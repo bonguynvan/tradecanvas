@@ -428,6 +428,7 @@ chart.on('stateChange', () => /* hình vẽ, chỉ báo, cảnh báo, loại bi�
 chart.on('paneChange', e => /* { instanceId, change: 'collapsed' | 'maximized' | 'order' } */)
 chart.on('chartTypeChange', e => /* { type, previous } */)
 chart.on('symbolChange', e => /* { symbol, previous } */)
+chart.on('marketChange', e => /* { market }: setMarket */)
 chart.on('timeframeChange', e => /* { timeframe, previous } */)
 chart.on('historyChange', e => /* { canUndo, canRedo } */)
 chart.on('drawingSelect', e => /* { ids, primary } */)
@@ -746,15 +747,27 @@ chart.setData(data)`}</code></pre>
 })
 widget.setData(oneMinuteBars)   // base series; clicking 4h/1d/1w resamples it
 
-// Or use the pure function directly
-import { resampleOHLCV, inferTimeframeMs } from '@tradecanvas/chart'
+// Or build bars yourself
+import { resampleBars, timeframeBucketStart } from '@tradecanvas/chart'
 
-const hourly = resampleOHLCV(oneMinuteBars, '1h')   // OHLC merged, volume summed
-const fourHour = resampleOHLCV(oneMinuteBars, '4h', { weekStartsOn: 1 })`}</code></pre>
+const hourly = resampleBars(oneMinuteBars, '1h')   // OHLC merged, volume summed
+const days = resampleBars(oneMinuteBars, '1d', { timeZone: 'Asia/Ho_Chi_Minh' })   // from 00:00 there
+const dayStart = timeframeBucketStart(trade.time, '1d', { timeZone: 'Asia/Ho_Chi_Minh' })`}</code></pre>
 <p>
-  Gom nhóm theo lịch: khung trong ngày và khung ngày neo theo các mốc epoch
-  UTC, tuần theo ngày đầu tuần đã cấu hình, còn tháng / quý / năm
-  theo ranh giới lịch. Nến đầu vào không bao giờ bị sửa đổi.
+  Gom nhóm theo lịch: phút và giờ (1h trở xuống) làm tròn xuống bội số của khung tính từ
+  epoch Unix. Ngày, tuần (từ ngày đầu tuần đã cấu hình), tháng, quý và năm bắt đầu lúc nửa
+  đêm của sàn, các khung giờ chia hết một ngày (2h, 3h, 4h, 6h, 8h, 12h) cũng vậy: theo
+  <code>timeZone</code> của mã (<code>setSymbolInfo</code>, hoặc <code>resolveSymbol</code>
+  của adapter), nếu không có thì của thị trường (<code>setMarket</code>), nếu không nữa thì
+  UTC. Ngày đổi giờ dài 23 hoặc 25 tiếng. Nến ngày đóng dấu 00:00 UTC được đọc là đúng ngày
+  chúng ghi, nên ở phía tây UTC thứ Hai vẫn nằm trong tuần của nó và nến tuần giữ dấu 00:00
+  UTC. Nến đầu vào không bao giờ bị sửa đổi.
+</p>
+<p>
+  Nến ngày hiện đúng ngày mà nó đại diện, dù biểu đồ đang hiển thị múi giờ nào: nến đóng dấu
+  00:00 UTC hiện ngày UTC của nó, nến dựng từ nửa đêm của sàn hiện ngày của sàn (trên trục
+  thời gian, crosshair và thẻ của nó). Khi bạn tự dựng nến, <code>timeframeBucketStart(time, timeframe, {'{'} timeZone {'}'})</code> cho biết lúc bắt đầu
+  của nến chứa một thời điểm.
 </p>
 
 <h3>Danh mục theo dõi</h3>

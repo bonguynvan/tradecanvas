@@ -1,5 +1,5 @@
 import type { KnownTimeFrame, TimeFrame, TimeFrameUnit } from '../types/ohlc.js';
-import { offsetAt, type TimeZoneSetting } from './timezone.js';
+import { isUtcTimeZone, offsetAt, wallToUtc, type TimeZoneSetting } from './timezone.js';
 import { barTimeUnit } from './data.js';
 
 const TIMEFRAME_MS: Record<KnownTimeFrame, number> = {
@@ -172,22 +172,94 @@ export function tzLabel(tz: TimeZoneSetting, atMs: number = Date.now()): string 
 
 /** Day-of-week for a Monday-anchored reference week (1970-01-05 was a Monday, UTC). */
 const WEEK_ANCHOR_MS = Date.UTC(1970, 0, 5);
+const MINUTE_MS = UNIT_MS.m;
+const DAY_MS = UNIT_MS.d;
+const HOURS_PER_DAY = 24;
+
+/** Where the buckets of `timeframeBucketStart` (and `resampleBars`) start. */
+export interface BucketOptions {
+  /** The day weeks start on: 0 Sunday, 1 Monday (the default). */
+  weekStartsOn?: 0 | 1;
+  /**
+   * The zone whose midnight days start at: an IANA name such as
+   * `'Asia/Ho_Chi_Minh'` (daylight saving time included), or minutes east of
+   * UTC. Days, weeks, months and the hour frames that divide a day (2h, 3h,
+   * 4h, 6h, 8h, 12h) follow it; 1h and shorter frames keep their epoch floor,
+   * so the hour a fall-back night repeats stays two bars. Left out, UTC's.
+   */
+  timeZone?: string | number;
+  /**
+   * The times are bars a day long or more: one stamped at 00:00 UTC is the
+   * date it names, and keeps that date's UTC bucket and stamp. Other times
+   * are instants in `timeZone`.
+   */
+  dates?: boolean;
+}
+
+type ParsedFrame = { count: number; unit: TimeFrameUnit };
+/** A frame that isn't one buckets as a minute, as it always has. */
+const MINUTE_FRAME: ParsedFrame = { count: 1, unit: 'm' };
+const PARSED_FRAMES_MAX = 256;
+/** Bars are bucketed one by one: read each timeframe's text once, not once a bar. */
+const parsedFrames = new Map<string, ParsedFrame>();
+
+function parsedFrame(tf: TimeFrame): ParsedFrame {
+  let frame = parsedFrames.get(tf);
+  if (!frame) {
+    frame = parseTimeframe(tf) ?? MINUTE_FRAME;
+    if (parsedFrames.size >= PARSED_FRAMES_MAX) parsedFrames.clear();
+    parsedFrames.set(tf, frame);
+  }
+  return frame;
+}
+
+/** Whether a frame's buckets start at a day's midnight: days, weeks, months, and hours that divide a day. */
+function followsDays({ count, unit }: ParsedFrame): boolean {
+  if (unit === 'h') return count > 1 && HOURS_PER_DAY % count === 0;
+  return unit === 'd' || unit === 'w' || unit === 'M';
+}
+
+/** Whether `timeframeBucketStart` starts the buckets of `tf` at a zone's midnight when given one. */
+export function timeframeFollowsDays(tf: TimeFrame): boolean {
+  return followsDays(parsedFrame(tf));
+}
+
+/** Whether `timeZone` moves a day's midnight away from UTC's. */
+function isZoned(timeZone: string | number | undefined): timeZone is string | number {
+  return timeZone !== undefined && !isUtcTimeZone(timeZone);
+}
 
 /**
  * Start of the bucket a timestamp falls into for a given timeframe.
  *
- * Intraday and daily frames are anchored to the Unix epoch (UTC) via fixed-ms
- * flooring. Weekly frames are anchored to Monday (or `weekStartsOn`), monthly
- * and yearly frames use calendar boundaries (1st of month, Jan for years) so
- * 3M aligns to quarters and 12M to calendar years.
+ * Minutes and hours floor to multiples of the frame since the Unix epoch.
+ * Days, weeks (from Monday, or `weekStartsOn`), months, quarters and years
+ * start at midnight, and the hour frames that divide a day (2h to 12h) count
+ * from it: UTC's, or `timeZone`'s when given (a day the clocks change is 23
+ * or 25 hours long, its 4h bucket 3 or 5). A 3M frame starts on quarters, a
+ * 12M one on 1 January. The third argument may also be the day weeks start
+ * on alone. Throws a RangeError for a zone the browser doesn't know.
  */
 export function timeframeBucketStart(
   timestamp: number,
   tf: TimeFrame,
-  weekStartsOn: 0 | 1 = 1,
+  options: 0 | 1 | BucketOptions = 1,
 ): number {
-  const { count, unit } = parseTimeframe(tf) ?? { count: 1, unit: 'm' as const };
+  const frame = parsedFrame(tf);
+  const weekStartsOn = typeof options === 'number' ? options : options.weekStartsOn ?? 1;
+  const timeZone = typeof options === 'number' ? undefined : options.timeZone;
+  if (!isZoned(timeZone) || !followsDays(frame)) return utcBucketStart(timestamp, frame, weekStartsOn);
+  // A date keeps the bucket of the day it names; only instants follow the zone.
+  if (typeof options === 'object' && options.dates && timestamp % DAY_MS === 0) {
+    return utcBucketStart(timestamp, frame, weekStartsOn);
+  }
+  // Bucket the zone's wall clock as if it were UTC, then find when that wall time happens there.
+  const wall = timestamp + offsetAt(timeZone, timestamp) * MINUTE_MS;
+  return wallToUtc(utcBucketStart(wall, frame, weekStartsOn), timeZone);
+}
 
+/** The bucket of `timestamp` on UTC's clock and calendar. */
+function utcBucketStart(timestamp: number, { count, unit }: ParsedFrame, weekStartsOn: 0 | 1): number {
   if (unit === 's' || unit === 'm' || unit === 'h' || unit === 'd') {
     const ms = count * UNIT_MS[unit];
     return Math.floor(timestamp / ms) * ms;
@@ -196,18 +268,33 @@ export function timeframeBucketStart(
   const d = new Date(timestamp);
 
   if (unit === 'w') {
-    const dayMs = UNIT_MS.d;
     const dow = d.getUTCDay();
     const shift = (dow - weekStartsOn + 7) % 7;
     const weekStart = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() - shift);
     if (count <= 1) return weekStart;
-    const weekIndex = Math.floor((weekStart - WEEK_ANCHOR_MS) / (7 * dayMs));
+    const weekIndex = Math.floor((weekStart - WEEK_ANCHOR_MS) / (7 * DAY_MS));
     const grouped = Math.floor(weekIndex / count) * count;
-    return WEEK_ANCHOR_MS + grouped * 7 * dayMs;
+    return WEEK_ANCHOR_MS + grouped * 7 * DAY_MS;
   }
 
   // months / quarters / years
   const totalMonths = d.getUTCFullYear() * 12 + d.getUTCMonth();
   const grouped = Math.floor(totalMonths / count) * count;
   return Date.UTC(Math.floor(grouped / 12), grouped % 12, 1);
+}
+
+/**
+ * The zone a bar a day long or more is dated in, whatever zone the chart
+ * shows (`tz`): UTC for one stamped at 00:00 UTC, the date it names; its
+ * exchange's zone (`exchangeZone`) for any other, since the days a chart
+ * builds start at the exchange's midnight; else `tz`.
+ */
+export function barDateZone(timeMs: number, tz: TimeZoneSetting, exchangeZone?: string | null): TimeZoneSetting {
+  if (timeMs % DAY_MS === 0) return 0;
+  return exchangeZone || tz;
+}
+
+/** The calendar parts a bar a day long or more is labelled with: its date, in the zone `barDateZone` gives. */
+export function barDateParts(timeMs: number, tz: TimeZoneSetting, exchangeZone?: string | null): TimeParts {
+  return timeParts(timeMs, barDateZone(timeMs, tz, exchangeZone));
 }

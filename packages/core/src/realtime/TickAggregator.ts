@@ -1,6 +1,14 @@
-import type { OHLCBar, TimeFrame, RawTick, AggregatedBar } from '@tradecanvas/commons';
-import { timeframeToMs } from '@tradecanvas/commons';
+import type { OHLCBar, TimeFrame, RawTick, AggregatedBar, BucketOptions } from '@tradecanvas/commons';
+import { offsetAt, parseTimeframe, timeframeBucketStart, timeframeToMs } from '@tradecanvas/commons';
 import { Emitter } from './Emitter.js';
+
+const MINUTE_MS = 60_000;
+
+/** Whether bars of `tf` are a day long or more, which some feeds stamp by date. */
+function isDateFrame(tf: TimeFrame): boolean {
+  const unit = parseTimeframe(tf)?.unit;
+  return unit === 'd' || unit === 'w' || unit === 'M';
+}
 
 interface AggregatorEvents {
   /** The forming bar, after each tick. */
@@ -24,7 +32,13 @@ interface AggregatorEvents {
  */
 export class TickAggregator extends Emitter<AggregatorEvents> {
   private currentBar: AggregatedBar | null = null;
+  private timeframe: TimeFrame;
   private timeframeMs: number;
+  /** Bars a day long or more, which `dateStamps` stamps by date. */
+  private dateFrame: boolean;
+  /** Where the buckets start: see `setTimeZone`. */
+  private bucket: BucketOptions = {};
+  private dateStamps = false;
 
   // Ring buffer for tick storage — O(1) push and eviction
   private tickRing: RawTick[];
@@ -37,16 +51,32 @@ export class TickAggregator extends Emitter<AggregatorEvents> {
     bufferSize = 1000,
   ) {
     super();
+    this.timeframe = _timeframe;
     this.timeframeMs = timeframeToMs(_timeframe);
+    this.dateFrame = isDateFrame(_timeframe);
     this.ringCapacity = bufferSize;
     this.tickRing = new Array<RawTick>(bufferSize);
   }
 
   setTimeframe(tf: TimeFrame): void {
+    this.timeframe = tf;
     this.timeframeMs = timeframeToMs(tf);
+    this.dateFrame = isDateFrame(tf);
     this.currentBar = null;
     this.ringHead = 0;
     this.ringCount = 0;
+  }
+
+  /**
+   * The exchange's zone: days, weeks, months and the hour frames that divide
+   * a day start at its midnight (`timeframeBucketStart`), UTC's when left
+   * out. `dateStamps` stamps days, weeks and months at 00:00 UTC of their
+   * date there instead, as feeds that stamp their daily bars by date do, so
+   * a bar from ticks lands on the feed's own bar.
+   */
+  setTimeZone(timeZone?: string | number | null, dateStamps = false): void {
+    this.bucket = { timeZone: timeZone ?? undefined };
+    this.dateStamps = dateStamps;
   }
 
   processTick(tick: RawTick): void {
@@ -136,6 +166,9 @@ export class TickAggregator extends Emitter<AggregatorEvents> {
   private alignToTimeframe(timestamp: number): number {
     // A timeframe without a length (ticks): each tick keeps its own time.
     if (!(this.timeframeMs > 0)) return timestamp;
-    return Math.floor(timestamp / this.timeframeMs) * this.timeframeMs;
+    const start = timeframeBucketStart(timestamp, this.timeframe, this.bucket);
+    if (!this.dateStamps || !this.dateFrame) return start;
+    // The bucket starts at the zone's midnight: its date there, at 00:00 UTC.
+    return start + offsetAt(this.bucket.timeZone ?? 0, start) * MINUTE_MS;
   }
 }

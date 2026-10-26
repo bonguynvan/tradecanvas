@@ -435,6 +435,7 @@ chart.on('stateChange', () => /* pueden haber cambiado los dibujos, indicadores,
 chart.on('paneChange', e => /* { instanceId, change: 'collapsed' | 'maximized' | 'order' } */)
 chart.on('chartTypeChange', e => /* { type, previous } */)
 chart.on('symbolChange', e => /* { symbol, previous } */)
+chart.on('marketChange', e => /* { market }: setMarket */)
 chart.on('timeframeChange', e => /* { timeframe, previous } */)
 chart.on('historyChange', e => /* { canUndo, canRedo } */)
 chart.on('drawingSelect', e => /* { ids, primary } */)
@@ -763,16 +764,29 @@ chart.setData(data)`}</code></pre>
 })
 widget.setData(oneMinuteBars)   // base series; clicking 4h/1d/1w resamples it
 
-// Or use the pure function directly
-import { resampleOHLCV, inferTimeframeMs } from '@tradecanvas/chart'
+// Or build bars yourself
+import { resampleBars, timeframeBucketStart } from '@tradecanvas/chart'
 
-const hourly = resampleOHLCV(oneMinuteBars, '1h')   // OHLC merged, volume summed
-const fourHour = resampleOHLCV(oneMinuteBars, '4h', { weekStartsOn: 1 })`}</code></pre>
+const hourly = resampleBars(oneMinuteBars, '1h')   // OHLC merged, volume summed
+const days = resampleBars(oneMinuteBars, '1d', { timeZone: 'Asia/Ho_Chi_Minh' })   // from 00:00 there
+const dayStart = timeframeBucketStart(trade.time, '1d', { timeZone: 'Asia/Ho_Chi_Minh' })`}</code></pre>
 <p>
-  Agrupación según el calendario: las temporalidades intradía y diarias se
-  alinean con los límites de la época UTC, las semanas con el inicio de semana
-  configurado y los meses / trimestres / años con los límites del calendario.
-  Las barras de entrada nunca se modifican.
+  Agrupación según el calendario: los minutos y las horas (1h o menos) se redondean hacia
+  abajo a múltiplos de la temporalidad contados desde la época Unix. Los días, las semanas
+  (desde el inicio de semana configurado), los meses, los trimestres y los años empiezan a
+  la medianoche de la bolsa, igual que las temporalidades en horas que dividen un día (2h,
+  3h, 4h, 6h, 8h, 12h): la del <code>timeZone</code> del símbolo (<code>setSymbolInfo</code>,
+  o el <code>resolveSymbol</code> del adaptador), si no la del mercado (<code>setMarket</code>),
+  y si no la de UTC. Un día de cambio de hora dura 23 o 25 horas. Las barras diarias con
+  sello de las 00:00 UTC se leen como la fecha que indican, así que al oeste de UTC el lunes
+  sigue en su propia semana y las semanas conservan el sello de las 00:00 UTC. Las barras de
+  entrada nunca se modifican.
+</p>
+<p>
+  Una barra diaria muestra la fecha que representa, sea cual sea la zona que muestra el
+  gráfico: la de sello 00:00 UTC, su fecha UTC; la construida desde la medianoche de la
+  bolsa, la fecha de la bolsa (en el eje de tiempo, la cruz y su tarjeta). Para las barras
+  que construyas tú, <code>timeframeBucketStart(time, timeframe, {'{'} timeZone {'}'})</code> da el inicio de la barra en la que cae un instante.
 </p>
 
 <h3>Listas de seguimiento</h3>

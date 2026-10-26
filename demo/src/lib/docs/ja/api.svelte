@@ -408,6 +408,7 @@ chart.on('stateChange', () => /* 描画、インジケーター、アラート�
 chart.on('paneChange', e => /* { instanceId, change: 'collapsed' | 'maximized' | 'order' } */)
 chart.on('chartTypeChange', e => /* { type, previous } */)
 chart.on('symbolChange', e => /* { symbol, previous } */)
+chart.on('marketChange', e => /* { market }: setMarket */)
 chart.on('timeframeChange', e => /* { timeframe, previous } */)
 chart.on('historyChange', e => /* { canUndo, canRedo } */)
 chart.on('drawingSelect', e => /* { ids, primary } */)
@@ -705,14 +706,24 @@ chart.setData(data)`}</code></pre>
 })
 widget.setData(oneMinuteBars)   // base series; clicking 4h/1d/1w resamples it
 
-// Or use the pure function directly
-import { resampleOHLCV, inferTimeframeMs } from '@tradecanvas/chart'
+// Or build bars yourself
+import { resampleBars, timeframeBucketStart } from '@tradecanvas/chart'
 
-const hourly = resampleOHLCV(oneMinuteBars, '1h')   // OHLC merged, volume summed
-const fourHour = resampleOHLCV(oneMinuteBars, '4h', { weekStartsOn: 1 })`}</code></pre>
+const hourly = resampleBars(oneMinuteBars, '1h')   // OHLC merged, volume summed
+const days = resampleBars(oneMinuteBars, '1d', { timeZone: 'Asia/Ho_Chi_Minh' })   // from 00:00 there
+const dayStart = timeframeBucketStart(trade.time, '1d', { timeZone: 'Asia/Ho_Chi_Minh' })`}</code></pre>
 <p>
-  区切りはカレンダーを考慮します。日中足と日足は UTC エポックの境界に、週足は設定した週の開始日に、
-  月足 / 四半期足 / 年足はカレンダーの境界にそろえます。入力のバーが変更されることはありません。
+  区切りはカレンダーを考慮します。分足と時間足（1h 以下）は Unix エポックからの時間足の倍数に切り捨てます。
+  日足、週足（設定した週の開始日から）、月足、四半期足、年足は取引所の午前 0 時に始まり、1 日を割り切る時間足
+  （2h、3h、4h、6h、8h、12h）も同じです。基準は銘柄の <code>timeZone</code>（<code>setSymbolInfo</code>、
+  またはアダプターの <code>resolveSymbol</code>）、なければ市場のもの（<code>setMarket</code>）、それもなければ UTC です。
+  時計が切り替わる日は 23 時間または 25 時間になります。00:00 UTC のタイムスタンプを持つ日足はそれが示す日付として扱うので、
+  UTC より西でも月曜日は自分の週に入り、週足は 00:00 UTC のタイムスタンプを保ちます。入力のバーが変更されることはありません。
+</p>
+<p>
+  日足は、チャートがどのタイムゾーンで表示していても、そのバーが表す日付を示します。00:00 UTC のバーは UTC の日付、
+  取引所の午前 0 時から作ったバーは取引所の日付です（時間軸、クロスヘアとそのカードで）。自分でバーを作るときは、
+  <code>timeframeBucketStart(time, timeframe, {'{'} timeZone {'}'})</code> がある時刻を含むバーの開始時刻を返します。
 </p>
 
 <h3>ウォッチリスト</h3>

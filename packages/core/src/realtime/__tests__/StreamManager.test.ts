@@ -31,7 +31,7 @@ function controlledAdapter() {
     off: (event, listener) => { listeners.get(event)?.delete(listener as DataAdapterListener); },
     dispose: () => {},
   };
-  return { adapter, pending, connects };
+  return { adapter, pending, connects, listeners };
 }
 
 const bars = (close: number): OHLCBar[] => [{ time: 1, open: close, high: close, low: close, close, volume: 1 }];
@@ -154,6 +154,36 @@ describe('StreamManager — timeframes the feed lacks', () => {
     expect(snapshots[0].map((b) => b.time)).toEqual([0, 600_000]);
     expect(snapshots[0][1]).toMatchObject({ open: 2, close: 3, volume: 2 });
     expect(connects.at(-1)?.timeframe).toBe('5m');
+  });
+});
+
+describe('StreamManager — daily bars from ticks', () => {
+  const day = (time: number): OHLCBar => ({ time, open: 1, high: 1, low: 1, close: 1, volume: 1 });
+
+  /** The day a trade at `time` lands in, on a stream of daily bars in `zone` built from ticks after `history`. */
+  async function tickOnto(zone: string, history: OHLCBar[], time: number): Promise<number | undefined> {
+    const { adapter, pending, listeners } = controlledAdapter();
+    const sm = new StreamManager();
+    sm.setTimeZone(zone);
+    const updates: OHLCBar[] = [];
+    sm.on('barUpdate', (b) => updates.push(b));
+    const done = sm.connect({ adapter, symbol: 'X', timeframe: '1d', aggregateTicks: true });
+    pending[0].resolve(history);
+    await done;
+    for (const l of listeners.get('tick') ?? []) l({ type: 'tick', data: { time, price: 2, volume: 1 }, timestamp: 0 });
+    return updates.at(-1)?.time;
+  }
+
+  it('starts the day at the exchange’s midnight, as the bars before it do', async () => {
+    // Friday 23 October 2026, 09:15 in Ho Chi Minh City.
+    const day23 = await tickOnto('Asia/Ho_Chi_Minh', [day(Date.UTC(2026, 9, 21, 17))], Date.UTC(2026, 9, 23, 2, 15));
+    expect(day23).toBe(Date.UTC(2026, 9, 22, 17));
+  });
+
+  it('stamps the day by its date when the history stamps days at 00:00 UTC', async () => {
+    // 20:30 on Friday 23 October in New York, already Saturday in UTC.
+    const day23 = await tickOnto('America/New_York', [day(Date.UTC(2026, 9, 22))], Date.UTC(2026, 9, 24, 0, 30));
+    expect(day23).toBe(Date.UTC(2026, 9, 23));
   });
 });
 

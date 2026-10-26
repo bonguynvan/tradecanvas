@@ -94,6 +94,22 @@ describe('TimeMarker', () => {
     const out = new TimeMarker().marks(data, { from: 0, to: 11, gapBars: 12, tz: 420, timesPastData: false });
     expect(out.map(iso)).toEqual(['2025-01-01T17:00']);
   });
+
+  it('starts the month of daily bars built at the exchange’s midnight on its own first day, in any zone shown', () => {
+    // Days of Ho Chi Minh City (UTC+7), each stamped at 17:00 UTC the day before: 26 September to 5 October.
+    const data = Array.from({ length: 10 }, (_, i) => ({ time: Date.UTC(2026, 8, 25, 17) + i * DAY }));
+    for (const tz of [0, -240]) {
+      const out = new TimeMarker().marks(data, { from: 0, to: 9, gapBars: 10, tz, timesPastData: false, exchangeZone: 'Asia/Ho_Chi_Minh' });
+      // 1 October there is the bar stamped 17:00 UTC on 30 September.
+      expect(out.map(iso)).toEqual(['2026-09-30T17:00']);
+    }
+  });
+
+  it('starts the month of dated daily bars on the date they name, in any zone shown', () => {
+    const data = Array.from({ length: 10 }, (_, i) => ({ time: Date.UTC(2026, 8, 26) + i * DAY }));
+    const out = new TimeMarker().marks(data, { from: 0, to: 9, gapBars: 10, tz: 'America/New_York', timesPastData: false });
+    expect(out.map(iso)).toEqual(['2026-10-01T00:00']);
+  });
 });
 
 describe('TimeMarker — live series', () => {

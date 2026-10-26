@@ -24,6 +24,7 @@ chart.connect({ adapter: new CoinbaseAdapter(), symbol: 'BTC-USD', timeframe: '1
 <h2>Interface DataAdapter</h2>
 <pre><code>{`interface DataAdapter {
   name: string
+  supportedTimeframes?: TimeFrame[]   // left out: it serves every timeframe
   connect(config): void
   disconnect(): void
   getConnectionState(): ConnectionState
@@ -41,6 +42,19 @@ chart.connect({ adapter: new CoinbaseAdapter(), symbol: 'BTC-USD', timeframe: '1
   fetchTrades?(symbol, limit?): Promise<Trade[]>        // tick charts, with
   subscribeTrades?(symbol, onTrades): () => void        // subscribeTrades
 }`}</code></pre>
+
+<h2 id="built-timeframes">Khung thời gian nguồn dữ liệu không có</h2>
+<p>
+  Nguồn dữ liệu khai báo <code>supportedTimeframes</code> được dựng mọi khung khác từ khung thô nhất
+  trong số đó chia hết khung cần dựng: 7m từ 1m, 4h và 1D từ 1h. Ngày, tuần, tháng và các khung giờ
+  chia hết một ngày (2h, 3h, 4h, 6h, 8h, 12h) bắt đầu lúc nửa đêm của sàn giao dịch, theo
+  <code>timeZone</code> mà <code>resolveSymbol</code> trả về. Biểu đồ hỏi một lần cho mỗi mã, trước
+  lần tải lịch sử đầu tiên của khung như vậy, rồi giữ múi giờ đó; khung 1h trở xuống không chờ. Nguồn
+  dữ liệu không có <code>resolveSymbol</code>, không nêu múi giờ hoặc nêu UTC, hay có các khung không
+  khớp được với nửa đêm đó (chỉ có nến 4h cho múi giờ lệch UTC 7 tiếng) thì dùng ngày theo UTC như
+  trước. Nến ngày đóng dấu 00:00 UTC được đọc là đúng ngày chúng ghi. Múi giờ mà nguồn dữ liệu gửi sau
+  qua sự kiện <code>symbolInfo</code> đổi giờ hiển thị, không đổi lúc bắt đầu của những ngày đã dựng.
+</p>
 
 <h2 id="symbol-info">Thông tin mã mà nguồn dữ liệu biết sau</h2>
 <p>
@@ -67,11 +81,13 @@ const myAdapter = new WebSocketAdapter({
 <p>Gộp tick thô thành nến OHLC theo từng khung thời gian:</p>
 <pre><code>{`import { TickAggregator } from '@tradecanvas/chart'
 
-const agg = new TickAggregator('1m')
+const agg = new TickAggregator('1d')
+agg.setTimeZone('Asia/Ho_Chi_Minh')         // days start at the exchange's midnight
+agg.on('barClose', (bar) => console.log(bar))   // a bar whose interval is over
 agg.processTick({ time, price, volume })
 
-const current = agg.getCurrentBar()         // forming bar
-const closed = agg.flushClosedBars()        // bars that have rolled over`}</code></pre>
+const current = agg.getCurrentBar()         // forming bar`}</code></pre>
+<p>Tuần bắt đầu từ thứ Hai và tháng từ ngày 1. Với <code>setTimeZone</code>, ngày, tuần, tháng và các khung giờ chia hết một ngày bắt đầu lúc nửa đêm của sàn; biểu đồ tự đặt nó cho tick của luồng dữ liệu (<code>aggregateTicks</code>) theo múi giờ của mã, và đóng dấu ngày lúc 00:00 UTC khi lịch sử cũng đóng dấu như vậy.</p>
 
 <h2>Giá của nhiều mã</h2>
 <p>

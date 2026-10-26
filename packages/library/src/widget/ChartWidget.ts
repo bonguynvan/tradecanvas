@@ -404,6 +404,8 @@ export class ChartWidget {
   // instead of refetching. See `setData` / `applyTimeframeData`.
   private baseSeries: DataSeries | null = null;
   private baseTimeframeMs = 0;
+  /** The exchange's zone the bars on the chart were built in (null: UTC's), undefined when they weren't built. */
+  private builtInZone: string | null | undefined = undefined;
   /** The timeframe the user (or the host) picked: ranges never show finer than it, layouts keep it. */
   private chosenTimeframe: TimeFrame | null = null;
   /** Counts range clicks and the user's own picks: a range waiting behind a newer one gives way. */
@@ -770,10 +772,13 @@ export class ChartWidget {
       const text = info ? [info.description, info.exchange].filter(Boolean).join(' · ') : '';
       this.toolbar?.setSymbolDescription(text || null);
       this.refreshMarket();
+      this.rebuildForZone();
       // A symbol's decimals often arrive after the lists were written (the
       // adapter's resolveSymbol answers late): write their prices again.
       this.refreshPriceTexts();
     });
+    // A market set after the bars may name the zone their days start in.
+    this.chart.on('marketChange', () => this.rebuildForZone());
 
     // Symbol info: the panel, and the market's status in the status bar,
     // kept current as the clock runs toward the next open or close.
@@ -3027,18 +3032,35 @@ export class ChartWidget {
     }
   }
 
-  /** Render the base series at the active timeframe, resampling when coarser. */
+  /**
+   * Render the base series at the active timeframe, resampling when coarser:
+   * days, weeks, months and the hour frames that divide a day start at the
+   * exchange's midnight (`getExchangeTimeZone`), else at UTC's.
+   */
   private applyTimeframeData(): void {
     if (!this.baseSeries) return;
     const started = performance.now();
     const targetMs = timeframeToMs(this.state.timeframe);
     if (this.baseTimeframeMs > 0 && targetMs > this.baseTimeframeMs) {
-      const weekStartsOn = this.options.weekStartsOn ?? 1;
-      this.chart.setData(resampleOHLCV(this.baseSeries, this.state.timeframe, { weekStartsOn }));
+      const zone = this.chart.getExchangeTimeZone() ?? null;
+      this.chart.setData(resampleOHLCV(this.baseSeries, this.state.timeframe, this.resampleOptions(zone)));
+      this.builtInZone = zone;
     } else {
       this.chart.setData(this.baseSeries);
+      this.builtInZone = undefined;
     }
     this.lastLocalSwitchMs = performance.now() - started;
+  }
+
+  private resampleOptions(zone: string | null): { weekStartsOn: 0 | 1; timeZone?: string } {
+    return { weekStartsOn: this.options.weekStartsOn ?? 1, timeZone: zone ?? undefined };
+  }
+
+  /** The exchange's zone moved (the symbol's info, or the market, came after the bars): build their days again. */
+  private rebuildForZone(): void {
+    if (this.adapter || this.builtInZone === undefined) return;
+    if ((this.chart.getExchangeTimeZone() ?? null) === this.builtInZone) return;
+    this.applyTimeframeData();
   }
 
   private handleDataUpdate(p: DataUpdatePayload): void {
@@ -4600,7 +4622,8 @@ export class ChartWidget {
 
   /** The finer bars for a replay in `tf` steps: from the feed, or built from the bars loaded. Null when there are none. */
   private async replayStepsFor(tf: TimeFrame): Promise<DataSeries | null> {
-    const key = `${this.state.symbol}|${this.state.timeframe}|${tf}`;
+    const zone = this.chart.getExchangeTimeZone() ?? null;
+    const key = `${this.state.symbol}|${this.state.timeframe}|${tf}|${zone}`;
     if (this.replayStepsCache?.key === key) return this.replayStepsCache.steps;
     let steps: DataSeries | null = null;
     if (this.adapter) {
@@ -4612,7 +4635,7 @@ export class ChartWidget {
         steps = null;
       }
     } else if (this.baseSeries) {
-      steps = timeframeToMs(tf) === this.baseTimeframeMs ? this.baseSeries : resampleOHLCV(this.baseSeries, tf);
+      steps = timeframeToMs(tf) === this.baseTimeframeMs ? this.baseSeries : resampleOHLCV(this.baseSeries, tf, this.resampleOptions(zone));
     }
     if (!steps || steps.length === 0) return null;
     this.replayStepsCache = { key, steps };

@@ -398,6 +398,7 @@ chart.on('stateChange', () => /* 画线、指标、提醒、图表类型或主�
 chart.on('paneChange', e => /* { instanceId, change: 'collapsed' | 'maximized' | 'order' } */)
 chart.on('chartTypeChange', e => /* { type, previous } */)
 chart.on('symbolChange', e => /* { symbol, previous } */)
+chart.on('marketChange', e => /* { market }: setMarket */)
 chart.on('timeframeChange', e => /* { timeframe, previous } */)
 chart.on('historyChange', e => /* { canUndo, canRedo } */)
 chart.on('drawingSelect', e => /* { ids, primary } */)
@@ -681,14 +682,22 @@ chart.setData(data)`}</code></pre>
 })
 widget.setData(oneMinuteBars)   // base series; clicking 4h/1d/1w resamples it
 
-// Or use the pure function directly
-import { resampleOHLCV, inferTimeframeMs } from '@tradecanvas/chart'
+// Or build bars yourself
+import { resampleBars, timeframeBucketStart } from '@tradecanvas/chart'
 
-const hourly = resampleOHLCV(oneMinuteBars, '1h')   // OHLC merged, volume summed
-const fourHour = resampleOHLCV(oneMinuteBars, '4h', { weekStartsOn: 1 })`}</code></pre>
+const hourly = resampleBars(oneMinuteBars, '1h')   // OHLC merged, volume summed
+const days = resampleBars(oneMinuteBars, '1d', { timeZone: 'Asia/Ho_Chi_Minh' })   // from 00:00 there
+const dayStart = timeframeBucketStart(trade.time, '1d', { timeZone: 'Asia/Ho_Chi_Minh' })`}</code></pre>
 <p>
-  分组遵循日历规则：日内和日线周期对齐 UTC 纪元边界，周线对齐所配置的一周起始日，
-  月 / 季度 / 年对齐日历边界。输入的K线永远不会被修改。
+  分组遵循日历规则：分钟和小时（1h 及更短）从 Unix 纪元起按周期的整数倍向下取整。日、周（从所配置的一周起始日开始）、
+  月、季度和年从交易所的午夜开始，能整除一天的小时周期（2h、3h、4h、6h、8h、12h）也一样：依据品种的
+  <code>timeZone</code>（<code>setSymbolInfo</code>，或适配器的 <code>resolveSymbol</code>），其次是市场的
+  （<code>setMarket</code>），再次是 UTC。调整时钟的那一天长 23 或 25 小时。时间戳为 00:00 UTC 的日线被视为其标明的日期，
+  因此在 UTC 以西，周一仍留在自己的那一周，周线保持 00:00 UTC 的时间戳。输入的K线永远不会被修改。
+</p>
+<p>
+  无论图表显示哪个时区，日线都显示它所代表的日期：时间戳为 00:00 UTC 的K线显示其 UTC 日期，从交易所午夜构建的K线显示交易所的日期
+  （时间轴、十字光标及其卡片上都是如此）。自己构建K线时，<code>timeframeBucketStart(time, timeframe, {'{'} timeZone {'}'})</code> 给出某个时刻所在K线的开始时间。
 </p>
 
 <h3>自选列表</h3>

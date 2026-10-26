@@ -24,6 +24,7 @@ chart.connect({ adapter: new CoinbaseAdapter(), symbol: 'BTC-USD', timeframe: '1
 <h2>DataAdapter 인터페이스</h2>
 <pre><code>{`interface DataAdapter {
   name: string
+  supportedTimeframes?: TimeFrame[]   // left out: it serves every timeframe
   connect(config): void
   disconnect(): void
   getConnectionState(): ConnectionState
@@ -41,6 +42,17 @@ chart.connect({ adapter: new CoinbaseAdapter(), symbol: 'BTC-USD', timeframe: '1
   fetchTrades?(symbol, limit?): Promise<Trade[]>        // tick charts, with
   subscribeTrades?(symbol, onTrades): () => void        // subscribeTrades
 }`}</code></pre>
+
+<h2 id="built-timeframes">피드에 없는 시간 단위</h2>
+<p>
+  <code>supportedTimeframes</code>를 밝힌 피드는 다른 시간 단위를 그중 나누어떨어지는 가장 큰 단위로 만듭니다. 7m은 1m에서,
+  4h와 1D는 1h에서 만듭니다. 일, 주, 월과 하루를 나누어떨어지게 하는 시간 단위(2h, 3h, 4h, 6h, 8h, 12h)는 거래소의 자정, 즉
+  <code>resolveSymbol</code>이 알려 주는 <code>timeZone</code>의 자정에 시작합니다. 차트는 종목마다 한 번, 그런 단위의 첫 기록을 불러오기 전에
+  묻고 그 시간대를 유지합니다. 1h 이하 단위는 기다리지 않습니다. <code>resolveSymbol</code>이 없거나, 시간대를 알려 주지 않거나 UTC를 알려 주거나,
+  시간 단위가 그 자정에 맞지 않는 피드(UTC와 7시간 차이 나는 시간대에 4h 봉만 있는 경우)는 전처럼 UTC 기준의 날을 씁니다.
+  00:00 UTC로 찍힌 일봉은 그것이 가리키는 날짜로 읽습니다. 피드가 나중에 <code>symbolInfo</code> 이벤트로 보내는 시간대는 표시되는 시각을 바꾸지만
+  이미 만든 날의 시작은 바꾸지 않습니다.
+</p>
 
 <h2 id="symbol-info">피드가 나중에 알게 되는 종목 정보</h2>
 <p>
@@ -67,11 +79,13 @@ const myAdapter = new WebSocketAdapter({
 <p>원시 틱을 시간 단위별 OHLC 봉으로 묶습니다.</p>
 <pre><code>{`import { TickAggregator } from '@tradecanvas/chart'
 
-const agg = new TickAggregator('1m')
+const agg = new TickAggregator('1d')
+agg.setTimeZone('Asia/Ho_Chi_Minh')         // days start at the exchange's midnight
+agg.on('barClose', (bar) => console.log(bar))   // a bar whose interval is over
 agg.processTick({ time, price, volume })
 
-const current = agg.getCurrentBar()         // forming bar
-const closed = agg.flushClosedBars()        // bars that have rolled over`}</code></pre>
+const current = agg.getCurrentBar()         // forming bar`}</code></pre>
+<p>주는 월요일에, 월은 1일에 시작합니다. <code>setTimeZone</code>을 쓰면 일, 주, 월과 하루를 나누어떨어지게 하는 시간 단위가 거래소 자정에 시작합니다. 차트는 종목의 시간대로 스트림의 틱(<code>aggregateTicks</code>)에 이를 설정하고, 기록이 날짜를 00:00 UTC로 찍으면 그에 맞춥니다.</p>
 
 <h2>여러 종목의 시세</h2>
 <p>

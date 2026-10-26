@@ -162,10 +162,10 @@ export type { BarTimeUnit } from '@tradecanvas/commons';
 
 // Timeframes of any length, resampling, and display time zones
 export {
-  parseTimeframe, isTimeFrame, timeframeToMs, resampleBars, pickBaseTimeframe,
+  parseTimeframe, isTimeFrame, timeframeToMs, timeframeBucketStart, resampleBars, pickBaseTimeframe,
   isValidTimeZone, zoneOffsetMinutes, offsetAt, wallToUtc,
 } from '@tradecanvas/commons';
-export type { KnownTimeFrame, TimeFrameUnit, TimeZoneSetting, HistoryLoadPayload, DataUpdatePayload, OverlayScale } from '@tradecanvas/commons';
+export type { KnownTimeFrame, TimeFrameUnit, BucketOptions, TimeZoneSetting, HistoryLoadPayload, DataUpdatePayload, OverlayScale } from '@tradecanvas/commons';
 
 // Symbol search and what a feed knows about a symbol
 export { rankSymbols, stepDecimals } from '@tradecanvas/commons';

@@ -24,6 +24,7 @@ chart.connect({ adapter: new CoinbaseAdapter(), symbol: 'BTC-USD', timeframe: '1
 <h2>DataAdapter interface</h2>
 <pre><code>{`interface DataAdapter {
   name: string
+  supportedTimeframes?: TimeFrame[]   // left out: it serves every timeframe
   connect(config): void
   disconnect(): void
   getConnectionState(): ConnectionState
@@ -41,6 +42,19 @@ chart.connect({ adapter: new CoinbaseAdapter(), symbol: 'BTC-USD', timeframe: '1
   fetchTrades?(symbol, limit?): Promise<Trade[]>        // tick charts, with
   subscribeTrades?(symbol, onTrades): () => void        // subscribeTrades
 }`}</code></pre>
+
+<h2 id="built-timeframes">Timeframes the feed lacks</h2>
+<p>
+  A feed that lists its <code>supportedTimeframes</code> gets every other timeframe built from the
+  coarsest of them that divides it: 7m from 1m, 4h and 1D from 1h. Days, weeks, months and the hour
+  frames that divide a day (2h, 3h, 4h, 6h, 8h, 12h) start at the midnight of the symbol's exchange,
+  in the <code>timeZone</code> its <code>resolveSymbol</code> names. The chart asks once per symbol,
+  before the first history of such a timeframe, and keeps the zone; 1h and shorter frames don't wait
+  for it. A feed without <code>resolveSymbol</code>, one that names no zone or UTC, or one whose
+  timeframes can't line up with that midnight (only 4h bars for a zone 7 hours from UTC) gets UTC
+  days, as before. Daily bars stamped at 00:00 UTC are read as the dates they name. A zone the feed
+  sends later in a <code>symbolInfo</code> event changes the times shown, not where built days start.
+</p>
 
 <h2 id="symbol-info">Symbol details the feed learns later</h2>
 <p>
@@ -67,11 +81,13 @@ const myAdapter = new WebSocketAdapter({
 <p>Roll raw ticks into OHLC bars per timeframe:</p>
 <pre><code>{`import { TickAggregator } from '@tradecanvas/chart'
 
-const agg = new TickAggregator('1m')
+const agg = new TickAggregator('1d')
+agg.setTimeZone('Asia/Ho_Chi_Minh')         // days start at the exchange's midnight
+agg.on('barClose', (bar) => console.log(bar))   // a bar whose interval is over
 agg.processTick({ time, price, volume })
 
-const current = agg.getCurrentBar()         // forming bar
-const closed = agg.flushClosedBars()        // bars that have rolled over`}</code></pre>
+const current = agg.getCurrentBar()         // forming bar`}</code></pre>
+<p>Weeks start on Monday and months on the 1st. With <code>setTimeZone</code>, days, weeks, months and the hour frames that divide a day start at the exchange's midnight; a chart sets it for its stream's ticks (<code>aggregateTicks</code>) from the symbol's zone, and stamps days at 00:00 UTC when the history does.</p>
 
 <h2>Quotes for many symbols</h2>
 <p>

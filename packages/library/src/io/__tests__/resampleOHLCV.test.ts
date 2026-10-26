@@ -98,6 +98,28 @@ describe('resampleOHLCV', () => {
   });
 });
 
+describe('resampleOHLCV in a time zone', () => {
+  const bar = (time: number) => ({ time, open: 1, high: 2, low: 0.5, close: 1.5, volume: 1 });
+
+  it('starts days at the given zone’s midnight', () => {
+    // Hourly bars of 22 and 23 October, 09:00 to 14:00 in Ho Chi Minh City (02:00 to 07:00 UTC).
+    const hours = [22, 23].flatMap((d) => [2, 3, 4, 5, 6, 7].map((h) => bar(Date.UTC(2026, 9, d, h))));
+    const days = resampleOHLCV(hours, '1d', { timeZone: 'Asia/Ho_Chi_Minh' });
+    expect(days.map((d) => [d.time, d.volume])).toEqual([[Date.UTC(2026, 9, 21, 17), 6], [Date.UTC(2026, 9, 22, 17), 6]]);
+  });
+
+  it('builds weeks from daily bars stamped at 00:00 UTC by their dates, and keeps the stamps', () => {
+    const dates = [19, 20, 21, 22, 23, 26, 27, 28, 29, 30].map((d) => bar(Date.UTC(2026, 9, d)));
+    const weeks = resampleOHLCV(dates, '1w', { timeZone: 'America/New_York' });
+    expect(weeks.map((w) => [w.time, w.volume])).toEqual([[Date.UTC(2026, 9, 19), 5], [Date.UTC(2026, 9, 26), 5]]);
+  });
+
+  it('is today’s result without a zone', () => {
+    const hours = Array.from({ length: 48 }, (_, i) => bar(Date.UTC(2026, 9, 22) + i * HOUR));
+    expect(resampleOHLCV(hours, '1d', { timeZone: undefined })).toEqual(resampleOHLCV(hours, '1d'));
+  });
+});
+
 describe('inferTimeframeMs', () => {
   it('returns 0 for series shorter than two bars', () => {
     expect(inferTimeframeMs([])).toBe(0);

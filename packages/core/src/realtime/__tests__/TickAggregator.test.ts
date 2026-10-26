@@ -180,3 +180,43 @@ describe('TickAggregator buffering and lifecycle', () => {
     expect(agg.getCurrentBar()?.time).toBe(10 * MIN);
   });
 });
+
+describe('TickAggregator on the calendar', () => {
+  // Friday 23 October 2026, 09:15 in Ho Chi Minh City (UTC+7).
+  const friday = Date.UTC(2026, 9, 23, 2, 15);
+
+  it('starts weeks on Monday and months on the 1st', () => {
+    const week = new TickAggregator('1w');
+    week.processTick(tick(friday, 100));
+    expect(week.getCurrentBar()?.time).toBe(Date.UTC(2026, 9, 19));
+    const month = new TickAggregator('1M');
+    month.processTick(tick(friday, 100));
+    expect(month.getCurrentBar()?.time).toBe(Date.UTC(2026, 9, 1));
+  });
+
+  it('starts days and 4h bars at the exchange’s midnight once it knows the zone', () => {
+    const day = new TickAggregator('1d');
+    day.setTimeZone('Asia/Ho_Chi_Minh');
+    day.processTick(tick(friday, 100));
+    expect(day.getCurrentBar()?.time).toBe(Date.UTC(2026, 9, 22, 17));
+    const four = new TickAggregator('4h');
+    four.setTimeZone('Asia/Ho_Chi_Minh');
+    four.processTick(tick(friday, 100));
+    expect(four.getCurrentBar()?.time).toBe(Date.UTC(2026, 9, 23, 1));
+  });
+
+  it('stamps days by their date there for a feed that stamps its daily bars at 00:00 UTC', () => {
+    const day = new TickAggregator('1d');
+    day.setTimeZone('America/New_York', true);
+    // 20:30 on Friday 23 October in New York is already Saturday in UTC.
+    day.processTick(tick(Date.UTC(2026, 9, 24, 0, 30), 100));
+    expect(day.getCurrentBar()?.time).toBe(Date.UTC(2026, 9, 23));
+  });
+
+  it('keeps hours and minutes on the epoch floor', () => {
+    const hour = new TickAggregator('1h');
+    hour.setTimeZone('Asia/Kolkata', true);
+    hour.processTick(tick(friday, 100));
+    expect(hour.getCurrentBar()?.time).toBe(Date.UTC(2026, 9, 23, 2));
+  });
+});

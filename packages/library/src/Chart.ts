@@ -3005,6 +3005,7 @@ export class Chart {
     this.disconnectStream();
 
     this.streamManager = new StreamManager();
+    this.streamManager.setTimeZone(this.getExchangeTimeZone());
 
     this.streamManager.on('snapshot', (bars) => {
       const key = `${this.currentSymbol}|${this.streamTimeframe}`;
@@ -3981,6 +3982,18 @@ export class Chart {
     this.setTimeZone(minutes);
   }
 
+  /**
+   * The exchange's zone where it counts beyond the zone shown: daily bars
+   * built at its midnight are dated there, and so are days built from ticks.
+   */
+  private applyExchangeZone(): void {
+    const zone = this.getExchangeTimeZone();
+    this.timeAxis.setExchangeTimeZone(zone);
+    this.crosshairHandler.setExchangeTimeZone(zone);
+    this.crosshairTooltip.setExchangeTimeZone(zone);
+    this.streamManager?.setTimeZone(zone);
+  }
+
   private applyTimeZone(): void {
     const tz = this.timeZoneSetting === EXCHANGE_TIME_ZONE ? (this.getExchangeTimeZone() ?? 'UTC') : this.timeZoneSetting;
     this.displayTz = tz;
@@ -3998,8 +4011,8 @@ export class Chart {
    * What is known about the symbol on the chart — usually from the stream's
    * adapter (`resolveSymbol`), which a connected chart asks by itself. Its
    * price precision applies unless `setMarket` set one; its zone
-   * (`timeZone`) backs `setTimeZone('exchange')`; its hours feed the session
-   * shading. `getSymbolInfo()` gives the zone as `timeZone` and as the older
+   * (`timeZone`) backs `setTimeZone('exchange')` and dates daily bars; its
+   * hours feed the session shading. `getSymbolInfo()` gives the zone as `timeZone` and as the older
    * `timezone`; given both with different zones, `timeZone` is the one, unless
    * it is the zone the chart already has for the symbol and `timezone` is new
    * (`{ ...chart.getSymbolInfo(), timezone: zone }` changes it).
@@ -4024,6 +4037,7 @@ export class Chart {
       ? { timeZone: zone, windows, startMinute: windows[0].startMinute, endMinute: windows[windows.length - 1].endMinute }
       : this.hostSessionHours);
     if (this.timeZoneSetting === EXCHANGE_TIME_ZONE) this.applyTimeZone();
+    this.applyExchangeZone();
     this.reapplyExtendedHours();
     this.updateViewportAndRender();
     this.eventBus.emit('symbolInfoChange', { info: this.symbolInfo });
@@ -4056,7 +4070,9 @@ export class Chart {
   private resolveStreamSymbol(adapter: DataAdapter, symbol: string): void {
     // Another symbol's details go, whether or not the feed can be asked (it may send them later).
     if (this.symbolInfo && this.symbolInfo.symbol !== symbol) this.setSymbolInfo(null);
-    const resolve = adapter.resolveSymbol?.bind(adapter);
+    // Through the stream's own wrapper: the question it asks to build the symbol's days is this one.
+    const source = withResampling(adapter);
+    const resolve = source.resolveSymbol?.bind(source);
     if (!resolve) return;
     const seq = ++this.symbolInfoSeq;
     // Taken as a promise: an adapter may throw, or answer without one.
@@ -5199,8 +5215,9 @@ export class Chart {
    * its daily limits once `setPriceLimits` gives the reference.
    *
    * The axis keeps its zone: `setTimeZone('exchange')` shows the market's
-   * (the symbol's own, when `setSymbolInfo` gave one). Numbers keep the
-   * chart's locale (`numberLocale`).
+   * (the symbol's own, when `setSymbolInfo` gave one). That zone also dates
+   * daily bars, and starts the days a `ChartWidget` builds from its bars.
+   * Numbers keep the chart's locale (`numberLocale`). Sends `marketChange`.
    *
    * @example
    * chart.setMarket(MARKET_HOSE);
@@ -5211,6 +5228,7 @@ export class Chart {
     this.marketConfig = config;
     // `'exchange'` shows the market's zone when the symbol names none.
     if (this.timeZoneSetting === EXCHANGE_TIME_ZONE) this.applyTimeZone();
+    this.applyExchangeZone();
 
     // The market's colours on the candles; volume keeps the theme's own.
     if (config.colorScheme) {
@@ -5230,6 +5248,7 @@ export class Chart {
 
     // Longer price labels may need a wider axis.
     this.updateViewportAndRender();
+    this.eventBus.emit('marketChange', { market: config });
   }
 
   /** Prices show `precision` decimals everywhere; null goes back to fitting the price range. */

@@ -24,6 +24,7 @@ chart.connect({ adapter: new CoinbaseAdapter(), symbol: 'BTC-USD', timeframe: '1
 <h2>DataAdapter インターフェース</h2>
 <pre><code>{`interface DataAdapter {
   name: string
+  supportedTimeframes?: TimeFrame[]   // left out: it serves every timeframe
   connect(config): void
   disconnect(): void
   getConnectionState(): ConnectionState
@@ -41,6 +42,17 @@ chart.connect({ adapter: new CoinbaseAdapter(), symbol: 'BTC-USD', timeframe: '1
   fetchTrades?(symbol, limit?): Promise<Trade[]>        // tick charts, with
   subscribeTrades?(symbol, onTrades): () => void        // subscribeTrades
 }`}</code></pre>
+
+<h2 id="built-timeframes">フィードにない時間足</h2>
+<p>
+  <code>supportedTimeframes</code> を挙げるフィードでは、ほかの時間足を、そのうち割り切れる最も粗い時間足から作ります。7m は 1m から、
+  4h と 1D は 1h からです。日足、週足、月足と、1 日を割り切る時間足（2h、3h、4h、6h、8h、12h）は、取引所の午前 0 時、つまり
+  <code>resolveSymbol</code> が示す <code>timeZone</code> の午前 0 時に始まります。チャートは銘柄ごとに一度、そうした時間足の最初の履歴の前に問い合わせ、
+  そのタイムゾーンを保ちます。1h 以下の時間足は待ちません。<code>resolveSymbol</code> のないフィード、タイムゾーンを示さないか UTC を示すフィード、
+  時間足がその午前 0 時にそろわないフィード（UTC から 7 時間ずれたタイムゾーンで 4h バーしかない場合など）は、これまでどおり UTC の日になります。
+  00:00 UTC のタイムスタンプを持つ日足は、それが示す日付として扱います。フィードが後から <code>symbolInfo</code> イベントで送るタイムゾーンは、
+  表示される時刻を変えますが、作られた日の始まりは変えません。
+</p>
 
 <h2 id="symbol-info">データフィードが後から知る銘柄情報</h2>
 <p>
@@ -67,11 +79,13 @@ const myAdapter = new WebSocketAdapter({
 <p>生のティックを、時間足ごとの OHLC バーにまとめます：</p>
 <pre><code>{`import { TickAggregator } from '@tradecanvas/chart'
 
-const agg = new TickAggregator('1m')
+const agg = new TickAggregator('1d')
+agg.setTimeZone('Asia/Ho_Chi_Minh')         // days start at the exchange's midnight
+agg.on('barClose', (bar) => console.log(bar))   // a bar whose interval is over
 agg.processTick({ time, price, volume })
 
-const current = agg.getCurrentBar()         // forming bar
-const closed = agg.flushClosedBars()        // bars that have rolled over`}</code></pre>
+const current = agg.getCurrentBar()         // forming bar`}</code></pre>
+<p>週は月曜日、月は 1 日に始まります。<code>setTimeZone</code> を使うと、日、週、月と 1 日を割り切る時間足は取引所の午前 0 時に始まります。チャートは銘柄のタイムゾーンからストリームのティック（<code>aggregateTicks</code>）にこれを設定し、履歴が日を 00:00 UTC で記録していればそれに合わせます。</p>
 
 <h2>複数シンボルのクオート</h2>
 <p>

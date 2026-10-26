@@ -4,6 +4,7 @@ import type { Point } from './rendering.js';
 import type { IndicatorValue } from './indicator.js';
 import type { DrawingToolType } from './drawing.js';
 import type { SymbolInfo } from './symbol.js';
+import type { MarketConfig } from '../market/types.js';
 
 export type ChartEventType =
   | 'crosshairMove'
@@ -16,6 +17,8 @@ export type ChartEventType =
   | 'dataUpdate'
   | 'historyLoad'
   | 'symbolInfoChange'
+  /** The market's rules changed (`setMarket`): its steps, colours, decimals, zone. */
+  | 'marketChange'
   | 'indicatorAdd'
   | 'indicatorRemove'
   | 'paneResize'
@@ -326,6 +329,8 @@ export interface ChartEventMap {
   historyLoad: HistoryLoadPayload;
   /** What is known about the symbol on the chart changed (`setSymbolInfo`, or the stream's adapter). */
   symbolInfoChange: { info: SymbolInfo | null };
+  /** The market's rules changed (`setMarket`); its zone backs `getExchangeTimeZone` when the symbol names none. */
+  marketChange: { market: MarketConfig };
   chartTypeChange: { type: string; previous: string };
   /**
    * What draws the chart now. `reason` says why: no WebGL 2 here (or only a

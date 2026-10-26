@@ -9,7 +9,7 @@ import type {
   SymbolInfo,
   TimeFrame,
 } from '@tradecanvas/commons';
-import { DEFAULT_STREAM_CONFIG, DEFAULT_RECONNECT } from '@tradecanvas/commons';
+import { DEFAULT_STREAM_CONFIG, DEFAULT_RECONNECT, normalizeBarTime } from '@tradecanvas/commons';
 import { Emitter } from './Emitter.js';
 import { TickAggregator } from './TickAggregator.js';
 import { ReconnectManager } from './ReconnectManager.js';
@@ -58,6 +58,7 @@ export interface StreamEvents {
  */
 /** Silence after which a connection the page comes back to is taken for dead (a quiet market still sends a heartbeat or a tick). */
 const RESUME_STALE_MS = 20_000;
+const DAY_MS = 86_400_000;
 
 export class StreamManager extends Emitter<StreamEvents> {
   private config: StreamConfig | null = null;
@@ -74,6 +75,10 @@ export class StreamManager extends Emitter<StreamEvents> {
   private lastMessageTime = 0;
   /** Bumped by every connect attempt and by disconnect — see doConnect. */
   private connectSeq = 0;
+  /** The exchange's zone, where days built from ticks start (`setTimeZone`). */
+  private timeZone: string | null = null;
+  /** The history stamps its days at 00:00 UTC: days built from ticks are stamped so too. */
+  private datedHistory = false;
 
   constructor() {
     super();
@@ -93,6 +98,8 @@ export class StreamManager extends Emitter<StreamEvents> {
     this.config = { ...DEFAULT_STREAM_CONFIG, ...config, adapter } as StreamConfig;
     this.adapter = adapter;
     this.aggregator = new TickAggregator(config.timeframe);
+    this.datedHistory = false;
+    this.aggregator.setTimeZone(this.timeZone);
 
     // Replace reconnector — clean up old listeners first
     this.reconnector.removeAllListeners();
@@ -170,6 +177,17 @@ export class StreamManager extends Emitter<StreamEvents> {
     return this.state;
   }
 
+  /**
+   * The exchange's zone (null: UTC). Bars built from ticks (`aggregateTicks`)
+   * start their days, weeks, months and the hour frames that divide a day at
+   * its midnight; days are stamped at 00:00 UTC of their date when the
+   * history stamps them so. A chart sets it from the symbol's info.
+   */
+  setTimeZone(zone: string | null): void {
+    this.timeZone = zone;
+    this.aggregator?.setTimeZone(zone, this.datedHistory);
+  }
+
   getConnectionInfo(): ConnectionInfo {
     return {
       state: this.state,
@@ -207,6 +225,9 @@ export class StreamManager extends Emitter<StreamEvents> {
         this.previousClose = history[history.length - 1].close;
         this.updatePrice(history[history.length - 1].close);
       }
+      // Bars from ticks follow the history's stamps: a feed's dated days, or days at the exchange's midnight.
+      this.datedHistory = history.length > 0 && normalizeBarTime(history[history.length - 1].time) % DAY_MS === 0;
+      this.aggregator?.setTimeZone(this.timeZone, this.datedHistory);
 
       this.emit('snapshot', history);
 

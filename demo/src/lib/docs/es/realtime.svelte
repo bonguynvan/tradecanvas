@@ -24,6 +24,7 @@ chart.connect({ adapter: new CoinbaseAdapter(), symbol: 'BTC-USD', timeframe: '1
 <h2>Interfaz DataAdapter</h2>
 <pre><code>{`interface DataAdapter {
   name: string
+  supportedTimeframes?: TimeFrame[]   // left out: it serves every timeframe
   connect(config): void
   disconnect(): void
   getConnectionState(): ConnectionState
@@ -41,6 +42,21 @@ chart.connect({ adapter: new CoinbaseAdapter(), symbol: 'BTC-USD', timeframe: '1
   fetchTrades?(symbol, limit?): Promise<Trade[]>        // tick charts, with
   subscribeTrades?(symbol, onTrades): () => void        // subscribeTrades
 }`}</code></pre>
+
+<h2 id="built-timeframes">Temporalidades que el feed no tiene</h2>
+<p>
+  Un feed que indica sus <code>supportedTimeframes</code> recibe las demás temporalidades construidas a
+  partir de la más gruesa de ellas que las divide: 7m a partir de 1m, 4h y 1D a partir de 1h. Los días,
+  las semanas, los meses y las temporalidades en horas que dividen un día (2h, 3h, 4h, 6h, 8h, 12h)
+  empiezan a la medianoche de la bolsa del símbolo, en el <code>timeZone</code> que da su
+  <code>resolveSymbol</code>. El gráfico pregunta una vez por símbolo, antes del primer historial de esa
+  temporalidad, y conserva la zona; las de 1h o menos no la esperan. Un feed sin
+  <code>resolveSymbol</code>, que no da zona o da UTC, o cuyas temporalidades no pueden alinearse con
+  esa medianoche (solo barras de 4h para una zona a 7 horas de UTC) recibe días de UTC, como antes. Las
+  barras diarias con sello de las 00:00 UTC se leen como la fecha que indican. Una zona que el feed
+  envíe después en un evento <code>symbolInfo</code> cambia las horas que se muestran, no dónde empiezan
+  los días ya construidos.
+</p>
 
 <h2 id="symbol-info">Datos del símbolo que el feed conoce más tarde</h2>
 <p>
@@ -68,11 +84,13 @@ const myAdapter = new WebSocketAdapter({
 <p>Agrupa los ticks sin procesar en barras OHLC para cada temporalidad:</p>
 <pre><code>{`import { TickAggregator } from '@tradecanvas/chart'
 
-const agg = new TickAggregator('1m')
+const agg = new TickAggregator('1d')
+agg.setTimeZone('Asia/Ho_Chi_Minh')         // days start at the exchange's midnight
+agg.on('barClose', (bar) => console.log(bar))   // a bar whose interval is over
 agg.processTick({ time, price, volume })
 
-const current = agg.getCurrentBar()         // forming bar
-const closed = agg.flushClosedBars()        // bars that have rolled over`}</code></pre>
+const current = agg.getCurrentBar()         // forming bar`}</code></pre>
+<p>Las semanas empiezan el lunes y los meses el día 1. Con <code>setTimeZone</code>, los días, las semanas, los meses y las temporalidades en horas que dividen un día empiezan a la medianoche de la bolsa; un gráfico lo fija para los ticks de su stream (<code>aggregateTicks</code>) según la zona del símbolo, y sella los días a las 00:00 UTC cuando el historial lo hace.</p>
 
 <h2>Cotizaciones de muchos símbolos</h2>
 <p>

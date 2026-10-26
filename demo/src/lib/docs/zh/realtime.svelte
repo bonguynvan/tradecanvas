@@ -24,6 +24,7 @@ chart.connect({ adapter: new CoinbaseAdapter(), symbol: 'BTC-USD', timeframe: '1
 <h2>DataAdapter 接口</h2>
 <pre><code>{`interface DataAdapter {
   name: string
+  supportedTimeframes?: TimeFrame[]   // left out: it serves every timeframe
   connect(config): void
   disconnect(): void
   getConnectionState(): ConnectionState
@@ -41,6 +42,16 @@ chart.connect({ adapter: new CoinbaseAdapter(), symbol: 'BTC-USD', timeframe: '1
   fetchTrades?(symbol, limit?): Promise<Trade[]>        // tick charts, with
   subscribeTrades?(symbol, onTrades): () => void        // subscribeTrades
 }`}</code></pre>
+
+<h2 id="built-timeframes">数据源没有的周期</h2>
+<p>
+  列出 <code>supportedTimeframes</code> 的数据源，其他周期都由其中能整除它的最粗周期构建：7m 由 1m 构建，4h 和 1D 由 1h 构建。
+  日、周、月以及能整除一天的小时周期（2h、3h、4h、6h、8h、12h）从交易所的午夜开始，以 <code>resolveSymbol</code> 给出的
+  <code>timeZone</code> 为准。图表对每个品种只询问一次，在这类周期第一次加载历史之前，并记住该时区；1h 及更短的周期不会等待。
+  没有 <code>resolveSymbol</code>、不提供时区或提供 UTC，或者其周期无法与该午夜对齐（时区与 UTC 相差 7 小时却只有 4h K线）的数据源，
+  仍按 UTC 划分日期，与以前一样。时间戳为 00:00 UTC 的日线被视为其标明的日期。数据源之后通过 <code>symbolInfo</code>
+  事件发送的时区会改变显示的时间，但不会改变已构建的日的起点。
+</p>
 
 <h2 id="symbol-info">数据源稍后才得知的品种信息</h2>
 <p>
@@ -67,11 +78,13 @@ const myAdapter = new WebSocketAdapter({
 <p>按周期把原始 tick 汇总成 OHLC K线：</p>
 <pre><code>{`import { TickAggregator } from '@tradecanvas/chart'
 
-const agg = new TickAggregator('1m')
+const agg = new TickAggregator('1d')
+agg.setTimeZone('Asia/Ho_Chi_Minh')         // days start at the exchange's midnight
+agg.on('barClose', (bar) => console.log(bar))   // a bar whose interval is over
 agg.processTick({ time, price, volume })
 
-const current = agg.getCurrentBar()         // forming bar
-const closed = agg.flushClosedBars()        // bars that have rolled over`}</code></pre>
+const current = agg.getCurrentBar()         // forming bar`}</code></pre>
+<p>周从周一开始，月从 1 日开始。使用 <code>setTimeZone</code> 后，日、周、月以及能整除一天的小时周期从交易所的午夜开始；图表会按品种的时区为其数据流的 tick（<code>aggregateTicks</code>）设置它，并在历史数据以 00:00 UTC 标记日期时也这样标记。</p>
 
 <h2>多个品种的报价</h2>
 <p>

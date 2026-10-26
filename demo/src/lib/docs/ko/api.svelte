@@ -412,6 +412,7 @@ chart.on('stateChange', () => /* 그림, 지표, 알림, 차트 유형 또는 �
 chart.on('paneChange', e => /* { instanceId, change: 'collapsed' | 'maximized' | 'order' } */)
 chart.on('chartTypeChange', e => /* { type, previous } */)
 chart.on('symbolChange', e => /* { symbol, previous } */)
+chart.on('marketChange', e => /* { market }: setMarket */)
 chart.on('timeframeChange', e => /* { timeframe, previous } */)
 chart.on('historyChange', e => /* { canUndo, canRedo } */)
 chart.on('drawingSelect', e => /* { ids, primary } */)
@@ -712,15 +713,25 @@ chart.setData(data)`}</code></pre>
 })
 widget.setData(oneMinuteBars)   // base series; clicking 4h/1d/1w resamples it
 
-// Or use the pure function directly
-import { resampleOHLCV, inferTimeframeMs } from '@tradecanvas/chart'
+// Or build bars yourself
+import { resampleBars, timeframeBucketStart } from '@tradecanvas/chart'
 
-const hourly = resampleOHLCV(oneMinuteBars, '1h')   // OHLC merged, volume summed
-const fourHour = resampleOHLCV(oneMinuteBars, '4h', { weekStartsOn: 1 })`}</code></pre>
+const hourly = resampleBars(oneMinuteBars, '1h')   // OHLC merged, volume summed
+const days = resampleBars(oneMinuteBars, '1d', { timeZone: 'Asia/Ho_Chi_Minh' })   // from 00:00 there
+const dayStart = timeframeBucketStart(trade.time, '1d', { timeZone: 'Asia/Ho_Chi_Minh' })`}</code></pre>
 <p>
-  달력을 고려한 구간 나누기: 일중 및 일 단위는 UTC epoch 경계에, 주 단위는
-  설정된 주 시작일에, 월 / 분기 / 연 단위는 달력 경계에 맞춥니다.
+  달력을 고려한 구간 나누기: 분과 시간 단위(1h 이하)는 Unix epoch부터 단위의 배수로 내림합니다.
+  일, 주(설정된 주 시작일부터), 월, 분기, 연 단위는 거래소의 자정에 시작하며, 하루를 나누어떨어지게 하는
+  시간 단위(2h, 3h, 4h, 6h, 8h, 12h)도 마찬가지입니다. 기준은 종목의 <code>timeZone</code>
+  (<code>setSymbolInfo</code> 또는 어댑터의 <code>resolveSymbol</code>), 없으면 시장의 것(<code>setMarket</code>),
+  그것도 없으면 UTC입니다. 시계가 바뀌는 날은 23시간 또는 25시간입니다. 00:00 UTC로 찍힌 일봉은 그것이 가리키는
+  날짜로 읽으므로, UTC 서쪽에서도 월요일은 제 주에 남고 주봉은 00:00 UTC 시각을 유지합니다.
   입력 봉은 절대 변경되지 않습니다.
+</p>
+<p>
+  일봉은 차트가 어떤 시간대로 보여 주든 그 봉이 나타내는 날짜를 보여 줍니다. 00:00 UTC로 찍힌 봉은 UTC 날짜를,
+  거래소 자정에 맞춰 만든 봉은 거래소의 날짜를 보여 줍니다(시간 축, 십자선과 그 카드에서). 봉을 직접 만들 때는
+  <code>timeframeBucketStart(time, timeframe, {'{'} timeZone {'}'})</code>가 어떤 시각이 속한 봉의 시작 시각을 알려 줍니다.
 </p>
 
 <h3>관심 종목</h3>

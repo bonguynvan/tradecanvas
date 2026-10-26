@@ -211,3 +211,34 @@ describe('TimeAxis date labels', () => {
   });
 });
 
+describe('TimeAxis daily bars of an exchange', () => {
+  const DAY = 24 * HOUR;
+  /** Ten bars a slot apart, each labelled: 100 px a bar on a 1100 px axis. */
+  const wide = { ...viewport(0), chartRect: { x: 0, y: 0, width: 1100, height: 300 }, barWidth: 90, barSpacing: 10 } as ViewportState;
+  const days = (first: number) => Array.from({ length: 10 }, (_, i) => ({ time: first + i * DAY, open: 1, high: 1, low: 1, close: 1, volume: 1 }));
+  const labels = (bars: ReturnType<typeof days>, tz: string | number, exchange: string | null) => {
+    const { ctx, drawn } = recordingCtx();
+    const axis = new TimeAxis();
+    axis.setTimezoneOffset(tz);
+    axis.setExchangeTimeZone(exchange);
+    axis.render(ctx, wide, DARK_THEME, bars);
+    return drawn.filter((d) => d.align === 'center').map((d) => d.text);
+  };
+
+  it('writes the exchange’s dates on days built at its midnight, shown in UTC or in New York', () => {
+    // Ho Chi Minh City's 20 to 29 October, stamped at 17:00 UTC the day before. The first bar has no label.
+    const vn = days(Date.UTC(2026, 9, 19, 17));
+    for (const tz of ['UTC', 'America/New_York']) {
+      const shown = labels(vn, tz, 'Asia/Ho_Chi_Minh');
+      expect(shown).toContain('29');
+      expect(shown).not.toContain('20');
+    }
+  });
+
+  it('writes the dates bars stamped at 00:00 UTC name, in New York too', () => {
+    const shown = labels(days(Date.UTC(2026, 9, 20)), 'America/New_York', null);
+    expect(shown).toContain('29');
+    expect(shown).not.toContain('20');
+  });
+});
+

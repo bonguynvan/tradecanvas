@@ -109,7 +109,10 @@ export interface DataAdapter {
   /**
    * Optional: the timeframes the feed serves. Charts build any other
    * timeframe (7m, 90m, 2d…) from the coarsest of these that divides it.
-   * Leave it out when the feed serves every timeframe.
+   * Days, weeks, months and the hour frames that divide a day (2h to 12h)
+   * they build start at the midnight of the symbol's `timeZone`
+   * (`resolveSymbol`), else at UTC's; daily bars stamped at 00:00 UTC are
+   * read as their dates. Leave it out when the feed serves every timeframe.
    */
   readonly supportedTimeframes?: readonly TimeFrame[];
 

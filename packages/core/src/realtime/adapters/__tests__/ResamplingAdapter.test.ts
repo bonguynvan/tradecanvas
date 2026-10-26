@@ -5,10 +5,11 @@ import type {
   DataAdapterEventType,
   DataAdapterListener,
   OHLCBar,
+  SymbolInfo,
   TimeFrame,
 } from '@tradecanvas/commons';
 import { timeframeToMs } from '@tradecanvas/commons';
-import { ResamplingAdapter, withResampling, servesTimeframe, MAX_BASE_REQUESTS } from '../ResamplingAdapter.js';
+import { ResamplingAdapter, withResampling, servesTimeframe, MAX_BASE_REQUESTS, SYMBOL_ZONE_WAIT_MS } from '../ResamplingAdapter.js';
 
 const MIN = 60_000;
 
@@ -283,6 +284,160 @@ describe('ResamplingAdapter limits', () => {
     const { adapter } = setup();
     await expect(adapter.fetchHistory('X', '30s', 10)).rejects.toThrow(/30s/);
     expect(() => adapter.connect({ symbol: 'X', timeframe: '30s' })).toThrow(/30s/);
+  });
+});
+
+const VN = 'Asia/Ho_Chi_Minh';
+const NY = 'America/New_York';
+const HOUR = 60 * MIN;
+const DAY = 24 * HOUR;
+
+/** Hourly bars of a Vietnamese session, 08:00 to 13:00 there, on 20–23 October 2026: open = the hour's UTC time. */
+function vnHours(): OHLCBar[] {
+  const out: OHLCBar[] = [];
+  for (let d = 20; d <= 23; d++) {
+    for (let h = 8; h <= 13; h++) {
+      const t = Date.UTC(2026, 9, d, h - 7);
+      out.push(bar(t, t / HOUR, t / HOUR + 0.5, t / HOUR - 0.5, t / HOUR, 1));
+    }
+  }
+  return out;
+}
+
+/** A feed of some timeframes, in a zone its resolveSymbol names (null: it has no resolveSymbol). */
+function zonedFeed(supported: TimeFrame[], history: OHLCBar[], zone: string | null) {
+  const feed = new FakeFeed();
+  (feed as { supportedTimeframes: TimeFrame[] }).supportedTimeframes = supported;
+  feed.fetchHistory.mockImplementation(async (_s, _tf, limit = 500) => history.slice(-limit));
+  feed.fetchHistoryBefore.mockImplementation(async (_s, _tf, before, limit) => history.filter((b) => b.time < before).slice(-limit));
+  const resolveSymbol = vi.fn(async (symbol: string): Promise<SymbolInfo | null> => ({ symbol, timeZone: zone ?? undefined }));
+  if (zone !== null) (feed as unknown as { resolveSymbol: typeof resolveSymbol }).resolveSymbol = resolveSymbol;
+  const adapter = new ResamplingAdapter(feed, supported);
+  const bars: { bar: OHLCBar; closed: boolean }[] = [];
+  adapter.on<{ bar: OHLCBar; closed: boolean }>('bar', (e) => bars.push(e.data));
+  return { feed, adapter, bars, resolveSymbol };
+}
+
+describe('ResamplingAdapter in the symbol’s time zone', () => {
+  it('starts built days at the exchange’s midnight', async () => {
+    const { adapter } = zonedFeed(['1h'], vnHours(), VN);
+    const days = await adapter.fetchHistory('VN30F1M', '1d', 10);
+    expect(days.length).toBeGreaterThan(0);
+    expect(days.every((d) => d.time % DAY === 17 * HOUR)).toBe(true);
+    expect(days.at(-1)?.time).toBe(Date.UTC(2026, 9, 22, 17));
+  });
+
+  it('builds 4h bars of the morning and of the afternoon', async () => {
+    const { adapter } = zonedFeed(['1h'], vnHours(), VN);
+    const out = await adapter.fetchHistory('VN30F1M', '4h', 4);
+    expect(out.map((b) => [b.time, b.volume])).toEqual([
+      [Date.UTC(2026, 9, 22, 1), 4], [Date.UTC(2026, 9, 22, 5), 2],
+      [Date.UTC(2026, 9, 23, 1), 4], [Date.UTC(2026, 9, 23, 5), 2],
+    ]);
+  });
+
+  it('pages older bars in the same zone', async () => {
+    const { adapter } = zonedFeed(['1h'], vnHours(), VN);
+    await adapter.fetchHistory('VN30F1M', '4h', 2);
+    const older = await adapter.fetchHistoryBefore!('VN30F1M', '4h', Date.UTC(2026, 9, 22, 1), 4);
+    expect(older.map((b) => b.time)).toEqual([
+      Date.UTC(2026, 9, 20, 1), Date.UTC(2026, 9, 20, 5), Date.UTC(2026, 9, 21, 1), Date.UTC(2026, 9, 21, 5),
+    ]);
+  });
+
+  it('carries on live in the zone the history was built in', async () => {
+    const { feed, adapter, bars } = zonedFeed(['1h'], vnHours(), VN);
+    await adapter.fetchHistory('VN30F1M', '4h', 4);
+    adapter.connect({ symbol: 'VN30F1M', timeframe: '4h' });
+    expect(feed.connected?.timeframe).toBe('1h');
+    const at14 = Date.UTC(2026, 9, 23, 7);
+    feed.emit('bar', { bar: bar(at14, 1, 2, 0.5, 1.5, 1), closed: true });
+    expect(bars.at(-1)).toMatchObject({ bar: { time: Date.UTC(2026, 9, 23, 5), volume: 3 }, closed: false });
+    const nextMorning = Date.UTC(2026, 9, 24, 1);
+    feed.emit('bar', { bar: bar(nextMorning, 1, 2, 0.5, 1.5, 1), closed: false });
+    expect(bars.at(-2)).toMatchObject({ bar: { time: Date.UTC(2026, 9, 23, 5), volume: 3 }, closed: true });
+    expect(bars.at(-1)).toMatchObject({ bar: { time: nextMorning, volume: 1 }, closed: false });
+  });
+
+  it('builds weeks from dated daily bars by their dates, live too', async () => {
+    const dates = [19, 20, 21, 22, 23].map((d) => bar(Date.UTC(2026, 9, d), 1, 2, 0.5, 1.5, 1));
+    const { feed, adapter, bars } = zonedFeed(['1d'], dates, NY);
+    const weeks = await adapter.fetchHistory('SPY', '1w', 10);
+    expect(weeks).toEqual([bar(Date.UTC(2026, 9, 19), 1, 2, 0.5, 1.5, 5)]);
+    adapter.connect({ symbol: 'SPY', timeframe: '1w' });
+    // Monday 26 October, 00:00 UTC: Sunday evening in New York, but the date of a Monday.
+    feed.emit('bar', { bar: bar(Date.UTC(2026, 9, 26), 1, 2, 0.5, 1.5, 1), closed: false });
+    expect(bars).toContainEqual({ bar: bar(Date.UTC(2026, 9, 19), 1, 2, 0.5, 1.5, 5), closed: true });
+    expect(bars.at(-1)).toEqual({ bar: bar(Date.UTC(2026, 9, 26), 1, 2, 0.5, 1.5, 1), closed: false });
+  });
+
+  it('asks the feed once for the chart and itself together, and keeps only the zone', async () => {
+    const { adapter, resolveSymbol } = zonedFeed(['1h'], vnHours(), VN);
+    const [info] = await Promise.all([adapter.resolveSymbol!('VN30F1M'), adapter.fetchHistory('VN30F1M', '1d', 10)]);
+    expect(info).toEqual({ symbol: 'VN30F1M', timeZone: VN });
+    expect(resolveSymbol).toHaveBeenCalledTimes(1);
+    // The zone stays for the symbol; what the feed knows is asked again.
+    await adapter.fetchHistory('VN30F1M', '4h', 10);
+    expect(resolveSymbol).toHaveBeenCalledTimes(1);
+    await adapter.resolveSymbol!('VN30F1M');
+    expect(resolveSymbol).toHaveBeenCalledTimes(2);
+  });
+
+  it('falls back to UTC days when no timeframe of the feed lines up with the zone', async () => {
+    const fourHours = vnHours().filter((b) => b.time % (4 * HOUR) === 0);
+    const { adapter } = zonedFeed(['4h'], fourHours, VN);
+    expect(servesTimeframe(adapter, '1d')).toBe(true);
+    const days = await adapter.fetchHistory('VN30F1M', '1d', 10);
+    expect(days.length).toBeGreaterThan(0);
+    expect(days.every((d) => d.time % DAY === 0)).toBe(true);
+  });
+
+  it('builds UTC buckets at once for a feed that names no zone', () => {
+    // Coinbase's timeframes, and no resolveSymbol.
+    const { feed, adapter } = zonedFeed(['1m', '5m', '15m', '1h', '6h', '1d'], vnHours(), null);
+    void adapter.fetchHistory('BTC-USD', '4h', 10);
+    expect(feed.fetchHistory).toHaveBeenCalledWith('BTC-USD', '1h', expect.any(Number));
+  });
+
+  it('builds UTC buckets when the feed does not know the symbol, or fails to say', async () => {
+    const { adapter, resolveSymbol } = zonedFeed(['1h'], vnHours(), VN);
+    resolveSymbol.mockResolvedValueOnce(null);
+    expect((await adapter.fetchHistory('A', '4h', 4)).every((b) => b.time % (4 * HOUR) === 0)).toBe(true);
+    resolveSymbol.mockRejectedValueOnce(new Error('down'));
+    expect((await adapter.fetchHistory('B', '4h', 4)).every((b) => b.time % (4 * HOUR) === 0)).toBe(true);
+  });
+
+  it('waits a bounded time for a feed that never says', async () => {
+    vi.useFakeTimers();
+    try {
+      const { adapter, resolveSymbol } = zonedFeed(['1h'], vnHours(), VN);
+      resolveSymbol.mockReturnValue(new Promise(() => {}));
+      const pending = adapter.fetchHistory('VN30F1M', '4h', 4);
+      await vi.advanceTimersByTimeAsync(SYMBOL_ZONE_WAIT_MS);
+      expect((await pending).every((b) => b.time % (4 * HOUR) === 0)).toBe(true);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('resumes a frame on the epoch floor from its history when the zone is learnt in between', async () => {
+    const feed = new FakeFeed();
+    (feed as unknown as { resolveSymbol: (s: string) => Promise<SymbolInfo> }).resolveSymbol = async (symbol) => ({ symbol, timeZone: VN });
+    const adapter = new ResamplingAdapter(feed, feed.supportedTimeframes);
+    const seen: { bar: OHLCBar; closed: boolean }[] = [];
+    adapter.on<{ bar: OHLCBar; closed: boolean }>('bar', (e) => seen.push(e.data));
+    await adapter.fetchHistory('X', '7m', 10);
+    await adapter.resolveSymbol!('X');
+    adapter.connect({ symbol: 'X', timeframe: '7m' });
+    feed.emit('bar', { bar: bar(9999 * MIN, 9999, 10_000, 9998, 9999.5, 2), closed: false });
+    expect(seen.at(-1)?.bar.volume).toBe(5);
+  });
+
+  it('builds frames that keep the epoch floor without waiting for the zone', () => {
+    const { feed, adapter, resolveSymbol } = zonedFeed(['1m'], vnHours(), VN);
+    void adapter.fetchHistory('VN30F1M', '7m', 10);
+    expect(feed.fetchHistory).toHaveBeenCalled();
+    expect(resolveSymbol).not.toHaveBeenCalled();
   });
 });
 

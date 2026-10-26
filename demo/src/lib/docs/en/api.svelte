@@ -424,6 +424,7 @@ chart.on('stateChange', () => /* drawings, indicators, alerts, chart type or the
 chart.on('paneChange', e => /* { instanceId, change: 'collapsed' | 'maximized' | 'order' } */)
 chart.on('chartTypeChange', e => /* { type, previous } */)
 chart.on('symbolChange', e => /* { symbol, previous } */)
+chart.on('marketChange', e => /* { market }: setMarket */)
 chart.on('timeframeChange', e => /* { timeframe, previous } */)
 chart.on('historyChange', e => /* { canUndo, canRedo } */)
 chart.on('drawingSelect', e => /* { ids, primary } */)
@@ -741,15 +742,28 @@ chart.setData(data)`}</code></pre>
 })
 widget.setData(oneMinuteBars)   // base series; clicking 4h/1d/1w resamples it
 
-// Or use the pure function directly
-import { resampleOHLCV, inferTimeframeMs } from '@tradecanvas/chart'
+// Or build bars yourself
+import { resampleBars, timeframeBucketStart } from '@tradecanvas/chart'
 
-const hourly = resampleOHLCV(oneMinuteBars, '1h')   // OHLC merged, volume summed
-const fourHour = resampleOHLCV(oneMinuteBars, '4h', { weekStartsOn: 1 })`}</code></pre>
+const hourly = resampleBars(oneMinuteBars, '1h')   // OHLC merged, volume summed
+const days = resampleBars(oneMinuteBars, '1d', { timeZone: 'Asia/Ho_Chi_Minh' })   // from 00:00 there
+const dayStart = timeframeBucketStart(trade.time, '1d', { timeZone: 'Asia/Ho_Chi_Minh' })`}</code></pre>
 <p>
-  Calendar-aware bucketing: intraday and daily frames anchor to UTC epoch
-  boundaries, weeks to the configured week start, and months / quarters / years
-  to calendar boundaries. Input bars are never mutated.
+  Calendar-aware bucketing: minutes and hours (1h and shorter) floor to multiples of the
+  frame since the Unix epoch. Days, weeks (from the configured week start), months,
+  quarters and years start at the exchange's midnight, and so do the hour frames that
+  divide a day (2h, 3h, 4h, 6h, 8h, 12h): the symbol's <code>timeZone</code>
+  (<code>setSymbolInfo</code>, or the adapter's <code>resolveSymbol</code>), else the
+  market's (<code>setMarket</code>), else UTC. A day the clocks change is 23 or 25 hours
+  long. Daily bars stamped at 00:00 UTC are read as the dates they name, so a Monday stays
+  in its own week west of UTC and the weeks keep 00:00 UTC stamps. Input bars are never
+  mutated.
+</p>
+<p>
+  A daily bar shows the date it stands for, whatever zone the chart shows: one stamped at
+  00:00 UTC its UTC date, one built at the exchange's midnight the exchange's date (on the
+  time axis, the crosshair and its card). For bars you build yourself, <code>timeframeBucketStart(time, timeframe, {'{'} timeZone {'}'})</code> gives the
+  start of the bar a time falls in.
 </p>
 
 <h3>Watchlists</h3>

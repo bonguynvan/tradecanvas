@@ -1,0 +1,15 @@
+---
+'@tradecanvas/commons': minor
+'@tradecanvas/core': minor
+'@tradecanvas/chart': minor
+---
+
+**Bars the library builds start at the exchange's midnight, not UTC's.** This changes where some bars start. When the chart knows the symbol's zone (`SymbolInfo.timeZone` from your adapter's `resolveSymbol`, or for bars given to `ChartWidget.setData`, the symbol's zone else the market's from `setMarket`), the days, weeks, months and the hour frames that divide a day (2h, 3h, 4h, 6h, 8h, 12h) it builds from shorter bars start at that zone's midnight. They used to start at UTC's, so a Ho Chi Minh City 1D bar opened at 07:00 there and a 4H bar split the morning session at 11:00; it now opens at 00:00 there (17:00 UTC the day before), and 4H bars run 08:00–12:00 and 12:00–16:00. Where a session crosses UTC midnight (Sydney, New York's evening hours in winter), the days' open, high, low, close and volume change too. A day the clocks change is 23 or 25 hours long. 1h and shorter bars keep their floor on the epoch, so the hour a fall-back night repeats stays two bars. Nothing changes without a zone, or with UTC: Binance, Bybit, Coinbase and Kraken build exactly what they built before.
+
+Daily bars stamped at 00:00 UTC (as feeds and CSV files usually stamp them) are read as the dates they name: weeks and months built from them keep the Monday in its own week and their 00:00 UTC stamps, in any zone.
+
+For a feed with `supportedTimeframes`, the wrapper that builds its missing timeframes asks `resolveSymbol` for the zone once per symbol, before the first history of such a timeframe (the chart's own question about the symbol is the same request), and keeps the zone, so history, older pages and live bars agree. It waits at most `SYMBOL_ZONE_WAIT_MS` (5 s); 1h and shorter timeframes never wait. A feed without `resolveSymbol`, one that names no zone, or one whose timeframes can't line up with that midnight (only 4h bars for a zone 7 hours from UTC) builds UTC days as before, and keeps the timeframe. A zone the feed sends later in a `symbolInfo` event changes the times shown, not where built days start. The widget builds bars it was given again when the symbol's zone or the market's arrives after them.
+
+Daily bars show the date they stand for in any zone shown, on the time axis, the crosshair's label and its card: a bar stamped at 00:00 UTC its UTC date (a New York viewer saw the day before), a bar stamped at the exchange's midnight the exchange's date.
+
+New: `timeframeBucketStart(time, timeframe, { timeZone, weekStartsOn, dates })` and its `BucketOptions` type are exported from `@tradecanvas/chart`, to build your own bars where the chart's start (the third argument may still be the day weeks start on). `resampleBars` takes the same options, and `pickBaseTimeframe` a `{ timeZone }`. `chart.setMarket` sends a `marketChange` event. `TickAggregator` starts weeks on Monday and months on the 1st (it counted 7 and 30 days from 1970) and takes `setTimeZone(zone, dateStamps?)`; `StreamManager.setTimeZone(zone)` passes the chart's zone to it for `aggregateTicks`.

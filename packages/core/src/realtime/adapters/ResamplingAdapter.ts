@@ -1,4 +1,5 @@
 import type {
+  BucketOptions,
   ConnectionState,
   DataAdapter,
   DataAdapterConfig,
@@ -14,12 +15,18 @@ import type {
   Trade,
 } from '@tradecanvas/commons';
 import {
+  isUtcTimeZone,
+  isValidTimeZone,
+  offsetAt,
   parseTimeframe,
   pickBaseTimeframe,
+  symbolTimeZone,
   tickBarCount,
   resampleBars,
   timeframeBucketStart,
+  timeframeFollowsDays,
   timeframeToMs,
+  wallToUtc,
 } from '@tradecanvas/commons';
 
 /** Most base bars asked for in one request (Binance and Bybit stop at 1000). */
@@ -30,6 +37,16 @@ export const MAX_BASE_REQUESTS = 10;
 
 /** Most base bars one target bar may take (1440 = a day from minutes). */
 export const MAX_BASE_RATIO = 1440;
+
+/**
+ * Longest wait, ms, for the feed to say a symbol's zone (`resolveSymbol`)
+ * before its days are built at UTC's midnight instead: a slow or silent feed
+ * still gets its chart.
+ */
+export const SYMBOL_ZONE_WAIT_MS = 5_000;
+
+const DAY_MS = 86_400_000;
+const MINUTE_MS = 60_000;
 
 const FORWARDED: DataAdapterEventType[] = ['tick', 'barClose', 'snapshot', 'connectionChange', 'error', 'symbolInfo'];
 
@@ -50,10 +67,10 @@ export function withResampling(adapter: DataAdapter): DataAdapter {
   return out;
 }
 
-/** The feed timeframe that builds `target`, or null when none does at a sane ratio. */
-function baseTimeframe(target: TimeFrame, supported: readonly TimeFrame[]): TimeFrame | null {
+/** The feed timeframe that builds `target` (lined up with `timeZone`'s midnight when given), or null when none does at a sane ratio. */
+function baseTimeframe(target: TimeFrame, supported: readonly TimeFrame[], timeZone?: string): TimeFrame | null {
   if (supported.includes(target)) return target;
-  const base = pickBaseTimeframe(target, supported);
+  const base = pickBaseTimeframe(target, supported, { timeZone });
   if (!base) return null;
   return Math.ceil(timeframeToMs(target) / timeframeToMs(base)) <= MAX_BASE_RATIO ? base : null;
 }
@@ -70,14 +87,30 @@ export function servesTimeframe(adapter: DataAdapter, timeframe: TimeFrame): boo
   return !supported?.length || baseTimeframe(timeframe, supported) !== null;
 }
 
-/** Start of the base bar after the one starting at `time`, on the calendar for weeks and months. */
-function nextBaseStart(time: number, base: TimeFrame): number {
+/** Whether bars of `tf` are a day long or more: feeds stamp them by date. */
+function isDateFrame(tf: TimeFrame): boolean {
+  const unit = parseTimeframe(tf)?.unit;
+  return unit === 'd' || unit === 'w' || unit === 'M';
+}
+
+/**
+ * Start of the base bar after the one starting at `time`, on the calendar for
+ * weeks and months. A bar of a day or more stamped at `zone`'s midnight
+ * (rather than at a date's 00:00 UTC) is followed by the next midnight there,
+ * which a day the clocks change moves by an hour.
+ */
+function nextBaseStart(time: number, base: TimeFrame, zone?: string): number {
   const parsed = parseTimeframe(base);
+  const zoned = zone !== undefined && isDateFrame(base) && time % DAY_MS !== 0;
+  const wall = zoned ? time + offsetAt(zone, time) * MINUTE_MS : time;
+  let next: number;
   if (parsed?.unit === 'M') {
-    const d = new Date(time);
-    return Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + parsed.count, 1);
+    const d = new Date(wall);
+    next = Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + parsed.count, 1);
+  } else {
+    next = wall + timeframeToMs(base);
   }
-  return time + timeframeToMs(base);
+  return zoned ? wallToUtc(next, zone) : next;
 }
 
 /** Merge base bars (oldest first) into one bar stamped `time`. */
@@ -94,10 +127,20 @@ function compose(time: number, parts: readonly OHLCBar[]): OHLCBar {
   return out;
 }
 
+/** How a target timeframe is built: from which of the feed's, and where its days start. */
+interface BuildPlan {
+  base: TimeFrame;
+  /** The zone whose midnight days start at; UTC's when left out. */
+  zone?: string;
+  /** How its buckets are found: the zone, and whether the base bars are dates. */
+  bucket: BucketOptions;
+}
+
 /** The base bars of the newest bucket a history call served, to resume from on connect. */
 interface ServedTail {
   symbol: string;
   target: TimeFrame;
+  zone?: string;
   bucket: number;
   bars: OHLCBar[];
 }
@@ -109,6 +152,11 @@ interface ServedTail {
  * - History is fetched in the base timeframe, paging back through
  *   `fetchHistoryBefore` when one request holds too few bars (at most
  *   `MAX_BASE_REQUESTS` requests), and merged per bucket.
+ * - Days, weeks, months and the hour frames that divide a day start at the
+ *   midnight of the symbol's exchange: the `timeZone` the feed's
+ *   `resolveSymbol` names, asked once and kept per symbol (a feed without
+ *   one, or one whose timeframes can't line up with that midnight, gets
+ *   UTC's). Daily bars stamped at 00:00 UTC are read as their dates.
  * - Live base bars are kept by time within the forming bucket, so a feed
  *   that never flags a bar closed, or repeats a frame, still builds it right.
  *   The bucket closes with its last base bar, or when the next bucket's first
@@ -128,14 +176,22 @@ export class ResamplingAdapter implements DataAdapter {
 
   private readonly listeners = new Map<DataAdapterEventType, Set<DataAdapterListener>>();
   private readonly unsubscribe: (() => void)[] = [];
-  /** The live subscription: target and base timeframes when they differ. */
-  private live: { symbol: string; target: TimeFrame; base: TimeFrame } | null = null;
+  /** The live subscription: target and how it is built, when the feed doesn't serve it. */
+  private live: ({ symbol: string; target: TimeFrame } & BuildPlan) | null = null;
   private bucket: number | null = null;
   /** The forming bucket's base bars, by time. */
   private parts = new Map<number, OHLCBar>();
   private tail: ServedTail | null = null;
   /** Bumped by connect and disconnect: history paging in progress stops. */
   private generation = 0;
+  /**
+   * Per symbol, the zone its days are built in (null: UTC's), kept from the
+   * feed's first answer so history, older pages and live bars always agree.
+   * Only the zone: what the feed knows about the symbol is asked again.
+   */
+  private readonly zones = new Map<string, string | null>();
+  /** Per symbol, the feed's answer on its way: the chart's ask and this wrapper's share one request. */
+  private readonly resolving = new Map<string, Promise<SymbolInfo | null>>();
 
   constructor(private readonly inner: DataAdapter, private readonly baseTimeframes: readonly TimeFrame[]) {
     this.name = inner.name;
@@ -143,7 +199,7 @@ export class ResamplingAdapter implements DataAdapter {
       this.fetchHistoryBefore = (symbol, timeframe, before, limit) => this.historyBefore(symbol, timeframe, before, limit);
     }
     if (inner.searchSymbols) this.searchSymbols = inner.searchSymbols.bind(inner);
-    if (inner.resolveSymbol) this.resolveSymbol = inner.resolveSymbol.bind(inner);
+    if (inner.resolveSymbol) this.resolveSymbol = (symbol) => this.resolveShared(symbol);
     if (inner.subscribeQuotes) this.subscribeQuotes = inner.subscribeQuotes.bind(inner);
     if (inner.fetchNews) this.fetchNews = inner.fetchNews.bind(inner);
     if (inner.fetchTrades) this.fetchTrades = inner.fetchTrades.bind(inner);
@@ -163,9 +219,12 @@ export class ResamplingAdapter implements DataAdapter {
     const base = this.baseFor(config.timeframe);
     this.generation++;
     this.resetBucket();
-    this.live = base === config.timeframe ? null : { symbol: config.symbol, target: config.timeframe, base };
-    if (this.live) this.resumeFromHistory(this.live.symbol, this.live.target);
-    this.inner.connect({ ...config, timeframe: base });
+    // History came first and settled the symbol's zone: live bars follow it.
+    this.live = base === config.timeframe
+      ? null
+      : { symbol: config.symbol, target: config.timeframe, ...this.planFor(config.timeframe, this.keptZone(config.symbol)) };
+    if (this.live) this.resumeFromHistory(this.live);
+    this.inner.connect({ ...config, timeframe: this.live?.base ?? base });
   }
 
   disconnect(): void {
@@ -180,14 +239,15 @@ export class ResamplingAdapter implements DataAdapter {
   }
 
   async fetchHistory(symbol: string, timeframe: TimeFrame, limit = 500): Promise<OHLCBar[]> {
-    const base = this.baseFor(timeframe);
-    if (base === timeframe) return this.inner.fetchHistory(symbol, timeframe, limit);
+    const utcBase = this.baseFor(timeframe);
+    if (utcBase === timeframe) return this.inner.fetchHistory(symbol, timeframe, limit);
     const generation = this.generation;
-    const want = this.baseBarsFor(timeframe, base, limit);
-    const first = await this.inner.fetchHistory(symbol, base, Math.min(want, MAX_BASE_BARS_PER_REQUEST));
-    const bars = await this.extendBack(symbol, base, first, want, generation);
-    this.rememberTail(symbol, timeframe, bars);
-    return this.toTarget(bars, timeframe, limit);
+    const plan = this.planFor(timeframe, this.waitsForZone(timeframe) ? await this.zoneFor(symbol) : this.keptZone(symbol));
+    const want = this.baseBarsFor(timeframe, plan.base, limit);
+    const first = await this.inner.fetchHistory(symbol, plan.base, Math.min(want, MAX_BASE_BARS_PER_REQUEST));
+    const bars = await this.extendBack(symbol, plan.base, first, want, generation);
+    this.rememberTail(symbol, timeframe, bars, plan);
+    return this.toTarget(bars, timeframe, limit, plan);
   }
 
   on<T = unknown>(event: DataAdapterEventType, listener: DataAdapterListener<T>): void {
@@ -211,17 +271,92 @@ export class ResamplingAdapter implements DataAdapter {
     this.inner.dispose();
   }
 
+  // --- The symbol's zone ---
+
+  /** Whether building `timeframe` needs the symbol's zone first: its buckets start at midnight, and the feed can say where. */
+  private waitsForZone(timeframe: TimeFrame): boolean {
+    return typeof this.inner.resolveSymbol === 'function' && timeframeFollowsDays(timeframe);
+  }
+
+  private keptZone(symbol: string): string | undefined {
+    return this.zones.get(symbol) ?? undefined;
+  }
+
+  /**
+   * The zone `symbol`'s days are built in, asking the feed the first time. A
+   * feed that hasn't said within `SYMBOL_ZONE_WAIT_MS` keeps UTC days for the
+   * symbol, so a late answer can't move bars already built; one that failed
+   * to say is asked again next time.
+   */
+  private async zoneFor(symbol: string): Promise<string | undefined> {
+    if (this.zones.has(symbol)) return this.keptZone(symbol);
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const waited = new Promise<void>((resolve) => { timer = setTimeout(() => resolve(), SYMBOL_ZONE_WAIT_MS); });
+    let failed = false;
+    try {
+      await Promise.race([this.resolveShared(symbol), waited]);
+    } catch {
+      failed = true;
+    } finally {
+      clearTimeout(timer);
+    }
+    if (!failed && !this.zones.has(symbol)) this.zones.set(symbol, null);
+    return this.keptZone(symbol);
+  }
+
+  /** The feed's answer about `symbol`: one request while it is on its way, whoever asks. */
+  private resolveShared(symbol: string): Promise<SymbolInfo | null> {
+    const inFlight = this.resolving.get(symbol);
+    if (inFlight) return inFlight;
+    const resolve = this.inner.resolveSymbol!.bind(this.inner);
+    // Taken as a promise: a feed may throw, or answer without one.
+    const pending = Promise.resolve().then(() => resolve(symbol));
+    this.resolving.set(symbol, pending);
+    const settle = () => {
+      if (this.resolving.get(symbol) === pending) this.resolving.delete(symbol);
+    };
+    pending.then((info) => {
+      this.keepZone(symbol, info);
+      settle();
+    }, settle);
+    return pending;
+  }
+
+  /** The zone `info` names for `symbol`, kept the first time only. */
+  private keepZone(symbol: string, info: SymbolInfo | null): void {
+    if (this.zones.has(symbol)) return;
+    const zone = symbolTimeZone(info);
+    this.zones.set(symbol, zone && isValidTimeZone(zone) && !isUtcTimeZone(zone) ? zone : null);
+  }
+
+  /**
+   * How `timeframe` is built for a symbol in `zone`: from the coarsest base
+   * that lines up with the zone's midnight. When none does (a feed of 4h
+   * bars for a zone 7 hours from UTC), from today's base on UTC days: the
+   * timeframe is still served.
+   */
+  private planFor(timeframe: TimeFrame, zone: string | undefined): BuildPlan {
+    const utcBase = this.baseFor(timeframe);
+    // Frames on the epoch floor (7m, 1h) have no midnight to follow: no zone, whenever it is learnt.
+    const zoned = zone !== undefined && utcBase !== timeframe && timeframeFollowsDays(timeframe);
+    const zonedBase = zoned ? baseTimeframe(timeframe, this.baseTimeframes, zone) : null;
+    const base = zonedBase ?? utcBase;
+    const planZone = zonedBase ? zone : undefined;
+    return { base, zone: planZone, bucket: { timeZone: planZone, dates: isDateFrame(base) } };
+  }
+
   // --- History ---
 
   private async historyBefore(symbol: string, timeframe: TimeFrame, before: number, limit: number): Promise<OHLCBar[]> {
     const fetchBefore = this.inner.fetchHistoryBefore!.bind(this.inner);
-    const base = this.baseFor(timeframe);
-    if (base === timeframe) return fetchBefore(symbol, timeframe, before, limit);
+    const utcBase = this.baseFor(timeframe);
+    if (utcBase === timeframe) return fetchBefore(symbol, timeframe, before, limit);
     const generation = this.generation;
-    const want = this.baseBarsFor(timeframe, base, limit);
-    const first = await fetchBefore(symbol, base, before, Math.min(want, MAX_BASE_BARS_PER_REQUEST));
-    const bars = await this.extendBack(symbol, base, first.filter((b) => b.time < before), want, generation, 1);
-    return this.toTarget(bars, timeframe, limit);
+    const plan = this.planFor(timeframe, this.waitsForZone(timeframe) ? await this.zoneFor(symbol) : this.keptZone(symbol));
+    const want = this.baseBarsFor(timeframe, plan.base, limit);
+    const first = await fetchBefore(symbol, plan.base, before, Math.min(want, MAX_BASE_BARS_PER_REQUEST));
+    const bars = await this.extendBack(symbol, plan.base, first.filter((b) => b.time < before), want, generation, 1);
+    return this.toTarget(bars, timeframe, limit, plan);
   }
 
   /** Base bars for `limit` target bars, plus one bucket for a partial first one. */
@@ -258,25 +393,25 @@ export class ResamplingAdapter implements DataAdapter {
   }
 
   /** Merge into target buckets, drop a first bucket the bars start inside, keep the newest `limit`. */
-  private toTarget(bars: OHLCBar[], target: TimeFrame, limit: number): OHLCBar[] {
+  private toTarget(bars: OHLCBar[], target: TimeFrame, limit: number, plan: BuildPlan): OHLCBar[] {
     if (bars.length === 0) return [];
-    const out = resampleBars(bars, target);
+    const out = resampleBars(bars, target, plan.bucket);
     if (out.length > 1 && out[0].time !== bars[0].time) out.shift();
     return out.length > limit ? out.slice(out.length - limit) : out;
   }
 
   /** Keep the newest bucket's base bars, for the live stream to resume from. */
-  private rememberTail(symbol: string, target: TimeFrame, bars: OHLCBar[]): void {
+  private rememberTail(symbol: string, target: TimeFrame, bars: OHLCBar[], plan: BuildPlan): void {
     if (bars.length === 0) return;
-    const bucket = timeframeBucketStart(bars[bars.length - 1].time, target);
+    const bucket = timeframeBucketStart(bars[bars.length - 1].time, target, plan.bucket);
     let i = bars.length;
-    while (i > 0 && timeframeBucketStart(bars[i - 1].time, target) === bucket) i--;
-    this.tail = { symbol, target, bucket, bars: bars.slice(i) };
+    while (i > 0 && timeframeBucketStart(bars[i - 1].time, target, plan.bucket) === bucket) i--;
+    this.tail = { symbol, target, zone: plan.zone, bucket, bars: bars.slice(i) };
   }
 
-  private resumeFromHistory(symbol: string, target: TimeFrame): void {
+  private resumeFromHistory(live: { symbol: string; target: TimeFrame; zone?: string }): void {
     const tail = this.tail;
-    if (!tail || tail.symbol !== symbol || tail.target !== target) return;
+    if (!tail || tail.symbol !== live.symbol || tail.target !== live.target || tail.zone !== live.zone) return;
     this.bucket = tail.bucket;
     for (const bar of tail.bars) this.parts.set(bar.time, bar);
   }
@@ -290,7 +425,7 @@ export class ResamplingAdapter implements DataAdapter {
       return;
     }
     const { bar, closed } = event.data as { bar: OHLCBar; closed: boolean };
-    const bucket = timeframeBucketStart(bar.time, live.target);
+    const bucket = timeframeBucketStart(bar.time, live.target, live.bucket);
     if (this.bucket !== null && bucket < this.bucket) return; // a late frame of a closed bucket
     if (this.bucket !== null && bucket > this.bucket) {
       // A bar of the next bucket: the current one is complete.
@@ -303,12 +438,13 @@ export class ResamplingAdapter implements DataAdapter {
 
     const current = this.composed();
     if (!current) return;
-    const lastOfBucket = closed && timeframeBucketStart(nextBaseStart(bar.time, live.base), live.target) !== bucket;
+    const next = timeframeBucketStart(nextBaseStart(bar.time, live.base, live.zone), live.target, live.bucket);
+    const lastOfBucket = closed && next !== bucket;
     this.emit('bar', { bar: current, closed: lastOfBucket });
     if (lastOfBucket) {
       this.resetBucket();
       // The next bucket starts after this one, never at it again.
-      this.bucket = timeframeBucketStart(nextBaseStart(bar.time, live.base), live.target);
+      this.bucket = next;
     }
   }
 

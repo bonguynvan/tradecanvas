@@ -93,7 +93,10 @@ also works on a widget.
    `MarketConfig.timeZone`. `setTimeZone('exchange')` shows the symbol's zone,
    else its market's. In a `ChartWidget`, set it as a Chart Setting,
    `widget.setSettings({ timezone: 'exchange' })` (spelt `timezone` there), so
-   the widget's clock, its settings dialog and what it keeps follow.
+   the widget's clock, its settings dialog and what it keeps follow. The 2h–12h,
+   1D, 1W and 1M bars the library builds (from a feed's `supportedTimeframes`,
+   or the widget's `setData`) start at that exchange's midnight; bars your own
+   code builds take `timeframeBucketStart(t, tf, { timeZone })` to match.
 
 ## Quick start: the widget with live data
 
@@ -655,6 +658,42 @@ console.log(chart.roundPrice(25.37), priceStepAt(9.5, MARKET_HOSE)); // 25.35 0.
 const [front] = vn30fContracts(Date.now());
 chart.setMarket(MARKET_VN30F);
 console.log(front.symbol, front.lastTradingDay);   // e.g. VN30F2611 2026-11-19
+```
+
+## Bars of a day in the exchange's time
+
+The 4H, 1D, 1W and 1M bars the library builds start at the exchange's midnight
+when it knows the zone (`SymbolInfo.timeZone` from `resolveSymbol`, else
+`setMarket`'s): for Ho Chi Minh City, 1D at 00:00 there and 4H at 08:00 and
+12:00. Bars your own code builds (from trades, or hours into days) should start
+at the same place: `timeframeBucketStart` with the zone. 1h and shorter keep
+their floor on the epoch; daily bars stamped at 00:00 UTC keep their dates.
+
+```ts
+import { resampleBars, timeframeBucketStart, type OHLCBar, type TimeFrame, type Trade } from '@tradecanvas/chart';
+
+const timeZone = 'Asia/Ho_Chi_Minh';
+
+/** The bars with `trade` in them: it starts a bar of `timeframe`, or joins the last one. */
+function withTrade(bars: readonly OHLCBar[], trade: Trade, timeframe: TimeFrame): OHLCBar[] {
+  const time = timeframeBucketStart(trade.time, timeframe, { timeZone });
+  const last = bars[bars.length - 1];
+  if (last?.time !== time) {
+    return [...bars, { time, open: trade.price, high: trade.price, low: trade.price, close: trade.price, volume: trade.volume }];
+  }
+  const merged = { ...last, high: Math.max(last.high, trade.price), low: Math.min(last.low, trade.price), close: trade.price, volume: last.volume + trade.volume };
+  return [...bars.slice(0, -1), merged];
+}
+
+// 09:15 on 23 October there: its 1D bar opens at 17:00 UTC on the 22nd, its 4H bar at 08:00 there.
+const at = Date.UTC(2026, 9, 23, 2, 15);
+console.log(new Date(timeframeBucketStart(at, '1d', { timeZone })).toISOString()); // 2026-10-22T17:00:00.000Z
+console.log(withTrade([], { time: at, price: 1250.5, volume: 3 }, '4h')[0].time === Date.UTC(2026, 9, 23, 1)); // true
+
+// Hours into days and weeks, all at once
+declare const hours: OHLCBar[];
+const days = resampleBars(hours, '1d', { timeZone });
+const weeks = resampleBars(days, '1w', { timeZone });
 ```
 
 ## A dashboard: net flows, allocation and returns
