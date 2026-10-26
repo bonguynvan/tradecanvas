@@ -86,8 +86,9 @@
   Point &amp; Figure tạo nhiều nhất một đường hay một cột cho mỗi nến, nên chỉ chuỗi hơn 100,000 nến
   mới chạm tới giới hạn này; Line Break, với thông số là số đường, cũng tạo nhiều nhất một đường cho
   mỗi nến. Kích thước ô, mức đảo chiều hay biên độ nào không phải là số hữu hạn lớn hơn 0, trong trạng
-  thái đã lưu hay trong một link chia sẻ, sẽ bị bỏ qua (biểu đồ tự tính từ dữ liệu), nên một link
-  không thể làm biểu đồ treo. Hộp thoại cài đặt không nhận giá trị nhỏ hơn 0.00000001.
+  thái đã lưu hay trong một link chia sẻ, sẽ bị bỏ qua (biểu đồ quay về giá trị mặc định: tự tính từ
+  dữ liệu, hoặc 4% với Kagi), nên một link không thể làm biểu đồ treo. Hộp thoại cài đặt không nhận
+  giá trị nhỏ hơn 0.00000001.
 </p>
 <pre><code>{`chart.setChartTypeOptions({
   renko: { boxSize: 50 },                         // or 'atr' with atrPeriod

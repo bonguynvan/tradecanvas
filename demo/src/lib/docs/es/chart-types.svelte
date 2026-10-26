@@ -87,8 +87,9 @@
   mucho una línea o una columna por barra, así que solo una serie de más de 100,000 barras puede
   llegar al límite; Line Break, cuyo ajuste es un número de líneas, también da como mucho una línea
   por barra. Una caja, reversión o rango que no sea un número finito mayor que 0, en un estado guardado
-  o un enlace compartido, se descarta (el gráfico lo calcula a partir de los datos), así que un enlace
-  no puede bloquear el gráfico. El cuadro de configuración no acepta valores por debajo de 0.00000001.
+  o un enlace compartido, se descarta (el gráfico vuelve a su valor por defecto: calculado a partir
+  de los datos, o el 4% de Kagi), así que un enlace no puede bloquear el gráfico. El cuadro de
+  configuración no acepta valores por debajo de 0.00000001.
 </p>
 <pre><code>{`chart.setChartTypeOptions({
   renko: { boxSize: 50 },                         // or 'atr' with atrPeriod

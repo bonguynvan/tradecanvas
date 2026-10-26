@@ -87,8 +87,8 @@
   line or column a bar at most, so only a series of more than 100,000 bars can reach the limit;
   Line Break, whose setting is a count of lines, makes one line a bar at most too. A box, reversal
   or range that is no finite number above 0, in a saved state or a shared link, is dropped (the
-  chart works it out from the data), so a link can't stall the chart. The settings dialog takes
-  none under 0.00000001.
+  chart goes back to its default: worked out from the data, or Kagi's 4%), so a link can't stall
+  the chart. The settings dialog takes none under 0.00000001.
 </p>
 <pre><code>{`chart.setChartTypeOptions({
   renko: { boxSize: 50 },                         // or 'atr' with atrPeriod
