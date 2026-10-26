@@ -1,7 +1,7 @@
 ---
 '@tradecanvas/commons': patch
-'@tradecanvas/core': patch
-'@tradecanvas/chart': patch
+'@tradecanvas/core': minor
+'@tradecanvas/chart': minor
 ---
 
 Range bars draw on intraday data. The automatic range was 0.5% of the average close, about $500 for a symbol at 100,000, more than a one-second or one-minute chart moves in hours, so no bar closed and the chart stayed blank ("Chart, no data." to a screen reader). `'auto'` now follows the bars' true range: the mean true range of the last 100 closed bars, rounded to a 1, 2 or 5 and to a whole number of the symbol's price step (`minTick`, or the market's step; on a market whose step depends on the price, the largest step those bars traded at), so bars close on prices the market can trade. The bar still forming is left out, so a tick changes only the range bars built from it and the ones before stay as they are; when a bar closes and moves the mean to the next 1-2-5 number, every bar is built again on the new range. A daily chart on `'auto'` gets fewer, larger bars than before. A range you set is used as it is, unless it is far too small for the move (below).
