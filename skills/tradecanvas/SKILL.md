@@ -161,7 +161,8 @@ chart.removeIndicators(chart.getActiveIndicators().map((i) => i.instanceId)); //
   `chart.registerIndicator(...)` — see [references/recipes.md](references/recipes.md).
   A `category` in the descriptor (`'oscillators'`, `'volume'`…) files it under that
   group of ChartWidget's Indicators dialog. One that groups bars by day reads the
-  exchange's zone as `config.exchangeTimeZone`.
+  exchange's zone as `config.exchangeTimeZone`; one that reads no zone can say
+  `readsExchangeTimeZone: false`, so a new zone leaves it as it is.
 
 ## Drawings, alerts and orders
 

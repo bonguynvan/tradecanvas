@@ -96,6 +96,13 @@ export interface IndicatorDescriptor {
   inputs?: Readonly<Record<string, IndicatorInputSpec>>;
   /** The group it is listed under in the widget's indicator picker; unset: "other" (built-ins have theirs). */
   category?: IndicatorCategory;
+  /**
+   * Whether it counts days, weeks or months in the exchange's zone
+   * (`config.exchangeTimeZone`): a change of the zone computes again only
+   * the indicators that do and those that read their lines. Unset, a plugin
+   * of your own is taken to, and a built-in that doesn't say so is not.
+   */
+  readsExchangeTimeZone?: boolean;
 }
 
 /** The groups of the widget's indicator picker. */

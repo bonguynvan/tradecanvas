@@ -20,6 +20,7 @@ import { breaksBetween, periodKeyer } from '../periods.js';
  */
 export class SessionVWAPIndicator extends IndicatorBase {
   descriptor: IndicatorDescriptor = {
+    readsExchangeTimeZone: true,
     id: 'svwap',
     name: 'Session VWAP',
     placement: 'overlay' as const,

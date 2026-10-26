@@ -202,7 +202,9 @@ CANDLE_PATTERNS.length                                 // 64`}</code></pre>
   without one it is under Other. See the
   <a href="https://github.com/bonguynvan/tradecanvas/blob/main/skills/tradecanvas/references/recipes.md#a-custom-indicator">custom indicator recipe</a>.
   An indicator that groups bars by day, week or month reads the exchange's zone as
-  <code>config.exchangeTimeZone</code> (set by the chart; unset: UTC).
+  <code>config.exchangeTimeZone</code> (set by the chart; unset: UTC). A new zone computes again only
+  the indicators that read it and those that read their lines: one of yours that doesn't can say
+  <code>readsExchangeTimeZone: false</code> in its descriptor, and is left as it is.
 </p>
 
 <h2>Panes: resize, fold, maximise, reorder</h2>

@@ -197,7 +197,9 @@ CANDLE_PATTERNS.length                                 // 64`}</code></pre>
   들어가고, 지정하지 않으면 기타에 들어갑니다.
   <a href="https://github.com/bonguynvan/tradecanvas/blob/main/skills/tradecanvas/references/recipes.md#a-custom-indicator">사용자 지정 지표 레시피</a>를 참고하세요.
   봉을 일, 주, 월 단위로 묶는 지표는 거래소 시간대를 <code>config.exchangeTimeZone</code>에서 읽습니다
-  (차트가 설정하며, 없으면 UTC).
+  (차트가 설정하며, 없으면 UTC). 시간대가 바뀌면 그것을 읽는 지표와 그 지표의 선을 읽는 지표만
+  다시 계산합니다. 시간대를 읽지 않는 직접 만든 지표는 descriptor에
+  <code>readsExchangeTimeZone: false</code>를 적으면 그대로 남습니다.
 </p>
 
 <h2>패널: 크기 조절, 접기, 최대화, 순서 바꾸기</h2>

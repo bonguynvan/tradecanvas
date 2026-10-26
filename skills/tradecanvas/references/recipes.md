@@ -540,7 +540,9 @@ An indicator that starts again each day, week or month reads the exchange's
 IANA zone as `config.exchangeTimeZone`: the chart sets it from the symbol's
 `timeZone`, else the market's (`setSymbolInfo`, `setMarket`), and leaves it
 unset for UTC. Count days on that clock, not the zone the chart shows, so the
-values stay the same whatever `setTimeZone` displays.
+values stay the same whatever `setTimeZone` displays. A new zone computes again
+only the indicators that read it and those that read their lines; one of yours
+that reads no zone can say `readsExchangeTimeZone: false` in its descriptor.
 
 ## An overlay of your own, on the price grid
 

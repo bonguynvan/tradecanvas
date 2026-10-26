@@ -50,6 +50,7 @@ function keyerFor(data: DataSeries, config: IndicatorConfig): PeriodKeyer | null
  */
 export class VWAPIndicator extends IndicatorBase {
   descriptor: IndicatorDescriptor = {
+    readsExchangeTimeZone: true,
     id: 'vwap',
     name: 'Volume Weighted Average Price',
     placement: 'overlay' as const,

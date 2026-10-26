@@ -197,7 +197,9 @@ CANDLE_PATTERNS.length                                 // 64`}</code></pre>
   指定するとインジケーターダイアログのそのグループに入り、指定しなければ「その他」に入ります。詳しくは
   <a href="https://github.com/bonguynvan/tradecanvas/blob/main/skills/tradecanvas/references/recipes.md#a-custom-indicator">カスタムインジケーターのレシピ</a>を参照してください。
   日・週・月でバーをまとめるインジケーターは、取引所のタイムゾーンを <code>config.exchangeTimeZone</code>
-  で読めます（チャートが設定します。未設定なら UTC）。
+  で読めます（チャートが設定します。未設定なら UTC）。タイムゾーンが変わると、それを読むインジケーターと
+  その線を読むものだけを計算し直します。タイムゾーンを読まない自作のインジケーターは、descriptor に
+  <code>readsExchangeTimeZone: false</code> と書けばそのまま残ります。
 </p>
 
 <h2>ペイン：サイズ変更、折りたたみ、最大化、並べ替え</h2>

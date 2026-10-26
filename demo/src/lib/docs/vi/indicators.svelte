@@ -203,7 +203,9 @@ CANDLE_PATTERNS.length                                 // 64`}</code></pre>
   trong hộp thoại Chỉ báo; nếu không có, nó nằm trong nhóm Khác. Xem
   <a href="https://github.com/bonguynvan/tradecanvas/blob/main/skills/tradecanvas/references/recipes.md#a-custom-indicator">hướng dẫn mẫu cho chỉ báo tuỳ chỉnh</a>.
   Chỉ báo nhóm nến theo ngày, tuần hay tháng đọc múi giờ của sàn ở <code>config.exchangeTimeZone</code>
-  (do biểu đồ đặt; không có thì là UTC).
+  (do biểu đồ đặt; không có thì là UTC). Khi múi giờ đổi, chỉ những chỉ báo đọc nó và những chỉ báo
+  đọc đường của chúng được tính lại: chỉ báo của bạn không đọc múi giờ có thể ghi
+  <code>readsExchangeTimeZone: false</code> trong descriptor để được giữ nguyên.
 </p>
 
 <h2>Bảng: đổi kích thước, thu gọn, phóng to, sắp xếp lại</h2>

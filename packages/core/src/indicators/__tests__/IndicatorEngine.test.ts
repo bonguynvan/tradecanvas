@@ -189,6 +189,73 @@ describe('IndicatorEngine.deferRecalculateFrom', () => {
   });
 });
 
+describe('IndicatorEngine: a change of the exchange zone', () => {
+  /** Hourly bars of three days, each day at its own price. */
+  const hours = (): OHLCBar[] => Array.from({ length: 72 }, (_, i) => {
+    const p = 100 + Math.floor(i / 24);
+    return { time: Date.UTC(2026, 9, 19) + i * 3_600_000, open: p, high: p + 1, low: p - 1, close: p, volume: 10 };
+  });
+
+  /** A plugin of the host's that may count days in the zone: it says nothing either way. */
+  function hostPlugin(): { plugin: IndicatorPlugin; runs: () => number } {
+    let runs = 0;
+    const plugin: IndicatorPlugin = {
+      descriptor: { id: 'host', name: 'host', placement: 'overlay', defaultConfig: {} },
+      calculate(data) {
+        runs++;
+        return { values: new Map(), series: data.map(() => null) };
+      },
+      render() {},
+    };
+    return { plugin, runs: () => runs };
+  }
+
+  it('computes again only the indicators that count days in it, those that read their lines, and plugins that may', () => {
+    const engine = new IndicatorEngine();
+    registerBuiltInIndicators(engine);
+    const host = hostPlugin();
+    engine.register(host.plugin);
+    const data = hours();
+    const ema = engine.addIndicator('ema', { period: 10 }, data);
+    const vwap = engine.addIndicator('vwap', {}, data);
+    const smaOnVwap = engine.addIndicator('sma', { period: 3, source: indicatorSource(vwap, 'value') }, data);
+    engine.addIndicator('host', {}, data);
+    const before = { ema: engine.getOutput(ema), vwap: engine.getOutput(vwap)?.series?.[30]?.value, sma: engine.getOutput(smaOnVwap)?.series?.[30]?.value };
+    const hostRuns = host.runs();
+    expect(engine.setExchangeTimeZone('Asia/Tokyo', data)).toBe(true);
+    engine.flush();
+    expect(engine.getOutput(ema)).toBe(before.ema);
+    expect(engine.getOutput(vwap)?.series?.[30]?.value).not.toBe(before.vwap);
+    expect(engine.getOutput(smaOnVwap)?.series?.[30]?.value).not.toBe(before.sma);
+    expect(host.runs()).toBe(hostRuns + 1);
+  });
+
+  it('computes nothing again for a plugin that says it reads no zone', () => {
+    const engine = new IndicatorEngine();
+    const host = hostPlugin();
+    engine.register({ ...host.plugin, descriptor: { ...host.plugin.descriptor, readsExchangeTimeZone: false } });
+    const data = hours();
+    engine.addIndicator('host', {}, data);
+    engine.setExchangeTimeZone('Asia/Tokyo', data);
+    engine.flush();
+    expect(host.runs()).toBe(1);
+  });
+
+  it('goes with a tick waiting: both are computed once', () => {
+    const engine = new IndicatorEngine();
+    registerBuiltInIndicators(engine);
+    const data = hours();
+    const vwap = engine.addIndicator('vwap', {}, data);
+    engine.deferRecalculateFrom(data, data.length - 1);
+    engine.setExchangeTimeZone('Asia/Tokyo', data);
+    const fresh = new IndicatorEngine();
+    registerBuiltInIndicators(fresh);
+    fresh.setExchangeTimeZone('Asia/Tokyo');
+    const expected = fresh.getOutput(fresh.addIndicator('vwap', {}, data));
+    expect(engine.getOutput(vwap)?.series).toEqual(expected?.series);
+  });
+});
+
 describe('IndicatorEngine.setExchangeTimeZone', () => {
   /** A plugin that keeps the zone each computation was given. */
   function zoneProbe() {

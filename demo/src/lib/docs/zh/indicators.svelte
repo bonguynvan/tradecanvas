@@ -189,7 +189,8 @@ CANDLE_PATTERNS.length                                 // 64`}</code></pre>
   你无需编写任何渲染代码。它的 <code>category</code>（<code>'oscillators'</code>、<code>'volume'</code>…）
   会把它放进“指标”对话框中的对应分组；未设置时归入“其他”。参见
   <a href="https://github.com/bonguynvan/tradecanvas/blob/main/skills/tradecanvas/references/recipes.md#a-custom-indicator">自定义指标示例</a>。
-  按日、周或月分组K线的指标可从 <code>config.exchangeTimeZone</code> 读取交易所时区（由图表设置；未设置时为 UTC）。
+  按日、周或月分组K线的指标可从 <code>config.exchangeTimeZone</code> 读取交易所时区（由图表设置；未设置时为 UTC）。时区改变时，只有读取它的指标以及读取这些指标线条的指标会重新计算：
+  你自己的指标若不读取时区，可在 descriptor 中写 <code>readsExchangeTimeZone: false</code>，从而保持不变。
 </p>
 
 <h2>窗格：调整大小、收起、最大化、重新排序</h2>

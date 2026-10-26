@@ -22,6 +22,7 @@ import { periodKeyer } from '../periods.js';
  */
 export class MTFMovingAverageIndicator extends IndicatorBase {
   descriptor: IndicatorDescriptor = {
+    readsExchangeTimeZone: true,
     id: 'mtfma',
     name: 'MTF Moving Average',
     placement: 'overlay' as const,

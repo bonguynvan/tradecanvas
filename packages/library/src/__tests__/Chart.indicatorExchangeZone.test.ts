@@ -126,6 +126,18 @@ describe('Chart computes a VWAP once for a new zone', () => {
     expect(calculate).toHaveBeenCalledTimes(1);
   });
 
+  it('and leaves the indicators that count no days in it as they are', () => {
+    chart.setData(bars);
+    const vwap = chart.addIndicator('vwap')!;
+    const ema = chart.addIndicator('ema', { period: 10 })!;
+    const before = chart.getIndicatorOutput(ema);
+    const calculate = vi.spyOn(EMAIndicator.prototype, 'calculate');
+    chart.setMarket({ type: 'stock', timeZone: NEW_YORK });
+    chart.getIndicatorOutput(vwap);
+    expect(calculate).not.toHaveBeenCalled();
+    expect(chart.getIndicatorOutput(ema)).toEqual(before);
+  });
+
   it('on the bars alone, when the zone comes before them', () => {
     const id = chart.addIndicator('vwap')!;
     const calculate = vi.spyOn(VWAPIndicator.prototype, 'calculate');

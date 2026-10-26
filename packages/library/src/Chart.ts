@@ -4193,11 +4193,11 @@ export class Chart {
     this.periodLevels.setExchangeTimeZone(zone);
     this.marketProfile.setExchangeTimeZone(zone);
     const bars = this.series.bars();
-    // With no bars yet, the data that comes computes them. Otherwise before
-    // the next read, not now: the bars the symbol's hours filter again
-    // follow in setSymbolInfo, and computing them computes everything once.
-    if (this.indicatorEngine.setExchangeTimeZone(zone) && bars.length > 0) {
-      this.indicatorEngine.deferRecalculateFrom(bars, 0);
+    // With no bars yet, the data that comes computes them. Otherwise only
+    // the indicators that count days in the zone, before the next read, not
+    // now: the bars the symbol's hours filter again follow in setSymbolInfo,
+    // and computing them computes everything once.
+    if (this.indicatorEngine.setExchangeTimeZone(zone, bars.length > 0 ? bars : undefined) && bars.length > 0) {
       this.announceIndicatorUpdate(0);
     }
   }

@@ -213,7 +213,9 @@ CANDLE_PATTERNS.length                                 // 64`}</code></pre>
   grupo del diálogo Indicadores; sin ella, aparece en Otros. Consulta la
   <a href="https://github.com/bonguynvan/tradecanvas/blob/main/skills/tradecanvas/references/recipes.md#a-custom-indicator">receta de indicador personalizado</a>.
   Un indicador que agrupa las barras por día, semana o mes lee la zona de la bolsa en
-  <code>config.exchangeTimeZone</code> (la fija el gráfico; sin ella, UTC).
+  <code>config.exchangeTimeZone</code> (la fija el gráfico; sin ella, UTC). Una zona nueva vuelve a
+  calcular solo los indicadores que la leen y los que leen sus líneas: uno tuyo que no la lee puede
+  decir <code>readsExchangeTimeZone: false</code> en su descriptor y queda como está.
 </p>
 
 <h2>Paneles: redimensionar, contraer, maximizar, reordenar</h2>
