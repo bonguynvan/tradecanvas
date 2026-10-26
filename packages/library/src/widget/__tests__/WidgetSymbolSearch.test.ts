@@ -248,10 +248,24 @@ describe('WidgetSymbolSearch with a search function', () => {
     search.open({ symbols: [], current: '', search: () => (++calls === 1 ? Promise.resolve(results) : new Promise<SymbolInfo[]>(() => {})) });
     type('btc');
     await vi.advanceTimersByTimeAsync(SYMBOL_SEARCH_DEBOUNCE_MS);
+    const before = rows();
     type('btce');
     await vi.advanceTimersByTimeAsync(SYMBOL_SEARCH_DEBOUNCE_MS);
     expect(rowText()).toEqual(['BTCUSDT', 'BTCEUR']);
     expect(empty()).toBeUndefined();
+    // Left as they were: the search's start is nothing to draw them again for.
+    expect(rows()).toEqual(before);
+    expect(rows().every((row, i) => row === before[i])).toBe(true);
+  });
+
+  it('leaves a long list of the symbols given as it is while the first search runs', async () => {
+    const symbols = Array.from({ length: 50 }, (_, i) => `S${i}`);
+    search.open({ symbols, current: '', search: () => new Promise<SymbolInfo[]>(() => {}) });
+    const first = rows()[0];
+    type('s');
+    await vi.advanceTimersByTimeAsync(SYMBOL_SEARCH_DEBOUNCE_MS);
+    expect(rows()[0]).toBe(first);
+    expect(rows()).toHaveLength(50);
   });
 
   it('skips rows of the feed that have no symbol', async () => {

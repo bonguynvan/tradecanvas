@@ -420,9 +420,10 @@ export class WidgetSymbolSearch {
     this.searchAbort?.abort();
     const controller = new AbortController();
     this.searchAbort = controller;
-    // The rows of the last search stay while this one runs: no flicker as typing goes on.
+    // The rows on screen stay as they are while this one runs: no flicker as typing goes on, and no
+    // long list drawn again. "Searching…" shows only where there are none.
     this.status = 'searching';
-    this.renderList();
+    if (this.shown.length === 0) this.renderList();
     try {
       const found = await search(query, controller.signal);
       if (controller.signal.aborted) return;
