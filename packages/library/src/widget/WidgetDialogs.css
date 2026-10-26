@@ -830,10 +830,12 @@ img.tcw-ss-badge {
 }
 
 /* A venue before the ticker ("BINANCE:"), dim, is what a narrow column shortens; the ticker never
-   shrinks (a share of a pixel would end it in an ellipsis), and is cut only when it alone is wider. */
+   shrinks (a share of a pixel would end it in an ellipsis), and is cut only when it alone is wider.
+   A gap keeps the venue's ellipsis off the ticker ("HYPERLIQ… GOLD"). */
 .tcw-ss-venue {
   flex: 0 1 auto;
   min-width: 0;
+  margin-inline-end: var(--tcw-space-1);
   overflow: hidden;
   color: var(--tcw-text-muted);
   font-weight: var(--tcw-weight);

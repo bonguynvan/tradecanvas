@@ -122,6 +122,14 @@ describe('the symbol search', () => {
   });
 });
 
+describe('the symbol search’s venue', () => {
+  // On a phone "HYPERLIQ…GOLD": the venue's ellipsis touched the ticker. The cell reads left to right
+  // in any widget, so the end margin is on the ticker's side both ways.
+  it('keeps a gap between its ellipsis and the ticker', () => {
+    expect(blocks(dialogs, '.tcw-ss-venue')[0]).toMatch(/margin-inline-end:\s*var\(--tcw-space-1\)/);
+  });
+});
+
 describe('small boxes that scrolled a few px', () => {
   // Out to the menu's edges past its padding, the typed interval scrolled the menu 3 px both ways.
   it('takes the typed interval out to the timeframe menu’s edges and no further', () => {
