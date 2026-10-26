@@ -471,6 +471,28 @@ describe('the status bar, watching its width', () => {
     expect(fit).toHaveBeenCalledTimes(1);
   });
 
+  it('fits no more once gone, though the page\'s fonts arrive after', async () => {
+    let fontsReady!: () => void;
+    const ready = new Promise<void>((resolve) => { fontsReady = resolve; });
+    Object.defineProperty(document, 'fonts', { configurable: true, value: { ready } });
+    try {
+      bar.destroy();
+      make();
+      const fit = vi.spyOn(bar, 'fit');
+      frames.length = 0;
+      bar.destroy();
+      fontsReady();
+      await ready;
+      await Promise.resolve();
+      observers.at(-1)!.callback();
+      expect(frames).toHaveLength(0);
+      expect(fit).not.toHaveBeenCalled();
+    } finally {
+      Reflect.deleteProperty(document, 'fonts');
+      make();
+    }
+  });
+
   it('stops watching when it goes', () => {
     observers[0].callback();
     bar.destroy();

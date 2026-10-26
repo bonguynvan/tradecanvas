@@ -89,6 +89,8 @@ export class WidgetStatusBar {
   private rangeMenu: WidgetContextMenu | null = null;
   private resizeObserver: ResizeObserver | null = null;
   private fitFrame = 0;
+  /** Gone: a late font or a frame asked for before then fits nothing. */
+  private destroyed = false;
 
   constructor(
     private readonly host: HTMLElement,
@@ -150,12 +152,12 @@ export class WidgetStatusBar {
     void document.fonts?.ready.then(() => this.scheduleFit());
   }
 
-  /** Fit once before the next frame, however many changes came first. */
+  /** Fit once before the next frame, however many changes came first; never once the bar is gone. */
   private scheduleFit(): void {
-    if (this.fitFrame || typeof requestAnimationFrame === 'undefined') return;
+    if (this.destroyed || this.fitFrame || typeof requestAnimationFrame === 'undefined') return;
     this.fitFrame = requestAnimationFrame(() => {
       this.fitFrame = 0;
-      this.fit();
+      if (!this.destroyed) this.fit();
     });
   }
 
@@ -400,6 +402,7 @@ export class WidgetStatusBar {
   }
 
   destroy(): void {
+    this.destroyed = true;
     this.resizeObserver?.disconnect();
     if (this.fitFrame) cancelAnimationFrame(this.fitFrame);
     this.clockMenu?.destroy();
