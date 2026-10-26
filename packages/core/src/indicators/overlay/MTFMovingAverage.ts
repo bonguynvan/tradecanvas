@@ -12,8 +12,12 @@ import { periodKeyer } from '../periods.js';
  * grouped into buckets of the configured timeframe; the MA is a simple average
  * of *completed* higher-timeframe closes, so the value is flat within each
  * bucket and steps at its boundary — non-repainting (the in-progress HTF bar
- * never contributes until it closes). Days, weeks and months start at
- * midnight on the exchange's clock (`config.exchangeTimeZone`), as VWAP's do.
+ * never contributes until it closes). Days, weeks, months and the hour
+ * frames that divide a day (2h to 12h) start at midnight on the exchange's
+ * clock (`config.exchangeTimeZone`), as VWAP's do: in Ho Chi Minh City a 4h
+ * frame steps at 01:00, 05:00… UTC. A feed's own 4h bars stay on UTC's grid
+ * (00:00, 04:00…), so in a zone off UTC (New York only in winter) the 4h
+ * line steps at other hours than such a feed's 4h candles.
  */
 export class MTFMovingAverageIndicator extends IndicatorBase {
   descriptor: IndicatorDescriptor = {
