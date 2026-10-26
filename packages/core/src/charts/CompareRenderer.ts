@@ -199,7 +199,7 @@ export class CompareRenderer {
     const taken = this.reservedBoxes(viewport);
     for (const end of ends) {
       const width = MARK_LENGTH + MARK_GAP + ctx.measureText(end.sym.label).width + 2 * LABEL_PAD_X;
-      const box = this.placeLabel(end, width, taken, ends);
+      const box = this.placeLabel(end, width, taken, ends, viewport.chartRect);
       taken.push(box);
       this.drawLabel(ctx, end.sym, box, theme);
     }
@@ -221,24 +221,26 @@ export class CompareRenderer {
 
   /**
    * The first free box `width` wide by `end`, its line's end: above it,
-   * below it, then further out. Moved off its end, a label could land beside
-   * another line's and read as that line's name, so it takes the first free
-   * box nearer its own end than any other, and only without one the first
-   * free box at all.
+   * below it, then further out, inside the plot, whose edges would cut it.
+   * Moved off its end, a label could land beside another line's and read as
+   * that line's name, so it takes the first free box nearer its own end than
+   * any other, and only without one the first free box at all.
    */
-  private placeLabel(end: LineEnd, width: number, taken: readonly LabelBox[], ends: readonly LineEnd[]): LabelBox {
+  private placeLabel(end: LineEnd, width: number, taken: readonly LabelBox[], ends: readonly LineEnd[], plot: ViewportState['chartRect']): LabelBox {
     const right = end.x - LABEL_GAP;
     const at = (top: number): LabelBox => ({ left: right - width, top, right, bottom: top + LABEL_HEIGHT });
     const above = end.y - LABEL_GAP - LABEL_HEIGHT;
     const below = end.y + LABEL_GAP;
     const tries = Array.from({ length: LABEL_TRIES }, (_, step) => [at(above - step * LABEL_HEIGHT), at(below + step * LABEL_HEIGHT)]).flat();
-    const free = (box: LabelBox) => !taken.some((t) => overlaps(t, box));
+    const foot = plot.y + plot.height;
+    const free = (box: LabelBox) => box.top >= plot.y && box.bottom <= foot && !taken.some((t) => overlaps(t, box));
     const nearestIsOwn = (box: LabelBox) => {
       const middle = (box.top + box.bottom) / 2;
       const from = (e: LineEnd) => Math.hypot(e.x - end.x, e.y - middle);
       return ends.every((e) => e === end || from(e) > from(end));
     };
-    return tries.find((box) => free(box) && nearestIsOwn(box)) ?? tries.find(free) ?? at(above);
+    return tries.find((box) => free(box) && nearestIsOwn(box)) ?? tries.find(free)
+      ?? at(Math.max(plot.y, Math.min(above, foot - LABEL_HEIGHT)));
   }
 
   /** Where the alerts' labels sit: a band just above each line, across the plot (their text runs left from its right edge). */

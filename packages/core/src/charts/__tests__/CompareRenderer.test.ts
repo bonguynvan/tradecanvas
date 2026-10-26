@@ -184,6 +184,17 @@ describe('a compare line’s label', () => {
     }
   });
 
+  it('stays inside the plot by its foot when the spot above its end is taken', () => {
+    const { ctx, texts } = recorder();
+    // On the main scale the line ends 4 px above the foot (y 196 of 200); an alert's label sits just above it.
+    const r = renderer({ id: 'b', data: other(0, () => 52) });
+    r.setMode('absolute');
+    r.setReservedLevels(() => [56]);
+    r.render(ctx, main, view(0, 7), THEME);
+    expect(texts[0].top).toBeGreaterThanOrEqual(0);
+    expect(texts[0].bottom).toBeLessThanOrEqual(200);
+  });
+
   it('keeps two lines’ labels clear of each other where the lines end together', () => {
     const { ctx, texts } = recorder();
     renderer({ id: 'b', data: other(0, () => 10) }, { id: 'c', data: other(0, () => 20) }).render(ctx, main, view(0, 7), THEME);
