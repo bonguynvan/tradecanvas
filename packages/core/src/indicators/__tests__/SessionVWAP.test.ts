@@ -104,6 +104,13 @@ describe('SessionVWAPIndicator', () => {
     expect(segments(daily)).toBe(daily.length - 1);
   });
 
+  it('on daily bars, gives no band values, so its legend shows the line it draws alone', () => {
+    const daily: DataSeries = Array.from({ length: 5 }, (_, i) => bar((Date.UTC(2026, 8, 1) + i * 24 * HOUR) / 1000, 100 + i, 1000));
+    const s = ind.calculate(daily, { ...cfg, params: { bands: 3 } }).series!;
+    expect(s.map((v) => Object.keys(v ?? {}).sort())).toEqual(daily.map(() => ['session', 'value']));
+    expect(s[4]?.value).toBe(104);
+  });
+
   it('draws its bands through each session of more than one bar', () => {
     const data: DataSeries = [day1, day2].flatMap((day) => [0, 1, 2].map((h) => bar(day + h * HOUR, 10 + h, 100)));
     // Two segments a session each for the line, +1σ and −1σ.
