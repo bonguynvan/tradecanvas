@@ -170,14 +170,14 @@ export interface ChartWidgetOptions {
 
   // Config
   /**
-   * The symbols on offer, as tickers or `SymbolInfo` (a name, `type`,
-   * `exchange` and `logo` for the symbol search, the toolbar's symbol and the
-   * symbol info panel). The search lists them until something is typed (with
-   * no search, it filters them by ticker and name), a watchlist with no
+   * The symbols on offer, as tickers or `SymbolInfo`. Only a name, `type`,
+   * `exchange` and `logo` are used, by the symbol search, the toolbar's
+   * symbol and the symbol info panel: price steps and hours given here are
+   * not applied to the chart (those come from the adapter's `resolveSymbol`
+   * or `chart.setSymbolInfo`). The search lists them until something is typed
+   * (with no search, it filters them by ticker and name), a watchlist with no
    * `lists` starts with their tickers, and the chart starts on the first. A
-   * feed's search results win over the words given and keep the logo; price
-   * steps and hours given here are not applied to the chart (those come from
-   * the adapter's `resolveSymbol` or `chart.setSymbolInfo`).
+   * feed's search results win over the words given and keep the logo.
    */
   symbols?: readonly (string | SymbolInfo)[];
   timeframes?: TimeFrame[];
