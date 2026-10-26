@@ -82,6 +82,26 @@ describe('Chart bars a feed’s hours build', () => {
     await chart.switchStream('AAA', '1d');
     expect(startHours()).toEqual([17]); // 00:00 in Ho Chi Minh City
   });
+
+  it('keep the bars on screen and the view when the chart comes back to the symbol, its days in the same zone', async () => {
+    /** Sixty days of hours from 1 August 2026. */
+    const hours: OHLCBar[] = Array.from({ length: 60 * 24 }, (_, i) => ({ time: Date.UTC(2026, 7, 1) + i * HOUR, open: 1, high: 2, low: 0.5, close: 1.5, volume: 1 }));
+    const feed = vnFeed(async (symbol) => ({ symbol, timeZone: VN }));
+    // BBB's bars never come: the chart goes back to AAA, whose next load holds only its last ten days.
+    let loads = 0;
+    feed.fetchHistory = async (symbol, _tf, limit) => {
+      if (symbol === 'BBB') return new Promise(() => {});
+      return loads++ === 0 ? hours.slice(-(limit ?? 500)) : hours.slice(-10 * 24);
+    };
+    await chart.connect({ adapter: feed, symbol: 'AAA', timeframe: '4h' });
+    const shown = chart.getData().length;
+    chart.scrollBars(-50);
+    const view = chart.getVisibleTimeRange();
+    void chart.switchStream('BBB', '4h');
+    await chart.switchStream('AAA', '4h');
+    expect(chart.getData()).toHaveLength(shown);
+    expect(chart.getVisibleTimeRange()).toEqual(view);
+  });
 });
 
 describe('Chart.setMarket', () => {

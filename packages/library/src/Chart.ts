@@ -55,6 +55,7 @@ import type { ExportColumn } from '@tradecanvas/core';
 import {
   RenderEngine,
   Viewport,
+  ResamplingAdapter,
   withResampling,
   servesTimeframe,
   SYMBOL_ZONE_WAIT_MS,
@@ -3088,7 +3089,7 @@ export class Chart {
     this.streamManager.setTimeZone(this.getExchangeTimeZone());
 
     this.streamManager.on('snapshot', (bars) => {
-      const key = `${this.currentSymbol}|${this.streamTimeframe}`;
+      const key = this.streamSeriesKey(config.adapter);
       if (this.replaySession) {
         this.series.loadAside(bars);
       } else if (key === this.snapshotKey && this.series.length() > 0) {
@@ -3212,6 +3213,20 @@ export class Chart {
     }, 1000);
   }
 
+  /**
+   * The series a stream's history is of: its symbol, its timeframe and the
+   * zone whose midnight the days the feed's wrapper builds for it start at.
+   * The same series again (a reconnect, or a switch back before the next
+   * one's history landed) is merged with the bars on screen; days built in
+   * a zone the feed has named since replace them, so two zones' days never mix.
+   */
+  private streamSeriesKey(feed: DataAdapter): string {
+    const adapter = withResampling(feed);
+    const timeframe = this.streamTimeframe;
+    const days = adapter instanceof ResamplingAdapter && timeframe !== null ? adapter.bucketFor(this.currentSymbol, timeframe) : null;
+    return `${this.currentSymbol}|${timeframe}|${days?.timeZone ?? ''}`;
+  }
+
   /** The stream's symbol and timeframe, told when they change. */
   private setStreamTarget(symbol: string, timeframe: TimeFrame): void {
     const previousSymbol = this.announcedSymbol;
@@ -3260,10 +3275,6 @@ export class Chart {
     if (adapter && !servesTimeframe(adapter, timeframe)) {
       throw new RangeError(`${adapter.name} cannot serve the ${timeframe} timeframe`);
     }
-    // Another series: its history replaces the bars on screen, also when the
-    // chart comes back to them before it lands (the stream loads it afresh,
-    // its days perhaps in a zone the feed has named since).
-    if (symbol !== this.currentSymbol || timeframe !== this.streamTimeframe) this.snapshotKey = null;
     this.setStreamTarget(symbol, timeframe);
     // Until the new series is in, a page would be the new symbol's bars in
     // front of the old one's.
