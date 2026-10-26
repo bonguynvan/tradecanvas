@@ -90,6 +90,28 @@ describe('the symbol search', () => {
   });
 });
 
+describe('small boxes that scrolled a few px', () => {
+  // Out to the menu's edges past its padding, the typed interval scrolled the menu 3 px both ways.
+  it('takes the typed interval out to the timeframe menu’s edges and no further', () => {
+    const custom = rule('.tcw-tf-custom');
+    expect(custom).not.toMatch(/-6px/);
+    expect(custom).toMatch(/bottom:\s*calc\(-1 \* var\(--tcw-menu-pad\)\)/);
+    expect(custom).toMatch(/margin:\s*4px calc\(-1 \* var\(--tcw-menu-pad\)\) calc\(-1 \* var\(--tcw-menu-pad\)\)/);
+  });
+
+  // The first and last buttons' 1px margins added 2 px past the padding: at 1366 x 768 it scrolled by them.
+  it('counts the drawing tools’ end margins in the sidebar’s padding', () => {
+    expect(rule('.tcw-sidebar')).toMatch(/padding:\s*calc\(var\(--tcw-space-3\) - 1px\) 0/);
+    expect(rule('.tcw-sidebar-btn')).toMatch(/margin:\s*1px 0/);
+  });
+
+  it('ends a legend value cut by a narrow chart in an ellipsis', () => {
+    const value = rule('.tcw-ind-legend-values > *');
+    expect(value).toMatch(/min-width:\s*0/);
+    expect(value).toMatch(/text-overflow:\s*ellipsis/);
+  });
+});
+
 describe('the dialogs’ layout rules', () => {
   // A dialog is a column with a height cap: a part of it with an overflow of its own loses its
   // minimum height, and a long body squashes it (1.16.0 squashed the Settings' tabs this way).

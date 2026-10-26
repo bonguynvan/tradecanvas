@@ -583,15 +583,16 @@
   outline-offset: -2px;
 }
 
-/* Typed interval, under the list: stays in view while the list scrolls. */
+/* Typed interval, under the list: stays in view while the list scrolls. Out to the menu's edges over
+   its padding, and no further: past them, the menu scrolled a few px both ways. */
 .tcw-tf-custom {
   position: sticky;
-  bottom: -6px;
+  bottom: calc(-1 * var(--tcw-menu-pad));
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
-  margin: 4px -6px -6px;
-  padding: 6px 10px 8px;
+  margin: 4px calc(-1 * var(--tcw-menu-pad)) calc(-1 * var(--tcw-menu-pad));
+  padding: 6px calc(var(--tcw-menu-pad) + 4px) 8px;
   border-top: 1px solid var(--tcw-divider);
   background: var(--tcw-bg-elevated);
 }
@@ -1000,6 +1001,13 @@
   overflow: hidden;
 }
 
+/* A value cut by a narrow chart ends in an ellipsis, not mid-figure. */
+.tcw-ind-legend-values > * {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .tcw-ind-legend-row--hidden .tcw-ind-legend-name,
 .tcw-ind-legend-row--hidden .tcw-ind-legend-values {
   opacity: 0.45;
@@ -1094,7 +1102,9 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: var(--tcw-space-3) 0;
+  /* The buttons' own 1px margins at its ends make up the rest of the gap: as tall as its tools,
+     768 px high in the Print look, it doesn't scroll by those 2 px. */
+  padding: calc(var(--tcw-space-3) - 1px) 0;
   /* On a short screen the tools scroll; the menus sit outside it. */
   overflow-x: hidden;
   overflow-y: auto;
