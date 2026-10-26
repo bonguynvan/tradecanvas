@@ -241,6 +241,25 @@ describe('StreamManager — bars from ticks after the history', () => {
     });
   });
 
+  it('refuse a zone the browser does not know, and keep the one they had', async () => {
+    const { adapter, pending, listeners } = controlledAdapter();
+    const sm = new StreamManager();
+    sm.setTimeZone(VN);
+    expect(() => sm.setTimeZone('Not/AZone')).toThrow(RangeError);
+    const errors: unknown[] = [];
+    sm.on('error', (e) => errors.push(e));
+    const updates: OHLCBar[] = [];
+    sm.on('barUpdate', (b) => updates.push(b));
+    const done = sm.connect({ adapter, symbol: 'X', timeframe: '4h', aggregateTicks: true });
+    // 4h bars built from 04:00 and 08:00 in Ho Chi Minh City.
+    pending[0].resolve([at(Date.UTC(2026, 9, 22, 21)), at(Date.UTC(2026, 9, 23, 1))]);
+    await done;
+    for (const l of listeners.get('tick') ?? []) l({ type: 'tick', data: { time: Date.UTC(2026, 9, 23, 4, 30), price: 2, volume: 1 }, timestamp: 0 });
+    expect(errors).toEqual([]);
+    expect(updates.at(-1)?.time).toBe(Date.UTC(2026, 9, 23, 1));
+    sm.disconnect();
+  });
+
   describe('on a timeframe built from the feed’s shorter one', () => {
     it('keep the UTC days it built from hours, west of UTC too', async () => {
       // A feed of 1h bars with no zone to name, on a chart whose market is in New York: its days start at 00:00 UTC.

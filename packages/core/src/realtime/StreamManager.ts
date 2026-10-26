@@ -9,7 +9,7 @@ import type {
   SymbolInfo,
   TimeFrame,
 } from '@tradecanvas/commons';
-import { DEFAULT_STREAM_CONFIG, DEFAULT_RECONNECT, normalizeBarTime, timeframeBucketStart, timeframeSpansDays } from '@tradecanvas/commons';
+import { DEFAULT_STREAM_CONFIG, DEFAULT_RECONNECT, isValidTimeZone, normalizeBarTime, timeframeBucketStart, timeframeSpansDays } from '@tradecanvas/commons';
 import { Emitter } from './Emitter.js';
 import { TickAggregator } from './TickAggregator.js';
 import { ReconnectManager } from './ReconnectManager.js';
@@ -209,8 +209,11 @@ export class StreamManager extends Emitter<StreamEvents> {
    * are; the hour frames that divide a day (2h to 12h) start there only when
    * the history's do, and keep the epoch's grid, as a feed's own 4h bars
    * do, otherwise. A chart sets it from the symbol's info and its market.
+   * Throws a RangeError for a zone the browser doesn't know, keeping the
+   * zone it has.
    */
   setTimeZone(zone: string | null): void {
+    if (zone !== null && !isValidTimeZone(zone)) throw new RangeError(`Unknown time zone: ${zone}`);
     this.timeZone = zone;
     this.applyTickZone();
   }
