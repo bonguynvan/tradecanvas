@@ -207,4 +207,20 @@ describe('point & figure boxes', () => {
     chart.setChartTypeOptions({ pointAndFigure: { boxSize: 250 } });
     expect(setBox.mock.calls.at(-1)?.[0]).toBe(250);
   });
+
+  it('draws the boxes the columns were raised to, when a tiny box would make more than 100,000', () => {
+    // Closes 100, 101, 100, 104 over and over: three boxes of 0.25 reverse on every move, three of 0.5 only on the 4s.
+    const closes = [100, 101, 100, 104];
+    const zigzag = Array.from({ length: 150_000 }, (_, i) => {
+      const open = closes[(i + 3) % 4];
+      const close = closes[i % 4];
+      return { time: T0 + i * HOUR, open, high: Math.max(open, close), low: Math.min(open, close), close, volume: 1 };
+    });
+    const setBox = vi.spyOn(PointAndFigureRenderer.prototype, 'setBoxSize');
+    chart.setData(zigzag);
+    chart.setChartType('pointAndFigure');
+    chart.setChartTypeOptions({ pointAndFigure: { boxSize: 0.25 } });
+    expect(setBox.mock.calls.at(-1)?.[0]).toBe(0.5);
+    expect(probe().getDisplayData().length).toBeLessThanOrEqual(100_001);
+  });
 });

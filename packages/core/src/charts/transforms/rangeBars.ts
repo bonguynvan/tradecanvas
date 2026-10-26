@@ -1,4 +1,5 @@
 import type { OHLCBar, DataSeries } from '@tradecanvas/commons';
+import { MAX_RESHAPED_BARS, barLimit, sizeAt } from './reshapeCap.js';
 
 export interface RangeBarsConfig {
   /**
@@ -23,16 +24,6 @@ export interface RangeBarsConfig {
  */
 const PRICE_SIGNIFICANT_DIGITS = 15;
 
-/**
- * Range bars the closed bars may make, and the last bar as many again on its
- * own. The replay runs again on every tick, so a range far too small for the
- * move is raised rather than filling memory with millions of bars.
- */
-const MAX_RANGE_BARS = 100_000;
-
-/** The 1-2-5 steps a range too small is raised by: 2, 5, 10, 20, 50… times itself. */
-const RANGE_STEPS = [1, 2, 5] as const;
-
 /** The prices a bar is replayed through after its open, its extremes and its close: they share its volume. */
 const PATH_PRICES = 3;
 
@@ -47,16 +38,6 @@ const MIN_ROOM_BARS = 64;
  * from, a bar may grow past the range, and the count in surelyTooMany is not sure.
  */
 const MIN_RANGE_UNITS = 2;
-
-/** The `n`th multiple a range is tried at: 1, 2, 5, 10, 20, 50… */
-function rangeMultiple(n: number): number {
-  return RANGE_STEPS[n % RANGE_STEPS.length] * 10 ** Math.floor(n / RANGE_STEPS.length);
-}
-
-/** The `n`th range tried for `asked`, kept to 15 significant digits so a raised range reads as typed (0.35, not 0.35000000000000003). */
-function rangeAt(asked: number, n: number): number {
-  return n === 0 ? asked : Number((asked * rangeMultiple(n)).toPrecision(PRICE_SIGNIFICANT_DIGITS));
-}
 
 /**
  * The largest price the bars reach, high or low, by size. A price that is no
@@ -132,7 +113,7 @@ function spannedPath(data: DataSeries): SpannedPath {
 }
 
 /**
- * Whether a try at `range` is sure to close more than MAX_RANGE_BARS before
+ * Whether a try at `range` is sure to close more than MAX_RESHAPED_BARS before
  * the last bar (see SpannedPath), so it need not be replayed. A price within
  * half a digit of a close is taken as that close, so each source bar's span
  * counts a digit less, and the count must pass the limit by more than a bar,
@@ -140,7 +121,7 @@ function spannedPath(data: DataSeries): SpannedPath {
  */
 function surelyTooMany(path: SpannedPath, range: number, unit: number): boolean {
   if (range < MIN_RANGE_UNITS * unit) return false;
-  return (path.distance - path.bars * unit) / (range + unit) - path.bars > MAX_RANGE_BARS + 1;
+  return (path.distance - path.bars * unit) / (range + unit) - path.bars > MAX_RESHAPED_BARS + 1;
 }
 
 /** `cells` with room for twice as many bars, the ones in it kept. */
@@ -187,7 +168,7 @@ interface RangeTry {
 
 /**
  * The bars `data` closes at `range`, written to `cells`, or no bar forming as
- * soon as the closed bars have made more than MAX_RANGE_BARS, or the last bar
+ * soon as the closed bars have made more than MAX_RESHAPED_BARS, or the last bar
  * that many on its own, or a bar would close more than a kept digit short of a
  * price it reached: the range is too small for the move or for the kept
  * digits, and the rest is not replayed. The closed bars are kept as numbers and
@@ -205,10 +186,9 @@ function closeBars(data: DataSeries, range: number, digits: KeptDigits, cells: F
   // Where the bar forming closes, up and down: worked out when its low or high moves, not on every price.
   let upClose = clean(open + range);
   let downClose = clean(open - range);
-  let limit = MAX_RANGE_BARS;
   for (let i = 0; i < data.length; i++) {
     // The last bar may make as many again on its own, so a tick on it seldom moves the range.
-    if (i === data.length - 1) limit = count + MAX_RANGE_BARS;
+    const limit = barLimit(i, data.length, count);
     const bar = data[i];
     const rising = bar.close >= bar.open;
     const share = bar.volume / PATH_PRICES;
@@ -290,12 +270,12 @@ export function toRangeBars(data: DataSeries, config: RangeBarsConfig): DataSeri
 
   const top = largestPrice(data);
   // Room for a bar a source bar to start with, which most ranges come near; a try that fails leaves it grown for the next.
-  let cells: Float64Array = new Float64Array(CELLS_PER_BAR * Math.max(MIN_ROOM_BARS, Math.min(data.length, MAX_RANGE_BARS)));
+  let cells: Float64Array = new Float64Array(CELLS_PER_BAR * Math.max(MIN_ROOM_BARS, Math.min(data.length, MAX_RESHAPED_BARS)));
   // Worked out only once a range has failed: the ranges it shows too small are not replayed.
   let path: SpannedPath | null = null;
   // The range asked for, almost always: a try over the limit stops the moment it passes it.
   for (let n = 0; ; n++) {
-    const range = rangeAt(config.rangeSize, n);
+    const range = sizeAt(config.rangeSize, n);
     const digits = keptDigits(top, range);
     if (n > 0) {
       path ??= spannedPath(data);

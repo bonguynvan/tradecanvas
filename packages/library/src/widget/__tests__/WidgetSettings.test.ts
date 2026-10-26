@@ -98,6 +98,28 @@ describe('settings of the chart’s type', () => {
     expect(changes.at(-1)).toEqual({ chartTypeOptions: { lineBreak: { lines: 2 } } });
   });
 
+  it('takes no box, reversal or range under a hundred-millionth', () => {
+    const fields: [ChartType, string, (v: number) => unknown][] = [
+      ['renko', 'Box size', (v) => ({ renko: { boxSize: v } })],
+      ['kagi', 'Reversal', (v) => ({ kagi: { reversal: v } })],
+      ['pointAndFigure', 'Box size', (v) => ({ pointAndFigure: { boxSize: v } })],
+      ['rangeBars', 'Range', (v) => ({ rangeBars: { range: v } })],
+    ];
+    for (const [chartType, label, options] of fields) {
+      changes = [];
+      settings!.open(DEFAULT_SETTINGS, chartType);
+      const input = field(label)!;
+      expect(Number(input.min), label).toBe(1e-8);
+      type(input, '1e-9');
+      expect(changes, label).toEqual([]);
+      expect(input.getAttribute('aria-invalid'), label).not.toBeNull();
+      type(input, '0.00000001');
+      expect(changes.at(-1), label).toEqual({ chartTypeOptions: options(1e-8) });
+      expect(input.hasAttribute('aria-invalid'), label).toBe(false);
+      settings!.close();
+    }
+  });
+
   it('sets Kagi’s reversal in percent or price', () => {
     settings!.open(DEFAULT_SETTINGS, 'kagi');
     const select = document.querySelector<HTMLSelectElement>('.tcw-settings-section select')!;

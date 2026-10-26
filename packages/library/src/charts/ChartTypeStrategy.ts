@@ -16,6 +16,7 @@ import {
   RenkoRenderer,
   StepLineRenderer,
   VolumeCandleRenderer,
+  pointAndFigureBoxSize,
   toHeikinAshi,
   toKagi,
   toLineBreak,
@@ -135,10 +136,15 @@ export function isReshapedChartType(type: ChartType): boolean {
   return type !== 'heikinAshi' && isTransformedChartType(type);
 }
 
-/** The box of a point & figure chart: the one set, or 1% of the average close. */
+/**
+ * The box of a point & figure chart: the one set, or 1% of the average
+ * close, raised as `toPointAndFigure` raises it when the columns would pass
+ * 100,000, so the renderer draws the boxes the columns were built with.
+ */
 export function pointAndFigureBox(raw: DataSeries, options: ChartTypeOptions = {}): number {
   const box = options.pointAndFigure?.boxSize;
-  return typeof box === 'number' ? box : averageClose(raw) * 0.01;
+  const asked = typeof box === 'number' ? box : averageClose(raw) * 0.01;
+  return pointAndFigureBoxSize(raw, asked, options.pointAndFigure?.reversal ?? 3);
 }
 
 function averageClose(raw: DataSeries): number {

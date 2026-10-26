@@ -116,7 +116,8 @@
   .tcw-indi-input,
   .tcw-watchlist-input,
   .tcw-goto-input,
-  .tcw-alerts-form input
+  .tcw-alerts-form input,
+  .tcw-settings-number
 ):is([aria-invalid='true'], [aria-invalid='']):is(*, :hover, :focus) {
   /* As specific as the hover rule and later, so a wrong value stays red under the pointer and in focus. */
   border-color: var(--tcw-red);

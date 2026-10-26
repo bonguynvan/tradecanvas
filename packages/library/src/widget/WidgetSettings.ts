@@ -10,7 +10,7 @@ import { createChartTypeIcon, createIcon } from './icons.js';
 import { timezoneOptions } from './widgetTimezones.js';
 import { keepTabInside } from './focusTrap.js';
 import { WidgetContextMenu, type ContextMenuEntry } from './WidgetContextMenu.js';
-import { colorRow, numberRow, rangeRow, selectRow, settingsSection, toggleRow } from './settingsRows.js';
+import { colorRow, numberRow, rangeRow, selectRow, settingsSection, toggleRow, type NumberLimits } from './settingsRows.js';
 import { fill, type MessageKey, type Translator } from './i18n.js';
 
 export type SettingsTab = 'symbol' | 'statusLine' | 'scales' | 'appearance' | 'layers' | 'trading';
@@ -29,6 +29,15 @@ const TABS: readonly { id: Tab; icon: string }[] = [
 const LINE_WIDTHS = [1, 2, 3, 4];
 /** A template's entry in the Template menu, by its name. */
 const TEMPLATE_ID = 't:';
+/**
+ * The smallest box, reversal or range the chart type's settings take: a
+ * hundred-millionth, the finest price step markets commonly quote. A size
+ * far under the prices is no use; the chart raises one that would make too
+ * many bars anyway, but a slip like 1e-9 is turned away here.
+ */
+const MIN_TYPE_SIZE = 1e-8;
+/** A box, reversal or range: any number from MIN_TYPE_SIZE up. */
+const SIZE_LIMITS: NumberLimits = { step: 'any', max: Infinity, min: MIN_TYPE_SIZE };
 
 let nextSettingsId = 1;
 
@@ -497,34 +506,34 @@ export class WidgetSettings {
     /** Change one type's settings: the rest of its own stay. */
     const set = <K extends keyof ChartTypeOptions>(key: K, value: NonNullable<ChartTypeOptions[K]>) =>
       this.patch({ chartTypeOptions: { ...own(), [key]: value } });
-    const number = (label: MessageKey, value: number | null, step: string, max: number, onChange: (v: number | null) => void) =>
-      section.appendChild(numberRow(this.t(label), value, { step, max }, onChange, this.t));
+    const number = (label: MessageKey, value: number | null, limits: NumberLimits, onChange: (v: number | null) => void) =>
+      section.appendChild(numberRow(this.t(label), value, limits, onChange, this.t));
     switch (type) {
       case 'renko': {
         const o = all.renko ?? {};
-        number('settings.boxSize', typeof o.boxSize === 'number' ? o.boxSize : null, 'any', Infinity,
+        number('settings.boxSize', typeof o.boxSize === 'number' ? o.boxSize : null, SIZE_LIMITS,
           (v) => set('renko', { ...(own().renko ?? {}), boxSize: v ?? 'atr' }));
-        number('settings.atrPeriod', o.atrPeriod ?? null, '1', 500, (v) => set('renko', withValue(own().renko, 'atrPeriod', v)));
+        number('settings.atrPeriod', o.atrPeriod ?? null, { step: '1', max: 500 }, (v) => set('renko', withValue(own().renko, 'atrPeriod', v)));
         break;
       }
       case 'lineBreak':
-        number('settings.lineBreakLines', all.lineBreak?.lines ?? null, '1', 10, (v) => set('lineBreak', withValue(own().lineBreak, 'lines', v)));
+        number('settings.lineBreakLines', all.lineBreak?.lines ?? null, { step: '1', max: 10 }, (v) => set('lineBreak', withValue(own().lineBreak, 'lines', v)));
         break;
       case 'kagi':
-        number('settings.reversal', all.kagi?.reversal ?? null, 'any', Infinity, (v) => set('kagi', withValue(own().kagi, 'reversal', v)));
+        number('settings.reversal', all.kagi?.reversal ?? null, SIZE_LIMITS, (v) => set('kagi', withValue(own().kagi, 'reversal', v)));
         section.appendChild(selectRow(this.t('settings.reversalType'), all.kagi?.reversalType ?? 'percent', [
           { value: 'percent', label: this.t('settings.reversalType.percent') },
           { value: 'price', label: this.t('settings.reversalType.price') },
         ], (v) => set('kagi', { ...(own().kagi ?? {}), reversalType: v === 'price' ? 'price' : 'percent' })));
         break;
       case 'pointAndFigure':
-        number('settings.boxSize', typeof all.pointAndFigure?.boxSize === 'number' ? all.pointAndFigure.boxSize : null, 'any', Infinity,
+        number('settings.boxSize', typeof all.pointAndFigure?.boxSize === 'number' ? all.pointAndFigure.boxSize : null, SIZE_LIMITS,
           (v) => set('pointAndFigure', { ...(own().pointAndFigure ?? {}), boxSize: v ?? 'auto' }));
-        number('settings.reversalBoxes', all.pointAndFigure?.reversal ?? null, '1', 10,
+        number('settings.reversalBoxes', all.pointAndFigure?.reversal ?? null, { step: '1', max: 10 },
           (v) => set('pointAndFigure', withValue(own().pointAndFigure, 'reversal', v)));
         break;
       case 'rangeBars':
-        number('settings.barRange', typeof all.rangeBars?.range === 'number' ? all.rangeBars.range : null, 'any', Infinity,
+        number('settings.barRange', typeof all.rangeBars?.range === 'number' ? all.rangeBars.range : null, SIZE_LIMITS,
           (v) => set('rangeBars', { range: v ?? 'auto' }));
         break;
       default:

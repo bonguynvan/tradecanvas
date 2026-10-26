@@ -4,6 +4,10 @@ import type { OHLCBar, DataSeries } from '@tradecanvas/commons';
  * Three Line Break chart.
  * A new line is drawn only when the closing price exceeds the high or low
  * of the prior N lines (default: 3).
+ *
+ * A source bar makes one line at most, and the count of lines is no price
+ * size: no setting can make more lines than there are bars, so unlike
+ * Renko's box or Kagi's reversal nothing here is raised.
  */
 export function toLineBreak(data: DataSeries, lineCount = 3): DataSeries {
   if (data.length === 0) return [];

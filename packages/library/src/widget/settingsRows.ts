@@ -163,11 +163,21 @@ export function rangeRow(
   return row;
 }
 
-/** A number field; empty means "worked out from the data" (shown as Auto). Only numbers above 0 are taken. */
+/** What a number field takes. */
+export interface NumberLimits {
+  /** The field's step: '1' takes whole counts only, 'any' any number. */
+  step: string;
+  /** The largest number taken (Infinity: no limit). */
+  max: number;
+  /** The smallest number taken; without one, any number above 0. */
+  min?: number;
+}
+
+/** A number field; empty means "worked out from the data" (shown as Auto). Only numbers above 0, and from `limits.min` on, are taken. */
 export function numberRow(
   label: string,
   value: number | null,
-  limits: { step: string; max: number },
+  limits: NumberLimits,
   onChange: (v: number | null) => void,
   t: Translator,
 ): HTMLDivElement {
@@ -180,7 +190,7 @@ export function numberRow(
   const input = document.createElement('input');
   input.type = 'number';
   input.className = 'tcw-settings-number';
-  input.min = '0';
+  input.min = String(limits.min ?? 0);
   input.step = limits.step;
   if (Number.isFinite(limits.max)) input.max = String(limits.max);
   input.placeholder = t('settings.auto');
@@ -193,7 +203,7 @@ export function numberRow(
       return;
     }
     const v = Number(input.value);
-    const ok = Number.isFinite(v) && v > 0 && v <= limits.max && (limits.step !== '1' || Number.isInteger(v));
+    const ok = Number.isFinite(v) && v > 0 && v >= (limits.min ?? 0) && v <= limits.max && (limits.step !== '1' || Number.isInteger(v));
     input.toggleAttribute('aria-invalid', !ok);
     if (ok) onChange(v);
   });
