@@ -3483,7 +3483,8 @@ export class ChartWidget {
    * or in a pane of its own (`'pane'`), the spread or ratio of this symbol
    * to it (`'spread'`, `'ratio'`), or how they correlate, by price or by
    * bar-to-bar returns (`'correlation'`, `'correlationLog'`). Its bars come
-   * through the adapter.
+   * through the adapter, first, in every way: when the fetch fails or finds
+   * no bars at the chart's interval, nothing is added and a toast says why.
    */
   async addCompareSymbol(symbol: string, way: CompareWay = 'percent'): Promise<void> {
     if (!this.adapter) {
