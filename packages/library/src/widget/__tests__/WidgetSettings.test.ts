@@ -480,3 +480,18 @@ describe('the look’s table', () => {
     expect(toHex('rgba(31, 168, 116, 0.5)')).toBe('#1fa874');
   });
 });
+
+describe('the settings when they change from outside the dialog', () => {
+  it('keep focus on the control that had it, as the panel is built again', () => {
+    settings!.open(DEFAULT_SETTINGS, null, 'scales');
+    const controls = () => [...document.querySelectorAll<HTMLElement>('.tcw-set .tcw-modal-body select, .tcw-set .tcw-modal-body button, .tcw-set .tcw-modal-body input')];
+    const second = controls()[1];
+    second.focus();
+    const name = second.getAttribute('aria-label') ?? second.textContent;
+    settings!.refresh({ ...DEFAULT_SETTINGS, gridVisible: false });
+    const active = document.activeElement as HTMLElement;
+    expect(second.isConnected).toBe(false);
+    expect(active.closest('.tcw-set')).not.toBeNull();
+    expect(active.getAttribute('aria-label') ?? active.textContent).toBe(name);
+  });
+});

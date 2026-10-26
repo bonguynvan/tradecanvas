@@ -8,7 +8,7 @@ import {
 import { chartTypeLabel, numberLocaleOptions } from './widgetLocales.js';
 import { createChartTypeIcon, createIcon } from './icons.js';
 import { timezoneOptions } from './widgetTimezones.js';
-import { keepTabInside } from './focusTrap.js';
+import { FOCUSABLE, keepTabInside } from './focusTrap.js';
 import { WidgetContextMenu, type ContextMenuEntry } from './WidgetContextMenu.js';
 import { colorRow, numberRow, rangeRow, selectRow, settingsSection, toggleRow, type NumberLimits } from './settingsRows.js';
 import { fill, type MessageKey, type Translator } from './i18n.js';
@@ -110,7 +110,30 @@ export class WidgetSettings {
     if (!this.modal) return;
     this.currentSettings = { ...settings };
     if (chartType !== undefined) this.chartType = chartType;
+    // A change from outside (a compare's bars, the host's setSettings) builds the panel again under the
+    // control in focus: focus goes to the one in its place, not to the page outside the dialog.
+    const focused = this.focusedControl();
     this.renderTabContent();
+    if (focused !== null) this.focusControl(focused);
+  }
+
+  /** The place of the control in focus among the panel's, or null when focus is not in the panel. */
+  private focusedControl(): number | null {
+    const active = document.activeElement;
+    if (!this.bodyEl || !(active instanceof HTMLElement) || !this.bodyEl.contains(active)) return null;
+    const at = this.panelControls().indexOf(active);
+    return at < 0 ? null : at;
+  }
+
+  /** Focus the panel's control at `index`, or its last when it has fewer; the tab when it has none. */
+  private focusControl(index: number): void {
+    const controls = this.panelControls();
+    const control = controls[Math.min(index, controls.length - 1)] ?? this.tabButtons.find((b) => b.dataset.tab === this.currentTab);
+    control?.focus();
+  }
+
+  private panelControls(): HTMLElement[] {
+    return this.bodyEl ? [...this.bodyEl.querySelectorAll<HTMLElement>(FOCUSABLE)] : [];
   }
 
   /** Close, keeping what was changed (as OK does). */
