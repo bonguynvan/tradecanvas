@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import type { CalendarChartOptions, MatrixChartOptions } from '@tradecanvas/commons';
-import { DARK_THEME, LIGHT_THEME } from '@tradecanvas/commons';
+import { DARK_THEME, LIGHT_THEME, lerpColor } from '@tradecanvas/commons';
 import { resolveColorScale, scaleColor, readableText } from '../colorScale.js';
 import { parseDay, dayToIso, computeCalendarLayout, hitDay, renderCalendar, MAX_CALENDAR_YEARS } from '../CalendarRenderer.js';
 import { correlationMatrix, computeMatrixLayout, hitMatrixCell, renderMatrix } from '../MatrixRenderer.js';
@@ -224,17 +224,57 @@ describe('grouped treemaps', () => {
   });
 });
 
+/** The dark ink of a pale cell's label. */
+const DARK_INK = '#11151b';
+
+/** WCAG contrast of two colours given as `#rrggbb` or `rgb(r,g,b)`. */
+function contrastOf(a: string, b: string): number {
+  const rgb = (c: string) => (c.startsWith('#')
+    ? [1, 3, 5].map((i) => parseInt(c.slice(i, i + 2), 16))
+    : (c.match(/\d+/g) ?? []).slice(0, 3).map(Number));
+  const lum = (c: string) => {
+    const [r, g, bl] = rgb(c).map((v) => (v / 255 <= 0.03928 ? v / 255 / 12.92 : ((v / 255 + 0.055) / 1.055) ** 2.4));
+    return 0.2126 * r + 0.7152 * g + 0.0722 * bl;
+  };
+  const [hi, lo] = [lum(a), lum(b)].sort((x, y) => y - x);
+  return (hi + 0.05) / (lo + 0.05);
+}
+
 describe('a heatmap cell’s label', () => {
   // The light theme's PerformanceDashboard fades its months to the panel's near-clear surface: a month
   // near zero is near the paper, where its white label could not be read.
-  it('is white on a dark or strong cell, as before, and dark ink on a pale one as drawn over the background', () => {
+  it('is white on a dark cell and dark ink on a pale one, as drawn over the background', () => {
     expect(cellLabelInk('#424242', LIGHT_THEME.background)).toBe('#FFFFFF');
-    expect(cellLabelInk('#1fa874', DARK_THEME.background)).toBe('#FFFFFF');
-    expect(cellLabelInk('#e8505b', LIGHT_THEME.background)).toBe('#FFFFFF');
     expect(cellLabelInk('rgba(232,80,91,0.2)', DARK_THEME.background)).toBe('#FFFFFF');
-    expect(cellLabelInk('rgba(232,80,91,0.2)', LIGHT_THEME.background)).not.toBe('#FFFFFF');
-    expect(cellLabelInk('rgba(0,0,0,0.02)', '#fbfaf6')).not.toBe('#FFFFFF');
-    expect(cellLabelInk('#f4e1e0', '#000000')).not.toBe('#FFFFFF');
+    expect(cellLabelInk('rgba(232,80,91,0.2)', LIGHT_THEME.background)).toBe(DARK_INK);
+    expect(cellLabelInk('rgba(0,0,0,0.02)', '#fbfaf6')).toBe(DARK_INK);
+    expect(cellLabelInk('#f4e1e0', '#000000')).toBe(DARK_INK);
+  });
+
+  // White stayed down to 3:1: the light theme's -3.4% month, its red faded a third of the way to the
+  // paper, read at 3.1:1 in white where the dark ink reads at 5.9:1.
+  it('takes whichever of white and the dark ink reads better on a mid-tone cell', () => {
+    expect(cellLabelInk('rgb(205,125,122)', LIGHT_THEME.background)).toBe(DARK_INK); // light, -3.4 of 5
+    expect(cellLabelInk('rgb(197,103,100)', LIGHT_THEME.background)).toBe(DARK_INK); // light, -4 of 5: white 3.8
+    expect(cellLabelInk('#b8423f', LIGHT_THEME.background)).toBe('#FFFFFF'); // light, the full red: white 5.4
+    expect(cellLabelInk('#4fae8a', DARK_THEME.background)).toBe(DARK_INK); // dark, the full green: white 2.7
+    expect(cellLabelInk('rgb(123,66,65)', DARK_THEME.background)).toBe('#FFFFFF'); // dark, half way to the night
+  });
+
+  it('gives every cell of either theme’s scale a label at 4.5:1 where either ink reaches it, else the better', () => {
+    const scales = [
+      [LIGHT_THEME.candleDown, LIGHT_THEME.background], [LIGHT_THEME.candleUp, LIGHT_THEME.background],
+      [DARK_THEME.candleDown, DARK_THEME.background], [DARK_THEME.candleUp, DARK_THEME.background],
+    ];
+    for (const [end, ground] of scales) {
+      for (let step = 0; step <= 20; step++) {
+        const cell = lerpColor(end, ground, step / 20);
+        const [white, dark] = [contrastOf('#ffffff', cell), contrastOf(DARK_INK, cell)];
+        const ink = cellLabelInk(cell, ground) === DARK_INK ? dark : white;
+        expect(ink, `${cell} on ${ground}`).toBeCloseTo(Math.max(white, dark), 1);
+        if (Math.max(white, dark) >= 4.6) expect(ink, `${cell} on ${ground}`).toBeGreaterThanOrEqual(4.5);
+      }
+    }
   });
 
   it('draws the labels of pale cells in the dark ink, and no shadow under them', () => {
