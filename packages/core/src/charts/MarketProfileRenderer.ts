@@ -63,7 +63,7 @@ export class MarketProfileRenderer {
   setValueAreaPct(p: number): void { this.valueAreaPct = Math.max(0.3, Math.min(0.95, p)); }
   setHighlightPoC(enabled: boolean): void { this.highlightPoC = enabled; }
   setShowStats(enabled: boolean): void { this.showStats = enabled; }
-  /** Split the profile into one mini-histogram per calendar-day session. */
+  /** Split the profile into one mini-histogram per trading day, from the exchange's midnight (`setExchangeTimeZone`). */
   setSplitBySession(enabled: boolean): void { this.splitBySession = enabled; }
   isSplitBySession(): boolean { return this.splitBySession; }
   /** How it is drawn, as the setters left it. */
