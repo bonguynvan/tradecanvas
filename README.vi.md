@@ -58,8 +58,8 @@
       <br><b>Lưới</b>: tới sáu biểu đồ, liên kết theo mã, khung thời gian, crosshair hoặc thời gian.
     </td>
     <td width="50%" valign="top">
-      <img src=".github/assets/clips/looks.webp" alt="Một biểu đồ chuyển giữa các phong cách Terminal, Capsule và Studio, tối và sáng">
-      <br><b>Phong cách của bạn</b>: Studio, Terminal, Capsule, sáng hoặc tối, hoặc token của riêng bạn.
+      <img src=".github/assets/clips/looks.webp" alt="Một biểu đồ chuyển giữa các phong cách Print, Terminal, Capsule và Studio, tối và sáng">
+      <br><b>Phong cách của bạn</b>: Print (giấy và mực, theo tỉ lệ vàng), Studio, Terminal, Capsule, sáng hoặc tối, hoặc token của riêng bạn.
     </td>
   </tr>
   <tr>

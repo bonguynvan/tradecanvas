@@ -58,8 +58,8 @@
       <br><b>网格</b>：最多六个图表，按品种、周期、十字光标或时间联动。
     </td>
     <td width="50%" valign="top">
-      <img src=".github/assets/clips/looks.webp" alt="同一图表在 Terminal、Capsule 和 Studio 外观之间切换，深色与浅色">
-      <br><b>你的外观</b>：Studio、Terminal、Capsule，浅色或深色，或你自己的 token。
+      <img src=".github/assets/clips/looks.webp" alt="同一图表在 Print、Terminal、Capsule 和 Studio 外观之间切换，深色与浅色">
+      <br><b>你的外观</b>：Print（纸与墨，按黄金比例）、Studio、Terminal、Capsule，浅色或深色，或你自己的 token。
     </td>
   </tr>
   <tr>
