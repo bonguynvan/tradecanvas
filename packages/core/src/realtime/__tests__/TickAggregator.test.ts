@@ -392,3 +392,63 @@ describe('TickAggregator: seed() once the buckets moved', () => {
     expect(agg.getCurrentBar()?.time).toBe(D + 22 * HOUR);
   });
 });
+
+describe('TickAggregator: trades on a bar that starts off the buckets', () => {
+  const VN = 'Asia/Ho_Chi_Minh';
+  const HOUR = 60 * MIN;
+  const D = Date.UTC(2026, 9, 26);
+  const bar = (time: number, close = 100) => ({ time, open: 100, high: 101, low: 99, close, volume: 1 });
+
+  /** An aggregator that goes on from the history's last bar, as a stream's does, with the bars it sends. */
+  function goingOn(timeframe: '1d' | '4h', last: number) {
+    const agg = new TickAggregator(timeframe);
+    const sent: { time: number; close: number }[] = [];
+    agg.on('bar', (b) => sent.push({ time: b.time, close: b.close }));
+    agg.seed(last);
+    agg.resume(bar(last));
+    return { agg, sent };
+  }
+
+  it("builds a day stamped at another hour than the buckets' midnight with the trades after it starts", () => {
+    // A daily series dated at 05:00 UTC, the midnight of a browser five hours west; no zone.
+    const { agg, sent } = goingOn('1d', D + 5 * HOUR);
+    for (const [hour, price] of [[14, 101], [15, 102], [20, 103]]) agg.processTick(tick(D + hour * HOUR, price));
+    expect(sent).toEqual([{ time: D + 5 * HOUR, close: 101 }, { time: D + 5 * HOUR, close: 102 }, { time: D + 5 * HOUR, close: 103 }]);
+  });
+
+  it("builds the exchange's 4h bar before its zone is known, and the bar the trades started after it comes", () => {
+    // 4h bars from Ho Chi Minh City's midnight: 01:00, 05:00, 09:00 UTC.
+    const { agg, sent } = goingOn('4h', D + 9 * HOUR);
+    agg.processTick(tick(D + 10 * HOUR, 101)); // in the 09:00 bar; the epoch's buckets start it at 08:00
+    agg.processTick(tick(D + 12 * HOUR + MIN, 102)); // the epoch's 12:00 bar
+    agg.setTimeZone(VN);
+    agg.processTick(tick(D + 12 * HOUR + 2 * MIN, 103));
+    agg.processTick(tick(D + 12 * HOUR + 10 * MIN, 104));
+    expect(sent).toEqual([
+      { time: D + 9 * HOUR, close: 101 },
+      { time: D + 12 * HOUR, close: 102 },
+      { time: D + 12 * HOUR, close: 103 },
+      { time: D + 12 * HOUR, close: 104 },
+    ]);
+    agg.processTick(tick(D + 13 * HOUR + MIN, 105)); // the exchange's 13:00 bar
+    expect(sent.at(-1)).toEqual({ time: D + 13 * HOUR, close: 105 });
+  });
+
+  it('still leaves out a trade from before the newest bar starts', () => {
+    const { agg, sent } = goingOn('1d', D + 5 * HOUR);
+    agg.processTick(tick(D + 5 * HOUR - MIN, 99));
+    expect(sent).toEqual([]);
+  });
+
+  it("builds a day stamped by its date from the trades before 00:00 UTC of that date, east of UTC", () => {
+    // Tuesday 27 October in Sydney opens at 10:00 there, 23:00 UTC on Monday.
+    const agg = new TickAggregator('1d');
+    agg.setTimeZone('Australia/Sydney', true);
+    const sent: number[] = [];
+    agg.on('bar', (b) => sent.push(b.time));
+    agg.seed(D + 24 * HOUR);
+    agg.resume(bar(D + 24 * HOUR));
+    agg.processTick(tick(D + 23 * HOUR, 101));
+    expect(sent).toEqual([D + 24 * HOUR]);
+  });
+});

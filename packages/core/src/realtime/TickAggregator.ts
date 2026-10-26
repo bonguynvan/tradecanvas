@@ -152,12 +152,11 @@ export class TickAggregator extends Emitter<AggregatorEvents> {
       this.ringHead = (this.ringHead + 1) % this.ringCapacity;
     }
 
-    const barTime = this.alignToTimeframe(tick.time);
+    const barTime = this.barFor(tick.time);
     // A trade for a bar already past, delivered late: the bar it belongs to
     // is no longer built here, and starting it again would close the forming one.
-    const at = normalizeBarTime(barTime);
-    if (at < this.newest) return;
-    this.newest = at;
+    if (barTime === null) return;
+    this.newest = normalizeBarTime(barTime);
     this.lastTradeAt = tick.time;
 
     if (!this.currentBar || this.currentBar.time !== barTime) {
@@ -242,6 +241,29 @@ export class TickAggregator extends Emitter<AggregatorEvents> {
     this.lastTradeAt = null;
     this.ringHead = 0;
     this.ringCount = 0;
+  }
+
+  /**
+   * The bar a trade at `time` goes in: the one it starts on the buckets, or
+   * the newest bar when that starts after the bucket and the trade does not
+   * come before it. Such a bar starts off the buckets (a history stamped at
+   * another midnight, or the exchange's zone came after it), and its trades
+   * are the market's now: left out, they would hold the price, the orders
+   * and the alerts still until the next bucket. Null for a trade from
+   * before the newest bar, one for a bar already past.
+   */
+  private barFor(time: number): number | null {
+    const start = this.alignToTimeframe(time);
+    if (normalizeBarTime(start) >= this.newest) return start;
+    if (normalizeBarTime(time) < this.instantOf(this.newest)) return null;
+    const bar = this.currentBar;
+    return bar !== null && normalizeBarTime(bar.time) === this.newest ? bar.time : this.newest;
+  }
+
+  /** When a bar stamped `time` starts: a date stamp's day at the zone's midnight. */
+  private instantOf(time: number): number {
+    if (!this.dateStamps || !this.dateFrame) return time;
+    return time - offsetAt(this.bucket.timeZone ?? 0, time) * MINUTE_MS;
   }
 
   /** Whether the trades built the forming bar on buckets other than the ones they start on now. */

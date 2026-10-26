@@ -247,6 +247,18 @@ describe('StreamManager — bars from ticks after the history', () => {
     stream.sm.dispose();
   });
 
+  it('moves the price with each trade on a daily history stamped at another hour, before the zone is known', async () => {
+    // Days dated at 05:00 UTC, the midnight of a browser five hours west.
+    const days = [22, 23, 26].map((d) => at(Date.UTC(2026, 9, d, 5)));
+    const stream = await reconnecting(days, '1d');
+    const prices: number[] = [];
+    stream.sm.on('priceChange', (p) => prices.push(p.price));
+    for (const [hour, price] of [[14, 101], [15, 102], [20, 103]]) stream.trade(Date.UTC(2026, 9, 26, hour), price);
+    expect(prices).toEqual([101, 102, 103]);
+    expect(stream.updates.at(-1)).toMatchObject({ time: Date.UTC(2026, 9, 26, 5), close: 103 });
+    stream.sm.dispose();
+  });
+
   describe('4h bars', () => {
     // 11:30 on Friday 23 October in Ho Chi Minh City.
     const trade = Date.UTC(2026, 9, 23, 4, 30);

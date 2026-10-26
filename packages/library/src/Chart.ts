@@ -261,11 +261,13 @@ export class Chart {
   private symbolInfoSeq = 0;
   /**
    * While the stream asks about its next symbol, the indicators, the
-   * prior-day lines and the market profile keep the last symbol's zone: the
-   * next one most often trades on the same exchange, so its bars compute
-   * once, in the zone they keep.
+   * prior-day lines, the market profile and the bars built from trades keep
+   * the last symbol's zone: the next one most often trades on the same
+   * exchange, so its bars compute once, in the zone they keep.
    */
   private studyZoneHeld = false;
+  /** The zone `applyStudyZone` last gave: the one held while `studyZoneHeld`. */
+  private studyZone: string | null = null;
   /** Ends the hold when the feed says nothing of the next symbol for as long as its built days wait (`SYMBOL_ZONE_WAIT_MS`). */
   private studyZoneTimer: ReturnType<typeof setTimeout> | null = null;
   /** A disconnect's end of the hold, waiting to see whether a connect follows at once. */
@@ -3098,7 +3100,7 @@ export class Chart {
     this.disconnectStream();
 
     this.streamManager = new StreamManager();
-    this.streamManager.setTimeZone(this.getExchangeTimeZone());
+    this.streamManager.setTimeZone(this.studyZoneHeld ? this.studyZone : this.getExchangeTimeZone());
 
     this.streamManager.on('snapshot', (bars) => {
       const key = this.streamSeriesKey(config.adapter);
@@ -4138,12 +4140,18 @@ export class Chart {
     this.crosshairHandler.setExchangeTimeZone(zone);
     this.crosshairTooltip.setExchangeTimeZone(zone);
     this.pinnedTooltip.setExchangeTimeZone(zone);
-    this.streamManager?.setTimeZone(zone);
     if (!this.studyZoneHeld) this.applyStudyZone(zone);
   }
 
-  /** The zone the indicators, the prior-day lines and the market profile count their days in. */
+  /**
+   * The zone the indicators, the prior-day lines, the market profile and the
+   * bars built from trades count their days in. Held through a switch, the
+   * next symbol's trades go on building the day its history ends on when it
+   * trades on the same exchange, rather than starting UTC's day beside it.
+   */
   private applyStudyZone(zone: string | null): void {
+    this.studyZone = zone;
+    this.streamManager?.setTimeZone(zone);
     this.periodLevels.setExchangeTimeZone(zone);
     this.marketProfile.setExchangeTimeZone(zone);
     const bars = this.series.bars();
