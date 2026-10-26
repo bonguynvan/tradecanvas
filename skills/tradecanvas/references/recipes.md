@@ -477,6 +477,12 @@ chart.addIndicator('rangePosition', { period: 30 });
 Declare `inputs: { source: { source: true } }` and read `data[i].close` to let
 users run it on another price or another indicator's line.
 
+An indicator that starts again each day, week or month reads the exchange's
+IANA zone as `config.exchangeTimeZone`: the chart sets it from the symbol's
+`timeZone`, else the market's (`setSymbolInfo`, `setMarket`), and leaves it
+unset for UTC. Count days on that clock, not the zone the chart shows, so the
+values stay the same whatever `setTimeZone` displays.
+
 ## An overlay of your own, on the price grid
 
 An overlay plugin draws on a layer each frame. `overlayScale(context)` places

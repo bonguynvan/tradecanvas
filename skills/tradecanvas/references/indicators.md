@@ -15,7 +15,7 @@ Drawn over the candles, on the price scale.
 | `sma` | Simple Moving Average | period: 20, source: "close" | value: SMA | — | ✓ |
 | `ema` | Exponential Moving Average | period: 20, source: "close" | value: EMA | — | ✓ |
 | `bb` | Bollinger Bands | period: 20, stdDev: 2, source: "close" | upper: Upper, middle: Basis, lower: Lower | — | ✓ |
-| `vwap` | Volume Weighted Average Price | — | value: VWAP | — | |
+| `vwap` | Volume Weighted Average Price | anchor: "session" | value: VWAP | — | |
 | `ichimoku` | Ichimoku Cloud | tenkan: 9, kijun: 26, senkou: 52, displacement: 26 | tenkan: Conversion, kijun: Base, senkouA: Lead A, senkouB: Lead B | — | |
 | `psar` | Parabolic SAR | step: 0.02, max: 0.2 | value: SAR | — | |
 | `supertrend` | Supertrend | period: 10, multiplier: 3 | value: Supertrend | — | |

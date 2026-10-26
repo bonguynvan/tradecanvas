@@ -1,16 +1,18 @@
 import type { IndicatorDescriptor, DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue, ResolvedIndicatorStyle, ViewportState } from '@tradecanvas/commons';
-import { timeframeBucketStart, lineDash } from '@tradecanvas/commons';
+import { lineDash } from '@tradecanvas/commons';
 import { IndicatorBase } from '../IndicatorBase.js';
 import { IndicatorValueMap } from '../IndicatorValueMap.js';
 import { getIntParam } from '../params.js';
 import { barIndexToX, priceToY } from '../../viewport/ScaleMapping.js';
 import { LinePen, isDenseSlots } from '../linePen.js';
+import { breaksBetween, periodKeyer } from '../periods.js';
 
 /**
- * Session VWAP — a volume-weighted average price that resets at the start of
- * each calendar day (UTC), the way intraday traders read it. Distinct from the
- * cumulative `vwap` (never resets) and `avwap` (manual anchor). Uses the
- * typical price (H+L+C)/3 weighted by volume.
+ * Session VWAP — the session VWAP (`vwap`'s default anchor) with its bands:
+ * a volume-weighted average of the typical price (H+L+C)/3 that starts again
+ * each trading day, from midnight on the exchange's clock
+ * (`config.exchangeTimeZone`, else UTC), the way intraday traders read it.
+ * `avwap` starts at a bar you choose instead.
  *
  * `bands` (0–3) adds volume-weighted standard-deviation bands at ±1σ…±3σ around
  * the session VWAP — the classic VWAP band envelope.
@@ -39,14 +41,15 @@ export class SessionVWAPIndicator extends IndicatorBase {
     const series: (IndicatorValue | null)[] = new Array(data.length).fill(null);
     if (data.length === 0) return { values, series };
 
-    let sessionKey = timeframeBucketStart(data[0].time, '1d');
+    const keyOf = periodKeyer(data, 'session', config.exchangeTimeZone);
+    let sessionKey = keyOf(data[0].time);
     let cumPV = 0;
     let cumPV2 = 0;
     let cumV = 0;
 
     for (let i = 0; i < data.length; i++) {
       const bar = data[i];
-      const key = timeframeBucketStart(bar.time, '1d');
+      const key = keyOf(bar.time);
       if (key !== sessionKey) {
         cumPV = 0;
         cumPV2 = 0;
@@ -109,7 +112,10 @@ export class SessionVWAPIndicator extends IndicatorBase {
     ctx.setLineDash([]);
   }
 
-  /** Stroke a single series accessor, breaking the path at each session reset. */
+  /**
+   * Stroke a single series accessor, breaking the path at each session reset
+   * (`breaksBetween`: sessions of one bar each, as on daily bars, are joined).
+   */
   private strokeBandSeries(
     ctx: CanvasRenderingContext2D,
     series: (IndicatorValue | null)[],
@@ -119,16 +125,18 @@ export class SessionVWAPIndicator extends IndicatorBase {
     accessor: (v: IndicatorValue) => number | undefined,
   ): void {
     const pen = new LinePen(ctx, String(ctx.strokeStyle), ctx.lineWidth, isDenseSlots(viewport));
-    let prevSession: number | undefined;
+    let last = -1;
     for (let i = from; i <= to && i < series.length; i++) {
       const val = series[i];
       const value = val ? accessor(val) : undefined;
-      if (val === null || value === undefined) { pen.gap(); continue; }
-      const x = barIndexToX(i, viewport);
-      const y = priceToY(value, viewport);
-      if (val.session !== prevSession) pen.gap();
-      pen.add(x, y);
-      prevSession = val.session;
+      if (!val || value === undefined) {
+        pen.gap();
+        last = -1;
+        continue;
+      }
+      if (last >= 0 && breaksBetween(series, last, i)) pen.gap();
+      pen.add(barIndexToX(i, viewport), priceToY(value, viewport));
+      last = i;
     }
     pen.finish();
   }

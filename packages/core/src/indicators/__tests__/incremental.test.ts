@@ -27,6 +27,7 @@ import { MomentumIndicator } from '../panel/Momentum.js';
 import { HistoricalVolatilityIndicator } from '../panel/HistoricalVolatility.js';
 import { VolumeOscillatorIndicator } from '../panel/VolumeOscillator.js';
 import { UlcerIndexIndicator } from '../panel/UlcerIndex.js';
+import { VWAPIndicator } from '../overlay/VWAP.js';
 import { IndicatorEngine } from '../IndicatorEngine.js';
 
 /** Deterministic random walk so failures are reproducible. */
@@ -125,6 +126,9 @@ const CASES: [string, IndicatorPlugin, Record<string, number>][] = [
   ['hv', new HistoricalVolatilityIndicator(), { period: 10, annual: 365 }],
   ['vo', new VolumeOscillatorIndicator(), { short: 5, long: 10 }],
   ['ulcer', new UlcerIndexIndicator(), { period: 14 }],
+  // Minute bars from 22:13 UTC: the session starts again at midnight, inside the 300 bars.
+  ['vwap', new VWAPIndicator(), {}],
+  ['vwap-week', new VWAPIndicator(), { anchor: 'week' as unknown as number }],
 ];
 
 describe.each(CASES)('%s incremental update', (id, plugin, params) => {

@@ -35,6 +35,8 @@ export class MarketProfileRenderer {
   private splitBySession = false;
   private letters = false;
   private lastStats: MarketProfileStats | null = null;
+  /** The zone whose midnight starts each session of the split profile (null: UTC's). */
+  private exchangeZone: string | null = null;
 
   setVisible(v: boolean): void { this.visible = v; if (!v) this.lastStats = null; }
   isVisible(): boolean { return this.visible; }
@@ -47,6 +49,8 @@ export class MarketProfileRenderer {
   /** Split the profile into one mini-histogram per calendar-day session. */
   setSplitBySession(enabled: boolean): void { this.splitBySession = enabled; }
   isSplitBySession(): boolean { return this.splitBySession; }
+  /** The exchange's zone, an IANA name the chart has checked: sessions start at its midnight. */
+  setExchangeTimeZone(zone: string | null): void { this.exchangeZone = zone; }
   /** Render TPO letters (A, B, C…) per session instead of bars, when split + zoomed in. */
   setLetters(enabled: boolean): void { this.letters = enabled; }
   /** Whether it writes text: the stats readout, or TPO letters per session (when zoomed in enough). */
@@ -156,7 +160,7 @@ export class MarketProfileRenderer {
     const sessions = computeSessionProfiles(slice, priceRange.min, priceRange.max, {
       buckets: this.buckets,
       valueAreaPct: this.valueAreaPct,
-    });
+    }, this.exchangeZone);
     if (sessions.length === 0) return;
 
     const toY = priceToYMapper(viewport);

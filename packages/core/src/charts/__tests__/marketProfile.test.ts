@@ -97,6 +97,19 @@ describe('computeSessionProfiles', () => {
     expect(sessions[1].startTime).toBe(Date.UTC(2023, 0, 3));
   });
 
+  it('splits by the day in the exchange’s zone, and names each by its date', () => {
+    // ASX sessions, 10:00–15:00 in Sydney: 23:00 UTC the day before to 04:00 UTC.
+    const day = (d: number) => [0, 1, 2].map((h) => barAt(Date.UTC(2026, 9, 25 + d, 23) + h * 3_600_000, 10 + d, 20 + d));
+    const bars = [...day(0), ...day(1)];
+    const zoned = computeSessionProfiles(bars, 0, 100, { buckets: 10 }, 'Australia/Sydney');
+    expect(zoned.map((s) => [s.startIndex, s.endIndex, s.startTime])).toEqual([
+      [0, 2, Date.UTC(2026, 9, 26)],
+      [3, 5, Date.UTC(2026, 9, 27)],
+    ]);
+    // UTC's days cut each session after its first bar.
+    expect(computeSessionProfiles(bars, 0, 100, { buckets: 10 })).toHaveLength(3);
+  });
+
   it('shares the price window across sessions', () => {
     const bars = [barAt(D1, 10, 20), barAt(D2, 80, 90)];
     const sessions = computeSessionProfiles(bars, 0, 100, { buckets: 10 });

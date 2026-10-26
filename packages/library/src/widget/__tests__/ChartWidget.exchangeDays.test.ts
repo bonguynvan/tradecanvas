@@ -2,6 +2,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import type { ChartOptions, MarketConfig, OHLCBar, SymbolInfo } from '@tradecanvas/commons';
 import { MARKET_HOSE } from '@tradecanvas/commons';
+import { VWAPIndicator } from '@tradecanvas/core';
 
 type Handler = (e: { type: string; payload: unknown }) => void;
 
@@ -113,5 +114,47 @@ describe('ChartWidget days built from its bars', () => {
     widget.setData(hours);
     FakeChart.last.setSymbolInfo({ symbol: 'FPT', timeZone: 'Asia/Ho_Chi_Minh' });
     expect(FakeChart.last.data).toBe(hours);
+  });
+});
+
+describe('a monthly VWAP on the weeks the widget builds', () => {
+  const NY = 'America/New_York';
+  /** New York's regular hours as hourly bars, 14:00 to 20:00 UTC, each weekday from Monday 5 October 2026 for ten weeks; each day at its own price. */
+  function nyHours(): OHLCBar[] {
+    const out: OHLCBar[] = [];
+    for (let d = 0; d < 70; d++) {
+      const day = Date.UTC(2026, 9, 5) + d * DAY;
+      const dow = new Date(day).getUTCDay();
+      if (dow === 0 || dow === 6) continue;
+      for (let h = 14; h <= 20; h++) out.push({ time: day + h * HOUR, open: 10 + d, high: 10 + d, low: 10 + d, close: 10 + d, volume: 1 });
+    }
+    return out;
+  }
+  const config = { id: 'vwap', instanceId: 'v', params: { anchor: 'month' }, exchangeTimeZone: NY };
+  /** The weeks, by their Monday's date, that start a month again. */
+  const monthStarts = (weeks: OHLCBar[], dateOf: (t: number) => string): string[] => {
+    const s = new VWAPIndicator().calculate(weeks, config).series!;
+    return weeks.filter((b, i) => Math.abs(s[i]!.value! - (b.high + b.low + b.close) / 3) < 1e-9).map((b) => dateOf(b.time));
+  };
+  const nyDate = (t: number) => new Intl.DateTimeFormat('en-CA', { timeZone: NY }).format(t);
+  const utcDate = (t: number) => new Date(t).toISOString().slice(0, 10);
+
+  it('starts each month at its first week, the weeks built at New York’s midnight', async () => {
+    widget = new ChartWidget(host, { symbol: 'AAPL', timeframe: '1h', watchlist: false });
+    widget.getChart().setMarket({ type: 'stock', timeZone: NY });
+    widget.setData(nyHours());
+    await widget.setTimeframe('1w');
+    const weeks = FakeChart.last.data;
+    expect(weeks).toHaveLength(10);
+    expect(monthStarts(weeks, nyDate)).toEqual(['2026-10-05', '2026-11-02', '2026-12-07']);
+  });
+
+  it('and on weeks a feed stamps at 00:00 UTC', async () => {
+    widget = new ChartWidget(host, { symbol: 'AAPL', timeframe: '1h', watchlist: false });
+    widget.setData(nyHours());
+    await widget.setTimeframe('1w');
+    const weeks = FakeChart.last.data;
+    expect(weeks.every((b) => b.time % DAY === 0)).toBe(true);
+    expect(monthStarts(weeks, utcDate)).toEqual(['2026-10-05', '2026-11-02', '2026-12-07']);
   });
 });

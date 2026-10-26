@@ -18,6 +18,7 @@ const NOT_DRAWN: Record<string, readonly string[]> = {
   volindex: ['long'],
   supertrend: ['trend'],
   svwap: ['session'],
+  vwap: ['session'],
   ao: ['up'],
   ac: ['up'],
   voldelta: ['up'],

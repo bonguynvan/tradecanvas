@@ -129,6 +129,14 @@ export interface IndicatorConfig {
   scale?: 'left';
   /** The intervals it shows on; unset: all of them. */
   intervals?: IndicatorIntervals;
+  /**
+   * The exchange's IANA zone (`'Asia/Ho_Chi_Minh'`), which indicators that
+   * start again each day, week or month count their days in: VWAP's
+   * `anchor`, Session VWAP, the MTF moving average. Set by the chart, from
+   * the symbol's `timeZone`, else the market's (`setSymbolInfo`,
+   * `setMarket`), and never saved with a layout. Unset: UTC's days.
+   */
+  exchangeTimeZone?: string;
 }
 
 /** The kinds of interval an indicator's visibility is set for. */

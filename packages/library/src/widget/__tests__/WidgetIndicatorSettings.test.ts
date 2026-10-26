@@ -83,6 +83,17 @@ describe('WidgetIndicatorSettings', () => {
     change(input, '500');
     expect(onApply).toHaveBeenLastCalledWith('r1', { period: 50 });
   });
+
+  it('picks where VWAP starts again', () => {
+    const d = descriptor('vwap');
+    dialog.open({ instanceId: 'v1', indicatorId: 'vwap', name: d.name, defaults: d.defaultConfig, params: { ...d.defaultConfig }, inputs: d.inputs, plots: d.plots });
+    expect(labels()).toEqual(['Anchor']);
+    const select = host.querySelector<HTMLSelectElement>('.tcw-modal-body select')!;
+    expect([...select.options].map((o) => o.value)).toEqual(['session', 'week', 'month', 'all']);
+    expect(select.value).toBe('session');
+    change(select, 'all');
+    expect(onApply).toHaveBeenLastCalledWith('v1', { anchor: 'all' });
+  });
 });
 
 describe('WidgetIndicatorSettings style', () => {

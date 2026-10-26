@@ -186,3 +186,62 @@ describe('IndicatorEngine.deferRecalculateFrom', () => {
     expect(counts.calculate).toBe(1);
   });
 });
+
+describe('IndicatorEngine.setExchangeTimeZone', () => {
+  /** A plugin that keeps the zone each computation was given. */
+  function zoneProbe() {
+    const zones: (string | undefined)[] = [];
+    const plugin: IndicatorPlugin = {
+      descriptor: { id: 'zone', name: 'zone', placement: 'overlay', defaultConfig: {} },
+      calculate(data, config) {
+        zones.push(config.exchangeTimeZone);
+        return { values: new Map(), series: data.map(() => null) };
+      },
+      render() {},
+    };
+    return { plugin, zones };
+  }
+
+  it('gives every instance, and every new one, config.exchangeTimeZone', () => {
+    const { plugin, zones } = zoneProbe();
+    const engine = new IndicatorEngine();
+    engine.register(plugin);
+    const data = bars(10);
+    engine.addIndicator('zone', {}, data);
+    expect(engine.setExchangeTimeZone('Asia/Ho_Chi_Minh')).toBe(true);
+    engine.recalculateAll(data);
+    engine.addIndicator('zone', {}, data);
+    expect(zones).toEqual([undefined, 'Asia/Ho_Chi_Minh', 'Asia/Ho_Chi_Minh']);
+  });
+
+  it('says whether the zone changed, and null takes it away', () => {
+    const { plugin, zones } = zoneProbe();
+    const engine = new IndicatorEngine();
+    engine.register(plugin);
+    const data = bars(10);
+    engine.addIndicator('zone', {}, data);
+    expect(engine.setExchangeTimeZone('America/New_York')).toBe(true);
+    expect(engine.setExchangeTimeZone('America/New_York')).toBe(false);
+    expect(engine.setExchangeTimeZone(null)).toBe(true);
+    engine.recalculateAll(data);
+    expect(zones.at(-1)).toBeUndefined();
+  });
+
+  it('takes a zone the browser does not know as none', () => {
+    const { plugin, zones } = zoneProbe();
+    const engine = new IndicatorEngine();
+    engine.register(plugin);
+    expect(engine.setExchangeTimeZone('Mars/Olympus_Mons')).toBe(false);
+    engine.addIndicator('zone', {}, bars(10));
+    expect(zones).toEqual([undefined]);
+  });
+
+  it('keeps the zone out of the parameters a layout saves', () => {
+    const { plugin } = zoneProbe();
+    const engine = new IndicatorEngine();
+    engine.register(plugin);
+    engine.setExchangeTimeZone('Asia/Tokyo');
+    engine.addIndicator('zone', { length: 3 }, bars(10));
+    expect(engine.getActiveIndicators()[0].params).toEqual({ length: 3 });
+  });
+});

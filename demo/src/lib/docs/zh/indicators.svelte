@@ -119,6 +119,18 @@ chart.setIndicatorIntervals(ema, null)  // 恢复为全部周期`}</code></pre>
 </p>
 
 <p>
+  <code>vwap</code> 在 <code>anchor</code> 处重新累计：<code>'session'</code>（默认）每个交易日，从交易所时区的午夜起
+  （品种的 <code>timeZone</code>，否则市场的，否则 UTC）；<code>'week'</code> 每周一；<code>'month'</code> 每月 1 日；
+  <code>'all'</code> 从不重置，对已加载的全部K线求均值，加载更早的历史时数值会变。在日线上，按交易日计算的 VWAP
+  就是每根K线的典型价格，因此日线图请选 <code>'week'</code> 或 <code>'month'</code>。<code>svwap</code> 是带 σ 通道的
+  交易日 VWAP，<code>avwap</code> 从你锚定的K线开始。<code>svwap</code>、<code>mtfma</code>、前一日价位线和市场轮廓的
+  交易日也按同一时区划分。
+</p>
+<pre><code>{`chart.addIndicator('vwap')                      // 每个交易日重新累计
+chart.addIndicator('vwap', { anchor: 'week' })  // 每周一：用于日线
+chart.addIndicator('vwap', { anchor: 'all' })   // 已加载的全部K线，与以前相同`}</code></pre>
+
+<p>
   <code>volumeProfile</code> 从绘图区左边缘为每个价格区间画一行，每行的长度随该区间的成交量而定。
   这些行是半透明的，叠在其上的图例和位于其下的K线都清晰可读；用 <code>updateIndicatorStyle</code> 设置更低的
   <code>opacity</code> 可让它更淡。
@@ -176,6 +188,7 @@ CANDLE_PATTERNS.length                                 // 64`}</code></pre>
   你无需编写任何渲染代码。它的 <code>category</code>（<code>'oscillators'</code>、<code>'volume'</code>…）
   会把它放进“指标”对话框中的对应分组；未设置时归入“其他”。参见
   <a href="https://github.com/bonguynvan/tradecanvas/blob/main/skills/tradecanvas/references/recipes.md#a-custom-indicator">自定义指标示例</a>。
+  按日、周或月分组K线的指标可从 <code>config.exchangeTimeZone</code> 读取交易所时区（由图表设置；未设置时为 UTC）。
 </p>
 
 <h2>窗格：调整大小、收起、最大化、重新排序</h2>

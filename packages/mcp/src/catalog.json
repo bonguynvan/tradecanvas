@@ -82,7 +82,19 @@
       "name": "Volume Weighted Average Price",
       "shortName": "VWAP",
       "placement": "overlay",
-      "params": {},
+      "params": {
+        "anchor": "session"
+      },
+      "inputs": {
+        "anchor": {
+          "options": [
+            "session",
+            "week",
+            "month",
+            "all"
+          ]
+        }
+      },
       "plots": [
         {
           "key": "value",

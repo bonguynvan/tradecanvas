@@ -136,6 +136,19 @@ chart.setIndicatorIntervals(ema, null)  // todas otra vez`}</code></pre>
 </p>
 
 <p>
+  <code>vwap</code> vuelve a empezar en su <code>anchor</code>: <code>'session'</code>, por defecto, cada día de
+  negociación desde la medianoche en la zona horaria de la bolsa (el <code>timeZone</code> del símbolo, si no el del
+  mercado, si no UTC); <code>'week'</code> cada lunes; <code>'month'</code> el día 1; <code>'all'</code> nunca: promedia
+  todas las barras cargadas, así que cambia al cargar historial más antiguo. En barras diarias, el VWAP de sesión es
+  el precio típico de cada barra, así que elige ahí <code>'week'</code> o <code>'month'</code>. <code>svwap</code> es el
+  VWAP de sesión con bandas σ, y <code>avwap</code> empieza en la barra a la que lo anclas. <code>svwap</code>,
+  <code>mtfma</code>, las líneas del día anterior y las sesiones del perfil de mercado cuentan sus días en la misma zona.
+</p>
+<pre><code>{`chart.addIndicator('vwap')                      // vuelve a empezar cada día de negociación
+chart.addIndicator('vwap', { anchor: 'week' })  // cada lunes: para barras diarias
+chart.addIndicator('vwap', { anchor: 'all' })   // todas las barras cargadas, como antes`}</code></pre>
+
+<p>
   <code>volumeProfile</code> dibuja una fila por franja de precio desde el borde izquierdo del gráfico;
   el largo de cada fila sigue el volumen negociado en esa franja. Las filas son translúcidas, así que la
   leyenda que queda encima y las velas que quedan debajo se siguen leyendo; dale una <code>opacity</code> menor con
@@ -197,6 +210,8 @@ CANDLE_PATTERNS.length                                 // 64`}</code></pre>
   Su <code>category</code> (<code>'oscillators'</code>, <code>'volume'</code>…) lo coloca en ese
   grupo del diálogo Indicadores; sin ella, aparece en Otros. Consulta la
   <a href="https://github.com/bonguynvan/tradecanvas/blob/main/skills/tradecanvas/references/recipes.md#a-custom-indicator">receta de indicador personalizado</a>.
+  Un indicador que agrupa las barras por día, semana o mes lee la zona de la bolsa en
+  <code>config.exchangeTimeZone</code> (la fija el gráfico; sin ella, UTC).
 </p>
 
 <h2>Paneles: redimensionar, contraer, maximizar, reordenar</h2>

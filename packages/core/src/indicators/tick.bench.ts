@@ -15,11 +15,11 @@ function bars(n: number): OHLCBar[] {
   return out;
 }
 
-/** The demo's default stack: two overlays (BB, EMA) + two panels (RSI, MACD). */
+/** The demo's default stack: three overlays (BB, EMA, VWAP) + two panels (RSI, MACD). */
 function engineWith(data: OHLCBar[]): IndicatorEngine {
   const engine = new IndicatorEngine();
   registerBuiltInIndicators(engine);
-  for (const id of ['bb', 'ema', 'rsi', 'macd']) engine.addIndicator(id, {}, data);
+  for (const id of ['bb', 'ema', 'vwap', 'rsi', 'macd']) engine.addIndicator(id, {}, data);
   return engine;
 }
 
@@ -31,7 +31,7 @@ function tickLast(data: OHLCBar[], k: number): void {
 }
 
 for (const n of [20_000, 100_000]) {
-  describe(`live tick, 4 indicators, ${n.toLocaleString('en-US')} bars`, () => {
+  describe(`live tick, 5 indicators, ${n.toLocaleString('en-US')} bars`, () => {
     const data = bars(n);
     const engine = engineWith(data);
     let k = 0;

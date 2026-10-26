@@ -185,10 +185,16 @@ chart.removeIndicators(chart.getActiveIndicators().map((i) => i.instanceId)); //
 - Panel indicators may share a pane: `addIndicator('stochastic', {}, 'bottom', { pane: rsi })`.
 - The legend shows each line's latest value; tag it on the axis too with
   `features.indicatorValueLabels: true` (off by default).
+- `vwap` starts again each trading day (`anchor: 'session'`, from midnight in the
+  exchange's zone: the symbol's `timeZone`, else the market's, else UTC). Pass
+  `{ anchor: 'week' }` or `{ anchor: 'month' }` on daily bars, where a session's
+  VWAP is just each bar's typical price; `{ anchor: 'all' }` averages every bar
+  loaded and moves when older history is paged in.
 - Custom indicators: extend `IndicatorBase`, declare `plots`, and register with
   `chart.registerIndicator(...)` — see [references/recipes.md](references/recipes.md).
   A `category` in the descriptor (`'oscillators'`, `'volume'`…) files it under that
-  group of ChartWidget's Indicators dialog.
+  group of ChartWidget's Indicators dialog. One that groups bars by day reads the
+  exchange's zone as `config.exchangeTimeZone`.
 
 ## Drawings, alerts and orders
 
@@ -847,6 +853,12 @@ chart.addIndicator('rangePosition', { period: 30 });
 Declare `inputs: { source: { source: true } }` and read `data[i].close` to let
 users run it on another price or another indicator's line.
 
+An indicator that starts again each day, week or month reads the exchange's
+IANA zone as `config.exchangeTimeZone`: the chart sets it from the symbol's
+`timeZone`, else the market's (`setSymbolInfo`, `setMarket`), and leaves it
+unset for UTC. Count days on that clock, not the zone the chart shows, so the
+values stay the same whatever `setTimeZone` displays.
+
 ## An overlay of your own, on the price grid
 
 An overlay plugin draws on a layer each frame. `overlayScale(context)` places
@@ -1192,7 +1204,7 @@ Drawn over the candles, on the price scale.
 | `sma` | Simple Moving Average | period: 20, source: "close" | value: SMA | — | ✓ |
 | `ema` | Exponential Moving Average | period: 20, source: "close" | value: EMA | — | ✓ |
 | `bb` | Bollinger Bands | period: 20, stdDev: 2, source: "close" | upper: Upper, middle: Basis, lower: Lower | — | ✓ |
-| `vwap` | Volume Weighted Average Price | — | value: VWAP | — | |
+| `vwap` | Volume Weighted Average Price | anchor: "session" | value: VWAP | — | |
 | `ichimoku` | Ichimoku Cloud | tenkan: 9, kijun: 26, senkou: 52, displacement: 26 | tenkan: Conversion, kijun: Base, senkouA: Lead A, senkouB: Lead B | — | |
 | `psar` | Parabolic SAR | step: 0.02, max: 0.2 | value: SAR | — | |
 | `supertrend` | Supertrend | period: 10, multiplier: 3 | value: Supertrend | — | |

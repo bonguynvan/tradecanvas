@@ -127,6 +127,19 @@ chart.setIndicatorIntervals(ema, null)  // all of them again`}</code></pre>
 </p>
 
 <p>
+  <code>vwap</code> starts again at its <code>anchor</code>: <code>'session'</code>, the default, each trading
+  day, from midnight in the exchange's time zone (the symbol's <code>timeZone</code>, else the market's, else
+  UTC); <code>'week'</code> each Monday; <code>'month'</code> on the 1st; <code>'all'</code> never: it averages
+  every bar loaded, so it moves when older bars are paged in. On daily bars the session VWAP is each bar's
+  typical price: choose <code>'week'</code> or <code>'month'</code> there. <code>svwap</code> is the session VWAP
+  with σ bands, and <code>avwap</code> starts at the bar you anchor it to. <code>svwap</code>, <code>mtfma</code>,
+  the prior-day lines and the market profile's sessions count their days in the same zone.
+</p>
+<pre><code>{`chart.addIndicator('vwap')                      // starts again each trading day
+chart.addIndicator('vwap', { anchor: 'week' })  // each Monday: for daily bars
+chart.addIndicator('vwap', { anchor: 'all' })   // every bar loaded, as it was before`}</code></pre>
+
+<p>
   <code>volumeProfile</code> draws one row per price band from the left edge of the plot; each row's length
   follows the volume traded in that band. The rows are see-through, so the legend over them and the candles
   under them stay readable; give the indicator a lower <code>opacity</code> with <code>updateIndicatorStyle</code>
@@ -186,6 +199,8 @@ CANDLE_PATTERNS.length                                 // 64`}</code></pre>
   (<code>'oscillators'</code>, <code>'volume'</code>…) puts it in that group of the Indicators dialog;
   without one it is under Other. See the
   <a href="https://github.com/bonguynvan/tradecanvas/blob/main/skills/tradecanvas/references/recipes.md#a-custom-indicator">custom indicator recipe</a>.
+  An indicator that groups bars by day, week or month reads the exchange's zone as
+  <code>config.exchangeTimeZone</code> (set by the chart; unset: UTC).
 </p>
 
 <h2>Panes: resize, fold, maximise, reorder</h2>

@@ -3985,6 +3985,8 @@ export class Chart {
   /**
    * The exchange's zone where it counts beyond the zone shown: daily bars
    * built at its midnight are dated there, and so are days built from ticks.
+   * Indicators that start again each day, week or month, the prior-day lines
+   * and the market profile's sessions count their days there too.
    */
   private applyExchangeZone(): void {
     const zone = this.getExchangeTimeZone();
@@ -3992,6 +3994,16 @@ export class Chart {
     this.crosshairHandler.setExchangeTimeZone(zone);
     this.crosshairTooltip.setExchangeTimeZone(zone);
     this.streamManager?.setTimeZone(zone);
+    this.periodLevels.setExchangeTimeZone(zone);
+    this.marketProfile.setExchangeTimeZone(zone);
+    const bars = this.series.bars();
+    // With no bars yet, the data that comes computes them. Otherwise before
+    // the next read, not now: the bars the symbol's hours filter again
+    // follow in setSymbolInfo, and computing them computes everything once.
+    if (this.indicatorEngine.setExchangeTimeZone(zone) && bars.length > 0) {
+      this.indicatorEngine.deferRecalculateFrom(bars, 0);
+      this.announceIndicatorUpdate(0);
+    }
   }
 
   private applyTimeZone(): void {

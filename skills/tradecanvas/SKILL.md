@@ -149,10 +149,16 @@ chart.removeIndicators(chart.getActiveIndicators().map((i) => i.instanceId)); //
 - Panel indicators may share a pane: `addIndicator('stochastic', {}, 'bottom', { pane: rsi })`.
 - The legend shows each line's latest value; tag it on the axis too with
   `features.indicatorValueLabels: true` (off by default).
+- `vwap` starts again each trading day (`anchor: 'session'`, from midnight in the
+  exchange's zone: the symbol's `timeZone`, else the market's, else UTC). Pass
+  `{ anchor: 'week' }` or `{ anchor: 'month' }` on daily bars, where a session's
+  VWAP is just each bar's typical price; `{ anchor: 'all' }` averages every bar
+  loaded and moves when older history is paged in.
 - Custom indicators: extend `IndicatorBase`, declare `plots`, and register with
   `chart.registerIndicator(...)` — see [references/recipes.md](references/recipes.md).
   A `category` in the descriptor (`'oscillators'`, `'volume'`…) files it under that
-  group of ChartWidget's Indicators dialog.
+  group of ChartWidget's Indicators dialog. One that groups bars by day reads the
+  exchange's zone as `config.exchangeTimeZone`.
 
 ## Drawings, alerts and orders
 
