@@ -105,10 +105,16 @@ describe('small boxes that scrolled a few px', () => {
     expect(rule('.tcw-sidebar-btn')).toMatch(/margin:\s*1px 0/);
   });
 
-  it('ends a legend value cut by a narrow chart in an ellipsis', () => {
-    const value = rule('.tcw-ind-legend-values > *');
-    expect(value).toMatch(/min-width:\s*0/);
-    expect(value).toMatch(/text-overflow:\s*ellipsis/);
+  // Each value shrinking on its own cut all three of Bollinger's at once on a phone ("98… 98… 97…"):
+  // as one line of text, the values before the cut stay whole and one ellipsis ends the line.
+  it('ends a legend’s values in one ellipsis where a narrow chart cuts them, the values before it whole', () => {
+    const box = rule('.tcw-ind-legend-values');
+    expect(box).toMatch(/display:\s*block/);
+    expect(box).toMatch(/min-width:\s*0/);
+    expect(box).toMatch(/overflow:\s*hidden/);
+    expect(box).toMatch(/text-overflow:\s*ellipsis/);
+    expect(blocks(css, '.tcw-ind-legend-values > *').join('')).not.toMatch(/min-width|overflow|flex/);
+    expect(rule('.tcw-ind-legend-values > * + *')).toMatch(/margin-inline-start:\s*var\(--tcw-space-4\)/);
   });
 });
 

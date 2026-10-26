@@ -994,18 +994,18 @@
   color: var(--tcw-accent);
 }
 
+/* The values are one line of text: a narrow chart cuts the line, so the values
+   before the cut stay whole and the one it falls in ends in an ellipsis. Values
+   shrinking each on its own cut them all at once. */
 .tcw-ind-legend-values {
-  display: inline-flex;
-  gap: var(--tcw-space-4);
-  min-width: 0;
-  overflow: hidden;
-}
-
-/* A value cut by a narrow chart ends in an ellipsis, not mid-figure. */
-.tcw-ind-legend-values > * {
+  display: block;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.tcw-ind-legend-values > * + * {
+  margin-inline-start: var(--tcw-space-4);
 }
 
 .tcw-ind-legend-row--hidden .tcw-ind-legend-name,

@@ -198,6 +198,16 @@ describe('on-chart indicator legend', () => {
     expect(values(bb).map((v) => v.style.color)).toEqual([BLUE, ORANGE, BLUE]); // bands, basis, bands
   });
 
+  // The values are one line of text that the box cuts with one ellipsis: the spans and nothing else,
+  // as a space between them would add to the stylesheet's gap.
+  it('sets a three-value legend’s values side by side in its box, nothing between them', async () => {
+    FakeChart.last.addIndicator('bb');
+    await frame();
+    const box = rows()[0].querySelector('.tcw-ind-legend-values')!;
+    expect([...box.childNodes].map((n) => n.nodeName)).toEqual(['SPAN', 'SPAN', 'SPAN']);
+    expect(box.textContent).toBe('105.00101.0097.00');
+  });
+
   it('puts a pane indicator at the top of its pane', async () => {
     FakeChart.last.addIndicator('rsi');
     await frame();
