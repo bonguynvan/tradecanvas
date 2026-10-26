@@ -92,7 +92,10 @@
   the chart. The settings dialog takes none under 0.00000001 and says so under the field. On a live chart a raised size
   stays from tick to tick, so a tick builds the bars once, and is worked out again for a new
   series; <code>toRenko</code>, <code>toKagi</code>, <code>toPointAndFigure</code> and
-  <code>toRangeBars</code> do the same when given a <code>ReshapeMemo</code>.
+  <code>toRangeBars</code> do the same when given a <code>ReshapeMemo</code> as their last argument.
+  Keep one memo for each series, pass it on every run, and call <code>memo.clear()</code> (or make a
+  new one) when the series is replaced, for a new symbol or timeframe: a memo can't tell a new series
+  by itself, and would draw it at the last one's raised size.
 </p>
 <pre><code>{`chart.setChartTypeOptions({
   renko: { boxSize: 50 },                         // or 'atr' with atrPeriod

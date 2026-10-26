@@ -87,7 +87,9 @@
   기본값으로 돌아갑니다. 데이터로 계산한 값이고, 카기는 4%입니다) 링크가 차트를 멈추게 할 수
   없습니다. 설정 대화상자는 0.00000001보다 작은 값을 받지 않으며, 입력란 아래에 그렇게 알려 줍니다. 실시간 차트에서는 올린 크기가 틱에서
   틱으로 그대로 유지되어 틱마다 봉을 한 번만 만들고, 새 시계열에서는 다시 구합니다. <code>toRenko</code>,
-  <code>toKagi</code>, <code>toPointAndFigure</code>, <code>toRangeBars</code>도 <code>ReshapeMemo</code>를 주면 똑같이 합니다.
+  <code>toKagi</code>, <code>toPointAndFigure</code>, <code>toRangeBars</code>도 <code>ReshapeMemo</code>를 마지막 인수로 주면 똑같이 합니다.
+  memo는 시계열마다 하나를 두고 매번 넘기며, 종목이나 시간 단위가 바뀌어 시계열이 교체되면 <code>memo.clear()</code>를
+  호출하세요(새로 만들어도 됩니다). memo는 새 시계열을 스스로 알아보지 못해 이전 시계열에서 올린 크기로 그립니다.
 </p>
 <pre><code>{`chart.setChartTypeOptions({
   renko: { boxSize: 50 },                         // or 'atr' with atrPeriod

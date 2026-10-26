@@ -93,7 +93,10 @@
   giá trị nhỏ hơn 0,00000001 và ghi rõ điều đó dưới ô nhập. Trên biểu đồ trực tiếp, kích thước đã nâng được giữ từ tick này sang
   tick khác, nên mỗi tick chỉ dựng nến một lần, và được tính lại cho một chuỗi mới;
   <code>toRenko</code>, <code>toKagi</code>, <code>toPointAndFigure</code> và <code>toRangeBars</code>
-  cũng làm vậy khi được truyền một <code>ReshapeMemo</code>.
+  cũng làm vậy khi được truyền một <code>ReshapeMemo</code> làm tham số cuối. Mỗi chuỗi dùng một memo,
+  truyền nó ở mọi lần dựng, và gọi <code>memo.clear()</code> (hoặc tạo memo mới) khi chuỗi được thay bằng
+  chuỗi khác, như khi đổi mã hay khung thời gian: memo tự nó không nhận ra chuỗi mới, nên sẽ vẽ chuỗi đó
+  theo kích thước đã nâng của chuỗi trước.
 </p>
 <pre><code>{`chart.setChartTypeOptions({
   renko: { boxSize: 50 },                         // or 'atr' with atrPeriod

@@ -80,8 +80,9 @@
   因此只有超过 100,000 根K线的序列才会触及这个上限；新价线的设置是线数，每根K线同样最多生成一条线。
   已保存状态或分享链接中不是大于 0 的有限数的砖块大小、反转幅度或区间会被丢弃（图表改用默认值：根据数据计算，卡吉图则为 4%），
   因此链接无法让图表卡死。设置对话框不接受小于 0.00000001 的值，并会在输入框下方说明。在实时图表上，提高后的大小会在各个 tick 之间保留，
-  因此每个 tick 只构建一次，换成新序列时再重新计算；传入 <code>ReshapeMemo</code> 时，<code>toRenko</code>、
-  <code>toKagi</code>、<code>toPointAndFigure</code> 和 <code>toRangeBars</code> 也会这样做。
+  因此每个 tick 只构建一次，换成新序列时再重新计算；把 <code>ReshapeMemo</code> 作为最后一个参数传入时，<code>toRenko</code>、
+  <code>toKagi</code>、<code>toPointAndFigure</code> 和 <code>toRangeBars</code> 也会这样做。每个序列用一个 memo，每次计算都传入；
+  序列被替换时（换了品种或周期）调用 <code>memo.clear()</code>（或新建一个）：memo 自己分辨不出新序列，会沿用上一个序列提高后的大小来绘制。
 </p>
 <pre><code>{`chart.setChartTypeOptions({
   renko: { boxSize: 50 },                         // or 'atr' with atrPeriod

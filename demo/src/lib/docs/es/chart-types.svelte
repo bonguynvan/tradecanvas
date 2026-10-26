@@ -93,7 +93,10 @@
   configuración no acepta valores por debajo de 0,00000001 y lo dice bajo el campo. En un gráfico en vivo, un tamaño elevado
   se mantiene de un tick a otro, así que cada tick construye las barras una vez, y se vuelve a calcular
   para una serie nueva; <code>toRenko</code>, <code>toKagi</code>, <code>toPointAndFigure</code> y
-  <code>toRangeBars</code> hacen lo mismo si reciben un <code>ReshapeMemo</code>.
+  <code>toRangeBars</code> hacen lo mismo si reciben un <code>ReshapeMemo</code> como último argumento.
+  Usa un memo por serie, pásalo en cada cálculo y llama a <code>memo.clear()</code> (o crea uno nuevo)
+  cuando la serie se sustituya por otra, con un símbolo o una temporalidad nuevos: un memo no distingue
+  por sí solo una serie nueva y la dibujaría con el tamaño elevado de la anterior.
 </p>
 <pre><code>{`chart.setChartTypeOptions({
   renko: { boxSize: 50 },                         // or 'atr' with atrPeriod

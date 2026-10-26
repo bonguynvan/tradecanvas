@@ -88,7 +88,9 @@
   カギ足は 4% です）ため、リンクでチャートが止まることはありません。設定ダイアログは 0.00000001
   未満の値を受け付けず、入力欄の下にそう表示します。リアルタイムのチャートでは、引き上げた大きさをティックの間も保つので、ティックごとの
   作り直しは 1 回で済み、新しい系列では改めて求めます。<code>toRenko</code>、<code>toKagi</code>、
-  <code>toPointAndFigure</code>、<code>toRangeBars</code> も <code>ReshapeMemo</code> を渡すと同じようにします。
+  <code>toPointAndFigure</code>、<code>toRangeBars</code> も <code>ReshapeMemo</code> を最後の引数に渡すと同じようにします。
+  memo は系列ごとに 1 つ用意して毎回渡し、銘柄や時間足が変わって系列が入れ替わったら <code>memo.clear()</code>
+  を呼んでください（新しく作っても構いません）。memo は新しい系列を自分では見分けられず、前の系列で引き上げた大きさのまま描いてしまいます。
 </p>
 <pre><code>{`chart.setChartTypeOptions({
   renko: { boxSize: 50 },                         // or 'atr' with atrPeriod
