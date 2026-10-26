@@ -445,6 +445,8 @@ export class ChartWidget {
   /** The percent compares' older stretches are on their way; `compareOlderAgain`: more pages came meanwhile. */
   private compareOlderBusy = false;
   private compareOlderAgain = false;
+  /** Older bars asked no stretch of a compare whose bars were still at another interval: a round once they come. */
+  private compareOlderPassed = false;
   /** Every switch, on or off (see `setFeatures`). */
   private featureState: WidgetFeatureState;
   /** The host's own shortcuts, first added first. */
@@ -3603,12 +3605,14 @@ export class ChartWidget {
     try {
       const bars = await this.fetchCompareBars(this.adapter, symbol);
       if (!bars || this.compares.some((c) => c.symbol === symbol)) return;
+      // They come at the interval on screen.
+      const timeframe = this.state.timeframe;
       const color = COMPARE_COLORS[this.compares.length % COMPARE_COLORS.length];
       // Each line is its symbol's change from the first bar on screen, so
       // symbols of any price (BTC beside a $2 coin) read on one percent scale.
       if (this.compares.length === 0) this.chart.setCompareMode('percent');
       this.chart.addCompareSymbol(id, symbol, bars, color);
-      this.compares = [...this.compares, { id, symbol, color, bars }];
+      this.compares = [...this.compares, { id, symbol, color, bars, timeframe }];
       if (this.compares.length === 1) this.holdCompareScale(true);
       this.scheduleLegend();
       this.refreshObjects();
@@ -3794,11 +3798,17 @@ export class ChartWidget {
     const seq = ++this.compareFetchSeq;
     const adapter = withResampling(this.adapter);
     for (const c of this.compares) {
+      const timeframe = this.state.timeframe;
       try {
-        const bars = await adapter.fetchHistory(c.symbol, this.state.timeframe, this.compareDepth());
+        const bars = await adapter.fetchHistory(c.symbol, timeframe, this.compareDepth());
         if (this.destroyed || seq !== this.compareFetchSeq) return;
-        if (this.isPercentCompare(c.id)) this.setCompareBars(c.id, bars);
+        if (this.isPercentCompare(c.id)) this.setCompareBars(c.id, bars, timeframe);
       } catch { /* leave the stale overlay in place if the refetch fails */ }
+    }
+    // Older bars that loaded meanwhile were fetched only as deep as the chart was before them.
+    if (this.compareOlderPassed) {
+      this.compareOlderPassed = false;
+      void this.extendPercentCompares();
     }
   }
 
@@ -3835,6 +3845,11 @@ export class ChartWidget {
     const seq = this.compareFetchSeq;
     const timeframe = this.state.timeframe;
     for (const c of this.compares) {
+      // Its bars still at the interval before: older ones at this interval would mix two in one line.
+      if (c.timeframe !== timeframe) {
+        this.compareOlderPassed = true;
+        continue;
+      }
       const first = c.bars[0]?.time;
       if (first === undefined || c.atStart) continue;
       const missing = barsBefore(this.chart.getData(), first);
@@ -3842,24 +3857,24 @@ export class ChartWidget {
       try {
         const older = await adapter.fetchHistoryBefore(c.symbol, timeframe, first, missing);
         if (this.destroyed || seq !== this.compareFetchSeq) return;
-        this.prependCompareBars(c.id, older);
+        this.prependCompareBars(c.id, older, timeframe);
       } catch { /* the line keeps the bars it has; the next page asks again */ }
     }
   }
 
   /** A percent compare's older bars in front of its own; none older: the feed's history starts there. */
-  private prependCompareBars(id: string, older: readonly OHLCBar[]): void {
+  private prependCompareBars(id: string, older: readonly OHLCBar[], timeframe: TimeFrame): void {
     const c = this.compares.find((x) => x.id === id);
     if (!c) return;
     const bars = withOlderBars(c.bars, older);
-    if (bars) this.setCompareBars(id, bars);
+    if (bars) this.setCompareBars(id, bars, timeframe);
     else this.compares = this.compares.map((x) => (x.id === id ? { ...x, atStart: true } : x));
   }
 
-  /** A percent compare's line on new bars, which may reach further back again. */
-  private setCompareBars(id: string, bars: OHLCBar[]): void {
+  /** A percent compare's line on new bars at `timeframe`, which may reach further back again. */
+  private setCompareBars(id: string, bars: OHLCBar[], timeframe: TimeFrame): void {
     this.chart.updateCompareData(id, bars);
-    this.compares = this.compares.map((x) => (x.id === id ? { ...x, bars, atStart: false } : x));
+    this.compares = this.compares.map((x) => (x.id === id ? { ...x, bars, timeframe, atStart: false } : x));
   }
 
   private refreshAlerts(): void {

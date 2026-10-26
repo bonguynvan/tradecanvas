@@ -1,4 +1,4 @@
-import type { OHLCBar } from '@tradecanvas/commons';
+import type { OHLCBar, TimeFrame } from '@tradecanvas/commons';
 import type { Translator } from './i18n.js';
 import type { CompareEntry } from './WidgetSymbolSearch.js';
 
@@ -41,6 +41,8 @@ export interface CompareOverlay {
 export interface PercentCompare extends CompareOverlay {
   /** Never changed in place: new bars come as a new array. */
   bars: OHLCBar[];
+  /** The interval `bars` are at: the one before a switch until its bars come. */
+  timeframe: TimeFrame;
   /** The feed had nothing older than its first bar: no use asking again. */
   atStart?: boolean;
 }

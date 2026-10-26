@@ -1006,6 +1006,33 @@ describe('ChartWidget percent compares and the price scale', () => {
     expect(fake.compareData).toHaveLength(fullRefetch);
   });
 
+  it('puts no older stretch at the new interval in front of bars still at the one before, and asks for it once they come', async () => {
+    const FOUR_HOURS = 4 * HOUR;
+    /** `count` 4h bars from `from`. */
+    const fourHours = (from: number, count: number) =>
+      Array.from({ length: count }, (_, i) => ({ time: from + i * FOUR_HOURS, open: 1, high: 1, low: 1, close: 1, volume: 1 }));
+    const fake = make({ timeframe: '1h' });
+    const gate = { release: (_bars: typeof bars) => {} };
+    adapter.fetchHistory.mockImplementation((_symbol, tf) => (tf === '4h'
+      ? new Promise((resolve) => { gate.release = resolve; })
+      : Promise.resolve(bars)));
+    const fetchHistoryBefore = vi.fn(async (_symbol: string, _tf: string, before: number, limit: number) =>
+      fourHours(before - limit * FOUR_HOURS, limit));
+    Object.assign(adapter, { fetchHistoryBefore });
+    await widget.addCompareSymbol('BBB');
+    await widget.setTimeframe('4h');
+    // The compare's 4h bars are on their way when a page of older 4h bars loads.
+    fake.barsLoaded = fourHours(-4 * FOUR_HOURS, 8);
+    fake.emit('historyLoad', { state: 'loaded', count: 4 });
+    await new Promise((r) => setTimeout(r, 0));
+    expect(fetchHistoryBefore).not.toHaveBeenCalled();
+    expect(fake.compareData).toEqual([]);
+    gate.release(fourHours(0, 4));
+    await new Promise((r) => setTimeout(r, 0));
+    expect(fetchHistoryBefore.mock.calls).toEqual([['BBB', '4h', 0, 4]]);
+    expect(fake.compareData).toEqual([['cmp_BBB', fourHours(0, 4)], ['cmp_BBB', fourHours(-4 * FOUR_HOURS, 8)]]);
+  });
+
   it('holds no percent scale on a chart type that draws no compare lines, and holds it again off it', async () => {
     const fake = make();
     fake.timeAligned = false; // Renko, say
