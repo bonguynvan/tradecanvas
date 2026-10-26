@@ -102,6 +102,8 @@ export class TickAggregator extends Emitter<AggregatorEvents> {
     if (this.builtOffTheBuckets()) {
       this.currentBar = null;
       this.newest = -Infinity;
+      // Its last trade goes with it: none has come since for the bar the next one builds.
+      this.lastTradeAt = null;
     }
     if (Number.isFinite(time)) this.newest = Math.max(this.newest, normalizeBarTime(time));
   }
