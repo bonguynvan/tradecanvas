@@ -767,6 +767,7 @@ export const ZH_MESSAGES: WidgetMessages = {
   'symbolSearch.type': '类型',
   'symbolSearch.exchange': '交易所',
   'symbolSearch.allExchanges': '全部交易所',
+  'symbolSearch.more': '其他代码：{count}。继续输入可缩小列表。',
   'symbolSearch.typeHint': '在图表上输入字母即可打开此搜索',
   'palette.placeholder': '搜索指标、图表类型、工具…',
   'palette.empty': '未找到结果',

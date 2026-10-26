@@ -23,6 +23,14 @@ export const SYMBOL_SEARCH_DEBOUNCE_MS = 150;
 /** The key code a browser gives a key an input method takes. */
 const IME_KEY_CODE = 229;
 
+/**
+ * The most rows the list draws, the best first; a line under them says how
+ * many more typing would narrow. Every row is laid out in the columns all
+ * the others share, so a list of thousands would be laid out again on each
+ * keystroke.
+ */
+export const MAX_LISTED_ROWS = 200;
+
 /** A symbol on offer: its ticker, or what is known of it (a name, kind, exchange, logo). */
 export type SymbolEntry = string | SymbolInfo;
 
@@ -82,7 +90,8 @@ let nextSearchId = 1;
  * - The symbols it is given are listed until something is typed, named
  *   where they came with a SymbolInfo (or the chart knows its own).
  * - Without a search function it filters them by ticker and name with a
- *   cheap match, good enough for lists in the low thousands.
+ *   cheap match, good enough for lists in the low thousands. The list draws
+ *   the best `MAX_LISTED_ROWS` and says how many more typing would narrow.
  * - With one (a feed's `searchSymbols`) it asks once typing pauses, cancels a
  *   query a newer one replaced, and lists names, kinds and exchanges; what it
  *   hears is kept for the list it opens with next time.
@@ -477,8 +486,14 @@ export class WidgetSymbolSearch {
     this.filters?.see(listable.map((r) => r.info));
     this.shown = this.visibleRows(listable);
     const current = atCurrent ? this.shown.findIndex((r) => r.symbol === this.mode?.start.current) : -1;
-    this.selectedIndex = Math.max(0, current);
+    // The chart's symbol past the rows listed is not there to start on.
+    this.selectedIndex = current >= 0 && current < this.listedCount() ? current : 0;
     this.renderList();
+  }
+
+  /** How many of the rows on show are listed. */
+  private listedCount(): number {
+    return Math.min(this.shown.length, MAX_LISTED_ROWS);
   }
 
   /** The rows that can be listed: comparing, all but the chart's own symbol. */
@@ -527,10 +542,11 @@ export class WidgetSymbolSearch {
     }
     const query = typed.toUpperCase();
     const onChart = new Set(this.compared.map((c) => c.symbol));
-    list.replaceChildren(...this.shown.map((row, i) => this.row(row, i, query, comparing && onChart.has(row.symbol))));
-    const note = this.shown.length === 0 ? this.emptyNote(typed, comparing) : null;
+    const listed = this.shown.slice(0, MAX_LISTED_ROWS);
+    list.replaceChildren(...listed.map((row, i) => this.row(row, i, query, comparing && onChart.has(row.symbol))));
+    const note = this.shown.length === 0 ? this.emptyNote(typed, comparing) : this.moreNote(this.shown.length - listed.length);
     results.replaceChildren(...(this.columns ? [this.columns] : []), ...before, list, ...(note ? [note] : []));
-    if (this.live) this.live.textContent = note?.textContent ?? '';
+    if (this.live) this.live.textContent = this.shown.length === 0 ? note?.textContent ?? '' : '';
     this.markSelection();
   }
 
@@ -545,6 +561,15 @@ export class WidgetSymbolSearch {
     const note = document.createElement('div');
     note.className = 'tcw-ss-empty';
     note.textContent = text;
+    return note;
+  }
+
+  /** Under a list cut short, how many more rows there are to narrow by typing; null when none. */
+  private moreNote(count: number): HTMLDivElement | null {
+    if (count <= 0) return null;
+    const note = document.createElement('div');
+    note.className = 'tcw-ss-more';
+    note.textContent = fill(this.t('symbolSearch.more'), { count });
     return note;
   }
 
@@ -683,7 +708,7 @@ export class WidgetSymbolSearch {
     }
     keepTabInside(e, modal);
     if (e.target !== this.input) return;
-    const count = this.shown.length;
+    const count = this.listedCount();
     if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
       e.preventDefault();
       if (count === 0) return;

@@ -767,6 +767,7 @@ export const RO_MESSAGES: WidgetMessages = {
   'symbolSearch.type': 'Tip',
   'symbolSearch.exchange': 'Bursă',
   'symbolSearch.allExchanges': 'Toate bursele',
+  'symbolSearch.more': 'Alte simboluri: {count}. Tastați pentru a restrânge lista.',
   'symbolSearch.typeHint': 'Tastați o literă pe grafic pentru a deschide această căutare',
   'palette.placeholder': 'Căutare indicatori, tipuri de grafic, instrumente…',
   'palette.empty': 'Niciun rezultat',

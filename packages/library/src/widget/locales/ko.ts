@@ -767,6 +767,7 @@ export const KO_MESSAGES: WidgetMessages = {
   'symbolSearch.type': '유형',
   'symbolSearch.exchange': '거래소',
   'symbolSearch.allExchanges': '전체 거래소',
+  'symbolSearch.more': '다른 종목: {count}. 입력해 목록을 좁히세요.',
   'symbolSearch.typeHint': '차트에서 글자를 입력하면 이 검색이 열립니다',
   'palette.placeholder': '지표, 차트 유형, 도구 검색…',
   'palette.empty': '결과가 없습니다',

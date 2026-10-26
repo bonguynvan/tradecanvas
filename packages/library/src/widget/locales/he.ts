@@ -782,6 +782,7 @@ export const HE_MESSAGES: WidgetMessages = {
   'symbolSearch.type': 'סוג',
   'symbolSearch.exchange': 'בורסה',
   'symbolSearch.allExchanges': 'כל הבורסות',
+  'symbolSearch.more': 'סימולים נוספים: {count}. הקלדה תצמצם את הרשימה.',
   'symbolSearch.typeHint': 'הקלדת אות בגרף פותחת את החיפוש הזה',
   'palette.placeholder': 'חיפוש אינדיקטורים, סוגי גרפים, כלים…',
   'palette.empty': 'לא נמצאו תוצאות',

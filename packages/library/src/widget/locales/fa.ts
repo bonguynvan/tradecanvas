@@ -782,6 +782,7 @@ export const FA_MESSAGES: WidgetMessages = {
   'symbolSearch.type': 'نوع',
   'symbolSearch.exchange': 'بورس',
   'symbolSearch.allExchanges': 'همه بورس‌ها',
+  'symbolSearch.more': 'نمادهای دیگر: {count}. برای محدود کردن فهرست تایپ کنید.',
   'symbolSearch.typeHint': 'برای باز کردن این جستجو یک حرف روی نمودار تایپ کنید',
   'palette.placeholder': 'جستجوی اندیکاتورها، انواع نمودار، ابزارها…',
   'palette.empty': 'نتیجه‌ای پیدا نشد',

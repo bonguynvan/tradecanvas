@@ -782,6 +782,7 @@ export const AR_MESSAGES: WidgetMessages = {
   'symbolSearch.type': 'النوع',
   'symbolSearch.exchange': 'البورصة',
   'symbolSearch.allExchanges': 'كل البورصات',
+  'symbolSearch.more': 'رموز أخرى: {count}. اكتب لتضييق القائمة.',
   'symbolSearch.typeHint': 'اكتب حرفًا على الرسم البياني لفتح هذا البحث',
   'palette.placeholder': 'ابحث في المؤشرات وأنواع الرسوم البيانية والأدوات…',
   'palette.empty': 'لم يتم العثور على نتائج',

@@ -767,6 +767,7 @@ export const ES_MESSAGES: WidgetMessages = {
   'symbolSearch.type': 'Tipo',
   'symbolSearch.exchange': 'Bolsa',
   'symbolSearch.allExchanges': 'Todas las bolsas',
+  'symbolSearch.more': 'Más símbolos: {count}. Escribe para acotar la lista.',
   'symbolSearch.typeHint': 'Escribe una letra en el gráfico para abrir esta búsqueda',
   'palette.placeholder': 'Buscar indicadores, tipos de gráfico, herramientas…',
   'palette.empty': 'No se encontraron resultados',

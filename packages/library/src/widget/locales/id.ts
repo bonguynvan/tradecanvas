@@ -767,6 +767,7 @@ export const ID_MESSAGES: WidgetMessages = {
   'symbolSearch.type': 'Jenis',
   'symbolSearch.exchange': 'Bursa',
   'symbolSearch.allExchanges': 'Semua bursa',
+  'symbolSearch.more': 'Simbol lainnya: {count}. Ketik untuk mempersempit daftar.',
   'symbolSearch.typeHint': 'Ketik huruf di grafik untuk membuka pencarian ini',
   'palette.placeholder': 'Cari indikator, jenis grafik, alat…',
   'palette.empty': 'Tidak ada hasil',

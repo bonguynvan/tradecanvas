@@ -767,6 +767,7 @@ export const NL_MESSAGES: WidgetMessages = {
   'symbolSearch.type': 'Type',
   'symbolSearch.exchange': 'Beurs',
   'symbolSearch.allExchanges': 'Alle beurzen',
+  'symbolSearch.more': 'Meer symbolen: {count}. Typ om de lijst te verkleinen.',
   'symbolSearch.typeHint': 'Typ een letter op de grafiek om deze zoekopdracht te openen',
   'palette.placeholder': 'Zoek indicatoren, grafiektypen, tools…',
   'palette.empty': 'Geen resultaten gevonden',

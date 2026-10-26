@@ -767,6 +767,7 @@ export const ZH_HANT_MESSAGES: WidgetMessages = {
   'symbolSearch.type': '類型',
   'symbolSearch.exchange': '交易所',
   'symbolSearch.allExchanges': '全部交易所',
+  'symbolSearch.more': '其他代碼：{count}。繼續輸入可縮小清單。',
   'symbolSearch.typeHint': '在圖表上輸入字母即可開啟此搜尋',
   'palette.placeholder': '搜尋指標、圖表類型、工具…',
   'palette.empty': '找不到結果',

@@ -782,6 +782,7 @@ export const MS_MESSAGES: WidgetMessages = {
   'symbolSearch.type': 'Jenis',
   'symbolSearch.exchange': 'Bursa',
   'symbolSearch.allExchanges': 'Semua bursa',
+  'symbolSearch.more': 'Simbol lain: {count}. Taip untuk mengecilkan senarai.',
   'symbolSearch.typeHint': 'Taip huruf pada carta untuk membuka carian ini',
   'palette.placeholder': 'Cari penunjuk, jenis carta, alat…',
   'palette.empty': 'Tiada hasil ditemui',

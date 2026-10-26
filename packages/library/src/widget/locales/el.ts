@@ -767,6 +767,7 @@ export const EL_MESSAGES: WidgetMessages = {
   'symbolSearch.type': 'Τύπος',
   'symbolSearch.exchange': 'Χρηματιστήριο',
   'symbolSearch.allExchanges': 'Όλα τα χρηματιστήρια',
+  'symbolSearch.more': 'Περισσότερα σύμβολα: {count}. Πληκτρολογήστε για να περιορίσετε τη λίστα.',
   'symbolSearch.typeHint': 'Πληκτρολογήστε ένα γράμμα στο γράφημα για να ανοίξει αυτή η αναζήτηση',
   'palette.placeholder': 'Αναζήτηση δεικτών, τύπων γραφήματος, εργαλείων…',
   'palette.empty': 'Δεν βρέθηκαν αποτελέσματα',

@@ -767,6 +767,7 @@ export const RU_MESSAGES: WidgetMessages = {
   'symbolSearch.type': 'Тип',
   'symbolSearch.exchange': 'Биржа',
   'symbolSearch.allExchanges': 'Все биржи',
+  'symbolSearch.more': 'Другие символы: {count}. Вводите текст, чтобы сузить список.',
   'symbolSearch.typeHint': 'Наберите букву на графике, чтобы открыть этот поиск',
   'palette.placeholder': 'Поиск индикаторов, типов графиков, инструментов…',
   'palette.empty': 'Ничего не найдено',

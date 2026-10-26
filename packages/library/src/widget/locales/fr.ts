@@ -767,6 +767,7 @@ export const FR_MESSAGES: WidgetMessages = {
   'symbolSearch.type': 'Type',
   'symbolSearch.exchange': 'Place de marché',
   'symbolSearch.allExchanges': 'Toutes les places de marché',
+  'symbolSearch.more': 'Autres symboles : {count}. Tapez pour affiner la liste.',
   'symbolSearch.typeHint': 'Tapez une lettre sur le graphique pour ouvrir cette recherche',
   'palette.placeholder': 'Rechercher des indicateurs, types de graphique, outils…',
   'palette.empty': 'Aucun résultat',

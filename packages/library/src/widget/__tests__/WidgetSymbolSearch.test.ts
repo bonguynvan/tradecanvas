@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { SymbolInfo } from '@tradecanvas/commons';
-import { WidgetSymbolSearch, SYMBOL_SEARCH_DEBOUNCE_MS, type CompareEntry } from '../WidgetSymbolSearch.js';
+import { WidgetSymbolSearch, SYMBOL_SEARCH_DEBOUNCE_MS, MAX_LISTED_ROWS, type CompareEntry } from '../WidgetSymbolSearch.js';
 import { FOCUSABLE } from '../focusTrap.js';
 
 let host: HTMLDivElement;
@@ -794,6 +794,37 @@ describe('WidgetSymbolSearch symbols given with their info', () => {
     expect(badge.tagName).toBe('SPAN');
     expect(badge.textContent).toBe('A');
     expect(rows()[0].firstElementChild).toBe(badge);
+  });
+});
+
+describe('WidgetSymbolSearch with more symbols than it lists', () => {
+  const many = Array.from({ length: MAX_LISTED_ROWS + 50 }, (_, i) => `S${String(i).padStart(3, '0')}`);
+  const more = () => host.querySelector('.tcw-ss-more')?.textContent;
+
+  it('lists the best of them and says how many more typing would narrow', () => {
+    search.open({ symbols: many, current: '' });
+    expect(rows()).toHaveLength(MAX_LISTED_ROWS);
+    expect(rowText()[0]).toBe('S000');
+    expect(more()).toBe('More symbols: 50. Type to narrow the list.');
+    // Out of the list a screen reader moves through.
+    expect(host.querySelector('.tcw-ss-more')?.closest('[role="listbox"]')).toBeNull();
+    type('S01');
+    expect(rows().length).toBeLessThan(MAX_LISTED_ROWS);
+    expect(more()).toBeUndefined();
+  });
+
+  it('keeps the keys among the rows it lists, and picks the one they are on', () => {
+    search.open({ symbols: many, current: '' });
+    key('ArrowUp');
+    expect(rows().at(-1)?.getAttribute('aria-selected')).toBe('true');
+    key('Enter');
+    expect(picked).toEqual([many[MAX_LISTED_ROWS - 1]]);
+  });
+
+  it('starts the keys at the top when the chart’s symbol is past the rows it lists', () => {
+    search.open({ symbols: many, current: many.at(-1)! });
+    expect(rows()[0].getAttribute('aria-selected')).toBe('true');
+    expect(input().getAttribute('aria-activedescendant')).toBe(rows()[0].id);
   });
 });
 

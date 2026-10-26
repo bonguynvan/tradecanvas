@@ -767,6 +767,7 @@ export const CS_MESSAGES: WidgetMessages = {
   'symbolSearch.type': 'Typ',
   'symbolSearch.exchange': 'Burza',
   'symbolSearch.allExchanges': 'Všechny burzy',
+  'symbolSearch.more': 'Další symboly: {count}. Psaním seznam zúžíte.',
   'symbolSearch.typeHint': 'Napsáním písmene v grafu otevřete toto hledání',
   'palette.placeholder': 'Hledat indikátory, typy grafů, nástroje…',
   'palette.empty': 'Nic nenalezeno',

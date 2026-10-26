@@ -767,6 +767,7 @@ export const JA_MESSAGES: WidgetMessages = {
   'symbolSearch.type': '種類',
   'symbolSearch.exchange': '取引所',
   'symbolSearch.allExchanges': 'すべての取引所',
+  'symbolSearch.more': 'ほかのシンボル：{count}。入力すると絞り込めます。',
   'symbolSearch.typeHint': 'チャート上で文字を入力するとこの検索が開きます',
   'palette.placeholder': 'インジケーター、チャートタイプ、ツールを検索…',
   'palette.empty': '結果が見つかりません',

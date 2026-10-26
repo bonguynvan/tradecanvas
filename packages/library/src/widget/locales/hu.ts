@@ -767,6 +767,7 @@ export const HU_MESSAGES: WidgetMessages = {
   'symbolSearch.type': 'Típus',
   'symbolSearch.exchange': 'Tőzsde',
   'symbolSearch.allExchanges': 'Minden tőzsde',
+  'symbolSearch.more': 'További szimbólumok: {count}. Gépeljen a lista szűkítéséhez.',
   'symbolSearch.typeHint': 'Írjon be egy betűt a grafikonon a keresés megnyitásához',
   'palette.placeholder': 'Indikátorok, grafikontípusok, eszközök keresése…',
   'palette.empty': 'Nincs találat',

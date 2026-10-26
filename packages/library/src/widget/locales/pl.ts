@@ -767,6 +767,7 @@ export const PL_MESSAGES: WidgetMessages = {
   'symbolSearch.type': 'Typ',
   'symbolSearch.exchange': 'Giełda',
   'symbolSearch.allExchanges': 'Wszystkie giełdy',
+  'symbolSearch.more': 'Więcej symboli: {count}. Pisz, aby zawęzić listę.',
   'symbolSearch.typeHint': 'Wpisz literę na wykresie, aby otworzyć to wyszukiwanie',
   'palette.placeholder': 'Szukaj wskaźników, typów wykresów, narzędzi…',
   'palette.empty': 'Brak wyników',

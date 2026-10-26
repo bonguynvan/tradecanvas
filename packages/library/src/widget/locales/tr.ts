@@ -767,6 +767,7 @@ export const TR_MESSAGES: WidgetMessages = {
   'symbolSearch.type': 'Tür',
   'symbolSearch.exchange': 'Borsa',
   'symbolSearch.allExchanges': 'Tüm borsalar',
+  'symbolSearch.more': 'Diğer semboller: {count}. Listeyi daraltmak için yazın.',
   'symbolSearch.typeHint': 'Bu aramayı açmak için grafikte bir harf yazın',
   'palette.placeholder': 'Gösterge, grafik türü, araç ara…',
   'palette.empty': 'Sonuç bulunamadı',

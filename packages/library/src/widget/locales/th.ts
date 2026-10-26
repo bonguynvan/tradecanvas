@@ -767,6 +767,7 @@ export const TH_MESSAGES: WidgetMessages = {
   'symbolSearch.type': 'ประเภท',
   'symbolSearch.exchange': 'ตลาด',
   'symbolSearch.allExchanges': 'ทุกตลาด',
+  'symbolSearch.more': 'สัญลักษณ์อื่น: {count} พิมพ์เพื่อกรองรายการให้แคบลง',
   'symbolSearch.typeHint': 'พิมพ์ตัวอักษรบนกราฟเพื่อเปิดการค้นหานี้',
   'palette.placeholder': 'ค้นหาอินดิเคเตอร์ ประเภทกราฟ เครื่องมือ…',
   'palette.empty': 'ไม่พบผลลัพธ์',

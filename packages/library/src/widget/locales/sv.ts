@@ -767,6 +767,7 @@ export const SV_MESSAGES: WidgetMessages = {
   'symbolSearch.type': 'Typ',
   'symbolSearch.exchange': 'Börs',
   'symbolSearch.allExchanges': 'Alla börser',
+  'symbolSearch.more': 'Fler symboler: {count}. Skriv för att begränsa listan.',
   'symbolSearch.typeHint': 'Skriv en bokstav i diagrammet för att öppna den här sökningen',
   'palette.placeholder': 'Sök indikatorer, diagramtyper, verktyg…',
   'palette.empty': 'Inga resultat',

@@ -767,6 +767,7 @@ export const DE_MESSAGES: WidgetMessages = {
   'symbolSearch.type': 'Typ',
   'symbolSearch.exchange': 'Börse',
   'symbolSearch.allExchanges': 'Alle Börsen',
+  'symbolSearch.more': 'Weitere Symbole: {count}. Tippen, um die Liste einzugrenzen.',
   'symbolSearch.typeHint': 'Einen Buchstaben im Chart tippen, um diese Suche zu öffnen',
   'palette.placeholder': 'Indikatoren, Charttypen, Werkzeuge suchen…',
   'palette.empty': 'Keine Ergebnisse',

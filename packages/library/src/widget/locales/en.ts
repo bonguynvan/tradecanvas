@@ -783,6 +783,7 @@ export const EN_MESSAGES = {
   'symbolSearch.type': 'Type',
   'symbolSearch.exchange': 'Exchange',
   'symbolSearch.allExchanges': 'All exchanges',
+  'symbolSearch.more': 'More symbols: {count}. Type to narrow the list.',
   'symbolSearch.typeHint': 'Type a letter on the chart to open this search',
   'palette.placeholder': 'Search indicators, chart types, tools…',
   'palette.empty': 'No results found',

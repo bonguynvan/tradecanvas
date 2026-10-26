@@ -986,6 +986,14 @@ img.tcw-ss-badge {
   text-wrap: pretty;
 }
 
+/* Under a list cut short: how many more match, for typing to narrow. */
+.tcw-ss-more {
+  padding: var(--tcw-space-4);
+  color: var(--tcw-text-muted);
+  font-size: var(--tcw-font-size-xs);
+  line-height: 1.5;
+}
+
 /* The way the dialog opens too: a letter typed on the chart. */
 .tcw-ss-foot {
   flex: none;

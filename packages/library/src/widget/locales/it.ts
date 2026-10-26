@@ -767,6 +767,7 @@ export const IT_MESSAGES: WidgetMessages = {
   'symbolSearch.type': 'Tipo',
   'symbolSearch.exchange': 'Borsa',
   'symbolSearch.allExchanges': 'Tutte le borse',
+  'symbolSearch.more': 'Altri simboli: {count}. Digita per restringere l’elenco.',
   'symbolSearch.typeHint': 'Digita una lettera sul grafico per aprire questa ricerca',
   'palette.placeholder': 'Cerca indicatori, tipi di grafico, strumenti…',
   'palette.empty': 'Nessun risultato',

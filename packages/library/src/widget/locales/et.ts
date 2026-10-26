@@ -782,6 +782,7 @@ export const ET_MESSAGES: WidgetMessages = {
   'symbolSearch.type': 'Tüüp',
   'symbolSearch.exchange': 'Börs',
   'symbolSearch.allExchanges': 'Kõik börsid',
+  'symbolSearch.more': 'Veel sümboleid: {count}. Loendi kitsendamiseks sisesta rohkem.',
   'symbolSearch.typeHint': 'Selle otsingu avamiseks sisesta graafikul täht',
   'palette.placeholder': 'Otsi indikaatoreid, graafikutüüpe, tööriistu…',
   'palette.empty': 'Tulemusi ei leitud',

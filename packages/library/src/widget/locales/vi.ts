@@ -767,6 +767,7 @@ export const VI_MESSAGES: WidgetMessages = {
   'symbolSearch.type': 'Loại',
   'symbolSearch.exchange': 'Sàn',
   'symbolSearch.allExchanges': 'Tất cả các sàn',
+  'symbolSearch.more': 'Mã khác: {count}. Gõ thêm để thu hẹp danh sách.',
   'symbolSearch.typeHint': 'Gõ một chữ cái trên biểu đồ để mở ô tìm này',
   'palette.placeholder': 'Tìm chỉ báo, loại biểu đồ, công cụ…',
   'palette.empty': 'Không tìm thấy kết quả',

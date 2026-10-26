@@ -782,6 +782,7 @@ export const DA_MESSAGES: WidgetMessages = {
   'symbolSearch.type': 'Type',
   'symbolSearch.exchange': 'Børs',
   'symbolSearch.allExchanges': 'Alle børser',
+  'symbolSearch.more': 'Flere symboler: {count}. Skriv for at indsnævre listen.',
   'symbolSearch.typeHint': 'Skriv et bogstav på grafen for at åbne denne søgning',
   'palette.placeholder': 'Søg efter indikatorer, graftyper, værktøjer…',
   'palette.empty': 'Ingen resultater',

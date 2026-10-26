@@ -782,6 +782,7 @@ export const NB_MESSAGES: WidgetMessages = {
   'symbolSearch.type': 'Type',
   'symbolSearch.exchange': 'Børs',
   'symbolSearch.allExchanges': 'Alle børser',
+  'symbolSearch.more': 'Flere symboler: {count}. Skriv for å snevre inn listen.',
   'symbolSearch.typeHint': 'Skriv en bokstav på diagrammet for å åpne dette søket',
   'palette.placeholder': 'Søk etter indikatorer, graftyper, verktøy…',
   'palette.empty': 'Ingen treff',
