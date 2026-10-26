@@ -3175,8 +3175,9 @@ export class ChartWidget {
 
   /**
    * The exchange's zone moved (the symbol's info, or the market, came after
-   * the bars): build their days again, the view on the times it showed. Bars
-   * that start where they did in any zone (15m or 1h from minutes) stay.
+   * the bars): build their days again, a view scrolled back on the times it
+   * showed, at the same zoom. Bars that start where they did in any zone
+   * (15m or 1h from minutes) stay.
    */
   private rebuildForZone(): void {
     if (this.adapter || this.builtInZone === undefined) return;
@@ -3186,9 +3187,27 @@ export class ChartWidget {
       this.builtInZone = zone;
       return;
     }
-    const shown = this.chart.getVisibleTimeRange();
+    const from = this.timeToKeepInView();
+    // New bars land at the live edge, which they keep, following the next ones.
     this.applyTimeframeData();
-    if (shown) this.chart.setVisibleRange(shown.from, shown.to);
+    if (from !== null) this.chart.scrollTo(from);
+  }
+
+  /**
+   * Where a view scrolled back should start once the days are built again:
+   * half a bar before the first bar on screen, so the new bar there is the
+   * one that holds most of it, whichever way the zone moved the days. Null
+   * at the live edge, and on Renko and the other types that redraw the bars,
+   * whose times count bricks from the first bar and so move with it.
+   */
+  private timeToKeepInView(): number | null {
+    if (!this.chart.isTimeAligned()) return null;
+    const shown = this.chart.getVisibleTimeRange();
+    const bars = this.chart.getData();
+    if (!shown || bars.length < 2 || shown.to >= bars[bars.length - 1].time) return null;
+    const first = bars.findIndex((bar) => bar.time === shown.from);
+    if (first < 0) return null;
+    return shown.from - (bars[first + 1].time - shown.from) / 2;
   }
 
   private handleDataUpdate(p: DataUpdatePayload): void {
