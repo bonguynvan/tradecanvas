@@ -227,22 +227,40 @@ describe('ChartWidget toolbar parts of the host with no room', () => {
     expect(openMenus()).toEqual(['More']);
   });
 
-  it.each(['button', 'menu'] as const)('leaves the toolbar unfitted when the text of its %s is set to what it shows', async (kind) => {
+  /** The size watchers made, each with what it watches: the browser calls one back when a box it watches is resized. */
+  const watchSizes = () => {
+    const observers: { callback: () => void; watched: Element[] }[] = [];
+    vi.stubGlobal('ResizeObserver', class {
+      watched: Element[] = [];
+      constructor(public callback: () => void) { observers.push(this); }
+      observe(el: Element) { this.watched.push(el); }
+      unobserve() {}
+      disconnect() {}
+    });
+    /** As the browser does when `el` changes size. */
+    return (el: Element) => observers.filter((o) => o.watched.includes(el)).forEach((o) => o.callback());
+  };
+
+  afterEach(() => vi.unstubAllGlobals());
+
+  it.each(['button', 'menu'] as const)('leaves the toolbar unfitted when the text of its %s changes and the button keeps its width', async (kind) => {
+    watchSizes();
     widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false });
     const handle = kind === 'button'
       ? widget.addToolbarButton({ id: 'news', label: 'News', icon: 'bell', text: '3', onClick: () => {} })!
       : widget.addToolbarDropdown({ id: 'news', label: 'News', icon: 'bell', text: '3', items: () => [] })!;
     await settled();
     const fit = vi.spyOn(WidgetToolbar.prototype, 'fit');
-    handle.setText('3');
-    await nextFrame();
+    // A live count, set every frame: its figures are all as wide.
+    for (const count of ['3', '4', '5', '6']) {
+      handle.setText(count);
+      await nextFrame();
+    }
     expect(fit).not.toHaveBeenCalled();
-    handle.setText('4');
-    await nextFrame();
-    expect(fit).toHaveBeenCalledTimes(1);
   });
 
   it.each(['button', 'menu'] as const)('refits the toolbar when the text of its %s grows, folding from the right', async (kind) => {
+    const resized = watchSizes();
     widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false });
     const handle = kind === 'button'
       ? widget.addToolbarButton({ id: 'news', label: 'News', icon: 'bell', text: '3', side: 'left', onClick: () => {} })!
@@ -257,6 +275,8 @@ describe('ChartWidget toolbar parts of the host with no room', () => {
     await settled();
     expect(el.classList.contains('tcw-toolbar--collapsed')).toBe(false);
     handle.setText('12 unread');
+    // The button widens its group, not the toolbar.
+    resized(handle.element.parentElement!);
     await nextFrame();
     expect(el.classList.contains('tcw-toolbar--collapsed')).toBe(true);
     expect(handle.element.hasAttribute('data-tcw-folded')).toBe(false); // on the left, it folds last

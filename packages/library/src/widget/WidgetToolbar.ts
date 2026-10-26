@@ -51,6 +51,8 @@ export class WidgetToolbar {
   private moreMenu: WidgetContextMenu | null = null;
   private tfCurrent: HTMLSpanElement | null = null;
   private resizeObserver: ResizeObserver | null = null;
+  /** Tells of a host's group of buttons resized: a count in a button that grew or shrank. */
+  private hostObserver: ResizeObserver | null = null;
   private moreBtn: HTMLButtonElement | null = null;
   private fitFrame = 0;
   private undoBtn: HTMLButtonElement | null = null;
@@ -80,6 +82,9 @@ export class WidgetToolbar {
     if (typeof ResizeObserver !== 'undefined') {
       this.resizeObserver = new ResizeObserver(() => this.fit());
       this.resizeObserver.observe(this.el);
+      // A host's button whose text grows widens its group, not the toolbar: a refit, only when its width changes.
+      this.hostObserver = new ResizeObserver(() => this.scheduleFit());
+      for (const group of [this.hostLeft, this.hostRight]) if (group) this.hostObserver.observe(group);
     }
     // A web font arriving late changes the labels' widths.
     void document.fonts?.ready.then(() => this.scheduleFit());
@@ -674,6 +679,7 @@ export class WidgetToolbar {
 
   destroy(): void {
     this.resizeObserver?.disconnect();
+    this.hostObserver?.disconnect();
     if (this.fitFrame) cancelAnimationFrame(this.fitFrame);
     this.chartTypeDropdown?.destroy();
     this.tfDropdown?.destroy();

@@ -2525,12 +2525,8 @@ export class ChartWidget {
     return {
       element,
       setActive: (on) => setHostButtonActive(element, on, spec.toggle === true),
-      setText: (text) => {
-        // The same text every frame (a live count) needs no refit.
-        if (!setHostButtonText(element, spec.label, text)) return;
-        // A longer count widens the button, not the toolbar its observer watches.
-        toolbar.tidy();
-      },
+      // The toolbar refits when the button's group changes width; a count as wide as the last costs nothing.
+      setText: (text) => void setHostButtonText(element, spec.label, text),
       remove: () => {
         element.remove();
         toolbar.tidy();
@@ -2574,10 +2570,7 @@ export class ChartWidget {
     toolbar.tidy();
     return {
       element,
-      setText: (text) => {
-        if (!setHostButtonText(element, spec.label, text)) return;
-        toolbar.tidy();
-      },
+      setText: (text) => void setHostButtonText(element, spec.label, text),
       remove: () => {
         menu.destroy();
         this.hostMenus.delete(menu);

@@ -8,7 +8,7 @@ export function setHostButtonActive(element: HTMLButtonElement, on: boolean, tog
 
 /**
  * A host's toolbar button's text, its name following ("News: 3"). False when
- * it showed that text already: nothing changed, so nothing needs refitting.
+ * it showed that text already: nothing is written again.
  */
 export function setHostButtonText(element: HTMLButtonElement, label: string, value: string): boolean {
   // A host in plain script may pass a count as a number; the button shows it as text.
