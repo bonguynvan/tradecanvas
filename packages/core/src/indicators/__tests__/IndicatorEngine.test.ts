@@ -1,8 +1,10 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import type { IndicatorPlugin, IndicatorValue, OHLCBar } from '@tradecanvas/commons';
 import { indicatorSource } from '@tradecanvas/commons';
 import { IndicatorEngine } from '../IndicatorEngine.js';
 import { registerBuiltInIndicators } from '../registry.js';
+import { SymbolSeriesStore } from '../symbols/SymbolSeriesStore.js';
+import { CompareSymbolIndicator, CorrelationCoefficientIndicator, CorrelationLogIndicator, SpreadIndicator } from '../symbols/symbolIndicators.js';
 
 function bars(n: number): OHLCBar[] {
   return Array.from({ length: n }, (_, i) => ({ time: i * 60_000, open: 1, high: 1, low: 1, close: 1, volume: 0 }));
@@ -239,6 +241,22 @@ describe('IndicatorEngine: a change of the exchange zone', () => {
     engine.setExchangeTimeZone('Asia/Tokyo', data);
     engine.flush();
     expect(host.runs()).toBe(1);
+  });
+
+  it('computes nothing again for the chart’s own indicators of another symbol, which read its bars, not the zone', () => {
+    const engine = new IndicatorEngine();
+    const store = new SymbolSeriesStore();
+    const indicators = [new CompareSymbolIndicator(store), new SpreadIndicator(store), new CorrelationCoefficientIndicator(store), new CorrelationLogIndicator(store)];
+    const data = hours();
+    store.set('B', data);
+    for (const indicator of indicators) {
+      engine.register(indicator);
+      engine.addIndicator(indicator.descriptor.id, { symbol: 'B' }, data);
+    }
+    const runs = indicators.map((indicator) => vi.spyOn(indicator, 'calculate'));
+    engine.setExchangeTimeZone('Asia/Tokyo', data);
+    engine.flush();
+    for (const run of runs) expect(run).not.toHaveBeenCalled();
   });
 
   it('goes with a tick waiting: both are computed once', () => {
