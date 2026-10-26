@@ -2558,11 +2558,13 @@ export class ChartWidget {
         }
         const items = spec.items();
         if (items.length === 0) return;
-        // Picked from "more", the button is folded: the menu hangs from "more", as the toolbar's own do.
+        // Picked from "more", the button is folded: the menu hangs from "more", as the toolbar's own do,
+        // and with no room past it ends where "more" does, as the More menu does.
         const anchor = toolbar.menuAnchor(button);
         const box = anchor.getBoundingClientRect();
         const root = this.root.getBoundingClientRect();
-        menu.open(withHostItems([], items), box.left - root.left, box.bottom - root.top + 2, (id) => pickHostItem(id, items), anchor);
+        const pick = (id: string) => pickHostItem(id, items);
+        menu.open(withHostItems([], items), box.left - root.left, box.bottom - root.top + 2, pick, anchor, undefined, box.right - root.left);
       },
     });
     element.setAttribute('aria-haspopup', 'menu');

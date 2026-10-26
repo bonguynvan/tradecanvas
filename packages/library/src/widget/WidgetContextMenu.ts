@@ -125,8 +125,9 @@ export class WidgetContextMenu {
 
   /**
    * Open at (`x`, `y`) in the host's coordinates. It opens up or to the left
-   * of the point when there is no room below or to the right, and stays
-   * inside both the host and the window.
+   * of the point when there is no room below or to the right, ending at
+   * `xBack` then (a menu under a button ends at the button's far edge), and
+   * stays inside both the host and the window.
    */
   open(
     entries: readonly ContextMenuEntry[],
@@ -135,8 +136,9 @@ export class WidgetContextMenu {
     onPick: (id: string) => void,
     anchor?: HTMLElement,
     onRemove?: (id: string) => void,
+    xBack = x,
   ): void {
-    this.show(entries, { x, y, xBack: x, yBack: y }, onPick, anchor, onRemove, true);
+    this.show(entries, { x, y, xBack, yBack: y }, onPick, anchor, onRemove, true);
   }
 
   /**

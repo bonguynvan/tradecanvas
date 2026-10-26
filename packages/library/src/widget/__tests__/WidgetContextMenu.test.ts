@@ -76,6 +76,26 @@ describe('WidgetContextMenu', () => {
     expect(menu.isOpen()).toBe(false);
     expect(pick).not.toHaveBeenCalled();
   });
+
+  describe('without room to the right of its point', () => {
+    const left = () => parseFloat(host.querySelector<HTMLElement>('.tcw-context-menu')!.style.left);
+    beforeEach(() => {
+      Object.defineProperty(host, 'clientWidth', { value: 400, configurable: true });
+      Object.defineProperty(host, 'clientHeight', { value: 300, configurable: true });
+      vi.spyOn(HTMLElement.prototype, 'offsetWidth', 'get').mockReturnValue(150);
+    });
+    afterEach(() => { vi.restoreAllMocks(); });
+
+    it('ends at the point', () => {
+      menu.open(ENTRIES, 300, 0, () => {});
+      expect(left()).toBe(150);
+    });
+
+    it('ends where it is told to instead: a menu under a button, at the button’s far edge', () => {
+      menu.open(ENTRIES, 300, 0, () => {}, undefined, undefined, 380);
+      expect(left()).toBe(230);
+    });
+  });
 });
 
 describe('WidgetContextMenu shortcuts, choices and submenus', () => {

@@ -184,9 +184,11 @@ describe('ChartWidget toolbar parts of the host with no room', () => {
     root().setAttribute('data-tcw-narrow', '');
     placeMore();
     pickFromMore('Scans');
-    const [, x, y, , anchor] = open.mock.calls.at(-1)!;
+    const [, x, y, , anchor, , xBack] = open.mock.calls.at(-1)!;
     expect([x, y]).toEqual([500, 42]);
     expect(anchor).toBe(more());
+    // Without room past "more", its end lines up with "more"'s, as the More menu's does.
+    expect(xBack).toBe(528);
   });
 
   it('opens it under “more” too while its button is folded to fit a wide widget', () => {
