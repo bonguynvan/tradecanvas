@@ -4027,6 +4027,9 @@ export class ChartWidget {
     if (!this.featureState.settings || this.settings?.isOpen()) return;
     // The chart's own settings of its type (a layout may have brought them), its scale as a drag left it.
     this.syncSettingsFromChart();
+    // What the dialog opens on is what listeners last heard: a drag that turned auto-scale off told
+    // nobody, and Cancel, or an OK that changes nothing, must not tell them now.
+    this.markSettingsTold();
     this.settingsEdit = {
       settings: { ...this.settingsState }, style: this.settingsStyle(), keys: new Set(), styleKeys: new Set(), held: this.compareScaleHeld,
     };
@@ -4314,6 +4317,11 @@ export class ChartWidget {
     const kept = this.allowedSettings(this.settingsStore?.load() ?? {});
     if (Object.keys(kept).length > 0) this.applySettings(kept);
     this.settingsPublished = JSON.stringify(this.getSettings());
+  }
+
+  /** Once telling has begun, the settings as they are now count as told: the next change is measured from them. */
+  private markSettingsTold(): void {
+    if (this.settingsPublished !== null) this.settingsPublished = JSON.stringify(this.getSettings());
   }
 
   /** The settings changed: kept (`persistSettings`) and told to the listeners, unless they are as last time. */

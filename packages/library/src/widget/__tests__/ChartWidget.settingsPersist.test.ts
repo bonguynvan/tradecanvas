@@ -31,7 +31,9 @@ class FakeChart {
   saveState(): string { return JSON.stringify({ version: 3, chartType: 'candlestick', drawings: [], indicators: [] }); }
   loadState(): void {}
   getTheme() { return { name: 'dark', background: '#000', grid: '#111' }; }
-  isAutoScale(): boolean { return true; }
+  /** Auto-scale as the chart has it: a drag on the price axis turns it off without the widget hearing. */
+  auto = true;
+  isAutoScale(): boolean { return this.auto; }
   // As the chart does: each type given replaces its own, an empty one included.
   setChartTypeOptions(options: unknown): void {
     this.calls.push(['setChartTypeOptions', options]);
@@ -214,6 +216,27 @@ describe('ChartWidget settings API', () => {
     stop();
     widget.setSettings({ gridVisible: true });
     expect(seen).toHaveLength(2);
+  });
+
+  it('onSettingsChange hears nothing of a Cancel, or an OK that changes nothing, after a drag turned auto-scale off', () => {
+    make();
+    const seen: ChartSettingsState[] = [];
+    widget.onSettingsChange((s) => seen.push(s));
+    // The price axis dragged: the chart's auto-scale is off, which the widget isn't told.
+    FakeChart.last.auto = false;
+    openSettings();
+    footer('cancel');
+    expect(seen).toEqual([]);
+    openSettings();
+    footer('ok');
+    expect(seen).toEqual([]);
+    // A change made in the dialog is heard, with the scale as the drag left it.
+    openSettings();
+    tab('layers');
+    toggle('Volume profile').click();
+    footer('ok');
+    expect(seen).toHaveLength(1);
+    expect(seen[0]).toMatchObject({ volumeProfileVisible: true, autoScale: false });
   });
 
   it('a shared link’s scale is the one a layout keeps', async () => {
