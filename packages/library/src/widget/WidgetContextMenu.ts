@@ -100,6 +100,8 @@ export class WidgetContextMenu {
   /** The menu this one is the submenu of. */
   private parent: WidgetContextMenu | null = null;
   private hoverTimer: ReturnType<typeof setTimeout> | null = null;
+  /** The entry `hoverTimer` counts the rest on: moving on it counts on, not again. */
+  private hoverItem: HTMLElement | null = null;
   private readonly onDocPointer = (e: Event) => {
     const target = e.target as Node;
     if (this.holds(target) || this.anchor?.contains(target)) return;
@@ -299,8 +301,10 @@ export class WidgetContextMenu {
     item.appendChild(text);
     this.appendEnd(item, entry);
     const submenu = entry.submenu;
-    // A finger's tap is a click: only a pointer resting on an entry opens its submenu.
-    item.addEventListener('pointerenter', (e) => {
+    // A finger's tap is a click: only a pointer resting on an entry opens its submenu. A pointer that
+    // moved there, not one that entered: a menu that opens under a still pointer (a right-click near
+    // a phone's foot, where it opens as a sheet) is entered by it, and opened a submenu unasked.
+    item.addEventListener('pointermove', (e) => {
       if ((e as PointerEvent).pointerType !== 'touch') this.hover(item, entry.label, submenu);
     });
     item.addEventListener('click', () => {
@@ -392,17 +396,21 @@ export class WidgetContextMenu {
 
   /** After a rest on `item`: open its submenu, or close the one open for another entry. */
   private hover(item: HTMLButtonElement, label: string, submenu?: readonly ContextMenuEntry[]): void {
+    if (this.hoverTimer !== null && this.hoverItem === item) return;
     this.clearHover();
     const open = this.child?.isOpen() ? this.child.anchor : null;
     if (submenu ? open === item : open === null) return;
+    this.hoverItem = item;
     this.hoverTimer = setTimeout(() => {
       this.hoverTimer = null;
+      this.hoverItem = null;
       if (submenu) this.openSubmenu(item, label, submenu, false);
       else this.child?.close();
     }, HOVER_DELAY_MS);
   }
 
   private clearHover(): void {
+    this.hoverItem = null;
     if (this.hoverTimer === null) return;
     clearTimeout(this.hoverTimer);
     this.hoverTimer = null;

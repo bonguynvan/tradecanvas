@@ -340,8 +340,9 @@ describe('WidgetContextMenu shortcuts, choices and submenus', () => {
   });
 
   describe('under a resting pointer', () => {
+    /** The pointer moves onto `el` and rests there. */
     const rest = (el: Element) => {
-      el.dispatchEvent(new MouseEvent('pointerenter'));
+      el.dispatchEvent(new MouseEvent('pointermove', { bubbles: true }));
       vi.advanceTimersByTime(200);
     };
     beforeEach(() => { vi.useFakeTimers(); });
@@ -368,9 +369,22 @@ describe('WidgetContextMenu shortcuts, choices and submenus', () => {
       expect(menu.isOpen()).toBe(true);
     });
 
+    // On a 390 phone a right-click on the time axis opened its menu as a sheet under the pointer, on
+    // "Timezone": the browser told of the pointer entering it, which opened the zones too, two menus.
+    it('opens nothing for a pointer it opened under, until that pointer moves', () => {
+      menu.open(SCALE, 0, 0, () => {});
+      const zones = host.querySelector('[aria-haspopup="menu"]')!;
+      zones.dispatchEvent(new MouseEvent('pointerover', { bubbles: true }));
+      zones.dispatchEvent(new MouseEvent('pointerenter'));
+      vi.advanceTimersByTime(200);
+      expect(sub()).toBeUndefined();
+      rest(zones);
+      expect(sub()).toBeDefined();
+    });
+
     it('opens nothing under a finger: a tap is a click', () => {
       menu.open(SCALE, 0, 0, () => {});
-      const touch = new Event('pointerenter');
+      const touch = new Event('pointermove', { bubbles: true });
       Object.defineProperty(touch, 'pointerType', { value: 'touch' });
       host.querySelector('[aria-haspopup="menu"]')!.dispatchEvent(touch);
       vi.advanceTimersByTime(200);
@@ -380,8 +394,9 @@ describe('WidgetContextMenu shortcuts, choices and submenus', () => {
     it('keeps the submenu when the pointer crosses another entry on its way in', () => {
       menu.open(SCALE, 0, 0, () => {});
       rest(host.querySelector('[aria-haspopup="menu"]')!);
-      all('menuitem').find((b) => b.textContent === 'Settings…')!.dispatchEvent(new MouseEvent('pointerenter'));
-      rest(sub()!);
+      all('menuitem').find((b) => b.textContent === 'Settings…')!.dispatchEvent(new MouseEvent('pointermove', { bubbles: true }));
+      sub()!.dispatchEvent(new MouseEvent('pointerenter'));
+      vi.advanceTimersByTime(200);
       expect(sub()).toBeDefined();
     });
   });
