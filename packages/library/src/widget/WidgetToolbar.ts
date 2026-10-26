@@ -9,8 +9,21 @@ import { chartTypeLabel } from './widgetLocales.js';
 import { markPart, partAttr, tidyDividers } from './widgetFeatures.js';
 import { timeframeSections } from './widgetTimeframes.js';
 import { WidgetTradeMenu } from './WidgetTradeMenu.js';
+import { splitVenue } from './symbolCatalog.js';
 
 let toolbarCount = 0;
+
+/** Marks a button folded under "more" (the stylesheet hides it). */
+const FOLDED_ATTR = 'data-tcw-folded';
+/** The browser lays boxes out in 64ths of a pixel: a difference this small is the same edge. */
+const SUBPIXEL = 1 / 64;
+/**
+ * How far the symbol gives way when even everything folded has no room, a
+ * step at a time (`data-tcw-squeeze` on the toolbar, which the stylesheet
+ * reads): its venue cut short to an ellipsis, then the venue gone and the
+ * ticker whole, then the ticker cut short.
+ */
+const SQUEEZE_STEPS = ['venue', 'ticker', 'cut'] as const;
 
 /** The heading of each unit's section in the interval menu. */
 const UNIT_HEADINGS = {
@@ -51,11 +64,19 @@ export class WidgetToolbar {
   private moreMenu: WidgetContextMenu | null = null;
   private tfCurrent: HTMLSpanElement | null = null;
   private resizeObserver: ResizeObserver | null = null;
+  /** Tells of a host's group of buttons resized: a count in a button that grew or shrank. */
+  private hostObserver: ResizeObserver | null = null;
   private moreBtn: HTMLButtonElement | null = null;
   private fitFrame = 0;
+  /** Gone: a late font or a frame asked for before then fits nothing. */
+  private destroyed = false;
   private undoBtn: HTMLButtonElement | null = null;
   private redoBtn: HTMLButtonElement | null = null;
   private trade: WidgetTradeMenu | null = null;
+  /** What the layouts button shows now, its state and name: the same again changes nothing. */
+  private layoutShown = '';
+  /** The symbol its button shows now: the same again builds nothing. */
+  private symbolShown: string | null = null;
 
   /**
    * `layer`: where the toolbar's menus open, over the page (the widget's
@@ -80,64 +101,181 @@ export class WidgetToolbar {
     if (typeof ResizeObserver !== 'undefined') {
       this.resizeObserver = new ResizeObserver(() => this.fit());
       this.resizeObserver.observe(this.el);
+      // A host's button whose text grows widens its group, not the toolbar: a refit, only when its width changes.
+      this.hostObserver = new ResizeObserver(() => this.scheduleFit());
+      for (const group of [this.hostLeft, this.hostRight]) if (group) this.hostObserver.observe(group);
     }
     // A web font arriving late changes the labels' widths.
     void document.fonts?.ready.then(() => this.scheduleFit());
   }
 
-  /** Fit once before the next frame, however many changes came first. */
+  /** Fit once before the next frame, however many changes came first; never once the toolbar is gone. */
   private scheduleFit(): void {
-    if (this.fitFrame || typeof requestAnimationFrame === 'undefined') return;
+    if (this.destroyed || this.fitFrame || typeof requestAnimationFrame === 'undefined') return;
     this.fitFrame = requestAnimationFrame(() => {
       this.fitFrame = 0;
-      this.fit();
+      if (!this.destroyed) this.fit();
     });
   }
 
   /**
    * What a menu opened from `btn` hangs from: the button, or "more" while the
-   * button is folded under it.
+   * button is folded under it. A folded button has no box, so a menu placed
+   * from it would open at the widget's corner.
    */
-  private anchorOf(btn: HTMLElement): HTMLElement {
-    const folded = btn.hasAttribute('data-tcw-folded') || this.el.closest('[data-tcw-narrow]') !== null;
+  menuAnchor(btn: HTMLElement): HTMLElement {
+    const folded = btn.hasAttribute(FOLDED_ATTR) || this.el.closest('[data-tcw-narrow]') !== null;
     return folded && this.moreBtn ? this.moreBtn : btn;
   }
 
   /**
    * Fit the toolbar to its width. When everything doesn't fit, the buttons
    * on the right fold under "more" one at a time, from the right, until the
-   * rest does; when even that isn't enough, the menus show their icons only
+   * rest does; a host's buttons on the left come before them all, so they
+   * fold last. When even that isn't enough, the menus show their icons only
    * and the interval buttons give way to the interval menu, and as many
-   * buttons as then fit come back.
+   * buttons as then fit come back, from the left. Last of all, with nothing
+   * left to fold (a long symbol on a phone), the symbol gives way, in
+   * `SQUEEZE_STEPS`: its venue ("HYPERLIQUID:xyz:") is cut short to an
+   * ellipsis before anything else shrinks, its ticker kept whole while the
+   * buttons beside it can give. Each fit measures it whole, so it takes its
+   * room back as soon as there is room.
+   *
+   * A refit that changes what is folded closes the menus hanging from "more"
+   * or from a button that folded, whose place is gone, and the keyboard stays
+   * on the toolbar when the button it was on hides (see `keepFocus`).
    */
   fit(): void {
+    const focused = this.toolbarFocus();
+    const folded = this.foldedState();
+    this.refit();
+    if (this.foldedState() !== folded) this.closeStaleMenus();
+    if (focused) this.keepFocus(focused);
+  }
+
+  /** The folding, as `fit` says; the menus and the keyboard are `fit`'s. */
+  private refit(): void {
     const { el } = this;
-    const fits = () => el.scrollWidth <= el.clientWidth + 1;
+    const fits = () => this.fits();
     const items = [...el.querySelectorAll<HTMLElement>('.tcw-toolbar-overflow')];
-    for (const item of items) item.removeAttribute('data-tcw-folded');
+    for (const item of items) item.removeAttribute(FOLDED_ATTR);
     el.classList.remove('tcw-toolbar--collapsed', 'tcw-toolbar--icons');
+    delete el.dataset.tcwSqueeze;
     if (el.clientWidth === 0 || fits()) return;
     el.classList.add('tcw-toolbar--collapsed');
     for (let i = items.length - 1; i >= 0; i--) {
-      items[i].setAttribute('data-tcw-folded', '');
+      items[i].setAttribute(FOLDED_ATTR, '');
       if (fits()) return;
     }
     el.classList.add('tcw-toolbar--icons');
     for (const item of items) {
-      item.removeAttribute('data-tcw-folded');
+      item.removeAttribute(FOLDED_ATTR);
       if (fits()) continue;
-      item.setAttribute('data-tcw-folded', '');
+      item.setAttribute(FOLDED_ATTR, '');
       break;
     }
+    for (const step of SQUEEZE_STEPS) {
+      if (fits()) return;
+      el.dataset.tcwSqueeze = step;
+    }
+  }
+
+  /**
+   * Whether the toolbar's controls end inside its content box: the padding
+   * at its end clear (its left right to left), in its own layout px, as a
+   * container's transform or zoom leaves them. Widths are fractional ("more"
+   * ending at 1366.19 in a bar 1365 wide): the reach is rounded up to a
+   * whole px and the room down, so no share of a pixel hangs past the edge.
+   */
+  private fits(): boolean {
+    const { el } = this;
+    const box = el.getBoundingClientRect();
+    // The width on screen differs from the layout's by its rounding, unless something scales it.
+    const scale = el.offsetWidth > 0 && Math.abs(box.width - el.offsetWidth) >= 1 ? box.width / el.offsetWidth : 1;
+    const style = getComputedStyle(el);
+    const rtl = style.direction === 'rtl';
+    const px = (value: string) => parseFloat(value) || 0;
+    const room = box.width / scale - (rtl
+      ? px(style.borderLeftWidth) + px(style.paddingLeft)
+      : px(style.borderRightWidth) + px(style.paddingRight));
+    let reach = 0;
+    for (const child of el.children) {
+      // What the stylesheet hides (a folded button, "more" with nothing under it) has no box.
+      if (child.getClientRects().length === 0) continue;
+      const at = child.getBoundingClientRect();
+      reach = Math.max(reach, (rtl ? box.right - at.left : at.right - box.left) / scale);
+    }
+    return Math.ceil(reach - SUBPIXEL) <= Math.floor(room + SUBPIXEL);
+  }
+
+  /** What is folded, and whether "more" shows, as one word to tell a refit that changed them. */
+  private foldedState(): string {
+    const items = [...this.el.querySelectorAll('.tcw-toolbar-overflow')];
+    return `${this.el.classList.contains('tcw-toolbar--collapsed')}:${items.map((i) => Number(i.hasAttribute(FOLDED_ATTR))).join('')}`;
+  }
+
+  /** Close the menus that hang from "more", or from a button now folded: their entries or their place are stale. */
+  private closeStaleMenus(): void {
+    if (this.moreBtn) WidgetContextMenu.closeAnchoredTo(this.moreBtn);
+    for (const btn of this.el.querySelectorAll<HTMLElement>(`[${FOLDED_ATTR}], [${FOLDED_ATTR}] button`)) {
+      WidgetContextMenu.closeAnchoredTo(btn);
+    }
+  }
+
+  /** The toolbar's button the keyboard is on: the one a menu hangs from while the keyboard is in the menu. */
+  private toolbarFocus(): HTMLElement | null {
+    const anchor = WidgetContextMenu.focusedAnchor();
+    if (anchor && this.el.contains(anchor)) return anchor;
+    const active = document.activeElement;
+    return active instanceof HTMLElement && this.el.contains(active) ? active : null;
+  }
+
+  /**
+   * Keep the keyboard on the toolbar after a refit: on `focused` while it
+   * shows; on "more" when it folded; when "more" itself went (everything is
+   * back), on the last button that came back, beside where "more" was. A
+   * menu still open that holds it keeps it.
+   */
+  private keepFocus(focused: HTMLElement): void {
+    if (WidgetContextMenu.focusedAnchor()) return;
+    let target: HTMLElement | undefined = focused;
+    if (!this.shows(focused)) {
+      const more = this.moreBtn && focused !== this.moreBtn && this.shows(this.moreBtn) ? this.moreBtn : null;
+      target = more ?? this.overflowButtons().filter((btn) => this.shows(btn)).at(-1);
+    }
+    if (target && document.activeElement !== target) target.focus({ preventScroll: true });
+  }
+
+  /** The buttons that can fold, in their order: those that fold whole, and those inside what folds (the Trade menu). */
+  private overflowButtons(): HTMLButtonElement[] {
+    return [...this.el.querySelectorAll<HTMLButtonElement>('button.tcw-toolbar-overflow, .tcw-toolbar-overflow button')];
+  }
+
+  /** Whether a toolbar button shows: not hidden, folded or switched off, and "more" only while the toolbar is collapsed or narrow. */
+  private shows(btn: HTMLElement): boolean {
+    if (btn.closest('[hidden]') || btn.closest(`[${FOLDED_ATTR}]`) || this.isOff(btn)) return false;
+    const narrow = this.el.closest('[data-tcw-narrow]') !== null;
+    if (btn === this.moreBtn) return narrow || this.el.classList.contains('tcw-toolbar--collapsed');
+    return !(narrow && btn.closest('.tcw-toolbar-overflow'));
+  }
+
+  /** Whether `el`, or what holds it on the toolbar, is part of a switch that is off. */
+  private isOff(el: HTMLElement): boolean {
+    const off = new Set((this.rootEl().getAttribute('data-tcw-off') ?? '').split(/\s+/).filter(Boolean));
+    for (let at: HTMLElement | null = el; at && at !== this.el; at = at.parentElement) {
+      if ((at.dataset.tcwPart ?? '').split(/\s+/).some((name) => off.has(name))) return true;
+    }
+    return false;
   }
 
   private build(): void {
     const { config, callbacks, el } = this;
 
-    // Symbol button
+    // Symbol button: its venue and ticker in their own spans, read left to right in any widget.
     const symbolBtn = document.createElement('button');
     symbolBtn.className = 'tcw-toolbar-symbol';
     symbolBtn.dataset.role = 'symbol';
+    symbolBtn.dir = 'ltr';
     markPart(symbolBtn, 'toolbar.symbol');
     symbolBtn.addEventListener('click', callbacks.onSymbolClick);
     el.appendChild(symbolBtn);
@@ -252,7 +390,7 @@ export class WidgetToolbar {
       layoutsBtn.dataset.icon = 'save';
       markPart(layoutsBtn, 'layouts', 'toolbar.layouts');
       layoutsBtn.setAttribute('aria-haspopup', 'menu');
-      layoutsBtn.addEventListener('click', () => onLayouts(this.anchorOf(layoutsBtn)));
+      layoutsBtn.addEventListener('click', () => onLayouts(this.menuAnchor(layoutsBtn)));
       el.appendChild(layoutsBtn);
       this.setLayout(null, false);
     }
@@ -268,9 +406,11 @@ export class WidgetToolbar {
       el.appendChild(replayBtn);
     }
 
+    // The panels' buttons are switches from the start (`setActive`), so "more" lists them as such when off too.
     if (callbacks.onToggleObjects) {
       const objectsBtn = this.iconBtn('layers', this.t('toolbar.objects'), callbacks.onToggleObjects);
       objectsBtn.dataset.role = 'objects';
+      objectsBtn.setAttribute('aria-pressed', 'false');
       markPart(objectsBtn, 'objectTree', 'toolbar.objectTree');
       el.appendChild(objectsBtn);
     }
@@ -278,12 +418,13 @@ export class WidgetToolbar {
     if (callbacks.onToggleAlerts) {
       const alertsBtn = this.iconBtn('bell', this.t('toolbar.priceAlerts'), callbacks.onToggleAlerts);
       alertsBtn.dataset.role = 'alerts';
+      alertsBtn.setAttribute('aria-pressed', 'false');
       markPart(alertsBtn, 'alerts', 'toolbar.alerts');
       el.appendChild(alertsBtn);
     }
 
     // The trading tools in one menu: a new order, brackets, the ladder and the account.
-    this.trade = WidgetTradeMenu.create(callbacks, this.t, () => this.rootEl(), (btn) => this.anchorOf(btn));
+    this.trade = WidgetTradeMenu.create(callbacks, this.t, () => this.rootEl(), (btn) => this.menuAnchor(btn));
     if (this.trade) el.appendChild(this.trade.button);
     el.appendChild(this.sep());
 
@@ -323,41 +464,41 @@ export class WidgetToolbar {
 
   /** The buttons a narrow toolbar hides, as a menu under `anchor`: those switched off left out. */
   private toggleMore(anchor: HTMLButtonElement): void {
-    if (this.moreMenu?.isOpen()) {
-      this.moreMenu.close();
-      return;
-    }
+    // This menu, or one picked from it (a host's, Trade, Layouts), hangs from
+    // "more": a press closes it, so two menus are never open at once.
+    if (WidgetContextMenu.closeAnchoredTo(anchor)) return;
     const root = this.rootEl();
-    const off = new Set((root.getAttribute('data-tcw-off') ?? '').split(/\s+/).filter(Boolean));
-    const isOff = (el: HTMLElement) => (el.dataset.tcwPart ?? '').split(/\s+/).some((name) => off.has(name));
-    // Narrow, every button on the right is under "more"; else those folded to fit.
+    // Narrow, every button that can fold is under "more"; else those folded to fit.
     const narrow = this.el.closest('[data-tcw-narrow]') !== null;
     const buttons: HTMLButtonElement[] = [];
     for (const item of this.el.querySelectorAll<HTMLElement>('.tcw-toolbar-overflow')) {
-      if (isOff(item) || (!narrow && !item.hasAttribute('data-tcw-folded'))) continue;
+      if (this.isOff(item) || (!narrow && !item.hasAttribute(FOLDED_ATTR))) continue;
       const found = item instanceof HTMLButtonElement ? [item] : [...item.querySelectorAll<HTMLButtonElement>('button')];
       // Not what can't be done now (undo with nothing to undo).
-      buttons.push(...found.filter((btn) => !btn.hidden && !btn.disabled && !isOff(btn)));
+      buttons.push(...found.filter((btn) => !btn.hidden && !btn.disabled && !this.isOff(btn)));
     }
     if (buttons.length === 0) return;
     const entries: ContextMenuEntry[] = buttons.map((btn, i) => {
-      const label = btn.title || btn.getAttribute('aria-label') || btn.textContent?.trim() || '';
-      // A switch that is on shows its tick; one that is off, its icon.
-      return btn.getAttribute('aria-pressed') === 'true'
-        ? { id: String(i), label, checked: true }
-        : { id: String(i), label, icon: btn.dataset.icon };
+      // Its name before its tooltip: a host's button with a count is "News: 3", not "News".
+      const label = btn.getAttribute('aria-label') || btn.title || btn.textContent?.trim() || '';
+      // A switch stays one, on or off: its tick while on, its icon while off.
+      const pressed = btn.getAttribute('aria-pressed');
+      return pressed === null
+        ? { id: String(i), label, icon: btn.dataset.icon }
+        : { id: String(i), label, icon: btn.dataset.icon, checked: pressed === 'true' };
     });
     this.moreMenu ??= new WidgetContextMenu(root, this.t('toolbar.more'));
-    const at = anchor.getBoundingClientRect();
-    const box = root.getBoundingClientRect();
-    this.moreMenu.open(entries, at.right - box.left, at.bottom - box.top + 2, (id) => buttons[Number(id)]?.click(), anchor);
+    // "More" is at the toolbar's end: the menu ends where it ends (its left edge, right to left).
+    this.moreMenu.openUnder(entries, anchor, (id) => buttons[Number(id)]?.click(), 'end');
   }
 
   /** A host's own button, on the left or the right of the toolbar. */
   addHostButton(spec: ToolbarButtonSpec): HTMLButtonElement {
     const btn = document.createElement('button');
     btn.type = 'button';
-    btn.className = spec.text || !spec.icon ? 'tcw-btn tcw-host-btn' : 'tcw-btn-icon tcw-host-btn';
+    // A host's button folds under "more" like the toolbar's own, on either side.
+    // One on the left comes before them all, so it folds last and comes back first.
+    btn.className = `${spec.text || !spec.icon ? 'tcw-btn' : 'tcw-btn-icon'} tcw-host-btn tcw-toolbar-overflow`;
     btn.dataset.hostButton = spec.id;
     if (typeof spec.icon === 'string') btn.dataset.icon = spec.icon;
     btn.title = spec.label;
@@ -373,8 +514,6 @@ export class WidgetToolbar {
     }
     setHostButtonName(btn, spec.label);
     btn.addEventListener('click', () => spec.onClick(btn));
-    // On the right, a host's button folds under "more" like the toolbar's own.
-    if (spec.side !== 'left') btn.classList.add('tcw-toolbar-overflow');
     (spec.side === 'left' ? this.hostLeft : this.hostRight)?.appendChild(btn);
     this.scheduleFit();
     return btn;
@@ -432,17 +571,25 @@ export class WidgetToolbar {
     if (btn) btn.hidden = railed;
   }
 
-  /** The layout open now on its button (`null`: none saved yet), with a dot while it has unsaved changes. */
+  /**
+   * The layout open now on its button (`null`: none saved yet), with a dot
+   * while it has unsaved changes. A new name changes the button's width, not
+   * the toolbar's, so no resize tells of it: the toolbar refits, lest "more"
+   * be pushed past its end.
+   */
   setLayout(name: string | null, dirty: boolean): void {
     const btn = this.el.querySelector<HTMLButtonElement>('[data-role="layouts"]');
     if (!btn) return;
     const shown = name ?? this.t('layouts.unnamed');
+    if (this.layoutShown === `${dirty}:${shown}`) return;
+    this.layoutShown = `${dirty}:${shown}`;
     const label = `${this.t('toolbar.layouts')}: ${shown}${dirty ? ` (${this.t('layouts.unsavedChanges')})` : ''}`;
     btn.innerHTML = `${createIcon('save', 14)}<span class="tcw-layouts-label">${esc(shown)}</span>`
       + (dirty ? '<span class="tcw-layouts-dirty" aria-hidden="true"></span>' : '')
       + createIcon('chevronDown', 12);
     btn.title = label;
     btn.setAttribute('aria-label', label);
+    this.scheduleFit();
   }
 
   /** Swap the fullscreen button between enter and exit. */
@@ -606,10 +753,30 @@ export class WidgetToolbar {
     this.el.querySelector('[data-role="indicators"]')?.setAttribute('aria-expanded', String(open));
   }
 
+  /**
+   * The symbol on its button, its venue ("BINANCE:") apart from its ticker,
+   * the button marked when it has one: a toolbar with no room left cuts the
+   * venue short first (`refit`).
+   */
+  private renderSymbol(symbol: string): void {
+    const btn = this.el.querySelector<HTMLButtonElement>('[data-role="symbol"]');
+    if (!btn || this.symbolShown === symbol) return;
+    this.symbolShown = symbol;
+    const { venue, ticker } = splitVenue(symbol);
+    const part = (className: string, text: string) => {
+      const span = document.createElement('span');
+      span.className = className;
+      span.textContent = text;
+      return span;
+    };
+    btn.replaceChildren(...(venue ? [part('tcw-toolbar-venue', venue)] : []), part('tcw-toolbar-ticker', ticker));
+    btn.classList.toggle('tcw-toolbar-symbol--venue', venue !== '');
+    // A flex box reads its two parts apart, and a full bar hides the venue: the label keeps it whole.
+    btn.setAttribute('aria-label', symbol);
+  }
+
   update(state: WidgetState): void {
-    // Symbol
-    const symbolBtn = this.el.querySelector('[data-role="symbol"]') as HTMLButtonElement | null;
-    if (symbolBtn) symbolBtn.textContent = state.symbol;
+    this.renderSymbol(state.symbol);
 
     // Timeframe buttons
     this.renderTimeframes(state.timeframe);
@@ -671,7 +838,9 @@ export class WidgetToolbar {
   }
 
   destroy(): void {
+    this.destroyed = true;
     this.resizeObserver?.disconnect();
+    this.hostObserver?.disconnect();
     if (this.fitFrame) cancelAnimationFrame(this.fitFrame);
     this.chartTypeDropdown?.destroy();
     this.tfDropdown?.destroy();

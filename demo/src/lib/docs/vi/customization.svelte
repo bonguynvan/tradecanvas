@@ -162,6 +162,10 @@ widget.toast('Feed lost', 'error', 'info')`}</code></pre>
 <p>
   Nút, menu và mục của bạn nằm trong các thanh của widget, trông như của widget và theo theme lẫn giao diện của
   nó. Mỗi hàm trả về một handle để đổi hoặc gỡ, và phần đó hiện khi thanh của nó hiện.
+  Khi thanh công cụ hết chỗ, nút và menu của bạn gập vào menu “thêm” cùng với nút của widget, nút bên trái gập sau
+  cùng; hẹp hơn 641 px thì tất cả đều vào đó. Menu của bạn chọn từ “thêm” mở ngay dưới nút đó.
+  Bấm “thêm” lần nữa sẽ đóng menu đó. Khi được chọn từ “thêm”, <code>onClick</code> của bạn nhận nút đang gập, không có
+  kích thước (<code>getClientRects()</code> rỗng): khi đó hãy đặt popover theo nút “thêm” (<code>.tcw-toolbar-more</code>).
 </p>
 <pre><code>{`widget.addToolbarButton({ id: 'news', label: 'News', icon: 'bell', toggle: true, onClick })
 
@@ -180,7 +184,7 @@ const ruler = widget.addSidebarButton({ id: 'ruler', label: 'Ruler', icon: 'rule
   onClick: () => ruler?.setActive(toggleRuler()) })
 
 const latency = widget.addStatusBarItem({ id: 'latency', text: '12 ms', label: 'Latency' })
-latency?.setText('15 ms')
+latency?.setText('15 ms')                    // theo chiều chữ của chính nó: giao diện từ phải sang trái vẫn đọc là "15 ms"
 widget.addHotkey({ keys: 'Alt+N', label: 'New note', onPress: () => addNote() })   // thay phím tắt của widget nếu trùng phím; có trong bảng phím tắt (?)
 
 // Bất cứ gì khác của bạn: cạnh các nút của toolbar, dưới các nút của sidebar,

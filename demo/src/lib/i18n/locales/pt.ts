@@ -329,6 +329,7 @@ const pt: SiteMessages = {
         'Abra uma nova ordem no painel da conta: ela começa com 100 ações, e um preço acima do teto é recusado',
         'Mude para FPT (variações de 100 dongs) ou para o contrato VN30F (a partir das 8h45)',
         'As linhas roxa, ciano e amarela são o preço-teto, o preço-piso e o preço de referência',
+        'Clique em HPG na barra de ferramentas: a busca lista cada símbolo com nome, tipo, bolsa e logo; fique só com os warrants, ou com a HNX',
       ],
     },
     priceboard: {

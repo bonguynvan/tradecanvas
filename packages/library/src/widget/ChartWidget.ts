@@ -22,6 +22,7 @@ import { WidgetWatchlist, type WatchlistEntry } from './WidgetWatchlist.js';
 import { WatchlistStore, type WatchlistList } from './WatchlistStore.js';
 import { WidgetSymbolInfo, type SymbolInfoView } from './WidgetSymbolInfo.js';
 import { SymbolNews, buildSymbolInfoView } from './symbolInfoView.js';
+import { chartInfoFor, cleanSymbolInfo, mergeSymbolInfo, readSymbolCatalog, symbolTitle } from './symbolCatalog.js';
 import { TOOL_HOTKEYS, toolShortcuts } from './drawingHotkeys.js';
 import { WidgetChartNav } from './WidgetChartNav.js';
 import { WidgetAlertsPanel, describeAlert, type AlertListItem, type AlertSource } from './WidgetAlertsPanel.js';
@@ -358,7 +359,20 @@ export class ChartWidget {
   private lastLocalSwitchMs = 0;
   private destroyed = false;
   private options: ChartWidgetOptions;
+  /** The tickers on offer, cleaned: what the toolbar, the watchlist and the saved state work with. */
   private symbols: string[];
+  /**
+   * What came with the symbols given as SymbolInfo, by ticker: names, kinds,
+   * exchanges and logos for the search and the symbol's titles. Never the
+   * chart's: price steps and hours come from the feed or `setSymbolInfo`.
+   */
+  private symbolCatalog: Map<string, SymbolInfo>;
+  /**
+   * What the chart knew of a symbol when the widget last switched from it.
+   * With no feed to clear it, it stays the last symbol's until the chart is
+   * told of the new one; anything told since is the new one's.
+   */
+  private chartInfoAtSwitch: SymbolInfo | null = null;
   private settingsState: ChartSettingsState;
   /** What Reset in the settings panel goes back to: the defaults, as the host's features set them. */
   private settingsDefaults: ChartSettingsState;
@@ -394,7 +408,10 @@ export class ChartWidget {
 
   constructor(container: HTMLElement, options: ChartWidgetOptions = {}) {
     this.options = options;
-    this.symbols = options.symbols ?? DEFAULT_SYMBOLS;
+    // Read once, as plain JavaScript may hand over anything: tickers from here on, the info kept aside.
+    const catalog = readSymbolCatalog(options.symbols ?? DEFAULT_SYMBOLS);
+    this.symbols = catalog.names;
+    this.symbolCatalog = catalog.info;
     // `numberLocale`, `timeZone` and `leftPriceScale` live in two places:
     // the headless Chart gets them via `chartOptions` (spread straight into
     // `new Chart()` below) — but the widget's own chrome (watchlist, alerts,
@@ -687,6 +704,7 @@ export class ChartWidget {
     });
     // A shape the chart's options give stays until a look is set.
     if (!options.chartOptions?.shapes) this.applyChartShapes();
+    this.chartInfoAtSwitch = this.chart.getSymbolInfo();
     this.applyLegendFont();
     this.applyChartLook();
     // New indicators of a kind look as its saved default has them.
@@ -710,12 +728,11 @@ export class ChartWidget {
     // errors surface in the status bar and, mid-load, on the loading veil.
     this.chart.on('dataUpdate', (e) => this.handleDataUpdate(e.payload));
     this.chart.on('historyLoad', (e) => this.historyPill.update(e.payload as HistoryLoadPayload));
-    this.chart.on('symbolInfoChange', (e) => {
-      const info = (e.payload as { info: SymbolInfo | null }).info;
-      const text = info ? [info.description, info.exchange].filter(Boolean).join(' · ') : '';
-      this.toolbar?.setSymbolDescription(text || null);
+    this.chart.on('symbolInfoChange', () => {
+      this.refreshSymbolTitle();
       this.refreshMarket();
     });
+    this.refreshSymbolTitle();
 
     // Symbol info: the panel, and the market's status in the status bar,
     // kept current as the clock runs toward the next open or close.
@@ -756,9 +773,12 @@ export class ChartWidget {
       presetLabels: { All: this.t('range.all') },
       groupLabel: this.t('range.presets'),
       goToLabel: this.t('range.goTo'),
+      moreLabel: this.t('toolbar.more'),
       onPreset: (preset) => void this.applyRangePreset(preset),
       onGoTo: () => this.toggleGoToDate(),
+      goToKeys: () => this.keysShown('hotkeys.goToDate', 'Alt+G'),
     }, {
+      label: this.t('statusBar.label'),
       clock: {
         label: this.t('settings.timezone'),
         now: () => this.clockNow(),
@@ -1426,14 +1446,52 @@ export class ChartWidget {
 
   // --- Public API ---
 
-  /** Replace the searchable symbol catalog. Does not change the active symbol. */
-  setSymbols(symbols: string[]): void {
-    this.symbols = symbols;
+  /**
+   * Replace the symbols on offer, tickers or SymbolInfo as in the `symbols`
+   * option. Does not change the active symbol. A watchlist made from
+   * `symbols` (no `lists`, nothing kept) is replaced by their tickers too.
+   */
+  setSymbols(symbols: readonly (string | SymbolInfo)[]): void {
+    const catalog = readSymbolCatalog(symbols);
+    this.symbols = catalog.names;
+    this.symbolCatalog = catalog.info;
     // A list made from the symbols follows them; lists given or kept stay.
     const store = this.watchlistStore;
     if (store && this.watchlistFromSymbols) {
-      store.replace(store.getLists().map((l) => (l.id === 'default' ? { ...l, symbols } : l)));
+      store.replace(store.getLists().map((l) => (l.id === 'default' ? { ...l, symbols: catalog.names } : l)));
     }
+    this.refreshSymbolTitle();
+    this.refreshSymbolInfo();
+  }
+
+  /** The symbols on offer, each with what came with it, for the search and compare dialogs. */
+  private symbolEntries(): (string | SymbolInfo)[] {
+    return this.symbols.map((symbol) => this.symbolCatalog.get(symbol) ?? symbol);
+  }
+
+  /**
+   * What the chart knows of its symbol, to name it; null while it is still
+   * another symbol's. It is this symbol's when it names it (in any case, or
+   * with a venue before one of the two), or when the chart was told it since
+   * the symbol changed: a feed may spell the symbol its own way ('BTC-USD' for
+   * 'BTCUSD'). Its words are cleaned as the symbols given are, so a blank name
+   * or a numeric exchange code neither shows nor erases theirs; the market's
+   * hours, price step and zone are read from the chart's info as it is.
+   */
+  private chartSymbolInfo(): SymbolInfo | null {
+    const info = this.chart.getSymbolInfo();
+    const own = info && info !== this.chartInfoAtSwitch ? info : chartInfoFor(this.state.symbol, info);
+    return own ? cleanSymbolInfo(own, this.state.symbol) : null;
+  }
+
+  /** The symbol's names: what the chart knows first, what came with `symbols` for the rest. */
+  private displayInfo(): SymbolInfo | null {
+    return mergeSymbolInfo(this.symbolCatalog.get(this.state.symbol), this.chartSymbolInfo()) ?? null;
+  }
+
+  /** The symbol's name and exchange as the tooltip of its button on the toolbar. */
+  private refreshSymbolTitle(): void {
+    this.toolbar?.setSymbolDescription(symbolTitle(this.displayInfo()));
   }
 
   // --- Watchlists ---
@@ -1525,7 +1583,12 @@ export class ChartWidget {
   private refreshMarket(): void {
     if (pageHidden()) return;
     const status = marketStatus(this.chart.getSymbolInfo(), Date.now());
-    this.statusBar?.setMarket(status.state, this.t(status.state === 'open' ? 'symbolInfo.open' : 'symbolInfo.closed'));
+    const open = status.state === 'open';
+    this.statusBar?.setMarket(
+      status.state,
+      this.t(open ? 'symbolInfo.open' : 'symbolInfo.closed'),
+      this.t(open ? 'statusBar.marketOpen' : 'statusBar.marketClosed'),
+    );
     this.refreshSymbolInfo();
   }
 
@@ -1540,6 +1603,7 @@ export class ChartWidget {
     return buildSymbolInfoView({
       symbol,
       info: this.chart.getSymbolInfo(),
+      names: this.displayInfo(),
       quote: this.quotes.get(symbol),
       bars: this.chart.getData(),
       formatPrice: (p) => this.formatAlertPrice(p),
@@ -1586,7 +1650,10 @@ export class ChartWidget {
     const t = (key: Parameters<typeof this.t>[0]) => this.t(key);
     this.watchlist = new WidgetWatchlist(body, {
       onSelect: (sym) => { void this.setSymbol(sym); },
-      onAdd: () => this.symbolSearch?.open({ symbols: this.symbols, current: this.state.symbol, onPick: (sym) => store.add(sym), search: this.symbolSearchFn() }),
+      onAdd: () => this.symbolSearch?.open({
+        symbols: this.symbolEntries(), current: this.state.symbol, currentInfo: this.chartSymbolInfo(),
+        onPick: (sym) => store.add(sym), search: this.symbolSearchFn(),
+      }),
       onRemove: (sym) => store.removeSymbol(sym),
       onMove: (sym, index) => store.move(sym, index),
       onPickList: (id) => store.setActive(id),
@@ -1666,12 +1733,16 @@ export class ChartWidget {
     // Flush the outgoing symbol's layout BEFORE switching state, so the
     // saved snapshot reflects what the user actually saw under that ticker.
     this.flushActiveLayout();
-    // Fill marks sit on this symbol's bars; the next symbol starts with none.
-    if (symbol !== this.state.symbol) this.chart.clearFills();
+    if (symbol !== this.state.symbol) {
+      // Fill marks sit on this symbol's bars; the next symbol starts with none.
+      this.chart.clearFills();
+      this.chartInfoAtSwitch = this.chart.getSymbolInfo();
+    }
     this.state = { ...this.state, symbol };
     this.sessionRefPrice = null;
     this.options.onSymbolChange?.(symbol);
     this.updateUI();
+    this.refreshSymbolTitle();
     this.watchlist?.setActive(symbol);
     this.refreshMarket();
     this.loadNews();
@@ -1782,9 +1853,10 @@ export class ChartWidget {
   /**
    * Change the widget's look: a preset (`'print'`, `'studio'`,
    * `'terminal'`, `'capsule'`) or your theme over one. Colours stay with
-   * `setTheme`. The look sets the chart's bar layout and font too (golden and
+   * `setTheme`. The look sets the chart's bar layout and face too (golden and
    * the look's sans face when airy, classic and the theme's otherwise),
-   * over any set on the chart itself, unless `chartOptions` set them.
+   * over any set on the chart itself, unless `chartOptions` set the bar
+   * layout or a `font.family`; the sizes of `chartOptions.font` stay.
    */
   setUI(theme: WidgetUIPreset | WidgetUITheme): void {
     this.ui = resolveWidgetUI(theme);
@@ -1812,13 +1884,21 @@ export class ChartWidget {
   /**
    * The airy look's chart: golden bars, and its figures (axes, tags) in the
    * look's figures face; any other look gives them back. `chartOptions`
-   * that set the bars or the font win.
+   * that set the bars or a face win; sizes alone keep the look's face.
    */
   private applyChartLook(): void {
     const airy = this.ui.density === 'airy';
     const given = this.options.chartOptions;
     if (!given?.barLayout) this.chart.setBarLayout(airy ? 'golden' : 'classic');
-    if (!given?.font) this.chart.setFont(airy ? { family: this.ui.font.mono } : null);
+    if (given?.font?.family) return;
+    // setFont goes over the font before it, so the sizes of `chartOptions.font` stay under the look's face.
+    if (airy) {
+      this.chart.setFont({ family: this.ui.font.mono });
+      return;
+    }
+    // Back to the theme's face: null drops the look's, and with it your sizes, so they go on again.
+    this.chart.setFont(null);
+    if (given?.font) this.chart.setFont(given.font);
   }
 
   /** The chart's own tags and pills take the look's corners. */
@@ -1915,8 +1995,9 @@ export class ChartWidget {
   /** The symbol search, started from `query` (a letter typed on the chart). */
   private openSymbolSearch(query?: string): void {
     this.symbolSearch?.open({
-      symbols: this.symbols,
+      symbols: this.symbolEntries(),
       current: this.state.symbol,
+      currentInfo: this.chartSymbolInfo(),
       search: this.symbolSearchFn(),
       query,
       // Said where it can be done: letters typed on the chart open it.
@@ -2428,6 +2509,8 @@ export class ChartWidget {
     this.toolbar?.tidy();
     this.sidebar?.tidy();
     this.syncRail();
+    // A preset, go to date or the market's word shown or hidden changes what the status bar must fit.
+    this.statusBar?.fit();
   }
 
   /**
@@ -2442,7 +2525,8 @@ export class ChartWidget {
     return {
       element,
       setActive: (on) => setHostButtonActive(element, on, spec.toggle === true),
-      setText: (text) => setHostButtonText(element, spec.label, text),
+      // The toolbar refits when the button's group changes width; a count as wide as the last costs nothing.
+      setText: (text) => void setHostButtonText(element, spec.label, text),
       remove: () => {
         element.remove();
         toolbar.tidy();
@@ -2472,9 +2556,11 @@ export class ChartWidget {
         }
         const items = spec.items();
         if (items.length === 0) return;
-        const box = button.getBoundingClientRect();
-        const root = this.root.getBoundingClientRect();
-        menu.open(withHostItems([], items), box.left - root.left, box.bottom - root.top + 2, (id) => pickHostItem(id, items), button);
+        // Picked from "more", the button is folded: the menu hangs from "more", as the toolbar's own do,
+        // and with no room past it ends where "more" does, as the More menu does. Right to left it
+        // starts at the button's right edge, as the toolbar's own menus do.
+        const anchor = toolbar.menuAnchor(button);
+        menu.openUnder(withHostItems([], items), anchor, (id) => pickHostItem(id, items));
       },
     });
     element.setAttribute('aria-haspopup', 'menu');
@@ -2482,7 +2568,7 @@ export class ChartWidget {
     toolbar.tidy();
     return {
       element,
-      setText: (text) => setHostButtonText(element, spec.label, text),
+      setText: (text) => void setHostButtonText(element, spec.label, text),
       remove: () => {
         menu.destroy();
         this.hostMenus.delete(menu);
@@ -3326,7 +3412,7 @@ export class ChartWidget {
       return;
     }
     this.symbolSearch?.openCompare({
-      symbols: this.symbols,
+      symbols: this.symbolEntries(),
       current: this.state.symbol,
       search: this.symbolSearchFn(),
       ways: compareWayOptions(this.t),

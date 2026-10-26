@@ -4,6 +4,7 @@ import { WidgetToolbar } from '../WidgetToolbar.js';
 import { WidgetDropdown } from '../WidgetDropdown.js';
 import { EN_TRANSLATOR } from '../i18n.js';
 import type { ToolbarCallbacks, WidgetState } from '../types.js';
+import { layoutToolbar } from './toolbarLayout.js';
 
 let root: HTMLDivElement;
 let toolbar: WidgetToolbar;
@@ -67,6 +68,56 @@ describe('WidgetToolbar — narrow', () => {
     root.setAttribute('data-tcw-off', 'alerts');
     more().click();
     expect(menuItems().map((b) => b.textContent?.trim())).not.toContain('Price alerts');
+  });
+
+  it('folds a host’s buttons under “more” like its own, those on the left listed first', () => {
+    toolbar.addHostButton({ id: 'scan', label: 'Scanner', side: 'left', onClick: () => {} });
+    toolbar.addHostButton({ id: 'dom', label: 'DOM', side: 'right', onClick: () => {} });
+    root.setAttribute('data-tcw-narrow', '');
+    more().click();
+    expect(menuItems().map((b) => b.textContent?.trim()))
+      .toEqual(['Scanner', 'DOM', 'Bar replay', 'Price alerts', 'Screenshot', 'Chart Settings', 'Toggle theme']);
+  });
+
+  it('a pick from “more” clicks a host’s left button, and its switch shows a tick while on', () => {
+    let pressed: HTMLButtonElement | null = null;
+    const btn = toolbar.addHostButton({
+      id: 'flow', label: 'Order flow', icon: 'layers', toggle: true, side: 'left', onClick: (b) => { pressed = b; },
+    });
+    root.setAttribute('data-tcw-narrow', '');
+    const entry = () => menuItems().find((b) => b.textContent?.trim() === 'Order flow');
+    more().click();
+    entry()!.click();
+    expect(pressed).toBe(btn);
+    btn.setAttribute('aria-pressed', 'true'); // what handle.setActive(true) does to a switch
+    more().click();
+    expect(entry()?.getAttribute('aria-checked')).toBe('true');
+  });
+
+  it('lists a switch as one whether it is on or off: ticked while on, its icon while off', () => {
+    toolbar.addHostButton({ id: 'flow', label: 'Order flow', icon: 'layers', toggle: true, side: 'left', onClick: () => {} });
+    root.setAttribute('data-tcw-narrow', '');
+    const entry = (label: string) => menuItems().find((b) => b.textContent?.trim() === label)!;
+    more().click();
+    for (const label of ['Order flow', 'Price alerts']) {
+      expect(entry(label).getAttribute('role'), label).toBe('menuitemcheckbox');
+      expect(entry(label).getAttribute('aria-checked'), label).toBe('false');
+      expect(entry(label).querySelector('svg'), label).not.toBeNull();
+    }
+    more().click();
+    toolbar.setActive('alerts', true);
+    more().click();
+    expect(entry('Price alerts').getAttribute('role')).toBe('menuitemcheckbox');
+    expect(entry('Price alerts').getAttribute('aria-checked')).toBe('true');
+    // Not a switch: an action, listed as one.
+    expect(entry('Screenshot').getAttribute('role')).toBe('menuitem');
+  });
+
+  it('names a host’s button in “more” with its count, as assistive tech hears it', () => {
+    toolbar.addHostButton({ id: 'news', label: 'News', icon: 'bell', text: '3', side: 'left', onClick: () => {} });
+    root.setAttribute('data-tcw-narrow', '');
+    more().click();
+    expect(menuItems().map((b) => b.textContent?.trim())).toContain('News: 3');
   });
 
   it('names the current timeframe on the timeframe menu’s button', () => {
@@ -172,11 +223,10 @@ describe('watchNarrow', () => {
 });
 
 describe('WidgetToolbar — fitting its width', () => {
-  /** Lay the toolbar out `width` px wide, needing `need(toolbar)` px. */
-  function layout(width: number, need: (el: HTMLElement) => number) {
+  /** Lay the toolbar out `width` px wide, its controls reaching `need(toolbar)` px (see `layoutToolbar`). */
+  function layout(width: number, need: (el: HTMLElement) => number, scale = 1) {
     const el = root.querySelector<HTMLElement>('.tcw-toolbar')!;
-    Object.defineProperty(el, 'clientWidth', { configurable: true, get: () => width });
-    Object.defineProperty(el, 'scrollWidth', { configurable: true, get: () => need(el) });
+    layoutToolbar(el, width, () => need(el), scale);
     return el;
   }
   /** 500px for the chart's own controls, 60 for each button on the right still shown. */
@@ -212,5 +262,321 @@ describe('WidgetToolbar — fitting its width', () => {
     toolbar.fit();
     expect(folded(el)).toEqual([]);
     expect(iconsOnly(el)).toBe(false);
+  });
+
+  describe('a long symbol', () => {
+    /** The symbol's venue and ticker, and what is left of the venue squeezed (a letter and an ellipsis): px. */
+    const [VENUE_W, TICKER_W, VENUE_LEAST_W] = [120, 30, 30];
+    const symbolBtn = () => root.querySelector<HTMLButtonElement>('[data-role="symbol"]')!;
+    const squeeze = (el: HTMLElement) => el.dataset.tcwSqueeze;
+    const squeezed = (el: HTMLElement) => squeeze(el) !== undefined;
+    /**
+     * `base(el)` and the symbol, as the stylesheet lets it give way to fit `width` at each step: to
+     * a letter of its venue, an ellipsis and its ticker; to its ticker; to nothing.
+     */
+    const withSymbol = (width: number, base: (el: HTMLElement) => number = need) => (el: HTMLElement) => {
+      const whole = base(el) + VENUE_W + TICKER_W;
+      const least: number | undefined = ({ venue: VENUE_LEAST_W + TICKER_W, ticker: TICKER_W, cut: 0 } as Record<string, number>)[squeeze(el) ?? ''];
+      return least === undefined ? whole : Math.max(base(el) + least, Math.min(whole, width));
+    };
+
+    it('shows its venue apart from its ticker, left to right in any widget, and reads whole', () => {
+      toolbar.update({ ...state, symbol: 'HYPERLIQUID:xyz:GOLD' } as WidgetState);
+      expect(symbolBtn().dir).toBe('ltr');
+      expect(symbolBtn().querySelector('.tcw-toolbar-venue')?.textContent).toBe('HYPERLIQUID:xyz:');
+      expect(symbolBtn().querySelector('.tcw-toolbar-ticker')?.textContent).toBe('GOLD');
+      expect(symbolBtn().textContent).toBe('HYPERLIQUID:xyz:GOLD');
+      // Its two parts sit in a flex box, which reads them apart, and a squeezed bar hides the venue:
+      // the label keeps the whole symbol for a screen reader.
+      expect(symbolBtn().getAttribute('aria-label')).toBe('HYPERLIQUID:xyz:GOLD');
+      expect(symbolBtn().classList.contains('tcw-toolbar-symbol--venue')).toBe(true);
+      toolbar.update(state);
+      expect(symbolBtn().querySelector('.tcw-toolbar-venue')).toBeNull();
+      expect(symbolBtn().classList.contains('tcw-toolbar-symbol--venue')).toBe(false);
+      expect(symbolBtn().querySelector('.tcw-toolbar-ticker')?.textContent).toBe('BTCUSDT');
+      expect(symbolBtn().getAttribute('aria-label')).toBe('BTCUSDT');
+    });
+
+    // On a 390 phone "HYPERLIQUID:xyz:GOLD" pushed "more" to 380-408, where a tap on it missed:
+    // everything that folds was folded already, so nothing was left to give way.
+    it('gives way on a narrow toolbar, with everything folded, so "more" stays on the bar', () => {
+      root.setAttribute('data-tcw-narrow', '');
+      // 300 for the chart's controls and "more": a narrow toolbar shows nothing that folds.
+      const el = layout(390, withSymbol(390, () => 300));
+      toolbar.fit();
+      expect(squeezed(el)).toBe(true);
+    });
+
+    // Capsule at 320: even a letter of the venue and its ellipsis before "GOLD" left "more" past the bar.
+    it('drops the venue only when even a letter of it has no room, and cuts the ticker short last of all', () => {
+      root.setAttribute('data-tcw-narrow', '');
+      const el = layout(380, withSymbol(380, () => 300));
+      toolbar.fit();
+      expect(squeeze(el)).toBe('venue');
+      layout(340, withSymbol(340, () => 300));
+      toolbar.fit();
+      expect(squeeze(el)).toBe('ticker');
+      layout(320, withSymbol(320, () => 300));
+      toolbar.fit();
+      expect(squeeze(el)).toBe('cut');
+      layout(500, withSymbol(500, () => 300));
+      toolbar.fit();
+      expect(squeezed(el)).toBe(false);
+    });
+
+    it('keeps its whole width while the bar has room for it', () => {
+      root.setAttribute('data-tcw-narrow', '');
+      const el = layout(500, withSymbol(500, () => 300));
+      toolbar.fit();
+      expect(squeezed(el)).toBe(false);
+    });
+
+    // A desktop toolbar keeps its look: the buttons on the right fold first, then the labels go.
+    it('gives way last of all, after every button that folds and the labels', () => {
+      const el = layout(850, withSymbol(850));
+      toolbar.fit();
+      expect(folded(el)).toEqual(['Chart Settings', 'Toggle theme']);
+      expect(squeezed(el)).toBe(false);
+      layout(400, withSymbol(400));
+      toolbar.fit();
+      expect(iconsOnly(el)).toBe(true);
+      expect(shown(el)).toBe(0);
+      expect(squeezed(el)).toBe(true);
+    });
+
+    it('is measured whole at every fit: with room again, it takes it back', () => {
+      const el = layout(400, withSymbol(400));
+      toolbar.fit();
+      expect(squeezed(el)).toBe(true);
+      layout(1200, withSymbol(1200));
+      toolbar.fit();
+      expect(squeezed(el)).toBe(false);
+      expect(folded(el)).toEqual([]);
+    });
+  });
+
+  describe('to the pixel', () => {
+    // Widths are fractional: "more" ended at 1366.19 in a toolbar 1365 wide (Studio), whose scroll
+    // width, in whole px, said 1366 and was let through as within a pixel of its 1365.
+    it('folds one more button when the last runs past the end by a share of a pixel', () => {
+      const el = layout(700, (t) => need(t) + 20.19); // 700.19 with two folded
+      toolbar.fit();
+      expect(folded(el)).toEqual(['Screenshot', 'Chart Settings', 'Toggle theme']);
+    });
+
+    it('keeps what ends exactly at the end', () => {
+      const el = layout(680, need);
+      toolbar.fit();
+      expect(folded(el)).toEqual(['Chart Settings', 'Toggle theme']);
+    });
+
+    // The scroll width counts the padding at the end as room: "more" sat on the edge, in a bar that
+    // keeps 8 px clear at its end everywhere else.
+    it('keeps the padding at its end clear', () => {
+      const el = layout(708, (t) => need(t) + 25); // 705 with two folded: in the padding
+      el.style.paddingRight = '8px';
+      toolbar.fit();
+      expect(folded(el)).toEqual(['Screenshot', 'Chart Settings', 'Toggle theme']);
+    });
+
+    it('right to left, measures from its right edge to the padding on its left', () => {
+      const el = root.querySelector<HTMLElement>('.tcw-toolbar')!;
+      el.style.direction = 'rtl';
+      el.style.paddingLeft = '8px';
+      layout(708, (t) => need(t) + 20.19); // 700.19 with two folded
+      toolbar.fit();
+      expect(folded(el)).toEqual(['Screenshot', 'Chart Settings', 'Toggle theme']);
+    });
+
+    // Boxes on screen are scaled by a container's transform; the room is the toolbar's own px.
+    it('fits the same in a scaled container', () => {
+      const el = layout(700, need, 0.75);
+      toolbar.fit();
+      expect(folded(el)).toEqual(['Chart Settings', 'Toggle theme']);
+    });
+  });
+
+  describe('under the keyboard and the "more" menu', () => {
+    const button = (title: string) => root.querySelector<HTMLButtonElement>(`.tcw-toolbar button[title="${title}"]`)!;
+    const menuOpen = () => root.querySelector('.tcw-context-menu:not([hidden])') !== null;
+
+    it('hands the keyboard to "more" when the button it is on folds', () => {
+      layout(1200, need);
+      toolbar.fit();
+      button('Toggle theme').focus();
+      layout(700, need);
+      toolbar.fit();
+      expect(document.activeElement).toBe(more());
+    });
+
+    it('leaves the keyboard on a button that still shows', () => {
+      layout(1200, need);
+      toolbar.fit();
+      button('Bar replay').focus();
+      layout(700, need);
+      toolbar.fit();
+      expect(document.activeElement).toBe(button('Bar replay'));
+    });
+
+    it('hands the keyboard from "more", when it goes, to the last button that came back', () => {
+      layout(700, need);
+      toolbar.fit();
+      more().focus();
+      layout(1200, need);
+      toolbar.fit();
+      expect(document.activeElement).toBe(button('Toggle theme'));
+    });
+
+    it('keeps the menu open while what is folded stays the same', () => {
+      layout(700, need);
+      toolbar.fit();
+      more().click();
+      toolbar.fit();
+      expect(menuOpen()).toBe(true);
+    });
+
+    it('closes the menu when what is folded changes, its entries gone stale, the keyboard back on "more"', () => {
+      layout(700, need);
+      toolbar.fit();
+      more().click();
+      expect(root.querySelector('.tcw-context-menu')?.contains(document.activeElement)).toBe(true);
+      layout(600, need);
+      toolbar.fit();
+      expect(menuOpen()).toBe(false);
+      expect(more().getAttribute('aria-expanded')).toBe('false');
+      expect(document.activeElement).toBe(more());
+    });
+
+    it('closes the menu when nothing is folded any more, the keyboard on the last button', () => {
+      layout(700, need);
+      toolbar.fit();
+      more().click();
+      layout(1200, need);
+      toolbar.fit();
+      expect(menuOpen()).toBe(false);
+      expect(document.activeElement).toBe(button('Toggle theme'));
+    });
+
+    it('leaves the keyboard alone when it is not on the toolbar', () => {
+      const outside = document.createElement('input');
+      document.body.appendChild(outside);
+      outside.focus();
+      layout(700, need);
+      toolbar.fit();
+      expect(document.activeElement).toBe(outside);
+      outside.remove();
+    });
+  });
+
+  it('folds a host’s buttons on the left last of all, and brings them back first', () => {
+    toolbar.addHostButton({ id: 'scan', label: 'Scanner', side: 'left', onClick: () => {} });
+    toolbar.addHostButton({ id: 'dom', label: 'DOM', side: 'right', onClick: () => {} });
+    // Counted whether it can fold or not: a button that never folds still takes its room.
+    const hostShown = (el: HTMLElement) => [...el.querySelectorAll('.tcw-toolbar-overflow, [data-host-button]')]
+      .filter((b) => !b.hasAttribute('data-tcw-folded')).length;
+    const needAll = (el: HTMLElement) => (iconsOnly(el) ? 300 : 500) + 60 * hostShown(el);
+    const el = layout(560, needAll); // room for one button: the host's on the left
+    toolbar.fit();
+    expect(folded(el)).toEqual(['DOM', 'Bar replay', 'Price alerts', 'Screenshot', 'Chart Settings', 'Toggle theme']);
+    layout(500, needAll); // room for none: it goes too, before the labels do
+    toolbar.fit();
+    expect(folded(el)).toContain('Scanner');
+    expect(iconsOnly(el)).toBe(false);
+    more().click();
+    expect(menuItems()[0].textContent?.trim()).toBe('Scanner');
+    layout(400, needAll); // icons only, room for one again
+    toolbar.fit();
+    expect(iconsOnly(el)).toBe(true);
+    expect(folded(el)).not.toContain('Scanner');
+    expect(folded(el)).toContain('DOM');
+  });
+});
+
+describe('WidgetToolbar — the "more" menu under its button', () => {
+  const MENU_W = 200;
+  const menuLeft = () => parseFloat(root.querySelector<HTMLElement>('.tcw-context-menu:not([hidden])')!.style.left);
+  const place = (l: number, r: number) => {
+    more().getBoundingClientRect = () => ({ left: l, right: r, top: 0, bottom: 36, width: r - l, height: 36, x: l, y: 0, toJSON: () => ({}) }) as DOMRect;
+  };
+  beforeEach(() => {
+    root.setAttribute('data-tcw-narrow', '');
+    Object.defineProperty(root, 'clientWidth', { configurable: true, value: 800 });
+    Object.defineProperty(root, 'clientHeight', { configurable: true, value: 600 });
+    vi.spyOn(HTMLElement.prototype, 'offsetWidth', 'get').mockImplementation(function (this: HTMLElement) {
+      return this.classList.contains('tcw-context-menu') ? MENU_W : 0;
+    });
+  });
+  afterEach(() => vi.restoreAllMocks());
+
+  it('ends where "more" ends, at the toolbar’s end', () => {
+    place(764, 792);
+    more().click();
+    expect(menuLeft() + MENU_W).toBe(792);
+  });
+
+  it('right to left, where "more" is at the left end, ends where it ends too: under it, not beside it', () => {
+    root.dir = 'rtl';
+    place(8, 36);
+    more().click();
+    expect(menuLeft()).toBe(8);
+  });
+});
+
+describe('WidgetToolbar — a name that changes width', () => {
+  it('refits when the layout open now is named, or changes, and only then', () => {
+    const frames: (() => void)[] = [];
+    vi.stubGlobal('requestAnimationFrame', (cb: () => void) => frames.push(cb));
+    vi.stubGlobal('cancelAnimationFrame', vi.fn());
+    const host = document.createElement('div');
+    document.body.appendChild(host);
+    const bar = new WidgetToolbar(host, { symbols: ['A'], timeframes: [], chartTypes: [] }, {
+      onLayouts: () => {},
+    } as unknown as ToolbarCallbacks, EN_TRANSLATOR);
+    try {
+      const fit = vi.spyOn(bar, 'fit');
+      const run = () => frames.splice(0).forEach((frame) => frame());
+      run();
+      fit.mockClear();
+      // The toolbar's own width stays the same: no resize tells of the longer name.
+      bar.setLayout('Earnings watch', false);
+      run();
+      expect(fit).toHaveBeenCalledTimes(1);
+      bar.setLayout('Earnings watch', true);
+      run();
+      expect(fit).toHaveBeenCalledTimes(2);
+      // The same name and state again change nothing on the bar: no refit.
+      bar.setLayout('Earnings watch', true);
+      run();
+      expect(fit).toHaveBeenCalledTimes(2);
+    } finally {
+      bar.destroy();
+      host.remove();
+      vi.unstubAllGlobals();
+    }
+  });
+});
+
+describe('WidgetToolbar — once gone', () => {
+  it('fits no more, though the page’s fonts arrive after', async () => {
+    let fontsReady!: () => void;
+    const ready = new Promise<void>((resolve) => { fontsReady = resolve; });
+    Object.defineProperty(document, 'fonts', { configurable: true, value: { ready } });
+    const frames: (() => void)[] = [];
+    vi.stubGlobal('requestAnimationFrame', (cb: () => void) => frames.push(cb));
+    vi.stubGlobal('cancelAnimationFrame', vi.fn());
+    try {
+      const gone = new WidgetToolbar(root, { symbols: ['A'], timeframes: [], chartTypes: [] }, {} as ToolbarCallbacks, EN_TRANSLATOR);
+      const fit = vi.spyOn(gone, 'fit');
+      gone.destroy();
+      fontsReady();
+      await ready;
+      await Promise.resolve();
+      frames.forEach((frame) => frame());
+      expect(frames).toHaveLength(0);
+      expect(fit).not.toHaveBeenCalled();
+    } finally {
+      Reflect.deleteProperty(document, 'fonts');
+      vi.unstubAllGlobals();
+    }
   });
 });

@@ -85,7 +85,8 @@ export interface WidgetUIShadows {
  * How roomy the look is: its controls' sizes, and for `'airy'` the chart too.
  * `'airy'` is spacious controls, the figures (legend, axes) in the look's
  * sans face and golden bars (the body φ⁻¹ of its slot), the look 2.0 opens
- * with; `chartOptions.barLayout` and `chartOptions.font` win over it.
+ * with; `chartOptions.barLayout` and a `chartOptions.font.family` win over
+ * it, and sizes alone in `chartOptions.font` keep the look's face.
  */
 export type WidgetUIDensity = 'compact' | 'comfortable' | 'spacious' | 'airy';
 

@@ -76,6 +76,96 @@ describe('WidgetContextMenu', () => {
     expect(menu.isOpen()).toBe(false);
     expect(pick).not.toHaveBeenCalled();
   });
+
+  describe('without room to the right of its point', () => {
+    const left = () => parseFloat(host.querySelector<HTMLElement>('.tcw-context-menu')!.style.left);
+    beforeEach(() => {
+      Object.defineProperty(host, 'clientWidth', { value: 400, configurable: true });
+      Object.defineProperty(host, 'clientHeight', { value: 300, configurable: true });
+      vi.spyOn(HTMLElement.prototype, 'offsetWidth', 'get').mockReturnValue(150);
+    });
+    afterEach(() => { vi.restoreAllMocks(); });
+
+    it('ends at the point', () => {
+      menu.open(ENTRIES, 300, 0, () => {});
+      expect(left()).toBe(150);
+    });
+
+    it('ends where it is told to instead: a menu under a button, at the button’s far edge', () => {
+      menu.open(ENTRIES, 300, 0, () => {}, undefined, undefined, 380);
+      expect(left()).toBe(230);
+    });
+  });
+
+  describe('under a button', () => {
+    const MENU_W = 150;
+    const left = () => parseFloat(host.querySelector<HTMLElement>('.tcw-context-menu')!.style.left);
+    const top = () => parseFloat(host.querySelector<HTMLElement>('.tcw-context-menu')!.style.top);
+    const button = (l: number, r: number) => {
+      const btn = document.createElement('button');
+      host.appendChild(btn);
+      btn.getBoundingClientRect = () => ({ left: l, right: r, top: 10, bottom: 40, width: r - l, height: 30, x: l, y: 10, toJSON: () => ({}) }) as DOMRect;
+      return btn;
+    };
+    beforeEach(() => {
+      Object.defineProperty(host, 'clientWidth', { value: 400, configurable: true });
+      Object.defineProperty(host, 'clientHeight', { value: 300, configurable: true });
+      vi.spyOn(HTMLElement.prototype, 'offsetWidth', 'get').mockReturnValue(MENU_W);
+    });
+    afterEach(() => {
+      vi.restoreAllMocks();
+      host.removeAttribute('dir');
+    });
+
+    it('starts at the button’s start edge, or ends at its end edge without room', () => {
+      menu.openUnder(ENTRIES, button(100, 160), () => {});
+      expect([left(), top()]).toEqual([100, 42]);
+      menu.openUnder(ENTRIES, button(300, 360), () => {});
+      expect(left() + MENU_W).toBe(360);
+    });
+
+    it('ends at the button’s end edge with `end` ("more", at the end of the toolbar)', () => {
+      menu.openUnder(ENTRIES, button(340, 368), () => {}, 'end');
+      expect(left() + MENU_W).toBe(368);
+    });
+
+    it('mirrors both right to left: the start edge is the button’s right, the end edge its left', () => {
+      host.dir = 'rtl';
+      menu.openUnder(ENTRIES, button(200, 260), () => {});
+      expect(left() + MENU_W).toBe(260);
+      // No room before its start: it starts at the button's left.
+      menu.openUnder(ENTRIES, button(20, 80), () => {});
+      expect(left()).toBe(20);
+      menu.openUnder(ENTRIES, button(4, 32), () => {}, 'end');
+      expect(left()).toBe(4);
+    });
+  });
+
+  describe('taller than the room', () => {
+    const el = () => host.querySelector<HTMLElement>('.tcw-context-menu')!;
+    let sheet: HTMLStyleElement;
+    beforeEach(() => {
+      // The look's padding and border, around the rows.
+      sheet = document.createElement('style');
+      sheet.textContent = '.tcw-context-menu { padding: 3px; border: 1px solid; }';
+      document.head.appendChild(sheet);
+      Object.defineProperty(host, 'clientHeight', { value: 300, configurable: true });
+      Object.defineProperty(host, 'clientWidth', { value: 400, configurable: true });
+    });
+    afterEach(() => sheet.remove());
+
+    // The time zones over the clock: 300 tall less the 4 kept from the edge, its padding and border in it.
+    it('scrolls inside the room with its padding and border, not past the window by them', () => {
+      menu.open(ENTRIES, 0, 290, () => {});
+      expect(el().style.maxHeight).toBe(`${300 - 4 - 2 * 3 - 2 * 1}px`);
+    });
+
+    it('takes the room as it is when its height counts its padding and border', () => {
+      sheet.textContent = '.tcw-context-menu { box-sizing: border-box; padding: 3px; border: 1px solid; }';
+      menu.open(ENTRIES, 0, 290, () => {});
+      expect(el().style.maxHeight).toBe(`${300 - 4}px`);
+    });
+  });
 });
 
 describe('WidgetContextMenu shortcuts, choices and submenus', () => {
@@ -99,6 +189,19 @@ describe('WidgetContextMenu shortcuts, choices and submenus', () => {
     const invert = all('menuitemcheckbox')[0];
     expect(invert.querySelector('.tcw-context-key')?.textContent).toBe('Alt+I');
     expect(invert.getAttribute('aria-keyshortcuts')).toBe('Alt+I');
+  });
+
+  it('leads a switch with its icon while off, if it has one, and with a tick while on', () => {
+    menu.open([
+      { id: 'alerts', label: 'Price alerts', icon: 'bell', checked: false },
+      { id: 'flow', label: 'Order flow', icon: 'layers', checked: true },
+      { id: 'grid', label: 'Grid', checked: false },
+    ], 0, 0, () => {});
+    const [alerts, flow, grid] = all('menuitemcheckbox');
+    expect(alerts.querySelector('svg')).not.toBeNull();
+    expect(alerts.querySelector('svg')?.outerHTML).not.toBe(flow.querySelector('svg')?.outerHTML);
+    expect(grid.querySelector('svg')).toBeNull();
+    expect(grid.querySelector('.tcw-context-icon')).not.toBeNull();
   });
 
   it('marks a choice among several as a radio item', () => {
@@ -237,8 +340,9 @@ describe('WidgetContextMenu shortcuts, choices and submenus', () => {
   });
 
   describe('under a resting pointer', () => {
+    /** The pointer moves onto `el` and rests there. */
     const rest = (el: Element) => {
-      el.dispatchEvent(new MouseEvent('pointerenter'));
+      el.dispatchEvent(new MouseEvent('pointermove', { bubbles: true }));
       vi.advanceTimersByTime(200);
     };
     beforeEach(() => { vi.useFakeTimers(); });
@@ -265,9 +369,22 @@ describe('WidgetContextMenu shortcuts, choices and submenus', () => {
       expect(menu.isOpen()).toBe(true);
     });
 
+    // On a 390 phone a right-click on the time axis opened its menu as a sheet under the pointer, on
+    // "Timezone": the browser told of the pointer entering it, which opened the zones too, two menus.
+    it('opens nothing for a pointer it opened under, until that pointer moves', () => {
+      menu.open(SCALE, 0, 0, () => {});
+      const zones = host.querySelector('[aria-haspopup="menu"]')!;
+      zones.dispatchEvent(new MouseEvent('pointerover', { bubbles: true }));
+      zones.dispatchEvent(new MouseEvent('pointerenter'));
+      vi.advanceTimersByTime(200);
+      expect(sub()).toBeUndefined();
+      rest(zones);
+      expect(sub()).toBeDefined();
+    });
+
     it('opens nothing under a finger: a tap is a click', () => {
       menu.open(SCALE, 0, 0, () => {});
-      const touch = new Event('pointerenter');
+      const touch = new Event('pointermove', { bubbles: true });
       Object.defineProperty(touch, 'pointerType', { value: 'touch' });
       host.querySelector('[aria-haspopup="menu"]')!.dispatchEvent(touch);
       vi.advanceTimersByTime(200);
@@ -277,8 +394,9 @@ describe('WidgetContextMenu shortcuts, choices and submenus', () => {
     it('keeps the submenu when the pointer crosses another entry on its way in', () => {
       menu.open(SCALE, 0, 0, () => {});
       rest(host.querySelector('[aria-haspopup="menu"]')!);
-      all('menuitem').find((b) => b.textContent === 'Settings…')!.dispatchEvent(new MouseEvent('pointerenter'));
-      rest(sub()!);
+      all('menuitem').find((b) => b.textContent === 'Settings…')!.dispatchEvent(new MouseEvent('pointermove', { bubbles: true }));
+      sub()!.dispatchEvent(new MouseEvent('pointerenter'));
+      vi.advanceTimersByTime(200);
       expect(sub()).toBeDefined();
     });
   });

@@ -239,9 +239,11 @@ export interface ChartOptions {
   /** The shapes the chart draws: price tags, axis pills and order badges square (default), rounded or pills. */
   shapes?: import('./theme.js').ShapeConfig;
   /**
-   * The face and sizes of the chart's own text (the axes, the legend, the
-   * tags) over every theme: `{ family: SANS_FONT_FAMILY }` for proportional
-   * figures. Change it with `chart.setFont`.
+   * The face and sizes of the chart's own text (the axes, the tags, the
+   * crosshair's pills) over every theme: `{ family: SANS_FONT_FAMILY }` for
+   * proportional figures. The legend takes the face, at its own size
+   * (`chart.setLegend({ fontSize })`); in a widget its face and size come
+   * from the look (`ui.font`). Change it with `chart.setFont`.
    */
   font?: Partial<import('./theme.js').FontConfig>;
   /**

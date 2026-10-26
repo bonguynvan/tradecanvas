@@ -1,4 +1,4 @@
-import type { Chart, DataAdapter, OHLCBar } from '@tradecanvas/chart';
+import type { Chart, DataAdapter, MarketConfig, OHLCBar, SymbolInfo } from '@tradecanvas/chart';
 import type { ChartWidget, ChartWidgetGrid, ChartWidgetGridOptions, ChartWidgetOptions, WidgetMessages, WidgetUIPreset } from '@tradecanvas/chart/widget';
 import type { SiteMessages } from './i18n/messages';
 import { generateBars } from './sampleData';
@@ -84,16 +84,48 @@ function swings(data: OHLCBar[], span: number, endOffset: number, count: number,
 }
 
 
-/** Vietnamese symbols in the markets scene: a price in thousands of dong (index points for VN30F). */
-const VN_SYMBOLS: Record<string, { start: number; name: string }> = {
-  HPG: { start: 27, name: 'Hoa Phat Group · HOSE' },
-  FPT: { start: 118, name: 'FPT Corporation · HOSE' },
-  VN30F2611: { start: 1350, name: 'VN30 futures, November 2026 · HNX' },
-};
-const isVN30F = (symbol: string) => symbol.startsWith('VN30F');
+/** The rules a Vietnamese symbol trades under: HOSE shares, HOSE funds and warrants, HNX shares, VN30 futures. */
+type VNMarket = 'hose' | 'hoseFund' | 'hnx' | 'vn30f';
 
-/** HOSE's steps in thousands of dong (10, 50, 100 dong); 0.1 a point for VN30F. */
-const vnStep = (symbol: string, price: number) => (isVN30F(symbol) || price >= 50 ? 0.1 : price >= 10 ? 0.05 : 0.01);
+/**
+ * A plain mark as a logo, written in `data:` as an SVG: the scene's stand-in
+ * for a listed company's own, which a host serves from its site.
+ */
+const demoMark = (fill: string, shape: string) =>
+  `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><rect width="20" height="20" rx="5" fill="${fill}"/>${shape}</svg>`)}`;
+const MARK_RING = '<circle cx="10" cy="10" r="5" fill="none" stroke="#fff" stroke-width="2.5"/>';
+const MARK_PEAK = '<path d="M4 15 10 5l6 10z" fill="#fff"/>';
+const MARK_BARS = '<path d="M5 14h2V8H5zm4 0h2V5H9zm4 0h2v-4h-2z" fill="#fff"/>';
+
+/**
+ * Vietnamese symbols in the markets scenes: a price in thousands of dong
+ * (index points for VN30F), the rules each trades under, and what the
+ * symbol search lists of it.
+ */
+const VN_SYMBOLS: Record<string, { start: number; name: string; type: string; exchange: string; market: VNMarket; logo?: string }> = {
+  HPG: { start: 27, name: 'Hoa Phat Group', type: 'Stock', exchange: 'HOSE', market: 'hose', logo: demoMark('#b4532a', MARK_PEAK) },
+  FPT: { start: 118, name: 'FPT Corporation', type: 'Stock', exchange: 'HOSE', market: 'hose', logo: demoMark('#2f6fb3', MARK_RING) },
+  VCB: { start: 61, name: 'Vietcombank', type: 'Stock', exchange: 'HOSE', market: 'hose', logo: demoMark('#2e7d4f', MARK_BARS) },
+  PVS: { start: 33, name: 'PetroVietnam Technical Services', type: 'Stock', exchange: 'HNX', market: 'hnx' },
+  VN30F2611: { start: 1350, name: 'VN30 futures, November 2026', type: 'Futures', exchange: 'HNX', market: 'vn30f' },
+  CFPT2611: { start: 2.4, name: 'FPT covered warrant', type: 'Warrant', exchange: 'HOSE', market: 'hoseFund' },
+  E1VFVN30: { start: 24.5, name: 'DCVFMVN30 ETF', type: 'ETF', exchange: 'HOSE', market: 'hoseFund' },
+};
+const marketOf = (symbol: string): VNMarket => VN_SYMBOLS[symbol]?.market ?? 'hose';
+const isVN30F = (symbol: string) => marketOf(symbol) === 'vn30f';
+
+/** The symbols as the symbol search lists them: name, kind, exchange, and a logo for some. */
+const VN_LISTED: SymbolInfo[] = Object.entries(VN_SYMBOLS).map(([symbol, { name, type, exchange, logo }]) => ({
+  symbol, description: name, type, exchange, logo,
+}));
+
+/** A step in thousands of dong: HOSE's by price (10, 50, 100 dong), 10 dong for its funds and warrants, 100 on HNX; 0.1 a point for VN30F. */
+const vnStep = (symbol: string, price: number) => {
+  const market = marketOf(symbol);
+  if (market === 'hoseFund') return 0.01;
+  if (market !== 'hose') return 0.1;
+  return price >= 50 ? 0.1 : price >= 10 ? 0.05 : 0.01;
+};
 const onStep = (symbol: string, price: number) => {
   const step = vnStep(symbol, price);
   return Number((Math.round(price / step) * step).toFixed(2));
@@ -134,10 +166,16 @@ function applyVNMarket(symbol: string): void {
   const { chart, lib } = vnScene;
   if (!chart || !lib) return;
   const futures = isVN30F(symbol);
-  chart.setMarket(futures ? lib.MARKET_VN30F : lib.MARKET_HOSE);
+  const markets: Record<VNMarket, MarketConfig> = {
+    hose: lib.MARKET_HOSE, hoseFund: lib.MARKET_HOSE_ETF, hnx: lib.MARKET_HNX, vn30f: lib.MARKET_VN30F,
+  };
+  chart.setMarket(markets[marketOf(symbol)]);
+  const listed = VN_SYMBOLS[symbol];
   chart.setSymbolInfo({
     symbol,
-    description: VN_SYMBOLS[symbol]?.name,
+    description: listed?.name,
+    type: listed?.type,
+    exchange: listed?.exchange,
     timeZone: 'Asia/Ho_Chi_Minh',
     sessions: [{ start: futures ? '08:45' : '09:00', end: '11:30' }, { start: '13:00', end: '14:45' }],
   });
@@ -405,10 +443,18 @@ chart.setPriceLimits(27.05)       // the reference price: ceiling 28.9, floor 25
 chart.roundPrice(27.37)           // 27.35: a 50-dong step between 10,000 and 50,000
 
 chart.setMarket(MARKET_VN30F)     // VN30 futures: 0.1 a point, ±7%, from 8:45
-vn30fContracts(Date.now())        // the four listed contracts and their last days`,
+vn30fContracts(Date.now())        // the four listed contracts and their last days
+
+new ChartWidget(host, {           // the symbol search lists names, kinds, exchanges, logos
+  symbols: [
+    { symbol: 'HPG', description: 'Hoa Phat Group', type: 'Stock', exchange: 'HOSE', logo: '/logos/hpg.svg' },
+    { symbol: 'CFPT2611', description: 'FPT covered warrant', type: 'Warrant', exchange: 'HOSE' },
+    { symbol: 'VN30F2611', description: 'VN30 futures, November 2026', type: 'Futures', exchange: 'HNX' },
+  ],
+})`,
     options: () => ({
       symbol: 'HPG',
-      symbols: Object.keys(VN_SYMBOLS),
+      symbols: VN_LISTED,
       timeframe: '15m',
       chartOptions: { extendedHours: false },
       onSymbolChange: (symbol) => applyVNMarket(symbol),
@@ -430,7 +476,7 @@ chart.addIndicator('vr', { period: 20 }, 'bottom')  // volume of up days against
 detectCandlePatterns(bars)                          // every pattern found, by name`,
     options: () => ({
       symbol: 'FPT',
-      symbols: Object.keys(VN_SYMBOLS),
+      symbols: VN_LISTED,
       timeframe: '15m',
       chartOptions: { extendedHours: false },
     }),

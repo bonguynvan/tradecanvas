@@ -509,10 +509,42 @@ new ChartWidget(host, { features: { 'dock.dataWindow': false } })  // no button 
   <strong>Tìm mã</strong> mở từ mã trên thanh công cụ, <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>P</kbd>,
   hoặc khi gõ một chữ cái trên biểu đồ, và bắt đầu tìm bằng chữ cái đó. Khi chưa gõ gì, hộp thoại liệt kê các mã
   trong <code>symbols</code> của bạn; khi đã gõ, mỗi lần bạn ngừng gõ nó hỏi chức năng tìm kiếm của nguồn dữ liệu
-  (<code>searchSymbols</code>, hoặc của adapter): mã, tên, loại và sàn của mã xếp thành cột, mã của biểu đồ được
-  đánh dấu. Khi kết quả có nhiều loại (chẳng hạn cổ phiếu và tiền mã hoá), có thể lọc chỉ còn một loại. Tên mà một
-  lần tìm đã cho biết được giữ lại cho danh sách hiện ra lúc mở.
+  (<code>searchSymbols</code>, hoặc của adapter). Mỗi dòng mở đầu bằng một huy hiệu (logo của mã, nếu không có thì
+  chữ cái đầu của mã trong màu của loại mã), rồi đến mã, tên, loại và sàn xếp thành cột, mã của biểu đồ được đánh
+  dấu. Các thẻ lọc danh sách theo một loại (cổ phiếu, tiền mã hoá) và đứng yên khi bạn gõ; khi các dòng đến từ hai
+  sàn trở lên, một danh sách bên cạnh lọc theo một sàn. Cả hai chỉ lọc những dòng đang có, không tìm lại: một lần tìm
+  trả về một trang kết quả (chức năng tìm của adapter được yêu cầu 50 kết quả), nên chọn HNX sau khi gõ <code>V</code>
+  chỉ hiện các mã HNX trong số đó, không phải mọi mã HNX có chữ V. Danh sách hiện 200 dòng khớp nhất, và một dòng bên
+  dưới cho biết còn bao nhiêu mã nữa để gõ thêm mà thu hẹp. Khi không có chức năng tìm, chữ gõ vào sẽ tìm mã của bạn theo mã và theo tên, có
+  dấu hay không dấu (<code>ngan hang</code> tìm ra “Ngân hàng”).
   <code>{`features: { symbolTyping: false }`}</code> để các chữ cái gõ trên biểu đồ không mở hộp thoại này.
+</p>
+<p>
+  Truyền <code>symbols</code> dưới dạng <code>SymbolInfo</code> thì danh sách mở ra đã có tên, loại, sàn và logo;
+  mã trên thanh công cụ và bảng thông tin mã lấy tên và sàn từ đó khi biểu đồ chưa biết. Kết quả tìm của nguồn dữ
+  liệu được ưu tiên hơn những thông tin này nhưng vẫn giữ logo của bạn; những gì biểu đồ biết về mã của nó chỉ điền tên hoặc logo còn thiếu vào hộp tìm, vì nó có thể gọi loại và sàn bằng từ khác với danh sách của bạn (stock thay cho Cổ phiếu, tên công ty chứng khoán thay cho sàn). Bước giá và giờ giao dịch truyền ở đây không áp dụng cho biểu đồ: chúng đến từ
+  <code>resolveSymbol</code> của adapter hoặc <code>chart.setSymbolInfo</code>.
+</p>
+<pre><code>{`new ChartWidget(el, {
+  symbols: [
+    { symbol: 'VNM', description: 'Vinamilk', type: 'Cổ phiếu', exchange: 'HOSE', logo: '/logos/vnm.svg' },
+    'FPT',   // chỉ mã, như trước
+  ],
+})`}</code></pre>
+<p>
+  <code>logo</code> là một địa chỉ <code>https:</code> hoặc <code>http:</code>, một đường dẫn trên trang của bạn, một
+  URL <code>blob:</code> hoặc một ảnh viết trong <code>data:</code> (PNG, JPEG, GIF, WebP, AVIF hoặc SVG); mọi thứ khác
+  bị bỏ qua. Nó chỉ được tải như một ảnh, không kèm referrer, nên chính sách <code>img-src</code> của trang phải cho
+  phép máy chủ của nó; logo không tải được sẽ hiện chữ cái. Màu của chữ cái lấy từ <code>--tcw-kind-1</code> … <code>--tcw-kind-5</code> (cổ phiếu, phái sinh, chỉ số, tiền mã hoá và hợp đồng vĩnh cửu, ngoại hối, viết bằng tiếng Anh, Việt, Nhật, Trung hay Hàn; chứng quyền lấy màu của phái sinh, chứng chỉ quỹ và ETF lấy màu của chỉ số, trái phiếu lấy màu của ngoại hối; loại khác nhận một màu theo tên của nó), đặt cho cả giao diện tối và sáng.
+</p>
+<p>
+  Khi một lần tìm đã cho biết về một mã, tên của nguồn dữ liệu cũng hiện trên danh sách lúc hộp thoại mở ra, không
+  chỉ trong kết quả tìm. Tên, loại, sàn hay logo không phải là chữ (<code>null</code> của một nguồn JSON, mã sàn dạng số), trong kết quả của nguồn dữ liệu hay trong thông tin biểu đồ biết, được coi như không có: nó không hiện ra và không xoá thông tin của bạn. Tên sàn đứng trước dấu hai chấm
+  (<code>BINANCE:BTCUSDT</code>) hiện mờ hơn và được rút gọn trước tiên khi cột hẹp; trên điện thoại, các thẻ loại mã cuộn
+  trên một dòng và mờ dần ở đầu còn thẻ bị khuất. Thông tin biểu đồ biết về mã của nó đặt tên cho mã trên thanh công
+  cụ và trong bảng thông tin khi nó nói về đúng mã đó (không phân biệt chữ hoa chữ thường, có hay không có tên sàn
+  trước dấu hai chấm) hoặc được đặt sau khi đổi mã, nên cách viết riêng của nguồn dữ liệu (<code>BTC-USD</code> cho
+  <code>BTCUSD</code>) vẫn được tính.
 </p>
 <p>
   <strong>So sánh</strong> là chính hộp thoại đó, có thêm <strong>Thêm theo kiểu</strong> dưới ô tìm kiếm và các mã
@@ -546,7 +578,17 @@ new ChartWidget(host, { features: { 'dock.dataWindow': false } })  // no button 
     <tr><td>Bấm nút phát trên thanh công cụ</td><td>Mở thanh điều khiển phát lại nến (phát/từng bước/tua/tốc độ)</td></tr>
   </tbody>
 </table>
-<p>Cập nhật danh sách mã có thể tìm lúc chạy bằng <code>widget.setSymbols(['BTCUSDT', 'ETHUSDT', …])</code>.</p>
+<p>
+  Đổi các mã có thể tìm lúc chạy bằng <code>widget.setSymbols(['BTCUSDT', 'ETHUSDT', …])</code>, là mã hoặc
+  <code>SymbolInfo</code> như trong <code>symbols</code>. Danh mục theo dõi được tạo từ <code>symbols</code> (không có
+  <code>lists</code>, không lưu lại) sẽ được thay bằng các mã này và hỏi giá của từng mã: với một danh sách dài từ máy
+  chủ của bạn, hãy cho danh mục theo dõi các danh sách riêng.
+</p>
+<pre><code>{`const widget = new ChartWidget(el, {
+  adapter: feed,
+  watchlist: { lists: [{ id: 'main', name: 'Chính', symbols: ['VNM', 'FPT'] }] },
+})
+widget.setSymbols(await loadMarkets())   // SymbolInfo[] từ máy chủ của bạn: ô tìm mở ra với chúng, danh mục theo dõi giữ nguyên`}</code></pre>
 
 <h3>Cửa sổ dữ liệu</h3>
 <p>

@@ -155,6 +155,15 @@ describe('ChartWidget feature switches', () => {
     expect(FakeChart.last.resizes).toBe(2);
   });
 
+  it('fits the status bar again when a switch changes what it shows', async () => {
+    const { WidgetStatusBar } = await import('../WidgetStatusBar.js');
+    make();
+    const fit = vi.spyOn(WidgetStatusBar.prototype, 'fit');
+    widget.setFeatures({ 'statusBar.range': false });
+    expect(fit).toHaveBeenCalled();
+    fit.mockRestore();
+  });
+
   it('reports every switch', () => {
     make({ features: { 'statusBar.market': false } });
     const all = widget.getFeatures();
@@ -377,6 +386,31 @@ describe('ChartWidget keys and behaviours by switch', () => {
     widget.setFeatures({ hotkeys: false });
     (widget as unknown as { toggleCommandPalette(): void }).toggleCommandPalette();
     expect(document.querySelectorAll('.tcw-cp-row kbd')).toHaveLength(0);
+  });
+
+  it('names go to date on the status bar with its keys only while they work: off, or taken by a host, none', () => {
+    make();
+    const goTo = host.querySelector<HTMLButtonElement>('.tcw-statusbar [data-role="goto"]')!;
+    // The widget's tooltip lifts the title into data-tip while the pointer is on it.
+    const title = () => {
+      goTo.dispatchEvent(new MouseEvent('pointerover', { bubbles: true }));
+      const shown = goTo.dataset.tip || goTo.title;
+      goTo.dispatchEvent(new MouseEvent('pointerout', { bubbles: true }));
+      return shown;
+    };
+    expect(title()).toBe('Go to date (Alt+G)');
+    widget.setFeatures({ 'hotkeys.goToDate': false });
+    expect(title()).toBe('Go to date');
+    widget.setFeatures({ 'hotkeys.goToDate': true });
+    widget.addHotkey({ keys: 'Alt+G', label: 'Mine', onPress: () => {} });
+    expect(title()).toBe('Go to date');
+  });
+
+  it('names the status bar for a screen reader', () => {
+    make();
+    const bar = host.querySelector<HTMLElement>('.tcw-statusbar')!;
+    expect(bar.getAttribute('role')).toBe('group');
+    expect(bar.getAttribute('aria-label')).toBe('Status bar');
   });
 
   it('leaves out of the palette the commands switched off', () => {

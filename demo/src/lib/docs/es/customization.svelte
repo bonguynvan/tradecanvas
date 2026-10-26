@@ -163,6 +163,10 @@ widget.toast('Feed lost', 'error', 'info')`}</code></pre>
 <p>
   Tus botones, menús y elementos van en las barras del widget, se ven como los suyos y siguen su tema y su aspecto. Cada
   uno devuelve un manejador para cambiarlo o quitarlo, y se muestra mientras se muestre su barra.
+  Cuando la barra se queda sin espacio, tus botones y menús se pliegan bajo su menú «más» junto con los del widget,
+  los de la izquierda los últimos; por debajo de 641 px de ancho van todos allí. Un menú tuyo elegido desde «más» se
+  abre debajo de él. Pulsar «más» otra vez lo cierra. Tu <code>onClick</code> elegido desde «más» recibe su botón plegado y
+  sin tamaño (<code>getClientRects()</code> está vacío): coloca entonces el popover desde «más» (<code>.tcw-toolbar-more</code>).
 </p>
 <pre><code>{`widget.addToolbarButton({ id: 'news', label: 'News', icon: 'bell', toggle: true, onClick })
 
@@ -181,7 +185,7 @@ const ruler = widget.addSidebarButton({ id: 'ruler', label: 'Ruler', icon: 'rule
   onClick: () => ruler?.setActive(toggleRuler()) })
 
 const latency = widget.addStatusBarItem({ id: 'latency', text: '12 ms', label: 'Latency' })
-latency?.setText('15 ms')
+latency?.setText('15 ms')                    // en su propia dirección: de derecha a izquierda también se lee "15 ms"
 widget.addHotkey({ keys: 'Alt+N', label: 'New note', onPress: () => addNote() })   // sustituye al atajo del widget con las mismas teclas; también en la hoja de atajos (?)
 
 // Cualquier otra cosa tuya: junto a los controles de la barra, bajo los de la barra lateral,

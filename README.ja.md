@@ -58,8 +58,8 @@
       <br><b>グリッド</b>：最大 6 チャートを銘柄、時間足、クロスヘア、時刻で連動。
     </td>
     <td width="50%" valign="top">
-      <img src=".github/assets/clips/looks.webp" alt="1 つのチャートが Terminal、Capsule、Studio のルックとダーク・ライトを切り替える">
-      <br><b>あなたのルック</b>：Studio、Terminal、Capsule、ライトかダーク、または独自のトークン。
+      <img src=".github/assets/clips/looks.webp" alt="1 つのチャートが Print、Terminal、Capsule、Studio のルックとダーク・ライトを切り替える">
+      <br><b>あなたのルック</b>：Print（紙とインク、黄金比で）、Studio、Terminal、Capsule、ライトかダーク、または独自のトークン。
     </td>
   </tr>
   <tr>

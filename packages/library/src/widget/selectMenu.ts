@@ -159,6 +159,8 @@ export class SelectMenu {
     const text = document.createElement('span');
     text.className = 'tcw-select-option-text';
     text.textContent = option.label || option.textContent || '';
+    // An option of words from elsewhere (a feed's exchange) reads in their own direction, as it says.
+    if (option.dir) text.dir = option.dir;
     const check = document.createElement('span');
     check.className = 'tcw-select-check';
     check.setAttribute('aria-hidden', 'true');

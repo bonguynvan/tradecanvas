@@ -2,6 +2,7 @@ import type { HeatmapCell, HeatmapOptions, Theme } from '@tradecanvas/commons';
 import { lerpColor } from '@tradecanvas/commons';
 import type { GroupRect, LayoutRect } from './HeatmapLayout.js';
 import { fitText } from './chartKit.js';
+import { readableText } from './colorScale.js';
 
 function defaultValueFormat(value: number): string {
   const sign = value >= 0 ? '+' : '';
@@ -28,6 +29,25 @@ function computeCellColor(
   }
   const t = value / max;
   return lerpColor(colorScale.zero, colorScale.positive, t);
+}
+
+const WHITE_INK = '#FFFFFF';
+/** The dark ink, as `readableText` gives it. */
+const DARK_INK = '#11151b';
+
+/**
+ * The ink of a cell's label: white or the dark ink, whichever reads better
+ * on the cell as drawn over `background` (a see-through one blended into
+ * it), so a label reads at 4.5:1 wherever either ink can: on a mid-tone
+ * cell (a light theme's month at -3.4%) white reads at 3.1:1, the dark ink
+ * at 5.9:1.
+ */
+export function cellLabelInk(fill: string, background: string): string {
+  const seeThrough = /^rgba\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*\)$/i.exec(fill.trim());
+  const drawn = seeThrough
+    ? lerpColor(background, `rgb(${seeThrough[1]},${seeThrough[2]},${seeThrough[3]})`, Number(seeThrough[4]))
+    : lerpColor(fill, fill, 0);
+  return readableText(drawn) === DARK_INK ? DARK_INK : WHITE_INK;
 }
 
 function roundRect(
@@ -69,6 +89,7 @@ function drawCellText(
   showValues: boolean,
   formatLabel: (c: HeatmapCell) => string,
   formatValue: (v: number) => string,
+  ink: string,
 ): void {
   if (rw < 40 || rh < 30) return;
 
@@ -76,9 +97,11 @@ function drawCellText(
   const cy = y + rh / 2;
 
   ctx.save();
-  ctx.shadowColor = 'rgba(0,0,0,0.6)';
-  ctx.shadowBlur = 2;
-  ctx.fillStyle = '#FFFFFF';
+  // A shadow lifts white off a strong cell; the dark ink on a pale one needs none.
+  const white = ink === WHITE_INK;
+  ctx.shadowColor = white ? 'rgba(0,0,0,0.6)' : 'transparent';
+  ctx.shadowBlur = white ? 2 : 0;
+  ctx.fillStyle = ink;
   ctx.textAlign = 'center';
 
   if (showLabels) {
@@ -214,7 +237,7 @@ export function renderHeatmap(
     ctx.fillStyle = bgColor;
     ctx.fill();
 
-    drawCellText(ctx, cell, x, y, rw, rh, theme, showLabels, showValues, formatLabel, formatValue);
+    drawCellText(ctx, cell, x, y, rw, rh, theme, showLabels, showValues, formatLabel, formatValue, cellLabelInk(bgColor, theme.background));
 
     if (lr.id === hoveredId) {
       roundRect(ctx, x, y, rw, rh, cellRadius);

@@ -246,6 +246,12 @@ const dash = new PerformanceDashboard(document.getElementById('report')!, {
 
 // later: dash.update(newResult) · dash.setTheme('light') · dash.destroy()`}</code></pre>
 <p>
+  Metrics you build by hand take fractions, as <code>@tradecanvas/analytics</code> returns them: a
+  <code>totalReturnPct</code> of <code>0.12</code> shows as +12.00%, and one given in percent
+  (<code>12</code>) would show 100 times too large. <code>maxDrawdownPct</code> reads as a fall,
+  whichever sign it is given with.
+</p>
+<p>
   The calculations are exported for a layout of your own: <code>computeMonthlyReturns</code>,
   <code>computeDrawdownCurve</code>, <code>toEquityPoints</code>, <code>selectKeyStats</code>, and
   for axes of your own <code>niceScale(min, max)</code> (ticks in steps of 1, 2, 2.5 or 5).

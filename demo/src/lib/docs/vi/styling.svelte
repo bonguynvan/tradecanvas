@@ -68,7 +68,8 @@ chart.setBarLayout('classic')    // a 2 px gap, as before
 chart.setFont({ sizeSmall: 12 }) // the axes' and tags' size
 chart.setFont(null)              // the theme's own font again`}</code></pre>
 <p>
-  <code>chartOptions.barLayout</code> và <code>chartOptions.font</code> được ưu tiên hơn của giao diện. Khi đã có nến
+  <code>chartOptions.barLayout</code> và một <code>family</code> trong <code>chartOptions.font</code> được ưu tiên hơn
+  của giao diện; nếu <code>chartOptions.font</code> chỉ đặt cỡ chữ thì font của giao diện vẫn được giữ. Khi đã có nến
   trên màn hình, đổi layout giữ nguyên mức zoom và chỉ chia lại từng ô.
 </p>
 
@@ -188,6 +189,8 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
     <tr><td><code>--tcw-menu-shadow</code>, <code>--tcw-dialog-shadow</code>, <code>--tcw-tooltip-shadow</code></td><td><code>shadows</code></td></tr>
     <tr><td><code>--tcw-blur</code>, <code>--tcw-surface-opacity</code></td><td><code>blur</code></td></tr>
     <tr><td><code>--tcw-space-1</code> … <code>--tcw-space-7</code></td><td>Stylesheet: khoảng cách Fibonacci, từ 2 đến 34 px</td></tr>
+    <tr><td><code>--tcw-kind-1</code> … <code>--tcw-kind-5</code></td><td>Stylesheet: màu của từng loại mã trong hộp tìm mã (cổ phiếu, phái sinh, chỉ số, tiền mã hoá, ngoại hối), đặt cho cả giao diện tối và sáng. Bảng màu riêng của bạn cũng nên đặt chúng, nếu không các huy hiệu giữ những màu này.</td></tr>
+    <tr><td><code>--tcw-font-features</code></td><td>Stylesheet: <code>normal</code>, các font hiển thị như vốn có. Tuỳ chọn <code>ui</code> không bao giờ đặt nó, nên một quy tắc của bạn trên <code>.tcw-root</code> bật các tính năng OpenType của font bạn dùng (chữ a một tầng và chữ số mở của Inter: <code>'cv11', 'ss01'</code>). Chúng áp dụng cho chữ của widget, cả các nút và ô nhập; còn chữ của biểu đồ (các canvas và tooltip của nó) thì không bao giờ nhận chúng.</td></tr>
   </tbody>
 </table>
 <p>

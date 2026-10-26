@@ -41,6 +41,13 @@ chart.connect({ adapter: new CoinbaseAdapter(), symbol: 'BTC-USD', timeframe: '1
   fetchTrades?(symbol, limit?): Promise<Trade[]>        // tick charts, with
   subscribeTrades?(symbol, onTrades): () => void        // subscribeTrades
 }`}</code></pre>
+<p>
+  <code>searchSymbols</code> 和 <code>resolveSymbol</code> 返回 <code>SymbolInfo</code>：<code>symbol</code>，以及数据源
+  知道的其他信息：可读的名称（<code>description</code>）、<code>exchange</code>、用数据源自己的说法写的
+  <code>type</code>（<code>'stock'</code>、<code>'futures'</code>、<code>'Cổ phiếu'</code>…）、小部件的搜索代码里显示的
+  <code>logo</code>、<code>pricePrecision</code>、<code>minTick</code>、<code>currency</code>、<code>timeZone</code> 和
+  <code>sessions</code>。
+</p>
 
 <h2 id="symbol-info">数据源稍后才得知的品种信息</h2>
 <p>

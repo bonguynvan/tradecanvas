@@ -476,9 +476,36 @@ new ChartWidget(host, { features: { 'dock.dataWindow': false } })  // no button 
 <p>
   <strong>搜索代码</strong>可以从工具栏上的品种或 <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>P</kbd> 打开，
   也可以直接在图表上输入一个字母打开，并以该字母开始搜索。还没有输入时，它列出你的 <code>symbols</code>；
-  输入后，每当停顿下来，它就调用数据源的搜索（<code>searchSymbols</code>，或适配器的搜索）：品种、名称、类别和交易所分列显示，
-  图表当前的品种会被标出。结果包含多种类别（比如股票和加密货币）时，可以只看其中一种。搜索得知的名称会保留下来，
-  用在打开时显示的列表里。<code>{`features: { symbolTyping: false }`}</code> 让在图表上输入的字母不再打开搜索。
+  输入后，每当停顿下来，它就调用数据源的搜索（<code>searchSymbols</code>，或适配器的搜索）。每一行开头是一个标记
+  （品种的 logo，没有时是代码的首字母，用该类别的颜色），然后品种、名称、类别和交易所分列显示，图表当前的品种会被标出。
+  标签可以只看一种类别（股票、加密货币），输入时它们保持不动；结果来自两个或更多交易所时，旁边的列表可以只看其中一个。
+  两者都只筛选手头已有的结果，不会重新搜索：一次搜索返回一页结果（适配器的搜索会请求 50 个），所以输入 <code>V</code>
+  后选 HNX，显示的是其中的 HNX 品种，而不是所有带 V 的 HNX 品种。列表最多显示最匹配的 200 行，下方一行会说明还有多少个可以继续输入来缩小。没有搜索时，输入会按代码和名称查找你的品种，带不带越南语声调都可以
+  （<code>ngan hang</code> 能找到“Ngân hàng”）。<code>{`features: { symbolTyping: false }`}</code> 让在图表上输入的字母不再打开搜索。
+</p>
+<p>
+  把 <code>symbols</code> 写成 <code>SymbolInfo</code>，列表一打开就有名称、类别、交易所和 logo；图表还不知道时，
+  工具栏上的品种和品种信息面板也从这里取名称和交易所。数据源的搜索结果优先于这些信息，但保留你的 logo；
+  图表对自身品种的了解只为搜索补上缺少的名称或 logo，因为它对类别和交易所的叫法可能和你的列表不同（用 stock 而不是 Cổ phiếu，用券商名代替交易所）。这里给出的价格步长和交易时间不会用到图表上：它们来自适配器的
+  <code>resolveSymbol</code> 或 <code>chart.setSymbolInfo</code>。
+</p>
+<pre><code>{`new ChartWidget(el, {
+  symbols: [
+    { symbol: 'VNM', description: 'Vinamilk', type: 'stock', exchange: 'HOSE', logo: '/logos/vnm.svg' },
+    'FPT',   // 只给代码，和以前一样
+  ],
+})`}</code></pre>
+<p>
+  <code>logo</code> 可以是 <code>https:</code> 或 <code>http:</code> 地址、你网站上的路径、<code>blob:</code> URL，
+  或写在 <code>data:</code> 里的图片（PNG、JPEG、GIF、WebP、AVIF 或 SVG）；其他一律忽略。它只会作为图片加载，
+  不带 referrer，所以页面的 <code>img-src</code> 策略必须允许它的主机；加载失败时显示首字母。首字母的颜色来自 <code>--tcw-kind-1</code> … <code>--tcw-kind-5</code>（股票、期货、指数、加密货币和永续合约、外汇，用英语、越南语、日语、中文或韩语写都可以；权证用期货的颜色，基金和 ETF 用指数的颜色，债券用外汇的颜色；其他类别按名称分到一种），深色和浅色主题各有一套。
+</p>
+<p>
+  一旦搜索告知过某个品种，数据源给的名称不只用在搜索结果里，也用在搜索打开时的列表上。不是文本的名称、类别、交易所或
+  logo（JSON 数据源的 <code>null</code>、数字形式的交易所代码），无论出现在数据源的结果里还是图表的信息里，都视为没有给出：既不显示，也不会抹掉你给的信息。冒号前的
+  交易所名（<code>BINANCE:BTCUSDT</code>）显示得更淡，列变窄时先缩短它；在手机上，类别标签排成一行滚动，后面还有标签的
+  那一端会渐隐。图表对自身品种的了解，在属于同一个品种时（不分大小写，冒号前有没有交易所名都可以），或在切换品种之后
+  才设置时，会作为工具栏和信息面板上品种的名称，所以数据源自己的写法（<code>BTCUSD</code> 写作 <code>BTC-USD</code>）也算数。
 </p>
 <p>
   <strong>对比</strong>是同一个对话框，只是在搜索框下方多了<strong>添加方式</strong>，并把已在对比的品种列在最前面
@@ -510,7 +537,16 @@ new ChartWidget(host, { features: { 'dock.dataWindow': false } })  // no button 
     <tr><td>点击工具栏中的播放按钮</td><td>打开K线回放进度条（播放 / 单步 / 跳转 / 速度）</td></tr>
   </tbody>
 </table>
-<p>运行时可用 <code>widget.setSymbols(['BTCUSDT', 'ETHUSDT', …])</code> 更新可搜索的品种列表。</p>
+<p>
+  运行时可用 <code>widget.setSymbols(['BTCUSDT', 'ETHUSDT', …])</code> 更换可搜索的品种，和 <code>symbols</code> 一样，
+  可以是代码或 <code>SymbolInfo</code>。由 <code>symbols</code> 生成的自选列表（没有 <code>lists</code>，也不保存）
+  会被换成这些品种，并为每一个请求行情：如果是来自服务器的长列表，请给自选列表单独的列表。
+</p>
+<pre><code>{`const widget = new ChartWidget(el, {
+  adapter: feed,
+  watchlist: { lists: [{ id: 'main', name: '主列表', symbols: ['VNM', 'FPT'] }] },
+})
+widget.setSymbols(await loadMarkets())   // 来自你服务器的 SymbolInfo[]：搜索打开时列出它们，自选列表不变`}</code></pre>
 
 <h3>数据窗口</h3>
 <p>

@@ -25,6 +25,8 @@ type MenuItem = Exclude<ContextMenuEntry, 'separator'>;
 
 /** Room kept between the menu and the edge it would touch. */
 const MENU_MARGIN = 4;
+/** Room between a menu and the button it hangs under. */
+const MENU_GAP = 2;
 /**
  * How long the pointer rests on an entry before its submenu opens, or the
  * open one closes: crossing an entry on the way into a submenu does neither.
@@ -35,6 +37,12 @@ const ITEM_SELECTOR = '[role=menuitem], [role=menuitemcheckbox], [role=menuitemr
 const SHEET_QUERY = '(max-width: 640px)';
 /** The way back from a submenu opened as a sheet. */
 const BACK_ID = 'tcw:back';
+
+/**
+ * The menus open now, on every widget of the page: a button that several
+ * menus hang from ("more", for those picked from it) closes whichever is open.
+ */
+const openMenus = new Set<WidgetContextMenu>();
 
 /** Where a menu opens along each axis, in the host's coordinates. */
 interface MenuPlace {
@@ -67,7 +75,8 @@ function itemRole(entry: MenuItem): string {
 function leadMark(entry: MenuItem): string {
   const blank = '<span class="tcw-context-icon"></span>';
   if (entry.radio) return entry.checked ? '<span class="tcw-context-icon tcw-context-dot"></span>' : blank;
-  if (entry.checked !== undefined) return entry.checked ? createIcon('check', 14) : blank;
+  // A switch that is off shows its icon, as an action does.
+  if (entry.checked) return createIcon('check', 14);
   return (entry.icon && createIcon(entry.icon, 14)) || blank;
 }
 
@@ -91,6 +100,8 @@ export class WidgetContextMenu {
   /** The menu this one is the submenu of. */
   private parent: WidgetContextMenu | null = null;
   private hoverTimer: ReturnType<typeof setTimeout> | null = null;
+  /** The entry `hoverTimer` counts the rest on: moving on it counts on, not again. */
+  private hoverItem: HTMLElement | null = null;
   private readonly onDocPointer = (e: Event) => {
     const target = e.target as Node;
     if (this.holds(target) || this.anchor?.contains(target)) return;
@@ -119,8 +130,10 @@ export class WidgetContextMenu {
 
   /**
    * Open at (`x`, `y`) in the host's coordinates. It opens up or to the left
-   * of the point when there is no room below or to the right, and stays
-   * inside both the host and the window.
+   * of the point when there is no room below or to the right, ending at
+   * `xBack` then (a menu under a button ends at the button's far edge), and
+   * stays inside both the host and the window. With `before` it ends at
+   * `xBack` first, and starts at `x` only without room before it.
    */
   open(
     entries: readonly ContextMenuEntry[],
@@ -129,14 +142,52 @@ export class WidgetContextMenu {
     onPick: (id: string) => void,
     anchor?: HTMLElement,
     onRemove?: (id: string) => void,
+    xBack = x,
+    before = false,
   ): void {
-    this.show(entries, { x, y, xBack: x, yBack: y }, onPick, anchor, onRemove, true);
+    this.show(entries, { x, y, xBack, yBack: y, before }, onPick, anchor, onRemove, true);
+  }
+
+  /**
+   * Open under `anchor`, `gap` px below it, lined up with it as the
+   * toolbar's own menus are, mirrored right to left: from its start edge
+   * (`'start'`), or ending at its end edge (`'end'`: "more", at the
+   * toolbar's end); from its other edge when there is no room that way.
+   */
+  openUnder(
+    entries: readonly ContextMenuEntry[],
+    anchor: HTMLElement,
+    onPick: (id: string) => void,
+    align: 'start' | 'end' = 'start',
+    gap = MENU_GAP,
+  ): void {
+    const at = anchor.getBoundingClientRect();
+    const box = this.host.getBoundingClientRect();
+    // Ending at the button's right edge first: its end left to right, its start right to left.
+    const before = (align === 'end') !== this.rtl();
+    this.open(entries, at.left - box.left, at.bottom - box.top + gap, onPick, anchor, undefined, at.right - box.left, before);
+  }
+
+  /**
+   * Close every menu open under `anchor`, and say whether one was. Its
+   * button shows it open (aria-expanded), so a press on it closes it.
+   */
+  static closeAnchoredTo(anchor: HTMLElement): boolean {
+    const under = [...openMenus].filter((menu) => menu.anchor === anchor);
+    for (const menu of under) menu.close();
+    return under.length > 0;
+  }
+
+  /** The button an open menu that holds the keyboard hangs from; null when none does. */
+  static focusedAnchor(): HTMLElement | null {
+    return [...openMenus].find((menu) => menu.anchor !== null && menu.hasFocus())?.anchor ?? null;
   }
 
   close(): void {
     this.clearHover();
     this.child?.close();
     if (this.el.hidden) return;
+    openMenus.delete(this);
     // A submenu the pointer closes leaves the keyboard where it is, in the menu.
     const giveBack = !this.parent || this.el.contains(document.activeElement);
     this.el.hidden = true;
@@ -154,6 +205,11 @@ export class WidgetContextMenu {
 
   isOpen(): boolean {
     return !this.el.hidden;
+  }
+
+  /** Whether the keyboard is in the menu, or in a submenu of it. */
+  hasFocus(): boolean {
+    return document.activeElement !== null && this.holds(document.activeElement);
   }
 
   destroy(): void {
@@ -179,11 +235,12 @@ export class WidgetContextMenu {
     this.anchor?.setAttribute('aria-expanded', 'true');
     this.el.replaceChildren(...entries.map((entry) => this.entry(entry)));
     this.el.hidden = false;
+    openMenus.add(this);
     const hostRect = this.host.getBoundingClientRect();
     const right = Math.min(this.host.clientWidth, window.innerWidth - hostRect.left) - MENU_MARGIN;
     const bottom = Math.min(this.host.clientHeight, window.innerHeight - hostRect.top) - MENU_MARGIN;
-    // Taller than the room (a short widget), it scrolls.
-    this.el.style.maxHeight = `${Math.max(0, bottom)}px`;
+    // Taller than the room (a short widget, the time zones), it scrolls, its padding and border in the room too.
+    this.el.style.maxHeight = `${Math.max(0, bottom - this.frameHeight())}px`;
     this.el.style.left = `${place(at.x, this.el.offsetWidth, right, at.xBack, at.before)}px`;
     this.el.style.top = `${place(at.y, this.el.offsetHeight, bottom, at.yBack)}px`;
     document.addEventListener('pointerdown', this.onDocPointer, true);
@@ -192,6 +249,14 @@ export class WidgetContextMenu {
     window.addEventListener('blur', this.onAway);
     const chosen = this.revealChoice();
     if (focusFirst) (chosen ?? this.items()[0])?.focus({ preventScroll: true });
+  }
+
+  /** What its padding and border add to a max height, which sizes only its rows unless its box counts them. */
+  private frameHeight(): number {
+    const style = getComputedStyle(this.el);
+    if (style.boxSizing === 'border-box') return 0;
+    const px = (value: string) => parseFloat(value) || 0;
+    return px(style.paddingTop) + px(style.paddingBottom) + px(style.borderTopWidth) + px(style.borderBottomWidth);
   }
 
   /**
@@ -236,8 +301,10 @@ export class WidgetContextMenu {
     item.appendChild(text);
     this.appendEnd(item, entry);
     const submenu = entry.submenu;
-    // A finger's tap is a click: only a pointer resting on an entry opens its submenu.
-    item.addEventListener('pointerenter', (e) => {
+    // A finger's tap is a click: only a pointer resting on an entry opens its submenu. A pointer that
+    // moved there, not one that entered: a menu that opens under a still pointer (a right-click near
+    // a phone's foot, where it opens as a sheet) is entered by it, and opened a submenu unasked.
+    item.addEventListener('pointermove', (e) => {
       if ((e as PointerEvent).pointerType !== 'touch') this.hover(item, entry.label, submenu);
     });
     item.addEventListener('click', () => {
@@ -329,17 +396,21 @@ export class WidgetContextMenu {
 
   /** After a rest on `item`: open its submenu, or close the one open for another entry. */
   private hover(item: HTMLButtonElement, label: string, submenu?: readonly ContextMenuEntry[]): void {
+    if (this.hoverTimer !== null && this.hoverItem === item) return;
     this.clearHover();
     const open = this.child?.isOpen() ? this.child.anchor : null;
     if (submenu ? open === item : open === null) return;
+    this.hoverItem = item;
     this.hoverTimer = setTimeout(() => {
       this.hoverTimer = null;
+      this.hoverItem = null;
       if (submenu) this.openSubmenu(item, label, submenu, false);
       else this.child?.close();
     }, HOVER_DELAY_MS);
   }
 
   private clearHover(): void {
+    this.hoverItem = null;
     if (this.hoverTimer === null) return;
     clearTimeout(this.hoverTimer);
     this.hoverTimer = null;

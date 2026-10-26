@@ -247,8 +247,9 @@ Saved indicators keep their inputs, sources, panes, colours, visibility and leve
 
 `theme: 'dark' | 'light'` or a `Theme` object (`{ ...DARK_THEME, candleUp: '#1fa874' }`);
 `chart.setTheme(...)` at runtime. Numbers follow `numberLocale` (`'en-US'`, `'vi-VN'` …).
-The chart's own text (axes, legend, tags) over any theme: `font: { family: SANS_FONT_FAMILY, sizeSmall: 12 }`
-or `chart.setFont(...)` (`null`: the theme's). Bars: `barLayout: 'golden'` (body φ⁻¹ of the slot, more bars on
+The chart's own text (axes, tags, crosshair pills) over any theme: `font: { family: SANS_FONT_FAMILY, sizeSmall: 12 }`
+or `chart.setFont(...)` (`null`: the theme's); the legend takes the face at its own size (`chart.setLegend({ fontSize })`),
+and in the widget its face and size come from `ui.font`. Bars: `barLayout: 'golden'` (body φ⁻¹ of the slot, more bars on
 screen) or `'classic'` (the default, a 2 px gap); `chart.setBarLayout`. The widget's
 `ui: { density: 'airy' }` turns on golden bars, sans figures and spacious controls together.
 
@@ -271,7 +272,9 @@ everywhere, dotted = one place; a part shows while all of its switches are on, s
 `isFeatureOn('toolbar.replay')` stays `true` with `replay: false`). They hide the widget's UI only,
 and never add a part: the depth ladder and the watchlist come from their options
 (`depthLadder: true`, `watchlist: true`), and `features: { depthLadder: true }` alone makes no ladder.
-To stop drawing, trading or zoom on the chart, use `chartOptions.features`. The dock's panels
+To stop drawing, trading or zoom on the chart, use `chartOptions.features`. The widget's `symbols` (and
+`setSymbols`) take tickers or `SymbolInfo` (`description`, `type`, `exchange`, `logo`): the symbol search then
+opens named, with kind tabs and an exchange filter (recipe in [references/recipes.md](references/recipes.md)). The dock's panels
 (watchlist, alerts, depth ladder…) start shut: `widget.openPanel('watchlist')`. Your own parts: `addToolbarButton`,
 `addToolbarDropdown`, `addSidebarButton`, `addStatusBarItem`, `getSlot('chart')`, `addHotkey`, and
 the `chartMenuItems` / `drawingMenuItems` / `indicatorMenuItems` options. Style the widget with your

@@ -94,15 +94,23 @@ const m = computeRiskMetrics(initialCash, equityCurve, trades, {
   riskFreeRate: 0.03,
 })
 
-m.totalReturnPct
+m.totalReturnPct   // a fraction: 0.12 is +12%
 m.cagr
 m.sharpe
 m.sortino
-m.calmar
-m.maxDrawdownPct
+m.calmar           // cagr / maxDrawdownPct
+m.maxDrawdown      // the largest fall from a running peak, in money
+m.maxDrawdownPct   // the deepest fall from a running peak, as a fraction (0.5 is 50%)
 m.winRate
 m.profitFactor
 m.expectancy`}</code></pre>
+
+<p>
+  ここでの割合はすべて小数です。0.12 は 12% を表します。2 つのドローダウンは別々に測るため、
+  資産が増えていく口座では、それぞれ別の下落から来ることがあります。資産曲線 100、50、100、400、1000、800、1200 では、
+  最も深い下落は 50%（100 から 50 へ。<code>maxDrawdownPct</code> は 0.5）、
+  金額で最大の下落は 200（1000 から 800 へ。<code>maxDrawdown</code> は 200）です。
+</p>
 
 <p>
   結果の <code>equityCurve</code> を
@@ -138,4 +146,4 @@ const mc = runMonteCarlo(10_000, result.trades, {
 mc.equityBands         // per-step P5/P25/P50/P75/P95
 mc.finalEquityPercentiles  // { p5, p25, p50, p75, p95 }
 mc.probabilityProfitable
-mc.worstMaxDrawdownPct`}</code></pre>
+mc.worstMaxDrawdownPct  // in percent (25 is 25%), not a fraction`}</code></pre>

@@ -1,9 +1,10 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { LayerType } from '@tradecanvas/commons';
-import type { Theme, ViewportState } from '@tradecanvas/commons';
+import type { DataSeries, Theme, ViewportState } from '@tradecanvas/commons';
 import { RenderEngine } from '../RenderEngine.js';
 import type { RenderContext } from '../RenderEngine.js';
+import { SessionBreaks } from '../../ui/SessionBreaks.js';
 
 /** jsdom has no 2D context: a recorder that accepts any call or assignment. */
 function fakeContext(canvas: HTMLCanvasElement): CanvasRenderingContext2D {
@@ -202,7 +203,7 @@ describe('RenderEngine — two canvases', () => {
     expect(top).not.toHaveBeenCalled();
   });
 
-  it('draws session break lines under the series, and their labels over the indicators', () => {
+  it('draws session break lines under the series, and no labels over the indicators', () => {
     const { ctx, scene } = makeContext();
     const order: string[] = [];
     scene.mockImplementation(() => order.push('series'));
@@ -216,7 +217,42 @@ describe('RenderEngine — two canvases', () => {
     engine.setRenderContext(ctx);
     engine.start();
     runFrame();
-    expect(order).toEqual(['lines', 'series', 'compare', 'overlay', 'labels']);
+    expect(order).toEqual(['lines', 'series', 'compare', 'overlay']);
+  });
+
+  it('draws the breaks of intraday bars as lines, with no dates on either canvas', () => {
+    const { ctx } = makeContext();
+    // 1h bars from Sat Oct 10 2026 UTC, a pixel each: Mondays Oct 12 and 19 on screen.
+    const start = Date.UTC(2026, 9, 10);
+    const data: DataSeries = Array.from({ length: 240 }, (_, i) => ({
+      time: start + i * 3_600_000, open: 1, high: 1, low: 1, close: 1, volume: 1,
+    }));
+    const breaks = new SessionBreaks();
+    breaks.setVisible(true);
+    breaks.setTimezone(0);
+    ctx.data = data;
+    ctx.viewport = {
+      ...ctx.viewport,
+      visibleRange: { from: 0, to: data.length - 1 },
+      barWidth: 0.5,
+      barSpacing: 0.5,
+      offset: 0,
+    };
+    ctx.sessionBreaks = breaks;
+    engine.setRenderContext(ctx);
+    const sceneCtx = engine.layerManager.getLayer(LayerType.Main)!.ctx;
+    const topCtx = engine.layerManager.getLayer(LayerType.Hover)!.ctx;
+    const lines = vi.fn();
+    const sceneText = vi.fn();
+    const topText = vi.fn();
+    sceneCtx.moveTo = lines;
+    sceneCtx.fillText = sceneText;
+    topCtx.fillText = topText;
+    engine.start();
+    runFrame();
+    expect(lines).toHaveBeenCalled();
+    expect(sceneText).not.toHaveBeenCalled();
+    expect(topText).not.toHaveBeenCalled();
   });
 
   it('several requests in one frame paint each canvas once', () => {
@@ -433,7 +469,7 @@ describe('RenderEngine — a GPU layer under the scene', () => {
     expect(stack(gpu)).toEqual(['gpu', 'scene', 'top']);
   });
 
-  it('gives session shading and break lines to the GPU, and draws break labels over the bars', async () => {
+  it('gives session shading and break lines to the GPU, and draws no break labels over the bars', async () => {
     const { ctx } = await candleContext();
     const shade = { x: 0, y: 0, width: 50, height: 200, color: 'rgba(0,0,0,0.28)', alpha: 1 };
     const dash = { x: 99.5, y: 0, width: 1, height: 6, color: '#333', alpha: 0.22 };
@@ -449,7 +485,7 @@ describe('RenderEngine — a GPU layer under the scene', () => {
     expect(gpu.render).toHaveBeenCalledWith(expect.objectContaining({ background: expect.objectContaining({ grid: true, rects: [shade, dash] }) }));
     expect(lines).not.toHaveBeenCalled();
     expect(stack(gpu)).toEqual(['gpu', 'scene', 'top']);
-    expect((labels.mock.calls[0][0] as CanvasRenderingContext2D).canvas).toBe(engine.layerManager.getLayer(LayerType.Main)!.canvas);
+    expect(labels).not.toHaveBeenCalled();
   });
 
   it('draws the background under the GPU canvas when there is more than the grid', async () => {

@@ -241,6 +241,11 @@ const dash = new PerformanceDashboard(document.getElementById('report')!, {
 
 // 나중에: dash.update(newResult) · dash.setTheme('light') · dash.destroy()`}</code></pre>
 <p>
+  직접 만드는 지표는 <code>@tradecanvas/analytics</code>가 돌려주는 것처럼 소수로 넣습니다.
+  <code>totalReturnPct</code>가 <code>0.12</code>이면 +12.00%로 표시되고, 퍼센트로(<code>12</code>)
+  넣으면 100배 크게 표시됩니다. <code>maxDrawdownPct</code>는 부호와 상관없이 하락으로 표시됩니다.
+</p>
+<p>
   레이아웃을 직접 구성할 수 있도록 계산 함수도 export되어 있습니다: <code>computeMonthlyReturns</code>,
   <code>computeDrawdownCurve</code>, <code>toEquityPoints</code>, <code>selectKeyStats</code>. 축을 직접 그릴 때는
   <code>niceScale(min, max)</code>를 쓰세요(눈금 간격 1, 2, 2.5, 5).

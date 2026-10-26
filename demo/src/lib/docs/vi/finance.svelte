@@ -246,6 +246,12 @@ const dash = new PerformanceDashboard(document.getElementById('report')!, {
 
 // về sau: dash.update(newResult) · dash.setTheme('light') · dash.destroy()`}</code></pre>
 <p>
+  Các chỉ số bạn tự dựng dùng dạng phân số, như <code>@tradecanvas/analytics</code> trả về:
+  <code>totalReturnPct</code> bằng <code>0.12</code> hiện là +12.00%, còn nếu đưa theo phần trăm
+  (<code>12</code>) thì sẽ hiện lớn gấp 100 lần. <code>maxDrawdownPct</code> luôn được đọc là một mức
+  sụt giảm, dù được đưa với dấu nào.
+</p>
+<p>
   Các hàm tính toán được export để bạn tự làm bố cục: <code>computeMonthlyReturns</code>,
   <code>computeDrawdownCurve</code>, <code>toEquityPoints</code>, <code>selectKeyStats</code>, và để tự
   dựng trục, <code>niceScale(min, max)</code> (vạch chia theo bước 1, 2, 2.5 hoặc 5).

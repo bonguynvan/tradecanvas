@@ -241,6 +241,11 @@ const dash = new PerformanceDashboard(document.getElementById('report')!, {
 
 // あとで：dash.update(newResult) · dash.setTheme('light') · dash.destroy()`}</code></pre>
 <p>
+  手で組み立てる指標は <code>@tradecanvas/analytics</code> が返すのと同じく小数で渡します。
+  <code>totalReturnPct</code> が <code>0.12</code> なら +12.00% と表示され、パーセントで
+  （<code>12</code>）渡すと 100 倍の大きさになります。<code>maxDrawdownPct</code> は符号に関係なく下落として表示されます。
+</p>
+<p>
   独自のレイアウト向けに計算関数もエクスポートされています：<code>computeMonthlyReturns</code>、
   <code>computeDrawdownCurve</code>、<code>toEquityPoints</code>、<code>selectKeyStats</code>。独自の軸には
   <code>niceScale(min, max)</code> が使えます（目盛りは 1、2、2.5、5 刻み）。

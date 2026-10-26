@@ -162,6 +162,10 @@ widget.toast('Feed lost', 'error', 'info')`}</code></pre>
 <p>
   Your buttons, menus and items go into the widget's bars, look like its own and follow its theme and look. Each
   returns a handle to change or remove it, and shows while its bar does.
+  When the toolbar runs out of room your buttons and menus fold under its “more” menu with the widget's own, those
+  on the left last; below 641 px wide they all go there. A menu of yours picked from “more” opens under it.
+  Pressing “more” again closes it. Your <code>onClick</code> picked from “more” gets its button folded, with no size
+  (<code>getClientRects()</code> is empty): place a popover from “more” (<code>.tcw-toolbar-more</code>) then.
 </p>
 <pre><code>{`widget.addToolbarButton({ id: 'news', label: 'News', icon: 'bell', toggle: true, onClick })
 
@@ -180,7 +184,7 @@ const ruler = widget.addSidebarButton({ id: 'ruler', label: 'Ruler', icon: 'rule
   onClick: () => ruler?.setActive(toggleRuler()) })
 
 const latency = widget.addStatusBarItem({ id: 'latency', text: '12 ms', label: 'Latency' })
-latency?.setText('15 ms')
+latency?.setText('15 ms')                    // reads in its own direction: "15 ms", right to left too
 widget.addHotkey({ keys: 'Alt+N', label: 'New note', onPress: () => addNote() })   // replaces a widget shortcut on the same keys; listed in the shortcut sheet (?)
 
 // Anything else of yours: beside the toolbar's controls, under the sidebar's,

@@ -292,7 +292,12 @@ export class WidgetHotkeySheet {
       body.replaceChildren(empty);
       return;
     }
-    body.replaceChildren(...sections);
+    // In columns inside the box that scrolls, as tall as they are: columns on a box of a fixed height
+    // lay what doesn't fit in more columns to the side, out of sight and out of reach of the scroll.
+    const columns = document.createElement('div');
+    columns.className = 'tcw-hotkey-columns';
+    columns.append(...sections);
+    body.replaceChildren(columns);
   }
 
   private label(entry: HotkeyEntry | HostHotkeyEntry): string {

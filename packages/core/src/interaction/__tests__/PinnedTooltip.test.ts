@@ -4,6 +4,13 @@ import { DARK_THEME } from '@tradecanvas/commons';
 import { PinnedTooltip } from '../PinnedTooltip.js';
 
 describe('PinnedTooltip', () => {
+  it('draws its text without the page’s OpenType features, as the chart’s canvases do', () => {
+    const host = document.createElement('div');
+    host.style.fontFeatureSettings = "'ss01', 'ss03'";
+    new PinnedTooltip().create(host);
+    expect((host.firstElementChild as HTMLElement).style.fontFeatureSettings).toBe('normal');
+  });
+
   it('shows the bar time in the chart’s time zone', () => {
     const host = document.createElement('div');
     const tooltip = new PinnedTooltip();

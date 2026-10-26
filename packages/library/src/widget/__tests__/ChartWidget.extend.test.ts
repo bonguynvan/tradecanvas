@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { SANS_FONT_FAMILY, type ChartOptions } from '@tradecanvas/commons';
+import { layoutToolbar } from './toolbarLayout.js';
 
 /** Stand-in for the canvas-backed Chart: emits the menus' events on demand. */
 class FakeChart {
@@ -87,6 +88,8 @@ class FakeChart {
 vi.mock('../../Chart.js', () => ({ Chart: FakeChart }));
 
 const { ChartWidget } = await import('../ChartWidget.js');
+const { WidgetContextMenu } = await import('../WidgetContextMenu.js');
+const { WidgetToolbar } = await import('../WidgetToolbar.js');
 
 let host: HTMLDivElement;
 let widget: InstanceType<typeof ChartWidget>;
@@ -142,6 +145,160 @@ describe('ChartWidget toolbar buttons of the host', () => {
     expect(getComputedStyle(toolbar).display).toBe('none');
     widget.setFeatures({ toolbar: true });
     expect(getComputedStyle(toolbar).display).not.toBe('none');
+  });
+});
+
+describe('ChartWidget toolbar parts of the host with no room', () => {
+  const root = () => host.querySelector<HTMLElement>('.tcw-root')!;
+  const toolbarEl = () => host.querySelector<HTMLElement>('.tcw-toolbar')!;
+  const more = () => host.querySelector<HTMLButtonElement>('.tcw-toolbar-more')!;
+  const pickFromMore = (label: string) => {
+    more().click();
+    menuItems().find((b) => b.textContent?.trim() === label)!.click();
+  };
+  /** Where "more" sits; jsdom puts everything else at 0, 0. */
+  const placeMore = () => {
+    more().getBoundingClientRect = () => ({ left: 500, right: 528, top: 10, bottom: 40, width: 28, height: 30, x: 500, y: 10, toJSON: () => ({}) }) as DOMRect;
+  };
+  const nextFrame = () => new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+  /** The fits a new widget asks for, a frame after its first, all done. */
+  const settled = async () => {
+    for (let i = 0; i < 3; i++) await nextFrame();
+  };
+
+  afterEach(() => vi.restoreAllMocks());
+
+  it('puts a left button under “more” on a narrow widget, where a pick still calls back', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false });
+    const clicks: HTMLButtonElement[] = [];
+    const handle = widget.addToolbarButton({ id: 'scan', label: 'Scanner', side: 'left', onClick: (b) => clicks.push(b) })!;
+    root().setAttribute('data-tcw-narrow', '');
+    expect(handle.element.classList.contains('tcw-toolbar-overflow')).toBe(true);
+    pickFromMore('Scanner');
+    expect(clicks).toEqual([handle.element]);
+  });
+
+  it('opens a menu of the host picked from “more” on a narrow widget under “more”, not at the corner', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false });
+    const open = vi.spyOn(WidgetContextMenu.prototype, 'open');
+    widget.addToolbarDropdown({ id: 'scans', label: 'Scans', side: 'left', items: () => [{ label: 'A', onSelect: () => {} }] });
+    root().setAttribute('data-tcw-narrow', '');
+    placeMore();
+    pickFromMore('Scans');
+    const [, x, y, , anchor, , xBack] = open.mock.calls.at(-1)!;
+    expect([x, y]).toEqual([500, 42]);
+    expect(anchor).toBe(more());
+    // Without room past "more", its end lines up with "more"'s, as the More menu's does.
+    expect(xBack).toBe(528);
+  });
+
+  it('opens it under “more” too while its button is folded to fit a wide widget', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false });
+    const open = vi.spyOn(WidgetContextMenu.prototype, 'open');
+    const handle = widget.addToolbarDropdown({ id: 'scans', label: 'Scans', side: 'right', items: () => [{ label: 'A', onSelect: () => {} }] })!;
+    // All at once: a fit waiting for its frame would unfold it.
+    root().removeAttribute('data-tcw-narrow');
+    toolbarEl().classList.add('tcw-toolbar--collapsed');
+    handle.element.setAttribute('data-tcw-folded', '');
+    placeMore();
+    pickFromMore('Scans');
+    const [, x, y] = open.mock.calls.at(-1)!;
+    expect([x, y]).toEqual([500, 42]);
+  });
+
+  it.each([
+    ['left to right', 'ltr', (left: number) => left, 340],
+    ['right to left', 'rtl', (left: number) => left + 180, 400],
+  ] as const)('lines a menu of the host up under its button, %s, as the toolbar’s own menus', (_how, dir, startEdge, expected) => {
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false, dir });
+    const handle = widget.addToolbarDropdown({ id: 'scans', label: 'Scans', side: 'right', items: () => [{ label: 'A', onSelect: () => {} }] })!;
+    // Clicked on its button, which shows: a wide widget.
+    root().removeAttribute('data-tcw-narrow');
+    Object.defineProperty(root(), 'clientWidth', { configurable: true, value: 1000 });
+    Object.defineProperty(root(), 'clientHeight', { configurable: true, value: 600 });
+    vi.spyOn(HTMLElement.prototype, 'offsetWidth', 'get').mockImplementation(function (this: HTMLElement) {
+      return this.classList.contains('tcw-context-menu') ? 180 : 0;
+    });
+    handle.element.getBoundingClientRect = () => ({ left: 340, right: 400, top: 0, bottom: 36, width: 60, height: 36, x: 340, y: 0, toJSON: () => ({}) }) as DOMRect;
+    handle.element.click();
+    const menu = [...host.querySelectorAll<HTMLElement>('.tcw-context-menu')].find((m) => !m.hidden)!;
+    // Its start edge on the button's: the left, or right to left the right.
+    expect(startEdge(parseFloat(menu.style.left))).toBe(expected);
+  });
+
+  /** The menus showing now, by name. */
+  const openMenus = () => [...host.querySelectorAll<HTMLElement>('.tcw-context-menu')]
+    .filter((menu) => !menu.hidden)
+    .map((menu) => menu.getAttribute('aria-label'));
+
+  it.each([
+    ['a menu of the host', 'Scans'],
+    ['the Trade menu', 'Trade'],
+  ])('closes %s picked from “more” when “more” is pressed again, so two menus are never open', (_what, label) => {
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false });
+    widget.addToolbarDropdown({ id: 'scans', label: 'Scans', side: 'left', items: () => [{ label: 'Gap up', onSelect: () => {} }] });
+    root().setAttribute('data-tcw-narrow', '');
+    pickFromMore(label);
+    expect(openMenus()).toEqual([label]);
+    expect(more().getAttribute('aria-expanded')).toBe('true');
+    more().click();
+    expect(openMenus()).toEqual([]);
+    expect(more().getAttribute('aria-expanded')).toBe('false');
+    more().click();
+    expect(openMenus()).toEqual(['More']);
+  });
+
+  /** The size watchers made, each with what it watches: the browser calls one back when a box it watches is resized. */
+  const watchSizes = () => {
+    const observers: { callback: () => void; watched: Element[] }[] = [];
+    vi.stubGlobal('ResizeObserver', class {
+      watched: Element[] = [];
+      constructor(public callback: () => void) { observers.push(this); }
+      observe(el: Element) { this.watched.push(el); }
+      unobserve() {}
+      disconnect() {}
+    });
+    /** As the browser does when `el` changes size. */
+    return (el: Element) => observers.filter((o) => o.watched.includes(el)).forEach((o) => o.callback());
+  };
+
+  afterEach(() => vi.unstubAllGlobals());
+
+  it.each(['button', 'menu'] as const)('leaves the toolbar unfitted when the text of its %s changes and the button keeps its width', async (kind) => {
+    watchSizes();
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false });
+    const handle = kind === 'button'
+      ? widget.addToolbarButton({ id: 'news', label: 'News', icon: 'bell', text: '3', onClick: () => {} })!
+      : widget.addToolbarDropdown({ id: 'news', label: 'News', icon: 'bell', text: '3', items: () => [] })!;
+    await settled();
+    const fit = vi.spyOn(WidgetToolbar.prototype, 'fit');
+    // A live count, set every frame: its figures are all as wide.
+    for (const count of ['3', '4', '5', '6']) {
+      handle.setText(count);
+      await nextFrame();
+    }
+    expect(fit).not.toHaveBeenCalled();
+  });
+
+  it.each(['button', 'menu'] as const)('refits the toolbar when the text of its %s grows, folding from the right', async (kind) => {
+    const resized = watchSizes();
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false });
+    const handle = kind === 'button'
+      ? widget.addToolbarButton({ id: 'news', label: 'News', icon: 'bell', text: '3', side: 'left', onClick: () => {} })!
+      : widget.addToolbarDropdown({ id: 'news', label: 'News', icon: 'bell', text: '3', side: 'left', items: () => [] })!;
+    const el = toolbarEl();
+    // 400px for the chart's controls, 40 for each button that can fold still shown, 10 for each letter of the count.
+    const shown = () => [...el.querySelectorAll('.tcw-toolbar-overflow')].filter((b) => !b.hasAttribute('data-tcw-folded')).length;
+    const need = () => 400 + 40 * shown() + 10 * (handle.element.textContent?.length ?? 0);
+    layoutToolbar(el, need(), need);
+    await settled();
+    expect(el.classList.contains('tcw-toolbar--collapsed')).toBe(false);
+    handle.setText('12 unread');
+    // The button widens its group, not the toolbar.
+    resized(handle.element.parentElement!);
+    await nextFrame();
+    expect(el.classList.contains('tcw-toolbar--collapsed')).toBe(true);
+    expect(handle.element.hasAttribute('data-tcw-folded')).toBe(false); // on the left, it folds last
   });
 });
 
@@ -523,6 +680,16 @@ describe('ChartWidget look', () => {
     widget.setUI('terminal');
     expect(FakeChart.last.barLayouts).toEqual([]);
     expect(FakeChart.last.fonts).toEqual([]);
+  });
+
+  it('gives a chart font of yours that sets only sizes the airy look’s face, and keeps the sizes after', () => {
+    const yours = { sizeSmall: 13 };
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false, ui: { density: 'airy' }, chartOptions: { font: yours } });
+    // The font as drawn: each setFont goes over the one before, null goes back to the theme's.
+    const drawn = () => FakeChart.last.fonts.reduce<object>((font, next) => (next === null ? {} : { ...font, ...(next as object) }), yours);
+    expect(drawn()).toEqual({ sizeSmall: 13, family: SANS_FONT_FAMILY });
+    widget.setUI('print');
+    expect(drawn()).toEqual({ sizeSmall: 13 });
   });
 
   it('takes the look from its options', () => {

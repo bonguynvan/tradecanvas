@@ -329,6 +329,7 @@ const vi: SiteMessages = {
         'Mở lệnh mới từ bảng tài khoản: phiếu bắt đầu với 100 cổ phiếu, và giá vượt trần sẽ bị từ chối',
         'Chuyển sang FPT (bước 100 đồng) hoặc hợp đồng VN30F (mở cửa 8:45)',
         'Các đường tím, xanh lam và vàng là giá trần, giá sàn và giá tham chiếu',
+        'Bấm HPG trên thanh công cụ: hộp tìm liệt kê từng mã với tên, loại, sàn và logo; lọc chỉ chứng quyền, hoặc chỉ sàn HNX',
       ],
     },
     priceboard: {

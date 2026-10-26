@@ -61,6 +61,16 @@ describe('select menus', () => {
     expect(s.getAttribute('aria-expanded')).toBe('true');
   });
 
+  it('reads an option in the direction it is given, as the option itself does', () => {
+    const s = select(['all', 'nyse arca.']);
+    s.options[1].dir = 'auto';
+    mousedown(s);
+    const text = (i: number) => options()[i].querySelector<HTMLElement>('.tcw-select-option-text')!;
+    expect(text(1).dir).toBe('auto');
+    // One given no direction follows the widget's.
+    expect(text(0).hasAttribute('dir')).toBe(false);
+  });
+
   it('picks with a click: the select changes and says so, the list closes', () => {
     const s = select(['a', 'b', 'c']);
     const changed = vi.fn();

@@ -336,6 +336,7 @@ const en = {
         'Open a new order from the account panel: it starts at 100 shares, and a price past the ceiling is refused',
         'Switch to FPT (100-dong steps) or to the VN30F contract (from 8:45)',
         'The purple, cyan and yellow lines are the ceiling, floor and reference price',
+        'Press HPG on the toolbar: the search lists each symbol with its name, kind, exchange and logo; keep it to the warrants, or to HNX',
       ],
     },
     priceboard: {

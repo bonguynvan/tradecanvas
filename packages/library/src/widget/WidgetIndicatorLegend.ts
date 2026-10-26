@@ -71,6 +71,15 @@ interface PaneEls {
 /** Collapsing is offered once this many indicators share the price pane. */
 const COLLAPSE_FROM = 2;
 
+/**
+ * The least room a row's values show in, in ems of their figures: a digit
+ * and an ellipsis (1.2em in a monospace face, about 1.4 in the sans face the
+ * airy look sets them in). Narrower, the line would show a sliver of a digit.
+ */
+const VALUES_LEAST_EM = 1.5;
+/** On a row's values while their box has less than `VALUES_LEAST_EM`: they hide, keeping their room. */
+const NO_ROOM_CLASS = 'tcw-ind-legend-values--no-room';
+
 interface RowEls {
   el: HTMLDivElement;
   name: HTMLButtonElement;
@@ -102,6 +111,8 @@ export class WidgetIndicatorLegend {
   private collapsed = false;
   private toggleKey = '';
   private stackKey = '';
+  /** Tells of each row's values box resized: a narrow chart, a longer name beside them. */
+  private readonly valuesObserver: ResizeObserver | null;
 
   constructor(
     private readonly host: HTMLElement,
@@ -120,6 +131,11 @@ export class WidgetIndicatorLegend {
     });
     this.stack.appendChild(this.toggle);
     host.appendChild(this.stack);
+    this.valuesObserver = typeof ResizeObserver === 'undefined'
+      ? null
+      : new ResizeObserver((entries) => {
+        for (const entry of entries) fitValues(entry.target as HTMLElement, entry.contentRect.width);
+      });
   }
 
   update(rows: readonly IndicatorLegendRow[], overlay: { left: number; top: number }, panes: readonly IndicatorLegendPane[] = []): void {
@@ -148,6 +164,7 @@ export class WidgetIndicatorLegend {
     }
     for (const [id, els] of this.rows) {
       if (seen.has(id)) continue;
+      this.valuesObserver?.unobserve(els.values);
       els.el.remove();
       this.rows.delete(id);
     }
@@ -157,6 +174,7 @@ export class WidgetIndicatorLegend {
   }
 
   destroy(): void {
+    this.valuesObserver?.disconnect();
     for (const els of this.rows.values()) els.el.remove();
     this.rows.clear();
     for (const els of this.panes.values()) els.el.remove();
@@ -240,6 +258,7 @@ export class WidgetIndicatorLegend {
     const values = document.createElement('span');
     values.className = 'tcw-ind-legend-values';
     markPart(values, 'indicatorLegend.values');
+    this.valuesObserver?.observe(values);
 
     const actions = document.createElement('span');
     actions.className = 'tcw-ind-legend-actions';
@@ -337,6 +356,16 @@ export class WidgetIndicatorLegend {
     const icon = createIcon(this.collapsed ? 'chevronDown' : 'chevronUp', 12);
     this.toggle.innerHTML = this.collapsed ? `${icon}<span>${count}</span>` : icon;
   }
+}
+
+/**
+ * Hide a row's values while their box, `width` px, is too narrow for a digit
+ * and an ellipsis (a phone's legend beside its buttons), and show them again
+ * when it is wide enough: the name then reads alone, not beside a sliver.
+ */
+function fitValues(values: HTMLElement, width: number): void {
+  const least = (parseFloat(getComputedStyle(values).fontSize) || 0) * VALUES_LEAST_EM;
+  values.classList.toggle(NO_ROOM_CLASS, width < least);
 }
 
 /**

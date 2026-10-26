@@ -122,6 +122,22 @@ describe('WidgetHotkeySheet', () => {
     expect(live.textContent).toBe('');
   });
 
+  // Columns on a box of a fixed height lay what doesn't fit in further columns to the side, out of
+  // sight and out of reach of the scroll: the columns are on a block as tall as its groups, inside it.
+  it('lays its groups in columns inside the box that scrolls, not on it', () => {
+    sheet.open();
+    const body = host.querySelector<HTMLElement>('.tcw-hotkey-body')!;
+    const columns = body.querySelector<HTMLElement>(':scope > .tcw-hotkey-columns');
+    expect(columns).not.toBeNull();
+    expect([...body.children]).toEqual([columns]);
+    expect([...columns!.children].every((group) => group.classList.contains('tcw-hotkey-group'))).toBe(true);
+    expect(columns!.children).toHaveLength(headings().length);
+    type('zzz');
+    expect(body.querySelector('.tcw-hotkey-empty')).not.toBeNull();
+    type('');
+    expect(body.querySelectorAll('.tcw-hotkey-columns > .tcw-hotkey-group')).toHaveLength(headings().length);
+  });
+
   it('leaves Escape to an input method while it composes', () => {
     sheet.open();
     search().dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', keyCode: 229, bubbles: true, cancelable: true } as KeyboardEventInit));

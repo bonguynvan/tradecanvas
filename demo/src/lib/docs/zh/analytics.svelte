@@ -94,15 +94,23 @@ const m = computeRiskMetrics(initialCash, equityCurve, trades, {
   riskFreeRate: 0.03,
 })
 
-m.totalReturnPct
+m.totalReturnPct   // a fraction: 0.12 is +12%
 m.cagr
 m.sharpe
 m.sortino
-m.calmar
-m.maxDrawdownPct
+m.calmar           // cagr / maxDrawdownPct
+m.maxDrawdown      // the largest fall from a running peak, in money
+m.maxDrawdownPct   // the deepest fall from a running peak, as a fraction (0.5 is 50%)
 m.winRate
 m.profitFactor
 m.expectancy`}</code></pre>
+
+<p>
+  这里的百分比都是小数：0.12 即 12%。两种回撤分开计算，因此在资金不断增长的账户上，
+  它们可能来自不同的两次下跌。权益曲线 100、50、100、400、1000、800、1200 最深的一次下跌是 50%
+  （从 100 跌到 50，所以 <code>maxDrawdownPct</code> 为 0.5），按金额计最大的一次下跌是 200
+  （从 1000 跌到 800，所以 <code>maxDrawdown</code> 为 200）。
+</p>
 
 <p>
   将结果中的 <code>equityCurve</code> 与
@@ -138,4 +146,4 @@ const mc = runMonteCarlo(10_000, result.trades, {
 mc.equityBands         // per-step P5/P25/P50/P75/P95
 mc.finalEquityPercentiles  // { p5, p25, p50, p75, p95 }
 mc.probabilityProfitable
-mc.worstMaxDrawdownPct`}</code></pre>
+mc.worstMaxDrawdownPct  // in percent (25 is 25%), not a fraction`}</code></pre>
