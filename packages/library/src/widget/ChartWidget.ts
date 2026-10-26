@@ -33,6 +33,7 @@ import { WidgetIndicatorSettings, type IndicatorDefault } from './WidgetIndicato
 import { WidgetIndicatorPicker, type IndicatorPickerItem } from './WidgetIndicatorPicker.js';
 import { IndicatorDefaultsStore } from './indicatorDefaults.js';
 import { ChartTemplateStore } from './chartTemplates.js';
+import { ChartSettingsStore, LAYOUT_LEAVES, VIEWER_KEYS, pickSettings, readChartSettings, settingsDelta, settingsStoreKey } from './chartSettingsStore.js';
 import { WidgetDrawingStyle } from './WidgetDrawingStyle.js';
 import { WidgetSelectionToolbar } from './WidgetSelectionToolbar.js';
 import { DrawingDefaultsStore, DrawingTemplateStore } from './DrawingTemplateStore.js';
@@ -187,6 +188,8 @@ const inOverlay = (): boolean => {
 const IME_KEY_CODE = 229;
 /** How often the status bar's clock moves on. */
 const CLOCK_TICK_MS = 1000;
+/** Settings a layout doesn't hold (the viewer's own, and auto-scale, which a drag changes): a change to them leaves the open layout as saved. */
+const NOT_IN_LAYOUT = new Set<keyof ChartSettingsState>([...VIEWER_KEYS, 'autoScale']);
 /** The settings' style keys that aren't colours: they go with the user from theme to theme. */
 const LOOK_KEYS: readonly ChartStyleKey[] = SETTINGS_LOOK_KEYS.filter((key) => CHART_STYLE_KEYS[key] !== 'color');
 
@@ -365,6 +368,17 @@ export class ChartWidget {
   private settingsState: ChartSettingsState;
   /** What Reset in the settings panel goes back to: the defaults, as the host's features set them. */
   private settingsDefaults: ChartSettingsState;
+  /** Where `persistSettings` keeps the settings; null while it is off. */
+  private settingsStore: ChartSettingsStore | null = null;
+  /**
+   * The settings as last kept and told to the listeners, as JSON: a change
+   * that leaves them so (a Cancel, a call setting what is already set) is
+   * neither. Null while the widget is being made, which tells nobody.
+   */
+  private settingsPublished: string | null = null;
+  private readonly settingsListeners = new Set<(settings: ChartSettingsState) => void>();
+  /** Switches the host's features turned off: a setting kept, shared or in a layout can't turn them on. */
+  private settingsLocked = { barCountdown: false, logScale: false };
   private t: Translator;
   private adapter: import('@tradecanvas/commons').DataAdapter | null = null;
   private boundGlobalKeydown: ((e: KeyboardEvent) => void) | null = null;
@@ -406,15 +420,18 @@ export class ChartWidget {
   constructor(container: HTMLElement, options: ChartWidgetOptions = {}) {
     this.options = options;
     this.symbols = options.symbols ?? DEFAULT_SYMBOLS;
-    // `numberLocale`, `timeZone` and `leftPriceScale` live in two places:
-    // the headless Chart gets them via `chartOptions` (spread straight into
-    // `new Chart()` below) — but the widget's own chrome (watchlist, alerts,
-    // go-to-date, settings panel, Reset) reads `settingsState`, which
-    // otherwise stays on DEFAULT_SETTINGS until the host touches the Settings
-    // UI. Seed it from the same options so both layers start in sync.
+    // `numberLocale`, `timeZone`, `leftPriceScale`, the crosshair and the log
+    // scale live in two places: the headless Chart gets them via
+    // `chartOptions` (spread straight into `new Chart()` below) — but the
+    // widget's own chrome (watchlist, alerts, go-to-date, settings panel,
+    // Reset, layouts) reads `settingsState`, which otherwise stays on
+    // DEFAULT_SETTINGS until the host touches the Settings UI. Seed it from
+    // the same options so both layers start in sync.
     const chartOptions = options.chartOptions;
     this.settingsState = {
       ...DEFAULT_SETTINGS,
+      ...(chartOptions?.crosshair?.mode ? { crosshairMode: chartOptions.crosshair.mode } : {}),
+      ...(chartOptions?.logScale && chartOptions.features?.logScale !== false ? { logScale: true, scaleMode: 'logarithmic' as const } : {}),
       ...(chartOptions?.numberLocale ? { numberLocale: chartOptions.numberLocale } : {}),
       ...(chartOptions?.timeZone != null ? { timezone: timezoneToSetting(chartOptions.timeZone) } : {}),
       ...(chartOptions?.leftPriceScale !== undefined ? { leftPriceScale: chartOptions.leftPriceScale } : {}),
@@ -432,6 +449,9 @@ export class ChartWidget {
       this.layoutKeyPrefix = cfg.keyPrefix ?? 'tcw:layout:';
       this.layoutDebounceMs = cfg.debounceMs ?? 1500;
     }
+    // The Chart Settings kept in this browser: opt-in too.
+    const settingsKey = settingsStoreKey(options.persistSettings);
+    if (settingsKey) this.settingsStore = new ChartSettingsStore(settingsKey);
 
     // Resolve theme
     const isDark = this.resolveIsDark(options.theme);
@@ -473,6 +493,7 @@ export class ChartWidget {
     };
 
     this.canExport = features.dataExport !== false;
+    this.settingsLocked = { barCountdown: features.barCountdown === false, logScale: features.logScale === false };
     // The display toggles start where the host's features put them, and Reset goes back there.
     this.settingsDefaults = {
       ...this.settingsState,
@@ -1400,6 +1421,9 @@ export class ChartWidget {
     // A press in the widget's layer (a dialog, a menu) is a press in the widget.
     this.unregisterKeys = registerKeyRoot(this.root, [this.portal]);
 
+    // The settings the user kept in this browser, over the host's starting values (Reset goes back to those).
+    this.restoreKeptSettings();
+
     // 9. Connect stream
     if (options.adapter) {
       this.adapter = options.adapter;
@@ -1900,6 +1924,7 @@ export class ChartWidget {
     this.markerTip?.remove();
     this.layoutSession?.destroy();
     this.layoutsUI?.destroy();
+    this.settingsListeners.clear();
     this.accountPanel?.destroy();
     this.orderTicket?.destroy();
     if (this.accountFrame) cancelAnimationFrame(this.accountFrame);
@@ -3057,20 +3082,28 @@ export class ChartWidget {
     this.say(pinned ? this.t('toast.pinned') : this.t('toast.unpinned'));
   }
 
-  /** Encode the current view (symbol, timeframe, chart type, scale, indicators, drawings). */
+  /**
+   * Encode the current view (symbol, timeframe, chart type, scale,
+   * indicators, drawings, and the Chart Settings changed from the defaults
+   * but the viewer's time zone and number format).
+   */
   exportState(): string {
     const indicators = this.chart.getActiveIndicators().map((i) => ({
       id: i.id,
       params: i.params as Record<string, number | string | boolean>,
     }));
+    const settings = this.getSettings();
+    // Only what differs from the defaults, so a link stays short.
+    const changed = settingsDelta(settings, DEFAULT_SETTINGS, LAYOUT_LEAVES);
     return encodeWidgetState({
       v: 1,
       symbol: this.state.symbol,
       timeframe: this.state.timeframe,
       chartType: this.state.chartType,
-      scaleMode: this.userScaleMode(),
+      scaleMode: settings.scaleMode,
       indicators,
       drawings: this.chart.getDrawings(),
+      ...(Object.keys(changed).length > 0 ? { settings: changed } : {}),
     });
   }
 
@@ -3085,8 +3118,10 @@ export class ChartWidget {
     if (s.timeframe && s.timeframe !== this.state.timeframe) await this.setTimeframe(s.timeframe);
 
     if (s.chartType) this.applyChartType(s.chartType);
-    // Through the settings, so a percent compare keeps its scale and the settings show the shared one.
-    this.applySettings({ scaleMode: s.scaleMode });
+    // Through the settings, so a percent compare keeps its scale and the settings show the shared one;
+    // the sender's overlays with it, never their time zone or number format (the reader leaves those out).
+    this.applySettings(this.allowedSettings({ scaleMode: s.scaleMode, ...readChartSettings(s.settings, LAYOUT_LEAVES) }));
+    this.settings?.refresh(this.shownSettings());
 
     // The shared indicators in place of the chart's, as one undo step.
     this.chart.applyIndicatorSetup(s.indicators.map((ind, i) => ({ id: ind.id, instanceId: `shared_${i}`, params: ind.params })));
@@ -3507,7 +3542,7 @@ export class ChartWidget {
     return this.holdsPercentScale() ? 'percentage' : this.settingsState.scaleMode;
   }
 
-  /** The scale the user picked, for a shared link: never the percent a compare holds. */
+  /** The scale the user picked, for a shared link, a layout and the settings: never the percent a compare holds. */
   private userScaleMode(): PriceScaleMode {
     return this.holdsPercentScale() ? this.settingsState.scaleMode : this.chart.getScaleMode();
   }
@@ -3947,12 +3982,8 @@ export class ChartWidget {
 
   private openSettings(tab?: SettingsTab): void {
     if (!this.featureState.settings || this.settings?.isOpen()) return;
-    // The chart's own settings of its type (a layout may have brought them), and its scale as a drag left it.
-    this.settingsState = {
-      ...this.settingsState,
-      chartTypeOptions: this.chart.getChartTypeOptions?.() ?? {},
-      autoScale: this.chart.isAutoScale?.() ?? this.settingsState.autoScale,
-    };
+    // The chart's own settings of its type (a layout may have brought them), its scale as a drag left it.
+    this.syncSettingsFromChart();
     this.settingsEdit = {
       settings: { ...this.settingsState }, style: this.settingsStyle(), keys: new Set(), styleKeys: new Set(), held: this.compareScaleHeld,
     };
@@ -3982,9 +4013,11 @@ export class ChartWidget {
     const scale = edit.keys.has('scaleMode');
     const heldAfter = this.compareScaleHeld;
     if (!keep) {
+      // Put back as they were, which tells nobody: they are as last told.
       this.restoreSettings(before, beforeStyle, scale ? edit.held : undefined);
       return;
     }
+    this.publishSettings();
     const after = pick(this.settingsState);
     const afterStyle = styleKeys.length > 0 ? this.settingsStyle(styleKeys) : null;
     if (JSON.stringify([before, beforeStyle]) === JSON.stringify([after, afterStyle]) && (!scale || edit.held === heldAfter)) return;
@@ -4091,8 +4124,13 @@ export class ChartWidget {
     return this.state.timeframe;
   }
 
-  /** This chart as a layout: symbol, interval, scale and the chart's state (no theme). A copy, free to keep. */
+  /**
+   * This chart as a layout: symbol, interval, scale, the Chart Settings (but
+   * the viewer's time zone and number format) and the chart's state (no
+   * theme). A copy, free to keep.
+   */
   captureLayout(): WidgetLayoutContent {
+    const settings = this.getSettings();
     const json = this.chart.saveState();
     const state = json ? parseLayoutJson(json) : null;
     // The theme stays the viewer's; the time of the capture would make every capture differ.
@@ -4102,9 +4140,11 @@ export class ChartWidget {
       symbol: this.state.symbol,
       // The user's timeframe, not one a long range switched to.
       timeframe: this.chosenTimeframe ?? this.state.timeframe,
-      scaleMode: this.settingsState.scaleMode,
-      invertScale: this.settingsState.invertScale,
+      scaleMode: settings.scaleMode,
+      invertScale: settings.invertScale,
       chart,
+      // All of them, not only those changed: the layout opens as it was saved.
+      settings: pickSettings(settings, LAYOUT_LEAVES),
     };
   }
 
@@ -4118,7 +4158,12 @@ export class ChartWidget {
       const type = content.chart.chartType;
       if (typeof type === 'string') this.state = { ...this.state, chartType: type as ChartType };
     }
-    this.applySettings({ scaleMode: content.scaleMode, invertScale: content.invertScale });
+    // A layout saved before the settings were kept has none: they stay as they are.
+    this.applySettings(this.allowedSettings({
+      scaleMode: content.scaleMode,
+      invertScale: content.invertScale,
+      ...readChartSettings(content.settings, LAYOUT_LEAVES),
+    }));
     this.syncIndicatorsFromChart();
     this.updateUI();
     this.settings?.refresh(this.shownSettings(), this.state.chartType);
@@ -4135,6 +4180,104 @@ export class ChartWidget {
     if (!layout) return false;
     await this.restoreLayout(layout);
     return true;
+  }
+
+  // --- Chart Settings ---
+
+  /**
+   * The Chart Settings as they are now: the overlays, scales, crosshair,
+   * legend, time zone, number format and a chart type's own settings. A
+   * copy, free to keep. Read back from the chart first, so what was set on
+   * `getChart()` itself is in it.
+   */
+  getSettings(): ChartSettingsState {
+    this.syncSettingsFromChart();
+    return JSON.parse(JSON.stringify(this.settingsState)) as ChartSettingsState;
+  }
+
+  /**
+   * Change some of the Chart Settings, as the settings dialog does (an open
+   * one shows them). What isn't a setting, or not of its kind, is left out,
+   * and numbers are put in the dialog's ranges. Not an undo step: the change
+   * is yours, not the user's.
+   */
+  setSettings(patch: Partial<ChartSettingsState>): void {
+    this.applySettings(this.allowedSettings(readChartSettings(patch)));
+    this.settings?.refresh(this.shownSettings());
+  }
+
+  /**
+   * Hear of each change to the Chart Settings, with `getSettings()`: once
+   * when the settings dialog closes with OK, never for Cancel or for a
+   * change that leaves them as they were. Returns the function that stops it.
+   */
+  onSettingsChange(listener: (settings: ChartSettingsState) => void): () => void {
+    this.settingsListeners.add(listener);
+    return () => { this.settingsListeners.delete(listener); };
+  }
+
+  /**
+   * The settings the chart says itself, over the widget's: what a host set
+   * on `getChart()` directly, a scale a drag or a switched-off feature
+   * changed, a type's own settings a layout brought. The scale is the
+   * user's, never the percent a compare holds.
+   */
+  private syncSettingsFromChart(): void {
+    const chart = this.chart;
+    const zone = chart.getTimeZone?.();
+    const read = readChartSettings({
+      gridVisible: chart.isGridVisible?.(),
+      volumeProfileVisible: chart.isVolumeProfileVisible?.(),
+      marketProfileVisible: chart.isMarketProfileVisible?.(),
+      depthHeatmapVisible: chart.isDepthHeatmapVisible?.(),
+      pivotMarkersVisible: chart.isPivotMarkersVisible?.(),
+      sessionShadingVisible: chart.isSessionShadingVisible?.(),
+      periodLevelsVisible: chart.isPeriodLevelsVisible?.(),
+      crosshairMode: chart.getCrosshairMode?.(),
+      scaleMode: this.userScaleMode(),
+      autoScale: chart.isAutoScale?.(),
+      invertScale: chart.isInvertScale?.(),
+      timezone: zone === undefined ? undefined : timezoneToSetting(zone),
+      numberLocale: chart.getNumberLocale?.(),
+      highLowLines: chart.isHighLowLinesVisible?.(),
+      extendedHours: chart.isExtendedHoursVisible?.(),
+      mainSeriesVisible: chart.isMainSeriesVisible?.(),
+      chartTypeOptions: chart.getChartTypeOptions?.(),
+    });
+    // The log flag goes with the scale.
+    const scale = read.scaleMode ? { logScale: read.scaleMode === 'logarithmic' } : {};
+    this.settingsState = { ...this.settingsState, ...read, ...scale };
+  }
+
+  /** A patch without what the host's features switched off: a bar countdown or a log scale that isn't there stays off. */
+  private allowedSettings(patch: Partial<ChartSettingsState>): Partial<ChartSettingsState> {
+    const { barCountdown, logScale, scaleMode, ...rest } = patch;
+    const locked = this.settingsLocked;
+    return {
+      ...rest,
+      ...(barCountdown !== undefined && !(barCountdown && locked.barCountdown) ? { barCountdown } : {}),
+      ...(logScale !== undefined && !(logScale && locked.logScale) ? { logScale } : {}),
+      ...(scaleMode !== undefined && !(scaleMode === 'logarithmic' && locked.logScale) ? { scaleMode } : {}),
+    };
+  }
+
+  /** The settings the user kept in this browser (`persistSettings`) back on the chart; from here on each change is kept and told. */
+  private restoreKeptSettings(): void {
+    const kept = this.allowedSettings(this.settingsStore?.load() ?? {});
+    if (Object.keys(kept).length > 0) this.applySettings(kept);
+    this.settingsPublished = JSON.stringify(this.getSettings());
+  }
+
+  /** The settings changed: kept (`persistSettings`) and told to the listeners, unless they are as last time. */
+  private publishSettings(): void {
+    if (this.settingsPublished === null || this.destroyed) return;
+    const settings = this.getSettings();
+    const json = JSON.stringify(settings);
+    if (json === this.settingsPublished) return;
+    this.settingsPublished = json;
+    this.settingsStore?.save(settings, this.settingsDefaults);
+    // Each its own copy: a listener that changes what it gets changes nothing else.
+    for (const listener of [...this.settingsListeners]) listener(JSON.parse(json) as ChartSettingsState);
   }
 
   private setupLayouts(cfg: import('./types.js').WidgetLayoutsOptions): void {
@@ -4529,7 +4672,7 @@ export class ChartWidget {
 
   private applySettings(patch: Partial<ChartSettingsState>): void {
     this.settingsState = { ...this.settingsState, ...patch };
-    if (patch.scaleMode !== undefined || patch.logScale !== undefined || patch.invertScale !== undefined) this.layoutSession?.changed();
+    if ((Object.keys(patch) as (keyof ChartSettingsState)[]).some((key) => !NOT_IN_LAYOUT.has(key))) this.layoutSession?.changed();
     this.scheduleLegend(); // the OHLCV legend's rows and the locale move or reword it
 
     if (patch.gridVisible !== undefined) this.chart.setGridVisible(patch.gridVisible);
@@ -4580,6 +4723,8 @@ export class ChartWidget {
       // Every type: one left out goes back to its defaults (a reset).
       this.chart.setChartTypeOptions({ renko: {}, lineBreak: {}, kagi: {}, pointAndFigure: {}, rangeBars: {}, ...patch.chartTypeOptions });
     }
+    // Kept and told once done: an open dialog's changes wait for its OK or Cancel.
+    if (!this.settingsEdit) this.publishSettings();
   }
 
   private resetSettings(): void {

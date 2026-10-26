@@ -560,8 +560,9 @@ new ChartWidget(host, { features: { 'dock.dataWindow': false } })  // no button 
 
 <h3>共有できる表示（ディープリンク）</h3>
 <p>
-  シンボル、時間足、チャートタイプ、価格スケール、インジケーター（パラメーター込み）、描画を含む
-  表示全体を、ディープリンク用のコンパクトで URL セーフな文字列にエンコードします。
+  シンボル、時間足、チャートタイプ、価格スケール、インジケーター（パラメーター込み）、描画、
+  そして既定から変えたチャート設定（タイムゾーンと数値の書式を除く）を含む表示全体を、
+  ディープリンク用のコンパクトで URL セーフな文字列にエンコードします。
   <code>shareUrl: true</code> を指定すると、ウィジェットは読み込み時に <code>#tcw=…</code>
   ハッシュから表示を復元し、コマンドパレットの「表示を共有」アクションでリンクをクリップボードにコピーできます。
 </p>
@@ -574,7 +575,8 @@ await widget.copyShareLink()            // copy "<url>#tcw=<token>"`}</code></pr
 <h3>名前付きレイアウト</h3>
 <p>
   ツールバーのレイアウトボタンで、チャートに名前を付けて保存できます。保存されるのはシンボル、時間足、
-  価格スケール、チャートタイプ、インジケーター、描画、アラートです（テーマは閲覧者ごとのものなので含みません）。
+  価格スケール、チャートタイプ、インジケーター、描画、アラート、<a href="#chart-settings">チャート設定</a>です
+  （テーマ、タイムゾーン、数値の書式は閲覧者ごとのものなので含みません）。
   レイアウトを開く、名前を変更する、削除するといった操作は、このボタンのメニューから行います。
   開いているレイアウトは変更のたびに自動保存され、<kbd>Ctrl/⌘ S</kbd> でも保存できます。
   <code>storage</code> を渡さない限り、レイアウトはこのブラウザーの <code>localStorage</code> に保存されます。
@@ -610,6 +612,43 @@ await widget.applyLayoutContent(json)`}</code></pre>
   保存、開く、自動保存は 1 つずつ順に実行されるため、保存がその後に開いたレイアウトに書き込まれることはありません。
 </p>
 
+<h3 id="chart-settings">チャート設定</h3>
+<p>
+  設定ダイアログのスイッチと選択肢（出来高プロファイルとマーケットプロファイル、スイングマーカー、
+  セッションの網掛け、前期間の水準、グリッド、凡例、十字線、価格スケール、タイムゾーン、数値の書式）が
+  ウィジェットのチャート設定です。<code>getSettings()</code> で読み取り（コピーが返ります）、
+  <code>setSettings(patch)</code> で一部を変更します。読み取れないものは捨て、数値はダイアログの範囲に収め、
+  元に戻す履歴には記録しません。変更は <code>onSettingsChange(listener)</code> で受け取れ、
+  止めるための関数が返ります。ダイアログを OK で閉じたときに 1 回呼ばれ、キャンセルや何も変わらない変更では
+  呼ばれません。<code>persistSettings: true</code> を指定すると、ウィジェットはこのブラウザーに設定を保存し、
+  次に開いたときに元に戻します。
+</p>
+<pre><code>{`const widget = new ChartWidget(host, {
+  chartOptions: { timeZone: 'UTC' },
+  persistSettings: true,            // または { key: 'myapp:settings' }
+})
+
+widget.setSettings({ volumeProfileVisible: true, timezone: 'exchange' })
+widget.getSettings().timezone       // 'exchange'
+
+const stop = widget.onSettingsChange((settings) => {
+  api.put('/me/chart-settings', settings)   // たとえば自分のサーバーに
+})
+stop()`}</code></pre>
+<ul>
+  <li><strong>persistSettings</strong> は、ユーザーがあなたの値から変えた分をブラウザーごとに保存します。
+    保存された値は <code>chartOptions</code> より優先され、リセットするとあなたの値に戻ります。
+    対数スケールと自動スケールのフラグ、チャートタイプ固有の設定（練行足のボックスなど）はチャートの状態なので
+    保存しません。ページ上のウィジェットにはそれぞれ別の <code>key</code> を付けてください。
+    グリッドは各チャートに自動で付けます。</li>
+  <li><strong>名前付きレイアウト</strong> はタイムゾーンと数値の書式を除くすべてを保存します。
+    この 2 つは閲覧者ごとのものです。これより前に保存したレイアウトには含まれず、開いても設定はそのままです。
+    古いバージョンのライブラリーは新しいレイアウトをこれらなしで開き、その自動保存はこれらを含まずに書き戻します。</li>
+  <li><strong>共有リンク</strong> は、送り手が既定から変えた設定を運びます。タイムゾーンと数値の書式は含みません。</li>
+  <li><strong>シンボルごとのレイアウト</strong>（<code>persistLayouts</code>）と
+    <code>chart.saveState()</code> には、これらの設定は含まれません。</li>
+</ul>
+
 <h3>シンボルごとのレイアウト</h3>
 <p>
   これとは別に、シンボルごとのインジケーター構成、描画、アラート、チャートタイプを
@@ -626,7 +665,8 @@ await widget.applyLayoutContent(json)`}</code></pre>
 widget.clearSavedLayout('BTCUSDT')`}</code></pre>
 <p>
   レイアウトはシンボルの切り替え時とウィジェットの破棄時に書き出されるため、
-  ユーザーがページを離れても何も失われません。
+  ユーザーがページを離れても何も失われません。チャート設定は含まれません。
+  それは <code>persistSettings</code> が保存します。
 </p>
 
 <h3>ドラッグ＆ドロップでのデータ読み込み</h3>

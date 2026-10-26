@@ -11,6 +11,8 @@ class FakeChart {
 
   constructor(_host: HTMLElement, public options: ChartOptions) {
     FakeChart.last = this;
+    // As the chart does: it starts with the type settings its options give, and the widget reads them back.
+    this.chartTypeOptions = options.chartTypeOptions ?? {};
     return new Proxy(this, {
       get: (target, key, receiver) =>
         key in target ? Reflect.get(target, key, receiver) : () => undefined,

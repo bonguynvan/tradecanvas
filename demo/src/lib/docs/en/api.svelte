@@ -582,8 +582,9 @@ new ChartWidget(host, { features: { 'dock.dataWindow': false } })  // no button 
 <h3>Shareable view (deep links)</h3>
 <p>
   Encode the whole view — symbol, timeframe, chart type, price scale,
-  indicators (with params), and drawings — into a compact, URL-safe string for
-  deep-linking. With <code>shareUrl: true</code> the widget restores a
+  indicators (with params), drawings, and the Chart Settings changed from the
+  defaults (not the time zone or number format) — into a compact, URL-safe
+  string for deep-linking. With <code>shareUrl: true</code> the widget restores a
   <code>#tcw=…</code> hash on load and the "Share View" command palette action
   copies a link to the clipboard.
 </p>
@@ -596,8 +597,9 @@ await widget.copyShareLink()            // copy "<url>#tcw=<token>"`}</code></pr
 <h3>Named layouts</h3>
 <p>
   The layout button on the toolbar saves the chart under a name: symbol,
-  interval, price scale, chart type, indicators, drawings and alerts (not the
-  theme, which stays the viewer's). Open, rename and delete layouts from its
+  interval, price scale, chart type, indicators, drawings, alerts and the
+  <a href="#chart-settings">Chart Settings</a> (not the theme, the time zone or
+  the number format, which stay the viewer's). Open, rename and delete layouts from its
   menu; the layout open auto-saves as it changes, and <kbd>Ctrl/⌘ S</kbd> saves
   it. Layouts live in this browser's <code>localStorage</code> unless you give a
   <code>storage</code>: four calls, each may return a promise.
@@ -633,6 +635,49 @@ await widget.applyLayoutContent(json)`}</code></pre>
   auto-saving run one at a time, so a save never lands in a layout opened after it.
 </p>
 
+<h3 id="chart-settings">Chart settings</h3>
+<p>
+  The settings dialog's switches and choices (the volume and market profiles,
+  swing markers, session shading, prior-period levels, grid, legend, crosshair,
+  scales, time zone, number format) are the widget's Chart Settings. Read them
+  with <code>getSettings()</code>, a copy; change some with
+  <code>setSettings(patch)</code>, which drops what it can't read, keeps numbers
+  in the dialog's ranges and records no undo step; and hear of each change with
+  <code>onSettingsChange(listener)</code>, which returns the function that stops
+  it. It is called once when the dialog closes with OK, never for Cancel or for
+  a change that changes nothing. With <code>persistSettings: true</code> the
+  widget keeps them in this browser and puts them back on the next visit.
+</p>
+<pre><code>{`const widget = new ChartWidget(host, {
+  chartOptions: { timeZone: 'UTC' },
+  persistSettings: true,            // or { key: 'myapp:settings' }
+})
+
+widget.setSettings({ volumeProfileVisible: true, timezone: 'exchange' })
+widget.getSettings().timezone       // 'exchange'
+
+const stop = widget.onSettingsChange((settings) => {
+  api.put('/me/chart-settings', settings)   // your server, say
+})
+stop()`}</code></pre>
+<ul>
+  <li><strong>persistSettings</strong> keeps, per browser, what the user changed
+    from your values. A kept value wins over <code>chartOptions</code>, and Reset
+    goes back to yours. It leaves out the log and auto-scale flags and a chart
+    type's own settings (the Renko box and the like), which are the chart's state.
+    Give each widget on a page a <code>key</code> of its own; a grid gives each of
+    its charts one.</li>
+  <li><strong>Named layouts</strong> keep all of them but the time zone and the
+    number format, which stay the viewer's. A layout saved before they were kept
+    has none, and opening it leaves the settings as they are. An older version of
+    the library opens a newer layout without them, and its auto-save writes it back
+    without them.</li>
+  <li><strong>Share links</strong> carry the ones the sender changed from the
+    defaults, without the time zone and the number format.</li>
+  <li><strong>Per-symbol layouts</strong> (<code>persistLayouts</code>) and
+    <code>chart.saveState()</code> hold none of them.</li>
+</ul>
+
 <h3>Per-symbol layouts</h3>
 <p>
   Separately, persist per-symbol indicator stacks, drawings, alerts, and chart type
@@ -649,7 +694,8 @@ await widget.applyLayoutContent(json)`}</code></pre>
 widget.clearSavedLayout('BTCUSDT')`}</code></pre>
 <p>
   Layouts flush on symbol switch and on widget destroy so nothing is lost
-  when the user navigates away.
+  when the user navigates away. They hold no Chart Settings:
+  <code>persistSettings</code> keeps those.
 </p>
 
 <h3>Drag-and-drop data import</h3>

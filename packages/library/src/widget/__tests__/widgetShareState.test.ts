@@ -36,6 +36,18 @@ describe('encode/decodeWidgetState', () => {
     expect(decodeWidgetState(v2)).toBeNull();
   });
 
+  it('carries the Chart Settings', () => {
+    const shared = { ...sample, settings: { volumeProfileVisible: true, pivotStrength: 7 } };
+    expect(decodeWidgetState(encodeWidgetState(shared))).toEqual(shared);
+  });
+
+  it('reads back only the settings a link may carry, and a scale it knows', () => {
+    const odd = { ...sample, scaleMode: 'sideways' as never, settings: { volumeProfileVisible: 'yes', timezone: 'Asia/Tokyo', pivotStrength: 99, gridVisible: false } as never };
+    const decoded = decodeWidgetState(encodeWidgetState(odd))!;
+    expect(decoded.settings).toEqual({ pivotStrength: 20, gridVisible: false });
+    expect(decoded.scaleMode).toBe('regular');
+  });
+
   it('defaults scaleMode and arrays when absent', () => {
     const encoded = encodeWidgetState({ ...sample, scaleMode: undefined as never, indicators: undefined as never, drawings: undefined as never });
     const decoded = decodeWidgetState(encoded)!;

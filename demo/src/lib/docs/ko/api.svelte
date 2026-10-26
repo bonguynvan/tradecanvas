@@ -567,8 +567,9 @@ new ChartWidget(host, { features: { 'dock.dataWindow': false } })  // no button 
 
 <h3>공유 가능한 보기 (딥 링크)</h3>
 <p>
-  종목, 시간 단위, 차트 유형, 가격 눈금, 지표(파라미터 포함), 그림 등
-  보기 전체를 딥 링크용의 간결하고 URL에 안전한 문자열로 인코딩합니다.
+  종목, 시간 단위, 차트 유형, 가격 눈금, 지표(파라미터 포함), 그림, 그리고 기본값에서
+  바꾼 차트 설정(시간대와 숫자 형식 제외) 등 보기 전체를 딥 링크용의 간결하고 URL에 안전한
+  문자열로 인코딩합니다.
   <code>shareUrl: true</code>를 설정하면 위젯이 로드 시
   <code>#tcw=…</code> 해시를 복원하고, 명령 팔레트의 "보기 공유" 동작이
   링크를 클립보드에 복사합니다.
@@ -582,7 +583,8 @@ await widget.copyShareLink()            // copy "<url>#tcw=<token>"`}</code></pr
 <h3>이름 있는 레이아웃</h3>
 <p>
   도구 모음의 레이아웃 버튼은 차트를 이름을 붙여 저장합니다. 종목, 시간 단위, 가격 눈금,
-  차트 유형, 지표, 그림, 알림이 저장되며, 테마는 보는 사람의 설정이므로 저장하지 않습니다.
+  차트 유형, 지표, 그림, 알림, <a href="#chart-settings">차트 설정</a>이 저장되며, 테마와
+  시간대, 숫자 형식은 보는 사람의 설정이므로 저장하지 않습니다.
   레이아웃 열기, 이름 바꾸기, 삭제는 이 버튼의 메뉴에서 합니다. 열려 있는 레이아웃은
   바뀔 때마다 자동 저장되며, <kbd>Ctrl/⌘ S</kbd>로도 저장할 수 있습니다. <code>storage</code>를
   넘기지 않으면 레이아웃은 이 브라우저의 <code>localStorage</code>에 저장됩니다.
@@ -618,6 +620,42 @@ await widget.applyLayoutContent(json)`}</code></pre>
   자동 저장은 한 번에 하나씩 실행되므로, 저장이 그 뒤에 연 레이아웃에 기록되는 일은 없습니다.
 </p>
 
+<h3 id="chart-settings">차트 설정</h3>
+<p>
+  설정 대화 상자의 스위치와 선택 항목(거래량 프로파일과 마켓 프로파일, 스윙 표시, 세션 음영,
+  이전 기간 레벨, 격자, 범례, 십자선, 가격 눈금, 시간대, 숫자 형식)이 위젯의 차트 설정입니다.
+  <code>getSettings()</code>로 읽고(사본을 돌려줍니다), <code>setSettings(patch)</code>로 일부를
+  바꿉니다. 읽을 수 없는 값은 버리고, 숫자는 대화 상자의 범위 안으로 맞추며, 실행 취소 단계를 남기지
+  않습니다. 바뀔 때마다 <code>onSettingsChange(listener)</code>로 알림을 받을 수 있으며, 이 함수는
+  알림을 멈추는 함수를 돌려줍니다. 대화 상자를 확인으로 닫을 때 한 번 호출되고, 취소하거나 아무것도
+  바뀌지 않은 변경에는 호출되지 않습니다. <code>persistSettings: true</code>를 설정하면 위젯이 이
+  브라우저에 설정을 보관했다가 다음 방문 때 되돌려 놓습니다.
+</p>
+<pre><code>{`const widget = new ChartWidget(host, {
+  chartOptions: { timeZone: 'UTC' },
+  persistSettings: true,            // 또는 { key: 'myapp:settings' }
+})
+
+widget.setSettings({ volumeProfileVisible: true, timezone: 'exchange' })
+widget.getSettings().timezone       // 'exchange'
+
+const stop = widget.onSettingsChange((settings) => {
+  api.put('/me/chart-settings', settings)   // 예: 내 서버에 저장
+})
+stop()`}</code></pre>
+<ul>
+  <li><strong>persistSettings</strong>는 사용자가 여러분의 값에서 바꾼 것을 브라우저별로 보관합니다.
+    보관된 값이 <code>chartOptions</code>보다 우선하며, 초기화하면 여러분의 값으로 돌아갑니다.
+    로그 눈금과 자동 눈금 플래그, 차트 유형별 설정(렌코 박스 등)은 차트의 상태이므로 보관하지 않습니다.
+    페이지의 위젯마다 각자의 <code>key</code>를 주세요. 그리드는 각 차트에 하나씩 알아서 줍니다.</li>
+  <li><strong>이름 있는 레이아웃</strong>은 시간대와 숫자 형식을 뺀 전부를 저장합니다. 이 둘은 보는
+    사람의 설정입니다. 이 기능 이전에 저장한 레이아웃에는 설정이 없으며, 열어도 설정은 그대로입니다.
+    이전 버전의 라이브러리는 새 레이아웃을 설정 없이 열고, 그 자동 저장은 설정 없이 다시 기록합니다.</li>
+  <li><strong>공유 링크</strong>는 보낸 사람이 기본값에서 바꾼 설정을 담으며, 시간대와 숫자 형식은 담지 않습니다.</li>
+  <li><strong>종목별 레이아웃</strong>(<code>persistLayouts</code>)과
+    <code>chart.saveState()</code>에는 이 설정이 하나도 없습니다.</li>
+</ul>
+
 <h3>종목별 레이아웃</h3>
 <p>
   이와 별도로, 종목별 지표 구성, 그림, 알림, 차트 유형을
@@ -634,7 +672,8 @@ await widget.applyLayoutContent(json)`}</code></pre>
 widget.clearSavedLayout('BTCUSDT')`}</code></pre>
 <p>
   레이아웃은 종목을 전환할 때와 위젯이 소멸될 때 저장되므로, 사용자가
-  페이지를 떠나도 잃는 것이 없습니다.
+  페이지를 떠나도 잃는 것이 없습니다. 차트 설정은 담지 않으며, 그것은
+  <code>persistSettings</code>가 보관합니다.
 </p>
 
 <h3>드래그 앤 드롭 데이터 가져오기</h3>

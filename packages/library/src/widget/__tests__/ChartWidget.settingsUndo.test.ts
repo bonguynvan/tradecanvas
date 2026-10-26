@@ -24,7 +24,10 @@ class FakeChart {
   setChartType(type: string): void { this.chartType = type; }
   getTheme() { return { background: '#000', grid: '#111' }; }
   isAutoScale(): boolean { return true; }
-  isInvertScale(): boolean { return false; }
+  /** The scale's flip, as the chart keeps it: the widget reads it back. */
+  inverted = false;
+  setInvertScale(on: boolean): void { this.calls.push(['setInvertScale', on]); this.inverted = on; }
+  isInvertScale(): boolean { return this.inverted; }
   getData(): unknown[] { return []; }
   getDrawings(): unknown[] { return []; }
   getIndicatorPanes(): unknown[] { return []; }

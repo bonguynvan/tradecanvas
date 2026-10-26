@@ -542,8 +542,8 @@ new ChartWidget(host, { features: { 'dock.dataWindow': false } })  // no button 
 
 <h3>可分享视图（深层链接）</h3>
 <p>
-  把整个视图——品种、周期、图表类型、价格坐标、指标（含参数）和画线——编码为一个紧凑的、
-  可安全放入 URL 的字符串，用于深层链接。设置 <code>shareUrl: true</code> 后，
+  把整个视图——品种、周期、图表类型、价格坐标、指标（含参数）、画线，以及相对默认值改过的
+  图表设置（时区和数字格式除外）——编码为一个紧凑的、可安全放入 URL 的字符串，用于深层链接。设置 <code>shareUrl: true</code> 后，
   组件会在加载时恢复 <code>#tcw=…</code> 哈希，命令面板中的“分享视图”操作
   会把链接复制到剪贴板。
 </p>
@@ -555,8 +555,8 @@ await widget.copyShareLink()            // copy "<url>#tcw=<token>"`}</code></pr
 
 <h3>命名布局</h3>
 <p>
-  工具栏上的布局按钮会以一个名称保存图表：品种、周期、价格坐标、图表类型、指标、画线和提醒
-  （不包括主题，主题由查看者自己决定）。可从该按钮的菜单中打开、重命名和删除布局；
+  工具栏上的布局按钮会以一个名称保存图表：品种、周期、价格坐标、图表类型、指标、画线、提醒和
+  <a href="#chart-settings">图表设置</a>（不包括主题、时区和数字格式，这些由查看者自己决定）。可从该按钮的菜单中打开、重命名和删除布局；
   当前打开的布局会在变化时自动保存，按 <kbd>Ctrl/⌘ S</kbd> 也可以保存。
   除非你提供一个 <code>storage</code>，布局都保存在当前浏览器的 <code>localStorage</code> 中。
   <code>storage</code> 由四个方法组成，每个方法都可以返回 promise。
@@ -591,6 +591,41 @@ await widget.applyLayoutContent(json)`}</code></pre>
   因此保存绝不会写入在它之后打开的布局。
 </p>
 
+<h3 id="chart-settings">图表设置</h3>
+<p>
+  设置对话框中的开关和选项（成交量分布和市场轮廓、摆动点标记、交易时段阴影、前一周期价位、网格、
+  图例、十字光标、价格坐标、时区、数字格式）就是组件的图表设置。用 <code>getSettings()</code>
+  读取（返回一份副本）；用 <code>setSettings(patch)</code> 修改其中一部分，它会丢弃无法识别的内容，
+  把数值限制在对话框的范围内，并且不记录撤销步骤；用 <code>onSettingsChange(listener)</code>
+  监听每次变化，它返回一个用于停止监听的函数。对话框点“确定”关闭时调用一次，点“取消”或没有任何
+  改变时不会调用。设置 <code>persistSettings: true</code> 后，组件会把它们保存在当前浏览器中，
+  下次访问时恢复。
+</p>
+<pre><code>{`const widget = new ChartWidget(host, {
+  chartOptions: { timeZone: 'UTC' },
+  persistSettings: true,            // 或 { key: 'myapp:settings' }
+})
+
+widget.setSettings({ volumeProfileVisible: true, timezone: 'exchange' })
+widget.getSettings().timezone       // 'exchange'
+
+const stop = widget.onSettingsChange((settings) => {
+  api.put('/me/chart-settings', settings)   // 比如存到你的服务器
+})
+stop()`}</code></pre>
+<ul>
+  <li><strong>persistSettings</strong> 按浏览器保存用户相对你的值所做的改动。保存的值优先于
+    <code>chartOptions</code>，“重置”则回到你的值。它不保存对数和自动缩放这两个标志，也不保存
+    各图表类型自己的设置（如 Renko 砖块大小），这些属于图表本身的状态。页面上的每个组件请各用
+    一个 <code>key</code>；网格会自动为它的每个图表分配一个。</li>
+  <li><strong>命名布局</strong> 保存全部设置，时区和数字格式除外，它们由查看者自己决定。
+    在此之前保存的布局不含这些设置，打开时设置保持不变。旧版本的库打开新布局时会忽略它们，
+    其自动保存会把布局写回且不再包含它们。</li>
+  <li><strong>分享链接</strong> 携带发送者相对默认值改过的设置，不含时区和数字格式。</li>
+  <li><strong>按品种保存的布局</strong>（<code>persistLayouts</code>）和
+    <code>chart.saveState()</code> 都不包含这些设置。</li>
+</ul>
+
 <h3>按品种保存的布局</h3>
 <p>
   另外，还可以自动把每个品种的指标组合、画线、提醒和图表类型
@@ -607,6 +642,7 @@ await widget.applyLayoutContent(json)`}</code></pre>
 widget.clearSavedLayout('BTCUSDT')`}</code></pre>
 <p>
   切换品种和销毁组件时都会立即写入布局，因此用户离开页面时不会丢失任何内容。
+  它们不保存图表设置：图表设置由 <code>persistSettings</code> 保存。
 </p>
 
 <h3>拖放导入数据</h3>

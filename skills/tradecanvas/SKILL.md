@@ -55,7 +55,9 @@ also works on a widget.
 9. **The time zone is `timeZone`**, as in `Intl.DateTimeFormat`: the option,
    `setTimeZone` / `getEffectiveTimeZone`, `SymbolInfo.timeZone` and
    `MarketConfig.timeZone`. `setTimeZone('exchange')` shows the symbol's zone,
-   else its market's.
+   else its market's. In a `ChartWidget`, set it as a Chart Setting,
+   `widget.setSettings({ timezone: 'exchange' })` (spelt `timezone` there), so
+   the widget's clock, its settings dialog and what it keeps follow.
 
 ## Quick start: the widget with live data
 
@@ -216,6 +218,27 @@ chart.setAutoSave('layout', 1500);        // or keep it saved as it changes
 ```
 
 Saved indicators keep their inputs, sources, panes, colours, visibility and levels.
+`saveState` holds none of the overlays (volume and market profiles, swing
+markers, session shading, prior-period levels), the crosshair or the time zone.
+In a `ChartWidget` those are its Chart Settings, with an API and a store of their own:
+
+```ts
+import { ChartWidget } from '@tradecanvas/chart/widget';
+
+const widget = new ChartWidget(document.getElementById('chart')!, {
+  symbol: 'BTCUSDT',
+  persistSettings: true,                 // kept in this browser, back on the next visit
+});
+widget.setSettings({ timezone: 'exchange', volumeProfileVisible: true });  // checked, no undo step
+const settings = widget.getSettings();   // a copy: every switch, the scale, the zone
+const stop = widget.onSettingsChange((next) => console.log(next.timezone)); // each change; the dialog's once, at OK
+stop();
+```
+
+Named layouts (`layouts`) and share links (`shareUrl`, `exportState`) carry the
+Chart Settings too, but not the viewer's time zone and number format;
+`persistLayouts` (per symbol) carries none of them. A kept setting wins over
+`chartOptions`, and Reset in the dialog goes back to `chartOptions`.
 
 ## Events
 

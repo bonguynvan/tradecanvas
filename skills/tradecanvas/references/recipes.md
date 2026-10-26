@@ -544,10 +544,35 @@ new ChartWidget(document.getElementById('chart')!, {
   symbol: 'BTCUSDT',
   symbols: ['BTCUSDT', 'ETHUSDT', 'SOLUSDT'],
   persistLayouts: true,            // indicators, drawings and chart type per symbol, in localStorage
+  persistSettings: true,           // the Chart Settings (overlays, crosshair, time zone…), in localStorage
   locale: 'vi',
   chartOptions: { numberLocale: 'vi-VN' },
 });
 ```
+
+## The widget's Chart Settings, kept on your server
+
+`persistSettings` keeps them in one browser. To follow the user from device to
+device, read them on each change and give them back on the next visit; the
+widget checks what it is given.
+
+```ts
+import { ChartWidget, type ChartSettingsState } from '@tradecanvas/chart/widget';
+
+const saved = (await (await fetch('/api/me/chart-settings')).json()) as Partial<ChartSettingsState>;
+
+const widget = new ChartWidget(document.getElementById('chart')!, { symbol: 'BTCUSDT' });
+widget.setSettings(saved);   // right after the constructor: before the first paint
+
+const stop = widget.onSettingsChange((settings) => {
+  void fetch('/api/me/chart-settings', { method: 'PUT', body: JSON.stringify(settings) });
+});
+// stop() when the page goes; widget.destroy() also ends it.
+```
+
+Change them in code with `widget.setSettings({ timezone: 'exchange' })`, not
+`widget.getChart().setTimeZone(…)`: the widget's clock follows its own
+settings, and a change made on the chart itself is told to no listener.
 
 ## The widget in a look of your own
 

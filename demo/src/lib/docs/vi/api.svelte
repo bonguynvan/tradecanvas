@@ -588,7 +588,8 @@ new ChartWidget(host, { features: { 'dock.dataWindow': false } })  // no button 
 <h3>Chia sẻ góc nhìn (deep link)</h3>
 <p>
   Mã hoá toàn bộ góc nhìn — mã, khung thời gian, loại biểu đồ, thang giá,
-  chỉ báo (kèm tham số) và hình vẽ — thành một chuỗi gọn, an toàn cho URL để
+  chỉ báo (kèm tham số), hình vẽ và những Cài đặt biểu đồ đã đổi khác mặc định
+  (trừ múi giờ và định dạng số) — thành một chuỗi gọn, an toàn cho URL để
   tạo liên kết sâu. Với <code>shareUrl: true</code>, widget khôi phục hash
   <code>#tcw=…</code> khi tải trang, và thao tác "Chia sẻ góc nhìn" trong bảng lệnh
   sao chép một liên kết vào clipboard.
@@ -602,8 +603,9 @@ await widget.copyShareLink()            // copy "<url>#tcw=<token>"`}</code></pr
 <h3>Bố cục có tên</h3>
 <p>
   Nút bố cục trên thanh công cụ lưu biểu đồ dưới một cái tên: mã, khung thời gian,
-  thang giá, loại biểu đồ, chỉ báo, hình vẽ và cảnh báo (không gồm giao diện, vì đó
-  là lựa chọn của người xem). Mở, đổi tên và xoá bố cục từ menu của nút này; bố cục
+  thang giá, loại biểu đồ, chỉ báo, hình vẽ, cảnh báo và
+  <a href="#chart-settings">Cài đặt biểu đồ</a> (không gồm giao diện, múi giờ và định
+  dạng số, vì đó là lựa chọn của người xem). Mở, đổi tên và xoá bố cục từ menu của nút này; bố cục
   đang mở tự lưu mỗi khi thay đổi, và <kbd>Ctrl/⌘ S</kbd> sẽ lưu nó. Bố cục được lưu
   trong <code>localStorage</code> của trình duyệt này, trừ khi bạn truyền vào một
   <code>storage</code>: bốn hàm, hàm nào cũng có thể trả về một promise.
@@ -640,6 +642,48 @@ await widget.applyLayoutContent(json)`}</code></pre>
   giờ ghi vào bố cục được mở sau nó.
 </p>
 
+<h3 id="chart-settings">Cài đặt biểu đồ</h3>
+<p>
+  Các công tắc và lựa chọn trong hộp thoại cài đặt (hồ sơ khối lượng và Market
+  Profile, điểm swing, tô vùng phiên, mức của kỳ trước, lưới, chú giải, con trỏ chữ
+  thập, thang giá, múi giờ, định dạng số) là Cài đặt biểu đồ của widget. Đọc chúng
+  bằng <code>getSettings()</code> (một bản sao); đổi một phần bằng
+  <code>setSettings(patch)</code>, hàm này bỏ những gì không đọc được, giữ các số
+  trong khoảng của hộp thoại và không ghi bước hoàn tác; và nghe từng thay đổi bằng
+  <code>onSettingsChange(listener)</code>, hàm này trả về hàm để ngừng nghe. Nó được
+  gọi một lần khi hộp thoại đóng bằng OK, không bao giờ cho Huỷ hay cho một thay đổi
+  không đổi gì. Với <code>persistSettings: true</code>, widget giữ chúng trong trình
+  duyệt này và đặt lại ở lần ghé sau.
+</p>
+<pre><code>{`const widget = new ChartWidget(host, {
+  chartOptions: { timeZone: 'UTC' },
+  persistSettings: true,            // hoặc { key: 'myapp:settings' }
+})
+
+widget.setSettings({ volumeProfileVisible: true, timezone: 'exchange' })
+widget.getSettings().timezone       // 'exchange'
+
+const stop = widget.onSettingsChange((settings) => {
+  api.put('/me/chart-settings', settings)   // máy chủ của bạn, chẳng hạn
+})
+stop()`}</code></pre>
+<ul>
+  <li><strong>persistSettings</strong> giữ, theo từng trình duyệt, những gì người dùng
+    đã đổi so với giá trị của bạn. Giá trị được giữ thắng <code>chartOptions</code>, và
+    Đặt lại đưa về giá trị của bạn. Nó bỏ qua cờ thang log, cờ tự co giãn và cài đặt riêng
+    của từng loại biểu đồ (hộp Renko và những thứ tương tự), vốn là trạng thái của biểu đồ.
+    Hãy cho mỗi widget trên trang một <code>key</code> riêng; lưới tự cho mỗi biểu đồ của
+    nó một key.</li>
+  <li><strong>Bố cục có tên</strong> giữ tất cả, trừ múi giờ và định dạng số, vốn là của
+    người xem. Bố cục lưu trước khi có tính năng này không có chúng, và mở nó thì cài đặt
+    giữ nguyên. Một phiên bản thư viện cũ hơn mở bố cục mới mà không có chúng, và lần tự
+    lưu của nó ghi lại bố cục mà không có chúng.</li>
+  <li><strong>Liên kết chia sẻ</strong> mang những cài đặt người gửi đã đổi khác mặc định,
+    không gồm múi giờ và định dạng số.</li>
+  <li><strong>Bố cục theo từng mã</strong> (<code>persistLayouts</code>) và
+    <code>chart.saveState()</code> không giữ cài đặt nào trong số này.</li>
+</ul>
+
 <h3>Bố cục theo từng mã</h3>
 <p>
   Ngoài ra, có thể tự động lưu bộ chỉ báo, hình vẽ, cảnh báo và loại biểu đồ theo từng mã
@@ -656,7 +700,8 @@ await widget.applyLayoutContent(json)`}</code></pre>
 widget.clearSavedLayout('BTCUSDT')`}</code></pre>
 <p>
   Bố cục được ghi lại khi đổi mã và khi huỷ widget, nên không mất gì
-  khi người dùng rời trang.
+  khi người dùng rời trang. Chúng không giữ Cài đặt biểu đồ:
+  <code>persistSettings</code> giữ phần đó.
 </p>
 
 <h3>Kéo thả để nhập dữ liệu</h3>

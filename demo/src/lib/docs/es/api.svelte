@@ -596,8 +596,9 @@ new ChartWidget(host, { features: { 'dock.dataWindow': false } })  // no button 
 <h3>Vista compartible (enlaces profundos)</h3>
 <p>
   Codifica la vista completa —símbolo, temporalidad, tipo de gráfico, escala de
-  precio, indicadores (con sus parámetros) y dibujos— en una cadena compacta y
-  apta para URL, para crear enlaces profundos. Con <code>shareUrl: true</code> el
+  precio, indicadores (con sus parámetros), dibujos y la configuración del gráfico
+  cambiada respecto a la predeterminada (salvo la zona horaria y el formato de
+  números)— en una cadena compacta y apta para URL, para crear enlaces profundos. Con <code>shareUrl: true</code> el
   widget restaura un hash <code>#tcw=…</code> al cargar, y la acción "Compartir
   vista" de la paleta de comandos copia un enlace al portapapeles.
 </p>
@@ -610,8 +611,9 @@ await widget.copyShareLink()            // copy "<url>#tcw=<token>"`}</code></pr
 <h3>Diseños con nombre</h3>
 <p>
   El botón de diseño de la barra de herramientas guarda el gráfico con un nombre:
-  símbolo, temporalidad, escala de precio, tipo de gráfico, indicadores, dibujos y
-  alertas (no el tema, que sigue siendo el de quien mira). Abre, renombra y elimina
+  símbolo, temporalidad, escala de precio, tipo de gráfico, indicadores, dibujos,
+  alertas y la <a href="#chart-settings">configuración del gráfico</a> (no el tema,
+  la zona horaria ni el formato de números, que siguen siendo los de quien mira). Abre, renombra y elimina
   diseños desde su menú; el diseño abierto se guarda solo a medida que cambia, y
   <kbd>Ctrl/⌘ S</kbd> lo guarda. Los diseños viven en el <code>localStorage</code> de
   este navegador salvo que indiques un <code>storage</code>: cuatro llamadas, y cada
@@ -649,6 +651,50 @@ await widget.applyLayoutContent(json)`}</code></pre>
   uno, así que un guardado nunca acaba en un diseño abierto después de él.
 </p>
 
+<h3 id="chart-settings">Configuración del gráfico</h3>
+<p>
+  Los interruptores y opciones del diálogo de configuración (los perfiles de
+  volumen y de mercado, los marcadores de swing, el sombreado de sesión, los
+  niveles del periodo anterior, la cuadrícula, la leyenda, la cruz, las escalas, la
+  zona horaria y el formato de números) son la configuración del gráfico del
+  widget. Léela con <code>getSettings()</code>, una copia; cambia una parte con
+  <code>setSettings(patch)</code>, que descarta lo que no puede leer, mantiene los
+  números en los rangos del diálogo y no registra ningún paso de deshacer; y entérate
+  de cada cambio con <code>onSettingsChange(listener)</code>, que devuelve la función
+  que lo detiene. Se llama una vez cuando el diálogo se cierra con Aceptar, nunca con
+  Cancelar ni con un cambio que no cambia nada. Con <code>persistSettings: true</code>
+  el widget la guarda en este navegador y la recupera en la siguiente visita.
+</p>
+<pre><code>{`const widget = new ChartWidget(host, {
+  chartOptions: { timeZone: 'UTC' },
+  persistSettings: true,            // o { key: 'myapp:settings' }
+})
+
+widget.setSettings({ volumeProfileVisible: true, timezone: 'exchange' })
+widget.getSettings().timezone       // 'exchange'
+
+const stop = widget.onSettingsChange((settings) => {
+  api.put('/me/chart-settings', settings)   // en tu servidor, por ejemplo
+})
+stop()`}</code></pre>
+<ul>
+  <li><strong>persistSettings</strong> guarda, por navegador, lo que el usuario cambió
+    respecto a tus valores. Un valor guardado gana a <code>chartOptions</code>, y
+    Restablecer vuelve a los tuyos. Deja fuera los indicadores de escala logarítmica y
+    de escala automática y los ajustes propios de cada tipo de gráfico (la caja de
+    Renko y similares), que son estado del gráfico. Da a cada widget de la página su
+    propia <code>key</code>; una cuadrícula le da una a cada uno de sus gráficos.</li>
+  <li><strong>Los diseños con nombre</strong> la guardan entera salvo la zona horaria y
+    el formato de números, que siguen siendo los de quien mira. Un diseño guardado antes
+    de esto no la trae, y al abrirlo la configuración queda como está. Una versión
+    anterior de la biblioteca abre un diseño nuevo sin ella, y su guardado automático lo
+    vuelve a escribir sin ella.</li>
+  <li><strong>Los enlaces compartidos</strong> llevan lo que quien envía cambió respecto
+    a lo predeterminado, sin la zona horaria ni el formato de números.</li>
+  <li><strong>Los diseños por símbolo</strong> (<code>persistLayouts</code>) y
+    <code>chart.saveState()</code> no guardan nada de ella.</li>
+</ul>
+
 <h3>Diseños por símbolo</h3>
 <p>
   Por separado, guarda automáticamente en <code>localStorage</code>, por símbolo, los
@@ -665,7 +711,8 @@ await widget.applyLayoutContent(json)`}</code></pre>
 widget.clearSavedLayout('BTCUSDT')`}</code></pre>
 <p>
   Los diseños se guardan al cambiar de símbolo y al destruir el widget, así que
-  no se pierde nada cuando el usuario sale de la página.
+  no se pierde nada cuando el usuario sale de la página. No guardan la
+  configuración del gráfico: de eso se encarga <code>persistSettings</code>.
 </p>
 
 <h3>Importación de datos con arrastrar y soltar</h3>

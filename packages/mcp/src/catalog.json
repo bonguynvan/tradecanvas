@@ -5413,7 +5413,7 @@
       {
         "name": "layouts",
         "type": "boolean | WidgetLayoutsOptions",
-        "doc": "Named layouts: a toolbar button to save the chart (symbol, interval, scale, chart type, indicators, drawings, alerts) under a name, open, rename and delete layouts, and auto-save the one open; Ctrl/Cmd+S saves. Kept in this browser's `localStorage` unless `storage` says otherwise. Default `true`."
+        "doc": "Named layouts: a toolbar button to save the chart (symbol, interval, scale, chart type, indicators, drawings, alerts, Chart Settings but the time zone and number format) under a name, open, rename and delete them, and auto-save the one open; Ctrl/Cmd+S saves. Kept in this browser's `localStorage` unless `storage` says otherwise. Default `true`."
       },
       {
         "name": "indicatorTemplates",
@@ -5644,6 +5644,11 @@
           "projection",
           "barsPattern"
         ]
+      },
+      {
+        "name": "persistSettings",
+        "type": "boolean | { key?: string; }",
+        "doc": "Keep the Chart Settings in this browser (`localStorage`) and put them back on the next visit: the overlays, scales, crosshair, legend, time zone, number format. Default `false`. It keeps what the user changed from your values, which then win over `chartOptions` and the features' defaults; Reset in the settings goes back to yours."
       },
       {
         "name": "persistLayouts",
