@@ -55,6 +55,7 @@ export const RO_MESSAGES: WidgetMessages = {
   'toolbar.timeframes.weeks': 'Săptămâni',
   'toolbar.timeframes.months': 'Luni',
   'toolbar.trade': 'Tranzacționare',
+  'statusBar.label': 'Bară de stare',
   'statusBar.log': 'log',
   'statusBar.auto': 'auto',
   'statusBar.marketOpen': 'Deschis',

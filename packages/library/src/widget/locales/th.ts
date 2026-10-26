@@ -55,6 +55,7 @@ export const TH_MESSAGES: WidgetMessages = {
   'toolbar.timeframes.weeks': 'สัปดาห์',
   'toolbar.timeframes.months': 'เดือน',
   'toolbar.trade': 'เทรด',
+  'statusBar.label': 'แถบสถานะ',
   'statusBar.log': 'ล็อก',
   'statusBar.auto': 'อัตโนมัติ',
   'statusBar.marketOpen': 'เปิด',

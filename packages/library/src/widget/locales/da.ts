@@ -56,6 +56,7 @@ export const DA_MESSAGES: WidgetMessages = {
   'toolbar.timeframes.weeks': 'Uger',
   'toolbar.timeframes.months': 'Måneder',
   'toolbar.trade': 'Handel',
+  'statusBar.label': 'Statuslinje',
   'statusBar.log': 'log',
   'statusBar.auto': 'auto',
   'statusBar.marketOpen': 'Åbent',

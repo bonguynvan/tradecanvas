@@ -406,6 +406,13 @@ describe('ChartWidget keys and behaviours by switch', () => {
     expect(title()).toBe('Go to date');
   });
 
+  it('names the status bar for a screen reader', () => {
+    make();
+    const bar = host.querySelector<HTMLElement>('.tcw-statusbar')!;
+    expect(bar.getAttribute('role')).toBe('group');
+    expect(bar.getAttribute('aria-label')).toBe('Status bar');
+  });
+
   it('leaves out of the palette the commands switched off', () => {
     make({ features: { goToDate: false, alerts: false, hotkeySheet: false } });
     press();

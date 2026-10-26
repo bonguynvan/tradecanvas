@@ -55,6 +55,7 @@ export const VI_MESSAGES: WidgetMessages = {
   'toolbar.timeframes.weeks': 'Tuần',
   'toolbar.timeframes.months': 'Tháng',
   'toolbar.trade': 'Giao dịch',
+  'statusBar.label': 'Thanh trạng thái',
   'statusBar.log': 'log',
   'statusBar.auto': 'tự động',
   'statusBar.marketOpen': 'Mở cửa',

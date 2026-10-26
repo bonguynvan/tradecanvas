@@ -56,6 +56,7 @@ export const HE_MESSAGES: WidgetMessages = {
   'toolbar.timeframes.weeks': 'שבועות',
   'toolbar.timeframes.months': 'חודשים',
   'toolbar.trade': 'מסחר',
+  'statusBar.label': 'שורת המצב',
   'statusBar.log': 'לוג',
   'statusBar.auto': 'אוטו',
   'statusBar.marketOpen': 'פתוח',

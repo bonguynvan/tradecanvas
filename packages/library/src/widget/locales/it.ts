@@ -55,6 +55,7 @@ export const IT_MESSAGES: WidgetMessages = {
   'toolbar.timeframes.weeks': 'Settimane',
   'toolbar.timeframes.months': 'Mesi',
   'toolbar.trade': 'Trading',
+  'statusBar.label': 'Barra di stato',
   'statusBar.log': 'log',
   'statusBar.auto': 'auto',
   'statusBar.marketOpen': 'Aperto',

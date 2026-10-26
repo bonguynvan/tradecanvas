@@ -55,6 +55,7 @@ export const KO_MESSAGES: WidgetMessages = {
   'toolbar.timeframes.weeks': '주',
   'toolbar.timeframes.months': '월',
   'toolbar.trade': '거래',
+  'statusBar.label': '상태 표시줄',
   'statusBar.log': '로그',
   'statusBar.auto': '자동',
   'statusBar.marketOpen': '운영 중',

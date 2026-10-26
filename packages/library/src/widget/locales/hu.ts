@@ -55,6 +55,7 @@ export const HU_MESSAGES: WidgetMessages = {
   'toolbar.timeframes.weeks': 'Hetek',
   'toolbar.timeframes.months': 'Hónapok',
   'toolbar.trade': 'Kereskedés',
+  'statusBar.label': 'Állapotsor',
   'statusBar.log': 'log',
   'statusBar.auto': 'auto',
   'statusBar.marketOpen': 'Nyitva',

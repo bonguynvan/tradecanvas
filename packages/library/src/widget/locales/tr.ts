@@ -55,6 +55,7 @@ export const TR_MESSAGES: WidgetMessages = {
   'toolbar.timeframes.weeks': 'Haftalar',
   'toolbar.timeframes.months': 'Aylar',
   'toolbar.trade': 'İşlem',
+  'statusBar.label': 'Durum çubuğu',
   'statusBar.log': 'log',
   'statusBar.auto': 'oto',
   'statusBar.marketOpen': 'Açık',

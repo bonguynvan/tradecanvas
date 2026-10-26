@@ -56,6 +56,7 @@ export const MS_MESSAGES: WidgetMessages = {
   'toolbar.timeframes.weeks': 'Minggu',
   'toolbar.timeframes.months': 'Bulan',
   'toolbar.trade': 'Dagangan',
+  'statusBar.label': 'Bar status',
   'statusBar.log': 'log',
   'statusBar.auto': 'auto',
   'statusBar.marketOpen': 'Dibuka',

@@ -55,6 +55,7 @@ export const ZH_MESSAGES: WidgetMessages = {
   'toolbar.timeframes.weeks': '周',
   'toolbar.timeframes.months': '月',
   'toolbar.trade': '交易',
+  'statusBar.label': '状态栏',
   'statusBar.log': '对数',
   'statusBar.auto': '自动',
   'statusBar.marketOpen': '开市',

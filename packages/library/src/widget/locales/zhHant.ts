@@ -55,6 +55,7 @@ export const ZH_HANT_MESSAGES: WidgetMessages = {
   'toolbar.timeframes.weeks': '週',
   'toolbar.timeframes.months': '月',
   'toolbar.trade': '交易',
+  'statusBar.label': '狀態列',
   'statusBar.log': '對數',
   'statusBar.auto': '自動',
   'statusBar.marketOpen': '開市',

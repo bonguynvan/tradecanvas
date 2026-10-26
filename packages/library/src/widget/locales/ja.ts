@@ -55,6 +55,7 @@ export const JA_MESSAGES: WidgetMessages = {
   'toolbar.timeframes.weeks': '週',
   'toolbar.timeframes.months': '月',
   'toolbar.trade': '取引',
+  'statusBar.label': 'ステータスバー',
   'statusBar.log': '対数',
   'statusBar.auto': '自動',
   'statusBar.marketOpen': '取引中',

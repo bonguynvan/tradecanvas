@@ -56,6 +56,7 @@ export const NB_MESSAGES: WidgetMessages = {
   'toolbar.timeframes.weeks': 'Uker',
   'toolbar.timeframes.months': 'Måneder',
   'toolbar.trade': 'Handel',
+  'statusBar.label': 'Statuslinje',
   'statusBar.log': 'log',
   'statusBar.auto': 'auto',
   'statusBar.marketOpen': 'Åpent',

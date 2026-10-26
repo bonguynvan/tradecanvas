@@ -55,6 +55,7 @@ export const SV_MESSAGES: WidgetMessages = {
   'toolbar.timeframes.weeks': 'Veckor',
   'toolbar.timeframes.months': 'Månader',
   'toolbar.trade': 'Handel',
+  'statusBar.label': 'Statusfält',
   'statusBar.log': 'log',
   'statusBar.auto': 'auto',
   'statusBar.marketOpen': 'Öppen',

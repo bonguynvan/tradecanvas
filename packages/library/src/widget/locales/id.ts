@@ -55,6 +55,7 @@ export const ID_MESSAGES: WidgetMessages = {
   'toolbar.timeframes.weeks': 'Minggu',
   'toolbar.timeframes.months': 'Bulan',
   'toolbar.trade': 'Trading',
+  'statusBar.label': 'Bilah status',
   'statusBar.log': 'log',
   'statusBar.auto': 'auto',
   'statusBar.marketOpen': 'Buka',

@@ -55,6 +55,7 @@ export const EL_MESSAGES: WidgetMessages = {
   'toolbar.timeframes.weeks': 'Εβδομάδες',
   'toolbar.timeframes.months': 'Μήνες',
   'toolbar.trade': 'Συναλλαγές',
+  'statusBar.label': 'Γραμμή κατάστασης',
   'statusBar.log': 'λογ',
   'statusBar.auto': 'αυτό',
   'statusBar.marketOpen': 'Ανοιχτή',

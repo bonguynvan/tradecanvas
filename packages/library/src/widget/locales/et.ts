@@ -56,6 +56,7 @@ export const ET_MESSAGES: WidgetMessages = {
   'toolbar.timeframes.weeks': 'Nädalad',
   'toolbar.timeframes.months': 'Kuud',
   'toolbar.trade': 'Kauplemine',
+  'statusBar.label': 'Olekuriba',
   'statusBar.log': 'log',
   'statusBar.auto': 'auto',
   'statusBar.marketOpen': 'Avatud',

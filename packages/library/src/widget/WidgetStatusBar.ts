@@ -101,14 +101,19 @@ export class WidgetStatusBar {
   /** Gone: a late font or a frame asked for before then fits nothing. */
   private destroyed = false;
 
+  /** `extras.label` names the bar, which holds the keyboard itself when nothing in it shows. */
   constructor(
     private readonly host: HTMLElement,
     range?: StatusBarRange,
-    private readonly extras: { clock?: StatusBarClock; scale?: StatusBarScale } = {},
+    private readonly extras: { clock?: StatusBarClock; scale?: StatusBarScale; label?: string } = {},
   ) {
     this.el = document.createElement('div');
     this.el.className = 'tcw-statusbar';
     markPart(this.el, 'statusBar');
+    if (extras.label) {
+      this.el.setAttribute('role', 'group');
+      this.el.setAttribute('aria-label', extras.label);
+    }
 
     if (range) this.el.appendChild(this.buildRange(range));
     this.hostLeft = this.hostGroup();
@@ -271,8 +276,8 @@ export class WidgetStatusBar {
   /**
    * Keep the keyboard on the range bar after a refit, when it was on
    * `focused` (or in the menu "more" opened, which the refit closed): see
-   * `focusAfterRefit`. The bar itself takes it when nothing there shows, so
-   * it never drops to the page.
+   * `focusAfterRefit`. Another control of the bar, or the bar itself, takes
+   * it when nothing there shows, so it never drops to the page.
    */
   private keepFocus(focused: HTMLElement | null): void {
     if (!focused || this.rangeMenu?.isOpen()) return;
@@ -286,14 +291,21 @@ export class WidgetStatusBar {
    * button that still shows; a preset or go to date that folded hands it to
    * "more"; "more" gone (nothing folded any more, or the presets switched
    * off) hands it to go to date, else to the last preset that shows, else to
-   * the bar.
+   * the first control the rest of the bar shows (a button of yours, the
+   * clock, a scale switch), else to the bar.
    */
   private focusAfterRefit(focused: HTMLElement): HTMLElement {
     if (this.shows(focused)) return focused;
     const lastPreset = this.presetBtns.filter((btn) => this.shows(btn)).at(-1);
     const next = [focused === this.moreBtn ? null : this.moreBtn, this.goToBtn, lastPreset]
       .find((btn): btn is HTMLButtonElement => btn != null && this.shows(btn));
-    return next ?? this.el;
+    return next ?? this.firstOtherControl() ?? this.el;
+  }
+
+  /** The first button the bar shows outside the range bar, in its order; null when none does. */
+  private firstOtherControl(): HTMLButtonElement | null {
+    const others = [...this.el.querySelectorAll<HTMLButtonElement>('button')].filter((btn) => !this.rangeEl?.contains(btn));
+    return others.find((btn) => !btn.disabled && btn.getClientRects().length > 0) ?? null;
   }
 
   /** The bar holds the keyboard: focusable only until it leaves, so a click on the bar later doesn't take it. */

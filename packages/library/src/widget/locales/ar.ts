@@ -56,6 +56,7 @@ export const AR_MESSAGES: WidgetMessages = {
   'toolbar.timeframes.weeks': 'الأسابيع',
   'toolbar.timeframes.months': 'الأشهر',
   'toolbar.trade': 'تداول',
+  'statusBar.label': 'شريط الحالة',
   'statusBar.log': 'لوغ',
   'statusBar.auto': 'تلقائي',
   'statusBar.marketOpen': 'مفتوح',

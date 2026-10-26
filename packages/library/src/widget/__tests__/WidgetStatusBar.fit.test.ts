@@ -395,10 +395,48 @@ describe('the status bar, refitting under the keyboard and the "more" menu', () 
     expect(document.activeElement).toBe(goTo());
   });
 
-  it('hands it to the bar itself when nothing on the range bar shows, for as long as it stays there', () => {
+  describe('when nothing on the range bar shows', () => {
+    // jsdom lays nothing out: what isn't hidden or switched off gets a box, as it would on screen.
+    beforeEach(() => {
+      vi.spyOn(Element.prototype, 'getClientRects').mockImplementation(function (this: Element) {
+        const part = this.closest<HTMLElement>('[data-tcw-part]');
+        return (this.closest('[hidden]') || (part && isOff(part)) ? [] : [{}]) as unknown as DOMRectList;
+      });
+    });
+    afterEach(() => vi.restoreAllMocks());
+
+    it('hands the keyboard to the first control the bar still shows: yours, then the clock', () => {
+      const yours = bar.addHostItem({ id: 'acc', text: 'Demo', side: 'left', onClick: () => {} });
+      fitAt(RIGHT_PX + 240);
+      more().focus();
+      root.dataset.tcwOff = 'statusBar.range goToDate';
+      fitAt(RIGHT_PX + 240);
+      expect(document.activeElement).toBe(yours);
+    });
+
+    it('skips a control that does not show, the clock taking the keyboard then', () => {
+      const yours = bar.addHostItem({ id: 'acc', text: 'Demo', side: 'left', onClick: () => {} });
+      yours.hidden = true;
+      fitAt(RIGHT_PX + 240);
+      more().focus();
+      root.dataset.tcwOff = 'statusBar.range goToDate';
+      fitAt(RIGHT_PX + 240);
+      expect(document.activeElement).toBe(q('[data-role="clock"]'));
+    });
+  });
+
+  it('names the bar, for the keyboard it may hold when nothing in it shows', () => {
+    bar.destroy();
+    bar = new WidgetStatusBar(root, undefined, { label: 'Status bar' });
+    expect(statusBar().getAttribute('role')).toBe('group');
+    expect(statusBar().getAttribute('aria-label')).toBe('Status bar');
+  });
+
+  it('hands it to the bar itself when nothing in it shows, for as long as it stays there', () => {
+    root.dataset.tcwOff = 'statusBar.clock';
     fitAt(RIGHT_PX + 240);
     more().focus();
-    root.dataset.tcwOff = 'statusBar.range goToDate';
+    root.dataset.tcwOff = 'statusBar.range goToDate statusBar.clock';
     fitAt(RIGHT_PX + 240);
     expect(document.activeElement).toBe(statusBar());
     // Focusable only to hold the keyboard: a click on the bar later doesn't take it.
@@ -411,7 +449,7 @@ describe('the status bar, refitting under the keyboard and the "more" menu', () 
     more().focus();
     // As a browser does for a bar in an inert part of the page: no focus, so no blur will follow.
     vi.spyOn(statusBar(), 'focus').mockImplementation(() => {});
-    root.dataset.tcwOff = 'statusBar.range goToDate';
+    root.dataset.tcwOff = 'statusBar.range goToDate statusBar.clock';
     fitAt(RIGHT_PX + 240);
     expect(document.activeElement).not.toBe(statusBar());
     expect(statusBar().hasAttribute('tabindex')).toBe(false);

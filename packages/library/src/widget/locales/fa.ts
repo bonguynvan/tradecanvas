@@ -56,6 +56,7 @@ export const FA_MESSAGES: WidgetMessages = {
   'toolbar.timeframes.weeks': 'هفته‌ها',
   'toolbar.timeframes.months': 'ماه‌ها',
   'toolbar.trade': 'معامله',
+  'statusBar.label': 'نوار وضعیت',
   'statusBar.log': 'لگ',
   'statusBar.auto': 'خودکار',
   'statusBar.marketOpen': 'باز',

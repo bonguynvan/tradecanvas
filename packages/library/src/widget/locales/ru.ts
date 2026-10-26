@@ -55,6 +55,7 @@ export const RU_MESSAGES: WidgetMessages = {
   'toolbar.timeframes.weeks': 'Недели',
   'toolbar.timeframes.months': 'Месяцы',
   'toolbar.trade': 'Торговля',
+  'statusBar.label': 'Строка состояния',
   'statusBar.log': 'лог',
   'statusBar.auto': 'авто',
   'statusBar.marketOpen': 'Открыт',

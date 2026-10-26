@@ -778,6 +778,7 @@ export class ChartWidget {
       onGoTo: () => this.toggleGoToDate(),
       goToKeys: () => this.keysShown('hotkeys.goToDate', 'Alt+G'),
     }, {
+      label: this.t('statusBar.label'),
       clock: {
         label: this.t('settings.timezone'),
         now: () => this.clockNow(),

@@ -57,6 +57,7 @@ export const EN_MESSAGES = {
   'toolbar.timeframes.weeks': 'Weeks',
   'toolbar.timeframes.months': 'Months',
   'toolbar.trade': 'Trade',
+  'statusBar.label': 'Status bar',
   'statusBar.log': 'log',
   'statusBar.auto': 'auto',
   'statusBar.marketOpen': 'Open',

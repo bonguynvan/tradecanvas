@@ -55,6 +55,7 @@ export const SK_MESSAGES: WidgetMessages = {
   'toolbar.timeframes.weeks': 'Týždne',
   'toolbar.timeframes.months': 'Mesiace',
   'toolbar.trade': 'Obchod',
+  'statusBar.label': 'Stavový riadok',
   'statusBar.log': 'log',
   'statusBar.auto': 'auto',
   'statusBar.marketOpen': 'Otvorené',
