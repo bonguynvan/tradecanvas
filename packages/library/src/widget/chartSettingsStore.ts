@@ -1,7 +1,8 @@
-import { isValidTimeZone, readChartTypeOptions } from '@tradecanvas/commons';
+import { readChartTypeOptions } from '@tradecanvas/commons';
 import type { KeyValueStorage } from './DrawingTemplateStore.js';
 import type { ChartSettingsState } from './types.js';
 import { DEFAULT_SETTINGS } from './widgetConfig.js';
+import { settingToTimezone } from './widgetTimezones.js';
 
 type SettingsKey = keyof ChartSettingsState;
 
@@ -24,13 +25,19 @@ export const VIEWER_KEYS: ReadonlySet<SettingsKey> = new Set<SettingsKey>(['time
  */
 export const PERSIST_LEAVES: ReadonlySet<SettingsKey> = new Set<SettingsKey>([...NEVER_KEPT, 'chartTypeOptions']);
 /**
- * What a layout's or a shared link's `settings` leaves out: the viewer's own,
- * the scale and its flip (fields of their own there), and a chart type's own
- * settings (in the chart's state).
+ * What a layout's `settings` leaves out: the viewer's own, the scale and its
+ * flip (fields of their own there), and a chart type's own settings (in the
+ * chart's state).
  */
 export const LAYOUT_LEAVES: ReadonlySet<SettingsKey> = new Set<SettingsKey>([
   ...NEVER_KEPT, ...VIEWER_KEYS, 'scaleMode', 'invertScale', 'chartTypeOptions',
 ]);
+/**
+ * What a shared link's `settings` leaves out: the viewer's own and the scale
+ * (a field of its own there). The link has no other place for the flip or a
+ * chart type's own settings, so they go in it.
+ */
+export const SHARE_LEAVES: ReadonlySet<SettingsKey> = new Set<SettingsKey>([...NEVER_KEPT, ...VIEWER_KEYS, 'scaleMode']);
 /** Nothing left out: every setting of the right kind. */
 export const ALL_SETTINGS: ReadonlySet<SettingsKey> = new Set<SettingsKey>();
 
@@ -49,14 +56,15 @@ const RANGES: Partial<Record<SettingsKey, { min: number; max: number; whole?: bo
   pivotStrength: { min: 2, max: 20, whole: true },
 };
 
-/** A fixed offset in minutes, as older settings wrote one. */
-const MINUTES = /^-?\d+$/;
-
 const isObject = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
 
-/** A time zone the chart can show: the browser's, the symbol's, a fixed offset, or a zone this browser knows. */
+/**
+ * A time zone the chart can show: the browser's, the symbol's, a zone this
+ * browser knows, or a fixed offset a zone could have (minutes past that would
+ * make the chart throw, or show a clock days off).
+ */
 function isZoneSetting(value: string): boolean {
-  return value === 'local' || value === 'exchange' || MINUTES.test(value) || isValidTimeZone(value);
+  return value === 'local' || settingToTimezone(value) !== null;
 }
 
 /** A number format this browser can write (an unknown tag would throw when the chart formats a price). */
@@ -117,6 +125,18 @@ export function settingsDelta(settings: ChartSettingsState, base: ChartSettingsS
   return Object.fromEntries((Object.keys(settings) as SettingsKey[])
     .filter((key) => !leave.has(key) && JSON.stringify(settings[key]) !== JSON.stringify(base[key]))
     .map((key) => [key, settings[key]])) as Partial<ChartSettingsState>;
+}
+
+/**
+ * What a shared link carries: the settings that differ from `base`, but
+ * those in `SHARE_LEAVES`, with a chart type's own settings only for the
+ * types that have some (the chart lists every type, most with none, and a
+ * link should stay short).
+ */
+export function shareDelta(settings: ChartSettingsState, base: ChartSettingsState): Partial<ChartSettingsState> {
+  const typeOptions = Object.fromEntries(Object.entries(settings.chartTypeOptions)
+    .filter(([, options]) => isObject(options) && Object.keys(options).length > 0));
+  return settingsDelta({ ...settings, chartTypeOptions: typeOptions }, base, SHARE_LEAVES);
 }
 
 /** The key `persistSettings` names; null when it is off. */

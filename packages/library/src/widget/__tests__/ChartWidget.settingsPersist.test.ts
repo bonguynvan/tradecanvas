@@ -1,16 +1,17 @@
 // @vitest-environment jsdom
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import type { ChartOptions } from '@tradecanvas/commons';
+import { readChartTypeOptions, type ChartOptions } from '@tradecanvas/commons';
 import { decodeWidgetState, encodeWidgetState } from '../widgetShareState.js';
 import type { ChartSettingsState } from '../types.js';
 
-/** Stand-in for the canvas-backed Chart: records the setters the widget calls, keeps the scale and the zone. */
+/** Stand-in for the canvas-backed Chart: records the setters the widget calls, keeps the scale, the zone and a type's own settings. */
 class FakeChart {
   static last: FakeChart;
   calls: [string, unknown][] = [];
   steps: unknown[] = [];
   scaleMode = 'regular';
   zone: unknown;
+  typeOptions = {};
   constructor(_host: HTMLElement, public options: ChartOptions) {
     FakeChart.last = this;
     this.zone = options.timeZone ?? null;
@@ -31,7 +32,12 @@ class FakeChart {
   loadState(): void {}
   getTheme() { return { name: 'dark', background: '#000', grid: '#111' }; }
   isAutoScale(): boolean { return true; }
-  getChartTypeOptions() { return {}; }
+  // As the chart does: each type given replaces its own, an empty one included.
+  setChartTypeOptions(options: unknown): void {
+    this.calls.push(['setChartTypeOptions', options]);
+    this.typeOptions = { ...this.typeOptions, ...readChartTypeOptions(options) };
+  }
+  getChartTypeOptions() { return readChartTypeOptions(this.typeOptions); }
   getDrawings(): unknown[] { return []; }
   getData(): unknown[] { return []; }
   getActiveIndicators(): unknown[] { return []; }
@@ -134,6 +140,51 @@ describe('ChartWidget settings API', () => {
     expect(calls('setNumberLocale')).toEqual([]);
     expect(widget.getSettings()).not.toHaveProperty('bogus');
     expect(FakeChart.last.steps).toHaveLength(0);
+  });
+
+  it('setSettings takes a fixed offset only within the offsets a zone has', () => {
+    make();
+    widget.setSettings({ timezone: `1${'0'.repeat(400)}` });
+    widget.setSettings({ timezone: '100000000000' });
+    widget.setSettings({ timezone: '841' });
+    expect(calls('setTimeZone')).toEqual([]);
+    widget.setSettings({ timezone: '-300' });
+    expect(calls('setTimeZone')).toEqual([-300]);
+  });
+
+  it('a listener that throws costs neither the undo step nor the other listeners', () => {
+    make();
+    const report = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const heard: ChartSettingsState[] = [];
+    widget.onSettingsChange(() => { throw new Error('host bug'); });
+    widget.onSettingsChange((s) => heard.push(s));
+    openSettings();
+    tab('layers');
+    toggle('Volume profile').click();
+    footer('ok');
+    expect(FakeChart.last.steps).toHaveLength(1);
+    expect(heard).toHaveLength(1);
+    expect(report).toHaveBeenCalled();
+    report.mockRestore();
+  });
+
+  it('a shared link carries a flipped scale and a chart type’s own settings, which the viewer gets', async () => {
+    make();
+    widget.setSettings({ invertScale: true, chartTypeOptions: { renko: { boxSize: 5 } } });
+    const token = widget.exportState();
+    expect(decodeWidgetState(token)!.settings).toEqual({ invertScale: true, chartTypeOptions: { renko: { boxSize: 5 } } });
+    widget.destroy();
+    make();
+    expect(await widget.importState(token)).toBe(true);
+    expect(calls('setInvertScale')).toEqual([true]);
+    expect(calls('setChartTypeOptions').at(-1)).toMatchObject({ renko: { boxSize: 5 } });
+  });
+
+  it('a shared link leaves out the switches the sender’s features set, and carries the user’s change from them', () => {
+    make({ chartOptions: { features: { legend: false, barCountdown: false, indicatorValueLabels: true } } });
+    expect(decodeWidgetState(widget.exportState())!.settings).toBeUndefined();
+    widget.setSettings({ indicatorValueLabels: false });
+    expect(decodeWidgetState(widget.exportState())!.settings).toEqual({ indicatorValueLabels: false });
   });
 
   it('onSettingsChange is called once after OK, not while the dialog is open, and not after Cancel', () => {
@@ -260,7 +311,13 @@ describe('ChartWidget persistSettings', () => {
     make();
     const fresh = FakeChart.last.calls;
     widget.destroy();
-    for (const junk of ['{oops', '[1,2]', '"text"', JSON.stringify({ v: 2, settings: { gridVisible: false } }), JSON.stringify({ v: 1, settings: 'x' })]) {
+    const junks = [
+      '{oops', '[1,2]', '"text"', JSON.stringify({ v: 2, settings: { gridVisible: false } }), JSON.stringify({ v: 1, settings: 'x' }),
+      // Minutes past any zone's offset, and so many that they read as Infinity.
+      JSON.stringify({ v: 1, settings: { timezone: '100000000000' } }),
+      JSON.stringify({ v: 1, settings: { timezone: `1${'0'.repeat(400)}` } }),
+    ];
+    for (const junk of junks) {
       localStorage.setItem(KEY, junk);
       make({ persistSettings: true });
       // The chart is set up as a widget without anything kept is.
@@ -277,5 +334,20 @@ describe('ChartWidget persistSettings', () => {
     expect(calls('setBarCountdownVisible')).toEqual([]);
     expect(calls('setScaleMode')).toEqual([]);
     expect(widget.getSettings()).toMatchObject({ barCountdown: false, scaleMode: 'regular' });
+  });
+
+  it('a kept, shared or set legend or volume stays off where the host switched its feature off', async () => {
+    localStorage.setItem(KEY, JSON.stringify({ v: 1, settings: { legendVisible: true, volumeVisible: true } }));
+    make({ persistSettings: true, chartOptions: { features: { legend: false, volume: false } } });
+    widget.setSettings({ legendVisible: true, volumeVisible: true });
+    const token = encodeWidgetState({
+      v: 1, symbol: 'AAA', timeframe: '5m', chartType: 'candlestick', scaleMode: 'regular', indicators: [], drawings: [],
+      settings: { legendVisible: true, volumeVisible: true },
+    });
+    expect(await widget.importState(token)).toBe(true);
+    // The look's font is the only legend call.
+    expect(calls('setLegend').filter((c) => Object.prototype.hasOwnProperty.call(c, 'visible'))).toEqual([]);
+    expect(calls('setVolumeVisible')).toEqual([]);
+    expect(widget.getSettings()).toMatchObject({ legendVisible: false, volumeVisible: false });
   });
 });

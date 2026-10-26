@@ -617,13 +617,22 @@ stop()`}</code></pre>
   <li><strong>persistSettings</strong> 按浏览器保存用户相对你的值所做的改动。保存的值优先于
     <code>chartOptions</code>，“重置”则回到你的值。它不保存对数和自动缩放这两个标志，也不保存
     各图表类型自己的设置（如 Renko 砖块大小），这些属于图表本身的状态。页面上的每个组件请各用
-    一个 <code>key</code>；网格会自动为它的每个图表分配一个。</li>
-  <li><strong>命名布局</strong> 保存全部设置，时区和数字格式除外，它们由查看者自己决定。
+    一个 <code>key</code>；网格会自动为它的每个图表分配一个。它分不清改动来自谁：你用
+    <code>setSettings</code> 设置的值（比如在 <code>onReady</code> 里），以及打开的分享链接或布局带来的设置，
+    也会被当作用户的选择保存下来，并在下次访问时优先于 <code>chartOptions</code>，即使你的代码已不再设置它们。
+    把某项设回你在 <code>chartOptions</code> 中的值，它就不再被保存。</li>
+  <li><strong>命名布局</strong> 保存全部设置，但时区和数字格式除外，它们由查看者自己决定；自动缩放也除外，
+    在价格轴上拖动一下就会关闭它。在布局的 JSON 中，它们位于 <code>settings</code> 下，只有价格刻度及其翻转
+    各有自己的字段，图表类型自己的设置则在图表状态中。
     在此之前保存的布局不含这些设置，打开时设置保持不变。旧版本的库打开新布局时会忽略它们，
     其自动保存会把布局写回且不再包含它们。</li>
-  <li><strong>分享链接</strong> 携带发送者相对默认值改过的设置，不含时区和数字格式。</li>
+  <li><strong>分享链接</strong> 携带发送者相对默认值改过的设置，但不含时区、数字格式和自动缩放。
+    对于由你的 <code>features</code> 决定初始状态的开关（图例、成交量、K 线剩余时间、指标数值标签），
+    默认值就是 <code>features</code> 设定的状态，因此发送者的应用关闭的开关不会作为改动发出。</li>
+  <li><strong>已关闭的功能</strong>：当你的 <code>features</code> 关闭了图例、成交量、K 线剩余时间或对数刻度时，
+    无论是保存的、分享的、打开的还是设置的值，都无法把它们打开。</li>
   <li><strong>按品种保存的布局</strong>（<code>persistLayouts</code>）和
-    <code>chart.saveState()</code> 都不包含这些设置。</li>
+    <code>chart.saveState()</code> 包含图表类型自己的设置（这是图表状态的一部分），不包含其他任何设置。</li>
 </ul>
 
 <h3>按品种保存的布局</h3>
@@ -642,7 +651,7 @@ stop()`}</code></pre>
 widget.clearSavedLayout('BTCUSDT')`}</code></pre>
 <p>
   切换品种和销毁组件时都会立即写入布局，因此用户离开页面时不会丢失任何内容。
-  它们不保存图表设置：图表设置由 <code>persistSettings</code> 保存。
+  图表设置中，它们只保存图表类型自己的设置；其余的由 <code>persistSettings</code> 保存。
 </p>
 
 <h3>拖放导入数据</h3>

@@ -275,7 +275,9 @@ export interface ChartWidgetOptions {
    * defaults; Reset in the settings goes back to yours. Not kept: the log
    * and auto-scale flags, and a chart type's own settings (the chart's
    * state, which `persistLayouts` and layouts hold). Give each widget on a
-   * page a key of its own.
+   * page a key of its own. What `setSettings` sets, and what an opened
+   * shared link or layout brings, is kept as the user's too; set a value
+   * back to your `chartOptions` one and it is no longer kept.
    */
   persistSettings?: boolean | {
     /** The localStorage key. Default `'tcw:chart-settings'`. */

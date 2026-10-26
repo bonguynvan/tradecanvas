@@ -1,6 +1,6 @@
 import type { ChartType, TimeFrame, DrawingState, PriceScaleMode } from '@tradecanvas/commons';
 import type { ChartSettingsState } from './types.js';
-import { LAYOUT_LEAVES, readChartSettings } from './chartSettingsStore.js';
+import { SHARE_LEAVES, readChartSettings } from './chartSettingsStore.js';
 import { SCALE_MODES } from './widgetLayout.js';
 
 export interface ShareableIndicator {
@@ -18,8 +18,9 @@ export interface ShareableWidgetState {
   drawings: DrawingState[];
   /**
    * The Chart Settings the sender changed from the defaults (overlays,
-   * crosshair, legend…), but their time zone and number format, which stay
-   * the viewer's. Absent when they changed none.
+   * crosshair, legend, a flipped scale, a chart type's own settings…), but
+   * their time zone and number format, which stay the viewer's. Absent when
+   * they changed none.
    */
   settings?: Partial<ChartSettingsState>;
 }
@@ -80,7 +81,7 @@ export function decodeWidgetState(encoded: string): ShareableWidgetState | null 
       scaleMode: SCALE_MODES.find((m) => m === obj.scaleMode) ?? 'regular',
       indicators: Array.isArray(obj.indicators) ? obj.indicators : [],
       drawings: Array.isArray(obj.drawings) ? obj.drawings : [],
-      ...(isRecord(obj.settings) ? { settings: readChartSettings(obj.settings, LAYOUT_LEAVES) } : {}),
+      ...(isRecord(obj.settings) ? { settings: readChartSettings(obj.settings, SHARE_LEAVES) } : {}),
     };
   } catch {
     return null;

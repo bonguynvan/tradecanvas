@@ -14,9 +14,10 @@ export interface WidgetLayoutContent {
   chart: Record<string, unknown> | null;
   /**
    * The Chart Settings it was saved with (overlays, crosshair, legend,
-   * grid…), but the viewer's own time zone and number format. A layout
-   * saved before they were kept has none, and opening it leaves them as
-   * they are.
+   * grid…), but the viewer's own time zone and number format, auto-scale,
+   * and those with a place of their own here: the scale and its flip, and
+   * a chart type's own settings (in `chart`). A layout saved before they
+   * were kept has none, and opening it leaves them as they are.
    */
   settings?: Partial<ChartSettingsState>;
 }

@@ -666,16 +666,31 @@ stop()`}</code></pre>
     goes back to yours. It leaves out the log and auto-scale flags and a chart
     type's own settings (the Renko box and the like), which are the chart's state.
     Give each widget on a page a <code>key</code> of its own; a grid gives each of
-    its charts one.</li>
+    its charts one. It can't tell who made a change: what you set with
+    <code>setSettings</code> (in <code>onReady</code>, say), and what an opened
+    share link or layout brings, are kept as the user's too, and win over
+    <code>chartOptions</code> on the next visit even once your code stops setting
+    them. Setting one back to your <code>chartOptions</code> value takes it out of
+    what is kept.</li>
   <li><strong>Named layouts</strong> keep all of them but the time zone and the
-    number format, which stay the viewer's. A layout saved before they were kept
-    has none, and opening it leaves the settings as they are. An older version of
-    the library opens a newer layout without them, and its auto-save writes it back
-    without them.</li>
+    number format, which stay the viewer's, and auto-scale, which a drag on the
+    price axis turns off. In the layout's JSON they are under
+    <code>settings</code>, except the scale and its flip, which have fields of
+    their own, and a chart type's own settings, which are in the chart's state.
+    A layout saved before they were kept has none, and opening it leaves the
+    settings as they are. An older version of the library opens a newer layout
+    without them, and its auto-save writes it back without them.</li>
   <li><strong>Share links</strong> carry the ones the sender changed from the
-    defaults, without the time zone and the number format.</li>
+    defaults, but the time zone, the number format and auto-scale. For the
+    switches your <code>features</code> set (the legend, the volume, the bar
+    countdown, the indicators' value labels) the defaults are where they set
+    them, so a switch the sender's app turned off isn't sent as a change.</li>
+  <li><strong>Switched-off features</strong>: where your <code>features</code>
+    turn off the legend, the volume, the bar countdown or the log scale, nothing
+    kept, shared, opened or set turns them on.</li>
   <li><strong>Per-symbol layouts</strong> (<code>persistLayouts</code>) and
-    <code>chart.saveState()</code> hold none of them.</li>
+    <code>chart.saveState()</code> hold a chart type's own settings, which are
+    part of the chart's state, and none of the others.</li>
 </ul>
 
 <h3>Per-symbol layouts</h3>
@@ -694,8 +709,8 @@ stop()`}</code></pre>
 widget.clearSavedLayout('BTCUSDT')`}</code></pre>
 <p>
   Layouts flush on symbol switch and on widget destroy so nothing is lost
-  when the user navigates away. They hold no Chart Settings:
-  <code>persistSettings</code> keeps those.
+  when the user navigates away. Of the Chart Settings they hold
+  only a chart type's own; <code>persistSettings</code> keeps the others.
 </p>
 
 <h3>Drag-and-drop data import</h3>

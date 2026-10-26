@@ -673,15 +673,29 @@ stop()`}</code></pre>
     Đặt lại đưa về giá trị của bạn. Nó bỏ qua cờ thang log, cờ tự co giãn và cài đặt riêng
     của từng loại biểu đồ (hộp Renko và những thứ tương tự), vốn là trạng thái của biểu đồ.
     Hãy cho mỗi widget trên trang một <code>key</code> riêng; lưới tự cho mỗi biểu đồ của
-    nó một key.</li>
+    nó một key. Nó không biết ai đã đổi: những gì bạn đặt bằng <code>setSettings</code>
+    (chẳng hạn trong <code>onReady</code>), và những gì một liên kết chia sẻ hay một bố cục
+    được mở mang đến, cũng được giữ như lựa chọn của người dùng, và thắng
+    <code>chartOptions</code> ở lần ghé sau, kể cả khi mã của bạn đã thôi đặt chúng. Đặt một
+    cài đặt về lại giá trị trong <code>chartOptions</code> của bạn thì nó không còn được giữ.</li>
   <li><strong>Bố cục có tên</strong> giữ tất cả, trừ múi giờ và định dạng số, vốn là của
-    người xem. Bố cục lưu trước khi có tính năng này không có chúng, và mở nó thì cài đặt
-    giữ nguyên. Một phiên bản thư viện cũ hơn mở bố cục mới mà không có chúng, và lần tự
-    lưu của nó ghi lại bố cục mà không có chúng.</li>
+    người xem, và chế độ tự co giãn, thứ một lần kéo trục giá sẽ tắt. Trong JSON của bố cục,
+    chúng nằm dưới <code>settings</code>, trừ thang giá và việc lật thang, vốn có trường
+    riêng, và cài đặt riêng của từng loại biểu đồ, vốn nằm trong trạng thái của biểu đồ.
+    Bố cục lưu trước khi có tính năng này không có chúng, và mở nó thì cài đặt giữ nguyên.
+    Một phiên bản thư viện cũ hơn mở bố cục mới mà không có chúng, và lần tự lưu của nó
+    ghi lại bố cục mà không có chúng.</li>
   <li><strong>Liên kết chia sẻ</strong> mang những cài đặt người gửi đã đổi khác mặc định,
-    không gồm múi giờ và định dạng số.</li>
+    trừ múi giờ, định dạng số và chế độ tự co giãn. Với các công tắc mà <code>features</code>
+    của bạn đặt (chú giải, khối lượng, thời gian còn lại của nến, nhãn giá trị của chỉ báo),
+    mặc định là chỗ <code>features</code> đặt chúng, nên một công tắc mà ứng dụng của người
+    gửi đã tắt không được gửi đi như một thay đổi.</li>
+  <li><strong>Tính năng đã tắt</strong>: khi <code>features</code> của bạn tắt chú giải,
+    khối lượng, thời gian còn lại của nến hay thang log, không gì được giữ, chia sẻ, mở hay
+    đặt có thể bật chúng lên.</li>
   <li><strong>Bố cục theo từng mã</strong> (<code>persistLayouts</code>) và
-    <code>chart.saveState()</code> không giữ cài đặt nào trong số này.</li>
+    <code>chart.saveState()</code> giữ cài đặt riêng của từng loại biểu đồ, vốn là một phần
+    trạng thái của biểu đồ, và không giữ cài đặt nào khác trong số này.</li>
 </ul>
 
 <h3>Bố cục theo từng mã</h3>
@@ -700,8 +714,8 @@ stop()`}</code></pre>
 widget.clearSavedLayout('BTCUSDT')`}</code></pre>
 <p>
   Bố cục được ghi lại khi đổi mã và khi huỷ widget, nên không mất gì
-  khi người dùng rời trang. Chúng không giữ Cài đặt biểu đồ:
-  <code>persistSettings</code> giữ phần đó.
+  khi người dùng rời trang. Trong Cài đặt biểu đồ, chúng chỉ
+  giữ cài đặt riêng của từng loại biểu đồ; <code>persistSettings</code> giữ phần còn lại.
 </p>
 
 <h3>Kéo thả để nhập dữ liệu</h3>

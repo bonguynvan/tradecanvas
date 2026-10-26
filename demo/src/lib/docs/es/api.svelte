@@ -683,16 +683,32 @@ stop()`}</code></pre>
     Restablecer vuelve a los tuyos. Deja fuera los indicadores de escala logarítmica y
     de escala automática y los ajustes propios de cada tipo de gráfico (la caja de
     Renko y similares), que son estado del gráfico. Da a cada widget de la página su
-    propia <code>key</code>; una cuadrícula le da una a cada uno de sus gráficos.</li>
+    propia <code>key</code>; una cuadrícula le da una a cada uno de sus gráficos. No
+    distingue quién hizo un cambio: lo que fijas con <code>setSettings</code> (en
+    <code>onReady</code>, por ejemplo) y lo que trae un enlace compartido o un diseño
+    abierto también se guardan como elección del usuario, y ganan a
+    <code>chartOptions</code> en la siguiente visita aunque tu código ya no los fije.
+    Devolver un ajuste a tu valor de <code>chartOptions</code> lo saca de lo guardado.</li>
   <li><strong>Los diseños con nombre</strong> la guardan entera salvo la zona horaria y
-    el formato de números, que siguen siendo los de quien mira. Un diseño guardado antes
-    de esto no la trae, y al abrirlo la configuración queda como está. Una versión
-    anterior de la biblioteca abre un diseño nuevo sin ella, y su guardado automático lo
-    vuelve a escribir sin ella.</li>
+    el formato de números, que siguen siendo los de quien mira, y la escala automática,
+    que se apaga al arrastrar el eje de precios. En el JSON del diseño va bajo
+    <code>settings</code>, salvo la escala y su inversión, que tienen campos propios, y
+    los ajustes propios de cada tipo de gráfico, que van en el estado del gráfico. Un
+    diseño guardado antes de esto no la trae, y al abrirlo la configuración queda como
+    está. Una versión anterior de la biblioteca abre un diseño nuevo sin ella, y su
+    guardado automático lo vuelve a escribir sin ella.</li>
   <li><strong>Los enlaces compartidos</strong> llevan lo que quien envía cambió respecto
-    a lo predeterminado, sin la zona horaria ni el formato de números.</li>
+    a lo predeterminado, sin la zona horaria, el formato de números ni la escala
+    automática. Para los interruptores que fijan tus <code>features</code> (la leyenda,
+    el volumen, el tiempo que le queda a la barra, las etiquetas de valor de los
+    indicadores) lo predeterminado es donde los dejan, así que un interruptor que la app
+    de quien envía apagó no viaja como cambio.</li>
+  <li><strong>Funciones apagadas</strong>: donde tus <code>features</code> apagan la
+    leyenda, el volumen, el tiempo que le queda a la barra o la escala logarítmica, nada
+    guardado, compartido, abierto o fijado los enciende.</li>
   <li><strong>Los diseños por símbolo</strong> (<code>persistLayouts</code>) y
-    <code>chart.saveState()</code> no guardan nada de ella.</li>
+    <code>chart.saveState()</code> guardan solo los ajustes propios de cada tipo de
+    gráfico, que forman parte del estado del gráfico, y nada más de ella.</li>
 </ul>
 
 <h3>Diseños por símbolo</h3>
@@ -711,8 +727,9 @@ stop()`}</code></pre>
 widget.clearSavedLayout('BTCUSDT')`}</code></pre>
 <p>
   Los diseños se guardan al cambiar de símbolo y al destruir el widget, así que
-  no se pierde nada cuando el usuario sale de la página. No guardan la
-  configuración del gráfico: de eso se encarga <code>persistSettings</code>.
+  no se pierde nada cuando el usuario sale de la página. De la configuración del
+  gráfico solo guardan los ajustes propios de cada tipo; del resto se encarga
+  <code>persistSettings</code>.
 </p>
 
 <h3>Importación de datos con arrastrar y soltar</h3>

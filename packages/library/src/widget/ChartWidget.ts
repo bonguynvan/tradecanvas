@@ -33,7 +33,7 @@ import { WidgetIndicatorSettings, type IndicatorDefault } from './WidgetIndicato
 import { WidgetIndicatorPicker, type IndicatorPickerItem } from './WidgetIndicatorPicker.js';
 import { IndicatorDefaultsStore } from './indicatorDefaults.js';
 import { ChartTemplateStore } from './chartTemplates.js';
-import { ChartSettingsStore, LAYOUT_LEAVES, VIEWER_KEYS, pickSettings, readChartSettings, settingsDelta, settingsStoreKey } from './chartSettingsStore.js';
+import { ChartSettingsStore, LAYOUT_LEAVES, SHARE_LEAVES, VIEWER_KEYS, pickSettings, readChartSettings, shareDelta, settingsStoreKey } from './chartSettingsStore.js';
 import { WidgetDrawingStyle } from './WidgetDrawingStyle.js';
 import { WidgetSelectionToolbar } from './WidgetSelectionToolbar.js';
 import { DrawingDefaultsStore, DrawingTemplateStore } from './DrawingTemplateStore.js';
@@ -190,6 +190,23 @@ const IME_KEY_CODE = 229;
 const CLOCK_TICK_MS = 1000;
 /** Settings a layout doesn't hold (the viewer's own, and auto-scale, which a drag changes): a change to them leaves the open layout as saved. */
 const NOT_IN_LAYOUT = new Set<keyof ChartSettingsState>([...VIEWER_KEYS, 'autoScale']);
+/**
+ * The switches a host feature of the same meaning has: with the feature off
+ * the chart never draws it, so nothing kept, shared or set may turn it on.
+ */
+const FEATURE_SWITCHES = [
+  ['barCountdown', 'barCountdown'],
+  ['logScale', 'logScale'],
+  ['legendVisible', 'legend'],
+  ['volumeVisible', 'volume'],
+] as const satisfies readonly (readonly [keyof ChartSettingsState, keyof FeaturesConfig])[];
+/**
+ * The switches that start where the host's features put them. A share link
+ * measures them from the sender's start, not the library's: a switch the
+ * sender's app turned off is the app's, not the sender's choice, and would
+ * turn it off in an app that has it on.
+ */
+const FEATURE_SET_SETTINGS: readonly (keyof ChartSettingsState)[] = ['legendVisible', 'volumeVisible', 'barCountdown', 'indicatorValueLabels'];
 /** The settings' style keys that aren't colours: they go with the user from theme to theme. */
 const LOOK_KEYS: readonly ChartStyleKey[] = SETTINGS_LOOK_KEYS.filter((key) => CHART_STYLE_KEYS[key] !== 'color');
 
@@ -378,7 +395,7 @@ export class ChartWidget {
   private settingsPublished: string | null = null;
   private readonly settingsListeners = new Set<(settings: ChartSettingsState) => void>();
   /** Switches the host's features turned off: a setting kept, shared or in a layout can't turn them on. */
-  private settingsLocked = { barCountdown: false, logScale: false };
+  private settingsLocked: ReadonlySet<keyof ChartSettingsState> = new Set();
   private t: Translator;
   private adapter: import('@tradecanvas/commons').DataAdapter | null = null;
   private boundGlobalKeydown: ((e: KeyboardEvent) => void) | null = null;
@@ -493,11 +510,12 @@ export class ChartWidget {
     };
 
     this.canExport = features.dataExport !== false;
-    this.settingsLocked = { barCountdown: features.barCountdown === false, logScale: features.logScale === false };
+    this.settingsLocked = new Set(FEATURE_SWITCHES.filter(([, feature]) => features[feature] === false).map(([key]) => key));
     // The display toggles start where the host's features put them, and Reset goes back there.
     this.settingsDefaults = {
       ...this.settingsState,
       legendVisible: features.legend !== false,
+      volumeVisible: features.volume !== false,
       barCountdown: features.barCountdown !== false,
       indicatorValueLabels: features.indicatorValueLabels === true,
     };
@@ -3085,7 +3103,8 @@ export class ChartWidget {
   /**
    * Encode the current view (symbol, timeframe, chart type, scale,
    * indicators, drawings, and the Chart Settings changed from the defaults
-   * but the viewer's time zone and number format).
+   * but the viewer's time zone and number format; for the switches the
+   * host's features set, from where they set them).
    */
   exportState(): string {
     const indicators = this.chart.getActiveIndicators().map((i) => ({
@@ -3093,8 +3112,10 @@ export class ChartWidget {
       params: i.params as Record<string, number | string | boolean>,
     }));
     const settings = this.getSettings();
-    // Only what differs from the defaults, so a link stays short.
-    const changed = settingsDelta(settings, DEFAULT_SETTINGS, LAYOUT_LEAVES);
+    // Only what differs from the defaults, so a link stays short; the switches
+    // the host's features set, from where they set them.
+    const base = { ...DEFAULT_SETTINGS, ...Object.fromEntries(FEATURE_SET_SETTINGS.map((key) => [key, this.settingsDefaults[key]])) };
+    const changed = shareDelta(settings, base);
     return encodeWidgetState({
       v: 1,
       symbol: this.state.symbol,
@@ -3120,7 +3141,7 @@ export class ChartWidget {
     if (s.chartType) this.applyChartType(s.chartType);
     // Through the settings, so a percent compare keeps its scale and the settings show the shared one;
     // the sender's overlays with it, never their time zone or number format (the reader leaves those out).
-    this.applySettings(this.allowedSettings({ scaleMode: s.scaleMode, ...readChartSettings(s.settings, LAYOUT_LEAVES) }));
+    this.applySettings(this.allowedSettings({ scaleMode: s.scaleMode, ...readChartSettings(s.settings, SHARE_LEAVES) }));
     this.settings?.refresh(this.shownSettings());
 
     // The shared indicators in place of the chart's, as one undo step.
@@ -4017,14 +4038,17 @@ export class ChartWidget {
       this.restoreSettings(before, beforeStyle, scale ? edit.held : undefined);
       return;
     }
-    this.publishSettings();
-    const after = pick(this.settingsState);
+    const after = pick(this.getSettings());
     const afterStyle = styleKeys.length > 0 ? this.settingsStyle(styleKeys) : null;
-    if (JSON.stringify([before, beforeStyle]) === JSON.stringify([after, afterStyle]) && (!scale || edit.held === heldAfter)) return;
-    this.chart.recordUndo({
-      undo: () => this.restoreSettings(before, beforeStyle, scale ? edit.held : undefined),
-      redo: () => this.restoreSettings(after, afterStyle, scale ? heldAfter : undefined),
-    });
+    const changed = JSON.stringify([before, beforeStyle]) !== JSON.stringify([after, afterStyle]) || (scale && edit.held !== heldAfter);
+    // The undo step before the listeners hear of it, so a host's listener that throws can't cost it.
+    if (changed) {
+      this.chart.recordUndo({
+        undo: () => this.restoreSettings(before, beforeStyle, scale ? edit.held : undefined),
+        redo: () => this.restoreSettings(after, afterStyle, scale ? heldAfter : undefined),
+      });
+    }
+    this.publishSettings();
   }
 
   /** In the open settings, the keys a change touched: what Cancel and the undo step go by. */
@@ -4249,16 +4273,18 @@ export class ChartWidget {
     this.settingsState = { ...this.settingsState, ...read, ...scale };
   }
 
-  /** A patch without what the host's features switched off: a bar countdown or a log scale that isn't there stays off. */
+  /**
+   * A patch without what the host's features switched off: a bar countdown,
+   * a legend, a volume or a log scale that isn't there stays off. Keys given
+   * no value are left out too.
+   */
   private allowedSettings(patch: Partial<ChartSettingsState>): Partial<ChartSettingsState> {
-    const { barCountdown, logScale, scaleMode, ...rest } = patch;
     const locked = this.settingsLocked;
-    return {
-      ...rest,
-      ...(barCountdown !== undefined && !(barCountdown && locked.barCountdown) ? { barCountdown } : {}),
-      ...(logScale !== undefined && !(logScale && locked.logScale) ? { logScale } : {}),
-      ...(scaleMode !== undefined && !(scaleMode === 'logarithmic' && locked.logScale) ? { scaleMode } : {}),
-    };
+    const turnsOnLocked = (key: keyof ChartSettingsState, value: unknown): boolean => (key === 'scaleMode'
+      ? value === 'logarithmic' && locked.has('logScale')
+      : value === true && locked.has(key));
+    return Object.fromEntries(Object.entries(patch)
+      .filter(([key, value]) => value !== undefined && !turnsOnLocked(key as keyof ChartSettingsState, value))) as Partial<ChartSettingsState>;
   }
 
   /** The settings the user kept in this browser (`persistSettings`) back on the chart; from here on each change is kept and told. */
@@ -4277,7 +4303,14 @@ export class ChartWidget {
     this.settingsPublished = json;
     this.settingsStore?.save(settings, this.settingsDefaults);
     // Each its own copy: a listener that changes what it gets changes nothing else.
-    for (const listener of [...this.settingsListeners]) listener(JSON.parse(json) as ChartSettingsState);
+    for (const listener of [...this.settingsListeners]) {
+      // One that throws is the host's bug: said, and the others still hear.
+      try {
+        listener(JSON.parse(json) as ChartSettingsState);
+      } catch (err: unknown) {
+        console.error('[TradeCanvas] An onSettingsChange listener threw:', err);
+      }
+    }
   }
 
   private setupLayouts(cfg: import('./types.js').WidgetLayoutsOptions): void {
