@@ -71,7 +71,9 @@ interface KeptDigits {
 
 function keptDigits(top: number, range: number): KeptDigits {
   const largest = Math.max(top, range);
-  const decimals = Number.isFinite(largest) ? PRICE_SIGNIFICANT_DIGITS - Math.ceil(Math.log10(largest)) : 0;
+  // Its digits before the point (3 for 100 as for 999, 0 for 0.5, -1 for 0.05): a power of ten has one more than its log.
+  const leading = Math.floor(Math.log10(largest)) + 1;
+  const decimals = Number.isFinite(largest) ? PRICE_SIGNIFICANT_DIGITS - leading : 0;
   const unit = 10 ** -decimals;
   if (decimals <= 0) return { clean: (price) => price, unit, half: 0 };
   const scale = 10 ** decimals;

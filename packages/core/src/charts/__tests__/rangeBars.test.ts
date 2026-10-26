@@ -127,6 +127,15 @@ describe('toRangeBars', () => {
     expect(forming[0]).toMatchObject({ time: 0, open: 0.01, high: 11, low: -0.05, close: 11 });
   });
 
+  it('keeps 15 significant digits of a largest price that is a power of ten', () => {
+    // Prices up to exactly 100 keep digits down to 1e-12, as those up to 99.9 do: a range under half of that closes no bar.
+    const data = Array.from({ length: 50 }, (_, i) => bar(99 + (i % 2), 100, 99, 99 + ((i + 1) % 2), i));
+    expect(toRangeBars(data, { rangeSize: 4.9e-13 })).toEqual([]);
+    // A whole kept digit closes a bar on each of them.
+    const climb = [bar(99.999999999995, 99.999999999995, 99.999999999995, 99.999999999995, 0), bar(99.999999999995, 100, 99.999999999995, 100, 1)];
+    expect(toRangeBars(climb, { rangeSize: 1e-12 }).map((b) => b.close)).toEqual([99.999999999996, 99.999999999997, 99.999999999998, 99.999999999999, 100]);
+  });
+
   it('raises a range just over half a kept digit rather than close a bar short of a price it reached', () => {
     // Prices near 64 keep digits down to 1e-13, and 63.9999999999998 less 5.85e-14 rounds back to itself, so the bar
     // can't close on the way down. Its low runs on to 63.9999999999898, and the climb back would close it at
@@ -160,7 +169,7 @@ describe('toRangeBars', () => {
         return bar(open * tick, high * tick, low * tick, close * tick, i);
       });
       const high = Math.max(...data.map((b) => b.high));
-      const keptDigit = 10 ** (Math.ceil(Math.log10(high)) - 15);
+      const keptDigit = 10 ** (Math.floor(Math.log10(high)) + 1 - 15);
       const out = toRangeBars(data, { rangeSize: (0.05 + 0.4 * random()) * keptDigit, includeForming: true });
       expect(out).toHaveLength(1);
       expect(out[0]).toMatchObject({ open: data[0].open, high, low: Math.min(...data.map((b) => b.low)), close: data.at(-1)!.close });
