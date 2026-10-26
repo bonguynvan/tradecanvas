@@ -426,6 +426,45 @@ describe('the status bar, refitting under the keyboard and the "more" menu', () 
   });
 });
 
+describe('the status bar\'s menus, placed under their buttons', () => {
+  const rect = (left: number, right: number, top: number, bottom: number) =>
+    ({ left, right, top, bottom, width: right - left, height: bottom - top, x: left, y: top, toJSON: () => ({}) }) as DOMRect;
+  const MENU_W = 200;
+  const MENU_H = 120;
+
+  beforeEach(() => {
+    root.dir = 'rtl';
+    Object.defineProperty(root, 'clientWidth', { configurable: true, value: 420 });
+    Object.defineProperty(root, 'clientHeight', { configurable: true, value: 300 });
+    root.getBoundingClientRect = () => rect(0, 420, 0, 300);
+    vi.spyOn(HTMLElement.prototype, 'offsetWidth', 'get').mockImplementation(function (this: HTMLElement) {
+      return this.classList.contains('tcw-context-menu') ? MENU_W : 0;
+    });
+    vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockImplementation(function (this: HTMLElement) {
+      return this.classList.contains('tcw-context-menu') ? MENU_H : 0;
+    });
+  });
+  afterEach(() => vi.restoreAllMocks());
+
+  const menuRightEdge = () => parseFloat(q('.tcw-context-menu:not([hidden])').style.left) + MENU_W;
+
+  it('ends the "more" menu where "more" ends when there is no room after its start, right to left', () => {
+    fitAt(RIGHT_PX + MORE_PX);
+    const more = q<HTMLButtonElement>('[data-role="rangeMore"]');
+    // Right to left the range bar sits against the right edge.
+    more.getBoundingClientRect = () => rect(380, 406, 270, 294);
+    more.click();
+    expect(menuRightEdge()).toBe(406);
+  });
+
+  it('ends the zones menu where the clock ends too', () => {
+    const clock = q<HTMLButtonElement>('[data-role="clock"]');
+    clock.getBoundingClientRect = () => rect(330, 410, 270, 294);
+    clock.click();
+    expect(menuRightEdge()).toBe(410);
+  });
+});
+
 describe('the status bar, right to left', () => {
   // A bare "42 ms" in a right-to-left bar reads "ms 42"; each reads in its own text's direction instead.
   it('reads the clock in its own direction, apart from the bar\'s', () => {

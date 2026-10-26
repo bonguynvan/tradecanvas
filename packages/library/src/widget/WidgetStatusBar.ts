@@ -444,12 +444,15 @@ export class WidgetStatusBar {
     this.rangeMenu ??= new WidgetContextMenu(this.host, range.groupLabel);
     const at = anchor.getBoundingClientRect();
     const box = this.host.getBoundingClientRect();
+    // With no room after its start (right to left, the range bar is at the right edge) it ends where "more" does.
     this.rangeMenu.open(
       entries,
       at.left - box.left,
       at.top - box.top,
       (id) => (id === GO_TO_ID ? range.onGoTo() : range.onPreset(id as RangePreset)),
       anchor,
+      undefined,
+      at.right - box.left,
     );
   }
 
@@ -469,6 +472,8 @@ export class WidgetStatusBar {
       at.top - box.top,
       (value) => clock.onPick(value),
       anchor,
+      undefined,
+      at.right - box.left,
     );
   }
 
