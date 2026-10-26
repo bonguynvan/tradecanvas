@@ -4258,6 +4258,10 @@ export class Chart {
       if (resolve) this.holdStudyZone();
       else this.studyZoneHeld = false;
       this.useSymbolInfo(null);
+    } else if (resolve && this.studyZoneHeld) {
+      // A switch on before the last symbol's answer came: the hold lasts as
+      // long from this question, as the days the feed builds wait for it.
+      this.holdStudyZone();
     }
     if (!resolve) {
       this.releaseStudyZone();

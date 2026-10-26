@@ -267,6 +267,22 @@ describe('Chart keeps the indicators’ zone while the stream asks about its nex
       await vi.advanceTimersByTimeAsync(SYMBOL_ZONE_WAIT_MS * 0.25);
       expect(vwapAt(id, 19)).toBe(319);
     });
+
+    it('and holds for the next symbol as long from its own question, when the one before it never answered', async () => {
+      const answerC = later();
+      // The feed never says anything of BBB, and answers about CCC after a while.
+      const { id, calculate } = await switchToBBB(later(), { CCC: () => answerC.promise });
+      await vi.advanceTimersByTimeAsync(SYMBOL_ZONE_WAIT_MS * 0.6);
+      calculate.mockClear();
+      await chart.switchStream('CCC', '1h');
+      await vi.waitFor(() => expect(chart.getData()[0]?.close).toBe(300));
+      // Past the wait from BBB's question, within the one from CCC's.
+      await vi.advanceTimersByTimeAsync(SYMBOL_ZONE_WAIT_MS / 2);
+      expect(vwapAt(id, 19)).toBeCloseTo(309.5, 9); // New York's day still
+      answerC.resolve({ symbol: 'CCC', timeZone: NEW_YORK });
+      await vi.waitFor(() => expect(chart.getSymbolInfo()?.symbol).toBe('CCC'));
+      expect(calculate).toHaveBeenCalledTimes(1); // CCC's bars, once
+    });
   });
 
   it('but not when the host says the symbol has no info', () => {
