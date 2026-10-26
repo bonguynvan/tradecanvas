@@ -37,6 +37,10 @@ const KNOWN_KINDS: Record<string, number> = {
   bond: 5, bonds: 5, 'trái phiếu': 5,
 };
 
+/** How many kinds' and exchanges' words are kept keyed before the widget starts again. */
+const MAX_KIND_KEYS = 1000;
+const kindKeys = new Map<string, string>();
+
 /** What lower-casing leaves of Turkish İ (an i and a combining dot), and dotless ı, which I's lower case is not. */
 const TURKISH_I = /i\u0307|\u0131/g;
 
@@ -46,7 +50,15 @@ const TURKISH_I = /i\u0307|\u0131/g;
  * "HİSSE" and "Hisse" are the same kind; the words shown stay as written.
  */
 export function kindKey(type: unknown): string {
-  return typeof type === 'string' ? type.trim().normalize('NFC').toLowerCase().replace(TURKISH_I, 'i') : '';
+  if (typeof type !== 'string') return '';
+  // The same few words come on every row, keystroke after keystroke: each is keyed once.
+  let key = kindKeys.get(type);
+  if (key === undefined) {
+    key = type.trim().normalize('NFC').toLowerCase().replace(TURKISH_I, 'i');
+    if (kindKeys.size >= MAX_KIND_KEYS) kindKeys.clear();
+    kindKeys.set(type, key);
+  }
+  return key;
 }
 
 /**

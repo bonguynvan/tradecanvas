@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { createSymbolBadge, kindKey, kindSlot, symbolInitial } from '../symbolBadge.js';
 
 describe('kindSlot', () => {
@@ -72,6 +72,13 @@ describe('kindSlot', () => {
   it('keys a kind by its trimmed lower-case words', () => {
     expect(kindKey(' Stock ')).toBe('stock');
     expect(kindKey(undefined)).toBe('');
+  });
+
+  it('keys the same words once, however many rows ask', () => {
+    const normalize = vi.spyOn(String.prototype, 'normalize');
+    for (let i = 0; i < 5; i++) expect(kindKey('Chứng chỉ quỹ mở')).toBe('chứng chỉ quỹ mở');
+    expect(normalize).toHaveBeenCalledTimes(1);
+    normalize.mockRestore();
   });
 
   it('keys Turkish capitals as their lower case, dotted or dotless', () => {
