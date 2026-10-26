@@ -3323,6 +3323,25 @@ export class ChartWidget {
     return { ...settings, ...Object.fromEntries(still.map((key) => [key, link.own[key]])) };
   }
 
+  /**
+   * Settings the viewer or the host just set: a link's no more, so from here
+   * on they are kept as they are, the link's value too when it is picked
+   * again on purpose. Kept at once, since a pick of the value on screen (a
+   * Reset where the link set the defaults) changes nothing to tell.
+   */
+  private claimSettings(keys: Iterable<keyof ChartSettingsState>): void {
+    const link = this.linkSettings;
+    if (!link) return;
+    const claimed = new Set(keys);
+    const left = (from: Partial<ChartSettingsState>) => Object.fromEntries(
+      Object.entries(from).filter(([key]) => !claimed.has(key as keyof ChartSettingsState)),
+    ) as Partial<ChartSettingsState>;
+    const shown = left(link.shown);
+    if (Object.keys(shown).length === Object.keys(link.shown).length) return;
+    this.linkSettings = Object.keys(shown).length > 0 ? { shown, own: left(link.own) } : null;
+    if (this.settingsPublished !== null && !this.destroyed) this.settingsStore?.save(this.ownSettings(this.getSettings()), this.settingsDefaults);
+  }
+
   /** Restore a view from an `exportState()` string. Returns false if malformed. */
   async importState(encoded: string): Promise<boolean> {
     const s = decodeWidgetState(encoded);
@@ -4389,12 +4408,20 @@ export class ChartWidget {
         redo: () => this.restoreSettings(after, afterStyle, scale ? heldAfter : undefined),
       });
     }
+    this.claimSettings(keys);
     this.publishSettings();
   }
 
-  /** In the open settings, the keys a change touched: what Cancel and the undo step go by. */
+  /**
+   * The keys a change touched: in the open settings, what Cancel and the
+   * undo step go by (and what OK takes from a link); outside them, a link's
+   * no more.
+   */
   private touchSettings(keys: Iterable<keyof ChartSettingsState>, styleKeys: Iterable<ChartStyleKey> = []): void {
-    if (!this.settingsEdit) return;
+    if (!this.settingsEdit) {
+      this.claimSettings(keys);
+      return;
+    }
     for (const key of keys) this.settingsEdit.keys.add(key);
     for (const key of styleKeys) this.settingsEdit.styleKeys.add(key);
   }
@@ -4526,11 +4553,13 @@ export class ChartWidget {
       if (typeof type === 'string') this.state = { ...this.state, chartType: type as ChartType };
     }
     // A layout saved before the settings were kept has none: they stay as they are.
-    this.applySettings(this.allowedSettings({
+    const settings = this.allowedSettings({
       scaleMode: content.scaleMode,
       invertScale: content.invertScale,
       ...readChartSettings(content.settings, LAYOUT_LEAVES),
-    }));
+    });
+    this.claimSettings(Object.keys(settings) as (keyof ChartSettingsState)[]);
+    this.applySettings(settings);
     this.syncIndicatorsFromChart();
     this.updateUI();
     this.settings?.refresh(this.shownSettings(), this.state.chartType);
@@ -4571,7 +4600,9 @@ export class ChartWidget {
    * safe to give back right after the constructor.
    */
   setSettings(patch: Partial<ChartSettingsState>): void {
-    this.applySettings(this.allowedSettings(this.withoutEarlyFreeze(readChartSettings(patch))));
+    const settings = this.allowedSettings(this.withoutEarlyFreeze(readChartSettings(patch)));
+    this.claimSettings(Object.keys(settings) as (keyof ChartSettingsState)[]);
+    this.applySettings(settings);
     this.settings?.refresh(this.shownSettings());
   }
 

@@ -499,6 +499,45 @@ describe('ChartWidget: a shared link’s settings', () => {
     make({ persistSettings: true });
     expect(widget.getSettings()).toMatchObject({ invertScale: false, mainSeriesVisible: true, crosshairMode: 'normal', sessionShadingVisible: true });
   });
+
+  it("are the viewer's once changed, the link's value picked again included", async () => {
+    make({ persistSettings: true });
+    expect(await widget.importState(link({ invertScale: true }))).toBe(true);
+    widget.setSettings({ invertScale: false });
+    widget.setSettings({ invertScale: true });
+    expect(stored()!.settings).toEqual({ invertScale: true });
+    widget.destroy();
+    make({ persistSettings: true });
+    expect(widget.getSettings().invertScale).toBe(true);
+  });
+
+  it("don't bring back a value the viewer replaced when the viewer picks the link's again", async () => {
+    make({ persistSettings: true });
+    widget.setSettings({ scaleMode: 'logarithmic' });
+    expect(await widget.importState(link({}))).toBe(true); // on the regular scale
+    widget.setSettings({ scaleMode: 'percentage' });
+    expect(stored()!.settings).toEqual({ scaleMode: 'percentage' });
+    widget.setSettings({ scaleMode: 'regular' });
+    expect(stored()!.settings).toEqual({});
+  });
+
+  it('give way to a Reset, even where the link set the defaults, but not to a Cancel', async () => {
+    make({ persistSettings: true });
+    widget.setSettings({ scaleMode: 'logarithmic' });
+    expect(await widget.importState(link({}))).toBe(true);
+    const reset = () => {
+      openSettings();
+      footer('template');
+      menuItem('Reset to defaults');
+    };
+    reset();
+    footer('cancel');
+    widget.setSettings({ gridVisible: false });
+    expect(stored()!.settings).toEqual({ scaleMode: 'logarithmic', gridVisible: false });
+    reset();
+    footer('ok');
+    expect(stored()!.settings).toEqual({});
+  });
 });
 
 describe('ChartWidget settings where the host switched a feature off', () => {
