@@ -695,6 +695,15 @@ const stop = widget.onSettingsChange((settings) => {
   api.put('/me/chart-settings', settings)   // たとえば自分のサーバーに
 })
 stop()`}</code></pre>
+<p>
+  <code>getSettings()</code> は <code>getChart()</code> に直接設定した内容も読み戻すので、
+  レイアウトやリンクにはそのまま保存されます。チャートはこれらの設定を
+  <code>isVolumeVisible()</code>、<code>isLegendVisible()</code>、
+  <code>isBarCountdownVisible()</code>、<code>isIndicatorValueLabelsVisible()</code>、
+  <code>isLeftPriceScaleVisible()</code>、<code>getMarketProfileConfig()</code>、
+  <code>getDepthHeatmapConfig()</code>、<code>getPivotMarkersConfig()</code>、
+  <code>getPeriodLevelsPeriod()</code> で返します。各オーバーレイには <code>is…Visible()</code> もあります。
+</p>
 <ul>
   <li><strong>persistSettings</strong> は、ユーザーがあなたの値から変えた分をブラウザーごとに保存します。
     保存された値は <code>chartOptions</code> より優先され、リセットするとあなたの値に戻ります。

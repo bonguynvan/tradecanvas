@@ -24,6 +24,23 @@ export interface MarketProfileStats {
   valueAreaPct: number;
 }
 
+/** How the Market Profile is drawn: `MarketProfileRenderer.getConfig()`. */
+export interface MarketProfileConfig {
+  /** Price rows, 8 to 200. */
+  buckets: number;
+  /** The share of the plot's width the widest row takes. */
+  widthRatio: number;
+  opacity: number;
+  /** The share of the TPOs the value area holds. */
+  valueAreaPct: number;
+  highlightPoC: boolean;
+  showStats: boolean;
+  /** One profile per trading day rather than one over the bars on screen. */
+  splitBySession: boolean;
+  /** TPO letters per session, when split and zoomed in. */
+  letters: boolean;
+}
+
 export class MarketProfileRenderer {
   private visible = false;
   private buckets = 48;
@@ -49,6 +66,11 @@ export class MarketProfileRenderer {
   /** Split the profile into one mini-histogram per calendar-day session. */
   setSplitBySession(enabled: boolean): void { this.splitBySession = enabled; }
   isSplitBySession(): boolean { return this.splitBySession; }
+  /** How it is drawn, as the setters left it. */
+  getConfig(): MarketProfileConfig {
+    const { buckets, widthRatio, opacity, valueAreaPct, highlightPoC, showStats, splitBySession, letters } = this;
+    return { buckets, widthRatio, opacity, valueAreaPct, highlightPoC, showStats, splitBySession, letters };
+  }
   /** The exchange's zone, an IANA name the chart has checked: sessions start at its midnight. */
   setExchangeTimeZone(zone: string | null): void { this.exchangeZone = zone; }
   /** Render TPO letters (A, B, C…) per session instead of bars, when split + zoomed in. */

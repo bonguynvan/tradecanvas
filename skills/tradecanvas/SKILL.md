@@ -244,7 +244,7 @@ const widget = new ChartWidget(document.getElementById('chart')!, {
   persistSettings: true,                 // kept in this browser, back on the next visit
 });
 widget.setSettings({ timezone: 'exchange', volumeProfileVisible: true });  // checked, no undo step
-const settings = widget.getSettings();   // a copy: every switch, the scale, the zone
+const settings = widget.getSettings();   // a copy: every switch, the scale, the zone, what you set on getChart() too
 const stop = widget.onSettingsChange((next) => console.log(next.timezone)); // each change; the dialog's once, at OK
 stop();
 ```

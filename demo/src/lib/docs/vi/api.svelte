@@ -727,6 +727,15 @@ const stop = widget.onSettingsChange((settings) => {
   api.put('/me/chart-settings', settings)   // máy chủ của bạn, chẳng hạn
 })
 stop()`}</code></pre>
+<p>
+  <code>getSettings()</code> cũng đọc lại những gì đã đặt trên <code>getChart()</code>,
+  nên bố cục hay liên kết lưu đúng như vậy. Biểu đồ cho biết các cài đặt này qua
+  <code>isVolumeVisible()</code>, <code>isLegendVisible()</code>,
+  <code>isBarCountdownVisible()</code>, <code>isIndicatorValueLabelsVisible()</code>,
+  <code>isLeftPriceScaleVisible()</code>, <code>getMarketProfileConfig()</code>,
+  <code>getDepthHeatmapConfig()</code>, <code>getPivotMarkersConfig()</code> và
+  <code>getPeriodLevelsPeriod()</code>, cùng với <code>is…Visible()</code> của từng lớp phủ.
+</p>
 <ul>
   <li><strong>persistSettings</strong> giữ, theo từng trình duyệt, những gì người dùng
     đã đổi so với giá trị của bạn. Giá trị được giữ thắng <code>chartOptions</code>, và

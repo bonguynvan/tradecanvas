@@ -665,6 +665,15 @@ const stop = widget.onSettingsChange((settings) => {
   api.put('/me/chart-settings', settings)   // 比如存到你的服务器
 })
 stop()`}</code></pre>
+<p>
+  <code>getSettings()</code> 也会读回直接在 <code>getChart()</code> 上设置的内容，
+  因此布局或链接会按实际情况保存。图表通过
+  <code>isVolumeVisible()</code>、<code>isLegendVisible()</code>、
+  <code>isBarCountdownVisible()</code>、<code>isIndicatorValueLabelsVisible()</code>、
+  <code>isLeftPriceScaleVisible()</code>、<code>getMarketProfileConfig()</code>、
+  <code>getDepthHeatmapConfig()</code>、<code>getPivotMarkersConfig()</code> 和
+  <code>getPeriodLevelsPeriod()</code> 给出这些设置，各叠加层另有自己的 <code>is…Visible()</code>。
+</p>
 <ul>
   <li><strong>persistSettings</strong> 按浏览器保存用户相对你的值所做的改动。保存的值优先于
     <code>chartOptions</code>，“重置”则回到你的值。它不保存对数和自动缩放这两个标志，也不保存

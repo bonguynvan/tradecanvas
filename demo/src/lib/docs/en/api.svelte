@@ -721,6 +721,15 @@ const stop = widget.onSettingsChange((settings) => {
   api.put('/me/chart-settings', settings)   // your server, say
 })
 stop()`}</code></pre>
+<p>
+  <code>getSettings()</code> reads back what was set on <code>getChart()</code> too,
+  so a layout or a link saves it as it is. The chart gives these settings with
+  <code>isVolumeVisible()</code>, <code>isLegendVisible()</code>,
+  <code>isBarCountdownVisible()</code>, <code>isIndicatorValueLabelsVisible()</code>,
+  <code>isLeftPriceScaleVisible()</code>, <code>getMarketProfileConfig()</code>,
+  <code>getDepthHeatmapConfig()</code>, <code>getPivotMarkersConfig()</code> and
+  <code>getPeriodLevelsPeriod()</code>, beside each overlay's <code>is…Visible()</code>.
+</p>
 <ul>
   <li><strong>persistSettings</strong> keeps, per browser, what the user changed
     from your values. A kept value wins over <code>chartOptions</code>, and Reset

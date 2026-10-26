@@ -742,6 +742,15 @@ const stop = widget.onSettingsChange((settings) => {
   api.put('/me/chart-settings', settings)   // en tu servidor, por ejemplo
 })
 stop()`}</code></pre>
+<p>
+  <code>getSettings()</code> también lee lo que se haya fijado en <code>getChart()</code>,
+  así que un diseño o un enlace lo guarda tal como está. El gráfico da estos ajustes con
+  <code>isVolumeVisible()</code>, <code>isLegendVisible()</code>,
+  <code>isBarCountdownVisible()</code>, <code>isIndicatorValueLabelsVisible()</code>,
+  <code>isLeftPriceScaleVisible()</code>, <code>getMarketProfileConfig()</code>,
+  <code>getDepthHeatmapConfig()</code>, <code>getPivotMarkersConfig()</code> y
+  <code>getPeriodLevelsPeriod()</code>, además del <code>is…Visible()</code> de cada superposición.
+</p>
 <ul>
   <li><strong>persistSettings</strong> guarda, por navegador, lo que el usuario cambió
     respecto a tus valores. Un valor guardado gana a <code>chartOptions</code>, y

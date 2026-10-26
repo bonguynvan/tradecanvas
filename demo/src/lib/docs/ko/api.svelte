@@ -701,6 +701,15 @@ const stop = widget.onSettingsChange((settings) => {
   api.put('/me/chart-settings', settings)   // 예: 내 서버에 저장
 })
 stop()`}</code></pre>
+<p>
+  <code>getSettings()</code>는 <code>getChart()</code>에 직접 설정한 내용도 다시 읽으므로,
+  레이아웃이나 링크에 그대로 저장됩니다. 차트는 이 설정들을
+  <code>isVolumeVisible()</code>, <code>isLegendVisible()</code>,
+  <code>isBarCountdownVisible()</code>, <code>isIndicatorValueLabelsVisible()</code>,
+  <code>isLeftPriceScaleVisible()</code>, <code>getMarketProfileConfig()</code>,
+  <code>getDepthHeatmapConfig()</code>, <code>getPivotMarkersConfig()</code>,
+  <code>getPeriodLevelsPeriod()</code>로 돌려주며, 각 오버레이에는 <code>is…Visible()</code>도 있습니다.
+</p>
 <ul>
   <li><strong>persistSettings</strong>는 사용자가 여러분의 값에서 바꾼 것을 브라우저별로 보관합니다.
     보관된 값이 <code>chartOptions</code>보다 우선하며, 초기화하면 여러분의 값으로 돌아갑니다.

@@ -65,6 +65,11 @@ export class DepthHeatmapBuffer {
     return max;
   }
 
+  /** How many snapshots it keeps. */
+  getCapacity(): number {
+    return this.capacity;
+  }
+
   setCapacity(capacity: number): void {
     this.capacity = Math.max(1, Math.floor(capacity));
     if (this.buffer.length > this.capacity) {

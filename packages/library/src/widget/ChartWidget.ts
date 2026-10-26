@@ -4515,14 +4515,29 @@ export class ChartWidget {
   private syncSettingsFromChart(): void {
     const chart = this.chart;
     const zone = chart.getTimeZone?.();
-    const read = readChartSettings({
+    const profile = chart.getMarketProfileConfig?.();
+    const pivots = chart.getPivotMarkersConfig?.();
+    const read = this.allowedSettings(readChartSettings({
       gridVisible: chart.isGridVisible?.(),
+      volumeVisible: chart.isVolumeVisible?.(),
+      legendVisible: chart.isLegendVisible?.(),
+      barCountdown: chart.isBarCountdownVisible?.(),
+      indicatorValueLabels: chart.isIndicatorValueLabelsVisible?.(),
+      leftPriceScale: chart.isLeftPriceScaleVisible?.(),
       volumeProfileVisible: chart.isVolumeProfileVisible?.(),
       marketProfileVisible: chart.isMarketProfileVisible?.(),
+      marketProfileSplit: profile?.splitBySession,
+      marketProfileLetters: profile?.letters,
+      marketProfileBuckets: profile?.buckets,
+      marketProfileOpacity: profile?.opacity,
       depthHeatmapVisible: chart.isDepthHeatmapVisible?.(),
+      depthHeatmapOpacity: chart.getDepthHeatmapConfig?.()?.opacity,
       pivotMarkersVisible: chart.isPivotMarkersVisible?.(),
+      pivotStrength: pivots?.left,
+      pivotStructureLabels: pivots?.structureLabels,
       sessionShadingVisible: chart.isSessionShadingVisible?.(),
       periodLevelsVisible: chart.isPeriodLevelsVisible?.(),
+      periodLevelsPeriod: chart.getPeriodLevelsPeriod?.(),
       crosshairMode: chart.getCrosshairMode?.(),
       scaleMode: this.userScaleMode(),
       autoScale: chart.isAutoScale?.(),
@@ -4533,7 +4548,7 @@ export class ChartWidget {
       extendedHours: chart.isExtendedHoursVisible?.(),
       mainSeriesVisible: chart.isMainSeriesVisible?.(),
       chartTypeOptions: chart.getChartTypeOptions?.(),
-    });
+    }));
     // The log flag goes with the scale.
     const scale = read.scaleMode ? { logScale: read.scaleMode === 'logarithmic' } : {};
     // A type at its defaults is as one never set: a reset, or a box typed and cancelled, changes nothing to listeners.

@@ -13,6 +13,17 @@ const MAX_DECIMALS = 10;
  * ▲ below a pivot low). Recomputed against the full series each render; only
  * the visible pivots are drawn.
  */
+/** How the swing markers find and label pivots: `PivotMarkersRenderer.getConfig()`. */
+export interface PivotMarkersConfig {
+  /** Bars on the left a pivot is the extreme of. */
+  left: number;
+  /** Bars on the right a pivot is the extreme of. */
+  right: number;
+  showLabels: boolean;
+  /** Market-structure labels (HH/HL/LH/LL). */
+  structureLabels: boolean;
+}
+
 export class PivotMarkersRenderer {
   private visible = false;
   private left = 5;
@@ -29,6 +40,10 @@ export class PivotMarkersRenderer {
   setShowLabels(v: boolean): void { this.showLabels = v; }
   /** Show market-structure labels (HH/HL/LH/LL) on each pivot. */
   setStructureLabels(v: boolean): void { this.structureLabels = v; }
+  /** Its strength and labels, as the setters left them. */
+  getConfig(): PivotMarkersConfig {
+    return { left: this.left, right: this.right, showLabels: this.showLabels, structureLabels: this.structureLabels };
+  }
 
   render(ctx: CanvasRenderingContext2D, data: DataSeries, viewport: ViewportState, theme: Theme): void {
     if (!this.visible || data.length === 0) return;

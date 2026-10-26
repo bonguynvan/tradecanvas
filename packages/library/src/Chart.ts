@@ -1826,6 +1826,11 @@ export class Chart {
     this.updateViewportAndRender();
   }
 
+  /** Whether `setLeftPriceScaleVisible` asked for the left scale; it also shows while an overlay is on it (`isLeftPriceScaleShown`). */
+  isLeftPriceScaleVisible(): boolean {
+    return this.leftScaleRequested;
+  }
+
   /** Whether the left price scale is on screen: asked for, or carrying an overlay. */
   isLeftPriceScaleShown(): boolean {
     return this.features.priceAxis !== false && (this.leftScaleRequested || this.indicatorEngine.hasLeftScaleOverlays());
@@ -2199,11 +2204,15 @@ export class Chart {
     }));
   }
 
-  /** Tag each indicator line's latest value on its value axis (default on). */
+  /** Tag each indicator line's latest value on its value axis (off by default). */
   setIndicatorValueLabelsVisible(visible: boolean): void {
     this.features.indicatorValueLabels = visible;
     this.syncRenderContext();
     this.engine.requestRender();
+  }
+
+  isIndicatorValueLabelsVisible(): boolean {
+    return this.features.indicatorValueLabels;
   }
 
   /** Write each pane's indicator name and hovered values in its header (default); off when you label panes yourself. */
@@ -3400,6 +3409,10 @@ export class Chart {
     this.engine.requestRender(LayerType.Hover);
   }
 
+  isBarCountdownVisible(): boolean {
+    return this.barCountdown.isVisible();
+  }
+
   setSessionBreaksVisible(visible: boolean): void {
     this.sessionBreaks.setVisible(visible);
     this.engine.requestRender(LayerType.Background);
@@ -3965,6 +3978,11 @@ export class Chart {
     this.updateViewportAndRender();
   }
 
+  /** Whether the volume bars are drawn: switched on, and `features.volume` not off. */
+  isVolumeVisible(): boolean {
+    return this.features.volume && this.volumeRenderer.isVisible();
+  }
+
   // --- Volume Profile ---
 
   setVolumeProfileVisible(visible: boolean): void {
@@ -4007,6 +4025,11 @@ export class Chart {
     this.engine.requestRender(LayerType.Main);
   }
 
+  /** How the Market Profile is drawn, as `setMarketProfileConfig` left it. */
+  getMarketProfileConfig(): import('@tradecanvas/core').MarketProfileConfig {
+    return this.marketProfile.getConfig();
+  }
+
   /** POC / VAH / VAL of the currently rendered Market Profile, or null. */
   getMarketProfileStats(): import('@tradecanvas/core').MarketProfileStats | null {
     return this.marketProfile.getStats();
@@ -4027,6 +4050,10 @@ export class Chart {
     if (config.opacity !== undefined) this.depthHeatmap.setOpacity(config.opacity);
     if (config.capacity !== undefined) this.depthHeatmap.setCapacity(config.capacity);
     this.engine.requestRender(LayerType.Main);
+  }
+
+  getDepthHeatmapConfig(): { opacity: number; capacity: number } {
+    return this.depthHeatmap.getConfig();
   }
 
   /**
@@ -4062,6 +4089,10 @@ export class Chart {
   setPeriodLevelsPeriod(period: import('@tradecanvas/core').LevelPeriod): void {
     this.periodLevels.setPeriod(period);
     this.engine.requestRender(LayerType.Main);
+  }
+
+  getPeriodLevelsPeriod(): import('@tradecanvas/core').LevelPeriod {
+    return this.periodLevels.getPeriod();
   }
 
   /**
@@ -4360,6 +4391,10 @@ export class Chart {
     this.engine.requestRender(LayerType.Overlay);
   }
 
+  getPivotMarkersConfig(): import('@tradecanvas/core').PivotMarkersConfig {
+    return this.pivotMarkers.getConfig();
+  }
+
   // --- Session (RTH) shading ---
 
   setSessionShadingVisible(visible: boolean): void {
@@ -4394,6 +4429,11 @@ export class Chart {
   setLegend(config: Partial<import('@tradecanvas/core').LegendConfig>): void {
     this.chartLegend.setConfig(config);
     this.engine.requestRender(LayerType.Hover);
+  }
+
+  /** Whether the legend is drawn: shown by `setLegend`, and `features.legend` not off. */
+  isLegendVisible(): boolean {
+    return this.features.legend && this.chartLegend.getConfig().visible;
   }
 
   setSymbolName(symbol: string): void {
