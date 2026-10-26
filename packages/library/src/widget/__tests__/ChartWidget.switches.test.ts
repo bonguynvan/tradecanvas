@@ -388,6 +388,24 @@ describe('ChartWidget keys and behaviours by switch', () => {
     expect(document.querySelectorAll('.tcw-cp-row kbd')).toHaveLength(0);
   });
 
+  it('names go to date on the status bar with its keys only while they work: off, or taken by a host, none', () => {
+    make();
+    const goTo = host.querySelector<HTMLButtonElement>('.tcw-statusbar [data-role="goto"]')!;
+    // The widget's tooltip lifts the title into data-tip while the pointer is on it.
+    const title = () => {
+      goTo.dispatchEvent(new MouseEvent('pointerover', { bubbles: true }));
+      const shown = goTo.dataset.tip || goTo.title;
+      goTo.dispatchEvent(new MouseEvent('pointerout', { bubbles: true }));
+      return shown;
+    };
+    expect(title()).toBe('Go to date (Alt+G)');
+    widget.setFeatures({ 'hotkeys.goToDate': false });
+    expect(title()).toBe('Go to date');
+    widget.setFeatures({ 'hotkeys.goToDate': true });
+    widget.addHotkey({ keys: 'Alt+G', label: 'Mine', onPress: () => {} });
+    expect(title()).toBe('Go to date');
+  });
+
   it('leaves out of the palette the commands switched off', () => {
     make({ features: { goToDate: false, alerts: false, hotkeySheet: false } });
     press();

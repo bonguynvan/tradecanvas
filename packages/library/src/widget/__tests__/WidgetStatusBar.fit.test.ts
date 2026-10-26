@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import type { RangePreset } from '@tradecanvas/core';
-import { WidgetStatusBar, type StatusBarClock } from '../WidgetStatusBar.js';
+import { WidgetStatusBar, type StatusBarClock, type StatusBarRange } from '../WidgetStatusBar.js';
 
 const PRESETS: readonly RangePreset[] = ['1D', '5D', '1M', '3M', '6M', 'YTD', '1Y', '5Y', 'All'];
 /** Each preset and go to date take 30px, the "more" button 26px while something is folded. */
@@ -15,7 +15,7 @@ let root: HTMLDivElement;
 let bar: WidgetStatusBar;
 let calls: string[];
 
-function make(): void {
+function make(range: Partial<StatusBarRange> = {}): void {
   const clock: StatusBarClock = {
     label: 'Timezone',
     now: () => ({ time: '14:05:09', zone: 'UTC+7' }),
@@ -29,6 +29,7 @@ function make(): void {
     moreLabel: 'More',
     onPreset: (preset) => calls.push(preset),
     onGoTo: () => calls.push('goto'),
+    ...range,
   }, { clock });
 }
 
@@ -140,6 +141,31 @@ describe('the status bar, fitting its width', () => {
     expect(menu.querySelectorAll('[role="separator"]')).toHaveLength(1);
     last.click();
     expect(calls).toEqual(['goto']);
+  });
+
+  it('shows go to date\'s keys, in the menu and its tooltip, only while the widget says they work', () => {
+    let keys: string | undefined;
+    bar.destroy();
+    make({ goToKeys: () => keys });
+    const goTo = q<HTMLButtonElement>('[data-role="goto"]');
+    const more = q<HTMLButtonElement>('[data-role="rangeMore"]');
+    const tooltip = () => {
+      goTo.dispatchEvent(new MouseEvent('pointerover', { bubbles: true }));
+      return goTo.title;
+    };
+    // Switched off, or taken by a key of yours.
+    expect(tooltip()).toBe('Go to date');
+    fitAt(RIGHT_PX + MORE_PX);
+    more.click();
+    let last = menuItems().at(-1)!;
+    expect(last.hasAttribute('aria-keyshortcuts')).toBe(false);
+    expect(last.querySelector('kbd')).toBeNull();
+    more.click();
+    keys = 'Alt+G';
+    more.click();
+    last = menuItems().at(-1)!;
+    expect(last.getAttribute('aria-keyshortcuts')).toBe('Alt+G');
+    expect(tooltip()).toBe('Go to date (Alt+G)');
   });
 
   it('keeps the market word whole while anything can still fold', () => {

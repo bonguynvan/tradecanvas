@@ -15,6 +15,12 @@ export interface StatusBarRange {
   moreLabel: string;
   onPreset: (preset: RangePreset) => void;
   onGoTo: () => void;
+  /**
+   * The keys that go to a date now ("Alt+G"), shown beside it in the "more"
+   * menu and its tooltip; undefined while they do nothing (switched off, or
+   * taken by a key of the host's). Alt+G when not given.
+   */
+  goToKeys?: () => string | undefined;
 }
 
 /** Marks a button folded under "more" (the stylesheet hides it). */
@@ -28,6 +34,9 @@ const FIT_SLACK_PX = 1;
 const RANGE_ICON_PX = 13;
 const GO_TO_ID = 'goto';
 const GO_TO_KEYS = 'Alt+G';
+
+/** The keys that go to a date now, as the widget says; Alt+G when it says nothing. */
+const goToKeys = (range: StatusBarRange): string | undefined => (range.goToKeys ? range.goToKeys() : GO_TO_KEYS);
 
 /** A span of text with a class, built without markup. */
 function textSpan(className: string, text: string): HTMLSpanElement {
@@ -438,7 +447,7 @@ export class WidgetStatusBar {
       .map((preset) => ({ id: preset, label: range.presetLabels?.[preset] ?? preset }));
     if (this.goToBtn && listed(this.goToBtn)) {
       if (entries.length > 0) entries.push('separator');
-      entries.push({ id: GO_TO_ID, label: range.goToLabel, icon: 'calendar', shortcut: GO_TO_KEYS });
+      entries.push({ id: GO_TO_ID, label: range.goToLabel, icon: 'calendar', shortcut: goToKeys(range) });
     }
     if (entries.length === 0) return;
     this.rangeMenu ??= new WidgetContextMenu(this.host, range.groupLabel);
@@ -539,7 +548,14 @@ export class WidgetStatusBar {
 
     const goTo = this.rangeIconBtn('tcw-range-goto', 'goto', 'calendar', range.goToLabel);
     markPart(goTo, 'goToDate', 'statusBar.goToDate');
-    goTo.title = `${range.goToLabel} (${GO_TO_KEYS})`;
+    // Named with its keys as they are when the pointer or the keyboard comes, before its tooltip reads the title.
+    const nameGoTo = () => {
+      const keys = goToKeys(range);
+      goTo.title = keys ? `${range.goToLabel} (${keys})` : range.goToLabel;
+    };
+    nameGoTo();
+    goTo.addEventListener('pointerover', nameGoTo);
+    goTo.addEventListener('focusin', nameGoTo);
     goTo.addEventListener('click', range.onGoTo);
     group.appendChild(goTo);
     this.goToBtn = goTo;

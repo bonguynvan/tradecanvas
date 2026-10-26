@@ -776,6 +776,7 @@ export class ChartWidget {
       moreLabel: this.t('toolbar.more'),
       onPreset: (preset) => void this.applyRangePreset(preset),
       onGoTo: () => this.toggleGoToDate(),
+      goToKeys: () => this.keysShown('hotkeys.goToDate', 'Alt+G'),
     }, {
       clock: {
         label: this.t('settings.timezone'),
