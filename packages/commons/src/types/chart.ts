@@ -165,6 +165,11 @@ export interface ChartOptions {
   /** Default `'candlestick'`. */
   chartType?: ChartType;
   theme?: ThemeName | Theme;
+  /**
+   * Fit the price axis to the bars on view as they move (default `true`).
+   * `false` holds the range on screen; each new series (the first bars,
+   * `setData`'s, a stream's symbol or timeframe switch) is still fitted once.
+   */
   autoScale?: boolean;
   rightMargin?: number;
   minBarSpacing?: number;

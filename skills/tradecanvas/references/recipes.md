@@ -681,8 +681,9 @@ const stop = widget.onSettingsChange((settings) => {
 After a drag on the price axis, what `onSettingsChange` gives has auto-scale
 off. `setSettings` leaves auto-scale on until the chart has bars (off holds
 the price range on screen, and there is none before them), so given back right
-after the constructor the saved settings open with the bars fitted, not an
-empty price pane.
+after the constructor the saved settings open with the bars fitted and
+following the price. Auto-scale off, by any way, still fits each new series
+once (the first bars, a symbol or timeframe switch), then holds that range.
 
 Change them in code with `widget.setSettings({ timezone: 'exchange' })`, not
 `widget.getChart().setTimeZone(…)`: the widget's clock follows its own

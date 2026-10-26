@@ -5727,6 +5727,7 @@
       {
         "name": "autoScale",
         "type": "boolean",
+        "doc": "Fit the price axis to the bars on view as they move (default `true`). `false` holds the range on screen; each new series (the first bars, `setData`'s, a stream's symbol or timeframe switch) is still fitted once.",
         "kind": "boolean"
       },
       {
@@ -6028,6 +6029,7 @@
       {
         "name": "autoScale",
         "type": "boolean",
+        "doc": "Fit the price axis to the bars on view as they move (default `true`). `false` holds the range on screen; each new series (the first bars, `setData`'s, a stream's symbol or timeframe switch) is still fitted once.",
         "kind": "boolean"
       },
       {

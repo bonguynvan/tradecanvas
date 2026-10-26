@@ -122,7 +122,7 @@ chart.getEffectiveTimeZone()           // 가리키는 시간대: HOSE에서는 
 </p>
 
 <p>같은 효과를 코드로도 적용할 수 있습니다.</p>
-<pre><code>{`chart.setAutoScale(false)  // freeze the current price range
+<pre><code>{`chart.setAutoScale(false)  // hold the price range on screen (a new series is fitted once)
 chart.setLogScale(true)    // switch to logarithmic price scale
 chart.setInvertScale(true) // upside down (Alt+I in the widget)
 chart.fitContent()         // zoom out to all data (Alt+R in the widget, with auto scale)

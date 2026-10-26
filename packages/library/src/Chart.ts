@@ -367,6 +367,13 @@ export class Chart {
    * freeze on the old symbol doesn't silently carry over to a new one.
    */
   private defaultAutoScale: boolean;
+  /**
+   * A new series whose prices aren't on the axis yet (the first bars, or
+   * `setData`'s): they are fitted once even with auto-scale off, which then
+   * holds them. Off, a chart would otherwise keep its empty 0 to 1, or the
+   * last symbol's prices.
+   */
+  private priceFitPending = true;
   private keyboardHandler: KeyboardHandler | null = null;
   private a11y: ChartA11y | null = null;
   private onWindowKeyDown: ((e: KeyboardEvent) => void) | null = null;
@@ -1110,8 +1117,10 @@ export class Chart {
     // a live tick — those go through appendBar/updateLastBar instead), so
     // un-freeze the Y-axis the same way scrollToEnd below resets the X-axis.
     // Otherwise a price-axis drag or vertical pan on the old symbol silently
-    // keeps the new symbol's chart stuck on the old price range.
+    // keeps the new symbol's chart stuck on the old price range. Auto-scale
+    // set off fits the new series once too, then holds it.
     this.options.autoScale = this.defaultAutoScale;
+    this.priceFitPending = true;
     // New data context (symbol / timeframe) — drop stale alert prev-values so
     // the next tick seeds cleanly instead of crossing against the old series.
     // The bars kept: a bar the chart can't take is left out.
@@ -3878,6 +3887,12 @@ export class Chart {
 
   // --- Auto Scale ---
 
+  /**
+   * Fit the price axis to the bars on view as they move, or hold the range
+   * on screen (`false`), across `setData` too. Off, a new series (the first
+   * bars, `setData`'s, a stream's symbol or timeframe switch) is still fitted
+   * once, then held.
+   */
   setAutoScale(enabled: boolean): void {
     this.options.autoScale = enabled;
     // Unlike the drag-to-scale/vertical-pan gesture freeze, an explicit call
@@ -5736,7 +5751,7 @@ export class Chart {
    */
   private applyDataToViewport(scrollToEnd = false): DataSeries {
     const displayData = this.getDisplayData();
-    const autoScale = this.options.autoScale !== false;
+    const autoScale = this.options.autoScale !== false || this.priceFitPending;
 
     // updateData first so dataLength is current for scrollToEnd — but only
     // fit the price range once the FINAL visible window is known. Fitting
@@ -5808,10 +5823,12 @@ export class Chart {
    * before anything reads the layout for this frame.
    */
   private fitDataAndAxes(scrollToEnd = false): void {
-    this.applyDataToViewport(scrollToEnd);
+    const shown = this.applyDataToViewport(scrollToEnd);
     const priceResized = this.fitPriceAxisWidth();
     this.leftViewport = this.computeLeftViewport();
     if (this.fitLeftAxisWidth() || priceResized) this.applyDataToViewport(scrollToEnd);
+    // The new series' prices are on the axis: auto-scale off holds them from here.
+    if (shown.length > 0) this.priceFitPending = false;
   }
 
   /** Size the left scale to its widest label; true when the layout changed. */

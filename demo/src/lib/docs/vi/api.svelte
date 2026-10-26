@@ -124,7 +124,7 @@ chart.getEffectiveTimeZone()           // múi giờ nó trỏ tới: 'Asia/Ho_C
 </p>
 
 <p>Các tác dụng trên cũng có thể gọi bằng code:</p>
-<pre><code>{`chart.setAutoScale(false)  // freeze the current price range
+<pre><code>{`chart.setAutoScale(false)  // hold the price range on screen (a new series is fitted once)
 chart.setLogScale(true)    // switch to logarithmic price scale
 chart.setInvertScale(true) // upside down (Alt+I in the widget)
 chart.fitContent()         // zoom out to all data (Alt+R in the widget, with auto scale)

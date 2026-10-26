@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import type { OHLCBar } from '@tradecanvas/commons';
+import type { DataAdapter, OHLCBar } from '@tradecanvas/commons';
 import { installChartStubs, sizedHost } from '../../__tests__/chartTestEnv.js';
 import { ChartWidget } from '../ChartWidget.js';
 import type { ChartSettingsState } from '../types.js';
@@ -12,6 +12,8 @@ const HIGH = 110;
 const BARS: OHLCBar[] = Array.from({ length: 60 }, (_, i) => ({
   time: i * MINUTE, open: LOW + 4, high: HIGH, low: LOW, close: LOW + 6, volume: 10,
 }));
+/** A symbol trading far above `HIGH`. */
+const FAR = 5_000;
 
 let host: HTMLDivElement;
 let widget: ChartWidget;
@@ -47,5 +49,29 @@ describe('ChartWidget settings given back on the next visit', () => {
     expect(max).toBeGreaterThanOrEqual(HIGH);
     expect(max - min).toBeLessThan(2 * (HIGH - LOW));
     expect(widget.getChart().isAutoScale()).toBe(true);
+  });
+
+  it('fits the next symbol’s bars when the settings turn auto-scale off after the bars', async () => {
+    const feed: DataAdapter = {
+      name: 'fake',
+      connect: () => {},
+      disconnect: () => {},
+      getConnectionState: () => 'connected',
+      fetchHistory: async (symbol: string) => BARS.map((b) => (symbol === 'FAR' ? { ...b, open: b.open + FAR, high: b.high + FAR, low: b.low + FAR, close: b.close + FAR } : b)),
+      on: () => {},
+      off: () => {},
+      dispose: () => {},
+    };
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false, timeframe: '1m', adapter: feed });
+    await vi.waitFor(() => expect(widget.getChart().getData()).toHaveLength(BARS.length));
+    // Given back late: the bars came first.
+    widget.setSettings({ autoScale: false });
+    await widget.setSymbol('FAR');
+    await vi.waitFor(() => expect(widget.getChart().getData()[0]?.low).toBe(LOW + FAR));
+    const { min, max } = priceRange();
+    expect(min).toBeLessThanOrEqual(LOW + FAR);
+    expect(max).toBeGreaterThanOrEqual(HIGH + FAR);
+    expect(max - min).toBeLessThan(2 * (HIGH - LOW));
+    expect(widget.getChart().isAutoScale()).toBe(false);
   });
 });
