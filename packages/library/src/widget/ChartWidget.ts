@@ -3797,13 +3797,18 @@ export class ChartWidget {
     if (!this.adapter || this.compares.length === 0) return;
     const seq = ++this.compareFetchSeq;
     const adapter = withResampling(this.adapter);
+    // Each one's bars are on their way again.
+    this.compares = this.compares.map((x) => ({ ...x, failedAt: undefined }));
     for (const c of this.compares) {
       const timeframe = this.state.timeframe;
       try {
         const bars = await adapter.fetchHistory(c.symbol, timeframe, this.compareDepth());
         if (this.destroyed || seq !== this.compareFetchSeq) return;
         if (this.isPercentCompare(c.id)) this.setCompareBars(c.id, bars, timeframe);
-      } catch { /* leave the stale overlay in place if the refetch fails */ }
+      } catch {
+        // The stale overlay stays, and no older stretch waits for bars that aren't coming.
+        if (!this.destroyed && seq === this.compareFetchSeq) this.compareFailedAt(c.id, timeframe);
+      }
     }
     // Older bars that loaded meanwhile were fetched only as deep as the chart was before them.
     if (this.compareOlderPassed) {
@@ -3846,8 +3851,9 @@ export class ChartWidget {
     const timeframe = this.state.timeframe;
     for (const c of this.compares) {
       // Its bars still at the interval before: older ones at this interval would mix two in one line.
+      // A round follows once they come, unless they failed to.
       if (c.timeframe !== timeframe) {
-        this.compareOlderPassed = true;
+        if (c.failedAt !== timeframe) this.compareOlderPassed = true;
         continue;
       }
       const first = c.bars[0]?.time;
@@ -3874,7 +3880,12 @@ export class ChartWidget {
   /** A percent compare's line on new bars at `timeframe`, which may reach further back again. */
   private setCompareBars(id: string, bars: OHLCBar[], timeframe: TimeFrame): void {
     this.chart.updateCompareData(id, bars);
-    this.compares = this.compares.map((x) => (x.id === id ? { ...x, bars, timeframe, atStart: false } : x));
+    this.compares = this.compares.map((x) => (x.id === id ? { ...x, bars, timeframe, atStart: false, failedAt: undefined } : x));
+  }
+
+  /** A percent compare's bars at `timeframe` didn't come: it keeps the ones it has. */
+  private compareFailedAt(id: string, timeframe: TimeFrame): void {
+    this.compares = this.compares.map((x) => (x.id === id ? { ...x, failedAt: timeframe } : x));
   }
 
   private refreshAlerts(): void {

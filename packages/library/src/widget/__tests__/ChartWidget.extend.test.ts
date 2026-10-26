@@ -1033,6 +1033,29 @@ describe('ChartWidget percent compares and the price scale', () => {
     expect(fake.compareData).toEqual([['cmp_BBB', fourHours(0, 4)], ['cmp_BBB', fourHours(-4 * FOUR_HOURS, 8)]]);
   });
 
+  it('keeps no older stretch waiting for bars that failed to come at the new interval', async () => {
+    const FOUR_HOURS = 4 * HOUR;
+    const fake = make({ timeframe: '1h' });
+    adapter.fetchHistory.mockImplementation(async (_symbol, tf) => {
+      if (tf === '4h') throw new Error('down');
+      return bars;
+    });
+    const fetchHistoryBefore = vi.fn(async (_symbol: string, _tf: string, before: number, limit: number) => hoursBefore(before, limit));
+    Object.assign(adapter, { fetchHistoryBefore });
+    await widget.addCompareSymbol('BBB');
+    await widget.setTimeframe('4h');
+    await new Promise((r) => setTimeout(r, 0));
+    // A page of older 4h bars loads while the line keeps its 1h bars.
+    fake.barsLoaded = Array.from({ length: 8 }, (_, i) => ({ time: (i - 4) * FOUR_HOURS, close: 1 }));
+    fake.emit('historyLoad', { state: 'loaded', count: 4 });
+    await new Promise((r) => setTimeout(r, 0));
+    // Back at 1h the line's bars come as the feed has them, and no page loaded since: no stretch to ask for.
+    fake.barsLoaded = chartWithOlder(3);
+    await widget.setTimeframe('1h');
+    await new Promise((r) => setTimeout(r, 0));
+    expect(fetchHistoryBefore).not.toHaveBeenCalled();
+  });
+
   it('holds no percent scale on a chart type that draws no compare lines, and holds it again off it', async () => {
     const fake = make();
     fake.timeAligned = false; // Renko, say

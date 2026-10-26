@@ -45,6 +45,8 @@ export interface PercentCompare extends CompareOverlay {
   timeframe: TimeFrame;
   /** The feed had nothing older than its first bar: no use asking again. */
   atStart?: boolean;
+  /** The interval its bars failed to come at: none are on their way, so no older stretch waits for them. */
+  failedAt?: TimeFrame;
 }
 
 /** How many of `bars` come before `time`: the stretch a compare that starts there lacks. */
