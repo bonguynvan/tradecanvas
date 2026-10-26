@@ -1132,13 +1132,25 @@ img.tcw-ss-badge {
     grid-template-columns: max-content fit-content(min(144px, 38.2%)) minmax(0, 1fr) fit-content(55px) auto;
   }
 
-  /* A venue counts for nothing in that width: it shows, dim and shortened, in what its ticker leaves. */
+  /* A venue counts for nothing in that width (its own is 0): it shows, dim and shortened, in what
+     its ticker leaves, if that is 2em, a letter and an ellipsis as on the toolbar. With less, it
+     wraps to a second line the cell clips, never a sliver ("H.GOLD"). The ticker comes first in the
+     line, laid from the end, so it is the one that stays, at the column's start when alone. */
   .tcw-ss-symbol {
     justify-self: stretch;
+    flex-direction: row-reverse;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    align-content: flex-start;
+    height: 1lh;
+  }
+
+  .tcw-ss-ticker {
+    order: -1;
   }
 
   .tcw-ss-venue {
-    flex: 1 1 0;
+    flex: 1 1 2em;
     width: 0;
   }
 

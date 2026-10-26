@@ -128,6 +128,19 @@ describe('the symbol search’s venue', () => {
   it('keeps a gap between its ellipsis and the ticker', () => {
     expect(blocks(dialogs, '.tcw-ss-venue')[0]).toMatch(/margin-inline-end:\s*var\(--tcw-space-1\)/);
   });
+
+  // On a phone, a search that leaves only short tickers with a venue ("HYPER") sized the column to
+  // the ticker, and the venue showed as a sliver ("|GOLD", "H.GOLD").
+  it('shows on a phone a letter and an ellipsis or nothing, never a sliver', () => {
+    const rules = phone(dialogs);
+    // Its basis, not a least width: that would widen the column for every row by the venue's 2em.
+    expect(blocks(rules, '.tcw-ss-venue').join('')).toMatch(/flex:\s*1 1 2em/);
+    const cell = blocks(rules, '.tcw-ss-symbol').join('');
+    expect(cell).toMatch(/flex-wrap:\s*wrap/);
+    expect(cell).toMatch(/flex-direction:\s*row-reverse/);
+    expect(cell).toMatch(/height:\s*1lh/);
+    expect(blocks(rules, '.tcw-ss-ticker').join('')).toMatch(/order:\s*-1/);
+  });
 });
 
 describe('small boxes that scrolled a few px', () => {
