@@ -135,7 +135,9 @@ chart.setIndicatorIntervals(ema, null)  // lại hiện trên mọi khung`}</cod
   nến đã tải, nên đổi khi nạp thêm lịch sử cũ. Trên nến ngày, VWAP theo phiên chính là giá điển hình của từng nến,
   nên ở đó hãy chọn <code>'week'</code> hoặc <code>'month'</code>. <code>svwap</code> là VWAP theo phiên kèm các dải σ,
   còn <code>avwap</code> bắt đầu tại nến bạn neo. <code>svwap</code>, <code>mtfma</code>, các đường của ngày trước và
-  các phiên của market profile cũng đếm ngày theo múi giờ đó.
+  các phiên của market profile cũng đếm ngày theo múi giờ đó. Các khung 2h đến 12h của <code>mtfma</code> cũng
+  bắt đầu từ nửa đêm của sàn, còn nến 4h của chính nguồn dữ liệu vẫn theo lưới giờ UTC; trên nến ngày,
+  <code>svwap</code> chỉ cho đường chính, không có các dải.
 </p>
 <pre><code>{`chart.addIndicator('vwap')                      // tính lại mỗi ngày giao dịch
 chart.addIndicator('vwap', { anchor: 'week' })  // mỗi thứ Hai: cho nến ngày

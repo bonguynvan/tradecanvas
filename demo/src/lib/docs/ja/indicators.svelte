@@ -130,7 +130,9 @@ chart.setIndicatorIntervals(ema, null)  // ふたたびすべての時間足に�
   読み込むと値が変わります。日足ではセッション VWAP は各バーの典型価格そのものなので、日足チャートでは
   <code>'week'</code> か <code>'month'</code> を選んでください。<code>svwap</code> は σ バンド付きのセッション VWAP、
   <code>avwap</code> はアンカーしたバーから始まります。<code>svwap</code>、<code>mtfma</code>、前日の価格ライン、
-  マーケットプロファイルのセッションも同じタイムゾーンで日を区切ります。
+  マーケットプロファイルのセッションも同じタイムゾーンで日を区切ります。<code>mtfma</code> の 2h から 12h までの足も
+  取引所の午前 0 時から始まり（フィード自身の 4h 足は UTC の区切りのまま）、日足では <code>svwap</code> はバンドなしで
+  ラインだけを出します。
 </p>
 <pre><code>{`chart.addIndicator('vwap')                      // 取引日ごとにやり直す
 chart.addIndicator('vwap', { anchor: 'week' })  // 毎週月曜：日足向け

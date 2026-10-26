@@ -143,6 +143,8 @@ chart.setIndicatorIntervals(ema, null)  // todas otra vez`}</code></pre>
   el precio típico de cada barra, así que elige ahí <code>'week'</code> o <code>'month'</code>. <code>svwap</code> es el
   VWAP de sesión con bandas σ, y <code>avwap</code> empieza en la barra a la que lo anclas. <code>svwap</code>,
   <code>mtfma</code>, las líneas del día anterior y las sesiones del perfil de mercado cuentan sus días en la misma zona.
+  Los marcos de 2h a 12h de <code>mtfma</code> también empiezan a la medianoche de la bolsa, mientras que las velas de 4h
+  del propio feed siguen la cuadrícula de UTC, y en barras diarias <code>svwap</code> da solo su línea, sin bandas.
 </p>
 <pre><code>{`chart.addIndicator('vwap')                      // vuelve a empezar cada día de negociación
 chart.addIndicator('vwap', { anchor: 'week' })  // cada lunes: para barras diarias
