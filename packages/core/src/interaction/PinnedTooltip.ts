@@ -6,6 +6,8 @@ import { barIndexToX, priceToY } from '../viewport/ScaleMapping.js';
 const DEFAULT_DECIMALS = 2;
 /** Decimals the move's percentage shows. */
 const PERCENT_DECIMALS = 2;
+/** How far the move's percentage fades beside the price it follows. */
+const PERCENT_OPACITY = '0.7';
 
 /**
  * Pinned OHLC tooltip — a second DOM tooltip anchored to a specific bar index.
@@ -57,10 +59,9 @@ export class PinnedTooltip {
     this.locale = locale;
   }
 
-  /** A price as markup-safe text. */
+  /** A price as text, for `textContent`: nothing here is parsed as markup. */
   private fmt(v: number): string {
-    const text = this.priceFormatter ? this.priceFormatter(v) : formatPrice(v, this.pricePrecision ?? DEFAULT_DECIMALS, this.locale);
-    return escapeText(text);
+    return this.priceFormatter ? this.priceFormatter(v) : formatPrice(v, this.pricePrecision ?? DEFAULT_DECIMALS, this.locale);
   }
 
   create(container: HTMLElement): void {
@@ -194,8 +195,13 @@ export class PinnedTooltip {
         const direction = priceΔ >= 0 ? theme.candleUp : theme.candleDown;
         this.deltaEl.style.color = direction;
         // The percentage in the locale too: a price in it beside a plain 1.23 reads as two systems.
-        const pctText = escapeText(formatPrice(Math.abs(pct), PERCENT_DECIMALS, this.locale));
-        this.deltaEl.innerHTML = `Δ ${sign}${this.fmt(Math.abs(priceΔ))} <span style="opacity:.7">(${sign}${pctText}%)</span> · ${barΔ > 0 ? '+' : ''}${barΔ} bars`;
+        const pctText = formatPrice(Math.abs(pct), PERCENT_DECIMALS, this.locale);
+        // Built as nodes, its fade set as a style value: a style attribute in markup is refused
+        // by a Content-Security-Policy whose style-src leaves out 'unsafe-inline'.
+        const pctEl = document.createElement('span');
+        pctEl.style.opacity = PERCENT_OPACITY;
+        pctEl.textContent = `(${sign}${pctText}%)`;
+        this.deltaEl.replaceChildren(`Δ ${sign}${this.fmt(Math.abs(priceΔ))} `, pctEl, ` · ${barΔ > 0 ? '+' : ''}${barΔ} bars`);
         this.deltaEl.style.display = 'block';
       } else {
         this.deltaEl.style.display = 'none';
@@ -212,10 +218,6 @@ export class PinnedTooltip {
     this.pinnedBar = null;
     this.pinnedIndex = -1;
   }
-}
-
-function escapeText(text: string): string {
-  return text.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 }
 
 function pad(n: number): string {

@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { DARK_THEME } from '@tradecanvas/commons';
 import { PinnedTooltip } from '../PinnedTooltip.js';
 import { unitViewport } from '../../drawings/__tests__/fixtures.js';
@@ -52,5 +52,39 @@ describe('PinnedTooltip', () => {
     const viewport = { ...unitViewport, priceRange: { min: 99_000, max: 102_000 } };
     tooltip.reposition(viewport, { ...pinned, time: pinned.time + 5, close: 101_250 }, 5, DARK_THEME);
     expect(host.textContent).toContain('Δ +1.250,0 (+1,25%) · +5 bars');
+  });
+
+  it('fades the move’s percentage without a style attribute in markup, which a strict style-src refuses', () => {
+    const host = document.createElement('div');
+    const tooltip = new PinnedTooltip();
+    tooltip.create(host);
+    const pinned = { time: Date.UTC(2026, 2, 4), open: 100, high: 100, low: 100, close: 100 };
+    tooltip.pin(pinned, 0, DARK_THEME);
+    // jsdom applies no Content-Security-Policy, so the test looks at the markup written instead.
+    const innerHtml = vi.spyOn(Element.prototype, 'innerHTML', 'set');
+    let markup: string[];
+    try {
+      tooltip.reposition(unitViewport, { ...pinned, time: pinned.time + 2, close: 101 }, 2, DARK_THEME);
+    } finally {
+      markup = innerHtml.mock.calls.map(([html]) => String(html));
+      innerHtml.mockRestore();
+    }
+    expect(markup.filter((html) => /style\s*=/i.test(html))).toEqual([]);
+    const percent = [...host.querySelectorAll('span')].find((span) => span.textContent === '(+1.00%)');
+    expect(percent?.style.opacity).toBe('0.7');
+    expect(host.textContent).toContain('Δ +1.00 (+1.00%) · +2 bars');
+  });
+
+  it('shows a formatter’s price as it wrote it, quotes and ampersands too', () => {
+    const host = document.createElement('div');
+    const tooltip = new PinnedTooltip();
+    tooltip.create(host);
+    tooltip.setPriceFormatter((price) => `${price.toFixed(0)}'000 & <up>`);
+    const pinned = { time: Date.UTC(2026, 2, 4), open: 1, high: 1, low: 1, close: 1 };
+    tooltip.pin(pinned, 0, DARK_THEME);
+    expect(host.textContent).toContain("C 1'000 & <up>");
+    tooltip.reposition(unitViewport, { ...pinned, time: pinned.time + 1, close: 3 }, 1, DARK_THEME);
+    expect(host.textContent).toContain("Δ +2'000 & <up>");
+    expect(host.querySelector('up')).toBeNull();
   });
 });
