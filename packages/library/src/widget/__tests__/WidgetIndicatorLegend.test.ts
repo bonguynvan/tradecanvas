@@ -78,3 +78,21 @@ describe('an indicator legend’s values in a narrow chart', () => {
     expect(FakeResizeObserver.last.disconnected).toBe(true);
   });
 });
+
+describe('a legend row its chart doesn’t draw', () => {
+  it('says why to the keyboard and to a screen reader, not only in a tooltip', () => {
+    legend.destroy();
+    legend = new WidgetIndicatorLegend(host, { onToggleVisible: () => {}, onSettings: () => {}, onRemove: () => {} }, {
+      ...LABELS, offChartType: 'Not drawn on this chart type',
+    });
+    const compare: IndicatorLegendRow = { instanceId: 'cmp_ETH', kind: 'compare', label: 'ETHUSDT', visible: true, pane: null, values: [], offChartType: true };
+    legend.update([compare], { left: 0, top: 0 });
+    const buttons = [...host.querySelectorAll<HTMLButtonElement>('[data-instance="cmp_ETH"] button')];
+    expect(buttons.length).toBeGreaterThan(0);
+    for (const button of buttons) {
+      expect(document.getElementById(button.getAttribute('aria-describedby') ?? '')?.textContent).toBe('Not drawn on this chart type');
+    }
+    legend.update([{ ...compare, offChartType: false, values: [{ text: '+1.20%', color: null }] }], { left: 0, top: 0 });
+    for (const button of buttons) expect(button.hasAttribute('aria-describedby')).toBe(false);
+  });
+});

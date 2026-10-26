@@ -90,6 +90,9 @@ const VALUES_LEAST_EM = 1.5;
 /** On a row's values while their box has less than `VALUES_LEAST_EM`: they hide, keeping their room. */
 const NO_ROOM_CLASS = 'tcw-ind-legend-values--no-room';
 
+/** Numbers the rows' notes, so each id is the page's only one, with several legends on it. */
+let noteSeq = 0;
+
 interface RowEls {
   el: HTMLDivElement;
   /** A button that opens the indicator's settings; plain text on a compare's row. */
@@ -99,6 +102,8 @@ interface RowEls {
   settings: HTMLButtonElement | null;
   more: HTMLButtonElement | null;
   remove: HTMLButtonElement;
+  /** Why the row is not drawn, heard with its buttons (`aria-describedby`); empty while it is drawn. */
+  note: HTMLSpanElement;
   visible: boolean;
   valuesKey: string;
   state: string;
@@ -303,9 +308,13 @@ export class WidgetIndicatorLegend {
       : null;
     const remove = action('remove', 'x', () => this.callbacks.onRemove(instanceId, kind), 'indicatorLegend.remove');
 
-    el.append(name, values, actions);
+    const note = document.createElement('span');
+    note.className = 'tcw-visually-hidden';
+    note.id = `tcw-ind-note-${++noteSeq}`;
+
+    el.append(name, values, actions, note);
     const els: RowEls = {
-      el, name, values, eye, settings, more, remove, visible: true, valuesKey: '', state: '', placeKey: '',
+      el, name, values, eye, settings, more, remove, note, visible: true, valuesKey: '', state: '', placeKey: '',
     };
     this.rows.set(instanceId, els);
     return els;
@@ -322,6 +331,7 @@ export class WidgetIndicatorLegend {
       els.el.classList.toggle('tcw-ind-legend-row--hidden', !row.visible || note !== null);
       if (note) els.el.title = note;
       else els.el.removeAttribute('title');
+      this.describe(els, note);
       els.eye.innerHTML = createIcon(row.visible ? 'eye' : 'eyeOff', 13);
       setLabel(els.eye, row.visible ? this.labels.hide : this.labels.show, row.label);
       if (els.settings) setLabel(els.settings, this.labels.settings, row.label);
@@ -340,6 +350,16 @@ export class WidgetIndicatorLegend {
       if (v.color) span.style.color = v.color;
       return span;
     }));
+  }
+
+  /** Why the row is not drawn, heard with each of its buttons: the tooltip alone reaches only a mouse. */
+  private describe(els: RowEls, note: string | null): void {
+    els.note.textContent = note ?? '';
+    const buttons = [els.name, els.eye, els.settings, els.more, els.remove].filter((b): b is HTMLElement => b instanceof HTMLButtonElement);
+    for (const button of buttons) {
+      if (note) button.setAttribute('aria-describedby', els.note.id);
+      else button.removeAttribute('aria-describedby');
+    }
   }
 
   /** Why a row that is on is not drawn ('' without a note to say so), or null when it is drawn. */
