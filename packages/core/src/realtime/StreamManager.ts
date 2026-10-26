@@ -167,6 +167,8 @@ export class StreamManager extends Emitter<StreamEvents> {
     this.aggregator?.removeAllListeners();
     this.aggregator = null;
     this.config = null;
+    this.resampler = null;
+    this.historyEnd = null;
     this.lastPrice = null;
     this.previousClose = null;
     this.previousCloseTime = null;

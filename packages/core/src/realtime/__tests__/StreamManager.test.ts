@@ -637,3 +637,19 @@ describe('StreamManager — bars older than the newest', () => {
     });
   });
 });
+
+describe('StreamManager — after a disconnect', () => {
+  it('lets go of the wrapper that built the feed’s missing timeframes', async () => {
+    const { adapter: feed, pending } = controlledAdapter();
+    const sm = new StreamManager();
+    const done = sm.connect({ adapter: { ...feed, supportedTimeframes: ['1h'] }, symbol: 'X', timeframe: '4h' });
+    await vi.waitFor(() => expect(pending.length).toBe(1));
+    pending[0].resolve([]);
+    await done;
+    // Private: nothing else shows a reference kept to the last connection's adapter.
+    const kept = () => (sm as unknown as { resampler: unknown }).resampler;
+    expect(kept()).not.toBeNull();
+    sm.disconnect();
+    expect(kept()).toBeNull();
+  });
+});
