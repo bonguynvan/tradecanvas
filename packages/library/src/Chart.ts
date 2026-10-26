@@ -45,7 +45,7 @@ import { isValidTimeZone, sessionMinute, symbolTimeZone, LayerType, setLocale as
 import type { BarLayout, ChartTypeOptions, DataUpdatePayload, FontConfig, IndicatorId, IndicatorParamsFor, PriceFormatter, PriceFraction, ShapeConfig, TimeFormatter } from '@tradecanvas/commons';
 import type { ChartStyleKey, ChartStyleOverrides, ChartStyleOverridesPatch, IndicatorIntervals, IndicatorStyleConfig, PaneStyle, ResolvedChartStyle, StyleLayer } from '@tradecanvas/commons';
 import { PHI, computePriceRange, readChartTypeOptions, tickBarCount, barTimeUnit, readChartStyleOverrides, readIndicatorPlotStyles, readPaneStyle } from '@tradecanvas/commons';
-import { PRICE_SCALE_MARGIN, PriceLines, type BidAsk, SymbolSeriesStore, CompareSymbolIndicator, SpreadIndicator, CorrelationCoefficientIndicator, CorrelationLogIndicator, SYMBOL_INDICATOR_IDS, HiLoRenderer, PointAndFigureRenderer, ReshapeMemo, loadWebGL, gpuContextsLeft, whenGpuContextFree } from '@tradecanvas/core';
+import { PRICE_SCALE_MARGIN, PriceLines, type BidAsk, SymbolSeriesStore, CompareSymbolIndicator, SpreadIndicator, CorrelationCoefficientIndicator, CorrelationLogIndicator, SYMBOL_INDICATOR_IDS, HiLoRenderer, PointAndFigureRenderer, ReshapeMemo, isPriceLevelAlert, loadWebGL, gpuContextsLeft, whenGpuContextFree } from '@tradecanvas/core';
 import type { GpuRenderer, RendererMode } from '@tradecanvas/core';
 import { regularHoursFilter } from './regularHours.js';
 import { ChartA11y } from './chartA11y.js';
@@ -778,6 +778,8 @@ export class Chart {
     // Alerts on drawings check the drawing's lines where they are at the latest bar.
     this.alertManager.setDrawingLevels((id) => this.drawingLevelsNow(id));
     this.alertManager.setRequestRender(() => this.engine.requestRender(LayerType.Overlay));
+    // A compare's label at its line's end keeps clear of an alert's label at the plot's right edge.
+    this.compareRenderer.setReservedLevels(() => this.alertManager.getAlerts().filter(isPriceLevelAlert).map((a) => a.price));
     this.alertManager.on('triggered', (alert) => {
       this.eventBus.emit('alertTriggered', alertPayload(alert));
       // Back-compat: legacy listeners keyed off dataUpdate.

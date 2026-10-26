@@ -93,15 +93,70 @@ describe('a compare line’s label', () => {
     const ctx = new Proxy({ textAlign: 'start' } as Record<string, unknown>, {
       get: (t, k) => (k in t ? t[k as string] : k === 'fillText'
         ? (text: string, x: number) => texts.push({ text, x, align: String(t.textAlign) })
-        : () => {}),
+        : k === 'measureText' ? (text: string) => ({ width: text.length * 10 }) : () => {}),
       set: (t, k, v) => { t[k as string] = v; return true; },
     }) as unknown as CanvasRenderingContext2D;
     const vp = view(0, 7);
-    r.render(ctx, main, vp, {} as Theme);
+    r.render(ctx, main, vp, { background: '#fff' } as Theme);
     expect(texts).toHaveLength(1);
     expect(texts[0].text).toBe('B');
     expect(texts[0].align).toBe('right');
     expect(texts[0].x).toBeLessThanOrEqual(barIndexToX(7, vp));
     expect(texts[0].x).toBeGreaterThan(barIndexToX(6, vp));
   });
+
+  /** A canvas that keeps each text's box (10 px a letter, 12 px high, from where it is aligned) and each chip under one. */
+  function recorder() {
+    const texts: { text: string; left: number; top: number; right: number; bottom: number }[] = [];
+    const chips: { x: number; y: number; w: number; h: number; fill: string }[] = [];
+    const state: Record<string, unknown> = { textAlign: 'start', textBaseline: 'alphabetic', fillStyle: '' };
+    const ctx = new Proxy(state, {
+      get: (t, k) => {
+        if (k in t) return t[k as string];
+        if (k === 'measureText') return (text: string) => ({ width: text.length * 10 });
+        if (k === 'fillText') {
+          return (text: string, x: number, y: number) => {
+            const w = text.length * 10;
+            const left = t.textAlign === 'right' ? x - w : x;
+            const top = t.textBaseline === 'bottom' ? y - 12 : t.textBaseline === 'top' ? y : y - 6;
+            texts.push({ text, left, top, right: left + w, bottom: top + 12 });
+          };
+        }
+        if (k === 'fillRect') return (x: number, y: number, w: number, h: number) => chips.push({ x, y, w, h, fill: String(t.fillStyle) });
+        return () => {};
+      },
+      set: (t, k, v) => { t[k as string] = v; return true; },
+    }) as unknown as CanvasRenderingContext2D;
+    return { ctx, texts, chips };
+  }
+  const overlaps = (a: { top: number; bottom: number }, b: { top: number; bottom: number }) => a.top < b.bottom && b.top < a.bottom;
+  const THEME = { background: '#fbfaf6' } as Theme;
+
+  it('stands on a chip of the chart’s ground, so it reads over what is under it', () => {
+    const { ctx, texts, chips } = recorder();
+    renderer({ id: 'b', data: other(0, () => 10) }).render(ctx, main, view(0, 7), THEME);
+    expect(chips).toHaveLength(1);
+    expect(chips[0].fill).toBe('#fbfaf6');
+    expect(chips[0].y).toBeLessThanOrEqual(texts[0].top);
+    expect(chips[0].y + chips[0].h).toBeGreaterThanOrEqual(texts[0].bottom);
+  });
+
+  it('keeps clear of an alert’s label at the plot’s right edge', () => {
+    const { ctx, texts } = recorder();
+    const r = renderer({ id: 'b', data: other(0, () => 10) });
+    const vp = view(0, 7);
+    // The line ends at 107 (y 86), the alert's label sits just above its line at the same price.
+    r.setReservedLevels(() => [107]);
+    r.render(ctx, main, vp, THEME);
+    const alertLabel = { top: 86 - 2 - 14, bottom: 86 - 2 };
+    expect(overlaps(texts[0], alertLabel)).toBe(false);
+  });
+
+  it('keeps two lines’ labels clear of each other where the lines end together', () => {
+    const { ctx, texts } = recorder();
+    renderer({ id: 'b', data: other(0, () => 10) }, { id: 'c', data: other(0, () => 20) }).render(ctx, main, view(0, 7), THEME);
+    expect(texts).toHaveLength(2);
+    expect(overlaps(texts[0], texts[1])).toBe(false);
+  });
 });
+

@@ -5,6 +5,27 @@ import { SymbolSeriesStore } from '../indicators/symbols/SymbolSeriesStore.js';
 
 /** Between a line's end and its label (px). */
 const LABEL_GAP = 4;
+/** A label's text: its size (px), and the chip of the chart's ground around it. */
+const LABEL_FONT_PX = 10;
+const LABEL_PAD_X = 3;
+const LABEL_HEIGHT = 14;
+/** How strongly the chip covers what is under it: the line stays faintly seen through it. */
+const CHIP_ALPHA = 0.85;
+/** A label tried this many heights above and below its line's end before it settles where it first went. */
+const LABEL_TRIES = 4;
+/** An alert's label sits this far above its line, at the plot's right edge, as AlertManager draws it. */
+const ALERT_LABEL_GAP = 2;
+
+/** A label's box on the plot, px. */
+interface LabelBox {
+  left: number;
+  top: number;
+  right: number;
+  bottom: number;
+}
+
+const overlaps = (a: LabelBox, b: LabelBox): boolean =>
+  a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
 
 export interface CompareSymbol {
   id: string;
@@ -47,6 +68,17 @@ export class CompareRenderer {
   private store = new SymbolSeriesStore();
   /** Each series' closes on the main bars, for the main series it was worked out for. */
   private aligned = new Map<string, { main: DataSeries; data: DataSeries; length: number; lastTime: number; closes: Float64Array }>();
+  /** The prices of the lines whose labels sit at the plot's right edge (price alerts): see `setReservedLevels`. */
+  private reservedLevels: () => readonly number[] = () => [];
+
+  /**
+   * The prices of lines labelled at the plot's right edge, just above the
+   * line (a price alert's): each compare's label keeps clear of them, as it
+   * does of the other compares' labels.
+   */
+  setReservedLevels(levels: () => readonly number[]): void {
+    this.reservedLevels = levels;
+  }
 
   setMode(mode: 'percent' | 'absolute'): void {
     this.mode = mode;
@@ -116,7 +148,7 @@ export class CompareRenderer {
     ctx: CanvasRenderingContext2D,
     mainData: DataSeries,
     viewport: ViewportState,
-    _theme: Theme,
+    theme: Theme,
   ): void {
     if (this.symbols.size === 0 || mainData.length === 0) return;
 
@@ -127,12 +159,63 @@ export class CompareRenderer {
     ctx.rect(chartRect.x, chartRect.y, chartRect.width, chartRect.height);
     ctx.clip();
 
+    // The lines first, then their labels over all of them.
+    const ends: { sym: CompareSymbol; x: number; y: number }[] = [];
     for (const sym of this.symbols.values()) {
       if (!sym.visible || sym.data.length === 0) continue;
-      this.renderSymbol(ctx, sym, mainData, viewport);
+      const end = this.renderSymbol(ctx, sym, mainData, viewport);
+      if (end) ends.push({ sym, ...end });
     }
+    this.renderLabels(ctx, ends, viewport, theme);
 
     ctx.restore();
+  }
+
+  /**
+   * Each line's label at its end, where the lines part (in percent mode they
+   * all start at the same point, and labels there would stack), on a chip of
+   * the chart's ground, clear of an alert's label and of the labels placed
+   * before it: tried above the end, then below, then further out.
+   */
+  private renderLabels(ctx: CanvasRenderingContext2D, ends: readonly { sym: CompareSymbol; x: number; y: number }[], viewport: ViewportState, theme: Theme): void {
+    if (ends.length === 0) return;
+    ctx.font = `bold ${LABEL_FONT_PX}px sans-serif`;
+    ctx.textBaseline = 'middle';
+    ctx.textAlign = 'right';
+    const taken = this.reservedBoxes(viewport);
+    for (const { sym, x, y } of ends) {
+      const width = ctx.measureText(sym.label).width + 2 * LABEL_PAD_X;
+      const box = this.placeLabel(x - LABEL_GAP, y, width, taken);
+      taken.push(box);
+      ctx.globalAlpha = CHIP_ALPHA;
+      ctx.fillStyle = theme.background;
+      ctx.fillRect(box.left, box.top, box.right - box.left, box.bottom - box.top);
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = sym.color;
+      ctx.fillText(sym.label, box.right - LABEL_PAD_X, (box.top + box.bottom) / 2);
+    }
+  }
+
+  /** The first free box `width` wide ending at `right`, by its line's end at `y`: above it, below it, then further out. */
+  private placeLabel(right: number, y: number, width: number, taken: readonly LabelBox[]): LabelBox {
+    const at = (top: number): LabelBox => ({ left: right - width, top, right, bottom: top + LABEL_HEIGHT });
+    const above = y - LABEL_GAP - LABEL_HEIGHT;
+    const below = y + LABEL_GAP;
+    for (let step = 0; step < LABEL_TRIES; step++) {
+      for (const box of [at(above - step * LABEL_HEIGHT), at(below + step * LABEL_HEIGHT)]) {
+        if (!taken.some((t) => overlaps(t, box))) return box;
+      }
+    }
+    return at(above);
+  }
+
+  /** Where the alerts' labels sit: a band just above each line, across the plot (their text runs left from its right edge). */
+  private reservedBoxes(viewport: ViewportState): LabelBox[] {
+    const { chartRect } = viewport;
+    return this.reservedLevels().map((price) => {
+      const bottom = priceToY(price, viewport) - ALERT_LABEL_GAP;
+      return { left: chartRect.x, top: bottom - LABEL_HEIGHT, right: chartRect.x + chartRect.width, bottom };
+    });
   }
 
   /** `sym`'s closes on the bars of `main` (NaN where it has none). */
@@ -213,14 +296,15 @@ export class CompareRenderer {
     });
   }
 
+  /** Draw `sym`'s line; where it ends on screen, or null when it has no point there. */
   private renderSymbol(
     ctx: CanvasRenderingContext2D,
     sym: CompareSymbol,
     mainData: DataSeries,
     viewport: ViewportState,
-  ): void {
+  ): { x: number; y: number } | null {
     const line = this.line(sym, mainData, viewport);
-    if (!line) return;
+    if (!line) return null;
 
     ctx.strokeStyle = sym.color;
     ctx.lineWidth = sym.lineWidth ?? 1.5;
@@ -240,15 +324,6 @@ export class CompareRenderer {
       drawn++;
     }
     ctx.stroke();
-
-    // At the line's end, where the lines part: in percent mode they all
-    // start at the same point, and labels there would stack.
-    if (end) {
-      ctx.fillStyle = sym.color;
-      ctx.font = `bold 10px sans-serif`;
-      ctx.textBaseline = 'bottom';
-      ctx.textAlign = 'right';
-      ctx.fillText(sym.label, end.x - LABEL_GAP, end.y - LABEL_GAP);
-    }
+    return end;
   }
 }
