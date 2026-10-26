@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { SANS_FONT_FAMILY, type ChartOptions } from '@tradecanvas/commons';
+import { layoutToolbar } from './toolbarLayout.js';
 
 /** Stand-in for the canvas-backed Chart: emits the menus' events on demand. */
 class FakeChart {
@@ -289,9 +290,7 @@ describe('ChartWidget toolbar parts of the host with no room', () => {
     // 400px for the chart's controls, 40 for each button that can fold still shown, 10 for each letter of the count.
     const shown = () => [...el.querySelectorAll('.tcw-toolbar-overflow')].filter((b) => !b.hasAttribute('data-tcw-folded')).length;
     const need = () => 400 + 40 * shown() + 10 * (handle.element.textContent?.length ?? 0);
-    const width = need();
-    Object.defineProperty(el, 'clientWidth', { configurable: true, get: () => width });
-    Object.defineProperty(el, 'scrollWidth', { configurable: true, get: need });
+    layoutToolbar(el, need(), need);
     await settled();
     expect(el.classList.contains('tcw-toolbar--collapsed')).toBe(false);
     handle.setText('12 unread');

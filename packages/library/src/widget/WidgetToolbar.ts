@@ -14,6 +14,8 @@ let toolbarCount = 0;
 
 /** Marks a button folded under "more" (the stylesheet hides it). */
 const FOLDED_ATTR = 'data-tcw-folded';
+/** The browser lays boxes out in 64ths of a pixel: a difference this small is the same edge. */
+const SUBPIXEL = 1 / 64;
 
 /** The heading of each unit's section in the interval menu. */
 const UNIT_HEADINGS = {
@@ -139,7 +141,7 @@ export class WidgetToolbar {
   /** The folding, as `fit` says; the menus and the keyboard are `fit`'s. */
   private refit(): void {
     const { el } = this;
-    const fits = () => el.scrollWidth <= el.clientWidth + 1;
+    const fits = () => this.fits();
     const items = [...el.querySelectorAll<HTMLElement>('.tcw-toolbar-overflow')];
     for (const item of items) item.removeAttribute(FOLDED_ATTR);
     el.classList.remove('tcw-toolbar--collapsed', 'tcw-toolbar--icons');
@@ -156,6 +158,34 @@ export class WidgetToolbar {
       item.setAttribute(FOLDED_ATTR, '');
       break;
     }
+  }
+
+  /**
+   * Whether the toolbar's controls end inside its content box: the padding
+   * at its end clear (its left right to left), in its own layout px, as a
+   * container's transform or zoom leaves them. Widths are fractional ("more"
+   * ending at 1366.19 in a bar 1365 wide): the reach is rounded up to a
+   * whole px and the room down, so no share of a pixel hangs past the edge.
+   */
+  private fits(): boolean {
+    const { el } = this;
+    const box = el.getBoundingClientRect();
+    // The width on screen differs from the layout's by its rounding, unless something scales it.
+    const scale = el.offsetWidth > 0 && Math.abs(box.width - el.offsetWidth) >= 1 ? box.width / el.offsetWidth : 1;
+    const style = getComputedStyle(el);
+    const rtl = style.direction === 'rtl';
+    const px = (value: string) => parseFloat(value) || 0;
+    const room = box.width / scale - (rtl
+      ? px(style.borderLeftWidth) + px(style.paddingLeft)
+      : px(style.borderRightWidth) + px(style.paddingRight));
+    let reach = 0;
+    for (const child of el.children) {
+      // What the stylesheet hides (a folded button, "more" with nothing under it) has no box.
+      if (child.getClientRects().length === 0) continue;
+      const at = child.getBoundingClientRect();
+      reach = Math.max(reach, (rtl ? box.right - at.left : at.right - box.left) / scale);
+    }
+    return Math.ceil(reach - SUBPIXEL) <= Math.floor(room + SUBPIXEL);
   }
 
   /** What is folded, and whether "more" shows, as one word to tell a refit that changed them. */

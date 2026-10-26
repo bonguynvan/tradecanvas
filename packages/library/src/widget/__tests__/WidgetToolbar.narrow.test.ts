@@ -4,6 +4,7 @@ import { WidgetToolbar } from '../WidgetToolbar.js';
 import { WidgetDropdown } from '../WidgetDropdown.js';
 import { EN_TRANSLATOR } from '../i18n.js';
 import type { ToolbarCallbacks, WidgetState } from '../types.js';
+import { layoutToolbar } from './toolbarLayout.js';
 
 let root: HTMLDivElement;
 let toolbar: WidgetToolbar;
@@ -222,11 +223,10 @@ describe('watchNarrow', () => {
 });
 
 describe('WidgetToolbar — fitting its width', () => {
-  /** Lay the toolbar out `width` px wide, needing `need(toolbar)` px. */
-  function layout(width: number, need: (el: HTMLElement) => number) {
+  /** Lay the toolbar out `width` px wide, its controls reaching `need(toolbar)` px (see `layoutToolbar`). */
+  function layout(width: number, need: (el: HTMLElement) => number, scale = 1) {
     const el = root.querySelector<HTMLElement>('.tcw-toolbar')!;
-    Object.defineProperty(el, 'clientWidth', { configurable: true, get: () => width });
-    Object.defineProperty(el, 'scrollWidth', { configurable: true, get: () => need(el) });
+    layoutToolbar(el, width, () => need(el), scale);
     return el;
   }
   /** 500px for the chart's own controls, 60 for each button on the right still shown. */
@@ -262,6 +262,47 @@ describe('WidgetToolbar — fitting its width', () => {
     toolbar.fit();
     expect(folded(el)).toEqual([]);
     expect(iconsOnly(el)).toBe(false);
+  });
+
+  describe('to the pixel', () => {
+    // Widths are fractional: "more" ended at 1366.19 in a toolbar 1365 wide (Studio), whose scroll
+    // width, in whole px, said 1366 and was let through as within a pixel of its 1365.
+    it('folds one more button when the last runs past the end by a share of a pixel', () => {
+      const el = layout(700, (t) => need(t) + 20.19); // 700.19 with two folded
+      toolbar.fit();
+      expect(folded(el)).toEqual(['Screenshot', 'Chart Settings', 'Toggle theme']);
+    });
+
+    it('keeps what ends exactly at the end', () => {
+      const el = layout(680, need);
+      toolbar.fit();
+      expect(folded(el)).toEqual(['Chart Settings', 'Toggle theme']);
+    });
+
+    // The scroll width counts the padding at the end as room: "more" sat on the edge, in a bar that
+    // keeps 8 px clear at its end everywhere else.
+    it('keeps the padding at its end clear', () => {
+      const el = layout(708, (t) => need(t) + 25); // 705 with two folded: in the padding
+      el.style.paddingRight = '8px';
+      toolbar.fit();
+      expect(folded(el)).toEqual(['Screenshot', 'Chart Settings', 'Toggle theme']);
+    });
+
+    it('right to left, measures from its right edge to the padding on its left', () => {
+      const el = root.querySelector<HTMLElement>('.tcw-toolbar')!;
+      el.style.direction = 'rtl';
+      el.style.paddingLeft = '8px';
+      layout(708, (t) => need(t) + 20.19); // 700.19 with two folded
+      toolbar.fit();
+      expect(folded(el)).toEqual(['Screenshot', 'Chart Settings', 'Toggle theme']);
+    });
+
+    // Boxes on screen are scaled by a container's transform; the room is the toolbar's own px.
+    it('fits the same in a scaled container', () => {
+      const el = layout(700, need, 0.75);
+      toolbar.fit();
+      expect(folded(el)).toEqual(['Chart Settings', 'Toggle theme']);
+    });
   });
 
   describe('under the keyboard and the "more" menu', () => {
