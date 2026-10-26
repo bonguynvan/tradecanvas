@@ -274,6 +274,20 @@ describe('WidgetSymbolSearch with a search function', () => {
     expect(empty()).toBeUndefined();
   });
 
+  it('still lists a feed’s answer that carries a "__proto__" key, and lists again when opened again', async () => {
+    const answer = () => JSON.parse('[{"symbol":"AAPL","__proto__":{"type":5,"exchange":{"toString":0}}}]') as SymbolInfo[];
+    const open = () => search.open({ symbols: [{ symbol: 'AAPL', description: 'Apple' }], current: 'MSFT', search: async () => answer() });
+    open();
+    type('a');
+    await vi.advanceTimersByTimeAsync(SYMBOL_SEARCH_DEBOUNCE_MS);
+    expect(rowText()).toEqual(['AAPL']);
+    expect(rows()[0].querySelector('.tcw-ss-desc')?.textContent).toBe('Apple');
+    expect(rows()[0].querySelector('.tcw-ss-kind')?.textContent).toBe('');
+    search.close();
+    open();
+    expect(rowText()).toEqual(['AAPL']);
+  });
+
   it('cancels a query that a newer one replaced', async () => {
     const signals: AbortSignal[] = [];
     const fn = vi.fn((_q: string, signal: AbortSignal) => {

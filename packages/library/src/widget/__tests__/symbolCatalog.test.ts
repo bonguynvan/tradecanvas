@@ -75,6 +75,15 @@ describe('mergeSymbolInfo', () => {
     expect(mergeSymbolInfo(one, null)).toEqual(one);
     expect(mergeSymbolInfo(undefined, undefined)).toBeUndefined();
   });
+
+  it('copies a "__proto__" key of a JSON feed as no field, leaving the merged info a plain object', () => {
+    const over = JSON.parse('{"symbol":"A","__proto__":{"type":5,"exchange":{"toString":0}}}') as SymbolInfo;
+    const merged = mergeSymbolInfo({ symbol: 'A', description: 'Alpha' }, over)!;
+    expect(Object.getPrototypeOf(merged)).toBe(Object.prototype);
+    expect(merged.type).toBeUndefined();
+    expect(merged.exchange).toBeUndefined();
+    expect(merged.description).toBe('Alpha');
+  });
 });
 
 describe('readSymbolResults', () => {
@@ -92,6 +101,17 @@ describe('readSymbolResults', () => {
 
   it('reads anything but a list as no results', () => {
     for (const found of [undefined, null, 'VNM', { symbol: 'VNM' }]) expect(readSymbolResults(found)).toEqual([]);
+  });
+
+  it('keeps no "__proto__" key of a JSON feed, so nothing it holds reaches a row by a later merge', () => {
+    const [info] = readSymbolResults(JSON.parse('[{"symbol":"A","description":"Alpha","__proto__":{"type":5}}]'));
+    expect(Object.prototype.hasOwnProperty.call(info, '__proto__')).toBe(false);
+    expect(info).toEqual({ symbol: 'A', description: 'Alpha' });
+    const merged = mergeSymbolInfo({ symbol: 'A' }, info)!;
+    expect(Object.getPrototypeOf(merged)).toBe(Object.prototype);
+    expect(merged.type).toBeUndefined();
+    const { info: given } = readSymbolCatalog(JSON.parse('[{"symbol":"B","__proto__":{"exchange":7}}]'));
+    expect(Object.prototype.hasOwnProperty.call(given.get('B'), '__proto__')).toBe(false);
   });
 });
 

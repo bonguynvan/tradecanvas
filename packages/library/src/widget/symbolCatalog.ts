@@ -49,10 +49,13 @@ export function readSymbolCatalog(raw: unknown): SymbolCatalog {
 /**
  * A copy of `info` named `symbol`, its words kept only where they are text:
  * a JSON feed's numeric exchange code, a null or a blank says nothing, so it
- * neither shows nor erases what is known.
+ * neither shows nor erases what is known. A "__proto__" key, which JSON.parse
+ * keeps as a field, is dropped: copied onto another object by assignment, it
+ * would hand that object fields no one cleaned.
  */
 export function cleanSymbolInfo(info: object, symbol: string): SymbolInfo {
-  const isWords = ([key, value]: [string, unknown]) => !TEXT_FIELDS.has(key) || (typeof value === 'string' && value.trim() !== '');
+  const isWords = ([key, value]: [string, unknown]) =>
+    key !== '__proto__' && (!TEXT_FIELDS.has(key) || (typeof value === 'string' && value.trim() !== ''));
   return { ...Object.fromEntries(Object.entries(info).filter(isWords)), symbol } as SymbolInfo;
 }
 
@@ -76,11 +79,9 @@ export function readSymbolResults(found: unknown): SymbolInfo[] {
 export function mergeSymbolInfo(base: SymbolInfo | undefined, over: SymbolInfo | null | undefined): SymbolInfo | undefined {
   if (!over) return base;
   if (!base) return over;
-  const merged: Record<string, unknown> = { ...base };
-  for (const [key, value] of Object.entries(over)) {
-    if (value !== undefined && value !== null) merged[key] = value;
-  }
-  return merged as unknown as SymbolInfo;
+  // Defined, not assigned: a "__proto__" field is copied as a field and never swaps the copy's prototype.
+  const given = Object.entries(over).filter(([, value]) => value !== undefined && value !== null);
+  return Object.fromEntries([...Object.entries(base), ...given]) as unknown as SymbolInfo;
 }
 
 /**
