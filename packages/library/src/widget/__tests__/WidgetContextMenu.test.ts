@@ -97,6 +97,50 @@ describe('WidgetContextMenu', () => {
     });
   });
 
+  describe('under a button', () => {
+    const MENU_W = 150;
+    const left = () => parseFloat(host.querySelector<HTMLElement>('.tcw-context-menu')!.style.left);
+    const top = () => parseFloat(host.querySelector<HTMLElement>('.tcw-context-menu')!.style.top);
+    const button = (l: number, r: number) => {
+      const btn = document.createElement('button');
+      host.appendChild(btn);
+      btn.getBoundingClientRect = () => ({ left: l, right: r, top: 10, bottom: 40, width: r - l, height: 30, x: l, y: 10, toJSON: () => ({}) }) as DOMRect;
+      return btn;
+    };
+    beforeEach(() => {
+      Object.defineProperty(host, 'clientWidth', { value: 400, configurable: true });
+      Object.defineProperty(host, 'clientHeight', { value: 300, configurable: true });
+      vi.spyOn(HTMLElement.prototype, 'offsetWidth', 'get').mockReturnValue(MENU_W);
+    });
+    afterEach(() => {
+      vi.restoreAllMocks();
+      host.removeAttribute('dir');
+    });
+
+    it('starts at the button’s start edge, or ends at its end edge without room', () => {
+      menu.openUnder(ENTRIES, button(100, 160), () => {});
+      expect([left(), top()]).toEqual([100, 42]);
+      menu.openUnder(ENTRIES, button(300, 360), () => {});
+      expect(left() + MENU_W).toBe(360);
+    });
+
+    it('ends at the button’s end edge with `end` ("more", at the end of the toolbar)', () => {
+      menu.openUnder(ENTRIES, button(340, 368), () => {}, 'end');
+      expect(left() + MENU_W).toBe(368);
+    });
+
+    it('mirrors both right to left: the start edge is the button’s right, the end edge its left', () => {
+      host.dir = 'rtl';
+      menu.openUnder(ENTRIES, button(200, 260), () => {});
+      expect(left() + MENU_W).toBe(260);
+      // No room before its start: it starts at the button's left.
+      menu.openUnder(ENTRIES, button(20, 80), () => {});
+      expect(left()).toBe(20);
+      menu.openUnder(ENTRIES, button(4, 32), () => {}, 'end');
+      expect(left()).toBe(4);
+    });
+  });
+
   describe('taller than the room', () => {
     const el = () => host.querySelector<HTMLElement>('.tcw-context-menu')!;
     let sheet: HTMLStyleElement;

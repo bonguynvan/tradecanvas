@@ -128,7 +128,7 @@ export class WidgetLayoutsUI {
       return;
     }
     const { session } = this;
-    const { t, root } = this.host;
+    const { t } = this.host;
     let recent: SavedLayoutSummary[] = [];
     try {
       recent = (await session.list()).slice(0, RECENT_LAYOUTS);
@@ -148,16 +148,15 @@ export class WidgetLayoutsUI {
     }
     entries.push('separator', { id: 'manage', label: t('layouts.open'), icon: 'folder' });
 
-    const at = anchor.getBoundingClientRect();
-    const box = root.getBoundingClientRect();
-    this.menu.open(entries, at.left - box.left, at.bottom - box.top + 2, (id) => {
+    // From the button's start edge (its right, right to left), or ending at its end without room.
+    this.menu.openUnder(entries, anchor, (id) => {
       if (id === 'save') void this.save();
       else if (id === 'saveAs') this.promptSaveAs();
       else if (id === 'rename') this.promptRename();
       else if (id === 'autoSave') session.setAutoSave(!session.isAutoSave());
       else if (id === 'manage') void this.openDialog();
       else if (id.startsWith('open:')) void this.open(id.slice('open:'.length));
-    }, anchor);
+    });
   }
 
   destroy(): void {

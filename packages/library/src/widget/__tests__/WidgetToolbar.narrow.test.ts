@@ -360,6 +360,36 @@ describe('WidgetToolbar — fitting its width', () => {
   });
 });
 
+describe('WidgetToolbar — the "more" menu under its button', () => {
+  const MENU_W = 200;
+  const menuLeft = () => parseFloat(root.querySelector<HTMLElement>('.tcw-context-menu:not([hidden])')!.style.left);
+  const place = (l: number, r: number) => {
+    more().getBoundingClientRect = () => ({ left: l, right: r, top: 0, bottom: 36, width: r - l, height: 36, x: l, y: 0, toJSON: () => ({}) }) as DOMRect;
+  };
+  beforeEach(() => {
+    root.setAttribute('data-tcw-narrow', '');
+    Object.defineProperty(root, 'clientWidth', { configurable: true, value: 800 });
+    Object.defineProperty(root, 'clientHeight', { configurable: true, value: 600 });
+    vi.spyOn(HTMLElement.prototype, 'offsetWidth', 'get').mockImplementation(function (this: HTMLElement) {
+      return this.classList.contains('tcw-context-menu') ? MENU_W : 0;
+    });
+  });
+  afterEach(() => vi.restoreAllMocks());
+
+  it('ends where "more" ends, at the toolbar’s end', () => {
+    place(764, 792);
+    more().click();
+    expect(menuLeft() + MENU_W).toBe(792);
+  });
+
+  it('right to left, where "more" is at the left end, ends where it ends too: under it, not beside it', () => {
+    root.dir = 'rtl';
+    place(8, 36);
+    more().click();
+    expect(menuLeft()).toBe(8);
+  });
+});
+
 describe('WidgetToolbar — a name that changes width', () => {
   it('refits when the layout open now is named, or changes, and only then', () => {
     const frames: (() => void)[] = [];

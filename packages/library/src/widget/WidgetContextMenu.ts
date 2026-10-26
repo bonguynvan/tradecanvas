@@ -25,6 +25,8 @@ type MenuItem = Exclude<ContextMenuEntry, 'separator'>;
 
 /** Room kept between the menu and the edge it would touch. */
 const MENU_MARGIN = 4;
+/** Room between a menu and the button it hangs under. */
+const MENU_GAP = 2;
 /**
  * How long the pointer rests on an entry before its submenu opens, or the
  * open one closes: crossing an entry on the way into a submenu does neither.
@@ -128,7 +130,8 @@ export class WidgetContextMenu {
    * Open at (`x`, `y`) in the host's coordinates. It opens up or to the left
    * of the point when there is no room below or to the right, ending at
    * `xBack` then (a menu under a button ends at the button's far edge), and
-   * stays inside both the host and the window.
+   * stays inside both the host and the window. With `before` it ends at
+   * `xBack` first, and starts at `x` only without room before it.
    */
   open(
     entries: readonly ContextMenuEntry[],
@@ -138,8 +141,29 @@ export class WidgetContextMenu {
     anchor?: HTMLElement,
     onRemove?: (id: string) => void,
     xBack = x,
+    before = false,
   ): void {
-    this.show(entries, { x, y, xBack, yBack: y }, onPick, anchor, onRemove, true);
+    this.show(entries, { x, y, xBack, yBack: y, before }, onPick, anchor, onRemove, true);
+  }
+
+  /**
+   * Open under `anchor`, `gap` px below it, lined up with it as the
+   * toolbar's own menus are, mirrored right to left: from its start edge
+   * (`'start'`), or ending at its end edge (`'end'`: "more", at the
+   * toolbar's end); from its other edge when there is no room that way.
+   */
+  openUnder(
+    entries: readonly ContextMenuEntry[],
+    anchor: HTMLElement,
+    onPick: (id: string) => void,
+    align: 'start' | 'end' = 'start',
+    gap = MENU_GAP,
+  ): void {
+    const at = anchor.getBoundingClientRect();
+    const box = this.host.getBoundingClientRect();
+    // Ending at the button's right edge first: its end left to right, its start right to left.
+    const before = (align === 'end') !== this.rtl();
+    this.open(entries, at.left - box.left, at.bottom - box.top + gap, onPick, anchor, undefined, at.right - box.left, before);
   }
 
   /**

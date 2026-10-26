@@ -437,9 +437,8 @@ export class WidgetToolbar {
         : { id: String(i), label, icon: btn.dataset.icon, checked: pressed === 'true' };
     });
     this.moreMenu ??= new WidgetContextMenu(root, this.t('toolbar.more'));
-    const at = anchor.getBoundingClientRect();
-    const box = root.getBoundingClientRect();
-    this.moreMenu.open(entries, at.right - box.left, at.bottom - box.top + 2, (id) => buttons[Number(id)]?.click(), anchor);
+    // "More" is at the toolbar's end: the menu ends where it ends (its left edge, right to left).
+    this.moreMenu.openUnder(entries, anchor, (id) => buttons[Number(id)]?.click(), 'end');
   }
 
   /** A host's own button, on the left or the right of the toolbar. */

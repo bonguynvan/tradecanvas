@@ -205,6 +205,26 @@ describe('ChartWidget toolbar parts of the host with no room', () => {
     expect([x, y]).toEqual([500, 42]);
   });
 
+  it.each([
+    ['left to right', 'ltr', (left: number) => left, 340],
+    ['right to left', 'rtl', (left: number) => left + 180, 400],
+  ] as const)('lines a menu of the host up under its button, %s, as the toolbar’s own menus', (_how, dir, startEdge, expected) => {
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false, dir });
+    const handle = widget.addToolbarDropdown({ id: 'scans', label: 'Scans', side: 'right', items: () => [{ label: 'A', onSelect: () => {} }] })!;
+    // Clicked on its button, which shows: a wide widget.
+    root().removeAttribute('data-tcw-narrow');
+    Object.defineProperty(root(), 'clientWidth', { configurable: true, value: 1000 });
+    Object.defineProperty(root(), 'clientHeight', { configurable: true, value: 600 });
+    vi.spyOn(HTMLElement.prototype, 'offsetWidth', 'get').mockImplementation(function (this: HTMLElement) {
+      return this.classList.contains('tcw-context-menu') ? 180 : 0;
+    });
+    handle.element.getBoundingClientRect = () => ({ left: 340, right: 400, top: 0, bottom: 36, width: 60, height: 36, x: 340, y: 0, toJSON: () => ({}) }) as DOMRect;
+    handle.element.click();
+    const menu = [...host.querySelectorAll<HTMLElement>('.tcw-context-menu')].find((m) => !m.hidden)!;
+    // Its start edge on the button's: the left, or right to left the right.
+    expect(startEdge(parseFloat(menu.style.left))).toBe(expected);
+  });
+
   /** The menus showing now, by name. */
   const openMenus = () => [...host.querySelectorAll<HTMLElement>('.tcw-context-menu')]
     .filter((menu) => !menu.hidden)
