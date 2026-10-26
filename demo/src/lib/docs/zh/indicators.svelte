@@ -125,7 +125,7 @@ chart.setIndicatorIntervals(ema, null)  // 恢复为全部周期`}</code></pre>
   就是每根K线的典型价格，因此日线图请选 <code>'week'</code> 或 <code>'month'</code>。<code>svwap</code> 是带 σ 通道的
   交易日 VWAP，<code>avwap</code> 从你锚定的K线开始。<code>svwap</code>、<code>mtfma</code>、前一日价位线和市场轮廓的
   交易日也按同一时区划分。<code>mtfma</code> 的 2h 至 12h 周期同样从交易所的午夜开始，而数据源自身的 4h K线仍按
-  UTC 的整点网格划分；在日线上，<code>svwap</code> 只给出主线，不带通道。
+  UTC 的整点网格划分；在日线上，<code>svwap</code> 只给出主线，不带通道。在 ChartWidget 中，其他起点的 VWAP 会在图例、标签和对象面板中带上起点名称（'VWAP 周'），起点及其选项按组件的语言显示；CSV 列仍为 <code>VWAP</code>。
 </p>
 <pre><code>{`chart.addIndicator('vwap')                      // 每个交易日重新累计
 chart.addIndicator('vwap', { anchor: 'week' })  // 每周一：用于日线

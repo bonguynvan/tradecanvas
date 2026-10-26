@@ -131,7 +131,7 @@ chart.setIndicatorIntervals(ema, null)  // 다시 모든 시간 단위에 표시
   <code>'week'</code>나 <code>'month'</code>를 고르세요. <code>svwap</code>은 σ 밴드가 있는 세션 VWAP이고,
   <code>avwap</code>은 고정한 봉부터 시작합니다. <code>svwap</code>, <code>mtfma</code>, 전일 가격선, 마켓 프로파일의
   세션도 같은 시간대로 날짜를 나눕니다. <code>mtfma</code>의 2h부터 12h까지의 주기도 거래소 자정부터 시작하고(피드 자체의
-  4h 봉은 UTC 기준 그대로), 일봉에서 <code>svwap</code>은 밴드 없이 선만 표시합니다.
+  4h 봉은 UTC 기준 그대로), 일봉에서 <code>svwap</code>은 밴드 없이 선만 표시합니다. ChartWidget에서는 다른 기준점의 VWAP이 범례, 칩, 개체 패널에서 기준점 이름과 함께('VWAP 주') 표시되고, 기준점과 그 선택지는 위젯의 언어로 나옵니다. CSV 열은 <code>VWAP</code> 그대로입니다.
 </p>
 <pre><code>{`chart.addIndicator('vwap')                      // 거래일마다 다시 계산
 chart.addIndicator('vwap', { anchor: 'week' })  // 매주 월요일: 일봉용

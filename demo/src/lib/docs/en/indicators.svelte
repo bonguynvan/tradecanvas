@@ -135,7 +135,7 @@ chart.setIndicatorIntervals(ema, null)  // all of them again`}</code></pre>
   with σ bands, and <code>avwap</code> starts at the bar you anchor it to. <code>svwap</code>, <code>mtfma</code>,
   the prior-day lines and the market profile's sessions count their days in the same zone.
   <code>mtfma</code>'s 2h to 12h frames start at the exchange's midnight too, while a feed's own 4h candles
-  stay on UTC's grid, and on daily bars <code>svwap</code> gives its line alone, without bands.
+  stay on UTC's grid, and on daily bars <code>svwap</code> gives its line alone, without bands. In ChartWidget a VWAP at another anchor is named by it ('VWAP Week') in the legend, the chips and the Objects panel, and the anchor and its choices read in the widget's language; the CSV column stays <code>VWAP</code>.
 </p>
 <pre><code>{`chart.addIndicator('vwap')                      // starts again each trading day
 chart.addIndicator('vwap', { anchor: 'week' })  // each Monday: for daily bars

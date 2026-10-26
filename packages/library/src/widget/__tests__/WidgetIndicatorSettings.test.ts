@@ -5,6 +5,8 @@ import { TC_SERIES_COLORS } from '@tradecanvas/commons';
 import { IndicatorEngine, registerBuiltInIndicators } from '@tradecanvas/core';
 import { WidgetIndicatorSettings, type IndicatorSettingsTarget } from '../WidgetIndicatorSettings.js';
 import { lineSourcesFor } from '../ChartWidget.js';
+import { createTranslator, resolveMessages, type MessageKey } from '../i18n.js';
+import { JA_MESSAGES } from '../locales/ja.js';
 
 const engine = new IndicatorEngine();
 registerBuiltInIndicators(engine);
@@ -93,6 +95,21 @@ describe('WidgetIndicatorSettings', () => {
     expect(select.value).toBe('session');
     change(select, 'all');
     expect(onApply).toHaveBeenLastCalledWith('v1', { anchor: 'all' });
+  });
+
+  it('names VWAP’s anchor and its choices in the widget’s language', () => {
+    const d = descriptor('vwap');
+    const target = { instanceId: 'v1', indicatorId: 'vwap', name: d.name, defaults: d.defaultConfig, params: { ...d.defaultConfig }, inputs: d.inputs, plots: d.plots };
+    dialog.open(target);
+    const choices = () => [...host.querySelectorAll<HTMLOptionElement>('.tcw-modal-body select option')].map((o) => o.textContent);
+    expect(choices()).toEqual(['Session', 'Week', 'Month', 'All bars']);
+    dialog.destroy();
+    const ja = createTranslator(resolveMessages('ja', JA_MESSAGES));
+    dialog = new WidgetIndicatorSettings(host, { onApply, onStyle, onLevels, onIntervals, onSaveDefault, onClose }, ja);
+    dialog.open(target);
+    expect(labels()).toEqual([JA_MESSAGES['indicatorInput.anchor']]);
+    expect(choices()).toEqual(['session', 'week', 'month', 'all'].map((a) => JA_MESSAGES[`indicatorInput.anchor.${a}` as MessageKey]));
+    expect(choices()).not.toContain('session');
   });
 });
 

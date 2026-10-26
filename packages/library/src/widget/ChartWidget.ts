@@ -27,6 +27,7 @@ import { TOOL_HOTKEYS, toolShortcuts } from './drawingHotkeys.js';
 import { WidgetChartNav } from './WidgetChartNav.js';
 import { WidgetAlertsPanel, describeAlert, type AlertListItem, type AlertSource } from './WidgetAlertsPanel.js';
 import { indicatorChipLabel } from '../indicatorLabel.js';
+import { widgetIndicatorLabel } from './indicatorInputWords.js';
 import { readChartTypeOptions, type ChartTypeOptions } from '@tradecanvas/commons';
 import { applyWidgetUI, resolveWidgetUI, typeSize, type ResolvedWidgetUI, type WidgetUIPreset, type WidgetUITheme } from './widgetUI.js';
 import { WidgetObjectTree, drawingTypeLabel } from './WidgetObjectTree.js';
@@ -3571,7 +3572,7 @@ export class ChartWidget {
     // the full name in the tooltip.
     const indicators = this.chart.getActiveIndicators().map((i) => ({
       instanceId: i.instanceId,
-      name: indicatorChipLabel(i.id, i.params, i.descriptor.defaultConfig, i.descriptor.shortName),
+      name: widgetIndicatorLabel(i, this.t),
       title: i.descriptor.name,
       visible: i.visible,
     }));
@@ -4746,7 +4747,7 @@ export class ChartWidget {
   private syncIndicatorsFromChart(): void {
     const next = new Map<string, ActiveIndicatorInfo>();
     for (const a of this.chart.getActiveIndicators()) {
-      next.set(a.instanceId, { id: a.id, label: indicatorChipLabel(a.id, a.params, a.descriptor.defaultConfig, a.descriptor.shortName) });
+      next.set(a.instanceId, { id: a.id, label: widgetIndicatorLabel(a, this.t) });
     }
     this.state = { ...this.state, activeIndicators: next };
     this.updateUI();
@@ -5323,7 +5324,7 @@ export class ChartWidget {
       const values = offInterval ? [] : legendValues(ind.descriptor, point, style?.colors ?? [], style?.plots);
       return {
         instanceId: ind.instanceId,
-        label: indicatorChipLabel(ind.id, ind.params, ind.descriptor.defaultConfig, ind.descriptor.shortName),
+        label: widgetIndicatorLabel(ind, this.t),
         visible: ind.visible,
         offInterval,
         values: values.map((v) => ({

@@ -137,7 +137,7 @@ chart.setIndicatorIntervals(ema, null)  // lại hiện trên mọi khung`}</cod
   còn <code>avwap</code> bắt đầu tại nến bạn neo. <code>svwap</code>, <code>mtfma</code>, các đường của ngày trước và
   các phiên của market profile cũng đếm ngày theo múi giờ đó. Các khung 2h đến 12h của <code>mtfma</code> cũng
   bắt đầu từ nửa đêm của sàn, còn nến 4h của chính nguồn dữ liệu vẫn theo lưới giờ UTC; trên nến ngày,
-  <code>svwap</code> chỉ cho đường chính, không có các dải.
+  <code>svwap</code> chỉ cho đường chính, không có các dải. Trong ChartWidget, VWAP với mốc khác được gọi kèm tên mốc ('VWAP Tuần') ở chú giải, chip và bảng Đối tượng, còn mốc và các lựa chọn của nó hiện theo ngôn ngữ của widget; cột CSV vẫn là <code>VWAP</code>.
 </p>
 <pre><code>{`chart.addIndicator('vwap')                      // tính lại mỗi ngày giao dịch
 chart.addIndicator('vwap', { anchor: 'week' })  // mỗi thứ Hai: cho nến ngày

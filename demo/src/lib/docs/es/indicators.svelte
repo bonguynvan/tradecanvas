@@ -144,7 +144,7 @@ chart.setIndicatorIntervals(ema, null)  // todas otra vez`}</code></pre>
   VWAP de sesión con bandas σ, y <code>avwap</code> empieza en la barra a la que lo anclas. <code>svwap</code>,
   <code>mtfma</code>, las líneas del día anterior y las sesiones del perfil de mercado cuentan sus días en la misma zona.
   Los marcos de 2h a 12h de <code>mtfma</code> también empiezan a la medianoche de la bolsa, mientras que las velas de 4h
-  del propio feed siguen la cuadrícula de UTC, y en barras diarias <code>svwap</code> da solo su línea, sin bandas.
+  del propio feed siguen la cuadrícula de UTC, y en barras diarias <code>svwap</code> da solo su línea, sin bandas. En ChartWidget, un VWAP con otro anclaje lleva su nombre ('VWAP Semana') en la leyenda, las fichas y el panel de objetos, y el anclaje y sus opciones se leen en el idioma del widget; la columna del CSV sigue siendo <code>VWAP</code>.
 </p>
 <pre><code>{`chart.addIndicator('vwap')                      // vuelve a empezar cada día de negociación
 chart.addIndicator('vwap', { anchor: 'week' })  // cada lunes: para barras diarias
