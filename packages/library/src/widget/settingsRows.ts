@@ -190,7 +190,9 @@ export function numberRow(
   const input = document.createElement('input');
   input.type = 'number';
   input.className = 'tcw-settings-number';
-  input.min = String(limits.min ?? 0);
+  // The min attribute is also where the arrows step from: at 1e-8, the up arrow turns 5 into 5.00000001 and an
+  // empty field into 1e-8. It stays 0, and the smallest number taken is checked on change.
+  input.min = '0';
   input.step = limits.step;
   if (Number.isFinite(limits.max)) input.max = String(limits.max);
   input.placeholder = t('settings.auto');

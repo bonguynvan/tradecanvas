@@ -70,6 +70,17 @@ const type = (input: HTMLInputElement, value: string) => {
   input.dispatchEvent(new Event('change'));
 };
 const tab = (name: string) => document.querySelector<HTMLButtonElement>(`[role="tab"][data-tab="${name}"]`)!.click();
+/**
+ * What the up arrow writes in a number field, as a browser steps it: a field of step 'any' steps by the default
+ * step, 1, from its step base, which is its min. jsdom's stepUp() takes no step 'any', so a copy of step 1 is stepped.
+ */
+const arrowUp = (input: HTMLInputElement): string => {
+  const copy = input.cloneNode() as HTMLInputElement;
+  copy.step = '1';
+  copy.value = input.value;
+  copy.stepUp();
+  return copy.value;
+};
 
 describe('settings of the chart’s type', () => {
   it('offers Renko’s box and ATR length, Auto when empty', () => {
@@ -109,13 +120,23 @@ describe('settings of the chart’s type', () => {
       changes = [];
       settings!.open(DEFAULT_SETTINGS, chartType);
       const input = field(label)!;
-      expect(Number(input.min), label).toBe(1e-8);
       type(input, '1e-9');
       expect(changes, label).toEqual([]);
       expect(input.getAttribute('aria-invalid'), label).not.toBeNull();
       type(input, '0.00000001');
       expect(changes.at(-1), label).toEqual({ chartTypeOptions: options(1e-8) });
       expect(input.hasAttribute('aria-invalid'), label).toBe(false);
+      settings!.close();
+    }
+  });
+
+  it('steps a box, reversal or range by whole numbers from 0 with the arrows, not from the smallest it takes', () => {
+    for (const [chartType, label] of [['renko', 'Box size'], ['kagi', 'Reversal'], ['pointAndFigure', 'Box size'], ['rangeBars', 'Range']] as const) {
+      settings!.open(DEFAULT_SETTINGS, chartType);
+      const input = field(label)!;
+      expect(arrowUp(input), `${label} (Auto)`).toBe('1');
+      input.value = '5';
+      expect(arrowUp(input), label).toBe('6');
       settings!.close();
     }
   });
