@@ -745,7 +745,7 @@ const dayStart = timeframeBucketStart(trade.time, '1d', { timeZone: 'Asia/Ho_Chi
 </p>
 <p>
   일봉은 차트가 어떤 시간대로 보여 주든 그 봉이 나타내는 날짜를 보여 줍니다. 00:00 UTC로 찍힌 봉은 UTC 날짜를,
-  거래소 자정에 맞춰 만든 봉은 거래소의 날짜를 보여 줍니다(시간 축, 십자선과 그 카드에서). 봉을 직접 만들 때는
+  거래소 자정에 맞춰 만든 봉은 거래소의 날짜를 보여 줍니다(시간 축, 십자선과 그 카드, Alt 클릭으로 고정하는 툴팁, 화면 낭독기가 읽는 봉의 시각에서). 봉을 직접 만들 때는
   <code>timeframeBucketStart(time, timeframe, {'{'} timeZone {'}'})</code>가 어떤 시각이 속한 봉의 시작 시각을 알려 줍니다.
 </p>
 

@@ -76,4 +76,29 @@ describe('Chart.setMarket', () => {
     chart.setSymbolInfo({ symbol: 'AAPL', timeZone: 'America/New_York' });
     expect(parts.timeAxis.exchangeZone).toBe('America/New_York');
   });
+
+  describe('dates the days built at the exchange’s midnight, shown in UTC', () => {
+    // 20 to 23 October 2026 in Ho Chi Minh City: each starts at 17:00 UTC the day before.
+    const vnDays = (): OHLCBar[] => [19, 20, 21, 22].map((d) => ({ time: Date.UTC(2026, 9, d, 17), open: 1, high: 2, low: 0.5, close: 1.5, volume: 1 }));
+
+    beforeEach(() => {
+      chart.setMarket(MARKET_HOSE);
+      chart.setTimeZone('UTC');
+      chart.setData(vnDays());
+    });
+
+    it('in the tooltip Alt-click pins', () => {
+      type Inside = { interactionManager: { onAltClick(pos: { x: number; y: number }): void }; viewport: { getState(): { offset: number; barWidth: number; barSpacing: number } } };
+      const inside = chart as unknown as Inside;
+      const vp = inside.viewport.getState();
+      inside.interactionManager.onAltClick({ x: 3 * (vp.barWidth + vp.barSpacing) - vp.offset, y: 10 });
+      expect(host.textContent).toContain('10/23/2026');
+    });
+
+    it('to a screen reader', () => {
+      host.focus();
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: '.', bubbles: true }));
+      expect(host.querySelector('.tc-sr-live')?.textContent).toMatch(/^Oct 23, 2026: open/);
+    });
+  });
 });

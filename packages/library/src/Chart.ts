@@ -49,7 +49,7 @@ import { PRICE_SCALE_MARGIN, PriceLines, type BidAsk, SymbolSeriesStore, Compare
 import type { GpuRenderer, RendererMode } from '@tradecanvas/core';
 import { regularHoursFilter } from './regularHours.js';
 import { ChartA11y } from './chartA11y.js';
-import { zonedDateFormatter } from '@tradecanvas/commons';
+import { barDateZone, barsAreDaily, zonedDateFormatter } from '@tradecanvas/commons';
 import { indicatorChipLabel } from './indicatorLabel.js';
 import type { ExportColumn } from '@tradecanvas/core';
 import {
@@ -710,9 +710,7 @@ export class Chart {
         bars: () => this.getDisplayData(),
         visibleRange: () => this.viewport.getState().visibleRange,
         formatPrice: (price) => this.formatPrice(price),
-        formatTime: (time) => zonedDateFormatter(this.numberLocale || 'en-US', { dateStyle: 'medium', timeStyle: 'short' }, this.displayTz)(
-          time * barTimeUnit(this.getDisplayData()),
-        ),
+        formatTime: (time) => this.spokenBarTime(time),
         showBar: (time) => this.setCrosshairTime(time),
       }, options.a11y?.labels);
       for (const event of ['dataUpdate', 'chartTypeChange', 'symbolChange', 'timeframeChange'] as const) {
@@ -949,7 +947,7 @@ export class Chart {
       if (this.pinnedTooltip.isPinned() && this.pinnedTooltip.getPinnedIndex() === idx) {
         this.pinnedTooltip.unpin();
       } else {
-        this.pinnedTooltip.pin(data[idx], idx, this.themeManager.getTheme(), barTimeUnit(data));
+        this.pinnedTooltip.pin(data[idx], idx, this.themeManager.getTheme(), barTimeUnit(data), barsAreDaily(data) === true);
       }
       this.pinnedTooltip.reposition(
         this.viewport.getState(),
@@ -1428,7 +1426,7 @@ export class Chart {
     // Heikin-Ashi bars after it are built from it.
     if (aligned && pinned >= i) {
       const shown = this.getDisplayData();
-      if (shown[pinned]) this.pinnedTooltip.pin(shown[pinned], pinned, this.themeManager.getTheme(), barTimeUnit(shown));
+      if (shown[pinned]) this.pinnedTooltip.pin(shown[pinned], pinned, this.themeManager.getTheme(), barTimeUnit(shown), barsAreDaily(shown) === true);
     }
     if (hovered !== null && (!aligned || hovered === i || hovered === i + 1)) this.crosshairHandler.refresh();
   }
@@ -4098,6 +4096,7 @@ export class Chart {
     this.timeAxis.setExchangeTimeZone(zone);
     this.crosshairHandler.setExchangeTimeZone(zone);
     this.crosshairTooltip.setExchangeTimeZone(zone);
+    this.pinnedTooltip.setExchangeTimeZone(zone);
     this.streamManager?.setTimeZone(zone);
     if (!this.studyZoneHeld) this.applyStudyZone(zone);
   }
@@ -4122,6 +4121,21 @@ export class Chart {
     this.studyZoneHeld = false;
     this.applyStudyZone(this.getExchangeTimeZone());
     if (!this.disposed) this.updateViewportAndRender();
+  }
+
+  /**
+   * A bar's time as a screen reader hears it, in the chart's locale: a daily
+   * bar's date, the one it stands for in any zone shown (`barDateZone`), as
+   * the axis gives it; any other bar's date and time in the zone shown.
+   */
+  private spokenBarTime(time: number): string {
+    const data = this.getDisplayData();
+    const ms = time * barTimeUnit(data);
+    const locale = this.numberLocale || 'en-US';
+    if (barsAreDaily(data) === true) {
+      return zonedDateFormatter(locale, { dateStyle: 'medium' }, barDateZone(ms, this.displayTz, this.getExchangeTimeZone()))(ms);
+    }
+    return zonedDateFormatter(locale, { dateStyle: 'medium', timeStyle: 'short' }, this.displayTz)(ms);
   }
 
   private applyTimeZone(): void {

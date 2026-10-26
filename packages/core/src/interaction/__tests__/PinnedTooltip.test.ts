@@ -15,6 +15,21 @@ describe('PinnedTooltip', () => {
     expect(host.textContent).toContain('3/5 08:30');
   });
 
+  it('dates a daily bar as the axis does, whatever zone is shown', () => {
+    const host = document.createElement('div');
+    const tooltip = new PinnedTooltip();
+    tooltip.create(host);
+    tooltip.setTimezone('UTC');
+    tooltip.setExchangeTimeZone('Asia/Ho_Chi_Minh');
+    // 23 October 2026 in Ho Chi Minh City, built at its midnight: 17:00 UTC the day before.
+    tooltip.pin({ time: Date.UTC(2026, 9, 22, 17), open: 1, high: 2, low: 0.5, close: 1.5 }, 0, DARK_THEME, undefined, true);
+    expect(host.textContent).toContain('10/23/2026');
+    // A day stamped at 00:00 UTC is the date it names, in New York too.
+    tooltip.setTimezone('America/New_York');
+    tooltip.pin({ time: Date.UTC(2026, 9, 23), open: 1, high: 2, low: 0.5, close: 1.5 }, 0, DARK_THEME, undefined, true);
+    expect(host.textContent).toContain('10/23/2026');
+  });
+
   it('puts the values in as text, whatever the theme colours hold', () => {
     const host = document.createElement('div');
     const tooltip = new PinnedTooltip();

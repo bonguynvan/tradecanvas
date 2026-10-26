@@ -808,7 +808,7 @@ const dayStart = timeframeBucketStart(trade.time, '1d', { timeZone: 'Asia/Ho_Chi
 <p>
   Una barra diaria muestra la fecha que representa, sea cual sea la zona que muestra el
   gráfico: la de sello 00:00 UTC, su fecha UTC; la construida desde la medianoche de la
-  bolsa, la fecha de la bolsa (en el eje de tiempo, la cruz y su tarjeta). Para las barras
+  bolsa, la fecha de la bolsa (en el eje de tiempo, la cruz y su tarjeta, el tooltip que fija Alt-clic y la hora de las barras que lee un lector de pantalla). Para las barras
   que construyas tú, <code>timeframeBucketStart(time, timeframe, {'{'} timeZone {'}'})</code> da el inicio de la barra en la que cae un instante.
 </p>
 

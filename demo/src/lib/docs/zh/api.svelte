@@ -711,7 +711,7 @@ const dayStart = timeframeBucketStart(trade.time, '1d', { timeZone: 'Asia/Ho_Chi
 </p>
 <p>
   无论图表显示哪个时区，日线都显示它所代表的日期：时间戳为 00:00 UTC 的K线显示其 UTC 日期，从交易所午夜构建的K线显示交易所的日期
-  （时间轴、十字光标及其卡片上都是如此）。自己构建K线时，<code>timeframeBucketStart(time, timeframe, {'{'} timeZone {'}'})</code> 给出某个时刻所在K线的开始时间。
+  （时间轴、十字光标及其卡片、Alt 点击固定的提示框，以及屏幕阅读器读出的K线时间都是如此）。自己构建K线时，<code>timeframeBucketStart(time, timeframe, {'{'} timeZone {'}'})</code> 给出某个时刻所在K线的开始时间。
 </p>
 
 <h3>自选列表</h3>

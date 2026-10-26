@@ -785,7 +785,7 @@ const dayStart = timeframeBucketStart(trade.time, '1d', { timeZone: 'Asia/Ho_Chi
 <p>
   Nến ngày hiện đúng ngày mà nó đại diện, dù biểu đồ đang hiển thị múi giờ nào: nến đóng dấu
   00:00 UTC hiện ngày UTC của nó, nến dựng từ nửa đêm của sàn hiện ngày của sàn (trên trục
-  thời gian, crosshair và thẻ của nó). Khi bạn tự dựng nến, <code>timeframeBucketStart(time, timeframe, {'{'} timeZone {'}'})</code> cho biết lúc bắt đầu
+  thời gian, crosshair và thẻ của nó, chú giải ghim bằng Alt-click, và thời điểm của nến mà trình đọc màn hình đọc). Khi bạn tự dựng nến, <code>timeframeBucketStart(time, timeframe, {'{'} timeZone {'}'})</code> cho biết lúc bắt đầu
   của nến chứa một thời điểm.
 </p>
 

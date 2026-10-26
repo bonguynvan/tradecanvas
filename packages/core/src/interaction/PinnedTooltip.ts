@@ -1,5 +1,5 @@
 import type { OHLCBar, Theme, TimeZoneSetting, ViewportState } from '@tradecanvas/commons';
-import { UI_ICONS, formatPrice, iconSvg, normalizeBarTime, timeParts, type BarTimeUnit } from '@tradecanvas/commons';
+import { UI_ICONS, barDateParts, formatPrice, iconSvg, normalizeBarTime, timeParts, type BarTimeUnit } from '@tradecanvas/commons';
 import { barIndexToX, priceToY } from '../viewport/ScaleMapping.js';
 
 /** Decimals prices show when neither the chart nor the market sets them. */
@@ -34,6 +34,8 @@ export class PinnedTooltip {
   private pinnedBar: OHLCBar | null = null;
   private pinnedIndex = -1;
   private tz: TimeZoneSetting = null;
+  /** The exchange's zone: the date of a daily bar built at its midnight (`barDateParts`). */
+  private exchangeZone: string | null = null;
 
   private priceFormatter: ((price: number) => string) | null = null;
   private pricePrecision: number | null = null;
@@ -42,6 +44,11 @@ export class PinnedTooltip {
   /** The time zone the bar's time is shown in; null for the browser's. */
   setTimezone(tz: TimeZoneSetting): void {
     this.tz = tz;
+  }
+
+  /** The exchange's zone (null: none known), where the days a chart builds start. */
+  setExchangeTimeZone(zone: string | null): void {
+    this.exchangeZone = zone;
   }
 
   /** Prices in the chart's format (null: decimals, in the locale). */
@@ -112,8 +119,12 @@ export class PinnedTooltip {
     container.appendChild(this.el);
   }
 
-  /** `unit`: milliseconds in one unit of the series' bar times (`barTimeUnit(data)`). */
-  pin(bar: OHLCBar, barIndex: number, theme: Theme, unit?: BarTimeUnit): void {
+  /**
+   * `unit`: milliseconds in one unit of the series' bar times (`barTimeUnit(data)`).
+   * `daily`: the bars are a day apart or more (`barsAreDaily(data)`), so the
+   * bar shows the date it stands for, as the time axis writes it.
+   */
+  pin(bar: OHLCBar, barIndex: number, theme: Theme, unit?: BarTimeUnit, daily = false): void {
     if (!this.el || !this.timeEl || !this.ohlcEl) return;
     this.pinnedBar = bar;
     this.pinnedIndex = barIndex;
@@ -121,8 +132,9 @@ export class PinnedTooltip {
     const isUp = bar.close >= bar.open;
     const color = isUp ? theme.candleUp : theme.candleDown;
 
-    const d = timeParts(normalizeBarTime(bar.time, unit), this.tz);
-    this.timeEl.textContent = `${d.month}/${d.day} ${pad(d.hours)}:${pad(d.minutes)}`;
+    const ms = normalizeBarTime(bar.time, unit);
+    const d = daily ? barDateParts(ms, this.tz, this.exchangeZone) : timeParts(ms, this.tz);
+    this.timeEl.textContent = daily ? `${d.month}/${d.day}/${d.year}` : `${d.month}/${d.day} ${pad(d.hours)}:${pad(d.minutes)}`;
     this.timeEl.style.color = theme.textSecondary;
 
     // Built as nodes: the colours are set as style values, never parsed as markup.

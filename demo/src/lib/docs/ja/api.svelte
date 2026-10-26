@@ -739,7 +739,7 @@ const dayStart = timeframeBucketStart(trade.time, '1d', { timeZone: 'Asia/Ho_Chi
 </p>
 <p>
   日足は、チャートがどのタイムゾーンで表示していても、そのバーが表す日付を示します。00:00 UTC のバーは UTC の日付、
-  取引所の午前 0 時から作ったバーは取引所の日付です（時間軸、クロスヘアとそのカードで）。自分でバーを作るときは、
+  取引所の午前 0 時から作ったバーは取引所の日付です（時間軸、クロスヘアとそのカード、Alt クリックで固定するツールチップ、スクリーンリーダーが読み上げるバーの時刻で）。自分でバーを作るときは、
   <code>timeframeBucketStart(time, timeframe, {'{'} timeZone {'}'})</code> がある時刻を含むバーの開始時刻を返します。
 </p>
 

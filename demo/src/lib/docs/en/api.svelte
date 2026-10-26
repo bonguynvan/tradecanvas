@@ -783,7 +783,7 @@ const dayStart = timeframeBucketStart(trade.time, '1d', { timeZone: 'Asia/Ho_Chi
 <p>
   A daily bar shows the date it stands for, whatever zone the chart shows: one stamped at
   00:00 UTC its UTC date, one built at the exchange's midnight the exchange's date (on the
-  time axis, the crosshair and its card). For bars you build yourself, <code>timeframeBucketStart(time, timeframe, {'{'} timeZone {'}'})</code> gives the
+  time axis, the crosshair and its card, the tooltip Alt-click pins, and the bar times a screen reader reads). For bars you build yourself, <code>timeframeBucketStart(time, timeframe, {'{'} timeZone {'}'})</code> gives the
   start of the bar a time falls in.
 </p>
 
