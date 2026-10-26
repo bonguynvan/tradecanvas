@@ -276,6 +276,31 @@ describe('StreamManager — bars from ticks after the history', () => {
       expect(await tickOnto({ zone: 'UTC', history: hours, time: Date.UTC(2026, 9, 23, 2, 15), supported: ['1h'], feedZone: VN }))
         .toBe(Date.UTC(2026, 9, 22, 17));
     });
+
+    const DAY_MS = 86_400_000;
+    /** A feed's daily bars, stamped at 00:00 UTC of the exchange's dates, from `from` to `to` (UTC ms), weekends left out. */
+    const datedWeekdays = (from: number, to: number): OHLCBar[] => {
+      const days: OHLCBar[] = [];
+      for (let t = from; t <= to; t += DAY_MS) {
+        const weekday = new Date(t).getUTCDay();
+        if (weekday !== 0 && weekday !== 6) days.push(at(t));
+      }
+      return days;
+    };
+
+    it('date the weeks it built from the feed’s dated days in the chart’s zone, when the feed names none', async () => {
+      const days = datedWeekdays(Date.UTC(2026, 9, 5), Date.UTC(2026, 9, 23));
+      // 10:30 on Monday 26 October in Sydney, still Sunday in UTC: the feed's own day for it is Monday's, in the new week.
+      expect(await tickOnto({ zone: 'Australia/Sydney', history: days, time: Date.UTC(2026, 9, 25, 23, 30), timeframe: '1w', supported: ['1d'] }))
+        .toBe(Date.UTC(2026, 9, 26));
+    });
+
+    it('date the months it built from the feed’s dated days in the chart’s zone, when the feed names none', async () => {
+      const days = datedWeekdays(Date.UTC(2026, 9, 1), Date.UTC(2026, 10, 27));
+      // 19:30 on Monday 30 November in New York, after the close, already December in UTC: November's bar.
+      expect(await tickOnto({ zone: 'America/New_York', history: days, time: Date.UTC(2026, 11, 1, 0, 30), timeframe: '1M', supported: ['1d'] }))
+        .toBe(Date.UTC(2026, 10, 1));
+    });
   });
 });
 

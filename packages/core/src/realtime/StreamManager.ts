@@ -240,8 +240,11 @@ export class StreamManager extends Emitter<StreamEvents> {
    * Bars from ticks land on the history's bars: a feed's dated days, days at
    * the exchange's midnight, and 4h bars on whichever grid the history's sit.
    * A timeframe the feed lacks starts where the wrapper building it starts
-   * its bars, in the zone it keeps for the symbol: UTC days it built (the
-   * feed named no zone) stay UTC's, whatever zone the chart has.
+   * its bars, in the zone it keeps for the symbol: UTC days it built from
+   * hours (the feed named no zone) stay UTC's, whatever zone the chart has.
+   * Weeks and months it built from the feed's dated days hold the feed's
+   * dates, the exchange's: with no zone from the feed, a trade is dated in
+   * the chart's, as on the feed's own days.
    */
   private applyTickZone(): void {
     const config = this.config;
@@ -251,7 +254,8 @@ export class StreamManager extends Emitter<StreamEvents> {
     const built = this.resampler?.bucketFor(config.symbol, config.timeframe);
     if (built) {
       // Only bars built from dated days are dated: ones from hours start at the zone's midnight.
-      this.aggregator.setTimeZone(built.timeZone ?? null, built.dates === true && datedHistory);
+      const dated = built.dates === true && datedHistory;
+      this.aggregator.setTimeZone(built.timeZone ?? (dated ? this.timeZone : null), dated);
       return;
     }
     this.aggregator.setTimeZone(this.tickZone(config.timeframe, last), datedHistory);
