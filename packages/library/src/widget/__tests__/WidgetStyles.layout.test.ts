@@ -14,6 +14,14 @@ function rule(selector: string): string {
   return css.slice(at, css.indexOf('}', at)).replace(/\/\*[\s\S]*?\*\//g, '');
 }
 
+/** Every block of `sheet` for `selector`, in a media query or not, its comments left out. */
+const blocks = (sheet: string, selector: string) => [...sheet.replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/([^{}]+)\{([^{}]*)\}/g)]
+  .filter((m) => m[1].split(',').some((s) => s.trim() === selector))
+  .map((m) => m[2]);
+
+/** The part of `sheet` in its `@media (max-width: 640px)` blocks: the phone's rules. */
+const phone = (sheet: string) => sheet.split('@media (max-width: 640px)').slice(1).map((part) => part.slice(0, part.indexOf('\n}\n'))).join('\n');
+
 describe('the widget’s own box', () => {
   // Hidden overflow still scrolls when the keyboard lands on what is past the edge ("more" pushed out
   // by a long layout name shifted the whole widget left until a resize); clipped overflow never does.
@@ -34,11 +42,6 @@ describe('frosted menus', () => {
 });
 
 describe('the shortcut sheet', () => {
-  /** Every block of `sheet` for `selector`, in a media query or not, its comments left out. */
-  const blocks = (sheet: string, selector: string) => [...sheet.replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/([^{}]+)\{([^{}]*)\}/g)]
-    .filter((m) => m[1].split(',').some((s) => s.trim() === selector))
-    .map((m) => m[2]);
-
   // Columns on the box that scrolls, a fixed height, lay the groups past its height sideways, out of reach.
   it('lays its groups in columns on a block inside the scroller, never on the scroller', () => {
     expect(blocks(dialogs, '.tcw-hotkey-body').join('')).not.toMatch(/columns/);
@@ -68,6 +71,22 @@ describe('the dock', () => {
     const header = /min-height:\s*(calc\(var\(--tcw-space-6\) \+ var\(--tcw-space-5\)\))/.exec(panelRule('.tcw-dock-page > :is(.tcw-watchlist-header, .tcw-alerts-header, .tcw-tree-header, .tcw-datawin-header, .tcw-syminfo-header, .tcw-ladder-header)'));
     expect(header).not.toBeNull();
     expect(panelRule('.tcw-dock-panel > .tcw-dock-page')).toContain(`scroll-padding-block-start: ${header![1]}`);
+  });
+});
+
+describe('the symbol search', () => {
+  // Eight kinds at 1366 wrap "Perpetual" onto a line of its own: the exchange list stays on the first.
+  it('keeps the exchange list on the kind tabs’ first line when they wrap', () => {
+    expect(blocks(dialogs, '.tcw-ss-filters')[0]).toMatch(/align-items:\s*flex-start/);
+  });
+
+  // On a phone "OKX:BTC-USDT-SWAP" showed "BTC-USDT-S…" beside a name with room, and one long exchange
+  // held the exchange column at 89 on every row.
+  it('keeps a ticker whole on a phone before its name, a venue counting for nothing in its column', () => {
+    const rules = phone(dialogs);
+    expect(rules).toMatch(/\.tcw-ss-results\s*\{\s*grid-template-columns:\s*max-content fit-content\(min\(144px, 38\.2%\)\) minmax\(0, 1fr\) fit-content\(55px\) auto;/);
+    expect(blocks(rules, '.tcw-ss-venue').join('')).toMatch(/width:\s*0;/);
+    expect(blocks(rules, '.tcw-ss-symbol').join('')).toMatch(/justify-self:\s*stretch/);
   });
 });
 

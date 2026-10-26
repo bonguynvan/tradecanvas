@@ -612,10 +612,11 @@
   --tcw-ss-head-h: var(--tcw-control-h);
 }
 
-/* Over the list: the kinds the rows come in, and their exchanges once there are two. */
+/* Over the list: the kinds the rows come in, and their exchanges once there are two. The exchanges sit
+   on the tabs' first line when the tabs wrap, not between their lines. */
 .tcw-ss-filters {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: var(--tcw-space-4);
   flex: none;
   margin: 0 var(--tcw-space-6) var(--tcw-space-4);
@@ -1123,8 +1124,25 @@ img.tcw-ss-badge {
     max-width: 110px;
   }
 
+  /* The ticker is the row's key: its column as wide as the widest ticker, up to 144 or 38.2% of the
+     row, and the name gives way first. The exchange's up to 55, each cut in its own row. */
   .tcw-ss-results {
-    grid-template-columns: max-content fit-content(89px) minmax(0, 1fr) fit-content(89px) auto;
+    grid-template-columns: max-content fit-content(min(144px, 38.2%)) minmax(0, 1fr) fit-content(55px) auto;
+  }
+
+  /* A venue counts for nothing in that width: it shows, dim and shortened, in what its ticker leaves. */
+  .tcw-ss-symbol {
+    justify-self: stretch;
+  }
+
+  .tcw-ss-venue {
+    flex: 1 1 0;
+    width: 0;
+  }
+
+  /* The head over the exchanges reads whole, over the gap before it if it must. */
+  .tcw-ss-head:nth-child(5) {
+    overflow: visible;
   }
 
   .tcw-ss-columns,
