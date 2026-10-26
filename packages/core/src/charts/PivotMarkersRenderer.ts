@@ -8,11 +8,6 @@ const SMALL_PRICE_DIGITS = 4;
 /** Most decimals a pivot below 1 shows. */
 const MAX_DECIMALS = 10;
 
-/**
- * Marks fractal swing highs/lows with small triangles (▼ above a pivot high,
- * ▲ below a pivot low). Recomputed against the full series each render; only
- * the visible pivots are drawn.
- */
 /** How the swing markers find and label pivots: `PivotMarkersRenderer.getConfig()`. */
 export interface PivotMarkersConfig {
   /** Bars on the left a pivot is the extreme of. */
@@ -24,6 +19,11 @@ export interface PivotMarkersConfig {
   structureLabels: boolean;
 }
 
+/**
+ * Marks fractal swing highs/lows with small triangles (▼ above a pivot high,
+ * ▲ below a pivot low). Recomputed against the full series each render; only
+ * the visible pivots are drawn.
+ */
 export class PivotMarkersRenderer {
   private visible = false;
   private left = 5;
