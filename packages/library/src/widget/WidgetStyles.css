@@ -3252,6 +3252,9 @@
   border: var(--tcw-border-w) solid var(--tcw-border);
   border-radius: var(--tcw-menu-radius);
   box-shadow: var(--tcw-menu-shadow);
+  /* Frosted with the other menus (`ui.blur` above 0): the chart under it blurred, not sharp behind its words. */
+  backdrop-filter: blur(var(--tcw-blur));
+  -webkit-backdrop-filter: blur(var(--tcw-blur));
 }
 .tcw-context-item {
   display: flex;

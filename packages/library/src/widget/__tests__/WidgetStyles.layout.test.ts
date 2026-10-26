@@ -21,6 +21,16 @@ describe('the widget’s own box', () => {
   });
 });
 
+describe('frosted menus', () => {
+  // `ui.blur` above 0 (the Capsule look) shows the chart through every menu, blurred: the right-click
+  // and "more" menus showed it sharp behind their words.
+  it.each(['.tcw-dropdown', '.tcw-flyout', '.tcw-context-menu'])('blurs what is under %s', (selector) => {
+    const declarations = rule(selector);
+    expect(declarations).toMatch(/(?<!-)backdrop-filter:\s*blur\(var\(--tcw-blur\)\)/);
+    expect(declarations).toMatch(/-webkit-backdrop-filter:\s*blur\(var\(--tcw-blur\)\)/);
+  });
+});
+
 describe('the dialogs’ layout rules', () => {
   // A dialog is a column with a height cap: a part of it with an overflow of its own loses its
   // minimum height, and a long body squashes it (1.16.0 squashed the Settings' tabs this way).
