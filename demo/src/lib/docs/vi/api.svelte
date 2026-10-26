@@ -291,7 +291,7 @@ chart.setCompareVisible('eth', false)  // hidden, and out of the auto scale`}</c
   Xuất các nến dưới dạng CSV hoặc JSON, mỗi đường chỉ báo nằm trong một cột riêng, đặt tên theo
   tên trên chú thích. ChartWidget có mục <strong>Xuất dữ liệu (CSV)</strong> trong menu chuột phải
   của biểu đồ. Số có phần thập phân được ghi với 15 chữ số có nghĩa, nên khối lượng cộng từ các
-  nến nhỏ hơn được ghi là 40.37 chứ không phải 40.370000000000005.
+  nến nhỏ hơn được ghi là <code>40.37</code> chứ không phải <code>40.370000000000005</code>.
 </p>
 <pre><code>{`chart.exportAllData('csv', 'btc-1h.csv')                 // every bar loaded
 chart.exportVisibleData('json', undefined, { indicators: false })

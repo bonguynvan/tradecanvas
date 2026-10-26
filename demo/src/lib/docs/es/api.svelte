@@ -296,7 +296,7 @@ chart.setCompareVisible('eth', false)  // hidden, and out of the auto scale`}</c
   Las barras en CSV o JSON, con cada línea de indicador en su propia columna y con el nombre que le da
   la leyenda. ChartWidget tiene <strong>Exportar datos (CSV)</strong> en el menú del clic derecho del
   gráfico. Los números con decimales se escriben con 15 cifras significativas, así que un volumen
-  sumado a partir de barras más pequeñas queda como 40.37 y no como 40.370000000000005.
+  sumado a partir de barras más pequeñas queda como <code>40.37</code> y no como <code>40.370000000000005</code>.
 </p>
 <pre><code>{`chart.exportAllData('csv', 'btc-1h.csv')                 // every bar loaded
 chart.exportVisibleData('json', undefined, { indicators: false })
