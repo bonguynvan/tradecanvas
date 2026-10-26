@@ -1,5 +1,5 @@
 ---
-'@tradecanvas/core': patch
+'@tradecanvas/core': minor
 '@tradecanvas/chart': minor
 ---
 
