@@ -88,7 +88,7 @@ export class WebSocketAdapter implements DataAdapter {
 
   private listeners = new Map<DataAdapterEventType, Set<DataAdapterListener>>();
   private readonly opts: WebSocketAdapterOptions;
-  /** Which bar frames make a tick: those of the newest bar the connection has sent. */
+  /** Which bar frames make a tick: those of the newest bar the connection has sent, or its history ends on. */
   private readonly newestBar = new NewestBar();
   /** Present when the options give a way to fetch older bars. */
   readonly fetchHistoryBefore?: (symbol: string, timeframe: TimeFrame, before: number, limit: number) => Promise<OHLCBar[]>;
@@ -107,7 +107,7 @@ export class WebSocketAdapter implements DataAdapter {
 
   connect(config: DataAdapterConfig): void {
     this.config = config;
-    this.newestBar.reset();
+    this.newestBar.reset(config.symbol, config.timeframe);
     this.openSocket();
   }
 
@@ -140,7 +140,12 @@ export class WebSocketAdapter implements DataAdapter {
   }
 
   fetchHistory(symbol: string, timeframe: TimeFrame, limit?: number): Promise<OHLCBar[]> {
-    return this.opts.fetchHistory(symbol, timeframe, limit ?? this.opts.defaultHistoryLimit ?? 500);
+    const history = this.opts.fetchHistory(symbol, timeframe, limit ?? this.opts.defaultHistoryLimit ?? 500);
+    // A connection to them starts from its last bar.
+    return Promise.resolve(history).then((bars) => {
+      this.newestBar.serve(symbol, timeframe, bars);
+      return bars;
+    });
   }
 
   on<T = unknown>(event: DataAdapterEventType, listener: DataAdapterListener<T>): void {

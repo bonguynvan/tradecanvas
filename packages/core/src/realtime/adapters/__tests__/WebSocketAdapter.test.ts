@@ -137,6 +137,39 @@ describe('WebSocketAdapter', () => {
       send(frame(9, 99)); // another stream's newest, or the same after a gap
       expect(prices()).toEqual([101, 99]);
     });
+
+    /** A feed whose history, for any symbol and timeframe, ends on bar `last`. */
+    function servedFeed(last: number) {
+      const socket = new MockSocket();
+      const adapter = new WebSocketAdapter({
+        name: 'test',
+        wsUrl: () => 'wss://x',
+        fetchHistory: async () => [frame(last - 1, 100).bar, frame(last, 101).bar],
+        parseMessage: (raw) => raw as WsParseResult,
+        socketFactory: () => socket,
+      });
+      adapter.on('tick', (e) => tickEvents.push(e.data));
+      const connect = (config: DataAdapterConfig) => { adapter.connect(config); socket.fireOpen(); };
+      return { adapter, connect, send: (f: ReturnType<typeof frame>) => socket.fireMessage(f) };
+    }
+
+    it('starts from the last bar of the history it served for the symbol and timeframe: a bar sent again on subscribing is no live price', async () => {
+      const { adapter, connect, send } = servedFeed(10);
+      expect(await adapter.fetchHistory(CONFIG.symbol, CONFIG.timeframe, 2)).toEqual([frame(9, 100).bar, frame(10, 101).bar]);
+      connect(CONFIG);
+      send(frame(9, 100, true)); // the last closed bar, sent again on subscribing
+      send(frame(10, 102));
+      expect(prices()).toEqual([102]);
+    });
+
+    it("doesn't start from the history of another symbol or timeframe", async () => {
+      const { adapter, connect, send } = servedFeed(10);
+      await adapter.fetchHistory('ETHUSDT', CONFIG.timeframe, 2);
+      await adapter.fetchHistory(CONFIG.symbol, '5m', 2);
+      connect(CONFIG);
+      send(frame(9, 99));
+      expect(prices()).toEqual([99]);
+    });
   });
 
   it('ignores messages the parser rejects', () => {

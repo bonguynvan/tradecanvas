@@ -106,7 +106,7 @@ export class BinanceAdapter implements DataAdapter {
   private wsBase: string;
   /** Every trading symbol, loaded on the first search. */
   private symbolList: Promise<SymbolInfo[]> | null = null;
-  /** Which kline frames make a tick: those of the newest bar the connection has sent. */
+  /** Which kline frames make a tick: those of the newest bar the connection has sent, or its history ends on. */
   private readonly newestBar = new NewestBar();
 
   constructor(options?: { restBase?: string; wsBase?: string }) {
@@ -118,7 +118,7 @@ export class BinanceAdapter implements DataAdapter {
 
   connect(config: DataAdapterConfig): void {
     this.config = config;
-    this.newestBar.reset();
+    this.newestBar.reset(config.symbol, config.timeframe);
     this.connectWs();
   }
 
@@ -143,8 +143,11 @@ export class BinanceAdapter implements DataAdapter {
     return this.state;
   }
 
-  fetchHistory(symbol: string, timeframe: TimeFrame, limit = 500): Promise<OHLCBar[]> {
-    return this.fetchKlines(symbol, timeframe, limit, '');
+  async fetchHistory(symbol: string, timeframe: TimeFrame, limit = 500): Promise<OHLCBar[]> {
+    const bars = await this.fetchKlines(symbol, timeframe, limit, '');
+    // A connection to them starts from its last bar.
+    this.newestBar.serve(symbol, timeframe, bars);
+    return bars;
   }
 
   /** Trading symbols matching `query`, best first; the list loads once, on the first search. */

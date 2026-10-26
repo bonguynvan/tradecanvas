@@ -60,4 +60,19 @@ describe('BinanceAdapter klines', () => {
     send(kline(9, 99));
     expect(prices).toEqual([101, 99]);
   });
+
+  it('starts from the last kline of the history it served for the symbol and interval', async () => {
+    const rest = [9, 10].map((slot) => [T + slot * MINUTE, '100', '100', '100', '100', '3']);
+    vi.stubGlobal('fetch', vi.fn(async () => ({ ok: true, json: async () => rest })));
+    vi.stubGlobal('WebSocket', FakeSocket);
+    const adapter = new BinanceAdapter({ restBase: 'https://rest', wsBase: 'wss://ws/ws' });
+    const prices: number[] = [];
+    adapter.on<{ price: number }>('tick', (e) => prices.push(e.data.price));
+    await adapter.fetchHistory('BTCUSDT', '1m', 2);
+    adapter.connect({ symbol: 'BTCUSDT', timeframe: '1m' });
+    const send = (frame: string) => FakeSocket.all.at(-1)!.onmessage?.({ data: frame });
+    send(kline(9, 99, true)); // the last closed kline, sent again on subscribing
+    send(kline(10, 102));
+    expect(prices).toEqual([102]);
+  });
 });

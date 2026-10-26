@@ -62,7 +62,7 @@ chart.connect({ adapter: new CoinbaseAdapter(), symbol: 'BTC-USD', timeframe: '1
 
 <h2 id="corrections">数据源修正的K线</h2>
 <p>
-  数据源修正一根K线的方式，是把它以已收盘的状态、用它自己的时间再发一次：<code>parseMessage</code> 返回 <code>{'{'} bar, closed: true {'}'}</code>，或一个 <code>bar</code> 事件。比数据流见过的最新K线更早的已收盘K线，是数据源对它的最终结论，例如在下一根K线的第一帧之后才到的交易所最终数据，或一次修订：图表替换这个时间的K线，无论其位置（<code>updateBar</code>），从它起重新计算指标，并保持视图不变。它不是实时价格：价格线、订单和警报仍跟随市场。比最新K线更早的未收盘数据帧已经过时，会被忽略，不改变任何东西。内置适配器（<code>WebSocketAdapter</code>、<code>PollingAdapter</code>、基于它们的数据源以及 <code>BinanceAdapter</code>）只用最新K线的收盘价生成 tick；你自己的适配器若用K线生成 tick，也应忽略更早的K线。没有适配器时，调用 <code>chart.updateBar(bar)</code>。
+  数据源修正一根K线的方式，是把它以已收盘的状态、用它自己的时间再发一次：<code>parseMessage</code> 返回 <code>{'{'} bar, closed: true {'}'}</code>，或一个 <code>bar</code> 事件。比数据流见过的最新K线更早的已收盘K线，是数据源对它的最终结论，例如在下一根K线的第一帧之后才到的交易所最终数据，或一次修订：图表替换这个时间的K线，无论其位置（<code>updateBar</code>），从它起重新计算指标，并保持视图不变。它不是实时价格：价格线、订单和警报仍跟随市场。比最新K线更早的未收盘数据帧已经过时，会被忽略，不改变任何东西。内置适配器（<code>WebSocketAdapter</code>、<code>PollingAdapter</code>、基于它们的数据源以及 <code>BinanceAdapter</code>）只用最新K线的收盘价生成 tick（它们提供的历史数据的最后一根K线也算在内，因此数据源在订阅时重发的最后一根已收盘K线不会生成 tick）；你自己的适配器若用K线生成 tick，也应忽略更早的K线。没有适配器时，调用 <code>chart.updateBar(bar)</code>。
 </p>
 <p>
   使用 <code>aggregateTicks</code> 时，历史数据的最后一根K线就是成交继续构建的那根：连接后的第一笔成交保留它的开盘价、最高价、最低价和成交量。迟到的、属于已过去K线的成交会被忽略，而该K线的已收盘数据会修正它，正在形成的K线保留自己的成交。在由更细周期构建的周期上，被修正的基础K线会重新构建它所属的K线，适用于正在形成的K线之前最近的两根已构建K线；更早的修正会被忽略。

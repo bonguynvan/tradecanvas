@@ -440,7 +440,9 @@ came after the next bar's first frame, or a revision), corrects that bar: the
 chart replaces the bar with its time and computes the indicators again from
 it, the view kept. An older frame still forming is left out. Neither is a
 live price: the adapter makes a tick from a frame's close only for the newest
-bar, so the price line, the alerts and the orders stay with the market. A
+bar, the last bar of the history it served counting, so the price line, the
+alerts and the orders stay with the market, also when a feed sends its last
+closed bar again on subscribing. A
 `DataAdapter` of your own that makes ticks from its bars should do the same.
 
 A feed that learns the symbol's details only after connecting (its decimals,
