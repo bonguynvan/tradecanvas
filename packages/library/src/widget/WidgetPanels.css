@@ -106,6 +106,13 @@
   background: var(--tcw-accent);
 }
 
+/* A page's header: 34 tall (21 + 13), or a control's height where that is more, and the rule under
+   it. Its height and the page's scroll padding are both these, so they never part. */
+.tcw-dock-page {
+  --tcw-dock-head-h: max(calc(var(--tcw-space-6) + var(--tcw-space-5)), var(--tcw-control-h));
+  --tcw-dock-head-rule: 1px;
+}
+
 /* A page fills the panel and scrolls under its header; the floating panels it was lose their card. */
 .tcw-dock-panel > .tcw-dock-page {
   position: static;
@@ -120,8 +127,8 @@
   margin: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
-  /* A row the keyboard moves to scrolls in below the header, not under it. */
-  scroll-padding-block-start: calc(var(--tcw-space-6) + var(--tcw-space-5));
+  /* A row the keyboard moves to scrolls in below the header and its rule, not under them. */
+  scroll-padding-block-start: calc(var(--tcw-dock-head-h) + var(--tcw-dock-head-rule));
   border: none;
   border-radius: 0;
   background: transparent;
@@ -129,7 +136,7 @@
   animation: none;
 }
 
-/* One header for every page: its title, its own buttons, and the close at the end. 34 tall (21 + 13). */
+/* One header for every page: its title, its own buttons, and the close at the end. */
 .tcw-dock-page > :is(.tcw-watchlist-header, .tcw-alerts-header, .tcw-tree-header, .tcw-datawin-header, .tcw-syminfo-header, .tcw-ladder-header) {
   position: sticky;
   top: 0;
@@ -138,11 +145,11 @@
   align-items: center;
   gap: var(--tcw-space-2);
   flex: none;
-  min-height: calc(var(--tcw-space-6) + var(--tcw-space-5));
+  min-height: var(--tcw-dock-head-h);
   margin: 0;
   padding-block: 0;
   padding-inline: var(--tcw-space-5) var(--tcw-space-3);
-  border-bottom: 1px solid var(--tcw-divider);
+  border-bottom: var(--tcw-dock-head-rule) solid var(--tcw-divider);
   background: var(--tcw-bg-surface);
   color: var(--tcw-text);
   font-size: var(--tcw-font-size-sm);

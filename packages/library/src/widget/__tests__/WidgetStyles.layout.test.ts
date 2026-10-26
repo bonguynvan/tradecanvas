@@ -92,11 +92,17 @@ describe('the dock', () => {
     expect(panelRule('.tcw-dock-panel > .tcw-watchlist')).not.toMatch(/overflow/);
   });
 
-  // The arrow keys up the watchlist left its first symbol under the sticky header.
-  it('scrolls a row the keyboard moves to in below the page’s header, as tall as the header', () => {
-    const header = /min-height:\s*(calc\(var\(--tcw-space-6\) \+ var\(--tcw-space-5\)\))/.exec(panelRule('.tcw-dock-page > :is(.tcw-watchlist-header, .tcw-alerts-header, .tcw-tree-header, .tcw-datawin-header, .tcw-syminfo-header, .tcw-ladder-header)'));
-    expect(header).not.toBeNull();
-    expect(panelRule('.tcw-dock-panel > .tcw-dock-page')).toContain(`scroll-padding-block-start: ${header![1]}`);
+  // The arrow keys up the watchlist left its first symbol under the sticky header; then 1-1.5 px
+  // under it, the padding 34 px and the header 35 with the rule under it.
+  it('scrolls a row the keyboard moves to in below the page’s header, its rule too, from one height', () => {
+    const page = panelRule('.tcw-dock-page');
+    expect(page).toMatch(/--tcw-dock-head-h:\s*max\(calc\(var\(--tcw-space-6\) \+ var\(--tcw-space-5\)\), var\(--tcw-control-h\)\);/);
+    expect(page).toMatch(/--tcw-dock-head-rule:\s*1px;/);
+    const header = panelRule('.tcw-dock-page > :is(.tcw-watchlist-header, .tcw-alerts-header, .tcw-tree-header, .tcw-datawin-header, .tcw-syminfo-header, .tcw-ladder-header)');
+    expect(header).toMatch(/min-height:\s*var\(--tcw-dock-head-h\);/);
+    expect(header).toMatch(/padding-block:\s*0;/);
+    expect(header).toMatch(/border-bottom:\s*var\(--tcw-dock-head-rule\) solid var\(--tcw-divider\);/);
+    expect(panelRule('.tcw-dock-panel > .tcw-dock-page')).toMatch(/scroll-padding-block-start:\s*calc\(var\(--tcw-dock-head-h\) \+ var\(--tcw-dock-head-rule\)\);/);
   });
 });
 
