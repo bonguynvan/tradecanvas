@@ -360,6 +360,40 @@ describe('WidgetToolbar — fitting its width', () => {
   });
 });
 
+describe('WidgetToolbar — a name that changes width', () => {
+  it('refits when the layout open now is named, or changes, and only then', () => {
+    const frames: (() => void)[] = [];
+    vi.stubGlobal('requestAnimationFrame', (cb: () => void) => frames.push(cb));
+    vi.stubGlobal('cancelAnimationFrame', vi.fn());
+    const host = document.createElement('div');
+    document.body.appendChild(host);
+    const bar = new WidgetToolbar(host, { symbols: ['A'], timeframes: [], chartTypes: [] }, {
+      onLayouts: () => {},
+    } as unknown as ToolbarCallbacks, EN_TRANSLATOR);
+    try {
+      const fit = vi.spyOn(bar, 'fit');
+      const run = () => frames.splice(0).forEach((frame) => frame());
+      run();
+      fit.mockClear();
+      // The toolbar's own width stays the same: no resize tells of the longer name.
+      bar.setLayout('Earnings watch', false);
+      run();
+      expect(fit).toHaveBeenCalledTimes(1);
+      bar.setLayout('Earnings watch', true);
+      run();
+      expect(fit).toHaveBeenCalledTimes(2);
+      // The same name and state again change nothing on the bar: no refit.
+      bar.setLayout('Earnings watch', true);
+      run();
+      expect(fit).toHaveBeenCalledTimes(2);
+    } finally {
+      bar.destroy();
+      host.remove();
+      vi.unstubAllGlobals();
+    }
+  });
+});
+
 describe('WidgetToolbar — once gone', () => {
   it('fits no more, though the page’s fonts arrive after', async () => {
     let fontsReady!: () => void;

@@ -63,6 +63,8 @@ export class WidgetToolbar {
   private undoBtn: HTMLButtonElement | null = null;
   private redoBtn: HTMLButtonElement | null = null;
   private trade: WidgetTradeMenu | null = null;
+  /** What the layouts button shows now, its state and name: the same again changes nothing. */
+  private layoutShown = '';
 
   /**
    * `layer`: where the toolbar's menus open, over the page (the widget's
@@ -519,17 +521,25 @@ export class WidgetToolbar {
     if (btn) btn.hidden = railed;
   }
 
-  /** The layout open now on its button (`null`: none saved yet), with a dot while it has unsaved changes. */
+  /**
+   * The layout open now on its button (`null`: none saved yet), with a dot
+   * while it has unsaved changes. A new name changes the button's width, not
+   * the toolbar's, so no resize tells of it: the toolbar refits, lest "more"
+   * be pushed past its end.
+   */
   setLayout(name: string | null, dirty: boolean): void {
     const btn = this.el.querySelector<HTMLButtonElement>('[data-role="layouts"]');
     if (!btn) return;
     const shown = name ?? this.t('layouts.unnamed');
+    if (this.layoutShown === `${dirty}:${shown}`) return;
+    this.layoutShown = `${dirty}:${shown}`;
     const label = `${this.t('toolbar.layouts')}: ${shown}${dirty ? ` (${this.t('layouts.unsavedChanges')})` : ''}`;
     btn.innerHTML = `${createIcon('save', 14)}<span class="tcw-layouts-label">${esc(shown)}</span>`
       + (dirty ? '<span class="tcw-layouts-dirty" aria-hidden="true"></span>' : '')
       + createIcon('chevronDown', 12);
     btn.title = label;
     btn.setAttribute('aria-label', label);
+    this.scheduleFit();
   }
 
   /** Swap the fullscreen button between enter and exit. */

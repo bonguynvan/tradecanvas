@@ -74,7 +74,10 @@
   background: #131416;
   font-variant-numeric: tabular-nums;
   position: relative;
+  /* Clipped, not hidden: a box that hides its overflow still scrolls to what the keyboard lands on
+     past its edge, and the whole widget slid aside until the next resize. Hidden where clip is unknown. */
   overflow: hidden;
+  overflow: clip;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 

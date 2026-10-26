@@ -12,6 +12,15 @@ function rule(selector: string): string {
   return css.slice(at, css.indexOf('}', at)).replace(/\/\*[\s\S]*?\*\//g, '');
 }
 
+describe('the widget’s own box', () => {
+  // Hidden overflow still scrolls when the keyboard lands on what is past the edge ("more" pushed out
+  // by a long layout name shifted the whole widget left until a resize); clipped overflow never does.
+  it('clips what is past its edges, where the browser can, so focus never scrolls it', () => {
+    const root = rule('.tcw-root');
+    expect(root).toMatch(/overflow:\s*hidden;\s*overflow:\s*clip;/);
+  });
+});
+
 describe('the dialogs’ layout rules', () => {
   // A dialog is a column with a height cap: a part of it with an overflow of its own loses its
   // minimum height, and a long body squashes it (1.16.0 squashed the Settings' tabs this way).
