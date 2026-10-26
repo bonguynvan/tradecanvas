@@ -27,12 +27,17 @@
     <tr><td><code>appendBars(bars)</code></td><td>批量追加；指标只重新计算一次。</td></tr>
     <tr><td><code>updateLastBar(bar)</code></td><td>修改当前正在形成的K线。</td></tr>
     <tr><td><code>updateLastBarFromTick(tick)</code></td><td>把一笔 tick 合并进最后一根K线。</td></tr>
+    <tr><td><code>updateBar(bar)</code></td><td>修正一根已加载的K线：时间相同的那根，无论它在序列中的哪个位置。视图保持不变；没有已加载的K线是这个时间时返回 false。</td></tr>
     <tr><td><code>getData()</code></td><td>读取原始 OHLC 序列。</td></tr>
   </tbody>
 </table>
 
 <p id="live-price">
   <code>appendBar</code>、<code>appendBars</code> 或 <code>updateLastBar</code> 送来的K线，以及一笔 tick，就是实时价格：价格线、警报和订单的盈亏都跟随它，就像跟随已连接的数据流和 <code>setCurrentPrice</code> 一样。新K线会发出 <code>dataUpdate</code>；正在形成的K线上的 tick 不会。
+</p>
+
+<p id="corrections">
+  数据源修正的K线用 <code>updateBar(bar)</code> 传入：它替换 <code>time</code> 相同的已加载K线，无论其在序列中的位置，并返回 <code>true</code>。指标从这根K线起重新计算，Heikin-Ashi、Renko 等由K线构建的图表类型随之更新，视图停在原处；下一帧之前的多次修正只计算一次，从最早的那根开始。没有已加载的K线是这个时间（新K线用 <code>appendBar</code>，更早的K线用 <code>prependBars</code>），或图表不接受这根K线时，它返回 <code>false</code>，什么也不改变。它不是实时价格：订单和警报不跟随它，不会因它触发警报，指标线上的警报也不会按修正后的值重新检查。修正的是最后一根K线时，价格线随之移动，与 <code>setData</code> 之后相同。回放期间它修正的是实时序列，回放结束后显示；延长交易时段隐藏时，时段外的K线在时段重新显示后出现。再次发送与已加载相同的K线不会改变任何东西；缺少成交量按 0 处理，与 <code>setData</code> 相同，所以请发送完整的K线。它会发送 <code>dataUpdate</code>，内容为 <code>{'{'} kind: 'correction', time, index {'}'}</code>。在 ChartWidget 中，<code>widget.getChart().updateBar(bar)</code> 修正已连接数据源的K线；用 <code>setData</code> 交给组件的K线是它重新构建各周期所用的副本，所以对它们的修正只保留到下一次切换周期（针对这种情况的组件方法稍后提供）。
 </p>
 
 <p id="bar-times">
@@ -389,7 +394,7 @@ const sessions = computeSessionProfiles(bars, priceMin, priceMax)  // per-day TP
 chart.on('orderModify', e => /* OrderModifyPayload */)
 chart.on('signalMarkerAdd', e => /* { marker } */)
 chart.on('tradeZoneAdd', e => /* { zone } */)
-chart.on('dataUpdate', e => /* setData 和新K线时为 { kind: 'bars', length }；其他情况 kind 为 'alert' | 'bracket' | 'connection' | 'error' */)
+chart.on('dataUpdate', e => /* setData 和新K线时为 { kind: 'bars', length }；修正K线时为 { kind: 'correction', time, index }；其他情况 kind 为 'alert' | 'bracket' | 'connection' | 'error' */)
 chart.on('ordersChange', e => /* { orders } */)
 chart.on('positionsChange', e => /* { positions } */)
 chart.on('executionFill', e => /* { side, price, quantity, reason, pnl } */)

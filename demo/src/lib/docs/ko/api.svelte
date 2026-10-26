@@ -27,12 +27,17 @@
     <tr><td><code>appendBars(bars)</code></td><td>일괄 추가합니다. 지표는 한 번만 다시 계산합니다.</td></tr>
     <tr><td><code>updateLastBar(bar)</code></td><td>현재 형성 중인 봉을 변경합니다.</td></tr>
     <tr><td><code>updateLastBarFromTick(tick)</code></td><td>틱을 마지막 봉에 병합합니다.</td></tr>
+    <tr><td><code>updateBar(bar)</code></td><td>불러온 봉을 고칩니다. 시리즈 어디에 있든 시각이 같은 봉입니다. 보는 위치는 그대로이며, 그 시각의 봉이 없으면 false를 돌려줍니다.</td></tr>
     <tr><td><code>getData()</code></td><td>원본 OHLC 시리즈를 읽습니다.</td></tr>
   </tbody>
 </table>
 
 <p id="live-price">
   <code>appendBar</code>, <code>appendBars</code>, <code>updateLastBar</code>로 넣은 봉과 틱은 현재 가격입니다. 가격선, 알림, 주문의 손익은 연결된 스트림이나 <code>setCurrentPrice</code>를 따를 때처럼 이를 따릅니다. 새 봉은 <code>dataUpdate</code>를 보내고, 형성 중인 봉의 틱은 보내지 않습니다.
+</p>
+
+<p id="corrections">
+  피드가 고친 봉은 <code>updateBar(bar)</code>로 넣습니다. 시리즈 어디에 있든 <code>time</code>이 같은 불러온 봉을 바꾸고 <code>true</code>를 돌려줍니다. 지표는 그 봉부터 다시 계산되고, 하이킨아시, 렌코 등 봉으로 만드는 차트 유형도 따라가며, 보는 위치는 그대로입니다. 다음 프레임 전의 여러 수정은 가장 이른 봉부터 한 번만 계산됩니다. 그 시각의 불러온 봉이 없거나(새 봉은 <code>appendBar</code>, 더 오래된 봉은 <code>prependBars</code>로 넣습니다) 차트가 받을 수 없는 봉이면 <code>false</code>를 돌려주고 아무것도 바꾸지 않습니다. 실시간 가격이 아닙니다. 주문과 알림은 이를 따르지 않고, 이것으로 알림이 울리지 않으며, 지표 선의 알림도 고친 값으로 다시 확인하지 않습니다. 마지막 봉을 고치면 <code>setData</code> 뒤처럼 가격선이 그 종가로 옮겨 갑니다. 리플레이 중에는 실시간 시리즈를 고치며, 리플레이가 끝나면 보입니다. 시간외 거래를 숨긴 동안 시간외 봉은 다시 보이게 하면 나타납니다. 불러온 봉과 같은 봉을 다시 보내면 아무것도 바뀌지 않습니다. 거래량이 없으면 <code>setData</code>처럼 0이 되므로 봉의 값을 모두 보내세요. <code>dataUpdate</code>를 <code>{'{'} kind: 'correction', time, index {'}'}</code>로 보냅니다. ChartWidget에서는 연결된 피드의 봉을 <code>widget.getChart().updateBar(bar)</code>로 고칩니다. <code>setData</code>로 위젯에 준 봉은 위젯이 시간 단위를 다시 만드는 원본 복사본이라, 그에 대한 수정은 다음에 시간 단위를 바꿀 때까지만 남습니다(이를 위한 위젯 메서드는 나중에 추가됩니다).
 </p>
 
 <p id="bar-times">
@@ -403,7 +408,7 @@ const sessions = computeSessionProfiles(bars, priceMin, priceMax)  // per-day TP
 chart.on('orderModify', e => /* OrderModifyPayload */)
 chart.on('signalMarkerAdd', e => /* { marker } */)
 chart.on('tradeZoneAdd', e => /* { zone } */)
-chart.on('dataUpdate', e => /* setData와 새 봉에서는 { kind: 'bars', length }, 그 밖에는 kind 'alert' | 'bracket' | 'connection' | 'error' */)
+chart.on('dataUpdate', e => /* setData와 새 봉에서는 { kind: 'bars', length }, 봉을 고치면 { kind: 'correction', time, index }, 그 밖에는 kind 'alert' | 'bracket' | 'connection' | 'error' */)
 chart.on('ordersChange', e => /* { orders } */)
 chart.on('positionsChange', e => /* { positions } */)
 chart.on('executionFill', e => /* { side, price, quantity, reason, pnl } */)

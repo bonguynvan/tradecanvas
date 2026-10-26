@@ -144,6 +144,19 @@ describe('WebGLSeriesRenderer', () => {
     expect(sub[0].args[1]).toBe(19 * 6 * 4);
   });
 
+  it('uploads the series whole when its revision moved: a bar corrected in place', () => {
+    const r = makeRenderer()!;
+    const data = series(20);
+    r.render(frame({ data, seriesRevision: 0 }));
+    const whole = () => named('bufferData').filter((c) => c.args[2] === fake.enumOf('DYNAMIC_DRAW')).length;
+    const before = whole();
+    // Bar 9 of 20 is none of the bars sampled to tell new history from a tick.
+    data[9] = { ...data[9], close: 105, high: 110 };
+    r.render(frame({ data, seriesRevision: 1 }));
+    expect(whole()).toBe(before + 1);
+    expect(named('bufferSubData')).toHaveLength(0);
+  });
+
   it('dashes a rectangle on its own attribute, after the colour', () => {
     const r = makeRenderer()!;
     r.render(frame({ background: { grid: false, rects: [{ x: 1, y: 2, width: 3, height: 4, color: '#ff0000', alpha: 0.5, dash: [6, 4] }] }, candles: false, volume: null }));

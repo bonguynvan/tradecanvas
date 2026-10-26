@@ -16,6 +16,13 @@ function fakeChart(options: { extendedHours?: boolean; replay?: boolean } = {}) 
     updateLastBar: vi.fn((b: OHLCBar) => { held[held.length - 1] = b; }),
     appendBar: vi.fn((b: OHLCBar) => { held.push(b); }),
     appendBars: vi.fn((bars: OHLCBar[]) => { held.push(...bars); }),
+    /** As the chart's: the loaded bar with that time, or false. */
+    updateBar: vi.fn((b: OHLCBar) => {
+      const i = held.findIndex((h) => h.time === b.time);
+      if (i < 0) return false;
+      held[i] = b;
+      return true;
+    }),
     getData: () => held,
     isExtendedHoursVisible: () => options.extendedHours ?? true,
     isReplayActive: () => options.replay ?? false,
@@ -162,14 +169,77 @@ describe('feedBars', () => {
     expect(Object.isFrozen(chart.appendBar.mock.calls[0][0])).toBe(false);
   });
 
-  it('does not see an older bar changed in place: that needs a new bar in its place', () => {
+  it('does not see a bar before the last few changed in place: that needs a new bar in its place', () => {
     const chart = fakeChart();
-    const bars = [bar(1), bar(2), bar(3)];
+    const bars = [bar(1), bar(2), bar(3), bar(4), bar(5), bar(6)];
     const fed = feedBars(chart, bars, null);
     const next = bars.slice();
-    next[0].close = 9;
+    next[1].close = 9;
     feedBars(chart, next, fed);
     expect(chart.setData).toHaveBeenCalledTimes(1);
+    expect(chart.updateBar).not.toHaveBeenCalled();
+  });
+
+  it('feeds a change to one of the last bars before the forming one as updateBar, in a new array and in place', () => {
+    const chart = fakeChart();
+    const bars = [bar(1), bar(2), bar(3), bar(4), bar(5), bar(6)];
+    let fed = feedBars(chart, bars, null);
+    // A new array, the venue's final for bar 4.
+    let next = [...bars.slice(0, 3), bar(4, 9), ...bars.slice(4)];
+    fed = feedBars(chart, next, fed);
+    expect(chart.updateBar).toHaveBeenCalledWith(bar(4, 9));
+    // In place: bar 5, with the forming bar changed and a bar added.
+    Object.assign(next[4], { close: 7, high: 7 });
+    Object.assign(next[5], { close: 8, high: 8 });
+    next.push(bar(7));
+    fed = feedBars(chart, next, fed);
+    expect(chart.updateBar).toHaveBeenLastCalledWith(bar(5, 7));
+    expect(chart.updateLastBar).toHaveBeenLastCalledWith(bar(6, 8));
+    expect(chart.appendBar).toHaveBeenLastCalledWith(bar(7));
+    // The bar that was forming is one of the last bars before the forming one now.
+    next = [...next.slice(0, 5), bar(6, 3), bar(7)];
+    feedBars(chart, next, fed);
+    expect(chart.updateBar).toHaveBeenLastCalledWith(bar(6, 3));
+    expect(chart.updateBar).toHaveBeenCalledTimes(3);
+    expect(chart.setData).toHaveBeenCalledTimes(1);
+    expect(chart.held).toEqual(next);
+  });
+
+  it('takes a change further back, or to a time, as a new series', () => {
+    const before = [bar(1), bar(2), bar(3), bar(4), bar(5), bar(6)];
+    for (const next of [
+      [bar(1), bar(2, 9), ...before.slice(2)],
+      [...before.slice(0, 4), bar(5.5), bar(6)],
+      [...before.slice(0, 4), { ...bar(5), close: Number.NaN }, bar(6)],
+    ]) {
+      const chart = fakeChart();
+      const fed = feedBars(chart, before, null);
+      feedBars(chart, next, fed);
+      expect(chart.updateBar).not.toHaveBeenCalled();
+      expect(chart.setData).toHaveBeenLastCalledWith(next);
+    }
+  });
+
+  it('falls back to one setData when the chart has no bar at that time, with no bar appended twice', () => {
+    const chart = fakeChart();
+    const fed = feedBars(chart, [bar(1), bar(2), bar(3), bar(4), bar(5)], null);
+    chart.updateBar.mockReturnValue(false); // the chart left the bar out, say
+    const next = [bar(1), bar(2), bar(3), bar(4, 9), bar(5, 2), bar(6), bar(7)];
+    feedBars(chart, next, fed);
+    expect(chart.setData).toHaveBeenCalledTimes(2);
+    expect(chart.setData).toHaveBeenLastCalledWith(next);
+    expect(chart.updateLastBar).not.toHaveBeenCalled();
+    expect(chart.appendBar).not.toHaveBeenCalled();
+    expect(chart.appendBars).not.toHaveBeenCalled();
+    expect(chart.held).toEqual(next);
+  });
+
+  it('gives a host without updateBar the bars as a new series', () => {
+    const { updateBar: _none, ...chart } = fakeChart();
+    const fed = feedBars(chart, [bar(1), bar(2), bar(3), bar(4)], null);
+    feedBars(chart, [bar(1), bar(2), bar(3, 9), bar(4), bar(5)], fed);
+    expect(chart.setData).toHaveBeenCalledTimes(2);
+    expect(chart.appendBar).not.toHaveBeenCalled();
   });
 });
 
@@ -234,6 +304,30 @@ describe('feedBars on a chart', () => {
     expect(first()).toBe(before);
     chart.appendBars([bar(T0 + 101 * T), bar(T0 + 102 * T)]);
     expect(first()).toBe(before);
+  });
+
+  it('corrects one of the last bars before the forming one in place: the view stays, the bars are what setData would give', () => {
+    installChartStubs();
+    host = sizedHost();
+    chart = new Chart(host, {});
+    const oracle = new Chart(sizedHost(), {});
+    others.push(oracle);
+    const T0 = Date.UTC(2025, 0, 6);
+    const T = 60_000;
+    const given = Array.from({ length: 100 }, (_, i) => bar(T0 + i * T, 10 + (i % 5)));
+    const ema = chart.addIndicator('ema', { period: 5 })!;
+    const oracleEma = oracle.addIndicator('ema', { period: 5 })!;
+    const fed = feedBars(chart, given, null);
+    chart.setVisibleRange(given[40].time, given[80].time);
+    const view = chart.getVisibleTimeRange();
+    const setData = vi.spyOn(chart, 'setData');
+    given[97] = { ...given[97], close: 30, high: 30 };
+    feedBars(chart, given, fed);
+    oracle.setData(given);
+    expect(setData).not.toHaveBeenCalled();
+    expect(chart.getData()).toEqual(oracle.getData());
+    expect(chart.getIndicatorOutput(ema)?.series).toEqual(oracle.getIndicatorOutput(oracleEma)?.series);
+    expect(chart.getVisibleTimeRange()).toEqual(view);
   });
 
   it('leaves the chart with the bars given, tick by tick and after another writer', () => {

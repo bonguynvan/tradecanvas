@@ -122,6 +122,8 @@ export interface RenderContext {
   viewport: ViewportState;
   theme: Theme;
   data: DataSeries;
+  /** Moves when a bar of `data` was replaced in place (a correction): the GPU writes the bars again (`GpuFrame.seriesRevision`). */
+  seriesRevision?: number;
   /** Tag each indicator line's latest value on its value axis (default on). */
   indicatorValueLabels?: boolean;
   /** Price text as the price axis writes it (precision, locale). */
@@ -404,6 +406,7 @@ export class RenderEngine {
       dpr,
       candles: ctx.chartRenderer instanceof CandlestickRenderer,
       volume, background, under, recorded: recorder,
+      seriesRevision: ctx.seriesRevision,
     });
     const plan = drawn.recorded ? recorded : canvasPlan(plot);
     const result = { drawn: { ...drawn, volume: drawn.volume || profiles }, plan };

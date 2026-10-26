@@ -27,12 +27,17 @@
     <tr><td><code>appendBars(bars)</code></td><td>Añade en lote; recalcula los indicadores una sola vez.</td></tr>
     <tr><td><code>updateLastBar(bar)</code></td><td>Modifica la barra en formación.</td></tr>
     <tr><td><code>updateLastBarFromTick(tick)</code></td><td>Fusiona un tick en la última barra.</td></tr>
+    <tr><td><code>updateBar(bar)</code></td><td>Corrige una barra cargada: la que tiene el mismo tiempo, en cualquier lugar de la serie. La vista se mantiene; false si ninguna barra cargada tiene ese tiempo.</td></tr>
     <tr><td><code>getData()</code></td><td>Lee la serie OHLC sin procesar.</td></tr>
   </tbody>
 </table>
 
 <p id="live-price">
   Una barra de <code>appendBar</code>, <code>appendBars</code> o <code>updateLastBar</code>, y un tick, son el precio en vivo: la línea de precio, las alertas y el P&amp;L de las órdenes lo siguen, igual que siguen a un stream conectado y a <code>setCurrentPrice</code>. Una barra nueva envía <code>dataUpdate</code>; un tick en la barra en formación, no.
+</p>
+
+<p id="corrections">
+  Una barra que tu feed corrige entra con <code>updateBar(bar)</code>: reemplaza la barra cargada con el mismo <code>time</code>, esté donde esté en la serie, y devuelve <code>true</code>. Los indicadores se calculan de nuevo desde esa barra, Heikin-Ashi, Renko y los demás tipos construidos a partir de las barras la siguen, y la vista se queda donde está; las correcciones antes del siguiente fotograma se calculan una sola vez, desde la más antigua. Devuelve <code>false</code> y no cambia nada cuando ninguna barra cargada tiene ese tiempo (una barra nueva es de <code>appendBar</code>, las anteriores de <code>prependBars</code>) o el gráfico no puede aceptar la barra. No es un precio en vivo: las órdenes y las alertas no la siguen, ninguna alerta salta por ella y las alertas sobre líneas de indicadores no se comprueban de nuevo con los valores corregidos. Una última barra corregida mueve la línea de precio, como tras <code>setData</code>. Durante una repetición corrige la serie en vivo, que se ve al terminar la repetición; una barra del horario extendido, mientras está oculto, aparece al mostrarlo. La barra cargada enviada de nuevo no cambia nada; un volumen ausente es 0, como con <code>setData</code>, así que envía la barra completa. Envía <code>dataUpdate</code> con <code>{'{'} kind: 'correction', time, index {'}'}</code>. En ChartWidget, <code>widget.getChart().updateBar(bar)</code> corrige las barras de un feed conectado; las barras que diste al widget con <code>setData</code> son una copia a partir de la cual vuelve a construir sus temporalidades, así que una corrección sobre ellas solo dura hasta el siguiente cambio de temporalidad (un método del widget para esto llegará más adelante).
 </p>
 
 <p id="bar-times">
@@ -426,7 +431,7 @@ const sessions = computeSessionProfiles(bars, priceMin, priceMax)  // per-day TP
 chart.on('orderModify', e => /* OrderModifyPayload */)
 chart.on('signalMarkerAdd', e => /* { marker } */)
 chart.on('tradeZoneAdd', e => /* { zone } */)
-chart.on('dataUpdate', e => /* { kind: 'bars', length } con setData y barras nuevas; o kind 'alert' | 'bracket' | 'connection' | 'error' */)
+chart.on('dataUpdate', e => /* { kind: 'bars', length } con setData y barras nuevas; { kind: 'correction', time, index } al corregir una barra; o kind 'alert' | 'bracket' | 'connection' | 'error' */)
 chart.on('ordersChange', e => /* { orders } */)
 chart.on('positionsChange', e => /* { positions } */)
 chart.on('executionFill', e => /* { side, price, quantity, reason, pnl } */)

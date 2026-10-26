@@ -1,7 +1,7 @@
 export { Chart } from './Chart.js';
 export { syncIndicators } from './frameworks/syncIndicators.js';
 export type { IndicatorSpec, IndicatorHost } from './frameworks/syncIndicators.js';
-export { feedBars } from './frameworks/feedBars.js';
+export { feedBars, CORRECTABLE_BARS } from './frameworks/feedBars.js';
 export type { BarFeedHost, FedBars } from './frameworks/feedBars.js';
 export { DataManager } from './DataManager.js';
 export { HISTORY_RETRY_MS, DEFAULT_HISTORY_PAGE_SIZE } from './HistoryPager.js';

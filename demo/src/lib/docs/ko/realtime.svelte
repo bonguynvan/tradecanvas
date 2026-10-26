@@ -29,7 +29,7 @@ chart.connect({ adapter: new CoinbaseAdapter(), symbol: 'BTC-USD', timeframe: '1
   disconnect(): void
   getConnectionState(): ConnectionState
   fetchHistory(symbol, timeframe, limit?): Promise<OHLCBar[]>
-  on(event, listener): void   // 'bar' | 'tick' | 'snapshot' | 'connectionChange' | 'error' | 'symbolInfo'
+  on(event, listener): void   // 'bar' | 'tick' | 'connectionChange' | 'error' | 'symbolInfo'
   off(event, listener): void
   dispose(): void
 
@@ -62,6 +62,19 @@ chart.connect({ adapter: new CoinbaseAdapter(), symbol: 'BTC-USD', timeframe: '1
 </p>
 <pre><code>{`emit('symbolInfo', { symbol: 'VNM', pricePrecision: 0, minTick: 10, currency: 'VND' })   // 어댑터가 다른 이벤트를 보내는 방식 그대로`}</code></pre>
 
+<h2 id="corrections">피드가 고치는 봉</h2>
+<p>
+  피드는 마감된 봉을 그 봉의 시각 그대로 다시 보내 봉을 고칩니다. <code>parseMessage</code>에서 <code>{'{'} bar, closed: true {'}'}</code>를 돌려주거나 <code>bar</code> 이벤트를 보냅니다. 스트림이 본 가장 새 봉보다 오래된 마감 봉은 그 봉에 대한 피드의 마지막 값입니다(다음 봉의 첫 프레임 뒤에 온 거래소의 확정치나 정정 등). 차트는 어디에 있든 그 시각의 봉을 바꾸고(<code>updateBar</code>), 그 봉부터 지표를 다시 계산하며, 보는 위치는 그대로 둡니다. 실시간 가격이 아닙니다. 가격선, 주문, 알림은 시장을 계속 따릅니다. 가장 새 봉보다 오래된, 아직 형성 중인 프레임은 지난 데이터라 무시되며 아무것도 움직이지 않습니다. 어댑터 없이 쓸 때는 <code>chart.updateBar(bar)</code>를 부릅니다.
+</p>
+<p>
+  <code>aggregateTicks</code>에서는 과거 데이터의 마지막 봉에 체결이 이어서 쌓입니다. 연결 후 첫 체결도 그 봉의 시가, 고가, 저가, 거래량을 그대로 둡니다. 이미 지난 봉의 체결이 늦게 오면 무시하고, 그 봉의 마감 봉이 오면 그것으로 고치며, 형성 중인 봉은 자기 체결을 그대로 가집니다. 더 작은 시간 단위로 만드는 시간 단위에서는 고친 기본 봉이, 형성 중인 봉 앞의 최근 두 개의 만든 봉을 다시 만듭니다. 그보다 앞의 수정은 무시합니다.
+</p>
+<pre><code>{`// 어댑터에서: 차트에 이미 있는 봉에 대한 거래소의 확정치
+parseMessage: (raw) => ({ bar: toBar(raw), closed: true })
+
+// 어댑터 없이 직접 가진 봉
+const corrected = chart.updateBar(bar)   // false: bar.time의 봉을 불러오지 않았음`}</code></pre>
+
 <h2>약 20줄로 어떤 피드든 연결하기</h2>
 <p>
   <code>WebSocketAdapter</code>(실시간 + REST 과거 데이터) 또는 <code>PollingAdapter</code>
@@ -83,11 +96,14 @@ const myAdapter = new WebSocketAdapter({
 
 const agg = new TickAggregator('1d')
 agg.setTimeZone('Asia/Ho_Chi_Minh')         // days start at the exchange's midnight
+agg.seed(history.at(-1).time)               // a bar older than the history's last is past
 agg.on('barClose', (bar) => console.log(bar))   // a bar whose interval is over
+agg.on('correction', (bar) => console.log(bar)) // a closed bar older than the newest
 agg.processTick({ time, price, volume })
 
 const current = agg.getCurrentBar()         // forming bar`}</code></pre>
 <p>주는 월요일에, 월은 1일에 시작합니다. <code>setTimeZone</code>을 쓰면 일, 주, 월과 하루를 나누어떨어지게 하는 시간 단위가 거래소 자정에 시작합니다. 차트는 종목의 시간대(없으면 시장의 시간대)로 스트림의 틱(<code>aggregateTicks</code>)에 이를 설정하고, 틱으로 만든 봉을 기록의 봉에 맞춥니다. 기록이 날짜를 00:00 UTC로 찍으면 일봉도 그렇게 찍고, 2h부터 12h 봉은 기록의 봉이 거래소 자정에 시작할 때만 그곳에서 시작하므로 피드 자체의 4h 봉(00:00, 04:00… UTC)은 시각이 그대로입니다.</p>
+<p>본 것 중 가장 새 봉보다 오래된 봉은 이미 지난 봉입니다. <code>processBar</code>는 마감된 것을 <code>correction</code>으로 보내고 형성 중인 프레임은 무시하며, <code>processTick</code>은 그 봉의 체결을 무시합니다. 그래서 늦게 온 프레임이나 체결이 형성 중인 봉을 일찍 마감하거나 가격을 움직이지 못합니다. <code>seed(time)</code>은 과거 데이터의 마지막 봉에서 시작하고, <code>resume(bar)</code>는 아직 형성 중인 그 봉에 다음 체결이 이어서 쌓이게 합니다. 차트의 스트림은 연결할 때마다 둘 다 합니다. <code>StreamManager</code>는 수정을 <code>barCorrection</code>으로 보냅니다.</p>
 
 <h2>여러 종목의 시세</h2>
 <p>

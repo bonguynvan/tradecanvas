@@ -46,6 +46,13 @@ export const MAX_BASE_RATIO = 1440;
  */
 export const SYMBOL_ZONE_WAIT_MS = 5_000;
 
+/**
+ * Closed buckets whose base bars are kept, newest first, so a feed that
+ * corrects one of their base bars (sends it again as closed) builds the
+ * bucket again. A correction to an older bucket is left out.
+ */
+export const KEPT_BUCKETS = 2;
+
 const DAY_MS = 86_400_000;
 const MINUTE_MS = 60_000;
 
@@ -122,6 +129,11 @@ function compose(time: number, parts: readonly OHLCBar[]): OHLCBar {
   return out;
 }
 
+/** A bucket's base bars, kept by time, merged in time order. */
+function composeParts(time: number, parts: ReadonlyMap<number, OHLCBar>): OHLCBar {
+  return compose(time, [...parts.values()].sort((a, b) => a.time - b.time));
+}
+
 /** How a target timeframe is built: from which of the feed's, and where its days start. */
 interface BuildPlan {
   base: TimeFrame;
@@ -157,6 +169,11 @@ interface ServedTail {
  *   that never flags a bar closed, or repeats a frame, still builds it right.
  *   The bucket closes with its last base bar, or when the next bucket's first
  *   bar arrives. It starts from the base bars history served for it.
+ * - The base bars of the last `KEPT_BUCKETS` closed buckets are kept too: a
+ *   closed base bar for one of them (the feed correcting it) sends the
+ *   bucket again, closed, which the stream takes as a correction. A forming
+ *   frame for a closed bucket, or a bar for one no longer kept (or whose
+ *   base bars it never saw), is left out.
  * - Timeframes the feed has pass straight through; one it cannot build is
  *   refused rather than served as another.
  */
@@ -177,6 +194,8 @@ export class ResamplingAdapter implements DataAdapter {
   private bucket: number | null = null;
   /** The forming bucket's base bars, by time. */
   private parts = new Map<number, OHLCBar>();
+  /** The last closed buckets' base bars, by bucket, oldest first (`KEPT_BUCKETS`). */
+  private closedBuckets = new Map<number, Map<number, OHLCBar>>();
   private tail: ServedTail | null = null;
   /** Bumped by connect and disconnect: history paging in progress stops. */
   private generation = 0;
@@ -215,6 +234,7 @@ export class ResamplingAdapter implements DataAdapter {
     const base = this.baseFor(config.timeframe);
     this.generation++;
     this.resetBucket();
+    this.closedBuckets.clear();
     // History came first and settled the symbol's zone: live bars follow it.
     this.live = base === config.timeframe
       ? null
@@ -227,6 +247,7 @@ export class ResamplingAdapter implements DataAdapter {
     this.generation++;
     this.inner.disconnect();
     this.resetBucket();
+    this.closedBuckets.clear();
     this.live = null;
   }
 
@@ -422,11 +443,15 @@ export class ResamplingAdapter implements DataAdapter {
     }
     const { bar, closed } = event.data as { bar: OHLCBar; closed: boolean };
     const bucket = timeframeBucketStart(bar.time, live.target, live.bucket);
-    if (this.bucket !== null && bucket < this.bucket) return; // a late frame of a closed bucket
+    if (this.bucket !== null && bucket < this.bucket) {
+      if (closed) this.correctClosed(bucket, bar);
+      return; // a late frame of a closed bucket
+    }
     if (this.bucket !== null && bucket > this.bucket) {
       // A bar of the next bucket: the current one is complete.
       const done = this.composed();
       if (done) this.emit('bar', { bar: done, closed: true });
+      this.keepClosed();
       this.resetBucket();
     }
     this.bucket = bucket;
@@ -438,6 +463,7 @@ export class ResamplingAdapter implements DataAdapter {
     const lastOfBucket = closed && next !== bucket;
     this.emit('bar', { bar: current, closed: lastOfBucket });
     if (lastOfBucket) {
+      this.keepClosed();
       this.resetBucket();
       // The next bucket starts after this one, never at it again.
       this.bucket = next;
@@ -447,10 +473,32 @@ export class ResamplingAdapter implements DataAdapter {
   /** The current bucket: its base bars merged in time order. */
   private composed(): OHLCBar | null {
     if (this.bucket === null || this.parts.size === 0) return null;
-    const parts = [...this.parts.values()].sort((a, b) => a.time - b.time);
-    return compose(this.bucket, parts);
+    return composeParts(this.bucket, this.parts);
   }
 
+  /**
+   * A closed base bar of a closed bucket: the bucket again, closed, from the
+   * base bars kept for it. One not kept is left out: built from part of its
+   * base bars, it would be wrong.
+   */
+  private correctClosed(bucket: number, bar: OHLCBar): void {
+    const parts = this.closedBuckets.get(bucket);
+    if (!parts) return;
+    parts.set(bar.time, bar);
+    this.emit('bar', { bar: composeParts(bucket, parts), closed: true });
+  }
+
+  /** The bucket closing now: its base bars kept, the oldest kept let go beyond `KEPT_BUCKETS`. */
+  private keepClosed(): void {
+    if (this.bucket === null || this.parts.size === 0) return;
+    this.closedBuckets.set(this.bucket, this.parts);
+    for (const oldest of this.closedBuckets.keys()) {
+      if (this.closedBuckets.size <= KEPT_BUCKETS) break;
+      this.closedBuckets.delete(oldest);
+    }
+  }
+
+  /** The forming bucket starts again; the closed ones kept stay (a connect or disconnect clears them). */
   private resetBucket(): void {
     this.bucket = null;
     this.parts = new Map();

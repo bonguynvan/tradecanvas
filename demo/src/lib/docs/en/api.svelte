@@ -27,12 +27,17 @@
     <tr><td><code>appendBars(bars)</code></td><td>Batch append; recalculates indicators once.</td></tr>
     <tr><td><code>updateLastBar(bar)</code></td><td>Mutate the current forming bar.</td></tr>
     <tr><td><code>updateLastBarFromTick(tick)</code></td><td>Merge a tick into the last bar.</td></tr>
+    <tr><td><code>updateBar(bar)</code></td><td>Correct a loaded bar: the one with the same time, anywhere in the series. The view stays; false when no loaded bar has that time.</td></tr>
     <tr><td><code>getData()</code></td><td>Read the raw OHLC series.</td></tr>
   </tbody>
 </table>
 
 <p id="live-price">
   A bar from <code>appendBar</code>, <code>appendBars</code> or <code>updateLastBar</code>, and a tick, is the live price: the price line, the alerts and the orders' P&amp;L follow it, as they follow a connected stream and <code>setCurrentPrice</code>. A new bar sends <code>dataUpdate</code>; a tick on the forming bar sends none.
+</p>
+
+<p id="corrections">
+  A bar your feed corrects goes in with <code>updateBar(bar)</code>: it replaces the loaded bar with the same <code>time</code>, wherever it is in the series, and returns <code>true</code>. The indicators are computed again from that bar on, Heikin-Ashi, Renko and the other types built from the bars follow, and the view stays where it is; corrections before the next frame are computed once, from the earliest. It returns <code>false</code> and changes nothing when no loaded bar has that time (a new bar is <code>appendBar</code>'s, older ones <code>prependBars</code>') or the chart can't take the bar. It is no live price: the orders and the alerts don't follow it, no alert fires on it, and alerts on indicator lines aren't checked against the corrected values. A corrected last bar moves the price line, as after <code>setData</code>. During a replay it corrects the live series, shown when the replay ends; a bar in the extended hours, while they are hidden, shows when they are shown. The bar loaded, sent again, changes nothing; a missing volume is 0, as with <code>setData</code>, so send the bar whole. It sends <code>dataUpdate</code> with <code>{'{'} kind: 'correction', time, index {'}'}</code>. In ChartWidget, <code>widget.getChart().updateBar(bar)</code> corrects the bars of a connected feed; bars you gave the widget with <code>setData</code> are a copy it builds its timeframes from again, so a correction to them lasts only until the next timeframe switch (a widget method for these is to come).
 </p>
 
 <p id="bar-times">
@@ -415,7 +420,7 @@ const sessions = computeSessionProfiles(bars, priceMin, priceMax)  // per-day TP
 chart.on('orderModify', e => /* OrderModifyPayload */)
 chart.on('signalMarkerAdd', e => /* { marker } */)
 chart.on('tradeZoneAdd', e => /* { zone } */)
-chart.on('dataUpdate', e => /* { kind: 'bars', length } on setData and new bars; or kind 'alert' | 'bracket' | 'connection' | 'error' */)
+chart.on('dataUpdate', e => /* { kind: 'bars', length } on setData and new bars; { kind: 'correction', time, index } on a corrected bar; or kind 'alert' | 'bracket' | 'connection' | 'error' */)
 chart.on('ordersChange', e => /* { orders } */)
 chart.on('positionsChange', e => /* { positions } */)
 chart.on('executionFill', e => /* { side, price, quantity, reason, pnl } */)

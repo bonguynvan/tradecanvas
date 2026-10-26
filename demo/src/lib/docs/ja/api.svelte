@@ -27,12 +27,17 @@
     <tr><td><code>appendBars(bars)</code></td><td>まとめて追加します。インジケーターの再計算は 1 回だけです。</td></tr>
     <tr><td><code>updateLastBar(bar)</code></td><td>形成中の現在のバーを更新します。</td></tr>
     <tr><td><code>updateLastBarFromTick(tick)</code></td><td>ティックを最後のバーに統合します。</td></tr>
+    <tr><td><code>updateBar(bar)</code></td><td>読み込み済みのバーを修正します。系列のどこにあっても、時刻が同じバーです。表示位置はそのままで、その時刻のバーがなければ false を返します。</td></tr>
     <tr><td><code>getData()</code></td><td>元の OHLC 系列を取得します。</td></tr>
   </tbody>
 </table>
 
 <p id="live-price">
   <code>appendBar</code>・<code>appendBars</code>・<code>updateLastBar</code> で渡したバーとティックは現在価格です。価格ライン、アラート、注文の損益は、接続中のストリームや <code>setCurrentPrice</code> と同じようにこれに従います。新しいバーは <code>dataUpdate</code> を送り、形成中のバーへのティックは送りません。
+</p>
+
+<p id="corrections">
+  フィードが修正したバーは <code>updateBar(bar)</code> で入れます。系列のどこにあっても <code>time</code> が同じ読み込み済みのバーを置き換え、<code>true</code> を返します。インジケーターはそのバーから計算し直され、平均足や練行足などバーから作るチャートの種類も追従し、表示位置はそのままです。次のフレームまでの修正は、いちばん古いものから 1 回だけ計算されます。その時刻の読み込み済みのバーがない場合（新しいバーは <code>appendBar</code>、それより古いバーは <code>prependBars</code> で入れます）や、チャートが受け付けられないバーの場合は <code>false</code> を返し、何も変えません。ライブ価格ではありません。注文もアラートも追従せず、それでアラートが発火することはなく、インジケーターの線のアラートも修正後の値で確かめ直されません。最後のバーを修正すると、<code>setData</code> の後と同じく価格線がその終値に移ります。リプレイ中はライブの系列を修正し、リプレイが終わると表示されます。時間外取引を隠しているあいだ、時間外のバーは表示に戻したときに現れます。読み込み済みと同じバーを送り直しても何も変わりません。出来高がなければ <code>setData</code> と同じく 0 になるので、バーはすべての値を送ってください。<code>dataUpdate</code> を <code>{'{'} kind: 'correction', time, index {'}'}</code> で送ります。ChartWidget では、接続したフィードのバーを <code>widget.getChart().updateBar(bar)</code> で修正します。<code>setData</code> でウィジェットに渡したバーは、ウィジェットが時間足を作り直す元のコピーなので、それへの修正は次に時間足を切り替えるまでしか残りません（そのためのウィジェットのメソッドは今後追加します）。
 </p>
 
 <p id="bar-times">
@@ -399,7 +404,7 @@ const sessions = computeSessionProfiles(bars, priceMin, priceMax)  // per-day TP
 chart.on('orderModify', e => /* OrderModifyPayload */)
 chart.on('signalMarkerAdd', e => /* { marker } */)
 chart.on('tradeZoneAdd', e => /* { zone } */)
-chart.on('dataUpdate', e => /* setData と新しいバーでは { kind: 'bars', length }、ほかに kind 'alert' | 'bracket' | 'connection' | 'error' */)
+chart.on('dataUpdate', e => /* setData と新しいバーでは { kind: 'bars', length }、バーの修正では { kind: 'correction', time, index }、ほかに kind 'alert' | 'bracket' | 'connection' | 'error' */)
 chart.on('ordersChange', e => /* { orders } */)
 chart.on('positionsChange', e => /* { positions } */)
 chart.on('executionFill', e => /* { side, price, quantity, reason, pnl } */)

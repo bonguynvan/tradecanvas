@@ -41,10 +41,13 @@ also works on a widget.
    the type check. `addIndicator` returns an instance id (`null` if the feature or
    id is turned off); later calls take that instance id, not the indicator id.
 6. **Live updates:** `appendBar` for a new bar, `updateLastBar` for the forming
-   one. Never `setData` on every tick: it resets the view and recomputes
-   everything. Their close is the live price: the price line, the alerts and
-   the orders' P&L follow it (a feed with only a price, no bars:
-   `setCurrentPrice`).
+   one, `updateBar` for a closed bar the feed corrects (same `time`, anywhere
+   in the series; `false` when no loaded bar has it). Never `setData` on every
+   tick, or to fix a bar: it resets the view and recomputes everything. The
+   close of a new or forming bar is the live price: the price line, the alerts
+   and the orders' P&L follow it (a feed with only a price, no bars:
+   `setCurrentPrice`); a correction is not. A connected feed corrects a bar by
+   sending it again with `closed: true`.
 7. Read values with `chart.getIndicatorOutput(instanceId)?.series[i]` (an object
    keyed by the indicator's line keys), not by guessing from the drawing.
 8. **Look names up when the TradeCanvas MCP server is connected** (tools named
@@ -265,7 +268,7 @@ it being kept.
 | `crosshairLeave` | — |
 | `barClick` | `{ bar, barIndex, point }` |
 | `visibleRangeChange` | `{ from, to }` bar indices |
-| `dataUpdate` | by `kind`: `'bars'` (`{ length }`: `setData`, a bar appended, by hand or by the stream; not a tick), `'alert'`, `'bracket'`, `'connection'`, `'error'` |
+| `dataUpdate` | by `kind`: `'bars'` (`{ length }`: `setData`, a bar appended, by hand or by the stream; not a tick), `'correction'` (`{ time, index }`: `updateBar`, or a feed's closed bar for an older time), `'alert'`, `'bracket'`, `'connection'`, `'error'` |
 | `chartTypeChange` | `{ type, previous }` (`getChartType()` reads it back) |
 | `indicatorAdd` / `indicatorRemove` | `{ instanceId, id }` |
 | `indicatorChange` | `{ instanceId, change }`: `'visible' \| 'style' \| 'levels' \| 'params' \| 'pane'` |
@@ -325,6 +328,7 @@ own CSS through `--tcw-*` variables and `[data-tcw-part~="name"]` (stable throug
 | `addIndicator` returns `null` | `features.indicators` is off, or `features.indicatorIds` leaves it out |
 | Indicator line missing at the start | Warm-up: no value until its period has enough bars |
 | Chart stutters on a fast feed | `setData` called per tick instead of `updateLastBar` / `appendBar` |
+| View jumps back to the newest bar when the feed fixes a closed bar | `setData` used for it: call `updateBar(bar)` (same `time`) |
 | A React/Vue/Svelte chart shows Binance bars before yours | Pass `data` at mount, or `stream={false}` |
 
 ## References

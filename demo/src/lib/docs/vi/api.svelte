@@ -27,12 +27,17 @@
     <tr><td><code>appendBars(bars)</code></td><td>Thêm hàng loạt; chỉ tính lại chỉ báo một lần.</td></tr>
     <tr><td><code>updateLastBar(bar)</code></td><td>Sửa nến đang hình thành.</td></tr>
     <tr><td><code>updateLastBarFromTick(tick)</code></td><td>Gộp một tick vào nến cuối.</td></tr>
+    <tr><td><code>updateBar(bar)</code></td><td>Sửa một nến đã nạp: nến có cùng thời gian, ở bất kỳ đâu trong chuỗi. Khung nhìn giữ nguyên; trả về false khi không có nến đã nạp nào có thời gian đó.</td></tr>
     <tr><td><code>getData()</code></td><td>Đọc chuỗi OHLC gốc.</td></tr>
   </tbody>
 </table>
 
 <p id="live-price">
   Nến từ <code>appendBar</code>, <code>appendBars</code> hay <code>updateLastBar</code>, và một tick, là giá hiện tại: đường giá, cảnh báo và lãi/lỗ của lệnh đi theo nó, như đi theo một luồng dữ liệu đã kết nối và <code>setCurrentPrice</code>. Nến mới gửi <code>dataUpdate</code>; tick trên nến đang hình thành thì không.
+</p>
+
+<p id="corrections">
+  Nến mà nguồn dữ liệu của bạn sửa lại được đưa vào bằng <code>updateBar(bar)</code>: nó thay nến đã nạp có cùng <code>time</code>, dù nằm ở đâu trong chuỗi, và trả về <code>true</code>. Các chỉ báo được tính lại từ nến đó trở đi, Heikin-Ashi, Renko và các kiểu biểu đồ dựng từ nến cũng theo, còn khung nhìn giữ nguyên chỗ cũ; nhiều lần sửa trước khung hình kế tiếp chỉ được tính một lần, từ nến sớm nhất. Nó trả về <code>false</code> và không thay đổi gì khi không có nến đã nạp nào có thời gian đó (nến mới là việc của <code>appendBar</code>, nến cũ hơn là của <code>prependBars</code>) hoặc biểu đồ không nhận được nến đó. Đây không phải giá hiện tại: lệnh và cảnh báo không đi theo nó, không cảnh báo nào kích hoạt vì nó, và cảnh báo trên đường chỉ báo không được kiểm tra lại với giá trị đã sửa. Sửa nến cuối thì đường giá đi theo nó, như sau <code>setData</code>. Trong lúc phát lại, nó sửa chuỗi trực tiếp, hiện ra khi phát lại kết thúc; một nến ngoài giờ giao dịch chính, khi giờ mở rộng đang ẩn, hiện ra khi chúng được bật. Gửi lại đúng nến đã nạp thì không đổi gì; thiếu khối lượng thì tính là 0, như với <code>setData</code>, nên hãy gửi đủ cả nến. Nó gửi <code>dataUpdate</code> với <code>{'{'} kind: 'correction', time, index {'}'}</code>. Trong ChartWidget, <code>widget.getChart().updateBar(bar)</code> sửa nến của nguồn dữ liệu đã kết nối; nến bạn đưa cho widget bằng <code>setData</code> là một bản sao mà widget dựng lại các khung thời gian từ đó, nên lần sửa trên chúng chỉ giữ tới lần đổi khung thời gian kế tiếp (phương thức của widget cho trường hợp này sẽ có sau).
 </p>
 
 <p id="bar-times">
@@ -419,7 +424,7 @@ const sessions = computeSessionProfiles(bars, priceMin, priceMax)  // per-day TP
 chart.on('orderModify', e => /* OrderModifyPayload */)
 chart.on('signalMarkerAdd', e => /* { marker } */)
 chart.on('tradeZoneAdd', e => /* { zone } */)
-chart.on('dataUpdate', e => /* { kind: 'bars', length } khi setData và khi có nến mới; hoặc kind 'alert' | 'bracket' | 'connection' | 'error' */)
+chart.on('dataUpdate', e => /* { kind: 'bars', length } khi setData và khi có nến mới; { kind: 'correction', time, index } khi một nến được sửa; hoặc kind 'alert' | 'bracket' | 'connection' | 'error' */)
 chart.on('ordersChange', e => /* { orders } */)
 chart.on('positionsChange', e => /* { positions } */)
 chart.on('executionFill', e => /* { side, price, quantity, reason, pnl } */)

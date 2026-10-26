@@ -29,7 +29,7 @@ chart.connect({ adapter: new CoinbaseAdapter(), symbol: 'BTC-USD', timeframe: '1
   disconnect(): void
   getConnectionState(): ConnectionState
   fetchHistory(symbol, timeframe, limit?): Promise<OHLCBar[]>
-  on(event, listener): void   // 'bar' | 'tick' | 'snapshot' | 'connectionChange' | 'error' | 'symbolInfo'
+  on(event, listener): void   // 'bar' | 'tick' | 'connectionChange' | 'error' | 'symbolInfo'
   off(event, listener): void
   dispose(): void
 
@@ -64,6 +64,19 @@ chart.connect({ adapter: new CoinbaseAdapter(), symbol: 'BTC-USD', timeframe: '1
 </p>
 <pre><code>{`emit('symbolInfo', { symbol: 'VNM', pricePrecision: 0, minTick: 10, currency: 'VND' })   // as your adapter sends its other events`}</code></pre>
 
+<h2 id="corrections">A bar the feed corrects</h2>
+<p>
+  A feed corrects a bar by sending it again, closed, with its own time: <code>{'{'} bar, closed: true {'}'}</code> from <code>parseMessage</code>, or a <code>bar</code> event. A closed bar older than the newest the stream has seen is the feed's last word on it, a venue's final that came after the next bar's first frame or a revision: the chart replaces the bar with that time wherever it is (<code>updateBar</code>), computes its indicators again from it, and keeps the view. It is no live price: the price line, the orders and the alerts stay with the market. A forming frame older than the newest is stale and left out; it moves nothing. Without an adapter, call <code>chart.updateBar(bar)</code>.
+</p>
+<p>
+  With <code>aggregateTicks</code> the history's last bar is the one the trades build on: the first trade after connecting keeps its open, high, low and volume. A trade for a bar already past, delivered late, is left out, and a closed bar for one corrects it, the forming bar keeping its trades. On a timeframe built from a finer one, a corrected base bar builds its bar again, for the last two built bars before the forming one; a correction further back is left out.
+</p>
+<pre><code>{`// in an adapter: the venue's final for a bar already on the chart
+parseMessage: (raw) => ({ bar: toBar(raw), closed: true })
+
+// your own bars, without an adapter
+const corrected = chart.updateBar(bar)   // false: no loaded bar has bar.time`}</code></pre>
+
 <h2>Any feed in ~20 lines</h2>
 <p>
   Extend <code>WebSocketAdapter</code> (live + REST history) or <code>PollingAdapter</code>
@@ -85,11 +98,14 @@ const myAdapter = new WebSocketAdapter({
 
 const agg = new TickAggregator('1d')
 agg.setTimeZone('Asia/Ho_Chi_Minh')         // days start at the exchange's midnight
+agg.seed(history.at(-1).time)               // a bar older than the history's last is past
 agg.on('barClose', (bar) => console.log(bar))   // a bar whose interval is over
+agg.on('correction', (bar) => console.log(bar)) // a closed bar older than the newest
 agg.processTick({ time, price, volume })
 
 const current = agg.getCurrentBar()         // forming bar`}</code></pre>
 <p>Weeks start on Monday and months on the 1st. With <code>setTimeZone</code>, days, weeks, months and the hour frames that divide a day start at the exchange's midnight; a chart sets it for its stream's ticks (<code>aggregateTicks</code>) from the symbol's zone, else its market's, and lands their bars on the history's: days are stamped at 00:00 UTC when the history's are, and 2h to 12h bars start at the exchange's midnight only when the history's do, so a feed's own 4h bars (00:00, 04:00… UTC) keep their times.</p>
+<p>A bar older than the newest one seen is past: <code>processBar</code> sends a closed one as <code>correction</code> and leaves out a forming one, and <code>processTick</code> leaves out a trade for one, so a late frame or trade can neither close the forming bar early nor move the price. <code>seed(time)</code> starts from a history's last bar, and <code>resume(bar)</code> makes that bar, still forming, the one the next trades build on; a chart's stream does both on every connect. <code>StreamManager</code> sends a correction as <code>barCorrection</code>.</p>
 
 <h2>Quotes for many symbols</h2>
 <p>

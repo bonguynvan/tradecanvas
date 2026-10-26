@@ -1,5 +1,5 @@
 import type { OHLCBar, TimeFrame, RawTick, AggregatedBar, BucketOptions } from '@tradecanvas/commons';
-import { offsetAt, timeframeBucketStart, timeframeSpansDays, timeframeToMs } from '@tradecanvas/commons';
+import { normalizeBarTime, offsetAt, timeframeBucketStart, timeframeSpansDays, timeframeToMs } from '@tradecanvas/commons';
 import { Emitter } from './Emitter.js';
 
 const MINUTE_MS = 60_000;
@@ -9,8 +9,13 @@ interface AggregatorEvents {
   bar: AggregatedBar;
   /** A bar whose interval is over. */
   barClose: AggregatedBar;
+  /** A closed bar older than the newest: the feed's last word on a bar already past (a late final, a revision). */
+  correction: OHLCBar;
   [key: string]: unknown;
 }
+
+/** Whether a bar's prices are all numbers, for trades to go on building it. */
+const pricesAreNumbers = (b: OHLCBar): boolean => [b.open, b.high, b.low, b.close].every(Number.isFinite);
 
 /**
  * Aggregates raw ticks into OHLCV bars aligned to timeframe boundaries.
@@ -20,12 +25,21 @@ interface AggregatorEvents {
  * - Bar close detection (when time crosses boundary)
  * - Volume accumulation
  * - Tick counting
+ * - Bars older than the newest one: a closed one is a correction, sent as
+ *   `correction`; a forming frame, or a trade, for one is left out, so it
+ *   can neither close the forming bar early nor move the price
  *
  * Note: Emitted bars are references to internal state.
  * Listeners MUST NOT mutate them — treat as readonly.
  */
 export class TickAggregator extends Emitter<AggregatorEvents> {
   private currentBar: AggregatedBar | null = null;
+  /**
+   * When the newest bar seen starts, ms (`seed`, the bars and the trades
+   * since): an older bar is past. Times are read by their size, so a history
+   * in seconds lines up with a stream in milliseconds.
+   */
+  private newest = -Infinity;
   private timeframe: TimeFrame;
   private timeframeMs: number;
   /** Bars a day long or more, which `dateStamps` stamps by date. */
@@ -56,9 +70,31 @@ export class TickAggregator extends Emitter<AggregatorEvents> {
     this.timeframe = tf;
     this.timeframeMs = timeframeToMs(tf);
     this.dateFrame = timeframeSpansDays(tf);
-    this.currentBar = null;
-    this.ringHead = 0;
-    this.ringCount = 0;
+    this.reset();
+  }
+
+  /**
+   * When the newest bar a stream's history holds starts (its last bar), or
+   * `-Infinity` for none: a bar older than it is a correction or left out,
+   * as one older than the bars and trades since.
+   */
+  seed(time: number): void {
+    this.newest = Number.isFinite(time) ? normalizeBarTime(time) : -Infinity;
+  }
+
+  /**
+   * The history's last bar, still forming: the next trades go on building
+   * it, its open, high, low and volume kept, rather than starting it again
+   * from the first one. A bar whose prices aren't numbers is left out.
+   */
+  resume(bar: OHLCBar): void {
+    if (!pricesAreNumbers(bar)) return;
+    const time = normalizeBarTime(bar.time);
+    this.newest = Math.max(this.newest, time);
+    this.currentBar = {
+      time, open: bar.open, high: bar.high, low: bar.low, close: bar.close,
+      volume: bar.volume ?? 0, closed: false, tickCount: 0,
+    };
   }
 
   /**
@@ -85,6 +121,11 @@ export class TickAggregator extends Emitter<AggregatorEvents> {
     }
 
     const barTime = this.alignToTimeframe(tick.time);
+    // A trade for a bar already past, delivered late: the bar it belongs to
+    // is no longer built here, and starting it again would close the forming one.
+    const at = normalizeBarTime(barTime);
+    if (at < this.newest) return;
+    this.newest = at;
 
     if (!this.currentBar || this.currentBar.time !== barTime) {
       // Close previous bar
@@ -118,10 +159,18 @@ export class TickAggregator extends Emitter<AggregatorEvents> {
 
   /**
    * Process a pre-formed bar (from adapter that already provides OHLCV).
-   * Detects close by checking if this bar's time differs from current.
+   * Detects close by checking if this bar's time differs from current. A bar
+   * older than the newest is past: closed, it is sent as `correction`, the
+   * forming bar left as it is; forming, it is a stale frame, left out.
    */
   processBar(bar: OHLCBar, closed: boolean): void {
-    if (closed && this.currentBar && this.currentBar.time === bar.time) {
+    const at = normalizeBarTime(bar.time);
+    if (at < this.newest) {
+      if (closed) this.emit('correction', { ...bar });
+      return;
+    }
+    this.newest = at;
+    if (closed && this.currentBar && normalizeBarTime(this.currentBar.time) === at) {
       // Close the bar
       this.currentBar = { ...bar, closed: true, tickCount: this.currentBar.tickCount + 1 };
       this.emit('barClose', this.currentBar);
@@ -153,6 +202,7 @@ export class TickAggregator extends Emitter<AggregatorEvents> {
 
   reset(): void {
     this.currentBar = null;
+    this.newest = -Infinity;
     this.ringHead = 0;
     this.ringCount = 0;
   }

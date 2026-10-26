@@ -272,6 +272,39 @@ describe('a stream, what it leaves out and when it tells', () => {
     expect(seen).toEqual([[61, 61]]);
   });
 
+  it('a stale forming frame from a feed moves no price and fires no alert', async () => {
+    const send = await connected();
+    const fired = alertsFired();
+    type Line = { currentPriceLine: { getPrice(): number | null } };
+    const line = () => (chart as unknown as Line).currentPriceLine.getPrice();
+    chart.addAlert(95, 'crossingDown', 'under 95');
+    send(bar(60, 101), false);
+    const price = ordersPrice();
+    send(bar(57, 90), false); // a frame of a bar three back, late
+    expect(fired).toEqual([]);
+    expect(ordersPrice()).toBe(price);
+    expect(line()).toBe(101);
+    expect(chart.getData()[57].close).toBe(100);
+  });
+
+  it('a late close from a feed corrects the bar before the forming one, as no live price', async () => {
+    const send = await connected();
+    const fired = alertsFired();
+    const ema = chart.addIndicator('ema', { period: 5 })!;
+    chart.addAlert(95, 'crossingDown', 'under 95');
+    send(bar(60, 101), false); // the next bar forms
+    const seen: unknown[] = [];
+    chart.on('dataUpdate', (e) => seen.push(e.payload));
+    send(bar(59, 94), true); // the venue's final of bar 59
+    expect(chart.getData()[59].close).toBe(94);
+    expect(chart.getData()[60].close).toBe(101);
+    expect(chart.getData()).toHaveLength(61);
+    expect(chart.getIndicatorOutput(ema)!.series[59]!.value).toBeLessThan(100);
+    expect(seen).toEqual([{ kind: 'correction', time: bar(59, 94).time, index: 59 }]);
+    expect(fired).toEqual([]);
+    expect(ordersPrice()).toBe(101);
+  });
+
   it('leaves out a closed bar the chart turns down, price and all', async () => {
     const send = await connected();
     const fired = alertsFired();

@@ -10,6 +10,13 @@ const { chart, ChartCtor } = vi.hoisted(() => {
     updateLastBar: vi.fn((bar: unknown) => { held[held.length - 1] = bar; }),
     appendBar: vi.fn((bar: unknown) => { held.push(bar); }),
     appendBars: vi.fn((bars: unknown[]) => { held.push(...bars); }),
+    // As the chart's: the loaded bar with that time, or false.
+    updateBar: vi.fn((bar: { time: number }) => {
+      const i = held.findIndex((h) => (h as { time: number }).time === bar.time);
+      if (i < 0) return false;
+      held[i] = bar;
+      return true;
+    }),
     getData: () => held,
     isExtendedHoursVisible: () => true,
     isReplayActive: () => false,
@@ -37,6 +44,7 @@ const { chart, ChartCtor } = vi.hoisted(() => {
 vi.mock('@tradecanvas/chart', async (importOriginal) => ({
   syncIndicators: (await importOriginal<typeof import('@tradecanvas/chart')>()).syncIndicators,
   feedBars: (await importOriginal<typeof import('@tradecanvas/chart')>()).feedBars,
+  CORRECTABLE_BARS: (await importOriginal<typeof import('@tradecanvas/chart')>()).CORRECTABLE_BARS,
   Chart: ChartCtor,
   BinanceAdapter: vi.fn(),
   DARK_THEME: { name: 'dark' },
@@ -133,6 +141,14 @@ describe('<TradeCanvas> (react)', () => {
     rerender(<TradeCanvas data={[a, { ...b, close: 5 }]} />);
     expect(chart.setData).toHaveBeenLastCalledWith([a, { ...b, close: 5 }]);
     expect(chart.updateLastBar).not.toHaveBeenCalled();
+  });
+
+  it('feeds a new array with a bar before the forming one changed as updateBar: the view stays', () => {
+    const bars = [1, 2, 3, 4, 5].map((time) => ({ ...BAR, time }));
+    const { rerender } = render(<TradeCanvas data={bars} />);
+    rerender(<TradeCanvas data={[...bars.slice(0, 3), { ...bars[3], close: 3, high: 3 }, bars[4]]} />);
+    expect(chart.updateBar).toHaveBeenCalledWith({ ...BAR, time: 4, close: 3, high: 3 });
+    expect(chart.setData).toHaveBeenCalledTimes(1);
   });
 
   it('takes any other new array as a new series', () => {

@@ -181,6 +181,15 @@ describe.each(CASES)('%s incremental update', (id, plugin, params) => {
     expectSameOutput(out, plugin.calculate(all, config));
   });
 
+  it.each([250, Number(params.period ?? 2) + 1])('a bar changed in the middle (a correction at %i) matches a full recalculation', (k) => {
+    const bars = makeBars(300);
+    const prev = plugin.calculate(bars, config);
+    const corrected = [...bars];
+    corrected[k] = { ...tick(bars[k], 0.97), high: bars[k].high * 1.01 };
+    const out = updateOrRecalc(plugin, corrected, config, prev, k);
+    expectSameOutput(out, plugin.calculate(corrected, config));
+  });
+
   it('declines (falls back) when the replaced last bar has a different time', () => {
     const bars = makeBars(300);
     const prev = plugin.calculate(bars, config);

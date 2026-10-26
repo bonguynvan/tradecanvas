@@ -11,6 +11,7 @@ import {
   LIGHT_THEME,
   syncIndicators,
   feedBars,
+  CORRECTABLE_BARS,
 } from '@tradecanvas/chart';
 import type {
   ChartType,
@@ -42,9 +43,11 @@ const props = withDefaults(
      * them at mount. Bars that go on from those given before, the last one
      * changed or bars added after it, go in as live ticks (the view isn't
      * reset): pushed onto the same array, changed in place, or in a new array.
+     * A change to one of the last three bars before the forming one, its time
+     * the same, goes in as a correction (`updateBar`), the view kept too.
      * Any other bars are a new series, as are yours after a stream gave the
-     * chart bars of its own. An older bar changed needs a new array with a new
-     * bar in its place.
+     * chart bars of its own. A bar further back changed in place isn't seen;
+     * in a new array it makes a new series.
      */
     data?: OHLCBar[];
     adapter?: DataAdapter;
@@ -200,6 +203,8 @@ watch(() => [props.symbol, props.timeframe, !props.data, props.stream] as const,
 /** The bars last given to the chart (`feedBars`). */
 let fed: FedBars | null = null;
 const barKey = (b: OHLCBar | undefined) => (b ? `${b.time},${b.open},${b.high},${b.low},${b.close},${b.volume}` : '');
+/** The fields of the forming bar and of the bars before it a change to is a correction (`CORRECTABLE_BARS`). */
+const tailKey = (bars: readonly OHLCBar[] | undefined) => (bars ? bars.slice(-1 - CORRECTABLE_BARS).map(barKey).join(';') : '');
 
 /**
  * Bars into the chart: bars that go on from those given before (a bar pushed
@@ -220,10 +225,11 @@ watch(() => props.features, (f) => {
 
 watch(() => props.theme, (t) => { chart?.setTheme(resolveTheme(t)); });
 watch(() => props.chartType, (ct) => { chart?.setChartType(ct); });
-// The array, its length and the last bar's fields: a bar pushed or the
-// forming bar changed, without walking every bar as a deep watch does.
+// The array, its length and the fields of its last bars: a bar pushed, the
+// forming bar changed or one just before it corrected, without walking
+// every bar as a deep watch does.
 watch(
-  () => [props.data, props.data?.length, barKey(props.data?.[props.data.length - 1])],
+  () => [props.data, props.data?.length, tailKey(props.data)],
   () => {
     if (!chart) return;
     // Without data, the next bars are a new series: a stream may have come in between.

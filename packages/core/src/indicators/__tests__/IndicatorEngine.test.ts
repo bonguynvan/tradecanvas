@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import type { IndicatorPlugin, IndicatorValue, OHLCBar } from '@tradecanvas/commons';
+import { indicatorSource } from '@tradecanvas/commons';
 import { IndicatorEngine } from '../IndicatorEngine.js';
+import { registerBuiltInIndicators } from '../registry.js';
 
 function bars(n: number): OHLCBar[] {
   return Array.from({ length: n }, (_, i) => ({ time: i * 60_000, open: 1, high: 1, low: 1, close: 1, volume: 0 }));
@@ -257,5 +259,79 @@ describe('IndicatorEngine.setExchangeTimeZone', () => {
     engine.setExchangeTimeZone('Asia/Tokyo');
     engine.addIndicator('zone', { length: 3 }, bars(10));
     expect(engine.getActiveIndicators()[0].params).toEqual({ length: 3 });
+  });
+});
+
+/**
+ * A correction replaces a bar in the middle of the series, and the chart
+ * computes the indicators again from it on (`recalculateFrom`), each one
+ * resuming from its state at the bar before, or computing in full.
+ */
+describe('IndicatorEngine.recalculateFrom a corrected bar in the middle', () => {
+  const HOUR = 3_600_000;
+  const T0 = Date.UTC(2026, 0, 5, 13);
+  const wave = (n: number): OHLCBar[] => Array.from({ length: n }, (_, i) => {
+    const close = 100 + Math.sin(i / 5) * 8 + (i % 11) / 3;
+    return { time: T0 + i * HOUR, open: 100, high: Math.max(100, close) + 1, low: Math.min(100, close) - 1, close, volume: 5 + (i % 13) };
+  });
+  /** The bars with bar `k` corrected: a lower close, a wider range, more volume. */
+  const corrected = (bars: OHLCBar[], k: number): OHLCBar[] => {
+    const out = bars.slice();
+    out[k] = { ...bars[k], close: bars[k].close - 6, low: bars[k].low - 6, high: bars[k].high + 3, volume: bars[k].volume + 9 };
+    return out;
+  };
+  /** Outputs to compare: floats to 9 digits, as two orders of the same sums differ further down. */
+  const same = (engine: IndicatorEngine, id: string) =>
+    JSON.stringify(engine.getOutput(id)?.series ?? null, (_, v) => (typeof v === 'number' ? Number(v.toPrecision(9)) : v));
+  const builtIns = (() => {
+    const engine = new IndicatorEngine();
+    registerBuiltInIndicators(engine);
+    return engine.getAvailableIndicators().map((d) => d.id);
+  })();
+
+  it.each([0.5, 0.98])('matches a full recalculation for every built-in (bar at %f of the series)', (where) => {
+    const bars = wave(400);
+    const k = Math.floor(bars.length * where);
+    const live = new IndicatorEngine();
+    registerBuiltInIndicators(live);
+    const ids = builtIns.map((id) => [id, live.addIndicator(id, {}, bars)] as const);
+    const data = corrected(bars, k);
+    live.recalculateFrom(data, k);
+    const oracle = new IndicatorEngine();
+    registerBuiltInIndicators(oracle);
+    for (const [id, instance] of ids) {
+      const fresh = oracle.addIndicator(id, {}, data);
+      expect(same(live, instance), id).toBe(same(oracle, fresh));
+    }
+    expect(ids.length).toBeGreaterThan(60);
+  });
+
+  it.each([0.2, 0.5, 0.9, 0.98])('matches a full recalculation for line-source chains and price sources (bar at %f)', (where) => {
+    const build = (engine: IndicatorEngine, data: OHLCBar[]) => {
+      const rsi = engine.addIndicator('rsi', { period: 14 }, data);
+      const zigzag = engine.addIndicator('zigzag', {}, data);
+      const fractals = engine.addIndicator('fractals', {}, data);
+      const emaOnRsi = engine.addIndicator('ema', { period: 9, source: indicatorSource(rsi, 'value') }, data);
+      const smaOnPivots = engine.addIndicator('sma', { period: 5, source: indicatorSource(zigzag, 'pivot') }, data);
+      const emaHl2 = engine.addIndicator('ema', { period: 7, source: 'hl2' }, data);
+      const bandsOnEma = engine.addIndicator('bb', { period: 10, source: indicatorSource(emaHl2, 'value') }, data);
+      return { rsi, zigzag, fractals, emaOnRsi, smaOnPivots, emaHl2, bandsOnEma };
+    };
+    const bars = wave(400);
+    const k = Math.floor(bars.length * where);
+    const live = new IndicatorEngine();
+    registerBuiltInIndicators(live);
+    const ids = build(live, bars);
+    const data = corrected(bars, k);
+    live.recalculateFrom(data, k);
+    const oracle = new IndicatorEngine();
+    registerBuiltInIndicators(oracle);
+    const fresh = build(oracle, data);
+    // A wrong line key would compare two empty lines.
+    expect(live.getOutput(ids.emaOnRsi)?.series.some((v) => v && Number.isFinite(v.value))).toBe(true);
+    expect(live.getOutput(ids.smaOnPivots)?.series.some((v) => v && Number.isFinite(v.value))).toBe(true);
+    for (const key of Object.keys(ids) as (keyof typeof ids)[]) {
+      expect(same(live, ids[key]), key).toBe(same(oracle, fresh[key]));
+    }
   });
 });

@@ -138,6 +138,22 @@ export class CrosshairHandler {
     this.position = pos;
   }
 
+  /** The bar last reported under the pointer (the callback's `barIndex`); null with none. */
+  getReportedBarIndex(): number | null {
+    return this.lastCallbackBarIndex >= 0 ? this.lastCallbackBarIndex : null;
+  }
+
+  /**
+   * Report the bar under the pointer again, after the frame, though the
+   * pointer hasn't moved: its values changed (a bar corrected in place), and
+   * the callback otherwise fires only when the pointer reaches another bar.
+   */
+  refresh(): void {
+    if (this.lastCallbackBarIndex < 0 || !this.pendingPoint) return;
+    this.pendingBarIndex = this.lastCallbackBarIndex;
+    this.scheduleCallback();
+  }
+
   onPointerLeave(): void {
     this.position = null;
     this.pendingBarIndex = null;

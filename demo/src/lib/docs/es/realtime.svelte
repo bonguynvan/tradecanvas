@@ -29,7 +29,7 @@ chart.connect({ adapter: new CoinbaseAdapter(), symbol: 'BTC-USD', timeframe: '1
   disconnect(): void
   getConnectionState(): ConnectionState
   fetchHistory(symbol, timeframe, limit?): Promise<OHLCBar[]>
-  on(event, listener): void   // 'bar' | 'tick' | 'snapshot' | 'connectionChange' | 'error' | 'symbolInfo'
+  on(event, listener): void   // 'bar' | 'tick' | 'connectionChange' | 'error' | 'symbolInfo'
   off(event, listener): void
   dispose(): void
 
@@ -67,6 +67,19 @@ chart.connect({ adapter: new CoinbaseAdapter(), symbol: 'BTC-USD', timeframe: '1
 </p>
 <pre><code>{`emit('symbolInfo', { symbol: 'VNM', pricePrecision: 0, minTick: 10, currency: 'VND' })   // como tu adaptador envía sus otros eventos`}</code></pre>
 
+<h2 id="corrections">Una barra que el feed corrige</h2>
+<p>
+  Un feed corrige una barra enviándola de nuevo, cerrada, con su propio tiempo: <code>{'{'} bar, closed: true {'}'}</code> desde <code>parseMessage</code>, o un evento <code>bar</code>. Una barra cerrada más antigua que la más reciente que ha visto el flujo es la última palabra del feed sobre ella, el cierre definitivo de un mercado llegado tras el primer fotograma de la barra siguiente o una revisión: el gráfico reemplaza la barra con ese tiempo esté donde esté (<code>updateBar</code>), calcula de nuevo sus indicadores desde ella y mantiene la vista. No es un precio en vivo: la línea de precio, las órdenes y las alertas siguen con el mercado. Un fotograma en formación más antiguo que la barra más reciente está desfasado y se descarta; no mueve nada. Sin adaptador, llama a <code>chart.updateBar(bar)</code>.
+</p>
+<p>
+  Con <code>aggregateTicks</code>, la última barra del historial es la que las operaciones siguen construyendo: la primera operación tras conectar conserva su apertura, máximo, mínimo y volumen. Una operación de una barra ya pasada que llega tarde se descarta, y una barra cerrada para ella la corrige, mientras la barra en formación conserva sus operaciones. En una temporalidad construida a partir de otra más fina, una barra base corregida vuelve a construir su barra, para las dos últimas barras construidas antes de la que está en formación; una corrección más atrás se descarta.
+</p>
+<pre><code>{`// en un adaptador: el cierre definitivo de un mercado para una barra que ya está en el gráfico
+parseMessage: (raw) => ({ bar: toBar(raw), closed: true })
+
+// tus propias barras, sin adaptador
+const corrected = chart.updateBar(bar)   // false: ninguna barra cargada tiene bar.time`}</code></pre>
+
 <h2>Cualquier fuente de datos en ~20 líneas</h2>
 <p>
   Extiende <code>WebSocketAdapter</code> (en vivo + historial por REST) o
@@ -89,11 +102,14 @@ const myAdapter = new WebSocketAdapter({
 
 const agg = new TickAggregator('1d')
 agg.setTimeZone('Asia/Ho_Chi_Minh')         // days start at the exchange's midnight
+agg.seed(history.at(-1).time)               // a bar older than the history's last is past
 agg.on('barClose', (bar) => console.log(bar))   // a bar whose interval is over
+agg.on('correction', (bar) => console.log(bar)) // a closed bar older than the newest
 agg.processTick({ time, price, volume })
 
 const current = agg.getCurrentBar()         // forming bar`}</code></pre>
 <p>Las semanas empiezan el lunes y los meses el día 1. Con <code>setTimeZone</code>, los días, las semanas, los meses y las temporalidades en horas que dividen un día empiezan a la medianoche de la bolsa; un gráfico lo fija para los ticks de su stream (<code>aggregateTicks</code>) según la zona del símbolo, o si no la de su mercado, y hace coincidir sus barras con las del historial: sella los días a las 00:00 UTC cuando el historial lo hace, y las barras de 2h a 12h empiezan a la medianoche de la bolsa solo cuando las del historial empiezan ahí, así que las barras de 4h propias del feed (00:00, 04:00… UTC) conservan su hora.</p>
+<p>Una barra más antigua que la más reciente vista ya ha pasado: <code>processBar</code> envía una cerrada como <code>correction</code> y descarta un fotograma en formación, y <code>processTick</code> descarta una operación de ella, así que un fotograma o una operación con retraso no pueden cerrar antes de tiempo la barra en formación ni mover el precio. <code>seed(time)</code> parte de la última barra de un historial, y <code>resume(bar)</code> hace de esa barra, aún en formación, la que las siguientes operaciones siguen construyendo; el flujo de un gráfico hace ambas cosas en cada conexión. <code>StreamManager</code> envía una corrección como <code>barCorrection</code>.</p>
 
 <h2>Cotizaciones de muchos símbolos</h2>
 <p>

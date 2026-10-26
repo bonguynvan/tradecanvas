@@ -339,3 +339,124 @@ describe('StreamManager.wake — back from sleep', () => {
     expect(pending.length).toBe(1);
   });
 });
+
+describe('StreamManager — bars older than the newest', () => {
+  const HOUR = 3_600_000;
+  const T0 = Date.UTC(2026, 0, 5);
+  const at = (i: number, close = 100, volume = 10): OHLCBar =>
+    ({ time: T0 + i * HOUR, open: 100, high: Math.max(100, close) + 1, low: Math.min(100, close) - 1, close, volume });
+  const history = (n: number) => Array.from({ length: n }, (_, i) => at(i));
+
+  /** A connected stream whose feed the test speaks for, with what it said, by event. */
+  async function live(bars: OHLCBar[], aggregateTicks = false) {
+    const { adapter, pending, listeners } = controlledAdapter();
+    const sm = new StreamManager();
+    const seen = {
+      barUpdate: [] as OHLCBar[], barClose: [] as OHLCBar[], barCorrection: [] as OHLCBar[],
+      priceChange: [] as { price: number; previousClose: number | null }[],
+    };
+    sm.on('barUpdate', (b) => seen.barUpdate.push({ ...b }));
+    sm.on('barClose', (b) => seen.barClose.push({ ...b }));
+    sm.on('barCorrection', (b) => seen.barCorrection.push({ ...b }));
+    sm.on('priceChange', (p) => seen.priceChange.push({ ...p }));
+    const done = sm.connect({ adapter, symbol: 'X', timeframe: '1h', aggregateTicks });
+    pending[0].resolve(bars.map((b) => ({ ...b })));
+    await done;
+    const fire = (type: string, data: unknown) => { for (const l of listeners.get(type) ?? []) l({ type: type as never, data, timestamp: 0 }); };
+    return {
+      sm, seen, pending,
+      bar: (b: OHLCBar, closed: boolean) => fire('bar', { bar: { ...b }, closed }),
+      trade: (time: number, price: number, volume = 1) => fire('tick', { time, price, volume }),
+    };
+  }
+
+  it('sends a closed bar older than the newest as barCorrection, not barClose, and keeps the price and the previous close', async () => {
+    const feed = await live(history(40));
+    feed.bar(at(40, 101), false);
+    const prices = feed.seen.priceChange.length;
+    feed.bar(at(38, 97, 6), true);
+    expect(feed.seen.barCorrection).toEqual([at(38, 97, 6)]);
+    expect(feed.seen.barClose).toEqual([]);
+    expect(feed.seen.priceChange).toHaveLength(prices);
+    expect(feed.sm.getLastPrice()).toBe(101);
+    feed.bar(at(40, 102), false);
+    expect(feed.seen.priceChange.at(-1)).toEqual({ price: 102, previousClose: 100 });
+    feed.sm.dispose();
+  });
+
+  it('drops a forming frame older than the newest without a priceChange or barUpdate', async () => {
+    const feed = await live(history(40));
+    const prices = feed.seen.priceChange.length;
+    feed.bar(at(37, 90), false);
+    expect(feed.seen.barUpdate).toEqual([]);
+    expect(feed.seen.barCorrection).toEqual([]);
+    expect(feed.seen.priceChange).toHaveLength(prices);
+    feed.sm.dispose();
+  });
+
+  it('takes the newest time from the history on every connect and switchTo', async () => {
+    const feed = await live(history(40));
+    feed.bar(at(45, 101), false);
+    // Another timeframe, whose history ends earlier: its bars before 45 are no correction of the last one's.
+    const switching = feed.sm.switchTo('X', '4h');
+    feed.pending[1].resolve(history(20));
+    await switching;
+    feed.bar(at(20, 103), false);
+    expect(feed.seen.barUpdate.at(-1)).toMatchObject({ time: at(20).time, close: 103 });
+    feed.bar(at(19, 99), true);
+    expect(feed.seen.barCorrection.map((b) => b.time)).toEqual([at(19).time]);
+    feed.sm.dispose();
+  });
+
+  it('correcting the newest closed bar moves previousClose; an older one does not', async () => {
+    const feed = await live(history(40));
+    feed.bar(at(40, 101), false);
+    feed.bar(at(40, 102), true);
+    feed.bar(at(41, 103), false);
+    expect(feed.seen.priceChange.at(-1)).toEqual({ price: 103, previousClose: 102 });
+    feed.bar(at(40, 98), true); // the venue's revised final of bar 40
+    feed.bar(at(41, 104), false);
+    expect(feed.seen.priceChange.at(-1)).toEqual({ price: 104, previousClose: 98 });
+    feed.bar(at(39, 50), true);
+    feed.bar(at(41, 105), false);
+    expect(feed.seen.priceChange.at(-1)).toEqual({ price: 105, previousClose: 98 });
+    feed.sm.dispose();
+  });
+
+  describe('aggregateTicks', () => {
+    it('a closed bar for the bar before the forming one is sent as barCorrection; the forming bar keeps its trades', async () => {
+      const feed = await live(history(40), true);
+      const t40 = at(40).time;
+      feed.trade(t40 + 1000, 101, 5);
+      feed.trade(t40 + 2000, 104, 5);
+      feed.bar(at(39, 97, 6), true); // the venue's final for bar 39
+      feed.trade(t40 + 3000, 102, 1);
+      expect(feed.seen.barCorrection).toEqual([at(39, 97, 6)]);
+      // Bar 40's first trade closed the history's last bar, as it was; the correction closed nothing.
+      expect(feed.seen.barClose).toEqual([expect.objectContaining(at(39))]);
+      expect(feed.seen.barUpdate.at(-1)).toMatchObject({ time: t40, open: 101, high: 104, low: 101, close: 102, volume: 11 });
+      feed.sm.dispose();
+    });
+
+    it("builds on the history's forming bar: the first trade keeps its open, high, low and volume", async () => {
+      const bars = history(41);
+      bars[40] = { time: at(40).time, open: 100, high: 110, low: 95, close: 105, volume: 50 }; // the REST candle, forming
+      const feed = await live(bars, true);
+      feed.trade(at(40).time + 1_800_000, 104, 1);
+      expect(feed.seen.barUpdate.at(-1)).toMatchObject({ time: at(40).time, open: 100, high: 110, low: 95, close: 104, volume: 51 });
+      feed.sm.dispose();
+    });
+
+    it('a late trade for the bar before leaves the forming bar alone', async () => {
+      const feed = await live(history(40), true);
+      const t40 = at(40).time;
+      feed.trade(t40 + 1000, 101, 5);
+      feed.trade(t40 + 2000, 104, 5);
+      feed.trade(t40 - 1000, 99, 1); // a trade of bar 39, delivered late
+      feed.trade(t40 + 3000, 102, 1);
+      expect(feed.seen.barClose.map((b) => b.time)).toEqual([at(39).time]);
+      expect(feed.seen.barUpdate.at(-1)).toMatchObject({ time: t40, open: 101, high: 104, volume: 11 });
+      feed.sm.dispose();
+    });
+  });
+});

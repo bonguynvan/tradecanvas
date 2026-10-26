@@ -419,6 +419,16 @@ describe('RenderEngine — a GPU layer under the scene', () => {
     expect(engine.layerManager.getLayer(LayerType.Hover)!.canvas.style.zIndex).toBe('1');
   });
 
+  it('tells the GPU when a bar of the same series was replaced (its revision)', async () => {
+    const { ctx } = await candleContext();
+    const { gpu } = fakeGpu();
+    engine.attachGpu(gpu);
+    engine.setRenderContext({ ...ctx, seriesRevision: 7 });
+    engine.start();
+    runFrame();
+    expect(gpu.render).toHaveBeenCalledWith(expect.objectContaining({ seriesRevision: 7 }));
+  });
+
   it('leaves candles, volume and the grid to the GPU', async () => {
     const { ctx, series, grid, volume } = await candleContext();
     const { gpu } = fakeGpu();

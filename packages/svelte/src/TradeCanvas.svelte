@@ -7,6 +7,7 @@
     LIGHT_THEME,
     syncIndicators,
     feedBars,
+    CORRECTABLE_BARS,
   } from '@tradecanvas/chart';
   import type {
     ChartType,
@@ -37,9 +38,11 @@
      * them at mount. Bars that go on from those given before, the last one
      * changed or bars added after it, go in as live ticks (the view isn't
      * reset): pushed onto the same array, changed in place, or in a new array.
+     * A change to one of the last three bars before the forming one, its time
+     * the same, goes in as a correction (`updateBar`), the view kept too.
      * Any other bars are a new series, as are yours after a stream gave the
-     * chart bars of its own. An older bar changed needs a new array with a new
-     * bar in its place.
+     * chart bars of its own. A bar further back changed in place isn't seen;
+     * in a new array it makes a new series.
      */
     data?: OHLCBar[];
     adapter?: DataAdapter;
@@ -199,8 +202,9 @@
     fed = feedBars(target, bars, fed);
   }
 
-  // Follows the array, its length and the last bar's fields: a bar pushed onto
-  // $state data or the forming bar changed, without walking every bar.
+  // Follows the array, its length and the fields of its last bars: a bar
+  // pushed onto $state data, the forming bar changed or one just before it
+  // corrected (`CORRECTABLE_BARS`), without walking every bar.
   $effect(() => {
     const bars = data;
     // Without data, the next bars are a new series: a stream may have come in between.
@@ -208,7 +212,7 @@
       fed = null;
       return;
     }
-    void barKey(bars[bars.length - 1]);
+    for (const bar of bars.slice(-1 - CORRECTABLE_BARS)) void barKey(bar);
     untrack(() => { if (instance) feed(instance, bars); });
   });
 

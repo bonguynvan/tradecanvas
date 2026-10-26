@@ -24,6 +24,12 @@ export interface StreamEvents {
   barClose: AggregatedBar;
   /** Current forming bar updated */
   barUpdate: AggregatedBar;
+  /**
+   * A closed bar older than the newest: the feed's last word on a bar
+   * already past (a late final, a revision). No live price: the chart
+   * corrects the bar with that time (`updateBar`).
+   */
+  barCorrection: OHLCBar;
   /** Raw tick received */
   tick: RawTick;
   /** Current price changed */
@@ -75,6 +81,8 @@ export class StreamManager extends Emitter<StreamEvents> {
   private state: ConnectionState = 'disconnected';
   private lastPrice: number | null = null;
   private previousClose: number | null = null;
+  /** When the bar `previousClose` is the close of starts, ms: a correction of it moves the close. */
+  private previousCloseTime: number | null = null;
   private unsubscribers: (() => void)[] = [];
   private heartbeatTimer: ReturnType<typeof setInterval> | null = null;
   private lastMessageTime = 0;
@@ -118,8 +126,14 @@ export class StreamManager extends Emitter<StreamEvents> {
       this.updatePrice(bar.close);
     });
     this.aggregator.on('barClose', (bar) => {
-      this.previousClose = bar.close;
+      this.setPreviousClose(bar);
       this.emit('barClose', bar);
+    });
+    // A bar already past, with its final values: not a live price, but the
+    // reference the price's change is measured from when it is the last closed bar.
+    this.aggregator.on('correction', (bar) => {
+      if (normalizeBarTime(bar.time) === this.previousCloseTime) this.previousClose = bar.close;
+      this.emit('barCorrection', bar);
     });
 
     // Wire adapter events
@@ -149,6 +163,7 @@ export class StreamManager extends Emitter<StreamEvents> {
     this.config = null;
     this.lastPrice = null;
     this.previousClose = null;
+    this.previousCloseTime = null;
 
     this.setState('disconnected');
   }
@@ -171,6 +186,7 @@ export class StreamManager extends Emitter<StreamEvents> {
     this.aggregator?.setTimeframe(timeframe);
     this.lastPrice = null;
     this.previousClose = null;
+    this.previousCloseTime = null;
 
     this.config.symbol = symbol;
     this.config.timeframe = timeframe;
@@ -246,12 +262,14 @@ export class StreamManager extends Emitter<StreamEvents> {
       // land on top of the newer one, so drop it.
       if (seq !== this.connectSeq || !this.adapter) return;
 
-      if (history.length > 0) {
-        this.previousClose = history[history.length - 1].close;
-        this.updatePrice(history[history.length - 1].close);
+      const last = history.length > 0 ? history[history.length - 1] : null;
+      if (last) {
+        this.setPreviousClose(last);
+        this.updatePrice(last.close);
       }
-      this.historyEnd = history.length > 0 ? normalizeBarTime(history[history.length - 1].time) : null;
+      this.historyEnd = last ? normalizeBarTime(last.time) : null;
       this.applyTickZone();
+      this.seedAggregator(last);
 
       this.emit('snapshot', history);
 
@@ -347,6 +365,24 @@ export class StreamManager extends Emitter<StreamEvents> {
     } catch {
       // An adapter with a fixed list of events: it sends none of this one either.
     }
+  }
+
+  /** The close the price's change is measured from: `bar`'s. */
+  private setPreviousClose(bar: OHLCBar): void {
+    this.previousClose = bar.close;
+    this.previousCloseTime = normalizeBarTime(bar.time);
+  }
+
+  /**
+   * The history's last bar is the newest the stream has seen, on every
+   * connect and switch, so a bar older than it is a correction, never one
+   * of another symbol's. Built from trades, it is the bar the next trades
+   * go on building: a feed's history ends on the bar still forming.
+   */
+  private seedAggregator(last: OHLCBar | null): void {
+    if (!this.aggregator) return;
+    this.aggregator.seed(last ? last.time : -Infinity);
+    if (last && this.config?.aggregateTicks) this.aggregator.resume(last);
   }
 
   private updatePrice(price: number): void {

@@ -34,6 +34,8 @@ export class SeriesUploads {
   private last: OHLCBar | null = null;
   /** The array last written: the chart ticks and appends in place, and replaces it for new history. */
   private source: DataSeries | null = null;
+  /** The series revision last written (`GpuFrame.seriesRevision`). */
+  private revision: number | undefined = undefined;
 
   get values(): Float32Array {
     return this.buffer;
@@ -47,15 +49,22 @@ export class SeriesUploads {
     return this.basePrice;
   }
 
-  sync(data: DataSeries): SeriesChange {
+  /**
+   * `revision` moves when a bar was replaced in place (a correction), which
+   * the samples may miss: every bar is written again then. The same array
+   * keeps its revision through ticks and appends, so a burst of corrections
+   * costs one full write a frame.
+   */
+  sync(data: DataSeries, revision?: number): SeriesChange {
     const n = data.length;
     if (n === 0) {
       this.reset();
       return { full: true, from: 0, to: 0 };
     }
     const prev = this.count;
-    const continues = data === this.source && prev > 0 && n >= prev
+    const continues = data === this.source && revision === this.revision && prev > 0 && n >= prev
       && this.samples.every(({ index, bar }) => same(data[index], bar));
+    this.revision = revision;
     if (!continues) {
       this.basePrice = data[n - 1].close;
       this.ensure(n);
@@ -82,6 +91,7 @@ export class SeriesUploads {
     this.samples = [];
     this.last = null;
     this.source = null;
+    this.revision = undefined;
   }
 
   private ensure(n: number): void {

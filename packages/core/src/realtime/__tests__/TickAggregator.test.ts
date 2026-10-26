@@ -220,3 +220,104 @@ describe('TickAggregator on the calendar', () => {
     expect(hour.getCurrentBar()?.time).toBe(Date.UTC(2026, 9, 23, 2));
   });
 });
+
+describe('TickAggregator: bars and trades older than the newest', () => {
+  const T0 = Date.UTC(2026, 0, 5);
+  const at = (minute: number, close = 100, volume = 10) =>
+    ({ time: T0 + minute * MIN, open: 100, high: Math.max(100, close) + 1, low: Math.min(100, close) - 1, close, volume });
+
+  /** An aggregator with what it emits, by event. */
+  function watched(timeframe: '1m' | '5m' = '1m') {
+    const agg = new TickAggregator(timeframe);
+    const seen = { bar: [] as unknown[], barClose: [] as unknown[], correction: [] as unknown[] };
+    agg.on('bar', (b) => seen.bar.push({ ...b }));
+    agg.on('barClose', (b) => seen.barClose.push({ ...b }));
+    agg.on('correction', (b) => seen.correction.push({ ...b }));
+    return { agg, seen };
+  }
+
+  it('processBar: a closed bar older than the newest is a correction and keeps the forming bar', () => {
+    const { agg, seen } = watched();
+    agg.processTick(tick(T0 + 2 * MIN + 1000, 101, 5));
+    agg.processTick(tick(T0 + 2 * MIN + 2000, 104, 5));
+    agg.processBar(at(1, 97, 6), true); // the venue's final for the bar before
+    expect(seen.correction).toEqual([at(1, 97, 6)]);
+    expect(seen.barClose).toEqual([]);
+    agg.processTick(tick(T0 + 2 * MIN + 3000, 102, 1));
+    expect(agg.getCurrentBar()).toMatchObject({ time: T0 + 2 * MIN, open: 101, high: 104, low: 101, close: 102, volume: 11 });
+  });
+
+  it('processBar: an older forming frame emits nothing and leaves the forming bar alone', () => {
+    const { agg, seen } = watched();
+    agg.processBar(at(2, 101), false);
+    agg.processBar(at(1, 90), false);
+    expect(seen.bar).toHaveLength(1);
+    expect(seen.correction).toEqual([]);
+    expect(agg.getCurrentBar()).toMatchObject({ time: T0 + 2 * MIN, close: 101 });
+  });
+
+  it("seed() makes the history's last bar the newest", () => {
+    const { agg, seen } = watched();
+    agg.seed(T0 + 5 * MIN);
+    agg.processBar(at(4, 99), false);
+    agg.processBar(at(4, 98), true);
+    expect(seen.bar).toEqual([]);
+    expect(seen.correction).toEqual([at(4, 98)]);
+    agg.processBar(at(5, 101), false);
+    expect(seen.bar).toHaveLength(1);
+  });
+
+  it('seed() reads a history in seconds by its size', () => {
+    const { agg, seen } = watched();
+    agg.seed((T0 + 5 * MIN) / 1000);
+    agg.processBar(at(4, 98), true);
+    expect(seen.correction).toHaveLength(1);
+  });
+
+  it('a late trade for an older bar is left out: the forming bar is neither closed nor restarted', () => {
+    const { agg, seen } = watched();
+    agg.processTick(tick(T0 + 2 * MIN + 1000, 101, 5));
+    agg.processTick(tick(T0 + 2 * MIN + 2000, 104, 5));
+    agg.processTick(tick(T0 + 2 * MIN - 1000, 99, 1)); // a trade of the bar before, delivered late
+    agg.processTick(tick(T0 + 2 * MIN + 3000, 102, 1));
+    expect(seen.barClose).toEqual([]);
+    expect(agg.getCurrentBar()).toMatchObject({ time: T0 + 2 * MIN, open: 101, high: 104, low: 101, close: 102, volume: 11, tickCount: 3 });
+  });
+
+  it('a trade older than a closed bar from the feed is left out too', () => {
+    const { agg, seen } = watched();
+    agg.processBar(at(3, 101), true);
+    agg.processTick(tick(T0 + 2 * MIN + 1000, 99, 1));
+    expect(seen.bar).toEqual([]);
+    expect(agg.getCurrentBar()).toBeNull();
+  });
+
+  it("resume(): the history's forming bar is the one trades go on building", () => {
+    const { agg, seen } = watched();
+    agg.resume({ time: T0 + 40 * MIN, open: 100, high: 110, low: 95, close: 105, volume: 50 });
+    agg.processTick(tick(T0 + 40 * MIN + 30_000, 104, 1));
+    expect(seen.bar.at(-1)).toMatchObject({ time: T0 + 40 * MIN, open: 100, high: 110, low: 95, close: 104, volume: 51, closed: false });
+    // The next bar's first trade closes it with all it held.
+    agg.processTick(tick(T0 + 41 * MIN + 1000, 103, 2));
+    expect(seen.barClose).toEqual([expect.objectContaining({ time: T0 + 40 * MIN, open: 100, high: 110, low: 95, close: 104, volume: 51, closed: true })]);
+  });
+
+  it('resume() takes a history in seconds and one without volume', () => {
+    const { agg } = watched();
+    agg.resume({ time: (T0 + 40 * MIN) / 1000, open: 100, high: 110, low: 95, close: 105 } as never);
+    agg.processTick(tick(T0 + 40 * MIN + 30_000, 104, 1));
+    expect(agg.getCurrentBar()).toMatchObject({ time: T0 + 40 * MIN, open: 100, volume: 1 });
+  });
+
+  it('reset() and setTimeframe() forget the newest', () => {
+    const { agg, seen } = watched();
+    agg.seed(T0 + 5 * MIN);
+    agg.reset();
+    agg.processBar(at(4, 99), false);
+    expect(seen.bar).toHaveLength(1);
+    agg.seed(T0 + 5 * MIN);
+    agg.setTimeframe('5m');
+    agg.processBar(at(0, 99), false);
+    expect(seen.bar).toHaveLength(2);
+  });
+});

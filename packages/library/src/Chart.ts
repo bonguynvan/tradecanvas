@@ -1366,6 +1366,73 @@ export class Chart {
     this.scheduleRender();
   }
 
+  /**
+   * A loaded bar again, with new values: the bar with the same `time`,
+   * wherever it is in the series (a feed learned a closed bar was off). The
+   * indicators are computed again from it on, the chart types built from
+   * the bars too, and the view stays. Several corrections before the next
+   * frame are computed once, from the earliest. Sends `dataUpdate`
+   * (`{ kind: 'correction', time, index }`).
+   *
+   * It is no live price: the orders and the alerts don't follow it, and no
+   * alert fires. A corrected last bar is the price line's, measured from the
+   * bar before it, and the price alerts' last value, as after `setData`.
+   * During a replay it corrects the live series, shown when the replay
+   * ends; a bar in the extended hours, while they are hidden, shows when
+   * they are shown. The bar loaded sent again (after the repairs every
+   * write makes: a missing volume is 0) changes nothing.
+   *
+   * False, and nothing changes, when no loaded bar has that time (a new bar
+   * is `appendBar`'s, older ones `prependBars`') or the chart can't take the
+   * bar (a price that isn't a number, below zero, a high under its low).
+   */
+  updateBar(bar: OHLCBar): boolean {
+    if (!isValidBar(bar)) return false;
+    const write = this.series.replace(bar);
+    if (write.to === 'none') return false;
+    // Kept aside during a replay, or outside the hours shown: it shows when they do.
+    if (write.to === 'shown' && write.changed) this.showCorrection(write.index);
+    return true;
+  }
+
+  /** The bar shown at `i` was corrected: what follows from its values does, the view as it was. */
+  private showCorrection(i: number): void {
+    const data = this.series.bars();
+    const bar = data[i];
+    this.displayDataCache = null;
+    // Deferred: corrections before the next read cost one computation, from the earliest.
+    this.indicatorEngine.deferRecalculateFrom(data, i);
+    this.announceIndicatorUpdate(i);
+    if (i === data.length - 1) {
+      // As `setData` leaves the last bar: the price line's, and where the next price crosses from.
+      this.currentPriceLine.setPrice(bar.close, data[i - 1]?.close);
+      this.alertManager.seedLastValue('price', bar.close);
+    }
+    this.refreshShownBar(i);
+    this.eventBus.emit('dataUpdate', { kind: 'correction', time: bar.time, index: i } satisfies DataUpdatePayload);
+    this.scheduleRender();
+  }
+
+  /**
+   * The tooltips, the legend and the crosshair's listeners hold the bar
+   * they were given: give them the corrected one. The bar after it moves
+   * too, its change measured from this one's close; with bricks or boxes,
+   * any bar can.
+   */
+  private refreshShownBar(i: number): void {
+    const pinned = this.pinnedTooltip.isPinned() ? this.pinnedTooltip.getPinnedIndex() : -1;
+    const hovered = this.crosshairHandler.getReportedBarIndex();
+    // Nothing holds a bar from it on: no need to build the bars shown before the frame does.
+    if (pinned < i && hovered === null) return;
+    const aligned = this.isTimeAligned();
+    // Heikin-Ashi bars after it are built from it.
+    if (aligned && pinned >= i) {
+      const shown = this.getDisplayData();
+      if (shown[pinned]) this.pinnedTooltip.pin(shown[pinned], pinned, this.themeManager.getTheme(), barTimeUnit(shown));
+    }
+    if (hovered !== null && (!aligned || hovered === i || hovered === i + 1)) this.crosshairHandler.refresh();
+  }
+
   // --- Chart type ---
 
   /** The type the chart is drawn as: what `setChartType`, the `chartType` option or a loaded layout set; `'candlestick'` by default. */
@@ -3028,11 +3095,17 @@ export class Chart {
     });
 
     // Each bar lands by its time: the last bar again (its latest values, a
-    // close included), a new one after it, or none when it is older.
+    // close included), a new one after it, or none when it is older. A
+    // closed one older than the last is a correction of the bar loaded at
+    // its time: final, even when the host's own bars run ahead of the stream.
     this.streamManager.on('barClose', (bar) => {
       if (!isValidBar(bar)) return;
       const write = this.series.placeStreamBar(bar);
       if (write.refiltered) this.displayDataCache = null;
+      if (write.to === 'none') {
+        this.updateBar(bar);
+        return;
+      }
       // Its final close is a live price the stream's priceChange doesn't send.
       if (write.to === 'aside') this.followLivePrice(bar.close);
       if (write.to !== 'shown') return;
@@ -3047,11 +3120,18 @@ export class Chart {
       this.followLivePrice(bar.close);
     });
 
+    // The feed's last word on a bar already past: no live price.
+    this.streamManager.on('barCorrection', (bar) => {
+      this.updateBar(bar);
+    });
+
     this.streamManager.on('barUpdate', (bar) => {
       if (!isValidBar(bar)) return;
-      if (!this.replaySession) this.currentPriceLine.setPrice(bar.close);
       const write = this.series.placeStreamBar(bar);
       if (write.refiltered) this.displayDataCache = null;
+      // A frame of a bar older than the last is stale: it moves nothing, the price line included.
+      if (write.to === 'none') return;
+      if (!this.replaySession) this.currentPriceLine.setPrice(bar.close);
       // During a replay the bars shown are the replay's: nothing to draw again.
       if (this.replaySession) return;
       const before = write.before;
@@ -5884,6 +5964,8 @@ export class Chart {
       viewport: { ...this.viewport.getState(), data: displayData },
       theme: this.themeManager.getTheme(),
       data: displayData,
+      // A bar replaced in place leaves the array the same: the GPU's copy needs telling.
+      seriesRevision: this.series.revision(),
       numberLocale: this.numberLocale,
       paneTitles: this.paneTitles,
       indicatorValueLabels: this.features.indicatorValueLabels,

@@ -222,7 +222,7 @@ describe('ResamplingAdapter live bars, robustly', () => {
     expect(bars.at(-1)?.bar.volume).toBe(2);
   });
 
-  it('ignores a late frame of a bucket that already closed', () => {
+  it('ignores a late bar of a closed bucket none of whose base bars it saw', () => {
     const { feed, adapter, bars } = setup();
     adapter.connect({ symbol: 'X', timeframe: '7m' });
     feed.emit('bar', { bar: bar(14 * MIN, 20, 21, 19, 20, 1), closed: false });
@@ -474,3 +474,71 @@ describe('servesTimeframe', () => {
   });
 });
 
+describe('ResamplingAdapter: a base bar the feed corrects', () => {
+  /** Minutes `from` to `to` of a 7m bucket, closed, each one up a little. */
+  function closeBucket(feed: FakeFeed, from: number) {
+    for (let m = from; m < from + 7; m++) feed.emit('bar', { bar: bar(m * MIN, m, m + 1, m - 1, m + 0.5, 1), closed: true });
+  }
+
+  it('recomposes a closed bucket when the feed corrects one of its base bars', () => {
+    const { feed, adapter, bars } = setup();
+    adapter.connect({ symbol: 'X', timeframe: '7m' });
+    closeBucket(feed, 7);
+    feed.emit('bar', { bar: bar(14 * MIN, 14, 15, 13, 14.5, 1), closed: false });
+    // Minute 10 was off: its final has a lower low and half the volume.
+    feed.emit('bar', { bar: bar(10 * MIN, 10, 11, 2, 10.5, 0.5), closed: true });
+    expect(bars.at(-1)).toEqual({ bar: bar(7 * MIN, 7, 14, 2, 13.5, 6.5), closed: true });
+    // The bucket's last minute: its close.
+    feed.emit('bar', { bar: bar(13 * MIN, 13, 14, 12, 12.25, 1), closed: true });
+    expect(bars.at(-1)).toEqual({ bar: bar(7 * MIN, 7, 14, 2, 12.25, 6.5), closed: true });
+    // The forming bucket goes on as it was.
+    feed.emit('bar', { bar: bar(15 * MIN, 15, 16, 14, 15.5, 1), closed: false });
+    expect(bars.at(-1)).toEqual({ bar: bar(14 * MIN, 14, 16, 13, 15.5, 2), closed: false });
+  });
+
+  it('recomposes a bucket closed by the next one’s first bar too', () => {
+    const { feed, adapter, bars } = setup();
+    adapter.connect({ symbol: 'X', timeframe: '7m' });
+    feed.emit('bar', { bar: bar(7 * MIN, 7, 8, 6, 7.5, 1), closed: false });
+    feed.emit('bar', { bar: bar(8 * MIN, 8, 9, 7, 8.5, 1), closed: false });
+    feed.emit('bar', { bar: bar(14 * MIN, 14, 15, 13, 14.5, 1), closed: false });
+    feed.emit('bar', { bar: bar(8 * MIN, 8, 12, 7, 11, 3), closed: true });
+    expect(bars.at(-1)).toEqual({ bar: bar(7 * MIN, 7, 12, 6, 11, 4), closed: true });
+  });
+
+  it('leaves out a forming frame of a closed bucket', () => {
+    const { feed, adapter, bars } = setup();
+    adapter.connect({ symbol: 'X', timeframe: '7m' });
+    closeBucket(feed, 7);
+    feed.emit('bar', { bar: bar(14 * MIN, 14, 15, 13, 14.5, 1), closed: false });
+    const before = bars.length;
+    feed.emit('bar', { bar: bar(10 * MIN, 1, 1, 1, 1, 1), closed: false });
+    expect(bars).toHaveLength(before);
+  });
+
+  it('keeps only the last two closed buckets', () => {
+    const { feed, adapter, bars } = setup();
+    adapter.connect({ symbol: 'X', timeframe: '7m' });
+    closeBucket(feed, 7);
+    closeBucket(feed, 14);
+    closeBucket(feed, 21);
+    feed.emit('bar', { bar: bar(28 * MIN, 28, 29, 27, 28.5, 1), closed: false });
+    const before = bars.length;
+    feed.emit('bar', { bar: bar(10 * MIN, 10, 11, 9, 10.5, 9), closed: true });
+    expect(bars).toHaveLength(before);
+    feed.emit('bar', { bar: bar(15 * MIN, 15, 16, 14, 15.5, 9), closed: true });
+    expect(bars.at(-1)).toEqual({ bar: bar(14 * MIN, 14, 21, 13, 20.5, 15), closed: true });
+  });
+
+  it('forgets the closed buckets on a reconnect', () => {
+    const { feed, adapter, bars } = setup();
+    adapter.connect({ symbol: 'X', timeframe: '7m' });
+    closeBucket(feed, 7);
+    adapter.disconnect();
+    adapter.connect({ symbol: 'Y', timeframe: '7m' });
+    feed.emit('bar', { bar: bar(14 * MIN, 14, 15, 13, 14.5, 1), closed: false });
+    const before = bars.length;
+    feed.emit('bar', { bar: bar(10 * MIN, 10, 11, 9, 10.5, 9), closed: true });
+    expect(bars).toHaveLength(before);
+  });
+});

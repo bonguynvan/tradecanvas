@@ -90,6 +90,88 @@ describe('SeriesStore', () => {
   });
 });
 
+describe('SeriesStore.replace', () => {
+  const series = () => [bar(1), bar(2), bar(3), bar(4), bar(5)];
+
+  it('replaces a loaded bar by its time, anywhere in the series', () => {
+    const store = new SeriesStore(() => null);
+    store.load(series());
+    const array = store.bars();
+    expect(store.replace(bar(3, 12))).toEqual({ to: 'shown', index: 2, changed: true });
+    expect(store.bars().map((b) => [b.time, b.close])).toEqual([[1, 10], [2, 10], [3, 12], [4, 10], [5, 10]]);
+    // In place: the same array, as a tick changes it.
+    expect(store.bars()).toBe(array);
+  });
+
+  it('refuses a time not loaded: between bars, before the first, after the last', () => {
+    const store = new SeriesStore(() => null);
+    store.load(series());
+    for (const time of [2.5, 0, 6]) expect(store.replace(bar(time))).toEqual({ to: 'none', index: -1, changed: false });
+    expect(store.replace({ ...bar(3), high: 1, low: 2 })).toEqual({ to: 'none', index: -1, changed: false });
+    expect(times(store.bars())).toEqual([1, 2, 3, 4, 5]);
+    expect(new SeriesStore(() => null).replace(bar(1)).to).toBe('none');
+  });
+
+  it('corrects a hidden bar in the whole series only; it shows with the hours', () => {
+    const { store, show } = evenHours();
+    store.load(series());
+    expect(times(store.bars())).toEqual([2, 4]);
+    expect(store.replace(bar(3, 13))).toEqual({ to: 'hidden', index: -1, changed: true });
+    expect(store.bars().map((b) => b.close)).toEqual([10, 10]);
+    expect(store.replace(bar(4, 14))).toEqual({ to: 'shown', index: 1, changed: true });
+    show(true);
+    store.refilter();
+    expect(store.bars().map((b) => [b.time, b.close])).toEqual([[1, 10], [2, 10], [3, 13], [4, 14], [5, 10]]);
+  });
+
+  it('corrects the live series kept aside during a replay, not the bars shown', () => {
+    const store = new SeriesStore(() => null);
+    store.load(series());
+    store.beginReplay();
+    store.showReplayed(series().slice(0, 4));
+    expect(store.replace(bar(3, 13))).toEqual({ to: 'aside', index: -1, changed: true });
+    expect(store.replace(bar(3, 13))).toEqual({ to: 'aside', index: -1, changed: false });
+    expect(store.replace(bar(9))).toEqual({ to: 'none', index: -1, changed: false });
+    expect(store.bars().map((b) => b.close)).toEqual([10, 10, 10, 10]);
+    expect(store.endReplay()?.map((b) => b.close)).toEqual([10, 10, 13, 10, 10]);
+  });
+
+  it('tells an unchanged bar apart, and counts the bars shown it wrote', () => {
+    const store = new SeriesStore(() => null);
+    store.load(series());
+    const revision = store.revision();
+    expect(store.replace(bar(3))).toEqual({ to: 'shown', index: 2, changed: false });
+    expect(store.revision()).toBe(revision);
+    store.replace(bar(3, 11));
+    expect(store.revision()).toBe(revision + 1);
+  });
+
+  it('counts no hidden bar or replay write as a change of the bars shown', () => {
+    const { store } = evenHours();
+    store.load(series());
+    const revision = store.revision();
+    store.replace(bar(3, 13));
+    store.beginReplay();
+    store.replace(bar(4, 14));
+    expect(store.revision()).toBe(revision);
+  });
+
+  it('leaves out a time whose bar the chart could not take', () => {
+    const { store } = evenHours();
+    const broken = { ...bar(4), close: Number.NaN };
+    store.load([bar(1), bar(2), bar(3), broken, bar(5), bar(6)]);
+    expect(times(store.bars())).toEqual([2, 6]);
+    expect(store.replace(bar(4, 14))).toEqual({ to: 'none', index: -1, changed: false });
+  });
+
+  it('takes a bar in milliseconds onto a series in seconds', () => {
+    const store = new SeriesStore(() => null);
+    store.load([bar(1_700_000_000), bar(1_700_000_060)]);
+    expect(store.replace(bar(1_700_000_000_000, 12))).toEqual({ to: 'shown', index: 0, changed: true });
+    expect(store.bars()[0]).toMatchObject({ time: 1_700_000_000, close: 12 });
+  });
+});
+
 describe('barPlacement', () => {
   it('reads each time by its own size, a stream in milliseconds on a series in seconds', () => {
     expect(barPlacement([bar(1_700_000_000)], bar(1_700_000_000_000))).toBe('update');

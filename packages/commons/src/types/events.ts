@@ -303,6 +303,10 @@ export interface IndicatorSettingsChangePayload {
  *   A tick on the forming bar sends none (`indicatorUpdate` follows those),
  *   nor do older bars paged in (`historyLoad`) or a replay's steps
  *   (`replayStep`).
+ * - `correction`: the bar shown at `index`, at `time`, has new values
+ *   (`updateBar`, or a feed sending an older bar again as closed); the
+ *   series is as long as it was. None for a bar outside the hours shown or
+ *   during a replay, nor for one sent again with the same values.
  * - `alert`: an alert went off (`alertTriggered` says more).
  * - `bracket`: the bracket being placed was cancelled with Esc.
  * - `connection`: the stream's connection changed.
@@ -310,6 +314,7 @@ export interface IndicatorSettingsChangePayload {
  */
 export type DataUpdatePayload =
   | { kind: 'bars'; length: number }
+  | { kind: 'correction'; time: number; index: number }
   | { kind: 'alert'; alert: 'triggered'; alertId: string; price: number; message?: string }
   | { kind: 'bracket'; bracket: 'cancelled' }
   | { kind: 'connection'; connection: ConnectionInfo }

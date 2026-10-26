@@ -51,6 +51,12 @@ export interface GpuRegion {
 /** What a GPU renderer is asked to draw in a frame. */
 export interface GpuFrame {
   data: DataSeries;
+  /**
+   * Moves when a bar of `data` was replaced in place, the array the same (a
+   * bar corrected): a renderer that keeps the bars writes them all again.
+   * Left out, the bars are compared as before.
+   */
+  seriesRevision?: number;
   viewport: ViewportState;
   theme: Theme;
   /** Device pixels per CSS pixel. */

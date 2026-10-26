@@ -29,7 +29,7 @@ chart.connect({ adapter: new CoinbaseAdapter(), symbol: 'BTC-USD', timeframe: '1
   disconnect(): void
   getConnectionState(): ConnectionState
   fetchHistory(symbol, timeframe, limit?): Promise<OHLCBar[]>
-  on(event, listener): void   // 'bar' | 'tick' | 'snapshot' | 'connectionChange' | 'error' | 'symbolInfo'
+  on(event, listener): void   // 'bar' | 'tick' | 'connectionChange' | 'error' | 'symbolInfo'
   off(event, listener): void
   dispose(): void
 
@@ -62,6 +62,19 @@ chart.connect({ adapter: new CoinbaseAdapter(), symbol: 'BTC-USD', timeframe: '1
 </p>
 <pre><code>{`emit('symbolInfo', { symbol: 'VNM', pricePrecision: 0, minTick: 10, currency: 'VND' })   // アダプターが他のイベントを送るのと同じ方法で`}</code></pre>
 
+<h2 id="corrections">フィードが修正するバー</h2>
+<p>
+  フィードは、確定したバーを自身の時刻のままもう一度送ってバーを修正します。<code>parseMessage</code> から <code>{'{'} bar, closed: true {'}'}</code> を返すか、<code>bar</code> イベントです。ストリームが受け取った最新のバーより古い確定バーは、そのバーについてのフィードの最終的な値です（次のバーの最初のフレームより後に届いた取引所の確定値や、訂正など）。チャートはどこにあってもその時刻のバーを置き換え（<code>updateBar</code>）、そこからインジケーターを計算し直し、表示位置はそのままにします。ライブ価格ではありません。価格線、注文、アラートは市場の価格に従ったままです。最新のバーより古い未確定のフレームは古いデータとして無視され、何も動かしません。アダプターがなければ <code>chart.updateBar(bar)</code> を呼びます。
+</p>
+<p>
+  <code>aggregateTicks</code> では、履歴の最後のバーが約定の積み上げ先になります。接続後の最初の約定でも、その始値、高値、安値、出来高はそのままです。過ぎたバーの約定が遅れて届いた場合は無視し、そのバーの確定バーが届けばそれで修正します。形成中のバーは自分の約定を保ちます。より細かい時間足から作る時間足では、修正された元のバーが、形成中のバーの前にある直近 2 本の作ったバーを作り直します。それより前の修正は無視します。
+</p>
+<pre><code>{`// アダプター内: チャートに既にあるバーの、取引所の確定値
+parseMessage: (raw) => ({ bar: toBar(raw), closed: true })
+
+// アダプターなしで、自前のバーを
+const corrected = chart.updateBar(bar)   // false: bar.time のバーが読み込まれていない`}</code></pre>
+
 <h2>約 20 行で任意のフィードに対応</h2>
 <p>
   <code>WebSocketAdapter</code>（ライブ + REST での履歴取得）または <code>PollingAdapter</code>
@@ -83,11 +96,14 @@ const myAdapter = new WebSocketAdapter({
 
 const agg = new TickAggregator('1d')
 agg.setTimeZone('Asia/Ho_Chi_Minh')         // days start at the exchange's midnight
+agg.seed(history.at(-1).time)               // a bar older than the history's last is past
 agg.on('barClose', (bar) => console.log(bar))   // a bar whose interval is over
+agg.on('correction', (bar) => console.log(bar)) // a closed bar older than the newest
 agg.processTick({ time, price, volume })
 
 const current = agg.getCurrentBar()         // forming bar`}</code></pre>
 <p>週は月曜日、月は 1 日に始まります。<code>setTimeZone</code> を使うと、日、週、月と 1 日を割り切る時間足は取引所の午前 0 時に始まります。チャートは銘柄のタイムゾーン（なければ市場のもの）からストリームのティック（<code>aggregateTicks</code>）にこれを設定し、ティックから作るバーを履歴のバーに揃えます。履歴が日を 00:00 UTC で記録していれば日足もそうし、2h から 12h のバーは履歴のバーが取引所の午前 0 時から始まるときだけそこから始めるので、フィード自身の 4h バー（00:00、04:00… UTC）は時刻が変わりません。</p>
+<p>受け取った最新のバーより古いバーは過ぎたものです。<code>processBar</code> は確定したものを <code>correction</code> として送り、未確定のフレームは無視します。<code>processTick</code> はそのバーの約定を無視するので、遅れたフレームや約定が形成中のバーを早く確定させたり、価格を動かしたりすることはありません。<code>seed(time)</code> は履歴の最後のバーから始め、<code>resume(bar)</code> はまだ形成中のそのバーを次の約定の積み上げ先にします。チャートのストリームは接続のたびに両方を行います。<code>StreamManager</code> は修正を <code>barCorrection</code> として送ります。</p>
 
 <h2>複数シンボルのクオート</h2>
 <p>

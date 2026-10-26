@@ -77,10 +77,13 @@ also works on a widget.
    the type check. `addIndicator` returns an instance id (`null` if the feature or
    id is turned off); later calls take that instance id, not the indicator id.
 6. **Live updates:** `appendBar` for a new bar, `updateLastBar` for the forming
-   one. Never `setData` on every tick: it resets the view and recomputes
-   everything. Their close is the live price: the price line, the alerts and
-   the orders' P&L follow it (a feed with only a price, no bars:
-   `setCurrentPrice`).
+   one, `updateBar` for a closed bar the feed corrects (same `time`, anywhere
+   in the series; `false` when no loaded bar has it). Never `setData` on every
+   tick, or to fix a bar: it resets the view and recomputes everything. The
+   close of a new or forming bar is the live price: the price line, the alerts
+   and the orders' P&L follow it (a feed with only a price, no bars:
+   `setCurrentPrice`); a correction is not. A connected feed corrects a bar by
+   sending it again with `closed: true`.
 7. Read values with `chart.getIndicatorOutput(instanceId)?.series[i]` (an object
    keyed by the indicator's line keys), not by guessing from the drawing.
 8. **Look names up when the TradeCanvas MCP server is connected** (tools named
@@ -301,7 +304,7 @@ it being kept.
 | `crosshairLeave` | — |
 | `barClick` | `{ bar, barIndex, point }` |
 | `visibleRangeChange` | `{ from, to }` bar indices |
-| `dataUpdate` | by `kind`: `'bars'` (`{ length }`: `setData`, a bar appended, by hand or by the stream; not a tick), `'alert'`, `'bracket'`, `'connection'`, `'error'` |
+| `dataUpdate` | by `kind`: `'bars'` (`{ length }`: `setData`, a bar appended, by hand or by the stream; not a tick), `'correction'` (`{ time, index }`: `updateBar`, or a feed's closed bar for an older time), `'alert'`, `'bracket'`, `'connection'`, `'error'` |
 | `chartTypeChange` | `{ type, previous }` (`getChartType()` reads it back) |
 | `indicatorAdd` / `indicatorRemove` | `{ instanceId, id }` |
 | `indicatorChange` | `{ instanceId, change }`: `'visible' \| 'style' \| 'levels' \| 'params' \| 'pane'` |
@@ -361,6 +364,7 @@ own CSS through `--tcw-*` variables and `[data-tcw-part~="name"]` (stable throug
 | `addIndicator` returns `null` | `features.indicators` is off, or `features.indicatorIds` leaves it out |
 | Indicator line missing at the start | Warm-up: no value until its period has enough bars |
 | Chart stutters on a fast feed | `setData` called per tick instead of `updateLastBar` / `appendBar` |
+| View jumps back to the newest bar when the feed fixes a closed bar | `setData` used for it: call `updateBar(bar)` (same `time`) |
 | A React/Vue/Svelte chart shows Binance bars before yours | Pass `data` at mount, or `stream={false}` |
 
 ## References
@@ -431,6 +435,11 @@ const chart = new Chart(document.getElementById('chart')!, {});
 await chart.connect({ adapter: feed, symbol: 'BTCUSDT', timeframe: '1m' });
 ```
 
+A frame for a bar already past, with `closed: true` (the venue's final that
+came after the next bar's first frame, or a revision), corrects that bar: the
+chart replaces the bar with its time and computes the indicators again from
+it, the view kept. An older frame still forming is left out.
+
 A feed that learns the symbol's details only after connecting (its decimals,
 price step or hours, say on its first message) sends a `symbolInfo` event with
 the `SymbolInfo`, as it sends its other events (`emitEvent('symbolInfo', info)`
@@ -470,13 +479,55 @@ chart mounted before its bars arrive doesn't start the default Binance feed.
 Bars that go on from the last given (the last bar changed, or bars added:
 `setBars((bars) => [...bars, next])`) go in as live ticks, so the view isn't
 reset and alerts follow the price; any other array is a new series. Vue and
-Svelte take the same, and a push onto the same array too. `features` follows its
+Svelte take the same, and a push onto the same array too. A change to one of
+the last three bars before the forming one (`CORRECTABLE_BARS`), its time the
+same, goes in as `updateBar`, the view kept too: in a new array, and in Vue and
+Svelte in place. A change further back is a new series. `features` follows its
 changes after mount.
 
 `@tradecanvas/vue` and `@tradecanvas/svelte` take the same data props (Vue
 emits `ready` and `crosshairMove` instead of the callback props). To drive the
 widget or a bare `Chart` from a framework, create it in the mount hook on a
 sized element and call `destroy()` in the unmount hook.
+
+## A feed that corrects a closed bar
+
+A venue sends its final for a bar after the next one has started, or revises
+a bar it closed. `updateBar` puts it in place, wherever the bar is: the
+indicators are computed again from it, and the view, the replay and the
+alerts are left as they are. It returns `false` when no loaded bar has that
+time; a new bar is `appendBar`'s.
+
+```ts
+import { Chart, type OHLCBar } from '@tradecanvas/chart';
+
+const chart = new Chart(document.getElementById('chart')!, {});
+const res = await fetch('/api/candles?symbol=AAPL&tf=1h');
+const bars: OHLCBar[] = await res.json();
+chart.setData(bars);
+
+/** A closed bar from your own socket: a new one, the forming one's close, or the final of an older one. */
+function onClosedBar(bar: OHLCBar): boolean {
+  const data = chart.getData();
+  const last = data[data.length - 1];
+  if (!last || bar.time > last.time) chart.appendBar(bar);
+  else if (bar.time === last.time) chart.updateLastBar(bar); // the live price
+  else return chart.updateBar(bar); // false: no loaded bar has bar.time
+  return true;
+}
+
+const corrected: number[] = [];
+chart.on('dataUpdate', (e) => {
+  if (e.payload.kind === 'correction') corrected.push(e.payload.time);
+});
+
+onClosedBar({ time: bars[bars.length - 2].time, open: 101, high: 104, low: 100, close: 103, volume: 1_250 });
+```
+
+Send the bar whole: a missing volume is 0, as with `setData`. The same bar
+sent again computes nothing, so a feed that sends its last closed bars on
+every poll costs nothing for those that didn't change. With a connected feed,
+send the bar again as closed instead (see the WebSocket recipe).
 
 ## A signal from an indicator on an indicator
 

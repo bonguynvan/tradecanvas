@@ -55,6 +55,11 @@ const chart = new Chart(document.getElementById('chart')!, {});
 await chart.connect({ adapter: feed, symbol: 'BTCUSDT', timeframe: '1m' });
 ```
 
+A frame for a bar already past, with `closed: true` (the venue's final that
+came after the next bar's first frame, or a revision), corrects that bar: the
+chart replaces the bar with its time and computes the indicators again from
+it, the view kept. An older frame still forming is left out.
+
 A feed that learns the symbol's details only after connecting (its decimals,
 price step or hours, say on its first message) sends a `symbolInfo` event with
 the `SymbolInfo`, as it sends its other events (`emitEvent('symbolInfo', info)`
@@ -94,13 +99,55 @@ chart mounted before its bars arrive doesn't start the default Binance feed.
 Bars that go on from the last given (the last bar changed, or bars added:
 `setBars((bars) => [...bars, next])`) go in as live ticks, so the view isn't
 reset and alerts follow the price; any other array is a new series. Vue and
-Svelte take the same, and a push onto the same array too. `features` follows its
+Svelte take the same, and a push onto the same array too. A change to one of
+the last three bars before the forming one (`CORRECTABLE_BARS`), its time the
+same, goes in as `updateBar`, the view kept too: in a new array, and in Vue and
+Svelte in place. A change further back is a new series. `features` follows its
 changes after mount.
 
 `@tradecanvas/vue` and `@tradecanvas/svelte` take the same data props (Vue
 emits `ready` and `crosshairMove` instead of the callback props). To drive the
 widget or a bare `Chart` from a framework, create it in the mount hook on a
 sized element and call `destroy()` in the unmount hook.
+
+## A feed that corrects a closed bar
+
+A venue sends its final for a bar after the next one has started, or revises
+a bar it closed. `updateBar` puts it in place, wherever the bar is: the
+indicators are computed again from it, and the view, the replay and the
+alerts are left as they are. It returns `false` when no loaded bar has that
+time; a new bar is `appendBar`'s.
+
+```ts
+import { Chart, type OHLCBar } from '@tradecanvas/chart';
+
+const chart = new Chart(document.getElementById('chart')!, {});
+const res = await fetch('/api/candles?symbol=AAPL&tf=1h');
+const bars: OHLCBar[] = await res.json();
+chart.setData(bars);
+
+/** A closed bar from your own socket: a new one, the forming one's close, or the final of an older one. */
+function onClosedBar(bar: OHLCBar): boolean {
+  const data = chart.getData();
+  const last = data[data.length - 1];
+  if (!last || bar.time > last.time) chart.appendBar(bar);
+  else if (bar.time === last.time) chart.updateLastBar(bar); // the live price
+  else return chart.updateBar(bar); // false: no loaded bar has bar.time
+  return true;
+}
+
+const corrected: number[] = [];
+chart.on('dataUpdate', (e) => {
+  if (e.payload.kind === 'correction') corrected.push(e.payload.time);
+});
+
+onClosedBar({ time: bars[bars.length - 2].time, open: 101, high: 104, low: 100, close: 103, volume: 1_250 });
+```
+
+Send the bar whole: a missing volume is 0, as with `setData`. The same bar
+sent again computes nothing, so a feed that sends its last closed bars on
+every poll costs nothing for those that didn't change. With a connected feed,
+send the bar again as closed instead (see the WebSocket recipe).
 
 ## A signal from an indicator on an indicator
 

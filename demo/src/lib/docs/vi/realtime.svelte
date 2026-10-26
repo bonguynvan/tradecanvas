@@ -29,7 +29,7 @@ chart.connect({ adapter: new CoinbaseAdapter(), symbol: 'BTC-USD', timeframe: '1
   disconnect(): void
   getConnectionState(): ConnectionState
   fetchHistory(symbol, timeframe, limit?): Promise<OHLCBar[]>
-  on(event, listener): void   // 'bar' | 'tick' | 'snapshot' | 'connectionChange' | 'error' | 'symbolInfo'
+  on(event, listener): void   // 'bar' | 'tick' | 'connectionChange' | 'error' | 'symbolInfo'
   off(event, listener): void
   dispose(): void
 
@@ -64,6 +64,19 @@ chart.connect({ adapter: new CoinbaseAdapter(), symbol: 'BTC-USD', timeframe: '1
 </p>
 <pre><code>{`emit('symbolInfo', { symbol: 'VNM', pricePrecision: 0, minTick: 10, currency: 'VND' })   // như cách adapter gửi các sự kiện khác`}</code></pre>
 
+<h2 id="corrections">Nến mà nguồn dữ liệu sửa lại</h2>
+<p>
+  Nguồn dữ liệu sửa một nến bằng cách gửi lại nó, đã đóng, với đúng thời gian của nó: <code>{'{'} bar, closed: true {'}'}</code> từ <code>parseMessage</code>, hoặc một sự kiện <code>bar</code>. Một nến đã đóng cũ hơn nến mới nhất mà luồng dữ liệu đã thấy là lời cuối của nguồn về nến đó, chẳng hạn giá chốt của sàn đến sau khung đầu tiên của nến kế tiếp, hoặc một lần điều chỉnh: biểu đồ thay nến có thời gian đó dù nằm ở đâu (<code>updateBar</code>), tính lại chỉ báo từ nến đó và giữ nguyên khung nhìn. Đây không phải giá hiện tại: đường giá, lệnh và cảnh báo vẫn đi theo thị trường. Một khung đang hình thành cũ hơn nến mới nhất là dữ liệu cũ và bị bỏ qua; nó không làm thay đổi gì. Không có adapter thì gọi <code>chart.updateBar(bar)</code>.
+</p>
+<p>
+  Với <code>aggregateTicks</code>, nến cuối của lịch sử là nến mà các giao dịch tiếp tục dựng: giao dịch đầu tiên sau khi kết nối giữ nguyên giá mở cửa, cao, thấp và khối lượng của nó. Một giao dịch thuộc về nến đã qua mà đến muộn bị bỏ qua, còn một nến đã đóng của nến đó thì sửa nó, nến đang hình thành vẫn giữ các giao dịch của mình. Với khung thời gian dựng từ một khung nhỏ hơn, nến gốc được sửa sẽ dựng lại nến của nó, cho hai nến đã dựng gần nhất trước nến đang hình thành; lần sửa xa hơn bị bỏ qua.
+</p>
+<pre><code>{`// trong adapter: giá chốt của sàn cho một nến đã có trên biểu đồ
+parseMessage: (raw) => ({ bar: toBar(raw), closed: true })
+
+// nến của riêng bạn, không có adapter
+const corrected = chart.updateBar(bar)   // false: không có nến đã nạp nào có bar.time`}</code></pre>
+
 <h2>Nguồn dữ liệu bất kỳ trong ~20 dòng</h2>
 <p>
   Kế thừa <code>WebSocketAdapter</code> (dữ liệu trực tiếp + lịch sử qua REST) hoặc <code>PollingAdapter</code>
@@ -85,11 +98,14 @@ const myAdapter = new WebSocketAdapter({
 
 const agg = new TickAggregator('1d')
 agg.setTimeZone('Asia/Ho_Chi_Minh')         // days start at the exchange's midnight
+agg.seed(history.at(-1).time)               // a bar older than the history's last is past
 agg.on('barClose', (bar) => console.log(bar))   // a bar whose interval is over
+agg.on('correction', (bar) => console.log(bar)) // a closed bar older than the newest
 agg.processTick({ time, price, volume })
 
 const current = agg.getCurrentBar()         // forming bar`}</code></pre>
 <p>Tuần bắt đầu từ thứ Hai và tháng từ ngày 1. Với <code>setTimeZone</code>, ngày, tuần, tháng và các khung giờ chia hết một ngày bắt đầu lúc nửa đêm của sàn; biểu đồ tự đặt nó cho tick của luồng dữ liệu (<code>aggregateTicks</code>) theo múi giờ của mã, nếu không có thì của thị trường, và cho nến dựng từ tick khớp với nến lịch sử: ngày được đóng dấu lúc 00:00 UTC khi lịch sử cũng đóng dấu như vậy, còn nến 2h đến 12h chỉ bắt đầu lúc nửa đêm của sàn khi nến lịch sử bắt đầu ở đó, nên nến 4h của chính nguồn dữ liệu (00:00, 04:00… UTC) giữ nguyên thời điểm.</p>
+<p>Nến cũ hơn nến mới nhất đã thấy là nến đã qua: <code>processBar</code> gửi nến đã đóng dưới dạng <code>correction</code> và bỏ qua khung đang hình thành, còn <code>processTick</code> bỏ qua giao dịch thuộc về nến đó, nên một khung hay giao dịch đến muộn không thể đóng sớm nến đang hình thành hay làm giá thay đổi. <code>seed(time)</code> bắt đầu từ nến cuối của lịch sử, và <code>resume(bar)</code> biến nến đó, vẫn đang hình thành, thành nến mà các giao dịch tiếp theo dựng tiếp; luồng dữ liệu của biểu đồ làm cả hai mỗi lần kết nối. <code>StreamManager</code> gửi một lần sửa dưới dạng <code>barCorrection</code>.</p>
 
 <h2>Giá của nhiều mã</h2>
 <p>
