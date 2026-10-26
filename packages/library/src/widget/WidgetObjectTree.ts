@@ -4,7 +4,10 @@ import { markPart } from './widgetFeatures.js';
 
 export interface ObjectTreeIndicator {
   instanceId: string;
+  /** As its chip and the legend name it: 'BB 20 2'. */
   name: string;
+  /** Its full name, for the row's tooltip ('Bollinger Bands'); `name` without one. */
+  title?: string;
   visible: boolean;
 }
 
@@ -171,7 +174,7 @@ export class WidgetObjectTree {
       return;
     }
     for (const ind of indicators) {
-      const row = this.row(ind.name);
+      const row = this.row(ind.name, ind.title);
       if (!ind.visible) row.classList.add('tcw-tree-hidden');
       const actions = document.createElement('div');
       actions.className = 'tcw-tree-actions';
@@ -359,13 +362,13 @@ export class WidgetObjectTree {
     }
   }
 
-  private row(label: string): HTMLDivElement {
+  private row(label: string, title = label): HTMLDivElement {
     const row = document.createElement('div');
     row.className = 'tcw-tree-row';
     const name = document.createElement('span');
     name.className = 'tcw-tree-name';
     name.textContent = label;
-    name.title = label;
+    name.title = title;
     row.appendChild(name);
     return row;
   }

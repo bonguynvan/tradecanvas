@@ -582,6 +582,18 @@ describe('ChartWidget comparing with another symbol', () => {
     section('Compare').querySelector<HTMLButtonElement>('[aria-label="Remove comparison"]')!.click();
     expect(fake.removedIndicators).toEqual(['c1']);
   });
+
+  it('keeps an indicator’s full name in its Objects row’s tooltip', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false });
+    FakeChart.last.indicatorsShown = [{
+      instanceId: 'b1', id: 'bb', params: { period: 20, stdDev: 2 }, visible: true,
+      descriptor: { name: 'Bollinger Bands', defaultConfig: { period: 20, stdDev: 2 }, shortName: 'BB' },
+    }];
+    widget.openPanel('objectTree');
+    const name = host.querySelector<HTMLElement>('.tcw-tree-section .tcw-tree-row .tcw-tree-name')!;
+    expect(name.textContent).toBe('BB 20 2');
+    expect(name.title).toBe('Bollinger Bands');
+  });
 });
 
 describe('ChartWidget percent compares and the price scale', () => {

@@ -3425,10 +3425,12 @@ export class ChartWidget {
   private refreshObjects(): void {
     this.refreshDrawingsState();
     if (!this.objectTree) return;
-    // Named as the chips and the legend name them: a compare by its symbol, two EMAs by their periods.
+    // Named as the chips and the legend name them: a compare by its symbol, two EMAs by their periods;
+    // the full name in the tooltip.
     const indicators = this.chart.getActiveIndicators().map((i) => ({
       instanceId: i.instanceId,
       name: indicatorChipLabel(i.id, i.params, i.descriptor.defaultConfig, i.descriptor.shortName),
+      title: i.descriptor.name,
       visible: i.visible,
     }));
     const drawings = this.chart.getDrawings().map((d) => ({
