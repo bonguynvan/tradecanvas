@@ -53,7 +53,7 @@ chart.connect({ adapter: new CoinbaseAdapter(), symbol: 'BTC-USD', timeframe: '1
   dữ liệu không có <code>resolveSymbol</code>, không nêu múi giờ hoặc nêu UTC, hay có các khung không
   khớp được với nửa đêm đó (chỉ có nến 4h cho múi giờ lệch UTC 7 tiếng) thì dùng ngày theo UTC như
   trước. Nguồn dữ liệu trả lời lỗi hoặc chậm quá 5 giây cũng vậy, và từ đó ngày của mã giữ theo
-  UTC, nên các trang cũ hơn và lịch sử sau khi kết nối lại không bao giờ có một ngày hai lần. Múi giờ
+  UTC cho tới khi biểu đồ tải lại mã từ đầu (kết nối tới nó, hoặc chuyển sang nó từ mã hay khung thời gian khác), nên các trang cũ hơn và lịch sử sau khi kết nối lại không bao giờ có một ngày hai lần; lần tải mới dựng ngày theo múi giờ mà nguồn dữ liệu đã nêu từ đó, hoặc hỏi lại nguồn. Múi giờ
   của thị trường (<code>setMarket</code>) không dời những nến này. Nến ngày đóng dấu 00:00 UTC được đọc là đúng ngày chúng ghi. Múi giờ mà nguồn dữ liệu gửi sau
   qua sự kiện <code>symbolInfo</code> đổi giờ hiển thị, không đổi lúc bắt đầu của những ngày đã dựng.
 </p>

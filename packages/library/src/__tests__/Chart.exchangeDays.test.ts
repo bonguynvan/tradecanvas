@@ -58,6 +58,30 @@ describe('Chart bars a feed’s hours build', () => {
     await vi.waitFor(() => expect(chart.getExchangeTimeZone()).toBe(VN));
     expect(resolveSymbol).toHaveBeenCalledTimes(1);
   });
+
+  it('start at the zone the feed names later once the chart loads the symbol again, never mixed with the UTC days', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    let asks = 0;
+    // Down the first time it is asked.
+    const feed = vnFeed(async (symbol) => {
+      if (++asks === 1) throw new Error('down');
+      return { symbol, timeZone: VN };
+    });
+    // BBB's bars never come: the chart goes back to AAA with AAA's days still on screen,
+    // older than the ones it loads then (as days paged in would be).
+    let loads = 0;
+    feed.fetchHistory = async (symbol) => {
+      if (symbol === 'BBB') return new Promise(() => {});
+      const first = loads++ === 0;
+      return vnHours().filter((b) => first || b.time >= Date.UTC(2026, 9, 21));
+    };
+    const startHours = () => [...new Set(chart.getData().map((b) => (b.time % (24 * HOUR)) / HOUR))];
+    await chart.connect({ adapter: feed, symbol: 'AAA', timeframe: '1d' });
+    expect(startHours()).toEqual([0]);
+    void chart.switchStream('BBB', '1d');
+    await chart.switchStream('AAA', '1d');
+    expect(startHours()).toEqual([17]); // 00:00 in Ho Chi Minh City
+  });
 });
 
 describe('Chart.setMarket', () => {

@@ -356,7 +356,8 @@ and 12:00. Which zone depends on where the bars come from:
 
 - **Timeframes a feed lacks** (built from its `supportedTimeframes`): only the
   `SymbolInfo.timeZone` its `resolveSymbol` answers. `setMarket` doesn't move
-  them; a feed without `resolveSymbol` (or that fails to answer) gets UTC days.
+  them; a feed without `resolveSymbol` (or that fails to answer) gets UTC days,
+  after a failed answer until the chart loads the symbol afresh.
 - **Bars given to `widget.setData`**: the symbol's zone (`setSymbolInfo`), else
   the market's (`setMarket`).
 

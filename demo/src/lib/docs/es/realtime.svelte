@@ -53,8 +53,8 @@ chart.connect({ adapter: new CoinbaseAdapter(), symbol: 'BTC-USD', timeframe: '1
   temporalidad, y conserva la zona; las de 1h o menos no la esperan. Un feed sin
   <code>resolveSymbol</code>, que no da zona o da UTC, o cuyas temporalidades no pueden alinearse con
   esa medianoche (solo barras de 4h para una zona a 7 horas de UTC) recibe días de UTC, como antes. Lo mismo ocurre con un feed que falla al responder o tarda
-  más de 5 segundos, y los días del símbolo siguen entonces siendo de UTC, así que las páginas más
-  antiguas y el historial tras una reconexión nunca tienen un día dos veces. La zona del mercado
+  más de 5 segundos, y los días del símbolo siguen entonces siendo de UTC hasta que el gráfico vuelve a cargar el símbolo desde cero (al conectarse a él, o al llegar a él desde otro símbolo o temporalidad), así que las páginas más
+  antiguas y el historial tras una reconexión nunca tienen un día dos veces; esa carga nueva construye los días en la zona que el feed haya nombrado desde entonces, o vuelve a preguntarle. La zona del mercado
   (<code>setMarket</code>) no mueve estas barras. Las
   barras diarias con sello de las 00:00 UTC se leen como la fecha que indican. Una zona que el feed
   envíe después en un evento <code>symbolInfo</code> cambia las horas que se muestran, no dónde empiezan

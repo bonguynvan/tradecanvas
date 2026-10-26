@@ -3255,6 +3255,10 @@ export class Chart {
     if (adapter && !servesTimeframe(adapter, timeframe)) {
       throw new RangeError(`${adapter.name} cannot serve the ${timeframe} timeframe`);
     }
+    // Another series: its history replaces the bars on screen, also when the
+    // chart comes back to them before it lands (the stream loads it afresh,
+    // its days perhaps in a zone the feed has named since).
+    if (symbol !== this.currentSymbol || timeframe !== this.streamTimeframe) this.snapshotKey = null;
     this.setStreamTarget(symbol, timeframe);
     // Until the new series is in, a page would be the new symbol's bars in
     // front of the old one's.

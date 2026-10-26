@@ -279,6 +279,52 @@ describe('StreamManager — bars from ticks after the history', () => {
   });
 });
 
+describe('StreamManager — a symbol whose days were built in UTC for want of an answer', () => {
+  const VN = 'Asia/Ho_Chi_Minh';
+  const HOUR = 3_600_000;
+  const DAY = 24 * HOUR;
+  /** 09:00 to 14:00 in Ho Chi Minh City (02:00 to 07:00 UTC), 19 to 23 October 2026. */
+  const hours: OHLCBar[] = [];
+  for (let d = 19; d <= 23; d++) for (let h = 2; h <= 7; h++) hours.push({ time: Date.UTC(2026, 9, d, h), open: 1, high: 1, low: 1, close: 1, volume: 1 });
+
+  it('loads it afresh in the zone the feed names later, and keeps its days on a reconnect', async () => {
+    const listeners = new Map<string, Set<DataAdapterListener>>();
+    let asks = 0;
+    const adapter: DataAdapter = {
+      name: 'hours',
+      supportedTimeframes: ['1h'],
+      connect: () => {},
+      disconnect: () => {},
+      getConnectionState: () => 'connected',
+      fetchHistory: async (_s, _tf, limit = 500) => hours.slice(-limit),
+      // Down the first time it is asked.
+      resolveSymbol: async (symbol) => {
+        if (++asks === 1) throw new Error('down');
+        return { symbol, timeZone: VN };
+      },
+      on: (event, listener) => {
+        if (!listeners.has(event)) listeners.set(event, new Set());
+        listeners.get(event)!.add(listener as DataAdapterListener);
+      },
+      off: (event, listener) => { listeners.get(event)?.delete(listener as DataAdapterListener); },
+      dispose: () => {},
+    };
+    const sm = new StreamManager();
+    const snapshots: OHLCBar[][] = [];
+    sm.on('snapshot', (b) => snapshots.push(b));
+    const startHour = (b: OHLCBar[]) => (b.at(-1)!.time % DAY) / HOUR;
+
+    await sm.connect({ adapter, symbol: 'X', timeframe: '1d' });
+    for (const l of listeners.get('connectionChange') ?? []) l({ type: 'connectionChange', data: 'connected', timestamp: 0 });
+    sm.wake('online'); // a reconnect: its history is merged with the days on the chart
+    await vi.waitFor(() => expect(snapshots).toHaveLength(2));
+    await sm.switchTo('Y', '1d');
+    await sm.switchTo('X', '1d');
+    expect(snapshots.map(startHour)).toEqual([0, 0, 17, 17]);
+    sm.dispose();
+  });
+});
+
 describe('StreamManager.wake — back from sleep', () => {
   /** A connected stream whose adapter can say it is connected and send ticks. */
   async function connected() {

@@ -111,6 +111,8 @@ export class StreamManager extends Emitter<StreamEvents> {
     // Tick timeframes (100T) are built from the feed's trades.
     const resampled = withResampling(config.adapter);
     this.resampler = resampled instanceof ResamplingAdapter ? resampled : null;
+    // A fresh load: no bars of the symbol are kept to merge its history with.
+    this.resampler?.renewZone(config.symbol);
     const adapter = withTickBars(resampled);
     this.config = { ...DEFAULT_STREAM_CONFIG, ...config, adapter } as StreamConfig;
     this.adapter = adapter;
@@ -192,6 +194,8 @@ export class StreamManager extends Emitter<StreamEvents> {
     this.previousClose = null;
     this.previousCloseTime = null;
 
+    // Another symbol or timeframe is a new series; the same again is merged with the bars loaded.
+    if (symbol !== this.config.symbol || timeframe !== this.config.timeframe) this.resampler?.renewZone(symbol);
     this.config.symbol = symbol;
     this.config.timeframe = timeframe;
 

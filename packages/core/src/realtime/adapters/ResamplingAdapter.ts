@@ -163,7 +163,8 @@ interface ServedTail {
  *   midnight of the symbol's exchange: the `timeZone` the feed's
  *   `resolveSymbol` names, asked once and kept per symbol (a feed without
  *   one, one that fails or is slow to answer, or one whose timeframes can't
- *   line up with that midnight, gets UTC's, and keeps them for the symbol).
+ *   line up with that midnight, gets UTC's, and keeps them for the symbol;
+ *   after no answer, until the symbol's history is loaded afresh).
  *   Daily bars stamped at 00:00 UTC are read as their dates.
  * - Live base bars are kept by time within the forming bucket, so a feed
  *   that never flags a bar closed, or repeats a frame, still builds it right.
@@ -207,6 +208,13 @@ export class ResamplingAdapter implements DataAdapter {
   private readonly zones = new Map<string, string | null>();
   /** Per symbol, the feed's answer on its way: the chart's ask and this wrapper's share one request. */
   private readonly resolving = new Map<string, Promise<SymbolInfo | null>>();
+  /**
+   * Symbols whose days are built in UTC for want of an answer (the feed
+   * failed or was slow to say): the request given up on, still on its way
+   * then, and the zone the feed named since. A fresh load of the symbol's
+   * history (`renewZone`) builds in that zone, or asks again.
+   */
+  private readonly unanswered = new Map<string, { asked?: Promise<SymbolInfo | null>; zone?: string | null }>();
 
   constructor(private readonly inner: DataAdapter, private readonly baseTimeframes: readonly TimeFrame[]) {
     this.name = inner.name;
@@ -313,11 +321,29 @@ export class ResamplingAdapter implements DataAdapter {
   }
 
   /**
+   * A fresh load of `symbol`'s history, which no bars already loaded are
+   * merged with: days built in UTC for want of an answer follow the zone the
+   * feed named since, or the feed is asked again when it failed to say. A
+   * request still on its way since then isn't waited for twice, and a zone
+   * the feed did name (or not) stays.
+   */
+  renewZone(symbol: string): void {
+    const unanswered = this.unanswered.get(symbol);
+    if (!unanswered) return;
+    const named = unanswered.zone;
+    const stillAsked = unanswered.asked !== undefined && this.resolving.get(symbol) === unanswered.asked;
+    if (named === undefined && stillAsked) return;
+    this.unanswered.delete(symbol);
+    if (named === undefined) this.zones.delete(symbol);
+    else this.zones.set(symbol, named);
+  }
+
+  /**
    * The zone `symbol`'s days are built in, asking the feed the first time. A
    * feed that hasn't said within `SYMBOL_ZONE_WAIT_MS`, or failed to say,
-   * keeps UTC days for the symbol: a later answer can't move bars already
-   * built, so older pages and the history of a reconnect never hold a day
-   * twice.
+   * keeps UTC days for the symbol until a fresh load (`renewZone`): a later
+   * answer can't move bars already built, so older pages and the history of
+   * a reconnect never hold a day twice.
    */
   private async zoneFor(symbol: string): Promise<string | undefined> {
     if (this.zones.has(symbol)) return this.keptZone(symbol);
@@ -330,7 +356,10 @@ export class ResamplingAdapter implements DataAdapter {
     } finally {
       clearTimeout(timer);
     }
-    if (!this.zones.has(symbol)) this.zones.set(symbol, null);
+    if (!this.zones.has(symbol)) {
+      this.zones.set(symbol, null);
+      this.unanswered.set(symbol, { asked: this.resolving.get(symbol) });
+    }
     return this.keptZone(symbol);
   }
 
@@ -352,11 +381,13 @@ export class ResamplingAdapter implements DataAdapter {
     return pending;
   }
 
-  /** The zone `info` names for `symbol`, kept the first time only. */
+  /** The zone `info` names for `symbol`, kept the first time only; one too late for days built in UTC waits for a fresh load. */
   private keepZone(symbol: string, info: SymbolInfo | null): void {
-    if (this.zones.has(symbol)) return;
-    const zone = symbolTimeZone(info);
-    this.zones.set(symbol, zone && isValidTimeZone(zone) && !isUtcTimeZone(zone) ? zone : null);
+    const named = symbolTimeZone(info);
+    const zone = named && isValidTimeZone(named) && !isUtcTimeZone(named) ? named : null;
+    const unanswered = this.unanswered.get(symbol);
+    if (unanswered) this.unanswered.set(symbol, { ...unanswered, zone });
+    else if (!this.zones.has(symbol)) this.zones.set(symbol, zone);
   }
 
   /**

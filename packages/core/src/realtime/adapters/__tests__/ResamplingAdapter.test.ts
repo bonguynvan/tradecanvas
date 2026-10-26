@@ -464,6 +464,68 @@ describe('ResamplingAdapter in the symbol’s time zone', () => {
     expect(zonedFeed(['1h'], vnHours(), null).adapter.bucketFor('X', '1d')).toEqual({ timeZone: undefined, dates: false });
   });
 
+  describe('a symbol loaded afresh after its days were built in UTC for want of an answer', () => {
+    const utcDays = (days: OHLCBar[]) => days.length > 0 && days.every((d) => d.time % DAY === 0);
+    const vnDays = (days: OHLCBar[]) => days.length > 0 && days.every((d) => d.time % DAY === 17 * HOUR);
+
+    it('asks the feed again when it failed to say', async () => {
+      const { adapter, resolveSymbol } = zonedFeed(['1h'], vnHours(), VN);
+      resolveSymbol.mockRejectedValueOnce(new Error('down'));
+      expect(utcDays(await adapter.fetchHistory('X', '1d', 2))).toBe(true);
+      adapter.renewZone('X');
+      expect(vnDays(await adapter.fetchHistory('X', '1d', 2))).toBe(true);
+      expect(resolveSymbol).toHaveBeenCalledTimes(2);
+    });
+
+    it('builds in the zone the feed named too late, without asking again', async () => {
+      vi.useFakeTimers();
+      try {
+        const { adapter, resolveSymbol } = zonedFeed(['1h'], vnHours(), VN);
+        let answer: (info: SymbolInfo) => void = () => {};
+        resolveSymbol.mockReturnValueOnce(new Promise((resolve) => { answer = resolve; }));
+        const first = adapter.fetchHistory('X', '1d', 2);
+        await vi.advanceTimersByTimeAsync(SYMBOL_ZONE_WAIT_MS);
+        expect(utcDays(await first)).toBe(true);
+        answer({ symbol: 'X', timeZone: VN });
+        await vi.advanceTimersByTimeAsync(0);
+        // A reconnect's history, merged with the days already loaded, keeps them.
+        expect(utcDays(await adapter.fetchHistory('X', '1d', 2))).toBe(true);
+        adapter.renewZone('X');
+        expect(vnDays(await adapter.fetchHistory('X', '1d', 2))).toBe(true);
+        expect(resolveSymbol).toHaveBeenCalledTimes(1);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it('waits no second time for an answer still on its way', async () => {
+      vi.useFakeTimers();
+      try {
+        const { adapter, resolveSymbol } = zonedFeed(['1h'], vnHours(), VN);
+        resolveSymbol.mockReturnValue(new Promise(() => {}));
+        const first = adapter.fetchHistory('X', '1d', 2);
+        await vi.advanceTimersByTimeAsync(SYMBOL_ZONE_WAIT_MS);
+        await first;
+        adapter.renewZone('X');
+        let again: OHLCBar[] = [];
+        void adapter.fetchHistory('X', '1d', 2).then((days) => { again = days; });
+        await vi.advanceTimersByTimeAsync(1);
+        expect(utcDays(again)).toBe(true);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it('keeps the days of a symbol the feed did answer about', async () => {
+      const { adapter, resolveSymbol } = zonedFeed(['1h'], vnHours(), VN);
+      resolveSymbol.mockResolvedValueOnce(null);
+      await adapter.fetchHistory('X', '1d', 2);
+      adapter.renewZone('X');
+      expect(utcDays(await adapter.fetchHistory('X', '1d', 2))).toBe(true);
+      expect(resolveSymbol).toHaveBeenCalledTimes(1);
+    });
+  });
+
   it('builds frames that keep the epoch floor without waiting for the zone', () => {
     const { feed, adapter, resolveSymbol } = zonedFeed(['1m'], vnHours(), VN);
     void adapter.fetchHistory('VN30F1M', '7m', 10);

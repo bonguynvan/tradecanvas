@@ -53,7 +53,7 @@ chart.connect({ adapter: new CoinbaseAdapter(), symbol: 'BTC-USD', timeframe: '1
   for it. A feed without <code>resolveSymbol</code>, one that names no zone or UTC, or one whose
   timeframes can't line up with that midnight (only 4h bars for a zone 7 hours from UTC) gets UTC
   days, as before. So does one that fails to answer or takes more than 5 seconds, and the symbol's days then
-  stay UTC's, so older pages and the history after a reconnect never hold a day twice. The
+  stay UTC's until the chart loads the symbol afresh (connects to it, or comes to it from another symbol or timeframe), so older pages and the history after a reconnect never hold a day twice; a fresh load builds them in the zone the feed has named since, or asks it again. The
   market's zone (<code>setMarket</code>) doesn't move these bars. Daily bars stamped at 00:00 UTC are read as the dates they name. A zone the feed
   sends later in a <code>symbolInfo</code> event changes the times shown, not where built days start.
 </p>
