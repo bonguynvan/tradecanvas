@@ -648,7 +648,9 @@ await widget.applyLayoutContent(json)`}</code></pre>
   读取（返回一份副本）；用 <code>setSettings(patch)</code> 修改其中一部分，它会丢弃无法识别的内容，
   把数值限制在对话框的范围内，并且不记录撤销步骤；用 <code>onSettingsChange(listener)</code>
   监听每次变化，它返回一个用于停止监听的函数。对话框点“确定”关闭时调用一次，点“取消”或没有任何
-  改变时不会调用。设置 <code>persistSettings: true</code> 后，组件会把它们保存在当前浏览器中，
+  改变时不会调用。图表还没有K线时，<code>setSettings</code> 会保持自动缩放开启：关闭它是固定屏幕上的
+  价格范围，而此时还没有范围。因此 <code>onSettingsChange</code> 给出的设置（拖动价格轴后自动缩放为关闭）
+  可以在构造函数之后立即安全地传回。设置 <code>persistSettings: true</code> 后，组件会把它们保存在当前浏览器中，
   下次访问时恢复。
 </p>
 <pre><code>{`const widget = new ChartWidget(host, {

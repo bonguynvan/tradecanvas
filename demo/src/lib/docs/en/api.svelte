@@ -703,7 +703,10 @@ await widget.applyLayoutContent(json)`}</code></pre>
   in the dialog's ranges and records no undo step; and hear of each change with
   <code>onSettingsChange(listener)</code>, which returns the function that stops
   it. It is called once when the dialog closes with OK, never for Cancel or for
-  a change that changes nothing. With <code>persistSettings: true</code> the
+  a change that changes nothing. Until the chart has bars, <code>setSettings</code>
+  leaves auto-scale on, since off holds the price range on screen and there is none
+  yet: the settings <code>onSettingsChange</code> gave, auto-scale off after a drag
+  on the price axis, are safe to give back right after the constructor. With <code>persistSettings: true</code> the
   widget keeps them in this browser and puts them back on the next visit.
 </p>
 <pre><code>{`const widget = new ChartWidget(host, {

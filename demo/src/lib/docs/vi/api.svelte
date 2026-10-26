@@ -709,7 +709,10 @@ await widget.applyLayoutContent(json)`}</code></pre>
   trong khoảng của hộp thoại và không ghi bước hoàn tác; và nghe từng thay đổi bằng
   <code>onSettingsChange(listener)</code>, hàm này trả về hàm để ngừng nghe. Nó được
   gọi một lần khi hộp thoại đóng bằng OK, không bao giờ cho Huỷ hay cho một thay đổi
-  không đổi gì. Với <code>persistSettings: true</code>, widget giữ chúng trong trình
+  không đổi gì. Khi biểu đồ chưa có nến, <code>setSettings</code> để tự co giãn thang
+  bật, vì tắt nó là giữ nguyên khoảng giá đang hiện, mà lúc đó chưa có khoảng nào:
+  cài đặt mà <code>onSettingsChange</code> đưa ra, có tự co giãn thang bị tắt sau khi
+  kéo trục giá, vẫn đưa lại được ngay sau hàm khởi tạo mà không sao. Với <code>persistSettings: true</code>, widget giữ chúng trong trình
   duyệt này và đặt lại ở lần ghé sau.
 </p>
 <pre><code>{`const widget = new ChartWidget(host, {

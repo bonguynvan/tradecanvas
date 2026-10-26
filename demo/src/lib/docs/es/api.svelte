@@ -723,7 +723,11 @@ await widget.applyLayoutContent(json)`}</code></pre>
   números en los rangos del diálogo y no registra ningún paso de deshacer; y entérate
   de cada cambio con <code>onSettingsChange(listener)</code>, que devuelve la función
   que lo detiene. Se llama una vez cuando el diálogo se cierra con Aceptar, nunca con
-  Cancelar ni con un cambio que no cambia nada. Con <code>persistSettings: true</code>
+  Cancelar ni con un cambio que no cambia nada. Mientras el gráfico no tiene barras,
+  <code>setSettings</code> deja la escala automática activada, porque desactivarla fija
+  el rango de precios en pantalla y aún no hay ninguno: la configuración que dio
+  <code>onSettingsChange</code>, con la escala automática desactivada tras arrastrar el
+  eje de precio, se puede devolver sin riesgo justo después del constructor. Con <code>persistSettings: true</code>
   el widget la guarda en este navegador y la recupera en la siguiente visita.
 </p>
 <pre><code>{`const widget = new ChartWidget(host, {

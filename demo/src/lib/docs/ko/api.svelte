@@ -683,7 +683,10 @@ await widget.applyLayoutContent(json)`}</code></pre>
   바꿉니다. 읽을 수 없는 값은 버리고, 숫자는 대화 상자의 범위 안으로 맞추며, 실행 취소 단계를 남기지
   않습니다. 바뀔 때마다 <code>onSettingsChange(listener)</code>로 알림을 받을 수 있으며, 이 함수는
   알림을 멈추는 함수를 돌려줍니다. 대화 상자를 확인으로 닫을 때 한 번 호출되고, 취소하거나 아무것도
-  바뀌지 않은 변경에는 호출되지 않습니다. <code>persistSettings: true</code>를 설정하면 위젯이 이
+  바뀌지 않은 변경에는 호출되지 않습니다. 차트에 아직 봉이 없는 동안 <code>setSettings</code>는 자동
+  눈금을 켠 채로 둡니다. 끄면 화면의 가격 범위를 고정하는데, 그때는 아직 범위가 없기 때문입니다. 그래서
+  <code>onSettingsChange</code>가 준 설정(가격 축을 드래그해 자동 눈금이 꺼진 것)을 생성자 바로 뒤에
+  돌려줘도 안전합니다. <code>persistSettings: true</code>를 설정하면 위젯이 이
   브라우저에 설정을 보관했다가 다음 방문 때 되돌려 놓습니다.
 </p>
 <pre><code>{`const widget = new ChartWidget(host, {

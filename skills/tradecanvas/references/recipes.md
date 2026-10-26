@@ -678,6 +678,12 @@ const stop = widget.onSettingsChange((settings) => {
 // stop() when the page goes; widget.destroy() also ends it.
 ```
 
+After a drag on the price axis, what `onSettingsChange` gives has auto-scale
+off. `setSettings` leaves auto-scale on until the chart has bars (off holds
+the price range on screen, and there is none before them), so given back right
+after the constructor the saved settings open with the bars fitted, not an
+empty price pane.
+
 Change them in code with `widget.setSettings({ timezone: 'exchange' })`, not
 `widget.getChart().setTimeZone(…)`: the widget's clock follows its own
 settings, and a change made on the chart itself is told to no listener.

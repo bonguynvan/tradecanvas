@@ -677,7 +677,10 @@ await widget.applyLayoutContent(json)`}</code></pre>
   <code>setSettings(patch)</code> で一部を変更します。読み取れないものは捨て、数値はダイアログの範囲に収め、
   元に戻す履歴には記録しません。変更は <code>onSettingsChange(listener)</code> で受け取れ、
   止めるための関数が返ります。ダイアログを OK で閉じたときに 1 回呼ばれ、キャンセルや何も変わらない変更では
-  呼ばれません。<code>persistSettings: true</code> を指定すると、ウィジェットはこのブラウザーに設定を保存し、
+  呼ばれません。チャートにまだバーがない間、<code>setSettings</code> は自動スケールをオンのままにします。
+  オフは画面上の価格範囲を固定するもので、その時点ではまだ範囲がないからです。そのため
+  <code>onSettingsChange</code> が渡した設定（価格軸のドラッグで自動スケールがオフになったもの）は、
+  コンストラクターの直後に戻しても問題ありません。<code>persistSettings: true</code> を指定すると、ウィジェットはこのブラウザーに設定を保存し、
   次に開いたときに元に戻します。
 </p>
 <pre><code>{`const widget = new ChartWidget(host, {
