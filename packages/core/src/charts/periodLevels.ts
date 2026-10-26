@@ -40,7 +40,7 @@ function aggregate(bars: ReadonlyArray<OHLCBar>, period: LevelPeriod, exchangeTi
  * period's open). Bars are assumed ascending by time. Returns an empty array
  * until at least one completed period plus a current one exist. Days and
  * weeks start at midnight in `exchangeTimeZone` (an IANA name; UTC's when
- * left out), as VWAP's do.
+ * left out or unknown to the browser), as VWAP's do.
  */
 export function computePeriodLevels(
   bars: ReadonlyArray<OHLCBar>,

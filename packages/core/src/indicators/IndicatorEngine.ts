@@ -12,7 +12,7 @@ import type {
   ViewportState,
   OverlayScale,
 } from '@tradecanvas/commons';
-import { TC_SERIES_COLORS, isValidTimeZone } from '@tradecanvas/commons';
+import { TC_SERIES_COLORS, isUtcTimeZone, isValidTimeZone } from '@tradecanvas/commons';
 import { drawnKeys, hasHistogram, paneLogRange, paneValueRange, plotColor, plotShown } from './plots.js';
 import { alignOutput, emptyOutput, inputSource, lineSourceBars, priceSourceBars, sourceParam } from './sources.js';
 import { cleanIntervals, shownOnInterval } from './intervals.js';
@@ -549,13 +549,15 @@ export class IndicatorEngine {
 
   /**
    * The exchange's IANA zone, which the indicators that start again each day,
-   * week or month count their days in (`config.exchangeTimeZone`); null, or
-   * a zone the browser does not know, for UTC's. Not the zone the chart shows,
-   * so values stay the same however times are displayed. True when it
-   * changed: the caller then recomputes.
+   * week or month count their days in (`config.exchangeTimeZone`); null, UTC
+   * itself, or a zone the browser does not know, for UTC's (the config then
+   * has none). Not the zone the chart shows, so values stay the same however
+   * times are displayed. True when it changed: the caller then recomputes.
    */
   setExchangeTimeZone(zone: string | null): boolean {
-    const next = zone && isValidTimeZone(zone) ? zone : null;
+    // UTC is no zone at all: a crypto feed's symbol switch, UTC to none and
+    // back, then changes nothing and computes nothing again.
+    const next = zone && !isUtcTimeZone(zone) && isValidTimeZone(zone) ? zone : null;
     if (next === this.exchangeTimeZone) return false;
     this.exchangeTimeZone = next;
     for (const { config } of this.instances.values()) {

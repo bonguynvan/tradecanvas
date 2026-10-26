@@ -98,7 +98,7 @@ function updateOrRecalc(
   return plugin.update?.(data, config, prev, from) ?? plugin.calculate(data, config);
 }
 
-const CASES: [string, IndicatorPlugin, Record<string, number>][] = [
+const CASES: [string, IndicatorPlugin, Record<string, number | string>][] = [
   ['sma', new SMAIndicator(), { period: 20 }],
   ['ema', new EMAIndicator(), { period: 20 }],
   ['bb', new BollingerBandsIndicator(), { period: 20, stdDev: 2 }],
@@ -128,7 +128,7 @@ const CASES: [string, IndicatorPlugin, Record<string, number>][] = [
   ['ulcer', new UlcerIndexIndicator(), { period: 14 }],
   // Minute bars from 22:13 UTC: the session starts again at midnight, inside the 300 bars.
   ['vwap', new VWAPIndicator(), {}],
-  ['vwap-week', new VWAPIndicator(), { anchor: 'week' as unknown as number }],
+  ['vwap-week', new VWAPIndicator(), { anchor: 'week' }],
 ];
 
 describe.each(CASES)('%s incremental update', (id, plugin, params) => {

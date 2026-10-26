@@ -83,7 +83,9 @@ export class SessionVWAPIndicator extends IndicatorBase {
     if (!series) return;
     const { from, to } = viewport.visibleRange;
 
-    // Bands first (fainter, behind the VWAP line).
+    // Bands first (fainter, behind the VWAP line), each session's apart: a
+    // session of one bar, as on daily bars, holds them on its line (σ 0).
+    const newSession = (a: number, b: number) => series[a]?.session !== series[b]?.session;
     ctx.globalAlpha = 0.55;
     ctx.lineWidth = 1;
     ctx.strokeStyle = style.colors[1] ?? style.colors[0];
@@ -92,7 +94,7 @@ export class SessionVWAPIndicator extends IndicatorBase {
       const own = style.plots?.[key];
       if (own?.visible === false) return;
       ctx.setLineDash(own?.lineStyle ? lineDash(own.lineStyle, [4, 3], 1) : [4, 3]);
-      this.strokeBandSeries(ctx, series, viewport, from, to, (v) => v[key]);
+      this.strokeBandSeries(ctx, series, viewport, from, to, (v) => v[key], newSession);
     };
     for (let b = 1; b <= 3; b++) {
       band(`u${b}`);
@@ -108,13 +110,15 @@ export class SessionVWAPIndicator extends IndicatorBase {
     ctx.lineWidth = style.lineWidths[0];
     ctx.lineJoin = 'round';
     ctx.setLineDash(lineDash(vwap?.lineStyle ?? 'solid', [6, 4], style.lineWidths[0]));
-    this.strokeBandSeries(ctx, series, viewport, from, to, (v) => v.value);
+    this.strokeBandSeries(ctx, series, viewport, from, to, (v) => v.value, (a, b) => breaksBetween(series, a, b));
     ctx.setLineDash([]);
   }
 
   /**
-   * Stroke a single series accessor, breaking the path at each session reset
-   * (`breaksBetween`: sessions of one bar each, as on daily bars, are joined).
+   * Stroke one accessor's points, breaking the path between two bars where
+   * `breaks` says so: the bands at every session reset, the line where
+   * `breaksBetween` does (sessions of one bar each, as on daily bars, are
+   * joined).
    */
   private strokeBandSeries(
     ctx: CanvasRenderingContext2D,
@@ -123,6 +127,7 @@ export class SessionVWAPIndicator extends IndicatorBase {
     from: number,
     to: number,
     accessor: (v: IndicatorValue) => number | undefined,
+    breaks: (a: number, b: number) => boolean,
   ): void {
     const pen = new LinePen(ctx, String(ctx.strokeStyle), ctx.lineWidth, isDenseSlots(viewport));
     let last = -1;
@@ -134,7 +139,7 @@ export class SessionVWAPIndicator extends IndicatorBase {
         last = -1;
         continue;
       }
-      if (last >= 0 && breaksBetween(series, last, i)) pen.gap();
+      if (last >= 0 && breaks(last, i)) pen.gap();
       pen.add(barIndexToX(i, viewport), priceToY(value, viewport));
       last = i;
     }

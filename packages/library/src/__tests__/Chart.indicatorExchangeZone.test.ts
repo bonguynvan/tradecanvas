@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import type { OHLCBar } from '@tradecanvas/commons';
-import { VWAPIndicator } from '@tradecanvas/core';
+import type { DataAdapter, OHLCBar, SymbolInfo } from '@tradecanvas/commons';
+import { EMAIndicator, VWAPIndicator } from '@tradecanvas/core';
 import { Chart } from '../Chart.js';
 import { installChartStubs, sizedHost } from './chartTestEnv.js';
 
@@ -65,6 +65,7 @@ describe('Chart gives indicators the exchange’s zone', () => {
   it('from the market, when the symbol names none', () => {
     chart.setData(asxSession());
     const id = chart.addIndicator('vwap')!;
+    expect(vwapAt(id, 1)).toBe(20);
     chart.setMarket({ type: 'stock', timeZone: SYDNEY });
     expect(vwapAt(id, 1)).toBe(15);
   });
@@ -146,6 +147,101 @@ describe('Chart computes a VWAP once for a new zone', () => {
     chart.setSymbolInfo({ symbol: 'BBB', timeZone: NEW_YORK });
     chart.getIndicatorOutput(id);
     expect(calculate).toHaveBeenCalledTimes(1);
+  });
+
+  it('on the new bars alone, when the next symbol trades in UTC too, with no market set', () => {
+    // A crypto feed: every symbol names UTC, and the switch passes through no symbol at all.
+    chart.setData(bars);
+    chart.setSymbolInfo({ symbol: 'AAA', timeZone: 'UTC' });
+    const vwap = chart.addIndicator('vwap')!;
+    chart.addIndicator('ema');
+    const counts = [vi.spyOn(VWAPIndicator.prototype, 'calculate'), vi.spyOn(EMAIndicator.prototype, 'calculate')];
+    chart.setSymbolInfo(null);
+    chart.setData(bars.map((b) => ({ ...b, close: b.close + 1 })));
+    chart.setSymbolInfo({ symbol: 'BBB', timeZone: 'UTC' });
+    chart.getIndicatorOutput(vwap);
+    expect(counts.map((c) => c.mock.calls.length)).toEqual([1, 1]);
+  });
+});
+
+describe('Chart keeps the indicators’ zone while the stream asks about its next symbol', () => {
+  // Hourly bars from Monday 5 January 2026, 00:00 in New York (05:00 UTC), priced by their number.
+  const NY_MIDNIGHT = Date.UTC(2026, 0, 5, 5);
+  const BASE: Record<string, number> = { AAA: 100, BBB: 200 };
+  const history = (symbol: string): OHLCBar[] => Array.from({ length: 48 }, (_, i) => flat(NY_MIDNIGHT + i * HOUR, BASE[symbol] + i));
+
+  /** A feed whose answers about each symbol come when the test says. */
+  function feed(answers: Record<string, () => Promise<SymbolInfo | null>>): DataAdapter {
+    return {
+      name: 'fake',
+      connect: () => {},
+      disconnect: () => {},
+      getConnectionState: () => 'connected',
+      fetchHistory: async (symbol: string) => history(symbol),
+      resolveSymbol: (symbol: string) => answers[symbol](),
+      on: () => {},
+      off: () => {},
+      dispose: () => {},
+    };
+  }
+
+  type Answer = { promise: Promise<SymbolInfo | null>; resolve: (info: SymbolInfo | null) => void; reject: (err: unknown) => void };
+
+  function later(): Answer {
+    const answer = {} as Answer;
+    answer.promise = new Promise((resolve, reject) => Object.assign(answer, { resolve, reject }));
+    return answer;
+  }
+
+  /** Connected to AAA, in New York, with a VWAP: then switched to BBB, its bars in before its info. */
+  async function switchToBBB(answer: Answer) {
+    await chart.connect({ adapter: feed({ AAA: async () => ({ symbol: 'AAA', timeZone: NEW_YORK }), BBB: () => answer.promise }), symbol: 'AAA', timeframe: '1h', historyLimit: 48 });
+    await vi.waitFor(() => expect(chart.getSymbolInfo()?.symbol).toBe('AAA'));
+    const id = chart.addIndicator('vwap')!;
+    const calculate = vi.spyOn(VWAPIndicator.prototype, 'calculate');
+    await chart.switchStream('BBB', '1h');
+    await vi.waitFor(() => expect(chart.getData()[0]?.close).toBe(200));
+    return { id, calculate };
+  }
+
+  it('and computes once when the next symbol trades on the same exchange, with no market set', async () => {
+    const answer = later();
+    const { id, calculate } = await switchToBBB(answer);
+    answer.resolve({ symbol: 'BBB', timeZone: NEW_YORK });
+    await vi.waitFor(() => expect(chart.getSymbolInfo()?.symbol).toBe('BBB'));
+    expect(vwapAt(id, 24)).toBe(224); // New York's second day starts at its 24th bar
+    expect(calculate).toHaveBeenCalledTimes(1);
+  });
+
+  it('and takes the next symbol’s zone when it trades elsewhere', async () => {
+    const answer = later();
+    const { id } = await switchToBBB(answer);
+    answer.resolve({ symbol: 'BBB', timeZone: 'Asia/Tokyo' });
+    await vi.waitFor(() => expect(chart.getSymbolInfo()?.symbol).toBe('BBB'));
+    expect(vwapAt(id, 10)).toBe(210); // 15:00 UTC: midnight in Tokyo
+  });
+
+  it('and counts UTC’s days once the feed has nothing to say of the next symbol', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    for (const settle of [(a: Answer) => a.resolve(null), (a: Answer) => a.reject(new Error('451'))]) {
+      chart.disconnectStream();
+      chart.removeIndicators(chart.getActiveIndicators().map((i) => i.instanceId));
+      chart.setSymbolInfo(null);
+      const answer = later();
+      const { id } = await switchToBBB(answer);
+      expect(vwapAt(id, 19)).toBeCloseTo(209.5, 9); // still New York's day while it asks
+      settle(answer);
+      await vi.waitFor(() => expect(vwapAt(id, 19)).toBe(219)); // 00:00 UTC starts the day
+    }
+    warn.mockRestore();
+  });
+
+  it('but not when the host says the symbol has no info', () => {
+    chart.setData(history('AAA'));
+    chart.setSymbolInfo({ symbol: 'AAA', timeZone: NEW_YORK });
+    const id = chart.addIndicator('vwap')!;
+    chart.setSymbolInfo(null);
+    expect(vwapAt(id, 19)).toBe(119);
   });
 });
 

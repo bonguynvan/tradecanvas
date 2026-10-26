@@ -108,6 +108,8 @@ describe('computeSessionProfiles', () => {
     ]);
     // UTC's days cut each session after its first bar.
     expect(computeSessionProfiles(bars, 0, 100, { buckets: 10 })).toHaveLength(3);
+    // So does a zone the browser does not know, rather than throwing.
+    expect(computeSessionProfiles(bars, 0, 100, { buckets: 10 }, 'Mars/Olympus_Mons')).toHaveLength(3);
   });
 
   it('shares the price window across sessions', () => {

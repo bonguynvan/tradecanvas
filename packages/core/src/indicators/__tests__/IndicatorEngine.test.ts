@@ -236,6 +236,20 @@ describe('IndicatorEngine.setExchangeTimeZone', () => {
     expect(zones).toEqual([undefined]);
   });
 
+  it('takes UTC as none, so a UTC symbol after none or after another computes nothing again', () => {
+    // Every crypto feed names UTC, and a symbol switch passes through none on its way back to it.
+    const { plugin, zones } = zoneProbe();
+    const engine = new IndicatorEngine();
+    engine.register(plugin);
+    expect(engine.setExchangeTimeZone('UTC')).toBe(false);
+    expect(engine.setExchangeTimeZone('Etc/UTC')).toBe(false);
+    engine.addIndicator('zone', {}, bars(10));
+    expect(zones).toEqual([undefined]);
+    expect(engine.setExchangeTimeZone('Asia/Tokyo')).toBe(true);
+    expect(engine.setExchangeTimeZone('UTC')).toBe(true);
+    expect(engine.setExchangeTimeZone(null)).toBe(false);
+  });
+
   it('keeps the zone out of the parameters a layout saves', () => {
     const { plugin } = zoneProbe();
     const engine = new IndicatorEngine();

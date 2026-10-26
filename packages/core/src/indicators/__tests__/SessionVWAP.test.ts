@@ -83,20 +83,30 @@ describe('SessionVWAPIndicator', () => {
     expect(ind.calculate(session, cfg).series![1]?.value).toBe(20);
   });
 
-  it('on daily bars, joins each day’s typical price into one line, its bands too', () => {
-    const daily: DataSeries = Array.from({ length: 30 }, (_, i) => ({ time: Date.UTC(2026, 8, 1) + i * 24 * HOUR, open: 100 + i, high: 102 + i, low: 98 + i, close: 101 + i, volume: 1000 }));
-    const out = ind.calculate(daily, cfg);
+  /** The segments `render` strokes over all of `data`. */
+  function segments(data: DataSeries): number {
     let lines = 0;
     const ctx = new Proxy({}, {
       get: (_t, k) => (k === 'lineTo' ? () => { lines++; } : () => undefined),
       set: () => true,
     }) as unknown as CanvasRenderingContext2D;
     const viewport = {
-      visibleRange: { from: 0, to: daily.length - 1 }, priceRange: { min: 90, max: 140 }, barWidth: 6, barSpacing: 2, offset: 0,
+      visibleRange: { from: 0, to: data.length - 1 }, priceRange: { min: 0, max: 200 }, barWidth: 6, barSpacing: 2, offset: 0,
       chartRect: { x: 0, y: 0, width: 1200, height: 300 },
     } as unknown as ViewportState;
-    ind.render(ctx, out, viewport, { colors: ['#000', '#111'], lineWidths: [1], opacity: 1 });
-    // The VWAP line and the ±1σ bands (one bar each: σ 0, on the line).
-    expect(lines).toBe(3 * (daily.length - 1));
+    ind.render(ctx, ind.calculate(data, cfg), viewport, { colors: ['#000', '#111'], lineWidths: [1], opacity: 1 });
+    return lines;
+  }
+
+  it('on daily bars, joins each day’s typical price into one line, and leaves out the bands a one-bar session holds on it', () => {
+    const daily: DataSeries = Array.from({ length: 30 }, (_, i) => ({ time: Date.UTC(2026, 8, 1) + i * 24 * HOUR, open: 100 + i, high: 102 + i, low: 98 + i, close: 101 + i, volume: 1000 }));
+    // The VWAP line alone: the ±1σ bands (σ 0) would be two more lines on it.
+    expect(segments(daily)).toBe(daily.length - 1);
+  });
+
+  it('draws its bands through each session of more than one bar', () => {
+    const data: DataSeries = [day1, day2].flatMap((day) => [0, 1, 2].map((h) => bar(day + h * HOUR, 10 + h, 100)));
+    // Two segments a session each for the line, +1σ and −1σ.
+    expect(segments(data)).toBe(3 * 2 * 2);
   });
 });

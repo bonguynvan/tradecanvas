@@ -1,8 +1,9 @@
-import type { IndicatorValue, TimeFrame } from '@tradecanvas/commons';
+import type { BucketOptions, IndicatorValue, TimeFrame } from '@tradecanvas/commons';
 import {
   barTimeUnit,
   barsAreDaily,
   isUtcTimeZone,
+  isValidTimeZone,
   timeframeBucketStart,
   timeframeFollowsDays,
   timeframeToMs,
@@ -24,6 +25,8 @@ export type PeriodKeyer = (time: number) => number;
 const ANCHOR_FRAMES: Record<PeriodAnchor, TimeFrame> = { session: '1d', week: '1w', month: '1M' };
 const MINUTE_MS = 60_000;
 const DAY_MS = 86_400_000;
+/** UTC's buckets: weeks from Monday, days from its midnight. */
+const UTC_BUCKETS: BucketOptions = {};
 /**
  * Half a frame past a bucket's end is inside the next bucket: a month of 28
  * to 31 days, counted as 30, still lands there.
@@ -37,34 +40,42 @@ function isAnchor(period: string): period is PeriodAnchor {
 /**
  * The period of each bar of `data`: its day, week or month, or its bucket of
  * any timeframe (`'4h'`, `'1d'`). Bars are read on the exchange's clock
- * (`zone`, an IANA name the caller has checked; UTC without one), as
- * `timeframeBucketStart` starts the bars the library builds: the zone moves
- * only the frames that start at a midnight (days, weeks, months, 2h to 12h).
- * Daily-or-larger bars stamped at 00:00 UTC, as resamplers and most feeds
- * stamp them, are the date they name; stamped at any other hour (the
+ * (`zone`, an IANA name; UTC without one, or for one the browser does not
+ * know), with `timeframeBucketStart`, as the library starts the bars it
+ * builds: the zone moves only the frames that start at a midnight (days,
+ * weeks, months, 2h to 12h). Daily-or-larger bars stamped at 00:00 UTC, as
+ * resamplers and most feeds stamp them, are the date they name, as
+ * `BucketOptions.dates` reads them; stamped at any other hour (the
  * exchange's midnight, its open), they are read on its clock too.
  *
  * A key is the period's start on that clock written as UTC: a day's is its
- * date at 00:00 UTC. The last period's bounds are kept, so the bucket is
- * worked out once a period and a bar inside it costs one offset lookup.
+ * date at 00:00 UTC, however its bars are stamped, so a London feed's daily
+ * bars (23:00 UTC in summer, 00:00 in winter) keep a month whole. The last
+ * period's bounds are kept in real time, for the reading its bars had: the
+ * bucket is worked out once a period, and a bar inside it costs a compare.
  */
 export function periodKeyer(data: ArrayLike<{ time: number }>, period: PeriodAnchor | TimeFrame, zone?: string | null): PeriodKeyer {
   const frame = isAnchor(period) ? ANCHOR_FRAMES[period] : period;
   const unit = barTimeUnit(data);
-  const clock = zone && !isUtcTimeZone(zone) && timeframeFollowsDays(frame) ? zone : null;
+  const clock = zone && !isUtcTimeZone(zone) && timeframeFollowsDays(frame) && isValidTimeZone(zone) ? zone : null;
+  const onClock: BucketOptions = clock === null ? UTC_BUCKETS : { timeZone: clock };
   const dates = clock !== null && barsAreDaily(data) === true;
   const span = timeframeToMs(frame);
   const reach = (Number.isFinite(span) ? span : MINUTE_MS) * NEXT_BUCKET_REACH;
   let start = NaN;
   let end = NaN;
+  let key = NaN;
+  let boundsAreDates = false;
   return (time) => {
     const ms = time * unit;
-    const wall = clock === null || (dates && ms % DAY_MS === 0) ? ms : ms + zoneOffsetMinutes(clock, ms) * MINUTE_MS;
-    if (!(wall >= start && wall < end)) {
-      start = timeframeBucketStart(wall, frame);
-      end = timeframeBucketStart(start + reach, frame);
-    }
-    return start;
+    const isDate = dates && ms % DAY_MS === 0;
+    if (ms >= start && ms < end && isDate === boundsAreDates) return key;
+    boundsAreDates = isDate;
+    const options = isDate ? UTC_BUCKETS : onClock;
+    start = timeframeBucketStart(ms, frame, options);
+    end = timeframeBucketStart(start + reach, frame, options);
+    key = clock === null || isDate ? start : timeframeBucketStart(ms + zoneOffsetMinutes(clock, ms) * MINUTE_MS, frame);
+    return key;
   };
 }
 

@@ -165,7 +165,8 @@ export interface SessionProfile {
  * profile for each, all against the same shared price window so they line up
  * on a common y-axis. Sessions with no profile (e.g. a single flat bar) are
  * skipped. Input bars are assumed ascending by time. Days start at midnight
- * in `exchangeTimeZone` (an IANA name; UTC's when left out), as VWAP's do.
+ * in `exchangeTimeZone` (an IANA name; UTC's when left out or unknown to the
+ * browser), as VWAP's do.
  */
 export function computeSessionProfiles(
   bars: ReadonlyArray<OHLCBar>,

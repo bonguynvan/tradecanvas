@@ -253,6 +253,13 @@ export class Chart {
   private symbolInfo: SymbolInfo | null = null;
   /** Bumped per symbol asked about: an answer about a symbol the chart left is dropped. */
   private symbolInfoSeq = 0;
+  /**
+   * While the stream asks about its next symbol, the indicators, the
+   * prior-day lines and the market profile keep the last symbol's zone: the
+   * next one most often trades on the same exchange, so its bars compute
+   * once, in the zone they keep.
+   */
+  private studyZoneHeld = false;
   private sessionBreaks: SessionBreaks;
   private sessionShading: SessionShading;
   /** The session hours the host set (or the default); a symbol's own hours show over them. */
@@ -3204,6 +3211,7 @@ export class Chart {
    */
   disconnectStream(): void {
     this.symbolInfoSeq++; // a lookup still on its way no longer applies
+    this.releaseStudyZone();
     this.priceLines.setBidAsk(null);
     if (this.streamManager) {
       this.streamManager.dispose();
@@ -3994,6 +4002,11 @@ export class Chart {
     this.crosshairHandler.setExchangeTimeZone(zone);
     this.crosshairTooltip.setExchangeTimeZone(zone);
     this.streamManager?.setTimeZone(zone);
+    if (!this.studyZoneHeld) this.applyStudyZone(zone);
+  }
+
+  /** The zone the indicators, the prior-day lines and the market profile count their days in. */
+  private applyStudyZone(zone: string | null): void {
     this.periodLevels.setExchangeTimeZone(zone);
     this.marketProfile.setExchangeTimeZone(zone);
     const bars = this.series.bars();
@@ -4004,6 +4017,14 @@ export class Chart {
       this.indicatorEngine.deferRecalculateFrom(bars, 0);
       this.announceIndicatorUpdate(0);
     }
+  }
+
+  /** No word on the next symbol is coming: the indicators and the rest take the chart's zone. */
+  private releaseStudyZone(): void {
+    if (!this.studyZoneHeld) return;
+    this.studyZoneHeld = false;
+    this.applyStudyZone(this.getExchangeTimeZone());
+    if (!this.disposed) this.updateViewportAndRender();
   }
 
   private applyTimeZone(): void {
@@ -4030,6 +4051,13 @@ export class Chart {
    * (`{ ...chart.getSymbolInfo(), timezone: zone }` changes it).
    */
   setSymbolInfo(info: SymbolInfo | null): void {
+    // From the host or the feed: the indicators take the zone it brings, or none.
+    this.studyZoneHeld = false;
+    this.useSymbolInfo(info);
+  }
+
+  /** `setSymbolInfo`, leaving the indicators' zone held or not as it is. */
+  private useSymbolInfo(info: SymbolInfo | null): void {
     const held = info && this.symbolInfo?.symbol === info.symbol ? symbolTimeZone(this.symbolInfo) : undefined;
     this.symbolInfo = info ? withBothZoneSpellings({ ...info, sessions: info.sessions?.map((session) => ({ ...session })) }, held) : null;
     this.chartLegend.setExchange(this.symbolInfo?.exchange ?? '');
@@ -4080,22 +4108,34 @@ export class Chart {
 
   /** Ask the stream's adapter about `symbol`, if it can tell; a late answer about another symbol is dropped. */
   private resolveStreamSymbol(adapter: DataAdapter, symbol: string): void {
-    // Another symbol's details go, whether or not the feed can be asked (it may send them later).
-    if (this.symbolInfo && this.symbolInfo.symbol !== symbol) this.setSymbolInfo(null);
     // Through the stream's own wrapper: the question it asks to build the symbol's days is this one.
     const source = withResampling(adapter);
     const resolve = source.resolveSymbol?.bind(source);
-    if (!resolve) return;
+    // Another symbol's details go, whether or not the feed can be asked (it may send them later).
+    // Its zone stays with the indicators until the answer comes.
+    if (this.symbolInfo && this.symbolInfo.symbol !== symbol) {
+      this.studyZoneHeld = resolve !== undefined;
+      this.useSymbolInfo(null);
+    }
+    if (!resolve) {
+      this.releaseStudyZone();
+      return;
+    }
     const seq = ++this.symbolInfoSeq;
     // Taken as a promise: an adapter may throw, or answer without one.
     Promise.resolve().then(() => resolve(symbol)).then(
       (info) => {
-        // No answer leaves what the host set for the symbol, if anything.
-        if (info && seq === this.symbolInfoSeq && this.currentSymbol === symbol) this.setSymbolInfo(info);
+        // A newer question, or a disconnect, settles the zone instead.
+        if (seq !== this.symbolInfoSeq) return;
+        // No answer leaves what the host set for the symbol, if anything, and the chart's zone.
+        if (info && this.currentSymbol === symbol) this.setSymbolInfo(info);
+        else this.releaseStudyZone();
       },
       (err: unknown) => {
+        if (seq !== this.symbolInfoSeq) return;
         // Only the symbol's details are missing; the feed itself is fine.
-        if (seq === this.symbolInfoSeq) console.warn(`No symbol info for "${symbol}":`, err);
+        this.releaseStudyZone();
+        console.warn(`No symbol info for "${symbol}":`, err);
       },
     );
   }
@@ -5238,6 +5278,8 @@ export class Chart {
    */
   setMarket(config: MarketConfig): void {
     this.marketConfig = config;
+    // The host names the zone: the indicators wait for no symbol's.
+    this.studyZoneHeld = false;
     // `'exchange'` shows the market's zone when the symbol names none.
     if (this.timeZoneSetting === EXCHANGE_TIME_ZONE) this.applyTimeZone();
     this.applyExchangeZone();

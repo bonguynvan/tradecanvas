@@ -268,6 +268,36 @@ describe('VWAPIndicator.update', () => {
     });
   }
 
+  it('adds a tick and a new bar to the sums it kept, without reading the period’s earlier bars again', () => {
+    // A month of minute bars is 40,000 bars to sum again on every tick.
+    const data = walk(24 * 40, HOUR);
+    const c = cfg({ anchor: 'month' }, 'America/New_York');
+    const last = data.length - 1;
+    for (const from of [last, last - 1]) {
+      const read = new Set<number>();
+      const watched = new Proxy(data, {
+        get(target, key, receiver) {
+          if (typeof key === 'string' && /^\d+$/.test(key)) read.add(Number(key));
+          return Reflect.get(target, key, receiver);
+        },
+      });
+      const prev = vwap.calculate(data.slice(0, from + 1), c);
+      expect(vwap.update(watched, c, prev, from)).not.toBeNull();
+      // Whether the bars are daily is read from the first 64; nothing else before the bar it resumes from.
+      expect([...read].filter((i) => i >= 64 && i < from - 1)).toEqual([]);
+    }
+  });
+
+  it('resumes where a period starts at the bar it is given, and where one starts just before', () => {
+    const data = hourlyDays(MON, 5);
+    const c = cfg();
+    const full = vwap.calculate(data, c).series!;
+    for (const from of [72, 73]) {
+      const next = vwap.update(data, c, vwap.calculate(data.slice(0, from), c), from)!;
+      expect(next.series!.map((v) => v?.value)).toEqual(full.map((v) => v?.value));
+    }
+  });
+
   it("leaves 'all' to a full calculate", () => {
     const data = walk(200, HOUR);
     const c = cfg({ anchor: 'all' });

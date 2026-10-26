@@ -134,7 +134,8 @@ export interface IndicatorConfig {
    * start again each day, week or month count their days in: VWAP's
    * `anchor`, Session VWAP, the MTF moving average. Set by the chart, from
    * the symbol's `timeZone`, else the market's (`setSymbolInfo`,
-   * `setMarket`), and never saved with a layout. Unset: UTC's days.
+   * `setMarket`), and never saved with a layout. Unset for UTC, and when
+   * neither names a zone: UTC's days.
    */
   exchangeTimeZone?: string;
 }

@@ -67,4 +67,9 @@ describe('computePeriodLevels', () => {
     const bars = [bar(day1 / 1000, 10, 20, 5, 15), bar(day2 / 1000, 19, 30, 17, 28)];
     expect(computePeriodLevels(bars, 'day').find((l) => l.id === 'pDh')?.price).toBe(20);
   });
+
+  it('counts UTC’s days for a zone the browser does not know, rather than throwing', () => {
+    const bars = [bar(day1, 10, 20, 5, 15), bar(day1 + HOUR, 15, 25, 12, 18), bar(day2, 19, 30, 17, 28)];
+    expect(computePeriodLevels(bars, 'day', 'Mars/Olympus_Mons')).toEqual(computePeriodLevels(bars, 'day'));
+  });
 });

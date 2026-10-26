@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import type { IndicatorValue, OHLCBar } from '@tradecanvas/commons';
+import type { IndicatorValue, OHLCBar, TimeFrame } from '@tradecanvas/commons';
+import { barsAreDaily, timeframeBucketStart, timeframeFollowsDays, zoneOffsetMinutes } from '@tradecanvas/commons';
 import { periodKeyer, breaksBetween } from '../periods.js';
 
 const HOUR = 3_600_000;
@@ -72,6 +73,58 @@ describe('periodKeyer', () => {
     expect(periodKeyer(data, '4h', 'Asia/Ho_Chi_Minh')(data[0].time)).toBe(Date.UTC(2026, 9, 19, 8));
     // Kolkata is UTC+5:30, but an hour bar still starts on the hour UTC.
     expect(periodKeyer(data, '1h', 'Asia/Kolkata')(data[0].time)).toBe(Date.UTC(2026, 9, 19, 2));
+  });
+
+  it('reads a zone the browser does not know as UTC, rather than throwing', () => {
+    const data = hours(Date.UTC(2026, 9, 25, 23), 6);
+    const unknown = periodKeyer(data, 'session', 'Mars/Olympus_Mons');
+    const utc = periodKeyer(data, 'session', null);
+    expect(data.map((b) => unknown(b.time))).toEqual(data.map((b) => utc(b.time)));
+  });
+
+  it('keeps a month whole where daily bars stamped at London’s midnight go from 23:00 to 00:00 UTC', () => {
+    // 23:00 UTC the day before in summer time, 00:00 UTC (a date) once the clocks go back on 25 October 2026.
+    const london = (m: number, d: number) => Date.UTC(2026, m, d) - (Date.UTC(2026, m, d) < Date.UTC(2026, 9, 25, 1) ? HOUR : 0);
+    const days = [[8, 29], [8, 30], [9, 1], [9, 2], [9, 22], [9, 23], [9, 26], [9, 27], [9, 30], [10, 2], [10, 3]];
+    const data = series(days.map(([m, d]) => london(m, d)));
+    const month = periodKeyer(data, 'month', 'Europe/London');
+    const keys = data.map((b) => month(b.time));
+    expect(keys).toEqual(days.map(([m]) => Date.UTC(2026, m, 1)));
+    // Asked in any order, a bar is in the same month.
+    const backwards = periodKeyer(data, 'month', 'Europe/London');
+    expect([...data].reverse().map((b) => backwards(b.time))).toEqual([...keys].reverse());
+  });
+
+  it('puts the 1st’s daily bar, stamped at London’s midnight, in the new month after dates in the old one', () => {
+    // Summer time starts on 28 March 2027: 1 April's bar is stamped 23:00 UTC on 31 March, after bars stamped 00:00 UTC.
+    const data = series([Date.UTC(2027, 2, 25), Date.UTC(2027, 2, 26), Date.UTC(2027, 2, 29) - HOUR, Date.UTC(2027, 2, 31) - HOUR, Date.UTC(2027, 3, 1) - HOUR]);
+    const month = periodKeyer(data, 'month', 'Europe/London');
+    const march = Date.UTC(2027, 2, 1);
+    expect(data.map((b) => month(b.time))).toEqual([march, march, march, march, Date.UTC(2027, 3, 1)]);
+  });
+
+  it('gives each bar the period its time has on the exchange’s clock, across clock changes', () => {
+    /** Read bar by bar: a date stays the date it names, an instant is read on the zone's clock. */
+    const byClock = (data: OHLCBar[], ms: number, frame: TimeFrame, zone: string) => {
+      const date = barsAreDaily(data) === true && ms % DAY === 0;
+      const wall = date || !timeframeFollowsDays(frame) ? ms : ms + zoneOffsetMinutes(zone, ms) * 60_000;
+      return timeframeBucketStart(wall, frame);
+    };
+    const zones = ['America/New_York', 'Europe/London', 'Europe/Berlin', 'Australia/Sydney', 'Pacific/Auckland', 'Asia/Kolkata', 'America/Havana', 'Australia/Lord_Howe'];
+    // Half-hour bars through the clock changes of March, and of October and November 2026; daily bars stamped at 00:00 and at 23:00 UTC.
+    const spans: OHLCBar[][] = [
+      Array.from({ length: 48 * 40 }, (_, i) => at(Date.UTC(2026, 2, 1) + (i * HOUR) / 2)),
+      Array.from({ length: 48 * 45 }, (_, i) => at(Date.UTC(2026, 8, 20) + (i * HOUR) / 2)),
+      Array.from({ length: 400 }, (_, i) => at(Date.UTC(2026, 0, 1) + i * DAY - (i % 3 === 0 ? HOUR : 0))),
+    ];
+    for (const zone of zones) {
+      for (const data of spans) {
+        for (const frame of ['1d', '1w', '1M', '4h', '6h', '1h'] as TimeFrame[]) {
+          const key = periodKeyer(data, frame, zone);
+          expect(data.map((b) => key(b.time)), `${zone} ${frame}`).toEqual(data.map((b) => byClock(data, b.time, frame, zone)));
+        }
+      }
+    }
   });
 
   it('gives the same key whatever order bars are asked in', () => {

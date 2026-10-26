@@ -15,7 +15,7 @@ function bars(n: number): OHLCBar[] {
   return out;
 }
 
-/** The demo's default stack: three overlays (BB, EMA, VWAP) + two panels (RSI, MACD). */
+/** The demo's default stack, two overlays (BB, EMA) and two panels (RSI, MACD), with VWAP added: a third overlay that starts again each day. */
 function engineWith(data: OHLCBar[]): IndicatorEngine {
   const engine = new IndicatorEngine();
   registerBuiltInIndicators(engine);

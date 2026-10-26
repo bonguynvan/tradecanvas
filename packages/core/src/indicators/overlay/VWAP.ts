@@ -16,6 +16,20 @@ export type VWAPAnchor = (typeof VWAP_ANCHORS)[number];
  */
 const DAILY_SAMPLE_BARS = 64;
 
+/** The period's sums through bar `index`, from its first bar: volume, and volume times the typical price. */
+interface RunningSums {
+  index: number;
+  volume: number;
+  volumePrice: number;
+}
+
+/**
+ * The sums are kept through an output's last two bars: a tick, or the last
+ * bar closing as a new one comes, resumes from the one before the last;
+ * bars added after the last, from the last.
+ */
+const KEPT_BARS = 2;
+
 /** The anchor `config` asks for; one it does not know is the session. */
 export function readAnchor(config: IndicatorConfig): VWAPAnchor {
   const anchor = config.params.anchor;
@@ -45,34 +59,47 @@ export class VWAPIndicator extends IndicatorBase {
     plots: [{ key: 'value', title: 'VWAP', color: 0 }],
   };
 
+  /** The running sums through each output's last bars, which the average alone cannot be turned back into. */
+  private kept = new WeakMap<IndicatorOutput, RunningSums[]>();
+
   calculate(data: DataSeries, config: IndicatorConfig): IndicatorOutput {
     const out: IndicatorOutput = { values: new IndicatorValueMap(), series: new Array(data.length).fill(null) };
-    this.fill(out, data, keyerFor(data, config), 0, 0);
+    const keyOf = keyerFor(data, config);
+    const kept = this.fill(out, data, keyOf, 0, null);
+    // 'all' is never resumed.
+    if (keyOf) this.kept.set(out, kept);
     return out;
   }
 
   /**
-   * On a tick or a new bar only the current period is summed again, from its
-   * first bar: the bars before it are not in its average. `'all'` sums every
-   * bar, so it is computed in full, as are the first bars of a series.
+   * On a tick or a new bar, each changed bar is added to the sums kept for
+   * the bar before it: the period's earlier bars are not read again. `'all'`
+   * is computed in full, as are the first bars of a series and a change
+   * further back than the last two bars.
    */
   update(data: DataSeries, config: IndicatorConfig, prev: IndicatorOutput, from: number): IndicatorOutput | null {
     const keyOf = keyerFor(data, config);
-    if (!keyOf || from < DAILY_SAMPLE_BARS || from >= data.length || !this.canResume(data, prev, from)) return null;
-    const key = keyOf(data[from].time);
-    let start = from;
-    while (start > 0 && keyOf(data[start - 1].time) === key) start--;
+    const kept = this.kept.get(prev) ?? [];
+    const resume = kept.find((sums) => sums.index === from - 1);
+    if (!keyOf || !resume || from < DAILY_SAMPLE_BARS || from >= data.length || !this.canResume(data, prev, from)) return null;
     prev.series!.length = data.length;
-    this.fill(prev, data, keyOf, start, from);
+    const tail = this.fill(prev, data, keyOf, from, resume);
+    // The bars before `from` are as they were, and so are their sums.
+    const before = kept.filter((sums) => sums.index < from && sums.index >= data.length - KEPT_BARS);
+    this.kept.set(prev, [...before, ...tail]);
     return prev;
   }
 
-  /** Sum from bar `start` (a period's first bar, or 0) and write the points from `writeFrom` on. */
-  private fill(out: IndicatorOutput, data: DataSeries, keyOf: PeriodKeyer | null, start: number, writeFrom: number): void {
-    let period: number | undefined;
-    let volume = 0;
-    let volumePrice = 0;
-    for (let i = start; i < data.length; i++) {
+  /**
+   * Sum on from bar `from`, from the sums through the bar before it (`resume`;
+   * none at 0), and write each point. Gives the sums through the last bars.
+   */
+  private fill(out: IndicatorOutput, data: DataSeries, keyOf: PeriodKeyer | null, from: number, resume: RunningSums | null): RunningSums[] {
+    let period = resume && keyOf ? keyOf(data[resume.index].time) : undefined;
+    let volume = resume?.volume ?? 0;
+    let volumePrice = resume?.volumePrice ?? 0;
+    const kept: RunningSums[] = [];
+    for (let i = from; i < data.length; i++) {
       const bar = data[i];
       if (keyOf) {
         const key = keyOf(bar.time);
@@ -84,13 +111,14 @@ export class VWAPIndicator extends IndicatorBase {
       }
       volume += bar.volume;
       volumePrice += ((bar.high + bar.low + bar.close) / 3) * bar.volume;
-      if (i < writeFrom) continue;
+      if (i >= data.length - KEPT_BARS) kept.push({ index: i, volume, volumePrice });
       // The period rides along, not drawn, so the line breaks where it starts again.
       const val: IndicatorValue | null = volume > 0
         ? (period === undefined ? { value: volumePrice / volume } : { value: volumePrice / volume, session: period })
         : null;
       this.writePoint(out, data, i, val);
     }
+    return kept;
   }
 
   render(ctx: CanvasRenderingContext2D, output: IndicatorOutput, viewport: ViewportState, style: ResolvedIndicatorStyle): void {
