@@ -239,6 +239,51 @@ describe('StreamManager — bars from ticks after the history', () => {
     it('stay on the epoch with no history to follow', async () => {
       expect(await tickOnto({ zone: VN, history: [], time: trade, timeframe: '4h' })).toBe(Date.UTC(2026, 9, 23, 4));
     });
+
+    /** A 4h stream of bars from ticks after `first`: the bars it builds, and a reconnect whose history is `bars`. */
+    async function reconnecting(first: OHLCBar[]) {
+      const { adapter, pending, listeners } = controlledAdapter();
+      const sm = new StreamManager();
+      const updates: OHLCBar[] = [];
+      sm.on('barUpdate', (b) => updates.push({ ...b }));
+      const done = sm.connect({ adapter, symbol: 'X', timeframe: '4h', aggregateTicks: true });
+      pending[0].resolve(first);
+      await done;
+      const fire = (type: string, data: unknown) => { for (const l of listeners.get(type) ?? []) l({ type: type as never, data, timestamp: 0 }); };
+      return {
+        sm, updates,
+        trade: (time: number) => fire('tick', { time, price: 2, volume: 1 }),
+        reconnect: async (bars: OHLCBar[]) => {
+          fire('connectionChange', 'connected');
+          sm.wake('online');
+          pending.at(-1)!.resolve(bars);
+          await new Promise((r) => setTimeout(r, 0));
+        },
+      };
+    }
+    const MINUTE = 60_000;
+
+    it("land on the exchange's midnight after a reconnect onto it, from a first connect with no history", async () => {
+      const stream = await reconnecting([]);
+      stream.sm.setTimeZone(VN);
+      stream.trade(trade);
+      expect(stream.updates.at(-1)?.time).toBe(Date.UTC(2026, 9, 23, 4)); // the epoch's, with no history to follow
+      await stream.reconnect(zonedBars);
+      stream.trade(trade + 10 * MINUTE);
+      expect(stream.updates.at(-1)?.time).toBe(Date.UTC(2026, 9, 23, 1));
+      stream.sm.dispose();
+    });
+
+    it("land on the exchange's midnight after a reconnect, when the zone came once the trades had started", async () => {
+      const stream = await reconnecting(zonedBars);
+      stream.trade(trade);
+      expect(stream.updates.at(-1)?.time).toBe(Date.UTC(2026, 9, 23, 4)); // the epoch's, the zone not known yet
+      stream.sm.setTimeZone(VN);
+      await stream.reconnect(zonedBars);
+      stream.trade(trade + 10 * MINUTE);
+      expect(stream.updates.at(-1)?.time).toBe(Date.UTC(2026, 9, 23, 1));
+      stream.sm.dispose();
+    });
   });
 
   it('refuse a zone the browser does not know, and keep the one they had', async () => {

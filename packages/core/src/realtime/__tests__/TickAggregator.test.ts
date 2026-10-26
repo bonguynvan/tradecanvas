@@ -346,3 +346,37 @@ describe('TickAggregator: bars and trades older than the newest', () => {
     expect(seen.bar).toHaveLength(2);
   });
 });
+
+describe('TickAggregator: seed() once the buckets moved', () => {
+  const VN = 'Asia/Ho_Chi_Minh';
+  const HOUR = 60 * MIN;
+  const D = Date.UTC(2026, 9, 23);
+  /** A 4h bar of a history built from Ho Chi Minh City's midnight: 01:00, 05:00… UTC. */
+  const zoned = (hour: number, close: number, volume = 10) => ({ time: D + hour * HOUR, open: 100, high: 102, low: 99, close, volume });
+
+  it("lets go a bar the trades built on buckets they no longer start on: the history's last is the newest again", () => {
+    const agg = new TickAggregator('4h');
+    agg.processTick(tick(D + 8 * HOUR + 10 * MIN, 101, 5)); // the epoch's 08:00 UTC bar
+    agg.setTimeZone(VN); // a reconnect's history starts its bars at the exchange's midnight
+    agg.seed(zoned(5, 101, 20).time);
+    agg.resume(zoned(5, 101, 20));
+    agg.processTick(tick(D + 8 * HOUR + 30 * MIN, 103, 1));
+    expect(agg.getCurrentBar()).toMatchObject({ time: D + 5 * HOUR, open: 100, high: 103, low: 99, close: 103, volume: 21 });
+  });
+
+  it('keeps a day stamped by its date, in a zone west of UTC', () => {
+    const agg = new TickAggregator('1d');
+    agg.setTimeZone('America/New_York', true);
+    agg.processTick(tick(Date.UTC(2026, 9, 24, 0, 30), 100, 5)); // 20:30 on Friday 23 October there
+    agg.seed(Date.UTC(2026, 9, 22));
+    agg.processTick(tick(Date.UTC(2026, 9, 24, 1), 101, 1));
+    expect(agg.getCurrentBar()).toMatchObject({ time: Date.UTC(2026, 9, 23), open: 100, close: 101, volume: 6 });
+  });
+
+  it("keeps a feed's forming bar wherever it starts: no trades build it", () => {
+    const agg = new TickAggregator('1d');
+    agg.processBar({ time: D + 22 * HOUR, open: 1, high: 1, low: 1, close: 1, volume: 1 }, false); // a day from 22:00 UTC
+    agg.seed(D - 2 * HOUR);
+    expect(agg.getCurrentBar()?.time).toBe(D + 22 * HOUR);
+  });
+});

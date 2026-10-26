@@ -425,7 +425,8 @@ export class StreamManager extends Emitter<StreamEvents> {
    * of another symbol's. Built from trades, it is the bar the next trades
    * go on building: a feed's history ends on the bar still forming. A
    * reconnect keeps the aggregator: a history ending before the bar the
-   * trades were building leaves that bar, and its trades, as they were.
+   * trades were building leaves that bar, and its trades, as they were,
+   * unless they built it on buckets they no longer start on (`seed`).
    */
   private seedAggregator(last: OHLCBar | null): void {
     if (!this.aggregator) return;

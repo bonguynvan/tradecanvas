@@ -40,6 +40,11 @@ export class TickAggregator extends Emitter<AggregatorEvents> {
    * in seconds lines up with a stream in milliseconds.
    */
   private newest = -Infinity;
+  /**
+   * Whether trades build the forming bar (`processTick`, `resume`), on the
+   * buckets, rather than the feed sending it formed (`processBar`).
+   */
+  private builtFromTrades = false;
   private timeframe: TimeFrame;
   private timeframeMs: number;
   /** Bars a day long or more, which `dateStamps` stamps by date. */
@@ -76,11 +81,20 @@ export class TickAggregator extends Emitter<AggregatorEvents> {
   /**
    * When the newest bar a stream's history holds starts (its last bar), or
    * `-Infinity` for none: a bar older than it is a correction or left out,
-   * as one older than the bars and trades since. It never moves the newest
+   * as one older than the bars and trades since. It doesn't move the newest
    * back: after a reconnect whose history ends on an earlier bar than the
-   * trades since, those still count. `reset()` starts again.
+   * trades since, those still count. Unless the trades built that bar on
+   * buckets they no longer start on (the exchange's zone came after them,
+   * or the history's bars start at its midnight): the next trades can't go
+   * on building it, and they would be left out as late until the next
+   * bucket, so the bar is let go and the history's last is the newest.
+   * `reset()` starts again.
    */
   seed(time: number): void {
+    if (this.builtOffTheBuckets()) {
+      this.currentBar = null;
+      this.newest = -Infinity;
+    }
     if (Number.isFinite(time)) this.newest = Math.max(this.newest, normalizeBarTime(time));
   }
 
@@ -101,6 +115,7 @@ export class TickAggregator extends Emitter<AggregatorEvents> {
       time, open: bar.open, high: bar.high, low: bar.low, close: bar.close,
       volume: bar.volume ?? 0, closed: false, tickCount: 0,
     };
+    this.builtFromTrades = true;
   }
 
   /**
@@ -151,6 +166,7 @@ export class TickAggregator extends Emitter<AggregatorEvents> {
         closed: false,
         tickCount: 1,
       };
+      this.builtFromTrades = true;
     } else {
       // Update current bar
       this.currentBar.high = Math.max(this.currentBar.high, tick.price);
@@ -176,6 +192,7 @@ export class TickAggregator extends Emitter<AggregatorEvents> {
       return;
     }
     this.newest = at;
+    this.builtFromTrades = false;
     if (closed && this.currentBar && normalizeBarTime(this.currentBar.time) === at) {
       // Close the bar
       this.currentBar = { ...bar, closed: true, tickCount: this.currentBar.tickCount + 1 };
@@ -209,8 +226,23 @@ export class TickAggregator extends Emitter<AggregatorEvents> {
   reset(): void {
     this.currentBar = null;
     this.newest = -Infinity;
+    this.builtFromTrades = false;
     this.ringHead = 0;
     this.ringCount = 0;
+  }
+
+  /** Whether the trades built the forming bar on buckets other than the ones they start on now. */
+  private builtOffTheBuckets(): boolean {
+    const bar = this.currentBar;
+    return bar !== null && this.builtFromTrades && !this.startsABucket(normalizeBarTime(bar.time));
+  }
+
+  /** Whether a bar at `time` is one the trades start now. */
+  private startsABucket(time: number): boolean {
+    if (!(this.timeframeMs > 0)) return true;
+    // A date stamp is 00:00 UTC of its date, in any zone: the dates' own buckets.
+    if (this.dateStamps && this.dateFrame) return timeframeBucketStart(time, this.timeframe) === time;
+    return this.alignToTimeframe(time) === time;
   }
 
   private alignToTimeframe(timestamp: number): number {
