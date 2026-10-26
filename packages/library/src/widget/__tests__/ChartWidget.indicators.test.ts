@@ -396,6 +396,25 @@ describe('percent comparisons in the on-chart legend', () => {
     expect(FakeChart.last.compareAsked.at(-1)).toBeUndefined();
   });
 
+  it('hides and takes off a compare the host put on the chart itself', async () => {
+    await comparing();
+    const chart = FakeChart.last;
+    chart.addCompareSymbol('host_eth', 'ETHUSDT', [], '#00ff00');
+    chart.emit('dataUpdate', {});
+    await frame();
+    const row = () => rows().find((r) => r.querySelector('.tcw-ind-legend-name')!.textContent === 'ETHUSDT')!;
+    act(row(), 'visible');
+    expect(chart.compareLines.find((c) => c.id === 'host_eth')!.visible).toBe(false);
+    await frame();
+    expect(row().classList.contains('tcw-ind-legend-row--hidden')).toBe(true);
+    act(row(), 'remove');
+    expect(chart.compareLines.map((c) => c.id)).toEqual(['cmp_BBB']);
+    // The widget's own compare and the indicators are left as they were.
+    expect(chart.indicators.map((i) => i.id)).toEqual(['ema']);
+    await frame();
+    expect(names()).toEqual(['BBB', 'EMA 20']);
+  });
+
   it('dims a comparison where the chart draws no compare lines, and says why', async () => {
     await comparing();
     FakeChart.last.timeAligned = false; // Renko, say: its bars are not the data's

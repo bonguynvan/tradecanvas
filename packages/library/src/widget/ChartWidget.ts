@@ -923,8 +923,9 @@ export class ChartWidget {
     // The indicators on the chart itself, instead of toolbar chips that overflow.
     this.chart.setPaneTitlesVisible(!this.featureState.indicatorLegend);
     this.indicatorLegend = new WidgetIndicatorLegend(this.chartContainer, {
-      onToggleVisible: (iid, visible) => {
-        if (this.isPercentCompare(iid)) this.chart.setCompareVisible(iid, visible);
+      // A compare row's line may be the widget's or one the host put on the chart itself.
+      onToggleVisible: (iid, visible, kind) => {
+        if (kind === 'compare') this.chart.setCompareVisible(iid, visible);
         else this.chart.setIndicatorVisible(iid, visible);
         this.scheduleLegend();
         if (this.objectTree?.isOpen()) this.refreshObjects();
@@ -933,8 +934,9 @@ export class ChartWidget {
       onSettings: (iid) => {
         if (this.featureState['indicatorLegend.settings']) this.openIndicatorSettings(iid);
       },
-      onRemove: (iid) => {
+      onRemove: (iid, kind) => {
         if (this.isPercentCompare(iid)) this.handleRemoveCompare(iid);
+        else if (kind === 'compare') this.removeHostCompare(iid);
         else this.handleRemoveIndicator(iid);
       },
       onMore: (iid, anchor) => this.openLegendMenu(iid, anchor),
@@ -3590,6 +3592,12 @@ export class ChartWidget {
     this.scheduleLegend();
     this.refreshObjects();
     this.refreshCompareDialog();
+  }
+
+  /** A compare line the host added on the chart itself: the widget holds no scale nor list for it. */
+  private removeHostCompare(id: string): void {
+    this.chart.removeCompareSymbol(id);
+    this.scheduleLegend();
   }
 
   /** `id` is a symbol compared in percent (a line, not an indicator). */

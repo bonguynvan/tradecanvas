@@ -42,9 +42,10 @@ export interface IndicatorLegendPane {
 export type PaneAction = 'up' | 'down' | 'collapse' | 'expand' | 'maximize' | 'restore';
 
 export interface IndicatorLegendCallbacks {
-  onToggleVisible: (instanceId: string, visible: boolean) => void;
+  /** `kind` is the row's: 'compare' for a compare line, which is no indicator. */
+  onToggleVisible: (instanceId: string, visible: boolean, kind?: IndicatorLegendRow['kind']) => void;
   onSettings: (instanceId: string) => void;
-  onRemove: (instanceId: string) => void;
+  onRemove: (instanceId: string, kind?: IndicatorLegendRow['kind']) => void;
   /** The row's "more" button: a menu under `anchor` (move to another pane…). */
   onMore?: (instanceId: string, anchor: HTMLElement) => void;
   /** A pane's button: move it, fold it, maximise it. */
@@ -275,13 +276,13 @@ export class WidgetIndicatorLegend {
       return b;
     };
     const eye = action('visible', 'eye', () => {
-      this.callbacks.onToggleVisible(instanceId, !els.visible);
+      this.callbacks.onToggleVisible(instanceId, !els.visible, kind);
     }, 'indicatorLegend.visibility');
     const settings = compare ? null : action('settings', 'settings', () => this.callbacks.onSettings(instanceId), 'indicatorSettings', 'indicatorLegend.settings');
     const more = this.callbacks.onMore && !compare
       ? action('more', 'more', () => this.callbacks.onMore?.(instanceId, more!), 'indicatorLegend.more')
       : null;
-    const remove = action('remove', 'x', () => this.callbacks.onRemove(instanceId), 'indicatorLegend.remove');
+    const remove = action('remove', 'x', () => this.callbacks.onRemove(instanceId, kind), 'indicatorLegend.remove');
 
     el.append(name, values, actions);
     const els: RowEls = {
