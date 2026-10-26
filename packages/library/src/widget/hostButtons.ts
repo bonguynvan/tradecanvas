@@ -12,7 +12,8 @@ export function setHostButtonActive(element: HTMLButtonElement, on: boolean, tog
  */
 export function setHostButtonText(element: HTMLButtonElement, label: string, value: string): boolean {
   // A host in plain script may pass a count as a number; the button shows it as text.
-  const text = String(value);
+  // Null or undefined clears it, as the page itself treats them.
+  const text = value == null ? '' : String(value);
   let span = element.querySelector<HTMLSpanElement>('.tcw-host-btn-text');
   if ((span?.textContent ?? '') === text) return false;
   if (!span) {

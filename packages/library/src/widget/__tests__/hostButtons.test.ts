@@ -18,4 +18,15 @@ describe('setHostButtonText', () => {
     expect(setHostButtonText(button, 'News', count)).toBe(false);
     expect(setHostButtonText(button, 'News', '3')).toBe(false);
   });
+
+  it('shows nothing for a missing text from plain script, as the page does', () => {
+    const button = document.createElement('button');
+    setHostButtonText(button, 'News', '3');
+    // A host without types drops a badge by passing null or undefined.
+    expect(setHostButtonText(button, 'News', null as unknown as string)).toBe(true);
+    expect(button.querySelector('.tcw-host-btn-text')?.textContent).toBe('');
+    expect(button.getAttribute('aria-label')).toBe('News');
+    expect(setHostButtonText(button, 'News', null as unknown as string)).toBe(false);
+    expect(setHostButtonText(button, 'News', undefined as unknown as string)).toBe(false);
+  });
 });
