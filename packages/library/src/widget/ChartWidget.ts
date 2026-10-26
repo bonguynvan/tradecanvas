@@ -4466,11 +4466,23 @@ export class ChartWidget {
    * Change some of the Chart Settings, as the settings dialog does (an open
    * one shows them). What isn't a setting, or not of its kind, is left out,
    * and numbers are put in the dialog's ranges. Not an undo step: the change
-   * is yours, not the user's.
+   * is yours, not the user's. Auto-scale stays on until the chart has bars,
+   * so settings `onSettingsChange` gave after a drag on the price axis are
+   * safe to give back right after the constructor.
    */
   setSettings(patch: Partial<ChartSettingsState>): void {
-    this.applySettings(this.allowedSettings(readChartSettings(patch)));
+    this.applySettings(this.allowedSettings(this.withoutEarlyFreeze(readChartSettings(patch))));
     this.settings?.refresh(this.shownSettings());
+  }
+
+  /**
+   * A patch without auto-scale off while the chart has no bars. Off holds the
+   * price range on screen; before the first bars there is none, and the chart
+   * would keep its empty 0 to 1 for every series after them.
+   */
+  private withoutEarlyFreeze(patch: Partial<ChartSettingsState>): Partial<ChartSettingsState> {
+    if (patch.autoScale !== false || this.chart.getData().length > 0) return patch;
+    return Object.fromEntries(Object.entries(patch).filter(([key]) => key !== 'autoScale')) as Partial<ChartSettingsState>;
   }
 
   /**

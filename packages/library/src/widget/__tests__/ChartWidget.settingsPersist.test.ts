@@ -41,7 +41,8 @@ class FakeChart {
   }
   getChartTypeOptions() { return readChartTypeOptions(this.typeOptions); }
   getDrawings(): unknown[] { return []; }
-  getData(): unknown[] { return []; }
+  bars: unknown[] = [];
+  getData(): unknown[] { return this.bars; }
   getActiveIndicators(): unknown[] { return []; }
   getIndicatorPanes(): unknown[] { return []; }
   getPlotRect() { return { x: 0, y: 0, width: 600, height: 300 }; }
@@ -277,6 +278,26 @@ describe('ChartWidget settings API', () => {
     footer('ok');
     expect(seen).toHaveLength(1);
     expect(seen[0]).toMatchObject({ volumeProfileVisible: true, autoScale: false });
+  });
+
+  it('settings told after a drag, given back right after the constructor, leave auto-scale on until the chart has bars', () => {
+    make();
+    const seen: ChartSettingsState[] = [];
+    widget.onSettingsChange((s) => seen.push(s));
+    FakeChart.last.auto = false; // the price axis dragged
+    widget.setSettings({ gridVisible: false });
+    expect(seen[0]).toMatchObject({ gridVisible: false, autoScale: false });
+    widget.destroy();
+    // The next visit: no bars yet, so no price range for auto-scale off to hold.
+    make();
+    widget.setSettings(seen[0]);
+    expect(calls('setGridVisible')).toEqual([false]);
+    expect(calls('setAutoScale')).toEqual([]);
+    expect(widget.getSettings().autoScale).toBe(true);
+    // With bars on the chart, it holds the range on screen.
+    FakeChart.last.bars = [{ time: 0, open: 1, high: 1, low: 1, close: 1, volume: 1 }];
+    widget.setSettings({ autoScale: false });
+    expect(calls('setAutoScale')).toEqual([false]);
   });
 
   it('onSettingsChange hears nothing of a Reset to defaults cancelled, or OK’d where everything was at its defaults', () => {
