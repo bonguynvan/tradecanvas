@@ -52,7 +52,8 @@ class FakeChart {
   moved: [string, string][] = [];
   moveIndicatorToPane(id: string, target: string): boolean { this.moved.push([id, target]); return true; }
   overlays: string[] = [];
-  addCompareSymbol(id: string): void { this.overlays.push(id); }
+  overlayBars = new Map<string, unknown>();
+  addCompareSymbol(id: string, _label?: string, bars?: unknown): void { this.overlays.push(id); this.overlayBars.set(id, bars); }
   removeCompareSymbol(id: string): void { this.overlays = this.overlays.filter((o) => o !== id); }
   compareData: [string, unknown][] = [];
   updateCompareData(id: string, bars: unknown): void { this.compareData.push([id, bars]); }
@@ -489,6 +490,60 @@ describe('ChartWidget comparing with another symbol', () => {
     expect(hadBars).toEqual([true]);
     expect(fake.series.get('BBB')).toBe(bars);
     expect(own.fetchHistory.mock.calls.filter(([symbol]) => symbol === 'BBB')).toHaveLength(1);
+  });
+
+  /**
+   * An adapter whose first answer for BBB, at 5m, waits for `release`; at
+   * another interval it answers with `later`.
+   */
+  const slowAt5m = (later: unknown[]) => {
+    const gate = { release: () => {} };
+    const own = {
+      ...adapter,
+      fetchHistory: vi.fn((symbol: string, timeframe: string) => {
+        if (symbol !== 'BBB') return Promise.resolve(bars);
+        if (timeframe !== '5m') return Promise.resolve(later);
+        return new Promise((resolve) => { gate.release = () => resolve(bars); });
+      }),
+    };
+    return { own, gate };
+  };
+  const bbbIntervals = (own: { fetchHistory: { mock: { calls: unknown[][] } } }) =>
+    own.fetchHistory.mock.calls.filter(([symbol]) => symbol === 'BBB').map(([, timeframe]) => timeframe);
+
+  it('fetches a compare again at the interval picked while its bars loaded', async () => {
+    const hourly = bars.map((b) => ({ ...b, close: 2 }));
+    for (const way of ['scale', 'percent'] as const) {
+      const { own, gate } = slowAt5m(hourly);
+      if (way === 'percent') widget.destroy();
+      widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false, adapter: own as never, timeframe: '5m' });
+      const fake = FakeChart.last;
+      const adding = widget.addCompareSymbol('BBB', way);
+      await widget.setTimeframe('1h');
+      gate.release();
+      await adding;
+      expect(bbbIntervals(own)).toEqual(['5m', '1h']);
+      if (way === 'scale') {
+        expect(fake.series.get('BBB')).toBe(hourly);
+        expect(fake.added.map(([id]) => id)).toEqual(['compareSymbol']);
+      } else {
+        expect(fake.overlayBars.get('cmp_BBB')).toBe(hourly);
+      }
+    }
+  });
+
+  it('adds no compare when the interval picked while its bars loaded has none', async () => {
+    const { own, gate } = slowAt5m([]);
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false, adapter: own as never, timeframe: '5m' });
+    const fake = FakeChart.last;
+    const adding = widget.addCompareSymbol('BBB', 'scale');
+    await widget.setTimeframe('1h');
+    gate.release();
+    await adding;
+    expect(bbbIntervals(own)).toEqual(['5m', '1h']);
+    expect(fake.added).toEqual([]);
+    expect(fake.series.has('BBB')).toBe(false);
+    expect(toastText()).toBe('BBB: failed to load');
   });
 
   it('keeps a compare a saved state brings back without bars, and fills it on an interval that has them', async () => {

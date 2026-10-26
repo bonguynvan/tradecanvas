@@ -3502,13 +3502,8 @@ export class ChartWidget {
     const id = `cmp_${symbol}`;
     this.comparesLoading.add(symbol);
     try {
-      const bars = await withResampling(this.adapter).fetchHistory(symbol, this.state.timeframe, this.compareDepth());
-      if (this.destroyed || this.compares.some((c) => c.symbol === symbol)) return;
-      // No bars at this interval: a line with nothing to draw is no comparison.
-      if (bars.length === 0) {
-        this.sayCompareFailed(symbol);
-        return;
-      }
+      const bars = await this.fetchCompareBars(this.adapter, symbol);
+      if (!bars || this.compares.some((c) => c.symbol === symbol)) return;
       const color = COMPARE_COLORS[this.compares.length % COMPARE_COLORS.length];
       // Each line is its symbol's change from the first bar on screen, so
       // symbols of any price (BTC beside a $2 coin) read on one percent scale.
@@ -3520,8 +3515,6 @@ export class ChartWidget {
       this.refreshObjects();
       this.refreshCompareDialog();
       this.say(fill(this.t('toast.comparing'), { symbol }));
-    } catch (err: unknown) {
-      this.sayCompareFailed(symbol, err);
     } finally {
       this.comparesLoading.delete(symbol);
     }
@@ -3535,27 +3528,40 @@ export class ChartWidget {
    * the indicator, so it finds them there and asks for none.
    */
   private async addCompareIndicator(adapter: DataAdapter, symbol: string, way: Exclude<CompareWay, 'percent'>): Promise<void> {
-    const timeframe = this.state.timeframe;
-    let bars: OHLCBar[];
-    try {
-      bars = await withResampling(adapter).fetchHistory(symbol, timeframe, this.compareDepth());
-    } catch (err: unknown) {
-      if (!this.destroyed) this.sayCompareFailed(symbol, err);
-      return;
-    }
-    if (this.destroyed) return;
-    if (bars.length === 0) {
-      this.sayCompareFailed(symbol);
-      return;
-    }
-    // On another interval by now: the indicator asks for that one's bars.
-    if (timeframe === this.state.timeframe) this.chart.setSymbolSeries(symbol, bars);
+    const bars = await this.fetchCompareBars(adapter, symbol);
+    if (!bars) return;
+    this.chart.setSymbolSeries(symbol, bars);
     const id = way === 'scale' ? this.chart.addIndicator('compareSymbol', { symbol }, 'bottom', { scale: 'left' })
       : way === 'pane' ? this.chart.addIndicator('compareSymbol', { symbol })
         : way === 'correlation' ? this.chart.addIndicator('correlation', { symbol })
           : way === 'correlationLog' ? this.chart.addIndicator('correlationlog', { symbol })
             : this.chart.addIndicator('spread', { symbol, mode: way });
     if (id && way === 'pane') this.chart.moveIndicatorToPane(id, 'new');
+  }
+
+  /**
+   * The other symbol's bars at the chart's interval, for a compare about to
+   * be added: fetched again when the interval changed while they loaded, so
+   * they are checked, and added, at the one on screen. Null, with a toast,
+   * when they fail or there are none.
+   */
+  private async fetchCompareBars(adapter: DataAdapter, symbol: string): Promise<OHLCBar[] | null> {
+    for (;;) {
+      const timeframe = this.state.timeframe;
+      let bars: OHLCBar[] | null = null;
+      let failure: unknown = null;
+      try {
+        bars = await withResampling(adapter).fetchHistory(symbol, timeframe, this.compareDepth());
+      } catch (err: unknown) {
+        failure = err;
+      }
+      if (this.destroyed) return null;
+      // Another interval picked meanwhile: its bars instead. Only a pick made during a fetch asks again.
+      if (timeframe !== this.state.timeframe) continue;
+      if (bars && bars.length > 0) return bars;
+      this.sayCompareFailed(symbol, failure ?? undefined);
+      return null;
+    }
   }
 
   /** The other symbol's bars didn't come: the adapter's reason, or that they failed. */
