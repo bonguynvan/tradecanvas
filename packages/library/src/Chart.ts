@@ -57,6 +57,7 @@ import {
   Viewport,
   withResampling,
   servesTimeframe,
+  SYMBOL_ZONE_WAIT_MS,
   GridRenderer,
   PriceAxis,
   TimeAxis,
@@ -260,6 +261,8 @@ export class Chart {
    * once, in the zone they keep.
    */
   private studyZoneHeld = false;
+  /** Ends the hold when the feed says nothing of the next symbol for as long as its built days wait (`SYMBOL_ZONE_WAIT_MS`). */
+  private studyZoneTimer: ReturnType<typeof setTimeout> | null = null;
   private sessionBreaks: SessionBreaks;
   private sessionShading: SessionShading;
   /** The session hours the host set (or the default); a symbol's own hours show over them. */
@@ -4115,8 +4118,25 @@ export class Chart {
     }
   }
 
+  /**
+   * The indicators keep the last symbol's zone while the feed is asked about
+   * the next, for at most as long as the days it builds wait for the answer.
+   */
+  private holdStudyZone(): void {
+    this.endStudyZoneWait();
+    this.studyZoneHeld = true;
+    this.studyZoneTimer = setTimeout(() => this.releaseStudyZone(), SYMBOL_ZONE_WAIT_MS);
+  }
+
+  private endStudyZoneWait(): void {
+    if (this.studyZoneTimer === null) return;
+    clearTimeout(this.studyZoneTimer);
+    this.studyZoneTimer = null;
+  }
+
   /** No word on the next symbol is coming: the indicators and the rest take the chart's zone. */
   private releaseStudyZone(): void {
+    this.endStudyZoneWait();
     if (!this.studyZoneHeld) return;
     this.studyZoneHeld = false;
     this.applyStudyZone(this.getExchangeTimeZone());
@@ -4164,6 +4184,7 @@ export class Chart {
   setSymbolInfo(info: SymbolInfo | null): void {
     // From the host or the feed: the indicators take the zone it brings, or none.
     this.studyZoneHeld = false;
+    this.endStudyZoneWait();
     this.useSymbolInfo(info);
   }
 
@@ -4225,7 +4246,8 @@ export class Chart {
     // Another symbol's details go, whether or not the feed can be asked (it may send them later).
     // Its zone stays with the indicators until the answer comes.
     if (this.symbolInfo && this.symbolInfo.symbol !== symbol) {
-      this.studyZoneHeld = resolve !== undefined;
+      if (resolve) this.holdStudyZone();
+      else this.studyZoneHeld = false;
       this.useSymbolInfo(null);
     }
     if (!resolve) {
@@ -5391,6 +5413,7 @@ export class Chart {
     this.marketConfig = config;
     // The host names the zone: the indicators wait for no symbol's.
     this.studyZoneHeld = false;
+    this.endStudyZoneWait();
     // `'exchange'` shows the market's zone when the symbol names none.
     if (this.timeZoneSetting === EXCHANGE_TIME_ZONE) this.applyTimeZone();
     this.applyExchangeZone();
