@@ -202,14 +202,16 @@ describe('VWAPIndicator joins its line from the bars around, not from what is on
     const data = hourlyDays(MON, 3);
     const { ctx, counts } = recorder();
     vwap.render(ctx, vwap.calculate(data, cfg()), viewport(23, 71), style);
-    expect(counts.moves).toBe(3);
+    // Three pieces, the first a bar alone, drawn as a level stroke (a move of its own).
+    expect(counts.moves).toBe(4);
   });
 
   it('breaks either side of a day with one bar between two full days', () => {
     const data = [...hourlyDays(MON, 1), bar(MON + DAY, 200), ...hourlyDays(MON + 2 * DAY, 1).map((b) => ({ ...b, open: 300, high: 300, low: 300, close: 300 }))];
     const { ctx, counts } = recorder();
     vwap.render(ctx, vwap.calculate(data, cfg()), viewport(0, data.length - 1), style);
-    expect(counts.moves).toBe(3);
+    // Three pieces, the middle one a bar alone, drawn as a level stroke (a move of its own).
+    expect(counts.moves).toBe(4);
   });
 });
 

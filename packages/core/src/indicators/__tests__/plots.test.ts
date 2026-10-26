@@ -82,7 +82,8 @@ describe('renderPlots', () => {
   it('draws a line on the viewport scale, broken at gaps', () => {
     const { ctx, points } = recorder();
     renderPlots(ctx, out([{ value: 20 }, { value: 40 }, null, { value: 90 }]), viewport, style, [{ key: 'value', title: 'V', color: 0 }]);
-    expect(points.map((p) => p.y)).toEqual([80, 60, 10]);
+    // The point alone after the gap is drawn as a short level stroke through it.
+    expect(points.map((p) => p.y)).toEqual([80, 60, 10, 10, 10]);
   });
 
   it('colours a two-tone line segment by the bar it ends on', () => {
