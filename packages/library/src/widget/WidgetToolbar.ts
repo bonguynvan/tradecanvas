@@ -58,6 +58,8 @@ export class WidgetToolbar {
   private hostObserver: ResizeObserver | null = null;
   private moreBtn: HTMLButtonElement | null = null;
   private fitFrame = 0;
+  /** Gone: a late font or a frame asked for before then fits nothing. */
+  private destroyed = false;
   private undoBtn: HTMLButtonElement | null = null;
   private redoBtn: HTMLButtonElement | null = null;
   private trade: WidgetTradeMenu | null = null;
@@ -93,12 +95,12 @@ export class WidgetToolbar {
     void document.fonts?.ready.then(() => this.scheduleFit());
   }
 
-  /** Fit once before the next frame, however many changes came first. */
+  /** Fit once before the next frame, however many changes came first; never once the toolbar is gone. */
   private scheduleFit(): void {
-    if (this.fitFrame || typeof requestAnimationFrame === 'undefined') return;
+    if (this.destroyed || this.fitFrame || typeof requestAnimationFrame === 'undefined') return;
     this.fitFrame = requestAnimationFrame(() => {
       this.fitFrame = 0;
-      this.fit();
+      if (!this.destroyed) this.fit();
     });
   }
 
@@ -756,6 +758,7 @@ export class WidgetToolbar {
   }
 
   destroy(): void {
+    this.destroyed = true;
     this.resizeObserver?.disconnect();
     this.hostObserver?.disconnect();
     if (this.fitFrame) cancelAnimationFrame(this.fitFrame);

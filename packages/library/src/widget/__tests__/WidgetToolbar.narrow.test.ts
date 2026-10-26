@@ -359,3 +359,28 @@ describe('WidgetToolbar — fitting its width', () => {
     expect(folded(el)).toContain('DOM');
   });
 });
+
+describe('WidgetToolbar — once gone', () => {
+  it('fits no more, though the page’s fonts arrive after', async () => {
+    let fontsReady!: () => void;
+    const ready = new Promise<void>((resolve) => { fontsReady = resolve; });
+    Object.defineProperty(document, 'fonts', { configurable: true, value: { ready } });
+    const frames: (() => void)[] = [];
+    vi.stubGlobal('requestAnimationFrame', (cb: () => void) => frames.push(cb));
+    vi.stubGlobal('cancelAnimationFrame', vi.fn());
+    try {
+      const gone = new WidgetToolbar(root, { symbols: ['A'], timeframes: [], chartTypes: [] }, {} as ToolbarCallbacks, EN_TRANSLATOR);
+      const fit = vi.spyOn(gone, 'fit');
+      gone.destroy();
+      fontsReady();
+      await ready;
+      await Promise.resolve();
+      frames.forEach((frame) => frame());
+      expect(frames).toHaveLength(0);
+      expect(fit).not.toHaveBeenCalled();
+    } finally {
+      Reflect.deleteProperty(document, 'fonts');
+      vi.unstubAllGlobals();
+    }
+  });
+});
