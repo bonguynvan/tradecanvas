@@ -5,6 +5,14 @@ import { logoSrc, splitVenue } from './symbolCatalog.js';
 export const KIND_SLOTS = 5;
 /** The size a logo is fetched for: the badge's in Print, the default look. */
 const LOGO_PX = 20;
+/** How many logos that failed to load are remembered before the widget forgets them and tries again. */
+const MAX_FAILED_LOGOS = 1000;
+/**
+ * The logos that failed to load on this page. A row is built again on every
+ * keystroke, and a browser keeps no image that failed, so without this each
+ * one would be asked for again each time.
+ */
+const failedLogos = new Set<string>();
 
 /**
  * The usual kinds as feeds write them, in English, Vietnamese, Japanese,
@@ -73,12 +81,13 @@ export function symbolInitial(symbol: string): string {
 /**
  * A row's badge: the symbol's logo when it has one the widget takes, else its
  * initial in its kind's colour. A logo that fails to load (a blocked host, a
- * page's image policy) gives way to the initial. Either is decoration: the
- * ticker beside it says the same.
+ * page's image policy) gives way to the initial, and later rows show the
+ * initial for it without asking again. Either is decoration: the ticker
+ * beside it says the same.
  */
 export function createSymbolBadge(symbol: string, info: SymbolInfo | undefined): HTMLElement {
   const src = logoSrc(info?.logo);
-  if (!src) return letterBadge(symbol, info);
+  if (!src || failedLogos.has(src)) return letterBadge(symbol, info);
   const img = document.createElement('img');
   img.className = 'tcw-ss-badge';
   img.alt = '';
@@ -90,9 +99,17 @@ export function createSymbolBadge(symbol: string, info: SymbolInfo | undefined):
   img.setAttribute('decoding', 'async');
   // The logo's host learns nothing of the page it is shown on.
   img.setAttribute('referrerpolicy', 'no-referrer');
-  img.addEventListener('error', () => img.replaceWith(letterBadge(symbol, info)), { once: true });
+  img.addEventListener('error', () => {
+    rememberFailedLogo(src);
+    img.replaceWith(letterBadge(symbol, info));
+  }, { once: true });
   img.src = src;
   return img;
+}
+
+function rememberFailedLogo(src: string): void {
+  if (failedLogos.size >= MAX_FAILED_LOGOS) failedLogos.clear();
+  failedLogos.add(src);
 }
 
 function letterBadge(symbol: string, info: SymbolInfo | undefined): HTMLSpanElement {

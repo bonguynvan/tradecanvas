@@ -134,6 +134,22 @@ describe('createSymbolBadge', () => {
     expect(letter.dataset.kind).toBe('1');
   });
 
+  it('asks no more for a logo that failed to load: the next row shows the initial straight away', () => {
+    const info = { symbol: 'FPT', type: 'Stock', logo: 'https://cdn.example/missing-fpt.png' };
+    const host = document.createElement('div');
+    const first = createSymbolBadge('FPT', info);
+    host.appendChild(first);
+    expect(first.tagName).toBe('IMG');
+    first.dispatchEvent(new Event('error'));
+    // A keystroke builds the row again with the same logo.
+    const again = createSymbolBadge('FPT', info);
+    expect(again.tagName).toBe('SPAN');
+    expect(again.textContent).toBe('F');
+    expect(again.dataset.kind).toBe('1');
+    // Another logo still loads.
+    expect(createSymbolBadge('FPT', { ...info, logo: 'https://cdn.example/fpt.png' }).tagName).toBe('IMG');
+  });
+
   it('never loads a logo it does not take', () => {
     expect(createSymbolBadge('VCB', { symbol: 'VCB', logo: 'javascript:alert(1)' }).tagName).toBe('SPAN');
     expect(createSymbolBadge('VCB', { symbol: 'VCB', logo: 'data:text/html,<b>x</b>' }).tagName).toBe('SPAN');
