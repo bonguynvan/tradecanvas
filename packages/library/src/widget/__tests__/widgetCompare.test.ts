@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { EN_TRANSLATOR } from '../i18n.js';
-import { comparedEntries, compareWayOptions, isCompareWay } from '../widgetCompare.js';
+import { barsBefore, comparedEntries, compareWayOptions, isCompareWay, withOlderBars } from '../widgetCompare.js';
 
 describe('compareWayOptions', () => {
   it('offers every way, in words', () => {
@@ -42,5 +42,23 @@ describe('comparedEntries', () => {
       { id: 'd', symbol: 'ADA', way: 'Spread' },
       { id: 'e', symbol: 'DOT', way: 'Correlation of returns' },
     ]);
+  });
+});
+
+describe('a percent compare’s older stretch', () => {
+  const at = (time: number) => ({ time, open: 1, high: 1, low: 1, close: 1, volume: 1 });
+
+  it('counts the chart’s bars before a time', () => {
+    const chart = [at(1), at(2), at(3), at(4)];
+    expect(barsBefore(chart, 3)).toBe(2);
+    expect(barsBefore(chart, 1)).toBe(0);
+    expect(barsBefore(chart, 9)).toBe(4);
+  });
+
+  it('puts the older bars in front, leaving out any not older, and gives null when none is', () => {
+    const own = [at(5), at(6)];
+    expect(withOlderBars(own, [at(3), at(4), at(5)])).toEqual([at(3), at(4), at(5), at(6)]);
+    expect(withOlderBars(own, [at(5)])).toBeNull();
+    expect(withOlderBars(own, [])).toBeNull();
   });
 });

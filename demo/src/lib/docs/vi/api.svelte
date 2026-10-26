@@ -279,8 +279,9 @@ chart.setCompareVisible('eth', false)  // hidden, and out of the auto scale`}</c
   không bao giờ được lưu: bố cục và liên kết chia sẻ giữ thang của bạn. Chú thích liệt kê mỗi mã so
   sánh theo phần trăm phía trên các chỉ báo, kèm giá và mức thay đổi tại nến dưới con trỏ (nếu
   không thì tại nến cuối), một nút mắt để ẩn và một nút để gỡ ra. Nến của mã đó được tải sâu bằng
-  nến của biểu đồ, và tải lại khi biểu đồ tải thêm nến cũ, nên đường của nó bắt đầu cùng chỗ với
-  biểu đồ. Ở một kiểu biểu đồ không vẽ đường so sánh, ChartWidget giữ nguyên thang của bạn và làm
+  nến của biểu đồ, và khi biểu đồ tải thêm nến cũ thì chỉ tải thêm đoạn nến cũ hơn đó (với nguồn
+  dữ liệu không có <code>fetchHistoryBefore</code> thì tải lại toàn bộ), nên đường của nó bắt đầu
+  cùng chỗ với biểu đồ. Ở một kiểu biểu đồ không vẽ đường so sánh, ChartWidget giữ nguyên thang của bạn và làm
   mờ dòng của từng mã so sánh, với chú giải cho biết lý do; khi quay lại một kiểu có vẽ đường, thang
   phần trăm trở lại.
 </p>

@@ -276,7 +276,8 @@ chart.setCompareVisible('eth', false)  // hidden, and out of the auto scale`}</c
   a layout and a shared link keep your own. The legend lists each symbol compared in percent
   above the indicators, with its price and its change at the bar under the cursor (the last bar
   otherwise), an eye to hide it and a button to take it off. Its bars are fetched as deep as the
-  chart's, and again when the chart loads older bars, so its line starts where the chart does.
+  chart's and, when the chart loads older bars, the stretch those add (all of them again from a
+  feed without <code>fetchHistoryBefore</code>), so its line starts where the chart does.
   On a chart type that draws no compare lines it leaves your scale as it is and dims each compare's
   row, whose tooltip says why; back on one that draws them, the percent scale comes back.
 </p>

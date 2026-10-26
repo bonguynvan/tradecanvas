@@ -735,7 +735,7 @@ describe('ChartWidget percent compares and the price scale', () => {
     expect(adapter.fetchHistory).toHaveBeenCalledWith('BBB', '1h', 900);
   });
 
-  it('fetches the percent comparisons again, as deep, once older bars load', async () => {
+  it('fetches the percent comparisons again, as deep, once older bars load, from a feed that can’t page back', async () => {
     const fake = make({ timeframe: '1h' });
     await widget.addCompareSymbol('BBB');
     fake.barsLoaded = Array.from({ length: 1300 }, (_, i) => ({ time: i * HOUR, close: 1 }));
@@ -743,6 +743,67 @@ describe('ChartWidget percent compares and the price scale', () => {
     await new Promise((r) => setTimeout(r, 0));
     expect(adapter.fetchHistory).toHaveBeenLastCalledWith('BBB', '1h', 1300);
     expect(fake.compareData).toEqual([['cmp_BBB', bars]]);
+  });
+
+  /** `count` hourly bars ending an hour before `end`. */
+  const hoursBefore = (end: number, count: number) =>
+    Array.from({ length: count }, (_, i) => ({ time: end - (count - i) * HOUR, open: 1, high: 1, low: 1, close: 1, volume: 1 }));
+  /** The chart's bars: `older` hours before the compare's first, then the hours it has. */
+  const chartWithOlder = (older: number) => [...hoursBefore(0, older), ...bars];
+
+  it('fetches only the stretch older bars added to each percent comparison', async () => {
+    const fake = make({ timeframe: '1h' });
+    const fetchHistoryBefore = vi.fn(async (_symbol: string, _tf: string, before: number, limit: number) => hoursBefore(before, limit));
+    Object.assign(adapter, { fetchHistoryBefore });
+    await widget.addCompareSymbol('BBB');
+    fake.barsLoaded = chartWithOlder(3);
+    fake.emit('historyLoad', { state: 'loaded', count: 3 });
+    await new Promise((r) => setTimeout(r, 0));
+    expect(fetchHistoryBefore.mock.calls).toEqual([['BBB', '1h', 0, 3]]);
+    expect(adapter.fetchHistory).toHaveBeenCalledTimes(1);
+    expect(fake.compareData).toEqual([['cmp_BBB', [...hoursBefore(0, 3), ...bars]]]);
+    // Nothing older on the chart than the line has: nothing to ask for.
+    fake.emit('historyLoad', { state: 'loaded', count: 0 });
+    await new Promise((r) => setTimeout(r, 0));
+    expect(fetchHistoryBefore).toHaveBeenCalledTimes(1);
+  });
+
+  it('asks once more, for what is still missing, after pages that load while a stretch is on its way', async () => {
+    const fake = make({ timeframe: '1h' });
+    const gate = { release: () => {} };
+    const fetchHistoryBefore = vi.fn((_symbol: string, _tf: string, before: number, limit: number) => (
+      fetchHistoryBefore.mock.calls.length === 1
+        ? new Promise((resolve) => { gate.release = () => resolve(hoursBefore(before, limit)); })
+        : Promise.resolve(hoursBefore(before, limit))));
+    Object.assign(adapter, { fetchHistoryBefore });
+    await widget.addCompareSymbol('BBB');
+    fake.barsLoaded = chartWithOlder(3);
+    fake.emit('historyLoad', { state: 'loaded', count: 3 });
+    for (const older of [6, 9]) {
+      fake.barsLoaded = chartWithOlder(older);
+      fake.emit('historyLoad', { state: 'loaded', count: 3 });
+    }
+    gate.release();
+    await new Promise((r) => setTimeout(r, 0));
+    expect(fetchHistoryBefore.mock.calls).toEqual([['BBB', '1h', 0, 3], ['BBB', '1h', -3 * HOUR, 6]]);
+    expect(fake.compareData.at(-1)).toEqual(['cmp_BBB', [...hoursBefore(0, 9), ...bars]]);
+  });
+
+  it('drops an older stretch that comes after the interval changed', async () => {
+    const fake = make({ timeframe: '1h' });
+    const gate = { release: () => {} };
+    const fetchHistoryBefore = vi.fn((_symbol: string, _tf: string, before: number, limit: number) =>
+      new Promise((resolve) => { gate.release = () => resolve(hoursBefore(before, limit)); }));
+    Object.assign(adapter, { fetchHistoryBefore });
+    await widget.addCompareSymbol('BBB');
+    fake.barsLoaded = chartWithOlder(3);
+    fake.emit('historyLoad', { state: 'loaded', count: 3 });
+    await widget.setTimeframe('4h');
+    await new Promise((r) => setTimeout(r, 0));
+    const fullRefetch = fake.compareData.length;
+    gate.release();
+    await new Promise((r) => setTimeout(r, 0));
+    expect(fake.compareData).toHaveLength(fullRefetch);
   });
 
   it('holds no percent scale on a chart type that draws no compare lines, and holds it again off it', async () => {

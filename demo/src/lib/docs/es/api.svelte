@@ -283,8 +283,9 @@ chart.setCompareVisible('eth', false)  // hidden, and out of the auto scale`}</c
   comparación. La escala en porcentaje nunca se guarda: un diseño y un enlace compartido conservan la
   tuya. La leyenda lista cada símbolo comparado en porcentaje encima de los indicadores, con su precio
   y su cambio en la barra bajo el cursor (si no, en la última), un ojo para ocultarlo y un botón para
-  quitarlo. Sus barras se piden con la misma profundidad que las del gráfico, y otra vez cuando el
-  gráfico carga barras más antiguas, así que su línea empieza donde empieza el gráfico.
+  quitarlo. Sus barras se piden con la misma profundidad que las del gráfico y, cuando el
+  gráfico carga barras más antiguas, solo el tramo que estas añaden (todas otra vez con un feed sin
+  <code>fetchHistoryBefore</code>), así que su línea empieza donde empieza el gráfico.
   En un tipo de gráfico que no dibuja líneas de comparación deja tu escala como está y atenúa la fila
   de cada comparación, cuya información emergente dice por qué; al volver a uno que las dibuja, vuelve
   la escala en porcentaje.

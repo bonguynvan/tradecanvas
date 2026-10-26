@@ -69,7 +69,7 @@ import {
 } from './widgetTimeframes.js';
 import { WidgetGoToDate, utcToWallTime, wallTimeToUtc, type GoToTarget } from './WidgetGoToDate.js';
 import { WidgetDock } from './WidgetDock.js';
-import { comparedEntries, compareWayOptions, isCompareWay, type CompareWay } from './widgetCompare.js';
+import { barsBefore, comparedEntries, compareWayOptions, isCompareWay, withOlderBars, type CompareWay, type PercentCompare } from './widgetCompare.js';
 import { WidgetTooltip } from './WidgetTooltip.js';
 import { WidgetIndicatorLegend, type IndicatorLegendPane, type IndicatorLegendRow, type PaneAction } from './WidgetIndicatorLegend.js';
 import { formatIndicatorValue, legendValues } from './legendValues.js';
@@ -415,7 +415,7 @@ export class ChartWidget {
   private rangeSeq = 0;
   /** Ranges apply one at a time, each reading the bars the last one brought. */
   private rangeQueue: Promise<void> = Promise.resolve();
-  private compares: { id: string; symbol: string; color: string }[] = [];
+  private compares: PercentCompare[] = [];
   /** How the compare dialog adds a symbol: the way picked last. */
   private compareWay: CompareWay = 'percent';
   /** Symbols whose bars are on the way to be compared in percent. */
@@ -428,6 +428,9 @@ export class ChartWidget {
   private compareScaleHeld = false;
   /** The latest round of percent compare fetches: an older round's answers are dropped. */
   private compareFetchSeq = 0;
+  /** The percent compares' older stretches are on their way; `compareOlderAgain`: more pages came meanwhile. */
+  private compareOlderBusy = false;
+  private compareOlderAgain = false;
   /** Every switch, on or off (see `setFeatures`). */
   private featureState: WidgetFeatureState;
   /** The host's own shortcuts, first added first. */
@@ -768,7 +771,7 @@ export class ChartWidget {
       const payload = e.payload as HistoryLoadPayload;
       this.historyPill.update(payload);
       // Older bars in: the percent compares as deep, so their lines start where the chart does.
-      if (payload.state === 'loaded') void this.refetchPercentCompares();
+      if (payload.state === 'loaded') void this.extendPercentCompares();
     });
     this.chart.on('symbolInfoChange', (e) => {
       const info = (e.payload as { info: SymbolInfo | null }).info;
@@ -3519,7 +3522,7 @@ export class ChartWidget {
       // symbols of any price (BTC beside a $2 coin) read on one percent scale.
       if (this.compares.length === 0) this.chart.setCompareMode('percent');
       this.chart.addCompareSymbol(id, symbol, bars, color);
-      this.compares = [...this.compares, { id, symbol, color }];
+      this.compares = [...this.compares, { id, symbol, color, bars }];
       if (this.compares.length === 1) this.holdCompareScale(true);
       this.scheduleLegend();
       this.refreshObjects();
@@ -3708,9 +3711,69 @@ export class ChartWidget {
       try {
         const bars = await adapter.fetchHistory(c.symbol, this.state.timeframe, this.compareDepth());
         if (this.destroyed || seq !== this.compareFetchSeq) return;
-        if (this.isPercentCompare(c.id)) this.chart.updateCompareData(c.id, bars);
+        if (this.isPercentCompare(c.id)) this.setCompareBars(c.id, bars);
       } catch { /* leave the stale overlay in place if the refetch fails */ }
     }
+  }
+
+  /**
+   * Older bars in: each percent compare's older stretch, so its line starts
+   * where the chart does. One round at a time: pages that load meanwhile
+   * get one more round, for what is missing by then.
+   */
+  private async extendPercentCompares(): Promise<void> {
+    if (this.compareOlderBusy) {
+      this.compareOlderAgain = true;
+      return;
+    }
+    this.compareOlderBusy = true;
+    try {
+      do {
+        this.compareOlderAgain = false;
+        await this.fetchOlderCompares();
+      } while (this.compareOlderAgain && !this.destroyed);
+    } finally {
+      this.compareOlderBusy = false;
+    }
+  }
+
+  /**
+   * Each percent compare's bars before its first, as many as the chart has
+   * before it. A round of full fetches meanwhile (a new interval) drops them.
+   */
+  private async fetchOlderCompares(): Promise<void> {
+    if (!this.adapter || this.compares.length === 0) return;
+    const adapter = withResampling(this.adapter);
+    // A feed that can't page back: each one again, as deep as the chart's.
+    if (!adapter.fetchHistoryBefore) return this.refetchPercentCompares();
+    const seq = this.compareFetchSeq;
+    const timeframe = this.state.timeframe;
+    for (const c of this.compares) {
+      const first = c.bars[0]?.time;
+      if (first === undefined || c.atStart) continue;
+      const missing = barsBefore(this.chart.getData(), first);
+      if (missing === 0) continue;
+      try {
+        const older = await adapter.fetchHistoryBefore(c.symbol, timeframe, first, missing);
+        if (this.destroyed || seq !== this.compareFetchSeq) return;
+        this.prependCompareBars(c.id, older);
+      } catch { /* the line keeps the bars it has; the next page asks again */ }
+    }
+  }
+
+  /** A percent compare's older bars in front of its own; none older: the feed's history starts there. */
+  private prependCompareBars(id: string, older: readonly OHLCBar[]): void {
+    const c = this.compares.find((x) => x.id === id);
+    if (!c) return;
+    const bars = withOlderBars(c.bars, older);
+    if (bars) this.setCompareBars(id, bars);
+    else this.compares = this.compares.map((x) => (x.id === id ? { ...x, atStart: true } : x));
+  }
+
+  /** A percent compare's line on new bars, which may reach further back again. */
+  private setCompareBars(id: string, bars: OHLCBar[]): void {
+    this.chart.updateCompareData(id, bars);
+    this.compares = this.compares.map((x) => (x.id === id ? { ...x, bars, atStart: false } : x));
   }
 
   private refreshAlerts(): void {
