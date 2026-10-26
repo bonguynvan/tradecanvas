@@ -1047,6 +1047,13 @@
   margin-inline-start: var(--tcw-space-4);
 }
 
+/* Too narrow for a digit and an ellipsis (Bollinger's on a 320 phone, 6 px beside the buttons), the
+   values would show a sliver: they hide, keeping their room so they come back with it, and the name
+   reads alone. */
+.tcw-ind-legend-values--no-room {
+  visibility: hidden;
+}
+
 .tcw-ind-legend-row--hidden .tcw-ind-legend-name,
 .tcw-ind-legend-row--hidden .tcw-ind-legend-values {
   opacity: 0.45;

@@ -156,6 +156,13 @@ describe('small boxes that scrolled a few px', () => {
     expect(blocks(css, '.tcw-ind-legend-values > *').join('')).not.toMatch(/min-width|overflow|flex/);
     expect(rule('.tcw-ind-legend-values > * + *')).toMatch(/margin-inline-start:\s*var\(--tcw-space-4\)/);
   });
+
+  // Hidden, not gone: the box keeps its room, so it is measured again and the values come back.
+  it('hides a legend’s values with no room for a digit and an ellipsis, keeping their room', () => {
+    const declarations = rule('.tcw-ind-legend-values--no-room');
+    expect(declarations).toMatch(/visibility:\s*hidden/);
+    expect(declarations).not.toMatch(/display/);
+  });
 });
 
 describe('the dialogs’ layout rules', () => {
