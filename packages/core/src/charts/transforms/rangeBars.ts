@@ -86,45 +86,55 @@ function keptDigits(top: number, range: number): KeptDigits {
  * The bars forming while a source bar is replayed cover its span, each at
  * most a range wide, and one of them goes on into the next: a try makes at
  * least the summed span over the range, less one bar a source bar, closed
- * bars before it reaches the last bar.
+ * bars before it reaches the last bar. The last bar's span is kept apart: it
+ * has a cap of its own.
  */
 interface SpannedPath {
   /** Each source bar's span but the last one's, summed, in price. */
   distance: number;
   /** The source bars summed: all but the last. */
   bars: number;
+  /** The last bar's span, from the close before it through its own prices. */
+  lastSpan: number;
+}
+
+/** How far a source bar spans, from `before` (the close before it) through its own prices; 0 for none. */
+function spanOf(bar: OHLCBar, before: number): number {
+  let top = -Infinity;
+  let bottom = Infinity;
+  for (const price of [before, bar.open, bar.high, bar.low, bar.close]) {
+    if (!Number.isFinite(price)) continue;
+    top = Math.max(top, price);
+    bottom = Math.min(bottom, price);
+  }
+  return top > bottom ? top - bottom : 0;
 }
 
 function spannedPath(data: DataSeries): SpannedPath {
   let distance = 0;
   let last = data[0].open;
   for (let i = 0; i < data.length - 1; i++) {
-    const { open, high, low, close } = data[i];
-    let top = -Infinity;
-    let bottom = Infinity;
-    for (const price of [last, open, high, low, close]) {
-      if (!Number.isFinite(price)) continue;
-      top = Math.max(top, price);
-      bottom = Math.min(bottom, price);
-    }
-    if (top > bottom) distance += top - bottom;
+    distance += spanOf(data[i], last);
     // The replay ends a bar on its close. Without one, where the next bar starts from is left out of its span,
     // which can only make the sum smaller.
-    last = close;
+    last = data[i].close;
   }
-  return { distance, bars: data.length - 1 };
+  return { distance, bars: data.length - 1, lastSpan: spanOf(data[data.length - 1], last) };
 }
 
 /**
  * Whether a try at `range` is sure to close more than MAX_RESHAPED_BARS before
- * the last bar (see SpannedPath), so it need not be replayed. A price within
- * half a digit of a close is taken as that close, so each source bar's span
- * counts a digit less, and the count must pass the limit by more than a bar,
- * which the sum's own rounding can't make up.
+ * the last bar, or on the last bar alone (see SpannedPath), so it need not be
+ * replayed. A price within half a digit of a close is taken as that close, so
+ * each source bar's span counts a digit less, and the count must pass the
+ * limit by more than a bar, which the sum's own rounding can't make up.
  */
 function surelyTooMany(path: SpannedPath, range: number, unit: number): boolean {
   if (range < MIN_RANGE_UNITS * unit) return false;
-  return (path.distance - path.bars * unit) / (range + unit) - path.bars > MAX_RESHAPED_BARS + 1;
+  const width = range + unit;
+  const before = (path.distance - path.bars * unit) / width - path.bars;
+  const onLast = (path.lastSpan - unit) / width - 1;
+  return Math.max(before, onLast) > MAX_RESHAPED_BARS + 1;
 }
 
 /** `cells` with room for twice as many bars, the ones in it kept. */

@@ -198,6 +198,22 @@ describe('toRangeBars', () => {
     expect(spans([...zigzag.slice(0, -1), { ...last, low: 98, close: 98 }])).toEqual(new Set([2]));
   });
 
+  it('walks the series a few times, not once a step, when the last bar alone is far too wide', () => {
+    // 5,000 bars near 60,000, and a bad print on the forming bar: the range goes from 200 to some 100,000,000.
+    const prices = Array.from({ length: 5_000 }, (_, i) => 60_000 + 300 * Math.sin(i / 7));
+    const data = prices.map((open, i) => {
+      const close = prices[i + 1] ?? open;
+      return bar(open, Math.max(open, close) + 50, Math.min(open, close) - 50, close, i);
+    });
+    data[data.length - 1] = { ...data[data.length - 1], high: 6e12 };
+    let reads = 0;
+    const counted = data.map((b) => ({ ...b, get close() { reads++; return b.close; } }));
+    const out = toRangeBars(counted, { rangeSize: 200, includeForming: true });
+    expect(out.length).toBeGreaterThan(0);
+    // Two reads of each close a walk, and one for the spans the steps are measured by.
+    expect(reads / data.length).toBeLessThan(10);
+  });
+
   it('keeps the bar still forming with includeForming: a quiet market is one bar, not none', () => {
     const data = [
       bar(100, 100.5, 99.5, 100.2, 0),
