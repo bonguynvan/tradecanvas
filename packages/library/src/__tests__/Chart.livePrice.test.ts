@@ -173,6 +173,21 @@ describe('a price fed by hand, what goes with it', () => {
     expect(lineAt()).toBe(130);
   });
 
+  it('measures a new bar’s tag from the close before it, as a stream does', () => {
+    chart.updateLastBar(bar(59, 98));
+    expect(tagColour()).toBe(DARK_THEME.candleDown); // 98 against the 100 before it
+    // The next bar opens where this one closed: level.
+    chart.appendBar(bar(60, 98));
+    expect(tagColour()).toBe(DARK_THEME.candleUp);
+    chart.updateLastBar(bar(60, 97));
+    expect(tagColour()).toBe(DARK_THEME.candleDown);
+    chart.appendBars([bar(61, 99), bar(62, 97)]);
+    expect(tagColour()).toBe(DARK_THEME.candleDown); // 97 against 99
+    chart.updateLastBar(bar(62, 98));
+    chart.appendBars([bar(63, 98)]);
+    expect(tagColour()).toBe(DARK_THEME.candleUp);
+  });
+
   it('leaves out a bar the chart turns down: no alert, no price, no dataUpdate', () => {
     const fired = alertsFired();
     const seen: unknown[] = [];

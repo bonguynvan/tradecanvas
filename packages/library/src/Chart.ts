@@ -1290,7 +1290,8 @@ export class Chart {
     // Re-finalise the bar that just closed (its last tick may differ from the
     // final close) and compute the new one; everything older is untouched.
     this.recalcIndicatorsFrom(data, data.length - 2);
-    this.currentPriceLine.setPrice(bar.close);
+    // Measured from the close before it, as a stream measures a new bar: one opening there is level.
+    this.currentPriceLine.setPrice(bar.close, data[data.length - 2]?.close);
     this.updateViewportAndRender(follow);
     if (data.length !== before) this.emitBars(data.length);
     // Last: an alert's listener sees the chart with its new bar.
@@ -1320,7 +1321,7 @@ export class Chart {
     const data = this.series.bars();
     this.recalcIndicatorsFrom(data, before - 1);
     this.crosshairHandler.setData(data);
-    this.currentPriceLine.setPrice(price);
+    this.currentPriceLine.setPrice(price, data[data.length - 2]?.close);
     this.updateViewportAndRender(follow);
     if (data.length !== before) this.emitBars(data.length);
     this.followLivePrice(price);
