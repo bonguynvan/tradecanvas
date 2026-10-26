@@ -19,6 +19,8 @@ export type ChartEventType =
   | 'symbolInfoChange'
   /** The market's rules changed (`setMarket`): its steps, colours, decimals, zone. */
   | 'marketChange'
+  /** A compare line was added, taken off, given new bars, shown or hidden (`addCompareSymbol` and the rest). */
+  | 'compareChange'
   | 'indicatorAdd'
   | 'indicatorRemove'
   | 'paneResize'
@@ -336,6 +338,8 @@ export interface ChartEventMap {
   symbolInfoChange: { info: SymbolInfo | null };
   /** The market's rules changed (`setMarket`); its zone backs `getExchangeTimeZone` when the symbol names none. */
   marketChange: { market: MarketConfig };
+  /** A compare line changed: added, taken off, given new bars (`updateCompareData`), shown or hidden (`setCompareVisible`). */
+  compareChange: { id: string; change: 'add' | 'remove' | 'data' | 'visible' };
   chartTypeChange: { type: string; previous: string };
   /**
    * What draws the chart now. `reason` says why: no WebGL 2 here (or only a

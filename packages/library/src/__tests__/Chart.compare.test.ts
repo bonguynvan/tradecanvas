@@ -219,3 +219,17 @@ describe('correlation with another symbol', () => {
     expect(values(id).at(-1)).toBeCloseTo(1, 9);
   });
 });
+
+describe('a compare line’s changes', () => {
+  it('are told as compareChange: added, its bars, shown or hidden, taken off', () => {
+    const changes: unknown[] = [];
+    chart.on('compareChange', (e) => changes.push(e.payload));
+    chart.addCompareSymbol('cmp_B', 'B', other, '#b552c9');
+    chart.updateCompareData('cmp_B', other.slice(1));
+    chart.setCompareVisible('cmp_B', false);
+    chart.removeCompareSymbol('cmp_B');
+    expect(changes).toEqual([
+      { id: 'cmp_B', change: 'add' }, { id: 'cmp_B', change: 'data' }, { id: 'cmp_B', change: 'visible' }, { id: 'cmp_B', change: 'remove' },
+    ]);
+  });
+});

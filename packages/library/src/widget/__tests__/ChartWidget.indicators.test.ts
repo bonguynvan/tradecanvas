@@ -123,10 +123,15 @@ class FakeChart {
   compareAsked: (number | undefined)[] = [];
   addCompareSymbol(id: string, label: string, _data: unknown, color: string): void {
     this.compareLines.push({ id, label, color, visible: true });
+    this.emit('compareChange', { id, change: 'add' });
   }
-  removeCompareSymbol(id: string): void { this.compareLines = this.compareLines.filter((c) => c.id !== id); }
+  removeCompareSymbol(id: string): void {
+    this.compareLines = this.compareLines.filter((c) => c.id !== id);
+    this.emit('compareChange', { id, change: 'remove' });
+  }
   setCompareVisible(id: string, visible: boolean): void {
     this.compareLines = this.compareLines.map((c) => (c.id === id ? { ...c, visible } : c));
+    this.emit('compareChange', { id, change: 'visible' });
   }
   /** Every compare at 0.1002, down 7.69% since its first bar on screen. */
   getCompareValues(barIndex?: number) {
@@ -378,6 +383,16 @@ describe('percent comparisons in the on-chart legend', () => {
     expect(bbb.querySelector('[data-act="settings"]')).toBeNull();
     expect(bbb.querySelector('[data-act="more"]')).toBeNull();
     expect(bbb.querySelector('.tcw-ind-legend-name')!.tagName).not.toBe('BUTTON');
+  });
+
+  it('lists a compare line the host adds on the chart itself, without waiting for the pointer', async () => {
+    await comparing();
+    widget.getChart().addCompareSymbol('host_sol', 'SOL (host)', [], '#3e9a4f');
+    await frame();
+    expect(names()).toEqual(['BBB', 'SOL (host)', 'EMA 20']);
+    widget.getChart().removeCompareSymbol('host_sol');
+    await frame();
+    expect(names()).toEqual(['BBB', 'EMA 20']);
   });
 
   it('hides a comparison, and takes it off, from its legend row', async () => {

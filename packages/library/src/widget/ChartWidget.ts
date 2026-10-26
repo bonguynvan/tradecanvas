@@ -1007,7 +1007,8 @@ export class ChartWidget {
       this.scheduleLegend();
     });
     // A pan too: a compare's change is counted from the first bar on screen.
-    for (const event of ['indicatorUpdate', 'indicatorChange', 'dataUpdate', 'resize', 'paneResize', 'paneChange', 'themeChange', 'timeframeChange', 'visibleRangeChange'] as const) {
+    // A compare line the host adds on the chart itself gets its row at once, as the widget's do.
+    for (const event of ['indicatorUpdate', 'indicatorChange', 'dataUpdate', 'resize', 'paneResize', 'paneChange', 'themeChange', 'timeframeChange', 'visibleRangeChange', 'compareChange'] as const) {
       this.chart.on(event, () => this.scheduleLegend());
     }
     // Whoever changes the chart type: percent compares hold the scale only where their lines are drawn.

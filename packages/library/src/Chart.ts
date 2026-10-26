@@ -3435,16 +3435,19 @@ export class Chart {
     this.compareRenderer.addSymbol({ id, label, data, color, visible: true });
     // They count in the auto scale.
     this.updateViewportAndRender();
+    this.eventBus.emit('compareChange', { id, change: 'add' });
   }
 
   removeCompareSymbol(id: string): void {
     this.compareRenderer.removeSymbol(id);
     this.updateViewportAndRender();
+    this.eventBus.emit('compareChange', { id, change: 'remove' });
   }
 
   updateCompareData(id: string, data: DataSeries): void {
     this.compareRenderer.setSymbolData(id, data);
     this.updateViewportAndRender();
+    this.eventBus.emit('compareChange', { id, change: 'data' });
   }
 
   setCompareMode(mode: 'percent' | 'absolute'): void {
@@ -3456,6 +3459,7 @@ export class Chart {
   setCompareVisible(id: string, visible: boolean): void {
     this.compareRenderer.setSymbolVisible(id, visible);
     this.updateViewportAndRender();
+    this.eventBus.emit('compareChange', { id, change: 'visible' });
   }
 
   /**
