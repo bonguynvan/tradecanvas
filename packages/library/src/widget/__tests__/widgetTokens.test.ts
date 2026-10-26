@@ -60,6 +60,12 @@ const lightTints = { ...darkTints, ...tints(LIGHT) };
  */
 const ROW_CONTRAST = 4.55;
 
+/**
+ * The light theme's muted text (a venue, a kind) on that row, a step past it: at 4.55 here, `#6b6f76`
+ * measured 4.5517 as drawn, on the floor with no margin. `#6a6e75` reads at 4.62.
+ */
+const LIGHT_MUTED_ROW_CONTRAST = 4.6;
+
 describe('widget colour tokens', () => {
   it.each([
     ['dark', dark],
@@ -98,6 +104,12 @@ describe('widget colour tokens', () => {
     const hover = tint['--tcw-hover-bg'];
     const selected = mix(hover.hex, t['--tcw-bg-elevated'], hover.alpha);
     expect(contrast(t['--tcw-text-muted'], selected)).toBeGreaterThanOrEqual(ROW_CONTRAST);
+  });
+
+  it('light: muted text keeps a margin over that floor on the row the keys are on', () => {
+    const hover = lightTints['--tcw-hover-bg'];
+    const selected = mix(hover.hex, light['--tcw-bg-elevated'], hover.alpha);
+    expect(contrast(light['--tcw-text-muted'], selected)).toBeGreaterThanOrEqual(LIGHT_MUTED_ROW_CONTRAST);
   });
 
   it.each([
