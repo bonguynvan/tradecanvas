@@ -537,6 +537,28 @@ describe('StreamManager — bars older than the newest', () => {
     feed.sm.dispose();
   });
 
+  /** The stream of `feed` reconnected (the page came back), its history then `bars`. */
+  async function reconnect(feed: Awaited<ReturnType<typeof live>>, bars: OHLCBar[]) {
+    feed.fire('connectionChange', 'connected');
+    feed.sm.wake('online');
+    feed.pending[1].resolve(bars.map((b) => ({ ...b })));
+    await new Promise((r) => setTimeout(r, 0));
+  }
+
+  it("a feed's forming bar newer than a reconnect's history keeps the price, on top of the history", async () => {
+    const feed = await live(history(40));
+    feed.bar(at(40, 101), false);
+    feed.bar(at(40, 96), false);
+    const prices = feed.seen.priceChange.length;
+    const snapshots: OHLCBar[][] = [];
+    feed.sm.on('snapshot', (bars) => snapshots.push(bars));
+    await reconnect(feed, history(40));
+    expect(feed.seen.priceChange).toHaveLength(prices);
+    expect(snapshots[0]).toHaveLength(41);
+    expect(snapshots[0].at(-1)).toEqual(at(40, 96));
+    feed.sm.dispose();
+  });
+
   describe('aggregateTicks', () => {
     it('a closed bar for the bar before the forming one is sent as barCorrection; the forming bar keeps its trades', async () => {
       const feed = await live(history(40), true);
@@ -573,14 +595,6 @@ describe('StreamManager — bars older than the newest', () => {
       feed.sm.dispose();
     });
 
-    /** The stream of `feed` reconnected (the page came back), its history then `bars`. */
-    async function reconnect(feed: Awaited<ReturnType<typeof live>>, bars: OHLCBar[]) {
-      feed.fire('connectionChange', 'connected');
-      feed.sm.wake('online');
-      feed.pending[1].resolve(bars.map((b) => ({ ...b })));
-      await new Promise((r) => setTimeout(r, 0));
-    }
-
     it('keeps the trades of the forming bar across a reconnect whose history still ends on the bar before', async () => {
       const feed = await live(history(40), true);
       const t40 = at(40).time;
@@ -593,6 +607,38 @@ describe('StreamManager — bars older than the newest', () => {
       // A late trade of bar 39 after it is still left out.
       feed.trade(t40 - 1000, 99, 1);
       expect(feed.seen.barClose.map((b) => b.time)).toEqual([at(39).time]);
+      feed.sm.dispose();
+    });
+
+    it("sends no price from a reconnect's history that ends before the forming bar, and puts that bar on top of it", async () => {
+      const feed = await live(history(40), true);
+      const t40 = at(40).time;
+      feed.trade(t40 + 1000, 101, 5);
+      feed.trade(t40 + 2000, 96, 5);
+      const prices = feed.seen.priceChange.length;
+      const snapshots: OHLCBar[][] = [];
+      feed.sm.on('snapshot', (bars) => snapshots.push(bars));
+      await reconnect(feed, history(40));
+      expect(feed.seen.priceChange).toHaveLength(prices);
+      expect(feed.sm.getLastPrice()).toBe(96);
+      // The history, then the forming bar with its trades: the bars shown from the history's first on.
+      expect(snapshots[0]).toHaveLength(41);
+      expect(snapshots[0].at(-1)).toEqual({ time: t40, open: 101, high: 101, low: 96, close: 96, volume: 10 });
+      // The change is still measured from bar 39's close.
+      feed.trade(t40 + 3000, 97, 1);
+      expect(feed.seen.priceChange.at(-1)).toEqual({ price: 97, previousClose: 100 });
+      feed.sm.dispose();
+    });
+
+    it("puts the forming bar on a reconnect's history in the history's unit", async () => {
+      const inSeconds = (bars: OHLCBar[]) => bars.map((b) => ({ ...b, time: b.time / 1000 }));
+      const feed = await live(inSeconds(history(40)), true);
+      const t40 = at(40).time;
+      feed.trade(t40 + 1000, 101, 5);
+      const snapshots: OHLCBar[][] = [];
+      feed.sm.on('snapshot', (bars) => snapshots.push(bars));
+      await reconnect(feed, inSeconds(history(40)));
+      expect(snapshots[0].at(-1)).toMatchObject({ time: t40 / 1000, close: 101 });
       feed.sm.dispose();
     });
 

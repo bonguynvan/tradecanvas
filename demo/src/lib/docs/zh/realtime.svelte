@@ -101,7 +101,7 @@ agg.processTick({ time, price, volume })
 
 const current = agg.getCurrentBar()         // forming bar`}</code></pre>
 <p>周从周一开始，月从 1 日开始。使用 <code>setTimeZone</code> 后，日、周、月以及能整除一天的小时周期从交易所的午夜开始；图表会按品种的时区（没有则按市场的时区）为其数据流的 tick（<code>aggregateTicks</code>）设置它，并让由 tick 构建的K线与历史K线对齐：历史数据以 00:00 UTC 标记日期时，日线也这样标记；2h 到 12h 的K线只有在历史K线从交易所午夜开始时才从那里开始，因此数据源自己的 4h K线（00:00、04:00… UTC）保持原来的时间。在由数据源更细周期构建的周期上，它们从构建出的K线开始的地方开始。由小时K线构建时，从数据源的 <code>resolveSymbol</code> 给出的时区的午夜开始，没有则从 UTC 的午夜开始，无论图表使用哪个时区；由数据源以 00:00 UTC 标记的日线构建时，周线和月线保留数据源的日期，成交按数据源给出的时区确定日期，没有则按图表的时区，与数据源自己的日线一致。</p>
-<p>比已见到的最新K线更早的K线已经过去：<code>processBar</code> 把已收盘的这类K线作为 <code>correction</code> 发出，并忽略未收盘的数据帧；<code>processTick</code> 忽略属于这类K线的成交，因此迟到的数据帧或成交既不会提前结束正在形成的K线，也不会移动价格。<code>seed(time)</code> 从历史数据的最后一根K线开始，且从不后退；<code>resume(bar)</code> 让这根仍在形成的K线成为后续成交继续构建的K线，除非成交已经到了更新的K线；图表的数据流在每次连接时都会做这两步，因此重连时即使历史数据只到前一根K线，正在形成的K线的成交也会保留。<code>StreamManager</code> 把修正作为 <code>barCorrection</code> 发出。</p>
+<p>比已见到的最新K线更早的K线已经过去：<code>processBar</code> 把已收盘的这类K线作为 <code>correction</code> 发出，并忽略未收盘的数据帧；<code>processTick</code> 忽略属于这类K线的成交，因此迟到的数据帧或成交既不会提前结束正在形成的K线，也不会移动价格。<code>seed(time)</code> 从历史数据的最后一根K线开始，且从不后退；<code>resume(bar)</code> 让这根仍在形成的K线成为后续成交继续构建的K线，除非成交已经到了更新的K线；图表的数据流在每次连接时都会做这两步，因此重连时即使历史数据只到前一根K线，正在形成的K线的成交也会保留。此时 <code>StreamManager</code> 会把正在形成的K线（无论由成交构建，还是来自数据源的数据帧）放在它作为 <code>snapshot</code> 发出的历史数据之上，并且不会为历史数据最后一根K线的收盘价这个较旧的价格发出 <code>priceChange</code>。它把修正作为 <code>barCorrection</code> 发出。</p>
 
 <h2>多个品种的报价</h2>
 <p>

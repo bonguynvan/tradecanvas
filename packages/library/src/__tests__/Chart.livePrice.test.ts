@@ -388,6 +388,53 @@ describe('a built-in feed, a bar already past', () => {
   }
 });
 
+/**
+ * With aggregateTicks, a reconnect (the page coming back) whose history ends
+ * on the bar before the one the trades are building: that history's last
+ * close is the market's an hour ago, no live price.
+ */
+describe('aggregateTicks, a reconnect whose history ends before the forming bar', () => {
+  type Stream = { currentPriceLine: { getPrice(): number | null }; streamManager: { wake(reason: 'online'): void } };
+  const stream = () => chart as unknown as Stream;
+
+  it('keeps the forming bar, the price line, the orders and the alerts on its trades', async () => {
+    const sockets: WebSocketLike[] = [];
+    const adapter = new WebSocketAdapter({
+      name: 'ws',
+      wsUrl: () => 'wss://x',
+      fetchHistory: async () => Array.from({ length: 60 }, (_, i) => bar(i, 100)),
+      parseMessage: (raw) => raw as WsParseResult,
+      socketFactory: () => {
+        const socket: WebSocketLike = { onopen: null, onmessage: null, onerror: null, onclose: null, send: () => {}, close: () => {} };
+        sockets.push(socket);
+        return socket;
+      },
+    });
+    await chart.connect({ adapter, symbol: 'AAA', timeframe: '1h', historyLimit: 60, aggregateTicks: true });
+    sockets.at(-1)!.onopen?.({});
+    const t60 = T0 + 60 * HOUR;
+    const trade = (after: number, price: number, volume: number) =>
+      sockets.at(-1)!.onmessage?.({ data: { tick: { time: t60 + after, price, volume } } });
+    trade(1000, 101, 5);
+    trade(2000, 110, 5);
+    trade(3000, 96, 5);
+    const fired = alertsFired();
+    chart.addAlert(98, 'crossingUp', 'over 98');
+
+    stream().streamManager.wake('online');
+    await new Promise((r) => setTimeout(r, 0));
+    sockets.at(-1)!.onopen?.({});
+    expect(chart.getData().at(-1)).toMatchObject({ time: t60, open: 101, high: 110, low: 96, close: 96, volume: 15 });
+    expect(stream().currentPriceLine.getPrice()).toBe(96);
+    expect(ordersPrice()).toBe(96);
+    expect(fired).toEqual([]);
+
+    trade(4000, 102, 1);
+    expect(chart.getData().at(-1)).toMatchObject({ time: t60, open: 101, high: 110, low: 96, close: 102, volume: 16 });
+    expect(fired).toEqual(['over 98']);
+  });
+});
+
 describe('setData, what it tells', () => {
   it('counts and starts from the bars it kept', () => {
     const seen: unknown[] = [];

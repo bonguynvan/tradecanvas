@@ -9,7 +9,7 @@ import type {
   SymbolInfo,
   TimeFrame,
 } from '@tradecanvas/commons';
-import { DEFAULT_STREAM_CONFIG, DEFAULT_RECONNECT, isValidTimeZone, normalizeBarTime, timeframeBucketStart, timeframeSpansDays } from '@tradecanvas/commons';
+import { DEFAULT_STREAM_CONFIG, DEFAULT_RECONNECT, barTimeUnit, isValidTimeZone, normalizeBarTime, timeframeBucketStart, timeframeSpansDays } from '@tradecanvas/commons';
 import { Emitter } from './Emitter.js';
 import { TickAggregator } from './TickAggregator.js';
 import { ReconnectManager } from './ReconnectManager.js';
@@ -18,7 +18,10 @@ import { ResamplingAdapter, withResampling } from './adapters/ResamplingAdapter.
 import { withTickBars } from './TickBars.js';
 
 export interface StreamEvents {
-  /** Historical data loaded */
+  /**
+   * Historical data loaded. After a reconnect whose history ends before the
+   * bar the stream was building, that bar is on top, its trades kept.
+   */
   snapshot: OHLCBar[];
   /** New closed bar appended */
   barClose: AggregatedBar;
@@ -65,6 +68,18 @@ export interface StreamEvents {
 /** Silence after which a connection the page comes back to is taken for dead (a quiet market still sends a heartbeat or a tick). */
 const RESUME_STALE_MS = 20_000;
 const DAY_MS = 86_400_000;
+
+/**
+ * A reconnect's history and, on top, the bar the stream was building after
+ * its last, in the history's time unit: the bars take the place of the ones
+ * shown from the history's first on, so the forming bar stays, and alerts
+ * cross from its close.
+ */
+function withForming(history: OHLCBar[], forming: AggregatedBar | null): OHLCBar[] {
+  if (!forming) return history;
+  const { time, open, high, low, close, volume } = forming;
+  return [...history, { time: normalizeBarTime(time) / barTimeUnit(history), open, high, low, close, volume }];
+}
 
 /** Whether a bar of `tf` at `time` starts where `zone`'s midnight counts from, and not on the epoch. */
 function onZoneGrid(time: number, tf: TimeFrame, zone: string): boolean {
@@ -290,15 +305,19 @@ export class StreamManager extends Emitter<StreamEvents> {
       if (seq !== this.connectSeq || !this.adapter) return;
 
       const last = history.length > 0 ? history[history.length - 1] : null;
-      if (last) {
-        this.setPreviousClose(last);
-        this.updatePrice(last.close);
-      }
       this.historyEnd = last ? normalizeBarTime(last.time) : null;
       this.applyTickZone();
       this.seedAggregator(last);
+      // A reconnect whose history ends before the bar the stream was
+      // building: that bar's close is the market's now, the history's last
+      // an older one, which would move the price, the orders and the alerts back.
+      const forming = this.formingAfter(last);
+      if (last && !forming) {
+        this.setPreviousClose(last);
+        this.updatePrice(last.close);
+      }
 
-      this.emit('snapshot', history);
+      this.emit('snapshot', withForming(history, forming));
 
       // 2. Start streaming
       this.adapter.connect({ symbol, timeframe });
@@ -412,6 +431,13 @@ export class StreamManager extends Emitter<StreamEvents> {
     if (!this.aggregator) return;
     this.aggregator.seed(last ? last.time : -Infinity);
     if (last && this.config?.aggregateTicks) this.aggregator.resume(last);
+  }
+
+  /** The bar the stream was building, when it is newer than the history's last (a reconnect's), or null. */
+  private formingAfter(last: OHLCBar | null): AggregatedBar | null {
+    const bar = this.aggregator?.getCurrentBar() ?? null;
+    if (!bar || (last && normalizeBarTime(bar.time) <= normalizeBarTime(last.time))) return null;
+    return bar;
   }
 
   private updatePrice(price: number): void {
