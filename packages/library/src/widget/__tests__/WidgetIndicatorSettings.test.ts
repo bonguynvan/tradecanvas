@@ -345,8 +345,10 @@ describe('lineSourcesFor', () => {
     return { instanceId, id, params: { ...d.defaultConfig, ...params }, descriptor: d, visible: true };
   };
 
+  const en = createTranslator(resolveMessages('en', undefined));
+
   it('offers every drawn line of the other indicators', () => {
-    const list = lineSourcesFor('s1', [active('sma', 's1'), active('macd', 'm1')]);
+    const list = lineSourcesFor('s1', [active('sma', 's1'), active('macd', 'm1')], en);
     expect(list.map((l) => l.label)).toEqual(['MACD 12 26 9: Histogram', 'MACD 12 26 9: MACD', 'MACD 12 26 9: Signal']);
     expect(list[1].value).toBe('ind:m1:macd');
   });
@@ -357,7 +359,15 @@ describe('lineSourcesFor', () => {
       active('sma', 's1', { source: 'ind:r1:value' }),
       active('ema', 'e1', { source: 'ind:s1:value' }),
       active('obv', 'o1'),
-    ]);
+    ], en);
     expect(list.map((l) => l.value)).toEqual(['ind:o1:value']);
+  });
+
+  it('names indicators apart as the legend does: VWAPs of different anchors', () => {
+    const vwaps = [active('vwap', 'v1', { anchor: 'week' }), active('vwap', 'v2'), active('vwap', 'v3', { anchor: 'all' })];
+    expect(lineSourcesFor('s1', [active('sma', 's1'), ...vwaps], en).map((l) => l.label))
+      .toEqual(['VWAP Week: VWAP', 'VWAP: VWAP', 'VWAP All bars: VWAP']);
+    const ja = createTranslator(resolveMessages('ja', JA_MESSAGES));
+    expect(lineSourcesFor('s1', [active('sma', 's1'), ...vwaps], ja)[0].label).toBe(`VWAP ${JA_MESSAGES['indicatorInput.anchor.week']}: VWAP`);
   });
 });

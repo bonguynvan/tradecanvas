@@ -3595,7 +3595,7 @@ export class ChartWidget {
       defaults: ind.descriptor.defaultConfig,
       params: ind.params,
       inputs: ind.descriptor.inputs,
-      lineSources: lineSourcesFor(instanceId, active),
+      lineSources: lineSourcesFor(instanceId, active, this.t),
       plots: ind.descriptor.plots,
       colors: style?.colors,
       lineWidth: style?.lineWidths[0],
@@ -5519,9 +5519,10 @@ export type { CompareWay };
 
 /**
  * The lines `instanceId` can be computed from: every drawn line of the other
- * indicators, except those that already read from it (that would be a loop).
+ * indicators, except those that already read from it (that would be a loop),
+ * each named as the legend names its indicator, so two VWAPs read apart.
  */
-export function lineSourcesFor(instanceId: string, active: readonly ActiveIndicator[]): { value: string; label: string }[] {
+export function lineSourcesFor(instanceId: string, active: readonly ActiveIndicator[], t: Translator): { value: string; label: string }[] {
   const readsFrom = (ind: ActiveIndicator): string | null => {
     const name = sourceParam(ind.descriptor);
     return (name && parseIndicatorSource(ind.params[name])?.instanceId) || null;
@@ -5541,7 +5542,7 @@ export function lineSourcesFor(instanceId: string, active: readonly ActiveIndica
   const out: { value: string; label: string }[] = [];
   for (const ind of active) {
     if (downstream.has(ind.instanceId)) continue;
-    const name = indicatorChipLabel(ind.id, ind.params, ind.descriptor.defaultConfig, ind.descriptor.shortName);
+    const name = widgetIndicatorLabel(ind, t);
     for (const plot of ind.descriptor.plots ?? []) {
       out.push({ value: indicatorSource(ind.instanceId, plot.key), label: `${name}: ${plot.title}` });
     }
