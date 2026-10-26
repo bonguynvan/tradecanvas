@@ -1,5 +1,5 @@
 import type { ChartType, DataAdapter, DataUpdatePayload, DrawingToolType, FeaturesConfig, HistoryLoadPayload, OHLCBar, PriceScaleMode, Quote, QuoteSource, SymbolInfo, Theme, TimeFrame, TimeZoneSetting } from '@tradecanvas/commons';
-import { barTimeUnit, marketStatus, offsetAt, readQuote, stepDecimals, tickBarCount, tzLabel } from '@tradecanvas/commons';
+import { barTimeUnit, marketStatus, offsetAt, readQuote, stepDecimals, tickBarCount, timeframeFollowsDays, tzLabel } from '@tradecanvas/commons';
 import { settingToTimezone, timezoneOptions, timezoneToSetting } from './widgetTimezones.js';
 import { installFormControls } from './formControls.js';
 import { Chart } from '../Chart.js';
@@ -3166,11 +3166,22 @@ export class ChartWidget {
     return { weekStartsOn: this.options.weekStartsOn ?? 1, timeZone: zone ?? undefined };
   }
 
-  /** The exchange's zone moved (the symbol's info, or the market, came after the bars): build their days again. */
+  /**
+   * The exchange's zone moved (the symbol's info, or the market, came after
+   * the bars): build their days again, the view on the times it showed. Bars
+   * that start where they did in any zone (15m or 1h from minutes) stay.
+   */
   private rebuildForZone(): void {
     if (this.adapter || this.builtInZone === undefined) return;
-    if ((this.chart.getExchangeTimeZone() ?? null) === this.builtInZone) return;
+    const zone = this.chart.getExchangeTimeZone() ?? null;
+    if (zone === this.builtInZone) return;
+    if (!timeframeFollowsDays(this.state.timeframe)) {
+      this.builtInZone = zone;
+      return;
+    }
+    const shown = this.chart.getVisibleTimeRange();
     this.applyTimeframeData();
+    if (shown) this.chart.setVisibleRange(shown.from, shown.to);
   }
 
   private handleDataUpdate(p: DataUpdatePayload): void {

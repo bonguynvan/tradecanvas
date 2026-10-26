@@ -40,6 +40,11 @@ class FakeChart {
     this.marketZone = market.timeZone ?? null;
     this.fire('marketChange', { market });
   }
+  /** The times on screen, as a test sets them, and the ones the widget last asked to show. */
+  visible: { from: number; to: number } | null = null;
+  shown: { from: number; to: number } | null = null;
+  getVisibleTimeRange() { return this.visible; }
+  setVisibleRange(from: number, to: number): void { this.shown = { from, to }; }
   getPlotRect() { return { x: 0, y: 0, width: 1100, height: 500 }; }
   getActiveIndicators(): unknown[] { return []; }
   getAlerts(): unknown[] { return []; }
@@ -106,6 +111,25 @@ describe('ChartWidget days built from its bars', () => {
     widget.setData(vnHours());
     widget.getChart().setMarket(MARKET_HOSE);
     expect(timesOfDay()).toEqual([17 * HOUR]);
+  });
+
+  it('leaves bars it builds that start where they did in any zone as they are: 15m from minutes', () => {
+    widget = new ChartWidget(host, { symbol: 'FPT', timeframe: '15m', watchlist: false });
+    const minutes = Array.from({ length: 240 }, (_, i) => ({ time: Date.UTC(2026, 9, 23, 2) + i * 60_000, open: 1, high: 2, low: 0.5, close: 1.5, volume: 1 }));
+    widget.setData(minutes);
+    const built = FakeChart.last.data;
+    widget.getChart().setMarket(MARKET_HOSE);
+    FakeChart.last.setSymbolInfo({ symbol: 'FPT', timeZone: 'Asia/Ho_Chi_Minh' });
+    expect(FakeChart.last.data).toBe(built);
+  });
+
+  it('keeps the times on screen when it builds the days again', () => {
+    widget = new ChartWidget(host, { symbol: 'FPT', timeframe: '1d', watchlist: false });
+    widget.setData(vnHours());
+    FakeChart.last.visible = { from: Date.UTC(2026, 9, 20), to: Date.UTC(2026, 9, 21) };
+    FakeChart.last.setSymbolInfo({ symbol: 'FPT', timeZone: 'Asia/Ho_Chi_Minh' });
+    expect(timesOfDay()).toEqual([17 * HOUR]);
+    expect(FakeChart.last.shown).toEqual({ from: Date.UTC(2026, 9, 20), to: Date.UTC(2026, 9, 21) });
   });
 
   it('leaves bars it does not build alone when the zone comes', () => {
