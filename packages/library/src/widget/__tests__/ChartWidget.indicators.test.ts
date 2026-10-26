@@ -366,13 +366,14 @@ describe('percent comparisons in the on-chart legend', () => {
     await frame();
   };
 
-  it('lists each percent comparison first, with its price and its change in its colour', async () => {
+  it('lists each percent comparison first, marked in its colour, with its price and its change', async () => {
     await comparing();
     expect(names()).toEqual(['BBB', 'EMA 20']);
     const [bbb] = rows();
     expect(values(bbb).map((v) => v.textContent)).toEqual(['0.1002', '-7.69%']);
-    expect(values(bbb)[0].style.color).toBe('');
-    expect(values(bbb)[1].style.color).not.toBe('');
+    // The figures in the legend's text colour, legible on either theme; the line's colour marks the row.
+    expect(values(bbb).map((v) => v.style.color)).toEqual(['', '']);
+    expect(bbb.querySelector<HTMLElement>('.tcw-ind-legend-swatch')!.style.backgroundColor).not.toBe('');
     // Not an indicator: no settings, no more.
     expect(bbb.querySelector('[data-act="settings"]')).toBeNull();
     expect(bbb.querySelector('[data-act="more"]')).toBeNull();

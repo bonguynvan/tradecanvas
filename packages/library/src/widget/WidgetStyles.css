@@ -1061,6 +1061,17 @@
   visibility: hidden;
 }
 
+/* A compare's line colour, as a short stroke of it before the name. */
+.tcw-ind-legend-swatch {
+  flex: none;
+  align-self: center;
+  width: 10px;
+  height: 3px;
+  margin-inline-end: var(--tcw-space-2);
+  border-radius: 1px;
+}
+
+.tcw-ind-legend-row--hidden .tcw-ind-legend-swatch,
 .tcw-ind-legend-row--hidden .tcw-ind-legend-name,
 .tcw-ind-legend-row--hidden .tcw-ind-legend-values {
   opacity: 0.45;

@@ -25,8 +25,9 @@ export function formatChangePercent(change: number, locale = 'en-US'): string {
 
 /**
  * The legend's rows for the symbols compared in percent (`chart.getCompareValues`):
- * each one's price and its change since its first bar on screen, the change
- * in its line's colour, as the percent scale reads it. Where the chart draws
+ * each one marked in its line's colour, its price and its change since its
+ * first bar on screen, as the percent scale reads it, in the legend's text
+ * colour: no one colour reads as text on both the dark and the light theme. Where the chart draws
  * no compare lines (`drawn` false: Renko, Kagi and the like), each row is
  * dimmed, without values, as an indicator off its intervals is.
  */
@@ -35,16 +36,17 @@ export function compareLegendRows(values: readonly CompareValue[], locale = 'en-
     instanceId: v.id,
     kind: 'compare',
     label: v.label,
+    swatch: v.color,
     visible: v.visible,
     ...(drawn ? { values: compareFigures(v, locale) } : { values: [], offChartType: true }),
     pane: null,
   }));
 }
 
-/** A compare's price, then its change in its line's colour; each left out while it has none. */
+/** A compare's price, then its change; each left out while it has none. */
 function compareFigures(v: CompareValue, locale: string): IndicatorLegendRow['values'] {
   return [
     ...(v.close !== null ? [{ text: formatComparePrice(v.close, locale), color: null }] : []),
-    ...(v.change !== null ? [{ text: formatChangePercent(v.change, locale), color: v.color }] : []),
+    ...(v.change !== null ? [{ text: formatChangePercent(v.change, locale), color: null }] : []),
   ];
 }

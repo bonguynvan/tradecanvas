@@ -96,3 +96,19 @@ describe('a legend row its chart doesn’t draw', () => {
     for (const button of buttons) expect(button.hasAttribute('aria-describedby')).toBe(false);
   });
 });
+
+describe('a compare’s legend row', () => {
+  it('marks the row in its line’s colour, before its name', () => {
+    legend.update([{ instanceId: 'cmp_ETH', kind: 'compare', label: 'ETHUSDT', swatch: '#b552c9', visible: true, pane: null, values: [] }], { left: 0, top: 0 });
+    const row = host.querySelector<HTMLElement>('[data-instance="cmp_ETH"]')!;
+    const swatch = row.querySelector<HTMLElement>('.tcw-ind-legend-swatch')!;
+    expect(swatch.style.backgroundColor).toBe('rgb(181, 82, 201)');
+    expect(swatch.nextElementSibling?.classList.contains('tcw-ind-legend-name')).toBe(true);
+    expect(swatch.getAttribute('aria-hidden')).toBe('true');
+  });
+
+  it('has no mark on an indicator’s row, whose values are in its lines’ colours', () => {
+    legend.update([row('EMA 21', ['1'])], { left: 0, top: 0 });
+    expect(host.querySelector('[data-instance="EMA 21"] .tcw-ind-legend-swatch')).toBeNull();
+  });
+});

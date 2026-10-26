@@ -135,8 +135,13 @@ function afterPaint(): Promise<void> {
   });
 }
 
-/** Distinct line colors for comparison overlays, cycled by add order. */
-const COMPARE_COLORS = ['#4c8dff', '#a57cff', '#1398a8', '#e25592', '#8a93a3', '#62c895'];
+/**
+ * Distinct line colours for comparison overlays, cycled by add order. Each
+ * keeps 3:1 on both the dark ink and the light paper, as the palette's marks
+ * do, and the first is none of the indicators' first colours (the blue of a
+ * first EMA, a drawing and an alert).
+ */
+const COMPARE_COLORS = ['#b552c9', '#1398a8', '#d4622b', '#e25592', '#6f7a8c', '#3e9a4f'];
 
 /** A day: bars this long or longer have no time of day to go to. */
 const DAY_MS = 86_400_000;

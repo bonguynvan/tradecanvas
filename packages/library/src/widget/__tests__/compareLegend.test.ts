@@ -7,13 +7,15 @@ const value = (patch: Partial<CompareValue>): CompareValue => ({
 });
 
 describe('a percent compare’s legend row', () => {
-  it('gives the symbol, its own price and its signed change in its colour', () => {
+  it('gives the symbol, marked in its line’s colour, its own price and its signed change in the text colour', () => {
+    // A line colour reads as a mark on either theme, not as text: the figures take the legend's own.
     expect(compareLegendRows([value({})])).toEqual([{
       instanceId: 'cmp_DOGEUSDT',
       kind: 'compare',
       label: 'DOGEUSDT',
+      swatch: '#f7931a',
       visible: true,
-      values: [{ text: '0.1002', color: null }, { text: '-7.69%', color: '#f7931a' }],
+      values: [{ text: '0.1002', color: null }, { text: '-7.69%', color: null }],
       pane: null,
     }]);
   });

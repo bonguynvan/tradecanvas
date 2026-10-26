@@ -10,6 +10,8 @@ export interface IndicatorLegendRow {
   kind?: 'compare';
   /** "EMA 50", "MACD 12 26 9", "ETHUSDT". */
   label: string;
+  /** The colour of the line the row stands for, marked before its name (a compare's, whose figures are in the text colour). */
+  swatch?: string;
   visible: boolean;
   /** On, but not drawn on the chart's interval (its settings keep it to others). */
   offInterval?: boolean;
@@ -97,6 +99,8 @@ interface RowEls {
   el: HTMLDivElement;
   /** A button that opens the indicator's settings; plain text on a compare's row. */
   name: HTMLElement;
+  /** The mark in the line's colour (`swatch`), on a compare's row. */
+  swatch: HTMLSpanElement | null;
   values: HTMLSpanElement;
   eye: HTMLButtonElement;
   settings: HTMLButtonElement | null;
@@ -312,9 +316,16 @@ export class WidgetIndicatorLegend {
     note.className = 'tcw-visually-hidden';
     note.id = `tcw-ind-note-${++noteSeq}`;
 
+    // A compare's line is told by its colour: a mark of it, not text, which no one colour makes legible on both themes.
+    const swatch = compare ? document.createElement('span') : null;
+    if (swatch) {
+      swatch.className = 'tcw-ind-legend-swatch';
+      swatch.setAttribute('aria-hidden', 'true');
+      el.append(swatch);
+    }
     el.append(name, values, actions, note);
     const els: RowEls = {
-      el, name, values, eye, settings, more, remove, note, visible: true, valuesKey: '', state: '', placeKey: '',
+      el, name, swatch, values, eye, settings, more, remove, note, visible: true, valuesKey: '', state: '', placeKey: '',
     };
     this.rows.set(instanceId, els);
     return els;
@@ -322,9 +333,10 @@ export class WidgetIndicatorLegend {
 
   private fill(els: RowEls, row: IndicatorLegendRow): void {
     const note = this.offNote(row);
-    const state = `${row.label}|${row.visible}|${note}`;
+    const state = `${row.label}|${row.visible}|${note}|${row.swatch ?? ''}`;
     if (state !== els.state) {
       els.state = state;
+      if (els.swatch) els.swatch.style.backgroundColor = row.swatch ?? '';
       els.visible = row.visible;
       els.name.textContent = row.label;
       if (els.settings) els.name.title = this.labels.settings;
