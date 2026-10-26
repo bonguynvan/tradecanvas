@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { SANS_FONT_FAMILY, type ChartOptions } from '@tradecanvas/commons';
+import { withResampling, type ResamplingAdapter } from '@tradecanvas/core';
 import { decodeWidgetState } from '../widgetShareState.js';
 
 /** Stand-in for the canvas-backed Chart: emits the menus' events on demand. */
@@ -330,6 +331,48 @@ describe('ChartWidget replay in finer steps', () => {
     expect(restarts[0]).toMatchObject({ startIndex: 9 });
     expect((restarts[0].steps as unknown[]).length).toBe(32);
     expect(fake.resumed).toBe(resumed + 1);
+  });
+
+  it('fetches the steps again once the feed’s wrapper builds the symbol’s days in its zone', async () => {
+    const HOUR = 3_600_000;
+    const hours = Array.from({ length: 72 }, (_, i) => ({ time: Date.UTC(2026, 9, 20) + i * HOUR, open: 1, high: 1, low: 1, close: 1, volume: 1 }));
+    let answers = false;
+    // A feed of 1h bars whose first answer about the symbol fails: its wrapper builds 4h steps on UTC's grid until a fresh load.
+    const feed = {
+      name: 'hours',
+      supportedTimeframes: ['1h'],
+      connect: () => {},
+      disconnect: () => {},
+      getConnectionState: () => 'connected',
+      fetchHistory: async () => hours,
+      resolveSymbol: async (symbol: string) => {
+        if (!answers) throw new Error('down');
+        return { symbol, timeZone: 'Asia/Ho_Chi_Minh' };
+      },
+      on: () => {},
+      off: () => {},
+      dispose: () => {},
+    };
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false, adapter: feed as never, timeframe: '1d' });
+    const fake = FakeChart.last;
+    fake.setData([20, 21, 22].map((d) => ({ time: Date.UTC(2026, 9, d), close: 1 })));
+    const stepHours = () => (fake.replays.at(-1)!.steps as { time: number }[]).map((b) => new Date(b.time).getUTCHours() % 4);
+    widget.replayFrom(0);
+    const select = host.querySelector<HTMLSelectElement>('.tcw-replay-step')!;
+    select.value = '4h';
+    select.dispatchEvent(new Event('change'));
+    await vi.waitFor(() => expect(fake.replays).toHaveLength(2));
+    expect(new Set(stepHours())).toEqual(new Set([0]));
+
+    // The chart loads the symbol afresh, as its stream does: its days are built in Ho Chi Minh City now.
+    answers = true;
+    const wrapper = withResampling(feed as never) as ResamplingAdapter;
+    wrapper.renewZone('AAA');
+    await wrapper.fetchHistory('AAA', '1d', 3);
+    widget.replayFrom(0);
+    await vi.waitFor(() => expect(fake.replays).toHaveLength(3));
+    // 4h steps from midnight there: 01:00, 05:00… UTC.
+    expect(new Set(stepHours())).toEqual(new Set([1]));
   });
 });
 

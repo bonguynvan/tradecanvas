@@ -74,7 +74,7 @@ import { WidgetTooltip } from './WidgetTooltip.js';
 import { WidgetIndicatorLegend, type IndicatorLegendPane, type IndicatorLegendRow, type PaneAction } from './WidgetIndicatorLegend.js';
 import { formatIndicatorValue, legendValues } from './legendValues.js';
 import { compareLegendRows } from './compareLegend.js';
-import { RANGE_PRESETS, SYMBOL_INDICATOR_IDS, indicatorCategory, rangePresetStart, servesTimeframe, sourceParam, withResampling, type RangePreset } from '@tradecanvas/core';
+import { RANGE_PRESETS, ResamplingAdapter, SYMBOL_INDICATOR_IDS, indicatorCategory, rangePresetStart, servesTimeframe, sourceParam, withResampling, type RangePreset } from '@tradecanvas/core';
 import { WidgetBracketBar } from './WidgetBracketBar.js';
 import { AlertNotifier } from './AlertNotifier.js';
 import { WidgetDepthLadder } from './WidgetDepthLadder.js';
@@ -4750,14 +4750,15 @@ export class ChartWidget {
   /** The finer bars for a replay in `tf` steps: from the feed, or built from the bars loaded. Null when there are none. */
   private async replayStepsFor(tf: TimeFrame): Promise<DataSeries | null> {
     const zone = this.chart.getExchangeTimeZone() ?? null;
-    const key = `${this.state.symbol}|${this.state.timeframe}|${tf}|${zone}`;
-    if (this.replayStepsCache?.key === key) return this.replayStepsCache.steps;
+    const { symbol, timeframe } = this.state;
+    const key = () => `${symbol}|${timeframe}|${tf}|${zone}|${this.builtStepsZone(symbol, tf)}`;
+    if (this.replayStepsCache?.key === key()) return this.replayStepsCache.steps;
     let steps: DataSeries | null = null;
     if (this.adapter) {
-      const ratio = Math.max(1, Math.round(timeframeToMs(this.state.timeframe) / timeframeToMs(tf)));
+      const ratio = Math.max(1, Math.round(timeframeToMs(timeframe) / timeframeToMs(tf)));
       const limit = Math.min(MAX_REPLAY_STEPS, Math.max(this.chart.getData().length, 100) * ratio);
       try {
-        steps = await withResampling(this.adapter).fetchHistory(this.state.symbol, tf, limit);
+        steps = await withResampling(this.adapter).fetchHistory(symbol, tf, limit);
       } catch {
         steps = null;
       }
@@ -4765,8 +4766,22 @@ export class ChartWidget {
       steps = timeframeToMs(tf) === this.baseTimeframeMs ? this.baseSeries : resampleOHLCV(this.baseSeries, tf, this.resampleOptions(zone));
     }
     if (!steps || steps.length === 0) return null;
-    this.replayStepsCache = { key, steps };
+    // Kept under the zone the fetch settled: a first answer about the symbol comes during it.
+    this.replayStepsCache = { key: key(), steps };
     return steps;
+  }
+
+  /**
+   * The zone the feed's wrapper builds `tf` in for `symbol` ('' when the feed
+   * serves it): after no answer about the symbol it builds on UTC's days
+   * until the chart loads the symbol afresh, so steps fetched before then
+   * are stale after it.
+   */
+  private builtStepsZone(symbol: string, tf: TimeFrame): string {
+    const feed = this.adapter ? withResampling(this.adapter) : null;
+    if (!(feed instanceof ResamplingAdapter)) return '';
+    const bucket = feed.bucketFor(symbol, tf);
+    return bucket ? String(bucket.timeZone ?? 'UTC') : '';
   }
 
   /** Bars available to replay: the whole series, not the slice on screen. */
