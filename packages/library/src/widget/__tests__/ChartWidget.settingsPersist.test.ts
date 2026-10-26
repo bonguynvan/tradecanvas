@@ -359,6 +359,24 @@ describe('ChartWidget persistSettings', () => {
     expect(widget.getSettings()).toMatchObject({ barCountdown: false, scaleMode: 'regular' });
   });
 
+  it('a chart template turns on nothing the host’s features switched off', () => {
+    localStorage.setItem('tcw:chart-templates', JSON.stringify([{
+      name: 'Busy', style: {},
+      settings: { legendVisible: true, volumeVisible: true, barCountdown: true, scaleMode: 'logarithmic', gridVisible: false },
+    }]));
+    make({ chartOptions: { features: { legend: false, volume: false, barCountdown: false, logScale: false } } });
+    openSettings();
+    footer('template');
+    menuItem('Busy');
+    footer('ok');
+    expect(calls('setGridVisible')).toEqual([false]);
+    expect(calls('setLegend').filter((c) => Object.prototype.hasOwnProperty.call(c, 'visible'))).toEqual([]);
+    expect(calls('setVolumeVisible')).toEqual([]);
+    expect(calls('setBarCountdownVisible')).toEqual([]);
+    expect(calls('setScaleMode')).toEqual([]);
+    expect(widget.getSettings()).toMatchObject({ legendVisible: false, volumeVisible: false, barCountdown: false, scaleMode: 'regular' });
+  });
+
   it('a kept, shared or set legend or volume stays off where the host switched its feature off', async () => {
     localStorage.setItem(KEY, JSON.stringify({ v: 1, settings: { legendVisible: true, volumeVisible: true } }));
     make({ persistSettings: true, chartOptions: { features: { legend: false, volume: false } } });

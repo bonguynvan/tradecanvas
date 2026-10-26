@@ -4087,8 +4087,10 @@ export class ChartWidget {
   private applyChartTemplate(name: string): void {
     const template = this.chartTemplates.get(name);
     if (!template) return;
-    this.touchSettings(Object.keys(template.settings) as (keyof ChartSettingsState)[], SETTINGS_LOOK_KEYS);
-    this.applySettings(template.settings);
+    // Saved where the features were on, or by another app: it turns on nothing they switched off here.
+    const settings = this.allowedSettings(template.settings);
+    this.touchSettings(Object.keys(settings) as (keyof ChartSettingsState)[], SETTINGS_LOOK_KEYS);
+    this.applySettings(settings);
     this.chart.resetOverrides([...SETTINGS_LOOK_KEYS], { layer: 'user' });
     this.chart.applyOverrides(template.style, { layer: 'user' });
     this.settings?.refresh(this.shownSettings());

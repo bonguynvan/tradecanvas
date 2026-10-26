@@ -693,7 +693,7 @@ stop()`}</code></pre>
     them, so a switch the sender's app turned off isn't sent as a change.</li>
   <li><strong>Switched-off features</strong>: where your <code>features</code>
     turn off the legend, the volume, the bar countdown or the log scale, nothing
-    kept, shared, opened or set turns them on.</li>
+    kept, shared, opened, set or applied from a chart template turns them on.</li>
   <li><strong>Per-symbol layouts</strong> (<code>persistLayouts</code>) and
     <code>chart.saveState()</code> hold a chart type's own settings, which are
     part of the chart's state, and none of the others.</li>
