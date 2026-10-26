@@ -3883,13 +3883,12 @@ export class ChartWidget {
 
   /**
    * Each percent compare's bars before its first, as many as the chart has
-   * before it. A round of full fetches meanwhile (a new interval) drops them.
+   * before it; from a feed that can't page back, its bars again, as deep as
+   * the chart's. A round of full fetches meanwhile (a new interval) drops them.
    */
   private async fetchOlderCompares(): Promise<void> {
     if (!this.adapter || this.compares.length === 0) return;
     const adapter = withResampling(this.adapter);
-    // A feed that can't page back: each one again, as deep as the chart's.
-    if (!adapter.fetchHistoryBefore) return this.refetchPercentCompares();
     const seq = this.compareFetchSeq;
     const timeframe = this.state.timeframe;
     for (const c of this.compares) {
@@ -3904,11 +3903,30 @@ export class ChartWidget {
       const missing = barsBefore(this.chart.getData(), first);
       if (missing === 0) continue;
       try {
-        const older = await adapter.fetchHistoryBefore(c.symbol, timeframe, first, missing);
-        if (this.destroyed || seq !== this.compareFetchSeq) return;
-        this.prependCompareBars(c.id, older, timeframe);
+        if (adapter.fetchHistoryBefore) {
+          const older = await adapter.fetchHistoryBefore(c.symbol, timeframe, first, missing);
+          if (this.destroyed || seq !== this.compareFetchSeq) return;
+          this.prependCompareBars(c.id, older, timeframe);
+        } else {
+          const depth = this.compareDepth();
+          const bars = await adapter.fetchHistory(c.symbol, timeframe, depth);
+          if (this.destroyed || seq !== this.compareFetchSeq) return;
+          this.deepenCompareBars(c.id, bars, depth, first, timeframe);
+        }
       } catch { /* the line keeps the bars it has; the next page asks again */ }
     }
+  }
+
+  /**
+   * A percent compare's bars fetched again `depth` deep, from a feed that
+   * can't page back. Fewer than asked, or none older than `first`: the
+   * feed's history starts there, and no page asks again.
+   */
+  private deepenCompareBars(id: string, bars: OHLCBar[], depth: number, first: number, timeframe: TimeFrame): void {
+    if (!this.isPercentCompare(id)) return;
+    this.setCompareBars(id, bars, timeframe);
+    const atStart = bars.length < depth || !(bars[0].time < first);
+    if (atStart) this.compares = this.compares.map((x) => (x.id === id ? { ...x, atStart: true } : x));
   }
 
   /** A percent compare's older bars in front of its own; none older: the feed's history starts there. */

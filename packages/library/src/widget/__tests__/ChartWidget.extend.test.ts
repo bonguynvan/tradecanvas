@@ -938,10 +938,10 @@ describe('ChartWidget percent compares and the price scale', () => {
   it('fetches the percent comparisons again, as deep, once older bars load, from a feed that can’t page back', async () => {
     const fake = make({ timeframe: '1h' });
     await widget.addCompareSymbol('BBB');
-    fake.barsLoaded = Array.from({ length: 1300 }, (_, i) => ({ time: i * HOUR, close: 1 }));
+    fake.barsLoaded = chartWithOlder(800);
     fake.emit('historyLoad', { state: 'loaded', count: 800 });
     await new Promise((r) => setTimeout(r, 0));
-    expect(adapter.fetchHistory).toHaveBeenLastCalledWith('BBB', '1h', 1300);
+    expect(adapter.fetchHistory).toHaveBeenLastCalledWith('BBB', '1h', 805);
     expect(fake.compareData).toEqual([['cmp_BBB', bars]]);
   });
 
@@ -950,6 +950,35 @@ describe('ChartWidget percent compares and the price scale', () => {
     Array.from({ length: count }, (_, i) => ({ time: end - (count - i) * HOUR, open: 1, high: 1, low: 1, close: 1, volume: 1 }));
   /** The chart's bars: `older` hours before the compare's first, then the hours it has. */
   const chartWithOlder = (older: number) => [...hoursBefore(0, older), ...bars];
+
+  it('asks a feed that can’t page back no more for a comparison it gave nothing older', async () => {
+    const fake = make({ timeframe: '1h' });
+    await widget.addCompareSymbol('BBB');
+    for (let page = 1; page <= 3; page++) {
+      fake.barsLoaded = chartWithOlder(500 * page);
+      fake.emit('historyLoad', { state: 'loaded', count: 500 });
+      await new Promise((r) => setTimeout(r, 0));
+    }
+    // Added, then the first page as deep as the chart: five bars, its whole history. No page after asks.
+    expect(adapter.fetchHistory.mock.calls.map((c) => c[2])).toEqual([500, 505]);
+  });
+
+  it('asks a feed that can’t page back again on the next page while it has older bars to give', async () => {
+    const fake = make({ timeframe: '1h' });
+    adapter.fetchHistory.mockImplementation(async (_symbol: string, _tf: string, limit: number) => hoursBefore(5 * HOUR, limit));
+    await widget.addCompareSymbol('BBB');
+    fake.barsLoaded = chartWithOlder(500);
+    fake.emit('historyLoad', { state: 'loaded', count: 500 });
+    await new Promise((r) => setTimeout(r, 0));
+    fake.barsLoaded = chartWithOlder(1000);
+    fake.emit('historyLoad', { state: 'loaded', count: 500 });
+    await new Promise((r) => setTimeout(r, 0));
+    expect(adapter.fetchHistory.mock.calls.map((c) => c[2])).toEqual([500, 505, 1005]);
+    // The chart's first bar reached: the next page with none older asks nothing.
+    fake.emit('historyLoad', { state: 'loaded', count: 0 });
+    await new Promise((r) => setTimeout(r, 0));
+    expect(adapter.fetchHistory).toHaveBeenCalledTimes(3);
+  });
 
   it('fetches only the stretch older bars added to each percent comparison', async () => {
     const fake = make({ timeframe: '1h' });
