@@ -54,6 +54,12 @@ const light = { ...dark, ...tokens(LIGHT) };
 const darkTints = tints(DARK);
 const lightTints = { ...darkTints, ...tints(LIGHT) };
 
+/**
+ * 4.5:1 with room to spare, for the small text on the dialogs' rows: a text at 4.50 here was measured
+ * at 4.49 as drawn (light theme, the symbol search's selected row), where a tint's blend rounds.
+ */
+const ROW_CONTRAST = 4.55;
+
 describe('widget colour tokens', () => {
   it.each([
     ['dark', dark],
@@ -91,7 +97,7 @@ describe('widget colour tokens', () => {
   ])('%s: muted text reads on the row the keys are on, in a dialog (a venue, a kind in the symbol search)', (_name, t, tint) => {
     const hover = tint['--tcw-hover-bg'];
     const selected = mix(hover.hex, t['--tcw-bg-elevated'], hover.alpha);
-    expect(contrast(t['--tcw-text-muted'], selected)).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(t['--tcw-text-muted'], selected)).toBeGreaterThanOrEqual(ROW_CONTRAST);
   });
 
   it.each([
@@ -107,7 +113,7 @@ describe('widget colour tokens', () => {
       expect(t[name], name).toMatch(/^#[0-9a-f]{6}$/i);
       // The badge is the colour at 16% over the row, its letter the colour itself.
       for (const [row, ground] of [['a row', surface], ['the selected row', selected]]) {
-        expect(contrast(t[name], mix(t[name], ground, 0.16)), `${name} on ${row}`).toBeGreaterThanOrEqual(4.5);
+        expect(contrast(t[name], mix(t[name], ground, 0.16)), `${name} on ${row}`).toBeGreaterThanOrEqual(ROW_CONTRAST);
       }
     }
   });
@@ -176,10 +182,14 @@ function oklab(hex: string): [number, number, number] {
   ];
 }
 
-/** `fg` at `alpha` over `bg`, as `color-mix(in srgb, fg alpha, transparent)` is drawn on it. */
+/**
+ * `fg` at `alpha` over `bg`, as `color-mix(in srgb, fg alpha, transparent)` or an `rgba()` is drawn on
+ * it: the browser keeps an alpha in 8 bits (0.05 is 13/255, a shade more), and each channel whole.
+ */
 function mix(fg: string, bg: string, alpha: number): string {
   const channel = (hex: string, i: number) => parseInt(hex.slice(i, i + 2), 16);
-  return `#${[1, 3, 5].map((i) => Math.round(channel(fg, i) * alpha + channel(bg, i) * (1 - alpha)).toString(16).padStart(2, '0')).join('')}`;
+  const a = Math.round(alpha * 255) / 255;
+  return `#${[1, 3, 5].map((i) => Math.round(channel(fg, i) * a + channel(bg, i) * (1 - a)).toString(16).padStart(2, '0')).join('')}`;
 }
 
 describe('loading overlay styles', () => {
