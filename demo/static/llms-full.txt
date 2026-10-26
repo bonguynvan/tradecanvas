@@ -911,8 +911,10 @@ widget.setSymbols(more);
   Korean; a warrant takes the futures' colour, a fund or an ETF the index's, a
   bond the forex's; another kind gets one by its words. Set
   `--tcw-kind-1` … `--tcw-kind-5` to recolour them.
-- The kind and exchange filters narrow the rows the feed returned (at most
-  50); they do not ask the feed again.
+- The kind and exchange filters narrow the rows the search returned (an
+  adapter's search is asked for 50; a `searchSymbols` of yours gives what it
+  gives); they do not ask the feed again. The list shows the best 200 rows,
+  with a line under them saying how many more typing would narrow.
 
 ## The widget in a look of your own
 

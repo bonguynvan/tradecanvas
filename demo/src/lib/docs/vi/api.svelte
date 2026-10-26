@@ -512,9 +512,10 @@ new ChartWidget(host, { features: { 'dock.dataWindow': false } })  // no button 
   (<code>searchSymbols</code>, hoặc của adapter). Mỗi dòng mở đầu bằng một huy hiệu (logo của mã, nếu không có thì
   chữ cái đầu của mã trong màu của loại mã), rồi đến mã, tên, loại và sàn xếp thành cột, mã của biểu đồ được đánh
   dấu. Các thẻ lọc danh sách theo một loại (cổ phiếu, tiền mã hoá) và đứng yên khi bạn gõ; khi các dòng đến từ hai
-  sàn trở lên, một danh sách bên cạnh lọc theo một sàn. Cả hai chỉ lọc những dòng đang có: chức năng tìm của nguồn
-  dữ liệu trả về tối đa 50 kết quả, nên chọn HNX sau khi gõ <code>V</code> chỉ hiện các mã HNX trong 50 kết quả đó,
-  không phải mọi mã HNX có chữ V. Khi không có chức năng tìm, chữ gõ vào sẽ tìm mã của bạn theo mã và theo tên, có
+  sàn trở lên, một danh sách bên cạnh lọc theo một sàn. Cả hai chỉ lọc những dòng đang có, không tìm lại: một lần tìm
+  trả về một trang kết quả (chức năng tìm của adapter được yêu cầu 50 kết quả), nên chọn HNX sau khi gõ <code>V</code>
+  chỉ hiện các mã HNX trong số đó, không phải mọi mã HNX có chữ V. Danh sách hiện 200 dòng khớp nhất, và một dòng bên
+  dưới cho biết còn bao nhiêu mã nữa để gõ thêm mà thu hẹp. Khi không có chức năng tìm, chữ gõ vào sẽ tìm mã của bạn theo mã và theo tên, có
   dấu hay không dấu (<code>ngan hang</code> tìm ra “Ngân hàng”).
   <code>{`features: { symbolTyping: false }`}</code> để các chữ cái gõ trên biểu đồ không mở hộp thoại này.
 </p>

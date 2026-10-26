@@ -509,8 +509,9 @@ new ChartWidget(host, { features: { 'dock.dataWindow': false } })  // no button 
   with a badge (the symbol's logo, else the first letter of its ticker in its kind's colour), then the symbol, its
   name, its kind and its exchange in columns, the chart's own marked. Tabs keep the list to one kind (stocks, crypto)
   and stay put as you type; when the rows come from two or more exchanges, a list beside them keeps it to one. Both
-  narrow the rows on hand: a feed's search gives at most 50, so HNX picked after typing <code>V</code> shows the HNX
-  ones among those 50, not every HNX symbol with a V. With no search, typing finds your symbols by ticker and by
+  narrow the rows on hand and do not search again: a search returns a page of results (the adapter's is asked for
+  50), so HNX picked after typing <code>V</code> shows the HNX ones among them, not every HNX symbol with a V. The
+  list shows the best 200 rows, and a line under it says how many more typing would narrow. With no search, typing finds your symbols by ticker and by
   name, with or without Vietnamese marks (<code>ngan hang</code> finds “Ngân hàng”).
   <code>{`features: { symbolTyping: false }`}</code> leaves letters typed on the chart alone.
 </p>

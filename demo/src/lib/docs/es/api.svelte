@@ -520,9 +520,10 @@ new ChartWidget(host, { features: { 'dock.dataWindow': false } })  // no button 
   escribir. Cada fila empieza con una insignia (el logo del símbolo o, si no lo hay, la primera letra de su ticker en el
   color de su tipo), y siguen el símbolo, su nombre, su tipo y su bolsa en columnas, con el del gráfico marcado. Las
   pestañas reducen la lista a un tipo (acciones, cripto) y no se mueven mientras escribes; cuando las filas vienen de dos
-  bolsas o más, una lista al lado la reduce a una. Ambas filtran las filas que ya hay: la búsqueda de un feed da como
-  mucho 50, así que HNX elegida tras escribir <code>V</code> muestra los de HNX entre esos 50, no todos los símbolos de
-  HNX con una V. Sin búsqueda, al escribir se encuentran tus símbolos por ticker y por nombre, con o sin los diacríticos
+  bolsas o más, una lista al lado la reduce a una. Ambas filtran las filas que ya hay y no buscan de nuevo: una búsqueda
+  devuelve una página de resultados (a la del adaptador se le piden 50), así que HNX elegida tras escribir <code>V</code>
+  muestra los de HNX entre ellos, no todos los símbolos de HNX con una V. La lista muestra las 200 mejores filas, y una
+  línea debajo dice cuántas más quedan por acotar escribiendo. Sin búsqueda, al escribir se encuentran tus símbolos por ticker y por nombre, con o sin los diacríticos
   del vietnamita (<code>ngan hang</code> encuentra «Ngân hàng»). Con <code>{`features: { symbolTyping: false }`}</code>,
   las letras escritas sobre el gráfico no abren la búsqueda.
 </p>
