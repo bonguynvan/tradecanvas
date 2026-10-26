@@ -76,21 +76,27 @@ export class TickAggregator extends Emitter<AggregatorEvents> {
   /**
    * When the newest bar a stream's history holds starts (its last bar), or
    * `-Infinity` for none: a bar older than it is a correction or left out,
-   * as one older than the bars and trades since.
+   * as one older than the bars and trades since. It never moves the newest
+   * back: after a reconnect whose history ends on an earlier bar than the
+   * trades since, those still count. `reset()` starts again.
    */
   seed(time: number): void {
-    this.newest = Number.isFinite(time) ? normalizeBarTime(time) : -Infinity;
+    if (Number.isFinite(time)) this.newest = Math.max(this.newest, normalizeBarTime(time));
   }
 
   /**
    * The history's last bar, still forming: the next trades go on building
    * it, its open, high, low and volume kept, rather than starting it again
-   * from the first one. A bar whose prices aren't numbers is left out.
+   * from the first one. A bar older than the newest is left out, so the bar
+   * the trades were building when a reconnect's history ends earlier stays;
+   * the same bar again replaces it, the history's having the trades missed
+   * while away. A bar whose prices aren't numbers is left out.
    */
   resume(bar: OHLCBar): void {
     if (!pricesAreNumbers(bar)) return;
     const time = normalizeBarTime(bar.time);
-    this.newest = Math.max(this.newest, time);
+    if (time < this.newest) return;
+    this.newest = time;
     this.currentBar = {
       time, open: bar.open, high: bar.high, low: bar.low, close: bar.close,
       volume: bar.volume ?? 0, closed: false, tickCount: 0,

@@ -495,7 +495,7 @@ export class Chart {
       if (action.type === 'custom') action.custom?.[direction]();
       else this.applyIndicatorStep(action, direction);
     });
-    this.drawingManager.setDataGetter(() => this.series.bars());
+    this.drawingManager.setDataGetter(() => this.series.bars(), () => this.series.revision());
     this.drawingManager.setDisplayDataGetter(() => this.getDisplayData());
     // Magnet mode
     if (options.crosshair?.mode === 'magnet' && this.features.drawingMagnet) {

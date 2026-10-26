@@ -58,7 +58,10 @@ await chart.connect({ adapter: feed, symbol: 'BTCUSDT', timeframe: '1m' });
 A frame for a bar already past, with `closed: true` (the venue's final that
 came after the next bar's first frame, or a revision), corrects that bar: the
 chart replaces the bar with its time and computes the indicators again from
-it, the view kept. An older frame still forming is left out.
+it, the view kept. An older frame still forming is left out. Neither is a
+live price: the adapter makes a tick from a frame's close only for the newest
+bar, so the price line, the alerts and the orders stay with the market. A
+`DataAdapter` of your own that makes ticks from its bars should do the same.
 
 A feed that learns the symbol's details only after connecting (its decimals,
 price step or hours, say on its first message) sends a `symbolInfo` event with

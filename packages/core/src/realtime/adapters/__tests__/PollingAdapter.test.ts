@@ -89,6 +89,27 @@ describe('PollingAdapter', () => {
     expect(barEvents).toHaveLength(0);
   });
 
+  it('leaves out an answer older than one it already sent: no bar, no price', async () => {
+    const answers: ((bars: OHLCBar[]) => void)[] = [];
+    const adapter = makeAdapter(() => new Promise((resolve) => answers.push(resolve)));
+    const prices: number[] = [];
+    adapter.on<{ price: number }>('tick', (e) => prices.push(e.data.price));
+    adapter.connect(CONFIG); // the first poll asks
+    const second = adapter.poll(); // a slow answer overtaken by the next
+    answers[1]([bar(120, 101), bar(180, 102)]);
+    await second;
+    answers[0]([bar(60, 100), bar(120, 101)]);
+    await flush();
+    expect(prices).toEqual([102]);
+    expect(barEvents).toEqual([{ bar: bar(180, 102), closed: false }]);
+
+    const third = adapter.poll();
+    answers[2]([bar(180, 102.5), bar(240, 103)]);
+    await third;
+    expect(prices).toEqual([102, 103]);
+    expect(barEvents.filter((e) => e.closed)).toEqual([{ bar: bar(180, 102.5), closed: true }]);
+  });
+
   it('stops polling and reports disconnected on disconnect', async () => {
     const cleared = vi.fn();
     const adapter = new PollingAdapter({

@@ -98,6 +98,47 @@ describe('WebSocketAdapter', () => {
     expect(tickEvents).toEqual([tick]);
   });
 
+  describe('a frame of a bar older than the newest it sent', () => {
+    const MINUTE = 60_000;
+    const T = Date.UTC(2026, 0, 5);
+    const frame = (slot: number, close: number, closed = false) => ({
+      bar: { time: T + slot * MINUTE, open: close, high: close, low: close, close, volume: 3 },
+      closed,
+    });
+
+    function feed() {
+      const { adapter, socket } = makeAdapter((raw) => raw as WsParseResult);
+      adapter.on<{ bar: OHLCBar; closed: boolean }>('bar', (e) => barEvents.push(e.data));
+      adapter.on('tick', (e) => tickEvents.push(e.data));
+      adapter.connect(CONFIG);
+      socket.fireOpen();
+      return { adapter, socket, send: (f: ReturnType<typeof frame>) => socket.fireMessage(f) };
+    }
+    const prices = () => (tickEvents as { price: number }[]).map((t) => t.price);
+
+    it('is sent as a bar but makes no tick: a late final or a stale frame is no live price', () => {
+      const { send } = feed();
+      send(frame(10, 101));
+      send(frame(9, 94, true)); // the venue's final of the bar before
+      send(frame(7, 90)); // a stale frame, late
+      send(frame(10, 102));
+      send(frame(10, 103, true));
+      send(frame(11, 104));
+      expect(barEvents).toHaveLength(6);
+      expect(prices()).toEqual([101, 102, 103, 104]);
+    });
+
+    it('is counted again from a new connection', () => {
+      const { adapter, send, socket } = feed();
+      send(frame(10, 101));
+      adapter.disconnect();
+      adapter.connect(CONFIG);
+      socket.fireOpen();
+      send(frame(9, 99)); // another stream's newest, or the same after a gap
+      expect(prices()).toEqual([101, 99]);
+    });
+  });
+
   it('ignores messages the parser rejects', () => {
     const { adapter, socket } = makeAdapter(() => null);
     adapter.on('bar', (e) => barEvents.push(e.data as { bar: OHLCBar; closed: boolean }));

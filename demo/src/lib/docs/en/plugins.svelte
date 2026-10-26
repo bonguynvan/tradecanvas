@@ -105,7 +105,10 @@ chart.setDrawingTool('targetLine')`}</code></pre>
   <code>maxAnchors</code>) and whether the dialog offers a fill
   (<code>fill</code>) or text (<code>text</code>). A tool can move handles that
   are not anchors with <code>moveHandle()</code>, and receives the chart's bars
-  through <code>setDataGetter()</code> when it draws from them.
+  through <code>setDataGetter(getter, revision)</code> when it draws from them.
+  <code>revision()</code> moves when a bar was corrected in the same array
+  (<code>updateBar</code>): a tool that keeps what it computed from the bars
+  computes it again then.
 </p>
 
 <h2>Custom chart type</h2>

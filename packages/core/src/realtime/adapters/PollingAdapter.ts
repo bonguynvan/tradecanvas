@@ -125,6 +125,9 @@ export class PollingAdapter implements DataAdapter {
     if (bars.length === 0) return;
 
     const latest = bars[bars.length - 1];
+    // An answer older than one already sent (a slow request overtaken by the
+    // next, a cached page): its bars are past, and its close no live price.
+    if (latest.time < this.lastBarTime) return;
 
     // Bucket rolled over: the previously-forming bar is now closed. Emit it
     // with its final values (present in this response when pollLimit ≥ 2).

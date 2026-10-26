@@ -84,6 +84,8 @@ export class DrawingManager {
   private undoRedo: UndoRedoManager | null = null;
   private magnetMode: MagnetMode = 'none';
   private dataGetter: (() => OHLCBar[]) | null = null;
+  /** Moves when a bar of the same array was replaced: see `setDataGetter`. */
+  private dataRevision: () => number = () => 0;
   private displayDataGetter: (() => OHLCBar[]) | null = null;
   /** Keep the tool after a drawing is finished, to draw several in a row. */
   private stayInDrawingMode = false;
@@ -100,7 +102,7 @@ export class DrawingManager {
 
   register(plugin: DrawingPlugin): void {
     this.registry.set(plugin.descriptor.type, plugin);
-    if (this.dataGetter) plugin.setDataGetter?.(this.dataGetter);
+    if (this.dataGetter) plugin.setDataGetter?.(this.dataGetter, this.dataRevision);
   }
 
   setEventCallback(cb: DrawingEventCallback): void {
@@ -123,10 +125,15 @@ export class DrawingManager {
     return this.magnetMode;
   }
 
-  /** The chart's bars, for legacy anchors and the tools drawn from bars. */
-  setDataGetter(getter: () => OHLCBar[]): void {
+  /**
+   * The chart's bars, for legacy anchors and the tools drawn from bars, and
+   * their revision, which moves when one was replaced in the same array (a
+   * correction): what a tool computed from them is stale then.
+   */
+  setDataGetter(getter: () => OHLCBar[], revision: () => number = () => 0): void {
     this.dataGetter = getter;
-    for (const plugin of this.registry.values()) plugin.setDataGetter?.(getter);
+    this.dataRevision = revision;
+    for (const plugin of this.registry.values()) plugin.setDataGetter?.(getter, revision);
   }
 
   /** Set a separate getter for display data (e.g. Heikin Ashi transformed). Used by magnet snap. */

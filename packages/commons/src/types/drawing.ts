@@ -141,9 +141,12 @@ export interface DrawingPlugin {
   priceAt?(state: DrawingState, time: number, viewport?: ViewportState): number[] | null;
   /**
    * For a tool drawn from the chart's bars (an anchored VWAP, a volume
-   * profile): the chart hands it a getter for them when it is registered.
+   * profile): the chart hands it a getter for them when it is registered,
+   * and `revision`, whose number moves when a bar was replaced in the same
+   * array (`updateBar`): a tool that keeps what it computed from the bars,
+   * by the array and its length, computes it again then.
    */
-  setDataGetter?(getter: () => readonly OHLCBar[]): void;
+  setDataGetter?(getter: () => readonly OHLCBar[], revision?: () => number): void;
 }
 
 export const DEFAULT_DRAWING_STYLE: DrawingStyle = {

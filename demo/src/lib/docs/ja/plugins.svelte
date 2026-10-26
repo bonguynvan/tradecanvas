@@ -105,7 +105,9 @@ chart.setDrawingTool('targetLine')`}</code></pre>
   <code>maxAnchors</code> も指定できます）と、ダイアログで塗りつぶし
   （<code>fill</code>）やテキスト（<code>text</code>）を設定できるかどうかも記述できます。
   ツールは <code>moveHandle()</code> でアンカーではないハンドルを動かせ、バーをもとに描画する場合は
-  <code>setDataGetter()</code> でチャートのバーを受け取ります。
+  <code>setDataGetter(getter, revision)</code> でチャートのバーを受け取ります。
+  同じ配列の中でバーが修正されると（<code>updateBar</code>）<code>revision()</code> が変わるので、
+  バーから計算した結果を保持しているツールはそのとき計算し直します。
 </p>
 
 <h2>カスタムチャートタイプ</h2>

@@ -121,6 +121,20 @@ describe('Chart.updateBar', () => {
     }
   });
 
+  it('draws an anchored VWAP from the corrected bar', () => {
+    const live = make();
+    const bars = slots(0, 60);
+    live.chart.setData(bars);
+    live.chart.addDrawing({ type: 'anchoredVWAP', anchors: [{ time: bars[10].time, price: 10 }] });
+    const tool = inside(live.chart).drawingManager.registry.get('anchoredVWAP');
+    const shown = () => inside(live.chart).series.bars();
+    const last = () => tool.computeVWAP(shown(), 10).vwap.at(-1);
+    const before = last();
+    expect(live.chart.updateBar({ ...bars[30], close: 20, high: 20.5, volume: 100_000 })).toBe(true);
+    expect(last()).not.toBe(before);
+    expect(last()).toBe(tool.computeVWAPUncached(shown(), 10).vwap.at(-1));
+  });
+
   it('fires no alert and moves no order price; the price line shows the last bar’s corrected close', () => {
     const { chart } = make();
     chart.setData(slots(0, 40).map((b) => ({ ...b, open: 10, high: 10.5, low: 9.5, close: 10 })));

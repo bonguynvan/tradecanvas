@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import type { DataAdapter, DataAdapterConfig, DataAdapterListener, OHLCBar, TimeFrame } from '@tradecanvas/commons';
 import { StreamManager } from '../StreamManager.js';
+import { WebSocketAdapter, type WebSocketLike, type WsParseResult } from '../adapters/WebSocketAdapter.js';
 
 interface PendingFetch {
   symbol: string;
@@ -364,7 +365,7 @@ describe('StreamManager — bars older than the newest', () => {
     await done;
     const fire = (type: string, data: unknown) => { for (const l of listeners.get(type) ?? []) l({ type: type as never, data, timestamp: 0 }); };
     return {
-      sm, seen, pending,
+      sm, seen, pending, fire,
       bar: (b: OHLCBar, closed: boolean) => fire('bar', { bar: { ...b }, closed }),
       trade: (time: number, price: number, volume = 1) => fire('tick', { time, price, volume }),
     };
@@ -457,6 +458,69 @@ describe('StreamManager — bars older than the newest', () => {
       expect(feed.seen.barClose.map((b) => b.time)).toEqual([at(39).time]);
       expect(feed.seen.barUpdate.at(-1)).toMatchObject({ time: t40, open: 101, high: 104, volume: 11 });
       feed.sm.dispose();
+    });
+
+    /** The stream of `feed` reconnected (the page came back), its history then `bars`. */
+    async function reconnect(feed: Awaited<ReturnType<typeof live>>, bars: OHLCBar[]) {
+      feed.fire('connectionChange', 'connected');
+      feed.sm.wake('online');
+      feed.pending[1].resolve(bars.map((b) => ({ ...b })));
+      await new Promise((r) => setTimeout(r, 0));
+    }
+
+    it('keeps the trades of the forming bar across a reconnect whose history still ends on the bar before', async () => {
+      const feed = await live(history(40), true);
+      const t40 = at(40).time;
+      feed.trade(t40 + 1000, 101, 5);
+      feed.trade(t40 + 2000, 110, 5);
+      feed.trade(t40 + 3000, 95, 5);
+      await reconnect(feed, history(40));
+      feed.trade(t40 + 4000, 102, 1);
+      expect(feed.seen.barUpdate.at(-1)).toMatchObject({ time: t40, open: 101, high: 110, low: 95, close: 102, volume: 16 });
+      // A late trade of bar 39 after it is still left out.
+      feed.trade(t40 - 1000, 99, 1);
+      expect(feed.seen.barClose.map((b) => b.time)).toEqual([at(39).time]);
+      feed.sm.dispose();
+    });
+
+    it("takes a reconnect's history that holds the forming bar: it has the trades missed while away", async () => {
+      const feed = await live(history(40), true);
+      const t40 = at(40).time;
+      feed.trade(t40 + 1000, 101, 5);
+      const bars = history(41);
+      bars[40] = { time: t40, open: 101, high: 112, low: 94, close: 108, volume: 30 };
+      await reconnect(feed, bars);
+      feed.trade(t40 + 600_000, 107, 1);
+      expect(feed.seen.barUpdate.at(-1)).toMatchObject({ time: t40, open: 101, high: 112, low: 94, close: 107, volume: 31 });
+      feed.sm.dispose();
+    });
+
+    it("a bar feed's correction folds nothing into the forming bar (WebSocketAdapter)", async () => {
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.setSystemTime(at(40).time + 1_800_000); // halfway through bar 40
+      let socket: WebSocketLike | null = null;
+      const adapter = new WebSocketAdapter({
+        name: 'ws',
+        wsUrl: () => 'wss://x',
+        fetchHistory: async () => history(40),
+        parseMessage: (raw) => raw as WsParseResult,
+        socketFactory: () => {
+          socket = { onopen: null, onmessage: null, onerror: null, onclose: null, send: () => {}, close: () => {} };
+          return socket;
+        },
+      });
+      const sm = new StreamManager();
+      const updates: OHLCBar[] = [];
+      sm.on('barUpdate', (b) => updates.push({ ...b }));
+      await sm.connect({ adapter, symbol: 'X', timeframe: '1h', aggregateTicks: true });
+      const send = (b: OHLCBar, closed: boolean) => socket!.onmessage?.({ data: { bar: b, closed } });
+      send(at(40, 101, 3), false);
+      const forming = updates.at(-1);
+      send(at(39, 94, 10), true); // the venue's final of bar 39
+      send(at(37, 90, 10), false); // a stale frame
+      expect(updates.at(-1)).toEqual(forming);
+      expect(sm.getLastPrice()).toBe(101);
+      sm.dispose();
     });
   });
 });

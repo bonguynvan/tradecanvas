@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { MARKET_HOSE, type OHLCBar } from '@tradecanvas/commons';
+import { BinanceAdapter, WebSocketAdapter, type WebSocketLike, type WsParseResult } from '@tradecanvas/core';
 import { Chart } from '../Chart.js';
 import { installChartStubs, sizedHost } from './chartTestEnv.js';
 
@@ -313,6 +314,78 @@ describe('a stream, what it leaves out and when it tells', () => {
     expect(fired).toEqual([]);
     expect(chart.getData()).toHaveLength(60);
   });
+});
+
+/**
+ * The built-in feeds send a tick made from each bar frame's close: one from
+ * a frame of a bar already past would move the price, the orders and the
+ * alerts as a live price would.
+ */
+describe('a built-in feed, a bar already past', () => {
+  type Line = { currentPriceLine: { getPrice(): number | null } };
+  const line = () => (chart as unknown as Line).currentPriceLine.getPrice();
+  type Send = (b: OHLCBar, closed: boolean) => void;
+
+  async function webSocketFeed(): Promise<Send> {
+    let socket: WebSocketLike | null = null;
+    const adapter = new WebSocketAdapter({
+      name: 'ws',
+      wsUrl: () => 'wss://x',
+      fetchHistory: async () => Array.from({ length: 60 }, (_, i) => bar(i, 100)),
+      parseMessage: (raw) => raw as WsParseResult,
+      socketFactory: () => {
+        socket = { onopen: null, onmessage: null, onerror: null, onclose: null, send: () => {}, close: () => {} };
+        return socket;
+      },
+    });
+    await chart.connect({ adapter, symbol: 'AAA', timeframe: '1h', historyLimit: 60 });
+    socket!.onopen?.({});
+    return (b, closed) => socket!.onmessage?.({ data: { bar: b, closed } });
+  }
+
+  async function binanceFeed(): Promise<Send> {
+    const sockets: { onmessage: ((e: { data: unknown }) => void) | null }[] = [];
+    vi.stubGlobal('WebSocket', class {
+      onopen = null; onmessage = null; onerror = null; onclose = null;
+      constructor() { sockets.push(this); }
+      close() {}
+    });
+    const klines = Array.from({ length: 60 }, (_, i) => [bar(i, 100).time, '100', '101', '99', '100', '10']);
+    vi.stubGlobal('fetch', vi.fn(async (url: string) => ({ ok: url.includes('/klines'), json: async () => klines })));
+    await chart.connect({ adapter: new BinanceAdapter(), symbol: 'BTCUSDT', timeframe: '1h', historyLimit: 60 });
+    return (b, closed) => sockets.at(-1)!.onmessage?.({
+      data: JSON.stringify({ e: 'kline', k: { t: b.time, o: b.open, h: b.high, l: b.low, c: b.close, v: b.volume, x: closed } }),
+    });
+  }
+
+  for (const [name, connect] of [['WebSocketAdapter', webSocketFeed], ['BinanceAdapter', binanceFeed]] as const) {
+    describe(name, () => {
+      it('a late final corrects its bar and moves no price, order or alert', async () => {
+        const send = await connect();
+        const fired = alertsFired();
+        chart.addAlert(95, 'crossingDown', 'under 95');
+        send(bar(60, 101), false);
+        expect(ordersPrice()).toBe(101);
+        send(bar(59, 94), true); // the venue's final of bar 59
+        expect(chart.getData()[59].close).toBe(94);
+        expect(fired).toEqual([]);
+        expect(ordersPrice()).toBe(101);
+        expect(line()).toBe(101);
+      });
+
+      it('a stale forming frame moves nothing', async () => {
+        const send = await connect();
+        const fired = alertsFired();
+        chart.addAlert(95, 'crossingDown', 'under 95');
+        send(bar(60, 101), false);
+        send(bar(57, 90), false);
+        expect(fired).toEqual([]);
+        expect(ordersPrice()).toBe(101);
+        expect(line()).toBe(101);
+        expect(chart.getData()[57].close).toBe(100);
+      });
+    });
+  }
 });
 
 describe('setData, what it tells', () => {

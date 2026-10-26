@@ -377,7 +377,9 @@ export class StreamManager extends Emitter<StreamEvents> {
    * The history's last bar is the newest the stream has seen, on every
    * connect and switch, so a bar older than it is a correction, never one
    * of another symbol's. Built from trades, it is the bar the next trades
-   * go on building: a feed's history ends on the bar still forming.
+   * go on building: a feed's history ends on the bar still forming. A
+   * reconnect keeps the aggregator: a history ending before the bar the
+   * trades were building leaves that bar, and its trades, as they were.
    */
   private seedAggregator(last: OHLCBar | null): void {
     if (!this.aggregator) return;

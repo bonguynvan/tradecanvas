@@ -13,10 +13,13 @@ export class AnchoredVWAPTool extends DrawingBase {
   descriptor = { type: 'anchoredVWAP' as const, name: 'Anchored VWAP', requiredAnchors: 1 };
 
   private dataGetter: (() => DataSeries) | null = null;
+  /** Moves when a bar was replaced in the same array: the cached line is stale. */
+  private dataRevision: () => number = () => 0;
   private showBands = true;
 
-  setDataGetter(getter: () => DataSeries): void {
+  setDataGetter(getter: () => DataSeries, revision: () => number = () => 0): void {
     this.dataGetter = getter;
+    this.dataRevision = revision;
   }
 
   setShowBands(show: boolean): void {
@@ -106,10 +109,12 @@ export class AnchoredVWAPTool extends DrawingBase {
   /**
    * Last result, reused while the series, anchor and forming bar are
    * unchanged — hover hit-testing runs on every mouse move and would
-   * otherwise rebuild five O(n) arrays each time.
+   * otherwise rebuild five O(n) arrays each time. A bar corrected before
+   * the last changes none of those but the revision.
    */
   private vwapCache: {
     data: DataSeries;
+    revision: number;
     length: number;
     startIdx: number;
     lastClose: number;
@@ -119,13 +124,14 @@ export class AnchoredVWAPTool extends DrawingBase {
 
   private computeVWAP(data: DataSeries, startIdx: number): ReturnType<AnchoredVWAPTool['computeVWAPUncached']> {
     const last = data[data.length - 1];
+    const revision = this.dataRevision();
     const c = this.vwapCache;
-    if (c && c.data === data && c.length === data.length && c.startIdx === startIdx
+    if (c && c.data === data && c.revision === revision && c.length === data.length && c.startIdx === startIdx
       && c.lastClose === last?.close && c.lastVolume === (last?.volume ?? 0)) {
       return c.result;
     }
     const result = this.computeVWAPUncached(data, startIdx);
-    this.vwapCache = { data, length: data.length, startIdx, lastClose: last?.close, lastVolume: last?.volume ?? 0, result };
+    this.vwapCache = { data, revision, length: data.length, startIdx, lastClose: last?.close, lastVolume: last?.volume ?? 0, result };
     return result;
   }
 

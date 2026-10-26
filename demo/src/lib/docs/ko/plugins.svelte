@@ -104,7 +104,9 @@ chart.setDrawingTool('targetLine')`}</code></pre>
   <code>maxAnchors</code> 포함)과 대화상자에서 채우기(<code>fill</code>)나
   텍스트(<code>text</code>)를 제공할지도 적을 수 있습니다. 도구는
   <code>moveHandle()</code>로 앵커가 아닌 핸들을 옮길 수 있고, 봉을 바탕으로
-  그릴 때는 <code>setDataGetter()</code>를 통해 차트의 봉을 받습니다.
+  그릴 때는 <code>setDataGetter(getter, revision)</code>를 통해 차트의 봉을 받습니다.
+  같은 배열 안에서 봉이 수정되면(<code>updateBar</code>) <code>revision()</code>이 바뀌므로,
+  봉으로 계산한 결과를 보관하는 도구는 그때 다시 계산합니다.
 </p>
 
 <h2>사용자 지정 차트 유형</h2>

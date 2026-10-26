@@ -309,6 +309,31 @@ describe('TickAggregator: bars and trades older than the newest', () => {
     expect(agg.getCurrentBar()).toMatchObject({ time: T0 + 40 * MIN, open: 100, volume: 1 });
   });
 
+  it('seed() never moves the newest back: a reconnect whose history ends earlier keeps the trades since', () => {
+    const { agg, seen } = watched();
+    agg.seed(T0 + 39 * MIN);
+    agg.processTick(tick(T0 + 40 * MIN + 1000, 101, 5));
+    agg.processTick(tick(T0 + 40 * MIN + 2000, 110, 5));
+    agg.seed(T0 + 39 * MIN); // the same history again, after a reconnect
+    agg.processTick(tick(T0 + 39 * MIN + 30_000, 99, 1)); // a trade of bar 39, late
+    agg.processBar(at(39, 97), false); // a stale frame
+    expect(seen.barClose).toEqual([]);
+    expect(seen.bar).toHaveLength(2);
+    expect(agg.getCurrentBar()).toMatchObject({ time: T0 + 40 * MIN, open: 101, high: 110, volume: 10 });
+  });
+
+  it("resume() keeps a forming bar newer than the history's last, and takes the history's own for that bar", () => {
+    const { agg } = watched();
+    agg.resume(at(39, 100, 50));
+    agg.processTick(tick(T0 + 40 * MIN + 1000, 101, 5));
+    agg.processTick(tick(T0 + 40 * MIN + 2000, 110, 5));
+    agg.resume(at(39, 100, 50)); // a reconnect's history, still ending on the last closed bar
+    expect(agg.getCurrentBar()).toMatchObject({ time: T0 + 40 * MIN, open: 101, high: 110, low: 101, close: 110, volume: 10 });
+    // A history that holds bar 40 has the trades missed while away too.
+    agg.resume({ time: T0 + 40 * MIN, open: 101, high: 112, low: 94, close: 108, volume: 30 });
+    expect(agg.getCurrentBar()).toMatchObject({ time: T0 + 40 * MIN, open: 101, high: 112, low: 94, close: 108, volume: 30 });
+  });
+
   it('reset() and setTimeframe() forget the newest', () => {
     const { agg, seen } = watched();
     agg.seed(T0 + 5 * MIN);

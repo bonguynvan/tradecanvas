@@ -62,7 +62,7 @@ chart.connect({ adapter: new CoinbaseAdapter(), symbol: 'BTC-USD', timeframe: '1
 
 <h2 id="corrections">数据源修正的K线</h2>
 <p>
-  数据源修正一根K线的方式，是把它以已收盘的状态、用它自己的时间再发一次：<code>parseMessage</code> 返回 <code>{'{'} bar, closed: true {'}'}</code>，或一个 <code>bar</code> 事件。比数据流见过的最新K线更早的已收盘K线，是数据源对它的最终结论，例如在下一根K线的第一帧之后才到的交易所最终数据，或一次修订：图表替换这个时间的K线，无论其位置（<code>updateBar</code>），从它起重新计算指标，并保持视图不变。它不是实时价格：价格线、订单和警报仍跟随市场。比最新K线更早的未收盘数据帧已经过时，会被忽略，不改变任何东西。没有适配器时，调用 <code>chart.updateBar(bar)</code>。
+  数据源修正一根K线的方式，是把它以已收盘的状态、用它自己的时间再发一次：<code>parseMessage</code> 返回 <code>{'{'} bar, closed: true {'}'}</code>，或一个 <code>bar</code> 事件。比数据流见过的最新K线更早的已收盘K线，是数据源对它的最终结论，例如在下一根K线的第一帧之后才到的交易所最终数据，或一次修订：图表替换这个时间的K线，无论其位置（<code>updateBar</code>），从它起重新计算指标，并保持视图不变。它不是实时价格：价格线、订单和警报仍跟随市场。比最新K线更早的未收盘数据帧已经过时，会被忽略，不改变任何东西。内置适配器（<code>WebSocketAdapter</code>、<code>PollingAdapter</code>、基于它们的数据源以及 <code>BinanceAdapter</code>）只用最新K线的收盘价生成 tick；你自己的适配器若用K线生成 tick，也应忽略更早的K线。没有适配器时，调用 <code>chart.updateBar(bar)</code>。
 </p>
 <p>
   使用 <code>aggregateTicks</code> 时，历史数据的最后一根K线就是成交继续构建的那根：连接后的第一笔成交保留它的开盘价、最高价、最低价和成交量。迟到的、属于已过去K线的成交会被忽略，而该K线的已收盘数据会修正它，正在形成的K线保留自己的成交。在由更细周期构建的周期上，被修正的基础K线会重新构建它所属的K线，适用于正在形成的K线之前最近的两根已构建K线；更早的修正会被忽略。
@@ -101,7 +101,7 @@ agg.processTick({ time, price, volume })
 
 const current = agg.getCurrentBar()         // forming bar`}</code></pre>
 <p>周从周一开始，月从 1 日开始。使用 <code>setTimeZone</code> 后，日、周、月以及能整除一天的小时周期从交易所的午夜开始；图表会按品种的时区（没有则按市场的时区）为其数据流的 tick（<code>aggregateTicks</code>）设置它，并让由 tick 构建的K线与历史K线对齐：历史数据以 00:00 UTC 标记日期时，日线也这样标记；2h 到 12h 的K线只有在历史K线从交易所午夜开始时才从那里开始，因此数据源自己的 4h K线（00:00、04:00… UTC）保持原来的时间。</p>
-<p>比已见到的最新K线更早的K线已经过去：<code>processBar</code> 把已收盘的这类K线作为 <code>correction</code> 发出，并忽略未收盘的数据帧；<code>processTick</code> 忽略属于这类K线的成交，因此迟到的数据帧或成交既不会提前结束正在形成的K线，也不会移动价格。<code>seed(time)</code> 从历史数据的最后一根K线开始，<code>resume(bar)</code> 让这根仍在形成的K线成为后续成交继续构建的K线；图表的数据流在每次连接时都会做这两步。<code>StreamManager</code> 把修正作为 <code>barCorrection</code> 发出。</p>
+<p>比已见到的最新K线更早的K线已经过去：<code>processBar</code> 把已收盘的这类K线作为 <code>correction</code> 发出，并忽略未收盘的数据帧；<code>processTick</code> 忽略属于这类K线的成交，因此迟到的数据帧或成交既不会提前结束正在形成的K线，也不会移动价格。<code>seed(time)</code> 从历史数据的最后一根K线开始，且从不后退；<code>resume(bar)</code> 让这根仍在形成的K线成为后续成交继续构建的K线，除非成交已经到了更新的K线；图表的数据流在每次连接时都会做这两步，因此重连时即使历史数据只到前一根K线，正在形成的K线的成交也会保留。<code>StreamManager</code> 把修正作为 <code>barCorrection</code> 发出。</p>
 
 <h2>多个品种的报价</h2>
 <p>

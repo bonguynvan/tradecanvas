@@ -109,8 +109,10 @@ chart.setDrawingTool('targetLine')`}</code></pre>
   <code>'path'</code>, con <code>maxAnchors</code>) y si el diálogo ofrece un
   relleno (<code>fill</code>) o texto (<code>text</code>). Una herramienta puede
   mover puntos de control que no son anclas con <code>moveHandle()</code> y
-  recibe las barras del gráfico mediante <code>setDataGetter()</code> cuando
-  dibuja a partir de ellas.
+  recibe las barras del gráfico mediante <code>setDataGetter(getter, revision)</code>
+  cuando dibuja a partir de ellas. <code>revision()</code> cambia cuando una barra
+  se corrige en el mismo array (<code>updateBar</code>): una herramienta que guarda
+  lo que calculó a partir de las barras lo calcula de nuevo entonces.
 </p>
 
 <h2>Tipo de gráfico personalizado</h2>

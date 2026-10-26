@@ -144,9 +144,10 @@ export class CrosshairHandler {
   }
 
   /**
-   * Report the bar under the pointer again, after the frame, though the
-   * pointer hasn't moved: its values changed (a bar corrected in place), and
-   * the callback otherwise fires only when the pointer reaches another bar.
+   * Report the bar last reported again, in a microtask (before the next
+   * frame), though the pointer hasn't moved: its values changed (a bar
+   * corrected in place), and the callback otherwise fires only when the
+   * pointer reaches another bar.
    */
   refresh(): void {
     if (this.lastCallbackBarIndex < 0 || !this.pendingPoint) return;

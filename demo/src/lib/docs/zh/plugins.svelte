@@ -102,7 +102,9 @@ chart.setDrawingTool('targetLine')`}</code></pre>
   <code>'clicks'</code>、<code>'freehand'</code> 或 <code>'path'</code>，并可配合
   <code>maxAnchors</code>），以及对话框是否提供填充（<code>fill</code>）或文本
   （<code>text</code>）。工具可以用 <code>moveHandle()</code> 移动不属于锚点的控制点；
-  如果绘制时需要用到图表的K线，则通过 <code>setDataGetter()</code> 获取。
+  如果绘制时需要用到图表的K线，则通过 <code>setDataGetter(getter, revision)</code> 获取。
+  当同一数组中的某根K线被修正（<code>updateBar</code>）时，<code>revision()</code> 会变化：
+  缓存了由K线计算出的结果的工具，此时应重新计算。
 </p>
 
 <h2>自定义图表类型</h2>

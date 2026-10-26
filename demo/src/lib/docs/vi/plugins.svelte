@@ -105,8 +105,10 @@ chart.setDrawingTool('targetLine')`}</code></pre>
   <code>maxAnchors</code>) và hộp thoại có cho chọn màu nền
   (<code>fill</code>) hay chữ (<code>text</code>) hay không. Công cụ có thể
   di chuyển các điểm kéo không phải điểm neo bằng <code>moveHandle()</code>, và
-  nhận các nến của biểu đồ qua <code>setDataGetter()</code> khi nó vẽ dựa trên
-  chúng.
+  nhận các nến của biểu đồ qua <code>setDataGetter(getter, revision)</code> khi
+  nó vẽ dựa trên chúng. <code>revision()</code> thay đổi khi một nến được sửa
+  ngay trong cùng mảng (<code>updateBar</code>): công cụ giữ lại kết quả đã tính
+  từ các nến thì khi đó tính lại.
 </p>
 
 <h2>Loại biểu đồ tuỳ chỉnh</h2>

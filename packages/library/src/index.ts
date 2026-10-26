@@ -206,7 +206,7 @@ export { IndicatorBase, IndicatorValueMap, DrawingBase, indicatorCategory, INDIC
 export { barIndexToX, xToBarIndex, priceToY, priceToYMapper, yToPrice, timeToX, xToTime, timestampToBarIndex } from '@tradecanvas/core';
 
 // Re-export realtime module
-export { StreamManager, BinanceAdapter, MockAdapter, TickAggregator, CurrentPriceLine, PaperExecutionAdapter, WebSocketAdapter, PollingAdapter, CoinbaseAdapter, BybitAdapter, KrakenAdapter, ResamplingAdapter, withResampling, servesTimeframe, TickBarBuilder, TickBarAdapter, withTickBars } from '@tradecanvas/core';
+export { StreamManager, BinanceAdapter, MockAdapter, TickAggregator, CurrentPriceLine, PaperExecutionAdapter, WebSocketAdapter, PollingAdapter, CoinbaseAdapter, BybitAdapter, KrakenAdapter, ResamplingAdapter, withResampling, servesTimeframe, KEPT_BUCKETS, TickBarBuilder, TickBarAdapter, withTickBars } from '@tradecanvas/core';
 export type { PaperExecutionOptions, WebSocketAdapterOptions, WsParseResult, PollingAdapterOptions, CoinbaseAdapterOptions, BybitAdapterOptions, KrakenAdapterOptions } from '@tradecanvas/core';
 export { DEFAULT_RECONNECT, DEFAULT_STREAM_CONFIG } from '@tradecanvas/commons';
 
