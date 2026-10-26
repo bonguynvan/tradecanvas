@@ -56,8 +56,10 @@ chart.connect({ adapter: new CoinbaseAdapter(), symbol: 'BTC-USD', timeframe: '1
   partir de la más gruesa de ellas que las divide: 7m a partir de 1m, 4h y 1D a partir de 1h. Los días,
   las semanas, los meses y las temporalidades en horas que dividen un día (2h, 3h, 4h, 6h, 8h, 12h)
   empiezan a la medianoche de la bolsa del símbolo, en el <code>timeZone</code> que da su
-  <code>resolveSymbol</code>. El gráfico pregunta una vez por símbolo, antes del primer historial de esa
-  temporalidad, y conserva la zona; las de 1h o menos no la esperan. Un feed sin
+  <code>resolveSymbol</code>. El gráfico pregunta una vez por símbolo, mientras pide el primer historial de esa
+  temporalidad, construye ese historial cuando llega la respuesta y conserva la zona; las de 1h o menos
+  no la esperan. Una zona cuyos días necesitan una temporalidad más fina que los de UTC (los de Ciudad Ho
+  Chi Minh en un feed de barras de 4h) hace pedir ese historial otra vez en ella. Un feed sin
   <code>resolveSymbol</code>, que no da zona o da UTC, o cuyas temporalidades no pueden alinearse con
   esa medianoche (solo barras de 4h para una zona a 7 horas de UTC) recibe días de UTC, como antes. Lo mismo ocurre con un feed que falla al responder o tarda
   más de 5 segundos, y los días del símbolo siguen entonces siendo de UTC hasta que el gráfico vuelve a cargar el símbolo desde cero (al conectarse a él, o al llegar a él desde otro símbolo o temporalidad), así que las páginas más

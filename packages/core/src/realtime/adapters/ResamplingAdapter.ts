@@ -267,10 +267,11 @@ export class ResamplingAdapter implements DataAdapter {
     const utcBase = this.baseFor(timeframe);
     if (utcBase === timeframe) return this.inner.fetchHistory(symbol, timeframe, limit);
     const generation = this.generation;
-    const plan = this.planFor(timeframe, this.waitsForZone(timeframe) ? await this.zoneFor(symbol) : this.keptZone(symbol));
-    const want = this.baseBarsFor(timeframe, plan.base, limit);
-    const first = await this.inner.fetchHistory(symbol, plan.base, Math.min(want, MAX_BASE_BARS_PER_REQUEST));
-    const bars = await this.extendBack(symbol, plan.base, first, want, generation);
+    const { plan, bars } = await this.baseBarsWithZone(symbol, timeframe, async (base) => {
+      const want = this.baseBarsFor(timeframe, base, limit);
+      const first = await this.inner.fetchHistory(symbol, base, Math.min(want, MAX_BASE_BARS_PER_REQUEST));
+      return this.extendBack(symbol, base, first, want, generation);
+    });
     this.rememberTail(symbol, timeframe, bars, plan);
     return this.toTarget(bars, timeframe, limit, plan);
   }
@@ -413,11 +414,37 @@ export class ResamplingAdapter implements DataAdapter {
     const utcBase = this.baseFor(timeframe);
     if (utcBase === timeframe) return fetchBefore(symbol, timeframe, before, limit);
     const generation = this.generation;
-    const plan = this.planFor(timeframe, this.waitsForZone(timeframe) ? await this.zoneFor(symbol) : this.keptZone(symbol));
-    const want = this.baseBarsFor(timeframe, plan.base, limit);
-    const first = await fetchBefore(symbol, plan.base, before, Math.min(want, MAX_BASE_BARS_PER_REQUEST));
-    const bars = await this.extendBack(symbol, plan.base, first.filter((b) => b.time < before), want, generation, 1);
+    const { plan, bars } = await this.baseBarsWithZone(symbol, timeframe, async (base) => {
+      const want = this.baseBarsFor(timeframe, base, limit);
+      const first = await fetchBefore(symbol, base, before, Math.min(want, MAX_BASE_BARS_PER_REQUEST));
+      return this.extendBack(symbol, base, first.filter((b) => b.time < before), want, generation, 1);
+    });
     return this.toTarget(bars, timeframe, limit, plan);
+  }
+
+  /**
+   * The base bars `fetch` gives for building `timeframe` for `symbol`, and
+   * the plan they are built by. While the feed is still to say the symbol's
+   * zone, the bars UTC's days are built from are fetched as it is asked, not
+   * after: most zones' days line up with them (a whole hour from UTC on
+   * hours or finer), and only one whose days need a finer timeframe (Ho Chi
+   * Minh City's on a feed of 4h bars) is fetched again at that one.
+   */
+  private async baseBarsWithZone(
+    symbol: string,
+    timeframe: TimeFrame,
+    fetch: (base: TimeFrame) => Promise<OHLCBar[]>,
+  ): Promise<{ plan: BuildPlan; bars: OHLCBar[] }> {
+    if (!this.waitsForZone(timeframe) || this.zones.has(symbol)) {
+      const plan = this.planFor(timeframe, this.keptZone(symbol));
+      return { plan, bars: await fetch(plan.base) };
+    }
+    const early = this.planFor(timeframe, undefined).base;
+    const fetched = fetch(early);
+    // Read below when its timeframe is the one the zone's days need; a failure is thrown there, or not wanted.
+    fetched.catch(() => {});
+    const plan = this.planFor(timeframe, await this.zoneFor(symbol));
+    return { plan, bars: await (plan.base === early ? fetched : fetch(plan.base)) };
   }
 
   /** Base bars for `limit` target bars, plus one bucket for a partial first one. */

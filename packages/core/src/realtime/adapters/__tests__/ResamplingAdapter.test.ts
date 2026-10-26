@@ -420,6 +420,56 @@ describe('ResamplingAdapter in the symbol’s time zone', () => {
     expect(again).toEqual(first);
   });
 
+  describe('asks for the history while it asks the feed for the zone', () => {
+    /** An answer about the symbol that comes when the test says. */
+    function later() {
+      let answer!: (info: SymbolInfo) => void;
+      const promise = new Promise<SymbolInfo>((resolve) => { answer = resolve; });
+      return { promise, answer: () => answer({ symbol: 'VN30F1M', timeZone: VN }) };
+    }
+
+    it('and builds the bars in the zone from them when its days line up with the same timeframe', async () => {
+      const { feed, adapter, resolveSymbol } = zonedFeed(['1h'], vnHours(), VN);
+      const zone = later();
+      resolveSymbol.mockReturnValue(zone.promise);
+      const pending = adapter.fetchHistory('VN30F1M', '4h', 4);
+      await Promise.resolve();
+      expect(feed.fetchHistory).toHaveBeenCalledWith('VN30F1M', '1h', expect.any(Number));
+      zone.answer();
+      expect((await pending).map((b) => b.time)).toEqual([
+        Date.UTC(2026, 9, 22, 1), Date.UTC(2026, 9, 22, 5), Date.UTC(2026, 9, 23, 1), Date.UTC(2026, 9, 23, 5),
+      ]);
+      expect(feed.fetchHistory).toHaveBeenCalledTimes(1);
+    });
+
+    it('and again at a finer timeframe when the zone’s days need one', async () => {
+      // UTC days come from 4h bars; Ho Chi Minh City's start at 17:00 UTC, off the 4h grid, so from 1h.
+      const { feed, adapter, resolveSymbol } = zonedFeed(['1h', '4h'], vnHours(), VN);
+      const zone = later();
+      resolveSymbol.mockReturnValue(zone.promise);
+      const pending = adapter.fetchHistory('VN30F1M', '1d', 3);
+      await Promise.resolve();
+      expect(feed.fetchHistory.mock.calls.map((c) => c[1])).toEqual(['4h']);
+      zone.answer();
+      const days = await pending;
+      expect(feed.fetchHistory.mock.calls.map((c) => c[1])).toEqual(['4h', '1h']);
+      expect(days.every((d) => d.time % DAY === 17 * HOUR)).toBe(true);
+    });
+
+    it('for older bars too', async () => {
+      const { feed, adapter, resolveSymbol } = zonedFeed(['1h'], vnHours(), VN);
+      const zone = later();
+      resolveSymbol.mockReturnValue(zone.promise);
+      const pending = adapter.fetchHistoryBefore!('VN30F1M', '4h', Date.UTC(2026, 9, 22, 1), 4);
+      await Promise.resolve();
+      expect(feed.fetchHistoryBefore).toHaveBeenCalledWith('VN30F1M', '1h', Date.UTC(2026, 9, 22, 1), expect.any(Number));
+      zone.answer();
+      expect((await pending).map((b) => b.time)).toEqual([
+        Date.UTC(2026, 9, 20, 1), Date.UTC(2026, 9, 20, 5), Date.UTC(2026, 9, 21, 1), Date.UTC(2026, 9, 21, 5),
+      ]);
+    });
+  });
+
   it('waits a bounded time for a feed that never says', async () => {
     vi.useFakeTimers();
     try {

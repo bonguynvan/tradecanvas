@@ -55,8 +55,10 @@ chart.connect({ adapter: new CoinbaseAdapter(), symbol: 'BTC-USD', timeframe: '1
   Nguồn dữ liệu khai báo <code>supportedTimeframes</code> được dựng mọi khung khác từ khung thô nhất
   trong số đó chia hết khung cần dựng: 7m từ 1m, 4h và 1D từ 1h. Ngày, tuần, tháng và các khung giờ
   chia hết một ngày (2h, 3h, 4h, 6h, 8h, 12h) bắt đầu lúc nửa đêm của sàn giao dịch, theo
-  <code>timeZone</code> mà <code>resolveSymbol</code> trả về. Biểu đồ hỏi một lần cho mỗi mã, trước
-  lần tải lịch sử đầu tiên của khung như vậy, rồi giữ múi giờ đó; khung 1h trở xuống không chờ. Nguồn
+  <code>timeZone</code> mà <code>resolveSymbol</code> trả về. Biểu đồ hỏi một lần cho mỗi mã, trong
+  lúc tải lịch sử đầu tiên của khung như vậy, dựng lịch sử đó khi có câu trả lời, rồi giữ múi giờ đó;
+  khung 1h trở xuống không chờ. Múi giờ mà ngày của nó cần một khung nhỏ hơn khung của ngày UTC (ngày
+  của TP.HCM với nguồn chỉ có nến 4h) thì lịch sử đó được tải lại theo khung ấy. Nguồn
   dữ liệu không có <code>resolveSymbol</code>, không nêu múi giờ hoặc nêu UTC, hay có các khung không
   khớp được với nửa đêm đó (chỉ có nến 4h cho múi giờ lệch UTC 7 tiếng) thì dùng ngày theo UTC như
   trước. Nguồn dữ liệu trả lời lỗi hoặc chậm quá 5 giây cũng vậy, và từ đó ngày của mã giữ theo

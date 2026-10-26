@@ -56,8 +56,9 @@ chart.connect({ adapter: new CoinbaseAdapter(), symbol: 'BTC-USD', timeframe: '1
   coarsest of them that divides it: 7m from 1m, 4h and 1D from 1h. Days, weeks, months and the hour
   frames that divide a day (2h, 3h, 4h, 6h, 8h, 12h) start at the midnight of the symbol's exchange,
   in the <code>timeZone</code> its <code>resolveSymbol</code> names. The chart asks once per symbol,
-  before the first history of such a timeframe, and keeps the zone; 1h and shorter frames don't wait
-  for it. A feed without <code>resolveSymbol</code>, one that names no zone or UTC, or one whose
+  as the first history of such a timeframe is fetched, builds that history once the answer comes, and
+  keeps the zone; 1h and shorter frames don't wait for it. A zone whose days need a finer timeframe
+  than UTC's (Ho Chi Minh City's on a feed of 4h bars) has that history fetched again at it. A feed without <code>resolveSymbol</code>, one that names no zone or UTC, or one whose
   timeframes can't line up with that midnight (only 4h bars for a zone 7 hours from UTC) gets UTC
   days, as before. So does one that fails to answer or takes more than 5 seconds, and the symbol's days then
   stay UTC's until the chart loads the symbol afresh (connects to it, or comes to it from another symbol or timeframe), so older pages and the history after a reconnect never hold a day twice; a fresh load builds them in the zone the feed has named since, or asks it again. The
