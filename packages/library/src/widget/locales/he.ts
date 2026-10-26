@@ -310,6 +310,8 @@ export const HE_MESSAGES: WidgetMessages = {
   'settings.reversalBoxes': 'תיבות היפוך',
   'settings.barRange': 'טווח',
   'settings.auto': 'אוטומטי',
+  'settings.numberAtLeast': '{min} או יותר',
+  'settings.numberWhole': 'מספר שלם מ־{min} עד {max}',
   'settings.scale.regular': 'רגילה',
   'settings.scale.logarithmic': 'לוגריתמית',
   'settings.scale.percentage': 'באחוזים',

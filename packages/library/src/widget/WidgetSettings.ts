@@ -514,7 +514,7 @@ export class WidgetSettings {
     const set = <K extends keyof ChartTypeOptions>(key: K, value: NonNullable<ChartTypeOptions[K]>) =>
       this.patch({ chartTypeOptions: { ...own(), [key]: value } });
     const number = (label: MessageKey, value: number | null, limits: NumberLimits, onChange: (v: number | null) => void) =>
-      section.appendChild(numberRow(this.t(label), value, limits, onChange, this.t));
+      section.appendChild(numberRow(this.t(label), value, limits, onChange, this.t, this.currentSettings?.numberLocale || undefined));
     switch (type) {
       case 'renko': {
         const o = all.renko ?? {};

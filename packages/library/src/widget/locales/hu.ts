@@ -302,6 +302,8 @@ export const HU_MESSAGES: WidgetMessages = {
   'settings.reversalBoxes': 'Fordulódobozok',
   'settings.barRange': 'Tartomány',
   'settings.auto': 'Automatikus',
+  'settings.numberAtLeast': '{min} vagy több',
+  'settings.numberWhole': 'Egész szám {min} és {max} között',
   'settings.scale.regular': 'Normál',
   'settings.scale.logarithmic': 'Logaritmikus',
   'settings.scale.percentage': 'Százalékos',

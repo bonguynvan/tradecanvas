@@ -310,6 +310,8 @@ export const NB_MESSAGES: WidgetMessages = {
   'settings.reversalBoxes': 'Bokser for vending',
   'settings.barRange': 'Spenn',
   'settings.auto': 'Auto',
+  'settings.numberAtLeast': '{min} eller mer',
+  'settings.numberWhole': 'Et heltall fra {min} til {max}',
   'settings.scale.regular': 'Lineær',
   'settings.scale.logarithmic': 'Logaritmisk',
   'settings.scale.percentage': 'Prosent',

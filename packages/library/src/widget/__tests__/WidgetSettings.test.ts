@@ -130,6 +130,24 @@ describe('settings of the chart’s type', () => {
     }
   });
 
+  it('marks a number it turns away as invalid and says what it takes, in the number locale', () => {
+    const hint = (input: HTMLInputElement) => document.getElementById(input.getAttribute('aria-describedby') ?? '')?.textContent;
+    settings!.open({ ...DEFAULT_SETTINGS, numberLocale: 'de-DE' }, 'renko');
+    const box = field('Box size')!;
+    type(box, '1e-9');
+    expect(box.getAttribute('aria-invalid')).toBe('true');
+    expect(hint(box)).toBe('0,00000001 or more');
+    type(box, '5');
+    expect(box.hasAttribute('aria-invalid')).toBe(false);
+    expect(hint(box)).toBe('');
+    settings!.close();
+    settings!.open(DEFAULT_SETTINGS, 'lineBreak');
+    const lines = field('Lines to break')!;
+    type(lines, '2.5');
+    expect(lines.getAttribute('aria-invalid')).toBe('true');
+    expect(hint(lines)).toBe('A whole number from 1 to 10');
+  });
+
   it('steps a box, reversal or range by whole numbers from 0 with the arrows, not from the smallest it takes', () => {
     for (const [chartType, label] of [['renko', 'Box size'], ['kagi', 'Reversal'], ['pointAndFigure', 'Box size'], ['rangeBars', 'Range']] as const) {
       settings!.open(DEFAULT_SETTINGS, chartType);

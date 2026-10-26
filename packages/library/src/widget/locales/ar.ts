@@ -310,6 +310,8 @@ export const AR_MESSAGES: WidgetMessages = {
   'settings.reversalBoxes': 'صناديق الانعكاس',
   'settings.barRange': 'النطاق',
   'settings.auto': 'تلقائي',
+  'settings.numberAtLeast': '{min} أو أكثر',
+  'settings.numberWhole': 'عدد صحيح من {min} إلى {max}',
   'settings.scale.regular': 'عادي',
   'settings.scale.logarithmic': 'لوغاريتمي',
   'settings.scale.percentage': 'نسبة مئوية',

@@ -310,6 +310,8 @@ export const MS_MESSAGES: WidgetMessages = {
   'settings.reversalBoxes': 'Kotak pembalikan',
   'settings.barRange': 'Julat',
   'settings.auto': 'Automatik',
+  'settings.numberAtLeast': '{min} atau lebih',
+  'settings.numberWhole': 'Nombor bulat dari {min} hingga {max}',
   'settings.scale.regular': 'Biasa',
   'settings.scale.logarithmic': 'Logaritma',
   'settings.scale.percentage': 'Peratusan',

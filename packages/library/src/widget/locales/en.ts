@@ -311,6 +311,8 @@ export const EN_MESSAGES = {
   'settings.reversalBoxes': 'Reversal boxes',
   'settings.barRange': 'Range',
   'settings.auto': 'Auto',
+  'settings.numberAtLeast': '{min} or more',
+  'settings.numberWhole': 'A whole number from {min} to {max}',
   'settings.scale.regular': 'Regular',
   'settings.scale.logarithmic': 'Logarithmic',
   'settings.scale.percentage': 'Percentage',

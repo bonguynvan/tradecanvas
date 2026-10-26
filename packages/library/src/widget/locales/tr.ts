@@ -302,6 +302,8 @@ export const TR_MESSAGES: WidgetMessages = {
   'settings.reversalBoxes': 'Dönüş kutuları',
   'settings.barRange': 'Aralık',
   'settings.auto': 'Otomatik',
+  'settings.numberAtLeast': '{min} veya daha fazla',
+  'settings.numberWhole': '{min} ile {max} arasında bir tam sayı',
   'settings.scale.regular': 'Normal',
   'settings.scale.logarithmic': 'Logaritmik',
   'settings.scale.percentage': 'Yüzde',

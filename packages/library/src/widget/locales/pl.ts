@@ -302,6 +302,8 @@ export const PL_MESSAGES: WidgetMessages = {
   'settings.reversalBoxes': 'Liczba pól odwrócenia',
   'settings.barRange': 'Zakres',
   'settings.auto': 'Auto',
+  'settings.numberAtLeast': '{min} lub więcej',
+  'settings.numberWhole': 'Liczba całkowita od {min} do {max}',
   'settings.scale.regular': 'Zwykła',
   'settings.scale.logarithmic': 'Logarytmiczna',
   'settings.scale.percentage': 'Procentowa',

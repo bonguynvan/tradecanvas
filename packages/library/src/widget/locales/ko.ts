@@ -302,6 +302,8 @@ export const KO_MESSAGES: WidgetMessages = {
   'settings.reversalBoxes': '반전 박스 수',
   'settings.barRange': '범위',
   'settings.auto': '자동',
+  'settings.numberAtLeast': '{min} 이상',
+  'settings.numberWhole': '{min}부터 {max}까지의 정수',
   'settings.scale.regular': '일반',
   'settings.scale.logarithmic': '로그',
   'settings.scale.percentage': '퍼센트',

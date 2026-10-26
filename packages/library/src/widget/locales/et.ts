@@ -310,6 +310,8 @@ export const ET_MESSAGES: WidgetMessages = {
   'settings.reversalBoxes': 'Pöörde kastide arv',
   'settings.barRange': 'Vahemik',
   'settings.auto': 'Automaatne',
+  'settings.numberAtLeast': '{min} või rohkem',
+  'settings.numberWhole': 'Täisarv vahemikus {min} kuni {max}',
   'settings.scale.regular': 'Lineaarne',
   'settings.scale.logarithmic': 'Logaritmiline',
   'settings.scale.percentage': 'Protsent',

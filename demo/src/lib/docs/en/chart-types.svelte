@@ -89,7 +89,7 @@
   Line Break, whose setting is a count of lines, makes one line a bar at most too. A box, reversal
   or range that is no finite number above 0, in a saved state or a shared link, is dropped (the
   chart goes back to its default: worked out from the data, or Kagi's 4%), so a link can't stall
-  the chart. The settings dialog takes none under 0.00000001. On a live chart a raised size
+  the chart. The settings dialog takes none under 0.00000001 and says so under the field. On a live chart a raised size
   stays from tick to tick, so a tick builds the bars once, and is worked out again for a new
   series; <code>toRenko</code>, <code>toKagi</code>, <code>toPointAndFigure</code> and
   <code>toRangeBars</code> do the same when given a <code>ReshapeMemo</code>.

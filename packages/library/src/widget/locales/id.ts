@@ -302,6 +302,8 @@ export const ID_MESSAGES: WidgetMessages = {
   'settings.reversalBoxes': 'Kotak pembalikan',
   'settings.barRange': 'Rentang',
   'settings.auto': 'Otomatis',
+  'settings.numberAtLeast': '{min} atau lebih',
+  'settings.numberWhole': 'Bilangan bulat dari {min} sampai {max}',
   'settings.scale.regular': 'Biasa',
   'settings.scale.logarithmic': 'Logaritmik',
   'settings.scale.percentage': 'Persentase',

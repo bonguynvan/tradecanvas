@@ -302,6 +302,8 @@ export const SV_MESSAGES: WidgetMessages = {
   'settings.reversalBoxes': 'Vändningsboxar',
   'settings.barRange': 'Spann',
   'settings.auto': 'Auto',
+  'settings.numberAtLeast': '{min} eller mer',
+  'settings.numberWhole': 'Ett heltal från {min} till {max}',
   'settings.scale.regular': 'Normal',
   'settings.scale.logarithmic': 'Logaritmisk',
   'settings.scale.percentage': 'Procent',

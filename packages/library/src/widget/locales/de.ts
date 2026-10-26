@@ -302,6 +302,8 @@ export const DE_MESSAGES: WidgetMessages = {
   'settings.reversalBoxes': 'Umkehrboxen',
   'settings.barRange': 'Spanne',
   'settings.auto': 'Auto',
+  'settings.numberAtLeast': '{min} oder mehr',
+  'settings.numberWhole': 'Eine ganze Zahl von {min} bis {max}',
   'settings.scale.regular': 'Normal',
   'settings.scale.logarithmic': 'Logarithmisch',
   'settings.scale.percentage': 'Prozent',

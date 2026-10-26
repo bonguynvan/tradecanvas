@@ -302,6 +302,8 @@ export const SK_MESSAGES: WidgetMessages = {
   'settings.reversalBoxes': 'Počet boxov pre obrat',
   'settings.barRange': 'Rozsah',
   'settings.auto': 'Auto',
+  'settings.numberAtLeast': '{min} alebo viac',
+  'settings.numberWhole': 'Celé číslo od {min} do {max}',
   'settings.scale.regular': 'Bežná',
   'settings.scale.logarithmic': 'Logaritmická',
   'settings.scale.percentage': 'Percentuálna',

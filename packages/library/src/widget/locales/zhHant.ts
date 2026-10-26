@@ -302,6 +302,8 @@ export const ZH_HANT_MESSAGES: WidgetMessages = {
   'settings.reversalBoxes': '反轉格數',
   'settings.barRange': '區間大小',
   'settings.auto': '自動',
+  'settings.numberAtLeast': '{min} 或以上',
+  'settings.numberWhole': '{min} 到 {max} 之間的整數',
   'settings.scale.regular': '一般',
   'settings.scale.logarithmic': '對數',
   'settings.scale.percentage': '百分比',

@@ -302,6 +302,8 @@ export const NL_MESSAGES: WidgetMessages = {
   'settings.reversalBoxes': 'Omkeringsboxen',
   'settings.barRange': 'Bereik',
   'settings.auto': 'Auto',
+  'settings.numberAtLeast': '{min} of meer',
+  'settings.numberWhole': 'Een geheel getal van {min} tot en met {max}',
   'settings.scale.regular': 'Normaal',
   'settings.scale.logarithmic': 'Logaritmisch',
   'settings.scale.percentage': 'Procentueel',

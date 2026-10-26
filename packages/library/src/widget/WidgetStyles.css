@@ -1518,6 +1518,24 @@
   border-top: 1px solid var(--tcw-divider);
 }
 
+/* A number field's hint goes on a line of its own, under the field. */
+.tcw-settings-row--number {
+  flex-wrap: wrap;
+}
+
+.tcw-settings-hint {
+  flex-basis: 100%;
+  padding-top: var(--tcw-space-2);
+  color: var(--tcw-red);
+  font-size: var(--tcw-font-size-xs);
+  line-height: 1.35;
+  text-align: end;
+}
+
+.tcw-settings-hint:empty {
+  display: none;
+}
+
 .tcw-settings-label {
   font-size: var(--tcw-font-size);
   color: var(--tcw-text-dim);

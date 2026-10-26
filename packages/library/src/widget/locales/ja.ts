@@ -302,6 +302,8 @@ export const JA_MESSAGES: WidgetMessages = {
   'settings.reversalBoxes': '反転ボックス数',
   'settings.barRange': 'レンジ幅',
   'settings.auto': '自動',
+  'settings.numberAtLeast': '{min} 以上',
+  'settings.numberWhole': '{min} から {max} までの整数',
   'settings.scale.regular': '標準',
   'settings.scale.logarithmic': '対数',
   'settings.scale.percentage': 'パーセント',

@@ -302,6 +302,8 @@ export const VI_MESSAGES: WidgetMessages = {
   'settings.reversalBoxes': 'Số ô đảo chiều',
   'settings.barRange': 'Biên độ',
   'settings.auto': 'Tự động',
+  'settings.numberAtLeast': 'Từ {min} trở lên',
+  'settings.numberWhole': 'Số nguyên từ {min} đến {max}',
   'settings.scale.regular': 'Thường',
   'settings.scale.logarithmic': 'Logarit',
   'settings.scale.percentage': 'Phần trăm',

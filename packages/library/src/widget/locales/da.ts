@@ -310,6 +310,8 @@ export const DA_MESSAGES: WidgetMessages = {
   'settings.reversalBoxes': 'Bokse til vending',
   'settings.barRange': 'Spænd',
   'settings.auto': 'Auto',
+  'settings.numberAtLeast': '{min} eller mere',
+  'settings.numberWhole': 'Et heltal fra {min} til {max}',
   'settings.scale.regular': 'Lineær',
   'settings.scale.logarithmic': 'Logaritmisk',
   'settings.scale.percentage': 'Procent',

@@ -302,6 +302,8 @@ export const RU_MESSAGES: WidgetMessages = {
   'settings.reversalBoxes': 'Блоков для разворота',
   'settings.barRange': 'Диапазон',
   'settings.auto': 'Авто',
+  'settings.numberAtLeast': '{min} или больше',
+  'settings.numberWhole': 'Целое число от {min} до {max}',
   'settings.scale.regular': 'Обычная',
   'settings.scale.logarithmic': 'Логарифмическая',
   'settings.scale.percentage': 'Процентная',

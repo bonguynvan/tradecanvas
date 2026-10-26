@@ -302,6 +302,8 @@ export const TH_MESSAGES: WidgetMessages = {
   'settings.reversalBoxes': 'จำนวนกล่องกลับตัว',
   'settings.barRange': 'ช่วงราคา',
   'settings.auto': 'อัตโนมัติ',
+  'settings.numberAtLeast': '{min} ขึ้นไป',
+  'settings.numberWhole': 'จำนวนเต็มตั้งแต่ {min} ถึง {max}',
   'settings.scale.regular': 'ปกติ',
   'settings.scale.logarithmic': 'ลอการิทึม',
   'settings.scale.percentage': 'เปอร์เซ็นต์',

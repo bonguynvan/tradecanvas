@@ -302,6 +302,8 @@ export const EL_MESSAGES: WidgetMessages = {
   'settings.reversalBoxes': 'Κουτιά αντιστροφής',
   'settings.barRange': 'Εύρος',
   'settings.auto': 'Αυτόματο',
+  'settings.numberAtLeast': '{min} ή περισσότερο',
+  'settings.numberWhole': 'Ακέραιος από {min} έως {max}',
   'settings.scale.regular': 'Κανονική',
   'settings.scale.logarithmic': 'Λογαριθμική',
   'settings.scale.percentage': 'Ποσοστιαία',

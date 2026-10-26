@@ -302,6 +302,8 @@ export const RO_MESSAGES: WidgetMessages = {
   'settings.reversalBoxes': 'Casete de inversare',
   'settings.barRange': 'Amplitudine',
   'settings.auto': 'Automat',
+  'settings.numberAtLeast': '{min} sau mai mult',
+  'settings.numberWhole': 'Un număr întreg de la {min} la {max}',
   'settings.scale.regular': 'Normală',
   'settings.scale.logarithmic': 'Logaritmică',
   'settings.scale.percentage': 'Procentuală',

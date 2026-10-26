@@ -310,6 +310,8 @@ export const FA_MESSAGES: WidgetMessages = {
   'settings.reversalBoxes': 'باکس‌های بازگشت',
   'settings.barRange': 'رنج',
   'settings.auto': 'خودکار',
+  'settings.numberAtLeast': '{min} یا بیشتر',
+  'settings.numberWhole': 'عدد صحیح از {min} تا {max}',
   'settings.scale.regular': 'معمولی',
   'settings.scale.logarithmic': 'لگاریتمی',
   'settings.scale.percentage': 'درصدی',

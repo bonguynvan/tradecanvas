@@ -302,6 +302,8 @@ export const CS_MESSAGES: WidgetMessages = {
   'settings.reversalBoxes': 'Počet boxů pro obrat',
   'settings.barRange': 'Rozsah',
   'settings.auto': 'Auto',
+  'settings.numberAtLeast': '{min} nebo více',
+  'settings.numberWhole': 'Celé číslo od {min} do {max}',
   'settings.scale.regular': 'Běžné',
   'settings.scale.logarithmic': 'Logaritmické',
   'settings.scale.percentage': 'Procentní',
