@@ -657,8 +657,12 @@ chart.setScaleMode('percentage');
 const legend = document.getElementById('legend')!;
 chart.on('crosshairMove', (e) => {
   // Its close at the bar and its change in %, as the line reads; `stale` past its last bar.
+  // Both are null before its first bar: no figures then, not a lone '%'.
   legend.textContent = chart.getCompareValues(e.payload.barIndex)
-    .map((v) => `${v.label} ${v.close ?? ''} ${v.change?.toFixed(2) ?? ''}%`)
+    .map((v) => {
+      const change = v.change === null ? '' : `${v.change.toFixed(2)}%`;
+      return `${v.label} ${v.close ?? ''} ${change}`.trim();
+    })
     .join('  ');
 });
 ```
