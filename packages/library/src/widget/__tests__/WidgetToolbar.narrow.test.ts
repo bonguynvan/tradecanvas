@@ -264,6 +264,93 @@ describe('WidgetToolbar — fitting its width', () => {
     expect(iconsOnly(el)).toBe(false);
   });
 
+  describe('a long symbol', () => {
+    /** The symbol's venue and ticker, and what is left of the venue squeezed (a letter and an ellipsis): px. */
+    const [VENUE_W, TICKER_W, VENUE_LEAST_W] = [120, 30, 30];
+    const symbolBtn = () => root.querySelector<HTMLButtonElement>('[data-role="symbol"]')!;
+    const squeeze = (el: HTMLElement) => el.dataset.tcwSqueeze;
+    const squeezed = (el: HTMLElement) => squeeze(el) !== undefined;
+    /**
+     * `base(el)` and the symbol, as the stylesheet lets it give way to fit `width` at each step: to
+     * a letter of its venue, an ellipsis and its ticker; to its ticker; to nothing.
+     */
+    const withSymbol = (width: number, base: (el: HTMLElement) => number = need) => (el: HTMLElement) => {
+      const whole = base(el) + VENUE_W + TICKER_W;
+      const least: number | undefined = ({ venue: VENUE_LEAST_W + TICKER_W, ticker: TICKER_W, cut: 0 } as Record<string, number>)[squeeze(el) ?? ''];
+      return least === undefined ? whole : Math.max(base(el) + least, Math.min(whole, width));
+    };
+
+    it('shows its venue apart from its ticker, left to right in any widget, and reads whole', () => {
+      toolbar.update({ ...state, symbol: 'HYPERLIQUID:xyz:GOLD' } as WidgetState);
+      expect(symbolBtn().dir).toBe('ltr');
+      expect(symbolBtn().querySelector('.tcw-toolbar-venue')?.textContent).toBe('HYPERLIQUID:xyz:');
+      expect(symbolBtn().querySelector('.tcw-toolbar-ticker')?.textContent).toBe('GOLD');
+      expect(symbolBtn().textContent).toBe('HYPERLIQUID:xyz:GOLD');
+      expect(symbolBtn().classList.contains('tcw-toolbar-symbol--venue')).toBe(true);
+      toolbar.update(state);
+      expect(symbolBtn().querySelector('.tcw-toolbar-venue')).toBeNull();
+      expect(symbolBtn().classList.contains('tcw-toolbar-symbol--venue')).toBe(false);
+      expect(symbolBtn().querySelector('.tcw-toolbar-ticker')?.textContent).toBe('BTCUSDT');
+    });
+
+    // On a 390 phone "HYPERLIQUID:xyz:GOLD" pushed "more" to 380-408, where a tap on it missed:
+    // everything that folds was folded already, so nothing was left to give way.
+    it('gives way on a narrow toolbar, with everything folded, so "more" stays on the bar', () => {
+      root.setAttribute('data-tcw-narrow', '');
+      // 300 for the chart's controls and "more": a narrow toolbar shows nothing that folds.
+      const el = layout(390, withSymbol(390, () => 300));
+      toolbar.fit();
+      expect(squeezed(el)).toBe(true);
+    });
+
+    // Capsule at 320: even a letter of the venue and its ellipsis before "GOLD" left "more" past the bar.
+    it('drops the venue only when even a letter of it has no room, and cuts the ticker short last of all', () => {
+      root.setAttribute('data-tcw-narrow', '');
+      const el = layout(380, withSymbol(380, () => 300));
+      toolbar.fit();
+      expect(squeeze(el)).toBe('venue');
+      layout(340, withSymbol(340, () => 300));
+      toolbar.fit();
+      expect(squeeze(el)).toBe('ticker');
+      layout(320, withSymbol(320, () => 300));
+      toolbar.fit();
+      expect(squeeze(el)).toBe('cut');
+      layout(500, withSymbol(500, () => 300));
+      toolbar.fit();
+      expect(squeezed(el)).toBe(false);
+    });
+
+    it('keeps its whole width while the bar has room for it', () => {
+      root.setAttribute('data-tcw-narrow', '');
+      const el = layout(500, withSymbol(500, () => 300));
+      toolbar.fit();
+      expect(squeezed(el)).toBe(false);
+    });
+
+    // A desktop toolbar keeps its look: the buttons on the right fold first, then the labels go.
+    it('gives way last of all, after every button that folds and the labels', () => {
+      const el = layout(850, withSymbol(850));
+      toolbar.fit();
+      expect(folded(el)).toEqual(['Chart Settings', 'Toggle theme']);
+      expect(squeezed(el)).toBe(false);
+      layout(400, withSymbol(400));
+      toolbar.fit();
+      expect(iconsOnly(el)).toBe(true);
+      expect(shown(el)).toBe(0);
+      expect(squeezed(el)).toBe(true);
+    });
+
+    it('is measured whole at every fit: with room again, it takes it back', () => {
+      const el = layout(400, withSymbol(400));
+      toolbar.fit();
+      expect(squeezed(el)).toBe(true);
+      layout(1200, withSymbol(1200));
+      toolbar.fit();
+      expect(squeezed(el)).toBe(false);
+      expect(folded(el)).toEqual([]);
+    });
+  });
+
   describe('to the pixel', () => {
     // Widths are fractional: "more" ended at 1366.19 in a toolbar 1365 wide (Studio), whose scroll
     // width, in whole px, said 1366 and was let through as within a pixel of its 1365.

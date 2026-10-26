@@ -31,6 +31,32 @@ describe('the widget’s own box', () => {
   });
 });
 
+describe('the toolbar’s symbol', () => {
+  // "HYPERLIQUID:xyz:GOLD" on a 390 phone held its width and pushed "more" off the bar.
+  it('gives way only when the fit squeezes it, its venue to an ellipsis before anything else shrinks', () => {
+    expect(rule('.tcw-toolbar-symbol')).not.toMatch(/min-width|flex-shrink/);
+    const symbol = rule(".tcw-toolbar[data-tcw-squeeze='venue'] > .tcw-toolbar-symbol--venue");
+    expect(symbol).toMatch(/display:\s*inline-grid/);
+    // The venue's column counts a letter and an ellipsis in the smallest width (never a sliver), the ticker all of itself.
+    expect(symbol).toMatch(/grid-template-columns:\s*minmax\(2em, max-content\) auto/);
+    expect(symbol).toMatch(/column-gap:\s*var\(--tcw-space-1\)/);
+    expect(symbol).toMatch(/flex-shrink:\s*1000/);
+    const venue = rule(".tcw-toolbar[data-tcw-squeeze='venue'] .tcw-toolbar-venue");
+    expect(venue).toMatch(/min-width:\s*0/);
+    expect(venue).toMatch(/overflow:\s*hidden/);
+    expect(venue).toMatch(/text-overflow:\s*ellipsis/);
+  });
+
+  it('then drops its venue, and last cuts its ticker short', () => {
+    expect(blocks(css, ".tcw-toolbar[data-tcw-squeeze='ticker'] .tcw-toolbar-venue").join('')).toMatch(/display:\s*none/);
+    expect(blocks(css, ".tcw-toolbar[data-tcw-squeeze='cut'] .tcw-toolbar-venue").join('')).toMatch(/display:\s*none/);
+    expect(rule(".tcw-toolbar[data-tcw-squeeze='cut'] > .tcw-toolbar-symbol")).toMatch(/min-width:\s*0/);
+    const ticker = rule(".tcw-toolbar[data-tcw-squeeze='cut'] .tcw-toolbar-ticker");
+    expect(ticker).toMatch(/min-width:\s*0/);
+    expect(ticker).toMatch(/text-overflow:\s*ellipsis/);
+  });
+});
+
 describe('frosted menus', () => {
   // `ui.blur` above 0 (the Capsule look) shows the chart through every menu, blurred: the right-click
   // and "more" menus showed it sharp behind their words.

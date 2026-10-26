@@ -292,6 +292,45 @@
   background: transparent;
 }
 
+/* With everything folded and still no room (a long symbol on a phone), the symbol gives way so
+   "more" stays on the bar, a step at a time (`data-tcw-squeeze`). First its venue
+   ("HYPERLIQUID:xyz:") is cut short before anything else shrinks, down to its first letter and an
+   ellipsis, a gap keeping it off the ticker. That is 2em: a line's first letter is cut, never
+   swapped for the ellipsis, so less shows a letter and a sliver ("H."). The venue's column counts
+   only those 2em in the button's smallest width, so the ticker stays whole and the buttons beside it
+   give the rest. With room, the symbol shows as it always has. */
+.tcw-toolbar[data-tcw-squeeze='venue'] > .tcw-toolbar-symbol--venue {
+  display: inline-grid;
+  grid-template-columns: minmax(2em, max-content) auto;
+  column-gap: var(--tcw-space-1);
+  align-items: center;
+  /* Shrinking is shared by width times this: the symbol takes it all until it is at its smallest. */
+  flex-shrink: 1000;
+}
+
+.tcw-toolbar[data-tcw-squeeze='venue'] .tcw-toolbar-venue {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Then, with no room even for the ellipsis (a 320 phone in the Capsule look), the venue goes, the
+   ticker whole; and last of all, the ticker is cut short. */
+.tcw-toolbar[data-tcw-squeeze='ticker'] .tcw-toolbar-venue,
+.tcw-toolbar[data-tcw-squeeze='cut'] .tcw-toolbar-venue {
+  display: none;
+}
+
+.tcw-toolbar[data-tcw-squeeze='cut'] > .tcw-toolbar-symbol {
+  min-width: 0;
+}
+
+.tcw-toolbar[data-tcw-squeeze='cut'] .tcw-toolbar-ticker {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .tcw-toolbar-sep {
   width: var(--tcw-sep-w);
   /* A button's height over phi: the rule stands as tall as the icons beside it. */
