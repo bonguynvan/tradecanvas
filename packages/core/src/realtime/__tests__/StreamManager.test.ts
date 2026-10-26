@@ -176,6 +176,31 @@ describe('StreamManager — bars from ticks after the history', () => {
     feedZone?: string;
   }
 
+  /** A stream of `timeframe` bars from ticks after `first`: the bars it builds, and a reconnect whose history is `bars`. */
+  async function reconnecting(first: OHLCBar[], timeframe: TimeFrame = '4h') {
+    const { adapter, pending, listeners } = controlledAdapter();
+    const sm = new StreamManager();
+    const updates: OHLCBar[] = [];
+    const snapshots: OHLCBar[][] = [];
+    sm.on('barUpdate', (b) => updates.push({ ...b }));
+    sm.on('snapshot', (b) => snapshots.push(b));
+    const done = sm.connect({ adapter, symbol: 'X', timeframe, aggregateTicks: true });
+    pending[0].resolve(first);
+    await done;
+    const fire = (type: string, data: unknown) => { for (const l of listeners.get(type) ?? []) l({ type: type as never, data, timestamp: 0 }); };
+    return {
+      sm, updates, snapshots,
+      trade: (time: number, price = 2) => fire('tick', { time, price, volume: 1 }),
+      reconnect: async (bars: OHLCBar[]) => {
+        fire('connectionChange', 'connected');
+        sm.wake('online');
+        pending.at(-1)!.resolve(bars);
+        await new Promise((r) => setTimeout(r, 0));
+      },
+    };
+  }
+  const MINUTE = 60_000;
+
   /** The bar a trade lands in, on a stream of bars built from ticks after `history`, in `zone`. */
   async function tickOnto({ zone, history, time, timeframe = '1d', zoneAfterHistory = false, supported, feedZone }: TickCase): Promise<number | undefined> {
     const { adapter: feed, pending, listeners } = controlledAdapter();
@@ -205,6 +230,21 @@ describe('StreamManager — bars from ticks after the history', () => {
     // 20:30 on Friday 23 October in New York, already Saturday in UTC.
     const day23 = await tickOnto({ zone: 'America/New_York', history: [at(Date.UTC(2026, 9, 22))], time: Date.UTC(2026, 9, 24, 0, 30) });
     expect(day23).toBe(Date.UTC(2026, 9, 23));
+  });
+
+  it("dates the day in the exchange's zone after a reconnect, when the zone came once the trades had started", async () => {
+    // A New York feed's days, stamped by their date: the last is Friday 23 October.
+    const days = [Date.UTC(2026, 9, 21), Date.UTC(2026, 9, 22), Date.UTC(2026, 9, 23)].map(at);
+    const stream = await reconnecting(days, '1d');
+    stream.trade(Date.UTC(2026, 9, 24, 0, 30), 105); // 20:30 on Friday there, the zone not known yet: dated Saturday
+    expect(stream.updates.at(-1)?.time).toBe(Date.UTC(2026, 9, 24));
+    stream.sm.setTimeZone('America/New_York');
+    await stream.reconnect(days.map((b) => ({ ...b })));
+    // The Saturday bar is let go: the snapshot ends on Friday, and the next trade builds Friday.
+    expect(stream.snapshots.at(-1)?.at(-1)?.time).toBe(Date.UTC(2026, 9, 23));
+    stream.trade(Date.UTC(2026, 9, 24, 1, 30), 107); // 21:30 on Friday there
+    expect(stream.updates.at(-1)).toMatchObject({ time: Date.UTC(2026, 9, 23), close: 107 });
+    stream.sm.dispose();
   });
 
   describe('4h bars', () => {
@@ -240,28 +280,6 @@ describe('StreamManager — bars from ticks after the history', () => {
       expect(await tickOnto({ zone: VN, history: [], time: trade, timeframe: '4h' })).toBe(Date.UTC(2026, 9, 23, 4));
     });
 
-    /** A 4h stream of bars from ticks after `first`: the bars it builds, and a reconnect whose history is `bars`. */
-    async function reconnecting(first: OHLCBar[]) {
-      const { adapter, pending, listeners } = controlledAdapter();
-      const sm = new StreamManager();
-      const updates: OHLCBar[] = [];
-      sm.on('barUpdate', (b) => updates.push({ ...b }));
-      const done = sm.connect({ adapter, symbol: 'X', timeframe: '4h', aggregateTicks: true });
-      pending[0].resolve(first);
-      await done;
-      const fire = (type: string, data: unknown) => { for (const l of listeners.get(type) ?? []) l({ type: type as never, data, timestamp: 0 }); };
-      return {
-        sm, updates,
-        trade: (time: number) => fire('tick', { time, price: 2, volume: 1 }),
-        reconnect: async (bars: OHLCBar[]) => {
-          fire('connectionChange', 'connected');
-          sm.wake('online');
-          pending.at(-1)!.resolve(bars);
-          await new Promise((r) => setTimeout(r, 0));
-        },
-      };
-    }
-    const MINUTE = 60_000;
 
     it("land on the exchange's midnight after a reconnect onto it, from a first connect with no history", async () => {
       const stream = await reconnecting([]);

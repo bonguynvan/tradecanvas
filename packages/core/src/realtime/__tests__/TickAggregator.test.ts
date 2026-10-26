@@ -373,6 +373,18 @@ describe('TickAggregator: seed() once the buckets moved', () => {
     expect(agg.getCurrentBar()).toMatchObject({ time: Date.UTC(2026, 9, 23), open: 100, close: 101, volume: 6 });
   });
 
+  it('lets go a day stamped by the date the trades had before the zone came', () => {
+    const agg = new TickAggregator('1d');
+    agg.setTimeZone(null, true);
+    agg.processTick(tick(Date.UTC(2026, 9, 24, 0, 30), 100, 5)); // 20:30 on Friday in New York, dated Saturday in UTC
+    agg.setTimeZone('America/New_York', true);
+    const friday = { time: Date.UTC(2026, 9, 23), open: 98, high: 101, low: 97, close: 99, volume: 40 };
+    agg.seed(friday.time);
+    agg.resume(friday);
+    agg.processTick(tick(Date.UTC(2026, 9, 24, 1, 30), 102, 1));
+    expect(agg.getCurrentBar()).toMatchObject({ time: friday.time, open: 98, high: 102, close: 102, volume: 41 });
+  });
+
   it("keeps a feed's forming bar wherever it starts: no trades build it", () => {
     const agg = new TickAggregator('1d');
     agg.processBar({ time: D + 22 * HOUR, open: 1, high: 1, low: 1, close: 1, volume: 1 }, false); // a day from 22:00 UTC

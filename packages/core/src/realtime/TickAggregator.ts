@@ -45,6 +45,12 @@ export class TickAggregator extends Emitter<AggregatorEvents> {
    * buckets, rather than the feed sending it formed (`processBar`).
    */
   private builtFromTrades = false;
+  /**
+   * When the last trade that built the forming bar happened (null: none since
+   * `resume`): the bucket it starts on now says whether the bar is still where
+   * the trades go.
+   */
+  private lastTradeAt: number | null = null;
   private timeframe: TimeFrame;
   private timeframeMs: number;
   /** Bars a day long or more, which `dateStamps` stamps by date. */
@@ -87,8 +93,10 @@ export class TickAggregator extends Emitter<AggregatorEvents> {
    * buckets they no longer start on (the exchange's zone came after them,
    * or the history's bars start at its midnight): the next trades can't go
    * on building it, and they would be left out as late until the next
-   * bucket, so the bar is let go and the history's last is the newest.
-   * `reset()` starts again.
+   * bucket, so the bar is let go and the history's last is the newest. A
+   * bar that holds trades is measured by the last of them: a day the trades
+   * dated by UTC's date before the zone came is let go, though a date stamp
+   * is on the dates' grid whatever the zone. `reset()` starts again.
    */
   seed(time: number): void {
     if (this.builtOffTheBuckets()) {
@@ -116,6 +124,7 @@ export class TickAggregator extends Emitter<AggregatorEvents> {
       volume: bar.volume ?? 0, closed: false, tickCount: 0,
     };
     this.builtFromTrades = true;
+    this.lastTradeAt = null;
   }
 
   /**
@@ -147,6 +156,7 @@ export class TickAggregator extends Emitter<AggregatorEvents> {
     const at = normalizeBarTime(barTime);
     if (at < this.newest) return;
     this.newest = at;
+    this.lastTradeAt = tick.time;
 
     if (!this.currentBar || this.currentBar.time !== barTime) {
       // Close previous bar
@@ -227,6 +237,7 @@ export class TickAggregator extends Emitter<AggregatorEvents> {
     this.currentBar = null;
     this.newest = -Infinity;
     this.builtFromTrades = false;
+    this.lastTradeAt = null;
     this.ringHead = 0;
     this.ringCount = 0;
   }
@@ -234,7 +245,10 @@ export class TickAggregator extends Emitter<AggregatorEvents> {
   /** Whether the trades built the forming bar on buckets other than the ones they start on now. */
   private builtOffTheBuckets(): boolean {
     const bar = this.currentBar;
-    return bar !== null && this.builtFromTrades && !this.startsABucket(normalizeBarTime(bar.time));
+    if (bar === null || !this.builtFromTrades) return false;
+    // Its last trade lands on another bar now (it was put there before the zone came).
+    if (this.lastTradeAt !== null) return this.alignToTimeframe(this.lastTradeAt) !== bar.time;
+    return !this.startsABucket(normalizeBarTime(bar.time));
   }
 
   /** Whether a bar at `time` is one the trades start now. */
