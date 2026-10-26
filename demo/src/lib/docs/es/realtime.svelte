@@ -52,7 +52,10 @@ chart.connect({ adapter: new CoinbaseAdapter(), symbol: 'BTC-USD', timeframe: '1
   <code>resolveSymbol</code>. El gráfico pregunta una vez por símbolo, antes del primer historial de esa
   temporalidad, y conserva la zona; las de 1h o menos no la esperan. Un feed sin
   <code>resolveSymbol</code>, que no da zona o da UTC, o cuyas temporalidades no pueden alinearse con
-  esa medianoche (solo barras de 4h para una zona a 7 horas de UTC) recibe días de UTC, como antes. Las
+  esa medianoche (solo barras de 4h para una zona a 7 horas de UTC) recibe días de UTC, como antes. Lo mismo ocurre con un feed que falla al responder o tarda
+  más de 5 segundos, y los días del símbolo siguen entonces siendo de UTC, así que las páginas más
+  antiguas y el historial tras una reconexión nunca tienen un día dos veces. La zona del mercado
+  (<code>setMarket</code>) no mueve estas barras. Las
   barras diarias con sello de las 00:00 UTC se leen como la fecha que indican. Una zona que el feed
   envíe después en un evento <code>symbolInfo</code> cambia las horas que se muestran, no dónde empiezan
   los días ya construidos.
@@ -90,7 +93,7 @@ agg.on('barClose', (bar) => console.log(bar))   // a bar whose interval is over
 agg.processTick({ time, price, volume })
 
 const current = agg.getCurrentBar()         // forming bar`}</code></pre>
-<p>Las semanas empiezan el lunes y los meses el día 1. Con <code>setTimeZone</code>, los días, las semanas, los meses y las temporalidades en horas que dividen un día empiezan a la medianoche de la bolsa; un gráfico lo fija para los ticks de su stream (<code>aggregateTicks</code>) según la zona del símbolo, y sella los días a las 00:00 UTC cuando el historial lo hace.</p>
+<p>Las semanas empiezan el lunes y los meses el día 1. Con <code>setTimeZone</code>, los días, las semanas, los meses y las temporalidades en horas que dividen un día empiezan a la medianoche de la bolsa; un gráfico lo fija para los ticks de su stream (<code>aggregateTicks</code>) según la zona del símbolo, o si no la de su mercado, y hace coincidir sus barras con las del historial: sella los días a las 00:00 UTC cuando el historial lo hace, y las barras de 2h a 12h empiezan a la medianoche de la bolsa solo cuando las del historial empiezan ahí, así que las barras de 4h propias del feed (00:00, 04:00… UTC) conservan su hora.</p>
 
 <h2>Cotizaciones de muchos símbolos</h2>
 <p>

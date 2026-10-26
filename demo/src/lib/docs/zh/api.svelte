@@ -690,9 +690,9 @@ const days = resampleBars(oneMinuteBars, '1d', { timeZone: 'Asia/Ho_Chi_Minh' })
 const dayStart = timeframeBucketStart(trade.time, '1d', { timeZone: 'Asia/Ho_Chi_Minh' })`}</code></pre>
 <p>
   分组遵循日历规则：分钟和小时（1h 及更短）从 Unix 纪元起按周期的整数倍向下取整。日、周（从所配置的一周起始日开始）、
-  月、季度和年从交易所的午夜开始，能整除一天的小时周期（2h、3h、4h、6h、8h、12h）也一样：依据品种的
-  <code>timeZone</code>（<code>setSymbolInfo</code>，或适配器的 <code>resolveSymbol</code>），其次是市场的
-  （<code>setMarket</code>），再次是 UTC。调整时钟的那一天长 23 或 25 小时。时间戳为 00:00 UTC 的日线被视为其标明的日期，
+  月、季度和年从交易所的午夜开始，能整除一天的小时周期（2h、3h、4h、6h、8h、12h）也一样。对于传给 <code>widget.setData</code> 的K线，
+  依据品种的 <code>timeZone</code>（<code>setSymbolInfo</code>），其次是市场的（<code>setMarket</code>），再次是 UTC。
+  数据源缺少的周期从其 <code>resolveSymbol</code> 给出的时区的午夜开始，没有则从 UTC 的午夜开始：市场的时区不会移动它们。调整时钟的那一天长 23 或 25 小时。时间戳为 00:00 UTC 的日线被视为其标明的日期，
   因此在 UTC 以西，周一仍留在自己的那一周，周线保持 00:00 UTC 的时间戳。输入的K线永远不会被修改。
 </p>
 <p>

@@ -58,9 +58,11 @@ also works on a widget.
    else its market's. In a `ChartWidget`, set it as a Chart Setting,
    `widget.setSettings({ timezone: 'exchange' })` (spelt `timezone` there), so
    the widget's clock, its settings dialog and what it keeps follow. The 2h–12h,
-   1D, 1W and 1M bars the library builds (from a feed's `supportedTimeframes`,
-   or the widget's `setData`) start at that exchange's midnight; bars your own
-   code builds take `timeframeBucketStart(t, tf, { timeZone })` to match.
+   1D, 1W and 1M bars the library builds start at the exchange's midnight: from
+   a feed's `supportedTimeframes`, at the zone its `resolveSymbol` names (not
+   `setMarket`'s); from the widget's `setData`, at the symbol's zone, else the
+   market's. Bars your own code builds take
+   `timeframeBucketStart(t, tf, { timeZone })` to match.
 
 ## Quick start: the widget with live data
 

@@ -752,9 +752,11 @@ const dayStart = timeframeBucketStart(trade.time, '1d', { timeZone: 'Asia/Ho_Chi
   Calendar-aware bucketing: minutes and hours (1h and shorter) floor to multiples of the
   frame since the Unix epoch. Days, weeks (from the configured week start), months,
   quarters and years start at the exchange's midnight, and so do the hour frames that
-  divide a day (2h, 3h, 4h, 6h, 8h, 12h): the symbol's <code>timeZone</code>
-  (<code>setSymbolInfo</code>, or the adapter's <code>resolveSymbol</code>), else the
-  market's (<code>setMarket</code>), else UTC. A day the clocks change is 23 or 25 hours
+  divide a day (2h, 3h, 4h, 6h, 8h, 12h). For the bars given to <code>widget.setData</code>,
+  that is the midnight of the symbol's <code>timeZone</code> (<code>setSymbolInfo</code>), else
+  the market's (<code>setMarket</code>), else UTC's. The timeframes a feed lacks start at the
+  midnight of the zone its <code>resolveSymbol</code> names, else UTC's: the market's zone
+  doesn't move them. A day the clocks change is 23 or 25 hours
   long. Daily bars stamped at 00:00 UTC are read as the dates they name, so a Monday stays
   in its own week west of UTC and the weeks keep 00:00 UTC stamps. Input bars are never
   mutated.

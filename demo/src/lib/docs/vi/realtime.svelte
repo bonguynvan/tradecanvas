@@ -52,7 +52,9 @@ chart.connect({ adapter: new CoinbaseAdapter(), symbol: 'BTC-USD', timeframe: '1
   lần tải lịch sử đầu tiên của khung như vậy, rồi giữ múi giờ đó; khung 1h trở xuống không chờ. Nguồn
   dữ liệu không có <code>resolveSymbol</code>, không nêu múi giờ hoặc nêu UTC, hay có các khung không
   khớp được với nửa đêm đó (chỉ có nến 4h cho múi giờ lệch UTC 7 tiếng) thì dùng ngày theo UTC như
-  trước. Nến ngày đóng dấu 00:00 UTC được đọc là đúng ngày chúng ghi. Múi giờ mà nguồn dữ liệu gửi sau
+  trước. Nguồn dữ liệu trả lời lỗi hoặc chậm quá 5 giây cũng vậy, và từ đó ngày của mã giữ theo
+  UTC, nên các trang cũ hơn và lịch sử sau khi kết nối lại không bao giờ có một ngày hai lần. Múi giờ
+  của thị trường (<code>setMarket</code>) không dời những nến này. Nến ngày đóng dấu 00:00 UTC được đọc là đúng ngày chúng ghi. Múi giờ mà nguồn dữ liệu gửi sau
   qua sự kiện <code>symbolInfo</code> đổi giờ hiển thị, không đổi lúc bắt đầu của những ngày đã dựng.
 </p>
 
@@ -87,7 +89,7 @@ agg.on('barClose', (bar) => console.log(bar))   // a bar whose interval is over
 agg.processTick({ time, price, volume })
 
 const current = agg.getCurrentBar()         // forming bar`}</code></pre>
-<p>Tuần bắt đầu từ thứ Hai và tháng từ ngày 1. Với <code>setTimeZone</code>, ngày, tuần, tháng và các khung giờ chia hết một ngày bắt đầu lúc nửa đêm của sàn; biểu đồ tự đặt nó cho tick của luồng dữ liệu (<code>aggregateTicks</code>) theo múi giờ của mã, và đóng dấu ngày lúc 00:00 UTC khi lịch sử cũng đóng dấu như vậy.</p>
+<p>Tuần bắt đầu từ thứ Hai và tháng từ ngày 1. Với <code>setTimeZone</code>, ngày, tuần, tháng và các khung giờ chia hết một ngày bắt đầu lúc nửa đêm của sàn; biểu đồ tự đặt nó cho tick của luồng dữ liệu (<code>aggregateTicks</code>) theo múi giờ của mã, nếu không có thì của thị trường, và cho nến dựng từ tick khớp với nến lịch sử: ngày được đóng dấu lúc 00:00 UTC khi lịch sử cũng đóng dấu như vậy, còn nến 2h đến 12h chỉ bắt đầu lúc nửa đêm của sàn khi nến lịch sử bắt đầu ở đó, nên nến 4h của chính nguồn dữ liệu (00:00, 04:00… UTC) giữ nguyên thời điểm.</p>
 
 <h2>Giá của nhiều mã</h2>
 <p>

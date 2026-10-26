@@ -775,9 +775,11 @@ const dayStart = timeframeBucketStart(trade.time, '1d', { timeZone: 'Asia/Ho_Chi
   abajo a múltiplos de la temporalidad contados desde la época Unix. Los días, las semanas
   (desde el inicio de semana configurado), los meses, los trimestres y los años empiezan a
   la medianoche de la bolsa, igual que las temporalidades en horas que dividen un día (2h,
-  3h, 4h, 6h, 8h, 12h): la del <code>timeZone</code> del símbolo (<code>setSymbolInfo</code>,
-  o el <code>resolveSymbol</code> del adaptador), si no la del mercado (<code>setMarket</code>),
-  y si no la de UTC. Un día de cambio de hora dura 23 o 25 horas. Las barras diarias con
+  3h, 4h, 6h, 8h, 12h). Para las barras que se dan a <code>widget.setData</code>, es la del
+  <code>timeZone</code> del símbolo (<code>setSymbolInfo</code>), si no la del mercado
+  (<code>setMarket</code>), y si no la de UTC. Las temporalidades que le faltan a un feed
+  empiezan a la medianoche de la zona que nombra su <code>resolveSymbol</code>, o si no a la
+  de UTC: la zona del mercado no las mueve. Un día de cambio de hora dura 23 o 25 horas. Las barras diarias con
   sello de las 00:00 UTC se leen como la fecha que indican, así que al oeste de UTC el lunes
   sigue en su propia semana y las semanas conservan el sello de las 00:00 UTC. Las barras de
   entrada nunca se modifican.

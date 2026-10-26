@@ -9,7 +9,7 @@ import type {
   SymbolInfo,
   TimeFrame,
 } from '@tradecanvas/commons';
-import { DEFAULT_STREAM_CONFIG, DEFAULT_RECONNECT, normalizeBarTime } from '@tradecanvas/commons';
+import { DEFAULT_STREAM_CONFIG, DEFAULT_RECONNECT, normalizeBarTime, timeframeBucketStart, timeframeSpansDays } from '@tradecanvas/commons';
 import { Emitter } from './Emitter.js';
 import { TickAggregator } from './TickAggregator.js';
 import { ReconnectManager } from './ReconnectManager.js';
@@ -60,6 +60,11 @@ export interface StreamEvents {
 const RESUME_STALE_MS = 20_000;
 const DAY_MS = 86_400_000;
 
+/** Whether a bar of `tf` at `time` starts where `zone`'s midnight counts from, and not on the epoch. */
+function onZoneGrid(time: number, tf: TimeFrame, zone: string): boolean {
+  return timeframeBucketStart(time, tf, { timeZone: zone }) === time && timeframeBucketStart(time, tf) !== time;
+}
+
 export class StreamManager extends Emitter<StreamEvents> {
   private config: StreamConfig | null = null;
   private adapter: DataAdapter | null = null;
@@ -77,8 +82,8 @@ export class StreamManager extends Emitter<StreamEvents> {
   private connectSeq = 0;
   /** The exchange's zone, where days built from ticks start (`setTimeZone`). */
   private timeZone: string | null = null;
-  /** The history stamps its days at 00:00 UTC: days built from ticks are stamped so too. */
-  private datedHistory = false;
+  /** When the history's last bar starts, ms (null: no history yet): bars from ticks follow its grid. */
+  private historyEnd: number | null = null;
 
   constructor() {
     super();
@@ -98,8 +103,8 @@ export class StreamManager extends Emitter<StreamEvents> {
     this.config = { ...DEFAULT_STREAM_CONFIG, ...config, adapter } as StreamConfig;
     this.adapter = adapter;
     this.aggregator = new TickAggregator(config.timeframe);
-    this.datedHistory = false;
-    this.aggregator.setTimeZone(this.timeZone);
+    this.historyEnd = null;
+    this.applyTickZone();
 
     // Replace reconnector — clean up old listeners first
     this.reconnector.removeAllListeners();
@@ -179,13 +184,15 @@ export class StreamManager extends Emitter<StreamEvents> {
 
   /**
    * The exchange's zone (null: UTC). Bars built from ticks (`aggregateTicks`)
-   * start their days, weeks, months and the hour frames that divide a day at
-   * its midnight; days are stamped at 00:00 UTC of their date when the
-   * history stamps them so. A chart sets it from the symbol's info.
+   * follow the history they continue: days, weeks and months start at the
+   * zone's midnight, stamped at 00:00 UTC of their date when the history's
+   * are; the hour frames that divide a day (2h to 12h) start there only when
+   * the history's do, and keep the epoch's grid, as a feed's own 4h bars
+   * do, otherwise. A chart sets it from the symbol's info and its market.
    */
   setTimeZone(zone: string | null): void {
     this.timeZone = zone;
-    this.aggregator?.setTimeZone(zone, this.datedHistory);
+    this.applyTickZone();
   }
 
   getConnectionInfo(): ConnectionInfo {
@@ -201,6 +208,24 @@ export class StreamManager extends Emitter<StreamEvents> {
   }
 
   // --- Internal ---
+
+  /**
+   * Bars from ticks land on the history's bars: a feed's dated days, days at
+   * the exchange's midnight, and 4h bars on whichever grid the history's sit.
+   */
+  private applyTickZone(): void {
+    const timeframe = this.config?.timeframe;
+    if (!this.aggregator || !timeframe) return;
+    const last = this.historyEnd;
+    this.aggregator.setTimeZone(this.tickZone(timeframe, last), last !== null && last % DAY_MS === 0);
+  }
+
+  /** The zone whose midnight bars of `timeframe` built from ticks start at (null: UTC's, or the epoch's grid for hours). */
+  private tickZone(timeframe: TimeFrame, last: number | null): string | null {
+    const zone = this.timeZone;
+    if (zone === null || timeframeSpansDays(timeframe)) return zone;
+    return last !== null && onZoneGrid(last, timeframe, zone) ? zone : null;
+  }
 
   private async doConnect(): Promise<void> {
     if (!this.config || !this.adapter) return;
@@ -225,9 +250,8 @@ export class StreamManager extends Emitter<StreamEvents> {
         this.previousClose = history[history.length - 1].close;
         this.updatePrice(history[history.length - 1].close);
       }
-      // Bars from ticks follow the history's stamps: a feed's dated days, or days at the exchange's midnight.
-      this.datedHistory = history.length > 0 && normalizeBarTime(history[history.length - 1].time) % DAY_MS === 0;
-      this.aggregator?.setTimeZone(this.timeZone, this.datedHistory);
+      this.historyEnd = history.length > 0 ? normalizeBarTime(history[history.length - 1].time) : null;
+      this.applyTickZone();
 
       this.emit('snapshot', history);
 

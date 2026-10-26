@@ -715,8 +715,9 @@ const dayStart = timeframeBucketStart(trade.time, '1d', { timeZone: 'Asia/Ho_Chi
 <p>
   区切りはカレンダーを考慮します。分足と時間足（1h 以下）は Unix エポックからの時間足の倍数に切り捨てます。
   日足、週足（設定した週の開始日から）、月足、四半期足、年足は取引所の午前 0 時に始まり、1 日を割り切る時間足
-  （2h、3h、4h、6h、8h、12h）も同じです。基準は銘柄の <code>timeZone</code>（<code>setSymbolInfo</code>、
-  またはアダプターの <code>resolveSymbol</code>）、なければ市場のもの（<code>setMarket</code>）、それもなければ UTC です。
+  （2h、3h、4h、6h、8h、12h）も同じです。<code>widget.setData</code> に渡したバーでは、基準は銘柄の
+  <code>timeZone</code>（<code>setSymbolInfo</code>）、なければ市場のもの（<code>setMarket</code>）、それもなければ UTC です。
+  フィードにない時間足は、その <code>resolveSymbol</code> が示すタイムゾーンの午前 0 時、なければ UTC の午前 0 時に始まり、市場のタイムゾーンでは動きません。
   時計が切り替わる日は 23 時間または 25 時間になります。00:00 UTC のタイムスタンプを持つ日足はそれが示す日付として扱うので、
   UTC より西でも月曜日は自分の週に入り、週足は 00:00 UTC のタイムスタンプを保ちます。入力のバーが変更されることはありません。
 </p>

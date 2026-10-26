@@ -9,6 +9,7 @@ import {
   pickBaseTimeframe,
   wallToUtc,
   barDateParts,
+  timeframeSpansDays,
 } from '@tradecanvas/commons';
 
 const MIN = 60_000;
@@ -298,5 +299,23 @@ describe('barDateParts', () => {
     expect(barDateParts(built, 'UTC', VN).day).toBe(23);
     expect(barDateParts(built, NY, VN).day).toBe(23);
     expect(barDateParts(built, 'UTC', null).day).toBe(22);
+  });
+
+  it('reads a bar off the exchange’s midnight in the zone shown', () => {
+    // Stamped at midnight in Ho Chi Minh City, a browser's zone, for a New York market: 13:00 the day before there.
+    const local = Date.UTC(2026, 9, 22, 17);
+    expect(barDateParts(local, VN, NY).day).toBe(23);
+    // One built at New York's midnight keeps New York's date.
+    expect(barDateParts(Date.UTC(2026, 9, 23, 4), VN, NY).day).toBe(23);
+  });
+});
+
+describe('timeframeSpansDays', () => {
+  it('is true for bars a day long or more', () => {
+    expect(['1d', '2d', '1w', '1M', '12M'].map((tf) => timeframeSpansDays(tf))).toEqual([true, true, true, true, true]);
+  });
+
+  it('is false for hours, minutes and tick bars', () => {
+    expect(['4h', '12h', '1h', '7m', '100T'].map((tf) => timeframeSpansDays(tf))).toEqual([false, false, false, false, false]);
   });
 });

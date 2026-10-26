@@ -407,6 +407,19 @@ describe('ResamplingAdapter in the symbol’s time zone', () => {
     expect((await adapter.fetchHistory('B', '4h', 4)).every((b) => b.time % (4 * HOUR) === 0)).toBe(true);
   });
 
+  it('keeps the UTC days it built after a failed answer, for older pages and later histories too', async () => {
+    const { adapter, resolveSymbol } = zonedFeed(['1h'], vnHours(), VN);
+    resolveSymbol.mockRejectedValueOnce(new Error('down'));
+    const first = await adapter.fetchHistory('X', '1d', 2);
+    expect(first.map((d) => d.time)).toEqual([Date.UTC(2026, 9, 22), Date.UTC(2026, 9, 23)]);
+    // The feed would name the zone now: the symbol's days stay UTC's, so no day is there twice.
+    const older = await adapter.fetchHistoryBefore!('X', '1d', first[0].time, 5);
+    expect(older.length).toBeGreaterThan(0);
+    expect(older.every((d) => d.time % DAY === 0 && d.time < first[0].time)).toBe(true);
+    const again = await adapter.fetchHistory('X', '1d', 2);
+    expect(again).toEqual(first);
+  });
+
   it('waits a bounded time for a feed that never says', async () => {
     vi.useFakeTimers();
     try {

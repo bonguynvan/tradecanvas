@@ -756,10 +756,11 @@ const dayStart = timeframeBucketStart(trade.time, '1d', { timeZone: 'Asia/Ho_Chi
 <p>
   Gom nhóm theo lịch: phút và giờ (1h trở xuống) làm tròn xuống bội số của khung tính từ
   epoch Unix. Ngày, tuần (từ ngày đầu tuần đã cấu hình), tháng, quý và năm bắt đầu lúc nửa
-  đêm của sàn, các khung giờ chia hết một ngày (2h, 3h, 4h, 6h, 8h, 12h) cũng vậy: theo
-  <code>timeZone</code> của mã (<code>setSymbolInfo</code>, hoặc <code>resolveSymbol</code>
-  của adapter), nếu không có thì của thị trường (<code>setMarket</code>), nếu không nữa thì
-  UTC. Ngày đổi giờ dài 23 hoặc 25 tiếng. Nến ngày đóng dấu 00:00 UTC được đọc là đúng ngày
+  đêm của sàn, các khung giờ chia hết một ngày (2h, 3h, 4h, 6h, 8h, 12h) cũng vậy. Với nến đưa vào
+  <code>widget.setData</code>, đó là nửa đêm theo <code>timeZone</code> của mã (<code>setSymbolInfo</code>),
+  nếu không có thì của thị trường (<code>setMarket</code>), nếu không nữa thì của UTC. Các khung
+  mà nguồn dữ liệu không có bắt đầu lúc nửa đêm của múi giờ mà <code>resolveSymbol</code> của nó
+  nêu, nếu không có thì của UTC: múi giờ của thị trường không dời chúng. Ngày đổi giờ dài 23 hoặc 25 tiếng. Nến ngày đóng dấu 00:00 UTC được đọc là đúng ngày
   chúng ghi, nên ở phía tây UTC thứ Hai vẫn nằm trong tuần của nó và nến tuần giữ dấu 00:00
   UTC. Nến đầu vào không bao giờ bị sửa đổi.
 </p>

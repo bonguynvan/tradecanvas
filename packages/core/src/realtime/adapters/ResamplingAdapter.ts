@@ -25,6 +25,7 @@ import {
   resampleBars,
   timeframeBucketStart,
   timeframeFollowsDays,
+  timeframeSpansDays,
   timeframeToMs,
   wallToUtc,
 } from '@tradecanvas/commons';
@@ -87,12 +88,6 @@ export function servesTimeframe(adapter: DataAdapter, timeframe: TimeFrame): boo
   return !supported?.length || baseTimeframe(timeframe, supported) !== null;
 }
 
-/** Whether bars of `tf` are a day long or more: feeds stamp them by date. */
-function isDateFrame(tf: TimeFrame): boolean {
-  const unit = parseTimeframe(tf)?.unit;
-  return unit === 'd' || unit === 'w' || unit === 'M';
-}
-
 /**
  * Start of the base bar after the one starting at `time`, on the calendar for
  * weeks and months. A bar of a day or more stamped at `zone`'s midnight
@@ -101,7 +96,7 @@ function isDateFrame(tf: TimeFrame): boolean {
  */
 function nextBaseStart(time: number, base: TimeFrame, zone?: string): number {
   const parsed = parseTimeframe(base);
-  const zoned = zone !== undefined && isDateFrame(base) && time % DAY_MS !== 0;
+  const zoned = zone !== undefined && timeframeSpansDays(base) && time % DAY_MS !== 0;
   const wall = zoned ? time + offsetAt(zone, time) * MINUTE_MS : time;
   let next: number;
   if (parsed?.unit === 'M') {
@@ -155,8 +150,9 @@ interface ServedTail {
  * - Days, weeks, months and the hour frames that divide a day start at the
  *   midnight of the symbol's exchange: the `timeZone` the feed's
  *   `resolveSymbol` names, asked once and kept per symbol (a feed without
- *   one, or one whose timeframes can't line up with that midnight, gets
- *   UTC's). Daily bars stamped at 00:00 UTC are read as their dates.
+ *   one, one that fails or is slow to answer, or one whose timeframes can't
+ *   line up with that midnight, gets UTC's, and keeps them for the symbol).
+ *   Daily bars stamped at 00:00 UTC are read as their dates.
  * - Live base bars are kept by time within the forming bucket, so a feed
  *   that never flags a bar closed, or repeats a frame, still builds it right.
  *   The bucket closes with its last base bar, or when the next bucket's first
@@ -284,23 +280,23 @@ export class ResamplingAdapter implements DataAdapter {
 
   /**
    * The zone `symbol`'s days are built in, asking the feed the first time. A
-   * feed that hasn't said within `SYMBOL_ZONE_WAIT_MS` keeps UTC days for the
-   * symbol, so a late answer can't move bars already built; one that failed
-   * to say is asked again next time.
+   * feed that hasn't said within `SYMBOL_ZONE_WAIT_MS`, or failed to say,
+   * keeps UTC days for the symbol: a later answer can't move bars already
+   * built, so older pages and the history of a reconnect never hold a day
+   * twice.
    */
   private async zoneFor(symbol: string): Promise<string | undefined> {
     if (this.zones.has(symbol)) return this.keptZone(symbol);
     let timer: ReturnType<typeof setTimeout> | undefined;
     const waited = new Promise<void>((resolve) => { timer = setTimeout(() => resolve(), SYMBOL_ZONE_WAIT_MS); });
-    let failed = false;
     try {
       await Promise.race([this.resolveShared(symbol), waited]);
     } catch {
-      failed = true;
+      // No zone from the feed: the days are UTC's, and stay so below.
     } finally {
       clearTimeout(timer);
     }
-    if (!failed && !this.zones.has(symbol)) this.zones.set(symbol, null);
+    if (!this.zones.has(symbol)) this.zones.set(symbol, null);
     return this.keptZone(symbol);
   }
 
@@ -342,7 +338,7 @@ export class ResamplingAdapter implements DataAdapter {
     const zonedBase = zoned ? baseTimeframe(timeframe, this.baseTimeframes, zone) : null;
     const base = zonedBase ?? utcBase;
     const planZone = zonedBase ? zone : undefined;
-    return { base, zone: planZone, bucket: { timeZone: planZone, dates: isDateFrame(base) } };
+    return { base, zone: planZone, bucket: { timeZone: planZone, dates: timeframeSpansDays(base) } };
   }
 
   // --- History ---

@@ -295,11 +295,18 @@ console.log(front.symbol, front.lastTradingDay);   // e.g. VN30F2611 2026-11-19
 ## Bars of a day in the exchange's time
 
 The 4H, 1D, 1W and 1M bars the library builds start at the exchange's midnight
-when it knows the zone (`SymbolInfo.timeZone` from `resolveSymbol`, else
-`setMarket`'s): for Ho Chi Minh City, 1D at 00:00 there and 4H at 08:00 and
-12:00. Bars your own code builds (from trades, or hours into days) should start
-at the same place: `timeframeBucketStart` with the zone. 1h and shorter keep
-their floor on the epoch; daily bars stamped at 00:00 UTC keep their dates.
+when it knows the zone: for Ho Chi Minh City, 1D at 00:00 there and 4H at 08:00
+and 12:00. Which zone depends on where the bars come from:
+
+- **Timeframes a feed lacks** (built from its `supportedTimeframes`): only the
+  `SymbolInfo.timeZone` its `resolveSymbol` answers. `setMarket` doesn't move
+  them; a feed without `resolveSymbol` (or that fails to answer) gets UTC days.
+- **Bars given to `widget.setData`**: the symbol's zone (`setSymbolInfo`), else
+  the market's (`setMarket`).
+
+Bars your own code builds (from trades, or hours into days) should start at the
+same place: `timeframeBucketStart` with the zone. 1h and shorter keep their
+floor on the epoch; daily bars stamped at 00:00 UTC keep their dates.
 
 ```ts
 import { resampleBars, timeframeBucketStart, type OHLCBar, type TimeFrame, type Trade } from '@tradecanvas/chart';

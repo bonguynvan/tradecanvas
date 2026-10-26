@@ -49,7 +49,8 @@ chart.connect({ adapter: new CoinbaseAdapter(), symbol: 'BTC-USD', timeframe: '1
   日、周、月以及能整除一天的小时周期（2h、3h、4h、6h、8h、12h）从交易所的午夜开始，以 <code>resolveSymbol</code> 给出的
   <code>timeZone</code> 为准。图表对每个品种只询问一次，在这类周期第一次加载历史之前，并记住该时区；1h 及更短的周期不会等待。
   没有 <code>resolveSymbol</code>、不提供时区或提供 UTC，或者其周期无法与该午夜对齐（时区与 UTC 相差 7 小时却只有 4h K线）的数据源，
-  仍按 UTC 划分日期，与以前一样。时间戳为 00:00 UTC 的日线被视为其标明的日期。数据源之后通过 <code>symbolInfo</code>
+  仍按 UTC 划分日期，与以前一样。回答失败或超过 5 秒才回答的数据源也一样，此后该品种的日期保持按 UTC 划分，因此更早的分页和重新连接后的历史中同一天不会出现两次。
+  市场的时区（<code>setMarket</code>）不会移动这些K线。时间戳为 00:00 UTC 的日线被视为其标明的日期。数据源之后通过 <code>symbolInfo</code>
   事件发送的时区会改变显示的时间，但不会改变已构建的日的起点。
 </p>
 
@@ -84,7 +85,7 @@ agg.on('barClose', (bar) => console.log(bar))   // a bar whose interval is over
 agg.processTick({ time, price, volume })
 
 const current = agg.getCurrentBar()         // forming bar`}</code></pre>
-<p>周从周一开始，月从 1 日开始。使用 <code>setTimeZone</code> 后，日、周、月以及能整除一天的小时周期从交易所的午夜开始；图表会按品种的时区为其数据流的 tick（<code>aggregateTicks</code>）设置它，并在历史数据以 00:00 UTC 标记日期时也这样标记。</p>
+<p>周从周一开始，月从 1 日开始。使用 <code>setTimeZone</code> 后，日、周、月以及能整除一天的小时周期从交易所的午夜开始；图表会按品种的时区（没有则按市场的时区）为其数据流的 tick（<code>aggregateTicks</code>）设置它，并让由 tick 构建的K线与历史K线对齐：历史数据以 00:00 UTC 标记日期时，日线也这样标记；2h 到 12h 的K线只有在历史K线从交易所午夜开始时才从那里开始，因此数据源自己的 4h K线（00:00、04:00… UTC）保持原来的时间。</p>
 
 <h2>多个品种的报价</h2>
 <p>

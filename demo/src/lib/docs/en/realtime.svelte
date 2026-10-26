@@ -52,7 +52,9 @@ chart.connect({ adapter: new CoinbaseAdapter(), symbol: 'BTC-USD', timeframe: '1
   before the first history of such a timeframe, and keeps the zone; 1h and shorter frames don't wait
   for it. A feed without <code>resolveSymbol</code>, one that names no zone or UTC, or one whose
   timeframes can't line up with that midnight (only 4h bars for a zone 7 hours from UTC) gets UTC
-  days, as before. Daily bars stamped at 00:00 UTC are read as the dates they name. A zone the feed
+  days, as before. So does one that fails to answer or takes more than 5 seconds, and the symbol's days then
+  stay UTC's, so older pages and the history after a reconnect never hold a day twice. The
+  market's zone (<code>setMarket</code>) doesn't move these bars. Daily bars stamped at 00:00 UTC are read as the dates they name. A zone the feed
   sends later in a <code>symbolInfo</code> event changes the times shown, not where built days start.
 </p>
 
@@ -87,7 +89,7 @@ agg.on('barClose', (bar) => console.log(bar))   // a bar whose interval is over
 agg.processTick({ time, price, volume })
 
 const current = agg.getCurrentBar()         // forming bar`}</code></pre>
-<p>Weeks start on Monday and months on the 1st. With <code>setTimeZone</code>, days, weeks, months and the hour frames that divide a day start at the exchange's midnight; a chart sets it for its stream's ticks (<code>aggregateTicks</code>) from the symbol's zone, and stamps days at 00:00 UTC when the history does.</p>
+<p>Weeks start on Monday and months on the 1st. With <code>setTimeZone</code>, days, weeks, months and the hour frames that divide a day start at the exchange's midnight; a chart sets it for its stream's ticks (<code>aggregateTicks</code>) from the symbol's zone, else its market's, and lands their bars on the history's: days are stamped at 00:00 UTC when the history's are, and 2h to 12h bars start at the exchange's midnight only when the history's do, so a feed's own 4h bars (00:00, 04:00… UTC) keep their times.</p>
 
 <h2>Quotes for many symbols</h2>
 <p>

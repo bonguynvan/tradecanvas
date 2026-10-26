@@ -50,6 +50,8 @@ chart.connect({ adapter: new CoinbaseAdapter(), symbol: 'BTC-USD', timeframe: '1
   <code>resolveSymbol</code> が示す <code>timeZone</code> の午前 0 時に始まります。チャートは銘柄ごとに一度、そうした時間足の最初の履歴の前に問い合わせ、
   そのタイムゾーンを保ちます。1h 以下の時間足は待ちません。<code>resolveSymbol</code> のないフィード、タイムゾーンを示さないか UTC を示すフィード、
   時間足がその午前 0 時にそろわないフィード（UTC から 7 時間ずれたタイムゾーンで 4h バーしかない場合など）は、これまでどおり UTC の日になります。
+  問い合わせに失敗したフィードや 5 秒以内に答えないフィードも同じで、その銘柄の日はその後も UTC のままなので、さらに古いページや再接続後の履歴に
+  同じ日が二度現れることはありません。市場のタイムゾーン（<code>setMarket</code>）でこれらのバーが動くことはありません。
   00:00 UTC のタイムスタンプを持つ日足は、それが示す日付として扱います。フィードが後から <code>symbolInfo</code> イベントで送るタイムゾーンは、
   表示される時刻を変えますが、作られた日の始まりは変えません。
 </p>
@@ -85,7 +87,7 @@ agg.on('barClose', (bar) => console.log(bar))   // a bar whose interval is over
 agg.processTick({ time, price, volume })
 
 const current = agg.getCurrentBar()         // forming bar`}</code></pre>
-<p>週は月曜日、月は 1 日に始まります。<code>setTimeZone</code> を使うと、日、週、月と 1 日を割り切る時間足は取引所の午前 0 時に始まります。チャートは銘柄のタイムゾーンからストリームのティック（<code>aggregateTicks</code>）にこれを設定し、履歴が日を 00:00 UTC で記録していればそれに合わせます。</p>
+<p>週は月曜日、月は 1 日に始まります。<code>setTimeZone</code> を使うと、日、週、月と 1 日を割り切る時間足は取引所の午前 0 時に始まります。チャートは銘柄のタイムゾーン（なければ市場のもの）からストリームのティック（<code>aggregateTicks</code>）にこれを設定し、ティックから作るバーを履歴のバーに揃えます。履歴が日を 00:00 UTC で記録していれば日足もそうし、2h から 12h のバーは履歴のバーが取引所の午前 0 時から始まるときだけそこから始めるので、フィード自身の 4h バー（00:00、04:00… UTC）は時刻が変わりません。</p>
 
 <h2>複数シンボルのクオート</h2>
 <p>

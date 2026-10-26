@@ -722,9 +722,10 @@ const dayStart = timeframeBucketStart(trade.time, '1d', { timeZone: 'Asia/Ho_Chi
 <p>
   달력을 고려한 구간 나누기: 분과 시간 단위(1h 이하)는 Unix epoch부터 단위의 배수로 내림합니다.
   일, 주(설정된 주 시작일부터), 월, 분기, 연 단위는 거래소의 자정에 시작하며, 하루를 나누어떨어지게 하는
-  시간 단위(2h, 3h, 4h, 6h, 8h, 12h)도 마찬가지입니다. 기준은 종목의 <code>timeZone</code>
-  (<code>setSymbolInfo</code> 또는 어댑터의 <code>resolveSymbol</code>), 없으면 시장의 것(<code>setMarket</code>),
-  그것도 없으면 UTC입니다. 시계가 바뀌는 날은 23시간 또는 25시간입니다. 00:00 UTC로 찍힌 일봉은 그것이 가리키는
+  시간 단위(2h, 3h, 4h, 6h, 8h, 12h)도 마찬가지입니다. <code>widget.setData</code>에 준 봉의 기준은
+  종목의 <code>timeZone</code>(<code>setSymbolInfo</code>), 없으면 시장의 것(<code>setMarket</code>), 그것도 없으면
+  UTC입니다. 피드에 없는 단위는 그 피드의 <code>resolveSymbol</code>이 알려 주는 시간대의 자정, 없으면 UTC 자정에
+  시작하며, 시장의 시간대로는 옮겨지지 않습니다. 시계가 바뀌는 날은 23시간 또는 25시간입니다. 00:00 UTC로 찍힌 일봉은 그것이 가리키는
   날짜로 읽으므로, UTC 서쪽에서도 월요일은 제 주에 남고 주봉은 00:00 UTC 시각을 유지합니다.
   입력 봉은 절대 변경되지 않습니다.
 </p>

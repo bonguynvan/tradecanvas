@@ -1,14 +1,8 @@
 import type { OHLCBar, TimeFrame, RawTick, AggregatedBar, BucketOptions } from '@tradecanvas/commons';
-import { offsetAt, parseTimeframe, timeframeBucketStart, timeframeToMs } from '@tradecanvas/commons';
+import { offsetAt, timeframeBucketStart, timeframeSpansDays, timeframeToMs } from '@tradecanvas/commons';
 import { Emitter } from './Emitter.js';
 
 const MINUTE_MS = 60_000;
-
-/** Whether bars of `tf` are a day long or more, which some feeds stamp by date. */
-function isDateFrame(tf: TimeFrame): boolean {
-  const unit = parseTimeframe(tf)?.unit;
-  return unit === 'd' || unit === 'w' || unit === 'M';
-}
 
 interface AggregatorEvents {
   /** The forming bar, after each tick. */
@@ -53,7 +47,7 @@ export class TickAggregator extends Emitter<AggregatorEvents> {
     super();
     this.timeframe = _timeframe;
     this.timeframeMs = timeframeToMs(_timeframe);
-    this.dateFrame = isDateFrame(_timeframe);
+    this.dateFrame = timeframeSpansDays(_timeframe);
     this.ringCapacity = bufferSize;
     this.tickRing = new Array<RawTick>(bufferSize);
   }
@@ -61,7 +55,7 @@ export class TickAggregator extends Emitter<AggregatorEvents> {
   setTimeframe(tf: TimeFrame): void {
     this.timeframe = tf;
     this.timeframeMs = timeframeToMs(tf);
-    this.dateFrame = isDateFrame(tf);
+    this.dateFrame = timeframeSpansDays(tf);
     this.currentBar = null;
     this.ringHead = 0;
     this.ringCount = 0;

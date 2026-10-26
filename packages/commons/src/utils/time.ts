@@ -213,15 +213,25 @@ function parsedFrame(tf: TimeFrame): ParsedFrame {
   return frame;
 }
 
-/** Whether a frame's buckets start at a day's midnight: days, weeks, months, and hours that divide a day. */
-function followsDays({ count, unit }: ParsedFrame): boolean {
-  if (unit === 'h') return count > 1 && HOURS_PER_DAY % count === 0;
+/** Whether a frame's bars are a day long or more: days, weeks, months. */
+function spansDays({ unit }: ParsedFrame): boolean {
   return unit === 'd' || unit === 'w' || unit === 'M';
+}
+
+/** Whether a frame's buckets start at a day's midnight: days, weeks, months, and hours that divide a day. */
+function followsDays(frame: ParsedFrame): boolean {
+  if (frame.unit === 'h') return frame.count > 1 && HOURS_PER_DAY % frame.count === 0;
+  return spansDays(frame);
 }
 
 /** Whether `timeframeBucketStart` starts the buckets of `tf` at a zone's midnight when given one. */
 export function timeframeFollowsDays(tf: TimeFrame): boolean {
   return followsDays(parsedFrame(tf));
+}
+
+/** Whether bars of `tf` are a day long or more (days, weeks, months), which feeds often stamp by date. */
+export function timeframeSpansDays(tf: TimeFrame): boolean {
+  return spansDays(parsedFrame(tf));
 }
 
 /** Whether `timeZone` moves a day's midnight away from UTC's. */
@@ -286,12 +296,14 @@ function utcBucketStart(timestamp: number, { count, unit }: ParsedFrame, weekSta
 /**
  * The zone a bar a day long or more is dated in, whatever zone the chart
  * shows (`tz`): UTC for one stamped at 00:00 UTC, the date it names; its
- * exchange's zone (`exchangeZone`) for any other, since the days a chart
- * builds start at the exchange's midnight; else `tz`.
+ * exchange's zone (`exchangeZone`) for one stamped at the exchange's
+ * midnight, as the days a chart builds are; else `tz`, so a bar stamped at
+ * the browser's midnight still reads its own date there.
  */
 export function barDateZone(timeMs: number, tz: TimeZoneSetting, exchangeZone?: string | null): TimeZoneSetting {
   if (timeMs % DAY_MS === 0) return 0;
-  return exchangeZone || tz;
+  if (exchangeZone && timeframeBucketStart(timeMs, '1d', { timeZone: exchangeZone }) === timeMs) return exchangeZone;
+  return tz;
 }
 
 /** The calendar parts a bar a day long or more is labelled with: its date, in the zone `barDateZone` gives. */

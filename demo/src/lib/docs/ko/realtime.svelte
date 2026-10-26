@@ -50,6 +50,8 @@ chart.connect({ adapter: new CoinbaseAdapter(), symbol: 'BTC-USD', timeframe: '1
   <code>resolveSymbol</code>이 알려 주는 <code>timeZone</code>의 자정에 시작합니다. 차트는 종목마다 한 번, 그런 단위의 첫 기록을 불러오기 전에
   묻고 그 시간대를 유지합니다. 1h 이하 단위는 기다리지 않습니다. <code>resolveSymbol</code>이 없거나, 시간대를 알려 주지 않거나 UTC를 알려 주거나,
   시간 단위가 그 자정에 맞지 않는 피드(UTC와 7시간 차이 나는 시간대에 4h 봉만 있는 경우)는 전처럼 UTC 기준의 날을 씁니다.
+  답에 실패하거나 5초 넘게 답하지 않는 피드도 마찬가지이며, 그 뒤로 그 종목의 날은 UTC 기준으로 유지되므로 더 오래된 페이지나
+  다시 연결한 뒤의 기록에 같은 날이 두 번 나오지 않습니다. 시장의 시간대(<code>setMarket</code>)는 이 봉들을 옮기지 않습니다.
   00:00 UTC로 찍힌 일봉은 그것이 가리키는 날짜로 읽습니다. 피드가 나중에 <code>symbolInfo</code> 이벤트로 보내는 시간대는 표시되는 시각을 바꾸지만
   이미 만든 날의 시작은 바꾸지 않습니다.
 </p>
@@ -85,7 +87,7 @@ agg.on('barClose', (bar) => console.log(bar))   // a bar whose interval is over
 agg.processTick({ time, price, volume })
 
 const current = agg.getCurrentBar()         // forming bar`}</code></pre>
-<p>주는 월요일에, 월은 1일에 시작합니다. <code>setTimeZone</code>을 쓰면 일, 주, 월과 하루를 나누어떨어지게 하는 시간 단위가 거래소 자정에 시작합니다. 차트는 종목의 시간대로 스트림의 틱(<code>aggregateTicks</code>)에 이를 설정하고, 기록이 날짜를 00:00 UTC로 찍으면 그에 맞춥니다.</p>
+<p>주는 월요일에, 월은 1일에 시작합니다. <code>setTimeZone</code>을 쓰면 일, 주, 월과 하루를 나누어떨어지게 하는 시간 단위가 거래소 자정에 시작합니다. 차트는 종목의 시간대(없으면 시장의 시간대)로 스트림의 틱(<code>aggregateTicks</code>)에 이를 설정하고, 틱으로 만든 봉을 기록의 봉에 맞춥니다. 기록이 날짜를 00:00 UTC로 찍으면 일봉도 그렇게 찍고, 2h부터 12h 봉은 기록의 봉이 거래소 자정에 시작할 때만 그곳에서 시작하므로 피드 자체의 4h 봉(00:00, 04:00… UTC)은 시각이 그대로입니다.</p>
 
 <h2>여러 종목의 시세</h2>
 <p>
