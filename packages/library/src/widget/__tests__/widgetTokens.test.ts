@@ -88,6 +88,15 @@ describe('widget colour tokens', () => {
   it.each([
     ['dark', dark, darkTints],
     ['light', light, lightTints],
+  ])('%s: muted text reads on the row the keys are on, in a dialog (a venue, a kind in the symbol search)', (_name, t, tint) => {
+    const hover = tint['--tcw-hover-bg'];
+    const selected = mix(hover.hex, t['--tcw-bg-elevated'], hover.alpha);
+    expect(contrast(t['--tcw-text-muted'], selected)).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it.each([
+    ['dark', dark, darkTints],
+    ['light', light, lightTints],
   ])('%s: a kind colour reads on its own tint in the symbol search, on the selected row too', (_name, t, tint) => {
     const surface = t['--tcw-bg-elevated'];
     // The row the arrow keys are on is the hover tint over the dialog's surface.
