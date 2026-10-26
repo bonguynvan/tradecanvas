@@ -176,8 +176,8 @@ function barsOf(cells: Float64Array, count: number, open: number, time: number):
 
 /**
  * What a try at one range closed, as numbers (see CELLS_PER_BAR), and the bar
- * it left forming, or null when the try went over the limit. `cells` is the
- * store it wrote to, grown or not, for the next try to write to again.
+ * it left forming, or null when the try failed. `cells` is the store it wrote
+ * to, grown or not, for the next try to write to again.
  */
 interface RangeTry {
   cells: Float64Array;
@@ -188,12 +188,14 @@ interface RangeTry {
 /**
  * The bars `data` closes at `range`, written to `cells`, or no bar forming as
  * soon as the closed bars have made more than MAX_RANGE_BARS, or the last bar
- * that many on its own: the range is too small for the move, and the rest is
- * not replayed. The closed bars are kept as numbers and made into bars only by
- * the try that passes, so a try that fails leaves nothing behind to collect.
+ * that many on its own, or a bar would close more than a kept digit short of a
+ * price it reached: the range is too small for the move or for the kept
+ * digits, and the rest is not replayed. The closed bars are kept as numbers and
+ * made into bars only by the try that passes, so a try that fails leaves
+ * nothing behind to collect.
  */
 function closeBars(data: DataSeries, range: number, digits: KeptDigits, cells: Float64Array): RangeTry {
-  const { clean, half } = digits;
+  const { clean, unit, half } = digits;
   let count = 0;
   let open = data[0].open;
   let high = open;
@@ -225,6 +227,10 @@ function closeBars(data: DataSeries, range: number, digits: KeptDigits, cells: F
         const up = price > high && price >= upClose - half && upClose > low;
         if (!up && !(price < low && price <= downClose + half && downClose < high)) break;
         const at = up ? upClose : downClose;
+        // A close more than a kept digit short of the bar's near end is a price the move went straight past. Only a
+        // range near half a digit makes one: the digits round it to a whole digit one way and to nothing the other,
+        // so a bar can't close that other way and grows past the range. A wider range is tried.
+        if (up ? at < high - unit : at > low + unit) return { cells, count, forming: null };
         const cell = count * CELLS_PER_BAR;
         if (cell === cells.length) cells = grownCells(cells);
         cells[cell] = at;
@@ -264,13 +270,15 @@ function closeBars(data: DataSeries, range: number, digits: KeptDigits, cells: F
  * their times count up by one from the first bar's.
  *
  * Closes are kept to 15 significant digits of the largest price, so a range
- * finer than that closes no bar, and a price those digits read as a close
- * (100209.40000000001 for 100209.4) reaches it. When the closed bars would
- * make more than 100,000 range bars, or the last bar that many on its own,
- * the range is raised to 2, 5, 10, 20… times itself, the first that makes no
- * more, and every bar is built again on it. The last bar is counted on its
- * own, so a tick on it changes the range only when that bar alone makes that
- * many.
+ * under half the last of them closes no bar, however the prices are written,
+ * and a price those digits read as a close (100209.40000000001 for 100209.4)
+ * reaches it. When the closed bars would make more than 100,000 range bars,
+ * or the last bar that many on its own, the range is raised to 2, 5, 10, 20…
+ * times itself, the first that makes no more, and every bar is built again on
+ * it; so is a range just over half a digit that the digits round to nothing
+ * one way, which would leave a bar growing past it. The last bar is counted
+ * on its own, so a tick on it changes the range only when that bar alone
+ * makes that many.
  *
  * Approximation: input is OHLC, not tick-level. Each bar is replayed from
  * its open through its extremes in the order its candle implies (up bar:
@@ -293,7 +301,9 @@ export function toRangeBars(data: DataSeries, config: RangeBarsConfig): DataSeri
       path ??= spannedPath(data);
       if (surelyTooMany(path, range, digits.unit)) continue;
     }
-    const closed = closeBars(data, range, digits, cells);
+    // A range under half the last digit kept can't move a close off the price it starts from, so only a price's
+    // float dust would close a bar, at a price the move went straight past: it closes none, as a range no move reaches.
+    const closed = closeBars(data, range < digits.half ? Infinity : range, digits, cells);
     cells = closed.cells;
     if (!closed.forming) continue;
     const bars = barsOf(cells, closed.count, data[0].open, data[0].time);

@@ -112,6 +112,61 @@ describe('toRangeBars', () => {
     expect(out[0].volume).toBeCloseTo(2, 9);
   });
 
+  it('closes no bar on a range under half a kept digit, on prices written as whole ticks times the tick size', () => {
+    // Prices up to 11 keep digits down to 1e-13. 5507 * 0.0001 is 0.5507000000000001, which the kept digits read
+    // as 0.5507: that high less 1e-14 must not close a bar at 0.5507 on a move that went from 0.01 down to -0.05.
+    const data = [
+      bar(0.01, 0.01, -0.03, -0.02, 0),
+      bar(-0.02, 5_507 * 0.0001, -0.02, 0.5, 1),
+      bar(0.5, 0.5, -0.05, -0.05, 2),
+      bar(-0.05, 11, -0.05, 11, 3),
+    ];
+    expect(toRangeBars(data, { rangeSize: 1e-14 })).toEqual([]);
+    const forming = toRangeBars(data, { rangeSize: 1e-14, includeForming: true });
+    expect(forming).toHaveLength(1);
+    expect(forming[0]).toMatchObject({ time: 0, open: 0.01, high: 11, low: -0.05, close: 11 });
+  });
+
+  it('raises a range just over half a kept digit rather than close a bar short of a price it reached', () => {
+    // Prices near 64 keep digits down to 1e-13, and 63.9999999999998 less 5.85e-14 rounds back to itself, so the bar
+    // can't close on the way down. Its low runs on to 63.9999999999898, and the climb back would close it at
+    // 63.9999999999899, far under the 63.9999999999998 it opened at.
+    const data = [
+      bar(63.9999999999998, 63.9999999999998, 63.9999999999998, 63.9999999999998, 0),
+      bar(63.9999999999998, 63.9999999999998, 63.9999999999898, 63.9999999999898, 1),
+      bar(63.9999999999898, 63.9999999999999, 63.9999999999898, 63.9999999999999, 2),
+    ];
+    const out = toRangeBars(data, { rangeSize: 5.85e-14, includeForming: true });
+    expect(out).toEqual(toRangeBars(data, { rangeSize: 1.17e-13, includeForming: true }));
+    for (const b of out) {
+      expect(b.high).toBeGreaterThanOrEqual(Math.max(b.open, b.close));
+      expect(b.low).toBeLessThanOrEqual(Math.min(b.open, b.close));
+    }
+  });
+
+  it('closes no bar on any range under half a kept digit, on series of whole ticks', () => {
+    // Ticks of 0.1, 0.01 and 0.0001 near 50 and 100,000, at a range of 0.05 to 0.45 of the last digit kept.
+    let seed = 11;
+    const random = () => (seed = (seed * 1_664_525 + 1_013_904_223) >>> 0) / 2 ** 32;
+    for (let s = 0; s < 120; s++) {
+      const tick = [0.1, 0.01, 0.0001][s % 3];
+      let close = Math.round((s % 2 === 0 ? 50 : 100_000) / tick);
+      const swing = Math.max(2, Math.round(close * 0.002));
+      const data = Array.from({ length: 60 }, (_, i) => {
+        const open = close;
+        close = open + Math.round((random() + random() - 1) * swing);
+        const high = Math.max(open, close) + Math.round((random() * swing) / 2);
+        const low = Math.min(open, close) - Math.round((random() * swing) / 2);
+        return bar(open * tick, high * tick, low * tick, close * tick, i);
+      });
+      const high = Math.max(...data.map((b) => b.high));
+      const keptDigit = 10 ** (Math.ceil(Math.log10(high)) - 15);
+      const out = toRangeBars(data, { rangeSize: (0.05 + 0.4 * random()) * keptDigit, includeForming: true });
+      expect(out).toHaveLength(1);
+      expect(out[0]).toMatchObject({ open: data[0].open, high, low: Math.min(...data.map((b) => b.low)), close: data.at(-1)!.close });
+    }
+  });
+
   it('raises a range too small for the move to a whole multiple of itself, under 100,000 bars', () => {
     // 2.5 over a move of 1,000,000 would be 400,000 bars: five times it, 12.5, makes 80,000.
     const data = [bar(100, 100, 100, 100, 0), bar(100, 1_000_100, 100, 1_000_100, 1)];
@@ -193,6 +248,21 @@ describe('toRangeBars', () => {
     const ticks = toRangeBars(data(1_002_094 * 0.1), { rangeSize: 50, includeForming: true });
     expect(ohlc(ticks)).toEqual(ohlc(toRangeBars(data(100_209.4), { rangeSize: 50, includeForming: true })));
     expect(ticks).toHaveLength(17);
+  });
+
+  it('keeps closing bars on a high the kept digits read as where the bar closes on the way up', () => {
+    // 100000 * 0.000001 is 0.09999999999999999, as a feed sending whole ticks of 0.000001 writes 0.1. The bar must
+    // read it as 0.1, its close on the way up from 0.0995, and not close on the way down at the price it opened at.
+    const data = (high: number) => [
+      bar(0.0995, 0.0995, 0.0995, 0.0995, 0),
+      bar(0.0995, high, 0.098, 0.098, 1),
+      bar(0.098, 0.098, 0.096, 0.096, 2),
+    ];
+    const ohlc = (bars: OHLCBar[]) => bars.map((b) => [b.open, b.high, b.low, b.close]);
+    const config = { rangeSize: 0.0005, includeForming: true };
+    const ticks = toRangeBars(data(100_000 * 0.000001), config);
+    expect(ohlc(ticks)).toEqual(ohlc(toRangeBars(data(0.1), config)));
+    expect(ticks.map((b) => b.close)).toEqual([0.1, 0.0995, 0.099, 0.0985, 0.098, 0.0975, 0.097, 0.0965, 0.096]);
   });
 
   it('adds no bar still forming for a last price the kept digits read as the last close', () => {
