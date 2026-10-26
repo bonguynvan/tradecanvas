@@ -5,7 +5,7 @@ import { resolveColorScale, scaleColor, readableText } from '../colorScale.js';
 import { parseDay, dayToIso, computeCalendarLayout, hitDay, renderCalendar, MAX_CALENDAR_YEARS } from '../CalendarRenderer.js';
 import { correlationMatrix, computeMatrixLayout, hitMatrixCell, renderMatrix } from '../MatrixRenderer.js';
 import { layoutGroupedTreemap } from '../HeatmapLayout.js';
-import { renderHeatmap } from '../HeatmapRenderer.js';
+import { cellLabelInk, renderHeatmap } from '../HeatmapRenderer.js';
 
 /** Text measured as 0.6 em a character, at the font's size. */
 const measure = (text: string, size = 11) => text.length * size * 0.6;
@@ -221,6 +221,41 @@ describe('grouped treemaps', () => {
     renderHeatmap(ctx, 600, 400, data, layout.cells, { data, grouped: true }, DARK_THEME, { x: 5, y: 5 }, layout.groups);
     expect(depth()).toBe(0);
     expect(texts).toEqual(expect.arrayContaining(['Banks', 'VCB']));
+  });
+});
+
+describe('a heatmap cell’s label', () => {
+  // The light theme's PerformanceDashboard fades its months to the panel's near-clear surface: a month
+  // near zero is near the paper, where its white label could not be read.
+  it('is white on a dark or strong cell, as before, and dark ink on a pale one as drawn over the background', () => {
+    expect(cellLabelInk('#424242', LIGHT_THEME.background)).toBe('#FFFFFF');
+    expect(cellLabelInk('#1fa874', DARK_THEME.background)).toBe('#FFFFFF');
+    expect(cellLabelInk('#e8505b', LIGHT_THEME.background)).toBe('#FFFFFF');
+    expect(cellLabelInk('rgba(232,80,91,0.2)', DARK_THEME.background)).toBe('#FFFFFF');
+    expect(cellLabelInk('rgba(232,80,91,0.2)', LIGHT_THEME.background)).not.toBe('#FFFFFF');
+    expect(cellLabelInk('rgba(0,0,0,0.02)', '#fbfaf6')).not.toBe('#FFFFFF');
+    expect(cellLabelInk('#f4e1e0', '#000000')).not.toBe('#FFFFFF');
+  });
+
+  it('draws the labels of pale cells in the dark ink, and no shadow under them', () => {
+    const fills: string[] = [];
+    const shadows: string[] = [];
+    const { ctx } = fakeCtx();
+    const spy = new Proxy(ctx, {
+      get: (target, prop) => (prop === 'fillText'
+        ? () => { fills.push(String(Reflect.get(target, 'fillStyle'))); shadows.push(String(Reflect.get(target, 'shadowColor'))); }
+        : Reflect.get(target, prop)),
+      set: (target, prop, value) => Reflect.set(target, prop, value),
+    });
+    const data = [{ id: 'flat', label: 'Nov', value: 0.2 }, { id: 'up', label: 'Aug', value: 7.9 }];
+    const rects = [
+      { id: 'flat', rect: { x: 0, y: 0, width: 80, height: 40 } },
+      { id: 'up', rect: { x: 80, y: 0, width: 80, height: 40 } },
+    ];
+    renderHeatmap(spy, 160, 40, data, rects, { data, colorScale: { negative: '#b8423f', zero: 'rgba(0,0,0,0.02)', positive: '#1f7a5c' } }, LIGHT_THEME, null);
+    expect(fills[0]).not.toBe('#FFFFFF');
+    expect(shadows[0]).toBe('transparent');
+    expect(fills.at(-1)).toBe('#FFFFFF');
   });
 });
 
