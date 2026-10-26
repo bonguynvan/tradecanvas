@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { MARKET_HOSE, type OHLCBar } from '@tradecanvas/commons';
-import { BinanceAdapter, WebSocketAdapter, type WebSocketLike, type WsParseResult } from '@tradecanvas/core';
+import { DARK_THEME, MARKET_HOSE, type OHLCBar } from '@tradecanvas/commons';
+import { BinanceAdapter, WebSocketAdapter, type CurrentPriceLine, type WebSocketLike, type WsParseResult } from '@tradecanvas/core';
 import { Chart } from '../Chart.js';
-import { installChartStubs, sizedHost } from './chartTestEnv.js';
+import { fakeContext, installChartStubs, sizedHost } from './chartTestEnv.js';
 
 const HOUR = 3_600_000;
 const T0 = Date.UTC(2025, 0, 1);
@@ -14,6 +14,16 @@ let chart: Chart;
 
 type Internals = { tradingManager: { getCurrentPrice(): number | null } };
 const ordersPrice = () => (chart as unknown as Internals).tradingManager.getCurrentPrice();
+
+/** The last-price tag's colour, drawn on a price range that holds it. */
+function tagColour(): string | undefined {
+  const line = (chart as unknown as { currentPriceLine: CurrentPriceLine }).currentPriceLine;
+  line.render(fakeContext(document.createElement('canvas')), {
+    visibleRange: { from: 0, to: 10 }, priceRange: { min: 0, max: 200 }, barWidth: 6, barSpacing: 2, offset: 0,
+    chartRect: { x: 0, y: 0, width: 200, height: 100 },
+  }, DARK_THEME);
+  return line.getTag()?.color;
+}
 
 beforeEach(() => {
   installChartStubs();
@@ -222,6 +232,18 @@ describe('a stream', () => {
     expect(seen).toEqual([{ kind: 'bars', length: 61 }]);
   });
 
+  it('keeps the tag a fall when a frame comes again at the same price', async () => {
+    const send = await connected();
+    send(bar(60, 96), false);
+    expect(tagColour()).toBe(DARK_THEME.candleDown);
+    send(bar(60, 96), false);
+    expect(tagColour()).toBe(DARK_THEME.candleDown);
+    // The next bar opens where this one closed: level, measured from its close.
+    send(bar(60, 96), true);
+    send(bar(61, 96), false);
+    expect(tagColour()).toBe(DARK_THEME.candleUp);
+  });
+
   it('fires alerts on the close of a bar, as on its forming prices', async () => {
     const send = await connected();
     const fired = alertsFired();
@@ -420,12 +442,15 @@ describe('aggregateTicks, a reconnect whose history ends before the forming bar'
     trade(3000, 96, 5);
     const fired = alertsFired();
     chart.addAlert(98, 'crossingUp', 'over 98');
+    // 96 against the close of 100 before it: a fall.
+    expect(tagColour()).toBe(DARK_THEME.candleDown);
 
     stream().streamManager.wake('online');
     await new Promise((r) => setTimeout(r, 0));
     sockets.at(-1)!.onopen?.({});
     expect(chart.getData().at(-1)).toMatchObject({ time: t60, open: 101, high: 110, low: 96, close: 96, volume: 15 });
     expect(stream().currentPriceLine.getPrice()).toBe(96);
+    expect(tagColour()).toBe(DARK_THEME.candleDown);
     expect(ordersPrice()).toBe(96);
     expect(fired).toEqual([]);
 

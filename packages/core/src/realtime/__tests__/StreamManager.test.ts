@@ -582,6 +582,19 @@ describe('StreamManager — bars older than the newest', () => {
     feed.sm.dispose();
   });
 
+  it('sends the price again, unchanged, when the close it is measured from moved', async () => {
+    const feed = await live(history(40));
+    feed.bar(at(40, 96), false);
+    expect(feed.seen.priceChange.at(-1)).toEqual({ price: 96, previousClose: 100 });
+    feed.bar(at(40, 96), true);
+    feed.bar(at(41, 96), false); // the next bar opens where bar 40 closed: level
+    expect(feed.seen.priceChange.at(-1)).toEqual({ price: 96, previousClose: 96 });
+    const prices = feed.seen.priceChange.length;
+    feed.bar(at(41, 96), false);
+    expect(feed.seen.priceChange).toHaveLength(prices);
+    feed.sm.dispose();
+  });
+
   /** The stream of `feed` reconnected (the page came back), its history then `bars`. */
   async function reconnect(feed: Awaited<ReturnType<typeof live>>, bars: OHLCBar[]) {
     feed.fire('connectionChange', 'connected');

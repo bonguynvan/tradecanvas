@@ -35,7 +35,7 @@ export interface StreamEvents {
   barCorrection: OHLCBar;
   /** Raw tick received */
   tick: RawTick;
-  /** Current price changed */
+  /** The current price changed, or the close its change is measured from did (a new bar opening at the last close) */
   priceChange: { price: number; previousClose: number | null };
   /** The best bid and ask changed (from ticks that carry them) */
   quote: { bid?: number; ask?: number };
@@ -96,6 +96,8 @@ export class StreamManager extends Emitter<StreamEvents> {
   private state: ConnectionState = 'disconnected';
   private lastPrice: number | null = null;
   private previousClose: number | null = null;
+  /** The previous close the last `priceChange` carried. */
+  private sentPreviousClose: number | null = null;
   /** When the bar `previousClose` is the close of starts, ms: a correction of it moves the close. */
   private previousCloseTime: number | null = null;
   private unsubscribers: (() => void)[] = [];
@@ -187,6 +189,7 @@ export class StreamManager extends Emitter<StreamEvents> {
     this.lastPrice = null;
     this.previousClose = null;
     this.previousCloseTime = null;
+    this.sentPreviousClose = null;
 
     this.setState('disconnected');
   }
@@ -210,6 +213,7 @@ export class StreamManager extends Emitter<StreamEvents> {
     this.lastPrice = null;
     this.previousClose = null;
     this.previousCloseTime = null;
+    this.sentPreviousClose = null;
 
     // Another symbol or timeframe is a new series; the same again is merged with the bars loaded.
     if (symbol !== this.config.symbol || timeframe !== this.config.timeframe) this.resampler?.renewZone(symbol);
@@ -441,12 +445,17 @@ export class StreamManager extends Emitter<StreamEvents> {
     return bar;
   }
 
+  /**
+   * The price, sent when it or the close it is measured from moved: a new bar
+   * opening at the last close is level with it, where the price line would
+   * still measure it from the close before.
+   */
   private updatePrice(price: number): void {
-    if (price !== this.lastPrice) {
-      this.lastPrice = price;
-      this.priceLine.setPrice(price, this.previousClose ?? undefined);
-      this.emit('priceChange', { price, previousClose: this.previousClose });
-    }
+    if (price === this.lastPrice && this.previousClose === this.sentPreviousClose) return;
+    this.lastPrice = price;
+    this.sentPreviousClose = this.previousClose;
+    this.priceLine.setPrice(price, this.previousClose ?? undefined);
+    this.emit('priceChange', { price, previousClose: this.previousClose });
   }
 
   private setState(state: ConnectionState): void {
