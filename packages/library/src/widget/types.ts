@@ -286,8 +286,10 @@ export interface ChartWidgetOptions {
    * and auto-scale flags, and a chart type's own settings (the chart's
    * state, which `persistLayouts` and layouts hold). Give each widget on a
    * page a key of its own. What `setSettings` sets, and what an opened
-   * shared link or layout brings, is kept as the user's too; set a value
-   * back to your `chartOptions` one and it is no longer kept.
+   * layout brings, is kept as the user's too; set a value back to your
+   * `chartOptions` one and it is no longer kept. What an opened share link
+   * brings is someone else's choice: it shows for that visit, and the
+   * user's own stay kept until the user changes it.
    */
   persistSettings?: boolean | {
     /** The localStorage key. Default `'tcw:chart-settings'`. */

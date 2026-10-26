@@ -738,10 +738,12 @@ stop()`}</code></pre>
     Give each widget on a page a <code>key</code> of its own; a grid gives each of
     its charts one. It can't tell who made a change: what you set with
     <code>setSettings</code> (in <code>onReady</code>, say), and what an opened
-    share link or layout brings, are kept as the user's too, and win over
+    layout brings, are kept as the user's too, and win over
     <code>chartOptions</code> on the next visit even once your code stops setting
     them. Setting one back to your <code>chartOptions</code> value takes it out of
-    what is kept.</li>
+    what is kept. What an opened share link brings is someone else's choice: it
+    shows for that visit only, is not kept, and calls no
+    <code>onSettingsChange</code> listener (the next change tells them all).</li>
   <li><strong>Named layouts</strong> keep all of them but the time zone and the
     number format, which stay the viewer's, and auto-scale, which a drag on the
     price axis turns off. In the layout's JSON they are under

@@ -410,6 +410,12 @@ export class ChartWidget {
    * neither. Null while the widget is being made, which tells nobody.
    */
   private settingsPublished: string | null = null;
+  /**
+   * The settings shared links set this visit (`shown`) and the viewer's own
+   * they took the place of (`own`): what `persistSettings` keeps for a
+   * setting still as a link set it. Null when no link set any.
+   */
+  private linkSettings: { shown: Partial<ChartSettingsState>; own: Partial<ChartSettingsState> } | null = null;
   private readonly settingsListeners = new Set<(settings: ChartSettingsState) => void>();
   /** Switches the host's features turned off: a setting kept, shared or in a layout can't turn them on. */
   private settingsLocked: ReadonlySet<keyof ChartSettingsState> = new Set();
@@ -3254,6 +3260,32 @@ export class ChartWidget {
     });
   }
 
+  /**
+   * A link's settings, for this visit: shown, but neither kept nor told.
+   * They are someone else's choices (an upside-down scale, a hidden price),
+   * so `persistSettings` keeps the viewer's own in their place until the
+   * viewer changes them, and listeners hear of them with the next change.
+   */
+  private showLinkSettings(patch: Partial<ChartSettingsState>): void {
+    const before = this.getSettings();
+    const keys = Object.keys(patch) as (keyof ChartSettingsState)[];
+    const earlier = this.linkSettings;
+    // A second link takes the place of the first's: the viewer's own are still from before both.
+    const own = { ...Object.fromEntries(keys.map((key) => [key, before[key]])), ...earlier?.own } as Partial<ChartSettingsState>;
+    this.applySettings(patch, false);
+    this.linkSettings = { shown: { ...earlier?.shown, ...patch }, own };
+    this.markSettingsTold();
+  }
+
+  /** `settings` with each one still as a link set it back to the viewer's own: what `persistSettings` keeps. */
+  private ownSettings(settings: ChartSettingsState): ChartSettingsState {
+    const link = this.linkSettings;
+    if (!link) return settings;
+    const still = (Object.keys(link.shown) as (keyof ChartSettingsState)[])
+      .filter((key) => JSON.stringify(settings[key]) === JSON.stringify(link.shown[key]));
+    return { ...settings, ...Object.fromEntries(still.map((key) => [key, link.own[key]])) };
+  }
+
   /** Restore a view from an `exportState()` string. Returns false if malformed. */
   async importState(encoded: string): Promise<boolean> {
     const s = decodeWidgetState(encoded);
@@ -3269,7 +3301,7 @@ export class ChartWidget {
     // the sender's overlays with it, never their time zone or number format (the reader leaves those out).
     const { chartTypeOptions, ...shared } = this.allowedSettings({ scaleMode: s.scaleMode, ...readChartSettings(s.settings, SHARE_LEAVES) });
     const typeOptions = this.overViewerTypeOptions(s.chartType, chartTypeOptions);
-    this.applySettings(typeOptions ? { ...shared, chartTypeOptions: typeOptions } : shared);
+    this.showLinkSettings(typeOptions ? { ...shared, chartTypeOptions: typeOptions } : shared);
     this.settings?.refresh(this.shownSettings());
 
     // The shared indicators in place of the chart's, as one undo step.
@@ -4589,7 +4621,7 @@ export class ChartWidget {
     const json = JSON.stringify(settings);
     if (json === this.settingsPublished) return;
     this.settingsPublished = json;
-    this.settingsStore?.save(settings, this.settingsDefaults);
+    this.settingsStore?.save(this.ownSettings(settings), this.settingsDefaults);
     // Each its own copy: a listener that changes what it gets changes nothing else.
     for (const listener of [...this.settingsListeners]) {
       // One that throws is the host's bug: said, and the others still hear.
@@ -5007,7 +5039,8 @@ export class ChartWidget {
     this.replayBar = null;
   }
 
-  private applySettings(patch: Partial<ChartSettingsState>): void {
+  /** `told` false leaves the change unkept and untold (a link's). */
+  private applySettings(patch: Partial<ChartSettingsState>, told = true): void {
     this.settingsState = { ...this.settingsState, ...patch };
     if ((Object.keys(patch) as (keyof ChartSettingsState)[]).some((key) => !NOT_IN_LAYOUT.has(key))) this.layoutSession?.changed();
     this.scheduleLegend(); // the OHLCV legend's rows and the locale move or reword it
@@ -5061,7 +5094,7 @@ export class ChartWidget {
       this.chart.setChartTypeOptions({ ...typesAtDefaults(), ...patch.chartTypeOptions });
     }
     // Kept and told once done: an open dialog's changes wait for its OK or Cancel.
-    if (!this.settingsEdit) this.publishSettings();
+    if (told && !this.settingsEdit) this.publishSettings();
   }
 
   private resetSettings(): void {

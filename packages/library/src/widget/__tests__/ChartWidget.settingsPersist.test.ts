@@ -471,6 +471,36 @@ describe('ChartWidget persistSettings', () => {
   });
 });
 
+describe('ChartWidget: a shared link’s settings', () => {
+  const link = (settings: Partial<ChartSettingsState>) => encodeWidgetState({
+    v: 1, symbol: 'AAA', timeframe: '5m', chartType: 'candlestick', scaleMode: 'regular', indicators: [], drawings: [], settings,
+  });
+  const someoneElses = { invertScale: true, mainSeriesVisible: false, crosshairMode: 'hidden' } as const;
+
+  it('show for this visit, but are neither kept nor told', async () => {
+    make({ persistSettings: true });
+    widget.setSettings({ gridVisible: false }); // the viewer's own
+    const seen: ChartSettingsState[] = [];
+    widget.onSettingsChange((settings) => seen.push(settings));
+    expect(await widget.importState(link(someoneElses))).toBe(true);
+    expect(widget.getSettings()).toMatchObject(someoneElses);
+    expect(seen).toEqual([]);
+    expect(stored()!.settings).toEqual({ gridVisible: false });
+  });
+
+  it("leave the viewer's own kept when the viewer changes another, and become the viewer's once changed", async () => {
+    make({ persistSettings: true });
+    expect(await widget.importState(link(someoneElses))).toBe(true);
+    widget.setSettings({ sessionShadingVisible: true });
+    expect(stored()!.settings).toEqual({ sessionShadingVisible: true });
+    widget.setSettings({ crosshairMode: 'normal' });
+    expect(stored()!.settings).toEqual({ sessionShadingVisible: true, crosshairMode: 'normal' });
+    widget.destroy();
+    make({ persistSettings: true });
+    expect(widget.getSettings()).toMatchObject({ invertScale: false, mainSeriesVisible: true, crosshairMode: 'normal', sessionShadingVisible: true });
+  });
+});
+
 describe('ChartWidget settings where the host switched a feature off', () => {
   it('the settings dialog offers no legend or volume switch where the host switched the feature off', () => {
     make({ chartOptions: { features: { legend: false, volume: false } } });

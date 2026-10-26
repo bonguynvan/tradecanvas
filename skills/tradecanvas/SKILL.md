@@ -254,9 +254,10 @@ Chart Settings too, but not the viewer's time zone and number format;
 `persistLayouts` (per symbol) carries only a chart type's own settings. A kept
 setting wins over `chartOptions`, and Reset in the dialog goes back to
 `chartOptions`. With `persistSettings` on, what `setSettings` sets, and what an
-opened link or layout brings, is kept as the user's choice too: to force a
-value, set it on every start; setting it back to the `chartOptions` value stops
-it being kept.
+opened layout brings, is kept as the user's choice too: to force a value, set
+it on every start; setting it back to the `chartOptions` value stops it being
+kept. An opened share link's settings show for that visit only, are not kept
+and call no `onSettingsChange` listener.
 
 ## Events
 

@@ -679,9 +679,10 @@ stop()`}</code></pre>
     <code>chartOptions</code>，“重置”则回到你的值。它不保存对数和自动缩放这两个标志，也不保存
     各图表类型自己的设置（如 Renko 砖块大小），这些属于图表本身的状态。页面上的每个组件请各用
     一个 <code>key</code>；网格会自动为它的每个图表分配一个。它分不清改动来自谁：你用
-    <code>setSettings</code> 设置的值（比如在 <code>onReady</code> 里），以及打开的分享链接或布局带来的设置，
+    <code>setSettings</code> 设置的值（比如在 <code>onReady</code> 里），以及打开的布局带来的设置，
     也会被当作用户的选择保存下来，并在下次访问时优先于 <code>chartOptions</code>，即使你的代码已不再设置它们。
-    把某项设回你在 <code>chartOptions</code> 中的值，它就不再被保存。</li>
+    把某项设回你在 <code>chartOptions</code> 中的值，它就不再被保存。打开的分享链接带来的设置是别人的选择：
+    只在那次访问中生效，不会被保存，也不会调用 <code>onSettingsChange</code> 的监听器（下一次改动会一并告知）。</li>
   <li><strong>命名布局</strong> 保存全部设置，但时区和数字格式除外，它们由查看者自己决定；自动缩放也除外，
     在价格轴上拖动一下就会关闭它。在布局的 JSON 中，它们位于 <code>settings</code> 下，只有价格刻度及其翻转
     各有自己的字段，图表类型自己的设置则在图表状态中。

@@ -759,10 +759,13 @@ stop()`}</code></pre>
     Renko y similares), que son estado del gráfico. Da a cada widget de la página su
     propia <code>key</code>; una cuadrícula le da una a cada uno de sus gráficos. No
     distingue quién hizo un cambio: lo que fijas con <code>setSettings</code> (en
-    <code>onReady</code>, por ejemplo) y lo que trae un enlace compartido o un diseño
-    abierto también se guardan como elección del usuario, y ganan a
+    <code>onReady</code>, por ejemplo) y lo que trae un diseño abierto también se
+    guardan como elección del usuario, y ganan a
     <code>chartOptions</code> en la siguiente visita aunque tu código ya no los fije.
-    Devolver un ajuste a tu valor de <code>chartOptions</code> lo saca de lo guardado.</li>
+    Devolver un ajuste a tu valor de <code>chartOptions</code> lo saca de lo guardado.
+    Lo que trae un enlace compartido abierto es elección de otra persona: se ve solo
+    en esa visita, no se guarda y no llama a ningún listener de
+    <code>onSettingsChange</code> (el siguiente cambio los avisa con todo).</li>
   <li><strong>Los diseños con nombre</strong> la guardan entera salvo la zona horaria y
     el formato de números, que siguen siendo los de quien mira, y la escala automática,
     que se apaga al arrastrar el eje de precios. En el JSON del diseño va bajo

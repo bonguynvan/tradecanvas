@@ -743,10 +743,13 @@ stop()`}</code></pre>
     của từng loại biểu đồ (hộp Renko và những thứ tương tự), vốn là trạng thái của biểu đồ.
     Hãy cho mỗi widget trên trang một <code>key</code> riêng; lưới tự cho mỗi biểu đồ của
     nó một key. Nó không biết ai đã đổi: những gì bạn đặt bằng <code>setSettings</code>
-    (chẳng hạn trong <code>onReady</code>), và những gì một liên kết chia sẻ hay một bố cục
-    được mở mang đến, cũng được giữ như lựa chọn của người dùng, và thắng
+    (chẳng hạn trong <code>onReady</code>), và những gì một bố cục được mở mang đến,
+    cũng được giữ như lựa chọn của người dùng, và thắng
     <code>chartOptions</code> ở lần ghé sau, kể cả khi mã của bạn đã thôi đặt chúng. Đặt một
-    cài đặt về lại giá trị trong <code>chartOptions</code> của bạn thì nó không còn được giữ.</li>
+    cài đặt về lại giá trị trong <code>chartOptions</code> của bạn thì nó không còn được giữ.
+    Những gì một liên kết chia sẻ được mở mang đến là lựa chọn của người khác: chúng chỉ
+    hiện trong lần ghé đó, không được giữ và không gọi listener nào của
+    <code>onSettingsChange</code> (thay đổi kế tiếp sẽ báo tất cả).</li>
   <li><strong>Bố cục có tên</strong> giữ tất cả, trừ múi giờ và định dạng số, vốn là của
     người xem, và chế độ tự co giãn, thứ một lần kéo trục giá sẽ tắt. Trong JSON của bố cục,
     chúng nằm dưới <code>settings</code>, trừ thang giá và việc lật thang, vốn có trường
