@@ -281,13 +281,13 @@ chart.setCompareVisible('eth', false)  // hidden, and out of the auto scale`}</c
   indexada a 100 se deja como está, y una escala que eliges mientras comparas (el % o log de la barra
   de estado, el menú del gráfico, los ajustes) se mantiene, también después de quitar la última
   comparación. La escala en porcentaje nunca se guarda: un diseño y un enlace compartido conservan la
-  tuya. La leyenda lista cada símbolo comparado en porcentaje encima de los indicadores, con su precio
+  tuya. La leyenda lista cada símbolo comparado en porcentaje encima de los indicadores, marcado con el color de su línea, con su precio
   y su cambio en la barra bajo el cursor (si no, en la última), un ojo para ocultarlo y un botón para
   quitarlo. Sus barras se piden con la misma profundidad que las del gráfico y, cuando el
-  gráfico carga barras más antiguas, solo el tramo que estas añaden (todas otra vez con un feed sin
-  <code>fetchHistoryBefore</code>), así que su línea empieza donde empieza el gráfico.
+  gráfico carga barras más antiguas, solo el tramo que estas añaden (con un feed sin
+  <code>fetchHistoryBefore</code>, cada una otra vez, tan a fondo como el gráfico, mientras el feed tenga barras más antiguas), así que su línea empieza donde empieza el gráfico.
   En un tipo de gráfico que no dibuja líneas de comparación deja tu escala como está y atenúa la fila
-  de cada comparación, cuya información emergente dice por qué; al volver a uno que las dibuja, vuelve
+  de cada comparación, y dice por qué en su información emergente y a un lector de pantalla; al volver a uno que las dibuja, vuelve
   la escala en porcentaje.
 </p>
 
