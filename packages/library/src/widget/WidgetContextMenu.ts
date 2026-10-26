@@ -213,8 +213,8 @@ export class WidgetContextMenu {
     const hostRect = this.host.getBoundingClientRect();
     const right = Math.min(this.host.clientWidth, window.innerWidth - hostRect.left) - MENU_MARGIN;
     const bottom = Math.min(this.host.clientHeight, window.innerHeight - hostRect.top) - MENU_MARGIN;
-    // Taller than the room (a short widget), it scrolls.
-    this.el.style.maxHeight = `${Math.max(0, bottom)}px`;
+    // Taller than the room (a short widget, the time zones), it scrolls, its padding and border in the room too.
+    this.el.style.maxHeight = `${Math.max(0, bottom - this.frameHeight())}px`;
     this.el.style.left = `${place(at.x, this.el.offsetWidth, right, at.xBack, at.before)}px`;
     this.el.style.top = `${place(at.y, this.el.offsetHeight, bottom, at.yBack)}px`;
     document.addEventListener('pointerdown', this.onDocPointer, true);
@@ -223,6 +223,14 @@ export class WidgetContextMenu {
     window.addEventListener('blur', this.onAway);
     const chosen = this.revealChoice();
     if (focusFirst) (chosen ?? this.items()[0])?.focus({ preventScroll: true });
+  }
+
+  /** What its padding and border add to a max height, which sizes only its rows unless its box counts them. */
+  private frameHeight(): number {
+    const style = getComputedStyle(this.el);
+    if (style.boxSizing === 'border-box') return 0;
+    const px = (value: string) => parseFloat(value) || 0;
+    return px(style.paddingTop) + px(style.paddingBottom) + px(style.borderTopWidth) + px(style.borderBottomWidth);
   }
 
   /**

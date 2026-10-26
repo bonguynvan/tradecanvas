@@ -96,6 +96,32 @@ describe('WidgetContextMenu', () => {
       expect(left()).toBe(230);
     });
   });
+
+  describe('taller than the room', () => {
+    const el = () => host.querySelector<HTMLElement>('.tcw-context-menu')!;
+    let sheet: HTMLStyleElement;
+    beforeEach(() => {
+      // The look's padding and border, around the rows.
+      sheet = document.createElement('style');
+      sheet.textContent = '.tcw-context-menu { padding: 3px; border: 1px solid; }';
+      document.head.appendChild(sheet);
+      Object.defineProperty(host, 'clientHeight', { value: 300, configurable: true });
+      Object.defineProperty(host, 'clientWidth', { value: 400, configurable: true });
+    });
+    afterEach(() => sheet.remove());
+
+    // The time zones over the clock: 300 tall less the 4 kept from the edge, its padding and border in it.
+    it('scrolls inside the room with its padding and border, not past the window by them', () => {
+      menu.open(ENTRIES, 0, 290, () => {});
+      expect(el().style.maxHeight).toBe(`${300 - 4 - 2 * 3 - 2 * 1}px`);
+    });
+
+    it('takes the room as it is when its height counts its padding and border', () => {
+      sheet.textContent = '.tcw-context-menu { box-sizing: border-box; padding: 3px; border: 1px solid; }';
+      menu.open(ENTRIES, 0, 290, () => {});
+      expect(el().style.maxHeight).toBe(`${300 - 4}px`);
+    });
+  });
 });
 
 describe('WidgetContextMenu shortcuts, choices and submenus', () => {
