@@ -367,7 +367,7 @@ describe('Chart VWAP', () => {
     chart.replayStop();
   });
 
-  it('saved by 1.50 with no anchor, comes back starting each day', () => {
+  it('saved by 1.51 or earlier with no anchor, comes back starting each day', () => {
     chart.setData(hourlyDays(D1, 2));
     chart.applyIndicatorSetup([{ id: 'vwap', instanceId: 'vwap-0', params: {} }]);
     const [ind] = chart.getIndicatorSetup();
