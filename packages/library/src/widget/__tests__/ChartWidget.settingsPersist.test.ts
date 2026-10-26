@@ -279,6 +279,41 @@ describe('ChartWidget settings API', () => {
     expect(seen[0]).toMatchObject({ volumeProfileVisible: true, autoScale: false });
   });
 
+  it('onSettingsChange hears nothing of a Reset to defaults cancelled, or OK’d where everything was at its defaults', () => {
+    make();
+    const seen: ChartSettingsState[] = [];
+    widget.onSettingsChange((s) => seen.push(s));
+    for (const act of ['cancel', 'ok']) {
+      openSettings();
+      footer('template');
+      menuItem('Reset to defaults');
+      footer(act);
+      expect(seen, act).toEqual([]);
+    }
+    expect(widget.getSettings().chartTypeOptions).toEqual({});
+  });
+
+  it('onSettingsChange hears nothing of a box typed and cancelled, and once of one typed and OK’d', () => {
+    make({ chartOptions: { chartType: 'renko' } });
+    const seen: ChartSettingsState[] = [];
+    widget.onSettingsChange((s) => seen.push(s));
+    const typeBox = (value: string) => {
+      const box = document.querySelector<HTMLInputElement>('.tcw-set input[aria-label="Box size"]')!;
+      box.value = value;
+      box.dispatchEvent(new Event('change'));
+    };
+    openSettings();
+    typeBox('5');
+    footer('cancel');
+    expect(seen).toEqual([]);
+    expect(widget.getSettings().chartTypeOptions).toEqual({});
+    openSettings();
+    typeBox('5');
+    footer('ok');
+    expect(seen).toHaveLength(1);
+    expect(seen[0].chartTypeOptions).toEqual({ renko: { boxSize: 5 } });
+  });
+
   it('a shared link’s scale is the one a layout keeps', async () => {
     make();
     const token = encodeWidgetState({ v: 1, symbol: 'AAA', timeframe: '5m', chartType: 'candlestick', scaleMode: 'logarithmic', indicators: [], drawings: [] });

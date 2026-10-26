@@ -666,7 +666,11 @@ export interface ChartSettingsState {
   mainSeriesVisible: boolean;
   /** Bars outside the symbol's regular hours shown (pre- and post-market). */
   extendedHours: boolean;
-  /** Renko box, Line Break lines, Kagi reversal, Point & Figure box and reversal, range. */
+  /**
+   * Renko box, Line Break lines, Kagi reversal, Point & Figure box and
+   * reversal, range. `getSettings()` lists only the types set: one at its
+   * defaults is left out.
+   */
   chartTypeOptions: ChartTypeOptions;
 }
 

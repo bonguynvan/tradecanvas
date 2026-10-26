@@ -49,6 +49,15 @@ export function hasTypeSettings(type: unknown): type is keyof ChartTypeOptions {
   return (TYPES_WITH_SETTINGS as readonly unknown[]).includes(type);
 }
 
+/**
+ * Only the chart types given settings: one at its defaults (`{}`) is as one
+ * never set, though the chart lists every type it was given.
+ */
+export function typesWithSettings(options: ChartTypeOptions): ChartTypeOptions {
+  return Object.fromEntries(Object.entries(options)
+    .filter(([, own]) => isObject(own) && Object.keys(own).length > 0)) as ChartTypeOptions;
+}
+
 /** Every chart type with settings of its own at its defaults: given to the chart, it resets them all. */
 export function typesAtDefaults(): ChartTypeOptions {
   return Object.fromEntries(TYPES_WITH_SETTINGS.map((type) => [type, {}])) as ChartTypeOptions;
@@ -143,13 +152,10 @@ export function settingsDelta(settings: ChartSettingsState, base: ChartSettingsS
 /**
  * What a shared link carries: the settings that differ from `base`, but
  * those in `SHARE_LEAVES`, with a chart type's own settings only for the
- * types that have some (the chart lists every type, most with none, and a
- * link should stay short).
+ * types that have some (a link should stay short).
  */
 export function shareDelta(settings: ChartSettingsState, base: ChartSettingsState): Partial<ChartSettingsState> {
-  const typeOptions = Object.fromEntries(Object.entries(settings.chartTypeOptions)
-    .filter(([, options]) => isObject(options) && Object.keys(options).length > 0));
-  return settingsDelta({ ...settings, chartTypeOptions: typeOptions }, base, SHARE_LEAVES);
+  return settingsDelta({ ...settings, chartTypeOptions: typesWithSettings(settings.chartTypeOptions) }, base, SHARE_LEAVES);
 }
 
 /** The key `persistSettings` names; null when it is off. */

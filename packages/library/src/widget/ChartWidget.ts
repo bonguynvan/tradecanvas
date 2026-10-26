@@ -34,7 +34,8 @@ import { WidgetIndicatorPicker, type IndicatorPickerItem } from './WidgetIndicat
 import { IndicatorDefaultsStore } from './indicatorDefaults.js';
 import { ChartTemplateStore } from './chartTemplates.js';
 import {
-  ChartSettingsStore, LAYOUT_LEAVES, SHARE_LEAVES, VIEWER_KEYS, hasTypeSettings, pickSettings, readChartSettings, shareDelta, settingsStoreKey, typesAtDefaults,
+  ChartSettingsStore, LAYOUT_LEAVES, SHARE_LEAVES, VIEWER_KEYS, hasTypeSettings, pickSettings, readChartSettings, shareDelta, settingsStoreKey,
+  typesAtDefaults, typesWithSettings,
 } from './chartSettingsStore.js';
 import { WidgetDrawingStyle } from './WidgetDrawingStyle.js';
 import { WidgetSelectionToolbar } from './WidgetSelectionToolbar.js';
@@ -4315,7 +4316,9 @@ export class ChartWidget {
     });
     // The log flag goes with the scale.
     const scale = read.scaleMode ? { logScale: read.scaleMode === 'logarithmic' } : {};
-    this.settingsState = { ...this.settingsState, ...read, ...scale };
+    // A type at its defaults is as one never set: a reset, or a box typed and cancelled, changes nothing to listeners.
+    const types = read.chartTypeOptions ? { chartTypeOptions: typesWithSettings(read.chartTypeOptions) } : {};
+    this.settingsState = { ...this.settingsState, ...read, ...scale, ...types };
   }
 
   /**
