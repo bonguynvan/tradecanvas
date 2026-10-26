@@ -257,9 +257,9 @@ export class WidgetSymbolSearch {
     modal.append(this.buildHeader(mode), this.buildSearch());
     if (mode.kind === 'compare') modal.appendChild(this.buildWay(mode.start));
 
-    const filters = new SymbolSearchFilters(this.t, () => {
+    const filters = new SymbolSearchFilters(this.t, (refocus) => {
       this.afterResults(false);
-      this.input?.focus();
+      if (refocus) this.input?.focus();
     });
 
     const list = document.createElement('div');

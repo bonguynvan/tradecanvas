@@ -30,8 +30,13 @@ export class SymbolSearchFilters {
   /** Tells of the tabs' room changing (a phone turned), where the browser can. */
   private readonly resize: ResizeObserver | null;
 
-  /** `onChange` when the user picks a kind or an exchange. */
-  constructor(private readonly t: Translator, private readonly onChange: () => void) {
+  /**
+   * `onChange` when the user picks a kind or an exchange; `refocus` says the
+   * search may take the keyboard back. A tab is pressed once, on purpose; an
+   * exchange list changes with each arrow pressed on it, so it keeps the
+   * keyboard.
+   */
+  constructor(private readonly t: Translator, private readonly onChange: (refocus: boolean) => void) {
     this.el = document.createElement('div');
     this.el.className = 'tcw-ss-filters';
     this.el.hidden = true;
@@ -49,7 +54,7 @@ export class SymbolSearchFilters {
     this.exchangeEl.hidden = true;
     this.exchangeEl.addEventListener('change', () => {
       this.exchange = keyOf(this.exchangeEl.value) || null;
-      this.onChange();
+      this.onChange(false);
     });
     this.el.append(this.kindsEl, this.exchangeEl);
   }
@@ -110,7 +115,7 @@ export class SymbolSearchFilters {
       b.addEventListener('click', () => {
         this.kind = value;
         for (const other of this.kindsEl.children) other.setAttribute('aria-pressed', String(other === b));
-        this.onChange();
+        this.onChange(true);
       });
       return b;
     };

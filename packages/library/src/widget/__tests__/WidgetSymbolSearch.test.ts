@@ -470,9 +470,31 @@ describe('WidgetSymbolSearch exchanges', () => {
     expect([...select().options].map((o) => o.textContent)).toEqual(['All exchanges', 'HOSE', 'HNX', 'UPCOM']);
     pickExchange('HNX');
     expect(rowText()).toEqual(['SHB']);
-    expect(document.activeElement).toBe(input());
     pickExchange('');
     expect(rowText()).toHaveLength(3);
+  });
+
+  it('keeps the keyboard on the exchange list as its arrows step through it', async () => {
+    search.open({ symbols: [], current: '', search: async () => vn.slice(0, 3) });
+    type('a');
+    await vi.advanceTimersByTimeAsync(SYMBOL_SEARCH_DEBOUNCE_MS);
+    select().focus();
+    // An arrow on a closed list changes it at once, a change for each press.
+    pickExchange('HOSE');
+    expect(document.activeElement).toBe(select());
+    pickExchange('HNX');
+    expect(document.activeElement).toBe(select());
+    expect(rowText()).toEqual(['SHB']);
+  });
+
+  it('gives the keyboard back to the search when a kind tab is pressed', async () => {
+    search.open({ symbols: [], current: '', search: async () => vn });
+    type('v');
+    await vi.advanceTimersByTimeAsync(SYMBOL_SEARCH_DEBOUNCE_MS);
+    const futures = chips().find((c) => c.textContent === 'futures')!;
+    futures.focus();
+    futures.click();
+    expect(document.activeElement).toBe(input());
   });
 
   it('has no exchange filter for results from one exchange', async () => {
