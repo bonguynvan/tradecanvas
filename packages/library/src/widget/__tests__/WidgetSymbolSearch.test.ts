@@ -406,6 +406,14 @@ describe('WidgetSymbolSearch kinds of symbol', () => {
     expect(empty()).toBe('No symbols match');
   });
 
+  it('reads a feed’s kind in its own direction on its tab, and the tab for all in the widget’s', async () => {
+    search.open({ symbols: [], current: '', search: async () => mixed });
+    type('aa');
+    await vi.advanceTimersByTimeAsync(SYMBOL_SEARCH_DEBOUNCE_MS);
+    // A Latin "Stock." in a right-to-left widget keeps its full stop at its end.
+    expect(chips().map((c) => c.dir)).toEqual(['', 'auto', 'auto']);
+  });
+
   it('takes kinds that differ only in case as one', async () => {
     search.open({ symbols: [], current: '', search: async () => [{ symbol: 'AAA', type: 'Stock' }, { symbol: 'AAB', type: 'stock' }, { symbol: 'AAC', type: 'crypto' }] });
     type('aa');
@@ -495,6 +503,13 @@ describe('WidgetSymbolSearch exchanges', () => {
     futures.focus();
     futures.click();
     expect(document.activeElement).toBe(input());
+  });
+
+  it('reads a feed’s exchange in its own direction in the list, and the option for all in the widget’s', async () => {
+    search.open({ symbols: [], current: '', search: async () => vn.slice(0, 3) });
+    type('a');
+    await vi.advanceTimersByTimeAsync(SYMBOL_SEARCH_DEBOUNCE_MS);
+    expect([...select().options].map((o) => o.dir)).toEqual(['', 'auto', 'auto', 'auto']);
   });
 
   it('has no exchange filter for results from one exchange', async () => {

@@ -111,6 +111,8 @@ export class SymbolSearchFilters {
       b.type = 'button';
       b.className = 'tcw-ss-type';
       b.textContent = text;
+      // A feed's kind reads in its own direction ("Stock." in a right-to-left widget); "All" is the widget's.
+      if (value !== null) b.dir = 'auto';
       b.setAttribute('aria-pressed', String(this.kind === value));
       b.addEventListener('click', () => {
         this.kind = value;
@@ -128,6 +130,7 @@ export class SymbolSearchFilters {
       const o = document.createElement('option');
       o.value = value;
       o.textContent = text;
+      if (value) o.dir = 'auto';
       return o;
     };
     const options = [...this.exchanges.values()].map((label) => option(label, label));
