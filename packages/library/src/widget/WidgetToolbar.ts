@@ -12,6 +12,9 @@ import { WidgetTradeMenu } from './WidgetTradeMenu.js';
 
 let toolbarCount = 0;
 
+/** Marks a button folded under "more" (the stylesheet hides it). */
+const FOLDED_ATTR = 'data-tcw-folded';
+
 /** The heading of each unit's section in the interval menu. */
 const UNIT_HEADINGS = {
   T: 'toolbar.timeframes.ticks',
@@ -105,7 +108,7 @@ export class WidgetToolbar {
    * from it would open at the widget's corner.
    */
   menuAnchor(btn: HTMLElement): HTMLElement {
-    const folded = btn.hasAttribute('data-tcw-folded') || this.el.closest('[data-tcw-narrow]') !== null;
+    const folded = btn.hasAttribute(FOLDED_ATTR) || this.el.closest('[data-tcw-narrow]') !== null;
     return folded && this.moreBtn ? this.moreBtn : btn;
   }
 
@@ -116,26 +119,99 @@ export class WidgetToolbar {
    * fold last. When even that isn't enough, the menus show their icons only
    * and the interval buttons give way to the interval menu, and as many
    * buttons as then fit come back, from the left.
+   *
+   * A refit that changes what is folded closes the menus hanging from "more"
+   * or from a button that folded, whose place is gone, and the keyboard stays
+   * on the toolbar when the button it was on hides (see `keepFocus`).
    */
   fit(): void {
+    const focused = this.toolbarFocus();
+    const folded = this.foldedState();
+    this.refit();
+    if (this.foldedState() !== folded) this.closeStaleMenus();
+    if (focused) this.keepFocus(focused);
+  }
+
+  /** The folding, as `fit` says; the menus and the keyboard are `fit`'s. */
+  private refit(): void {
     const { el } = this;
     const fits = () => el.scrollWidth <= el.clientWidth + 1;
     const items = [...el.querySelectorAll<HTMLElement>('.tcw-toolbar-overflow')];
-    for (const item of items) item.removeAttribute('data-tcw-folded');
+    for (const item of items) item.removeAttribute(FOLDED_ATTR);
     el.classList.remove('tcw-toolbar--collapsed', 'tcw-toolbar--icons');
     if (el.clientWidth === 0 || fits()) return;
     el.classList.add('tcw-toolbar--collapsed');
     for (let i = items.length - 1; i >= 0; i--) {
-      items[i].setAttribute('data-tcw-folded', '');
+      items[i].setAttribute(FOLDED_ATTR, '');
       if (fits()) return;
     }
     el.classList.add('tcw-toolbar--icons');
     for (const item of items) {
-      item.removeAttribute('data-tcw-folded');
+      item.removeAttribute(FOLDED_ATTR);
       if (fits()) continue;
-      item.setAttribute('data-tcw-folded', '');
+      item.setAttribute(FOLDED_ATTR, '');
       break;
     }
+  }
+
+  /** What is folded, and whether "more" shows, as one word to tell a refit that changed them. */
+  private foldedState(): string {
+    const items = [...this.el.querySelectorAll('.tcw-toolbar-overflow')];
+    return `${this.el.classList.contains('tcw-toolbar--collapsed')}:${items.map((i) => Number(i.hasAttribute(FOLDED_ATTR))).join('')}`;
+  }
+
+  /** Close the menus that hang from "more", or from a button now folded: their entries or their place are stale. */
+  private closeStaleMenus(): void {
+    if (this.moreBtn) WidgetContextMenu.closeAnchoredTo(this.moreBtn);
+    for (const btn of this.el.querySelectorAll<HTMLElement>(`[${FOLDED_ATTR}], [${FOLDED_ATTR}] button`)) {
+      WidgetContextMenu.closeAnchoredTo(btn);
+    }
+  }
+
+  /** The toolbar's button the keyboard is on: the one a menu hangs from while the keyboard is in the menu. */
+  private toolbarFocus(): HTMLElement | null {
+    const anchor = WidgetContextMenu.focusedAnchor();
+    if (anchor && this.el.contains(anchor)) return anchor;
+    const active = document.activeElement;
+    return active instanceof HTMLElement && this.el.contains(active) ? active : null;
+  }
+
+  /**
+   * Keep the keyboard on the toolbar after a refit: on `focused` while it
+   * shows; on "more" when it folded; when "more" itself went (everything is
+   * back), on the last button that came back, beside where "more" was. A
+   * menu still open that holds it keeps it.
+   */
+  private keepFocus(focused: HTMLElement): void {
+    if (WidgetContextMenu.focusedAnchor()) return;
+    let target: HTMLElement | undefined = focused;
+    if (!this.shows(focused)) {
+      const more = this.moreBtn && focused !== this.moreBtn && this.shows(this.moreBtn) ? this.moreBtn : null;
+      target = more ?? this.overflowButtons().filter((btn) => this.shows(btn)).at(-1);
+    }
+    if (target && document.activeElement !== target) target.focus({ preventScroll: true });
+  }
+
+  /** The buttons that can fold, in their order: those that fold whole, and those inside what folds (the Trade menu). */
+  private overflowButtons(): HTMLButtonElement[] {
+    return [...this.el.querySelectorAll<HTMLButtonElement>('button.tcw-toolbar-overflow, .tcw-toolbar-overflow button')];
+  }
+
+  /** Whether a toolbar button shows: not hidden, folded or switched off, and "more" only while the toolbar is collapsed or narrow. */
+  private shows(btn: HTMLElement): boolean {
+    if (btn.closest('[hidden]') || btn.closest(`[${FOLDED_ATTR}]`) || this.isOff(btn)) return false;
+    const narrow = this.el.closest('[data-tcw-narrow]') !== null;
+    if (btn === this.moreBtn) return narrow || this.el.classList.contains('tcw-toolbar--collapsed');
+    return !(narrow && btn.closest('.tcw-toolbar-overflow'));
+  }
+
+  /** Whether `el`, or what holds it on the toolbar, is part of a switch that is off. */
+  private isOff(el: HTMLElement): boolean {
+    const off = new Set((this.rootEl().getAttribute('data-tcw-off') ?? '').split(/\s+/).filter(Boolean));
+    for (let at: HTMLElement | null = el; at && at !== this.el; at = at.parentElement) {
+      if ((at.dataset.tcwPart ?? '').split(/\s+/).some((name) => off.has(name))) return true;
+    }
+    return false;
   }
 
   private build(): void {
@@ -337,16 +413,14 @@ export class WidgetToolbar {
     // "more": a press closes it, so two menus are never open at once.
     if (WidgetContextMenu.closeAnchoredTo(anchor)) return;
     const root = this.rootEl();
-    const off = new Set((root.getAttribute('data-tcw-off') ?? '').split(/\s+/).filter(Boolean));
-    const isOff = (el: HTMLElement) => (el.dataset.tcwPart ?? '').split(/\s+/).some((name) => off.has(name));
     // Narrow, every button that can fold is under "more"; else those folded to fit.
     const narrow = this.el.closest('[data-tcw-narrow]') !== null;
     const buttons: HTMLButtonElement[] = [];
     for (const item of this.el.querySelectorAll<HTMLElement>('.tcw-toolbar-overflow')) {
-      if (isOff(item) || (!narrow && !item.hasAttribute('data-tcw-folded'))) continue;
+      if (this.isOff(item) || (!narrow && !item.hasAttribute(FOLDED_ATTR))) continue;
       const found = item instanceof HTMLButtonElement ? [item] : [...item.querySelectorAll<HTMLButtonElement>('button')];
       // Not what can't be done now (undo with nothing to undo).
-      buttons.push(...found.filter((btn) => !btn.hidden && !btn.disabled && !isOff(btn)));
+      buttons.push(...found.filter((btn) => !btn.hidden && !btn.disabled && !this.isOff(btn)));
     }
     if (buttons.length === 0) return;
     const entries: ContextMenuEntry[] = buttons.map((btn, i) => {

@@ -264,6 +264,78 @@ describe('WidgetToolbar — fitting its width', () => {
     expect(iconsOnly(el)).toBe(false);
   });
 
+  describe('under the keyboard and the "more" menu', () => {
+    const button = (title: string) => root.querySelector<HTMLButtonElement>(`.tcw-toolbar button[title="${title}"]`)!;
+    const menuOpen = () => root.querySelector('.tcw-context-menu:not([hidden])') !== null;
+
+    it('hands the keyboard to "more" when the button it is on folds', () => {
+      layout(1200, need);
+      toolbar.fit();
+      button('Toggle theme').focus();
+      layout(700, need);
+      toolbar.fit();
+      expect(document.activeElement).toBe(more());
+    });
+
+    it('leaves the keyboard on a button that still shows', () => {
+      layout(1200, need);
+      toolbar.fit();
+      button('Bar replay').focus();
+      layout(700, need);
+      toolbar.fit();
+      expect(document.activeElement).toBe(button('Bar replay'));
+    });
+
+    it('hands the keyboard from "more", when it goes, to the last button that came back', () => {
+      layout(700, need);
+      toolbar.fit();
+      more().focus();
+      layout(1200, need);
+      toolbar.fit();
+      expect(document.activeElement).toBe(button('Toggle theme'));
+    });
+
+    it('keeps the menu open while what is folded stays the same', () => {
+      layout(700, need);
+      toolbar.fit();
+      more().click();
+      toolbar.fit();
+      expect(menuOpen()).toBe(true);
+    });
+
+    it('closes the menu when what is folded changes, its entries gone stale, the keyboard back on "more"', () => {
+      layout(700, need);
+      toolbar.fit();
+      more().click();
+      expect(root.querySelector('.tcw-context-menu')?.contains(document.activeElement)).toBe(true);
+      layout(600, need);
+      toolbar.fit();
+      expect(menuOpen()).toBe(false);
+      expect(more().getAttribute('aria-expanded')).toBe('false');
+      expect(document.activeElement).toBe(more());
+    });
+
+    it('closes the menu when nothing is folded any more, the keyboard on the last button', () => {
+      layout(700, need);
+      toolbar.fit();
+      more().click();
+      layout(1200, need);
+      toolbar.fit();
+      expect(menuOpen()).toBe(false);
+      expect(document.activeElement).toBe(button('Toggle theme'));
+    });
+
+    it('leaves the keyboard alone when it is not on the toolbar', () => {
+      const outside = document.createElement('input');
+      document.body.appendChild(outside);
+      outside.focus();
+      layout(700, need);
+      toolbar.fit();
+      expect(document.activeElement).toBe(outside);
+      outside.remove();
+    });
+  });
+
   it('folds a host’s buttons on the left last of all, and brings them back first', () => {
     toolbar.addHostButton({ id: 'scan', label: 'Scanner', side: 'left', onClick: () => {} });
     toolbar.addHostButton({ id: 'dom', label: 'DOM', side: 'right', onClick: () => {} });

@@ -152,6 +152,11 @@ export class WidgetContextMenu {
     return under.length > 0;
   }
 
+  /** The button an open menu that holds the keyboard hangs from; null when none does. */
+  static focusedAnchor(): HTMLElement | null {
+    return [...openMenus].find((menu) => menu.anchor !== null && menu.hasFocus())?.anchor ?? null;
+  }
+
   close(): void {
     this.clearHover();
     this.child?.close();
