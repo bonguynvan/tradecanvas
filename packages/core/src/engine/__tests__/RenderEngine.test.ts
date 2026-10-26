@@ -791,9 +791,10 @@ describe('RenderEngine — the day’s price limits', () => {
 });
 
 describe('RenderEngine — overlay value tags on the price axis', () => {
-  /** The texts the scene canvas got with an overlay line at 110, on a 0 to 200 view. */
-  function tagTexts(viewport: Partial<ViewportState>): string[] {
+  /** The texts the scene canvas got with an overlay line at 110, on a 0 to 200 view, in `numberLocale`. */
+  function tagTexts(viewport: Partial<ViewportState>, numberLocale?: string): string[] {
     const { ctx } = makeContext();
+    if (numberLocale) ctx.numberLocale = numberLocale;
     ctx.indicatorEngine = {
       ...fakeIndicators([]),
       getLatestOverlayValues: () => [{ value: 110, color: '#f00' }],
@@ -815,5 +816,9 @@ describe('RenderEngine — overlay value tags on the price axis', () => {
   it('writes them in percent on a percent scale, and indexed on an indexed one, as the scale reads', () => {
     expect(tagTexts({ scaleMode: 'percentage', scaleBaseline: 100 })).toContain('+10.00%');
     expect(tagTexts({ scaleMode: 'indexedTo100', scaleBaseline: 50 })).toContain('220.00');
+  });
+
+  it('writes the percent in the number locale, as the legend writes a compare’s change', () => {
+    expect(tagTexts({ scaleMode: 'percentage', scaleBaseline: 100 }, 'de-DE')).toContain('+10,00%');
   });
 });

@@ -10,4 +10,6 @@ All of these now group thousands and follow the chart's number locale ('99,125.1
 
 A price limit's tag on the axis now hides the scale's label under it, as the last price's tag does.
 
+The percent scale writes its labels in the number locale too, grouped ('+8,46%' and '+1.234,50%' in `de-DE`, where it wrote '+8.46%' and '+1234.50%' beside a legend reading '-0,23%'), and so do the crosshair's label and the indicators' tags on it; `formatPriceScaleLabel` does the same, and a change that reads as nothing has no sign ('0.00%', not '-0.00%').
+
 For plugins: `ViewportState.pricePrecision` carries the market's or the symbol's decimals (unset on indicator panes and the left scale), `priceTagText(price, viewport)` reads it, and `Viewport.setPricePrecision` sets it.

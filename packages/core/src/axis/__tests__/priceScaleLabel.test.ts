@@ -16,6 +16,14 @@ describe('formatPriceScaleLabel', () => {
     expect(formatPriceScaleLabel(100, 'percentage', 100, 2, 'en-US')).toBe('0.00%');
   });
 
+  it('writes percentages in the number locale, grouped, and a change that reads as nothing unsigned', () => {
+    expect(formatPriceScaleLabel(108.456, 'percentage', 100, 2, 'de-DE')).toBe('+8,46%');
+    expect(formatPriceScaleLabel(1334.5, 'percentage', 100, 2, 'de-DE')).toBe('+1.234,50%');
+    expect(formatPriceScaleLabel(90, 'percentage', 100, 2, 'de-DE')).toBe('-10,00%');
+    expect(formatPriceScaleLabel(1334.5, 'percentage', 100, 2, 'en-US')).toBe('+1,234.50%');
+    expect(formatPriceScaleLabel(99.9999, 'percentage', 100, 2, 'en-US')).toBe('0.00%');
+  });
+
   it('rebases indexedTo100 against the baseline', () => {
     expect(formatPriceScaleLabel(150, 'indexedTo100', 100, 2, 'en-US')).toBe('150.00');
     expect(formatPriceScaleLabel(200, 'indexedTo100', 50, 2, 'en-US')).toBe('400.00');
