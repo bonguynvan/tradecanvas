@@ -5,7 +5,7 @@ import { toKagi } from '../transforms/kagi.js';
 import { toPointAndFigure, pointAndFigureColumns } from '../transforms/pointAndFigure.js';
 import { toLineBreak } from '../transforms/lineBreak.js';
 import { toRangeBars } from '../transforms/rangeBars.js';
-import { MAX_RESHAPED_BARS, reshape, reshapeOneABar, sizeAt, type ReshapeWalk } from '../transforms/reshapeCap.js';
+import { MAX_RESHAPED_BARS, ReshapeMemo, reshape, reshapeOneABar, sizeAt, type ReshapeWalk } from '../transforms/reshapeCap.js';
 
 /** What a test gives a transform at most: a stalled one fails it, where it once filled the tab's memory. */
 const FAST_MS = 1_000;
@@ -265,15 +265,15 @@ describe('the size a transform is raised to', () => {
 
   it('gives up at once when even the largest size makes too many: Renko makes none, Kagi and point & figure every one', () => {
     const none = fakeWalk(Infinity);
-    expect(reshape(4, none.walk)).toEqual({ bars: [], size: Infinity });
+    expect(reshape(4, none.walk)).toEqual({ bars: [], size: Infinity, step: 0 });
     expect(none.walks()).toBeLessThanOrEqual(3);
     const each = fakeWalk(Infinity);
-    expect(reshapeOneABar(4, each.walk)).toEqual({ bars: [bar(0, 4, 4)], size: 4 });
+    expect(reshapeOneABar(4, each.walk)).toEqual({ bars: [bar(0, 4, 4)], size: 4, step: 0 });
     expect(each.walks()).toBeLessThanOrEqual(4);
   });
 
   it('lays a size that is no number above 0 as it is, in Kagi and point & figure: nothing raises it', () => {
-    expect(reshapeOneABar(0, fakeWalk(1).walk)).toEqual({ bars: [bar(0, 0, 0)], size: 0 });
+    expect(reshapeOneABar(0, fakeWalk(1).walk)).toEqual({ bars: [bar(0, 0, 0)], size: 0, step: 0 });
   });
 });
 
@@ -281,5 +281,61 @@ describe('line break', () => {
   it('makes at most one line a bar, whatever the count of lines', () => {
     const data = nearSixtyThousand();
     for (const lines of [1, 3, 10]) expect(toLineBreak(data, lines).length).toBeLessThanOrEqual(data.length);
+  });
+});
+
+describe('a memo of the size reached', () => {
+  /** `data` after a tick that moves its last close to `close`, the bar as wide or wider. */
+  const ticked = (data: DataSeries, close: number): DataSeries => {
+    const last = data[data.length - 1];
+    return [...data.slice(0, -1), { ...last, close, high: Math.max(last.high, close), low: Math.min(last.low, close) }];
+  };
+  type Make = (data: DataSeries, memo?: ReshapeMemo) => DataSeries;
+  // Each raises its size on 150,000 bars of the zigzag; a walk of range bars reads each close twice.
+  const cases: [string, Make, number][] = [
+    ['Renko', (data, memo) => toRenko(data, { brickSize: 0.25 }, memo), 1],
+    ['Kagi', (data, memo) => toKagi(data, 0.5, 'price', memo), 1],
+    ['point & figure', (data, memo) => pointAndFigureColumns(data, 0.25, 3, memo).columns, 1],
+    ['range bars', (data, memo) => toRangeBars(data, { rangeSize: 0.25 }, memo), 2],
+  ];
+
+  it.each(cases)('lets %s walk a ticked series once, at the size it was raised to', (_, make, readsAWalk) => {
+    const { data, reads } = countingReads(zigzag(150_000), 50_000);
+    const memo = new ReshapeMemo();
+    make(data, memo);
+    const searched = reads();
+    expect(searched).toBeGreaterThan(readsAWalk);
+    const next = ticked(data, 103);
+    const out = make(next, memo);
+    expect(reads() - searched).toBe(readsAWalk);
+    expect(out).toEqual(make(next));
+  });
+
+  it('starts from the size asked for another transform, size or series, a narrower last bar, or once cleared', () => {
+    const memo = new ReshapeMemo();
+    const data = zigzag(10);
+    memo.keep('renko', 0.25, 3, data);
+    expect(memo.startStep('renko', 0.25, data)).toBe(3);
+    expect(memo.startStep('renko', 0.25, [...data, bar(10, 100, 101)])).toBe(3);
+    expect(memo.startStep('renko', 0.5, data)).toBe(0);
+    expect(memo.startStep('kagi:price', 0.25, data)).toBe(0);
+    expect(memo.startStep('renko', 0.25, data.slice(1))).toBe(0);
+    expect(memo.startStep('renko', 0.25, data.slice(0, -1))).toBe(0);
+    const last = data[data.length - 1];
+    expect(memo.startStep('renko', 0.25, [...data.slice(0, -1), { ...last, high: last.high - 0.5 }])).toBe(0);
+    memo.clear();
+    expect(memo.startStep('renko', 0.25, data)).toBe(0);
+  });
+
+  it('raises from the step it starts at, on the 1-2-5 steps of the size asked', () => {
+    const walkFrom = (enough: number): ReshapeWalk => (size, capped, lay) => {
+      if (capped && !(size >= enough)) return false;
+      lay?.(bar(0, size, size));
+      return true;
+    };
+    // From 10 (step 3 of 1): 20 and 50 are too small, 100 is the first that keeps to the cap.
+    expect(reshape(1, walkFrom(100), 3)).toMatchObject({ size: 100, step: 6 });
+    // A size the series fits at again after a start further on stays at the start.
+    expect(reshape(1, walkFrom(5), 3)).toMatchObject({ size: 10, step: 3 });
   });
 });

@@ -1,5 +1,5 @@
 import type { OHLCBar, DataSeries } from '@tradecanvas/commons';
-import { barLimit, reshapeOneABar, type LayBar } from './reshapeCap.js';
+import { barLimit, fromReached, reshapeOneABar, type LayBar, type ReshapeMemo } from './reshapeCap.js';
 
 /** How a reversal is measured: a percent of the line's start, or an amount of price. */
 type KagiMode = 'percent' | 'price';
@@ -14,11 +14,14 @@ type KagiMode = 'percent' | 'price';
  * reversal to make more than 100,000 lines from the bars before the last,
  * the reversal is raised to 2, 5, 10, 20… times itself, the first that
  * makes no more, as Renko's box and the range of range bars are. Where no
- * reversal would (prices all at 0, in percent), every line is drawn.
+ * reversal would (prices all at 0, in percent), every line is drawn. A
+ * `memo` starts the next run on the series, after a tick or a new bar, at
+ * the reversal it was raised to.
  */
-export function toKagi(data: DataSeries, reversal = 4, mode: KagiMode = 'percent'): DataSeries {
+export function toKagi(data: DataSeries, reversal = 4, mode: KagiMode = 'percent', memo?: ReshapeMemo): DataSeries {
   if (data.length < 2) return data.slice();
-  return reshapeOneABar(reversal, (r, capped, lay) => walkKagi(data, r, mode, capped, lay)).bars;
+  const walk = (r: number, capped: boolean, lay?: LayBar) => walkKagi(data, r, mode, capped, lay);
+  return fromReached(memo, `kagi:${mode}`, reversal, data, (start) => reshapeOneABar(reversal, walk, start)).bars;
 }
 
 /**

@@ -23,7 +23,7 @@ import {
   toRangeBars,
   toRenko,
 } from '@tradecanvas/core';
-import type { ChartRendererInterface, PointAndFigureColumns } from '@tradecanvas/core';
+import type { ChartRendererInterface, PointAndFigureColumns, ReshapeMemo } from '@tradecanvas/core';
 import type { ChartTypePlugin } from '../plugins/contracts.js';
 
 /**
@@ -75,8 +75,9 @@ export function createRendererFor(type: ChartType): ChartRendererInterface {
  * Transform raw OHLC bars into the display series for a given chart type,
  * with its settings (`options`; what isn't set is worked out from the data).
  * `step` is the market's price step (`rangeBarsStep`), when there is one:
- * the automatic range of range bars is a multiple of it. Returns the input
- * unchanged for chart types that render raw OHLC directly.
+ * the automatic range of range bars is a multiple of it. `memo` keeps the
+ * size a reshaped type was raised to, for the next tick (`ReshapeMemo`).
+ * Returns the input unchanged for chart types that render raw OHLC directly.
  *
  * Centralized so adding a new chart type only requires editing one file.
  */
@@ -85,6 +86,7 @@ export function transformDisplayData(
   raw: DataSeries,
   options: ChartTypeOptions = {},
   step?: number,
+  memo?: ReshapeMemo,
 ): DataSeries {
   if (raw.length === 0) return raw;
 
@@ -94,18 +96,18 @@ export function transformDisplayData(
     case 'renko': {
       const box = options.renko?.boxSize;
       return typeof box === 'number'
-        ? toRenko(raw, { brickSize: box })
-        : toRenko(raw, { brickSize: 0, useATR: true, atrPeriod: options.renko?.atrPeriod ?? 14 });
+        ? toRenko(raw, { brickSize: box }, memo)
+        : toRenko(raw, { brickSize: 0, useATR: true, atrPeriod: options.renko?.atrPeriod ?? 14 }, memo);
     }
     case 'lineBreak':
       return toLineBreak(raw, options.lineBreak?.lines ?? 3);
     case 'kagi':
-      return toKagi(raw, options.kagi?.reversal ?? 4, options.kagi?.reversalType ?? 'percent');
+      return toKagi(raw, options.kagi?.reversal ?? 4, options.kagi?.reversalType ?? 'percent', memo);
     case 'pointAndFigure':
-      return pointAndFigureDisplay(raw, options).columns;
+      return pointAndFigureDisplay(raw, options, memo).columns;
     case 'rangeBars':
       // The bar still forming is drawn too, so the chart ends at the last price and is never blank.
-      return toRangeBars(raw, { rangeSize: rangeBarsSize(raw, options, step), includeForming: true });
+      return toRangeBars(raw, { rangeSize: rangeBarsSize(raw, options, step), includeForming: true }, memo);
     default:
       return raw;
   }
@@ -140,10 +142,10 @@ export function isReshapedChartType(type: ChartType): boolean {
  * set, or 1% of the average close, raised when the columns would pass
  * 100,000, so the renderer draws the boxes the columns were built with.
  */
-export function pointAndFigureDisplay(raw: DataSeries, options: ChartTypeOptions = {}): PointAndFigureColumns {
+export function pointAndFigureDisplay(raw: DataSeries, options: ChartTypeOptions = {}, memo?: ReshapeMemo): PointAndFigureColumns {
   const box = options.pointAndFigure?.boxSize;
   const asked = typeof box === 'number' ? box : averageClose(raw) * 0.01;
-  return pointAndFigureColumns(raw, asked, options.pointAndFigure?.reversal ?? 3);
+  return pointAndFigureColumns(raw, asked, options.pointAndFigure?.reversal ?? 3, memo);
 }
 
 function averageClose(raw: DataSeries): number {
@@ -254,9 +256,10 @@ export function resolveDisplayData(
   lookup?: ChartTypeLookup,
   options?: ChartTypeOptions,
   step?: number,
+  memo?: ReshapeMemo,
 ): DataSeries {
   if (raw.length === 0) return raw;
   const plugin = lookup?.(type);
   if (plugin?.transform) return plugin.transform(raw);
-  return transformDisplayData(type as ChartType, raw, options, step);
+  return transformDisplayData(type as ChartType, raw, options, step, memo);
 }

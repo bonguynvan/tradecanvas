@@ -1,5 +1,5 @@
 import type { OHLCBar, DataSeries } from '@tradecanvas/commons';
-import { MAX_RESHAPED_BARS, barLimit, sizeAt } from './reshapeCap.js';
+import { MAX_RESHAPED_BARS, barLimit, sizeAt, type ReshapeMemo } from './reshapeCap.js';
 
 export interface RangeBarsConfig {
   /**
@@ -24,6 +24,9 @@ export interface RangeBarsConfig {
  * significant digits.
  */
 const PRICE_SIGNIFICANT_DIGITS = 15;
+
+/** What a memo knows range bars' runs by. */
+const RANGE_BARS = 'rangeBars';
 
 /** The prices a bar is replayed through after its open, its extremes and its close: they share its volume. */
 const PATH_PRICES = 3;
@@ -273,12 +276,15 @@ function closeBars(data: DataSeries, range: number, digits: KeptDigits, cells: F
  * on its own, so a tick on it changes the range only when that bar alone
  * makes that many.
  *
+ * A `memo` starts the next run on the series, after a tick or a new bar, at
+ * the range it was raised to.
+ *
  * Approximation: input is OHLC, not tick-level. Each bar is replayed from
  * its open through its extremes in the order its candle implies (up bar:
  * open, low, high, close; down bar: open, high, low, close), its volume
  * shared by the three moves after the open.
  */
-export function toRangeBars(data: DataSeries, config: RangeBarsConfig): DataSeries {
+export function toRangeBars(data: DataSeries, config: RangeBarsConfig, memo?: ReshapeMemo): DataSeries {
   if (data.length === 0 || !(config.rangeSize > 0)) return [];
 
   const top = largestPrice(data);
@@ -286,11 +292,13 @@ export function toRangeBars(data: DataSeries, config: RangeBarsConfig): DataSeri
   let cells: Float64Array = new Float64Array(CELLS_PER_BAR * Math.max(MIN_ROOM_BARS, Math.min(data.length, MAX_RESHAPED_BARS)));
   // Worked out only once a range has failed: the ranges it shows too small are not replayed.
   let path: SpannedPath | null = null;
-  // The range asked for, almost always: a try over the limit stops the moment it passes it.
-  for (let n = 0; ; n++) {
+  // The range asked for, almost always, or the one a memo says the series was raised to: a try over the limit
+  // stops the moment it passes it.
+  const start = memo?.startStep(RANGE_BARS, config.rangeSize, data) ?? 0;
+  for (let n = start; ; n++) {
     const range = sizeAt(config.rangeSize, n);
     const digits = keptDigits(top, range);
-    if (n > 0) {
+    if (n > start) {
       path ??= spannedPath(data);
       if (surelyTooMany(path, range, digits.unit)) continue;
     }
@@ -303,6 +311,7 @@ export function toRangeBars(data: DataSeries, config: RangeBarsConfig): DataSeri
     const { forming } = closed;
     // A bar that has moved less than half a kept digit since the last close has not moved: 100.30000000000001 is 100.3.
     if (config.includeForming && (bars.length === 0 || forming.high - forming.low > digits.half)) bars.push(forming);
+    memo?.keep(RANGE_BARS, config.rangeSize, n, data);
     return bars;
   }
 }

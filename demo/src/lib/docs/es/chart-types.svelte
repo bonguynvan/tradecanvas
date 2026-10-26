@@ -90,7 +90,10 @@
   por barra. Una caja, reversión o rango que no sea un número finito mayor que 0, en un estado guardado
   o un enlace compartido, se descarta (el gráfico vuelve a su valor por defecto: calculado a partir
   de los datos, o el 4% de Kagi), así que un enlace no puede bloquear el gráfico. El cuadro de
-  configuración no acepta valores por debajo de 0,00000001.
+  configuración no acepta valores por debajo de 0,00000001. En un gráfico en vivo, un tamaño elevado
+  se mantiene de un tick a otro, así que cada tick construye las barras una vez, y se vuelve a calcular
+  para una serie nueva; <code>toRenko</code>, <code>toKagi</code>, <code>toPointAndFigure</code> y
+  <code>toRangeBars</code> hacen lo mismo si reciben un <code>ReshapeMemo</code>.
 </p>
 <pre><code>{`chart.setChartTypeOptions({
   renko: { boxSize: 50 },                         // or 'atr' with atrPeriod

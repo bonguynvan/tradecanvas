@@ -7,3 +7,4 @@ export { toPointAndFigure, pointAndFigureColumns } from './pointAndFigure.js';
 export type { PointAndFigureColumns } from './pointAndFigure.js';
 export { toRangeBars } from './rangeBars.js';
 export type { RangeBarsConfig } from './rangeBars.js';
+export { ReshapeMemo } from './reshapeCap.js';

@@ -45,7 +45,7 @@ import { isValidTimeZone, sessionMinute, symbolTimeZone, LayerType, setLocale as
 import type { BarLayout, ChartTypeOptions, DataUpdatePayload, FontConfig, IndicatorId, IndicatorParamsFor, PriceFormatter, PriceFraction, ShapeConfig, TimeFormatter } from '@tradecanvas/commons';
 import type { ChartStyleKey, ChartStyleOverrides, ChartStyleOverridesPatch, IndicatorIntervals, IndicatorStyleConfig, PaneStyle, ResolvedChartStyle, StyleLayer } from '@tradecanvas/commons';
 import { PHI, computePriceRange, readChartTypeOptions, tickBarCount, barTimeUnit, readChartStyleOverrides, readIndicatorPlotStyles, readPaneStyle } from '@tradecanvas/commons';
-import { PRICE_SCALE_MARGIN, PriceLines, type BidAsk, SymbolSeriesStore, CompareSymbolIndicator, SpreadIndicator, CorrelationCoefficientIndicator, CorrelationLogIndicator, SYMBOL_INDICATOR_IDS, HiLoRenderer, PointAndFigureRenderer, loadWebGL, gpuContextsLeft, whenGpuContextFree } from '@tradecanvas/core';
+import { PRICE_SCALE_MARGIN, PriceLines, type BidAsk, SymbolSeriesStore, CompareSymbolIndicator, SpreadIndicator, CorrelationCoefficientIndicator, CorrelationLogIndicator, SYMBOL_INDICATOR_IDS, HiLoRenderer, PointAndFigureRenderer, ReshapeMemo, loadWebGL, gpuContextsLeft, whenGpuContextFree } from '@tradecanvas/core';
 import type { GpuRenderer, RendererMode } from '@tradecanvas/core';
 import { regularHoursFilter } from './regularHours.js';
 import { ChartA11y } from './chartA11y.js';
@@ -206,6 +206,8 @@ export class Chart {
   private execTeardown: (() => void) | null = null;
   private autoScrollOnNewBar = true;
   private displayDataCache: DataSeries | null = null;
+  /** The size a reshaped type was raised to on this series, so a tick walks it once (cleared when the series is replaced). */
+  private readonly reshapeMemo = new ReshapeMemo();
   /** The price step the cached range bars were built on: a new step (the symbol's `minTick` arrives) builds them again. */
   private displayDataStep: number | undefined;
   /** Earliest bar of an `indicatorUpdate` waiting to be emitted; null = none pending. */
@@ -1114,6 +1116,7 @@ export class Chart {
     this.series.load(data);
     this.crosshairHandler.setData(this.series.bars());
     this.displayDataCache = null;
+    this.reshapeMemo.clear();
     this.sessionBreaks.invalidateCache();
     // A full data replace means a new series (symbol/timeframe switch, not
     // a live tick — those go through appendBar/updateLastBar instead), so
@@ -1160,6 +1163,7 @@ export class Chart {
     const data = this.series.bars();
     this.crosshairHandler.setData(data);
     this.displayDataCache = null;
+    this.reshapeMemo.clear();
     this.sessionBreaks.invalidateCache();
     // Both hold bar positions that just moved.
     if (this.pinnedTooltip.isPinned()) this.pinnedTooltip.unpin();
@@ -1187,6 +1191,7 @@ export class Chart {
     const merged = this.series.bars();
     this.crosshairHandler.setData(merged);
     this.displayDataCache = null;
+    this.reshapeMemo.clear();
     this.sessionBreaks.invalidateCache();
     // The same series goes on (a reconnect): alerts keep their bars and last values.
     this.recalcIndicators(merged);
@@ -1419,6 +1424,7 @@ export class Chart {
     const data = this.series.bars();
     const bar = data[i];
     this.displayDataCache = null;
+    this.reshapeMemo.clear();
     // Deferred: corrections before the next read cost one computation, from the earliest.
     this.indicatorEngine.deferRecalculateFrom(data, i);
     this.announceIndicatorUpdate(i);
@@ -1529,6 +1535,7 @@ export class Chart {
     const data = this.series.bars();
     this.crosshairHandler.setData(data);
     this.displayDataCache = null;
+    this.reshapeMemo.clear();
     this.sessionBreaks.invalidateCache();
     this.recalcIndicators(data);
     this.updateViewportAndRender(true);
@@ -4905,6 +4912,7 @@ export class Chart {
       // The display cache isn't keyed to the data array — without this the
       // chart kept drawing the pre-replay series.
       this.displayDataCache = null;
+      this.reshapeMemo.clear();
       this.updateViewportAndRender(follow);
       this.feedReplaySteps(series, index);
       this.eventBus.emit('replayStep', { barIndex, time: coarse[barIndex].time, until, total: coarse.length });
@@ -5400,6 +5408,7 @@ export class Chart {
     // The saved type's settings (none saved: the defaults).
     this.chartTypeOptions = snapshot.chartTypeOptions ?? {};
     this.displayDataCache = null;
+    this.reshapeMemo.clear();
     if (snapshot.chartType) this.setChartType(snapshot.chartType);
     if (snapshot.drawings) this.setDrawings(snapshot.drawings);
     // A save names its theme: a built-in one loads, another (only its name was
@@ -5714,8 +5723,8 @@ export class Chart {
   private displaySeries(raw: DataSeries, step: number | undefined): DataSeries {
     const type = this.options.chartType;
     const lookup = (t: string) => this.pluginManager.getChartType(t);
-    if (type !== 'pointAndFigure' || lookup(type)) return resolveDisplayData(type, raw, lookup, this.chartTypeOptions, step);
-    const { columns, boxSize } = pointAndFigureDisplay(raw, this.chartTypeOptions);
+    if (type !== 'pointAndFigure' || lookup(type)) return resolveDisplayData(type, raw, lookup, this.chartTypeOptions, step, this.reshapeMemo);
+    const { columns, boxSize } = pointAndFigureDisplay(raw, this.chartTypeOptions, this.reshapeMemo);
     if (this.chartRenderer instanceof PointAndFigureRenderer) this.chartRenderer.setBoxSize(boxSize);
     return columns;
   }

@@ -85,7 +85,9 @@
   시리즈만 이 한도에 닿습니다. 설정이 선 수인 라인 브레이크도 봉마다 많아야 선 하나를 만듭니다. 저장된
   상태나 공유 링크에 있는, 0보다 큰 유한한 수가 아닌 박스 크기, 반전 폭, 범위는 버려지므로(차트는
   기본값으로 돌아갑니다. 데이터로 계산한 값이고, 카기는 4%입니다) 링크가 차트를 멈추게 할 수
-  없습니다. 설정 대화상자는 0.00000001보다 작은 값을 받지 않습니다.
+  없습니다. 설정 대화상자는 0.00000001보다 작은 값을 받지 않습니다. 실시간 차트에서는 올린 크기가 틱에서
+  틱으로 그대로 유지되어 틱마다 봉을 한 번만 만들고, 새 시계열에서는 다시 구합니다. <code>toRenko</code>,
+  <code>toKagi</code>, <code>toPointAndFigure</code>, <code>toRangeBars</code>도 <code>ReshapeMemo</code>를 주면 똑같이 합니다.
 </p>
 <pre><code>{`chart.setChartTypeOptions({
   renko: { boxSize: 50 },                         // or 'atr' with atrPeriod

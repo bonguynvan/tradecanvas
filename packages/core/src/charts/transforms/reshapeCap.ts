@@ -1,4 +1,4 @@
-import type { OHLCBar } from '@tradecanvas/commons';
+import type { DataSeries, OHLCBar } from '@tradecanvas/commons';
 
 /**
  * Bars a transform that reshapes the series by a size (Renko's box, Kagi's
@@ -53,19 +53,78 @@ export type LayBar = (bar: OHLCBar) => void;
  */
 export type ReshapeWalk = (size: number, capped: boolean, lay?: LayBar) => boolean;
 
-/** The bars a transform made, and the size it made them at. */
+/** The bars a transform made, the size it made them at, and that size's step from the one asked (`sizeAt`). */
 export interface Reshaped {
   bars: OHLCBar[];
   size: number;
+  step: number;
+}
+
+/** What a memo knows of the series a size was raised on. */
+interface ReachedStep {
+  /** The transform, with what else shapes its walk (Kagi's mode, point & figure's reversal). */
+  kind: string;
+  asked: number;
+  /** The step it was raised to: `sizeAt(asked, step)`. */
+  step: number;
+  /** The series' first bar's time and its length. */
+  first: number;
+  length: number;
+  /** Its last bar's high and low: a narrower bar there may make fewer bars. */
+  high: number;
+  low: number;
+}
+
+/**
+ * Where the last run of a transform raised its size to, for the next run on
+ * the same series after a tick or a new bar. A chart builds a reshaped type
+ * again on every tick, and a size the bars outgrew was walked to the cap at
+ * each step below the one that fits, every time; with a memo the walk starts
+ * at that step. It is used only for the same transform and size asked, on a
+ * series with the same first bar, no fewer bars, and the bar that was last
+ * as wide or wider, which make no fewer bars at any step. A size the series
+ * would fit at again after a correction further back stays raised until
+ * `clear()`, which a chart calls when its series is replaced.
+ */
+export class ReshapeMemo {
+  private reached: ReachedStep | null = null;
+
+  /** Forget the step reached: the next run starts at the size asked. */
+  clear(): void {
+    this.reached = null;
+  }
+
+  /** The step a run of `kind` at `asked` on `data` starts at: the one reached on that series, or 0. */
+  startStep(kind: string, asked: number, data: DataSeries): number {
+    const reached = this.reached;
+    if (!reached || reached.kind !== kind || reached.asked !== asked) return 0;
+    if (data.length < reached.length || data[0].time !== reached.first) return 0;
+    const was = data[reached.length - 1];
+    return was.high >= reached.high && was.low <= reached.low ? reached.step : 0;
+  }
+
+  /** The step a run of `kind` at `asked` reached on `data`. */
+  keep(kind: string, asked: number, step: number, data: DataSeries): void {
+    const last = data[data.length - 1];
+    this.reached = last ? { kind, asked, step, first: data[0].time, length: data.length, high: last.high, low: last.low } : null;
+  }
+}
+
+/** `run` from the step `memo` reached for `kind` at `asked` on `data`, which it then keeps; from the size asked without a memo. */
+export function fromReached(memo: ReshapeMemo | undefined, kind: string, asked: number, data: DataSeries, run: (start: number) => Reshaped): Reshaped {
+  const reshaped = run(memo?.startStep(kind, asked, data) ?? 0);
+  memo?.keep(kind, asked, reshaped.step, data);
+  return reshaped;
 }
 
 /**
  * The bars `walk` makes at `asked`: in one walk when they keep to the cap, as
  * almost every size does, else at the first of 2, 5, 10, 20… times it that
- * makes no more. None, at a size of Infinity, when no size does.
+ * makes no more. None, at a size of Infinity, when no size does. `start`
+ * skips the steps before it, known to make too many (`ReshapeMemo`).
  */
-export function reshape(asked: number, walk: ReshapeWalk): Reshaped {
-  return reshapeOr(asked, walk, () => ({ bars: [], size: Infinity }));
+export function reshape(asked: number, walk: ReshapeWalk, start = 0): Reshaped {
+  return reshapeOr(asked, walk, () => ({ bars: [], size: Infinity, step: 0 }), start);
 }
 
 /**
@@ -75,17 +134,19 @@ export function reshape(asked: number, walk: ReshapeWalk): Reshaped {
  * or `asked` is no number above 0, every bar is laid at `asked`, rather than
  * the bars cut off at the cap.
  */
-export function reshapeOneABar(asked: number, walk: ReshapeWalk): Reshaped {
-  return reshapeOr(asked, walk, () => ({ bars: laid(asked, walk, false) ?? [], size: asked }));
+export function reshapeOneABar(asked: number, walk: ReshapeWalk, start = 0): Reshaped {
+  return reshapeOr(asked, walk, () => ({ bars: laid(asked, walk, false) ?? [], size: asked, step: 0 }), start);
 }
 
-/** The bars at `asked` or the size it is raised to; `noneFits` when no size keeps to the cap. */
-function reshapeOr(asked: number, walk: ReshapeWalk, noneFits: () => Reshaped): Reshaped {
-  const atAsked = laid(asked, walk, true);
-  if (atAsked) return { bars: atAsked, size: asked };
-  const size = raisedSize(asked, (s) => walk(s, true));
+/** The bars at step `start` of `asked` or the step it is raised to; `noneFits` when no size keeps to the cap. */
+function reshapeOr(asked: number, walk: ReshapeWalk, noneFits: () => Reshaped, start: number): Reshaped {
+  const first = sizeAt(asked, start);
+  const atFirst = laid(first, walk, true);
+  if (atFirst) return { bars: atFirst, size: first, step: start };
+  const step = raisedStep(asked, (s) => walk(s, true), start);
+  const size = Number.isFinite(step) ? sizeAt(asked, step) : Infinity;
   const atRaised = Number.isFinite(size) ? laid(size, walk, true) : null;
-  return atRaised ? { bars: atRaised, size } : noneFits();
+  return atRaised ? { bars: atRaised, size, step } : noneFits();
 }
 
 /** The bars `walk` lays at `size`, or null when it stops: capped, past the cap, or at a size too small to walk. */
@@ -95,14 +156,14 @@ function laid(size: number, walk: ReshapeWalk, capped: boolean): OHLCBar[] | nul
 }
 
 /**
- * The first of 2, 5, 10, 20… times `asked` at which `fits`, for a size whose
- * bars pass the cap; Infinity when none would (not even the largest number
- * fits) or `asked` is no number above 0. A larger size makes no more bars, so
+ * The first step of `asked` after `from` (a step whose bars pass the cap) at
+ * which `fits`; Infinity when none would (not even the largest number fits)
+ * or `asked` is no number above 0. A larger size makes no more bars, so
  * rather than walk the series at every step (a size near the smallest number
- * is some 950 steps from one that fits), the steps are tried 1, 2, 4, 8… on
- * until one fits, then the gap is halved back to the first that does.
+ * is some 950 steps from one that fits), the steps after `from` are tried
+ * 1, 2, 4, 8… on until one fits, then the gap is halved back to the first that does.
  */
-function raisedSize(asked: number, fits: (size: number) => boolean): number {
+function raisedStep(asked: number, fits: (size: number) => boolean, from: number): number {
   if (!(asked > 0)) return Infinity;
   // A step past the largest number counts as fitting, so the search ends; it makes no bars.
   const fitsAt = (n: number) => {
@@ -110,18 +171,18 @@ function raisedSize(asked: number, fits: (size: number) => boolean): number {
     return size === Infinity || fits(size);
   };
   // Most sizes too small fit at twice themselves; only past that is it worth a walk to ask whether any size fits.
-  if (fitsAt(1)) return sizeAt(asked, 1);
+  if (fitsAt(from + 1)) return from + 1;
   if (!fits(Number.MAX_VALUE)) return Infinity;
-  let tooSmall = 1;
-  let enough = 2;
+  let tooSmall = from + 1;
+  let enough = from + 2;
   while (!fitsAt(enough)) {
     tooSmall = enough;
-    enough *= 2;
+    enough = from + 2 * (enough - from);
   }
   while (enough - tooSmall > 1) {
     const mid = Math.floor((tooSmall + enough) / 2);
     if (fitsAt(mid)) enough = mid;
     else tooSmall = mid;
   }
-  return sizeAt(asked, enough);
+  return enough;
 }

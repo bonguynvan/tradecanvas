@@ -79,7 +79,9 @@
   倍中第一个不超过这个数的倍数，并按提高后的值生成图表。卡吉图和点数图每根K线最多生成一条线或一列，
   因此只有超过 100,000 根K线的序列才会触及这个上限；新价线的设置是线数，每根K线同样最多生成一条线。
   已保存状态或分享链接中不是大于 0 的有限数的砖块大小、反转幅度或区间会被丢弃（图表改用默认值：根据数据计算，卡吉图则为 4%），
-  因此链接无法让图表卡死。设置对话框不接受小于 0.00000001 的值。
+  因此链接无法让图表卡死。设置对话框不接受小于 0.00000001 的值。在实时图表上，提高后的大小会在各个 tick 之间保留，
+  因此每个 tick 只构建一次，换成新序列时再重新计算；传入 <code>ReshapeMemo</code> 时，<code>toRenko</code>、
+  <code>toKagi</code>、<code>toPointAndFigure</code> 和 <code>toRangeBars</code> 也会这样做。
 </p>
 <pre><code>{`chart.setChartTypeOptions({
   renko: { boxSize: 50 },                         // or 'atr' with atrPeriod

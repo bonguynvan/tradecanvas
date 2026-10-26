@@ -86,7 +86,9 @@
   こちらもバー 1 本につき最大 1 本です。保存した状態や共有リンクにある、0 より大きい有限の数でない
   ボックスサイズ、反転幅、値幅は捨てられる（チャートは既定値に戻ります。データから求めた値で、
   カギ足は 4% です）ため、リンクでチャートが止まることはありません。設定ダイアログは 0.00000001
-  未満の値を受け付けません。
+  未満の値を受け付けません。リアルタイムのチャートでは、引き上げた大きさをティックの間も保つので、ティックごとの
+  作り直しは 1 回で済み、新しい系列では改めて求めます。<code>toRenko</code>、<code>toKagi</code>、
+  <code>toPointAndFigure</code>、<code>toRangeBars</code> も <code>ReshapeMemo</code> を渡すと同じようにします。
 </p>
 <pre><code>{`chart.setChartTypeOptions({
   renko: { boxSize: 50 },                         // or 'atr' with atrPeriod

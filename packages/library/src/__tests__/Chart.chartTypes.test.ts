@@ -245,3 +245,46 @@ describe('point & figure boxes', () => {
     expect(reads).toBe(1);
   });
 });
+
+describe('a raised size on a live chart', () => {
+  it('is walked once a tick, at the box it was raised to', () => {
+    const closes = [100, 101, 100, 104];
+    let reads = 0;
+    const zigzag = Array.from({ length: 150_000 }, (_, i) => {
+      const open = closes[(i + 3) % 4];
+      const close = closes[i % 4];
+      const bar = { time: T0 + i * HOUR, open, high: Math.max(open, close), low: Math.min(open, close), close, volume: 1 };
+      // One bar's close counts its reads: how many times the series is walked.
+      if (i === 50_000) Object.defineProperty(bar, 'close', { get: () => { reads++; return close; }, enumerable: true });
+      return bar;
+    });
+    chart.setData(zigzag);
+    chart.setChartType('pointAndFigure');
+    // Three boxes of 0.25 reverse on every move, some 150,000 columns: the box is raised to 0.5.
+    chart.setChartTypeOptions({ pointAndFigure: { boxSize: 0.25 } });
+    probe().getDisplayData();
+    const searched = reads;
+    const last = zigzag[zigzag.length - 1];
+    chart.updateLastBar({ ...last, close: 103 });
+    probe().getDisplayData();
+    expect(reads - searched).toBe(1);
+  });
+
+  it('is searched for again on a new series', () => {
+    chart.setChartType('rangeBars');
+    chart.setChartTypeOptions({ rangeBars: { range: 1 } });
+    // 200 moves of 1,000 would be 200,000 bars of 1: the range is raised to 2.
+    const zigzag = Array.from({ length: 201 }, (_, i) => {
+      const open = i === 0 || i % 2 === 1 ? 100 : 1_100;
+      const close = i % 2 === 1 ? 1_100 : 100;
+      return { time: T0 + i * HOUR, open, high: Math.max(open, close), low: Math.min(open, close), close, volume: 1 };
+    });
+    const spans = () => new Set(probe().getDisplayData().slice(0, -1).map((b) => b.high - b.low));
+    chart.setData(zigzag);
+    expect(spans()).toEqual(new Set([2]));
+    // The same first bar, as many bars and the last as wide, but only the last moves: 1,000 bars of 1.
+    const quiet = zigzag.map((b, i) => (i < 200 ? { ...b, open: 100, high: 100, low: 100, close: 100 } : { ...b, open: 100, close: 1_100 }));
+    chart.setData(quiet);
+    expect(spans()).toEqual(new Set([1]));
+  });
+});

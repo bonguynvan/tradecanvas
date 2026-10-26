@@ -90,7 +90,10 @@
   mỗi nến. Kích thước ô, mức đảo chiều hay biên độ nào không phải là số hữu hạn lớn hơn 0, trong trạng
   thái đã lưu hay trong một link chia sẻ, sẽ bị bỏ qua (biểu đồ quay về giá trị mặc định: tự tính từ
   dữ liệu, hoặc 4% với Kagi), nên một link không thể làm biểu đồ treo. Hộp thoại cài đặt không nhận
-  giá trị nhỏ hơn 0,00000001.
+  giá trị nhỏ hơn 0,00000001. Trên biểu đồ trực tiếp, kích thước đã nâng được giữ từ tick này sang
+  tick khác, nên mỗi tick chỉ dựng nến một lần, và được tính lại cho một chuỗi mới;
+  <code>toRenko</code>, <code>toKagi</code>, <code>toPointAndFigure</code> và <code>toRangeBars</code>
+  cũng làm vậy khi được truyền một <code>ReshapeMemo</code>.
 </p>
 <pre><code>{`chart.setChartTypeOptions({
   renko: { boxSize: 50 },                         // or 'atr' with atrPeriod

@@ -1,5 +1,5 @@
 import type { OHLCBar, DataSeries } from '@tradecanvas/commons';
-import { barLimit, reshapeOneABar, type LayBar } from './reshapeCap.js';
+import { barLimit, fromReached, reshapeOneABar, type LayBar, type ReshapeMemo } from './reshapeCap.js';
 
 /** A point & figure chart's columns, and the box they were built on, to draw them that size. */
 export interface PointAndFigureColumns {
@@ -14,8 +14,8 @@ export interface PointAndFigureColumns {
  *
  * The columns of `pointAndFigureColumns`, without their box.
  */
-export function toPointAndFigure(data: DataSeries, boxSize: number, reversalBoxes = 3): DataSeries {
-  return pointAndFigureColumns(data, boxSize, reversalBoxes).columns;
+export function toPointAndFigure(data: DataSeries, boxSize: number, reversalBoxes = 3, memo?: ReshapeMemo): DataSeries {
+  return pointAndFigureColumns(data, boxSize, reversalBoxes, memo).columns;
 }
 
 /**
@@ -24,11 +24,13 @@ export function toPointAndFigure(data: DataSeries, boxSize: number, reversalBoxe
  * 100,000 columns from the bars before the last (a source bar makes one at
  * most), the first of 2, 5, 10, 20… times it that makes no more. A renderer
  * draws the boxes that size. Where no box would (a reversal of no boxes),
- * every column is built on `boxSize`.
+ * every column is built on `boxSize`. A `memo` starts the next run on the
+ * series, after a tick or a new bar, at the box it was raised to.
  */
-export function pointAndFigureColumns(data: DataSeries, boxSize: number, reversalBoxes = 3): PointAndFigureColumns {
+export function pointAndFigureColumns(data: DataSeries, boxSize: number, reversalBoxes = 3, memo?: ReshapeMemo): PointAndFigureColumns {
   if (data.length === 0 || !(boxSize > 0)) return { columns: [], boxSize };
-  const { bars, size } = reshapeOneABar(boxSize, (box, capped, lay) => walkColumns(data, box, reversalBoxes, capped, lay));
+  const walk = (box: number, capped: boolean, lay?: LayBar) => walkColumns(data, box, reversalBoxes, capped, lay);
+  const { bars, size } = fromReached(memo, `pointAndFigure:${reversalBoxes}`, boxSize, data, (start) => reshapeOneABar(boxSize, walk, start));
   return { columns: bars, boxSize: size };
 }
 

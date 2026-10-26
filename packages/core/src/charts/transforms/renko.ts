@@ -1,5 +1,5 @@
 import type { OHLCBar, DataSeries } from '@tradecanvas/commons';
-import { barLimit, reshape, type LayBar } from './reshapeCap.js';
+import { barLimit, fromReached, reshape, type LayBar, type ReshapeMemo } from './reshapeCap.js';
 
 export interface RenkoConfig {
   /**
@@ -25,11 +25,14 @@ export interface RenkoConfig {
  * to 2, 5, 10, 20… times itself, the first that makes no more, and every
  * brick is laid on it: a box typed far too small, or carried by a link,
  * can't fill the page's memory. A close that is no finite number is passed
- * over.
+ * over. A `memo` starts the next run on the series, after a tick or a new
+ * bar, at the box it was raised to.
  */
-export function toRenko(data: DataSeries, config: RenkoConfig): DataSeries {
+export function toRenko(data: DataSeries, config: RenkoConfig, memo?: ReshapeMemo): DataSeries {
   if (data.length === 0) return [];
-  return reshape(askedBrickSize(data, config), (box, capped, lay) => walkBricks(data, box, capped, lay)).bars;
+  const asked = askedBrickSize(data, config);
+  const walk = (box: number, capped: boolean, lay?: LayBar) => walkBricks(data, box, capped, lay);
+  return fromReached(memo, 'renko', asked, data, (start) => reshape(asked, walk, start)).bars;
 }
 
 /** The box asked for: the one set, or the ATR's; for a flat market, a hundredth of the price. */
