@@ -283,6 +283,29 @@ describe('Chart keeps the indicators’ zone while the stream asks about its nex
       await vi.waitFor(() => expect(chart.getSymbolInfo()?.symbol).toBe('CCC'));
       expect(calculate).toHaveBeenCalledTimes(1); // CCC's bars, once
     });
+
+    it('and as long from its question when the switch is a disconnect and a connect at once', async () => {
+      const answerC = later();
+      const answers = { AAA: async () => ({ symbol: 'AAA', timeZone: NEW_YORK }), BBB: () => later().promise, CCC: () => answerC.promise };
+      const { id, calculate } = await switchToBBB(later(), answers);
+      await vi.advanceTimersByTimeAsync(SYMBOL_ZONE_WAIT_MS * 0.6);
+      calculate.mockClear();
+      chart.disconnectStream();
+      await chart.connect({ adapter: feed(answers), symbol: 'CCC', timeframe: '1h', historyLimit: 48 });
+      await vi.waitFor(() => expect(chart.getData()[0]?.close).toBe(300));
+      await vi.advanceTimersByTimeAsync(SYMBOL_ZONE_WAIT_MS / 2);
+      expect(vwapAt(id, 19)).toBeCloseTo(309.5, 9); // New York's day still
+      answerC.resolve({ symbol: 'CCC', timeZone: NEW_YORK });
+      await vi.waitFor(() => expect(chart.getSymbolInfo()?.symbol).toBe('CCC'));
+      expect(calculate).toHaveBeenCalledTimes(1);
+    });
+
+    it('but a disconnect with no connect after it lets the zone go', async () => {
+      const { id } = await switchToBBB(later());
+      chart.disconnectStream();
+      await Promise.resolve();
+      expect(vwapAt(id, 19)).toBe(219); // 00:00 UTC starts the day
+    });
   });
 
   it('but not when the host says the symbol has no info', () => {

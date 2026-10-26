@@ -268,6 +268,8 @@ export class Chart {
   private studyZoneHeld = false;
   /** Ends the hold when the feed says nothing of the next symbol for as long as its built days wait (`SYMBOL_ZONE_WAIT_MS`). */
   private studyZoneTimer: ReturnType<typeof setTimeout> | null = null;
+  /** A disconnect's end of the hold, waiting to see whether a connect follows at once. */
+  private studyZoneReleaseQueued = false;
   private sessionBreaks: SessionBreaks;
   private sessionShading: SessionShading;
   /** The session hours the host set (or the default); a symbol's own hours show over them. */
@@ -3312,7 +3314,7 @@ export class Chart {
    */
   disconnectStream(): void {
     this.symbolInfoSeq++; // a lookup still on its way no longer applies
-    this.releaseStudyZone();
+    this.releaseStudyZoneAfterCaller();
     this.priceLines.setBidAsk(null);
     if (this.streamManager) {
       this.streamManager.dispose();
@@ -4149,6 +4151,7 @@ export class Chart {
   }
 
   private endStudyZoneWait(): void {
+    this.studyZoneReleaseQueued = false;
     if (this.studyZoneTimer === null) return;
     clearTimeout(this.studyZoneTimer);
     this.studyZoneTimer = null;
@@ -4161,6 +4164,22 @@ export class Chart {
     this.studyZoneHeld = false;
     this.applyStudyZone(this.getExchangeTimeZone());
     if (!this.disposed) this.updateViewportAndRender();
+  }
+
+  /**
+   * A disconnect ends the hold once the code that called it has run, unless
+   * a connect came in it: a symbol switch made of `disconnectStream()` and
+   * `connect()`, as the widget's are, asks about the next symbol in that
+   * connect, which holds the zone on from its question, as `switchStream` does.
+   */
+  private releaseStudyZoneAfterCaller(): void {
+    if (!this.studyZoneHeld) return;
+    this.endStudyZoneWait();
+    this.studyZoneReleaseQueued = true;
+    queueMicrotask(() => {
+      if (!this.studyZoneReleaseQueued || this.disposed) return;
+      this.releaseStudyZone();
+    });
   }
 
   /**
