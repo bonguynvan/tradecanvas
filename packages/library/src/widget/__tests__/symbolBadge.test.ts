@@ -74,6 +74,14 @@ describe('kindSlot', () => {
     expect(kindKey(undefined)).toBe('');
   });
 
+  it('keys Turkish capitals as their lower case, dotted or dotless', () => {
+    // Lower-casing İ leaves a combining dot after the i, and ı stays dotless while I becomes i.
+    expect(kindKey('HİSSE')).toBe(kindKey('Hisse'));
+    expect(kindKey('VADELİ')).toBe(kindKey('Vadeli'));
+    expect(kindKey('ALTIN')).toBe(kindKey('Altın'));
+    expect(kindSlot('HİSSE')).toBe(kindSlot('Hisse'));
+  });
+
   it('gives a kind named like a built-in of every object a colour from its words', () => {
     for (const kind of ['constructor', 'Constructor', '__proto__', 'toString', 'hasownproperty']) {
       const slot = kindSlot(kind);

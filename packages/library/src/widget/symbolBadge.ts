@@ -29,9 +29,16 @@ const KNOWN_KINDS: Record<string, number> = {
   bond: 5, bonds: 5, 'trái phiếu': 5,
 };
 
-/** A kind as the search keys it: its words trimmed, in lower case, with their marks composed. */
+/** What lower-casing leaves of Turkish İ (an i and a combining dot), and dotless ı, which I's lower case is not. */
+const TURKISH_I = /i\u0307|\u0131/g;
+
+/**
+ * A kind as the search keys it: its words trimmed, in lower case, with their
+ * marks composed. Turkish i's are keyed as one, dotted or not, so a feed's
+ * "HİSSE" and "Hisse" are the same kind; the words shown stay as written.
+ */
 export function kindKey(type: unknown): string {
-  return typeof type === 'string' ? type.trim().normalize('NFC').toLowerCase() : '';
+  return typeof type === 'string' ? type.trim().normalize('NFC').toLowerCase().replace(TURKISH_I, 'i') : '';
 }
 
 /**
