@@ -597,6 +597,9 @@ new ChartWidget(host, { features: { 'dock.dataWindow': false } })  // no button 
     <tr><td><kbd>?</kbd></td><td>키보드 단축키 목록. 기능이나 키로 검색할 수 있습니다</td></tr>
     <tr><td><kbd>Alt</kbd> + 차트 클릭</td><td>마우스를 올린 봉에 OHLC 툴팁 고정(실시간 십자선과의 차이 표시)</td></tr>
     <tr><td><kbd>Esc</kbd></td><td>툴팁 고정 해제 / 그리기 취소</td></tr>
+    <tr><td><kbd>Shift</kbd> + <kbd>←</kbd> / <kbd>→</kbd></td><td>리플레이 한 단계 뒤로 / 앞으로</td></tr>
+    <tr><td><kbd>Space</kbd></td><td>리플레이 재생 또는 일시정지(차트나 트랙에서; 리플레이 밖에서는 차트 맞춤)</td></tr>
+    <tr><td><kbd>Esc</kbd></td><td>리플레이 시작 봉 선택 취소</td></tr>
     <tr><td>도구 모음에서 종목 클릭</td><td>종목 검색 모달을 엽니다</td></tr>
     <tr><td>도구 모음에서 재생 클릭</td><td>바 리플레이 스크러버를 엽니다(재생/한 봉씩 이동/탐색/속도)</td></tr>
   </tbody>

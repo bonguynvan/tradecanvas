@@ -225,7 +225,9 @@ does both by default (`replayStep`, `replayAnimate: false` change it). A replay 
 live series: `setData`, a new symbol or timeframe, older bars and the extended hours
 carry it over to the same time (it waits while a new series loads), so its indices
 change with the bars. Keep a position by time (`getReplayProgress().until`, then
-`replaySeekToTime`), and call `replayStop()` first to end it on a new series.
+`replaySeekToTime`), and call `replayStop()` first to end it on a new series. ChartWidget's replay
+bar shows the replayed date, plays at speeds of 0.1× to 50× (1× is one chart bar a second), and takes
+Shift+←/→ and Space; don't build a second panel over it.
 
 ## Saving layouts
 
@@ -288,7 +290,7 @@ and call no `onSettingsChange` listener.
 | `drawingContextMenu` | `{ id, x, y }`: a drawing was right-clicked |
 | `toolModeChange` | `{ eraser }` or `{ zoomArea }` |
 | `orderModify`, `positionModify` | the object |
-| `replayStep` | `{ barIndex, time, until, total }`: a replay step |
+| `replayStep` | `{ barIndex, time, stepTime, until, total }`: a replay step (`stepTime`: when the step shown opened, for a date readout) |
 | `replayState` | `{ state }`: `'playing' \| 'paused' \| 'stopped'` |
 | `replayComplete` | `{ barIndex, time }`: the replay reached its last bar |
 | `replayStepsLoad` | `{ state, step, count }`: finer bars for a replay's `step` loading, loaded, at their end or failed |

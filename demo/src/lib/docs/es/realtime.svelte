@@ -227,7 +227,7 @@ chart.replayResume()
 chart.getReplayBarIndex()      // the chart bar forming now
 chart.replaySeekToBar(150)     // to the end of bar 150
 chart.replaySeekToTime(t)      // to the bars that closed by t
-chart.on('replayStep', (e) => e.payload)    // { barIndex, time, until, total, cause }
+chart.on('replayStep', (e) => e.payload)    // { barIndex, time, stepTime, until, total, cause }
 chart.on('replayComplete', (e) => e.payload) // { barIndex, time }
 chart.on('replayState', (e) => e.payload)   // { state: 'playing' | 'paused' | 'stopped' }
 chart.replayStop()             // back to the live series`}</code></pre>
@@ -251,6 +251,24 @@ chart.replayStop()             // back to the live series`}</code></pre>
   <code>replayStep</code> (<code>'auto'</code>, <code>'bar'</code> o un intervalo) y
   <code>replayAnimate: false</code> lo cambian. Con una fuente sin
   <code>fetchHistoryBefore</code>, el widget obtiene las barras más finas en una sola petición antes de que empiece la reproducción.
+</p>
+
+<h3>La barra de repetición en ChartWidget</h3>
+<p>
+  El botón <strong>Repetición de barras</strong> de la barra de herramientas abre una barra compacta al pie del panel principal,
+  centrada en su gráfico (los paneles de abajo siguen legibles). Primero elige la vela de inicio: haz clic en ella o pulsa
+  <strong>Barra aleatoria</strong>; <strong>Cancelar</strong> (o <kbd>Esc</kbd>) sale. Después: retroceder,
+  <strong>Reproducir</strong>/<strong>Pausa</strong> y avanzar; la fecha y la hora del paso mostrado, en la zona horaria de la
+  pantalla (el año solo cuando no es el actual), y una pista con la parte reproducida rellena; <strong>Velocidad</strong> en
+  múltiplos de 0.1× a 50× (1× reproduce una vela del gráfico por segundo, sea cual sea el paso; por defecto 1×);
+  <strong>Paso</strong>; <strong>Elegir barra</strong>, que pausa y elige otro inicio entre las velas mostradas sin mostrar las que
+  vienen (<strong>Cancelar</strong> o <kbd>Esc</kbd> vuelve al mismo sitio); y <strong>Volver al tiempo real</strong>. En un móvil
+  o un gráfico estrecho ocupa dos filas, con la fecha y la pista arriba. Teclas, para el widget usado por último:
+  <kbd>Shift</kbd>+<kbd>←</kbd>/<kbd>→</kbd> avanza o retrocede, <kbd>Space</kbd> en el gráfico o la pista reproduce o pausa
+  (fuera de una repetición ajusta el gráfico) y <kbd>Esc</kbd> deja de elegir. Un atajo que añadas con <code>addHotkey</code>
+  en las mismas teclas va primero. La barra usa los tokens <code>--tcw-*</code> del aspecto y del tema; el anfitrión también
+  puede fijar <code>--tcw-replay-btn</code>, <code>--tcw-replay-play</code> o <code>--tcw-replay-track-w</code> en
+  <code>.tcw-replay-bar</code>. La fecha viene de <code>stepTime</code> de <code>replayStep</code>, la hora del paso mostrado.
 </p>
 
 <h3>Una repetición sobrevive al cambio de velas</h3>

@@ -614,6 +614,9 @@ new ChartWidget(host, { features: { 'dock.dataWindow': false } })  // no button 
     <tr><td><kbd>?</kbd></td><td>The shortcut sheet, searchable by what a key does or by the keys</td></tr>
     <tr><td><kbd>Alt</kbd> + click chart</td><td>Pin OHLC tooltip at the hovered bar (delta to live crosshair shown)</td></tr>
     <tr><td><kbd>Esc</kbd></td><td>Unpin tooltip / cancel drawing</td></tr>
+    <tr><td><kbd>Shift</kbd> + <kbd>←</kbd> / <kbd>→</kbd></td><td>Step the replay back / forward</td></tr>
+    <tr><td><kbd>Space</kbd></td><td>Play or pause the replay (on the chart or its track; outside a replay it fits the chart)</td></tr>
+    <tr><td><kbd>Esc</kbd></td><td>Stop picking the replay's start bar</td></tr>
     <tr><td>Click symbol in toolbar</td><td>Opens the symbol search modal</td></tr>
     <tr><td>Click play in toolbar</td><td>Opens the bar replay scrubber (play/step/seek/speed)</td></tr>
   </tbody>

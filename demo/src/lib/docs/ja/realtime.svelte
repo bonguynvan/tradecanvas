@@ -214,7 +214,7 @@ chart.replayResume()
 chart.getReplayBarIndex()      // the chart bar forming now
 chart.replaySeekToBar(150)     // to the end of bar 150
 chart.replaySeekToTime(t)      // to the bars that closed by t
-chart.on('replayStep', (e) => e.payload)    // { barIndex, time, until, total, cause }
+chart.on('replayStep', (e) => e.payload)    // { barIndex, time, stepTime, until, total, cause }
 chart.on('replayComplete', (e) => e.payload) // { barIndex, time }
 chart.on('replayState', (e) => e.payload)   // { state: 'playing' | 'paused' | 'stopped' }
 chart.replayStop()             // back to the live series`}</code></pre>
@@ -234,6 +234,21 @@ chart.replayStop()             // back to the live series`}</code></pre>
   ステップメニューは <strong>自動</strong> から始まり、<code>replayStep</code>（<code>'auto'</code>、<code>'bar'</code>、時間足）と
   <code>replayAnimate: false</code> で変えられます。<code>fetchHistoryBefore</code>
   を持たないフィードでは、ウィジェットがリプレイ開始前に細かい足を一度のリクエストで取得します。
+</p>
+
+<h3>ChartWidget のリプレイバー</h3>
+<p>
+  ツールバーの<strong>バーリプレイ</strong>ボタンで、メインペインの下端、プロットの中央にコンパクトなバーが開きます（下のペインは読めるまま）。
+  まず開始足を選びます。足をクリックするか<strong>ランダムなバー</strong>を押します。<strong>キャンセル</strong>（または <kbd>Esc</kbd>）で閉じます。
+  その後は、戻る・<strong>再生</strong>/<strong>一時停止</strong>・進む、表示中のステップの日時（表示タイムゾーン、年は今年でないときだけ）、
+  再生済み部分を塗ったトラック、<strong>速度</strong>は 0.1×〜50× の倍率（1× はステップに関係なくチャートの足を 1 秒に 1 本、既定は 1×）、
+  <strong>ステップ</strong>、<strong>バーを選択</strong>（一時停止して表示中の足から開始足を選び直す。先の足は見せません。
+  <strong>キャンセル</strong>か <kbd>Esc</kbd> で元の位置へ）、<strong>リアルタイムに戻る</strong>。スマートフォンや狭いチャートでは 2 行になり、日時とトラックが上です。
+  キーは最後に使ったウィジェットに効きます。<kbd>Shift</kbd>+<kbd>←</kbd>/<kbd>→</kbd> でステップ、チャートかトラック上の
+  <kbd>Space</kbd> で再生/一時停止（リプレイ外ではチャートを全体表示）、<kbd>Esc</kbd> で選択をやめます。<code>addHotkey</code> で同じキーに
+  追加したショートカットが優先されます。バーはルックとテーマの <code>--tcw-*</code> トークンを使い、ホストは
+  <code>.tcw-replay-bar</code> に <code>--tcw-replay-btn</code>、<code>--tcw-replay-play</code>、<code>--tcw-replay-track-w</code> も設定できます。
+  日時は <code>replayStep</code> の <code>stepTime</code>（表示中のステップの時刻）から読みます。
 </p>
 
 <h3>リプレイはバーが変わっても続く</h3>

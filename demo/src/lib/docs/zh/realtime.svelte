@@ -209,7 +209,7 @@ chart.replayResume()
 chart.getReplayBarIndex()      // the chart bar forming now
 chart.replaySeekToBar(150)     // to the end of bar 150
 chart.replaySeekToTime(t)      // to the bars that closed by t
-chart.on('replayStep', (e) => e.payload)    // { barIndex, time, until, total, cause }
+chart.on('replayStep', (e) => e.payload)    // { barIndex, time, stepTime, until, total, cause }
 chart.on('replayComplete', (e) => e.payload) // { barIndex, time }
 chart.on('replayState', (e) => e.payload)   // { state: 'playing' | 'paused' | 'stopped' }
 chart.replayStop()             // back to the live series`}</code></pre>
@@ -227,6 +227,21 @@ chart.replayStop()             // back to the live series`}</code></pre>
   ChartWidget 默认如此：步长菜单从 <strong>自动</strong> 开始；<code>replayStep</code>（<code>'auto'</code>、<code>'bar'</code>
   或某个周期）和 <code>replayAnimate: false</code> 可以修改。数据源没有
   <code>fetchHistoryBefore</code> 时，组件会在回放开始前一次性获取更细的K线。
+</p>
+
+<h3>ChartWidget 中的回放栏</h3>
+<p>
+  工具栏的<strong>K线回放</strong>按钮会在主窗格底部、绘图区居中处打开一个紧凑的回放栏（下方窗格保持可读）。
+  先选择起点K线：点击它，或点<strong>随机K线</strong>；<strong>取消</strong>（或 <kbd>Esc</kbd>）退出。
+  之后：后退、<strong>播放</strong>/<strong>暂停</strong>、前进；当前步的日期和时间，按显示时区（只在不是今年时显示年份），
+  以及已播放部分填色的进度条；<strong>速度</strong>为 0.1× 到 50× 的倍数（1× 每秒播放图表的一根K线，与步长无关；默认 1×）；
+  <strong>步长</strong>；<strong>选择K线</strong>：暂停并在已显示的K线中重新选择起点，不会显示后面的K线
+  （<strong>取消</strong>或 <kbd>Esc</kbd> 回到原处）；以及<strong>返回实时</strong>。在手机或窄图表上分两行，日期和进度条在上。
+  按键作用于最后使用的组件：<kbd>Shift</kbd>+<kbd>←</kbd>/<kbd>→</kbd> 单步，在图表或进度条上按 <kbd>Space</kbd>
+  播放或暂停（回放之外它适配图表），<kbd>Esc</kbd> 停止选择。用 <code>addHotkey</code> 添加的同键快捷键优先。
+  回放栏使用外观和主题的 <code>--tcw-*</code> 令牌；宿主也可在 <code>.tcw-replay-bar</code> 上设置
+  <code>--tcw-replay-btn</code>、<code>--tcw-replay-play</code> 或 <code>--tcw-replay-track-w</code>。
+  日期来自 <code>replayStep</code> 的 <code>stepTime</code>，即当前显示步的时间。
 </p>
 
 <h3>回放跨越K线的变化</h3>

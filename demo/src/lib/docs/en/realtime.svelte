@@ -220,7 +220,7 @@ chart.replayResume()
 chart.getReplayBarIndex()      // the chart bar forming now
 chart.replaySeekToBar(150)     // to the end of bar 150
 chart.replaySeekToTime(t)      // to the bars that closed by t
-chart.on('replayStep', (e) => e.payload)    // { barIndex, time, until, total, cause }
+chart.on('replayStep', (e) => e.payload)    // { barIndex, time, stepTime, until, total, cause }
 chart.on('replayComplete', (e) => e.payload) // { barIndex, time }
 chart.on('replayState', (e) => e.payload)   // { state: 'playing' | 'paused' | 'stopped' }
 chart.replayStop()             // back to the live series`}</code></pre>
@@ -244,6 +244,27 @@ chart.replayStop()             // back to the live series`}</code></pre>
   <strong>Auto</strong>; <code>replayStep</code> (<code>'auto'</code>, <code>'bar'</code> or an
   interval) and <code>replayAnimate: false</code> change it. On a feed without
   <code>fetchHistoryBefore</code> the widget fetches the finer bars in one request before the replay starts.
+</p>
+
+<h3>The replay bar in ChartWidget</h3>
+<p>
+  The toolbar's <strong>Bar replay</strong> button opens a compact bar on the foot of the main
+  pane, centred on its plot (bottom panes stay readable). First pick the bar to start from: click
+  it, or press <strong>Random bar</strong>; <strong>Cancel</strong> (or <kbd>Esc</kbd>) leaves.
+  Then: step back, <strong>Play</strong>/<strong>Pause</strong> and step forward; the date and time of
+  the step shown, in the display timezone (the year only when it isn't this one), and a track with
+  the played part filled; <strong>Speed</strong> as multipliers from 0.1× to 50× (1× plays one bar
+  of the chart a second, whatever the step; the default is 1×); <strong>Step</strong>;
+  <strong>Select bar</strong>, which pauses and picks another start among the bars shown, without
+  showing the bars to come (<strong>Cancel</strong> or <kbd>Esc</kbd> returns to the same place); and
+  <strong>Back to realtime</strong>. On a phone or a narrow chart it takes two rows, the date and
+  the track on top. Keys, for the widget used last: <kbd>Shift</kbd>+<kbd>←</kbd>/<kbd>→</kbd> step,
+  <kbd>Space</kbd> on the chart or the track plays or pauses (outside a replay it fits the chart), and
+  <kbd>Esc</kbd> stops picking. A shortcut you add with <code>addHotkey</code> on the same keys comes
+  first. The bar reads the <code>--tcw-*</code> tokens of the look and theme; a host may also set
+  <code>--tcw-replay-btn</code>, <code>--tcw-replay-play</code> or <code>--tcw-replay-track-w</code> on
+  <code>.tcw-replay-bar</code>. Its readout comes from <code>replayStep</code>'s
+  <code>stepTime</code>, the time of the step shown.
 </p>
 
 <h3>A replay outlives the bars</h3>

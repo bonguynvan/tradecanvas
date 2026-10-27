@@ -569,6 +569,9 @@ new ChartWidget(host, { features: { 'dock.dataWindow': false } })  // no button 
     <tr><td><kbd>?</kbd></td><td>快捷键列表，可按功能或按键搜索</td></tr>
     <tr><td><kbd>Alt</kbd> + 点击图表</td><td>在鼠标所在K线上固定 OHLC 提示（同时显示与实时十字光标的差值）</td></tr>
     <tr><td><kbd>Esc</kbd></td><td>取消固定提示 / 取消当前画线</td></tr>
+    <tr><td><kbd>Shift</kbd> + <kbd>←</kbd> / <kbd>→</kbd></td><td>回放后退 / 前进一步</td></tr>
+    <tr><td><kbd>Space</kbd></td><td>播放或暂停回放（在图表或进度条上；回放之外适配图表）</td></tr>
+    <tr><td><kbd>Esc</kbd></td><td>停止选择回放起点K线</td></tr>
     <tr><td>点击工具栏中的品种</td><td>打开代码搜索弹窗</td></tr>
     <tr><td>点击工具栏中的播放按钮</td><td>打开K线回放进度条（播放 / 单步 / 跳转 / 速度）</td></tr>
   </tbody>

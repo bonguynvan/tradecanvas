@@ -216,7 +216,7 @@ chart.replayResume()
 chart.getReplayBarIndex()      // the chart bar forming now
 chart.replaySeekToBar(150)     // to the end of bar 150
 chart.replaySeekToTime(t)      // to the bars that closed by t
-chart.on('replayStep', (e) => e.payload)    // { barIndex, time, until, total, cause }
+chart.on('replayStep', (e) => e.payload)    // { barIndex, time, stepTime, until, total, cause }
 chart.on('replayComplete', (e) => e.payload) // { barIndex, time }
 chart.on('replayState', (e) => e.payload)   // { state: 'playing' | 'paused' | 'stopped' }
 chart.replayStop()             // back to the live series`}</code></pre>
@@ -235,6 +235,21 @@ chart.replayStop()             // back to the live series`}</code></pre>
   만들어집니다. ChartWidget은 기본으로 이렇게 합니다. 단계 메뉴는 <strong>자동</strong>에서 시작하고, <code>replayStep</code>
   (<code>'auto'</code>, <code>'bar'</code> 또는 주기)과 <code>replayAnimate: false</code>로 바꿉니다. <code>fetchHistoryBefore</code>가
   없는 피드에서는 위젯이 리플레이 시작 전에 더 작은 봉을 한 번의 요청으로 가져옵니다.
+</p>
+
+<h3>ChartWidget의 리플레이 바</h3>
+<p>
+  툴바의 <strong>바 리플레이</strong> 버튼은 메인 패널 아래쪽, 플롯 가운데에 작은 바를 엽니다(아래 패널은 그대로 읽힙니다).
+  먼저 시작 봉을 고릅니다. 봉을 클릭하거나 <strong>무작위 봉</strong>을 누르고, <strong>취소</strong>(또는 <kbd>Esc</kbd>)로 나갑니다.
+  그다음: 뒤로, <strong>재생</strong>/<strong>일시정지</strong>, 앞으로; 표시 중인 단계의 날짜와 시간(표시 시간대, 올해가 아닐 때만 연도);
+  재생한 부분이 채워진 트랙; <strong>속도</strong>는 0.1×~50× 배수(1×는 단계와 상관없이 차트 봉 하나를 1초에, 기본 1×);
+  <strong>스텝</strong>; <strong>봉 선택</strong>은 일시정지하고 보이는 봉 중에서 시작 봉을 다시 고르며 앞으로 올 봉은 보여주지 않습니다
+  (<strong>취소</strong>나 <kbd>Esc</kbd>로 같은 자리로); <strong>실시간으로 돌아가기</strong>. 휴대폰이나 좁은 차트에서는 두 줄이 되고 날짜와 트랙이 위에 옵니다.
+  키는 마지막으로 쓴 위젯에 적용됩니다. <kbd>Shift</kbd>+<kbd>←</kbd>/<kbd>→</kbd> 단계 이동, 차트나 트랙에서 <kbd>Space</kbd>는
+  재생/일시정지(리플레이 밖에서는 차트 맞춤), <kbd>Esc</kbd>는 선택 중단. 같은 키에 <code>addHotkey</code>로 추가한 단축키가 먼저입니다.
+  바는 룩과 테마의 <code>--tcw-*</code> 토큰을 쓰며, 호스트는 <code>.tcw-replay-bar</code>에 <code>--tcw-replay-btn</code>,
+  <code>--tcw-replay-play</code>, <code>--tcw-replay-track-w</code>도 지정할 수 있습니다. 날짜는 <code>replayStep</code>의
+  <code>stepTime</code>(표시 중인 단계의 시각)에서 옵니다.
 </p>
 
 <h3>리플레이는 봉이 바뀌어도 이어집니다</h3>

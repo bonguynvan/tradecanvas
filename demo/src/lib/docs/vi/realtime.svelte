@@ -221,7 +221,7 @@ chart.replayResume()
 chart.getReplayBarIndex()      // the chart bar forming now
 chart.replaySeekToBar(150)     // to the end of bar 150
 chart.replaySeekToTime(t)      // to the bars that closed by t
-chart.on('replayStep', (e) => e.payload)    // { barIndex, time, until, total, cause }
+chart.on('replayStep', (e) => e.payload)    // { barIndex, time, stepTime, until, total, cause }
 chart.on('replayComplete', (e) => e.payload) // { barIndex, time }
 chart.on('replayState', (e) => e.payload)   // { state: 'playing' | 'paused' | 'stopped' }
 chart.replayStop()             // back to the live series`}</code></pre>
@@ -245,6 +245,26 @@ chart.replayStop()             // back to the live series`}</code></pre>
   mặc định: menu Bước bắt đầu ở <strong>Tự động</strong>; <code>replayStep</code>
   (<code>'auto'</code>, <code>'bar'</code> hoặc một khung) và <code>replayAnimate: false</code> thay đổi nó. Với nguồn không có
   <code>fetchHistoryBefore</code>, widget tải các nến nhỏ hơn trong một lần gọi trước khi phát lại bắt đầu.
+</p>
+
+<h3>Thanh phát lại trong ChartWidget</h3>
+<p>
+  Nút <strong>Phát lại</strong> trên thanh công cụ mở một thanh gọn ở chân khung chính, giữa vùng
+  vẽ (các khung bên dưới vẫn đọc được). Trước hết chọn nến bắt đầu: bấm vào nó, hoặc bấm
+  <strong>Nến ngẫu nhiên</strong>; <strong>Huỷ</strong> (hoặc <kbd>Esc</kbd>) để thoát. Sau đó: lùi,
+  <strong>Phát</strong>/<strong>Tạm dừng</strong> và tiến; ngày giờ của bước đang hiện, theo múi giờ
+  hiển thị (chỉ ghi năm khi khác năm nay), và một thanh trượt tô phần đã phát; <strong>Tốc độ</strong>
+  là bội số từ 0.1× đến 50× (1× phát một nến của biểu đồ mỗi giây, bước nào cũng vậy; mặc định 1×);
+  <strong>Bước</strong>; <strong>Chọn nến</strong>, tạm dừng và chọn nến bắt đầu khác trong các nến
+  đang hiện mà không lộ các nến sau (<strong>Huỷ</strong> hoặc <kbd>Esc</kbd> quay lại đúng chỗ cũ);
+  và <strong>Về thời gian thực</strong>. Trên điện thoại hoặc biểu đồ hẹp, thanh chia hai hàng, ngày
+  và thanh trượt ở trên. Phím, cho widget dùng gần nhất: <kbd>Shift</kbd>+<kbd>←</kbd>/<kbd>→</kbd>
+  lùi/tiến, <kbd>Space</kbd> trên biểu đồ hoặc thanh trượt để phát/tạm dừng (ngoài phát lại nó vừa
+  khung biểu đồ), <kbd>Esc</kbd> thôi chọn nến. Phím tắt bạn thêm bằng <code>addHotkey</code> trên
+  cùng phím được ưu tiên. Thanh dùng các token <code>--tcw-*</code> của giao diện và chủ đề; host có
+  thể đặt thêm <code>--tcw-replay-btn</code>, <code>--tcw-replay-play</code> hoặc
+  <code>--tcw-replay-track-w</code> trên <code>.tcw-replay-bar</code>. Ngày giờ lấy từ
+  <code>stepTime</code> của <code>replayStep</code>, thời điểm của bước đang hiện.
 </p>
 
 <h3>Phát lại sống qua việc đổi nến</h3>
