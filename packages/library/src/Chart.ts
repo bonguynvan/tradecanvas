@@ -5000,7 +5000,8 @@ export class Chart {
       if (forward) {
         // Forward: the bar that was forming closes as it is in the series, the
         // newly revealed bars are appended, and indicators update from there.
-        if (steps && nextLen > loaded) this.series.updateReplayed(coarse[loaded - 1]);
+        // (With `animate` it was drawn part way; a bar already whole is written again unchanged.)
+        if (nextLen > loaded) this.series.updateReplayed(coarse[loaded - 1]);
         for (let j = loaded; j < nextLen - 1; j++) this.series.appendReplayed(coarse[j]);
         if (nextLen > loaded) this.series.appendReplayed(shownBar);
         else this.series.updateReplayed(shownBar);

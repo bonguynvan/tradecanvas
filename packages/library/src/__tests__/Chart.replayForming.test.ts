@@ -60,6 +60,29 @@ describe('a bar forming in a replay', () => {
     expect(last().time).toBe(hours[102].time);
   });
 
+  it('forms every bar after the first, not only the first one', () => {
+    start();
+    chart.replayResume();
+    play(1008 + 496); // bar 101 whole, bar 102 about halfway
+    expect(chart.getData()[101]).toEqual(hours[101]);
+    expect(last()).toMatchObject({ time: hours[102].time, open: 202, low: 200 });
+    expect(last().close).toBeLessThan(hours[102].close);
+    expect(last().high).toBeLessThan(hours[102].high);
+    play(512 + 496);
+    expect(last()).toMatchObject({ time: hours[103].time, open: 203 });
+    expect(last().high).toBeLessThan(hours[103].high);
+  });
+
+  it('closes the bar that was forming when a seek jumps past it', () => {
+    start();
+    chart.replayResume();
+    play(496);
+    const forming = chart.getReplayBarIndex();
+    chart.replayPause();
+    chart.replaySeek(forming + 3);
+    expect(chart.getData()[forming]).toEqual(hours[forming]);
+  });
+
   it('holds where it is on a pause, and goes on from there on Play', () => {
     start();
     chart.replayResume();

@@ -24,6 +24,22 @@ export interface IntrabarPath {
 
 /** Each of a piece's three legs takes this share of it when the piece doesn't move. */
 const FLAT_LEG = 1 / 3;
+/** How far outside the bar's range (as a share of it) a finer bar may close and still be the bar's. */
+const PIECE_CLOSE_SLACK = 0.25;
+/** The share of finer bars that may close outside it before they are taken for another series. */
+const MAX_STRAY_PIECES = 0.5;
+
+/**
+ * Whether the finer bars trade where the bar does. A feed that makes up
+ * each interval on its own (a demo feed, say) gives minutes far from the
+ * hour; pulled onto the hour they would sit at its high or low for most of
+ * it, and the bar would look whole a moment after it starts.
+ */
+function piecesFit(bar: OHLCBar, pieces: readonly OHLCBar[]): boolean {
+  const slack = (bar.high - bar.low) * PIECE_CLOSE_SLACK;
+  const stray = pieces.filter((p) => p.close > bar.high + slack || p.close < bar.low - slack).length;
+  return stray <= pieces.length * MAX_STRAY_PIECES;
+}
 
 /** A bar's own path: down first when it rose (or stayed), up first when it fell (as paper fills decide). */
 function ownPath(bar: OHLCBar): number[] {
@@ -48,14 +64,14 @@ function piecePoints(piece: OHLCBar, j: number, n: number): PathPoint[] {
 
 /**
  * The path bar `bar` takes, from `finer` (its finer bars, sorted, all inside
- * it) or from itself. Each finer bar takes an equal share of the bar's time,
+ * it) or from itself (also when they trade somewhere else). Each finer bar takes an equal share of the bar's time,
  * and inside it the price moves at an even pace. The path is made to agree
  * with `bar`: it starts at its open, ends at its close and reaches its high
  * and low, so the last frame is the bar as the series has it (venues differ
  * between intervals: auction closes, trades missing from the minutes).
  */
 export function intrabarPath(bar: OHLCBar, finer: readonly OHLCBar[] = []): IntrabarPath {
-  const pieces = finer.length > 0 ? finer : [bar];
+  const pieces = finer.length > 0 && piecesFit(bar, finer) ? finer : [bar];
   const n = pieces.length;
   const points = reconcile(pieces.flatMap((piece, j) => piecePoints(piece, j, n)), bar);
   const sum = pieces.reduce((s, p) => s + (p.volume ?? 0), 0);

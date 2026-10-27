@@ -58,6 +58,14 @@ describe('a bar made of finer bars', () => {
     const path = intrabarPath(bar, wild);
     for (let f = 0; f <= 1; f += 0.01) expect(formingAt(path, f).high).toBeLessThanOrEqual(204);
   });
+
+  it('forms from the bar itself when its finer bars trade somewhere else', () => {
+    // Minutes of another series (a feed that makes up each interval): all above the bar.
+    const elsewhere = minutes.map((m) => ({ ...m, open: m.open + 50, high: m.high + 50, low: m.low + 50, close: m.close + 50 }));
+    expect(intrabarPath(bar, elsewhere).points).toEqual(intrabarPath(bar).points);
+    const half = formingAt(intrabarPath(bar, elsewhere), 0.5);
+    expect(half.high).toBeLessThan(bar.high);
+  });
 });
 
 describe('under reduced motion', () => {
