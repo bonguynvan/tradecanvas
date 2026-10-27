@@ -619,6 +619,9 @@ new ChartWidget(host, { features: { 'dock.dataWindow': false } })  // no button 
     <tr><td><kbd>?</kbd></td><td>Bảng phím tắt, tìm được theo việc phím làm hoặc theo phím</td></tr>
     <tr><td><kbd>Alt</kbd> + bấm vào biểu đồ</td><td>Ghim chú thích OHLC tại nến đang rê chuột (kèm chênh lệch so với vị trí con trỏ chữ thập hiện tại)</td></tr>
     <tr><td><kbd>Esc</kbd></td><td>Bỏ ghim chú thích / huỷ hình đang vẽ</td></tr>
+    <tr><td><kbd>Shift</kbd> + <kbd>←</kbd> / <kbd>→</kbd></td><td>Lùi / tiến phát lại một bước</td></tr>
+    <tr><td><kbd>Space</kbd></td><td>Phát hoặc tạm dừng phát lại (trên biểu đồ hoặc thanh trượt; ngoài phát lại nó vừa khung biểu đồ)</td></tr>
+    <tr><td><kbd>Esc</kbd></td><td>Thôi chọn nến bắt đầu phát lại</td></tr>
     <tr><td>Bấm vào mã trên thanh công cụ</td><td>Mở hộp thoại tìm mã</td></tr>
     <tr><td>Bấm nút phát trên thanh công cụ</td><td>Mở thanh điều khiển phát lại nến (phát/từng bước/tua/tốc độ)</td></tr>
   </tbody>

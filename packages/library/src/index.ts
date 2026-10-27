@@ -165,7 +165,7 @@ export {
   parseTimeframe, isTimeFrame, timeframeToMs, timeframeBucketStart, resampleBars, pickBaseTimeframe,
   isValidTimeZone, zoneOffsetMinutes, offsetAt, wallToUtc,
 } from '@tradecanvas/commons';
-export type { KnownTimeFrame, TimeFrameUnit, BucketOptions, TimeZoneSetting, HistoryLoadPayload, DataUpdatePayload, OverlayScale } from '@tradecanvas/commons';
+export type { KnownTimeFrame, TimeFrameUnit, BucketOptions, TimeZoneSetting, HistoryLoadPayload, ReplayStepsLoadPayload, DataUpdatePayload, OverlayScale } from '@tradecanvas/commons';
 
 // Symbol search and what a feed knows about a symbol
 export { rankSymbols, stepDecimals } from '@tradecanvas/commons';

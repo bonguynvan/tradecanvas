@@ -214,16 +214,80 @@ replay.start()
   In ChartWidget, the replay bar's <strong>Step</strong> menu offers the finer intervals the
   feed has (or that the bars you loaded can build).
 </p>
-<pre><code>{`const steps = await adapter.fetchHistory('BTCUSDT', '5m', 2000)
-chart.replayStart({ steps, startIndex: 120, paused: true, speed: 5 })
+<pre><code>{`chart.replayStart({ animate: true, step: 'auto', startIndex: 120, paused: true })
+// or finer bars you hold for the bars replayed: { steps, startIndex: 120 }
 chart.replayResume()
 chart.getReplayBarIndex()      // the chart bar forming now
 chart.replaySeekToBar(150)     // to the end of bar 150
-chart.replaySeekToTime(t)      // to the bars that opened before t
-chart.on('replayStep', (e) => e.payload)    // { barIndex, time, until, total }
+chart.replaySeekToTime(t)      // to the bars that closed by t
+chart.on('replayStep', (e) => e.payload)    // { barIndex, time, stepTime, until, total, cause }
 chart.on('replayComplete', (e) => e.payload) // { barIndex, time }
 chart.on('replayState', (e) => e.payload)   // { state: 'playing' | 'paused' | 'stopped' }
 chart.replayStop()             // back to the live series`}</code></pre>
+
+<h3>Bars that form as they play</h3>
+<p>
+  With <code>animate: true</code> each bar grows over its time, as a live bar does: from its
+  open to the extreme its direction says came first (a rising bar dips first), the other, then
+  its close. With <code>step</code> (<code>'auto'</code>, or an interval such as <code>'1m'</code>) the
+  chart fetches the finer bars of the bars it is about to play through the connected feed's
+  <code>fetchHistoryBefore</code>, a page at a time and only while it plays, and each bar forms
+  along them; <code>'auto'</code> is the finest the feed serves with at most 60 to a bar. The
+  last frame is always the bar as the series has it. <code>steps</code> you give are used the same
+  way. The clock keeps counting the chart's bars: <code>speed</code>, <code>duration</code> and the
+  indices mean bars, and <code>getReplayBarIndex()</code> is the bar forming. A pause holds a
+  half-drawn bar; a seek or a step shows whole bars. A paper account fills as the drawn price
+  reaches an order. Bars shorter than three frames come whole, and under reduced motion a bar
+  steps from one of its prices to the next. <code>replayStepsLoad</code> tells
+  <code>loading</code>, <code>loaded</code>, <code>end</code> or <code>error</code>; a bar without finer
+  bars forms from its own prices. ChartWidget does this by default: its Step menu starts on
+  <strong>Auto</strong>; <code>replayStep</code> (<code>'auto'</code>, <code>'bar'</code> or an
+  interval) and <code>replayAnimate: false</code> change it. On a feed without
+  <code>fetchHistoryBefore</code> the widget fetches the finer bars in one request before the replay starts.
+  With <code>replayAnimate: false</code>, Auto replays whole bars; a finer interval picked plays as steps of its own.
+</p>
+
+<h3>The replay bar in ChartWidget</h3>
+<p>
+  The toolbar's <strong>Bar replay</strong> button opens a compact bar on the foot of the main
+  pane, centred on its plot (bottom panes stay readable). First pick the bar to start from: click
+  it, or press <strong>Random bar</strong>; <strong>Cancel</strong> (or <kbd>Esc</kbd>) leaves.
+  Then: step back, <strong>Play</strong>/<strong>Pause</strong> and step forward; the date and time of
+  the step shown, in the display timezone (the year only when it isn't this one), and a track with
+  the played part filled; <strong>Speed</strong> as multipliers from 0.1× to 50× (1× plays one bar
+  of the chart a second, whatever the step; the default is 1×); <strong>Step</strong>;
+  <strong>Select bar</strong>, which pauses and picks another start among the bars shown, without
+  showing the bars to come (<strong>Cancel</strong> or <kbd>Esc</kbd> returns to the same place); and
+  <strong>Back to realtime</strong>. On a phone or a narrow chart it takes two rows, the date and
+  the track on top. Keys, for the widget used last: <kbd>Shift</kbd>+<kbd>←</kbd>/<kbd>→</kbd> step,
+  <kbd>Space</kbd> on the chart or the track plays or pauses (outside a replay it fits the chart), and
+  <kbd>Esc</kbd> stops picking. A shortcut you add with <code>addHotkey</code> on the same keys comes
+  first. The bar reads the <code>--tcw-*</code> tokens of the look and theme; a host may also set
+  <code>--tcw-replay-btn</code>, <code>--tcw-replay-play</code> or <code>--tcw-replay-track-w</code> on
+  <code>.tcw-replay-bar</code>. Its readout comes from <code>replayStep</code>'s
+  <code>stepTime</code>, the time of the step shown.
+</p>
+
+<h3>A replay outlives the bars</h3>
+<p>
+  A replay is a time over the live series. When the bars change — a new symbol or
+  timeframe through <code>connect</code> or <code>switchStream</code>, <code>setData</code>,
+  older bars paged in, the extended hours, a corrected bar — it goes on over the new bars at
+  the time it had reached, and shows only bars that closed by then. While a new series
+  loads, the replay waits, playing or paused as it was. Indices (<code>barIndex</code>,
+  <code>total</code>, <code>replaySeekToBar</code>) are of the bars replayed now and change
+  with them; keep a position by time. A replay a paper account trades ends when the symbol
+  changes. In ChartWidget the replay bar stays open, says <em>Loading chart</em> and waits
+  while the bars load, then follows their total and the new interval's steps.
+</p>
+<pre><code>{`chart.replayStart({ startIndex: 300, paused: true })
+await chart.setTimeframe('1h')        // the replay waits, then goes on at the same time
+const { until } = chart.getReplayProgress()   // keep a position by time, not by index
+if (until !== null) chart.replaySeekToTime(until)   // back to it, on any interval
+chart.on('replayStep', (e) => {
+  if (e.payload.cause === 'series') {}  // carried over: barIndex and total are the new bars'
+})
+chart.replayStop()                    // call it first to end the replay as before`}</code></pre>
 
 <h3>A replay in your own app</h3>
 <p>

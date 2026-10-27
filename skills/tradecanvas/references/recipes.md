@@ -238,8 +238,9 @@ chart.on('alertExpired', (e) => console.log('expired', e.payload.id));
 
 ## Practising on a replay with a paper account
 
-Replay an hourly chart in 5-minute steps and trade it on paper: orders fill on
-the replayed prices and fills land on the replayed bars. Alerts keep watching
+Replay an hourly chart with each bar forming along its minutes and trade it on
+paper: orders fill as the drawn price reaches them, and fills land on the
+replayed bars. Alerts keep watching
 the live market meanwhile.
 
 ```ts
@@ -250,11 +251,15 @@ const chart = new Chart(document.getElementById('chart')!, { theme: 'dark' });
 await chart.connect({ adapter, symbol: 'BTCUSDT', timeframe: '1h' });
 chart.connectExecution(new PaperExecutionAdapter());
 
-const steps = await adapter.fetchHistory('BTCUSDT', '5m', 2000);
-chart.replayStart({ steps, startIndex: 300, paused: true, speed: 5 });
+// The chart fetches the minutes of the bars it is about to play (not the newest ones).
+chart.replayStart({ animate: true, step: 'auto', startIndex: 300, paused: true, speed: 2 });
 chart.replayResume();
 // … place orders from the chart; chart.replaySeekToBar(i) jumps, chart.replayStop() goes back to live
 ```
+
+Switching the interval mid-replay keeps the time: the replay waits for the new
+bars and goes on there, fetching the new interval's finer bars itself. Switching the symbol ends a
+replay the paper account trades, since its orders are of the old symbol.
 
 ## Another symbol's change beside yours, in percent
 

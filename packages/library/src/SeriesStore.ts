@@ -52,6 +52,18 @@ export interface SeriesPage {
   readonly taken: number;
 }
 
+/**
+ * How the live series changed during a replay, other than at its end: a
+ * new one (`series`: `load`, a reconnect's snapshot), older bars in front
+ * (`older`, with how many it took), the hours shown (`hours`), or a bar
+ * corrected (`bar`, at its time). A replay follows each by time.
+ */
+export type LiveChange =
+  | { readonly kind: 'series' }
+  | { readonly kind: 'older'; readonly taken: number }
+  | { readonly kind: 'hours' }
+  | { readonly kind: 'bar'; readonly time: number };
+
 /** A bar onto a series by its time: the last one again, a new one after it, or an older one. */
 export function barPlacement(series: readonly OHLCBar[], bar: OHLCBar): 'append' | 'update' | 'stale' {
   const last = series[series.length - 1];
@@ -84,7 +96,14 @@ export class SeriesStore {
   /** Bumped by every bar shown replaced in place (`replace`): what keeps a copy of the bars by their array writes them again. */
   private shownRevision = 0;
 
-  constructor(private readonly hoursFilter: HoursFilter) {}
+  /**
+   * `onLiveChange` hears every change to the live series during a replay
+   * other than at its end, whoever wrote it, so the replay can follow.
+   */
+  constructor(
+    private readonly hoursFilter: HoursFilter,
+    private readonly onLiveChange: (change: LiveChange) => void = () => {},
+  ) {}
 
   /** The bars the chart shows. */
   bars(): DataSeries {
@@ -110,8 +129,16 @@ export class SeriesStore {
 
   // --- A whole series ---
 
-  /** A new series: the bars shown are those of `bars` in the hours shown. */
+  /**
+   * A new series: the bars shown are those of `bars` in the hours shown.
+   * During a replay it is the live series kept aside.
+   */
   load(bars: DataSeries): void {
+    if (this.aside) {
+      this.aside.setData(bars);
+      this.onLiveChange({ kind: 'series' });
+      return;
+    }
     this.shown.setData(this.regularOnly(bars));
   }
 
@@ -121,6 +148,11 @@ export class SeriesStore {
    * hidden ones too (`taken`).
    */
   prepend(bars: readonly OHLCBar[]): SeriesPage {
+    if (this.aside) {
+      const taken = this.aside.prependBars(bars);
+      if (taken > 0) this.onLiveChange({ kind: 'older', taken });
+      return { added: 0, taken };
+    }
     let taken: number | null = null;
     let onShown: readonly OHLCBar[] = bars;
     if (this.whole) {
@@ -147,18 +179,25 @@ export class SeriesStore {
    * gap): load it instead.
    */
   mergeSnapshot(bars: DataSeries): boolean {
-    const data = this.whole ?? this.shown.getData();
-    const first = bars[0]?.time;
-    let keep = 0;
-    while (first !== undefined && keep < data.length && data[keep].time < first) keep++;
-    if (keep === 0 || keep === data.length) return false;
-    this.shown.setData(this.regularOnly(data.slice(0, keep).concat(bars)));
+    if (this.aside) {
+      // During a replay the live series kept aside takes it, merged the same way.
+      this.aside.setData(mergedSnapshot(this.aside.getData(), bars) ?? bars);
+      this.onLiveChange({ kind: 'series' });
+      return true;
+    }
+    const merged = mergedSnapshot(this.whole ?? this.shown.getData(), bars);
+    if (!merged) return false;
+    this.shown.setData(this.regularOnly(merged));
     return true;
   }
 
   /** The bars shown again after the extended hours or the symbol's hours changed: whether they did. */
   refilter(): boolean {
-    if (this.aside) return false; // the replay's end brings the series back through the filter
+    if (this.aside) {
+      // The replay filters the live series again itself; its end brings the series back through the filter.
+      this.onLiveChange({ kind: 'hours' });
+      return false;
+    }
     const all = this.whole ?? this.shown.getData().slice();
     if (!this.whole && !this.hoursFilter(all)) return false; // nothing hidden before or now
     this.shown.setData(this.regularOnly(all));
@@ -266,7 +305,9 @@ export class SeriesStore {
   replace(given: OHLCBar): SeriesCorrection {
     if (this.aside) {
       const { index, changed } = this.aside.replaceBar(given);
-      return index < 0 ? NOWHERE : { to: 'aside', index: -1, changed };
+      if (index < 0) return NOWHERE;
+      if (changed) this.onLiveChange({ kind: 'bar', time: this.aside.getData()[index].time });
+      return { to: 'aside', index: -1, changed };
     }
     if (!isValidBar(given)) return NOWHERE;
     const bar = this.inSeriesUnit(given);
@@ -285,11 +326,6 @@ export class SeriesStore {
       this.shownRevision++;
     }
     return { to: 'shown', index, changed };
-  }
-
-  /** A stream's snapshot during a replay: the live series kept aside. */
-  loadAside(bars: DataSeries): void {
-    this.aside?.setData(bars);
   }
 
   // --- A replay ---
@@ -386,4 +422,17 @@ export class SeriesStore {
     const keep = this.hoursFilter(whole);
     return !keep || keep(bar.time);
   }
+}
+
+/**
+ * A reconnect's snapshot onto `data`: the bars before its first kept, the
+ * rest its own. Null when it doesn't reach back over them (after a longer
+ * outage it starts later, and joining them would hide a gap).
+ */
+function mergedSnapshot(data: DataSeries, bars: DataSeries): DataSeries | null {
+  const first = bars[0]?.time;
+  let keep = 0;
+  while (first !== undefined && keep < data.length && data[keep].time < first) keep++;
+  if (keep === 0 || keep === data.length) return null;
+  return data.slice(0, keep).concat(bars);
 }

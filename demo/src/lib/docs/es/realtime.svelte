@@ -221,16 +221,79 @@ replay.start()
   <strong>Paso</strong> de la barra de repetición ofrece los intervalos más finos que tiene
   la fuente (o que se pueden construir con las barras que cargaste).
 </p>
-<pre><code>{`const steps = await adapter.fetchHistory('BTCUSDT', '5m', 2000)
-chart.replayStart({ steps, startIndex: 120, paused: true, speed: 5 })
+<pre><code>{`chart.replayStart({ animate: true, step: 'auto', startIndex: 120, paused: true })
+// o barras más finas que ya tienes para las barras que se reproducen: { steps, startIndex: 120 }
 chart.replayResume()
 chart.getReplayBarIndex()      // the chart bar forming now
 chart.replaySeekToBar(150)     // to the end of bar 150
-chart.replaySeekToTime(t)      // to the bars that opened before t
-chart.on('replayStep', (e) => e.payload)    // { barIndex, time, until, total }
+chart.replaySeekToTime(t)      // to the bars that closed by t
+chart.on('replayStep', (e) => e.payload)    // { barIndex, time, stepTime, until, total, cause }
 chart.on('replayComplete', (e) => e.payload) // { barIndex, time }
 chart.on('replayState', (e) => e.payload)   // { state: 'playing' | 'paused' | 'stopped' }
 chart.replayStop()             // back to the live series`}</code></pre>
+
+<h3>Barras que se forman al reproducir</h3>
+<p>
+  Con <code>animate: true</code> cada barra crece durante su tiempo, como una barra en vivo: de su
+  apertura al extremo que su dirección indica que llegó primero (una barra alcista baja primero), el otro
+  y su cierre. Con <code>step</code> (<code>'auto'</code> o un intervalo como <code>'1m'</code>) el gráfico pide
+  las barras más finas de las barras que va a reproducir con el <code>fetchHistoryBefore</code> de la fuente
+  conectada, una página cada vez y solo mientras reproduce, y cada barra se forma siguiéndolas;
+  <code>'auto'</code> es el intervalo más fino que sirve la fuente con 60 como mucho por barra. El último
+  fotograma es siempre la barra tal como está en la serie. Los <code>steps</code> que pases se usan igual. El
+  reloj sigue contando las barras del gráfico: <code>speed</code>, <code>duration</code> y los índices son
+  barras, y <code>getReplayBarIndex()</code> es la barra que se forma. Una pausa conserva la barra a medio
+  dibujar; un salto o un paso muestra barras completas. Una cuenta simulada se ejecuta cuando el precio dibujado
+  llega a una orden. Las barras de menos de tres fotogramas llegan completas y, con movimiento reducido, la
+  barra salta de un precio al siguiente. <code>replayStepsLoad</code> avisa <code>loading</code>,
+  <code>loaded</code>, <code>end</code> o <code>error</code>; una barra sin barras más finas se forma con sus
+  propios precios. ChartWidget lo hace por defecto: su menú Paso empieza en <strong>Auto</strong>;
+  <code>replayStep</code> (<code>'auto'</code>, <code>'bar'</code> o un intervalo) y
+  <code>replayAnimate: false</code> lo cambian. Con una fuente sin
+  <code>fetchHistoryBefore</code>, el widget obtiene las barras más finas en una sola petición antes de que empiece la reproducción.
+  Con <code>replayAnimate: false</code>, Auto reproduce barras enteras; un intervalo más fino elegido avanza en pasos propios.
+</p>
+
+<h3>La barra de repetición en ChartWidget</h3>
+<p>
+  El botón <strong>Repetición de barras</strong> de la barra de herramientas abre una barra compacta al pie del panel principal,
+  centrada en su gráfico (los paneles de abajo siguen legibles). Primero elige la vela de inicio: haz clic en ella o pulsa
+  <strong>Barra aleatoria</strong>; <strong>Cancelar</strong> (o <kbd>Esc</kbd>) sale. Después: retroceder,
+  <strong>Reproducir</strong>/<strong>Pausa</strong> y avanzar; la fecha y la hora del paso mostrado, en la zona horaria de la
+  pantalla (el año solo cuando no es el actual), y una pista con la parte reproducida rellena; <strong>Velocidad</strong> en
+  múltiplos de 0.1× a 50× (1× reproduce una vela del gráfico por segundo, sea cual sea el paso; por defecto 1×);
+  <strong>Paso</strong>; <strong>Elegir barra</strong>, que pausa y elige otro inicio entre las velas mostradas sin mostrar las que
+  vienen (<strong>Cancelar</strong> o <kbd>Esc</kbd> vuelve al mismo sitio); y <strong>Volver al tiempo real</strong>. En un móvil
+  o un gráfico estrecho ocupa dos filas, con la fecha y la pista arriba. Teclas, para el widget usado por último:
+  <kbd>Shift</kbd>+<kbd>←</kbd>/<kbd>→</kbd> avanza o retrocede, <kbd>Space</kbd> en el gráfico o la pista reproduce o pausa
+  (fuera de una repetición ajusta el gráfico) y <kbd>Esc</kbd> deja de elegir. Un atajo que añadas con <code>addHotkey</code>
+  en las mismas teclas va primero. La barra usa los tokens <code>--tcw-*</code> del aspecto y del tema; el anfitrión también
+  puede fijar <code>--tcw-replay-btn</code>, <code>--tcw-replay-play</code> o <code>--tcw-replay-track-w</code> en
+  <code>.tcw-replay-bar</code>. La fecha viene de <code>stepTime</code> de <code>replayStep</code>, la hora del paso mostrado.
+</p>
+
+<h3>Una repetición sobrevive al cambio de velas</h3>
+<p>
+  Una repetición es un instante sobre la serie en vivo. Cuando las velas cambian — otro
+  símbolo o temporalidad con <code>connect</code> o <code>switchStream</code>,
+  <code>setData</code>, velas más antiguas cargadas, el horario extendido, una vela corregida —
+  sigue sobre las velas nuevas en el instante al que había llegado, y solo muestra velas
+  cerradas hasta entonces. Mientras carga una serie nueva, la repetición espera, reproduciendo
+  o en pausa como estaba. Los índices (<code>barIndex</code>, <code>total</code>,
+  <code>replaySeekToBar</code>) son de las velas que se repiten ahora y cambian con ellas;
+  guarda una posición por tiempo. Una repetición en la que opera una cuenta de papel termina
+  cuando cambia el símbolo. En ChartWidget la barra de repetición sigue abierta, dice
+  <em>Cargando gráfico</em> y espera mientras cargan las velas, y luego sigue su total y los
+  pasos de la nueva temporalidad.
+</p>
+<pre><code>{`chart.replayStart({ startIndex: 300, paused: true })
+await chart.setTimeframe('1h')        // the replay waits, then goes on at the same time
+const { until } = chart.getReplayProgress()   // keep a position by time, not by index
+if (until !== null) chart.replaySeekToTime(until)   // back to it, on any interval
+chart.on('replayStep', (e) => {
+  if (e.payload.cause === 'series') {}  // carried over: barIndex and total are the new bars'
+})
+chart.replayStop()                    // call it first to end the replay as before`}</code></pre>
 
 <h3>Una repetición en tu propia app</h3>
 <p>

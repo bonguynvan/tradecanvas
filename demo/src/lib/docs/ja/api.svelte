@@ -593,6 +593,9 @@ new ChartWidget(host, { features: { 'dock.dataWindow': false } })  // no button 
     <tr><td><kbd>?</kbd></td><td>キーボードショートカットの一覧。機能名でもキーでも検索できます</td></tr>
     <tr><td><kbd>Alt</kbd> + チャートをクリック</td><td>カーソル位置のバーに OHLC ツールチップを固定（ライブのクロスヘアとの差分を表示）</td></tr>
     <tr><td><kbd>Esc</kbd></td><td>ツールチップの固定を解除 / 描画をキャンセル</td></tr>
+    <tr><td><kbd>Shift</kbd> + <kbd>←</kbd> / <kbd>→</kbd></td><td>リプレイを 1 つ戻す / 進める</td></tr>
+    <tr><td><kbd>Space</kbd></td><td>リプレイを再生 / 一時停止（チャートかトラック上で。リプレイ外ではチャートを全体表示）</td></tr>
+    <tr><td><kbd>Esc</kbd></td><td>リプレイの開始足の選択をやめる</td></tr>
     <tr><td>ツールバーのシンボルをクリック</td><td>シンボル検索のモーダルを開きます</td></tr>
     <tr><td>ツールバーの再生ボタンをクリック</td><td>バーリプレイのスクラバーを開きます（再生 / ステップ / シーク / 速度）</td></tr>
   </tbody>

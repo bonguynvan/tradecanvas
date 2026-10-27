@@ -17,7 +17,7 @@ import { WidgetCommandPalette } from './WidgetCommandPalette.js';
 import { WidgetSymbolSearch, type SymbolSearchFn } from './WidgetSymbolSearch.js';
 import { WidgetHotkeySheet } from './WidgetHotkeySheet.js';
 import { MOD_KEY } from './platformKeys.js';
-import { WidgetReplayBar, DEFAULT_REPLAY_SPEED } from './WidgetReplayBar.js';
+import { WidgetReplayBar, DEFAULT_REPLAY_RATE } from './WidgetReplayBar.js';
 import { WidgetWatchlist, type WatchlistEntry } from './WidgetWatchlist.js';
 import { WatchlistStore, type WatchlistList } from './WatchlistStore.js';
 import { WidgetSymbolInfo, type SymbolInfoView } from './WidgetSymbolInfo.js';
@@ -84,8 +84,9 @@ import { WidgetDataWindow, PERCENT_DECIMALS as DATA_WINDOW_PERCENT_DECIMALS, typ
 import type { DepthData } from '@tradecanvas/commons';
 import { encodeWidgetState, decodeWidgetState, readShareHash, buildShareUrl } from './widgetShareState.js';
 import { DragDropImporter, resampleOHLCV, inferTimeframeMs } from '../io/index.js';
-import type { DataSeries } from '@tradecanvas/commons';
-import { timeframeToMs } from '@tradecanvas/commons';
+import type { DataSeries, ReplayStepPayload, ReplayStepsLoadPayload } from '@tradecanvas/commons';
+import { timeframeToMs, zonedDateFormatter } from '@tradecanvas/commons';
+import { replayStepChoices, resolveReplayStep } from '../replay/replayStep.js';
 import type { CommandItem } from './WidgetCommandPalette.js';
 import { resolveMessages, createTranslator, fill, type MessageKey, type Translator } from './i18n.js';
 import { chartTypeLabel, localizeToolGroups } from './widgetLocales.js';
@@ -145,6 +146,8 @@ const COMPARE_COLORS = ['#b552c9', '#1398a8', '#d4622b', '#e25592', '#6f7a8c', '
 
 /** A day: bars this long or longer have no time of day to go to. */
 const DAY_MS = 86_400_000;
+/** A bar of the chart at 1×, ms. */
+const REPLAY_BAR_MS = 1000;
 
 /** The switch each of the dock's panels, but the watchlist (an option), goes with. */
 const PANEL_FEATURES = {
@@ -184,10 +187,13 @@ const PANE_ROW_TOP = 7;
 const PANE_ROW_STEP = 17;
 /** Where a pane's buttons (move, fold, maximise) sit below its top edge. */
 const PANE_CONTROLS_TOP = 3;
-/** Finer intervals a replay may step through (those dividing the chart's interval are offered). */
-const REPLAY_STEP_CANDIDATES: readonly TimeFrame[] = ['1m', '3m', '5m', '15m', '30m', '1h', '2h', '4h', '1d'];
+/** How often the replay panel follows the chart (ms). */
+const REPLAY_POLL_MS = 150;
 /** The most finer bars fetched for one replay. */
 const MAX_REPLAY_STEPS = 5000;
+/** The replay bar's margin over the main pane, each side (the --tcw-space-4 step). */
+const REPLAY_BAR_MARGIN = 8;
+const MINUTE_MS = 60_000;
 /** Focus is in a dialog or a menu (the widget's or the page's): its keys are its own. */
 const inOverlay = (): boolean => {
   const active = document.activeElement;
@@ -367,11 +373,19 @@ export class ChartWidget {
   /** Bars on screen, for the navigation's scroll step. */
   private visibleBarCount = 50;
   private replayPollInterval: ReturnType<typeof setInterval> | null = null;
-  /** Bars revealed per second. */
-  private replaySpeed = DEFAULT_REPLAY_SPEED;
-  /** `'bar'`, or the finer interval a replay steps through. */
-  private replayStep = 'bar';
+  /** The replay's speed, a multiplier: 1 plays one bar of the chart a second. */
+  private replaySpeed = DEFAULT_REPLAY_RATE;
+  /** The chart's bars the replay goes through, and when the step shown opened (from `replayStep`). */
+  private replayBarsTotal: number | null = null;
+  private replayStepTime: number | null = null;
+  /** The symbol and interval of the finer steps given to the replay running (null: none given). */
+  private replayStepsKey: string | null = null;
+  /** `'auto'`, `'bar'`, or the finer interval a replay steps through. */
+  private replayStep = 'auto';
   private replayStartSeq = 0;
+  /** A replay start waiting for its finer steps: a Play pressed meanwhile plays it once it starts. */
+  private replayStartPending = false;
+  private replayPlayWanted = false;
   /** Finer bars fetched or built for the last replay in steps. */
   private replayStepsCache: { key: string; steps: DataSeries } | null = null;
   /** While picking the start bar: shades the bars right of the pointer. */
@@ -472,6 +486,7 @@ export class ChartWidget {
 
   constructor(container: HTMLElement, options: ChartWidgetOptions = {}) {
     this.options = options;
+    this.replayStep = options.replayStep ?? 'auto';
     // Read once, as plain JavaScript may hand over anything: tickers from here on, the info kept aside.
     const catalog = readSymbolCatalog(options.symbols ?? DEFAULT_SYMBOLS);
     this.symbols = catalog.names;
@@ -1020,11 +1035,12 @@ export class ChartWidget {
     // Replay: while picking, a click starts the replay at that bar; during a
     // replay it jumps the cursor there.
     this.chart.on('barClick', (e) => {
-      if (!this.replayBar?.isMounted()) return;
+      // While the next bars load, a click would pick a bar of the old ones.
+      if (!this.replayBar?.isMounted() || this.seriesPending()) return;
       const idx = (e.payload as { barIndex?: number }).barIndex;
       if (typeof idx !== 'number') return;
       if (this.replayBar.getMode() === 'select') {
-        this.startReplayAt(idx);
+        this.startReplayAt(idx, false, true);
         return;
       }
       if (this.chart.getReplayState() === 'playing') this.chart.replayPause();
@@ -1036,8 +1052,29 @@ export class ChartWidget {
     this.chart.on('crosshairMove', (e) => {
       if (this.replayBar?.getMode() !== 'select' || !this.replayBar.isMounted()) return;
       const point = (e.payload as { point?: { x: number } | null }).point;
-      this.positionReplayShade(point?.x ?? null);
+      this.positionReplayShade(this.seriesPending() ? null : point?.x ?? null);
     });
+    // The replay went on over new bars (another interval, say): the panel follows.
+    this.chart.on('replayStep', (e) => {
+      const step = e.payload as ReplayStepPayload;
+      this.replayBarsTotal = step.total;
+      this.replayStepTime = typeof step.stepTime === 'number' ? step.stepTime : step.time;
+      // Read once the chart is done: a carry-over resumes after its step, and the next bar starts to form after it.
+      queueMicrotask(() => {
+        if (this.destroyed) return;
+        if (step.cause === 'series') this.afterReplayCarryOver();
+        else this.syncReplayBar();
+      });
+    });
+    // The bar keeps to the main pane's foot as the chart lays out again.
+    for (const event of ['resize', 'paneResize', 'paneChange'] as const) {
+      this.chart.on(event, () => this.layoutReplayBar());
+    }
+    // The finer bars a replay fetches for itself failed: its bars form from their own prices.
+    this.chart.on('replayStepsLoad', (e) => {
+      if ((e.payload as ReplayStepsLoadPayload).state === 'error') this.say(this.t('replay.stepsFailed'), 'error');
+    });
+    this.chart.on('timeframeChange', () => this.refreshReplaySteps());
 
     // Data Window — precise OHLCV + indicator values at the hovered bar.
     this.dataWindow = new WidgetDataWindow(this.root, {
@@ -1423,8 +1460,8 @@ export class ChartWidget {
     });
 
     this.boundGlobalKeydown = (e: KeyboardEvent) => {
-      if (this.featureState.hotkeys && this.replayBar?.isMounted() && this.handleReplayKey(e)) return;
       if (this.handleHostHotkey(e)) return;
+      if (this.featureState.hotkeys && this.replayBar?.isMounted() && this.handleReplayKey(e)) return;
       // With several widgets on the page, the shortcuts go to the one used last.
       const mine = isKeyTarget(this.root);
       // The widget's keys may be switched off all together, or one by one.
@@ -4877,35 +4914,43 @@ export class ChartWidget {
       {
         onPlay: () => {
           if (this.replayBar?.getMode() === 'select') {
-            this.startReplayAt(Math.max(1, this.replayTotal() - 100), true);
+            if (!this.seriesPending()) this.startReplayAt(Math.max(1, this.replayTotal() - 100), true);
             return;
           }
-          if (this.chart.getReplayState() === 'paused') this.chart.replayResume();
-          this.replayBar?.setState('playing');
+          // A start still waiting for its steps plays once it starts.
+          if (this.replayStartPending) this.replayPlayWanted = true;
+          else if (this.chart.getReplayState() === 'paused') this.chart.replayResume();
+          this.syncReplayBar();
         },
         onPause: () => {
+          this.replayPlayWanted = false;
           this.chart.replayPause();
-          this.replayBar?.setState('paused');
+          this.syncReplayBar();
         },
         onStepBack: () => this.stepReplay(-1),
         onStepForward: () => this.stepReplay(1),
         onSeek: (idx) => {
+          if (this.seriesPending()) return;
           if (this.chart.getReplayState() === 'playing') this.chart.replayPause();
           this.chart.replaySeek(idx);
           this.replayBar?.setState('paused');
         },
-        onSpeedChange: (barsPerSecond) => {
-          this.replaySpeed = barsPerSecond;
-          this.chart.setReplaySpeed(barsPerSecond);
+        onSpeedChange: (rate) => {
+          this.replaySpeed = rate;
+          this.chart.setReplaySpeed(rate);
         },
         onRandomStart: () => {
-          const n = this.replayTotal();
+          if (this.seriesPending()) return;
+          // The chart's bars, not the steps of a replay in finer steps.
+          const n = this.replayBarCount();
           // Somewhere in the middle 80%, so there is history before and bars after.
           const lo = Math.max(1, Math.floor(n * 0.1));
           const hi = Math.max(lo, Math.floor(n * 0.9));
-          this.startReplayAt(lo + Math.floor(Math.random() * (hi - lo + 1)));
+          this.startReplayAt(lo + Math.floor(Math.random() * (hi - lo + 1)), false, true);
         },
         onClose: () => this.exitReplay(),
+        onSelectBar: () => this.pickReplayBarAgain(),
+        onCancelPick: () => this.cancelReplayPick(),
         onStepChange: (step) => {
           this.replayStep = step;
           if (this.replayBar?.getMode() !== 'replay') return;
@@ -4917,9 +4962,9 @@ export class ChartWidget {
       },
       {
         selectHint: t('replay.selectHint'),
+        loading: t('status.loading'),
         random: t('replay.random'),
         realtime: t('replay.realtime'),
-        barsPerSecond: t('replay.barsPerSecond'),
         play: t('replay.play'),
         pause: t('replay.pause'),
         stepBack: t('replay.stepBack'),
@@ -4928,20 +4973,146 @@ export class ChartWidget {
         position: t('replay.position'),
         speed: t('replay.speed'),
         step: t('replay.step'),
+        selectBar: t('replay.selectBar'),
+        cancel: t('common.cancel'),
+        rate: t('replay.rate'),
+        rateHint: t('replay.rateHint'),
+        playingAt: t('replay.playingAt'),
+        pausedAt: t('replay.pausedAt'),
+        endedAt: t('replay.endedAt'),
       },
     );
-    const steps = [
-      { value: 'bar', label: t('replay.step.bar') },
-      ...this.replayStepOptions().map((tf) => ({ value: tf, label: tf })),
-    ];
-    if (!steps.some((s) => s.value === this.replayStep)) this.replayStep = 'bar';
-    this.replayBar.mount(this.chartContainer, { total: this.replayTotal(), speed: this.replaySpeed, mode: 'select', steps, step: this.replayStep });
+    const steps = this.replayStepMenu();
+    this.replayBar.mount(this.chartContainer, {
+      total: this.replayTotal(),
+      rate: this.replaySpeed,
+      mode: 'select',
+      steps,
+      step: this.replayStep,
+      dir: this.root.dir === 'rtl' ? 'rtl' : 'ltr',
+      formatRate: (rate) => fill(t('replay.rate'), { rate: rate.toLocaleString(this.intlLocale()) }),
+    });
+    this.watchReplayBar();
+    this.toolbar?.setActive('replay', true);
+    this.root.setAttribute('data-tcw-replay', '');
+    this.showReplayShade();
+    this.layoutReplayBar();
+  }
 
+  /** While picking the start bar: the shade over the bars a pick would hide. */
+  private showReplayShade(): void {
+    if (this.replayShade) return;
     this.replayShade = document.createElement('div');
     this.replayShade.className = 'tcw-replay-shade';
     this.replayShade.hidden = true;
     this.chartContainer.appendChild(this.replayShade);
     this.chartContainer.addEventListener('mouseleave', this.hideReplayShade);
+  }
+
+  private removeReplayShade(): void {
+    this.replayShade?.remove();
+    this.replayShade = null;
+    this.chartContainer.removeEventListener('mouseleave', this.hideReplayShade);
+  }
+
+  /**
+   * Select bar, inside the replay: it pauses and picks again among the bars
+   * shown, so the bars still to come stay hidden, the view stays and grid
+   * followers go on. Cancel (or Esc) comes back to the same place.
+   */
+  private pickReplayBarAgain(): void {
+    const bar = this.replayBar;
+    if (!bar?.isMounted() || this.seriesPending()) return;
+    this.replayPlayWanted = false;
+    if (this.chart.getReplayState() === 'playing') this.chart.replayPause();
+    bar.setState('paused');
+    bar.setMode('select');
+    this.showReplayShade();
+    this.layoutReplayBar();
+  }
+
+  /** Cancel picking: back to the replay when there is one, else out of it. */
+  private cancelReplayPick(): void {
+    const bar = this.replayBar;
+    if (!bar?.isMounted()) return;
+    if (!this.chart.isReplayActive() && !this.replayStartPending) {
+      this.exitReplay();
+      return;
+    }
+    this.removeReplayShade();
+    bar.setMode('replay');
+    this.syncReplayBar();
+    this.layoutReplayBar();
+  }
+
+  /**
+   * Where the bar sits: on the main pane's foot (bottom panes stay
+   * readable), centred on its plot, in the tier its width allows; and how
+   * high it reaches, for the toasts and the drawing button to clear it.
+   */
+  private layoutReplayBar(): void {
+    const el = this.replayBar?.element();
+    if (!el || !this.replayBar) return;
+    const plot = this.chart.getPlotRect();
+    const box = this.chartContainer;
+    const px = (n: number) => `${Math.max(0, Math.round(n))}px`;
+    el.style.setProperty('--tcw-replay-foot', px(box.clientHeight - (plot.y + plot.height)));
+    el.style.setProperty('--tcw-replay-plot-start', px(plot.x));
+    el.style.setProperty('--tcw-replay-plot-end', px(box.clientWidth - (plot.x + plot.width)));
+    this.replayBar.setRoom(plot.width - 2 * REPLAY_BAR_MARGIN);
+    this.liftOverReplayBar();
+  }
+
+  /**
+   * How high the bar reaches over the widget's foot and its body's, for the
+   * toasts and the drawing button to clear it. Also run as the panel follows
+   * the chart: the bar's height changes with its rows and its words.
+   */
+  private liftOverReplayBar(): void {
+    const el = this.replayBar?.element();
+    if (!el) return;
+    const top = el.getBoundingClientRect().top;
+    const set = (host: HTMLElement | null) => {
+      if (!host) return;
+      const lift = `${Math.max(0, Math.round(host.getBoundingClientRect().bottom - top))}px`;
+      if (host.style.getPropertyValue('--tcw-replay-lift') !== lift) host.style.setProperty('--tcw-replay-lift', lift);
+    };
+    set(this.root);
+    set(this.bodyEl());
+  }
+
+  private bodyEl(): HTMLElement | null {
+    return this.root.querySelector<HTMLElement>(':scope > .tcw-body');
+  }
+
+  /**
+   * Where the replay is, as the readout says it: the step's open time in
+   * the display timezone and the widget's language; the date alone on a
+   * daily chart and above, seconds under a minute (or with no interval),
+   * the year only when it isn't this one.
+   */
+  private replayTimeText(): string | undefined {
+    // The bar forming is the one on screen: name it, not the whole one before it.
+    const progress = this.chart.getReplayProgress();
+    const forming = this.chart.getReplayBarIndex() > progress.current ? progress.time : null;
+    const time = forming ?? this.replayStepTime;
+    if (time === null) return undefined;
+    const locale = this.textLocale();
+    const zone = this.chart.getTimeZone?.() ?? null;
+    const ms = timeframeToMs(this.state.timeframe);
+    const yearOf = zonedDateFormatter(locale, { year: 'numeric' }, zone);
+    const date: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric' };
+    if (yearOf(time) !== yearOf(Date.now())) date.year = 'numeric';
+    const day = zonedDateFormatter(locale, date, zone)(time);
+    if (Number.isFinite(ms) && ms >= DAY_MS) return day;
+    const clock: Intl.DateTimeFormatOptions = { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' };
+    if (!Number.isFinite(ms) || ms < MINUTE_MS) clock.second = '2-digit';
+    return `${day} · ${zonedDateFormatter(locale, clock, zone)(time)}`;
+  }
+
+  /** The chart's bars the replay goes through (not its steps), or those loaded before it starts. */
+  private replayBarCount(): number {
+    return this.chart.isReplayActive() && this.replayBarsTotal !== null ? this.replayBarsTotal : this.chart.getData().length;
   }
 
   private readonly hideReplayShade = (): void => this.positionReplayShade(null);
@@ -4956,54 +5127,144 @@ export class ChartWidget {
     this.startReplayAt(index, play);
   }
 
-  /** Cut the chart at `index` and wait paused (or play at once). */
-  private startReplayAt(index: number, play = false): void {
+  /**
+   * The steps a replay can take on this interval, the one picked kept while
+   * it is still one of them (else whole bars).
+   */
+  private replayStepMenu(): { value: string; label: string }[] {
+    const steps = [
+      { value: 'auto', label: this.t('replay.step.auto') },
+      { value: 'bar', label: this.t('replay.step.bar') },
+      ...this.replayStepOptions().map((tf) => ({ value: tf, label: tf })),
+    ];
+    if (!steps.some((s) => s.value === this.replayStep)) this.replayStep = 'auto';
+    return steps;
+  }
+
+  /** The interval changed: the step menu offers its steps. */
+  private refreshReplaySteps(): void {
+    if (!this.replayBar?.isMounted()) return;
+    const steps = this.replayStepMenu();
+    this.replayBar.setSteps(steps, this.replayStep);
+  }
+
+  /**
+   * The replay went on over new bars at the same time: the panel shows their
+   * total, and a replay in finer steps fetches them for the new bars and
+   * goes on from the bar it is on.
+   */
+  private afterReplayCarryOver(): void {
+    const bar = this.replayBar;
+    if (!bar?.isMounted() || bar.getMode() !== 'replay') return;
+    this.syncReplayBar();
+    // Whole bars, or the chart fetching the finer ones for the new bars itself.
+    if (this.replayStep === 'bar' || this.chartFetchesReplaySteps()) return;
+    // The same symbol and interval (a corrected bar, older bars): its steps still serve, and it keeps its place in the bar.
+    if (this.replayStepsKey === this.replayStepsKeyNow()) return;
+    this.startReplayAt(this.chart.getReplayBarIndex(), this.chart.getReplayState() === 'playing');
+  }
+
+  /** Whether the bars on screen are about to be replaced: a new symbol's or interval's on their way. */
+  private seriesPending(): boolean {
+    return this.loading.isActive() && !this.loading.hasFailed();
+  }
+
+  /** The panel follows the chart, and whether the bars are on their way, a few times a second. */
+  private watchReplayBar(): void {
+    if (this.replayPollInterval) clearInterval(this.replayPollInterval);
+    this.replayPollInterval = setInterval(() => this.syncReplayBar(), REPLAY_POLL_MS);
+  }
+
+  /**
+   * Cut the chart at `index` and wait paused (or play at once). `ofBars`:
+   * `index` is one of the chart's bars (a pick), not a step of the replay.
+   */
+  private startReplayAt(index: number, play = false, ofBars = false): void {
     const bar = this.replayBar;
     if (!bar) return;
-    const n = this.replayTotal();
+    const n = ofBars ? this.replayBarCount() : this.replayTotal();
     const start = Math.max(0, Math.min(Number.isFinite(index) ? Math.floor(index) : 0, n - 1));
-    this.replayShade?.remove();
-    this.replayShade = null;
-    this.chartContainer.removeEventListener('mouseleave', this.hideReplayShade);
+    // By time: bars that land while its steps load don't move it.
+    const startTime = this.chart.getData()[start]?.time;
+    this.removeReplayShade();
     bar.setMode('replay');
+    this.layoutReplayBar();
     // A newer start (a quicker step choice) wins over one still fetching its steps.
     const seq = ++this.replayStartSeq;
+    this.replayPlayWanted = play;
+    const animate = this.options.replayAnimate !== false;
+    const fetchedByChart = this.chartFetchesReplaySteps();
     const go = (steps: DataSeries | null) => {
       if (this.destroyed || this.replayBar !== bar || !bar.isMounted() || seq !== this.replayStartSeq) return;
+      this.replayStartPending = false;
+      this.replayStepsKey = steps ? this.replayStepsKeyNow() : null;
       this.chart.replayStart({
         speed: this.replaySpeed,
-        interval: 1000,
-        startIndex: start,
+        // 1× is a bar of the chart a second, whatever the step.
+        interval: animate ? REPLAY_BAR_MS : REPLAY_BAR_MS / this.replayStepsPerBar(steps ? tf : null),
+        ...(startTime !== undefined ? { startTime } : { startIndex: start }),
         paused: true,
         revealMarks: this.options.replayRevealMarks !== false,
+        animate,
+        ...(fetchedByChart ? { step: this.replayStep as TimeFrame | 'auto' } : {}),
         ...(steps ? { steps } : {}),
       });
-      if (play) this.chart.replayResume();
-      bar.setState(play ? 'playing' : 'paused');
+      if (this.replayPlayWanted) this.chart.replayResume();
+      this.replayPlayWanted = false;
       this.syncReplayBar();
-      if (this.replayPollInterval) clearInterval(this.replayPollInterval);
-      this.replayPollInterval = setInterval(() => this.syncReplayBar(), 150);
+      this.watchReplayBar();
     };
-    if (this.replayStep === 'bar') {
+    const tf = this.replayStepInterval();
+    if (fetchedByChart || tf === null) {
       go(null);
       return;
     }
-    void this.replayStepsFor(this.replayStep as TimeFrame).then((steps) => {
+    this.replayStartPending = true;
+    void this.replayStepsFor(tf).then((steps) => {
       if (seq !== this.replayStartSeq) return; // a newer start took over
       if (!steps) this.say(this.t('replay.stepsFailed'), 'error');
       go(steps);
     });
   }
 
+  private replayStepsKeyNow(): string {
+    return `${this.state.symbol}|${this.state.timeframe}`;
+  }
+
+  /** How many steps of `tf` make a bar of the chart (1 for whole bars, or a chart without an interval). */
+  private replayStepsPerBar(tf: TimeFrame | null): number {
+    if (tf === null) return 1;
+    const ratio = timeframeToMs(this.state.timeframe) / timeframeToMs(tf);
+    return Number.isFinite(ratio) && ratio >= 1 ? Math.round(ratio) : 1;
+  }
+
   /** Finer intervals a replay can step through: they divide the chart's, and the feed (or the bars loaded) has them. */
   private replayStepOptions(): TimeFrame[] {
-    const current = timeframeToMs(this.state.timeframe);
-    return REPLAY_STEP_CANDIDATES.filter((tf) => {
-      const ms = timeframeToMs(tf);
-      if (!(ms < current) || current % ms !== 0) return false;
-      if (this.adapter) return servesTimeframe(this.adapter, tf);
-      return this.baseSeries !== null && this.baseTimeframeMs > 0 && ms >= this.baseTimeframeMs && ms % this.baseTimeframeMs === 0;
-    });
+    return replayStepChoices(this.state.timeframe, (tf) => this.hasReplayStep(tf));
+  }
+
+  /** Whether the feed serves `tf`, or the bars loaded build it. */
+  private hasReplayStep(tf: TimeFrame): boolean {
+    if (this.adapter) return servesTimeframe(this.adapter, tf);
+    const ms = timeframeToMs(tf);
+    return this.baseSeries !== null && this.baseTimeframeMs > 0 && ms >= this.baseTimeframeMs && ms % this.baseTimeframeMs === 0;
+  }
+
+  /** The finer interval the step picked stands for (`'auto'` worked out here); null for whole bars. */
+  private replayStepInterval(): TimeFrame | null {
+    // Without animate, Auto is whole bars: finer steps of their own are a choice, as they were.
+    if (this.replayStep === 'bar' || (this.replayStep === 'auto' && this.options.replayAnimate === false)) return null;
+    return resolveReplayStep(this.replayStep as TimeFrame | 'auto', this.state.timeframe, (tf) => this.hasReplayStep(tf));
+  }
+
+  /**
+   * Whether the chart fetches a replay's finer bars itself: its bars form, a
+   * step is picked and the feed pages back. A feed that can't page back gets
+   * its finer bars fetched here, in one request, as before.
+   */
+  private chartFetchesReplaySteps(): boolean {
+    if (this.options.replayAnimate === false || !this.adapter || this.replayStep === 'bar') return false;
+    return withResampling(this.adapter).fetchHistoryBefore !== undefined;
   }
 
   /** The finer bars for a replay in `tf` steps: from the feed, or built from the bars loaded. Null when there are none. */
@@ -5051,47 +5312,93 @@ export class ChartWidget {
   /** Mirror the replay engine in the bar; close it if the session ended elsewhere. */
   private syncReplayBar(): void {
     const bar = this.replayBar;
-    if (!bar?.isMounted() || bar.getMode() !== 'replay') return;
+    if (!bar?.isMounted()) return;
+    bar.setPending(this.seriesPending());
+    this.liftOverReplayBar();
+    if (bar.getMode() !== 'replay') return;
+    if (this.replayStartPending) {
+      // Waiting for its steps: no session yet, so nothing plays.
+      bar.setState('paused');
+      return;
+    }
     if (!this.chart.isReplayActive()) {
-      // e.g. a symbol or timeframe switch replaced the series.
+      // The host ended it (replayStop), or a paper account's symbol changed.
       this.teardownReplayUi();
       return;
     }
     const p = this.chart.getReplayProgress();
     const state = this.chart.getReplayState();
-    bar.setProgress(p.current, p.total);
+    bar.setProgress(p.current, p.total, this.replayTimeText());
     bar.setState(state === 'stopped' ? 'paused' : state);
     bar.setEnded(state !== 'playing' && p.total > 0 && p.current >= p.total - 1);
   }
 
   private stepReplay(delta: number): void {
-    if (this.replayBar?.getMode() !== 'replay') return;
+    if (this.replayBar?.getMode() !== 'replay' || this.seriesPending()) return;
     const p = this.chart.getReplayProgress();
     if (this.chart.getReplayState() === 'playing') this.chart.replayPause();
-    this.chart.replaySeek(Math.max(0, Math.min(p.total - 1, p.current + delta)));
+    // A bar half drawn: forward completes it first; back leaves the one before it whole.
+    const forming = this.chart.getReplayBarIndex() > p.current;
+    const target = forming ? (delta > 0 ? this.chart.getReplayBarIndex() : p.current) : p.current + delta;
+    this.chart.replaySeek(Math.max(0, Math.min(p.total - 1, target)));
     this.replayBar.setState('paused');
     this.syncReplayBar();
   }
 
-  /** Replay shortcuts: Shift+←/→ step one bar; Escape cancels picking a start bar. */
+  /**
+   * Replay shortcuts: Shift+←/→ step one bar, Space on the chart plays or
+   * pauses, Escape cancels picking a start bar. Only for the widget used
+   * last, with focus in it (or nowhere), not while typing or in a dialog.
+   */
   private handleReplayKey(e: KeyboardEvent): boolean {
-    if (e.defaultPrevented) return false;
+    if (e.defaultPrevented || e.isComposing || e.keyCode === IME_KEY_CODE) return false;
+    if (isTyping() || inOverlay() || !isKeyTarget(this.root, true)) return false;
     const active = document.activeElement as HTMLElement | null;
+    if (active && active !== document.body && !this.root.contains(active)) return false;
     if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.tagName === 'SELECT' || active.isContentEditable)) {
       return false;
     }
-    if (e.shiftKey && (e.key === 'ArrowRight' || e.key === 'ArrowLeft') && this.replayBar?.getMode() === 'replay') {
+    const mode = this.replayBar?.getMode();
+    if (e.shiftKey && (e.key === 'ArrowRight' || e.key === 'ArrowLeft') && mode === 'replay') {
       e.preventDefault();
       // The chart's own Shift+Arrow scrolls ten bars; this one steps the replay.
       e.stopPropagation();
       this.stepReplay(e.key === 'ArrowRight' ? 1 : -1);
       return true;
     }
-    if (e.key === 'Escape' && this.replayBar?.getMode() === 'select') {
-      this.exitReplay();
+    if (e.key === ' ' && mode === 'replay' && this.onChartSurface(active)) {
+      // Before the chart's own Space (fit content), which listens on window.
+      e.preventDefault();
+      e.stopPropagation();
+      this.toggleReplayPlay();
+      return true;
+    }
+    if (e.key === 'Escape' && mode === 'select') {
+      this.cancelReplayPick();
       return true;
     }
     return false;
+  }
+
+  /** Focus on the chart itself (its container or the canvas in it), not on a control over it. */
+  private onChartSurface(active: HTMLElement | null): boolean {
+    if (!active || !this.chartContainer.contains(active)) return false;
+    return active === this.chartContainer || active.closest('button, [role="button"], a, .tcw-replay-bar') === null;
+  }
+
+  private toggleReplayPlay(): void {
+    if (this.replayStartPending) {
+      this.replayPlayWanted = !this.replayPlayWanted;
+      return;
+    }
+    if (this.chart.getReplayState() === 'playing') this.chart.replayPause();
+    else if (!this.replayBarAtEnd()) this.chart.replayResume();
+    this.syncReplayBar();
+  }
+
+  private replayBarAtEnd(): boolean {
+    const p = this.chart.getReplayProgress();
+    return p.total > 0 && p.current >= p.total - 1;
   }
 
   private positionReplayShade(x: number | null): void {
@@ -5116,15 +5423,36 @@ export class ChartWidget {
   }
 
   private teardownReplayUi(): void {
+    this.replayStartSeq++; // a start still fetching its steps is dropped
+    this.replayStartPending = false;
+    this.replayPlayWanted = false;
     if (this.replayPollInterval) {
       clearInterval(this.replayPollInterval);
       this.replayPollInterval = null;
     }
-    this.replayShade?.remove();
-    this.replayShade = null;
-    this.chartContainer.removeEventListener('mouseleave', this.hideReplayShade);
+    this.removeReplayShade();
+    const hadFocus = !!this.replayBar?.element()?.contains(document.activeElement);
     this.replayBar?.unmount();
     this.replayBar = null;
+    this.replayBarsTotal = null;
+    this.replayStepTime = null;
+    this.toolbar?.setActive('replay', false);
+    this.root.removeAttribute('data-tcw-replay');
+    this.root.style.removeProperty('--tcw-replay-lift');
+    this.bodyEl()?.style.removeProperty('--tcw-replay-lift');
+    if (hadFocus) this.focusAfterReplay();
+  }
+
+  /**
+   * Focus was in the bar: back to the toolbar's Bar replay button, or the
+   * "more" menu that folds it on a narrow toolbar, or the chart.
+   */
+  private focusAfterReplay(): void {
+    const visible = (el: HTMLElement | null) => !!el && !el.hidden && !el.closest('[hidden]') && getComputedStyle(el).display !== 'none';
+    const btn = this.root.querySelector<HTMLElement>('.tcw-toolbar [data-role="replay"]');
+    const more = this.root.querySelector<HTMLElement>('.tcw-toolbar .tcw-toolbar-more');
+    const target = visible(btn) ? btn : visible(more) ? more : this.chartContainer;
+    target?.focus();
   }
 
   /** `told` false leaves the change unkept and untold (a link's). */

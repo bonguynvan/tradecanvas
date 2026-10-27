@@ -210,16 +210,68 @@ replay.start()
   ChartWidget에서는 리플레이 바의 <strong>스텝</strong> 메뉴에 피드가 제공하는(또는 불러온 봉으로
   만들 수 있는) 더 작은 시간 단위가 나옵니다.
 </p>
-<pre><code>{`const steps = await adapter.fetchHistory('BTCUSDT', '5m', 2000)
-chart.replayStart({ steps, startIndex: 120, paused: true, speed: 5 })
+<pre><code>{`chart.replayStart({ animate: true, step: 'auto', startIndex: 120, paused: true })
+// 또는 재생할 봉의 더 작은 봉을 직접 넘긴다: { steps, startIndex: 120 }
 chart.replayResume()
 chart.getReplayBarIndex()      // the chart bar forming now
 chart.replaySeekToBar(150)     // to the end of bar 150
-chart.replaySeekToTime(t)      // to the bars that opened before t
-chart.on('replayStep', (e) => e.payload)    // { barIndex, time, until, total }
+chart.replaySeekToTime(t)      // to the bars that closed by t
+chart.on('replayStep', (e) => e.payload)    // { barIndex, time, stepTime, until, total, cause }
 chart.on('replayComplete', (e) => e.payload) // { barIndex, time }
 chart.on('replayState', (e) => e.payload)   // { state: 'playing' | 'paused' | 'stopped' }
 chart.replayStop()             // back to the live series`}</code></pre>
+
+<h3>재생하며 만들어지는 봉</h3>
+<p>
+  <code>animate: true</code>이면 각 봉이 실시간 봉처럼 제 시간에 걸쳐 자랍니다. 시가에서 방향으로 보아 먼저 온
+  극값(상승 봉은 저가 먼저), 다른 극값, 그리고 종가로. <code>step</code>(<code>'auto'</code> 또는 <code>'1m'</code> 같은
+  주기)을 주면 차트가 연결된 피드의 <code>fetchHistoryBefore</code>로 곧 재생할 봉의 더 작은 봉을 재생하는 동안에만 한 페이지씩
+  가져오고, 각 봉은 그것을 따라 만들어집니다. <code>'auto'</code>는 피드가 제공하는, 봉 하나에 60개 이하인 가장 작은 주기입니다.
+  마지막 프레임은 언제나 시리즈에 있는 그 봉입니다. 직접 넘긴 <code>steps</code>도 같은 방식으로 쓰입니다. 시계는 계속 차트의 봉을
+  셉니다. <code>speed</code>, <code>duration</code>, 인덱스는 봉 단위이고 <code>getReplayBarIndex()</code>는 만들어지는 봉입니다.
+  일시정지는 그리다 만 봉을 그대로 두고, 이동이나 한 단계는 완성된 봉을 보여 줍니다. 모의 계좌는 그려진 가격이 주문에 닿을 때 체결됩니다.
+  세 프레임보다 짧은 봉은 완성된 채로 나오고, 움직임 줄이기 설정에서는 가격에서 가격으로 건너뜁니다. <code>replayStepsLoad</code>는
+  <code>loading</code>, <code>loaded</code>, <code>end</code>, <code>error</code>를 알립니다. 더 작은 봉이 없는 봉은 자기 가격으로
+  만들어집니다. ChartWidget은 기본으로 이렇게 합니다. 단계 메뉴는 <strong>자동</strong>에서 시작하고, <code>replayStep</code>
+  (<code>'auto'</code>, <code>'bar'</code> 또는 주기)과 <code>replayAnimate: false</code>로 바꿉니다. <code>fetchHistoryBefore</code>가
+  없는 피드에서는 위젯이 리플레이 시작 전에 더 작은 봉을 한 번의 요청으로 가져옵니다.
+  <code>replayAnimate: false</code>이면 Auto는 봉을 통째로 재생하고, 더 작은 주기를 고르면 그 봉 단위로 진행합니다.
+</p>
+
+<h3>ChartWidget의 리플레이 바</h3>
+<p>
+  툴바의 <strong>바 리플레이</strong> 버튼은 메인 패널 아래쪽, 플롯 가운데에 작은 바를 엽니다(아래 패널은 그대로 읽힙니다).
+  먼저 시작 봉을 고릅니다. 봉을 클릭하거나 <strong>무작위 봉</strong>을 누르고, <strong>취소</strong>(또는 <kbd>Esc</kbd>)로 나갑니다.
+  그다음: 뒤로, <strong>재생</strong>/<strong>일시정지</strong>, 앞으로; 표시 중인 단계의 날짜와 시간(표시 시간대, 올해가 아닐 때만 연도);
+  재생한 부분이 채워진 트랙; <strong>속도</strong>는 0.1×~50× 배수(1×는 단계와 상관없이 차트 봉 하나를 1초에, 기본 1×);
+  <strong>스텝</strong>; <strong>봉 선택</strong>은 일시정지하고 보이는 봉 중에서 시작 봉을 다시 고르며 앞으로 올 봉은 보여주지 않습니다
+  (<strong>취소</strong>나 <kbd>Esc</kbd>로 같은 자리로); <strong>실시간으로 돌아가기</strong>. 휴대폰이나 좁은 차트에서는 두 줄이 되고 날짜와 트랙이 위에 옵니다.
+  키는 마지막으로 쓴 위젯에 적용됩니다. <kbd>Shift</kbd>+<kbd>←</kbd>/<kbd>→</kbd> 단계 이동, 차트나 트랙에서 <kbd>Space</kbd>는
+  재생/일시정지(리플레이 밖에서는 차트 맞춤), <kbd>Esc</kbd>는 선택 중단. 같은 키에 <code>addHotkey</code>로 추가한 단축키가 먼저입니다.
+  바는 룩과 테마의 <code>--tcw-*</code> 토큰을 쓰며, 호스트는 <code>.tcw-replay-bar</code>에 <code>--tcw-replay-btn</code>,
+  <code>--tcw-replay-play</code>, <code>--tcw-replay-track-w</code>도 지정할 수 있습니다. 날짜는 <code>replayStep</code>의
+  <code>stepTime</code>(표시 중인 단계의 시각)에서 옵니다.
+</p>
+
+<h3>리플레이는 봉이 바뀌어도 이어집니다</h3>
+<p>
+  리플레이는 실시간 시리즈 위의 한 시점입니다. 봉이 바뀌면 — <code>connect</code> 나
+  <code>switchStream</code> 으로 바꾼 종목이나 시간 단위, <code>setData</code>, 불러온 과거 봉,
+  장외 시간, 수정된 봉 — 도달했던 시점 그대로 새 봉 위에서 이어지고, 그때까지 마감된 봉만 보여 줍니다.
+  새 시리즈를 불러오는 동안 리플레이는 재생 중이든 일시 정지든 그 상태로 기다립니다. 인덱스
+  (<code>barIndex</code>, <code>total</code>, <code>replaySeekToBar</code>)는 지금 리플레이하는
+  봉의 것이며 봉과 함께 바뀝니다. 위치는 시간으로 기억하세요. 모의 계좌가 리플레이에서 거래 중이면
+  종목이 바뀔 때 리플레이가 끝납니다. ChartWidget 에서는 리플레이 바가 열린 채로, 봉을 불러오는 동안
+  <em>차트를 불러오는 중</em>을 표시하며 기다린 뒤 새 총 개수와 새 시간 단위의 단계를 따릅니다.
+</p>
+<pre><code>{`chart.replayStart({ startIndex: 300, paused: true })
+await chart.setTimeframe('1h')        // the replay waits, then goes on at the same time
+const { until } = chart.getReplayProgress()   // keep a position by time, not by index
+if (until !== null) chart.replaySeekToTime(until)   // back to it, on any interval
+chart.on('replayStep', (e) => {
+  if (e.payload.cause === 'series') {}  // carried over: barIndex and total are the new bars'
+})
+chart.replayStop()                    // call it first to end the replay as before`}</code></pre>
 
 <h3>내 앱에서의 리플레이</h3>
 <p>

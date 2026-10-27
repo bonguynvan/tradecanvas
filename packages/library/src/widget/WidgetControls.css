@@ -156,6 +156,14 @@
   background-position: left 8px center;
 }
 
+/* A select laid out left to right inside a right-to-left widget (the chart's
+ * own area is LTR, the replay's figures too) keeps its chevron on the right,
+ * where its padding is. */
+.tcw-root[dir='rtl'] [dir='ltr'] select:not([multiple]):not([size]),
+.tcw-root[dir='rtl'] select[dir='ltr']:not([multiple]):not([size]) {
+  background-position: right 8px center;
+}
+
 /* Number fields: the steppers show only on a field in use. */
 .tcw-root input[type='number']::-webkit-inner-spin-button,
 .tcw-root input[type='number']::-webkit-outer-spin-button {

@@ -1,4 +1,4 @@
-import type { OHLCBar } from './ohlc.js';
+import type { OHLCBar, TimeFrame } from './ohlc.js';
 import type { ConnectionInfo } from './realtime.js';
 import type { Point } from './rendering.js';
 import type { IndicatorValue } from './indicator.js';
@@ -72,6 +72,8 @@ export type ChartEventType =
   | 'replayState'
   /** A replay reached its last bar (it waits there, paused). */
   | 'replayComplete'
+  /** A replay's finer bars (its `step`) are fetched: loading, loaded, no more, or failed. */
+  | 'replayStepsLoad'
   | 'alertUpdate'
   /**
    * Something a saved layout holds may have changed: drawings, indicators,
@@ -365,6 +367,7 @@ export interface ChartEventMap {
   indicatorChange: IndicatorSettingsChangePayload;
   themeChange: ThemeChangePayload;
   styleChange: StyleChangePayload;
+  /** The chart's size changed: its element was resized (a window, a rotation, a panel beside it) or `resize()` was called. */
   resize: ResizePayload;
   orderPlace: OrderPlacePayload;
   bracketPlace: BracketPlacePayload;
@@ -392,7 +395,23 @@ export interface ChartEventMap {
   replayStep: ReplayStepPayload;
   replayState: { state: 'playing' | 'paused' | 'stopped' };
   replayComplete: { barIndex: number; time: number };
+  replayStepsLoad: ReplayStepsLoadPayload;
   alertUpdate: AlertPayload;
+}
+
+/**
+ * Payload for `replayStepsLoad`: the finer bars that shape a replay's bars as
+ * they form (`step`), fetched a page at a time for the bars it is about to
+ * play. `loading` when a request starts, then `loaded` (`count` finer bars
+ * kept), `end` (the feed has no more, or can't page back) or `error`. Bars
+ * without them form from their own prices.
+ */
+export interface ReplayStepsLoadPayload {
+  state: 'loading' | 'loaded' | 'end' | 'error';
+  /** The finer interval. */
+  step: TimeFrame;
+  count: number;
+  error?: string;
 }
 
 /** Payload for `replayStep`. */
@@ -401,10 +420,26 @@ export interface ReplayStepPayload {
   barIndex: number;
   /** When it opened. */
   time: number;
+  /**
+   * When the step shown last opened: the bar's own time in whole bars, a
+   * finer bar's inside it in finer steps (14:05 inside the 14:00 bar).
+   * Where a panel reads the replay's date.
+   */
+  stepTime: number;
   /** The replay has shown everything before this time (the next step's). */
   until: number;
-  /** The bars the replay goes through (from its start, when it leaves the history out). */
+  /**
+   * The bars the replay goes through (from its start, when it leaves the
+   * history out). It can change during a replay: the bars it replays are the
+   * live series, which a new symbol or timeframe, `setData` or older bars
+   * change.
+   */
   total: number;
+  /**
+   * What moved it: the clock (`play`), a jump (`seek`), or the bars under it
+   * changing (`series`: the replay carried over to the same time on them).
+   */
+  cause?: 'play' | 'seek' | 'series';
 }
 
 export interface AlertRemovePayload {

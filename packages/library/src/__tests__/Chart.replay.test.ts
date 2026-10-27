@@ -139,12 +139,14 @@ describe('Chart replay session', () => {
     expect(priceLine()).toBe(live[80].close);
   });
 
-  it('ends the replay when a new series is set', () => {
+  it('goes on over a new series, at the same time', () => {
     chart.replayStart({ startIndex: 50, interval: 100, speed: 1, paused: true });
-    chart.setData(bars(40));
-    expect(chart.isReplayActive()).toBe(false);
-    vi.advanceTimersByTime(1000);
-    expect(chart.getData().length).toBe(40);
+    const at = chart.getData()[50].time;
+    chart.setData(bars(300).map((b) => ({ ...b, close: b.close + 1 })));
+    expect(chart.isReplayActive()).toBe(true);
+    expect(chart.getData().at(-1)?.time).toBe(at);
+    chart.replayStop();
+    expect(chart.getData().length).toBe(300);
   });
 
   it('turns auto-scale back on for the replay', () => {

@@ -2171,7 +2171,14 @@
   color: var(--tcw-red);
 }
 
-/* === Replay scrubber === */
+/* === Replay bar ===
+ * A transport over the foot of the main pane: step back / play / step
+ * forward, where the replay is (its date and a track with the played part
+ * filled), its pace (speed, step), and the ways out (pick another bar, back
+ * to now). Only --tcw-* tokens; its sizes come from the look's own ladder.
+ * The widget sets where it sits (--tcw-replay-foot, --tcw-replay-plot-*)
+ * from the main pane, and the tier (data-fit) from the room it has.
+ */
 
 /* Picking the replay start: the bars right of the pointer would be hidden. */
 .tcw-replay-shade {
@@ -2182,177 +2189,296 @@
   border-inline-start: 1.5px dashed var(--tcw-accent);
 }
 
-.tcw-replay-group {
-  display: inline-flex;
+.tcw-replay-bar {
+  /* Buttons are the look's controls; Play two small steps above them. */
+  --tcw-replay-btn: var(--tcw-control-h);
+  --tcw-replay-play: calc(var(--tcw-control-h) + 2 * var(--tcw-space-2));
+  --tcw-replay-track-w: calc(var(--tcw-space-7) * 6);
+  --tcw-replay-track-min: calc(var(--tcw-space-7) * 3);
+  --tcw-replay-rail: var(--tcw-space-2);
+  --tcw-replay-head-w: var(--tcw-space-2);
+  --tcw-replay-head-h: var(--tcw-space-5);
+  position: absolute;
+  /* On the main pane's foot (over the volume, clear of the bottom panes), above the time axis without them. */
+  bottom: calc(var(--tcw-replay-foot, 30px) + var(--tcw-space-4));
+  inset-inline: var(--tcw-replay-plot-start, 0px) var(--tcw-replay-plot-end, 0px);
+  /* Centred on the plot by its margins: an entrance on `transform` would undo a translate. */
+  margin-inline: auto;
+  box-sizing: border-box;
+  width: max-content;
+  max-width: calc(100% - var(--tcw-replay-plot-start, 0px) - var(--tcw-replay-plot-end, 0px) - 2 * var(--tcw-space-4));
+  z-index: 25;
+  display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--tcw-space-4);
+  padding: var(--tcw-space-3);
+  background: var(--tcw-bg-elevated);
+  background: color-mix(in srgb, var(--tcw-bg-elevated) var(--tcw-surface-opacity, 100%), transparent);
+  backdrop-filter: blur(var(--tcw-blur));
+  -webkit-backdrop-filter: blur(var(--tcw-blur));
+  /* The look's menu shadow carries its hairline (Print, Terminal, Capsule): no border of its own on top. */
+  border-radius: var(--tcw-panel-radius);
+  box-shadow: var(--tcw-menu-shadow);
+  color: var(--tcw-text);
+  font-size: var(--tcw-font-size-sm);
+  line-height: 1.2;
+  animation: tcw-sel-in var(--tcw-dur-normal) var(--tcw-ease-out);
 }
 
-.tcw-replay-group[hidden] { display: none; }
-
-.tcw-replay-hint {
+.tcw-replay-group,
+.tcw-replay-slot {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 0 4px;
-  color: var(--tcw-text-dim);
-  white-space: nowrap;
+  gap: var(--tcw-space-2);
+  min-width: 0;
+}
+.tcw-replay-bar [hidden] { display: none !important; }
+/* The step field on a single step: nothing there, no gap for it. */
+.tcw-replay-slot:empty { display: none; }
+
+/* Hairlines between the groups where the look draws separators (Print, Terminal); a gap in the others. */
+.tcw-replay-sep {
+  flex: none;
+  align-self: stretch;
+  width: var(--tcw-sep-w);
+  margin-block: var(--tcw-space-2);
+  background: var(--tcw-divider);
 }
 
-.tcw-replay-text-btn {
-  height: 26px;
-  padding: 0 10px;
-  border: 1px solid var(--tcw-border);
+/* --- Buttons --- */
+.tcw-replay-btn {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  inline-size: var(--tcw-replay-btn);
+  block-size: var(--tcw-replay-btn);
+  padding: 0;
+  border: 0;
   border-radius: var(--tcw-control-radius);
   background: transparent;
+  color: var(--tcw-text-dim);
+  font: inherit;
+  cursor: pointer;
+  transition:
+    background-color var(--tcw-dur-fast) var(--tcw-ease),
+    color var(--tcw-dur-fast) var(--tcw-ease),
+    transform var(--tcw-dur-fast) var(--tcw-ease);
+}
+.tcw-replay-btn > svg,
+.tcw-replay-text-btn svg { width: var(--tcw-icon); height: var(--tcw-icon); flex: none; }
+.tcw-replay-btn:hover { background: var(--tcw-hover-bg); color: var(--tcw-text); }
+.tcw-replay-btn:active { background: var(--tcw-active-bg); transform: scale(0.94); }
+.tcw-replay-btn:focus-visible { outline: none; box-shadow: var(--tcw-ring); }
+
+/* Play: the one filled control. Its focus ring stands off the fill, or it would vanish into it. */
+.tcw-replay-btn.tcw-replay-play {
+  inline-size: var(--tcw-replay-play);
+  block-size: var(--tcw-replay-play);
+  background: var(--tcw-accent);
+  color: var(--tcw-accent-ink);
+}
+.tcw-replay-btn.tcw-replay-play:hover { background: var(--tcw-accent-hover); color: var(--tcw-accent-ink); }
+.tcw-replay-btn.tcw-replay-play:focus-visible {
+  box-shadow: 0 0 0 var(--tcw-space-1) var(--tcw-bg-elevated), 0 0 0 calc(2 * var(--tcw-space-1)) var(--tcw-accent-line);
+}
+
+.tcw-replay-btn:disabled,
+.tcw-replay-text-btn:disabled,
+.tcw-replay-scrubber:disabled,
+.tcw-replay-speed:disabled { opacity: 0.4; cursor: default; transform: none; }
+/* Nothing left to play: a muted fill, not a faded accent that reads as pressed. */
+.tcw-replay-btn.tcw-replay-play:disabled { background: var(--tcw-active-bg); color: var(--tcw-text-muted); opacity: 1; }
+
+/* --- Where the replay is --- */
+.tcw-replay-timeline {
+  flex: 1 1 auto;
+  gap: var(--tcw-space-4);
+}
+.tcw-replay-time {
+  flex: none;
+  font-family: var(--tcw-font-mono);
+  font-size: var(--tcw-font-size-sm);
+  font-variant-numeric: tabular-nums;
   color: var(--tcw-text);
+  white-space: nowrap;
+}
+.tcw-replay-group[aria-busy='true'] .tcw-replay-time,
+.tcw-replay-group[aria-busy='true'] .tcw-replay-hint { color: var(--tcw-text-muted); }
+
+.tcw-root input[type='range'].tcw-replay-scrubber {
+  --tcw-replay-rest: var(--tcw-border-strong);
+  flex: 1 1 var(--tcw-replay-track-w);
+  min-inline-size: var(--tcw-replay-track-min);
+  inline-size: var(--tcw-replay-track-w);
+  block-size: var(--tcw-replay-btn);
+  margin: 0;
+  padding: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
+  border: 0;
+  border-radius: var(--tcw-control-radius);
+  cursor: pointer;
+}
+/* Measured at its least: the bar's width with no slack in the track. */
+.tcw-replay-bar[data-measure] { max-width: none; animation: none; }
+.tcw-replay-bar[data-measure] input[type='range'].tcw-replay-scrubber { inline-size: var(--tcw-replay-track-min); flex: none; }
+.tcw-root input[type='range'].tcw-replay-scrubber:hover { --tcw-replay-rest: var(--tcw-text-muted); }
+.tcw-root input[type='range'].tcw-replay-scrubber:focus-visible { outline: none; box-shadow: var(--tcw-ring); }
+/* The played part in the accent, the rest a rail; Firefox fills it itself. */
+.tcw-root input[type='range'].tcw-replay-scrubber::-webkit-slider-runnable-track {
+  block-size: var(--tcw-replay-rail);
+  border-radius: var(--tcw-radius-xs);
+  background: linear-gradient(to right, var(--tcw-accent) 0 var(--tcw-replay-done, 0%), var(--tcw-replay-rest) var(--tcw-replay-done, 0%) 100%);
+}
+.tcw-root input[type='range'].tcw-replay-scrubber::-moz-range-track { block-size: var(--tcw-replay-rail); border-radius: var(--tcw-radius-xs); background: var(--tcw-replay-rest); }
+.tcw-root input[type='range'].tcw-replay-scrubber::-moz-range-progress { block-size: var(--tcw-replay-rail); border-radius: var(--tcw-radius-xs); background: var(--tcw-accent); }
+/* A playhead, as the chart marks the replay's cut: a short upright in ink, rounded as the look rounds. */
+.tcw-root input[type='range'].tcw-replay-scrubber::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  inline-size: var(--tcw-replay-head-w);
+  block-size: var(--tcw-replay-head-h);
+  margin-top: calc((var(--tcw-replay-rail) - var(--tcw-replay-head-h)) / 2);
+  border: 0;
+  border-radius: var(--tcw-radius-xs);
+  background: var(--tcw-text);
+  box-shadow: 0 0 0 var(--tcw-space-1) var(--tcw-bg-elevated);
+  transition: transform var(--tcw-dur-fast) var(--tcw-ease);
+}
+.tcw-root input[type='range'].tcw-replay-scrubber:hover::-webkit-slider-thumb,
+.tcw-root input[type='range'].tcw-replay-scrubber:active::-webkit-slider-thumb { transform: scaleY(1.25); }
+.tcw-root input[type='range'].tcw-replay-scrubber::-moz-range-thumb {
+  inline-size: var(--tcw-replay-head-w);
+  block-size: var(--tcw-replay-head-h);
+  border: 0;
+  border-radius: var(--tcw-radius-xs);
+  background: var(--tcw-text);
+  box-shadow: 0 0 0 var(--tcw-space-1) var(--tcw-bg-elevated);
+}
+
+/* --- Pace: speed and step, each a labelled field --- */
+.tcw-replay-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--tcw-space-3);
+  flex: none;
+}
+.tcw-replay-chip-label {
+  font-size: var(--tcw-font-size-xs);
+  text-transform: var(--tcw-label-case);
+  letter-spacing: var(--tcw-label-tracking);
+  color: var(--tcw-text-muted);
+  white-space: nowrap;
+}
+.tcw-root .tcw-replay-chip select.tcw-replay-speed {
+  block-size: var(--tcw-replay-btn);
+  padding-block: 0;
+  padding-inline-start: var(--tcw-space-4);
+  font-family: var(--tcw-font-mono);
+  font-size: var(--tcw-font-size-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- The ways out, and picking --- */
+.tcw-replay-text-btn {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--tcw-space-3);
+  block-size: var(--tcw-replay-btn);
+  padding-inline: var(--tcw-space-4);
+  border: 0;
+  border-radius: var(--tcw-control-radius);
+  background: transparent;
+  color: var(--tcw-text-dim);
   font: inherit;
   font-weight: var(--tcw-weight);
   white-space: nowrap;
   cursor: pointer;
-  transition: background var(--tcw-dur-fast), border-color var(--tcw-dur-fast), color var(--tcw-dur-fast);
+  transition: background-color var(--tcw-dur-fast) var(--tcw-ease), color var(--tcw-dur-fast) var(--tcw-ease), transform var(--tcw-dur-fast) var(--tcw-ease);
 }
-
-.tcw-replay-text-btn:hover { background: var(--tcw-hover-bg); border-color: var(--tcw-border-strong); }
+.tcw-replay-text-btn:hover { background: var(--tcw-hover-bg); color: var(--tcw-text); }
+.tcw-replay-text-btn:active { background: var(--tcw-active-bg); transform: scale(0.97); }
 .tcw-replay-text-btn:focus-visible { outline: none; box-shadow: var(--tcw-ring); }
+/* Random bar: outlined, the one thing to press while picking. */
+.tcw-replay-text-btn.tcw-replay-ghost { border: var(--tcw-border-w) solid var(--tcw-border-strong); color: var(--tcw-text); }
+/* The close glyph is the phone's: on wider bars the words say it. */
+.tcw-replay-close-icon { display: none; }
+/* At the last bar, the way back to now is the next thing to do. */
+.tcw-replay-bar--ended .tcw-replay-realtime { background: var(--tcw-accent); color: var(--tcw-accent-ink); }
+.tcw-replay-bar--ended .tcw-replay-realtime:hover { background: var(--tcw-accent-hover); color: var(--tcw-accent-ink); }
 
-/* At the last bar: the way out is the next thing to do. */
-.tcw-replay-bar--ended .tcw-replay-realtime {
-  background: var(--tcw-accent);
-  border-color: var(--tcw-accent);
-  color: var(--tcw-accent-ink);
-}
-
-.tcw-replay-btn:disabled { opacity: 0.4; cursor: default; }
-
-@media (max-width: 640px) {
-  .tcw-replay-bar {
-    flex-wrap: wrap;
-    justify-content: center;
-    max-width: calc(100% - 24px);
-    border-radius: var(--tcw-panel-radius);
-  }
-  .tcw-replay-hint { white-space: normal; }
-}
-
-.tcw-replay-bar {
-  position: absolute;
-  left: 50%;
-  /* Above the 30px time axis, so its dates stay readable. */
-  bottom: 40px;
-  transform: translateX(-50%);
-  z-index: 25;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 10px;
-  background: var(--tcw-bg-elevated);
-  border: 1px solid var(--tcw-border);
-  border-radius: var(--tcw-panel-radius);
-  box-shadow: var(--tcw-menu-shadow);
-  backdrop-filter: blur(var(--tcw-blur));
-  -webkit-backdrop-filter: blur(var(--tcw-blur));
-  font-size: var(--tcw-font-size-sm);
-  color: var(--tcw-text);
-  animation: tcw-pop-in var(--tcw-dur-normal) var(--tcw-ease-out);
-}
-
-.tcw-replay-btn {
-  width: 28px;
-  height: 28px;
+.tcw-replay-hint {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  border: none;
-  background: transparent;
+  gap: var(--tcw-space-3);
+  padding-inline: var(--tcw-space-3);
   color: var(--tcw-text-dim);
-  border-radius: var(--tcw-control-radius);
-  cursor: pointer;
-  font-family: inherit;
-  transition: background var(--tcw-dur-fast) var(--tcw-ease), color var(--tcw-dur-fast) var(--tcw-ease);
+  white-space: nowrap;
+}
+.tcw-replay-hint > svg { flex: none; width: var(--tcw-icon); height: var(--tcw-icon); color: var(--tcw-accent); }
+
+/* --- Narrower: the fields lose their captions (they stay their names) --- */
+.tcw-replay-bar:is([data-fit='compact'], [data-fit='stack']) .tcw-replay-chip-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
-.tcw-replay-btn:hover {
-  background: var(--tcw-hover-bg);
-  color: var(--tcw-text);
+/* --- A phone, or a narrow chart: two rows across the plot, where the replay is on top --- */
+.tcw-replay-bar[data-fit='stack'] {
+  /* Touch targets: 40 px (44 for Play) at least, as the toolbar's on a phone. */
+  --tcw-replay-btn: max(40px, var(--tcw-control-h));
+  --tcw-replay-play: max(44px, calc(var(--tcw-control-h) + 2 * var(--tcw-space-2)));
+  inset-inline: var(--tcw-space-4);
+  width: auto;
+  max-width: none;
+  margin-inline: 0;
+  flex-wrap: wrap;
+  gap: var(--tcw-space-2);
+}
+.tcw-replay-bar[data-fit='stack'] .tcw-replay-sep { display: none; }
+.tcw-replay-bar[data-fit='stack'] .tcw-replay-timeline {
+  order: -2;
+  /* The first row, beside the close button; the rest wraps below. */
+  flex: 1 1 calc(100% - var(--tcw-replay-btn) - 2 * var(--tcw-space-2));
+  box-sizing: border-box;
+  padding-inline-start: var(--tcw-space-3);
+}
+.tcw-replay-bar[data-fit='stack'] input[type='range'].tcw-replay-scrubber { block-size: var(--tcw-menu-item-h); min-inline-size: 0; }
+/* Back to realtime closes the bar from the first row, a glyph touch users know. */
+.tcw-replay-bar[data-fit='stack'] .tcw-replay-exits { display: contents; }
+.tcw-replay-bar[data-fit='stack'] .tcw-replay-realtime { order: -1; inline-size: var(--tcw-replay-btn); padding: 0; justify-content: center; }
+.tcw-replay-bar[data-fit='stack'] .tcw-replay-realtime .tcw-replay-text { display: none; }
+.tcw-replay-bar[data-fit='stack'] .tcw-replay-close-icon { display: inline-flex; }
+.tcw-replay-bar[data-fit='stack'] .tcw-replay-transport { flex: 1 0 auto; }
+.tcw-replay-bar[data-fit='stack'] .tcw-replay-hint { white-space: normal; flex: 1 0 100%; padding-block: var(--tcw-space-2); }
+.tcw-replay-bar[data-fit='stack'] .tcw-replay-picking { display: contents; }
+
+/* While the bar holds the plot's foot, what lives there makes room: the toasts and the phone's drawing button. */
+.tcw-root[data-tcw-replay] > .tcw-toast:not(.tcw-toast-over) {
+  bottom: calc(var(--tcw-replay-lift, 0px) + var(--tcw-space-4));
+}
+.tcw-root[data-tcw-narrow][data-tcw-replay] > .tcw-body > .tcw-sidebar-fab {
+  bottom: calc(var(--tcw-replay-lift, 0px) + var(--tcw-space-4));
 }
 
-.tcw-replay-btn.tcw-replay-play {
-  background: var(--tcw-accent);
-  color: var(--tcw-accent-ink);
-  width: 32px;
-  height: 32px;
-  box-shadow: 0 0 0 3px var(--tcw-accent-glow);
+@media (forced-colors: active) {
+  .tcw-replay-bar { border: 1px solid CanvasText; }
+  .tcw-replay-btn.tcw-replay-play { border: 1px solid ButtonText; }
+  .tcw-root input[type='range'].tcw-replay-scrubber::-webkit-slider-runnable-track { background: GrayText; }
+  .tcw-root input[type='range'].tcw-replay-scrubber::-webkit-slider-thumb { background: Highlight; }
 }
 
-.tcw-replay-btn.tcw-replay-play:hover {
-  background: var(--tcw-accent-hover);
-}
-
-.tcw-replay-scrubber {
-  appearance: none;
-  -webkit-appearance: none;
-  width: 220px;
-  height: 4px;
-  background: var(--tcw-border-strong);
-  border-radius: 2px;
-  outline: none;
-  cursor: pointer;
-}
-
-.tcw-replay-scrubber::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: var(--tcw-accent);
-  border: 2px solid var(--tcw-bg-elevated);
-  box-shadow: 0 0 0 1px var(--tcw-accent), 0 2px 6px rgba(0, 0, 0, 0.3);
-  cursor: pointer;
-}
-
-.tcw-replay-scrubber::-moz-range-thumb {
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: var(--tcw-accent);
-  border: 2px solid var(--tcw-bg-elevated);
-  box-shadow: 0 0 0 1px var(--tcw-accent), 0 2px 6px rgba(0, 0, 0, 0.3);
-  cursor: pointer;
-}
-
-.tcw-replay-progress {
-  font-size: var(--tcw-font-size-xs);
-  font-family: var(--tcw-font-mono);
-  color: var(--tcw-text-muted);
-  min-width: 64px;
-  text-align: center;
-}
-
-.tcw-replay-speed {
-  padding: 4px 8px;
-  font-size: var(--tcw-font-size-xs);
-  font-family: var(--tcw-font-mono);
-  font-variant-numeric: tabular-nums;
-  background: var(--tcw-bg-surface);
-  border: 1px solid var(--tcw-border);
-  border-radius: var(--tcw-control-radius);
-  color: var(--tcw-text-dim);
-  cursor: pointer;
-}
-
-.tcw-replay-speed:hover {
-  border-color: var(--tcw-border-strong);
-}
-
-@media (max-width: 640px) {
-  .tcw-replay-scrubber {
-    width: 140px;
-  }
-  .tcw-replay-progress {
-    display: none;
-  }
+@media (prefers-reduced-motion: reduce) {
+  .tcw-replay-bar { animation: none; }
+  .tcw-replay-btn,
+  .tcw-replay-text-btn,
+  .tcw-root input[type='range'].tcw-replay-scrubber::-webkit-slider-thumb { transition: none; }
 }
 
 /* === Responsive === */
@@ -2385,14 +2511,6 @@
   .tcw-modal {
     width: 94vw;
     border-radius: var(--tcw-dialog-radius);
-  }
-
-  /* Replay scrubber compact mode */
-  .tcw-replay-scrubber {
-    width: 120px;
-  }
-  .tcw-replay-progress {
-    display: none;
   }
 }
 
@@ -2774,7 +2892,7 @@
   text-overflow: ellipsis;
 }
 /* The replay bar has the chart's foot while it shows: the bracket's goes to the top. */
-.tcw-chart-container:has(> .tcw-replay-bar) > .tcw-bracket-bar {
+.tcw-root[data-tcw-replay] .tcw-bracket-bar {
   top: var(--tcw-space-4);
   bottom: auto;
 }

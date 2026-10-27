@@ -215,16 +215,79 @@ replay.start()
   Trong ChartWidget, menu <strong>Bước</strong> trên thanh phát lại đưa ra các khung thời gian nhỏ hơn
   mà nguồn dữ liệu có (hoặc dựng được từ các nến bạn đã nạp).
 </p>
-<pre><code>{`const steps = await adapter.fetchHistory('BTCUSDT', '5m', 2000)
-chart.replayStart({ steps, startIndex: 120, paused: true, speed: 5 })
+<pre><code>{`chart.replayStart({ animate: true, step: 'auto', startIndex: 120, paused: true })
+// hoặc các nến nhỏ hơn bạn đã có cho những nến được tua lại: { steps, startIndex: 120 }
 chart.replayResume()
 chart.getReplayBarIndex()      // the chart bar forming now
 chart.replaySeekToBar(150)     // to the end of bar 150
-chart.replaySeekToTime(t)      // to the bars that opened before t
-chart.on('replayStep', (e) => e.payload)    // { barIndex, time, until, total }
+chart.replaySeekToTime(t)      // to the bars that closed by t
+chart.on('replayStep', (e) => e.payload)    // { barIndex, time, stepTime, until, total, cause }
 chart.on('replayComplete', (e) => e.payload) // { barIndex, time }
 chart.on('replayState', (e) => e.payload)   // { state: 'playing' | 'paused' | 'stopped' }
 chart.replayStop()             // back to the live series`}</code></pre>
+
+<h3>Nến hình thành khi tua lại</h3>
+<p>
+  Với <code>animate: true</code>, mỗi nến lớn dần theo thời gian của nó như một nến đang chạy:
+  từ giá mở cửa đến cực trị mà hướng của nến cho biết đến trước (nến tăng chạm đáy trước),
+  rồi cực trị còn lại, rồi giá đóng cửa. Với <code>step</code> (<code>'auto'</code> hoặc một khung như
+  <code>'1m'</code>), biểu đồ tải các nến nhỏ hơn của những nến sắp tua qua
+  <code>fetchHistoryBefore</code> của nguồn dữ liệu đang kết nối, từng trang và chỉ khi đang chạy,
+  và mỗi nến hình thành theo chúng; <code>'auto'</code> là khung nhỏ nhất nguồn có với tối đa 60
+  nến con cho một nến. Khung hình cuối luôn là nến đúng như trong chuỗi. <code>steps</code> bạn
+  truyền vào được dùng theo cùng cách. Đồng hồ vẫn đếm nến của biểu đồ: <code>speed</code>,
+  <code>duration</code> và các chỉ số là nến, và <code>getReplayBarIndex()</code> là nến đang hình
+  thành. Tạm dừng giữ nguyên nến đang vẽ dở; tua hoặc bước tới hiện nến trọn vẹn. Tài khoản giả
+  lập khớp lệnh khi giá được vẽ chạm tới lệnh. Nến ngắn hơn ba khung hình hiện trọn, và khi hệ
+  thống yêu cầu giảm chuyển động, nến nhảy từ mức giá này sang mức giá kế tiếp.
+  <code>replayStepsLoad</code> báo <code>loading</code>, <code>loaded</code>, <code>end</code> hoặc
+  <code>error</code>; nến không có nến con hình thành từ giá của chính nó. ChartWidget làm điều này
+  mặc định: menu Bước bắt đầu ở <strong>Tự động</strong>; <code>replayStep</code>
+  (<code>'auto'</code>, <code>'bar'</code> hoặc một khung) và <code>replayAnimate: false</code> thay đổi nó. Với nguồn không có
+  <code>fetchHistoryBefore</code>, widget tải các nến nhỏ hơn trong một lần gọi trước khi phát lại bắt đầu.
+  Với <code>replayAnimate: false</code>, Auto phát lại nến nguyên; một khung nhỏ hơn được chọn sẽ phát thành các bước riêng.
+</p>
+
+<h3>Thanh phát lại trong ChartWidget</h3>
+<p>
+  Nút <strong>Phát lại</strong> trên thanh công cụ mở một thanh gọn ở chân khung chính, giữa vùng
+  vẽ (các khung bên dưới vẫn đọc được). Trước hết chọn nến bắt đầu: bấm vào nó, hoặc bấm
+  <strong>Nến ngẫu nhiên</strong>; <strong>Huỷ</strong> (hoặc <kbd>Esc</kbd>) để thoát. Sau đó: lùi,
+  <strong>Phát</strong>/<strong>Tạm dừng</strong> và tiến; ngày giờ của bước đang hiện, theo múi giờ
+  hiển thị (chỉ ghi năm khi khác năm nay), và một thanh trượt tô phần đã phát; <strong>Tốc độ</strong>
+  là bội số từ 0.1× đến 50× (1× phát một nến của biểu đồ mỗi giây, bước nào cũng vậy; mặc định 1×);
+  <strong>Bước</strong>; <strong>Chọn nến</strong>, tạm dừng và chọn nến bắt đầu khác trong các nến
+  đang hiện mà không lộ các nến sau (<strong>Huỷ</strong> hoặc <kbd>Esc</kbd> quay lại đúng chỗ cũ);
+  và <strong>Về thời gian thực</strong>. Trên điện thoại hoặc biểu đồ hẹp, thanh chia hai hàng, ngày
+  và thanh trượt ở trên. Phím, cho widget dùng gần nhất: <kbd>Shift</kbd>+<kbd>←</kbd>/<kbd>→</kbd>
+  lùi/tiến, <kbd>Space</kbd> trên biểu đồ hoặc thanh trượt để phát/tạm dừng (ngoài phát lại nó vừa
+  khung biểu đồ), <kbd>Esc</kbd> thôi chọn nến. Phím tắt bạn thêm bằng <code>addHotkey</code> trên
+  cùng phím được ưu tiên. Thanh dùng các token <code>--tcw-*</code> của giao diện và chủ đề; host có
+  thể đặt thêm <code>--tcw-replay-btn</code>, <code>--tcw-replay-play</code> hoặc
+  <code>--tcw-replay-track-w</code> trên <code>.tcw-replay-bar</code>. Ngày giờ lấy từ
+  <code>stepTime</code> của <code>replayStep</code>, thời điểm của bước đang hiện.
+</p>
+
+<h3>Phát lại sống qua việc đổi nến</h3>
+<p>
+  Phát lại là một mốc thời gian trên chuỗi nến trực tiếp. Khi nến thay đổi — mã hoặc khung
+  thời gian mới qua <code>connect</code> hay <code>switchStream</code>, <code>setData</code>,
+  nến cũ hơn được tải thêm, giờ ngoài phiên, một nến được sửa — nó tiếp tục trên nến mới tại
+  đúng thời điểm đã tới, và chỉ hiện những nến đã đóng trước đó. Trong lúc chuỗi mới đang tải,
+  phát lại chờ, vẫn đang chạy hay tạm dừng như trước. Các chỉ số (<code>barIndex</code>,
+  <code>total</code>, <code>replaySeekToBar</code>) là của chuỗi đang phát lại và đổi theo nó;
+  hãy giữ vị trí bằng thời gian. Phát lại mà tài khoản giấy giao dịch trên đó sẽ kết thúc khi
+  đổi mã. Trong ChartWidget, thanh phát lại vẫn mở, hiện <em>Đang tải biểu đồ</em> và chờ khi
+  nến đang tải, rồi theo tổng số nến và các bước của khung thời gian mới.
+</p>
+<pre><code>{`chart.replayStart({ startIndex: 300, paused: true })
+await chart.setTimeframe('1h')        // the replay waits, then goes on at the same time
+const { until } = chart.getReplayProgress()   // keep a position by time, not by index
+if (until !== null) chart.replaySeekToTime(until)   // back to it, on any interval
+chart.on('replayStep', (e) => {
+  if (e.payload.cause === 'series') {}  // carried over: barIndex and total are the new bars'
+})
+chart.replayStop()                    // call it first to end the replay as before`}</code></pre>
 
 <h3>Phát lại trong ứng dụng của bạn</h3>
 <p>

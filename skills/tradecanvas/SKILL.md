@@ -217,7 +217,17 @@ chart.on('replayComplete', () => chart.replayStop());   // every bar and mark ba
 ```
 
 `replayPause`, `replayResume`, `replaySeekToTime` and `replaySeekToBar` steer it;
-`revealMarks: false` shows every mark from the start.
+`revealMarks: false` shows every mark from the start. `animate: true` grows each
+bar over its time, and `step: 'auto'` (or `'1m'`) shapes it with finer bars the
+chart fetches through the connected feed for the bars it is about to play; never
+fetch the newest finer bars yourself, they are not the window replayed. ChartWidget
+does both by default (`replayStep`, `replayAnimate: false` change it). A replay is a time over the
+live series: `setData`, a new symbol or timeframe, older bars and the extended hours
+carry it over to the same time (it waits while a new series loads), so its indices
+change with the bars. Keep a position by time (`getReplayProgress().until`, then
+`replaySeekToTime`), and call `replayStop()` first to end it on a new series. ChartWidget's replay
+bar shows the replayed date, plays at speeds of 0.1× to 50× (1× is one chart bar a second), and takes
+Shift+←/→ and Space; don't build a second panel over it.
 
 ## Saving layouts
 
@@ -280,9 +290,10 @@ and call no `onSettingsChange` listener.
 | `drawingContextMenu` | `{ id, x, y }`: a drawing was right-clicked |
 | `toolModeChange` | `{ eraser }` or `{ zoomArea }` |
 | `orderModify`, `positionModify` | the object |
-| `replayStep` | `{ barIndex, time, until, total }`: a replay step |
+| `replayStep` | `{ barIndex, time, stepTime, until, total, cause }`: a replay step (`stepTime`: when the step shown opened, for a date readout; `cause`: `'play'`, `'seek'` or `'series'`, a carry-over to new bars) |
 | `replayState` | `{ state }`: `'playing' \| 'paused' \| 'stopped'` |
 | `replayComplete` | `{ barIndex, time }`: the replay reached its last bar |
+| `replayStepsLoad` | `{ state, step, count }`: finer bars for a replay's `step` loading, loaded, at their end or failed |
 | `styleChange` | `{ layer }`: `'host'` or `'user'` overrides changed |
 | `rendererChange` | `{ renderer, reason? }`: WebGL fell back to Canvas 2D, or came back |
 

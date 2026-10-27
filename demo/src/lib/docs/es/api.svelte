@@ -631,6 +631,9 @@ new ChartWidget(host, { features: { 'dock.dataWindow': false } })  // no button 
     <tr><td><kbd>?</kbd></td><td>La hoja de atajos, que se busca por lo que hace una tecla o por la tecla</td></tr>
     <tr><td><kbd>Alt</kbd> + clic en el gráfico</td><td>Fija la información OHLC en la barra bajo el cursor (muestra la diferencia con la cruz en vivo)</td></tr>
     <tr><td><kbd>Esc</kbd></td><td>Desfija la información / cancela el dibujo</td></tr>
+    <tr><td><kbd>Shift</kbd> + <kbd>←</kbd> / <kbd>→</kbd></td><td>Retroceder / avanzar la repetición</td></tr>
+    <tr><td><kbd>Space</kbd></td><td>Reproducir o pausar la repetición (en el gráfico o su pista; fuera de una repetición ajusta el gráfico)</td></tr>
+    <tr><td><kbd>Esc</kbd></td><td>Dejar de elegir la vela de inicio</td></tr>
     <tr><td>Clic en el símbolo de la barra de herramientas</td><td>Abre el cuadro de búsqueda de símbolos</td></tr>
     <tr><td>Clic en reproducir en la barra de herramientas</td><td>Abre el control de repetición de barras (reproducir/avanzar/buscar/velocidad)</td></tr>
   </tbody>

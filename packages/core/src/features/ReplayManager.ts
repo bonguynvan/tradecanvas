@@ -1,4 +1,4 @@
-import type { OHLCBar, DataSeries } from '@tradecanvas/commons';
+import type { OHLCBar, DataSeries, TimeFrame } from '@tradecanvas/commons';
 import { Emitter } from '../realtime/Emitter.js';
 
 export interface ReplayConfig {
@@ -47,6 +47,24 @@ export interface ReplayConfig {
    * The chart reads this; the manager itself steps through what it is given.
    */
   steps?: DataSeries;
+  /**
+   * Draw each bar growing over its time, as a live one does: from its open
+   * to the extreme its direction says came first (a rising bar dips first),
+   * the other one, then its close; with finer bars (`step` or `steps`) along
+   * their prices. It ends as the bar is in the series. Not for a bar shorter
+   * than three frames (it comes whole), and under reduced motion it moves
+   * from one of those prices to the next without the slide. Default `false`;
+   * ChartWidget turns it on. With it, indices, `speed` and `duration` count
+   * the chart's bars, also with `steps`.
+   */
+  animate?: boolean;
+  /**
+   * With `animate`: the finer interval whose bars shape each bar as it forms,
+   * fetched through the connected feed for the bars the replay is about to
+   * play (`'auto'`: the finest it serves with at most 60 to a bar). A bar
+   * they don't cover forms from its own prices. The chart reads this.
+   */
+  step?: TimeFrame | 'auto';
 }
 
 /**
@@ -61,6 +79,12 @@ export interface ReplayClock {
 
 /** A bar quicker than this plays on the frame clock, several bars a frame when need be. */
 const FRAME_MS = 16;
+/** A bar shorter than this (three frames) comes whole: it would not be seen forming. */
+const MIN_FORMING_STEP_MS = 3 * FRAME_MS;
+/** How often a forming bar is told: about 30 times a second, which keeps a Canvas 2D chart smooth at high DPR. */
+const FORMING_INTERVAL_MS = 1000 / 30;
+/** Rounding slack when the time owed is exactly a bar's. */
+const OWED_EPSILON = 1e-9;
 /** The most replay time one frame may add: a late frame slows the replay rather than skip ahead. */
 export const MAX_REPLAY_FRAME_MS = 50;
 
@@ -81,6 +105,8 @@ const DEFAULT_CLOCK: ReplayClock = {
 
 interface ReplayEvents {
   bar: { bar: OHLCBar; index: number; total: number };
+  /** With `animate`: how far (0..1) bar `index`, the next one, has formed. */
+  phase: { index: number; fraction: number };
   complete: void;
   stateChange: 'playing' | 'paused' | 'stopped';
   [key: string]: unknown;
@@ -95,7 +121,8 @@ interface ReplayEvents {
  *
  * A bar a frame or slower ticks on a timer; quicker (a high speed, or a
  * `duration` over many bars) it plays on animation frames, several bars a
- * frame, each reported once.
+ * frame, each reported once. With `animate` it always plays on frames and
+ * tells `phase`, how far the next bar has formed, about 30 times a second.
  */
 export class ReplayManager extends Emitter<ReplayEvents> {
   private data: DataSeries = [];
@@ -108,6 +135,8 @@ export class ReplayManager extends Emitter<ReplayEvents> {
   private config: ReplayConfig = { speed: 1, interval: 500 };
   /** A bar's time set by a `duration` (null: the interval at the speed). */
   private paceMs: number | null = null;
+  /** With `animate`: the time played into the next bar, kept through a pause. */
+  private owedMs = 0;
 
   constructor(private readonly clock: ReplayClock = DEFAULT_CLOCK) {
     super();
@@ -117,6 +146,7 @@ export class ReplayManager extends Emitter<ReplayEvents> {
     this.stop();
     this.data = data;
     this.cursor = -1;
+    this.owedMs = 0;
   }
 
   play(config?: Partial<ReplayConfig>): void {
@@ -133,7 +163,10 @@ export class ReplayManager extends Emitter<ReplayEvents> {
         this.setState('paused');
         return;
       }
-      if (start !== null) this.cursor = start - 1;
+      if (start !== null) {
+        this.cursor = start - 1;
+        this.owedMs = 0;
+      }
       this.setPace(duration);
     }
     if (this.isAtEnd()) {
@@ -144,14 +177,15 @@ export class ReplayManager extends Emitter<ReplayEvents> {
     }
 
     this.clearTimer();
-    const stepMs = this.paceMs ?? this.config.interval / this.config.speed;
+    const stepMs = this.stepMs();
     // A speed of 0, below it or not a number has no pace to keep: it waits.
     if (!(stepMs > 0) || !Number.isFinite(stepMs)) {
       this.setState('paused');
       return;
     }
     this.setState('playing');
-    if (stepMs < FRAME_MS || this.paceMs !== null) this.runFrames(stepMs);
+    if (this.config.animate) this.runForming(stepMs);
+    else if (stepMs < FRAME_MS || this.paceMs !== null) this.runFrames(stepMs);
     else this.timer = setInterval(() => this.advance(1), stepMs);
   }
 
@@ -167,6 +201,7 @@ export class ReplayManager extends Emitter<ReplayEvents> {
   stop(): void {
     this.clearTimer();
     this.cursor = -1;
+    this.owedMs = 0;
     this.setState('stopped');
   }
 
@@ -178,12 +213,17 @@ export class ReplayManager extends Emitter<ReplayEvents> {
   seekTo(index: number): void {
     if (this.data.length === 0) return;
     this.cursor = this.clamp(index);
+    this.owedMs = 0;
     this.emit('bar', { bar: this.data[this.cursor], index: this.cursor, total: this.data.length });
   }
 
   setSpeed(speed: number): void {
+    // The bar forming keeps how far it is: the time owed scales with the pace.
+    const fraction = this.getFraction();
     this.config = { ...this.config, speed };
     this.paceMs = null;
+    const stepMs = this.stepMs();
+    this.owedMs = stepMs > 0 && Number.isFinite(stepMs) ? fraction * stepMs : 0;
     if (this.state === 'playing') this.play();
   }
 
@@ -204,6 +244,25 @@ export class ReplayManager extends Emitter<ReplayEvents> {
       total,
       percent: total > 0 ? ((this.cursor + 1) / total) * 100 : 0,
     };
+  }
+
+  /**
+   * With a `duration` pace, the time left to play to the end (ms), so a
+   * replay rebuilt on other bars can keep it; null with an interval pace.
+   */
+  remainingMs(): number | null {
+    return this.paceMs === null ? null : this.paceMs * Math.max(0, this.data.length - 1 - this.cursor);
+  }
+
+  /** A bar's time at the pace now (ms): a `duration`'s, else the interval at the speed. */
+  getStepMs(): number {
+    return this.stepMs();
+  }
+
+  /** With `animate`: how far (0..1) the next bar has formed; 0 when it hasn't started. */
+  getFraction(): number {
+    const stepMs = this.stepMs();
+    return stepMs > 0 && Number.isFinite(stepMs) ? Math.min(1, this.owedMs / stepMs) : 0;
   }
 
   dispose(): void {
@@ -242,6 +301,49 @@ export class ReplayManager extends Emitter<ReplayEvents> {
         if (run === this.run && this.state === 'playing' && this.frameHandle === null) this.frameHandle = this.clock.frame(frame);
       }
     };
+    this.frameHandle = this.clock.frame(frame);
+  }
+
+  /** A bar's time at the pace now: a `duration`'s, else the interval at the speed. */
+  private stepMs(): number {
+    return this.paceMs ?? this.config.interval / this.config.speed;
+  }
+
+  /**
+   * Frames that form the next bar (`animate`): the time owed is kept between
+   * runs, a bar lands when it is paid for, and the bar forming is told at
+   * once, then about 30 times a second.
+   */
+  private runForming(stepMs: number): void {
+    const run = this.run;
+    const forms = stepMs >= MIN_FORMING_STEP_MS;
+    let last = this.clock.now();
+    let told = -Infinity;
+    const tell = (at: number): void => {
+      if (!forms || this.isAtEnd() || run !== this.run || this.state !== 'playing') return;
+      told = at;
+      this.emit('phase', { index: this.cursor + 1, fraction: Math.min(1, this.owedMs / stepMs) });
+    };
+    const frame = (): void => {
+      if (run !== this.run || this.state !== 'playing') return;
+      this.frameHandle = null;
+      const now = this.clock.now();
+      this.owedMs += Math.min(MAX_REPLAY_FRAME_MS, Math.max(0, now - last));
+      last = now;
+      const bars = Math.floor((this.owedMs + OWED_EPSILON) / stepMs);
+      try {
+        if (bars > 0) {
+          this.owedMs = Math.max(0, this.owedMs - bars * stepMs);
+          this.advance(bars);
+          tell(now);
+        } else if (now - told + FRAME_MS / 2 >= FORMING_INTERVAL_MS) {
+          tell(now);
+        }
+      } finally {
+        if (run === this.run && this.state === 'playing' && this.frameHandle === null) this.frameHandle = this.clock.frame(frame);
+      }
+    };
+    tell(last);
     this.frameHandle = this.clock.frame(frame);
   }
 

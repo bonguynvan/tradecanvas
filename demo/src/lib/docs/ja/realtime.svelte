@@ -208,16 +208,70 @@ replay.start()
   ChartWidget では、リプレイバーの<strong>ステップ</strong>メニューに、フィードが持つ下位の時間足
   （または読み込んだバーから組み立てられる時間足）が並びます。
 </p>
-<pre><code>{`const steps = await adapter.fetchHistory('BTCUSDT', '5m', 2000)
-chart.replayStart({ steps, startIndex: 120, paused: true, speed: 5 })
+<pre><code>{`chart.replayStart({ animate: true, step: 'auto', startIndex: 120, paused: true })
+// または、再生するバーの細かいバーを手元から渡す: { steps, startIndex: 120 }
 chart.replayResume()
 chart.getReplayBarIndex()      // the chart bar forming now
 chart.replaySeekToBar(150)     // to the end of bar 150
-chart.replaySeekToTime(t)      // to the bars that opened before t
-chart.on('replayStep', (e) => e.payload)    // { barIndex, time, until, total }
+chart.replaySeekToTime(t)      // to the bars that closed by t
+chart.on('replayStep', (e) => e.payload)    // { barIndex, time, stepTime, until, total, cause }
 chart.on('replayComplete', (e) => e.payload) // { barIndex, time }
 chart.on('replayState', (e) => e.payload)   // { state: 'playing' | 'paused' | 'stopped' }
 chart.replayStop()             // back to the live series`}</code></pre>
+
+<h3>再生中に形づくられるバー</h3>
+<p>
+  <code>animate: true</code> にすると、各バーはライブのバーと同じように時間をかけて伸びます。始値から、
+  方向から見て先に来た極値（上昇バーは先に安値へ）、もう一方の極値、そして終値へ。<code>step</code>
+  （<code>'auto'</code> または <code>'1m'</code> などの時間足）を渡すと、チャートは接続中のフィードの
+  <code>fetchHistoryBefore</code> で、これから再生するバーの細かいバーを再生中にだけ 1 ページずつ取得し、各バーはそれに沿って形づくられます。
+  <code>'auto'</code> はフィードが提供する、1 本あたり 60 本以下の最も細かい時間足です。最後のフレームは常に系列どおりのバーです。
+  渡した <code>steps</code> も同じように使われます。時計はチャートのバーを数え続けます。<code>speed</code>、<code>duration</code>、
+  インデックスはバー単位で、<code>getReplayBarIndex()</code> は形成中のバーです。一時停止は描きかけのバーをそのまま保ち、
+  シークやステップは完成したバーを表示します。ペーパー口座は描かれた価格が注文に届いたときに約定します。3 フレームより短いバーは完成した形で現れ、
+  動きを減らす設定では価格から価格へ段階的に進みます。<code>replayStepsLoad</code> は <code>loading</code>、<code>loaded</code>、
+  <code>end</code>、<code>error</code> を伝えます。細かいバーのないバーは自身の価格から形づくられます。ChartWidget は既定でこう動きます。
+  ステップメニューは <strong>自動</strong> から始まり、<code>replayStep</code>（<code>'auto'</code>、<code>'bar'</code>、時間足）と
+  <code>replayAnimate: false</code> で変えられます。<code>fetchHistoryBefore</code>
+  を持たないフィードでは、ウィジェットがリプレイ開始前に細かい足を一度のリクエストで取得します。
+  <code>replayAnimate: false</code> のとき、Auto は足を丸ごと再生し、細かい周期を選ぶとその足ごとに進みます。
+</p>
+
+<h3>ChartWidget のリプレイバー</h3>
+<p>
+  ツールバーの<strong>バーリプレイ</strong>ボタンで、メインペインの下端、プロットの中央にコンパクトなバーが開きます（下のペインは読めるまま）。
+  まず開始足を選びます。足をクリックするか<strong>ランダムなバー</strong>を押します。<strong>キャンセル</strong>（または <kbd>Esc</kbd>）で閉じます。
+  その後は、戻る・<strong>再生</strong>/<strong>一時停止</strong>・進む、表示中のステップの日時（表示タイムゾーン、年は今年でないときだけ）、
+  再生済み部分を塗ったトラック、<strong>速度</strong>は 0.1×〜50× の倍率（1× はステップに関係なくチャートの足を 1 秒に 1 本、既定は 1×）、
+  <strong>ステップ</strong>、<strong>バーを選択</strong>（一時停止して表示中の足から開始足を選び直す。先の足は見せません。
+  <strong>キャンセル</strong>か <kbd>Esc</kbd> で元の位置へ）、<strong>リアルタイムに戻る</strong>。スマートフォンや狭いチャートでは 2 行になり、日時とトラックが上です。
+  キーは最後に使ったウィジェットに効きます。<kbd>Shift</kbd>+<kbd>←</kbd>/<kbd>→</kbd> でステップ、チャートかトラック上の
+  <kbd>Space</kbd> で再生/一時停止（リプレイ外ではチャートを全体表示）、<kbd>Esc</kbd> で選択をやめます。<code>addHotkey</code> で同じキーに
+  追加したショートカットが優先されます。バーはルックとテーマの <code>--tcw-*</code> トークンを使い、ホストは
+  <code>.tcw-replay-bar</code> に <code>--tcw-replay-btn</code>、<code>--tcw-replay-play</code>、<code>--tcw-replay-track-w</code> も設定できます。
+  日時は <code>replayStep</code> の <code>stepTime</code>（表示中のステップの時刻）から読みます。
+</p>
+
+<h3>リプレイはバーが変わっても続く</h3>
+<p>
+  リプレイはライブ系列の上の一つの時刻です。バーが変わると —
+  <code>connect</code> や <code>switchStream</code> による別の銘柄や時間足、<code>setData</code>、
+  読み込まれた過去のバー、時間外取引、修正されたバー — 到達していた時刻のまま新しいバーの上で続き、
+  その時点までに確定したバーだけを表示します。新しい系列の読み込み中は、再生中か一時停止かを保ったまま待ちます。
+  インデックス(<code>barIndex</code>、<code>total</code>、<code>replaySeekToBar</code>)は
+  いまリプレイしているバーのもので、バーと一緒に変わります。位置は時刻で保持してください。
+  ペーパー口座がリプレイで取引している場合、銘柄が変わるとリプレイは終了します。ChartWidget では
+  リプレイバーは開いたまま、バーの読み込み中は <em>チャートを読み込み中</em> と表示して待ち、
+  その後バーの総数と新しい時間足のステップに従います。
+</p>
+<pre><code>{`chart.replayStart({ startIndex: 300, paused: true })
+await chart.setTimeframe('1h')        // the replay waits, then goes on at the same time
+const { until } = chart.getReplayProgress()   // keep a position by time, not by index
+if (until !== null) chart.replaySeekToTime(until)   // back to it, on any interval
+chart.on('replayStep', (e) => {
+  if (e.payload.cause === 'series') {}  // carried over: barIndex and total are the new bars'
+})
+chart.replayStop()                    // call it first to end the replay as before`}</code></pre>
 
 <h3>自分のアプリでのリプレイ</h3>
 <p>

@@ -89,12 +89,15 @@ describe('Chart.prependBars', () => {
     expect(chart.getData()).toHaveLength(50);
   });
 
-  it('leaves a replay alone', () => {
+  it('takes older bars into a replay, which stays on the same bar', () => {
     chart.setData(hourly(1000, 50));
-    chart.replayStart({ startIndex: 10 });
-    expect(chart.prependBars(hourly(900, 10))).toBe(0);
+    chart.replayStart({ startIndex: 10, paused: true });
+    const at = chart.getData()[10].time;
+    expect(chart.prependBars(hourly(900, 10))).toBe(10);
+    expect(chart.getData().at(-1)?.time).toBe(at);
+    expect(chart.getReplayProgress().total).toBe(60);
     chart.replayStop();
-    expect(chart.getData()).toHaveLength(50);
+    expect(chart.getData()).toHaveLength(60);
   });
 });
 

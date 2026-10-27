@@ -107,3 +107,17 @@ describe('ReplayManager', () => {
     expect(rm.getProgress().current).toBe(0);
   });
 });
+
+describe('ReplayManager remainingMs', () => {
+  it('tells the time a duration has left, and nothing for an interval pace', () => {
+    const manager = new ReplayManager();
+    manager.load(bars(101));
+    manager.play({ startIndex: 0, paused: true, duration: 1000 });
+    expect(manager.remainingMs()).toBeCloseTo(1000);
+    manager.seekTo(50);
+    expect(manager.remainingMs()).toBeCloseTo(500);
+    manager.play({ paused: true, interval: 100 });
+    expect(manager.remainingMs()).toBeNull();
+    manager.dispose();
+  });
+});
