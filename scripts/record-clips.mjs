@@ -125,7 +125,10 @@ const SCENES = {
     await page.evaluate(() => {
       const { widget, chart } = window.stage;
       widget.replayFrom(chart.getData().length - 140, false);
-      chart.setReplaySpeed(8);
+      // Picked in the bar, so its Speed field shows the pace the clip plays at.
+      const speed = document.querySelector('.tcw-replay-bar select[data-act="speed"]');
+      speed.value = '5';
+      speed.dispatchEvent(new Event('change'));
     });
     await wait(700);
     await page.evaluate(() => window.stage.chart.replayResume());

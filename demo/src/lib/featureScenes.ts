@@ -353,6 +353,9 @@ await chart.setTimeframe('7m')`,
     id: 'replay',
     code: `widget.toggleReplay()             // pick a start bar on the chart
 widget.replayFrom(220)            // or start at a bar directly
+// The bar: Speed 0.1×–50× (1× = a bar a second), Select bar, Back to realtime
+// Keys: Shift+←/→ step, Space plays or pauses, Esc stops picking
+chart.on('replayStep', (e) => e.payload.stepTime)  // the date the bar shows
 chart.replayStart({ startIndex: 220, paused: true, interval: 1000, speed: 5 })
 chart.replayStart({ steps: bars15m, startIndex: 220 })  // each hour forms in 15m steps
 chart.replayStart({ startTime, hideHistory: true, duration: 3500 })  // only the window, in 3.5 s
