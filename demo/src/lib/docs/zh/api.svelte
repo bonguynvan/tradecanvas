@@ -37,7 +37,7 @@
 </p>
 
 <p id="corrections">
-  数据源修正的K线用 <code>updateBar(bar)</code> 传入：它替换 <code>time</code> 相同的已加载K线，无论其在序列中的位置，并返回 <code>true</code>。指标从这根K线起重新计算，Heikin-Ashi、Renko 等由K线构建的图表类型随之更新，视图停在原处；下一帧之前的多次修正只计算一次，从最早的那根开始。没有已加载的K线是这个时间（新K线用 <code>appendBar</code>，更早的K线用 <code>prependBars</code>），或图表不接受这根K线时，它返回 <code>false</code>，什么也不改变。它不是实时价格：订单和警报不跟随它，不会因它触发警报，指标线上的警报也不会按修正后的值重新检查。修正的是最后一根K线时，价格线随之移动，与 <code>setData</code> 之后相同。回放期间它修正的是实时序列，回放结束后显示；延长交易时段隐藏时，时段外的K线在时段重新显示后出现。再次发送与已加载相同的K线不会改变任何东西；缺少成交量按 0 处理，与 <code>setData</code> 相同，所以请发送完整的K线。它会发送 <code>dataUpdate</code>，内容为 <code>{'{'} kind: 'correction', time, index {'}'}</code>。在 ChartWidget 中，<code>widget.getChart().updateBar(bar)</code> 修正已连接数据源的K线；用 <code>setData</code> 交给组件的K线是它重新构建各周期所用的副本，所以对它们的修正只保留到下一次切换周期（针对这种情况的组件方法稍后提供）。
+  数据源修正的K线用 <code>updateBar(bar)</code> 传入：它替换 <code>time</code> 相同的已加载K线，无论其在序列中的位置，并返回 <code>true</code>。指标从这根K线起重新计算，Heikin-Ashi、Renko 等由K线构建的图表类型随之更新，视图停在原处；下一帧之前的多次修正只计算一次，从最早的那根开始。没有已加载的K线是这个时间（新K线用 <code>appendBar</code>，更早的K线用 <code>prependBars</code>），或图表不接受这根K线时，它返回 <code>false</code>，什么也不改变。它不是实时价格：订单和警报不跟随它，不会因它触发警报，指标线上的警报也不会按修正后的值重新检查。修正的是最后一根K线时，价格线随之移动，与 <code>setData</code> 之后相同。回放期间它修正的是实时序列：回放已经走过的K线立即显示修正后的样子，之后的K线在回放走到时显示；延长交易时段隐藏时，时段外的K线在时段重新显示后出现。再次发送与已加载相同的K线不会改变任何东西；缺少成交量按 0 处理，与 <code>setData</code> 相同，所以请发送完整的K线。它会发送 <code>dataUpdate</code>，内容为 <code>{'{'} kind: 'correction', time, index {'}'}</code>。在 ChartWidget 中，<code>widget.getChart().updateBar(bar)</code> 修正已连接数据源的K线；用 <code>setData</code> 交给组件的K线是它重新构建各周期所用的副本，所以对它们的修正只保留到下一次切换周期（针对这种情况的组件方法稍后提供）。
 </p>
 
 <p id="bar-times">
