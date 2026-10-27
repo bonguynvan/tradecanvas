@@ -136,6 +136,9 @@ import { VerticalPanGate } from './interaction/verticalPanGate.js';
 import { PluginManager } from './plugins/PluginManager.js';
 import { wireExecution } from './trading/wireExecution.js';
 import { overlaysForLayer, type ChartPlugin } from './plugins/contracts.js';
+import { ReplayStepLoader } from './replay/ReplayStepLoader.js';
+import { formingAt, intrabarPath, pathMarks, pathStop, type IntrabarPath } from './replay/intrabarPath.js';
+import { resolveReplayStep } from './replay/replayStep.js';
 
 // Replaced at build time by Vite `define` (see vite.config.ts). The `typeof`
 // guard keeps this safe when the source runs un-bundled (tests, ts-node).
@@ -314,6 +317,13 @@ export class Chart {
   private replayRevealMarks = true;
   /** Bars of the series left out before a replay's window (`hideHistory`). */
   private replayOffset = 0;
+  /** With `animate`: the host's finer bars by the time of the bar they shape. */
+  private replayPieces: Map<number, OHLCBar[]> | null = null;
+  /** With `animate` and a `step`: the finer bars fetched for the bars ahead. */
+  private replayLoader: { key: string; loader: ReplayStepLoader } | null = null;
+  /** The bar forming on screen and the path it began with (it keeps it: a page landing late shapes later bars). */
+  private replayForming: { index: number; path: IntrabarPath } | null = null;
+  private replayPhaseUnsub: (() => void) | null = null;
   private undoRedoManager: UndoRedoManager;
   private autoSaveScheduler = new AutoSaveScheduler((key) => this.saveState(key));
   private animator: Animator;
@@ -4884,7 +4894,9 @@ export class Chart {
     const session = this.replaySession;
     // Replay the live series as it stands now (a restart includes bars that
     // arrived during the previous run).
-    const { steps: rawSteps, startTime, hideHistory, revealMarks, ...playConfig } = config ?? {};
+    const { steps: rawSteps, startTime, hideHistory, revealMarks, step, ...playConfig } = config ?? {};
+    // Set each start: the clock keeps what it was given before.
+    playConfig.animate = playConfig.animate === true;
     const full = this.series.inHoursShown(this.series.liveBars());
     // Where it starts, as a bar of the whole series: from a time, or an index.
     // A restart within a window (no `startTime`, history not asked back) keeps
@@ -4902,13 +4914,17 @@ export class Chart {
     session.steps = rawSteps ?? null;
     session.stepsSymbol = this.currentSymbol;
     session.until = null;
+    session.animate = playConfig.animate;
+    session.step = playConfig.animate ? step ?? null : null;
     this.replayRevealMarks = revealMarks !== false;
-    const steps = rawSteps ? replaySteps(rawSteps, coarse) : null;
+    this.useReplayLoader(session, true);
+    const steps = rawSteps ? this.replayStepsOver(session, coarse, true) : null;
     // A replay fits each step; a price-axis drag from before shouldn't pin it.
     this.options.autoScale = true;
     this.buildReplay(coarse, steps, windowStart);
-    if (steps && playConfig.startIndex !== undefined) playConfig.startIndex = lastStepOfBar(steps, coarse, playConfig.startIndex);
-    const series = steps ?? coarse;
+    const stepped = this.replayStepsSeries;
+    if (stepped && playConfig.startIndex !== undefined) playConfig.startIndex = lastStepOfBar(stepped, coarse, playConfig.startIndex);
+    const series = stepped ?? coarse;
     // Markers and trades as far as the start, or all of them.
     const first = series[Math.max(0, Math.min(Math.floor(Number(playConfig.startIndex ?? 0)) || 0, series.length - 1))];
     this.revealReplayMarks(this.replayRevealMarks ? first?.time ?? null : null);
@@ -4927,7 +4943,12 @@ export class Chart {
    * clock, stopped at its start, and show each of its steps. The bars before
    * `windowStart` of the series are left out (`hideHistory`).
    */
-  private buildReplay(coarse: DataSeries, steps: DataSeries | null, windowStart: number): void {
+  private buildReplay(coarse: DataSeries, finer: DataSeries | null, windowStart: number): void {
+    // With `animate` the clock counts the chart's bars; finer bars only shape them.
+    const animate = this.replaySession?.animate === true;
+    const steps = animate ? null : finer;
+    this.replayPieces = animate && finer ? piecesByBar(finer, coarse) : null;
+    this.replayForming = null;
     this.replayOffset = windowStart;
     this.replayStepsSeries = steps;
     this.replayCoarse = coarse;
@@ -4942,6 +4963,7 @@ export class Chart {
     // Each replayStart used to stack another 'bar' listener, so a restarted
     // replay ran every step once per previous start.
     this.replayBarUnsub?.();
+    this.replayPhaseUnsub?.();
     let loaded = -1; // bars of `coarse` shown, as of the last step (the forming one included)
     let lastStep = -1;
     let forming: OHLCBar | null = null;
@@ -4955,8 +4977,11 @@ export class Chart {
         barIndex = barAt(coarse, step.time);
         const sameBar = forming !== null && lastStep === index - 1 && barIndex === loaded - 1;
         forming = sameBar && forming ? mergeBar(forming, step) : formingBar(coarse[barIndex], steps, index);
-        shownBar = forming;
+        // Its last step ends the bar as the series has it: finer bars can disagree with it.
+        shownBar = closesBar(steps, coarse, index, barIndex) ? coarse[barIndex] : forming;
       }
+      const formed = this.replayForming;
+      this.replayForming = null;
       lastStep = index;
       const nextLen = barIndex + 1;
       const forward = loaded > 0 && nextLen >= loaded && this.series.length() === loaded;
@@ -5001,10 +5026,132 @@ export class Chart {
       this.displayDataCache = null;
       this.reshapeMemo.clear();
       this.updateViewportAndRender(follow);
-      this.feedReplaySteps(series, index);
+      if (animate) this.feedReplayForming(coarse, index, formed?.index === index ? formed.path : this.replayPathOf(coarse, index), 1);
+      else this.feedReplaySteps(series, index);
       const cause = this.replayCause !== null ? 'series' : stepForward ? 'play' : 'seek';
       this.eventBus.emit('replayStep', { barIndex, time: coarse[barIndex].time, until, total: coarse.length, cause });
     });
+    if (!animate) return;
+    this.replayPhaseUnsub = this.replayManager.on('phase', ({ index, fraction }) => {
+      const bar = coarse[index];
+      // Shown as far as the bar before it (a new one appends), or forming it now.
+      if (!bar || this.series.length() !== loaded || (loaded !== index && loaded !== index + 1)) return;
+      const path = this.replayForming?.index === index ? this.replayForming.path : this.replayPathOf(coarse, index);
+      const f = prefersReducedMotion() ? pathStop(path, fraction) : fraction;
+      const appended = loaded === index;
+      // A new bar follows the newest while the view rests at the end (read before it lands).
+      const follow = appended && this.autoScrollOnNewBar && this.viewport.isAtEnd();
+      const shown = formingAt(path, f);
+      if (appended) this.series.appendReplayed(shown);
+      else this.series.updateReplayed(shown);
+      loaded = index + 1;
+      this.replayForming = { index, path };
+      this.drawFormingBar(shown, index > 0 ? coarse[index - 1].close : undefined, appended, follow);
+      this.feedReplayForming(coarse, index, path, f);
+      this.loadReplaySteps(coarse, index);
+    });
+  }
+
+  /**
+   * The bar forming in a replay drawn again, as `updateLastBar` draws a live
+   * one, without the live price: alerts and orders keep watching the market.
+   * A new bar fits the view as a replay step does.
+   */
+  private drawFormingBar(bar: OHLCBar, previousClose: number | undefined, appended: boolean, follow: boolean): void {
+    this.currentPriceLine.setPrice(bar.close, previousClose);
+    const data = this.series.bars();
+    this.recalcIndicatorsFrom(data, data.length - 1);
+    if (appended || !PLAIN_CHART_TYPES.has(this.options.chartType)) this.displayDataCache = null;
+    if (!appended) {
+      this.scheduleRender();
+      return;
+    }
+    this.crosshairHandler.setData(data);
+    this.reshapeMemo.clear();
+    this.updateViewportAndRender(follow);
+  }
+
+  /** The path bar `index` of `coarse` forms along: its finer bars when they are in, else its own prices. */
+  private replayPathOf(coarse: DataSeries, index: number): IntrabarPath {
+    const bar = coarse[index];
+    const finer = this.replayPieces?.get(bar.time) ?? this.replayLoader?.loader.piecesOf(bar.time) ?? [];
+    return intrabarPath(bar, finer);
+  }
+
+  /** Finer bars for the bars the next few seconds of playback show, and none kept for those behind. */
+  private loadReplaySteps(coarse: DataSeries, index: number): void {
+    const loader = this.replayLoader?.loader;
+    if (!loader) return;
+    loader.evictBefore(coarse[index].time);
+    const barMs = this.replayManager.getStepMs();
+    loader.ensure(coarse, index, Number.isFinite(barMs) && barMs > 0 ? Math.ceil(REPLAY_LOOKAHEAD_MS / barMs) : 1);
+  }
+
+  /**
+   * The loader of finer bars for a replay with `animate` and a `step`, kept
+   * while the symbol and the interval are (`fresh`: a new one, at a start).
+   * None without a connected feed, or a step it serves.
+   */
+  private useReplayLoader(session: ReplaySession, fresh: boolean): void {
+    const adapter = this.streamAdapter;
+    const chartTf = this.streamTimeframe;
+    const step = session.step && adapter && chartTf !== null
+      ? resolveReplayStep(session.step, chartTf, (tf) => servesTimeframe(adapter, tf))
+      : null;
+    const key = `${this.currentSymbol}|${chartTf}|${step}`;
+    if (!fresh && this.replayLoader?.key === key) return;
+    this.replayLoader?.loader.dispose();
+    this.replayLoader = null;
+    if (!step || !adapter || chartTf === null) return;
+    const feed = withResampling(adapter);
+    const fetchBefore = feed.fetchHistoryBefore;
+    const symbol = this.currentSymbol;
+    const barMs = timeframeToMs(chartTf);
+    const loader = new ReplayStepLoader({
+      source: fetchBefore ? (before, limit) => fetchBefore.call(feed, symbol, step, before, limit) : null,
+      step,
+      ratio: Math.max(1, Math.round(barMs / timeframeToMs(step))),
+      barMs,
+      keep: (bars) => this.series.inHoursShown(bars),
+      report: (payload) => this.eventBus.emit('replayStepsLoad', payload),
+    });
+    this.replayLoader = { key, loader };
+  }
+
+  /**
+   * A paper account trades on the prices a forming bar has been drawn
+   * through, forward only by (time, fraction): the rest of a bar given in
+   * part, the bars a jump passes, then this one up to `fraction`.
+   */
+  private feedReplayForming(coarse: DataSeries, index: number, path: IntrabarPath, fraction: number): void {
+    const session = this.replaySession;
+    const adapter = this.executionAdapter;
+    const bar = coarse[index];
+    if (!session || !adapter?.setMarkPrice || !bar) return;
+    const fedTime = session.fedTime;
+    if (fedTime === null) {
+      session.fedTime = bar.time;
+      session.fedFraction = fraction;
+      this.feedReplayPrice(formingAt(path, fraction).close, bar.time);
+      return;
+    }
+    if (bar.time < fedTime || (bar.time === fedTime && fraction <= session.fedFraction)) return;
+    const marks: [number, number][] = [];
+    if (bar.time > fedTime) {
+      const part = firstAtOrAfter(coarse, fedTime);
+      if (coarse[part]?.time === fedTime && session.fedFraction < 1) marks.push(...pathMarks(this.replayPathOf(coarse, part), session.fedFraction, 1));
+      const passed = coarse.slice(firstAfter(coarse, fedTime), index);
+      const size = Math.ceil(passed.length / MAX_REPLAY_CHUNKS);
+      for (let i = 0; i < passed.length; i += size) marks.push(...replayMarks(passed.slice(i, i + size)));
+      marks.push(...pathMarks(path, -1, fraction));
+    } else {
+      marks.push(...pathMarks(path, session.fedFraction, fraction));
+    }
+    session.fedTime = bar.time;
+    session.fedFraction = fraction;
+    for (const [price, time] of marks) adapter.setMarkPrice(price, time);
+    const price = marks[marks.length - 1]?.[0];
+    if (price !== undefined) this.tradingManager.setCurrentPrice(price);
   }
 
   /** The store says the live series changed during a replay: the replay follows it, by time. */
@@ -5031,8 +5178,10 @@ export class Chart {
     if (full.length === 0) return;
     const windowStart = session.windowTime === null ? 0 : Math.min(firstAtOrAfter(full, session.windowTime), full.length - 1);
     const coarse = windowStart > 0 ? full.slice(windowStart) : full;
+    this.useReplayLoader(session, false);
     const steps = this.replayStepsOver(session, coarse);
-    const at = session.until === null ? 0 : positionAt(steps ?? coarse, session.until);
+    const stepped = session.animate ? null : steps;
+    const at = session.until === null ? 0 : positionAt(stepped ?? coarse, session.until);
     if (at < 0 && this.canPageBackForReplay(session)) {
       this.holdReplay();
       if (session.held) session.held.pagesBack++;
@@ -5076,10 +5225,11 @@ export class Chart {
   }
 
   /** The host's finer steps over `coarse`, while they are of its symbol and fit its bars; else none. */
-  private replayStepsOver(session: ReplaySession, coarse: DataSeries): DataSeries | null {
+  private replayStepsOver(session: ReplaySession, coarse: DataSeries, starting = false): DataSeries | null {
     if (!session.steps || session.stepsSymbol !== this.currentSymbol) return null;
-    const steps = replaySteps(session.steps, coarse);
-    return steps && stepsFit(steps, coarse) ? steps : null;
+    // Only the hours shown: after-hours steps never reach the last regular bar.
+    const steps = replaySteps(this.series.inHoursShown(session.steps), coarse);
+    return steps && (starting || stepsFit(steps, coarse)) ? steps : null;
   }
 
   /** Whether a replay's time older than the series can page older bars in to reach it. */
@@ -5196,6 +5346,7 @@ export class Chart {
    */
   getReplayBarIndex(): number {
     if (!this.replaySession) return -1;
+    if (this.replayForming) return this.replayForming.index;
     const { current } = this.replayManager.getProgress();
     const steps = this.replayStepsSeries;
     return steps && this.replayCoarse ? barAt(this.replayCoarse, steps[current]?.time ?? -Infinity) : current;
@@ -5292,6 +5443,12 @@ export class Chart {
     this.replayCoarse = null;
     this.replayBarUnsub?.();
     this.replayBarUnsub = null;
+    this.replayPhaseUnsub?.();
+    this.replayPhaseUnsub = null;
+    this.replayLoader?.loader.dispose();
+    this.replayLoader = null;
+    this.replayPieces = null;
+    this.replayForming = null;
     this.replayManager.stop();
     this.replayOffset = 0;
     this.revealReplayMarks(null);
@@ -6544,6 +6701,12 @@ function alertPayload(alert: import('@tradecanvas/core').PriceAlert): import('@t
   };
 }
 
+/** How far ahead of the bar forming a replay has its finer bars fetched, in playback time (ms). */
+const REPLAY_LOOKAHEAD_MS = 8000;
+
+/** Chart types that draw the series itself: a bar written in place needs no new display data. */
+const PLAIN_CHART_TYPES: ReadonlySet<string> = new Set(['candlestick', 'line', 'area', 'bar', 'hollowCandle']);
+
 /** At most this many pages of older bars a replay loads to reach its time on a new series. */
 const MAX_REPLAY_PAGES_BACK = 10;
 
@@ -6563,6 +6726,11 @@ interface ReplaySession {
   price: { price: number; previousClose?: number } | null;
   /** The latest replayed time a paper account has been given (it only goes forward). */
   fedTime: number | null;
+  /** How far into the bar at `fedTime` it has been given (1: all of it). */
+  fedFraction: number;
+  /** Whether bars form as they play (`animate`), and the finer interval that shapes them. */
+  animate: boolean;
+  step: TimeFrame | 'auto' | null;
   /** Up to when the replay has shown everything (its last step's `until`); null before its first step. */
   until: number | null;
   /** Where a `hideHistory` window starts, by time; null without one. */
@@ -6580,7 +6748,7 @@ interface ReplaySession {
 }
 
 function newReplaySession(symbol: string): ReplaySession {
-  return { price: null, fedTime: null, until: null, windowTime: null, steps: null, stepsSymbol: symbol, symbol, held: null };
+  return { price: null, fedTime: null, fedFraction: 1, animate: false, step: null, until: null, windowTime: null, steps: null, stepsSymbol: symbol, symbol, held: null };
 }
 
 /**
@@ -6720,6 +6888,30 @@ function formingBar(bar: OHLCBar, steps: DataSeries, index: number): OHLCBar {
   let out: OHLCBar = { ...steps[i], time: bar.time };
   for (let j = i + 1; j <= index; j++) out = mergeBar(out, steps[j]);
   return out;
+}
+
+/** Whether step `index` is the last of bar `barIndex` of `coarse`: the next step is in a later bar. */
+function closesBar(steps: DataSeries, coarse: DataSeries, index: number, barIndex: number): boolean {
+  const next = steps[index + 1];
+  const nextBar = coarse[barIndex + 1];
+  return next !== undefined && nextBar !== undefined && next.time >= nextBar.time;
+}
+
+/** Finer bars grouped by the bar of `coarse` they are in. */
+function piecesByBar(steps: DataSeries, coarse: DataSeries): Map<number, OHLCBar[]> {
+  const out = new Map<number, OHLCBar[]>();
+  for (const step of steps) {
+    const time = coarse[barAt(coarse, step.time)].time;
+    const list = out.get(time);
+    if (list) list.push(step);
+    else out.set(time, [step]);
+  }
+  return out;
+}
+
+/** Whether the system asks for less motion: a forming bar then steps between its prices. */
+function prefersReducedMotion(): boolean {
+  return typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
 
 /** `bar` with one more step in it. */

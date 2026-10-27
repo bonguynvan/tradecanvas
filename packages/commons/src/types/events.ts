@@ -1,4 +1,4 @@
-import type { OHLCBar } from './ohlc.js';
+import type { OHLCBar, TimeFrame } from './ohlc.js';
 import type { ConnectionInfo } from './realtime.js';
 import type { Point } from './rendering.js';
 import type { IndicatorValue } from './indicator.js';
@@ -72,6 +72,8 @@ export type ChartEventType =
   | 'replayState'
   /** A replay reached its last bar (it waits there, paused). */
   | 'replayComplete'
+  /** A replay's finer bars (its `step`) are fetched: loading, loaded, no more, or failed. */
+  | 'replayStepsLoad'
   | 'alertUpdate'
   /**
    * Something a saved layout holds may have changed: drawings, indicators,
@@ -392,7 +394,23 @@ export interface ChartEventMap {
   replayStep: ReplayStepPayload;
   replayState: { state: 'playing' | 'paused' | 'stopped' };
   replayComplete: { barIndex: number; time: number };
+  replayStepsLoad: ReplayStepsLoadPayload;
   alertUpdate: AlertPayload;
+}
+
+/**
+ * Payload for `replayStepsLoad`: the finer bars that shape a replay's bars as
+ * they form (`step`), fetched a page at a time for the bars it is about to
+ * play. `loading` when a request starts, then `loaded` (`count` finer bars
+ * kept), `end` (the feed has no more, or can't page back) or `error`. Bars
+ * without them form from their own prices.
+ */
+export interface ReplayStepsLoadPayload {
+  state: 'loading' | 'loaded' | 'end' | 'error';
+  /** The finer interval. */
+  step: TimeFrame;
+  count: number;
+  error?: string;
 }
 
 /** Payload for `replayStep`. */
