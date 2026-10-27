@@ -326,7 +326,7 @@ and call no `onSettingsChange` listener.
 | `drawingContextMenu` | `{ id, x, y }`: a drawing was right-clicked |
 | `toolModeChange` | `{ eraser }` or `{ zoomArea }` |
 | `orderModify`, `positionModify` | the object |
-| `replayStep` | `{ barIndex, time, stepTime, until, total }`: a replay step (`stepTime`: when the step shown opened, for a date readout) |
+| `replayStep` | `{ barIndex, time, stepTime, until, total, cause }`: a replay step (`stepTime`: when the step shown opened, for a date readout; `cause`: `'play'`, `'seek'` or `'series'`, a carry-over to new bars) |
 | `replayState` | `{ state }`: `'playing' \| 'paused' \| 'stopped'` |
 | `replayComplete` | `{ barIndex, time }`: the replay reached its last bar |
 | `replayStepsLoad` | `{ state, step, count }`: finer bars for a replay's `step` loading, loaded, at their end or failed |
