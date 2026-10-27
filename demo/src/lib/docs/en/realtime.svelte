@@ -214,8 +214,8 @@ replay.start()
   In ChartWidget, the replay bar's <strong>Step</strong> menu offers the finer intervals the
   feed has (or that the bars you loaded can build).
 </p>
-<pre><code>{`const steps = await adapter.fetchHistory('BTCUSDT', '5m', 2000)
-chart.replayStart({ steps, startIndex: 120, paused: true, speed: 5 })
+<pre><code>{`chart.replayStart({ animate: true, step: 'auto', startIndex: 120, paused: true })
+// or finer bars you hold for the bars replayed: { steps, startIndex: 120 }
 chart.replayResume()
 chart.getReplayBarIndex()      // the chart bar forming now
 chart.replaySeekToBar(150)     // to the end of bar 150
@@ -224,6 +224,26 @@ chart.on('replayStep', (e) => e.payload)    // { barIndex, time, until, total, c
 chart.on('replayComplete', (e) => e.payload) // { barIndex, time }
 chart.on('replayState', (e) => e.payload)   // { state: 'playing' | 'paused' | 'stopped' }
 chart.replayStop()             // back to the live series`}</code></pre>
+
+<h3>Bars that form as they play</h3>
+<p>
+  With <code>animate: true</code> each bar grows over its time, as a live bar does: from its
+  open to the extreme its direction says came first (a rising bar dips first), the other, then
+  its close. With <code>step</code> (<code>'auto'</code>, or an interval such as <code>'1m'</code>) the
+  chart fetches the finer bars of the bars it is about to play through the connected feed's
+  <code>fetchHistoryBefore</code>, a page at a time and only while it plays, and each bar forms
+  along them; <code>'auto'</code> is the finest the feed serves with at most 60 to a bar. The
+  last frame is always the bar as the series has it. <code>steps</code> you give are used the same
+  way. The clock keeps counting the chart's bars: <code>speed</code>, <code>duration</code> and the
+  indices mean bars, and <code>getReplayBarIndex()</code> is the bar forming. A pause holds a
+  half-drawn bar; a seek or a step shows whole bars. A paper account fills as the drawn price
+  reaches an order. Bars shorter than three frames come whole, and under reduced motion a bar
+  steps from one of its prices to the next. <code>replayStepsLoad</code> tells
+  <code>loading</code>, <code>loaded</code>, <code>end</code> or <code>error</code>; a bar without finer
+  bars forms from its own prices. ChartWidget does this by default: its Step menu starts on
+  <strong>Auto</strong>; <code>replayStep</code> (<code>'auto'</code>, <code>'bar'</code> or an
+  interval) and <code>replayAnimate: false</code> change it.
+</p>
 
 <h3>A replay outlives the bars</h3>
 <p>

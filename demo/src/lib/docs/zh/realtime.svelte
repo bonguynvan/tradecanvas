@@ -203,8 +203,8 @@ replay.start()
   在 ChartWidget 中，回放栏的<strong>步长</strong>菜单会列出数据源提供的更小周期
   （或由你加载的K线能够合成的周期）。
 </p>
-<pre><code>{`const steps = await adapter.fetchHistory('BTCUSDT', '5m', 2000)
-chart.replayStart({ steps, startIndex: 120, paused: true, speed: 5 })
+<pre><code>{`chart.replayStart({ animate: true, step: 'auto', startIndex: 120, paused: true })
+// 或者传入你已有的、覆盖回放K线的更细K线: { steps, startIndex: 120 }
 chart.replayResume()
 chart.getReplayBarIndex()      // the chart bar forming now
 chart.replaySeekToBar(150)     // to the end of bar 150
@@ -213,6 +213,20 @@ chart.on('replayStep', (e) => e.payload)    // { barIndex, time, until, total, c
 chart.on('replayComplete', (e) => e.payload) // { barIndex, time }
 chart.on('replayState', (e) => e.payload)   // { state: 'playing' | 'paused' | 'stopped' }
 chart.replayStop()             // back to the live series`}</code></pre>
+
+<h3>回放中逐步成形的K线</h3>
+<p>
+  设置 <code>animate: true</code> 后，每根K线会像实时K线一样随时间成形：从开盘价走到按方向判断先到的极值
+  （上涨K线先探底），再到另一个极值，最后到收盘价。设置 <code>step</code>（<code>'auto'</code> 或
+  <code>'1m'</code> 等周期）后，图表会通过已连接数据源的 <code>fetchHistoryBefore</code>，在播放时按页获取即将回放的K线的更细K线，
+  每根K线沿着它们成形；<code>'auto'</code> 是数据源提供的、每根K线最多 60 根的最细周期。最后一帧总是序列中的那根K线。
+  你传入的 <code>steps</code> 也按同样方式使用。时钟仍按图表的K线计数：<code>speed</code>、<code>duration</code> 和索引都指K线，
+  <code>getReplayBarIndex()</code> 是正在成形的K线。暂停会保留画到一半的K线；跳转或单步显示完整K线。模拟账户在绘制的价格到达订单时成交。
+  短于三帧的K线直接完整显示；系统要求减少动态效果时，K线在各个价格点之间跳动。<code>replayStepsLoad</code> 报告
+  <code>loading</code>、<code>loaded</code>、<code>end</code> 或 <code>error</code>；没有更细K线的K线按自身价格成形。
+  ChartWidget 默认如此：步长菜单从 <strong>自动</strong> 开始；<code>replayStep</code>（<code>'auto'</code>、<code>'bar'</code>
+  或某个周期）和 <code>replayAnimate: false</code> 可以修改。
+</p>
 
 <h3>回放跨越K线的变化</h3>
 <p>

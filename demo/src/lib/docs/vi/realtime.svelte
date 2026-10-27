@@ -215,8 +215,8 @@ replay.start()
   Trong ChartWidget, menu <strong>Bước</strong> trên thanh phát lại đưa ra các khung thời gian nhỏ hơn
   mà nguồn dữ liệu có (hoặc dựng được từ các nến bạn đã nạp).
 </p>
-<pre><code>{`const steps = await adapter.fetchHistory('BTCUSDT', '5m', 2000)
-chart.replayStart({ steps, startIndex: 120, paused: true, speed: 5 })
+<pre><code>{`chart.replayStart({ animate: true, step: 'auto', startIndex: 120, paused: true })
+// hoặc các nến nhỏ hơn bạn đã có cho những nến được tua lại: { steps, startIndex: 120 }
 chart.replayResume()
 chart.getReplayBarIndex()      // the chart bar forming now
 chart.replaySeekToBar(150)     // to the end of bar 150
@@ -225,6 +225,26 @@ chart.on('replayStep', (e) => e.payload)    // { barIndex, time, until, total, c
 chart.on('replayComplete', (e) => e.payload) // { barIndex, time }
 chart.on('replayState', (e) => e.payload)   // { state: 'playing' | 'paused' | 'stopped' }
 chart.replayStop()             // back to the live series`}</code></pre>
+
+<h3>Nến hình thành khi tua lại</h3>
+<p>
+  Với <code>animate: true</code>, mỗi nến lớn dần theo thời gian của nó như một nến đang chạy:
+  từ giá mở cửa đến cực trị mà hướng của nến cho biết đến trước (nến tăng chạm đáy trước),
+  rồi cực trị còn lại, rồi giá đóng cửa. Với <code>step</code> (<code>'auto'</code> hoặc một khung như
+  <code>'1m'</code>), biểu đồ tải các nến nhỏ hơn của những nến sắp tua qua
+  <code>fetchHistoryBefore</code> của nguồn dữ liệu đang kết nối, từng trang và chỉ khi đang chạy,
+  và mỗi nến hình thành theo chúng; <code>'auto'</code> là khung nhỏ nhất nguồn có với tối đa 60
+  nến con cho một nến. Khung hình cuối luôn là nến đúng như trong chuỗi. <code>steps</code> bạn
+  truyền vào được dùng theo cùng cách. Đồng hồ vẫn đếm nến của biểu đồ: <code>speed</code>,
+  <code>duration</code> và các chỉ số là nến, và <code>getReplayBarIndex()</code> là nến đang hình
+  thành. Tạm dừng giữ nguyên nến đang vẽ dở; tua hoặc bước tới hiện nến trọn vẹn. Tài khoản giả
+  lập khớp lệnh khi giá được vẽ chạm tới lệnh. Nến ngắn hơn ba khung hình hiện trọn, và khi hệ
+  thống yêu cầu giảm chuyển động, nến nhảy từ mức giá này sang mức giá kế tiếp.
+  <code>replayStepsLoad</code> báo <code>loading</code>, <code>loaded</code>, <code>end</code> hoặc
+  <code>error</code>; nến không có nến con hình thành từ giá của chính nó. ChartWidget làm điều này
+  mặc định: menu Bước bắt đầu ở <strong>Tự động</strong>; <code>replayStep</code>
+  (<code>'auto'</code>, <code>'bar'</code> hoặc một khung) và <code>replayAnimate: false</code> thay đổi nó.
+</p>
 
 <h3>Phát lại sống qua việc đổi nến</h3>
 <p>

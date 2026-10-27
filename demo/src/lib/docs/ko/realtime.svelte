@@ -210,8 +210,8 @@ replay.start()
   ChartWidget에서는 리플레이 바의 <strong>스텝</strong> 메뉴에 피드가 제공하는(또는 불러온 봉으로
   만들 수 있는) 더 작은 시간 단위가 나옵니다.
 </p>
-<pre><code>{`const steps = await adapter.fetchHistory('BTCUSDT', '5m', 2000)
-chart.replayStart({ steps, startIndex: 120, paused: true, speed: 5 })
+<pre><code>{`chart.replayStart({ animate: true, step: 'auto', startIndex: 120, paused: true })
+// 또는 재생할 봉의 더 작은 봉을 직접 넘긴다: { steps, startIndex: 120 }
 chart.replayResume()
 chart.getReplayBarIndex()      // the chart bar forming now
 chart.replaySeekToBar(150)     // to the end of bar 150
@@ -220,6 +220,21 @@ chart.on('replayStep', (e) => e.payload)    // { barIndex, time, until, total, c
 chart.on('replayComplete', (e) => e.payload) // { barIndex, time }
 chart.on('replayState', (e) => e.payload)   // { state: 'playing' | 'paused' | 'stopped' }
 chart.replayStop()             // back to the live series`}</code></pre>
+
+<h3>재생하며 만들어지는 봉</h3>
+<p>
+  <code>animate: true</code>이면 각 봉이 실시간 봉처럼 제 시간에 걸쳐 자랍니다. 시가에서 방향으로 보아 먼저 온
+  극값(상승 봉은 저가 먼저), 다른 극값, 그리고 종가로. <code>step</code>(<code>'auto'</code> 또는 <code>'1m'</code> 같은
+  주기)을 주면 차트가 연결된 피드의 <code>fetchHistoryBefore</code>로 곧 재생할 봉의 더 작은 봉을 재생하는 동안에만 한 페이지씩
+  가져오고, 각 봉은 그것을 따라 만들어집니다. <code>'auto'</code>는 피드가 제공하는, 봉 하나에 60개 이하인 가장 작은 주기입니다.
+  마지막 프레임은 언제나 시리즈에 있는 그 봉입니다. 직접 넘긴 <code>steps</code>도 같은 방식으로 쓰입니다. 시계는 계속 차트의 봉을
+  셉니다. <code>speed</code>, <code>duration</code>, 인덱스는 봉 단위이고 <code>getReplayBarIndex()</code>는 만들어지는 봉입니다.
+  일시정지는 그리다 만 봉을 그대로 두고, 이동이나 한 단계는 완성된 봉을 보여 줍니다. 모의 계좌는 그려진 가격이 주문에 닿을 때 체결됩니다.
+  세 프레임보다 짧은 봉은 완성된 채로 나오고, 움직임 줄이기 설정에서는 가격에서 가격으로 건너뜁니다. <code>replayStepsLoad</code>는
+  <code>loading</code>, <code>loaded</code>, <code>end</code>, <code>error</code>를 알립니다. 더 작은 봉이 없는 봉은 자기 가격으로
+  만들어집니다. ChartWidget은 기본으로 이렇게 합니다. 단계 메뉴는 <strong>자동</strong>에서 시작하고, <code>replayStep</code>
+  (<code>'auto'</code>, <code>'bar'</code> 또는 주기)과 <code>replayAnimate: false</code>로 바꿉니다.
+</p>
 
 <h3>리플레이는 봉이 바뀌어도 이어집니다</h3>
 <p>

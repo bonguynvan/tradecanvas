@@ -221,8 +221,8 @@ replay.start()
   <strong>Paso</strong> de la barra de repetición ofrece los intervalos más finos que tiene
   la fuente (o que se pueden construir con las barras que cargaste).
 </p>
-<pre><code>{`const steps = await adapter.fetchHistory('BTCUSDT', '5m', 2000)
-chart.replayStart({ steps, startIndex: 120, paused: true, speed: 5 })
+<pre><code>{`chart.replayStart({ animate: true, step: 'auto', startIndex: 120, paused: true })
+// o barras más finas que ya tienes para las barras que se reproducen: { steps, startIndex: 120 }
 chart.replayResume()
 chart.getReplayBarIndex()      // the chart bar forming now
 chart.replaySeekToBar(150)     // to the end of bar 150
@@ -231,6 +231,26 @@ chart.on('replayStep', (e) => e.payload)    // { barIndex, time, until, total, c
 chart.on('replayComplete', (e) => e.payload) // { barIndex, time }
 chart.on('replayState', (e) => e.payload)   // { state: 'playing' | 'paused' | 'stopped' }
 chart.replayStop()             // back to the live series`}</code></pre>
+
+<h3>Barras que se forman al reproducir</h3>
+<p>
+  Con <code>animate: true</code> cada barra crece durante su tiempo, como una barra en vivo: de su
+  apertura al extremo que su dirección indica que llegó primero (una barra alcista baja primero), el otro
+  y su cierre. Con <code>step</code> (<code>'auto'</code> o un intervalo como <code>'1m'</code>) el gráfico pide
+  las barras más finas de las barras que va a reproducir con el <code>fetchHistoryBefore</code> de la fuente
+  conectada, una página cada vez y solo mientras reproduce, y cada barra se forma siguiéndolas;
+  <code>'auto'</code> es el intervalo más fino que sirve la fuente con 60 como mucho por barra. El último
+  fotograma es siempre la barra tal como está en la serie. Los <code>steps</code> que pases se usan igual. El
+  reloj sigue contando las barras del gráfico: <code>speed</code>, <code>duration</code> y los índices son
+  barras, y <code>getReplayBarIndex()</code> es la barra que se forma. Una pausa conserva la barra a medio
+  dibujar; un salto o un paso muestra barras completas. Una cuenta simulada se ejecuta cuando el precio dibujado
+  llega a una orden. Las barras de menos de tres fotogramas llegan completas y, con movimiento reducido, la
+  barra salta de un precio al siguiente. <code>replayStepsLoad</code> avisa <code>loading</code>,
+  <code>loaded</code>, <code>end</code> o <code>error</code>; una barra sin barras más finas se forma con sus
+  propios precios. ChartWidget lo hace por defecto: su menú Paso empieza en <strong>Auto</strong>;
+  <code>replayStep</code> (<code>'auto'</code>, <code>'bar'</code> o un intervalo) y
+  <code>replayAnimate: false</code> lo cambian.
+</p>
 
 <h3>Una repetición sobrevive al cambio de velas</h3>
 <p>

@@ -208,8 +208,8 @@ replay.start()
   ChartWidget では、リプレイバーの<strong>ステップ</strong>メニューに、フィードが持つ下位の時間足
   （または読み込んだバーから組み立てられる時間足）が並びます。
 </p>
-<pre><code>{`const steps = await adapter.fetchHistory('BTCUSDT', '5m', 2000)
-chart.replayStart({ steps, startIndex: 120, paused: true, speed: 5 })
+<pre><code>{`chart.replayStart({ animate: true, step: 'auto', startIndex: 120, paused: true })
+// または、再生するバーの細かいバーを手元から渡す: { steps, startIndex: 120 }
 chart.replayResume()
 chart.getReplayBarIndex()      // the chart bar forming now
 chart.replaySeekToBar(150)     // to the end of bar 150
@@ -218,6 +218,22 @@ chart.on('replayStep', (e) => e.payload)    // { barIndex, time, until, total, c
 chart.on('replayComplete', (e) => e.payload) // { barIndex, time }
 chart.on('replayState', (e) => e.payload)   // { state: 'playing' | 'paused' | 'stopped' }
 chart.replayStop()             // back to the live series`}</code></pre>
+
+<h3>再生中に形づくられるバー</h3>
+<p>
+  <code>animate: true</code> にすると、各バーはライブのバーと同じように時間をかけて伸びます。始値から、
+  方向から見て先に来た極値（上昇バーは先に安値へ）、もう一方の極値、そして終値へ。<code>step</code>
+  （<code>'auto'</code> または <code>'1m'</code> などの時間足）を渡すと、チャートは接続中のフィードの
+  <code>fetchHistoryBefore</code> で、これから再生するバーの細かいバーを再生中にだけ 1 ページずつ取得し、各バーはそれに沿って形づくられます。
+  <code>'auto'</code> はフィードが提供する、1 本あたり 60 本以下の最も細かい時間足です。最後のフレームは常に系列どおりのバーです。
+  渡した <code>steps</code> も同じように使われます。時計はチャートのバーを数え続けます。<code>speed</code>、<code>duration</code>、
+  インデックスはバー単位で、<code>getReplayBarIndex()</code> は形成中のバーです。一時停止は描きかけのバーをそのまま保ち、
+  シークやステップは完成したバーを表示します。ペーパー口座は描かれた価格が注文に届いたときに約定します。3 フレームより短いバーは完成した形で現れ、
+  動きを減らす設定では価格から価格へ段階的に進みます。<code>replayStepsLoad</code> は <code>loading</code>、<code>loaded</code>、
+  <code>end</code>、<code>error</code> を伝えます。細かいバーのないバーは自身の価格から形づくられます。ChartWidget は既定でこう動きます。
+  ステップメニューは <strong>自動</strong> から始まり、<code>replayStep</code>（<code>'auto'</code>、<code>'bar'</code>、時間足）と
+  <code>replayAnimate: false</code> で変えられます。
+</p>
 
 <h3>リプレイはバーが変わっても続く</h3>
 <p>
