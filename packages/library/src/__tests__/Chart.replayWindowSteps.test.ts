@@ -154,6 +154,17 @@ describe('a replay fetches the finer bars of the bars it is about to play', () =
     expect(chart.getData()).toHaveLength(500);
   });
 
+  it('asks a disconnected feed for nothing more', async () => {
+    const adapter = await connected();
+    start();
+    chart.replayResume();
+    await play(100);
+    expect(minuteAsks(adapter)).toHaveLength(1);
+    chart.disconnectStream();
+    await play(12_000);
+    expect(minuteAsks(adapter)).toHaveLength(1);
+  });
+
   it('fetches nothing while bars come quicker than three frames', async () => {
     const adapter = await connected();
     start({ speed: 25 });

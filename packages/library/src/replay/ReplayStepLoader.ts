@@ -35,7 +35,7 @@ export class ReplayStepLoader {
   private readonly asked = new Set<number>();
   private inFlight = false;
   private lastAsk = -Infinity;
-  /** No more pages: the feed ran out, failed, can't page back, or the replay went. */
+  /** No more pages: the feed failed, can't page back, or the replay went. */
   private done = false;
   private readonly now: () => number;
 
@@ -99,8 +99,9 @@ export class ReplayStepLoader {
   private take(bars: OHLCBar[], before: number, page: DataSeries): void {
     if (this.done) return;
     this.inFlight = false;
+    // None for these bars (a venue keeps only recent ones, say): later bars may have some.
     if (page.length === 0) {
-      this.finish('end', 0);
+      this.options.report({ state: 'end', step: this.options.step, count: 0 });
       return;
     }
     const earliest = page.reduce((t, b) => Math.min(t, b.time), Infinity);

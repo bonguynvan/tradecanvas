@@ -3400,6 +3400,9 @@ export class Chart {
       this.history.setLoader(null);
       this.historyFromStream = false;
     }
+    // A replay's finer bars came from this feed: the next one connected brings its own.
+    this.replayLoader?.loader.dispose();
+    this.replayLoader = null;
     this.streamAdapter = null;
     // Bars set by hand after this aren't tick bars.
     this.tickStream = false;
