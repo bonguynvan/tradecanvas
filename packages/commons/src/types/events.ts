@@ -419,6 +419,12 @@ export interface ReplayStepPayload {
   barIndex: number;
   /** When it opened. */
   time: number;
+  /**
+   * When the step shown last opened: the bar's own time in whole bars, a
+   * finer bar's inside it in finer steps (14:05 inside the 14:00 bar).
+   * Where a panel reads the replay's date.
+   */
+  stepTime: number;
   /** The replay has shown everything before this time (the next step's). */
   until: number;
   /**

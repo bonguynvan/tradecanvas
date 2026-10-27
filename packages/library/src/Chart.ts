@@ -5029,7 +5029,7 @@ export class Chart {
       if (animate) this.feedReplayForming(coarse, index, formed?.index === index ? formed.path : this.replayPathOf(coarse, index), 1);
       else this.feedReplaySteps(series, index);
       const cause = this.replayCause !== null ? 'series' : stepForward ? 'play' : 'seek';
-      this.eventBus.emit('replayStep', { barIndex, time: coarse[barIndex].time, until, total: coarse.length, cause });
+      this.eventBus.emit('replayStep', { barIndex, time: coarse[barIndex].time, stepTime: series[index].time, until, total: coarse.length, cause });
     });
     if (!animate) return;
     this.replayPhaseUnsub = this.replayManager.on('phase', ({ index, fraction }) => {
