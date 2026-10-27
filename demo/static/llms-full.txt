@@ -253,7 +253,11 @@ chart.on('replayComplete', () => chart.replayStop());   // every bar and mark ba
 ```
 
 `replayPause`, `replayResume`, `replaySeekToTime` and `replaySeekToBar` steer it;
-`revealMarks: false` shows every mark from the start.
+`revealMarks: false` shows every mark from the start. A replay is a time over the
+live series: `setData`, a new symbol or timeframe, older bars and the extended hours
+carry it over to the same time (it waits while a new series loads), so its indices
+change with the bars. Keep a position by time (`getReplayProgress().until`, then
+`replaySeekToTime`), and call `replayStop()` first to end it on a new series.
 
 ## Saving layouts
 
@@ -640,6 +644,11 @@ chart.replayStart({ steps, startIndex: 300, paused: true, speed: 5 });
 chart.replayResume();
 // … place orders from the chart; chart.replaySeekToBar(i) jumps, chart.replayStop() goes back to live
 ```
+
+Switching the interval mid-replay keeps the time: the replay waits for the new
+bars and goes on there (fetch finer steps for the new interval and start again
+from `getReplayProgress().until` if you want them). Switching the symbol ends a
+replay the paper account trades, since its orders are of the old symbol.
 
 ## Another symbol's change beside yours, in percent
 

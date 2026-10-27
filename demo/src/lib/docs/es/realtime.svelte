@@ -226,11 +226,34 @@ chart.replayStart({ steps, startIndex: 120, paused: true, speed: 5 })
 chart.replayResume()
 chart.getReplayBarIndex()      // the chart bar forming now
 chart.replaySeekToBar(150)     // to the end of bar 150
-chart.replaySeekToTime(t)      // to the bars that opened before t
-chart.on('replayStep', (e) => e.payload)    // { barIndex, time, until, total }
+chart.replaySeekToTime(t)      // to the bars that closed by t
+chart.on('replayStep', (e) => e.payload)    // { barIndex, time, until, total, cause }
 chart.on('replayComplete', (e) => e.payload) // { barIndex, time }
 chart.on('replayState', (e) => e.payload)   // { state: 'playing' | 'paused' | 'stopped' }
 chart.replayStop()             // back to the live series`}</code></pre>
+
+<h3>Una repetición sobrevive al cambio de velas</h3>
+<p>
+  Una repetición es un instante sobre la serie en vivo. Cuando las velas cambian — otro
+  símbolo o temporalidad con <code>connect</code> o <code>switchStream</code>,
+  <code>setData</code>, velas más antiguas cargadas, el horario extendido, una vela corregida —
+  sigue sobre las velas nuevas en el instante al que había llegado, y solo muestra velas
+  cerradas hasta entonces. Mientras carga una serie nueva, la repetición espera, reproduciendo
+  o en pausa como estaba. Los índices (<code>barIndex</code>, <code>total</code>,
+  <code>replaySeekToBar</code>) son de las velas que se repiten ahora y cambian con ellas;
+  guarda una posición por tiempo. Una repetición en la que opera una cuenta de papel termina
+  cuando cambia el símbolo. En ChartWidget la barra de repetición sigue abierta, dice
+  <em>Cargando gráfico</em> y espera mientras cargan las velas, y luego sigue su total y los
+  pasos de la nueva temporalidad.
+</p>
+<pre><code>{`chart.replayStart({ startIndex: 300, paused: true })
+await chart.setTimeframe('1h')        // the replay waits, then goes on at the same time
+const { until } = chart.getReplayProgress()   // keep a position by time, not by index
+chart.replaySeekToTime(until)         // back to it, on any interval
+chart.on('replayStep', (e) => {
+  if (e.payload.cause === 'series') {}  // carried over: barIndex and total are the new bars'
+})
+chart.replayStop()                    // call it first to end the replay as before`}</code></pre>
 
 <h3>Una repetición en tu propia app</h3>
 <p>

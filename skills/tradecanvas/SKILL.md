@@ -217,7 +217,11 @@ chart.on('replayComplete', () => chart.replayStop());   // every bar and mark ba
 ```
 
 `replayPause`, `replayResume`, `replaySeekToTime` and `replaySeekToBar` steer it;
-`revealMarks: false` shows every mark from the start.
+`revealMarks: false` shows every mark from the start. A replay is a time over the
+live series: `setData`, a new symbol or timeframe, older bars and the extended hours
+carry it over to the same time (it waits while a new series loads), so its indices
+change with the bars. Keep a position by time (`getReplayProgress().until`, then
+`replaySeekToTime`), and call `replayStop()` first to end it on a new series.
 
 ## Saving layouts
 

@@ -215,11 +215,31 @@ chart.replayStart({ steps, startIndex: 120, paused: true, speed: 5 })
 chart.replayResume()
 chart.getReplayBarIndex()      // the chart bar forming now
 chart.replaySeekToBar(150)     // to the end of bar 150
-chart.replaySeekToTime(t)      // to the bars that opened before t
-chart.on('replayStep', (e) => e.payload)    // { barIndex, time, until, total }
+chart.replaySeekToTime(t)      // to the bars that closed by t
+chart.on('replayStep', (e) => e.payload)    // { barIndex, time, until, total, cause }
 chart.on('replayComplete', (e) => e.payload) // { barIndex, time }
 chart.on('replayState', (e) => e.payload)   // { state: 'playing' | 'paused' | 'stopped' }
 chart.replayStop()             // back to the live series`}</code></pre>
+
+<h3>리플레이는 봉이 바뀌어도 이어집니다</h3>
+<p>
+  리플레이는 실시간 시리즈 위의 한 시점입니다. 봉이 바뀌면 — <code>connect</code> 나
+  <code>switchStream</code> 으로 바꾼 종목이나 시간 단위, <code>setData</code>, 불러온 과거 봉,
+  장외 시간, 수정된 봉 — 도달했던 시점 그대로 새 봉 위에서 이어지고, 그때까지 마감된 봉만 보여 줍니다.
+  새 시리즈를 불러오는 동안 리플레이는 재생 중이든 일시 정지든 그 상태로 기다립니다. 인덱스
+  (<code>barIndex</code>, <code>total</code>, <code>replaySeekToBar</code>)는 지금 리플레이하는
+  봉의 것이며 봉과 함께 바뀝니다. 위치는 시간으로 기억하세요. 모의 계좌가 리플레이에서 거래 중이면
+  종목이 바뀔 때 리플레이가 끝납니다. ChartWidget 에서는 리플레이 바가 열린 채로, 봉을 불러오는 동안
+  <em>차트를 불러오는 중</em>을 표시하며 기다린 뒤 새 총 개수와 새 시간 단위의 단계를 따릅니다.
+</p>
+<pre><code>{`chart.replayStart({ startIndex: 300, paused: true })
+await chart.setTimeframe('1h')        // the replay waits, then goes on at the same time
+const { until } = chart.getReplayProgress()   // keep a position by time, not by index
+chart.replaySeekToTime(until)         // back to it, on any interval
+chart.on('replayStep', (e) => {
+  if (e.payload.cause === 'series') {}  // carried over: barIndex and total are the new bars'
+})
+chart.replayStop()                    // call it first to end the replay as before`}</code></pre>
 
 <h3>내 앱에서의 리플레이</h3>
 <p>

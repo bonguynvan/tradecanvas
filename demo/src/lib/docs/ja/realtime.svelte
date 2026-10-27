@@ -213,11 +213,32 @@ chart.replayStart({ steps, startIndex: 120, paused: true, speed: 5 })
 chart.replayResume()
 chart.getReplayBarIndex()      // the chart bar forming now
 chart.replaySeekToBar(150)     // to the end of bar 150
-chart.replaySeekToTime(t)      // to the bars that opened before t
-chart.on('replayStep', (e) => e.payload)    // { barIndex, time, until, total }
+chart.replaySeekToTime(t)      // to the bars that closed by t
+chart.on('replayStep', (e) => e.payload)    // { barIndex, time, until, total, cause }
 chart.on('replayComplete', (e) => e.payload) // { barIndex, time }
 chart.on('replayState', (e) => e.payload)   // { state: 'playing' | 'paused' | 'stopped' }
 chart.replayStop()             // back to the live series`}</code></pre>
+
+<h3>リプレイはバーが変わっても続く</h3>
+<p>
+  リプレイはライブ系列の上の一つの時刻です。バーが変わると —
+  <code>connect</code> や <code>switchStream</code> による別の銘柄や時間足、<code>setData</code>、
+  読み込まれた過去のバー、時間外取引、修正されたバー — 到達していた時刻のまま新しいバーの上で続き、
+  その時点までに確定したバーだけを表示します。新しい系列の読み込み中は、再生中か一時停止かを保ったまま待ちます。
+  インデックス(<code>barIndex</code>、<code>total</code>、<code>replaySeekToBar</code>)は
+  いまリプレイしているバーのもので、バーと一緒に変わります。位置は時刻で保持してください。
+  ペーパー口座がリプレイで取引している場合、銘柄が変わるとリプレイは終了します。ChartWidget では
+  リプレイバーは開いたまま、バーの読み込み中は <em>チャートを読み込み中</em> と表示して待ち、
+  その後バーの総数と新しい時間足のステップに従います。
+</p>
+<pre><code>{`chart.replayStart({ startIndex: 300, paused: true })
+await chart.setTimeframe('1h')        // the replay waits, then goes on at the same time
+const { until } = chart.getReplayProgress()   // keep a position by time, not by index
+chart.replaySeekToTime(until)         // back to it, on any interval
+chart.on('replayStep', (e) => {
+  if (e.payload.cause === 'series') {}  // carried over: barIndex and total are the new bars'
+})
+chart.replayStop()                    // call it first to end the replay as before`}</code></pre>
 
 <h3>自分のアプリでのリプレイ</h3>
 <p>

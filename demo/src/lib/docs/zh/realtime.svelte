@@ -208,11 +208,30 @@ chart.replayStart({ steps, startIndex: 120, paused: true, speed: 5 })
 chart.replayResume()
 chart.getReplayBarIndex()      // the chart bar forming now
 chart.replaySeekToBar(150)     // to the end of bar 150
-chart.replaySeekToTime(t)      // to the bars that opened before t
-chart.on('replayStep', (e) => e.payload)    // { barIndex, time, until, total }
+chart.replaySeekToTime(t)      // to the bars that closed by t
+chart.on('replayStep', (e) => e.payload)    // { barIndex, time, until, total, cause }
 chart.on('replayComplete', (e) => e.payload) // { barIndex, time }
 chart.on('replayState', (e) => e.payload)   // { state: 'playing' | 'paused' | 'stopped' }
 chart.replayStop()             // back to the live series`}</code></pre>
+
+<h3>回放跨越K线的变化</h3>
+<p>
+  回放是实时序列上的一个时间点。当K线变化时——通过 <code>connect</code> 或
+  <code>switchStream</code> 切换品种或周期、<code>setData</code>、加载更早的K线、盘前盘后时段、
+  修正某根K线——回放会在新的K线上从已到达的时间继续,只显示那时已收盘的K线。新序列加载期间,
+  回放会等待,保持原来的播放或暂停状态。索引(<code>barIndex</code>、<code>total</code>、
+  <code>replaySeekToBar</code>)属于当前回放的K线,会随之改变;请用时间来记住位置。
+  模拟账户在回放中交易时,切换品种会结束回放。在 ChartWidget 中,回放栏保持打开,K线加载时显示
+  <em>图表加载中</em>并等待,随后跟随新的总数和新周期的步长。
+</p>
+<pre><code>{`chart.replayStart({ startIndex: 300, paused: true })
+await chart.setTimeframe('1h')        // the replay waits, then goes on at the same time
+const { until } = chart.getReplayProgress()   // keep a position by time, not by index
+chart.replaySeekToTime(until)         // back to it, on any interval
+chart.on('replayStep', (e) => {
+  if (e.payload.cause === 'series') {}  // carried over: barIndex and total are the new bars'
+})
+chart.replayStop()                    // call it first to end the replay as before`}</code></pre>
 
 <h3>在你自己的应用中回放</h3>
 <p>

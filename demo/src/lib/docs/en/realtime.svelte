@@ -219,11 +219,32 @@ chart.replayStart({ steps, startIndex: 120, paused: true, speed: 5 })
 chart.replayResume()
 chart.getReplayBarIndex()      // the chart bar forming now
 chart.replaySeekToBar(150)     // to the end of bar 150
-chart.replaySeekToTime(t)      // to the bars that opened before t
-chart.on('replayStep', (e) => e.payload)    // { barIndex, time, until, total }
+chart.replaySeekToTime(t)      // to the bars that closed by t
+chart.on('replayStep', (e) => e.payload)    // { barIndex, time, until, total, cause }
 chart.on('replayComplete', (e) => e.payload) // { barIndex, time }
 chart.on('replayState', (e) => e.payload)   // { state: 'playing' | 'paused' | 'stopped' }
 chart.replayStop()             // back to the live series`}</code></pre>
+
+<h3>A replay outlives the bars</h3>
+<p>
+  A replay is a time over the live series. When the bars change — a new symbol or
+  timeframe through <code>connect</code> or <code>switchStream</code>, <code>setData</code>,
+  older bars paged in, the extended hours, a corrected bar — it goes on over the new bars at
+  the time it had reached, and shows only bars that closed by then. While a new series
+  loads, the replay waits, playing or paused as it was. Indices (<code>barIndex</code>,
+  <code>total</code>, <code>replaySeekToBar</code>) are of the bars replayed now and change
+  with them; keep a position by time. A replay a paper account trades ends when the symbol
+  changes. In ChartWidget the replay bar stays open, says <em>Loading chart</em> and waits
+  while the bars load, then follows their total and the new interval's steps.
+</p>
+<pre><code>{`chart.replayStart({ startIndex: 300, paused: true })
+await chart.setTimeframe('1h')        // the replay waits, then goes on at the same time
+const { until } = chart.getReplayProgress()   // keep a position by time, not by index
+chart.replaySeekToTime(until)         // back to it, on any interval
+chart.on('replayStep', (e) => {
+  if (e.payload.cause === 'series') {}  // carried over: barIndex and total are the new bars'
+})
+chart.replayStop()                    // call it first to end the replay as before`}</code></pre>
 
 <h3>A replay in your own app</h3>
 <p>

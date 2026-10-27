@@ -220,11 +220,32 @@ chart.replayStart({ steps, startIndex: 120, paused: true, speed: 5 })
 chart.replayResume()
 chart.getReplayBarIndex()      // the chart bar forming now
 chart.replaySeekToBar(150)     // to the end of bar 150
-chart.replaySeekToTime(t)      // to the bars that opened before t
-chart.on('replayStep', (e) => e.payload)    // { barIndex, time, until, total }
+chart.replaySeekToTime(t)      // to the bars that closed by t
+chart.on('replayStep', (e) => e.payload)    // { barIndex, time, until, total, cause }
 chart.on('replayComplete', (e) => e.payload) // { barIndex, time }
 chart.on('replayState', (e) => e.payload)   // { state: 'playing' | 'paused' | 'stopped' }
 chart.replayStop()             // back to the live series`}</code></pre>
+
+<h3>Phát lại sống qua việc đổi nến</h3>
+<p>
+  Phát lại là một mốc thời gian trên chuỗi nến trực tiếp. Khi nến thay đổi — mã hoặc khung
+  thời gian mới qua <code>connect</code> hay <code>switchStream</code>, <code>setData</code>,
+  nến cũ hơn được tải thêm, giờ ngoài phiên, một nến được sửa — nó tiếp tục trên nến mới tại
+  đúng thời điểm đã tới, và chỉ hiện những nến đã đóng trước đó. Trong lúc chuỗi mới đang tải,
+  phát lại chờ, vẫn đang chạy hay tạm dừng như trước. Các chỉ số (<code>barIndex</code>,
+  <code>total</code>, <code>replaySeekToBar</code>) là của chuỗi đang phát lại và đổi theo nó;
+  hãy giữ vị trí bằng thời gian. Phát lại mà tài khoản giấy giao dịch trên đó sẽ kết thúc khi
+  đổi mã. Trong ChartWidget, thanh phát lại vẫn mở, hiện <em>Đang tải biểu đồ</em> và chờ khi
+  nến đang tải, rồi theo tổng số nến và các bước của khung thời gian mới.
+</p>
+<pre><code>{`chart.replayStart({ startIndex: 300, paused: true })
+await chart.setTimeframe('1h')        // the replay waits, then goes on at the same time
+const { until } = chart.getReplayProgress()   // keep a position by time, not by index
+chart.replaySeekToTime(until)         // back to it, on any interval
+chart.on('replayStep', (e) => {
+  if (e.payload.cause === 'series') {}  // carried over: barIndex and total are the new bars'
+})
+chart.replayStop()                    // call it first to end the replay as before`}</code></pre>
 
 <h3>Phát lại trong ứng dụng của bạn</h3>
 <p>

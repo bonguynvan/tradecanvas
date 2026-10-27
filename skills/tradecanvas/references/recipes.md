@@ -256,6 +256,11 @@ chart.replayResume();
 // … place orders from the chart; chart.replaySeekToBar(i) jumps, chart.replayStop() goes back to live
 ```
 
+Switching the interval mid-replay keeps the time: the replay waits for the new
+bars and goes on there (fetch finer steps for the new interval and start again
+from `getReplayProgress().until` if you want them). Switching the symbol ends a
+replay the paper account trades, since its orders are of the old symbol.
+
 ## Another symbol's change beside yours, in percent
 
 ETH's line on BTC's chart, each reading its change since the first bar on
