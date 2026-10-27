@@ -5186,7 +5186,8 @@ export class ChartWidget {
     if (this.seriesPending()) return;
     this.replayPickTime = null;
     const bars = this.chart.getData();
-    if (bars.length === 0) return;
+    // Another symbol's bars may not reach the time: the bar asks for a pick again.
+    if (!pickWithin(bars, time)) return;
     let index = 0;
     while (index + 1 < bars.length && bars[index + 1].time <= time) index++;
     this.startReplayAt(index, false, true);
@@ -5969,4 +5970,16 @@ function unionRects(rects: (Box | null)[]): Box | null {
 
 function isRtlLocale(locale: string | undefined): boolean {
   return !!locale && /^(ar|he|iw|fa|ur|ps|yi|dv|ckb|sd|ug)(-|$)/i.test(locale);
+}
+
+/**
+ * Whether `time` falls in the span of `bars`: from the first bar's start to the last one's
+ * end, the last bar taken as long as the one before it.
+ */
+function pickWithin(bars: readonly { time: number }[], time: number): boolean {
+  const n = bars.length;
+  if (n === 0 || time < bars[0].time) return false;
+  const last = bars[n - 1].time;
+  const lastSpan = n > 1 ? last - bars[n - 2].time : 0;
+  return time < last + lastSpan || time === last;
 }

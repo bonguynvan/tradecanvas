@@ -4,7 +4,7 @@
 
 ### Replay
 
-- **A bar picked while the bars load starts the replay once they come** (`@tradecanvas/chart`). In ChartWidget, a bar clicked to start a replay while another symbol's or timeframe's bars loaded was dropped, and the replay bar still asked for a bar once they were in. Now the time of the bar clicked is kept: the bar says Loading chart until the bars are in, then the replay starts at the bar that holds that time. Nothing starts if they fail to load or the pick is left.
+- **A bar picked while the bars load starts the replay once they come** (`@tradecanvas/chart`). In ChartWidget, a bar clicked to start a replay while another symbol's or timeframe's bars loaded was dropped, and the replay bar still asked for a bar once they were in. Now the time of the bar clicked is kept: the bar says Loading chart until the bars are in, then the replay starts at the bar that holds that time. Nothing starts if they fail to load or the pick is left, and the bar asks again if the new bars don't reach that time (another symbol's shorter history).
 
 ## 1.53.0 (2026-10-27)
 

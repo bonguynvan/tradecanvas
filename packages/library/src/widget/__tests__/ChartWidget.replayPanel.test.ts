@@ -334,6 +334,39 @@ describe('Select bar: picking again inside the replay', async () => {
     expect(a.chart.replays).toHaveLength(0);
   });
 
+  // Another symbol's bars may not reach the time picked: starting at their first or last bar would
+  // replay nothing the user chose, so the bar keeps asking for one.
+  it('a bar picked while the next bars load is let go when they don\'t hold its time', async () => {
+    for (const offset of [-5 * H, 60 * H]) {
+      const a = await make();
+      a.widget.toggleReplay();
+      const loading = (a.widget as unknown as { loading: { begin(c: boolean, i: boolean): void; end(): void } }).loading;
+      const sync = () => (a.widget as unknown as { syncReplayBar(): void }).syncReplayBar();
+      loading.begin(true, true);
+      sync();
+      a.chart.emit('barClick', { barIndex: 0, bar: { time: T0 + offset } });
+      loading.end();
+      sync();
+      expect(a.chart.replays).toHaveLength(0);
+      expect(a.host.querySelector('.tcw-replay-bar')?.getAttribute('data-mode')).toBe('select');
+    }
+  });
+
+  it('a bar picked while the next bars load is let go when the pick is cancelled', async () => {
+    const a = await make();
+    a.widget.replayFrom(10);
+    act(a.host, 'selectBar').click();
+    const loading = (a.widget as unknown as { loading: { begin(c: boolean, i: boolean): void; end(): void } }).loading;
+    const sync = () => (a.widget as unknown as { syncReplayBar(): void }).syncReplayBar();
+    loading.begin(true, true);
+    a.chart.emit('barClick', { barIndex: 3, bar: { time: T0 + 3 * H } });
+    act(a.host, 'cancel').click();
+    sync();
+    loading.end();
+    sync();
+    expect(a.chart.replays).toHaveLength(1);
+  });
+
   it('Random bar draws from the chart\'s bars, not the steps of a replay in finer steps', async () => {
     const a = await make();
     a.widget.replayFrom(10);
