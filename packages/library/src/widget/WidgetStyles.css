@@ -2302,8 +2302,8 @@
   color: var(--tcw-text);
   white-space: nowrap;
 }
-.tcw-replay-bar[aria-busy='true'] .tcw-replay-time,
-.tcw-replay-bar[aria-busy='true'] .tcw-replay-hint { color: var(--tcw-text-muted); }
+.tcw-replay-group[aria-busy='true'] .tcw-replay-time,
+.tcw-replay-group[aria-busy='true'] .tcw-replay-hint { color: var(--tcw-text-muted); }
 
 .tcw-root input[type='range'].tcw-replay-scrubber {
   --tcw-replay-rest: var(--tcw-border-strong);

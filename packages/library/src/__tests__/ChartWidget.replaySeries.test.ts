@@ -77,7 +77,7 @@ describe('ChartWidget replay while the bars change', () => {
     await vi.advanceTimersByTimeAsync(65);
     widget.toggleReplay();
     await vi.advanceTimersByTimeAsync(200);
-    const bar = q('.tcw-replay-bar')!;
+    const bar = q('.tcw-replay-picking')!; // its controls are busy, not its status region
     expect(bar.getAttribute('aria-busy')).toBe('true');
     expect(q('.tcw-replay-hint')!.textContent).toContain('Loading chart');
     expect(q<HTMLButtonElement>('[data-act="random"]')!.disabled).toBe(true);

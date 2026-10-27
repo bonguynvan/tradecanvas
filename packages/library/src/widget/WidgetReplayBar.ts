@@ -99,6 +99,8 @@ const FIT_TIERS: readonly ReplayBarFit[] = ['full', 'compact', 'stack'];
 const ANNOUNCE_REST_MS = 300;
 /** The played part's share is written to two decimals. */
 const PERCENT_DECIMALS = 2;
+/** The controls that wait while the bars load (Play stays: the chart keeps a press). */
+const WAITING_ACTS: readonly string[] = ['random', 'stepBack', 'stepForward', 'seek', 'step', 'selectBar'];
 
 export interface ReplayBarMountOptions {
   total: number;
@@ -204,7 +206,8 @@ export class WidgetReplayBar {
     this.mode = mode;
     this.syncUi();
     if (!hadFocus) return;
-    if (mode === 'replay') this.playBtn?.focus();
+    // Play is off at the end: the way back to realtime then, not the page.
+    if (mode === 'replay') (this.playBtn && !this.playBtn.disabled ? this.playBtn : this.realtimeBtn)?.focus();
     else this.root?.querySelector<HTMLButtonElement>('[data-act="random"]')?.focus();
   }
 
@@ -233,7 +236,13 @@ export class WidgetReplayBar {
   setPending(pending: boolean): void {
     if (this.pending === pending) return;
     this.pending = pending;
+    // A control about to wait loses focus to Play, which doesn't, rather than to the page.
+    const focused = document.activeElement as HTMLElement | null;
+    if (pending && focused && focused !== this.playBtn && this.root?.contains(focused) && WAITING_ACTS.includes(focused.dataset.act ?? '')) {
+      this.playBtn?.focus();
+    }
     this.syncUi();
+    if (pending && this.mode === 'replay') this.announce(this.labels.loading);
   }
 
   isPending(): boolean {
@@ -275,8 +284,9 @@ export class WidgetReplayBar {
       const shownChars = Number.parseFloat(this.timeLabel.style.minInlineSize) || 0;
       if (where.length > shownChars) this.timeLabel.style.minInlineSize = `${where.length}ch`;
     }
-    // Each step taken by hand is said; a run plays on unsaid.
-    if (moved && this.mode === 'replay' && this.state !== 'playing') this.announce(where);
+    // Each step taken by hand is said; a run plays on unsaid; the focused track says its own value.
+    const onTrack = this.scrubber !== null && document.activeElement === this.scrubber;
+    if (moved && this.mode === 'replay' && this.state !== 'playing' && !onTrack) this.announce(where);
   }
 
   /**
@@ -289,9 +299,33 @@ export class WidgetReplayBar {
     for (const tier of FIT_TIERS) {
       if (tier === 'stack' || this.widthIn(tier) <= room) {
         root.dataset.fit = tier;
+        this.orderFor(tier);
         return;
       }
     }
+  }
+
+  /**
+   * On a phone the track and the close button take the first row: they go
+   * first in the page too, so Tab follows the rows shown (and back after).
+   */
+  private orderFor(tier: ReplayBarFit): void {
+    const root = this.root;
+    const timeline = root?.querySelector<HTMLElement>('.tcw-replay-timeline');
+    const transport = root?.querySelector<HTMLElement>('.tcw-replay-transport');
+    const realtime = this.realtimeBtn;
+    if (!root || !timeline || !transport || !realtime) return;
+    const stacked = tier === 'stack';
+    if (stacked === (timeline.nextElementSibling === realtime)) return;
+    const focused = document.activeElement as HTMLElement | null;
+    if (stacked) {
+      transport.before(timeline, realtime);
+    } else {
+      transport.nextElementSibling?.after(timeline);
+      root.querySelector('[data-act="cancel"]')?.before(realtime);
+    }
+    // Moving an element can drop its focus.
+    if (focused && root.contains(focused) && document.activeElement !== focused) focused.focus();
   }
 
   getFit(): ReplayBarFit {
@@ -448,12 +482,18 @@ export class WidgetReplayBar {
     }
   }
 
-  /** While the bars are on their way: busy, the hint says so, and the controls that pick or move wait. */
+  /**
+   * While the bars are on their way: the controls' groups are busy (not the
+   * bar, whose status region would be held back), the hint says so, and the
+   * controls that pick or move wait.
+   */
   private syncPending(root: HTMLElement): void {
-    if (this.pending) root.setAttribute('aria-busy', 'true');
-    else root.removeAttribute('aria-busy');
+    for (const group of root.querySelectorAll<HTMLElement>('.tcw-replay-group')) {
+      if (this.pending) group.setAttribute('aria-busy', 'true');
+      else group.removeAttribute('aria-busy');
+    }
     if (this.hintText) this.hintText.textContent = this.pending ? this.labels.loading : this.labels.selectHint;
-    for (const act of ['random', 'stepBack', 'stepForward', 'seek', 'step', 'selectBar']) {
+    for (const act of WAITING_ACTS) {
       const control = root.querySelector<HTMLButtonElement | HTMLInputElement | HTMLSelectElement>(`[data-act="${act}"]`);
       if (control) control.disabled = this.pending;
     }

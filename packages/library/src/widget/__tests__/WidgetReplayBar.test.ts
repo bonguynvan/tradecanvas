@@ -167,6 +167,32 @@ describe('WidgetReplayBar: keyboard', () => {
   });
 });
 
+describe('WidgetReplayBar: focus', () => {
+  it('lands on Back to realtime, not on a disabled Play, after Cancel on a finished replay', () => {
+    bar.setMode('replay');
+    bar.setEnded(true);
+    bar.setMode('select');
+    q<HTMLButtonElement>('[data-act="cancel"]').focus();
+    bar.setMode('replay');
+    expect(document.activeElement).toBe(q('[data-act="realtime"]'));
+  });
+
+  it('on a phone tabs in the order shown: the track and the close button first', () => {
+    bar.setMode('replay');
+    bar.setRoom(-1);
+    expect(q('.tcw-replay-bar').dataset.fit).toBe('stack');
+    const order = () => [...host.querySelectorAll<HTMLElement>('button, input, select')]
+      .filter((el) => !el.closest('[hidden]'))
+      .map((el) => el.dataset.act);
+    expect(order()).toEqual(['seek', 'realtime', 'stepBack', 'play', 'stepForward', 'speed', 'step', 'selectBar']);
+    const track = q<HTMLInputElement>('input[data-act="seek"]');
+    track.focus();
+    bar.setRoom(1300);
+    expect(order()).toEqual(['stepBack', 'play', 'stepForward', 'seek', 'speed', 'step', 'selectBar', 'realtime']);
+    expect(document.activeElement).toBe(track);
+  });
+});
+
 describe('WidgetReplayBar: what assistive technology hears', () => {
   beforeEach(() => {
     vi.useFakeTimers();
@@ -191,6 +217,14 @@ describe('WidgetReplayBar: what assistive technology hears', () => {
     expect(live()).toBe('Replay ended at Oct 22 · 15:00');
   });
 
+  it('leaves a move on the focused track to the track, which says it', () => {
+    q<HTMLInputElement>('input[data-act="seek"]').focus();
+    bar.setProgress(120, 300, 'Oct 22 · 16:00');
+    vi.advanceTimersByTime(400);
+    expect(live()).toBe('');
+    expect(q('input[data-act="seek"]').getAttribute('aria-valuetext')).toBe('Oct 22 · 16:00');
+  });
+
   it('says a burst of steps once, when the keys rest', () => {
     const region = q('[role="status"][data-tcw="announce"]');
     const writes: string[] = [];
@@ -209,16 +243,29 @@ describe('WidgetReplayBar: what assistive technology hears', () => {
 describe('WidgetReplayBar while the bars load', () => {
   it('is busy, the hint says so, and the controls that pick or move wait (Play stays)', () => {
     bar.setPending(true);
-    expect(q('.tcw-replay-bar').getAttribute('aria-busy')).toBe('true');
+    // Its groups are busy, not the bar: the status region stays outside them.
+    expect(q('.tcw-replay-bar').hasAttribute('aria-busy')).toBe(false);
+    expect(q('.tcw-replay-picking').getAttribute('aria-busy')).toBe('true');
+    expect(q('[data-tcw="announce"]').closest('[aria-busy]')).toBeNull();
     expect(q('.tcw-replay-hint').textContent).toBe('Loading chart...');
     for (const act of ['random', 'seek', 'stepForward', 'selectBar']) {
       expect(q<HTMLButtonElement>(`[data-act="${act}"]`).disabled).toBe(true);
     }
     expect(q<HTMLButtonElement>('[data-act="play"]').disabled).toBe(false);
     bar.setPending(false);
-    expect(q('.tcw-replay-bar').hasAttribute('aria-busy')).toBe(false);
+    expect(host.querySelector('[aria-busy]')).toBeNull();
     expect(q('.tcw-replay-hint').textContent).toBe('Bấm vào một nến');
     expect(q<HTMLButtonElement>('[data-act="random"]').disabled).toBe(false);
+  });
+
+  it('says it is loading during a replay, and moves focus off a control that waits', () => {
+    vi.useFakeTimers();
+    bar.setMode('replay');
+    q<HTMLButtonElement>('[data-act="stepForward"]').focus();
+    bar.setPending(true);
+    expect(document.activeElement).toBe(q('[data-act="play"]'));
+    vi.advanceTimersByTime(400);
+    expect(q('[data-tcw="announce"]').textContent).toBe('Loading chart...');
   });
 
   it('offers new steps', () => {
