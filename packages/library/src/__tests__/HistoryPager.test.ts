@@ -31,6 +31,19 @@ function deferred<T>() {
 }
 
 describe('HistoryPager', () => {
+  it('answers a loadMore while a page is on its way with that page, not with none', async () => {
+    const { pager } = setup();
+    const page = deferred<OHLCBar[]>();
+    const loader = vi.fn(() => page.promise);
+    pager.setLoader(loader, 30);
+    const first = pager.loadMore();
+    const second = pager.loadMore();
+    page.resolve(bars(70, 30));
+    expect(await second).toBe(30);
+    expect(await first).toBe(30);
+    expect(loader).toHaveBeenCalledTimes(1);
+  });
+
   it('asks for a page before the oldest bar once the view gets close to it', async () => {
     const { pager, events, data } = setup();
     const loader = vi.fn(async (before: number, limit: number) => bars(before - limit, limit));

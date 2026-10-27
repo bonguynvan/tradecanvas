@@ -45,6 +45,8 @@ export class HistoryPager {
   private retryAt = 0;
   /** Bumped whenever an in-flight page must be dropped. */
   private seq = 0;
+  /** The page on its way: a loadMore meanwhile waits for it rather than finding none. */
+  private inFlight: Promise<number> | null = null;
 
   constructor(private readonly host: HistoryPagerHost) {}
 
@@ -89,8 +91,18 @@ export class HistoryPager {
     void this.loadMore();
   }
 
-  /** Load one page now, whatever the wait after a failure. Resolves to the number of bars added. */
-  async loadMore(): Promise<number> {
+  /**
+   * Load one page now, whatever the wait after a failure. Resolves to the
+   * number of bars added; while a page is on its way, to that page's.
+   */
+  loadMore(): Promise<number> {
+    if (this.loading && this.inFlight) return this.inFlight;
+    const page = this.loadPage();
+    this.inFlight = page;
+    return page;
+  }
+
+  private async loadPage(): Promise<number> {
     const loader = this.loader;
     const before = this.host.oldestTime();
     if (!loader || !this.canLoad() || before === null) return 0;
