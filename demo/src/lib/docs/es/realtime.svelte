@@ -251,6 +251,7 @@ chart.replayStop()             // back to the live series`}</code></pre>
   <code>replayStep</code> (<code>'auto'</code>, <code>'bar'</code> o un intervalo) y
   <code>replayAnimate: false</code> lo cambian. Con una fuente sin
   <code>fetchHistoryBefore</code>, el widget obtiene las barras más finas en una sola petición antes de que empiece la reproducción.
+  Con <code>replayAnimate: false</code>, Auto reproduce barras enteras; un intervalo más fino elegido avanza en pasos propios.
 </p>
 
 <h3>La barra de repetición en ChartWidget</h3>
@@ -288,7 +289,7 @@ chart.replayStop()             // back to the live series`}</code></pre>
 <pre><code>{`chart.replayStart({ startIndex: 300, paused: true })
 await chart.setTimeframe('1h')        // the replay waits, then goes on at the same time
 const { until } = chart.getReplayProgress()   // keep a position by time, not by index
-chart.replaySeekToTime(until)         // back to it, on any interval
+if (until !== null) chart.replaySeekToTime(until)   // back to it, on any interval
 chart.on('replayStep', (e) => {
   if (e.payload.cause === 'series') {}  // carried over: barIndex and total are the new bars'
 })

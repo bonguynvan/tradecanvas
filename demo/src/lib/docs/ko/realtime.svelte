@@ -235,6 +235,7 @@ chart.replayStop()             // back to the live series`}</code></pre>
   만들어집니다. ChartWidget은 기본으로 이렇게 합니다. 단계 메뉴는 <strong>자동</strong>에서 시작하고, <code>replayStep</code>
   (<code>'auto'</code>, <code>'bar'</code> 또는 주기)과 <code>replayAnimate: false</code>로 바꿉니다. <code>fetchHistoryBefore</code>가
   없는 피드에서는 위젯이 리플레이 시작 전에 더 작은 봉을 한 번의 요청으로 가져옵니다.
+  <code>replayAnimate: false</code>이면 Auto는 봉을 통째로 재생하고, 더 작은 주기를 고르면 그 봉 단위로 진행합니다.
 </p>
 
 <h3>ChartWidget의 리플레이 바</h3>
@@ -266,7 +267,7 @@ chart.replayStop()             // back to the live series`}</code></pre>
 <pre><code>{`chart.replayStart({ startIndex: 300, paused: true })
 await chart.setTimeframe('1h')        // the replay waits, then goes on at the same time
 const { until } = chart.getReplayProgress()   // keep a position by time, not by index
-chart.replaySeekToTime(until)         // back to it, on any interval
+if (until !== null) chart.replaySeekToTime(until)   // back to it, on any interval
 chart.on('replayStep', (e) => {
   if (e.payload.cause === 'series') {}  // carried over: barIndex and total are the new bars'
 })

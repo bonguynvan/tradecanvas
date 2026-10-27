@@ -227,6 +227,7 @@ chart.replayStop()             // back to the live series`}</code></pre>
   ChartWidget 默认如此：步长菜单从 <strong>自动</strong> 开始；<code>replayStep</code>（<code>'auto'</code>、<code>'bar'</code>
   或某个周期）和 <code>replayAnimate: false</code> 可以修改。数据源没有
   <code>fetchHistoryBefore</code> 时，组件会在回放开始前一次性获取更细的K线。
+  设置 <code>replayAnimate: false</code> 时，Auto 回放完整的K线；选择更细的周期则按该周期逐步回放。
 </p>
 
 <h3>ChartWidget 中的回放栏</h3>
@@ -257,7 +258,7 @@ chart.replayStop()             // back to the live series`}</code></pre>
 <pre><code>{`chart.replayStart({ startIndex: 300, paused: true })
 await chart.setTimeframe('1h')        // the replay waits, then goes on at the same time
 const { until } = chart.getReplayProgress()   // keep a position by time, not by index
-chart.replaySeekToTime(until)         // back to it, on any interval
+if (until !== null) chart.replaySeekToTime(until)   // back to it, on any interval
 chart.on('replayStep', (e) => {
   if (e.payload.cause === 'series') {}  // carried over: barIndex and total are the new bars'
 })

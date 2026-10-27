@@ -234,6 +234,7 @@ chart.replayStop()             // back to the live series`}</code></pre>
   ステップメニューは <strong>自動</strong> から始まり、<code>replayStep</code>（<code>'auto'</code>、<code>'bar'</code>、時間足）と
   <code>replayAnimate: false</code> で変えられます。<code>fetchHistoryBefore</code>
   を持たないフィードでは、ウィジェットがリプレイ開始前に細かい足を一度のリクエストで取得します。
+  <code>replayAnimate: false</code> のとき、Auto は足を丸ごと再生し、細かい周期を選ぶとその足ごとに進みます。
 </p>
 
 <h3>ChartWidget のリプレイバー</h3>
@@ -266,7 +267,7 @@ chart.replayStop()             // back to the live series`}</code></pre>
 <pre><code>{`chart.replayStart({ startIndex: 300, paused: true })
 await chart.setTimeframe('1h')        // the replay waits, then goes on at the same time
 const { until } = chart.getReplayProgress()   // keep a position by time, not by index
-chart.replaySeekToTime(until)         // back to it, on any interval
+if (until !== null) chart.replaySeekToTime(until)   // back to it, on any interval
 chart.on('replayStep', (e) => {
   if (e.payload.cause === 'series') {}  // carried over: barIndex and total are the new bars'
 })

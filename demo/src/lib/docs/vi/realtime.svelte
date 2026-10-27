@@ -245,6 +245,7 @@ chart.replayStop()             // back to the live series`}</code></pre>
   mặc định: menu Bước bắt đầu ở <strong>Tự động</strong>; <code>replayStep</code>
   (<code>'auto'</code>, <code>'bar'</code> hoặc một khung) và <code>replayAnimate: false</code> thay đổi nó. Với nguồn không có
   <code>fetchHistoryBefore</code>, widget tải các nến nhỏ hơn trong một lần gọi trước khi phát lại bắt đầu.
+  Với <code>replayAnimate: false</code>, Auto phát lại nến nguyên; một khung nhỏ hơn được chọn sẽ phát thành các bước riêng.
 </p>
 
 <h3>Thanh phát lại trong ChartWidget</h3>
@@ -282,7 +283,7 @@ chart.replayStop()             // back to the live series`}</code></pre>
 <pre><code>{`chart.replayStart({ startIndex: 300, paused: true })
 await chart.setTimeframe('1h')        // the replay waits, then goes on at the same time
 const { until } = chart.getReplayProgress()   // keep a position by time, not by index
-chart.replaySeekToTime(until)         // back to it, on any interval
+if (until !== null) chart.replaySeekToTime(until)   // back to it, on any interval
 chart.on('replayStep', (e) => {
   if (e.payload.cause === 'series') {}  // carried over: barIndex and total are the new bars'
 })

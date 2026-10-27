@@ -244,6 +244,7 @@ chart.replayStop()             // back to the live series`}</code></pre>
   <strong>Auto</strong>; <code>replayStep</code> (<code>'auto'</code>, <code>'bar'</code> or an
   interval) and <code>replayAnimate: false</code> change it. On a feed without
   <code>fetchHistoryBefore</code> the widget fetches the finer bars in one request before the replay starts.
+  With <code>replayAnimate: false</code>, Auto replays whole bars; a finer interval picked plays as steps of its own.
 </p>
 
 <h3>The replay bar in ChartWidget</h3>
@@ -282,7 +283,7 @@ chart.replayStop()             // back to the live series`}</code></pre>
 <pre><code>{`chart.replayStart({ startIndex: 300, paused: true })
 await chart.setTimeframe('1h')        // the replay waits, then goes on at the same time
 const { until } = chart.getReplayProgress()   // keep a position by time, not by index
-chart.replaySeekToTime(until)         // back to it, on any interval
+if (until !== null) chart.replaySeekToTime(until)   // back to it, on any interval
 chart.on('replayStep', (e) => {
   if (e.payload.cause === 'series') {}  // carried over: barIndex and total are the new bars'
 })
