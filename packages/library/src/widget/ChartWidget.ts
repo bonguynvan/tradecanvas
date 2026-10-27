@@ -378,6 +378,8 @@ export class ChartWidget {
   /** The chart's bars the replay goes through, and when the step shown opened (from `replayStep`). */
   private replayBarsTotal: number | null = null;
   private replayStepTime: number | null = null;
+  /** The symbol and interval of the finer steps given to the replay running (null: none given). */
+  private replayStepsKey: string | null = null;
   /** `'auto'`, `'bar'`, or the finer interval a replay steps through. */
   private replayStep = 'auto';
   private replayStartSeq = 0;
@@ -1057,8 +1059,12 @@ export class ChartWidget {
       const step = e.payload as ReplayStepPayload;
       this.replayBarsTotal = step.total;
       this.replayStepTime = typeof step.stepTime === 'number' ? step.stepTime : step.time;
-      if (step.cause === 'series') this.afterReplayCarryOver();
-      else this.syncReplayBar();
+      // Read once the chart is done: a carry-over resumes after its step, and the next bar starts to form after it.
+      queueMicrotask(() => {
+        if (this.destroyed) return;
+        if (step.cause === 'series') this.afterReplayCarryOver();
+        else this.syncReplayBar();
+      });
     });
     // The bar keeps to the main pane's foot as the chart lays out again.
     for (const event of ['resize', 'paneResize', 'paneChange'] as const) {
@@ -5086,7 +5092,10 @@ export class ChartWidget {
    * the year only when it isn't this one.
    */
   private replayTimeText(): string | undefined {
-    const time = this.replayStepTime;
+    // The bar forming is the one on screen: name it, not the whole one before it.
+    const progress = this.chart.getReplayProgress();
+    const forming = this.chart.getReplayBarIndex() > progress.current ? progress.time : null;
+    const time = forming ?? this.replayStepTime;
     if (time === null) return undefined;
     const locale = this.textLocale();
     const zone = this.chart.getTimeZone?.() ?? null;
@@ -5150,6 +5159,8 @@ export class ChartWidget {
     this.syncReplayBar();
     // Whole bars, or the chart fetching the finer ones for the new bars itself.
     if (this.replayStep === 'bar' || this.chartFetchesReplaySteps()) return;
+    // The same symbol and interval (a corrected bar, older bars): its steps still serve, and it keeps its place in the bar.
+    if (this.replayStepsKey === this.replayStepsKeyNow()) return;
     this.startReplayAt(this.chart.getReplayBarIndex(), this.chart.getReplayState() === 'playing');
   }
 
@@ -5186,6 +5197,7 @@ export class ChartWidget {
     const go = (steps: DataSeries | null) => {
       if (this.destroyed || this.replayBar !== bar || !bar.isMounted() || seq !== this.replayStartSeq) return;
       this.replayStartPending = false;
+      this.replayStepsKey = steps ? this.replayStepsKeyNow() : null;
       this.chart.replayStart({
         speed: this.replaySpeed,
         // 1× is a bar of the chart a second, whatever the step.
@@ -5215,6 +5227,10 @@ export class ChartWidget {
     });
   }
 
+  private replayStepsKeyNow(): string {
+    return `${this.state.symbol}|${this.state.timeframe}`;
+  }
+
   /** How many steps of `tf` make a bar of the chart (1 for whole bars, or a chart without an interval). */
   private replayStepsPerBar(tf: TimeFrame | null): number {
     if (tf === null) return 1;
@@ -5236,7 +5252,8 @@ export class ChartWidget {
 
   /** The finer interval the step picked stands for (`'auto'` worked out here); null for whole bars. */
   private replayStepInterval(): TimeFrame | null {
-    if (this.replayStep === 'bar') return null;
+    // Without animate, Auto is whole bars: finer steps of their own are a choice, as they were.
+    if (this.replayStep === 'bar' || (this.replayStep === 'auto' && this.options.replayAnimate === false)) return null;
     return resolveReplayStep(this.replayStep as TimeFrame | 'auto', this.state.timeframe, (tf) => this.hasReplayStep(tf));
   }
 

@@ -126,4 +126,34 @@ describe('ChartWidget replay while the bars change', () => {
     play.click();
     expect(play.getAttribute('aria-label')).toBe('Play');
   });
+
+  it('goes on playing after a timeframe switch while it plays in steps the widget builds', async () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', timeframe: '1h', watchlist: false });
+    widget.setData(series(15 * MIN, 4000));
+    await vi.advanceTimersByTimeAsync(50);
+    widget.toggleReplay();
+    widget.replayFrom(500, true);
+    await vi.advanceTimersByTimeAsync(1100);
+    expect(widget.getChart().getReplayState()).toBe('playing');
+    await widget.setTimeframe('4h');
+    await vi.advanceTimersByTimeAsync(1100);
+    expect(widget.getChart().getReplayState()).toBe('playing');
+    expect(q('.tcw-replay-play')!.getAttribute('aria-label')).toBe('Pause');
+  });
+
+  it('keeps its place in the bar when a passed bar is corrected while it plays in steps', async () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', timeframe: '1h', watchlist: false });
+    widget.setData(series(15 * MIN, 4000));
+    await vi.advanceTimersByTimeAsync(50);
+    widget.toggleReplay();
+    widget.replayFrom(500, true);
+    await vi.advanceTimersByTimeAsync(1100);
+    const chart = widget.getChart();
+    const start = vi.spyOn(chart, 'replayStart');
+    const bar = chart.getData()[400];
+    chart.updateBar({ ...bar, close: bar.close + 0.25 });
+    await vi.advanceTimersByTimeAsync(50);
+    expect(start).not.toHaveBeenCalled();
+    expect(chart.getReplayState()).toBe('playing');
+  });
 });

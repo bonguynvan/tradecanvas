@@ -353,11 +353,13 @@ describe('the readout', async () => {
     a.chart.zone = 'Asia/Ho_Chi_Minh';
     a.widget.replayFrom(10);
     a.chart.emit('replayStep', { barIndex: 10, time: T0, stepTime: T0 + 5 * 60_000, until: T0 + H, total: 40, cause: 'seek' });
+    await Promise.resolve(); // the panel reads the step once the chart is done with it
     const time = a.host.querySelector('[data-tcw="time"]')!.textContent!;
     expect(time).toContain('Oct 22');
     expect(time).toContain('07:05');
     expect(time).not.toContain('2026');
     a.chart.emit('replayStep', { barIndex: 10, time: Date.UTC(2025, 2, 3), stepTime: Date.UTC(2025, 2, 3), until: 0, total: 40, cause: 'seek' });
+    await Promise.resolve();
     expect(a.host.querySelector('[data-tcw="time"]')!.textContent).toContain('2025');
   });
 
@@ -365,6 +367,7 @@ describe('the readout', async () => {
     const a = await make({ timeframe: '1d', locale: 'en' });
     a.widget.replayFrom(10);
     a.chart.emit('replayStep', { barIndex: 10, time: T0, stepTime: T0, until: T0 + 24 * H, total: 40, cause: 'seek' });
+    await Promise.resolve();
     expect(a.host.querySelector('[data-tcw="time"]')!.textContent).not.toMatch(/\d\d:\d\d/);
   });
 });

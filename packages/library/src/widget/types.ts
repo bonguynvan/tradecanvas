@@ -104,7 +104,8 @@ export interface ChartWidgetOptions {
   /**
    * Draw each bar of a replay growing over its time, along its finer bars
    * when there are some, as a live bar does. Default `true`; `false` shows
-   * each step whole, and the finer bars become steps of their own.
+   * each step whole: `'auto'` is then whole bars, and a finer interval
+   * picked plays as steps of its own.
    */
   replayAnimate?: boolean;
   /** Fullscreen button in the toolbar, where the browser allows it. Default `true`. */

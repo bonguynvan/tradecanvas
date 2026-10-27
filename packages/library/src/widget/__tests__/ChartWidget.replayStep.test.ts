@@ -16,6 +16,8 @@ class FakeChart {
   seeks: number[] = [];
   current = 0;
   barIndex = 0;
+  /** The time of the bar the replay is on (the one forming, while one forms). */
+  progressTime: number | null = null;
   handlers = new Map<string, ((e: { payload: unknown }) => void)[]>();
   bars: OHLCBar[] = barsOf('1h', 500);
   constructor() {
@@ -33,7 +35,7 @@ class FakeChart {
   getFeatures(): Record<string, boolean> { return {}; }
   replayStart(config: Record<string, unknown>): void { this.replays.push(config); }
   isReplayActive(): boolean { return this.replays.length > 0; }
-  getReplayProgress() { return { current: this.current, total: 500, percent: 0 }; }
+  getReplayProgress() { return { current: this.current, total: 500, percent: 0, time: this.progressTime, until: null }; }
   getReplayState(): string { return 'paused'; }
   getReplayBarIndex(): number { return this.barIndex; }
   getPlotRect() { return { x: 0, y: 0, width: 600, height: 300 }; }
@@ -109,6 +111,21 @@ describe('the replay Step menu', () => {
     expect(FakeChart.last.replays.at(-1)!.step).toBeUndefined();
   });
 
+  it('replays whole bars on Auto without animate, fetching no newest finer bars', async () => {
+    const adapter = feed();
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false, timeframe: '1h', adapter, replayAnimate: false });
+    await tick();
+    widget.toggleReplay();
+    widget.replayFrom(100);
+    await tick();
+    await tick();
+    const config = FakeChart.last.replays.at(-1)!;
+    expect(config).toMatchObject({ animate: false, interval: 1000 });
+    expect(config.step).toBeUndefined();
+    expect(config.steps).toBeUndefined();
+    expect(adapter.fetchHistory.mock.calls.some((c) => c[1] === '1m')).toBe(false);
+  });
+
   it('fetches the finer bars itself, and forms the bars from them, when the feed can’t page back', async () => {
     const adapter = feed() as DataAdapter & { fetchHistory: ReturnType<typeof vi.fn>; fetchHistoryBefore?: unknown };
     delete adapter.fetchHistoryBefore;
@@ -160,6 +177,22 @@ describe('stepping a replay whose bars form', () => {
     fake.barIndex = 103;
     host.querySelector<HTMLButtonElement>('[data-act="stepBack"]')!.click();
     expect(fake.seeks.at(-1)).toBe(102);
+  });
+
+  it('names the bar forming once a step lands, not the one before it', async () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false, timeframe: '1h', adapter: feed() });
+    await tick();
+    widget.replayFrom(100);
+    await tick();
+    const fake = FakeChart.last;
+    const { bars } = fake;
+    fake.current = 100;
+    fake.barIndex = 101; // the next bar starts to form as the step lands
+    fake.progressTime = bars[101].time;
+    fake.emit('replayStep', { barIndex: 100, time: bars[100].time, stepTime: bars[100].time, until: bars[101].time, total: 500, cause: 'play' });
+    await Promise.resolve();
+    const hour = new Date(bars[101].time).toISOString().slice(11, 16);
+    expect(host.querySelector('.tcw-replay-time')?.textContent).toContain(hour);
   });
 
   it('says so when the finer bars can’t be fetched', async () => {
