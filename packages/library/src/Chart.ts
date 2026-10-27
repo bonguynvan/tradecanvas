@@ -4892,7 +4892,9 @@ export class Chart {
    * The replay is a time over the live series: when that changes (`setData`,
    * `connect` or `switchStream` to another symbol or timeframe, older bars,
    * the extended hours, a correction) it goes on over the new bars at the
-   * same time, held while they load, and its indices change with them. It
+   * same time, held while they load, and its indices change with them (a
+   * load that fails keeps it held, still telling the state it was asked to
+   * keep, until a later load comes in or `replayStop()`). It
    * ends there only when a paper account trades it and the symbol changes.
    * Call `replayStop()` first to end it as before.
    */
