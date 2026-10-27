@@ -62,3 +62,26 @@ describe('WidgetReplayBar', () => {
     expect(q('.tcw-replay-bar').classList.contains('tcw-replay-bar--ended')).toBe(true);
   });
 });
+
+describe('WidgetReplayBar while the bars load', () => {
+  it('says so in the hint, busy, with the controls that pick or move off', () => {
+    bar.setPending(true);
+    expect(q('.tcw-replay-bar').getAttribute('aria-busy')).toBe('true');
+    expect(q('.tcw-replay-hint').textContent).toBe('Loading chart...');
+    expect(q<HTMLButtonElement>('[data-act="random"]').disabled).toBe(true);
+    expect(q<HTMLInputElement>('[data-act="seek"]').disabled).toBe(true);
+    expect(q<HTMLButtonElement>('[data-act="play"]').disabled).toBe(false);
+    bar.setPending(false);
+    expect(q('.tcw-replay-bar').hasAttribute('aria-busy')).toBe(false);
+    expect(q('.tcw-replay-hint').textContent).toBe('Bấm vào một nến');
+    expect(q<HTMLButtonElement>('[data-act="random"]').disabled).toBe(false);
+  });
+
+  it('offers new steps, and reads the position as where of how many', () => {
+    bar.setSteps([{ value: 'bar', label: 'Bar' }, { value: '15m', label: '15m' }], '15m');
+    const select = q<HTMLSelectElement>('[data-act="step"]');
+    expect(select.value).toBe('15m');
+    bar.setProgress(3918, 5000);
+    expect(q('[data-act="seek"]').getAttribute('aria-valuetext')).toBe('3919 / 5000');
+  });
+});

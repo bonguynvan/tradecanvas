@@ -44,6 +44,8 @@ export interface ReplayBarLabels {
   position: string;
   speed: string;
   step: string;
+  /** Said in the hint while the bars to replay are on their way. */
+  loading: string;
 }
 
 export const DEFAULT_REPLAY_LABELS: ReplayBarLabels = {
@@ -59,6 +61,7 @@ export const DEFAULT_REPLAY_LABELS: ReplayBarLabels = {
   position: 'Replay position',
   speed: 'Speed',
   step: 'Step',
+  loading: 'Loading chart...',
 };
 
 export type ReplayBarState = 'playing' | 'paused' | 'stopped';
@@ -77,6 +80,9 @@ export class WidgetReplayBar {
   private state: ReplayBarState = 'stopped';
   private mode: ReplayBarMode = 'select';
   private ended = false;
+  /** The bars to replay are on their way: picking and moving wait. */
+  private pending = false;
+  private hint: HTMLSpanElement | null = null;
   private total = 0;
   private speed = DEFAULT_REPLAY_SPEED;
   private steps: readonly ReplayStepOption[] = [];
@@ -114,6 +120,7 @@ export class WidgetReplayBar {
   unmount(): void {
     this.root?.remove();
     this.root = null;
+    this.hint = null;
     this.scrubber = null;
     this.progressLabel = null;
     this.playBtn = null;
@@ -151,15 +158,47 @@ export class WidgetReplayBar {
     this.syncUi();
   }
 
+  /**
+   * The bars to replay are on their way: the hint says so, and picking a
+   * bar, stepping, scrubbing and the step menu wait. Play stays: the chart
+   * keeps a press for when they are in.
+   */
+  setPending(pending: boolean): void {
+    if (this.pending === pending) return;
+    this.pending = pending;
+    this.syncUi();
+  }
+
+  isPending(): boolean {
+    return this.pending;
+  }
+
+  /** The steps on offer changed (a new interval): the menu again, on `step`. */
+  setSteps(steps: readonly ReplayStepOption[], step: string): void {
+    this.steps = steps;
+    this.step = step;
+    const root = this.root;
+    if (!root) return;
+    const old = root.querySelector('[data-act="step"]');
+    const markup = this.stepMarkup();
+    if (old) old.outerHTML = markup;
+    else this.realtimeBtn?.insertAdjacentHTML('beforebegin', markup);
+    this.wireStep();
+    this.syncUi();
+  }
+
   /** `current`: index of the bar on screen. */
   setProgress(current: number, total: number): void {
     this.total = total;
+    const text = `${Math.min(current + 1, total)} / ${total}`;
     if (this.scrubber) {
       this.scrubber.max = String(Math.max(0, total - 1));
       this.scrubber.value = String(current);
+      // Read as where it is of how many, not as a raw index that jumps when the bars change.
+      this.scrubber.setAttribute('aria-valuetext', text);
     }
     if (this.progressLabel) {
-      this.progressLabel.textContent = `${Math.min(current + 1, total)} / ${total}`;
+      this.progressLabel.textContent = text;
     }
   }
 
@@ -185,16 +224,32 @@ export class WidgetReplayBar {
         <span class="tcw-replay-progress" data-tcw="progress">1 / ${this.total}</span>
         <select class="tcw-replay-speed" data-act="speed" aria-label="${escapeHtml(this.labels.speed)}">${speeds}</select>
       </span>
-      ${this.steps.length > 1 ? `<select class="tcw-replay-speed tcw-replay-step" data-act="step" aria-label="${escapeHtml(l.step)}" title="${escapeHtml(l.step)}">${
-        this.steps.map((s) => `<option value="${escapeHtml(s.value)}"${s.value === this.step ? ' selected' : ''}>${escapeHtml(s.label)}</option>`).join('')
-      }</select>` : ''}
+      ${this.stepMarkup()}
       <button class="tcw-replay-text-btn tcw-replay-realtime" data-act="realtime">${escapeHtml(l.realtime)}</button>
     `;
+  }
+
+  /** The step menu, when there is more than one step to pick. */
+  private stepMarkup(): string {
+    const l = this.labels;
+    if (this.steps.length <= 1) return '';
+    const options = this.steps
+      .map((s) => `<option value="${escapeHtml(s.value)}"${s.value === this.step ? ' selected' : ''}>${escapeHtml(s.label)}</option>`)
+      .join('');
+    return `<select class="tcw-replay-speed tcw-replay-step" data-act="step" aria-label="${escapeHtml(l.step)}" title="${escapeHtml(l.step)}">${options}</select>`;
+  }
+
+  private wireStep(): void {
+    (this.root?.querySelector('[data-act="step"]') as HTMLSelectElement | null)?.addEventListener('change', (e) => {
+      this.step = (e.target as HTMLSelectElement).value;
+      this.callbacks.onStepChange?.(this.step);
+    });
   }
 
   private wireEvents(): void {
     const root = this.root;
     if (!root) return;
+    this.hint = root.querySelector('.tcw-replay-hint');
     this.scrubber = root.querySelector('input[data-act="seek"]');
     this.progressLabel = root.querySelector('[data-tcw="progress"]');
     this.playBtn = root.querySelector('button[data-act="play"]');
@@ -214,10 +269,7 @@ export class WidgetReplayBar {
       this.speed = v;
       this.callbacks.onSpeedChange(v);
     });
-    (root.querySelector('[data-act="step"]') as HTMLSelectElement | null)?.addEventListener('change', (e) => {
-      this.step = (e.target as HTMLSelectElement).value;
-      this.callbacks.onStepChange?.(this.step);
-    });
+    this.wireStep();
   }
 
   private syncUi(): void {
@@ -227,6 +279,7 @@ export class WidgetReplayBar {
       group.hidden = group.dataset.mode !== this.mode;
     }
     root.classList.toggle('tcw-replay-bar--ended', this.ended);
+    this.syncPending(root);
     if (this.playBtn) {
       const playing = this.state === 'playing';
       this.playBtn.innerHTML = playing ? svgPause() : svgPlay();
@@ -235,6 +288,22 @@ export class WidgetReplayBar {
       const disable = this.ended && !playing;
       if (disable && document.activeElement === this.playBtn) this.realtimeBtn?.focus();
       this.playBtn.disabled = disable;
+    }
+  }
+
+  /** While the bars are on their way: busy, the hint says so, and the controls that pick or move wait. */
+  private syncPending(root: HTMLElement): void {
+    if (this.pending) root.setAttribute('aria-busy', 'true');
+    else root.removeAttribute('aria-busy');
+    if (this.hint) {
+      // The cursor icon stays; the text after it changes.
+      const text = this.hint.lastChild;
+      const said = this.pending ? this.labels.loading : this.labels.selectHint;
+      if (text && text.nodeType === Node.TEXT_NODE) text.textContent = said;
+    }
+    for (const act of ['random', 'stepBack', 'stepForward', 'seek', 'step']) {
+      const control = root.querySelector<HTMLButtonElement | HTMLInputElement | HTMLSelectElement>(`[data-act="${act}"]`);
+      if (control) control.disabled = this.pending;
     }
   }
 }

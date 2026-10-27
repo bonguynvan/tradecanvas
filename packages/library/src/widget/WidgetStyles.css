@@ -2223,7 +2223,12 @@
   color: var(--tcw-accent-ink);
 }
 
-.tcw-replay-btn:disabled { opacity: 0.4; cursor: default; }
+.tcw-replay-btn:disabled,
+.tcw-replay-text-btn:disabled,
+.tcw-replay-scrubber:disabled,
+.tcw-replay-speed:disabled { opacity: 0.4; cursor: default; }
+/* The bars to replay are on their way: the hint says so, quietly. */
+.tcw-replay-bar[aria-busy='true'] .tcw-replay-hint { color: var(--tcw-text-muted); }
 
 @media (max-width: 640px) {
   .tcw-replay-bar {
@@ -2328,6 +2333,9 @@
   color: var(--tcw-text-muted);
   min-width: 64px;
   text-align: center;
+  /* A total that grows when the bars change (5000 hourly after 401 daily) stays on one line. */
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }
 
 .tcw-replay-speed {

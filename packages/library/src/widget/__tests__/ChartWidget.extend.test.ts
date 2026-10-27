@@ -486,7 +486,8 @@ describe('ChartWidget replay in finer steps', () => {
     await new Promise((r) => setTimeout(r, 0));
     const restarts = fake.replays.slice(1);
     expect(restarts).toHaveLength(1);
-    expect(restarts[0]).toMatchObject({ startIndex: 9 });
+    // By time, so bars that land while its steps load don't move it.
+    expect(restarts[0]).toMatchObject({ startTime: fake.getData()[9].time });
     expect((restarts[0].steps as unknown[]).length).toBe(32);
     expect(fake.resumed).toBe(resumed + 1);
   });
