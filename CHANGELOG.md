@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 1.52.0 (2026-10-27)
+
+React, Vue and Svelte components: 1.3.35.
+
 ### What a full audit of the widget found
 
 - **A horizontal line's and a horizontal ray's price label is whole again.** It took its alignment from the text drawn before it, so after a redraw without a pane indicator, or beside a Gann box or a measure, only its last character showed at the plot's left edge. Each drawing now renders in a canvas state of its own, starting left-aligned on the alphabetic baseline, so a drawing plugin a host registers cannot shift the next drawing's text either.
