@@ -1446,9 +1446,10 @@ export class Chart {
    * It is no live price: the orders and the alerts don't follow it, and no
    * alert fires. A corrected last bar is the price line's, measured from the
    * bar before it, and the price alerts' last value, as after `setData`.
-   * During a replay it corrects the live series, shown when the replay
-   * ends; a bar in the extended hours, while they are hidden, shows when
-   * they are shown. The bar loaded sent again (after the repairs every
+   * During a replay it corrects the live series: a bar the replay has
+   * passed shows corrected at once (the replay carries over at the same
+   * time), a later one when the replay reaches it; a bar in the extended
+   * hours, while they are hidden, shows when they are shown. The bar loaded sent again (after the repairs every
    * write makes: a missing volume is 0) changes nothing.
    *
    * False, and nothing changes, when no loaded bar has that time (a new bar
@@ -4877,6 +4878,9 @@ export class Chart {
    * from bar 60 at four bars a second. `paused: true` waits at the start.
    *
    * With `steps` (finer bars), each step grows the forming bar from them.
+   * `animate: true` grows each bar over its time instead, and with `step`
+   * (`'auto'` or an interval) the chart fetches the finer bars that shape it
+   * through the connected feed; `step` needs `animate`.
    * A connected execution adapter that takes a mark price (a paper one)
    * trades on the replayed price and time.
    *
