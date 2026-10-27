@@ -1,5 +1,20 @@
 # @tradecanvas/core
 
+## 1.53.0
+
+### Minor Changes
+
+- 0d4c66b: A replay goes on when the bars under it change. Started while another timeframe's history loaded, it replayed the old bars and kept the new ones out of sight until it stopped; a symbol or timeframe switch during a replay did the same, `setData` ended it, and older bars were dropped. Now the replay is a time over the live series: a new symbol or timeframe (`connect`, `switchStream`), `setData`, older bars (`prependBars` returns their count, and history pages in during a replay), the extended hours and a corrected bar carry it over to the same time, showing only bars that closed by then. While a new series loads it waits, playing or paused as it was, and says nothing on `replayState`; a `duration` keeps the time it had left. A replay a paper account trades ends when the symbol changes. `replaySeekToTime` no longer shows a coarser bar whole before it closes, so a grid's synced replay doesn't give the coming hours away. `replayStep` gains `cause` (`'play'`, `'seek'` or `'series'`), `getReplayProgress()` gains `time` and `until`, and a page of history dropped by a new series is reported as `loaded` with no bars. Indices (`barIndex`, `total`, `replaySeekToBar`) are of the bars replayed now; keep a position by time. To end a replay on a new series as before, call `replayStop()` first. In ChartWidget the replay bar stays open across a switch, says Loading chart and waits while the bars load, then follows their total and the new interval's steps. `loadMoreHistory()` called while a page is on its way resolves to that page's count, where it gave 0, so a replay paging back no longer stops at the newest page.
+- 4e44074: Bars form as a replay plays. With `animate: true` (`replayStart`, `ReplayConfig`) each bar grows over its time as a live one does, from its open to the extreme its direction says came first, the other one, then its close, and ends as the bar is in the series; a pause holds it half drawn, a seek or a step shows whole bars, and a paper account fills as the drawn price reaches an order. `step: 'auto'` (or an interval such as `'1m'`) shapes each bar with finer bars the chart fetches through the connected feed's `fetchHistoryBefore` for the bars it is about to play, only while it plays, one request at a time; `'auto'` is the finest the feed serves with at most 60 to a bar, and the new `replayStepsLoad` event says how the fetching goes. Finer `steps` you pass shape the bars the same way with `animate`; without it they stay steps of their own, as before, now keeping only the hours shown, and a bar's last step shows the bar as the series has it. Indices, `speed` and `duration` count the chart's bars, and `getReplayBarIndex()` is the bar forming. Bars shorter than three frames come whole; under reduced motion a bar steps between its prices. `ReplayManager` gains a `phase` event, `getFraction()` and `getStepMs()`. ChartWidget replays this way by default: the Step menu starts on Auto, the new `replayStep` and `replayAnimate` options set it, step forward completes a half-drawn bar first, and the widget no longer fetches the newest finer bars, which were not the ones replayed, when the feed has `fetchHistoryBefore`; with `replayAnimate: false`, Auto replays whole bars as before; on a feed without it the widget fetches them in one request as before and the bars form along them.
+
+### Patch Changes
+
+- Updated dependencies [5d0aa7c]
+- Updated dependencies [0d4c66b]
+- Updated dependencies [4e44074]
+- Updated dependencies [9c18140]
+  - @tradecanvas/commons@1.53.0
+
 ## 1.52.0
 
 ### Minor Changes
