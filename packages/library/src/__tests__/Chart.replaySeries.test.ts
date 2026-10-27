@@ -191,6 +191,23 @@ describe('a replay over a series that changes', () => {
     expect(spacing(chart.getData())).toBe(HOUR);
   });
 
+  it('pages back through the stream’s own history after a switch to a finer timeframe', async () => {
+    const adapter: DataAdapter = {
+      ...slowAdapter({ '1d': 10, '1h': 10 }),
+      fetchHistory: async (_s: string, tf: TimeFrame) => (tf === '1d' ? series(DAY, 401) : series(HOUR, 500)),
+      fetchHistoryBefore: async (_s: string, _tf: TimeFrame, before: number, limit?: number) => series(HOUR, limit ?? 500, before - HOUR),
+    };
+    await chart.connect({ adapter, symbol: 'X', timeframe: '1d' });
+    await vi.advanceTimersByTimeAsync(10);
+    const steps = stepsOf(chart);
+    chart.replayStart({ startIndex: 300, paused: true });
+    const until = steps.at(-1)!.until;
+    await chart.switchStream('X', '1h');
+    await vi.advanceTimersByTimeAsync(50);
+    expect(spacing(chart.getData())).toBe(HOUR);
+    expect(lastShown().time + HOUR).toBe(until);
+  });
+
   it('takes older bars into the replay: the count, the same time, and all of them after', () => {
     const hourly = series(HOUR, 300);
     chart.setData(hourly);

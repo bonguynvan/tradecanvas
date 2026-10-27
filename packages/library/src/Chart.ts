@@ -1295,7 +1295,7 @@ export class Chart {
   }
 
   /** Page the connected stream's history through its adapter, if it can. */
-  private useStreamHistory(feed: DataAdapter, pageSize: number | undefined): void {
+  private useStreamHistory(feed: DataAdapter, pageSize: number | undefined, check = true): void {
     if (this.hostHistoryLoader) return;
     // The same wrapper the stream uses: pages of a 7m chart are 7m bars.
     const adapter = withResampling(feed);
@@ -1310,7 +1310,8 @@ export class Chart {
     const symbol = this.currentSymbol;
     this.history.setLoader((before, limit) => fetchBefore.call(adapter, symbol, timeframe, before, limit), pageSize);
     this.historyFromStream = true;
-    this.checkHistory();
+    // Not before the new bars are in: a page would go in front of the old ones.
+    if (check) this.checkHistory();
   }
 
   /**
@@ -3169,6 +3170,8 @@ export class Chart {
       } else if (key === this.snapshotKey && this.series.length() > 0) {
         this.mergeSnapshot(bars); // a reconnect: keep the paged-in history and the view
       } else {
+        // A replay older than the new bars pages back as they land: the stream's pages must be there by then.
+        if (this.replaySession) this.useStreamHistory(config.adapter, config.historyPageSize, false);
         this.setData(bars);
       }
       this.snapshotKey = key;
