@@ -608,6 +608,7 @@ export const NL_MESSAGES: WidgetMessages = {
   'alerts.invalid': 'Deze alarminstellingen passen niet bij elkaar',
   'replay.step': 'Stap',
   'replay.step.bar': 'Bar',
+  'replay.step.auto': 'Auto',
   'replay.stepsFailed': 'Kon de bars van het kleinere interval niet laden: replay per bar',
   'markers.neutral': 'Neutraal',
   'markers.confidence': 'betrouwbaarheid {pct}%',

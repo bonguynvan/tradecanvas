@@ -608,6 +608,7 @@ export const ZH_HANT_MESSAGES: WidgetMessages = {
   'alerts.invalid': '這些警示設定無法同時使用',
   'replay.step': '步長',
   'replay.step.bar': 'K線',
+  'replay.step.auto': '自動',
   'replay.stepsFailed': '無法載入更小週期的K線：改為逐根回放',
   'markers.neutral': '中性',
   'markers.confidence': '信賴度 {pct}%',

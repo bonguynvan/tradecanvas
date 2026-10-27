@@ -619,6 +619,7 @@ export const NB_MESSAGES: WidgetMessages = {
   'alerts.invalid': 'Disse varselinnstillingene passer ikke sammen',
   'replay.step': 'Trinn',
   'replay.step.bar': 'Lys',
+  'replay.step.auto': 'Auto',
   'replay.stepsFailed': 'Kunne ikke laste inn lys fra en mindre tidsramme: spiller av lys for lys',
   'markers.neutral': 'Nøytral',
   'markers.confidence': 'sikkerhet {pct} %',

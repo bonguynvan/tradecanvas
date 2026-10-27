@@ -608,6 +608,7 @@ export const HU_MESSAGES: WidgetMessages = {
   'alerts.invalid': 'Ezek a riasztási beállítások nem illenek össze',
   'replay.step': 'Lépés',
   'replay.step.bar': 'Gyertya',
+  'replay.step.auto': 'Auto',
   'replay.stepsFailed': 'A kisebb idősík gyertyáit nem sikerült betölteni: visszajátszás gyertyánként',
   'markers.neutral': 'Semleges',
   'markers.confidence': 'megbízhatóság: {pct}%',

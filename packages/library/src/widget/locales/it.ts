@@ -608,6 +608,7 @@ export const IT_MESSAGES: WidgetMessages = {
   'alerts.invalid': 'Queste impostazioni dell’avviso non sono compatibili',
   'replay.step': 'Passo',
   'replay.step.bar': 'Barra',
+  'replay.step.auto': 'Auto',
   'replay.stepsFailed': 'Impossibile caricare le barre del timeframe inferiore: replay barra per barra',
   'markers.neutral': 'Neutrale',
   'markers.confidence': 'affidabilità {pct}%',

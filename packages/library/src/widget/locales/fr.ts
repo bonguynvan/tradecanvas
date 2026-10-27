@@ -608,6 +608,7 @@ export const FR_MESSAGES: WidgetMessages = {
   'alerts.invalid': 'Ces paramètres d’alerte sont incompatibles',
   'replay.step': 'Pas',
   'replay.step.bar': 'Barre',
+  'replay.step.auto': 'Auto',
   'replay.stepsFailed': 'Impossible de charger les barres de l’unité de temps inférieure : relecture barre par barre',
   'markers.neutral': 'Neutre',
   'markers.confidence': 'confiance {pct} %',

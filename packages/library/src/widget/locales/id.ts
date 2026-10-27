@@ -608,6 +608,7 @@ export const ID_MESSAGES: WidgetMessages = {
   'alerts.invalid': 'Pengaturan peringatan ini tidak dapat digunakan bersama',
   'replay.step': 'Langkah',
   'replay.step.bar': 'Bar',
+  'replay.step.auto': 'Otomatis',
   'replay.stepsFailed': 'Tidak dapat memuat bar kerangka waktu yang lebih kecil: memutar ulang bar demi bar',
   'markers.neutral': 'Netral',
   'markers.confidence': 'keyakinan {pct}%',

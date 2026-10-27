@@ -608,6 +608,7 @@ export const ZH_MESSAGES: WidgetMessages = {
   'alerts.invalid': '这些提醒设置无法同时使用',
   'replay.step': '步长',
   'replay.step.bar': 'K线',
+  'replay.step.auto': '自动',
   'replay.stepsFailed': '无法加载更小周期的K线：改为逐根回放',
   'markers.neutral': '中性',
   'markers.confidence': '置信度 {pct}%',

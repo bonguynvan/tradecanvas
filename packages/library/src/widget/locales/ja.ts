@@ -608,6 +608,7 @@ export const JA_MESSAGES: WidgetMessages = {
   'alerts.invalid': 'この組み合わせのアラート設定は使用できません',
   'replay.step': 'ステップ',
   'replay.step.bar': 'バー',
+  'replay.step.auto': '自動',
   'replay.stepsFailed': '下位の時間足のバーを読み込めませんでした：1 本ずつリプレイします',
   'markers.neutral': '中立',
   'markers.confidence': '信頼度 {pct}%',

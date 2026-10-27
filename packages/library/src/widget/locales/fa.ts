@@ -619,6 +619,7 @@ export const FA_MESSAGES: WidgetMessages = {
   'alerts.invalid': 'این تنظیمات هشدار با هم سازگار نیستند',
   'replay.step': 'گام',
   'replay.step.bar': 'کندل',
+  'replay.step.auto': 'خودکار',
   'replay.stepsFailed': 'کندل‌های ریزتر بارگذاری نشد: بازپخش کندل‌به‌کندل انجام می‌شود',
   'markers.neutral': 'خنثی',
   'markers.confidence': 'اطمینان {pct}%',

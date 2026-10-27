@@ -619,6 +619,7 @@ export const AR_MESSAGES: WidgetMessages = {
   'alerts.invalid': 'إعدادات التنبيه هذه غير متوافقة معًا',
   'replay.step': 'الخطوة',
   'replay.step.bar': 'شمعة',
+  'replay.step.auto': 'تلقائي',
   'replay.stepsFailed': 'تعذّر تحميل الشموع الأدق: تتم إعادة التشغيل شمعة بشمعة',
   'markers.neutral': 'محايد',
   'markers.confidence': 'الثقة {pct}%',

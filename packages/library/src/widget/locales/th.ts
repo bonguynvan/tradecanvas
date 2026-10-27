@@ -608,6 +608,7 @@ export const TH_MESSAGES: WidgetMessages = {
   'alerts.invalid': 'การตั้งค่าการแจ้งเตือนเหล่านี้ใช้ร่วมกันไม่ได้',
   'replay.step': 'ขั้น',
   'replay.step.bar': 'แท่ง',
+  'replay.step.auto': 'อัตโนมัติ',
   'replay.stepsFailed': 'โหลดแท่งของกรอบเวลาที่เล็กกว่าไม่ได้: เล่นซ้ำทีละแท่ง',
   'markers.neutral': 'เป็นกลาง',
   'markers.confidence': 'ความมั่นใจ {pct}%',

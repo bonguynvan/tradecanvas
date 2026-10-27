@@ -608,6 +608,7 @@ export const SV_MESSAGES: WidgetMessages = {
   'alerts.invalid': 'De här larminställningarna passar inte ihop',
   'replay.step': 'Steg',
   'replay.step.bar': 'Stapel',
+  'replay.step.auto': 'Auto',
   'replay.stepsFailed': 'Kunde inte läsa in staplar med kortare intervall: spelar upp stapel för stapel',
   'markers.neutral': 'Neutral',
   'markers.confidence': 'säkerhet {pct} %',

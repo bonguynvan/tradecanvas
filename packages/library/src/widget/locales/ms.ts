@@ -619,6 +619,7 @@ export const MS_MESSAGES: WidgetMessages = {
   'alerts.invalid': 'Tetapan amaran ini tidak serasi',
   'replay.step': 'Langkah',
   'replay.step.bar': 'Bar',
+  'replay.step.auto': 'Auto',
   'replay.stepsFailed': 'Tidak dapat memuatkan bar yang lebih halus: main semula bar demi bar',
   'markers.neutral': 'Neutral',
   'markers.confidence': 'keyakinan {pct}%',

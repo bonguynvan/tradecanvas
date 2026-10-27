@@ -608,6 +608,7 @@ export const VI_MESSAGES: WidgetMessages = {
   'alerts.invalid': 'Các thiết lập cảnh báo này không dùng chung được',
   'replay.step': 'Bước',
   'replay.step.bar': 'Nến',
+  'replay.step.auto': 'Tự động',
   'replay.stepsFailed': 'Không tải được nến khung nhỏ: replay theo từng nến',
   'markers.neutral': 'Trung lập',
   'markers.confidence': 'độ tin cậy {pct}%',

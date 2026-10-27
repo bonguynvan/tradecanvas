@@ -619,6 +619,7 @@ export const DA_MESSAGES: WidgetMessages = {
   'alerts.invalid': 'Disse alarmindstillinger passer ikke sammen',
   'replay.step': 'Trin',
   'replay.step.bar': 'Lys',
+  'replay.step.auto': 'Auto',
   'replay.stepsFailed': 'Lys fra en mindre tidsramme kunne ikke indlæses: genafspiller lys for lys',
   'markers.neutral': 'Neutral',
   'markers.confidence': 'sikkerhed {pct} %',

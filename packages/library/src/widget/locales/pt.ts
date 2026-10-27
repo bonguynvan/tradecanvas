@@ -608,6 +608,7 @@ export const PT_MESSAGES: WidgetMessages = {
   'alerts.invalid': 'Essas configurações de alerta não são compatíveis entre si',
   'replay.step': 'Passo',
   'replay.step.bar': 'Barra',
+  'replay.step.auto': 'Auto',
   'replay.stepsFailed': 'Não foi possível carregar as barras do tempo gráfico menor: replay barra a barra',
   'markers.neutral': 'Neutra',
   'markers.confidence': 'confiança {pct}%',

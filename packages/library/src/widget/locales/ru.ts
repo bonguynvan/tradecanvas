@@ -608,6 +608,7 @@ export const RU_MESSAGES: WidgetMessages = {
   'alerts.invalid': 'Эти настройки оповещения несовместимы',
   'replay.step': 'Шаг',
   'replay.step.bar': 'Бар',
+  'replay.step.auto': 'Авто',
   'replay.stepsFailed': 'Не удалось загрузить бары меньшего таймфрейма: воспроизведение по одному бару',
   'markers.neutral': 'Нейтральный',
   'markers.confidence': 'уверенность {pct}%',

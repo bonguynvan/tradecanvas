@@ -608,6 +608,7 @@ export const KO_MESSAGES: WidgetMessages = {
   'alerts.invalid': '이 알림 설정은 함께 사용할 수 없습니다',
   'replay.step': '스텝',
   'replay.step.bar': '봉',
+  'replay.step.auto': '자동',
   'replay.stepsFailed': '하위 시간 단위의 봉을 불러오지 못했습니다: 한 봉씩 리플레이합니다',
   'markers.neutral': '중립',
   'markers.confidence': '신뢰도 {pct}%',

@@ -608,6 +608,7 @@ export const PL_MESSAGES: WidgetMessages = {
   'alerts.invalid': 'Te ustawienia alertu się wykluczają',
   'replay.step': 'Krok',
   'replay.step.bar': 'Świeca',
+  'replay.step.auto': 'Auto',
   'replay.stepsFailed': 'Nie udało się wczytać świec z niższego interwału: odtwarzanie świeca po świecy',
   'markers.neutral': 'Neutralny',
   'markers.confidence': 'pewność {pct}%',

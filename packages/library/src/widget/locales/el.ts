@@ -608,6 +608,7 @@ export const EL_MESSAGES: WidgetMessages = {
   'alerts.invalid': 'Αυτές οι ρυθμίσεις ειδοποίησης δεν συνδυάζονται',
   'replay.step': 'Βήμα',
   'replay.step.bar': 'Κερί',
+  'replay.step.auto': 'Αυτόματο',
   'replay.stepsFailed': 'Δεν ήταν δυνατή η φόρτωση των κεριών μικρότερου χρονικού πλαισίου: επανάληψη κερί προς κερί',
   'markers.neutral': 'Ουδέτερο',
   'markers.confidence': 'βεβαιότητα {pct}%',

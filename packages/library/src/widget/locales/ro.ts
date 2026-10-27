@@ -608,6 +608,7 @@ export const RO_MESSAGES: WidgetMessages = {
   'alerts.invalid': 'Aceste setări ale alertei nu se potrivesc între ele',
   'replay.step': 'Pas',
   'replay.step.bar': 'Bară',
+  'replay.step.auto': 'Auto',
   'replay.stepsFailed': 'Barele intervalului mai mic nu au putut fi încărcate: reluare bară cu bară',
   'markers.neutral': 'Neutru',
   'markers.confidence': 'încredere {pct}%',

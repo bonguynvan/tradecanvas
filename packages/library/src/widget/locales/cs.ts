@@ -608,6 +608,7 @@ export const CS_MESSAGES: WidgetMessages = {
   'alerts.invalid': 'Tato nastavení upozornění k sobě nepasují',
   'replay.step': 'Krok',
   'replay.step.bar': 'Svíčka',
+  'replay.step.auto': 'Auto',
   'replay.stepsFailed': 'Svíčky nižšího intervalu se nepodařilo načíst: přehrávání po celých svíčkách',
   'markers.neutral': 'Neutrální',
   'markers.confidence': 'jistota {pct} %',

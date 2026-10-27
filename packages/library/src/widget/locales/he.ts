@@ -619,6 +619,7 @@ export const HE_MESSAGES: WidgetMessages = {
   'alerts.invalid': 'הגדרות ההתראה האלה לא מתאימות זו לזו',
   'replay.step': 'צעד',
   'replay.step.bar': 'נר',
+  'replay.step.auto': 'אוטומטי',
   'replay.stepsFailed': 'לא ניתן היה לטעון את הנרות המפורטים: השידור החוזר מתקדם נר אחר נר',
   'markers.neutral': 'ניטרלי',
   'markers.confidence': 'ביטחון {pct}%',

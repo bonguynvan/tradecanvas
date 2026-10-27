@@ -620,6 +620,7 @@ export const EN_MESSAGES = {
   'alerts.invalid': 'These alert settings don’t fit together',
   'replay.step': 'Step',
   'replay.step.bar': 'Bar',
+  'replay.step.auto': 'Auto',
   'replay.stepsFailed': 'Couldn\'t load the finer bars: replaying bar by bar',
   'markers.neutral': 'Neutral',
   'markers.confidence': 'confidence {pct}%',

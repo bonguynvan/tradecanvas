@@ -93,6 +93,20 @@ export interface ChartWidgetOptions {
    * all through the replay.
    */
   replayRevealMarks?: boolean;
+  /**
+   * The step a replay starts with: `'auto'` (the finest the feed, or the bars
+   * loaded, have with at most 60 to a bar), `'bar'` (whole bars) or a finer
+   * interval. With a feed connected the chart fetches its bars for the bars
+   * it is about to play. The user can change it in the replay panel.
+   * Default `'auto'`.
+   */
+  replayStep?: 'auto' | 'bar' | TimeFrame;
+  /**
+   * Draw each bar of a replay growing over its time, along its finer bars
+   * when there are some, as a live bar does. Default `true`; `false` shows
+   * each step whole, and the finer bars become steps of their own.
+   */
+  replayAnimate?: boolean;
   /** Fullscreen button in the toolbar, where the browser allows it. Default `true`. */
   fullscreen?: boolean;
   /**

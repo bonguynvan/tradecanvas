@@ -608,6 +608,7 @@ export const TR_MESSAGES: WidgetMessages = {
   'alerts.invalid': 'Bu alarm ayarları birbiriyle uyumlu değil',
   'replay.step': 'Adım',
   'replay.step.bar': 'Bar',
+  'replay.step.auto': 'Otomatik',
   'replay.stepsFailed': 'Daha küçük zaman dilimindeki barlar yüklenemedi: bar bar oynatılıyor',
   'markers.neutral': 'Nötr',
   'markers.confidence': 'güven %{pct}',

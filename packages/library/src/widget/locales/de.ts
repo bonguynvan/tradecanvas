@@ -608,6 +608,7 @@ export const DE_MESSAGES: WidgetMessages = {
   'alerts.invalid': 'Diese Alarmeinstellungen passen nicht zusammen',
   'replay.step': 'Schritt',
   'replay.step.bar': 'Kerze',
+  'replay.step.auto': 'Auto',
   'replay.stepsFailed': 'Kerzen der kleineren Zeiteinheit konnten nicht geladen werden: Replay Kerze für Kerze',
   'markers.neutral': 'Neutral',
   'markers.confidence': 'Konfidenz {pct} %',

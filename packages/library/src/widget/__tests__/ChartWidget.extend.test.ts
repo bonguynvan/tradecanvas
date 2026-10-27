@@ -459,7 +459,7 @@ describe('ChartWidget replay in finer steps', () => {
     await new Promise((r) => setTimeout(r, 0));
     widget.toggleReplay();
     const select = host.querySelector<HTMLSelectElement>('.tcw-replay-step')!;
-    expect([...select.options].map((o) => o.value)).toEqual(['bar', '15m', '30m']);
+    expect([...select.options].map((o) => o.value)).toEqual(['auto', 'bar', '15m', '30m']);
     select.value = '15m';
     select.dispatchEvent(new Event('change'));
     host.querySelector<HTMLButtonElement>('[data-act="random"]')!.click();
@@ -471,7 +471,7 @@ describe('ChartWidget replay in finer steps', () => {
   it('switches steps mid-replay from the bar before the forming one, still playing', async () => {
     const MIN15 = 15 * 60_000;
     const bars = Array.from({ length: 64 }, (_, i) => ({ time: i * MIN15, open: 100, high: 101, low: 99, close: 100, volume: 1 }));
-    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false, timeframe: '1h' });
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false, timeframe: '1h', replayStep: 'bar' });
     widget.setData(bars as never);
     await new Promise((r) => setTimeout(r, 0));
     widget.replayFrom(8, true);
@@ -512,7 +512,8 @@ describe('ChartWidget replay in finer steps', () => {
       off: () => {},
       dispose: () => {},
     };
-    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false, adapter: feed as never, timeframe: '1d' });
+    // Steps of their own (no forming): the widget fetches them.
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false, adapter: feed as never, timeframe: '1d', replayStep: 'bar', replayAnimate: false });
     const fake = FakeChart.last;
     fake.setData([20, 21, 22].map((d) => ({ time: Date.UTC(2026, 9, d), close: 1 })));
     const stepHours = () => (fake.replays.at(-1)!.steps as { time: number }[]).map((b) => new Date(b.time).getUTCHours() % 4);

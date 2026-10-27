@@ -619,6 +619,7 @@ export const ET_MESSAGES: WidgetMessages = {
   'alerts.invalid': 'Need teavituse seaded ei sobi kokku',
   'replay.step': 'Samm',
   'replay.step.bar': 'Küünal',
+  'replay.step.auto': 'Auto',
   'replay.stepsFailed': 'Väiksema intervalli küünlaid ei õnnestunud laadida: taasesitus käib küünal küünla haaval',
   'markers.neutral': 'Neutraalne',
   'markers.confidence': 'kindlus {pct}%',

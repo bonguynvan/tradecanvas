@@ -608,6 +608,7 @@ export const SK_MESSAGES: WidgetMessages = {
   'alerts.invalid': 'Tieto nastavenia upozornenia k sebe nepasujú',
   'replay.step': 'Krok',
   'replay.step.bar': 'Sviečka',
+  'replay.step.auto': 'Auto',
   'replay.stepsFailed': 'Sviečky nižšieho intervalu sa nepodarilo načítať: prehrávanie po celých sviečkach',
   'markers.neutral': 'Neutrálny',
   'markers.confidence': 'istota {pct} %',
