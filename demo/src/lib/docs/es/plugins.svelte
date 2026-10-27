@@ -109,8 +109,10 @@ chart.setDrawingTool('targetLine')`}</code></pre>
   <code>'path'</code>, con <code>maxAnchors</code>) y si el diálogo ofrece un
   relleno (<code>fill</code>) o texto (<code>text</code>). Una herramienta puede
   mover puntos de control que no son anclas con <code>moveHandle()</code> y
-  recibe las barras del gráfico mediante <code>setDataGetter()</code> cuando
-  dibuja a partir de ellas.
+  recibe las barras del gráfico mediante <code>setDataGetter(getter, revision)</code>
+  cuando dibuja a partir de ellas. <code>revision()</code> cambia cuando una barra
+  se corrige en el mismo array (<code>updateBar</code>): una herramienta que guarda
+  lo que calculó a partir de las barras lo calcula de nuevo entonces.
 </p>
 
 <h2>Tipo de gráfico personalizado</h2>
@@ -153,6 +155,9 @@ registerPlugin({
   Los renderizadores de indicadores y tipos de gráfico solo reciben el viewport: para ellos se exportan
   <code>priceToY</code>, <code>barIndexToX</code>, <code>timeToX</code> y sus inversas. Las velas son las que están en
   pantalla: en un gráfico Renko o Kagi, sus ladrillos (<code>chart.isTimeAligned()</code> indica cuándo son las velas del feed).
+  Para escribir un precio como el eje, el viewport lleva el formato de precio propio del gráfico cuando lo tiene
+  (<code>formatPrice</code>), su <code>numberLocale</code> y los decimales del mercado o del símbolo cuando alguno los
+  fija (<code>pricePrecision</code>); los paneles de indicadores dejan sin fijar el formato y los decimales.
 </p>
 <p>
   Un overlay con ajustes propios (un modo de visualización, un interruptor) puede mostrar un cambio al instante,

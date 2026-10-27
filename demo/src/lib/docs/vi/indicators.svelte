@@ -128,6 +128,27 @@ chart.setIndicatorIntervals(ema, null)  // lại hiện trên mọi khung`}</cod
   đổi bậc tại mỗi ranh giới và không bao giờ vẽ lại (repaint).
 </p>
 
+<p>
+  <code>vwap</code> tính lại từ đầu tại mốc <code>anchor</code>: <code>'session'</code> (mặc định) mỗi ngày giao dịch,
+  từ nửa đêm theo múi giờ của sàn (<code>timeZone</code> của mã, không có thì của thị trường, không có nữa thì UTC);
+  <code>'week'</code> mỗi thứ Hai; <code>'month'</code> ngày mùng 1; <code>'all'</code> không bao giờ: trung bình trên mọi
+  nến đã tải, nên đổi khi nạp thêm lịch sử cũ. Trên nến ngày, VWAP theo phiên chính là giá điển hình của từng nến,
+  nên ở đó hãy chọn <code>'week'</code> hoặc <code>'month'</code>. <code>svwap</code> là VWAP theo phiên kèm các dải σ,
+  còn <code>avwap</code> bắt đầu tại nến bạn neo. <code>svwap</code>, <code>mtfma</code>, các đường của ngày trước và
+  các phiên của market profile cũng đếm ngày theo múi giờ đó. Các khung 2h đến 12h của <code>mtfma</code> cũng
+  bắt đầu từ nửa đêm của sàn, còn nến 4h của chính nguồn dữ liệu vẫn theo lưới giờ UTC; trên nến ngày,
+  <code>svwap</code> chỉ cho đường chính, không có các dải. Trong ChartWidget, VWAP với mốc khác được gọi kèm tên mốc ('VWAP Tuần') ở chú giải, chip và bảng Đối tượng, còn mốc và các lựa chọn của nó hiện theo ngôn ngữ của widget; cột CSV vẫn là <code>VWAP</code>.
+</p>
+<pre><code>{`chart.addIndicator('vwap')                      // tính lại mỗi ngày giao dịch
+chart.addIndicator('vwap', { anchor: 'week' })  // mỗi thứ Hai: cho nến ngày
+chart.addIndicator('vwap', { anchor: 'all' })   // mọi nến đã tải, như trước đây`}</code></pre>
+
+<p>
+  <code>volumeProfile</code> vẽ mỗi vùng giá một hàng từ mép trái vùng vẽ; độ dài mỗi hàng theo khối lượng đã khớp trong vùng giá đó.
+  Các hàng trong mờ nên chú giải đè lên trên chúng và nến nằm bên dưới chúng vẫn đọc được; đặt <code>opacity</code> thấp hơn bằng
+  <code>updateIndicatorStyle</code> để làm chỉ báo mờ thêm.
+</p>
+
 <h2>Trong bảng riêng ({panes.length})</h2>
 <table>
   <thead><tr><th>id</th><th>Tên</th><th>Tham số mặc định</th><th>Đường</th><th>Mức</th></tr></thead>
@@ -181,6 +202,10 @@ CANDLE_PATTERNS.length                                 // 64`}</code></pre>
   <code>category</code> của nó (<code>'oscillators'</code>, <code>'volume'</code>…) xếp nó vào nhóm đó
   trong hộp thoại Chỉ báo; nếu không có, nó nằm trong nhóm Khác. Xem
   <a href="https://github.com/bonguynvan/tradecanvas/blob/main/skills/tradecanvas/references/recipes.md#a-custom-indicator">hướng dẫn mẫu cho chỉ báo tuỳ chỉnh</a>.
+  Chỉ báo nhóm nến theo ngày, tuần hay tháng đọc múi giờ của sàn ở <code>config.exchangeTimeZone</code>
+  (do biểu đồ đặt; không có thì là UTC). Khi múi giờ đổi, chỉ những chỉ báo đọc nó và những chỉ báo
+  đọc đường của chúng được tính lại: chỉ báo của bạn không đọc múi giờ có thể ghi
+  <code>readsExchangeTimeZone: false</code> trong descriptor để được giữ nguyên.
 </p>
 
 <h2>Bảng: đổi kích thước, thu gọn, phóng to, sắp xếp lại</h2>

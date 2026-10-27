@@ -148,3 +148,70 @@ describe('CrosshairHandler past the data', () => {
     expect(onBar.texts).toHaveLength(2);
   });
 });
+
+describe('CrosshairHandler on daily bars', () => {
+  const DAY = 86_400_000;
+  const days = (first: number): OHLCBar[] =>
+    Array.from({ length: 50 }, (_, i) => ({ time: first + i * DAY, open: 100, high: 101, low: 99, close: 100, volume: 1 }));
+  const pill = (data: OHLCBar[], tz: string, exchange: string | null) => {
+    const handler = new CrosshairHandler();
+    handler.setData(data);
+    handler.setTimezoneOffset(tz);
+    handler.setExchangeTimeZone(exchange);
+    handler.setSyncedSlot(2);
+    const { ctx, texts } = recorder();
+    handler.renderAxisLabels(ctx, viewport, theme, data);
+    return texts[0];
+  };
+
+  it('dates a day built at the exchange’s midnight by the exchange’s date, in UTC and in New York', () => {
+    // Ho Chi Minh City's 21 to 23 October, stamped at 17:00 UTC the day before.
+    const vn = days(Date.UTC(2026, 9, 20, 17));
+    expect(pill(vn, 'UTC', 'Asia/Ho_Chi_Minh')).toBe('10/23/2026');
+    expect(pill(vn, 'America/New_York', 'Asia/Ho_Chi_Minh')).toBe('10/23/2026');
+  });
+
+  it('dates a day stamped at 00:00 UTC by the date it names, in New York too', () => {
+    expect(pill(days(Date.UTC(2026, 9, 21)), 'America/New_York', null)).toBe('10/23/2026');
+  });
+});
+
+describe('CrosshairHandler.refresh', () => {
+  it('reports the bar under the pointer again, though the pointer has not moved', async () => {
+    const handler = new CrosshairHandler();
+    const callback = vi.fn();
+    handler.setCallback(callback);
+    handler.setData(bars);
+    handler.onPointerMove({ x: 124, y: 150 });
+    handler.render(recorder().ctx, viewport, theme);
+    await Promise.resolve();
+    expect(callback).toHaveBeenCalledTimes(1);
+    expect(handler.getReportedBarIndex()).toBe(12);
+    // The same bar on the next frame: nothing new to report.
+    handler.render(recorder().ctx, viewport, theme);
+    await Promise.resolve();
+    expect(callback).toHaveBeenCalledTimes(1);
+    handler.refresh();
+    await Promise.resolve();
+    expect(callback).toHaveBeenCalledTimes(2);
+    expect(callback.mock.calls[1]).toEqual(callback.mock.calls[0]);
+  });
+
+  it('reports nothing with no bar under the pointer', async () => {
+    const handler = new CrosshairHandler();
+    const callback = vi.fn();
+    handler.setCallback(callback);
+    handler.setData(bars);
+    expect(handler.getReportedBarIndex()).toBeNull();
+    handler.refresh();
+    handler.onPointerMove({ x: 124, y: 150 });
+    handler.render(recorder().ctx, viewport, theme);
+    await Promise.resolve();
+    handler.onPointerLeave();
+    callback.mockClear();
+    handler.refresh();
+    await Promise.resolve();
+    expect(callback).not.toHaveBeenCalled();
+    expect(handler.getReportedBarIndex()).toBeNull();
+  });
+});

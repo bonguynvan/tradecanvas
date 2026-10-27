@@ -4,6 +4,7 @@ import { LayerType } from '@tradecanvas/commons';
 import type { DataSeries, Theme, ViewportState } from '@tradecanvas/commons';
 import { RenderEngine } from '../RenderEngine.js';
 import type { RenderContext } from '../RenderEngine.js';
+import { PriceAxis } from '../../axis/PriceAxis.js';
 import { SessionBreaks } from '../../ui/SessionBreaks.js';
 
 /** jsdom has no 2D context: a recorder that accepts any call or assignment. */
@@ -454,6 +455,16 @@ describe('RenderEngine — a GPU layer under the scene', () => {
     expect(engine.layerManager.getLayer(LayerType.Hover)!.canvas.style.zIndex).toBe('1');
   });
 
+  it('tells the GPU when a bar of the same series was replaced (its revision)', async () => {
+    const { ctx } = await candleContext();
+    const { gpu } = fakeGpu();
+    engine.attachGpu(gpu);
+    engine.setRenderContext({ ...ctx, seriesRevision: 7 });
+    engine.start();
+    runFrame();
+    expect(gpu.render).toHaveBeenCalledWith(expect.objectContaining({ seriesRevision: 7 }));
+  });
+
   it('leaves candles, volume and the grid to the GPU', async () => {
     const { ctx, series, grid, volume } = await candleContext();
     const { gpu } = fakeGpu();
@@ -735,5 +746,79 @@ describe('RenderEngine — a GPU layer under the scene', () => {
     engine.detachGpu();
     expect(gpu.destroy).toHaveBeenCalled();
     expect(stack(gpu)).toEqual(['scene', 'top']);
+  });
+});
+
+describe('RenderEngine — the day’s price limits', () => {
+  /** The texts the scene canvas got in one frame, with the limits drawn on a 98,000 to 100,000 view. */
+  function limitTexts(patch: Partial<RenderContext>, viewport: Partial<ViewportState> = {}): string[] {
+    const { ctx } = makeContext();
+    Object.assign(ctx, patch);
+    ctx.viewport = { ...ctx.viewport, priceRange: { min: 98_000, max: 100_000 }, ...viewport };
+    engine.setRenderContext(ctx);
+    engine.start();
+    engine.requestRender(LayerType.Main);
+    const fillText = vi.fn();
+    engine.layerManager.getLayer(LayerType.Main)!.ctx.fillText = fillText;
+    runFrame();
+    return fillText.mock.calls.map((call) => String(call[0]));
+  }
+  const limits = { ceiling: 99_800, floor: 98_100, reference: 98_937 };
+
+  it('writes them in the market’s decimals and the number locale, on the line and on the axis', () => {
+    const texts = limitTexts({ priceLimits: limits }, { pricePrecision: 1, numberLocale: 'de-DE' });
+    expect(texts).toContain('REF 98.937,0');
+    expect(texts).toContain('CE 99.800,0');
+    expect(texts).toContain('FL 98.100,0');
+    expect(texts).toContain('98.937,0');
+  });
+
+  it('writes them as the chart writes a price', () => {
+    const texts = limitTexts({ priceLimits: limits, formatPrice: (p) => `$${Math.round(p)}` });
+    expect(texts).toContain('REF $98937');
+    expect(texts).toContain('$98937');
+  });
+
+  it('hides the scale’s label under a limit’s tag on the axis, as the last price’s does', () => {
+    const axis = new PriceAxis();
+    const onTick = { ceiling: 105_000, floor: 90_000, reference: 99_000 };
+    expect(limitTexts({ priceAxis: axis })).toContain('99,000');
+    const texts = limitTexts({ priceAxis: axis, priceLimits: onTick });
+    expect(texts).toContain('REF 99,000.00');
+    expect(texts).not.toContain('99,000');
+    expect(texts).toContain('99,500');
+  });
+});
+
+describe('RenderEngine — overlay value tags on the price axis', () => {
+  /** The texts the scene canvas got with an overlay line at 110, on a 0 to 200 view, in `numberLocale`. */
+  function tagTexts(viewport: Partial<ViewportState>, numberLocale?: string): string[] {
+    const { ctx } = makeContext();
+    if (numberLocale) ctx.numberLocale = numberLocale;
+    ctx.indicatorEngine = {
+      ...fakeIndicators([]),
+      getLatestOverlayValues: () => [{ value: 110, color: '#f00' }],
+    } as unknown as RenderContext['indicatorEngine'];
+    ctx.viewport = { ...ctx.viewport, priceRange: { min: 0, max: 200 }, ...viewport };
+    engine.setRenderContext(ctx);
+    engine.start();
+    engine.requestRender(LayerType.Main);
+    const fillText = vi.fn();
+    engine.layerManager.getLayer(LayerType.Main)!.ctx.fillText = fillText;
+    runFrame();
+    return fillText.mock.calls.map((call) => String(call[0]));
+  }
+
+  it('writes them as prices on a regular scale', () => {
+    expect(tagTexts({})).toContain('110.00');
+  });
+
+  it('writes them in percent on a percent scale, and indexed on an indexed one, as the scale reads', () => {
+    expect(tagTexts({ scaleMode: 'percentage', scaleBaseline: 100 })).toContain('+10.00%');
+    expect(tagTexts({ scaleMode: 'indexedTo100', scaleBaseline: 50 })).toContain('220.00');
+  });
+
+  it('writes the percent in the number locale, as the legend writes a compare’s change', () => {
+    expect(tagTexts({ scaleMode: 'percentage', scaleBaseline: 100 }, 'de-DE')).toContain('+10,00%');
   });
 });

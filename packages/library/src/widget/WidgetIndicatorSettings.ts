@@ -7,6 +7,7 @@ import { EN_MESSAGES, type Translator } from './i18n.js';
 import { WidgetContextMenu } from './WidgetContextMenu.js';
 import { colorInput, numberInput, settingsRow, toggleSwitch } from './settingsControls.js';
 import { renderStyleTab, renderVisibilityTab } from './indicatorSettingsTabs.js';
+import { choiceLabel, inputLabel } from './indicatorInputWords.js';
 
 export type IndicatorParamValue = number | string | boolean;
 
@@ -403,7 +404,7 @@ export class WidgetIndicatorSettings {
       control = numberInput(n, { min: spec?.min, max: spec?.max, step: spec?.step ?? (Number.isInteger(n) ? 1 : 0.1) }, (v) => this.setValue(key, v));
     } else if (typeof value === 'string' && HEX_RE.test(value)) control = colorInput(value, (v) => this.setValue(key, v));
     else control = this.textControl(key, String(value ?? ''));
-    return settingsRow(spec?.label ?? titleCase(key), control);
+    return settingsRow(spec?.label ?? inputLabel(key, this.t) ?? titleCase(key), control);
   }
 
   private sourceControl(key: string, value: string): HTMLSelectElement {
@@ -429,7 +430,7 @@ export class WidgetIndicatorSettings {
   private choiceControl(key: string, options: readonly (string | number)[], value: IndicatorParamValue): HTMLSelectElement {
     const select = document.createElement('select');
     select.className = 'tcw-indi-input tcw-indi-select';
-    for (const opt of options) select.appendChild(this.option(String(opt), String(opt)));
+    for (const opt of options) select.appendChild(this.option(String(opt), choiceLabel(key, opt, this.t) ?? String(opt)));
     select.value = String(value);
     select.addEventListener('change', () => {
       const picked = options.find((o) => String(o) === select.value);

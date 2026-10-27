@@ -49,6 +49,11 @@ export class ChartLegend {
     this.drawnHeight = null;
   }
 
+  /** A copy of what it shows and how. */
+  getConfig(): LegendConfig {
+    return { ...this.config };
+  }
+
   /**
    * Fixed decimals for OHLC values (e.g. a market's `pricePrecision`); `null`
    * follows the price axis.

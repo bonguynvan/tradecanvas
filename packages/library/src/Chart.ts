@@ -45,18 +45,20 @@ import { isValidTimeZone, sessionMinute, symbolTimeZone, LayerType, setLocale as
 import type { BarLayout, ChartTypeOptions, DataUpdatePayload, FontConfig, IndicatorId, IndicatorParamsFor, PriceFormatter, PriceFraction, ShapeConfig, TimeFormatter } from '@tradecanvas/commons';
 import type { ChartStyleKey, ChartStyleOverrides, ChartStyleOverridesPatch, IndicatorIntervals, IndicatorStyleConfig, PaneStyle, ResolvedChartStyle, StyleLayer } from '@tradecanvas/commons';
 import { PHI, computePriceRange, readChartTypeOptions, tickBarCount, barTimeUnit, readChartStyleOverrides, readIndicatorPlotStyles, readPaneStyle } from '@tradecanvas/commons';
-import { PRICE_SCALE_MARGIN, PriceLines, type BidAsk, SymbolSeriesStore, CompareSymbolIndicator, SpreadIndicator, CorrelationCoefficientIndicator, CorrelationLogIndicator, SYMBOL_INDICATOR_IDS, HiLoRenderer, PointAndFigureRenderer, loadWebGL, gpuContextsLeft, whenGpuContextFree } from '@tradecanvas/core';
+import { PRICE_SCALE_MARGIN, PriceLines, type BidAsk, SymbolSeriesStore, CompareSymbolIndicator, SpreadIndicator, CorrelationCoefficientIndicator, CorrelationLogIndicator, SYMBOL_INDICATOR_IDS, HiLoRenderer, PointAndFigureRenderer, ReshapeMemo, isPriceLevelAlert, loadWebGL, gpuContextsLeft, whenGpuContextFree } from '@tradecanvas/core';
 import type { GpuRenderer, RendererMode } from '@tradecanvas/core';
 import { regularHoursFilter } from './regularHours.js';
 import { ChartA11y } from './chartA11y.js';
-import { zonedDateFormatter } from '@tradecanvas/commons';
+import { barDateZone, barsAreDaily, zonedDateFormatter } from '@tradecanvas/commons';
 import { indicatorChipLabel } from './indicatorLabel.js';
 import type { ExportColumn } from '@tradecanvas/core';
 import {
   RenderEngine,
   Viewport,
+  ResamplingAdapter,
   withResampling,
   servesTimeframe,
+  SYMBOL_ZONE_WAIT_MS,
   GridRenderer,
   PriceAxis,
   TimeAxis,
@@ -118,9 +120,9 @@ import {
   findDominantSwing,
   readAlertOptions,
 } from '@tradecanvas/core';
-import type { ChartRendererInterface, RangePreset, SessionHoursConfig, DrawingPatch, DrawingOrderMove } from '@tradecanvas/core';
+import type { ChartRendererInterface, CompareValue, RangePreset, SessionHoursConfig, DrawingPatch, DrawingOrderMove } from '@tradecanvas/core';
 import { timeframeToMs } from '@tradecanvas/commons';
-import { resolveRenderer, resolveDisplayData, isReshapedChartType, pointAndFigureBox } from './charts/ChartTypeStrategy.js';
+import { resolveRenderer, resolveDisplayData, isReshapedChartType, pointAndFigureDisplay, rangeBarsStep } from './charts/ChartTypeStrategy.js';
 import { AutoSaveScheduler } from './state/AutoSaveScheduler.js';
 import { isValidBar } from './DataManager.js';
 import { SeriesStore, isWholeBar } from './SeriesStore.js';
@@ -204,6 +206,10 @@ export class Chart {
   private execTeardown: (() => void) | null = null;
   private autoScrollOnNewBar = true;
   private displayDataCache: DataSeries | null = null;
+  /** The size a reshaped type was raised to on this series, so a tick walks it once (cleared when the series is replaced). */
+  private readonly reshapeMemo = new ReshapeMemo();
+  /** The price step the cached range bars were built on: a new step (the symbol's `minTick` arrives) builds them again. */
+  private displayDataStep: number | undefined;
   /** Earliest bar of an `indicatorUpdate` waiting to be emitted; null = none pending. */
   private indicatorUpdateFrom: number | null = null;
   private resolvedLayoutCache: import('@tradecanvas/commons').ResolvedLayout | null = null;
@@ -255,6 +261,19 @@ export class Chart {
   private symbolInfo: SymbolInfo | null = null;
   /** Bumped per symbol asked about: an answer about a symbol the chart left is dropped. */
   private symbolInfoSeq = 0;
+  /**
+   * While the stream asks about its next symbol, the indicators, the
+   * prior-day lines, the market profile and the bars built from trades keep
+   * the last symbol's zone: the next one most often trades on the same
+   * exchange, so its bars compute once, in the zone they keep.
+   */
+  private studyZoneHeld = false;
+  /** The zone `applyStudyZone` last gave: the one held while `studyZoneHeld`. */
+  private studyZone: string | null = null;
+  /** Ends the hold when the feed says nothing of the next symbol for as long as its built days wait (`SYMBOL_ZONE_WAIT_MS`). */
+  private studyZoneTimer: ReturnType<typeof setTimeout> | null = null;
+  /** A disconnect's end of the hold, waiting to see whether a connect follows at once. */
+  private studyZoneReleaseQueued = false;
   private sessionBreaks: SessionBreaks;
   private sessionShading: SessionShading;
   /** The session hours the host set (or the default); a symbol's own hours show over them. */
@@ -352,6 +371,20 @@ export class Chart {
    * freeze on the old symbol doesn't silently carry over to a new one.
    */
   private defaultAutoScale: boolean;
+  /**
+   * A new series whose prices aren't on the axis yet (the first bars, or
+   * `setData`'s): they are fitted once even with auto-scale off, which then
+   * holds them. Off, a chart would otherwise keep its empty 0 to 1, or the
+   * last symbol's prices.
+   */
+  private priceFitPending = true;
+  /**
+   * The series began with no bars (a new chart, `setData([])`, an empty
+   * history), so its bars come one by one: see `priceFitDone`. A hold the
+   * user or the host asks for (a drag of the price axis, `setAutoScale(false)`)
+   * ends it.
+   */
+  private seriesArriving = true;
   private keyboardHandler: KeyboardHandler | null = null;
   private a11y: ChartA11y | null = null;
   private onWindowKeyDown: ((e: KeyboardEvent) => void) | null = null;
@@ -490,7 +523,7 @@ export class Chart {
       if (action.type === 'custom') action.custom?.[direction]();
       else this.applyIndicatorStep(action, direction);
     });
-    this.drawingManager.setDataGetter(() => this.series.bars());
+    this.drawingManager.setDataGetter(() => this.series.bars(), () => this.series.revision());
     this.drawingManager.setDisplayDataGetter(() => this.getDisplayData());
     // Magnet mode
     if (options.crosshair?.mode === 'magnet' && this.features.drawingMagnet) {
@@ -660,6 +693,7 @@ export class Chart {
     this.crosshairTooltip.setLocale(this.numberLocale);
     this.pinnedTooltip = new PinnedTooltip();
     this.pinnedTooltip.create(container);
+    this.pinnedTooltip.setLocale(this.numberLocale);
     if (options.priceFormat) this.applyPriceFormat(options.priceFormat);
     if (options.chartTypeOptions) this.chartTypeOptions = readChartTypeOptions(options.chartTypeOptions);
     if (options.highLowLines) this.priceLines.setHighLow(true);
@@ -703,9 +737,7 @@ export class Chart {
         bars: () => this.getDisplayData(),
         visibleRange: () => this.viewport.getState().visibleRange,
         formatPrice: (price) => this.formatPrice(price),
-        formatTime: (time) => zonedDateFormatter(this.numberLocale || 'en-US', { dateStyle: 'medium', timeStyle: 'short' }, this.displayTz)(
-          time * barTimeUnit(this.getDisplayData()),
-        ),
+        formatTime: (time) => this.spokenBarTime(time),
         showBar: (time) => this.setCrosshairTime(time),
       }, options.a11y?.labels);
       for (const event of ['dataUpdate', 'chartTypeChange', 'symbolChange', 'timeframeChange'] as const) {
@@ -753,6 +785,8 @@ export class Chart {
     // Alerts on drawings check the drawing's lines where they are at the latest bar.
     this.alertManager.setDrawingLevels((id) => this.drawingLevelsNow(id));
     this.alertManager.setRequestRender(() => this.engine.requestRender(LayerType.Overlay));
+    // A compare's label at its line's end keeps clear of an alert's label at the plot's right edge.
+    this.compareRenderer.setReservedLevels(() => this.alertManager.getAlerts().filter(isPriceLevelAlert).map((a) => a.price));
     this.alertManager.on('triggered', (alert) => {
       this.eventBus.emit('alertTriggered', alertPayload(alert));
       // Back-compat: legacy listeners keyed off dataUpdate.
@@ -822,7 +856,7 @@ export class Chart {
             // turns it off (double-click the price axis to restore), mirroring
             // the price-axis drag-scale gesture.
             if (verticalGate.step(deltaX, deltaY, this.options.autoScale !== false) && deltaY) {
-              this.options.autoScale = false;
+              this.holdPriceScale();
               this.viewport.panPriceRange(deltaY);
             }
 
@@ -857,7 +891,7 @@ export class Chart {
       //   dblclick axis    → reset (price: re-enable autoScale; time: fitContent)
       const axisDrag = new AxisDragHandler(
         (factor) => {
-          this.options.autoScale = false;
+          this.holdPriceScale();
           this.viewport.scalePriceRange(factor);
           this.syncRenderContext();
           this.engine.requestRender();
@@ -942,7 +976,7 @@ export class Chart {
       if (this.pinnedTooltip.isPinned() && this.pinnedTooltip.getPinnedIndex() === idx) {
         this.pinnedTooltip.unpin();
       } else {
-        this.pinnedTooltip.pin(data[idx], idx, this.themeManager.getTheme(), barTimeUnit(data));
+        this.pinnedTooltip.pin(data[idx], idx, this.themeManager.getTheme(), barTimeUnit(data), barsAreDaily(data) === true);
       }
       this.pinnedTooltip.reposition(
         this.viewport.getState(),
@@ -1091,17 +1125,21 @@ export class Chart {
     this.series.load(data);
     this.crosshairHandler.setData(this.series.bars());
     this.displayDataCache = null;
+    this.reshapeMemo.clear();
     this.sessionBreaks.invalidateCache();
     // A full data replace means a new series (symbol/timeframe switch, not
     // a live tick — those go through appendBar/updateLastBar instead), so
     // un-freeze the Y-axis the same way scrollToEnd below resets the X-axis.
     // Otherwise a price-axis drag or vertical pan on the old symbol silently
-    // keeps the new symbol's chart stuck on the old price range.
+    // keeps the new symbol's chart stuck on the old price range. Auto-scale
+    // set off fits the new series once too, then holds it.
     this.options.autoScale = this.defaultAutoScale;
+    this.priceFitPending = true;
     // New data context (symbol / timeframe) — drop stale alert prev-values so
     // the next tick seeds cleanly instead of crossing against the old series.
     // The bars kept: a bar the chart can't take is left out.
     const kept = this.series.bars();
+    this.seriesArriving = kept.length === 0;
     const lastKept = kept[kept.length - 1];
     if (!restoring) {
       this.alertManager.clearLastValues();
@@ -1135,6 +1173,7 @@ export class Chart {
     const data = this.series.bars();
     this.crosshairHandler.setData(data);
     this.displayDataCache = null;
+    this.reshapeMemo.clear();
     this.sessionBreaks.invalidateCache();
     // Both hold bar positions that just moved.
     if (this.pinnedTooltip.isPinned()) this.pinnedTooltip.unpin();
@@ -1162,6 +1201,7 @@ export class Chart {
     const merged = this.series.bars();
     this.crosshairHandler.setData(merged);
     this.displayDataCache = null;
+    this.reshapeMemo.clear();
     this.sessionBreaks.invalidateCache();
     // The same series goes on (a reconnect): alerts keep their bars and last values.
     this.recalcIndicators(merged);
@@ -1267,7 +1307,8 @@ export class Chart {
     // Re-finalise the bar that just closed (its last tick may differ from the
     // final close) and compute the new one; everything older is untouched.
     this.recalcIndicatorsFrom(data, data.length - 2);
-    this.currentPriceLine.setPrice(bar.close);
+    // Measured from the close before it, as a stream measures a new bar: one opening there is level.
+    this.currentPriceLine.setPrice(bar.close, data[data.length - 2]?.close);
     this.updateViewportAndRender(follow);
     if (data.length !== before) this.emitBars(data.length);
     // Last: an alert's listener sees the chart with its new bar.
@@ -1297,7 +1338,7 @@ export class Chart {
     const data = this.series.bars();
     this.recalcIndicatorsFrom(data, before - 1);
     this.crosshairHandler.setData(data);
-    this.currentPriceLine.setPrice(price);
+    this.currentPriceLine.setPrice(price, data[data.length - 2]?.close);
     this.updateViewportAndRender(follow);
     if (data.length !== before) this.emitBars(data.length);
     this.followLivePrice(price);
@@ -1359,6 +1400,74 @@ export class Chart {
     this.scheduleRender();
   }
 
+  /**
+   * A loaded bar again, with new values: the bar with the same `time`,
+   * wherever it is in the series (a feed learned a closed bar was off). The
+   * indicators are computed again from it on, the chart types built from
+   * the bars too, and the view stays. Several corrections before the next
+   * frame are computed once, from the earliest. Sends `dataUpdate`
+   * (`{ kind: 'correction', time, index }`).
+   *
+   * It is no live price: the orders and the alerts don't follow it, and no
+   * alert fires. A corrected last bar is the price line's, measured from the
+   * bar before it, and the price alerts' last value, as after `setData`.
+   * During a replay it corrects the live series, shown when the replay
+   * ends; a bar in the extended hours, while they are hidden, shows when
+   * they are shown. The bar loaded sent again (after the repairs every
+   * write makes: a missing volume is 0) changes nothing.
+   *
+   * False, and nothing changes, when no loaded bar has that time (a new bar
+   * is `appendBar`'s, older ones `prependBars`') or the chart can't take the
+   * bar (a price that isn't a number, below zero, a high under its low).
+   */
+  updateBar(bar: OHLCBar): boolean {
+    if (!isValidBar(bar)) return false;
+    const write = this.series.replace(bar);
+    if (write.to === 'none') return false;
+    // Kept aside during a replay, or outside the hours shown: it shows when they do.
+    if (write.to === 'shown' && write.changed) this.showCorrection(write.index);
+    return true;
+  }
+
+  /** The bar shown at `i` was corrected: what follows from its values does, the view as it was. */
+  private showCorrection(i: number): void {
+    const data = this.series.bars();
+    const bar = data[i];
+    this.displayDataCache = null;
+    this.reshapeMemo.clear();
+    // Deferred: corrections before the next read cost one computation, from the earliest.
+    this.indicatorEngine.deferRecalculateFrom(data, i);
+    this.announceIndicatorUpdate(i);
+    if (i === data.length - 1) {
+      // As `setData` leaves the last bar: the price line's, and where the next price crosses from.
+      this.currentPriceLine.setPrice(bar.close, data[i - 1]?.close);
+      this.alertManager.seedLastValue('price', bar.close);
+    }
+    this.refreshShownBar(i);
+    this.eventBus.emit('dataUpdate', { kind: 'correction', time: bar.time, index: i } satisfies DataUpdatePayload);
+    this.scheduleRender();
+  }
+
+  /**
+   * The tooltips, the legend and the crosshair's listeners hold the bar
+   * they were given: give them the corrected one. The bar after it moves
+   * too, its change measured from this one's close; with bricks or boxes,
+   * any bar can.
+   */
+  private refreshShownBar(i: number): void {
+    const pinned = this.pinnedTooltip.isPinned() ? this.pinnedTooltip.getPinnedIndex() : -1;
+    const hovered = this.crosshairHandler.getReportedBarIndex();
+    // Nothing holds a bar from it on: no need to build the bars shown before the frame does.
+    if (pinned < i && hovered === null) return;
+    const aligned = this.isTimeAligned();
+    // Heikin-Ashi bars after it are built from it.
+    if (aligned && pinned >= i) {
+      const shown = this.getDisplayData();
+      if (shown[pinned]) this.pinnedTooltip.pin(shown[pinned], pinned, this.themeManager.getTheme(), barTimeUnit(shown), barsAreDaily(shown) === true);
+    }
+    if (hovered !== null && (!aligned || hovered === i || hovered === i + 1)) this.crosshairHandler.refresh();
+  }
+
   // --- Chart type ---
 
   /** The type the chart is drawn as: what `setChartType`, the `chartType` option or a loaded layout set; `'candlestick'` by default. */
@@ -1399,6 +1508,8 @@ export class Chart {
     this.chartTypeOptions = { ...this.chartTypeOptions, ...readChartTypeOptions(options) };
     this.displayDataCache = null;
     this.updateViewportAndRender(true);
+    // New settings build other bars: a screen reader hears the new summary, as after a new type.
+    this.a11y?.refresh(true);
     this.markStateChanged();
   }
 
@@ -1434,6 +1545,7 @@ export class Chart {
     const data = this.series.bars();
     this.crosshairHandler.setData(data);
     this.displayDataCache = null;
+    this.reshapeMemo.clear();
     this.sessionBreaks.invalidateCache();
     this.recalcIndicators(data);
     this.updateViewportAndRender(true);
@@ -1731,6 +1843,11 @@ export class Chart {
     this.updateViewportAndRender();
   }
 
+  /** Whether `setLeftPriceScaleVisible` asked for the left scale; it also shows while an overlay is on it (`isLeftPriceScaleShown`). */
+  isLeftPriceScaleVisible(): boolean {
+    return this.leftScaleRequested;
+  }
+
   /** Whether the left price scale is on screen: asked for, or carrying an overlay. */
   isLeftPriceScaleShown(): boolean {
     return this.features.priceAxis !== false && (this.leftScaleRequested || this.indicatorEngine.hasLeftScaleOverlays());
@@ -1759,8 +1876,9 @@ export class Chart {
       logScale: false,
       scaleMode: 'regular',
       invertScale: false,
-      // The overlays' own numbers, not the price's format.
+      // The overlays' own numbers, not the price's format or decimals.
       formatPrice: undefined,
+      pricePrecision: undefined,
       priceUnit: undefined,
     };
   }
@@ -2103,11 +2221,15 @@ export class Chart {
     }));
   }
 
-  /** Tag each indicator line's latest value on its value axis (default on). */
+  /** Tag each indicator line's latest value on its value axis (off by default). */
   setIndicatorValueLabelsVisible(visible: boolean): void {
     this.features.indicatorValueLabels = visible;
     this.syncRenderContext();
     this.engine.requestRender();
+  }
+
+  isIndicatorValueLabelsVisible(): boolean {
+    return this.features.indicatorValueLabels;
   }
 
   /** Write each pane's indicator name and hovered values in its header (default); off when you label panes yourself. */
@@ -3004,9 +3126,10 @@ export class Chart {
     this.disconnectStream();
 
     this.streamManager = new StreamManager();
+    this.streamManager.setTimeZone(this.studyZoneHeld ? this.studyZone : this.getExchangeTimeZone());
 
     this.streamManager.on('snapshot', (bars) => {
-      const key = `${this.currentSymbol}|${this.streamTimeframe}`;
+      const key = this.streamSeriesKey(config.adapter);
       if (this.replaySession) {
         this.series.loadAside(bars);
       } else if (key === this.snapshotKey && this.series.length() > 0) {
@@ -3019,11 +3142,17 @@ export class Chart {
     });
 
     // Each bar lands by its time: the last bar again (its latest values, a
-    // close included), a new one after it, or none when it is older.
+    // close included), a new one after it, or none when it is older. A
+    // closed one older than the last is a correction of the bar loaded at
+    // its time: final, even when the host's own bars run ahead of the stream.
     this.streamManager.on('barClose', (bar) => {
       if (!isValidBar(bar)) return;
       const write = this.series.placeStreamBar(bar);
       if (write.refiltered) this.displayDataCache = null;
+      if (write.to === 'none') {
+        this.updateBar(bar);
+        return;
+      }
       // Its final close is a live price the stream's priceChange doesn't send.
       if (write.to === 'aside') this.followLivePrice(bar.close);
       if (write.to !== 'shown') return;
@@ -3038,11 +3167,18 @@ export class Chart {
       this.followLivePrice(bar.close);
     });
 
+    // The feed's last word on a bar already past: no live price.
+    this.streamManager.on('barCorrection', (bar) => {
+      this.updateBar(bar);
+    });
+
     this.streamManager.on('barUpdate', (bar) => {
       if (!isValidBar(bar)) return;
-      if (!this.replaySession) this.currentPriceLine.setPrice(bar.close);
       const write = this.series.placeStreamBar(bar);
       if (write.refiltered) this.displayDataCache = null;
+      // A frame of a bar older than the last is stale: it moves nothing, the price line included.
+      if (write.to === 'none') return;
+      if (!this.replaySession) this.currentPriceLine.setPrice(bar.close);
       // During a replay the bars shown are the replay's: nothing to draw again.
       if (this.replaySession) return;
       const before = write.before;
@@ -3115,6 +3251,20 @@ export class Chart {
         this.engine.requestRender(LayerType.Hover);
       }
     }, 1000);
+  }
+
+  /**
+   * The series a stream's history is of: its symbol, its timeframe and the
+   * zone whose midnight the days the feed's wrapper builds for it start at.
+   * The same series again (a reconnect, or a switch back before the next
+   * one's history landed) is merged with the bars on screen; days built in
+   * a zone the feed has named since replace them, so two zones' days never mix.
+   */
+  private streamSeriesKey(feed: DataAdapter): string {
+    const adapter = withResampling(feed);
+    const timeframe = this.streamTimeframe;
+    const days = adapter instanceof ResamplingAdapter && timeframe !== null ? adapter.bucketFor(this.currentSymbol, timeframe) : null;
+    return `${this.currentSymbol}|${timeframe}|${days?.timeZone ?? ''}`;
   }
 
   /** The stream's symbol and timeframe, told when they change. */
@@ -3202,6 +3352,7 @@ export class Chart {
    */
   disconnectStream(): void {
     this.symbolInfoSeq++; // a lookup still on its way no longer applies
+    this.releaseStudyZoneAfterCaller();
     this.priceLines.setBidAsk(null);
     if (this.streamManager) {
       this.streamManager.dispose();
@@ -3275,6 +3426,10 @@ export class Chart {
     this.engine.requestRender(LayerType.Hover);
   }
 
+  isBarCountdownVisible(): boolean {
+    return this.barCountdown.isVisible();
+  }
+
   setSessionBreaksVisible(visible: boolean): void {
     this.sessionBreaks.setVisible(visible);
     this.engine.requestRender(LayerType.Background);
@@ -3288,16 +3443,19 @@ export class Chart {
     this.compareRenderer.addSymbol({ id, label, data, color, visible: true });
     // They count in the auto scale.
     this.updateViewportAndRender();
+    this.eventBus.emit('compareChange', { id, change: 'add' });
   }
 
   removeCompareSymbol(id: string): void {
     this.compareRenderer.removeSymbol(id);
     this.updateViewportAndRender();
+    this.eventBus.emit('compareChange', { id, change: 'remove' });
   }
 
   updateCompareData(id: string, data: DataSeries): void {
     this.compareRenderer.setSymbolData(id, data);
     this.updateViewportAndRender();
+    this.eventBus.emit('compareChange', { id, change: 'data' });
   }
 
   setCompareMode(mode: 'percent' | 'absolute'): void {
@@ -3305,9 +3463,49 @@ export class Chart {
     this.updateViewportAndRender();
   }
 
+  /** Show or hide a compare line (`addCompareSymbol`'s id); a hidden one leaves the auto scale. */
+  setCompareVisible(id: string, visible: boolean): void {
+    this.compareRenderer.setSymbolVisible(id, visible);
+    this.updateViewportAndRender();
+    this.eventBus.emit('compareChange', { id, change: 'visible' });
+  }
+
+  /**
+   * Each compare line at bar `barIndex` (the last bar by default), for a
+   * legend: the other symbol's close at or before it, and its change in
+   * percent since its first bar on screen, which is what its line reads on
+   * a percent price scale (`setScaleMode('percentage')`). Past the compare's
+   * last bar (bars you fetched once, the chart streaming on), its last close,
+   * with `stale` true. Where the chart draws no compare lines, on Renko,
+   * Kagi, line break, point & figure and range bars (`isTimeAligned()`
+   * false), each one's close at the latest data bar, whatever `barIndex`,
+   * and no change.
+   */
+  getCompareValues(barIndex?: number): CompareValue[] {
+    if (!this.comparesDrawn()) {
+      const bars = this.series.bars();
+      return this.compareRenderer.valuesAt(bars, null, bars.length - 1);
+    }
+    const data = this.getDisplayData();
+    return this.compareRenderer.valuesAt(data, this.viewport.getState(), barIndex ?? data.length - 1);
+  }
+
+  /**
+   * Compare lines line up with the bars by time: not on the chart types
+   * that redraw them (Renko bricks, Kagi lines…), whose times only count
+   * them, so a line there would read the other symbol at the wrong bars or
+   * at none.
+   */
+  private comparesDrawn(): boolean {
+    return this.isTimeAligned();
+  }
+
+  /** Take every compare line off, each told as a `compareChange` of `'remove'`. */
   clearCompareSymbols(): void {
+    const ids = this.compareRenderer.getSymbols().map((sym) => sym.id);
     this.compareRenderer.clear();
     this.updateViewportAndRender();
+    for (const id of ids) this.eventBus.emit('compareChange', { id, change: 'remove' });
   }
 
   // --- Price scale ---
@@ -3729,13 +3927,28 @@ export class Chart {
 
   // --- Auto Scale ---
 
+  /**
+   * Fit the price axis to the bars on view as they move, or hold the range
+   * on screen (`false`), across `setData` too. Off, a new series (the first
+   * bars, `setData`'s, a stream's symbol or timeframe switch) is still fitted
+   * once, then held; bars that come one by one into an empty chart are
+   * fitted until they fill it.
+   */
   setAutoScale(enabled: boolean): void {
     this.options.autoScale = enabled;
     // Unlike the drag-to-scale/vertical-pan gesture freeze, an explicit call
     // here is a deliberate preference — it should survive the next setData()
     // the same way a constructor-time `autoScale: false` would.
     this.defaultAutoScale = enabled;
+    // Off once bars are coming in: held from what is on screen now, not after the next.
+    if (!enabled && this.series.length() > 0) this.seriesArriving = false;
     this.updateViewportAndRender();
+  }
+
+  /** A drag of the price axis or a vertical pan: the range on screen is the user's, held from here. */
+  private holdPriceScale(): void {
+    this.options.autoScale = false;
+    this.priceFitPending = false;
   }
 
   isAutoScale(): boolean {
@@ -3798,6 +4011,11 @@ export class Chart {
     this.updateViewportAndRender();
   }
 
+  /** Whether the volume bars are drawn: switched on, and `features.volume` not off. */
+  isVolumeVisible(): boolean {
+    return this.features.volume && this.volumeRenderer.isVisible();
+  }
+
   // --- Volume Profile ---
 
   setVolumeProfileVisible(visible: boolean): void {
@@ -3840,6 +4058,11 @@ export class Chart {
     this.engine.requestRender(LayerType.Main);
   }
 
+  /** How the Market Profile is drawn, as `setMarketProfileConfig` left it. */
+  getMarketProfileConfig(): import('@tradecanvas/core').MarketProfileConfig {
+    return this.marketProfile.getConfig();
+  }
+
   /** POC / VAH / VAL of the currently rendered Market Profile, or null. */
   getMarketProfileStats(): import('@tradecanvas/core').MarketProfileStats | null {
     return this.marketProfile.getStats();
@@ -3860,6 +4083,10 @@ export class Chart {
     if (config.opacity !== undefined) this.depthHeatmap.setOpacity(config.opacity);
     if (config.capacity !== undefined) this.depthHeatmap.setCapacity(config.capacity);
     this.engine.requestRender(LayerType.Main);
+  }
+
+  getDepthHeatmapConfig(): { opacity: number; capacity: number } {
+    return this.depthHeatmap.getConfig();
   }
 
   /**
@@ -3895,6 +4122,10 @@ export class Chart {
   setPeriodLevelsPeriod(period: import('@tradecanvas/core').LevelPeriod): void {
     this.periodLevels.setPeriod(period);
     this.engine.requestRender(LayerType.Main);
+  }
+
+  getPeriodLevelsPeriod(): import('@tradecanvas/core').LevelPeriod {
+    return this.periodLevels.getPeriod();
   }
 
   /**
@@ -3961,6 +4192,99 @@ export class Chart {
     this.setTimeZone(minutes);
   }
 
+  /**
+   * The exchange's zone where it counts beyond the zone shown: daily bars
+   * built at its midnight are dated there, and so are days built from ticks.
+   * Indicators that start again each day, week or month, the prior-day lines
+   * and the market profile's sessions count their days there too.
+   */
+  private applyExchangeZone(): void {
+    const zone = this.getExchangeTimeZone();
+    this.timeAxis.setExchangeTimeZone(zone);
+    this.crosshairHandler.setExchangeTimeZone(zone);
+    this.crosshairTooltip.setExchangeTimeZone(zone);
+    this.pinnedTooltip.setExchangeTimeZone(zone);
+    if (!this.studyZoneHeld) this.applyStudyZone(zone);
+  }
+
+  /**
+   * The zone the indicators, the prior-day lines, the market profile and the
+   * bars built from trades count their days in. Held through a switch, the
+   * next symbol's trades go on building the day its history ends on when it
+   * trades on the same exchange, rather than starting UTC's day beside it.
+   */
+  private applyStudyZone(zone: string | null): void {
+    this.studyZone = zone;
+    this.streamManager?.setTimeZone(zone);
+    this.periodLevels.setExchangeTimeZone(zone);
+    this.marketProfile.setExchangeTimeZone(zone);
+    const bars = this.series.bars();
+    // With no bars yet, the data that comes computes them. Otherwise only
+    // the indicators that count days in the zone, before the next read, not
+    // now: the bars the symbol's hours filter again follow in setSymbolInfo,
+    // and computing them computes everything once.
+    if (this.indicatorEngine.setExchangeTimeZone(zone, bars.length > 0 ? bars : undefined) && bars.length > 0) {
+      this.announceIndicatorUpdate(0);
+    }
+  }
+
+  /**
+   * The indicators keep the last symbol's zone while the feed is asked about
+   * the next, for at most as long as the days it builds wait for the answer.
+   */
+  private holdStudyZone(): void {
+    this.endStudyZoneWait();
+    this.studyZoneHeld = true;
+    this.studyZoneTimer = setTimeout(() => this.releaseStudyZone(), SYMBOL_ZONE_WAIT_MS);
+  }
+
+  private endStudyZoneWait(): void {
+    this.studyZoneReleaseQueued = false;
+    if (this.studyZoneTimer === null) return;
+    clearTimeout(this.studyZoneTimer);
+    this.studyZoneTimer = null;
+  }
+
+  /** No word on the next symbol is coming: the indicators and the rest take the chart's zone. */
+  private releaseStudyZone(): void {
+    this.endStudyZoneWait();
+    if (!this.studyZoneHeld) return;
+    this.studyZoneHeld = false;
+    this.applyStudyZone(this.getExchangeTimeZone());
+    if (!this.disposed) this.updateViewportAndRender();
+  }
+
+  /**
+   * A disconnect ends the hold once the code that called it has run, unless
+   * a connect came in it: a symbol switch made of `disconnectStream()` and
+   * `connect()`, as the widget's are, asks about the next symbol in that
+   * connect, which holds the zone on from its question, as `switchStream` does.
+   */
+  private releaseStudyZoneAfterCaller(): void {
+    if (!this.studyZoneHeld) return;
+    this.endStudyZoneWait();
+    this.studyZoneReleaseQueued = true;
+    queueMicrotask(() => {
+      if (!this.studyZoneReleaseQueued || this.disposed) return;
+      this.releaseStudyZone();
+    });
+  }
+
+  /**
+   * A bar's time as a screen reader hears it, in the chart's locale: a daily
+   * bar's date, the one it stands for in any zone shown (`barDateZone`), as
+   * the axis gives it; any other bar's date and time in the zone shown.
+   */
+  private spokenBarTime(time: number): string {
+    const data = this.getDisplayData();
+    const ms = time * barTimeUnit(data);
+    const locale = this.numberLocale || 'en-US';
+    if (barsAreDaily(data) === true) {
+      return zonedDateFormatter(locale, { dateStyle: 'medium' }, barDateZone(ms, this.displayTz, this.getExchangeTimeZone()))(ms);
+    }
+    return zonedDateFormatter(locale, { dateStyle: 'medium', timeStyle: 'short' }, this.displayTz)(ms);
+  }
+
   private applyTimeZone(): void {
     const tz = this.timeZoneSetting === EXCHANGE_TIME_ZONE ? (this.getExchangeTimeZone() ?? 'UTC') : this.timeZoneSetting;
     this.displayTz = tz;
@@ -3978,13 +4302,21 @@ export class Chart {
    * What is known about the symbol on the chart — usually from the stream's
    * adapter (`resolveSymbol`), which a connected chart asks by itself. Its
    * price precision applies unless `setMarket` set one; its zone
-   * (`timeZone`) backs `setTimeZone('exchange')`; its hours feed the session
-   * shading. `getSymbolInfo()` gives the zone as `timeZone` and as the older
+   * (`timeZone`) backs `setTimeZone('exchange')` and dates daily bars; its
+   * hours feed the session shading. `getSymbolInfo()` gives the zone as `timeZone` and as the older
    * `timezone`; given both with different zones, `timeZone` is the one, unless
    * it is the zone the chart already has for the symbol and `timezone` is new
    * (`{ ...chart.getSymbolInfo(), timezone: zone }` changes it).
    */
   setSymbolInfo(info: SymbolInfo | null): void {
+    // From the host or the feed: the indicators take the zone it brings, or none.
+    this.studyZoneHeld = false;
+    this.endStudyZoneWait();
+    this.useSymbolInfo(info);
+  }
+
+  /** `setSymbolInfo`, leaving the indicators' zone held or not as it is. */
+  private useSymbolInfo(info: SymbolInfo | null): void {
     const held = info && this.symbolInfo?.symbol === info.symbol ? symbolTimeZone(this.symbolInfo) : undefined;
     this.symbolInfo = info ? withBothZoneSpellings({ ...info, sessions: info.sessions?.map((session) => ({ ...session })) }, held) : null;
     this.chartLegend.setExchange(this.symbolInfo?.exchange ?? '');
@@ -4004,6 +4336,7 @@ export class Chart {
       ? { timeZone: zone, windows, startMinute: windows[0].startMinute, endMinute: windows[windows.length - 1].endMinute }
       : this.hostSessionHours);
     if (this.timeZoneSetting === EXCHANGE_TIME_ZONE) this.applyTimeZone();
+    this.applyExchangeZone();
     this.reapplyExtendedHours();
     this.updateViewportAndRender();
     this.eventBus.emit('symbolInfoChange', { info: this.symbolInfo });
@@ -4034,20 +4367,39 @@ export class Chart {
 
   /** Ask the stream's adapter about `symbol`, if it can tell; a late answer about another symbol is dropped. */
   private resolveStreamSymbol(adapter: DataAdapter, symbol: string): void {
+    // Through the stream's own wrapper: the question it asks to build the symbol's days is this one.
+    const source = withResampling(adapter);
+    const resolve = source.resolveSymbol?.bind(source);
     // Another symbol's details go, whether or not the feed can be asked (it may send them later).
-    if (this.symbolInfo && this.symbolInfo.symbol !== symbol) this.setSymbolInfo(null);
-    const resolve = adapter.resolveSymbol?.bind(adapter);
-    if (!resolve) return;
+    // Its zone stays with the indicators until the answer comes.
+    if (this.symbolInfo && this.symbolInfo.symbol !== symbol) {
+      if (resolve) this.holdStudyZone();
+      else this.studyZoneHeld = false;
+      this.useSymbolInfo(null);
+    } else if (resolve && this.studyZoneHeld) {
+      // A switch on before the last symbol's answer came: the hold lasts as
+      // long from this question, as the days the feed builds wait for it.
+      this.holdStudyZone();
+    }
+    if (!resolve) {
+      this.releaseStudyZone();
+      return;
+    }
     const seq = ++this.symbolInfoSeq;
     // Taken as a promise: an adapter may throw, or answer without one.
     Promise.resolve().then(() => resolve(symbol)).then(
       (info) => {
-        // No answer leaves what the host set for the symbol, if anything.
-        if (info && seq === this.symbolInfoSeq && this.currentSymbol === symbol) this.setSymbolInfo(info);
+        // A newer question, or a disconnect, settles the zone instead.
+        if (seq !== this.symbolInfoSeq) return;
+        // No answer leaves what the host set for the symbol, if anything, and the chart's zone.
+        if (info && this.currentSymbol === symbol) this.setSymbolInfo(info);
+        else this.releaseStudyZone();
       },
       (err: unknown) => {
+        if (seq !== this.symbolInfoSeq) return;
         // Only the symbol's details are missing; the feed itself is fine.
-        if (seq === this.symbolInfoSeq) console.warn(`No symbol info for "${symbol}":`, err);
+        this.releaseStudyZone();
+        console.warn(`No symbol info for "${symbol}":`, err);
       },
     );
   }
@@ -4070,6 +4422,10 @@ export class Chart {
     if (config.showLabels !== undefined) this.pivotMarkers.setShowLabels(config.showLabels);
     if (config.structureLabels !== undefined) this.pivotMarkers.setStructureLabels(config.structureLabels);
     this.engine.requestRender(LayerType.Overlay);
+  }
+
+  getPivotMarkersConfig(): import('@tradecanvas/core').PivotMarkersConfig {
+    return this.pivotMarkers.getConfig();
   }
 
   // --- Session (RTH) shading ---
@@ -4106,6 +4462,11 @@ export class Chart {
   setLegend(config: Partial<import('@tradecanvas/core').LegendConfig>): void {
     this.chartLegend.setConfig(config);
     this.engine.requestRender(LayerType.Hover);
+  }
+
+  /** Whether the legend is drawn: shown by `setLegend`, and `features.legend` not off. */
+  isLegendVisible(): boolean {
+    return this.features.legend && this.chartLegend.getConfig().visible;
   }
 
   setSymbolName(symbol: string): void {
@@ -4209,12 +4570,30 @@ export class Chart {
   /** Copy the chart image to the clipboard. Returns false if unsupported/blocked. */
   async copyScreenshot(): Promise<boolean> {
     if (!this.features.screenshot) return false;
+    const ClipboardItemCtor = (globalThis as { ClipboardItem?: typeof ClipboardItem }).ClipboardItem;
+    // A runtime with no navigator has no clipboard either: that is a false, not an error.
+    const clipboard = typeof navigator === 'undefined' ? undefined : navigator.clipboard;
+    if (!clipboard?.write || !ClipboardItemCtor) return false;
     try {
       this.freshFrame();
-      const blob = await Screenshot.toBlob(this.container, this.themeManager.getTheme().background);
-      const ClipboardItemCtor = (globalThis as { ClipboardItem?: typeof ClipboardItem }).ClipboardItem;
-      if (!blob || !navigator.clipboard?.write || !ClipboardItemCtor) return false;
-      await navigator.clipboard.write([new ClipboardItemCtor({ 'image/png': blob })]);
+      const png = Screenshot.toBlob(this.container, this.themeManager.getTheme().background).then((blob) => {
+        if (!blob) throw new Error('No chart image to copy');
+        return blob;
+      });
+      // The write reports a missing image; this keeps it from also showing as an unhandled rejection.
+      png.catch(() => {});
+      // The item is made, and written, before anything is awaited, while the
+      // image still encodes: Safari lets a page write the clipboard only while
+      // the click that asked for it is being handled.
+      let item: ClipboardItem;
+      try {
+        item = new ClipboardItemCtor({ 'image/png': png });
+      } catch (err) {
+        // Older browsers take only a Blob here, so they wait for the encoding.
+        if (!(err instanceof TypeError)) throw err;
+        item = new ClipboardItemCtor({ 'image/png': await png });
+      }
+      await clipboard.write([item]);
       return true;
     } catch {
       return false;
@@ -4559,6 +4938,7 @@ export class Chart {
       // The display cache isn't keyed to the data array — without this the
       // chart kept drawing the pre-replay series.
       this.displayDataCache = null;
+      this.reshapeMemo.clear();
       this.updateViewportAndRender(follow);
       this.feedReplaySteps(series, index);
       this.eventBus.emit('replayStep', { barIndex, time: coarse[barIndex].time, until, total: coarse.length });
@@ -5054,6 +5434,7 @@ export class Chart {
     // The saved type's settings (none saved: the defaults).
     this.chartTypeOptions = snapshot.chartTypeOptions ?? {};
     this.displayDataCache = null;
+    this.reshapeMemo.clear();
     if (snapshot.chartType) this.setChartType(snapshot.chartType);
     if (snapshot.drawings) this.setDrawings(snapshot.drawings);
     // A save names its theme: a built-in one loads, another (only its name was
@@ -5141,6 +5522,7 @@ export class Chart {
     this.timeAxis.setLocale(locale);
     this.chartLegend.setLocale(locale);
     this.crosshairTooltip.setLocale(locale);
+    this.pinnedTooltip.setLocale(locale);
     this.currentPriceLine.setLocale(locale);
     // Separators change label widths; the axis may need to refit.
     this.updateViewportAndRender();
@@ -5159,8 +5541,9 @@ export class Chart {
    * its daily limits once `setPriceLimits` gives the reference.
    *
    * The axis keeps its zone: `setTimeZone('exchange')` shows the market's
-   * (the symbol's own, when `setSymbolInfo` gave one). Numbers keep the
-   * chart's locale (`numberLocale`).
+   * (the symbol's own, when `setSymbolInfo` gave one). That zone also dates
+   * daily bars, and starts the days a `ChartWidget` builds from its bars.
+   * Numbers keep the chart's locale (`numberLocale`). Sends `marketChange`.
    *
    * @example
    * chart.setMarket(MARKET_HOSE);
@@ -5169,8 +5552,12 @@ export class Chart {
    */
   setMarket(config: MarketConfig): void {
     this.marketConfig = config;
+    // The host names the zone: the indicators wait for no symbol's.
+    this.studyZoneHeld = false;
+    this.endStudyZoneWait();
     // `'exchange'` shows the market's zone when the symbol names none.
     if (this.timeZoneSetting === EXCHANGE_TIME_ZONE) this.applyTimeZone();
+    this.applyExchangeZone();
 
     // The market's colours on the candles; volume keeps the theme's own.
     if (config.colorScheme) {
@@ -5190,11 +5577,16 @@ export class Chart {
 
     // Longer price labels may need a wider axis.
     this.updateViewportAndRender();
+    this.eventBus.emit('marketChange', { market: config });
   }
 
   /** Prices show `precision` decimals everywhere; null goes back to fitting the price range. */
   private applyPricePrecision(precision: number | null): void {
     this.marketPricePrecision = precision;
+    // On the viewport for what draws from it alone: drawing labels, price
+    // limits, pivots, the measure, the market profile and plugins.
+    this.viewport.setPricePrecision(precision);
+    this.pinnedTooltip.setPricePrecision(precision);
     this.priceAxis.setPricePrecision(precision);
     this.tradingManager.setConfig({ pricePrecision: precision ?? undefined });
     this.alertManager.setPricePrecision(precision);
@@ -5337,16 +5729,30 @@ export class Chart {
   }
 
   private getDisplayData(): DataSeries {
-    if (this.displayDataCache) return this.displayDataCache;
     const raw = this.series.bars();
+    // Range bars go on the market's own grid, not the decimals the axis shows, which follow the view: the
+    // coarsest step of the bars their range is measured on, so a last price over a band edge rebuilds nothing.
+    const step = this.options.chartType === 'rangeBars' ? rangeBarsStep(raw, (price) => this.stepAt(price)) : undefined;
+    if (this.displayDataCache && step === this.displayDataStep) return this.displayDataCache;
     if (raw.length === 0) return raw;
-    const result = resolveDisplayData(this.options.chartType, raw, (t) => this.pluginManager.getChartType(t), this.chartTypeOptions);
-    // Boxes drawn the size the built-in columns were built with (a plugin's chart type keeps its own).
-    if (this.chartRenderer instanceof PointAndFigureRenderer && !this.pluginManager.getChartType(this.options.chartType)) {
-      this.chartRenderer.setBoxSize(pointAndFigureBox(raw, this.chartTypeOptions));
-    }
+    const result = this.displaySeries(raw, step);
     this.displayDataCache = result;
+    this.displayDataStep = step;
     return result;
+  }
+
+  /**
+   * The series the chart type draws. The built-in point & figure's columns
+   * come with the box they were built on, which its renderer draws them at,
+   * in the one walk (a plugin's chart type keeps its own).
+   */
+  private displaySeries(raw: DataSeries, step: number | undefined): DataSeries {
+    const type = this.options.chartType;
+    const lookup = (t: string) => this.pluginManager.getChartType(t);
+    if (type !== 'pointAndFigure' || lookup(type)) return resolveDisplayData(type, raw, lookup, this.chartTypeOptions, step, this.reshapeMemo);
+    const { columns, boxSize } = pointAndFigureDisplay(raw, this.chartTypeOptions, this.reshapeMemo);
+    if (this.chartRenderer instanceof PointAndFigureRenderer) this.chartRenderer.setBoxSize(boxSize);
+    return columns;
   }
 
   /** Recompute indicators from bar `from` on, and say so (live ticks, closes, replay steps). */
@@ -5429,7 +5835,7 @@ export class Chart {
    */
   private applyDataToViewport(scrollToEnd = false): DataSeries {
     const displayData = this.getDisplayData();
-    const autoScale = this.options.autoScale !== false;
+    const autoScale = this.options.autoScale !== false || this.priceFitPending;
 
     // updateData first so dataLength is current for scrollToEnd — but only
     // fit the price range once the FINAL visible window is known. Fitting
@@ -5450,7 +5856,8 @@ export class Chart {
       this.viewport.setScaleBaseline(displayData[baseIdx]?.close);
     }
 
-    if (autoScale) this.fitPriceScale(displayData, vs);
+    // Fitted on the new baseline: percent compare lines start there.
+    if (autoScale) this.fitPriceScale(displayData, this.viewport.getState());
     return displayData;
   }
 
@@ -5465,7 +5872,7 @@ export class Chart {
     const to = Math.min(vs.visibleRange.to, displayData.length - 1);
     const range = joinRanges(
       joinRanges(computePriceRange(displayData, from, to, 0), this.indicatorEngine.getOverlayPriceRange(from, to)),
-      this.features.compareSymbols ? this.compareRenderer.getPriceRange(displayData, vs) : null,
+      this.features.compareSymbols && this.comparesDrawn() ? this.compareRenderer.getPriceRange(displayData, vs) : null,
     )!;
     const volume = this.features.volume && this.volumeRenderer.isVisible() && hasVolume(displayData, from, to);
     const band = volume ? this.volumeRenderer.getHeightRatio() + VOLUME_GAP : PRICE_SCALE_MARGIN;
@@ -5500,10 +5907,26 @@ export class Chart {
    * before anything reads the layout for this frame.
    */
   private fitDataAndAxes(scrollToEnd = false): void {
-    this.applyDataToViewport(scrollToEnd);
+    const shown = this.applyDataToViewport(scrollToEnd);
     const priceResized = this.fitPriceAxisWidth();
     this.leftViewport = this.computeLeftViewport();
     if (this.fitLeftAxisWidth() || priceResized) this.applyDataToViewport(scrollToEnd);
+    // The new series' prices are on the axis: auto-scale off holds them from here.
+    if (this.priceFitPending && this.priceFitDone(shown)) this.priceFitPending = false;
+  }
+
+  /**
+   * Whether the new series' bars on view were fitted: there are some, on a
+   * plot with room for them. A chart with no size yet (a hidden tab or
+   * panel) has none on view, so it fits them once it gets one. A series that
+   * began with no bars is still coming in while all of it fits on screen:
+   * each bar it gets one by one is fitted too, not just its first.
+   */
+  private priceFitDone(shown: DataSeries): boolean {
+    const { chartRect, offset, barWidth, barSpacing } = this.viewport.getState();
+    if (shown.length === 0 || chartRect.width <= 0) return false;
+    const allOnView = offset <= 0 && shown.length * (barWidth + barSpacing) - offset <= chartRect.width;
+    return !(this.seriesArriving && allOnView);
   }
 
   /** Size the left scale to its widest label; true when the layout changed. */
@@ -5701,6 +6124,7 @@ export class Chart {
           scaleBaseline: panel.config.percentScale ? this.paneBaseline(panel.config.id, from, to) : undefined,
           // A pane's values are its own, not prices.
           formatPrice: undefined,
+          pricePrecision: undefined,
           priceUnit: undefined,
           invertScale: !!panel.config.invertScale,
         },
@@ -5761,7 +6185,7 @@ export class Chart {
       barCountdown: this.barCountdown,
       sessionBreaks: this.sessionBreaks,
       sessionShading: this.sessionShading,
-      compareRenderer: this.compareRenderer,
+      compareRenderer: this.comparesDrawn() ? this.compareRenderer : null,
       alertManager: this.features.alerts ? this.alertManager : null,
       measureOverlay: this.measureOverlay,
       selectionBoxOverlay: this.selectionBoxOverlay,
@@ -5776,6 +6200,8 @@ export class Chart {
       viewport: { ...this.viewport.getState(), data: displayData },
       theme: this.themeManager.getTheme(),
       data: displayData,
+      // A bar replaced in place leaves the array the same: the GPU's copy needs telling.
+      seriesRevision: this.series.revision(),
       numberLocale: this.numberLocale,
       paneTitles: this.paneTitles,
       indicatorValueLabels: this.features.indicatorValueLabels,

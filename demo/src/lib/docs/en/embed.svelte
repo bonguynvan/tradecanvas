@@ -51,13 +51,18 @@ import { App } from '@capacitor/app';
 App.addListener('appStateChange', ({ isActive }) => (isActive ? chart.resume() : chart.suspend()));`}</code></pre>
 <p>A chart inside a screen that scrolls leaves vertical swipes to the screen.</p>
 <pre><code>{`new Chart(host, { pageScroll: true })   // a chart in a screen that scrolls`}</code></pre>
-<p>Tauri's content security policy must let the page reach the data feed's hosts.</p>
-<pre><code>{`// tauri.conf.json (Tauri 2): let the page reach the feed
+<p>
+  Tauri's content security policy must let the page reach the data feed's hosts. The widget also needs <code>style-src 'unsafe-inline'</code>, for the one <code>&lt;style&gt;</code> element it adds, and <code>img-src data:</code>, for the small icons in its fields and checkboxes: without the first it shows unstyled, without the second its fields and checkboxes lose their icons. Copying the chart image needs nothing more.
+</p>
+<pre><code>{`// tauri.conf.json (Tauri 2): the feed's hosts, the widget's styles and icons
 "app": {
   "security": {
-    "csp": "default-src 'self'; connect-src 'self' https://api.binance.com wss://stream.binance.com:9443"
+    "csp": "default-src 'self'; connect-src 'self' https://api.binance.com wss://stream.binance.com:9443; style-src 'self' 'unsafe-inline'; img-src 'self' data:"
   }
 }`}</code></pre>
+<p>
+  Tauri adds a nonce to <code>style-src</code> for each <code>&lt;style&gt;</code> element in the page's own HTML (and a hash in its isolation pattern), and a browser ignores <code>'unsafe-inline'</code> once a nonce is there, so the widget's styles are refused again. Keep the page's styles in stylesheet files, or list <code>"style-src"</code> under <code>dangerousDisableAssetCspModification</code>.
+</p>
 <p>
   The chart draws at a pixel ratio of 2 at most (<code>maxPixelRatio</code>); destroy it (<code>chart.destroy()</code>) when its screen closes, and its canvas memory goes back at once.
 </p>

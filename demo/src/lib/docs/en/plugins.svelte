@@ -105,7 +105,10 @@ chart.setDrawingTool('targetLine')`}</code></pre>
   <code>maxAnchors</code>) and whether the dialog offers a fill
   (<code>fill</code>) or text (<code>text</code>). A tool can move handles that
   are not anchors with <code>moveHandle()</code>, and receives the chart's bars
-  through <code>setDataGetter()</code> when it draws from them.
+  through <code>setDataGetter(getter, revision)</code> when it draws from them.
+  <code>revision()</code> moves when a bar was corrected in the same array
+  (<code>updateBar</code>): a tool that keeps what it computed from the bars
+  computes it again then.
 </p>
 
 <h2>Custom chart type</h2>
@@ -148,6 +151,9 @@ registerPlugin({
   Indicator and chart-type renderers get the viewport alone: <code>priceToY</code>, <code>barIndexToX</code>,
   <code>timeToX</code> and their inverses are exported for them. The bars are those on screen: on a Renko or
   Kagi chart, its bricks (<code>chart.isTimeAligned()</code> says when they are the feed's bars).
+  To write a price as the axis does, the viewport carries the chart's own price format when it has one
+  (<code>formatPrice</code>), its <code>numberLocale</code>, and the market's or the symbol's decimals when one sets
+  them (<code>pricePrecision</code>); indicator panes leave the format and the decimals unset.
 </p>
 <p>
   An overlay with settings of its own (a display mode, a switch) can show a change at once, even when no

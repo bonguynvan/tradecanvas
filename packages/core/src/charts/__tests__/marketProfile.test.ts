@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import type { OHLCBar } from '@tradecanvas/commons';
+import { DARK_THEME, type OHLCBar, type ViewportState } from '@tradecanvas/commons';
 import { computeMarketProfile, computeSessionProfiles, tpoLetter, assignSessionLetters } from '../marketProfile.js';
+import { MarketProfileRenderer } from '../MarketProfileRenderer.js';
+import { recordingCtx, unitViewport } from '../../drawings/__tests__/fixtures.js';
 
 function bar(low: number, high: number): OHLCBar {
   return { time: 0, open: low, high, low, close: high, volume: 1 };
@@ -95,6 +97,21 @@ describe('computeSessionProfiles', () => {
     expect(sessions[1].startTime).toBe(Date.UTC(2023, 0, 3));
   });
 
+  it('splits by the day in the exchange’s zone, and names each by its date', () => {
+    // ASX sessions, 10:00–15:00 in Sydney: 23:00 UTC the day before to 04:00 UTC.
+    const day = (d: number) => [0, 1, 2].map((h) => barAt(Date.UTC(2026, 9, 25 + d, 23) + h * 3_600_000, 10 + d, 20 + d));
+    const bars = [...day(0), ...day(1)];
+    const zoned = computeSessionProfiles(bars, 0, 100, { buckets: 10 }, 'Australia/Sydney');
+    expect(zoned.map((s) => [s.startIndex, s.endIndex, s.startTime])).toEqual([
+      [0, 2, Date.UTC(2026, 9, 26)],
+      [3, 5, Date.UTC(2026, 9, 27)],
+    ]);
+    // UTC's days cut each session after its first bar.
+    expect(computeSessionProfiles(bars, 0, 100, { buckets: 10 })).toHaveLength(3);
+    // So does a zone the browser does not know, rather than throwing.
+    expect(computeSessionProfiles(bars, 0, 100, { buckets: 10 }, 'Mars/Olympus_Mons')).toHaveLength(3);
+  });
+
   it('shares the price window across sessions', () => {
     const bars = [barAt(D1, 10, 20), barAt(D2, 80, 90)];
     const sessions = computeSessionProfiles(bars, 0, 100, { buckets: 10 });
@@ -142,5 +159,31 @@ describe('MarketProfileRenderer.drawsText', () => {
     expect(r.drawsText()).toBe(false);
     r.setLetters(true);
     expect(r.drawsText()).toBe(true);
+  });
+});
+
+describe('MarketProfileRenderer stats', () => {
+  function statsTexts(viewport: ViewportState) {
+    const r = new MarketProfileRenderer();
+    r.setVisible(true);
+    const data = Array.from({ length: 20 }, (_, i) => barAt(i, 99_500 + i * 10, 100_200 + i * 10));
+    const { ctx, texts } = recordingCtx();
+    r.render(ctx, data, viewport, DARK_THEME);
+    // Each row writes its name, then its value.
+    const values = ['POC', 'VAH', 'VAL'].map((name) => texts[texts.indexOf(name) + 1]);
+    return { values, stats: r.getStats()! };
+  }
+
+  it('write POC, VAH and VAL in the market’s decimals and the number locale', () => {
+    const near100k = { ...unitViewport, priceRange: { min: 99_000, max: 101_000 }, pricePrecision: 1, numberLocale: 'de-DE' };
+    const { values, stats } = statsTexts(near100k);
+    const de = (v: number) => v.toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+    expect(values).toEqual([de(stats.poc), de(stats.vah), de(stats.val)]);
+    expect(values[0]).toMatch(/^\d{2,3}\.\d{3},\d$/);
+  });
+
+  it('keep the decimals they had without a market precision, grouped', () => {
+    const { values } = statsTexts({ ...unitViewport, priceRange: { min: 99_000, max: 101_000 } });
+    expect(values[0]).toMatch(/^\d{2,3},\d{3}\.\d{2}$/);
   });
 });

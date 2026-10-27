@@ -52,6 +52,13 @@ export interface ViewportState {
   /** The number locale prices on this scale are grouped in (`'vi-VN'`: 72.202,13). Unset: en-US. */
   numberLocale?: string;
   /**
+   * Decimals prices on this scale show, when the market or the symbol sets
+   * them (`setMarket`, `SymbolInfo.pricePrecision`): drawing labels, price
+   * limits and the tags beside the axis use them. Unset: each label keeps its
+   * own decimals. Indicator panes and the left scale leave it unset.
+   */
+  pricePrecision?: number;
+  /**
    * The step prices move in under that format (a 32nd): the axis puts its
    * ticks on whole numbers of it.
    */

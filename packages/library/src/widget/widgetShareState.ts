@@ -1,4 +1,7 @@
 import type { ChartType, TimeFrame, DrawingState, PriceScaleMode } from '@tradecanvas/commons';
+import type { ChartSettingsState } from './types.js';
+import { SHARE_LEAVES, readChartSettings } from './chartSettingsStore.js';
+import { SCALE_MODES } from './widgetLayout.js';
 
 export interface ShareableIndicator {
   id: string;
@@ -13,7 +16,16 @@ export interface ShareableWidgetState {
   scaleMode: PriceScaleMode;
   indicators: ShareableIndicator[];
   drawings: DrawingState[];
+  /**
+   * The Chart Settings the sender changed from the defaults (overlays,
+   * crosshair, legend, a flipped scale, a chart type's own settings…), but
+   * their time zone and number format, which stay the viewer's. Absent when
+   * they changed none.
+   */
+  settings?: Partial<ChartSettingsState>;
 }
+
+const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null && !Array.isArray(value);
 
 interface NodeBufferCtor {
   from(input: string, encoding: string): { toString(encoding: string): string };
@@ -66,9 +78,10 @@ export function decodeWidgetState(encoded: string): ShareableWidgetState | null 
       symbol: obj.symbol,
       timeframe: obj.timeframe,
       chartType: obj.chartType,
-      scaleMode: obj.scaleMode ?? 'regular',
+      scaleMode: SCALE_MODES.find((m) => m === obj.scaleMode) ?? 'regular',
       indicators: Array.isArray(obj.indicators) ? obj.indicators : [],
       drawings: Array.isArray(obj.drawings) ? obj.drawings : [],
+      ...(isRecord(obj.settings) ? { settings: readChartSettings(obj.settings, SHARE_LEAVES) } : {}),
     };
   } catch {
     return null;

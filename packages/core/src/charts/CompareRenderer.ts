@@ -2,6 +2,40 @@ import type { DataSeries, ViewportState, Theme } from '@tradecanvas/commons';
 import { barTimeUnit } from '@tradecanvas/commons';
 import { barIndexToX, priceToY } from '../viewport/ScaleMapping.js';
 import { SymbolSeriesStore } from '../indicators/symbols/SymbolSeriesStore.js';
+import { fillTextWithHalo } from '../drawings/tools/labels.js';
+
+/** Between a line's end and its label (px). */
+const LABEL_GAP = 4;
+/** A label's text: its size (px), and the room around it the other labels keep clear of. */
+const LABEL_FONT_PX = 10;
+const LABEL_PAD_X = 3;
+const LABEL_HEIGHT = 14;
+/** The stroke of the line's colour before a label's name (px): its length, its width, and its gap to the name. */
+const MARK_LENGTH = 8;
+const MARK_WIDTH = 2;
+const MARK_GAP = 3;
+/** A label tried this many heights above and below its line's end before it settles where it first went. */
+const LABEL_TRIES = 4;
+/** An alert's label sits this far above its line, at the plot's right edge, as AlertManager draws it. */
+const ALERT_LABEL_GAP = 2;
+
+/** A label's box on the plot, px. */
+interface LabelBox {
+  left: number;
+  top: number;
+  right: number;
+  bottom: number;
+}
+
+/** Where a compare line ends on screen, which its label goes by. */
+interface LineEnd {
+  sym: CompareSymbol;
+  x: number;
+  y: number;
+}
+
+const overlaps = (a: LabelBox, b: LabelBox): boolean =>
+  a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
 
 export interface CompareSymbol {
   id: string;
@@ -12,11 +46,31 @@ export interface CompareSymbol {
   visible: boolean;
 }
 
+/** A compare's values at one main bar, for a legend. */
+export interface CompareValue {
+  id: string;
+  label: string;
+  color: string;
+  visible: boolean;
+  /** Its close at or before the bar; past its last bar, its last close. Null before its first bar. */
+  close: number | null;
+  /**
+   * Its change in percent since the first bar on screen it has a close for:
+   * what its line reads on a percent price scale. Null without a close.
+   */
+  change: number | null;
+  /** The bar is past the compare's last bar: `close` is its last close, not one at this bar. */
+  stale: boolean;
+}
+
 /**
  * Renders comparison overlays on the main chart. Each compare series is
- * lined up with the main bars by time (its bar at or before each one), and
- * in percent mode rebased on the first main bar on screen it has a value
- * for, then mapped onto the main chart's price axis.
+ * lined up with the main bars by time (its bar at or before each one). In
+ * percent mode each line starts at the main close of the first bar on
+ * screen, the baseline the percent scale reads 0% at, from its own first
+ * bar on screen: a symbol whose bars begin later starts at 0% there too, so
+ * on a percent scale every line reads its own change. Then it is mapped onto
+ * the main chart's price axis.
  */
 export class CompareRenderer {
   private symbols = new Map<string, CompareSymbol>();
@@ -24,6 +78,17 @@ export class CompareRenderer {
   private store = new SymbolSeriesStore();
   /** Each series' closes on the main bars, for the main series it was worked out for. */
   private aligned = new Map<string, { main: DataSeries; data: DataSeries; length: number; lastTime: number; closes: Float64Array }>();
+  /** The prices of the lines whose labels sit at the plot's right edge (price alerts): see `setReservedLevels`. */
+  private reservedLevels: () => readonly number[] = () => [];
+
+  /**
+   * The prices of lines labelled at the plot's right edge, just above the
+   * line (a price alert's): each compare's label keeps clear of them, as it
+   * does of the other compares' labels.
+   */
+  setReservedLevels(levels: () => readonly number[]): void {
+    this.reservedLevels = levels;
+  }
 
   setMode(mode: 'percent' | 'absolute'): void {
     this.mode = mode;
@@ -93,7 +158,7 @@ export class CompareRenderer {
     ctx: CanvasRenderingContext2D,
     mainData: DataSeries,
     viewport: ViewportState,
-    _theme: Theme,
+    theme: Theme,
   ): void {
     if (this.symbols.size === 0 || mainData.length === 0) return;
 
@@ -104,12 +169,87 @@ export class CompareRenderer {
     ctx.rect(chartRect.x, chartRect.y, chartRect.width, chartRect.height);
     ctx.clip();
 
+    // The lines first, then their labels over all of them.
+    const ends: LineEnd[] = [];
     for (const sym of this.symbols.values()) {
       if (!sym.visible || sym.data.length === 0) continue;
-      this.renderSymbol(ctx, sym, mainData, viewport);
+      const end = this.renderSymbol(ctx, sym, mainData, viewport);
+      if (end) ends.push({ sym, ...end });
     }
+    this.renderLabels(ctx, ends, viewport, theme);
 
     ctx.restore();
+  }
+
+  /**
+   * Each line's label at its end, where the lines part (in percent mode they
+   * all start at the same point, and labels there would stack), clear of an
+   * alert's label and of the labels placed before it: tried above the end,
+   * then below, then further out. A halo of the chart's ground around the
+   * letters keeps them legible over the candles and the other lines, which a
+   * box would hide. The name is in the text colour, as the legend's figures
+   * are: no one line colour reads as text on both the dark and the light
+   * theme. A stroke of the line's colour before it says which line it names.
+   */
+  private renderLabels(ctx: CanvasRenderingContext2D, ends: readonly LineEnd[], viewport: ViewportState, theme: Theme): void {
+    if (ends.length === 0) return;
+    ctx.font = `bold ${LABEL_FONT_PX}px sans-serif`;
+    ctx.textBaseline = 'middle';
+    ctx.textAlign = 'right';
+    const taken = this.reservedBoxes(viewport);
+    for (const end of ends) {
+      const width = MARK_LENGTH + MARK_GAP + ctx.measureText(end.sym.label).width + 2 * LABEL_PAD_X;
+      const box = this.placeLabel(end, width, taken, ends, viewport.chartRect);
+      taken.push(box);
+      this.drawLabel(ctx, end.sym, box, theme);
+    }
+  }
+
+  /** `sym`'s mark and name in `box`. */
+  private drawLabel(ctx: CanvasRenderingContext2D, sym: CompareSymbol, box: LabelBox, theme: Theme): void {
+    const middle = (box.top + box.bottom) / 2;
+    const markLeft = box.left + LABEL_PAD_X;
+    ctx.strokeStyle = sym.color;
+    ctx.lineWidth = MARK_WIDTH;
+    ctx.beginPath();
+    ctx.moveTo(markLeft, middle);
+    ctx.lineTo(markLeft + MARK_LENGTH, middle);
+    ctx.stroke();
+    ctx.fillStyle = theme.text;
+    fillTextWithHalo(ctx, sym.label, box.right - LABEL_PAD_X, middle, theme.background);
+  }
+
+  /**
+   * The first free box `width` wide by `end`, its line's end: above it,
+   * below it, then further out, inside the plot, whose edges would cut it.
+   * Moved off its end, a label could land beside another line's and read as
+   * that line's name, so it takes the first free box nearer its own end than
+   * any other, and only without one the first free box at all.
+   */
+  private placeLabel(end: LineEnd, width: number, taken: readonly LabelBox[], ends: readonly LineEnd[], plot: ViewportState['chartRect']): LabelBox {
+    const right = end.x - LABEL_GAP;
+    const at = (top: number): LabelBox => ({ left: right - width, top, right, bottom: top + LABEL_HEIGHT });
+    const above = end.y - LABEL_GAP - LABEL_HEIGHT;
+    const below = end.y + LABEL_GAP;
+    const tries = Array.from({ length: LABEL_TRIES }, (_, step) => [at(above - step * LABEL_HEIGHT), at(below + step * LABEL_HEIGHT)]).flat();
+    const foot = plot.y + plot.height;
+    const free = (box: LabelBox) => box.top >= plot.y && box.bottom <= foot && !taken.some((t) => overlaps(t, box));
+    const nearestIsOwn = (box: LabelBox) => {
+      const middle = (box.top + box.bottom) / 2;
+      const from = (e: LineEnd) => Math.hypot(e.x - end.x, e.y - middle);
+      return ends.every((e) => e === end || from(e) > from(end));
+    };
+    return tries.find((box) => free(box) && nearestIsOwn(box)) ?? tries.find(free)
+      ?? at(Math.max(plot.y, Math.min(above, foot - LABEL_HEIGHT)));
+  }
+
+  /** Where the alerts' labels sit: a band just above each line, across the plot (their text runs left from its right edge). */
+  private reservedBoxes(viewport: ViewportState): LabelBox[] {
+    const { chartRect } = viewport;
+    return this.reservedLevels().map((price) => {
+      const bottom = priceToY(price, viewport) - ALERT_LABEL_GAP;
+      return { left: chartRect.x, top: bottom - LABEL_HEIGHT, right: chartRect.x + chartRect.width, bottom };
+    });
   }
 
   /** `sym`'s closes on the bars of `main` (NaN where it has none). */
@@ -127,9 +267,13 @@ export class CompareRenderer {
     return closes;
   }
 
-  /** The visible stretch of `sym`'s line and its price at each main bar there. */
-  private line(sym: CompareSymbol, mainData: DataSeries, viewport: ViewportState):
-    { from: number; to: number; priceAt: (i: number) => number | null } | null {
+  /**
+   * Where `sym`'s line starts on screen: its first bar there with a close
+   * (`base`), its close then, and the main price it starts at in percent
+   * mode, the percent scale's baseline (the first main close on screen).
+   */
+  private anchor(sym: CompareSymbol, mainData: DataSeries, viewport: ViewportState):
+    { closes: Float64Array; base: number; to: number; mainBase: number; symBase: number } | null {
     const closes = this.closesOn(sym, mainData);
     const from = Math.max(0, viewport.visibleRange.from);
     const to = Math.min(mainData.length - 1, viewport.visibleRange.to);
@@ -138,12 +282,20 @@ export class CompareRenderer {
       if (Number.isFinite(closes[i]) && closes[i] !== 0 && mainData[i].close !== 0) { base = i; break; }
     }
     if (base < 0) return null;
-    const mainBase = mainData[base].close;
-    const symBase = closes[base];
+    const mainBase = viewport.scaleBaseline || mainData[from]?.close || mainData[base].close;
+    return { closes, base, to, mainBase, symBase: closes[base] };
+  }
+
+  /** The visible stretch of `sym`'s line and its price at each main bar there. */
+  private line(sym: CompareSymbol, mainData: DataSeries, viewport: ViewportState):
+    { from: number; to: number; priceAt: (i: number) => number | null } | null {
+    const anchor = this.anchor(sym, mainData, viewport);
+    if (!anchor) return null;
+    const { closes, mainBase, symBase } = anchor;
     const percent = this.mode === 'percent';
     return {
-      from: base,
-      to,
+      from: anchor.base,
+      to: anchor.to,
       priceAt: (i) => {
         const c = closes[i];
         if (!Number.isFinite(c)) return null;
@@ -152,14 +304,41 @@ export class CompareRenderer {
     };
   }
 
+  /**
+   * Each compare's close at main bar `index` and its change since its line's
+   * start on screen, rebased as the line is, so a legend reads what the
+   * percent scale does. Past a compare's last bar it gives its last close,
+   * `stale`. Without a viewport (no line on screen to read it off) the
+   * change is null.
+   */
+  valuesAt(mainData: DataSeries, viewport: ViewportState | null, index: number): CompareValue[] {
+    const time = mainData[index]?.time;
+    const unit = barTimeUnit(mainData);
+    return this.getSymbols().map((sym) => {
+      const at = time === undefined ? undefined : this.store.lastCloseAt(sym.id, time, unit);
+      const symBase = at && viewport ? this.anchor(sym, mainData, viewport)?.symBase : undefined;
+      const close = at?.close ?? null;
+      return {
+        id: sym.id,
+        label: sym.label,
+        color: sym.color,
+        visible: sym.visible,
+        close,
+        change: close !== null && symBase ? (close / symBase - 1) * 100 : null,
+        stale: at?.stale ?? false,
+      };
+    });
+  }
+
+  /** Draw `sym`'s line; where it ends on screen, or null when it has no point there. */
   private renderSymbol(
     ctx: CanvasRenderingContext2D,
     sym: CompareSymbol,
     mainData: DataSeries,
     viewport: ViewportState,
-  ): void {
+  ): { x: number; y: number } | null {
     const line = this.line(sym, mainData, viewport);
-    if (!line) return;
+    if (!line) return null;
 
     ctx.strokeStyle = sym.color;
     ctx.lineWidth = sym.lineWidth ?? 1.5;
@@ -167,7 +346,7 @@ export class CompareRenderer {
     ctx.beginPath();
 
     let drawn = 0;
-    let label: { x: number; y: number } | null = null;
+    let end: { x: number; y: number } | null = null;
     for (let i = line.from; i <= line.to; i++) {
       const price = line.priceAt(i);
       if (price === null) continue;
@@ -175,17 +354,10 @@ export class CompareRenderer {
       const y = priceToY(price, viewport);
       if (drawn === 0) ctx.moveTo(x, y);
       else ctx.lineTo(x, y);
-      if (drawn === 2 || (drawn === 0 && label === null)) label = { x: x + 4, y: y - 4 };
+      end = { x, y };
       drawn++;
     }
     ctx.stroke();
-
-    if (label) {
-      ctx.fillStyle = sym.color;
-      ctx.font = `bold 10px sans-serif`;
-      ctx.textBaseline = 'bottom';
-      ctx.textAlign = 'left';
-      ctx.fillText(sym.label, label.x, label.y);
-    }
+    return end;
   }
 }

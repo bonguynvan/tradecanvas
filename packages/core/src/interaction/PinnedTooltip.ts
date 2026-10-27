@@ -1,7 +1,14 @@
 import type { OHLCBar, Theme, TimeZoneSetting, ViewportState } from '@tradecanvas/commons';
-import { UI_ICONS, iconSvg, normalizeBarTime, timeParts, type BarTimeUnit } from '@tradecanvas/commons';
+import { UI_ICONS, barDateParts, formatPrice, iconSvg, normalizeBarTime, timeParts, type BarTimeUnit } from '@tradecanvas/commons';
 import { barIndexToX, priceToY } from '../viewport/ScaleMapping.js';
 import { isolateFontFeatures } from '../engine/CanvasLayer.js';
+
+/** Decimals prices show when neither the chart nor the market sets them. */
+const DEFAULT_DECIMALS = 2;
+/** Decimals the move's percentage shows. */
+const PERCENT_DECIMALS = 2;
+/** How far the move's percentage fades beside the price it follows. */
+const PERCENT_OPACITY = '0.7';
 
 /**
  * Pinned OHLC tooltip — a second DOM tooltip anchored to a specific bar index.
@@ -28,22 +35,41 @@ export class PinnedTooltip {
   private pinnedBar: OHLCBar | null = null;
   private pinnedIndex = -1;
   private tz: TimeZoneSetting = null;
+  /** The exchange's zone: the date of a daily bar built at its midnight (`barDateParts`). */
+  private exchangeZone: string | null = null;
 
   private priceFormatter: ((price: number) => string) | null = null;
+  private pricePrecision: number | null = null;
+  private locale = 'en-US';
 
   /** The time zone the bar's time is shown in; null for the browser's. */
   setTimezone(tz: TimeZoneSetting): void {
     this.tz = tz;
   }
 
-  /** Prices in the chart's format (null: two decimals). */
+  /** The exchange's zone (null: none known), where the days a chart builds start. */
+  setExchangeTimeZone(zone: string | null): void {
+    this.exchangeZone = zone;
+  }
+
+  /** Prices in the chart's format (null: decimals, in the locale). */
   setPriceFormatter(formatter: ((price: number) => string) | null): void {
     this.priceFormatter = formatter;
   }
 
-  /** A price as markup-safe text. */
+  /** Decimals prices show (the market's or the symbol's), or null for two. */
+  setPricePrecision(precision: number | null): void {
+    this.pricePrecision = precision !== null && Number.isInteger(precision) && precision >= 0 ? precision : null;
+  }
+
+  /** Locale prices are grouped in (BCP 47). */
+  setLocale(locale: string): void {
+    this.locale = locale;
+  }
+
+  /** A price as text, for `textContent`: nothing here is parsed as markup. */
   private fmt(v: number): string {
-    return escapeText(this.priceFormatter ? this.priceFormatter(v) : v.toFixed(2));
+    return this.priceFormatter ? this.priceFormatter(v) : formatPrice(v, this.pricePrecision ?? DEFAULT_DECIMALS, this.locale);
   }
 
   create(container: HTMLElement): void {
@@ -96,8 +122,12 @@ export class PinnedTooltip {
     container.appendChild(this.el);
   }
 
-  /** `unit`: milliseconds in one unit of the series' bar times (`barTimeUnit(data)`). */
-  pin(bar: OHLCBar, barIndex: number, theme: Theme, unit?: BarTimeUnit): void {
+  /**
+   * `unit`: milliseconds in one unit of the series' bar times (`barTimeUnit(data)`).
+   * `daily`: the bars are a day apart or more (`barsAreDaily(data)`), so the
+   * bar shows the date it stands for, as the time axis writes it.
+   */
+  pin(bar: OHLCBar, barIndex: number, theme: Theme, unit?: BarTimeUnit, daily = false): void {
     if (!this.el || !this.timeEl || !this.ohlcEl) return;
     this.pinnedBar = bar;
     this.pinnedIndex = barIndex;
@@ -105,8 +135,9 @@ export class PinnedTooltip {
     const isUp = bar.close >= bar.open;
     const color = isUp ? theme.candleUp : theme.candleDown;
 
-    const d = timeParts(normalizeBarTime(bar.time, unit), this.tz);
-    this.timeEl.textContent = `${d.month}/${d.day} ${pad(d.hours)}:${pad(d.minutes)}`;
+    const ms = normalizeBarTime(bar.time, unit);
+    const d = daily ? barDateParts(ms, this.tz, this.exchangeZone) : timeParts(ms, this.tz);
+    this.timeEl.textContent = daily ? `${d.month}/${d.day}/${d.year}` : `${d.month}/${d.day} ${pad(d.hours)}:${pad(d.minutes)}`;
     this.timeEl.style.color = theme.textSecondary;
 
     // Built as nodes: the colours are set as style values, never parsed as markup.
@@ -178,7 +209,14 @@ export class PinnedTooltip {
         const barΔ = hoverIndex - this.pinnedIndex;
         const direction = priceΔ >= 0 ? theme.candleUp : theme.candleDown;
         this.deltaEl.style.color = direction;
-        this.deltaEl.innerHTML = `Δ ${sign}${this.fmt(Math.abs(priceΔ))} <span style="opacity:.7">(${sign}${Math.abs(pct).toFixed(2)}%)</span> · ${barΔ > 0 ? '+' : ''}${barΔ} bars`;
+        // The percentage in the locale too: a price in it beside a plain 1.23 reads as two systems.
+        const pctText = formatPrice(Math.abs(pct), PERCENT_DECIMALS, this.locale);
+        // Built as nodes, its fade set as a style value: a style attribute in markup is refused
+        // by a Content-Security-Policy whose style-src leaves out 'unsafe-inline'.
+        const pctEl = document.createElement('span');
+        pctEl.style.opacity = PERCENT_OPACITY;
+        pctEl.textContent = `(${sign}${pctText}%)`;
+        this.deltaEl.replaceChildren(`Δ ${sign}${this.fmt(Math.abs(priceΔ))} `, pctEl, ` · ${barΔ > 0 ? '+' : ''}${barΔ} bars`);
         this.deltaEl.style.display = 'block';
       } else {
         this.deltaEl.style.display = 'none';
@@ -195,10 +233,6 @@ export class PinnedTooltip {
     this.pinnedBar = null;
     this.pinnedIndex = -1;
   }
-}
-
-function escapeText(text: string): string {
-  return text.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 }
 
 function pad(n: number): string {

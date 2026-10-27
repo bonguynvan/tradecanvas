@@ -51,13 +51,18 @@ import { App } from '@capacitor/app';
 App.addListener('appStateChange', ({ isActive }) => (isActive ? chart.resume() : chart.suspend()));`}</code></pre>
 <p>放在可滚动屏幕里的图表把竖直滑动留给屏幕。</p>
 <pre><code>{`new Chart(host, { pageScroll: true })   // a chart in a screen that scrolls`}</code></pre>
-<p>Tauri 的内容安全策略必须允许页面访问数据源的主机。</p>
-<pre><code>{`// tauri.conf.json (Tauri 2): let the page reach the feed
+<p>
+  Tauri 的内容安全策略必须允许页面访问数据源的主机。组件还需要 <code>style-src 'unsafe-inline'</code>（用于它添加的那一个 <code>&lt;style&gt;</code> 元素）和 <code>img-src data:</code>（用于输入框和复选框里的小图标）：缺少前者，组件显示时没有样式；缺少后者，输入框和复选框会丢失图标。复制图表图片不需要再加任何内容。
+</p>
+<pre><code>{`// tauri.conf.json (Tauri 2): the feed's hosts, the widget's styles and icons
 "app": {
   "security": {
-    "csp": "default-src 'self'; connect-src 'self' https://api.binance.com wss://stream.binance.com:9443"
+    "csp": "default-src 'self'; connect-src 'self' https://api.binance.com wss://stream.binance.com:9443; style-src 'self' 'unsafe-inline'; img-src 'self' data:"
   }
 }`}</code></pre>
+<p>
+  页面自身 HTML 中每有一个 <code>&lt;style&gt;</code> 元素，Tauri 就会在 <code>style-src</code> 中加入一个 nonce（使用隔离模式时还会加入一个哈希）；其中一旦有 nonce，浏览器就会忽略 <code>'unsafe-inline'</code>，组件的样式又会被拦截。请把页面的样式放在样式表文件中，或在 <code>dangerousDisableAssetCspModification</code> 中列出 <code>"style-src"</code>。
+</p>
 <p>
   图表最多以 2 的像素比绘制（<code>maxPixelRatio</code>）；屏幕关闭时销毁它（<code>chart.destroy()</code>），画布内存立即归还。
 </p>

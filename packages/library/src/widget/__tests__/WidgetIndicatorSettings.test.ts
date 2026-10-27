@@ -5,6 +5,8 @@ import { TC_SERIES_COLORS } from '@tradecanvas/commons';
 import { IndicatorEngine, registerBuiltInIndicators } from '@tradecanvas/core';
 import { WidgetIndicatorSettings, type IndicatorSettingsTarget } from '../WidgetIndicatorSettings.js';
 import { lineSourcesFor } from '../ChartWidget.js';
+import { createTranslator, resolveMessages, type MessageKey } from '../i18n.js';
+import { JA_MESSAGES } from '../locales/ja.js';
 
 const engine = new IndicatorEngine();
 registerBuiltInIndicators(engine);
@@ -82,6 +84,32 @@ describe('WidgetIndicatorSettings', () => {
     const input = host.querySelector<HTMLInputElement>('input[type="number"]')!;
     change(input, '500');
     expect(onApply).toHaveBeenLastCalledWith('r1', { period: 50 });
+  });
+
+  it('picks where VWAP starts again', () => {
+    const d = descriptor('vwap');
+    dialog.open({ instanceId: 'v1', indicatorId: 'vwap', name: d.name, defaults: d.defaultConfig, params: { ...d.defaultConfig }, inputs: d.inputs, plots: d.plots });
+    expect(labels()).toEqual(['Anchor']);
+    const select = host.querySelector<HTMLSelectElement>('.tcw-modal-body select')!;
+    expect([...select.options].map((o) => o.value)).toEqual(['session', 'week', 'month', 'all']);
+    expect(select.value).toBe('session');
+    change(select, 'all');
+    expect(onApply).toHaveBeenLastCalledWith('v1', { anchor: 'all' });
+  });
+
+  it('names VWAP’s anchor and its choices in the widget’s language', () => {
+    const d = descriptor('vwap');
+    const target = { instanceId: 'v1', indicatorId: 'vwap', name: d.name, defaults: d.defaultConfig, params: { ...d.defaultConfig }, inputs: d.inputs, plots: d.plots };
+    dialog.open(target);
+    const choices = () => [...host.querySelectorAll<HTMLOptionElement>('.tcw-modal-body select option')].map((o) => o.textContent);
+    expect(choices()).toEqual(['Session', 'Week', 'Month', 'All bars']);
+    dialog.destroy();
+    const ja = createTranslator(resolveMessages('ja', JA_MESSAGES));
+    dialog = new WidgetIndicatorSettings(host, { onApply, onStyle, onLevels, onIntervals, onSaveDefault, onClose }, ja);
+    dialog.open(target);
+    expect(labels()).toEqual([JA_MESSAGES['indicatorInput.anchor']]);
+    expect(choices()).toEqual(['session', 'week', 'month', 'all'].map((a) => JA_MESSAGES[`indicatorInput.anchor.${a}` as MessageKey]));
+    expect(choices()).not.toContain('session');
   });
 });
 
@@ -317,8 +345,10 @@ describe('lineSourcesFor', () => {
     return { instanceId, id, params: { ...d.defaultConfig, ...params }, descriptor: d, visible: true };
   };
 
+  const en = createTranslator(resolveMessages('en', undefined));
+
   it('offers every drawn line of the other indicators', () => {
-    const list = lineSourcesFor('s1', [active('sma', 's1'), active('macd', 'm1')]);
+    const list = lineSourcesFor('s1', [active('sma', 's1'), active('macd', 'm1')], en);
     expect(list.map((l) => l.label)).toEqual(['MACD 12 26 9: Histogram', 'MACD 12 26 9: MACD', 'MACD 12 26 9: Signal']);
     expect(list[1].value).toBe('ind:m1:macd');
   });
@@ -329,7 +359,15 @@ describe('lineSourcesFor', () => {
       active('sma', 's1', { source: 'ind:r1:value' }),
       active('ema', 'e1', { source: 'ind:s1:value' }),
       active('obv', 'o1'),
-    ]);
+    ], en);
     expect(list.map((l) => l.value)).toEqual(['ind:o1:value']);
+  });
+
+  it('names indicators apart as the legend does: VWAPs of different anchors', () => {
+    const vwaps = [active('vwap', 'v1', { anchor: 'week' }), active('vwap', 'v2'), active('vwap', 'v3', { anchor: 'all' })];
+    expect(lineSourcesFor('s1', [active('sma', 's1'), ...vwaps], en).map((l) => l.label))
+      .toEqual(['VWAP Week: VWAP', 'VWAP: VWAP', 'VWAP All bars: VWAP']);
+    const ja = createTranslator(resolveMessages('ja', JA_MESSAGES));
+    expect(lineSourcesFor('s1', [active('sma', 's1'), ...vwaps], ja)[0].label).toBe(`VWAP ${JA_MESSAGES['indicatorInput.anchor.week']}: VWAP`);
   });
 });

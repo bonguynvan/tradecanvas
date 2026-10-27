@@ -1,4 +1,5 @@
 import type { DataSeries, ViewportState, Theme } from '@tradecanvas/commons';
+import { priceTagText } from '@tradecanvas/commons';
 import { computeMarketProfile, computeSessionProfiles, assignSessionLetters, tpoLetter } from './marketProfile.js';
 import { barIndexToX, priceBucketRow, priceToYMapper } from '../viewport/ScaleMapping.js';
 
@@ -23,6 +24,23 @@ export interface MarketProfileStats {
   valueAreaPct: number;
 }
 
+/** How the Market Profile is drawn: `MarketProfileRenderer.getConfig()`. */
+export interface MarketProfileConfig {
+  /** Price rows, 8 to 200. */
+  buckets: number;
+  /** The share of the plot's width the widest row takes. */
+  widthRatio: number;
+  opacity: number;
+  /** The share of the TPOs the value area holds. */
+  valueAreaPct: number;
+  highlightPoC: boolean;
+  showStats: boolean;
+  /** One profile per trading day rather than one over the bars on screen. */
+  splitBySession: boolean;
+  /** TPO letters per session, when split and zoomed in. */
+  letters: boolean;
+}
+
 export class MarketProfileRenderer {
   private visible = false;
   private buckets = 48;
@@ -34,6 +52,8 @@ export class MarketProfileRenderer {
   private splitBySession = false;
   private letters = false;
   private lastStats: MarketProfileStats | null = null;
+  /** The zone whose midnight starts each session of the split profile (null: UTC's). */
+  private exchangeZone: string | null = null;
 
   setVisible(v: boolean): void { this.visible = v; if (!v) this.lastStats = null; }
   isVisible(): boolean { return this.visible; }
@@ -43,9 +63,16 @@ export class MarketProfileRenderer {
   setValueAreaPct(p: number): void { this.valueAreaPct = Math.max(0.3, Math.min(0.95, p)); }
   setHighlightPoC(enabled: boolean): void { this.highlightPoC = enabled; }
   setShowStats(enabled: boolean): void { this.showStats = enabled; }
-  /** Split the profile into one mini-histogram per calendar-day session. */
+  /** Split the profile into one mini-histogram per trading day, from the exchange's midnight (`setExchangeTimeZone`). */
   setSplitBySession(enabled: boolean): void { this.splitBySession = enabled; }
   isSplitBySession(): boolean { return this.splitBySession; }
+  /** How it is drawn, as the setters left it. */
+  getConfig(): MarketProfileConfig {
+    const { buckets, widthRatio, opacity, valueAreaPct, highlightPoC, showStats, splitBySession, letters } = this;
+    return { buckets, widthRatio, opacity, valueAreaPct, highlightPoC, showStats, splitBySession, letters };
+  }
+  /** The exchange's zone, an IANA name the chart has checked: sessions start at its midnight. */
+  setExchangeTimeZone(zone: string | null): void { this.exchangeZone = zone; }
   /** Render TPO letters (A, B, C…) per session instead of bars, when split + zoomed in. */
   setLetters(enabled: boolean): void { this.letters = enabled; }
   /** Whether it writes text: the stats readout, or TPO letters per session (when zoomed in enough). */
@@ -137,7 +164,7 @@ export class MarketProfileRenderer {
 
     // Stats readout — POC / VAH / VAL in a compact label, top-left of profile.
     if (this.showStats) {
-      this.drawStats(ctx, chartRect.x + 6, chartRect.y + 6, pocPrice, profile.valueAreaHigh, profile.valueAreaLow, theme);
+      this.drawStats(ctx, chartRect.x + 6, chartRect.y + 6, pocPrice, profile.valueAreaHigh, profile.valueAreaLow, viewport, theme);
     }
 
     ctx.restore();
@@ -155,7 +182,7 @@ export class MarketProfileRenderer {
     const sessions = computeSessionProfiles(slice, priceRange.min, priceRange.max, {
       buckets: this.buckets,
       valueAreaPct: this.valueAreaPct,
-    });
+    }, this.exchangeZone);
     if (sessions.length === 0) return;
 
     const toY = priceToYMapper(viewport);
@@ -231,13 +258,17 @@ export class MarketProfileRenderer {
     poc: number,
     vah: number,
     val: number,
+    viewport: ViewportState,
     theme: Theme,
   ): void {
-    const digits = pricePrecision(poc);
+    // As the chart writes a price: the market's decimals when it sets them,
+    // else those of the price's size, grouped in the number locale.
+    const digits = viewport.pricePrecision ?? statsDecimals(poc);
+    const text = (price: number) => priceTagText(price, viewport, digits);
     const rows: [string, string, string][] = [
-      ['POC', poc.toFixed(digits), theme.text],
-      ['VAH', vah.toFixed(digits), theme.candleUp],
-      ['VAL', val.toFixed(digits), theme.candleUp],
+      ['POC', text(poc), theme.text],
+      ['VAH', text(vah), theme.candleUp],
+      ['VAL', text(val), theme.candleUp],
     ];
     ctx.globalAlpha = 1;
     ctx.font = `600 10px ${theme.font.family}`;
@@ -269,7 +300,7 @@ export class MarketProfileRenderer {
   }
 }
 
-function pricePrecision(price: number): number {
+function statsDecimals(price: number): number {
   const abs = Math.abs(price);
   if (abs >= 1000) return 2;
   if (abs >= 1) return 4;

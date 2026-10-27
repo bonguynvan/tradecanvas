@@ -13,6 +13,7 @@ import type {
 } from '@tradecanvas/commons';
 import { rankSymbols, stepDecimals } from '@tradecanvas/commons';
 import { parseAggTrade, parseMiniTicker, parseRestKline, parseRestTicker, parseWsKline } from './binanceTypes.js';
+import { NewestBar } from './newestBar.js';
 
 const TF_MAP: Record<string, string> = {
   '1s': '1s', '1m': '1m', '3m': '3m', '5m': '5m', '15m': '15m', '30m': '30m',
@@ -105,6 +106,8 @@ export class BinanceAdapter implements DataAdapter {
   private wsBase: string;
   /** Every trading symbol, loaded on the first search. */
   private symbolList: Promise<SymbolInfo[]> | null = null;
+  /** Which kline frames make a tick: those of the newest bar the connection has sent, or its history ends on. */
+  private readonly newestBar = new NewestBar();
 
   constructor(options?: { restBase?: string; wsBase?: string }) {
     this.restBase = options?.restBase ?? 'https://api.binance.com/api/v3';
@@ -115,6 +118,7 @@ export class BinanceAdapter implements DataAdapter {
 
   connect(config: DataAdapterConfig): void {
     this.config = config;
+    this.newestBar.reset(config.symbol, config.timeframe);
     this.connectWs();
   }
 
@@ -139,8 +143,11 @@ export class BinanceAdapter implements DataAdapter {
     return this.state;
   }
 
-  fetchHistory(symbol: string, timeframe: TimeFrame, limit = 500): Promise<OHLCBar[]> {
-    return this.fetchKlines(symbol, timeframe, limit, '');
+  async fetchHistory(symbol: string, timeframe: TimeFrame, limit = 500): Promise<OHLCBar[]> {
+    const bars = await this.fetchKlines(symbol, timeframe, limit, '');
+    // A connection to them starts from its last bar.
+    this.newestBar.serve(symbol, timeframe, bars);
+    return bars;
   }
 
   /** Trading symbols matching `query`, best first; the list loads once, on the first search. */
@@ -416,7 +423,12 @@ export class BinanceAdapter implements DataAdapter {
     if (!parsed) return;
     const { bar, closed } = parsed;
 
+    // A frame of a bar already past (a late final, a stale frame, the
+    // history's last sent again closed as served) still goes out as a bar,
+    // but its close is no live price.
+    const live = this.newestBar.admit(bar, closed);
     this.emitEvent('bar', { bar, closed });
+    if (!live) return;
     this.emitEvent('tick', {
       time: Date.now(),
       price: bar.close,

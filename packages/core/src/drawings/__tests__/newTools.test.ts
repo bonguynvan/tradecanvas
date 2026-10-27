@@ -7,6 +7,7 @@ import { ElliottImpulseTool, ElliottTripleComboTool, waveLabel } from '../tools/
 import { ThreeDrivesTool, CypherPatternTool } from '../tools/patterns.js';
 import { TimeCyclesTool, SineLineTool } from '../tools/cycles.js';
 import { ForecastTool, ProjectionTool, BarsPatternTool, forecastOutcome } from '../tools/forecast.js';
+import { AnchoredVWAPTool } from '../tools/AnchoredVWAP.js';
 import { wrapText } from '../tools/textBox.js';
 import { drawing, recordingCtx, unitViewport } from './fixtures.js';
 
@@ -315,5 +316,25 @@ describe('review cases', () => {
     const [line] = wrapText(measure, 'x'.repeat(2000), 120);
     expect(measure(line)).toBeLessThanOrEqual(120);
     expect(calls).toBeLessThan(40);
+  });
+});
+
+describe('anchored VWAP', () => {
+  /** A bar at one price all through, with `volume`. */
+  const flat = (price: number, volume: number): OHLCBar => ({ time: 0, open: price, high: price, low: price, close: price, volume });
+
+  it('draws its line again when a bar before the last is corrected in place', () => {
+    const tool = new AnchoredVWAPTool();
+    const data = [flat(40, 10), flat(40, 10), flat(40, 10), flat(40, 10)];
+    let revision = 0;
+    tool.setDataGetter(() => data, () => revision);
+    const avwap = drawing('anchoredVWAP', [at(0, 40)]);
+    expect(tool.hitTest({ x: 25, y: 60 }, avwap, vp, 1)).toBe(true); // 40 all along
+    // The chart corrects bar 1 in the same array, and says so with its revision.
+    data[1] = flat(80, 30);
+    revision++;
+    // At bar 2: (40·10 + 80·30 + 40·10) / 50 = 64.
+    expect(tool.hitTest({ x: 25, y: 36 }, avwap, vp, 1)).toBe(true);
+    expect(tool.hitTest({ x: 25, y: 60 }, avwap, vp, 1)).toBe(false);
   });
 });

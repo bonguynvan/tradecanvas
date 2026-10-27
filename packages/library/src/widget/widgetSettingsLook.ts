@@ -57,12 +57,13 @@ export const HIGH_LOW_SECTION: LookSection = {
 
 export const SYMBOL_SECTIONS: readonly LookSection[] = [LAST_PRICE_SECTION, VOLUME_SECTION, HIGH_LOW_SECTION];
 
-/** The Status line tab's colours: the legend's text and the panes' titles. */
-export const STATUS_LINE_ROWS: readonly LookRow[] = [
+/** The Status line tab's colours of the legend, offered where the chart has one. */
+export const LEGEND_ROWS: readonly LookRow[] = [
   row('settings.legendText', 'legend.textColor'),
   row('settings.legendLabels', 'legend.labelColor'),
-  row('settings.paneTitles', 'panes.titleColor'),
 ];
+/** The Status line tab's colours: the legend's text and the panes' titles, which are drawn without it. */
+export const STATUS_LINE_ROWS: readonly LookRow[] = [...LEGEND_ROWS, row('settings.paneTitles', 'panes.titleColor')];
 
 /** The Scales tab's colours: the axes' text and lines. */
 export const SCALE_ROWS: readonly LookRow[] = [

@@ -67,4 +67,18 @@ export class SymbolSeriesStore {
     }
     return bars[lo].close;
   }
+
+  /**
+   * `symbol`'s close as of `time`, however long after its last bar: then its
+   * last close, marked `stale`. A series fetched once is still read after
+   * the chart's own bars have moved on. Undefined before the series starts,
+   * or for a symbol it doesn't have.
+   */
+  lastCloseAt(symbol: string, time: number, unit?: BarTimeUnit): { close: number; stale: boolean } | undefined {
+    const close = this.closeAt(symbol, time, unit);
+    if (close !== undefined) return { close, stale: false };
+    const entry = this.series.get(symbol);
+    if (!entry || normalizeBarTime(time, unit) < entry.times[0]) return undefined;
+    return { close: entry.bars[entry.bars.length - 1].close, stale: true };
+  }
 }

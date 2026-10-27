@@ -1,4 +1,5 @@
 import type { IndicatorDescriptor, DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue, ResolvedIndicatorStyle, ViewportState } from '@tradecanvas/commons';
+import { barTimeUnit, normalizeBarTime } from '@tradecanvas/commons';
 import { IndicatorBase } from '../IndicatorBase.js';
 import { IndicatorValueMap } from '../IndicatorValueMap.js';
 import { getNumberParam } from '../params.js';
@@ -7,9 +8,10 @@ import { LinePen, isDenseSlots } from '../linePen.js';
 import { plotLook } from '../plots.js';
 
 /**
- * Anchored VWAP — VWAP that resets at a chosen anchor.
- * Anchor is provided as a unix-ms timestamp via params.anchorTime.
- * If anchorTime is missing or precedes the dataset, behaves like regular VWAP.
+ * Anchored VWAP — a VWAP from the bar at `params.anchorTime` on: a time in
+ * milliseconds (one in seconds is read too), whichever unit the bars are
+ * timed in. With no anchor, or one before the first bar, it runs over every
+ * bar loaded (VWAP's `anchor: 'all'`).
  */
 export class AnchoredVWAPIndicator extends IndicatorBase {
   descriptor: IndicatorDescriptor = {
@@ -28,7 +30,10 @@ export class AnchoredVWAPIndicator extends IndicatorBase {
 
     let anchorIdx = 0;
     if (anchorTime > 0) {
-      anchorIdx = data.findIndex((b) => b.time >= anchorTime);
+      // Both read in milliseconds: bars timed in seconds never reached an anchor in ms.
+      const unit = barTimeUnit(data);
+      const anchorMs = normalizeBarTime(anchorTime);
+      anchorIdx = data.findIndex((b) => b.time * unit >= anchorMs);
       if (anchorIdx < 0) return { values, series };
     }
 

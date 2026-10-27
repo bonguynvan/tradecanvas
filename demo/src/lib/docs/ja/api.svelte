@@ -27,12 +27,17 @@
     <tr><td><code>appendBars(bars)</code></td><td>まとめて追加します。インジケーターの再計算は 1 回だけです。</td></tr>
     <tr><td><code>updateLastBar(bar)</code></td><td>形成中の現在のバーを更新します。</td></tr>
     <tr><td><code>updateLastBarFromTick(tick)</code></td><td>ティックを最後のバーに統合します。</td></tr>
+    <tr><td><code>updateBar(bar)</code></td><td>読み込み済みのバーを修正します。系列のどこにあっても、時刻が同じバーです。表示位置はそのままで、その時刻のバーがなければ false を返します。</td></tr>
     <tr><td><code>getData()</code></td><td>元の OHLC 系列を取得します。</td></tr>
   </tbody>
 </table>
 
 <p id="live-price">
   <code>appendBar</code>・<code>appendBars</code>・<code>updateLastBar</code> で渡したバーとティックは現在価格です。価格ライン、アラート、注文の損益は、接続中のストリームや <code>setCurrentPrice</code> と同じようにこれに従います。新しいバーは <code>dataUpdate</code> を送り、形成中のバーへのティックは送りません。
+</p>
+
+<p id="corrections">
+  フィードが修正したバーは <code>updateBar(bar)</code> で入れます。系列のどこにあっても <code>time</code> が同じ読み込み済みのバーを置き換え、<code>true</code> を返します。インジケーターはそのバーから計算し直され、平均足や練行足などバーから作るチャートの種類も追従し、表示位置はそのままです。次のフレームまでの修正は、いちばん古いものから 1 回だけ計算されます。その時刻の読み込み済みのバーがない場合（新しいバーは <code>appendBar</code>、それより古いバーは <code>prependBars</code> で入れます）や、チャートが受け付けられないバーの場合は <code>false</code> を返し、何も変えません。ライブ価格ではありません。注文もアラートも追従せず、それでアラートが発火することはなく、インジケーターの線のアラートも修正後の値で確かめ直されません。最後のバーを修正すると、<code>setData</code> の後と同じく価格線がその終値に移ります。リプレイ中はライブの系列を修正し、リプレイが終わると表示されます。時間外取引を隠しているあいだ、時間外のバーは表示に戻したときに現れます。読み込み済みと同じバーを送り直しても何も変わりません。出来高がなければ <code>setData</code> と同じく 0 になるので、バーはすべての値を送ってください。<code>dataUpdate</code> を <code>{'{'} kind: 'correction', time, index {'}'}</code> で送ります。ChartWidget では、接続したフィードのバーを <code>widget.getChart().updateBar(bar)</code> で修正します。<code>setData</code> でウィジェットに渡したバーは、ウィジェットが時間足を作り直す元のコピーなので、それへの修正は次に時間足を切り替えるまでしか残りません（そのためのウィジェットのメソッドは今後追加します）。
 </p>
 
 <p id="bar-times">
@@ -118,7 +123,7 @@ chart.getEffectiveTimeZone()           // それが指すタイムゾーン：HO
 </p>
 
 <p>同じ操作はプログラムからも行えます：</p>
-<pre><code>{`chart.setAutoScale(false)  // freeze the current price range
+<pre><code>{`chart.setAutoScale(false)  // hold the price range on screen (a new series is fitted once)
 chart.setLogScale(true)    // switch to logarithmic price scale
 chart.setInvertScale(true) // upside down (Alt+I in the widget)
 chart.fitContent()         // zoom out to all data (Alt+R in the widget, with auto scale)
@@ -229,16 +234,49 @@ chart.on('symbolSeriesRequest', async ({ payload }) =>
 chart.getRequiredSymbols()                           // what to fetch again on a new interval
 chart.setPaneScale(spreadId, { percent: true })     // a pane in percent of its first value`}</code></pre>
 <p>
+  変化率の比較ラインは、画面上の最初のバーにおけるメインの終値、つまりパーセントスケールが 0% と読む価格から始まり、
+  もう一方のシンボル自身の画面上の最初のバーから数えます。バーの始まりが遅いシンボルも 0% から始まります。
+  価格スケールをパーセントにすると（<code>chart.setScaleMode('percentage')</code>）、各ラインは画面上の最初のバーからの
+  自身の変化率をそのまま示し、パンすると変わります。ラインのラベルはラインの終端にあります。
+  <code>chart.getCompareValues(barIndex?)</code> は、独自の凡例のために、あるバー（既定は最後のバー）での各ラインの値を返します：<code>{'{'} id, label, color, visible, close, change, stale {'}'}</code>。
+  <code>close</code> はそのバーまたはそれ以前のもう一方のシンボルの終値、<code>change</code> はラインが示すとおりの変化率（%）です。
+  もう一方のシンボルの最後のバーを過ぎると（バーを一度だけ取得し、チャートが更新を続けている場合）、最後の終値を
+  <code>stale: true</code> 付きで返します。<code>chart.setCompareVisible(id, false)</code> はラインを隠し、自動スケールから外します。
+</p>
+<p>
+  練行足、カギ足、新値足、P&amp;F、レンジバーでは比較ラインを描きません。これらのバーは最初のバーから数えられるだけで
+  独自の時刻を持たないため、ラインを引くともう一方のシンボルを誤ったバーで読むことになるからです。これらのタイプでは
+  比較ラインは自動スケールに含まれず、<code>getCompareValues()</code> はどのバーを尋ねても、各シンボルの最新のデータバーでの
+  終値を <code>change: null</code> とともに返します。
+</p>
+<pre><code>{`chart.setScaleMode('percentage')       // each line reads its change on the axis
+chart.getCompareValues()               // [{ id: 'eth', label: 'ETHUSDT', color, visible, close: 2650.4, change: -1.82, stale: false }]
+chart.getCompareValues(barIndex)       // at a bar: the one under the cursor
+chart.setCompareVisible('eth', false)  // hidden, and out of the auto scale`}</code></pre>
+<p>
   ChartWidget では、ツールバーの比較（とオブジェクトツリーの +）で比較ダイアログが開きます。シンボルを検索し、
   <strong>追加方法</strong>で表示方法（変化率、専用スケール、専用サブチャート、スプレッド、比率、価格またはリターンの相関）を
   選んで、いくつでも追加できます。比較中のシンボルは先頭に並び、それぞれに表示方法と、外すためのボタンが付きます。
   次に開いたときは、前回使った表示方法が選ばれています。
+</p>
+<p>
+  ChartWidget は、シンボルを変化率で比較している間は価格スケールをパーセントにし、最後の比較を外すと元のスケールに戻します。
+  対数、パーセント、100 基準のスケールはそのままです。比較中に選んだスケール（ステータスバーの % や log、チャートのメニュー、設定）は、
+  最後の比較を外した後も保たれます。このパーセントスケールは保存されません。レイアウトと共有リンクにはご自身のスケールが残ります。
+  凡例はインジケーターの上に、変化率で比較中の各シンボルを、ラインの色の印を付けて、価格とカーソル位置のバー（それ以外は最後のバー）での変化率、
+  隠すための目のボタン、外すためのボタンとともに並べます。そのバーはチャートと同じ深さまで取得され、チャートが過去のバーを
+  読み込むと、増えた分だけを取得する（<code>fetchHistoryBefore</code> のないフィードでは、より古いバーがある限り、チャートと同じ深さで各比較を再取得する）ので、
+  ラインはチャートと同じ位置から始まります。比較ラインを描かないチャートタイプでは、
+  スケールはそのままにし、凡例の各比較の行を淡く表示して、その理由をツールチップとスクリーンリーダーに示します。ラインを描くタイプに戻ると、
+  パーセントスケールも戻ります。
 </p>
 
 <h3>データのエクスポート</h3>
 <p>
   バーを CSV または JSON で書き出します。インジケーターのラインはそれぞれ独立した列になり、列名は凡例での
   名前と同じです。ChartWidget では、チャートの右クリックメニューに<strong>データをエクスポート (CSV)</strong>があります。
+  小数を含む数値は有効数字 15 桁で書き出されるため、より小さいバーから合算した出来高は
+  40.370000000000005 ではなく 40.37 になります。
 </p>
 <pre><code>{`chart.exportAllData('csv', 'btc-1h.csv')                 // every bar loaded
 chart.exportVisibleData('json', undefined, { indicators: false })
@@ -306,9 +344,9 @@ chart.isExtendedHoursVisible()`}</code></pre>
 <pre><code>{`chart.setPeriodLevelsVisible(true)
 chart.setPeriodLevelsPeriod('week')   // 'day' (PDH/PDL/PDC) | 'week' (PWH/PWL/PWC)
 
-// pure computation is exported
+// pure computation is exported; the chart passes the exchange's zone (left out, the days are UTC's)
 import { computePeriodLevels } from '@tradecanvas/core'
-const levels = computePeriodLevels(bars, 'day')  // [{ id, label, price }]`}</code></pre>
+const levels = computePeriodLevels(bars, 'day', 'Australia/Sydney')  // [{ id, label, price }]`}</code></pre>
 
 <h3>マーケットプロファイル (TPO)</h3>
 <p>
@@ -327,16 +365,16 @@ chart.setMarketProfileConfig({
   highlightPoC: true, // dashed line at the point of control
 })
 
-// split into one mini-profile per calendar-day session
+// split into one mini-profile per trading day, in the exchange's zone
 chart.setMarketProfileConfig({ splitBySession: true })
 
 // classic TPO letters per session (when zoomed in enough to be legible)
 chart.setMarketProfileConfig({ splitBySession: true, letters: true })
 
-// pure computation is exported too
+// pure computation is exported too; give the sessions the exchange's zone, as the chart does (left out, UTC's days)
 import { computeMarketProfile, computeSessionProfiles } from '@tradecanvas/core'
 const profile = computeMarketProfile(bars, priceMin, priceMax, { buckets: 48 })
-const sessions = computeSessionProfiles(bars, priceMin, priceMax)  // per-day TPO`}</code></pre>
+const sessions = computeSessionProfiles(bars, priceMin, priceMax, {}, 'Australia/Sydney')  // per-day TPO`}</code></pre>
 
 <h3>タッチとモバイル</h3>
 <table>
@@ -375,7 +413,7 @@ const sessions = computeSessionProfiles(bars, priceMin, priceMax)  // per-day TP
 chart.on('orderModify', e => /* OrderModifyPayload */)
 chart.on('signalMarkerAdd', e => /* { marker } */)
 chart.on('tradeZoneAdd', e => /* { zone } */)
-chart.on('dataUpdate', e => /* setData と新しいバーでは { kind: 'bars', length }、ほかに kind 'alert' | 'bracket' | 'connection' | 'error' */)
+chart.on('dataUpdate', e => /* setData と新しいバーでは { kind: 'bars', length }、バーの修正では { kind: 'correction', time, index }、ほかに kind 'alert' | 'bracket' | 'connection' | 'error' */)
 chart.on('ordersChange', e => /* { orders } */)
 chart.on('positionsChange', e => /* { positions } */)
 chart.on('executionFill', e => /* { side, price, quantity, reason, pnl } */)
@@ -384,6 +422,8 @@ chart.on('stateChange', () => /* 描画、インジケーター、アラート�
 chart.on('paneChange', e => /* { instanceId, change: 'collapsed' | 'maximized' | 'order' } */)
 chart.on('chartTypeChange', e => /* { type, previous } */)
 chart.on('symbolChange', e => /* { symbol, previous } */)
+chart.on('marketChange', e => /* { market }: setMarket */)
+chart.on('compareChange', e => /* { id, change: 'add' | 'remove' | 'data' | 'visible' }: addCompareSymbol and the rest */)
 chart.on('timeframeChange', e => /* { timeframe, previous } */)
 chart.on('historyChange', e => /* { canUndo, canRedo } */)
 chart.on('drawingSelect', e => /* { ids, primary } */)
@@ -578,8 +618,9 @@ widget.setSymbols(await loadMarkets())   // サーバーからの SymbolInfo[]�
 
 <h3>共有できる表示（ディープリンク）</h3>
 <p>
-  シンボル、時間足、チャートタイプ、価格スケール、インジケーター（パラメーター込み）、描画を含む
-  表示全体を、ディープリンク用のコンパクトで URL セーフな文字列にエンコードします。
+  シンボル、時間足、チャートタイプ、価格スケール、インジケーター（パラメーター込み）、描画、
+  そして既定から変えたチャート設定（タイムゾーンと数値の書式を除く）を含む表示全体を、
+  ディープリンク用のコンパクトで URL セーフな文字列にエンコードします。
   <code>shareUrl: true</code> を指定すると、ウィジェットは読み込み時に <code>#tcw=…</code>
   ハッシュから表示を復元し、コマンドパレットの「表示を共有」アクションでリンクをクリップボードにコピーできます。
 </p>
@@ -592,7 +633,8 @@ await widget.copyShareLink()            // copy "<url>#tcw=<token>"`}</code></pr
 <h3>名前付きレイアウト</h3>
 <p>
   ツールバーのレイアウトボタンで、チャートに名前を付けて保存できます。保存されるのはシンボル、時間足、
-  価格スケール、チャートタイプ、インジケーター、描画、アラートです（テーマは閲覧者ごとのものなので含みません）。
+  価格スケール、チャートタイプ、インジケーター、描画、アラート、<a href="#chart-settings">チャート設定</a>です
+  （テーマ、タイムゾーン、数値の書式は閲覧者ごとのものなので含みません）。
   レイアウトを開く、名前を変更する、削除するといった操作は、このボタンのメニューから行います。
   開いているレイアウトは変更のたびに自動保存され、<kbd>Ctrl/⌘ S</kbd> でも保存できます。
   <code>storage</code> を渡さない限り、レイアウトはこのブラウザーの <code>localStorage</code> に保存されます。
@@ -628,6 +670,67 @@ await widget.applyLayoutContent(json)`}</code></pre>
   保存、開く、自動保存は 1 つずつ順に実行されるため、保存がその後に開いたレイアウトに書き込まれることはありません。
 </p>
 
+<h3 id="chart-settings">チャート設定</h3>
+<p>
+  設定ダイアログのスイッチと選択肢（出来高プロファイルとマーケットプロファイル、スイングマーカー、
+  セッションの網掛け、前期間の水準、グリッド、凡例、十字線、価格スケール、タイムゾーン、数値の書式）が
+  ウィジェットのチャート設定です。<code>getSettings()</code> で読み取り（コピーが返ります）、
+  <code>setSettings(patch)</code> で一部を変更します。読み取れないものは捨て、数値はダイアログの範囲に収め、
+  元に戻す履歴には記録しません。変更は <code>onSettingsChange(listener)</code> で受け取れ、
+  止めるための関数が返ります。ダイアログを OK で閉じたときに 1 回呼ばれ、キャンセルや何も変わらない変更では
+  呼ばれません。チャートにまだバーがない間、<code>setSettings</code> は自動スケールをオンのままにします。
+  オフは画面上の価格範囲を固定するもので、その時点ではまだ範囲がないからです。そのため
+  <code>onSettingsChange</code> が渡した設定（価格軸のドラッグで自動スケールがオフになったもの）は、
+  コンストラクターの直後に戻しても問題ありません。<code>persistSettings: true</code> を指定すると、ウィジェットはこのブラウザーに設定を保存し、
+  次に開いたときに元に戻します。
+</p>
+<pre><code>{`const widget = new ChartWidget(host, {
+  chartOptions: { timeZone: 'UTC' },
+  persistSettings: true,            // または { key: 'myapp:settings' }
+})
+
+widget.setSettings({ volumeProfileVisible: true, timezone: 'exchange' })
+widget.getSettings().timezone       // 'exchange'
+
+const stop = widget.onSettingsChange((settings) => {
+  api.put('/me/chart-settings', settings)   // たとえば自分のサーバーに
+})
+stop()`}</code></pre>
+<p>
+  <code>getSettings()</code> は <code>getChart()</code> に直接設定した内容も読み戻すので、
+  レイアウトやリンクにはそのまま保存されます。チャートはこれらの設定を
+  <code>isVolumeVisible()</code>、<code>isLegendVisible()</code>、
+  <code>isBarCountdownVisible()</code>、<code>isIndicatorValueLabelsVisible()</code>、
+  <code>isLeftPriceScaleVisible()</code>、<code>getMarketProfileConfig()</code>、
+  <code>getDepthHeatmapConfig()</code>、<code>getPivotMarkersConfig()</code>、
+  <code>getPeriodLevelsPeriod()</code> で返します。各オーバーレイには <code>is…Visible()</code> もあります。
+</p>
+<ul>
+  <li><strong>persistSettings</strong> は、ユーザーがあなたの値から変えた分をブラウザーごとに保存します。
+    保存された値は <code>chartOptions</code> より優先され、リセットするとあなたの値に戻ります。
+    対数スケールと自動スケールのフラグ、チャートタイプ固有の設定（練行足のボックスなど）はチャートの状態なので
+    保存しません。ページ上のウィジェットにはそれぞれ別の <code>key</code> を付けてください。
+    グリッドは各チャートに自動で付けます。変更を誰がしたかは区別しません。あなたが <code>setSettings</code> で
+    設定した値（たとえば <code>onReady</code> の中で）や、開いたレイアウトが持ち込んだ設定もユーザーの選択として保存され、
+    コードがもう設定しなくなった後も、次の訪問で <code>chartOptions</code> より優先されます。
+    ある設定を <code>chartOptions</code> の値に戻すと、保存の対象から外れます。開いた共有リンクが持ち込んだ設定は他人の選択なので、
+    その訪問のあいだだけ表示され、保存されず、<code>onSettingsChange</code> のリスナーも呼びません（次の変更でまとめて伝えます）。</li>
+  <li><strong>名前付きレイアウト</strong> は、タイムゾーンと数値の書式（閲覧者ごとのもの）と、
+    価格軸をドラッグすると切れる自動スケールを除くすべてを保存します。レイアウトの JSON では <code>settings</code> の下に入りますが、
+    価格スケールとその反転はそれぞれ専用のフィールドに、チャートタイプ固有の設定はチャートの状態に入ります。
+    これより前に保存したレイアウトには含まれず、開いても設定はそのままです。
+    古いバージョンのライブラリーは新しいレイアウトをこれらなしで開き、その自動保存はこれらを含まずに書き戻します。</li>
+  <li><strong>共有リンク</strong> は、送り手が既定から変えた設定を運びます。タイムゾーン、数値の書式、自動スケールは含みません。
+    リンクのチャートタイプ固有の設定は送り手が設定したタイプと表示中のタイプ（送り手が既定のままにしていれば既定）だけに効き、閲覧者のほかのタイプの設定はそのまま残ります。
+    あなたの <code>features</code> が初期状態を決めるスイッチ（凡例、出来高、バーの残り時間、インジケーターの値ラベル）は
+    <code>features</code> が置いた状態を既定とするので、送り手のアプリが切ったスイッチは変更として送られません。</li>
+  <li><strong>切られた機能</strong>：あなたの <code>features</code> が凡例、出来高、バーの残り時間、対数スケールを切っている場合、
+    保存・共有・オープン・設定・チャートテンプレートの適用のどれによってもそれらはオンになりません。
+    設定ダイアログにも凡例や出来高のスイッチと色は表示されません。</li>
+  <li><strong>シンボルごとのレイアウト</strong>（<code>persistLayouts</code>）と
+    <code>chart.saveState()</code> には、チャートの状態の一部であるチャートタイプ固有の設定だけが含まれ、ほかの設定は含まれません。</li>
+</ul>
+
 <h3>シンボルごとのレイアウト</h3>
 <p>
   これとは別に、シンボルごとのインジケーター構成、描画、アラート、チャートタイプを
@@ -644,7 +747,8 @@ await widget.applyLayoutContent(json)`}</code></pre>
 widget.clearSavedLayout('BTCUSDT')`}</code></pre>
 <p>
   レイアウトはシンボルの切り替え時とウィジェットの破棄時に書き出されるため、
-  ユーザーがページを離れても何も失われません。
+  ユーザーがページを離れても何も失われません。チャート設定のうち含まれるのは
+  チャートタイプ固有の設定だけで、ほかは <code>persistSettings</code> が保存します。
 </p>
 
 <h3>ドラッグ＆ドロップでのデータ読み込み</h3>
@@ -674,14 +778,25 @@ chart.setData(data)`}</code></pre>
 })
 widget.setData(oneMinuteBars)   // base series; clicking 4h/1d/1w resamples it
 
-// Or use the pure function directly
-import { resampleOHLCV, inferTimeframeMs } from '@tradecanvas/chart'
+// Or build bars yourself
+import { resampleBars, timeframeBucketStart } from '@tradecanvas/chart'
 
-const hourly = resampleOHLCV(oneMinuteBars, '1h')   // OHLC merged, volume summed
-const fourHour = resampleOHLCV(oneMinuteBars, '4h', { weekStartsOn: 1 })`}</code></pre>
+const hourly = resampleBars(oneMinuteBars, '1h')   // OHLC merged, volume summed
+const days = resampleBars(oneMinuteBars, '1d', { timeZone: 'Asia/Ho_Chi_Minh' })   // from 00:00 there
+const dayStart = timeframeBucketStart(trade.time, '1d', { timeZone: 'Asia/Ho_Chi_Minh' })`}</code></pre>
 <p>
-  区切りはカレンダーを考慮します。日中足と日足は UTC エポックの境界に、週足は設定した週の開始日に、
-  月足 / 四半期足 / 年足はカレンダーの境界にそろえます。入力のバーが変更されることはありません。
+  区切りはカレンダーを考慮します。分足と時間足（1h 以下）は Unix エポックからの時間足の倍数に切り捨てます。
+  日足、週足（設定した週の開始日から）、月足、四半期足、年足は取引所の午前 0 時に始まり、1 日を割り切る時間足
+  （2h、3h、4h、6h、8h、12h）も同じです。<code>widget.setData</code> に渡したバーでは、基準は銘柄の
+  <code>timeZone</code>（<code>setSymbolInfo</code>）、なければ市場のもの（<code>setMarket</code>）、それもなければ UTC です。
+  フィードにない時間足は、その <code>resolveSymbol</code> が示すタイムゾーンの午前 0 時、なければ UTC の午前 0 時に始まり、市場のタイムゾーンでは動きません。
+  時計が切り替わる日は 23 時間または 25 時間になります。00:00 UTC のタイムスタンプを持つ日足はそれが示す日付として扱うので、
+  UTC より西でも月曜日は自分の週に入り、週足は 00:00 UTC のタイムスタンプを保ちます。入力のバーが変更されることはありません。
+</p>
+<p>
+  日足は、チャートがどのタイムゾーンで表示していても、そのバーが表す日付を示します。00:00 UTC のバーは UTC の日付、
+  取引所の午前 0 時から作ったバーは取引所の日付です（時間軸、クロスヘアとそのカード、Alt クリックで固定するツールチップ、スクリーンリーダーが読み上げるバーの時刻で）。自分でバーを作るときは、
+  <code>timeframeBucketStart(time, timeframe, {'{'} timeZone {'}'})</code> がある時刻を含むバーの開始時刻を返します。
 </p>
 
 <h3>ウォッチリスト</h3>
@@ -757,7 +872,7 @@ chart.setSelectedDrawingStyle({ color: '#1fa874' })  // restyle the selected dra
 
 <h3>オブジェクトツリー</h3>
 <p>
-  レールのレイヤーボタン（レールがない場合はツールバーのもの）で、有効なインジケーターと描画をすべて一覧する
+  レールのレイヤーボタン（レールがない場合はツールバーのもの）で、有効なインジケーター（チップと同じ名前、例：EMA 20、Compare ETHUSDT）と描画をすべて一覧する
   オブジェクトツリーがドックに開きます。インジケーターは削除でき、描画は項目ごとに表示 / 非表示、ロック / ロック解除、
   設定、削除ができ、グループはその下に所属する描画とともに一覧表示されます。
   既定で有効で、<code>objectTree: false</code> で無効にできます。
@@ -791,17 +906,21 @@ chart.removeIndicator(instanceId)`}</code></pre>
   即座に適用します。期間や色を変えるために、削除して追加し直す必要はありません。
 </p>
 <p>
-  オブジェクトツリーの<strong>比較</strong>セクションには、正規化したラインとして重ねて表示している
-  シンボルが並びます。ライブアダプターがある場合、その + ボタンで比較ダイアログが開きます。
-  パーセントで追加したシンボルは <code>adapter.fetchHistory</code> で履歴を取得します
-  （価格帯の異なるシンボルでも 1 本の軸を共有できます）。比較は時間足を変えると自動で再取得されます。
+  オブジェクトツリーの<strong>比較</strong>セクションには、比較ダイアログと同じくすべての比較が並びます。
+  各シンボルに比較方法（変化率、専用スケール、専用サブチャート、スプレッド、比率、相関）と、外すためのボタンが付きます。
+  ライブアダプターがある場合、その + ボタンで比較ダイアログが開きます。どの方法でも、ウィジェットは比較を追加する前に
+  <code>adapter.fetchHistory</code> で相手シンボルのバーを取得し、バーが届かない場合（取得の失敗、またはこの時間足にバーがない場合）は
+  何も追加せず、理由をトーストで知らせます。保存した状態から戻った比較は、バーの読み込みに失敗してもチャートに残り、
+  バーのある時間足で表示されます。比較は時間足を変えると自動で再取得されます。
   プログラムでは次のようにします：
 </p>
 <pre><code>{`widget.addCompareSymbol('ETHUSDT')   // fetches + overlays (needs an adapter)
+await widget.addCompareSymbol('ETHUSDT', 'scale')  // its bars first; nothing added if they don't come
 
 // or drive the chart directly with your own data
 chart.addCompareSymbol('ETHUSDT', 'ETH', ethBars, '#627eea')
 chart.setCompareMode('percent')      // 'percent' | 'absolute'
+chart.setScaleMode('percentage')     // each line's change, read on the axis
 chart.removeCompareSymbol('ETHUSDT')`}</code></pre>
 
 <h3>価格アラート</h3>

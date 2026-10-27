@@ -27,12 +27,17 @@
     <tr><td><code>appendBars(bars)</code></td><td>Thêm hàng loạt; chỉ tính lại chỉ báo một lần.</td></tr>
     <tr><td><code>updateLastBar(bar)</code></td><td>Sửa nến đang hình thành.</td></tr>
     <tr><td><code>updateLastBarFromTick(tick)</code></td><td>Gộp một tick vào nến cuối.</td></tr>
+    <tr><td><code>updateBar(bar)</code></td><td>Sửa một nến đã nạp: nến có cùng thời gian, ở bất kỳ đâu trong chuỗi. Khung nhìn giữ nguyên; trả về false khi không có nến đã nạp nào có thời gian đó.</td></tr>
     <tr><td><code>getData()</code></td><td>Đọc chuỗi OHLC gốc.</td></tr>
   </tbody>
 </table>
 
 <p id="live-price">
   Nến từ <code>appendBar</code>, <code>appendBars</code> hay <code>updateLastBar</code>, và một tick, là giá hiện tại: đường giá, cảnh báo và lãi/lỗ của lệnh đi theo nó, như đi theo một luồng dữ liệu đã kết nối và <code>setCurrentPrice</code>. Nến mới gửi <code>dataUpdate</code>; tick trên nến đang hình thành thì không.
+</p>
+
+<p id="corrections">
+  Nến mà nguồn dữ liệu của bạn sửa lại được đưa vào bằng <code>updateBar(bar)</code>: nó thay nến đã nạp có cùng <code>time</code>, dù nằm ở đâu trong chuỗi, và trả về <code>true</code>. Các chỉ báo được tính lại từ nến đó trở đi, Heikin-Ashi, Renko và các kiểu biểu đồ dựng từ nến cũng theo, còn khung nhìn giữ nguyên chỗ cũ; nhiều lần sửa trước khung hình kế tiếp chỉ được tính một lần, từ nến sớm nhất. Nó trả về <code>false</code> và không thay đổi gì khi không có nến đã nạp nào có thời gian đó (nến mới là việc của <code>appendBar</code>, nến cũ hơn là của <code>prependBars</code>) hoặc biểu đồ không nhận được nến đó. Đây không phải giá hiện tại: lệnh và cảnh báo không đi theo nó, không cảnh báo nào kích hoạt vì nó, và cảnh báo trên đường chỉ báo không được kiểm tra lại với giá trị đã sửa. Sửa nến cuối thì đường giá đi theo nó, như sau <code>setData</code>. Trong lúc phát lại, nó sửa chuỗi trực tiếp, hiện ra khi phát lại kết thúc; một nến ngoài giờ giao dịch chính, khi giờ mở rộng đang ẩn, hiện ra khi chúng được bật. Gửi lại đúng nến đã nạp thì không đổi gì; thiếu khối lượng thì tính là 0, như với <code>setData</code>, nên hãy gửi đủ cả nến. Nó gửi <code>dataUpdate</code> với <code>{'{'} kind: 'correction', time, index {'}'}</code>. Trong ChartWidget, <code>widget.getChart().updateBar(bar)</code> sửa nến của nguồn dữ liệu đã kết nối; nến bạn đưa cho widget bằng <code>setData</code> là một bản sao mà widget dựng lại các khung thời gian từ đó, nên lần sửa trên chúng chỉ giữ tới lần đổi khung thời gian kế tiếp (phương thức của widget cho trường hợp này sẽ có sau).
 </p>
 
 <p id="bar-times">
@@ -119,7 +124,7 @@ chart.getEffectiveTimeZone()           // múi giờ nó trỏ tới: 'Asia/Ho_C
 </p>
 
 <p>Các tác dụng trên cũng có thể gọi bằng code:</p>
-<pre><code>{`chart.setAutoScale(false)  // freeze the current price range
+<pre><code>{`chart.setAutoScale(false)  // hold the price range on screen (a new series is fitted once)
 chart.setLogScale(true)    // switch to logarithmic price scale
 chart.setInvertScale(true) // upside down (Alt+I in the widget)
 chart.fitContent()         // zoom out to all data (Alt+R in the widget, with auto scale)
@@ -238,17 +243,55 @@ chart.on('symbolSeriesRequest', async ({ payload }) =>
 chart.getRequiredSymbols()                           // what to fetch again on a new interval
 chart.setPaneScale(spreadId, { percent: true })     // a pane in percent of its first value`}</code></pre>
 <p>
+  Một đường so sánh phần trăm bắt đầu ở giá đóng cửa của nến đầu tiên trên màn hình, mức giá mà
+  thang phần trăm đọc là 0%, tính từ nến đầu tiên trên màn hình của chính mã kia; một mã có nến
+  bắt đầu muộn hơn cũng bắt đầu ở 0%. Khi thang giá ở chế độ phần trăm
+  (<code>chart.setScaleMode('percentage')</code>), mỗi đường đọc đúng mức thay đổi của riêng nó
+  kể từ nến đầu tiên trên màn hình, và mức này đổi khi bạn kéo biểu đồ. Nhãn của đường nằm ở cuối
+  đường. <code>chart.getCompareValues(barIndex?)</code> cho giá trị của từng đường tại một nến
+  (mặc định là nến cuối), để bạn tự làm chú thích: <code>{'{'} id, label, color, visible, close, change, stale {'}'}</code>, trong đó <code>close</code> là giá
+  đóng cửa của mã kia tại hoặc trước nến đó và <code>change</code> là mức thay đổi tính bằng phần
+  trăm, đúng như đường của nó đọc. Sau nến cuối của mã kia (nến bạn chỉ tải một lần, trong khi
+  biểu đồ vẫn chạy tiếp), nó cho giá đóng cửa cuối cùng kèm <code>stale: true</code>.
+  <code>chart.setCompareVisible(id, false)</code> ẩn một đường và bỏ nó khỏi thang tự động.
+</p>
+<p>
+  Renko, Kagi, Line Break, P&amp;F và Range Bars không vẽ đường so sánh: nến của chúng chỉ được đếm
+  tiếp từ nến đầu, không mang thời gian riêng, nên một đường ở đó sẽ đọc mã kia tại sai nến. Ở các
+  kiểu này, đường so sánh không tính vào thang tự động, và <code>getCompareValues()</code> cho giá
+  đóng cửa của từng mã tại nến dữ liệu mới nhất, dù hỏi nến nào, kèm <code>change: null</code>.
+</p>
+<pre><code>{`chart.setScaleMode('percentage')       // each line reads its change on the axis
+chart.getCompareValues()               // [{ id: 'eth', label: 'ETHUSDT', color, visible, close: 2650.4, change: -1.82, stale: false }]
+chart.getCompareValues(barIndex)       // at a bar: the one under the cursor
+chart.setCompareVisible('eth', false)  // hidden, and out of the auto scale`}</code></pre>
+<p>
   Trong ChartWidget, nút So sánh trên thanh công cụ (và nút + trong cây đối tượng) mở hộp thoại so sánh: tìm một
   mã, chọn cách so sánh ở <strong>Thêm theo kiểu</strong> (thay đổi phần trăm, thang riêng, pane riêng, chênh lệch,
   tỷ lệ, hoặc tương quan theo giá hay theo lợi suất) và thêm bao nhiêu mã tuỳ ý. Các mã đang so sánh được liệt kê
   trước, mỗi mã kèm cách so sánh của nó và một nút để gỡ ra. Lần mở sau, hộp thoại chọn sẵn cách đã dùng lần trước.
+</p>
+<p>
+  ChartWidget đặt thang giá ở chế độ phần trăm khi có mã được so sánh theo phần trăm, và trả về
+  thang bạn đang dùng khi mã cuối cùng được gỡ ra. Thang logarit, phần trăm hay chỉ số 100 được
+  giữ nguyên, và thang bạn chọn trong lúc so sánh (nút % hay log ở thanh trạng thái, menu của biểu
+  đồ, phần cài đặt) được giữ lại, kể cả sau khi mã so sánh cuối cùng được gỡ. Thang phần trăm này
+  không bao giờ được lưu: bố cục và liên kết chia sẻ giữ thang của bạn. Chú thích liệt kê mỗi mã so
+  sánh theo phần trăm phía trên các chỉ báo, được đánh dấu bằng màu đường của nó, kèm giá và mức thay đổi tại nến dưới con trỏ (nếu
+  không thì tại nến cuối), một nút mắt để ẩn và một nút để gỡ ra. Nến của mã đó được tải sâu bằng
+  nến của biểu đồ, và khi biểu đồ tải thêm nến cũ thì chỉ tải thêm đoạn nến cũ hơn đó (với nguồn
+  dữ liệu không có <code>fetchHistoryBefore</code> thì tải lại từng mã sâu bằng biểu đồ, chừng nào nguồn còn nến cũ hơn), nên đường của nó bắt đầu
+  cùng chỗ với biểu đồ. Ở một kiểu biểu đồ không vẽ đường so sánh, ChartWidget giữ nguyên thang của bạn và làm
+  mờ dòng của từng mã so sánh, cho biết lý do trong chú giải khi rê chuột và cho trình đọc màn hình; khi quay lại một kiểu có vẽ đường, thang
+  phần trăm trở lại.
 </p>
 
 <h3>Xuất dữ liệu</h3>
 <p>
   Xuất các nến dưới dạng CSV hoặc JSON, mỗi đường chỉ báo nằm trong một cột riêng, đặt tên theo
   tên trên chú thích. ChartWidget có mục <strong>Xuất dữ liệu (CSV)</strong> trong menu chuột phải
-  của biểu đồ.
+  của biểu đồ. Số có phần thập phân được ghi với 15 chữ số có nghĩa, nên khối lượng cộng từ các
+  nến nhỏ hơn được ghi là <code>40.37</code> chứ không phải <code>40.370000000000005</code>.
 </p>
 <pre><code>{`chart.exportAllData('csv', 'btc-1h.csv')                 // every bar loaded
 chart.exportVisibleData('json', undefined, { indicators: false })
@@ -319,9 +362,9 @@ chart.isExtendedHoursVisible()`}</code></pre>
 <pre><code>{`chart.setPeriodLevelsVisible(true)
 chart.setPeriodLevelsPeriod('week')   // 'day' (PDH/PDL/PDC) | 'week' (PWH/PWL/PWC)
 
-// pure computation is exported
+// pure computation is exported; the chart passes the exchange's zone (left out, the days are UTC's)
 import { computePeriodLevels } from '@tradecanvas/core'
-const levels = computePeriodLevels(bars, 'day')  // [{ id, label, price }]`}</code></pre>
+const levels = computePeriodLevels(bars, 'day', 'Australia/Sydney')  // [{ id, label, price }]`}</code></pre>
 
 <h3>Hồ sơ thị trường (TPO)</h3>
 <p>
@@ -340,16 +383,16 @@ chart.setMarketProfileConfig({
   highlightPoC: true, // dashed line at the point of control
 })
 
-// split into one mini-profile per calendar-day session
+// split into one mini-profile per trading day, in the exchange's zone
 chart.setMarketProfileConfig({ splitBySession: true })
 
 // classic TPO letters per session (when zoomed in enough to be legible)
 chart.setMarketProfileConfig({ splitBySession: true, letters: true })
 
-// pure computation is exported too
+// pure computation is exported too; give the sessions the exchange's zone, as the chart does (left out, UTC's days)
 import { computeMarketProfile, computeSessionProfiles } from '@tradecanvas/core'
 const profile = computeMarketProfile(bars, priceMin, priceMax, { buckets: 48 })
-const sessions = computeSessionProfiles(bars, priceMin, priceMax)  // per-day TPO`}</code></pre>
+const sessions = computeSessionProfiles(bars, priceMin, priceMax, {}, 'Australia/Sydney')  // per-day TPO`}</code></pre>
 
 <h3>Cảm ứng &amp; di động</h3>
 <table>
@@ -390,7 +433,7 @@ const sessions = computeSessionProfiles(bars, priceMin, priceMax)  // per-day TP
 chart.on('orderModify', e => /* OrderModifyPayload */)
 chart.on('signalMarkerAdd', e => /* { marker } */)
 chart.on('tradeZoneAdd', e => /* { zone } */)
-chart.on('dataUpdate', e => /* { kind: 'bars', length } khi setData và khi có nến mới; hoặc kind 'alert' | 'bracket' | 'connection' | 'error' */)
+chart.on('dataUpdate', e => /* { kind: 'bars', length } khi setData và khi có nến mới; { kind: 'correction', time, index } khi một nến được sửa; hoặc kind 'alert' | 'bracket' | 'connection' | 'error' */)
 chart.on('ordersChange', e => /* { orders } */)
 chart.on('positionsChange', e => /* { positions } */)
 chart.on('executionFill', e => /* { side, price, quantity, reason, pnl } */)
@@ -399,6 +442,8 @@ chart.on('stateChange', () => /* hình vẽ, chỉ báo, cảnh báo, loại bi�
 chart.on('paneChange', e => /* { instanceId, change: 'collapsed' | 'maximized' | 'order' } */)
 chart.on('chartTypeChange', e => /* { type, previous } */)
 chart.on('symbolChange', e => /* { symbol, previous } */)
+chart.on('marketChange', e => /* { market }: setMarket */)
+chart.on('compareChange', e => /* { id, change: 'add' | 'remove' | 'data' | 'visible' }: addCompareSymbol and the rest */)
 chart.on('timeframeChange', e => /* { timeframe, previous } */)
 chart.on('historyChange', e => /* { canUndo, canRedo } */)
 chart.on('drawingSelect', e => /* { ids, primary } */)
@@ -601,7 +646,8 @@ widget.setSymbols(await loadMarkets())   // SymbolInfo[] từ máy chủ của b
 <h3>Chia sẻ góc nhìn (deep link)</h3>
 <p>
   Mã hoá toàn bộ góc nhìn — mã, khung thời gian, loại biểu đồ, thang giá,
-  chỉ báo (kèm tham số) và hình vẽ — thành một chuỗi gọn, an toàn cho URL để
+  chỉ báo (kèm tham số), hình vẽ và những Cài đặt biểu đồ đã đổi khác mặc định
+  (trừ múi giờ và định dạng số) — thành một chuỗi gọn, an toàn cho URL để
   tạo liên kết sâu. Với <code>shareUrl: true</code>, widget khôi phục hash
   <code>#tcw=…</code> khi tải trang, và thao tác "Chia sẻ góc nhìn" trong bảng lệnh
   sao chép một liên kết vào clipboard.
@@ -615,8 +661,9 @@ await widget.copyShareLink()            // copy "<url>#tcw=<token>"`}</code></pr
 <h3>Bố cục có tên</h3>
 <p>
   Nút bố cục trên thanh công cụ lưu biểu đồ dưới một cái tên: mã, khung thời gian,
-  thang giá, loại biểu đồ, chỉ báo, hình vẽ và cảnh báo (không gồm giao diện, vì đó
-  là lựa chọn của người xem). Mở, đổi tên và xoá bố cục từ menu của nút này; bố cục
+  thang giá, loại biểu đồ, chỉ báo, hình vẽ, cảnh báo và
+  <a href="#chart-settings">Cài đặt biểu đồ</a> (không gồm giao diện, múi giờ và định
+  dạng số, vì đó là lựa chọn của người xem). Mở, đổi tên và xoá bố cục từ menu của nút này; bố cục
   đang mở tự lưu mỗi khi thay đổi, và <kbd>Ctrl/⌘ S</kbd> sẽ lưu nó. Bố cục được lưu
   trong <code>localStorage</code> của trình duyệt này, trừ khi bạn truyền vào một
   <code>storage</code>: bốn hàm, hàm nào cũng có thể trả về một promise.
@@ -653,6 +700,81 @@ await widget.applyLayoutContent(json)`}</code></pre>
   giờ ghi vào bố cục được mở sau nó.
 </p>
 
+<h3 id="chart-settings">Cài đặt biểu đồ</h3>
+<p>
+  Các công tắc và lựa chọn trong hộp thoại cài đặt (hồ sơ khối lượng và Market
+  Profile, điểm swing, tô vùng phiên, mức của kỳ trước, lưới, chú giải, con trỏ chữ
+  thập, thang giá, múi giờ, định dạng số) là Cài đặt biểu đồ của widget. Đọc chúng
+  bằng <code>getSettings()</code> (một bản sao); đổi một phần bằng
+  <code>setSettings(patch)</code>, hàm này bỏ những gì không đọc được, giữ các số
+  trong khoảng của hộp thoại và không ghi bước hoàn tác; và nghe từng thay đổi bằng
+  <code>onSettingsChange(listener)</code>, hàm này trả về hàm để ngừng nghe. Nó được
+  gọi một lần khi hộp thoại đóng bằng OK, không bao giờ cho Huỷ hay cho một thay đổi
+  không đổi gì. Khi biểu đồ chưa có nến, <code>setSettings</code> để tự co giãn thang
+  bật, vì tắt nó là giữ nguyên khoảng giá đang hiện, mà lúc đó chưa có khoảng nào:
+  cài đặt mà <code>onSettingsChange</code> đưa ra, có tự co giãn thang bị tắt sau khi
+  kéo trục giá, vẫn đưa lại được ngay sau hàm khởi tạo mà không sao. Với <code>persistSettings: true</code>, widget giữ chúng trong trình
+  duyệt này và đặt lại ở lần ghé sau.
+</p>
+<pre><code>{`const widget = new ChartWidget(host, {
+  chartOptions: { timeZone: 'UTC' },
+  persistSettings: true,            // hoặc { key: 'myapp:settings' }
+})
+
+widget.setSettings({ volumeProfileVisible: true, timezone: 'exchange' })
+widget.getSettings().timezone       // 'exchange'
+
+const stop = widget.onSettingsChange((settings) => {
+  api.put('/me/chart-settings', settings)   // máy chủ của bạn, chẳng hạn
+})
+stop()`}</code></pre>
+<p>
+  <code>getSettings()</code> cũng đọc lại những gì đã đặt trên <code>getChart()</code>,
+  nên bố cục hay liên kết lưu đúng như vậy. Biểu đồ cho biết các cài đặt này qua
+  <code>isVolumeVisible()</code>, <code>isLegendVisible()</code>,
+  <code>isBarCountdownVisible()</code>, <code>isIndicatorValueLabelsVisible()</code>,
+  <code>isLeftPriceScaleVisible()</code>, <code>getMarketProfileConfig()</code>,
+  <code>getDepthHeatmapConfig()</code>, <code>getPivotMarkersConfig()</code> và
+  <code>getPeriodLevelsPeriod()</code>, cùng với <code>is…Visible()</code> của từng lớp phủ.
+</p>
+<ul>
+  <li><strong>persistSettings</strong> giữ, theo từng trình duyệt, những gì người dùng
+    đã đổi so với giá trị của bạn. Giá trị được giữ thắng <code>chartOptions</code>, và
+    Đặt lại đưa về giá trị của bạn. Nó bỏ qua cờ thang log, cờ tự co giãn và cài đặt riêng
+    của từng loại biểu đồ (hộp Renko và những thứ tương tự), vốn là trạng thái của biểu đồ.
+    Hãy cho mỗi widget trên trang một <code>key</code> riêng; lưới tự cho mỗi biểu đồ của
+    nó một key. Nó không biết ai đã đổi: những gì bạn đặt bằng <code>setSettings</code>
+    (chẳng hạn trong <code>onReady</code>), và những gì một bố cục được mở mang đến,
+    cũng được giữ như lựa chọn của người dùng, và thắng
+    <code>chartOptions</code> ở lần ghé sau, kể cả khi mã của bạn đã thôi đặt chúng. Đặt một
+    cài đặt về lại giá trị trong <code>chartOptions</code> của bạn thì nó không còn được giữ.
+    Những gì một liên kết chia sẻ được mở mang đến là lựa chọn của người khác: chúng chỉ
+    hiện trong lần ghé đó, không được giữ và không gọi listener nào của
+    <code>onSettingsChange</code> (thay đổi kế tiếp sẽ báo tất cả).</li>
+  <li><strong>Bố cục có tên</strong> giữ tất cả, trừ múi giờ và định dạng số, vốn là của
+    người xem, và chế độ tự co giãn, thứ một lần kéo trục giá sẽ tắt. Trong JSON của bố cục,
+    chúng nằm dưới <code>settings</code>, trừ thang giá và việc lật thang, vốn có trường
+    riêng, và cài đặt riêng của từng loại biểu đồ, vốn nằm trong trạng thái của biểu đồ.
+    Bố cục lưu trước khi có tính năng này không có chúng, và mở nó thì cài đặt giữ nguyên.
+    Một phiên bản thư viện cũ hơn mở bố cục mới mà không có chúng, và lần tự lưu của nó
+    ghi lại bố cục mà không có chúng.</li>
+  <li><strong>Liên kết chia sẻ</strong> mang những cài đặt người gửi đã đổi khác mặc định,
+    trừ múi giờ, định dạng số và chế độ tự co giãn. Cài đặt riêng của loại biểu đồ trong một
+    liên kết chỉ đặt những loại mà người gửi đã đặt và loại đang hiển thị (theo mặc định nếu
+    người gửi để nguyên); cài đặt của người xem cho các loại khác
+    giữ nguyên. Với các công tắc mà <code>features</code>
+    của bạn đặt (chú giải, khối lượng, thời gian còn lại của nến, nhãn giá trị của chỉ báo),
+    mặc định là chỗ <code>features</code> đặt chúng, nên một công tắc mà ứng dụng của người
+    gửi đã tắt không được gửi đi như một thay đổi.</li>
+  <li><strong>Tính năng đã tắt</strong>: khi <code>features</code> của bạn tắt chú giải,
+    khối lượng, thời gian còn lại của nến hay thang log, không gì được giữ, chia sẻ, mở,
+    đặt hay áp dụng từ một mẫu biểu đồ có thể bật chúng lên, và hộp thoại cài đặt không có
+    công tắc và màu của chú giải hay của khối lượng.</li>
+  <li><strong>Bố cục theo từng mã</strong> (<code>persistLayouts</code>) và
+    <code>chart.saveState()</code> giữ cài đặt riêng của từng loại biểu đồ, vốn là một phần
+    trạng thái của biểu đồ, và không giữ cài đặt nào khác trong số này.</li>
+</ul>
+
 <h3>Bố cục theo từng mã</h3>
 <p>
   Ngoài ra, có thể tự động lưu bộ chỉ báo, hình vẽ, cảnh báo và loại biểu đồ theo từng mã
@@ -669,7 +791,8 @@ await widget.applyLayoutContent(json)`}</code></pre>
 widget.clearSavedLayout('BTCUSDT')`}</code></pre>
 <p>
   Bố cục được ghi lại khi đổi mã và khi huỷ widget, nên không mất gì
-  khi người dùng rời trang.
+  khi người dùng rời trang. Trong Cài đặt biểu đồ, chúng chỉ
+  giữ cài đặt riêng của từng loại biểu đồ; <code>persistSettings</code> giữ phần còn lại.
 </p>
 
 <h3>Kéo thả để nhập dữ liệu</h3>
@@ -700,15 +823,28 @@ chart.setData(data)`}</code></pre>
 })
 widget.setData(oneMinuteBars)   // base series; clicking 4h/1d/1w resamples it
 
-// Or use the pure function directly
-import { resampleOHLCV, inferTimeframeMs } from '@tradecanvas/chart'
+// Or build bars yourself
+import { resampleBars, timeframeBucketStart } from '@tradecanvas/chart'
 
-const hourly = resampleOHLCV(oneMinuteBars, '1h')   // OHLC merged, volume summed
-const fourHour = resampleOHLCV(oneMinuteBars, '4h', { weekStartsOn: 1 })`}</code></pre>
+const hourly = resampleBars(oneMinuteBars, '1h')   // OHLC merged, volume summed
+const days = resampleBars(oneMinuteBars, '1d', { timeZone: 'Asia/Ho_Chi_Minh' })   // from 00:00 there
+const dayStart = timeframeBucketStart(trade.time, '1d', { timeZone: 'Asia/Ho_Chi_Minh' })`}</code></pre>
 <p>
-  Gom nhóm theo lịch: khung trong ngày và khung ngày neo theo các mốc epoch
-  UTC, tuần theo ngày đầu tuần đã cấu hình, còn tháng / quý / năm
-  theo ranh giới lịch. Nến đầu vào không bao giờ bị sửa đổi.
+  Gom nhóm theo lịch: phút và giờ (1h trở xuống) làm tròn xuống bội số của khung tính từ
+  epoch Unix. Ngày, tuần (từ ngày đầu tuần đã cấu hình), tháng, quý và năm bắt đầu lúc nửa
+  đêm của sàn, các khung giờ chia hết một ngày (2h, 3h, 4h, 6h, 8h, 12h) cũng vậy. Với nến đưa vào
+  <code>widget.setData</code>, đó là nửa đêm theo <code>timeZone</code> của mã (<code>setSymbolInfo</code>),
+  nếu không có thì của thị trường (<code>setMarket</code>), nếu không nữa thì của UTC. Các khung
+  mà nguồn dữ liệu không có bắt đầu lúc nửa đêm của múi giờ mà <code>resolveSymbol</code> của nó
+  nêu, nếu không có thì của UTC: múi giờ của thị trường không dời chúng. Ngày đổi giờ dài 23 hoặc 25 tiếng. Nến ngày đóng dấu 00:00 UTC được đọc là đúng ngày
+  chúng ghi, nên ở phía tây UTC thứ Hai vẫn nằm trong tuần của nó và nến tuần giữ dấu 00:00
+  UTC. Nến đầu vào không bao giờ bị sửa đổi.
+</p>
+<p>
+  Nến ngày hiện đúng ngày mà nó đại diện, dù biểu đồ đang hiển thị múi giờ nào: nến đóng dấu
+  00:00 UTC hiện ngày UTC của nó, nến dựng từ nửa đêm của sàn hiện ngày của sàn (trên trục
+  thời gian, crosshair và thẻ của nó, chú giải ghim bằng Alt-click, và thời điểm của nến mà trình đọc màn hình đọc). Khi bạn tự dựng nến, <code>timeframeBucketStart(time, timeframe, {'{'} timeZone {'}'})</code> cho biết lúc bắt đầu
+  của nến chứa một thời điểm.
 </p>
 
 <h3>Danh mục theo dõi</h3>
@@ -788,7 +924,8 @@ chart.setSelectedDrawingStyle({ color: '#1fa874' })  // restyle the selected dra
 <h3>Cây đối tượng</h3>
 <p>
   Nút lớp (layers) trên dải nút (trên thanh công cụ, khi không có dải nút) mở cây đối tượng
-  trong ngăn bên, liệt kê mọi chỉ báo và hình vẽ đang có. Chỉ báo có thể xoá; mỗi hình vẽ có nút
+  trong ngăn bên, liệt kê mọi chỉ báo đang có, gọi theo tên trên nhãn của nó (EMA 20, Compare ETHUSDT),
+  và mọi hình vẽ. Chỉ báo có thể xoá; mỗi hình vẽ có nút
   hiện / ẩn, khoá / mở khoá, cài đặt và xoá, còn các nhóm được liệt kê cùng
   các hình vẽ của chúng bên dưới. Bật sẵn theo mặc định — tắt bằng
   <code>objectTree: false</code>. Các nút cho hình vẽ tương ứng với:
@@ -824,17 +961,22 @@ chart.removeIndicator(instanceId)`}</code></pre>
   thêm lại để đổi chu kỳ hay màu.
 </p>
 <p>
-  Phần <strong>So sánh</strong> trong cây đối tượng liệt kê các mã đang vẽ chồng thành
-  các đường đã chuẩn hoá. Khi có adapter dữ liệu trực tiếp, nút + của phần này mở hộp thoại so sánh;
-  mã được thêm ở chế độ phần trăm được tải lịch sử qua <code>adapter.fetchHistory</code>
-  (để các mã có mức giá khác nhau dùng chung một trục). Các mã so sánh
-  tự tải lại khi đổi khung thời gian. Các lệnh tương đương trong code:
+  Phần <strong>So sánh</strong> trong cây đối tượng liệt kê mọi mã đang so sánh, như hộp thoại
+  so sánh: mỗi mã kèm cách so sánh (thay đổi phần trăm, thang riêng, pane riêng, chênh lệch, tỷ lệ
+  hay tương quan) và một nút để bỏ nó đi. Khi có adapter dữ liệu trực tiếp, nút + của phần này mở
+  hộp thoại so sánh. Dù so sánh theo cách nào, widget cũng tải nến của mã kia qua
+  <code>adapter.fetchHistory</code> trước khi thêm, và không thêm gì nếu nến không về (tải lỗi,
+  hoặc không có nến ở khung thời gian này); một thông báo nói lý do. Một mã so sánh do trạng thái
+  đã lưu mang lại vẫn ở trên biểu đồ khi nến của nó không tải được, và có dữ liệu ở khung thời
+  gian có nến. Các mã so sánh tự tải lại khi đổi khung thời gian. Các lệnh tương đương trong code:
 </p>
 <pre><code>{`widget.addCompareSymbol('ETHUSDT')   // fetches + overlays (needs an adapter)
+await widget.addCompareSymbol('ETHUSDT', 'scale')  // its bars first; nothing added if they don't come
 
 // or drive the chart directly with your own data
 chart.addCompareSymbol('ETHUSDT', 'ETH', ethBars, '#627eea')
 chart.setCompareMode('percent')      // 'percent' | 'absolute'
+chart.setScaleMode('percentage')     // each line's change, read on the axis
 chart.removeCompareSymbol('ETHUSDT')`}</code></pre>
 
 <h3>Cảnh báo giá</h3>

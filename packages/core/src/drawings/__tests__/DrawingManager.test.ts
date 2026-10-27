@@ -2,7 +2,10 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import type { DrawingState } from '@tradecanvas/commons';
 import { DrawingManager } from '../DrawingManager.js';
 import { TrendLineTool } from '../tools/TrendLine.js';
-import { drawing, unitViewport } from './fixtures.js';
+import { GannBoxTool } from '../tools/GannBox.js';
+import { HorizontalLineTool } from '../tools/HorizontalLine.js';
+import { VerticalLineTool } from '../tools/VerticalLine.js';
+import { drawing, textCtx, unitViewport } from './fixtures.js';
 import { UndoRedoManager } from '../../features/UndoRedoManager.js';
 
 let manager: DrawingManager;
@@ -382,5 +385,66 @@ describe('DrawingManager — after undo', () => {
     manager.setToolFilter((type) => type !== 'trendLine');
     expect(manager.paste()).toEqual([]);
     expect(manager.getSelectedDrawingIds()).toEqual(['a']);
+  });
+});
+
+describe('DrawingManager text state between drawings', () => {
+  /** A host's drawing that leaves the context right-aligned and top-based. */
+  class LeakyTool extends TrendLineTool {
+    override render(ctx: CanvasRenderingContext2D): void {
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'top';
+    }
+  }
+
+  /** Records the text state each of its drawings is rendered in. */
+  class ProbeTool extends VerticalLineTool {
+    seen: [CanvasTextAlign, CanvasTextBaseline][] = [];
+    override render(ctx: CanvasRenderingContext2D): void {
+      this.seen.push([ctx.textAlign, ctx.textBaseline]);
+    }
+  }
+
+  it('keeps a horizontal line’s label left-aligned inside the plot after a Gann box', () => {
+    const scene = new DrawingManager();
+    scene.register(new GannBoxTool());
+    scene.register(new HorizontalLineTool());
+    scene.setDrawings([
+      // Its percent labels are right-aligned, left of the box.
+      drawing('gannBox', [{ time: 10, price: 80 }, { time: 30, price: 20 }], { id: 'box' }),
+      drawing('horizontalLine', [{ time: 0, price: 50 }], { id: 'line' }),
+    ]);
+    const { ctx, drawn } = textCtx();
+    scene.render(ctx, unitViewport);
+    const label = drawn.find((d) => d.text === '50.00');
+    expect(label?.align).toBe('left');
+    expect(label?.left).toBeGreaterThanOrEqual(unitViewport.chartRect.x);
+  });
+
+  it('renders each drawing in the state the pass starts with, not the one the previous drawing left', () => {
+    const probe = new ProbeTool();
+    const scene = new DrawingManager();
+    scene.register(new LeakyTool());
+    scene.register(probe);
+    scene.setDrawings([
+      drawing('trendLine', [{ time: 0, price: 50 }, { time: 10, price: 60 }], { id: 'leaky' }),
+      drawing('verticalLine', [{ time: 20, price: 50 }], { id: 'probe' }),
+    ]);
+    scene.render(textCtx().ctx, unitViewport);
+    expect(probe.seen).toEqual([['left', 'alphabetic']]);
+  });
+
+  it('starts the pass left-aligned whatever the time axis left on the context last frame', () => {
+    const probe = new ProbeTool();
+    const scene = new DrawingManager();
+    scene.register(probe);
+    scene.setDrawings([drawing('verticalLine', [{ time: 20, price: 50 }], { id: 'probe' })]);
+    const { ctx } = textCtx();
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    scene.render(ctx, unitViewport);
+    expect(probe.seen).toEqual([['left', 'alphabetic']]);
+    // The pass leaves the context as it found it.
+    expect([ctx.textAlign, ctx.textBaseline]).toEqual(['right', 'middle']);
   });
 });

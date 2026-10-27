@@ -11,6 +11,7 @@ import { WidgetLayoutsUI } from './WidgetLayoutsUI.js';
 import { LayoutSession } from '../state/LayoutSession.js';
 import { localStorageLayouts, type SavedLayout } from '../state/layoutStorage.js';
 import { parseLayoutJson, readWidgetLayout, type WidgetLayoutContent } from './widgetLayout.js';
+import { settingsStoreKey } from './chartSettingsStore.js';
 import { utcToWallTime } from './WidgetGoToDate.js';
 import { isKeyTarget, isTyping, registerKeyRoot } from './keyTarget.js';
 import { applyWidgetUI, resolveWidgetUI, type ResolvedWidgetUI, type WidgetUIPreset, type WidgetUITheme } from './widgetUI.js';
@@ -450,6 +451,10 @@ export class ChartWidgetGrid {
       ...(this.uiTheme ? { ui: this.uiTheme } : {}),
       // The grid keeps the layouts, of all its charts at once.
       layouts: false,
+      // Settings kept in this browser, a key for each chart: under one, the charts would overwrite each other.
+      ...(own.persistSettings === undefined && shared.persistSettings
+        ? { persistSettings: { key: `${settingsStoreKey(shared.persistSettings)}:${index}` } }
+        : {}),
       // A rail of panels on every chart would narrow them all: off unless the grid's widget options turn it on.
       features: { dock: false, ...shared.features, ...own.features },
       onSymbolChange: (symbol) => {
@@ -530,6 +535,8 @@ export class ChartWidgetGrid {
       });
     });
     chart.on('stateChange', () => this.session?.changed());
+    // A chart's settings are in the grid's layout too.
+    cell.widget.onSettingsChange(() => this.session?.changed());
     chart.on('themeChange', () => {
       if (!this.relaying) this.followTheme(cell);
     });

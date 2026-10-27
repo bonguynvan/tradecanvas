@@ -52,4 +52,13 @@ describe('AnchoredVWAPIndicator', () => {
     expect(series![0]).not.toBeNull();
     expect(series![1]).not.toBeNull();
   });
+
+  it('anchors at the bar of its time in milliseconds when the bars are timed in seconds', () => {
+    const start = Date.UTC(2026, 9, 19) / 1000;
+    const data = Array.from({ length: 4 }, (_, i) => ({ time: start + i * 3600, open: 10 * (i + 1), high: 10 * (i + 1), low: 10 * (i + 1), close: 10 * (i + 1), volume: 1 }));
+    const { series } = avwap.calculate(data, indicatorConfig('avwap', { anchorTime: data[2].time * 1000 }));
+    expect(series![1]).toBeNull();
+    expect(series![2]?.value).toBe(30);
+    expect(series![3]?.value).toBe(35);
+  });
 });

@@ -96,6 +96,13 @@ export interface IndicatorDescriptor {
   inputs?: Readonly<Record<string, IndicatorInputSpec>>;
   /** The group it is listed under in the widget's indicator picker; unset: "other" (built-ins have theirs). */
   category?: IndicatorCategory;
+  /**
+   * Whether it counts days, weeks or months in the exchange's zone
+   * (`config.exchangeTimeZone`): a change of the zone computes again only
+   * the indicators that do and those that read their lines. Unset, a plugin
+   * of your own is taken to, and a built-in that doesn't say so is not.
+   */
+  readsExchangeTimeZone?: boolean;
 }
 
 /** The groups of the widget's indicator picker. */
@@ -129,6 +136,15 @@ export interface IndicatorConfig {
   scale?: 'left';
   /** The intervals it shows on; unset: all of them. */
   intervals?: IndicatorIntervals;
+  /**
+   * The exchange's IANA zone (`'Asia/Ho_Chi_Minh'`), which indicators that
+   * start again each day, week or month count their days in: VWAP's
+   * `anchor`, Session VWAP, the MTF moving average. Set by the chart, from
+   * the symbol's `timeZone`, else the market's (`setSymbolInfo`,
+   * `setMarket`), and never saved with a layout. Unset for UTC, and when
+   * neither names a zone: UTC's days.
+   */
+  exchangeTimeZone?: string;
 }
 
 /** The kinds of interval an indicator's visibility is set for. */

@@ -47,4 +47,20 @@ describe('MTFMovingAverageIndicator', () => {
     const out = ind.calculate([], cfg({ period: 5, timeframe: '1d' }));
     expect(out.series).toEqual([]);
   });
+
+  it('counts its days from midnight in config.exchangeTimeZone, as the session VWAP does', () => {
+    // ASX sessions, 10:00–15:00 in Sydney: 23:00 UTC the day before to 04:00 UTC.
+    const session = (d: number, close: number): DataSeries =>
+      Array.from({ length: 6 }, (_, h) => ({ time: Date.UTC(2026, 9, 25 + d, 23) + h * HOUR, open: 1, high: 1, low: 1, close, volume: 1 }));
+    const data = [...session(0, 10), ...session(1, 20), ...session(2, 30)];
+    const zoned = { ...cfg({ period: 1, timeframe: '1d' }), exchangeTimeZone: 'Australia/Sydney' };
+    const s = ind.calculate(data, zoned).series!;
+    // A day is one session: the third session's bars all read the second's close.
+    expect(s.slice(12).map((v) => v?.value)).toEqual([20, 20, 20, 20, 20, 20]);
+  });
+
+  it('reads bar times given in seconds', () => {
+    const data: DataSeries = [day1, day1 + HOUR, day2, day2 + HOUR, day3].map((t, i) => ({ time: t / 1000, open: 1, high: 1, low: 1, close: [10, 12, 20, 22, 30][i], volume: 1 }));
+    expect(ind.calculate(data, cfg({ period: 2, timeframe: '1d' })).series![4]?.value).toBe(17);
+  });
 });

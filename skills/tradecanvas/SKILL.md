@@ -41,10 +41,13 @@ also works on a widget.
    the type check. `addIndicator` returns an instance id (`null` if the feature or
    id is turned off); later calls take that instance id, not the indicator id.
 6. **Live updates:** `appendBar` for a new bar, `updateLastBar` for the forming
-   one. Never `setData` on every tick: it resets the view and recomputes
-   everything. Their close is the live price: the price line, the alerts and
-   the orders' P&L follow it (a feed with only a price, no bars:
-   `setCurrentPrice`).
+   one, `updateBar` for a closed bar the feed corrects (same `time`, anywhere
+   in the series; `false` when no loaded bar has it). Never `setData` on every
+   tick, or to fix a bar: it resets the view and recomputes everything. The
+   close of a new or forming bar is the live price: the price line, the alerts
+   and the orders' P&L follow it (a feed with only a price, no bars:
+   `setCurrentPrice`); a correction is not. A connected feed corrects a bar by
+   sending it again with `closed: true`.
 7. Read values with `chart.getIndicatorOutput(instanceId)?.series[i]` (an object
    keyed by the indicator's line keys), not by guessing from the drawing.
 8. **Look names up when the TradeCanvas MCP server is connected** (tools named
@@ -55,7 +58,14 @@ also works on a widget.
 9. **The time zone is `timeZone`**, as in `Intl.DateTimeFormat`: the option,
    `setTimeZone` / `getEffectiveTimeZone`, `SymbolInfo.timeZone` and
    `MarketConfig.timeZone`. `setTimeZone('exchange')` shows the symbol's zone,
-   else its market's.
+   else its market's. In a `ChartWidget`, set it as a Chart Setting,
+   `widget.setSettings({ timezone: 'exchange' })` (spelt `timezone` there), so
+   the widget's clock, its settings dialog and what it keeps follow. The 2h–12h,
+   1D, 1W and 1M bars the library builds start at the exchange's midnight: from
+   a feed's `supportedTimeframes`, at the zone its `resolveSymbol` names (not
+   `setMarket`'s); from the widget's `setData`, at the symbol's zone, else the
+   market's. Bars your own code builds take
+   `timeframeBucketStart(t, tf, { timeZone })` to match.
 
 ## Quick start: the widget with live data
 
@@ -142,10 +152,17 @@ chart.removeIndicators(chart.getActiveIndicators().map((i) => i.instanceId)); //
 - Panel indicators may share a pane: `addIndicator('stochastic', {}, 'bottom', { pane: rsi })`.
 - The legend shows each line's latest value; tag it on the axis too with
   `features.indicatorValueLabels: true` (off by default).
+- `vwap` starts again each trading day (`anchor: 'session'`, from midnight in the
+  exchange's zone: the symbol's `timeZone`, else the market's, else UTC). Pass
+  `{ anchor: 'week' }` or `{ anchor: 'month' }` on daily bars, where a session's
+  VWAP is just each bar's typical price; `{ anchor: 'all' }` averages every bar
+  loaded and moves when older history is paged in.
 - Custom indicators: extend `IndicatorBase`, declare `plots`, and register with
   `chart.registerIndicator(...)` — see [references/recipes.md](references/recipes.md).
   A `category` in the descriptor (`'oscillators'`, `'volume'`…) files it under that
-  group of ChartWidget's Indicators dialog.
+  group of ChartWidget's Indicators dialog. One that groups bars by day reads the
+  exchange's zone as `config.exchangeTimeZone`; one that reads no zone can say
+  `readsExchangeTimeZone: false`, so a new zone leaves it as it is.
 
 ## Drawings, alerts and orders
 
@@ -216,6 +233,32 @@ chart.setAutoSave('layout', 1500);        // or keep it saved as it changes
 ```
 
 Saved indicators keep their inputs, sources, panes, colours, visibility and levels.
+`saveState` holds none of the overlays (volume and market profiles, swing
+markers, session shading, prior-period levels), the crosshair or the time zone.
+In a `ChartWidget` those are its Chart Settings, with an API and a store of their own:
+
+```ts
+import { ChartWidget } from '@tradecanvas/chart/widget';
+
+const widget = new ChartWidget(document.getElementById('chart')!, {
+  symbol: 'BTCUSDT',
+  persistSettings: true,                 // kept in this browser, back on the next visit
+});
+widget.setSettings({ timezone: 'exchange', volumeProfileVisible: true });  // checked, no undo step
+const settings = widget.getSettings();   // a copy: every switch, the scale, the zone, what you set on getChart() too
+const stop = widget.onSettingsChange((next) => console.log(next.timezone)); // each change; the dialog's once, at OK
+stop();
+```
+
+Named layouts (`layouts`) and share links (`shareUrl`, `exportState`) carry the
+Chart Settings too, but not the viewer's time zone and number format;
+`persistLayouts` (per symbol) carries only a chart type's own settings. A kept
+setting wins over `chartOptions`, and Reset in the dialog goes back to
+`chartOptions`. With `persistSettings` on, what `setSettings` sets, and what an
+opened layout brings, is kept as the user's choice too: to force a value, set
+it on every start; setting it back to the `chartOptions` value stops it being
+kept. An opened share link's settings show for that visit only, are not kept
+and call no `onSettingsChange` listener.
 
 ## Events
 
@@ -227,7 +270,7 @@ Saved indicators keep their inputs, sources, panes, colours, visibility and leve
 | `crosshairLeave` | — |
 | `barClick` | `{ bar, barIndex, point }` |
 | `visibleRangeChange` | `{ from, to }` bar indices |
-| `dataUpdate` | by `kind`: `'bars'` (`{ length }`: `setData`, a bar appended, by hand or by the stream; not a tick), `'alert'`, `'bracket'`, `'connection'`, `'error'` |
+| `dataUpdate` | by `kind`: `'bars'` (`{ length }`: `setData`, a bar appended, by hand or by the stream; not a tick), `'correction'` (`{ time, index }`: `updateBar`, or a feed's closed bar for an older time), `'alert'`, `'bracket'`, `'connection'`, `'error'` |
 | `chartTypeChange` | `{ type, previous }` (`getChartType()` reads it back) |
 | `indicatorAdd` / `indicatorRemove` | `{ instanceId, id }` |
 | `indicatorChange` | `{ instanceId, change }`: `'visible' \| 'style' \| 'levels' \| 'params' \| 'pane'` |
@@ -290,6 +333,7 @@ own CSS through `--tcw-*` variables and `[data-tcw-part~="name"]` (stable throug
 | `addIndicator` returns `null` | `features.indicators` is off, or `features.indicatorIds` leaves it out |
 | Indicator line missing at the start | Warm-up: no value until its period has enough bars |
 | Chart stutters on a fast feed | `setData` called per tick instead of `updateLastBar` / `appendBar` |
+| View jumps back to the newest bar when the feed fixes a closed bar | `setData` used for it: call `updateBar(bar)` (same `time`) |
 | A React/Vue/Svelte chart shows Binance bars before yours | Pass `data` at mount, or `stream={false}` |
 
 ## References

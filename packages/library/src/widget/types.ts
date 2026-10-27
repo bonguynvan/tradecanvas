@@ -135,10 +135,10 @@ export interface ChartWidgetOptions {
 
   /**
    * Named layouts: a toolbar button to save the chart (symbol, interval,
-   * scale, chart type, indicators, drawings, alerts) under a name, open,
-   * rename and delete layouts, and auto-save the one open; Ctrl/Cmd+S saves.
-   * Kept in this browser's `localStorage` unless `storage` says otherwise.
-   * Default `true`.
+   * scale, chart type, indicators, drawings, alerts, Chart Settings but the
+   * time zone and number format) under a name, open, rename and delete
+   * them, and auto-save the one open; Ctrl/Cmd+S saves. Kept in this
+   * browser's `localStorage` unless `storage` says otherwise. Default `true`.
    */
   layouts?: boolean | WidgetLayoutsOptions;
 
@@ -276,6 +276,25 @@ export interface ChartWidgetOptions {
    * empty) — this option only seeds the initial pins.
    */
   drawingFavorites?: DrawingToolType[];
+
+  /**
+   * Keep the Chart Settings in this browser (`localStorage`) and put them
+   * back on the next visit: the overlays, scales, crosshair, legend, time
+   * zone, number format. Default `false`. It keeps what the user changed
+   * from your values, which then win over `chartOptions` and the features'
+   * defaults; Reset in the settings goes back to yours. Not kept: the log
+   * and auto-scale flags, and a chart type's own settings (the chart's
+   * state, which `persistLayouts` and layouts hold). Give each widget on a
+   * page a key of its own. What `setSettings` sets, and what an opened
+   * layout brings, is kept as the user's too; set a value back to your
+   * `chartOptions` one and it is no longer kept. What an opened share link
+   * brings is someone else's choice: it shows for that visit, and the
+   * user's own stay kept until the user changes it.
+   */
+  persistSettings?: boolean | {
+    /** The localStorage key. Default `'tcw:chart-settings'`. */
+    key?: string;
+  };
 
   // Layout persistence (per-symbol indicators + drawings + chart type)
   persistLayouts?: boolean | {
@@ -603,38 +622,69 @@ export interface SettingsCallbacks {
   };
 }
 
-/** The settings that aren't the look: the look (colours, lines, dashes) is the chart's style keys, on the user's layer. */
+/**
+ * The Chart Settings that aren't the look (the look, its colours, lines and
+ * dashes, is the chart's style keys, on the user's layer): what
+ * `ChartWidget.getSettings` reads and `setSettings` takes.
+ */
 export interface ChartSettingsState {
+  /** The grid's lines. */
   gridVisible: boolean;
+  /** The volume bars under the price. */
   volumeVisible: boolean;
+  /** The volume profile at the right of the plot. */
   volumeProfileVisible: boolean;
+  /** The Market Profile (TPO). */
   marketProfileVisible: boolean;
+  /** A Market Profile for each session, not one for all the bars on screen. */
   marketProfileSplit: boolean;
+  /** The Market Profile's rows as letters, one per period. */
   marketProfileLetters: boolean;
+  /** Rows in the Market Profile, 8 to 200. */
   marketProfileBuckets: number;
+  /** The Market Profile's opacity, 0.05 to 1. */
   marketProfileOpacity: number;
+  /** The order book's liquidity heatmap (with depth from `setDepth`). */
   depthHeatmapVisible: boolean;
+  /** The liquidity heatmap's opacity, 0.1 to 1. */
   depthHeatmapOpacity: number;
+  /** Shade the hours outside the regular session. */
   sessionShadingVisible: boolean;
+  /** Mark the swing highs and lows. */
   pivotMarkersVisible: boolean;
+  /** Bars on each side a swing must stand above or below, 2 to 20. */
   pivotStrength: number;
+  /** Name the swings as structure: HH, HL, LH, LL. */
   pivotStructureLabels: boolean;
+  /** The prior period's levels: its high, low and close (PDH, PDL, PDC). */
   periodLevelsVisible: boolean;
+  /** The period those levels are of. */
   periodLevelsPeriod: 'day' | 'week';
+  /** The OHLCV legend at the top left. */
   legendVisible: boolean;
+  /** The time left in the bar, on the price scale. */
   barCountdown: boolean;
   /** Tag each indicator line's latest value on its scale. */
   indicatorValueLabels: boolean;
+  /** The price scale is logarithmic: kept with `scaleMode`. */
   logScale: boolean;
+  /** The price scale: regular, logarithmic, percent from the first bar on screen, or indexed to 100. */
   scaleMode: PriceScaleMode;
+  /** The price scale fits the bars on screen; a drag on the axis turns it off. */
   autoScale: boolean;
   /** Price scale upside down. */
   invertScale: boolean;
   /** A price scale on the left too (it carries overlays put on it, else mirrors the price scale). */
   leftPriceScale: boolean;
+  /** The crosshair follows the pointer (`'normal'`), snaps to the bars' prices (`'magnet'`) or is hidden. */
   crosshairMode: 'normal' | 'magnet' | 'hidden';
+  /** The number format, a locale tag (`'de-DE'`): the viewer's own. */
   numberLocale: string;
-  /** 'local' = browser timezone; an IANA zone ('America/New_York'); or a fixed UTC offset in minutes (as a string, from older settings). */
+  /**
+   * The time zone: `'local'` (the browser's), `'exchange'` (the symbol's),
+   * an IANA zone (`'America/New_York'`), or minutes east of UTC as a string.
+   * The viewer's own.
+   */
   timezone: string;
   /** Lines at the highest high and lowest low on screen. */
   highLowLines: boolean;
@@ -642,7 +692,11 @@ export interface ChartSettingsState {
   mainSeriesVisible: boolean;
   /** Bars outside the symbol's regular hours shown (pre- and post-market). */
   extendedHours: boolean;
-  /** Renko box, Line Break lines, Kagi reversal, Point & Figure box and reversal, range. */
+  /**
+   * Renko box, Line Break lines, Kagi reversal, Point & Figure box and
+   * reversal, range. `getSettings()` lists only the types set: one at its
+   * defaults is left out.
+   */
   chartTypeOptions: ChartTypeOptions;
 }
 

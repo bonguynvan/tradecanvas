@@ -1,5 +1,5 @@
 import type { ViewportState, Theme, DataSeries, TimeFormatter, TimeZoneSetting } from '@tradecanvas/commons';
-import { timeParts, tzLabel, barTimeUnit } from '@tradecanvas/commons';
+import { barDateParts, barsAreDaily, timeParts, tzLabel, barTimeUnit } from '@tradecanvas/commons';
 import { barIndexToTime } from '../viewport/ScaleMapping.js';
 import { MARK_WEIGHT, TimeMarker, markKind, type MarkKind, type TimeMark } from './timeMarks.js';
 
@@ -34,6 +34,8 @@ function shortMonths(locale: string): string[] {
 export class TimeAxis {
   /** An IANA zone, a fixed UTC offset in minutes, or null for the browser's zone. */
   private tz: TimeZoneSetting = null;
+  /** The exchange's zone: daily bars built at its midnight are dated there. */
+  private exchangeZone: string | null = null;
   private timeFormatter: TimeFormatter | null = null;
   private timesPastData = true;
   private locale = 'en-US';
@@ -47,6 +49,15 @@ export class TimeAxis {
 
   setTimezoneOffset(tz: TimeZoneSetting): void {
     this.tz = tz;
+  }
+
+  /**
+   * The exchange's zone (null: none known). Daily bars stamped at its
+   * midnight, as the chart builds them, carry its dates in any zone shown;
+   * bars stamped at 00:00 UTC carry the dates they name.
+   */
+  setExchangeTimeZone(zone: string | null): void {
+    this.exchangeZone = zone;
   }
 
   /** Labels in your words, or null for its own. */
@@ -82,13 +93,14 @@ export class TimeAxis {
       gapBars: MIN_LABEL_SPACING_PX / barUnit,
       tz: this.tz,
       timesPastData: this.timesPastData,
+      exchangeZone: this.exchangeZone,
     });
   }
 
-  /** "2024" where a year starts, "Mar" a month, "15" a day, "13:30" within a day. */
-  private label(mark: TimeMark, kind: MarkKind): string {
+  /** "2024" where a year starts, "Mar" a month, "15" a day, "13:30" within a day; daily bars by their dates. */
+  private label(mark: TimeMark, kind: MarkKind, daily: boolean): string {
     if (this.timeFormatter) return this.timeFormatter(mark.time, { kind, timeZone: this.tz });
-    const parts = timeParts(mark.time, this.tz);
+    const parts = daily ? barDateParts(mark.time, this.tz, this.exchangeZone) : timeParts(mark.time, this.tz);
     if (kind === 'year') return String(parts.year);
     if (kind === 'month') return shortMonths(this.locale)[parts.month - 1];
     if (kind === 'day') return String(parts.day);
@@ -141,10 +153,11 @@ export class TimeAxis {
     // its neighbours, and a year beats the day beside it.
     const placed: { left: number; right: number }[] = [];
     const order = this.marks(viewport, data).sort((a, b) => b.weight - a.weight || a.index - b.index);
+    const daily = barsAreDaily(data) === true;
     for (const mark of order) {
       const x = mark.index * barUnit + offsetX;
       const kind = markKind(mark.weight);
-      const label = this.label(mark, kind);
+      const label = this.label(mark, kind, daily);
       // A new year stands out from the months and days around it.
       ctx.font = kind === 'year' ? bold : plain;
       const half = ctx.measureText(label).width / 2;

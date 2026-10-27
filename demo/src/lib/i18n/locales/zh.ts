@@ -827,7 +827,7 @@ const zh: SiteMessages = {
     reviewHtml: [
       '无第三方运行时依赖：图表包只依赖 TradeCanvas 自己的 core 和 commons。',
       '不使用 <code>eval</code> 和 <code>new Function</code>，因此可以在不含 <code>unsafe-eval</code> 的 Content Security Policy 下运行。',
-      "组件会添加一个 <code>&lt;style&gt;</code> 元素，因此其所在页面需要 <code>style-src 'unsafe-inline'</code>；无界面的 <code>Chart</code> 不添加任何元素。",
+      "组件会添加一个 <code>&lt;style&gt;</code> 元素，并用 <code>data:</code> 图片绘制输入框和复选框里的图标，因此其所在页面需要 <code>style-src 'unsafe-inline'</code> 和 <code>img-src data:</code>；无界面的 <code>Chart</code> 两者都不需要。",
       '安全问题通过私密渠道报告，一周内答复。',
       '每个拉取请求都会在 CI 中构建、类型检查和测试：超过 3,000 个单元测试。',
       '版本由 GitHub Actions 从代码仓库发布，而不是从开发者的电脑发布。',

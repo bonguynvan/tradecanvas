@@ -52,6 +52,12 @@ describe('exporting the chart’s data', () => {
     expect(Object.keys(json[79])).toContain('SMA 20');
   });
 
+  it('writes volumes without float dust', () => {
+    chart.setData(bars.map((b) => ({ ...b, volume: 20.17 + 20.2 })));
+    const lines = chart.getExportText('csv').split('\n');
+    expect(lines[lines.length - 1].endsWith(',40.37')).toBe(true);
+  });
+
   it('downloads the file with the indicator lines', () => {
     chart.addIndicator('sma', { period: 20 });
     const clicked: string[] = [];

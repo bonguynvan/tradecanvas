@@ -117,6 +117,27 @@ class FakeChart {
   }
 
   setIndicatorDefaults(id: string, style: unknown): void { this.styleDefaults.set(id, style); }
+
+  /** The percent compare lines, as the real chart keeps them. */
+  compareLines: { id: string; label: string; color: string; visible: boolean }[] = [];
+  compareAsked: (number | undefined)[] = [];
+  addCompareSymbol(id: string, label: string, _data: unknown, color: string): void {
+    this.compareLines.push({ id, label, color, visible: true });
+    this.emit('compareChange', { id, change: 'add' });
+  }
+  removeCompareSymbol(id: string): void {
+    this.compareLines = this.compareLines.filter((c) => c.id !== id);
+    this.emit('compareChange', { id, change: 'remove' });
+  }
+  setCompareVisible(id: string, visible: boolean): void {
+    this.compareLines = this.compareLines.map((c) => (c.id === id ? { ...c, visible } : c));
+    this.emit('compareChange', { id, change: 'visible' });
+  }
+  /** Every compare at 0.1002, down 7.69% since its first bar on screen. */
+  getCompareValues(barIndex?: number) {
+    this.compareAsked.push(barIndex);
+    return this.compareLines.map((c) => ({ ...c, close: 0.1002, change: -7.6912, stale: false }));
+  }
 }
 
 vi.mock('../../Chart.js', () => ({ Chart: FakeChart }));
@@ -334,6 +355,105 @@ describe('on-chart indicator legend', () => {
     await frame();
     expect(getComputedStyle(host.querySelector('.tcw-ind-legend')!).display).toBe('none');
     expect(host.querySelector('.tcw-ind-legend-row')).toBeNull();
+  });
+});
+
+describe('percent comparisons in the on-chart legend', () => {
+  const bars = Array.from({ length: BARS }, (_, i) => ({ time: i * 3_600_000, open: 1, high: 1, low: 1, close: 1, volume: 1 }));
+  /** A widget whose adapter has the other symbol's bars, an EMA and BBB compared on it. */
+  const comparing = async () => {
+    widget.destroy();
+    host.replaceChildren();
+    const feed = { ...adapter, fetchHistory: async () => bars, connect: () => {}, disconnect: () => {}, on: () => {}, off: () => {} };
+    widget = new ChartWidget(host, { adapter: feed as unknown as DataAdapter, symbol: 'AAA', timeframe: '5m', watchlist: false });
+    FakeChart.last.addIndicator('ema', { period: 20 });
+    await widget.addCompareSymbol('BBB');
+    await frame();
+  };
+
+  it('lists each percent comparison first, marked in its colour, with its price and its change', async () => {
+    await comparing();
+    expect(names()).toEqual(['BBB', 'EMA 20']);
+    const [bbb] = rows();
+    expect(values(bbb).map((v) => v.textContent)).toEqual(['0.1002', '-7.69%']);
+    // The figures in the legend's text colour, legible on either theme; the line's colour marks the row.
+    expect(values(bbb).map((v) => v.style.color)).toEqual(['', '']);
+    expect(bbb.querySelector<HTMLElement>('.tcw-ind-legend-swatch')!.style.backgroundColor).not.toBe('');
+    // Not an indicator: no settings, no more.
+    expect(bbb.querySelector('[data-act="settings"]')).toBeNull();
+    expect(bbb.querySelector('[data-act="more"]')).toBeNull();
+    expect(bbb.querySelector('.tcw-ind-legend-name')!.tagName).not.toBe('BUTTON');
+  });
+
+  it('lists a compare line the host adds on the chart itself, without waiting for the pointer', async () => {
+    await comparing();
+    widget.getChart().addCompareSymbol('host_sol', 'SOL (host)', [], '#3e9a4f');
+    await frame();
+    expect(names()).toEqual(['BBB', 'SOL (host)', 'EMA 20']);
+    widget.getChart().removeCompareSymbol('host_sol');
+    await frame();
+    expect(names()).toEqual(['BBB', 'EMA 20']);
+  });
+
+  it('hides a comparison, and takes it off, from its legend row', async () => {
+    await comparing();
+    act(rows()[0], 'visible');
+    expect(FakeChart.last.compareLines[0].visible).toBe(false);
+    await frame();
+    expect(rows()[0].classList.contains('tcw-ind-legend-row--hidden')).toBe(true);
+    act(rows()[0], 'remove');
+    expect(FakeChart.last.compareLines).toEqual([]);
+    await frame();
+    expect(names()).toEqual(['EMA 20']);
+  });
+
+  it('reads a comparison at the bar under the cursor, and again on a pan', async () => {
+    await comparing();
+    FakeChart.last.emit('crosshairMove', { barIndex: 4 });
+    await frame();
+    expect(FakeChart.last.compareAsked.at(-1)).toBe(4);
+    FakeChart.last.compareAsked = [];
+    FakeChart.last.emit('visibleRangeChange', { from: 2, to: 9 });
+    await frame();
+    expect(FakeChart.last.compareAsked).not.toEqual([]);
+    // Off the chart: the chart's own last bar, not an index into the data.
+    FakeChart.last.emit('crosshairLeave', {});
+    await frame();
+    expect(FakeChart.last.compareAsked.at(-1)).toBeUndefined();
+  });
+
+  it('hides and takes off a compare the host put on the chart itself', async () => {
+    await comparing();
+    const chart = FakeChart.last;
+    chart.addCompareSymbol('host_eth', 'ETHUSDT', [], '#00ff00');
+    chart.emit('dataUpdate', {});
+    await frame();
+    const row = () => rows().find((r) => r.querySelector('.tcw-ind-legend-name')!.textContent === 'ETHUSDT')!;
+    act(row(), 'visible');
+    expect(chart.compareLines.find((c) => c.id === 'host_eth')!.visible).toBe(false);
+    await frame();
+    expect(row().classList.contains('tcw-ind-legend-row--hidden')).toBe(true);
+    act(row(), 'remove');
+    expect(chart.compareLines.map((c) => c.id)).toEqual(['cmp_BBB']);
+    // The widget's own compare and the indicators are left as they were.
+    expect(chart.indicators.map((i) => i.id)).toEqual(['ema']);
+    await frame();
+    expect(names()).toEqual(['BBB', 'EMA 20']);
+  });
+
+  it('dims a comparison where the chart draws no compare lines, and says why', async () => {
+    await comparing();
+    FakeChart.last.timeAligned = false; // Renko, say: its bars are not the data's
+    FakeChart.last.emit('crosshairMove', { barIndex: 4 });
+    await frame();
+    expect(FakeChart.last.compareAsked.at(-1)).toBeUndefined();
+    const [bbb] = rows();
+    expect(bbb.classList.contains('tcw-ind-legend-row--hidden')).toBe(true);
+    expect(bbb.title).toBe('Not drawn on this chart type');
+    expect(values(bbb)).toEqual([]);
+    // Its eye and its remove button still work.
+    act(bbb, 'remove');
+    expect(FakeChart.last.compareLines).toEqual([]);
   });
 });
 

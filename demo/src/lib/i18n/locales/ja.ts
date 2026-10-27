@@ -826,7 +826,7 @@ const ja: SiteMessages = {
     reviewHtml: [
       'サードパーティのランタイム依存関係なし：チャートパッケージが依存するのは TradeCanvas 自身の core と commons だけです。',
       '<code>eval</code> も <code>new Function</code> も使っていないため、<code>unsafe-eval</code> を許可しない Content Security Policy の下で動作します。',
-      "ウィジェットは <code>&lt;style&gt;</code> 要素を 1 つ追加するため、そのページには <code>style-src 'unsafe-inline'</code> が必要です。ヘッドレスの <code>Chart</code> は何も追加しません。",
+      "ウィジェットは <code>&lt;style&gt;</code> 要素を 1 つ追加し、入力欄とチェックボックスのアイコンを <code>data:</code> 画像で描くため、そのページには <code>style-src 'unsafe-inline'</code> と <code>img-src data:</code> が必要です。ヘッドレスの <code>Chart</code> にはどちらも要りません。",
       'セキュリティ上の問題は非公開で報告でき、1 週間以内に回答します。',
       'すべてのプルリクエストは CI でビルド、型チェック、テストされます。ユニットテストは 3,000 件超です。',
       'リリースは開発者の手元のマシンからではなく、リポジトリから GitHub Actions で公開されます。',

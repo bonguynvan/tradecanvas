@@ -155,4 +155,17 @@ describe('formatTooltipTime', () => {
   it('accepts timestamps in seconds', () => {
     expect(formatTooltipTime(Date.UTC(2026, 2, 4, 14, 5) / 1000, 0)).toBe('Mar 4 · 14:05');
   });
+
+  it('dates a day built at the exchange’s midnight by the exchange’s date, in UTC and in New York', () => {
+    // 23 October in Ho Chi Minh City starts at 17:00 UTC on the 22nd.
+    const built = Date.UTC(2026, 9, 22, 17);
+    expect(formatTooltipTime(built, 'UTC', 86_400_000, 'en-US', undefined, 'Asia/Ho_Chi_Minh')).toBe('Oct 23, 2026');
+    expect(formatTooltipTime(built, 'America/New_York', 86_400_000, 'en-US', undefined, 'Asia/Ho_Chi_Minh')).toBe('Oct 23, 2026');
+  });
+
+  it('dates a day stamped at 00:00 UTC by the date it names, in New York too', () => {
+    expect(formatTooltipTime(Date.UTC(2026, 9, 23), 'America/New_York', 86_400_000)).toBe('Oct 23, 2026');
+    // Intraday bars keep the zone shown.
+    expect(formatTooltipTime(Date.UTC(2026, 9, 23), 'America/New_York', 3_600_000)).toBe('Oct 22 · 20:00');
+  });
 });

@@ -2,6 +2,9 @@ import { createIcon } from './icons.js';
 import { EN_TRANSLATOR, type Translator } from './i18n.js';
 import { markPart } from './widgetFeatures.js';
 
+/** Decimals the change's percentage shows. */
+export const PERCENT_DECIMALS = 2;
+
 export interface DataWindowIndicator {
   name: string;
   values: { key: string; value: number }[];
@@ -16,6 +19,11 @@ export interface DataWindowModel {
 
 export interface DataWindowCallbacks {
   formatPrice: (price: number) => string;
+  /**
+   * The change's percentage in the number locale the prices are in, a fall's
+   * with its minus (the panel adds the + of a rise); without it, two decimals.
+   */
+  formatPercent?: (pct: number) => string;
   /** Its close button: the dock it sits in shuts. Without it, the panel hides itself. */
   onClose?: () => void;
 }
@@ -106,7 +114,8 @@ export class WidgetDataWindow {
     this.bodyEl.appendChild(this.row(this.t('dataWindow.close'), fp(o.close)));
     const tone = model.change > 0 ? 'up' : model.change < 0 ? 'down' : '';
     const sign = model.change > 0 ? '+' : '';
-    this.bodyEl.appendChild(this.row(this.t('dataWindow.change'), `${sign}${fp(model.change)} (${sign}${model.changePct.toFixed(2)}%)`, tone));
+    const pct = this.callbacks.formatPercent?.(model.changePct) ?? model.changePct.toFixed(PERCENT_DECIMALS);
+    this.bodyEl.appendChild(this.row(this.t('dataWindow.change'), `${sign}${fp(model.change)} (${sign}${pct}%)`, tone));
     this.bodyEl.appendChild(this.row(this.t('dataWindow.volume'), formatVolume(o.volume)));
 
     for (const ind of model.indicators) {

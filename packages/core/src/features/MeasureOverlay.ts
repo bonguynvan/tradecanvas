@@ -1,6 +1,13 @@
 import type { Point, ViewportState, Theme, DataSeries } from '@tradecanvas/commons';
-import { barTimeUnit } from '@tradecanvas/commons';
+import { barTimeUnit, formatPrice, priceTagText } from '@tradecanvas/commons';
 import { xToBarIndex, yToPrice, barIndexToX, priceToY } from '../viewport/ScaleMapping.js';
+
+/** Decimals the move's percentage shows. */
+const PERCENT_DECIMALS = 2;
+/** Significant digits a move below 1 shows without a market precision. */
+const SMALL_MOVE_DIGITS = 4;
+/** Most decimals a move below 1 shows. */
+const MAX_DECIMALS = 10;
 
 /**
  * Transient "measure" overlay (the shift-drag ruler).
@@ -109,7 +116,8 @@ export class MeasureOverlay {
     const lines: string[] = [];
     const sign = priceDelta > 0 ? '+' : priceDelta < 0 ? '−' : '';
     const absDelta = Math.abs(priceDelta);
-    lines.push(`${sign}${viewport.formatPrice?.(absDelta) ?? formatPrice(absDelta)}  (${sign}${Math.abs(pricePct).toFixed(2)}%)`);
+    const pctText = formatPrice(Math.abs(pricePct), PERCENT_DECIMALS, viewport.numberLocale ?? 'en-US');
+    lines.push(`${sign}${deltaText(absDelta, viewport)}  (${sign}${pctText}%)`);
     lines.push(`${bars} bars${timeSpan ? '  ·  ' + timeSpan : ''}`);
 
     ctx.save();
@@ -123,10 +131,21 @@ function barTime(barIdx: number, data: DataSeries): number | null {
   return data[barIdx].time * barTimeUnit(data);
 }
 
-function formatPrice(v: number): string {
-  if (v >= 1000) return v.toFixed(2);
-  if (v >= 1) return v.toFixed(4);
-  return v.toPrecision(4);
+/**
+ * The size of the move as the chart writes a price: its price format, else
+ * grouped in the number locale at the market's or the symbol's decimals, or
+ * at those of its size when neither sets them.
+ */
+function deltaText(delta: number, viewport: ViewportState): string {
+  return priceTagText(delta, viewport, viewport.pricePrecision ?? moveDecimals(delta));
+}
+
+/** 2 decimals from 1,000 up, 4 from 1, and 4 significant digits below 1. */
+function moveDecimals(delta: number): number {
+  if (delta >= 1000) return 2;
+  if (delta >= 1) return 4;
+  if (delta <= 0) return SMALL_MOVE_DIGITS - 1;
+  return Math.min(MAX_DECIMALS, SMALL_MOVE_DIGITS - 1 - Math.floor(Math.log10(delta)));
 }
 
 function formatTimeSpan(ms: number): string {

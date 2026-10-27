@@ -28,6 +28,10 @@ export class DepthHeatmapRenderer {
   setCapacity(n: number): void {
     this.buffer.setCapacity(n);
   }
+  /** Its opacity and how many snapshots it keeps, as the setters left them. */
+  getConfig(): { opacity: number; capacity: number } {
+    return { opacity: this.opacity, capacity: this.buffer.getCapacity() };
+  }
 
   push(time: number, depth: DepthData): void {
     this.buffer.push(time, depth);

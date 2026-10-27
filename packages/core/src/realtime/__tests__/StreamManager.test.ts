@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import type { DataAdapter, DataAdapterConfig, DataAdapterListener, OHLCBar, TimeFrame } from '@tradecanvas/commons';
 import { StreamManager } from '../StreamManager.js';
+import { WebSocketAdapter, type WebSocketLike, type WsParseResult } from '../adapters/WebSocketAdapter.js';
 
 interface PendingFetch {
   symbol: string;
@@ -31,7 +32,7 @@ function controlledAdapter() {
     off: (event, listener) => { listeners.get(event)?.delete(listener as DataAdapterListener); },
     dispose: () => {},
   };
-  return { adapter, pending, connects };
+  return { adapter, pending, connects, listeners };
 }
 
 const bars = (close: number): OHLCBar[] => [{ time: 1, open: close, high: close, low: close, close, volume: 1 }];
@@ -157,6 +158,273 @@ describe('StreamManager — timeframes the feed lacks', () => {
   });
 });
 
+describe('StreamManager — bars from ticks after the history', () => {
+  const VN = 'Asia/Ho_Chi_Minh';
+  const at = (time: number): OHLCBar => ({ time, open: 1, high: 1, low: 1, close: 1, volume: 1 });
+
+  interface TickCase {
+    zone: string;
+    history: OHLCBar[];
+    /** When the trade happens. */
+    time: number;
+    timeframe?: TimeFrame;
+    /** The zone comes once the history is in, as a symbol's details often do. */
+    zoneAfterHistory?: boolean;
+    /** The feed's timeframes, when it lacks `timeframe`: the history is built from them. */
+    supported?: TimeFrame[];
+    /** The zone the feed's `resolveSymbol` names for the symbol (none: it has no `resolveSymbol`). */
+    feedZone?: string;
+  }
+
+  /** A stream of `timeframe` bars from ticks after `first`: the bars it builds, and a reconnect whose history is `bars`. */
+  async function reconnecting(first: OHLCBar[], timeframe: TimeFrame = '4h') {
+    const { adapter, pending, listeners } = controlledAdapter();
+    const sm = new StreamManager();
+    const updates: OHLCBar[] = [];
+    const snapshots: OHLCBar[][] = [];
+    sm.on('barUpdate', (b) => updates.push({ ...b }));
+    sm.on('snapshot', (b) => snapshots.push(b));
+    const done = sm.connect({ adapter, symbol: 'X', timeframe, aggregateTicks: true });
+    pending[0].resolve(first);
+    await done;
+    const fire = (type: string, data: unknown) => { for (const l of listeners.get(type) ?? []) l({ type: type as never, data, timestamp: 0 }); };
+    return {
+      sm, updates, snapshots,
+      trade: (time: number, price = 2) => fire('tick', { time, price, volume: 1 }),
+      reconnect: async (bars: OHLCBar[]) => {
+        fire('connectionChange', 'connected');
+        sm.wake('online');
+        pending.at(-1)!.resolve(bars);
+        await new Promise((r) => setTimeout(r, 0));
+      },
+    };
+  }
+  const MINUTE = 60_000;
+
+  /** The bar a trade lands in, on a stream of bars built from ticks after `history`, in `zone`. */
+  async function tickOnto({ zone, history, time, timeframe = '1d', zoneAfterHistory = false, supported, feedZone }: TickCase): Promise<number | undefined> {
+    const { adapter: feed, pending, listeners } = controlledAdapter();
+    const resolveSymbol = feedZone ? async (symbol: string) => ({ symbol, timeZone: feedZone }) : undefined;
+    const adapter = supported ? { ...feed, supportedTimeframes: supported, resolveSymbol } : feed;
+    const sm = new StreamManager();
+    if (!zoneAfterHistory) sm.setTimeZone(zone);
+    const updates: OHLCBar[] = [];
+    sm.on('barUpdate', (b) => updates.push(b));
+    const done = sm.connect({ adapter, symbol: 'X', timeframe, aggregateTicks: true });
+    // A feed that names the zone is asked first.
+    await vi.waitFor(() => expect(pending.length).toBe(1));
+    pending[0].resolve(history);
+    await done;
+    if (zoneAfterHistory) sm.setTimeZone(zone);
+    for (const l of listeners.get('tick') ?? []) l({ type: 'tick', data: { time, price: 2, volume: 1 }, timestamp: 0 });
+    return updates.at(-1)?.time;
+  }
+
+  it('starts the day at the exchange’s midnight, as the bars before it do', async () => {
+    // Friday 23 October 2026, 09:15 in Ho Chi Minh City.
+    const day23 = await tickOnto({ zone: VN, history: [at(Date.UTC(2026, 9, 21, 17))], time: Date.UTC(2026, 9, 23, 2, 15) });
+    expect(day23).toBe(Date.UTC(2026, 9, 22, 17));
+  });
+
+  it('stamps the day by its date when the history stamps days at 00:00 UTC', async () => {
+    // 20:30 on Friday 23 October in New York, already Saturday in UTC.
+    const day23 = await tickOnto({ zone: 'America/New_York', history: [at(Date.UTC(2026, 9, 22))], time: Date.UTC(2026, 9, 24, 0, 30) });
+    expect(day23).toBe(Date.UTC(2026, 9, 23));
+  });
+
+  it("dates the day in the exchange's zone after a reconnect, when the zone came once the trades had started", async () => {
+    // A New York feed's days, stamped by their date: the last is Friday 23 October.
+    const days = [Date.UTC(2026, 9, 21), Date.UTC(2026, 9, 22), Date.UTC(2026, 9, 23)].map(at);
+    const stream = await reconnecting(days, '1d');
+    stream.trade(Date.UTC(2026, 9, 24, 0, 30), 105); // 20:30 on Friday there, the zone not known yet: dated Saturday
+    expect(stream.updates.at(-1)?.time).toBe(Date.UTC(2026, 9, 24));
+    stream.sm.setTimeZone('America/New_York');
+    await stream.reconnect(days.map((b) => ({ ...b })));
+    // The Saturday bar is let go: the snapshot ends on Friday, and the next trade builds Friday.
+    expect(stream.snapshots.at(-1)?.at(-1)?.time).toBe(Date.UTC(2026, 9, 23));
+    stream.trade(Date.UTC(2026, 9, 24, 1, 30), 107); // 21:30 on Friday there
+    expect(stream.updates.at(-1)).toMatchObject({ time: Date.UTC(2026, 9, 23), close: 107 });
+    stream.sm.dispose();
+  });
+
+  it('moves the price with each trade on a daily history stamped at another hour, before the zone is known', async () => {
+    // Days dated at 05:00 UTC, the midnight of a browser five hours west.
+    const days = [22, 23, 26].map((d) => at(Date.UTC(2026, 9, d, 5)));
+    const stream = await reconnecting(days, '1d');
+    const prices: number[] = [];
+    stream.sm.on('priceChange', (p) => prices.push(p.price));
+    for (const [hour, price] of [[14, 101], [15, 102], [20, 103]]) stream.trade(Date.UTC(2026, 9, 26, hour), price);
+    expect(prices).toEqual([101, 102, 103]);
+    expect(stream.updates.at(-1)).toMatchObject({ time: Date.UTC(2026, 9, 26, 5), close: 103 });
+    stream.sm.dispose();
+  });
+
+  describe('4h bars', () => {
+    // 11:30 on Friday 23 October in Ho Chi Minh City.
+    const trade = Date.UTC(2026, 9, 23, 4, 30);
+    /** A feed's own 4h bars, on the epoch: 00:00 and 04:00 UTC. */
+    const feedBars = [at(Date.UTC(2026, 9, 23, 0)), at(Date.UTC(2026, 9, 23, 4))];
+    /** 4h bars built from 04:00 and 08:00 in Ho Chi Minh City. */
+    const zonedBars = [at(Date.UTC(2026, 9, 22, 21)), at(Date.UTC(2026, 9, 23, 1))];
+
+    it('stay on the epoch when the feed’s own bars sit there', async () => {
+      expect(await tickOnto({ zone: VN, history: feedBars, time: trade, timeframe: '4h' })).toBe(Date.UTC(2026, 9, 23, 4));
+    });
+
+    it('start at the exchange’s midnight when the history’s do', async () => {
+      expect(await tickOnto({ zone: VN, history: zonedBars, time: trade, timeframe: '4h' })).toBe(Date.UTC(2026, 9, 23, 1));
+    });
+
+    it('follow the history when the zone comes after it', async () => {
+      expect(await tickOnto({ zone: VN, history: feedBars, time: trade, timeframe: '4h', zoneAfterHistory: true }))
+        .toBe(Date.UTC(2026, 9, 23, 4));
+      expect(await tickOnto({ zone: VN, history: zonedBars, time: trade, timeframe: '4h', zoneAfterHistory: true }))
+        .toBe(Date.UTC(2026, 9, 23, 1));
+    });
+
+    it('stay on the epoch when the history was built there from a feed’s hours', async () => {
+      // A feed of 1h bars that names no zone, on a chart whose market is in Ho Chi Minh City.
+      const hours = [0, 1, 2, 3, 4].map((h) => at(Date.UTC(2026, 9, 23, h)));
+      expect(await tickOnto({ zone: VN, history: hours, time: trade, timeframe: '4h', supported: ['1h'] })).toBe(Date.UTC(2026, 9, 23, 4));
+    });
+
+    it('stay on the epoch with no history to follow', async () => {
+      expect(await tickOnto({ zone: VN, history: [], time: trade, timeframe: '4h' })).toBe(Date.UTC(2026, 9, 23, 4));
+    });
+
+
+    it("land on the exchange's midnight after a reconnect onto it, from a first connect with no history", async () => {
+      const stream = await reconnecting([]);
+      stream.sm.setTimeZone(VN);
+      stream.trade(trade);
+      expect(stream.updates.at(-1)?.time).toBe(Date.UTC(2026, 9, 23, 4)); // the epoch's, with no history to follow
+      await stream.reconnect(zonedBars);
+      stream.trade(trade + 10 * MINUTE);
+      expect(stream.updates.at(-1)?.time).toBe(Date.UTC(2026, 9, 23, 1));
+      stream.sm.dispose();
+    });
+
+    it("land on the exchange's midnight after a reconnect, when the zone came once the trades had started", async () => {
+      const stream = await reconnecting(zonedBars);
+      stream.trade(trade);
+      expect(stream.updates.at(-1)?.time).toBe(Date.UTC(2026, 9, 23, 4)); // the epoch's, the zone not known yet
+      stream.sm.setTimeZone(VN);
+      await stream.reconnect(zonedBars);
+      stream.trade(trade + 10 * MINUTE);
+      expect(stream.updates.at(-1)?.time).toBe(Date.UTC(2026, 9, 23, 1));
+      stream.sm.dispose();
+    });
+  });
+
+  it('refuse a zone the browser does not know, and keep the one they had', async () => {
+    const { adapter, pending, listeners } = controlledAdapter();
+    const sm = new StreamManager();
+    sm.setTimeZone(VN);
+    expect(() => sm.setTimeZone('Not/AZone')).toThrow(RangeError);
+    const errors: unknown[] = [];
+    sm.on('error', (e) => errors.push(e));
+    const updates: OHLCBar[] = [];
+    sm.on('barUpdate', (b) => updates.push(b));
+    const done = sm.connect({ adapter, symbol: 'X', timeframe: '4h', aggregateTicks: true });
+    // 4h bars built from 04:00 and 08:00 in Ho Chi Minh City.
+    pending[0].resolve([at(Date.UTC(2026, 9, 22, 21)), at(Date.UTC(2026, 9, 23, 1))]);
+    await done;
+    for (const l of listeners.get('tick') ?? []) l({ type: 'tick', data: { time: Date.UTC(2026, 9, 23, 4, 30), price: 2, volume: 1 }, timestamp: 0 });
+    expect(errors).toEqual([]);
+    expect(updates.at(-1)?.time).toBe(Date.UTC(2026, 9, 23, 1));
+    sm.disconnect();
+  });
+
+  describe('on a timeframe built from the feed’s shorter one', () => {
+    it('keep the UTC days it built from hours, west of UTC too', async () => {
+      // A feed of 1h bars with no zone to name, on a chart whose market is in New York: its days start at 00:00 UTC.
+      const hours = [20, 21, 22, 23, 24].map((h) => at(Date.UTC(2026, 9, 23, h)));
+      // 20:30 on Friday 23 October in New York, already Saturday in UTC: Saturday's bar, the history's last.
+      expect(await tickOnto({ zone: 'America/New_York', history: hours, time: Date.UTC(2026, 9, 24, 0, 30), supported: ['1h'] }))
+        .toBe(Date.UTC(2026, 9, 24));
+    });
+
+    it('start the day where the feed’s zone starts the days it built, whatever zone the chart has', async () => {
+      // A Ho Chi Minh City session of 1h bars, 09:00 to 14:00 there on Thursday 22 October.
+      const hours = [2, 3, 4, 5, 6, 7].map((h) => at(Date.UTC(2026, 9, 22, h)));
+      // 09:15 on Friday 23 October there; the chart has no zone for the symbol yet.
+      expect(await tickOnto({ zone: 'UTC', history: hours, time: Date.UTC(2026, 9, 23, 2, 15), supported: ['1h'], feedZone: VN }))
+        .toBe(Date.UTC(2026, 9, 22, 17));
+    });
+
+    const DAY_MS = 86_400_000;
+    /** A feed's daily bars, stamped at 00:00 UTC of the exchange's dates, from `from` to `to` (UTC ms), weekends left out. */
+    const datedWeekdays = (from: number, to: number): OHLCBar[] => {
+      const days: OHLCBar[] = [];
+      for (let t = from; t <= to; t += DAY_MS) {
+        const weekday = new Date(t).getUTCDay();
+        if (weekday !== 0 && weekday !== 6) days.push(at(t));
+      }
+      return days;
+    };
+
+    it('date the weeks it built from the feed’s dated days in the chart’s zone, when the feed names none', async () => {
+      const days = datedWeekdays(Date.UTC(2026, 9, 5), Date.UTC(2026, 9, 23));
+      // 10:30 on Monday 26 October in Sydney, still Sunday in UTC: the feed's own day for it is Monday's, in the new week.
+      expect(await tickOnto({ zone: 'Australia/Sydney', history: days, time: Date.UTC(2026, 9, 25, 23, 30), timeframe: '1w', supported: ['1d'] }))
+        .toBe(Date.UTC(2026, 9, 26));
+    });
+
+    it('date the months it built from the feed’s dated days in the chart’s zone, when the feed names none', async () => {
+      const days = datedWeekdays(Date.UTC(2026, 9, 1), Date.UTC(2026, 10, 27));
+      // 19:30 on Monday 30 November in New York, after the close, already December in UTC: November's bar.
+      expect(await tickOnto({ zone: 'America/New_York', history: days, time: Date.UTC(2026, 11, 1, 0, 30), timeframe: '1M', supported: ['1d'] }))
+        .toBe(Date.UTC(2026, 10, 1));
+    });
+  });
+});
+
+describe('StreamManager — a symbol whose days were built in UTC for want of an answer', () => {
+  const VN = 'Asia/Ho_Chi_Minh';
+  const HOUR = 3_600_000;
+  const DAY = 24 * HOUR;
+  /** 09:00 to 14:00 in Ho Chi Minh City (02:00 to 07:00 UTC), 19 to 23 October 2026. */
+  const hours: OHLCBar[] = [];
+  for (let d = 19; d <= 23; d++) for (let h = 2; h <= 7; h++) hours.push({ time: Date.UTC(2026, 9, d, h), open: 1, high: 1, low: 1, close: 1, volume: 1 });
+
+  it('loads it afresh in the zone the feed names later, and keeps its days on a reconnect', async () => {
+    const listeners = new Map<string, Set<DataAdapterListener>>();
+    let asks = 0;
+    const adapter: DataAdapter = {
+      name: 'hours',
+      supportedTimeframes: ['1h'],
+      connect: () => {},
+      disconnect: () => {},
+      getConnectionState: () => 'connected',
+      fetchHistory: async (_s, _tf, limit = 500) => hours.slice(-limit),
+      // Down the first time it is asked.
+      resolveSymbol: async (symbol) => {
+        if (++asks === 1) throw new Error('down');
+        return { symbol, timeZone: VN };
+      },
+      on: (event, listener) => {
+        if (!listeners.has(event)) listeners.set(event, new Set());
+        listeners.get(event)!.add(listener as DataAdapterListener);
+      },
+      off: (event, listener) => { listeners.get(event)?.delete(listener as DataAdapterListener); },
+      dispose: () => {},
+    };
+    const sm = new StreamManager();
+    const snapshots: OHLCBar[][] = [];
+    sm.on('snapshot', (b) => snapshots.push(b));
+    const startHour = (b: OHLCBar[]) => (b.at(-1)!.time % DAY) / HOUR;
+
+    await sm.connect({ adapter, symbol: 'X', timeframe: '1d' });
+    for (const l of listeners.get('connectionChange') ?? []) l({ type: 'connectionChange', data: 'connected', timestamp: 0 });
+    sm.wake('online'); // a reconnect: its history is merged with the days on the chart
+    await vi.waitFor(() => expect(snapshots).toHaveLength(2));
+    await sm.switchTo('Y', '1d');
+    await sm.switchTo('X', '1d');
+    expect(snapshots.map(startHour)).toEqual([0, 0, 17, 17]);
+    sm.dispose();
+  });
+});
+
 describe('StreamManager.wake — back from sleep', () => {
   /** A connected stream whose adapter can say it is connected and send ticks. */
   async function connected() {
@@ -258,5 +526,264 @@ describe('StreamManager.wake — back from sleep', () => {
     sm.disconnect();
     sm.wake('online');
     expect(pending.length).toBe(1);
+  });
+});
+
+describe('StreamManager — bars older than the newest', () => {
+  const HOUR = 3_600_000;
+  const T0 = Date.UTC(2026, 0, 5);
+  const at = (i: number, close = 100, volume = 10): OHLCBar =>
+    ({ time: T0 + i * HOUR, open: 100, high: Math.max(100, close) + 1, low: Math.min(100, close) - 1, close, volume });
+  const history = (n: number) => Array.from({ length: n }, (_, i) => at(i));
+
+  /** A connected stream whose feed the test speaks for, with what it said, by event. */
+  async function live(bars: OHLCBar[], aggregateTicks = false) {
+    const { adapter, pending, listeners } = controlledAdapter();
+    const sm = new StreamManager();
+    const seen = {
+      barUpdate: [] as OHLCBar[], barClose: [] as OHLCBar[], barCorrection: [] as OHLCBar[],
+      priceChange: [] as { price: number; previousClose: number | null }[],
+    };
+    sm.on('barUpdate', (b) => seen.barUpdate.push({ ...b }));
+    sm.on('barClose', (b) => seen.barClose.push({ ...b }));
+    sm.on('barCorrection', (b) => seen.barCorrection.push({ ...b }));
+    sm.on('priceChange', (p) => seen.priceChange.push({ ...p }));
+    const done = sm.connect({ adapter, symbol: 'X', timeframe: '1h', aggregateTicks });
+    pending[0].resolve(bars.map((b) => ({ ...b })));
+    await done;
+    const fire = (type: string, data: unknown) => { for (const l of listeners.get(type) ?? []) l({ type: type as never, data, timestamp: 0 }); };
+    return {
+      sm, seen, pending, fire,
+      bar: (b: OHLCBar, closed: boolean) => fire('bar', { bar: { ...b }, closed }),
+      trade: (time: number, price: number, volume = 1) => fire('tick', { time, price, volume }),
+    };
+  }
+
+  it('sends a closed bar older than the newest as barCorrection, not barClose, and keeps the price and the previous close', async () => {
+    const feed = await live(history(40));
+    feed.bar(at(40, 101), false);
+    const prices = feed.seen.priceChange.length;
+    feed.bar(at(38, 97, 6), true);
+    expect(feed.seen.barCorrection).toEqual([at(38, 97, 6)]);
+    expect(feed.seen.barClose).toEqual([]);
+    expect(feed.seen.priceChange).toHaveLength(prices);
+    expect(feed.sm.getLastPrice()).toBe(101);
+    feed.bar(at(40, 102), false);
+    expect(feed.seen.priceChange.at(-1)).toEqual({ price: 102, previousClose: 100 });
+    feed.sm.dispose();
+  });
+
+  it('drops a forming frame older than the newest without a priceChange or barUpdate', async () => {
+    const feed = await live(history(40));
+    const prices = feed.seen.priceChange.length;
+    feed.bar(at(37, 90), false);
+    expect(feed.seen.barUpdate).toEqual([]);
+    expect(feed.seen.barCorrection).toEqual([]);
+    expect(feed.seen.priceChange).toHaveLength(prices);
+    feed.sm.dispose();
+  });
+
+  it('takes the newest time from the history on every connect and switchTo', async () => {
+    const feed = await live(history(40));
+    feed.bar(at(45, 101), false);
+    // Another timeframe, whose history ends earlier: its bars before 45 are no correction of the last one's.
+    const switching = feed.sm.switchTo('X', '4h');
+    feed.pending[1].resolve(history(20));
+    await switching;
+    feed.bar(at(20, 103), false);
+    expect(feed.seen.barUpdate.at(-1)).toMatchObject({ time: at(20).time, close: 103 });
+    feed.bar(at(19, 99), true);
+    expect(feed.seen.barCorrection.map((b) => b.time)).toEqual([at(19).time]);
+    feed.sm.dispose();
+  });
+
+  it('correcting the newest closed bar moves previousClose; an older one does not', async () => {
+    const feed = await live(history(40));
+    feed.bar(at(40, 101), false);
+    feed.bar(at(40, 102), true);
+    feed.bar(at(41, 103), false);
+    expect(feed.seen.priceChange.at(-1)).toEqual({ price: 103, previousClose: 102 });
+    feed.bar(at(40, 98), true); // the venue's revised final of bar 40
+    feed.bar(at(41, 104), false);
+    expect(feed.seen.priceChange.at(-1)).toEqual({ price: 104, previousClose: 98 });
+    feed.bar(at(39, 50), true);
+    feed.bar(at(41, 105), false);
+    expect(feed.seen.priceChange.at(-1)).toEqual({ price: 105, previousClose: 98 });
+    feed.sm.dispose();
+  });
+
+  it('sends the price again, unchanged, when the close it is measured from moved', async () => {
+    const feed = await live(history(40));
+    feed.bar(at(40, 96), false);
+    expect(feed.seen.priceChange.at(-1)).toEqual({ price: 96, previousClose: 100 });
+    feed.bar(at(40, 96), true);
+    feed.bar(at(41, 96), false); // the next bar opens where bar 40 closed: level
+    expect(feed.seen.priceChange.at(-1)).toEqual({ price: 96, previousClose: 96 });
+    const prices = feed.seen.priceChange.length;
+    feed.bar(at(41, 96), false);
+    expect(feed.seen.priceChange).toHaveLength(prices);
+    feed.sm.dispose();
+  });
+
+  /** The stream of `feed` reconnected (the page came back), its history then `bars`. */
+  async function reconnect(feed: Awaited<ReturnType<typeof live>>, bars: OHLCBar[]) {
+    feed.fire('connectionChange', 'connected');
+    feed.sm.wake('online');
+    feed.pending[1].resolve(bars.map((b) => ({ ...b })));
+    await new Promise((r) => setTimeout(r, 0));
+  }
+
+  it("a feed's forming bar newer than a reconnect's history keeps the price, on top of the history", async () => {
+    const feed = await live(history(40));
+    feed.bar(at(40, 101), false);
+    feed.bar(at(40, 96), false);
+    const prices = feed.seen.priceChange.length;
+    const snapshots: OHLCBar[][] = [];
+    feed.sm.on('snapshot', (bars) => snapshots.push(bars));
+    await reconnect(feed, history(40));
+    expect(feed.seen.priceChange).toHaveLength(prices);
+    expect(snapshots[0]).toHaveLength(41);
+    expect(snapshots[0].at(-1)).toEqual(at(40, 96));
+    feed.sm.dispose();
+  });
+
+  describe('aggregateTicks', () => {
+    it('a closed bar for the bar before the forming one is sent as barCorrection; the forming bar keeps its trades', async () => {
+      const feed = await live(history(40), true);
+      const t40 = at(40).time;
+      feed.trade(t40 + 1000, 101, 5);
+      feed.trade(t40 + 2000, 104, 5);
+      feed.bar(at(39, 97, 6), true); // the venue's final for bar 39
+      feed.trade(t40 + 3000, 102, 1);
+      expect(feed.seen.barCorrection).toEqual([at(39, 97, 6)]);
+      // Bar 40's first trade closed the history's last bar, as it was; the correction closed nothing.
+      expect(feed.seen.barClose).toEqual([expect.objectContaining(at(39))]);
+      expect(feed.seen.barUpdate.at(-1)).toMatchObject({ time: t40, open: 101, high: 104, low: 101, close: 102, volume: 11 });
+      feed.sm.dispose();
+    });
+
+    it("builds on the history's forming bar: the first trade keeps its open, high, low and volume", async () => {
+      const bars = history(41);
+      bars[40] = { time: at(40).time, open: 100, high: 110, low: 95, close: 105, volume: 50 }; // the REST candle, forming
+      const feed = await live(bars, true);
+      feed.trade(at(40).time + 1_800_000, 104, 1);
+      expect(feed.seen.barUpdate.at(-1)).toMatchObject({ time: at(40).time, open: 100, high: 110, low: 95, close: 104, volume: 51 });
+      feed.sm.dispose();
+    });
+
+    it('a late trade for the bar before leaves the forming bar alone', async () => {
+      const feed = await live(history(40), true);
+      const t40 = at(40).time;
+      feed.trade(t40 + 1000, 101, 5);
+      feed.trade(t40 + 2000, 104, 5);
+      feed.trade(t40 - 1000, 99, 1); // a trade of bar 39, delivered late
+      feed.trade(t40 + 3000, 102, 1);
+      expect(feed.seen.barClose.map((b) => b.time)).toEqual([at(39).time]);
+      expect(feed.seen.barUpdate.at(-1)).toMatchObject({ time: t40, open: 101, high: 104, volume: 11 });
+      feed.sm.dispose();
+    });
+
+    it('keeps the trades of the forming bar across a reconnect whose history still ends on the bar before', async () => {
+      const feed = await live(history(40), true);
+      const t40 = at(40).time;
+      feed.trade(t40 + 1000, 101, 5);
+      feed.trade(t40 + 2000, 110, 5);
+      feed.trade(t40 + 3000, 95, 5);
+      await reconnect(feed, history(40));
+      feed.trade(t40 + 4000, 102, 1);
+      expect(feed.seen.barUpdate.at(-1)).toMatchObject({ time: t40, open: 101, high: 110, low: 95, close: 102, volume: 16 });
+      // A late trade of bar 39 after it is still left out.
+      feed.trade(t40 - 1000, 99, 1);
+      expect(feed.seen.barClose.map((b) => b.time)).toEqual([at(39).time]);
+      feed.sm.dispose();
+    });
+
+    it("sends no price from a reconnect's history that ends before the forming bar, and puts that bar on top of it", async () => {
+      const feed = await live(history(40), true);
+      const t40 = at(40).time;
+      feed.trade(t40 + 1000, 101, 5);
+      feed.trade(t40 + 2000, 96, 5);
+      const prices = feed.seen.priceChange.length;
+      const snapshots: OHLCBar[][] = [];
+      feed.sm.on('snapshot', (bars) => snapshots.push(bars));
+      await reconnect(feed, history(40));
+      expect(feed.seen.priceChange).toHaveLength(prices);
+      expect(feed.sm.getLastPrice()).toBe(96);
+      // The history, then the forming bar with its trades: the bars shown from the history's first on.
+      expect(snapshots[0]).toHaveLength(41);
+      expect(snapshots[0].at(-1)).toEqual({ time: t40, open: 101, high: 101, low: 96, close: 96, volume: 10 });
+      // The change is still measured from bar 39's close.
+      feed.trade(t40 + 3000, 97, 1);
+      expect(feed.seen.priceChange.at(-1)).toEqual({ price: 97, previousClose: 100 });
+      feed.sm.dispose();
+    });
+
+    it("puts the forming bar on a reconnect's history in the history's unit", async () => {
+      const inSeconds = (bars: OHLCBar[]) => bars.map((b) => ({ ...b, time: b.time / 1000 }));
+      const feed = await live(inSeconds(history(40)), true);
+      const t40 = at(40).time;
+      feed.trade(t40 + 1000, 101, 5);
+      const snapshots: OHLCBar[][] = [];
+      feed.sm.on('snapshot', (bars) => snapshots.push(bars));
+      await reconnect(feed, inSeconds(history(40)));
+      expect(snapshots[0].at(-1)).toMatchObject({ time: t40 / 1000, close: 101 });
+      feed.sm.dispose();
+    });
+
+    it("takes a reconnect's history that holds the forming bar: it has the trades missed while away", async () => {
+      const feed = await live(history(40), true);
+      const t40 = at(40).time;
+      feed.trade(t40 + 1000, 101, 5);
+      const bars = history(41);
+      bars[40] = { time: t40, open: 101, high: 112, low: 94, close: 108, volume: 30 };
+      await reconnect(feed, bars);
+      feed.trade(t40 + 600_000, 107, 1);
+      expect(feed.seen.barUpdate.at(-1)).toMatchObject({ time: t40, open: 101, high: 112, low: 94, close: 107, volume: 31 });
+      feed.sm.dispose();
+    });
+
+    it("a bar feed's correction folds nothing into the forming bar (WebSocketAdapter)", async () => {
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.setSystemTime(at(40).time + 1_800_000); // halfway through bar 40
+      let socket: WebSocketLike | null = null;
+      const adapter = new WebSocketAdapter({
+        name: 'ws',
+        wsUrl: () => 'wss://x',
+        fetchHistory: async () => history(40),
+        parseMessage: (raw) => raw as WsParseResult,
+        socketFactory: () => {
+          socket = { onopen: null, onmessage: null, onerror: null, onclose: null, send: () => {}, close: () => {} };
+          return socket;
+        },
+      });
+      const sm = new StreamManager();
+      const updates: OHLCBar[] = [];
+      sm.on('barUpdate', (b) => updates.push({ ...b }));
+      await sm.connect({ adapter, symbol: 'X', timeframe: '1h', aggregateTicks: true });
+      const send = (b: OHLCBar, closed: boolean) => socket!.onmessage?.({ data: { bar: b, closed } });
+      send(at(40, 101, 3), false);
+      const forming = updates.at(-1);
+      send(at(39, 94, 10), true); // the venue's final of bar 39
+      send(at(37, 90, 10), false); // a stale frame
+      expect(updates.at(-1)).toEqual(forming);
+      expect(sm.getLastPrice()).toBe(101);
+      sm.dispose();
+    });
+  });
+});
+
+describe('StreamManager — after a disconnect', () => {
+  it('lets go of the wrapper that built the feed’s missing timeframes', async () => {
+    const { adapter: feed, pending } = controlledAdapter();
+    const sm = new StreamManager();
+    const done = sm.connect({ adapter: { ...feed, supportedTimeframes: ['1h'] }, symbol: 'X', timeframe: '4h' });
+    await vi.waitFor(() => expect(pending.length).toBe(1));
+    pending[0].resolve([]);
+    await done;
+    // Private: nothing else shows a reference kept to the last connection's adapter.
+    const kept = () => (sm as unknown as { resampler: unknown }).resampler;
+    expect(kept()).not.toBeNull();
+    sm.disconnect();
+    expect(kept()).toBeNull();
   });
 });

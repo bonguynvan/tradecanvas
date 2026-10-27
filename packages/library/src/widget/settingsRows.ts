@@ -1,5 +1,5 @@
 import { toHex } from './settingsControls.js';
-import type { Translator } from './i18n.js';
+import { fill, type Translator } from './i18n.js';
 
 /**
  * The rows of the chart settings: a section, a colour, a switch, a choice,
@@ -8,6 +8,10 @@ import type { Translator } from './i18n.js';
 
 /** Ids for the colour rows' descriptions. */
 let colorRowCount = 0;
+/** Ids for the number rows' hints. */
+let numberRowCount = 0;
+/** The most decimals a number in a hint shows: the smallest size taken, 0.00000001, has 8. */
+const HINT_MAX_DECIMALS = 20;
 
 /** A group of rows; a title names it to a screen reader too (rows named alike under several titles). */
 export function settingsSection(title?: string): HTMLDivElement {
@@ -163,16 +167,39 @@ export function rangeRow(
   return row;
 }
 
-/** A number field; empty means "worked out from the data" (shown as Auto). Only numbers above 0 are taken. */
+/** What a number field takes. */
+export interface NumberLimits {
+  /** The field's step: '1' takes whole counts only, 'any' any number. */
+  step: string;
+  /** The largest number taken (Infinity: no limit). */
+  max: number;
+  /** The smallest number taken; without one, any number above 0. */
+  min?: number;
+}
+
+/** What a number field takes, in words: the hint under it once it turned a number away. */
+function limitsText(limits: NumberLimits, t: Translator, locale: string): string {
+  const format = new Intl.NumberFormat(locale, { maximumFractionDigits: HINT_MAX_DECIMALS }).format;
+  if (limits.step === '1' && Number.isFinite(limits.max)) {
+    return fill(t('settings.numberWhole'), { min: format(Math.max(1, limits.min ?? 1)), max: format(limits.max) });
+  }
+  return fill(t('settings.numberAtLeast'), { min: format(limits.min ?? 0) });
+}
+
+/**
+ * A number field; empty means "worked out from the data" (shown as Auto). Only numbers above 0, and from
+ * `limits.min` on, are taken; one turned away is marked invalid, and a hint under it, in `locale`, says what is.
+ */
 export function numberRow(
   label: string,
   value: number | null,
-  limits: { step: string; max: number },
+  limits: NumberLimits,
   onChange: (v: number | null) => void,
   t: Translator,
+  locale = 'en-US',
 ): HTMLDivElement {
   const row = document.createElement('div');
-  row.className = 'tcw-settings-row';
+  row.className = 'tcw-settings-row tcw-settings-row--number';
   const lbl = document.createElement('label');
   lbl.className = 'tcw-settings-label';
   lbl.textContent = label;
@@ -180,23 +207,36 @@ export function numberRow(
   const input = document.createElement('input');
   input.type = 'number';
   input.className = 'tcw-settings-number';
+  // The min attribute is also where the arrows step from: at 1e-8, the up arrow turns 5 into 5.00000001 and an
+  // empty field into 1e-8. It stays 0, and the smallest number taken is checked on change.
   input.min = '0';
   input.step = limits.step;
   if (Number.isFinite(limits.max)) input.max = String(limits.max);
   input.placeholder = t('settings.auto');
   input.value = value === null ? '' : String(value);
   input.setAttribute('aria-label', label);
+  // Written when a number is turned away, and heard with the field: red alone says nothing to a screen reader.
+  const hint = document.createElement('div');
+  hint.className = 'tcw-settings-hint';
+  hint.id = `tcw-number-hint-${++numberRowCount}`;
+  hint.setAttribute('role', 'status');
+  input.setAttribute('aria-describedby', hint.id);
+  const mark = (ok: boolean) => {
+    if (ok) input.removeAttribute('aria-invalid');
+    else input.setAttribute('aria-invalid', 'true');
+    hint.textContent = ok ? '' : limitsText(limits, t, locale);
+  };
   input.addEventListener('change', () => {
     if (input.value.trim() === '') {
-      input.removeAttribute('aria-invalid');
+      mark(true);
       onChange(null);
       return;
     }
     const v = Number(input.value);
-    const ok = Number.isFinite(v) && v > 0 && v <= limits.max && (limits.step !== '1' || Number.isInteger(v));
-    input.toggleAttribute('aria-invalid', !ok);
+    const ok = Number.isFinite(v) && v > 0 && v >= (limits.min ?? 0) && v <= limits.max && (limits.step !== '1' || Number.isInteger(v));
+    mark(ok);
     if (ok) onChange(v);
   });
-  row.appendChild(input);
+  row.append(input, hint);
   return row;
 }

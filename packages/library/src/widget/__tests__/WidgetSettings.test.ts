@@ -70,6 +70,17 @@ const type = (input: HTMLInputElement, value: string) => {
   input.dispatchEvent(new Event('change'));
 };
 const tab = (name: string) => document.querySelector<HTMLButtonElement>(`[role="tab"][data-tab="${name}"]`)!.click();
+/**
+ * What the up arrow writes in a number field, as a browser steps it: a field of step 'any' steps by the default
+ * step, 1, from its step base, which is its min. jsdom's stepUp() takes no step 'any', so a copy of step 1 is stepped.
+ */
+const arrowUp = (input: HTMLInputElement): string => {
+  const copy = input.cloneNode() as HTMLInputElement;
+  copy.step = '1';
+  copy.value = input.value;
+  copy.stepUp();
+  return copy.value;
+};
 
 describe('settings of the chart’s type', () => {
   it('offers Renko’s box and ATR length, Auto when empty', () => {
@@ -96,6 +107,56 @@ describe('settings of the chart’s type', () => {
     expect(changes).toEqual([]);
     type(field('Lines to break')!, '2');
     expect(changes.at(-1)).toEqual({ chartTypeOptions: { lineBreak: { lines: 2 } } });
+  });
+
+  it('takes no box, reversal or range under a hundred-millionth', () => {
+    const fields: [ChartType, string, (v: number) => unknown][] = [
+      ['renko', 'Box size', (v) => ({ renko: { boxSize: v } })],
+      ['kagi', 'Reversal', (v) => ({ kagi: { reversal: v } })],
+      ['pointAndFigure', 'Box size', (v) => ({ pointAndFigure: { boxSize: v } })],
+      ['rangeBars', 'Range', (v) => ({ rangeBars: { range: v } })],
+    ];
+    for (const [chartType, label, options] of fields) {
+      changes = [];
+      settings!.open(DEFAULT_SETTINGS, chartType);
+      const input = field(label)!;
+      type(input, '1e-9');
+      expect(changes, label).toEqual([]);
+      expect(input.getAttribute('aria-invalid'), label).not.toBeNull();
+      type(input, '0.00000001');
+      expect(changes.at(-1), label).toEqual({ chartTypeOptions: options(1e-8) });
+      expect(input.hasAttribute('aria-invalid'), label).toBe(false);
+      settings!.close();
+    }
+  });
+
+  it('marks a number it turns away as invalid and says what it takes, in the number locale', () => {
+    const hint = (input: HTMLInputElement) => document.getElementById(input.getAttribute('aria-describedby') ?? '')?.textContent;
+    settings!.open({ ...DEFAULT_SETTINGS, numberLocale: 'de-DE' }, 'renko');
+    const box = field('Box size')!;
+    type(box, '1e-9');
+    expect(box.getAttribute('aria-invalid')).toBe('true');
+    expect(hint(box)).toBe('0,00000001 or more');
+    type(box, '5');
+    expect(box.hasAttribute('aria-invalid')).toBe(false);
+    expect(hint(box)).toBe('');
+    settings!.close();
+    settings!.open(DEFAULT_SETTINGS, 'lineBreak');
+    const lines = field('Lines to break')!;
+    type(lines, '2.5');
+    expect(lines.getAttribute('aria-invalid')).toBe('true');
+    expect(hint(lines)).toBe('A whole number from 1 to 10');
+  });
+
+  it('steps a box, reversal or range by whole numbers from 0 with the arrows, not from the smallest it takes', () => {
+    for (const [chartType, label] of [['renko', 'Box size'], ['kagi', 'Reversal'], ['pointAndFigure', 'Box size'], ['rangeBars', 'Range']] as const) {
+      settings!.open(DEFAULT_SETTINGS, chartType);
+      const input = field(label)!;
+      expect(arrowUp(input), `${label} (Auto)`).toBe('1');
+      input.value = '5';
+      expect(arrowUp(input), label).toBe('6');
+      settings!.close();
+    }
   });
 
   it('sets Kagi’s reversal in percent or price', () => {
@@ -312,6 +373,19 @@ describe('the settings’ tabs', () => {
     expect(labels()).toEqual(expect.arrayContaining(['Volume profile', 'Market profile (TPO)', 'Session shading']));
   });
 
+  it('leave out the legend and the volume where the chart has them switched off', () => {
+    make({ legend: false, volume: false });
+    settings!.open(DEFAULT_SETTINGS, 'candlestick');
+    expect(section('Volume')).toBeNull();
+    expect(section('High and low lines')).not.toBeNull();
+    tab('statusLine');
+    expect(labels()).not.toContain('OHLC legend');
+    expect(labels()).not.toContain('Legend text');
+    expect(labels()).not.toContain('Legend labels');
+    // The panes' titles are drawn without the legend.
+    expect(labels()).toContain('Pane titles');
+  });
+
   it('open on the tab asked for (the scales, from the price axis’s menu)', () => {
     settings!.open(DEFAULT_SETTINGS, null, 'scales');
     const scales = document.querySelector<HTMLElement>('[role="tab"][data-tab="scales"]')!;
@@ -404,5 +478,20 @@ describe('the look’s table', () => {
     expect(toHex('#1fa874cc')).toBe('#1fa874');
     expect(toHex('#abcd')).toBe('#aabbcc');
     expect(toHex('rgba(31, 168, 116, 0.5)')).toBe('#1fa874');
+  });
+});
+
+describe('the settings when they change from outside the dialog', () => {
+  it('keep focus on the control that had it, as the panel is built again', () => {
+    settings!.open(DEFAULT_SETTINGS, null, 'scales');
+    const controls = () => [...document.querySelectorAll<HTMLElement>('.tcw-set .tcw-modal-body select, .tcw-set .tcw-modal-body button, .tcw-set .tcw-modal-body input')];
+    const second = controls()[1];
+    second.focus();
+    const name = second.getAttribute('aria-label') ?? second.textContent;
+    settings!.refresh({ ...DEFAULT_SETTINGS, gridVisible: false });
+    const active = document.activeElement as HTMLElement;
+    expect(second.isConnected).toBe(false);
+    expect(active.closest('.tcw-set')).not.toBeNull();
+    expect(active.getAttribute('aria-label') ?? active.textContent).toBe(name);
   });
 });

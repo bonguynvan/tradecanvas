@@ -32,7 +32,7 @@
     <tr><td><code>kagi</code></td><td>Líneas de giro yang/yin; el giro es un porcentaje (4 por defecto) o una cantidad de precio.</td></tr>
     <tr><td><code>lineBreak</code></td><td>Una línea nueva cuando el cierre rompe las últimas líneas (3 por defecto).</td></tr>
     <tr><td><code>pointAndFigure</code></td><td>Columnas de X/O; tamaño de caja + número de cajas para el giro.</td></tr>
-    <tr><td><code>rangeBars</code></td><td>El máximo-mínimo de cada barra equivale a un rango fijo.</td></tr>
+    <tr><td><code>rangeBars</code></td><td>El máximo-mínimo de cada barra equivale a un rango fijo, y la barra cierra en su máximo o en su mínimo; la última barra es la que todavía se está formando.</td></tr>
   </tbody>
 </table>
 
@@ -62,6 +62,41 @@
   de los datos (una caja por ATR para Renko, el 1% del cierre medio para la caja de P&amp;F…). La
   configuración forma parte del estado guardado; en ChartWidget está en el cuadro de configuración del
   tipo de gráfico.
+</p>
+<p>
+  El rango automático de las Range Bars es el rango verdadero medio de las últimas 100 barras cerradas,
+  redondeado a un 1, 2 o 5 (… 1, 2, 5, 10, 20 …) y a un número entero de pasos de precio del símbolo
+  (en un mercado cuyo paso depende del precio, el mayor paso al que negociaron esas barras): barras
+  pequeñas en un gráfico de un segundo, más grandes en uno diario. La barra que todavía se forma queda
+  fuera del cálculo, así que un tick solo cambia las range bars hechas con esa barra; las anteriores se
+  quedan como están. Cuando una barra cierra y lleva la media al siguiente número 1-2-5, o esas barras a
+  otro paso de precio, todas las barras se vuelven a construir con el nuevo rango. Al subir, una barra
+  cierra en su mínimo más el rango; al bajar, en su máximo menos el rango: su cierre es un precio que
+  alcanzó, y su mecha muestra hacia dónde fue primero. Un salto de varios rangos, también un hueco entre
+  dos barras, da una barra por cada rango; las barras que llenan un hueco quedan en precios que el
+  hueco saltó, en los que nunca se negoció. Un rango, fijado o automático, se eleva a 2, 5, 10, 20…
+  veces su valor, el primero que no da más, cuando las barras cerradas darían más de 100.000 range
+  bars, o la barra que todavía se forma más de 100.000 por sí sola; entonces todas las barras se
+  vuelven a construir con el rango elevado. Un rango menor que la mitad de la 15.ª cifra significativa
+  del precio más alto no cierra ninguna barra, se escriban como se escriban los precios.
+</p>
+<p>
+  La caja de Renko, la reversión de Kagi y la caja de Punto y figura siguen el mismo límite: una tan
+  pequeña para los precios que las barras anteriores a la última darían más de 100.000 ladrillos,
+  líneas o columnas, o la última barra otras tantas por sí sola, se eleva a 2, 5, 10, 20… veces su
+  valor, el primero que no da más, y el gráfico se construye con ella. Kagi y Punto y figura dan como
+  mucho una línea o una columna por barra, así que solo una serie de más de 100.000 barras puede
+  llegar al límite; Line Break, cuyo ajuste es un número de líneas, también da como mucho una línea
+  por barra. Una caja, reversión o rango que no sea un número finito mayor que 0, en un estado guardado
+  o un enlace compartido, se descarta (el gráfico vuelve a su valor por defecto: calculado a partir
+  de los datos, o el 4% de Kagi), así que un enlace no puede bloquear el gráfico. El cuadro de
+  configuración no acepta valores por debajo de 0,00000001 y lo dice bajo el campo. En un gráfico en vivo, un tamaño elevado
+  se mantiene de un tick a otro, así que cada tick construye las barras una vez, y se vuelve a calcular
+  para una serie nueva; <code>toRenko</code>, <code>toKagi</code>, <code>toPointAndFigure</code> y
+  <code>toRangeBars</code> hacen lo mismo si reciben un <code>ReshapeMemo</code> como último argumento.
+  Usa un memo por serie, pásalo en cada cálculo y llama a <code>memo.clear()</code> (o crea uno nuevo)
+  cuando la serie se sustituya por otra, con un símbolo o una temporalidad nuevos: un memo no distingue
+  por sí solo una serie nueva y la dibujaría con el tamaño elevado de la anterior.
 </p>
 <pre><code>{`chart.setChartTypeOptions({
   renko: { boxSize: 50 },                         // or 'atr' with atrPeriod

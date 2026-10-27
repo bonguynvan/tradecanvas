@@ -32,7 +32,7 @@ Two stacked canvases — a hover repaints only the thin top one:
 
 `CandlestickRenderer`, `HollowCandleRenderer`, `BarRenderer`, `LineRenderer`, `AreaRenderer`, `BaselineRenderer`, `RenkoRenderer`, `KagiRenderer`, `PointAndFigureRenderer`, `VolumeRenderer`, `VolumeCandleRenderer`, `EquivolumeRenderer`, `HLCAreaRenderer`, `StepLineRenderer`, `LineWithMarkersRenderer`, `CompareRenderer`. Heikin-Ashi, Line Break, and Range Bars reuse `CandlestickRenderer` against transformed data.
 
-Data transforms: `toHeikinAshi`, `toRenko`, `toLineBreak`, `toKagi`, `toPointAndFigure`, `toRangeBars`
+Data transforms: `toHeikinAshi`, `toRenko`, `toLineBreak`, `toKagi`, `toPointAndFigure`, `toRangeBars` (and `pointAndFigureColumns`, the columns of `toPointAndFigure` with the box they were built on, to draw them that size)
 
 ### Indicators (134 built-in)
 

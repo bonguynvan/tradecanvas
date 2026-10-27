@@ -26,7 +26,11 @@ export interface SymbolInfo {
   pricePrecision?: number;
   /** Smallest price step. */
   minTick?: number;
-  /** IANA zone the exchange keeps its hours in, e.g. `'America/New_York'`. */
+  /**
+   * IANA zone the exchange keeps its hours in, e.g. `'America/New_York'`.
+   * Days, weeks and months a chart builds from shorter bars start at its
+   * midnight, and daily bars are dated by it.
+   */
   timeZone?: string;
   /**
    * @deprecated Use `timeZone`, spelled as the chart's `timeZone` option is.

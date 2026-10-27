@@ -1,5 +1,5 @@
 import type { TimeZoneSetting } from '@tradecanvas/commons';
-import { barTimeUnit, timeParts, type TimeParts } from '@tradecanvas/commons';
+import { barDateParts, barTimeUnit, barsAreDaily, timeParts, type TimeParts } from '@tradecanvas/commons';
 import { barIndexToTime } from '../viewport/ScaleMapping.js';
 
 /**
@@ -57,6 +57,8 @@ export interface TimeMarkQuery {
   tz: TimeZoneSetting;
   /** Whether the empty future right of the last bar gets marks (off for tick bars and bricks). */
   timesPastData: boolean;
+  /** The exchange's zone: daily bars not stamped at 00:00 UTC are dated there (`barDateParts`). */
+  exchangeZone?: string | null;
 }
 
 /** The weight of a bar at `cur` after one at `prev`; 0 for the first bar, which has nothing to stand out from. */
@@ -99,8 +101,8 @@ function quantiseGap(gap: number): number {
 export class TimeMarker {
   private weights = new Uint8Array(0);
   private times: number[] = [];
-  /** What `weights` and `times` were made for: the bars weighed, the zone, the slots. */
-  private weighed: { bars: number; tz: TimeZoneSetting; extent: number; unit: number } | null = null;
+  /** What `weights` and `times` were made for: the bars weighed, the zones, the slots. */
+  private weighed: { bars: number; tz: TimeZoneSetting; exchangeZone: string | null; daily: boolean; extent: number; unit: number } | null = null;
   private chosen: Int32Array = new Int32Array(0);
   private chosenFor: { gapBars: number; extent: number; weights: Uint8Array } | null = null;
 
@@ -110,7 +112,7 @@ export class TimeMarker {
     const gapBars = quantiseGap(query.gapBars);
     const lastSlot = query.timesPastData ? Math.max(n - 1, Math.ceil(query.to)) : n - 1;
     const extent = lastSlot <= n - 1 ? n : Math.ceil((lastSlot + 1 - n) / FUTURE_CHUNK) * FUTURE_CHUNK + n;
-    this.weigh(data, query.tz, extent);
+    this.weigh(data, query.tz, query.exchangeZone ?? null, extent);
     this.choose(gapBars, extent);
     const from = Math.max(0, Math.floor(query.from));
     const to = Math.min(lastSlot, Math.ceil(query.to));
@@ -135,15 +137,18 @@ export class TimeMarker {
    * Weigh the bars and the future slots. A series rebuilt as a new array (a
    * derived chart type on every tick) keeps its weights while its times are
    * the same; bars appended are weighed on from the last one kept. Only
-   * history put in front, or another zone, weighs everything again.
+   * history put in front, or another zone, weighs everything again. Daily
+   * bars are weighed by their dates (`barDateParts`), whatever zone is shown.
    */
-  private weigh(data: ArrayLike<{ time: number }>, tz: TimeZoneSetting, extent: number): void {
+  private weigh(data: ArrayLike<{ time: number }>, tz: TimeZoneSetting, exchangeZone: string | null, extent: number): void {
     const n = data.length;
     const unit = barTimeUnit(data);
+    const daily = barsAreDaily(data) === true;
+    const partsOf = daily ? (t: number) => barDateParts(t, tz, exchangeZone) : (t: number) => timeParts(t, tz);
     const w = this.weighed;
     // Bars weighed before that still have their times: their weights stand.
     let keep = 0;
-    if (w && w.tz === tz && w.unit === unit) {
+    if (w && w.tz === tz && w.exchangeZone === exchangeZone && w.daily === daily && w.unit === unit) {
       const limit = Math.min(w.bars, n);
       const times = this.times;
       while (keep < limit && data[keep].time * unit === times[keep]) keep++;
@@ -156,18 +161,18 @@ export class TimeMarker {
       weights.set(this.weights.subarray(0, keep));
       for (let i = 0; i < keep; i++) times[i] = this.times[i];
     }
-    let prev: TimeParts | null = keep > 0 ? timeParts(times[keep - 1], tz) : null;
+    let prev: TimeParts | null = keep > 0 ? partsOf(times[keep - 1]) : null;
     for (let i = keep; i < extent; i++) {
       // Past the last bar the slots' times are extrapolated, as the axis does.
       const time = (i < n ? data[i].time : barIndexToTime(i, data as ReadonlyArray<{ time: number }>)) * unit;
-      const parts = timeParts(time, tz);
+      const parts = partsOf(time);
       weights[i] = markWeight(prev, parts);
       times[i] = time;
       prev = parts;
     }
     this.weights = weights;
     this.times = times;
-    this.weighed = { bars: n, tz, extent, unit };
+    this.weighed = { bars: n, tz, exchangeZone, daily, extent, unit };
   }
 
   private choose(gapBars: number, extent: number): void {

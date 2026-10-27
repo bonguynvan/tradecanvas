@@ -45,7 +45,10 @@ export interface BuiltInIndicators {
   };
   /** Volume Weighted Average Price, on the price pane. Lines: `value` (VWAP). */
   vwap: {
-    params: {};
+    params: {
+      /** Default `'session'`. */
+      anchor?: 'session' | 'week' | 'month' | 'all' | (string & {});
+    };
     lines: 'value';
   };
   /** Ichimoku Cloud, on the price pane. Lines: `tenkan` (Conversion), `kijun` (Base), `senkouA` (Lead A), `senkouB` (Lead B). */

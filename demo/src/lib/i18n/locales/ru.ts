@@ -826,7 +826,7 @@ const ru: SiteMessages = {
     reviewHtml: [
       'Нет сторонних runtime-зависимостей: пакет графика зависит только от собственных core и commons TradeCanvas.',
       'Ни <code>eval</code>, ни <code>new Function</code>, поэтому он работает под Content Security Policy без <code>unsafe-eval</code>.',
-      "Виджет добавляет один элемент <code>&lt;style&gt;</code>, поэтому его страницам нужен <code>style-src 'unsafe-inline'</code>; headless-<code>Chart</code> не добавляет ничего.",
+      "Виджет добавляет один элемент <code>&lt;style&gt;</code> и рисует значки в своих полях и флажках изображениями <code>data:</code>, поэтому его страницам нужны <code>style-src 'unsafe-inline'</code> и <code>img-src data:</code>; headless-<code>Chart</code> не нуждается ни в том, ни в другом.",
       'О проблемах безопасности сообщают в закрытом порядке, ответ приходит в течение недели.',
       'Каждый pull request собирается, проходит проверку типов и тесты в CI: более 3000 модульных тестов.',
       'Релизы публикует GitHub Actions из репозитория, а не с компьютера разработчика.',

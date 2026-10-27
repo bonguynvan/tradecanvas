@@ -55,11 +55,23 @@ const chart = new Chart(document.getElementById('chart')!, {});
 await chart.connect({ adapter: feed, symbol: 'BTCUSDT', timeframe: '1m' });
 ```
 
+A frame for a bar already past, with `closed: true` (the venue's final that
+came after the next bar's first frame, or a revision), corrects that bar: the
+chart replaces the bar with its time and computes the indicators again from
+it, the view kept. An older frame still forming is left out. Neither is a
+live price: the adapter makes a tick from a frame's close only for the newest
+bar, the last bar of the history it served counting, so the price line, the
+alerts and the orders stay with the market, also when a feed sends its last
+closed bar again on subscribing. A
+`DataAdapter` of your own that makes ticks from its bars should do the same.
+
 A feed that learns the symbol's details only after connecting (its decimals,
 price step or hours, say on its first message) sends a `symbolInfo` event with
 the `SymbolInfo`, as it sends its other events (`emitEvent('symbolInfo', info)`
 in a subclass of these adapters). The chart applies it: the price scale,
-legend and tags take the symbol's decimals, the scale's ticks its price step.
+legend and tags take the symbol's decimals, and so do drawing labels, price
+limits and the widget's data window, alerts list and order ticket; the scale's
+ticks take its price step.
 
 ## React, Vue, Svelte
 
@@ -92,13 +104,55 @@ chart mounted before its bars arrive doesn't start the default Binance feed.
 Bars that go on from the last given (the last bar changed, or bars added:
 `setBars((bars) => [...bars, next])`) go in as live ticks, so the view isn't
 reset and alerts follow the price; any other array is a new series. Vue and
-Svelte take the same, and a push onto the same array too. `features` follows its
+Svelte take the same, and a push onto the same array too. A change to one of
+the last three bars before the forming one (`CORRECTABLE_BARS`), its time the
+same, goes in as `updateBar`, the view kept too: in a new array, and in Vue and
+Svelte in place. A change further back is a new series. `features` follows its
 changes after mount.
 
 `@tradecanvas/vue` and `@tradecanvas/svelte` take the same data props (Vue
 emits `ready` and `crosshairMove` instead of the callback props). To drive the
 widget or a bare `Chart` from a framework, create it in the mount hook on a
 sized element and call `destroy()` in the unmount hook.
+
+## A feed that corrects a closed bar
+
+A venue sends its final for a bar after the next one has started, or revises
+a bar it closed. `updateBar` puts it in place, wherever the bar is: the
+indicators are computed again from it, and the view, the replay and the
+alerts are left as they are. It returns `false` when no loaded bar has that
+time; a new bar is `appendBar`'s.
+
+```ts
+import { Chart, type OHLCBar } from '@tradecanvas/chart';
+
+const chart = new Chart(document.getElementById('chart')!, {});
+const res = await fetch('/api/candles?symbol=AAPL&tf=1h');
+const bars: OHLCBar[] = await res.json();
+chart.setData(bars);
+
+/** A closed bar from your own socket: a new one, the forming one's close, or the final of an older one. */
+function onClosedBar(bar: OHLCBar): boolean {
+  const data = chart.getData();
+  const last = data[data.length - 1];
+  if (!last || bar.time > last.time) chart.appendBar(bar);
+  else if (bar.time === last.time) chart.updateLastBar(bar); // the live price
+  else return chart.updateBar(bar); // false: no loaded bar has bar.time
+  return true;
+}
+
+const corrected: number[] = [];
+chart.on('dataUpdate', (e) => {
+  if (e.payload.kind === 'correction') corrected.push(e.payload.time);
+});
+
+onClosedBar({ time: bars[bars.length - 2].time, open: 101, high: 104, low: 100, close: 103, volume: 1_250 });
+```
+
+Send the bar whole: a missing volume is 0, as with `setData`. The same bar
+sent again computes nothing, so a feed that sends its last closed bars on
+every poll costs nothing for those that didn't change. With a connected feed,
+send the bar again as closed instead (see the WebSocket recipe).
 
 ## A signal from an indicator on an indicator
 
@@ -202,6 +256,39 @@ chart.replayResume();
 // … place orders from the chart; chart.replaySeekToBar(i) jumps, chart.replayStop() goes back to live
 ```
 
+## Another symbol's change beside yours, in percent
+
+ETH's line on BTC's chart, each reading its change since the first bar on
+screen on a percent price scale, and a legend of your own from
+`getCompareValues` (the widget's `addCompareSymbol` does all of this itself).
+Fetch as many bars as the chart has, so the line starts where the chart does.
+Renko, Kagi, line break, point & figure and range bars draw no compare lines;
+there `getCompareValues` gives each one's latest close and a null change:
+
+```ts
+import { Chart, BinanceAdapter } from '@tradecanvas/chart';
+
+const adapter = new BinanceAdapter();
+const chart = new Chart(document.getElementById('chart')!, { theme: 'dark' });
+await chart.connect({ adapter, symbol: 'BTCUSDT', timeframe: '1h' });
+
+const eth = await adapter.fetchHistory('ETHUSDT', '1h', chart.getData().length);
+chart.addCompareSymbol('eth', 'ETHUSDT', eth, '#7c4dff');
+chart.setScaleMode('percentage');
+
+const legend = document.getElementById('legend')!;
+chart.on('crosshairMove', (e) => {
+  // Its close at the bar and its change in %, as the line reads; `stale` past its last bar.
+  // Both are null before its first bar: no figures then, not a lone '%'.
+  legend.textContent = chart.getCompareValues(e.payload.barIndex)
+    .map((v) => {
+      const change = v.change === null ? '' : `${v.change.toFixed(2)}%`;
+      return `${v.label} ${v.close ?? ''} ${change}`.trim();
+    })
+    .join('  ');
+});
+```
+
 ## Another symbol on its own scale, and the ratio of the two
 
 ETH beside BTC on a price scale of its own, and BTC ÷ ETH in a pane. The
@@ -261,6 +348,50 @@ console.log(chart.roundPrice(25.37), priceStepAt(9.5, MARKET_HOSE)); // 25.35 0.
 const [front] = vn30fContracts(Date.now());
 chart.setMarket(MARKET_VN30F);
 console.log(front.symbol, front.lastTradingDay);   // e.g. VN30F2611 2026-11-19
+```
+
+## Bars of a day in the exchange's time
+
+The 4H, 1D, 1W and 1M bars the library builds start at the exchange's midnight
+when it knows the zone: for Ho Chi Minh City, 1D at 00:00 there and 4H at 08:00
+and 12:00. Which zone depends on where the bars come from:
+
+- **Timeframes a feed lacks** (built from its `supportedTimeframes`): only the
+  `SymbolInfo.timeZone` its `resolveSymbol` answers. `setMarket` doesn't move
+  them; a feed without `resolveSymbol` (or that fails to answer) gets UTC days,
+  after a failed answer until the chart loads the symbol afresh.
+- **Bars given to `widget.setData`**: the symbol's zone (`setSymbolInfo`), else
+  the market's (`setMarket`).
+
+Bars your own code builds (from trades, or hours into days) should start at the
+same place: `timeframeBucketStart` with the zone. 1h and shorter keep their
+floor on the epoch; daily bars stamped at 00:00 UTC keep their dates.
+
+```ts
+import { resampleBars, timeframeBucketStart, type OHLCBar, type TimeFrame, type Trade } from '@tradecanvas/chart';
+
+const timeZone = 'Asia/Ho_Chi_Minh';
+
+/** The bars with `trade` in them: it starts a bar of `timeframe`, or joins the last one. */
+function withTrade(bars: readonly OHLCBar[], trade: Trade, timeframe: TimeFrame): OHLCBar[] {
+  const time = timeframeBucketStart(trade.time, timeframe, { timeZone });
+  const last = bars[bars.length - 1];
+  if (last?.time !== time) {
+    return [...bars, { time, open: trade.price, high: trade.price, low: trade.price, close: trade.price, volume: trade.volume }];
+  }
+  const merged = { ...last, high: Math.max(last.high, trade.price), low: Math.min(last.low, trade.price), close: trade.price, volume: last.volume + trade.volume };
+  return [...bars.slice(0, -1), merged];
+}
+
+// 09:15 on 23 October there: its 1D bar opens at 17:00 UTC on the 22nd, its 4H bar at 08:00 there.
+const at = Date.UTC(2026, 9, 23, 2, 15);
+console.log(new Date(timeframeBucketStart(at, '1d', { timeZone })).toISOString()); // 2026-10-22T17:00:00.000Z
+console.log(withTrade([], { time: at, price: 1250.5, volume: 3 }, '4h')[0].time === Date.UTC(2026, 9, 23, 1)); // true
+
+// Hours into days and weeks, all at once
+declare const hours: OHLCBar[];
+const days = resampleBars(hours, '1d', { timeZone });
+const weeks = resampleBars(days, '1w', { timeZone });
 ```
 
 ## A dashboard: net flows, allocation and returns
@@ -405,6 +536,14 @@ chart.addIndicator('rangePosition', { period: 30 });
 Declare `inputs: { source: { source: true } }` and read `data[i].close` to let
 users run it on another price or another indicator's line.
 
+An indicator that starts again each day, week or month reads the exchange's
+IANA zone as `config.exchangeTimeZone`: the chart sets it from the symbol's
+`timeZone`, else the market's (`setSymbolInfo`, `setMarket`), and leaves it
+unset for UTC. Count days on that clock, not the zone the chart shows, so the
+values stay the same whatever `setTimeZone` displays. A new zone computes again
+only the indicators that read it and those that read their lines; one of yours
+that reads no zone can say `readsExchangeTimeZone: false` in its descriptor.
+
 ## An overlay of your own, on the price grid
 
 An overlay plugin draws on a layer each frame. `overlayScale(context)` places
@@ -515,10 +654,42 @@ new ChartWidget(document.getElementById('chart')!, {
   symbol: 'BTCUSDT',
   symbols: ['BTCUSDT', 'ETHUSDT', 'SOLUSDT'],
   persistLayouts: true,            // indicators, drawings and chart type per symbol, in localStorage
+  persistSettings: true,           // the Chart Settings (overlays, crosshair, time zone…), in localStorage
   locale: 'vi',
   chartOptions: { numberLocale: 'vi-VN' },
 });
 ```
+
+## The widget's Chart Settings, kept on your server
+
+`persistSettings` keeps them in one browser. To follow the user from device to
+device, read them on each change and give them back on the next visit; the
+widget checks what it is given.
+
+```ts
+import { ChartWidget, type ChartSettingsState } from '@tradecanvas/chart/widget';
+
+const saved = (await (await fetch('/api/me/chart-settings')).json()) as Partial<ChartSettingsState>;
+
+const widget = new ChartWidget(document.getElementById('chart')!, { symbol: 'BTCUSDT' });
+widget.setSettings(saved);   // right after the constructor: before the first paint
+
+const stop = widget.onSettingsChange((settings) => {
+  void fetch('/api/me/chart-settings', { method: 'PUT', body: JSON.stringify(settings) });
+});
+// stop() when the page goes; widget.destroy() also ends it.
+```
+
+After a drag on the price axis, what `onSettingsChange` gives has auto-scale
+off. `setSettings` leaves auto-scale on until the chart has bars (off holds
+the price range on screen, and there is none before them), so given back right
+after the constructor the saved settings open with the bars fitted and
+following the price. Auto-scale off, by any way, still fits each new series
+once (the first bars, a symbol or timeframe switch), then holds that range.
+
+Change them in code with `widget.setSettings({ timezone: 'exchange' })`, not
+`widget.getChart().setTimeZone(…)`: the widget's clock follows its own
+settings, and a change made on the chart itself is told to no listener.
 
 ## The symbol search with names, kinds, exchanges and logos
 

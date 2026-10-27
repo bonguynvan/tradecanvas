@@ -77,6 +77,19 @@ describe('SeriesUploads', () => {
     expect(up.values[room * FLOATS_PER_BAR + 3]).toBe(data[room].close - up.base);
   });
 
+  it('writes every bar again when the series revision moves (a bar corrected in place)', () => {
+    const up = new SeriesUploads();
+    const data = series(200);
+    up.sync(data, 0);
+    // A bar no sample watches, replaced in the same array.
+    data[197] = { ...data[197], close: 90, low: 89 };
+    expect(up.sync(data, 1)).toEqual({ full: true, from: 0, to: 200 });
+    expect(up.values[197 * FLOATS_PER_BAR + 3]).toBe(90 - up.base);
+    // The same revision again: only the tail, as for a tick.
+    data[199] = { ...data[199], close: 91, low: 90 };
+    expect(up.sync(data, 1)).toEqual({ full: false, from: 199, to: 200 });
+  });
+
   it('empties for no bars', () => {
     const up = new SeriesUploads();
     up.sync(series(3));

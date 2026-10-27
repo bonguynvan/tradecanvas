@@ -1,7 +1,7 @@
 export { Chart } from './Chart.js';
 export { syncIndicators } from './frameworks/syncIndicators.js';
 export type { IndicatorSpec, IndicatorHost } from './frameworks/syncIndicators.js';
-export { feedBars } from './frameworks/feedBars.js';
+export { feedBars, CORRECTABLE_BARS } from './frameworks/feedBars.js';
 export type { BarFeedHost, FedBars } from './frameworks/feedBars.js';
 export { DataManager } from './DataManager.js';
 export { HISTORY_RETRY_MS, DEFAULT_HISTORY_PAGE_SIZE } from './HistoryPager.js';
@@ -162,10 +162,10 @@ export type { BarTimeUnit } from '@tradecanvas/commons';
 
 // Timeframes of any length, resampling, and display time zones
 export {
-  parseTimeframe, isTimeFrame, timeframeToMs, resampleBars, pickBaseTimeframe,
+  parseTimeframe, isTimeFrame, timeframeToMs, timeframeBucketStart, resampleBars, pickBaseTimeframe,
   isValidTimeZone, zoneOffsetMinutes, offsetAt, wallToUtc,
 } from '@tradecanvas/commons';
-export type { KnownTimeFrame, TimeFrameUnit, TimeZoneSetting, HistoryLoadPayload, DataUpdatePayload, OverlayScale } from '@tradecanvas/commons';
+export type { KnownTimeFrame, TimeFrameUnit, BucketOptions, TimeZoneSetting, HistoryLoadPayload, DataUpdatePayload, OverlayScale } from '@tradecanvas/commons';
 
 // Symbol search and what a feed knows about a symbol
 export { rankSymbols, stepDecimals } from '@tradecanvas/commons';
@@ -206,7 +206,7 @@ export { IndicatorBase, IndicatorValueMap, DrawingBase, indicatorCategory, INDIC
 export { barIndexToX, xToBarIndex, priceToY, priceToYMapper, yToPrice, timeToX, xToTime, timestampToBarIndex } from '@tradecanvas/core';
 
 // Re-export realtime module
-export { StreamManager, BinanceAdapter, MockAdapter, TickAggregator, CurrentPriceLine, PaperExecutionAdapter, WebSocketAdapter, PollingAdapter, CoinbaseAdapter, BybitAdapter, KrakenAdapter, ResamplingAdapter, withResampling, servesTimeframe, TickBarBuilder, TickBarAdapter, withTickBars } from '@tradecanvas/core';
+export { StreamManager, BinanceAdapter, MockAdapter, TickAggregator, CurrentPriceLine, PaperExecutionAdapter, WebSocketAdapter, PollingAdapter, CoinbaseAdapter, BybitAdapter, KrakenAdapter, ResamplingAdapter, withResampling, servesTimeframe, KEPT_BUCKETS, TickBarBuilder, TickBarAdapter, withTickBars } from '@tradecanvas/core';
 export type { PaperExecutionOptions, WebSocketAdapterOptions, WsParseResult, PollingAdapterOptions, CoinbaseAdapterOptions, BybitAdapterOptions, KrakenAdapterOptions } from '@tradecanvas/core';
 export { DEFAULT_RECONNECT, DEFAULT_STREAM_CONFIG } from '@tradecanvas/commons';
 
@@ -219,8 +219,8 @@ export { VolumeRenderer, CompareRenderer } from '@tradecanvas/core';
 // How many charts on the page draw with WebGL at once.
 export { setMaxWebGLCharts, DEFAULT_MAX_WEBGL_CHARTS } from '@tradecanvas/core';
 export { lttbDownsample, lttbVisibleIndices } from '@tradecanvas/core';
-export type { CompareSymbol } from '@tradecanvas/core';
-export { toHeikinAshi, toRenko, toLineBreak, toKagi, toPointAndFigure, toRangeBars } from '@tradecanvas/core';
+export type { CompareSymbol, CompareValue, MarketProfileConfig, PivotMarkersConfig } from '@tradecanvas/core';
+export { toHeikinAshi, toRenko, toLineBreak, toKagi, toPointAndFigure, toRangeBars, ReshapeMemo } from '@tradecanvas/core';
 
 // Re-export data export
 export { DataExporter } from '@tradecanvas/core';

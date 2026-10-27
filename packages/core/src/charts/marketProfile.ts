@@ -1,5 +1,5 @@
 import type { OHLCBar } from '@tradecanvas/commons';
-import { timeframeBucketStart } from '@tradecanvas/commons';
+import { periodKeyer } from '../indicators/periods.js';
 
 export interface MarketProfileBucket {
   /** Lower price bound of the bucket. */
@@ -154,7 +154,7 @@ export interface SessionProfile {
   startIndex: number;
   /** Index of the session's last bar within the input array (inclusive). */
   endIndex: number;
-  /** UTC start-of-session timestamp (calendar-day bucket). */
+  /** The session's day: its date on the exchange's clock, at 00:00 UTC. */
   startTime: number;
   /** TPO profile for this session, against the shared price window. */
   profile: MarketProfile;
@@ -164,19 +164,23 @@ export interface SessionProfile {
  * Split a contiguous bar array into calendar-day sessions and compute a TPO
  * profile for each, all against the same shared price window so they line up
  * on a common y-axis. Sessions with no profile (e.g. a single flat bar) are
- * skipped. Input bars are assumed ascending by time.
+ * skipped. Input bars are assumed ascending by time. Days start at midnight
+ * in `exchangeTimeZone` (an IANA name; UTC's when left out or unknown to the
+ * browser), as VWAP's do.
  */
 export function computeSessionProfiles(
   bars: ReadonlyArray<OHLCBar>,
   priceMin: number,
   priceMax: number,
   opts: MarketProfileOptions = {},
+  exchangeTimeZone?: string | null,
 ): SessionProfile[] {
   if (bars.length === 0 || priceMax - priceMin <= 0) return [];
 
   const out: SessionProfile[] = [];
+  const keyOf = periodKeyer(bars, 'session', exchangeTimeZone);
   let groupStart = 0;
-  let groupKey = timeframeBucketStart(bars[0].time, '1d');
+  let groupKey = keyOf(bars[0].time);
 
   const flush = (start: number, end: number, key: number): void => {
     const profile = computeMarketProfile(bars.slice(start, end + 1), priceMin, priceMax, opts);
@@ -184,7 +188,7 @@ export function computeSessionProfiles(
   };
 
   for (let i = 1; i < bars.length; i++) {
-    const key = timeframeBucketStart(bars[i].time, '1d');
+    const key = keyOf(bars[i].time);
     if (key !== groupKey) {
       flush(groupStart, i - 1, groupKey);
       groupStart = i;

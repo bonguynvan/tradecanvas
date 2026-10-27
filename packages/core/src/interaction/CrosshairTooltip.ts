@@ -1,5 +1,5 @@
 import type { OHLCBar, Theme, Point, TimeFormatter, TimeZoneSetting } from '@tradecanvas/commons';
-import { autoPricePrecision, formatPrice, normalizeBarTime, timeParts, isDateOnly, zonedDateFormatter, type BarTimeUnit } from '@tradecanvas/commons';
+import { autoPricePrecision, barDateZone, formatPrice, normalizeBarTime, timeParts, isDateOnly, zonedDateFormatter, type BarTimeUnit } from '@tradecanvas/commons';
 import { isolateFontFeatures } from '../engine/CanvasLayer.js';
 
 /** Gap between the pointer and the card. */
@@ -37,7 +37,9 @@ const pad2 = (n: number) => (n < 10 ? `0${n}` : `${n}`);
  * "Mar 4, 2026" for daily-or-larger bars, "Mar 4 · 14:05" for intraday ones
  * and "Mar 4 · 14:05:30" for sub-minute ones ("4 thg 3 · 14:05" in vi-VN).
  * Pass the bar spacing in ms when known: without it, a midnight bar can't be
- * told from a daily one.
+ * told from a daily one. A daily bar shows the date it stands for in any
+ * zone: the one it names when stamped at 00:00 UTC, else its date in
+ * `exchangeZone`, where the days a chart builds start.
  */
 export function formatTooltipTime(
   rawTime: number,
@@ -45,11 +47,12 @@ export function formatTooltipTime(
   barStepMs?: number,
   locale = 'en-US',
   unit?: BarTimeUnit,
+  exchangeZone?: string | null,
 ): string {
   const ms = normalizeBarTime(rawTime, unit);
   const parts = timeParts(ms, tz);
   const daily = barStepMs !== undefined && barStepMs > 0 ? barStepMs >= DAY_MS : isDateOnly(parts);
-  if (daily) return formatDate(ms, tz, locale, true);
+  if (daily) return formatDate(ms, barDateZone(ms, tz, exchangeZone), locale, true);
   const date = formatDate(ms, tz, locale, false);
   const clock = `${pad2(parts.hours)}:${pad2(parts.minutes)}`;
   if (barStepMs !== undefined && barStepMs > 0 && barStepMs < 60_000) {
@@ -82,6 +85,8 @@ export class CrosshairTooltip {
   private locale = 'en-US';
   private pricePrecision: number | null = null;
   private tz: TimeZoneSetting = null;
+  /** The exchange's zone: daily bars built at its midnight are dated there. */
+  private exchangeZone: string | null = null;
   private priceFormatter: ((price: number) => string) | null = null;
   private timeFormatter: TimeFormatter | null = null;
 
@@ -173,6 +178,11 @@ export class CrosshairTooltip {
     this.tz = tz;
   }
 
+  /** The exchange's zone (null: none known): the date a daily bar's card gives (`formatTooltipTime`). */
+  setExchangeTimeZone(zone: string | null): void {
+    this.exchangeZone = zone;
+  }
+
   /** Prices in the chart's format (null: decimals). */
   setPriceFormatter(formatter: ((price: number) => string) | null): void {
     this.priceFormatter = formatter;
@@ -207,7 +217,7 @@ export class CrosshairTooltip {
 
     this.timeEl.textContent = this.timeFormatter
       ? this.timeFormatter(normalizeBarTime(bar.time, context.timeUnit), { kind: 'crosshair', timeZone: this.tz })
-      : formatTooltipTime(bar.time, this.tz, context.barStepMs, this.locale, context.timeUnit);
+      : formatTooltipTime(bar.time, this.tz, context.barStepMs, this.locale, context.timeUnit, this.exchangeZone);
     this.changeEl.textContent = `${sign}${formatPrice(Math.abs(pct), 2, this.locale)}%`;
     this.changeEl.style.color = tone;
     this.changeEl.style.background = withAlpha(tone, 0.14);

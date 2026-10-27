@@ -3,11 +3,20 @@ import { markPart, type WidgetFeature } from './widgetFeatures.js';
 
 export interface IndicatorLegendRow {
   instanceId: string;
-  /** "EMA 50", "MACD 12 26 9". */
+  /**
+   * A symbol compared in percent rather than an indicator: its row has no
+   * settings or more buttons, and its name opens nothing.
+   */
+  kind?: 'compare';
+  /** "EMA 50", "MACD 12 26 9", "ETHUSDT". */
   label: string;
+  /** The colour of the line the row stands for, marked before its name (a compare's, whose figures are in the text colour). */
+  swatch?: string;
   visible: boolean;
   /** On, but not drawn on the chart's interval (its settings keep it to others). */
   offInterval?: boolean;
+  /** A compare on, but not drawn on the chart's type (Renko, Kagi and the like draw no compare lines). */
+  offChartType?: boolean;
   /** The values at the bar in view; `color` null = the neutral text colour. */
   values: readonly { text: string; color: string | null }[];
   /**
@@ -35,9 +44,10 @@ export interface IndicatorLegendPane {
 export type PaneAction = 'up' | 'down' | 'collapse' | 'expand' | 'maximize' | 'restore';
 
 export interface IndicatorLegendCallbacks {
-  onToggleVisible: (instanceId: string, visible: boolean) => void;
+  /** `kind` is the row's: 'compare' for a compare line, which is no indicator. */
+  onToggleVisible: (instanceId: string, visible: boolean, kind?: IndicatorLegendRow['kind']) => void;
   onSettings: (instanceId: string) => void;
-  onRemove: (instanceId: string) => void;
+  onRemove: (instanceId: string, kind?: IndicatorLegendRow['kind']) => void;
   /** The row's "more" button: a menu under `anchor` (move to another pane…). */
   onMore?: (instanceId: string, anchor: HTMLElement) => void;
   /** A pane's button: move it, fold it, maximise it. */
@@ -60,6 +70,8 @@ export interface IndicatorLegendLabels {
   paneRestore?: string;
   /** A row's note while its indicator isn't drawn on this interval. */
   offInterval?: string;
+  /** A row's note while its compare isn't drawn on this chart type. */
+  offChartType?: string;
 }
 
 interface PaneEls {
@@ -80,14 +92,22 @@ const VALUES_LEAST_EM = 1.5;
 /** On a row's values while their box has less than `VALUES_LEAST_EM`: they hide, keeping their room. */
 const NO_ROOM_CLASS = 'tcw-ind-legend-values--no-room';
 
+/** Numbers the rows' notes, so each id is the page's only one, with several legends on it. */
+let noteSeq = 0;
+
 interface RowEls {
   el: HTMLDivElement;
-  name: HTMLButtonElement;
+  /** A button that opens the indicator's settings; plain text on a compare's row. */
+  name: HTMLElement;
+  /** The mark in the line's colour (`swatch`), on a compare's row. */
+  swatch: HTMLSpanElement | null;
   values: HTMLSpanElement;
   eye: HTMLButtonElement;
-  settings: HTMLButtonElement;
+  settings: HTMLButtonElement | null;
   more: HTMLButtonElement | null;
   remove: HTMLButtonElement;
+  /** Why the row is not drawn, heard with its buttons (`aria-describedby`); empty while it is drawn. */
+  note: HTMLSpanElement;
   visible: boolean;
   valuesKey: string;
   state: string;
@@ -99,6 +119,8 @@ interface RowEls {
  * pane indicators stack under the OHLCV legend, pane indicators sit at the
  * top of their pane. Each row reads "EMA 50  123.45" and, on hover or focus,
  * offers show/hide, settings and remove. A long stack can be collapsed.
+ * Symbols compared in percent head the stack: their price and change, with
+ * show/hide and remove.
  *
  * `update()` is cheap to call every frame: rows are kept by instance id and
  * only changed text and positions are written.
@@ -147,26 +169,29 @@ export class WidgetIndicatorLegend {
       this.stack.style.top = `${Math.round(overlay.top)}px`;
     }
 
-    const seen = new Set<string>();
-    let joinedStack = false;
-    for (const row of rows) {
-      seen.add(row.instanceId);
-      const els = this.rows.get(row.instanceId) ?? this.createRow(row.instanceId);
-      this.fill(els, row);
-      if (row.pane) {
-        if (els.el.parentElement !== this.host) this.host.appendChild(els.el);
-      } else if (els.el.parentElement !== this.stack) {
-        // New rows join the end (the chart's order), before the toggle.
-        this.stack.insertBefore(els.el, this.toggle);
-        joinedStack = true;
-      }
-      this.place(els, row.pane);
-    }
+    // Rows gone first, so the rest move only when their order changed.
+    const seen = new Set(rows.map((r) => r.instanceId));
     for (const [id, els] of this.rows) {
       if (seen.has(id)) continue;
       this.valuesObserver?.unobserve(els.values);
       els.el.remove();
       this.rows.delete(id);
+    }
+    let joinedStack = false;
+    let previous: HTMLElement | null = null;
+    for (const row of rows) {
+      const els = this.rows.get(row.instanceId) ?? this.createRow(row.instanceId, row.kind);
+      this.fill(els, row);
+      if (row.pane) {
+        if (els.el.parentElement !== this.host) this.host.appendChild(els.el);
+      } else {
+        // In the order given (compares first, then the chart's), before the toggle.
+        const next: Element | null = previous ? previous.nextElementSibling : this.stack.firstElementChild;
+        if (els.el.parentElement !== this.stack) joinedStack = true;
+        if (els.el !== next) this.stack.insertBefore(els.el, next);
+        previous = els.el;
+      }
+      this.place(els, row.pane);
     }
     // A collapsed stack would hide the indicator just added: open it.
     if (joinedStack && this.collapsed) this.setCollapsed(false);
@@ -244,16 +269,20 @@ export class WidgetIndicatorLegend {
     return els;
   }
 
-  private createRow(instanceId: string): RowEls {
+  private createRow(instanceId: string, kind?: IndicatorLegendRow['kind']): RowEls {
+    const compare = kind === 'compare';
     const el = document.createElement('div');
-    el.className = 'tcw-ind-legend-row';
+    el.className = compare ? 'tcw-ind-legend-row tcw-ind-legend-row--compare' : 'tcw-ind-legend-row';
     markPart(el, 'indicatorLegend');
     el.dataset.instance = instanceId;
 
-    const name = document.createElement('button');
-    name.type = 'button';
+    // A compare has no settings for its name to open.
+    const name = document.createElement(compare ? 'span' : 'button');
     name.className = 'tcw-ind-legend-name';
-    name.addEventListener('click', () => this.callbacks.onSettings(instanceId));
+    if (name instanceof HTMLButtonElement) {
+      name.type = 'button';
+      name.addEventListener('click', () => this.callbacks.onSettings(instanceId));
+    }
 
     const values = document.createElement('span');
     values.className = 'tcw-ind-legend-values';
@@ -275,35 +304,49 @@ export class WidgetIndicatorLegend {
       return b;
     };
     const eye = action('visible', 'eye', () => {
-      this.callbacks.onToggleVisible(instanceId, !els.visible);
+      this.callbacks.onToggleVisible(instanceId, !els.visible, kind);
     }, 'indicatorLegend.visibility');
-    const settings = action('settings', 'settings', () => this.callbacks.onSettings(instanceId), 'indicatorSettings', 'indicatorLegend.settings');
-    const more = this.callbacks.onMore
+    const settings = compare ? null : action('settings', 'settings', () => this.callbacks.onSettings(instanceId), 'indicatorSettings', 'indicatorLegend.settings');
+    const more = this.callbacks.onMore && !compare
       ? action('more', 'more', () => this.callbacks.onMore?.(instanceId, more!), 'indicatorLegend.more')
       : null;
-    const remove = action('remove', 'x', () => this.callbacks.onRemove(instanceId), 'indicatorLegend.remove');
+    const remove = action('remove', 'x', () => this.callbacks.onRemove(instanceId, kind), 'indicatorLegend.remove');
 
-    el.append(name, values, actions);
+    const note = document.createElement('span');
+    note.className = 'tcw-visually-hidden';
+    note.id = `tcw-ind-note-${++noteSeq}`;
+
+    // A compare's line is told by its colour: a mark of it, not text, which no one colour makes legible on both themes.
+    const swatch = compare ? document.createElement('span') : null;
+    if (swatch) {
+      swatch.className = 'tcw-ind-legend-swatch';
+      swatch.setAttribute('aria-hidden', 'true');
+      el.append(swatch);
+    }
+    el.append(name, values, actions, note);
     const els: RowEls = {
-      el, name, values, eye, settings, more, remove, visible: true, valuesKey: '', state: '', placeKey: '',
+      el, name, swatch, values, eye, settings, more, remove, note, visible: true, valuesKey: '', state: '', placeKey: '',
     };
     this.rows.set(instanceId, els);
     return els;
   }
 
   private fill(els: RowEls, row: IndicatorLegendRow): void {
-    const state = `${row.label}|${row.visible}|${!!row.offInterval}`;
+    const note = this.offNote(row);
+    const state = `${row.label}|${row.visible}|${note}|${row.swatch ?? ''}`;
     if (state !== els.state) {
       els.state = state;
+      if (els.swatch) els.swatch.style.backgroundColor = row.swatch ?? '';
       els.visible = row.visible;
       els.name.textContent = row.label;
-      els.name.title = this.labels.settings;
-      els.el.classList.toggle('tcw-ind-legend-row--hidden', !row.visible || !!row.offInterval);
-      if (row.offInterval && this.labels.offInterval) els.el.title = this.labels.offInterval;
+      if (els.settings) els.name.title = this.labels.settings;
+      els.el.classList.toggle('tcw-ind-legend-row--hidden', !row.visible || note !== null);
+      if (note) els.el.title = note;
       else els.el.removeAttribute('title');
+      this.describe(els, note);
       els.eye.innerHTML = createIcon(row.visible ? 'eye' : 'eyeOff', 13);
       setLabel(els.eye, row.visible ? this.labels.hide : this.labels.show, row.label);
-      setLabel(els.settings, this.labels.settings, row.label);
+      if (els.settings) setLabel(els.settings, this.labels.settings, row.label);
       if (els.more) {
         setLabel(els.more, this.labels.more ?? 'More', row.label);
         els.more.setAttribute('aria-haspopup', 'menu');
@@ -319,6 +362,23 @@ export class WidgetIndicatorLegend {
       if (v.color) span.style.color = v.color;
       return span;
     }));
+  }
+
+  /** Why the row is not drawn, heard with each of its buttons: the tooltip alone reaches only a mouse. */
+  private describe(els: RowEls, note: string | null): void {
+    els.note.textContent = note ?? '';
+    const buttons = [els.name, els.eye, els.settings, els.more, els.remove].filter((b): b is HTMLElement => b instanceof HTMLButtonElement);
+    for (const button of buttons) {
+      if (note) button.setAttribute('aria-describedby', els.note.id);
+      else button.removeAttribute('aria-describedby');
+    }
+  }
+
+  /** Why a row that is on is not drawn ('' without a note to say so), or null when it is drawn. */
+  private offNote(row: IndicatorLegendRow): string | null {
+    if (row.offInterval) return this.labels.offInterval ?? '';
+    if (row.offChartType) return this.labels.offChartType ?? '';
+    return null;
   }
 
   /** Pane rows are placed in their pane; stacked rows flow in the stack. */

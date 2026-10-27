@@ -24,11 +24,12 @@ chart.connect({ adapter: new CoinbaseAdapter(), symbol: 'BTC-USD', timeframe: '1
 <h2>DataAdapter interface</h2>
 <pre><code>{`interface DataAdapter {
   name: string
+  supportedTimeframes?: TimeFrame[]   // left out: it serves every timeframe
   connect(config): void
   disconnect(): void
   getConnectionState(): ConnectionState
   fetchHistory(symbol, timeframe, limit?): Promise<OHLCBar[]>
-  on(event, listener): void   // 'bar' | 'tick' | 'snapshot' | 'connectionChange' | 'error' | 'symbolInfo'
+  on(event, listener): void   // 'bar' | 'tick' | 'connectionChange' | 'error' | 'symbolInfo'
   off(event, listener): void
   dispose(): void
 
@@ -49,11 +50,40 @@ chart.connect({ adapter: new CoinbaseAdapter(), symbol: 'BTC-USD', timeframe: '1
   <code>minTick</code>, <code>currency</code>, <code>timeZone</code> and <code>sessions</code>.
 </p>
 
+<h2 id="built-timeframes">Timeframes the feed lacks</h2>
+<p>
+  A feed that lists its <code>supportedTimeframes</code> gets every other timeframe built from the
+  coarsest of them that divides it: 7m from 1m, 4h and 1D from 1h. Days, weeks, months and the hour
+  frames that divide a day (2h, 3h, 4h, 6h, 8h, 12h) start at the midnight of the symbol's exchange,
+  in the <code>timeZone</code> its <code>resolveSymbol</code> names. The chart asks once per symbol,
+  as the first history of such a timeframe is fetched, builds that history once the answer comes, and
+  keeps the zone; 1h and shorter frames don't wait for it. A zone whose days need a finer timeframe
+  than UTC's (Ho Chi Minh City's on a feed of 4h bars) has that history fetched again at it. A feed without <code>resolveSymbol</code>, one that names no zone or UTC, or one whose
+  timeframes can't line up with that midnight (only 4h bars for a zone 7 hours from UTC) gets UTC
+  days, as before. So does one that fails to answer or takes more than 5 seconds, and the symbol's days then
+  stay UTC's until the chart loads the symbol afresh (connects to it, or comes to it from another symbol or timeframe), so older pages and the history after a reconnect never hold a day twice; a fresh load builds them in the zone the feed has named since, or asks it again. The
+  market's zone (<code>setMarket</code>) doesn't move these bars. Daily bars stamped at 00:00 UTC are read as the dates they name. A zone the feed
+  sends later in a <code>symbolInfo</code> event changes the times shown, not where built days start.
+</p>
+
 <h2 id="symbol-info">Symbol details the feed learns later</h2>
 <p>
-  A connected chart asks <code>resolveSymbol</code> once. A feed that learns the symbol's details only later (on its first message, say) sends them with a <code>symbolInfo</code> event, and the chart applies them: the price scale, legend and tags in the symbol's decimals (<code>pricePrecision</code>), the scale's ticks on its price step (<code>minTick</code>), the exchange's hours.
+  A connected chart asks <code>resolveSymbol</code> once. A feed that learns the symbol's details only later (on its first message, say) sends them with a <code>symbolInfo</code> event, and the chart applies them: the symbol's decimals (<code>pricePrecision</code>) on the price scale, the legend and the tags, and on the drawings' labels, the day's price limits, pivot labels, the measure and the market profile too; in the widget, on the data window, the alerts list, the order ticket and the account panel; the scale's ticks on its price step (<code>minTick</code>); the exchange's hours. A market's decimals (<code>setMarket</code>) go to the same places and come before the symbol's. Without either, a drawing's label keeps the decimals of its price's size, grouped in the number locale as the axis is.
 </p>
 <pre><code>{`emit('symbolInfo', { symbol: 'VNM', pricePrecision: 0, minTick: 10, currency: 'VND' })   // as your adapter sends its other events`}</code></pre>
+
+<h2 id="corrections">A bar the feed corrects</h2>
+<p>
+  A feed corrects a bar by sending it again, closed, with its own time: <code>{'{'} bar, closed: true {'}'}</code> from <code>parseMessage</code>, or a <code>bar</code> event. A closed bar older than the newest the stream has seen is the feed's last word on it, a venue's final that came after the next bar's first frame or a revision: the chart replaces the bar with that time wherever it is (<code>updateBar</code>), computes its indicators again from it, and keeps the view. It is no live price: the price line, the orders and the alerts stay with the market. A forming frame older than the newest is stale and left out; it moves nothing. The built-in adapters (<code>WebSocketAdapter</code>, <code>PollingAdapter</code>, the feeds built on them and <code>BinanceAdapter</code>) make a tick from a bar's close only for the newest bar, counting the last bar of the history they served, so a last closed bar a feed sends again on subscribing makes none; an adapter of your own that makes ticks from its bars should leave older ones out too. Without an adapter, call <code>chart.updateBar(bar)</code>.
+</p>
+<p>
+  With <code>aggregateTicks</code> the history's last bar is the one the trades build on: the first trade after connecting keeps its open, high, low and volume. A trade for a bar already past, delivered late, is left out, and a closed bar for one corrects it, the forming bar keeping its trades. A trade from after the newest bar starts goes in that bar even when the buckets would start it earlier (daily bars stamped at another hour than midnight, or a symbol whose zone comes after the first trade), so the price follows every trade. On a timeframe built from a finer one, a corrected base bar builds its bar again, for the last two built bars before the forming one; a correction further back is left out.
+</p>
+<pre><code>{`// in an adapter: the venue's final for a bar already on the chart
+parseMessage: (raw) => ({ bar: toBar(raw), closed: true })
+
+// your own bars, without an adapter
+const corrected = chart.updateBar(bar)   // false: no loaded bar has bar.time`}</code></pre>
 
 <h2>Any feed in ~20 lines</h2>
 <p>
@@ -74,11 +104,16 @@ const myAdapter = new WebSocketAdapter({
 <p>Roll raw ticks into OHLC bars per timeframe:</p>
 <pre><code>{`import { TickAggregator } from '@tradecanvas/chart'
 
-const agg = new TickAggregator('1m')
+const agg = new TickAggregator('1d')
+agg.setTimeZone('Asia/Ho_Chi_Minh')         // days start at the exchange's midnight
+agg.seed(history.at(-1).time)               // a bar older than the history's last is past
+agg.on('barClose', (bar) => console.log(bar))   // a bar whose interval is over
+agg.on('correction', (bar) => console.log(bar)) // a closed bar older than the newest
 agg.processTick({ time, price, volume })
 
-const current = agg.getCurrentBar()         // forming bar
-const closed = agg.flushClosedBars()        // bars that have rolled over`}</code></pre>
+const current = agg.getCurrentBar()         // forming bar`}</code></pre>
+<p>Weeks start on Monday and months on the 1st. With <code>setTimeZone</code>, days, weeks, months and the hour frames that divide a day start at the exchange's midnight; a chart sets it for its stream's ticks (<code>aggregateTicks</code>) from the symbol's zone, else its market's, and lands their bars on the history's: days are stamped at 00:00 UTC when the history's are, and 2h to 12h bars start at the exchange's midnight only when the history's do, so a feed's own 4h bars (00:00, 04:00… UTC) keep their times. On a timeframe built from a shorter one of the feed's, they start where the built bars start. Built from hours, they start at the midnight of the zone its <code>resolveSymbol</code> named, else UTC's, whatever zone the chart has; built from the feed's days stamped at 00:00 UTC, weeks and months keep its dates, and a trade is dated in the zone it named, else the chart's, as on the feed's own days.</p>
+<p>A bar older than the newest one seen is past: <code>processBar</code> sends a closed one as <code>correction</code> and leaves out a forming one, and <code>processTick</code> leaves out a trade for one, so a late frame or trade can neither close the forming bar early nor move the price. <code>seed(time)</code> starts from a history's last bar and doesn't move back (unless the trades built the newer bar on buckets they no longer start on, the exchange's zone having come after them: that bar is let go, or the next trades would be left out until the next bucket), and <code>resume(bar)</code> makes that bar, still forming, the one the next trades build on, unless the trades have reached a newer one; a chart's stream does both on every connect, so a reconnect whose history ends on the bar before keeps the forming bar's trades. <code>StreamManager</code> then puts the forming bar, built from trades or from a feed's frames, on top of the history it sends as <code>snapshot</code>, and sends no <code>priceChange</code> for the history's last close, an older price. It sends a correction as <code>barCorrection</code>.</p>
 
 <h2>Quotes for many symbols</h2>
 <p>

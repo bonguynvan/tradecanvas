@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import type { ChartType, OHLCBar } from '@tradecanvas/commons';
+import { MARKET_HOSE, priceStepAt } from '@tradecanvas/commons';
 import {
   CandlestickRenderer,
   LineRenderer,
@@ -14,8 +15,11 @@ import {
 import {
   createRendererFor,
   isTransformedChartType,
+  rangeBarsSize,
+  rangeBarsStep,
   transformDisplayData,
 } from '../ChartTypeStrategy.js';
+import { secondBars } from '../../__tests__/secondBars.js';
 
 function bars(closes: number[], hl = 0.5): OHLCBar[] {
   return closes.map((c, i) => ({
@@ -76,14 +80,23 @@ describe('transformDisplayData', () => {
     expect(out).toHaveLength(raw.length);
   });
 
-  it('emits range bars whose high − low equals the auto-derived range size', () => {
-    // avgPrice * 0.005 ≈ 0.5, so a 100 → 110 ramp emits ~20 bars of size 0.5.
-    const raw = bars(Array.from({ length: 50 }, (_, i) => 100 + i * 0.2), 0.05);
+  it('sizes automatic range bars from the bars’ true range and ends on the bar still forming', () => {
+    // One-second bars near 100,000 move about $150 in all: 0.5% of the price ($500) closed no bar.
+    const raw = secondBars(145);
     const out = transformDisplayData('rangeBars', raw);
-    expect(out.length).toBeGreaterThan(5);
-    const expectedSize = (raw.reduce((s, b) => s + b.close, 0) / raw.length) * 0.005;
-    for (const b of out) {
-      expect(b.high - b.low).toBeCloseTo(expectedSize, 6);
+    expect(out.length).toBeGreaterThan(10);
+    const range = rangeBarsSize(raw);
+    for (const b of out.slice(0, -1)) expect(b.high - b.low).toBeCloseTo(range, 9);
+    expect(out.at(-1)!.close).toBe(raw.at(-1)!.close);
+  });
+
+  it('keeps the closed range bars when one more bar closes', () => {
+    const raw = secondBars(300);
+    for (let n = 145; n < raw.length; n++) {
+      const before = transformDisplayData('rangeBars', raw.slice(0, n)).slice(0, -1);
+      const after = transformDisplayData('rangeBars', raw.slice(0, n + 1));
+      expect(before.length).toBeGreaterThan(10);
+      expect(after.slice(0, before.length)).toEqual(before);
     }
   });
 
@@ -93,6 +106,70 @@ describe('transformDisplayData', () => {
     const raw = bars(Array.from({ length: 5 }, (_, i) => 100 + i * 0.2));
     const out = transformDisplayData('renko', raw);
     expect(out).toEqual([]);
+  });
+});
+
+describe('rangeBarsSize', () => {
+  it('uses a range that is set as it is', () => {
+    expect(rangeBarsSize(secondBars(145), { rangeBars: { range: 33 } }, 50)).toBe(33);
+  });
+
+  it('keeps the automatic range when one more bar closes', () => {
+    const raw = secondBars(600);
+    for (let n = 145; n < raw.length; n++) {
+      expect(rangeBarsSize(raw.slice(0, n + 1))).toBe(rangeBarsSize(raw.slice(0, n)));
+    }
+  });
+
+  it('rounds the automatic range to a 1-2-5 number and leaves out the bar still forming', () => {
+    const raw = secondBars(145);
+    expect(rangeBarsSize(raw)).toBe(10);
+    // A forming bar that runs $5,000 changes nothing until it closes.
+    const forming = { ...raw.at(-1)!, high: raw.at(-1)!.high + 5_000 };
+    expect(rangeBarsSize([...raw.slice(0, -1), forming])).toBe(10);
+    expect(rangeBarsSize(raw, { rangeBars: { range: 'auto' } })).toBe(10);
+  });
+
+  it('puts the automatic range on the price step, one step at least', () => {
+    const raw = secondBars(145, { start: 25_000, move: 16 });
+    expect(rangeBarsSize(raw)).toBe(20);
+    expect(rangeBarsSize(raw, {}, 50)).toBe(50);
+    expect(rangeBarsSize(raw, {}, 0.25) % 0.25).toBe(0);
+    const wide = secondBars(145, { start: 25_000, move: 160 });
+    expect(rangeBarsSize(wide, {}, 50) % 50).toBe(0);
+    expect(rangeBarsSize(wide, {}, 50)).toBeGreaterThan(50);
+  });
+
+  it('takes a hundredth of the last close with too few bars for a true range', () => {
+    expect(rangeBarsSize(bars([100_000, 100_500]))).toBe(1_000);
+    expect(rangeBarsSize(bars([100_000, 100_500]), {}, 0.5)).toBe(1_000);
+  });
+});
+
+describe('rangeBarsStep', () => {
+  // HOSE steps 0.05 a price from 10 and 0.1 from 50.
+  const hose = (price: number): number | undefined => priceStepAt(price, MARKET_HOSE);
+
+  it('takes the coarsest step the closed bars of the automatic range traded at', () => {
+    // Closed bars on both sides of 50 and a last price below it: the range goes on 0.1, not 0.05.
+    expect(rangeBarsStep(bars([49.8, 49.9, 50.1, 50.2, 49.9, 49.7], 0.05), hose)).toBe(0.1);
+    expect(rangeBarsStep(bars([49.8, 49.9, 49.7], 0.05), hose)).toBe(0.05);
+  });
+
+  it('leaves out the bar still forming, so a tick over a band edge changes nothing', () => {
+    expect(rangeBarsStep(bars([49.6, 49.7, 49.8, 50.4], 0.05), hose)).toBe(0.05);
+  });
+
+  it('looks only at the bars the automatic range is measured on', () => {
+    // A price past 50 more than 100 closed bars back no longer sets the step.
+    const quiet = Array.from({ length: 99 }, () => 49.5);
+    expect(rangeBarsStep(bars([50.5, ...quiet, 49.5, 49.6], 0.05), hose)).toBe(0.05);
+    expect(rangeBarsStep(bars([50.5, ...quiet, 49.6], 0.05), hose)).toBe(0.1);
+  });
+
+  it('takes the step at the last close with one bar, and none without a step', () => {
+    expect(rangeBarsStep(bars([50.2], 0.05), hose)).toBe(0.1);
+    expect(rangeBarsStep(bars([100, 101, 102]), () => undefined)).toBeUndefined();
   });
 });
 

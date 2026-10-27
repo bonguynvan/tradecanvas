@@ -46,4 +46,30 @@ describe('computePeriodLevels', () => {
     expect(labels).toContain('PWC');
     expect(levels.find((l) => l.id === 'pWh')?.price).toBe(120);
   });
+
+  it('counts the day from midnight in the exchange’s zone, as VWAP does', () => {
+    // ASX sessions, 10:00–15:00 in Sydney: the first hour of each is 23:00 UTC the day before.
+    const open1 = Date.UTC(2026, 9, 25, 23);
+    const open2 = Date.UTC(2026, 9, 26, 23);
+    const bars = [
+      bar(open1, 10, 50, 9, 12), // day 1's high is its 10:00 bar
+      bar(open1 + HOUR, 12, 20, 11, 18),
+      bar(open2, 19, 30, 17, 28), // day 2 opens at 19
+      bar(open2 + HOUR, 28, 35, 26, 33),
+    ];
+    const byId = (zone?: string) => Object.fromEntries(computePeriodLevels(bars, 'day', zone).map((l) => [l.id, l.price]));
+    expect(byId('Australia/Sydney')).toMatchObject({ pDh: 50, pDl: 9, pDc: 18, open: 19 });
+    // In UTC's days the 10:00 bars belong to the day before.
+    expect(byId()).toMatchObject({ pDh: 30, open: 28 });
+  });
+
+  it('reads bar times given in seconds', () => {
+    const bars = [bar(day1 / 1000, 10, 20, 5, 15), bar(day2 / 1000, 19, 30, 17, 28)];
+    expect(computePeriodLevels(bars, 'day').find((l) => l.id === 'pDh')?.price).toBe(20);
+  });
+
+  it('counts UTC’s days for a zone the browser does not know, rather than throwing', () => {
+    const bars = [bar(day1, 10, 20, 5, 15), bar(day1 + HOUR, 15, 25, 12, 18), bar(day2, 19, 30, 17, 28)];
+    expect(computePeriodLevels(bars, 'day', 'Mars/Olympus_Mons')).toEqual(computePeriodLevels(bars, 'day'));
+  });
 });

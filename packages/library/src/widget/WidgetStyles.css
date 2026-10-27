@@ -1033,6 +1033,13 @@
   color: var(--tcw-accent);
 }
 
+/* A compared symbol's name opens nothing. */
+.tcw-ind-legend-row--compare .tcw-ind-legend-name,
+.tcw-ind-legend-row--compare .tcw-ind-legend-name:hover {
+  color: var(--tcw-text);
+  cursor: default;
+}
+
 /* The values are one line of text: a narrow chart cuts the line, so the values
    before the cut stay whole and the one it falls in ends in an ellipsis. Values
    shrinking each on its own cut them all at once. */
@@ -1054,26 +1061,53 @@
   visibility: hidden;
 }
 
+/* A compare's line colour, as a short stroke of it before the name. */
+.tcw-ind-legend-swatch {
+  flex: none;
+  align-self: center;
+  width: 10px;
+  height: 3px;
+  margin-inline-end: var(--tcw-space-2);
+  border-radius: 1px;
+}
+
+.tcw-ind-legend-row--hidden .tcw-ind-legend-swatch,
 .tcw-ind-legend-row--hidden .tcw-ind-legend-name,
 .tcw-ind-legend-row--hidden .tcw-ind-legend-values {
   opacity: 0.45;
 }
 
-/* Show / settings / remove: on hover or keyboard focus (always on touch). */
+/* Show / settings / remove: on hover or keyboard focus (always on touch). Out of sight, not out of the
+   page, so Tab reaches them in a row with nothing else to focus (a compare's) and a screen reader finds
+   them; a button focused shows them all. */
 .tcw-ind-legend-actions {
-  display: none;
+  display: inline-flex;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
   gap: 1px;
   margin-left: -2px;
 }
 
 .tcw-ind-legend-row:hover .tcw-ind-legend-actions,
 .tcw-ind-legend-row:focus-within .tcw-ind-legend-actions {
-  display: inline-flex;
+  position: static;
+  width: auto;
+  height: auto;
+  overflow: visible;
+  clip-path: none;
 }
 
 @media (hover: none) {
   .tcw-ind-legend-actions {
-    display: inline-flex;
+    position: static;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip-path: none;
   }
 
   /* Finger-sized targets. */
@@ -1493,6 +1527,25 @@
 
 .tcw-settings-row + .tcw-settings-row {
   border-top: 1px solid var(--tcw-divider);
+}
+
+/* A number field's hint goes on a line of its own, under the field. */
+.tcw-settings-row--number {
+  flex-wrap: wrap;
+}
+
+.tcw-settings-hint {
+  flex-basis: 100%;
+  padding-top: var(--tcw-space-2);
+  color: var(--tcw-red);
+  font-size: var(--tcw-font-size-xs);
+  line-height: 1.35;
+  text-align: end;
+}
+
+/* Empty, it takes no room but stays rendered: a live region that appears with its text is often not read out. */
+.tcw-settings-hint:empty {
+  padding-top: 0;
 }
 
 .tcw-settings-label {
@@ -3136,6 +3189,26 @@
   font-size: var(--tcw-font-size-sm);
   color: var(--tcw-text);
   overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* A compare: its colour and symbol, then how it is compared, taking the room left before its button. */
+.tcw-tree-compare {
+  justify-content: flex-start;
+}
+.tcw-tree-compare .tcw-tree-name {
+  flex: 0 1 auto;
+}
+.tcw-tree-compare .tcw-tree-del {
+  flex: none;
+  margin-inline-start: auto;
+}
+.tcw-tree-way {
+  flex: 1 1 0;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--tcw-text-dim);
+  font-size: var(--tcw-font-size-xs);
   text-overflow: ellipsis;
   white-space: nowrap;
 }

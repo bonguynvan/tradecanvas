@@ -62,8 +62,10 @@ export interface TradeCanvasProps {
    * computed again, and alerts follow the price. Any other new array is a new
    * series (`setData`): the view goes back to the newest bar and every
    * indicator is computed again. So is one after a stream, or code through
-   * the ref, gave the chart bars of its own. An older bar changed needs a new
-   * bar object in its place.
+   * the ref, gave the chart bars of its own. A new array that changes one of
+   * the last three bars before the forming one, its time the same, goes in
+   * as a correction (`updateBar`): the view stays, and the indicators are
+   * computed again from that bar. A change further back is a new series.
    */
   data?: OHLCBar[];
   /** The stream's feed (Binance by default), taken when the stream connects. */

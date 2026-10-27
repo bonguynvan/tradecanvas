@@ -1,5 +1,5 @@
 import type { NewsItem, Quote, SymbolInfo } from '@tradecanvas/commons';
-import { barTimeUnit, isValidTimeZone, marketStatus, readNews, symbolTimeZone, zoneOffsetMinutes } from '@tradecanvas/commons';
+import { barTimeUnit, formatPrice, isValidTimeZone, marketStatus, readNews, symbolTimeZone, zoneOffsetMinutes } from '@tradecanvas/commons';
 import { fill, type Translator } from './i18n.js';
 import type { SymbolInfoNews, SymbolInfoView } from './WidgetSymbolInfo.js';
 
@@ -7,6 +7,8 @@ import type { SymbolInfoNews, SymbolInfoView } from './WidgetSymbolInfo.js';
 const NEWS_LIMIT = 10;
 const NEWS_TTL_MS = 5 * 60_000;
 const DAY_MS = 86_400_000;
+/** Decimals the change's percentage shows. */
+const PERCENT_DECIMALS = 2;
 
 type DayBar = { time: number; open: number; high: number; low: number; close: number; volume?: number };
 
@@ -76,7 +78,7 @@ export function buildSymbolInfoView(input: SymbolInfoInput): SymbolInfoView {
     meta: [named?.exchange, named?.type].filter(Boolean).join(' · ') || undefined,
     price: last !== undefined ? fp(last) : undefined,
     change: change !== undefined
-      ? { text: `${sign}${fp(Math.abs(change))}${percent !== undefined ? ` (${sign}${Math.abs(percent).toFixed(2)}%)` : ''}`, up: change >= 0 }
+      ? { text: `${sign}${fp(Math.abs(change))}${percent !== undefined ? ` (${sign}${fixedNumber(Math.abs(percent), PERCENT_DECIMALS, input.numberLocale)}%)` : ''}`, up: change >= 0 }
       : undefined,
     status: { state: status.state, text: statusText },
     stats,
@@ -177,6 +179,20 @@ export function relativeTime(deltaMs: number, locale: string): string {
     return new Intl.RelativeTimeFormat(locale, { numeric: 'auto' }).format(value, unit);
   } catch {
     return new Intl.RelativeTimeFormat('en', { numeric: 'auto' }).format(value, unit);
+  }
+}
+
+/**
+ * `value` to `decimals`, in `locale` (2.234,50 in de-DE), as the price beside it is written:
+ * commons' `formatPrice`, guarded as `relativeTime` and `compactNumber` beside it are. The
+ * view takes its locale as any string, and for a tag Intl refuses ('pt_BR') `formatPrice`
+ * throws a RangeError that would leave the panel empty, so plain digits are written instead.
+ */
+function fixedNumber(value: number, decimals: number, locale: string): string {
+  try {
+    return formatPrice(value, decimals, locale);
+  } catch {
+    return value.toFixed(decimals);
   }
 }
 

@@ -125,6 +125,42 @@ describe('a chart’s price format', () => {
   });
 });
 
+describe('the market’s and the symbol’s decimals', () => {
+  it('go on the viewport, for drawing labels, price limits and plugins', () => {
+    chart = new Chart(host, {});
+    chart.setData(bars);
+    const state = () => (chart as unknown as Probe).viewport.getState();
+    expect(state().pricePrecision).toBeUndefined();
+    chart.setSymbolInfo({ symbol: 'BTC', pricePrecision: 1 });
+    expect(state().pricePrecision).toBe(1);
+    // The market's win over the symbol's, as on the axis.
+    chart.setMarket({ type: 'crypto', pricePrecision: 3 });
+    expect(state().pricePrecision).toBe(3);
+    expect(chart.formatPrice(100_018.7)).toBe('100,018.700');
+    chart.setSymbolInfo({ symbol: 'BTC', pricePrecision: 1 });
+    expect(state().pricePrecision).toBe(3);
+  });
+
+  it('are cleared with the symbol’s, and stay off indicator panes', () => {
+    chart = new Chart(host, {});
+    chart.setData(bars);
+    chart.setSymbolInfo({ symbol: 'BTC', pricePrecision: 1 });
+    chart.addIndicator('rsi');
+    expect((chart as unknown as Probe).buildPanelRenderInfos()[0].viewport.pricePrecision).toBeUndefined();
+    chart.setSymbolInfo(null);
+    expect((chart as unknown as Probe).viewport.getState().pricePrecision).toBeUndefined();
+  });
+
+  it('reach the pinned tooltip, in the number locale', () => {
+    chart = new Chart(host, { numberLocale: 'de-DE' });
+    chart.setData(bars);
+    chart.setSymbolInfo({ symbol: 'BTC', pricePrecision: 1 });
+    const tooltip = (chart as unknown as { pinnedTooltip: { pin(bar: OHLCBar, index: number, theme: unknown): void } }).pinnedTooltip;
+    tooltip.pin({ time: T0, open: 100_000, high: 100_085.3, low: 99_990.1, close: 100_018.7, volume: 1 }, 0, chart.getTheme());
+    expect(host.textContent).toContain('100.018,7');
+  });
+});
+
 describe('a chart’s time format', () => {
   it('goes to the time axis, the crosshair and the tooltip', () => {
     const toAxis = vi.spyOn(TimeAxis.prototype, 'setTimeFormatter');

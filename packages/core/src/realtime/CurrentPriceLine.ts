@@ -34,11 +34,19 @@ export class CurrentPriceLine {
     this.locale = locale;
   }
 
+  /**
+   * The price shown, and the close its tag is measured from: rising or level
+   * against it is up. Without one, it is measured from the price shown
+   * before, and the same price again keeps what it was measured from:
+   * measured from itself, a fall would show as a rise (a reconnect, a feed's
+   * frame at an unchanged price).
+   */
   setPrice(price: number, previousClose?: number): void {
     if (this.price !== null && price !== this.price) {
       this.flashUntil = Date.now() + 300;
     }
-    this.previousClose = previousClose ?? this.price ?? price;
+    if (previousClose !== undefined) this.previousClose = previousClose;
+    else if (price !== this.price) this.previousClose = this.price ?? price;
     this.price = price;
   }
 

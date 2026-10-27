@@ -60,6 +60,34 @@ describe('LinePen', () => {
   });
 });
 
+describe('LinePen: a piece of one point', () => {
+  it('draws a short level stroke at it, where a session that has just begun has one bar', () => {
+    const { ctx, calls } = recorder();
+    const pen = new LinePen(ctx, '#0f0', 2, false);
+    pen.add(0, 10);
+    pen.add(10, 20);
+    pen.gap();
+    pen.add(30, 40);
+    pen.finish();
+    const lone = calls.slice(-3);
+    expect(lone.map((c) => c.name)).toEqual(['moveTo', 'lineTo', 'stroke']);
+    const [[x0, y0], [x1, y1]] = [lone[0].args, lone[1].args];
+    expect(y0).toBe(40);
+    expect(y1).toBe(40);
+    expect(x0).toBeLessThan(30);
+    expect(x1).toBeGreaterThan(30);
+  });
+
+  it('leaves a piece of two points as it is', () => {
+    const { ctx, calls } = recorder();
+    const pen = new LinePen(ctx, '#0f0', 2, false);
+    pen.add(0, 10);
+    pen.add(10, 20);
+    pen.finish();
+    expect(calls.map((c) => c.name)).toEqual(['beginPath', 'moveTo', 'lineTo', 'stroke']);
+  });
+});
+
 describe('isDenseLine', () => {
   it('is dense when points come more than about one per pixel', () => {
     expect(isDenseLine(100, 0, 99)).toBe(false);

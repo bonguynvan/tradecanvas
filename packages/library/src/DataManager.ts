@@ -23,8 +23,8 @@ function isSanitized(bar: OHLCBar): boolean {
     && bar.low <= bar.open && bar.low <= bar.close;
 }
 
-/** Sanitize a bar: clamp high/low to envelope OHLC values. */
-function sanitizeBar(bar: OHLCBar): OHLCBar {
+/** Sanitize a bar: clamp high/low to envelope OHLC values, a missing volume 0. */
+export function sanitizeBar(bar: OHLCBar): OHLCBar {
   return {
     ...bar,
     high: Math.max(bar.open, bar.high, bar.low, bar.close),
@@ -32,6 +32,32 @@ function sanitizeBar(bar: OHLCBar): OHLCBar {
     volume: bar.volume !== undefined ? Math.max(0, bar.volume) : 0,
   };
 }
+
+/** Whether two bars have the same time, prices and volume. */
+export function sameBar(a: OHLCBar, b: OHLCBar): boolean {
+  return a === b || (a.time === b.time && a.open === b.open && a.high === b.high && a.low === b.low && a.close === b.close && a.volume === b.volume);
+}
+
+/**
+ * The index of the bar at `time` in `series` (in its unit), looking back from
+ * the newest: corrections are to recent bars, so this costs their distance
+ * from the end. -1 when no bar has that time.
+ */
+export function lastIndexOfTime(series: readonly { time: number }[], time: number): number {
+  for (let i = series.length - 1; i >= 0; i--) {
+    if (series[i].time === time) return i;
+    if (series[i].time < time) return -1;
+  }
+  return -1;
+}
+
+/** What `DataManager.replaceBar` did: the bar's index (-1: not loaded, or a bar it can't take), and whether its values changed. */
+export interface BarReplacement {
+  readonly index: number;
+  readonly changed: boolean;
+}
+
+const NOT_LOADED: BarReplacement = { index: -1, changed: false };
 
 /**
  * `time` in the unit of `series`. A series has one unit, read off its newest
@@ -116,6 +142,23 @@ export class DataManager {
       return;
     }
     this.data[this.data.length - 1] = sanitized;
+  }
+
+  /**
+   * The loaded bar with the same time, given new values, repaired as
+   * `setData` repairs a bar. A bar that, repaired, is the one loaded is
+   * not written (`changed: false`): a feed sending its closed bars again,
+   * without volume or with a high under its close, costs nothing.
+   */
+  replaceBar(bar: OHLCBar): BarReplacement {
+    if (!isValidBar(bar)) return NOT_LOADED;
+    const timed = this.withSeriesTime(bar);
+    const index = lastIndexOfTime(this.data, timed.time);
+    if (index < 0) return NOT_LOADED;
+    const repaired = sanitizeBar(timed);
+    if (sameBar(this.data[index], repaired)) return { index, changed: false };
+    this.data[index] = repaired;
+    return { index, changed: true };
   }
 
   updateLastBarFromTick(tick: { price: number; volume?: number; time: number }): void {

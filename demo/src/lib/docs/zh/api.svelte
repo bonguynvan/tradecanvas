@@ -27,12 +27,17 @@
     <tr><td><code>appendBars(bars)</code></td><td>批量追加；指标只重新计算一次。</td></tr>
     <tr><td><code>updateLastBar(bar)</code></td><td>修改当前正在形成的K线。</td></tr>
     <tr><td><code>updateLastBarFromTick(tick)</code></td><td>把一笔 tick 合并进最后一根K线。</td></tr>
+    <tr><td><code>updateBar(bar)</code></td><td>修正一根已加载的K线：时间相同的那根，无论它在序列中的哪个位置。视图保持不变；没有已加载的K线是这个时间时返回 false。</td></tr>
     <tr><td><code>getData()</code></td><td>读取原始 OHLC 序列。</td></tr>
   </tbody>
 </table>
 
 <p id="live-price">
   <code>appendBar</code>、<code>appendBars</code> 或 <code>updateLastBar</code> 送来的K线，以及一笔 tick，就是实时价格：价格线、警报和订单的盈亏都跟随它，就像跟随已连接的数据流和 <code>setCurrentPrice</code> 一样。新K线会发出 <code>dataUpdate</code>；正在形成的K线上的 tick 不会。
+</p>
+
+<p id="corrections">
+  数据源修正的K线用 <code>updateBar(bar)</code> 传入：它替换 <code>time</code> 相同的已加载K线，无论其在序列中的位置，并返回 <code>true</code>。指标从这根K线起重新计算，Heikin-Ashi、Renko 等由K线构建的图表类型随之更新，视图停在原处；下一帧之前的多次修正只计算一次，从最早的那根开始。没有已加载的K线是这个时间（新K线用 <code>appendBar</code>，更早的K线用 <code>prependBars</code>），或图表不接受这根K线时，它返回 <code>false</code>，什么也不改变。它不是实时价格：订单和警报不跟随它，不会因它触发警报，指标线上的警报也不会按修正后的值重新检查。修正的是最后一根K线时，价格线随之移动，与 <code>setData</code> 之后相同。回放期间它修正的是实时序列，回放结束后显示；延长交易时段隐藏时，时段外的K线在时段重新显示后出现。再次发送与已加载相同的K线不会改变任何东西；缺少成交量按 0 处理，与 <code>setData</code> 相同，所以请发送完整的K线。它会发送 <code>dataUpdate</code>，内容为 <code>{'{'} kind: 'correction', time, index {'}'}</code>。在 ChartWidget 中，<code>widget.getChart().updateBar(bar)</code> 修正已连接数据源的K线；用 <code>setData</code> 交给组件的K线是它重新构建各周期所用的副本，所以对它们的修正只保留到下一次切换周期（针对这种情况的组件方法稍后提供）。
 </p>
 
 <p id="bar-times">
@@ -117,7 +122,7 @@ chart.getEffectiveTimeZone()           // 它代表的时区：在 HOSE 上为 '
 </p>
 
 <p>同样的效果也可以通过代码实现：</p>
-<pre><code>{`chart.setAutoScale(false)  // freeze the current price range
+<pre><code>{`chart.setAutoScale(false)  // hold the price range on screen (a new series is fitted once)
 chart.setLogScale(true)    // switch to logarithmic price scale
 chart.setInvertScale(true) // upside down (Alt+I in the widget)
 chart.fitContent()         // zoom out to all data (Alt+R in the widget, with auto scale)
@@ -226,15 +231,44 @@ chart.on('symbolSeriesRequest', async ({ payload }) =>
 chart.getRequiredSymbols()                           // what to fetch again on a new interval
 chart.setPaneScale(spreadId, { percent: true })     // a pane in percent of its first value`}</code></pre>
 <p>
+  百分比对比线从屏幕上第一根K线的主品种收盘价开始，也就是百分比坐标读作 0% 的价格，并从另一个品种自己在屏幕上的第一根K线算起；
+  K线开始得较晚的品种也从 0% 开始。价格坐标设为百分比时（<code>chart.setScaleMode('percentage')</code>），
+  每条线读出的就是它自屏幕上第一根K线以来的涨跌幅，平移图表时随之变化。线的标签在线的末端。
+  <code>chart.getCompareValues(barIndex?)</code> 给出每条线在某根K线（默认最后一根）上的数值，便于自制图例：<code>{'{'} id, label, color, visible, close, change, stale {'}'}</code>，
+  其中 <code>close</code> 是另一个品种在该K线或之前的收盘价，<code>change</code> 是其百分比涨跌幅，与线上读到的一致。
+  超过另一个品种最后一根K线时（K线只获取了一次，而图表仍在继续更新），返回其最后的收盘价，并带 <code>stale: true</code>。
+  <code>chart.setCompareVisible(id, false)</code> 隐藏一条线，并把它排除在自动坐标之外。
+</p>
+<p>
+  Renko、Kagi、Line Break、P&amp;F 和 Range Bars 不绘制对比线：它们的K线只是从第一根往后计数，没有自己的时间，
+  在这些图上画线会在错误的K线上读取另一个品种。在这些图表类型上，对比线不计入自动坐标，
+  <code>getCompareValues()</code> 无论问哪根K线，都给出每个品种在最新一根数据K线上的收盘价，并带 <code>change: null</code>。
+</p>
+<pre><code>{`chart.setScaleMode('percentage')       // each line reads its change on the axis
+chart.getCompareValues()               // [{ id: 'eth', label: 'ETHUSDT', color, visible, close: 2650.4, change: -1.82, stale: false }]
+chart.getCompareValues(barIndex)       // at a bar: the one under the cursor
+chart.setCompareVisible('eth', false)  // hidden, and out of the auto scale`}</code></pre>
+<p>
   在 ChartWidget 中，工具栏上的对比（以及对象树中的 +）会打开对比对话框：搜索品种，在<strong>添加方式</strong>下选择对比方式
   （涨跌幅、独立坐标、独立副图、价差、比值，或按价格或收益率计算的相关性），想添加多少个都可以。已在对比的品种列在最前面，
   每个都标出其对比方式，并带一个移除按钮。下次打开时，对话框默认使用上次用过的方式。
+</p>
+<p>
+  在 ChartWidget 中，只要有品种以百分比方式对比，价格坐标就会切换为百分比；最后一个对比移除后，恢复为你原来的坐标。
+  对数、百分比或指数化到 100 的坐标保持不变；对比期间你自己选择的坐标（状态栏的 % 或 log、图表菜单、设置）会被保留，
+  最后一个对比移除后也不例外。这个百分比坐标从不保存：布局和分享链接保留的是你自己的坐标。图例在指标上方列出每个以百分比对比的品种，
+  以其线条颜色标记，显示其价格以及在光标所在K线（否则为最后一根）上的涨跌幅，并带一个隐藏用的眼睛按钮和一个移除按钮。
+  它的K线按图表的深度获取；图表加载更早的K线时，只补取新增的那一段（数据源没有 <code>fetchHistoryBefore</code> 时，只要还有更早的K线，就按图表的深度逐个重新获取），
+  因此它的线与图表从同一处开始。
+  在不绘制对比线的图表类型上，ChartWidget 保持你的坐标不变，并把每个对比品种的图例行变暗，并在提示和屏幕阅读器中说明原因；
+  回到会绘制对比线的类型时，百分比坐标随之恢复。
 </p>
 
 <h3>导出数据</h3>
 <p>
   以 CSV 或 JSON 导出K线，每条指标线各占一列，列名与图例中的名称一致。ChartWidget 的图表右键菜单中有
-  <strong>导出数据 (CSV)</strong>。
+  <strong>导出数据 (CSV)</strong>。带小数的数字写到 15 位有效数字，因此由更小K线累加的成交量写作
+  40.37，而不是 40.370000000000005。
 </p>
 <pre><code>{`chart.exportAllData('csv', 'btc-1h.csv')                 // every bar loaded
 chart.exportVisibleData('json', undefined, { indicators: false })
@@ -300,9 +334,9 @@ chart.isExtendedHoursVisible()`}</code></pre>
 <pre><code>{`chart.setPeriodLevelsVisible(true)
 chart.setPeriodLevelsPeriod('week')   // 'day' (PDH/PDL/PDC) | 'week' (PWH/PWL/PWC)
 
-// pure computation is exported
+// pure computation is exported; the chart passes the exchange's zone (left out, the days are UTC's)
 import { computePeriodLevels } from '@tradecanvas/core'
-const levels = computePeriodLevels(bars, 'day')  // [{ id, label, price }]`}</code></pre>
+const levels = computePeriodLevels(bars, 'day', 'Australia/Sydney')  // [{ id, label, price }]`}</code></pre>
 
 <h3>市场轮廓（TPO）</h3>
 <p>
@@ -320,16 +354,16 @@ chart.setMarketProfileConfig({
   highlightPoC: true, // dashed line at the point of control
 })
 
-// split into one mini-profile per calendar-day session
+// split into one mini-profile per trading day, in the exchange's zone
 chart.setMarketProfileConfig({ splitBySession: true })
 
 // classic TPO letters per session (when zoomed in enough to be legible)
 chart.setMarketProfileConfig({ splitBySession: true, letters: true })
 
-// pure computation is exported too
+// pure computation is exported too; give the sessions the exchange's zone, as the chart does (left out, UTC's days)
 import { computeMarketProfile, computeSessionProfiles } from '@tradecanvas/core'
 const profile = computeMarketProfile(bars, priceMin, priceMax, { buckets: 48 })
-const sessions = computeSessionProfiles(bars, priceMin, priceMax)  // per-day TPO`}</code></pre>
+const sessions = computeSessionProfiles(bars, priceMin, priceMax, {}, 'Australia/Sydney')  // per-day TPO`}</code></pre>
 
 <h3>触控与移动端</h3>
 <table>
@@ -368,7 +402,7 @@ const sessions = computeSessionProfiles(bars, priceMin, priceMax)  // per-day TP
 chart.on('orderModify', e => /* OrderModifyPayload */)
 chart.on('signalMarkerAdd', e => /* { marker } */)
 chart.on('tradeZoneAdd', e => /* { zone } */)
-chart.on('dataUpdate', e => /* setData 和新K线时为 { kind: 'bars', length }；其他情况 kind 为 'alert' | 'bracket' | 'connection' | 'error' */)
+chart.on('dataUpdate', e => /* setData 和新K线时为 { kind: 'bars', length }；修正K线时为 { kind: 'correction', time, index }；其他情况 kind 为 'alert' | 'bracket' | 'connection' | 'error' */)
 chart.on('ordersChange', e => /* { orders } */)
 chart.on('positionsChange', e => /* { positions } */)
 chart.on('executionFill', e => /* { side, price, quantity, reason, pnl } */)
@@ -377,6 +411,8 @@ chart.on('stateChange', () => /* 画线、指标、提醒、图表类型或主�
 chart.on('paneChange', e => /* { instanceId, change: 'collapsed' | 'maximized' | 'order' } */)
 chart.on('chartTypeChange', e => /* { type, previous } */)
 chart.on('symbolChange', e => /* { symbol, previous } */)
+chart.on('marketChange', e => /* { market }: setMarket */)
+chart.on('compareChange', e => /* { id, change: 'add' | 'remove' | 'data' | 'visible' }: addCompareSymbol and the rest */)
 chart.on('timeframeChange', e => /* { timeframe, previous } */)
 chart.on('historyChange', e => /* { canUndo, canRedo } */)
 chart.on('drawingSelect', e => /* { ids, primary } */)
@@ -557,8 +593,8 @@ widget.setSymbols(await loadMarkets())   // 来自你服务器的 SymbolInfo[]�
 
 <h3>可分享视图（深层链接）</h3>
 <p>
-  把整个视图——品种、周期、图表类型、价格坐标、指标（含参数）和画线——编码为一个紧凑的、
-  可安全放入 URL 的字符串，用于深层链接。设置 <code>shareUrl: true</code> 后，
+  把整个视图——品种、周期、图表类型、价格坐标、指标（含参数）、画线，以及相对默认值改过的
+  图表设置（时区和数字格式除外）——编码为一个紧凑的、可安全放入 URL 的字符串，用于深层链接。设置 <code>shareUrl: true</code> 后，
   组件会在加载时恢复 <code>#tcw=…</code> 哈希，命令面板中的“分享视图”操作
   会把链接复制到剪贴板。
 </p>
@@ -570,8 +606,8 @@ await widget.copyShareLink()            // copy "<url>#tcw=<token>"`}</code></pr
 
 <h3>命名布局</h3>
 <p>
-  工具栏上的布局按钮会以一个名称保存图表：品种、周期、价格坐标、图表类型、指标、画线和提醒
-  （不包括主题，主题由查看者自己决定）。可从该按钮的菜单中打开、重命名和删除布局；
+  工具栏上的布局按钮会以一个名称保存图表：品种、周期、价格坐标、图表类型、指标、画线、提醒和
+  <a href="#chart-settings">图表设置</a>（不包括主题、时区和数字格式，这些由查看者自己决定）。可从该按钮的菜单中打开、重命名和删除布局；
   当前打开的布局会在变化时自动保存，按 <kbd>Ctrl/⌘ S</kbd> 也可以保存。
   除非你提供一个 <code>storage</code>，布局都保存在当前浏览器的 <code>localStorage</code> 中。
   <code>storage</code> 由四个方法组成，每个方法都可以返回 promise。
@@ -606,6 +642,63 @@ await widget.applyLayoutContent(json)`}</code></pre>
   因此保存绝不会写入在它之后打开的布局。
 </p>
 
+<h3 id="chart-settings">图表设置</h3>
+<p>
+  设置对话框中的开关和选项（成交量分布和市场轮廓、摆动点标记、交易时段阴影、前一周期价位、网格、
+  图例、十字光标、价格坐标、时区、数字格式）就是组件的图表设置。用 <code>getSettings()</code>
+  读取（返回一份副本）；用 <code>setSettings(patch)</code> 修改其中一部分，它会丢弃无法识别的内容，
+  把数值限制在对话框的范围内，并且不记录撤销步骤；用 <code>onSettingsChange(listener)</code>
+  监听每次变化，它返回一个用于停止监听的函数。对话框点“确定”关闭时调用一次，点“取消”或没有任何
+  改变时不会调用。图表还没有K线时，<code>setSettings</code> 会保持自动缩放开启：关闭它是固定屏幕上的
+  价格范围，而此时还没有范围。因此 <code>onSettingsChange</code> 给出的设置（拖动价格轴后自动缩放为关闭）
+  可以在构造函数之后立即安全地传回。设置 <code>persistSettings: true</code> 后，组件会把它们保存在当前浏览器中，
+  下次访问时恢复。
+</p>
+<pre><code>{`const widget = new ChartWidget(host, {
+  chartOptions: { timeZone: 'UTC' },
+  persistSettings: true,            // 或 { key: 'myapp:settings' }
+})
+
+widget.setSettings({ volumeProfileVisible: true, timezone: 'exchange' })
+widget.getSettings().timezone       // 'exchange'
+
+const stop = widget.onSettingsChange((settings) => {
+  api.put('/me/chart-settings', settings)   // 比如存到你的服务器
+})
+stop()`}</code></pre>
+<p>
+  <code>getSettings()</code> 也会读回直接在 <code>getChart()</code> 上设置的内容，
+  因此布局或链接会按实际情况保存。图表通过
+  <code>isVolumeVisible()</code>、<code>isLegendVisible()</code>、
+  <code>isBarCountdownVisible()</code>、<code>isIndicatorValueLabelsVisible()</code>、
+  <code>isLeftPriceScaleVisible()</code>、<code>getMarketProfileConfig()</code>、
+  <code>getDepthHeatmapConfig()</code>、<code>getPivotMarkersConfig()</code> 和
+  <code>getPeriodLevelsPeriod()</code> 给出这些设置，各叠加层另有自己的 <code>is…Visible()</code>。
+</p>
+<ul>
+  <li><strong>persistSettings</strong> 按浏览器保存用户相对你的值所做的改动。保存的值优先于
+    <code>chartOptions</code>，“重置”则回到你的值。它不保存对数和自动缩放这两个标志，也不保存
+    各图表类型自己的设置（如 Renko 砖块大小），这些属于图表本身的状态。页面上的每个组件请各用
+    一个 <code>key</code>；网格会自动为它的每个图表分配一个。它分不清改动来自谁：你用
+    <code>setSettings</code> 设置的值（比如在 <code>onReady</code> 里），以及打开的布局带来的设置，
+    也会被当作用户的选择保存下来，并在下次访问时优先于 <code>chartOptions</code>，即使你的代码已不再设置它们。
+    把某项设回你在 <code>chartOptions</code> 中的值，它就不再被保存。打开的分享链接带来的设置是别人的选择：
+    只在那次访问中生效，不会被保存，也不会调用 <code>onSettingsChange</code> 的监听器（下一次改动会一并告知）。</li>
+  <li><strong>命名布局</strong> 保存全部设置，但时区和数字格式除外，它们由查看者自己决定；自动缩放也除外，
+    在价格轴上拖动一下就会关闭它。在布局的 JSON 中，它们位于 <code>settings</code> 下，只有价格刻度及其翻转
+    各有自己的字段，图表类型自己的设置则在图表状态中。
+    在此之前保存的布局不含这些设置，打开时设置保持不变。旧版本的库打开新布局时会忽略它们，
+    其自动保存会把布局写回且不再包含它们。</li>
+  <li><strong>分享链接</strong> 携带发送者相对默认值改过的设置，但不含时区、数字格式和自动缩放。
+    链接中图表类型自己的设置只作用于发送者设置过的类型和正在显示的类型（发送者未改动时即为默认值）；查看者对其他类型的设置保持不变。
+    对于由你的 <code>features</code> 决定初始状态的开关（图例、成交量、K 线剩余时间、指标数值标签），
+    默认值就是 <code>features</code> 设定的状态，因此发送者的应用关闭的开关不会作为改动发出。</li>
+  <li><strong>已关闭的功能</strong>：当你的 <code>features</code> 关闭了图例、成交量、K 线剩余时间或对数刻度时，
+    无论是保存的、分享的、打开的、设置的值，还是应用的图表模板，都无法把它们打开；设置对话框中也不再提供图例或成交量的开关和颜色。</li>
+  <li><strong>按品种保存的布局</strong>（<code>persistLayouts</code>）和
+    <code>chart.saveState()</code> 包含图表类型自己的设置（这是图表状态的一部分），不包含其他任何设置。</li>
+</ul>
+
 <h3>按品种保存的布局</h3>
 <p>
   另外，还可以自动把每个品种的指标组合、画线、提醒和图表类型
@@ -622,6 +715,7 @@ await widget.applyLayoutContent(json)`}</code></pre>
 widget.clearSavedLayout('BTCUSDT')`}</code></pre>
 <p>
   切换品种和销毁组件时都会立即写入布局，因此用户离开页面时不会丢失任何内容。
+  图表设置中，它们只保存图表类型自己的设置；其余的由 <code>persistSettings</code> 保存。
 </p>
 
 <h3>拖放导入数据</h3>
@@ -651,14 +745,22 @@ chart.setData(data)`}</code></pre>
 })
 widget.setData(oneMinuteBars)   // base series; clicking 4h/1d/1w resamples it
 
-// Or use the pure function directly
-import { resampleOHLCV, inferTimeframeMs } from '@tradecanvas/chart'
+// Or build bars yourself
+import { resampleBars, timeframeBucketStart } from '@tradecanvas/chart'
 
-const hourly = resampleOHLCV(oneMinuteBars, '1h')   // OHLC merged, volume summed
-const fourHour = resampleOHLCV(oneMinuteBars, '4h', { weekStartsOn: 1 })`}</code></pre>
+const hourly = resampleBars(oneMinuteBars, '1h')   // OHLC merged, volume summed
+const days = resampleBars(oneMinuteBars, '1d', { timeZone: 'Asia/Ho_Chi_Minh' })   // from 00:00 there
+const dayStart = timeframeBucketStart(trade.time, '1d', { timeZone: 'Asia/Ho_Chi_Minh' })`}</code></pre>
 <p>
-  分组遵循日历规则：日内和日线周期对齐 UTC 纪元边界，周线对齐所配置的一周起始日，
-  月 / 季度 / 年对齐日历边界。输入的K线永远不会被修改。
+  分组遵循日历规则：分钟和小时（1h 及更短）从 Unix 纪元起按周期的整数倍向下取整。日、周（从所配置的一周起始日开始）、
+  月、季度和年从交易所的午夜开始，能整除一天的小时周期（2h、3h、4h、6h、8h、12h）也一样。对于传给 <code>widget.setData</code> 的K线，
+  依据品种的 <code>timeZone</code>（<code>setSymbolInfo</code>），其次是市场的（<code>setMarket</code>），再次是 UTC。
+  数据源缺少的周期从其 <code>resolveSymbol</code> 给出的时区的午夜开始，没有则从 UTC 的午夜开始：市场的时区不会移动它们。调整时钟的那一天长 23 或 25 小时。时间戳为 00:00 UTC 的日线被视为其标明的日期，
+  因此在 UTC 以西，周一仍留在自己的那一周，周线保持 00:00 UTC 的时间戳。输入的K线永远不会被修改。
+</p>
+<p>
+  无论图表显示哪个时区，日线都显示它所代表的日期：时间戳为 00:00 UTC 的K线显示其 UTC 日期，从交易所午夜构建的K线显示交易所的日期
+  （时间轴、十字光标及其卡片、Alt 点击固定的提示框，以及屏幕阅读器读出的K线时间都是如此）。自己构建K线时，<code>timeframeBucketStart(time, timeframe, {'{'} timeZone {'}'})</code> 给出某个时刻所在K线的开始时间。
 </p>
 
 <h3>自选列表</h3>
@@ -731,7 +833,7 @@ chart.setSelectedDrawingStyle({ color: '#1fa874' })  // restyle the selected dra
 
 <h3>对象树</h3>
 <p>
-  按钮栏上的图层按钮（没有按钮栏时是工具栏上的）会在停靠区中打开对象树，列出所有已添加的指标和画线。
+  按钮栏上的图层按钮（没有按钮栏时是工具栏上的）会在停靠区中打开对象树，列出所有已添加的指标（名称与指标标签一致，如 EMA 20、Compare ETHUSDT）和画线。
   指标可以删除；每条画线都可以单独显示 / 隐藏、锁定 / 解锁、设置和删除，
   分组则连同其中的画线一起列出。
   默认启用——设置 <code>objectTree: false</code> 可关闭。画线控制对应以下调用：
@@ -763,16 +865,20 @@ chart.removeIndicator(instanceId)`}</code></pre>
   修改周期或颜色时无需先删除再重新添加。
 </p>
 <p>
-  对象树中的<strong>对比</strong>区域列出叠加为归一化折线的品种。
-  连接实时适配器时，点击其中的 + 按钮会打开对比对话框；以百分比方式添加的品种会通过 <code>adapter.fetchHistory</code>
-  获取历史数据（这样价格量级不同的品种可以共用一个坐标轴）。
+  对象树中的<strong>对比</strong>区域与对比对话框一样列出所有对比：每个品种附带其对比方式
+  （涨跌幅、独立坐标、独立副图、价差、比值或相关性）和一个移除按钮。
+  连接实时适配器时，点击其中的 + 按钮会打开对比对话框。无论哪种方式，组件都会先通过
+  <code>adapter.fetchHistory</code> 获取另一品种的 K 线再添加对比；K 线没有取到（请求失败，或此周期没有 K 线）时不会添加任何内容，并以提示说明原因。
+  由保存的状态恢复的对比在 K 线加载失败时仍保留在图表上，切换到有 K 线的周期后即会显示。
   切换周期时，对比数据会自动重新获取。对应的代码调用：
 </p>
 <pre><code>{`widget.addCompareSymbol('ETHUSDT')   // fetches + overlays (needs an adapter)
+await widget.addCompareSymbol('ETHUSDT', 'scale')  // its bars first; nothing added if they don't come
 
 // or drive the chart directly with your own data
 chart.addCompareSymbol('ETHUSDT', 'ETH', ethBars, '#627eea')
 chart.setCompareMode('percent')      // 'percent' | 'absolute'
+chart.setScaleMode('percentage')     // each line's change, read on the axis
 chart.removeCompareSymbol('ETHUSDT')`}</code></pre>
 
 <h3>价格提醒</h3>

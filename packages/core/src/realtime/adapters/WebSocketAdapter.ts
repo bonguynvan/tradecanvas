@@ -10,6 +10,7 @@ import type {
   RawTick,
   TimeFrame,
 } from '@tradecanvas/commons';
+import { NewestBar } from './newestBar.js';
 
 /** Minimal structural subset of the browser WebSocket this base depends on. */
 export interface WebSocketLike {
@@ -30,7 +31,10 @@ export interface WsParseResult {
   /** Whether `bar` is finalized (default false). */
   closed?: boolean;
   /** An explicit trade tick. When omitted but `bar` is present, a tick is
-   *  synthesized from the bar close (matches BinanceAdapter). */
+   *  synthesized from the bar close (matches BinanceAdapter), unless the bar
+   *  is older than the newest the connection has sent or its history ends
+   *  on, or is that history's last bar sent again closed at the close it
+   *  was served at, before a forming frame of it. */
   tick?: RawTick;
 }
 
@@ -86,6 +90,8 @@ export class WebSocketAdapter implements DataAdapter {
 
   private listeners = new Map<DataAdapterEventType, Set<DataAdapterListener>>();
   private readonly opts: WebSocketAdapterOptions;
+  /** Which bar frames make a tick: those of the newest bar the connection has sent, or its history ends on. */
+  private readonly newestBar = new NewestBar();
   /** Present when the options give a way to fetch older bars. */
   readonly fetchHistoryBefore?: (symbol: string, timeframe: TimeFrame, before: number, limit: number) => Promise<OHLCBar[]>;
   readonly searchSymbols?: (query: string, options?: SymbolSearchOptions) => Promise<SymbolInfo[]>;
@@ -103,6 +109,7 @@ export class WebSocketAdapter implements DataAdapter {
 
   connect(config: DataAdapterConfig): void {
     this.config = config;
+    this.newestBar.reset(config.symbol, config.timeframe);
     this.openSocket();
   }
 
@@ -135,7 +142,12 @@ export class WebSocketAdapter implements DataAdapter {
   }
 
   fetchHistory(symbol: string, timeframe: TimeFrame, limit?: number): Promise<OHLCBar[]> {
-    return this.opts.fetchHistory(symbol, timeframe, limit ?? this.opts.defaultHistoryLimit ?? 500);
+    const history = this.opts.fetchHistory(symbol, timeframe, limit ?? this.opts.defaultHistoryLimit ?? 500);
+    // A connection to them starts from its last bar.
+    return Promise.resolve(history).then((bars) => {
+      this.newestBar.serve(symbol, timeframe, bars);
+      return bars;
+    });
   }
 
   on<T = unknown>(event: DataAdapterEventType, listener: DataAdapterListener<T>): void {
@@ -200,12 +212,16 @@ export class WebSocketAdapter implements DataAdapter {
       }
       if (!result) return;
 
+      // A frame of a bar already past (a late final, a revision, a stale
+      // frame, the history's last sent again closed as served) still goes
+      // out as a bar, but its close is no live price.
+      const live = result.bar ? this.newestBar.admit(result.bar, result.closed ?? false) : false;
       if (result.bar) {
         this.emitEvent('bar', { bar: result.bar, closed: result.closed ?? false });
       }
       if (result.tick) {
         this.emitEvent('tick', result.tick);
-      } else if (result.bar) {
+      } else if (result.bar && live) {
         this.emitEvent('tick', {
           time: Date.now(),
           price: result.bar.close,

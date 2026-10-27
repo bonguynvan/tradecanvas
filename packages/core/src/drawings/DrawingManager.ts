@@ -84,6 +84,8 @@ export class DrawingManager {
   private undoRedo: UndoRedoManager | null = null;
   private magnetMode: MagnetMode = 'none';
   private dataGetter: (() => OHLCBar[]) | null = null;
+  /** Moves when a bar of the same array was replaced: see `setDataGetter`. */
+  private dataRevision: () => number = () => 0;
   private displayDataGetter: (() => OHLCBar[]) | null = null;
   /** Keep the tool after a drawing is finished, to draw several in a row. */
   private stayInDrawingMode = false;
@@ -100,7 +102,7 @@ export class DrawingManager {
 
   register(plugin: DrawingPlugin): void {
     this.registry.set(plugin.descriptor.type, plugin);
-    if (this.dataGetter) plugin.setDataGetter?.(this.dataGetter);
+    if (this.dataGetter) plugin.setDataGetter?.(this.dataGetter, this.dataRevision);
   }
 
   setEventCallback(cb: DrawingEventCallback): void {
@@ -123,10 +125,15 @@ export class DrawingManager {
     return this.magnetMode;
   }
 
-  /** The chart's bars, for legacy anchors and the tools drawn from bars. */
-  setDataGetter(getter: () => OHLCBar[]): void {
+  /**
+   * The chart's bars, for legacy anchors and the tools drawn from bars, and
+   * their revision, which moves when one was replaced in the same array (a
+   * correction): what a tool computed from them is stale then.
+   */
+  setDataGetter(getter: () => OHLCBar[], revision: () => number = () => 0): void {
     this.dataGetter = getter;
-    for (const plugin of this.registry.values()) plugin.setDataGetter?.(getter);
+    this.dataRevision = revision;
+    for (const plugin of this.registry.values()) plugin.setDataGetter?.(getter, revision);
   }
 
   /** Set a separate getter for display data (e.g. Heikin Ashi transformed). Used by magnet snap. */
@@ -1090,6 +1097,11 @@ export class DrawingManager {
   render(ctx: CanvasRenderingContext2D, viewport: ViewportState): void {
     // Clip to chart area so drawings don't bleed into axis areas
     ctx.save();
+    // The context carries its text state over from the last frame, and the
+    // time axis, drawn after the drawings, leaves it right-aligned. Each pass
+    // starts from the canvas's own baseline and a left alignment instead.
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'alphabetic';
     ctx.beginPath();
     ctx.rect(viewport.chartRect.x, viewport.chartRect.y, viewport.chartRect.width, viewport.chartRect.height);
     ctx.clip();
@@ -1098,13 +1110,13 @@ export class DrawingManager {
       if (!this.shown(drawing)) continue;
       const plugin = this.registry.get(drawing.type);
       if (!plugin) continue;
-      const isSelected = this.selection.has(drawing.id);
-      plugin.render(ctx, drawing, viewport, isSelected);
+      renderIsolated(ctx, plugin, drawing, viewport, this.selection.has(drawing.id));
     }
 
     // The drawing being made, with the anchor under the pointer.
     const preview = this.creator.previewState();
-    if (preview) this.registry.get(preview.type)?.render(ctx, preview, viewport, false);
+    const previewPlugin = preview ? this.registry.get(preview.type) : undefined;
+    if (preview && previewPlugin) renderIsolated(ctx, previewPlugin, preview, viewport, false);
 
     ctx.restore();
   }
@@ -1325,6 +1337,22 @@ export class DrawingManager {
     }
     return false;
   }
+}
+
+/**
+ * One drawing in a save/restore of its own, so the alignment, alpha or dash
+ * it sets, a host's drawing plugin included, never reaches the next one.
+ */
+function renderIsolated(
+  ctx: CanvasRenderingContext2D,
+  plugin: DrawingPlugin,
+  state: DrawingState,
+  viewport: ViewportState,
+  selected: boolean,
+): void {
+  ctx.save();
+  plugin.render(ctx, state, viewport, selected);
+  ctx.restore();
 }
 
 /** A group name as kept: trimmed and at most `MAX_GROUP_NAME` long. */

@@ -9,24 +9,33 @@ import type {
   SymbolInfo,
   TimeFrame,
 } from '@tradecanvas/commons';
-import { DEFAULT_STREAM_CONFIG, DEFAULT_RECONNECT } from '@tradecanvas/commons';
+import { DEFAULT_STREAM_CONFIG, DEFAULT_RECONNECT, barTimeUnit, isValidTimeZone, normalizeBarTime, timeframeBucketStart, timeframeSpansDays } from '@tradecanvas/commons';
 import { Emitter } from './Emitter.js';
 import { TickAggregator } from './TickAggregator.js';
 import { ReconnectManager } from './ReconnectManager.js';
 import { CurrentPriceLine } from './CurrentPriceLine.js';
-import { withResampling } from './adapters/ResamplingAdapter.js';
+import { ResamplingAdapter, withResampling } from './adapters/ResamplingAdapter.js';
 import { withTickBars } from './TickBars.js';
 
 export interface StreamEvents {
-  /** Historical data loaded */
+  /**
+   * Historical data loaded. After a reconnect whose history ends before the
+   * bar the stream was building, that bar is on top, its trades kept.
+   */
   snapshot: OHLCBar[];
   /** New closed bar appended */
   barClose: AggregatedBar;
   /** Current forming bar updated */
   barUpdate: AggregatedBar;
+  /**
+   * A closed bar older than the newest: the feed's last word on a bar
+   * already past (a late final, a revision). No live price: the chart
+   * corrects the bar with that time (`updateBar`).
+   */
+  barCorrection: OHLCBar;
   /** Raw tick received */
   tick: RawTick;
-  /** Current price changed */
+  /** The current price changed, or the close its change is measured from did (a new bar opening at the last close) */
   priceChange: { price: number; previousClose: number | null };
   /** The best bid and ask changed (from ticks that carry them) */
   quote: { bid?: number; ask?: number };
@@ -58,6 +67,24 @@ export interface StreamEvents {
  */
 /** Silence after which a connection the page comes back to is taken for dead (a quiet market still sends a heartbeat or a tick). */
 const RESUME_STALE_MS = 20_000;
+const DAY_MS = 86_400_000;
+
+/**
+ * A reconnect's history and, on top, the bar the stream was building after
+ * its last, in the history's time unit: the bars take the place of the ones
+ * shown from the history's first on, so the forming bar stays, and alerts
+ * cross from its close.
+ */
+function withForming(history: OHLCBar[], forming: AggregatedBar | null): OHLCBar[] {
+  if (!forming) return history;
+  const { time, open, high, low, close, volume } = forming;
+  return [...history, { time: normalizeBarTime(time) / barTimeUnit(history), open, high, low, close, volume }];
+}
+
+/** Whether a bar of `tf` at `time` starts where `zone`'s midnight counts from, and not on the epoch. */
+function onZoneGrid(time: number, tf: TimeFrame, zone: string): boolean {
+  return timeframeBucketStart(time, tf, { timeZone: zone }) === time && timeframeBucketStart(time, tf) !== time;
+}
 
 export class StreamManager extends Emitter<StreamEvents> {
   private config: StreamConfig | null = null;
@@ -69,11 +96,21 @@ export class StreamManager extends Emitter<StreamEvents> {
   private state: ConnectionState = 'disconnected';
   private lastPrice: number | null = null;
   private previousClose: number | null = null;
+  /** The previous close the last `priceChange` carried. */
+  private sentPreviousClose: number | null = null;
+  /** When the bar `previousClose` is the close of starts, ms: a correction of it moves the close. */
+  private previousCloseTime: number | null = null;
   private unsubscribers: (() => void)[] = [];
   private heartbeatTimer: ReturnType<typeof setInterval> | null = null;
   private lastMessageTime = 0;
   /** Bumped by every connect attempt and by disconnect — see doConnect. */
   private connectSeq = 0;
+  /** The exchange's zone, where days built from ticks start (`setTimeZone`). */
+  private timeZone: string | null = null;
+  /** When the history's last bar starts, ms (null: no history yet): bars from ticks follow its grid. */
+  private historyEnd: number | null = null;
+  /** The wrapper that builds the timeframes the feed lacks (null: it serves every one): bars from ticks start where its do. */
+  private resampler: ResamplingAdapter | null = null;
 
   constructor() {
     super();
@@ -89,10 +126,16 @@ export class StreamManager extends Emitter<StreamEvents> {
 
     // Timeframes the feed lacks (7m, 90m…) are built from one it has.
     // Tick timeframes (100T) are built from the feed's trades.
-    const adapter = withTickBars(withResampling(config.adapter));
+    const resampled = withResampling(config.adapter);
+    this.resampler = resampled instanceof ResamplingAdapter ? resampled : null;
+    // A fresh load: no bars of the symbol are kept to merge its history with.
+    this.resampler?.renewZone(config.symbol);
+    const adapter = withTickBars(resampled);
     this.config = { ...DEFAULT_STREAM_CONFIG, ...config, adapter } as StreamConfig;
     this.adapter = adapter;
     this.aggregator = new TickAggregator(config.timeframe);
+    this.historyEnd = null;
+    this.applyTickZone();
 
     // Replace reconnector — clean up old listeners first
     this.reconnector.removeAllListeners();
@@ -106,8 +149,14 @@ export class StreamManager extends Emitter<StreamEvents> {
       this.updatePrice(bar.close);
     });
     this.aggregator.on('barClose', (bar) => {
-      this.previousClose = bar.close;
+      this.setPreviousClose(bar);
       this.emit('barClose', bar);
+    });
+    // A bar already past, with its final values: not a live price, but the
+    // reference the price's change is measured from when it is the last closed bar.
+    this.aggregator.on('correction', (bar) => {
+      if (normalizeBarTime(bar.time) === this.previousCloseTime) this.previousClose = bar.close;
+      this.emit('barCorrection', bar);
     });
 
     // Wire adapter events
@@ -135,8 +184,12 @@ export class StreamManager extends Emitter<StreamEvents> {
     this.aggregator?.removeAllListeners();
     this.aggregator = null;
     this.config = null;
+    this.resampler = null;
+    this.historyEnd = null;
     this.lastPrice = null;
     this.previousClose = null;
+    this.previousCloseTime = null;
+    this.sentPreviousClose = null;
 
     this.setState('disconnected');
   }
@@ -159,7 +212,11 @@ export class StreamManager extends Emitter<StreamEvents> {
     this.aggregator?.setTimeframe(timeframe);
     this.lastPrice = null;
     this.previousClose = null;
+    this.previousCloseTime = null;
+    this.sentPreviousClose = null;
 
+    // Another symbol or timeframe is a new series; the same again is merged with the bars loaded.
+    if (symbol !== this.config.symbol || timeframe !== this.config.timeframe) this.resampler?.renewZone(symbol);
     this.config.symbol = symbol;
     this.config.timeframe = timeframe;
 
@@ -168,6 +225,22 @@ export class StreamManager extends Emitter<StreamEvents> {
 
   getConnectionState(): ConnectionState {
     return this.state;
+  }
+
+  /**
+   * The exchange's zone (null: UTC). Bars built from ticks (`aggregateTicks`)
+   * follow the history they continue: days, weeks and months start at the
+   * zone's midnight, stamped at 00:00 UTC of their date when the history's
+   * are; the hour frames that divide a day (2h to 12h) start there only when
+   * the history's do, and keep the epoch's grid, as a feed's own 4h bars
+   * do, otherwise. A chart sets it from the symbol's info and its market.
+   * Throws a RangeError for a zone the browser doesn't know, keeping the
+   * zone it has.
+   */
+  setTimeZone(zone: string | null): void {
+    if (zone !== null && !isValidTimeZone(zone)) throw new RangeError(`Unknown time zone: ${zone}`);
+    this.timeZone = zone;
+    this.applyTickZone();
   }
 
   getConnectionInfo(): ConnectionInfo {
@@ -183,6 +256,38 @@ export class StreamManager extends Emitter<StreamEvents> {
   }
 
   // --- Internal ---
+
+  /**
+   * Bars from ticks land on the history's bars: a feed's dated days, days at
+   * the exchange's midnight, and 4h bars on whichever grid the history's sit.
+   * A timeframe the feed lacks starts where the wrapper building it starts
+   * its bars, in the zone it keeps for the symbol: UTC days it built from
+   * hours (the feed named no zone) stay UTC's, whatever zone the chart has.
+   * Weeks and months it built from the feed's dated days hold the feed's
+   * dates, the exchange's: with no zone from the feed, a trade is dated in
+   * the chart's, as on the feed's own days.
+   */
+  private applyTickZone(): void {
+    const config = this.config;
+    if (!this.aggregator || !config) return;
+    const last = this.historyEnd;
+    const datedHistory = last !== null && last % DAY_MS === 0;
+    const built = this.resampler?.bucketFor(config.symbol, config.timeframe);
+    if (built) {
+      // Only bars built from dated days are dated: ones from hours start at the zone's midnight.
+      const dated = built.dates === true && datedHistory;
+      this.aggregator.setTimeZone(built.timeZone ?? (dated ? this.timeZone : null), dated);
+      return;
+    }
+    this.aggregator.setTimeZone(this.tickZone(config.timeframe, last), datedHistory);
+  }
+
+  /** The zone whose midnight bars of `timeframe` built from ticks start at (null: UTC's, or the epoch's grid for hours). */
+  private tickZone(timeframe: TimeFrame, last: number | null): string | null {
+    const zone = this.timeZone;
+    if (zone === null || timeframeSpansDays(timeframe)) return zone;
+    return last !== null && onZoneGrid(last, timeframe, zone) ? zone : null;
+  }
 
   private async doConnect(): Promise<void> {
     if (!this.config || !this.adapter) return;
@@ -203,12 +308,20 @@ export class StreamManager extends Emitter<StreamEvents> {
       // land on top of the newer one, so drop it.
       if (seq !== this.connectSeq || !this.adapter) return;
 
-      if (history.length > 0) {
-        this.previousClose = history[history.length - 1].close;
-        this.updatePrice(history[history.length - 1].close);
+      const last = history.length > 0 ? history[history.length - 1] : null;
+      this.historyEnd = last ? normalizeBarTime(last.time) : null;
+      this.applyTickZone();
+      this.seedAggregator(last);
+      // A reconnect whose history ends before the bar the stream was
+      // building: that bar's close is the market's now, the history's last
+      // an older one, which would move the price, the orders and the alerts back.
+      const forming = this.formingAfter(last);
+      if (last && !forming) {
+        this.setPreviousClose(last);
+        this.updatePrice(last.close);
       }
 
-      this.emit('snapshot', history);
+      this.emit('snapshot', withForming(history, forming));
 
       // 2. Start streaming
       this.adapter.connect({ symbol, timeframe });
@@ -304,12 +417,45 @@ export class StreamManager extends Emitter<StreamEvents> {
     }
   }
 
+  /** The close the price's change is measured from: `bar`'s. */
+  private setPreviousClose(bar: OHLCBar): void {
+    this.previousClose = bar.close;
+    this.previousCloseTime = normalizeBarTime(bar.time);
+  }
+
+  /**
+   * The history's last bar is the newest the stream has seen, on every
+   * connect and switch, so a bar older than it is a correction, never one
+   * of another symbol's. Built from trades, it is the bar the next trades
+   * go on building: a feed's history ends on the bar still forming. A
+   * reconnect keeps the aggregator: a history ending before the bar the
+   * trades were building leaves that bar, and its trades, as they were,
+   * unless they built it on buckets they no longer start on (`seed`).
+   */
+  private seedAggregator(last: OHLCBar | null): void {
+    if (!this.aggregator) return;
+    this.aggregator.seed(last ? last.time : -Infinity);
+    if (last && this.config?.aggregateTicks) this.aggregator.resume(last);
+  }
+
+  /** The bar the stream was building, when it is newer than the history's last (a reconnect's), or null. */
+  private formingAfter(last: OHLCBar | null): AggregatedBar | null {
+    const bar = this.aggregator?.getCurrentBar() ?? null;
+    if (!bar || (last && normalizeBarTime(bar.time) <= normalizeBarTime(last.time))) return null;
+    return bar;
+  }
+
+  /**
+   * The price, sent when it or the close it is measured from moved: a new bar
+   * opening at the last close is level with it, where the price line would
+   * still measure it from the close before.
+   */
   private updatePrice(price: number): void {
-    if (price !== this.lastPrice) {
-      this.lastPrice = price;
-      this.priceLine.setPrice(price, this.previousClose ?? undefined);
-      this.emit('priceChange', { price, previousClose: this.previousClose });
-    }
+    if (price === this.lastPrice && this.previousClose === this.sentPreviousClose) return;
+    this.lastPrice = price;
+    this.sentPreviousClose = this.previousClose;
+    this.priceLine.setPrice(price, this.previousClose ?? undefined);
+    this.emit('priceChange', { price, previousClose: this.previousClose });
   }
 
   private setState(state: ConnectionState): void {

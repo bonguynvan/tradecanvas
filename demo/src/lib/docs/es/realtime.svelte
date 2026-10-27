@@ -24,11 +24,12 @@ chart.connect({ adapter: new CoinbaseAdapter(), symbol: 'BTC-USD', timeframe: '1
 <h2>Interfaz DataAdapter</h2>
 <pre><code>{`interface DataAdapter {
   name: string
+  supportedTimeframes?: TimeFrame[]   // left out: it serves every timeframe
   connect(config): void
   disconnect(): void
   getConnectionState(): ConnectionState
   fetchHistory(symbol, timeframe, limit?): Promise<OHLCBar[]>
-  on(event, listener): void   // 'bar' | 'tick' | 'snapshot' | 'connectionChange' | 'error' | 'symbolInfo'
+  on(event, listener): void   // 'bar' | 'tick' | 'connectionChange' | 'error' | 'symbolInfo'
   off(event, listener): void
   dispose(): void
 
@@ -49,11 +50,44 @@ chart.connect({ adapter: new CoinbaseAdapter(), symbol: 'BTC-USD', timeframe: '1
   <code>currency</code>, <code>timeZone</code> y <code>sessions</code>.
 </p>
 
+<h2 id="built-timeframes">Temporalidades que el feed no tiene</h2>
+<p>
+  Un feed que indica sus <code>supportedTimeframes</code> recibe las demás temporalidades construidas a
+  partir de la más gruesa de ellas que las divide: 7m a partir de 1m, 4h y 1D a partir de 1h. Los días,
+  las semanas, los meses y las temporalidades en horas que dividen un día (2h, 3h, 4h, 6h, 8h, 12h)
+  empiezan a la medianoche de la bolsa del símbolo, en el <code>timeZone</code> que da su
+  <code>resolveSymbol</code>. El gráfico pregunta una vez por símbolo, mientras pide el primer historial de esa
+  temporalidad, construye ese historial cuando llega la respuesta y conserva la zona; las de 1h o menos
+  no la esperan. Una zona cuyos días necesitan una temporalidad más fina que los de UTC (los de Ciudad Ho
+  Chi Minh en un feed de barras de 4h) hace pedir ese historial otra vez en ella. Un feed sin
+  <code>resolveSymbol</code>, que no da zona o da UTC, o cuyas temporalidades no pueden alinearse con
+  esa medianoche (solo barras de 4h para una zona a 7 horas de UTC) recibe días de UTC, como antes. Lo mismo ocurre con un feed que falla al responder o tarda
+  más de 5 segundos, y los días del símbolo siguen entonces siendo de UTC hasta que el gráfico vuelve a cargar el símbolo desde cero (al conectarse a él, o al llegar a él desde otro símbolo o temporalidad), así que las páginas más
+  antiguas y el historial tras una reconexión nunca tienen un día dos veces; esa carga nueva construye los días en la zona que el feed haya nombrado desde entonces, o vuelve a preguntarle. La zona del mercado
+  (<code>setMarket</code>) no mueve estas barras. Las
+  barras diarias con sello de las 00:00 UTC se leen como la fecha que indican. Una zona que el feed
+  envíe después en un evento <code>symbolInfo</code> cambia las horas que se muestran, no dónde empiezan
+  los días ya construidos.
+</p>
+
 <h2 id="symbol-info">Datos del símbolo que el feed conoce más tarde</h2>
 <p>
-  Un gráfico conectado llama a <code>resolveSymbol</code> una vez. Un feed que conoce los datos del símbolo solo más tarde (en su primer mensaje, por ejemplo) los envía con un evento <code>symbolInfo</code>, y el gráfico los aplica: la escala de precios, la leyenda y las etiquetas con los decimales del símbolo (<code>pricePrecision</code>), las marcas de la escala en su paso de precio (<code>minTick</code>) y el horario de la bolsa.
+  Un gráfico conectado llama a <code>resolveSymbol</code> una vez. Un feed que conoce los datos del símbolo solo más tarde (en su primer mensaje, por ejemplo) los envía con un evento <code>symbolInfo</code>, y el gráfico los aplica: los decimales del símbolo (<code>pricePrecision</code>) en la escala de precios, la leyenda y las etiquetas, y también en las etiquetas de los dibujos, los límites de precio del día, las etiquetas de los pivotes, la medición y el perfil de mercado; en el widget, en la ventana de datos, la lista de alertas, el ticket de orden y el panel de cuenta; las marcas de la escala en su paso de precio (<code>minTick</code>) y el horario de la bolsa. Los decimales de un mercado (<code>setMarket</code>) llegan a los mismos sitios y van antes que los del símbolo. Sin ninguno de los dos, la etiqueta de un dibujo conserva los decimales según el tamaño de su precio, agrupados en el locale numérico como en el eje.
 </p>
 <pre><code>{`emit('symbolInfo', { symbol: 'VNM', pricePrecision: 0, minTick: 10, currency: 'VND' })   // como tu adaptador envía sus otros eventos`}</code></pre>
+
+<h2 id="corrections">Una barra que el feed corrige</h2>
+<p>
+  Un feed corrige una barra enviándola de nuevo, cerrada, con su propio tiempo: <code>{'{'} bar, closed: true {'}'}</code> desde <code>parseMessage</code>, o un evento <code>bar</code>. Una barra cerrada más antigua que la más reciente que ha visto el flujo es la última palabra del feed sobre ella, el cierre definitivo de un mercado llegado tras el primer fotograma de la barra siguiente o una revisión: el gráfico reemplaza la barra con ese tiempo esté donde esté (<code>updateBar</code>), calcula de nuevo sus indicadores desde ella y mantiene la vista. No es un precio en vivo: la línea de precio, las órdenes y las alertas siguen con el mercado. Un fotograma en formación más antiguo que la barra más reciente está desfasado y se descarta; no mueve nada. Los adaptadores incluidos (<code>WebSocketAdapter</code>, <code>PollingAdapter</code>, los feeds basados en ellos y <code>BinanceAdapter</code>) solo crean un tick a partir del cierre de una barra cuando es la más reciente, contando la última barra del historial que sirvieron, así que la última barra cerrada que una fuente reenvía al suscribirse no crea ninguno; un adaptador propio que cree ticks a partir de sus barras también debería descartar las más antiguas. Sin adaptador, llama a <code>chart.updateBar(bar)</code>.
+</p>
+<p>
+  Con <code>aggregateTicks</code>, la última barra del historial es la que las operaciones siguen construyendo: la primera operación tras conectar conserva su apertura, máximo, mínimo y volumen. Una operación de una barra ya pasada que llega tarde se descarta, y una barra cerrada para ella la corrige, mientras la barra en formación conserva sus operaciones. Una operación posterior al inicio de la barra más reciente entra en esa barra aunque los intervalos la hagan empezar antes (barras diarias selladas a otra hora que la medianoche, o un símbolo cuya zona llega después de la primera operación), así que el precio sigue cada operación. En una temporalidad construida a partir de otra más fina, una barra base corregida vuelve a construir su barra, para las dos últimas barras construidas antes de la que está en formación; una corrección más atrás se descarta.
+</p>
+<pre><code>{`// en un adaptador: el cierre definitivo de un mercado para una barra que ya está en el gráfico
+parseMessage: (raw) => ({ bar: toBar(raw), closed: true })
+
+// tus propias barras, sin adaptador
+const corrected = chart.updateBar(bar)   // false: ninguna barra cargada tiene bar.time`}</code></pre>
 
 <h2>Cualquier fuente de datos en ~20 líneas</h2>
 <p>
@@ -75,11 +109,16 @@ const myAdapter = new WebSocketAdapter({
 <p>Agrupa los ticks sin procesar en barras OHLC para cada temporalidad:</p>
 <pre><code>{`import { TickAggregator } from '@tradecanvas/chart'
 
-const agg = new TickAggregator('1m')
+const agg = new TickAggregator('1d')
+agg.setTimeZone('Asia/Ho_Chi_Minh')         // days start at the exchange's midnight
+agg.seed(history.at(-1).time)               // a bar older than the history's last is past
+agg.on('barClose', (bar) => console.log(bar))   // a bar whose interval is over
+agg.on('correction', (bar) => console.log(bar)) // a closed bar older than the newest
 agg.processTick({ time, price, volume })
 
-const current = agg.getCurrentBar()         // forming bar
-const closed = agg.flushClosedBars()        // bars that have rolled over`}</code></pre>
+const current = agg.getCurrentBar()         // forming bar`}</code></pre>
+<p>Las semanas empiezan el lunes y los meses el día 1. Con <code>setTimeZone</code>, los días, las semanas, los meses y las temporalidades en horas que dividen un día empiezan a la medianoche de la bolsa; un gráfico lo fija para los ticks de su stream (<code>aggregateTicks</code>) según la zona del símbolo, o si no la de su mercado, y hace coincidir sus barras con las del historial: sella los días a las 00:00 UTC cuando el historial lo hace, y las barras de 2h a 12h empiezan a la medianoche de la bolsa solo cuando las del historial empiezan ahí, así que las barras de 4h propias del feed (00:00, 04:00… UTC) conservan su hora. En una temporalidad construida a partir de otra más fina del feed, empiezan donde empiezan las barras construidas. Construidas a partir de horas, empiezan a la medianoche de la zona que nombró su <code>resolveSymbol</code>, o si no a la de UTC, sea cual sea la zona del gráfico; construidas a partir de los días del feed sellados a las 00:00 UTC, las semanas y los meses conservan sus fechas, y una operación se fecha en la zona que nombró, o si no en la del gráfico, como en los días propios del feed.</p>
+<p>Una barra más antigua que la más reciente vista ya ha pasado: <code>processBar</code> envía una cerrada como <code>correction</code> y descarta un fotograma en formación, y <code>processTick</code> descarta una operación de ella, así que un fotograma o una operación con retraso no pueden cerrar antes de tiempo la barra en formación ni mover el precio. <code>seed(time)</code> parte de la última barra de un historial y no retrocede (salvo que las operaciones hayan construido la barra más reciente con intervalos con los que ya no empiezan, porque la zona horaria de la bolsa llegó después: esa barra se abandona, o las siguientes operaciones se descartarían hasta el siguiente intervalo), y <code>resume(bar)</code> hace de esa barra, aún en formación, la que las siguientes operaciones siguen construyendo, salvo que las operaciones ya hayan llegado a una más reciente; el flujo de un gráfico hace ambas cosas en cada conexión, así que una reconexión cuyo historial acaba en la barra anterior conserva las operaciones de la barra en formación. <code>StreamManager</code> pone entonces la barra en formación, construida con operaciones o con los fotogramas de la fuente, encima del historial que envía como <code>snapshot</code>, y no envía <code>priceChange</code> con el cierre de la última barra del historial, un precio más antiguo. Envía una corrección como <code>barCorrection</code>.</p>
 
 <h2>Cotizaciones de muchos símbolos</h2>
 <p>

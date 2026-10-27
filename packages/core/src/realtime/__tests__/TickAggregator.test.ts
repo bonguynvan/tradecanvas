@@ -180,3 +180,275 @@ describe('TickAggregator buffering and lifecycle', () => {
     expect(agg.getCurrentBar()?.time).toBe(10 * MIN);
   });
 });
+
+describe('TickAggregator on the calendar', () => {
+  // Friday 23 October 2026, 09:15 in Ho Chi Minh City (UTC+7).
+  const friday = Date.UTC(2026, 9, 23, 2, 15);
+
+  it('starts weeks on Monday and months on the 1st', () => {
+    const week = new TickAggregator('1w');
+    week.processTick(tick(friday, 100));
+    expect(week.getCurrentBar()?.time).toBe(Date.UTC(2026, 9, 19));
+    const month = new TickAggregator('1M');
+    month.processTick(tick(friday, 100));
+    expect(month.getCurrentBar()?.time).toBe(Date.UTC(2026, 9, 1));
+  });
+
+  it('starts days and 4h bars at the exchange’s midnight once it knows the zone', () => {
+    const day = new TickAggregator('1d');
+    day.setTimeZone('Asia/Ho_Chi_Minh');
+    day.processTick(tick(friday, 100));
+    expect(day.getCurrentBar()?.time).toBe(Date.UTC(2026, 9, 22, 17));
+    const four = new TickAggregator('4h');
+    four.setTimeZone('Asia/Ho_Chi_Minh');
+    four.processTick(tick(friday, 100));
+    expect(four.getCurrentBar()?.time).toBe(Date.UTC(2026, 9, 23, 1));
+  });
+
+  it('stamps days by their date there for a feed that stamps its daily bars at 00:00 UTC', () => {
+    const day = new TickAggregator('1d');
+    day.setTimeZone('America/New_York', true);
+    // 20:30 on Friday 23 October in New York is already Saturday in UTC.
+    day.processTick(tick(Date.UTC(2026, 9, 24, 0, 30), 100));
+    expect(day.getCurrentBar()?.time).toBe(Date.UTC(2026, 9, 23));
+  });
+
+  it('keeps hours and minutes on the epoch floor', () => {
+    const hour = new TickAggregator('1h');
+    hour.setTimeZone('Asia/Kolkata', true);
+    hour.processTick(tick(friday, 100));
+    expect(hour.getCurrentBar()?.time).toBe(Date.UTC(2026, 9, 23, 2));
+  });
+});
+
+describe('TickAggregator: bars and trades older than the newest', () => {
+  const T0 = Date.UTC(2026, 0, 5);
+  const at = (minute: number, close = 100, volume = 10) =>
+    ({ time: T0 + minute * MIN, open: 100, high: Math.max(100, close) + 1, low: Math.min(100, close) - 1, close, volume });
+
+  /** An aggregator with what it emits, by event. */
+  function watched(timeframe: '1m' | '5m' = '1m') {
+    const agg = new TickAggregator(timeframe);
+    const seen = { bar: [] as unknown[], barClose: [] as unknown[], correction: [] as unknown[] };
+    agg.on('bar', (b) => seen.bar.push({ ...b }));
+    agg.on('barClose', (b) => seen.barClose.push({ ...b }));
+    agg.on('correction', (b) => seen.correction.push({ ...b }));
+    return { agg, seen };
+  }
+
+  it('processBar: a closed bar older than the newest is a correction and keeps the forming bar', () => {
+    const { agg, seen } = watched();
+    agg.processTick(tick(T0 + 2 * MIN + 1000, 101, 5));
+    agg.processTick(tick(T0 + 2 * MIN + 2000, 104, 5));
+    agg.processBar(at(1, 97, 6), true); // the venue's final for the bar before
+    expect(seen.correction).toEqual([at(1, 97, 6)]);
+    expect(seen.barClose).toEqual([]);
+    agg.processTick(tick(T0 + 2 * MIN + 3000, 102, 1));
+    expect(agg.getCurrentBar()).toMatchObject({ time: T0 + 2 * MIN, open: 101, high: 104, low: 101, close: 102, volume: 11 });
+  });
+
+  it('processBar: an older forming frame emits nothing and leaves the forming bar alone', () => {
+    const { agg, seen } = watched();
+    agg.processBar(at(2, 101), false);
+    agg.processBar(at(1, 90), false);
+    expect(seen.bar).toHaveLength(1);
+    expect(seen.correction).toEqual([]);
+    expect(agg.getCurrentBar()).toMatchObject({ time: T0 + 2 * MIN, close: 101 });
+  });
+
+  it("seed() makes the history's last bar the newest", () => {
+    const { agg, seen } = watched();
+    agg.seed(T0 + 5 * MIN);
+    agg.processBar(at(4, 99), false);
+    agg.processBar(at(4, 98), true);
+    expect(seen.bar).toEqual([]);
+    expect(seen.correction).toEqual([at(4, 98)]);
+    agg.processBar(at(5, 101), false);
+    expect(seen.bar).toHaveLength(1);
+  });
+
+  it('seed() reads a history in seconds by its size', () => {
+    const { agg, seen } = watched();
+    agg.seed((T0 + 5 * MIN) / 1000);
+    agg.processBar(at(4, 98), true);
+    expect(seen.correction).toHaveLength(1);
+  });
+
+  it('a late trade for an older bar is left out: the forming bar is neither closed nor restarted', () => {
+    const { agg, seen } = watched();
+    agg.processTick(tick(T0 + 2 * MIN + 1000, 101, 5));
+    agg.processTick(tick(T0 + 2 * MIN + 2000, 104, 5));
+    agg.processTick(tick(T0 + 2 * MIN - 1000, 99, 1)); // a trade of the bar before, delivered late
+    agg.processTick(tick(T0 + 2 * MIN + 3000, 102, 1));
+    expect(seen.barClose).toEqual([]);
+    expect(agg.getCurrentBar()).toMatchObject({ time: T0 + 2 * MIN, open: 101, high: 104, low: 101, close: 102, volume: 11, tickCount: 3 });
+  });
+
+  it('a trade older than a closed bar from the feed is left out too', () => {
+    const { agg, seen } = watched();
+    agg.processBar(at(3, 101), true);
+    agg.processTick(tick(T0 + 2 * MIN + 1000, 99, 1));
+    expect(seen.bar).toEqual([]);
+    expect(agg.getCurrentBar()).toBeNull();
+  });
+
+  it("resume(): the history's forming bar is the one trades go on building", () => {
+    const { agg, seen } = watched();
+    agg.resume({ time: T0 + 40 * MIN, open: 100, high: 110, low: 95, close: 105, volume: 50 });
+    agg.processTick(tick(T0 + 40 * MIN + 30_000, 104, 1));
+    expect(seen.bar.at(-1)).toMatchObject({ time: T0 + 40 * MIN, open: 100, high: 110, low: 95, close: 104, volume: 51, closed: false });
+    // The next bar's first trade closes it with all it held.
+    agg.processTick(tick(T0 + 41 * MIN + 1000, 103, 2));
+    expect(seen.barClose).toEqual([expect.objectContaining({ time: T0 + 40 * MIN, open: 100, high: 110, low: 95, close: 104, volume: 51, closed: true })]);
+  });
+
+  it('resume() takes a history in seconds and one without volume', () => {
+    const { agg } = watched();
+    agg.resume({ time: (T0 + 40 * MIN) / 1000, open: 100, high: 110, low: 95, close: 105 } as never);
+    agg.processTick(tick(T0 + 40 * MIN + 30_000, 104, 1));
+    expect(agg.getCurrentBar()).toMatchObject({ time: T0 + 40 * MIN, open: 100, volume: 1 });
+  });
+
+  it("seed() doesn't move the newest back while the trades' bar is still on their buckets: a reconnect whose history ends earlier keeps the trades since", () => {
+    const { agg, seen } = watched();
+    agg.seed(T0 + 39 * MIN);
+    agg.processTick(tick(T0 + 40 * MIN + 1000, 101, 5));
+    agg.processTick(tick(T0 + 40 * MIN + 2000, 110, 5));
+    agg.seed(T0 + 39 * MIN); // the same history again, after a reconnect
+    agg.processTick(tick(T0 + 39 * MIN + 30_000, 99, 1)); // a trade of bar 39, late
+    agg.processBar(at(39, 97), false); // a stale frame
+    expect(seen.barClose).toEqual([]);
+    expect(seen.bar).toHaveLength(2);
+    expect(agg.getCurrentBar()).toMatchObject({ time: T0 + 40 * MIN, open: 101, high: 110, volume: 10 });
+  });
+
+  it("resume() keeps a forming bar newer than the history's last, and takes the history's own for that bar", () => {
+    const { agg } = watched();
+    agg.resume(at(39, 100, 50));
+    agg.processTick(tick(T0 + 40 * MIN + 1000, 101, 5));
+    agg.processTick(tick(T0 + 40 * MIN + 2000, 110, 5));
+    agg.resume(at(39, 100, 50)); // a reconnect's history, still ending on the last closed bar
+    expect(agg.getCurrentBar()).toMatchObject({ time: T0 + 40 * MIN, open: 101, high: 110, low: 101, close: 110, volume: 10 });
+    // A history that holds bar 40 has the trades missed while away too.
+    agg.resume({ time: T0 + 40 * MIN, open: 101, high: 112, low: 94, close: 108, volume: 30 });
+    expect(agg.getCurrentBar()).toMatchObject({ time: T0 + 40 * MIN, open: 101, high: 112, low: 94, close: 108, volume: 30 });
+  });
+
+  it('reset() and setTimeframe() forget the newest', () => {
+    const { agg, seen } = watched();
+    agg.seed(T0 + 5 * MIN);
+    agg.reset();
+    agg.processBar(at(4, 99), false);
+    expect(seen.bar).toHaveLength(1);
+    agg.seed(T0 + 5 * MIN);
+    agg.setTimeframe('5m');
+    agg.processBar(at(0, 99), false);
+    expect(seen.bar).toHaveLength(2);
+  });
+});
+
+describe('TickAggregator: seed() once the buckets moved', () => {
+  const VN = 'Asia/Ho_Chi_Minh';
+  const HOUR = 60 * MIN;
+  const D = Date.UTC(2026, 9, 23);
+  /** A 4h bar of a history built from Ho Chi Minh City's midnight: 01:00, 05:00… UTC. */
+  const zoned = (hour: number, close: number, volume = 10) => ({ time: D + hour * HOUR, open: 100, high: 102, low: 99, close, volume });
+
+  it("lets go a bar the trades built on buckets they no longer start on: the history's last is the newest again", () => {
+    const agg = new TickAggregator('4h');
+    agg.processTick(tick(D + 8 * HOUR + 10 * MIN, 101, 5)); // the epoch's 08:00 UTC bar
+    agg.setTimeZone(VN); // a reconnect's history starts its bars at the exchange's midnight
+    agg.seed(zoned(5, 101, 20).time);
+    agg.resume(zoned(5, 101, 20));
+    agg.processTick(tick(D + 8 * HOUR + 30 * MIN, 103, 1));
+    expect(agg.getCurrentBar()).toMatchObject({ time: D + 5 * HOUR, open: 100, high: 103, low: 99, close: 103, volume: 21 });
+  });
+
+  it('keeps a day stamped by its date, in a zone west of UTC', () => {
+    const agg = new TickAggregator('1d');
+    agg.setTimeZone('America/New_York', true);
+    agg.processTick(tick(Date.UTC(2026, 9, 24, 0, 30), 100, 5)); // 20:30 on Friday 23 October there
+    agg.seed(Date.UTC(2026, 9, 22));
+    agg.processTick(tick(Date.UTC(2026, 9, 24, 1), 101, 1));
+    expect(agg.getCurrentBar()).toMatchObject({ time: Date.UTC(2026, 9, 23), open: 100, close: 101, volume: 6 });
+  });
+
+  it('lets go a day stamped by the date the trades had before the zone came', () => {
+    const agg = new TickAggregator('1d');
+    agg.setTimeZone(null, true);
+    agg.processTick(tick(Date.UTC(2026, 9, 24, 0, 30), 100, 5)); // 20:30 on Friday in New York, dated Saturday in UTC
+    agg.setTimeZone('America/New_York', true);
+    const friday = { time: Date.UTC(2026, 9, 23), open: 98, high: 101, low: 97, close: 99, volume: 40 };
+    agg.seed(friday.time);
+    agg.resume(friday);
+    agg.processTick(tick(Date.UTC(2026, 9, 24, 1, 30), 102, 1));
+    expect(agg.getCurrentBar()).toMatchObject({ time: friday.time, open: 98, high: 102, close: 102, volume: 41 });
+  });
+
+  it("keeps a feed's forming bar wherever it starts: no trades build it", () => {
+    const agg = new TickAggregator('1d');
+    agg.processBar({ time: D + 22 * HOUR, open: 1, high: 1, low: 1, close: 1, volume: 1 }, false); // a day from 22:00 UTC
+    agg.seed(D - 2 * HOUR);
+    expect(agg.getCurrentBar()?.time).toBe(D + 22 * HOUR);
+  });
+});
+
+describe('TickAggregator: trades on a bar that starts off the buckets', () => {
+  const VN = 'Asia/Ho_Chi_Minh';
+  const HOUR = 60 * MIN;
+  const D = Date.UTC(2026, 9, 26);
+  const bar = (time: number, close = 100) => ({ time, open: 100, high: 101, low: 99, close, volume: 1 });
+
+  /** An aggregator that goes on from the history's last bar, as a stream's does, with the bars it sends. */
+  function goingOn(timeframe: '1d' | '4h', last: number) {
+    const agg = new TickAggregator(timeframe);
+    const sent: { time: number; close: number }[] = [];
+    agg.on('bar', (b) => sent.push({ time: b.time, close: b.close }));
+    agg.seed(last);
+    agg.resume(bar(last));
+    return { agg, sent };
+  }
+
+  it("builds a day stamped at another hour than the buckets' midnight with the trades after it starts", () => {
+    // A daily series dated at 05:00 UTC, the midnight of a browser five hours west; no zone.
+    const { agg, sent } = goingOn('1d', D + 5 * HOUR);
+    for (const [hour, price] of [[14, 101], [15, 102], [20, 103]]) agg.processTick(tick(D + hour * HOUR, price));
+    expect(sent).toEqual([{ time: D + 5 * HOUR, close: 101 }, { time: D + 5 * HOUR, close: 102 }, { time: D + 5 * HOUR, close: 103 }]);
+  });
+
+  it("builds the exchange's 4h bar before its zone is known, and the bar the trades started after it comes", () => {
+    // 4h bars from Ho Chi Minh City's midnight: 01:00, 05:00, 09:00 UTC.
+    const { agg, sent } = goingOn('4h', D + 9 * HOUR);
+    agg.processTick(tick(D + 10 * HOUR, 101)); // in the 09:00 bar; the epoch's buckets start it at 08:00
+    agg.processTick(tick(D + 12 * HOUR + MIN, 102)); // the epoch's 12:00 bar
+    agg.setTimeZone(VN);
+    agg.processTick(tick(D + 12 * HOUR + 2 * MIN, 103));
+    agg.processTick(tick(D + 12 * HOUR + 10 * MIN, 104));
+    expect(sent).toEqual([
+      { time: D + 9 * HOUR, close: 101 },
+      { time: D + 12 * HOUR, close: 102 },
+      { time: D + 12 * HOUR, close: 103 },
+      { time: D + 12 * HOUR, close: 104 },
+    ]);
+    agg.processTick(tick(D + 13 * HOUR + MIN, 105)); // the exchange's 13:00 bar
+    expect(sent.at(-1)).toEqual({ time: D + 13 * HOUR, close: 105 });
+  });
+
+  it('still leaves out a trade from before the newest bar starts', () => {
+    const { agg, sent } = goingOn('1d', D + 5 * HOUR);
+    agg.processTick(tick(D + 5 * HOUR - MIN, 99));
+    expect(sent).toEqual([]);
+  });
+
+  it("builds a day stamped by its date from the trades before 00:00 UTC of that date, east of UTC", () => {
+    // Tuesday 27 October in Sydney opens at 10:00 there, 23:00 UTC on Monday.
+    const agg = new TickAggregator('1d');
+    agg.setTimeZone('Australia/Sydney', true);
+    const sent: number[] = [];
+    agg.on('bar', (b) => sent.push(b.time));
+    agg.seed(D + 24 * HOUR);
+    agg.resume(bar(D + 24 * HOUR));
+    agg.processTick(tick(D + 23 * HOUR, 101));
+    expect(sent).toEqual([D + 24 * HOUR]);
+  });
+});

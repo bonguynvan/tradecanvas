@@ -123,6 +123,26 @@ chart.setIndicatorIntervals(ema, null)  // 다시 모든 시간 단위에 표시
   각 경계에서 계단식으로 바뀌며, 지나간 값이 다시 그려지지(repaint) 않습니다.
 </p>
 
+<p>
+  <code>vwap</code>은 <code>anchor</code>에서 다시 계산합니다. <code>'session'</code>(기본값)은 거래일마다 거래소
+  시간대의 자정부터(종목의 <code>timeZone</code>, 없으면 시장의, 없으면 UTC), <code>'week'</code>는 매주 월요일,
+  <code>'month'</code>는 매월 1일, <code>'all'</code>은 초기화 없이 불러온 모든 봉의 평균이라 과거 데이터를 더
+  불러오면 값이 바뀝니다. 일봉에서는 세션 VWAP이 각 봉의 대표가격과 같으므로 일봉 차트에서는
+  <code>'week'</code>나 <code>'month'</code>를 고르세요. <code>svwap</code>은 σ 밴드가 있는 세션 VWAP이고,
+  <code>avwap</code>은 고정한 봉부터 시작합니다. <code>svwap</code>, <code>mtfma</code>, 전일 가격선, 마켓 프로파일의
+  세션도 같은 시간대로 날짜를 나눕니다. <code>mtfma</code>의 2h부터 12h까지의 주기도 거래소 자정부터 시작하고(피드 자체의
+  4h 봉은 UTC 기준 그대로), 일봉에서 <code>svwap</code>은 밴드 없이 선만 표시합니다. ChartWidget에서는 다른 기준점의 VWAP이 범례, 칩, 개체 패널에서 기준점 이름과 함께('VWAP 주') 표시되고, 기준점과 그 선택지는 위젯의 언어로 나옵니다. CSV 열은 <code>VWAP</code> 그대로입니다.
+</p>
+<pre><code>{`chart.addIndicator('vwap')                      // 거래일마다 다시 계산
+chart.addIndicator('vwap', { anchor: 'week' })  // 매주 월요일: 일봉용
+chart.addIndicator('vwap', { anchor: 'all' })   // 불러온 모든 봉, 예전과 같음`}</code></pre>
+
+<p>
+  <code>volumeProfile</code>은 가격대마다 한 줄을 플롯 왼쪽 가장자리부터 그리며, 각 줄의 길이는 그 가격대에서 거래된 거래량을 따릅니다.
+  줄은 반투명하므로 위에 겹친 범례와 아래에 있는 캔들도 그대로 읽힙니다. <code>updateIndicatorStyle</code>로
+  <code>opacity</code>를 낮추면 더 흐리게 할 수 있습니다.
+</p>
+
 <h2>별도 패널 ({panes.length})</h2>
 <table>
   <thead><tr><th>id</th><th>이름</th><th>기본 파라미터</th><th>선</th><th>레벨</th></tr></thead>
@@ -176,6 +196,10 @@ CANDLE_PATTERNS.length                                 // 64`}</code></pre>
   <code>category</code>(<code>'oscillators'</code>, <code>'volume'</code>…)를 지정하면 지표 대화상자의 그 그룹에
   들어가고, 지정하지 않으면 기타에 들어갑니다.
   <a href="https://github.com/bonguynvan/tradecanvas/blob/main/skills/tradecanvas/references/recipes.md#a-custom-indicator">사용자 지정 지표 레시피</a>를 참고하세요.
+  봉을 일, 주, 월 단위로 묶는 지표는 거래소 시간대를 <code>config.exchangeTimeZone</code>에서 읽습니다
+  (차트가 설정하며, 없으면 UTC). 시간대가 바뀌면 그것을 읽는 지표와 그 지표의 선을 읽는 지표만
+  다시 계산합니다. 시간대를 읽지 않는 직접 만든 지표는 descriptor에
+  <code>readsExchangeTimeZone: false</code>를 적으면 그대로 남습니다.
 </p>
 
 <h2>패널: 크기 조절, 접기, 최대화, 순서 바꾸기</h2>

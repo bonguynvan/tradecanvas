@@ -1,6 +1,6 @@
 import type { DataSeries, OHLCBar } from '@tradecanvas/commons';
 import { normalizeBarTime } from '@tradecanvas/commons';
-import { DataManager, timeInUnitOf, withTimeOf } from './DataManager.js';
+import { DataManager, isValidBar, lastIndexOfTime, sameBar, sanitizeBar, timeInUnitOf, withTimeOf } from './DataManager.js';
 
 /** Which bar times the chart shows, for bars like these; null: all of them. */
 export type HoursFilter = (bars: readonly { time: number }[]) => ((time: number) => boolean) | null;
@@ -18,6 +18,22 @@ export interface SeriesWrite {
   /** Whether the bars shown were filtered again first: any copy of them is stale. */
   readonly refiltered: boolean;
 }
+
+/** What a correction did with a bar (`replace`). */
+export interface SeriesCorrection {
+  /**
+   * Where the bar was: in the live series kept aside during a replay, in the
+   * whole series only (outside the hours shown), among the bars shown, or
+   * nowhere (no loaded bar has its time, or the chart can't take it).
+   */
+  readonly to: 'aside' | 'hidden' | 'shown' | 'none';
+  /** Its index among the bars shown; -1 when it isn't one of them. */
+  readonly index: number;
+  /** Whether its values changed: false for the bar loaded sent again, after the repairs every write makes. */
+  readonly changed: boolean;
+}
+
+const NOWHERE: SeriesCorrection = { to: 'none', index: -1, changed: false };
 
 /** What a batch of new bars did: how many the chart shows, from how many before. */
 export interface SeriesBatch {
@@ -65,6 +81,8 @@ export class SeriesStore {
   private whole: OHLCBar[] | null = null;
   /** The live series during a replay, which the bars shown no longer follow. */
   private aside: DataManager | null = null;
+  /** Bumped by every bar shown replaced in place (`replace`): what keeps a copy of the bars by their array writes them again. */
+  private shownRevision = 0;
 
   constructor(private readonly hoursFilter: HoursFilter) {}
 
@@ -75,6 +93,14 @@ export class SeriesStore {
 
   length(): number {
     return this.shown.getLength();
+  }
+
+  /**
+   * Moves when a bar shown was replaced in place, the array the same: a copy
+   * kept by the array and a few bars it samples (the GPU's) is stale.
+   */
+  revision(): number {
+    return this.shownRevision;
   }
 
   /** The live series: kept aside during a replay, else every bar, hidden ones too. */
@@ -229,6 +255,38 @@ export class SeriesStore {
     return { to: 'shown', before, refiltered };
   }
 
+  /**
+   * A loaded bar again, with new values: the bar with the same time,
+   * wherever it is, repaired as every write repairs a bar. During a replay
+   * it is the live series kept aside; outside the hours shown, the whole
+   * series only. Nowhere when no loaded bar has its time: a bar the chart
+   * left out (it couldn't take it) isn't loaded either. Bar times don't
+   * change, so the hours shown need no filtering again.
+   */
+  replace(given: OHLCBar): SeriesCorrection {
+    if (this.aside) {
+      const { index, changed } = this.aside.replaceBar(given);
+      return index < 0 ? NOWHERE : { to: 'aside', index: -1, changed };
+    }
+    if (!isValidBar(given)) return NOWHERE;
+    const bar = this.inSeriesUnit(given);
+    const whole = this.whole;
+    const at = whole ? lastIndexOfTime(whole, bar.time) : -1;
+    if (whole) {
+      if (at < 0 || !isValidBar(whole[at])) return NOWHERE;
+      const keep = this.hoursFilter(whole);
+      if (keep && !keep(bar.time)) return this.replaceHidden(whole, at, bar);
+    }
+    const { index, changed } = this.shown.replaceBar(bar);
+    if (index < 0) return NOWHERE;
+    if (changed) {
+      // The whole series holds the same bar as the one shown, as a tick leaves it.
+      if (whole) whole[at] = this.shown.getData()[index];
+      this.shownRevision++;
+    }
+    return { to: 'shown', index, changed };
+  }
+
   /** A stream's snapshot during a replay: the live series kept aside. */
   loadAside(bars: DataSeries): void {
     this.aside?.setData(bars);
@@ -279,6 +337,14 @@ export class SeriesStore {
    */
   private inSeriesUnit(bar: OHLCBar): OHLCBar {
     return withTimeOf(this.whole ?? this.shown.getData(), bar);
+  }
+
+  /** A bar outside the hours shown, corrected in the whole series only: it shows with the hours. */
+  private replaceHidden(whole: OHLCBar[], at: number, bar: OHLCBar): SeriesCorrection {
+    const repaired = sanitizeBar(bar);
+    const changed = !sameBar(whole[at], repaired);
+    if (changed) whole[at] = repaired;
+    return { to: 'hidden', index: -1, changed };
   }
 
   private wrote(to: SeriesWrite['to'], refiltered: boolean): SeriesWrite {

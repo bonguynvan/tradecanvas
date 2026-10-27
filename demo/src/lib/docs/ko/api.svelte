@@ -27,12 +27,17 @@
     <tr><td><code>appendBars(bars)</code></td><td>일괄 추가합니다. 지표는 한 번만 다시 계산합니다.</td></tr>
     <tr><td><code>updateLastBar(bar)</code></td><td>현재 형성 중인 봉을 변경합니다.</td></tr>
     <tr><td><code>updateLastBarFromTick(tick)</code></td><td>틱을 마지막 봉에 병합합니다.</td></tr>
+    <tr><td><code>updateBar(bar)</code></td><td>불러온 봉을 고칩니다. 시리즈 어디에 있든 시각이 같은 봉입니다. 보는 위치는 그대로이며, 그 시각의 봉이 없으면 false를 돌려줍니다.</td></tr>
     <tr><td><code>getData()</code></td><td>원본 OHLC 시리즈를 읽습니다.</td></tr>
   </tbody>
 </table>
 
 <p id="live-price">
   <code>appendBar</code>, <code>appendBars</code>, <code>updateLastBar</code>로 넣은 봉과 틱은 현재 가격입니다. 가격선, 알림, 주문의 손익은 연결된 스트림이나 <code>setCurrentPrice</code>를 따를 때처럼 이를 따릅니다. 새 봉은 <code>dataUpdate</code>를 보내고, 형성 중인 봉의 틱은 보내지 않습니다.
+</p>
+
+<p id="corrections">
+  피드가 고친 봉은 <code>updateBar(bar)</code>로 넣습니다. 시리즈 어디에 있든 <code>time</code>이 같은 불러온 봉을 바꾸고 <code>true</code>를 돌려줍니다. 지표는 그 봉부터 다시 계산되고, 하이킨아시, 렌코 등 봉으로 만드는 차트 유형도 따라가며, 보는 위치는 그대로입니다. 다음 프레임 전의 여러 수정은 가장 이른 봉부터 한 번만 계산됩니다. 그 시각의 불러온 봉이 없거나(새 봉은 <code>appendBar</code>, 더 오래된 봉은 <code>prependBars</code>로 넣습니다) 차트가 받을 수 없는 봉이면 <code>false</code>를 돌려주고 아무것도 바꾸지 않습니다. 실시간 가격이 아닙니다. 주문과 알림은 이를 따르지 않고, 이것으로 알림이 울리지 않으며, 지표 선의 알림도 고친 값으로 다시 확인하지 않습니다. 마지막 봉을 고치면 <code>setData</code> 뒤처럼 가격선이 그 종가로 옮겨 갑니다. 리플레이 중에는 실시간 시리즈를 고치며, 리플레이가 끝나면 보입니다. 시간외 거래를 숨긴 동안 시간외 봉은 다시 보이게 하면 나타납니다. 불러온 봉과 같은 봉을 다시 보내면 아무것도 바뀌지 않습니다. 거래량이 없으면 <code>setData</code>처럼 0이 되므로 봉의 값을 모두 보내세요. <code>dataUpdate</code>를 <code>{'{'} kind: 'correction', time, index {'}'}</code>로 보냅니다. ChartWidget에서는 연결된 피드의 봉을 <code>widget.getChart().updateBar(bar)</code>로 고칩니다. <code>setData</code>로 위젯에 준 봉은 위젯이 시간 단위를 다시 만드는 원본 복사본이라, 그에 대한 수정은 다음에 시간 단위를 바꿀 때까지만 남습니다(이를 위한 위젯 메서드는 나중에 추가됩니다).
 </p>
 
 <p id="bar-times">
@@ -117,7 +122,7 @@ chart.getEffectiveTimeZone()           // 가리키는 시간대: HOSE에서는 
 </p>
 
 <p>같은 효과를 코드로도 적용할 수 있습니다.</p>
-<pre><code>{`chart.setAutoScale(false)  // freeze the current price range
+<pre><code>{`chart.setAutoScale(false)  // hold the price range on screen (a new series is fitted once)
 chart.setLogScale(true)    // switch to logarithmic price scale
 chart.setInvertScale(true) // upside down (Alt+I in the widget)
 chart.fitContent()         // zoom out to all data (Alt+R in the widget, with auto scale)
@@ -229,16 +234,47 @@ chart.on('symbolSeriesRequest', async ({ payload }) =>
 chart.getRequiredSymbols()                           // what to fetch again on a new interval
 chart.setPaneScale(spreadId, { percent: true })     // a pane in percent of its first value`}</code></pre>
 <p>
+  변동률 비교선은 화면의 첫 봉에서 주 종목의 종가, 즉 퍼센트 눈금이 0%로 읽는 가격에서 시작하며, 다른 종목 자신의
+  화면상 첫 봉부터 셉니다. 봉이 더 늦게 시작하는 종목도 0%에서 시작합니다. 가격 눈금을 퍼센트로 두면
+  (<code>chart.setScaleMode('percentage')</code>) 각 선은 화면의 첫 봉 이후 자신의 변동률을 그대로 나타내며, 차트를
+  이동하면 함께 바뀝니다. 선의 라벨은 선의 끝에 있습니다. <code>chart.getCompareValues(barIndex?)</code>는 직접 만드는
+  범례를 위해 어떤 봉(기본값은 마지막 봉)에서 각 선의 값을 돌려줍니다: <code>{'{'} id, label, color, visible, close, change, stale {'}'}</code>. <code>close</code>는 그 봉 또는 그 이전의
+  다른 종목 종가이고 <code>change</code>는 선이 나타내는 그대로의 변동률(%)입니다. 다른 종목의 마지막 봉을 지나면(봉을 한 번만
+  가져오고 차트는 계속 갱신되는 경우) 마지막 종가를 <code>stale: true</code>와 함께 돌려줍니다.
+  <code>chart.setCompareVisible(id, false)</code>는 선을 숨기고 자동 눈금에서 뺍니다.
+</p>
+<p>
+  렌코, 카기, 라인 브레이크, P&amp;F, 레인지 바에서는 비교선을 그리지 않습니다. 이들의 봉은 첫 봉부터 차례로 셀 뿐 자신의
+  시각이 없어서, 선을 그리면 다른 종목을 엉뚱한 봉에서 읽게 되기 때문입니다. 이 유형에서는 비교선이 자동 눈금에 들어가지
+  않으며, <code>getCompareValues()</code>는 어느 봉을 묻든 각 종목의 최신 데이터 봉 종가를 <code>change: null</code>과 함께
+  돌려줍니다.
+</p>
+<pre><code>{`chart.setScaleMode('percentage')       // each line reads its change on the axis
+chart.getCompareValues()               // [{ id: 'eth', label: 'ETHUSDT', color, visible, close: 2650.4, change: -1.82, stale: false }]
+chart.getCompareValues(barIndex)       // at a bar: the one under the cursor
+chart.setCompareVisible('eth', false)  // hidden, and out of the auto scale`}</code></pre>
+<p>
   ChartWidget에서는 도구 모음의 비교(그리고 개체 트리의 +)가 비교 대화상자를 엽니다. 종목을 검색하고
   <strong>추가 방식</strong>에서 표시 방식(변동률, 별도 눈금, 별도 보조 차트, 스프레드, 비율, 가격 또는 수익률 상관관계)을
   고른 뒤 원하는 만큼 추가할 수 있습니다. 이미 비교 중인 종목은 맨 앞에 나열되며, 각각 표시 방식과 제거 버튼이
   붙습니다. 다음에 열 때는 마지막으로 쓴 방식이 선택되어 있습니다.
+</p>
+<p>
+  ChartWidget은 종목을 변동률로 비교하는 동안 가격 눈금을 퍼센트로 바꾸고, 마지막 비교를 제거하면 원래 눈금으로 되돌립니다.
+  로그, 퍼센트, 100 기준 눈금은 그대로 두며, 비교 중에 직접 고른 눈금(상태 표시줄의 % 또는 log, 차트 메뉴, 설정)은 마지막
+  비교를 제거한 뒤에도 유지됩니다. 이 퍼센트 눈금은 저장되지 않습니다. 레이아웃과 공유 링크에는 사용자의 눈금이 남습니다.
+  범례는 지표 위에 변동률로 비교 중인 각 종목을 선 색 표시와 함께 가격, 커서 아래 봉(그 밖에는 마지막 봉)에서의 변동률, 숨기기 위한 눈 버튼,
+  제거 버튼과 함께 나열합니다. 그 봉은 차트만큼 깊이 가져오며, 차트가 과거 봉을 불러오면 늘어난 구간만 가져오므로
+  (<code>fetchHistoryBefore</code>가 없는 피드에서는 더 오래된 봉이 있는 동안 각 비교를 차트만큼 깊이 다시 가져옵니다) 선이 차트와 같은 곳에서 시작합니다. 비교선을 그리지 않는 차트 유형에서는 눈금을 그대로 두고 범례의 각 비교 행을 흐리게 표시하며, 그 이유는
+  툴팁과 화면 낭독기로 알려 줍니다. 선을 그리는 유형으로 돌아가면 퍼센트 눈금도 돌아옵니다.
 </p>
 
 <h3>데이터 내보내기</h3>
 <p>
   봉을 CSV 또는 JSON으로 내보내며, 각 지표 선은 범례에 표시되는 이름으로 별도의 열이 됩니다.
   ChartWidget에서는 차트의 오른쪽 클릭 메뉴에 <strong>데이터 내보내기 (CSV)</strong>가 있습니다.
+  소수가 있는 숫자는 유효 숫자 15자리로 기록되므로, 더 작은 봉에서 합산한 거래량은
+  40.370000000000005가 아니라 40.37로 기록됩니다.
 </p>
 <pre><code>{`chart.exportAllData('csv', 'btc-1h.csv')                 // every bar loaded
 chart.exportVisibleData('json', undefined, { indicators: false })
@@ -308,9 +344,9 @@ chart.isExtendedHoursVisible()`}</code></pre>
 <pre><code>{`chart.setPeriodLevelsVisible(true)
 chart.setPeriodLevelsPeriod('week')   // 'day' (PDH/PDL/PDC) | 'week' (PWH/PWL/PWC)
 
-// pure computation is exported
+// pure computation is exported; the chart passes the exchange's zone (left out, the days are UTC's)
 import { computePeriodLevels } from '@tradecanvas/core'
-const levels = computePeriodLevels(bars, 'day')  // [{ id, label, price }]`}</code></pre>
+const levels = computePeriodLevels(bars, 'day', 'Australia/Sydney')  // [{ id, label, price }]`}</code></pre>
 
 <h3>마켓 프로파일 (TPO)</h3>
 <p>
@@ -329,16 +365,16 @@ chart.setMarketProfileConfig({
   highlightPoC: true, // dashed line at the point of control
 })
 
-// split into one mini-profile per calendar-day session
+// split into one mini-profile per trading day, in the exchange's zone
 chart.setMarketProfileConfig({ splitBySession: true })
 
 // classic TPO letters per session (when zoomed in enough to be legible)
 chart.setMarketProfileConfig({ splitBySession: true, letters: true })
 
-// pure computation is exported too
+// pure computation is exported too; give the sessions the exchange's zone, as the chart does (left out, UTC's days)
 import { computeMarketProfile, computeSessionProfiles } from '@tradecanvas/core'
 const profile = computeMarketProfile(bars, priceMin, priceMax, { buckets: 48 })
-const sessions = computeSessionProfiles(bars, priceMin, priceMax)  // per-day TPO`}</code></pre>
+const sessions = computeSessionProfiles(bars, priceMin, priceMax, {}, 'Australia/Sydney')  // per-day TPO`}</code></pre>
 
 <h3>터치 및 모바일</h3>
 <table>
@@ -379,7 +415,7 @@ const sessions = computeSessionProfiles(bars, priceMin, priceMax)  // per-day TP
 chart.on('orderModify', e => /* OrderModifyPayload */)
 chart.on('signalMarkerAdd', e => /* { marker } */)
 chart.on('tradeZoneAdd', e => /* { zone } */)
-chart.on('dataUpdate', e => /* setData와 새 봉에서는 { kind: 'bars', length }, 그 밖에는 kind 'alert' | 'bracket' | 'connection' | 'error' */)
+chart.on('dataUpdate', e => /* setData와 새 봉에서는 { kind: 'bars', length }, 봉을 고치면 { kind: 'correction', time, index }, 그 밖에는 kind 'alert' | 'bracket' | 'connection' | 'error' */)
 chart.on('ordersChange', e => /* { orders } */)
 chart.on('positionsChange', e => /* { positions } */)
 chart.on('executionFill', e => /* { side, price, quantity, reason, pnl } */)
@@ -388,6 +424,8 @@ chart.on('stateChange', () => /* 그림, 지표, 알림, 차트 유형 또는 �
 chart.on('paneChange', e => /* { instanceId, change: 'collapsed' | 'maximized' | 'order' } */)
 chart.on('chartTypeChange', e => /* { type, previous } */)
 chart.on('symbolChange', e => /* { symbol, previous } */)
+chart.on('marketChange', e => /* { market }: setMarket */)
+chart.on('compareChange', e => /* { id, change: 'add' | 'remove' | 'data' | 'visible' }: addCompareSymbol and the rest */)
 chart.on('timeframeChange', e => /* { timeframe, previous } */)
 chart.on('historyChange', e => /* { canUndo, canRedo } */)
 chart.on('drawingSelect', e => /* { ids, primary } */)
@@ -585,8 +623,9 @@ widget.setSymbols(await loadMarkets())   // 서버에서 받은 SymbolInfo[]: �
 
 <h3>공유 가능한 보기 (딥 링크)</h3>
 <p>
-  종목, 시간 단위, 차트 유형, 가격 눈금, 지표(파라미터 포함), 그림 등
-  보기 전체를 딥 링크용의 간결하고 URL에 안전한 문자열로 인코딩합니다.
+  종목, 시간 단위, 차트 유형, 가격 눈금, 지표(파라미터 포함), 그림, 그리고 기본값에서
+  바꾼 차트 설정(시간대와 숫자 형식 제외) 등 보기 전체를 딥 링크용의 간결하고 URL에 안전한
+  문자열로 인코딩합니다.
   <code>shareUrl: true</code>를 설정하면 위젯이 로드 시
   <code>#tcw=…</code> 해시를 복원하고, 명령 팔레트의 "보기 공유" 동작이
   링크를 클립보드에 복사합니다.
@@ -600,7 +639,8 @@ await widget.copyShareLink()            // copy "<url>#tcw=<token>"`}</code></pr
 <h3>이름 있는 레이아웃</h3>
 <p>
   도구 모음의 레이아웃 버튼은 차트를 이름을 붙여 저장합니다. 종목, 시간 단위, 가격 눈금,
-  차트 유형, 지표, 그림, 알림이 저장되며, 테마는 보는 사람의 설정이므로 저장하지 않습니다.
+  차트 유형, 지표, 그림, 알림, <a href="#chart-settings">차트 설정</a>이 저장되며, 테마와
+  시간대, 숫자 형식은 보는 사람의 설정이므로 저장하지 않습니다.
   레이아웃 열기, 이름 바꾸기, 삭제는 이 버튼의 메뉴에서 합니다. 열려 있는 레이아웃은
   바뀔 때마다 자동 저장되며, <kbd>Ctrl/⌘ S</kbd>로도 저장할 수 있습니다. <code>storage</code>를
   넘기지 않으면 레이아웃은 이 브라우저의 <code>localStorage</code>에 저장됩니다.
@@ -636,6 +676,66 @@ await widget.applyLayoutContent(json)`}</code></pre>
   자동 저장은 한 번에 하나씩 실행되므로, 저장이 그 뒤에 연 레이아웃에 기록되는 일은 없습니다.
 </p>
 
+<h3 id="chart-settings">차트 설정</h3>
+<p>
+  설정 대화 상자의 스위치와 선택 항목(거래량 프로파일과 마켓 프로파일, 스윙 표시, 세션 음영,
+  이전 기간 레벨, 격자, 범례, 십자선, 가격 눈금, 시간대, 숫자 형식)이 위젯의 차트 설정입니다.
+  <code>getSettings()</code>로 읽고(사본을 돌려줍니다), <code>setSettings(patch)</code>로 일부를
+  바꿉니다. 읽을 수 없는 값은 버리고, 숫자는 대화 상자의 범위 안으로 맞추며, 실행 취소 단계를 남기지
+  않습니다. 바뀔 때마다 <code>onSettingsChange(listener)</code>로 알림을 받을 수 있으며, 이 함수는
+  알림을 멈추는 함수를 돌려줍니다. 대화 상자를 확인으로 닫을 때 한 번 호출되고, 취소하거나 아무것도
+  바뀌지 않은 변경에는 호출되지 않습니다. 차트에 아직 봉이 없는 동안 <code>setSettings</code>는 자동
+  눈금을 켠 채로 둡니다. 끄면 화면의 가격 범위를 고정하는데, 그때는 아직 범위가 없기 때문입니다. 그래서
+  <code>onSettingsChange</code>가 준 설정(가격 축을 드래그해 자동 눈금이 꺼진 것)을 생성자 바로 뒤에
+  돌려줘도 안전합니다. <code>persistSettings: true</code>를 설정하면 위젯이 이
+  브라우저에 설정을 보관했다가 다음 방문 때 되돌려 놓습니다.
+</p>
+<pre><code>{`const widget = new ChartWidget(host, {
+  chartOptions: { timeZone: 'UTC' },
+  persistSettings: true,            // 또는 { key: 'myapp:settings' }
+})
+
+widget.setSettings({ volumeProfileVisible: true, timezone: 'exchange' })
+widget.getSettings().timezone       // 'exchange'
+
+const stop = widget.onSettingsChange((settings) => {
+  api.put('/me/chart-settings', settings)   // 예: 내 서버에 저장
+})
+stop()`}</code></pre>
+<p>
+  <code>getSettings()</code>는 <code>getChart()</code>에 직접 설정한 내용도 다시 읽으므로,
+  레이아웃이나 링크에 그대로 저장됩니다. 차트는 이 설정들을
+  <code>isVolumeVisible()</code>, <code>isLegendVisible()</code>,
+  <code>isBarCountdownVisible()</code>, <code>isIndicatorValueLabelsVisible()</code>,
+  <code>isLeftPriceScaleVisible()</code>, <code>getMarketProfileConfig()</code>,
+  <code>getDepthHeatmapConfig()</code>, <code>getPivotMarkersConfig()</code>,
+  <code>getPeriodLevelsPeriod()</code>로 돌려주며, 각 오버레이에는 <code>is…Visible()</code>도 있습니다.
+</p>
+<ul>
+  <li><strong>persistSettings</strong>는 사용자가 여러분의 값에서 바꾼 것을 브라우저별로 보관합니다.
+    보관된 값이 <code>chartOptions</code>보다 우선하며, 초기화하면 여러분의 값으로 돌아갑니다.
+    로그 눈금과 자동 눈금 플래그, 차트 유형별 설정(렌코 박스 등)은 차트의 상태이므로 보관하지 않습니다.
+    페이지의 위젯마다 각자의 <code>key</code>를 주세요. 그리드는 각 차트에 하나씩 알아서 줍니다.
+    누가 바꿨는지는 구분하지 않습니다. 여러분이 <code>setSettings</code>로 정한 값(예: <code>onReady</code> 안에서)과
+    연 레이아웃이 가져온 설정도 사용자의 선택으로 보관되며, 코드가 더 이상 정하지 않아도 다음 방문 때
+    <code>chartOptions</code>보다 우선합니다. 어떤 설정을 <code>chartOptions</code>의 값으로 되돌리면 보관 대상에서 빠집니다.
+    연 공유 링크가 가져온 설정은 다른 사람의 선택이므로 그 방문 동안에만 보이고, 보관되지 않으며,
+    <code>onSettingsChange</code> 리스너도 부르지 않습니다(다음 변경 때 함께 알립니다).</li>
+  <li><strong>이름 있는 레이아웃</strong>은 시간대와 숫자 형식(보는 사람의 설정), 그리고 가격 축을 끌면 꺼지는
+    자동 눈금을 뺀 전부를 저장합니다. 레이아웃 JSON에서는 <code>settings</code> 아래에 있지만, 가격 눈금과 그 뒤집기는
+    각자의 필드에, 차트 유형별 설정은 차트의 상태에 들어갑니다. 이 기능 이전에 저장한 레이아웃에는 설정이 없으며,
+    열어도 설정은 그대로입니다. 이전 버전의 라이브러리는 새 레이아웃을 설정 없이 열고, 그 자동 저장은 설정 없이 다시 기록합니다.</li>
+  <li><strong>공유 링크</strong>는 보낸 사람이 기본값에서 바꾼 설정을 담으며, 시간대, 숫자 형식, 자동 눈금은 담지 않습니다.
+    링크에 담긴 차트 유형별 설정은 보낸 사람이 정한 유형과 표시 중인 유형(보낸 사람이 기본값 그대로 두었다면 기본값)에만 적용되고, 보는 사람의 다른 유형 설정은 그대로 남습니다.
+    여러분의 <code>features</code>가 처음 상태를 정하는 스위치(범례, 거래량, 봉의 남은 시간, 지표 값 라벨)는
+    <code>features</code>가 둔 상태가 기본값이므로, 보낸 사람의 앱이 끈 스위치는 변경으로 보내지지 않습니다.</li>
+  <li><strong>꺼진 기능</strong>: 여러분의 <code>features</code>가 범례, 거래량, 봉의 남은 시간, 로그 눈금을 끄면,
+    보관된 값, 공유된 값, 연 레이아웃, 정한 값, 적용한 차트 템플릿 그 어느 것도 이를 켜지 못하며,
+    설정 대화 상자에도 범례나 거래량의 스위치와 색이 나오지 않습니다.</li>
+  <li><strong>종목별 레이아웃</strong>(<code>persistLayouts</code>)과
+    <code>chart.saveState()</code>에는 차트 상태의 일부인 차트 유형별 설정만 있고, 다른 설정은 하나도 없습니다.</li>
+</ul>
+
 <h3>종목별 레이아웃</h3>
 <p>
   이와 별도로, 종목별 지표 구성, 그림, 알림, 차트 유형을
@@ -652,7 +752,8 @@ await widget.applyLayoutContent(json)`}</code></pre>
 widget.clearSavedLayout('BTCUSDT')`}</code></pre>
 <p>
   레이아웃은 종목을 전환할 때와 위젯이 소멸될 때 저장되므로, 사용자가
-  페이지를 떠나도 잃는 것이 없습니다.
+  페이지를 떠나도 잃는 것이 없습니다. 차트 설정 중에는 차트 유형별 설정만
+  담으며, 나머지는 <code>persistSettings</code>가 보관합니다.
 </p>
 
 <h3>드래그 앤 드롭 데이터 가져오기</h3>
@@ -683,15 +784,26 @@ chart.setData(data)`}</code></pre>
 })
 widget.setData(oneMinuteBars)   // base series; clicking 4h/1d/1w resamples it
 
-// Or use the pure function directly
-import { resampleOHLCV, inferTimeframeMs } from '@tradecanvas/chart'
+// Or build bars yourself
+import { resampleBars, timeframeBucketStart } from '@tradecanvas/chart'
 
-const hourly = resampleOHLCV(oneMinuteBars, '1h')   // OHLC merged, volume summed
-const fourHour = resampleOHLCV(oneMinuteBars, '4h', { weekStartsOn: 1 })`}</code></pre>
+const hourly = resampleBars(oneMinuteBars, '1h')   // OHLC merged, volume summed
+const days = resampleBars(oneMinuteBars, '1d', { timeZone: 'Asia/Ho_Chi_Minh' })   // from 00:00 there
+const dayStart = timeframeBucketStart(trade.time, '1d', { timeZone: 'Asia/Ho_Chi_Minh' })`}</code></pre>
 <p>
-  달력을 고려한 구간 나누기: 일중 및 일 단위는 UTC epoch 경계에, 주 단위는
-  설정된 주 시작일에, 월 / 분기 / 연 단위는 달력 경계에 맞춥니다.
+  달력을 고려한 구간 나누기: 분과 시간 단위(1h 이하)는 Unix epoch부터 단위의 배수로 내림합니다.
+  일, 주(설정된 주 시작일부터), 월, 분기, 연 단위는 거래소의 자정에 시작하며, 하루를 나누어떨어지게 하는
+  시간 단위(2h, 3h, 4h, 6h, 8h, 12h)도 마찬가지입니다. <code>widget.setData</code>에 준 봉의 기준은
+  종목의 <code>timeZone</code>(<code>setSymbolInfo</code>), 없으면 시장의 것(<code>setMarket</code>), 그것도 없으면
+  UTC입니다. 피드에 없는 단위는 그 피드의 <code>resolveSymbol</code>이 알려 주는 시간대의 자정, 없으면 UTC 자정에
+  시작하며, 시장의 시간대로는 옮겨지지 않습니다. 시계가 바뀌는 날은 23시간 또는 25시간입니다. 00:00 UTC로 찍힌 일봉은 그것이 가리키는
+  날짜로 읽으므로, UTC 서쪽에서도 월요일은 제 주에 남고 주봉은 00:00 UTC 시각을 유지합니다.
   입력 봉은 절대 변경되지 않습니다.
+</p>
+<p>
+  일봉은 차트가 어떤 시간대로 보여 주든 그 봉이 나타내는 날짜를 보여 줍니다. 00:00 UTC로 찍힌 봉은 UTC 날짜를,
+  거래소 자정에 맞춰 만든 봉은 거래소의 날짜를 보여 줍니다(시간 축, 십자선과 그 카드, Alt 클릭으로 고정하는 툴팁, 화면 낭독기가 읽는 봉의 시각에서). 봉을 직접 만들 때는
+  <code>timeframeBucketStart(time, timeframe, {'{'} timeZone {'}'})</code>가 어떤 시각이 속한 봉의 시작 시각을 알려 줍니다.
 </p>
 
 <h3>관심 종목</h3>
@@ -766,7 +878,7 @@ chart.setSelectedDrawingStyle({ color: '#1fa874' })  // restyle the selected dra
 
 <h3>개체 트리</h3>
 <p>
-  레일의 레이어 버튼(레일이 없으면 도구 모음의 버튼)을 누르면 모든 활성 지표와 그림을 나열하는 개체 트리가
+  레일의 레이어 버튼(레일이 없으면 도구 모음의 버튼)을 누르면 모든 활성 지표(칩과 같은 이름, 예: EMA 20, Compare ETHUSDT)와 그림을 나열하는 개체 트리가
   도크에 열립니다. 지표는 삭제할 수 있고, 그림은 항목마다
   표시 / 숨기기, 잠금 / 잠금 해제, 설정, 삭제를 할 수 있고, 그룹은 소속된 그림과
   함께 그 아래에 나열됩니다. 기본적으로 활성화되어 있으며
@@ -800,17 +912,21 @@ chart.removeIndicator(instanceId)`}</code></pre>
   지표를 지웠다가 다시 추가할 필요가 없습니다.
 </p>
 <p>
-  개체 트리의 <strong>비교</strong> 섹션에는 정규화된 선으로 겹쳐 표시한 종목이
-  나열됩니다. 실시간 어댑터가 있으면 이 섹션의 + 버튼이 비교 대화상자를 엽니다.
-  퍼센트로 추가한 종목은 <code>adapter.fetchHistory</code>로 과거 데이터를
-  가져옵니다(가격대가 다른 종목도 하나의 축을 공유하도록). 비교 종목은
+  개체 트리의 <strong>비교</strong> 섹션에는 비교 대화상자처럼 모든 비교가 나열됩니다. 종목마다
+  비교 방식(변동률, 별도 눈금, 별도 보조 차트, 스프레드, 비율, 상관관계)과 비교를 없애는 버튼이 붙습니다.
+  실시간 어댑터가 있으면 이 섹션의 + 버튼이 비교 대화상자를 엽니다. 어떤 방식이든 위젯은 비교를 추가하기 전에
+  <code>adapter.fetchHistory</code>로 다른 종목의 봉을 가져오고, 봉이 오지 않으면(가져오기 실패, 또는 이 시간 단위에
+  봉이 없음) 아무것도 추가하지 않고 토스트로 이유를 알립니다. 저장된 상태에서 돌아온 비교는 봉을 불러오지 못해도
+  차트에 남아 있다가, 봉이 있는 시간 단위에서 채워집니다. 비교 종목은
   시간 단위가 바뀌면 자동으로 다시 가져옵니다. 코드로는 다음과 같습니다.
 </p>
 <pre><code>{`widget.addCompareSymbol('ETHUSDT')   // fetches + overlays (needs an adapter)
+await widget.addCompareSymbol('ETHUSDT', 'scale')  // its bars first; nothing added if they don't come
 
 // or drive the chart directly with your own data
 chart.addCompareSymbol('ETHUSDT', 'ETH', ethBars, '#627eea')
 chart.setCompareMode('percent')      // 'percent' | 'absolute'
+chart.setScaleMode('percentage')     // each line's change, read on the axis
 chart.removeCompareSymbol('ETHUSDT')`}</code></pre>
 
 <h3>가격 알림</h3>

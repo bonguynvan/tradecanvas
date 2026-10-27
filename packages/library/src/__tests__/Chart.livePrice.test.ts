@@ -1,8 +1,9 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { MARKET_HOSE, type OHLCBar } from '@tradecanvas/commons';
+import { DARK_THEME, MARKET_HOSE, type OHLCBar } from '@tradecanvas/commons';
+import { BinanceAdapter, WebSocketAdapter, type CurrentPriceLine, type WebSocketLike, type WsParseResult } from '@tradecanvas/core';
 import { Chart } from '../Chart.js';
-import { installChartStubs, sizedHost } from './chartTestEnv.js';
+import { fakeContext, installChartStubs, sizedHost } from './chartTestEnv.js';
 
 const HOUR = 3_600_000;
 const T0 = Date.UTC(2025, 0, 1);
@@ -13,6 +14,16 @@ let chart: Chart;
 
 type Internals = { tradingManager: { getCurrentPrice(): number | null } };
 const ordersPrice = () => (chart as unknown as Internals).tradingManager.getCurrentPrice();
+
+/** The last-price tag's colour, drawn on a price range that holds it. */
+function tagColour(): string | undefined {
+  const line = (chart as unknown as { currentPriceLine: CurrentPriceLine }).currentPriceLine;
+  line.render(fakeContext(document.createElement('canvas')), {
+    visibleRange: { from: 0, to: 10 }, priceRange: { min: 0, max: 200 }, barWidth: 6, barSpacing: 2, offset: 0,
+    chartRect: { x: 0, y: 0, width: 200, height: 100 },
+  }, DARK_THEME);
+  return line.getTag()?.color;
+}
 
 beforeEach(() => {
   installChartStubs();
@@ -162,6 +173,21 @@ describe('a price fed by hand, what goes with it', () => {
     expect(lineAt()).toBe(130);
   });
 
+  it('measures a new bar’s tag from the close before it, as a stream does', () => {
+    chart.updateLastBar(bar(59, 98));
+    expect(tagColour()).toBe(DARK_THEME.candleDown); // 98 against the 100 before it
+    // The next bar opens where this one closed: level.
+    chart.appendBar(bar(60, 98));
+    expect(tagColour()).toBe(DARK_THEME.candleUp);
+    chart.updateLastBar(bar(60, 97));
+    expect(tagColour()).toBe(DARK_THEME.candleDown);
+    chart.appendBars([bar(61, 99), bar(62, 97)]);
+    expect(tagColour()).toBe(DARK_THEME.candleDown); // 97 against 99
+    chart.updateLastBar(bar(62, 98));
+    chart.appendBars([bar(63, 98)]);
+    expect(tagColour()).toBe(DARK_THEME.candleUp);
+  });
+
   it('leaves out a bar the chart turns down: no alert, no price, no dataUpdate', () => {
     const fired = alertsFired();
     const seen: unknown[] = [];
@@ -221,6 +247,18 @@ describe('a stream', () => {
     expect(seen).toEqual([{ kind: 'bars', length: 61 }]);
   });
 
+  it('keeps the tag a fall when a frame comes again at the same price', async () => {
+    const send = await connected();
+    send(bar(60, 96), false);
+    expect(tagColour()).toBe(DARK_THEME.candleDown);
+    send(bar(60, 96), false);
+    expect(tagColour()).toBe(DARK_THEME.candleDown);
+    // The next bar opens where this one closed: level, measured from its close.
+    send(bar(60, 96), true);
+    send(bar(61, 96), false);
+    expect(tagColour()).toBe(DARK_THEME.candleUp);
+  });
+
   it('fires alerts on the close of a bar, as on its forming prices', async () => {
     const send = await connected();
     const fired = alertsFired();
@@ -272,6 +310,39 @@ describe('a stream, what it leaves out and when it tells', () => {
     expect(seen).toEqual([[61, 61]]);
   });
 
+  it('a stale forming frame from a feed moves no price and fires no alert', async () => {
+    const send = await connected();
+    const fired = alertsFired();
+    type Line = { currentPriceLine: { getPrice(): number | null } };
+    const line = () => (chart as unknown as Line).currentPriceLine.getPrice();
+    chart.addAlert(95, 'crossingDown', 'under 95');
+    send(bar(60, 101), false);
+    const price = ordersPrice();
+    send(bar(57, 90), false); // a frame of a bar three back, late
+    expect(fired).toEqual([]);
+    expect(ordersPrice()).toBe(price);
+    expect(line()).toBe(101);
+    expect(chart.getData()[57].close).toBe(100);
+  });
+
+  it('a late close from a feed corrects the bar before the forming one, as no live price', async () => {
+    const send = await connected();
+    const fired = alertsFired();
+    const ema = chart.addIndicator('ema', { period: 5 })!;
+    chart.addAlert(95, 'crossingDown', 'under 95');
+    send(bar(60, 101), false); // the next bar forms
+    const seen: unknown[] = [];
+    chart.on('dataUpdate', (e) => seen.push(e.payload));
+    send(bar(59, 94), true); // the venue's final of bar 59
+    expect(chart.getData()[59].close).toBe(94);
+    expect(chart.getData()[60].close).toBe(101);
+    expect(chart.getData()).toHaveLength(61);
+    expect(chart.getIndicatorOutput(ema)!.series[59]!.value).toBeLessThan(100);
+    expect(seen).toEqual([{ kind: 'correction', time: bar(59, 94).time, index: 59 }]);
+    expect(fired).toEqual([]);
+    expect(ordersPrice()).toBe(101);
+  });
+
   it('leaves out a closed bar the chart turns down, price and all', async () => {
     const send = await connected();
     const fired = alertsFired();
@@ -279,6 +350,185 @@ describe('a stream, what it leaves out and when it tells', () => {
     send({ ...bar(60, 80), high: 70, low: 90 }, true);
     expect(fired).toEqual([]);
     expect(chart.getData()).toHaveLength(60);
+  });
+});
+
+/**
+ * The built-in feeds send a tick made from each bar frame's close: one from
+ * a frame of a bar already past would move the price, the orders and the
+ * alerts as a live price would.
+ */
+describe('a built-in feed, a bar already past', () => {
+  type Line = { currentPriceLine: { getPrice(): number | null } };
+  const line = () => (chart as unknown as Line).currentPriceLine.getPrice();
+  type Stream = { streamManager: { getLastPrice(): number | null } };
+  const streamPrice = () => (chart as unknown as Stream).streamManager.getLastPrice();
+  type Send = (b: OHLCBar, closed: boolean) => void;
+  /** A connected feed: a frame from it, and a reconnect (the network came back) that opens a new socket. */
+  interface Feed { send: Send; reconnect(): Promise<void> }
+  type Wake = { streamManager: { wake(reason: 'online'): void } };
+  const wake = async () => {
+    (chart as unknown as Wake).streamManager.wake('online');
+    await new Promise((r) => setTimeout(r, 0));
+  };
+
+  /** How many bars the feed's history holds unless a test says: 0 to 59 at 100, the last closed while bar 60 forms. */
+  const HISTORY_BARS = 60;
+
+  async function webSocketFeed(bars = HISTORY_BARS): Promise<Feed> {
+    const sockets: WebSocketLike[] = [];
+    const adapter = new WebSocketAdapter({
+      name: 'ws',
+      wsUrl: () => 'wss://x',
+      fetchHistory: async () => Array.from({ length: bars }, (_, i) => bar(i, 100)),
+      parseMessage: (raw) => raw as WsParseResult,
+      socketFactory: () => {
+        const socket: WebSocketLike = { onopen: null, onmessage: null, onerror: null, onclose: null, send: () => {}, close: () => {} };
+        sockets.push(socket);
+        return socket;
+      },
+    });
+    await chart.connect({ adapter, symbol: 'AAA', timeframe: '1h', historyLimit: bars });
+    sockets.at(-1)!.onopen?.({});
+    return {
+      send: (b, closed) => sockets.at(-1)!.onmessage?.({ data: { bar: b, closed } }),
+      reconnect: async () => {
+        await wake();
+        sockets.at(-1)!.onopen?.({});
+      },
+    };
+  }
+
+  async function binanceFeed(bars = HISTORY_BARS): Promise<Feed> {
+    const sockets: { onopen: (() => void) | null; onmessage: ((e: { data: unknown }) => void) | null }[] = [];
+    vi.stubGlobal('WebSocket', class {
+      onopen = null; onmessage = null; onerror = null; onclose = null;
+      constructor() { sockets.push(this); }
+      close() {}
+    });
+    const klines = Array.from({ length: bars }, (_, i) => [bar(i, 100).time, '100', '101', '99', '100', '10']);
+    vi.stubGlobal('fetch', vi.fn(async (url: string) => ({ ok: url.includes('/klines'), json: async () => klines })));
+    await chart.connect({ adapter: new BinanceAdapter(), symbol: 'BTCUSDT', timeframe: '1h', historyLimit: bars });
+    sockets.at(-1)!.onopen?.();
+    return {
+      send: (b, closed) => sockets.at(-1)!.onmessage?.({
+        data: JSON.stringify({ e: 'kline', k: { t: b.time, o: b.open, h: b.high, l: b.low, c: b.close, v: b.volume, x: closed } }),
+      }),
+      reconnect: async () => {
+        await wake();
+        sockets.at(-1)!.onopen?.();
+      },
+    };
+  }
+
+  for (const [name, connect] of [['WebSocketAdapter', webSocketFeed], ['BinanceAdapter', binanceFeed]] as const) {
+    describe(name, () => {
+      it('a late final corrects its bar and moves no price, order or alert', async () => {
+        const { send } = await connect();
+        const fired = alertsFired();
+        chart.addAlert(95, 'crossingDown', 'under 95');
+        send(bar(60, 101), false);
+        expect(ordersPrice()).toBe(101);
+        send(bar(59, 94), true); // the venue's final of bar 59
+        expect(chart.getData()[59].close).toBe(94);
+        expect(fired).toEqual([]);
+        expect(ordersPrice()).toBe(101);
+        expect(line()).toBe(101);
+      });
+
+      it('a stale forming frame moves nothing', async () => {
+        const { send } = await connect();
+        const fired = alertsFired();
+        chart.addAlert(95, 'crossingDown', 'under 95');
+        send(bar(60, 101), false);
+        send(bar(57, 90), false);
+        expect(fired).toEqual([]);
+        expect(ordersPrice()).toBe(101);
+        expect(line()).toBe(101);
+        expect(chart.getData()[57].close).toBe(100);
+      });
+
+      it("the history's last bar, sent again closed on subscribing, moves nothing after a reconnect", async () => {
+        // A history of closed bars only, 0 to 59, while bar 60 forms.
+        const { send, reconnect } = await connect();
+        send(bar(59, 100), true); // on subscribing
+        send({ ...bar(60, 96), open: 101, high: 110 }, false);
+        const fired = alertsFired();
+        chart.addAlert(98, 'crossingUp', 'over 98');
+        await reconnect();
+        send(bar(59, 100), true); // on subscribing again
+        expect(line()).toBe(96);
+        expect(ordersPrice()).toBe(96);
+        expect(fired).toEqual([]);
+        expect(chart.getData().at(-1)).toMatchObject({ time: bar(60, 96).time, close: 96 });
+        // Bar 60's next frame is live.
+        send({ ...bar(60, 99), open: 101, high: 110 }, false);
+        expect(fired).toEqual(['over 98']);
+      });
+
+      it("the history's last bar, still forming when it was served, moves the price line to its final close on the first frame", async () => {
+        // The history ends on bar 60, at 100 when it was fetched; its final comes first on the socket.
+        const { send } = await connect(HISTORY_BARS + 1);
+        const fired = alertsFired();
+        chart.addAlert(102, 'crossingUp', 'over 102');
+        send({ ...bar(60, 104), high: 105 }, true);
+        expect(chart.getData().at(-1)).toMatchObject({ time: bar(60, 104).time, close: 104 });
+        expect(line()).toBe(104);
+        expect(streamPrice()).toBe(104);
+        expect(ordersPrice()).toBe(104);
+        expect(fired).toEqual(['over 102']);
+      });
+    });
+  }
+});
+
+/**
+ * With aggregateTicks, a reconnect (the page coming back) whose history ends
+ * on the bar before the one the trades are building: that history's last
+ * close is the market's an hour ago, no live price.
+ */
+describe('aggregateTicks, a reconnect whose history ends before the forming bar', () => {
+  type Stream = { currentPriceLine: { getPrice(): number | null }; streamManager: { wake(reason: 'online'): void } };
+  const stream = () => chart as unknown as Stream;
+
+  it('keeps the forming bar, the price line, the orders and the alerts on its trades', async () => {
+    const sockets: WebSocketLike[] = [];
+    const adapter = new WebSocketAdapter({
+      name: 'ws',
+      wsUrl: () => 'wss://x',
+      fetchHistory: async () => Array.from({ length: 60 }, (_, i) => bar(i, 100)),
+      parseMessage: (raw) => raw as WsParseResult,
+      socketFactory: () => {
+        const socket: WebSocketLike = { onopen: null, onmessage: null, onerror: null, onclose: null, send: () => {}, close: () => {} };
+        sockets.push(socket);
+        return socket;
+      },
+    });
+    await chart.connect({ adapter, symbol: 'AAA', timeframe: '1h', historyLimit: 60, aggregateTicks: true });
+    sockets.at(-1)!.onopen?.({});
+    const t60 = T0 + 60 * HOUR;
+    const trade = (after: number, price: number, volume: number) =>
+      sockets.at(-1)!.onmessage?.({ data: { tick: { time: t60 + after, price, volume } } });
+    trade(1000, 101, 5);
+    trade(2000, 110, 5);
+    trade(3000, 96, 5);
+    const fired = alertsFired();
+    chart.addAlert(98, 'crossingUp', 'over 98');
+    // 96 against the close of 100 before it: a fall.
+    expect(tagColour()).toBe(DARK_THEME.candleDown);
+
+    stream().streamManager.wake('online');
+    await new Promise((r) => setTimeout(r, 0));
+    sockets.at(-1)!.onopen?.({});
+    expect(chart.getData().at(-1)).toMatchObject({ time: t60, open: 101, high: 110, low: 96, close: 96, volume: 15 });
+    expect(stream().currentPriceLine.getPrice()).toBe(96);
+    expect(tagColour()).toBe(DARK_THEME.candleDown);
+    expect(ordersPrice()).toBe(96);
+    expect(fired).toEqual([]);
+
+    trade(4000, 102, 1);
+    expect(chart.getData().at(-1)).toMatchObject({ time: t60, open: 101, high: 110, low: 96, close: 102, volume: 16 });
+    expect(fired).toEqual(['over 98']);
   });
 });
 

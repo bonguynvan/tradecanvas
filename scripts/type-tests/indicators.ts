@@ -17,6 +17,8 @@ declare const field: { value: string };
 const rsi = chart.addIndicator('rsi', { period: 14, source: 'close' });
 chart.addIndicator('bb', { period: 20, stdDev: 2.5 }, 'bottom');
 chart.addIndicator('pivots', { type: 'fibonacci' });
+chart.addIndicator('vwap', { anchor: 'week' });
+chart.addIndicator('vwap');
 // Another indicator's line as the source.
 if (rsi) chart.addIndicator('sma', { period: 9, source: indicatorSource(rsi, 'value') });
 
@@ -26,6 +28,8 @@ chart.addIndicator('bb', { period: 20, stddev: 2 });
 chart.addIndicator('rsi', { length: 14 });
 // @ts-expect-error A number's input takes no `true`.
 chart.addIndicator('rsi', { period: true });
+// @ts-expect-error VWAP's input is `anchor`.
+chart.addIndicator('vwap', { reset: 'session' });
 
 // What compiled before still does.
 // Text for a number, as a form field gives it, and any text for a kind.

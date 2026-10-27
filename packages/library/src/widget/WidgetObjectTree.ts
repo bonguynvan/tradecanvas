@@ -4,7 +4,10 @@ import { markPart } from './widgetFeatures.js';
 
 export interface ObjectTreeIndicator {
   instanceId: string;
+  /** As its chip and the legend name it: 'BB 20 2'. */
   name: string;
+  /** Its full name, for the row's tooltip ('Bollinger Bands'); `name` without one. */
+  title?: string;
   visible: boolean;
 }
 
@@ -22,7 +25,10 @@ export interface ObjectTreeDrawing {
 export interface ObjectTreeCompare {
   id: string;
   label: string;
-  color: string;
+  /** The line's colour, for a compare that has one of its own (the percent way). */
+  color?: string;
+  /** How it is compared, in words. */
+  way?: string;
 }
 
 export interface ObjectTreeCallbacks {
@@ -168,7 +174,7 @@ export class WidgetObjectTree {
       return;
     }
     for (const ind of indicators) {
-      const row = this.row(ind.name);
+      const row = this.row(ind.name, ind.title);
       if (!ind.visible) row.classList.add('tcw-tree-hidden');
       const actions = document.createElement('div');
       actions.className = 'tcw-tree-actions';
@@ -329,12 +335,24 @@ export class WidgetObjectTree {
       this.compareEl.appendChild(this.emptyRow(this.t('objects.noComparisons')));
       return;
     }
+    // The symbols line up: beside a coloured one, a compare without a colour keeps the dot's room, empty.
+    const dots = compares.some((c) => c.color);
     for (const c of compares) {
       const row = this.row(c.label);
-      const dot = document.createElement('span');
-      dot.className = 'tcw-tree-dot';
-      dot.style.background = c.color;
-      row.insertBefore(dot, row.firstChild);
+      row.classList.add('tcw-tree-compare');
+      if (dots) {
+        const dot = document.createElement('span');
+        dot.className = 'tcw-tree-dot';
+        if (c.color) dot.style.background = c.color;
+        row.insertBefore(dot, row.firstChild);
+      }
+      if (c.way) {
+        const way = document.createElement('span');
+        way.className = 'tcw-tree-way';
+        way.textContent = c.way;
+        way.title = c.way;
+        row.appendChild(way);
+      }
       if (this.callbacks.onRemoveCompare) {
         row.appendChild(this.iconButton('trash', this.t('objects.removeComparison'), 'tcw-tree-del', () =>
           this.callbacks.onRemoveCompare?.(c.id),
@@ -344,13 +362,13 @@ export class WidgetObjectTree {
     }
   }
 
-  private row(label: string): HTMLDivElement {
+  private row(label: string, title = label): HTMLDivElement {
     const row = document.createElement('div');
     row.className = 'tcw-tree-row';
     const name = document.createElement('span');
     name.className = 'tcw-tree-name';
     name.textContent = label;
-    name.title = label;
+    name.title = title;
     row.appendChild(name);
     return row;
   }

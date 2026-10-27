@@ -98,6 +98,106 @@ describe('WebSocketAdapter', () => {
     expect(tickEvents).toEqual([tick]);
   });
 
+  describe('a frame of a bar older than the newest it sent', () => {
+    const MINUTE = 60_000;
+    const T = Date.UTC(2026, 0, 5);
+    const frame = (slot: number, close: number, closed = false) => ({
+      bar: { time: T + slot * MINUTE, open: close, high: close, low: close, close, volume: 3 },
+      closed,
+    });
+
+    function feed() {
+      const { adapter, socket } = makeAdapter((raw) => raw as WsParseResult);
+      adapter.on<{ bar: OHLCBar; closed: boolean }>('bar', (e) => barEvents.push(e.data));
+      adapter.on('tick', (e) => tickEvents.push(e.data));
+      adapter.connect(CONFIG);
+      socket.fireOpen();
+      return { adapter, socket, send: (f: ReturnType<typeof frame>) => socket.fireMessage(f) };
+    }
+    const prices = () => (tickEvents as { price: number }[]).map((t) => t.price);
+
+    it('is sent as a bar but makes no tick: a late final or a stale frame is no live price', () => {
+      const { send } = feed();
+      send(frame(10, 101));
+      send(frame(9, 94, true)); // the venue's final of the bar before
+      send(frame(7, 90)); // a stale frame, late
+      send(frame(10, 102));
+      send(frame(10, 103, true));
+      send(frame(11, 104));
+      expect(barEvents).toHaveLength(6);
+      expect(prices()).toEqual([101, 102, 103, 104]);
+    });
+
+    it('is counted again from a new connection', () => {
+      const { adapter, send, socket } = feed();
+      send(frame(10, 101));
+      adapter.disconnect();
+      adapter.connect(CONFIG);
+      socket.fireOpen();
+      send(frame(9, 99)); // another stream's newest, or the same after a gap
+      expect(prices()).toEqual([101, 99]);
+    });
+
+    /** A feed whose history, for any symbol and timeframe, ends on bar `last`. */
+    function servedFeed(last: number) {
+      const socket = new MockSocket();
+      const adapter = new WebSocketAdapter({
+        name: 'test',
+        wsUrl: () => 'wss://x',
+        fetchHistory: async () => [frame(last - 1, 100).bar, frame(last, 101).bar],
+        parseMessage: (raw) => raw as WsParseResult,
+        socketFactory: () => socket,
+      });
+      adapter.on('tick', (e) => tickEvents.push(e.data));
+      const connect = (config: DataAdapterConfig) => { adapter.connect(config); socket.fireOpen(); };
+      return { adapter, connect, send: (f: ReturnType<typeof frame>) => socket.fireMessage(f) };
+    }
+
+    it('starts from the last bar of the history it served for the symbol and timeframe: a bar sent again on subscribing is no live price', async () => {
+      const { adapter, connect, send } = servedFeed(10);
+      expect(await adapter.fetchHistory(CONFIG.symbol, CONFIG.timeframe, 2)).toEqual([frame(9, 100).bar, frame(10, 101).bar]);
+      connect(CONFIG);
+      send(frame(9, 100, true)); // the last closed bar, sent again on subscribing
+      send(frame(10, 102));
+      expect(prices()).toEqual([102]);
+    });
+
+    it("takes the history's last bar, sent again closed, for no live price: a history of closed bars only", async () => {
+      const { adapter, connect, send } = servedFeed(10);
+      await adapter.fetchHistory(CONFIG.symbol, CONFIG.timeframe, 2);
+      connect(CONFIG);
+      send(frame(10, 101, true)); // the history's last, closed, sent again on subscribing
+      send(frame(11, 96));
+      expect(prices()).toEqual([96]);
+    });
+
+    it("takes the close of the history's last bar once a forming frame of it came on the connection", async () => {
+      const { adapter, connect, send } = servedFeed(10);
+      await adapter.fetchHistory(CONFIG.symbol, CONFIG.timeframe, 2);
+      connect(CONFIG);
+      send(frame(10, 102)); // the history's last bar was still forming
+      send(frame(10, 103, true));
+      expect(prices()).toEqual([102, 103]);
+    });
+
+    it("takes the history's last bar, closed at another close than the one served, as a live price: it was still forming", async () => {
+      const { adapter, connect, send } = servedFeed(10);
+      await adapter.fetchHistory(CONFIG.symbol, CONFIG.timeframe, 2);
+      connect(CONFIG);
+      send(frame(10, 104, true)); // its final, the first frame on the connection
+      expect(prices()).toEqual([104]);
+    });
+
+    it("doesn't start from the history of another symbol or timeframe", async () => {
+      const { adapter, connect, send } = servedFeed(10);
+      await adapter.fetchHistory('ETHUSDT', CONFIG.timeframe, 2);
+      await adapter.fetchHistory(CONFIG.symbol, '5m', 2);
+      connect(CONFIG);
+      send(frame(9, 99));
+      expect(prices()).toEqual([99]);
+    });
+  });
+
   it('ignores messages the parser rejects', () => {
     const { adapter, socket } = makeAdapter(() => null);
     adapter.on('bar', (e) => barEvents.push(e.data as { bar: OHLCBar; closed: boolean }));

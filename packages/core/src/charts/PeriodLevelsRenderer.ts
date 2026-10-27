@@ -11,6 +11,8 @@ import { computePeriodLevels, type LevelPeriod, type PriceLevel } from './period
 export class PeriodLevelsRenderer {
   private visible = false;
   private period: LevelPeriod = 'day';
+  /** The zone whose midnight starts each day and week (null: UTC's). */
+  private exchangeZone: string | null = null;
 
   setVisible(v: boolean): void {
     this.visible = v;
@@ -24,10 +26,14 @@ export class PeriodLevelsRenderer {
   getPeriod(): LevelPeriod {
     return this.period;
   }
+  /** The exchange's zone, an IANA name the chart has checked: days and weeks start at its midnight. */
+  setExchangeTimeZone(zone: string | null): void {
+    this.exchangeZone = zone;
+  }
 
   render(ctx: CanvasRenderingContext2D, data: DataSeries, viewport: ViewportState, theme: Theme): void {
     if (!this.visible || data.length === 0) return;
-    const levels = computePeriodLevels(data, this.period);
+    const levels = computePeriodLevels(data, this.period, this.exchangeZone);
     if (levels.length === 0) return;
 
     const { chartRect } = viewport;

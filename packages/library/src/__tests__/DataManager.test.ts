@@ -144,3 +144,47 @@ describe('DataManager — one time unit per series', () => {
     expect(dm.getData()[1].time).toBe((S + 60) * 1000);
   });
 });
+
+describe('DataManager.replaceBar', () => {
+  const series = () => [bar(1, 10, 12, 9, 11, 5), bar(2, 11, 13, 10, 12, 1), bar(3, 12, 14, 11, 13, 2), bar(4, 13, 15, 12, 14, 3)];
+
+  it('replaces the bar at a time, repaired like setData, and gives its index', () => {
+    const dm = new DataManager();
+    dm.setData(series());
+    // A high under its close, and no volume: clamped and 0, as setData would.
+    expect(dm.replaceBar(bar(2, 11, 11.5, 10, 12))).toEqual({ index: 1, changed: true });
+    expect(dm.getData()[1]).toEqual(bar(2, 11, 12, 10, 12, 0));
+    expect(dm.getData().map((b) => b.time)).toEqual([1, 2, 3, 4]);
+  });
+
+  it('gives -1 and changes nothing for a time not loaded or a bar it cannot take', () => {
+    const dm = new DataManager();
+    dm.setData(series());
+    const before = dm.getData().slice();
+    for (const given of [bar(2.5, 1, 1, 1, 1), bar(0, 1, 1, 1, 1), bar(5, 1, 1, 1, 1), bar(2, 1, 1, 2, 1), bar(2, Number.NaN, 1, 1, 1), bar(2, -1, 1, 1, 1)]) {
+      expect(dm.replaceBar(given)).toEqual({ index: -1, changed: false });
+    }
+    expect(dm.getData()).toEqual(before);
+    expect(new DataManager().replaceBar(bar(1, 1, 1, 1, 1))).toEqual({ index: -1, changed: false });
+  });
+
+  it('finds a time in milliseconds on a series in seconds', () => {
+    const dm = new DataManager();
+    dm.setData([bar(1_700_000_000, 1, 1, 1, 1, 1), bar(1_700_000_060, 1, 1, 1, 1, 1)]);
+    expect(dm.replaceBar(bar(1_700_000_000_000, 1, 3, 1, 2, 1))).toEqual({ index: 0, changed: true });
+    expect(dm.getData()[0]).toEqual(bar(1_700_000_000, 1, 3, 1, 2, 1));
+  });
+
+  it('tells a bar sent again from a changed one, after the repairs', () => {
+    const dm = new DataManager();
+    // An FX feed sends no volume, and this one a high under its close.
+    const given = [bar(1, 1.1, 1.2, 1.0, 1.15), bar(2, 1.1, 1.12, 1.0, 1.15, 3)];
+    dm.setData(given);
+    const stored = dm.getData().slice();
+    expect(dm.replaceBar({ ...given[0] })).toEqual({ index: 0, changed: false });
+    expect(dm.replaceBar({ ...given[1] })).toEqual({ index: 1, changed: false });
+    // Nothing written: the bars are the objects they were.
+    expect(dm.getData()[0]).toBe(stored[0]);
+    expect(dm.getData()[1]).toBe(stored[1]);
+  });
+});

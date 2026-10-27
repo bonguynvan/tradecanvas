@@ -277,7 +277,7 @@ export class WebGLSeriesRenderer implements GpuRenderer {
 
   private syncSeries(frame: GpuFrame): void {
     const gl = this.gl;
-    const change = this.uploads.sync(frame.data);
+    const change = this.uploads.sync(frame.data, frame.seriesRevision);
     const values = this.uploads.values;
     gl.bindBuffer(gl.ARRAY_BUFFER, this.seriesBuffer);
     if (change.full || values.length !== this.gpuFloats) {

@@ -32,7 +32,7 @@
     <tr><td><code>kagi</code></td><td>Yang/yin reversal lines; the reversal is a percent (4) or an amount of price.</td></tr>
     <tr><td><code>lineBreak</code></td><td>A new line once the close breaks the last lines (3 by default).</td></tr>
     <tr><td><code>pointAndFigure</code></td><td>X/O columns; box size + reversal count.</td></tr>
-    <tr><td><code>rangeBars</code></td><td>Each bar's high-low equals a fixed range.</td></tr>
+    <tr><td><code>rangeBars</code></td><td>Each bar's high-low equals a fixed range, and it closes at its high or its low; the last bar is the one still forming.</td></tr>
   </tbody>
 </table>
 
@@ -62,6 +62,40 @@
   data (an ATR box for Renko, 1% of the average close for a P&amp;F box…). The settings
   are kept in a saved state; in ChartWidget they are in the settings dialog for the
   chart's type.
+</p>
+<p>
+  The automatic range of range bars is the mean true range of the last 100 closed bars,
+  rounded to a 1, 2 or 5 (… 1, 2, 5, 10, 20 …) and to a whole number of the symbol's
+  price step (on a market whose step depends on the price, the largest step those bars
+  traded at): small bars on a one-second chart, larger ones on a daily chart. The bar
+  still forming is left out of it, so a tick changes only the range bars built from that
+  bar; the ones before it stay as they are. When a bar closes and moves the mean to the
+  next 1-2-5 number, or those bars to another price step, every bar is built again on the
+  new range. A bar closes at its low plus the range on the way up, or its high minus the
+  range on the way down: its close is a price it reached, and its wick shows the way it
+  went first. A jump of several ranges, a gap between bars too, makes a bar for each range;
+  the bars that fill a gap stand at prices the gap skipped, which never traded. A range, set
+  or automatic, is raised to 2, 5, 10, 20… times itself, the first that makes no more, when
+  the closed bars would make more than 100,000 range bars, or the bar still forming more than
+  100,000 on its own; every bar is then built again on the raised range. A range under half the
+  15th significant digit of the largest price closes no bar, however the prices are written.
+</p>
+<p>
+  Renko's box, Kagi's reversal and a Point &amp; Figure box keep to the same limit: one so small
+  for the prices that the bars before the last would make more than 100,000 bricks, lines or
+  columns, or the last bar that many on its own, is raised to 2, 5, 10, 20… times itself, the
+  first that makes no more, and the chart is built on it. Kagi and Point &amp; Figure make one
+  line or column a bar at most, so only a series of more than 100,000 bars can reach the limit;
+  Line Break, whose setting is a count of lines, makes one line a bar at most too. A box, reversal
+  or range that is no finite number above 0, in a saved state or a shared link, is dropped (the
+  chart goes back to its default: worked out from the data, or Kagi's 4%), so a link can't stall
+  the chart. The settings dialog takes none under 0.00000001 and says so under the field. On a live chart a raised size
+  stays from tick to tick, so a tick builds the bars once, and is worked out again for a new
+  series; <code>toRenko</code>, <code>toKagi</code>, <code>toPointAndFigure</code> and
+  <code>toRangeBars</code> do the same when given a <code>ReshapeMemo</code> as their last argument.
+  Keep one memo for each series, pass it on every run, and call <code>memo.clear()</code> (or make a
+  new one) when the series is replaced, for a new symbol or timeframe: a memo can't tell a new series
+  by itself, and would draw it at the last one's raised size.
 </p>
 <pre><code>{`chart.setChartTypeOptions({
   renko: { boxSize: 50 },                         // or 'atr' with atrPeriod

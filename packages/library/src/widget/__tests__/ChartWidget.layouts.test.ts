@@ -10,13 +10,17 @@ class FakeChart {
   chartType = 'candlestick';
   loaded: string[] = [];
   scaleModes: string[] = [];
+  /** The other setters the widget called, in order. */
+  calls: [string, unknown][] = [];
   private listeners = new Map<string, ((e: { payload: unknown }) => void)[]>();
 
   constructor(_host: HTMLElement, public options: ChartOptions) {
     FakeChart.last = this;
     return new Proxy(this, {
-      get: (target, key, receiver) =>
-        key in target ? Reflect.get(target, key, receiver) : () => undefined,
+      get: (target, key, receiver) => {
+        if (key in target) return Reflect.get(target, key, receiver);
+        return (arg: unknown) => { if (typeof key === 'string' && key.startsWith('set')) target.calls.push([key, arg]); };
+      },
     });
   }
 
@@ -75,6 +79,7 @@ const typeName = (name: string) => {
 };
 const submitName = () => prompt().dispatchEvent(new Event('submit', { cancelable: true }));
 const settle = (ms = 30) => new Promise((r) => setTimeout(r, ms));
+const calls = (name: string) => FakeChart.last.calls.filter(([n]) => n === name).map(([, v]) => v);
 const flush = () => settle(0);
 /** Use the widget (the page's Ctrl+S is its own until then). */
 const press = () => host.querySelector('.tcw-root')!.dispatchEvent(new Event('pointerdown'));
@@ -173,6 +178,45 @@ describe('ChartWidget named layouts', () => {
     expect(FakeChart.last.scaleModes).toContain('logarithmic');
     expect(layoutsButton()!.textContent).toContain('Saved');
     expect(await widget.openLayout('missing')).toBe(false);
+  });
+
+  it('a layout carries the overlays but not the time zone', async () => {
+    make();
+    widget.setSettings({ volumeProfileVisible: true, crosshairMode: 'normal', timezone: 'Asia/Tokyo', numberLocale: 'de-DE' });
+    const content = JSON.parse(widget.getLayoutContent());
+    expect(content.settings).toMatchObject({ volumeProfileVisible: true, crosshairMode: 'normal', gridVisible: true });
+    // The viewer's own, and what the layout keeps elsewhere.
+    for (const key of ['timezone', 'numberLocale', 'scaleMode', 'invertScale', 'logScale', 'autoScale', 'chartTypeOptions']) {
+      expect(content.settings).not.toHaveProperty(key);
+    }
+  });
+
+  it('opens a layout with its Chart Settings, the viewer’s zone left as it is', async () => {
+    make();
+    const content = JSON.stringify({
+      v: 1, symbol: 'AAA', timeframe: '5m', scaleMode: 'regular', invertScale: false, chart: null,
+      settings: { volumeProfileVisible: true, crosshairMode: 'normal', timezone: 'Asia/Tokyo' },
+    });
+    expect(await widget.applyLayoutContent(content)).toBe(true);
+    expect(calls('setVolumeProfileVisible')).toEqual([true]);
+    expect(calls('setCrosshairMode')).toEqual(['normal']);
+    expect(calls('setTimeZone')).toEqual([]);
+  });
+
+  it('a layout saved before settings were kept leaves them as they are', async () => {
+    make();
+    const content = JSON.stringify({ v: 1, symbol: 'AAA', timeframe: '5m', scaleMode: 'regular', invertScale: false, chart: null });
+    expect(await widget.applyLayoutContent(content)).toBe(true);
+    expect(calls('setVolumeProfileVisible')).toEqual([]);
+    expect(calls('setCrosshairMode')).toEqual([]);
+  });
+
+  it('a settings change auto-saves the open layout', async () => {
+    make();
+    const saved = await widget.getLayoutSession()!.saveAs('A');
+    widget.setSettings({ volumeProfileVisible: true });
+    await settle();
+    expect(JSON.parse((await storage.load(saved.id))!.content).settings.volumeProfileVisible).toBe(true);
   });
 
   it('turns down content that is not a layout', async () => {

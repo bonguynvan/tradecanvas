@@ -16,15 +16,40 @@ export type ChartType =
  * is worked out from the data.
  */
 export interface ChartTypeOptions {
-  /** Box size in price, or 'atr' (default): the average true range of the last `atrPeriod` bars (14). */
+  /**
+   * Box size in price, or 'atr' (default): the average true range of the
+   * last `atrPeriod` bars (14). A box with which the bars before the last
+   * would make more than 100,000 bricks, or the last bar more than 100,000
+   * on its own, is raised to 2, 5, 10… times itself, the first that makes
+   * no more.
+   */
   renko?: { boxSize?: number | 'atr'; atrPeriod?: number };
-  /** How many lines a reversal has to break (3). */
+  /** How many lines a reversal has to break (3). A bar makes one line at most. */
   lineBreak?: { lines?: number };
-  /** The reversal: percent of the line's start (4), or an amount of price with `reversalType` 'price'. */
+  /**
+   * The reversal: percent of the line's start (4), or an amount of price
+   * with `reversalType` 'price'. A bar makes one line at most; on a series
+   * of more than 100,000 bars, a reversal with which the bars before the
+   * last would make more than 100,000 lines is raised as Renko's box is.
+   */
   kagi?: { reversal?: number; reversalType?: 'percent' | 'price' };
-  /** Box size in price ('auto': 1% of the average close) and boxes to reverse (3). */
+  /**
+   * Box size in price ('auto': 1% of the average close) and boxes to
+   * reverse (3). A bar makes one column at most; on a series of more than
+   * 100,000 bars, a box with which the bars before the last would make more
+   * than 100,000 columns is raised as Renko's is, and drawn that size.
+   */
   pointAndFigure?: { boxSize?: number | 'auto'; reversal?: number };
-  /** Each bar's range in price ('auto': 0.5% of the average close). */
+  /**
+   * Each bar's range in price ('auto': the mean true range of the last 100
+   * closed bars, rounded to 1, 2 or 5 and to a whole number of the price
+   * step, the largest those bars traded at). One under half the 15th
+   * significant digit of the largest price closes no bar, however the prices
+   * are written; a larger one with which the closed bars would make more than
+   * 100,000 range bars, or the last bar more than 100,000 on its own, is
+   * raised to 2, 5, 10… times itself, and every bar is built again on it. The
+   * last bar drawn is the one still forming.
+   */
   rangeBars?: { range?: number | 'auto' };
 }
 
@@ -140,6 +165,12 @@ export interface ChartOptions {
   /** Default `'candlestick'`. */
   chartType?: ChartType;
   theme?: ThemeName | Theme;
+  /**
+   * Fit the price axis to the bars on view as they move (default `true`).
+   * `false` holds the range on screen; each new series (the first bars,
+   * `setData`'s, a stream's symbol or timeframe switch) is still fitted once,
+   * and bars that come one by one into an empty chart until they fill it.
+   */
   autoScale?: boolean;
   rightMargin?: number;
   minBarSpacing?: number;

@@ -33,6 +33,7 @@ class FakeChart {
   getOrders(): unknown[] { return []; }
   getPositions(): unknown[] { return []; }
   getFills(): unknown[] { return []; }
+  getAlerts(): unknown[] { return []; }
   getRequiredSymbols(): string[] { return []; }
   formatPrice(v: number): string { return v.toFixed(2); }
 }

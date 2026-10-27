@@ -1,6 +1,10 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import type { IndicatorPlugin, IndicatorValue, OHLCBar } from '@tradecanvas/commons';
+import { indicatorSource } from '@tradecanvas/commons';
 import { IndicatorEngine } from '../IndicatorEngine.js';
+import { registerBuiltInIndicators } from '../registry.js';
+import { SymbolSeriesStore } from '../symbols/SymbolSeriesStore.js';
+import { CompareSymbolIndicator, CorrelationCoefficientIndicator, CorrelationLogIndicator, SpreadIndicator } from '../symbols/symbolIndicators.js';
 
 function bars(n: number): OHLCBar[] {
   return Array.from({ length: n }, (_, i) => ({ time: i * 60_000, open: 1, high: 1, low: 1, close: 1, volume: 0 }));
@@ -184,5 +188,235 @@ describe('IndicatorEngine.deferRecalculateFrom', () => {
     engine.recalculateAll(data);
     engine.getOutput(id);
     expect(counts.calculate).toBe(1);
+  });
+});
+
+describe('IndicatorEngine: a change of the exchange zone', () => {
+  /** Hourly bars of three days, each day at its own price. */
+  const hours = (): OHLCBar[] => Array.from({ length: 72 }, (_, i) => {
+    const p = 100 + Math.floor(i / 24);
+    return { time: Date.UTC(2026, 9, 19) + i * 3_600_000, open: p, high: p + 1, low: p - 1, close: p, volume: 10 };
+  });
+
+  /** A plugin of the host's that may count days in the zone: it says nothing either way. */
+  function hostPlugin(): { plugin: IndicatorPlugin; runs: () => number } {
+    let runs = 0;
+    const plugin: IndicatorPlugin = {
+      descriptor: { id: 'host', name: 'host', placement: 'overlay', defaultConfig: {} },
+      calculate(data) {
+        runs++;
+        return { values: new Map(), series: data.map(() => null) };
+      },
+      render() {},
+    };
+    return { plugin, runs: () => runs };
+  }
+
+  it('computes again only the indicators that count days in it, those that read their lines, and plugins that may', () => {
+    const engine = new IndicatorEngine();
+    registerBuiltInIndicators(engine);
+    const host = hostPlugin();
+    engine.register(host.plugin);
+    const data = hours();
+    const ema = engine.addIndicator('ema', { period: 10 }, data);
+    const vwap = engine.addIndicator('vwap', {}, data);
+    const smaOnVwap = engine.addIndicator('sma', { period: 3, source: indicatorSource(vwap, 'value') }, data);
+    engine.addIndicator('host', {}, data);
+    const before = { ema: engine.getOutput(ema), vwap: engine.getOutput(vwap)?.series?.[30]?.value, sma: engine.getOutput(smaOnVwap)?.series?.[30]?.value };
+    const hostRuns = host.runs();
+    expect(engine.setExchangeTimeZone('Asia/Tokyo', data)).toBe(true);
+    engine.flush();
+    expect(engine.getOutput(ema)).toBe(before.ema);
+    expect(engine.getOutput(vwap)?.series?.[30]?.value).not.toBe(before.vwap);
+    expect(engine.getOutput(smaOnVwap)?.series?.[30]?.value).not.toBe(before.sma);
+    expect(host.runs()).toBe(hostRuns + 1);
+  });
+
+  it('computes nothing again for a plugin that says it reads no zone', () => {
+    const engine = new IndicatorEngine();
+    const host = hostPlugin();
+    engine.register({ ...host.plugin, descriptor: { ...host.plugin.descriptor, readsExchangeTimeZone: false } });
+    const data = hours();
+    engine.addIndicator('host', {}, data);
+    engine.setExchangeTimeZone('Asia/Tokyo', data);
+    engine.flush();
+    expect(host.runs()).toBe(1);
+  });
+
+  it('computes nothing again for the chart’s own indicators of another symbol, which read its bars, not the zone', () => {
+    const engine = new IndicatorEngine();
+    const store = new SymbolSeriesStore();
+    const indicators = [new CompareSymbolIndicator(store), new SpreadIndicator(store), new CorrelationCoefficientIndicator(store), new CorrelationLogIndicator(store)];
+    const data = hours();
+    store.set('B', data);
+    for (const indicator of indicators) {
+      engine.register(indicator);
+      engine.addIndicator(indicator.descriptor.id, { symbol: 'B' }, data);
+    }
+    const runs = indicators.map((indicator) => vi.spyOn(indicator, 'calculate'));
+    engine.setExchangeTimeZone('Asia/Tokyo', data);
+    engine.flush();
+    for (const run of runs) expect(run).not.toHaveBeenCalled();
+  });
+
+  it('goes with a tick waiting: both are computed once', () => {
+    const engine = new IndicatorEngine();
+    registerBuiltInIndicators(engine);
+    const data = hours();
+    const vwap = engine.addIndicator('vwap', {}, data);
+    engine.deferRecalculateFrom(data, data.length - 1);
+    engine.setExchangeTimeZone('Asia/Tokyo', data);
+    const fresh = new IndicatorEngine();
+    registerBuiltInIndicators(fresh);
+    fresh.setExchangeTimeZone('Asia/Tokyo');
+    const expected = fresh.getOutput(fresh.addIndicator('vwap', {}, data));
+    expect(engine.getOutput(vwap)?.series).toEqual(expected?.series);
+  });
+});
+
+describe('IndicatorEngine.setExchangeTimeZone', () => {
+  /** A plugin that keeps the zone each computation was given. */
+  function zoneProbe() {
+    const zones: (string | undefined)[] = [];
+    const plugin: IndicatorPlugin = {
+      descriptor: { id: 'zone', name: 'zone', placement: 'overlay', defaultConfig: {} },
+      calculate(data, config) {
+        zones.push(config.exchangeTimeZone);
+        return { values: new Map(), series: data.map(() => null) };
+      },
+      render() {},
+    };
+    return { plugin, zones };
+  }
+
+  it('gives every instance, and every new one, config.exchangeTimeZone', () => {
+    const { plugin, zones } = zoneProbe();
+    const engine = new IndicatorEngine();
+    engine.register(plugin);
+    const data = bars(10);
+    engine.addIndicator('zone', {}, data);
+    expect(engine.setExchangeTimeZone('Asia/Ho_Chi_Minh')).toBe(true);
+    engine.recalculateAll(data);
+    engine.addIndicator('zone', {}, data);
+    expect(zones).toEqual([undefined, 'Asia/Ho_Chi_Minh', 'Asia/Ho_Chi_Minh']);
+  });
+
+  it('says whether the zone changed, and null takes it away', () => {
+    const { plugin, zones } = zoneProbe();
+    const engine = new IndicatorEngine();
+    engine.register(plugin);
+    const data = bars(10);
+    engine.addIndicator('zone', {}, data);
+    expect(engine.setExchangeTimeZone('America/New_York')).toBe(true);
+    expect(engine.setExchangeTimeZone('America/New_York')).toBe(false);
+    expect(engine.setExchangeTimeZone(null)).toBe(true);
+    engine.recalculateAll(data);
+    expect(zones.at(-1)).toBeUndefined();
+  });
+
+  it('takes a zone the browser does not know as none', () => {
+    const { plugin, zones } = zoneProbe();
+    const engine = new IndicatorEngine();
+    engine.register(plugin);
+    expect(engine.setExchangeTimeZone('Mars/Olympus_Mons')).toBe(false);
+    engine.addIndicator('zone', {}, bars(10));
+    expect(zones).toEqual([undefined]);
+  });
+
+  it('takes UTC as none, so a UTC symbol after none or after another computes nothing again', () => {
+    // Every crypto feed names UTC, and a symbol switch passes through none on its way back to it.
+    const { plugin, zones } = zoneProbe();
+    const engine = new IndicatorEngine();
+    engine.register(plugin);
+    expect(engine.setExchangeTimeZone('UTC')).toBe(false);
+    expect(engine.setExchangeTimeZone('Etc/UTC')).toBe(false);
+    engine.addIndicator('zone', {}, bars(10));
+    expect(zones).toEqual([undefined]);
+    expect(engine.setExchangeTimeZone('Asia/Tokyo')).toBe(true);
+    expect(engine.setExchangeTimeZone('UTC')).toBe(true);
+    expect(engine.setExchangeTimeZone(null)).toBe(false);
+  });
+
+  it('keeps the zone out of the parameters a layout saves', () => {
+    const { plugin } = zoneProbe();
+    const engine = new IndicatorEngine();
+    engine.register(plugin);
+    engine.setExchangeTimeZone('Asia/Tokyo');
+    engine.addIndicator('zone', { length: 3 }, bars(10));
+    expect(engine.getActiveIndicators()[0].params).toEqual({ length: 3 });
+  });
+});
+
+/**
+ * A correction replaces a bar in the middle of the series, and the chart
+ * computes the indicators again from it on (`recalculateFrom`), each one
+ * resuming from its state at the bar before, or computing in full.
+ */
+describe('IndicatorEngine.recalculateFrom a corrected bar in the middle', () => {
+  const HOUR = 3_600_000;
+  const T0 = Date.UTC(2026, 0, 5, 13);
+  const wave = (n: number): OHLCBar[] => Array.from({ length: n }, (_, i) => {
+    const close = 100 + Math.sin(i / 5) * 8 + (i % 11) / 3;
+    return { time: T0 + i * HOUR, open: 100, high: Math.max(100, close) + 1, low: Math.min(100, close) - 1, close, volume: 5 + (i % 13) };
+  });
+  /** The bars with bar `k` corrected: a lower close, a wider range, more volume. */
+  const corrected = (bars: OHLCBar[], k: number): OHLCBar[] => {
+    const out = bars.slice();
+    out[k] = { ...bars[k], close: bars[k].close - 6, low: bars[k].low - 6, high: bars[k].high + 3, volume: bars[k].volume + 9 };
+    return out;
+  };
+  /** Outputs to compare: floats to 9 digits, as two orders of the same sums differ further down. */
+  const same = (engine: IndicatorEngine, id: string) =>
+    JSON.stringify(engine.getOutput(id)?.series ?? null, (_, v) => (typeof v === 'number' ? Number(v.toPrecision(9)) : v));
+  const builtIns = (() => {
+    const engine = new IndicatorEngine();
+    registerBuiltInIndicators(engine);
+    return engine.getAvailableIndicators().map((d) => d.id);
+  })();
+
+  it.each([0.5, 0.98])('matches a full recalculation for every built-in (bar at %f of the series)', (where) => {
+    const bars = wave(400);
+    const k = Math.floor(bars.length * where);
+    const live = new IndicatorEngine();
+    registerBuiltInIndicators(live);
+    const ids = builtIns.map((id) => [id, live.addIndicator(id, {}, bars)] as const);
+    const data = corrected(bars, k);
+    live.recalculateFrom(data, k);
+    const oracle = new IndicatorEngine();
+    registerBuiltInIndicators(oracle);
+    for (const [id, instance] of ids) {
+      const fresh = oracle.addIndicator(id, {}, data);
+      expect(same(live, instance), id).toBe(same(oracle, fresh));
+    }
+    expect(ids.length).toBeGreaterThan(60);
+  });
+
+  it.each([0.2, 0.5, 0.9, 0.98])('matches a full recalculation for line-source chains and price sources (bar at %f)', (where) => {
+    const build = (engine: IndicatorEngine, data: OHLCBar[]) => {
+      const rsi = engine.addIndicator('rsi', { period: 14 }, data);
+      const zigzag = engine.addIndicator('zigzag', {}, data);
+      const fractals = engine.addIndicator('fractals', {}, data);
+      const emaOnRsi = engine.addIndicator('ema', { period: 9, source: indicatorSource(rsi, 'value') }, data);
+      const smaOnPivots = engine.addIndicator('sma', { period: 5, source: indicatorSource(zigzag, 'pivot') }, data);
+      const emaHl2 = engine.addIndicator('ema', { period: 7, source: 'hl2' }, data);
+      const bandsOnEma = engine.addIndicator('bb', { period: 10, source: indicatorSource(emaHl2, 'value') }, data);
+      return { rsi, zigzag, fractals, emaOnRsi, smaOnPivots, emaHl2, bandsOnEma };
+    };
+    const bars = wave(400);
+    const k = Math.floor(bars.length * where);
+    const live = new IndicatorEngine();
+    registerBuiltInIndicators(live);
+    const ids = build(live, bars);
+    const data = corrected(bars, k);
+    live.recalculateFrom(data, k);
+    const oracle = new IndicatorEngine();
+    registerBuiltInIndicators(oracle);
+    const fresh = build(oracle, data);
+    // A wrong line key would compare two empty lines.
+    expect(live.getOutput(ids.emaOnRsi)?.series.some((v) => v && Number.isFinite(v.value))).toBe(true);
+    expect(live.getOutput(ids.smaOnPivots)?.series.some((v) => v && Number.isFinite(v.value))).toBe(true);
+    for (const key of Object.keys(ids) as (keyof typeof ids)[]) {
+      expect(same(live, ids[key]), key).toBe(same(oracle, fresh[key]));
+    }
   });
 });

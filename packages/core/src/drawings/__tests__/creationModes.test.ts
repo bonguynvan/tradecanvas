@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { DrawingManager } from '../DrawingManager.js';
 import { BrushTool, PathTool, PolylineTool } from '../tools/freehand.js';
 import { TrendLineTool } from '../tools/TrendLine.js';
@@ -119,6 +119,19 @@ describe('tools drawn from the bars', () => {
     for (const tool of [before, after]) {
       expect((tool as unknown as { dataGetter: () => unknown }).dataGetter()).toBe(bars);
     }
+  });
+
+  it('get the revision of the bars with them, which says when one was corrected in place', () => {
+    const before = new AnchoredVWAPTool();
+    const early = vi.spyOn(before, 'setDataGetter');
+    manager.register(before);
+    let revision = 4;
+    manager.setDataGetter(() => [], () => revision);
+    const after = new AnchoredVWAPTool();
+    const late = vi.spyOn(after, 'setDataGetter');
+    manager.register(after);
+    revision = 5;
+    for (const spy of [early, late]) expect(spy.mock.calls[0][1]?.()).toBe(5);
   });
 });
 

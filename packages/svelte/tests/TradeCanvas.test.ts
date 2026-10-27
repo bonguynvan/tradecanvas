@@ -11,6 +11,13 @@ const { chart, ChartCtor } = vi.hoisted(() => {
     updateLastBar: vi.fn((bar: unknown) => { held[held.length - 1] = bar; }),
     appendBar: vi.fn((bar: unknown) => { held.push(bar); }),
     appendBars: vi.fn((bars: unknown[]) => { held.push(...bars); }),
+    // As the chart's: the loaded bar with that time, or false.
+    updateBar: vi.fn((bar: { time: number }) => {
+      const i = held.findIndex((h) => (h as { time: number }).time === bar.time);
+      if (i < 0) return false;
+      held[i] = bar;
+      return true;
+    }),
     getData: () => held,
     isExtendedHoursVisible: () => true,
     isReplayActive: () => false,
@@ -37,6 +44,7 @@ const { chart, ChartCtor } = vi.hoisted(() => {
 vi.mock('@tradecanvas/chart', async (importOriginal) => ({
   syncIndicators: (await importOriginal<typeof import('@tradecanvas/chart')>()).syncIndicators,
   feedBars: (await importOriginal<typeof import('@tradecanvas/chart')>()).feedBars,
+  CORRECTABLE_BARS: (await importOriginal<typeof import('@tradecanvas/chart')>()).CORRECTABLE_BARS,
   Chart: ChartCtor,
   BinanceAdapter: vi.fn(),
   DARK_THEME: { name: 'dark' },
@@ -198,6 +206,33 @@ describe('<TradeCanvas> (svelte)', () => {
     flushSync();
     expect(chart.setData).toHaveBeenCalledTimes(2);
     expect(chart.appendBar).not.toHaveBeenCalled();
+  });
+
+  it('feeds a bar before the forming one changed in place in $state data as updateBar, without setData', async () => {
+    const { default: DataHost } = await import('./DataHost.svelte');
+    type Host = { push: (bar: typeof BAR) => void; setClose: (close: number, back?: number) => void };
+    let host: Host | null = null;
+    render(DataHost, { props: { onHost: (h: Host) => { host = h; } } });
+    flushSync();
+    for (const time of [2, 3, 4, 5]) host!.push({ ...BAR, time });
+    flushSync();
+    expect(chart.setData).toHaveBeenCalledTimes(1);
+    // The venue's final for bar 4, the one before the forming bar.
+    host!.setClose(3, 1);
+    flushSync();
+    expect(chart.updateBar).toHaveBeenCalledWith({ ...BAR, time: 4, close: 3, high: 3 });
+    expect(chart.setData).toHaveBeenCalledTimes(1);
+    expect(chart.updateLastBar).not.toHaveBeenCalled();
+  });
+
+  it('feeds a new array with a bar before the forming one changed as updateBar', async () => {
+    const bars = [1, 2, 3, 4, 5].map((time) => ({ ...BAR, time }));
+    const { rerender } = render(TradeCanvas, { props: { data: bars, stream: false } });
+    flushSync();
+    await rerender({ data: [...bars.slice(0, 3), { ...bars[3], close: 3, high: 3 }, bars[4]], stream: false });
+    flushSync();
+    expect(chart.updateBar).toHaveBeenCalledWith({ ...BAR, time: 4, close: 3, high: 3 });
+    expect(chart.setData).toHaveBeenCalledTimes(1);
   });
 
   it('feeds a new array that goes on from the last as ticks, and takes any other as a new series', async () => {

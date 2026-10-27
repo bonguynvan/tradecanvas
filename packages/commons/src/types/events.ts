@@ -4,6 +4,7 @@ import type { Point } from './rendering.js';
 import type { IndicatorValue } from './indicator.js';
 import type { DrawingToolType } from './drawing.js';
 import type { SymbolInfo } from './symbol.js';
+import type { MarketConfig } from '../market/types.js';
 
 export type ChartEventType =
   | 'crosshairMove'
@@ -16,6 +17,10 @@ export type ChartEventType =
   | 'dataUpdate'
   | 'historyLoad'
   | 'symbolInfoChange'
+  /** The market's rules changed (`setMarket`): its steps, colours, decimals, zone. */
+  | 'marketChange'
+  /** A compare line was added, taken off, given new bars, shown or hidden (`addCompareSymbol` and the rest). */
+  | 'compareChange'
   | 'indicatorAdd'
   | 'indicatorRemove'
   | 'paneResize'
@@ -300,6 +305,10 @@ export interface IndicatorSettingsChangePayload {
  *   A tick on the forming bar sends none (`indicatorUpdate` follows those),
  *   nor do older bars paged in (`historyLoad`) or a replay's steps
  *   (`replayStep`).
+ * - `correction`: the bar shown at `index`, at `time`, has new values
+ *   (`updateBar`, or a feed sending an older bar again as closed); the
+ *   series is as long as it was. None for a bar outside the hours shown or
+ *   during a replay, nor for one sent again with the same values.
  * - `alert`: an alert went off (`alertTriggered` says more).
  * - `bracket`: the bracket being placed was cancelled with Esc.
  * - `connection`: the stream's connection changed.
@@ -307,6 +316,7 @@ export interface IndicatorSettingsChangePayload {
  */
 export type DataUpdatePayload =
   | { kind: 'bars'; length: number }
+  | { kind: 'correction'; time: number; index: number }
   | { kind: 'alert'; alert: 'triggered'; alertId: string; price: number; message?: string }
   | { kind: 'bracket'; bracket: 'cancelled' }
   | { kind: 'connection'; connection: ConnectionInfo }
@@ -326,6 +336,10 @@ export interface ChartEventMap {
   historyLoad: HistoryLoadPayload;
   /** What is known about the symbol on the chart changed (`setSymbolInfo`, or the stream's adapter). */
   symbolInfoChange: { info: SymbolInfo | null };
+  /** The market's rules changed (`setMarket`); its zone backs `getExchangeTimeZone` when the symbol names none. */
+  marketChange: { market: MarketConfig };
+  /** A compare line changed: added, taken off (each one `clearCompareSymbols` takes too), given new bars (`updateCompareData`), shown or hidden (`setCompareVisible`). */
+  compareChange: { id: string; change: 'add' | 'remove' | 'data' | 'visible' };
   chartTypeChange: { type: string; previous: string };
   /**
    * What draws the chart now. `reason` says why: no WebGL 2 here (or only a

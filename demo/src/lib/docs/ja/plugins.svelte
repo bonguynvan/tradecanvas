@@ -105,7 +105,9 @@ chart.setDrawingTool('targetLine')`}</code></pre>
   <code>maxAnchors</code> も指定できます）と、ダイアログで塗りつぶし
   （<code>fill</code>）やテキスト（<code>text</code>）を設定できるかどうかも記述できます。
   ツールは <code>moveHandle()</code> でアンカーではないハンドルを動かせ、バーをもとに描画する場合は
-  <code>setDataGetter()</code> でチャートのバーを受け取ります。
+  <code>setDataGetter(getter, revision)</code> でチャートのバーを受け取ります。
+  同じ配列の中でバーが修正されると（<code>updateBar</code>）<code>revision()</code> が変わるので、
+  バーから計算した結果を保持しているツールはそのとき計算し直します。
 </p>
 
 <h2>カスタムチャートタイプ</h2>
@@ -147,6 +149,8 @@ registerPlugin({
   インジケーターとチャートタイプのレンダラーは viewport だけを受け取るため、<code>priceToY</code>、<code>barIndexToX</code>、
   <code>timeToX</code> とその逆関数もエクスポートしています。バーは画面に描かれている系列のもので、練行足や
   Kagi ではそのブロックです（<code>chart.isTimeAligned()</code> でデータのバーと一致するかが分かります）。
+  価格軸と同じように価格を書くために、viewport にはチャート独自の価格フォーマット（ある場合は <code>formatPrice</code>）、
+  <code>numberLocale</code>、市場または銘柄が決めた小数桁（<code>pricePrecision</code>）が入っています。インジケーターのペインではフォーマットと小数桁は未設定です。
 </p>
 <p>
   独自の設定（表示モードやスイッチ）を持つオーバーレイは、チャートを再描画する tick が来なくても変更をすぐに反映できます。

@@ -27,6 +27,15 @@ describe('SymbolSeriesStore', () => {
     expect(store.closeAt('C', T0 + 11 * HOUR)).toBeUndefined();
   });
 
+  it('gives a symbol’s last close however long after its last bar, as stale', () => {
+    const store = new SymbolSeriesStore();
+    store.set('B', other);
+    expect(store.lastCloseAt('B', T0 + 15 * HOUR)).toEqual({ close: 30, stale: false });
+    expect(store.lastCloseAt('B', T0 + 17 * HOUR)).toEqual({ close: 30, stale: true });
+    expect(store.lastCloseAt('B', T0 + 9 * HOUR)).toBeUndefined(); // before it starts
+    expect(store.lastCloseAt('C', T0 + 11 * HOUR)).toBeUndefined();
+  });
+
   it('matches bars timed in seconds with bars timed in milliseconds', () => {
     const store = new SymbolSeriesStore();
     store.set('S', other.map((b) => ({ ...b, time: b.time / 1000 })));
@@ -80,15 +89,19 @@ describe('CompareRenderer', () => {
   it('lines the other series up with the main one by time', () => {
     const renderer = new CompareRenderer();
     renderer.addSymbol({ id: 'b', label: 'B', data: other, color: '#f00', visible: true });
-    const points: number[][] = [];
+    // Each path drawn: the line's first, then its label's mark.
+    const paths: number[][][] = [];
     const ctx = {
-      save() {}, restore() {}, beginPath() {}, rect() {}, clip() {}, stroke() {}, fillText() {},
-      moveTo(x: number, y: number) { points.push([x, y]); },
-      lineTo(x: number, y: number) { points.push([x, y]); },
+      save() {}, restore() {}, rect() {}, clip() {}, stroke() {}, fillText() {}, strokeText() {}, setLineDash() {},
+      beginPath() { paths.push([]); },
+      measureText: (text: string) => ({ width: text.length * 6 }),
+      moveTo(x: number, y: number) { paths[paths.length - 1].push([x, y]); },
+      lineTo(x: number, y: number) { paths[paths.length - 1].push([x, y]); },
     } as unknown as CanvasRenderingContext2D;
     renderer.render(ctx, main, viewport, DARK_THEME);
+    const line = paths.find((points) => points.length > 0)!;
     // From the main bar at 10:00 (index 2) to 15:00 (index 7): six points.
-    expect(points.map(([x]) => x)).toEqual([24, 34, 44, 54, 64, 74]);
+    expect(line.map(([x]) => x)).toEqual([24, 34, 44, 54, 64, 74]);
   });
 
   it('gives the price range it covers, for the auto scale', () => {

@@ -123,6 +123,27 @@ chart.setIndicatorIntervals(ema, null)  // ふたたびすべての時間足に�
   階段状に変化し、リペイントすることはありません。
 </p>
 
+<p>
+  <code>vwap</code> は <code>anchor</code> で計算をやり直します。<code>'session'</code>（既定）は取引日ごと、取引所の
+  タイムゾーンの午前 0 時から（銘柄の <code>timeZone</code>、なければ市場の、なければ UTC）。<code>'week'</code> は
+  毎週月曜、<code>'month'</code> は毎月 1 日、<code>'all'</code> はリセットせず、読み込んだ全バーの平均なので、古い履歴を
+  読み込むと値が変わります。日足ではセッション VWAP は各バーの典型価格そのものなので、日足チャートでは
+  <code>'week'</code> か <code>'month'</code> を選んでください。<code>svwap</code> は σ バンド付きのセッション VWAP、
+  <code>avwap</code> はアンカーしたバーから始まります。<code>svwap</code>、<code>mtfma</code>、前日の価格ライン、
+  マーケットプロファイルのセッションも同じタイムゾーンで日を区切ります。<code>mtfma</code> の 2h から 12h までの足も
+  取引所の午前 0 時から始まり（フィード自身の 4h 足は UTC の区切りのまま）、日足では <code>svwap</code> はバンドなしで
+  ラインだけを出します。ChartWidget では、ほかの起点の VWAP は凡例・チップ・オブジェクトパネルで起点の名前付き（'VWAP 週'）になり、起点とその選択肢はウィジェットの言語で表示されます。CSV の列は <code>VWAP</code> のままです。
+</p>
+<pre><code>{`chart.addIndicator('vwap')                      // 取引日ごとにやり直す
+chart.addIndicator('vwap', { anchor: 'week' })  // 毎週月曜：日足向け
+chart.addIndicator('vwap', { anchor: 'all' })   // 読み込んだ全バー、以前と同じ`}</code></pre>
+
+<p>
+  <code>volumeProfile</code> は価格帯ごとに 1 行を描画領域の左端から描き、各行の長さはその価格帯で取引された出来高に従います。
+  行は半透明なので、上に重なる凡例も下にあるローソク足も読み取れます。<code>updateIndicatorStyle</code> で
+  <code>opacity</code> を下げると、さらに薄くできます。
+</p>
+
 <h2>独自のペインに表示 ({panes.length})</h2>
 <table>
   <thead><tr><th>id</th><th>名前</th><th>既定のパラメーター</th><th>ライン</th><th>レベル</th></tr></thead>
@@ -175,6 +196,10 @@ CANDLE_PATTERNS.length                                 // 64`}</code></pre>
   ウィジェットの凡例と設定に表示します。<code>category</code>（<code>'oscillators'</code>、<code>'volume'</code>…）を
   指定するとインジケーターダイアログのそのグループに入り、指定しなければ「その他」に入ります。詳しくは
   <a href="https://github.com/bonguynvan/tradecanvas/blob/main/skills/tradecanvas/references/recipes.md#a-custom-indicator">カスタムインジケーターのレシピ</a>を参照してください。
+  日・週・月でバーをまとめるインジケーターは、取引所のタイムゾーンを <code>config.exchangeTimeZone</code>
+  で読めます（チャートが設定します。未設定なら UTC）。タイムゾーンが変わると、それを読むインジケーターと
+  その線を読むものだけを計算し直します。タイムゾーンを読まない自作のインジケーターは、descriptor に
+  <code>readsExchangeTimeZone: false</code> と書けばそのまま残ります。
 </p>
 
 <h2>ペイン：サイズ変更、折りたたみ、最大化、並べ替え</h2>

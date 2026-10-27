@@ -121,6 +121,11 @@ function bucketOffset(zone: string, timeMs: number): number {
   return offset;
 }
 
+/** Whether `tz` keeps UTC's clock all year: a name of UTC itself, or an offset of 0. */
+export function isUtcTimeZone(tz: TimeZoneSetting): boolean {
+  return tz === 0 || (typeof tz === 'string' && UTC_ZONES.has(tz));
+}
+
 /** Minutes east of UTC at `timeMs` for any display timezone. */
 export function offsetAt(tz: TimeZoneSetting, timeMs: number): number {
   if (tz === null) return -new Date(timeMs).getTimezoneOffset();

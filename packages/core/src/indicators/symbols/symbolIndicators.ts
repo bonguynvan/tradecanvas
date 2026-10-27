@@ -30,6 +30,7 @@ export class CompareSymbolIndicator extends PointwiseIndicator<SymbolParams> {
     defaultConfig: { symbol: '' },
     shortName: 'Compare',
     plots: [{ key: 'value', title: 'Close', color: 0 }],
+    readsExchangeTimeZone: false,
   };
 
   constructor(private readonly store: SymbolSeriesStore) {
@@ -60,6 +61,7 @@ export class SpreadIndicator extends PointwiseIndicator<SpreadParams> {
     shortName: 'Spread',
     plots: [{ key: 'value', title: 'Spread', color: 0 }],
     inputs: { mode: { options: ['spread', 'ratio'] } },
+    readsExchangeTimeZone: false,
   };
 
   constructor(private readonly store: SymbolSeriesStore) {
@@ -122,6 +124,7 @@ const CORRELATION_DESCRIPTOR = {
   plots: [{ key: 'value', title: 'Correlation', color: 0 }],
   scale: { min: -1, max: 1 },
   levels: [0],
+  readsExchangeTimeZone: false,
 } as const;
 
 /**

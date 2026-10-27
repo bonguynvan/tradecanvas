@@ -13,6 +13,14 @@ describe('settingToTimezone', () => {
     expect(settingToTimezone('Mars/Olympus')).toBeNull();
     expect(settingToTimezone('')).toBeNull();
   });
+
+  it('reads a fixed offset only within the offsets a zone has, UTC-14 to UTC+14', () => {
+    expect(settingToTimezone('840')).toBe(840);
+    expect(settingToTimezone('-840')).toBe(-840);
+    expect(settingToTimezone('841')).toBeNull();
+    expect(settingToTimezone('100000000000')).toBeNull();
+    expect(settingToTimezone(`1${'0'.repeat(400)}`)).toBeNull();
+  });
 });
 
 describe('timezoneOptions', () => {

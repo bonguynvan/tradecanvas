@@ -24,11 +24,12 @@ chart.connect({ adapter: new CoinbaseAdapter(), symbol: 'BTC-USD', timeframe: '1
 <h2>DataAdapter 接口</h2>
 <pre><code>{`interface DataAdapter {
   name: string
+  supportedTimeframes?: TimeFrame[]   // left out: it serves every timeframe
   connect(config): void
   disconnect(): void
   getConnectionState(): ConnectionState
   fetchHistory(symbol, timeframe, limit?): Promise<OHLCBar[]>
-  on(event, listener): void   // 'bar' | 'tick' | 'snapshot' | 'connectionChange' | 'error' | 'symbolInfo'
+  on(event, listener): void   // 'bar' | 'tick' | 'connectionChange' | 'error' | 'symbolInfo'
   off(event, listener): void
   dispose(): void
 
@@ -49,11 +50,35 @@ chart.connect({ adapter: new CoinbaseAdapter(), symbol: 'BTC-USD', timeframe: '1
   <code>sessions</code>。
 </p>
 
+<h2 id="built-timeframes">数据源没有的周期</h2>
+<p>
+  列出 <code>supportedTimeframes</code> 的数据源，其他周期都由其中能整除它的最粗周期构建：7m 由 1m 构建，4h 和 1D 由 1h 构建。
+  日、周、月以及能整除一天的小时周期（2h、3h、4h、6h、8h、12h）从交易所的午夜开始，以 <code>resolveSymbol</code> 给出的
+  <code>timeZone</code> 为准。图表对每个品种只询问一次，在这类周期第一次加载历史的同时询问，得到回答后再构建该历史，并记住该时区；1h 及更短的周期不会等待。若该时区的日需要比 UTC 日更细的周期（只有 4h K线的数据源上的胡志明市），则按该周期重新加载这段历史。
+  没有 <code>resolveSymbol</code>、不提供时区或提供 UTC，或者其周期无法与该午夜对齐（时区与 UTC 相差 7 小时却只有 4h K线）的数据源，
+  仍按 UTC 划分日期，与以前一样。回答失败或超过 5 秒才回答的数据源也一样，此后该品种的日期保持按 UTC 划分，直到图表重新加载该品种（连接到它，或从其他品种或周期切换过来），因此更早的分页和重新连接后的历史中同一天不会出现两次；重新加载时按数据源此后给出的时区构建日期，或再次询问数据源。
+  市场的时区（<code>setMarket</code>）不会移动这些K线。时间戳为 00:00 UTC 的日线被视为其标明的日期。数据源之后通过 <code>symbolInfo</code>
+  事件发送的时区会改变显示的时间，但不会改变已构建的日的起点。
+</p>
+
 <h2 id="symbol-info">数据源稍后才得知的品种信息</h2>
 <p>
-  已连接的图表只调用一次 <code>resolveSymbol</code>。若数据源要稍后（例如收到第一条消息时）才得知品种信息，可通过 <code>symbolInfo</code> 事件发送，图表随即应用：价格轴、图例和价格标签按品种的小数位（<code>pricePrecision</code>）显示，价格轴刻度落在最小变动价位（<code>minTick</code>）上，并采用交易所的交易时段。
+  已连接的图表只调用一次 <code>resolveSymbol</code>。若数据源要稍后（例如收到第一条消息时）才得知品种信息，可通过 <code>symbolInfo</code> 事件发送，图表随即应用：价格轴、图例和价格标签按品种的小数位（<code>pricePrecision</code>）显示，绘图标签、当日涨跌停价与参考价、枢轴点标签、测量工具和市场轮廓也一样；组件中的数据窗口、价格提醒列表、委托单和账户面板同样如此；价格轴刻度落在最小变动价位（<code>minTick</code>）上，并采用交易所的交易时段。市场的小数位（<code>setMarket</code>）作用于同样的位置，并优先于品种的小数位。两者都没有时，绘图标签保留按价格大小决定的小数位，并像价格轴一样按数字区域设置分组。
 </p>
 <pre><code>{`emit('symbolInfo', { symbol: 'VNM', pricePrecision: 0, minTick: 10, currency: 'VND' })   // 与适配器发送其他事件的方式相同`}</code></pre>
+
+<h2 id="corrections">数据源修正的K线</h2>
+<p>
+  数据源修正一根K线的方式，是把它以已收盘的状态、用它自己的时间再发一次：<code>parseMessage</code> 返回 <code>{'{'} bar, closed: true {'}'}</code>，或一个 <code>bar</code> 事件。比数据流见过的最新K线更早的已收盘K线，是数据源对它的最终结论，例如在下一根K线的第一帧之后才到的交易所最终数据，或一次修订：图表替换这个时间的K线，无论其位置（<code>updateBar</code>），从它起重新计算指标，并保持视图不变。它不是实时价格：价格线、订单和警报仍跟随市场。比最新K线更早的未收盘数据帧已经过时，会被忽略，不改变任何东西。内置适配器（<code>WebSocketAdapter</code>、<code>PollingAdapter</code>、基于它们的数据源以及 <code>BinanceAdapter</code>）只用最新K线的收盘价生成 tick（它们提供的历史数据的最后一根K线也算在内，因此数据源在订阅时重发的最后一根已收盘K线不会生成 tick）；你自己的适配器若用K线生成 tick，也应忽略更早的K线。没有适配器时，调用 <code>chart.updateBar(bar)</code>。
+</p>
+<p>
+  使用 <code>aggregateTicks</code> 时，历史数据的最后一根K线就是成交继续构建的那根：连接后的第一笔成交保留它的开盘价、最高价、最低价和成交量。迟到的、属于已过去K线的成交会被忽略，而该K线的已收盘数据会修正它，正在形成的K线保留自己的成交。晚于最新K线开始时间的成交会计入该K线，即使按分段它应从更早开始（日线标记在午夜以外的时刻，或品种的时区在第一笔成交之后才到），因此价格会跟随每一笔成交。在由更细周期构建的周期上，被修正的基础K线会重新构建它所属的K线，适用于正在形成的K线之前最近的两根已构建K线；更早的修正会被忽略。
+</p>
+<pre><code>{`// 在适配器中：交易所对图表上已有K线的最终数据
+parseMessage: (raw) => ({ bar: toBar(raw), closed: true })
+
+// 你自己的K线，不经适配器
+const corrected = chart.updateBar(bar)   // false：没有已加载的K线是 bar.time`}</code></pre>
 
 <h2>约 20 行代码接入任意数据源</h2>
 <p>
@@ -74,11 +99,16 @@ const myAdapter = new WebSocketAdapter({
 <p>按周期把原始 tick 汇总成 OHLC K线：</p>
 <pre><code>{`import { TickAggregator } from '@tradecanvas/chart'
 
-const agg = new TickAggregator('1m')
+const agg = new TickAggregator('1d')
+agg.setTimeZone('Asia/Ho_Chi_Minh')         // days start at the exchange's midnight
+agg.seed(history.at(-1).time)               // a bar older than the history's last is past
+agg.on('barClose', (bar) => console.log(bar))   // a bar whose interval is over
+agg.on('correction', (bar) => console.log(bar)) // a closed bar older than the newest
 agg.processTick({ time, price, volume })
 
-const current = agg.getCurrentBar()         // forming bar
-const closed = agg.flushClosedBars()        // bars that have rolled over`}</code></pre>
+const current = agg.getCurrentBar()         // forming bar`}</code></pre>
+<p>周从周一开始，月从 1 日开始。使用 <code>setTimeZone</code> 后，日、周、月以及能整除一天的小时周期从交易所的午夜开始；图表会按品种的时区（没有则按市场的时区）为其数据流的 tick（<code>aggregateTicks</code>）设置它，并让由 tick 构建的K线与历史K线对齐：历史数据以 00:00 UTC 标记日期时，日线也这样标记；2h 到 12h 的K线只有在历史K线从交易所午夜开始时才从那里开始，因此数据源自己的 4h K线（00:00、04:00… UTC）保持原来的时间。在由数据源更细周期构建的周期上，它们从构建出的K线开始的地方开始。由小时K线构建时，从数据源的 <code>resolveSymbol</code> 给出的时区的午夜开始，没有则从 UTC 的午夜开始，无论图表使用哪个时区；由数据源以 00:00 UTC 标记的日线构建时，周线和月线保留数据源的日期，成交按数据源给出的时区确定日期，没有则按图表的时区，与数据源自己的日线一致。</p>
+<p>比已见到的最新K线更早的K线已经过去：<code>processBar</code> 把已收盘的这类K线作为 <code>correction</code> 发出，并忽略未收盘的数据帧；<code>processTick</code> 忽略属于这类K线的成交，因此迟到的数据帧或成交既不会提前结束正在形成的K线，也不会移动价格。<code>seed(time)</code> 从历史数据的最后一根K线开始，且不会后退（除非较新的那根K线是成交按如今已不再采用的时间段构建的，比如交易所时区在成交开始后才到：这根K线会被放弃，否则后续成交在下一个时间段开始前都会被忽略）；<code>resume(bar)</code> 让这根仍在形成的K线成为后续成交继续构建的K线，除非成交已经到了更新的K线；图表的数据流在每次连接时都会做这两步，因此重连时即使历史数据只到前一根K线，正在形成的K线的成交也会保留。此时 <code>StreamManager</code> 会把正在形成的K线（无论由成交构建，还是来自数据源的数据帧）放在它作为 <code>snapshot</code> 发出的历史数据之上，并且不会为历史数据最后一根K线的收盘价这个较旧的价格发出 <code>priceChange</code>。它把修正作为 <code>barCorrection</code> 发出。</p>
 
 <h2>多个品种的报价</h2>
 <p>

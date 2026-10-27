@@ -24,8 +24,13 @@ export function isDenseLine(count: number, x0: number, x1: number): boolean {
   return count > 1.5 * (Math.abs(x1 - x0) + 1);
 }
 
+/** Half the level stroke drawn for a piece of one point, px, at least: a stroke from a point alone draws nothing. */
+const LONE_POINT_HALF_PX = 3;
+
 export class LinePen {
   private started = false;
+  /** Points in the piece being drawn. */
+  private piece = 0;
   private lastX = NaN;
   private lastY = NaN;
   // The open column while dense: its x and its span.
@@ -60,12 +65,14 @@ export class LinePen {
     else if (!this.started) this.ctx.moveTo(x, y);
     else this.ctx.lineTo(x, y);
     this.started = true;
+    this.piece++;
     this.lastX = x;
     this.lastY = y;
   }
 
   /** A break: the next point starts a new piece. */
   gap(): void {
+    this.endPiece();
     this.flush();
     this.started = false;
     this.lastY = NaN;
@@ -82,6 +89,7 @@ export class LinePen {
 
   /** Draw what was added. */
   finish(): void {
+    this.endPiece();
     this.flush();
     if (this.dense) {
       this.ctx.fill();
@@ -92,6 +100,20 @@ export class LinePen {
     } else {
       this.ctx.stroke();
     }
+  }
+
+  /**
+   * A piece of one point would stroke nothing (a session's VWAP on its first
+   * bar, the newest session just begun): a short level stroke shows its value
+   * there. Dense, its column is filled anyway.
+   */
+  private endPiece(): void {
+    if (!this.dense && this.piece === 1) {
+      const half = Math.max(this.width, LONE_POINT_HALF_PX);
+      this.ctx.moveTo(this.lastX - half, this.lastY);
+      this.ctx.lineTo(this.lastX + half, this.lastY);
+    }
+    this.piece = 0;
   }
 
   private addDense(x: number, y: number): void {

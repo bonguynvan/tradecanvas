@@ -9,6 +9,7 @@ import type {
   SymbolSearchOptions,
   TimeFrame,
 } from '@tradecanvas/commons';
+import { ServedHistory } from './servedHistory.js';
 
 export interface PollingAdapterOptions {
   /** Adapter name, e.g. `'coinbase'`. */
@@ -37,7 +38,10 @@ export interface PollingAdapterOptions {
 /**
  * REST polling `DataAdapter` base — for feeds without a WebSocket (most stock /
  * FX APIs). Polls `fetchBars` on an interval, emits the latest bar as forming,
- * and emits the prior bar as `closed` when the bucket rolls over.
+ * and emits the prior bar as `closed` when the bucket rolls over. A
+ * connection starts from the last bar of the history it served for the
+ * symbol and timeframe: an older answer is left out, and the first poll
+ * after that bar's bucket ended sends it `closed`.
  *
  * Generic use:
  * ```ts
@@ -53,7 +57,9 @@ export class PollingAdapter implements DataAdapter {
   private listeners = new Map<DataAdapterEventType, Set<DataAdapterListener>>();
   private config: DataAdapterConfig | null = null;
   private timer: unknown = null;
+  /** When the newest bar sent starts, or the last of the history served for the symbol and timeframe; 0 for none. */
   private lastBarTime = 0;
+  private readonly served = new ServedHistory();
   private readonly opts: PollingAdapterOptions;
   /** Present when the options give a way to fetch older bars. */
   readonly fetchHistoryBefore?: (symbol: string, timeframe: TimeFrame, before: number, limit: number) => Promise<OHLCBar[]>;
@@ -72,7 +78,9 @@ export class PollingAdapter implements DataAdapter {
 
   connect(config: DataAdapterConfig): void {
     this.config = config;
-    this.lastBarTime = 0;
+    // The history's last bar is the newest yet: an older answer is past, and
+    // a newer one closes it with its final values.
+    this.lastBarTime = this.served.lastBar(config.symbol, config.timeframe)?.time ?? 0;
     this.state = 'connected';
     this.emitEvent('connectionChange', 'connected');
     this.startPolling();
@@ -88,8 +96,11 @@ export class PollingAdapter implements DataAdapter {
     return this.state;
   }
 
-  fetchHistory(symbol: string, timeframe: TimeFrame, limit?: number): Promise<OHLCBar[]> {
-    return this.opts.fetchBars(symbol, timeframe, limit ?? this.opts.defaultHistoryLimit ?? 500);
+  async fetchHistory(symbol: string, timeframe: TimeFrame, limit?: number): Promise<OHLCBar[]> {
+    const bars = await this.opts.fetchBars(symbol, timeframe, limit ?? this.opts.defaultHistoryLimit ?? 500);
+    // A connection to them starts from its last bar.
+    this.served.serve(symbol, timeframe, bars);
+    return bars;
   }
 
   on<T = unknown>(event: DataAdapterEventType, listener: DataAdapterListener<T>): void {
@@ -125,6 +136,9 @@ export class PollingAdapter implements DataAdapter {
     if (bars.length === 0) return;
 
     const latest = bars[bars.length - 1];
+    // An answer older than one already sent (a slow request overtaken by the
+    // next, a cached page): its bars are past, and its close no live price.
+    if (latest.time < this.lastBarTime) return;
 
     // Bucket rolled over: the previously-forming bar is now closed. Emit it
     // with its final values (present in this response when pollLimit ≥ 2).

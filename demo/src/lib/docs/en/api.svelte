@@ -27,12 +27,17 @@
     <tr><td><code>appendBars(bars)</code></td><td>Batch append; recalculates indicators once.</td></tr>
     <tr><td><code>updateLastBar(bar)</code></td><td>Mutate the current forming bar.</td></tr>
     <tr><td><code>updateLastBarFromTick(tick)</code></td><td>Merge a tick into the last bar.</td></tr>
+    <tr><td><code>updateBar(bar)</code></td><td>Correct a loaded bar: the one with the same time, anywhere in the series. The view stays; false when no loaded bar has that time.</td></tr>
     <tr><td><code>getData()</code></td><td>Read the raw OHLC series.</td></tr>
   </tbody>
 </table>
 
 <p id="live-price">
   A bar from <code>appendBar</code>, <code>appendBars</code> or <code>updateLastBar</code>, and a tick, is the live price: the price line, the alerts and the orders' P&amp;L follow it, as they follow a connected stream and <code>setCurrentPrice</code>. A new bar sends <code>dataUpdate</code>; a tick on the forming bar sends none.
+</p>
+
+<p id="corrections">
+  A bar your feed corrects goes in with <code>updateBar(bar)</code>: it replaces the loaded bar with the same <code>time</code>, wherever it is in the series, and returns <code>true</code>. The indicators are computed again from that bar on, Heikin-Ashi, Renko and the other types built from the bars follow, and the view stays where it is; corrections before the next frame are computed once, from the earliest. It returns <code>false</code> and changes nothing when no loaded bar has that time (a new bar is <code>appendBar</code>'s, older ones <code>prependBars</code>') or the chart can't take the bar. It is no live price: the orders and the alerts don't follow it, no alert fires on it, and alerts on indicator lines aren't checked against the corrected values. A corrected last bar moves the price line, as after <code>setData</code>. During a replay it corrects the live series, shown when the replay ends; a bar in the extended hours, while they are hidden, shows when they are shown. The bar loaded, sent again, changes nothing; a missing volume is 0, as with <code>setData</code>, so send the bar whole. It sends <code>dataUpdate</code> with <code>{'{'} kind: 'correction', time, index {'}'}</code>. In ChartWidget, <code>widget.getChart().updateBar(bar)</code> corrects the bars of a connected feed; bars you gave the widget with <code>setData</code> are a copy it builds its timeframes from again, so a correction to them lasts only until the next timeframe switch (a widget method for these is to come).
 </p>
 
 <p id="bar-times">
@@ -118,7 +123,7 @@ chart.getEffectiveTimeZone()           // the zone it stands for: 'Asia/Ho_Chi_M
 </p>
 
 <p>The same effects are also available programmatically:</p>
-<pre><code>{`chart.setAutoScale(false)  // freeze the current price range
+<pre><code>{`chart.setAutoScale(false)  // hold the price range on screen (a new series is fitted once)
 chart.setLogScale(true)    // switch to logarithmic price scale
 chart.setInvertScale(true) // upside down (Alt+I in the widget)
 chart.fitContent()         // zoom out to all data (Alt+R in the widget, with auto scale)
@@ -236,17 +241,53 @@ chart.on('symbolSeriesRequest', async ({ payload }) =>
 chart.getRequiredSymbols()                           // what to fetch again on a new interval
 chart.setPaneScale(spreadId, { percent: true })     // a pane in percent of its first value`}</code></pre>
 <p>
+  A percent line starts at the chart's own close on the first bar on screen, the price a percent
+  scale reads 0% at, from the other symbol's own first bar there; one whose bars begin later
+  starts at 0% too. With the price scale in percent (<code>chart.setScaleMode('percentage')</code>)
+  each line then reads its own change since the first bar on screen, which moves as you pan.
+  Its label is at its end. <code>chart.getCompareValues(barIndex?)</code> gives each line at a
+  bar (the last by default), for a legend of your own: <code>{'{'} id, label, color, visible, close, change, stale {'}'}</code>, where <code>close</code> is the
+  other symbol's close at or before the bar and <code>change</code> its change in percent, as
+  its line reads. Past the other symbol's last bar (bars you fetched once, the chart streaming
+  on) it gives its last close, with <code>stale: true</code>. <code>chart.setCompareVisible(id, false)</code>
+  hides a line and leaves it out of the auto scale.
+</p>
+<p>
+  Renko, Kagi, Line Break, P&amp;F and Range Bars draw no compare lines: their bars only count on from
+  the first, with no time of their own, so a line there would read the other symbol at the wrong
+  bars. On those types the lines stay out of the auto scale, and <code>getCompareValues()</code>
+  gives each one's close at the latest data bar, whatever bar is asked for, with <code>change: null</code>.
+</p>
+<pre><code>{`chart.setScaleMode('percentage')       // each line reads its change on the axis
+chart.getCompareValues()               // [{ id: 'eth', label: 'ETHUSDT', color, visible, close: 2650.4, change: -1.82, stale: false }]
+chart.getCompareValues(barIndex)       // at a bar: the one under the cursor
+chart.setCompareVisible('eth', false)  // hidden, and out of the auto scale`}</code></pre>
+<p>
   In ChartWidget, Compare on the toolbar (and the + in the object tree) opens the compare dialog: search for a
   symbol, pick how under <strong>Add as</strong> (percent change, own scale, own pane, spread, ratio, or the
   correlation of prices or of returns) and add as many as you like. What is compared already is listed first,
   each with its way and a button to take it off. The dialog opens next time on the way used last.
+</p>
+<p>
+  ChartWidget puts the price scale in percent while a symbol is compared in percent, and back to
+  the scale you had once the last one goes. A logarithmic, percentage or indexed-to-100 scale is
+  left as it is, and a scale you pick while comparing (the status bar's % or log, the chart's
+  menu, the settings) stays, also after the last compare goes. The percent scale is never saved:
+  a layout and a shared link keep your own. The legend lists each symbol compared in percent
+  above the indicators, marked in its line's colour, with its price and its change at the bar under the
+  cursor (the last bar otherwise), an eye to hide it and a button to take it off. Its bars are fetched as deep as the
+  chart's and, when the chart loads older bars, the stretch those add (from a feed without <code>fetchHistoryBefore</code>,
+  each again, as deep as the chart's, while the feed has older bars to give), so its line starts where the chart does.
+  On a chart type that draws no compare lines it leaves your scale as it is and dims each compare's
+  row, saying why in its tooltip and to a screen reader; back on one that draws them, the percent scale comes back.
 </p>
 
 <h3>Exporting data</h3>
 <p>
   The bars as CSV or JSON, each indicator line in a column of its own named as the
   legend names it. ChartWidget has <strong>Export data (CSV)</strong> in the chart's
-  right-click menu.
+  right-click menu. Numbers with a fraction are written to 15 significant digits, so a
+  volume summed from smaller bars reads 40.37 rather than 40.370000000000005.
 </p>
 <pre><code>{`chart.exportAllData('csv', 'btc-1h.csv')                 // every bar loaded
 chart.exportVisibleData('json', undefined, { indicators: false })
@@ -317,9 +358,9 @@ chart.isExtendedHoursVisible()`}</code></pre>
 <pre><code>{`chart.setPeriodLevelsVisible(true)
 chart.setPeriodLevelsPeriod('week')   // 'day' (PDH/PDL/PDC) | 'week' (PWH/PWL/PWC)
 
-// pure computation is exported
+// pure computation is exported; the chart passes the exchange's zone (left out, the days are UTC's)
 import { computePeriodLevels } from '@tradecanvas/core'
-const levels = computePeriodLevels(bars, 'day')  // [{ id, label, price }]`}</code></pre>
+const levels = computePeriodLevels(bars, 'day', 'Australia/Sydney')  // [{ id, label, price }]`}</code></pre>
 
 <h3>Market Profile (TPO)</h3>
 <p>
@@ -338,16 +379,16 @@ chart.setMarketProfileConfig({
   highlightPoC: true, // dashed line at the point of control
 })
 
-// split into one mini-profile per calendar-day session
+// split into one mini-profile per trading day, in the exchange's zone
 chart.setMarketProfileConfig({ splitBySession: true })
 
 // classic TPO letters per session (when zoomed in enough to be legible)
 chart.setMarketProfileConfig({ splitBySession: true, letters: true })
 
-// pure computation is exported too
+// pure computation is exported too; give the sessions the exchange's zone, as the chart does (left out, UTC's days)
 import { computeMarketProfile, computeSessionProfiles } from '@tradecanvas/core'
 const profile = computeMarketProfile(bars, priceMin, priceMax, { buckets: 48 })
-const sessions = computeSessionProfiles(bars, priceMin, priceMax)  // per-day TPO`}</code></pre>
+const sessions = computeSessionProfiles(bars, priceMin, priceMax, {}, 'Australia/Sydney')  // per-day TPO`}</code></pre>
 
 <h3>Touch &amp; mobile</h3>
 <table>
@@ -388,7 +429,7 @@ const sessions = computeSessionProfiles(bars, priceMin, priceMax)  // per-day TP
 chart.on('orderModify', e => /* OrderModifyPayload */)
 chart.on('signalMarkerAdd', e => /* { marker } */)
 chart.on('tradeZoneAdd', e => /* { zone } */)
-chart.on('dataUpdate', e => /* { kind: 'bars', length } on setData and new bars; or kind 'alert' | 'bracket' | 'connection' | 'error' */)
+chart.on('dataUpdate', e => /* { kind: 'bars', length } on setData and new bars; { kind: 'correction', time, index } on a corrected bar; or kind 'alert' | 'bracket' | 'connection' | 'error' */)
 chart.on('ordersChange', e => /* { orders } */)
 chart.on('positionsChange', e => /* { positions } */)
 chart.on('executionFill', e => /* { side, price, quantity, reason, pnl } */)
@@ -397,6 +438,8 @@ chart.on('stateChange', () => /* drawings, indicators, alerts, chart type or the
 chart.on('paneChange', e => /* { instanceId, change: 'collapsed' | 'maximized' | 'order' } */)
 chart.on('chartTypeChange', e => /* { type, previous } */)
 chart.on('symbolChange', e => /* { symbol, previous } */)
+chart.on('marketChange', e => /* { market }: setMarket */)
+chart.on('compareChange', e => /* { id, change: 'add' | 'remove' | 'data' | 'visible' }: addCompareSymbol and the rest */)
 chart.on('timeframeChange', e => /* { timeframe, previous } */)
 chart.on('historyChange', e => /* { canUndo, canRedo } */)
 chart.on('drawingSelect', e => /* { ids, primary } */)
@@ -598,8 +641,9 @@ widget.setSymbols(await loadMarkets())   // your server's SymbolInfo[]: the sear
 <h3>Shareable view (deep links)</h3>
 <p>
   Encode the whole view — symbol, timeframe, chart type, price scale,
-  indicators (with params), and drawings — into a compact, URL-safe string for
-  deep-linking. With <code>shareUrl: true</code> the widget restores a
+  indicators (with params), drawings, and the Chart Settings changed from the
+  defaults (not the time zone or number format) — into a compact, URL-safe
+  string for deep-linking. With <code>shareUrl: true</code> the widget restores a
   <code>#tcw=…</code> hash on load and the "Share View" command palette action
   copies a link to the clipboard.
 </p>
@@ -612,8 +656,9 @@ await widget.copyShareLink()            // copy "<url>#tcw=<token>"`}</code></pr
 <h3>Named layouts</h3>
 <p>
   The layout button on the toolbar saves the chart under a name: symbol,
-  interval, price scale, chart type, indicators, drawings and alerts (not the
-  theme, which stays the viewer's). Open, rename and delete layouts from its
+  interval, price scale, chart type, indicators, drawings, alerts and the
+  <a href="#chart-settings">Chart Settings</a> (not the theme, the time zone or
+  the number format, which stay the viewer's). Open, rename and delete layouts from its
   menu; the layout open auto-saves as it changes, and <kbd>Ctrl/⌘ S</kbd> saves
   it. Layouts live in this browser's <code>localStorage</code> unless you give a
   <code>storage</code>: four calls, each may return a promise.
@@ -649,6 +694,83 @@ await widget.applyLayoutContent(json)`}</code></pre>
   auto-saving run one at a time, so a save never lands in a layout opened after it.
 </p>
 
+<h3 id="chart-settings">Chart settings</h3>
+<p>
+  The settings dialog's switches and choices (the volume and market profiles,
+  swing markers, session shading, prior-period levels, grid, legend, crosshair,
+  scales, time zone, number format) are the widget's Chart Settings. Read them
+  with <code>getSettings()</code>, a copy; change some with
+  <code>setSettings(patch)</code>, which drops what it can't read, keeps numbers
+  in the dialog's ranges and records no undo step; and hear of each change with
+  <code>onSettingsChange(listener)</code>, which returns the function that stops
+  it. It is called once when the dialog closes with OK, never for Cancel or for
+  a change that changes nothing. Until the chart has bars, <code>setSettings</code>
+  leaves auto-scale on, since off holds the price range on screen and there is none
+  yet: the settings <code>onSettingsChange</code> gave, auto-scale off after a drag
+  on the price axis, are safe to give back right after the constructor. With <code>persistSettings: true</code> the
+  widget keeps them in this browser and puts them back on the next visit.
+</p>
+<pre><code>{`const widget = new ChartWidget(host, {
+  chartOptions: { timeZone: 'UTC' },
+  persistSettings: true,            // or { key: 'myapp:settings' }
+})
+
+widget.setSettings({ volumeProfileVisible: true, timezone: 'exchange' })
+widget.getSettings().timezone       // 'exchange'
+
+const stop = widget.onSettingsChange((settings) => {
+  api.put('/me/chart-settings', settings)   // your server, say
+})
+stop()`}</code></pre>
+<p>
+  <code>getSettings()</code> reads back what was set on <code>getChart()</code> too,
+  so a layout or a link saves it as it is. The chart gives these settings with
+  <code>isVolumeVisible()</code>, <code>isLegendVisible()</code>,
+  <code>isBarCountdownVisible()</code>, <code>isIndicatorValueLabelsVisible()</code>,
+  <code>isLeftPriceScaleVisible()</code>, <code>getMarketProfileConfig()</code>,
+  <code>getDepthHeatmapConfig()</code>, <code>getPivotMarkersConfig()</code> and
+  <code>getPeriodLevelsPeriod()</code>, beside each overlay's <code>is…Visible()</code>.
+</p>
+<ul>
+  <li><strong>persistSettings</strong> keeps, per browser, what the user changed
+    from your values. A kept value wins over <code>chartOptions</code>, and Reset
+    goes back to yours. It leaves out the log and auto-scale flags and a chart
+    type's own settings (the Renko box and the like), which are the chart's state.
+    Give each widget on a page a <code>key</code> of its own; a grid gives each of
+    its charts one. It can't tell who made a change: what you set with
+    <code>setSettings</code> (in <code>onReady</code>, say), and what an opened
+    layout brings, are kept as the user's too, and win over
+    <code>chartOptions</code> on the next visit even once your code stops setting
+    them. Setting one back to your <code>chartOptions</code> value takes it out of
+    what is kept. What an opened share link brings is someone else's choice: it
+    shows for that visit only, is not kept, and calls no
+    <code>onSettingsChange</code> listener (the next change tells them all).</li>
+  <li><strong>Named layouts</strong> keep all of them but the time zone and the
+    number format, which stay the viewer's, and auto-scale, which a drag on the
+    price axis turns off. In the layout's JSON they are under
+    <code>settings</code>, except the scale and its flip, which have fields of
+    their own, and a chart type's own settings, which are in the chart's state.
+    A layout saved before they were kept has none, and opening it leaves the
+    settings as they are. An older version of the library opens a newer layout
+    without them, and its auto-save writes it back without them.</li>
+  <li><strong>Share links</strong> carry the ones the sender changed from the
+    defaults, but the time zone, the number format and auto-scale. A chart
+    type's own settings in a link set only the types the sender set and the
+    type shown (at its defaults when the sender left it there); the viewer's
+    settings of the other types stay. For the
+    switches your <code>features</code> set (the legend, the volume, the bar
+    countdown, the indicators' value labels) the defaults are where they set
+    them, so a switch the sender's app turned off isn't sent as a change.</li>
+  <li><strong>Switched-off features</strong>: where your <code>features</code>
+    turn off the legend, the volume, the bar countdown or the log scale, nothing
+    kept, shared, opened, set or applied from a chart template turns them on,
+    and the settings dialog doesn't offer the legend's or the volume's switch
+    and colours.</li>
+  <li><strong>Per-symbol layouts</strong> (<code>persistLayouts</code>) and
+    <code>chart.saveState()</code> hold a chart type's own settings, which are
+    part of the chart's state, and none of the others.</li>
+</ul>
+
 <h3>Per-symbol layouts</h3>
 <p>
   Separately, persist per-symbol indicator stacks, drawings, alerts, and chart type
@@ -665,7 +787,8 @@ await widget.applyLayoutContent(json)`}</code></pre>
 widget.clearSavedLayout('BTCUSDT')`}</code></pre>
 <p>
   Layouts flush on symbol switch and on widget destroy so nothing is lost
-  when the user navigates away.
+  when the user navigates away. Of the Chart Settings they hold
+  only a chart type's own; <code>persistSettings</code> keeps the others.
 </p>
 
 <h3>Drag-and-drop data import</h3>
@@ -696,15 +819,30 @@ chart.setData(data)`}</code></pre>
 })
 widget.setData(oneMinuteBars)   // base series; clicking 4h/1d/1w resamples it
 
-// Or use the pure function directly
-import { resampleOHLCV, inferTimeframeMs } from '@tradecanvas/chart'
+// Or build bars yourself
+import { resampleBars, timeframeBucketStart } from '@tradecanvas/chart'
 
-const hourly = resampleOHLCV(oneMinuteBars, '1h')   // OHLC merged, volume summed
-const fourHour = resampleOHLCV(oneMinuteBars, '4h', { weekStartsOn: 1 })`}</code></pre>
+const hourly = resampleBars(oneMinuteBars, '1h')   // OHLC merged, volume summed
+const days = resampleBars(oneMinuteBars, '1d', { timeZone: 'Asia/Ho_Chi_Minh' })   // from 00:00 there
+const dayStart = timeframeBucketStart(trade.time, '1d', { timeZone: 'Asia/Ho_Chi_Minh' })`}</code></pre>
 <p>
-  Calendar-aware bucketing: intraday and daily frames anchor to UTC epoch
-  boundaries, weeks to the configured week start, and months / quarters / years
-  to calendar boundaries. Input bars are never mutated.
+  Calendar-aware bucketing: minutes and hours (1h and shorter) floor to multiples of the
+  frame since the Unix epoch. Days, weeks (from the configured week start), months,
+  quarters and years start at the exchange's midnight, and so do the hour frames that
+  divide a day (2h, 3h, 4h, 6h, 8h, 12h). For the bars given to <code>widget.setData</code>,
+  that is the midnight of the symbol's <code>timeZone</code> (<code>setSymbolInfo</code>), else
+  the market's (<code>setMarket</code>), else UTC's. The timeframes a feed lacks start at the
+  midnight of the zone its <code>resolveSymbol</code> names, else UTC's: the market's zone
+  doesn't move them. A day the clocks change is 23 or 25 hours
+  long. Daily bars stamped at 00:00 UTC are read as the dates they name, so a Monday stays
+  in its own week west of UTC and the weeks keep 00:00 UTC stamps. Input bars are never
+  mutated.
+</p>
+<p>
+  A daily bar shows the date it stands for, whatever zone the chart shows: one stamped at
+  00:00 UTC its UTC date, one built at the exchange's midnight the exchange's date (on the
+  time axis, the crosshair and its card, the tooltip Alt-click pins, and the bar times a screen reader reads). For bars you build yourself, <code>timeframeBucketStart(time, timeframe, {'{'} timeZone {'}'})</code> gives the
+  start of the bar a time falls in.
 </p>
 
 <h3>Watchlists</h3>
@@ -784,7 +922,8 @@ chart.setSelectedDrawingStyle({ color: '#1fa874' })  // restyle the selected dra
 <h3>Object tree</h3>
 <p>
   The rail's layers button (the toolbar's, where there is no rail) opens the
-  object tree in the dock, listing every active indicator and drawing. Indicators can be removed; drawings get per-item
+  object tree in the dock, listing every active indicator, named as its chip names it (EMA 20, Compare ETHUSDT),
+  and every drawing. Indicators can be removed; drawings get per-item
   show / hide, lock / unlock, settings and delete, and groups are listed with
   their drawings under them. Enabled by default — disable with
   <code>objectTree: false</code>. The drawing controls map to:
@@ -820,17 +959,23 @@ chart.removeIndicator(instanceId)`}</code></pre>
   re-add to change a period or colour.
 </p>
 <p>
-  The object tree's <strong>Compare</strong> section lists the symbols overlaid as
-  normalized lines. With a live adapter, its + button opens the compare dialog;
-  a symbol added in percent has its history fetched via <code>adapter.fetchHistory</code>
-  (so mixed-price symbols share one axis). Comparisons refetch automatically on
-  timeframe change. Programmatic equivalents:
+  The object tree's <strong>Compare</strong> section lists every compare, as the compare
+  dialog does: each symbol with its way (percent change, own scale, own pane, spread, ratio
+  or correlation) and a button to take it off. With a live adapter, its + button opens the
+  compare dialog. Whatever the way, the widget fetches the other symbol's bars through
+  <code>adapter.fetchHistory</code> before it adds the compare, and adds nothing when they
+  don't come (the fetch fails, or there are no bars at this interval); a toast says why.
+  A compare a saved state brings back stays on the chart when its bars fail to load, and
+  fills on an interval that has them. Comparisons refetch automatically on timeframe
+  change. Programmatic equivalents:
 </p>
 <pre><code>{`widget.addCompareSymbol('ETHUSDT')   // fetches + overlays (needs an adapter)
+await widget.addCompareSymbol('ETHUSDT', 'scale')  // its bars first; nothing added if they don't come
 
 // or drive the chart directly with your own data
 chart.addCompareSymbol('ETHUSDT', 'ETH', ethBars, '#627eea')
 chart.setCompareMode('percent')      // 'percent' | 'absolute'
+chart.setScaleMode('percentage')     // each line's change, read on the axis
 chart.removeCompareSymbol('ETHUSDT')`}</code></pre>
 
 <h3>Price alerts</h3>

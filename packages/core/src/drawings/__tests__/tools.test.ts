@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { TrendLineTool } from '../tools/TrendLine.js';
 import { HorizontalLineTool } from '../tools/HorizontalLine.js';
 import { RectangleTool } from '../tools/Rectangle.js';
-import { drawing, unitViewport } from './fixtures.js';
+import { drawing, textCtx, unitViewport } from './fixtures.js';
 
 describe('TrendLineTool.hitTest', () => {
   const tool = new TrendLineTool();
@@ -58,6 +58,29 @@ describe('HorizontalLineTool.hitTest', () => {
     const state = drawing('horizontalLine', [{ time: 0, price: 30 }]);
     expect(tool.hitTest({ x: -5, y: 70 }, state, unitViewport, 2)).toBe(false);
     expect(tool.hitTest({ x: 1500, y: 70 }, state, unitViewport, 2)).toBe(false);
+  });
+});
+
+describe('HorizontalLineTool price label', () => {
+  const tool = new HorizontalLineTool();
+  const line = drawing('horizontalLine', [{ time: 0, price: 50 }]);
+
+  // The time axis ends its pass right-aligned, and the next frame's drawings
+  // start with the context it left.
+  it('is left-aligned at the plot’s left edge when the context was left right-aligned', () => {
+    const { ctx, drawn } = textCtx();
+    ctx.textAlign = 'right';
+    tool.render(ctx, line, unitViewport, false);
+    const label = drawn.find((d) => d.text === '50.00');
+    expect(label).toMatchObject({ align: 'left', baseline: 'bottom', left: 4, y: 47 });
+  });
+
+  it('starts inside the plot after a drawing left the context centred', () => {
+    const { ctx, drawn } = textCtx();
+    ctx.textAlign = 'center';
+    tool.render(ctx, line, unitViewport, false);
+    const label = drawn.find((d) => d.text === '50.00');
+    expect(label?.left).toBeGreaterThanOrEqual(unitViewport.chartRect.x);
   });
 });
 

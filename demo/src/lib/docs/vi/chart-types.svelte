@@ -32,7 +32,7 @@
     <tr><td><code>kagi</code></td><td>Đường đảo chiều dương/âm (yang/yin); mức đảo chiều theo phần trăm (mặc định 4) hoặc theo giá.</td></tr>
     <tr><td><code>lineBreak</code></td><td>Một đường mới khi giá đóng cửa phá vỡ các đường gần nhất (mặc định 3).</td></tr>
     <tr><td><code>pointAndFigure</code></td><td>Các cột X/O; kích thước ô + số ô đảo chiều.</td></tr>
-    <tr><td><code>rangeBars</code></td><td>Biên độ cao-thấp của mỗi nến bằng một khoảng cố định.</td></tr>
+    <tr><td><code>rangeBars</code></td><td>Biên độ cao-thấp của mỗi nến bằng một khoảng cố định, và nến đóng cửa ở giá cao nhất hoặc thấp nhất của nó; nến cuối cùng là nến đang hình thành.</td></tr>
   </tbody>
 </table>
 
@@ -62,6 +62,41 @@
   được tính từ dữ liệu (ô Renko theo ATR, ô P&amp;F bằng 1% giá đóng cửa trung bình…). Các thông số
   được giữ trong trạng thái đã lưu; trong ChartWidget, chúng nằm trong hộp thoại cài đặt, ở phần
   dành cho loại biểu đồ đang dùng.
+</p>
+<p>
+  Biên độ tự động của Range Bars là true range trung bình của 100 nến đã đóng gần nhất, làm tròn
+  về 1, 2 hoặc 5 (… 1, 2, 5, 10, 20 …) và về một số nguyên lần bước giá của mã (với thị trường có
+  bước giá thay đổi theo mức giá, đó là bước giá lớn nhất mà các nến này đã giao dịch): nến nhỏ trên
+  biểu đồ một giây, lớn hơn trên biểu đồ ngày. Nến đang hình thành không được tính vào, nên một tick
+  chỉ thay đổi các range bar dựng từ nến đó; các range bar trước nó giữ nguyên. Khi một nến đóng cửa
+  làm giá trị trung bình chuyển sang số 1-2-5 kế tiếp, hoặc đưa các nến này sang một bước giá khác,
+  mọi range bar được dựng lại theo biên độ mới. Khi đi lên, nến đóng cửa ở giá thấp nhất cộng
+  biên độ; khi đi xuống, ở giá cao nhất trừ biên độ: giá đóng cửa là giá nến đã chạm tới, và râu nến
+  cho thấy hướng giá đi trước. Một cú nhảy qua nhiều biên độ, kể cả khoảng trống giữa hai nến, tạo
+  một nến cho mỗi biên độ; các nến lấp khoảng trống nằm ở những mức giá mà khoảng trống đã bỏ qua,
+  chưa từng được giao dịch. Một biên độ, đặt tay hay tự động, sẽ được nâng lên 2, 5, 10, 20… lần chính
+  nó, lấy mức đầu tiên không vượt quá số đó, khi các nến đã đóng tạo ra hơn 100.000 range bar, hoặc
+  riêng nến đang hình thành tạo ra hơn 100.000; khi đó mọi range bar được dựng lại theo biên độ đã nâng.
+  Một biên độ nhỏ hơn nửa chữ số có nghĩa thứ 15 của giá lớn nhất không đóng nến nào, dù giá được ghi
+  theo cách nào.
+</p>
+<p>
+  Kích thước ô của Renko, mức đảo chiều của Kagi và kích thước ô của Point &amp; Figure cũng theo
+  cùng giới hạn đó: một giá trị quá nhỏ so với giá, khiến các nến trước nến cuối tạo ra hơn 100.000
+  viên gạch, đường hay cột, hoặc riêng nến cuối tạo ra ngần ấy, sẽ được nâng lên 2, 5, 10, 20… lần
+  chính nó, lấy mức đầu tiên không vượt quá số đó, và biểu đồ được dựng theo mức đã nâng. Kagi và
+  Point &amp; Figure tạo nhiều nhất một đường hay một cột cho mỗi nến, nên chỉ chuỗi hơn 100.000 nến
+  mới chạm tới giới hạn này; Line Break, với thông số là số đường, cũng tạo nhiều nhất một đường cho
+  mỗi nến. Kích thước ô, mức đảo chiều hay biên độ nào không phải là số hữu hạn lớn hơn 0, trong trạng
+  thái đã lưu hay trong một link chia sẻ, sẽ bị bỏ qua (biểu đồ quay về giá trị mặc định: tự tính từ
+  dữ liệu, hoặc 4% với Kagi), nên một link không thể làm biểu đồ treo. Hộp thoại cài đặt không nhận
+  giá trị nhỏ hơn 0,00000001 và ghi rõ điều đó dưới ô nhập. Trên biểu đồ trực tiếp, kích thước đã nâng được giữ từ tick này sang
+  tick khác, nên mỗi tick chỉ dựng nến một lần, và được tính lại cho một chuỗi mới;
+  <code>toRenko</code>, <code>toKagi</code>, <code>toPointAndFigure</code> và <code>toRangeBars</code>
+  cũng làm vậy khi được truyền một <code>ReshapeMemo</code> làm tham số cuối. Mỗi chuỗi dùng một memo,
+  truyền nó ở mọi lần dựng, và gọi <code>memo.clear()</code> (hoặc tạo memo mới) khi chuỗi được thay bằng
+  chuỗi khác, như khi đổi mã hay khung thời gian: memo tự nó không nhận ra chuỗi mới, nên sẽ vẽ chuỗi đó
+  theo kích thước đã nâng của chuỗi trước.
 </p>
 <pre><code>{`chart.setChartTypeOptions({
   renko: { boxSize: 50 },                         // or 'atr' with atrPeriod

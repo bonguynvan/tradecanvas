@@ -1,5 +1,5 @@
 import type { OHLCBar } from '@tradecanvas/commons';
-import { timeframeBucketStart } from '@tradecanvas/commons';
+import { periodKeyer } from '../indicators/periods.js';
 
 export type LevelPeriod = 'day' | 'week';
 
@@ -18,11 +18,11 @@ interface PeriodAgg {
   close: number;
 }
 
-function aggregate(bars: ReadonlyArray<OHLCBar>, period: LevelPeriod): PeriodAgg[] {
-  const tf = period === 'day' ? '1d' : '1w';
+function aggregate(bars: ReadonlyArray<OHLCBar>, period: LevelPeriod, exchangeTimeZone?: string | null): PeriodAgg[] {
+  const keyOf = periodKeyer(bars, period === 'day' ? 'session' : 'week', exchangeTimeZone);
   const out: PeriodAgg[] = [];
   for (const bar of bars) {
-    const key = timeframeBucketStart(bar.time, tf);
+    const key = keyOf(bar.time);
     const last = out[out.length - 1];
     if (last && last.key === key) {
       last.high = Math.max(last.high, bar.high);
@@ -38,13 +38,16 @@ function aggregate(bars: ReadonlyArray<OHLCBar>, period: LevelPeriod): PeriodAgg
 /**
  * Prior-period reference levels (e.g. prior-day high/low/close + the current
  * period's open). Bars are assumed ascending by time. Returns an empty array
- * until at least one completed period plus a current one exist.
+ * until at least one completed period plus a current one exist. Days and
+ * weeks start at midnight in `exchangeTimeZone` (an IANA name; UTC's when
+ * left out or unknown to the browser), as VWAP's do.
  */
 export function computePeriodLevels(
   bars: ReadonlyArray<OHLCBar>,
   period: LevelPeriod = 'day',
+  exchangeTimeZone?: string | null,
 ): PriceLevel[] {
-  const periods = aggregate(bars, period);
+  const periods = aggregate(bars, period, exchangeTimeZone);
   if (periods.length < 2) return [];
 
   const prior = periods[periods.length - 2];

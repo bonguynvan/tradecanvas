@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import type { IndicatorPlot } from '@tradecanvas/commons';
+import { SessionVWAPIndicator } from '@tradecanvas/core';
 import { formatIndicatorValue, legendValues } from '../legendValues.js';
 
 const COLORS = ['#first', '#second', '#third', '#fourth'];
@@ -17,6 +18,13 @@ describe('legendValues', () => {
       { value: 101, color: '#second' },
       { value: 97, color: '#first' },
     ]);
+  });
+
+  it('shows the Session VWAP line alone on daily bars, where it draws no bands', () => {
+    const svwap = new SessionVWAPIndicator();
+    const days = [0, 1].map((d) => ({ time: Date.UTC(2026, 9, 19 + d), open: 160, high: 162, low: 160, close: 161, volume: 1 }));
+    const output = svwap.calculate(days, { id: 'svwap', instanceId: 's', params: { bands: 1 }, visible: true });
+    expect(legendValues(svwap.descriptor, output.series![1], COLORS)).toEqual([{ value: 161, color: '#first' }]);
   });
 
   it('leaves out fields that are not drawn, and missing values', () => {

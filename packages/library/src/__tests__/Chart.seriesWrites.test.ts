@@ -1,15 +1,15 @@
 // @vitest-environment jsdom
 import { describe, it, expect, afterEach, vi } from 'vitest';
-import { mergeBar, type OHLCBar } from '@tradecanvas/commons';
+import { mergeBar, resampleBars, type DataAdapter, type DataAdapterListener, type OHLCBar } from '@tradecanvas/commons';
 import { Chart } from '../Chart.js';
 import { regularHoursFilter } from '../regularHours.js';
 import { installChartStubs, sizedHost } from './chartTestEnv.js';
 
 /**
  * Every way bars reach a chart leaves it as loading them all at once would:
- * after any run of appends, updates, ticks, older pages, new series and the
- * extended hours shown or hidden, the chart's bars and its indicators are
- * those of a chart given the same whole series with `setData`.
+ * after any run of appends, updates, corrections, ticks, older pages, new
+ * series and the extended hours shown or hidden, the chart's bars and its
+ * indicators are those of a chart given the same whole series with `setData`.
  */
 const NYSE = { symbol: 'AAA', timeZone: 'America/New_York', sessions: [{ start: '09:30', end: '16:00' }] };
 const HALF_HOUR = 30 * 60_000;
@@ -24,14 +24,18 @@ describe('Chart: every write path agrees with setData', () => {
     vi.unstubAllGlobals();
   });
 
-  function make(): { chart: Chart; ema: string; rsi: string } {
+  function make(): { chart: Chart; ema: string; rsi: string; vwap: string; zz: string } {
     const chart = new Chart(sizedHost(), {});
     charts.push(chart);
     chart.setSymbolInfo(NYSE);
     const ema = chart.addIndicator('ema', { period: 5 })!;
     const rsi = chart.addIndicator('rsi', { period: 4 }, 'bottom')!;
-    return { chart, ema, rsi };
+    // Two that compute in full, from the session's start or a swing back.
+    const vwap = chart.addIndicator('svwap')!;
+    const zz = chart.addIndicator('zigzag')!;
+    return { chart, ema, rsi, vwap, zz };
   }
+  const LINES = ['ema', 'rsi', 'vwap', 'zz'] as const;
 
   it.each([3, 11, 29])('after a seeded run of writes (seed %i)', (start) => {
     installChartStubs();
@@ -54,6 +58,7 @@ describe('Chart: every write path agrees with setData', () => {
     live.chart.setData(whole.slice());
 
     let hidden = 0;
+    let corrected = 0;
     for (let step = 0; step < 250; step++) {
       const last = whole[whole.length - 1];
       const lastSlot = Math.round((last.time - T0) / HALF_HOUR);
@@ -69,11 +74,23 @@ describe('Chart: every write path agrees with setData', () => {
         const bars = series(lastSlot + 1, 2 + Math.floor(random() * 3));
         live.chart.appendBars(bars);
         whole.push(...bars);
-      } else if (roll < 0.55) {
+      } else if (roll < 0.45) {
         what = 'updateLastBar';
         const bar = { ...at(lastSlot), time: last.time };
         live.chart.updateLastBar(bar);
         whole[whole.length - 1] = bar;
+      } else if (roll < 0.53) {
+        what = 'updateBar';
+        // Mostly one of the last bars, as a feed corrects them; now and then one far back.
+        const reach = random() < 0.7 ? 6 : 60;
+        const k = whole.length - 1 - Math.floor(random() * Math.min(whole.length, reach));
+        const bar = { ...at(0), time: whole[k].time };
+        expect(live.chart.updateBar(bar), `seed ${start}, step ${step}`).toBe(true);
+        whole[k] = bar;
+        corrected++;
+      } else if (roll < 0.55) {
+        what = 'updateBar: no such time';
+        expect(live.chart.updateBar({ ...at(0), time: last.time + 7 })).toBe(false);
       } else if (roll < 0.72) {
         what = 'tick';
         const tick = { time: last.time + (1 + Math.floor(random() * 29)) * 60_000, price: price(), volume: 1 };
@@ -101,18 +118,24 @@ describe('Chart: every write path agrees with setData', () => {
       oracle.chart.setData(whole.slice());
       const where = `seed ${start}, step ${step} (${what})`;
       expect(live.chart.getData(), where).toEqual(oracle.chart.getData());
-      for (const key of ['ema', 'rsi'] as const) {
+      for (const key of LINES) {
         expect(live.chart.getIndicatorOutput(live[key])?.series, `${where}, ${key}`)
           .toEqual(oracle.chart.getIndicatorOutput(oracle[key])?.series);
       }
       if (live.chart.getData().length < whole.length) hidden++;
     }
-    // Not by luck: most steps had bars hidden.
+    // Not by luck: most steps had bars hidden, and many bars were corrected.
     expect(hidden).toBeGreaterThan(100);
+    expect(corrected).toBeGreaterThan(10);
   });
 
   /** A feed whose bars the test sends, as an adapter's `bar` events. */
   async function connectFeed(chart: Chart, history: OHLCBar[]): Promise<(bar: OHLCBar, closed: boolean) => void> {
+    return (await connectTrades(chart, history, false)).send;
+  }
+
+  /** A feed whose bars and trades the test sends, as an adapter's `bar` and `tick` events. */
+  async function connectTrades(chart: Chart, history: OHLCBar[], aggregateTicks = true) {
     const handlers = new Map<string, (e: { data: unknown }) => void>();
     const adapter = {
       name: 'fake',
@@ -124,8 +147,11 @@ describe('Chart: every write path agrees with setData', () => {
       off: () => {},
       dispose: () => {},
     };
-    await chart.connect({ adapter: adapter as never, symbol: 'AAA', timeframe: '30m', historyLimit: history.length });
-    return (bar, closed) => handlers.get('bar')?.({ data: { bar: { ...bar }, closed } });
+    await chart.connect({ adapter: adapter as never, symbol: 'AAA', timeframe: '30m', historyLimit: history.length, aggregateTicks });
+    return {
+      send: (bar: OHLCBar, closed: boolean) => handlers.get('bar')?.({ data: { bar: { ...bar }, closed } }),
+      trade: (time: number, price: number, volume: number) => handlers.get('tick')?.({ data: { time, price, volume } }),
+    };
   }
 
   describe('when a bar first tells the interval, hiding the bars before it', () => {
@@ -293,18 +319,30 @@ describe('Chart: every write path agrees with setData', () => {
         send(bar, random() < 0.5);
         whole.push(bar);
       } else if (roll < 0.5) {
-        what = 'stream: an older bar, left out';
-        send(at(lastSlot - 3), random() < 0.5);
+        // Closed, it is the feed's last word on that bar; still forming, a stale frame.
+        const bar = at(lastSlot - 3);
+        const closed = random() < 0.5;
+        what = closed ? 'stream: an older bar, closed' : 'stream: an older bar, forming, left out';
+        send(bar, closed);
+        const k = whole.length - 4;
+        expect(whole[k].time).toBe(bar.time);
+        if (closed) whole[k] = bar;
       } else if (roll < 0.62) {
         what = 'host: appendBar';
         const bar = at(lastSlot + 1);
         live.chart.appendBar(bar);
         whole.push(bar);
-      } else if (roll < 0.74) {
+      } else if (roll < 0.68) {
         what = 'host: updateLastBar';
         const bar = { ...at(lastSlot), time: last.time };
         live.chart.updateLastBar(bar);
         whole[whole.length - 1] = bar;
+      } else if (roll < 0.74) {
+        what = replaying ? 'host: updateBar, in a replay' : 'host: updateBar';
+        const k = whole.length - 1 - Math.floor(random() * Math.min(whole.length, 12));
+        const bar = { ...at(0), time: whole[k].time };
+        expect(live.chart.updateBar(bar)).toBe(true);
+        whole[k] = bar;
       } else if (roll < 0.82) {
         what = 'host: tick';
         const tick = { time: last.time + (1 + Math.floor(random() * 29)) * 60_000, price: price(), volume: 1 };
@@ -329,10 +367,135 @@ describe('Chart: every write path agrees with setData', () => {
       oracle.chart.setData(whole.slice());
       const where = `seed ${start}, step ${step} (${what})`;
       expect(plain(live.chart.getData()), where).toEqual(plain(oracle.chart.getData()));
-      for (const key of ['ema', 'rsi'] as const) {
+      for (const key of LINES) {
         expect(live.chart.getIndicatorOutput(live[key])?.series, `${where}, ${key}`)
           .toEqual(oracle.chart.getIndicatorOutput(oracle[key])?.series);
       }
+    }
+  });
+
+  it.each([7, 23])('with bars built from trades, late trades and late closes in between (seed %i)', async (start) => {
+    installChartStubs();
+    const live = make();
+    const oracle = make();
+    let seed = start;
+    const random = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+    const price = () => 5 + Math.round(random() * 100) / 10;
+    const at = (slot: number): OHLCBar => {
+      const close = price();
+      const open = price();
+      return { time: T0 + slot * HALF_HOUR, open, high: Math.max(open, close) + 0.5, low: Math.min(open, close) - 0.5, close, volume: 1 + Math.round(random() * 9) };
+    };
+    let hoursShown = false;
+    live.chart.setExtendedHours(false);
+    const whole = Array.from({ length: 30 }, (_, i) => at(i));
+    // The history's last bar is still forming: the first trades build on it.
+    const { send, trade } = await connectTrades(live.chart, whole);
+    let replaying = false;
+    let corrections = 0;
+    for (let step = 0; step < 250; step++) {
+      const last = whole[whole.length - 1];
+      const lastSlot = Math.round((last.time - T0) / HALF_HOUR);
+      const roll = random();
+      let what: string;
+      if (roll < 0.3) {
+        what = 'trade: the forming bar';
+        const tick = { time: last.time + (1 + Math.floor(random() * 29)) * 60_000, price: price(), volume: 1 + Math.floor(random() * 3) };
+        trade(tick.time, tick.price, tick.volume);
+        whole[whole.length - 1] = mergeBar(last, tick);
+      } else if (roll < 0.45) {
+        what = 'trade: a new bar';
+        const p = price();
+        const volume = 1 + Math.floor(random() * 3);
+        trade(T0 + (lastSlot + 1) * HALF_HOUR + 1000, p, volume);
+        whole.push({ time: T0 + (lastSlot + 1) * HALF_HOUR, open: p, high: p, low: p, close: p, volume });
+      } else if (roll < 0.55) {
+        what = 'trade: late, for a bar before';
+        const back = 1 + Math.floor(random() * 3);
+        trade(T0 + (lastSlot - back) * HALF_HOUR + 5000, price(), 1);
+      } else if (roll < 0.7) {
+        const back = 1 + Math.floor(random() * 3);
+        const bar = at(lastSlot - back);
+        const closed = random() < 0.6;
+        what = closed ? 'stream: a late close' : 'stream: a late forming frame, left out';
+        send(bar, closed);
+        if (closed) {
+          whole[whole.length - 1 - back] = bar;
+          corrections++;
+        }
+      } else if (roll < 0.8) {
+        what = 'host: updateBar';
+        // Not the forming bar: the trades build that one.
+        const k = whole.length - 2 - Math.floor(random() * Math.min(whole.length - 1, 10));
+        const bar = { ...at(0), time: whole[k].time };
+        expect(live.chart.updateBar(bar)).toBe(true);
+        whole[k] = bar;
+      } else if (roll < 0.9) {
+        what = replaying ? 'replay stop' : 'replay start';
+        if (replaying) live.chart.replayStop();
+        else live.chart.replayStart({ startIndex: Math.max(1, live.chart.getData().length - 8), paused: true });
+        replaying = !replaying;
+      } else if (!replaying) {
+        what = 'extendedHours';
+        hoursShown = !hoursShown;
+        live.chart.setExtendedHours(hoursShown);
+      } else {
+        continue;
+      }
+      if (replaying) continue;
+      oracle.chart.setExtendedHours(hoursShown);
+      oracle.chart.setData(whole.slice());
+      const where = `seed ${start}, step ${step} (${what})`;
+      expect(plain(live.chart.getData()), where).toEqual(plain(oracle.chart.getData()));
+      for (const key of LINES) {
+        expect(live.chart.getIndicatorOutput(live[key])?.series, `${where}, ${key}`)
+          .toEqual(oracle.chart.getIndicatorOutput(oracle[key])?.series);
+      }
+    }
+    expect(corrections).toBeGreaterThan(10);
+  });
+
+  it('corrects a timeframe built from a finer one: the feed, the stream and the chart together', async () => {
+    installChartStubs();
+    const live = make();
+    live.chart.setExtendedHours(true);
+    const MIN = 60_000;
+    const minute = (m: number, close = 10 + (m % 7) / 2, volume = 1): OHLCBar =>
+      ({ time: T0 + m * MIN, open: 10, high: Math.max(10, close) + 0.25, low: Math.min(10, close) - 0.25, close, volume });
+    const listeners = new Map<string, Set<DataAdapterListener>>();
+    const feed: DataAdapter = {
+      name: 'minutes',
+      supportedTimeframes: ['1m'],
+      connect: () => {},
+      disconnect: () => {},
+      getConnectionState: () => 'connected',
+      fetchHistory: async () => Array.from({ length: 40 }, (_, m) => minute(m)),
+      on: (type, cb) => {
+        if (!listeners.has(type)) listeners.set(type, new Set());
+        listeners.get(type)!.add(cb as DataAdapterListener);
+      },
+      off: (type, cb) => { listeners.get(type)?.delete(cb as DataAdapterListener); },
+      dispose: () => {},
+    };
+    const minutes = Array.from({ length: 40 }, (_, m) => minute(m));
+    const send = (bar: OHLCBar, closed: boolean) => {
+      for (const cb of listeners.get('bar') ?? []) cb({ type: 'bar', data: { bar: { ...bar }, closed }, timestamp: 0 });
+      minutes[(bar.time - T0) / MIN] = bar;
+    };
+    await live.chart.connect({ adapter: feed, symbol: 'AAA', timeframe: '5m' });
+    for (let m = 40; m < 45; m++) send(minute(m), true);
+    send(minute(45), false);
+    // Minute 42 of the 40–44 bar was off, and so was minute 37, of the history's last bar.
+    send(minute(42, 3, 4), true);
+    send(minute(37, 18, 2), true);
+    const oracle = make();
+    oracle.chart.setExtendedHours(true);
+    oracle.chart.setData(resampleBars(minutes, '5m'));
+    expect(plain(live.chart.getData())).toEqual(plain(oracle.chart.getData()));
+    expect(live.chart.getData()[8]).toMatchObject({ low: 2.75, volume: 8 });
+    expect(live.chart.getData()[7]).toMatchObject({ high: 18.25, volume: 6 });
+    for (const key of LINES) {
+      expect(live.chart.getIndicatorOutput(live[key])?.series, key).toEqual(oracle.chart.getIndicatorOutput(oracle[key])?.series);
     }
   });
 });

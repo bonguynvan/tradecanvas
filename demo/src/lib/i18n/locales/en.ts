@@ -834,7 +834,7 @@ const en = {
     reviewHtml: [
       'No third-party runtime dependencies: the chart package depends only on TradeCanvas’s own core and commons.',
       'No <code>eval</code> and no <code>new Function</code>, so it runs under a Content Security Policy without <code>unsafe-eval</code>.',
-      "The widget adds one <code>&lt;style&gt;</code> element, so its pages need <code>style-src 'unsafe-inline'</code>; the headless <code>Chart</code> adds none.",
+      "The widget adds one <code>&lt;style&gt;</code> element and draws the icons in its fields and checkboxes from <code>data:</code> images, so its pages need <code>style-src 'unsafe-inline'</code> and <code>img-src data:</code>; the headless <code>Chart</code> needs neither.",
       'Security problems are reported privately and answered within a week.',
       'Every pull request is built, type-checked and tested in CI: more than 3,000 unit tests.',
       'Releases are published by GitHub Actions from the repository, not from a developer’s machine.',

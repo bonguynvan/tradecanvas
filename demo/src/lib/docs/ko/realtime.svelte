@@ -24,11 +24,12 @@ chart.connect({ adapter: new CoinbaseAdapter(), symbol: 'BTC-USD', timeframe: '1
 <h2>DataAdapter 인터페이스</h2>
 <pre><code>{`interface DataAdapter {
   name: string
+  supportedTimeframes?: TimeFrame[]   // left out: it serves every timeframe
   connect(config): void
   disconnect(): void
   getConnectionState(): ConnectionState
   fetchHistory(symbol, timeframe, limit?): Promise<OHLCBar[]>
-  on(event, listener): void   // 'bar' | 'tick' | 'snapshot' | 'connectionChange' | 'error' | 'symbolInfo'
+  on(event, listener): void   // 'bar' | 'tick' | 'connectionChange' | 'error' | 'symbolInfo'
   off(event, listener): void
   dispose(): void
 
@@ -49,11 +50,37 @@ chart.connect({ adapter: new CoinbaseAdapter(), symbol: 'BTC-USD', timeframe: '1
   <code>sessions</code>.
 </p>
 
+<h2 id="built-timeframes">피드에 없는 시간 단위</h2>
+<p>
+  <code>supportedTimeframes</code>를 밝힌 피드는 다른 시간 단위를 그중 나누어떨어지는 가장 큰 단위로 만듭니다. 7m은 1m에서,
+  4h와 1D는 1h에서 만듭니다. 일, 주, 월과 하루를 나누어떨어지게 하는 시간 단위(2h, 3h, 4h, 6h, 8h, 12h)는 거래소의 자정, 즉
+  <code>resolveSymbol</code>이 알려 주는 <code>timeZone</code>의 자정에 시작합니다. 차트는 종목마다 한 번, 그런 단위의 첫 기록을 불러오는 동안
+  묻고, 답이 오면 그 기록을 만들며 그 시간대를 유지합니다. 1h 이하 단위는 기다리지 않습니다. 그 시간대의 날에 UTC 날보다 작은 단위가 필요하면(4h 봉만 있는 피드의 호찌민시) 그 단위로 기록을 다시 불러옵니다. <code>resolveSymbol</code>이 없거나, 시간대를 알려 주지 않거나 UTC를 알려 주거나,
+  시간 단위가 그 자정에 맞지 않는 피드(UTC와 7시간 차이 나는 시간대에 4h 봉만 있는 경우)는 전처럼 UTC 기준의 날을 씁니다.
+  답에 실패하거나 5초 넘게 답하지 않는 피드도 마찬가지이며, 그 뒤로 그 종목의 날은 차트가 그 종목을 새로 불러올 때까지(연결하거나, 다른 종목이나 시간 단위에서 바꿔 올 때) UTC 기준으로 유지되므로 더 오래된 페이지나
+  다시 연결한 뒤의 기록에 같은 날이 두 번 나오지 않습니다. 새로 불러올 때는 피드가 그사이 알려 준 시간대로 날을 만들거나 다시 묻습니다. 시장의 시간대(<code>setMarket</code>)는 이 봉들을 옮기지 않습니다.
+  00:00 UTC로 찍힌 일봉은 그것이 가리키는 날짜로 읽습니다. 피드가 나중에 <code>symbolInfo</code> 이벤트로 보내는 시간대는 표시되는 시각을 바꾸지만
+  이미 만든 날의 시작은 바꾸지 않습니다.
+</p>
+
 <h2 id="symbol-info">피드가 나중에 알게 되는 종목 정보</h2>
 <p>
-  연결된 차트는 <code>resolveSymbol</code> 을 한 번만 호출합니다. 종목 정보를 나중에(예: 첫 메시지에서) 알게 되는 피드는 <code>symbolInfo</code> 이벤트로 보내면 차트가 바로 적용합니다. 가격 축, 범례, 가격 태그가 종목의 소수 자릿수(<code>pricePrecision</code>)로 표시되고, 가격 축 눈금은 호가 단위(<code>minTick</code>)에 맞춰지며, 거래소의 거래 시간이 쓰입니다.
+  연결된 차트는 <code>resolveSymbol</code> 을 한 번만 호출합니다. 종목 정보를 나중에(예: 첫 메시지에서) 알게 되는 피드는 <code>symbolInfo</code> 이벤트로 보내면 차트가 바로 적용합니다. 가격 축, 범례, 가격 태그가 종목의 소수 자릿수(<code>pricePrecision</code>)로 표시되고, 드로잉 라벨, 당일 가격 제한폭과 기준가, 피벗 라벨, 측정 도구, 마켓 프로파일도 같은 자릿수를 씁니다. 위젯에서는 데이터 창, 알림 목록, 주문 티켓, 계좌 패널도 마찬가지입니다. 가격 축 눈금은 호가 단위(<code>minTick</code>)에 맞춰지며, 거래소의 거래 시간이 쓰입니다. 시장의 소수 자릿수(<code>setMarket</code>)도 같은 곳에 적용되며 종목의 것보다 우선합니다. 둘 다 없으면 드로잉 라벨은 가격 크기에 따른 소수 자릿수를 유지하고, 가격 축처럼 숫자 로캘에 맞춰 자릿수를 구분합니다.
 </p>
 <pre><code>{`emit('symbolInfo', { symbol: 'VNM', pricePrecision: 0, minTick: 10, currency: 'VND' })   // 어댑터가 다른 이벤트를 보내는 방식 그대로`}</code></pre>
+
+<h2 id="corrections">피드가 고치는 봉</h2>
+<p>
+  피드는 마감된 봉을 그 봉의 시각 그대로 다시 보내 봉을 고칩니다. <code>parseMessage</code>에서 <code>{'{'} bar, closed: true {'}'}</code>를 돌려주거나 <code>bar</code> 이벤트를 보냅니다. 스트림이 본 가장 새 봉보다 오래된 마감 봉은 그 봉에 대한 피드의 마지막 값입니다(다음 봉의 첫 프레임 뒤에 온 거래소의 확정치나 정정 등). 차트는 어디에 있든 그 시각의 봉을 바꾸고(<code>updateBar</code>), 그 봉부터 지표를 다시 계산하며, 보는 위치는 그대로 둡니다. 실시간 가격이 아닙니다. 가격선, 주문, 알림은 시장을 계속 따릅니다. 가장 새 봉보다 오래된, 아직 형성 중인 프레임은 지난 데이터라 무시되며 아무것도 움직이지 않습니다. 기본 제공 어댑터(<code>WebSocketAdapter</code>, <code>PollingAdapter</code>, 이를 바탕으로 한 피드, <code>BinanceAdapter</code>)는 가장 새 봉일 때만 봉의 종가로 틱을 만듭니다(제공한 과거 데이터의 마지막 봉도 포함해서 따지므로, 피드가 구독할 때 다시 보내는 마지막 마감 봉으로는 틱을 만들지 않습니다). 직접 만든 어댑터가 봉에서 틱을 만든다면 더 오래된 봉은 빼야 합니다. 어댑터 없이 쓸 때는 <code>chart.updateBar(bar)</code>를 부릅니다.
+</p>
+<p>
+  <code>aggregateTicks</code>에서는 과거 데이터의 마지막 봉에 체결이 이어서 쌓입니다. 연결 후 첫 체결도 그 봉의 시가, 고가, 저가, 거래량을 그대로 둡니다. 이미 지난 봉의 체결이 늦게 오면 무시하고, 그 봉의 마감 봉이 오면 그것으로 고치며, 형성 중인 봉은 자기 체결을 그대로 가집니다. 가장 최근 봉이 시작된 뒤의 체결은 구간 나눔으로는 더 일찍 시작하더라도 그 봉에 들어갑니다(자정이 아닌 시각으로 찍힌 일봉이나, 첫 체결 뒤에 종목의 시간대가 도착한 경우). 그래서 가격은 모든 체결을 따라갑니다. 더 작은 시간 단위로 만드는 시간 단위에서는 고친 기본 봉이, 형성 중인 봉 앞의 최근 두 개의 만든 봉을 다시 만듭니다. 그보다 앞의 수정은 무시합니다.
+</p>
+<pre><code>{`// 어댑터에서: 차트에 이미 있는 봉에 대한 거래소의 확정치
+parseMessage: (raw) => ({ bar: toBar(raw), closed: true })
+
+// 어댑터 없이 직접 가진 봉
+const corrected = chart.updateBar(bar)   // false: bar.time의 봉을 불러오지 않았음`}</code></pre>
 
 <h2>약 20줄로 어떤 피드든 연결하기</h2>
 <p>
@@ -74,11 +101,16 @@ const myAdapter = new WebSocketAdapter({
 <p>원시 틱을 시간 단위별 OHLC 봉으로 묶습니다.</p>
 <pre><code>{`import { TickAggregator } from '@tradecanvas/chart'
 
-const agg = new TickAggregator('1m')
+const agg = new TickAggregator('1d')
+agg.setTimeZone('Asia/Ho_Chi_Minh')         // days start at the exchange's midnight
+agg.seed(history.at(-1).time)               // a bar older than the history's last is past
+agg.on('barClose', (bar) => console.log(bar))   // a bar whose interval is over
+agg.on('correction', (bar) => console.log(bar)) // a closed bar older than the newest
 agg.processTick({ time, price, volume })
 
-const current = agg.getCurrentBar()         // forming bar
-const closed = agg.flushClosedBars()        // bars that have rolled over`}</code></pre>
+const current = agg.getCurrentBar()         // forming bar`}</code></pre>
+<p>주는 월요일에, 월은 1일에 시작합니다. <code>setTimeZone</code>을 쓰면 일, 주, 월과 하루를 나누어떨어지게 하는 시간 단위가 거래소 자정에 시작합니다. 차트는 종목의 시간대(없으면 시장의 시간대)로 스트림의 틱(<code>aggregateTicks</code>)에 이를 설정하고, 틱으로 만든 봉을 기록의 봉에 맞춥니다. 기록이 날짜를 00:00 UTC로 찍으면 일봉도 그렇게 찍고, 2h부터 12h 봉은 기록의 봉이 거래소 자정에 시작할 때만 그곳에서 시작하므로 피드 자체의 4h 봉(00:00, 04:00… UTC)은 시각이 그대로입니다. 피드의 더 작은 시간 단위로 만드는 시간 단위에서는 만든 봉이 시작하는 곳에서 시작합니다. 시간 봉으로 만들 때는 피드의 <code>resolveSymbol</code>이 알려 준 시간대의 자정, 없으면 UTC 자정이며, 차트의 시간대와는 상관없습니다. 피드가 00:00 UTC로 날짜를 찍은 일봉으로 만드는 주봉과 월봉은 피드의 날짜를 지키고, 체결의 날짜는 피드가 알려 준 시간대, 없으면 차트의 시간대로 정합니다. 피드 자체의 일봉과 같습니다.</p>
+<p>본 것 중 가장 새 봉보다 오래된 봉은 이미 지난 봉입니다. <code>processBar</code>는 마감된 것을 <code>correction</code>으로 보내고 형성 중인 프레임은 무시하며, <code>processTick</code>은 그 봉의 체결을 무시합니다. 그래서 늦게 온 프레임이나 체결이 형성 중인 봉을 일찍 마감하거나 가격을 움직이지 못합니다. <code>seed(time)</code>은 과거 데이터의 마지막 봉에서 시작하며 뒤로 돌아가지 않고(단, 체결이 더 새 봉을 지금은 쓰지 않는 구간으로 만들었다면, 예컨대 거래소 시간대가 체결이 시작된 뒤에 왔다면 그 봉은 놓아 줍니다. 그러지 않으면 다음 구간까지 체결이 무시되기 때문입니다), <code>resume(bar)</code>는 아직 형성 중인 그 봉에 다음 체결이 이어서 쌓이게 하되, 체결이 이미 더 새 봉에 와 있으면 그대로 둡니다. 차트의 스트림은 연결할 때마다 둘 다 하므로, 다시 연결했을 때 과거 데이터가 이전 봉까지만 있어도 형성 중인 봉의 체결은 남습니다. 이때 <code>StreamManager</code>는 형성 중인 봉을(체결로 만든 것이든 피드의 프레임에서 온 것이든) <code>snapshot</code>으로 보내는 과거 데이터 위에 얹고, 과거 데이터 마지막 봉의 종가라는 더 오래된 가격으로는 <code>priceChange</code>를 보내지 않습니다. 수정은 <code>barCorrection</code>으로 보냅니다.</p>
 
 <h2>여러 종목의 시세</h2>
 <p>

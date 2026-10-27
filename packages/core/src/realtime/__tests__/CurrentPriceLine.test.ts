@@ -59,4 +59,26 @@ describe('CurrentPriceLine', () => {
     line.render(narrow.ctx, viewport(0.0000042, 0.0000045), DARK_THEME);
     expect(narrow.rects[0][2]).toBe(PRICE_AXIS_WIDTH - 2);
   });
+
+  describe('the colour of the tag', () => {
+    function colour(line: CurrentPriceLine): string | undefined {
+      line.render(recordingCtx().ctx, viewport(0, 200), DARK_THEME);
+      return line.getTag()?.color;
+    }
+
+    it('is measured from the close given, else from the price shown before', () => {
+      const line = new CurrentPriceLine();
+      line.setPrice(96, 100);
+      expect(colour(line)).toBe(DARK_THEME.candleDown);
+      line.setPrice(97);
+      expect(colour(line)).toBe(DARK_THEME.candleUp);
+    });
+
+    it('stays when the same price comes again with no close to measure from', () => {
+      const line = new CurrentPriceLine();
+      line.setPrice(96, 100);
+      line.setPrice(96);
+      expect(colour(line)).toBe(DARK_THEME.candleDown);
+    });
+  });
 });

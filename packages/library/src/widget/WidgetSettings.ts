@@ -2,15 +2,15 @@ import { CHART_STYLE_KEYS, type ChartType, type ChartTypeOptions, type LineStyle
 import type { ChartSettingsState, SettingsCallbacks, SettingsStylePatch } from './types.js';
 import { CHART_TYPES } from './widgetConfig.js';
 import {
-  APPEARANCE_SECTIONS, HIGH_LOW_SECTION, LAST_PRICE_SECTION, SCALE_ROWS, STATUS_LINE_ROWS, TRADING_SECTIONS, VOLUME_SECTION,
+  APPEARANCE_SECTIONS, HIGH_LOW_SECTION, LAST_PRICE_SECTION, LEGEND_ROWS, SCALE_ROWS, STATUS_LINE_ROWS, TRADING_SECTIONS, VOLUME_SECTION,
   seriesRows, type LookRow, type LookSection,
 } from './widgetSettingsLook.js';
 import { chartTypeLabel, numberLocaleOptions } from './widgetLocales.js';
 import { createChartTypeIcon, createIcon } from './icons.js';
 import { timezoneOptions } from './widgetTimezones.js';
-import { keepTabInside } from './focusTrap.js';
+import { FOCUSABLE, keepTabInside } from './focusTrap.js';
 import { WidgetContextMenu, type ContextMenuEntry } from './WidgetContextMenu.js';
-import { colorRow, numberRow, rangeRow, selectRow, settingsSection, toggleRow } from './settingsRows.js';
+import { colorRow, numberRow, rangeRow, selectRow, settingsSection, toggleRow, type NumberLimits } from './settingsRows.js';
 import { fill, type MessageKey, type Translator } from './i18n.js';
 
 export type SettingsTab = 'symbol' | 'statusLine' | 'scales' | 'appearance' | 'layers' | 'trading';
@@ -29,6 +29,15 @@ const TABS: readonly { id: Tab; icon: string }[] = [
 const LINE_WIDTHS = [1, 2, 3, 4];
 /** A template's entry in the Template menu, by its name. */
 const TEMPLATE_ID = 't:';
+/**
+ * The smallest box, reversal or range the chart type's settings take: a
+ * hundred-millionth, the finest price step markets commonly quote. A size
+ * far under the prices is no use; the chart raises one that would make too
+ * many bars anyway, but a slip like 1e-9 is turned away here.
+ */
+const MIN_TYPE_SIZE = 1e-8;
+/** A box, reversal or range: any number from MIN_TYPE_SIZE up. */
+const SIZE_LIMITS: NumberLimits = { step: 'any', max: Infinity, min: MIN_TYPE_SIZE };
 
 let nextSettingsId = 1;
 
@@ -57,8 +66,9 @@ export class WidgetSettings {
   private readonly uid = nextSettingsId++;
 
   /**
-   * `barCountdown` / `logScale` false leave out the controls for features the
-   * chart has switched off.
+   * `barCountdown` / `logScale` / `legend` / `volume` false leave out the
+   * controls for features the chart has switched off: there they would do
+   * nothing.
    */
   constructor(
     callbacks: SettingsCallbacks,
@@ -66,6 +76,8 @@ export class WidgetSettings {
     private readonly available: {
       barCountdown?: boolean;
       logScale?: boolean;
+      legend?: boolean;
+      volume?: boolean;
       /** The exchange's time zone to offer (null while unknown), or undefined when there is none to offer. */
       exchangeZone?: () => string | null | undefined;
       /** false: the chart doesn't trade, so the orders' colours aren't offered. */
@@ -98,7 +110,30 @@ export class WidgetSettings {
     if (!this.modal) return;
     this.currentSettings = { ...settings };
     if (chartType !== undefined) this.chartType = chartType;
+    // A change from outside (a compare's bars, the host's setSettings) builds the panel again under the
+    // control in focus: focus goes to the one in its place, not to the page outside the dialog.
+    const focused = this.focusedControl();
     this.renderTabContent();
+    if (focused !== null) this.focusControl(focused);
+  }
+
+  /** The place of the control in focus among the panel's, or null when focus is not in the panel. */
+  private focusedControl(): number | null {
+    const active = document.activeElement;
+    if (!this.bodyEl || !(active instanceof HTMLElement) || !this.bodyEl.contains(active)) return null;
+    const at = this.panelControls().indexOf(active);
+    return at < 0 ? null : at;
+  }
+
+  /** Focus the panel's control at `index`, or its last when it has fewer; the tab when it has none. */
+  private focusControl(index: number): void {
+    const controls = this.panelControls();
+    const control = controls[Math.min(index, controls.length - 1)] ?? this.tabButtons.find((b) => b.dataset.tab === this.currentTab);
+    control?.focus();
+  }
+
+  private panelControls(): HTMLElement[] {
+    return this.bodyEl ? [...this.bodyEl.querySelectorAll<HTMLElement>(FOCUSABLE)] : [];
   }
 
   /** Close, keeping what was changed (as OK does). */
@@ -331,15 +366,19 @@ export class WidgetSettings {
     // A section's own switch says "Show": its title names what it shows.
     const show = this.t('common.show');
     this.renderLookSection(LAST_PRICE_SECTION);
-    this.renderLookSection(VOLUME_SECTION, [toggleRow(show, s.volumeVisible, (v) => this.patch({ volumeVisible: v }))]);
+    if (this.available.volume !== false) {
+      this.renderLookSection(VOLUME_SECTION, [toggleRow(show, s.volumeVisible, (v) => this.patch({ volumeVisible: v }))]);
+    }
     this.renderLookSection(HIGH_LOW_SECTION, [toggleRow(show, s.highLowLines, (v) => this.patch({ highLowLines: v }))]);
   }
 
-  /** The legend over the chart: shown or not, its colours. */
+  /** The legend over the chart: shown or not, its colours; the panes' titles. */
   private renderStatusLineTab(s: ChartSettingsState): void {
+    const legend = this.available.legend !== false;
+    const rows = legend ? STATUS_LINE_ROWS : STATUS_LINE_ROWS.filter((row) => !LEGEND_ROWS.includes(row));
     this.addSection(undefined, [
-      toggleRow(this.t('settings.ohlcLegend'), s.legendVisible, (v) => this.patch({ legendVisible: v })),
-      ...STATUS_LINE_ROWS.map((row) => this.lookRow(row)),
+      ...(legend ? [toggleRow(this.t('settings.ohlcLegend'), s.legendVisible, (v) => this.patch({ legendVisible: v }))] : []),
+      ...rows.map((row) => this.lookRow(row)),
     ]);
   }
 
@@ -497,34 +536,34 @@ export class WidgetSettings {
     /** Change one type's settings: the rest of its own stay. */
     const set = <K extends keyof ChartTypeOptions>(key: K, value: NonNullable<ChartTypeOptions[K]>) =>
       this.patch({ chartTypeOptions: { ...own(), [key]: value } });
-    const number = (label: MessageKey, value: number | null, step: string, max: number, onChange: (v: number | null) => void) =>
-      section.appendChild(numberRow(this.t(label), value, { step, max }, onChange, this.t));
+    const number = (label: MessageKey, value: number | null, limits: NumberLimits, onChange: (v: number | null) => void) =>
+      section.appendChild(numberRow(this.t(label), value, limits, onChange, this.t, this.currentSettings?.numberLocale || undefined));
     switch (type) {
       case 'renko': {
         const o = all.renko ?? {};
-        number('settings.boxSize', typeof o.boxSize === 'number' ? o.boxSize : null, 'any', Infinity,
+        number('settings.boxSize', typeof o.boxSize === 'number' ? o.boxSize : null, SIZE_LIMITS,
           (v) => set('renko', { ...(own().renko ?? {}), boxSize: v ?? 'atr' }));
-        number('settings.atrPeriod', o.atrPeriod ?? null, '1', 500, (v) => set('renko', withValue(own().renko, 'atrPeriod', v)));
+        number('settings.atrPeriod', o.atrPeriod ?? null, { step: '1', max: 500 }, (v) => set('renko', withValue(own().renko, 'atrPeriod', v)));
         break;
       }
       case 'lineBreak':
-        number('settings.lineBreakLines', all.lineBreak?.lines ?? null, '1', 10, (v) => set('lineBreak', withValue(own().lineBreak, 'lines', v)));
+        number('settings.lineBreakLines', all.lineBreak?.lines ?? null, { step: '1', max: 10 }, (v) => set('lineBreak', withValue(own().lineBreak, 'lines', v)));
         break;
       case 'kagi':
-        number('settings.reversal', all.kagi?.reversal ?? null, 'any', Infinity, (v) => set('kagi', withValue(own().kagi, 'reversal', v)));
+        number('settings.reversal', all.kagi?.reversal ?? null, SIZE_LIMITS, (v) => set('kagi', withValue(own().kagi, 'reversal', v)));
         section.appendChild(selectRow(this.t('settings.reversalType'), all.kagi?.reversalType ?? 'percent', [
           { value: 'percent', label: this.t('settings.reversalType.percent') },
           { value: 'price', label: this.t('settings.reversalType.price') },
         ], (v) => set('kagi', { ...(own().kagi ?? {}), reversalType: v === 'price' ? 'price' : 'percent' })));
         break;
       case 'pointAndFigure':
-        number('settings.boxSize', typeof all.pointAndFigure?.boxSize === 'number' ? all.pointAndFigure.boxSize : null, 'any', Infinity,
+        number('settings.boxSize', typeof all.pointAndFigure?.boxSize === 'number' ? all.pointAndFigure.boxSize : null, SIZE_LIMITS,
           (v) => set('pointAndFigure', { ...(own().pointAndFigure ?? {}), boxSize: v ?? 'auto' }));
-        number('settings.reversalBoxes', all.pointAndFigure?.reversal ?? null, '1', 10,
+        number('settings.reversalBoxes', all.pointAndFigure?.reversal ?? null, { step: '1', max: 10 },
           (v) => set('pointAndFigure', withValue(own().pointAndFigure, 'reversal', v)));
         break;
       case 'rangeBars':
-        number('settings.barRange', typeof all.rangeBars?.range === 'number' ? all.rangeBars.range : null, 'any', Infinity,
+        number('settings.barRange', typeof all.rangeBars?.range === 'number' ? all.rangeBars.range : null, SIZE_LIMITS,
           (v) => set('rangeBars', { range: v ?? 'auto' }));
         break;
       default:

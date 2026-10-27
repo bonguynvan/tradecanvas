@@ -27,6 +27,7 @@ import { MomentumIndicator } from '../panel/Momentum.js';
 import { HistoricalVolatilityIndicator } from '../panel/HistoricalVolatility.js';
 import { VolumeOscillatorIndicator } from '../panel/VolumeOscillator.js';
 import { UlcerIndexIndicator } from '../panel/UlcerIndex.js';
+import { VWAPIndicator } from '../overlay/VWAP.js';
 import { IndicatorEngine } from '../IndicatorEngine.js';
 
 /** Deterministic random walk so failures are reproducible. */
@@ -97,7 +98,7 @@ function updateOrRecalc(
   return plugin.update?.(data, config, prev, from) ?? plugin.calculate(data, config);
 }
 
-const CASES: [string, IndicatorPlugin, Record<string, number>][] = [
+const CASES: [string, IndicatorPlugin, Record<string, number | string>][] = [
   ['sma', new SMAIndicator(), { period: 20 }],
   ['ema', new EMAIndicator(), { period: 20 }],
   ['bb', new BollingerBandsIndicator(), { period: 20, stdDev: 2 }],
@@ -125,6 +126,9 @@ const CASES: [string, IndicatorPlugin, Record<string, number>][] = [
   ['hv', new HistoricalVolatilityIndicator(), { period: 10, annual: 365 }],
   ['vo', new VolumeOscillatorIndicator(), { short: 5, long: 10 }],
   ['ulcer', new UlcerIndexIndicator(), { period: 14 }],
+  // Minute bars from 22:13 UTC: the session starts again at midnight, inside the 300 bars.
+  ['vwap', new VWAPIndicator(), {}],
+  ['vwap-week', new VWAPIndicator(), { anchor: 'week' }],
 ];
 
 describe.each(CASES)('%s incremental update', (id, plugin, params) => {
@@ -175,6 +179,15 @@ describe.each(CASES)('%s incremental update', (id, plugin, params) => {
     const prev = plugin.calculate(before, config);
     const out = updateOrRecalc(plugin, all, config, prev, before.length - 1);
     expectSameOutput(out, plugin.calculate(all, config));
+  });
+
+  it.each([250, Number(params.period ?? 2) + 1])('a bar changed in the middle (a correction at %i) matches a full recalculation', (k) => {
+    const bars = makeBars(300);
+    const prev = plugin.calculate(bars, config);
+    const corrected = [...bars];
+    corrected[k] = { ...tick(bars[k], 0.97), high: bars[k].high * 1.01 };
+    const out = updateOrRecalc(plugin, corrected, config, prev, k);
+    expectSameOutput(out, plugin.calculate(corrected, config));
   });
 
   it('declines (falls back) when the replaced last bar has a different time', () => {

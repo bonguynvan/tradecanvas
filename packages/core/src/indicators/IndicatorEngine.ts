@@ -12,11 +12,12 @@ import type {
   ViewportState,
   OverlayScale,
 } from '@tradecanvas/commons';
-import { TC_SERIES_COLORS } from '@tradecanvas/commons';
+import { TC_SERIES_COLORS, isUtcTimeZone, isValidTimeZone } from '@tradecanvas/commons';
 import { drawnKeys, hasHistogram, paneLogRange, paneValueRange, plotColor, plotShown } from './plots.js';
 import { alignOutput, emptyOutput, inputSource, lineSourceBars, priceSourceBars, sourceParam } from './sources.js';
 import { cleanIntervals, shownOnInterval } from './intervals.js';
 import { copyIntervals, copyPlots, isSeriesPalette, paletteFrom } from './palette.js';
+import { BUILT_IN_PLUGINS } from './builtIns.js';
 
 interface IndicatorInstance {
   plugin: IndicatorPlugin;
@@ -67,6 +68,21 @@ export interface ActiveIndicatorInfo {
   pane?: string;
 }
 
+/** Whether a plugin's values move with the exchange's zone: it says so, or it is the host's and says nothing. */
+function readsZone(plugin: IndicatorPlugin): boolean {
+  return plugin.descriptor.readsExchangeTimeZone ?? !BUILT_IN_PLUGINS.has(plugin);
+}
+
+/**
+ * A computation waiting for the next read: every instance from bar `from` on
+ * (Infinity: none of them), and the ones in `full` from the start.
+ */
+interface PendingComputation {
+  data: DataSeries;
+  from: number;
+  full: Set<string>;
+}
+
 export class IndicatorEngine {
   private registry = new Map<string, IndicatorPlugin>();
   private instances = new Map<string, IndicatorInstance>();
@@ -74,10 +90,12 @@ export class IndicatorEngine {
   private styleDefaults = new Map<string, IndicatorStyleConfig>();
   /** Instances in computing order (each after the indicators it reads); null = recompute. */
   private order: IndicatorInstance[] | null = null;
-  /** A recalculation waiting for the next read (`deferRecalculateFrom`). */
-  private pending: { data: DataSeries; from: number } | null = null;
+  /** A recalculation waiting for the next read (`deferRecalculateFrom`, a change of zone). */
+  private pending: PendingComputation | null = null;
   /** The chart's interval, which the instances' `intervals` are read against (null: not known). */
   private timeframe: string | null = null;
+  /** The exchange's zone, given to every instance as `config.exchangeTimeZone` (null: UTC's days). */
+  private exchangeTimeZone: string | null = null;
 
   register(plugin: IndicatorPlugin): void {
     this.registry.set(plugin.descriptor.id, plugin);
@@ -109,6 +127,7 @@ export class IndicatorEngine {
     };
     if (options.pane && this.canHost(options.pane)) config.pane = options.pane;
     if (options.scale === 'left' && plugin.descriptor.placement === 'overlay' && !config.pane) config.scale = 'left';
+    if (this.exchangeTimeZone) config.exchangeTimeZone = this.exchangeTimeZone;
 
     // The kind's defaults (setStyleDefaults) under what the config sets.
     const defaults = this.styleDefaults.get(id);
@@ -171,14 +190,18 @@ export class IndicatorEngine {
    * frames then costs one recalculation a frame, not one a tick.
    */
   deferRecalculateFrom(data: DataSeries, from: number): void {
+    const pending = this.waitingOn(data);
+    pending.from = Math.min(pending.from, from);
+  }
+
+  /** The computation waiting on `data`: the one there is, or a new one, once one on another series has run. */
+  private waitingOn(data: DataSeries): PendingComputation {
     const pending = this.pending;
-    if (pending && pending.data === data) {
-      pending.from = Math.min(pending.from, from);
-      return;
-    }
+    if (pending && pending.data === data) return pending;
     // Another series than the one waiting: that one first.
     this.flush();
-    this.pending = { data, from };
+    this.pending = { data, from: Infinity, full: new Set() };
+    return this.pending;
   }
 
   /** Run a deferred recalculation now, if one is waiting. */
@@ -186,7 +209,11 @@ export class IndicatorEngine {
     const pending = this.pending;
     if (!pending) return;
     this.pending = null;
-    for (const instance of this.ordered()) this.compute(instance, pending.data, pending.from);
+    const { data, from, full } = pending;
+    for (const instance of this.ordered()) {
+      if (full.has(instance.config.instanceId)) this.compute(instance, data);
+      else if (from !== Infinity) this.compute(instance, data, from);
+    }
   }
 
   /**
@@ -542,6 +569,44 @@ export class IndicatorEngine {
     let changed = false;
     for (const instance of this.instances.values()) changed = this.placeOnInterval(instance) || changed;
     return changed;
+  }
+
+  /**
+   * The exchange's IANA zone, which the indicators that start again each day,
+   * week or month count their days in (`config.exchangeTimeZone`); null, UTC
+   * itself, or a zone the browser does not know, for UTC's (the config then
+   * has none). Not the zone the chart shows, so values stay the same however
+   * times are displayed. True when it changed. With `data`, the indicators
+   * that count days in it (`readsExchangeTimeZone`) and those that read
+   * their lines are computed again before the next read, the others left as
+   * they are; without, the caller recomputes.
+   */
+  setExchangeTimeZone(zone: string | null, data?: DataSeries): boolean {
+    // UTC is no zone at all: a crypto feed's symbol switch, UTC to none and
+    // back, then changes nothing and computes nothing again.
+    const next = zone && !isUtcTimeZone(zone) && isValidTimeZone(zone) ? zone : null;
+    if (next === this.exchangeTimeZone) return false;
+    this.exchangeTimeZone = next;
+    for (const { config } of this.instances.values()) {
+      if (next) config.exchangeTimeZone = next;
+      else delete config.exchangeTimeZone;
+    }
+    if (data) {
+      const full = this.waitingOn(data).full;
+      for (const id of this.zoneDependents()) full.add(id);
+    }
+    return true;
+  }
+
+  /** The instances a change of the exchange's zone moves: those that read it, and those that read their lines. */
+  private zoneDependents(): Set<string> {
+    const out = new Set<string>();
+    for (const instance of this.instances.values()) {
+      if (!readsZone(instance.plugin)) continue;
+      out.add(instance.config.instanceId);
+      for (const id of this.getDependents(instance.config.instanceId)) out.add(id);
+    }
+    return out;
   }
 
   /**

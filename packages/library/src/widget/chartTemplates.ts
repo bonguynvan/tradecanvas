@@ -1,7 +1,7 @@
 import { readChartStyleOverrides } from '@tradecanvas/commons';
 import type { KeyValueStorage } from './DrawingTemplateStore.js';
 import type { ChartSettingsState, SettingsStylePatch } from './types.js';
-import { DEFAULT_SETTINGS } from './widgetConfig.js';
+import { readChartSettings } from './chartSettingsStore.js';
 import { SETTINGS_LOOK_KEYS } from './widgetSettingsLook.js';
 
 /** A chart's look under a name: the settings' switches, and the colours, dashes and widths. */
@@ -20,28 +20,11 @@ const NOT_LOOK = new Set<keyof ChartSettingsState>(['timezone', 'numberLocale', 
 /** The longest name kept: as long as the name prompt takes. */
 const MAX_NAME = 80;
 
-/** The choices a setting takes, where it is one of a few words. */
-const CHOICES: Partial<Record<keyof ChartSettingsState, readonly string[]>> = {
-  crosshairMode: ['normal', 'magnet', 'hidden'],
-  scaleMode: ['regular', 'logarithmic', 'percentage', 'indexedTo100'],
-  periodLevelsPeriod: ['day', 'week'],
-};
-
 const isObject = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
 
 /** The settings a template keeps, of the kind each takes. */
 export function templateSettings(raw: unknown): Partial<ChartSettingsState> {
-  if (!isObject(raw)) return {};
-  const out: Record<string, unknown> = {};
-  for (const [key, def] of Object.entries(DEFAULT_SETTINGS) as [keyof ChartSettingsState, unknown][]) {
-    if (NOT_LOOK.has(key) || !(key in raw)) continue;
-    const value = raw[key];
-    if (typeof value !== typeof def || (typeof value === 'number' && !Number.isFinite(value))) continue;
-    const choices = CHOICES[key];
-    if (choices && !choices.includes(value as string)) continue;
-    out[key] = value;
-  }
-  return out as Partial<ChartSettingsState>;
+  return readChartSettings(raw, NOT_LOOK);
 }
 
 /** The style a template keeps: the settings' own keys that are set, of the kind each takes. */

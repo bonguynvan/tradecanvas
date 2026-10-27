@@ -87,6 +87,7 @@ export class Viewport {
         priceAxisWidth: this.state.priceAxisWidth,
         formatPrice: this.state.formatPrice,
         numberLocale: this.state.numberLocale,
+        pricePrecision: this.state.pricePrecision,
         priceUnit: this.state.priceUnit,
       };
     }
@@ -130,6 +131,15 @@ export class Viewport {
   /** The number locale prices on the scale are grouped in. */
   setNumberLocale(locale: string): void {
     this.state.numberLocale = locale;
+    this.invalidate();
+  }
+
+  /**
+   * Decimals prices on the scale show, the market's or the symbol's; null
+   * (or anything but a whole number from 0 up) leaves each label its own.
+   */
+  setPricePrecision(precision: number | null): void {
+    this.state.pricePrecision = precision !== null && Number.isInteger(precision) && precision >= 0 ? precision : undefined;
     this.invalidate();
   }
 

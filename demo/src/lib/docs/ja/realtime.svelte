@@ -24,11 +24,12 @@ chart.connect({ adapter: new CoinbaseAdapter(), symbol: 'BTC-USD', timeframe: '1
 <h2>DataAdapter インターフェース</h2>
 <pre><code>{`interface DataAdapter {
   name: string
+  supportedTimeframes?: TimeFrame[]   // left out: it serves every timeframe
   connect(config): void
   disconnect(): void
   getConnectionState(): ConnectionState
   fetchHistory(symbol, timeframe, limit?): Promise<OHLCBar[]>
-  on(event, listener): void   // 'bar' | 'tick' | 'snapshot' | 'connectionChange' | 'error' | 'symbolInfo'
+  on(event, listener): void   // 'bar' | 'tick' | 'connectionChange' | 'error' | 'symbolInfo'
   off(event, listener): void
   dispose(): void
 
@@ -49,11 +50,37 @@ chart.connect({ adapter: new CoinbaseAdapter(), symbol: 'BTC-USD', timeframe: '1
   <code>timeZone</code>、<code>sessions</code>。
 </p>
 
+<h2 id="built-timeframes">フィードにない時間足</h2>
+<p>
+  <code>supportedTimeframes</code> を挙げるフィードでは、ほかの時間足を、そのうち割り切れる最も粗い時間足から作ります。7m は 1m から、
+  4h と 1D は 1h からです。日足、週足、月足と、1 日を割り切る時間足（2h、3h、4h、6h、8h、12h）は、取引所の午前 0 時、つまり
+  <code>resolveSymbol</code> が示す <code>timeZone</code> の午前 0 時に始まります。チャートは銘柄ごとに一度、そうした時間足の最初の履歴を取りに行くのと同時に問い合わせ、
+  答えが来てからその履歴を作り、そのタイムゾーンを保ちます。1h 以下の時間足は待ちません。そのタイムゾーンの日に UTC の日より細かい時間足が要る場合（4h バーしかないフィードでのホーチミン市など）は、その時間足で履歴を取り直します。<code>resolveSymbol</code> のないフィード、タイムゾーンを示さないか UTC を示すフィード、
+  時間足がその午前 0 時にそろわないフィード（UTC から 7 時間ずれたタイムゾーンで 4h バーしかない場合など）は、これまでどおり UTC の日になります。
+  問い合わせに失敗したフィードや 5 秒以内に答えないフィードも同じで、その銘柄の日はチャートがその銘柄を新たに読み込むまで（接続したとき、または別の銘柄や時間足から切り替えたとき）UTC のままなので、さらに古いページや再接続後の履歴に
+  同じ日が二度現れることはありません。新たに読み込むときは、フィードがその後に示したタイムゾーンで日を作るか、もう一度問い合わせます。市場のタイムゾーン（<code>setMarket</code>）でこれらのバーが動くことはありません。
+  00:00 UTC のタイムスタンプを持つ日足は、それが示す日付として扱います。フィードが後から <code>symbolInfo</code> イベントで送るタイムゾーンは、
+  表示される時刻を変えますが、作られた日の始まりは変えません。
+</p>
+
 <h2 id="symbol-info">データフィードが後から知る銘柄情報</h2>
 <p>
-  接続済みのチャートは <code>resolveSymbol</code> を一度だけ呼びます。銘柄の情報を後から（たとえば最初のメッセージで）知るフィードは <code>symbolInfo</code> イベントで送れば、チャートがすぐ適用します。価格軸・凡例・価格タグは銘柄の小数桁（<code>pricePrecision</code>）で表示され、価格軸の目盛りは呼値（<code>minTick</code>）に揃い、取引所の取引時間も使われます。
+  接続済みのチャートは <code>resolveSymbol</code> を一度だけ呼びます。銘柄の情報を後から（たとえば最初のメッセージで）知るフィードは <code>symbolInfo</code> イベントで送れば、チャートがすぐ適用します。価格軸・凡例・価格タグは銘柄の小数桁（<code>pricePrecision</code>）で表示され、描画のラベル、当日の値幅制限と基準値、ピボットのラベル、計測ツール、マーケットプロファイルも同じ桁になります。ウィジェットではデータウィンドウ、アラート一覧、注文チケット、口座パネルも同様です。価格軸の目盛りは呼値（<code>minTick</code>）に揃い、取引所の取引時間も使われます。市場の小数桁（<code>setMarket</code>）も同じ箇所に届き、銘柄の小数桁より優先されます。どちらもない場合、描画のラベルは価格の大きさに応じた小数桁のまま、価格軸と同じく数値ロケールで桁区切りされます。
 </p>
 <pre><code>{`emit('symbolInfo', { symbol: 'VNM', pricePrecision: 0, minTick: 10, currency: 'VND' })   // アダプターが他のイベントを送るのと同じ方法で`}</code></pre>
+
+<h2 id="corrections">フィードが修正するバー</h2>
+<p>
+  フィードは、確定したバーを自身の時刻のままもう一度送ってバーを修正します。<code>parseMessage</code> から <code>{'{'} bar, closed: true {'}'}</code> を返すか、<code>bar</code> イベントです。ストリームが受け取った最新のバーより古い確定バーは、そのバーについてのフィードの最終的な値です（次のバーの最初のフレームより後に届いた取引所の確定値や、訂正など）。チャートはどこにあってもその時刻のバーを置き換え（<code>updateBar</code>）、そこからインジケーターを計算し直し、表示位置はそのままにします。ライブ価格ではありません。価格線、注文、アラートは市場の価格に従ったままです。最新のバーより古い未確定のフレームは古いデータとして無視され、何も動かしません。組み込みのアダプター（<code>WebSocketAdapter</code>、<code>PollingAdapter</code>、それらを使うフィード、<code>BinanceAdapter</code>）がバーの終値からティックを作るのは、最新のバーのときだけです（提供した履歴の最後のバーも含めて数えるので、フィードが購読時にもう一度送る最後の確定バーからはティックを作りません）。独自のアダプターでバーからティックを作る場合も、古いバーは除いてください。アダプターがなければ <code>chart.updateBar(bar)</code> を呼びます。
+</p>
+<p>
+  <code>aggregateTicks</code> では、履歴の最後のバーが約定の積み上げ先になります。接続後の最初の約定でも、その始値、高値、安値、出来高はそのままです。過ぎたバーの約定が遅れて届いた場合は無視し、そのバーの確定バーが届けばそれで修正します。形成中のバーは自分の約定を保ちます。最新のバーが始まった後の約定は、区切りの上ではそれより前に始まる場合でも、そのバーに入ります（午前 0 時以外の時刻で記録された日足や、最初の約定より後に銘柄のタイムゾーンが届いた場合）。そのため価格はすべての約定に追随します。より細かい時間足から作る時間足では、修正された元のバーが、形成中のバーの前にある直近 2 本の作ったバーを作り直します。それより前の修正は無視します。
+</p>
+<pre><code>{`// アダプター内: チャートに既にあるバーの、取引所の確定値
+parseMessage: (raw) => ({ bar: toBar(raw), closed: true })
+
+// アダプターなしで、自前のバーを
+const corrected = chart.updateBar(bar)   // false: bar.time のバーが読み込まれていない`}</code></pre>
 
 <h2>約 20 行で任意のフィードに対応</h2>
 <p>
@@ -74,11 +101,16 @@ const myAdapter = new WebSocketAdapter({
 <p>生のティックを、時間足ごとの OHLC バーにまとめます：</p>
 <pre><code>{`import { TickAggregator } from '@tradecanvas/chart'
 
-const agg = new TickAggregator('1m')
+const agg = new TickAggregator('1d')
+agg.setTimeZone('Asia/Ho_Chi_Minh')         // days start at the exchange's midnight
+agg.seed(history.at(-1).time)               // a bar older than the history's last is past
+agg.on('barClose', (bar) => console.log(bar))   // a bar whose interval is over
+agg.on('correction', (bar) => console.log(bar)) // a closed bar older than the newest
 agg.processTick({ time, price, volume })
 
-const current = agg.getCurrentBar()         // forming bar
-const closed = agg.flushClosedBars()        // bars that have rolled over`}</code></pre>
+const current = agg.getCurrentBar()         // forming bar`}</code></pre>
+<p>週は月曜日、月は 1 日に始まります。<code>setTimeZone</code> を使うと、日、週、月と 1 日を割り切る時間足は取引所の午前 0 時に始まります。チャートは銘柄のタイムゾーン（なければ市場のもの）からストリームのティック（<code>aggregateTicks</code>）にこれを設定し、ティックから作るバーを履歴のバーに揃えます。履歴が日を 00:00 UTC で記録していれば日足もそうし、2h から 12h のバーは履歴のバーが取引所の午前 0 時から始まるときだけそこから始めるので、フィード自身の 4h バー（00:00、04:00… UTC）は時刻が変わりません。フィードのより細かい時間足から作る時間足では、作ったバーと同じところから始まります。時間足から作るときは、フィードの <code>resolveSymbol</code> が示したタイムゾーンの午前 0 時、なければ UTC の午前 0 時で、チャートのタイムゾーンには左右されません。フィードが 00:00 UTC で記録した日足から作る週足と月足はフィードの日付を保ち、約定の日付はフィードが示したタイムゾーン、なければチャートのタイムゾーンで決まります。フィード自身の日足と同じです。</p>
+<p>受け取った最新のバーより古いバーは過ぎたものです。<code>processBar</code> は確定したものを <code>correction</code> として送り、未確定のフレームは無視します。<code>processTick</code> はそのバーの約定を無視するので、遅れたフレームや約定が形成中のバーを早く確定させたり、価格を動かしたりすることはありません。<code>seed(time)</code> は履歴の最後のバーから始め、後戻りはしません（ただし、より新しいバーを約定が今はもう使わない区切りで組み立てていた場合、たとえば取引所のタイムゾーンが約定の後に届いた場合は、そのバーを手放します。そうしないと次の区切りまで約定が無視されるためです）。<code>resume(bar)</code> はまだ形成中のそのバーを次の約定の積み上げ先にしますが、約定がすでにより新しいバーに進んでいればそのままです。チャートのストリームは接続のたびに両方を行うので、再接続で履歴が一つ前のバーまでしかなくても、形成中のバーの約定は残ります。このとき <code>StreamManager</code> は、形成中のバー（約定から組み立てたものでも、フィードのフレームから来たものでも）を <code>snapshot</code> として送る履歴の上に載せ、履歴の最後のバーの終値という古い価格の <code>priceChange</code> は送りません。修正は <code>barCorrection</code> として送ります。</p>
 
 <h2>複数シンボルのクオート</h2>
 <p>

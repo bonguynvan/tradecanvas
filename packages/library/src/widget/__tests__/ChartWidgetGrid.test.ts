@@ -244,6 +244,25 @@ describe('ChartWidgetGrid', () => {
     expect(charts()[1].drawings).toEqual(['line']);
   });
 
+  it('a chart’s settings are in the grid layout and mark it changed', async () => {
+    make();
+    const saved = await grid.getLayoutSession()!.saveAs('G');
+    grid.getWidgets()[0].setSettings({ volumeProfileVisible: true });
+    expect(grid.captureLayout().cells[0].settings?.volumeProfileVisible).toBe(true);
+    expect(grid.captureLayout().cells[1].settings?.volumeProfileVisible).toBe(false);
+    await new Promise((r) => setTimeout(r, 30));
+    expect(JSON.parse((await storage.load(saved.id))!.content).cells[0].settings.volumeProfileVisible).toBe(true);
+  });
+
+  it('keeps each chart’s settings under a key of its own', () => {
+    make({ widget: { watchlist: false, persistSettings: true } });
+    grid.getWidgets()[0].setSettings({ gridVisible: false });
+    grid.getWidgets()[1].setSettings({ volumeVisible: false });
+    expect(JSON.parse(localStorage.getItem('tcw:chart-settings:0')!).settings).toEqual({ gridVisible: false });
+    expect(JSON.parse(localStorage.getItem('tcw:chart-settings:1')!).settings).toEqual({ volumeVisible: false });
+    expect(localStorage.getItem('tcw:chart-settings')).toBeNull();
+  });
+
   it('turns down content that is not a grid layout', async () => {
     make();
     expect(await grid.applyLayoutContent(JSON.stringify({ v: 1, kind: 'grid', layout: '9x9', cells: [] }))).toBe(false);

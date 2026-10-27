@@ -1,5 +1,5 @@
 import type { Point, ViewportState, Theme, DataSeries, TimeFormatter, TimeZoneSetting, ResolvedLineLook } from '@tradecanvas/commons';
-import { PRICE_AXIS_WIDTH, autoPricePrecision, timeParts, isDateOnly, barsAreDaily, barTimeUnit, lineDash } from '@tradecanvas/commons';
+import { PRICE_AXIS_WIDTH, autoPricePrecision, timeParts, isDateOnly, barDateParts, barsAreDaily, barTimeUnit, lineDash } from '@tradecanvas/commons';
 import { crosshairLooks } from './crosshairLooks.js';
 import { crispX, crispY } from '../charts/pixelGrid.js';
 import { priceScaleText } from '../axis/PriceAxis.js';
@@ -16,6 +16,8 @@ export class CrosshairHandler {
   private data: DataSeries = [];
   private source: (() => DataSeries) | null = null;
   private tz: TimeZoneSetting = null;
+  /** The exchange's zone: daily bars built at its midnight are dated there. */
+  private exchangeZone: string | null = null;
   private timeFormatter: TimeFormatter | null = null;
   private timesPastData = true;
 
@@ -40,6 +42,11 @@ export class CrosshairHandler {
   /** An IANA zone, a fixed UTC offset in minutes, or null for the browser's zone. */
   setTimezoneOffset(tz: TimeZoneSetting): void {
     this.tz = tz;
+  }
+
+  /** The exchange's zone (null: none known): the date a daily bar's label gives (`barDateParts`). */
+  setExchangeTimeZone(zone: string | null): void {
+    this.exchangeZone = zone;
   }
   private magnetMode = true;
   private mode: CrosshairMode = 'magnet';
@@ -129,6 +136,23 @@ export class CrosshairHandler {
 
   onPointerMove(pos: Point): void {
     this.position = pos;
+  }
+
+  /** The bar last reported under the pointer (the callback's `barIndex`); null with none. */
+  getReportedBarIndex(): number | null {
+    return this.lastCallbackBarIndex >= 0 ? this.lastCallbackBarIndex : null;
+  }
+
+  /**
+   * Report the bar last reported again, in a microtask (before the next
+   * frame), though the pointer hasn't moved: its values changed (a bar
+   * corrected in place), and the callback otherwise fires only when the
+   * pointer reaches another bar.
+   */
+  refresh(): void {
+    if (this.lastCallbackBarIndex < 0 || !this.pendingPoint) return;
+    this.pendingBarIndex = this.lastCallbackBarIndex;
+    this.scheduleCallback();
   }
 
   onPointerLeave(): void {
@@ -300,7 +324,7 @@ export class CrosshairHandler {
     const time = barIndexToTime(slot, data);
     const timeText = this.timeFormatter
       ? this.timeFormatter(time * barTimeUnit(data), { kind: 'crosshair', timeZone: this.tz })
-      : formatBarTime(time * barTimeUnit(data), this.tz, barsAreDaily(data));
+      : formatBarTime(time * barTimeUnit(data), this.tz, barsAreDaily(data), this.exchangeZone);
     const font = `600 ${theme.font.sizeSmall}px ${theme.font.family}`;
     const axisY = timeAxisY ?? (viewport.chartRect.y + viewport.chartRect.height);
     ctx.font = font;
@@ -449,11 +473,16 @@ function drawAxisPill(ctx: CanvasRenderingContext2D, opts: AxisPillOptions): voi
 }
 
 /** `ms` is in milliseconds: the caller knows its series' unit. */
-function formatBarTime(ms: number, tz: TimeZoneSetting, daily?: boolean): string {
-  const parts = timeParts(ms, tz);
-  const { year, month: m, day, hours: h, minutes: mm } = parts;
+function formatBarTime(ms: number, tz: TimeZoneSetting, daily?: boolean, exchangeZone?: string | null): string {
   // Same rule as TimeAxis's own label: a daily-or-larger bar has no time-of-day to show, so the
   // year takes that space instead — `${m}/${day}` alone is ambiguous once bars span years apart.
-  if (daily ?? isDateOnly(parts)) return `${m}/${day}/${year}`;
+  // Its date is the one it stands for, in any zone shown.
+  if (daily) {
+    const date = barDateParts(ms, tz, exchangeZone);
+    return `${date.month}/${date.day}/${date.year}`;
+  }
+  const parts = timeParts(ms, tz);
+  const { year, month: m, day, hours: h, minutes: mm } = parts;
+  if (daily === undefined && isDateOnly(parts)) return `${m}/${day}/${year}`;
   return `${m}/${day} ${h < 10 ? '0' + h : h}:${mm < 10 ? '0' + mm : mm}`;
 }

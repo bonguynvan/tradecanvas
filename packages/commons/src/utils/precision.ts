@@ -25,16 +25,17 @@ function numberFormat(locale: string, precision: number): Intl.NumberFormat {
 /**
  * A price on a tag beside the axis (an order, a position, an alert) as the
  * axis writes one: the chart's price format when it has one, else grouped in
- * its number locale at `precision` decimals, or at the axis's own for the
- * range on view when none is given.
+ * its number locale at `precision` decimals, or the market's or the symbol's
+ * (`viewport.pricePrecision`), or the axis's own for the range on view when
+ * neither is given.
  */
 export function priceTagText(
   price: number,
-  viewport: Pick<ViewportState, 'formatPrice' | 'numberLocale' | 'priceRange'>,
+  viewport: Pick<ViewportState, 'formatPrice' | 'numberLocale' | 'priceRange' | 'pricePrecision'>,
   precision?: number,
 ): string {
   if (viewport.formatPrice) return viewport.formatPrice(price);
-  const decimals = precision ?? autoPricePrecision(viewport.priceRange.min, viewport.priceRange.max);
+  const decimals = precision ?? viewport.pricePrecision ?? autoPricePrecision(viewport.priceRange.min, viewport.priceRange.max);
   return formatPrice(price, decimals, viewport.numberLocale ?? 'en-US');
 }
 
@@ -58,11 +59,15 @@ import type { PriceScaleMode, ViewportState } from '../types/rendering.js';
 import type { PriceFormatter, PriceFraction } from '../types/chart.js';
 import { computeTickStep } from './math.js';
 
+/** Decimals a percentage on the price scale shows. */
+const PERCENT_DECIMALS = 2;
+
 /**
- * Format a price-axis label for a given scale mode.
+ * Format a price-axis label for a given scale mode, in the number locale.
  *
  * - `regular` / `logarithmic`: the raw price.
- * - `percentage`: change from `baseline`, e.g. `+12.34%`.
+ * - `percentage`: change from `baseline`, e.g. `+12.34%` (`+12,34%` in
+ *   `de-DE`); one that reads as nothing has no sign.
  * - `indexedTo100`: the price rebased so `baseline` reads as 100.
  *
  * Falls back to a plain price when a baseline is required but missing/zero.
@@ -77,8 +82,9 @@ export function formatPriceScaleLabel(
   if ((mode === 'percentage' || mode === 'indexedTo100') && baseline && baseline !== 0) {
     if (mode === 'percentage') {
       const pct = (price / baseline - 1) * 100;
-      const sign = pct > 0 ? '+' : '';
-      return `${sign}${pct.toFixed(2)}%`;
+      const text = formatPrice(Math.abs(pct), PERCENT_DECIMALS, locale);
+      const sign = text === formatPrice(0, PERCENT_DECIMALS, locale) ? '' : pct > 0 ? '+' : '-';
+      return `${sign}${text}%`;
     }
     const indexed = (price / baseline) * 100;
     return formatPrice(indexed, 2, locale);

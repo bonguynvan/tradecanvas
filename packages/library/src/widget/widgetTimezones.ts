@@ -33,15 +33,32 @@ export const WIDGET_TIMEZONES: readonly { zone: string; city: string }[] = [
   { zone: 'Pacific/Auckland', city: 'Auckland' },
 ];
 
+/** A fixed offset as the settings write one: a whole number of minutes. */
+const OFFSET_SETTING = /^-?\d+$/;
+/**
+ * No zone is further from UTC than 14 hours (Kiribati is UTC+14, the
+ * furthest west UTC-12), so minutes past that are not an offset but a
+ * broken value, and so many digits can even read as Infinity.
+ */
+const MAX_OFFSET_MINUTES = 14 * 60;
+
+/** The fixed offset a settings value names, in minutes east of UTC; null when it names none a zone could have. */
+export function offsetSettingMinutes(value: string): number | null {
+  if (!OFFSET_SETTING.test(value)) return null;
+  const minutes = Number(value);
+  return Math.abs(minutes) <= MAX_OFFSET_MINUTES ? minutes : null;
+}
+
 /**
  * The settings' timezone value as a display timezone: `'local'` is the
  * browser's, a number of minutes a fixed offset (older saved settings), and
- * anything else an IANA zone — the browser's own when it doesn't know it.
+ * anything else an IANA zone — the browser's own when it doesn't know it or
+ * the offset is past any zone's.
  */
 export function settingToTimezone(value: string): TimeZoneSetting {
   if (!value || value === 'local') return null;
   if (value === 'exchange') return 'exchange';
-  if (/^-?\d+$/.test(value)) return Number(value);
+  if (OFFSET_SETTING.test(value)) return offsetSettingMinutes(value);
   return isValidTimeZone(value) ? value : null;
 }
 

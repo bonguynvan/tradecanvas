@@ -1,3 +1,4 @@
+import type { OHLCBar, TimeFrame } from '@tradecanvas/commons';
 import type { Translator } from './i18n.js';
 import type { CompareEntry } from './WidgetSymbolSearch.js';
 
@@ -34,6 +35,31 @@ export interface CompareOverlay {
   id: string;
   symbol: string;
   color: string;
+}
+
+/** A symbol the widget compares in percent: its line, and the bars it was given. */
+export interface PercentCompare extends CompareOverlay {
+  /** Never changed in place: new bars come as a new array. */
+  bars: OHLCBar[];
+  /** The interval `bars` are at: the one before a switch until its bars come. */
+  timeframe: TimeFrame;
+  /** The feed had nothing older than its first bar: no use asking again. */
+  atStart?: boolean;
+  /** The interval its bars failed to come at: none are on their way, so no older stretch waits for them. */
+  failedAt?: TimeFrame;
+}
+
+/** How many of `bars` come before `time`: the stretch a compare that starts there lacks. */
+export function barsBefore(bars: readonly { time: number }[], time: number): number {
+  const at = bars.findIndex((b) => b.time >= time);
+  return at < 0 ? bars.length : at;
+}
+
+/** `older` in front of `bars`, leaving out any not older than its first; null when none is. */
+export function withOlderBars(bars: readonly OHLCBar[], older: readonly OHLCBar[]): OHLCBar[] | null {
+  const first = bars[0]?.time ?? Number.POSITIVE_INFINITY;
+  const add = older.filter((b) => b.time < first);
+  return add.length > 0 ? [...add, ...bars] : null;
 }
 
 /** What the compare list needs to know of an indicator on the chart. */

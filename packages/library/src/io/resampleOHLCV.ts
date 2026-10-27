@@ -1,18 +1,24 @@
-import type { DataSeries, OHLCBar, TimeFrame } from '@tradecanvas/commons';
-import { timeframeToMs, timeframeBucketStart } from '@tradecanvas/commons';
+import type { DataSeries, TimeFrame } from '@tradecanvas/commons';
+import { resampleBars, timeframeToMs } from '@tradecanvas/commons';
 
 export interface ResampleOptions {
   /** 0 = Sunday, 1 = Monday (default) — anchor for weekly buckets. */
   weekStartsOn?: 0 | 1;
+  /**
+   * The exchange's zone (an IANA name): days, weeks, months and the hour
+   * frames that divide a day start at its midnight. Left out, UTC's.
+   */
+  timeZone?: string;
 }
 
 /**
  * Aggregate a finer OHLCV series into a coarser timeframe.
  *
- * Bars are grouped by calendar-aware bucket (see `timeframeBucketStart`):
- * open = first bar's open, high/low = extremes, close = last bar's close,
- * volume = sum. Input bars are assumed sorted ascending by `time` and are
- * never mutated.
+ * Bars are grouped by calendar-aware bucket (see `resampleBars` and
+ * `timeframeBucketStart`): open = first bar's open, high/low = extremes,
+ * close = last bar's close, volume = sum. Daily bars stamped at 00:00 UTC
+ * keep the dates they name. Input bars are assumed sorted ascending by
+ * `time` and are never mutated.
  *
  * Upsampling (target finer than source) cannot synthesize data — pass a target
  * coarser than the source. Use `inferTimeframeMs` to detect the source spacing.
@@ -22,39 +28,7 @@ export function resampleOHLCV(
   target: TimeFrame,
   opts: ResampleOptions = {},
 ): DataSeries {
-  if (bars.length === 0) return [];
-  const weekStartsOn = opts.weekStartsOn ?? 1;
-
-  const out: OHLCBar[] = [];
-  let current: OHLCBar | null = null;
-  let currentKey = Number.NaN;
-
-  for (const bar of bars) {
-    const key = timeframeBucketStart(bar.time, target, weekStartsOn);
-    if (current === null || key !== currentKey) {
-      if (current !== null) out.push(current);
-      current = {
-        time: key,
-        open: bar.open,
-        high: bar.high,
-        low: bar.low,
-        close: bar.close,
-        volume: bar.volume,
-      };
-      currentKey = key;
-    } else {
-      current = {
-        time: current.time,
-        open: current.open,
-        high: Math.max(current.high, bar.high),
-        low: Math.min(current.low, bar.low),
-        close: bar.close,
-        volume: current.volume + bar.volume,
-      };
-    }
-  }
-  if (current !== null) out.push(current);
-  return out;
+  return resampleBars(bars, target, { weekStartsOn: opts.weekStartsOn ?? 1, timeZone: opts.timeZone });
 }
 
 /**

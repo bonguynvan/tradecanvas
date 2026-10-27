@@ -78,3 +78,37 @@ describe('an indicator legend’s values in a narrow chart', () => {
     expect(FakeResizeObserver.last.disconnected).toBe(true);
   });
 });
+
+describe('a legend row its chart doesn’t draw', () => {
+  it('says why to the keyboard and to a screen reader, not only in a tooltip', () => {
+    legend.destroy();
+    legend = new WidgetIndicatorLegend(host, { onToggleVisible: () => {}, onSettings: () => {}, onRemove: () => {} }, {
+      ...LABELS, offChartType: 'Not drawn on this chart type',
+    });
+    const compare: IndicatorLegendRow = { instanceId: 'cmp_ETH', kind: 'compare', label: 'ETHUSDT', visible: true, pane: null, values: [], offChartType: true };
+    legend.update([compare], { left: 0, top: 0 });
+    const buttons = [...host.querySelectorAll<HTMLButtonElement>('[data-instance="cmp_ETH"] button')];
+    expect(buttons.length).toBeGreaterThan(0);
+    for (const button of buttons) {
+      expect(document.getElementById(button.getAttribute('aria-describedby') ?? '')?.textContent).toBe('Not drawn on this chart type');
+    }
+    legend.update([{ ...compare, offChartType: false, values: [{ text: '+1.20%', color: null }] }], { left: 0, top: 0 });
+    for (const button of buttons) expect(button.hasAttribute('aria-describedby')).toBe(false);
+  });
+});
+
+describe('a compare’s legend row', () => {
+  it('marks the row in its line’s colour, before its name', () => {
+    legend.update([{ instanceId: 'cmp_ETH', kind: 'compare', label: 'ETHUSDT', swatch: '#b552c9', visible: true, pane: null, values: [] }], { left: 0, top: 0 });
+    const row = host.querySelector<HTMLElement>('[data-instance="cmp_ETH"]')!;
+    const swatch = row.querySelector<HTMLElement>('.tcw-ind-legend-swatch')!;
+    expect(swatch.style.backgroundColor).toBe('rgb(181, 82, 201)');
+    expect(swatch.nextElementSibling?.classList.contains('tcw-ind-legend-name')).toBe(true);
+    expect(swatch.getAttribute('aria-hidden')).toBe('true');
+  });
+
+  it('has no mark on an indicator’s row, whose values are in its lines’ colours', () => {
+    legend.update([row('EMA 21', ['1'])], { left: 0, top: 0 });
+    expect(host.querySelector('[data-instance="EMA 21"] .tcw-ind-legend-swatch')).toBeNull();
+  });
+});

@@ -1,7 +1,10 @@
 // @vitest-environment jsdom
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { SANS_FONT_FAMILY, type ChartOptions } from '@tradecanvas/commons';
+import { withResampling, type ResamplingAdapter } from '@tradecanvas/core';
+import { decodeWidgetState } from '../widgetShareState.js';
 import { layoutToolbar } from './toolbarLayout.js';
+import { timeframeLabel } from '../widgetTimeframes.js';
 
 /** Stand-in for the canvas-backed Chart: emits the menus' events on demand. */
 class FakeChart {
@@ -11,6 +14,8 @@ class FakeChart {
 
   constructor(_host: HTMLElement, public options: ChartOptions) {
     FakeChart.last = this;
+    // As the chart does: it starts with the type settings its options give, and the widget reads them back.
+    this.chartTypeOptions = options.chartTypeOptions ?? {};
     return new Proxy(this, {
       get: (target, key, receiver) =>
         key in target ? Reflect.get(target, key, receiver) : () => undefined,
@@ -24,7 +29,14 @@ class FakeChart {
     for (const cb of this.listeners.get(event) ?? []) cb({ payload });
   }
   addAlert(price: number): void { this.alerts.push(price); }
-  getFeatures(): Record<string, boolean> { return {}; }
+  features: Record<string, boolean> = {};
+  getFeatures(): Record<string, boolean> { return this.features; }
+  scaleMode = 'regular';
+  scaleModes: string[] = [];
+  getScaleMode(): string { return this.scaleMode; }
+  setScaleMode(mode: string): void { this.scaleMode = mode; this.scaleModes.push(mode); }
+  undos: { undo(): void; redo(): void }[] = [];
+  recordUndo(step: { undo(): void; redo(): void }): void { this.undos.push(step); }
   tools: (string | null)[] = [];
   setDrawingTool(tool: string | null): void { this.tools.push(tool); }
   setups: unknown[][] = [];
@@ -42,6 +54,12 @@ class FakeChart {
   removeIndicator(id: string): void { this.removedIndicators.push(id); }
   moved: [string, string][] = [];
   moveIndicatorToPane(id: string, target: string): boolean { this.moved.push([id, target]); return true; }
+  overlays: string[] = [];
+  overlayBars = new Map<string, unknown>();
+  addCompareSymbol(id: string, _label?: string, bars?: unknown): void { this.overlays.push(id); this.overlayBars.set(id, bars); }
+  removeCompareSymbol(id: string): void { this.overlays = this.overlays.filter((o) => o !== id); }
+  compareData: [string, unknown][] = [];
+  updateCompareData(id: string, bars: unknown): void { this.compareData.push([id, bars]); }
   series = new Map<string, unknown>();
   setSymbolSeries(symbol: string, bars: unknown): void { this.series.set(symbol, bars); }
   getSymbolSeries(symbol: string): unknown { return this.series.get(symbol) ?? null; }
@@ -74,7 +92,9 @@ class FakeChart {
   getIndicatorPanes(): unknown[] { return []; }
   getPlotRect() { return { x: 0, y: 0, width: 600, height: 300 }; }
   getLegendBottom(): number { return 40; }
-  isTimeAligned(): boolean { return true; }
+  /** False on Renko and the like, which draw no compare lines. */
+  timeAligned = true;
+  isTimeAligned(): boolean { return this.timeAligned; }
   isTimeframeAllowed(): boolean { return true; }
   isAutoScale(): boolean { return true; }
   isInvertScale(): boolean { return false; }
@@ -470,6 +490,48 @@ describe('ChartWidget replay in finer steps', () => {
     expect((restarts[0].steps as unknown[]).length).toBe(32);
     expect(fake.resumed).toBe(resumed + 1);
   });
+
+  it('fetches the steps again once the feed’s wrapper builds the symbol’s days in its zone', async () => {
+    const HOUR = 3_600_000;
+    const hours = Array.from({ length: 72 }, (_, i) => ({ time: Date.UTC(2026, 9, 20) + i * HOUR, open: 1, high: 1, low: 1, close: 1, volume: 1 }));
+    let answers = false;
+    // A feed of 1h bars whose first answer about the symbol fails: its wrapper builds 4h steps on UTC's grid until a fresh load.
+    const feed = {
+      name: 'hours',
+      supportedTimeframes: ['1h'],
+      connect: () => {},
+      disconnect: () => {},
+      getConnectionState: () => 'connected',
+      fetchHistory: async () => hours,
+      resolveSymbol: async (symbol: string) => {
+        if (!answers) throw new Error('down');
+        return { symbol, timeZone: 'Asia/Ho_Chi_Minh' };
+      },
+      on: () => {},
+      off: () => {},
+      dispose: () => {},
+    };
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false, adapter: feed as never, timeframe: '1d' });
+    const fake = FakeChart.last;
+    fake.setData([20, 21, 22].map((d) => ({ time: Date.UTC(2026, 9, d), close: 1 })));
+    const stepHours = () => (fake.replays.at(-1)!.steps as { time: number }[]).map((b) => new Date(b.time).getUTCHours() % 4);
+    widget.replayFrom(0);
+    const select = host.querySelector<HTMLSelectElement>('.tcw-replay-step')!;
+    select.value = '4h';
+    select.dispatchEvent(new Event('change'));
+    await vi.waitFor(() => expect(fake.replays).toHaveLength(2));
+    expect(new Set(stepHours())).toEqual(new Set([0]));
+
+    // The chart loads the symbol afresh, as its stream does: its days are built in Ho Chi Minh City now.
+    answers = true;
+    const wrapper = withResampling(feed as never) as ResamplingAdapter;
+    wrapper.renewZone('AAA');
+    await wrapper.fetchHistory('AAA', '1d', 3);
+    widget.replayFrom(0);
+    await vi.waitFor(() => expect(fake.replays).toHaveLength(3));
+    // 4h steps from midnight there: 01:00, 05:00… UTC.
+    expect(new Set(stepHours())).toEqual(new Set([1]));
+  });
 });
 
 describe('ChartWidget signal marker note', () => {
@@ -543,6 +605,7 @@ describe('ChartWidget comparing with another symbol', () => {
     host.querySelector<HTMLButtonElement>('[data-role="compare"]')!.click();
     pickWay('ratio');
     document.querySelector<HTMLElement>('.tcw-ss-row[data-symbol="CCC"]')!.click();
+    await new Promise((r) => setTimeout(r, 0)); // its bars come first
     expect(fake.added).toEqual([['spread', { symbol: 'CCC', mode: 'ratio' }, undefined, undefined]]);
     expect(document.querySelector('.tcw-ss')).not.toBeNull(); // open for the next
     fake.indicatorsShown = [{ instanceId: 'tc_spread_1', id: 'spread', params: { symbol: 'CCC', mode: 'ratio' }, descriptor: { name: 'Spread / Ratio' }, visible: true }];
@@ -584,6 +647,469 @@ describe('ChartWidget comparing with another symbol', () => {
     await new Promise((r) => setTimeout(r, 0));
     expect(fake.series.get('BBB')).toBe(bars);
     expect(adapter.fetchHistory).toHaveBeenLastCalledWith('BBB', '1h', expect.any(Number));
+  });
+
+  /** An adapter that answers BBB with `answer`, and anything else with the bars. */
+  const adapterFor = (answer: () => Promise<unknown>) => ({
+    ...adapter,
+    fetchHistory: vi.fn((symbol: string) => (symbol === 'BBB' ? answer() : Promise.resolve(bars))),
+  });
+  const toastText = () => host.querySelector('.tcw-toast')?.textContent;
+
+  it('adds no compare on its own scale when the other symbol’s bars fail to load, as the percent way does', async () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false, adapter: adapterFor(async () => { throw new Error('451'); }) as never });
+    const fake = FakeChart.last;
+    for (const way of ['scale', 'pane', 'ratio', 'correlation', 'percent'] as const) await widget.addCompareSymbol('BBB', way);
+    expect(fake.added).toEqual([]);
+    expect(fake.overlays).toEqual([]);
+    expect(toastText()).toBe('BBB: 451');
+  });
+
+  it('adds no compare when the other symbol has no bars at this interval, in any way', async () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false, adapter: adapterFor(async () => []) as never });
+    const fake = FakeChart.last;
+    await widget.addCompareSymbol('BBB', 'scale');
+    await widget.addCompareSymbol('BBB', 'percent');
+    expect(fake.added).toEqual([]);
+    expect(fake.overlays).toEqual([]);
+    // Not a failure: the feed has no bars of it at the interval on screen.
+    expect(toastText()).toBe(`BBB: no bars at ${timeframeLabel(widget.getTimeframe())}`);
+  });
+
+  it('gives the chart the other symbol’s bars before adding the compare', async () => {
+    const own = adapterFor(async () => bars);
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false, adapter: own as never });
+    const fake = FakeChart.last;
+    const hadBars: boolean[] = [];
+    // As the chart does: an indicator on a symbol it has no bars of asks for them.
+    fake.addIndicator = (id, params) => {
+      const symbol = params.symbol as string;
+      hadBars.push(fake.series.has(symbol));
+      if (!fake.series.has(symbol)) fake.emit('symbolSeriesRequest', { symbol });
+      fake.added.push([id, params]);
+      return `tc_${id}_${fake.added.length}`;
+    };
+    await widget.addCompareSymbol('BBB', 'scale');
+    await new Promise((r) => setTimeout(r, 0));
+    expect(hadBars).toEqual([true]);
+    expect(fake.series.get('BBB')).toBe(bars);
+    expect(own.fetchHistory.mock.calls.filter(([symbol]) => symbol === 'BBB')).toHaveLength(1);
+  });
+
+  /**
+   * An adapter whose first answer for BBB, at 5m, waits for `release`; at
+   * another interval it answers with `later`.
+   */
+  const slowAt5m = (later: unknown[]) => {
+    const gate = { release: () => {} };
+    const own = {
+      ...adapter,
+      fetchHistory: vi.fn((symbol: string, timeframe: string) => {
+        if (symbol !== 'BBB') return Promise.resolve(bars);
+        if (timeframe !== '5m') return Promise.resolve(later);
+        return new Promise((resolve) => { gate.release = () => resolve(bars); });
+      }),
+    };
+    return { own, gate };
+  };
+  const bbbIntervals = (own: { fetchHistory: { mock: { calls: unknown[][] } } }) =>
+    own.fetchHistory.mock.calls.filter(([symbol]) => symbol === 'BBB').map(([, timeframe]) => timeframe);
+
+  it('fetches a compare again at the interval picked while its bars loaded', async () => {
+    const hourly = bars.map((b) => ({ ...b, close: 2 }));
+    for (const way of ['scale', 'percent'] as const) {
+      const { own, gate } = slowAt5m(hourly);
+      if (way === 'percent') widget.destroy();
+      widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false, adapter: own as never, timeframe: '5m' });
+      const fake = FakeChart.last;
+      const adding = widget.addCompareSymbol('BBB', way);
+      await widget.setTimeframe('1h');
+      gate.release();
+      await adding;
+      expect(bbbIntervals(own)).toEqual(['5m', '1h']);
+      if (way === 'scale') {
+        expect(fake.series.get('BBB')).toBe(hourly);
+        expect(fake.added.map(([id]) => id)).toEqual(['compareSymbol']);
+      } else {
+        expect(fake.overlayBars.get('cmp_BBB')).toBe(hourly);
+      }
+    }
+  });
+
+  it('adds no compare when the interval picked while its bars loaded has none', async () => {
+    const { own, gate } = slowAt5m([]);
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false, adapter: own as never, timeframe: '5m' });
+    const fake = FakeChart.last;
+    const adding = widget.addCompareSymbol('BBB', 'scale');
+    await widget.setTimeframe('1h');
+    gate.release();
+    await adding;
+    expect(bbbIntervals(own)).toEqual(['5m', '1h']);
+    expect(fake.added).toEqual([]);
+    expect(fake.series.has('BBB')).toBe(false);
+    expect(toastText()).toBe('BBB: no bars at 1H');
+  });
+
+  it('keeps a compare a saved state brings back without bars, and fills it on an interval that has them', async () => {
+    let refuse = true;
+    const own = adapterFor(async () => {
+      if (refuse) throw new Error('no bars of BBB at 5m');
+      return bars;
+    });
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false, adapter: own as never, timeframe: '5m' });
+    const fake = FakeChart.last;
+    fake.required = ['BBB'];
+    fake.emit('symbolSeriesRequest', { symbol: 'BBB' });
+    await new Promise((r) => setTimeout(r, 0));
+    expect(fake.series.get('BBB')).toBeNull();
+    expect(fake.removedIndicators).toEqual([]);
+    refuse = false;
+    await widget.setTimeframe('1h');
+    await new Promise((r) => setTimeout(r, 0));
+    expect(fake.series.get('BBB')).toBe(bars);
+  });
+
+  it('names a compare by its symbol in Objects and lists it under Compare with its way', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false, adapter: adapter as never });
+    const fake = FakeChart.last;
+    fake.indicatorsShown = [{
+      instanceId: 'c1', id: 'compareSymbol', params: { symbol: 'BBB' }, visible: true,
+      descriptor: { name: 'Compare Symbol', defaultConfig: { symbol: '' }, shortName: 'Compare' },
+    }];
+    widget.openPanel('objectTree');
+    const section = (title: string) => [...host.querySelectorAll<HTMLElement>('.tcw-tree-section')]
+      .find((s) => s.querySelector('.tcw-tree-section-head span')?.textContent === title)!;
+    const names = (title: string) => [...section(title).querySelectorAll('.tcw-tree-row')].map((r) => r.textContent);
+    expect(names('Indicators')).toEqual(['Compare BBB']);
+    expect(names('Compare')).toEqual(['BBBPrice, on its own scale']);
+    expect(section('Compare').textContent).not.toContain('No comparisons');
+    section('Compare').querySelector<HTMLButtonElement>('[aria-label="Remove comparison"]')!.click();
+    expect(fake.removedIndicators).toEqual(['c1']);
+  });
+
+  it('keeps an indicator’s full name in its Objects row’s tooltip', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false });
+    FakeChart.last.indicatorsShown = [{
+      instanceId: 'b1', id: 'bb', params: { period: 20, stdDev: 2 }, visible: true,
+      descriptor: { name: 'Bollinger Bands', defaultConfig: { period: 20, stdDev: 2 }, shortName: 'BB' },
+    }];
+    widget.openPanel('objectTree');
+    const name = host.querySelector<HTMLElement>('.tcw-tree-section .tcw-tree-row .tcw-tree-name')!;
+    expect(name.textContent).toBe('BB 20 2');
+    expect(name.title).toBe('Bollinger Bands');
+  });
+});
+
+describe('ChartWidget percent compares and the price scale', () => {
+  const HOUR = 3_600_000;
+  const bars = Array.from({ length: 5 }, (_, i) => ({ time: i * HOUR, open: 1, high: 1, low: 1, close: 1, volume: 1 }));
+  const feed = () => ({
+    name: 'fake',
+    connect: () => {},
+    disconnect: () => {},
+    getConnectionState: () => 'connected',
+    fetchHistory: vi.fn(async (_symbol: string, _tf: string, _limit: number) => bars),
+    on: () => {},
+    off: () => {},
+    dispose: () => {},
+  });
+  let adapter: ReturnType<typeof feed>;
+  const make = (options: Record<string, unknown> = {}) => {
+    adapter = feed();
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false, adapter: adapter as never, ...options });
+    return FakeChart.last;
+  };
+  /** Take compares off from the compare dialog, as the user does: `count` of them, or all. */
+  const removeCompares = (count = Infinity) => {
+    host.querySelector<HTMLButtonElement>('[data-role="compare"]')!.click();
+    for (let i = 0; i < count; i++) {
+      const remove = document.querySelector<HTMLButtonElement>('.tcw-ss-remove');
+      if (!remove) break;
+      remove.click();
+    }
+    document.querySelector<HTMLButtonElement>('.tcw-ss .tcw-modal-close')!.click();
+  };
+  const percentSwitch = () => host.querySelector<HTMLButtonElement>('[data-scale="percent"]')!;
+  const logSwitch = () => host.querySelector<HTMLButtonElement>('[data-scale="log"]')!;
+  /** A scale mode in the price axis's menu. */
+  const scaleMenuItem = (label: string) => {
+    FakeChart.last.emit('chartContextMenu', { area: 'priceAxis', x: 10, y: 10, price: 95 });
+    return [...host.querySelectorAll<HTMLElement>('.tcw-context-menu:not([hidden]) [role^=menuitem]')]
+      .find((b) => b.querySelector('.tcw-context-label')?.textContent === label)!;
+  };
+  const scaleSelect = () => document.querySelector<HTMLSelectElement>('select[aria-label="Price scale"]')!;
+  const openSettings = () => (widget as unknown as { openSettings(tab: string): void }).openSettings('scales');
+
+  it('reads the price scale in percent while a symbol is compared in percent, and goes back after the last', async () => {
+    const fake = make();
+    await widget.addCompareSymbol('BBB');
+    expect(fake.scaleMode).toBe('percentage');
+    await widget.addCompareSymbol('CCC');
+    expect(percentSwitch().getAttribute('aria-pressed')).toBe('true');
+    removeCompares(1);
+    expect(fake.scaleMode).toBe('percentage');
+    removeCompares();
+    expect(fake.scaleMode).toBe('regular');
+    expect(percentSwitch().getAttribute('aria-pressed')).toBe('false');
+  });
+
+  it('keeps the user’s scale in a saved layout and a shared link while comparing', async () => {
+    make();
+    await widget.addCompareSymbol('BBB');
+    expect(widget.captureLayout().scaleMode).toBe('regular');
+    expect(decodeWidgetState(widget.exportState())!.scaleMode).toBe('regular');
+  });
+
+  it('keeps a scale the user picks while comparing, the last compare gone too', async () => {
+    const fake = make();
+    await widget.addCompareSymbol('BBB');
+    percentSwitch().click(); // % off: back to prices
+    expect(fake.scaleMode).toBe('regular');
+    // Only the first compare puts the scale in percent.
+    await widget.addCompareSymbol('CCC');
+    expect(fake.scaleMode).toBe('regular');
+    removeCompares();
+    expect(fake.scaleMode).toBe('regular');
+
+    await widget.addCompareSymbol('BBB');
+    scaleMenuItem('Indexed to 100').click();
+    removeCompares();
+    expect(fake.scaleMode).toBe('indexedTo100');
+  });
+
+  it('puts the percent scale back on an undo of a pick made while comparing', async () => {
+    const fake = make();
+    await widget.addCompareSymbol('BBB');
+    percentSwitch().click();
+    expect(fake.undos).toHaveLength(1);
+    fake.undos[0].undo();
+    expect(fake.scaleMode).toBe('percentage');
+    fake.undos[0].redo();
+    expect(fake.scaleMode).toBe('regular');
+  });
+
+  it('leaves a log scale alone while comparing', async () => {
+    const fake = make();
+    logSwitch().click();
+    await widget.addCompareSymbol('BBB');
+    expect(fake.scaleMode).toBe('logarithmic');
+    removeCompares();
+    expect(fake.scaleMode).toBe('logarithmic');
+  });
+
+  it('leaves a scale already in percent or indexed to 100 alone', async () => {
+    const fake = make();
+    scaleMenuItem('Indexed to 100').click();
+    await widget.addCompareSymbol('BBB');
+    removeCompares();
+    expect(fake.scaleModes).not.toContain('percentage');
+    expect(fake.scaleMode).toBe('indexedTo100');
+  });
+
+  it('keeps the percent scale through a layout restore and a shared link while comparing', async () => {
+    const fake = make();
+    await widget.addCompareSymbol('BBB');
+    await widget.restoreLayout({ ...widget.captureLayout(), scaleMode: 'regular' });
+    expect(fake.scaleMode).toBe('percentage');
+    await widget.importState(widget.exportState());
+    expect(fake.scaleMode).toBe('percentage');
+  });
+
+  it('shows the scale on screen in the settings and the chart menu while comparing', async () => {
+    const fake = make();
+    await widget.addCompareSymbol('BBB');
+    expect(scaleMenuItem('Percentage').getAttribute('aria-checked')).toBe('true');
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    openSettings();
+    expect(scaleSelect().value).toBe('percentage');
+    scaleSelect().value = 'regular';
+    scaleSelect().dispatchEvent(new Event('change'));
+    expect(fake.scaleMode).toBe('regular');
+    // Cancel puts back what the settings changed: the percent scale too.
+    document.querySelector<HTMLButtonElement>('.tcw-set .tcw-modal-footer [data-act="cancel"]')!.click();
+    expect(fake.scaleMode).toBe('percentage');
+  });
+
+  it('fetches a percent comparison as deep as the bars on the chart', async () => {
+    const fake = make({ timeframe: '1h' });
+    fake.barsLoaded = Array.from({ length: 900 }, (_, i) => ({ time: i * HOUR, close: 1 }));
+    await widget.addCompareSymbol('BBB');
+    expect(adapter.fetchHistory).toHaveBeenCalledWith('BBB', '1h', 900);
+  });
+
+  it('fetches the percent comparisons again, as deep, once older bars load, from a feed that can’t page back', async () => {
+    const fake = make({ timeframe: '1h' });
+    await widget.addCompareSymbol('BBB');
+    fake.barsLoaded = chartWithOlder(800);
+    fake.emit('historyLoad', { state: 'loaded', count: 800 });
+    await new Promise((r) => setTimeout(r, 0));
+    expect(adapter.fetchHistory).toHaveBeenLastCalledWith('BBB', '1h', 805);
+    expect(fake.compareData).toEqual([['cmp_BBB', bars]]);
+  });
+
+  /** `count` hourly bars ending an hour before `end`. */
+  const hoursBefore = (end: number, count: number) =>
+    Array.from({ length: count }, (_, i) => ({ time: end - (count - i) * HOUR, open: 1, high: 1, low: 1, close: 1, volume: 1 }));
+  /** The chart's bars: `older` hours before the compare's first, then the hours it has. */
+  const chartWithOlder = (older: number) => [...hoursBefore(0, older), ...bars];
+
+  it('asks a feed that can’t page back no more for a comparison it gave nothing older', async () => {
+    const fake = make({ timeframe: '1h' });
+    await widget.addCompareSymbol('BBB');
+    for (let page = 1; page <= 3; page++) {
+      fake.barsLoaded = chartWithOlder(500 * page);
+      fake.emit('historyLoad', { state: 'loaded', count: 500 });
+      await new Promise((r) => setTimeout(r, 0));
+    }
+    // Added, then the first page as deep as the chart: five bars, its whole history. No page after asks.
+    expect(adapter.fetchHistory.mock.calls.map((c) => c[2])).toEqual([500, 505]);
+  });
+
+  it('asks a feed that can’t page back again on the next page while it has older bars to give', async () => {
+    const fake = make({ timeframe: '1h' });
+    adapter.fetchHistory.mockImplementation(async (_symbol: string, _tf: string, limit: number) => hoursBefore(5 * HOUR, limit));
+    await widget.addCompareSymbol('BBB');
+    fake.barsLoaded = chartWithOlder(500);
+    fake.emit('historyLoad', { state: 'loaded', count: 500 });
+    await new Promise((r) => setTimeout(r, 0));
+    fake.barsLoaded = chartWithOlder(1000);
+    fake.emit('historyLoad', { state: 'loaded', count: 500 });
+    await new Promise((r) => setTimeout(r, 0));
+    expect(adapter.fetchHistory.mock.calls.map((c) => c[2])).toEqual([500, 505, 1005]);
+    // The chart's first bar reached: the next page with none older asks nothing.
+    fake.emit('historyLoad', { state: 'loaded', count: 0 });
+    await new Promise((r) => setTimeout(r, 0));
+    expect(adapter.fetchHistory).toHaveBeenCalledTimes(3);
+  });
+
+  it('fetches only the stretch older bars added to each percent comparison', async () => {
+    const fake = make({ timeframe: '1h' });
+    const fetchHistoryBefore = vi.fn(async (_symbol: string, _tf: string, before: number, limit: number) => hoursBefore(before, limit));
+    Object.assign(adapter, { fetchHistoryBefore });
+    await widget.addCompareSymbol('BBB');
+    fake.barsLoaded = chartWithOlder(3);
+    fake.emit('historyLoad', { state: 'loaded', count: 3 });
+    await new Promise((r) => setTimeout(r, 0));
+    expect(fetchHistoryBefore.mock.calls).toEqual([['BBB', '1h', 0, 3]]);
+    expect(adapter.fetchHistory).toHaveBeenCalledTimes(1);
+    expect(fake.compareData).toEqual([['cmp_BBB', [...hoursBefore(0, 3), ...bars]]]);
+    // Nothing older on the chart than the line has: nothing to ask for.
+    fake.emit('historyLoad', { state: 'loaded', count: 0 });
+    await new Promise((r) => setTimeout(r, 0));
+    expect(fetchHistoryBefore).toHaveBeenCalledTimes(1);
+  });
+
+  it('asks once more, for what is still missing, after pages that load while a stretch is on its way', async () => {
+    const fake = make({ timeframe: '1h' });
+    const gate = { release: () => {} };
+    const fetchHistoryBefore = vi.fn((_symbol: string, _tf: string, before: number, limit: number) => (
+      fetchHistoryBefore.mock.calls.length === 1
+        ? new Promise((resolve) => { gate.release = () => resolve(hoursBefore(before, limit)); })
+        : Promise.resolve(hoursBefore(before, limit))));
+    Object.assign(adapter, { fetchHistoryBefore });
+    await widget.addCompareSymbol('BBB');
+    fake.barsLoaded = chartWithOlder(3);
+    fake.emit('historyLoad', { state: 'loaded', count: 3 });
+    for (const older of [6, 9]) {
+      fake.barsLoaded = chartWithOlder(older);
+      fake.emit('historyLoad', { state: 'loaded', count: 3 });
+    }
+    gate.release();
+    await new Promise((r) => setTimeout(r, 0));
+    expect(fetchHistoryBefore.mock.calls).toEqual([['BBB', '1h', 0, 3], ['BBB', '1h', -3 * HOUR, 6]]);
+    expect(fake.compareData.at(-1)).toEqual(['cmp_BBB', [...hoursBefore(0, 9), ...bars]]);
+  });
+
+  it('drops an older stretch that comes after the interval changed', async () => {
+    const fake = make({ timeframe: '1h' });
+    const gate = { release: () => {} };
+    const fetchHistoryBefore = vi.fn((_symbol: string, _tf: string, before: number, limit: number) =>
+      new Promise((resolve) => { gate.release = () => resolve(hoursBefore(before, limit)); }));
+    Object.assign(adapter, { fetchHistoryBefore });
+    await widget.addCompareSymbol('BBB');
+    fake.barsLoaded = chartWithOlder(3);
+    fake.emit('historyLoad', { state: 'loaded', count: 3 });
+    await widget.setTimeframe('4h');
+    await new Promise((r) => setTimeout(r, 0));
+    const fullRefetch = fake.compareData.length;
+    gate.release();
+    await new Promise((r) => setTimeout(r, 0));
+    expect(fake.compareData).toHaveLength(fullRefetch);
+  });
+
+  it('puts no older stretch at the new interval in front of bars still at the one before, and asks for it once they come', async () => {
+    const FOUR_HOURS = 4 * HOUR;
+    /** `count` 4h bars from `from`. */
+    const fourHours = (from: number, count: number) =>
+      Array.from({ length: count }, (_, i) => ({ time: from + i * FOUR_HOURS, open: 1, high: 1, low: 1, close: 1, volume: 1 }));
+    const fake = make({ timeframe: '1h' });
+    const gate = { release: (_bars: typeof bars) => {} };
+    adapter.fetchHistory.mockImplementation((_symbol, tf) => (tf === '4h'
+      ? new Promise((resolve) => { gate.release = resolve; })
+      : Promise.resolve(bars)));
+    const fetchHistoryBefore = vi.fn(async (_symbol: string, _tf: string, before: number, limit: number) =>
+      fourHours(before - limit * FOUR_HOURS, limit));
+    Object.assign(adapter, { fetchHistoryBefore });
+    await widget.addCompareSymbol('BBB');
+    await widget.setTimeframe('4h');
+    // The compare's 4h bars are on their way when a page of older 4h bars loads.
+    fake.barsLoaded = fourHours(-4 * FOUR_HOURS, 8);
+    fake.emit('historyLoad', { state: 'loaded', count: 4 });
+    await new Promise((r) => setTimeout(r, 0));
+    expect(fetchHistoryBefore).not.toHaveBeenCalled();
+    expect(fake.compareData).toEqual([]);
+    gate.release(fourHours(0, 4));
+    await new Promise((r) => setTimeout(r, 0));
+    expect(fetchHistoryBefore.mock.calls).toEqual([['BBB', '4h', 0, 4]]);
+    expect(fake.compareData).toEqual([['cmp_BBB', fourHours(0, 4)], ['cmp_BBB', fourHours(-4 * FOUR_HOURS, 8)]]);
+  });
+
+  it('keeps no older stretch waiting for bars that failed to come at the new interval', async () => {
+    const FOUR_HOURS = 4 * HOUR;
+    const fake = make({ timeframe: '1h' });
+    adapter.fetchHistory.mockImplementation(async (_symbol, tf) => {
+      if (tf === '4h') throw new Error('down');
+      return bars;
+    });
+    const fetchHistoryBefore = vi.fn(async (_symbol: string, _tf: string, before: number, limit: number) => hoursBefore(before, limit));
+    Object.assign(adapter, { fetchHistoryBefore });
+    await widget.addCompareSymbol('BBB');
+    await widget.setTimeframe('4h');
+    await new Promise((r) => setTimeout(r, 0));
+    // A page of older 4h bars loads while the line keeps its 1h bars.
+    fake.barsLoaded = Array.from({ length: 8 }, (_, i) => ({ time: (i - 4) * FOUR_HOURS, close: 1 }));
+    fake.emit('historyLoad', { state: 'loaded', count: 4 });
+    await new Promise((r) => setTimeout(r, 0));
+    // Back at 1h the line's bars come as the feed has them, and no page loaded since: no stretch to ask for.
+    fake.barsLoaded = chartWithOlder(3);
+    await widget.setTimeframe('1h');
+    await new Promise((r) => setTimeout(r, 0));
+    expect(fetchHistoryBefore).not.toHaveBeenCalled();
+  });
+
+  it('holds no percent scale on a chart type that draws no compare lines, and holds it again off it', async () => {
+    const fake = make();
+    fake.timeAligned = false; // Renko, say
+    await widget.addCompareSymbol('BBB');
+    expect(fake.scaleMode).toBe('regular');
+    expect(percentSwitch().getAttribute('aria-pressed')).toBe('false');
+    fake.timeAligned = true;
+    fake.emit('chartTypeChange', { type: 'candlestick', previous: 'renko' });
+    expect(fake.scaleMode).toBe('percentage');
+    expect(percentSwitch().getAttribute('aria-pressed')).toBe('true');
+    fake.timeAligned = false;
+    fake.emit('chartTypeChange', { type: 'kagi', previous: 'candlestick' });
+    expect(fake.scaleMode).toBe('regular');
+    // The user's scale all along: layouts keep it.
+    expect(widget.captureLayout().scaleMode).toBe('regular');
+  });
+
+  it('leaves the scale alone where the chart takes no compare lines', async () => {
+    const fake = make({ chartOptions: { features: { compareSymbols: false } } });
+    fake.features = { compareSymbols: false };
+    await widget.addCompareSymbol('BBB');
+    expect(fake.overlays).toEqual([]);
+    expect(fake.scaleModes).not.toContain('percentage');
   });
 });
 

@@ -24,11 +24,12 @@ chart.connect({ adapter: new CoinbaseAdapter(), symbol: 'BTC-USD', timeframe: '1
 <h2>Interface DataAdapter</h2>
 <pre><code>{`interface DataAdapter {
   name: string
+  supportedTimeframes?: TimeFrame[]   // left out: it serves every timeframe
   connect(config): void
   disconnect(): void
   getConnectionState(): ConnectionState
   fetchHistory(symbol, timeframe, limit?): Promise<OHLCBar[]>
-  on(event, listener): void   // 'bar' | 'tick' | 'snapshot' | 'connectionChange' | 'error' | 'symbolInfo'
+  on(event, listener): void   // 'bar' | 'tick' | 'connectionChange' | 'error' | 'symbolInfo'
   off(event, listener): void
   dispose(): void
 
@@ -49,11 +50,41 @@ chart.connect({ adapter: new CoinbaseAdapter(), symbol: 'BTC-USD', timeframe: '1
   <code>minTick</code>, <code>currency</code>, <code>timeZone</code> và <code>sessions</code>.
 </p>
 
+<h2 id="built-timeframes">Khung thời gian nguồn dữ liệu không có</h2>
+<p>
+  Nguồn dữ liệu khai báo <code>supportedTimeframes</code> được dựng mọi khung khác từ khung thô nhất
+  trong số đó chia hết khung cần dựng: 7m từ 1m, 4h và 1D từ 1h. Ngày, tuần, tháng và các khung giờ
+  chia hết một ngày (2h, 3h, 4h, 6h, 8h, 12h) bắt đầu lúc nửa đêm của sàn giao dịch, theo
+  <code>timeZone</code> mà <code>resolveSymbol</code> trả về. Biểu đồ hỏi một lần cho mỗi mã, trong
+  lúc tải lịch sử đầu tiên của khung như vậy, dựng lịch sử đó khi có câu trả lời, rồi giữ múi giờ đó;
+  khung 1h trở xuống không chờ. Múi giờ mà ngày của nó cần một khung nhỏ hơn khung của ngày UTC (ngày
+  của TP.HCM với nguồn chỉ có nến 4h) thì lịch sử đó được tải lại theo khung ấy. Nguồn
+  dữ liệu không có <code>resolveSymbol</code>, không nêu múi giờ hoặc nêu UTC, hay có các khung không
+  khớp được với nửa đêm đó (chỉ có nến 4h cho múi giờ lệch UTC 7 tiếng) thì dùng ngày theo UTC như
+  trước. Nguồn dữ liệu trả lời lỗi hoặc chậm quá 5 giây cũng vậy, và từ đó ngày của mã giữ theo
+  UTC cho tới khi biểu đồ tải lại mã từ đầu (kết nối tới nó, hoặc chuyển sang nó từ mã hay khung thời gian khác), nên các trang cũ hơn và lịch sử sau khi kết nối lại không bao giờ có một ngày hai lần; lần tải mới dựng ngày theo múi giờ mà nguồn dữ liệu đã nêu từ đó, hoặc hỏi lại nguồn. Múi giờ
+  của thị trường (<code>setMarket</code>) không dời những nến này. Nến ngày đóng dấu 00:00 UTC được đọc là đúng ngày chúng ghi. Múi giờ mà nguồn dữ liệu gửi sau
+  qua sự kiện <code>symbolInfo</code> đổi giờ hiển thị, không đổi lúc bắt đầu của những ngày đã dựng.
+</p>
+
 <h2 id="symbol-info">Thông tin mã mà nguồn dữ liệu biết sau</h2>
 <p>
-  Chart đã kết nối hỏi <code>resolveSymbol</code> một lần. Nguồn dữ liệu nào chỉ biết thông tin của mã về sau (chẳng hạn ở tin nhắn đầu tiên) thì gửi nó bằng sự kiện <code>symbolInfo</code>, và chart áp dụng ngay: trục giá, legend và nhãn giá theo số lẻ của mã (<code>pricePrecision</code>), vạch chia trục theo bước giá (<code>minTick</code>), giờ giao dịch của sàn.
+  Chart đã kết nối hỏi <code>resolveSymbol</code> một lần. Nguồn dữ liệu nào chỉ biết thông tin của mã về sau (chẳng hạn ở tin nhắn đầu tiên) thì gửi nó bằng sự kiện <code>symbolInfo</code>, và chart áp dụng ngay: số lẻ của mã (<code>pricePrecision</code>) trên trục giá, legend và nhãn giá, và cả trên nhãn của các hình vẽ, giá trần, sàn và tham chiếu trong ngày, nhãn đỉnh đáy, công cụ đo và market profile; trong widget, trên cửa sổ dữ liệu, danh sách cảnh báo, phiếu đặt lệnh và bảng tài khoản; vạch chia trục theo bước giá (<code>minTick</code>); giờ giao dịch của sàn. Số lẻ của thị trường (<code>setMarket</code>) đi tới đúng những chỗ đó và được ưu tiên hơn số lẻ của mã. Khi không có cả hai, nhãn của hình vẽ giữ số lẻ theo độ lớn của giá, nhóm hàng nghìn theo locale số như trục giá.
 </p>
 <pre><code>{`emit('symbolInfo', { symbol: 'VNM', pricePrecision: 0, minTick: 10, currency: 'VND' })   // như cách adapter gửi các sự kiện khác`}</code></pre>
+
+<h2 id="corrections">Nến mà nguồn dữ liệu sửa lại</h2>
+<p>
+  Nguồn dữ liệu sửa một nến bằng cách gửi lại nó, đã đóng, với đúng thời gian của nó: <code>{'{'} bar, closed: true {'}'}</code> từ <code>parseMessage</code>, hoặc một sự kiện <code>bar</code>. Một nến đã đóng cũ hơn nến mới nhất mà luồng dữ liệu đã thấy là lời cuối của nguồn về nến đó, chẳng hạn giá chốt của sàn đến sau khung đầu tiên của nến kế tiếp, hoặc một lần điều chỉnh: biểu đồ thay nến có thời gian đó dù nằm ở đâu (<code>updateBar</code>), tính lại chỉ báo từ nến đó và giữ nguyên khung nhìn. Đây không phải giá hiện tại: đường giá, lệnh và cảnh báo vẫn đi theo thị trường. Một khung đang hình thành cũ hơn nến mới nhất là dữ liệu cũ và bị bỏ qua; nó không làm thay đổi gì. Các adapter có sẵn (<code>WebSocketAdapter</code>, <code>PollingAdapter</code>, các nguồn dựng trên chúng và <code>BinanceAdapter</code>) chỉ tạo tick từ giá đóng cửa của nến mới nhất, tính cả nến cuối của lịch sử mà chúng đã trả về, nên nến đã đóng cuối cùng mà nguồn dữ liệu gửi lại khi đăng ký không tạo tick nào; adapter của riêng bạn nếu tạo tick từ các nến cũng nên bỏ qua nến cũ hơn. Không có adapter thì gọi <code>chart.updateBar(bar)</code>.
+</p>
+<p>
+  Với <code>aggregateTicks</code>, nến cuối của lịch sử là nến mà các giao dịch tiếp tục dựng: giao dịch đầu tiên sau khi kết nối giữ nguyên giá mở cửa, cao, thấp và khối lượng của nó. Một giao dịch thuộc về nến đã qua mà đến muộn bị bỏ qua, còn một nến đã đóng của nến đó thì sửa nó, nến đang hình thành vẫn giữ các giao dịch của mình. Một giao dịch diễn ra sau khi nến mới nhất bắt đầu sẽ vào nến đó, kể cả khi cách chia nến cho nó bắt đầu sớm hơn (nến ngày đóng dấu ở một giờ khác nửa đêm, hoặc múi giờ của mã đến sau giao dịch đầu tiên), nên giá theo kịp mọi giao dịch. Với khung thời gian dựng từ một khung nhỏ hơn, nến gốc được sửa sẽ dựng lại nến của nó, cho hai nến đã dựng gần nhất trước nến đang hình thành; lần sửa xa hơn bị bỏ qua.
+</p>
+<pre><code>{`// trong adapter: giá chốt của sàn cho một nến đã có trên biểu đồ
+parseMessage: (raw) => ({ bar: toBar(raw), closed: true })
+
+// nến của riêng bạn, không có adapter
+const corrected = chart.updateBar(bar)   // false: không có nến đã nạp nào có bar.time`}</code></pre>
 
 <h2>Nguồn dữ liệu bất kỳ trong ~20 dòng</h2>
 <p>
@@ -74,11 +105,16 @@ const myAdapter = new WebSocketAdapter({
 <p>Gộp tick thô thành nến OHLC theo từng khung thời gian:</p>
 <pre><code>{`import { TickAggregator } from '@tradecanvas/chart'
 
-const agg = new TickAggregator('1m')
+const agg = new TickAggregator('1d')
+agg.setTimeZone('Asia/Ho_Chi_Minh')         // days start at the exchange's midnight
+agg.seed(history.at(-1).time)               // a bar older than the history's last is past
+agg.on('barClose', (bar) => console.log(bar))   // a bar whose interval is over
+agg.on('correction', (bar) => console.log(bar)) // a closed bar older than the newest
 agg.processTick({ time, price, volume })
 
-const current = agg.getCurrentBar()         // forming bar
-const closed = agg.flushClosedBars()        // bars that have rolled over`}</code></pre>
+const current = agg.getCurrentBar()         // forming bar`}</code></pre>
+<p>Tuần bắt đầu từ thứ Hai và tháng từ ngày 1. Với <code>setTimeZone</code>, ngày, tuần, tháng và các khung giờ chia hết một ngày bắt đầu lúc nửa đêm của sàn; biểu đồ tự đặt nó cho tick của luồng dữ liệu (<code>aggregateTicks</code>) theo múi giờ của mã, nếu không có thì của thị trường, và cho nến dựng từ tick khớp với nến lịch sử: ngày được đóng dấu lúc 00:00 UTC khi lịch sử cũng đóng dấu như vậy, còn nến 2h đến 12h chỉ bắt đầu lúc nửa đêm của sàn khi nến lịch sử bắt đầu ở đó, nên nến 4h của chính nguồn dữ liệu (00:00, 04:00… UTC) giữ nguyên thời điểm. Với khung thời gian dựng từ một khung nhỏ hơn của nguồn dữ liệu, chúng bắt đầu ở nơi nến đã dựng bắt đầu. Dựng từ nến giờ, chúng bắt đầu lúc nửa đêm của múi giờ mà <code>resolveSymbol</code> của nguồn nêu, nếu không có thì của UTC, dù biểu đồ đang dùng múi giờ nào; dựng từ nến ngày của nguồn đóng dấu lúc 00:00 UTC, tuần và tháng giữ ngày của nguồn, và một giao dịch được tính ngày theo múi giờ nguồn nêu, nếu không có thì theo múi giờ của biểu đồ, như trên nến ngày của chính nguồn.</p>
+<p>Nến cũ hơn nến mới nhất đã thấy là nến đã qua: <code>processBar</code> gửi nến đã đóng dưới dạng <code>correction</code> và bỏ qua khung đang hình thành, còn <code>processTick</code> bỏ qua giao dịch thuộc về nến đó, nên một khung hay giao dịch đến muộn không thể đóng sớm nến đang hình thành hay làm giá thay đổi. <code>seed(time)</code> bắt đầu từ nến cuối của lịch sử và không lùi lại (trừ khi các giao dịch đã dựng nến mới hơn theo các khoảng mà chúng không còn bắt đầu theo nữa, vì múi giờ của sàn đến sau: nến đó bị bỏ đi, nếu không các giao dịch tiếp theo sẽ bị bỏ qua cho đến khoảng kế tiếp), còn <code>resume(bar)</code> biến nến đó, vẫn đang hình thành, thành nến mà các giao dịch tiếp theo dựng tiếp, trừ khi giao dịch đã sang một nến mới hơn; luồng dữ liệu của biểu đồ làm cả hai mỗi lần kết nối, nên khi kết nối lại mà lịch sử chỉ đến nến trước đó thì các giao dịch của nến đang hình thành vẫn được giữ. Khi đó <code>StreamManager</code> đặt nến đang hình thành, dù dựng từ giao dịch hay từ các khung của nguồn dữ liệu, lên trên lịch sử mà nó gửi dưới dạng <code>snapshot</code>, và không gửi <code>priceChange</code> cho giá đóng cửa của nến cuối trong lịch sử, vốn là một mức giá cũ hơn. Nó gửi một lần sửa dưới dạng <code>barCorrection</code>.</p>
 
 <h2>Giá của nhiều mã</h2>
 <p>

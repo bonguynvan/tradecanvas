@@ -51,13 +51,18 @@ import { App } from '@capacitor/app';
 App.addListener('appStateChange', ({ isActive }) => (isActive ? chart.resume() : chart.suspend()));`}</code></pre>
 <p>스크롤되는 화면 안의 차트는 세로 스와이프를 화면에 맡깁니다.</p>
 <pre><code>{`new Chart(host, { pageScroll: true })   // a chart in a screen that scrolls`}</code></pre>
-<p>Tauri의 콘텐츠 보안 정책이 페이지가 데이터 피드의 호스트에 연결하도록 허용해야 합니다.</p>
-<pre><code>{`// tauri.conf.json (Tauri 2): let the page reach the feed
+<p>
+  Tauri의 콘텐츠 보안 정책이 페이지가 데이터 피드의 호스트에 연결하도록 허용해야 합니다. 위젯에는 추가로, 위젯이 넣는 <code>&lt;style&gt;</code> 요소 하나를 위한 <code>style-src 'unsafe-inline'</code>과 입력란과 체크박스의 작은 아이콘을 위한 <code>img-src data:</code>가 필요합니다. 앞의 것이 없으면 위젯이 스타일 없이 표시되고, 뒤의 것이 없으면 입력란과 체크박스의 아이콘이 사라집니다. 차트 이미지 복사에는 더 필요한 것이 없습니다.
+</p>
+<pre><code>{`// tauri.conf.json (Tauri 2): the feed's hosts, the widget's styles and icons
 "app": {
   "security": {
-    "csp": "default-src 'self'; connect-src 'self' https://api.binance.com wss://stream.binance.com:9443"
+    "csp": "default-src 'self'; connect-src 'self' https://api.binance.com wss://stream.binance.com:9443; style-src 'self' 'unsafe-inline'; img-src 'self' data:"
   }
 }`}</code></pre>
+<p>
+  Tauri는 페이지 자체 HTML의 <code>&lt;style&gt;</code> 요소마다 <code>style-src</code>에 nonce를 추가하며(isolation 패턴에서는 해시도 추가합니다), nonce가 있으면 브라우저는 <code>'unsafe-inline'</code>을 무시하므로 위젯의 스타일이 다시 차단됩니다. 페이지의 스타일은 스타일시트 파일에 두거나, <code>dangerousDisableAssetCspModification</code>에 <code>"style-src"</code>를 넣으세요.
+</p>
 <p>
   차트는 픽셀 비율 최대 2로 그립니다(<code>maxPixelRatio</code>). 화면을 닫을 때 제거하면(<code>chart.destroy()</code>) 캔버스 메모리가 바로 반환됩니다.
 </p>
