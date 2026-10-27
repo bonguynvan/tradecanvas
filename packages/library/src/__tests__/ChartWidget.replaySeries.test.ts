@@ -56,7 +56,11 @@ afterEach(() => {
 });
 
 const q = <T extends Element = HTMLElement>(sel: string) => host.querySelector(sel) as T | null;
-const progress = () => q('.tcw-replay-progress')?.textContent ?? null;
+/** Where the replay is on its track, of how many: what the panel shows of the bars. */
+const progress = () => {
+  const track = q('.tcw-replay-scrubber') as HTMLInputElement | null;
+  return track ? `${Number(track.value) + 1} / ${Number(track.max) + 1}` : null;
+};
 const clickBar = (barIndex: number) =>
   (widget.getChart() as unknown as { eventBus: { emit(e: string, p: unknown): void } }).eventBus.emit('barClick', { barIndex });
 

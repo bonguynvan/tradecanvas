@@ -38,7 +38,7 @@ describe('WidgetHotkeySheet', () => {
     expect(dialog()?.getAttribute('aria-modal')).toBe('true');
     expect(document.getElementById(dialog()!.getAttribute('aria-labelledby')!)?.textContent).toBe('Keyboard shortcuts');
     expect(document.activeElement).toBe(search());
-    expect(headings()).toEqual(['Search & navigation', 'Chart manipulation', 'Touch (mobile / tablet)', 'Keyboard', 'Drawing']);
+    expect(headings()).toEqual(['Search & navigation', 'Chart manipulation', 'Touch (mobile / tablet)', 'Keyboard', 'Bar replay', 'Drawing']);
   });
 
   it('writes each shortcut: what it does, then its keys; a gesture as words, not a key', () => {
@@ -51,6 +51,19 @@ describe('WidgetHotkeySheet', () => {
     // The words come first in the row, the keys after them, read left to right in any widget ("Ctrl + K").
     expect(go.firstElementChild?.classList.contains('tcw-hotkey-label')).toBe(true);
     expect(go.querySelector<HTMLElement>('.tcw-hotkey-keys')?.dir).toBe('ltr');
+  });
+
+  it('lists the replay keys while the replay is on, and Space (not F) for fitting the chart', () => {
+    sheet.open();
+    type('replay');
+    expect(labels()).toEqual(['Step the replay back / forward', 'Play or pause the replay', "Stop picking the replay's start bar"]);
+    expect([...row('Play or pause the replay').querySelectorAll('kbd')].map((k) => k.textContent)).toEqual(['Space']);
+    type('fit content');
+    expect(rows().map((r) => [...r.querySelectorAll('kbd')].map((k) => k.textContent).join('+'))).toContain('Space');
+    expect(rows().map((r) => [...r.querySelectorAll('kbd')].map((k) => k.textContent).join('+'))).not.toContain('F');
+    sheet.close();
+    sheet.open({ isOn: (feature) => feature !== 'replay' });
+    expect(headings()).not.toContain('Bar replay');
   });
 
   it('finds a shortcut by what it does or by its keys', () => {

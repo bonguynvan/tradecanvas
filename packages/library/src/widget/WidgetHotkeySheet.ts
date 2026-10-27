@@ -23,6 +23,7 @@ const GROUP_TITLE_KEYS: Record<string, MessageKey> = {
   'Chart manipulation': 'hotkeys.group.chartManipulation',
   'Touch (mobile / tablet)': 'hotkeys.group.touch',
   'Keyboard': 'hotkeys.group.keyboard',
+  'Bar replay': 'toolbar.replay',
   'Drawing': 'hotkeys.group.drawing',
   'More': 'hotkeys.group.more',
 };
@@ -98,7 +99,16 @@ const GROUPS: HotkeyGroup[] = [
       { keys: ['+', '−'], label: 'hotkeys.zoomInOut' },
       { keys: ['Home'], label: 'hotkeys.toStart' },
       { keys: ['End'], label: 'hotkeys.toEnd' },
-      { keys: ['F'], label: 'hotkeys.fit' },
+      { keys: ['Space'], label: 'hotkeys.fit' },
+    ],
+  },
+  {
+    title: 'Bar replay',
+    entries: [
+      { keys: ['Shift', '←', '→'], label: 'hotkeys.replayStep', feature: 'replay' },
+      // Outside a replay, Space fits the chart (above).
+      { keys: ['Space'], label: 'hotkeys.replayPlay', feature: 'replay' },
+      { keys: ['Esc'], label: 'hotkeys.replayCancel', feature: 'replay' },
     ],
   },
   {
