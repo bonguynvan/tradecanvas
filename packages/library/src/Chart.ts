@@ -5207,6 +5207,7 @@ export class Chart {
     // A `duration` keeps the time it had left (read before the clock takes the new steps).
     const remaining = this.replayManager.remainingMs();
     this.clearBarHolders();
+    if (session.animate) mapReplayFeed(session, this.replayCoarse, coarse);
     const restarting = this.replayRestarting;
     this.replayRestarting = true;
     this.replayCause = kind === 'older' ? 'older' : 'series';
@@ -6766,6 +6767,36 @@ function newReplaySession(symbol: string): ReplaySession {
  * The last of `series` that closed by `until` (the next one opened by then;
  * the last one, its span passed): -1 when none did.
  */
+/** How long bar `i` of `series` lasts: to the next bar, or the last bars' spacing. */
+function barSpanAt(series: DataSeries, i: number): number {
+  const next = series[i + 1];
+  return next ? next.time - series[i].time : lastBarSpan(series);
+}
+
+/**
+ * Where a paper account has been fed to in a replay, moved from the bars of
+ * `before` onto those of `after` by time: on another timeframe it is fed the
+ * rest of the bar it was in, and nothing it was given again.
+ */
+function mapReplayFeed(session: ReplaySession, before: DataSeries | null, after: DataSeries): void {
+  const fedTime = session.fedTime;
+  if (fedTime === null || !before || before.length === 0 || after.length === 0) return;
+  const span = barSpanAt(before, barAt(before, fedTime));
+  const at = fedTime + (Number.isFinite(span) ? session.fedFraction * span : 0);
+  const k = barAt(after, at);
+  const start = after[k].time;
+  if (start > at) return; // older than the new bars: they are all ahead of it
+  const into = barSpanAt(after, k);
+  // At a bar's open exactly: the bar before it, all given.
+  if (at === start && k > 0) {
+    session.fedTime = after[k - 1].time;
+    session.fedFraction = 1;
+    return;
+  }
+  session.fedTime = start;
+  session.fedFraction = Number.isFinite(into) && into > 0 ? Math.min(1, (at - start) / into) : 0;
+}
+
 function positionAt(series: DataSeries, until: number): number {
   const next = firstAfter(series, until);
   const last = series.length - 1;

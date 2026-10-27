@@ -208,6 +208,30 @@ describe('what a forming bar leaves alone', () => {
   });
 });
 
+describe('a paper account through a switch to a coarser timeframe', () => {
+  const FOUR = 4 * HOUR;
+  /** The 4h bars the hours make: bar 25 is hours 100-103, its high (206) in hour 103. */
+  const fours: OHLCBar[] = Array.from({ length: 50 }, (_, k) => {
+    const h = hours.slice(k * 4, k * 4 + 4);
+    return { time: T0 + k * FOUR, open: h[0].open, high: Math.max(...h.map((b) => b.high)), low: Math.min(...h.map((b) => b.low)), close: h[3].close, volume: 360 };
+  });
+
+  it('is fed the rest of the bar it was in, so an order its later part reaches fills', async () => {
+    const paper = new PaperExecutionAdapter({ markPrice: 500 });
+    chart.connectExecution(paper);
+    const fills: number[] = [];
+    chart.on('executionFill', (e) => fills.push((e.payload as { price: number }).price));
+    start();
+    chart.replayResume();
+    play(496); // hour 101 half formed
+    await paper.placeOrder({ side: 'sell', type: 'limit', price: 205.5, quantity: 1 });
+    chart.setData(fours);
+    expect(chart.getReplayState()).toBe('playing');
+    play(1104); // 4h bar 25 forms whole, through 206; bar 26 starts down, from 204
+    expect(fills).toEqual([205.5]);
+  });
+});
+
 describe('a replay over finer bars the host gives', () => {
   const STEP = 15 * 60_000;
   const quarters: OHLCBar[] = hours.slice(0, 10).flatMap((h) =>
