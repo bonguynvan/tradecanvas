@@ -71,7 +71,7 @@ async function dailyWidget(): Promise<void> {
 }
 
 describe('ChartWidget replay while the bars change', () => {
-  it('waits for the bars that load: Loading in the hint, Random off, a bar click starts nothing', async () => {
+  it('waits for the bars that load: Loading in the hint, Random off, a bar clicked starts at its time once they come', async () => {
     await dailyWidget();
     void widget.setTimeframe('1h');
     await vi.advanceTimersByTimeAsync(65);
@@ -81,15 +81,16 @@ describe('ChartWidget replay while the bars change', () => {
     expect(bar.getAttribute('aria-busy')).toBe('true');
     expect(q('.tcw-replay-hint')!.textContent).toContain('Loading chart');
     expect(q<HTMLButtonElement>('[data-act="random"]')!.disabled).toBe(true);
+    // A day of the old bars, 46 days before the end: kept by its time while the hours load.
     clickBar(354);
     expect(widget.getChart().isReplayActive()).toBe(false);
 
     await vi.advanceTimersByTimeAsync(1400);
     expect(bar.hasAttribute('aria-busy')).toBe(false);
     expect(q<HTMLButtonElement>('[data-act="random"]')!.disabled).toBe(false);
-    clickBar(4954);
     expect(widget.getChart().isReplayActive()).toBe(true);
-    expect(progress()).toBe('4955 / 5000');
+    // The hour that day starts at: 46 * 24 hours before the last one.
+    expect(progress()).toBe(`${5000 - 46 * 24} / 5000`);
   });
 
   it('stays open across a timeframe switch: its controls wait, then the total and the steps follow', async () => {
