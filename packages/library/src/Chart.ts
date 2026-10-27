@@ -1257,7 +1257,7 @@ export class Chart {
     this.checkHistory();
   }
 
-  /** Load one page of older bars now. Resolves to the number of bars added. */
+  /** Load one page of older bars now. Resolves to the number of bars added (while a page is on its way, that page's). */
   loadMoreHistory(): Promise<number> {
     if (!this.replayPages()) return Promise.resolve(0);
     return this.history.loadMore();
