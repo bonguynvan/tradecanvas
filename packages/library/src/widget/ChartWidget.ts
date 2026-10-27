@@ -383,6 +383,8 @@ export class ChartWidget {
   /** `'auto'`, `'bar'`, or the finer interval a replay steps through. */
   private replayStep = 'auto';
   private replayStartSeq = 0;
+  /** The time of a bar picked while the next bars loaded: the replay starts there once they come. */
+  private replayPickTime: number | null = null;
   /** A replay start waiting for its finer steps: a Play pressed meanwhile plays it once it starts. */
   private replayStartPending = false;
   private replayPlayWanted = false;
@@ -1035,10 +1037,16 @@ export class ChartWidget {
     // Replay: while picking, a click starts the replay at that bar; during a
     // replay it jumps the cursor there.
     this.chart.on('barClick', (e) => {
-      // While the next bars load, a click would pick a bar of the old ones.
-      if (!this.replayBar?.isMounted() || this.seriesPending()) return;
-      const idx = (e.payload as { barIndex?: number }).barIndex;
+      if (!this.replayBar?.isMounted()) return;
+      const { barIndex: idx, bar: clicked } = e.payload as { barIndex?: number; bar?: { time?: number } };
       if (typeof idx !== 'number') return;
+      // While the next bars load, the bar clicked is one of the old ones: keep its time and
+      // start there once they come (syncReplayBar), rather than drop the click.
+      if (this.seriesPending()) {
+        const time = clicked?.time ?? this.chart.getData()[idx]?.time;
+        if (this.replayBar.getMode() === 'select' && typeof time === 'number') this.replayPickTime = time;
+        return;
+      }
       if (this.replayBar.getMode() === 'select') {
         this.startReplayAt(idx, false, true);
         return;
@@ -5164,6 +5172,26 @@ export class ChartWidget {
     this.startReplayAt(this.chart.getReplayBarIndex(), this.chart.getReplayState() === 'playing');
   }
 
+  /**
+   * A bar picked while the next bars loaded: once they are in, start the replay at the bar
+   * holding its time; let it go if they failed or the pick was left.
+   */
+  private startPickedReplay(): void {
+    const time = this.replayPickTime;
+    if (time === null) return;
+    if (this.loading.hasFailed() || this.replayBar?.getMode() !== 'select') {
+      this.replayPickTime = null;
+      return;
+    }
+    if (this.seriesPending()) return;
+    this.replayPickTime = null;
+    const bars = this.chart.getData();
+    if (bars.length === 0) return;
+    let index = 0;
+    while (index + 1 < bars.length && bars[index + 1].time <= time) index++;
+    this.startReplayAt(index, false, true);
+  }
+
   /** Whether the bars on screen are about to be replaced: a new symbol's or interval's on their way. */
   private seriesPending(): boolean {
     return this.loading.isActive() && !this.loading.hasFailed();
@@ -5314,6 +5342,7 @@ export class ChartWidget {
     const bar = this.replayBar;
     if (!bar?.isMounted()) return;
     bar.setPending(this.seriesPending());
+    this.startPickedReplay();
     this.liftOverReplayBar();
     if (bar.getMode() !== 'replay') return;
     if (this.replayStartPending) {
@@ -5424,6 +5453,7 @@ export class ChartWidget {
 
   private teardownReplayUi(): void {
     this.replayStartSeq++; // a start still fetching its steps is dropped
+    this.replayPickTime = null;
     this.replayStartPending = false;
     this.replayPlayWanted = false;
     if (this.replayPollInterval) {
