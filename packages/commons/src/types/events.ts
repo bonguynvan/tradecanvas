@@ -367,6 +367,7 @@ export interface ChartEventMap {
   indicatorChange: IndicatorSettingsChangePayload;
   themeChange: ThemeChangePayload;
   styleChange: StyleChangePayload;
+  /** The chart's size changed: its element was resized (a window, a rotation, a panel beside it) or `resize()` was called. */
   resize: ResizePayload;
   orderPlace: OrderPlacePayload;
   bracketPlace: BracketPlacePayload;

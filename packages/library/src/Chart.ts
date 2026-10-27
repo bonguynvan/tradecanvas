@@ -584,6 +584,10 @@ export class Chart {
       // edge before the resize, keep them there afterwards. Otherwise leave
       // their scroll position alone.
       this.updateViewportAndRender(wasAtEnd);
+      // A window resize, a phone rotation or a panel beside the chart changes
+      // the container without a call to resize(); what lays itself out over
+      // the chart (the widget's replay bar, its toasts) waits for this event.
+      this.eventBus.emit('resize', newSize);
     };
 
     // Chart renderer
