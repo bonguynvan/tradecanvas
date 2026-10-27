@@ -242,7 +242,8 @@ chart.replayStop()             // back to the live series`}</code></pre>
   <code>loading</code>, <code>loaded</code>, <code>end</code> or <code>error</code>; a bar without finer
   bars forms from its own prices. ChartWidget does this by default: its Step menu starts on
   <strong>Auto</strong>; <code>replayStep</code> (<code>'auto'</code>, <code>'bar'</code> or an
-  interval) and <code>replayAnimate: false</code> change it.
+  interval) and <code>replayAnimate: false</code> change it. On a feed without
+  <code>fetchHistoryBefore</code> the widget fetches the finer bars in one request before the replay starts.
 </p>
 
 <h3>A replay outlives the bars</h3>

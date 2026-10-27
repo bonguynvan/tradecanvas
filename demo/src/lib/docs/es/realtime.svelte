@@ -249,7 +249,8 @@ chart.replayStop()             // back to the live series`}</code></pre>
   <code>loaded</code>, <code>end</code> o <code>error</code>; una barra sin barras más finas se forma con sus
   propios precios. ChartWidget lo hace por defecto: su menú Paso empieza en <strong>Auto</strong>;
   <code>replayStep</code> (<code>'auto'</code>, <code>'bar'</code> o un intervalo) y
-  <code>replayAnimate: false</code> lo cambian.
+  <code>replayAnimate: false</code> lo cambian. Con una fuente sin
+  <code>fetchHistoryBefore</code>, el widget obtiene las barras más finas en una sola petición antes de que empiece la reproducción.
 </p>
 
 <h3>Una repetición sobrevive al cambio de velas</h3>

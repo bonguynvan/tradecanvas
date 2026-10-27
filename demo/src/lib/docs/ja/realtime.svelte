@@ -232,7 +232,8 @@ chart.replayStop()             // back to the live series`}</code></pre>
   動きを減らす設定では価格から価格へ段階的に進みます。<code>replayStepsLoad</code> は <code>loading</code>、<code>loaded</code>、
   <code>end</code>、<code>error</code> を伝えます。細かいバーのないバーは自身の価格から形づくられます。ChartWidget は既定でこう動きます。
   ステップメニューは <strong>自動</strong> から始まり、<code>replayStep</code>（<code>'auto'</code>、<code>'bar'</code>、時間足）と
-  <code>replayAnimate: false</code> で変えられます。
+  <code>replayAnimate: false</code> で変えられます。<code>fetchHistoryBefore</code>
+  を持たないフィードでは、ウィジェットがリプレイ開始前に細かい足を一度のリクエストで取得します。
 </p>
 
 <h3>リプレイはバーが変わっても続く</h3>

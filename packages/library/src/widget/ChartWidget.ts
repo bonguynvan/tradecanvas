@@ -5086,9 +5086,14 @@ export class ChartWidget {
     return resolveReplayStep(this.replayStep as TimeFrame | 'auto', this.state.timeframe, (tf) => this.hasReplayStep(tf));
   }
 
-  /** Whether the chart fetches a replay's finer bars itself: its bars form, a feed is connected and a step is picked. */
+  /**
+   * Whether the chart fetches a replay's finer bars itself: its bars form, a
+   * step is picked and the feed pages back. A feed that can't page back gets
+   * its finer bars fetched here, in one request, as before.
+   */
   private chartFetchesReplaySteps(): boolean {
-    return this.options.replayAnimate !== false && this.adapter !== null && this.adapter !== undefined && this.replayStep !== 'bar';
+    if (this.options.replayAnimate === false || !this.adapter || this.replayStep === 'bar') return false;
+    return withResampling(this.adapter).fetchHistoryBefore !== undefined;
   }
 
   /** The finer bars for a replay in `tf` steps: from the feed, or built from the bars loaded. Null when there are none. */

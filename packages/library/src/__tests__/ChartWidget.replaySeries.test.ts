@@ -29,6 +29,8 @@ function slowAdapter(delay: Record<string, number>): DataAdapter {
     getConnectionState: () => 'connected',
     fetchHistory: (_s: string, tf: TimeFrame, limit?: number) =>
       new Promise((r) => setTimeout(() => r(series(TF_MS[tf], COUNT[tf] ?? Math.min(limit ?? 500, 5000))), delay[tf] ?? 700)),
+    // It pages back, so the chart fetches a replay's finer bars and the replay starts at once.
+    fetchHistoryBefore: async () => [],
     on: () => {},
     off: () => {},
     dispose: () => {},

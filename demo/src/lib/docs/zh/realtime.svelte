@@ -225,7 +225,8 @@ chart.replayStop()             // back to the live series`}</code></pre>
   短于三帧的K线直接完整显示；系统要求减少动态效果时，K线在各个价格点之间跳动。<code>replayStepsLoad</code> 报告
   <code>loading</code>、<code>loaded</code>、<code>end</code> 或 <code>error</code>；没有更细K线的K线按自身价格成形。
   ChartWidget 默认如此：步长菜单从 <strong>自动</strong> 开始；<code>replayStep</code>（<code>'auto'</code>、<code>'bar'</code>
-  或某个周期）和 <code>replayAnimate: false</code> 可以修改。
+  或某个周期）和 <code>replayAnimate: false</code> 可以修改。数据源没有
+  <code>fetchHistoryBefore</code> 时，组件会在回放开始前一次性获取更细的K线。
 </p>
 
 <h3>回放跨越K线的变化</h3>

@@ -109,6 +109,22 @@ describe('the replay Step menu', () => {
     expect(FakeChart.last.replays.at(-1)!.step).toBeUndefined();
   });
 
+  it('fetches the finer bars itself, and forms the bars from them, when the feed can’t page back', async () => {
+    const adapter = feed() as DataAdapter & { fetchHistory: ReturnType<typeof vi.fn>; fetchHistoryBefore?: unknown };
+    delete adapter.fetchHistoryBefore;
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false, timeframe: '1h', adapter, replayStep: '1m' });
+    await tick();
+    widget.toggleReplay();
+    widget.replayFrom(100);
+    await tick();
+    await tick();
+    const config = FakeChart.last.replays.at(-1)!;
+    expect(config.animate).toBe(true);
+    expect(config.step).toBeUndefined();
+    expect((config.steps as unknown[]).length).toBeGreaterThan(0);
+    expect(adapter.fetchHistory.mock.calls.some((c) => c[1] === '1m')).toBe(true);
+  });
+
   it('builds the steps from the bars loaded when there is no feed, and animates them', async () => {
     const MIN15 = 15 * 60_000;
     widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false, timeframe: '1h' });

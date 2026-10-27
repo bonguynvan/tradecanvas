@@ -243,7 +243,8 @@ chart.replayStop()             // back to the live series`}</code></pre>
   <code>replayStepsLoad</code> báo <code>loading</code>, <code>loaded</code>, <code>end</code> hoặc
   <code>error</code>; nến không có nến con hình thành từ giá của chính nó. ChartWidget làm điều này
   mặc định: menu Bước bắt đầu ở <strong>Tự động</strong>; <code>replayStep</code>
-  (<code>'auto'</code>, <code>'bar'</code> hoặc một khung) và <code>replayAnimate: false</code> thay đổi nó.
+  (<code>'auto'</code>, <code>'bar'</code> hoặc một khung) và <code>replayAnimate: false</code> thay đổi nó. Với nguồn không có
+  <code>fetchHistoryBefore</code>, widget tải các nến nhỏ hơn trong một lần gọi trước khi phát lại bắt đầu.
 </p>
 
 <h3>Phát lại sống qua việc đổi nến</h3>
