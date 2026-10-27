@@ -610,7 +610,7 @@ export const ES_MESSAGES: WidgetMessages = {
   'replay.step.bar': 'Barra',
   'replay.step.auto': 'Auto',
   'replay.stepsFailed': 'No se pudieron cargar las barras de menor temporalidad: repetición barra a barra',
-  'replay.selectBar': 'Elegir vela',
+  'replay.selectBar': 'Elegir barra',
   'replay.rate': '{rate}×',
   'replay.rateHint': '1× reproduce una vela por segundo',
   'replay.playingAt': 'Reproduciendo a {rate}',

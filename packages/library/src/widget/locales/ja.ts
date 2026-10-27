@@ -610,7 +610,7 @@ export const JA_MESSAGES: WidgetMessages = {
   'replay.step.bar': 'バー',
   'replay.step.auto': '自動',
   'replay.stepsFailed': '下位の時間足のバーを読み込めませんでした：1 本ずつリプレイします',
-  'replay.selectBar': '足を選択',
+  'replay.selectBar': 'バーを選択',
   'replay.rate': '{rate}×',
   'replay.rateHint': '1× は 1 秒に 1 本',
   'replay.playingAt': '{rate} で再生中',
