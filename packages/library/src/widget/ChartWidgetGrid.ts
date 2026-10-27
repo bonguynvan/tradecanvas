@@ -516,7 +516,9 @@ export class ChartWidgetGrid {
     }
     // A replay leads the others: they start at its time, follow its steps and end with it.
     chart.on('replayStep', (e) => {
-      if (!this.sync.replay || this.relaying) return;
+      // A step that only carried this chart's replay over to new bars (its own
+      // interval changed) moves no one: each chart carries its own over.
+      if (!this.sync.replay || this.relaying || e.payload.cause === 'series') return;
       const { until } = e.payload;
       this.relay(cell, (w) => {
         const other = w.getChart();

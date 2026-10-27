@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import type { OHLCBar } from '@tradecanvas/commons';
-import { SeriesStore, barPlacement } from '../SeriesStore.js';
+import { SeriesStore, barPlacement, type LiveChange } from '../SeriesStore.js';
 
 const bar = (time: number, close = 10): OHLCBar => ({ time, open: 10, high: Math.max(10, close), low: Math.min(10, close), close, volume: 1 });
 const times = (bars: readonly OHLCBar[]) => bars.map((b) => b.time);
@@ -177,5 +177,44 @@ describe('barPlacement', () => {
     expect(barPlacement([bar(1_700_000_000)], bar(1_700_000_000_000))).toBe('update');
     expect(barPlacement([bar(1_700_000_000)], bar(1_700_000_060_000))).toBe('append');
     expect(barPlacement([], bar(5))).toBe('append');
+  });
+});
+
+describe('SeriesStore during a replay', () => {
+  const replaying = () => {
+    const changes: LiveChange[] = [];
+    const store = new SeriesStore(() => null, (change) => changes.push(change));
+    store.load([bar(10), bar(20), bar(30), bar(40)]);
+    store.beginReplay();
+    store.showReplayed([bar(10), bar(20)]);
+    return { store, changes };
+  };
+
+  it('tells every change to the live series that is not at its end', () => {
+    const { store, changes } = replaying();
+    store.load([bar(10), bar(20), bar(30), bar(40), bar(50)]);
+    expect(store.prepend([bar(5)])).toEqual({ added: 0, taken: 1 });
+    store.mergeSnapshot([bar(30, 12), bar(40), bar(50), bar(60)]);
+    store.refilter();
+    store.replace(bar(20, 11));
+    expect(changes).toEqual([{ kind: 'series' }, { kind: 'older', taken: 1 }, { kind: 'series' }, { kind: 'hours' }, { kind: 'bar', time: 20 }]);
+    // None of them touched the bars replayed.
+    expect(times(store.bars())).toEqual([10, 20]);
+  });
+
+  it('says nothing of bars at the end, nor of a correction that changes nothing', () => {
+    const { store, changes } = replaying();
+    store.append(bar(50));
+    store.updateLast(bar(50, 11));
+    store.placeStreamBar(bar(60));
+    store.replace(bar(20));
+    expect(changes).toEqual([]);
+  });
+
+  it('merges a reconnect into the live series, keeping the older bars', () => {
+    const { store } = replaying();
+    store.prepend([bar(1), bar(5)]);
+    store.mergeSnapshot([bar(30, 12), bar(40)]);
+    expect(times(store.endReplay()!)).toEqual([1, 5, 10, 20, 30, 40]);
   });
 });

@@ -232,7 +232,7 @@ describe('Chart: every write path agrees with setData', () => {
       expect(live.chart.getData().length).toBeLessThan(50); // some hours hidden
     });
 
-    it('keeps the replayed bars while the hours change, and shows the live ones in the new hours after', async () => {
+    it('filters the replayed bars again when the hours change, at the same time, and shows the live ones in the new hours after', async () => {
       installChartStubs();
       const live = make();
       const oracle = make();
@@ -240,9 +240,13 @@ describe('Chart: every write path agrees with setData', () => {
       const whole = slots(0, 60);
       live.chart.setData(whole);
       live.chart.replayStart({ startIndex: 5, paused: true });
-      const replayed = live.chart.getData().length;
+      const until = live.chart.getReplayProgress().until!;
+      const regular = live.chart.getData().length;
       live.chart.setExtendedHours(true);
-      expect(live.chart.getData()).toHaveLength(replayed);
+      // The extended hours come in up to the same time: the last slot before it.
+      expect(live.chart.getData().at(-1)!.time + HALF_HOUR).toBe(until);
+      expect(live.chart.getData().length).toBeGreaterThan(regular);
+      expect(live.chart.getReplayProgress().until).toBe(until);
       live.chart.replayStop();
       oracle.chart.setExtendedHours(true);
       oracle.chart.setData(whole);

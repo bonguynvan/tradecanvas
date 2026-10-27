@@ -403,8 +403,18 @@ export interface ReplayStepPayload {
   time: number;
   /** The replay has shown everything before this time (the next step's). */
   until: number;
-  /** The bars the replay goes through (from its start, when it leaves the history out). */
+  /**
+   * The bars the replay goes through (from its start, when it leaves the
+   * history out). It can change during a replay: the bars it replays are the
+   * live series, which a new symbol or timeframe, `setData` or older bars
+   * change.
+   */
   total: number;
+  /**
+   * What moved it: the clock (`play`), a jump (`seek`), or the bars under it
+   * changing (`series`: the replay carried over to the same time on them).
+   */
+  cause?: 'play' | 'seek' | 'series';
 }
 
 export interface AlertRemovePayload {

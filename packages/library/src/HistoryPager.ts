@@ -58,13 +58,19 @@ export class HistoryPager {
     return this.loader !== null;
   }
 
-  /** A new series: drop any page in flight and allow paging again. */
+  /**
+   * A new series: drop any page in flight and allow paging again. A page
+   * dropped is reported as loaded with no bars, so a 'loading' told for it
+   * doesn't stay open.
+   */
   reset(): void {
     this.seq++;
+    const dropped = this.loading;
     this.loading = false;
     this.exhausted = false;
     this.failures = 0;
     this.retryAt = 0;
+    if (dropped) this.emit({ state: 'loaded', count: 0 });
   }
 
   isLoading(): boolean {

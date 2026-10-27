@@ -206,6 +206,14 @@ export class ReplayManager extends Emitter<ReplayEvents> {
     };
   }
 
+  /**
+   * With a `duration` pace, the time left to play to the end (ms), so a
+   * replay rebuilt on other bars can keep it; null with an interval pace.
+   */
+  remainingMs(): number | null {
+    return this.paceMs === null ? null : this.paceMs * Math.max(0, this.data.length - 1 - this.cursor);
+  }
+
   dispose(): void {
     this.stop();
     this.removeAllListeners();

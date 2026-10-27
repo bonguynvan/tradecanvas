@@ -305,6 +305,15 @@ describe('ChartWidgetGrid replay', () => {
     expect(a.replay).toEqual([]);
   });
 
+  it('does not relay a step that only carried a replay over to new bars', () => {
+    make({ layout: '1x2', sync: { replay: true } });
+    const [a, b] = charts();
+    a.emit('replayStep', { barIndex: 1, time: 200, until: 300 });
+    // The cell's own interval changed: its replay is at the same time on the new bars.
+    a.emit('replayStep', { barIndex: 24, time: 250, until: 290, cause: 'series' });
+    expect(b.replay).toEqual(['start 1']);
+  });
+
   it('leaves the others alone without replay in sync', () => {
     make({ layout: '1x2' });
     const [a, b] = charts();

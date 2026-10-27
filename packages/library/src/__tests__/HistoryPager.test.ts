@@ -89,7 +89,8 @@ describe('HistoryPager', () => {
     page.resolve(bars(0, 10));
     expect(await pending).toBe(0);
     expect(data()[0].time).toBe(100);
-    expect(events.map((e) => e.state)).toEqual(['loading']);
+    // The 'loading' told for it is closed: loaded, with no bars.
+    expect(events).toEqual([{ state: 'loading', count: 0 }, { state: 'loaded', count: 0 }]);
     expect(pager.isLoading()).toBe(false);
   });
 
