@@ -623,8 +623,11 @@ export class Chart {
         const data = this.crosshairSeries();
         const bar = barIndex >= 0 && barIndex < data.length ? data[barIndex] : undefined;
 
-        // Update legend (canvas-rendered, will show on next UI paint)
+        // The legend is drawn in the frame that found this bar, before it knew it: one more
+        // paint of the pointer's layer shows it, or a pointer that comes to rest leaves the
+        // legend on the bar before while the data window and the indicator rows show this one.
         this.chartLegend.setHoverBar(bar ?? null, barIndex > 0 ? data[barIndex - 1] ?? null : null);
+        if (this.features.legend) this.engine.requestRender(LayerType.Hover);
 
         // Update tooltip (DOM, lightweight update only when bar changes).
         // Over an indicator pane there is no price crosshair to sit beside.
@@ -658,6 +661,7 @@ export class Chart {
       } else {
         this.crosshairTooltip.hide();
         this.chartLegend.setHoverBar(null);
+        if (this.features.legend) this.engine.requestRender(LayerType.Hover);
         this.eventBus.emit('crosshairLeave', {});
       }
     });
