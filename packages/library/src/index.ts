@@ -149,7 +149,7 @@ export { detectCandlePatterns, CANDLE_PATTERNS } from '@tradecanvas/core';
 
 // Re-export themes and defaults
 export {
-  DARK_THEME, LIGHT_THEME, DARK_TERMINAL, TC_PALETTE, TC_SERIES_COLORS, volumeColor, VOLUME_ALPHA, CHART_STYLE_KEYS,
+  DARK_THEME, LIGHT_THEME, DARK_TERMINAL, DARK_PRICE_LIMITS, LIGHT_PRICE_LIMITS, TC_PALETTE, TC_SERIES_COLORS, volumeColor, VOLUME_ALPHA, CHART_STYLE_KEYS,
   DEFAULT_FONT_FAMILY, SANS_FONT_FAMILY,
   DEFAULT_DRAWING_STYLE, DEFAULT_TRADING_CONFIG,
   DEFAULT_SIGNAL_STYLE, DEFAULT_TRADE_ZONE_STYLE,
@@ -172,7 +172,9 @@ export { rankSymbols, stepDecimals } from '@tradecanvas/commons';
 export { formatFraction, fractionTick, priceFormatterFor } from '@tradecanvas/commons';
 export type { PriceFormatter, PriceFraction, TimeFormatter, TimeFormatContext } from '@tradecanvas/commons';
 export type { SymbolInfo, SymbolSession, SymbolSearchOptions } from '@tradecanvas/commons';
-export type { ShapeConfig } from '@tradecanvas/commons';
+export type { ShapeConfig, PriceLimitColors } from '@tradecanvas/commons';
+// Colour contrast, for a theme of your own: how two colours read, and a shade that reads.
+export { contrastRatio, readableOn, inkOn } from '@tradecanvas/commons';
 export { readQuote, readNews, marketStatus, symbolTimeZone, tickBarCount } from '@tradecanvas/commons';
 export type { Quote, QuoteSource, NewsItem, Trade, MarketStatus, ChartA11yLabels } from '@tradecanvas/commons';
 export { EXCHANGE_TIME_ZONE, EXCHANGE_TIMEZONE } from './Chart.js';
