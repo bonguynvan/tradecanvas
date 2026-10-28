@@ -663,6 +663,8 @@ export class Chart {
     this.chartLegend = new ChartLegend();
     this.chartLegend.setChartType(this.options.chartType);
     this.chartLegend.setLocale(this.numberLocale);
+    // Drawn taller or shorter: what a host stacks under it (the widget's indicator rows) moves.
+    this.chartLegend.setResizeListener(() => this.eventBus.emit('legendResize', { bottom: this.getLegendBottom() }));
 
     // Watermark + Volume
     this.watermark = new Watermark();

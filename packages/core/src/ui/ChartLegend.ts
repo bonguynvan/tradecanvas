@@ -43,6 +43,24 @@ export class ChartLegend {
   private drawnHeight: number | null = null;
   private locale = 'en-US';
   private pricePrecision: number | null = null;
+  /** The height last told to the resize listener; null before the first draw. */
+  private reportedHeight: number | null = null;
+  private resizeListener: (() => void) | null = null;
+
+  /**
+   * Called after a draw that left the top rows taller or shorter than the
+   * one before (a line wrapped, a status came): what stacks under them moves.
+   */
+  setResizeListener(listener: (() => void) | null): void {
+    this.resizeListener = listener;
+  }
+
+  private reportResize(): void {
+    const height = this.getHeight();
+    if (height === this.reportedHeight) return;
+    this.reportedHeight = height;
+    this.resizeListener?.();
+  }
 
   setConfig(config: Partial<LegendConfig>): void {
     Object.assign(this.config, config);
@@ -248,6 +266,7 @@ export class ChartLegend {
       y += fs + 2;
     }
     this.drawnHeight = isLeft ? y - chartRect.y : null;
+    this.reportResize();
 
     // Active indicator values
     if (this.indicators.length > 0) {

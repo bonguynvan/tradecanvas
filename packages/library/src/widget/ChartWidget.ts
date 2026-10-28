@@ -974,6 +974,9 @@ export class ChartWidget {
     this.chart.on('indicatorAdd', () => this.syncIndicatorsFromChart());
     this.chart.on('indicatorRemove', () => this.syncIndicatorsFromChart());
 
+    // The OHLCV rows drawn taller or shorter (a switch wrapped their line): the stack under them follows.
+    this.chart.on('legendResize', () => this.scheduleLegend());
+
     // The indicators on the chart itself, instead of toolbar chips that overflow.
     this.chart.setPaneTitlesVisible(!this.featureState.indicatorLegend);
     this.indicatorLegend = new WidgetIndicatorLegend(this.chartContainer, {

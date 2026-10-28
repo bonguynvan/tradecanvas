@@ -24,6 +24,12 @@ export type ChartEventType =
   | 'indicatorAdd'
   | 'indicatorRemove'
   | 'paneResize'
+  /**
+   * The legend was drawn taller or shorter (its line wrapped, a status came
+   * or went): `{ bottom }`, the new `getLegendBottom()`, where content
+   * stacked under it moves to.
+   */
+  | 'legendResize'
   /** A pane was folded or opened, maximised or put back, or moved up or down. */
   | 'paneChange'
   | 'indicatorUpdate'

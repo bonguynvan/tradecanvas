@@ -79,7 +79,9 @@ class FakeChart {
   getDrawings(): unknown[] { return []; }
   getData(): unknown[] { return Array.from({ length: BARS }, (_, i) => ({ time: i, open: 1, high: 1, low: 1, close: 1, volume: 1 })); }
   getPlotRect() { return { x: 0, y: 0, width: 600, height: 300 }; }
-  getLegendBottom(): number { return 40; }
+  /** Where the OHLCV rows end, as last drawn. */
+  legendBottom = 40;
+  getLegendBottom(): number { return this.legendBottom; }
   isTimeAligned(): boolean { return this.timeAligned; }
   getIndicatorStyle() { return { colors: [...PALETTE], lineWidths: [1.5], opacity: 1 }; }
   formatPrice(v: number): string { return v.toFixed(2); }
@@ -217,6 +219,18 @@ describe('on-chart indicator legend', () => {
     expect(values(ema)[0].style.color).toBe(BLUE); // the line's colour
     expect(values(bb).map((v) => v.textContent)).toEqual(['105.00', '101.00', '97.00']);
     expect(values(bb).map((v) => v.style.color)).toEqual([BLUE, ORANGE, BLUE]); // bands, basis, bands
+  });
+
+  it('moves the stack when the OHLCV rows are drawn taller, with nothing else changing', async () => {
+    FakeChart.last.addIndicator('ema', { period: 20 });
+    await frame();
+    const stack = host.querySelector<HTMLElement>('.tcw-ind-legend')!;
+    expect(stack.style.top).toBe('41px');
+    // A switch wrapped the legend's line: the chart says so once it has drawn it.
+    FakeChart.last.legendBottom = 68;
+    FakeChart.last.emit('legendResize', { bottom: 68 });
+    await frame();
+    expect(stack.style.top).toBe('69px');
   });
 
   // The values are one line of text that the box cuts with one ellipsis: the spans and nothing else,
