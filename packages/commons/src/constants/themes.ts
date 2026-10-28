@@ -1,4 +1,4 @@
-import type { Theme } from '../types/theme.js';
+import type { PriceLimitColors, Theme } from '../types/theme.js';
 import { withAlpha } from '../utils/color.js';
 
 /**
@@ -85,6 +85,16 @@ const DARK_DOWN = '#e2706b';
 const NIGHT_CROSSHAIR = '#6a6966';
 const PAPER_CROSSHAIR = '#8d8a84';
 
+/**
+ * The price limits on ink: bright magenta, cyan and gold, the colours a
+ * price board marks the ceiling, floor and reference with; each reads at 5:1
+ * or more there. Themes without limit colours of their own take these.
+ */
+export const DARK_PRICE_LIMITS: PriceLimitColors = { ceiling: '#FF00FF', floor: '#00FFFF', reference: '#FFD700' };
+
+/** The same hues deep enough for paper: 4.5:1 or more on it, as text needs. */
+export const LIGHT_PRICE_LIMITS: PriceLimitColors = { ceiling: '#a21caf', floor: '#0e7490', reference: '#8a6a00' };
+
 /** Order in which overlay indicators are coloured when no colour is given. */
 export const TC_SERIES_COLORS: readonly string[] = [
   TC_PALETTE.blue,
@@ -114,6 +124,7 @@ export const DARK_THEME: Theme = {
   axisLabel: '#a9a6a0',
   axisLabelBackground: '#232427',
   font: DEFAULT_FONT,
+  priceLimits: DARK_PRICE_LIMITS,
 };
 
 export const LIGHT_THEME: Theme = {
@@ -136,6 +147,7 @@ export const LIGHT_THEME: Theme = {
   axisLabel: '#4a4e57',
   axisLabelBackground: '#eeebe3',
   font: DEFAULT_FONT,
+  priceLimits: LIGHT_PRICE_LIMITS,
 };
 
 export const DARK_TERMINAL: Theme = {

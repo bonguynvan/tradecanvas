@@ -213,6 +213,12 @@ vn30fLastTradingDay(2026, 12, (day) => holidays.has(day)) // 第三个星期四�
   在依赖某个预设之前，请先对照你所在交易所的现行规则进行核实。
 </p>
 
+<p>
+  涨跌停价和参考价画成虚线，标为 CE、FL 和 REF，并在价格轴上带标签，颜色取市场的
+  <code>colorScheme</code>，没有则取主题的 <code>priceLimits</code>。在主题背景上对比度不足 4.5:1 的颜色会被加深到足够为止，
+  因此报价板上明亮的品红、青色和黄色在浅色主题上仍保持原有色相。
+</p>
+
 <h3 id="comparing-symbols">品种对比</h3>
 <p>
   可以在价格坐标上显示另一个品种的涨跌幅（<code>addCompareSymbol</code>），也可以把它的价格放在独立坐标或独立窗格中，

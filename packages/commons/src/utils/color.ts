@@ -69,3 +69,45 @@ export function lerpColor(colorA: string, colorB: string, t: number): string {
   const rgb = `${channel(a.r, b.r)},${channel(a.g, b.g)},${channel(a.b, b.b)}`;
   return alpha >= 1 ? `rgb(${rgb})` : `rgba(${rgb},${Number(alpha.toFixed(ALPHA_DECIMALS))})`;
 }
+
+/** A colour's WCAG relative luminance, 0 (black) to 1 (white); null for a colour it can't read. */
+function relativeLuminance(color: string): number | null {
+  const c = parseColor(color);
+  if (!c) return null;
+  const linear = (v: number) => {
+    const s = v / 255;
+    return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
+  };
+  return 0.2126 * linear(c.r) + 0.7152 * linear(c.g) + 0.0722 * linear(c.b);
+}
+
+/** WCAG contrast of two opaque colours, 1 to 21; null when either can't be read. */
+export function contrastRatio(a: string, b: string): number | null {
+  const la = relativeLuminance(a);
+  const lb = relativeLuminance(b);
+  if (la === null || lb === null) return null;
+  return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
+}
+
+/** Steps a colour takes toward the ink while it looks for enough contrast. */
+const READABLE_STEPS = 20;
+
+/**
+ * `color`, or the nearest mix of it toward `ink` that reads at `minRatio` on
+ * `background`: a hue kept, only deepened (or lightened) as far as it must
+ * be. `color` as it is when it already reads, or when a colour can't be read.
+ */
+export function readableOn(color: string, background: string, ink: string, minRatio: number): string {
+  const ratio = contrastRatio(color, background);
+  if (ratio === null || ratio >= minRatio) return color;
+  for (let step = 1; step <= READABLE_STEPS; step++) {
+    const mixed = lerpColor(color, ink, step / READABLE_STEPS);
+    if ((contrastRatio(mixed, background) ?? 0) >= minRatio) return mixed;
+  }
+  return ink;
+}
+
+/** Of `a` and `b`, the one that reads better on `fill`: the text for a tag of that colour. */
+export function inkOn(fill: string, a: string, b: string): string {
+  return (contrastRatio(fill, a) ?? 0) >= (contrastRatio(fill, b) ?? 0) ? a : b;
+}

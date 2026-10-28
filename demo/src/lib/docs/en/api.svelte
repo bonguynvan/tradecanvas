@@ -221,6 +221,13 @@ vn30fLastTradingDay(2026, 12, (day) => holidays.has(day)) // the third Thursday,
   exchange's current rules before you rely on it.
 </p>
 
+<p>
+  The limits are drawn as dashed lines named CE, FL and REF, with a tag on the axis, in the
+  market's <code>colorScheme</code> colours, else the theme's <code>priceLimits</code>. A colour
+  that doesn't read at 4.5:1 on the theme's background is shaded toward its text until it does, so the
+  price board's bright magenta, cyan and yellow keep their hue on the light theme.
+</p>
+
 <h3 id="comparing-symbols">Comparing symbols</h3>
 <p>
   Another symbol's percent change on the price scale (<code>addCompareSymbol</code>), or

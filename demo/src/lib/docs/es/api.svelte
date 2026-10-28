@@ -225,6 +225,14 @@ vn30fLastTradingDay(2026, 12, (day) => holidays.has(day)) // el tercer jueves, a
   las reglas vigentes de tu bolsa antes de confiar en él.
 </p>
 
+<p>
+  Los límites se dibujan como líneas discontinuas llamadas CE, FL y REF, con una etiqueta en el eje,
+  en los colores del <code>colorScheme</code> del mercado o, si no los hay, en los
+  <code>priceLimits</code> del tema. Un color que no alcanza un contraste de 4.5:1 sobre el fondo del
+  tema se oscurece hasta alcanzarlo, así que el magenta, el cian y el amarillo vivos del tablero de
+  precios conservan su tono en el tema claro.
+</p>
+
 <h3 id="comparing-symbols">Comparar símbolos</h3>
 <p>
   El cambio porcentual de otro símbolo en la escala de precio (<code>addCompareSymbol</code>), o su

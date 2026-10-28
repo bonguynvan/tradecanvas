@@ -215,6 +215,12 @@ vn30fLastTradingDay(2026, 12, (day) => holidays.has(day)) // 셋째 목요일, �
   거래소 규칙은 때때로 바뀌므로, 프리셋을 사용하기 전에 해당 거래소의 현행 규칙과 대조해 보세요.
 </p>
 
+<p>
+  가격 제한은 CE, FL, REF라는 이름의 점선과 축 위의 태그로 그려지며, 색은 시장의
+  <code>colorScheme</code>, 없으면 테마의 <code>priceLimits</code>를 따릅니다. 테마 배경에서 4.5:1 대비에 못 미치는 색은 그 대비가 될 때까지 짙어지므로,
+  시세판의 밝은 자홍, 청록, 노랑이 라이트 테마에서도 색조를 유지합니다.
+</p>
+
 <h3 id="comparing-symbols">종목 비교</h3>
 <p>
   다른 종목의 변동률을 가격 눈금에 표시하거나(<code>addCompareSymbol</code>), 그 가격을 별도 눈금이나

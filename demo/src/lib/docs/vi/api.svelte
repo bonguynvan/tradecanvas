@@ -223,6 +223,13 @@ vn30fLastTradingDay(2026, 12, (day) => holidays.has(day)) // thứ Năm thứ ba
   trước khi dựa vào nó.
 </p>
 
+<p>
+  Các giới hạn được vẽ bằng đường nét đứt có tên CE, FL và REF, kèm nhãn trên trục, theo màu
+  <code>colorScheme</code> của thị trường, nếu không có thì theo <code>priceLimits</code> của theme.
+  Màu nào không đạt độ tương phản 4.5:1 trên nền của theme sẽ được làm đậm đến khi đạt, nên màu
+  tím, xanh lơ và vàng sáng của bảng giá vẫn giữ sắc màu trên theme sáng.
+</p>
+
 <h3 id="comparing-symbols">So sánh các mã</h3>
 <p>
   Phần trăm thay đổi của một mã khác trên thang giá (<code>addCompareSymbol</code>), hoặc giá của
