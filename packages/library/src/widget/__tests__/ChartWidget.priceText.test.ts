@@ -63,7 +63,8 @@ class FakeChart {
   getLegendBottom(): number { return 40; }
   getPaneScale() { return { log: false, invert: false, percent: false }; }
   roundPrice(p: number): number { return p; }
-  isTimeAligned(): boolean { return true; }
+  timeAligned = true;
+  isTimeAligned(): boolean { return this.timeAligned; }
   isTimeframeAllowed(): boolean { return true; }
   isAutoScale(): boolean { return true; }
   isInvertScale(): boolean { return false; }
@@ -203,5 +204,34 @@ describe('ChartWidget data window’s indicator values', () => {
     widget.openPanel('dataWindow');
     hoverBar();
     expect(indicatorValues()).toEqual(['100.012,35', '54,32']);
+  });
+
+  it('write a compare on a scale of its own in its own decimals, not the chart’s prices’', () => {
+    const chart = FakeChart.last;
+    chart.indicators = [{
+      instanceId: 'cmp', id: 'compareSymbol', params: { symbol: 'PEPE' }, visible: true, scale: 'left',
+      descriptor: { id: 'compareSymbol', name: 'Compare Symbol', defaultConfig: {}, plots: [{ key: 'value', title: 'Close' }] },
+    }];
+    chart.outputs = { cmp: { series: [{ value: 0.0000482 }] } };
+    widget.openPanel('dataWindow');
+    hoverBar();
+    // The chart writes its prices near 100,000 in two decimals, which read 0.00 here.
+    expect(indicatorValues()).toEqual(['0.000048']);
+  });
+});
+
+describe('ChartWidget data window on Renko and the like', () => {
+  const BRICK = { time: 3, open: 100_100, high: 100_200, low: 100_100, close: 100_200, volume: 9 };
+
+  it('shows the brick under the pointer and its change from the brick before', () => {
+    const chart = FakeChart.last;
+    chart.timeAligned = false;
+    // The data bars under the bricks, none of them the brick.
+    chart.bars = [BAR, BAR, BAR, BAR, BAR];
+    widget.openPanel('dataWindow');
+    chart.emit('crosshairMove', { barIndex: 3, bar: BRICK, prevClose: 100_100 });
+    expect(dataWindowValues()).toEqual(['100,100.00', '100,200.00', '100,100.00', '100,200.00']);
+    const change = [...host.querySelectorAll('.tcw-datawin-value')][4]?.textContent;
+    expect(change).toBe('+100.00 (+0.10%)');
   });
 });

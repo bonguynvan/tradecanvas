@@ -448,6 +448,7 @@ chart.on('executionFill', e => /* { side, price, quantity, reason, pnl } */)
 chart.on('chartContextMenu', e => /* { area, x, y, price, time } */)
 chart.on('stateChange', () => /* drawings, indicators, alerts, chart type or theme may have changed */)
 chart.on('paneChange', e => /* { instanceId, change: 'collapsed' | 'maximized' | 'order' } */)
+chart.on('crosshairMove', e => /* { point, bar, barIndex, time, prevClose }: time is when the bar stands as the axis dates it (on Renko, the bar a brick was finished on); prevClose the close of the bar drawn before */)
 chart.on('legendResize', e => /* { bottom }: the legend drawn taller or shorter; content stacked under it moves to getLegendBottom() */)
 chart.on('chartTypeChange', e => /* { type, previous } */)
 chart.on('symbolChange', e => /* { symbol, previous } */)
@@ -663,6 +664,10 @@ widget.setSymbols(await loadMarkets())   // your server's SymbolInfo[]: the sear
   crosshair on a bar. Prices, the change and the values of indicators on the
   price pane read as the chart writes prices; those of indicators in a pane of
   their own as their legend row does; all in the chart's number locale.
+  A compare, a spread or a ratio, and a line on a scale of its own, read in the
+  decimals their size calls for, not the chart's prices'. On Renko, Kagi and the
+  like the data window shows the brick under the pointer and its change from the
+  brick before.
 </p>
 
 <h3>Shareable view (deep links)</h3>

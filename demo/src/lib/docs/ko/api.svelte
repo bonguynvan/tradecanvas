@@ -431,6 +431,7 @@ chart.on('executionFill', e => /* { side, price, quantity, reason, pnl } */)
 chart.on('chartContextMenu', e => /* { area, x, y, price, time } */)
 chart.on('stateChange', () => /* 그림, 지표, 알림, 차트 유형 또는 테마가 바뀌었을 수 있음 */)
 chart.on('paneChange', e => /* { instanceId, change: 'collapsed' | 'maximized' | 'order' } */)
+chart.on('crosshairMove', e => /* { point, bar, barIndex, time, prevClose }: time은 축이 붙이는 그 봉의 시각(Renko에서는 벽돌이 완성된 봉의 시각), prevClose는 바로 앞에 그려진 봉의 종가 */)
 chart.on('legendResize', e => /* { bottom }: 범례가 더 높게 또는 낮게 그려짐; 그 아래에 쌓은 내용은 getLegendBottom()으로 옮김 */)
 chart.on('chartTypeChange', e => /* { type, previous } */)
 chart.on('symbolChange', e => /* { symbol, previous } */)
@@ -640,6 +641,9 @@ widget.setSymbols(await loadMarkets())   // 서버에서 받은 SymbolInfo[]: �
   "데이터 창 표시/숨기기")에서 켜고 끕니다. 터치스크린에서는 차트를 터치하면
   십자선이 봉 위에 놓입니다. 가격, 변동, 가격 창 지표의 값은 차트가 가격을 쓰는
   방식대로, 별도 창 지표의 값은 범례 행과 같은 방식으로, 모두 차트의 숫자 로캘로 표시됩니다.
+  비교, 스프레드, 비율, 그리고 자체 눈금에 놓인 선은 차트 가격이 아니라 값의 크기에 맞는
+  소수 자릿수로 표시됩니다. Renko, Kagi 등에서는 데이터 창이 포인터 아래 벽돌과 앞 벽돌
+  대비 변화를 보여 줍니다.
 </p>
 
 <h3>공유 가능한 보기 (딥 링크)</h3>

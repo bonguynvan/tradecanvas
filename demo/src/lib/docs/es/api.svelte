@@ -462,6 +462,7 @@ chart.on('executionFill', e => /* { side, price, quantity, reason, pnl } */)
 chart.on('chartContextMenu', e => /* { area, x, y, price, time } */)
 chart.on('stateChange', () => /* pueden haber cambiado los dibujos, indicadores, alertas, el tipo de gráfico o el tema */)
 chart.on('paneChange', e => /* { instanceId, change: 'collapsed' | 'maximized' | 'order' } */)
+chart.on('crosshairMove', e => /* { point, bar, barIndex, time, prevClose }: time es cuándo está la barra según la fecha del eje (en Renko, la barra en la que se terminó el ladrillo); prevClose el cierre de la barra dibujada antes */)
 chart.on('legendResize', e => /* { bottom }: la leyenda se dibujó más alta o más baja; lo que va apilado debajo pasa a getLegendBottom() */)
 chart.on('chartTypeChange', e => /* { type, previous } */)
 chart.on('symbolChange', e => /* { symbol, previous } */)
@@ -682,6 +683,9 @@ widget.setSymbols(await loadMarkets())   // los SymbolInfo[] de tu servidor: la 
   indicadores del panel de precios se escriben como el gráfico escribe los precios;
   los de indicadores en un panel propio, como su fila de la leyenda; todos en el
   formato numérico del gráfico.
+  Una comparación, un spread o un ratio, y una línea en una escala propia, se escriben con los
+  decimales que pide su tamaño, no los de los precios del gráfico. En Renko, Kagi y similares la
+  ventana de datos muestra el ladrillo bajo el puntero y su cambio respecto al ladrillo anterior.
 </p>
 
 <h3>Vista compartible (enlaces profundos)</h3>

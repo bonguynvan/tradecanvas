@@ -452,6 +452,7 @@ chart.on('executionFill', e => /* { side, price, quantity, reason, pnl } */)
 chart.on('chartContextMenu', e => /* { area, x, y, price, time } */)
 chart.on('stateChange', () => /* hình vẽ, chỉ báo, cảnh báo, loại biểu đồ hoặc giao diện có thể đã thay đổi */)
 chart.on('paneChange', e => /* { instanceId, change: 'collapsed' | 'maximized' | 'order' } */)
+chart.on('crosshairMove', e => /* { point, bar, barIndex, time, prevClose }: time là thời điểm của nến như trục ghi (trên Renko, nến mà viên gạch hoàn thành); prevClose là giá đóng cửa của nến vẽ trước nó */)
 chart.on('legendResize', e => /* { bottom }: chú giải được vẽ cao hơn hoặc thấp hơn; nội dung xếp dưới nó dời xuống getLegendBottom() */)
 chart.on('chartTypeChange', e => /* { type, previous } */)
 chart.on('symbolChange', e => /* { symbol, previous } */)
@@ -667,6 +668,10 @@ widget.setSymbols(await loadMarkets())   // SymbolInfo[] từ máy chủ của b
   con trỏ chữ thập lên một nến. Giá, mức thay đổi và giá trị của chỉ báo trên
   khung giá được viết như biểu đồ viết giá; giá trị của chỉ báo ở khung riêng
   được viết như dòng chú giải của nó; tất cả theo định dạng số của biểu đồ.
+  Một đường so sánh, spread hay tỉ lệ, và một đường trên thang riêng, được ghi theo số
+  chữ số thập phân mà độ lớn của nó cần, không theo giá của biểu đồ. Trên Renko, Kagi và
+  các kiểu tương tự, cửa sổ dữ liệu hiển thị viên gạch dưới con trỏ và mức thay đổi so với
+  viên gạch trước.
 </p>
 
 <h3>Chia sẻ góc nhìn (deep link)</h3>

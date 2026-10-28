@@ -431,6 +431,7 @@ chart.on('executionFill', e => /* { side, price, quantity, reason, pnl } */)
 chart.on('chartContextMenu', e => /* { area, x, y, price, time } */)
 chart.on('stateChange', () => /* 描画、インジケーター、アラート、チャートタイプ、テーマのいずれかが変わった可能性がある */)
 chart.on('paneChange', e => /* { instanceId, change: 'collapsed' | 'maximized' | 'order' } */)
+chart.on('crosshairMove', e => /* { point, bar, barIndex, time, prevClose }: time は軸が付けるそのバーの日時（Renko ではブロックが完成したバーの日時）、prevClose は一つ前に描かれたバーの終値 */)
 chart.on('legendResize', e => /* { bottom }: 凡例の高さが変わった。その下に重ねた内容は getLegendBottom() へ移す */)
 chart.on('chartTypeChange', e => /* { type, previous } */)
 chart.on('symbolChange', e => /* { symbol, previous } */)
@@ -638,6 +639,9 @@ widget.setSymbols(await loadMarkets())   // サーバーからの SymbolInfo[]�
   タッチスクリーンではチャートをタッチするとクロスヘアがバーに置かれます。価格、変化、
   価格ペイン上のインジケーターの値はチャートが価格を書くとおりに、独立したペインの
   インジケーターの値は凡例の行と同じように、いずれもチャートの数値ロケールで表示されます。
+  比較、スプレッド、レシオ、独自のスケールに載る線は、チャートの価格ではなく値の大きさに合った
+  小数桁で表示されます。Renko や Kagi などでは、データウィンドウはポインター下のブロックと、
+  一つ前のブロックからの変化を表示します。
 </p>
 
 <h3>共有できる表示（ディープリンク）</h3>

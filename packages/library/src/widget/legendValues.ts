@@ -9,6 +9,20 @@ export interface LegendValue {
 }
 
 /**
+ * An indicator's point at the bar under the pointer, or at its last bar with
+ * none: by its own series, which on Renko and the like holds a point per
+ * brick, not per data bar.
+ */
+export function indicatorPointAt(
+  series: readonly (IndicatorValue | null | undefined)[] | undefined,
+  index: number | null,
+): IndicatorValue | null {
+  if (!series || series.length === 0) return null;
+  const at = index === null ? series.length - 1 : Math.min(Math.max(index, 0), series.length - 1);
+  return series[at] ?? null;
+}
+
+/**
  * An indicator's values at one bar, as its legend shows them: one per plot it
  * draws, in drawing order, each in the colour its line has at that bar (the
  * up or down colour of a two-tone plot). An indicator that declares no plots

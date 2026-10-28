@@ -419,6 +419,7 @@ chart.on('executionFill', e => /* { side, price, quantity, reason, pnl } */)
 chart.on('chartContextMenu', e => /* { area, x, y, price, time } */)
 chart.on('stateChange', () => /* 画线、指标、提醒、图表类型或主题可能已变化 */)
 chart.on('paneChange', e => /* { instanceId, change: 'collapsed' | 'maximized' | 'order' } */)
+chart.on('crosshairMove', e => /* { point, bar, barIndex, time, prevClose }：time 是坐标轴给该柱的时间（在 Renko 上是砖块完成时所在的柱）；prevClose 是前一根绘制柱的收盘价 */)
 chart.on('legendResize', e => /* { bottom }：图例绘制得更高或更矮；叠在其下方的内容移到 getLegendBottom() */)
 chart.on('chartTypeChange', e => /* { type, previous } */)
 chart.on('symbolChange', e => /* { symbol, previous } */)
@@ -611,6 +612,8 @@ widget.setSymbols(await loadMarkets())   // 来自你服务器的 SymbolInfo[]�
   “显示/隐藏数据窗口”）。在触摸屏上，轻触图表即可把十字光标放到一根K线上。
   价格、涨跌和价格窗格上指标的数值按图表书写价格的方式显示；独立窗格中指标的数值
   与其图例行一致；全部使用图表的数字格式。
+  对比、价差或比率，以及位于独立刻度上的线，按其数值大小所需的小数位显示，而不是图表价格的小数位。
+  在 Renko、Kagi 等类型上，数据窗口显示指针下的砖块及其相对前一块砖的变化。
 </p>
 
 <h3>可分享视图（深层链接）</h3>

@@ -20,6 +20,8 @@ const DEFAULTS: Record<string, Record<string, unknown>> = {
   macd: { fast: 12, slow: 26, signal: 9 },
 };
 const BARS = 10;
+/** The bricks a Renko chart draws from them. */
+const BRICKS = 6;
 /**
  * Each indicator's output at bar `i`: one line, three lines, a pane value,
  * a line plus a trend flag, the bar number (plus `FakeChart.bump`), and two
@@ -93,7 +95,9 @@ class FakeChart {
   }
   getIndicatorOutput(instanceId: string) {
     const ind = this.indicators.find((i) => i.instanceId === instanceId);
-    return ind ? { series: Array.from({ length: BARS }, (_, i) => OUTPUT[ind.id](i)) } : null;
+    // On Renko and the like the chart works the indicators out on its bricks, fewer than the bars.
+    const length = this.timeAligned ? BARS : BRICKS;
+    return ind ? { series: Array.from({ length }, (_, i) => OUTPUT[ind.id](i)) } : null;
   }
 
   addIndicator(id: string, params: Record<string, unknown> = {}): string {
@@ -291,12 +295,14 @@ describe('on-chart indicator legend', () => {
     expect(values(rows()[0]).map((v) => v.textContent)).toEqual(['9.00']);
   });
 
-  it('stays on the latest bar when the chart type redraws the bars', async () => {
+  it('reads the brick under the pointer, and the last brick off the chart, on Renko and the like', async () => {
     FakeChart.last.timeAligned = false; // Renko and the like
     FakeChart.last.addIndicator('wma');
+    await frame();
+    expect(values(rows()[0]).map((v) => v.textContent)).toEqual([`${BRICKS - 1}.00`]);
     FakeChart.last.emit('crosshairMove', { barIndex: 3, point: { x: 10, y: 10 } });
     await frame();
-    expect(values(rows()[0]).map((v) => v.textContent)).toEqual(['9.00']);
+    expect(values(rows()[0]).map((v) => v.textContent)).toEqual(['3.00']);
   });
 
   it('follows live recalculation of the indicators', async () => {

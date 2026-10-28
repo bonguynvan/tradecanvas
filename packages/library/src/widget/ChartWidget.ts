@@ -74,7 +74,7 @@ import { WidgetDock } from './WidgetDock.js';
 import { barsBefore, comparedEntries, compareWayOptions, isCompareWay, withOlderBars, type CompareWay, type PercentCompare } from './widgetCompare.js';
 import { WidgetTooltip } from './WidgetTooltip.js';
 import { WidgetIndicatorLegend, type IndicatorLegendPane, type IndicatorLegendRow, type PaneAction } from './WidgetIndicatorLegend.js';
-import { formatIndicatorValue, legendValues } from './legendValues.js';
+import { formatIndicatorValue, indicatorPointAt, legendValues } from './legendValues.js';
 import { compareLegendRows } from './compareLegend.js';
 import { RANGE_PRESETS, ResamplingAdapter, SYMBOL_INDICATOR_IDS, indicatorCategory, rangePresetStart, servesTimeframe, sourceParam, withResampling, type RangePreset } from '@tradecanvas/core';
 import { WidgetBracketBar } from './WidgetBracketBar.js';
@@ -84,7 +84,7 @@ import { WidgetDataWindow, PERCENT_DECIMALS as DATA_WINDOW_PERCENT_DECIMALS, typ
 import type { DepthData } from '@tradecanvas/commons';
 import { encodeWidgetState, decodeWidgetState, readShareHash, buildShareUrl } from './widgetShareState.js';
 import { DragDropImporter, resampleOHLCV, inferTimeframeMs } from '../io/index.js';
-import type { DataSeries, ReplayStepPayload, ReplayStepsLoadPayload } from '@tradecanvas/commons';
+import type { CrosshairMovePayload, DataSeries, ReplayStepPayload, ReplayStepsLoadPayload } from '@tradecanvas/commons';
 import { timeframeToMs, zonedDateFormatter } from '@tradecanvas/commons';
 import { replayStepChoices, resolveReplayStep } from '../replay/replayStep.js';
 import type { CommandItem } from './WidgetCommandPalette.js';
@@ -337,6 +337,9 @@ export class ChartWidget {
   private depthLadder: WidgetDepthLadder | null = null;
   private dataWindow: WidgetDataWindow | null = null;
   private lastHoverIndex: number | null = null;
+  /** The bar the crosshair reported at it: on Renko and the like a brick, not a data bar. */
+  private lastHoverBar: OHLCBar | null = null;
+  private lastHoverPrevClose: number | null = null;
   /** The bar the on-chart indicator values are read at; null = the latest. */
   private legendHoverIndex: number | null = null;
   private favoritesStore = new DrawingFavoritesStore();
@@ -1103,8 +1106,10 @@ export class ChartWidget {
       onClose: () => this.closePanelByHand('dataWindow'),
     }, this.t);
     this.chart.on('crosshairMove', (e) => {
-      const p = e.payload as { barIndex?: number };
+      const p = e.payload as CrosshairMovePayload;
       this.lastHoverIndex = typeof p.barIndex === 'number' ? p.barIndex : null;
+      this.lastHoverBar = p.bar ?? null;
+      this.lastHoverPrevClose = typeof p.prevClose === 'number' ? p.prevClose : null;
       if (this.dataWindow?.isOpen()) this.dataWindow.render(this.buildDataWindowModel());
     });
 
@@ -3468,22 +3473,39 @@ export class ChartWidget {
     }
   }
 
-  private buildDataWindowModel(): DataWindowModel {
-    const data = this.chart.getData();
+  /**
+   * The bar under the pointer and the close before it. On candles the data
+   * bar at the index, as it is now (a live tick moves it); on Renko and the
+   * like the brick the crosshair reported, whose index is not the data's.
+   */
+  private hoveredBar(): { bar: OHLCBar; prevClose: number } | null {
     const idx = this.lastHoverIndex;
-    if (idx === null || idx < 0 || idx >= data.length) {
+    if (idx === null || idx < 0) return null;
+    if (!this.chart.isTimeAligned()) {
+      const bar = this.lastHoverBar;
+      return bar ? { bar, prevClose: this.lastHoverPrevClose ?? bar.open } : null;
+    }
+    const data = this.chart.getData();
+    if (idx >= data.length) return null;
+    return { bar: data[idx], prevClose: idx > 0 ? data[idx - 1].close : data[idx].open };
+  }
+
+  private buildDataWindowModel(): DataWindowModel {
+    const idx = this.lastHoverIndex;
+    const hovered = this.hoveredBar();
+    if (idx === null || !hovered) {
       return { ohlc: null, change: 0, changePct: 0, indicators: [] };
     }
-    const bar = data[idx];
-    const prevClose = idx > 0 ? data[idx - 1].close : bar.open;
+    const { bar, prevClose } = hovered;
     const change = bar.close - prevClose;
     const changePct = prevClose !== 0 ? (change / prevClose) * 100 : 0;
-    const onPane = new Set(this.chart.getIndicatorPanes().flatMap((pane) => pane.instanceIds ?? [pane.instanceId]));
+    const inOwnPane = new Set(this.chart.getIndicatorPanes().flatMap((pane) => pane.instanceIds ?? [pane.instanceId]));
     const locale = this.settingsState.numberLocale || 'en-US';
 
     const indicators = this.chart.getActiveIndicators().map((ind) => {
       const series = this.chart.getIndicatorOutput(ind.instanceId)?.series;
       const point = series?.[idx] ?? null;
+      const inPriceUnits = !inOwnPane.has(ind.instanceId) && readsChartPrices(ind);
       // The drawn lines by their titles ("Signal"), else every field by its key.
       const fields = ind.descriptor.plots?.map((p) => [p.key, p.title] as const)
         ?? Object.keys(point ?? {}).map((k) => [k, k] as const);
@@ -3492,7 +3514,7 @@ export class ChartWidget {
             .filter(([key]) => typeof point[key] === 'number' && Number.isFinite(point[key]))
             .map(([key, title]) => {
               const value = point[key] as number;
-              return { key: title, value, text: this.indicatorValueText(value, onPane.has(ind.instanceId), locale) };
+              return { key: title, value, text: this.indicatorValueText(value, inPriceUnits, locale) };
             })
         : [];
       return { name: ind.descriptor.name, values };
@@ -4125,7 +4147,8 @@ export class ChartWidget {
     if (sep < 0 || data.length === 0) return null;
     const instanceId = channel.slice(0, sep);
     const key = channel.slice(sep + 1);
-    const v = this.chart.getIndicatorOutput(instanceId)?.series?.[data.length - 1]?.[key];
+    // The line's last value: on Renko and the like its series ends at the last brick, not the last bar.
+    const v = indicatorPointAt(this.chart.getIndicatorOutput(instanceId)?.series, null)?.[key];
     return typeof v === 'number' && Number.isFinite(v) ? v : null;
   }
 
@@ -4163,11 +4186,12 @@ export class ChartWidget {
 
   /**
    * An indicator's value as the legend and the data window write it: a line
-   * on the price pane as the chart writes prices, one in a pane of its own
-   * in the decimals its size calls for, both in the number locale.
+   * in the chart's prices as the chart writes them; one in a pane of its own,
+   * on a scale of its own or of another symbol in the decimals its size
+   * calls for; both in the number locale.
    */
-  private indicatorValueText(value: number, onPane: boolean, locale: string): string {
-    return onPane ? formatIndicatorValue(value, locale) : this.chart.formatPrice(value);
+  private indicatorValueText(value: number, inPriceUnits: boolean, locale: string): string {
+    return inPriceUnits ? this.chart.formatPrice(value) : formatIndicatorValue(value, locale);
   }
 
   /** Whether the market or the symbol sets the decimals prices show (the market's win, as on the chart). */
@@ -5758,10 +5782,10 @@ export class ChartWidget {
   private renderLegend(): void {
     if (!this.indicatorLegend || this.destroyed) return;
     const last = this.chart.getData().length - 1;
-    // Renko, Kagi and the like redraw the series: the hovered bar is not a
-    // data bar, so their values stay on the latest one.
+    // On Renko, Kagi and the like the hovered index is a brick's, and the
+    // indicators are worked out on the bricks: each reads its own series there.
     const aligned = this.chart.isTimeAligned();
-    const hover = aligned ? this.legendHoverIndex : null;
+    const hover = this.legendHoverIndex;
     const idx = hover === null ? last : Math.min(Math.max(hover, 0), last);
     // Each pane's indicators, its own first, stacked down from its top.
     const panes = new Map<string, { x: number; y: number; width: number; height: number; row: number }>();
@@ -5771,11 +5795,11 @@ export class ChartWidget {
     const locale = this.settingsState.numberLocale || 'en-US';
     // The symbols compared in percent first: the lines on the price scale itself. With nothing
     // hovered, at the chart's own latest bar (no index: on Renko and the like it is not the data's).
-    const compareValues = idx >= 0 ? this.chart.getCompareValues?.(hover === null ? undefined : idx) ?? [] : [];
+    const compareValues = idx >= 0 ? this.chart.getCompareValues?.(hover === null || !aligned ? undefined : idx) ?? [] : [];
     const compares = compareLegendRows(compareValues, locale, aligned);
     const indicators: IndicatorLegendRow[] = this.chart.getActiveIndicators().map((ind) => {
       const pane = panes.get(ind.instanceId) ?? null;
-      const point = idx >= 0 ? this.chart.getIndicatorOutput(ind.instanceId)?.series?.[idx] : null;
+      const point = indicatorPointAt(this.chart.getIndicatorOutput(ind.instanceId)?.series, hover);
       const style = this.chart.getIndicatorStyle(ind.instanceId);
       // Not drawn on this chart type (another symbol read by time, on bricks) or interval: no values to read off it.
       const offChartType = ind.visible && ind.offChartType === true;
@@ -5788,7 +5812,7 @@ export class ChartWidget {
         offInterval,
         offChartType,
         values: values.map((v) => ({
-          text: this.indicatorValueText(v.value, pane !== null, locale),
+          text: this.indicatorValueText(v.value, pane === null && readsChartPrices(ind), locale),
           color: v.color,
         })),
         pane: pane
@@ -6027,4 +6051,13 @@ function pickWithin(bars: readonly { time: number }[], time: number): boolean {
   const last = bars[n - 1].time;
   const lastSpan = n > 1 ? last - bars[n - 2].time : 0;
   return time < last + lastSpan || time === last;
+}
+
+/**
+ * Whether an indicator's lines are in the chart's own prices, written as it
+ * writes them: not another symbol's (a compare, a spread, a ratio), nor one
+ * on a scale of its own on the left.
+ */
+function readsChartPrices(ind: { id: string; scale?: 'left' }): boolean {
+  return !SYMBOL_INDICATOR_IDS.has(ind.id) && ind.scale !== 'left';
 }
