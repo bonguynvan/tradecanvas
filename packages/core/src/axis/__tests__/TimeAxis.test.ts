@@ -201,6 +201,20 @@ describe('TimeAxis date labels', () => {
     }
   });
 
+  it('never draws a tick label past the plot’s left edge, where it would be cut', () => {
+    const axis = new TimeAxis();
+    axis.setTimezoneOffset(420);
+    // Scan offsets so a tick lands at every distance from the left edge; the plot starts at 40 (a left scale).
+    for (let offset = 0; offset < 80; offset += 1) {
+      const { ctx, drawn } = recordingCtx();
+      const vp = viewport(offset);
+      axis.render(ctx, { ...vp, chartRect: { ...vp.chartRect, x: 40 } }, DARK_THEME, data);
+      for (const tick of drawn.filter((d) => d.align === 'center')) {
+        expect(tick.x - (tick.text.length * 6) / 2, `offset ${offset}: "${tick.text}"`).toBeGreaterThanOrEqual(40);
+      }
+    }
+  });
+
   it('shows seconds on bars within a minute', () => {
     const { ctx, drawn } = recordingCtx();
     const axis = new TimeAxis();

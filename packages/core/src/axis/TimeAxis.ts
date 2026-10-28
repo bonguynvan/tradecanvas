@@ -155,12 +155,16 @@ export class TimeAxis {
     const order = this.marks(viewport, data).sort((a, b) => b.weight - a.weight || a.index - b.index);
     const daily = barsAreDaily(data) === true;
     for (const mark of order) {
-      const x = mark.index * barUnit + offsetX;
+      const markX = mark.index * barUnit + offsetX;
+      // A bar off the plot has no label on it.
+      if (markX < chartRect.x) continue;
       const kind = markKind(mark.weight);
       const label = this.label(mark, kind, daily);
       // A new year stands out from the months and days around it.
       ctx.font = kind === 'year' ? bold : plain;
       const half = ctx.measureText(label).width / 2;
+      // A label of a bar by the plot's left edge would be cut there: it starts at the edge instead.
+      const x = Math.max(markX, chartRect.x + half);
       if (x + half > tzLeft) continue;
       if (placed.some((p) => x - half < p.right + LABEL_GAP_PX && x + half + LABEL_GAP_PX > p.left)) continue;
       placed.push({ left: x - half, right: x + half });
