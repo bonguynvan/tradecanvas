@@ -34,6 +34,7 @@ const OUTPUT: Record<string, (i: number) => Record<string, number>> = {
   psar: () => ({ value: 99.5, trend: 1 }),
   wma: (i) => ({ value: i + FakeChart.last.bump }),
   macd: (i) => (i < 5 ? { macd: 0.5 } : { macd: 0.5, signal: 0.4 }),
+  compareSymbol: () => ({ value: 2 }),
 };
 
 /**
@@ -189,6 +190,13 @@ describe('ChartWidget indicators', () => {
     expect(names()).toEqual(['EMA 9', 'EMA 9']);
     expect(host.querySelector('.tcw-indicator-chip')).toBeNull(); // no chips crowding the toolbar
     expect(host.querySelector('[data-role="indicators"] .tcw-badge-count')?.textContent).toBe('2');
+  });
+
+  it('counts no compare in the toolbar badge, as the menu and the dialog leave them out', async () => {
+    pick('ema');
+    FakeChart.last.addIndicator('compareSymbol', { symbol: 'BBB' });
+    await frame();
+    expect(host.querySelector('[data-role="indicators"] .tcw-badge-count')?.textContent).toBe('1');
   });
 
   it('removes only the instance whose row was closed', async () => {
