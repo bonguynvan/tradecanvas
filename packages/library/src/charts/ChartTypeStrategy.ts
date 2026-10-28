@@ -139,19 +139,44 @@ export function isReshapedChartType(type: ChartType): boolean {
 
 /**
  * A point & figure chart's columns and the box they were built on: the box
- * set, or 1% of the average close, raised when the columns would pass
- * 100,000, so the renderer draws the boxes the columns were built with.
+ * set, or the automatic one (`pointAndFigureBox`), raised when the columns
+ * would pass 100,000, so the renderer draws the boxes the columns were built with.
  */
 export function pointAndFigureDisplay(raw: DataSeries, options: ChartTypeOptions = {}, memo?: ReshapeMemo): PointAndFigureColumns {
-  const box = options.pointAndFigure?.boxSize;
-  const asked = typeof box === 'number' ? box : averageClose(raw) * 0.01;
-  return pointAndFigureColumns(raw, asked, options.pointAndFigure?.reversal ?? 3, memo);
+  return pointAndFigureColumns(raw, pointAndFigureBox(raw, options), options.pointAndFigure?.reversal ?? 3, memo);
 }
 
-function averageClose(raw: DataSeries): number {
-  let sum = 0;
-  for (const b of raw) sum += b.close;
-  return sum / raw.length;
+/** Boxes the automatic box makes of the series' price range: enough for columns that fill the view. */
+const POINT_AND_FIGURE_AUTO_BOXES = 50;
+/** The automatic box of a series too flat to measure: about this share of the last close. */
+const POINT_AND_FIGURE_PRICE_SHARE = 0.01;
+
+/**
+ * The box of a point & figure chart: the one set, as it is, or for 'auto' a
+ * fiftieth of the range from the lowest low to the highest high, rounded to
+ * a 1-2-5 number, so the columns span the scale whatever the prices (a
+ * share of the price would make one column of a stock that moved 7%). The
+ * bar still forming is left out, so a tick doesn't reshape the history. A
+ * series with no range: a hundredth of the last close, or 1 at 0.
+ */
+export function pointAndFigureBox(raw: DataSeries, options: ChartTypeOptions = {}): number {
+  const box = options.pointAndFigure?.boxSize;
+  if (typeof box === 'number') return box;
+  const range = priceRange(raw, raw.length > 1 ? raw.length - 1 : raw.length);
+  if (range > 0) return cleanRange(niceNumber(range / POINT_AND_FIGURE_AUTO_BOXES, true));
+  return Math.abs(raw[raw.length - 1]?.close ?? 0) * POINT_AND_FIGURE_PRICE_SHARE || 1;
+}
+
+/** The highest high less the lowest low of the first `end` bars; 0 without a finite one. */
+function priceRange(raw: DataSeries, end: number): number {
+  let high = -Infinity;
+  let low = Infinity;
+  for (let i = 0; i < end; i++) {
+    if (raw[i].high > high) high = raw[i].high;
+    if (raw[i].low < low) low = raw[i].low;
+  }
+  const range = high - low;
+  return Number.isFinite(range) ? range : 0;
 }
 
 /** Closed bars the automatic range of range bars averages the true range of. */

@@ -1183,6 +1183,7 @@ export class Chart {
     // Auto-set current price line from last bar's close
     if (lastKept) this.currentPriceLine.setPrice(lastKept.close);
     this.updateViewportAndRender(true);
+    this.fitFewColumns();
     this.emitBars(kept.length);
   }
 
@@ -1535,8 +1536,23 @@ export class Chart {
     this.displayDataCache = null;
     this.applyTimeSpacing();
     this.updateViewportAndRender(true);
+    this.fitFewColumns();
     this.markStateChanged();
     if (type !== previous) this.eventBus.emit('chartTypeChange', { type, previous });
+  }
+
+  /**
+   * A point & figure chart has a column for each reversal, often a few dozen
+   * for a whole series: at the width of a bar they would sit in a corner of
+   * an empty plot. Fewer than the view holds are fitted to it, on a new
+   * type, box or series; more are left at the width they are, as candles are.
+   */
+  private fitFewColumns(): void {
+    if (this.options.chartType !== 'pointAndFigure' || this.pluginManager.getChartType('pointAndFigure')) return;
+    const n = this.getDisplayData().length;
+    const { chartRect, barWidth, barSpacing } = this.viewport.getState();
+    const slots = chartRect.width / (barWidth + barSpacing);
+    if (n > 0 && slots > n + this.viewport.getRightMargin()) this.fitContent();
   }
 
   /**
@@ -1558,6 +1574,7 @@ export class Chart {
     this.chartTypeOptions = { ...this.chartTypeOptions, ...readChartTypeOptions(options) };
     this.displayDataCache = null;
     this.updateViewportAndRender(true);
+    this.fitFewColumns();
     // New settings build other bars: a screen reader hears the new summary, as after a new type.
     this.a11y?.refresh(true);
     this.markStateChanged();

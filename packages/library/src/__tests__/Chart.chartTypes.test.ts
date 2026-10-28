@@ -197,15 +197,41 @@ describe('the main series and lines on the price pane', () => {
 });
 
 describe('point & figure boxes', () => {
-  it('draws boxes of the size the columns were built with: 1% of the average close, or the one set', () => {
+  it('draws boxes of the size the columns were built with: a fiftieth of the price range, or the one set', () => {
     const setBox = vi.spyOn(PointAndFigureRenderer.prototype, 'setBoxSize');
     const thousandfold = bars.map((b) => ({ ...b, open: b.open * 1000, high: b.high * 1000, low: b.low * 1000, close: b.close * 1000 }));
     chart.setData(thousandfold);
     chart.setChartType('pointAndFigure');
-    const average = thousandfold.reduce((s, b) => s + b.close, 0) / thousandfold.length;
-    expect(setBox.mock.calls.at(-1)?.[0]).toBeCloseTo(average * 0.01, 6);
+    // Lows from 99,600, highs to 199,400 before the bar still forming: 99,800 / 50 = 1,996, rounded to 2,000.
+    expect(setBox.mock.calls.at(-1)?.[0]).toBe(2000);
     chart.setChartTypeOptions({ pointAndFigure: { boxSize: 250 } });
     expect(setBox.mock.calls.at(-1)?.[0]).toBe(250);
+  });
+
+  it('fits its columns to the view when they are fewer than it holds, on a new type, box or series', () => {
+    type View = { viewport: { getState(): { visibleRange: { from: number; to: number }; chartRect: { width: number }; barWidth: number; barSpacing: number } } };
+    const state = () => (chart as unknown as View).viewport.getState();
+    const fitted = (what: string) => {
+      const n = probe().getDisplayData().length;
+      const { visibleRange, chartRect, barWidth, barSpacing } = state();
+      expect(n, what).toBeGreaterThan(5);
+      expect(visibleRange.from, what).toBeLessThanOrEqual(1);
+      expect(visibleRange.to, what).toBeGreaterThanOrEqual(n - 2);
+      // The slots on screen: the columns and the margin, not a view many times wider with them at its right.
+      expect(chartRect.width / (barWidth + barSpacing), what).toBeLessThan(n + 20);
+    };
+    // Swings of 40 around 100: some twenty columns at the automatic box of 1.
+    const swings = bars.map((b, i) => {
+      const p = 100 + 20 * Math.sin(i / 8);
+      return { ...b, open: p, high: p + 0.4, low: p - 0.4, close: p };
+    });
+    chart.setData(swings);
+    chart.setChartType('pointAndFigure');
+    fitted('auto box');
+    chart.setChartTypeOptions({ pointAndFigure: { boxSize: 2, reversal: 1 } });
+    fitted('a box set');
+    chart.setData(swings.slice(0, 120));
+    fitted('a new series');
   });
 
   it('draws the boxes the columns were raised to, when a tiny box would make more than 100,000', () => {

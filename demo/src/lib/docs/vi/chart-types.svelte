@@ -31,7 +31,7 @@
     <tr><td><code>renko</code></td><td>Biểu đồ viên gạch với bước giá cố định; không phụ thuộc thời gian.</td></tr>
     <tr><td><code>kagi</code></td><td>Đường đảo chiều dương/âm (yang/yin); mức đảo chiều theo phần trăm (mặc định 4) hoặc theo giá.</td></tr>
     <tr><td><code>lineBreak</code></td><td>Một đường mới khi giá đóng cửa phá vỡ các đường gần nhất (mặc định 3).</td></tr>
-    <tr><td><code>pointAndFigure</code></td><td>Các cột X/O; kích thước ô + số ô đảo chiều.</td></tr>
+    <tr><td><code>pointAndFigure</code></td><td>Các cột X/O; kích thước ô + số ô đảo chiều. Ô quá nhỏ để nhìn thấy được vẽ thành cột liền, và khi số cột ít hơn chỗ khung nhìn chứa thì chúng được giãn cho vừa khung.</td></tr>
     <tr><td><code>rangeBars</code></td><td>Biên độ cao-thấp của mỗi nến bằng một khoảng cố định, và nến đóng cửa ở giá cao nhất hoặc thấp nhất của nó; nến cuối cùng là nến đang hình thành.</td></tr>
   </tbody>
 </table>
@@ -66,7 +66,7 @@
 <p>
   Kích thước ô của Renko, số đường mà Line Break phải phá vỡ, mức đảo chiều của Kagi, kích thước
   ô và số ô đảo chiều của Point &amp; Figure, và biên độ của Range Bars. Thông số nào không đặt sẽ
-  được tính từ dữ liệu (ô Renko theo ATR, ô P&amp;F bằng 1% giá đóng cửa trung bình…). Các thông số
+  được tính từ dữ liệu (ô Renko theo ATR, ô P&amp;F bằng một phần năm mươi biên độ giá, làm tròn về 1, 2 hoặc 5…). Các thông số
   được giữ trong trạng thái đã lưu; trong ChartWidget, chúng nằm trong hộp thoại cài đặt, ở phần
   dành cho loại biểu đồ đang dùng.
 </p>

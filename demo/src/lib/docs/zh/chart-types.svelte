@@ -31,7 +31,7 @@
     <tr><td><code>renko</code></td><td>固定价格砖块图（砖形图）；与时间无关。</td></tr>
     <tr><td><code>kagi</code></td><td>阳线 / 阴线（卡吉图）；反转幅度按百分比（默认 4）或按价格。</td></tr>
     <tr><td><code>lineBreak</code></td><td>收盘价突破最近几条线（默认 3 条）时画出新线（新价线）。</td></tr>
-    <tr><td><code>pointAndFigure</code></td><td>X / O 列（点数图）；由格值和反转格数决定。</td></tr>
+    <tr><td><code>pointAndFigure</code></td><td>X / O 列（点数图）；由格值和反转格数决定。小到看不清的格子画成实心柱；列数少于视图容量时，会缩放到填满视图。</td></tr>
     <tr><td><code>rangeBars</code></td><td>每根K线的最高价与最低价之差等于固定区间，并收在其最高价或最低价；最后一根是仍在形成的K线。</td></tr>
   </tbody>
 </table>
@@ -64,7 +64,7 @@
 <h2>衍生类型的设置</h2>
 <p>
   砖形图的砖块大小、新价线需要突破的线数、卡吉图的反转幅度、点数图的格值与反转格数，以及
-  Range Bars 的区间。未设置的项会根据数据计算（砖形图使用 ATR 砖块，P&amp;F 格值取平均收盘价的 1%……）。
+  Range Bars 的区间。未设置的项会根据数据计算（砖形图使用 ATR 砖块，P&amp;F 格值取价格区间的五十分之一并取整到 1、2 或 5……）。
   这些设置会随状态一起保存；在 ChartWidget 中，它们位于当前图表类型的设置对话框里。
 </p>
 <p>

@@ -52,7 +52,41 @@ describe('line chart types on the GPU', () => {
 });
 
 describe('point & figure boxes', () => {
-  it('draws only the boxes on screen, at most one a pixel, however small the box', () => {
+  it('draws boxes too small to see as solid columns, in the colour of their way', () => {
+    let moves = 0;
+    class CountingPath {
+      moveTo() { moves++; }
+      lineTo() {}
+      arc() {}
+    }
+    vi.stubGlobal('Path2D', CountingPath);
+    try {
+      const r = new PointAndFigureRenderer();
+      // A box of 0.01 on a scale of 40: 0.125 px a box.
+      r.setBoxSize(0.01);
+      const columns: OHLCBar[] = [
+        { time: 0, open: 90, high: 110, low: 90, close: 110, volume: 1 },
+        { time: 1, open: 109.99, high: 109.99, low: 95, close: 95, volume: 1 },
+      ];
+      const fills: { style: string; rect: number[] }[] = [];
+      const state: Record<string, unknown> = {};
+      const ctx = new Proxy(state, {
+        get: (t, p) => (p === 'fillRect' ? (...rect: number[]) => fills.push({ style: String(t.fillStyle), rect }) : p in t ? t[p as string] : () => {}),
+        set: (t, p, v) => { t[p as string] = v; return true; },
+      }) as unknown as CanvasRenderingContext2D;
+      r.render(ctx, columns, view(2, 16), DARK_THEME);
+      expect(moves).toBe(0);
+      expect(fills.map((f) => f.style)).toEqual([DARK_THEME.candleUp, DARK_THEME.candleDown]);
+      // The X column spans 90 to 110 on a scale of 80 to 120: the middle half of the 500 px.
+      const [, y, , h] = fills[0].rect;
+      expect(y).toBeCloseTo(125);
+      expect(h).toBeCloseTo(250);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('draws a column of a hundred million boxes as one bar, not box by box', () => {
     let moves = 0;
     class CountingPath {
       moveTo() { moves++; }
@@ -68,9 +102,7 @@ describe('point & figure boxes', () => {
       const vp = { ...view(1, 16), priceRange: { min: 90, max: 110 } } as ViewportState;
       const ctx = new Proxy({}, { get: () => () => {}, set: () => true }) as unknown as CanvasRenderingContext2D;
       r.render(ctx, column, vp, DARK_THEME);
-      // Two lines an X, one X a pixel row of the 500 at most.
-      expect(moves).toBeGreaterThan(0);
-      expect(moves).toBeLessThanOrEqual(2 * 502);
+      expect(moves).toBe(0);
     } finally {
       vi.unstubAllGlobals();
     }

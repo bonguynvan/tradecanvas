@@ -2,6 +2,11 @@ import type { DataSeries, ViewportState, Theme } from '@tradecanvas/commons';
 import type { ChartRendererInterface } from './ChartRenderer.js';
 import { priceToYMapper } from '../viewport/ScaleMapping.js';
 
+/** Boxes shorter than this (px) draw no X or O that reads: the column is drawn solid instead. */
+const MIN_SYMBOL_BOX_PX = 3;
+/** Share of the slot a column or a symbol takes. */
+const SYMBOL_WIDTH_SHARE = 0.8;
+
 /**
  * Renders Point & Figure chart. Data should be transformed via toPointAndFigure().
  * X for up columns, O for down columns.
@@ -29,7 +34,11 @@ export class PointAndFigureRenderer implements ChartRendererInterface {
     const toY = priceToYMapper(viewport);
 
     const boxPixelHeight = Math.abs(this.boxSize * priceScale);
-    const symbolSize = Math.min(halfBar * 0.8, boxPixelHeight * 0.8);
+    if (boxPixelHeight < MIN_SYMBOL_BOX_PX) {
+      this.renderSolid(ctx, data, from, to, toX, toY, Math.max(1, barWidth * SYMBOL_WIDTH_SHARE), theme);
+      return;
+    }
+    const symbolSize = Math.min(halfBar * SYMBOL_WIDTH_SHARE, boxPixelHeight * SYMBOL_WIDTH_SHARE);
     const s = symbolSize * 0.5;
 
     // X symbols as two strokes, each line of the X on its own (they cross,
@@ -46,13 +55,12 @@ export class PointAndFigureRenderer implements ChartRendererInterface {
       const topPrice = bar.high;
       const bottomPrice = bar.low;
       const numBoxes = Math.max(1, Math.round((topPrice - bottomPrice) / this.boxSize));
-      // The boxes on screen only, and at most one a pixel: a box tiny for
-      // the prices can't run a column to millions of symbols.
+      // The boxes on screen only: boxes are a few pixels high at least here
+      // (smaller ones are drawn solid), so no more than the plot holds.
       const first = Math.max(0, Math.floor((min - bottomPrice) / this.boxSize) - 1);
       const last = Math.min(numBoxes - 1, Math.ceil((max - bottomPrice) / this.boxSize));
-      const stride = Math.max(1, Math.ceil(1 / boxPixelHeight));
 
-      for (let j = first; j <= last; j += stride) {
+      for (let j = first; j <= last; j++) {
         const price = bottomPrice + (j + 0.5) * this.boxSize;
         const y = toY(price);
 
@@ -77,5 +85,29 @@ export class PointAndFigureRenderer implements ChartRendererInterface {
     // Stroke all O symbols at once
     ctx.strokeStyle = theme.candleDown;
     ctx.stroke(oPath);
+  }
+
+  /**
+   * Each column as a bar from its low to its high, in the colour of its way:
+   * with boxes a few pixels high or less, an X or an O would be a dot, and a
+   * chart of them would read as empty.
+   */
+  private renderSolid(
+    ctx: CanvasRenderingContext2D,
+    data: DataSeries,
+    from: number,
+    to: number,
+    toX: (i: number) => number,
+    toY: (price: number) => number,
+    width: number,
+    theme: Theme,
+  ): void {
+    for (let i = Math.max(0, from); i <= to && i < data.length; i++) {
+      const bar = data[i];
+      const top = toY(bar.high);
+      const bottom = toY(bar.low);
+      ctx.fillStyle = bar.close >= bar.open ? theme.candleUp : theme.candleDown;
+      ctx.fillRect(toX(i) - width / 2, Math.min(top, bottom), width, Math.max(1, Math.abs(bottom - top)));
+    }
   }
 }

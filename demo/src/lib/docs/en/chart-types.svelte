@@ -31,7 +31,7 @@
     <tr><td><code>renko</code></td><td>Fixed price-brick chart; time-independent.</td></tr>
     <tr><td><code>kagi</code></td><td>Yang/yin reversal lines; the reversal is a percent (4) or an amount of price.</td></tr>
     <tr><td><code>lineBreak</code></td><td>A new line once the close breaks the last lines (3 by default).</td></tr>
-    <tr><td><code>pointAndFigure</code></td><td>X/O columns; box size + reversal count.</td></tr>
+    <tr><td><code>pointAndFigure</code></td><td>X/O columns; box size + reversal count. Boxes too small to see are drawn as solid columns, and columns fewer than the view holds are fitted to it.</td></tr>
     <tr><td><code>rangeBars</code></td><td>Each bar's high-low equals a fixed range, and it closes at its high or its low; the last bar is the one still forming.</td></tr>
   </tbody>
 </table>
@@ -66,7 +66,7 @@
 <p>
   Renko's box, the lines a Line Break has to break, Kagi's reversal, Point &amp; Figure's
   box and reversal, and the range of range bars. What isn't set is worked out from the
-  data (an ATR box for Renko, 1% of the average close for a P&amp;F box…). The settings
+  data (an ATR box for Renko, a fiftieth of the price range, rounded to 1, 2 or 5, for a P&amp;F box…). The settings
   are kept in a saved state; in ChartWidget they are in the settings dialog for the
   chart's type.
 </p>
