@@ -156,11 +156,23 @@ describe('drawing labels keep clear of the legend', () => {
   it('draw a horizontal line’s label on its line at the right end rather than far below it', () => {
     setDrawingKeepOut([{ x: 0, y: 0, width: 254, height: 148 }]);
     const { ctx, drawn } = textCtx();
-    // 290 px: the line's end has no spot clear of the rows either.
-    new HorizontalLineTool().render(ctx, drawing('horizontalLine', [{ time: 0, price: 359 }]), tall(290), false); // y = 41
+    // 300 px: the spots above and below the line's end touch the rows; on the line, by the axis, is clear.
+    setDrawingKeepOut([{ x: 0, y: 0, width: 254, height: 148 }, { x: 0, y: 0, width: 300, height: 33 }]);
+    new HorizontalLineTool().render(ctx, drawing('horizontalLine', [{ time: 0, price: 359 }]), tall(300), false); // y = 41
     const label = box(drawn[0]);
     expect(Math.abs(label.top - 41)).toBeLessThanOrEqual(2 * LABEL_SIZE);
-    expect(label.right).toBeLessThanOrEqual(290);
+    expect(label.right).toBeLessThanOrEqual(300);
+  });
+
+  it('never writes a horizontal line’s label over the legend’s rows, under them where they span the plot', () => {
+    const rows = [{ x: 0, y: 0, width: 300, height: 47 }, { x: 0, y: 47, width: 254, height: 101 }];
+    setDrawingKeepOut(rows);
+    const { ctx, drawn } = textCtx();
+    new HorizontalLineTool().render(ctx, drawing('horizontalLine', [{ time: 0, price: 388 }]), tall(300), false); // y = 12
+    const label = box(drawn[0]);
+    // Under the OHLC rows, beside the indicator rows: the nearest clear spot.
+    expect(rows.every((r) => label.right <= r.x || label.left >= r.x + r.width || label.bottom <= r.y || label.top >= r.y + r.height)).toBe(true);
+    expect(label.top).toBeGreaterThanOrEqual(47);
   });
 
   it('give two horizontal lines in the legend’s band labels of their own', () => {

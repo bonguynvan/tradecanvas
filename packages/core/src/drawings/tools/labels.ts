@@ -158,8 +158,8 @@ const LEVEL_LABEL_REACH = 2 * LEVEL_LABEL_SIZE;
  * end at `right`, else below its start or its end; never above the plot's
  * `plotTop`. With all of them covered (on a phone the legend spans the
  * plot), under the legend's foot when that is near the line, else on the
- * line at its right end, by the price axis, so it never reads as another
- * line's price. It sets its own alignment and
+ * line at its right end, by the price axis, where that is clear; with that
+ * covered too, under the legend and the labels moved there before it. It sets its own alignment and
  * baseline: the context keeps whatever the last text drawn on it left (the
  * time axis leaves 'right', a Gann box 'right', a measure 'center'), and a
  * label right-aligned at the plot's left edge is clipped down to its last
@@ -196,9 +196,15 @@ function levelLabelSpot(start: number, end: number, y: number, width: number, pl
   const near = unders.find((u) => u.top - y <= LEVEL_LABEL_REACH);
   if (near) return { x: near.l, y: near.top, align: 'left', baseline: 'top', left: near.l, top: near.top };
   // Far under the line it would read as the price of whatever is drawn there: on the line
-  // instead, by the price axis, through its halo, even where the rows' box reaches it.
+  // instead, by the price axis, through its halo, where nothing covers it there.
   const axisSide = end - LEVEL_LABEL_INSET;
-  return { x: axisSide, y, align: 'right', baseline: 'middle', left: axisSide - width, top: y - LEVEL_LABEL_SIZE / 2 };
+  const onLine = { left: axisSide - width, top: y - LEVEL_LABEL_SIZE / 2 };
+  if (!labelBlocked(onLine.left, onLine.top, axisSide, onLine.top + LEVEL_LABEL_SIZE)) {
+    return { x: axisSide, y, align: 'right', baseline: 'middle', ...onLine };
+  }
+  // The legend spans the plot there too (a phone): under it all, under the labels moved before it.
+  const nearest = unders.reduce((a, b) => (b.top < a.top ? b : a));
+  return { x: nearest.l, y: nearest.top, align: 'left', baseline: 'top', left: nearest.l, top: nearest.top };
 }
 
 
