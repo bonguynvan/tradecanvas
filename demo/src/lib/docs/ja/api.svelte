@@ -436,6 +436,12 @@ chart.on('timeframeChange', e => /* { timeframe, previous } */)
 chart.on('historyChange', e => /* { canUndo, canRedo } */)
 chart.on('drawingSelect', e => /* { ids, primary } */)
 chart.on('rendererChange', e => /* { renderer: 'canvas' | 'webgl', reason?: 'unsupported' | 'contextLost' | 'contextRestored' | 'limit' } */)`}</code></pre>
+<p>
+  凡例の下に置く独自のラベルは <code>getLegendBottom()</code> から始め、<code>legendResize</code>
+  で動かします。<code>setLegendStack({'{'} width, height {'}'})</code> でその大きさをチャートに伝えると
+  （プロットの左端とその下端から測り、ないときは <code>null</code>）、水平線の価格やポジションの目標などの
+  描画ラベルは、凡例と同じようにそれを避けます。ChartWidget はインジケーター行でこれを行います。
+</p>
 
 <h3>独自の変更を元に戻す</h3>
 <p>

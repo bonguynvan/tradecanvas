@@ -81,6 +81,9 @@ class FakeChart {
   getPlotRect() { return { x: 0, y: 0, width: 600, height: 300 }; }
   /** Where the OHLCV rows end, as last drawn. */
   legendBottom = 40;
+  /** What the widget said it stacks under the legend (`setLegendStack`). */
+  legendStacks: ({ width: number; height: number } | null)[] = [];
+  setLegendStack(size: { width: number; height: number } | null): void { this.legendStacks.push(size); }
   getLegendBottom(): number { return this.legendBottom; }
   isTimeAligned(): boolean { return this.timeAligned; }
   getIndicatorStyle() { return { colors: [...PALETTE], lineWidths: [1.5], opacity: 1 }; }
@@ -231,6 +234,29 @@ describe('on-chart indicator legend', () => {
     FakeChart.last.emit('legendResize', { bottom: 68 });
     await frame();
     expect(stack.style.top).toBe('69px');
+  });
+
+  it('tells the chart how much it stacks under the legend, for drawing labels to keep clear of it', () => {
+    const observers: { cb: () => void; els: Element[] }[] = [];
+    vi.stubGlobal('ResizeObserver', class {
+      private readonly rec: { cb: () => void; els: Element[] };
+      constructor(cb: () => void) { this.rec = { cb, els: [] }; observers.push(this.rec); }
+      observe(el: Element) { this.rec.els.push(el); }
+      unobserve() {}
+      disconnect() {}
+    });
+    try {
+      widget.destroy();
+      widget = new ChartWidget(host, { adapter, symbol: 'AAA', timeframe: '5m', watchlist: false });
+      const stack = host.querySelector<HTMLElement>('.tcw-ind-legend')!;
+      Object.defineProperty(stack, 'offsetWidth', { configurable: true, value: 214 });
+      Object.defineProperty(stack, 'offsetHeight', { configurable: true, value: 58 });
+      observers.find((o) => o.els.includes(stack))!.cb();
+      // From the plot's left edge (the stack is 4 px in) and the legend's foot (1 px under it).
+      expect(FakeChart.last.legendStacks.at(-1)).toEqual({ width: 4 + 214, height: 1 + 58 });
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 
   // The values are one line of text that the box cuts with one ellipsis: the spans and nothing else,

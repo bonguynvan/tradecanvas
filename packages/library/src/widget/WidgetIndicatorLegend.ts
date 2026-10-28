@@ -52,6 +52,8 @@ export interface IndicatorLegendCallbacks {
   onMore?: (instanceId: string, anchor: HTMLElement) => void;
   /** A pane's button: move it, fold it, maximise it. */
   onPaneAction?: (instanceId: string, action: PaneAction) => void;
+  /** The stack under the OHLCV legend laid out at a new size (its border box), or `null` with nothing in it. */
+  onStackResize?: (size: { width: number; height: number } | null) => void;
 }
 
 export interface IndicatorLegendLabels {
@@ -135,6 +137,8 @@ export class WidgetIndicatorLegend {
   private stackKey = '';
   /** Tells of each row's values box resized: a narrow chart, a longer name beside them. */
   private readonly valuesObserver: ResizeObserver | null;
+  /** Tells of the stack resized, for the chart's drawing labels to keep clear of it. */
+  private readonly stackObserver: ResizeObserver | null;
 
   constructor(
     private readonly host: HTMLElement,
@@ -153,6 +157,10 @@ export class WidgetIndicatorLegend {
     });
     this.stack.appendChild(this.toggle);
     host.appendChild(this.stack);
+    this.stackObserver = typeof ResizeObserver === 'undefined' || !callbacks.onStackResize
+      ? null
+      : new ResizeObserver(() => this.reportStackSize());
+    this.stackObserver?.observe(this.stack);
     this.valuesObserver = typeof ResizeObserver === 'undefined'
       ? null
       : new ResizeObserver((entries) => {
@@ -200,11 +208,18 @@ export class WidgetIndicatorLegend {
 
   destroy(): void {
     this.valuesObserver?.disconnect();
+    this.stackObserver?.disconnect();
     for (const els of this.rows.values()) els.el.remove();
     this.rows.clear();
     for (const els of this.panes.values()) els.el.remove();
     this.panes.clear();
     this.stack.remove();
+  }
+
+  private reportStackSize(): void {
+    const width = this.stack.offsetWidth;
+    const height = this.stack.offsetHeight;
+    this.callbacks.onStackResize?.(width > 0 && height > 0 ? { width, height } : null);
   }
 
   /** Each pane's buttons at its top right: move up, move down, fold, maximise. */

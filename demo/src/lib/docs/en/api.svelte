@@ -453,6 +453,14 @@ chart.on('timeframeChange', e => /* { timeframe, previous } */)
 chart.on('historyChange', e => /* { canUndo, canRedo } */)
 chart.on('drawingSelect', e => /* { ids, primary } */)
 chart.on('rendererChange', e => /* { renderer: 'canvas' | 'webgl', reason?: 'unsupported' | 'contextLost' | 'contextRestored' | 'limit' } */)`}</code></pre>
+<p>
+  Labels of your own under the legend start at <code>getLegendBottom()</code> and move
+  with <code>legendResize</code>. Tell the chart their size with
+  <code>setLegendStack({'{'} width, height {'}'})</code>, measured from the plot's left edge and
+  that bottom (<code>null</code> when there are none): drawing labels, such as a horizontal
+  line's price or a position's target, keep clear of them as they keep clear of the legend.
+  ChartWidget does this for its indicator rows.
+</p>
 
 <h3>Undo for your own changes</h3>
 <p>

@@ -59,3 +59,27 @@ describe("Chart — 'legendResize'", () => {
     expect(bottoms[0]).toBeLessThan(tall);
   });
 });
+
+describe('Chart — what drawing labels keep clear of', () => {
+  type Box = { x: number; y: number; width: number; height: number };
+  const keepOut = (): readonly Box[] =>
+    (chart as unknown as { drawingRenderer: { getKeepOut(): readonly Box[] } }).drawingRenderer.getKeepOut();
+
+  it('is the OHLCV rows as drawn, and what a host stacks under them', () => {
+    const plot = chart.getPlotRect();
+    const bottom = chart.getLegendBottom();
+    const [rows] = keepOut();
+    expect(rows).toMatchObject({ x: plot.x, y: plot.y, height: bottom - plot.y });
+    expect(rows.width).toBeGreaterThan(0);
+    chart.setLegendStack({ width: 180, height: 50 });
+    expect(keepOut()).toContainEqual({ x: plot.x, y: bottom, width: 180, height: 50 });
+    chart.setLegendStack(null);
+    expect(keepOut()).toHaveLength(1);
+  });
+
+  it('is nothing with the legend hidden and nothing stacked', () => {
+    chart.setLegend({ visible: false });
+    vi.advanceTimersByTime(FRAMES_MS);
+    expect(keepOut()).toEqual([]);
+  });
+});

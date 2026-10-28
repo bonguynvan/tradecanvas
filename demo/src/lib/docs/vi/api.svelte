@@ -457,6 +457,13 @@ chart.on('timeframeChange', e => /* { timeframe, previous } */)
 chart.on('historyChange', e => /* { canUndo, canRedo } */)
 chart.on('drawingSelect', e => /* { ids, primary } */)
 chart.on('rendererChange', e => /* { renderer: 'canvas' | 'webgl', reason?: 'unsupported' | 'contextLost' | 'contextRestored' | 'limit' } */)`}</code></pre>
+<p>
+  Nhãn riêng của bạn đặt dưới chú giải bắt đầu từ <code>getLegendBottom()</code> và dời theo
+  <code>legendResize</code>. Báo cho biểu đồ kích thước của chúng bằng
+  <code>setLegendStack({'{'} width, height {'}'})</code>, đo từ mép trái vùng vẽ và từ đáy đó
+  (<code>null</code> khi không có): nhãn của hình vẽ, như giá của đường ngang hay mục tiêu của
+  một vị thế, tránh chúng như tránh chú giải. ChartWidget làm việc này cho các dòng chỉ báo của nó.
+</p>
 
 <h3>Hoàn tác cho thay đổi của riêng bạn</h3>
 <p>

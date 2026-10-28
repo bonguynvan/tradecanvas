@@ -181,6 +181,8 @@ function typedLetter(e: KeyboardEvent): string | null {
 
 /** Gap between the on-chart indicator rows and the plot or pane edge, px. */
 const LEGEND_INSET = 4;
+/** How far under the OHLCV legend's foot the indicator rows start (px). */
+const STACK_GAP = 1;
 /** A pane's row starts below the divider's grab zone (±6 px), so it never blocks a resize. */
 const PANE_ROW_TOP = 7;
 /** Rows of the indicators sharing a pane, one under the other (px). */
@@ -998,6 +1000,8 @@ export class ChartWidget {
       },
       onMore: (iid, anchor) => this.openLegendMenu(iid, anchor),
       onPaneAction: (iid, action) => this.runPaneAction(iid, action),
+      // From the plot's left edge and the legend's foot, as the stack is placed: the drawings' labels keep clear of it.
+      onStackResize: (size) => this.chart.setLegendStack?.(size ? { width: LEGEND_INSET + size.width, height: STACK_GAP + size.height } : null),
     }, {
       show: this.t('legend.show'),
       hide: this.t('legend.hide'),
@@ -5790,7 +5794,7 @@ export class ChartWidget {
       canMoveUp: this.chart.canMovePane(pane.instanceId, -1),
       canMoveDown: this.chart.canMovePane(pane.instanceId, 1),
     }));
-    this.indicatorLegend.update(rows, { left: plot.x + LEGEND_INSET, top: this.chart.getLegendBottom() + 1 }, paneControls);
+    this.indicatorLegend.update(rows, { left: plot.x + LEGEND_INSET, top: this.chart.getLegendBottom() + STACK_GAP }, paneControls);
   }
 
   /** A pane's button on the chart. */

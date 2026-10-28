@@ -438,6 +438,12 @@ chart.on('timeframeChange', e => /* { timeframe, previous } */)
 chart.on('historyChange', e => /* { canUndo, canRedo } */)
 chart.on('drawingSelect', e => /* { ids, primary } */)
 chart.on('rendererChange', e => /* { renderer: 'canvas' | 'webgl', reason?: 'unsupported' | 'contextLost' | 'contextRestored' | 'limit' } */)`}</code></pre>
+<p>
+  범례 아래에 두는 자체 레이블은 <code>getLegendBottom()</code>에서 시작하고 <code>legendResize</code>에
+  따라 옮깁니다. <code>setLegendStack({'{'} width, height {'}'})</code>로 그 크기를 차트에 알리면
+  (플롯의 왼쪽 가장자리와 그 아래쪽에서 잰 값, 없으면 <code>null</code>) 수평선의 가격이나 포지션의 목표 같은
+  드로잉 레이블이 범례를 피하듯 그것을 피합니다. ChartWidget은 지표 행에 이렇게 합니다.
+</p>
 
 <h3>직접 만든 변경의 실행 취소</h3>
 <p>

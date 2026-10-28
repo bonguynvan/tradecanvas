@@ -41,6 +41,8 @@ export class ChartLegend {
   private exchange = '';
   /** The height the top rows took on the last draw; null before the first. */
   private drawnHeight: number | null = null;
+  /** How far right of the plot's edge the top rows reached on the last draw (px). */
+  private drawnWidth = 0;
   private locale = 'en-US';
   private pricePrecision: number | null = null;
   /** The height last told to the resize listener; null before the first draw. */
@@ -222,6 +224,17 @@ export class ChartLegend {
     return h;
   }
 
+  /**
+   * How far right of the plot's left edge the title, price and volume rows
+   * reached on the last draw, its inset included: with `getHeight()`, the
+   * box drawing labels keep clear of. 0 before a draw, when hidden or drawn
+   * in the top-right corner.
+   */
+  getWidth(): number {
+    if (!this.config.visible || this.config.position !== 'top-left') return 0;
+    return this.drawnWidth;
+  }
+
   render(ctx: CanvasRenderingContext2D, viewport: ViewportState, theme: Theme, data: DataSeries): void {
     if (!this.config.visible || data.length === 0) return;
 
@@ -243,6 +256,7 @@ export class ChartLegend {
 
     ctx.textAlign = isLeft ? 'left' : 'right';
     ctx.textBaseline = 'top';
+    let widest = 0;
 
     // The title (symbol · interval · exchange, and a status) and the prices,
     // one line that wraps where the plot is too narrow for it.
@@ -253,6 +267,7 @@ export class ChartLegend {
       const gap = ctx.measureText('  ').width;
       for (const line of wrapCells(cells, gap, chartRect.width - 2 * LEGEND_INSET)) {
         const total = line.reduce((sum, c) => sum + c.labelWidth + c.width + gap, -gap);
+        widest = Math.max(widest, total);
         let cx = isLeft ? x : x - total;
         ctx.textAlign = 'left';
         for (const cell of line) {
@@ -277,9 +292,11 @@ export class ChartLegend {
       ctx.fillStyle = label;
       const vol = bar.volume >= 1e6 ? `${(bar.volume / 1e6).toFixed(2)}M` : bar.volume >= 1e3 ? `${(bar.volume / 1e3).toFixed(2)}K` : bar.volume.toFixed(0);
       ctx.fillText(`Vol ${vol}`, x, y);
+      widest = Math.max(widest, ctx.measureText(`Vol ${vol}`).width);
       y += fs + 2;
     }
     this.drawnHeight = isLeft ? y - chartRect.y : null;
+    this.drawnWidth = isLeft ? LEGEND_INSET + widest : 0;
     this.reportResize();
 
     // Active indicator values

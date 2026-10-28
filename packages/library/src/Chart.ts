@@ -238,6 +238,8 @@ export class Chart {
   private lastEmittedPriceRange: { min: number; max: number } | null = null;
   private lastEmittedBarWidth: number | null = null;
   private chartLegend: ChartLegend;
+  /** What a host lays under the legend (`setLegendStack`), for drawing labels to keep clear of. */
+  private legendStack: { width: number; height: number } | null = null;
   private watermark: Watermark;
   private barCountdown: BarCountdown;
   /**
@@ -503,6 +505,7 @@ export class Chart {
     this.drawingManager = new DrawingManager();
     registerBuiltInDrawingTools(this.drawingManager);
     this.drawingRenderer = new DrawingRenderer(this.drawingManager);
+    this.drawingRenderer.setKeepOut(() => this.legendKeepOut());
     this.drawingManager.setRequestRender(() => {
       // Sync entire render context so drawings render with same viewport as candles
       this.syncRenderContext();
@@ -663,8 +666,12 @@ export class Chart {
     this.chartLegend = new ChartLegend();
     this.chartLegend.setChartType(this.options.chartType);
     this.chartLegend.setLocale(this.numberLocale);
-    // Drawn taller or shorter: what a host stacks under it (the widget's indicator rows) moves.
-    this.chartLegend.setResizeListener(() => this.eventBus.emit('legendResize', { bottom: this.getLegendBottom() }));
+    // Drawn taller or shorter: what a host stacks under it (the widget's indicator rows) moves,
+    // and the drawings' labels are placed again around it.
+    this.chartLegend.setResizeListener(() => {
+      this.eventBus.emit('legendResize', { bottom: this.getLegendBottom() });
+      this.engine.requestRender();
+    });
 
     // Watermark + Volume
     this.watermark = new Watermark();
@@ -2284,6 +2291,32 @@ export class Chart {
   getLegendBottom(): number {
     const top = this.viewport.getState().chartRect.y;
     return this.features.legend ? top + this.chartLegend.getHeight() : top;
+  }
+
+  /**
+   * The size of what you lay over the chart under the legend (rows of your
+   * own, as ChartWidget's indicator rows are), from the plot's left edge and
+   * `getLegendBottom()` down, in CSS px: drawing labels keep clear of it as
+   * they keep clear of the legend. `null` when nothing is there.
+   */
+  setLegendStack(size: { width: number; height: number } | null): void {
+    const next = size && size.width > 0 && size.height > 0 ? { width: size.width, height: size.height } : null;
+    const same = next === this.legendStack
+      || (next !== null && this.legendStack !== null && next.width === this.legendStack.width && next.height === this.legendStack.height);
+    if (same) return;
+    this.legendStack = next;
+    this.engine.requestRender();
+  }
+
+  /** The legend's rows as drawn and what is stacked under them: drawing labels keep clear of these. */
+  private legendKeepOut(): { x: number; y: number; width: number; height: number }[] {
+    const plot = this.viewport.getState().chartRect;
+    const bottom = this.getLegendBottom();
+    const boxes: { x: number; y: number; width: number; height: number }[] = [];
+    const width = this.features.legend ? this.chartLegend.getWidth() : 0;
+    if (width > 0 && bottom > plot.y) boxes.push({ x: plot.x, y: plot.y, width, height: bottom - plot.y });
+    if (this.legendStack) boxes.push({ x: plot.x, y: bottom, ...this.legendStack });
+    return boxes;
   }
 
   /**

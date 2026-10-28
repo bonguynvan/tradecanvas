@@ -467,6 +467,14 @@ chart.on('timeframeChange', e => /* { timeframe, previous } */)
 chart.on('historyChange', e => /* { canUndo, canRedo } */)
 chart.on('drawingSelect', e => /* { ids, primary } */)
 chart.on('rendererChange', e => /* { renderer: 'canvas' | 'webgl', reason?: 'unsupported' | 'contextLost' | 'contextRestored' | 'limit' } */)`}</code></pre>
+<p>
+  Las etiquetas propias bajo la leyenda empiezan en <code>getLegendBottom()</code> y se mueven con
+  <code>legendResize</code>. Dile al gráfico su tamaño con
+  <code>setLegendStack({'{'} width, height {'}'})</code>, medido desde el borde izquierdo del área
+  del gráfico y ese pie (<code>null</code> cuando no hay ninguna): las etiquetas de los dibujos, como
+  el precio de una línea horizontal o el objetivo de una posición, las evitan como evitan la leyenda.
+  ChartWidget lo hace con sus filas de indicadores.
+</p>
 
 <h3>Deshacer tus propios cambios</h3>
 <p>

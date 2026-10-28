@@ -425,6 +425,12 @@ chart.on('timeframeChange', e => /* { timeframe, previous } */)
 chart.on('historyChange', e => /* { canUndo, canRedo } */)
 chart.on('drawingSelect', e => /* { ids, primary } */)
 chart.on('rendererChange', e => /* { renderer: 'canvas' | 'webgl', reason?: 'unsupported' | 'contextLost' | 'contextRestored' | 'limit' } */)`}</code></pre>
+<p>
+  放在图例下方的自定义标签从 <code>getLegendBottom()</code> 开始，并随 <code>legendResize</code>
+  移动。用 <code>setLegendStack({'{'} width, height {'}'})</code> 告诉图表它们的大小，从绘图区左边缘和该底部量起
+  （没有时为 <code>null</code>）：画线的标签，如水平线的价格或持仓的目标，会像避开图例一样避开它们。
+  ChartWidget 为其指标行这样做。
+</p>
 
 <h3>为你自己的改动提供撤销</h3>
 <p>

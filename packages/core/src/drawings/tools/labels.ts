@@ -60,21 +60,87 @@ export function fillTextWithHalo(ctx: CanvasRenderingContext2D, text: string, x:
 const LEVEL_LABEL_SIZE = 11;
 /** How far a level label starts right of where its line starts (px). */
 const LEVEL_LABEL_INSET = 4;
-/** How far a level label's baseline sits above its line (px). */
+/** How far a level label sits above its line, or below it (px). */
 const LEVEL_LABEL_GAP = 3;
 
+/** A box on the plot (CSS px) that drawing labels keep clear of. */
+export interface LabelKeepOut {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
 /**
- * A price level's text just above its line, by the line's start at (`x`, `y`).
- * It sets its own alignment and baseline: the context keeps whatever the last
- * text drawn on it left (the time axis leaves 'right', a Gann box 'right', a
- * measure 'center'), and a label right-aligned at the plot's left edge is
- * clipped down to its last glyph.
+ * What the next drawing pass's labels keep clear of: the legend's rows and
+ * what a host stacks under them. Set by the drawing renderer right before
+ * each (synchronous) pass; none clears it.
  */
-export function fillLevelLabel(ctx: CanvasRenderingContext2D, text: string, x: number, y: number): void {
+let keepOut: readonly LabelKeepOut[] = [];
+
+export function setDrawingKeepOut(boxes: readonly LabelKeepOut[] | null): void {
+  keepOut = boxes ?? [];
+}
+
+/** Whether the box from (`left`, `top`) to (`right`, `bottom`) runs into any kept-out box. */
+export function overlapsKeepOut(left: number, top: number, right: number, bottom: number): boolean {
+  return keepOut.some((k) => right > k.x && left < k.x + k.width && bottom > k.y && top < k.y + k.height);
+}
+
+/**
+ * The lowest foot of the kept-out boxes beside the span from `left` to
+ * `right`, all of them stacked as one: where a label under them starts.
+ * `top` when none is beside it.
+ */
+export function belowKeepOut(left: number, right: number, top: number): number {
+  let bottom = top;
+  for (const k of keepOut) {
+    if (right > k.x && left < k.x + k.width) bottom = Math.max(bottom, k.y + k.height);
+  }
+  return bottom;
+}
+
+/** Where a level label goes: its anchor, alignment and baseline. */
+interface LevelLabelSpot {
+  x: number;
+  y: number;
+  align: CanvasTextAlign;
+  baseline: CanvasTextBaseline;
+}
+
+/**
+ * A price level's text by its line at `y`: above its start at `x` when that
+ * is clear of the legend, else above its end at `right`, else below its
+ * start or its end; with the legend over all of them (on a phone it spans
+ * the plot), under the legend's foot. It sets its own alignment and
+ * baseline: the context keeps whatever the last text drawn on it left (the
+ * time axis leaves 'right', a Gann box 'right', a measure 'center'), and a
+ * label right-aligned at the plot's left edge is clipped down to its last
+ * glyph.
+ */
+export function fillLevelLabel(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, right = x): void {
   ctx.font = drawingFont(LEVEL_LABEL_SIZE);
-  ctx.textAlign = 'left';
-  ctx.textBaseline = 'bottom';
-  fillTextWithHalo(ctx, text, x + LEVEL_LABEL_INSET, y - LEVEL_LABEL_GAP);
+  const spot = levelLabelSpot(x, right, y, ctx.measureText(text).width);
+  ctx.textAlign = spot.align;
+  ctx.textBaseline = spot.baseline;
+  fillTextWithHalo(ctx, text, spot.x, spot.y);
+}
+
+function levelLabelSpot(start: number, end: number, y: number, width: number): LevelLabelSpot {
+  const left = start + LEVEL_LABEL_INSET;
+  // The end has a spot of its own only where the line is long enough to hold the label there.
+  const endLeft = end - LEVEL_LABEL_INSET - width;
+  const lefts = endLeft > left ? [left, endLeft] : [left];
+  const above = { top: y - LEVEL_LABEL_GAP - LEVEL_LABEL_SIZE, bottom: y - LEVEL_LABEL_GAP };
+  const below = { top: y + LEVEL_LABEL_GAP, bottom: y + LEVEL_LABEL_GAP + LEVEL_LABEL_SIZE };
+  for (const side of [above, below]) {
+    for (const l of lefts) {
+      if (!overlapsKeepOut(l, side.top, l + width, side.bottom)) {
+        return { x: l, y: side === above ? side.bottom : side.top, align: 'left', baseline: side === above ? 'bottom' : 'top' };
+      }
+    }
+  }
+  return { x: left, y: belowKeepOut(left, left + width, y) + LEVEL_LABEL_GAP, align: 'left', baseline: 'top' };
 }
 
 
