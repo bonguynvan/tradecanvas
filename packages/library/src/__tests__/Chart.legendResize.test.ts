@@ -36,7 +36,7 @@ describe("Chart — 'legendResize'", () => {
   it('fires once the legend is drawn taller, with the new bottom, and not again while it keeps that height', () => {
     const before = chart.getLegendBottom();
     const bottoms: number[] = [];
-    chart.on('legendResize', (e) => bottoms.push((e.payload as { bottom: number }).bottom));
+    chart.on('legendResize', (e) => bottoms.push(e.payload.bottom));
     // A status long enough to take a line of its own.
     chart.setStatusText('LIVE · 8 ms · a feed with a long name that wraps');
     vi.advanceTimersByTime(FRAMES_MS);
@@ -52,7 +52,7 @@ describe("Chart — 'legendResize'", () => {
     vi.advanceTimersByTime(FRAMES_MS);
     const tall = chart.getLegendBottom();
     const bottoms: number[] = [];
-    chart.on('legendResize', (e) => bottoms.push((e.payload as { bottom: number }).bottom));
+    chart.on('legendResize', (e) => bottoms.push(e.payload.bottom));
     chart.setStatusText(null);
     vi.advanceTimersByTime(FRAMES_MS);
     expect(bottoms).toHaveLength(1);
