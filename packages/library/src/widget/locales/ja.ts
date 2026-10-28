@@ -817,6 +817,7 @@ export const JA_MESSAGES: WidgetMessages = {
   'dock.rail': 'パネル',
   'dock.resize': 'パネルの幅を変更',
   'dataWindow.hover': 'チャートにカーソルを合わせてください',
+  'dataWindow.touch': 'チャートをタッチしてください',
   'dataWindow.open': '始値',
   'dataWindow.high': '高値',
   'dataWindow.low': '安値',

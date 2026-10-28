@@ -817,6 +817,7 @@ export const ID_MESSAGES: WidgetMessages = {
   'dock.rail': 'Panel',
   'dock.resize': 'Ubah lebar panel',
   'dataWindow.hover': 'Arahkan kursor ke grafik',
+  'dataWindow.touch': 'Sentuh grafik',
   'dataWindow.open': 'Pembukaan',
   'dataWindow.high': 'Tertinggi',
   'dataWindow.low': 'Terendah',

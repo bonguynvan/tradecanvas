@@ -835,6 +835,7 @@ export const EN_MESSAGES = {
   'dock.rail': 'Panels',
   'dock.resize': 'Resize the panel',
   'dataWindow.hover': 'Hover the chart',
+  'dataWindow.touch': 'Touch the chart',
   'dataWindow.open': 'Open',
   'dataWindow.high': 'High',
   'dataWindow.low': 'Low',

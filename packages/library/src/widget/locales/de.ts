@@ -817,6 +817,7 @@ export const DE_MESSAGES: WidgetMessages = {
   'dock.rail': 'Bereiche',
   'dock.resize': 'Breite des Bereichs ändern',
   'dataWindow.hover': 'Bewegen Sie den Mauszeiger über den Chart',
+  'dataWindow.touch': 'Tippen Sie auf den Chart',
   'dataWindow.open': 'Eröffnung',
   'dataWindow.high': 'Hoch',
   'dataWindow.low': 'Tief',

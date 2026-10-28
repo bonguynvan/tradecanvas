@@ -817,6 +817,7 @@ export const RU_MESSAGES: WidgetMessages = {
   'dock.rail': 'Панели',
   'dock.resize': 'Изменить ширину панели',
   'dataWindow.hover': 'Наведите курсор на график',
+  'dataWindow.touch': 'Коснитесь графика',
   'dataWindow.open': 'Открытие',
   'dataWindow.high': 'Максимум',
   'dataWindow.low': 'Минимум',

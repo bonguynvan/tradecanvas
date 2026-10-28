@@ -817,6 +817,7 @@ export const PL_MESSAGES: WidgetMessages = {
   'dock.rail': 'Panele',
   'dock.resize': 'Zmień szerokość panelu',
   'dataWindow.hover': 'Najedź kursorem na wykres',
+  'dataWindow.touch': 'Dotknij wykresu',
   'dataWindow.open': 'Otwarcie',
   'dataWindow.high': 'Maksimum',
   'dataWindow.low': 'Minimum',

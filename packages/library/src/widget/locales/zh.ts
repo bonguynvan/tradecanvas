@@ -817,6 +817,7 @@ export const ZH_MESSAGES: WidgetMessages = {
   'dock.rail': '面板',
   'dock.resize': '调整面板宽度',
   'dataWindow.hover': '将鼠标移到图表上',
+  'dataWindow.touch': '轻触图表',
   'dataWindow.open': '开盘',
   'dataWindow.high': '最高',
   'dataWindow.low': '最低',

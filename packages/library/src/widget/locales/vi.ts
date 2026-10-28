@@ -817,6 +817,7 @@ export const VI_MESSAGES: WidgetMessages = {
   'dock.rail': 'Các bảng',
   'dock.resize': 'Đổi độ rộng của bảng',
   'dataWindow.hover': 'Rê chuột lên biểu đồ',
+  'dataWindow.touch': 'Chạm vào biểu đồ',
   'dataWindow.open': 'Mở cửa',
   'dataWindow.high': 'Cao',
   'dataWindow.low': 'Thấp',

@@ -817,6 +817,7 @@ export const TH_MESSAGES: WidgetMessages = {
   'dock.rail': 'แผง',
   'dock.resize': 'ปรับความกว้างของแผง',
   'dataWindow.hover': 'วางเมาส์บนกราฟ',
+  'dataWindow.touch': 'แตะที่กราฟ',
   'dataWindow.open': 'ราคาเปิด',
   'dataWindow.high': 'ราคาสูงสุด',
   'dataWindow.low': 'ราคาต่ำสุด',

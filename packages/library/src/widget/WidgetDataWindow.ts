@@ -1,6 +1,7 @@
 import { createIcon } from './icons.js';
 import { EN_TRANSLATOR, type Translator } from './i18n.js';
 import { markPart } from './widgetFeatures.js';
+import { coarsePointer } from './formControls.js';
 
 /** Decimals the change's percentage shows. */
 export const PERCENT_DECIMALS = 2;
@@ -104,7 +105,8 @@ export class WidgetDataWindow {
     if (!model.ohlc) {
       const empty = document.createElement('div');
       empty.className = 'tcw-datawin-empty';
-      empty.textContent = this.t('dataWindow.hover');
+      // A finger has no hover: it touches the chart to put the crosshair on a bar.
+      empty.textContent = this.t(coarsePointer() ? 'dataWindow.touch' : 'dataWindow.hover');
       this.bodyEl.appendChild(empty);
       return;
     }

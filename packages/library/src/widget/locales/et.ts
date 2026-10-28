@@ -833,6 +833,7 @@ export const ET_MESSAGES: WidgetMessages = {
   'dock.rail': 'Paneelid',
   'dock.resize': 'Muuda paneeli laiust',
   'dataWindow.hover': 'Liigu hiirega graafiku kohale',
+  'dataWindow.touch': 'Puuduta graafikut',
   'dataWindow.open': 'Avamine',
   'dataWindow.high': 'Kõrgeim',
   'dataWindow.low': 'Madalaim',

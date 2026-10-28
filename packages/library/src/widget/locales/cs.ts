@@ -817,6 +817,7 @@ export const CS_MESSAGES: WidgetMessages = {
   'dock.rail': 'Panely',
   'dock.resize': 'Změnit šířku panelu',
   'dataWindow.hover': 'Najeďte kurzorem na graf',
+  'dataWindow.touch': 'Klepněte na graf',
   'dataWindow.open': 'Otevření',
   'dataWindow.high': 'Maximum',
   'dataWindow.low': 'Minimum',

@@ -817,6 +817,7 @@ export const SV_MESSAGES: WidgetMessages = {
   'dock.rail': 'Paneler',
   'dock.resize': 'Ändra panelens bredd',
   'dataWindow.hover': 'Håll muspekaren över diagrammet',
+  'dataWindow.touch': 'Tryck på diagrammet',
   'dataWindow.open': 'Öppning',
   'dataWindow.high': 'Högsta',
   'dataWindow.low': 'Lägsta',

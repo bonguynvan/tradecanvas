@@ -833,6 +833,7 @@ export const MS_MESSAGES: WidgetMessages = {
   'dock.rail': 'Panel',
   'dock.resize': 'Ubah lebar panel',
   'dataWindow.hover': 'Halakan tetikus ke atas carta',
+  'dataWindow.touch': 'Sentuh carta',
   'dataWindow.open': 'Buka',
   'dataWindow.high': 'Tinggi',
   'dataWindow.low': 'Rendah',

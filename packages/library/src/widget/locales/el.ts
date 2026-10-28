@@ -817,6 +817,7 @@ export const EL_MESSAGES: WidgetMessages = {
   'dock.rail': 'Πάνελ',
   'dock.resize': 'Αλλαγή πλάτους του πάνελ',
   'dataWindow.hover': 'Μετακινήστε το ποντίκι πάνω από το γράφημα',
+  'dataWindow.touch': 'Αγγίξτε το γράφημα',
   'dataWindow.open': 'Άνοιγμα',
   'dataWindow.high': 'Υψηλό',
   'dataWindow.low': 'Χαμηλό',
