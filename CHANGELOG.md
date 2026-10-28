@@ -17,6 +17,7 @@
 - **The legend shows the bar under a pointer at rest** (`@tradecanvas/chart`). It was drawn in the frame that found the bar, before it knew it, so after a single move (the pointer coming onto the chart as ChartWidget's data window opened) it stayed on the latest bar while the data window and the indicator rows showed the hovered one. It is drawn again once the bar is known, and when the pointer leaves.
 - **The data window writes its values as the legend does** (`@tradecanvas/chart`). ChartWidget's data window rounded indicator values on its own, without grouping or the number locale (`96848.73`, `54.3220`), and its change took decimals from its own size (`-206.949` beside prices of two). A line on the price pane now reads as the chart writes prices, one in a pane of its own in the decimals its size calls for, both in the number locale, and the change in the decimals of the bar's prices.
 - **The data window says to touch the chart on a touch screen** (`@tradecanvas/chart`). With no bar under the pointer, ChartWidget's data window said "Hover the chart" on a phone too. Where the pointer is a finger it now says "Touch the chart" (the new string `dataWindow.touch`, in all 30 languages).
+- **A watchlist row's remove button keeps clear of its numbers** (`@tradecanvas/chart`). In ChartWidget's watchlist, the button a row shows when the keyboard is on it (or on hover) sat over its price and change. It now has a column of its own after them.
 
 ## 1.53.1 (2026-10-27)
 

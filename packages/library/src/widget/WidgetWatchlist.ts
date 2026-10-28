@@ -233,6 +233,7 @@ export class WidgetWatchlist {
     row.append(label, spark, right);
 
     if (this.callbacks.onRemove) {
+      row.classList.add('tcw-watchlist-removable');
       const remove = document.createElement('button');
       remove.type = 'button';
       remove.className = 'tcw-watchlist-remove';

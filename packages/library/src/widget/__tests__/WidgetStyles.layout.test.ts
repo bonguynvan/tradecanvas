@@ -194,3 +194,13 @@ describe('the dialogs’ layout rules', () => {
     expect(before.lastIndexOf('@media (min-width: 641px)')).toBeGreaterThan(before.lastIndexOf('}\n\n'));
   });
 });
+
+describe('a watchlist row’s remove button', () => {
+  // Shown on focus from the keyboard (or on hover), it sat over the price and the change.
+  it('has a column of its own after the numbers, never over them', () => {
+    expect(rule('.tcw-watchlist-row.tcw-watchlist-removable')).toMatch(/grid-template-columns:\s*1fr auto auto var\(--tcw-watchlist-remove\)/);
+    const button = rule('.tcw-watchlist-remove');
+    expect(button).not.toMatch(/position:\s*absolute/);
+    expect(button).toMatch(/width:\s*var\(--tcw-watchlist-remove\)/);
+  });
+});
