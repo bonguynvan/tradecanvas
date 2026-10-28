@@ -6,7 +6,7 @@ import type { NumberParam } from './indicator.js';
  * `chart.addIndicator(id, params)` takes, each optional (its default in its
  * note), and the keys of the lines it draws, as
  * `chart.getIndicatorOutput(instanceId)` and `indicatorSource(instanceId, key)`
- * name them (an output may hold a few more, such as Ichimoku's `chikou`).
+ * name them (an output may hold a few more, such as Supertrend's `trend`).
  * The chart adds four that read other symbols, `compareSymbol`, `spread`,
  * `correlation` and `correlationlog`; they take any inputs.
  */
@@ -51,7 +51,7 @@ export interface BuiltInIndicators {
     };
     lines: 'value';
   };
-  /** Ichimoku Cloud, on the price pane. Lines: `tenkan` (Conversion), `kijun` (Base), `senkouA` (Lead A), `senkouB` (Lead B). */
+  /** Ichimoku Cloud, on the price pane. Lines: `tenkan` (Conversion), `kijun` (Base), `senkouA` (Lead A), `senkouB` (Lead B), `chikou` (Lagging Span). */
   ichimoku: {
     params: {
       /** Default 9. */
@@ -63,7 +63,7 @@ export interface BuiltInIndicators {
       /** Default 26. */
       displacement?: NumberParam;
     };
-    lines: 'tenkan' | 'kijun' | 'senkouA' | 'senkouB';
+    lines: 'tenkan' | 'kijun' | 'senkouA' | 'senkouB' | 'chikou';
   };
   /** Parabolic SAR, on the price pane. Lines: `value` (SAR). */
   psar: {

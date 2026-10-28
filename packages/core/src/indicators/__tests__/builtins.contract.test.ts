@@ -29,7 +29,6 @@ const NOT_DRAWN: Record<string, readonly string[]> = {
   chaikinOsc: ['adl'],
   adx: ['dx'],
   lrc: ['slope'],
-  ichimoku: ['chikou'],
 };
 
 /** Parameters that give these a value within 400 hourly bars. */

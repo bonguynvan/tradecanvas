@@ -6,6 +6,15 @@ import { withAlpha } from '@tradecanvas/commons';
 import { barIndexToX, priceToY } from '../../viewport/ScaleMapping.js';
 import { plotLook } from '../plots.js';
 
+/** Index of the lagging span's colour in the indicator's colours. */
+const CHIKOU_COLOR = 4;
+
+/**
+ * Ichimoku Kinko Hyo: the conversion and base lines, the two lead lines with
+ * the cloud between them, and the lagging span, each bar's close plotted the
+ * displacement back (26 bars by default), so it reads against the price of
+ * then.
+ */
 export class IchimokuIndicator extends IndicatorBase {
   descriptor: IndicatorDescriptor = {
     id: 'ichimoku',
@@ -18,6 +27,7 @@ export class IchimokuIndicator extends IndicatorBase {
       { key: 'kijun', title: 'Base', color: 1 },
       { key: 'senkouA', title: 'Lead A', color: 2 },
       { key: 'senkouB', title: 'Lead B', color: 3 },
+      { key: 'chikou', title: 'Lagging Span', color: CHIKOU_COLOR },
     ],
   };
 
@@ -25,6 +35,7 @@ export class IchimokuIndicator extends IndicatorBase {
     const tenkanPeriod = getIntParam(config, 'tenkan', 9, 1);
     const kijunPeriod = getIntParam(config, 'kijun', 26, 1);
     const senkouBPeriod = getIntParam(config, 'senkou', 52, 1);
+    const displacement = getIntParam(config, 'displacement', 26, 0);
     const values = new IndicatorValueMap();
     const series: (IndicatorValue | null)[] = new Array(data.length).fill(null);
 
@@ -65,11 +76,12 @@ export class IchimokuIndicator extends IndicatorBase {
       if (i >= senkouBPeriod - 1) {
         val.senkouB = (senkouBHL.highs[i] + senkouBHL.lows[i]) / 2;
       }
-      if (i >= kijunPeriod - 1) {
-        val.chikou = data[i].close;
+      // The lagging span: the close of the bar the displacement on, so the last bars have none yet.
+      if (i + displacement < data.length) {
+        val.chikou = data[i + displacement].close;
       }
 
-      if (val.tenkan !== undefined || val.kijun !== undefined || val.senkouA !== undefined || val.senkouB !== undefined) {
+      if (Object.keys(val).length > 0) {
         values.set(data[i].time, val);
         series[i] = val;
       }
@@ -88,6 +100,7 @@ export class IchimokuIndicator extends IndicatorBase {
     const kijunXs = new Float64Array(maxPts); const kijunYs = new Float64Array(maxPts); let kijunN = 0;
     const senkouAXs = new Float64Array(maxPts); const senkouAYs = new Float64Array(maxPts); let senkouAN = 0;
     const senkouBXs = new Float64Array(maxPts); const senkouBYs = new Float64Array(maxPts); let senkouBN = 0;
+    const chikouXs = new Float64Array(maxPts); const chikouYs = new Float64Array(maxPts); let chikouN = 0;
 
     for (let i = from; i <= to && i < series.length; i++) {
       const val = series[i];
@@ -97,6 +110,7 @@ export class IchimokuIndicator extends IndicatorBase {
       if (val.kijun !== undefined) { kijunXs[kijunN] = x; kijunYs[kijunN] = priceToY(val.kijun, viewport); kijunN++; }
       if (val.senkouA !== undefined) { senkouAXs[senkouAN] = x; senkouAYs[senkouAN] = priceToY(val.senkouA, viewport); senkouAN++; }
       if (val.senkouB !== undefined) { senkouBXs[senkouBN] = x; senkouBYs[senkouBN] = priceToY(val.senkouB, viewport); senkouBN++; }
+      if (val.chikou !== undefined) { chikouXs[chikouN] = x; chikouYs[chikouN] = priceToY(val.chikou, viewport); chikouN++; }
     }
 
     // Cloud fill
@@ -130,5 +144,6 @@ export class IchimokuIndicator extends IndicatorBase {
     drawTypedLine('kijun', kijunXs, kijunYs, kijunN, style.colors[1] ?? '#f2a93b', style.lineWidths[0]);
     drawTypedLine('senkouA', senkouAXs, senkouAYs, senkouAN, style.colors[2] ?? '#1fa874', 1);
     drawTypedLine('senkouB', senkouBXs, senkouBYs, senkouBN, style.colors[3] ?? '#e8505b', 1);
+    drawTypedLine('chikou', chikouXs, chikouYs, chikouN, style.colors[CHIKOU_COLOR] ?? style.colors[0], 1);
   }
 }

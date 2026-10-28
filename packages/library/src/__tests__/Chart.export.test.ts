@@ -47,6 +47,14 @@ describe('exporting the chart’s data', () => {
     expect(header.endsWith(',Stoch RSI 14 14 3 5 %K,Stoch RSI 14 14 3 5 %D')).toBe(true);
   });
 
+  it('exports Ichimoku’s lagging span, the close 26 bars on', () => {
+    chart.addIndicator('ichimoku');
+    const lagging = chart.getExportData().columns.find((c) => c.name === 'Ichimoku 9 26 52 Lagging Span');
+    expect(lagging).toBeDefined();
+    expect(lagging!.values[0]).toBe(bars[26].close);
+    expect(lagging!.values[bars.length - 1]).toBeNull();
+  });
+
   it('exports only the bars on screen, or no indicator lines, when asked', () => {
     chart.addIndicator('sma', { period: 20 });
     const { bars: shown, columns } = chart.getExportData({ range: 'visible', indicators: false });

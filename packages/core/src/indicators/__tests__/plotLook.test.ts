@@ -62,6 +62,15 @@ describe('plot looks of indicators that draw themselves', () => {
     expect(looked.find((s) => s.color === '#111111')!.dash.length).toBeGreaterThan(0);
   });
 
+  it("draws Ichimoku's lagging span in its own colour, and hides it when its plot says so", () => {
+    const style: ResolvedIndicatorStyle = { colors: ['#111111', '#222222', '#333333', '#444444', '#555555'], lineWidths: [1], opacity: 1 };
+    const all = draw(new IchimokuIndicator(), style).filter((s) => s.segments.length > 0);
+    expect(all.some((s) => s.color === '#555555')).toBe(true);
+    const hidden = draw(new IchimokuIndicator(), { ...style, plots: { chikou: { visible: false } } }).filter((s) => s.segments.length > 0);
+    expect(hidden).toHaveLength(all.length - 1);
+    expect(hidden.some((s) => s.color === '#555555')).toBe(false);
+  });
+
   it('hides a pivot level and draws a support solid when its plot says so', () => {
     const style: ResolvedIndicatorStyle = { colors: ['#111111', '#222222', '#333333'], lineWidths: [2], opacity: 1 };
     const all = draw(new PivotPointsIndicator(), style);

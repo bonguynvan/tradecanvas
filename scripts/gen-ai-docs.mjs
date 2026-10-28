@@ -73,7 +73,7 @@ function indicatorTypes() {
     ' * `chart.addIndicator(id, params)` takes, each optional (its default in its',
     ' * note), and the keys of the lines it draws, as',
     ' * `chart.getIndicatorOutput(instanceId)` and `indicatorSource(instanceId, key)`',
-    " * name them (an output may hold a few more, such as Ichimoku's `chikou`).",
+    " * name them (an output may hold a few more, such as Supertrend's `trend`).",
     ' * The chart adds four that read other symbols, `compareSymbol`, `spread`,',
     ' * `correlation` and `correlationlog`; they take any inputs.',
     ' */',
