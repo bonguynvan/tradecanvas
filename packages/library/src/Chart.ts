@@ -1550,12 +1550,15 @@ export class Chart {
 
   /**
    * A point & figure chart has a column for each reversal, often a few dozen
-   * for a whole series: at the width of a bar they would sit in a corner of
-   * an empty plot. Fewer than the view holds are fitted to it, on a new
-   * type, box or series; more are left at the width they are, as candles are.
+   * for a whole series, and Renko, Kagi, line break and range bars a brick
+   * or a line for each move of their size: at the width of a bar they would
+   * sit in a corner of an empty plot. Fewer than the view holds are fitted
+   * to it, on a new type, box or series; more are left at the width they
+   * are, as candles are.
    */
   private fitFewColumns(): void {
-    if (this.options.chartType !== 'pointAndFigure' || this.pluginManager.getChartType('pointAndFigure')) return;
+    const type = this.options.chartType;
+    if (!isReshapedChartType(type) || this.pluginManager.getChartType(type)) return;
     const n = this.getDisplayData().length;
     const { chartRect, barWidth, barSpacing } = this.viewport.getState();
     const slots = chartRect.width / (barWidth + barSpacing);

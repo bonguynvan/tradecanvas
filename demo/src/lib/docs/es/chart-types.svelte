@@ -70,6 +70,12 @@
   indicadores que cuentan días (VWAP, Session VWAP, la media móvil multitemporal) y los que leen otro símbolo por
   tiempo no se dibujan ahí: <code>getActiveIndicators()</code> los marca con <code>offChartType: true</code>.
 </p>
+<p>
+  Renko, Kagi, Line Break y Range Bars con menos ladrillos o líneas de los que caben en la vista se ajustan
+  a ella como Point &amp; Figure, así que no quedan en la parte derecha del gráfico. El volumen de una columna
+  P&amp;F es el de las barras de las que se hizo. En estos tipos el eje de tiempo deja solo las dos clases de
+  etiqueta más gruesas a la vista (años y meses, por ejemplo), sin un día suelto entre ellas.
+</p>
 
 <h2>Configuración de los tipos derivados</h2>
 <p>

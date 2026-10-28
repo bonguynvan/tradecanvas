@@ -68,6 +68,12 @@
   이동평균)와 다른 종목을 시간으로 읽는 지표는 여기서 그려지지 않으며, <code>getActiveIndicators()</code>는 이들에
   <code>offChartType: true</code>를 붙입니다.
 </p>
+<p>
+  화면에 들어갈 수보다 벽돌이나 선이 적은 Renko, Kagi, Line Break, Range Bars는 Point &amp; Figure처럼
+  화면에 맞게 넓혀져 플롯의 오른쪽에 몰리지 않습니다. P&amp;F 열의 거래량은 그 열을 만든 봉들의
+  거래량입니다. 이 유형에서 시간 축은 보이는 라벨 중 가장 굵은 두 종류(예: 연과 월)만 남기고, 그 사이에
+  홀로 있는 날짜는 두지 않습니다.
+</p>
 
 <h2>파생 유형의 설정</h2>
 <p>

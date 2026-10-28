@@ -70,6 +70,12 @@
   ngày (VWAP, Session VWAP, đường trung bình đa khung) và các chỉ báo đọc mã khác theo thời gian không được
   vẽ ở đó: <code>getActiveIndicators()</code> đánh dấu chúng <code>offChartType: true</code>.
 </p>
+<p>
+  Renko, Kagi, Line Break và Range Bars có ít viên gạch hay đường hơn số chỗ của khung nhìn sẽ được
+  giãn cho vừa khung như Point &amp; Figure, nên chúng không nằm dồn ở phần bên phải. Khối lượng của một
+  cột P&amp;F là khối lượng của các nến tạo nên nó. Trên các kiểu này trục thời gian chỉ giữ hai loại nhãn
+  thô nhất đang hiển thị (ví dụ năm và tháng), không có một ngày lẻ loi giữa chúng.
+</p>
 
 <h2>Thông số của các loại nến dựng từ dữ liệu</h2>
 <p>

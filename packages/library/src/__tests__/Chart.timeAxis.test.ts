@@ -124,6 +124,27 @@ describe('Chart visible range on bricks', () => {
   });
 });
 
+describe('Chart with fewer bricks than the view holds', () => {
+  const SMALL_COUNT = {
+    renko: { boxSize: 10 },
+    kagi: { reversal: 10 },
+    rangeBars: { range: 10 },
+  } as const;
+  for (const type of ['renko', 'kagi', 'rangeBars'] as const) {
+    it(`fits ${type} to the view rather than leaving its left side empty`, () => {
+      chart.setData(weekdays(Date.UTC(2025, 0, 6), Date.UTC(2026, 9, 21)));
+      chart.setChartType(type);
+      // A box twice the default's: fewer bricks than the plot has room for at the width of a bar.
+      chart.setChartTypeOptions({ [type]: SMALL_COUNT[type] });
+      const n = (chart as unknown as Inside).getDisplayData().length;
+      const { chartRect, barWidth, barSpacing } = (chart as unknown as Inside).viewport.getState();
+      expect(n, type).toBeLessThan(100);
+      // The bars widened until the bricks span the plot, not drawn at a bar's width in its right part.
+      expect(chartRect.width / (barWidth + barSpacing), `${type}: ${n} bricks`).toBeLessThan(n + 20);
+    });
+  }
+});
+
 describe('Chart time axis on bricks, lines and columns', () => {
   for (const type of ['renko', 'kagi', 'rangeBars', 'lineBreak', 'pointAndFigure'] as const) {
     it(`dates ${type} by the bars they were made from, each label once`, () => {

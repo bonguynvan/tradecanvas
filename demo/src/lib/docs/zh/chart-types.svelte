@@ -67,6 +67,11 @@
   导出写出的是砖块，日期与坐标轴一致。按天计数的指标（VWAP、Session VWAP、多周期均线）以及按时间读取另一个品种的指标
   不会在这些类型上绘制：<code>getActiveIndicators()</code> 将它们标记为 <code>offChartType: true</code>。
 </p>
+<p>
+  砖块或线段少于视图容量的 Renko、Kagi、Line Break 和 Range Bars 会像 Point &amp; Figure 一样拉伸铺满视图，
+  而不是挤在图表右侧。P&amp;F 每一列的成交量是构成它的各根 K 线的成交量之和。在这些类型上，时间轴只保留视图中
+  最粗的两类标签（例如年和月），不会在其间出现孤零零的日期。
+</p>
 
 <h2>衍生类型的设置</h2>
 <p>

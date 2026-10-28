@@ -70,6 +70,12 @@
   (VWAP, Session VWAP, the multi-timeframe moving average) and those that read another symbol by time are
   not drawn there: <code>getActiveIndicators()</code> marks them <code>offChartType: true</code>.
 </p>
+<p>
+  Renko, Kagi, Line Break and Range Bars with fewer bricks or lines than the view holds are
+  fitted to it as Point &amp; Figure is, so they don't sit in the plot's right part. A P&amp;F
+  column's volume is that of the bars it was made of. On these types the time axis keeps the
+  two coarsest kinds of label on view (years and months, say), not a lone day between them.
+</p>
 
 <h2>Settings of the built bar types</h2>
 <p>
