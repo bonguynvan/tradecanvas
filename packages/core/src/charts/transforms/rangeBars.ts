@@ -1,5 +1,6 @@
 import type { OHLCBar, DataSeries } from '@tradecanvas/commons';
 import { MAX_RESHAPED_BARS, barLimit, sizeAt, type ReshapeMemo } from './reshapeCap.js';
+import { madeFrom } from './axisTimes.js';
 
 export interface RangeBarsConfig {
   /**
@@ -31,8 +32,8 @@ const RANGE_BARS = 'rangeBars';
 /** The prices a bar is replayed through after its open, its extremes and its close: they share its volume. */
 const PATH_PRICES = 3;
 
-/** Numbers kept for each closed bar: its close, the far end it started from, its volume. */
-const CELLS_PER_BAR = 3;
+/** Numbers kept for each closed bar: its close, the far end it started from, its volume, the time of the bar it closed on. */
+const CELLS_PER_BAR = 4;
 /** Closed bars there is room for at least, before the store first grows; a long series starts with one for each of its bars. */
 const MIN_ROOM_BARS = 64;
 
@@ -165,7 +166,8 @@ function barsOf(cells: Float64Array, count: number, open: number, time: number):
     const close = cells[i * CELLS_PER_BAR];
     const from = cells[i * CELLS_PER_BAR + 1];
     const up = close > from;
-    bars[i] = { time: time + i, open, high: up ? close : from, low: up ? from : close, close, volume: cells[i * CELLS_PER_BAR + 2] };
+    const bar = { time: time + i, open, high: up ? close : from, low: up ? from : close, close, volume: cells[i * CELLS_PER_BAR + 2] };
+    bars[i] = madeFrom(bar, cells[i * CELLS_PER_BAR + 3]);
     open = close;
   }
   return bars;
@@ -232,6 +234,7 @@ function closeBars(data: DataSeries, range: number, digits: KeptDigits, cells: F
         cells[cell] = at;
         cells[cell + 1] = up ? low : high;
         cells[cell + 2] = volume;
+        cells[cell + 3] = bar.time;
         if (++count > limit) return { cells, count, forming: null };
         open = high = low = at;
         upClose = clean(at + range);
@@ -252,7 +255,8 @@ function closeBars(data: DataSeries, range: number, digits: KeptDigits, cells: F
       else shareVolume(cells, first, count, moved);
     }
   }
-  return { cells, count, forming: { time: data[0].time + count, open, high, low, close: last, volume } };
+  const forming = { time: data[0].time + count, open, high, low, close: last, volume };
+  return { cells, count, forming: madeFrom(forming, data[data.length - 1].time) };
 }
 
 /**

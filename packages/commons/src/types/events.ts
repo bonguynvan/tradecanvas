@@ -24,6 +24,12 @@ export type ChartEventType =
   | 'indicatorAdd'
   | 'indicatorRemove'
   | 'paneResize'
+  /**
+   * The legend was drawn taller or shorter (its line wrapped, a status came
+   * or went): `{ bottom }`, the new `getLegendBottom()`, where content
+   * stacked under it moves to.
+   */
+  | 'legendResize'
   /** A pane was folded or opened, maximised or put back, or moved up or down. */
   | 'paneChange'
   | 'indicatorUpdate'
@@ -103,6 +109,14 @@ export interface CrosshairMovePayload {
   point: Point;
   bar?: OHLCBar;
   barIndex?: number;
+  /**
+   * When the bar stands, as the time axis dates it: `bar.time` on candles;
+   * on Renko, Kagi and the like, whose own times only count them, the time
+   * of the bar it was finished on.
+   */
+  time?: number;
+  /** The close of the bar drawn before it (on Renko, the brick before), for a change. */
+  prevClose?: number;
   indicatorValues?: Record<string, IndicatorValue>;
 }
 
@@ -359,6 +373,8 @@ export interface ChartEventMap {
   indicatorRemove: IndicatorChangePayload;
   /** An indicator pane was resized (by dragging its divider or `setPanelSize`). */
   paneResize: { instanceId: string; size: number };
+  /** The legend was drawn taller or shorter, hidden or shown again: `bottom` is the new `getLegendBottom()`. */
+  legendResize: { bottom: number };
   /** A pane was folded or opened, maximised or put back, or moved up or down. */
   paneChange: { instanceId: string; change: 'collapsed' | 'maximized' | 'order' | 'scale' };
   /** Indicator values were recomputed from bar index `from` on: new bars, a live tick, a replay step. */

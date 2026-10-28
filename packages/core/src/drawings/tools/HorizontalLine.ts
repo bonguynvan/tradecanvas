@@ -18,9 +18,9 @@ export class HorizontalLineTool extends DrawingBase {
     this.strokeHorizontal(ctx, chartRect.x, chartRect.x + chartRect.width, y);
     this.resetLineStyle(ctx);
 
-    // Price label
+    // Price label, at the line's start or, under the legend, its end.
     ctx.fillStyle = state.style.color;
-    fillLevelLabel(ctx, formatDrawingPrice(state.anchors[0].price, state.anchors[0].price, viewport), chartRect.x, y);
+    fillLevelLabel(ctx, formatDrawingPrice(state.anchors[0].price, state.anchors[0].price, viewport), chartRect.x, y, chartRect.x + chartRect.width, chartRect.y);
 
     if (selected) this.renderAnchorHandles(ctx, state, viewport);
   }

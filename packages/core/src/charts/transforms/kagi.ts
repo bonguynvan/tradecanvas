@@ -1,5 +1,6 @@
 import type { OHLCBar, DataSeries } from '@tradecanvas/commons';
 import { barLimit, fromReached, reshapeOneABar, type LayBar, type ReshapeMemo } from './reshapeCap.js';
+import { madeFrom } from './axisTimes.js';
 
 /** How a reversal is measured: a percent of the line's start, or an amount of price. */
 type KagiMode = 'percent' | 'price';
@@ -45,7 +46,7 @@ function walkKagi(data: DataSeries, reversal: number, mode: KagiMode, capped: bo
     if (!reverses) continue;
     if (capped && idx + 1 > barLimit(i, data.length, idx)) return false;
     // Finish the line, and start one the other way from where it turned.
-    lay?.(line(idx, lineStart, direction === 1 ? high : low, data[i].volume));
+    lay?.(madeFrom(line(idx, lineStart, direction === 1 ? high : low, data[i].volume), data[i].time));
     idx++;
     lineStart = direction === 1 ? high : low;
     direction = -direction;
@@ -54,7 +55,7 @@ function walkKagi(data: DataSeries, reversal: number, mode: KagiMode, capped: bo
   }
 
   // The line still drawing
-  lay?.(line(idx, lineStart, direction === 1 ? high : low, 0));
+  lay?.(madeFrom(line(idx, lineStart, direction === 1 ? high : low, 0), data[data.length - 1].time));
   return true;
 }
 

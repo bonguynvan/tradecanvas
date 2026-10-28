@@ -26,7 +26,7 @@ export class HorizontalRayTool extends DrawingBase {
     this.resetLineStyle(ctx);
 
     ctx.fillStyle = state.style.color;
-    fillLevelLabel(ctx, formatDrawingPrice(state.anchors[0].price, state.anchors[0].price, viewport), anchor.x, y);
+    fillLevelLabel(ctx, formatDrawingPrice(state.anchors[0].price, state.anchors[0].price, viewport), anchor.x, y, chartRect.x + chartRect.width, chartRect.y);
 
     if (selected) this.renderAnchorHandles(ctx, state, viewport);
   }

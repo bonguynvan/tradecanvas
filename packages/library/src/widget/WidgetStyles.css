@@ -2013,15 +2013,16 @@
   line-height: 1.5;
 }
 
-/* A row's remove button shows on hover or focus, over its numbers. */
+/*
+ * A row's remove button shows on hover or focus, in a column of its own after
+ * the numbers: over them, it hid the price and the change of the row the
+ * keyboard was on.
+ */
 .tcw-watchlist-remove {
-  position: absolute;
-  top: 50%;
-  right: 6px;
   display: grid;
   place-items: center;
-  width: 20px;
-  height: 20px;
+  width: var(--tcw-watchlist-remove);
+  height: var(--tcw-watchlist-remove);
   border: 0;
   border-radius: var(--tcw-radius-sm);
   background: var(--tcw-bg-elevated);
@@ -2030,7 +2031,6 @@
   font-size: var(--tcw-font-size);
   line-height: 1;
   opacity: 0;
-  transform: translateY(-50%);
   cursor: pointer;
   transition: opacity var(--tcw-dur-fast) var(--tcw-ease);
 }
@@ -2052,6 +2052,7 @@
 }
 
 .tcw-watchlist-row {
+  --tcw-watchlist-remove: 20px;
   position: relative;
   display: grid;
   grid-template-columns: 1fr auto auto;
@@ -2062,6 +2063,10 @@
   transition: background var(--tcw-dur-fast) var(--tcw-ease);
   border-inline-start: 2px solid transparent;
   outline: none;
+}
+
+.tcw-watchlist-row.tcw-watchlist-removable {
+  grid-template-columns: 1fr auto auto var(--tcw-watchlist-remove);
 }
 
 .tcw-watchlist-row:hover {
@@ -4723,7 +4728,10 @@
   align-items: center;
   justify-content: center;
   position: absolute;
-  inset-inline-start: 10px;
+  /* Over the plot, in from its left edge (the widget sets where it starts): the
+     price axis stays on the chart's right in either direction, so a
+     right-to-left widget keeps the button on the left too, off the axis. */
+  left: calc(var(--tcw-fab-plot-left, 0px) + 10px);
   /* Clear of the time axis. */
   bottom: 44px;
   z-index: 17;

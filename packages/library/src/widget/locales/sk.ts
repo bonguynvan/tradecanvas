@@ -817,6 +817,7 @@ export const SK_MESSAGES: WidgetMessages = {
   'dock.rail': 'Panely',
   'dock.resize': 'Zmeniť šírku panelu',
   'dataWindow.hover': 'Prejdite kurzorom nad graf',
+  'dataWindow.touch': 'Ťuknite na graf',
   'dataWindow.open': 'Otvorenie',
   'dataWindow.high': 'Maximum',
   'dataWindow.low': 'Minimum',

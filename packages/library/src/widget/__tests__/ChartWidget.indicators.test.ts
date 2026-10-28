@@ -20,6 +20,8 @@ const DEFAULTS: Record<string, Record<string, unknown>> = {
   macd: { fast: 12, slow: 26, signal: 9 },
 };
 const BARS = 10;
+/** The bricks a Renko chart draws from them. */
+const BRICKS = 6;
 /**
  * Each indicator's output at bar `i`: one line, three lines, a pane value,
  * a line plus a trend flag, the bar number (plus `FakeChart.bump`), and two
@@ -32,6 +34,7 @@ const OUTPUT: Record<string, (i: number) => Record<string, number>> = {
   psar: () => ({ value: 99.5, trend: 1 }),
   wma: (i) => ({ value: i + FakeChart.last.bump }),
   macd: (i) => (i < 5 ? { macd: 0.5 } : { macd: 0.5, signal: 0.4 }),
+  compareSymbol: () => ({ value: 2 }),
 };
 
 /**
@@ -79,7 +82,12 @@ class FakeChart {
   getDrawings(): unknown[] { return []; }
   getData(): unknown[] { return Array.from({ length: BARS }, (_, i) => ({ time: i, open: 1, high: 1, low: 1, close: 1, volume: 1 })); }
   getPlotRect() { return { x: 0, y: 0, width: 600, height: 300 }; }
-  getLegendBottom(): number { return 40; }
+  /** Where the OHLCV rows end, as last drawn. */
+  legendBottom = 40;
+  /** What the widget said it stacks under the legend (`setLegendStack`). */
+  legendStacks: ({ width: number; height: number } | null)[] = [];
+  setLegendStack(size: { width: number; height: number } | null): void { this.legendStacks.push(size); }
+  getLegendBottom(): number { return this.legendBottom; }
   isTimeAligned(): boolean { return this.timeAligned; }
   getIndicatorStyle() { return { colors: [...PALETTE], lineWidths: [1.5], opacity: 1 }; }
   formatPrice(v: number): string { return v.toFixed(2); }
@@ -88,7 +96,9 @@ class FakeChart {
   }
   getIndicatorOutput(instanceId: string) {
     const ind = this.indicators.find((i) => i.instanceId === instanceId);
-    return ind ? { series: Array.from({ length: BARS }, (_, i) => OUTPUT[ind.id](i)) } : null;
+    // On Renko and the like the chart works the indicators out on its bricks, fewer than the bars.
+    const length = this.timeAligned ? BARS : BRICKS;
+    return ind ? { series: Array.from({ length }, (_, i) => OUTPUT[ind.id](i)) } : null;
   }
 
   addIndicator(id: string, params: Record<string, unknown> = {}): string {
@@ -182,6 +192,13 @@ describe('ChartWidget indicators', () => {
     expect(host.querySelector('[data-role="indicators"] .tcw-badge-count')?.textContent).toBe('2');
   });
 
+  it('counts no compare in the toolbar badge, as the menu and the dialog leave them out', async () => {
+    pick('ema');
+    FakeChart.last.addIndicator('compareSymbol', { symbol: 'BBB' });
+    await frame();
+    expect(host.querySelector('[data-role="indicators"] .tcw-badge-count')?.textContent).toBe('1');
+  });
+
   it('removes only the instance whose row was closed', async () => {
     pick('ema');
     pick('ema');
@@ -219,6 +236,41 @@ describe('on-chart indicator legend', () => {
     expect(values(bb).map((v) => v.style.color)).toEqual([BLUE, ORANGE, BLUE]); // bands, basis, bands
   });
 
+  it('moves the stack when the OHLCV rows are drawn taller, with nothing else changing', async () => {
+    FakeChart.last.addIndicator('ema', { period: 20 });
+    await frame();
+    const stack = host.querySelector<HTMLElement>('.tcw-ind-legend')!;
+    expect(stack.style.top).toBe('41px');
+    // A switch wrapped the legend's line: the chart says so once it has drawn it.
+    FakeChart.last.legendBottom = 68;
+    FakeChart.last.emit('legendResize', { bottom: 68 });
+    await frame();
+    expect(stack.style.top).toBe('69px');
+  });
+
+  it('tells the chart how much it stacks under the legend, for drawing labels to keep clear of it', () => {
+    const observers: { cb: () => void; els: Element[] }[] = [];
+    vi.stubGlobal('ResizeObserver', class {
+      private readonly rec: { cb: () => void; els: Element[] };
+      constructor(cb: () => void) { this.rec = { cb, els: [] }; observers.push(this.rec); }
+      observe(el: Element) { this.rec.els.push(el); }
+      unobserve() {}
+      disconnect() {}
+    });
+    try {
+      widget.destroy();
+      widget = new ChartWidget(host, { adapter, symbol: 'AAA', timeframe: '5m', watchlist: false });
+      const stack = host.querySelector<HTMLElement>('.tcw-ind-legend')!;
+      Object.defineProperty(stack, 'offsetWidth', { configurable: true, value: 214 });
+      Object.defineProperty(stack, 'offsetHeight', { configurable: true, value: 58 });
+      observers.find((o) => o.els.includes(stack))!.cb();
+      // From the plot's left edge (the stack is 4 px in) and the legend's foot (1 px under it).
+      expect(FakeChart.last.legendStacks.at(-1)).toEqual({ width: 4 + 214, height: 1 + 58 });
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   // The values are one line of text that the box cuts with one ellipsis: the spans and nothing else,
   // as a space between them would add to the stylesheet's gap.
   it('sets a three-value legend’s values side by side in its box, nothing between them', async () => {
@@ -251,12 +303,14 @@ describe('on-chart indicator legend', () => {
     expect(values(rows()[0]).map((v) => v.textContent)).toEqual(['9.00']);
   });
 
-  it('stays on the latest bar when the chart type redraws the bars', async () => {
+  it('reads the brick under the pointer, and the last brick off the chart, on Renko and the like', async () => {
     FakeChart.last.timeAligned = false; // Renko and the like
     FakeChart.last.addIndicator('wma');
+    await frame();
+    expect(values(rows()[0]).map((v) => v.textContent)).toEqual([`${BRICKS - 1}.00`]);
     FakeChart.last.emit('crosshairMove', { barIndex: 3, point: { x: 10, y: 10 } });
     await frame();
-    expect(values(rows()[0]).map((v) => v.textContent)).toEqual(['9.00']);
+    expect(values(rows()[0]).map((v) => v.textContent)).toEqual(['3.00']);
   });
 
   it('follows live recalculation of the indicators', async () => {
@@ -465,6 +519,12 @@ describe('indicatorChipLabel', () => {
     expect(indicatorChipLabel('x', { a: 1, b: 2, c: 3, d: 4 })).toBe('X 1 2 3');
   });
 
+  it('lists all four of Stochastic RSI’s lengths, so its k and d read apart', () => {
+    const defaults = { rsiPeriod: 14, stochPeriod: 14, k: 3, d: 3, source: 'close' };
+    expect(indicatorChipLabel('stochrsi', defaults, defaults, 'Stoch RSI')).toBe('Stoch RSI 14 14 3 3');
+    expect(indicatorChipLabel('stochrsi', { ...defaults, d: 5 }, defaults, 'Stoch RSI')).toBe('Stoch RSI 14 14 3 5');
+  });
+
   it('rounds long decimals and skips non-numbers', () => {
     expect(indicatorChipLabel('psar', { step: 0.0200000001, max: 0.2 }, { step: 0.02, max: 0.2 })).toBe('PSAR 0.02 0.2');
     expect(indicatorChipLabel('vwap', { anchor: 'session' }, { anchor: 'session' })).toBe('VWAP');
@@ -520,6 +580,18 @@ describe('ChartWidget indicator defaults and intervals', () => {
     await frame();
     expect(rows()[0].classList.contains('tcw-ind-legend-row--hidden')).toBe(true);
     expect(rows()[0].title).toBe('Not shown on this interval');
+    expect(values(rows()[0])).toHaveLength(0);
+  });
+
+  it('greys an indicator not drawn on this chart type, and says so as for a compare', async () => {
+    pick('ema');
+    await frame();
+    // A compare on its own scale, say, on Renko: the chart leaves it out there.
+    Object.assign(FakeChart.last.indicators[0], { shown: false, offChartType: true });
+    FakeChart.last.emit('chartTypeChange', { type: 'renko', previous: 'candlestick' });
+    await frame();
+    expect(rows()[0].classList.contains('tcw-ind-legend-row--hidden')).toBe(true);
+    expect(rows()[0].title).toBe('Not drawn on this chart type');
     expect(values(rows()[0])).toHaveLength(0);
   });
 });

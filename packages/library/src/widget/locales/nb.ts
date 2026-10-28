@@ -833,6 +833,7 @@ export const NB_MESSAGES: WidgetMessages = {
   'dock.rail': 'Paneler',
   'dock.resize': 'Endre panelets bredde',
   'dataWindow.hover': 'Hold musepekeren over grafen',
+  'dataWindow.touch': 'Trykk på grafen',
   'dataWindow.open': 'Åpning',
   'dataWindow.high': 'Høy',
   'dataWindow.low': 'Lav',

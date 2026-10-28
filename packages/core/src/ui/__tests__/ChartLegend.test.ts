@@ -103,9 +103,48 @@ describe('ChartLegend.getHeight', () => {
     expect(legend.getHeight()).toBe(0);
   });
 
+  it('says how far right of the plot’s edge its rows reach, as last drawn', () => {
+    const legend = new ChartLegend();
+    legend.setConfig({ showSymbol: false, showOHLC: true, showChange: false, showVolume: true, fontSize: 12 });
+    expect(legend.getWidth()).toBe(0); // not drawn yet
+    const { ctx } = mockCtx();
+    legend.render(ctx, viewport(0, 1), DARK_THEME, [bar(), bar()]);
+    // O, H, L and C: a 10 px label and a 10 px value each, 10 px apart (measureText says 10), from 8 in.
+    expect(legend.getWidth()).toBe(8 + 4 * 20 + 3 * 10);
+    legend.setConfig({ visible: false });
+    expect(legend.getWidth()).toBe(0);
+  });
+
   it('takes no room at the top left when drawn in the top-right corner', () => {
     const legend = new ChartLegend();
     legend.setConfig({ showSymbol: false, showOHLC: true, showVolume: false, fontSize: 12, position: 'top-right' });
     expect(legend.getHeight()).toBe(0);
+    legend.render(mockCtx().ctx, viewport(0, 1), DARK_THEME, [bar(), bar()]);
+    expect(legend.getWidth()).toBe(0);
+  });
+});
+
+describe('ChartLegend resize listener', () => {
+  const draw = (legend: ChartLegend) => legend.render(mockCtx().ctx, viewport(0, 1), DARK_THEME, [bar(), bar()]);
+
+  it('is called after a draw that changed the height, not after one that kept it', () => {
+    const legend = new ChartLegend();
+    const calls = vi.fn();
+    legend.setResizeListener(calls);
+    draw(legend);
+    expect(calls).toHaveBeenCalledTimes(1);
+    draw(legend);
+    expect(calls).toHaveBeenCalledTimes(1);
+  });
+
+  // Between the change and the draw its height is a guess, which a host may have read and placed rows by.
+  it('is called after the first draw since a change that could move it, even at the height it had', () => {
+    const legend = new ChartLegend();
+    const calls = vi.fn();
+    legend.setResizeListener(calls);
+    draw(legend);
+    legend.setTimeframe('1m');
+    draw(legend);
+    expect(calls).toHaveBeenCalledTimes(2);
   });
 });

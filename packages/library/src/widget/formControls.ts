@@ -21,7 +21,8 @@ export interface FormControlOptions {
   calendar?: () => boolean;
 }
 
-const coarsePointer = () => typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
+/** Whether the screen's main pointer is a finger: a touch screen. */
+export const coarsePointer = (): boolean => typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
 const hideableCalendar = () =>
   typeof CSS === 'undefined' || typeof CSS.supports !== 'function' || CSS.supports('selector(::-webkit-calendar-picker-indicator)');
 

@@ -833,6 +833,7 @@ export const AR_MESSAGES: WidgetMessages = {
   'dock.rail': 'اللوحات',
   'dock.resize': 'تغيير حجم اللوحة',
   'dataWindow.hover': 'مرّر الماوس فوق الرسم البياني',
+  'dataWindow.touch': 'المس الرسم البياني',
   'dataWindow.open': 'الافتتاح',
   'dataWindow.high': 'الأعلى',
   'dataWindow.low': 'الأدنى',

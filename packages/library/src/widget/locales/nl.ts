@@ -817,6 +817,7 @@ export const NL_MESSAGES: WidgetMessages = {
   'dock.rail': 'Panelen',
   'dock.resize': 'Breedte van het paneel wijzigen',
   'dataWindow.hover': 'Beweeg over de grafiek',
+  'dataWindow.touch': 'Tik op de grafiek',
   'dataWindow.open': 'Open',
   'dataWindow.high': 'Hoog',
   'dataWindow.low': 'Laag',

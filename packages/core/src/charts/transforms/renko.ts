@@ -1,5 +1,6 @@
 import type { OHLCBar, DataSeries } from '@tradecanvas/commons';
 import { barLimit, fromReached, reshape, type LayBar, type ReshapeMemo } from './reshapeCap.js';
+import { madeFrom } from './axisTimes.js';
 
 export interface RenkoConfig {
   /**
@@ -64,7 +65,7 @@ function walkBricks(data: DataSeries, size: number, capped: boolean, lay?: LayBa
     for (let j = 0; j < bricks; j++) {
       const open = level;
       level += direction * size;
-      lay?.(brick(start + count + j, open, level, volume / bricks));
+      lay?.(madeFrom(brick(start + count + j, open, level, volume / bricks), data[i].time));
     }
     count += bricks;
   }

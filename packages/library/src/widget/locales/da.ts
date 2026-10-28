@@ -833,6 +833,7 @@ export const DA_MESSAGES: WidgetMessages = {
   'dock.rail': 'Paneler',
   'dock.resize': 'Skift panelets bredde',
   'dataWindow.hover': 'Hold musen over grafen',
+  'dataWindow.touch': 'Tryk på grafen',
   'dataWindow.open': 'Åbning',
   'dataWindow.high': 'Høj',
   'dataWindow.low': 'Lav',

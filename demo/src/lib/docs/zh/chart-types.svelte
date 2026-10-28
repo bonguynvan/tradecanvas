@@ -31,7 +31,7 @@
     <tr><td><code>renko</code></td><td>固定价格砖块图（砖形图）；与时间无关。</td></tr>
     <tr><td><code>kagi</code></td><td>阳线 / 阴线（卡吉图）；反转幅度按百分比（默认 4）或按价格。</td></tr>
     <tr><td><code>lineBreak</code></td><td>收盘价突破最近几条线（默认 3 条）时画出新线（新价线）。</td></tr>
-    <tr><td><code>pointAndFigure</code></td><td>X / O 列（点数图）；由格值和反转格数决定。</td></tr>
+    <tr><td><code>pointAndFigure</code></td><td>X / O 列（点数图）；由格值和反转格数决定。小到看不清的格子画成实心柱；列数少于视图容量时，会缩放到填满视图。</td></tr>
     <tr><td><code>rangeBars</code></td><td>每根K线的最高价与最低价之差等于固定区间，并收在其最高价或最低价；最后一根是仍在形成的K线。</td></tr>
   </tbody>
 </table>
@@ -54,11 +54,29 @@
   变换类图表（Heikin-Ashi、Renko、Kagi、Line Break、P&amp;F、Range Bars）在内部处理——
   <code>chart.getData()</code> 返回的仍是原始输入序列。
 </p>
+<p>
+  时间轴和十字线的时间标签按砖块、线段或列完成时所在的K线标注日期，所以 Renko、Kagi、Line Break、P&amp;F
+  或 Range Bars 图的时间轴会显示它跨越的年、月、日；在同一根K线上完成的砖块共用该K线的标签。它们自己的
+  <code>time</code> 值仍只用于计数，相邻相差 1。<code>@tradecanvas/chart</code> 的 <code>axisTimes(series)</code>
+  为 <code>toRenko</code> 等函数构建的序列给出这些日期。
+</p>
+<p>
+  十字线的提示框和 <code>crosshairMove</code> 事件以同样的方式为砖块标注日期：payload 中的
+  <code>time</code> 是坐标轴的日期，<code>prevClose</code> 是前一块砖的收盘价。在这些类型上，指标基于所绘制的砖块、
+  线段或列计算，而不是其下的 K 线，因此移动平均线落在砖块上，图例、ChartWidget 的数据窗口和导出都在某块砖处读取它；
+  导出写出的是砖块，日期与坐标轴一致。按天计数的指标（VWAP、Session VWAP、多周期均线）以及按时间读取另一个品种的指标
+  不会在这些类型上绘制：<code>getActiveIndicators()</code> 将它们标记为 <code>offChartType: true</code>。
+</p>
+<p>
+  砖块或线段少于视图容量的 Renko、Kagi、Line Break 和 Range Bars 会像 Point &amp; Figure 一样拉伸铺满视图，
+  而不是挤在图表右侧。P&amp;F 每一列的成交量是构成它的各根 K 线的成交量之和。在这些类型上，时间轴只保留视图中
+  最粗的两类标签（例如年和月），不会在其间出现孤零零的日期。
+</p>
 
 <h2>衍生类型的设置</h2>
 <p>
   砖形图的砖块大小、新价线需要突破的线数、卡吉图的反转幅度、点数图的格值与反转格数，以及
-  Range Bars 的区间。未设置的项会根据数据计算（砖形图使用 ATR 砖块，P&amp;F 格值取平均收盘价的 1%……）。
+  Range Bars 的区间。未设置的项会根据数据计算（砖形图使用 ATR 砖块，P&amp;F 格值取价格区间的五十分之一并取整到 1、2 或 5……）。
   这些设置会随状态一起保存；在 ChartWidget 中，它们位于当前图表类型的设置对话框里。
 </p>
 <p>

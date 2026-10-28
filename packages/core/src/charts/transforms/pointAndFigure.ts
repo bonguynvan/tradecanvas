@@ -1,5 +1,6 @@
 import type { OHLCBar, DataSeries } from '@tradecanvas/commons';
 import { barLimit, fromReached, reshapeOneABar, type LayBar, type ReshapeMemo } from './reshapeCap.js';
+import { madeFrom } from './axisTimes.js';
 
 /** A point & figure chart's columns, and the box they were built on, to draw them that size. */
 export interface PointAndFigureColumns {
@@ -50,6 +51,8 @@ function walkColumns(data: DataSeries, boxSize: number, reversalBoxes: number, c
   if (pastLargest(first, startPrice)) return false;
   let colHigh = startPrice;
   let colLow = startPrice;
+  // The volume of the bars the column is made of so far, so the volume bars and the legend read a column's.
+  let colVolume = data[0].volume;
   const reversal = boxSize * reversalBoxes;
 
   for (let i = 1; i < data.length; i++) {
@@ -63,10 +66,14 @@ function walkColumns(data: DataSeries, boxSize: number, reversalBoxes: number, c
       else reverses = colHigh - roundedPrice >= reversal;
     } else if (roundedPrice < colLow) colLow = roundedPrice;
     else reverses = roundedPrice - colLow >= reversal;
-    if (!reverses) continue;
+    if (!reverses) {
+      colVolume += data[i].volume;
+      continue;
+    }
     if (capped && idx + 1 > barLimit(i, data.length, idx)) return false;
-    // Close the column, and start one the other way a box from its end.
-    lay?.(column(idx, direction === 1, colLow, colHigh, data[i].volume));
+    // Close the column, and start one the other way a box from its end, with the reversing bar's volume.
+    lay?.(madeFrom(column(idx, direction === 1, colLow, colHigh, colVolume), data[i].time));
+    colVolume = data[i].volume;
     idx++;
     if (direction === 1) {
       colLow = roundedPrice;
@@ -79,7 +86,7 @@ function walkColumns(data: DataSeries, boxSize: number, reversalBoxes: number, c
   }
 
   // The column still forming
-  lay?.(column(idx, direction === 1, colLow, colHigh, 0));
+  lay?.(madeFrom(column(idx, direction === 1, colLow, colHigh, colVolume), data[data.length - 1].time));
   return true;
 }
 

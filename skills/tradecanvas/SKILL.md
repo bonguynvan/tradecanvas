@@ -276,7 +276,7 @@ and call no `onSettingsChange` listener.
 
 | Event | Payload |
 |---|---|
-| `crosshairMove` | `{ point, bar, barIndex }` (also over indicator panes) |
+| `crosshairMove` | `{ point, bar, barIndex, time, prevClose }` (also over indicator panes; `time` as the axis dates the bar, a Renko brick by the bar it was finished on) |
 | `crosshairLeave` | — |
 | `barClick` | `{ bar, barIndex, point }` |
 | `visibleRangeChange` | `{ from, to }` bar indices |
@@ -296,6 +296,7 @@ and call no `onSettingsChange` listener.
 | `replayStepsLoad` | `{ state, step, count }`: finer bars for a replay's `step` loading, loaded, at their end or failed |
 | `styleChange` | `{ layer }`: `'host'` or `'user'` overrides changed |
 | `rendererChange` | `{ renderer, reason? }`: WebGL fell back to Canvas 2D, or came back |
+| `legendResize` | `{ bottom }`: the legend was drawn taller or shorter; labels of your own stacked under it move to `getLegendBottom()`; give their size with `chart.setLegendStack({ width, height })` (from the plot's left edge and that bottom) and drawing labels keep clear of them |
 
 ## Theming
 

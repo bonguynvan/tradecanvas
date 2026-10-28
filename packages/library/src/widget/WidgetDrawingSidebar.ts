@@ -26,6 +26,9 @@ function toolLabel(groups: SidebarConfig['drawingToolGroups'], tool: string): st
   }
   return tool;
 }
+/** The custom property that tells the drawing button's stylesheet where the plot starts. */
+const FAB_PLOT_LEFT = '--tcw-fab-plot-left';
+
 
 export class WidgetDrawingSidebar {
   private config: SidebarConfig;
@@ -91,6 +94,16 @@ export class WidgetDrawingSidebar {
     markPart(this.fab, 'sidebar');
     this.fab.addEventListener('click', () => this.setOpen(!this.isOpen()));
     host.appendChild(this.fab);
+  }
+
+  /**
+   * Where the chart's plot starts, from the widget body's left edge (px): the
+   * phone's drawing button sits in from there, off a left price scale, and in
+   * a right-to-left widget off the price axis on the chart's right.
+   */
+  setPlotLeft(px: number): void {
+    const value = `${Math.max(0, Math.round(px))}px`;
+    if (this.fab.style.getPropertyValue(FAB_PLOT_LEFT) !== value) this.fab.style.setProperty(FAB_PLOT_LEFT, value);
   }
 
   /** Laid out as on a phone: the sidebar hides behind the drawing button. */

@@ -817,6 +817,7 @@ export const HU_MESSAGES: WidgetMessages = {
   'dock.rail': 'Panelek',
   'dock.resize': 'A panel szélességének módosítása',
   'dataWindow.hover': 'Vigye az egeret a grafikon fölé',
+  'dataWindow.touch': 'Érintse meg a grafikont',
   'dataWindow.open': 'Nyitó',
   'dataWindow.high': 'Maximum',
   'dataWindow.low': 'Minimum',

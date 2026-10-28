@@ -817,6 +817,7 @@ export const RO_MESSAGES: WidgetMessages = {
   'dock.rail': 'Panouri',
   'dock.resize': 'Redimensionare panou',
   'dataWindow.hover': 'Treceți cursorul peste grafic',
+  'dataWindow.touch': 'Atingeți graficul',
   'dataWindow.open': 'Deschidere',
   'dataWindow.high': 'Maxim',
   'dataWindow.low': 'Minim',

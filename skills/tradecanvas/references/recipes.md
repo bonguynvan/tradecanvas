@@ -268,7 +268,13 @@ screen on a percent price scale, and a legend of your own from
 `getCompareValues` (the widget's `addCompareSymbol` does all of this itself).
 Fetch as many bars as the chart has, so the line starts where the chart does.
 Renko, Kagi, line break, point & figure and range bars draw no compare lines;
-there `getCompareValues` gives each one's latest close and a null change:
+there `getCompareValues` gives each one's latest close and a null change, and
+the indicators that read another symbol (`compareSymbol`, `compareSymbolPane`,
+`spread`, the correlations) are not drawn either, nor those that count days
+(`vwap`, `svwap`, `mtfma`): `getActiveIndicators()` gives
+them `shown: false` and `offChartType: true`. The other indicators are worked
+out on the bricks drawn, so `getIndicatorOutput(id).series` has a point per
+brick there, and `crosshairMove`'s `time` dates a brick as the axis does:
 
 ```ts
 import { Chart, BinanceAdapter } from '@tradecanvas/chart';
@@ -296,7 +302,9 @@ chart.on('crosshairMove', (e) => {
 
 ## Another symbol on its own scale, and the ratio of the two
 
-ETH beside BTC on a price scale of its own, and BTC ÷ ETH in a pane. The
+ETH beside BTC on a price scale of its own, ETH's price again in a pane of its
+own (`compareSymbolPane`; `compareSymbol` stays on the price pane), and BTC ÷ ETH
+in a pane. The
 indicators ask for the bars of the symbol they read; fetch them again when the
 interval changes:
 
@@ -311,6 +319,7 @@ const load = async (symbol: string) => chart.setSymbolSeries(symbol, await adapt
 chart.on('symbolSeriesRequest', (e) => void load(e.payload.symbol));
 
 chart.addIndicator('compareSymbol', { symbol: 'ETHUSDT' }, 'bottom', { scale: 'left' });
+chart.addIndicator('compareSymbolPane', { symbol: 'ETHUSDT' }); // its price in a pane of its own
 const ratio = chart.addIndicator('spread', { symbol: 'ETHUSDT', mode: 'ratio' })!;
 chart.setPaneScale(ratio, { percent: true });
 ```

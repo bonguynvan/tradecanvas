@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { LayerType } from '@tradecanvas/commons';
+import { DARK_THEME, LIGHT_THEME, LayerType, VN_COLORS } from '@tradecanvas/commons';
 import type { DataSeries, Theme, ViewportState } from '@tradecanvas/commons';
 import { RenderEngine } from '../RenderEngine.js';
 import type { RenderContext } from '../RenderEngine.js';
@@ -787,6 +787,61 @@ describe('RenderEngine — the day’s price limits', () => {
     expect(texts).toContain('REF 99,000.00');
     expect(texts).not.toContain('99,000');
     expect(texts).toContain('99,500');
+  });
+});
+
+describe('RenderEngine — the price limits’ colours', () => {
+  /** WCAG relative luminance of a #rrggbb or rgb() colour. */
+  function luminance(color: string): number {
+    const hex = /^#([0-9a-f]{6})$/i.exec(color);
+    const rgb = hex ? [0, 2, 4].map((i) => parseInt(hex[1].slice(i, i + 2), 16)) : color.match(/\d+/g)!.slice(0, 3).map(Number);
+    const [r, g, b] = rgb.map((c) => c / 255).map((c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4));
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  }
+  const contrast = (a: string, b: string) => {
+    const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+    return (hi + 0.05) / (lo + 0.05);
+  };
+
+  /** Each text the scene canvas wrote with the limits drawn, and the fill it was written in. */
+  function limitInks(theme: Theme, colors?: { ceiling: string; floor: string; reference: string }): { text: string; fill: string }[] {
+    const { ctx } = makeContext();
+    ctx.theme = theme;
+    ctx.priceLimits = { ceiling: 99_800, floor: 98_100, reference: 98_937, colors };
+    ctx.viewport = { ...ctx.viewport, priceRange: { min: 98_000, max: 100_000 } };
+    engine.setRenderContext(ctx);
+    engine.start();
+    engine.requestRender(LayerType.Main);
+    const layer = engine.layerManager.getLayer(LayerType.Main)!.ctx;
+    const inks: { text: string; fill: string }[] = [];
+    layer.fillText = (text: string) => { inks.push({ text, fill: String(layer.fillStyle) }); };
+    runFrame();
+    return inks;
+  }
+  const label = (inks: { text: string; fill: string }[], name: string) => inks.find((i) => i.text.startsWith(`${name} `))!.fill;
+
+  it('writes the names in colours that read at 4.5:1 on the light theme, the market’s or the theme’s own', () => {
+    for (const colors of [VN_COLORS, undefined]) {
+      const inks = limitInks(LIGHT_THEME, colors);
+      for (const name of ['CE', 'FL', 'REF']) {
+        expect(contrast(label(inks, name), LIGHT_THEME.background), `${name} ${colors ? 'market' : 'theme'}`).toBeGreaterThanOrEqual(4.5);
+      }
+      // The price on each axis tag reads on the tag, too.
+      for (const ink of inks.filter((i) => !/^[A-Z]/.test(i.text))) expect(ink.fill).toBe(LIGHT_THEME.background);
+    }
+  });
+
+  it('takes the light colours for a light theme of its own that gives none', () => {
+    const { priceLimits: _none, ...plain } = LIGHT_THEME;
+    const inks = limitInks({ ...plain, background: '#fbfaf7' } as Theme);
+    expect([label(inks, 'CE'), label(inks, 'FL'), label(inks, 'REF')]).toEqual(['#a21caf', '#0e7490', '#8a6a00']);
+  });
+
+  it('keeps the dark theme’s look: the market’s colours as they are', () => {
+    const inks = limitInks(DARK_THEME, VN_COLORS);
+    expect([label(inks, 'CE'), label(inks, 'FL'), label(inks, 'REF')]).toEqual([VN_COLORS.ceiling, VN_COLORS.floor, VN_COLORS.reference]);
+    const own = limitInks(DARK_THEME);
+    expect([label(own, 'CE'), label(own, 'FL'), label(own, 'REF')]).toEqual(['#FF00FF', '#00FFFF', '#FFD700']);
   });
 });
 

@@ -18,6 +18,7 @@ import { alignOutput, emptyOutput, inputSource, lineSourceBars, priceSourceBars,
 import { cleanIntervals, shownOnInterval } from './intervals.js';
 import { copyIntervals, copyPlots, isSeriesPalette, paletteFrom } from './palette.js';
 import { BUILT_IN_PLUGINS } from './builtIns.js';
+import { SYMBOL_INDICATOR_IDS } from './symbols/symbolIndicators.js';
 
 interface IndicatorInstance {
   plugin: IndicatorPlugin;
@@ -36,6 +37,8 @@ interface IndicatorInstance {
   changedFrom: number;
   /** Not shown on the chart's interval (its `intervals` leave it out). */
   offInterval: boolean;
+  /** Not shown on the chart's type: it reads another symbol by time, and the bars drawn carry none. */
+  offChartType: boolean;
 }
 
 interface LineInput {
@@ -60,12 +63,22 @@ export interface ActiveIndicatorInfo {
   params: Record<string, unknown>;
   descriptor: IndicatorDescriptor;
   visible: boolean;
-  /** Whether it is drawn now: visible, and on the chart's interval. */
+  /** Whether it is drawn now: visible, on the chart's interval, and on its type. */
   shown: boolean;
+  /**
+   * True while the chart's type draws bars with no time of their own (Renko,
+   * Kagi, line break, point & figure, range bars) and the indicator reads
+   * another symbol by time (a compare on its own scale or in a pane, a
+   * spread, a ratio, a correlation) or counts days (VWAP and the others
+   * whose descriptor says `readsExchangeTimeZone`): it is not drawn there.
+   */
+  offChartType?: true;
   /** The intervals it shows on, when not all. */
   intervals?: IndicatorIntervals;
   /** The instance whose pane it is drawn in, when not its own. */
   pane?: string;
+  /** `'left'`: an overlay on a price scale of its own on the left, not the chart's prices. */
+  scale?: 'left';
 }
 
 /** Whether a plugin's values move with the exchange's zone: it says so, or it is the host's and says nothing. */
@@ -96,6 +109,8 @@ export class IndicatorEngine {
   private timeframe: string | null = null;
   /** The exchange's zone, given to every instance as `config.exchangeTimeZone` (null: UTC's days). */
   private exchangeTimeZone: string | null = null;
+  /** Whether the bars drawn carry times of their own: not Renko bricks, Kagi lines and the like. */
+  private barsTimed = true;
 
   register(plugin: IndicatorPlugin): void {
     this.registry.set(plugin.descriptor.id, plugin);
@@ -140,7 +155,8 @@ export class IndicatorEngine {
     };
 
     this.flush();
-    const instance: IndicatorInstance = { plugin, config, output: null, style, changedFrom: 0, offInterval: false };
+    const instance: IndicatorInstance = { plugin, config, output: null, style, changedFrom: 0, offInterval: false, offChartType: false };
+    this.placeOnChartType(instance);
     this.instances.set(instanceId, instance);
     this.order = null;
     if (data) this.compute(instance, data);
@@ -629,6 +645,35 @@ export class IndicatorEngine {
     return intervals ? copyIntervals(intervals) : null;
   }
 
+  /**
+   * Whether the bars the chart draws carry times of their own. Off for the
+   * types that redraw them (Renko bricks, Kagi lines…), whose times only
+   * count them: an indicator that reads another symbol by time would read
+   * it at the wrong bars there, and one that counts days would find none,
+   * so neither is shown. True when that changed
+   * what is shown.
+   */
+  setBarsTimed(on: boolean): boolean {
+    if (on === this.barsTimed) return false;
+    this.barsTimed = on;
+    let changed = false;
+    for (const instance of this.instances.values()) changed = this.placeOnChartType(instance) || changed;
+    return changed;
+  }
+
+  /**
+   * Mark the instance on or off the chart's type; true when that changed.
+   * Off the bricks: one that reads another symbol by time, and one that says
+   * it counts days, weeks or months (VWAP's anchor), as bricks have no days.
+   */
+  private placeOnChartType(instance: IndicatorInstance): boolean {
+    const readsTime = SYMBOL_INDICATOR_IDS.has(instance.config.id) || instance.plugin.descriptor.readsExchangeTimeZone === true;
+    const off = !this.barsTimed && readsTime;
+    if (off === instance.offChartType) return false;
+    instance.offChartType = off;
+    return true;
+  }
+
   /** Mark the instance on or off the chart's interval; true when that changed. */
   private placeOnInterval(instance: IndicatorInstance): boolean {
     const off = !shownOnInterval(instance.config.intervals, this.timeframe);
@@ -704,8 +749,10 @@ export class IndicatorEngine {
         descriptor: instance.plugin.descriptor,
         visible: instance.config.visible ?? true,
         shown: isShown(instance),
+        ...(instance.offChartType ? { offChartType: true as const } : {}),
         ...(instance.config.intervals ? { intervals: copyIntervals(instance.config.intervals) } : {}),
         ...(instance.config.pane ? { pane: instance.config.pane } : {}),
+        ...(instance.config.scale === 'left' ? { scale: 'left' as const } : {}),
       });
     }
     return result;
@@ -820,9 +867,9 @@ export class IndicatorEngine {
   }
 }
 
-/** Whether an instance is drawn: switched on, and on the chart's interval. */
+/** Whether an instance is drawn: switched on, on the chart's interval, and on its type. */
 function isShown(instance: IndicatorInstance): boolean {
-  return instance.config.visible !== false && !instance.offInterval;
+  return instance.config.visible !== false && !instance.offInterval && !instance.offChartType;
 }
 
 /** The fields an instance draws and shows: a hidden plot stretches no scale. */

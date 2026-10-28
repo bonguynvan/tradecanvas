@@ -1,7 +1,7 @@
 import type { DrawingState, Point, ViewportState } from '@tradecanvas/commons';
 import { DrawingBase } from '../DrawingBase.js';
 import { resolveBarIndex } from '../../viewport/ScaleMapping.js';
-import { formatPriceChange, drawingFont } from './labels.js';
+import { formatPriceChange, drawingFont, belowKeepOut, overlapsKeepOut } from './labels.js';
 
 export class MeasureTool extends DrawingBase {
   descriptor = { type: 'measure' as const, name: 'Measure', requiredAnchors: 2 };
@@ -31,21 +31,22 @@ export class MeasureTool extends DrawingBase {
       `Bars: ${barsDiff}`,
     ];
 
-    const midX = (p1.x + p2.x) / 2;
-    const midY = (p1.y + p2.y) / 2;
-
     ctx.font = drawingFont(11);
     ctx.textAlign = 'center';
     ctx.textBaseline = 'bottom';
 
-    // Background
-    const maxWidth = Math.max(...lines.map((l) => ctx.measureText(l).width));
+    // The box centred over the middle of the measure, its foot there, moved
+    // onto the plot where that would run off it (a measure by its edge).
+    const textWidth = Math.max(...lines.map((l) => ctx.measureText(l).width));
+    const box = labelBox((p1.x + p2.x) / 2, (p1.y + p2.y) / 2, textWidth, lines.length, viewport);
     ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-    ctx.fillRect(midX - maxWidth / 2 - 6, midY - lines.length * 14 - 4, maxWidth + 12, lines.length * 14 + 8);
+    ctx.fillRect(box.x, box.y, box.width, box.height);
 
     ctx.fillStyle = '#FFFFFF';
+    const centerX = box.x + box.width / 2;
+    const lastBaseline = box.y + box.height - LABEL_PAD_Y;
     for (let i = 0; i < lines.length; i++) {
-      ctx.fillText(lines[i], midX, midY - (lines.length - 1 - i) * 14);
+      ctx.fillText(lines[i], centerX, lastBaseline - (lines.length - 1 - i) * LINE_HEIGHT);
     }
 
     if (selected) this.renderAnchorHandles(ctx, state, viewport);
@@ -57,4 +58,31 @@ export class MeasureTool extends DrawingBase {
     const p2 = this.anchorToPixel(state.anchors[1], viewport);
     return this.distanceToLine(point, p1, p2) <= tolerance;
   }
+}
+
+/** A label line's height, and the room around the lines in their box (px). */
+const LINE_HEIGHT = 14;
+const LABEL_PAD_X = 6;
+const LABEL_PAD_Y = 4;
+
+/**
+ * The label's box for `lineCount` lines `textWidth` wide: centred on
+ * `centerX` with its foot at `footY`, then moved onto the plot by as
+ * much as it would run off it, and under the legend where it covers it.
+ */
+function labelBox(centerX: number, footY: number, textWidth: number, lineCount: number, viewport: ViewportState) {
+  const { chartRect } = viewport;
+  const width = textWidth + 2 * LABEL_PAD_X;
+  const height = lineCount * LINE_HEIGHT + 2 * LABEL_PAD_Y;
+  const x = clamp(centerX - width / 2, chartRect.x, chartRect.x + chartRect.width - width);
+  const y = clamp(footY - height + LABEL_PAD_Y, chartRect.y, chartRect.y + chartRect.height - height);
+  // Over the legend's rows (a measure at the plot's top): under them, where the plot has room.
+  if (!overlapsKeepOut(x, y, x + width, y + height)) return { x, y, width, height };
+  const under = belowKeepOut(x, x + width, y);
+  return { x, y: under + height <= chartRect.y + chartRect.height ? under : y, width, height };
+}
+
+/** `value` within `min` and `max`; at `min` when they cross (a box wider than the plot). */
+function clamp(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(value, max));
 }

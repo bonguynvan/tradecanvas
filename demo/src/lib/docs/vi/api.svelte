@@ -223,11 +223,19 @@ vn30fLastTradingDay(2026, 12, (day) => holidays.has(day)) // thứ Năm thứ ba
   trước khi dựa vào nó.
 </p>
 
+<p>
+  Các giới hạn được vẽ bằng đường nét đứt có tên CE, FL và REF, kèm nhãn trên trục, theo màu
+  <code>colorScheme</code> của thị trường, nếu không có thì theo <code>priceLimits</code> của theme.
+  Màu nào không đạt độ tương phản 4.5:1 trên nền của theme sẽ được làm đậm đến khi đạt, nên màu
+  tím, xanh lơ và vàng sáng của bảng giá vẫn giữ sắc màu trên theme sáng.
+  Một theme tự tạo không có <code>priceLimits</code> sẽ dùng màu của theme sáng trên nền sáng, của theme tối trên nền tối.
+</p>
+
 <h3 id="comparing-symbols">So sánh các mã</h3>
 <p>
   Phần trăm thay đổi của một mã khác trên thang giá (<code>addCompareSymbol</code>), hoặc giá của
   nó trên thang riêng, trong bảng riêng, hoặc chênh lệch hay tỷ lệ giữa giá đóng cửa của biểu đồ
-  và mã đó — mấy cách sau là chỉ báo (<code>compareSymbol</code>, <code>spread</code>), có chú
+  và mã đó — mấy cách sau là chỉ báo (<code>compareSymbol</code>, <code>compareSymbolPane</code>, <code>spread</code>), có chú
   thích, nhãn giá trị, cảnh báo và được lưu trong bố cục như mọi chỉ báo khác. Nến của mã kia được
   khớp với nến của biểu đồ theo thời gian. Biểu đồ tự yêu cầu những nến nó cần; hãy cung cấp lại
   sau khi đổi khung thời gian. <code>correlation</code> (theo giá đóng cửa) và <code>correlationlog</code>
@@ -235,6 +243,7 @@ vn30fLastTradingDay(2026, 12, (day) => holidays.has(day)) // thứ Năm thứ ba
 </p>
 <pre><code>{`chart.addCompareSymbol('eth', 'ETHUSDT', ethBars, '#7c4dff')   // percent change, on this scale
 chart.addIndicator('compareSymbol', { symbol: 'ETHUSDT' }, 'bottom', { scale: 'left' })  // own scale
+chart.addIndicator('compareSymbolPane', { symbol: 'ETHUSDT' })                         // own pane, own scale
 chart.addIndicator('spread', { symbol: 'ETHUSDT', mode: 'ratio' })                      // own pane
 chart.addIndicator('correlation', { symbol: 'ETHUSDT', length: 20 })                    // −1 to 1, own pane
 
@@ -260,6 +269,11 @@ chart.setPaneScale(spreadId, { percent: true })     // a pane in percent of its 
   tiếp từ nến đầu, không mang thời gian riêng, nên một đường ở đó sẽ đọc mã kia tại sai nến. Ở các
   kiểu này, đường so sánh không tính vào thang tự động, và <code>getCompareValues()</code> cho giá
   đóng cửa của từng mã tại nến dữ liệu mới nhất, dù hỏi nến nào, kèm <code>change: null</code>.
+  Các chỉ báo đọc một mã khác theo thời gian (một mã trên thang riêng hoặc trong khung riêng, chênh lệch,
+  tỷ lệ, tương quan) cũng không được vẽ ở đó và không tính vào thang nào: <code>getActiveIndicators()</code>
+  cho chúng <code>shown: false</code> và <code>offChartType: true</code>, và ChartWidget làm mờ dòng của chúng như
+  dòng của một mã so sánh. Quay lại nến thường thì chúng hiện lại.
+  Một khung không còn gì khác trong đó sẽ được bỏ đi ở đó, phần chỗ của nó dành cho vùng biểu đồ, và quay lại cùng chúng.
 </p>
 <pre><code>{`chart.setScaleMode('percentage')       // each line reads its change on the axis
 chart.getCompareValues()               // [{ id: 'eth', label: 'ETHUSDT', color, visible, close: 2650.4, change: -1.82, stale: false }]
@@ -440,6 +454,8 @@ chart.on('executionFill', e => /* { side, price, quantity, reason, pnl } */)
 chart.on('chartContextMenu', e => /* { area, x, y, price, time } */)
 chart.on('stateChange', () => /* hình vẽ, chỉ báo, cảnh báo, loại biểu đồ hoặc giao diện có thể đã thay đổi */)
 chart.on('paneChange', e => /* { instanceId, change: 'collapsed' | 'maximized' | 'order' } */)
+chart.on('crosshairMove', e => /* { point, bar, barIndex, time, prevClose }: time là thời điểm của nến như trục ghi (trên Renko, nến mà viên gạch hoàn thành); prevClose là giá đóng cửa của nến vẽ trước nó */)
+chart.on('legendResize', e => /* { bottom }: chú giải được vẽ cao hơn hoặc thấp hơn, bị ẩn hoặc hiện lại; nội dung xếp dưới nó dời xuống getLegendBottom() */)
 chart.on('chartTypeChange', e => /* { type, previous } */)
 chart.on('symbolChange', e => /* { symbol, previous } */)
 chart.on('marketChange', e => /* { market }: setMarket */)
@@ -448,6 +464,16 @@ chart.on('timeframeChange', e => /* { timeframe, previous } */)
 chart.on('historyChange', e => /* { canUndo, canRedo } */)
 chart.on('drawingSelect', e => /* { ids, primary } */)
 chart.on('rendererChange', e => /* { renderer: 'canvas' | 'webgl', reason?: 'unsupported' | 'contextLost' | 'contextRestored' | 'limit' } */)`}</code></pre>
+<p>
+  Nhãn riêng của bạn đặt dưới chú giải bắt đầu từ <code>getLegendBottom()</code> và dời theo
+  <code>legendResize</code>. Báo cho biểu đồ kích thước của chúng bằng
+  <code>setLegendStack({'{'} width, height {'}'})</code>, đo từ mép trái vùng vẽ và từ đáy đó
+  (<code>null</code> khi không có): nhãn của hình vẽ, như giá của đường ngang hay mục tiêu của
+  một vị thế, tránh chúng như tránh chú giải. ChartWidget làm việc này cho các dòng chỉ báo của nó.
+  Nhãn bị chúng che sẽ trượt sang bên cạnh trên chính hàng của nó, xuống dưới chúng khi chỗ đó gần
+  đường của nó, nếu không thì nằm trên đường, cạnh trục giá khi chỗ đó trống; các nhãn được dời không chồng lên nhau, và
+  các thẻ của một vị thế giữ thứ tự theo giá.
+</p>
 
 <h3>Hoàn tác cho thay đổi của riêng bạn</h3>
 <p>
@@ -643,7 +669,14 @@ widget.setSymbols(await loadMarkets())   // SymbolInfo[] từ máy chủ của b
   Một bảng nổi hiển thị chính xác O/H/L/C/V, mức thay đổi của nến và giá trị của mọi
   chỉ báo đang bật tại nến đang rê chuột — cập nhật trực tiếp khi bạn di chuyển
   con trỏ chữ thập. Bật/tắt từ bảng lệnh (<kbd>Ctrl/⌘ K</kbd> →
-  "Bật/tắt cửa sổ dữ liệu").
+  "Bật/tắt cửa sổ dữ liệu"). Trên màn hình cảm ứng, chạm vào biểu đồ để đặt
+  con trỏ chữ thập lên một nến. Giá, mức thay đổi và giá trị của chỉ báo trên
+  khung giá được viết như biểu đồ viết giá; giá trị của chỉ báo ở khung riêng
+  được viết như dòng chú giải của nó; tất cả theo định dạng số của biểu đồ.
+  Một đường so sánh, spread hay tỉ lệ, và một đường trên thang riêng, được ghi theo số
+  chữ số thập phân mà độ lớn của nó cần, không theo giá của biểu đồ. Trên Renko, Kagi và
+  các kiểu tương tự, cửa sổ dữ liệu hiển thị viên gạch dưới con trỏ và mức thay đổi so với
+  viên gạch trước.
 </p>
 
 <h3>Chia sẻ góc nhìn (deep link)</h3>

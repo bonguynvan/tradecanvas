@@ -225,11 +225,20 @@ vn30fLastTradingDay(2026, 12, (day) => holidays.has(day)) // el tercer jueves, a
   las reglas vigentes de tu bolsa antes de confiar en él.
 </p>
 
+<p>
+  Los límites se dibujan como líneas discontinuas llamadas CE, FL y REF, con una etiqueta en el eje,
+  en los colores del <code>colorScheme</code> del mercado o, si no los hay, en los
+  <code>priceLimits</code> del tema. Un color que no alcanza un contraste de 4.5:1 sobre el fondo del
+  tema se oscurece hasta alcanzarlo, así que el magenta, el cian y el amarillo vivos del tablero de
+  precios conservan su tono en el tema claro.
+  Un tema propio sin <code>priceLimits</code> toma los del tema claro sobre un fondo claro y los del oscuro sobre uno oscuro.
+</p>
+
 <h3 id="comparing-symbols">Comparar símbolos</h3>
 <p>
   El cambio porcentual de otro símbolo en la escala de precio (<code>addCompareSymbol</code>), o su
   precio en una escala propia, en un panel propio, o el diferencial o el ratio entre el cierre del
-  gráfico y ese símbolo; estos últimos son indicadores (<code>compareSymbol</code>,
+  gráfico y ese símbolo; estos últimos son indicadores (<code>compareSymbol</code>, <code>compareSymbolPane</code>,
   <code>spread</code>), con leyenda, etiquetas de valor, alertas y diseños guardados como cualquier
   otro. Las barras del otro símbolo se alinean con las del gráfico por tiempo. El gráfico pide las
   barras que necesita; vuelve a dárselas tras un cambio de temporalidad. <code>correlation</code> (de los
@@ -238,6 +247,7 @@ vn30fLastTradingDay(2026, 12, (day) => holidays.has(day)) // el tercer jueves, a
 </p>
 <pre><code>{`chart.addCompareSymbol('eth', 'ETHUSDT', ethBars, '#7c4dff')   // percent change, on this scale
 chart.addIndicator('compareSymbol', { symbol: 'ETHUSDT' }, 'bottom', { scale: 'left' })  // own scale
+chart.addIndicator('compareSymbolPane', { symbol: 'ETHUSDT' })                         // own pane, own scale
 chart.addIndicator('spread', { symbol: 'ETHUSDT', mode: 'ratio' })                      // own pane
 chart.addIndicator('correlation', { symbol: 'ETHUSDT', length: 20 })                    // −1 to 1, own pane
 
@@ -264,6 +274,11 @@ chart.setPaneScale(spreadId, { percent: true })     // a pane in percent of its 
   barras equivocadas. En esos tipos las líneas quedan fuera de la escala automática, y
   <code>getCompareValues()</code> da el cierre de cada una en la última barra de datos, pidas la barra
   que pidas, con <code>change: null</code>.
+  Los indicadores que leen otro símbolo por tiempo (un símbolo en su propia escala o en su propio panel, un
+  spread, un ratio, una correlación) tampoco se dibujan ahí ni ajustan ninguna escala: <code>getActiveIndicators()</code>
+  les da <code>shown: false</code> y <code>offChartType: true</code>, y ChartWidget atenúa sus filas como atenúa las de
+  una comparación. De vuelta en velas, aparecen de nuevo.
+  Un panel sin nada más dentro se quita ahí, su espacio pasa al gráfico, y vuelve con ellos.
 </p>
 <pre><code>{`chart.setScaleMode('percentage')       // each line reads its change on the axis
 chart.getCompareValues()               // [{ id: 'eth', label: 'ETHUSDT', color, visible, close: 2650.4, change: -1.82, stale: false }]
@@ -449,6 +464,8 @@ chart.on('executionFill', e => /* { side, price, quantity, reason, pnl } */)
 chart.on('chartContextMenu', e => /* { area, x, y, price, time } */)
 chart.on('stateChange', () => /* pueden haber cambiado los dibujos, indicadores, alertas, el tipo de gráfico o el tema */)
 chart.on('paneChange', e => /* { instanceId, change: 'collapsed' | 'maximized' | 'order' } */)
+chart.on('crosshairMove', e => /* { point, bar, barIndex, time, prevClose }: time es cuándo está la barra según la fecha del eje (en Renko, la barra en la que se terminó el ladrillo); prevClose el cierre de la barra dibujada antes */)
+chart.on('legendResize', e => /* { bottom }: la leyenda se dibujó más alta o más baja, o se ocultó o volvió a mostrarse; lo que va apilado debajo pasa a getLegendBottom() */)
 chart.on('chartTypeChange', e => /* { type, previous } */)
 chart.on('symbolChange', e => /* { symbol, previous } */)
 chart.on('marketChange', e => /* { market }: setMarket */)
@@ -457,6 +474,17 @@ chart.on('timeframeChange', e => /* { timeframe, previous } */)
 chart.on('historyChange', e => /* { canUndo, canRedo } */)
 chart.on('drawingSelect', e => /* { ids, primary } */)
 chart.on('rendererChange', e => /* { renderer: 'canvas' | 'webgl', reason?: 'unsupported' | 'contextLost' | 'contextRestored' | 'limit' } */)`}</code></pre>
+<p>
+  Las etiquetas propias bajo la leyenda empiezan en <code>getLegendBottom()</code> y se mueven con
+  <code>legendResize</code>. Dile al gráfico su tamaño con
+  <code>setLegendStack({'{'} width, height {'}'})</code>, medido desde el borde izquierdo del área
+  del gráfico y ese pie (<code>null</code> cuando no hay ninguna): las etiquetas de los dibujos, como
+  el precio de una línea horizontal o el objetivo de una posición, las evitan como evitan la leyenda.
+  ChartWidget lo hace con sus filas de indicadores.
+  Una etiqueta que tapan se desliza a su lado en su propia fila, va debajo de ellas cuando eso queda
+  cerca de su línea, o si no se pone sobre su línea junto al eje de precios cuando ahí está libre; las etiquetas movidas no se
+  tapan entre sí y las de una posición mantienen el orden de sus precios.
+</p>
 
 <h3>Deshacer tus propios cambios</h3>
 <p>
@@ -655,7 +683,14 @@ widget.setSymbols(await loadMarkets())   // los SymbolInfo[] de tu servidor: la 
   Un panel flotante con los valores exactos de O/H/L/C/V, el cambio de la barra y
   el valor de cada indicador activo en la barra bajo el cursor; se actualiza en
   vivo al mover la cruz. Actívalo desde la paleta de comandos (<kbd>Ctrl/⌘ K</kbd> →
-  "Mostrar/ocultar ventana de datos").
+  "Mostrar/ocultar ventana de datos"). En una pantalla táctil, toca el gráfico
+  para poner la cruz sobre una barra. Los precios, el cambio y los valores de los
+  indicadores del panel de precios se escriben como el gráfico escribe los precios;
+  los de indicadores en un panel propio, como su fila de la leyenda; todos en el
+  formato numérico del gráfico.
+  Una comparación, un spread o un ratio, y una línea en una escala propia, se escriben con los
+  decimales que pide su tamaño, no los de los precios del gráfico. En Renko, Kagi y similares la
+  ventana de datos muestra el ladrillo bajo el puntero y su cambio respecto al ladrillo anterior.
 </p>
 
 <h3>Vista compartible (enlaces profundos)</h3>

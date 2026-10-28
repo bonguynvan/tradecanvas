@@ -1,7 +1,7 @@
 import { LayerType } from '@tradecanvas/commons';
 import type { Size, ViewportState, Theme, DataSeries, Rect, PaneStyle } from '@tradecanvas/commons';
 import { priceToY, yToPrice, xToBarIndex, barIndexToX } from '../viewport/ScaleMapping.js';
-import { PRICE_AXIS_WIDTH, autoPricePrecision, formatPrice, lineDash, priceTagText } from '@tradecanvas/commons';
+import { DARK_PRICE_LIMITS, LIGHT_PRICE_LIMITS, PRICE_AXIS_WIDTH, autoPricePrecision, formatPrice, inkOn, lineDash, priceTagText, readableOn } from '@tradecanvas/commons';
 import { priceScaleText, roundStep, stepTicks } from '../axis/PriceAxis.js';
 import { LayerManager } from './LayerManager.js';
 import { AXIS_LABEL_HEIGHT, renderAxisValueLabels, layoutAxisValueLabels, drawAxisValueLabels, indicatorValuePrecision, type AxisValueLabel, type FixedAxisTag } from '../ui/axisValueLabels.js';
@@ -40,18 +40,54 @@ const PANEL_HEADER_HEIGHT = 20;
 const MIN_PANE_PLOT_HEIGHT = 8;
 /** Height of a price limit's tag on the axis. */
 const LIMIT_TAG_HEIGHT = 14;
+/** A limit tag's price on a theme that names no colours to pick from. */
+const LIMIT_TAG_INK = '#000';
 /** Decimals a price limit shows when neither the chart nor the market sets them. */
 const LIMIT_DECIMALS = 2;
 
 type PriceLimits = NonNullable<RenderContext['priceLimits']>;
 
-/** The day's ceiling, floor and reference: each line's price, colour and name. */
-function limitLines(limits: PriceLimits): { price: number; color: string; label: string }[] {
+/** The contrast a limit's name and price need on the plot and on their tag: WCAG's for text. */
+const LIMIT_TEXT_CONTRAST = 4.5;
+
+/**
+ * The day's ceiling, floor and reference: each line's price, name and colour
+ * (the market's, else the theme's), shaded toward the theme's text until its
+ * name reads on the background. Colours that already read stay as they are.
+ */
+function limitLines(limits: PriceLimits, theme?: Theme): { price: number; color: string; label: string }[] {
+  // A theme of your own without colours of its own: the light ones on paper, the dark ones on the dark.
+  const own = theme?.priceLimits ?? (theme?.background && isPaper(theme.background) ? LIGHT_PRICE_LIMITS : DARK_PRICE_LIMITS);
+  const readable = (color: string) => theme?.background && theme.text
+    ? readableShade(color, theme.background, theme.text)
+    : color;
   return [
-    { price: limits.ceiling, color: limits.colors?.ceiling ?? '#FF00FF', label: 'CE' },
-    { price: limits.floor, color: limits.colors?.floor ?? '#00FFFF', label: 'FL' },
-    { price: limits.reference, color: limits.colors?.reference ?? '#FFD700', label: 'REF' },
+    { price: limits.ceiling, color: readable(limits.colors?.ceiling ?? own.ceiling), label: 'CE' },
+    { price: limits.floor, color: readable(limits.colors?.floor ?? own.floor), label: 'FL' },
+    { price: limits.reference, color: readable(limits.colors?.reference ?? own.reference), label: 'REF' },
   ];
+}
+
+/** Whether a background is light: black text reads on it better than white. */
+function isPaper(background: string): boolean {
+  return inkOn(background, '#000000', '#ffffff') === '#000000';
+}
+
+/** The shades worked out, by colour, background and ink: a frame draws the same few each time. */
+const shades = new Map<string, string>();
+/** Shades kept before the cache starts again (themes and markets come in a handful of colours). */
+const SHADES_KEPT = 64;
+
+/** `readableOn` at the limits' contrast, worked out once for each colour on each background. */
+function readableShade(color: string, background: string, ink: string): string {
+  const key = `${color}|${background}|${ink}`;
+  let shade = shades.get(key);
+  if (shade === undefined) {
+    if (shades.size >= SHADES_KEPT) shades.clear();
+    shade = readableOn(color, background, ink, LIMIT_TEXT_CONTRAST);
+    shades.set(key, shade);
+  }
+  return shade;
 }
 
 /** `steps` recorded in one region, all or none: a recorder holding all of them, or null. */
@@ -835,7 +871,7 @@ export class RenderEngine {
     const boldFont = `bold 9px ${theme.font.family}`;
     const normalFont = `10px ${theme.font.family}`;
 
-    for (const { price, color, label } of limitLines(limits)) {
+    for (const { price, color, label } of limitLines(limits, theme)) {
       const y = priceToY(price, viewport);
       if (y < chartRect.y || y > chartRect.y + chartRect.height) continue;
 
@@ -859,7 +895,8 @@ export class RenderEngine {
       const axisX = chartRect.x + chartRect.width + 1;
       ctx.fillStyle = color;
       fillTag(ctx, axisX, y - LIMIT_TAG_HEIGHT / 2, (viewport.priceAxisWidth ?? PRICE_AXIS_WIDTH) - 2, LIMIT_TAG_HEIGHT, theme);
-      ctx.fillStyle = '#000';
+      // The ground's colour or the text's, whichever reads on the tag: near black on the bright ones.
+      ctx.fillStyle = theme.background && theme.text ? inkOn(color, theme.background, theme.text) : LIMIT_TAG_INK;
       ctx.font = normalFont;
       ctx.textBaseline = 'middle';
       ctx.textAlign = 'left';

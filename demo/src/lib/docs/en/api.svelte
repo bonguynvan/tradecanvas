@@ -221,11 +221,19 @@ vn30fLastTradingDay(2026, 12, (day) => holidays.has(day)) // the third Thursday,
   exchange's current rules before you rely on it.
 </p>
 
+<p>
+  The limits are drawn as dashed lines named CE, FL and REF, with a tag on the axis, in the
+  market's <code>colorScheme</code> colours, else the theme's <code>priceLimits</code>. A colour
+  that doesn't read at 4.5:1 on the theme's background is shaded toward its text until it does, so the
+  price board's bright magenta, cyan and yellow keep their hue on the light theme.
+  A theme of your own without <code>priceLimits</code> takes the light theme's on a light background, the dark theme's on a dark one.
+</p>
+
 <h3 id="comparing-symbols">Comparing symbols</h3>
 <p>
   Another symbol's percent change on the price scale (<code>addCompareSymbol</code>), or
   its price on a scale of its own, in a pane of its own, or the spread or ratio of the
-  chart's close to it — those last are indicators (<code>compareSymbol</code>,
+  chart's close to it — those last are indicators (<code>compareSymbol</code>, <code>compareSymbolPane</code>,
   <code>spread</code>), with legends, value tags, alerts and saved layouts like any
   other. The other symbol's bars line up with the chart's by time. The chart asks for
   the bars it needs; give them again after a timeframe change. <code>correlation</code> (of the closes)
@@ -233,6 +241,7 @@ vn30fLastTradingDay(2026, 12, (day) => holidays.has(day)) // the third Thursday,
 </p>
 <pre><code>{`chart.addCompareSymbol('eth', 'ETHUSDT', ethBars, '#7c4dff')   // percent change, on this scale
 chart.addIndicator('compareSymbol', { symbol: 'ETHUSDT' }, 'bottom', { scale: 'left' })  // own scale
+chart.addIndicator('compareSymbolPane', { symbol: 'ETHUSDT' })                         // own pane, own scale
 chart.addIndicator('spread', { symbol: 'ETHUSDT', mode: 'ratio' })                      // own pane
 chart.addIndicator('correlation', { symbol: 'ETHUSDT', length: 20 })                    // −1 to 1, own pane
 
@@ -257,6 +266,11 @@ chart.setPaneScale(spreadId, { percent: true })     // a pane in percent of its 
   the first, with no time of their own, so a line there would read the other symbol at the wrong
   bars. On those types the lines stay out of the auto scale, and <code>getCompareValues()</code>
   gives each one's close at the latest data bar, whatever bar is asked for, with <code>change: null</code>.
+  The indicators that read another symbol by time (a symbol on its own scale or in its own pane, a spread,
+  a ratio, a correlation) are not drawn there either, nor fit a scale: <code>getActiveIndicators()</code> gives
+  them <code>shown: false</code> and <code>offChartType: true</code>, and ChartWidget dims their rows as it dims a
+  compare's. Back on candles they come back.
+  A pane with nothing else in it is taken away there, its room going to the plot, and comes back with them.
 </p>
 <pre><code>{`chart.setScaleMode('percentage')       // each line reads its change on the axis
 chart.getCompareValues()               // [{ id: 'eth', label: 'ETHUSDT', color, visible, close: 2650.4, change: -1.82, stale: false }]
@@ -436,6 +450,8 @@ chart.on('executionFill', e => /* { side, price, quantity, reason, pnl } */)
 chart.on('chartContextMenu', e => /* { area, x, y, price, time } */)
 chart.on('stateChange', () => /* drawings, indicators, alerts, chart type or theme may have changed */)
 chart.on('paneChange', e => /* { instanceId, change: 'collapsed' | 'maximized' | 'order' } */)
+chart.on('crosshairMove', e => /* { point, bar, barIndex, time, prevClose }: time is when the bar stands as the axis dates it (on Renko, the bar a brick was finished on); prevClose the close of the bar drawn before */)
+chart.on('legendResize', e => /* { bottom }: the legend drawn taller or shorter, hidden or shown; content stacked under it moves to getLegendBottom() */)
 chart.on('chartTypeChange', e => /* { type, previous } */)
 chart.on('symbolChange', e => /* { symbol, previous } */)
 chart.on('marketChange', e => /* { market }: setMarket */)
@@ -444,6 +460,17 @@ chart.on('timeframeChange', e => /* { timeframe, previous } */)
 chart.on('historyChange', e => /* { canUndo, canRedo } */)
 chart.on('drawingSelect', e => /* { ids, primary } */)
 chart.on('rendererChange', e => /* { renderer: 'canvas' | 'webgl', reason?: 'unsupported' | 'contextLost' | 'contextRestored' | 'limit' } */)`}</code></pre>
+<p>
+  Labels of your own under the legend start at <code>getLegendBottom()</code> and move
+  with <code>legendResize</code>. Tell the chart their size with
+  <code>setLegendStack({'{'} width, height {'}'})</code>, measured from the plot's left edge and
+  that bottom (<code>null</code> when there are none): drawing labels, such as a horizontal
+  line's price or a position's target, keep clear of them as they keep clear of the legend.
+  ChartWidget does this for its indicator rows.
+  A label they cover slides beside them on its own row, goes under them when that is
+  near its line, or else sits on its line by the price axis where that is clear; labels moved keep clear of one
+  another, and a position's tags keep the order of their prices.
+</p>
 
 <h3>Undo for your own changes</h3>
 <p>
@@ -638,7 +665,14 @@ widget.setSymbols(await loadMarkets())   // your server's SymbolInfo[]: the sear
   A floating readout of the exact O/H/L/C/V, bar change, and every active
   indicator's value at the hovered bar — updates live as you move the
   crosshair. Toggle it from the command palette (<kbd>Ctrl/⌘ K</kbd> →
-  "Toggle Data Window").
+  "Toggle Data Window"). On a touch screen, touch the chart to put the
+  crosshair on a bar. Prices, the change and the values of indicators on the
+  price pane read as the chart writes prices; those of indicators in a pane of
+  their own as their legend row does; all in the chart's number locale.
+  A compare, a spread or a ratio, and a line on a scale of its own, read in the
+  decimals their size calls for, not the chart's prices'. On Renko, Kagi and the
+  like the data window shows the brick under the pointer and its change from the
+  brick before.
 </p>
 
 <h3>Shareable view (deep links)</h3>

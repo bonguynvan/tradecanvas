@@ -41,12 +41,42 @@ export class ChartLegend {
   private exchange = '';
   /** The height the top rows took on the last draw; null before the first. */
   private drawnHeight: number | null = null;
+  /** How far right of the plot's edge the top rows reached on the last draw (px). */
+  private drawnWidth = 0;
   private locale = 'en-US';
   private pricePrecision: number | null = null;
+  /** The height last told to the resize listener; null before the first draw. */
+  private reportedHeight: number | null = null;
+  private resizeListener: (() => void) | null = null;
+
+  /**
+   * Called after a draw that left the top rows taller or shorter than the
+   * one before (a line wrapped, a status came): what stacks under them moves.
+   */
+  setResizeListener(listener: (() => void) | null): void {
+    this.resizeListener = listener;
+  }
+
+  /**
+   * What it shows changed: until the next draw its height is a guess
+   * (`getHeight`), which a host may place its rows by, so that draw reports
+   * the height it finds even when it is the one it had.
+   */
+  private forgetHeight(): void {
+    this.drawnHeight = null;
+    this.reportedHeight = null;
+  }
+
+  private reportResize(): void {
+    const height = this.getHeight();
+    if (height === this.reportedHeight) return;
+    this.reportedHeight = height;
+    this.resizeListener?.();
+  }
 
   setConfig(config: Partial<LegendConfig>): void {
     Object.assign(this.config, config);
-    this.drawnHeight = null;
+    this.forgetHeight();
   }
 
   /** A copy of what it shows and how. */
@@ -67,13 +97,15 @@ export class ChartLegend {
   }
 
   setSymbol(symbol: string): void {
+    if (symbol === this.symbol) return;
     this.symbol = symbol;
-    this.drawnHeight = null;
+    this.forgetHeight();
   }
 
   setTimeframe(tf: string): void {
+    if (tf === this.timeframe) return;
     this.timeframe = tf;
-    this.drawnHeight = null;
+    this.forgetHeight();
   }
 
   setChartType(_type: string): void {
@@ -91,14 +123,16 @@ export class ChartLegend {
   }
 
   setStatusText(text: string | null): void {
+    if (text === this.statusText) return;
     this.statusText = text;
-    this.drawnHeight = null;
+    this.forgetHeight();
   }
 
   /** The exchange the symbol trades on, named in the title line. */
   setExchange(exchange: string): void {
+    if (exchange === this.exchange) return;
     this.exchange = exchange;
-    this.drawnHeight = null;
+    this.forgetHeight();
   }
 
   /** Symbol · interval · exchange, as far as they are known ('' with none or `showSymbol` off). */
@@ -190,8 +224,21 @@ export class ChartLegend {
     return h;
   }
 
+  /**
+   * How far right of the plot's left edge the title, price and volume rows
+   * reached on the last draw, its inset included: with `getHeight()`, the
+   * box drawing labels keep clear of. 0 before a draw, when hidden or drawn
+   * in the top-right corner.
+   */
+  getWidth(): number {
+    if (!this.config.visible || this.config.position !== 'top-left') return 0;
+    return this.drawnWidth;
+  }
+
   render(ctx: CanvasRenderingContext2D, viewport: ViewportState, theme: Theme, data: DataSeries): void {
-    if (!this.config.visible || data.length === 0) return;
+    // Hidden, it takes no height: a host stacking rows under it hears so, as when it is drawn shorter.
+    if (!this.config.visible) return this.reportResize();
+    if (data.length === 0) return;
 
     const bar = this.hoverBar ?? data[data.length - 1];
     // The change is from the bar before the one shown, hovered or last.
@@ -211,6 +258,7 @@ export class ChartLegend {
 
     ctx.textAlign = isLeft ? 'left' : 'right';
     ctx.textBaseline = 'top';
+    let widest = 0;
 
     // The title (symbol · interval · exchange, and a status) and the prices,
     // one line that wraps where the plot is too narrow for it.
@@ -221,6 +269,7 @@ export class ChartLegend {
       const gap = ctx.measureText('  ').width;
       for (const line of wrapCells(cells, gap, chartRect.width - 2 * LEGEND_INSET)) {
         const total = line.reduce((sum, c) => sum + c.labelWidth + c.width + gap, -gap);
+        widest = Math.max(widest, total);
         let cx = isLeft ? x : x - total;
         ctx.textAlign = 'left';
         for (const cell of line) {
@@ -245,9 +294,12 @@ export class ChartLegend {
       ctx.fillStyle = label;
       const vol = bar.volume >= 1e6 ? `${(bar.volume / 1e6).toFixed(2)}M` : bar.volume >= 1e3 ? `${(bar.volume / 1e3).toFixed(2)}K` : bar.volume.toFixed(0);
       ctx.fillText(`Vol ${vol}`, x, y);
+      widest = Math.max(widest, ctx.measureText(`Vol ${vol}`).width);
       y += fs + 2;
     }
     this.drawnHeight = isLeft ? y - chartRect.y : null;
+    this.drawnWidth = isLeft ? LEGEND_INSET + widest : 0;
+    this.reportResize();
 
     // Active indicator values
     if (this.indicators.length > 0) {

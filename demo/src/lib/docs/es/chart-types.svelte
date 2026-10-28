@@ -31,7 +31,7 @@
     <tr><td><code>renko</code></td><td>Gráfico de ladrillos de precio fijo; independiente del tiempo.</td></tr>
     <tr><td><code>kagi</code></td><td>Líneas de giro yang/yin; el giro es un porcentaje (4 por defecto) o una cantidad de precio.</td></tr>
     <tr><td><code>lineBreak</code></td><td>Una línea nueva cuando el cierre rompe las últimas líneas (3 por defecto).</td></tr>
-    <tr><td><code>pointAndFigure</code></td><td>Columnas de X/O; tamaño de caja + número de cajas para el giro.</td></tr>
+    <tr><td><code>pointAndFigure</code></td><td>Columnas de X/O; tamaño de caja + número de cajas para el giro. Las cajas demasiado pequeñas para verse se dibujan como columnas sólidas, y si hay menos columnas de las que caben en la vista, se ajustan a ella.</td></tr>
     <tr><td><code>rangeBars</code></td><td>El máximo-mínimo de cada barra equivale a un rango fijo, y la barra cierra en su máximo o en su mínimo; la última barra es la que todavía se está formando.</td></tr>
   </tbody>
 </table>
@@ -54,12 +54,34 @@
   Las transformaciones (Heikin-Ashi, Renko, Kagi, Line Break, P&amp;F, Range Bars) se
   gestionan internamente: <code>chart.getData()</code> sigue devolviendo la serie de entrada original.
 </p>
+<p>
+  El eje de tiempo y la etiqueta de hora del cursor fechan un ladrillo, una línea o una columna por la
+  barra en que se completó, así que el eje de un gráfico Renko, Kagi, Line Break, P&amp;F o Range Bars
+  muestra los años, meses y días que abarca; los ladrillos completados en una misma barra comparten su
+  etiqueta. Sus propios valores <code>time</code> solo los cuentan, de uno en uno. <code>axisTimes(series)</code>
+  de <code>@tradecanvas/chart</code> da esas fechas para una serie construida con <code>toRenko</code> y similares.
+</p>
+<p>
+  El tooltip del crosshair y el evento <code>crosshairMove</code> fechan un ladrillo igual: el
+  <code>time</code> del payload es la fecha del eje y <code>prevClose</code> el cierre del ladrillo anterior. En
+  estos tipos los indicadores se calculan sobre los ladrillos, líneas o columnas dibujados, no sobre las barras de
+  debajo, así que una media móvil va sobre los ladrillos y la leyenda, la ventana de datos de ChartWidget y una
+  exportación la leen en un ladrillo; una exportación escribe los ladrillos, fechados como los fecha el eje. Los
+  indicadores que cuentan días (VWAP, Session VWAP, la media móvil multitemporal) y los que leen otro símbolo por
+  tiempo no se dibujan ahí: <code>getActiveIndicators()</code> los marca con <code>offChartType: true</code>.
+</p>
+<p>
+  Renko, Kagi, Line Break y Range Bars con menos ladrillos o líneas de los que caben en la vista se ajustan
+  a ella como Point &amp; Figure, así que no quedan en la parte derecha del gráfico. El volumen de una columna
+  P&amp;F es el de las barras de las que se hizo. En estos tipos el eje de tiempo deja solo las dos clases de
+  etiqueta más gruesas a la vista (años y meses, por ejemplo), sin un día suelto entre ellas.
+</p>
 
 <h2>Configuración de los tipos derivados</h2>
 <p>
   La caja de Renko, las líneas que un Line Break tiene que romper, la reversión de Kagi, la caja y la
   reversión de Punto y figura, y el rango de las Range Bars. Lo que no se configura se calcula a partir
-  de los datos (una caja por ATR para Renko, el 1% del cierre medio para la caja de P&amp;F…). La
+  de los datos (una caja por ATR para Renko, la quincuagésima parte del rango de precios, redondeada a 1, 2 o 5, para la caja de P&amp;F…). La
   configuración forma parte del estado guardado; en ChartWidget está en el cuadro de configuración del
   tipo de gráfico.
 </p>

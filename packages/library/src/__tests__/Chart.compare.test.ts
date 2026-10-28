@@ -56,6 +56,19 @@ describe('another symbol on the chart', () => {
     expect(chart.getIndicatorPanes().map((p) => p.instanceId)).toEqual([spread, ratio]);
   });
 
+  it('draws the symbol’s price in a pane of its own, on its own scale, and takes the pane away with it', () => {
+    chart.setSymbolSeries('B', other);
+    const cmp = chart.addIndicator('compareSymbolPane', { symbol: 'B' })!;
+    expect(values(cmp).slice(0, 4)).toEqual([1000, 1000, 1010, 1010]);
+    expect(chart.getIndicatorPanes().map((p) => p.instanceId)).toEqual([cmp]);
+    type Probe = { buildPanelRenderInfos(): { instanceId: string; viewport: ViewportState }[] };
+    const vp = (chart as unknown as Probe).buildPanelRenderInfos().find((p) => p.instanceId === cmp)!.viewport;
+    // Its pane's scale holds the other symbol's prices, ten times the chart's.
+    expect(vp.priceRange.min).toBeGreaterThan(900);
+    chart.removeIndicator(cmp);
+    expect(chart.getIndicatorPanes()).toEqual([]);
+  });
+
   it('asks again when an indicator switches to a symbol it hasn’t got', () => {
     const asked: string[] = [];
     chart.on('symbolSeriesRequest', (e) => asked.push(e.payload.symbol));
@@ -175,6 +188,42 @@ describe('compares on chart types whose bars carry no time', () => {
     chart.setChartType('heikinAshi');
     expect(drawn()).not.toBeNull();
     expect(state().priceRange.max).toBeGreaterThan(1000);
+  });
+
+  it('draws no indicator that reads another symbol there: on its own scale, in a pane, as a spread or ratio', () => {
+    chart.setSymbolSeries('B', other);
+    const scale = chart.addIndicator('compareSymbol', { symbol: 'B' }, 'bottom', { scale: 'left' })!;
+    const pane = chart.addIndicator('compareSymbolPane', { symbol: 'B' })!;
+    const ratio = chart.addIndicator('spread', { symbol: 'B', mode: 'ratio' })!;
+    const ema = chart.addIndicator('ema', { period: 5 })!;
+    const shown = () => Object.fromEntries(chart.getActiveIndicators().map((a) => [a.instanceId, a.shown]));
+    const offType = () => chart.getActiveIndicators().filter((a) => a.offChartType).map((a) => a.instanceId);
+    for (const type of ['renko', 'kagi', 'lineBreak', 'pointAndFigure', 'rangeBars'] as const) {
+      chart.setChartType(type);
+      expect(shown(), type).toEqual({ [scale]: false, [pane]: false, [ratio]: false, [ema]: true });
+      expect(offType(), type).toEqual([scale, pane, ratio]);
+      // The left scale held the other symbol: nothing on it there.
+      expect(chart.isLeftPriceScaleShown(), type).toBe(false);
+    }
+    chart.setChartType('candlestick');
+    expect(shown()).toEqual({ [scale]: true, [pane]: true, [ratio]: true, [ema]: true });
+    expect(offType()).toEqual([]);
+  });
+
+  it('takes the panes of the indicators it leaves off away there, and gives them back on candles', () => {
+    chart.setSymbolSeries('B', other);
+    const pane = chart.addIndicator('compareSymbolPane', { symbol: 'B' })!;
+    const corr = chart.addIndicator('correlation', { symbol: 'B' })!;
+    const rsi = chart.addIndicator('rsi')!;
+    const panes = () => chart.getIndicatorPanes().map((p) => p.instanceId);
+    expect(panes()).toEqual([pane, corr, rsi]);
+    const plotHeight = chart.getPlotRect().height;
+    chart.setChartType('renko');
+    // Nothing to draw in them there: no empty panes with a made-up scale, and the plot has their room.
+    expect(panes()).toEqual([rsi]);
+    expect(chart.getPlotRect().height).toBeGreaterThan(plotHeight);
+    chart.setChartType('candlestick');
+    expect(panes()).toEqual([pane, corr, rsi]);
   });
 
   it('gives each compare’s close at the latest bar there, and no change, whatever bar is asked for', () => {

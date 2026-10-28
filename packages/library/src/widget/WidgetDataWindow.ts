@@ -1,18 +1,22 @@
 import { createIcon } from './icons.js';
 import { EN_TRANSLATOR, type Translator } from './i18n.js';
 import { markPart } from './widgetFeatures.js';
+import { coarsePointer } from './formControls.js';
 
 /** Decimals the change's percentage shows. */
 export const PERCENT_DECIMALS = 2;
 
 export interface DataWindowIndicator {
   name: string;
-  values: { key: string; value: number }[];
+  /** `text`: the value as the legend writes it; without it, a figure the panel rounds itself. */
+  values: { key: string; value: number; text?: string }[];
 }
 
 export interface DataWindowModel {
   ohlc: { open: number; high: number; low: number; close: number; volume: number } | null;
   change: number;
+  /** The change as the prices are written (no sign); without it, `formatPrice` writes it. */
+  changeText?: string;
   changePct: number;
   indicators: DataWindowIndicator[];
 }
@@ -101,7 +105,8 @@ export class WidgetDataWindow {
     if (!model.ohlc) {
       const empty = document.createElement('div');
       empty.className = 'tcw-datawin-empty';
-      empty.textContent = this.t('dataWindow.hover');
+      // A finger has no hover: it touches the chart to put the crosshair on a bar.
+      empty.textContent = this.t(coarsePointer() ? 'dataWindow.touch' : 'dataWindow.hover');
       this.bodyEl.appendChild(empty);
       return;
     }
@@ -115,7 +120,8 @@ export class WidgetDataWindow {
     const tone = model.change > 0 ? 'up' : model.change < 0 ? 'down' : '';
     const sign = model.change > 0 ? '+' : '';
     const pct = this.callbacks.formatPercent?.(model.changePct) ?? model.changePct.toFixed(PERCENT_DECIMALS);
-    this.bodyEl.appendChild(this.row(this.t('dataWindow.change'), `${sign}${fp(model.change)} (${sign}${pct}%)`, tone));
+    const changeText = model.changeText ?? fp(model.change);
+    this.bodyEl.appendChild(this.row(this.t('dataWindow.change'), `${sign}${changeText} (${sign}${pct}%)`, tone));
     this.bodyEl.appendChild(this.row(this.t('dataWindow.volume'), formatVolume(o.volume)));
 
     for (const ind of model.indicators) {
@@ -124,7 +130,7 @@ export class WidgetDataWindow {
       head.textContent = ind.name;
       this.bodyEl.appendChild(head);
       for (const v of ind.values) {
-        this.bodyEl.appendChild(this.row(v.key, formatNumber(v.value)));
+        this.bodyEl.appendChild(this.row(v.key, v.text ?? formatNumber(v.value)));
       }
     }
   }

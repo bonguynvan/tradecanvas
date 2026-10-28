@@ -215,17 +215,25 @@ vn30fLastTradingDay(2026, 12, (day) => holidays.has(day)) // 第 3 木曜日。�
   取引所のルールは随時変わるため、プリセットに頼る前に、その取引所の現行ルールと照らし合わせてください。
 </p>
 
+<p>
+  値幅制限は CE、FL、REF と名付けた破線と軸上のタグで描かれ、色はマーケットの
+  <code>colorScheme</code>、なければテーマの <code>priceLimits</code> です。テーマの背景に対して 4.5:1 のコントラストに届かない色は届くまで濃くされるため、
+  板の明るいマゼンタ、シアン、黄色はライトテーマでも色相を保ちます。
+  <code>priceLimits</code> のない独自テーマは、明るい背景ではライトテーマの色、暗い背景ではダークテーマの色を使います。
+</p>
+
 <h3 id="comparing-symbols">シンボルの比較</h3>
 <p>
   別のシンボルの変化率を価格スケール上に表示する（<code>addCompareSymbol</code>）ほか、その価格を専用の
   スケールや専用のペインに表示したり、チャートの終値とのスプレッドや比率を表示したりできます。後者は
-  インジケーター（<code>compareSymbol</code>、<code>spread</code>）なので、ほかのインジケーターと同じく
+  インジケーター（<code>compareSymbol</code>、<code>compareSymbolPane</code>、<code>spread</code>）なので、ほかのインジケーターと同じく
   凡例、値ラベル、アラートを持ち、レイアウトにも保存されます。もう一方のシンボルのバーは時刻でチャートのバーに
   揃えられます。チャートは必要なバーを要求するので、時間足を変えたら改めて渡してください。<code>correlation</code>（終値）と
   <code>correlationlog</code>（バーごとのリターン）も同じようにもう一方のシンボルを読み、−1 から 1 の値を取ります。
 </p>
 <pre><code>{`chart.addCompareSymbol('eth', 'ETHUSDT', ethBars, '#7c4dff')   // percent change, on this scale
 chart.addIndicator('compareSymbol', { symbol: 'ETHUSDT' }, 'bottom', { scale: 'left' })  // own scale
+chart.addIndicator('compareSymbolPane', { symbol: 'ETHUSDT' })                         // own pane, own scale
 chart.addIndicator('spread', { symbol: 'ETHUSDT', mode: 'ratio' })                      // own pane
 chart.addIndicator('correlation', { symbol: 'ETHUSDT', length: 20 })                    // −1 to 1, own pane
 
@@ -248,6 +256,11 @@ chart.setPaneScale(spreadId, { percent: true })     // a pane in percent of its 
   独自の時刻を持たないため、ラインを引くともう一方のシンボルを誤ったバーで読むことになるからです。これらのタイプでは
   比較ラインは自動スケールに含まれず、<code>getCompareValues()</code> はどのバーを尋ねても、各シンボルの最新のデータバーでの
   終値を <code>change: null</code> とともに返します。
+  時刻でもう一方のシンボルを読むインジケーター（独自スケールや独自ペインのシンボル、スプレッド、比率、相関）も
+  これらのタイプでは描かれず、どのスケールにも含まれません。<code>getActiveIndicators()</code> はそれらに
+  <code>shown: false</code> と <code>offChartType: true</code> を返し、ChartWidget は比較の行と同じように行を薄く表示します。
+  ローソク足に戻すと再び表示されます。
+  ほかに何もないペインはそこでは取り除かれ、その分の高さはチャートに回り、それらと一緒に戻ります。
 </p>
 <pre><code>{`chart.setScaleMode('percentage')       // each line reads its change on the axis
 chart.getCompareValues()               // [{ id: 'eth', label: 'ETHUSDT', color, visible, close: 2650.4, change: -1.82, stale: false }]
@@ -420,6 +433,8 @@ chart.on('executionFill', e => /* { side, price, quantity, reason, pnl } */)
 chart.on('chartContextMenu', e => /* { area, x, y, price, time } */)
 chart.on('stateChange', () => /* 描画、インジケーター、アラート、チャートタイプ、テーマのいずれかが変わった可能性がある */)
 chart.on('paneChange', e => /* { instanceId, change: 'collapsed' | 'maximized' | 'order' } */)
+chart.on('crosshairMove', e => /* { point, bar, barIndex, time, prevClose }: time は軸が付けるそのバーの日時（Renko ではブロックが完成したバーの日時）、prevClose は一つ前に描かれたバーの終値 */)
+chart.on('legendResize', e => /* { bottom }: 凡例の高さが変わった（非表示・再表示を含む）。その下に重ねた内容は getLegendBottom() へ移す */)
 chart.on('chartTypeChange', e => /* { type, previous } */)
 chart.on('symbolChange', e => /* { symbol, previous } */)
 chart.on('marketChange', e => /* { market }: setMarket */)
@@ -428,6 +443,14 @@ chart.on('timeframeChange', e => /* { timeframe, previous } */)
 chart.on('historyChange', e => /* { canUndo, canRedo } */)
 chart.on('drawingSelect', e => /* { ids, primary } */)
 chart.on('rendererChange', e => /* { renderer: 'canvas' | 'webgl', reason?: 'unsupported' | 'contextLost' | 'contextRestored' | 'limit' } */)`}</code></pre>
+<p>
+  凡例の下に置く独自のラベルは <code>getLegendBottom()</code> から始め、<code>legendResize</code>
+  で動かします。<code>setLegendStack({'{'} width, height {'}'})</code> でその大きさをチャートに伝えると
+  （プロットの左端とその下端から測り、ないときは <code>null</code>）、水平線の価格やポジションの目標などの
+  描画ラベルは、凡例と同じようにそれを避けます。ChartWidget はインジケーター行でこれを行います。
+  それらに隠れるラベルは同じ行のまま横へずれ、線に近ければその下へ、そうでなければ空いていれば価格軸のそばの線上に
+  置かれます。移動したラベル同士は重ならず、ポジションのタグは価格の順を保ちます。
+</p>
 
 <h3>独自の変更を元に戻す</h3>
 <p>
@@ -617,6 +640,12 @@ widget.setSymbols(await loadMarkets())   // サーバーからの SymbolInfo[]�
   カーソル位置のバーの正確な O/H/L/C/V、バーの変化、すべての有効なインジケーターの値を表示する
   フローティングパネルです。クロスヘアを動かすとリアルタイムに更新されます。コマンドパレット
   （<kbd>Ctrl/⌘ K</kbd> →「データウィンドウの表示切り替え」）から表示を切り替えます。
+  タッチスクリーンではチャートをタッチするとクロスヘアがバーに置かれます。価格、変化、
+  価格ペイン上のインジケーターの値はチャートが価格を書くとおりに、独立したペインの
+  インジケーターの値は凡例の行と同じように、いずれもチャートの数値ロケールで表示されます。
+  比較、スプレッド、レシオ、独自のスケールに載る線は、チャートの価格ではなく値の大きさに合った
+  小数桁で表示されます。Renko や Kagi などでは、データウィンドウはポインター下のブロックと、
+  一つ前のブロックからの変化を表示します。
 </p>
 
 <h3>共有できる表示（ディープリンク）</h3>

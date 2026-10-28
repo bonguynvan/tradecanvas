@@ -45,7 +45,7 @@ import { isValidTimeZone, sessionMinute, symbolTimeZone, LayerType, setLocale as
 import type { BarLayout, ChartTypeOptions, DataUpdatePayload, FontConfig, IndicatorId, IndicatorParamsFor, PriceFormatter, PriceFraction, ShapeConfig, TimeFormatter } from '@tradecanvas/commons';
 import type { ChartStyleKey, ChartStyleOverrides, ChartStyleOverridesPatch, IndicatorIntervals, IndicatorStyleConfig, PaneStyle, ResolvedChartStyle, StyleLayer } from '@tradecanvas/commons';
 import { PHI, computePriceRange, readChartTypeOptions, tickBarCount, barTimeUnit, readChartStyleOverrides, readIndicatorPlotStyles, readPaneStyle } from '@tradecanvas/commons';
-import { PRICE_SCALE_MARGIN, PriceLines, type BidAsk, SymbolSeriesStore, CompareSymbolIndicator, SpreadIndicator, CorrelationCoefficientIndicator, CorrelationLogIndicator, SYMBOL_INDICATOR_IDS, HiLoRenderer, PointAndFigureRenderer, ReshapeMemo, isPriceLevelAlert, loadWebGL, gpuContextsLeft, whenGpuContextFree } from '@tradecanvas/core';
+import { PRICE_SCALE_MARGIN, PriceLines, type BidAsk, SymbolSeriesStore, CompareSymbolIndicator, CompareSymbolPaneIndicator, SpreadIndicator, CorrelationCoefficientIndicator, CorrelationLogIndicator, SYMBOL_INDICATOR_IDS, axisTimes, HiLoRenderer, PointAndFigureRenderer, ReshapeMemo, isPriceLevelAlert, loadWebGL, gpuContextsLeft, whenGpuContextFree } from '@tradecanvas/core';
 import type { GpuRenderer, RendererMode } from '@tradecanvas/core';
 import { regularHoursFilter } from './regularHours.js';
 import { ChartA11y } from './chartA11y.js';
@@ -209,6 +209,8 @@ export class Chart {
   private execTeardown: (() => void) | null = null;
   private autoScrollOnNewBar = true;
   private displayDataCache: DataSeries | null = null;
+  /** The drawn series (Renko bricks…) the indicators were last worked out on; null: the data bars. */
+  private indicatorsOnDrawn: DataSeries | null = null;
   /** The size a reshaped type was raised to on this series, so a tick walks it once (cleared when the series is replaced). */
   private readonly reshapeMemo = new ReshapeMemo();
   /** The price step the cached range bars were built on: a new step (the symbol's `minTick` arrives) builds them again. */
@@ -238,6 +240,8 @@ export class Chart {
   private lastEmittedPriceRange: { min: number; max: number } | null = null;
   private lastEmittedBarWidth: number | null = null;
   private chartLegend: ChartLegend;
+  /** What a host lays under the legend (`setLegendStack`), for drawing labels to keep clear of. */
+  private legendStack: { width: number; height: number } | null = null;
   private watermark: Watermark;
   private barCountdown: BarCountdown;
   /**
@@ -494,6 +498,7 @@ export class Chart {
     registerBuiltInIndicators(this.indicatorEngine);
     // Indicators on other symbols' bars, kept by this chart.
     this.indicatorEngine.register(new CompareSymbolIndicator(this.symbolSeries));
+    this.indicatorEngine.register(new CompareSymbolPaneIndicator(this.symbolSeries));
     this.indicatorEngine.register(new SpreadIndicator(this.symbolSeries));
     this.indicatorEngine.register(new CorrelationCoefficientIndicator(this.symbolSeries));
     this.indicatorEngine.register(new CorrelationLogIndicator(this.symbolSeries));
@@ -502,6 +507,7 @@ export class Chart {
     this.drawingManager = new DrawingManager();
     registerBuiltInDrawingTools(this.drawingManager);
     this.drawingRenderer = new DrawingRenderer(this.drawingManager);
+    this.drawingRenderer.setKeepOut(() => this.legendKeepOut());
     this.drawingManager.setRequestRender(() => {
       // Sync entire render context so drawings render with same viewport as candles
       this.syncRenderContext();
@@ -618,21 +624,29 @@ export class Chart {
       if (barIndex !== null && point) {
         const data = this.crosshairSeries();
         const bar = barIndex >= 0 && barIndex < data.length ? data[barIndex] : undefined;
+        const prevClose = barIndex > 0 ? data[barIndex - 1]?.close : undefined;
+        // A brick's own time only counts bricks: the tooltip and listeners get the date the axis gives it.
+        const times = axisTimes(data);
+        const time = bar ? times[barIndex]?.time ?? bar.time : undefined;
 
-        // Update legend (canvas-rendered, will show on next UI paint)
+        // The legend is drawn in the frame that found this bar, before it knew it: one more
+        // paint of the pointer's layer shows it, or a pointer that comes to rest leaves the
+        // legend on the bar before while the data window and the indicator rows show this one.
         this.chartLegend.setHoverBar(bar ?? null, barIndex > 0 ? data[barIndex - 1] ?? null : null);
+        if (this.features.legend) this.engine.requestRender(LayerType.Hover);
 
         // Update tooltip (DOM, lightweight update only when bar changes).
         // Over an indicator pane there is no price crosshair to sit beside.
         const vs = this.viewport.getState();
         const inPlot = point.y >= vs.chartRect.y && point.y <= vs.chartRect.y + vs.chartRect.height;
         if (bar && inPlot && this.features.crosshairTooltip) {
-          this.crosshairTooltip.show(point, bar, this.themeManager.getTheme(), this.cachedContainerSize(), {
-            prevClose: barIndex > 0 ? data[barIndex - 1]?.close : undefined,
+          const dated = time === bar.time ? bar : { ...bar, time: time ?? bar.time };
+          this.crosshairTooltip.show(point, dated, this.themeManager.getTheme(), this.cachedContainerSize(), {
+            prevClose,
             priceRange: vs.priceRange,
             plot: vs.chartRect,
-            barStepMs: barTimeStepMs(data),
-            timeUnit: barTimeUnit(data),
+            barStepMs: barTimeStepMs(times),
+            timeUnit: barTimeUnit(times),
           });
         } else {
           this.crosshairTooltip.hide();
@@ -650,10 +664,11 @@ export class Chart {
         }
 
         // Emit for external consumers
-        this.eventBus.emit('crosshairMove', { point, bar, barIndex });
+        this.eventBus.emit('crosshairMove', { point, bar, barIndex, ...(time !== undefined ? { time } : {}), ...(prevClose !== undefined ? { prevClose } : {}) });
       } else {
         this.crosshairTooltip.hide();
         this.chartLegend.setHoverBar(null);
+        if (this.features.legend) this.engine.requestRender(LayerType.Hover);
         this.eventBus.emit('crosshairLeave', {});
       }
     });
@@ -662,6 +677,12 @@ export class Chart {
     this.chartLegend = new ChartLegend();
     this.chartLegend.setChartType(this.options.chartType);
     this.chartLegend.setLocale(this.numberLocale);
+    // Drawn taller or shorter: what a host stacks under it (the widget's indicator rows) moves,
+    // and the drawings' labels are placed again around it.
+    this.chartLegend.setResizeListener(() => {
+      this.eventBus.emit('legendResize', { bottom: this.getLegendBottom() });
+      this.engine.requestRender();
+    });
 
     // Watermark + Volume
     this.watermark = new Watermark();
@@ -1169,6 +1190,7 @@ export class Chart {
     // Auto-set current price line from last bar's close
     if (lastKept) this.currentPriceLine.setPrice(lastKept.close);
     this.updateViewportAndRender(true);
+    this.fitFewColumns();
     this.emitBars(kept.length);
   }
 
@@ -1521,8 +1543,26 @@ export class Chart {
     this.displayDataCache = null;
     this.applyTimeSpacing();
     this.updateViewportAndRender(true);
+    this.fitFewColumns();
     this.markStateChanged();
     if (type !== previous) this.eventBus.emit('chartTypeChange', { type, previous });
+  }
+
+  /**
+   * A point & figure chart has a column for each reversal, often a few dozen
+   * for a whole series, and Renko, Kagi, line break and range bars a brick
+   * or a line for each move of their size: at the width of a bar they would
+   * sit in a corner of an empty plot. Fewer than the view holds are fitted
+   * to it, on a new type, box or series; more are left at the width they
+   * are, as candles are.
+   */
+  private fitFewColumns(): void {
+    const type = this.options.chartType;
+    if (!isReshapedChartType(type) || this.pluginManager.getChartType(type)) return;
+    const n = this.getDisplayData().length;
+    const { chartRect, barWidth, barSpacing } = this.viewport.getState();
+    const slots = chartRect.width / (barWidth + barSpacing);
+    if (n > 0 && slots > n + this.viewport.getRightMargin()) this.fitContent();
   }
 
   /**
@@ -1544,6 +1584,7 @@ export class Chart {
     this.chartTypeOptions = { ...this.chartTypeOptions, ...readChartTypeOptions(options) };
     this.displayDataCache = null;
     this.updateViewportAndRender(true);
+    this.fitFewColumns();
     // New settings build other bars: a screen reader hears the new summary, as after a new type.
     this.a11y?.refresh(true);
     this.markStateChanged();
@@ -1715,7 +1756,7 @@ export class Chart {
     if (!this.isIndicatorAllowed(id)) return null;
     const descriptor = this.indicatorEngine.getAvailableIndicators().find((d) => d.id === id);
     const pane = descriptor ? this.paneFor(descriptor, params, options.pane) : null;
-    const instanceId = this.indicatorEngine.addIndicator(id, params, this.series.bars(), {
+    const instanceId = this.indicatorEngine.addIndicator(id, params, this.indicatorBars(), {
       ...(pane ? { pane } : {}),
       ...(options.scale === 'left' ? { scale: 'left' as const } : {}),
       ...(options.instanceId ? { instanceId: options.instanceId } : {}),
@@ -1741,7 +1782,7 @@ export class Chart {
     symbol = symbol.trim();
     this.symbolSeries.set(symbol, bars);
     this.requestedSymbols.delete(symbol);
-    const data = this.series.bars();
+    const data = this.indicatorBars();
     let changed = false;
     for (const ind of this.indicatorEngine.getActiveIndicators()) {
       if (!SYMBOL_INDICATOR_IDS.has(ind.id) || String(ind.params.symbol ?? '').trim() !== symbol.trim()) continue;
@@ -1800,7 +1841,7 @@ export class Chart {
     const descriptor = this.indicatorEngine.getIndicatorDescriptor(instanceId);
     const name = descriptor ? sourceParam(descriptor) : null;
     const before = name ? this.indicatorEngine.getIndicatorConfig(instanceId)?.params[name] : undefined;
-    this.indicatorEngine.updateIndicator(instanceId, params, this.series.bars());
+    this.indicatorEngine.updateIndicator(instanceId, params, this.indicatorBars());
     this.announceIndicatorUpdate(0);
     this.markStateChanged();
     this.eventBus.emit('indicatorChange', { instanceId, change: 'params' });
@@ -2284,6 +2325,32 @@ export class Chart {
   }
 
   /**
+   * The size of what you lay over the chart under the legend (rows of your
+   * own, as ChartWidget's indicator rows are), from the plot's left edge and
+   * `getLegendBottom()` down, in CSS px: drawing labels keep clear of it as
+   * they keep clear of the legend. `null` when nothing is there.
+   */
+  setLegendStack(size: { width: number; height: number } | null): void {
+    const next = size && size.width > 0 && size.height > 0 ? { width: size.width, height: size.height } : null;
+    const same = next === this.legendStack
+      || (next !== null && this.legendStack !== null && next.width === this.legendStack.width && next.height === this.legendStack.height);
+    if (same) return;
+    this.legendStack = next;
+    this.engine.requestRender();
+  }
+
+  /** The legend's rows as drawn and what is stacked under them: drawing labels keep clear of these. */
+  private legendKeepOut(): { x: number; y: number; width: number; height: number }[] {
+    const plot = this.viewport.getState().chartRect;
+    const bottom = this.getLegendBottom();
+    const boxes: { x: number; y: number; width: number; height: number }[] = [];
+    const width = this.features.legend ? this.chartLegend.getWidth() : 0;
+    if (width > 0 && bottom > plot.y) boxes.push({ x: plot.x, y: plot.y, width, height: bottom - plot.y });
+    if (this.legendStack) boxes.push({ x: plot.x, y: bottom, ...this.legendStack });
+    return boxes;
+  }
+
+  /**
    * Whether each drawn bar is one data bar (candles, lines, Heikin-Ashi…).
    * Renko, Kagi, point & figure, line break and range bars redraw the series,
    * so a bar index on screen is not an index into the data.
@@ -2762,7 +2829,7 @@ export class Chart {
    * those on screen (`range: 'visible'`).
    */
   getExportData(options: { range?: 'all' | 'visible'; indicators?: boolean } = {}): { bars: OHLCBar[]; columns: ExportColumn[] } {
-    const data = this.series.bars();
+    const data = this.exportBars();
     let from = 0;
     let to = data.length - 1;
     if (options.range === 'visible') {
@@ -3118,15 +3185,15 @@ export class Chart {
    * Cheap — only walks alerts whose channel isn't `'price'`, usually none.
    */
   private collectIndicatorValues(into: Map<string, number>): void {
-    const data = this.series.bars();
-    if (data.length === 0) return;
-    const lastIdx = data.length - 1;
+    if (this.series.length() === 0) return;
     const channels = this.alertManager.getAlerts().flatMap((a) => (a.target ? [a.channel, a.target] : [a.channel]));
     for (const channel of channels) {
       if (into.has(channel)) continue;
       const sep = channel.indexOf(':');
       if (sep < 0) continue;
-      const point = this.indicatorEngine.getOutput(channel.slice(0, sep))?.series?.[lastIdx];
+      // The line's last value: at the last bar, or on Renko and the like the last brick.
+      const series = this.indicatorEngine.getOutput(channel.slice(0, sep))?.series;
+      const point = series?.[series.length - 1];
       const value = point?.[channel.slice(sep + 1)];
       if (typeof value === 'number' && Number.isFinite(value)) into.set(channel, value);
     }
@@ -3540,6 +3607,23 @@ export class Chart {
    */
   private comparesDrawn(): boolean {
     return this.isTimeAligned();
+  }
+
+  /**
+   * The panes with nothing to draw on this chart type: every indicator in
+   * them is left off it (a compare in its own pane, a correlation, on
+   * Renko). They are laid out as if they weren't there, so no empty pane
+   * with a made-up scale takes the plot's room; back on candles they return.
+   */
+  private panesOffChartType(): Set<string> {
+    const active = this.indicatorEngine.getActiveIndicators();
+    const off = new Set(active.filter((ind) => ind.offChartType).map((ind) => ind.instanceId));
+    const aside = new Set<string>();
+    for (const panel of this.layoutManager.getPanels()) {
+      const members = active.filter((ind) => ind.instanceId === panel.id || ind.pane === panel.id);
+      if (members.length > 0 && members.every((ind) => off.has(ind.instanceId))) aside.add(panel.id);
+    }
+    return aside;
   }
 
   /** Take every compare line off, each told as a `compareChange` of `'remove'`. */
@@ -5999,6 +6083,8 @@ export class Chart {
       ...this.marketConfig,
       priceLimits: { ...this.marketConfig.priceLimits, referencePrice },
     };
+    // The lines are drawn from the render context, not read each frame: give it the new ones.
+    this.syncRenderContext();
     this.engine.requestRender();
   }
 
@@ -6011,7 +6097,12 @@ export class Chart {
 
   /** Update feature flags at runtime. Only provided keys are changed. */
   setFeatures(patch: Partial<FeaturesConfig>): void {
+    const legendBottom = this.getLegendBottom();
     Object.assign(this.features, patch);
+    // The legend switched off or on: what is stacked under it moves, as when it is drawn another height.
+    if (patch.legend !== undefined && this.getLegendBottom() !== legendBottom) {
+      this.eventBus.emit('legendResize', { bottom: this.getLegendBottom() });
+    }
 
     // Apply immediate side-effects
     if (patch.crosshair === false || patch.crosshairTooltip === false) {
@@ -6136,13 +6227,47 @@ export class Chart {
 
   /** Recompute indicators from bar `from` on, and say so (live ticks, closes, replay steps). */
   private recalcIndicatorsFrom(data: DataSeries, from: number): void {
+    // A new bar can add, move or take away bricks anywhere near the end: all of them again.
+    if (!this.isTimeAligned()) return this.recalcIndicators(data);
     this.indicatorEngine.recalculateFrom(data, from);
+    this.indicatorsOnDrawn = null;
     this.announceIndicatorUpdate(from);
   }
 
   private recalcIndicators(data: DataSeries): void {
-    this.indicatorEngine.recalculateAll(data);
+    const bars = this.indicatorBars(data);
+    this.indicatorEngine.recalculateAll(bars);
+    this.indicatorsOnDrawn = bars === data ? null : bars;
     this.announceIndicatorUpdate(0);
+  }
+
+  /**
+   * The bars an export writes, beside the indicator values worked out on
+   * them: on Renko and the like the bricks drawn, each dated as the axis
+   * dates it (by the bar it was finished on), not the bars under them.
+   */
+  private exportBars(): DataSeries {
+    if (this.isTimeAligned()) return this.series.bars();
+    const drawn = this.getDisplayData();
+    const times = axisTimes(drawn);
+    return drawn.map((bar, i) => ({ ...bar, time: times[i]?.time ?? bar.time }));
+  }
+
+  /**
+   * The bars indicators are worked out on: the data bars where each drawn
+   * bar is one, the series drawn on Renko, Kagi and the like, so a line sits
+   * on the bricks and reads their closes, as the legend and the data window
+   * read it at a brick.
+   */
+  private indicatorBars(data: DataSeries = this.series.bars()): DataSeries {
+    return this.isTimeAligned() ? data : this.getDisplayData();
+  }
+
+  /** A new chart type, box or series drawn: the indicators follow the bars drawn. */
+  private syncIndicatorBars(displayData: DataSeries): void {
+    const aligned = this.isTimeAligned();
+    if (aligned ? this.indicatorsOnDrawn === null : this.indicatorsOnDrawn === displayData) return;
+    this.recalcIndicators(this.series.bars());
   }
 
   /**
@@ -6214,6 +6339,7 @@ export class Chart {
    */
   private applyDataToViewport(scrollToEnd = false): DataSeries {
     const displayData = this.getDisplayData();
+    this.syncIndicatorBars(displayData);
     const autoScale = this.options.autoScale !== false || this.priceFitPending;
 
     // updateData first so dataLength is current for scrollToEnd — but only
@@ -6264,6 +6390,9 @@ export class Chart {
 
   /** Full update: resolve layout, update viewport, sync context, request render. */
   private updateViewportAndRender(scrollToEnd = false): void {
+    // Before the layout and the scales: an indicator that reads another symbol by time is not drawn on bricks.
+    this.indicatorEngine.setBarsTimed(this.comparesDrawn());
+    this.layoutManager.setPanelsAside(this.panesOffChartType());
     // Invalidate layout cache
     this.resolvedLayoutCache = null;
     this.panelInfoCache = null;

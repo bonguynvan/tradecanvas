@@ -817,6 +817,7 @@ export const PT_MESSAGES: WidgetMessages = {
   'dock.rail': 'Painéis',
   'dock.resize': 'Redimensionar o painel',
   'dataWindow.hover': 'Passe o cursor sobre o gráfico',
+  'dataWindow.touch': 'Toque no gráfico',
   'dataWindow.open': 'Abertura',
   'dataWindow.high': 'Máxima',
   'dataWindow.low': 'Mínima',

@@ -133,6 +133,11 @@
         "key": "senkouB",
         "title": "Lead B",
         "kind": "line"
+      },
+      {
+        "key": "chikou",
+        "title": "Lagging Span",
+        "kind": "line"
       }
     ]
   },

@@ -15,6 +15,7 @@ import {
 import {
   createRendererFor,
   isTransformedChartType,
+  pointAndFigureBox,
   rangeBarsSize,
   rangeBarsStep,
   transformDisplayData,
@@ -143,6 +144,26 @@ describe('rangeBarsSize', () => {
   it('takes a hundredth of the last close with too few bars for a true range', () => {
     expect(rangeBarsSize(bars([100_000, 100_500]))).toBe(1_000);
     expect(rangeBarsSize(bars([100_000, 100_500]), {}, 0.5)).toBe(1_000);
+  });
+});
+
+describe('pointAndFigureBox', () => {
+  it('is the one set, as it is', () => {
+    expect(pointAndFigureBox(bars([100, 200, 300]), { pointAndFigure: { boxSize: 7 } })).toBe(7);
+  });
+
+  it('is a fiftieth of the price range, rounded to 1, 2 or 5, the bar still forming left out', () => {
+    // Highs and lows 99.5 to 200.5 before the last bar: 101 / 50 = 2.02, rounded to 2.
+    const raw = bars([100, 150, 200, 1000]);
+    expect(pointAndFigureBox(raw)).toBe(2);
+    expect(pointAndFigureBox(raw, { pointAndFigure: { boxSize: 'auto' } })).toBe(2);
+    // Prices of 92,000 to 98,900: boxes of 100, not 950 (a hundredth of the price) that make one column.
+    expect(pointAndFigureBox(bars([92_000, 95_000, 98_900, 98_900], 0))).toBe(100);
+  });
+
+  it('is a hundredth of the last close for a series too flat to measure, and 1 for one at 0', () => {
+    expect(pointAndFigureBox(bars([250, 250, 250], 0))).toBe(2.5);
+    expect(pointAndFigureBox(bars([0, 0], 0))).toBe(1);
   });
 });
 

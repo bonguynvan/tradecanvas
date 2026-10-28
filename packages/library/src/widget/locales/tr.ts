@@ -817,6 +817,7 @@ export const TR_MESSAGES: WidgetMessages = {
   'dock.rail': 'Paneller',
   'dock.resize': 'Panelin genişliğini değiştir',
   'dataWindow.hover': 'İmleci grafiğin üzerine getirin',
+  'dataWindow.touch': 'Grafiğe dokunun',
   'dataWindow.open': 'Açılış',
   'dataWindow.high': 'En yüksek',
   'dataWindow.low': 'En düşük',

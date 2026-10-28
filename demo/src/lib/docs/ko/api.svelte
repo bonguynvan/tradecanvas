@@ -215,17 +215,25 @@ vn30fLastTradingDay(2026, 12, (day) => holidays.has(day)) // 셋째 목요일, �
   거래소 규칙은 때때로 바뀌므로, 프리셋을 사용하기 전에 해당 거래소의 현행 규칙과 대조해 보세요.
 </p>
 
+<p>
+  가격 제한은 CE, FL, REF라는 이름의 점선과 축 위의 태그로 그려지며, 색은 시장의
+  <code>colorScheme</code>, 없으면 테마의 <code>priceLimits</code>를 따릅니다. 테마 배경에서 4.5:1 대비에 못 미치는 색은 그 대비가 될 때까지 짙어지므로,
+  시세판의 밝은 자홍, 청록, 노랑이 라이트 테마에서도 색조를 유지합니다.
+  <code>priceLimits</code>가 없는 자체 테마는 밝은 배경에서는 라이트 테마의 색을, 어두운 배경에서는 다크 테마의 색을 씁니다.
+</p>
+
 <h3 id="comparing-symbols">종목 비교</h3>
 <p>
   다른 종목의 변동률을 가격 눈금에 표시하거나(<code>addCompareSymbol</code>), 그 가격을 별도 눈금이나
   별도 패널에 표시하거나, 차트 종가와의 스프레드 또는 비율을 표시할 수 있습니다. 뒤의 방식들은
-  지표(<code>compareSymbol</code>, <code>spread</code>)이므로 다른 지표처럼 범례, 값 라벨, 알림을 갖고
+  지표(<code>compareSymbol</code>, <code>compareSymbolPane</code>, <code>spread</code>)이므로 다른 지표처럼 범례, 값 라벨, 알림을 갖고
   레이아웃에도 저장됩니다. 다른 종목의 봉은 시간 기준으로 차트의 봉에 맞춰집니다. 차트가 필요한 봉을
   요청하므로, 시간 단위를 바꾼 뒤에는 다시 넘겨 주세요. <code>correlation</code>(종가 기준)과
   <code>correlationlog</code>(봉별 수익률 기준)도 같은 방식으로 다른 종목을 읽으며, 값은 −1에서 1 사이입니다.
 </p>
 <pre><code>{`chart.addCompareSymbol('eth', 'ETHUSDT', ethBars, '#7c4dff')   // percent change, on this scale
 chart.addIndicator('compareSymbol', { symbol: 'ETHUSDT' }, 'bottom', { scale: 'left' })  // own scale
+chart.addIndicator('compareSymbolPane', { symbol: 'ETHUSDT' })                         // own pane, own scale
 chart.addIndicator('spread', { symbol: 'ETHUSDT', mode: 'ratio' })                      // own pane
 chart.addIndicator('correlation', { symbol: 'ETHUSDT', length: 20 })                    // −1 to 1, own pane
 
@@ -247,7 +255,10 @@ chart.setPaneScale(spreadId, { percent: true })     // a pane in percent of its 
   렌코, 카기, 라인 브레이크, P&amp;F, 레인지 바에서는 비교선을 그리지 않습니다. 이들의 봉은 첫 봉부터 차례로 셀 뿐 자신의
   시각이 없어서, 선을 그리면 다른 종목을 엉뚱한 봉에서 읽게 되기 때문입니다. 이 유형에서는 비교선이 자동 눈금에 들어가지
   않으며, <code>getCompareValues()</code>는 어느 봉을 묻든 각 종목의 최신 데이터 봉 종가를 <code>change: null</code>과 함께
-  돌려줍니다.
+  돌려줍니다. 시각으로 다른 종목을 읽는 지표(자체 눈금이나 자체 창의 종목, 스프레드, 비율, 상관계수)도 이 유형에서는
+  그려지지 않고 어떤 눈금에도 들어가지 않습니다. <code>getActiveIndicators()</code>는 이들에 <code>shown: false</code>와
+  <code>offChartType: true</code>를 주고, ChartWidget은 비교 행처럼 그 행을 흐리게 표시합니다. 캔들로 돌아가면 다시 나타납니다.
+  그 밖에 아무것도 없는 창은 여기서 빠지고 그 자리는 차트 영역이 쓰며, 이들과 함께 돌아옵니다.
 </p>
 <pre><code>{`chart.setScaleMode('percentage')       // each line reads its change on the axis
 chart.getCompareValues()               // [{ id: 'eth', label: 'ETHUSDT', color, visible, close: 2650.4, change: -1.82, stale: false }]
@@ -422,6 +433,8 @@ chart.on('executionFill', e => /* { side, price, quantity, reason, pnl } */)
 chart.on('chartContextMenu', e => /* { area, x, y, price, time } */)
 chart.on('stateChange', () => /* 그림, 지표, 알림, 차트 유형 또는 테마가 바뀌었을 수 있음 */)
 chart.on('paneChange', e => /* { instanceId, change: 'collapsed' | 'maximized' | 'order' } */)
+chart.on('crosshairMove', e => /* { point, bar, barIndex, time, prevClose }: time은 축이 붙이는 그 봉의 시각(Renko에서는 벽돌이 완성된 봉의 시각), prevClose는 바로 앞에 그려진 봉의 종가 */)
+chart.on('legendResize', e => /* { bottom }: 범례가 더 높게 또는 낮게 그려지거나 숨겨지거나 다시 보임; 그 아래에 쌓은 내용은 getLegendBottom()으로 옮김 */)
 chart.on('chartTypeChange', e => /* { type, previous } */)
 chart.on('symbolChange', e => /* { symbol, previous } */)
 chart.on('marketChange', e => /* { market }: setMarket */)
@@ -430,6 +443,14 @@ chart.on('timeframeChange', e => /* { timeframe, previous } */)
 chart.on('historyChange', e => /* { canUndo, canRedo } */)
 chart.on('drawingSelect', e => /* { ids, primary } */)
 chart.on('rendererChange', e => /* { renderer: 'canvas' | 'webgl', reason?: 'unsupported' | 'contextLost' | 'contextRestored' | 'limit' } */)`}</code></pre>
+<p>
+  범례 아래에 두는 자체 레이블은 <code>getLegendBottom()</code>에서 시작하고 <code>legendResize</code>에
+  따라 옮깁니다. <code>setLegendStack({'{'} width, height {'}'})</code>로 그 크기를 차트에 알리면
+  (플롯의 왼쪽 가장자리와 그 아래쪽에서 잰 값, 없으면 <code>null</code>) 수평선의 가격이나 포지션의 목표 같은
+  드로잉 레이블이 범례를 피하듯 그것을 피합니다. ChartWidget은 지표 행에 이렇게 합니다.
+  이들에 가려지는 라벨은 같은 줄에서 옆으로 비켜나고, 선에 가까우면 그 아래로, 아니면 비어 있을 때 가격 축 옆의 선 위에
+  놓입니다. 옮겨진 라벨끼리는 겹치지 않고, 포지션의 태그는 가격 순서를 지킵니다.
+</p>
 
 <h3>직접 만든 변경의 실행 취소</h3>
 <p>
@@ -621,7 +642,12 @@ widget.setSymbols(await loadMarkets())   // 서버에서 받은 SymbolInfo[]: �
   마우스를 올린 봉의 정확한 O/H/L/C/V, 봉 변동, 모든 활성 지표의 값을
   보여 주는 플로팅 표시창으로, 십자선을 움직이면 실시간으로 갱신됩니다.
   명령 팔레트(<kbd>Ctrl/⌘ K</kbd> →
-  "데이터 창 표시/숨기기")에서 켜고 끕니다.
+  "데이터 창 표시/숨기기")에서 켜고 끕니다. 터치스크린에서는 차트를 터치하면
+  십자선이 봉 위에 놓입니다. 가격, 변동, 가격 창 지표의 값은 차트가 가격을 쓰는
+  방식대로, 별도 창 지표의 값은 범례 행과 같은 방식으로, 모두 차트의 숫자 로캘로 표시됩니다.
+  비교, 스프레드, 비율, 그리고 자체 눈금에 놓인 선은 차트 가격이 아니라 값의 크기에 맞는
+  소수 자릿수로 표시됩니다. Renko, Kagi 등에서는 데이터 창이 포인터 아래 벽돌과 앞 벽돌
+  대비 변화를 보여 줍니다.
 </p>
 
 <h3>공유 가능한 보기 (딥 링크)</h3>

@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import type { ViewportState } from '@tradecanvas/commons';
 import { DARK_THEME } from '@tradecanvas/commons';
 import { TimeAxis, TZ_LABEL_GAP_PX } from '../TimeAxis.js';
+import { madeFrom } from '../../charts/transforms/axisTimes.js';
 
 /** Records each fillText with the font it was drawn in; text is 6 px a character. */
 function recordingCtx(): { ctx: CanvasRenderingContext2D; drawn: { text: string; x: number; align: string }[]; fonts: string[] } {
@@ -201,6 +202,20 @@ describe('TimeAxis date labels', () => {
     }
   });
 
+  it('never draws a tick label past the plot’s left edge, where it would be cut', () => {
+    const axis = new TimeAxis();
+    axis.setTimezoneOffset(420);
+    // Scan offsets so a tick lands at every distance from the left edge; the plot starts at 40 (a left scale).
+    for (let offset = 0; offset < 80; offset += 1) {
+      const { ctx, drawn } = recordingCtx();
+      const vp = viewport(offset);
+      axis.render(ctx, { ...vp, chartRect: { ...vp.chartRect, x: 40 } }, DARK_THEME, data);
+      for (const tick of drawn.filter((d) => d.align === 'center')) {
+        expect(tick.x - (tick.text.length * 6) / 2, `offset ${offset}: "${tick.text}"`).toBeGreaterThanOrEqual(40);
+      }
+    }
+  });
+
   it('shows seconds on bars within a minute', () => {
     const { ctx, drawn } = recordingCtx();
     const axis = new TimeAxis();
@@ -242,3 +257,21 @@ describe('TimeAxis daily bars of an exchange', () => {
   });
 });
 
+
+describe('TimeAxis on bars a transform built', () => {
+  it('leaves a lone day out from among the years and months of point & figure columns', () => {
+    // Columns finished months apart, two in one month: the second would be a day mark on its own.
+    const finished = [
+      Date.UTC(2025, 6, 10), Date.UTC(2025, 9, 5), Date.UTC(2026, 0, 15),
+      Date.UTC(2026, 6, 3), Date.UTC(2026, 6, 31), Date.UTC(2026, 9, 2),
+    ];
+    const columns = finished.map((t, i) => madeFrom({ time: i, open: 1, high: 2, low: 1, close: 2, volume: 1 }, t));
+    const axis = new TimeAxis();
+    const vp = { ...viewport(0), chartRect: { x: 0, y: 0, width: 1000, height: 300 }, barWidth: 120, barSpacing: 30 } as ViewportState;
+    const { ctx, drawn } = recordingCtx();
+    axis.render(ctx, vp, DARK_THEME, columns);
+    const labels = drawn.filter((d) => d.align === 'center').map((d) => d.text);
+    expect(labels, labels.join(' ')).not.toContain('31');
+    expect(labels).toContain('2026');
+  });
+});

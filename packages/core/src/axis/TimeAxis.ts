@@ -2,6 +2,7 @@ import type { ViewportState, Theme, DataSeries, TimeFormatter, TimeZoneSetting }
 import { barDateParts, barsAreDaily, timeParts, tzLabel, barTimeUnit } from '@tradecanvas/commons';
 import { barIndexToTime } from '../viewport/ScaleMapping.js';
 import { MARK_WEIGHT, TimeMarker, markKind, type MarkKind, type TimeMark } from './timeMarks.js';
+import { axisTimes } from '../charts/transforms/axisTimes.js';
 
 const _pad2 = (n: number) => n < 10 ? '0' + n : '' + n;
 
@@ -82,12 +83,15 @@ export class TimeAxis {
    * The slots labelled on view, the grid's columns with them: the bars that
    * start the largest calendar steps, at least `MIN_LABEL_SPACING_PX` apart.
    * Nothing left of the oldest bar, whose history isn't loaded; past the
-   * newest, the future's slots when times are extrapolated there.
+   * newest, the future's slots when times are extrapolated there. Bricks
+   * and the like are marked by the times of the bars they were made from
+   * (`axisTimes`).
    */
   marks(viewport: ViewportState, data: DataSeries): TimeMark[] {
     const barUnit = viewport.barWidth + viewport.barSpacing;
     if (!(barUnit > 0) || data.length === 0) return [];
-    return this.marker.marks(data, {
+    const times = axisTimes(data);
+    const marks = this.marker.marks(times, {
       from: Math.floor(viewport.offset / barUnit),
       to: Math.ceil((viewport.offset + viewport.chartRect.width) / barUnit),
       gapBars: MIN_LABEL_SPACING_PX / barUnit,
@@ -95,6 +99,7 @@ export class TimeAxis {
       timesPastData: this.timesPastData,
       exchangeZone: this.exchangeZone,
     });
+    return times === data ? marks : coarsestKinds(marks);
   }
 
   /** "2024" where a year starts, "Mar" a month, "15" a day, "13:30" within a day; daily bars by their dates. */
@@ -114,8 +119,10 @@ export class TimeAxis {
     return this.columns;
   }
 
-  render(ctx: CanvasRenderingContext2D, viewport: ViewportState, theme: Theme, data: DataSeries, axisYOverride?: number): void {
+  render(ctx: CanvasRenderingContext2D, viewport: ViewportState, theme: Theme, series: DataSeries, axisYOverride?: number): void {
     const { chartRect } = viewport;
+    // Renko bricks and the like are dated by the bars they were made from.
+    const times = axisTimes(series);
     const axisY = axisYOverride ?? (chartRect.y + chartRect.height);
 
     // Subtle horizontal divider
@@ -134,8 +141,8 @@ export class TimeAxis {
     const barUnit = viewport.barWidth + viewport.barSpacing;
     const offsetX = -viewport.offset + chartRect.x + viewport.barWidth / 2;
     const to = Math.ceil((viewport.offset + chartRect.width) / barUnit);
-    const unit = barTimeUnit(data);
-    const rightTime = data.length > 0 ? barIndexToTime(Math.min(to, data.length - 1), data) : Date.now();
+    const unit = barTimeUnit(times);
+    const rightTime = times.length > 0 ? barIndexToTime(Math.min(to, times.length - 1), times) : Date.now();
     const tzText = tzLabel(this.tz, rightTime * unit);
     const tzFont = `500 ${theme.font.sizeSmall - 1}px ${theme.font.family}`;
     const tzRight = chartRect.x + chartRect.width - 4;
@@ -152,15 +159,19 @@ export class TimeAxis {
     // wide one (a long month name, a formatter's own text) can't run into
     // its neighbours, and a year beats the day beside it.
     const placed: { left: number; right: number }[] = [];
-    const order = this.marks(viewport, data).sort((a, b) => b.weight - a.weight || a.index - b.index);
-    const daily = barsAreDaily(data) === true;
+    const order = this.marks(viewport, series).sort((a, b) => b.weight - a.weight || a.index - b.index);
+    const daily = barsAreDaily(times) === true;
     for (const mark of order) {
-      const x = mark.index * barUnit + offsetX;
+      const markX = mark.index * barUnit + offsetX;
+      // A bar off the plot has no label on it.
+      if (markX < chartRect.x) continue;
       const kind = markKind(mark.weight);
       const label = this.label(mark, kind, daily);
       // A new year stands out from the months and days around it.
       ctx.font = kind === 'year' ? bold : plain;
       const half = ctx.measureText(label).width / 2;
+      // A label of a bar by the plot's left edge would be cut there: it starts at the edge instead.
+      const x = Math.max(markX, chartRect.x + half);
       if (x + half > tzLeft) continue;
       if (placed.some((p) => x - half < p.right + LABEL_GAP_PX && x + half + LABEL_GAP_PX > p.left)) continue;
       placed.push({ left: x - half, right: x + half });
@@ -177,4 +188,21 @@ export class TimeAxis {
     ctx.fillText(tzText, tzRight, axisY + 7);
     ctx.globalAlpha = 1;
   }
+}
+
+/** How coarse a mark's label is: a year's, a month's, a day's, a time's. */
+const KIND_RANK: Record<MarkKind, number> = { year: 3, month: 2, day: 1, time: 0 };
+/** The kinds of label a built series' axis keeps: a step and the one above it. */
+const KINDS_KEPT = 2;
+
+/**
+ * Bricks and columns stand at uneven times, so a finer step shows up only
+ * where two of them happen to fall close (a lone '31' among the months): on
+ * their axis only the two coarsest kinds of label on view are kept.
+ */
+function coarsestKinds(marks: TimeMark[]): TimeMark[] {
+  const ranks = [...new Set(marks.map((m) => KIND_RANK[markKind(m.weight)]))].sort((a, b) => b - a);
+  if (ranks.length <= KINDS_KEPT) return marks;
+  const lowest = ranks[KINDS_KEPT - 1];
+  return marks.filter((m) => KIND_RANK[markKind(m.weight)] >= lowest);
 }

@@ -8,3 +8,4 @@ export type { PointAndFigureColumns } from './pointAndFigure.js';
 export { toRangeBars } from './rangeBars.js';
 export type { RangeBarsConfig } from './rangeBars.js';
 export { ReshapeMemo } from './reshapeCap.js';
+export { axisTimes } from './axisTimes.js';

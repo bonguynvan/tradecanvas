@@ -5,10 +5,12 @@ import { WidgetIndicatorLegend, type IndicatorLegendRow } from '../WidgetIndicat
 /** Stand-in for the browser's ResizeObserver: the test says when a box was laid out, and how wide. */
 class FakeResizeObserver {
   static last: FakeResizeObserver;
+  static all: FakeResizeObserver[] = [];
   readonly observed = new Set<Element>();
   disconnected = false;
   constructor(private readonly callback: ResizeObserverCallback) {
     FakeResizeObserver.last = this;
+    FakeResizeObserver.all.push(this);
   }
   observe(el: Element): void { this.observed.add(el); }
   unobserve(el: Element): void { this.observed.delete(el); }
@@ -110,5 +112,25 @@ describe('a compare’s legend row', () => {
   it('has no mark on an indicator’s row, whose values are in its lines’ colours', () => {
     legend.update([row('EMA 21', ['1'])], { left: 0, top: 0 });
     expect(host.querySelector('[data-instance="EMA 21"] .tcw-ind-legend-swatch')).toBeNull();
+  });
+});
+
+describe('the stack’s size, for the chart to keep drawing labels clear of', () => {
+  it('is told as the stack is laid out, and as nothing once it is empty', () => {
+    const sizes: ({ width: number; height: number } | null)[] = [];
+    const told = new WidgetIndicatorLegend(host, { onToggleVisible: () => {}, onSettings: () => {}, onRemove: () => {}, onStackResize: (size) => sizes.push(size) }, LABELS);
+    const stack = host.querySelectorAll<HTMLElement>('.tcw-ind-legend')[1];
+    const observer = FakeResizeObserver.all.find((o) => o.observed.has(stack))!;
+    expect(observer).toBeDefined();
+    told.update([row('EMA 21', ['98,159.48'])], { left: 8, top: 41 });
+    // Laid out: its border box, the rows and the toggle in it.
+    Object.defineProperty(stack, 'offsetWidth', { configurable: true, value: 214 });
+    Object.defineProperty(stack, 'offsetHeight', { configurable: true, value: 58 });
+    observer.resize(stack, 214);
+    Object.defineProperty(stack, 'offsetHeight', { configurable: true, value: 0 });
+    observer.resize(stack, 0);
+    expect(sizes).toEqual([{ width: 214, height: 58 }, null]);
+    told.destroy();
+    expect(observer.disconnected).toBe(true);
   });
 });

@@ -34,8 +34,12 @@ export interface ChartTypeOptions {
    */
   kagi?: { reversal?: number; reversalType?: 'percent' | 'price' };
   /**
-   * Box size in price ('auto': 1% of the average close) and boxes to
-   * reverse (3). A bar makes one column at most; on a series of more than
+   * Box size in price ('auto': a fiftieth of the range from the lowest low
+   * to the highest high, the bar still forming left out, rounded to 1, 2 or
+   * 5; a bar that closes past that high or low can change it, and every
+   * column is built again on the new box) and boxes to reverse (3). Boxes a
+   * few pixels high or less are drawn as solid columns; a chart with fewer
+   * columns than the view holds is fitted to it. A bar makes one column at most; on a series of more than
    * 100,000 bars, a box with which the bars before the last would make more
    * than 100,000 columns is raised as Renko's is, and drawn that size.
    */

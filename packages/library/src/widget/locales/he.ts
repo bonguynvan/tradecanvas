@@ -833,6 +833,7 @@ export const HE_MESSAGES: WidgetMessages = {
   'dock.rail': 'חלוניות',
   'dock.resize': 'שינוי רוחב החלונית',
   'dataWindow.hover': 'יש לרחף מעל הגרף',
+  'dataWindow.touch': 'יש לגעת בגרף',
   'dataWindow.open': 'פתיחה',
   'dataWindow.high': 'גבוה',
   'dataWindow.low': 'נמוך',

@@ -121,6 +121,10 @@ describe('WidgetWatchlist', () => {
     expect(calls.onRemove).toHaveBeenCalledWith('SOLUSDT');
   });
 
+  it('marks a row it can remove, so the stylesheet keeps a column for the button beside the numbers', () => {
+    expect(rows().every((r) => r.classList.contains('tcw-watchlist-removable'))).toBe(true);
+  });
+
   it('moves a row with Alt+arrows and by dragging', () => {
     key(rows()[0], 'ArrowDown', { altKey: true });
     expect(calls.onMove).toHaveBeenCalledWith('BTCUSDT', 1);

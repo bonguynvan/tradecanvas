@@ -833,6 +833,7 @@ export const FA_MESSAGES: WidgetMessages = {
   'dock.rail': 'پنل‌ها',
   'dock.resize': 'تغییر پهنای پنل',
   'dataWindow.hover': 'نشانگر ماوس را روی نمودار ببرید',
+  'dataWindow.touch': 'نمودار را لمس کنید',
   'dataWindow.open': 'باز شدن',
   'dataWindow.high': 'بالاترین',
   'dataWindow.low': 'پایین‌ترین',

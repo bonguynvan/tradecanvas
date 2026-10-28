@@ -31,7 +31,7 @@
     <tr><td><code>renko</code></td><td>Fixed price-brick chart; time-independent.</td></tr>
     <tr><td><code>kagi</code></td><td>Yang/yin reversal lines; the reversal is a percent (4) or an amount of price.</td></tr>
     <tr><td><code>lineBreak</code></td><td>A new line once the close breaks the last lines (3 by default).</td></tr>
-    <tr><td><code>pointAndFigure</code></td><td>X/O columns; box size + reversal count.</td></tr>
+    <tr><td><code>pointAndFigure</code></td><td>X/O columns; box size + reversal count. Boxes too small to see are drawn as solid columns, and columns fewer than the view holds are fitted to it.</td></tr>
     <tr><td><code>rangeBars</code></td><td>Each bar's high-low equals a fixed range, and it closes at its high or its low; the last bar is the one still forming.</td></tr>
   </tbody>
 </table>
@@ -54,12 +54,34 @@
   Transforms (Heikin-Ashi, Renko, Kagi, Line Break, P&amp;F, Range Bars) are handled
   internally — <code>chart.getData()</code> still returns the raw input series.
 </p>
+<p>
+  The time axis and the crosshair's time label date a brick, line or column by the bar it was
+  finished on, so the axis of a Renko, Kagi, Line Break, P&amp;F or Range Bars chart reads the
+  years, months and days it spans; bricks finished on one bar share its label. Their own
+  <code>time</code> values still only count them, one apart. <code>axisTimes(series)</code> from
+  <code>@tradecanvas/chart</code> gives those dates for a series built by <code>toRenko</code> and the like.
+</p>
+<p>
+  The crosshair's tooltip and the <code>crosshairMove</code> event date a brick the same way: the payload's
+  <code>time</code> is the axis's date, and <code>prevClose</code> the close of the brick before. On these
+  types the indicators are worked out on the bricks, lines or columns drawn, not the bars under them, so
+  a moving average sits on the bricks and the legend, ChartWidget's data window and an export read it at
+  a brick; an export writes the bricks, dated as the axis dates them. The indicators that count days
+  (VWAP, Session VWAP, the multi-timeframe moving average) and those that read another symbol by time are
+  not drawn there: <code>getActiveIndicators()</code> marks them <code>offChartType: true</code>.
+</p>
+<p>
+  Renko, Kagi, Line Break and Range Bars with fewer bricks or lines than the view holds are
+  fitted to it as Point &amp; Figure is, so they don't sit in the plot's right part. A P&amp;F
+  column's volume is that of the bars it was made of. On these types the time axis keeps the
+  two coarsest kinds of label on view (years and months, say), not a lone day between them.
+</p>
 
 <h2>Settings of the built bar types</h2>
 <p>
   Renko's box, the lines a Line Break has to break, Kagi's reversal, Point &amp; Figure's
   box and reversal, and the range of range bars. What isn't set is worked out from the
-  data (an ATR box for Renko, 1% of the average close for a P&amp;F box…). The settings
+  data (an ATR box for Renko, a fiftieth of the price range, rounded to 1, 2 or 5, for a P&amp;F box…). The settings
   are kept in a saved state; in ChartWidget they are in the settings dialog for the
   chart's type.
 </p>

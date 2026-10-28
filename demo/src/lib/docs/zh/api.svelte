@@ -213,16 +213,24 @@ vn30fLastTradingDay(2026, 12, (day) => holidays.has(day)) // 第三个星期四�
   在依赖某个预设之前，请先对照你所在交易所的现行规则进行核实。
 </p>
 
+<p>
+  涨跌停价和参考价画成虚线，标为 CE、FL 和 REF，并在价格轴上带标签，颜色取市场的
+  <code>colorScheme</code>，没有则取主题的 <code>priceLimits</code>。在主题背景上对比度不足 4.5:1 的颜色会被加深到足够为止，
+  因此报价板上明亮的品红、青色和黄色在浅色主题上仍保持原有色相。
+  没有 <code>priceLimits</code> 的自定义主题在浅色背景上使用浅色主题的颜色，在深色背景上使用深色主题的颜色。
+</p>
+
 <h3 id="comparing-symbols">品种对比</h3>
 <p>
   可以在价格坐标上显示另一个品种的涨跌幅（<code>addCompareSymbol</code>），也可以把它的价格放在独立坐标或独立窗格中，
-  或者显示图表收盘价与它的价差或比值——后几种都是指标（<code>compareSymbol</code>、<code>spread</code>），
+  或者显示图表收盘价与它的价差或比值——后几种都是指标（<code>compareSymbol</code>、<code>compareSymbolPane</code>、<code>spread</code>），
   和其他指标一样有图例、数值标签和提醒，并会保存在布局中。另一个品种的K线按时间与图表的K线对齐。
   图表会请求它需要的K线；切换周期后请重新提供。<code>correlation</code>（按收盘价）和 <code>correlationlog</code>
   （按逐根K线收益率）以同样方式读取另一个品种，取值在 −1 到 1 之间。
 </p>
 <pre><code>{`chart.addCompareSymbol('eth', 'ETHUSDT', ethBars, '#7c4dff')   // percent change, on this scale
 chart.addIndicator('compareSymbol', { symbol: 'ETHUSDT' }, 'bottom', { scale: 'left' })  // own scale
+chart.addIndicator('compareSymbolPane', { symbol: 'ETHUSDT' })                         // own pane, own scale
 chart.addIndicator('spread', { symbol: 'ETHUSDT', mode: 'ratio' })                      // own pane
 chart.addIndicator('correlation', { symbol: 'ETHUSDT', length: 20 })                    // −1 to 1, own pane
 
@@ -243,6 +251,10 @@ chart.setPaneScale(spreadId, { percent: true })     // a pane in percent of its 
   Renko、Kagi、Line Break、P&amp;F 和 Range Bars 不绘制对比线：它们的K线只是从第一根往后计数，没有自己的时间，
   在这些图上画线会在错误的K线上读取另一个品种。在这些图表类型上，对比线不计入自动坐标，
   <code>getCompareValues()</code> 无论问哪根K线，都给出每个品种在最新一根数据K线上的收盘价，并带 <code>change: null</code>。
+  按时间读取另一个品种的指标（独立坐标或独立窗格中的品种、价差、比率、相关系数）在这些图上同样不绘制，也不计入任何坐标：
+  <code>getActiveIndicators()</code> 给它们 <code>shown: false</code> 和 <code>offChartType: true</code>，ChartWidget
+  会像对比行那样把它们的行调暗。切回普通K线后它们会重新显示。
+  其中没有其他内容的窗格在这些类型上会被移除，空间让给图表区，并随它们一起恢复。
 </p>
 <pre><code>{`chart.setScaleMode('percentage')       // each line reads its change on the axis
 chart.getCompareValues()               // [{ id: 'eth', label: 'ETHUSDT', color, visible, close: 2650.4, change: -1.82, stale: false }]
@@ -409,6 +421,8 @@ chart.on('executionFill', e => /* { side, price, quantity, reason, pnl } */)
 chart.on('chartContextMenu', e => /* { area, x, y, price, time } */)
 chart.on('stateChange', () => /* 画线、指标、提醒、图表类型或主题可能已变化 */)
 chart.on('paneChange', e => /* { instanceId, change: 'collapsed' | 'maximized' | 'order' } */)
+chart.on('crosshairMove', e => /* { point, bar, barIndex, time, prevClose }：time 是坐标轴给该柱的时间（在 Renko 上是砖块完成时所在的柱）；prevClose 是前一根绘制柱的收盘价 */)
+chart.on('legendResize', e => /* { bottom }：图例绘制得更高或更矮，或被隐藏、重新显示；叠在其下方的内容移到 getLegendBottom() */)
 chart.on('chartTypeChange', e => /* { type, previous } */)
 chart.on('symbolChange', e => /* { symbol, previous } */)
 chart.on('marketChange', e => /* { market }: setMarket */)
@@ -417,6 +431,14 @@ chart.on('timeframeChange', e => /* { timeframe, previous } */)
 chart.on('historyChange', e => /* { canUndo, canRedo } */)
 chart.on('drawingSelect', e => /* { ids, primary } */)
 chart.on('rendererChange', e => /* { renderer: 'canvas' | 'webgl', reason?: 'unsupported' | 'contextLost' | 'contextRestored' | 'limit' } */)`}</code></pre>
+<p>
+  放在图例下方的自定义标签从 <code>getLegendBottom()</code> 开始，并随 <code>legendResize</code>
+  移动。用 <code>setLegendStack({'{'} width, height {'}'})</code> 告诉图表它们的大小，从绘图区左边缘和该底部量起
+  （没有时为 <code>null</code>）：画线的标签，如水平线的价格或持仓的目标，会像避开图例一样避开它们。
+  ChartWidget 为其指标行这样做。
+  被它们遮住的标签会在自己那一行移到它们旁边；若下方离其线条较近则移到它们下方，否则在空出的情况下放在线条上、靠近价格轴；
+  被移动的标签互不重叠，持仓的标签保持价格顺序。
+</p>
 
 <h3>为你自己的改动提供撤销</h3>
 <p>
@@ -591,7 +613,11 @@ widget.setSymbols(await loadMarkets())   // 来自你服务器的 SymbolInfo[]�
 <p>
   一个浮动的读数面板，显示鼠标所在K线的精确 O/H/L/C/V、K线涨跌，以及每个已添加指标的数值——
   移动十字光标时实时更新。可从命令面板中切换（<kbd>Ctrl/⌘ K</kbd> →
-  “显示/隐藏数据窗口”）。
+  “显示/隐藏数据窗口”）。在触摸屏上，轻触图表即可把十字光标放到一根K线上。
+  价格、涨跌和价格窗格上指标的数值按图表书写价格的方式显示；独立窗格中指标的数值
+  与其图例行一致；全部使用图表的数字格式。
+  对比、价差或比率，以及位于独立刻度上的线，按其数值大小所需的小数位显示，而不是图表价格的小数位。
+  在 Renko、Kagi 等类型上，数据窗口显示指针下的砖块及其相对前一块砖的变化。
 </p>
 
 <h3>可分享视图（深层链接）</h3>

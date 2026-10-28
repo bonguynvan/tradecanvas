@@ -1,4 +1,4 @@
-import { drawingFont, drawPill, formatPercent, pillWidth, PILL_HEIGHT } from './labels.js';
+import { belowKeepOut, drawingFont, drawPill, formatPercent, labelBlocked, pillWidth, PILL_HEIGHT, rightOfKeepOut, takeLabelBox } from './labels.js';
 import type { AnchorPoint, DrawingState, Point, ViewportState } from '@tradecanvas/commons';
 import { autoPricePrecision, formatPrice, priceTagText } from '@tradecanvas/commons';
 import { DrawingBase } from '../DrawingBase.js';
@@ -15,6 +15,15 @@ const MAX_MONEY = 1e15;
 const MONEY_DECIMALS = 2;
 /** Most decimals the R:R shows; a whole ratio shows none (R:R 2, R:R 1.5). */
 const RATIO_DECIMALS = 2;
+/** Gap between a tag slid right and what it slid clear of (px). */
+const TAG_SLIDE_GAP = 4;
+
+/** A tag of a position: its text, the row it belongs on and its colour. */
+interface PositionTag {
+  text: string;
+  y: number;
+  color: string;
+}
 
 /**
  * "Long/Short Position": drag from the entry to the stop; the target sits the
@@ -121,14 +130,37 @@ export class RiskRewardTool extends DrawingBase {
         return Math.min(Math.max(apart, chartRect.y + half), chartRect.y + chartRect.height - half);
       };
       // Tags start at the zone's left edge, moved left when they'd run off the plot.
-      const tag = (text: string, y: number, color: string) => {
-        drawPill(ctx, text, Math.max(plotLeft + 4, Math.min(x + 4, plotRight - 4 - pillWidth(ctx, text))), y, color);
+      // Where the legend or a label drawn before covers one, it slides right of
+      // them on its own row, else goes down under them (by the plot's top on a
+      // phone). They are laid out top to bottom, so moved ones still read in
+      // the order of their prices.
+      const place = ({ text, y }: PositionTag): { left: number; top: number } => {
+        const w = pillWidth(ctx, text);
+        let left = Math.max(plotLeft + 4, Math.min(x + 4, plotRight - 4 - w));
+        let top = y - half;
+        if (labelBlocked(left, top, left + w, top + PILL_HEIGHT)) {
+          const beside = (rightOfKeepOut(top, top + PILL_HEIGHT) ?? left) + TAG_SLIDE_GAP;
+          if (beside + w <= plotRight - 4 && !labelBlocked(beside, top, beside + w, top + PILL_HEIGHT)) left = beside;
+          else top = belowKeepOut(left, left + w, top) + 2;
+        }
+        takeLabelBox(left, top, left + w, top + PILL_HEIGHT);
+        return { left, top };
       };
-      tag(`${g.isLong ? 'Long' : 'Short'} · Qty ${formatPrice(g.qty, qtyDecimals, locale)} · R:R ${ratio}`, entryPt.y, state.style.color);
+      const tags: PositionTag[] = [
+        { text: `${g.isLong ? 'Long' : 'Short'} · Qty ${formatPrice(g.qty, qtyDecimals, locale)} · R:R ${ratio}`, y: entryPt.y, color: state.style.color },
+      ];
       // A stop on the entry (while it's being placed) has no zones to label yet.
       if (Math.abs(stopPt.y - entryPt.y) >= 1) {
-        tag(`Target ${price(g.target)} (${signed(g.target)}) · ${money(g.rewardAmount)}`, outside(targetPt.y), '#1fa874');
-        tag(`Stop ${price(g.stop)} (${signed(g.stop)}) · ${money(g.riskAmount)}`, outside(stopPt.y), '#e8505b');
+        tags.push(
+          { text: `Target ${price(g.target)} (${signed(g.target)}) · ${money(g.rewardAmount)}`, y: outside(targetPt.y), color: '#1fa874' },
+          { text: `Stop ${price(g.stop)} (${signed(g.stop)}) · ${money(g.riskAmount)}`, y: outside(stopPt.y), color: '#e8505b' },
+        );
+      }
+      // Placed top to bottom, drawn entry first as before.
+      const spots = new Map([...tags].sort((a, b) => a.y - b.y).map((t) => [t, place(t)] as const));
+      for (const t of tags) {
+        const spot = spots.get(t)!;
+        drawPill(ctx, t.text, spot.left, spot.top + half, t.color);
       }
     }
 

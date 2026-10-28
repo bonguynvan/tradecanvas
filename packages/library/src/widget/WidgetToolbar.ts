@@ -1,3 +1,4 @@
+import { SYMBOL_INDICATOR_IDS } from '@tradecanvas/core';
 import type { ChartType, TimeFrame } from '@tradecanvas/commons';
 import type { ToolbarButtonSpec, ToolbarConfig, ToolbarCallbacks, WidgetState } from './types.js';
 import { createChartTypeIcon, createIcon } from './icons.js';
@@ -795,7 +796,8 @@ export class WidgetToolbar {
     // Indicator trigger + badge
     const indTrigger = this.el.querySelector('[data-role="indicators"]') as HTMLElement | null;
     if (indTrigger) {
-      const count = state.activeIndicators.size;
+      // A compare is not one the indicators' menu and dialog list: the badge leaves it out as they do.
+      const count = [...state.activeIndicators.values()].filter((ind) => !SYMBOL_INDICATOR_IDS.has(ind.id)).length;
       let inner = `${createIcon('trendingUp', 14)} <span class="tcw-trigger-label">${esc(this.t('toolbar.indicators'))}</span>`;
       indTrigger.setAttribute('aria-label', this.t('toolbar.indicators'));
       if (count > 0) {

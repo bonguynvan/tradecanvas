@@ -817,6 +817,7 @@ export const KO_MESSAGES: WidgetMessages = {
   'dock.rail': '패널',
   'dock.resize': '패널 너비 조절',
   'dataWindow.hover': '차트 위에 마우스를 올리세요',
+  'dataWindow.touch': '차트를 터치하세요',
   'dataWindow.open': '시가',
   'dataWindow.high': '고가',
   'dataWindow.low': '저가',
