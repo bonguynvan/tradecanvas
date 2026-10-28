@@ -210,6 +210,22 @@ describe('compares on chart types whose bars carry no time', () => {
     expect(offType()).toEqual([]);
   });
 
+  it('takes the panes of the indicators it leaves off away there, and gives them back on candles', () => {
+    chart.setSymbolSeries('B', other);
+    const pane = chart.addIndicator('compareSymbolPane', { symbol: 'B' })!;
+    const corr = chart.addIndicator('correlation', { symbol: 'B' })!;
+    const rsi = chart.addIndicator('rsi')!;
+    const panes = () => chart.getIndicatorPanes().map((p) => p.instanceId);
+    expect(panes()).toEqual([pane, corr, rsi]);
+    const plotHeight = chart.getPlotRect().height;
+    chart.setChartType('renko');
+    // Nothing to draw in them there: no empty panes with a made-up scale, and the plot has their room.
+    expect(panes()).toEqual([rsi]);
+    expect(chart.getPlotRect().height).toBeGreaterThan(plotHeight);
+    chart.setChartType('candlestick');
+    expect(panes()).toEqual([pane, corr, rsi]);
+  });
+
   it('gives each compare’s close at the latest bar there, and no change, whatever bar is asked for', () => {
     chart.addCompareSymbol('b', 'B', other, '#f00');
     chart.setChartType('renko');

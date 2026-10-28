@@ -19,6 +19,8 @@ export class LayoutManager {
   private leftAxisWidth = 0;
   /** The pane that takes the room of the others (they fold to their headers), or null. */
   private maximized: string | null = null;
+  /** Panes set aside: kept with their size and place, but not laid out (nothing drawn in them on this chart type). */
+  private aside: ReadonlySet<string> = new Set();
 
   resize(width: number, height: number): void {
     this.containerWidth = width;
@@ -207,15 +209,23 @@ export class LayoutManager {
     return this.panels;
   }
 
+  /** Set the panes laid out as if they weren't there, and bring back the others; true when that changed any. */
+  setPanelsAside(ids: ReadonlySet<string>): boolean {
+    const changed = ids.size !== this.aside.size || [...ids].some((id) => !this.aside.has(id));
+    this.aside = new Set(ids);
+    return changed;
+  }
+
   resolve(): ResolvedLayout {
-    const leftPanels = this.panels.filter((p) => p.position === 'left');
-    const rightPanels = this.panels.filter((p) => p.position === 'right');
-    const topPanels = this.panels.filter((p) => p.position === 'top');
-    const bottomPanels = this.panels.filter((p) => p.position === 'bottom');
+    const laidOut = this.panels.filter((p) => !this.aside.has(p.id));
+    const leftPanels = laidOut.filter((p) => p.position === 'left');
+    const rightPanels = laidOut.filter((p) => p.position === 'right');
+    const topPanels = laidOut.filter((p) => p.position === 'top');
+    const bottomPanels = laidOut.filter((p) => p.position === 'bottom');
 
     // A maximised pane takes what the price pane and the folded panes leave.
     const folded = (topPanels.length + bottomPanels.length - 1) * COLLAPSED_PANE_HEIGHT;
-    const maximizedPanel = this.maximized ? this.panels.find((p) => p.id === this.maximized) : undefined;
+    const maximizedPanel = this.maximized ? laidOut.find((p) => p.id === this.maximized) : undefined;
     const maximizedSize = Math.max(
       maximizedPanel?.minSize ?? 0,
       this.containerHeight - TIME_AXIS_HEIGHT - MIN_MAIN_HEIGHT_WITH_MAXIMIZED - folded,

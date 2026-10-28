@@ -269,6 +269,7 @@ chart.setPaneScale(spreadId, { percent: true })     // a pane in percent of its 
   a ratio, a correlation) are not drawn there either, nor fit a scale: <code>getActiveIndicators()</code> gives
   them <code>shown: false</code> and <code>offChartType: true</code>, and ChartWidget dims their rows as it dims a
   compare's. Back on candles they come back.
+  A pane with nothing else in it is taken away there, its room going to the plot, and comes back with them.
 </p>
 <pre><code>{`chart.setScaleMode('percentage')       // each line reads its change on the axis
 chart.getCompareValues()               // [{ id: 'eth', label: 'ETHUSDT', color, visible, close: 2650.4, change: -1.82, stale: false }]

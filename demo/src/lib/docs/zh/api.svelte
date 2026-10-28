@@ -253,6 +253,7 @@ chart.setPaneScale(spreadId, { percent: true })     // a pane in percent of its 
   按时间读取另一个品种的指标（独立坐标或独立窗格中的品种、价差、比率、相关系数）在这些图上同样不绘制，也不计入任何坐标：
   <code>getActiveIndicators()</code> 给它们 <code>shown: false</code> 和 <code>offChartType: true</code>，ChartWidget
   会像对比行那样把它们的行调暗。切回普通K线后它们会重新显示。
+  其中没有其他内容的窗格在这些类型上会被移除，空间让给图表区，并随它们一起恢复。
 </p>
 <pre><code>{`chart.setScaleMode('percentage')       // each line reads its change on the axis
 chart.getCompareValues()               // [{ id: 'eth', label: 'ETHUSDT', color, visible, close: 2650.4, change: -1.82, stale: false }]

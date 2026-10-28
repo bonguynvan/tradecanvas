@@ -272,6 +272,7 @@ chart.setPaneScale(spreadId, { percent: true })     // a pane in percent of its 
   tỷ lệ, tương quan) cũng không được vẽ ở đó và không tính vào thang nào: <code>getActiveIndicators()</code>
   cho chúng <code>shown: false</code> và <code>offChartType: true</code>, và ChartWidget làm mờ dòng của chúng như
   dòng của một mã so sánh. Quay lại nến thường thì chúng hiện lại.
+  Một khung không còn gì khác trong đó sẽ được bỏ đi ở đó, phần chỗ của nó dành cho vùng biểu đồ, và quay lại cùng chúng.
 </p>
 <pre><code>{`chart.setScaleMode('percentage')       // each line reads its change on the axis
 chart.getCompareValues()               // [{ id: 'eth', label: 'ETHUSDT', color, visible, close: 2650.4, change: -1.82, stale: false }]

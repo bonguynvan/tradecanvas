@@ -257,6 +257,7 @@ chart.setPaneScale(spreadId, { percent: true })     // a pane in percent of its 
   돌려줍니다. 시각으로 다른 종목을 읽는 지표(자체 눈금이나 자체 창의 종목, 스프레드, 비율, 상관계수)도 이 유형에서는
   그려지지 않고 어떤 눈금에도 들어가지 않습니다. <code>getActiveIndicators()</code>는 이들에 <code>shown: false</code>와
   <code>offChartType: true</code>를 주고, ChartWidget은 비교 행처럼 그 행을 흐리게 표시합니다. 캔들로 돌아가면 다시 나타납니다.
+  그 밖에 아무것도 없는 창은 여기서 빠지고 그 자리는 차트 영역이 쓰며, 이들과 함께 돌아옵니다.
 </p>
 <pre><code>{`chart.setScaleMode('percentage')       // each line reads its change on the axis
 chart.getCompareValues()               // [{ id: 'eth', label: 'ETHUSDT', color, visible, close: 2650.4, change: -1.82, stale: false }]

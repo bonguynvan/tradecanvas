@@ -3606,6 +3606,23 @@ export class Chart {
     return this.isTimeAligned();
   }
 
+  /**
+   * The panes with nothing to draw on this chart type: every indicator in
+   * them is left off it (a compare in its own pane, a correlation, on
+   * Renko). They are laid out as if they weren't there, so no empty pane
+   * with a made-up scale takes the plot's room; back on candles they return.
+   */
+  private panesOffChartType(): Set<string> {
+    const active = this.indicatorEngine.getActiveIndicators();
+    const off = new Set(active.filter((ind) => ind.offChartType).map((ind) => ind.instanceId));
+    const aside = new Set<string>();
+    for (const panel of this.layoutManager.getPanels()) {
+      const members = active.filter((ind) => ind.instanceId === panel.id || ind.pane === panel.id);
+      if (members.length > 0 && members.every((ind) => off.has(ind.instanceId))) aside.add(panel.id);
+    }
+    return aside;
+  }
+
   /** Take every compare line off, each told as a `compareChange` of `'remove'`. */
   clearCompareSymbols(): void {
     const ids = this.compareRenderer.getSymbols().map((sym) => sym.id);
@@ -6367,6 +6384,7 @@ export class Chart {
   private updateViewportAndRender(scrollToEnd = false): void {
     // Before the layout and the scales: an indicator that reads another symbol by time is not drawn on bricks.
     this.indicatorEngine.setBarsTimed(this.comparesDrawn());
+    this.layoutManager.setPanelsAside(this.panesOffChartType());
     // Invalidate layout cache
     this.resolvedLayoutCache = null;
     this.panelInfoCache = null;

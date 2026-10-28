@@ -259,6 +259,7 @@ chart.setPaneScale(spreadId, { percent: true })     // a pane in percent of its 
   これらのタイプでは描かれず、どのスケールにも含まれません。<code>getActiveIndicators()</code> はそれらに
   <code>shown: false</code> と <code>offChartType: true</code> を返し、ChartWidget は比較の行と同じように行を薄く表示します。
   ローソク足に戻すと再び表示されます。
+  ほかに何もないペインはそこでは取り除かれ、その分の高さはチャートに回り、それらと一緒に戻ります。
 </p>
 <pre><code>{`chart.setScaleMode('percentage')       // each line reads its change on the axis
 chart.getCompareValues()               // [{ id: 'eth', label: 'ETHUSDT', color, visible, close: 2650.4, change: -1.82, stale: false }]

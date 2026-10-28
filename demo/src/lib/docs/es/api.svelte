@@ -277,6 +277,7 @@ chart.setPaneScale(spreadId, { percent: true })     // a pane in percent of its 
   spread, un ratio, una correlación) tampoco se dibujan ahí ni ajustan ninguna escala: <code>getActiveIndicators()</code>
   les da <code>shown: false</code> y <code>offChartType: true</code>, y ChartWidget atenúa sus filas como atenúa las de
   una comparación. De vuelta en velas, aparecen de nuevo.
+  Un panel sin nada más dentro se quita ahí, su espacio pasa al gráfico, y vuelve con ellos.
 </p>
 <pre><code>{`chart.setScaleMode('percentage')       // each line reads its change on the axis
 chart.getCompareValues()               // [{ id: 'eth', label: 'ETHUSDT', color, visible, close: 2650.4, change: -1.82, stale: false }]
