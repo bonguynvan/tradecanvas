@@ -61,6 +61,15 @@
   <code>time</code> values still only count them, one apart. <code>axisTimes(series)</code> from
   <code>@tradecanvas/chart</code> gives those dates for a series built by <code>toRenko</code> and the like.
 </p>
+<p>
+  The crosshair's tooltip and the <code>crosshairMove</code> event date a brick the same way: the payload's
+  <code>time</code> is the axis's date, and <code>prevClose</code> the close of the brick before. On these
+  types the indicators are worked out on the bricks, lines or columns drawn, not the bars under them, so
+  a moving average sits on the bricks and the legend, ChartWidget's data window and an export read it at
+  a brick; an export writes the bricks, dated as the axis dates them. The indicators that count days
+  (VWAP, Session VWAP, the multi-timeframe moving average) and those that read another symbol by time are
+  not drawn there: <code>getActiveIndicators()</code> marks them <code>offChartType: true</code>.
+</p>
 
 <h2>Settings of the built bar types</h2>
 <p>

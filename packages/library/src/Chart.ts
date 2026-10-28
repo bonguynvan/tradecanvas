@@ -45,7 +45,7 @@ import { isValidTimeZone, sessionMinute, symbolTimeZone, LayerType, setLocale as
 import type { BarLayout, ChartTypeOptions, DataUpdatePayload, FontConfig, IndicatorId, IndicatorParamsFor, PriceFormatter, PriceFraction, ShapeConfig, TimeFormatter } from '@tradecanvas/commons';
 import type { ChartStyleKey, ChartStyleOverrides, ChartStyleOverridesPatch, IndicatorIntervals, IndicatorStyleConfig, PaneStyle, ResolvedChartStyle, StyleLayer } from '@tradecanvas/commons';
 import { PHI, computePriceRange, readChartTypeOptions, tickBarCount, barTimeUnit, readChartStyleOverrides, readIndicatorPlotStyles, readPaneStyle } from '@tradecanvas/commons';
-import { PRICE_SCALE_MARGIN, PriceLines, type BidAsk, SymbolSeriesStore, CompareSymbolIndicator, CompareSymbolPaneIndicator, SpreadIndicator, CorrelationCoefficientIndicator, CorrelationLogIndicator, SYMBOL_INDICATOR_IDS, HiLoRenderer, PointAndFigureRenderer, ReshapeMemo, isPriceLevelAlert, loadWebGL, gpuContextsLeft, whenGpuContextFree } from '@tradecanvas/core';
+import { PRICE_SCALE_MARGIN, PriceLines, type BidAsk, SymbolSeriesStore, CompareSymbolIndicator, CompareSymbolPaneIndicator, SpreadIndicator, CorrelationCoefficientIndicator, CorrelationLogIndicator, SYMBOL_INDICATOR_IDS, axisTimes, HiLoRenderer, PointAndFigureRenderer, ReshapeMemo, isPriceLevelAlert, loadWebGL, gpuContextsLeft, whenGpuContextFree } from '@tradecanvas/core';
 import type { GpuRenderer, RendererMode } from '@tradecanvas/core';
 import { regularHoursFilter } from './regularHours.js';
 import { ChartA11y } from './chartA11y.js';
@@ -209,6 +209,8 @@ export class Chart {
   private execTeardown: (() => void) | null = null;
   private autoScrollOnNewBar = true;
   private displayDataCache: DataSeries | null = null;
+  /** The drawn series (Renko bricks…) the indicators were last worked out on; null: the data bars. */
+  private indicatorsOnDrawn: DataSeries | null = null;
   /** The size a reshaped type was raised to on this series, so a tick walks it once (cleared when the series is replaced). */
   private readonly reshapeMemo = new ReshapeMemo();
   /** The price step the cached range bars were built on: a new step (the symbol's `minTick` arrives) builds them again. */
@@ -622,6 +624,10 @@ export class Chart {
       if (barIndex !== null && point) {
         const data = this.crosshairSeries();
         const bar = barIndex >= 0 && barIndex < data.length ? data[barIndex] : undefined;
+        const prevClose = barIndex > 0 ? data[barIndex - 1]?.close : undefined;
+        // A brick's own time only counts bricks: the tooltip and listeners get the date the axis gives it.
+        const times = axisTimes(data);
+        const time = bar ? times[barIndex]?.time ?? bar.time : undefined;
 
         // The legend is drawn in the frame that found this bar, before it knew it: one more
         // paint of the pointer's layer shows it, or a pointer that comes to rest leaves the
@@ -634,12 +640,13 @@ export class Chart {
         const vs = this.viewport.getState();
         const inPlot = point.y >= vs.chartRect.y && point.y <= vs.chartRect.y + vs.chartRect.height;
         if (bar && inPlot && this.features.crosshairTooltip) {
-          this.crosshairTooltip.show(point, bar, this.themeManager.getTheme(), this.cachedContainerSize(), {
-            prevClose: barIndex > 0 ? data[barIndex - 1]?.close : undefined,
+          const dated = time === bar.time ? bar : { ...bar, time: time ?? bar.time };
+          this.crosshairTooltip.show(point, dated, this.themeManager.getTheme(), this.cachedContainerSize(), {
+            prevClose,
             priceRange: vs.priceRange,
             plot: vs.chartRect,
-            barStepMs: barTimeStepMs(data),
-            timeUnit: barTimeUnit(data),
+            barStepMs: barTimeStepMs(times),
+            timeUnit: barTimeUnit(times),
           });
         } else {
           this.crosshairTooltip.hide();
@@ -657,7 +664,7 @@ export class Chart {
         }
 
         // Emit for external consumers
-        this.eventBus.emit('crosshairMove', { point, bar, barIndex });
+        this.eventBus.emit('crosshairMove', { point, bar, barIndex, ...(time !== undefined ? { time } : {}), ...(prevClose !== undefined ? { prevClose } : {}) });
       } else {
         this.crosshairTooltip.hide();
         this.chartLegend.setHoverBar(null);
@@ -1746,7 +1753,7 @@ export class Chart {
     if (!this.isIndicatorAllowed(id)) return null;
     const descriptor = this.indicatorEngine.getAvailableIndicators().find((d) => d.id === id);
     const pane = descriptor ? this.paneFor(descriptor, params, options.pane) : null;
-    const instanceId = this.indicatorEngine.addIndicator(id, params, this.series.bars(), {
+    const instanceId = this.indicatorEngine.addIndicator(id, params, this.indicatorBars(), {
       ...(pane ? { pane } : {}),
       ...(options.scale === 'left' ? { scale: 'left' as const } : {}),
       ...(options.instanceId ? { instanceId: options.instanceId } : {}),
@@ -1772,7 +1779,7 @@ export class Chart {
     symbol = symbol.trim();
     this.symbolSeries.set(symbol, bars);
     this.requestedSymbols.delete(symbol);
-    const data = this.series.bars();
+    const data = this.indicatorBars();
     let changed = false;
     for (const ind of this.indicatorEngine.getActiveIndicators()) {
       if (!SYMBOL_INDICATOR_IDS.has(ind.id) || String(ind.params.symbol ?? '').trim() !== symbol.trim()) continue;
@@ -1831,7 +1838,7 @@ export class Chart {
     const descriptor = this.indicatorEngine.getIndicatorDescriptor(instanceId);
     const name = descriptor ? sourceParam(descriptor) : null;
     const before = name ? this.indicatorEngine.getIndicatorConfig(instanceId)?.params[name] : undefined;
-    this.indicatorEngine.updateIndicator(instanceId, params, this.series.bars());
+    this.indicatorEngine.updateIndicator(instanceId, params, this.indicatorBars());
     this.announceIndicatorUpdate(0);
     this.markStateChanged();
     this.eventBus.emit('indicatorChange', { instanceId, change: 'params' });
@@ -2819,7 +2826,7 @@ export class Chart {
    * those on screen (`range: 'visible'`).
    */
   getExportData(options: { range?: 'all' | 'visible'; indicators?: boolean } = {}): { bars: OHLCBar[]; columns: ExportColumn[] } {
-    const data = this.series.bars();
+    const data = this.exportBars();
     let from = 0;
     let to = data.length - 1;
     if (options.range === 'visible') {
@@ -3175,15 +3182,15 @@ export class Chart {
    * Cheap — only walks alerts whose channel isn't `'price'`, usually none.
    */
   private collectIndicatorValues(into: Map<string, number>): void {
-    const data = this.series.bars();
-    if (data.length === 0) return;
-    const lastIdx = data.length - 1;
+    if (this.series.length() === 0) return;
     const channels = this.alertManager.getAlerts().flatMap((a) => (a.target ? [a.channel, a.target] : [a.channel]));
     for (const channel of channels) {
       if (into.has(channel)) continue;
       const sep = channel.indexOf(':');
       if (sep < 0) continue;
-      const point = this.indicatorEngine.getOutput(channel.slice(0, sep))?.series?.[lastIdx];
+      // The line's last value: at the last bar, or on Renko and the like the last brick.
+      const series = this.indicatorEngine.getOutput(channel.slice(0, sep))?.series;
+      const point = series?.[series.length - 1];
       const value = point?.[channel.slice(sep + 1)];
       if (typeof value === 'number' && Number.isFinite(value)) into.set(channel, value);
     }
@@ -6195,13 +6202,47 @@ export class Chart {
 
   /** Recompute indicators from bar `from` on, and say so (live ticks, closes, replay steps). */
   private recalcIndicatorsFrom(data: DataSeries, from: number): void {
+    // A new bar can add, move or take away bricks anywhere near the end: all of them again.
+    if (!this.isTimeAligned()) return this.recalcIndicators(data);
     this.indicatorEngine.recalculateFrom(data, from);
+    this.indicatorsOnDrawn = null;
     this.announceIndicatorUpdate(from);
   }
 
   private recalcIndicators(data: DataSeries): void {
-    this.indicatorEngine.recalculateAll(data);
+    const bars = this.indicatorBars(data);
+    this.indicatorEngine.recalculateAll(bars);
+    this.indicatorsOnDrawn = bars === data ? null : bars;
     this.announceIndicatorUpdate(0);
+  }
+
+  /**
+   * The bars an export writes, beside the indicator values worked out on
+   * them: on Renko and the like the bricks drawn, each dated as the axis
+   * dates it (by the bar it was finished on), not the bars under them.
+   */
+  private exportBars(): DataSeries {
+    if (this.isTimeAligned()) return this.series.bars();
+    const drawn = this.getDisplayData();
+    const times = axisTimes(drawn);
+    return drawn.map((bar, i) => ({ ...bar, time: times[i]?.time ?? bar.time }));
+  }
+
+  /**
+   * The bars indicators are worked out on: the data bars where each drawn
+   * bar is one, the series drawn on Renko, Kagi and the like, so a line sits
+   * on the bricks and reads their closes, as the legend and the data window
+   * read it at a brick.
+   */
+  private indicatorBars(data: DataSeries = this.series.bars()): DataSeries {
+    return this.isTimeAligned() ? data : this.getDisplayData();
+  }
+
+  /** A new chart type, box or series drawn: the indicators follow the bars drawn. */
+  private syncIndicatorBars(displayData: DataSeries): void {
+    const aligned = this.isTimeAligned();
+    if (aligned ? this.indicatorsOnDrawn === null : this.indicatorsOnDrawn === displayData) return;
+    this.recalcIndicators(this.series.bars());
   }
 
   /**
@@ -6273,6 +6314,7 @@ export class Chart {
    */
   private applyDataToViewport(scrollToEnd = false): DataSeries {
     const displayData = this.getDisplayData();
+    this.syncIndicatorBars(displayData);
     const autoScale = this.options.autoScale !== false || this.priceFitPending;
 
     // updateData first so dataLength is current for scrollToEnd — but only

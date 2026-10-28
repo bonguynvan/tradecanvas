@@ -109,6 +109,14 @@ export interface CrosshairMovePayload {
   point: Point;
   bar?: OHLCBar;
   barIndex?: number;
+  /**
+   * When the bar stands, as the time axis dates it: `bar.time` on candles;
+   * on Renko, Kagi and the like, whose own times only count them, the time
+   * of the bar it was finished on.
+   */
+  time?: number;
+  /** The close of the bar drawn before it (on Renko, the brick before), for a change. */
+  prevClose?: number;
   indicatorValues?: Record<string, IndicatorValue>;
 }
 

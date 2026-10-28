@@ -60,6 +60,14 @@
   라벨을 함께 씁니다. 이들 자신의 <code>time</code> 값은 여전히 1씩 세는 용도일 뿐입니다. <code>@tradecanvas/chart</code>의
   <code>axisTimes(series)</code>는 <code>toRenko</code> 등으로 만든 시리즈에 그 시각을 돌려줍니다.
 </p>
+<p>
+  크로스헤어 툴팁과 <code>crosshairMove</code> 이벤트도 벽돌에 같은 시각을 붙입니다. 페이로드의
+  <code>time</code>은 축의 시각이고 <code>prevClose</code>는 앞 벽돌의 종가입니다. 이 유형에서는 지표를 그 아래 봉이 아니라
+  그려진 벽돌·선·열로 계산하므로, 이동평균은 벽돌 위에 놓이고 범례, ChartWidget의 데이터 창, 내보내기는 벽돌 위치에서
+  값을 읽습니다. 내보내기는 축과 같은 시각을 붙인 벽돌을 씁니다. 날짜를 세는 지표(VWAP, Session VWAP, 다중 시간대
+  이동평균)와 다른 종목을 시간으로 읽는 지표는 여기서 그려지지 않으며, <code>getActiveIndicators()</code>는 이들에
+  <code>offChartType: true</code>를 붙입니다.
+</p>
 
 <h2>파생 유형의 설정</h2>
 <p>

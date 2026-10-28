@@ -61,6 +61,15 @@
   Giá trị <code>time</code> riêng của chúng vẫn chỉ để đếm, cách nhau một. <code>axisTimes(series)</code> từ
   <code>@tradecanvas/chart</code> cho các ngày đó với chuỗi dựng bằng <code>toRenko</code> và các hàm tương tự.
 </p>
+<p>
+  Tooltip của crosshair và sự kiện <code>crosshairMove</code> ghi ngày cho một viên gạch theo cùng cách:
+  <code>time</code> trong payload là ngày của trục, còn <code>prevClose</code> là giá đóng cửa của viên gạch
+  trước. Trên các kiểu này, chỉ báo được tính trên các viên gạch, đường hay cột được vẽ chứ không phải các
+  nến bên dưới, nên một đường trung bình nằm trên các viên gạch và chú giải, Data Window của ChartWidget
+  và bản xuất đọc nó tại một viên gạch; bản xuất ghi các viên gạch, có ngày như trục ghi. Các chỉ báo đếm
+  ngày (VWAP, Session VWAP, đường trung bình đa khung) và các chỉ báo đọc mã khác theo thời gian không được
+  vẽ ở đó: <code>getActiveIndicators()</code> đánh dấu chúng <code>offChartType: true</code>.
+</p>
 
 <h2>Thông số của các loại nến dựng từ dữ liệu</h2>
 <p>

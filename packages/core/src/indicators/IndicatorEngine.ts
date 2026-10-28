@@ -69,13 +69,16 @@ export interface ActiveIndicatorInfo {
    * True while the chart's type draws bars with no time of their own (Renko,
    * Kagi, line break, point & figure, range bars) and the indicator reads
    * another symbol by time (a compare on its own scale or in a pane, a
-   * spread, a ratio, a correlation): it is not drawn there.
+   * spread, a ratio, a correlation) or counts days (VWAP and the others
+   * whose descriptor says `readsExchangeTimeZone`): it is not drawn there.
    */
   offChartType?: true;
   /** The intervals it shows on, when not all. */
   intervals?: IndicatorIntervals;
   /** The instance whose pane it is drawn in, when not its own. */
   pane?: string;
+  /** `'left'`: an overlay on a price scale of its own on the left, not the chart's prices. */
+  scale?: 'left';
 }
 
 /** Whether a plugin's values move with the exchange's zone: it says so, or it is the host's and says nothing. */
@@ -646,7 +649,8 @@ export class IndicatorEngine {
    * Whether the bars the chart draws carry times of their own. Off for the
    * types that redraw them (Renko bricks, Kagi lines…), whose times only
    * count them: an indicator that reads another symbol by time would read
-   * it at the wrong bars there, so it is not shown. True when that changed
+   * it at the wrong bars there, and one that counts days would find none,
+   * so neither is shown. True when that changed
    * what is shown.
    */
   setBarsTimed(on: boolean): boolean {
@@ -657,9 +661,14 @@ export class IndicatorEngine {
     return changed;
   }
 
-  /** Mark the instance on or off the chart's type; true when that changed. */
+  /**
+   * Mark the instance on or off the chart's type; true when that changed.
+   * Off the bricks: one that reads another symbol by time, and one that says
+   * it counts days, weeks or months (VWAP's anchor), as bricks have no days.
+   */
   private placeOnChartType(instance: IndicatorInstance): boolean {
-    const off = !this.barsTimed && SYMBOL_INDICATOR_IDS.has(instance.config.id);
+    const readsTime = SYMBOL_INDICATOR_IDS.has(instance.config.id) || instance.plugin.descriptor.readsExchangeTimeZone === true;
+    const off = !this.barsTimed && readsTime;
     if (off === instance.offChartType) return false;
     instance.offChartType = off;
     return true;
@@ -743,6 +752,7 @@ export class IndicatorEngine {
         ...(instance.offChartType ? { offChartType: true as const } : {}),
         ...(instance.config.intervals ? { intervals: copyIntervals(instance.config.intervals) } : {}),
         ...(instance.config.pane ? { pane: instance.config.pane } : {}),
+        ...(instance.config.scale === 'left' ? { scale: 'left' as const } : {}),
       });
     }
     return result;

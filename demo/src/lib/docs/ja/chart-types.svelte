@@ -60,6 +60,14 @@
   ブロックはそのバーのラベルを共有します。それぞれの <code>time</code> の値は引き続き 1 ずつ数えるだけのものです。
   <code>@tradecanvas/chart</code> の <code>axisTimes(series)</code> は、<code>toRenko</code> などで作った系列のその日時を返します。
 </p>
+<p>
+  クロスヘアのツールチップと <code>crosshairMove</code> イベントもブロックに同じ日時を付けます。ペイロードの
+  <code>time</code> は軸の日時、<code>prevClose</code> は一つ前のブロックの終値です。これらのタイプでは、インジケーターは
+  その下のバーではなく描かれたブロック・線・列から計算されるため、移動平均はブロックの上に乗り、凡例、ChartWidget の
+  データウィンドウ、エクスポートはブロックの位置で値を読みます。エクスポートは軸と同じ日時を付けたブロックを書き出します。
+  日を数えるインジケーター（VWAP、Session VWAP、マルチタイムフレーム移動平均）と、別の銘柄を時刻で読むものはそこでは
+  描かれません。<code>getActiveIndicators()</code> はそれらに <code>offChartType: true</code> を付けます。
+</p>
 
 <h2>派生タイプの設定</h2>
 <p>

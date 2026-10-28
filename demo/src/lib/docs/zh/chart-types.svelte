@@ -60,6 +60,13 @@
   <code>time</code> 值仍只用于计数，相邻相差 1。<code>@tradecanvas/chart</code> 的 <code>axisTimes(series)</code>
   为 <code>toRenko</code> 等函数构建的序列给出这些日期。
 </p>
+<p>
+  十字线的提示框和 <code>crosshairMove</code> 事件以同样的方式为砖块标注日期：payload 中的
+  <code>time</code> 是坐标轴的日期，<code>prevClose</code> 是前一块砖的收盘价。在这些类型上，指标基于所绘制的砖块、
+  线段或列计算，而不是其下的 K 线，因此移动平均线落在砖块上，图例、ChartWidget 的数据窗口和导出都在某块砖处读取它；
+  导出写出的是砖块，日期与坐标轴一致。按天计数的指标（VWAP、Session VWAP、多周期均线）以及按时间读取另一个品种的指标
+  不会在这些类型上绘制：<code>getActiveIndicators()</code> 将它们标记为 <code>offChartType: true</code>。
+</p>
 
 <h2>衍生类型的设置</h2>
 <p>

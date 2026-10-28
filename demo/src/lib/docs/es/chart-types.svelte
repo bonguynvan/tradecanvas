@@ -61,6 +61,15 @@
   etiqueta. Sus propios valores <code>time</code> solo los cuentan, de uno en uno. <code>axisTimes(series)</code>
   de <code>@tradecanvas/chart</code> da esas fechas para una serie construida con <code>toRenko</code> y similares.
 </p>
+<p>
+  El tooltip del crosshair y el evento <code>crosshairMove</code> fechan un ladrillo igual: el
+  <code>time</code> del payload es la fecha del eje y <code>prevClose</code> el cierre del ladrillo anterior. En
+  estos tipos los indicadores se calculan sobre los ladrillos, líneas o columnas dibujados, no sobre las barras de
+  debajo, así que una media móvil va sobre los ladrillos y la leyenda, la ventana de datos de ChartWidget y una
+  exportación la leen en un ladrillo; una exportación escribe los ladrillos, fechados como los fecha el eje. Los
+  indicadores que cuentan días (VWAP, Session VWAP, la media móvil multitemporal) y los que leen otro símbolo por
+  tiempo no se dibujan ahí: <code>getActiveIndicators()</code> los marca con <code>offChartType: true</code>.
+</p>
 
 <h2>Configuración de los tipos derivados</h2>
 <p>

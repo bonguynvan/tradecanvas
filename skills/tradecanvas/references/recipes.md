@@ -270,8 +270,11 @@ Fetch as many bars as the chart has, so the line starts where the chart does.
 Renko, Kagi, line break, point & figure and range bars draw no compare lines;
 there `getCompareValues` gives each one's latest close and a null change, and
 the indicators that read another symbol (`compareSymbol`, `compareSymbolPane`,
-`spread`, the correlations) are not drawn either: `getActiveIndicators()` gives
-them `shown: false` and `offChartType: true`:
+`spread`, the correlations) are not drawn either, nor those that count days
+(`vwap`, `svwap`, `mtfma`): `getActiveIndicators()` gives
+them `shown: false` and `offChartType: true`. The other indicators are worked
+out on the bricks drawn, so `getIndicatorOutput(id).series` has a point per
+brick there, and `crosshairMove`'s `time` dates a brick as the axis does:
 
 ```ts
 import { Chart, BinanceAdapter } from '@tradecanvas/chart';

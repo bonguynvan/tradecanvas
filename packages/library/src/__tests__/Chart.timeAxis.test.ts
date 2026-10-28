@@ -140,3 +140,96 @@ describe('Chart time axis on bricks, lines and columns', () => {
     });
   }
 });
+
+describe('Chart crosshair over bricks', () => {
+  type Crosshair = {
+    crosshairHandler: { callback: (barIndex: number | null, point: { x: number; y: number } | null) => void };
+    crosshairTooltip: { show(point: unknown, bar: OHLCBar, theme: unknown, size: unknown, ctx: { prevClose?: number; barStepMs?: number }): void };
+  };
+
+  it('dates the tooltip and the crosshairMove payload as the axis dates the brick', () => {
+    chart.setData(weekdays(Date.UTC(2016, 0, 4), Date.UTC(2026, 9, 21)));
+    chart.setChartType('renko');
+    chart.fitContent();
+    const inside = chart as unknown as Inside & Crosshair;
+    const bricks = inside.getDisplayData();
+    const shown = vi.spyOn(inside.crosshairTooltip, 'show');
+    const moves: { time?: number; prevClose?: number; bar?: OHLCBar }[] = [];
+    chart.on('crosshairMove', (e) => moves.push(e.payload));
+    const last = bricks.length - 1;
+    inside.crosshairHandler.callback(last, { x: 500, y: 200 });
+    const tooltipBar = shown.mock.calls[0][1];
+    // The brick's own time only counts bricks from the first bar's; the tooltip dates it in 2026, as the axis does.
+    expect(new Date(tooltipBar.time).getUTCFullYear()).toBe(2026);
+    expect(tooltipBar.close).toBe(bricks[last].close);
+    expect(new Date(moves[0].time!).getUTCFullYear()).toBe(2026);
+    expect(moves[0].bar?.time).toBe(bricks[last].time);
+    expect(moves[0].prevClose).toBe(bricks[last - 1].close);
+  });
+});
+
+describe('Chart indicators on bricks', () => {
+  it('works out an indicator from the bricks drawn, not the bars under them', () => {
+    chart.setData(weekdays(Date.UTC(2016, 0, 4), Date.UTC(2026, 9, 21)));
+    const sma = chart.addIndicator('sma', { period: 3 })!;
+    chart.setChartType('renko');
+    const bricks = (chart as unknown as Inside).getDisplayData();
+    const series = chart.getIndicatorOutput(sma)!.series!;
+    expect(series).toHaveLength(bricks.length);
+    const last = bricks.length - 1;
+    const mean = (bricks[last].close + bricks[last - 1].close + bricks[last - 2].close) / 3;
+    expect(series[last]!.value).toBeCloseTo(mean, 6);
+    // Back on candles, the bars again.
+    chart.setChartType('candlestick');
+    expect(chart.getIndicatorOutput(sma)!.series).toHaveLength(chart.getData().length);
+  });
+
+  it('exports the bricks drawn beside their indicator values, dated as the axis dates them', () => {
+    chart.setData(weekdays(Date.UTC(2016, 0, 4), Date.UTC(2026, 9, 21)));
+    chart.addIndicator('sma', { period: 3 });
+    chart.setChartType('renko');
+    const bricks = (chart as unknown as Inside).getDisplayData();
+    const { bars, columns } = chart.getExportData();
+    expect(bars).toHaveLength(bricks.length);
+    expect(bars[bars.length - 1].close).toBe(bricks[bricks.length - 1].close);
+    expect(new Date(bars[bars.length - 1].time).getUTCFullYear()).toBe(2026);
+    expect(columns[0].values).toHaveLength(bricks.length);
+    expect(columns[0].values[bricks.length - 1]).toBeCloseTo(
+      (bricks[bricks.length - 1].close + bricks[bricks.length - 2].close + bricks[bricks.length - 3].close) / 3, 6);
+  });
+
+  it('fires an alert on an indicator line from its last brick', () => {
+    chart.setData(weekdays(Date.UTC(2016, 0, 4), Date.UTC(2026, 9, 21)));
+    const sma = chart.addIndicator('sma', { period: 3 })!;
+    chart.setChartType('renko');
+    const values = new Map<string, number>();
+    (chart as unknown as { collectIndicatorValues(into: Map<string, number>): void; alertManager: { getAlerts(): unknown[] } })
+      .alertManager.getAlerts = () => [{ channel: `${sma}:value` }];
+    (chart as unknown as { collectIndicatorValues(into: Map<string, number>): void }).collectIndicatorValues(values);
+    const series = chart.getIndicatorOutput(sma)!.series!;
+    expect(values.get(`${sma}:value`)).toBe(series[series.length - 1]!.value);
+  });
+
+  it('leaves the indicators that count days off the bricks, whose times only count them', () => {
+    chart.setData(weekdays(Date.UTC(2016, 0, 4), Date.UTC(2026, 9, 21)));
+    const vwap = chart.addIndicator('vwap')!;
+    const sma = chart.addIndicator('sma', { period: 3 })!;
+    chart.setChartType('renko');
+    const active = chart.getActiveIndicators();
+    expect(active.find((i) => i.instanceId === vwap)).toMatchObject({ shown: false, offChartType: true });
+    expect(active.find((i) => i.instanceId === sma)?.offChartType).toBeUndefined();
+    chart.setChartType('candlestick');
+    expect(chart.getActiveIndicators().find((i) => i.instanceId === vwap)?.offChartType).toBeUndefined();
+  });
+
+  it('follows a new bar on bricks', () => {
+    const bars = weekdays(Date.UTC(2016, 0, 4), Date.UTC(2026, 9, 21));
+    chart.setData(bars);
+    const sma = chart.addIndicator('sma', { period: 3 })!;
+    chart.setChartType('renko');
+    const last = bars[bars.length - 1];
+    chart.appendBar({ ...last, time: last.time + DAY, open: last.close, high: last.close * 1.4, low: last.close, close: last.close * 1.4 });
+    const bricks = (chart as unknown as Inside).getDisplayData();
+    expect(chart.getIndicatorOutput(sma)!.series).toHaveLength(bricks.length);
+  });
+});

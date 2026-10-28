@@ -276,7 +276,7 @@ and call no `onSettingsChange` listener.
 
 | Event | Payload |
 |---|---|
-| `crosshairMove` | `{ point, bar, barIndex }` (also over indicator panes) |
+| `crosshairMove` | `{ point, bar, barIndex, time, prevClose }` (also over indicator panes; `time` as the axis dates the bar, a Renko brick by the bar it was finished on) |
 | `crosshairLeave` | — |
 | `barClick` | `{ bar, barIndex, point }` |
 | `visibleRangeChange` | `{ from, to }` bar indices |
