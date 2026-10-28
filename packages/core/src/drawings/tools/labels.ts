@@ -77,27 +77,65 @@ export interface LabelKeepOut {
  * each (synchronous) pass; none clears it.
  */
 let keepOut: readonly LabelKeepOut[] = [];
+/**
+ * The labels drawn so far in the pass, of every drawing: a later one keeps
+ * clear of them as of the legend, so two positions' tags or two lines'
+ * labels moved to one spot don't print over each other.
+ */
+let taken: LabelKeepOut[] = [];
+/** Whether a pass is open (labels are kept track of only within one). */
+let passOpen = false;
 
+/** Start a pass with the boxes to keep clear of; null ends it. Either forgets the labels drawn. */
 export function setDrawingKeepOut(boxes: readonly LabelKeepOut[] | null): void {
   keepOut = boxes ?? [];
+  taken = [];
+  passOpen = boxes !== null;
+}
+
+/** Note a label drawn from (`left`, `top`) to (`right`, `bottom`), for the labels after it in the pass. */
+export function takeLabelBox(left: number, top: number, right: number, bottom: number): void {
+  if (passOpen) taken.push({ x: left, y: top, width: right - left, height: bottom - top });
+}
+
+function crosses(k: LabelKeepOut, left: number, top: number, right: number, bottom: number): boolean {
+  return right > k.x && left < k.x + k.width && bottom > k.y && top < k.y + k.height;
 }
 
 /** Whether the box from (`left`, `top`) to (`right`, `bottom`) runs into any kept-out box. */
 export function overlapsKeepOut(left: number, top: number, right: number, bottom: number): boolean {
-  return keepOut.some((k) => right > k.x && left < k.x + k.width && bottom > k.y && top < k.y + k.height);
+  return keepOut.some((k) => crosses(k, left, top, right, bottom));
+}
+
+/** Whether the box runs into a kept-out box or a label drawn before it in the pass. */
+export function labelBlocked(left: number, top: number, right: number, bottom: number): boolean {
+  return overlapsKeepOut(left, top, right, bottom) || taken.some((k) => crosses(k, left, top, right, bottom));
 }
 
 /**
- * The lowest foot of the kept-out boxes beside the span from `left` to
- * `right`, all of them stacked as one: where a label under them starts.
- * `top` when none is beside it.
+ * The lowest foot of the kept-out boxes and the labels drawn beside the span
+ * from `left` to `right`, all of them stacked as one: where a label under
+ * them starts. `top` when none is beside it.
  */
 export function belowKeepOut(left: number, right: number, top: number): number {
   let bottom = top;
-  for (const k of keepOut) {
+  for (const k of [...keepOut, ...taken]) {
     if (right > k.x && left < k.x + k.width) bottom = Math.max(bottom, k.y + k.height);
   }
   return bottom;
+}
+
+/**
+ * The right edge of the kept-out boxes and labels across the row from `top`
+ * to `bottom`, where a label beside them on that row starts; null when
+ * nothing is on the row.
+ */
+export function rightOfKeepOut(top: number, bottom: number): number | null {
+  let right: number | null = null;
+  for (const k of [...keepOut, ...taken]) {
+    if (bottom > k.y && top < k.y + k.height) right = Math.max(right ?? k.x + k.width, k.x + k.width);
+  }
+  return right;
 }
 
 /** Where a level label goes: its anchor, alignment and baseline. */
@@ -106,27 +144,38 @@ interface LevelLabelSpot {
   y: number;
   align: CanvasTextAlign;
   baseline: CanvasTextBaseline;
+  /** The label's box: its left edge and top. */
+  left: number;
+  top: number;
 }
+
+/** How far under its line a level label may go to clear the legend: two labels' height (px). */
+const LEVEL_LABEL_REACH = 2 * LEVEL_LABEL_SIZE;
 
 /**
  * A price level's text by its line at `y`: above its start at `x` when that
- * is clear of the legend, else above its end at `right`, else below its
- * start or its end; with the legend over all of them (on a phone it spans
- * the plot), under the legend's foot. It sets its own alignment and
+ * is clear of the legend and of the labels drawn before it, else above its
+ * end at `right`, else below its start or its end; never above the plot's
+ * `plotTop`. With all of them covered (on a phone the legend spans the
+ * plot), under the legend's foot when that is near the line, else on the
+ * line at its right end, by the price axis, so it never reads as another
+ * line's price. It sets its own alignment and
  * baseline: the context keeps whatever the last text drawn on it left (the
  * time axis leaves 'right', a Gann box 'right', a measure 'center'), and a
  * label right-aligned at the plot's left edge is clipped down to its last
  * glyph.
  */
-export function fillLevelLabel(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, right = x): void {
+export function fillLevelLabel(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, right = x, plotTop = -Infinity): void {
   ctx.font = drawingFont(LEVEL_LABEL_SIZE);
-  const spot = levelLabelSpot(x, right, y, ctx.measureText(text).width);
+  const width = ctx.measureText(text).width;
+  const spot = levelLabelSpot(x, right, y, width, plotTop);
   ctx.textAlign = spot.align;
   ctx.textBaseline = spot.baseline;
   fillTextWithHalo(ctx, text, spot.x, spot.y);
+  takeLabelBox(spot.left, spot.top, spot.left + width, spot.top + LEVEL_LABEL_SIZE);
 }
 
-function levelLabelSpot(start: number, end: number, y: number, width: number): LevelLabelSpot {
+function levelLabelSpot(start: number, end: number, y: number, width: number, plotTop: number): LevelLabelSpot {
   const left = start + LEVEL_LABEL_INSET;
   // The end has a spot of its own only where the line is long enough to hold the label there.
   const endLeft = end - LEVEL_LABEL_INSET - width;
@@ -134,13 +183,22 @@ function levelLabelSpot(start: number, end: number, y: number, width: number): L
   const above = { top: y - LEVEL_LABEL_GAP - LEVEL_LABEL_SIZE, bottom: y - LEVEL_LABEL_GAP };
   const below = { top: y + LEVEL_LABEL_GAP, bottom: y + LEVEL_LABEL_GAP + LEVEL_LABEL_SIZE };
   for (const side of [above, below]) {
+    // Above the plot's top the label would be cut off.
+    if (side.top < plotTop) continue;
     for (const l of lefts) {
-      if (!overlapsKeepOut(l, side.top, l + width, side.bottom)) {
-        return { x: l, y: side === above ? side.bottom : side.top, align: 'left', baseline: side === above ? 'bottom' : 'top' };
+      if (!labelBlocked(l, side.top, l + width, side.bottom)) {
+        const isAbove = side === above;
+        return { x: l, y: isAbove ? side.bottom : side.top, align: 'left', baseline: isAbove ? 'bottom' : 'top', left: l, top: side.top };
       }
     }
   }
-  return { x: left, y: belowKeepOut(left, left + width, y) + LEVEL_LABEL_GAP, align: 'left', baseline: 'top' };
+  const unders = lefts.map((l) => ({ l, top: belowKeepOut(l, l + width, y) + LEVEL_LABEL_GAP }));
+  const near = unders.find((u) => u.top - y <= LEVEL_LABEL_REACH);
+  if (near) return { x: near.l, y: near.top, align: 'left', baseline: 'top', left: near.l, top: near.top };
+  // Far under the line it would read as the price of whatever is drawn there: on the line
+  // instead, by the price axis, through its halo, even where the rows' box reaches it.
+  const axisSide = end - LEVEL_LABEL_INSET;
+  return { x: axisSide, y, align: 'right', baseline: 'middle', left: axisSide - width, top: y - LEVEL_LABEL_SIZE / 2 };
 }
 
 

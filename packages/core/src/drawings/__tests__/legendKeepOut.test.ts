@@ -98,4 +98,83 @@ describe('drawing labels keep clear of the legend', () => {
     renderer.render(ctx, unitViewport);
     expect(clearOfLegend(drawn[0])).toBe(true);
   });
+
+  /** A plot 400 px tall, price p at y = 400 - p; `width` wide (a phone's is about 306). */
+  const tall = (width: number): ViewportState => ({
+    ...unitViewport,
+    priceRange: { min: 0, max: 400 },
+    chartRect: { x: 0, y: 0, width, height: 400 },
+  });
+  /** The legend and four indicator rows on a phone: 250 px wide, to y = 148. */
+  const STACK = [{ x: 4, y: 0, width: 250, height: 148 }];
+  /** The pills drawn, as (left, top, width, height), in the order entry, target, stop. */
+  function positionPills(viewport: ViewportState, entry: number, stop: number, ctx = recordingCtx()): number[][] {
+    new RiskRewardTool().render(ctx.ctx, drawing('riskReward', [{ time: 1, price: entry }, { time: 10, price: stop }]), viewport, false);
+    return ctx.calls.filter((c) => c.name === 'roundRect').map((c) => c.args as number[]);
+  }
+  const centre = ([, top, , h]: number[]) => top + h / 2;
+  const clearOf = (boxes: typeof STACK) => ([x, top, w, h]: number[]) =>
+    boxes.every((r) => x + w <= r.x || x >= r.x + r.width || top + h <= r.y || top >= r.y + r.height);
+
+  it('slide a long position’s tags right of the legend on their own rows where there is room', () => {
+    setDrawingKeepOut(STACK);
+    // Entry at y = 107, stop at y = 147, the target 40 px above the entry.
+    const [entry, target, stop] = positionPills(tall(1000), 293, 253);
+    for (const pill of [entry, target, stop]) expect(clearOf(STACK)(pill), `tag at ${pill}`).toBe(true);
+    expect(target[0]).toBeGreaterThanOrEqual(254);
+    // The target's tag stays above the entry line, the stop's below it.
+    expect(centre(target)).toBeLessThan(107);
+    expect(centre(stop)).toBeGreaterThan(107);
+  });
+
+  it('keep the tags in the order of their prices when they must go under the legend, as on a phone', () => {
+    setDrawingKeepOut([{ x: 0, y: 0, width: 306, height: 148 }]);
+    const [entry, target, stop] = positionPills(tall(306), 293, 253);
+    // Top to bottom: Target, Long, Stop, as the zones read.
+    expect(centre(target)).toBeLessThan(centre(entry));
+    expect(centre(entry)).toBeLessThan(centre(stop));
+  });
+
+  it('keep two positions’ tags under the legend off each other', () => {
+    setDrawingKeepOut([{ x: 0, y: 0, width: 306, height: 148 }]);
+    const rec = recordingCtx();
+    const tool = new RiskRewardTool();
+    tool.render(rec.ctx, drawing('riskReward', [{ time: 1, price: 293 }, { time: 10, price: 253 }]), tall(306), false);
+    tool.render(rec.ctx, drawing('riskReward', [{ time: 3, price: 300 }, { time: 12, price: 260 }]), tall(306), false);
+    const pills = rec.calls.filter((c) => c.name === 'roundRect').map((c) => c.args as number[]);
+    const moved = pills.filter(([, top]) => top >= 148);
+    for (let i = 0; i < moved.length; i++) {
+      for (let j = i + 1; j < moved.length; j++) {
+        const [ax, at, aw, ah] = moved[i];
+        const [bx, bt, bw, bh] = moved[j];
+        const overlap = ax < bx + bw && bx < ax + aw && at < bt + bh && bt < at + ah;
+        expect(overlap, `tags at ${moved[i]} and ${moved[j]}`).toBe(false);
+      }
+    }
+  });
+
+  it('draw a horizontal line’s label on its line at the right end rather than far below it', () => {
+    setDrawingKeepOut([{ x: 0, y: 0, width: 254, height: 148 }]);
+    const { ctx, drawn } = textCtx();
+    // 290 px: the line's end has no spot clear of the rows either.
+    new HorizontalLineTool().render(ctx, drawing('horizontalLine', [{ time: 0, price: 359 }]), tall(290), false); // y = 41
+    const label = box(drawn[0]);
+    expect(Math.abs(label.top - 41)).toBeLessThanOrEqual(2 * LABEL_SIZE);
+    expect(label.right).toBeLessThanOrEqual(290);
+  });
+
+  it('give two horizontal lines in the legend’s band labels of their own', () => {
+    setDrawingKeepOut([{ x: 0, y: 0, width: 254, height: 148 }]);
+    const { ctx, drawn } = textCtx();
+    new HorizontalLineTool().render(ctx, drawing('horizontalLine', [{ time: 0, price: 388 }]), tall(306), false); // y = 12
+    new HorizontalLineTool().render(ctx, drawing('horizontalLine', [{ time: 0, price: 378 }]), tall(306), false); // y = 22
+    const [a, b] = drawn.map(box);
+    expect(a.bottom <= b.top || b.bottom <= a.top || a.right <= b.left || b.right <= a.left, `${JSON.stringify(a)} ${JSON.stringify(b)}`).toBe(true);
+  });
+
+  it('keep a horizontal line’s label inside the plot’s top', () => {
+    const { ctx, drawn } = textCtx();
+    new HorizontalLineTool().render(ctx, drawing('horizontalLine', [{ time: 0, price: 395 }]), tall(1000), false); // y = 5
+    expect(box(drawn[0]).top).toBeGreaterThanOrEqual(0);
+  });
 });

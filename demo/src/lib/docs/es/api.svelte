@@ -479,6 +479,9 @@ chart.on('rendererChange', e => /* { renderer: 'canvas' | 'webgl', reason?: 'uns
   del gráfico y ese pie (<code>null</code> cuando no hay ninguna): las etiquetas de los dibujos, como
   el precio de una línea horizontal o el objetivo de una posición, las evitan como evitan la leyenda.
   ChartWidget lo hace con sus filas de indicadores.
+  Una etiqueta que tapan se desliza a su lado en su propia fila, va debajo de ellas cuando eso queda
+  cerca de su línea, o si no se pone sobre su línea junto al eje de precios; las etiquetas movidas no se
+  tapan entre sí y las de una posición mantienen el orden de sus precios.
 </p>
 
 <h3>Deshacer tus propios cambios</h3>

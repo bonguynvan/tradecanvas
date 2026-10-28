@@ -465,6 +465,9 @@ chart.on('rendererChange', e => /* { renderer: 'canvas' | 'webgl', reason?: 'uns
   that bottom (<code>null</code> when there are none): drawing labels, such as a horizontal
   line's price or a position's target, keep clear of them as they keep clear of the legend.
   ChartWidget does this for its indicator rows.
+  A label they cover slides beside them on its own row, goes under them when that is
+  near its line, or else sits on its line by the price axis; labels moved keep clear of one
+  another, and a position's tags keep the order of their prices.
 </p>
 
 <h3>Undo for your own changes</h3>

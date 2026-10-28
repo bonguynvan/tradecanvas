@@ -1,7 +1,7 @@
 import type { DrawingState, Point, ViewportState } from '@tradecanvas/commons';
 import { DrawingBase } from '../DrawingBase.js';
 import { resolveBarIndex } from '../../viewport/ScaleMapping.js';
-import { formatPriceChange, drawingFont } from './labels.js';
+import { formatPriceChange, drawingFont, belowKeepOut, overlapsKeepOut } from './labels.js';
 
 export class MeasureTool extends DrawingBase {
   descriptor = { type: 'measure' as const, name: 'Measure', requiredAnchors: 2 };
@@ -68,7 +68,7 @@ const LABEL_PAD_Y = 4;
 /**
  * The label's box for `lineCount` lines `textWidth` wide: centred on
  * `centerX` with its foot at `footY`, then moved onto the plot by as
- * much as it would run off it.
+ * much as it would run off it, and under the legend where it covers it.
  */
 function labelBox(centerX: number, footY: number, textWidth: number, lineCount: number, viewport: ViewportState) {
   const { chartRect } = viewport;
@@ -76,7 +76,10 @@ function labelBox(centerX: number, footY: number, textWidth: number, lineCount: 
   const height = lineCount * LINE_HEIGHT + 2 * LABEL_PAD_Y;
   const x = clamp(centerX - width / 2, chartRect.x, chartRect.x + chartRect.width - width);
   const y = clamp(footY - height + LABEL_PAD_Y, chartRect.y, chartRect.y + chartRect.height - height);
-  return { x, y, width, height };
+  // Over the legend's rows (a measure at the plot's top): under them, where the plot has room.
+  if (!overlapsKeepOut(x, y, x + width, y + height)) return { x, y, width, height };
+  const under = belowKeepOut(x, x + width, y);
+  return { x, y: under + height <= chartRect.y + chartRect.height ? under : y, width, height };
 }
 
 /** `value` within `min` and `max`; at `min` when they cross (a box wider than the plot). */

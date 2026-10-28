@@ -468,6 +468,9 @@ chart.on('rendererChange', e => /* { renderer: 'canvas' | 'webgl', reason?: 'uns
   <code>setLegendStack({'{'} width, height {'}'})</code>, đo từ mép trái vùng vẽ và từ đáy đó
   (<code>null</code> khi không có): nhãn của hình vẽ, như giá của đường ngang hay mục tiêu của
   một vị thế, tránh chúng như tránh chú giải. ChartWidget làm việc này cho các dòng chỉ báo của nó.
+  Nhãn bị chúng che sẽ trượt sang bên cạnh trên chính hàng của nó, xuống dưới chúng khi chỗ đó gần
+  đường của nó, nếu không thì nằm trên đường, cạnh trục giá; các nhãn được dời không chồng lên nhau, và
+  các thẻ của một vị thế giữ thứ tự theo giá.
 </p>
 
 <h3>Hoàn tác cho thay đổi của riêng bạn</h3>

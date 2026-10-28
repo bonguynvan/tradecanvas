@@ -434,6 +434,8 @@ chart.on('rendererChange', e => /* { renderer: 'canvas' | 'webgl', reason?: 'uns
   移动。用 <code>setLegendStack({'{'} width, height {'}'})</code> 告诉图表它们的大小，从绘图区左边缘和该底部量起
   （没有时为 <code>null</code>）：画线的标签，如水平线的价格或持仓的目标，会像避开图例一样避开它们。
   ChartWidget 为其指标行这样做。
+  被它们遮住的标签会在自己那一行移到它们旁边；若下方离其线条较近则移到它们下方，否则放在线条上、靠近价格轴；
+  被移动的标签互不重叠，持仓的标签保持价格顺序。
 </p>
 
 <h3>为你自己的改动提供撤销</h3>
