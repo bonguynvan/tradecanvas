@@ -1,4 +1,5 @@
 import type { OHLCBar, DataSeries } from '@tradecanvas/commons';
+import { madeFrom } from './axisTimes.js';
 
 /**
  * Three Line Break chart.
@@ -16,14 +17,14 @@ export function toLineBreak(data: DataSeries, lineCount = 3): DataSeries {
   let idx = 0;
 
   // First line
-  lines.push({
+  lines.push(madeFrom({
     time: idx++,
     open: data[0].open,
     high: Math.max(data[0].open, data[0].close),
     low: Math.min(data[0].open, data[0].close),
     close: data[0].close,
     volume: data[0].volume,
-  });
+  }, data[0].time));
 
   for (let i = 1; i < data.length; i++) {
     const price = data[i].close;
@@ -41,44 +42,44 @@ export function toLineBreak(data: DataSeries, lineCount = 3): DataSeries {
 
     if (isUp && price > lastLine.close) {
       // Continuation up
-      lines.push({
+      lines.push(madeFrom({
         time: idx++,
         open: lastLine.close,
         high: price,
         low: lastLine.close,
         close: price,
         volume: data[i].volume,
-      });
+      }, data[i].time));
     } else if (!isUp && price < lastLine.close) {
       // Continuation down
-      lines.push({
+      lines.push(madeFrom({
         time: idx++,
         open: lastLine.close,
         high: lastLine.close,
         low: price,
         close: price,
         volume: data[i].volume,
-      });
+      }, data[i].time));
     } else if (isUp && price < lowestLow) {
       // Reversal down
-      lines.push({
+      lines.push(madeFrom({
         time: idx++,
         open: lastLine.close,
         high: lastLine.close,
         low: price,
         close: price,
         volume: data[i].volume,
-      });
+      }, data[i].time));
     } else if (!isUp && price > highestHigh) {
       // Reversal up
-      lines.push({
+      lines.push(madeFrom({
         time: idx++,
         open: lastLine.close,
         high: price,
         low: lastLine.close,
         close: price,
         volume: data[i].volume,
-      });
+      }, data[i].time));
     }
   }
 

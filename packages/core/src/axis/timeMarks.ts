@@ -166,7 +166,8 @@ export class TimeMarker {
       // Past the last bar the slots' times are extrapolated, as the axis does.
       const time = (i < n ? data[i].time : barIndexToTime(i, data as ReadonlyArray<{ time: number }>)) * unit;
       const parts = partsOf(time);
-      weights[i] = markWeight(prev, parts);
+      // Bars at one time (bricks made from the same bar) start nothing: only the first is weighed.
+      weights[i] = i > 0 && time === times[i - 1] ? 0 : markWeight(prev, parts);
       times[i] = time;
       prev = parts;
     }

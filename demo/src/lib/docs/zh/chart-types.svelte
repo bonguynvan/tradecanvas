@@ -54,6 +54,12 @@
   变换类图表（Heikin-Ashi、Renko、Kagi、Line Break、P&amp;F、Range Bars）在内部处理——
   <code>chart.getData()</code> 返回的仍是原始输入序列。
 </p>
+<p>
+  时间轴和十字线的时间标签按砖块、线段或列完成时所在的K线标注日期，所以 Renko、Kagi、Line Break、P&amp;F
+  或 Range Bars 图的时间轴会显示它跨越的年、月、日；在同一根K线上完成的砖块共用该K线的标签。它们自己的
+  <code>time</code> 值仍只用于计数，相邻相差 1。<code>@tradecanvas/chart</code> 的 <code>axisTimes(series)</code>
+  为 <code>toRenko</code> 等函数构建的序列给出这些日期。
+</p>
 
 <h2>衍生类型的设置</h2>
 <p>

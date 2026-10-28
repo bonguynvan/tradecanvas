@@ -54,6 +54,13 @@
   Transforms (Heikin-Ashi, Renko, Kagi, Line Break, P&amp;F, Range Bars) are handled
   internally — <code>chart.getData()</code> still returns the raw input series.
 </p>
+<p>
+  The time axis and the crosshair's time label date a brick, line or column by the bar it was
+  finished on, so the axis of a Renko, Kagi, Line Break, P&amp;F or Range Bars chart reads the
+  years, months and days it spans; bricks finished on one bar share its label. Their own
+  <code>time</code> values still only count them, one apart. <code>axisTimes(series)</code> from
+  <code>@tradecanvas/chart</code> gives those dates for a series built by <code>toRenko</code> and the like.
+</p>
 
 <h2>Settings of the built bar types</h2>
 <p>

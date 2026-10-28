@@ -27,21 +27,21 @@ type Inside = {
   getDisplayData(): OHLCBar[];
 };
 
-/** The time axis labels the chart draws now. */
+/** The time axis labels the chart draws now, left to right. */
 function axisLabels(chart: Chart): string[] {
   const inside = chart as unknown as Inside;
-  const drawn: { text: string; align: string }[] = [];
+  const drawn: { text: string; align: string; x: number }[] = [];
   const state: Record<string, unknown> = { textAlign: 'start' };
   const ctx = new Proxy(state, {
     get: (t, p) => {
-      if (p === 'fillText') return (text: string) => drawn.push({ text, align: String(t.textAlign) });
+      if (p === 'fillText') return (text: string, x: number) => drawn.push({ text, align: String(t.textAlign), x });
       if (p === 'measureText') return (text: string) => ({ width: text.length * 6 });
       return p in t ? t[p as string] : () => {};
     },
     set: (t, p, v) => { t[p as string] = v; return true; },
   }) as unknown as CanvasRenderingContext2D;
   inside.timeAxis.render(ctx, inside.viewport.getState(), DARK_THEME, inside.getDisplayData());
-  return drawn.filter((d) => d.align === 'center').map((d) => d.text);
+  return drawn.filter((d) => d.align === 'center').sort((a, b) => a.x - b.x).map((d) => d.text);
 }
 
 /** The years among the labels. */
@@ -122,4 +122,21 @@ describe('Chart visible range on bricks', () => {
     // Fitted, not squeezed down as if there were as many bricks as bars.
     expect(range.to - range.from).toBeLessThan(bricks.length + 20);
   });
+});
+
+describe('Chart time axis on bricks, lines and columns', () => {
+  for (const type of ['renko', 'kagi', 'rangeBars', 'lineBreak', 'pointAndFigure'] as const) {
+    it(`dates ${type} by the bars they were made from, each label once`, () => {
+      chart.setData(weekdays(Date.UTC(2016, 0, 4), Date.UTC(2026, 9, 21)));
+      chart.setChartType(type);
+      chart.fitContent();
+      const labels = axisLabels(chart);
+      const found = years(labels);
+      expect(found.length, `${type}: ${labels.join(' ')}`).toBeGreaterThanOrEqual(3);
+      expect(found.every((y) => y >= 2016 && y <= 2026), labels.join(' ')).toBe(true);
+      // Later to the right, and no label beside the same one.
+      expect([...found].sort((a, b) => a - b), labels.join(' ')).toEqual(found);
+      expect(labels.some((l, i) => i > 0 && l === labels[i - 1]), labels.join(' ')).toBe(false);
+    });
+  }
 });

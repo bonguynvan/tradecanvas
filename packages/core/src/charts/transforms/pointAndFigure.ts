@@ -1,5 +1,6 @@
 import type { OHLCBar, DataSeries } from '@tradecanvas/commons';
 import { barLimit, fromReached, reshapeOneABar, type LayBar, type ReshapeMemo } from './reshapeCap.js';
+import { madeFrom } from './axisTimes.js';
 
 /** A point & figure chart's columns, and the box they were built on, to draw them that size. */
 export interface PointAndFigureColumns {
@@ -66,7 +67,7 @@ function walkColumns(data: DataSeries, boxSize: number, reversalBoxes: number, c
     if (!reverses) continue;
     if (capped && idx + 1 > barLimit(i, data.length, idx)) return false;
     // Close the column, and start one the other way a box from its end.
-    lay?.(column(idx, direction === 1, colLow, colHigh, data[i].volume));
+    lay?.(madeFrom(column(idx, direction === 1, colLow, colHigh, data[i].volume), data[i].time));
     idx++;
     if (direction === 1) {
       colLow = roundedPrice;
@@ -79,7 +80,7 @@ function walkColumns(data: DataSeries, boxSize: number, reversalBoxes: number, c
   }
 
   // The column still forming
-  lay?.(column(idx, direction === 1, colLow, colHigh, 0));
+  lay?.(madeFrom(column(idx, direction === 1, colLow, colHigh, 0), data[data.length - 1].time));
   return true;
 }
 

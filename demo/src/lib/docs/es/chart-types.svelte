@@ -54,6 +54,13 @@
   Las transformaciones (Heikin-Ashi, Renko, Kagi, Line Break, P&amp;F, Range Bars) se
   gestionan internamente: <code>chart.getData()</code> sigue devolviendo la serie de entrada original.
 </p>
+<p>
+  El eje de tiempo y la etiqueta de hora del cursor fechan un ladrillo, una línea o una columna por la
+  barra en que se completó, así que el eje de un gráfico Renko, Kagi, Line Break, P&amp;F o Range Bars
+  muestra los años, meses y días que abarca; los ladrillos completados en una misma barra comparten su
+  etiqueta. Sus propios valores <code>time</code> solo los cuentan, de uno en uno. <code>axisTimes(series)</code>
+  de <code>@tradecanvas/chart</code> da esas fechas para una serie construida con <code>toRenko</code> y similares.
+</p>
 
 <h2>Configuración de los tipos derivados</h2>
 <p>

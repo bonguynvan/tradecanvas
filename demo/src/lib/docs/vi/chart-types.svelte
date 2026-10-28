@@ -54,6 +54,13 @@
   Các phép biến đổi (Heikin-Ashi, Renko, Kagi, Line Break, P&amp;F, Range Bars) được xử lý
   bên trong — <code>chart.getData()</code> vẫn trả về chuỗi dữ liệu gốc đã truyền vào.
 </p>
+<p>
+  Trục thời gian và nhãn thời gian của crosshair ghi ngày cho một viên gạch, đường hay cột theo nến
+  mà nó hoàn thành, nên trục của biểu đồ Renko, Kagi, Line Break, P&amp;F hay Range Bars đọc ra các năm,
+  tháng và ngày mà nó trải qua; các viên gạch hoàn thành trên cùng một nến dùng chung nhãn của nến đó.
+  Giá trị <code>time</code> riêng của chúng vẫn chỉ để đếm, cách nhau một. <code>axisTimes(series)</code> từ
+  <code>@tradecanvas/chart</code> cho các ngày đó với chuỗi dựng bằng <code>toRenko</code> và các hàm tương tự.
+</p>
 
 <h2>Thông số của các loại nến dựng từ dữ liệu</h2>
 <p>

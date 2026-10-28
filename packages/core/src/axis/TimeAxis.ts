@@ -2,6 +2,7 @@ import type { ViewportState, Theme, DataSeries, TimeFormatter, TimeZoneSetting }
 import { barDateParts, barsAreDaily, timeParts, tzLabel, barTimeUnit } from '@tradecanvas/commons';
 import { barIndexToTime } from '../viewport/ScaleMapping.js';
 import { MARK_WEIGHT, TimeMarker, markKind, type MarkKind, type TimeMark } from './timeMarks.js';
+import { axisTimes } from '../charts/transforms/axisTimes.js';
 
 const _pad2 = (n: number) => n < 10 ? '0' + n : '' + n;
 
@@ -82,12 +83,14 @@ export class TimeAxis {
    * The slots labelled on view, the grid's columns with them: the bars that
    * start the largest calendar steps, at least `MIN_LABEL_SPACING_PX` apart.
    * Nothing left of the oldest bar, whose history isn't loaded; past the
-   * newest, the future's slots when times are extrapolated there.
+   * newest, the future's slots when times are extrapolated there. Bricks
+   * and the like are marked by the times of the bars they were made from
+   * (`axisTimes`).
    */
   marks(viewport: ViewportState, data: DataSeries): TimeMark[] {
     const barUnit = viewport.barWidth + viewport.barSpacing;
     if (!(barUnit > 0) || data.length === 0) return [];
-    return this.marker.marks(data, {
+    return this.marker.marks(axisTimes(data), {
       from: Math.floor(viewport.offset / barUnit),
       to: Math.ceil((viewport.offset + viewport.chartRect.width) / barUnit),
       gapBars: MIN_LABEL_SPACING_PX / barUnit,
@@ -114,8 +117,10 @@ export class TimeAxis {
     return this.columns;
   }
 
-  render(ctx: CanvasRenderingContext2D, viewport: ViewportState, theme: Theme, data: DataSeries, axisYOverride?: number): void {
+  render(ctx: CanvasRenderingContext2D, viewport: ViewportState, theme: Theme, series: DataSeries, axisYOverride?: number): void {
     const { chartRect } = viewport;
+    // Renko bricks and the like are dated by the bars they were made from.
+    const times = axisTimes(series);
     const axisY = axisYOverride ?? (chartRect.y + chartRect.height);
 
     // Subtle horizontal divider
@@ -134,8 +139,8 @@ export class TimeAxis {
     const barUnit = viewport.barWidth + viewport.barSpacing;
     const offsetX = -viewport.offset + chartRect.x + viewport.barWidth / 2;
     const to = Math.ceil((viewport.offset + chartRect.width) / barUnit);
-    const unit = barTimeUnit(data);
-    const rightTime = data.length > 0 ? barIndexToTime(Math.min(to, data.length - 1), data) : Date.now();
+    const unit = barTimeUnit(times);
+    const rightTime = times.length > 0 ? barIndexToTime(Math.min(to, times.length - 1), times) : Date.now();
     const tzText = tzLabel(this.tz, rightTime * unit);
     const tzFont = `500 ${theme.font.sizeSmall - 1}px ${theme.font.family}`;
     const tzRight = chartRect.x + chartRect.width - 4;
@@ -152,8 +157,8 @@ export class TimeAxis {
     // wide one (a long month name, a formatter's own text) can't run into
     // its neighbours, and a year beats the day beside it.
     const placed: { left: number; right: number }[] = [];
-    const order = this.marks(viewport, data).sort((a, b) => b.weight - a.weight || a.index - b.index);
-    const daily = barsAreDaily(data) === true;
+    const order = this.marks(viewport, series).sort((a, b) => b.weight - a.weight || a.index - b.index);
+    const daily = barsAreDaily(times) === true;
     for (const mark of order) {
       const markX = mark.index * barUnit + offsetX;
       // A bar off the plot has no label on it.

@@ -4,6 +4,7 @@ import { crosshairLooks } from './crosshairLooks.js';
 import { crispX, crispY } from '../charts/pixelGrid.js';
 import { priceScaleText } from '../axis/PriceAxis.js';
 import { fillTag } from '../ui/shapes.js';
+import { axisTimes } from '../charts/transforms/axisTimes.js';
 import { xToBarIndex, yToPrice, barIndexToX, barIndexToTime } from '../viewport/ScaleMapping.js';
 
 export type CrosshairCallback = (barIndex: number | null, point: Point | null) => void;
@@ -320,11 +321,13 @@ export class CrosshairHandler {
   ): void {
     if (data.length === 0) return;
     if (!this.timesPastData && (slot < 0 || slot >= data.length)) return;
+    // Renko bricks and the like read the time of the bar they were made from, as the axis labels them.
+    const times = axisTimes(data);
     // Past either end of the data the time is extrapolated.
-    const time = barIndexToTime(slot, data);
+    const time = barIndexToTime(slot, times);
     const timeText = this.timeFormatter
-      ? this.timeFormatter(time * barTimeUnit(data), { kind: 'crosshair', timeZone: this.tz })
-      : formatBarTime(time * barTimeUnit(data), this.tz, barsAreDaily(data), this.exchangeZone);
+      ? this.timeFormatter(time * barTimeUnit(times), { kind: 'crosshair', timeZone: this.tz })
+      : formatBarTime(time * barTimeUnit(times), this.tz, barsAreDaily(times), this.exchangeZone);
     const font = `600 ${theme.font.sizeSmall}px ${theme.font.family}`;
     const axisY = timeAxisY ?? (viewport.chartRect.y + viewport.chartRect.height);
     ctx.font = font;
