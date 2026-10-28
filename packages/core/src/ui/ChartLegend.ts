@@ -55,6 +55,16 @@ export class ChartLegend {
     this.resizeListener = listener;
   }
 
+  /**
+   * What it shows changed: until the next draw its height is a guess
+   * (`getHeight`), which a host may place its rows by, so that draw reports
+   * the height it finds even when it is the one it had.
+   */
+  private forgetHeight(): void {
+    this.drawnHeight = null;
+    this.reportedHeight = null;
+  }
+
   private reportResize(): void {
     const height = this.getHeight();
     if (height === this.reportedHeight) return;
@@ -64,7 +74,7 @@ export class ChartLegend {
 
   setConfig(config: Partial<LegendConfig>): void {
     Object.assign(this.config, config);
-    this.drawnHeight = null;
+    this.forgetHeight();
   }
 
   /** A copy of what it shows and how. */
@@ -85,13 +95,15 @@ export class ChartLegend {
   }
 
   setSymbol(symbol: string): void {
+    if (symbol === this.symbol) return;
     this.symbol = symbol;
-    this.drawnHeight = null;
+    this.forgetHeight();
   }
 
   setTimeframe(tf: string): void {
+    if (tf === this.timeframe) return;
     this.timeframe = tf;
-    this.drawnHeight = null;
+    this.forgetHeight();
   }
 
   setChartType(_type: string): void {
@@ -109,14 +121,16 @@ export class ChartLegend {
   }
 
   setStatusText(text: string | null): void {
+    if (text === this.statusText) return;
     this.statusText = text;
-    this.drawnHeight = null;
+    this.forgetHeight();
   }
 
   /** The exchange the symbol trades on, named in the title line. */
   setExchange(exchange: string): void {
+    if (exchange === this.exchange) return;
     this.exchange = exchange;
-    this.drawnHeight = null;
+    this.forgetHeight();
   }
 
   /** Symbol · interval · exchange, as far as they are known ('' with none or `showSymbol` off). */

@@ -109,3 +109,28 @@ describe('ChartLegend.getHeight', () => {
     expect(legend.getHeight()).toBe(0);
   });
 });
+
+describe('ChartLegend resize listener', () => {
+  const draw = (legend: ChartLegend) => legend.render(mockCtx().ctx, viewport(0, 1), DARK_THEME, [bar(), bar()]);
+
+  it('is called after a draw that changed the height, not after one that kept it', () => {
+    const legend = new ChartLegend();
+    const calls = vi.fn();
+    legend.setResizeListener(calls);
+    draw(legend);
+    expect(calls).toHaveBeenCalledTimes(1);
+    draw(legend);
+    expect(calls).toHaveBeenCalledTimes(1);
+  });
+
+  // Between the change and the draw its height is a guess, which a host may have read and placed rows by.
+  it('is called after the first draw since a change that could move it, even at the height it had', () => {
+    const legend = new ChartLegend();
+    const calls = vi.fn();
+    legend.setResizeListener(calls);
+    draw(legend);
+    legend.setTimeframe('1m');
+    draw(legend);
+    expect(calls).toHaveBeenCalledTimes(2);
+  });
+});
