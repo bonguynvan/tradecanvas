@@ -52,6 +52,14 @@ describe('plot looks of indicators that draw themselves', () => {
     expect(without.some((s) => s.color === '#222222')).toBe(false);
   });
 
+  it("draws Ichimoku's lagging span apart from the conversion line when only four colours are given", () => {
+    const style: ResolvedIndicatorStyle = { colors: ['#111111', '#222222', '#333333', '#444444'], lineWidths: [1], opacity: 1 };
+    const strokes = draw(new IchimokuIndicator(), style).filter((s) => s.segments.length > 0);
+    const conversion = draw(new IchimokuIndicator(), { ...style, plots: { chikou: { visible: false } } }).filter((s) => s.segments.length > 0);
+    expect(strokes).toHaveLength(conversion.length + 1);
+    expect(strokes.filter((s) => s.color === '#111111')).toHaveLength(1);
+  });
+
   it("leaves out one of Ichimoku's lines and dashes another", () => {
     const style: ResolvedIndicatorStyle = { colors: ['#111111', '#222222', '#333333', '#444444'], lineWidths: [1], opacity: 1 };
     const all = draw(new IchimokuIndicator(), style).filter((s) => s.segments.length > 0);

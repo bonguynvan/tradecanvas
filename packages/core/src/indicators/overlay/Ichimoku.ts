@@ -2,12 +2,14 @@ import type { IndicatorDescriptor, DataSeries, IndicatorConfig, IndicatorOutput,
 import { IndicatorBase } from '../IndicatorBase.js';
 import { IndicatorValueMap } from '../IndicatorValueMap.js';
 import { getIntParam } from '../params.js';
-import { withAlpha } from '@tradecanvas/commons';
+import { withAlpha, TC_SERIES_COLORS } from '@tradecanvas/commons';
 import { barIndexToX, priceToY } from '../../viewport/ScaleMapping.js';
 import { plotLook } from '../plots.js';
 
 /** Index of the lagging span's colour in the indicator's colours. */
 const CHIKOU_COLOR = 4;
+/** The series palette's fifth colour, so four colours of one's own don't paint it as the conversion line. */
+const CHIKOU_FALLBACK = TC_SERIES_COLORS[CHIKOU_COLOR];
 
 /**
  * Ichimoku Kinko Hyo: the conversion and base lines, the two lead lines with
@@ -144,6 +146,6 @@ export class IchimokuIndicator extends IndicatorBase {
     drawTypedLine('kijun', kijunXs, kijunYs, kijunN, style.colors[1] ?? '#f2a93b', style.lineWidths[0]);
     drawTypedLine('senkouA', senkouAXs, senkouAYs, senkouAN, style.colors[2] ?? '#1fa874', 1);
     drawTypedLine('senkouB', senkouBXs, senkouBYs, senkouBN, style.colors[3] ?? '#e8505b', 1);
-    drawTypedLine('chikou', chikouXs, chikouYs, chikouN, style.colors[CHIKOU_COLOR] ?? style.colors[0], 1);
+    drawTypedLine('chikou', chikouXs, chikouYs, chikouN, style.colors[CHIKOU_COLOR] ?? CHIKOU_FALLBACK, 1);
   }
 }
