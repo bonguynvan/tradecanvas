@@ -3478,6 +3478,8 @@ export class ChartWidget {
     const prevClose = idx > 0 ? data[idx - 1].close : bar.open;
     const change = bar.close - prevClose;
     const changePct = prevClose !== 0 ? (change / prevClose) * 100 : 0;
+    const onPane = new Set(this.chart.getIndicatorPanes().flatMap((pane) => pane.instanceIds ?? [pane.instanceId]));
+    const locale = this.settingsState.numberLocale || 'en-US';
 
     const indicators = this.chart.getActiveIndicators().map((ind) => {
       const series = this.chart.getIndicatorOutput(ind.instanceId)?.series;
@@ -3488,7 +3490,10 @@ export class ChartWidget {
       const values = point
         ? fields
             .filter(([key]) => typeof point[key] === 'number' && Number.isFinite(point[key]))
-            .map(([key, title]) => ({ key: title, value: point[key] as number }))
+            .map(([key, title]) => {
+              const value = point[key] as number;
+              return { key: title, value, text: this.indicatorValueText(value, onPane.has(ind.instanceId), locale) };
+            })
         : [];
       return { name: ind.descriptor.name, values };
     }).filter((i) => i.values.length > 0);
@@ -3496,6 +3501,8 @@ export class ChartWidget {
     return {
       ohlc: { open: bar.open, high: bar.high, low: bar.low, close: bar.close, volume: bar.volume },
       change,
+      // In the decimals the bar's prices show: a change of 18.7494 on 100,000 reads 18.75.
+      changeText: this.formatAlertPrice(change, bar.close),
       changePct,
       indicators,
     };
@@ -4137,17 +4144,30 @@ export class ChartWidget {
     return value.toLocaleString(locale, { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
   }
 
-  private formatAlertPrice(price: number): string {
+  /**
+   * `scale`: the price whose size picks the decimals when nothing sets them
+   * (a change takes its bar's, so it reads in the decimals its prices do).
+   */
+  private formatAlertPrice(price: number, scale = price): string {
     // The chart's own price format (fractions, a host's function) wins, then
     // the market's or the symbol's decimals: then a price reads as the axis
     // writes it, in the chart's number locale.
     if (this.chart.getPriceFormatter?.() || this.chartSetsDecimals()) return this.chart.formatPrice(price);
     // Nothing sets them: pick digits from magnitude so BTC (64,200.5) and a
     // sub-dollar alt (0.04821) both read sensibly, whatever is on view.
-    const abs = Math.abs(price);
+    const abs = Math.abs(scale);
     const digits = abs >= 1000 ? 2 : abs >= 1 ? 4 : 6;
     const locale = this.settingsState.numberLocale || undefined;
     return price.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: digits });
+  }
+
+  /**
+   * An indicator's value as the legend and the data window write it: a line
+   * on the price pane as the chart writes prices, one in a pane of its own
+   * in the decimals its size calls for, both in the number locale.
+   */
+  private indicatorValueText(value: number, onPane: boolean, locale: string): string {
+    return onPane ? formatIndicatorValue(value, locale) : this.chart.formatPrice(value);
   }
 
   /** Whether the market or the symbol sets the decimals prices show (the market's win, as on the chart). */
@@ -5766,7 +5786,7 @@ export class ChartWidget {
         visible: ind.visible,
         offInterval,
         values: values.map((v) => ({
-          text: pane ? formatIndicatorValue(v.value, locale) : this.chart.formatPrice(v.value),
+          text: this.indicatorValueText(v.value, pane !== null, locale),
           color: v.color,
         })),
         pane: pane

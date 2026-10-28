@@ -15,6 +15,11 @@ class FakeChart {
   symbolInfo: SymbolInfo | null = null;
   market: { pricePrecision?: number } | null = null;
   priceFormatter: ((price: number) => string) | null = null;
+  bars = [BAR];
+  /** An EMA on the price pane and an RSI in a pane of its own, when a test adds them. */
+  indicators: unknown[] = [];
+  outputs: Record<string, { series: Record<string, number>[] }> = {};
+  panes: { instanceId: string; rect: { x: number; y: number; width: number; height: number } }[] = [];
 
   constructor(_host: HTMLElement, public options: ChartOptions) {
     FakeChart.last = this;
@@ -44,11 +49,11 @@ class FakeChart {
     return v.toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
   }
   getFeatures(): Record<string, unknown> { return {}; }
-  getData() { return [BAR]; }
+  getData() { return this.bars; }
   getAlerts(): unknown[] { return [{ id: 'a', price: 100_018.7, condition: 'crossing' }]; }
-  getActiveIndicators(): unknown[] { return []; }
-  getIndicatorPanes(): unknown[] { return []; }
-  getIndicatorOutput(): null { return null; }
+  getActiveIndicators(): unknown[] { return this.indicators; }
+  getIndicatorPanes(): unknown[] { return this.panes; }
+  getIndicatorOutput(id: string) { return this.outputs[id] ?? null; }
   getDrawings(): unknown[] { return []; }
   getSelectedDrawingIds(): string[] { return []; }
   getOrders(): unknown[] { return []; }
@@ -157,5 +162,46 @@ describe('ChartWidget panels’ prices', () => {
     widget.openPanel('alerts');
     FakeChart.last.emit('alertAdd');
     expect(alertRow()).toBe('Crossing $100019');
+  });
+
+  it('write the data window’s change in the decimals its prices have, not the change’s own size', () => {
+    // A move of 18.7494 on a price near 100,000: the prices show two decimals, so does the change.
+    FakeChart.last.bars = [{ ...BAR, close: BAR.open + 18.7494 }];
+    widget.openPanel('dataWindow');
+    hoverBar();
+    const change = [...host.querySelectorAll('.tcw-datawin-value')][4]?.textContent;
+    expect(change).toBe('+18.75 (+0.02%)');
+  });
+});
+
+describe('ChartWidget data window’s indicator values', () => {
+  const addIndicators = () => {
+    const chart = FakeChart.last;
+    const descriptor = (id: string, name: string) => ({ id, name, defaultConfig: {}, plots: [{ key: 'value', title: name }] });
+    chart.indicators = [
+      { instanceId: 'ema', id: 'ema', params: {}, visible: true, descriptor: descriptor('ema', 'EMA') },
+      { instanceId: 'rsi', id: 'rsi', params: {}, visible: true, descriptor: descriptor('rsi', 'RSI') },
+    ];
+    chart.outputs = { ema: { series: [{ value: 100_012.3456 }] }, rsi: { series: [{ value: 54.32198 }] } };
+    chart.panes = [{ instanceId: 'rsi', rect: { x: 0, y: 300, width: 600, height: 100 } }];
+  };
+  const indicatorValues = () => [...host.querySelectorAll('.tcw-datawin-value')].slice(6).map((el) => el.textContent);
+
+  it('read as the legend writes them: a price-pane line as the chart writes prices', () => {
+    FakeChart.last.setSymbolInfo({ symbol: 'AAA', pricePrecision: 1 });
+    addIndicators();
+    widget.openPanel('dataWindow');
+    hoverBar();
+    expect(indicatorValues()).toEqual(['100,012.3', '54.32']);
+  });
+
+  it('are in the number locale', () => {
+    widget.destroy();
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false, chartOptions: { numberLocale: 'de-DE' } });
+    addIndicators();
+    FakeChart.last.formatPrice = (v: number) => v.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    widget.openPanel('dataWindow');
+    hoverBar();
+    expect(indicatorValues()).toEqual(['100.012,35', '54,32']);
   });
 });
