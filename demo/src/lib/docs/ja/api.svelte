@@ -219,6 +219,7 @@ vn30fLastTradingDay(2026, 12, (day) => holidays.has(day)) // 第 3 木曜日。�
   値幅制限は CE、FL、REF と名付けた破線と軸上のタグで描かれ、色はマーケットの
   <code>colorScheme</code>、なければテーマの <code>priceLimits</code> です。テーマの背景に対して 4.5:1 のコントラストに届かない色は届くまで濃くされるため、
   板の明るいマゼンタ、シアン、黄色はライトテーマでも色相を保ちます。
+  <code>priceLimits</code> のない独自テーマは、明るい背景ではライトテーマの色、暗い背景ではダークテーマの色を使います。
 </p>
 
 <h3 id="comparing-symbols">シンボルの比較</h3>

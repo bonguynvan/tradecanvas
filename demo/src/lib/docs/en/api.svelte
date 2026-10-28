@@ -226,6 +226,7 @@ vn30fLastTradingDay(2026, 12, (day) => holidays.has(day)) // the third Thursday,
   market's <code>colorScheme</code> colours, else the theme's <code>priceLimits</code>. A colour
   that doesn't read at 4.5:1 on the theme's background is shaded toward its text until it does, so the
   price board's bright magenta, cyan and yellow keep their hue on the light theme.
+  A theme of your own without <code>priceLimits</code> takes the light theme's on a light background, the dark theme's on a dark one.
 </p>
 
 <h3 id="comparing-symbols">Comparing symbols</h3>

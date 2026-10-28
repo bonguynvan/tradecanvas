@@ -231,6 +231,7 @@ vn30fLastTradingDay(2026, 12, (day) => holidays.has(day)) // el tercer jueves, a
   <code>priceLimits</code> del tema. Un color que no alcanza un contraste de 4.5:1 sobre el fondo del
   tema se oscurece hasta alcanzarlo, así que el magenta, el cian y el amarillo vivos del tablero de
   precios conservan su tono en el tema claro.
+  Un tema propio sin <code>priceLimits</code> toma los del tema claro sobre un fondo claro y los del oscuro sobre uno oscuro.
 </p>
 
 <h3 id="comparing-symbols">Comparar símbolos</h3>

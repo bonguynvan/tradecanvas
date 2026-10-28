@@ -831,6 +831,12 @@ describe('RenderEngine — the price limits’ colours', () => {
     }
   });
 
+  it('takes the light colours for a light theme of its own that gives none', () => {
+    const { priceLimits: _none, ...plain } = LIGHT_THEME;
+    const inks = limitInks({ ...plain, background: '#fbfaf7' } as Theme);
+    expect([label(inks, 'CE'), label(inks, 'FL'), label(inks, 'REF')]).toEqual(['#a21caf', '#0e7490', '#8a6a00']);
+  });
+
   it('keeps the dark theme’s look: the market’s colours as they are', () => {
     const inks = limitInks(DARK_THEME, VN_COLORS);
     expect([label(inks, 'CE'), label(inks, 'FL'), label(inks, 'REF')]).toEqual([VN_COLORS.ceiling, VN_COLORS.floor, VN_COLORS.reference]);

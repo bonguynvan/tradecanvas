@@ -44,9 +44,10 @@ export interface Theme {
   /** The shapes the chart draws: its price tags and axis pills square, rounded or pills. */
   shape?: ShapeConfig;
   /**
-   * The price limits' colours when the market's colour scheme gives none.
-   * Whichever colour they take, their names and axis tags are shaded to
-   * read at 4.5:1 on the theme's background.
+   * The price limits' colours when the market's colour scheme gives none;
+   * unset, `LIGHT_PRICE_LIMITS` on a light background, `DARK_PRICE_LIMITS`
+   * on a dark one. Whichever colour they take, their names and axis tags
+   * are shaded to read at 4.5:1 on the theme's background.
    */
   priceLimits?: PriceLimitColors;
   /**

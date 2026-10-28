@@ -1,7 +1,7 @@
 import { LayerType } from '@tradecanvas/commons';
 import type { Size, ViewportState, Theme, DataSeries, Rect, PaneStyle } from '@tradecanvas/commons';
 import { priceToY, yToPrice, xToBarIndex, barIndexToX } from '../viewport/ScaleMapping.js';
-import { DARK_PRICE_LIMITS, PRICE_AXIS_WIDTH, autoPricePrecision, formatPrice, inkOn, lineDash, priceTagText, readableOn } from '@tradecanvas/commons';
+import { DARK_PRICE_LIMITS, LIGHT_PRICE_LIMITS, PRICE_AXIS_WIDTH, autoPricePrecision, formatPrice, inkOn, lineDash, priceTagText, readableOn } from '@tradecanvas/commons';
 import { priceScaleText, roundStep, stepTicks } from '../axis/PriceAxis.js';
 import { LayerManager } from './LayerManager.js';
 import { AXIS_LABEL_HEIGHT, renderAxisValueLabels, layoutAxisValueLabels, drawAxisValueLabels, indicatorValuePrecision, type AxisValueLabel, type FixedAxisTag } from '../ui/axisValueLabels.js';
@@ -56,15 +56,38 @@ const LIMIT_TEXT_CONTRAST = 4.5;
  * name reads on the background. Colours that already read stay as they are.
  */
 function limitLines(limits: PriceLimits, theme?: Theme): { price: number; color: string; label: string }[] {
-  const own = theme?.priceLimits ?? DARK_PRICE_LIMITS;
+  // A theme of your own without colours of its own: the light ones on paper, the dark ones on the dark.
+  const own = theme?.priceLimits ?? (theme?.background && isPaper(theme.background) ? LIGHT_PRICE_LIMITS : DARK_PRICE_LIMITS);
   const readable = (color: string) => theme?.background && theme.text
-    ? readableOn(color, theme.background, theme.text, LIMIT_TEXT_CONTRAST)
+    ? readableShade(color, theme.background, theme.text)
     : color;
   return [
     { price: limits.ceiling, color: readable(limits.colors?.ceiling ?? own.ceiling), label: 'CE' },
     { price: limits.floor, color: readable(limits.colors?.floor ?? own.floor), label: 'FL' },
     { price: limits.reference, color: readable(limits.colors?.reference ?? own.reference), label: 'REF' },
   ];
+}
+
+/** Whether a background is light: black text reads on it better than white. */
+function isPaper(background: string): boolean {
+  return inkOn(background, '#000000', '#ffffff') === '#000000';
+}
+
+/** The shades worked out, by colour, background and ink: a frame draws the same few each time. */
+const shades = new Map<string, string>();
+/** Shades kept before the cache starts again (themes and markets come in a handful of colours). */
+const SHADES_KEPT = 64;
+
+/** `readableOn` at the limits' contrast, worked out once for each colour on each background. */
+function readableShade(color: string, background: string, ink: string): string {
+  const key = `${color}|${background}|${ink}`;
+  let shade = shades.get(key);
+  if (shade === undefined) {
+    if (shades.size >= SHADES_KEPT) shades.clear();
+    shade = readableOn(color, background, ink, LIMIT_TEXT_CONTRAST);
+    shades.set(key, shade);
+  }
+  return shade;
 }
 
 /** `steps` recorded in one region, all or none: a recorder holding all of them, or null. */

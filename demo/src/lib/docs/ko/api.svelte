@@ -219,6 +219,7 @@ vn30fLastTradingDay(2026, 12, (day) => holidays.has(day)) // 셋째 목요일, �
   가격 제한은 CE, FL, REF라는 이름의 점선과 축 위의 태그로 그려지며, 색은 시장의
   <code>colorScheme</code>, 없으면 테마의 <code>priceLimits</code>를 따릅니다. 테마 배경에서 4.5:1 대비에 못 미치는 색은 그 대비가 될 때까지 짙어지므로,
   시세판의 밝은 자홍, 청록, 노랑이 라이트 테마에서도 색조를 유지합니다.
+  <code>priceLimits</code>가 없는 자체 테마는 밝은 배경에서는 라이트 테마의 색을, 어두운 배경에서는 다크 테마의 색을 씁니다.
 </p>
 
 <h3 id="comparing-symbols">종목 비교</h3>

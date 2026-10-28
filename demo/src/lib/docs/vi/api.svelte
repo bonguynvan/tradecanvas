@@ -228,6 +228,7 @@ vn30fLastTradingDay(2026, 12, (day) => holidays.has(day)) // thứ Năm thứ ba
   <code>colorScheme</code> của thị trường, nếu không có thì theo <code>priceLimits</code> của theme.
   Màu nào không đạt độ tương phản 4.5:1 trên nền của theme sẽ được làm đậm đến khi đạt, nên màu
   tím, xanh lơ và vàng sáng của bảng giá vẫn giữ sắc màu trên theme sáng.
+  Một theme tự tạo không có <code>priceLimits</code> sẽ dùng màu của theme sáng trên nền sáng, của theme tối trên nền tối.
 </p>
 
 <h3 id="comparing-symbols">So sánh các mã</h3>
