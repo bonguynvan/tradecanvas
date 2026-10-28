@@ -24,6 +24,14 @@ Cursor, Claude Desktop and most other clients take the same command in their MCP
 }
 ```
 
+Codex adds it with `codex mcp add tradecanvas -- npx -y @tradecanvas/mcp`, or reads it from `~/.codex/config.toml`, where the key is `mcp_servers`:
+
+```toml
+[mcp_servers.tradecanvas]
+command = "npx"
+args = ["-y", "@tradecanvas/mcp"]
+```
+
 ## Tools
 
 All of them read only; none touches the network or your files.
