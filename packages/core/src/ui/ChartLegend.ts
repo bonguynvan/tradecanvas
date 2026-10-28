@@ -236,7 +236,9 @@ export class ChartLegend {
   }
 
   render(ctx: CanvasRenderingContext2D, viewport: ViewportState, theme: Theme, data: DataSeries): void {
-    if (!this.config.visible || data.length === 0) return;
+    // Hidden, it takes no height: a host stacking rows under it hears so, as when it is drawn shorter.
+    if (!this.config.visible) return this.reportResize();
+    if (data.length === 0) return;
 
     const bar = this.hoverBar ?? data[data.length - 1];
     // The change is from the bar before the one shown, hovered or last.

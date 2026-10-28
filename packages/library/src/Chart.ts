@@ -6097,7 +6097,12 @@ export class Chart {
 
   /** Update feature flags at runtime. Only provided keys are changed. */
   setFeatures(patch: Partial<FeaturesConfig>): void {
+    const legendBottom = this.getLegendBottom();
     Object.assign(this.features, patch);
+    // The legend switched off or on: what is stacked under it moves, as when it is drawn another height.
+    if (patch.legend !== undefined && this.getLegendBottom() !== legendBottom) {
+      this.eventBus.emit('legendResize', { bottom: this.getLegendBottom() });
+    }
 
     // Apply immediate side-effects
     if (patch.crosshair === false || patch.crosshairTooltip === false) {

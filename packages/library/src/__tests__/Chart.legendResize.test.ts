@@ -82,4 +82,21 @@ describe('Chart — what drawing labels keep clear of', () => {
     vi.advanceTimersByTime(FRAMES_MS);
     expect(keepOut()).toEqual([]);
   });
+
+  it('fires when the legend is hidden, by setLegend or by its feature switch', () => {
+    vi.advanceTimersByTime(FRAMES_MS);
+    const top = chart.getPlotRect().y;
+    const bottoms: number[] = [];
+    chart.on('legendResize', (e) => bottoms.push(e.payload.bottom));
+    chart.setLegend({ visible: false });
+    vi.advanceTimersByTime(FRAMES_MS);
+    expect(bottoms).toEqual([top]);
+    chart.setLegend({ visible: true });
+    vi.advanceTimersByTime(FRAMES_MS);
+    expect(bottoms).toHaveLength(2);
+    chart.setFeatures({ legend: false });
+    vi.advanceTimersByTime(FRAMES_MS);
+    expect(bottoms).toHaveLength(3);
+    expect(bottoms[2]).toBe(top);
+  });
 });

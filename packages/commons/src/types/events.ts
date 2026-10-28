@@ -373,7 +373,7 @@ export interface ChartEventMap {
   indicatorRemove: IndicatorChangePayload;
   /** An indicator pane was resized (by dragging its divider or `setPanelSize`). */
   paneResize: { instanceId: string; size: number };
-  /** The legend was drawn taller or shorter: `bottom` is the new `getLegendBottom()`. */
+  /** The legend was drawn taller or shorter, hidden or shown again: `bottom` is the new `getLegendBottom()`. */
   legendResize: { bottom: number };
   /** A pane was folded or opened, maximised or put back, or moved up or down. */
   paneChange: { instanceId: string; change: 'collapsed' | 'maximized' | 'order' | 'scale' };
