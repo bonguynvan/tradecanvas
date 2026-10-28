@@ -41,6 +41,12 @@ describe('exporting the chart’s data', () => {
     expect(last.split(',').every((cell) => cell !== '')).toBe(true);
   });
 
+  it('names Stochastic RSI’s columns after all four of its lengths', () => {
+    chart.addIndicator('stochrsi', { d: 5 });
+    const header = chart.getExportText('csv').split('\n')[0];
+    expect(header.endsWith(',Stoch RSI 14 14 3 5 %K,Stoch RSI 14 14 3 5 %D')).toBe(true);
+  });
+
   it('exports only the bars on screen, or no indicator lines, when asked', () => {
     chart.addIndicator('sma', { period: 20 });
     const { bars: shown, columns } = chart.getExportData({ range: 'visible', indicators: false });

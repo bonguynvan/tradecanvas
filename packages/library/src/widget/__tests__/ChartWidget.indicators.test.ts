@@ -465,6 +465,12 @@ describe('indicatorChipLabel', () => {
     expect(indicatorChipLabel('x', { a: 1, b: 2, c: 3, d: 4 })).toBe('X 1 2 3');
   });
 
+  it('lists all four of Stochastic RSI’s lengths, so its k and d read apart', () => {
+    const defaults = { rsiPeriod: 14, stochPeriod: 14, k: 3, d: 3, source: 'close' };
+    expect(indicatorChipLabel('stochrsi', defaults, defaults, 'Stoch RSI')).toBe('Stoch RSI 14 14 3 3');
+    expect(indicatorChipLabel('stochrsi', { ...defaults, d: 5 }, defaults, 'Stoch RSI')).toBe('Stoch RSI 14 14 3 5');
+  });
+
   it('rounds long decimals and skips non-numbers', () => {
     expect(indicatorChipLabel('psar', { step: 0.0200000001, max: 0.2 }, { step: 0.02, max: 0.2 })).toBe('PSAR 0.02 0.2');
     expect(indicatorChipLabel('vwap', { anchor: 'session' }, { anchor: 'session' })).toBe('VWAP');
