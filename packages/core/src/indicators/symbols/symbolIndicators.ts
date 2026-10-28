@@ -12,7 +12,7 @@ interface SpreadParams extends SymbolParams {
 }
 
 /** The indicators that read another symbol's bars: Compare adds them, with the symbol. */
-export const SYMBOL_INDICATOR_IDS: ReadonlySet<string> = new Set(['compareSymbol', 'spread', 'correlation', 'correlationlog']);
+export const SYMBOL_INDICATOR_IDS: ReadonlySet<string> = new Set(['compareSymbol', 'compareSymbolPane', 'spread', 'correlation', 'correlationlog']);
 
 const symbolOf = (config: IndicatorConfig): string =>
   typeof config.params.symbol === 'string' ? config.params.symbol.trim() : '';
@@ -46,6 +46,23 @@ export class CompareSymbolIndicator extends PointwiseIndicator<SymbolParams> {
     const value = this.store.closeAt(symbol, data[i].time, barTimeUnit(data));
     return value === undefined ? null : { value };
   }
+}
+
+/**
+ * Another symbol's close, as Compare Symbol reads it, in a pane of its own
+ * on that pane's scale: a price-pane line can't open a pane, so the pane way
+ * is its own indicator.
+ */
+export class CompareSymbolPaneIndicator extends CompareSymbolIndicator {
+  override descriptor: IndicatorDescriptor = {
+    id: 'compareSymbolPane',
+    name: 'Compare Symbol (Pane)',
+    placement: 'panel',
+    defaultConfig: { symbol: '' },
+    shortName: 'Compare',
+    plots: [{ key: 'value', title: 'Close', color: 0 }],
+    readsExchangeTimeZone: false,
+  };
 }
 
 /**

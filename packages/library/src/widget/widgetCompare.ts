@@ -73,6 +73,7 @@ export interface CompareIndicator {
 function indicatorWay(indicator: CompareIndicator, inOwnPane: boolean): CompareWay | null {
   switch (indicator.id) {
     case 'compareSymbol': return inOwnPane ? 'pane' : 'scale';
+    case 'compareSymbolPane': return 'pane';
     case 'spread': return indicator.params.mode === 'ratio' ? 'ratio' : 'spread';
     case 'correlation': return 'correlation';
     case 'correlationlog': return 'correlationLog';

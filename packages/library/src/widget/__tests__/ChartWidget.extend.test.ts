@@ -574,12 +574,12 @@ describe('ChartWidget comparing with another symbol', () => {
     await widget.addCompareSymbol('BBB', 'correlationLog');
     expect(fake.added).toEqual([
       ['compareSymbol', { symbol: 'BBB' }, 'bottom', { scale: 'left' }],
-      ['compareSymbol', { symbol: 'BBB' }, undefined, undefined],
+      ['compareSymbolPane', { symbol: 'BBB' }, undefined, undefined],
       ['spread', { symbol: 'BBB', mode: 'ratio' }, undefined, undefined],
       ['correlation', { symbol: 'BBB' }, undefined, undefined],
       ['correlationlog', { symbol: 'BBB' }, undefined, undefined],
     ]);
-    expect(fake.moved).toEqual([['tc_compareSymbol_2', 'new']]);
+    expect(fake.moved).toEqual([]);
   });
 
   const dialogRows = () => [...document.querySelectorAll<HTMLElement>('.tcw-ss-row')].map((r) => r.dataset.symbol);
@@ -787,6 +787,21 @@ describe('ChartWidget comparing with another symbol', () => {
     expect(section('Compare').textContent).not.toContain('No comparisons');
     section('Compare').querySelector<HTMLButtonElement>('[aria-label="Remove comparison"]')!.click();
     expect(fake.removedIndicators).toEqual(['c1']);
+  });
+
+  it('lists a compare in a pane of its own with that way, and takes it off the chart, pane and all', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false, adapter: adapter as never });
+    const fake = FakeChart.last;
+    fake.indicatorsShown = [{
+      instanceId: 'p1', id: 'compareSymbolPane', params: { symbol: 'BBB' }, visible: true,
+      descriptor: { name: 'Compare Symbol (Pane)', defaultConfig: { symbol: '' }, shortName: 'Compare' },
+    }];
+    widget.openPanel('objectTree');
+    const section = [...host.querySelectorAll<HTMLElement>('.tcw-tree-section')]
+      .find((s) => s.querySelector('.tcw-tree-section-head span')?.textContent === 'Compare')!;
+    expect([...section.querySelectorAll('.tcw-tree-row')].map((r) => r.textContent)).toEqual(['BBBPrice, in a pane of its own']);
+    section.querySelector<HTMLButtonElement>('[aria-label="Remove comparison"]')!.click();
+    expect(fake.removedIndicators).toEqual(['p1']);
   });
 
   it('keeps an indicator’s full name in its Objects row’s tooltip', () => {

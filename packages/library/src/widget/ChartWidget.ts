@@ -3767,12 +3767,12 @@ export class ChartWidget {
     const bars = await this.fetchCompareBars(adapter, symbol);
     if (!bars) return;
     this.chart.setSymbolSeries(symbol, bars);
-    const id = way === 'scale' ? this.chart.addIndicator('compareSymbol', { symbol }, 'bottom', { scale: 'left' })
-      : way === 'pane' ? this.chart.addIndicator('compareSymbol', { symbol })
-        : way === 'correlation' ? this.chart.addIndicator('correlation', { symbol })
-          : way === 'correlationLog' ? this.chart.addIndicator('correlationlog', { symbol })
-            : this.chart.addIndicator('spread', { symbol, mode: way });
-    if (id && way === 'pane') this.chart.moveIndicatorToPane(id, 'new');
+    // The pane way is an indicator of its own: a price-pane line can't open a pane.
+    if (way === 'scale') this.chart.addIndicator('compareSymbol', { symbol }, 'bottom', { scale: 'left' });
+    else if (way === 'pane') this.chart.addIndicator('compareSymbolPane', { symbol });
+    else if (way === 'correlation') this.chart.addIndicator('correlation', { symbol });
+    else if (way === 'correlationLog') this.chart.addIndicator('correlationlog', { symbol });
+    else this.chart.addIndicator('spread', { symbol, mode: way });
   }
 
   /**

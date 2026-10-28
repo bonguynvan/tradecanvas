@@ -56,6 +56,19 @@ describe('another symbol on the chart', () => {
     expect(chart.getIndicatorPanes().map((p) => p.instanceId)).toEqual([spread, ratio]);
   });
 
+  it('draws the symbol’s price in a pane of its own, on its own scale, and takes the pane away with it', () => {
+    chart.setSymbolSeries('B', other);
+    const cmp = chart.addIndicator('compareSymbolPane', { symbol: 'B' })!;
+    expect(values(cmp).slice(0, 4)).toEqual([1000, 1000, 1010, 1010]);
+    expect(chart.getIndicatorPanes().map((p) => p.instanceId)).toEqual([cmp]);
+    type Probe = { buildPanelRenderInfos(): { instanceId: string; viewport: ViewportState }[] };
+    const vp = (chart as unknown as Probe).buildPanelRenderInfos().find((p) => p.instanceId === cmp)!.viewport;
+    // Its pane's scale holds the other symbol's prices, ten times the chart's.
+    expect(vp.priceRange.min).toBeGreaterThan(900);
+    chart.removeIndicator(cmp);
+    expect(chart.getIndicatorPanes()).toEqual([]);
+  });
+
   it('asks again when an indicator switches to a symbol it hasn’t got', () => {
     const asked: string[] = [];
     chart.on('symbolSeriesRequest', (e) => asked.push(e.payload.symbol));

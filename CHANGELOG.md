@@ -6,6 +6,7 @@
 
 - **Stochastic RSI is named after all four of its lengths** (`@tradecanvas/chart`). Its label dropped the %D smoothing ("Stoch RSI 14 14 3"), so two instances that differed only there read the same in the legend, the chips and the Objects panel. It is now "Stoch RSI 14 14 3 3" there and in the export, where the columns are renamed to match: `Stoch RSI 14 14 3 3 %K` and `Stoch RSI 14 14 3 3 %D`.
 - **Ichimoku Cloud draws its lagging span** (`@tradecanvas/core`, `@tradecanvas/chart`). The close, plotted the displacement back (26 bars by default), is the line `chikou` (Lagging Span) in the fifth colour, with a legend value, an export column and a style of its own; the last 26 bars have none yet. The `chikou` field in the output was the bar's own close and the `displacement` input did nothing; now it sets how far back the close goes.
+- **A compare in a pane of its own gets one** (`@tradecanvas/core`, `@tradecanvas/chart`). Compare's "Price, in a pane of its own" drew the symbol's price on the main pane: the line was an overlay, which can't open a pane. It is now the new `compareSymbolPane` indicator, the symbol's close in a pane of its own on that pane's scale; taking it off takes the pane away. `compareSymbol` stays on the price pane. The API docs in all six languages and the skill's recipe say so.
 
 ## 1.53.1 (2026-10-27)
 

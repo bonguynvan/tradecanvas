@@ -25,6 +25,7 @@ describe('comparedEntries', () => {
       [
         { instanceId: 'a', id: 'compareSymbol', params: { symbol: 'SOL' } },
         { instanceId: 'b', id: 'compareSymbol', params: { symbol: 'BNB' } },
+        { instanceId: 'p', id: 'compareSymbolPane', params: { symbol: 'LTC' } },
         { instanceId: 'c', id: 'spread', params: { symbol: 'XRP', mode: 'ratio' } },
         { instanceId: 'd', id: 'spread', params: { symbol: 'ADA', mode: 'spread' } },
         { instanceId: 'e', id: 'correlationlog', params: { symbol: 'DOT' } },
@@ -38,6 +39,7 @@ describe('comparedEntries', () => {
       { id: 'cmp_ETH', symbol: 'ETH', way: 'Percent change, on this scale', color: '#4c8dff' },
       { id: 'a', symbol: 'SOL', way: 'Price, on its own scale' },
       { id: 'b', symbol: 'BNB', way: 'Price, in a pane of its own' },
+      { id: 'p', symbol: 'LTC', way: 'Price, in a pane of its own' },
       { id: 'c', symbol: 'XRP', way: 'Ratio' },
       { id: 'd', symbol: 'ADA', way: 'Spread' },
       { id: 'e', symbol: 'DOT', way: 'Correlation of returns' },

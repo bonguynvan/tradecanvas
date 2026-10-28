@@ -219,13 +219,14 @@ vn30fLastTradingDay(2026, 12, (day) => holidays.has(day)) // 第 3 木曜日。�
 <p>
   別のシンボルの変化率を価格スケール上に表示する（<code>addCompareSymbol</code>）ほか、その価格を専用の
   スケールや専用のペインに表示したり、チャートの終値とのスプレッドや比率を表示したりできます。後者は
-  インジケーター（<code>compareSymbol</code>、<code>spread</code>）なので、ほかのインジケーターと同じく
+  インジケーター（<code>compareSymbol</code>、<code>compareSymbolPane</code>、<code>spread</code>）なので、ほかのインジケーターと同じく
   凡例、値ラベル、アラートを持ち、レイアウトにも保存されます。もう一方のシンボルのバーは時刻でチャートのバーに
   揃えられます。チャートは必要なバーを要求するので、時間足を変えたら改めて渡してください。<code>correlation</code>（終値）と
   <code>correlationlog</code>（バーごとのリターン）も同じようにもう一方のシンボルを読み、−1 から 1 の値を取ります。
 </p>
 <pre><code>{`chart.addCompareSymbol('eth', 'ETHUSDT', ethBars, '#7c4dff')   // percent change, on this scale
 chart.addIndicator('compareSymbol', { symbol: 'ETHUSDT' }, 'bottom', { scale: 'left' })  // own scale
+chart.addIndicator('compareSymbolPane', { symbol: 'ETHUSDT' })                         // own pane, own scale
 chart.addIndicator('spread', { symbol: 'ETHUSDT', mode: 'ratio' })                      // own pane
 chart.addIndicator('correlation', { symbol: 'ETHUSDT', length: 20 })                    // −1 to 1, own pane
 

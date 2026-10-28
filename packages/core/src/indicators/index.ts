@@ -125,5 +125,5 @@ export { SMIErgodicIndicator } from './panel/SMIErgodic.js';
 export { PriceOscillatorIndicator } from './panel/PriceOscillator.js';
 export { VolatilityOHLCIndicator, VolatilityZeroTrendIndicator } from './panel/VolatilityEstimators.js';
 export { SymbolSeriesStore } from './symbols/SymbolSeriesStore.js';
-export { CompareSymbolIndicator, SpreadIndicator, CorrelationCoefficientIndicator, CorrelationLogIndicator, SYMBOL_INDICATOR_IDS } from './symbols/symbolIndicators.js';
+export { CompareSymbolIndicator, CompareSymbolPaneIndicator, SpreadIndicator, CorrelationCoefficientIndicator, CorrelationLogIndicator, SYMBOL_INDICATOR_IDS } from './symbols/symbolIndicators.js';
 export { detectCandlePatterns, CANDLE_PATTERNS } from './candles/detect.js';

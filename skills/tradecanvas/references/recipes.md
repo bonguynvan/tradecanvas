@@ -296,7 +296,9 @@ chart.on('crosshairMove', (e) => {
 
 ## Another symbol on its own scale, and the ratio of the two
 
-ETH beside BTC on a price scale of its own, and BTC ÷ ETH in a pane. The
+ETH beside BTC on a price scale of its own, ETH's price again in a pane of its
+own (`compareSymbolPane`; `compareSymbol` stays on the price pane), and BTC ÷ ETH
+in a pane. The
 indicators ask for the bars of the symbol they read; fetch them again when the
 interval changes:
 
@@ -311,6 +313,7 @@ const load = async (symbol: string) => chart.setSymbolSeries(symbol, await adapt
 chart.on('symbolSeriesRequest', (e) => void load(e.payload.symbol));
 
 chart.addIndicator('compareSymbol', { symbol: 'ETHUSDT' }, 'bottom', { scale: 'left' });
+chart.addIndicator('compareSymbolPane', { symbol: 'ETHUSDT' }); // its price in a pane of its own
 const ratio = chart.addIndicator('spread', { symbol: 'ETHUSDT', mode: 'ratio' })!;
 chart.setPaneScale(ratio, { percent: true });
 ```

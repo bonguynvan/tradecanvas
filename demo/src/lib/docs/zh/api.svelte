@@ -216,13 +216,14 @@ vn30fLastTradingDay(2026, 12, (day) => holidays.has(day)) // 第三个星期四�
 <h3 id="comparing-symbols">品种对比</h3>
 <p>
   可以在价格坐标上显示另一个品种的涨跌幅（<code>addCompareSymbol</code>），也可以把它的价格放在独立坐标或独立窗格中，
-  或者显示图表收盘价与它的价差或比值——后几种都是指标（<code>compareSymbol</code>、<code>spread</code>），
+  或者显示图表收盘价与它的价差或比值——后几种都是指标（<code>compareSymbol</code>、<code>compareSymbolPane</code>、<code>spread</code>），
   和其他指标一样有图例、数值标签和提醒，并会保存在布局中。另一个品种的K线按时间与图表的K线对齐。
   图表会请求它需要的K线；切换周期后请重新提供。<code>correlation</code>（按收盘价）和 <code>correlationlog</code>
   （按逐根K线收益率）以同样方式读取另一个品种，取值在 −1 到 1 之间。
 </p>
 <pre><code>{`chart.addCompareSymbol('eth', 'ETHUSDT', ethBars, '#7c4dff')   // percent change, on this scale
 chart.addIndicator('compareSymbol', { symbol: 'ETHUSDT' }, 'bottom', { scale: 'left' })  // own scale
+chart.addIndicator('compareSymbolPane', { symbol: 'ETHUSDT' })                         // own pane, own scale
 chart.addIndicator('spread', { symbol: 'ETHUSDT', mode: 'ratio' })                      // own pane
 chart.addIndicator('correlation', { symbol: 'ETHUSDT', length: 20 })                    // −1 to 1, own pane
 

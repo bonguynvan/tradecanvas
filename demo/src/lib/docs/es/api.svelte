@@ -229,7 +229,7 @@ vn30fLastTradingDay(2026, 12, (day) => holidays.has(day)) // el tercer jueves, a
 <p>
   El cambio porcentual de otro símbolo en la escala de precio (<code>addCompareSymbol</code>), o su
   precio en una escala propia, en un panel propio, o el diferencial o el ratio entre el cierre del
-  gráfico y ese símbolo; estos últimos son indicadores (<code>compareSymbol</code>,
+  gráfico y ese símbolo; estos últimos son indicadores (<code>compareSymbol</code>, <code>compareSymbolPane</code>,
   <code>spread</code>), con leyenda, etiquetas de valor, alertas y diseños guardados como cualquier
   otro. Las barras del otro símbolo se alinean con las del gráfico por tiempo. El gráfico pide las
   barras que necesita; vuelve a dárselas tras un cambio de temporalidad. <code>correlation</code> (de los
@@ -238,6 +238,7 @@ vn30fLastTradingDay(2026, 12, (day) => holidays.has(day)) // el tercer jueves, a
 </p>
 <pre><code>{`chart.addCompareSymbol('eth', 'ETHUSDT', ethBars, '#7c4dff')   // percent change, on this scale
 chart.addIndicator('compareSymbol', { symbol: 'ETHUSDT' }, 'bottom', { scale: 'left' })  // own scale
+chart.addIndicator('compareSymbolPane', { symbol: 'ETHUSDT' })                         // own pane, own scale
 chart.addIndicator('spread', { symbol: 'ETHUSDT', mode: 'ratio' })                      // own pane
 chart.addIndicator('correlation', { symbol: 'ETHUSDT', length: 20 })                    // −1 to 1, own pane
 

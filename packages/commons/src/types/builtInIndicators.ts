@@ -7,7 +7,8 @@ import type { NumberParam } from './indicator.js';
  * note), and the keys of the lines it draws, as
  * `chart.getIndicatorOutput(instanceId)` and `indicatorSource(instanceId, key)`
  * name them (an output may hold a few more, such as Supertrend's `trend`).
- * The chart adds four that read other symbols, `compareSymbol`, `spread`,
+ * The chart adds five that read other symbols, `compareSymbol` (on the
+ * price pane), `compareSymbolPane` (in a pane of its own), `spread`,
  * `correlation` and `correlationlog`; they take any inputs.
  */
 export interface BuiltInIndicators {
