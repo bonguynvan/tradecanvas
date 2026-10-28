@@ -1078,6 +1078,11 @@ export class ChartWidget {
       });
     });
     // The bar keeps to the main pane's foot as the chart lays out again.
+    // The phone's drawing button keeps to the plot as the chart lays out, or a left scale comes.
+    for (const event of ['resize', 'dataUpdate', 'symbolInfoChange'] as const) {
+      this.chart.on(event, () => this.placeDrawingButton());
+    }
+    this.placeDrawingButton();
     for (const event of ['resize', 'paneResize', 'paneChange'] as const) {
       this.chart.on(event, () => this.layoutReplayBar());
     }
@@ -5092,6 +5097,14 @@ export class ChartWidget {
     set(this.bodyEl());
   }
 
+  /** Where the plot starts in the body, for the phone's drawing button to sit over it. */
+  private placeDrawingButton(): void {
+    const body = this.bodyEl();
+    if (!this.sidebar || !body) return;
+    const inBody = this.chartContainer.getBoundingClientRect().left - body.getBoundingClientRect().left;
+    this.sidebar.setPlotLeft(inBody + this.chart.getPlotRect().x);
+  }
+
   private bodyEl(): HTMLElement | null {
     return this.root.querySelector<HTMLElement>(':scope > .tcw-body');
   }
@@ -5517,7 +5530,10 @@ export class ChartWidget {
     if (patch.crosshairMode !== undefined) this.chart.setCrosshairMode(patch.crosshairMode);
     if (patch.autoScale !== undefined) this.chart.setAutoScale(patch.autoScale);
     if (patch.invertScale !== undefined) this.chart.setInvertScale(patch.invertScale);
-    if (patch.leftPriceScale !== undefined) this.chart.setLeftPriceScaleVisible(patch.leftPriceScale);
+    if (patch.leftPriceScale !== undefined) {
+      this.chart.setLeftPriceScaleVisible(patch.leftPriceScale);
+      this.placeDrawingButton();
+    }
     if (patch.scaleMode !== undefined || patch.autoScale !== undefined) queueMicrotask(() => this.refreshScaleSwitches());
     // Another zone: the clock says so at once.
     if (patch.timezone !== undefined) queueMicrotask(() => this.statusBar?.tick());

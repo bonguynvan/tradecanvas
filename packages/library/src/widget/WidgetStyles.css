@@ -4723,7 +4723,10 @@
   align-items: center;
   justify-content: center;
   position: absolute;
-  inset-inline-start: 10px;
+  /* Over the plot, in from its left edge (the widget sets where it starts): the
+     price axis stays on the chart's right in either direction, so a
+     right-to-left widget keeps the button on the left too, off the axis. */
+  left: calc(var(--tcw-fab-plot-left, 0px) + 10px);
   /* Clear of the time axis. */
   bottom: 44px;
   z-index: 17;
