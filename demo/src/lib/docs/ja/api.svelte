@@ -255,6 +255,10 @@ chart.setPaneScale(spreadId, { percent: true })     // a pane in percent of its 
   独自の時刻を持たないため、ラインを引くともう一方のシンボルを誤ったバーで読むことになるからです。これらのタイプでは
   比較ラインは自動スケールに含まれず、<code>getCompareValues()</code> はどのバーを尋ねても、各シンボルの最新のデータバーでの
   終値を <code>change: null</code> とともに返します。
+  時刻でもう一方のシンボルを読むインジケーター（独自スケールや独自ペインのシンボル、スプレッド、比率、相関）も
+  これらのタイプでは描かれず、どのスケールにも含まれません。<code>getActiveIndicators()</code> はそれらに
+  <code>shown: false</code> と <code>offChartType: true</code> を返し、ChartWidget は比較の行と同じように行を薄く表示します。
+  ローソク足に戻すと再び表示されます。
 </p>
 <pre><code>{`chart.setScaleMode('percentage')       // each line reads its change on the axis
 chart.getCompareValues()               // [{ id: 'eth', label: 'ETHUSDT', color, visible, close: 2650.4, change: -1.82, stale: false }]

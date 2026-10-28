@@ -250,6 +250,9 @@ chart.setPaneScale(spreadId, { percent: true })     // a pane in percent of its 
   Renko、Kagi、Line Break、P&amp;F 和 Range Bars 不绘制对比线：它们的K线只是从第一根往后计数，没有自己的时间，
   在这些图上画线会在错误的K线上读取另一个品种。在这些图表类型上，对比线不计入自动坐标，
   <code>getCompareValues()</code> 无论问哪根K线，都给出每个品种在最新一根数据K线上的收盘价，并带 <code>change: null</code>。
+  按时间读取另一个品种的指标（独立坐标或独立窗格中的品种、价差、比率、相关系数）在这些图上同样不绘制，也不计入任何坐标：
+  <code>getActiveIndicators()</code> 给它们 <code>shown: false</code> 和 <code>offChartType: true</code>，ChartWidget
+  会像对比行那样把它们的行调暗。切回普通K线后它们会重新显示。
 </p>
 <pre><code>{`chart.setScaleMode('percentage')       // each line reads its change on the axis
 chart.getCompareValues()               // [{ id: 'eth', label: 'ETHUSDT', color, visible, close: 2650.4, change: -1.82, stale: false }]

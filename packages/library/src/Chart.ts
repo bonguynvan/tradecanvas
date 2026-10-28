@@ -6306,6 +6306,8 @@ export class Chart {
 
   /** Full update: resolve layout, update viewport, sync context, request render. */
   private updateViewportAndRender(scrollToEnd = false): void {
+    // Before the layout and the scales: an indicator that reads another symbol by time is not drawn on bricks.
+    this.indicatorEngine.setBarsTimed(this.comparesDrawn());
     // Invalidate layout cache
     this.resolvedLayoutCache = null;
     this.panelInfoCache = null;

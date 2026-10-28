@@ -5777,14 +5777,16 @@ export class ChartWidget {
       const pane = panes.get(ind.instanceId) ?? null;
       const point = idx >= 0 ? this.chart.getIndicatorOutput(ind.instanceId)?.series?.[idx] : null;
       const style = this.chart.getIndicatorStyle(ind.instanceId);
-      // Not drawn on this interval: no values to read off it.
-      const offInterval = ind.visible && ind.shown === false;
-      const values = offInterval ? [] : legendValues(ind.descriptor, point, style?.colors ?? [], style?.plots);
+      // Not drawn on this chart type (another symbol read by time, on bricks) or interval: no values to read off it.
+      const offChartType = ind.visible && ind.offChartType === true;
+      const offInterval = ind.visible && ind.shown === false && !offChartType;
+      const values = offInterval || offChartType ? [] : legendValues(ind.descriptor, point, style?.colors ?? [], style?.plots);
       return {
         instanceId: ind.instanceId,
         label: widgetIndicatorLabel(ind, this.t),
         visible: ind.visible,
         offInterval,
+        offChartType,
         values: values.map((v) => ({
           text: this.indicatorValueText(v.value, pane !== null, locale),
           color: v.color,

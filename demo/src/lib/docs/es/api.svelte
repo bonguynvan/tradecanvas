@@ -273,6 +273,10 @@ chart.setPaneScale(spreadId, { percent: true })     // a pane in percent of its 
   barras equivocadas. En esos tipos las líneas quedan fuera de la escala automática, y
   <code>getCompareValues()</code> da el cierre de cada una en la última barra de datos, pidas la barra
   que pidas, con <code>change: null</code>.
+  Los indicadores que leen otro símbolo por tiempo (un símbolo en su propia escala o en su propio panel, un
+  spread, un ratio, una correlación) tampoco se dibujan ahí ni ajustan ninguna escala: <code>getActiveIndicators()</code>
+  les da <code>shown: false</code> y <code>offChartType: true</code>, y ChartWidget atenúa sus filas como atenúa las de
+  una comparación. De vuelta en velas, aparecen de nuevo.
 </p>
 <pre><code>{`chart.setScaleMode('percentage')       // each line reads its change on the axis
 chart.getCompareValues()               // [{ id: 'eth', label: 'ETHUSDT', color, visible, close: 2650.4, change: -1.82, stale: false }]

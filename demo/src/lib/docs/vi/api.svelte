@@ -268,6 +268,10 @@ chart.setPaneScale(spreadId, { percent: true })     // a pane in percent of its 
   tiếp từ nến đầu, không mang thời gian riêng, nên một đường ở đó sẽ đọc mã kia tại sai nến. Ở các
   kiểu này, đường so sánh không tính vào thang tự động, và <code>getCompareValues()</code> cho giá
   đóng cửa của từng mã tại nến dữ liệu mới nhất, dù hỏi nến nào, kèm <code>change: null</code>.
+  Các chỉ báo đọc một mã khác theo thời gian (một mã trên thang riêng hoặc trong khung riêng, chênh lệch,
+  tỷ lệ, tương quan) cũng không được vẽ ở đó và không tính vào thang nào: <code>getActiveIndicators()</code>
+  cho chúng <code>shown: false</code> và <code>offChartType: true</code>, và ChartWidget làm mờ dòng của chúng như
+  dòng của một mã so sánh. Quay lại nến thường thì chúng hiện lại.
 </p>
 <pre><code>{`chart.setScaleMode('percentage')       // each line reads its change on the axis
 chart.getCompareValues()               // [{ id: 'eth', label: 'ETHUSDT', color, visible, close: 2650.4, change: -1.82, stale: false }]

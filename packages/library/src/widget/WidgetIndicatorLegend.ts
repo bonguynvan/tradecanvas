@@ -15,7 +15,10 @@ export interface IndicatorLegendRow {
   visible: boolean;
   /** On, but not drawn on the chart's interval (its settings keep it to others). */
   offInterval?: boolean;
-  /** A compare on, but not drawn on the chart's type (Renko, Kagi and the like draw no compare lines). */
+  /**
+   * A compare, or an indicator that reads another symbol, on but not drawn on
+   * the chart's type (Renko, Kagi and the like: their bars carry no time).
+   */
   offChartType?: boolean;
   /** The values at the bar in view; `color` null = the neutral text colour. */
   values: readonly { text: string; color: string | null }[];

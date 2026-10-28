@@ -568,4 +568,16 @@ describe('ChartWidget indicator defaults and intervals', () => {
     expect(rows()[0].title).toBe('Not shown on this interval');
     expect(values(rows()[0])).toHaveLength(0);
   });
+
+  it('greys an indicator not drawn on this chart type, and says so as for a compare', async () => {
+    pick('ema');
+    await frame();
+    // A compare on its own scale, say, on Renko: the chart leaves it out there.
+    Object.assign(FakeChart.last.indicators[0], { shown: false, offChartType: true });
+    FakeChart.last.emit('chartTypeChange', { type: 'renko', previous: 'candlestick' });
+    await frame();
+    expect(rows()[0].classList.contains('tcw-ind-legend-row--hidden')).toBe(true);
+    expect(rows()[0].title).toBe('Not drawn on this chart type');
+    expect(values(rows()[0])).toHaveLength(0);
+  });
 });

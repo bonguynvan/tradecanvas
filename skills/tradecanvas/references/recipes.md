@@ -268,7 +268,10 @@ screen on a percent price scale, and a legend of your own from
 `getCompareValues` (the widget's `addCompareSymbol` does all of this itself).
 Fetch as many bars as the chart has, so the line starts where the chart does.
 Renko, Kagi, line break, point & figure and range bars draw no compare lines;
-there `getCompareValues` gives each one's latest close and a null change:
+there `getCompareValues` gives each one's latest close and a null change, and
+the indicators that read another symbol (`compareSymbol`, `compareSymbolPane`,
+`spread`, the correlations) are not drawn either: `getActiveIndicators()` gives
+them `shown: false` and `offChartType: true`:
 
 ```ts
 import { Chart, BinanceAdapter } from '@tradecanvas/chart';

@@ -265,6 +265,10 @@ chart.setPaneScale(spreadId, { percent: true })     // a pane in percent of its 
   the first, with no time of their own, so a line there would read the other symbol at the wrong
   bars. On those types the lines stay out of the auto scale, and <code>getCompareValues()</code>
   gives each one's close at the latest data bar, whatever bar is asked for, with <code>change: null</code>.
+  The indicators that read another symbol by time (a symbol on its own scale or in its own pane, a spread,
+  a ratio, a correlation) are not drawn there either, nor fit a scale: <code>getActiveIndicators()</code> gives
+  them <code>shown: false</code> and <code>offChartType: true</code>, and ChartWidget dims their rows as it dims a
+  compare's. Back on candles they come back.
 </p>
 <pre><code>{`chart.setScaleMode('percentage')       // each line reads its change on the axis
 chart.getCompareValues()               // [{ id: 'eth', label: 'ETHUSDT', color, visible, close: 2650.4, change: -1.82, stale: false }]

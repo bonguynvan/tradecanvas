@@ -190,6 +190,26 @@ describe('compares on chart types whose bars carry no time', () => {
     expect(state().priceRange.max).toBeGreaterThan(1000);
   });
 
+  it('draws no indicator that reads another symbol there: on its own scale, in a pane, as a spread or ratio', () => {
+    chart.setSymbolSeries('B', other);
+    const scale = chart.addIndicator('compareSymbol', { symbol: 'B' }, 'bottom', { scale: 'left' })!;
+    const pane = chart.addIndicator('compareSymbolPane', { symbol: 'B' })!;
+    const ratio = chart.addIndicator('spread', { symbol: 'B', mode: 'ratio' })!;
+    const ema = chart.addIndicator('ema', { period: 5 })!;
+    const shown = () => Object.fromEntries(chart.getActiveIndicators().map((a) => [a.instanceId, a.shown]));
+    const offType = () => chart.getActiveIndicators().filter((a) => a.offChartType).map((a) => a.instanceId);
+    for (const type of ['renko', 'kagi', 'lineBreak', 'pointAndFigure', 'rangeBars'] as const) {
+      chart.setChartType(type);
+      expect(shown(), type).toEqual({ [scale]: false, [pane]: false, [ratio]: false, [ema]: true });
+      expect(offType(), type).toEqual([scale, pane, ratio]);
+      // The left scale held the other symbol: nothing on it there.
+      expect(chart.isLeftPriceScaleShown(), type).toBe(false);
+    }
+    chart.setChartType('candlestick');
+    expect(shown()).toEqual({ [scale]: true, [pane]: true, [ratio]: true, [ema]: true });
+    expect(offType()).toEqual([]);
+  });
+
   it('gives each compare’s close at the latest bar there, and no change, whatever bar is asked for', () => {
     chart.addCompareSymbol('b', 'B', other, '#f00');
     chart.setChartType('renko');

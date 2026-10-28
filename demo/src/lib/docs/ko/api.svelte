@@ -254,7 +254,9 @@ chart.setPaneScale(spreadId, { percent: true })     // a pane in percent of its 
   렌코, 카기, 라인 브레이크, P&amp;F, 레인지 바에서는 비교선을 그리지 않습니다. 이들의 봉은 첫 봉부터 차례로 셀 뿐 자신의
   시각이 없어서, 선을 그리면 다른 종목을 엉뚱한 봉에서 읽게 되기 때문입니다. 이 유형에서는 비교선이 자동 눈금에 들어가지
   않으며, <code>getCompareValues()</code>는 어느 봉을 묻든 각 종목의 최신 데이터 봉 종가를 <code>change: null</code>과 함께
-  돌려줍니다.
+  돌려줍니다. 시각으로 다른 종목을 읽는 지표(자체 눈금이나 자체 창의 종목, 스프레드, 비율, 상관계수)도 이 유형에서는
+  그려지지 않고 어떤 눈금에도 들어가지 않습니다. <code>getActiveIndicators()</code>는 이들에 <code>shown: false</code>와
+  <code>offChartType: true</code>를 주고, ChartWidget은 비교 행처럼 그 행을 흐리게 표시합니다. 캔들로 돌아가면 다시 나타납니다.
 </p>
 <pre><code>{`chart.setScaleMode('percentage')       // each line reads its change on the axis
 chart.getCompareValues()               // [{ id: 'eth', label: 'ETHUSDT', color, visible, close: 2650.4, change: -1.82, stale: false }]
