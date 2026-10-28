@@ -1,4 +1,4 @@
-import { drawingFont, drawPill, formatPercent, pillWidth, PILL_HEIGHT } from './labels.js';
+import { belowKeepOut, drawingFont, drawPill, formatPercent, overlapsKeepOut, pillWidth, PILL_HEIGHT } from './labels.js';
 import type { AnchorPoint, DrawingState, Point, ViewportState } from '@tradecanvas/commons';
 import { autoPricePrecision, formatPrice, priceTagText } from '@tradecanvas/commons';
 import { DrawingBase } from '../DrawingBase.js';
@@ -120,9 +120,22 @@ export class RiskRewardTool extends DrawingBase {
         const apart = up ? Math.min(y, entryPt.y - gap) : Math.max(y, entryPt.y + gap);
         return Math.min(Math.max(apart, chartRect.y + half), chartRect.y + chartRect.height - half);
       };
-      // Tags start at the zone's left edge, moved left when they'd run off the plot.
+      // Tags start at the zone's left edge, moved left when they'd run off the plot,
+      // and down under the legend where it would cover them (by the plot's top on a phone),
+      // each there under the one moved before it, which the next keeps clear of too.
+      const moved: { left: number; right: number; bottom: number }[] = [];
       const tag = (text: string, y: number, color: string) => {
-        drawPill(ctx, text, Math.max(plotLeft + 4, Math.min(x + 4, plotRight - 4 - pillWidth(ctx, text))), y, color);
+        const w = pillWidth(ctx, text);
+        const left = Math.max(plotLeft + 4, Math.min(x + 4, plotRight - 4 - w));
+        const beside = moved.filter((m) => m.right > left && m.left < left + w);
+        const onMoved = beside.some((m) => m.bottom > y - half && m.bottom - PILL_HEIGHT < y + half);
+        if (!onMoved && !overlapsKeepOut(left, y - half, left + w, y + half)) {
+          drawPill(ctx, text, left, y, color);
+          return;
+        }
+        const top = Math.max(belowKeepOut(left, left + w, y - half), ...beside.map((m) => m.bottom)) + 2;
+        moved.push({ left, right: left + w, bottom: top + PILL_HEIGHT });
+        drawPill(ctx, text, left, top + half, color);
       };
       tag(`${g.isLong ? 'Long' : 'Short'} · Qty ${formatPrice(g.qty, qtyDecimals, locale)} · R:R ${ratio}`, entryPt.y, state.style.color);
       // A stop on the entry (while it's being placed) has no zones to label yet.
