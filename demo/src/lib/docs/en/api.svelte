@@ -655,7 +655,10 @@ widget.setSymbols(await loadMarkets())   // your server's SymbolInfo[]: the sear
   A floating readout of the exact O/H/L/C/V, bar change, and every active
   indicator's value at the hovered bar — updates live as you move the
   crosshair. Toggle it from the command palette (<kbd>Ctrl/⌘ K</kbd> →
-  "Toggle Data Window").
+  "Toggle Data Window"). On a touch screen, touch the chart to put the
+  crosshair on a bar. Prices, the change and the values of indicators on the
+  price pane read as the chart writes prices; those of indicators in a pane of
+  their own as their legend row does; all in the chart's number locale.
 </p>
 
 <h3>Shareable view (deep links)</h3>

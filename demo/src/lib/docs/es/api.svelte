@@ -673,7 +673,11 @@ widget.setSymbols(await loadMarkets())   // los SymbolInfo[] de tu servidor: la 
   Un panel flotante con los valores exactos de O/H/L/C/V, el cambio de la barra y
   el valor de cada indicador activo en la barra bajo el cursor; se actualiza en
   vivo al mover la cruz. Actívalo desde la paleta de comandos (<kbd>Ctrl/⌘ K</kbd> →
-  "Mostrar/ocultar ventana de datos").
+  "Mostrar/ocultar ventana de datos"). En una pantalla táctil, toca el gráfico
+  para poner la cruz sobre una barra. Los precios, el cambio y los valores de los
+  indicadores del panel de precios se escriben como el gráfico escribe los precios;
+  los de indicadores en un panel propio, como su fila de la leyenda; todos en el
+  formato numérico del gráfico.
 </p>
 
 <h3>Vista compartible (enlaces profundos)</h3>

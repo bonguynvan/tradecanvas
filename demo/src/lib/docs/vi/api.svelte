@@ -659,7 +659,10 @@ widget.setSymbols(await loadMarkets())   // SymbolInfo[] từ máy chủ của b
   Một bảng nổi hiển thị chính xác O/H/L/C/V, mức thay đổi của nến và giá trị của mọi
   chỉ báo đang bật tại nến đang rê chuột — cập nhật trực tiếp khi bạn di chuyển
   con trỏ chữ thập. Bật/tắt từ bảng lệnh (<kbd>Ctrl/⌘ K</kbd> →
-  "Bật/tắt cửa sổ dữ liệu").
+  "Bật/tắt cửa sổ dữ liệu"). Trên màn hình cảm ứng, chạm vào biểu đồ để đặt
+  con trỏ chữ thập lên một nến. Giá, mức thay đổi và giá trị của chỉ báo trên
+  khung giá được viết như biểu đồ viết giá; giá trị của chỉ báo ở khung riêng
+  được viết như dòng chú giải của nó; tất cả theo định dạng số của biểu đồ.
 </p>
 
 <h3>Chia sẻ góc nhìn (deep link)</h3>
