@@ -84,6 +84,24 @@ describe('a chart on a market with price bands', () => {
     expect(chart.getMarket()?.priceLimits?.referencePrice).toBe(108);
     expect(MARKET_HOSE.priceLimits?.referencePrice).toBeUndefined();
   });
+
+  it('draws the limits as soon as the reference is given, and moves them with a new one', () => {
+    chart = new Chart(host, {});
+    chart.setData(bars);
+    chart.setMarket(MARKET_HOSE);
+    type Engine = { engine: { setRenderContext(ctx: { priceLimits?: { reference: number } | null }): void } };
+    const engine = (chart as unknown as Engine).engine;
+    const drawn: (number | null)[] = [];
+    const set = engine.setRenderContext.bind(engine);
+    vi.spyOn(engine, 'setRenderContext').mockImplementation((ctx) => {
+      drawn.push(ctx.priceLimits?.reference ?? null);
+      set(ctx as never);
+    });
+    chart.setPriceLimits(108);
+    expect(drawn.at(-1)).toBe(108);
+    chart.setPriceLimits(110);
+    expect(drawn.at(-1)).toBe(110);
+  });
 });
 
 describe('a chart’s price format', () => {

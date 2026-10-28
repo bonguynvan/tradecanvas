@@ -6000,6 +6000,8 @@ export class Chart {
       ...this.marketConfig,
       priceLimits: { ...this.marketConfig.priceLimits, referencePrice },
     };
+    // The lines are drawn from the render context, not read each frame: give it the new ones.
+    this.syncRenderContext();
     this.engine.requestRender();
   }
 
