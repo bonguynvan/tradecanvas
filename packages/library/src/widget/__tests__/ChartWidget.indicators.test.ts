@@ -303,6 +303,25 @@ describe('on-chart indicator legend', () => {
     expect(values(rows()[0]).map((v) => v.textContent)).toEqual(['9.00']);
   });
 
+  it('reads the values at the bar a linked crosshair points to, and the latest bar when it goes', async () => {
+    FakeChart.last.addIndicator('wma');
+    await frame();
+    FakeChart.last.emit('crosshairSync', { barIndex: 3, bar: FakeChart.last.getData()[3] });
+    await frame();
+    expect(values(rows()[0]).map((v) => v.textContent)).toEqual(['3.00']);
+    FakeChart.last.emit('crosshairSync', { barIndex: null });
+    await frame();
+    expect(values(rows()[0]).map((v) => v.textContent)).toEqual(['9.00']);
+  });
+
+  it('keeps to the pointer on this chart over a linked crosshair', async () => {
+    FakeChart.last.addIndicator('wma');
+    FakeChart.last.emit('crosshairMove', { barIndex: 2, point: { x: 10, y: 10 } });
+    FakeChart.last.emit('crosshairSync', { barIndex: 5, bar: FakeChart.last.getData()[5] });
+    await frame();
+    expect(values(rows()[0]).map((v) => v.textContent)).toEqual(['2.00']);
+  });
+
   it('reads the brick under the pointer, and the last brick off the chart, on Renko and the like', async () => {
     FakeChart.last.timeAligned = false; // Renko and the like
     FakeChart.last.addIndicator('wma');

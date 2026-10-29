@@ -278,6 +278,7 @@ and call no `onSettingsChange` listener.
 |---|---|
 | `crosshairMove` | `{ point, bar, barIndex, time, prevClose }` (also over indicator panes; `time` as the axis dates the bar, a Renko brick by the bar it was finished on) |
 | `crosshairLeave` | — |
+| `crosshairSync` | `{ barIndex, bar, time, prevClose }`: another chart's crosshair mirrored here (`setCrosshairTime`, a grid); `barIndex: null` when it goes |
 | `barClick` | `{ bar, barIndex, point }` |
 | `visibleRangeChange` | `{ from, to }` bar indices |
 | `dataUpdate` | by `kind`: `'bars'` (`{ length }`: `setData`, a bar appended, by hand or by the stream; not a tick), `'correction'` (`{ time, index }`: `updateBar`, or a feed's closed bar for an older time), `'alert'`, `'bracket'`, `'connection'`, `'error'` |

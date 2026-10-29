@@ -11,6 +11,7 @@ const series = (n: number, stepMs: number): OHLCBar[] =>
 
 type Probe = {
   crosshairHandler: { getSyncedSlot(): number | null; getPosition(): unknown };
+  chartLegend: { hoverBar: OHLCBar | null; hoverPrev: OHLCBar | null };
   viewport: { getState(): { chartRect: { x: number; width: number; y: number; height: number }; barWidth: number; barSpacing: number; offset: number } };
 };
 const probe = (chart: Chart) => chart as unknown as Probe;
@@ -57,6 +58,43 @@ describe('ChartGrid crosshair link', () => {
 
     m1.setCrosshairPosition(null);
     expect(probe(m5).crosshairHandler.getSyncedSlot()).toBeNull();
+  });
+
+  it('shows the mirrored bar in the legend and says so with crosshairSync, then goes back to the latest', async () => {
+    grid = new ChartGrid(host, { layout: '1x2', syncTimeAxis: false });
+    const [m1, m5] = grid.getCharts();
+    m1.setData(series(60, 60_000));
+    m5.setData(series(12, 300_000));
+    await vi.advanceTimersByTimeAsync(40);
+    const syncs = vi.fn();
+    m5.on('crosshairSync', (e) => syncs(e.payload));
+
+    await hover(m1, 23);
+    const bars = m5.getData();
+    expect(probe(m5).chartLegend.hoverBar).toBe(bars[4]);
+    expect(probe(m5).chartLegend.hoverPrev).toBe(bars[3]);
+    expect(syncs).toHaveBeenLastCalledWith({ barIndex: 4, bar: bars[4], time: bars[4].time, prevClose: bars[3].close });
+
+    m1.setCrosshairPosition(null);
+    expect(probe(m5).chartLegend.hoverBar).toBeNull();
+    expect(syncs).toHaveBeenLastCalledWith({ barIndex: null });
+  });
+
+  it('reads the mirrored slot again after new bars, and after the pointer leaves the mirrored chart', async () => {
+    grid = new ChartGrid(host, { layout: '1x2', syncTimeAxis: false });
+    const [a, b] = grid.getCharts();
+    a.setData(series(30, 60_000));
+    b.setData(series(30, 60_000));
+    await vi.advanceTimersByTimeAsync(40);
+    b.setCrosshairTime(T0 + 7 * 60_000);
+    b.setData(series(30, 60_000));
+    expect(probe(b).chartLegend.hoverBar).toBe(b.getData()[7]);
+
+    await hover(b, 3);
+    expect(probe(b).chartLegend.hoverBar).toBe(b.getData()[3]);
+    b.setCrosshairPosition(null);
+    await vi.advanceTimersByTimeAsync(40);
+    expect(probe(b).chartLegend.hoverBar).toBe(b.getData()[7]);
   });
 
   it('does not echo the mirrored crosshair back to the chart under the pointer', async () => {

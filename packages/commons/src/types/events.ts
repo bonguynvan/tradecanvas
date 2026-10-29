@@ -9,6 +9,8 @@ import type { MarketConfig } from '../market/types.js';
 export type ChartEventType =
   | 'crosshairMove'
   | 'crosshairLeave'
+  /** Another chart's crosshair is mirrored here (`setCrosshairTime`), or no longer is. */
+  | 'crosshairSync'
   | 'click'
   | 'barClick'
   | 'visibleRangeChange'
@@ -118,6 +120,22 @@ export interface CrosshairMovePayload {
   /** The close of the bar drawn before it (on Renko, the brick before), for a change. */
   prevClose?: number;
   indicatorValues?: Record<string, IndicatorValue>;
+}
+
+/**
+ * Payload for `crosshairSync`: `setCrosshairTime` (a grid mirroring another
+ * chart's crosshair) put this chart's time-only crosshair on bar `barIndex`,
+ * or took it away (`barIndex: null`). Fired once per bar, never as
+ * `crosshairMove`, so linked charts don't echo each other. `bar` is missing
+ * when the time lies before or past the bars.
+ */
+export interface CrosshairSyncPayload {
+  barIndex: number | null;
+  bar?: OHLCBar;
+  /** When the bar stands, as the time axis dates it (see `CrosshairMovePayload.time`). */
+  time?: number;
+  /** The close of the bar drawn before it. */
+  prevClose?: number;
 }
 
 /**
@@ -342,6 +360,7 @@ export interface ChartEventMap {
   crosshairMove: CrosshairMovePayload;
   /** The pointer left the plot; the crosshair is gone. */
   crosshairLeave: Record<string, never>;
+  crosshairSync: CrosshairSyncPayload;
   click: { x: number; y: number };
   barClick: BarClickPayload;
   visibleRangeChange: VisibleRangeChangePayload;

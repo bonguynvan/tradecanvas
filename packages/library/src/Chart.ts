@@ -670,6 +670,9 @@ export class Chart {
         this.chartLegend.setHoverBar(null);
         if (this.features.legend) this.engine.requestRender(LayerType.Hover);
         this.eventBus.emit('crosshairLeave', {});
+        // Another chart's crosshair still mirrored here: back to its bar, not the latest.
+        const synced = this.crosshairHandler.getSyncedSlot();
+        if (synced !== null) this.showSyncedBar(synced);
       }
     });
 
@@ -3152,6 +3155,9 @@ export class Chart {
   /** `dataUpdate` for the bars: the series is `length` bars now. */
   private emitBars(length: number): void {
     this.eventBus.emit('dataUpdate', { kind: 'bars', length } satisfies DataUpdatePayload);
+    // A mirrored crosshair stays on its slot: the legend reads the bar there now, not the old series'.
+    const synced = this.crosshairHandler.getSyncedSlot();
+    if (synced !== null) this.showSyncedBar(synced);
   }
 
   /** The orders and the alerts follow a live price (a paper account in a replay follows the replay). */
@@ -4104,14 +4110,40 @@ export class Chart {
   /**
    * Show a time-only crosshair — a vertical line and time label on the bar
    * that contains `time` — as when mirroring another chart; null clears it.
-   * Fires no crosshair events, so linked charts don't echo each other.
+   * The legend reads that bar, and `crosshairSync` says which one; no
+   * `crosshairMove` fires, so linked charts don't echo each other.
    */
   setCrosshairTime(time: number | null): void {
     const data = this.getDisplayData();
     const slot = time === null || data.length === 0 ? null : Math.floor(timestampToBarIndex(time, data));
     if (slot === this.crosshairHandler.getSyncedSlot()) return;
     this.crosshairHandler.setSyncedSlot(slot);
+    this.showSyncedBar(slot);
     this.engine.requestRender(LayerType.Hover);
+  }
+
+  /**
+   * The legend follows a mirrored crosshair as it follows the pointer, or the
+   * other charts of a grid keep showing their latest bar. The pointer's own
+   * crosshair, when there is one here, keeps the legend.
+   */
+  private showSyncedBar(slot: number | null): void {
+    if (slot === null) {
+      if (!this.crosshairHandler.getPosition()) this.chartLegend.setHoverBar(null);
+      this.eventBus.emit('crosshairSync', { barIndex: null });
+      return;
+    }
+    const series = this.crosshairSeries();
+    const bar = slot >= 0 && slot < series.length ? series[slot] : undefined;
+    const prev = bar && slot > 0 ? series[slot - 1] : undefined;
+    if (!this.crosshairHandler.getPosition()) this.chartLegend.setHoverBar(bar ?? null, prev ?? null);
+    const time = bar ? axisTimes(series)[slot]?.time ?? bar.time : undefined;
+    this.eventBus.emit('crosshairSync', {
+      barIndex: slot,
+      ...(bar ? { bar } : {}),
+      ...(time !== undefined ? { time } : {}),
+      ...(prev ? { prevClose: prev.close } : {}),
+    });
   }
 
   getData(): DataSeries {
