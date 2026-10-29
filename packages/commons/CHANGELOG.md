@@ -1,5 +1,11 @@
 # @tradecanvas/commons
 
+## 1.54.1
+
+### Patch Changes
+
+- 656f663: A grid's other charts show the bar the linked crosshair is on: their OHLC legend, indicator rows and data window read it, and go back to the latest bar when the pointer leaves. The new `crosshairSync` event (`{ barIndex, bar, time, prevClose }`, `barIndex: null` when it goes) says which bar `setCrosshairTime` put the line on; it never fires as `crosshairMove`.
+
 ## 1.54.0
 
 ### Minor Changes
