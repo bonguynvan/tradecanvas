@@ -1,5 +1,14 @@
 # @tradecanvas/chart
 
+## 1.54.3
+
+### Patch Changes
+
+- 5c96dc3: The last price's line is drawn under the labels of orders and positions, so a label near the last price stays readable; its tag on the price axis is still drawn over the axis. `CurrentPriceLine` gains `renderLine` and `renderTag` (`render` still draws both).
+- Updated dependencies [5c96dc3]
+  - @tradecanvas/core@1.54.3
+  - @tradecanvas/commons@1.54.3
+
 ## 1.54.2
 
 ### Patch Changes
