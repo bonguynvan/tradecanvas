@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixes
+
+- **The bid, ask, high and low lines run under order and position labels** (`@tradecanvas/core`, `@tradecanvas/chart`). The last price line went under them in 1.54.3, but the quote's bid and ask lines, and the high and low of the bars on screen, were still drawn after them and crossed a label near them. They are drawn under the orders and positions now; their tags on the price axis stay over the axis.
+
 ## 1.54.3 (2026-10-29)
 
 React, Vue and Svelte components: 1.3.41.
