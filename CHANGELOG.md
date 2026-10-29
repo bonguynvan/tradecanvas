@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixes
+
+- **A grid's other charts show the bar the crosshair is on** (`@tradecanvas/commons`, `@tradecanvas/chart`). In a ChartWidgetGrid or ChartGrid with the crosshair linked, the other charts drew the line at the right time but their OHLC legend, indicator rows and data window stayed on the latest bar. They now read the bar the line is on, and go back to the latest when the pointer leaves. The new `crosshairSync` event (`{ barIndex, bar, time, prevClose }`, `barIndex: null` when it goes) says which bar `setCrosshairTime` put the line on, for a legend of your own; it never fires as `crosshairMove`, so linked charts still don't echo each other. The API docs in all six languages and the skill list it.
+
 ## 1.54.0 (2026-10-28)
 
 React, Vue and Svelte components: 1.3.38.

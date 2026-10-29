@@ -40,6 +40,7 @@ export type {
   TauriBridgeOptions,
   ViewportState,
   CrosshairMovePayload,
+  CrosshairSyncPayload,
   BarClickPayload,
   VisibleRangeChangePayload,
   OrderModifyPayload,

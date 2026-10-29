@@ -84,7 +84,7 @@ import { WidgetDataWindow, PERCENT_DECIMALS as DATA_WINDOW_PERCENT_DECIMALS, typ
 import type { DepthData } from '@tradecanvas/commons';
 import { encodeWidgetState, decodeWidgetState, readShareHash, buildShareUrl } from './widgetShareState.js';
 import { DragDropImporter, resampleOHLCV, inferTimeframeMs } from '../io/index.js';
-import type { CrosshairMovePayload, DataSeries, ReplayStepPayload, ReplayStepsLoadPayload } from '@tradecanvas/commons';
+import type { CrosshairMovePayload, CrosshairSyncPayload, DataSeries, ReplayStepPayload, ReplayStepsLoadPayload } from '@tradecanvas/commons';
 import { timeframeToMs, zonedDateFormatter } from '@tradecanvas/commons';
 import { replayStepChoices, resolveReplayStep } from '../replay/replayStep.js';
 import type { CommandItem } from './WidgetCommandPalette.js';
@@ -342,6 +342,8 @@ export class ChartWidget {
   private lastHoverPrevClose: number | null = null;
   /** The bar the on-chart indicator values are read at; null = the latest. */
   private legendHoverIndex: number | null = null;
+  /** The pointer's own crosshair is on this chart: it wins over one mirrored from another chart. */
+  private pointerOnChart = false;
   private favoritesStore = new DrawingFavoritesStore();
   /** The indicators starred in the indicators dialog. */
   private indicatorFavorites = new DrawingFavoritesStore('tcw:indicator-favorites');
@@ -1025,12 +1027,21 @@ export class ChartWidget {
     this.legendMenu = new WidgetContextMenu(this.root, this.t('legend.more'));
     this.chart.on('crosshairMove', (e) => {
       const p = e.payload as { barIndex?: number };
+      this.pointerOnChart = true;
       this.legendHoverIndex = typeof p.barIndex === 'number' ? p.barIndex : null;
       this.scheduleLegend();
     });
     // Off the chart, the values go back to the latest bar.
     this.chart.on('crosshairLeave', () => {
+      this.pointerOnChart = false;
       this.legendHoverIndex = null;
+      this.scheduleLegend();
+    });
+    // Another chart of a grid points at a bar here: its values, as under the pointer.
+    this.chart.on('crosshairSync', (e) => {
+      if (this.pointerOnChart) return;
+      const p = e.payload as CrosshairSyncPayload;
+      this.legendHoverIndex = p.bar && p.barIndex !== null ? p.barIndex : null;
       this.scheduleLegend();
     });
     // A pan too: a compare's change is counted from the first bar on screen.
@@ -1108,6 +1119,15 @@ export class ChartWidget {
     this.chart.on('crosshairMove', (e) => {
       const p = e.payload as CrosshairMovePayload;
       this.lastHoverIndex = typeof p.barIndex === 'number' ? p.barIndex : null;
+      this.lastHoverBar = p.bar ?? null;
+      this.lastHoverPrevClose = typeof p.prevClose === 'number' ? p.prevClose : null;
+      if (this.dataWindow?.isOpen()) this.dataWindow.render(this.buildDataWindowModel());
+    });
+    // The bar another chart of a grid points at here, or the latest again when it goes.
+    this.chart.on('crosshairSync', (e) => {
+      if (this.pointerOnChart) return;
+      const p = e.payload as CrosshairSyncPayload;
+      this.lastHoverIndex = p.bar && p.barIndex !== null ? p.barIndex : null;
       this.lastHoverBar = p.bar ?? null;
       this.lastHoverPrevClose = typeof p.prevClose === 'number' ? p.prevClose : null;
       if (this.dataWindow?.isOpen()) this.dataWindow.render(this.buildDataWindowModel());
