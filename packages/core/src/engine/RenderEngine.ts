@@ -372,6 +372,8 @@ export class RenderEngine {
     if (ctx.priceLimits) this.renderPriceLimits(c, viewport, theme, ctx.priceLimits, ctx.formatPrice);
     ctx.tradeZoneManager?.render(c, viewport, theme);
     ctx.drawingRenderer?.render(c, viewport, theme);
+    // The last price's line under the orders and positions, whose labels sit on it when the price is near.
+    ctx.currentPriceLine?.renderLine(c, viewport, theme);
     ctx.tradingRenderer?.render(c, viewport, theme);
     ctx.signalMarkerManager?.render(c, viewport, theme);
     ctx.alertManager?.render(c, viewport, theme);
@@ -392,7 +394,7 @@ export class RenderEngine {
     // so position entry prices and order trigger prices are always visible.
     ctx.tradingRenderer?.renderAxisBadges(c, viewport, theme);
     ctx.priceLines?.renderAxisTags(c, viewport, theme, data);
-    ctx.currentPriceLine?.render(c, viewport, theme);
+    ctx.currentPriceLine?.renderTag(c, viewport, theme);
     ctx.timeAxis?.render(c, viewport, theme, data, ctx.timeAxisY);
     this.renderPanelAxes(c, ctx);
   }

@@ -71,18 +71,33 @@ export class CurrentPriceLine {
     return this.tag;
   }
 
+  /** The line and its axis tag together. */
   render(ctx: CanvasRenderingContext2D, viewport: ViewportState, theme: Theme): void {
-    this.tag = null;
-    const look = theme.style?.lastPrice;
-    if (!this.visible || this.price === null || look?.visible === false) return;
+    this.renderLine(ctx, viewport, theme);
+    this.renderTag(ctx, viewport, theme);
+  }
 
+  /** Where the line is drawn and in what colour; null when it isn't drawn. */
+  private placed(viewport: ViewportState, theme: Theme): { y: number; color: string } | null {
+    const look = theme.style?.lastPrice;
+    if (!this.visible || this.price === null || look?.visible === false) return null;
     const y = priceToY(this.price, viewport);
     const { chartRect } = viewport;
-
-    if (y < chartRect.y || y > chartRect.y + chartRect.height) return;
-
+    if (y < chartRect.y || y > chartRect.y + chartRect.height) return null;
     const isUp = this.previousClose !== null ? this.price >= this.previousClose : true;
-    const color = isUp ? (look?.up ?? theme.candleUp ?? '#1fa874') : (look?.down ?? theme.candleDown ?? '#e8505b');
+    return { y, color: isUp ? (look?.up ?? theme.candleUp ?? '#1fa874') : (look?.down ?? theme.candleDown ?? '#e8505b') };
+  }
+
+  /**
+   * The line across the plot. Drawn under the chart's objects, so the labels of
+   * orders and positions near the last price stay readable over it.
+   */
+  renderLine(ctx: CanvasRenderingContext2D, viewport: ViewportState, theme: Theme): void {
+    const at = this.placed(viewport, theme);
+    if (!at) return;
+    const { y, color } = at;
+    const { chartRect } = viewport;
+    const look = theme.style?.lastPrice;
     const isFlashing = Date.now() < this.flashUntil;
 
     // A solid hairline (unless its style says otherwise)
@@ -97,6 +112,15 @@ export class CurrentPriceLine {
     ctx.stroke();
     ctx.setLineDash([]);
     ctx.globalAlpha = 1;
+  }
+
+  /** The price's tag on the axis, over the axis and its other tags. */
+  renderTag(ctx: CanvasRenderingContext2D, viewport: ViewportState, theme: Theme): void {
+    this.tag = null;
+    const at = this.placed(viewport, theme);
+    if (!at || this.price === null) return;
+    const { y, color } = at;
+    const { chartRect } = viewport;
 
     // Price badge on axis
     const axisX = chartRect.x + chartRect.width + 1;

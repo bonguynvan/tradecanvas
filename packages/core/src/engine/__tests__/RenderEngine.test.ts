@@ -221,6 +221,27 @@ describe('RenderEngine — two canvases', () => {
     expect(order).toEqual(['lines', 'series', 'compare', 'overlay']);
   });
 
+  it('draws the last price line under the order and position labels, and its axis tag over them', () => {
+    const { ctx } = makeContext();
+    const order: string[] = [];
+    ctx.tradingRenderer = {
+      render: () => order.push('trading labels'),
+      renderAxisBadges: () => order.push('trading badges'),
+      axisTagYs: () => [],
+    } as unknown as RenderContext['tradingRenderer'];
+    ctx.currentPriceLine = {
+      renderLine: () => order.push('price line'),
+      renderTag: () => order.push('price tag'),
+      isVisible: () => false,
+      getPrice: () => null,
+      getTag: () => null,
+    } as unknown as RenderContext['currentPriceLine'];
+    engine.setRenderContext(ctx);
+    engine.start();
+    runFrame();
+    expect(order).toEqual(['price line', 'trading labels', 'trading badges', 'price tag']);
+  });
+
   it('draws the breaks of intraday bars as lines, with no dates on either canvas', () => {
     const { ctx } = makeContext();
     // 1h bars from Sat Oct 10 2026 UTC, a pixel each: Mondays Oct 12 and 19 on screen.

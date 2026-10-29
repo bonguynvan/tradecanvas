@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixes
+
+- **The last price line runs under order and position labels** (`@tradecanvas/core`, `@tradecanvas/chart`). It was drawn after them, so with the price near an order or a position it crossed their labels ("Long", the P&L, the buttons). It is now drawn under the chart's orders and positions, and its tag on the price axis still over the axis. `CurrentPriceLine` gains `renderLine` and `renderTag`; `render` draws both, as before.
+
 ### MCP server
 
 - **Ready for the MCP Registry** (`@tradecanvas/mcp`). The package names its server `io.github.bonguynvan/tradecanvas` (`mcpName`), which the official MCP Registry checks before it lists a server; `pnpm --filter @tradecanvas/mcp registry` writes the `server.json` to publish from its version.
