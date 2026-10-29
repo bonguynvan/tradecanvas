@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+### MCP server
+
+- **Ready for the MCP Registry** (`@tradecanvas/mcp`). The package names its server `io.github.bonguynvan/tradecanvas` (`mcpName`), which the official MCP Registry checks before it lists a server; `pnpm --filter @tradecanvas/mcp registry` writes the `server.json` to publish from its version.
+
+## 1.54.1 (2026-10-29)
+
+React, Vue and Svelte components: 1.3.39.
+
 ### Fixes
 
 - **A grid's other charts show the bar the crosshair is on** (`@tradecanvas/commons`, `@tradecanvas/chart`). In a ChartWidgetGrid or ChartGrid with the crosshair linked, the other charts drew the line at the right time but their OHLC legend, indicator rows and data window stayed on the latest bar. They now read the bar the line is on, and go back to the latest when the pointer leaves. The new `crosshairSync` event (`{ barIndex, bar, time, prevClose }`, `barIndex: null` when it goes) says which bar `setCrosshairTime` put the line on, for a legend of your own; it never fires as `crosshairMove`, so linked charts still don't echo each other. The API docs in all six languages and the skill list it.
