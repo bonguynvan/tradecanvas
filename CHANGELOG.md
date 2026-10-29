@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 1.54.0 (2026-10-28)
+
+React, Vue and Svelte components: 1.3.38.
+
 ### Fixes and indicators
 
 - **Stochastic RSI is named after all four of its lengths** (`@tradecanvas/chart`). Its label dropped the %D smoothing ("Stoch RSI 14 14 3"), so two instances that differed only there read the same in the legend, the chips and the Objects panel. It is now "Stoch RSI 14 14 3 3" there and in the export, where the columns are renamed to match: `Stoch RSI 14 14 3 3 %K` and `Stoch RSI 14 14 3 3 %D`.
