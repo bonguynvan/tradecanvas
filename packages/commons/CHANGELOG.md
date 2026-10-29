@@ -1,5 +1,7 @@
 # @tradecanvas/commons
 
+## 1.54.2
+
 ## 1.54.1
 
 ### Patch Changes
