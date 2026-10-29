@@ -1,5 +1,6 @@
 {
   "name": "@tradecanvas/mcp",
+  "mcpName": "io.github.bonguynvan/tradecanvas",
   "version": "1.54.1",
   "type": "module",
   "description": "An MCP server for TradeCanvas: coding agents look up its indicators, drawing tools, options, feature switches and style keys, and check an options object before they use it.",
@@ -47,6 +48,7 @@
     "dev": "vite build --watch",
     "clean": "rm -rf dist",
     "test": "vitest run",
+    "registry": "node scripts/server-json.mjs",
     "test:watch": "vitest",
     "prepublishOnly": "pnpm build"
   },

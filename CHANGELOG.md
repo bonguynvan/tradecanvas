@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### MCP server
+
+- **Ready for the MCP Registry** (`@tradecanvas/mcp`). The package names its server `io.github.bonguynvan/tradecanvas` (`mcpName`), which the official MCP Registry checks before it lists a server; `pnpm --filter @tradecanvas/mcp registry` writes the `server.json` to publish from its version.
+
 ## 1.54.1 (2026-10-29)
 
 React, Vue and Svelte components: 1.3.39.
