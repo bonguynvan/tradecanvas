@@ -1,5 +1,35 @@
 # @tradecanvas/react
 
+## 1.3.38
+
+### Patch Changes
+
+- Updated dependencies [58ba934]
+- Updated dependencies [bd09daf]
+- Updated dependencies [2f662ea]
+- Updated dependencies [4363ad6]
+- Updated dependencies [8615681]
+- Updated dependencies [9ea8298]
+- Updated dependencies [e5cd6ea]
+- Updated dependencies [2f6c431]
+- Updated dependencies [b355fb9]
+- Updated dependencies [0c75c8e]
+- Updated dependencies [4363ad6]
+- Updated dependencies [1cd314e]
+- Updated dependencies [073c546]
+- Updated dependencies [e88972b]
+- Updated dependencies [243d105]
+- Updated dependencies [ffa3154]
+- Updated dependencies [e394049]
+- Updated dependencies [4c475f7]
+- Updated dependencies [e7fa6cf]
+- Updated dependencies [e10507a]
+- Updated dependencies [58aa1c8]
+- Updated dependencies [d4ce838]
+- Updated dependencies [be78a93]
+- Updated dependencies [da8b971]
+  - @tradecanvas/chart@1.54.0
+
 ## 1.3.37
 
 ### Patch Changes
