@@ -221,7 +221,7 @@ describe('RenderEngine — two canvases', () => {
     expect(order).toEqual(['lines', 'series', 'compare', 'overlay']);
   });
 
-  it('draws the last price line under the order and position labels, and its axis tag over them', () => {
+  it('draws the last price, bid, ask, high and low lines under the order and position labels, and their axis tags over them', () => {
     const { ctx } = makeContext();
     const order: string[] = [];
     ctx.tradingRenderer = {
@@ -236,10 +236,15 @@ describe('RenderEngine — two canvases', () => {
       getPrice: () => null,
       getTag: () => null,
     } as unknown as RenderContext['currentPriceLine'];
+    ctx.priceLines = {
+      render: () => order.push('quote lines'),
+      renderAxisTags: () => order.push('quote tags'),
+      levels: () => [],
+    } as unknown as RenderContext['priceLines'];
     engine.setRenderContext(ctx);
     engine.start();
     runFrame();
-    expect(order).toEqual(['price line', 'trading labels', 'trading badges', 'price tag']);
+    expect(order).toEqual(['quote lines', 'price line', 'trading labels', 'trading badges', 'quote tags', 'price tag']);
   });
 
   it('draws the breaks of intraday bars as lines, with no dates on either canvas', () => {

@@ -372,12 +372,13 @@ export class RenderEngine {
     if (ctx.priceLimits) this.renderPriceLimits(c, viewport, theme, ctx.priceLimits, ctx.formatPrice);
     ctx.tradeZoneManager?.render(c, viewport, theme);
     ctx.drawingRenderer?.render(c, viewport, theme);
-    // The last price's line under the orders and positions, whose labels sit on it when the price is near.
+    // The price lines (high, low, bid, ask, the last price) under the orders and positions,
+    // whose labels sit on them when the price is near.
+    ctx.priceLines?.render(c, viewport, theme, data);
     ctx.currentPriceLine?.renderLine(c, viewport, theme);
     ctx.tradingRenderer?.render(c, viewport, theme);
     ctx.signalMarkerManager?.render(c, viewport, theme);
     ctx.alertManager?.render(c, viewport, theme);
-    ctx.priceLines?.render(c, viewport, theme, data);
 
     // --- Axes and price tags ---
     // Tags are placed first: value tags step around the fixed ones (last
