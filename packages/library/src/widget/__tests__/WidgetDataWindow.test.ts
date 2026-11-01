@@ -31,3 +31,21 @@ describe('WidgetDataWindow — the hint with no bar under the pointer', () => {
     expect(emptyHint()).toBe('Touch the chart');
   });
 });
+
+describe('WidgetDataWindow — the volume', () => {
+  const volumeText = (callbacks: Partial<ConstructorParameters<typeof WidgetDataWindow>[1]>): string => {
+    const host = document.createElement('div');
+    const panel = new WidgetDataWindow(host, { formatPrice: String, ...callbacks });
+    panel.openPanel();
+    panel.render({ ...EMPTY, ohlc: { open: 1, high: 2, low: 1, close: 2, volume: 24_580 } });
+    return host.textContent ?? '';
+  };
+
+  it('is written by formatVolume when the widget gives one', () => {
+    expect(volumeText({ formatVolume: (v) => `${v / 1e4}만` })).toContain('2.458만');
+  });
+
+  it('is shortened to K, M and B without one', () => {
+    expect(volumeText({})).toContain('24.58K');
+  });
+});

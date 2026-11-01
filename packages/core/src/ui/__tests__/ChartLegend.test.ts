@@ -149,3 +149,20 @@ describe('ChartLegend resize listener', () => {
     expect(calls).toHaveBeenCalledTimes(2);
   });
 });
+
+describe('ChartLegend — volume in Korean units', () => {
+  it('writes the volume in 만, 억 and 조 when the numbers are Korean', () => {
+    const legend = new ChartLegend();
+    legend.setLocale('ko-KR');
+    const { ctx, fillTextCalls } = mockCtx();
+    legend.render(ctx, viewport(0.335, 0.342), DARK_THEME, [bar({ volume: 24_580 })]);
+    expect(fillTextCalls).toContain('Vol 2.46만');
+  });
+
+  it('keeps K and M in other locales', () => {
+    const legend = new ChartLegend();
+    const { ctx, fillTextCalls } = mockCtx();
+    legend.render(ctx, viewport(0.335, 0.342), DARK_THEME, [bar({ volume: 24_580 })]);
+    expect(fillTextCalls).toContain('Vol 24.58K');
+  });
+});

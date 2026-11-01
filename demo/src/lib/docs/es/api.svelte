@@ -227,6 +227,8 @@ vn30fLastTradingDay(2026, 12, (day) => holidays.has(day)) // el tercer jueves, a
   se dibujan en rojo y las bajadas en azul (<code>KR_COLORS</code>);
   <code>createMarketTheme(theme, KR_COLORS)</code> da esas velas a cualquier tema, y
   <code>formatVolumeLoc(value, 'ko')</code> abrevia los volúmenes en 만, 억 y 조.
+  Con <code>numberLocale: 'ko-KR'</code> el gráfico también los escribe así: la leyenda, el
+  tooltip del cursor y la ventana de datos de ChartWidget.
 </p>
 <pre><code>{`import { MARKET_KRX, KR_COLORS, createMarketTheme, LIGHT_THEME, formatVolumeLoc } from '@tradecanvas/chart'
 

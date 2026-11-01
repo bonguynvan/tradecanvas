@@ -102,3 +102,13 @@ describe('the news loader', () => {
     expect(late.map((n) => n.kind)).toEqual(['loading', 'none']);
   });
 });
+
+describe('the symbol info view’s volume', () => {
+  it('is in 만, 억 and 조 when the numbers are Korean', () => {
+    const view = buildSymbolInfoView({
+      symbol: 'AAA', info: null, quote: { symbol: 'AAA', last: 11, volume: 345_000_000 }, bars, formatPrice: (p) => p.toFixed(2),
+      t: EN_TRANSLATOR, textLocale: 'ko', numberLocale: 'ko-KR', now: T0 + 8_000_000,
+    });
+    expect(view.stats.find((s) => s.label === 'Volume')?.value).toBe('3.45억');
+  });
+});

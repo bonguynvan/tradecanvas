@@ -1,5 +1,5 @@
 import type { ViewportState, Theme, OHLCBar, DataSeries } from '@tradecanvas/commons';
-import { autoPricePrecision, formatPrice } from '@tradecanvas/commons';
+import { autoPricePrecision, formatPrice, formatVolumeLoc, usesKoreanUnits } from '@tradecanvas/commons';
 
 export interface LegendConfig {
   visible: boolean;
@@ -299,7 +299,7 @@ export class ChartLegend {
     if (this.config.showVolume) {
       ctx.font = `${fs}px ${family}`;
       ctx.fillStyle = label;
-      const vol = bar.volume >= 1e6 ? `${(bar.volume / 1e6).toFixed(2)}M` : bar.volume >= 1e3 ? `${(bar.volume / 1e3).toFixed(2)}K` : bar.volume.toFixed(0);
+      const vol = usesKoreanUnits(this.locale) ? formatVolumeLoc(bar.volume, this.locale) : bar.volume >= 1e6 ? `${(bar.volume / 1e6).toFixed(2)}M` : bar.volume >= 1e3 ? `${(bar.volume / 1e3).toFixed(2)}K` : bar.volume.toFixed(0);
       const volWidth = ctx.measureText(`Vol ${vol}`).width;
       this.drawGround(ctx, theme, isLeft ? x : x - volWidth, y, volWidth, fs);
       ctx.fillStyle = label;

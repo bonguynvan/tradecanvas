@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Markets
+
+- **Volumes in Korean units on the chart** (`@tradecanvas/commons`, `@tradecanvas/core`, `@tradecanvas/chart`). With `numberLocale: 'ko-KR'`, the OHLCV legend, the crosshair tooltip and ChartWidget's data window write volumes in 만, 억 and 조 (`3.45억` rather than `345.00M`), as `formatVolumeLoc(value, 'ko')` does; other locales keep K, M and B. `usesKoreanUnits(locale)` tells which locales write them so. The API page in all six languages and the skill describe it.
+
 ## 1.57.0 (2026-11-01)
 
 React, Vue and Svelte components: 1.3.46.

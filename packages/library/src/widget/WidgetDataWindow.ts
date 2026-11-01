@@ -28,6 +28,8 @@ export interface DataWindowCallbacks {
    * with its minus (the panel adds the + of a rise); without it, two decimals.
    */
   formatPercent?: (pct: number) => string;
+  /** The volume in the number locale the prices are in; without it, shortened to K, M and B. */
+  formatVolume?: (volume: number) => string;
   /** Its close button: the dock it sits in shuts. Without it, the panel hides itself. */
   onClose?: () => void;
 }
@@ -122,7 +124,7 @@ export class WidgetDataWindow {
     const pct = this.callbacks.formatPercent?.(model.changePct) ?? model.changePct.toFixed(PERCENT_DECIMALS);
     const changeText = model.changeText ?? fp(model.change);
     this.bodyEl.appendChild(this.row(this.t('dataWindow.change'), `${sign}${changeText} (${sign}${pct}%)`, tone));
-    this.bodyEl.appendChild(this.row(this.t('dataWindow.volume'), formatVolume(o.volume)));
+    this.bodyEl.appendChild(this.row(this.t('dataWindow.volume'), (this.callbacks.formatVolume ?? shortVolume)(o.volume)));
 
     for (const ind of model.indicators) {
       const head = document.createElement('div');
@@ -158,7 +160,8 @@ function formatNumber(v: number): string {
   return v.toPrecision(4);
 }
 
-function formatVolume(v: number): string {
+/** A volume shortened to K, M and B. */
+export function shortVolume(v: number): string {
   if (v >= 1_000_000_000) return (v / 1_000_000_000).toFixed(2) + 'B';
   if (v >= 1_000_000) return (v / 1_000_000).toFixed(2) + 'M';
   if (v >= 1_000) return (v / 1_000).toFixed(2) + 'K';

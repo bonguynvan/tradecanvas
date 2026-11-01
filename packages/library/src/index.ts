@@ -192,7 +192,7 @@ export type {
 } from '@tradecanvas/commons';
 
 // Re-export i18n
-export { setLocale, getLocale, t, registerLocale, formatNumber, formatVND, formatVolumeLoc } from '@tradecanvas/commons';
+export { setLocale, getLocale, t, registerLocale, formatNumber, formatVND, formatVolumeLoc, usesKoreanUnits } from '@tradecanvas/commons';
 
 // Re-export market presets
 export {
