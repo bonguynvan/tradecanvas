@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 1.59.0 (2026-11-01)
+
+React, Vue and Svelte components: 1.3.48. 1.58.0 was versioned but not published; its changes are here.
+
 ### Widget
 
 - **The chart's figures in the look's face, and a Desk look** (`@tradecanvas/chart`). ChartWidget's chart now draws its figures (axes, price tags, the crosshair's pills, the legend) in the look's figures face. In the default Print look that is a sans face whose digits are one width (Segoe UI on Windows, Helvetica Neue on Apple systems, Roboto on Android) rather than a monospaced one, so prices still line up in columns. The other looks' axes move from the theme's Cascadia Mono to the face their legend already used: JetBrains Mono's list in Studio and Capsule, IBM Plex Mono's in Terminal. A new look, `'desk'` (`ui: 'desk'` or `setUI('desk')`), is a desktop trading platform's window: Tahoma at 12 px for the labels and the figures alike, square corners and price tags, bars a step tighter, rules between groups and a tinted chosen button. `chartOptions.font.family` still wins over the look's face (`chartOptions: { font: { family: DEFAULT_FONT_FAMILY } }` brings the monospaced figures back); the plain `Chart` keeps its monospaced default. The styling page in all six languages and the skill describe it.
