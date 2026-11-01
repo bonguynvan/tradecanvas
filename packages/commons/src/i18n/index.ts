@@ -5,6 +5,7 @@ export { vi } from './vi.js';
 import type { Locale, LocaleStrings } from './types.js';
 import { en } from './en.js';
 import { vi } from './vi.js';
+import { formatPrice } from '../utils/precision.js';
 
 const locales = new Map<string, LocaleStrings>([
   ['en', en],
@@ -69,6 +70,15 @@ export function usesKoreanUnits(locale: string): boolean {
   return /^ko([-_]|$)/i.test(locale);
 }
 
+/** A figure as Intl writes it in `locale`; in English when Intl does not know the locale. */
+function intlFigure(value: number, decimals: number, locale: string): string {
+  try {
+    return formatPrice(value, decimals, locale);
+  } catch {
+    return formatNumber(value, decimals, 'en');
+  }
+}
+
 /** A volume shortened for `locale`: 1.23K, 4.50M; in Korean 1.23만, 3.45억, 1.82조. */
 export function formatVolumeLoc(value: number, locale?: string): string {
   const loc = locale ?? currentLocale;
@@ -78,8 +88,10 @@ export function formatVolumeLoc(value: number, locale?: string): string {
     for (const [size, unit] of KO_UNITS) if (Math.round((value / size) * 100) >= 100) return formatNumber(value / size, 2, loc) + unit;
     return formatNumber(value, 0, loc);
   }
-  if (value >= 1e9) return formatNumber(value / 1e9, 2, locale ?? currentLocale) + 'B';
-  if (value >= 1e6) return formatNumber(value / 1e6, 2, locale ?? currentLocale) + 'M';
-  if (value >= 1e3) return formatNumber(value / 1e3, 2, locale ?? currentLocale) + 'K';
-  return formatNumber(value, 0, locale ?? currentLocale);
+  // A locale with a table here keeps its marks; any other is written as Intl writes it.
+  const figure = locales.has(loc) ? (v: number, d: number) => formatNumber(v, d, loc) : (v: number, d: number) => intlFigure(v, d, loc);
+  if (value >= 1e9) return figure(value / 1e9, 2) + 'B';
+  if (value >= 1e6) return figure(value / 1e6, 2) + 'M';
+  if (value >= 1e3) return figure(value / 1e3, 2) + 'K';
+  return figure(value, 0);
 }

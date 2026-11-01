@@ -21,7 +21,7 @@ import { BracketTool, bracketRiskReward } from './BracketTool.js';
 import { OrderDraftTool } from './OrderDraftTool.js';
 import { buttonAt, sameLineAction, type LineButton, type LineButtonAction } from './lineButtons.js';
 import { renderFillMarks } from './fillMarks.js';
-import { drawAxisBadge, drawTags, spreadAxisBadges, tagAt, type AxisBadge, type TagBox } from './tradingTags.js';
+import { drawAxisBadge, drawTags, spreadAxisBadges, tagAt, type AxisBadge, type TagBox, type TagRect } from './tradingTags.js';
 import { clampToPlot } from './plot.js';
 import { AXIS_LABEL_HEIGHT } from '../ui/axisValueLabels.js';
 
@@ -50,6 +50,8 @@ export class TradingManager {
   private tagBoxes: TagBox[] = [];
   /** How far short of the plot's right edge the tags end (`setTagInset`). */
   private tagInset = 0;
+  /** Where every tag was drawn last. */
+  private drawnTags: TagRect[] = [];
   /** A press on a tag drags its line: how far the line sits from the pointer. */
   private grabOffset = 0;
   private fills: FillEvent[] = [];
@@ -397,6 +399,11 @@ export class TradingManager {
     return true;
   }
 
+  /** Where the tags were drawn last: what the legend leaves showing. */
+  tagRects(): readonly TagRect[] {
+    return this.drawnTags;
+  }
+
   /**
    * Keep the tags `px` short of the plot's right edge, clear of a control
    * the chart draws there (the "+" by the price axis); 0 for none.
@@ -410,6 +417,7 @@ export class TradingManager {
   render(ctx: CanvasRenderingContext2D, viewport: ViewportState, theme: Theme): void {
     this.buttons = [];
     this.tagBoxes = [];
+    this.drawnTags = [];
     if (!this.config.enabled) return;
     // Lines priced off the plot would otherwise paint over the time axis and
     // the panes below; restored even if a host callback (a label) throws.
@@ -449,7 +457,7 @@ export class TradingManager {
       ...this.positionRenderer.tags(this.positions, this.currentPrice, viewport, config, drag),
       ...this.orderRenderer.tags(this.orders, viewport, config, drag),
     ];
-    drawTags(ctx, tags, viewport, theme, this.buttons, this.tagBoxes, this.tagInset);
+    drawTags(ctx, tags, viewport, theme, this.buttons, this.tagBoxes, this.tagInset, this.drawnTags);
   }
 
   /**

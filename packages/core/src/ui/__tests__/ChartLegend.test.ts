@@ -165,4 +165,12 @@ describe('ChartLegend — volume in Korean units', () => {
     legend.render(ctx, viewport(0.335, 0.342), DARK_THEME, [bar({ volume: 24_580 })]);
     expect(fillTextCalls).toContain('Vol 24.58K');
   });
+
+  it('writes K, M and B in the locale’s own decimal mark', () => {
+    const legend = new ChartLegend();
+    legend.setLocale('de-DE');
+    const { ctx, fillTextCalls } = mockCtx();
+    legend.render(ctx, viewport(0.335, 0.342), DARK_THEME, [bar({ volume: 24_580 })]);
+    expect(fillTextCalls).toContain('Vol 24,58K');
+  });
 });

@@ -48,6 +48,17 @@ describe('the tags on the trading lines', () => {
     expect(close.x + close.size).toBe(1000 - TAG_GAP);
   });
 
+  it('tell where they were last drawn, so the legend can leave them showing', () => {
+    const { buttons } = draw();
+    const close = button(buttons, 'closePosition');
+    const rects = manager.tagRects();
+    // One rect a tag: the position, its stop and target, and the order.
+    expect(rects).toHaveLength(4);
+    expect(rects).toContainEqual(expect.objectContaining({ y: close.y, height: close.size, x: expect.any(Number) }));
+    const mine = rects.find((r) => r.y === close.y)!;
+    expect(mine.x + mine.width).toBe(close.x + close.size);
+  });
+
   it('give a position its quantity, its side and its profit, then reverse and close', () => {
     const { texts, buttons } = draw();
     expect(texts).toEqual(expect.arrayContaining(['2', 'Long', '+20.00']));
