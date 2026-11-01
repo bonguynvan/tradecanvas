@@ -1,5 +1,14 @@
 # @tradecanvas/chart
 
+## 1.59.2
+
+### Patch Changes
+
+- f408fa6: The legend is drawn around the trading tags, so a tag under it (a target near the top of a narrow chart) stays whole and its buttons can be pressed. The OHLCV legend and the data window write volumes in the number locale's decimal mark (`66,10K` under `de-DE`), and `formatVolumeLoc` writes a locale it has no table for as `Intl` does.
+- Updated dependencies [f408fa6]
+  - @tradecanvas/commons@1.59.2
+  - @tradecanvas/core@1.59.2
+
 ## 1.59.1
 
 ### Patch Changes
