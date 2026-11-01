@@ -1,5 +1,12 @@
 # @tradecanvas/vue
 
+## 1.3.44
+
+### Patch Changes
+
+- Updated dependencies [5a3f39c]
+  - @tradecanvas/chart@1.56.0
+
 ## 1.3.43
 
 ### Patch Changes
