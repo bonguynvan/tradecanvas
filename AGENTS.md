@@ -22,7 +22,7 @@ A pnpm workspace, TypeScript strict, no runtime dependencies in any package.
 | `benchmarks` | Those two measured on one machine, by date: what a change to the engine is compared with. |
 | `evals` | Coding agents given tasks with and without the skill (`pnpm eval`); the runs to compare with in `evals/baselines`, and what they turned up in `evals/FINDINGS.md`. |
 | `skills/tradecanvas` | The agent skill users install. Its code examples are type-checked. |
-| `scripts` | Docs generated from the code, and their checks; `bench-render.mjs` (`pnpm bench:render`) times the chart's frames in Chrome, `size-report.mjs` (`pnpm size`) what a page downloads for each entry; `redirects.mjs` sends the old GitHub Pages addresses on to tradecanvas.dev; `record-clips.mjs` records the README clips (`.github/assets/clips`) from the scenes in `scripts/clips`, and with `--web <dir>` an MP4 and a poster of each for a web page. |
+| `scripts` | Docs generated from the code, and their checks; `bench-render.mjs` (`pnpm bench:render`) times the chart's frames in Chrome, `size-report.mjs` (`pnpm size`) what a page downloads for each entry; `redirects.mjs` sends the old GitHub Pages addresses on to tradecanvas.dev; `record-clips.mjs` records the README clips (`.github/assets/clips`) from the scenes in `scripts/clips`, and with `--web <dir>` an MP4 and a poster of each for a web page; `audit-scenes.mjs` (`pnpm audit:scenes`) shoots the chart's states in `scripts/audit` and checks them. |
 
 ## Commands
 
@@ -116,6 +116,14 @@ These fail CI, often far from the line that caused them.
 - A visible change needs a look in a real browser at a phone width, a laptop
   width and a wide one, in both themes and the three looks, before the pull
   request. Put a screenshot or a short clip in it.
+- A change to the widget or the engine also runs `pnpm audit:scenes` (after
+  `pnpm build`): the chart in the states dialogs never show (the price at an
+  order with a quote on, a linked grid under the pointer, a replay, compares,
+  Renko, the day's limits, many indicators), in both themes at three widths.
+  It checks that no two price axis tags overlap and that a linked grid's
+  legends follow the pointer, and writes a sheet per scene to `.tmp/audit`
+  to look over. Add a scene to `scripts/audit/scenes.js` for a state a bug
+  turned up.
 
 ## Before you commit
 
