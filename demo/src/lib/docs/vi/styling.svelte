@@ -23,8 +23,9 @@
   <tbody>
     <tr><td><code>print</code> (mặc định)</td><td>
       Giấy và mực. Nền trắng ngà hoặc đen than, màu xám cho mọi thứ bình thường và chỉ dùng màu ở chỗ nó mang ý
-      nghĩa; đường kẻ mảnh, nút 3 px, menu 5 px và hộp thoại 8 px; nhãn chữ in hoa; mọi con số dùng font đơn cách để
-      giá thẳng hàng theo cột. Nút đang chọn tô đặc màu mực, công cụ đang chọn màu xanh mực.
+      nghĩa; đường kẻ mảnh, nút 3 px, menu 5 px và hộp thoại 8 px; nhãn chữ in hoa; mọi con số, kể cả trên chart, dùng
+      font sans có chữ số rộng bằng nhau (Segoe UI trên Windows, Helvetica Neue trên máy Apple, Roboto trên Android) nên
+      giá vẫn thẳng hàng theo cột. Nút đang chọn tô đặc màu mực, công cụ đang chọn màu xanh mực.
     </td></tr>
     <tr><td><code>studio</code></td><td>
       Nút bo góc 7 px, menu 11 px và hộp thoại 16 px. Các nhóm cách nhau bằng khoảng trống thay vì đường kẻ, menu
@@ -37,6 +38,11 @@
     <tr><td><code>capsule</code></td><td>
       Hình viên thuốc ở khắp nơi, kể cả nhãn giá. Thanh công cụ và công cụ vẽ nổi thành những hòn đảo, menu là kính
       mờ, và nút đang chọn là một viên thuốc tô đặc.
+    </td></tr>
+    <tr><td><code>desk</code></td><td>
+      Cửa sổ của một nền tảng giao dịch trên máy tính: Tahoma 12 px cho cả nhãn lẫn con số trên chart, góc và nhãn giá
+      vuông, các thanh gọn hơn một bậc (nút 24 px), đường kẻ giữa các nhóm, nút đang chọn tô nhạt. Máy không có Tahoma
+      thì dùng Verdana, Segoe UI hoặc DejaVu Sans.
     </td></tr>
   </tbody>
 </table>

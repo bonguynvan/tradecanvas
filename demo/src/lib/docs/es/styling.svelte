@@ -24,8 +24,9 @@
   <tbody>
     <tr><td><code>print</code> (predeterminado)</td><td>
       Papel y tinta. Un fondo casi blanco o casi negro, gris para todo lo normal y color solo donde significa algo;
-      líneas finas, controles de 3 px, menús de 5 px y diálogos de 8 px; etiquetas en mayúsculas; todas las cifras en una
-      fuente monoespaciada para que los precios se alineen en columnas. Un botón elegido es de tinta sólida; una
+      líneas finas, controles de 3 px, menús de 5 px y diálogos de 8 px; etiquetas en mayúsculas; todas las cifras, también las del
+      gráfico, en una fuente sans de dígitos del mismo ancho (Segoe UI en Windows, Helvetica Neue en Apple, Roboto en
+      Android), así que los precios se alinean en columnas. Un botón elegido es de tinta sólida; una
       herramienta elegida, azul tinta.
     </td></tr>
     <tr><td><code>studio</code></td><td>
@@ -40,6 +41,11 @@
     <tr><td><code>capsule</code></td><td>
       Píldoras por todas partes, también en las etiquetas de precio. La barra de herramientas y las herramientas de dibujo
       flotan como islas, los menús son de vidrio esmerilado y un botón elegido es una píldora sólida.
+    </td></tr>
+    <tr><td><code>desk</code></td><td>
+      La ventana de una plataforma de trading de escritorio: Tahoma de 12 px para las etiquetas y las cifras del gráfico,
+      esquinas y etiquetas de precio rectas, barras un paso más compactas (controles de 24 px), líneas entre grupos y un
+      botón elegido teñido. Sin Tahoma usa Verdana, Segoe UI o DejaVu Sans.
     </td></tr>
   </tbody>
 </table>

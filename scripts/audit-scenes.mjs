@@ -7,10 +7,12 @@
 //
 //   pnpm build
 //   pnpm audit:scenes [scene…]          (all scenes when none is named)
+//   UI=desk pnpm audit:scenes …         (the widgets in that look; Print without it)
 //
 // Writes .tmp/audit/<scene>-<theme>-<size>.png and .tmp/audit/<scene>.png (the
-// sheet); exits 1 when a check fails. Needs Playwright where this script can
-// import it (as scripts/record-clips.mjs does), or PLAYWRIGHT=<its index.mjs>.
+// sheet), named <scene>-<ui> in place of <scene> with UI; exits 1 when a check
+// fails. Needs Playwright where this script can import it (as
+// scripts/record-clips.mjs does), or PLAYWRIGHT=<its index.mjs>.
 import { createServer } from 'node:http';
 import { mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, extname, join, normalize, resolve, sep } from 'node:path';
@@ -20,6 +22,8 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = join(ROOT, '.tmp/audit');
 const { chromium } = await import(process.env.PLAYWRIGHT ? pathToFileURL(process.env.PLAYWRIGHT).href : 'playwright');
 
+const UI = process.env.UI ?? '';
+if (UI && !/^[a-z]+$/.test(UI)) throw new Error(`UI must be a look's name, not ${UI}`);
 const SCENES = ['orderAtPrice', 'linkedGrid', 'replay', 'compare', 'renko', 'priceLimits', 'indicators', 'krx'];
 const THEMES = ['dark', 'light'];
 const SIZES = {
@@ -73,12 +77,15 @@ function serve() {
   return new Promise((r) => server.listen(0, '127.0.0.1', () => r(server)));
 }
 
+/** A scene's files, named for the look when one is set. */
+const sheetName = (scene) => (UI ? `${scene}-${UI}` : scene);
+
 async function shoot(browser, base, scene, theme, size) {
   const context = await browser.newContext({ ...SIZES[size], deviceScaleFactor: 1 });
   const page = await context.newPage();
   const errors = [];
   page.on('pageerror', (e) => errors.push(`error: ${e.message}`));
-  await page.goto(`${base}/scripts/audit/scenes.html?scene=${scene}&theme=${theme}`);
+  await page.goto(`${base}/scripts/audit/scenes.html?scene=${scene}&theme=${theme}${UI ? `&ui=${UI}` : ''}`);
   await page.waitForFunction(() => window.stage?.ready, null, { timeout: 30000 });
   await page.waitForTimeout(SETTLE_MS);
   if (scene === 'linkedGrid') {
@@ -91,7 +98,7 @@ async function shoot(browser, base, scene, theme, size) {
     errors.push(...await page.evaluate(linkedLegendChecks));
   }
   errors.push(...await page.evaluate(pageChecks));
-  const file = `${scene}-${theme}-${size}.png`;
+  const file = `${sheetName(scene)}-${theme}-${size}.png`;
   await page.screenshot({ path: join(OUT, file) });
   await context.close();
   return { file, problems: errors };
@@ -103,10 +110,10 @@ async function sheet(browser, scene, files) {
   const rows = THEMES.map((theme) => `<div style="display:flex;gap:8px;align-items:flex-start">${files.filter((f) => f.includes(`-${theme}-`)).map(cell).join('')}</div>`);
   const html = `<body style="margin:0;background:#888;display:grid;gap:8px;padding:8px;font:12px sans-serif;width:max-content">${rows.join('')}</body>`;
   const page = await browser.newPage({ viewport: { width: 1600, height: 900 } });
-  const htmlFile = join(OUT, `${scene}.html`);
+  const htmlFile = join(OUT, `${sheetName(scene)}.html`);
   writeFileSync(htmlFile, html);
   await page.goto(pathToFileURL(htmlFile).href);
-  await page.screenshot({ path: join(OUT, `${scene}.png`), fullPage: true });
+  await page.screenshot({ path: join(OUT, `${sheetName(scene)}.png`), fullPage: true });
   await page.close();
 }
 
@@ -128,7 +135,7 @@ try {
       }
     }
     await sheet(browser, scene, files);
-    console.log(`${scene}: ${files.length} shots, sheet .tmp/audit/${scene}.png`);
+    console.log(`${scene}: ${files.length} shots, sheet .tmp/audit/${sheetName(scene)}.png`);
   }
 } finally {
   await browser.close();

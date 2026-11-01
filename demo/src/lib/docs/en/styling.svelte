@@ -23,8 +23,9 @@
   <tbody>
     <tr><td><code>print</code> (default)</td><td>
       Paper and ink. An off-white and an off-black ground, grey for everything that is normal and colour only where
-      it means something; hairlines, 3 px controls, 5 px menus and 8 px dialogs; capital labels; every figure in a
-      monospaced face so prices line up in columns. A chosen button is solid ink, a chosen tool ink blue.
+      it means something; hairlines, 3 px controls, 5 px menus and 8 px dialogs; capital labels; every figure, on the
+      chart too, in a sans face whose digits are one width (Segoe UI on Windows, Helvetica Neue on Apple systems, Roboto on
+      Android), so prices line up in columns. A chosen button is solid ink, a chosen tool ink blue.
     </td></tr>
     <tr><td><code>studio</code></td><td>
       Rounded 7 px controls, 11 px menus and 16 px dialogs. Groups are spaced instead of ruled, menus float on soft
@@ -37,6 +38,11 @@
     <tr><td><code>capsule</code></td><td>
       Pills everywhere, pill price tags included. The toolbar and the drawing tools float as islands, menus are
       frosted glass, and a chosen button is a solid pill.
+    </td></tr>
+    <tr><td><code>desk</code></td><td>
+      A desktop trading platform's window: Tahoma at 12 px for the labels and the chart's figures alike, square
+      corners and price tags, bars a step tighter (24 px controls), rules between groups, and a tinted chosen button.
+      Where there is no Tahoma it falls back to Verdana, Segoe UI or DejaVu Sans.
     </td></tr>
   </tbody>
 </table>

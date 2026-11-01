@@ -5,7 +5,7 @@
  */
 import { SANS_FONT_FAMILY, phiStep } from '@tradecanvas/commons';
 
-export type WidgetUIPreset = 'print' | 'studio' | 'terminal' | 'capsule';
+export type WidgetUIPreset = 'print' | 'studio' | 'terminal' | 'capsule' | 'desk';
 
 const DEFAULT_PRESET: WidgetUIPreset = 'print';
 
@@ -140,9 +140,19 @@ export interface WidgetUITheme {
 
 const SYSTEM_SANS = "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
 const MONO = "'JetBrains Mono', 'SF Mono', 'Cascadia Code', 'Fira Code', 'Consolas', ui-monospace, monospace";
-/** The faces every system has: the chart's figures and the widget's labels without a font to load. */
+/** The face every system has: the widget's labels without a font to load. */
 const PRINT_SANS = SANS_FONT_FAMILY;
-const PRINT_MONO = "'Cascadia Mono', 'SF Mono', ui-monospace, Menlo, Consolas, monospace";
+/**
+ * Print's figures, on the chart and in the panels: sans faces every system has
+ * whose digits are one width as they come. San Francisco's are not, and the
+ * chart's canvas can't ask for tabular figures, so it is left out.
+ */
+const PRINT_FIGURES = "'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif";
+/**
+ * The desktop trading platforms' small Windows face, and the nearest where
+ * there is no Tahoma. Its digits are one width, so figures still line up.
+ */
+const DESK_SANS = "Tahoma, Verdana, 'Segoe UI', 'DejaVu Sans', sans-serif";
 
 type Density = 'compact' | 'spacious';
 type PresetBase = Omit<ResolvedWidgetUI, 'components' | 'preset' | 'density'> & {
@@ -168,7 +178,7 @@ const PRESETS: Record<WidgetUIPreset, PresetBase> = {
       compact: { toolbar: 33, control: 20, controlSmall: 20, icon: 16, sidebar: 33, menuItem: 26 },
       spacious: { toolbar: 53, control: 33, controlSmall: 26, icon: 20, sidebar: 53, menuItem: 42 },
     },
-    font: { family: PRINT_SANS, mono: PRINT_MONO, size: 13, weight: 400, strongWeight: 600, labelCase: 'uppercase', labelTracking: 0.06 },
+    font: { family: PRINT_SANS, mono: PRINT_FIGURES, size: 13, weight: 400, strongWeight: 600, labelCase: 'uppercase', labelTracking: 0.06 },
     borders: { width: 1, separators: true },
     // A hairline round each surface, and a soft shadow to lift it off the chart.
     shadows: {
@@ -237,6 +247,28 @@ const PRESETS: Record<WidgetUIPreset, PresetBase> = {
     sidebar: 'floating',
     intervals: 'segmented',
     tagRadius: 999,
+  },
+  /*
+   * Desk: a desktop trading platform's window. Tahoma at 12px throughout,
+   * square corners, bars a step tighter, and buttons that show a tint.
+   */
+  desk: {
+    radius: { xs: 0, sm: 1, md: 2, lg: 2, xl: 3 },
+    components: { tag: 0, toolbar: 0, sidebar: 0 },
+    sizes: { toolbar: 34, control: 24, controlSmall: 20, icon: 16, sidebar: 36, menuItem: 24 },
+    font: { family: DESK_SANS, mono: DESK_SANS, size: 12, weight: 400, strongWeight: 700, labelCase: 'none', labelTracking: 0 },
+    borders: { width: 1, separators: true },
+    shadows: {
+      menu: '0 0 0 1px var(--tcw-border-strong), var(--tcw-shadow-sm)',
+      dialog: '0 0 0 1px var(--tcw-border-strong), var(--tcw-shadow-md)',
+      tooltip: '0 0 0 1px var(--tcw-border)',
+    },
+    blur: 0,
+    active: 'tint',
+    toolbar: 'docked',
+    sidebar: 'docked',
+    intervals: 'plain',
+    tagRadius: 0,
   },
 };
 

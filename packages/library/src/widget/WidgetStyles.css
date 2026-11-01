@@ -190,7 +190,7 @@
   --tcw-ring: 0 0 0 2px rgba(125, 155, 255, 0.5);
 
   /* Type */
-  --tcw-font-mono: 'Cascadia Mono', 'SF Mono', ui-monospace, Menlo, Consolas, monospace;
+  --tcw-font-mono: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   /* The faces as drawn: a tag means something else in each face (in IBM Plex, ss01 is a one-storey a).
    * The `ui` option never sets it, so a rule of yours on .tcw-root turns on your face's own. */
   --tcw-font-features: normal;
@@ -1584,7 +1584,8 @@
 
 .tcw-color-hex {
   font-size: var(--tcw-font-size-xs);
-  font-family: var(--tcw-font-mono);
+  /* Hex letters vary in width in a sans face: a monospaced one keeps the codes one width. */
+  font-family: ui-monospace, 'Cascadia Mono', 'SF Mono', Menlo, Consolas, monospace;
   font-variant-numeric: tabular-nums;
   color: var(--tcw-text-muted);
   min-width: 64px;

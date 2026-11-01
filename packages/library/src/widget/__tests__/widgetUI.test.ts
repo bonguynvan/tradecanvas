@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect } from 'vitest';
-import { FIBONACCI, phiStep } from '@tradecanvas/commons';
+import { FIBONACCI, SANS_FONT_FAMILY, phiStep } from '@tradecanvas/commons';
 import { applyWidgetUI, resolveWidgetUI, typeSize, widgetUIVariables, WIDGET_UI_PRESETS, type WidgetUITheme } from '../widgetUI.js';
 import { injectWidgetStyles, removeWidgetStyles } from '../WidgetStyles.js';
 
@@ -58,6 +58,24 @@ describe('resolveWidgetUI', () => {
       expect(resolveWidgetUI({ preset, density: 'compact' }).sizes, preset).toEqual({ toolbar: 38, control: 26, controlSmall: 20, icon: 16, sidebar: 40, menuItem: 26 });
       expect(resolveWidgetUI({ preset, density: 'spacious' }).sizes, preset).toEqual({ toolbar: 52, control: 34, controlSmall: 28, icon: 20, sidebar: 54, menuItem: 34 });
     }
+  });
+
+  it('writes Print’s figures in a sans face whose digits are one width on every system, as the chart draws them too', () => {
+    // Canvas text can't turn on tabular figures, so San Francisco (proportional digits) stays out.
+    const mono = resolveWidgetUI().font.mono;
+    expect(mono.split(',')[0]).toBe("'Segoe UI'");
+    expect(mono).not.toMatch(/apple-system|BlinkMacSystemFont|system-ui/);
+    expect(mono).not.toBe(SANS_FONT_FAMILY);
+  });
+
+  it('has a Desk look: Tahoma throughout, small type, square corners, compact bars', () => {
+    const desk = resolveWidgetUI('desk');
+    expect(desk.preset).toBe('desk');
+    expect(desk.font.family).toMatch(/^Tahoma,/);
+    expect(desk.font.mono).toBe(desk.font.family);
+    expect(desk.font.size).toBe(12);
+    expect(desk.tagRadius).toBe(0);
+    expect(desk.sizes).toMatchObject({ toolbar: 34, control: 24 });
   });
 
   it('takes the airy density: spacious controls, the figures in the look’s sans face', () => {
