@@ -369,9 +369,9 @@ console.log(front.symbol, front.lastTradingDay);   // e.g. VN30F2611 2026-11-19
 KRX's rules (KOSPI, KOSDAQ; `MARKET_NXT` for Nextrade): steps by price band in
 won, ±30% limits rounded as KRX rounds them, red up and blue down. Upbit's
 REST API allows a browser one call in ten seconds: point `restBase` at a proxy.
-With `numberLocale: 'ko-KR'` the legend, the crosshair tooltip and ChartWidget's
-data window write volumes in 만, 억 and 조 (in a widget: `chartOptions: { numberLocale: 'ko-KR' }`);
-the Date and Price Range box keeps K, M and B.
+With `numberLocale: 'ko-KR'` the legend, the crosshair tooltip, ChartWidget's
+data window and the Date and Price Range box write volumes in 만, 억 and 조 (in a
+widget: `chartOptions: { numberLocale: 'ko-KR' }`).
 
 ```ts
 import { Chart, MARKET_KRX, MARKET_UPBIT_KRW, UpbitAdapter, formatVolumeLoc } from '@tradecanvas/chart';

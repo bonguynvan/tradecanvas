@@ -1,4 +1,5 @@
 import type { DrawingState, Point, ViewportState } from '@tradecanvas/commons';
+import { formatVolumeLoc } from '@tradecanvas/commons';
 import { DrawingBase } from '../DrawingBase.js';
 import { resolveBarIndex } from '../../viewport/ScaleMapping.js';
 import { barsBetween, drawLabelBox, formatPriceChange, spanBetween } from './labels.js';
@@ -19,13 +20,6 @@ export function volumeBetween(state: DrawingState, viewport: ViewportState): num
   return sum;
 }
 
-function formatVolume(v: number): string {
-  if (v >= 1e9) return `${(v / 1e9).toFixed(2)}B`;
-  if (v >= 1e6) return `${(v / 1e6).toFixed(2)}M`;
-  if (v >= 1e3) return `${(v / 1e3).toFixed(2)}K`;
-  return v.toFixed(0);
-}
-
 /** The stats the box shows: price change, bars and time spanned, volume traded. */
 export function dateAndPriceRangeLines(state: DrawingState, viewport: ViewportState): string[] {
   const span = spanBetween(state, 0, 1, viewport);
@@ -35,7 +29,8 @@ export function dateAndPriceRangeLines(state: DrawingState, viewport: ViewportSt
     span ? `${bars} bars, ${span}` : `${bars} bars`,
   ];
   const vol = volumeBetween(state, viewport);
-  if (vol !== null) lines.push(`Vol ${formatVolume(vol)}`);
+  // As the chart's numbers read: K, M and B in the locale's mark; 만, 억 and 조 in Korean.
+  if (vol !== null) lines.push(`Vol ${formatVolumeLoc(vol, viewport.numberLocale ?? 'en-US')}`);
   return lines;
 }
 
