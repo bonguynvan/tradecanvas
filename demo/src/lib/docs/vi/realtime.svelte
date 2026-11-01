@@ -14,12 +14,21 @@
 
 <h2>Adapter có sẵn</h2>
 <p>Tất cả đều miễn phí, không cần API key — kết nối adapter nào cũng theo cùng một cách:</p>
-<pre><code>{`import { BinanceAdapter, CoinbaseAdapter, BybitAdapter, KrakenAdapter } from '@tradecanvas/chart'
+<pre><code>{`import { BinanceAdapter, CoinbaseAdapter, BybitAdapter, KrakenAdapter, UpbitAdapter } from '@tradecanvas/chart'
 
 chart.connect({ adapter: new BinanceAdapter(),  symbol: 'BTCUSDT', timeframe: '1m' })
 chart.connect({ adapter: new BybitAdapter(),    symbol: 'BTCUSDT', timeframe: '1m' })
 chart.connect({ adapter: new KrakenAdapter(),   symbol: 'BTC/USD', timeframe: '5m' })
-chart.connect({ adapter: new CoinbaseAdapter(), symbol: 'BTC-USD', timeframe: '15m' })`}</code></pre>
+chart.connect({ adapter: new CoinbaseAdapter(), symbol: 'BTC-USD', timeframe: '15m' })
+chart.connect({ adapter: new UpbitAdapter(),   symbol: 'KRW-BTC', timeframe: '1m' })`}</code></pre>
+<p>
+  <code>UpbitAdapter</code> nhận các mã của Upbit (<code>KRW-BTC</code>, <code>BTC-ETH</code>):
+  nến được stream đến khung 4 giờ, nến ngày lấy từ ticker, các khung dài hơn được dựng từ
+  nến ngày. REST API của Upbit trả 200 nến mỗi lần gọi và chỉ cho trình duyệt gọi một lần
+  mỗi 10 giây, nên trang web cần truyền <code>restBase</code> trỏ tới proxy của chính mình.
+  Dữ liệu thuộc về Upbit, theo điều khoản Open API của họ. <code>MARKET_UPBIT_KRW</code> cho
+  bước giá và màu của chợ KRW.
+</p>
 
 <h2>Interface DataAdapter</h2>
 <pre><code>{`interface DataAdapter {

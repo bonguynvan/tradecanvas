@@ -14,12 +14,20 @@
 
 <h2>内置适配器</h2>
 <p>全部免费，无需 API key——连接方式完全相同：</p>
-<pre><code>{`import { BinanceAdapter, CoinbaseAdapter, BybitAdapter, KrakenAdapter } from '@tradecanvas/chart'
+<pre><code>{`import { BinanceAdapter, CoinbaseAdapter, BybitAdapter, KrakenAdapter, UpbitAdapter } from '@tradecanvas/chart'
 
 chart.connect({ adapter: new BinanceAdapter(),  symbol: 'BTCUSDT', timeframe: '1m' })
 chart.connect({ adapter: new BybitAdapter(),    symbol: 'BTCUSDT', timeframe: '1m' })
 chart.connect({ adapter: new KrakenAdapter(),   symbol: 'BTC/USD', timeframe: '5m' })
-chart.connect({ adapter: new CoinbaseAdapter(), symbol: 'BTC-USD', timeframe: '15m' })`}</code></pre>
+chart.connect({ adapter: new CoinbaseAdapter(), symbol: 'BTC-USD', timeframe: '15m' })
+chart.connect({ adapter: new UpbitAdapter(),   symbol: 'KRW-BTC', timeframe: '1m' })`}</code></pre>
+<p>
+  <code>UpbitAdapter</code> 使用 Upbit 的市场代码（<code>KRW-BTC</code>、<code>BTC-ETH</code>）：
+  K 线实时推送最长到 4 小时周期，日线来自 ticker，更长周期由日线合成。其 REST API 每次返回
+  200 根 K 线，且浏览器每 10 秒只能调用一次，因此网页需通过 <code>restBase</code> 指向自己的
+  代理。数据归 Upbit 所有，受其 Open API 条款约束。<code>MARKET_UPBIT_KRW</code> 提供 KRW
+  市场的价格档位和配色。
+</p>
 
 <h2>DataAdapter 接口</h2>
 <pre><code>{`interface DataAdapter {

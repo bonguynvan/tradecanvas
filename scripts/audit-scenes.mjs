@@ -20,7 +20,7 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = join(ROOT, '.tmp/audit');
 const { chromium } = await import(process.env.PLAYWRIGHT ? pathToFileURL(process.env.PLAYWRIGHT).href : 'playwright');
 
-const SCENES = ['orderAtPrice', 'linkedGrid', 'replay', 'compare', 'renko', 'priceLimits', 'indicators', 'ichimoku'];
+const SCENES = ['orderAtPrice', 'linkedGrid', 'replay', 'compare', 'renko', 'priceLimits', 'indicators', 'krx'];
 const THEMES = ['dark', 'light'];
 const SIZES = {
   phone: { viewport: { width: 390, height: 760 }, isMobile: true, hasTouch: true },

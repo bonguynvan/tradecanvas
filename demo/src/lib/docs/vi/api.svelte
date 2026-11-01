@@ -215,6 +215,26 @@ getCurrentSession(MARKET_HOSE.sessions, Date.now(), MARKET_HOSE.timeZone) // { n
 vn30fContracts(Date.now())                   // [{ symbol: 'VN30F2611', lastTradingDay: '2026-11-19', … }, …]
 vn30fLastTradingDay(2026, 12, (day) => holidays.has(day)) // thứ Năm thứ ba, lùi lại nếu là ngày nghỉ`}</code></pre>
 <p>
+  Hàn Quốc, theo quy định tháng 9/2026: <code>MARKET_KRX</code> cho cổ phiếu KOSPI và KOSDAQ
+  tính bằng won (bước giá từ 1 đến 1.000 won theo vùng giá; ±30%, khoảng biên độ được làm
+  tròn xuống theo bước giá của giá tham chiếu trước, đúng cách KRX làm; phiên khớp lệnh
+  định kỳ mở cửa và đóng cửa, phiên liên tục và After-Market đến 20:00),
+  <code>MARKET_NXT</code> cho sàn Nextrade (bước giá và biên độ như KRX, phiên riêng từ 8:00
+  đến 20:00) và <code>MARKET_UPBIT_KRW</code> cho chợ KRW của Upbit (bước giá từ 1.000 won
+  xuống một phần trăm triệu won, không có biên độ). Giá tăng màu đỏ, giảm màu xanh dương
+  (<code>KR_COLORS</code>); <code>createMarketTheme(theme, KR_COLORS)</code> cho theme bất
+  kỳ màu nến đó, và <code>formatVolumeLoc(value, 'ko')</code> rút gọn khối lượng theo 만, 억
+  và 조.
+</p>
+<pre><code>{`import { MARKET_KRX, KR_COLORS, createMarketTheme, LIGHT_THEME, formatVolumeLoc } from '@tradecanvas/chart'
+
+chart.setMarket(MARKET_KRX)                  // red up, blue down
+chart.setPriceLimits(9980)                   // the reference: yesterday's close
+chart.getPriceLimits()                       // { ceiling: 12970, floor: 6990, reference: 9980 }
+chart.roundPrice(72340)                      // 72300, a 100-won step
+createMarketTheme(LIGHT_THEME, KR_COLORS)    // a theme with Korea's candles
+formatVolumeLoc(345_000_000, 'ko')           // '3.45억'`}</code></pre>
+<p>
   Thị trường của riêng bạn là một <code>MarketConfig</code>: <code>priceStep</code>, hoặc
   <code>priceSteps: [{'{'} from, step {'}'}]</code> cho các vùng giá, <code>priceLimits</code>,
   <code>volumeUnit</code> (lô), <code>sessions</code>, <code>timeZone</code> và

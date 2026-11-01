@@ -41,7 +41,7 @@ import type {
   ExecutionAdapter,
   ExecutionConfig,
 } from '@tradecanvas/commons';
-import { isValidTimeZone, sessionMinute, symbolTimeZone, LayerType, setLocale as setGlobalLocale, computePriceLimits, priceStepAt, PRICE_AXIS_WIDTH, autoPricePrecision, formatPrice, parseIndicatorSource, indicatorSource, stepDecimals, priceFormatterFor, fractionTick } from '@tradecanvas/commons';
+import { isValidTimeZone, sessionMinute, symbolTimeZone, LayerType, setLocale as setGlobalLocale, computePriceLimits, createMarketTheme, priceStepAt, PRICE_AXIS_WIDTH, autoPricePrecision, formatPrice, parseIndicatorSource, indicatorSource, stepDecimals, priceFormatterFor, fractionTick } from '@tradecanvas/commons';
 import type { BarLayout, ChartTypeOptions, DataUpdatePayload, FontConfig, IndicatorId, IndicatorParamsFor, PriceFormatter, PriceFraction, ShapeConfig, TimeFormatter } from '@tradecanvas/commons';
 import type { ChartStyleKey, ChartStyleOverrides, ChartStyleOverridesPatch, IndicatorIntervals, IndicatorStyleConfig, PaneStyle, ResolvedChartStyle, StyleLayer } from '@tradecanvas/commons';
 import { PHI, computePriceRange, readChartTypeOptions, tickBarCount, barTimeUnit, readChartStyleOverrides, readIndicatorPlotStyles, readPaneStyle } from '@tradecanvas/commons';
@@ -6068,15 +6068,7 @@ export class Chart {
 
     // The market's colours on the candles; volume keeps the theme's own.
     if (config.colorScheme) {
-      const base = this.themeManager.getBaseTheme();
-      const marketTheme: Theme = {
-        ...base,
-        candleUp: config.colorScheme.up,
-        candleDown: config.colorScheme.down,
-        candleUpWick: config.colorScheme.up,
-        candleDownWick: config.colorScheme.down,
-      };
-      this.themeManager.setTheme(marketTheme);
+      this.themeManager.setTheme(createMarketTheme(this.themeManager.getBaseTheme(), config.colorScheme));
     }
 
     // Apply price precision to trading, alerts, and price line

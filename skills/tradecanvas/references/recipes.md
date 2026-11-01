@@ -364,6 +364,27 @@ chart.setMarket(MARKET_VN30F);
 console.log(front.symbol, front.lastTradingDay);   // e.g. VN30F2611 2026-11-19
 ```
 
+## A Korean stock, and Upbit
+
+KRX's rules (KOSPI, KOSDAQ; `MARKET_NXT` for Nextrade): steps by price band in
+won, ±30% limits rounded as KRX rounds them, red up and blue down. Upbit's
+REST API allows a browser one call in ten seconds: point `restBase` at a proxy.
+
+```ts
+import { Chart, MARKET_KRX, MARKET_UPBIT_KRW, UpbitAdapter, formatVolumeLoc } from '@tradecanvas/chart';
+
+const chart = new Chart(document.getElementById('chart')!, { numberLocale: 'ko-KR' });
+chart.setMarket(MARKET_KRX);
+chart.setTimeZone('exchange');                     // Asia/Seoul
+chart.setPriceLimits(9980);
+console.log(chart.getPriceLimits());               // { ceiling: 12970, floor: 6990, reference: 9980 }
+console.log(formatVolumeLoc(345_000_000, 'ko'));   // 3.45억
+
+// Upbit's KRW market, through a proxy of your own
+chart.setMarket(MARKET_UPBIT_KRW);
+chart.connect({ adapter: new UpbitAdapter({ restBase: '/upbit' }), symbol: 'KRW-BTC', timeframe: '1m' });
+```
+
 ## Bars of a day in the exchange's time
 
 The 4H, 1D, 1W and 1M bars the library builds start at the exchange's midnight

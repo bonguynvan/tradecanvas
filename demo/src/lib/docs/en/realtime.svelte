@@ -14,12 +14,21 @@
 
 <h2>Built-in adapters</h2>
 <p>All free, no API key — connect any of them the same way:</p>
-<pre><code>{`import { BinanceAdapter, CoinbaseAdapter, BybitAdapter, KrakenAdapter } from '@tradecanvas/chart'
+<pre><code>{`import { BinanceAdapter, CoinbaseAdapter, BybitAdapter, KrakenAdapter, UpbitAdapter } from '@tradecanvas/chart'
 
 chart.connect({ adapter: new BinanceAdapter(),  symbol: 'BTCUSDT', timeframe: '1m' })
 chart.connect({ adapter: new BybitAdapter(),    symbol: 'BTCUSDT', timeframe: '1m' })
 chart.connect({ adapter: new KrakenAdapter(),   symbol: 'BTC/USD', timeframe: '5m' })
-chart.connect({ adapter: new CoinbaseAdapter(), symbol: 'BTC-USD', timeframe: '15m' })`}</code></pre>
+chart.connect({ adapter: new CoinbaseAdapter(), symbol: 'BTC-USD', timeframe: '15m' })
+chart.connect({ adapter: new UpbitAdapter(),   symbol: 'KRW-BTC', timeframe: '1m' })`}</code></pre>
+<p>
+  <code>UpbitAdapter</code> takes Upbit's markets (<code>KRW-BTC</code>, <code>BTC-ETH</code>):
+  candles stream up to 4 hours, the day comes from the ticker, and longer bars are built
+  from days. Its REST API gives 200 candles a call and lets a browser make one call in ten
+  seconds, so a web page passes <code>restBase</code> pointing at a proxy of its own. The
+  data is Upbit's, under its Open API terms. <code>MARKET_UPBIT_KRW</code> gives the KRW
+  market's steps and colours.
+</p>
 
 <h2>DataAdapter interface</h2>
 <pre><code>{`interface DataAdapter {

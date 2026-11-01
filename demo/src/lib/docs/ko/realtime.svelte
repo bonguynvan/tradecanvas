@@ -14,12 +14,21 @@
 
 <h2>내장 어댑터</h2>
 <p>모두 무료이며 API 키가 필요 없습니다. 어느 것이든 같은 방식으로 연결합니다.</p>
-<pre><code>{`import { BinanceAdapter, CoinbaseAdapter, BybitAdapter, KrakenAdapter } from '@tradecanvas/chart'
+<pre><code>{`import { BinanceAdapter, CoinbaseAdapter, BybitAdapter, KrakenAdapter, UpbitAdapter } from '@tradecanvas/chart'
 
 chart.connect({ adapter: new BinanceAdapter(),  symbol: 'BTCUSDT', timeframe: '1m' })
 chart.connect({ adapter: new BybitAdapter(),    symbol: 'BTCUSDT', timeframe: '1m' })
 chart.connect({ adapter: new KrakenAdapter(),   symbol: 'BTC/USD', timeframe: '5m' })
-chart.connect({ adapter: new CoinbaseAdapter(), symbol: 'BTC-USD', timeframe: '15m' })`}</code></pre>
+chart.connect({ adapter: new CoinbaseAdapter(), symbol: 'BTC-USD', timeframe: '15m' })
+chart.connect({ adapter: new UpbitAdapter(),   symbol: 'KRW-BTC', timeframe: '1m' })`}</code></pre>
+<p>
+  <code>UpbitAdapter</code>는 업비트 마켓 코드(<code>KRW-BTC</code>, <code>BTC-ETH</code>)를
+  받습니다. 캔들은 240분봉까지 실시간으로 받고, 일봉은 현재가(ticker)에서, 더 긴 봉은 일봉으로
+  만듭니다. REST API는 한 번에 캔들 200개를 주고 브라우저에서는 10초에 한 번만 호출할 수
+  있으므로, 웹 페이지에서는 <code>restBase</code>에 자체 프록시를 지정하세요. 데이터의 권리는
+  업비트에 있으며 Open API 이용약관을 따릅니다. <code>MARKET_UPBIT_KRW</code>는 KRW 마켓의 호가
+  단위와 색을 적용합니다.
+</p>
 
 <h2>DataAdapter 인터페이스</h2>
 <pre><code>{`interface DataAdapter {

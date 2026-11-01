@@ -208,6 +208,24 @@ getCurrentSession(MARKET_HOSE.sessions, Date.now(), MARKET_HOSE.timeZone) // { n
 vn30fContracts(Date.now())                   // [{ symbol: 'VN30F2611', lastTradingDay: '2026-11-19', … }, …]
 vn30fLastTradingDay(2026, 12, (day) => holidays.has(day)) // 셋째 목요일, 휴일이면 앞당김`}</code></pre>
 <p>
+  한국(2026년 9월 기준): <code>MARKET_KRX</code>는 원화 표시 KOSPI·KOSDAQ 주식용입니다(가격대별
+  호가 단위 1~1,000원, 가격제한폭 ±30%로 KRX와 같이 변동폭을 기준가격의 호가 단위로 먼저
+  절사, 장 시작·마감 동시호가, 정규장, 20:00까지의 애프터마켓). <code>MARKET_NXT</code>는
+  넥스트레이드용(호가 단위와 가격제한폭은 KRX와 같고, 거래 시간은 8:00~20:00),
+  <code>MARKET_UPBIT_KRW</code>는 업비트 KRW 마켓용입니다(호가 단위 1,000원부터 1억분의 1원까지,
+  가격제한 없음). 상승은 빨간색, 하락은 파란색으로 그립니다(<code>KR_COLORS</code>).
+  <code>createMarketTheme(theme, KR_COLORS)</code>로 어떤 테마든 이 캔들 색을 쓸 수 있고,
+  <code>formatVolumeLoc(value, 'ko')</code>는 거래량을 만·억·조 단위로 줄여 표시합니다.
+</p>
+<pre><code>{`import { MARKET_KRX, KR_COLORS, createMarketTheme, LIGHT_THEME, formatVolumeLoc } from '@tradecanvas/chart'
+
+chart.setMarket(MARKET_KRX)                  // red up, blue down
+chart.setPriceLimits(9980)                   // the reference: yesterday's close
+chart.getPriceLimits()                       // { ceiling: 12970, floor: 6990, reference: 9980 }
+chart.roundPrice(72340)                      // 72300, a 100-won step
+createMarketTheme(LIGHT_THEME, KR_COLORS)    // a theme with Korea's candles
+formatVolumeLoc(345_000_000, 'ko')           // '3.45억'`}</code></pre>
+<p>
   직접 만드는 시장은 <code>MarketConfig</code>입니다. <code>priceStep</code>(가격대별로는
   <code>priceSteps: [{'{'} from, step {'}'}]</code>), <code>priceLimits</code>,
   <code>volumeUnit</code>(매매 단위), <code>sessions</code>, <code>timeZone</code>,

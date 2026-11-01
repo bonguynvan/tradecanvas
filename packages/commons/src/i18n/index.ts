@@ -61,7 +61,17 @@ export function formatVND(value: number): string {
   return formatNumber(value, 0, 'vi');
 }
 
+/** Korean counts in ten-thousands: 만 (10⁴), 억 (10⁸), 조 (10¹²). */
+const KO_UNITS: readonly [number, string][] = [[1e12, '조'], [1e8, '억'], [1e4, '만']];
+
+/** A volume shortened for `locale`: 1.23K, 4.50M; in Korean 1.23만, 3.45억, 1.82조. */
 export function formatVolumeLoc(value: number, locale?: string): string {
+  const loc = locale ?? currentLocale;
+  if (/^ko([-_]|$)/i.test(loc)) {
+    // By the value as printed, so 99,999,999 reads 1.00억 rather than 10,000.00만.
+    for (const [size, unit] of KO_UNITS) if (Math.round((value / size) * 100) >= 100) return formatNumber(value / size, 2, loc) + unit;
+    return formatNumber(value, 0, loc);
+  }
   if (value >= 1e9) return formatNumber(value / 1e9, 2, locale ?? currentLocale) + 'B';
   if (value >= 1e6) return formatNumber(value / 1e6, 2, locale ?? currentLocale) + 'M';
   if (value >= 1e3) return formatNumber(value / 1e3, 2, locale ?? currentLocale) + 'K';

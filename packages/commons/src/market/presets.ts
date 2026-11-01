@@ -18,6 +18,21 @@ export const VN_COLORS: MarketColorScheme = {
 
 const VN_TIME_ZONE = 'Asia/Ho_Chi_Minh';
 
+/**
+ * Korean trading apps: red up, blue down, against the previous close; the
+ * upper limit (상한가) a deeper red, the lower (하한가) a deeper blue.
+ */
+export const KR_COLORS: MarketColorScheme = {
+  up: '#E8313F',
+  down: '#2F6FEB',
+  unchanged: '#8B8F99',
+  ceiling: '#C2121F',
+  floor: '#1E4FC2',
+  reference: '#8B8F99',
+};
+
+const KR_TIME_ZONE = 'Asia/Seoul';
+
 // Session times and rules: the exchanges' trading rules as of May 2025 (the
 // HOSE KRX system went live on 5 May 2025).
 export const HOSE_SESSIONS: TradingSession[] = [
@@ -48,6 +63,56 @@ export const VN30F_SESSIONS: TradingSession[] = [
   { name: 'Nghỉ trưa', startTime: '11:30', endTime: '13:00', type: 'closed' },
   { name: 'Phiên 2', startTime: '13:00', endTime: '14:30', type: 'continuous' },
   { name: 'ATC', startTime: '14:30', endTime: '14:45', type: 'preClose' },
+];
+
+// KRX's sessions as of 14 September 2026, when the After-Market (16:00–20:00,
+// continuous, within the day's limits) replaced the after-hours single-price
+// session. The pre-hours closing-price trade (08:30–08:40) runs inside the
+// opening call and is left out.
+export const KRX_SESSIONS: TradingSession[] = [
+  { name: '장전 동시호가', startTime: '08:30', endTime: '09:00', type: 'preOpen' },
+  { name: '정규장', startTime: '09:00', endTime: '15:20', type: 'continuous' },
+  { name: '장마감 동시호가', startTime: '15:20', endTime: '15:30', type: 'preClose' },
+  { name: '장후 시간외', startTime: '15:40', endTime: '16:00', type: 'postClose' },
+  { name: '애프터마켓', startTime: '16:00', endTime: '20:00', type: 'postClose' },
+];
+
+// Nextrade, the alternative exchange (since March 2025): its main market
+// stops for KRX's closing call. It opens at 09:00:30; sessions are by the minute.
+export const NXT_SESSIONS: TradingSession[] = [
+  { name: '프리마켓', startTime: '08:00', endTime: '08:50', type: 'preOpen' },
+  { name: '메인마켓', startTime: '09:00', endTime: '15:20', type: 'continuous' },
+  { name: '애프터마켓', startTime: '15:40', endTime: '20:00', type: 'postClose' },
+];
+
+/** KOSPI, KOSDAQ and KONEX shares, in won (one table since 25 January 2023). */
+const KRX_STEPS: readonly PriceStepBand[] = [
+  { from: 0, step: 1 },
+  { from: 2_000, step: 5 },
+  { from: 5_000, step: 10 },
+  { from: 20_000, step: 50 },
+  { from: 50_000, step: 100 },
+  { from: 200_000, step: 500 },
+  { from: 500_000, step: 1_000 },
+];
+
+/** Upbit's KRW market, in won (since 31 July 2025). */
+const UPBIT_KRW_STEPS: readonly PriceStepBand[] = [
+  { from: 0, step: 0.00000001 },
+  { from: 0.00001, step: 0.0000001 },
+  { from: 0.0001, step: 0.000001 },
+  { from: 0.001, step: 0.00001 },
+  { from: 0.01, step: 0.0001 },
+  { from: 0.1, step: 0.001 },
+  { from: 1, step: 0.01 },
+  { from: 10, step: 0.1 },
+  { from: 100, step: 1 },
+  { from: 5_000, step: 5 },
+  { from: 10_000, step: 10 },
+  { from: 50_000, step: 50 },
+  { from: 100_000, step: 100 },
+  { from: 500_000, step: 500 },
+  { from: 1_000_000, step: 1_000 },
 ];
 
 /** HOSE shares and closed funds, in thousands of dong: 10, 50 and 100 dong steps. */
@@ -131,6 +196,51 @@ export const MARKET_VN30F: MarketConfig = {
   colorScheme: VN_COLORS,
 };
 
+/**
+ * KOSPI and KOSDAQ shares on KRX, in won: steps from 1 won below 2,000 to
+ * 1,000 from 500,000 (`priceSteps`); whole won; limits of ±30% from the
+ * reference, the move rounded first as KRX does (`roundMove`); zone
+ * Asia/Seoul; red up and blue down (`KR_COLORS`); the opening and closing
+ * calls, the regular session and the After-Market (`KRX_SESSIONS`). ETFs
+ * and ETNs step differently and are not in the After-Market.
+ */
+export const MARKET_KRX: MarketConfig = {
+  type: 'stock',
+  exchange: 'KRX',
+  currency: 'KRW',
+  pricePrecision: 0,
+  volumeUnit: 1,
+  priceStep: 1,
+  priceSteps: KRX_STEPS,
+  timeZone: KR_TIME_ZONE,
+  priceLimits: { enabled: true, ceilingPercent: 30, floorPercent: 30, roundMove: true },
+  sessions: KRX_SESSIONS,
+  colorScheme: KR_COLORS,
+};
+
+/** Shares on Nextrade: KRX's steps and limits (from KRX's reference price), `NXT_SESSIONS`. */
+export const MARKET_NXT: MarketConfig = {
+  ...MARKET_KRX,
+  exchange: 'NXT',
+  sessions: NXT_SESSIONS,
+};
+
+/**
+ * Upbit's KRW market (`KRW-BTC`): steps from 1,000 won at a million down to
+ * a hundred-millionth of a won (`priceSteps`), the decimals following the
+ * symbol's data; no limits; red up and blue down. It trades around the clock.
+ */
+export const MARKET_UPBIT_KRW: MarketConfig = {
+  type: 'crypto',
+  exchange: 'UPBIT',
+  currency: 'KRW',
+  priceStep: 0.00000001,
+  priceSteps: UPBIT_KRW_STEPS,
+  timeZone: KR_TIME_ZONE,
+  priceLimits: { enabled: false },
+  colorScheme: KR_COLORS,
+};
+
 /** Crypto: 2 decimals, no limits, no zone or sessions (it trades around the clock). */
 export const MARKET_CRYPTO: MarketConfig = {
   type: 'crypto',
@@ -161,12 +271,21 @@ export const MARKET_NYSE: MarketConfig = {
  * preset's follows the new candles).
  */
 export function createVNTheme(base: Theme): Theme {
+  return createMarketTheme(base, VN_COLORS);
+}
+
+/**
+ * A theme variant with a market's candle colours: `createMarketTheme(DARK_THEME,
+ * KR_COLORS)` draws rising candles red and falling ones blue. Volume keeps
+ * the theme's own.
+ */
+export function createMarketTheme(base: Theme, colors: Pick<MarketColorScheme, 'up' | 'down'>): Theme {
   return {
     ...base,
-    candleUp: VN_COLORS.up,
-    candleDown: VN_COLORS.down,
-    candleUpWick: VN_COLORS.up,
-    candleDownWick: VN_COLORS.down,
+    candleUp: colors.up,
+    candleDown: colors.down,
+    candleUpWick: colors.up,
+    candleDownWick: colors.down,
   };
 }
 
@@ -229,8 +348,17 @@ export function computePriceLimits(referencePrice: number, config: MarketConfig)
   const oneUp = roundToPriceStep(reference + refStep, config);
   if (Math.abs(reference - refStep) < STEP_EPSILON) return { ceiling: oneUp, floor: reference, reference };
 
-  let ceiling = roundToPriceStep(rawCeiling, config, 'down');
-  let floor = roundToPriceStep(rawFloor, config, 'up');
+  let ceiling: number;
+  let floor: number;
+  if (config.priceLimits.roundMove) {
+    // KRX: the move rounded down to the reference's step, then each limit down to its own.
+    const atRefStep: MarketConfig = { ...config, priceStep: refStep, priceSteps: undefined };
+    ceiling = roundToPriceStep(reference + roundToPriceStep(reference * ceilPct, atRefStep, 'down'), config, 'down');
+    floor = roundToPriceStep(reference - roundToPriceStep(reference * floorPct, atRefStep, 'down'), config, 'down');
+  } else {
+    ceiling = roundToPriceStep(rawCeiling, config, 'down');
+    floor = roundToPriceStep(rawFloor, config, 'up');
+  }
   if (ceiling <= reference) ceiling = oneUp;
   if (floor >= reference) floor = roundToPriceStep(reference - (stepBelow(reference, config) ?? refStep), config);
   if (floor <= 0) floor = reference;

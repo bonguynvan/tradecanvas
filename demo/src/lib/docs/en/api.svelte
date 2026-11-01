@@ -213,6 +213,25 @@ getCurrentSession(MARKET_HOSE.sessions, Date.now(), MARKET_HOSE.timeZone) // { n
 vn30fContracts(Date.now())                   // [{ symbol: 'VN30F2611', lastTradingDay: '2026-11-19', … }, …]
 vn30fLastTradingDay(2026, 12, (day) => holidays.has(day)) // the third Thursday, earlier on a holiday`}</code></pre>
 <p>
+  Korea, as of September 2026: <code>MARKET_KRX</code> for KOSPI and KOSDAQ shares in won
+  (1 to 1,000 won a step by price; ±30%, the move rounded down to the reference's step
+  first, as KRX rounds it; the opening and closing calls, the regular session and the
+  After-Market until 20:00), <code>MARKET_NXT</code> for Nextrade (KRX's steps and limits,
+  its own sessions from 8:00 to 20:00) and <code>MARKET_UPBIT_KRW</code> for Upbit's KRW
+  market (steps from 1,000 won down to a hundred-millionth of a won, no limits). They draw
+  rising prices red and falling ones blue (<code>KR_COLORS</code>);
+  <code>createMarketTheme(theme, KR_COLORS)</code> gives any theme those candles, and
+  <code>formatVolumeLoc(value, 'ko')</code> shortens volumes in 만, 억 and 조.
+</p>
+<pre><code>{`import { MARKET_KRX, KR_COLORS, createMarketTheme, LIGHT_THEME, formatVolumeLoc } from '@tradecanvas/chart'
+
+chart.setMarket(MARKET_KRX)                  // red up, blue down
+chart.setPriceLimits(9980)                   // the reference: yesterday's close
+chart.getPriceLimits()                       // { ceiling: 12970, floor: 6990, reference: 9980 }
+chart.roundPrice(72340)                      // 72300, a 100-won step
+createMarketTheme(LIGHT_THEME, KR_COLORS)    // a theme with Korea's candles
+formatVolumeLoc(345_000_000, 'ko')           // '3.45억'`}</code></pre>
+<p>
   A market of your own is a <code>MarketConfig</code>: <code>priceStep</code>, or
   <code>priceSteps: [{'{'} from, step {'}'}]</code> for bands, <code>priceLimits</code>,
   <code>volumeUnit</code> (the lot), <code>sessions</code>, <code>timeZone</code> and

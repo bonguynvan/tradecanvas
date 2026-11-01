@@ -208,6 +208,24 @@ getCurrentSession(MARKET_HOSE.sessions, Date.now(), MARKET_HOSE.timeZone) // { n
 vn30fContracts(Date.now())                   // [{ symbol: 'VN30F2611', lastTradingDay: '2026-11-19', … }, …]
 vn30fLastTradingDay(2026, 12, (day) => holidays.has(day)) // 第 3 木曜日。祝日なら前倒し`}</code></pre>
 <p>
+  韓国（2026 年 9 月時点のルール）：<code>MARKET_KRX</code> はウォン建ての KOSPI・KOSDAQ 株
+  （価格帯に応じて 1〜1,000 ウォンの呼値。±30% で、値幅はまず基準価格の呼値に切り捨て、
+  KRX と同じ計算。寄付きと引けの板寄せ、ザラ場、20:00 までの After-Market）、
+  <code>MARKET_NXT</code> は Nextrade（呼値と値幅制限は KRX と同じ、独自の取引時間 8:00〜20:00）、
+  <code>MARKET_UPBIT_KRW</code> は Upbit の KRW マーケット（1,000 ウォンから 1 億分の 1 ウォン
+  までの呼値、値幅制限なし）です。上昇は赤、下落は青で描きます（<code>KR_COLORS</code>）。
+  <code>createMarketTheme(theme, KR_COLORS)</code> で任意のテーマをこのローソク足の色にでき、
+  <code>formatVolumeLoc(value, 'ko')</code> は出来高を 만・억・조 で短く表示します。
+</p>
+<pre><code>{`import { MARKET_KRX, KR_COLORS, createMarketTheme, LIGHT_THEME, formatVolumeLoc } from '@tradecanvas/chart'
+
+chart.setMarket(MARKET_KRX)                  // red up, blue down
+chart.setPriceLimits(9980)                   // the reference: yesterday's close
+chart.getPriceLimits()                       // { ceiling: 12970, floor: 6990, reference: 9980 }
+chart.roundPrice(72340)                      // 72300, a 100-won step
+createMarketTheme(LIGHT_THEME, KR_COLORS)    // a theme with Korea's candles
+formatVolumeLoc(345_000_000, 'ko')           // '3.45억'`}</code></pre>
+<p>
   独自のマーケットは <code>MarketConfig</code> です。<code>priceStep</code>（価格帯ごとなら
   <code>priceSteps: [{'{'} from, step {'}'}]</code>）、<code>priceLimits</code>、
   <code>volumeUnit</code>（売買単位）、<code>sessions</code>、<code>timeZone</code>、

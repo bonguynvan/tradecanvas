@@ -197,8 +197,9 @@ export { setLocale, getLocale, t, registerLocale, formatNumber, formatVND, forma
 // Re-export market presets
 export {
   MARKET_HOSE, MARKET_HOSE_ETF, MARKET_HNX, MARKET_UPCOM, MARKET_VN30F, MARKET_CRYPTO, MARKET_NYSE,
-  HOSE_SESSIONS, HNX_SESSIONS, UPCOM_SESSIONS, VN30F_SESSIONS,
-  VN_COLORS, createVNTheme, computePriceLimits, getCurrentSession,
+  MARKET_KRX, MARKET_NXT, MARKET_UPBIT_KRW,
+  HOSE_SESSIONS, HNX_SESSIONS, UPCOM_SESSIONS, VN30F_SESSIONS, KRX_SESSIONS, NXT_SESSIONS,
+  VN_COLORS, KR_COLORS, createVNTheme, createMarketTheme, computePriceLimits, getCurrentSession,
   priceStepAt, roundToPriceStep, scaleMarketPrices, vn30fLastTradingDay, vn30fContracts,
 } from '@tradecanvas/commons';
 export type { PriceStepBand, VN30FContract } from '@tradecanvas/commons';
@@ -209,8 +210,8 @@ export { IndicatorBase, IndicatorValueMap, DrawingBase, indicatorCategory, INDIC
 export { barIndexToX, xToBarIndex, priceToY, priceToYMapper, yToPrice, timeToX, xToTime, timestampToBarIndex } from '@tradecanvas/core';
 
 // Re-export realtime module
-export { StreamManager, BinanceAdapter, MockAdapter, TickAggregator, CurrentPriceLine, PaperExecutionAdapter, WebSocketAdapter, PollingAdapter, CoinbaseAdapter, BybitAdapter, KrakenAdapter, ResamplingAdapter, withResampling, servesTimeframe, KEPT_BUCKETS, TickBarBuilder, TickBarAdapter, withTickBars } from '@tradecanvas/core';
-export type { PaperExecutionOptions, WebSocketAdapterOptions, WsParseResult, PollingAdapterOptions, CoinbaseAdapterOptions, BybitAdapterOptions, KrakenAdapterOptions } from '@tradecanvas/core';
+export { StreamManager, BinanceAdapter, MockAdapter, TickAggregator, CurrentPriceLine, PaperExecutionAdapter, WebSocketAdapter, PollingAdapter, CoinbaseAdapter, BybitAdapter, KrakenAdapter, UpbitAdapter, ResamplingAdapter, withResampling, servesTimeframe, KEPT_BUCKETS, TickBarBuilder, TickBarAdapter, withTickBars } from '@tradecanvas/core';
+export type { PaperExecutionOptions, WebSocketAdapterOptions, WsParseResult, PollingAdapterOptions, CoinbaseAdapterOptions, BybitAdapterOptions, KrakenAdapterOptions, UpbitAdapterOptions } from '@tradecanvas/core';
 export { DEFAULT_RECONNECT, DEFAULT_STREAM_CONFIG } from '@tradecanvas/commons';
 
 // Re-export UI
