@@ -791,7 +791,7 @@ import { ChartWidget, WIDGET_UI_PRESETS } from '@tradecanvas/chart/widget';
 import { BinanceAdapter } from '@tradecanvas/chart';
 
 // 'print' (the default: paper and ink, kept to the golden ratio), 'studio' (rounded),
-// 'terminal' (dense, square) or 'capsule' (pills, floating bars)
+// 'terminal' (dense, square), 'capsule' (pills, floating bars) or 'desk' (Tahoma, a desktop platform's window)
 const widget = new ChartWidget(document.getElementById('chart')!, {
   adapter: new BinanceAdapter(),
   symbol: 'BTCUSDT',

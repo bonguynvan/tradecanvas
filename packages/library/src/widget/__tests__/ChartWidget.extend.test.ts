@@ -1213,9 +1213,25 @@ describe('ChartWidget look', () => {
     widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false, ui: { density: 'airy' } });
     expect(FakeChart.last.barLayouts.at(-1)).toBe('golden');
     expect(FakeChart.last.fonts.at(-1)).toEqual({ family: SANS_FONT_FAMILY });
-    widget.setUI('print');
+    widget.setUI('terminal');
     expect(FakeChart.last.barLayouts.at(-1)).toBe('classic');
-    expect(FakeChart.last.fonts.at(-1)).toBeNull();
+    expect(FakeChart.last.fonts.at(-1)).toEqual({ family: widget.getUI().font.mono });
+  });
+
+  it('draws the chart’s figures in the look’s figures face: a sans face by default, Tahoma in Desk, and back', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false });
+    const print = widget.getUI().font.mono;
+    expect(FakeChart.last.fonts.at(-1)).toEqual({ family: print });
+    widget.setUI('desk');
+    expect((FakeChart.last.fonts.at(-1) as { family: string }).family).toMatch(/^Tahoma,/);
+    widget.setUI('print');
+    expect(FakeChart.last.fonts.at(-1)).toEqual({ family: print });
+  });
+
+  it('leaves a chart face of yours in Print and Desk too', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false, chartOptions: { font: { family: 'Cascadia Mono' } } });
+    widget.setUI('desk');
+    expect(FakeChart.last.fonts).toEqual([]);
   });
 
   it('leaves the chart the bars and the font its options give, in any look', () => {
@@ -1231,8 +1247,8 @@ describe('ChartWidget look', () => {
     // The font as drawn: each setFont goes over the one before, null goes back to the theme's.
     const drawn = () => FakeChart.last.fonts.reduce<object>((font, next) => (next === null ? {} : { ...font, ...(next as object) }), yours);
     expect(drawn()).toEqual({ sizeSmall: 13, family: SANS_FONT_FAMILY });
-    widget.setUI('print');
-    expect(drawn()).toEqual({ sizeSmall: 13 });
+    widget.setUI('terminal');
+    expect(drawn()).toEqual({ sizeSmall: 13, family: widget.getUI().font.mono });
   });
 
   it('takes the look from its options', () => {

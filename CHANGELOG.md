@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Widget
+
+- **The chart's figures in the look's face, and a Desk look** (`@tradecanvas/chart`). ChartWidget's chart now draws its figures (axes, price tags, the crosshair's pills, the legend) in the look's figures face. In the default Print look that is a sans face whose digits are one width (Segoe UI on Windows, Helvetica Neue on Apple systems, Roboto on Android) rather than a monospaced one, so prices still line up in columns. The other looks' axes move from the theme's Cascadia Mono to the face their legend already used: JetBrains Mono's list in Studio and Capsule, IBM Plex Mono's in Terminal. A new look, `'desk'` (`ui: 'desk'` or `setUI('desk')`), is a desktop trading platform's window: Tahoma at 12 px for the labels and the figures alike, square corners and price tags, bars a step tighter, rules between groups and a tinted chosen button. `chartOptions.font.family` still wins over the look's face (`chartOptions: { font: { family: DEFAULT_FONT_FAMILY } }` brings the monospaced figures back); the plain `Chart` keeps its monospaced default. The styling page in all six languages and the skill describe it.
+
 ### Markets
 
 - **Volumes in Korean units on the chart** (`@tradecanvas/commons`, `@tradecanvas/core`, `@tradecanvas/chart`). With `numberLocale: 'ko-KR'`, the OHLCV legend, the crosshair tooltip and ChartWidget's data window write volumes in 만, 억 and 조 (`3.45억` rather than `345.00M`), as `formatVolumeLoc(value, 'ko')` does; other locales keep K, M and B. `usesKoreanUnits(locale)` tells which locales write them so. The API page in all six languages and the skill describe it.

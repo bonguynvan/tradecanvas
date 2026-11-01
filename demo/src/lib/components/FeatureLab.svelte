@@ -31,6 +31,7 @@
     { id: 'studio', name: 'Studio' },
     { id: 'terminal', name: 'Terminal' },
     { id: 'capsule', name: 'Capsule' },
+    { id: 'desk', name: 'Desk' },
   ];
   let look = $state<WidgetUIPreset>('print');
   /** The airy density on top of the look: golden bars, sans figures, spacious controls. */

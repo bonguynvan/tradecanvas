@@ -22,7 +22,7 @@
   <tbody>
     <tr><td><code>print</code>（默认）</td><td>
       纸与墨。近白或近黑的底色，常规内容一律用灰色，只在有含义的地方用颜色；细线、3 px 控件、5 px 菜单和 8 px 对话框；
-      标签大写；所有数字使用等宽字体，让价格按列对齐。选中的按钮是实心墨色，选中的工具是墨蓝色。
+      标签大写；所有数字（图表上的也一样）使用数字等宽的无衬线字体（Windows 上为 Segoe UI，Apple 系统上为 Helvetica Neue，Android 上为 Roboto），价格仍按列对齐。选中的按钮是实心墨色，选中的工具是墨蓝色。
     </td></tr>
     <tr><td><code>studio</code></td><td>
       控件圆角 7 px，菜单 11 px，对话框 16 px。分组之间用间距而非分隔线隔开，菜单浮在柔和的阴影之上，
@@ -34,6 +34,10 @@
     </td></tr>
     <tr><td><code>capsule</code></td><td>
       处处都是胶囊形，价格标签也不例外。工具栏和画线工具像小岛一样悬浮，菜单是磨砂玻璃效果，选中的按钮是实心胶囊。
+    </td></tr>
+    <tr><td><code>desk</code></td><td>
+      桌面交易平台的窗口风格：标签和图表上的数字都用 12 px 的 Tahoma，控件与价格标签均为直角，各栏紧凑一级（24 px 控件），
+      分组之间有分隔线，选中的按钮为浅色填充。没有 Tahoma 时依次使用 Verdana、Segoe UI 或 DejaVu Sans。
     </td></tr>
   </tbody>
 </table>
