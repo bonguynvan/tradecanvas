@@ -49,7 +49,7 @@ describe('exporting the chart’s data', () => {
 
   it('exports Ichimoku’s lagging span, the close 26 bars on', () => {
     chart.addIndicator('ichimoku');
-    const lagging = chart.getExportData().columns.find((c) => c.name === 'Ichimoku 9 26 52 Lagging Span');
+    const lagging = chart.getExportData().columns.find((c) => c.name === 'Ichimoku 9 26 52 26 Lagging Span');
     expect(lagging).toBeDefined();
     expect(lagging!.values[0]).toBe(bars[26].close);
     expect(lagging!.values[bars.length - 1]).toBeNull();

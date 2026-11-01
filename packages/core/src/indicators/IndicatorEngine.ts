@@ -2,6 +2,7 @@ import type {
   IndicatorPlugin,
   IndicatorConfig,
   IndicatorOutput,
+  IndicatorValue,
   IndicatorDescriptor,
   ResolvedIndicatorStyle,
   IndicatorStyleConfig,
@@ -829,8 +830,12 @@ export class IndicatorEngine {
       // stretch the price scale.
       const keys = shownKeys(instance);
       const end = Math.min(to, series.length - 1);
-      for (let idx = Math.max(0, from); idx <= end; idx++) {
-        const val = series[idx];
+      // Values drawn past the latest bar (Ichimoku's cloud ahead, `meta.ahead`)
+      // count while that bar is in range: they sit just right of it.
+      const ahead = to >= series.length - 1 ? instance.output.meta?.ahead : undefined;
+      const extra = Array.isArray(ahead) ? (ahead as (IndicatorValue | null)[]) : [];
+      for (let idx = Math.max(0, from); idx <= end + extra.length; idx++) {
+        const val = idx <= end ? series[idx] : extra[idx - end - 1];
         if (!val) continue;
         if (keys) {
           for (let k = 0; k < keys.length; k++) {

@@ -15,7 +15,9 @@ const CHIKOU_FALLBACK = TC_SERIES_COLORS[CHIKOU_COLOR];
  * Ichimoku Kinko Hyo: the conversion and base lines, the two lead lines with
  * the cloud between them, and the lagging span, each bar's close plotted the
  * displacement back (26 bars by default), so it reads against the price of
- * then.
+ * then. The lead lines go the displacement ahead: each bar's cloud is the one
+ * worked out that many bars before, and the last bars' cloud, ahead of the
+ * latest bar, is kept in `meta.ahead` and drawn past it.
  */
 export class IchimokuIndicator extends IndicatorBase {
   descriptor: IndicatorDescriptor = {
@@ -62,22 +64,26 @@ export class IchimokuIndicator extends IndicatorBase {
     const tenkanHL = rollingHL(tenkanPeriod);
     const kijunHL = rollingHL(kijunPeriod);
     const senkouBHL = rollingHL(senkouBPeriod);
+    const midpoint = (hl: { highs: Float64Array; lows: Float64Array }, period: number, i: number): number | undefined =>
+      i >= period - 1 ? (hl.highs[i] + hl.lows[i]) / 2 : undefined;
+    /** The lead lines as worked out on bar `i`, before they are moved ahead. */
+    const leadAt = (i: number): IndicatorValue => {
+      const tenkan = midpoint(tenkanHL, tenkanPeriod, i);
+      const kijun = midpoint(kijunHL, kijunPeriod, i);
+      const lead: IndicatorValue = {};
+      if (tenkan !== undefined && kijun !== undefined) lead.senkouA = (tenkan + kijun) / 2;
+      const senkouB = midpoint(senkouBHL, senkouBPeriod, i);
+      if (senkouB !== undefined) lead.senkouB = senkouB;
+      return lead;
+    };
 
     for (let i = 0; i < data.length; i++) {
       const val: IndicatorValue = {};
-
-      if (i >= tenkanPeriod - 1) {
-        val.tenkan = (tenkanHL.highs[i] + tenkanHL.lows[i]) / 2;
-      }
-      if (i >= kijunPeriod - 1) {
-        val.kijun = (kijunHL.highs[i] + kijunHL.lows[i]) / 2;
-      }
-      if (val.tenkan !== undefined && val.kijun !== undefined) {
-        val.senkouA = (val.tenkan + val.kijun) / 2;
-      }
-      if (i >= senkouBPeriod - 1) {
-        val.senkouB = (senkouBHL.highs[i] + senkouBHL.lows[i]) / 2;
-      }
+      const tenkan = midpoint(tenkanHL, tenkanPeriod, i);
+      if (tenkan !== undefined) val.tenkan = tenkan;
+      const kijun = midpoint(kijunHL, kijunPeriod, i);
+      if (kijun !== undefined) val.kijun = kijun;
+      if (i >= displacement) Object.assign(val, leadAt(i - displacement));
       // The lagging span: the close of the bar the displacement on, so the last bars have none yet.
       if (i + displacement < data.length) {
         val.chikou = data[i + displacement].close;
@@ -88,7 +94,12 @@ export class IchimokuIndicator extends IndicatorBase {
         series[i] = val;
       }
     }
-    return { values, series };
+    // The cloud of the last bars, for the bars ahead of the latest: `ahead[k]`
+    // goes on bar `aheadFrom + k`, past the last one even with fewer bars than the displacement.
+    const first = Math.max(0, data.length - displacement);
+    const ahead: IndicatorValue[] = [];
+    for (let i = first; i < data.length; i++) ahead.push(leadAt(i));
+    return { values, series, meta: { ahead, aheadFrom: first + displacement } };
   }
 
   render(ctx: CanvasRenderingContext2D, output: IndicatorOutput, viewport: ViewportState, style: ResolvedIndicatorStyle): void {
@@ -96,13 +107,28 @@ export class IchimokuIndicator extends IndicatorBase {
     if (!series) return;
     const { from, to } = viewport.visibleRange;
 
+    const ahead = output.meta?.ahead as readonly IndicatorValue[] | undefined;
+    const aheadFrom = (output.meta?.aheadFrom as number | undefined) ?? series.length;
+
     // Single pass to collect points using typed arrays
     const maxPts = to - from + 1;
+    const leadPts = maxPts + (ahead?.length ?? 0);
     const tenkanXs = new Float64Array(maxPts); const tenkanYs = new Float64Array(maxPts); let tenkanN = 0;
     const kijunXs = new Float64Array(maxPts); const kijunYs = new Float64Array(maxPts); let kijunN = 0;
-    const senkouAXs = new Float64Array(maxPts); const senkouAYs = new Float64Array(maxPts); let senkouAN = 0;
-    const senkouBXs = new Float64Array(maxPts); const senkouBYs = new Float64Array(maxPts); let senkouBN = 0;
+    const senkouAXs = new Float64Array(leadPts); const senkouAYs = new Float64Array(leadPts); let senkouAN = 0;
+    const senkouBXs = new Float64Array(leadPts); const senkouBYs = new Float64Array(leadPts); let senkouBN = 0;
     const chikouXs = new Float64Array(maxPts); const chikouYs = new Float64Array(maxPts); let chikouN = 0;
+    // The cloud, only where both lead lines are: Lead B starts later than Lead A.
+    const cloudXs = new Float64Array(leadPts); const cloudAYs = new Float64Array(leadPts); const cloudBYs = new Float64Array(leadPts); let cloudN = 0;
+    const addLead = (x: number, val: IndicatorValue): void => {
+      const a = val.senkouA;
+      const b = val.senkouB;
+      if (a !== undefined) { senkouAXs[senkouAN] = x; senkouAYs[senkouAN] = priceToY(a, viewport); senkouAN++; }
+      if (b !== undefined) { senkouBXs[senkouBN] = x; senkouBYs[senkouBN] = priceToY(b, viewport); senkouBN++; }
+      if (a !== undefined && b !== undefined) {
+        cloudXs[cloudN] = x; cloudAYs[cloudN] = senkouAYs[senkouAN - 1]; cloudBYs[cloudN] = senkouBYs[senkouBN - 1]; cloudN++;
+      }
+    };
 
     for (let i = from; i <= to && i < series.length; i++) {
       const val = series[i];
@@ -110,18 +136,26 @@ export class IchimokuIndicator extends IndicatorBase {
       const x = barIndexToX(i, viewport);
       if (val.tenkan !== undefined) { tenkanXs[tenkanN] = x; tenkanYs[tenkanN] = priceToY(val.tenkan, viewport); tenkanN++; }
       if (val.kijun !== undefined) { kijunXs[kijunN] = x; kijunYs[kijunN] = priceToY(val.kijun, viewport); kijunN++; }
-      if (val.senkouA !== undefined) { senkouAXs[senkouAN] = x; senkouAYs[senkouAN] = priceToY(val.senkouA, viewport); senkouAN++; }
-      if (val.senkouB !== undefined) { senkouBXs[senkouBN] = x; senkouBYs[senkouBN] = priceToY(val.senkouB, viewport); senkouBN++; }
+      addLead(x, val);
       if (val.chikou !== undefined) { chikouXs[chikouN] = x; chikouYs[chikouN] = priceToY(val.chikou, viewport); chikouN++; }
     }
 
-    // Cloud fill
-    if (senkouAN > 1 && senkouBN > 1) {
-      const n = Math.min(senkouAN, senkouBN);
+    // The cloud ahead of the latest bar, as far as the plot's right edge.
+    if (ahead) {
+      const left = viewport.chartRect.x - viewport.barWidth - viewport.barSpacing;
+      const right = viewport.chartRect.x + viewport.chartRect.width + viewport.barWidth + viewport.barSpacing;
+      for (let k = 0; k < ahead.length; k++) {
+        const x = barIndexToX(aheadFrom + k, viewport);
+        if (x > right) break;
+        if (x >= left) addLead(x, ahead[k]);
+      }
+    }
+
+    if (cloudN > 1) {
       ctx.beginPath();
-      ctx.moveTo(senkouAXs[0], senkouAYs[0]);
-      for (let i = 1; i < n; i++) ctx.lineTo(senkouAXs[i], senkouAYs[i]);
-      for (let i = n - 1; i >= 0; i--) ctx.lineTo(senkouBXs[i], senkouBYs[i]);
+      ctx.moveTo(cloudXs[0], cloudAYs[0]);
+      for (let i = 1; i < cloudN; i++) ctx.lineTo(cloudXs[i], cloudAYs[i]);
+      for (let i = cloudN - 1; i >= 0; i--) ctx.lineTo(cloudXs[i], cloudBYs[i]);
       ctx.closePath();
       ctx.fillStyle = withAlpha(style.colors[2] ?? '#1fa874', 0.15);
       ctx.fill();

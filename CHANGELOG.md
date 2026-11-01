@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+### Fixes
+
+- **Ichimoku's cloud runs ahead of the price** (`@tradecanvas/core`, `@tradecanvas/chart`). Lead A and Lead B were drawn on the bar they were worked out on, so the cloud sat under the price instead of the displacement (26 bars by default) ahead of it. Each bar's lead lines are now the ones worked out that many bars before, and the cloud of the last bars is drawn past the latest bar, into the space to its right; `meta.ahead` in the indicator's output holds those values, from bar `meta.aheadFrom`, and the price scale makes room for them. Lead A and Lead B at a bar, in the legend, the data window and an export, are now the values drawn there. Where Lead B starts later than Lead A, the cloud is filled only where both are. The label names all four inputs (`Ichimoku 9 26 52 26`), the displacement among them, so two instances read apart.
+
+## 1.56.0 (2026-11-01)
+
+React, Vue and Svelte components: 1.3.44.
+
 ### Legend
 
 - **The legend's rows sit on a see-through ground** (`@tradecanvas/core`, `@tradecanvas/chart`). Lines drawn across the top of the plot (moving averages, a VWAP) ran through the OHLCV legend's text and ChartWidget's indicator rows. Each row now sits on the chart's background at 72%, so the lines run behind the text and the bars still show. `setLegend({ ground: false })` leaves it out of the legend; the widget's rows take the CSS variable `--tcw-legend-ground` (`transparent` for none). The styling page in all six languages and the skill describe it.

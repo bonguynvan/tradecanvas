@@ -126,6 +126,13 @@ const SCENES = {
     return s;
   },
 
+  /** Ichimoku, its cloud the displacement ahead of the latest bar. */
+  async ichimoku() {
+    const s = await widget();
+    s.chart.addIndicator('ichimoku');
+    return s;
+  },
+
   /** Overlays and panes, their values tagged on the axes. */
   async indicators() {
     const s = await widget();
