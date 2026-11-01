@@ -1,5 +1,11 @@
 # @tradecanvas/mcp
 
+## 1.56.1
+
+### Patch Changes
+
+- @tradecanvas/commons@1.56.1
+
 ## 1.56.0
 
 ### Patch Changes
