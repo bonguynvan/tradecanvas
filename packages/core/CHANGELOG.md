@@ -1,5 +1,12 @@
 # @tradecanvas/core
 
+## 1.60.0
+
+### Patch Changes
+
+- Updated dependencies [db2340e]
+  - @tradecanvas/commons@1.60.0
+
 ## 1.59.3
 
 ### Patch Changes
