@@ -48,6 +48,8 @@ export class TradingManager {
   private buttons: LineButton[] = [];
   /** The tags that take their line when pressed, as last drawn. */
   private tagBoxes: TagBox[] = [];
+  /** How far short of the plot's right edge the tags end (`setTagInset`). */
+  private tagInset = 0;
   /** A press on a tag drags its line: how far the line sits from the pointer. */
   private grabOffset = 0;
   private fills: FillEvent[] = [];
@@ -395,6 +397,14 @@ export class TradingManager {
     return true;
   }
 
+  /**
+   * Keep the tags `px` short of the plot's right edge, clear of a control
+   * the chart draws there (the "+" by the price axis); 0 for none.
+   */
+  setTagInset(px: number): void {
+    this.tagInset = Math.max(0, px);
+  }
+
   // --- Render ---
 
   render(ctx: CanvasRenderingContext2D, viewport: ViewportState, theme: Theme): void {
@@ -439,7 +449,7 @@ export class TradingManager {
       ...this.positionRenderer.tags(this.positions, this.currentPrice, viewport, config, drag),
       ...this.orderRenderer.tags(this.orders, viewport, config, drag),
     ];
-    drawTags(ctx, tags, viewport, theme, this.buttons, this.tagBoxes);
+    drawTags(ctx, tags, viewport, theme, this.buttons, this.tagBoxes, this.tagInset);
   }
 
   /**

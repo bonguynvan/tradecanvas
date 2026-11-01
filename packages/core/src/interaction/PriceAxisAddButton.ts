@@ -4,6 +4,9 @@ import type { Point, Theme, ViewportState } from '@tradecanvas/commons';
 const SIZE = 16;
 const GAP = 3;
 
+/** The strip the button takes at the plot's right edge: what the trading tags keep clear of. */
+export const PRICE_AXIS_ADD_STRIP = SIZE + GAP;
+
 /**
  * A "+" at the right edge of the price pane, level with the crosshair: a
  * click on it offers what to do at that price (an alert, an order, a line).

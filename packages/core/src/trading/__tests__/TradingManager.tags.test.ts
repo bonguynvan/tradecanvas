@@ -36,6 +36,18 @@ describe('the tags on the trading lines', () => {
     expect(cancel.x + cancel.size).toBe(1000 - TAG_GAP);
   });
 
+  it('keep clear of a strip by the price axis, where the chart puts its "+"', () => {
+    manager.setTagInset(19);
+    const { buttons } = draw();
+    for (const type of ['closePosition', 'cancelOrder']) {
+      const b = button(buttons, type);
+      expect(b.x + b.size).toBe(1000 - 19 - TAG_GAP);
+    }
+    manager.setTagInset(0);
+    const close = button(draw().buttons, 'closePosition');
+    expect(close.x + close.size).toBe(1000 - TAG_GAP);
+  });
+
   it('give a position its quantity, its side and its profit, then reverse and close', () => {
     const { texts, buttons } = draw();
     expect(texts).toEqual(expect.arrayContaining(['2', 'Long', '+20.00']));

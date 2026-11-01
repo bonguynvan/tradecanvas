@@ -139,7 +139,8 @@ chart.setTradingConfig({ fillMarks: false })  // no marks`}</code></pre>
   （<code>'plot'</code>、<code>'pane'</code>、<code>'priceAxis'</code> 或
   <code>'timeAxis'</code>）以及该处的价格和时间。启用
   <code>features.priceAxisAddButton</code> 后，价格轴上会有一个“+”跟随十字光标移动；
-  点击它会发出带有该价格的 <code>priceAxisAdd</code> 事件。
+  点击它会发出带有该价格的 <code>priceAxisAdd</code> 事件。它显示时，订单和持仓的标签会停在它的左侧，
+  因此它不会挡住标签上的按钮。
 </p>
 <pre><code>{`const chart = new Chart(host, { features: { priceAxisAddButton: true } })
 

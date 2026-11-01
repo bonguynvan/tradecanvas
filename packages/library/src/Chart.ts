@@ -117,6 +117,7 @@ import {
   timeToX,
   priceToY,
   PriceAxisAddButton,
+  PRICE_AXIS_ADD_STRIP,
   findDominantSwing,
   readAlertOptions,
 } from '@tradecanvas/core';
@@ -978,8 +979,7 @@ export class Chart {
       this.eventBus.emit('chartContextMenu', this.contextAt(area, pos));
       return true;
     });
-    // The "+" rides on the crosshair: without one it is neither drawn nor pressed.
-    this.priceAxisAddButton.setEnabled(this.features.priceAxisAddButton && this.features.crosshair);
+    this.applyPriceAxisAdd();
     this.interactionManager.setPriceAxisAddButton(this.priceAxisAddButton, (pos) => {
       const price = yToPrice(pos.y, this.viewport.getState());
       if (Number.isFinite(price)) this.eventBus.emit('priceAxisAdd', { price, x: pos.x, y: pos.y });
@@ -2745,10 +2745,21 @@ export class Chart {
     return payload;
   }
 
+  /**
+   * The "+" rides on the crosshair: without one it is neither drawn nor
+   * pressed. While it shows, the trading tags end left of its strip, so it
+   * never covers their buttons.
+   */
+  private applyPriceAxisAdd(): void {
+    const on = this.features.priceAxisAddButton && this.features.crosshair;
+    this.priceAxisAddButton.setEnabled(on);
+    this.tradingManager.setTagInset(on ? PRICE_AXIS_ADD_STRIP : 0);
+  }
+
   /** Show or hide the "+" by the price axis (`features.priceAxisAddButton`). */
   setPriceAxisAddButton(visible: boolean): void {
     this.features.priceAxisAddButton = visible;
-    this.priceAxisAddButton.setEnabled(visible && this.features.crosshair);
+    this.applyPriceAxisAdd();
     this.engine.requestRender(LayerType.Overlay);
   }
 
@@ -6143,6 +6154,10 @@ export class Chart {
     // Apply immediate side-effects
     if (patch.crosshair === false || patch.crosshairTooltip === false) {
       this.crosshairTooltip.hide();
+    }
+    if (patch.priceAxisAddButton !== undefined || patch.crosshair !== undefined) {
+      this.applyPriceAxisAdd();
+      this.engine.requestRender(LayerType.Overlay);
     }
     if (patch.grid !== undefined) {
       this.engine.requestRender(LayerType.Background);

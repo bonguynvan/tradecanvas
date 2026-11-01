@@ -139,6 +139,7 @@ chart.setTradingConfig({ fillMarks: false })  // no marks`}</code></pre>
   <code>'priceAxis'</code>、<code>'timeAxis'</code> のいずれか）と、その位置の価格と時刻を含む
   <code>chartContextMenu</code> が発行されます。<code>features.priceAxisAddButton</code> を有効にすると、
   価格軸上にクロスヘアを追って動く「+」が表示され、押すとその価格を含む <code>priceAxisAdd</code> が発行されます。
+  「+」が表示されている間、注文とポジションのタグはその左で終わるため、タグのボタンが隠れることはありません。
 </p>
 <pre><code>{`const chart = new Chart(host, { features: { priceAxisAddButton: true } })
 
