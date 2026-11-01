@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 1.57.0 (2026-11-01)
+
+React, Vue and Svelte components: 1.3.46.
+
 ### Markets
 
 - **Korea's markets** (`@tradecanvas/commons`, `@tradecanvas/core`, `@tradecanvas/chart`). `MARKET_KRX` for KOSPI and KOSDAQ shares in won: steps of 1 to 1,000 won by price band, limits of ±30% with the move rounded down to the reference's step first, as KRX rounds it (the new `priceLimits.roundMove`), the opening and closing calls, the regular session and the After-Market until 20:00 (`KRX_SESSIONS`, as of September 2026). `MARKET_NXT` for Nextrade, with KRX's steps and limits and its own sessions (`NXT_SESSIONS`). `MARKET_UPBIT_KRW` for Upbit's KRW market, steps from 1,000 won down to a hundred-millionth of a won. They draw rising prices red and falling ones blue (`KR_COLORS`); `createMarketTheme(theme, colors)` gives any theme a market's candles, and `createVNTheme` is now made with it. `formatVolumeLoc(value, 'ko')` shortens volumes in 만, 억 and 조. The API page in all six languages and the skill describe them.
