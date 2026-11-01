@@ -334,12 +334,17 @@ chart.setLegend({
   position: 'top-right',
   fontSize: 11,
   fontFamily: 'Inter, sans-serif',                   // null: the theme's font
+  ground: false,                                     // 行の下の半透明の下地なし
 })
 
 // The widget: no legend, and no switch for it in its Settings
 new ChartWidget(host, { chartOptions: { features: { legend: false } } })
 // Off to start, for the user to turn on in Settings
 new ChartWidget(host).setSettings({ legendVisible: false })`}</code></pre>
+
+<p>
+  凡例の各行はチャートの背景色の半透明の下地に載るので、プロット上部を横切るライン（移動平均、VWAP）は文字を横切らず、その後ろを通ります。<code>ground: false</code> で下地をなくします。その下に並ぶウィジェットのインジケーター行も同じ下地で、CSS 変数 <code>--tcw-legend-ground</code> です（<code>transparent</code> でなし）。
+</p>
 
 <h2 id="volume">価格スケールと出来高の帯</h2>
 <p>

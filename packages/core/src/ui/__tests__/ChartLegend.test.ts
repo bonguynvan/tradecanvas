@@ -25,6 +25,7 @@ function mockCtx() {
       save: vi.fn(),
       restore: vi.fn(),
       fillText: vi.fn((text: string) => fillTextCalls.push(text)),
+      fillRect: vi.fn(),
       measureText: vi.fn(() => ({ width: 10 })),
       beginPath: vi.fn(),
       moveTo: vi.fn(),

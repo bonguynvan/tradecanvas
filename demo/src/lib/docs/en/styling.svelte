@@ -338,12 +338,17 @@ chart.setLegend({
   position: 'top-right',
   fontSize: 11,
   fontFamily: 'Inter, sans-serif',                   // null: the theme's font
+  ground: false,                                     // no see-through ground under the rows
 })
 
 // The widget: no legend, and no switch for it in its Settings
 new ChartWidget(host, { chartOptions: { features: { legend: false } } })
 // Off to start, for the user to turn on in Settings
 new ChartWidget(host).setSettings({ legendVisible: false })`}</code></pre>
+
+<p>
+  Each row of the legend sits on a see-through ground of the chart's background, so lines drawn across the top of the plot (moving averages, a VWAP) run behind its text rather than through it. <code>ground: false</code> leaves it out. The widget's indicator rows under it have the same ground, the CSS variable <code>--tcw-legend-ground</code> (<code>transparent</code> for none).
+</p>
 
 <h2 id="volume">The price scale and the volume band</h2>
 <p>

@@ -332,12 +332,17 @@ chart.setLegend({
   position: 'top-right',
   fontSize: 11,
   fontFamily: 'Inter, sans-serif',                   // null: the theme's font
+  ground: false,                                     // 행 아래 반투명 바탕 없음
 })
 
 // The widget: no legend, and no switch for it in its Settings
 new ChartWidget(host, { chartOptions: { features: { legend: false } } })
 // Off to start, for the user to turn on in Settings
 new ChartWidget(host).setSettings({ legendVisible: false })`}</code></pre>
+
+<p>
+  범례의 각 행은 차트 배경색의 반투명 바탕 위에 있어서, 플롯 위쪽을 가로지르는 선(이동평균, VWAP)이 글자를 가로지르지 않고 그 뒤로 지나갑니다. <code>ground: false</code>로 바탕을 없앱니다. 그 아래 위젯의 지표 행도 같은 바탕이며, CSS 변수 <code>--tcw-legend-ground</code>입니다(<code>transparent</code>이면 없음).
+</p>
 
 <h2 id="volume">가격 눈금과 거래량 띠</h2>
 <p>

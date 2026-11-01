@@ -342,12 +342,17 @@ chart.setLegend({
   position: 'top-right',
   fontSize: 11,
   fontFamily: 'Inter, sans-serif',                   // null: the theme's font
+  ground: false,                                     // sin fondo translúcido bajo las filas
 })
 
 // The widget: no legend, and no switch for it in its Settings
 new ChartWidget(host, { chartOptions: { features: { legend: false } } })
 // Off to start, for the user to turn on in Settings
 new ChartWidget(host).setSettings({ legendVisible: false })`}</code></pre>
+
+<p>
+  Cada fila de la leyenda se apoya en un fondo translúcido del color del gráfico, así que las líneas que cruzan la parte de arriba del gráfico (medias móviles, un VWAP) pasan por detrás del texto en vez de atravesarlo. <code>ground: false</code> lo quita. Las filas de indicadores del widget, debajo, tienen el mismo fondo, la variable CSS <code>--tcw-legend-ground</code> (<code>transparent</code> para ninguno).
+</p>
 
 <h2 id="volume">La escala de precio y la banda del volumen</h2>
 <p>

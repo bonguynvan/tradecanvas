@@ -334,12 +334,17 @@ chart.setLegend({
   position: 'top-right',
   fontSize: 11,
   fontFamily: 'Inter, sans-serif',                   // null: the theme's font
+  ground: false,                                     // bỏ nền mờ dưới các dòng
 })
 
 // The widget: no legend, and no switch for it in its Settings
 new ChartWidget(host, { chartOptions: { features: { legend: false } } })
 // Off to start, for the user to turn on in Settings
 new ChartWidget(host).setSettings({ legendVisible: false })`}</code></pre>
+
+<p>
+  Mỗi dòng của legend nằm trên một nền mờ cùng màu nền chart, nên các đường kẻ ngang phần trên vùng giá (đường trung bình, VWAP) chạy phía sau chữ thay vì cắt ngang chữ. <code>ground: false</code> bỏ nền này. Các dòng chỉ báo của widget bên dưới cũng có nền đó, là biến CSS <code>--tcw-legend-ground</code> (đặt <code>transparent</code> để bỏ).
+</p>
 
 <h2 id="volume">Thang giá và dải volume</h2>
 <p>

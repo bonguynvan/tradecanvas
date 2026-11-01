@@ -2,9 +2,21 @@
 
 ## Unreleased
 
+### Legend
+
+- **The legend's rows sit on a see-through ground** (`@tradecanvas/core`, `@tradecanvas/chart`). Lines drawn across the top of the plot (moving averages, a VWAP) ran through the OHLCV legend's text and ChartWidget's indicator rows. Each row now sits on the chart's background at 72%, so the lines run behind the text and the bars still show. `setLegend({ ground: false })` leaves it out of the legend; the widget's rows take the CSS variable `--tcw-legend-ground` (`transparent` for none). The styling page in all six languages and the skill describe it.
+
+## 1.55.0 (2026-11-01)
+
+React, Vue and Svelte components: 1.3.43.
+
 ### Price axis
 
 - **Tags on the price axis no longer cover one another** (`@tradecanvas/commons`, `@tradecanvas/core`, `@tradecanvas/chart`). With the price near an order or a position, its tag covered theirs, and so did the bid, ask, high and low tags and the day's limits. They are now placed together: the last price's tag stays on its line, and the others move up or down only as far as they must. It is on by default (`features.alignAxisLabels`); `setAxisLabelsAligned(false)` keeps each tag on its line, as before, and `isAxisLabelsAligned()` reads it back. ChartWidget lists it as "No overlapping labels" in the price scale menu and in Settings (the new string `settings.alignAxisLabels`, in all 30 languages). `alignAxisTags` in `@tradecanvas/core` places the tags. The chart types page in all six languages and the skill describe it.
+
+## 1.54.4 (2026-10-30)
+
+React, Vue and Svelte components: 1.3.42.
 
 ### Fixes
 

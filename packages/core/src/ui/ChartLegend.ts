@@ -11,6 +11,11 @@ export interface LegendConfig {
   fontSize: number;
   /** The legend's font family; null follows the theme's (`theme.font.family`). */
   fontFamily: string | null;
+  /**
+   * A see-through ground of the chart's background under each row, so lines
+   * drawn across the top of the plot run behind the text, not through it.
+   */
+  ground: boolean;
 }
 
 export const DEFAULT_LEGEND_CONFIG: LegendConfig = {
@@ -22,6 +27,7 @@ export const DEFAULT_LEGEND_CONFIG: LegendConfig = {
   position: 'top-left',
   fontSize: 12,
   fontFamily: null,
+  ground: true,
 };
 
 /**
@@ -271,6 +277,7 @@ export class ChartLegend {
         const total = line.reduce((sum, c) => sum + c.labelWidth + c.width + gap, -gap);
         widest = Math.max(widest, total);
         let cx = isLeft ? x : x - total;
+        this.drawGround(ctx, theme, cx, y, total, fs);
         ctx.textAlign = 'left';
         for (const cell of line) {
           ctx.font = cell.font;
@@ -293,8 +300,11 @@ export class ChartLegend {
       ctx.font = `${fs}px ${family}`;
       ctx.fillStyle = label;
       const vol = bar.volume >= 1e6 ? `${(bar.volume / 1e6).toFixed(2)}M` : bar.volume >= 1e3 ? `${(bar.volume / 1e3).toFixed(2)}K` : bar.volume.toFixed(0);
+      const volWidth = ctx.measureText(`Vol ${vol}`).width;
+      this.drawGround(ctx, theme, isLeft ? x : x - volWidth, y, volWidth, fs);
+      ctx.fillStyle = label;
       ctx.fillText(`Vol ${vol}`, x, y);
-      widest = Math.max(widest, ctx.measureText(`Vol ${vol}`).width);
+      widest = Math.max(widest, volWidth);
       y += fs + 2;
     }
     this.drawnHeight = isLeft ? y - chartRect.y : null;
@@ -311,6 +321,7 @@ export class ChartLegend {
       });
       const total = entries.reduce((sum, e) => sum + e.width + gap, -gap);
       let ix = isLeft ? x : x - total;
+      this.drawGround(ctx, theme, ix, y, total, fs);
       ctx.textAlign = 'left';
       for (const { entry, color, width } of entries) {
         ctx.fillStyle = color;
@@ -318,6 +329,16 @@ export class ChartLegend {
         ix += width + gap;
       }
     }
+  }
+
+  /** The ground under a row of text `width` wide from `left`, its top at `y` (with `ground` on). */
+  private drawGround(ctx: CanvasRenderingContext2D, theme: Theme, left: number, y: number, width: number, fontSize: number): void {
+    if (!this.config.ground || width <= 0) return;
+    ctx.save();
+    ctx.globalAlpha = GROUND_ALPHA;
+    ctx.fillStyle = theme.background;
+    ctx.fillRect(left - GROUND_PAD_X, y - GROUND_PAD_Y, width + 2 * GROUND_PAD_X, fontSize + LINE_GAP);
+    ctx.restore();
   }
 }
 
@@ -336,6 +357,10 @@ const LEGEND_TOP = 6;
 const LEGEND_INSET = 8;
 /** Space under each of its lines (px). */
 const LINE_GAP = 3;
+/** The rows' ground: enough to read the text over a line, thin enough to still see the bars under it. */
+const GROUND_ALPHA = 0.72;
+const GROUND_PAD_X = 3;
+const GROUND_PAD_Y = 1;
 
 /** `cells` in lines no wider than `width`, a cell that can't fit on a line of its own going on one anyway. */
 function wrapCells(cells: readonly LegendCell[], gap: number, width: number): LegendCell[][] {
