@@ -1,5 +1,17 @@
 # @tradecanvas/core
 
+## 1.57.0
+
+### Minor Changes
+
+- aab008d: Korea's markets: `MARKET_KRX` (KOSPI and KOSDAQ: steps by price band in won, ±30% limits rounded as KRX rounds them, the calls, the regular session and the After-Market), `MARKET_NXT` (Nextrade) and `MARKET_UPBIT_KRW` (Upbit's KRW market), with `KRX_SESSIONS`, `NXT_SESSIONS` and `KR_COLORS` (red up, blue down). `UpbitAdapter` streams Upbit's candles and loads its history. `createMarketTheme(theme, colors)` gives any theme a market's candle colours; `priceLimits.roundMove` rounds the move before the limits, as KRX does; `formatVolumeLoc(value, 'ko')` shortens volumes in 만, 억 and 조.
+
+### Patch Changes
+
+- ab1e1f4: Ichimoku's cloud runs the displacement (26 bars by default) ahead of the price, as it should, and is drawn past the latest bar; the values ahead of it are in the output's `meta.ahead`, from bar `meta.aheadFrom`, and the price scale makes room for them. Lead A and Lead B at a bar, in the legend, the data window and an export, are now the values drawn there, worked out the displacement before. The cloud is filled only where both lead lines are, and the label names all four inputs, the displacement among them.
+- Updated dependencies [aab008d]
+  - @tradecanvas/commons@1.57.0
+
 ## 1.56.0
 
 ### Minor Changes
