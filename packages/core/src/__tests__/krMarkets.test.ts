@@ -86,6 +86,7 @@ describe('Korean colours and numbers', () => {
     expect(formatVolumeLoc(12_345, 'ko')).toBe('1.23만');
     expect(formatVolumeLoc(99_999_999, 'ko-KR')).toBe('1.00억');
     expect(formatVolumeLoc(345_000_000, 'ko')).toBe('3.45억');
+    expect(formatVolumeLoc(Infinity, 'ko')).toBe('Infinity');
     expect(formatVolumeLoc(1_817_700_000_000, 'ko')).toBe('1.82조');
   });
 });

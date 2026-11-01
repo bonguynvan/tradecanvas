@@ -216,6 +216,7 @@ vn30fLastTradingDay(2026, 12, (day) => holidays.has(day)) // 셋째 목요일, �
   가격제한 없음). 상승은 빨간색, 하락은 파란색으로 그립니다(<code>KR_COLORS</code>).
   <code>createMarketTheme(theme, KR_COLORS)</code>로 어떤 테마든 이 캔들 색을 쓸 수 있고,
   <code>formatVolumeLoc(value, 'ko')</code>는 거래량을 만·억·조 단위로 줄여 표시합니다.
+  <code>numberLocale: 'ko-KR'</code>로 설정하면 차트도 범례, 크로스헤어 툴팁, ChartWidget의 데이터 창에서 거래량을 이 단위로 표시합니다.
 </p>
 <pre><code>{`import { MARKET_KRX, KR_COLORS, createMarketTheme, LIGHT_THEME, formatVolumeLoc } from '@tradecanvas/chart'
 

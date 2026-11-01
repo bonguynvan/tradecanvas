@@ -80,12 +80,12 @@ import { RANGE_PRESETS, ResamplingAdapter, SYMBOL_INDICATOR_IDS, indicatorCatego
 import { WidgetBracketBar } from './WidgetBracketBar.js';
 import { AlertNotifier } from './AlertNotifier.js';
 import { WidgetDepthLadder } from './WidgetDepthLadder.js';
-import { WidgetDataWindow, PERCENT_DECIMALS as DATA_WINDOW_PERCENT_DECIMALS, type DataWindowModel } from './WidgetDataWindow.js';
+import { WidgetDataWindow, shortVolume, PERCENT_DECIMALS as DATA_WINDOW_PERCENT_DECIMALS, type DataWindowModel } from './WidgetDataWindow.js';
 import type { DepthData } from '@tradecanvas/commons';
 import { encodeWidgetState, decodeWidgetState, readShareHash, buildShareUrl } from './widgetShareState.js';
 import { DragDropImporter, resampleOHLCV, inferTimeframeMs } from '../io/index.js';
 import type { CrosshairMovePayload, CrosshairSyncPayload, DataSeries, ReplayStepPayload, ReplayStepsLoadPayload } from '@tradecanvas/commons';
-import { timeframeToMs, zonedDateFormatter } from '@tradecanvas/commons';
+import { formatVolumeLoc, timeframeToMs, usesKoreanUnits, zonedDateFormatter } from '@tradecanvas/commons';
 import { replayStepChoices, resolveReplayStep } from '../replay/replayStep.js';
 import type { CommandItem } from './WidgetCommandPalette.js';
 import { resolveMessages, createTranslator, fill, type MessageKey, type Translator } from './i18n.js';
@@ -1115,6 +1115,7 @@ export class ChartWidget {
     this.dataWindow = new WidgetDataWindow(this.root, {
       formatPrice: (p) => this.formatAlertPrice(p),
       formatPercent: (pct) => this.formatNumber(pct, DATA_WINDOW_PERCENT_DECIMALS),
+      formatVolume: (volume) => this.formatVolume(volume),
       onClose: () => this.closePanelByHand('dataWindow'),
     }, this.t);
     this.chart.on('crosshairMove', (e) => {
@@ -4183,6 +4184,12 @@ export class ChartWidget {
    */
   private formatMoney(value: number): string {
     return this.formatNumber(value, Math.min(stepDecimals(this.chart.getPriceStep()), MONEY_DECIMALS));
+  }
+
+  /** A volume as the data window shows it: in 만, 억 and 조 when the chart's numbers are Korean. */
+  private formatVolume(volume: number): string {
+    const locale = this.settingsState.numberLocale || 'en-US';
+    return usesKoreanUnits(locale) ? formatVolumeLoc(volume, locale) : shortVolume(volume);
   }
 
   /** A plain figure to `decimals`, in the number locale. */

@@ -148,6 +148,23 @@ describe('ChartWidget panels’ prices', () => {
     expect(change).toBe('+18,70 (+0,02%)');
   });
 
+  it('write the data window’s volume in 만, 억 and 조 when the number locale is Korean', () => {
+    widget.destroy();
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false, chartOptions: { numberLocale: 'ko-KR' } });
+    FakeChart.last.bars = [{ ...BAR, volume: 345_000_000 }];
+    widget.openPanel('dataWindow');
+    hoverBar();
+    expect(host.querySelector('.tcw-datawin')?.textContent).toContain('3.45억');
+  });
+
+  it('switch the data window’s volume to 만, 억 and 조 when the settings turn the numbers Korean', () => {
+    FakeChart.last.bars = [{ ...BAR, volume: 345_000_000 }];
+    widget.setSettings({ numberLocale: 'ko-KR' });
+    widget.openPanel('dataWindow');
+    hoverBar();
+    expect(host.querySelector('.tcw-datawin')?.textContent).toContain('3.45억');
+  });
+
   it('take a symbol’s decimals of null as none set, as the chart does', () => {
     widget.destroy();
     widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false, chartOptions: { numberLocale: 'de-DE' } });

@@ -224,7 +224,8 @@ vn30fLastTradingDay(2026, 12, (day) => holidays.has(day)) // thứ Năm thứ ba
   xuống một phần trăm triệu won, không có biên độ). Giá tăng màu đỏ, giảm màu xanh dương
   (<code>KR_COLORS</code>); <code>createMarketTheme(theme, KR_COLORS)</code> cho theme bất
   kỳ màu nến đó, và <code>formatVolumeLoc(value, 'ko')</code> rút gọn khối lượng theo 만, 억
-  và 조.
+  và 조. Với <code>numberLocale: 'ko-KR'</code>, chart cũng ghi khối lượng như vậy: ở legend,
+  tooltip theo crosshair và Data Window của ChartWidget.
 </p>
 <pre><code>{`import { MARKET_KRX, KR_COLORS, createMarketTheme, LIGHT_THEME, formatVolumeLoc } from '@tradecanvas/chart'
 

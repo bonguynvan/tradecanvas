@@ -1,5 +1,5 @@
 import type { OHLCBar, Theme, Point, TimeFormatter, TimeZoneSetting } from '@tradecanvas/commons';
-import { autoPricePrecision, barDateZone, formatPrice, normalizeBarTime, timeParts, isDateOnly, zonedDateFormatter, type BarTimeUnit } from '@tradecanvas/commons';
+import { autoPricePrecision, barDateZone, formatPrice, formatVolumeLoc, usesKoreanUnits, normalizeBarTime, timeParts, isDateOnly, zonedDateFormatter, type BarTimeUnit } from '@tradecanvas/commons';
 import { isolateFontFeatures } from '../engine/CanvasLayer.js';
 
 /** Gap between the pointer and the card. */
@@ -62,8 +62,13 @@ export function formatTooltipTime(
   return `${date} · ${clock}`;
 }
 
+const KO_TEN_THOUSAND = 1e4;
+
 function formatVolume(v: number, locale: string): string {
   if (!Number.isFinite(v)) return '—';
+  // Korean counts in 만 and up; below that the figure itself, a coin's fractions kept.
+  if (usesKoreanUnits(locale) && v >= KO_TEN_THOUSAND) return formatVolumeLoc(v, locale);
+  if (usesKoreanUnits(locale)) return formatPrice(v, v % 1 === 0 ? 0 : 2, locale);
   if (v >= 1e9) return `${formatPrice(v / 1e9, 2, locale)}B`;
   if (v >= 1e6) return `${formatPrice(v / 1e6, 2, locale)}M`;
   if (v >= 1e3) return `${formatPrice(v / 1e3, 1, locale)}K`;

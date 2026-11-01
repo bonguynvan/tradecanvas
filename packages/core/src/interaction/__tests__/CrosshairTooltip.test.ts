@@ -169,3 +169,22 @@ describe('formatTooltipTime', () => {
     expect(formatTooltipTime(Date.UTC(2026, 9, 23), 'America/New_York', 3_600_000)).toBe('Oct 22 · 20:00');
   });
 });
+
+describe('CrosshairTooltip — volume in Korean units', () => {
+  it('writes the volume in 만, 억 and 조 when the numbers are Korean', () => {
+    tip.setLocale('ko-KR');
+    tip.show({ x: 100, y: 100 }, bar({ volume: 345_000_000 }), DARK_THEME, box);
+    expect(text()).toContain('3.45억');
+    expect(text()).not.toContain('345.00M');
+  });
+
+  it('keeps a coin’s fractional volume under 1만 in Korean, and a dash for none', () => {
+    tip.setLocale('ko-KR');
+    tip.show({ x: 100, y: 100 }, bar({ volume: 12.5 }), DARK_THEME, box);
+    expect(text()).toContain('12.50');
+    tip.show({ x: 100, y: 100 }, bar({ volume: 9_999 }), DARK_THEME, box);
+    expect(text()).toContain('9,999');
+    tip.show({ x: 100, y: 100 }, bar({ volume: NaN }), DARK_THEME, box);
+    expect(text()).toContain('—');
+  });
+});
