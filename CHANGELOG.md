@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 1.56.0 (2026-11-01)
+
+React, Vue and Svelte components: 1.3.44.
+
 ### Legend
 
 - **The legend's rows sit on a see-through ground** (`@tradecanvas/core`, `@tradecanvas/chart`). Lines drawn across the top of the plot (moving averages, a VWAP) ran through the OHLCV legend's text and ChartWidget's indicator rows. Each row now sits on the chart's background at 72%, so the lines run behind the text and the bars still show. `setLegend({ ground: false })` leaves it out of the legend; the widget's rows take the CSS variable `--tcw-legend-ground` (`transparent` for none). The styling page in all six languages and the skill describe it.
