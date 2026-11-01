@@ -1,5 +1,7 @@
 # @tradecanvas/commons
 
+## 1.59.3
+
 ## 1.59.2
 
 ### Patch Changes
