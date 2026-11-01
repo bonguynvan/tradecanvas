@@ -152,6 +152,10 @@ chart.removeIndicators(chart.getActiveIndicators().map((i) => i.instanceId)); //
 - Panel indicators may share a pane: `addIndicator('stochastic', {}, 'bottom', { pane: rsi })`.
 - The legend shows each line's latest value; tag it on the axis too with
   `features.indicatorValueLabels: true` (off by default).
+- Price axis tags that would cover one another (last price, bid/ask, high/low,
+  limits, orders, positions) are moved apart, the last price's staying on its line
+  (`features.alignAxisLabels`, on by default; `chart.setAxisLabelsAligned(false)`
+  keeps each tag on its line).
 - `vwap` starts again each trading day (`anchor: 'session'`, from midnight in the
   exchange's zone: the symbol's `timeZone`, else the market's, else UTC). Pass
   `{ anchor: 'week' }` or `{ anchor: 'month' }` on daily bars, where a session's

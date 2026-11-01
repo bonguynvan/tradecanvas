@@ -281,6 +281,7 @@ export const PL_MESSAGES: WidgetMessages = {
   'settings.priorWeek': 'Poprzedni tydzień (PWH/PWL)',
   'settings.ohlcLegend': 'Legenda OHLC',
   'settings.indicatorValues': 'Wartości wskaźników na skali',
+  'settings.alignAxisLabels': 'Etykiety bez nakładania',
   'settings.barCountdown': 'Odliczanie do zamknięcia świecy',
   'settings.crosshairMode': 'Celownik',
   'settings.crosshair.magnet': 'Magnes',

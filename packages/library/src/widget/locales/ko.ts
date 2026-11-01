@@ -281,6 +281,7 @@ export const KO_MESSAGES: WidgetMessages = {
   'settings.priorWeek': '전주 (PWH/PWL)',
   'settings.ohlcLegend': 'OHLC 범례',
   'settings.indicatorValues': '눈금에 지표 값 표시',
+  'settings.alignAxisLabels': '라벨 겹치지 않기',
   'settings.barCountdown': '봉 카운트다운',
   'settings.crosshairMode': '십자선',
   'settings.crosshair.magnet': '자석',

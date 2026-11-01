@@ -224,7 +224,7 @@ const FEATURE_SWITCHES = [
  * sender's app turned off is the app's, not the sender's choice, and would
  * turn it off in an app that has it on.
  */
-const FEATURE_SET_SETTINGS: readonly (keyof ChartSettingsState)[] = ['legendVisible', 'volumeVisible', 'barCountdown', 'indicatorValueLabels'];
+const FEATURE_SET_SETTINGS: readonly (keyof ChartSettingsState)[] = ['legendVisible', 'volumeVisible', 'barCountdown', 'indicatorValueLabels', 'alignAxisLabels'];
 /** The settings' style keys that aren't colours: they go with the user from theme to theme. */
 const LOOK_KEYS: readonly ChartStyleKey[] = SETTINGS_LOOK_KEYS.filter((key) => CHART_STYLE_KEYS[key] !== 'color');
 
@@ -581,6 +581,7 @@ export class ChartWidget {
       volumeVisible: features.volume !== false,
       barCountdown: features.barCountdown !== false,
       indicatorValueLabels: features.indicatorValueLabels === true,
+      alignAxisLabels: features.alignAxisLabels !== false,
     };
     this.settingsState = { ...this.settingsDefaults };
 
@@ -2481,7 +2482,7 @@ export class ChartWidget {
       canLog: features.logScale !== false,
       inverted: this.chart.isInvertScale(),
       leftScale: s.leftPriceScale,
-      labels: { values: s.indicatorValueLabels, ...(features.barCountdown !== false ? { countdown: s.barCountdown } : {}) },
+      labels: { values: s.indicatorValueLabels, aligned: s.alignAxisLabels, ...(features.barCountdown !== false ? { countdown: s.barCountdown } : {}) },
       lines: { highLow: s.highLowLines, lastPrice: this.chart.getStyleValue('lastPrice.visible') !== false },
       timezone: { current: s.timezone, options: this.timezoneChoices() },
       keys: Object.fromEntries(CHART_MENU_KEYS
@@ -2899,6 +2900,9 @@ export class ChartWidget {
         break;
       case 'indicatorValueLabels':
         this.changeSettings({ indicatorValueLabels: !s.indicatorValueLabels });
+        break;
+      case 'alignAxisLabels':
+        this.changeSettings({ alignAxisLabels: !s.alignAxisLabels });
         break;
       case 'barCountdown':
         this.changeSettings({ barCountdown: !s.barCountdown });
@@ -4764,6 +4768,7 @@ export class ChartWidget {
       legendVisible: chart.isLegendVisible?.(),
       barCountdown: chart.isBarCountdownVisible?.(),
       indicatorValueLabels: chart.isIndicatorValueLabelsVisible?.(),
+      alignAxisLabels: chart.isAxisLabelsAligned?.(),
       leftPriceScale: chart.isLeftPriceScaleVisible?.(),
       volumeProfileVisible: chart.isVolumeProfileVisible?.(),
       marketProfileVisible: chart.isMarketProfileVisible?.(),
@@ -5595,6 +5600,7 @@ export class ChartWidget {
     if (patch.legendVisible !== undefined) this.chart.setLegend({ visible: patch.legendVisible });
     if (patch.barCountdown !== undefined) this.chart.setBarCountdownVisible(patch.barCountdown);
     if (patch.indicatorValueLabels !== undefined) this.chart.setIndicatorValueLabelsVisible(patch.indicatorValueLabels);
+    if (patch.alignAxisLabels !== undefined) this.chart.setAxisLabelsAligned(patch.alignAxisLabels);
     if (patch.crosshairMode !== undefined) this.chart.setCrosshairMode(patch.crosshairMode);
     if (patch.autoScale !== undefined) this.chart.setAutoScale(patch.autoScale);
     if (patch.invertScale !== undefined) this.chart.setInvertScale(patch.invertScale);

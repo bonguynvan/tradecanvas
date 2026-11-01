@@ -291,6 +291,7 @@ export const EN_MESSAGES = {
   'settings.priorWeek': 'Prior week (PWH/PWL)',
   'settings.ohlcLegend': 'OHLC legend',
   'settings.indicatorValues': 'Indicator values on scale',
+  'settings.alignAxisLabels': 'No overlapping labels',
   'settings.barCountdown': 'Bar countdown',
   'settings.crosshairMode': 'Crosshair',
   'settings.crosshair.magnet': 'Magnet',

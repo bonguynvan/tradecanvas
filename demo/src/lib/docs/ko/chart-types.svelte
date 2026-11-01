@@ -131,3 +131,10 @@ new Chart(host, { chartTypeOptions: { renko: { boxSize: 50 } } })`}</code></pre>
 chart.setHighLowLines(true)          // or new Chart(host, { highLowLines: true })
 chart.setBidAsk({ bid: 64210.5, ask: 64211 })
 chart.setBidAsk(null)`}</code></pre>
+<p>
+  가격 축에서 서로 겹치는 태그(현재가, 매수·매도 호가, 고가·저가, 상하한가, 주문과 포지션)는 떨어뜨려
+  놓습니다. 현재가 태그는 자기 선에 그대로 있고, 위쪽 태그는 위로, 아래쪽 태그는 아래로 필요한 만큼만
+  움직입니다. ChartWidget의 가격 축 메뉴와 설정에서는 "라벨 겹치지 않기"입니다. 끄면 모든 태그가 자기 선에
+  남습니다:
+</p>
+<pre><code>{`chart.setAxisLabelsAligned(false)   // 또는 new Chart(host, { features: { alignAxisLabels: false } })`}</code></pre>

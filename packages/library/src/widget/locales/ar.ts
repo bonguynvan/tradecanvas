@@ -289,6 +289,7 @@ export const AR_MESSAGES: WidgetMessages = {
   'settings.priorWeek': 'الأسبوع السابق (PWH/PWL)',
   'settings.ohlcLegend': 'وسيلة إيضاح OHLC',
   'settings.indicatorValues': 'قيم المؤشرات على المقياس',
+  'settings.alignAxisLabels': 'بدون تداخل التسميات',
   'settings.barCountdown': 'العد التنازلي للشمعة',
   'settings.crosshairMode': 'الخطوط المتقاطعة',
   'settings.crosshair.magnet': 'مغناطيس',

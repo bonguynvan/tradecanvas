@@ -26,9 +26,10 @@ describe('ChartWidget.getSettings reads back every setting set on getChart()', (
     chart.setLegend({ visible: false });
     chart.setBarCountdownVisible(false);
     chart.setIndicatorValueLabelsVisible(true);
+    chart.setAxisLabelsAligned(false);
     chart.setLeftPriceScaleVisible(true);
     expect(widget.getSettings()).toMatchObject({
-      volumeVisible: false, legendVisible: false, barCountdown: false, indicatorValueLabels: true, leftPriceScale: true,
+      volumeVisible: false, legendVisible: false, barCountdown: false, indicatorValueLabels: true, alignAxisLabels: false, leftPriceScale: true,
     });
   });
 

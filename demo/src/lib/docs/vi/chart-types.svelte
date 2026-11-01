@@ -140,3 +140,10 @@ new Chart(host, { chartTypeOptions: { renko: { boxSize: 50 } } })`}</code></pre>
 chart.setHighLowLines(true)          // or new Chart(host, { highLowLines: true })
 chart.setBidAsk({ bid: 64210.5, ask: 64211 })
 chart.setBidAsk(null)`}</code></pre>
+<p>
+  Các tag trên trục giá đè lên nhau (giá cuối, bid và ask, high và low, giá trần sàn, lệnh và
+  vị thế) được dàn ra: tag giá cuối đứng yên trên đường của nó, các tag phía trên đẩy lên,
+  phía dưới đẩy xuống, mỗi tag chỉ dời vừa đủ. Trong menu trục giá và Settings của ChartWidget,
+  mục này tên là "Nhãn không chồng nhau". Tắt đi để mỗi tag nằm đúng trên đường của nó:
+</p>
+<pre><code>{`chart.setAxisLabelsAligned(false)   // hoặc new Chart(host, { features: { alignAxisLabels: false } })`}</code></pre>

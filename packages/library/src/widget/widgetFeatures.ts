@@ -111,6 +111,7 @@ export const CHART_MENU_FEATURES: Readonly<Record<ChartMenuAction, readonly Widg
   indexedScale: ['menu.chart.scale'],
   labels: ['menu.chart.scale'],
   indicatorValueLabels: ['menu.chart.scale'],
+  alignAxisLabels: ['menu.chart.scale'],
   barCountdown: ['menu.chart.scale'],
   lines: ['menu.chart.scale'],
   highLowLines: ['menu.chart.scale'],

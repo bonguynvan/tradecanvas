@@ -139,3 +139,11 @@ new Chart(host, { chartTypeOptions: { renko: { boxSize: 50 } } })`}</code></pre>
 chart.setHighLowLines(true)          // or new Chart(host, { highLowLines: true })
 chart.setBidAsk({ bid: 64210.5, ask: 64211 })
 chart.setBidAsk(null)`}</code></pre>
+<p>
+  Tags on the price axis that would cover one another (the last price, the bid and ask, the
+  high and low, the day's limits, orders and positions) are moved apart: the last price's
+  stays on its line, those above it go up and those below it down, each only as far as it
+  must. ChartWidget's price scale menu and Settings call it "No overlapping labels". Turn it
+  off to keep every tag on its line:
+</p>
+<pre><code>{`chart.setAxisLabelsAligned(false)   // or new Chart(host, { features: { alignAxisLabels: false } })`}</code></pre>

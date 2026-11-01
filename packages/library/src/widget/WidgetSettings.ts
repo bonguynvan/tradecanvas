@@ -399,6 +399,7 @@ export class WidgetSettings {
       toggleRow(this.t('settings.invertScale'), s.invertScale, (v) => this.patch({ invertScale: v })),
       toggleRow(this.t('settings.leftScale'), s.leftPriceScale, (v) => this.patch({ leftPriceScale: v })),
       toggleRow(this.t('settings.indicatorValues'), s.indicatorValueLabels, (v) => this.patch({ indicatorValueLabels: v })),
+      toggleRow(this.t('settings.alignAxisLabels'), s.alignAxisLabels, (v) => this.patch({ alignAxisLabels: v })),
       ...(this.available.barCountdown !== false
         ? [toggleRow(this.t('settings.barCountdown'), s.barCountdown, (v) => this.patch({ barCountdown: v }))]
         : []),

@@ -140,3 +140,11 @@ new Chart(host, { chartTypeOptions: { renko: { boxSize: 50 } } })`}</code></pre>
 chart.setHighLowLines(true)          // or new Chart(host, { highLowLines: true })
 chart.setBidAsk({ bid: 64210.5, ask: 64211 })
 chart.setBidAsk(null)`}</code></pre>
+<p>
+  Las etiquetas del eje de precios que se taparían entre sí (el último precio, el bid y el ask, el
+  máximo y el mínimo, los límites del día, órdenes y posiciones) se separan: la del último precio
+  queda en su línea, las de encima suben y las de debajo bajan, cada una solo lo necesario. En el
+  menú del eje de precios y los ajustes de ChartWidget se llama "Etiquetas sin superposición".
+  Desactívalo para dejar cada etiqueta en su línea:
+</p>
+<pre><code>{`chart.setAxisLabelsAligned(false)   // o new Chart(host, { features: { alignAxisLabels: false } })`}</code></pre>

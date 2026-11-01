@@ -281,6 +281,7 @@ export const DE_MESSAGES: WidgetMessages = {
   'settings.priorWeek': 'Vorwoche (PWH/PWL)',
   'settings.ohlcLegend': 'OHLC-Legende',
   'settings.indicatorValues': 'Indikatorwerte auf der Skala',
+  'settings.alignAxisLabels': 'Keine überlappenden Beschriftungen',
   'settings.barCountdown': 'Countdown der Kerze',
   'settings.crosshairMode': 'Fadenkreuz',
   'settings.crosshair.magnet': 'Magnet',

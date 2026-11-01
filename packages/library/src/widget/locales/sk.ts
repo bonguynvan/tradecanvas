@@ -281,6 +281,7 @@ export const SK_MESSAGES: WidgetMessages = {
   'settings.priorWeek': 'Predchádzajúci týždeň (PWH/PWL)',
   'settings.ohlcLegend': 'Legenda OHLC',
   'settings.indicatorValues': 'Hodnoty indikátorov na osi',
+  'settings.alignAxisLabels': 'Bez prekrývajúcich sa popiskov',
   'settings.barCountdown': 'Odpočet do zatvorenia sviečky',
   'settings.crosshairMode': 'Nitkový kríž',
   'settings.crosshair.magnet': 'Magnet',
