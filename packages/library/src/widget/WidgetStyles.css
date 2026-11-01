@@ -999,6 +999,9 @@
   line-height: 19px;
   white-space: nowrap;
   color: var(--tcw-text-dim);
+  /* A see-through ground, as under the price legend's rows: lines across the plot run
+     behind the text. A host sets --tcw-legend-ground (transparent: none). */
+  background: var(--tcw-legend-ground, color-mix(in srgb, var(--tcw-bg) 72%, transparent));
   pointer-events: auto;
   cursor: default;
   /* A narrow pane: the values shrink first, then the row is clipped. */

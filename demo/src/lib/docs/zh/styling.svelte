@@ -321,12 +321,17 @@ chart.setLegend({
   position: 'top-right',
   fontSize: 11,
   fontFamily: 'Inter, sans-serif',                   // null: the theme's font
+  ground: false,                                     // 行下不加半透明底色
 })
 
 // The widget: no legend, and no switch for it in its Settings
 new ChartWidget(host, { chartOptions: { features: { legend: false } } })
 // Off to start, for the user to turn on in Settings
 new ChartWidget(host).setSettings({ legendVisible: false })`}</code></pre>
+
+<p>
+  图例的每一行都垫着一层与图表背景同色的半透明底色，所以横穿绘图区上方的线（均线、VWAP）从文字后面经过，而不是穿过文字。<code>ground: false</code> 去掉这层底色。组件下方的指标行也有同样的底色，即 CSS 变量 <code>--tcw-legend-ground</code>（设为 <code>transparent</code> 则没有）。
+</p>
 
 <h2 id="volume">价格坐标与成交量带</h2>
 <p>

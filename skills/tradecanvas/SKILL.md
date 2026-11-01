@@ -312,6 +312,8 @@ or `chart.setFont(...)` (`null`: the theme's); the legend takes the face at its 
 and in the widget its face and size come from `ui.font`. Bars: `barLayout: 'golden'` (body φ⁻¹ of the slot, more bars on
 screen) or `'classic'` (the default, a 2 px gap); `chart.setBarLayout`. The widget's
 `ui: { density: 'airy' }` turns on golden bars, sans figures and spacious controls together.
+The legend's rows sit on a see-through ground (`setLegend({ ground: false })`
+leaves it out; the widget's indicator rows: the CSS variable `--tcw-legend-ground`).
 
 One part of the look apart from the theme: `chart.applyOverrides({ 'grid.vertical.visible': false,
 'series.candlestick.upColor': '#26a69a' })` (every key and its kind in
