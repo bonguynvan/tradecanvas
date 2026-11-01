@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 1.59.2 (2026-11-01)
+
+React, Vue and Svelte components: 1.3.50.
+
 ### Fixes
 
 - **The legend no longer covers a trading tag near the top of the plot** (`@tradecanvas/core`, `@tradecanvas/chart`). On a narrow chart, a take-profit, stop or order whose tag sat under the OHLCV legend had its text and buttons drawn over by the legend's rows. The legend is now drawn around the tags, so a tag under it stays whole and its buttons can be seen and pressed; the part of the legend under the tag is left out. `TradingManager.tagRects()` tells where the tags were drawn.
