@@ -4,14 +4,15 @@ const LABEL_NUMBERS = 3;
 /**
  * Indicators whose label shows more than that, because every one of the
  * lengths named tells two instances apart: Stochastic RSI's %D smoothing is
- * its fourth, and without it a 3/3 and a 3/5 read the same.
+ * its fourth, and without it a 3/3 and a 3/5 read the same; Ichimoku's
+ * displacement is its fourth.
  */
-const LABEL_NUMBERS_BY_ID: Readonly<Record<string, number>> = { stochrsi: 4 };
+const LABEL_NUMBERS_BY_ID: Readonly<Record<string, number>> = { stochrsi: 4, ichimoku: 4 };
 
 /**
  * "EMA 20", "BB 20 2", "MACD 12 26 9": the short name (`shortName`, else the
  * id in capitals) plus up to three numeric parameters (four for Stochastic
- * RSI), in the indicator's own order, so two instances of the same indicator
+ * RSI and Ichimoku), in the indicator's own order, so two instances of the same indicator
  * can be told apart.
  */
 export function indicatorChipLabel(

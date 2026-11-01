@@ -538,6 +538,11 @@ describe('indicatorChipLabel', () => {
     expect(indicatorChipLabel('x', { a: 1, b: 2, c: 3, d: 4 })).toBe('X 1 2 3');
   });
 
+  it('lists all four of Ichimoku’s lengths, its displacement among them', () => {
+    const defaults = { tenkan: 9, kijun: 26, senkou: 52, displacement: 26 };
+    expect(indicatorChipLabel('ichimoku', { ...defaults, displacement: 30 }, defaults, 'Ichimoku')).toBe('Ichimoku 9 26 52 30');
+  });
+
   it('lists all four of Stochastic RSI’s lengths, so its k and d read apart', () => {
     const defaults = { rsiPeriod: 14, stochPeriod: 14, k: 3, d: 3, source: 'close' };
     expect(indicatorChipLabel('stochrsi', defaults, defaults, 'Stoch RSI')).toBe('Stoch RSI 14 14 3 3');

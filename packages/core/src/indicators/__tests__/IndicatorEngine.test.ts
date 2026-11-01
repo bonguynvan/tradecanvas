@@ -74,6 +74,19 @@ describe('IndicatorEngine.getOverlayPriceRange', () => {
     expect(range).toEqual({ min: 5, max: 15 });
   });
 
+  it('counts the values drawn past the latest bar while it is in range', () => {
+    const engine = new IndicatorEngine();
+    const plugin = fakeOverlayPlugin('ahead');
+    engine.register({
+      ...plugin,
+      calculate: (data, config) => ({ ...plugin.calculate(data, config), meta: { ahead: [{ value: 500 }, { value: -3 }] } }),
+    });
+    engine.addIndicator('ahead', {}, bars(30));
+
+    expect(engine.getOverlayPriceRange(20, 29)).toEqual({ min: -3, max: 500 });
+    expect(engine.getOverlayPriceRange(10, 20)).toEqual({ min: 10, max: 20 });
+  });
+
   it('returns null when nothing is registered', () => {
     const engine = new IndicatorEngine();
     expect(engine.getOverlayPriceRange(0, 10)).toBeNull();
