@@ -1,6 +1,6 @@
 export type MarketType = 'crypto' | 'stock' | 'forex' | 'futures';
 
-export type StockExchange = 'HOSE' | 'HNX' | 'UPCOM' | 'NYSE' | 'NASDAQ' | string;
+export type StockExchange = 'HOSE' | 'HNX' | 'UPCOM' | 'NYSE' | 'NASDAQ' | 'KRX' | 'NXT' | 'UPBIT' | string;
 
 /** From `from` up to the next band, prices move in steps of `step`. */
 export interface PriceStepBand {
@@ -36,6 +36,13 @@ export interface MarketConfig {
     floorPercent?: number;
     /** The price the limits are counted from, the last session's close; `chart.setPriceLimits(price)` sets it. */
     referencePrice?: number;
+    /**
+     * Round the move first (KRX): the percentage of the reference is rounded
+     * down to the reference's step, then each limit down to the step of the
+     * price it lands on. Without it, the ceiling rounds down and the floor up
+     * (the Vietnamese exchanges).
+     */
+    roundMove?: boolean;
   };
 
   /** The day's sessions, their times in the exchange's `timeZone`. */

@@ -206,6 +206,24 @@ getCurrentSession(MARKET_HOSE.sessions, Date.now(), MARKET_HOSE.timeZone) // { n
 vn30fContracts(Date.now())                   // [{ symbol: 'VN30F2611', lastTradingDay: '2026-11-19', … }, …]
 vn30fLastTradingDay(2026, 12, (day) => holidays.has(day)) // 第三个星期四，遇节假日则提前`}</code></pre>
 <p>
+  韩国（截至 2026 年 9 月的规则）：<code>MARKET_KRX</code> 用于以韩元计价的 KOSPI 和 KOSDAQ
+  股票（按价格区间每档 1 至 1,000 韩元；±30%，涨跌幅度先按参考价的档位向下取整，与 KRX
+  的算法一致；开盘与收盘集合竞价、常规交易时段和延长至 20:00 的 After-Market），
+  <code>MARKET_NXT</code> 用于 Nextrade（价格档位和涨跌幅与 KRX 相同，自有交易时段 8:00 至
+  20:00），<code>MARKET_UPBIT_KRW</code> 用于 Upbit 的 KRW 市场（档位从 1,000 韩元到一亿分之一
+  韩元，无涨跌幅限制）。上涨为红色，下跌为蓝色（<code>KR_COLORS</code>）；
+  <code>createMarketTheme(theme, KR_COLORS)</code> 让任意主题使用这种 K 线配色，
+  <code>formatVolumeLoc(value, 'ko')</code> 以 만、억、조 缩写成交量。
+</p>
+<pre><code>{`import { MARKET_KRX, KR_COLORS, createMarketTheme, LIGHT_THEME, formatVolumeLoc } from '@tradecanvas/chart'
+
+chart.setMarket(MARKET_KRX)                  // red up, blue down
+chart.setPriceLimits(9980)                   // the reference: yesterday's close
+chart.getPriceLimits()                       // { ceiling: 12970, floor: 6990, reference: 9980 }
+chart.roundPrice(72340)                      // 72300, a 100-won step
+createMarketTheme(LIGHT_THEME, KR_COLORS)    // a theme with Korea's candles
+formatVolumeLoc(345_000_000, 'ko')           // '3.45억'`}</code></pre>
+<p>
   自定义市场是一个 <code>MarketConfig</code>：<code>priceStep</code>（按价格区间分档时用
   <code>priceSteps: [{'{'} from, step {'}'}]</code>）、<code>priceLimits</code>、
   <code>volumeUnit</code>（每手数量）、<code>sessions</code>、<code>timeZone</code> 和

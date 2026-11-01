@@ -14,12 +14,21 @@
 
 <h2>Adaptadores integrados</h2>
 <p>Todos gratuitos y sin clave de API; se conectan todos de la misma forma:</p>
-<pre><code>{`import { BinanceAdapter, CoinbaseAdapter, BybitAdapter, KrakenAdapter } from '@tradecanvas/chart'
+<pre><code>{`import { BinanceAdapter, CoinbaseAdapter, BybitAdapter, KrakenAdapter, UpbitAdapter } from '@tradecanvas/chart'
 
 chart.connect({ adapter: new BinanceAdapter(),  symbol: 'BTCUSDT', timeframe: '1m' })
 chart.connect({ adapter: new BybitAdapter(),    symbol: 'BTCUSDT', timeframe: '1m' })
 chart.connect({ adapter: new KrakenAdapter(),   symbol: 'BTC/USD', timeframe: '5m' })
-chart.connect({ adapter: new CoinbaseAdapter(), symbol: 'BTC-USD', timeframe: '15m' })`}</code></pre>
+chart.connect({ adapter: new CoinbaseAdapter(), symbol: 'BTC-USD', timeframe: '15m' })
+chart.connect({ adapter: new UpbitAdapter(),   symbol: 'KRW-BTC', timeframe: '1m' })`}</code></pre>
+<p>
+  <code>UpbitAdapter</code> usa los mercados de Upbit (<code>KRW-BTC</code>, <code>BTC-ETH</code>):
+  las velas llegan en streaming hasta 4 horas, el día sale del ticker y las barras más largas
+  se construyen con días. Su API REST da 200 velas por llamada y permite a un navegador una
+  llamada cada diez segundos, así que una página web pasa <code>restBase</code> apuntando a
+  un proxy propio. Los datos son de Upbit, bajo los términos de su Open API.
+  <code>MARKET_UPBIT_KRW</code> da los pasos y colores del mercado KRW.
+</p>
 
 <h2>Interfaz DataAdapter</h2>
 <pre><code>{`interface DataAdapter {

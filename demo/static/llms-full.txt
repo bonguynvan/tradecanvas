@@ -150,7 +150,8 @@ chart.updateLastBar({ ...chart.getData()[chart.getData().length - 1], close: las
 For a live feed, give the chart an adapter instead and it handles history,
 streaming and reconnects: `chart.connect({ adapter, symbol, timeframe })`.
 Built-in adapters: `BinanceAdapter`, `CoinbaseAdapter`, `BybitAdapter`,
-`KrakenAdapter`, `MockAdapter` (random data for demos), and two bases for your
+`KrakenAdapter`, `UpbitAdapter` (Korea; a browser needs its own proxy as
+`restBase`), `MockAdapter` (random data for demos), and two bases for your
 own feeds — `WebSocketAdapter` and `PollingAdapter` (see
 [references/recipes.md](references/recipes.md)).
 
@@ -766,6 +767,27 @@ console.log(chart.roundPrice(25.37), priceStepAt(9.5, MARKET_HOSE)); // 25.35 0.
 const [front] = vn30fContracts(Date.now());
 chart.setMarket(MARKET_VN30F);
 console.log(front.symbol, front.lastTradingDay);   // e.g. VN30F2611 2026-11-19
+```
+
+## A Korean stock, and Upbit
+
+KRX's rules (KOSPI, KOSDAQ; `MARKET_NXT` for Nextrade): steps by price band in
+won, ±30% limits rounded as KRX rounds them, red up and blue down. Upbit's
+REST API allows a browser one call in ten seconds: point `restBase` at a proxy.
+
+```ts
+import { Chart, MARKET_KRX, MARKET_UPBIT_KRW, UpbitAdapter, formatVolumeLoc } from '@tradecanvas/chart';
+
+const chart = new Chart(document.getElementById('chart')!, { numberLocale: 'ko-KR' });
+chart.setMarket(MARKET_KRX);
+chart.setTimeZone('exchange');                     // Asia/Seoul
+chart.setPriceLimits(9980);
+console.log(chart.getPriceLimits());               // { ceiling: 12970, floor: 6990, reference: 9980 }
+console.log(formatVolumeLoc(345_000_000, 'ko'));   // 3.45억
+
+// Upbit's KRW market, through a proxy of your own
+chart.setMarket(MARKET_UPBIT_KRW);
+chart.connect({ adapter: new UpbitAdapter({ restBase: '/upbit' }), symbol: 'KRW-BTC', timeframe: '1m' });
 ```
 
 ## Bars of a day in the exchange's time
@@ -1554,7 +1576,7 @@ packages/library/README.md
 
 - **18 chart types, 134 indicators, 69 drawing tools**, indicators on indicators, alerts on lines, undo and redo.
 - **Trading on the chart**: positions with live P&L, orders and stops you drag, a paper broker or your own.
-- **Live data** from Binance, Bybit, Coinbase and Kraken, or your own feed in about twenty lines.
+- **Live data** from Binance, Bybit, Coinbase, Kraken and Upbit, or your own feed in about twenty lines.
 - **Fast**: a million bars panned at 60 fps with WebGL; a live tick in about a microsecond.
 - **A workspace**: grids of charts, layouts, bar replay, backtesting.
 - **Yours to shape**: themes, four looks, 132 switches, plugins; 30 languages; phones and apps.

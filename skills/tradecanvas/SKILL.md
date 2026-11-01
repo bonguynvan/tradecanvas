@@ -114,7 +114,8 @@ chart.updateLastBar({ ...chart.getData()[chart.getData().length - 1], close: las
 For a live feed, give the chart an adapter instead and it handles history,
 streaming and reconnects: `chart.connect({ adapter, symbol, timeframe })`.
 Built-in adapters: `BinanceAdapter`, `CoinbaseAdapter`, `BybitAdapter`,
-`KrakenAdapter`, `MockAdapter` (random data for demos), and two bases for your
+`KrakenAdapter`, `UpbitAdapter` (Korea; a browser needs its own proxy as
+`restBase`), `MockAdapter` (random data for demos), and two bases for your
 own feeds — `WebSocketAdapter` and `PollingAdapter` (see
 [references/recipes.md](references/recipes.md)).
 

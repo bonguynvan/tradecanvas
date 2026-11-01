@@ -14,12 +14,21 @@
 
 <h2>組み込みアダプター</h2>
 <p>すべて無料で、API キーは不要です。どれも同じ方法で接続できます：</p>
-<pre><code>{`import { BinanceAdapter, CoinbaseAdapter, BybitAdapter, KrakenAdapter } from '@tradecanvas/chart'
+<pre><code>{`import { BinanceAdapter, CoinbaseAdapter, BybitAdapter, KrakenAdapter, UpbitAdapter } from '@tradecanvas/chart'
 
 chart.connect({ adapter: new BinanceAdapter(),  symbol: 'BTCUSDT', timeframe: '1m' })
 chart.connect({ adapter: new BybitAdapter(),    symbol: 'BTCUSDT', timeframe: '1m' })
 chart.connect({ adapter: new KrakenAdapter(),   symbol: 'BTC/USD', timeframe: '5m' })
-chart.connect({ adapter: new CoinbaseAdapter(), symbol: 'BTC-USD', timeframe: '15m' })`}</code></pre>
+chart.connect({ adapter: new CoinbaseAdapter(), symbol: 'BTC-USD', timeframe: '15m' })
+chart.connect({ adapter: new UpbitAdapter(),   symbol: 'KRW-BTC', timeframe: '1m' })`}</code></pre>
+<p>
+  <code>UpbitAdapter</code> は Upbit のマーケット（<code>KRW-BTC</code>、<code>BTC-ETH</code>）を
+  扱います。ローソク足は 4 時間足までストリーミングされ、日足はティッカーから、それより
+  長い足は日足から作ります。REST API は 1 回 200 本までで、ブラウザからは 10 秒に 1 回しか
+  呼べないため、Web ページでは自前のプロキシを <code>restBase</code> に指定します。データは
+  Upbit のもので、同社の Open API 規約が適用されます。<code>MARKET_UPBIT_KRW</code> で KRW
+  マーケットの呼値と配色を設定できます。
+</p>
 
 <h2>DataAdapter インターフェース</h2>
 <pre><code>{`interface DataAdapter {

@@ -217,6 +217,26 @@ getCurrentSession(MARKET_HOSE.sessions, Date.now(), MARKET_HOSE.timeZone) // { n
 vn30fContracts(Date.now())                   // [{ symbol: 'VN30F2611', lastTradingDay: '2026-11-19', … }, …]
 vn30fLastTradingDay(2026, 12, (day) => holidays.has(day)) // el tercer jueves, antes si es festivo`}</code></pre>
 <p>
+  Corea, según las reglas de septiembre de 2026: <code>MARKET_KRX</code> para acciones de
+  KOSPI y KOSDAQ en wones (pasos de 1 a 1.000 wones según el precio; ±30%, con el
+  movimiento redondeado primero hacia abajo al paso del precio de referencia, como lo
+  calcula KRX; las subastas de apertura y cierre, la sesión regular y el After-Market hasta
+  las 20:00), <code>MARKET_NXT</code> para Nextrade (los pasos y límites de KRX, con sus
+  propias sesiones de 8:00 a 20:00) y <code>MARKET_UPBIT_KRW</code> para el mercado KRW de
+  Upbit (pasos de 1.000 wones hasta una cienmillonésima de won, sin límites). Las subidas
+  se dibujan en rojo y las bajadas en azul (<code>KR_COLORS</code>);
+  <code>createMarketTheme(theme, KR_COLORS)</code> da esas velas a cualquier tema, y
+  <code>formatVolumeLoc(value, 'ko')</code> abrevia los volúmenes en 만, 억 y 조.
+</p>
+<pre><code>{`import { MARKET_KRX, KR_COLORS, createMarketTheme, LIGHT_THEME, formatVolumeLoc } from '@tradecanvas/chart'
+
+chart.setMarket(MARKET_KRX)                  // red up, blue down
+chart.setPriceLimits(9980)                   // the reference: yesterday's close
+chart.getPriceLimits()                       // { ceiling: 12970, floor: 6990, reference: 9980 }
+chart.roundPrice(72340)                      // 72300, a 100-won step
+createMarketTheme(LIGHT_THEME, KR_COLORS)    // a theme with Korea's candles
+formatVolumeLoc(345_000_000, 'ko')           // '3.45억'`}</code></pre>
+<p>
   Un mercado propio es un <code>MarketConfig</code>: <code>priceStep</code>, o
   <code>priceSteps: [{'{'} from, step {'}'}]</code> por tramos, <code>priceLimits</code>,
   <code>volumeUnit</code> (el lote), <code>sessions</code>, <code>timeZone</code> y

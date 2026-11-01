@@ -1,6 +1,13 @@
 export type { MarketType, StockExchange, MarketConfig, PriceStepBand, TradingSession, MarketColorScheme, PriceLimitInfo, VN30FContract } from './types.js';
 export {
   VN_COLORS,
+  KR_COLORS,
+  KRX_SESSIONS,
+  NXT_SESSIONS,
+  MARKET_KRX,
+  MARKET_NXT,
+  MARKET_UPBIT_KRW,
+  createMarketTheme,
   HOSE_SESSIONS,
   HNX_SESSIONS,
   UPCOM_SESSIONS,

@@ -3,7 +3,7 @@
 // quote on, a linked grid under the pointer, a replay, compares, Renko, the
 // day's limits. Picked by `?scene=` and `?theme=`; the market is made up from
 // a fixed seed and stops once loaded, so every run draws the same bars.
-import { MockAdapter, PaperExecutionAdapter, MARKET_HOSE } from '@tradecanvas/chart';
+import { MockAdapter, PaperExecutionAdapter, MARKET_HOSE, MARKET_KRX } from '@tradecanvas/chart';
 import { ChartWidget, ChartWidgetGrid } from '@tradecanvas/chart/widget';
 
 /** A small seeded generator in place of Math.random: the same bars every time. */
@@ -19,7 +19,7 @@ function seeded(seed) {
 }
 Math.random = seeded(20261101);
 
-const PRICES = { BTCUSDT: 64200, ETHUSDT: 3150, SOLUSDT: 148, BNBUSDT: 585, VNM: 25.35 };
+const PRICES = { BTCUSDT: 64200, ETHUSDT: 3150, SOLUSDT: 148, BNBUSDT: 585, VNM: 25.35, '005930': 72300 };
 const HISTORY = 300;
 
 const params = new URLSearchParams(location.search);
@@ -130,6 +130,18 @@ const SCENES = {
   async ichimoku() {
     const s = await widget();
     s.chart.addIndicator('ichimoku');
+    return s;
+  },
+
+  /** A Korean share: KRX's steps and limits, red up and blue down, an order near the reference. */
+  async krx() {
+    const s = await widget({ symbol: '005930', trading: true });
+    s.chart.setMarket(MARKET_KRX);
+    const last = lastClose(s.chart);
+    s.chart.setPriceLimits(last);
+    const broker = new PaperExecutionAdapter({ markPrice: last });
+    s.chart.connectExecution(broker);
+    await broker.placeOrder({ side: 'buy', type: 'limit', price: s.chart.roundPrice(last * 0.995), quantity: 10 });
     return s;
   },
 

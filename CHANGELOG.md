@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Markets
+
+- **Korea's markets** (`@tradecanvas/commons`, `@tradecanvas/core`, `@tradecanvas/chart`). `MARKET_KRX` for KOSPI and KOSDAQ shares in won: steps of 1 to 1,000 won by price band, limits of ±30% with the move rounded down to the reference's step first, as KRX rounds it (the new `priceLimits.roundMove`), the opening and closing calls, the regular session and the After-Market until 20:00 (`KRX_SESSIONS`, as of September 2026). `MARKET_NXT` for Nextrade, with KRX's steps and limits and its own sessions (`NXT_SESSIONS`). `MARKET_UPBIT_KRW` for Upbit's KRW market, steps from 1,000 won down to a hundred-millionth of a won. They draw rising prices red and falling ones blue (`KR_COLORS`); `createMarketTheme(theme, colors)` gives any theme a market's candles, and `createVNTheme` is now made with it. `formatVolumeLoc(value, 'ko')` shortens volumes in 만, 억 and 조. The API page in all six languages and the skill describe them.
+- **`UpbitAdapter`** (`@tradecanvas/core`, `@tradecanvas/chart`): Upbit's markets (`KRW-BTC`) with no API key. Candles stream up to four hours and the day comes from the ticker; history is 200 candles a call, before a time when scrolling back. Upbit lets a browser make one REST call in ten seconds, so a web page sets `restBase` to a proxy of its own. The realtime page in all six languages and the skill describe it.
+
 ### Fixes
 
 - **Ichimoku's cloud runs ahead of the price** (`@tradecanvas/core`, `@tradecanvas/chart`). Lead A and Lead B were drawn on the bar they were worked out on, so the cloud sat under the price instead of the displacement (26 bars by default) ahead of it. Each bar's lead lines are now the ones worked out that many bars before, and the cloud of the last bars is drawn past the latest bar, into the space to its right; `meta.ahead` in the indicator's output holds those values, from bar `meta.aheadFrom`, and the price scale makes room for them. Lead A and Lead B at a bar, in the legend, the data window and an export, are now the values drawn there. Where Lead B starts later than Lead A, the cloud is filled only where both are. The label names all four inputs (`Ichimoku 9 26 52 26`), the displacement among them, so two instances read apart.
