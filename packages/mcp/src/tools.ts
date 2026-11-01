@@ -72,6 +72,16 @@ function withKnownValues(catalog: Catalog, option: OptionEntry): OptionEntry & {
   return option;
 }
 
+/** The options one level in under `target` (`ChartWidget.chartOptions`, `Chart.features`), named by their path. */
+function nestedOptions(catalog: Catalog, target: Target): OptionEntry[] {
+  return Object.entries(catalog.nested)
+    .filter(([path]) => path.startsWith(`${target}.`))
+    .flatMap(([path, options]) => {
+      const prefix = path.slice(target.length + 1);
+      return options.map((o) => ({ ...withKnownValues(catalog, o), name: `${prefix}.${o.name}` }));
+    });
+}
+
 export const TOOLS: readonly ToolDefinition[] = [
   {
     name: 'list_indicators',
@@ -157,7 +167,9 @@ export const TOOLS: readonly ToolDefinition[] = [
       const options = catalog.options[target]
         .filter((o) => matches(query, o.name, o.doc ?? ''))
         .map((o) => withKnownValues(catalog, o));
-      return ok({ target, count: options.length, options });
+      // Words to find look one level in too (the widget's chartOptions, the chart's features), by path.
+      const nested = query ? nestedOptions(catalog, target).filter((o) => matches(query, o.name, o.doc ?? '')) : [];
+      return ok({ target, count: options.length + nested.length, options: [...options, ...nested] });
     },
   },
   {

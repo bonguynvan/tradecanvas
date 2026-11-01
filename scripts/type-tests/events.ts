@@ -11,3 +11,19 @@ chart.on('legendResize', (e) => {
   const top: number = e.payload.top;
   return [bottom, top];
 });
+
+// Trading, menus and tool events carry typed payloads too.
+chart.on('executionFill', (e) => e.payload.price);
+chart.on('ordersChange', (e) => e.payload.orders.map((o) => o.id));
+chart.on('positionsChange', (e) => e.payload.positions.map((p) => p.id));
+chart.on('positionReverse', (e) => e.payload.positionId.length);
+chart.on('chartContextMenu', (e) => [e.payload.area, e.payload.price]);
+chart.on('priceAxisAdd', (e) => e.payload.price + e.payload.y);
+chart.on('drawingUpdate', (e) => e.payload.id.length);
+chart.on('drawingDoubleClick', (e) => e.payload.id.length);
+chart.on('drawingContextMenu', (e) => [e.payload.id, e.payload.x, e.payload.y]);
+chart.on('toolModeChange', (e) => [e.payload.eraser, e.payload.zoomArea]);
+chart.on('ordersChange', (e) => {
+  // @ts-expect-error The payload holds the orders, not a single order.
+  return e.payload.id;
+});

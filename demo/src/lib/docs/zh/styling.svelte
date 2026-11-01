@@ -6,7 +6,7 @@
 
 <svelte:head>
   <title>样式 — TradeCanvas 文档</title>
-  <meta name="description" content="用 token 描述组件的外观：圆角、尺寸、字体、边框、阴影和工具栏。四套遵循黄金比例的预设——Print、Studio、Terminal、Capsule——以及在其基础上定制的你自己的主题。" />
+  <meta name="description" content="用 token 描述组件的外观：圆角、尺寸、字体、边框、阴影和工具栏。五套预设——Print、Studio、Terminal、Capsule、Desk——以及在其基础上定制的你自己的主题。" />
 </svelte:head>
 
 <h1>组件样式</h1>
@@ -155,9 +155,9 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
 
 <h2>字体</h2>
 <p>
-  组件不会加载任何字体：它只写出字体名称，由浏览器按列表依次回退。Print 指定每个系统都有的字体（Segoe UI、
-  San Francisco、Roboto），数字则用 Cascadia Mono、SF Mono、Menlo 或 Consolas，因此无需加载任何字体。
-  Studio 指定 Manrope，其次是 Inter；
+  组件不会加载任何字体：它只写出字体名称，由浏览器按列表依次回退。Print 指定每个系统都有的字体：文字用 Segoe UI、
+  San Francisco 或 Roboto，数字用 Segoe UI、Roboto、Helvetica Neue 或 Arial（各数字等宽），因此无需加载任何字体；
+  Desk 指定 Tahoma，其次是 Verdana，同样是系统自带字体。Studio 指定 Manrope，其次是 Inter；
   Terminal 指定 IBM Plex Sans Condensed 和 IBM Plex Mono；Capsule 指定 Sora。请自行加载需要的字体：
 </p>
 <pre><code>{`<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap">`}</code></pre>

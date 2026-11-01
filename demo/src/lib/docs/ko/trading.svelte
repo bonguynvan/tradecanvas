@@ -306,12 +306,11 @@ chart.on('signalMarkerClick', (e) => openSignal(e.payload.marker))`}</code></pre
 <p>진입 → 청산 사각형을 손익 색상과 방향 배지로 시각화합니다.</p>
 <pre><code>{`chart.addTradeZone({
   id: 'tz-1',
-  side: 'long',
+  direction: 'long',
   entryTime: openedAt,
   exitTime: closedAt,
   entryPrice: 65_100,
   exitPrice: 65_800,
-  status: 'closed',
 })`}</code></pre>
 
 <h2>포지션 라벨 토큰</h2>

@@ -310,12 +310,11 @@ chart.on('signalMarkerClick', (e) => openSignal(e.payload.marker))`}</code></pre
 <p>Hiển thị hình chữ nhật từ điểm vào → điểm ra, tô màu theo lãi/lỗ (P&amp;L) và có huy hiệu hướng lệnh.</p>
 <pre><code>{`chart.addTradeZone({
   id: 'tz-1',
-  side: 'long',
+  direction: 'long',
   entryTime: openedAt,
   exitTime: closedAt,
   entryPrice: 65_100,
   exitPrice: 65_800,
-  status: 'closed',
 })`}</code></pre>
 
 <h2>Token cho nhãn vị thế</h2>

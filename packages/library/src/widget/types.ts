@@ -48,11 +48,11 @@ export interface ChartWidgetOptions {
   ui?: import('./widgetUI.js').WidgetUIPreset | import('./widgetUI.js').WidgetUITheme;
 
   /**
-   * UI chrome language (toolbar, watchlist, indicator picker, status bar,
-   * settings panel, hotkey sheet). A built-in table ('en', the default, or
-   * 'vi'), layered under `messages` for host overrides/additions. Does not
-   * translate the data-driven indicator/drawing-tool names from
-   * `widgetConfig.ts` — see README "Widget i18n".
+   * The widget's language: its bars, menus, dialogs, panels and the names of
+   * its drawing tools, in one of 30 tables. 'en' (the default) and 'vi' are
+   * built in; call `registerWidgetLocales()` from
+   * '@tradecanvas/chart/widget/locales' for the others. `messages` overrides
+   * or adds single strings. Numbers follow `chartOptions.numberLocale`.
    */
   locale?: string;
   /** Override or add individual UI strings, on top of `locale`'s built-in table. */
@@ -221,6 +221,11 @@ export interface ChartWidgetOptions {
   historyPageSize?: number;
 
   // Chart pass-through
+  /**
+   * Options for the chart inside the widget, as `new Chart` takes them:
+   * `numberLocale`, `features` (`priceAxisAddButton`, `replay`…), `chartType`,
+   * `overrides`, `priceFormat` and the rest.
+   */
   chartOptions?: Partial<ChartOptions>;
 
   /**

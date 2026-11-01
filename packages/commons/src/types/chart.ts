@@ -213,7 +213,13 @@ export interface ChartOptions {
   sessionBreaks?: SessionBreakOptions;
   /** Feature toggles — control what users can access */
   features?: FeaturesConfig;
-  /** BCP 47 locale for number formatting (e.g. 'en-US', 'de-DE', 'vi-VN'). Defaults to 'en-US'. */
+  /**
+   * The BCP 47 locale numbers are written in: grouping and decimal marks on
+   * the axis, the legend, tooltips, labels and volumes ('de-DE': 72.202,13).
+   * `'ko-KR'` also writes volumes in 만, 억 and 조. Defaults to 'en-US'.
+   * ChartWidget's settings offer en-US, en-GB, en-IN, de-DE, fr-FR, es-ES,
+   * it-IT, pt-BR, ru-RU, tr-TR, vi-VN, id-ID, th-TH, zh-CN, zh-TW, ja-JP and ko-KR.
+   */
   numberLocale?: string;
   /**
    * Free panning (default `true`): drag past the newest bar

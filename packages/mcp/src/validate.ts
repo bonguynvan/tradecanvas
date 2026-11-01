@@ -158,6 +158,23 @@ function checkPlain(ctx: Context, entry: OptionEntry, value: unknown, path: stri
   if (!ok) problem(ctx, path, `'${entry.name}' takes a ${entry.kind}, not ${JSON.stringify(value)}.`);
 }
 
+/** The number formats ChartWidget's settings offer: what a mistyped one is likely meant to be. */
+const NUMBER_LOCALES = [
+  'en-US', 'en-GB', 'en-IN', 'de-DE', 'fr-FR', 'es-ES', 'it-IT', 'pt-BR', 'ru-RU', 'tr-TR',
+  'vi-VN', 'id-ID', 'th-TH', 'zh-CN', 'zh-TW', 'ja-JP', 'ko-KR',
+];
+
+/** A BCP 47 tag Intl writes numbers in: a malformed one throws in the chart, an unknown one falls back to English silently. */
+function checkNumberLocale(ctx: Context, value: unknown, path: string): void {
+  let known = false;
+  try {
+    known = typeof value === 'string' && Intl.NumberFormat.supportedLocalesOf(value).length > 0;
+  } catch {
+    known = false;
+  }
+  if (!known) problem(ctx, path, `\`numberLocale\` is a BCP 47 tag numbers are written in, such as ${quoted(['en-US', 'de-DE', 'ko-KR'])}.`, NUMBER_LOCALES, value);
+}
+
 /** `siblings`: the options set beside this one, those it is laid over included. */
 function checkValue(ctx: Context, owner: string, entry: OptionEntry, value: unknown, path: string, siblings: Record<string, unknown>): void {
   const { catalog } = ctx;
@@ -174,6 +191,7 @@ function checkValue(ctx: Context, owner: string, entry: OptionEntry, value: unkn
       value.forEach((cell, i) => checkObject(ctx, catalog.options.ChartWidget, cell, `${path}[${i}]`, 'ChartWidget', isObject(siblings.widget) ? siblings.widget : {}));
       return;
   }
+  if (entry.name === 'numberLocale') return checkNumberLocale(ctx, value, path);
   if (entry.name === 'theme' && !isObject(value) && value !== 'dark' && value !== 'light') {
     return problem(ctx, path, "`theme` is 'dark', 'light' or a theme object.", ['dark', 'light'], value);
   }

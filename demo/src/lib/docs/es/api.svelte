@@ -169,7 +169,7 @@ chart.setPriceFormat(null)                                              // decim
 
 chart.setTimeFormatter((time, { kind, timeZone }) =>
   // kind: 'year', 'month', 'day' (the step a label starts), 'time' (within a day), 'crosshair'
-  new Intl.DateTimeFormat('en-GB', { timeZone: timeZone ?? undefined, hour: '2-digit', minute: '2-digit' }).format(time))`}</code></pre>
+  new Intl.DateTimeFormat('en-GB', { timeZone: typeof timeZone === 'string' ? timeZone : undefined, hour: '2-digit', minute: '2-digit' }).format(time))`}</code></pre>
 
 <h3 id="axis-labels">Cómo eligen sus etiquetas los ejes</h3>
 <p>
@@ -537,7 +537,7 @@ chart.recordUndo({ subject: 'panel-color', undo: () => (panel.color = before), r
 </p>
 
 <h2>ChartWidget</h2>
-<p>Envuelve <code>Chart</code> en una interfaz completa. La misma instancia está disponible en <code>widget.chart</code>.</p>
+<p>Envuelve <code>Chart</code> en una interfaz completa. <code>widget.getChart()</code> devuelve la misma instancia.</p>
 
 <pre><code>{`import { ChartWidget } from '@tradecanvas/chart/widget'
 
@@ -552,7 +552,7 @@ const widget = new ChartWidget(host, {
   onReady: (chart, widget) => { /* once built, just after new ChartWidget() returns */ },
 })
 
-widget.chart.setData(...)
+widget.getChart().setData(...)
 widget.destroy()`}</code></pre>
 
 <h3 id="bars">Las barras</h3>

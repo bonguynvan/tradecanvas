@@ -91,6 +91,15 @@ describe('validateOptions', () => {
     expect(problems('ChartWidget', { locale: 'jp' })[0].path).toBe('locale');
   });
 
+  it('checks a number locale is one Intl can write numbers in', () => {
+    expect(problems('ChartWidget', { chartOptions: { numberLocale: 'ko-KR' } })).toEqual([]);
+    expect(problems('Chart', { numberLocale: 'de-DE' })).toEqual([]);
+    const bad = problems('ChartWidget', { chartOptions: { numberLocale: 'korean' } });
+    expect(bad[0].path).toBe('chartOptions.numberLocale');
+    expect(bad[0].message).toMatch(/BCP 47/);
+    expect(problems('Chart', { numberLocale: 'en_US' })[0].suggestion).toBe('en-US');
+  });
+
   it('takes tick-bar intervals, as the library does', () => {
     expect(problems('ChartWidget', { timeframe: '100T' })).toEqual([]);
     expect(problems('ChartWidget', { timeframes: ['1m', '500T'] })).toEqual([]);

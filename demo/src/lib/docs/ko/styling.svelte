@@ -6,7 +6,7 @@
 
 <svelte:head>
   <title>스타일링 — TradeCanvas 문서</title>
-  <meta name="description" content="토큰으로 정하는 위젯의 외관: 모서리, 크기, 글꼴, 테두리, 그림자, 바. 황금비를 따르는 네 가지 프리셋(Print, Studio, Terminal, Capsule)과 그 위에 얹는 나만의 테마." />
+  <meta name="description" content="토큰으로 정하는 위젯의 외관: 모서리, 크기, 글꼴, 테두리, 그림자, 바. 다섯 가지 프리셋(Print, Studio, Terminal, Capsule, Desk)과 그 위에 얹는 나만의 테마." />
 </svelte:head>
 
 <h1>위젯 스타일링</h1>
@@ -163,9 +163,10 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
 <h2>글꼴</h2>
 <p>
   위젯은 글꼴을 불러오지 않습니다. 이름만 지정하고, 브라우저가 목록 순서대로 대체 글꼴을 찾습니다. Print는 어느
-  시스템에나 있는 글꼴(Segoe UI, San Francisco, Roboto)과, 숫자에는 Cascadia Mono, SF Mono, Menlo 또는 Consolas를
-  지정하므로 따로 불러올 것이 없습니다. Studio는 Manrope 다음 Inter, Terminal은 IBM Plex Sans Condensed와
-  IBM Plex Mono, Capsule은 Sora를 지정합니다. 원하는 글꼴은 직접 불러오세요.
+  시스템에나 있는 글꼴을 지정합니다. 레이블에는 Segoe UI, San Francisco 또는 Roboto, 숫자에는 숫자 폭이 모두 같은
+  Segoe UI, Roboto, Helvetica Neue 또는 Arial을 쓰므로 따로 불러올 것이 없습니다. Desk는 Tahoma 다음 Verdana로, 역시
+  시스템에 들어 있습니다. Studio는 Manrope 다음 Inter, Terminal은 IBM Plex Sans Condensed와 IBM Plex Mono, Capsule은
+  Sora를 지정합니다. 원하는 글꼴은 직접 불러오세요.
 </p>
 <pre><code>{`<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap">`}</code></pre>
 

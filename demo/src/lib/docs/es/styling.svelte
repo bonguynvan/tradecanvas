@@ -6,7 +6,7 @@
 
 <svelte:head>
   <title>Estilos — Documentación de TradeCanvas</title>
-  <meta name="description" content="El aspecto del widget como tokens: esquinas, tamaños, tipografía, bordes, sombras y barras. Cuatro preajustes (Print, Studio, Terminal, Capsule) ceñidos a la proporción áurea, y tu propio tema sobre ellos." />
+  <meta name="description" content="El aspecto del widget como tokens: esquinas, tamaños, tipografía, bordes, sombras y barras. Cinco preajustes (Print, Studio, Terminal, Capsule, Desk), y tu propio tema sobre ellos." />
 </svelte:head>
 
 <h1>Estilos del widget</h1>
@@ -170,9 +170,10 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
 <h2>Fuentes</h2>
 <p>
   El widget no carga ninguna fuente: las nombra, y el navegador recorre cada lista hasta dar con una disponible. Print
-  nombra las fuentes que trae cualquier sistema (Segoe UI, San Francisco, Roboto) y, para las cifras, Cascadia Mono,
-  SF Mono, Menlo o Consolas, así que no necesita cargar nada. Studio nombra Manrope y después Inter; Terminal,
-  IBM Plex Sans Condensed e IBM Plex Mono; Capsule, Sora. Carga las que quieras:
+  nombra las fuentes que trae cualquier sistema: Segoe UI, San Francisco o Roboto para los textos y, para las cifras,
+  Segoe UI, Roboto, Helvetica Neue o Arial, cuyos dígitos tienen todos el mismo ancho, así que no necesita cargar nada;
+  Desk nombra Tahoma y después Verdana, que también vienen con el sistema. Studio nombra Manrope y después Inter;
+  Terminal, IBM Plex Sans Condensed e IBM Plex Mono; Capsule, Sora. Carga las que quieras:
 </p>
 <pre><code>{`<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap">`}</code></pre>
 

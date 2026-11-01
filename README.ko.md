@@ -59,7 +59,7 @@
     </td>
     <td width="50%" valign="top">
       <img src=".github/assets/clips/looks.webp" alt="한 차트가 Print, Terminal, Capsule, Studio 룩과 다크·라이트를 오감">
-      <br><b>나만의 룩</b>: Print(종이와 잉크, 황금비로), Studio, Terminal, Capsule, 라이트 또는 다크, 또는 직접 만든 토큰.
+      <br><b>나만의 룩</b>: Print(종이와 잉크, 황금비로), Studio, Terminal, Capsule, Desk(데스크톱 트레이딩 프로그램 창), 라이트 또는 다크, 또는 직접 만든 토큰.
     </td>
   </tr>
   <tr>

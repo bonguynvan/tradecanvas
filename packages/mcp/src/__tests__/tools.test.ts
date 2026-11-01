@@ -73,6 +73,19 @@ describe('tools', () => {
     expect(widget.options.find((o) => o.name === 'timeframes')?.items).toContain('1h');
   });
 
+  it('list_options finds options one level in, by their path', () => {
+    type Found = { options: { name: string; doc?: string }[] };
+    // The widget's chart options and the chart's feature switches.
+    const widget = call('list_options', { target: 'ChartWidget', query: 'numberLocale' }).data as Found;
+    expect(widget.options.map((o) => o.name)).toContain('chartOptions.numberLocale');
+    expect(widget.options.find((o) => o.name === 'chartOptions.numberLocale')?.doc).toMatch(/ko-KR/);
+    const chart = call('list_options', { target: 'Chart', query: 'priceAxisAdd' }).data as Found;
+    expect(chart.options.map((o) => o.name)).toContain('features.priceAxisAddButton');
+    // Without words to find, only the entry point's own options: the list stays short.
+    const all = call('list_options', { target: 'Chart' }).data as Found;
+    expect(all.options.some((o) => o.name.includes('.'))).toBe(false);
+  });
+
   it('list_widget_features and list_style_keys narrow by prefix', () => {
     const features = call('list_widget_features', { prefix: 'toolbar.' }).data as { features: string[] };
     expect(features.features.length).toBeGreaterThan(5);

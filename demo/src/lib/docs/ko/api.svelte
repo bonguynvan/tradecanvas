@@ -164,7 +164,7 @@ chart.setPriceFormat(null)                                              // decim
 
 chart.setTimeFormatter((time, { kind, timeZone }) =>
   // kind: 'year', 'month', 'day' (the step a label starts), 'time' (within a day), 'crosshair'
-  new Intl.DateTimeFormat('en-GB', { timeZone: timeZone ?? undefined, hour: '2-digit', minute: '2-digit' }).format(time))`}</code></pre>
+  new Intl.DateTimeFormat('en-GB', { timeZone: typeof timeZone === 'string' ? timeZone : undefined, hour: '2-digit', minute: '2-digit' }).format(time))`}</code></pre>
 
 <h3 id="axis-labels">축이 라벨을 고르는 방식</h3>
 <p>
@@ -498,7 +498,7 @@ chart.recordUndo({ subject: 'panel-color', undo: () => (panel.color = before), r
 </p>
 
 <h2>ChartWidget</h2>
-<p><code>Chart</code>를 완전한 UI로 감쌉니다. 같은 인스턴스를 <code>widget.chart</code>로 사용할 수 있습니다.</p>
+<p><code>Chart</code>를 완전한 UI로 감쌉니다. <code>widget.getChart()</code>로 같은 인스턴스를 얻습니다.</p>
 
 <pre><code>{`import { ChartWidget } from '@tradecanvas/chart/widget'
 
@@ -513,7 +513,7 @@ const widget = new ChartWidget(host, {
   onReady: (chart, widget) => { /* once built, just after new ChartWidget() returns */ },
 })
 
-widget.chart.setData(...)
+widget.getChart().setData(...)
 widget.destroy()`}</code></pre>
 
 <h3 id="bars">각 바</h3>

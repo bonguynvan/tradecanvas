@@ -5337,7 +5337,7 @@
       {
         "name": "locale",
         "type": "string",
-        "doc": "UI chrome language (toolbar, watchlist, indicator picker, status bar, settings panel, hotkey sheet). A built-in table ('en', the default, or 'vi'), layered under `messages` for host overrides/additions. Does not translate the data-driven indicator/drawing-tool names from `widgetConfig.ts` — see README \"Widget i18n\".",
+        "doc": "The widget's language: its bars, menus, dialogs, panels and the names of its drawing tools, in one of 30 tables. 'en' (the default) and 'vi' are built in; call `registerWidgetLocales()` from '@tradecanvas/chart/widget/locales' for the others. `messages` overrides or adds single strings. Numbers follow `chartOptions.numberLocale`.",
         "kind": "string"
       },
       {
@@ -5537,7 +5537,8 @@
       },
       {
         "name": "chartOptions",
-        "type": "Partial<ChartOptions>"
+        "type": "Partial<ChartOptions>",
+        "doc": "Options for the chart inside the widget, as `new Chart` takes them: `numberLocale`, `features` (`priceAxisAddButton`, `replay`…), `chartType`, `overrides`, `priceFormat` and the rest."
       },
       {
         "name": "watchlist",
@@ -5817,7 +5818,7 @@
       {
         "name": "numberLocale",
         "type": "string",
-        "doc": "BCP 47 locale for number formatting (e.g. 'en-US', 'de-DE', 'vi-VN'). Defaults to 'en-US'.",
+        "doc": "The BCP 47 locale numbers are written in: grouping and decimal marks on the axis, the legend, tooltips, labels and volumes ('de-DE': 72.202,13). `'ko-KR'` also writes volumes in 만, 억 and 조. Defaults to 'en-US'.",
         "kind": "string"
       },
       {
@@ -6119,7 +6120,7 @@
       {
         "name": "numberLocale",
         "type": "string",
-        "doc": "BCP 47 locale for number formatting (e.g. 'en-US', 'de-DE', 'vi-VN'). Defaults to 'en-US'.",
+        "doc": "The BCP 47 locale numbers are written in: grouping and decimal marks on the axis, the legend, tooltips, labels and volumes ('de-DE': 72.202,13). `'ko-KR'` also writes volumes in 만, 억 and 조. Defaults to 'en-US'.",
         "kind": "string"
       },
       {

@@ -6,7 +6,7 @@
 
 <svelte:head>
   <title>スタイル設定 — TradeCanvas ドキュメント</title>
-  <meta name="description" content="ウィジェットの外観をトークンで指定：角の丸み、サイズ、文字、枠線、影、バー。黄金比に沿った 4 つのプリセット（Print、Studio、Terminal、Capsule）と、その上に重ねる独自のテーマ。" />
+  <meta name="description" content="ウィジェットの外観をトークンで指定：角の丸み、サイズ、文字、枠線、影、バー。5 つのプリセット（Print、Studio、Terminal、Capsule、Desk）と、その上に重ねる独自のテーマ。" />
 </svelte:head>
 
 <h1>ウィジェットのスタイル設定</h1>
@@ -163,9 +163,10 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
 <h2>フォント</h2>
 <p>
   ウィジェットはフォントを読み込みません。名前を指定するだけで、ブラウザーがリストの順にフォールバックします。
-  Print はどのシステムにもある書体（Segoe UI、San Francisco、Roboto）と、数字には Cascadia Mono、SF Mono、Menlo、
-  Consolas を指定しているので、何も読み込む必要がありません。Studio は Manrope、次に Inter、Terminal は
-  IBM Plex Sans Condensed と IBM Plex Mono、Capsule は Sora を指定しています。使いたいフォントは自分で読み込んでください。
+  Print はどのシステムにもある書体を指定しています。ラベルには Segoe UI、San Francisco、Roboto、数字には数字の幅が揃った
+  Segoe UI、Roboto、Helvetica Neue、Arial を使うので、何も読み込む必要がありません。Desk は Tahoma、次に Verdana で、
+  これもシステムに入っています。Studio は Manrope、次に Inter、Terminal は IBM Plex Sans Condensed と IBM Plex Mono、
+  Capsule は Sora を指定しています。使いたいフォントは自分で読み込んでください。
 </p>
 <pre><code>{`<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap">`}</code></pre>
 

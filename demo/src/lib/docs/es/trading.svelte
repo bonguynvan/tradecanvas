@@ -330,12 +330,11 @@ chart.on('signalMarkerClick', (e) => openSignal(e.payload.marker))`}</code></pre
 <p>Visualiza rectángulos de entrada → salida coloreados según el P&amp;L y con distintivos de dirección.</p>
 <pre><code>{`chart.addTradeZone({
   id: 'tz-1',
-  side: 'long',
+  direction: 'long',
   entryTime: openedAt,
   exitTime: closedAt,
   entryPrice: 65_100,
   exitPrice: 65_800,
-  status: 'closed',
 })`}</code></pre>
 
 <h2>Tokens de la etiqueta de posición</h2>

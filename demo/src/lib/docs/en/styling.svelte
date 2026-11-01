@@ -6,7 +6,7 @@
 
 <svelte:head>
   <title>Styling — TradeCanvas docs</title>
-  <meta name="description" content="The widget's look as tokens, with four presets — Print, Studio, Terminal, Capsule — kept to the golden ratio, and the chart's look by key: the grid, crosshair, axes, panes, legend, last price, volume and each chart type, indicator plots and panes." />
+  <meta name="description" content="The widget's look as tokens, with five presets — Print, Studio, Terminal, Capsule, Desk — kept to the golden ratio, and the chart's look by key: the grid, crosshair, axes, panes, legend, last price, volume and each chart type, indicator plots and panes." />
 </svelte:head>
 
 <h1>Styling the widget</h1>
@@ -166,9 +166,10 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
 <h2>Fonts</h2>
 <p>
   The widget loads no fonts: it names them, and the browser falls back along each list. Print names the faces every
-  system has (Segoe UI, San Francisco, Roboto) and, for figures, Cascadia Mono, SF Mono, Menlo or Consolas, so it
-  needs nothing loaded. Studio names Manrope, then Inter; Terminal IBM Plex Sans Condensed and IBM Plex Mono;
-  Capsule Sora. Load the ones you want:
+  system has: Segoe UI, San Francisco or Roboto for labels, and for figures Segoe UI, Roboto, Helvetica Neue or Arial,
+  whose digits are all one width, so it needs nothing loaded; Desk names Tahoma, then Verdana, which also come with
+  the system. Studio names Manrope, then Inter; Terminal IBM Plex Sans Condensed and IBM Plex Mono; Capsule Sora.
+  Load the ones you want:
 </p>
 <pre><code>{`<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap">`}</code></pre>
 
