@@ -299,12 +299,11 @@ chart.on('signalMarkerClick', (e) => openSignal(e.payload.marker))`}</code></pre
 <p>エントリー → エグジットを、損益で色分けした長方形と方向のバッジで可視化します。</p>
 <pre><code>{`chart.addTradeZone({
   id: 'tz-1',
-  side: 'long',
+  direction: 'long',
   entryTime: openedAt,
   exitTime: closedAt,
   entryPrice: 65_100,
   exitPrice: 65_800,
-  status: 'closed',
 })`}</code></pre>
 
 <h2>ポジションラベルのトークン</h2>

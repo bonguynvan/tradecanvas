@@ -168,7 +168,7 @@ chart.setPriceFormat(null)                                              // decim
 
 chart.setTimeFormatter((time, { kind, timeZone }) =>
   // kind: 'year', 'month', 'day' (the step a label starts), 'time' (within a day), 'crosshair'
-  new Intl.DateTimeFormat('en-GB', { timeZone: timeZone ?? undefined, hour: '2-digit', minute: '2-digit' }).format(time))`}</code></pre>
+  new Intl.DateTimeFormat('en-GB', { timeZone: typeof timeZone === 'string' ? timeZone : undefined, hour: '2-digit', minute: '2-digit' }).format(time))`}</code></pre>
 
 <h3 id="axis-labels">Cách các trục chọn nhãn</h3>
 <p>
@@ -525,7 +525,7 @@ chart.recordUndo({ subject: 'panel-color', undo: () => (panel.color = before), r
 </p>
 
 <h2>ChartWidget</h2>
-<p>Bọc <code>Chart</code> trong một giao diện hoàn chỉnh. Có thể truy cập chính instance đó qua <code>widget.chart</code>.</p>
+<p>Bọc <code>Chart</code> trong một giao diện hoàn chỉnh. <code>widget.getChart()</code> trả về chính instance đó.</p>
 
 <pre><code>{`import { ChartWidget } from '@tradecanvas/chart/widget'
 
@@ -540,7 +540,7 @@ const widget = new ChartWidget(host, {
   onReady: (chart, widget) => { /* once built, just after new ChartWidget() returns */ },
 })
 
-widget.chart.setData(...)
+widget.getChart().setData(...)
 widget.destroy()`}</code></pre>
 
 <h3 id="bars">Các thanh</h3>

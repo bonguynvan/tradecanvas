@@ -5,6 +5,8 @@ import type { IndicatorValue } from './indicator.js';
 import type { DrawingToolType } from './drawing.js';
 import type { SymbolInfo } from './symbol.js';
 import type { MarketConfig } from '../market/types.js';
+import type { FillEvent } from './execution.js';
+import type { TradingOrder, TradingPosition } from './trading.js';
 
 export type ChartEventType =
   | 'crosshairMove'
@@ -411,8 +413,28 @@ export interface ChartEventMap {
   positionClose: PositionClosePayload;
   positionModify: PositionModifyPayload;
   executionError: ExecutionErrorPayload;
+  /** An order filled, from the execution adapter or `addFill`. */
+  executionFill: FillEvent;
+  /** The orders on the chart changed (`setOrders`, or the execution adapter): all of them. */
+  ordersChange: { orders: TradingOrder[] };
+  /** The positions on the chart changed (`setPositions`, or the execution adapter): all of them. */
+  positionsChange: { positions: TradingPosition[] };
+  /** The reverse button on a position's tag was pressed. */
+  positionReverse: { positionId: string };
+  /** A right-click off any drawing, where it landed: only while something listens. */
+  chartContextMenu: ChartContextMenuPayload;
+  /** The "+" by the price axis was pressed (`features.priceAxisAddButton`). */
+  priceAxisAdd: PriceAxisAddPayload;
   drawingCreate: DrawingCreatePayload;
   drawingRemove: DrawingRemovePayload;
+  /** A drawing changed: moved, restyled, given new text or anchors. */
+  drawingUpdate: { id: string };
+  /** A drawing was double-clicked (the widget opens its settings). */
+  drawingDoubleClick: { id: string };
+  /** A drawing was right-clicked, at `x`, `y` in the chart's pixels; it is selected. */
+  drawingContextMenu: { id: string; x: number; y: number };
+  /** The eraser or the zoom-area tool turned on or off: the one that changed. */
+  toolModeChange: { eraser?: boolean; zoomArea?: boolean };
   /** The active drawing tool changed — picked, finished, or cancelled (`tool: null`). */
   drawingToolChange: { tool: DrawingToolType | null };
   signalMarkerAdd: SignalMarkerAddPayload;

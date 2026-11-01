@@ -59,7 +59,7 @@
     </td>
     <td width="50%" valign="top">
       <img src=".github/assets/clips/looks.webp" alt="Một biểu đồ chuyển giữa các phong cách Print, Terminal, Capsule và Studio, tối và sáng">
-      <br><b>Phong cách của bạn</b>: Print (giấy và mực, theo tỉ lệ vàng), Studio, Terminal, Capsule, sáng hoặc tối, hoặc token của riêng bạn.
+      <br><b>Phong cách của bạn</b>: Print (giấy và mực, theo tỉ lệ vàng), Studio, Terminal, Capsule, Desk (cửa sổ phần mềm giao dịch), sáng hoặc tối, hoặc token của riêng bạn.
     </td>
   </tr>
   <tr>

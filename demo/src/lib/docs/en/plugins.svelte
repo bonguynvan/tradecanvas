@@ -48,7 +48,7 @@ chart.plugins.list()`}</code></pre>
 class DoubleSMA extends IndicatorBase {
   descriptor = {
     id: 'double-sma', name: 'Double SMA',
-    placement: 'overlay', defaultConfig: { fast: 10, slow: 30 },
+    placement: 'overlay' as const, defaultConfig: { fast: 10, slow: 30 },
   }
   calculate(data, config) { /* values = new IndicatorValueMap(); return { values, series } */ }
   render(ctx, output, viewport, style) { /* draw lines */ }

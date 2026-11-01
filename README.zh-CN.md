@@ -59,7 +59,7 @@
     </td>
     <td width="50%" valign="top">
       <img src=".github/assets/clips/looks.webp" alt="同一图表在 Print、Terminal、Capsule 和 Studio 外观之间切换，深色与浅色">
-      <br><b>你的外观</b>：Print（纸与墨，按黄金比例）、Studio、Terminal、Capsule，浅色或深色，或你自己的 token。
+      <br><b>你的外观</b>：Print（纸与墨，按黄金比例）、Studio、Terminal、Capsule、Desk（桌面交易软件的窗口），浅色或深色，或你自己的 token。
     </td>
   </tr>
   <tr>

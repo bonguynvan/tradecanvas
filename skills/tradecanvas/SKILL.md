@@ -54,7 +54,8 @@ also works on a widget.
    `get_indicator`, `validate_options`…, from `@tradecanvas/mcp`): an
    indicator's params and line keys with `get_indicator`, drawing types with
    `list_drawing_tools`, and an options object through `validate_options`
-   before it goes to `new ChartWidget` or `new Chart`.
+   before it goes to `new ChartWidget` or `new Chart`. Not connected? It is
+   one command: `claude mcp add tradecanvas -- npx -y @tradecanvas/mcp`.
 9. **The time zone is `timeZone`**, as in `Intl.DateTimeFormat`: the option,
    `setTimeZone` / `getEffectiveTimeZone`, `SymbolInfo.timeZone` and
    `MarketConfig.timeZone`. `setTimeZone('exchange')` shows the symbol's zone,

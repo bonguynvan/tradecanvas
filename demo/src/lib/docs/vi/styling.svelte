@@ -6,7 +6,7 @@
 
 <svelte:head>
   <title>Giao diện — Tài liệu TradeCanvas</title>
-  <meta name="description" content="Giao diện của widget dưới dạng token: góc bo, kích thước, kiểu chữ, đường viền, bóng đổ và các thanh. Bốn preset — Print, Studio, Terminal, Capsule — giữ theo tỉ lệ vàng, cùng giao diện riêng của bạn dựng trên chúng." />
+  <meta name="description" content="Giao diện của widget dưới dạng token: góc bo, kích thước, kiểu chữ, đường viền, bóng đổ và các thanh. Năm preset — Print, Studio, Terminal, Capsule, Desk — giữ theo tỉ lệ vàng, cùng giao diện riêng của bạn dựng trên chúng." />
 </svelte:head>
 
 <h1>Tuỳ biến giao diện widget</h1>
@@ -165,9 +165,10 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
 <h2>Font chữ</h2>
 <p>
   Widget không tải font nào: nó chỉ gọi tên, và trình duyệt lần lượt thử từng font trong danh sách. Print dùng các
-  font mà hệ điều hành nào cũng có (Segoe UI, San Francisco, Roboto) và, cho các con số, Cascadia Mono, SF Mono,
-  Menlo hoặc Consolas, nên không cần tải gì. Studio dùng Manrope, rồi đến Inter; Terminal dùng IBM Plex Sans
-  Condensed và IBM Plex Mono; Capsule dùng Sora. Hãy tự tải những font bạn muốn:
+  font mà hệ điều hành nào cũng có: Segoe UI, San Francisco hoặc Roboto cho chữ, và cho các con số là Segoe UI, Roboto,
+  Helvetica Neue hoặc Arial, có các chữ số rộng bằng nhau, nên không cần tải gì; Desk dùng Tahoma, rồi Verdana, cũng có
+  sẵn trong hệ điều hành. Studio dùng Manrope, rồi đến Inter; Terminal dùng IBM Plex Sans Condensed và IBM Plex Mono;
+  Capsule dùng Sora. Hãy tự tải những font bạn muốn:
 </p>
 <pre><code>{`<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap">`}</code></pre>
 
