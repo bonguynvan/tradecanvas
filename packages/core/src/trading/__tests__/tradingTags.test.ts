@@ -59,6 +59,13 @@ describe('drawTags', () => {
     expect(buttons).toEqual([{ x: x + 16 + 34, y: 50 - Math.floor(TAG_HEIGHT / 2), size: TAG_HEIGHT, action: tag.cells[2].kind === 'button' ? tag.cells[2].action : null }]);
   });
 
+  it('keeps clear of a strip at the plot’s right edge when given one', () => {
+    const { ctx } = recordingCtx();
+    const buttons: LineButton[] = [];
+    drawTags(ctx, [tag], unitViewport, theme, buttons, [], 19);
+    expect(buttons[0].x + buttons[0].size).toBe(1000 - 19 - TAG_GAP);
+  });
+
   it('writes the stamp and the text; a button is an icon, not a glyph', () => {
     const { ctx, texts } = recordingCtx();
     drawTags(ctx, [tag], unitViewport, theme, []);

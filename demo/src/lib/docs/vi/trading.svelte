@@ -144,7 +144,8 @@ chart.setTradingConfig({ fillMarks: false })  // no marks`}</code></pre>
   bấm (<code>'plot'</code>, <code>'pane'</code>, <code>'priceAxis'</code> hoặc
   <code>'timeAxis'</code>) cùng giá và thời gian tại đó. Với
   <code>features.priceAxisAddButton</code>, một nút “+” chạy theo con trỏ chữ thập dọc trục
-  giá; bấm vào nó sẽ phát ra <code>priceAxisAdd</code> kèm mức giá đó.
+  giá; bấm vào nó sẽ phát ra <code>priceAxisAdd</code> kèm mức giá đó. Khi nút hiện, nhãn của
+  lệnh và vị thế lùi sang trái nó, nên nút không bao giờ che các nút của nhãn.
 </p>
 <pre><code>{`const chart = new Chart(host, { features: { priceAxisAddButton: true } })
 

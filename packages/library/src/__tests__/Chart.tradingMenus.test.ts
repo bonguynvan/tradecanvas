@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { ChartContextMenuPayload, OHLCBar, ViewportState } from '@tradecanvas/commons';
-import { PaperExecutionAdapter } from '@tradecanvas/core';
+import { PaperExecutionAdapter, PRICE_AXIS_ADD_STRIP } from '@tradecanvas/core';
 import { Chart } from '../Chart.js';
 import { installChartStubs, sizedHost } from './chartTestEnv.js';
 
@@ -59,6 +59,31 @@ describe('Chart "+" by the price axis', () => {
     expect(adds).toHaveLength(1);
     const { min, max } = state().priceRange;
     expect(adds[0].price).toBeCloseTo((min + max) / 2, 1);
+  });
+
+  it('keeps the trading tags clear of it, and gives the room back when it is off', () => {
+    const inset = () => (chart as unknown as { tradingManager: { tagInset: number } }).tradingManager.tagInset;
+    expect(inset()).toBe(PRICE_AXIS_ADD_STRIP);
+    chart.setPriceAxisAddButton(false);
+    expect(inset()).toBe(0);
+    chart.setPriceAxisAddButton(true);
+    expect(inset()).toBe(PRICE_AXIS_ADD_STRIP);
+  });
+
+  it('follows setFeatures too, as ChartWidget turns it off and on', () => {
+    const inset = () => (chart as unknown as { tradingManager: { tagInset: number } }).tradingManager.tagInset;
+    const adds: unknown[] = [];
+    chart.on('priceAxisAdd', (e) => adds.push(e.payload));
+    const plot = state().chartRect;
+    chart.setFeatures({ priceAxisAddButton: false });
+    mouse('mousedown', plot.x + plot.width - 8, plot.y + 40);
+    mouse('mouseup', plot.x + plot.width - 8, plot.y + 40);
+    expect([adds.length, inset()]).toEqual([0, 0]);
+    chart.setFeatures({ priceAxisAddButton: true });
+    expect(inset()).toBe(PRICE_AXIS_ADD_STRIP);
+    // It rides on the crosshair.
+    chart.setFeatures({ crosshair: false });
+    expect(inset()).toBe(0);
   });
 
   it('can be turned off', () => {

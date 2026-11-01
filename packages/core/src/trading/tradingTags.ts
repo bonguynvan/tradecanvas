@@ -115,7 +115,8 @@ export function layoutTags(
  * and add their buttons to `buttons`, and the tags that take their line to
  * `boxes`, where they were drawn. A tag that did not fit is drawn first,
  * under the others, with neither: what may lie under another tag can't be
- * pressed.
+ * pressed. `rightInset` keeps a strip at the plot's right edge clear, for
+ * a control drawn there.
  */
 export function drawTags(
   ctx: CanvasRenderingContext2D,
@@ -124,6 +125,7 @@ export function drawTags(
   theme: Theme,
   buttons: LineButton[],
   boxes: TagBox[] = [],
+  rightInset = 0,
 ): void {
   if (tags.length === 0) return;
   const { chartRect } = viewport;
@@ -131,7 +133,7 @@ export function drawTags(
   const sums = widths.map((w) => w.reduce((a, b) => a + b, 0));
   const places = layoutTags(
     tags.map((tag, i) => ({ y: tag.y, width: sums[i] })),
-    { left: chartRect.x, right: chartRect.x + chartRect.width },
+    { left: chartRect.x, right: chartRect.x + chartRect.width - rightInset },
   );
   const order = tags.map((_, i) => i).sort((a, b) => Number(places[a].fits) - Number(places[b].fits));
   for (const i of order) {

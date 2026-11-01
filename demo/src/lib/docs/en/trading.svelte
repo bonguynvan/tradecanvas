@@ -144,7 +144,8 @@ chart.setTradingConfig({ fillMarks: false })  // no marks`}</code></pre>
   clicked (<code>'plot'</code>, <code>'pane'</code>, <code>'priceAxis'</code> or
   <code>'timeAxis'</code>) and the price and time there. With
   <code>features.priceAxisAddButton</code> a “+” follows the crosshair along the price
-  axis; pressing it emits <code>priceAxisAdd</code> with its price.
+  axis; pressing it emits <code>priceAxisAdd</code> with its price. While it shows, the order
+  and position tags end left of it, so it never covers their buttons.
 </p>
 <pre><code>{`const chart = new Chart(host, { features: { priceAxisAddButton: true } })
 

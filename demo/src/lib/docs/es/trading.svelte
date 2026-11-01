@@ -150,7 +150,8 @@ chart.setTradingConfig({ fillMarks: false })  // no marks`}</code></pre>
   que se hizo clic (<code>'plot'</code>, <code>'pane'</code>, <code>'priceAxis'</code>
   o <code>'timeAxis'</code>) y el precio y la hora en ese punto. Con
   <code>features.priceAxisAddButton</code>, un “+” sigue a la cruz a lo largo del eje
-  de precio; al pulsarlo se emite <code>priceAxisAdd</code> con su precio.
+  de precio; al pulsarlo se emite <code>priceAxisAdd</code> con su precio. Mientras se ve, las
+  etiquetas de órdenes y posiciones terminan a su izquierda, así que nunca tapa sus botones.
 </p>
 <pre><code>{`const chart = new Chart(host, { features: { priceAxisAddButton: true } })
 

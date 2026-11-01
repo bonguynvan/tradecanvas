@@ -144,7 +144,8 @@ chart.setTradingConfig({ fillMarks: false })  // no marks`}</code></pre>
   <code>'priceAxis'</code>, <code>'timeAxis'</code>)과 그 위치의 가격, 시간을 담은
   <code>chartContextMenu</code>가 발생합니다. <code>features.priceAxisAddButton</code>을 켜면
   가격 축을 따라 십자선을 따라다니는 “+”가 나타나고, 이를 누르면 그 가격을 담은
-  <code>priceAxisAdd</code>가 발생합니다.
+  <code>priceAxisAdd</code>가 발생합니다. “+”가 보이는 동안 주문과 포지션의 태그는 그 왼쪽에서
+  끝나므로, 태그의 버튼을 가리지 않습니다.
 </p>
 <pre><code>{`const chart = new Chart(host, { features: { priceAxisAddButton: true } })
 
