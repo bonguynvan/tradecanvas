@@ -1,5 +1,17 @@
 # @tradecanvas/chart
 
+## 1.56.0
+
+### Minor Changes
+
+- 5a3f39c: The legend's rows sit on a see-through ground of the chart's background, so moving averages and other lines across the top of the plot run behind the text, not through it. `setLegend({ ground: false })` leaves it out. ChartWidget's indicator rows have the same ground, the CSS variable `--tcw-legend-ground` (`transparent` for none).
+
+### Patch Changes
+
+- Updated dependencies [5a3f39c]
+  - @tradecanvas/core@1.56.0
+  - @tradecanvas/commons@1.56.0
+
 ## 1.55.0
 
 ### Minor Changes
