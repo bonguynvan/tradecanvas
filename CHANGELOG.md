@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+### Markets
+
+- **The Date and Price Range box writes volumes as the chart's numbers read** (`@tradecanvas/core`, `@tradecanvas/chart`). With `numberLocale: 'ko-KR'` the box's volume reads in 만, 억 and 조 (`Vol 275.29만`), as the legend, the crosshair tooltip and the data window already did; in other locales K, M and B take the locale's decimal mark (`Vol 2,75M` under `de-DE`). The API page in all six languages and the skill describe it.
+
+## 1.59.2 (2026-11-01)
+
+React, Vue and Svelte components: 1.3.50.
+
 ### Fixes
 
 - **The legend no longer covers a trading tag near the top of the plot** (`@tradecanvas/core`, `@tradecanvas/chart`). On a narrow chart, a take-profit, stop or order whose tag sat under the OHLCV legend had its text and buttons drawn over by the legend's rows. The legend is now drawn around the tags, so a tag under it stays whole and its buttons can be seen and pressed; the part of the legend under the tag is left out. `TradingManager.tagRects()` tells where the tags were drawn.

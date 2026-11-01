@@ -214,7 +214,7 @@ vn30fLastTradingDay(2026, 12, (day) => holidays.has(day)) // 第三个星期四�
   韩元，无涨跌幅限制）。上涨为红色，下跌为蓝色（<code>KR_COLORS</code>）；
   <code>createMarketTheme(theme, KR_COLORS)</code> 让任意主题使用这种 K 线配色，
   <code>formatVolumeLoc(value, 'ko')</code> 以 만、억、조 缩写成交量。
-  设置 <code>numberLocale: 'ko-KR'</code> 后，图表也这样显示成交量：图例、十字光标提示框和 ChartWidget 的数据窗口。
+  设置 <code>numberLocale: 'ko-KR'</code> 后，图表也这样显示成交量：图例、十字光标提示框、ChartWidget 的数据窗口和 Date and Price Range 框。
 </p>
 <pre><code>{`import { MARKET_KRX, KR_COLORS, createMarketTheme, LIGHT_THEME, formatVolumeLoc } from '@tradecanvas/chart'
 

@@ -216,7 +216,7 @@ vn30fLastTradingDay(2026, 12, (day) => holidays.has(day)) // 第 3 木曜日。�
   までの呼値、値幅制限なし）です。上昇は赤、下落は青で描きます（<code>KR_COLORS</code>）。
   <code>createMarketTheme(theme, KR_COLORS)</code> で任意のテーマをこのローソク足の色にでき、
   <code>formatVolumeLoc(value, 'ko')</code> は出来高を 만・억・조 で短く表示します。
-  <code>numberLocale: 'ko-KR'</code> を指定すると、チャートも凡例、クロスヘアのツールチップ、ChartWidget のデータウィンドウで出来高をこの単位で表示します。
+  <code>numberLocale: 'ko-KR'</code> を指定すると、チャートも凡例、クロスヘアのツールチップ、ChartWidget のデータウィンドウ、Date and Price Range のボックスで出来高をこの単位で表示します。
 </p>
 <pre><code>{`import { MARKET_KRX, KR_COLORS, createMarketTheme, LIGHT_THEME, formatVolumeLoc } from '@tradecanvas/chart'
 

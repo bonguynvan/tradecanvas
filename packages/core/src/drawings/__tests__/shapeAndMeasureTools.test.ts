@@ -43,6 +43,19 @@ describe('DateAndPriceRangeTool', () => {
     expect(dateAndPriceRangeLines(state, dataViewport)).toEqual(['+10.00 (+20.00%)', '4 bars, 4h', 'Vol 10']);
   });
 
+  it('writes the volume as the chart’s numbers read: 만, 억 and 조 in Korean, the locale’s mark elsewhere', () => {
+    const state = drawing('dateAndPriceRange', [{ time: 0, price: 50 }, { time: 4 * HOUR, price: 60 }]);
+    const heavy = (volume: number, numberLocale: string): ViewportState => ({
+      ...dataViewport,
+      numberLocale,
+      data: dataViewport.data!.map((b) => ({ ...b, volume })),
+    });
+    // Five bars inside the box.
+    expect(dateAndPriceRangeLines(state, heavy(69_000_000, 'ko-KR'))[2]).toBe('Vol 3.45억');
+    expect(dateAndPriceRangeLines(state, heavy(13_220, 'de-DE'))[2]).toBe('Vol 66,10K');
+    expect(dateAndPriceRangeLines(state, heavy(13_220, 'en-US'))[2]).toBe('Vol 66.10K');
+  });
+
   it('omits volume and time without a bar series', () => {
     const state = drawing('dateAndPriceRange', [{ time: 0, price: 50 }, { time: 4, price: 40 }]);
     expect(volumeBetween(state, unitViewport)).toBeNull();
