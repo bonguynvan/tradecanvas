@@ -66,6 +66,14 @@ describe('drawTags', () => {
     expect(buttons[0].x + buttons[0].size).toBe(1000 - 19 - TAG_GAP);
   });
 
+  it('reports where each tag was drawn, for what is drawn over the plot to keep clear of', () => {
+    const { ctx } = recordingCtx();
+    const rects: { x: number; y: number; width: number; height: number }[] = [];
+    drawTags(ctx, [tag], unitViewport, theme, [], [], 0, rects);
+    const width = 16 + 34 + TAG_HEIGHT;
+    expect(rects).toEqual([{ x: 1000 - TAG_GAP - width, y: 50 - Math.floor(TAG_HEIGHT / 2), width, height: TAG_HEIGHT }]);
+  });
+
   it('writes the stamp and the text; a button is an icon, not a glyph', () => {
     const { ctx, texts } = recordingCtx();
     drawTags(ctx, [tag], unitViewport, theme, []);

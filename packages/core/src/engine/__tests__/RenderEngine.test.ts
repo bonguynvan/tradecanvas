@@ -195,6 +195,31 @@ describe('RenderEngine — two canvases', () => {
     expect(plugins.map(([c, layer]) => `${layer}:${canvasOf(c)}`)).toEqual(['main:scene', 'overlay:top', 'ui:top']);
   });
 
+  it('draws the legend around the trading tags, so a tag under it stays whole', () => {
+    const { ctx } = makeContext();
+    const order: string[] = [];
+    // Two tags that overlap, as one that did not fit lies under another: each is cut out on its own.
+    const tags = [{ x: 120, y: 4, width: 80, height: 20 }, { x: 150, y: 10, width: 60, height: 20 }];
+    ctx.tradingRenderer = { render: () => {}, renderAxisBadges: () => {}, axisBadgeLines: () => [], axisTagYs: () => [], tagRects: () => tags } as unknown as RenderContext['tradingRenderer'];
+    ctx.chartLegend = { render: () => order.push('legend') } as unknown as RenderContext['chartLegend'];
+    engine.setRenderContext(ctx);
+    const top = engine.layerManager.getLayer(LayerType.Hover)!.ctx as unknown as Record<string, unknown>;
+    top.save = () => order.push('save');
+    top.restore = () => order.push('restore');
+    top.rect = (...a: number[]) => order.push(`rect ${a.join(' ')}`);
+    top.clip = (rule?: string) => order.push(`clip ${rule}`);
+    engine.start();
+    runFrame();
+    const at = order.indexOf('legend');
+    // The plot less one tag, then less the other: clips meet, so where the tags overlap stays out.
+    expect(order.slice(at - 7, at + 2)).toEqual([
+      'save',
+      'rect 0 0 300 200', 'rect 120 4 80 20', 'clip evenodd',
+      'rect 0 0 300 200', 'rect 150 10 60 20', 'clip evenodd',
+      'legend', 'restore',
+    ]);
+  });
+
   it('skips painting while the plot has no size', () => {
     const { ctx, scene, top } = makeContext();
     ctx.viewport = { ...ctx.viewport, chartRect: { x: 0, y: 0, width: 0, height: 0 } };

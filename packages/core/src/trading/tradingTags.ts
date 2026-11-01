@@ -43,6 +43,14 @@ export interface TradingTag {
   grab?: TagGrab;
 }
 
+/** Where a tag was drawn. */
+export interface TagRect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
 /** Where a tag that takes its line was drawn (on the plot), its line's y, and the line. */
 export interface TagBox {
   x: number;
@@ -116,7 +124,7 @@ export function layoutTags(
  * `boxes`, where they were drawn. A tag that did not fit is drawn first,
  * under the others, with neither: what may lie under another tag can't be
  * pressed. `rightInset` keeps a strip at the plot's right edge clear, for
- * a control drawn there.
+ * a control drawn there; `rects` gets where every tag was drawn.
  */
 export function drawTags(
   ctx: CanvasRenderingContext2D,
@@ -126,6 +134,7 @@ export function drawTags(
   buttons: LineButton[],
   boxes: TagBox[] = [],
   rightInset = 0,
+  rects: TagRect[] = [],
 ): void {
   if (tags.length === 0) return;
   const { chartRect } = viewport;
@@ -140,6 +149,7 @@ export function drawTags(
     const { x, fits } = places[i];
     const top = tagTop(tags[i].y);
     drawTag(ctx, tags[i], x, top, widths[i], sums[i], theme, fits ? buttons : []);
+    rects.push({ x, y: top, width: sums[i], height: TAG_HEIGHT });
     const grab = tags[i].grab;
     if (!fits || !grab) continue;
     // Only what shows: the plot clips a tag on a line near its edge.

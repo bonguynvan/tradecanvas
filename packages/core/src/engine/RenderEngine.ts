@@ -540,9 +540,39 @@ export class RenderEngine {
     ctx.barCountdown?.render(c, viewport, theme, data, ctx.currentPriceLine?.getTag() ?? null);
     ctx.crosshairHandler?.renderAxisLabels(c, viewport, theme, data, ctx.timeAxisY, ctx.priceAxis?.labelRows(), ctx.timeAxis?.labelColumns());
     ctx.priceAxisAddButton?.render(c, viewport, theme, ctx.crosshairHandler?.getPosition() ?? null);
-    ctx.chartLegend?.render(c, viewport, theme, data);
+    this.renderLegend(c, ctx);
     ctx.renderOverlayPlugins?.(c, 'ui');
     this.renderPanelHoverValues(c, ctx);
+  }
+
+  /**
+   * The legend, cut around the trading tags: it is drawn on the layer above
+   * them, and a tag on a line near the top would lie under its rows, its
+   * buttons with it.
+   */
+  private renderLegend(c: CanvasRenderingContext2D, ctx: RenderContext): void {
+    if (!ctx.chartLegend) return;
+    const { viewport, theme, data } = ctx;
+    const tags = ctx.tradingRenderer?.tagRects() ?? [];
+    if (tags.length === 0) {
+      ctx.chartLegend.render(c, viewport, theme, data);
+      return;
+    }
+    const { x, y, width, height } = viewport.chartRect;
+    c.save();
+    try {
+      // The plot less each tag, one clip a tag: clips meet, so where tags
+      // overlap stays out too, as one even-odd path would not leave it.
+      for (const tag of tags) {
+        c.beginPath();
+        c.rect(x, y, width, height);
+        c.rect(tag.x, tag.y, tag.width, tag.height);
+        c.clip('evenodd');
+      }
+      ctx.chartLegend.render(c, viewport, theme, data);
+    } finally {
+      c.restore();
+    }
   }
 
   /** Each pane's drawing as steps: its background, then its levels and indicators. */

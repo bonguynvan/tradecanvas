@@ -1,5 +1,6 @@
 import type { ViewportState, Theme } from '@tradecanvas/commons';
 import type { TradingManager } from './TradingManager.js';
+import type { TagRect } from './tradingTags.js';
 
 export class TradingRenderer {
   constructor(private manager: TradingManager) {}
@@ -20,6 +21,11 @@ export class TradingRenderer {
   /** The lines the axis badges are for, top to bottom: where `renderAxisBadges` takes its `at` for. */
   axisBadgeLines(viewport: ViewportState, theme?: Theme): number[] {
     return this.manager.axisBadgeLines(viewport, theme);
+  }
+
+  /** Where the tags on the lines were drawn last. */
+  tagRects(): readonly TagRect[] {
+    return this.manager.tagRects();
   }
 
   /** Where the axis badges sit, for the scale and other tags to keep clear of. */

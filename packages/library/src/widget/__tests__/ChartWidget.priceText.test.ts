@@ -157,6 +157,15 @@ describe('ChartWidget panels’ prices', () => {
     expect(host.querySelector('.tcw-datawin')?.textContent).toContain('3.45억');
   });
 
+  it('write the data window’s volume in the number locale’s decimal mark', () => {
+    widget.destroy();
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false, chartOptions: { numberLocale: 'de-DE' } });
+    FakeChart.last.bars = [{ ...BAR, volume: 66_100 }];
+    widget.openPanel('dataWindow');
+    hoverBar();
+    expect(host.querySelector('.tcw-datawin')?.textContent).toContain('66,10K');
+  });
+
   it('switch the data window’s volume to 만, 억 and 조 when the settings turn the numbers Korean', () => {
     FakeChart.last.bars = [{ ...BAR, volume: 345_000_000 }];
     widget.setSettings({ numberLocale: 'ko-KR' });
