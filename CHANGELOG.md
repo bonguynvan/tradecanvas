@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 1.59.1 (2026-11-01)
+
+React, Vue and Svelte components: 1.3.49.
+
 ### Fixes
 
 - **The "+" by the price axis no longer covers the trading tags' buttons** (`@tradecanvas/core`, `@tradecanvas/chart`). With `features.priceAxisAddButton` on (ChartWidget turns it on with trading or alerts), the "+" that follows the crosshair sat over the right end of the order and position tags, on their close button, and took a press meant for it. While the "+" shows, the tags now end left of its strip. `PRICE_AXIS_ADD_STRIP` in `@tradecanvas/core` is that strip's width; `TradingManager.setTagInset(px)` keeps the tags that far from the plot's right edge. `setFeatures({ priceAxisAddButton })`, which ChartWidget's settings use, now turns the "+" off and on as `setPriceAxisAddButton` does; before, the "+" switched off that way still took presses. The trading page in all six languages describes it.
