@@ -281,6 +281,7 @@ export const TR_MESSAGES: WidgetMessages = {
   'settings.priorWeek': 'Önceki hafta (PWH/PWL)',
   'settings.ohlcLegend': 'OHLC açıklaması',
   'settings.indicatorValues': 'Gösterge değerleri ölçekte',
+  'settings.alignAxisLabels': 'Etiketler üst üste binmesin',
   'settings.barCountdown': 'Bar geri sayımı',
   'settings.crosshairMode': 'Artı imleç',
   'settings.crosshair.magnet': 'Mıknatıs',

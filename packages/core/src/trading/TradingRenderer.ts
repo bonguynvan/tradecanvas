@@ -13,8 +13,13 @@ export class TradingRenderer {
    * scene pass AFTER priceAxis.render() so the badges paint on top of the
    * regular tick labels — matching MT4/MT5 behaviour.
    */
-  renderAxisBadges(ctx: CanvasRenderingContext2D, viewport: ViewportState, theme: Theme): void {
-    this.manager.renderAxisBadges(ctx, viewport, theme);
+  renderAxisBadges(ctx: CanvasRenderingContext2D, viewport: ViewportState, theme: Theme, at?: readonly number[]): void {
+    this.manager.renderAxisBadges(ctx, viewport, theme, at);
+  }
+
+  /** The lines the axis badges are for, top to bottom: where `renderAxisBadges` takes its `at` for. */
+  axisBadgeLines(viewport: ViewportState, theme?: Theme): number[] {
+    return this.manager.axisBadgeLines(viewport, theme);
   }
 
   /** Where the axis badges sit, for the scale and other tags to keep clear of. */

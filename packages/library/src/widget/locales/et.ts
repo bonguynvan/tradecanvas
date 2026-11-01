@@ -289,6 +289,7 @@ export const ET_MESSAGES: WidgetMessages = {
   'settings.priorWeek': 'Eelmine nädal (PWH/PWL)',
   'settings.ohlcLegend': 'OHLC-legend',
   'settings.indicatorValues': 'Indikaatorite väärtused skaalal',
+  'settings.alignAxisLabels': 'Sildid ei kattu',
   'settings.barCountdown': 'Aeg küünla sulgumiseni',
   'settings.crosshairMode': 'Sihtrist',
   'settings.crosshair.magnet': 'Magnet',

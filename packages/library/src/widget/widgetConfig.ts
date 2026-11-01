@@ -200,6 +200,7 @@ export const DEFAULT_SETTINGS: ChartSettingsState = {
   legendVisible: true,
   barCountdown: true,
   indicatorValueLabels: false,
+  alignAxisLabels: true,
   logScale: false,
   scaleMode: 'regular',
   autoScale: true,

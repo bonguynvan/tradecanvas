@@ -281,6 +281,7 @@ export const ID_MESSAGES: WidgetMessages = {
   'settings.priorWeek': 'Minggu sebelumnya (PWH/PWL)',
   'settings.ohlcLegend': 'Legenda OHLC',
   'settings.indicatorValues': 'Nilai indikator di skala',
+  'settings.alignAxisLabels': 'Label tidak tumpang tindih',
   'settings.barCountdown': 'Hitung mundur bar',
   'settings.crosshairMode': 'Crosshair',
   'settings.crosshair.magnet': 'Magnet',

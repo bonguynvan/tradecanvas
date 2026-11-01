@@ -6406,6 +6406,12 @@
         "kind": "boolean"
       },
       {
+        "name": "alignAxisLabels",
+        "type": "boolean",
+        "doc": "Move the price axis's tags apart where they would cover one another: the last price's stays on its line, those above it go up and those below it down (orders, positions, bid/ask, high/low, limits). Default true; false keeps each tag on its line.",
+        "kind": "boolean"
+      },
+      {
         "name": "volume",
         "type": "boolean",
         "doc": "Show volume bars below candles",

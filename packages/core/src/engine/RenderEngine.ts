@@ -33,6 +33,8 @@ import type { AlertManager } from '../features/AlertManager.js';
 import type { SignalMarkerManager } from '../features/SignalMarkerManager.js';
 import type { TradeZoneManager } from '../features/TradeZoneManager.js';
 import { fillTag } from '../ui/shapes.js';
+import { alignAxisTags, type AxisTagBox } from '../axis/alignAxisTags.js';
+import type { PriceLineKind } from '../ui/PriceLines.js';
 
 /** Height of an indicator pane's title strip; the indicator draws below it. */
 const PANEL_HEADER_HEIGHT = 20;
@@ -40,6 +42,20 @@ const PANEL_HEADER_HEIGHT = 20;
 const MIN_PANE_PLOT_HEIGHT = 8;
 /** Height of a price limit's tag on the axis. */
 const LIMIT_TAG_HEIGHT = 14;
+/** Half the last price's tag (`CurrentPriceLine`) and of a high/low or bid/ask tag (`PriceLines`). */
+const LAST_TAG_HALF = 10;
+const QUOTE_TAG_HALF = 8;
+
+/** Where the price axis's fixed tags go (`axisTagPlan`). */
+interface AxisTagPlan {
+  /** Each tag's span as placed, for value tags and the scale's labels to keep clear of. */
+  fixed: FixedAxisTag[];
+  quote: Map<PriceLineKind, number>;
+  /** By the order of `limitLines`. */
+  limits: (number | undefined)[];
+  /** By the order of `axisBadgeLines`; undefined when the badges spread among themselves. */
+  trading: number[] | undefined;
+}
 /** A limit tag's price on a theme that names no colours to pick from. */
 const LIMIT_TAG_INK = '#000';
 /** Decimals a price limit shows when neither the chart nor the market sets them. */
@@ -162,6 +178,8 @@ export interface RenderContext {
   seriesRevision?: number;
   /** Tag each indicator line's latest value on its value axis (default on). */
   indicatorValueLabels?: boolean;
+  /** Move the price axis's tags apart where they would cover one another, the last price's staying on its line (default on). */
+  alignAxisLabels?: boolean;
   /** Price text as the price axis writes it (precision, locale). */
   formatPrice?: (price: number) => string;
   /** BCP 47 locale for number formatting. Defaults to 'en-US' when not set. */
@@ -368,8 +386,11 @@ export class RenderEngine {
 
     this.renderPanels(c, ctx, panes, plan);
 
+    // Where the price axis's tags go, placed together so none covers another.
+    const axisTags = this.axisTagPlan(ctx);
+
     // --- Chart objects: limits, trade zones, drawings, orders, markers, alerts ---
-    if (ctx.priceLimits) this.renderPriceLimits(c, viewport, theme, ctx.priceLimits, ctx.formatPrice);
+    if (ctx.priceLimits) this.renderPriceLimits(c, viewport, theme, ctx.priceLimits, ctx.formatPrice, axisTags.limits);
     ctx.tradeZoneManager?.render(c, viewport, theme);
     ctx.drawingRenderer?.render(c, viewport, theme);
     // The price lines (high, low, bid, ask, the last price) under the orders and positions,
@@ -383,7 +404,7 @@ export class RenderEngine {
     // --- Axes and price tags ---
     // Tags are placed first: value tags step around the fixed ones (last
     // price, high/low, orders), and the scale's labels give way to them all.
-    const fixedTags = this.fixedAxisTags(ctx);
+    const fixedTags = axisTags.fixed;
     const valueTags = ctx.indicatorValueLabels !== false ? this.overlayValueTags(ctx, fixedTags) : [];
     ctx.priceAxis?.render(c, viewport, theme, 'right', [...fixedTags.map((t) => t.y), ...valueTags.map((t) => t.y)]);
     drawAxisValueLabels(c, valueTags, viewport.chartRect.x + viewport.chartRect.width, viewport.priceAxisWidth ?? PRICE_AXIS_WIDTH, theme);
@@ -393,8 +414,8 @@ export class RenderEngine {
     }
     // Trading axis badges paint ON TOP of the regular price axis labels
     // so position entry prices and order trigger prices are always visible.
-    ctx.tradingRenderer?.renderAxisBadges(c, viewport, theme);
-    ctx.priceLines?.renderAxisTags(c, viewport, theme, data);
+    ctx.tradingRenderer?.renderAxisBadges(c, viewport, theme, axisTags.trading);
+    ctx.priceLines?.renderAxisTags(c, viewport, theme, data, axisTags.quote);
     ctx.currentPriceLine?.renderTag(c, viewport, theme);
     ctx.timeAxis?.render(c, viewport, theme, data, ctx.timeAxisY);
     this.renderPanelAxes(c, ctx);
@@ -603,25 +624,56 @@ export class RenderEngine {
     }
   }
 
-  /** Tags fixed on the price axis: the last price, the high/low and bid/ask lines, the day's limits, positions and orders. */
-  private fixedAxisTags(ctx: RenderContext): FixedAxisTag[] {
+  /**
+   * The price axis's fixed tags (the last price with its countdown, the
+   * high/low and bid/ask lines, the day's limits, positions and orders) and
+   * where each is drawn. With `alignAxisLabels` on, they are moved apart so
+   * none covers another, the last price's staying on its line; off, each is
+   * on its line, orders and positions spread among themselves as before.
+   */
+  private axisTagPlan(ctx: RenderContext): AxisTagPlan {
     const { viewport, data } = ctx;
     const { chartRect } = viewport;
-    const tags: FixedAxisTag[] = [];
+    const onPlot = (y: number) => y >= chartRect.y && y <= chartRect.y + chartRect.height;
+    const boxes: (AxisTagBox & { source: 'last' | 'quote' | 'limit' | 'trading'; key: number | PriceLineKind })[] = [];
     const last = ctx.currentPriceLine?.isVisible() && ctx.theme.style?.lastPrice.visible !== false ? ctx.currentPriceLine.getPrice() : null;
-    if (last !== null && last !== undefined) {
-      const y = priceToY(last, viewport);
-      tags.push({ y, half: 10 });
-      // The countdown's strip under the tag: the scale's labels and value tags keep clear of it too.
-      const onPlot = y >= chartRect.y && y <= chartRect.y + chartRect.height;
-      if (onPlot && ctx.barCountdown?.isShown(data)) tags.push({ y: y + 10 + COUNTDOWN_HEIGHT / 2, half: COUNTDOWN_HEIGHT / 2 });
+    if (last !== null && last !== undefined && onPlot(priceToY(last, viewport))) {
+      // The countdown's strip hangs under the tag: the tags below keep clear of it too.
+      const countdown = ctx.barCountdown?.isShown(data) ? COUNTDOWN_HEIGHT : 0;
+      boxes.push({ y: priceToY(last, viewport), above: LAST_TAG_HALF, below: LAST_TAG_HALF + countdown, source: 'last', key: 0 });
     }
-    for (const level of ctx.priceLines?.levels(data, viewport) ?? []) tags.push({ y: priceToY(level.price, viewport), half: 8 });
-    for (const { price } of ctx.priceLimits ? limitLines(ctx.priceLimits) : []) {
-      tags.push({ y: priceToY(price, viewport), half: LIMIT_TAG_HEIGHT / 2 });
+    for (const level of ctx.priceLines?.levels(data, viewport) ?? []) {
+      const y = priceToY(level.price, viewport);
+      if (onPlot(y)) boxes.push({ y, above: QUOTE_TAG_HALF, below: QUOTE_TAG_HALF, source: 'quote', key: level.kind });
     }
-    for (const y of ctx.tradingRenderer?.axisTagYs(viewport, ctx.theme) ?? []) tags.push({ y, half: AXIS_LABEL_HEIGHT / 2 });
-    return tags.filter((t) => t.y >= chartRect.y && t.y <= chartRect.y + chartRect.height);
+    (ctx.priceLimits ? limitLines(ctx.priceLimits) : []).forEach(({ price }, i) => {
+      const y = priceToY(price, viewport);
+      if (onPlot(y)) boxes.push({ y, above: LIMIT_TAG_HEIGHT / 2, below: LIMIT_TAG_HEIGHT / 2, source: 'limit', key: i });
+    });
+    const aligned = ctx.alignAxisLabels !== false;
+    if (aligned) {
+      (ctx.tradingRenderer?.axisBadgeLines(viewport, ctx.theme) ?? []).forEach((y, i) => {
+        boxes.push({ y, above: AXIS_LABEL_HEIGHT / 2, below: AXIS_LABEL_HEIGHT / 2, source: 'trading', key: i });
+      });
+    }
+    const anchor = boxes.findIndex((b) => b.source === 'last');
+    const bounds = { top: chartRect.y, bottom: chartRect.y + chartRect.height };
+    const at = aligned ? alignAxisTags(boxes, anchor >= 0 ? anchor : null, bounds) : boxes.map((b) => b.y);
+
+    const plan: AxisTagPlan = { fixed: [], quote: new Map(), limits: [], trading: aligned ? [] : undefined };
+    boxes.forEach((b, i) => {
+      // One pushed off the plot (NaN) is left out: there is nothing for the others to keep clear of.
+      if (!Number.isNaN(at[i])) plan.fixed.push({ y: at[i] + (b.below - b.above) / 2, half: (b.above + b.below) / 2 });
+      if (b.source === 'quote') plan.quote.set(b.key as PriceLineKind, at[i]);
+      else if (b.source === 'limit') plan.limits[b.key as number] = at[i];
+      else if (b.source === 'trading') plan.trading![b.key as number] = at[i];
+    });
+    if (!aligned) {
+      for (const y of ctx.tradingRenderer?.axisTagYs(viewport, ctx.theme) ?? []) {
+        if (onPlot(y)) plan.fixed.push({ y, half: AXIS_LABEL_HEIGHT / 2 });
+      }
+    }
+    return plan;
   }
 
   /** Overlay indicators' latest values as tags on the price axis, clear of the fixed tags. */
@@ -867,6 +919,7 @@ export class RenderEngine {
     theme: Theme,
     limits: PriceLimits,
     format?: (price: number) => string,
+    tagAt: readonly (number | undefined)[] = [],
   ): void {
     const { chartRect } = viewport;
     const text = format ?? ((price: number) => priceTagText(price, viewport, viewport.pricePrecision ?? LIMIT_DECIMALS));
@@ -874,9 +927,9 @@ export class RenderEngine {
     const boldFont = `bold 9px ${theme.font.family}`;
     const normalFont = `10px ${theme.font.family}`;
 
-    for (const { price, color, label } of limitLines(limits, theme)) {
+    limitLines(limits, theme).forEach(({ price, color, label }, i) => {
       const y = priceToY(price, viewport);
-      if (y < chartRect.y || y > chartRect.y + chartRect.height) continue;
+      if (y < chartRect.y || y > chartRect.y + chartRect.height) return;
 
       ctx.setLineDash([8, 4]);
       ctx.strokeStyle = color;
@@ -894,17 +947,20 @@ export class RenderEngine {
       ctx.textAlign = 'left';
       ctx.fillText(`${label} ${text(price)}`, chartRect.x + 4, y - 2);
 
-      // Axis badge: the scale's labels under it give way (`fixedAxisTags`).
+      // Axis badge, where the axis's tags were placed together (`axisTagPlan`): the scale's labels give way.
+      const tagY = tagAt[i] ?? y;
+      // Pushed off the plot by the other tags: the line and its name stay, the tag is left out.
+      if (Number.isNaN(tagY)) return;
       const axisX = chartRect.x + chartRect.width + 1;
       ctx.fillStyle = color;
-      fillTag(ctx, axisX, y - LIMIT_TAG_HEIGHT / 2, (viewport.priceAxisWidth ?? PRICE_AXIS_WIDTH) - 2, LIMIT_TAG_HEIGHT, theme);
+      fillTag(ctx, axisX, tagY - LIMIT_TAG_HEIGHT / 2, (viewport.priceAxisWidth ?? PRICE_AXIS_WIDTH) - 2, LIMIT_TAG_HEIGHT, theme);
       // The ground's colour or the text's, whichever reads on the tag: near black on the bright ones.
       ctx.fillStyle = theme.background && theme.text ? inkOn(color, theme.background, theme.text) : LIMIT_TAG_INK;
       ctx.font = normalFont;
       ctx.textBaseline = 'middle';
       ctx.textAlign = 'left';
-      ctx.fillText(text(price), axisX + 4, y);
-    }
+      ctx.fillText(text(price), axisX + 4, tagY);
+    });
   }
 
   destroy(): void {

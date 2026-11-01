@@ -20,7 +20,7 @@ const ctx = (over: Partial<ChartMenuContext> = {}): ChartMenuContext => ({
   canLog: true,
   inverted: false,
   leftScale: false,
-  labels: { values: false, countdown: true },
+  labels: { values: false, aligned: true, countdown: true },
   lines: { highLow: false, lastPrice: true },
   timezone: { current: 'local', options: [{ value: 'local', label: 'Local' }, { value: 'UTC', label: 'UTC' }] },
   keys: {},
@@ -73,14 +73,14 @@ describe('chart menus', () => {
       'regularScale', 'logScale', 'percentScale', 'indexedScale', '|',
       'labels', 'lines', '|', 'alert', '|', 'settings',
     ]);
-    expect(ids(find(entries, 'labels')!.submenu!)).toEqual(['indicatorValueLabels', 'barCountdown']);
+    expect(ids(find(entries, 'labels')!.submenu!)).toEqual(['indicatorValueLabels', 'alignAxisLabels', 'barCountdown']);
     expect(ids(find(entries, 'lines')!.submenu!)).toEqual(['highLowLines', 'lastPriceLine']);
   });
 
   it('ticks the price axis’s switches, and its mode among the four, as they are', () => {
     const entries = chartMenuEntries('priceAxis', ctx({
       scaleMode: 'logarithmic', inverted: true, autoScale: false, leftScale: true,
-      labels: { values: true, countdown: false }, lines: { highLow: true, lastPrice: false },
+      labels: { values: true, aligned: false, countdown: false }, lines: { highLow: true, lastPrice: false },
     }), EN_TRANSLATOR);
     const checked = (list: readonly ContextMenuEntry[]) =>
       Object.fromEntries(list.flatMap((e) => (e === 'separator' || e.checked === undefined ? [] : [[e.id, e.checked]])));
@@ -90,15 +90,15 @@ describe('chart menus', () => {
     });
     expect(entries.filter((e): e is Item => e !== 'separator' && e.radio === true).map((e) => e.id))
       .toEqual(['regularScale', 'logScale', 'percentScale', 'indexedScale']);
-    expect(checked(find(entries, 'labels')!.submenu!)).toEqual({ indicatorValueLabels: true, barCountdown: false });
+    expect(checked(find(entries, 'labels')!.submenu!)).toEqual({ indicatorValueLabels: true, alignAxisLabels: false, barCountdown: false });
     expect(checked(find(entries, 'lines')!.submenu!)).toEqual({ highLowLines: true, lastPriceLine: false });
   });
 
   it('leaves out of the price axis what the chart can’t do', () => {
-    const entries = chartMenuEntries('priceAxis', ctx({ canLog: false, labels: { values: false }, price: undefined }), EN_TRANSLATOR);
+    const entries = chartMenuEntries('priceAxis', ctx({ canLog: false, labels: { values: false, aligned: true }, price: undefined }), EN_TRANSLATOR);
     expect(ids(entries)).not.toContain('logScale');
     expect(ids(entries)).not.toContain('alert');
-    expect(ids(find(entries, 'labels')!.submenu!)).toEqual(['indicatorValueLabels']);
+    expect(ids(find(entries, 'labels')!.submenu!)).toEqual(['indicatorValueLabels', 'alignAxisLabels']);
   });
 
   it('gives a pane its scale switches', () => {

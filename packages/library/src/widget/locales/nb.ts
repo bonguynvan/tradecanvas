@@ -289,6 +289,7 @@ export const NB_MESSAGES: WidgetMessages = {
   'settings.priorWeek': 'Forrige uke (PWH/PWL)',
   'settings.ohlcLegend': 'OHLC-forklaring',
   'settings.indicatorValues': 'Indikatorverdier på skalaen',
+  'settings.alignAxisLabels': 'Ingen overlappende etiketter',
   'settings.barCountdown': 'Nedtelling til neste lys',
   'settings.crosshairMode': 'Trådkors',
   'settings.crosshair.magnet': 'Magnet',

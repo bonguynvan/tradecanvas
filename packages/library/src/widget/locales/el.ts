@@ -281,6 +281,7 @@ export const EL_MESSAGES: WidgetMessages = {
   'settings.priorWeek': 'Προηγούμενη εβδομάδα (PWH/PWL)',
   'settings.ohlcLegend': 'Υπόμνημα OHLC',
   'settings.indicatorValues': 'Τιμές δεικτών στην κλίμακα',
+  'settings.alignAxisLabels': 'Χωρίς επικαλυπτόμενες ετικέτες',
   'settings.barCountdown': 'Αντίστροφη μέτρηση κεριού',
   'settings.crosshairMode': 'Σταυρόνημα',
   'settings.crosshair.magnet': 'Μαγνήτης',

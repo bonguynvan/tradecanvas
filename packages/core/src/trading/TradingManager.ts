@@ -23,6 +23,7 @@ import { buttonAt, sameLineAction, type LineButton, type LineButtonAction } from
 import { renderFillMarks } from './fillMarks.js';
 import { drawAxisBadge, drawTags, spreadAxisBadges, tagAt, type AxisBadge, type TagBox } from './tradingTags.js';
 import { clampToPlot } from './plot.js';
+import { AXIS_LABEL_HEIGHT } from '../ui/axisValueLabels.js';
 
 /** Most fills kept for their marks; the oldest go first. */
 const MAX_FILLS = 1000;
@@ -445,11 +446,35 @@ export class TradingManager {
    * Draw position/order price badges on the price axis. Drawn after the
    * price axis so they paint ON TOP of the regular axis labels.
    */
-  renderAxisBadges(ctx: CanvasRenderingContext2D, viewport: ViewportState, theme: Theme): void {
+  /**
+   * The badges, spread among themselves; or, given `at` (one centre per line
+   * of `axisBadgeLines`, as the chart placed all of its axis's tags), there.
+   */
+  renderAxisBadges(ctx: CanvasRenderingContext2D, viewport: ViewportState, theme: Theme, at?: readonly number[]): void {
     if (!this.config.enabled) return;
+    if (at) {
+      const { chartRect } = viewport;
+      this.sortedAxisBadges(viewport, theme).forEach((badge, i) => {
+        const y = at[i] ?? badge.y;
+        // One pushed past the plot's edge is left out: it would sit on the time axis.
+        if (!Number.isFinite(y) || y - AXIS_LABEL_HEIGHT / 2 < chartRect.y - 0.5 || y + AXIS_LABEL_HEIGHT / 2 > chartRect.y + chartRect.height + 0.5) return;
+        drawAxisBadge(ctx, y, badge.text, badge.color, viewport, theme);
+      });
+      return;
+    }
     for (const badge of spreadAxisBadges(this.axisBadges(viewport, theme), viewport)) {
       drawAxisBadge(ctx, badge.at, badge.text, badge.color, viewport, theme);
     }
+  }
+
+  /** Where the badges' lines are, top to bottom. */
+  axisBadgeLines(viewport: ViewportState, theme: Theme = DARK_THEME): number[] {
+    if (!this.config.enabled) return [];
+    return this.sortedAxisBadges(viewport, theme).map((b) => b.y);
+  }
+
+  private sortedAxisBadges(viewport: ViewportState, theme: Theme): AxisBadge[] {
+    return this.axisBadges(viewport, theme).sort((a, b) => a.y - b.y);
   }
 
   /** Every price the lines put on the axis, where their lines are. */

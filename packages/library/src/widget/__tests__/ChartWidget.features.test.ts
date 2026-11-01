@@ -40,6 +40,7 @@ class FakeChart {
   setLegend(config: { visible?: boolean }): void { if ('visible' in config) this.display.push(`legend:${config.visible}`); }
   setBarCountdownVisible(on: boolean): void { this.display.push(`countdown:${on}`); }
   setIndicatorValueLabelsVisible(on: boolean): void { this.display.push(`values:${on}`); }
+  setAxisLabelsAligned(on: boolean): void { this.display.push(`aligned:${on}`); }
   timezones: unknown[] = [];
   setTimeZone(tz: unknown): void { this.timezones.push(tz); }
   leftScale: boolean[] = [];
@@ -258,13 +259,14 @@ describe('ChartWidget range bar', () => {
     expect(FakeChart.last.presets).toEqual(['3M']);
   });
 
-  it('applies the legend, countdown and indicator value toggles to the chart', () => {
+  it('applies the legend, countdown, indicator value and label alignment toggles to the chart', () => {
     make();
     const apply = (p: object) => (widget as unknown as { applySettings(p: object): void }).applySettings(p);
     apply({ legendVisible: false });
     apply({ barCountdown: false });
     apply({ indicatorValueLabels: false });
-    expect(FakeChart.last.display).toEqual(['legend:false', 'countdown:false', 'values:false']);
+    apply({ alignAxisLabels: false });
+    expect(FakeChart.last.display).toEqual(['legend:false', 'countdown:false', 'values:false', 'aligned:false']);
   });
 
   const field = (name: string) => document.querySelector<HTMLInputElement>(`.tcw-goto [data-field="${name}"]`);

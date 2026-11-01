@@ -128,6 +128,13 @@ export interface FeaturesConfig {
   legend?: boolean;
   /** Tag each indicator line's latest value on its value axis. Default false: the legend shows the values. */
   indicatorValueLabels?: boolean;
+  /**
+   * Move the price axis's tags apart where they would cover one another: the
+   * last price's stays on its line, those above it go up and those below it
+   * down (orders, positions, bid/ask, high/low, limits). Default true; false
+   * keeps each tag on its line.
+   */
+  alignAxisLabels?: boolean;
   /** Show volume bars below candles */
   volume?: boolean;
   /** Show watermark text */

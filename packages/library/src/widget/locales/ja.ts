@@ -281,6 +281,7 @@ export const JA_MESSAGES: WidgetMessages = {
   'settings.priorWeek': '前週 (PWH/PWL)',
   'settings.ohlcLegend': 'OHLC 凡例',
   'settings.indicatorValues': 'スケールにインジケーター値を表示',
+  'settings.alignAxisLabels': 'ラベルを重ねない',
   'settings.barCountdown': 'バーのカウントダウン',
   'settings.crosshairMode': 'クロスヘア',
   'settings.crosshair.magnet': 'マグネット',

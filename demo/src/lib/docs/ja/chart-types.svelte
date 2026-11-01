@@ -132,3 +132,9 @@ new Chart(host, { chartTypeOptions: { renko: { boxSize: 50 } } })`}</code></pre>
 chart.setHighLowLines(true)          // or new Chart(host, { highLowLines: true })
 chart.setBidAsk({ bid: 64210.5, ask: 64211 })
 chart.setBidAsk(null)`}</code></pre>
+<p>
+  価格軸で重なり合うタグ（最新値、Bid と Ask、高値と安値、値幅制限、注文とポジション）は離して並べます。
+  最新値のタグはそのラインに留まり、上のタグは上へ、下のタグは下へ、必要な分だけ動きます。ChartWidget の
+  価格軸メニューと設定では「ラベルを重ねない」です。オフにすると各タグはそのライン上に留まります：
+</p>
+<pre><code>{`chart.setAxisLabelsAligned(false)   // または new Chart(host, { features: { alignAxisLabels: false } })`}</code></pre>

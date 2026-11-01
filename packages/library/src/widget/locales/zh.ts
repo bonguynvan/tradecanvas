@@ -281,6 +281,7 @@ export const ZH_MESSAGES: WidgetMessages = {
   'settings.priorWeek': '前一周 (PWH/PWL)',
   'settings.ohlcLegend': 'OHLC 图例',
   'settings.indicatorValues': '在坐标轴显示指标值',
+  'settings.alignAxisLabels': '标签不重叠',
   'settings.barCountdown': 'K线倒计时',
   'settings.crosshairMode': '十字光标',
   'settings.crosshair.magnet': '吸附',

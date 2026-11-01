@@ -289,6 +289,7 @@ export const DA_MESSAGES: WidgetMessages = {
   'settings.priorWeek': 'Forrige uge (PWH/PWL)',
   'settings.ohlcLegend': 'OHLC-forklaring',
   'settings.indicatorValues': 'Indikatorværdier på skalaen',
+  'settings.alignAxisLabels': 'Ingen overlappende etiketter',
   'settings.barCountdown': 'Nedtælling til næste lys',
   'settings.crosshairMode': 'Trådkors',
   'settings.crosshair.magnet': 'Magnet',

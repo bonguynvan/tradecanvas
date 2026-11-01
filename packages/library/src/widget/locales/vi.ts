@@ -281,6 +281,7 @@ export const VI_MESSAGES: WidgetMessages = {
   'settings.priorWeek': 'Tuần trước (PWH/PWL)',
   'settings.ohlcLegend': 'Chú thích OHLC',
   'settings.indicatorValues': 'Giá trị chỉ báo trên trục',
+  'settings.alignAxisLabels': 'Nhãn không chồng nhau',
   'settings.barCountdown': 'Đếm ngược nến',
   'settings.crosshairMode': 'Con trỏ chữ thập',
   'settings.crosshair.magnet': 'Hút vào giá',

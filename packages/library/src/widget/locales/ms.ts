@@ -289,6 +289,7 @@ export const MS_MESSAGES: WidgetMessages = {
   'settings.priorWeek': 'Minggu sebelumnya (PWH/PWL)',
   'settings.ohlcLegend': 'Legenda OHLC',
   'settings.indicatorValues': 'Nilai penunjuk pada skala',
+  'settings.alignAxisLabels': 'Tiada label bertindih',
   'settings.barCountdown': 'Kira detik bar',
   'settings.crosshairMode': 'Crosshair',
   'settings.crosshair.magnet': 'Magnet',

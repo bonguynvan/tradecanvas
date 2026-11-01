@@ -281,6 +281,7 @@ export const RU_MESSAGES: WidgetMessages = {
   'settings.priorWeek': 'Прошлая неделя (PWH/PWL)',
   'settings.ohlcLegend': 'Легенда OHLC',
   'settings.indicatorValues': 'Значения индикаторов на шкале',
+  'settings.alignAxisLabels': 'Метки без наложения',
   'settings.barCountdown': 'Обратный отсчёт бара',
   'settings.crosshairMode': 'Перекрестие',
   'settings.crosshair.magnet': 'Магнит',

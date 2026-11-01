@@ -96,8 +96,11 @@ export class PriceLines {
     ctx.restore();
   }
 
-  /** Their tags, on the price axis (drawn over its labels). */
-  renderAxisTags(ctx: CanvasRenderingContext2D, viewport: ViewportState, theme: Theme, data: DataSeries): void {
+  /**
+   * Their tags, on the price axis (drawn over its labels): on their lines, or
+   * where `at` puts them so they keep clear of the axis's other tags.
+   */
+  renderAxisTags(ctx: CanvasRenderingContext2D, viewport: ViewportState, theme: Theme, data: DataSeries, at?: ReadonlyMap<PriceLineKind, number>): void {
     const { chartRect } = viewport;
     const axisX = chartRect.x + chartRect.width + 1;
     const width = (viewport.priceAxisWidth ?? PRICE_AXIS_WIDTH) - 2;
@@ -109,11 +112,14 @@ export class PriceLines {
     for (const level of this.levels(data, viewport)) {
       const y = priceToY(level.price, viewport);
       if (y < chartRect.y || y > chartRect.y + chartRect.height) continue;
+      const tagY = at?.get(level.kind) ?? y;
+      // Pushed off the plot by the axis's other tags: left out.
+      if (Number.isNaN(tagY)) continue;
       ctx.fillStyle = colorOf(level.kind, theme);
-      fillTag(ctx, axisX, y - TAG_HEIGHT / 2, width, TAG_HEIGHT, theme);
+      fillTag(ctx, axisX, tagY - TAG_HEIGHT / 2, width, TAG_HEIGHT, theme);
       ctx.fillStyle = theme.background;
       const text = viewport.formatPrice?.(level.price) ?? this.priceText?.(level.price) ?? formatPrice(level.price, precision);
-      ctx.fillText(text, axisX + 5, y);
+      ctx.fillText(text, axisX + 5, tagY);
     }
     ctx.restore();
   }

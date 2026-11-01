@@ -281,6 +281,7 @@ export const CS_MESSAGES: WidgetMessages = {
   'settings.priorWeek': 'Předchozí týden (PWH/PWL)',
   'settings.ohlcLegend': 'Legenda OHLC',
   'settings.indicatorValues': 'Hodnoty indikátorů na ose',
+  'settings.alignAxisLabels': 'Bez překrývajících se popisků',
   'settings.barCountdown': 'Odpočet do uzavření svíčky',
   'settings.crosshairMode': 'Nitkový kříž',
   'settings.crosshair.magnet': 'Magnet',

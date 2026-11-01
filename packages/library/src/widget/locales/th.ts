@@ -281,6 +281,7 @@ export const TH_MESSAGES: WidgetMessages = {
   'settings.priorWeek': 'สัปดาห์ก่อนหน้า (PWH/PWL)',
   'settings.ohlcLegend': 'คำอธิบาย OHLC',
   'settings.indicatorValues': 'ค่าอินดิเคเตอร์บนสเกล',
+  'settings.alignAxisLabels': 'ป้ายไม่ซ้อนทับกัน',
   'settings.barCountdown': 'นับถอยหลังแท่งเทียน',
   'settings.crosshairMode': 'เป้าเล็ง',
   'settings.crosshair.magnet': 'แม่เหล็ก',

@@ -289,6 +289,7 @@ export const HE_MESSAGES: WidgetMessages = {
   'settings.priorWeek': 'שבוע קודם (PWH/PWL)',
   'settings.ohlcLegend': 'מקרא OHLC',
   'settings.indicatorValues': 'ערכי אינדיקטורים על הסקאלה',
+  'settings.alignAxisLabels': 'ללא תוויות חופפות',
   'settings.barCountdown': 'ספירה לאחור לסגירת הנר',
   'settings.crosshairMode': 'כוונת',
   'settings.crosshair.magnet': 'מגנט',

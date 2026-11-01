@@ -6,6 +6,7 @@ import { RenderEngine } from '../RenderEngine.js';
 import type { RenderContext } from '../RenderEngine.js';
 import { PriceAxis } from '../../axis/PriceAxis.js';
 import { SessionBreaks } from '../../ui/SessionBreaks.js';
+import { AXIS_LABEL_HEIGHT } from '../../ui/axisValueLabels.js';
 
 /** jsdom has no 2D context: a recorder that accepts any call or assignment. */
 function fakeContext(canvas: HTMLCanvasElement): CanvasRenderingContext2D {
@@ -228,6 +229,7 @@ describe('RenderEngine — two canvases', () => {
       render: () => order.push('trading labels'),
       renderAxisBadges: () => order.push('trading badges'),
       axisTagYs: () => [],
+      axisBadgeLines: () => [],
     } as unknown as RenderContext['tradingRenderer'];
     ctx.currentPriceLine = {
       renderLine: () => order.push('price line'),
@@ -901,5 +903,48 @@ describe('RenderEngine — overlay value tags on the price axis', () => {
 
   it('writes the percent in the number locale, as the legend writes a compare’s change', () => {
     expect(tagTexts({ scaleMode: 'percentage', scaleBaseline: 100 }, 'de-DE')).toContain('+10,00%');
+  });
+});
+
+describe('RenderEngine — tags on the price axis', () => {
+  /** The last price, the bid and ask and a position, all at about 50 (y 100 on this plot). */
+  function crowded(align?: boolean) {
+    const { ctx } = makeContext();
+    const placed: { quote?: ReadonlyMap<string, number>; trading?: readonly number[] } = {};
+    ctx.currentPriceLine = {
+      isVisible: () => true, getPrice: () => 50, getTag: () => null, renderLine: () => {}, renderTag: () => {},
+    } as unknown as RenderContext['currentPriceLine'];
+    ctx.priceLines = {
+      levels: () => [{ kind: 'bid', price: 50 }, { kind: 'ask', price: 50.5 }],
+      render: () => {},
+      renderAxisTags: (_c: unknown, _v: unknown, _t: unknown, _d: unknown, at?: ReadonlyMap<string, number>) => { placed.quote = at; },
+    } as unknown as RenderContext['priceLines'];
+    ctx.tradingRenderer = {
+      render: () => {},
+      axisBadgeLines: () => [100],
+      axisTagYs: () => [100],
+      renderAxisBadges: (_c: unknown, _v: unknown, _t: unknown, at?: readonly number[]) => { placed.trading = at; },
+    } as unknown as RenderContext['tradingRenderer'];
+    if (align !== undefined) ctx.alignAxisLabels = align;
+    engine.setRenderContext(ctx);
+    engine.start();
+    runFrame();
+    return placed;
+  }
+
+  it('moves the tags apart so none covers another, the last price staying on its line', () => {
+    const placed = crowded();
+    const spans = [
+      { top: 90, bottom: 110 }, // the last price, which stays
+      ...['bid', 'ask'].map((k) => ({ top: placed.quote!.get(k)! - 8, bottom: placed.quote!.get(k)! + 8 })),
+      { top: placed.trading![0] - AXIS_LABEL_HEIGHT / 2, bottom: placed.trading![0] + AXIS_LABEL_HEIGHT / 2 },
+    ].sort((a, b) => a.top - b.top);
+    for (let i = 1; i < spans.length; i++) expect(spans[i].top).toBeGreaterThanOrEqual(spans[i - 1].bottom - 1e-9);
+  });
+
+  it('leaves each tag on its line with alignAxisLabels off, orders and positions spreading among themselves', () => {
+    const placed = crowded(false);
+    expect(placed.quote!.get('bid')).toBe(100);
+    expect(placed.trading).toBeUndefined();
   });
 });

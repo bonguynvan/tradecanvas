@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Price axis
+
+- **Tags on the price axis no longer cover one another** (`@tradecanvas/commons`, `@tradecanvas/core`, `@tradecanvas/chart`). With the price near an order or a position, its tag covered theirs, and so did the bid, ask, high and low tags and the day's limits. They are now placed together: the last price's tag stays on its line, and the others move up or down only as far as they must. It is on by default (`features.alignAxisLabels`); `setAxisLabelsAligned(false)` keeps each tag on its line, as before, and `isAxisLabelsAligned()` reads it back. ChartWidget lists it as "No overlapping labels" in the price scale menu and in Settings (the new string `settings.alignAxisLabels`, in all 30 languages). `alignAxisTags` in `@tradecanvas/core` places the tags. The chart types page in all six languages and the skill describe it.
+
 ### Fixes
 
 - **The bid, ask, high and low lines run under order and position labels** (`@tradecanvas/core`, `@tradecanvas/chart`). The last price line went under them in 1.54.3, but the quote's bid and ask lines, and the high and low of the bars on screen, were still drawn after them and crossed a label near them. They are drawn under the orders and positions now; their tags on the price axis stay over the axis.

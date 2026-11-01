@@ -455,6 +455,7 @@ export class Chart {
       grid: f.grid ?? (options.grid?.visible ?? true),
       legend: f.legend ?? true,
       indicatorValueLabels: f.indicatorValueLabels ?? false,
+      alignAxisLabels: f.alignAxisLabels ?? true,
       volume: f.volume ?? true,
       watermark: f.watermark ?? true,
       saveLoad: f.saveLoad ?? true,
@@ -2310,6 +2311,17 @@ export class Chart {
 
   isIndicatorValueLabelsVisible(): boolean {
     return this.features.indicatorValueLabels;
+  }
+
+  /** Move the price axis's tags apart where they would cover one another, the last price's staying on its line (on by default). */
+  setAxisLabelsAligned(aligned: boolean): void {
+    this.features.alignAxisLabels = aligned;
+    this.syncRenderContext();
+    this.engine.requestRender();
+  }
+
+  isAxisLabelsAligned(): boolean {
+    return this.features.alignAxisLabels;
   }
 
   /** Write each pane's indicator name and hovered values in its header (default); off when you label panes yourself. */
@@ -6745,6 +6757,7 @@ export class Chart {
       numberLocale: this.numberLocale,
       paneTitles: this.paneTitles,
       indicatorValueLabels: this.features.indicatorValueLabels,
+      alignAxisLabels: this.features.alignAxisLabels,
       formatPrice: (price) => this.formatPrice(price),
       renderOverlayPlugins: (c, layer) => this.drawOverlayPlugins(c, layer),
     });

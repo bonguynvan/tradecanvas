@@ -281,6 +281,7 @@ export const RO_MESSAGES: WidgetMessages = {
   'settings.priorWeek': 'Săptămâna anterioară (PWH/PWL)',
   'settings.ohlcLegend': 'Legendă OHLC',
   'settings.indicatorValues': 'Valorile indicatorilor pe scară',
+  'settings.alignAxisLabels': 'Etichete fără suprapunere',
   'settings.barCountdown': 'Numărătoare inversă a barei',
   'settings.crosshairMode': 'Reticul',
   'settings.crosshair.magnet': 'Magnet',

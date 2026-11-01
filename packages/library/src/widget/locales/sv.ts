@@ -281,6 +281,7 @@ export const SV_MESSAGES: WidgetMessages = {
   'settings.priorWeek': 'Föregående vecka (PWH/PWL)',
   'settings.ohlcLegend': 'OHLC-förklaring',
   'settings.indicatorValues': 'Indikatorvärden på skalan',
+  'settings.alignAxisLabels': 'Inga överlappande etiketter',
   'settings.barCountdown': 'Nedräkning för stapeln',
   'settings.crosshairMode': 'Hårkors',
   'settings.crosshair.magnet': 'Magnet',

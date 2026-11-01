@@ -289,6 +289,7 @@ export const FA_MESSAGES: WidgetMessages = {
   'settings.priorWeek': 'هفته قبل (PWH/PWL)',
   'settings.ohlcLegend': 'راهنمای OHLC',
   'settings.indicatorValues': 'مقادیر اندیکاتورها روی مقیاس',
+  'settings.alignAxisLabels': 'بدون همپوشانی برچسب‌ها',
   'settings.barCountdown': 'شمارش معکوس کندل',
   'settings.crosshairMode': 'کراس‌هیر',
   'settings.crosshair.magnet': 'آهنربا',

@@ -11,7 +11,7 @@ export type ChartMenuAction =
   | 'settings' | 'exportData'
   | 'resetPriceScale' | 'autoScale' | 'invertScale' | 'leftScale'
   | 'regularScale' | 'logScale' | 'percentScale' | 'indexedScale'
-  | 'indicatorValueLabels' | 'barCountdown' | 'highLowLines' | 'lastPriceLine'
+  | 'indicatorValueLabels' | 'alignAxisLabels' | 'barCountdown' | 'highLowLines' | 'lastPriceLine'
   | 'goToDate'
   | 'paneLog'
   | 'paneInvert'
@@ -71,7 +71,7 @@ export interface ChartMenuContext {
   /** The price scale is on the left. */
   leftScale: boolean;
   /** The labels on the price scale; no `countdown` when the chart has none. */
-  labels: { values: boolean; countdown?: boolean };
+  labels: { values: boolean; aligned: boolean; countdown?: boolean };
   /** The lines across the chart. */
   lines: { highLow: boolean; lastPrice: boolean };
   /** The time zone now, and those on offer (none: no entry for it). */
@@ -152,7 +152,10 @@ function priceAxisEntries(ctx: ChartMenuContext, t: Translator): ContextMenuEntr
   const modes: MenuItem[] = SCALE_MODES
     .filter((m) => m.mode !== 'logarithmic' || ctx.canLog)
     .map((m) => ({ id: m.id, label: t(m.label), radio: true, checked: ctx.scaleMode === m.mode }));
-  const labels: MenuItem[] = [{ id: 'indicatorValueLabels', label: t('settings.indicatorValues'), checked: ctx.labels.values }];
+  const labels: MenuItem[] = [
+    { id: 'indicatorValueLabels', label: t('settings.indicatorValues'), checked: ctx.labels.values },
+    { id: 'alignAxisLabels', label: t('settings.alignAxisLabels'), checked: ctx.labels.aligned },
+  ];
   if (ctx.labels.countdown !== undefined) labels.push({ id: 'barCountdown', label: t('settings.barCountdown'), checked: ctx.labels.countdown });
   const lines: MenuItem[] = [
     { id: 'highLowLines', label: t('settings.highLowLines'), checked: ctx.lines.highLow },

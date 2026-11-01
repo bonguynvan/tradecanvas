@@ -281,6 +281,7 @@ export const HU_MESSAGES: WidgetMessages = {
   'settings.priorWeek': 'Előző hét (PWH/PWL)',
   'settings.ohlcLegend': 'OHLC jelmagyarázat',
   'settings.indicatorValues': 'Indikátorértékek a skálán',
+  'settings.alignAxisLabels': 'Nem átfedő címkék',
   'settings.barCountdown': 'Gyertyazárás visszaszámláló',
   'settings.crosshairMode': 'Szálkereszt',
   'settings.crosshair.magnet': 'Mágnes',

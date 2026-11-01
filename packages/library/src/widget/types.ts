@@ -681,6 +681,8 @@ export interface ChartSettingsState {
   barCountdown: boolean;
   /** Tag each indicator line's latest value on its scale. */
   indicatorValueLabels: boolean;
+  /** Move the price scale's tags apart where they would cover one another (`features.alignAxisLabels`). */
+  alignAxisLabels: boolean;
   /** The price scale is logarithmic: kept with `scaleMode`. */
   logScale: boolean;
   /** The price scale: regular, logarithmic, percent from the first bar on screen, or indexed to 100. */

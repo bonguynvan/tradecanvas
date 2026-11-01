@@ -121,3 +121,9 @@ new Chart(host, { chartTypeOptions: { renko: { boxSize: 50 } } })`}</code></pre>
 chart.setHighLowLines(true)          // or new Chart(host, { highLowLines: true })
 chart.setBidAsk({ bid: 64210.5, ask: 64211 })
 chart.setBidAsk(null)`}</code></pre>
+<p>
+  价格轴上会互相遮挡的标签（最新价、买卖价、最高最低价、涨跌停价、订单和持仓）会被错开：最新价的标签
+  留在它的线上，上方的往上移，下方的往下移，每个只移动必要的距离。ChartWidget 的价格轴菜单和设置中称为
+  “标签不重叠”。关闭后每个标签都留在它的线上：
+</p>
+<pre><code>{`chart.setAxisLabelsAligned(false)   // 或 new Chart(host, { features: { alignAxisLabels: false } })`}</code></pre>
