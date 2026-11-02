@@ -35,7 +35,7 @@ import { cleanIntervals, shownOnInterval } from '../indicators/intervals.js';
 import { DrawingSelection } from './DrawingSelection.js';
 import { DrawingDrag, shiftAnchors, type DragEdit } from './DrawingDrag.js';
 import { constrainedAnchor, keepsAngle } from './drawingEditing.js';
-import { isScreenAnchored, offsetScreenPoints, pixelToScreenPoint, screenPointToPixel, shiftScreenPoints } from './screenAnchors.js';
+import { clampScreenPoints, isScreenAnchored, offsetScreenPoints, pixelToScreenPoint, screenPointToPixel, shiftScreenPoints } from './screenAnchors.js';
 
 export type { DrawingOrderMove, DrawingPatch } from './drawingState.js';
 
@@ -1067,7 +1067,8 @@ export class DrawingManager {
     reserveIds(states);
     this.drawings = this.upgradeLegacyAnchors(states).map((given) => {
       // A name is kept as `updateDrawing` keeps one: trimmed, cut to length, none when blank.
-      const d = given.name === undefined || given.name === cleanDrawingName(given.name) ? given : withName(given, cleanDrawingName(given.name));
+      const named = given.name === undefined || given.name === cleanDrawingName(given.name) ? given : withName(given, cleanDrawingName(given.name));
+      const d = this.onScreen(named.type) ? { ...named, anchors: clampScreenPoints(named.anchors) } : named;
       if (!d.options && d.intervals === undefined) return d;
       const options = sanitizeDrawingOptions(this.optionDefs(d.type), d.options);
       return {
@@ -1263,7 +1264,11 @@ export class DrawingManager {
       if (!valid) return false;
     }
     const before = this.edits.has(id) ? null : cloneDrawing(drawing);
-    if (patch.anchors) drawing.anchors = patch.anchors.map((a) => ({ time: a.time, price: a.price }));
+    if (patch.anchors) {
+      drawing.anchors = this.onScreen(drawing.type)
+        ? clampScreenPoints(patch.anchors)
+        : patch.anchors.map((a) => ({ time: a.time, price: a.price }));
+    }
     if (patch.style) drawing.style = { ...drawing.style, ...patch.style };
     if (patch.options) {
       const options = { ...drawing.options, ...sanitizeDrawingOptions(this.optionDefs(drawing.type), patch.options) };
@@ -1331,7 +1336,8 @@ export class DrawingManager {
     const drawing: DrawingState = {
       id,
       type: state.type,
-      anchors: state.anchors.map((a) => ({ ...a })),
+      // A screen drawing's points are shares of the plot: a time and a price given for one land on its edges.
+      anchors: this.onScreen(state.type) ? clampScreenPoints(state.anchors) : state.anchors.map((a) => ({ ...a })),
       style: { ...this.activeStyle, ...state.style },
       visible: state.visible ?? true,
       locked: state.locked ?? false,

@@ -19,6 +19,8 @@ export interface DrawingToolEntry {
   name: string;
   anchors: number;
   creation?: string;
+  /** 'screen': its anchors are shares of the plot (0 to 1 across and down), not times and prices. */
+  anchoring?: 'screen';
   options?: Record<string, { kind: string; label: string; default: unknown }>;
 }
 

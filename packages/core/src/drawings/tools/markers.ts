@@ -17,6 +17,18 @@ function markerLook(state: DrawingState): TextBoxLook {
   return textLook(state.style, { fontSize: DEFAULT_FONT_SIZE, box: true, border: true, width: MARKER_WIDTH, fill: 'rgba(76, 141, 255, 0.1)' });
 }
 
+/**
+ * Where a marker's box goes for its point `p`: centred over it, `gap` px
+ * above, or under it when that would leave the plot's top; and slid along so
+ * it stays on the plot sideways. `below` says which way it went.
+ */
+function markerBox(p: Point, size: { width: number; height: number }, gap: number, viewport: ViewportState): Rect & { below: boolean } {
+  const plot = viewport.chartRect;
+  const below = p.y - gap - size.height < plot.y;
+  const left = Math.max(plot.x, Math.min(p.x - size.width / 2, plot.x + plot.width - size.width));
+  return { x: left, y: below ? p.y + gap : p.y - gap - size.height, ...size, below };
+}
+
 /** A box `text` would roughly take before it is drawn (for a hit test). */
 function estimateSize(state: DrawingState, text: string): { width: number; height: number } {
   const size = state.style.fontSize || DEFAULT_FONT_SIZE;
@@ -36,23 +48,24 @@ export class SignpostTool extends DrawingBase {
     const p = this.anchorToPixel(state.anchors[0], viewport);
     const text = resolveAnnotationText(state, 'Signpost');
     const look = markerLook(state);
-    const size = measureTextBox(ctx, text, look);
+    const box = markerBox(p, measureTextBox(ctx, text, look), POST_HEIGHT, viewport);
+    // Near the plot's top the post hangs down and the board under it.
     this.applyLineStyle(ctx, { ...state.style, lineStyle: 'solid' });
     ctx.beginPath();
     ctx.moveTo(p.x, p.y);
-    ctx.lineTo(p.x, p.y - POST_HEIGHT);
+    ctx.lineTo(p.x, box.below ? p.y + POST_HEIGHT : p.y - POST_HEIGHT);
     ctx.stroke();
     this.resetLineStyle(ctx);
-    this.boxes.set(state.id, drawTextBox(ctx, text, p.x - size.width / 2, p.y - POST_HEIGHT - size.height, look));
+    this.boxes.set(state.id, drawTextBox(ctx, text, box.x, box.y, look));
     if (selected) this.renderAnchorHandles(ctx, state, viewport);
   }
 
   hitTest(point: Point, state: DrawingState, viewport: ViewportState, tolerance: number): boolean {
     if (state.anchors.length < 1) return false;
     const p = this.anchorToPixel(state.anchors[0], viewport);
-    if (Math.abs(point.x - p.x) <= tolerance && point.y <= p.y + tolerance && point.y >= p.y - POST_HEIGHT) return true;
-    const size = estimateSize(state, resolveAnnotationText(state, 'Signpost'));
-    const box: Rect = this.boxes.get(state.id) ?? { x: p.x - size.width / 2, y: p.y - POST_HEIGHT - size.height, ...size };
+    const box: Rect = this.boxes.get(state.id) ?? markerBox(p, estimateSize(state, resolveAnnotationText(state, 'Signpost')), POST_HEIGHT, viewport);
+    const [postTop, postBottom] = box.y > p.y ? [p.y, p.y + POST_HEIGHT] : [p.y - POST_HEIGHT, p.y];
+    if (Math.abs(point.x - p.x) <= tolerance && point.y >= postTop - tolerance && point.y <= postBottom + tolerance) return true;
     return inRect(point, box, tolerance);
   }
 }
@@ -68,31 +81,33 @@ export class BalloonTool extends DrawingBase {
     const p = this.anchorToPixel(state.anchors[0], viewport);
     const text = resolveAnnotationText(state, 'Comment');
     const look = markerLook(state);
-    const size = measureTextBox(ctx, text, look);
-    const bottom = p.y - TAIL_HEIGHT;
-    // The tail first: the bubble covers where it joins.
+    const box = markerBox(p, measureTextBox(ctx, text, look), TAIL_HEIGHT, viewport);
+    // The tail first, from the bubble's edge nearest the point (its foot, or its top when it hangs under).
+    const base = box.below ? p.y + TAIL_HEIGHT : p.y - TAIL_HEIGHT;
     ctx.beginPath();
-    ctx.moveTo(p.x - TAIL_HALF, bottom);
+    ctx.moveTo(p.x - TAIL_HALF, base);
     ctx.lineTo(p.x, p.y);
-    ctx.lineTo(p.x + TAIL_HALF, bottom);
-    ctx.closePath();
+    ctx.lineTo(p.x + TAIL_HALF, base);
     if (look.fill) {
       ctx.fillStyle = look.fill;
       ctx.fill();
     }
-    ctx.strokeStyle = look.stroke ?? state.style.color;
-    ctx.lineWidth = 1;
-    ctx.stroke();
-    this.boxes.set(state.id, drawTextBox(ctx, text, p.x - size.width / 2, bottom - size.height, look));
+    // Its two sides only, and only with the bubble's border: the bubble's own edge closes it.
+    if (look.stroke) {
+      ctx.strokeStyle = look.stroke;
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+    this.boxes.set(state.id, drawTextBox(ctx, text, box.x, box.y, look));
     if (selected) this.renderAnchorHandles(ctx, state, viewport);
   }
 
   hitTest(point: Point, state: DrawingState, viewport: ViewportState, tolerance: number): boolean {
     if (state.anchors.length < 1) return false;
     const p = this.anchorToPixel(state.anchors[0], viewport);
-    if (Math.abs(point.x - p.x) <= TAIL_HALF + tolerance && point.y <= p.y + tolerance && point.y >= p.y - TAIL_HEIGHT) return true;
-    const size = estimateSize(state, resolveAnnotationText(state, 'Comment'));
-    const box: Rect = this.boxes.get(state.id) ?? { x: p.x - size.width / 2, y: p.y - TAIL_HEIGHT - size.height, ...size };
+    const box: Rect = this.boxes.get(state.id) ?? markerBox(p, estimateSize(state, resolveAnnotationText(state, 'Comment')), TAIL_HEIGHT, viewport);
+    const [tailTop, tailBottom] = box.y > p.y ? [p.y, p.y + TAIL_HEIGHT] : [p.y - TAIL_HEIGHT, p.y];
+    if (Math.abs(point.x - p.x) <= TAIL_HALF + tolerance && point.y >= tailTop - tolerance && point.y <= tailBottom + tolerance) return true;
     return inRect(point, box, tolerance);
   }
 }

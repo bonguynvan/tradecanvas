@@ -143,7 +143,7 @@ export const TOOLS: readonly ToolDefinition[] = [
       return ok({
         count: tools.length,
         tools,
-        usage: "chart.addDrawing({ type: 'trendLine', anchors: [{ time, price }, { time, price }], options: { extendRight: true } }); // as many anchors as the tool's `anchors`\nchart.setDrawingTool('trendLine'); // or let the user draw it",
+        usage: "chart.addDrawing({ type: 'trendLine', anchors: [{ time, price }, { time, price }], options: { extendRight: true } }); // as many anchors as the tool's `anchors`\n// A tool with anchoring: 'screen' stays at a place on the plot: its anchors are shares, { time: 0.5, price: 0.25 } is halfway across and a quarter down.\nchart.setDrawingTool('trendLine'); // or let the user draw it",
       });
     },
   },
