@@ -183,3 +183,24 @@ describe('DrawingManager drawing names', () => {
     expect(manager.getDrawings()[0].name).toBeUndefined();
   });
 });
+
+describe('DrawingManager drawing names on the way in', () => {
+  it('keeps a name given to addDrawing, and a pasted copy keeps its original’s', () => {
+    const named = manager.addDrawing({ type: 'trendLine', anchors: [{ time: 0, price: 1 }, { time: 5, price: 1 }], name: '  Level  ' } as never);
+    expect(manager.getDrawings().find((d) => d.id === named)!.name).toBe('Level');
+    manager.select(named);
+    manager.copySelection();
+    const [pasted] = manager.paste();
+    expect(manager.getDrawings().find((d) => d.id === pasted)!.name).toBe('Level');
+  });
+
+  it('cleans the names of drawings set as a whole: blank, too long or not text', () => {
+    const base = { type: 'trendLine' as const, anchors: [{ time: 0, price: 1 }, { time: 5, price: 1 }], style: { color: '#fff', lineWidth: 1, lineStyle: 'solid' as const }, visible: true, locked: false };
+    manager.setDrawings([
+      { ...base, id: 'x', name: '' },
+      { ...base, id: 'y', name: 'z'.repeat(300) },
+      { ...base, id: 'w', name: 42 as never },
+    ]);
+    expect(manager.getDrawings().map((d) => d.name)).toEqual([undefined, 'z'.repeat(80), undefined]);
+  });
+});

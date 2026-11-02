@@ -668,6 +668,7 @@ export class DrawingManager {
           options: source.options ? cloneOptions(source.options) : undefined,
           intervals: source.intervals,
           meta: source.meta ? structuredClone(source.meta) : undefined,
+          name: source.name,
         }));
       }
     });
@@ -1044,7 +1045,9 @@ export class DrawingManager {
   setDrawings(states: DrawingState[]): void {
     this.dropCopyGesture();
     reserveIds(states);
-    this.drawings = this.upgradeLegacyAnchors(states).map((d) => {
+    this.drawings = this.upgradeLegacyAnchors(states).map((given) => {
+      // A name is kept as `updateDrawing` keeps one: trimmed, cut to length, none when blank.
+      const d = given.name === undefined || given.name === cleanDrawingName(given.name) ? given : withName(given, cleanDrawingName(given.name));
       if (!d.options && d.intervals === undefined) return d;
       const options = sanitizeDrawingOptions(this.optionDefs(d.type), d.options);
       return {
@@ -1317,6 +1320,8 @@ export class DrawingManager {
       meta: state.meta,
       ...(typeof state.paneId === 'string' ? { paneId: state.paneId } : {}),
     };
+    const name = cleanDrawingName(state.name);
+    if (name !== undefined) drawing.name = name;
     this.drawings = [...this.drawings, drawing];
     this.record({ type: 'drawingCreate', before: null, after: cloneDrawing(drawing) });
     this.eventCallback?.('drawingCreate', { id, type: drawing.type, drawing });
@@ -1726,6 +1731,12 @@ function renderIsolated(
   ctx.clip();
   plugin.render(ctx, state, viewport, selected);
   ctx.restore();
+}
+
+/** `drawing` with `name`, or with none when it is undefined. */
+function withName(drawing: DrawingState, name: string | undefined): DrawingState {
+  const { name: _old, ...rest } = drawing;
+  return name === undefined ? rest : { ...rest, name };
 }
 
 /** A group name as kept: trimmed and at most `MAX_GROUP_NAME` long. */

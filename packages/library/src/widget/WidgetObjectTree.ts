@@ -53,7 +53,11 @@ export interface ObjectTreeCallbacks {
   onRenameDrawing?: (id: string, name: string) => void;
   /** Each drawing row gets a clone button. */
   onCloneDrawing?: (id: string) => void;
-  /** Each drawing row gets a grip: dragged onto another row, the drawing takes that row's place in the chart's order. */
+  /**
+   * Each drawing outside a group gets a grip: dragged onto another such row,
+   * the drawing takes that row's place in the chart's order; a group moves
+   * as one, from the chart.
+   */
   onMoveDrawing?: (id: string, index: number) => void;
   /** When provided, a Compare section with an "add" button is shown. */
   onAddCompare?: () => void;
@@ -75,6 +79,11 @@ export class WidgetObjectTree {
   private open = false;
   /** Each drawing's place in the chart's order (bottom first), as last listed. */
   private drawingIndex = new Map<string, number>();
+  /** The drawings outside a group, in the order the list shows them: what the grips move among. */
+  private loose: string[] = [];
+  /** Drawings listed while a rename or a drag was under way, drawn when it ends. */
+  private pending: ObjectTreeDrawing[] | null = null;
+  private renaming = false;
   /** A row being dragged by its grip, and the listeners that follow the pointer. */
   private dragging: { id: string; stop: () => void } | null = null;
 
@@ -139,6 +148,7 @@ export class WidgetObjectTree {
   }
 
   destroy(): void {
+    this.pending = null;
     this.dragging?.stop();
     this.el.remove();
   }
@@ -215,9 +225,28 @@ export class WidgetObjectTree {
   }
 
   private renderDrawings(drawings: ObjectTreeDrawing[]): void {
-    this.dragging?.stop();
+    // A name being typed or a row being dragged would be thrown away: the list waits for it.
+    if (this.renaming || this.dragging) {
+      this.pending = drawings;
+      return;
+    }
+    this.pending = null;
+    // The grip with the focus keeps it, so the arrow keys go on moving its drawing.
+    const focusedGrip = (document.activeElement as HTMLElement | null)?.closest<HTMLElement>('.tcw-tree-grip')
+      ?.closest<HTMLElement>('[data-drawing-id]')?.dataset.drawingId;
     this.drawingIndex = new Map(drawings.map((d, i) => [d.id, i]));
+    this.loose = drawings.filter((d) => !d.group).map((d) => d.id);
     this.drawingsEl.replaceChildren();
+    this.listDrawings(drawings);
+    if (focusedGrip) this.drawingsEl.querySelector<HTMLElement>(`[data-drawing-id="${focusedGrip}"] .tcw-tree-grip`)?.focus();
+  }
+
+  /** Draw the list held back by a rename or a drag, once it ends. */
+  private flushPending(): void {
+    if (this.pending && !this.renaming && !this.dragging) this.renderDrawings(this.pending);
+  }
+
+  private listDrawings(drawings: ObjectTreeDrawing[]): void {
     if (drawings.length === 0) {
       this.drawingsEl.appendChild(this.emptyRow(this.t('objects.noDrawings')));
       return;
@@ -293,6 +322,7 @@ export class WidgetObjectTree {
    */
   private renameInline(nameEl: HTMLElement, name: string, label: string, save: (next: string) => void): void {
     if (!nameEl.isConnected) return; // already being renamed
+    this.renaming = true;
     const input = document.createElement('input');
     input.type = 'text';
     input.className = 'tcw-tree-rename';
@@ -305,7 +335,9 @@ export class WidgetObjectTree {
       done = true;
       const next = input.value.trim();
       if (input.isConnected) input.replaceWith(nameEl);
+      this.renaming = false;
       if (keep) save(next);
+      this.flushPending();
     };
     input.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') finish(true);
@@ -325,7 +357,10 @@ export class WidgetObjectTree {
     row.dataset.drawingId = d.id;
     if (!d.visible || d.offInterval) row.classList.add('tcw-tree-hidden');
     if (d.offInterval) row.title = this.t('indicatorSettings.offInterval');
-    if (this.callbacks.onMoveDrawing) row.insertBefore(this.grip(d.id), row.firstChild);
+    if (this.callbacks.onMoveDrawing && !d.group) {
+      row.dataset.reorder = 'true';
+      row.insertBefore(this.grip(d.id), row.firstChild);
+    }
 
     const nameEl = row.querySelector<HTMLSpanElement>('.tcw-tree-name')!;
     if (this.callbacks.onSelectDrawing) {
@@ -370,11 +405,12 @@ export class WidgetObjectTree {
   }
 
   /**
-   * A drawing row's grip: dragged onto another drawing's row, the drawing
-   * takes that one's place; the arrow keys move it a place up or down.
+   * A drawing row's grip: dragged onto another loose drawing's row, the
+   * drawing takes that one's place; the arrow keys move it a row up or down.
    */
   private grip(id: string): HTMLButtonElement {
     const grip = this.iconButton('grip', this.t('objects.dragToReorder'), 'tcw-tree-grip', () => {});
+    grip.setAttribute('aria-keyshortcuts', 'ArrowUp ArrowDown');
     grip.addEventListener('pointerdown', (e) => {
       if ((e as MouseEvent).button !== 0) return;
       e.preventDefault();
@@ -382,11 +418,12 @@ export class WidgetObjectTree {
     });
     grip.addEventListener('keydown', (e) => {
       const step = e.key === 'ArrowUp' ? -1 : e.key === 'ArrowDown' ? 1 : 0;
-      const from = this.drawingIndex.get(id);
-      if (!step || from === undefined) return;
+      if (!step) return;
       e.preventDefault();
-      const to = from + step;
-      if (to >= 0 && to < this.drawingIndex.size) this.callbacks.onMoveDrawing?.(id, to);
+      // The row above or under among the loose drawings: the drawing takes its place.
+      const neighbour = this.loose[this.loose.indexOf(id) + step];
+      const to = neighbour === undefined ? undefined : this.drawingIndex.get(neighbour);
+      if (to !== undefined) this.callbacks.onMoveDrawing?.(id, to);
     });
     return grip;
   }
@@ -400,7 +437,7 @@ export class WidgetObjectTree {
       target = row && row.dataset.drawingId !== id ? row : null;
       target?.classList.add('tcw-tree-drop');
     };
-    const rowAt = (y: number) => [...this.drawingsEl.querySelectorAll<HTMLElement>('.tcw-tree-row[data-drawing-id]')]
+    const rowAt = (y: number) => [...this.drawingsEl.querySelectorAll<HTMLElement>('.tcw-tree-row[data-reorder]')]
       .find((row) => { const r = row.getBoundingClientRect(); return y >= r.top && y < r.bottom; }) ?? null;
     const move = (e: Event) => mark(rowAt((e as MouseEvent).clientY));
     const up = (e: Event) => {
@@ -415,6 +452,7 @@ export class WidgetObjectTree {
       document.removeEventListener('pointerup', up);
       document.removeEventListener('pointercancel', stop);
       this.dragging = null;
+      this.flushPending();
     };
     document.addEventListener('pointermove', move);
     document.addEventListener('pointerup', up);

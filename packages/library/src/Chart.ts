@@ -2582,6 +2582,8 @@ export class Chart {
     intervals?: IndicatorIntervals;
     /** The indicator pane it goes on (an id from `getIndicatorPanes()`): its anchors' prices are that pane's values. Unset: the price pane. */
     paneId?: string;
+    /** Its name in the object tree (at most 80 characters); unset: its tool's. */
+    name?: string;
     meta?: Record<string, unknown>;
   }): string | null {
     if (!this.features.drawings) return null;

@@ -3801,7 +3801,7 @@ export class ChartWidget {
     }));
     const drawings = this.chart.getDrawings().map((d) => ({
       id: d.id,
-      label: d.name ?? drawingTypeLabel(d.type, this.t),
+      label: d.name || drawingTypeLabel(d.type, this.t),
       visible: d.visible,
       offInterval: d.visible && !this.chart.isDrawingShown(d.id),
       locked: d.locked,

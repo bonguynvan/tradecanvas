@@ -3,6 +3,7 @@ import { readChartStyleOverrides, readChartTypeOptions, readIndicatorPlotStyles,
 import { sanitizeDrawingStyle } from '@tradecanvas/commons';
 import { readAlertOptions, type AlertCondition, type PriceAlert } from './AlertManager.js';
 import { cleanIntervals } from '../indicators/intervals.js';
+import { cleanDrawingName } from '../drawings/drawingState.js';
 
 /**
  * Serializable chart state for save/load functionality.
@@ -135,7 +136,7 @@ function validateDrawing(raw: unknown): DrawingState | null {
     options: isObject(raw.options) ? (raw.options as DrawingState['options']) : undefined,
     intervals: cleanIntervals(raw.intervals) ?? undefined,
     group: validateGroup(raw.group),
-    ...(typeof raw.name === 'string' && raw.name.trim() ? { name: raw.name.trim().slice(0, MAX_DRAWING_NAME) } : {}),
+    ...(cleanDrawingName(raw.name) !== undefined ? { name: cleanDrawingName(raw.name) } : {}),
     // The indicator pane it is drawn on, by its id; the chart drops it when there is no such pane.
     ...(typeof raw.paneId === 'string' && raw.paneId.length > 0 && raw.paneId.length <= MAX_PANE_ID ? { paneId: raw.paneId } : {}),
     meta: isObject(raw.meta) ? raw.meta : undefined,
@@ -147,8 +148,6 @@ const MAX_ANCHORS = 5000;
 const MAX_PANE_ID = 200;
 const MAX_GROUP_ID = 64;
 const MAX_GROUP_NAME = 80;
-/** Longest drawing name kept, as a chart keeps it. */
-const MAX_DRAWING_NAME = 80;
 
 function validateGroup(raw: unknown): DrawingState['group'] {
   if (!isObject(raw) || typeof raw.id !== 'string' || typeof raw.name !== 'string') return undefined;

@@ -154,22 +154,90 @@ describe('WidgetObjectTree drawing rows', () => {
   });
 
   it('moves a drawing to where its row is dropped, by its grip', () => {
+    tree.setObjects([], DRAWINGS.map(({ group: _group, ...d }) => d));
     layOut();
     const grip = button(drawingRow('b'), 'Drag to reorder');
-    grip.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, clientY: 3 * 24 + 10, button: 0 }));
-    document.dispatchEvent(new MouseEvent('pointermove', { bubbles: true, clientY: 24 + 6 }));
+    grip.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, clientY: 24 + 10, button: 0 }));
+    document.dispatchEvent(new MouseEvent('pointermove', { bubbles: true, clientY: 6 }));
     expect(drawingRow('a').classList.contains('tcw-tree-drop')).toBe(true);
-    document.dispatchEvent(new MouseEvent('pointerup', { bubbles: true, clientY: 24 + 6 }));
+    document.dispatchEvent(new MouseEvent('pointerup', { bubbles: true, clientY: 6 }));
     // Dropped on the trend line's row: its place, 0, in the chart's order.
     expect(callbacks.onMoveDrawing).toHaveBeenCalledWith('b', 0);
     expect(host.querySelector('.tcw-tree-drop')).toBeNull();
   });
 
   it('moves nothing when the grip is let go on its own row', () => {
+    tree.setObjects([], DRAWINGS.map(({ group: _group, ...d }) => d));
     layOut();
     const grip = button(drawingRow('b'), 'Drag to reorder');
-    grip.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, clientY: 3 * 24 + 10, button: 0 }));
-    document.dispatchEvent(new MouseEvent('pointerup', { bubbles: true, clientY: 3 * 24 + 12 }));
+    grip.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, clientY: 24 + 10, button: 0 }));
+    document.dispatchEvent(new MouseEvent('pointerup', { bubbles: true, clientY: 24 + 12 }));
     expect(callbacks.onMoveDrawing).not.toHaveBeenCalled();
+  });
+});
+
+describe('WidgetObjectTree reorder around groups', () => {
+  // Chart order a(g), b, c(g), d: the tree shows G, a, c, b, d.
+  const MIXED: ObjectTreeDrawing[] = [
+    { id: 'a', label: 'A', visible: true, locked: false, group },
+    { id: 'b', label: 'B', visible: true, locked: false },
+    { id: 'c', label: 'C', visible: true, locked: false, group },
+    { id: 'd', label: 'D', visible: true, locked: false },
+  ];
+  const drawingRow = (id: string) => host.querySelector<HTMLElement>(`.tcw-tree-row[data-drawing-id="${id}"]`)!;
+  const grip = (id: string) => drawingRow(id).querySelector<HTMLButtonElement>('[aria-label="Drag to reorder"]');
+  const layOut = () => rows().forEach((r, i) => {
+    r.getBoundingClientRect = () => ({ top: i * 24, bottom: i * 24 + 24, left: 0, right: 200, width: 200, height: 24, x: 0, y: i * 24, toJSON: () => ({}) });
+  });
+
+  beforeEach(() => tree.setObjects([], MIXED));
+
+  it('gives a grip only to drawings outside a group: a group moves as one', () => {
+    expect(grip('a')).toBeNull();
+    expect(grip('b')).not.toBeNull();
+  });
+
+  it('drops a drawing beside the row it lands on', () => {
+    layOut();
+    // d (shown last) onto b (shown fourth): d goes where b is, just under it in the list.
+    grip('d')!.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, clientY: 4 * 24 + 10, button: 0 }));
+    document.dispatchEvent(new MouseEvent('pointermove', { bubbles: true, clientY: 3 * 24 + 6 }));
+    expect(drawingRow('c').classList.contains('tcw-tree-drop')).toBe(false);
+    document.dispatchEvent(new MouseEvent('pointerup', { bubbles: true, clientY: 3 * 24 + 6 }));
+    expect(callbacks.onMoveDrawing).toHaveBeenCalledWith('d', 1);
+  });
+
+  it('takes no drop on a grouped drawing’s row', () => {
+    layOut();
+    grip('d')!.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, clientY: 4 * 24 + 10, button: 0 }));
+    document.dispatchEvent(new MouseEvent('pointerup', { bubbles: true, clientY: 2 * 24 + 6 }));
+    expect(callbacks.onMoveDrawing).not.toHaveBeenCalled();
+  });
+
+  it('moves a drawing one row up or down among the others with the arrow keys', () => {
+    grip('d')!.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp' }));
+    expect(callbacks.onMoveDrawing).toHaveBeenLastCalledWith('d', 1);
+    grip('b')!.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown' }));
+    expect(callbacks.onMoveDrawing).toHaveBeenLastCalledWith('b', 3);
+    // Nothing above b but the group: it stays.
+    grip('b')!.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp' }));
+    expect(callbacks.onMoveDrawing).toHaveBeenCalledTimes(2);
+  });
+
+  it('keeps the grip focused through the list being drawn again, so the keys go on moving it', () => {
+    grip('d')!.focus();
+    tree.setObjects([], MIXED);
+    expect(document.activeElement).toBe(grip('d'));
+  });
+
+  it('waits for a rename to end before drawing the list again', () => {
+    drawingRow('b').querySelector<HTMLElement>('.tcw-tree-name')!.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
+    const input = drawingRow('b').querySelector<HTMLInputElement>('input')!;
+    input.value = 'Kept';
+    tree.setObjects([], [...MIXED, { id: 'e', label: 'E', visible: true, locked: false }]);
+    expect(input.isConnected).toBe(true);
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+    expect(callbacks.onRenameDrawing).toHaveBeenCalledWith('b', 'Kept');
+    expect(drawingRow('e')).not.toBeNull();
   });
 });
