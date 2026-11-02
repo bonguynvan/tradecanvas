@@ -48,6 +48,17 @@ export function extendOptions(left = false, right = false): DrawingOptionDefs {
   };
 }
 
+/** A level line's price on the plot, shown unless turned off. */
+export const SHOW_PRICE_OPTION: DrawingOptionDefs = {
+  showPrice: { kind: 'boolean', label: 'Show price', default: true },
+};
+
+/** A Fibonacci tool's dashed line through its points, and all its levels in the drawing's colour. */
+export const FIB_EXTRA_OPTIONS: DrawingOptionDefs = {
+  trendLine: { kind: 'boolean', label: 'Trend line', default: true },
+  oneColor: { kind: 'boolean', label: 'Use one color', default: false },
+};
+
 /** What the labels of horizontal Fibonacci levels show, and on which side. */
 export const LEVEL_LABEL_OPTIONS: DrawingOptionDefs = {
   showLevels: { kind: 'boolean', label: 'Show levels', default: true },

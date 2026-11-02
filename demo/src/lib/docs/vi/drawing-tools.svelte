@@ -72,6 +72,22 @@ chart.addDrawing({
   Trong widget, Text, Note hoặc Callout hỏi nội dung ngay khi vẽ xong: phần cài đặt mở ở tab Chữ, chữ đã được chọn sẵn, và nút Huỷ bỏ luôn hình vẽ. Nhấp đúp vào chúng cũng mở tab đó. Thanh công cụ trên hình đang chọn đặt được màu nền và màu chữ cho các công cụ có những thứ đó.
 </p>
 
+<h3 id="line-text">Chữ trên đường và hình chữ nhật</h3>
+<p>
+  Đường xu hướng, tia, đường kéo dài, đường thông tin, đường góc, mũi tên, đường ngang, đường dọc và hình chữ nhật cũng nhận chữ, cùng kiểu chữ ấy. <code>textAlign</code> đặt chữ ở đầu trái, giữa hoặc đầu phải của đường, còn <code>textVAlign</code> đặt trên đường, trên chính đường hoặc dưới đường; trong hình chữ nhật, hai khóa này đặt chữ bên trong, ở trên, giữa hoặc dưới. Chữ nghiêng theo độ dốc của đường và luôn đọc từ trái sang phải, từ dưới lên trên với đường dọc. Trong widget, tab Chữ có hai hàng này.
+</p>
+<pre><code>{`chart.addDrawing({
+  type: 'trendLine',
+  anchors: [{ time: t1, price: 98 }, { time: t2, price: 104 }],
+  style: { color: '#4c8dff', lineWidth: 2, lineStyle: 'solid',
+    text: 'Breakout', textAlign: 'right', textVAlign: 'top' },  // 'top' | 'middle' | 'bottom'
+})
+chart.addDrawing({ type: 'verticalLine', anchors: [{ time: t3, price: 0 }], options: { showTime: true } })
+chart.addDrawing({ type: 'fibRetracement', anchors: [a, b], options: { trendLine: false, oneColor: true } })`}</code></pre>
+<p>
+  Đường ngang và tia ngang ẩn giá bằng <code>showPrice: false</code>. Đường dọc hiện thời gian của nến bằng <code>showTime: true</code>, viết như crosshair viết. Hình chữ nhật có tám tay nắm: mỗi góc một cái và giữa mỗi cạnh một cái, kéo cạnh đó riêng. Fibonacci thoái lui và mở rộng vẽ một đường đứt nét qua các điểm của nó (<code>trendLine</code>, bật sẵn) và vẽ mọi mức bằng màu của hình vẽ với <code>oneColor</code>.
+</p>
+
 <h2>Cài đặt</h2>
 <p>
   Ngoài kiểu (màu, độ dày nét, kiểu nét, màu nền, chữ), một công cụ có thể có

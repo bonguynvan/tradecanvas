@@ -1,17 +1,50 @@
 import type { DrawingState, Point, ViewportState } from '@tradecanvas/commons';
 import { DrawingBase } from '../DrawingBase.js';
+import { drawPill, drawingFont, PILL_HEIGHT } from './labels.js';
+import { drawLineText } from './lineText.js';
+
+/** How far the time label sits above the plot's foot (px). */
+const TIME_LABEL_GAP = 4;
 
 export class VerticalLineTool extends DrawingBase {
-  descriptor = { type: 'verticalLine' as const, name: 'Vertical Line', requiredAnchors: 1 };
+  descriptor = {
+    type: 'verticalLine' as const,
+    name: 'Vertical Line',
+    requiredAnchors: 1,
+    text: true,
+    options: { showTime: { kind: 'boolean' as const, label: 'Show time', default: false } },
+  };
 
   render(ctx: CanvasRenderingContext2D, state: DrawingState, viewport: ViewportState, selected: boolean): void {
     if (state.anchors.length < 1) return;
     const p = this.anchorToPixel(state.anchors[0], viewport);
     const { chartRect } = viewport;
+    const bottom = chartRect.y + chartRect.height;
     this.applyLineStyle(ctx, state.style);
-    this.strokeVertical(ctx, p.x, chartRect.y, chartRect.y + chartRect.height);
+    this.strokeVertical(ctx, p.x, chartRect.y, bottom);
     this.resetLineStyle(ctx);
+    const time = this.option<boolean>(state, 'showTime') ? this.timeText(state, viewport) : null;
+    // The text starts above the time's tag, when there is one.
+    const foot = time ? bottom - TIME_LABEL_GAP * 2 - PILL_HEIGHT : bottom;
+    drawLineText(ctx, state.style, { x: p.x, y: foot }, { x: p.x, y: chartRect.y });
+    // The bar's time on a tag at the line's foot, as the chart writes it under the crosshair.
+    if (time) {
+      ctx.font = drawingFont(11);
+      const width = ctx.measureText(time).width + 12;
+      drawPill(ctx, time, p.x - width / 2, bottom - TIME_LABEL_GAP - PILL_HEIGHT / 2, state.style.color);
+    }
     if (selected) this.renderAnchorHandles(ctx, state, viewport);
+  }
+
+  /** The bar's time as the chart writes it; null without a format, or when a host's formatter fails. */
+  private timeText(state: DrawingState, viewport: ViewportState): string | null {
+    if (!viewport.formatTime) return null;
+    try {
+      return viewport.formatTime(state.anchors[0].time);
+    } catch {
+      // A host's time formatter that throws costs the label, not the whole drawing pass.
+      return null;
+    }
   }
 
   hitTest(point: Point, state: DrawingState, viewport: ViewportState, tolerance: number): boolean {

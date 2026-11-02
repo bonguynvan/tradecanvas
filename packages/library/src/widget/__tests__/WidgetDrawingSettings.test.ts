@@ -275,6 +275,17 @@ describe('WidgetDrawingSettings: Text, Coordinates and Visibility', () => {
     expect(labelled<HTMLInputElement>('Wrap width').disabled).toBe(false);
   });
 
+  it('places a line’s text at an end or the middle, above, on or under it', () => {
+    dialog.open({ ...trendLine(), text: true, textPlace: true });
+    tab('Text').click();
+    expect(labelled<HTMLSelectElement>('Align').value).toBe('center');
+    expect(labelled<HTMLSelectElement>('Vertical align').value).toBe('top');
+    change(labelled<HTMLSelectElement>('Align'), 'right');
+    change(labelled<HTMLSelectElement>('Vertical align'), 'bottom');
+    expect(calls.change.slice(-2)).toEqual([{ style: { textAlign: 'right' } }, { style: { textVAlign: 'bottom' } }]);
+    expect(host.querySelector('[aria-label="Wrap"]')).toBeNull();
+  });
+
   it('opens on the Text tab when asked, the text ready to type over', () => {
     dialog.open({ ...fib(), type: 'text', text: true, style: { ...fib().style, text: 'Text' }, textLayout: { box: false, border: false, wrap: 0, fontSize: 14 } }, { tab: 'text' });
     expect(tab('Text').getAttribute('aria-selected')).toBe('true');

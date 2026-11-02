@@ -44,7 +44,7 @@ import { WidgetSelectionToolbar } from './WidgetSelectionToolbar.js';
 import { DrawingDefaultsStore, DrawingTemplateStore } from './DrawingTemplateStore.js';
 import { WidgetDrawingSettings, type DrawingTemplateLook } from './WidgetDrawingSettings.js';
 import { WidgetContextMenu, type ContextMenuEntry } from './WidgetContextMenu.js';
-import { TEXT_COLORS, TEXT_LAYOUTS } from './drawingSettingsTabs.js';
+import { TEXT_COLORS, TEXT_LAYOUTS, TEXT_PLACES } from './drawingSettingsTabs.js';
 import { drawingMenuEntries, type DrawingMenuAction } from './drawingMenu.js';
 import { CHART_MENU_KEYS, TIMEZONE_ENTRY, chartMenuEntries, priceEntries, scaleModeOf, type ChartMenuAction, type ChartMenuContext } from './chartMenu.js';
 import { WidgetAccountPanel } from './WidgetAccountPanel.js';
@@ -2416,6 +2416,7 @@ export class ChartWidget {
       text: descriptor.text === true,
       textLayout: TEXT_LAYOUTS[drawing.type],
       textColor: TEXT_COLORS[drawing.type],
+      textPlace: TEXT_PLACES.has(drawing.type),
       intervals: drawing.intervals ?? null,
     }, how);
   }

@@ -242,6 +242,11 @@ Text tools (`text`, `note`, `callout`, `priceLabel`, `arrowMark`) take a text st
 `style: { text: 'line one\nline two', fontSize, bold, italic, textColor }`, and a text, a note
 or a callout also `textAlign` ('left' | 'center' | 'right'), `textBackground` (in `fillColor`),
 `textBorder` (in `borderColor`) and `textWrap` (px; 0: only at the text's own breaks).
+Lines and boxes (`trendLine`, `ray`, `extendedLine`, `infoLine`, `trendAngle`, `arrow`,
+`horizontalLine`, `horizontalRay`, `verticalLine`, `rectangle`) take `style.text` too, placed with
+`textAlign` (end or middle) and `textVAlign` ('top' | 'middle' | 'bottom'); don't add a separate
+`text` drawing beside a line to label it. `showPrice: false` hides a horizontal line's price,
+`showTime: true` shows a vertical line's time, and Fibonacci tools take `trendLine` and `oneColor`.
 The widget's magnet starts off; `setDrawingMagnetMode('weak' | 'strong')` turns it on.
 Editing is built in, so don't wire it yourself: the magnet also pulls dragged handles and moved
 drawings, Ctrl/⌘ held turns it over, Shift keeps lines at 45° steps, the arrow keys move the

@@ -72,6 +72,22 @@ chart.addDrawing({
   위젯에서는 텍스트, 노트, 말풍선을 그리자마자 내용을 묻습니다. 설정이 텍스트 탭에서 열리고 글자가 선택되어 있으며, 취소를 누르면 그리기가 취소됩니다. 더블 클릭해도 같은 탭이 열립니다. 선택했을 때의 도구 모음에서 채우기와 글자가 있는 도구의 채우기 색과 글자 색을 바꿀 수 있습니다.
 </p>
 
+<h3 id="line-text">선과 상자의 텍스트</h3>
+<p>
+  추세선, 레이, 연장선, 정보선, 각도선, 화살표, 수평선, 수직선, 사각형도 같은 스타일로 텍스트를 가질 수 있습니다. <code>textAlign</code>은 선의 왼쪽 끝, 가운데, 오른쪽 끝에, <code>textVAlign</code>은 선 위, 선 위에 겹쳐, 선 아래에 둡니다. 사각형에서는 안쪽의 위, 가운데, 아래에 둡니다. 텍스트는 선의 기울기를 따르고 항상 왼쪽에서 오른쪽으로, 수직선에서는 아래에서 위로 읽힙니다. 위젯의 텍스트 탭에 이 두 줄이 있습니다.
+</p>
+<pre><code>{`chart.addDrawing({
+  type: 'trendLine',
+  anchors: [{ time: t1, price: 98 }, { time: t2, price: 104 }],
+  style: { color: '#4c8dff', lineWidth: 2, lineStyle: 'solid',
+    text: 'Breakout', textAlign: 'right', textVAlign: 'top' },  // 'top' | 'middle' | 'bottom'
+})
+chart.addDrawing({ type: 'verticalLine', anchors: [{ time: t3, price: 0 }], options: { showTime: true } })
+chart.addDrawing({ type: 'fibRetracement', anchors: [a, b], options: { trendLine: false, oneColor: true } })`}</code></pre>
+<p>
+  수평선과 수평 레이는 <code>showPrice: false</code>로 가격을 숨깁니다. 수직선은 <code>showTime: true</code>로 그 봉의 시간을 크로스헤어와 같은 방식으로 표시합니다. 사각형에는 핸들이 여덟 개 있습니다. 모서리마다 하나, 각 변의 가운데에 하나씩이며, 변의 핸들은 그 변만 옮깁니다. 피보나치 되돌림과 확장은 점들을 지나는 점선(<code>trendLine</code>, 기본으로 켜짐)을 그리고, <code>oneColor</code>로 모든 레벨을 드로잉 색으로 그립니다.
+</p>
+
 <h2>설정</h2>
 <p>
   스타일(색상, 선 두께, 선 스타일, 채우기, 텍스트) 외에도 도구마다 고유한 설정을

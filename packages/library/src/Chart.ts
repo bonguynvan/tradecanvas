@@ -526,6 +526,7 @@ export class Chart {
     registerBuiltInDrawingTools(this.drawingManager);
     this.drawingRenderer = new DrawingRenderer(this.drawingManager);
     this.drawingRenderer.setKeepOut(() => this.legendKeepOut());
+    this.drawingRenderer.setTimeFormat((time) => this.crosshairHandler.formatTime(time, this.getDisplayData()));
     this.drawingManager.setRequestRender(() => {
       // Sync entire render context so drawings render with same viewport as candles
       this.syncRenderContext();

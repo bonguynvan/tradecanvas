@@ -2,6 +2,7 @@ import type { DrawingState, Point, ViewportState } from '@tradecanvas/commons';
 import { DrawingBase } from '../DrawingBase.js';
 import { barsBetween, drawLabelBox, formatPriceChange, spanBetween } from './labels.js';
 import { screenAngleDeg } from './TrendAngle.js';
+import { drawLineText } from './lineText.js';
 
 /** The text the info line shows: price change, bars (and time) spanned, angle. */
 export function infoLineLines(state: DrawingState, viewport: ViewportState, angleDeg: number): string[] {
@@ -16,7 +17,7 @@ export function infoLineLines(state: DrawingState, viewport: ViewportState, angl
 
 /** Trend line with a stats box: price change and %, bars and time spanned, angle. */
 export class InfoLineTool extends DrawingBase {
-  descriptor = { type: 'infoLine' as const, name: 'Info Line', requiredAnchors: 2 };
+  descriptor = { type: 'infoLine' as const, name: 'Info Line', requiredAnchors: 2, text: true };
 
   render(ctx: CanvasRenderingContext2D, state: DrawingState, viewport: ViewportState, selected: boolean): void {
     if (state.anchors.length < 2) return;
@@ -35,6 +36,7 @@ export class InfoLineTool extends DrawingBase {
     const rising = b.y <= a.y;
     drawLabelBox(ctx, lines, b.x + (b.x >= a.x ? 8 : -8), b.y + (rising ? -6 : 6), b.x >= a.x ? 'left' : 'right', rising);
 
+    drawLineText(ctx, state.style, this.anchorToPixel(state.anchors[0], viewport), this.anchorToPixel(state.anchors[1], viewport), viewport.chartRect);
     if (selected) this.renderAnchorHandles(ctx, state, viewport);
   }
 

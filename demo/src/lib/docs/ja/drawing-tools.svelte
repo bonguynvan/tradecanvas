@@ -72,6 +72,22 @@ chart.addDrawing({
   ウィジェットでは、テキスト、ノート、吹き出しを描くとすぐに文字を尋ねます。設定がテキストタブで開き、文字が選択された状態になり、キャンセルで描画を取り消します。ダブルクリックでも同じタブが開きます。選択中のツールバーでは、塗りと文字のあるツールの塗り色と文字色を設定できます。
 </p>
 
+<h3 id="line-text">線とボックスのテキスト</h3>
+<p>
+  トレンドライン、レイ、延長線、情報線、角度線、矢印、水平線、垂直線、四角形も、同じスタイルでテキストを持てます。<code>textAlign</code> で線の左端・中央・右端に、<code>textVAlign</code> で線の上・線上・下に置きます。四角形では、内側の上・中央・下に置きます。テキストは線の傾きに沿い、常に左から右へ、垂直線では下から上へ読めます。ウィジェットではテキストタブにこの 2 行があります。
+</p>
+<pre><code>{`chart.addDrawing({
+  type: 'trendLine',
+  anchors: [{ time: t1, price: 98 }, { time: t2, price: 104 }],
+  style: { color: '#4c8dff', lineWidth: 2, lineStyle: 'solid',
+    text: 'Breakout', textAlign: 'right', textVAlign: 'top' },  // 'top' | 'middle' | 'bottom'
+})
+chart.addDrawing({ type: 'verticalLine', anchors: [{ time: t3, price: 0 }], options: { showTime: true } })
+chart.addDrawing({ type: 'fibRetracement', anchors: [a, b], options: { trendLine: false, oneColor: true } })`}</code></pre>
+<p>
+  水平線と水平レイは <code>showPrice: false</code> で価格を隠します。垂直線は <code>showTime: true</code> でそのバーの時刻を、クロスヘアと同じ書き方で表示します。四角形には 8 つのハンドルがあります。各角に 1 つ、各辺の中央に 1 つで、辺のハンドルはその辺だけを動かします。フィボナッチ・リトレースメントとエクステンションは、点を通る破線（<code>trendLine</code>、既定でオン）を描き、<code>oneColor</code> ですべてのレベルを描画の色で描きます。
+</p>
+
 <h2>設定</h2>
 <p>
   スタイル（色、線の太さ、線の種類、塗りつぶし、テキスト）のほかに、ツールは

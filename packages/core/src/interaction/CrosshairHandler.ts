@@ -309,6 +309,20 @@ export class CrosshairHandler {
     this.drawTimePill(ctx, viewport, theme, data, slot, x, timeAxisY, timeColumns);
   }
 
+  /**
+   * A bar's time (as `data` holds it) as the pill under the crosshair
+   * writes it: in the chart's time zone, through its time formatter.
+   */
+  formatTime(time: number, data: DataSeries): string {
+    return this.timeText(time, axisTimes(data));
+  }
+
+  private timeText(time: number, times: ReturnType<typeof axisTimes>): string {
+    return this.timeFormatter
+      ? this.timeFormatter(time * barTimeUnit(times), { kind: 'crosshair', timeZone: this.tz })
+      : formatBarTime(time * barTimeUnit(times), this.tz, barsAreDaily(times), this.exchangeZone);
+  }
+
   private drawTimePill(
     ctx: CanvasRenderingContext2D,
     viewport: ViewportState,
@@ -325,9 +339,7 @@ export class CrosshairHandler {
     const times = axisTimes(data);
     // Past either end of the data the time is extrapolated.
     const time = barIndexToTime(slot, times);
-    const timeText = this.timeFormatter
-      ? this.timeFormatter(time * barTimeUnit(times), { kind: 'crosshair', timeZone: this.tz })
-      : formatBarTime(time * barTimeUnit(times), this.tz, barsAreDaily(times), this.exchangeZone);
+    const timeText = this.timeText(time, times);
     const font = `600 ${theme.font.sizeSmall}px ${theme.font.family}`;
     const axisY = timeAxisY ?? (viewport.chartRect.y + viewport.chartRect.height);
     ctx.font = font;

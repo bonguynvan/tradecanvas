@@ -33,6 +33,8 @@ export interface DrawingSettingsTarget {
   textLayout?: TextLayout;
   /** The colour the tool writes in without one of its own, when it isn't the line's. */
   textColor?: string;
+  /** It writes its text along a line or in a box: the Text tab offers where (`textAlign`, `textVAlign`). */
+  textPlace?: boolean;
   /** The intervals it shows on; unset or null: all of them. */
   intervals?: IndicatorIntervals | null;
 }
@@ -331,7 +333,7 @@ export class WidgetDrawingSettings {
     if (!target) return;
     switch (this.tab) {
       case 'text':
-        renderTextTab(this.bodyEl, this.style, (patch) => this.setStyle(patch), this.t, target.textLayout, target.textColor);
+        renderTextTab(this.bodyEl, this.style, (patch) => this.setStyle(patch), this.t, target.textLayout, target.textColor, target.textPlace);
         break;
       case 'coordinates':
         renderCoordinatesTab(this.bodyEl, this.anchors, {

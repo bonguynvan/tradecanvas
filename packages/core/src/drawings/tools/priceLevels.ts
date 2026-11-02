@@ -98,6 +98,30 @@ export function renderPriceLevels(
   ctx.globalAlpha = 1;
 }
 
+/** The dashes of a Fibonacci tool's trend line (px). */
+const TREND_DASH = [4, 4];
+/** How strongly the trend line shows under the levels. */
+const TREND_ALPHA = 0.6;
+
+/** A Fibonacci tool's dashed trend line through its points, on screen. */
+export function strokeTrendLine(ctx: CanvasRenderingContext2D, points: readonly { x: number; y: number }[], color: string): void {
+  if (points.length < 2) return;
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1;
+  ctx.globalAlpha = TREND_ALPHA;
+  ctx.setLineDash(TREND_DASH);
+  ctx.beginPath();
+  points.forEach((p, i) => (i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y)));
+  ctx.stroke();
+  ctx.restore();
+}
+
+/** Levels without their own colours: drawn in the drawing's (a Fibonacci tool's "one colour"). */
+export function inOneColor(levels: readonly PriceLevel[]): PriceLevel[] {
+  return levels.map(({ level, price }) => ({ level: { ...level, color: undefined }, price }));
+}
+
 /** Whether `point` is on one of the level lines. */
 export function hitPriceLevels(
   point: { x: number; y: number },

@@ -73,6 +73,22 @@ chart.addDrawing({
   En el widget, un Texto, una Nota o una Llamada piden sus palabras en cuanto se dibujan: su configuración se abre en la pestaña Texto, con el texto seleccionado, y Cancelar deshace el dibujo. Un doble clic abre la misma pestaña. La barra sobre una selección cambia el relleno y el color del texto de las herramientas que los tienen.
 </p>
 
+<h3 id="line-text">Texto en líneas y rectángulos</h3>
+<p>
+  Una línea de tendencia, un rayo, una línea extendida, de información o de ángulo, una flecha, una línea horizontal o vertical y un rectángulo también llevan texto, con el mismo estilo. <code>textAlign</code> lo pone en el extremo izquierdo, el centro o el extremo derecho de la línea, y <code>textVAlign</code> encima de la línea, sobre ella o debajo; en un rectángulo lo colocan dentro, arriba, en el medio o abajo. El texto sigue la pendiente de la línea y siempre se lee de izquierda a derecha, y de abajo arriba en una línea vertical. En el widget, la pestaña Texto tiene esas dos filas.
+</p>
+<pre><code>{`chart.addDrawing({
+  type: 'trendLine',
+  anchors: [{ time: t1, price: 98 }, { time: t2, price: 104 }],
+  style: { color: '#4c8dff', lineWidth: 2, lineStyle: 'solid',
+    text: 'Breakout', textAlign: 'right', textVAlign: 'top' },  // 'top' | 'middle' | 'bottom'
+})
+chart.addDrawing({ type: 'verticalLine', anchors: [{ time: t3, price: 0 }], options: { showTime: true } })
+chart.addDrawing({ type: 'fibRetracement', anchors: [a, b], options: { trendLine: false, oneColor: true } })`}</code></pre>
+<p>
+  Una línea horizontal y un rayo horizontal ocultan su precio con <code>showPrice: false</code>. Una línea vertical muestra la hora de su barra con <code>showTime: true</code>, escrita como la escribe la cruz. Un rectángulo tiene ocho controles: uno en cada esquina y uno en el centro de cada lado, que mueve solo ese lado. Un retroceso y una extensión de Fibonacci dibujan una línea discontinua por sus puntos (<code>trendLine</code>, activada por defecto) y dibujan todos sus niveles en el color del dibujo con <code>oneColor</code>.
+</p>
+
 <h2>Configuración</h2>
 <p>
   Además de su estilo (color, grosor, estilo de línea, relleno, texto), una

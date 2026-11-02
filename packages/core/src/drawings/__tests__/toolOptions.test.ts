@@ -90,7 +90,7 @@ describe('FibRetracementTool options', () => {
     const recorded = new Proxy(ctx, {
       get: (target, key) => (key === 'stroke' ? () => strokes.push(String((target as unknown as Record<string, unknown>).strokeStyle)) : Reflect.get(target, key)),
     });
-    tool.render(recorded, drawing('fibRetracement', anchors, { options: { levels: [{ value: 0.5, visible: true, color: '#ff0000' }] } }), unitViewport, false);
+    tool.render(recorded, drawing('fibRetracement', anchors, { options: { levels: [{ value: 0.5, visible: true, color: '#ff0000' }], trendLine: false } }), unitViewport, false);
     expect(strokes).toEqual(['#ff0000']);
     void calls;
   });

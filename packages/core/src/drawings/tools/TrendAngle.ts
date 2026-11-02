@@ -1,6 +1,7 @@
 import { drawingFont, fillTextWithHalo } from './labels.js';
 import type { DrawingState, Point, ViewportState } from '@tradecanvas/commons';
 import { DrawingBase } from '../DrawingBase.js';
+import { drawLineText } from './lineText.js';
 
 const ARC_RADIUS = 28;
 const REFERENCE_LENGTH = 48;
@@ -15,7 +16,7 @@ export function screenAngleDeg(a: Point, b: Point): number {
  * start point, an arc sweeping to the line, and the angle in degrees.
  */
 export class TrendAngleTool extends DrawingBase {
-  descriptor = { type: 'trendAngle' as const, name: 'Trend Angle', requiredAnchors: 2 };
+  descriptor = { type: 'trendAngle' as const, name: 'Trend Angle', requiredAnchors: 2, text: true };
 
   render(ctx: CanvasRenderingContext2D, state: DrawingState, viewport: ViewportState, selected: boolean): void {
     if (state.anchors.length < 2) return;
@@ -56,6 +57,7 @@ export class TrendAngleTool extends DrawingBase {
     ctx.textBaseline = 'middle';
     fillTextWithHalo(ctx, `${angle.toFixed(1)}°`, a.x + dir * (ARC_RADIUS + 6), a.y + (angle >= 0 ? -8 : 8));
 
+    drawLineText(ctx, state.style, this.anchorToPixel(state.anchors[0], viewport), this.anchorToPixel(state.anchors[1], viewport), viewport.chartRect);
     if (selected) this.renderAnchorHandles(ctx, state, viewport);
   }
 

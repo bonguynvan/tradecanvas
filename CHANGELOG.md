@@ -4,6 +4,28 @@
 
 ### Drawings
 
+- **Text on lines and boxes** (`@tradecanvas/commons`, `@tradecanvas/core`, `@tradecanvas/chart`).
+  - These tools now take a text in the text style the text tools use: a trend line, a ray, an extended, info or angle line, an arrow, a horizontal or a vertical line, and a rectangle.
+  - `textAlign` puts the text at the line's left end, its middle (the default) or its right end. The new style key `textVAlign` puts it above the line (the default), on it or under it.
+  - In a rectangle, the two keys place the text inside the box, at its top, middle or bottom.
+  - The text follows the line's slope. It reads left to right, and bottom to top along a vertical line.
+  - It is placed on the part of the line that is on the chart, so a ray's or an extended line's text sits at the chart's edge and stays in sight as the points scroll off.
+  - A horizontal line's price label moves out of the text's way.
+  - The widget's Text tab has an Align row and a Vertical align row for these tools.
+- **A level's price, a vertical line's time** (`@tradecanvas/commons`, `@tradecanvas/core`, `@tradecanvas/chart`).
+  - A horizontal line and a horizontal ray hide their price with the new option `showPrice: false`.
+  - A vertical line shows its bar's time with the new option `showTime: true`, on a tag at its foot, written as the crosshair writes it. `ViewportState.formatTime` carries the chart's time format to the drawings.
+- **Eight handles on a rectangle** (`@tradecanvas/core`). A rectangle has a handle at each corner and one in the middle of each side. A side's handle moves that side alone.
+- **Fibonacci trend line and one colour** (`@tradecanvas/core`, `@tradecanvas/chart`).
+  - A Fibonacci retracement and extension draw a dashed line through their points, saved ones included. The new option `trendLine` turns it off.
+  - With the new option `oneColor`, all the levels are drawn in the drawing's colour.
+
+## 1.63.0 (2026-11-02)
+
+React, Vue and Svelte components: 1.3.55.
+
+### Drawings
+
 - **Editing drawings with the pointer and the keys** (`@tradecanvas/core`, `@tradecanvas/chart`).
   - The magnet works on a dragged handle and on a moved drawing too. The point nearest where it was grabbed lands on a price, and the rest keep their place to it. The weak magnet reaches 50 px, up from 30.
   - Hold Ctrl or ⌘ while drawing or dragging to turn the magnet over for that moment: on when it is off, off when it is on.

@@ -215,3 +215,17 @@ describe('CrosshairHandler.refresh', () => {
     expect(handler.getReportedBarIndex()).toBeNull();
   });
 });
+
+describe('CrosshairHandler.formatTime', () => {
+  it('writes a bar’s time as its pill does, a time formatter included', () => {
+    const handler = new CrosshairHandler();
+    handler.setData(bars);
+    handler.setTimezoneOffset('UTC');
+    handler.setSyncedSlot(2);
+    const { ctx, texts } = recorder();
+    handler.renderAxisLabels(ctx, viewport, theme, bars);
+    expect(handler.formatTime(bars[2].time, bars)).toBe(texts[0]);
+    handler.setTimeFormatter((ms) => `t${ms}`);
+    expect(handler.formatTime(bars[2].time, bars)).toBe(`t${bars[2].time}`);
+  });
+});

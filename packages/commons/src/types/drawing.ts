@@ -48,8 +48,17 @@ export interface DrawingStyle {
   bold?: boolean;
   /** The text in italics. */
   italic?: boolean;
-  /** Where each line of the text lines up in its box. */
+  /**
+   * Where each line of the text lines up in its box. On a line or a box (a
+   * trend line, a rectangle): at which end of it the text sits, the middle
+   * when left out.
+   */
   textAlign?: 'left' | 'center' | 'right';
+  /**
+   * On a line: above it, on it, or under it. In a box: at its top, its
+   * middle or its bottom. Left out: the top.
+   */
+  textVAlign?: 'top' | 'middle' | 'bottom';
   /** The text's colour; `color` when left out (a note keeps `color` for its pin). */
   textColor?: string;
   /**

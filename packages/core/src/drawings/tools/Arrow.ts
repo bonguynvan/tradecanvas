@@ -1,9 +1,10 @@
 import type { DrawingState, Point, ViewportState } from '@tradecanvas/commons';
 import { DrawingBase } from '../DrawingBase.js';
 import { fillArrowHead } from './lineDecor.js';
+import { drawLineText } from './lineText.js';
 
 export class ArrowTool extends DrawingBase {
-  descriptor = { type: 'arrow' as const, name: 'Arrow', requiredAnchors: 2 };
+  descriptor = { type: 'arrow' as const, name: 'Arrow', requiredAnchors: 2, text: true };
 
   render(ctx: CanvasRenderingContext2D, state: DrawingState, viewport: ViewportState, selected: boolean): void {
     if (state.anchors.length < 2) return;
@@ -17,6 +18,7 @@ export class ArrowTool extends DrawingBase {
     ctx.stroke();
     fillArrowHead(ctx, p1, p2, state.style.color);
     this.resetLineStyle(ctx);
+    drawLineText(ctx, state.style, this.anchorToPixel(state.anchors[0], viewport), this.anchorToPixel(state.anchors[1], viewport), viewport.chartRect);
     if (selected) this.renderAnchorHandles(ctx, state, viewport);
   }
 
