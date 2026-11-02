@@ -916,5 +916,9 @@ export const PL_MESSAGES: WidgetMessages = {
   'hotkeys.orderStep': 'Przesuń do przodu / do tyłu',
   'hotkeys.orderEnd': 'Przenieś na wierzch / na spód',
   'hotkeys.finishPath': 'Zakończ ścieżkę lub łamaną',
+  'hotkeys.copyDrag': 'Przeciągnij kopię rysunku (na rysunku)',
+  'hotkeys.keepAngle': 'Utrzymaj linię poziomo, pionowo lub pod kątem 45° (podczas rysowania lub uchwytem)',
+  'hotkeys.flipMagnet': 'Przytrzymaj podczas rysowania: włącz lub wyłącz magnes',
+  'hotkeys.nudge': 'Przesuń zaznaczone rysunki (Shift: 10 kroków)',
   'key.rightClick': 'Prawy klik',
 };

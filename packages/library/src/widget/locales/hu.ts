@@ -916,5 +916,9 @@ export const HU_MESSAGES: WidgetMessages = {
   'hotkeys.orderStep': 'Előbbre hozás / hátrébb küldés',
   'hotkeys.orderEnd': 'Előrehozás / hátraküldés',
   'hotkeys.finishPath': 'Útvonal vagy töröttvonal befejezése',
+  'hotkeys.copyDrag': 'Rajz másolatának húzása (a rajzon)',
+  'hotkeys.keepAngle': 'Vonal vízszintesen, függőlegesen vagy 45°-ban tartása (rajzoláskor vagy fogantyúval)',
+  'hotkeys.flipMagnet': 'Rajzolás közben tartva: mágnes be- vagy kikapcsolása',
+  'hotkeys.nudge': 'A kijelölt rajzok mozgatása (Shift: 10 lépés)',
   'key.rightClick': 'Jobb kattintás',
 };

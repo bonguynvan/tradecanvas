@@ -935,5 +935,9 @@ export const MS_MESSAGES: WidgetMessages = {
   'hotkeys.orderStep': 'Bawa ke hadapan / hantar ke belakang',
   'hotkeys.orderEnd': 'Bawa ke paling hadapan / hantar ke paling belakang',
   'hotkeys.finishPath': 'Selesaikan laluan atau polyline',
+  'hotkeys.copyDrag': 'Seret salinan lukisan (pada lukisan)',
+  'hotkeys.keepAngle': 'Kekalkan garisan mendatar, menegak atau 45° (semasa melukis atau melalui pemegang)',
+  'hotkeys.flipMagnet': 'Tahan semasa melukis: hidupkan atau matikan magnet',
+  'hotkeys.nudge': 'Alihkan lukisan yang dipilih (Shift: 10 langkah)',
   'key.rightClick': 'Klik kanan',
 };

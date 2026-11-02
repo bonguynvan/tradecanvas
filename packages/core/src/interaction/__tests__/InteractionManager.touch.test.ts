@@ -67,6 +67,7 @@ function drawings(takes: (pos: Point) => boolean = () => false, opts: { tool?: s
     onPointerUp: () => { calls.push('up'); return false; },
     placeAt: (pos: Point) => { calls.push(`place ${pos.x}`); return true; },
     isDragging: () => false,
+    setModifiers: () => {},
     isEraser: () => opts.eraser ?? false,
     takeBackPoint: () => { calls.push('take back'); return true; },
     getActiveTool: () => opts.tool ?? null,

@@ -935,5 +935,9 @@ export const FA_MESSAGES: WidgetMessages = {
   'hotkeys.orderStep': 'یک لایه به جلو / یک لایه به عقب',
   'hotkeys.orderEnd': 'انتقال به جلوترین / عقب‌ترین لایه',
   'hotkeys.finishPath': 'پایان دادن به مسیر یا چندخطی',
+  'hotkeys.copyDrag': 'کشیدن یک نسخه از ترسیم (روی ترسیم)',
+  'hotkeys.keepAngle': 'نگه داشتن خط به‌صورت افقی، عمودی یا ۴۵° (هنگام ترسیم یا با دستگیره)',
+  'hotkeys.flipMagnet': 'هنگام ترسیم نگه دارید: روشن یا خاموش کردن آهنربا',
+  'hotkeys.nudge': 'جابه‌جایی ترسیم‌های انتخاب‌شده (Shift: ۱۰ گام)',
   'key.rightClick': 'راست‌کلیک',
 };

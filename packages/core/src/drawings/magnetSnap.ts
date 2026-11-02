@@ -5,7 +5,7 @@ import { priceToY, timestampToBarIndex } from '../viewport/ScaleMapping.js';
 export type MagnetMode = 'none' | 'magnet' | 'strong';
 
 /** How near (px) the weak magnet has to be to a price to snap to it. */
-const MAGNET_REACH_PX = 30;
+const MAGNET_REACH_PX = 50;
 
 /**
  * Snap a point to the closest open, high, low or close of the bar under it.

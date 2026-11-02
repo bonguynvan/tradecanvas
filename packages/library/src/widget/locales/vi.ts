@@ -916,5 +916,9 @@ export const VI_MESSAGES: WidgetMessages = {
   'hotkeys.orderStep': 'Đưa lên / xuống một lớp',
   'hotkeys.orderEnd': 'Đưa lên trên cùng / xuống dưới cùng',
   'hotkeys.finishPath': 'Kết thúc đường nhiều điểm hoặc đa giác',
+  'hotkeys.copyDrag': 'Kéo ra một bản sao của hình vẽ (trên hình vẽ)',
+  'hotkeys.keepAngle': 'Giữ đường nằm ngang, thẳng đứng hoặc 45° (khi vẽ, hoặc kéo tay nắm)',
+  'hotkeys.flipMagnet': 'Giữ khi vẽ: bật hoặc tắt nam châm',
+  'hotkeys.nudge': 'Di chuyển các hình vẽ đang chọn (Shift: 10 bước)',
   'key.rightClick': 'Chuột phải',
 };

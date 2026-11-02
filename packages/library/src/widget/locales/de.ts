@@ -916,5 +916,9 @@ export const DE_MESSAGES: WidgetMessages = {
   'hotkeys.orderStep': 'Eine Ebene nach vorne / hinten',
   'hotkeys.orderEnd': 'In den Vordergrund / Hintergrund',
   'hotkeys.finishPath': 'Pfad oder Polylinie beenden',
+  'hotkeys.copyDrag': 'Kopie einer Zeichnung ziehen (auf der Zeichnung)',
+  'hotkeys.keepAngle': 'Linie waagerecht, senkrecht oder bei 45° halten (beim Zeichnen oder am Griff)',
+  'hotkeys.flipMagnet': 'Beim Zeichnen halten: Magnet ein- oder ausschalten',
+  'hotkeys.nudge': 'Ausgewählte Zeichnungen verschieben (Shift: 10 Schritte)',
   'key.rightClick': 'Rechtsklick',
 };

@@ -17,8 +17,8 @@ beforeEach(() => {
 
 describe('strong magnet', () => {
   // One bar a slot (unitViewport: bar i at x = i*10 + 5; 1 px a point): every price of it
-  // is over 30 px from a click at 50, the nearest being the close, 12.
-  const bars = Array.from({ length: 10 }, (_, i) => ({ time: i, open: 10, high: 95, low: 5, close: 12, volume: 1 }));
+  // is over 50 px from a click at 68, the nearest being the close, 12.
+  const bars = Array.from({ length: 10 }, (_, i) => ({ time: i, open: 10, high: 125, low: 5, close: 12, volume: 1 }));
   const vp = { ...unitViewport, data: undefined };
 
   const anchorAt = (mode: 'magnet' | 'strong', price: number) => {
@@ -31,11 +31,11 @@ describe('strong magnet', () => {
   };
 
   it('the weak magnet leaves a point far from every price where it is', () => {
-    expect(anchorAt('magnet', 50)).toBe(50);
+    expect(anchorAt('magnet', 68)).toBeCloseTo(68);
   });
 
   it('the strong magnet snaps it to the nearest price anyway', () => {
-    expect(anchorAt('strong', 50)).toBe(12);
+    expect(anchorAt('strong', 68)).toBe(12);
   });
 });
 

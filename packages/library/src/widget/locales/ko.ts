@@ -916,5 +916,9 @@ export const KO_MESSAGES: WidgetMessages = {
   'hotkeys.orderStep': '앞으로 가져오기 / 뒤로 보내기',
   'hotkeys.orderEnd': '맨 앞으로 가져오기 / 맨 뒤로 보내기',
   'hotkeys.finishPath': '경로 또는 폴리라인 완료',
+  'hotkeys.copyDrag': '드로잉의 복사본 끌어오기 (드로잉 위에서)',
+  'hotkeys.keepAngle': '선을 수평, 수직 또는 45°로 유지 (그리는 중이나 핸들로)',
+  'hotkeys.flipMagnet': '그리는 동안 누르기: 자석 켜기/끄기',
+  'hotkeys.nudge': '선택한 드로잉 이동 (Shift: 10단계)',
   'key.rightClick': '오른쪽 클릭',
 };

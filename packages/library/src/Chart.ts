@@ -191,6 +191,15 @@ const HISTORY_AHEAD_MIN_BARS = 20;
 
 /** Narrowest box (px) the zoom-area tool zooms into. */
 const MIN_ZOOM_BOX_PX = 8;
+/** Arrow keys on selected drawings: a bar across or a pixel up or down; Shift moves this many. */
+const NUDGE_SHIFT_STEPS = 10;
+/** Each arrow key's step for selected drawings: bars across, pixels down. */
+const NUDGE_KEYS: Record<string, [bars: number, px: number]> = {
+  ArrowLeft: [-1, 0],
+  ArrowRight: [1, 0],
+  ArrowUp: [0, -1],
+  ArrowDown: [0, 1],
+};
 
 /** Drawings drawn across the whole plot's width, or its height, whatever their anchors. */
 const FULL_WIDTH_DRAWINGS = new Set(['horizontalLine', 'crossLine']);
@@ -811,6 +820,11 @@ export class Chart {
       if (this.a11y && this.features.keyboard && (e.key === ',' || e.key === '.') && !e.ctrlKey && !e.metaKey && !e.altKey) {
         e.preventDefault();
         this.a11y.readBar(e.key === '.' ? 1 : -1);
+        return;
+      }
+      // With drawings selected, the arrows move them instead of the chart.
+      if (this.nudgeSelectedDrawings(e)) {
+        e.preventDefault();
         return;
       }
       if (this.keyboardHandler.handleKey(e)) {
@@ -2596,6 +2610,19 @@ export class Chart {
   /** Remove several drawings as one undo step; locked ones stay. Returns how many went. */
   removeDrawings(ids: readonly string[]): number {
     return this.drawingManager.removeDrawings(ids);
+  }
+
+  /**
+   * An arrow key with drawings selected: move them a bar across or a pixel
+   * up or down (Shift: ten), one undo step for a run of presses. False when
+   * it is not an arrow, or nothing selected can move.
+   */
+  private nudgeSelectedDrawings(e: KeyboardEvent): boolean {
+    const step = NUDGE_KEYS[e.key];
+    if (!step || !this.features.drawings || e.ctrlKey || e.metaKey || e.altKey) return false;
+    const times = e.shiftKey ? NUDGE_SHIFT_STEPS : 1;
+    const viewport = { ...this.viewport.getState(), data: this.getDisplayData() };
+    return this.drawingManager.nudge(step[0] * times, step[1] * times, viewport);
   }
 
   /**

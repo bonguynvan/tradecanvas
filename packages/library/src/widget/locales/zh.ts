@@ -916,5 +916,9 @@ export const ZH_MESSAGES: WidgetMessages = {
   'hotkeys.orderStep': '上移一层 / 下移一层',
   'hotkeys.orderEnd': '置于顶层 / 置于底层',
   'hotkeys.finishPath': '完成路径或折线',
+  'hotkeys.copyDrag': '拖出绘图的副本（在绘图上）',
+  'hotkeys.keepAngle': '让线保持水平、垂直或 45°（绘制时，或拖动控制点）',
+  'hotkeys.flipMagnet': '绘制时按住：打开或关闭磁铁',
+  'hotkeys.nudge': '移动选中的绘图（Shift：10 步）',
   'key.rightClick': '右击',
 };

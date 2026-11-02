@@ -935,5 +935,9 @@ export const AR_MESSAGES: WidgetMessages = {
   'hotkeys.orderStep': 'تقديم للأمام / إرسال للخلف',
   'hotkeys.orderEnd': 'إحضار إلى المقدمة / إرسال إلى الخلفية',
   'hotkeys.finishPath': 'إنهاء مسار أو خط متعدد',
+  'hotkeys.copyDrag': 'اسحب نسخة من رسم (على الرسم)',
+  'hotkeys.keepAngle': 'أبقِ الخط أفقيًا أو عموديًا أو بزاوية 45° (أثناء الرسم أو بمقبض)',
+  'hotkeys.flipMagnet': 'اضغط مطولًا أثناء الرسم: تشغيل المغناطيس أو إيقافه',
+  'hotkeys.nudge': 'تحريك الرسوم المحددة (Shift: ‏10 خطوات)',
   'key.rightClick': 'نقر بزر الماوس الأيمن',
 };

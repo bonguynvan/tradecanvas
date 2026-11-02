@@ -158,6 +158,7 @@ describe('InteractionManager — what a pointer move repaints', () => {
   it('a move the drawing tools consume (preview, drag) repaints the scene', () => {
     const drawings = {
       onPointerMove: () => true,
+      setModifiers: () => {},
       hoverCursorAt: () => null,
     } as unknown as DrawingManager;
     const vp = { chartRect: { x: 0, y: 0, width: 400, height: 300 } } as ViewportState;

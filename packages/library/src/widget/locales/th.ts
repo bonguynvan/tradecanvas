@@ -916,5 +916,9 @@ export const TH_MESSAGES: WidgetMessages = {
   'hotkeys.orderStep': 'เลื่อนไปข้างหน้า / ข้างหลัง',
   'hotkeys.orderEnd': 'นำไปไว้หน้าสุด / หลังสุด',
   'hotkeys.finishPath': 'จบเส้นทางหรือโพลีไลน์',
+  'hotkeys.copyDrag': 'ลากสำเนาของภาพวาด (บนภาพวาด)',
+  'hotkeys.keepAngle': 'ให้เส้นอยู่แนวนอน แนวตั้ง หรือ 45° (ขณะวาดหรือด้วยจุดจับ)',
+  'hotkeys.flipMagnet': 'กดค้างขณะวาด: เปิดหรือปิดแม่เหล็ก',
+  'hotkeys.nudge': 'ย้ายภาพวาดที่เลือก (Shift: 10 ขั้น)',
   'key.rightClick': 'คลิกขวา',
 };

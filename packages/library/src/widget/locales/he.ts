@@ -935,5 +935,9 @@ export const HE_MESSAGES: WidgetMessages = {
   'hotkeys.orderStep': 'הבאה קדימה / שליחה אחורה',
   'hotkeys.orderEnd': 'הבאה לחזית / שליחה לרקע',
   'hotkeys.finishPath': 'סיום מסלול או קו שבור',
+  'hotkeys.copyDrag': 'גרירת עותק של ציור (על הציור)',
+  'hotkeys.keepAngle': 'שמירת קו אופקי, אנכי או ב־45° (בזמן הציור או בידית)',
+  'hotkeys.flipMagnet': 'החזקה בזמן ציור: הפעלה או כיבוי של המגנט',
+  'hotkeys.nudge': 'הזזת הציורים הנבחרים (Shift: ‏10 צעדים)',
   'key.rightClick': 'לחיצה ימנית',
 };

@@ -916,5 +916,9 @@ export const JA_MESSAGES: WidgetMessages = {
   'hotkeys.orderStep': '前面へ / 背面へ移動',
   'hotkeys.orderEnd': '最前面へ / 最背面へ移動',
   'hotkeys.finishPath': 'パスまたはポリラインを確定',
+  'hotkeys.copyDrag': '描画のコピーをドラッグ（描画の上で）',
+  'hotkeys.keepAngle': '線を水平・垂直・45°に保つ（描画中、またはハンドルで）',
+  'hotkeys.flipMagnet': '描画中に押し続ける：マグネットをオン／オフ',
+  'hotkeys.nudge': '選択した描画を移動（Shift：10 ステップ）',
   'key.rightClick': '右クリック',
 };

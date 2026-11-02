@@ -935,5 +935,9 @@ export const NB_MESSAGES: WidgetMessages = {
   'hotkeys.orderStep': 'Flytt fremover / bakover',
   'hotkeys.orderEnd': 'Plasser lengst frem / lengst bak',
   'hotkeys.finishPath': 'Fullfør en sti eller polylinje',
+  'hotkeys.copyDrag': 'Dra en kopi av en tegning (på tegningen)',
+  'hotkeys.keepAngle': 'Hold en linje vannrett, loddrett eller i 45° (når den tegnes, eller med et håndtak)',
+  'hotkeys.flipMagnet': 'Hold mens du tegner: slå magneten av eller på',
+  'hotkeys.nudge': 'Flytt de valgte tegningene (Shift: 10 trinn)',
   'key.rightClick': 'Høyreklikk',
 };

@@ -464,6 +464,8 @@ export class InteractionManager {
       const mouse = kind === 'mouse';
       const reach = mouse ? undefined : TOUCH_REACH;
       this.pressPlacedPoint = false;
+      // A finger has no keys: nothing held turns the magnet over or keeps a line at 45°.
+      if (!mouse) this.drawingManager?.setModifiers({ ctrl: false, shift: false });
 
       // Click tracking — only a press that falls through to pan (i.e. an empty
       // chart-area press) and is released without drag counts as a click.
@@ -489,6 +491,11 @@ export class InteractionManager {
       const placing = !!this.drawingManager?.getActiveTool()
         || !!this.tradingManager?.isBracketActive()
         || !!this.tradingManager?.isOrderDraftActive();
+      // Ctrl/⌘ on a drawing: dragging copies it, a click adds it to the selection or takes it out.
+      if (mods.ctrl && !placing && !this.zoomArea && vp && this.drawingManager?.beginCopyDrag(pos, vp, reach)) {
+        if (mouse) setCursor('copy');
+        return 'taken';
+      }
       // The zoom-area tool takes a plain drag for its box (before anything being placed).
       if (this.boxSelectHandlers && (this.zoomArea || (mods.ctrl && !placing))) {
         this.boxSelecting = true;
@@ -500,8 +507,9 @@ export class InteractionManager {
 
       // Shift-drag measure tool — bypasses pan/draw/trade. Tracked separately
       // because the gesture spans the press and its release, and the crosshair
-      // is suppressed while measuring.
-      if (mods.shift && this.measureHandlers) {
+      // is suppressed while measuring. Not while placing a point or on a
+      // drawing: there Shift keeps the line at 45° steps.
+      if (mods.shift && this.measureHandlers && !placing && !(vp && this.drawingManager?.hoverCursorAt(pos, vp))) {
         this.measuring = true;
         this.measureHandlers.begin(pos);
         this.onOverlayDirty?.(true);
@@ -563,6 +571,7 @@ export class InteractionManager {
       // interaction that follows (drag, pan, draw, etc.).
       this.invalidateRect();
       const mods = { ctrl: e.ctrlKey || e.metaKey, shift: e.shiftKey, alt: e.altKey };
+      this.drawingManager?.setModifiers({ ctrl: mods.ctrl, shift: mods.shift });
       // Keep focus where the "+" menu puts it.
       if (press(this.getMousePos(e), mods, 'mouse') === 'menu') e.preventDefault();
     };
@@ -583,6 +592,8 @@ export class InteractionManager {
 
     const handleMove = (e: MouseEvent) => {
       const pos = this.getMousePos(e);
+      // A key pressed or let go mid-drag counts from the next move.
+      this.drawingManager?.setModifiers({ ctrl: e.ctrlKey || e.metaKey, shift: e.shiftKey });
       // Hover cursor and markers — only between gestures; a press keeps the
       // cursor it started with (grabbing hand while panning, etc.).
       if (!pressActive) {

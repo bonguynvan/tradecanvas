@@ -916,5 +916,9 @@ export const RU_MESSAGES: WidgetMessages = {
   'hotkeys.orderStep': 'Переместить вперёд / назад',
   'hotkeys.orderEnd': 'На передний / задний план',
   'hotkeys.finishPath': 'Завершить путь или ломаную',
+  'hotkeys.copyDrag': 'Перетащить копию рисунка (на рисунке)',
+  'hotkeys.keepAngle': 'Держать линию горизонтальной, вертикальной или под 45° (при рисовании или за маркер)',
+  'hotkeys.flipMagnet': 'Удерживать при рисовании: включить или выключить магнит',
+  'hotkeys.nudge': 'Сдвинуть выбранные рисунки (Shift: 10 шагов)',
   'key.rightClick': 'Правый щелчок',
 };
