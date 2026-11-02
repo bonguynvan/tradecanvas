@@ -1313,6 +1313,33 @@ describe('ChartWidget on a wide screen', () => {
     expect(fonts[fonts.length - 1]).toMatchObject({ sizeSmall: 13, sizeMedium: 15, sizeLarge: 18 });
   });
 
+  it('sets only the sizes it grows, so the other tokens a host sets in CSS stay', () => {
+    wide(2600);
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false });
+    const root = host.querySelector<HTMLElement>('.tcw-root')!;
+    expect(root.style.getPropertyValue('--tcw-icon')).toBe('19px');
+    expect(root.style.getPropertyValue('--tcw-radius')).toBe('');
+    expect(root.style.getPropertyValue('--tcw-font')).toBe('');
+  });
+
+  it('changes size only once the width is a little past a step, and leaves the type of the chart alone at 1', () => {
+    (FakeChart.prototype as unknown as Record<string, unknown>).getFont = () => ({ ...chartFont });
+    const observers: ((entries: unknown[]) => void)[] = [];
+    const resized = () => observers.forEach((cb) => cb([]));
+    vi.stubGlobal('ResizeObserver', class { constructor(cb: (entries: unknown[]) => void) { observers.push(cb); } observe() {} disconnect() {} });
+    const width = wide(1440);
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false });
+    const root = host.querySelector<HTMLElement>('.tcw-root')!;
+    expect((FakeChart.last.fonts as Record<string, unknown>[]).every((f) => f.sizeSmall === undefined)).toBe(true);
+    width.mockReturnValue(1810);
+    resized();
+    expect(root.style.getPropertyValue('--tcw-toolbar-h')).toBe('');
+    width.mockReturnValue(1830);
+    resized();
+    expect(root.style.getPropertyValue('--tcw-toolbar-h')).toBe('46px');
+    vi.unstubAllGlobals();
+  });
+
   it('keeps its sizes on a laptop, and at every width with a scale of 1', () => {
     wide(1440);
     widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false });
@@ -1380,10 +1407,20 @@ describe('ChartWidget text typed in place', () => {
     expect(calls).toEqual([['amendNewDrawing', 't', { style: { text: 'Typed' } }], ['takeBackDrawing', 't']]);
   });
 
-  it('closes when the text is taken away while it is typed', () => {
-    const { fake } = setUp();
+  it('closes when the text is taken away while it is typed, and ends its edit', () => {
+    const { fake, calls } = setUp();
     fake.emit('drawingDoubleClick', { id: 't' });
     fake.emit('drawingRemove', { id: 't' });
     expect(area()).toBeNull();
+    expect(calls.at(-1)).toEqual(['endDrawingEdit', 't']);
+  });
+
+  it('opens no second box over a text already being typed in', () => {
+    const { fake, calls } = setUp();
+    fake.emit('drawingDoubleClick', { id: 't' });
+    area()!.value = 'Half';
+    fake.emit('drawingDoubleClick', { id: 't' });
+    expect(area()!.value).toBe('Half');
+    expect(calls.filter((c) => c[0] === 'beginDrawingEdit')).toHaveLength(1);
   });
 });

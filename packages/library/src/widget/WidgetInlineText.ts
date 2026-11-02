@@ -25,6 +25,8 @@ export interface InlineTextTarget {
   onCommit: (text: string) => void;
   /** Escape: the words as they were. */
   onCancel: () => void;
+  /** Where the focus goes back after Enter or Escape (the chart), so its keys work at once. */
+  returnFocus?: () => HTMLElement | null;
 }
 
 /** Inside padding, as a text box on the chart has it (`textBox.ts`), so the words sit where they were drawn. */
@@ -34,6 +36,8 @@ const PAD_Y = 6;
 const LINE_GAP = 1.3;
 /** Narrowest the box gets, so a short word has room to grow. */
 const MIN_WIDTH = 120;
+/** The key code a browser gives a key that ends an IME composition (Safari's Enter on a candidate). */
+const IME_KEY_CODE = 229;
 
 export class WidgetInlineText {
   private wrap: HTMLDivElement | null = null;
@@ -41,6 +45,13 @@ export class WidgetInlineText {
   private target: InlineTextTarget | null = null;
   private frame = 0;
   private done = true;
+  /**
+   * A press anywhere but the box keeps the words first: before the chart
+   * takes the press (a pan, a point placed, another drawing picked).
+   */
+  private readonly onPressAway = (e: Event) => {
+    if (this.area && e.target !== this.area) this.finish(true, false);
+  };
 
   constructor(private readonly layer: () => HTMLElement) {}
 
@@ -53,7 +64,7 @@ export class WidgetInlineText {
    * first. False (nothing opened) when the text's box is not on the chart.
    */
   open(target: InlineTextTarget): boolean {
-    if (this.area) this.finish(true);
+    if (this.area) this.finish(true, false);
     const rect = target.rect();
     if (!rect) return false;
     this.target = target;
@@ -61,8 +72,6 @@ export class WidgetInlineText {
 
     const wrap = document.createElement('div');
     wrap.className = 'tcw-inline-text';
-    wrap.setAttribute('role', 'dialog');
-    wrap.setAttribute('aria-label', target.label);
     const area = document.createElement('textarea');
     area.className = 'tcw-inline-text-input';
     area.value = target.text;
@@ -86,15 +95,17 @@ export class WidgetInlineText {
     area.addEventListener('keydown', (e) => {
       // The chart's and the page's shortcuts stay out of the typing.
       e.stopPropagation();
+      // Keys that pick or drop an IME candidate (Japanese, Chinese, Korean) are the IME's.
+      if (e.isComposing || e.keyCode === IME_KEY_CODE) return;
       if (e.key === 'Escape') {
         e.preventDefault();
-        this.finish(false);
-      } else if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
+        this.finish(false, true);
+      } else if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
-        this.finish(true);
+        this.finish(true, true);
       }
     });
-    area.addEventListener('blur', () => this.finish(true));
+    area.addEventListener('blur', () => this.finish(true, false));
     wrap.appendChild(area);
     this.layer().appendChild(wrap);
     this.wrap = wrap;
@@ -103,18 +114,24 @@ export class WidgetInlineText {
     this.fit();
     area.focus();
     area.select();
+    document.addEventListener('pointerdown', this.onPressAway, true);
     this.follow();
     return true;
   }
 
-  /** Shut without keeping or putting back anything (the drawing went, the widget is going). */
+  /** Keep the words now (the page goes fullscreen, the text is hidden): as a click away does. */
+  commit(): void {
+    this.finish(true, false);
+  }
+
+  /** Shut without keeping or putting back anything (the drawing went, the widget is going): the caller ends the edit. */
   close(): void {
     this.done = true;
     this.teardown();
   }
 
-  /** Keep the words (true) or put them back, once. */
-  private finish(keep: boolean): void {
+  /** Keep the words (true) or put them back, once; from a key, the focus goes back to the chart. */
+  private finish(keep: boolean, fromKey: boolean): void {
     if (this.done || !this.area || !this.target) return;
     this.done = true;
     const text = this.area.value;
@@ -122,9 +139,11 @@ export class WidgetInlineText {
     this.teardown();
     if (keep) target.onCommit(text);
     else target.onCancel();
+    if (fromKey) target.returnFocus?.()?.focus({ preventScroll: true });
   }
 
   private teardown(): void {
+    document.removeEventListener('pointerdown', this.onPressAway, true);
     cancelAnimationFrame(this.frame);
     this.frame = 0;
     this.wrap?.remove();
@@ -156,8 +175,8 @@ export class WidgetInlineText {
       if (!this.target || this.done) return;
       const rect = this.target.rect();
       if (!rect) {
-        // The drawing went (an undo, another chart's sync): nothing left to type into.
-        this.close();
+        // The text went out of sight (hidden, another interval, its pane gone): what was typed is kept.
+        this.finish(true, false);
         return;
       }
       this.place(rect);

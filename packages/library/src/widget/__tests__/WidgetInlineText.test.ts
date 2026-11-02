@@ -51,7 +51,7 @@ describe('WidgetInlineText', () => {
     expect(el.style.top).toBe('50px');
     expect(el.style.fontWeight).toBe('bold');
     expect(el.style.fontSize).toBe('14px');
-    expect(el.closest('[role="dialog"]')?.getAttribute('aria-label')).toBe('Edit text');
+    expect(el.getAttribute('aria-label')).toBe('Edit text');
   });
 
   it('shows the words on the chart as they are typed', () => {
@@ -112,5 +112,49 @@ describe('WidgetInlineText', () => {
     expect(calls.commit).toEqual([]);
     expect(calls.cancel).toBe(0);
     expect(editor.isOpen()).toBe(false);
+  });
+});
+
+describe('WidgetInlineText in real use', () => {
+  it('leaves Enter and Escape to an IME picking a word', () => {
+    editor.open(target());
+    expect(key('Enter', { keyCode: 229 } as KeyboardEventInit).defaultPrevented).toBe(false);
+    key('Escape', { isComposing: true });
+    expect(calls.commit).toEqual([]);
+    expect(calls.cancel).toBe(0);
+    expect(area()).not.toBeNull();
+  });
+
+  it('keeps the words as a press lands anywhere else, before what is under it hears it', () => {
+    editor.open(target());
+    area()!.value = 'Kept first';
+    const order: string[] = [];
+    const other = document.createElement('div');
+    host.appendChild(other);
+    other.addEventListener('pointerdown', () => order.push(calls.commit.length ? 'press after commit' : 'press before commit'));
+    other.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true }));
+    expect(order).toEqual(['press after commit']);
+    expect(calls.commit).toEqual(['Kept first']);
+  });
+
+  it('hands the focus back to the chart after Enter or Escape', () => {
+    const chart = document.createElement('div');
+    chart.tabIndex = 0;
+    host.appendChild(chart);
+    editor.open(target({ returnFocus: () => chart }));
+    key('Escape');
+    expect(document.activeElement).toBe(chart);
+  });
+
+  it('keeps what was typed when the text goes out of sight', () => {
+    let frame: FrameRequestCallback | null = null;
+    vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => { frame = cb; return 1; });
+    let shown = true;
+    editor.open(target({ rect: () => (shown ? { x: 1, y: 2, width: 50, height: 20 } : null) }));
+    area()!.value = 'Typed';
+    shown = false;
+    frame!(0);
+    expect(calls.commit).toEqual(['Typed']);
+    expect(area()).toBeNull();
   });
 });

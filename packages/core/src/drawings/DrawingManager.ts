@@ -1201,7 +1201,6 @@ export class DrawingManager {
     return !!drawing && typeof this.registry.get(drawing.type)?.priceAt === 'function';
   }
 
-  /** A registered tool's descriptor, or null. */
   /** The tool registered for `type`, or null. */
   getPlugin(type: DrawingToolType): DrawingPlugin | null {
     return this.registry.get(type) ?? null;
@@ -1218,6 +1217,7 @@ export class DrawingManager {
     return this.registry.get(drawing.type)?.textBox?.(drawing, viewport) ?? null;
   }
 
+  /** A registered tool's descriptor, or null. */
   getDescriptor(type: DrawingToolType): DrawingPlugin['descriptor'] | null {
     return this.registry.get(type)?.descriptor ?? null;
   }
@@ -1430,11 +1430,6 @@ export class DrawingManager {
   }
 
   /**
-   * Take back a drawing just made (the prompt for its text cancelled): with
-   * its undo step when that is the last one, so nothing is left to undo or
-   * redo; else removed as a step of its own.
-   */
-  /**
    * Change a drawing just made as part of the step that made it (its words
    * typed in place), so one undo takes the drawing and the change away. Once
    * another step came after it, the change is a step of its own. False for
@@ -1456,11 +1451,15 @@ export class DrawingManager {
       this.batch = outer;
     }
     if (!changed) return false;
-    this.undoRedo.dropLast();
-    this.undoRedo.push({ ...last, after: cloneDrawing(drawing) });
+    this.undoRedo.replaceLast({ ...last, after: cloneDrawing(drawing) });
     return true;
   }
 
+  /**
+   * Take back a drawing just made (the prompt for its text cancelled): with
+   * its undo step when that is the last one, so nothing is left to undo or
+   * redo; else removed as a step of its own.
+   */
   takeBack(id: string): void {
     const last = this.undoRedo?.last();
     if (!this.undoRedo || last?.type !== 'drawingCreate' || last.after?.id !== id) {

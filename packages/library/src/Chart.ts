@@ -2627,11 +2627,6 @@ export class Chart {
   }
 
   /**
-   * Take back a drawing just made, as a "Cancel" right after it: with the
-   * step that made it when that is the history's last, so nothing is left to
-   * undo or redo; else removed as a step of its own.
-   */
-  /**
    * Where a drawing's text box was drawn last, its padding included, in the
    * chart's own pixels (as `getDrawingRect`); null for a drawing that writes
    * in no box, a hidden one, or one not drawn yet. To lay a text box of yours
@@ -2653,6 +2648,11 @@ export class Chart {
     return changed;
   }
 
+  /**
+   * Take back a drawing just made, as a "Cancel" right after it: with the
+   * step that made it when that is the history's last, so nothing is left to
+   * undo or redo; else removed as a step of its own.
+   */
   takeBackDrawing(id: string): void {
     if (!this.features.drawings) return;
     this.drawingManager.takeBack(id);
