@@ -211,11 +211,11 @@ const es: SiteMessages = {
       title: 'Herramientas de dibujo',
       stat: '73 herramientas',
       blurb:
-        'Herramientas de Fibonacci y Gann con tus propios niveles, ondas de Elliott, patrones armónicos, notas y pinceles. Doble clic en un dibujo abre su configuración y clic derecho, su menú; las alertas siguen las líneas de tendencia, y la herramienta de posición larga/corta calcula el tamaño de la posición.',
+        'Herramientas de Fibonacci y Gann con tus propios niveles, ondas de Elliott, patrones armónicos, señales y pinceles. Las líneas y los cuadros llevan texto, las notas y las señales se editan en su sitio, una nota puede quedarse fija en la pantalla y un dibujo puede ir en el panel de un indicador. Las alertas siguen las líneas de tendencia, y Largo/Corto calcula el tamaño de la posición.',
       tryThis: [
-        'Haz doble clic en el retroceso de Fibonacci y edita sus niveles',
-        'Haz clic derecho en un dibujo: tráelo adelante, agrúpalo o añade una alerta',
-        'Elige el pincel o la herramienta de ruta; Enter termina una ruta',
+        'Haz doble clic en la señal y escribe sobre su texto',
+        'Abre Objetos a la derecha: renombra, reordena u oculta un dibujo',
+        'Clic derecho en un dibujo: agrúpalo o añade una alerta',
       ],
     },
     indicators: {

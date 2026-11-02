@@ -190,12 +190,17 @@ export const FEATURE_SCENES: FeatureScene[] = [
   {
     id: 'drawings',
     code: `chart.addDrawing({
-  type: 'riskReward',               // Long/Short Position
-  anchors: [entry, stop],           // { time, price } each
-  options: { accountSize: 10_000, risk: 1, rewardRatio: 2 },
+  type: 'trendLine', name: 'Rising support',   // its name in the object tree
+  anchors: [low1, low2],                        // { time, price } each
+  style: { text: 'Support', textAlign: 'center', textVAlign: 'bottom' },
 })
 chart.addDrawingAlert(trendLine, { condition: 'crossing' })
-chart.groupDrawings([fib, note], 'Swing')`,
+chart.groupDrawings([fib, signpost], 'Swing')
+// Kept to the screen: shares of the plot, not a time and a price
+chart.addDrawing({ type: 'anchoredNote', anchors: [{ time: 0.04, price: 0.88 }],
+  style: { text: 'Double-click this note to type over it' } })
+// A level at 70 on the RSI pane: rsi is the id addIndicator returned (getIndicatorPanes() lists them)
+chart.addDrawing({ type: 'horizontalLine', paneId: rsi, anchors: [{ time, price: 70 }] })`,
     options: () => ({ symbol: 'DEMO', symbols: ['DEMO', 'ALPHA', 'BETA'], timeframe: '1h' }),
     data: (symbol) => generateBars(600, symbol, HOUR, 240),
     setup: (_widget, chart) => {
@@ -209,13 +214,15 @@ chart.groupDrawings([fib, note], 'Swing')`,
         anchors: [low, high],
         options: { extendLeft: false, extendRight: false, labelPosition: 'right' },
       });
-      const note = chart.addDrawing({ type: 'note', anchors: [high], style: { text: 'Swing high: watch the 0.618' } });
-      if (fib && note) chart.groupDrawings([fib, note], 'Swing');
-      // A trend line under the lows, with an alert on it.
+      const post = chart.addDrawing({ type: 'signpost', anchors: [high], style: { text: 'Swing high: watch the 0.618' } });
+      if (fib && post) chart.groupDrawings([fib, post], 'Swing');
+      // A trend line under the lows, its words on it and its name in the object tree, with an alert on it.
       const line = chart.addDrawing({
         type: 'trendLine',
+        name: 'Rising support',
         anchors: [swing(data, n - 80, n - 55, 'low'), swing(data, n - 30, n - 8, 'low')],
         options: { extendRight: true },
+        style: { text: 'Support', textAlign: 'center', textVAlign: 'bottom' },
       });
       if (line) chart.addDrawingAlert(line, { condition: 'crossing', message: 'Trend line crossed' });
       // A long position, sized for a 10 000 account risking 1%.
@@ -228,6 +235,22 @@ chart.groupDrawings([fib, note], 'Swing')`,
         ],
         options: { accountSize: 10_000, risk: 1, rewardRatio: 2 },
       });
+      // Kept to the screen: it stays put while the chart scrolls and zooms under it.
+      chart.addDrawing({
+        type: 'anchoredNote',
+        anchors: [{ time: 0.04, price: 0.88 }],
+        style: { text: 'Double-click this note to type over it' },
+      });
+      // A drawing on an indicator pane follows that pane's scale.
+      const rsi = chart.addIndicator('rsi', { period: 14 });
+      if (rsi) {
+        chart.addDrawing({
+          type: 'horizontalLine',
+          paneId: rsi,
+          anchors: [{ time: data[n - 1].time, price: 70 }],
+          style: { color: '#f2a93b', text: 'Overbought', textAlign: 'left', textVAlign: 'top' },
+        });
+      }
     },
   },
   {

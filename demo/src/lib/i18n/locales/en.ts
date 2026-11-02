@@ -216,11 +216,11 @@ const en = {
       title: 'Drawing tools',
       stat: '73 tools',
       blurb:
-        'Fibonacci and Gann tools with your own levels, Elliott waves, harmonic patterns, notes and brushes. Double-click a drawing for its settings, right-click for its menu; alerts follow trend lines, and Long/Short works out the position size.',
+        'Fibonacci and Gann tools with your own levels, Elliott waves, harmonic patterns, signposts and brushes. Lines and boxes carry words, notes and signposts are typed over in place, a note can stay put on the screen, and a drawing can sit on an indicator pane. Alerts follow trend lines, and Long/Short works out the position size.',
       tryThis: [
-        'Double-click the Fibonacci retracement and edit its levels',
-        'Right-click a drawing: bring it forward, group it, or add an alert',
-        'Pick the brush or the path tool; Enter ends a path',
+        'Double-click the signpost and type over its words',
+        'Open Objects on the right: rename, reorder or hide a drawing',
+        'Right-click a drawing: group it, or add an alert',
       ],
     },
     indicators: {
