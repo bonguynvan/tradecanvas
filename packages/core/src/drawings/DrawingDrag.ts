@@ -3,6 +3,7 @@ import { sanitizeDrawingOptions } from '@tradecanvas/commons';
 import { barIndexToTime, priceToY, resolveBarIndex, xToTime, yToPrice } from '../viewport/ScaleMapping.js';
 import { cloneDrawing } from './drawingState.js';
 import { nearestAnchor } from './drawingEditing.js';
+import { pixelToScreenPoint, shiftScreenPoints } from './screenAnchors.js';
 
 /** Pointer travel (px) before pressing a drawing turns into moving it. */
 const DRAG_START_PX = 3;
@@ -38,7 +39,14 @@ export class DrawingDrag {
   /** The first drawing's anchor nearest the press: the one the magnet pulls on a move. */
   private held = -1;
 
-  constructor(private readonly find: (id: string) => DrawingState | undefined) {}
+  /**
+   * `onScreen` says whether a drawing is kept to the screen: it then moves by
+   * pixels across the plot, not by bars and prices.
+   */
+  constructor(
+    private readonly find: (id: string) => DrawingState | undefined,
+    private readonly onScreen: (drawing: DrawingState) => boolean = () => false,
+  ) {}
 
   isActive(): boolean {
     return this.start !== null;
@@ -92,11 +100,16 @@ export class DrawingDrag {
     if (Math.hypot(dx, dy) < DRAG_START_PX && this.unmoved()) return true;
     const barUnit = viewport.barWidth + viewport.barSpacing;
     const bars = barUnit > 0 ? Math.round(dx / barUnit) : 0;
-    const snapped = edit ? this.snapHeld(bars, dy, viewport, edit) : null;
+    const first = this.find(this.grabbed[0].id);
+    const snapped = edit && first && !this.onScreen(first) ? this.snapHeld(bars, dy, viewport, edit) : null;
     if (snapped) dy += snapped.dy;
     this.grabbed.forEach(({ id, anchors }, i) => {
       const drawing = this.find(id);
       if (!drawing || drawing.locked) return;
+      if (this.onScreen(drawing)) {
+        drawing.anchors = shiftScreenPoints(anchors, dx, pos.y - start.y, viewport);
+        return;
+      }
       drawing.anchors = shiftAnchors(anchors, bars, dy, viewport);
       // The held point on the price itself, not a hair off it from the pixel round trip.
       if (i === 0 && snapped) drawing.anchors[this.held] = { ...drawing.anchors[this.held], price: snapped.price };
@@ -130,9 +143,11 @@ export class DrawingDrag {
   private reshape(pos: Point, viewport: ViewportState, plugin: DrawingPlugin | undefined, edit?: DragEdit): boolean {
     const drawing = this.find(this.grabbed[0].id);
     if (!drawing) return false;
-    const anchor = edit
-      ? edit.handleAt(pos, drawing, this.handle)
-      : { time: xToTime(pos.x, viewport), price: yToPrice(pos.y, viewport) };
+    const anchor = this.onScreen(drawing)
+      ? pixelToScreenPoint(pos, viewport)
+      : edit
+        ? edit.handleAt(pos, drawing, this.handle)
+        : { time: xToTime(pos.x, viewport), price: yToPrice(pos.y, viewport) };
     if (plugin?.moveHandle) {
       const moved = plugin.moveHandle(cloneDrawing(drawing), this.handle, anchor);
       drawing.anchors = moved.anchors;

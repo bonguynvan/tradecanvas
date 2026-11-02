@@ -18,6 +18,7 @@ export type BuiltInDrawingToolType =
   | 'volumeProfileRange'
   | 'riskReward'
   | 'note' | 'callout' | 'flag' | 'arrowMark' | 'icon'
+  | 'signpost' | 'balloon' | 'anchoredText' | 'anchoredNote'
   | 'brush' | 'highlighter' | 'path' | 'polyline' | 'curve' | 'arc'
   | 'fibCircles' | 'fibSpiral' | 'fibArcs' | 'fibWedge' | 'pitchfan' | 'gannSquare'
   | 'elliottImpulse' | 'elliottCorrection' | 'elliottTriangle' | 'elliottDoubleCombo' | 'elliottTripleCombo'
@@ -144,6 +145,14 @@ export interface DrawingDescriptor {
   creation?: 'clicks' | 'freehand' | 'path';
   /** Most points a 'path' takes (100 when left out). */
   maxAnchors?: number;
+  /**
+   * What its points are kept to. 'chart' (the default): a bar's time and a
+   * price, so it moves with the chart. 'screen': a place on the plot, each
+   * point's `time` its share across from the left edge and `price` its
+   * share down from the top (0 to 1), so it stays put as the chart scrolls,
+   * zooms or changes symbol.
+   */
+  anchoring?: 'chart' | 'screen';
   /**
    * It reads the bars' prices or volumes (an anchored VWAP, a volume profile,
    * a position): drawn on the price pane only, never on an indicator pane.

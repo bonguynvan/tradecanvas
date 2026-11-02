@@ -270,6 +270,10 @@ export const TEXT_LAYOUTS: Readonly<Partial<Record<string, TextLayout>>> = {
   text: { box: false, border: false, wrap: 0, fontSize: 14 },
   note: { box: true, border: true, wrap: 240, fontSize: 13 },
   callout: { box: true, border: true, wrap: 240, fontSize: 13 },
+  signpost: { box: true, border: true, wrap: 200, fontSize: 13 },
+  balloon: { box: true, border: true, wrap: 200, fontSize: 13 },
+  anchoredText: { box: false, border: false, wrap: 0, fontSize: 14 },
+  anchoredNote: { box: true, border: true, wrap: 240, fontSize: 13 },
 };
 
 /** The tools that write their text along a line or in a box, at a place the Text tab picks. */

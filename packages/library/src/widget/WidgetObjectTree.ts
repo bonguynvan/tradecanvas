@@ -569,6 +569,10 @@ const DRAWING_TYPE_LABELS: Record<string, string> = {
   anchoredVWAP: 'Anchored VWAP',
   volumeProfileRange: 'Volume Profile',
   riskReward: 'Long/Short Position',
+  signpost: 'Signpost',
+  balloon: 'Balloon',
+  anchoredText: 'Anchored Text',
+  anchoredNote: 'Anchored Note',
 };
 
 /** Label for a drawing type in the widget's language, falling back to English, then the raw key. */

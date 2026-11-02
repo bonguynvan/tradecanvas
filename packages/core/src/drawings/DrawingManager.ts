@@ -35,6 +35,7 @@ import { cleanIntervals, shownOnInterval } from '../indicators/intervals.js';
 import { DrawingSelection } from './DrawingSelection.js';
 import { DrawingDrag, shiftAnchors, type DragEdit } from './DrawingDrag.js';
 import { constrainedAnchor, keepsAngle } from './drawingEditing.js';
+import { clampScreenPoints, isScreenAnchored, offsetScreenPoints, pixelToScreenPoint, screenPointToPixel, shiftScreenPoints } from './screenAnchors.js';
 
 export type { DrawingOrderMove, DrawingPatch } from './drawingState.js';
 
@@ -60,6 +61,8 @@ const MOUSE_REACH: DrawingReach = { line: 8, handle: 8 };
 const COPY_START_PX = 8;
 /** Arrow presses this close together (ms) on the same selection are one undo step. */
 const NUDGE_MERGE_MS = 1000;
+/** How far across and down the plot each paste of a drawing kept to the screen lands from the one before (a share of it). */
+const SCREEN_PASTE_STEP = 0.02;
 
 /** The modifier keys held, as the pointer last reported them. */
 export interface DrawingModifiers {
@@ -123,7 +126,10 @@ export class DrawingManager {
   private selection = new DrawingSelection();
   /** Start state of the other group members while the group is dragged. */
   /** Drawings being moved or reshaped with the pointer. */
-  private drag = new DrawingDrag((id) => this.drawings.find((d) => d.id === id));
+  private drag = new DrawingDrag(
+    (id) => this.drawings.find((d) => d.id === id),
+    (d) => this.onScreen(d.type),
+  );
   private eventCallback: DrawingEventCallback | null = null;
   private requestRender: (() => void) | null = null;
   private undoRedo: UndoRedoManager | null = null;
@@ -261,6 +267,16 @@ export class DrawingManager {
     if (changed) this.requestRender?.();
   }
 
+  /** Whether drawings of `type` are kept to the screen (`DrawingDescriptor.anchoring`). */
+  private onScreen(type: DrawingToolType): boolean {
+    return isScreenAnchored(this.registry.get(type)?.descriptor);
+  }
+
+  /** Where a point of a drawing of `type` shows on `viewport`'s plot: by its bar and price, or its place on the screen. */
+  anchorPoint(type: DrawingToolType, anchor: AnchorPoint, viewport: ViewportState): Point {
+    return this.onScreen(type) ? screenPointToPixel(anchor, viewport) : { x: timeToX(anchor.time, viewport), y: priceToY(anchor.price, viewport) };
+  }
+
   // --- Magnet snap ---
 
   /** Snap a point being placed to the bar under it (see `snapToBar`), on the bars as drawn (Heikin Ashi, say). */
@@ -280,7 +296,8 @@ export class DrawingManager {
    * None for a freehand stroke: its points are where the hand went.
    */
   private dragEdit(drawing: DrawingState, viewport: ViewportState): DragEdit | undefined {
-    if (this.registry.get(drawing.type)?.descriptor.creation === 'freehand') return undefined;
+    // A freehand stroke's points are where the hand went; a screen drawing's, where they were put.
+    if (this.registry.get(drawing.type)?.descriptor.creation === 'freehand' || this.onScreen(drawing.type)) return undefined;
     return {
       handleAt: (pos, d, handle) => {
         // The point the dragged one is kept at 45° steps from: the one before it, or the next for the first.
@@ -470,8 +487,7 @@ export class DrawingManager {
     for (const d of this.drawings) {
       if (!this.shown(d) || d.paneId !== paneId) continue;
       const inside = d.anchors.some((a) => {
-        const x = timeToX(a.time, viewport);
-        const y = priceToY(a.price, viewport);
+        const { x, y } = this.anchorPoint(d.type, a, viewport);
         return x >= left && x <= right && y >= top && y <= bottom;
       });
       if (inside) this.addToSelection(d.id);
@@ -663,7 +679,9 @@ export class DrawingManager {
         ids.push(this.addDrawing({
           ...(source.paneId !== undefined ? { paneId: source.paneId } : {}),
           type: source.type,
-          anchors: source.anchors.map((a) => ({ ...a, time: a.time + shift })),
+          anchors: this.onScreen(source.type)
+            ? offsetScreenPoints(source.anchors, SCREEN_PASTE_STEP * clipboard.pastes)
+            : source.anchors.map((a) => ({ ...a, time: a.time + shift })),
           style: { ...source.style },
           options: source.options ? cloneOptions(source.options) : undefined,
           intervals: source.intervals,
@@ -938,7 +956,9 @@ export class DrawingManager {
     const moved = targets.filter((d) => {
       const viewport = this.viewportFor(d.paneId, main);
       if (!viewport) return false;
-      d.anchors = shiftAnchors(d.anchors, bars, px, viewport);
+      d.anchors = this.onScreen(d.type)
+        ? shiftScreenPoints(d.anchors, bars * (viewport.barWidth + viewport.barSpacing), px, viewport)
+        : shiftAnchors(d.anchors, bars, px, viewport);
       return true;
     });
     if (moved.length === 0) return false;
@@ -1047,7 +1067,8 @@ export class DrawingManager {
     reserveIds(states);
     this.drawings = this.upgradeLegacyAnchors(states).map((given) => {
       // A name is kept as `updateDrawing` keeps one: trimmed, cut to length, none when blank.
-      const d = given.name === undefined || given.name === cleanDrawingName(given.name) ? given : withName(given, cleanDrawingName(given.name));
+      const named = given.name === undefined || given.name === cleanDrawingName(given.name) ? given : withName(given, cleanDrawingName(given.name));
+      const d = this.onScreen(named.type) ? { ...named, anchors: clampScreenPoints(named.anchors) } : named;
       if (!d.options && d.intervals === undefined) return d;
       const options = sanitizeDrawingOptions(this.optionDefs(d.type), d.options);
       return {
@@ -1243,7 +1264,11 @@ export class DrawingManager {
       if (!valid) return false;
     }
     const before = this.edits.has(id) ? null : cloneDrawing(drawing);
-    if (patch.anchors) drawing.anchors = patch.anchors.map((a) => ({ time: a.time, price: a.price }));
+    if (patch.anchors) {
+      drawing.anchors = this.onScreen(drawing.type)
+        ? clampScreenPoints(patch.anchors)
+        : patch.anchors.map((a) => ({ time: a.time, price: a.price }));
+    }
     if (patch.style) drawing.style = { ...drawing.style, ...patch.style };
     if (patch.options) {
       const options = { ...drawing.options, ...sanitizeDrawingOptions(this.optionDefs(drawing.type), patch.options) };
@@ -1311,7 +1336,8 @@ export class DrawingManager {
     const drawing: DrawingState = {
       id,
       type: state.type,
-      anchors: state.anchors.map((a) => ({ ...a })),
+      // A screen drawing's points are shares of the plot: a time and a price given for one land on its edges.
+      anchors: this.onScreen(state.type) ? clampScreenPoints(state.anchors) : state.anchors.map((a) => ({ ...a })),
       style: { ...this.activeStyle, ...state.style },
       visible: state.visible ?? true,
       locked: state.locked ?? false,
@@ -1343,7 +1369,8 @@ export class DrawingManager {
     const TIMESTAMP_THRESHOLD = LEGACY_INDEX_LIMIT;
     // Bars timed by index themselves (tests, synthetic series): nothing to upgrade.
     if (data[data.length - 1].time < TIMESTAMP_THRESHOLD) return states;
-    return states.map(d => ({
+    // A drawing kept to the screen holds shares of the plot, never bar indices.
+    return states.map(d => this.onScreen(d.type) ? d : ({
       ...d,
       anchors: d.anchors.map(a => {
         // Only a finite, non-negative small number is an old bar index.
@@ -1415,10 +1442,12 @@ export class DrawingManager {
     // timestamps, "3 bars" means 3 × median bar interval in the current
     // series; when anchors are bar indices (legacy / no data), it's literal.
     const timeOffset = this.computeBarOffsetTime(3);
-    newDrawing.anchors = newDrawing.anchors.map(a => ({
-      ...a,
-      time: a.time + timeOffset,
-    }));
+    newDrawing.anchors = this.onScreen(newDrawing.type)
+      ? offsetScreenPoints(newDrawing.anchors, SCREEN_PASTE_STEP)
+      : newDrawing.anchors.map(a => ({
+        ...a,
+        time: a.time + timeOffset,
+      }));
     newDrawing.locked = false;
 
     this.drawings.push(newDrawing);
@@ -1498,6 +1527,7 @@ export class DrawingManager {
 
   /** Where a press or move puts an anchor: magnet-snapped, except for a freehand stroke. */
   private creationAnchor(type: DrawingToolType, pos: Point, viewport: ViewportState, paneId?: string): AnchorPoint {
+    if (this.onScreen(type)) return pixelToScreenPoint(pos, viewport);
     const time = xToTime(pos.x, viewport);
     const price = yToPrice(pos.y, viewport);
     if (this.registry.get(type)?.descriptor.creation === 'freehand') return { time, price };
@@ -1530,7 +1560,7 @@ export class DrawingManager {
       ...(pane !== undefined ? { paneId: pane } : {}),
     });
     this.creationPressAt = Date.now();
-    const onScreen = (a: AnchorPoint): Point => ({ x: timeToX(a.time, on), y: priceToY(a.price, on) });
+    const onScreen = (a: AnchorPoint): Point => this.anchorPoint(type, a, on);
     this.afterCreationStep(this.creator.press(plugin, start, this.creationAnchor(type, pos, on, pane), pos, onScreen));
     return true;
   }

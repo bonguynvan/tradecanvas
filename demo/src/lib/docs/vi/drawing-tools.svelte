@@ -6,12 +6,12 @@
 
 <svelte:head>
   <title>Công cụ vẽ — Tài liệu TradeCanvas</title>
-  <meta name="description" content="69 công cụ vẽ có sẵn, mỗi công cụ có cài đặt riêng: công cụ Fibonacci và Gann, sóng Elliott, mô hình harmonic, ghi chú, bút vẽ, Vị thế Long/Short kèm tính khối lượng, cảnh báo trên hình vẽ, nhóm và thứ tự lớp." />
+  <meta name="description" content="73 công cụ vẽ có sẵn, mỗi công cụ có cài đặt riêng: công cụ Fibonacci và Gann, sóng Elliott, mô hình harmonic, ghi chú, bút vẽ, Vị thế Long/Short kèm tính khối lượng, cảnh báo trên hình vẽ, nhóm và thứ tự lớp." />
 </svelte:head>
 
 <h1>Công cụ vẽ</h1>
 <p>
-  69 công cụ vẽ có sẵn. Mỗi công cụ đều hút vào các nến nhờ nam châm, hỗ trợ
+  73 công cụ vẽ có sẵn. Mỗi công cụ đều hút vào các nến nhờ nam châm, hỗ trợ
   hoàn tác và làm lại, có cài đặt riêng, và được lưu cùng bố cục.
 </p>
 
@@ -312,6 +312,8 @@ chart.on('toolModeChange', (e) => e.payload)      // { eraser } hoặc { zoomAre
 <ul>
   <li><code>text</code>, <code>note</code> (một chiếc ghim kèm chữ), <code>callout</code>, <code>priceLabel</code></li>
   <li><code>arrow</code>, <code>arrowMark</code> (lên, xuống, trái hoặc phải, kèm nhãn), <code>flag</code>, <code>icon</code> (ngôi sao, trái tim, dấu tích, dấu chéo, hình tròn, tam giác, tia sét)</li>
+  <li><code>signpost</code> (chữ trên tấm biển ở đầu một cột cắm vào nến), <code>balloon</code> (chữ trong bóng chú thích chỉ vào một nến)</li>
+  <li><code>anchoredText</code>, <code>anchoredNote</code>: gắn vào một chỗ trên màn hình, chúng đứng yên khi biểu đồ cuộn, phóng to hay đổi mã. Điểm của chúng là tỉ lệ trên vùng vẽ (<code>{'{'} time: 0.5, price: 0.25 {'}'}</code> là giữa chiều ngang, một phần tư từ trên xuống), và cài đặt không có tab Tọa độ.</li>
 </ul>
 
 <h3>Dự báo</h3>

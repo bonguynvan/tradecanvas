@@ -26,7 +26,7 @@
   <a href="README.md">English</a> · <a href="README.vi.md">Tiếng Việt</a> · <a href="README.zh-CN.md">简体中文</a> · <a href="README.ja.md">日本語</a> · <a href="README.ko.md">한국어</a> · <b>Español</b>
 </p>
 
-**Un gráfico de trading completo para la web.** De velas japonesas a Renko, 134 indicadores, 69 herramientas de dibujo, datos en vivo de exchanges y órdenes sobre el gráfico, dibujado con Canvas 2D o WebGL y sin dependencias de terceros. Usa el `ChartWidget` completo o construye tu propia interfaz sobre el `Chart` headless, en TypeScript, React, Vue o Svelte.
+**Un gráfico de trading completo para la web.** De velas japonesas a Renko, 134 indicadores, 73 herramientas de dibujo, datos en vivo de exchanges y órdenes sobre el gráfico, dibujado con Canvas 2D o WebGL y sin dependencias de terceros. Usa el `ChartWidget` completo o construye tu propia interfaz sobre el `Chart` headless, en TypeScript, React, Vue o Svelte.
 
 <p align="center">
   <a href="https://tradecanvas.dev/es/chart/"><img src=".github/assets/clips/hero.webp" alt="ChartWidget sobre un mercado en vivo: EMA 21 y 55, RSI, la cruz y una línea de tendencia dibujada con el ratón" width="100%"></a>
@@ -34,7 +34,7 @@
 
 ## Lo más destacado
 
-- **18 tipos de gráfico, 134 indicadores, 69 herramientas de dibujo**, indicadores sobre indicadores, alertas en líneas, deshacer y rehacer.
+- **18 tipos de gráfico, 134 indicadores, 73 herramientas de dibujo**, indicadores sobre indicadores, alertas en líneas, deshacer y rehacer.
 - **Trading en el gráfico**: posiciones con P&L en vivo, órdenes y stops que arrastras, un bróker simulado o el tuyo.
 - **Datos en vivo** de Binance, Bybit, Coinbase y Kraken, o tu propio feed en unas veinte líneas.
 - **Rápido**: un millón de barras desplazadas a 60 fps con WebGL; un tick en vivo en un microsegundo, más o menos.

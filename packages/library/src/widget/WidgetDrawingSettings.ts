@@ -35,6 +35,8 @@ export interface DrawingSettingsTarget {
   textColor?: string;
   /** It writes its text along a line or in a box: the Text tab offers where (`textAlign`, `textVAlign`). */
   textPlace?: boolean;
+  /** False for a drawing kept to the screen: its points are places on the plot, not times and prices to edit. */
+  coordinates?: boolean;
   /** The intervals it shows on; unset or null: all of them. */
   intervals?: IndicatorIntervals | null;
 }
@@ -261,7 +263,7 @@ export class WidgetDrawingSettings {
       'style',
       ...(target.text ? ['text' as const] : []),
       // A freehand stroke has hundreds of points: no table of them.
-      ...(target.anchors.length <= MAX_COORDINATE_ROWS ? ['coordinates' as const] : []),
+      ...(target.coordinates !== false && target.anchors.length <= MAX_COORDINATE_ROWS ? ['coordinates' as const] : []),
       'visibility',
     ];
   }

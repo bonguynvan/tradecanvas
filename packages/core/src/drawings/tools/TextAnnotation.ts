@@ -1,4 +1,4 @@
-import type { DrawingState, Point, ViewportState } from '@tradecanvas/commons';
+import type { DrawingDescriptor, DrawingState, Point, ViewportState } from '@tradecanvas/commons';
 import { DrawingBase } from '../DrawingBase.js';
 import { BoxCache, PAD_X, PAD_Y, drawTextBox, inRect, textLook, type Rect } from './textBox.js';
 
@@ -27,7 +27,7 @@ export function resolveAnnotationText(state: DrawingState, fallback = 'Text'): s
  * right, with a box behind it and a border when asked.
  */
 export class TextAnnotationTool extends DrawingBase {
-  descriptor = { type: 'text' as const, name: 'Text', requiredAnchors: 1, text: true, fill: true };
+  descriptor: DrawingDescriptor = { type: 'text', name: 'Text', requiredAnchors: 1, text: true, fill: true };
 
   private boxes = new BoxCache();
 

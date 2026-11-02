@@ -4475,6 +4475,35 @@
       }
     },
     {
+      "type": "signpost",
+      "name": "Signpost",
+      "anchors": 1
+    },
+    {
+      "type": "balloon",
+      "name": "Balloon",
+      "anchors": 1
+    },
+    {
+      "type": "anchoredText",
+      "name": "Anchored Text",
+      "anchors": 1,
+      "anchoring": "screen"
+    },
+    {
+      "type": "anchoredNote",
+      "name": "Anchored Note",
+      "anchors": 1,
+      "anchoring": "screen",
+      "options": {
+        "showText": {
+          "kind": "boolean",
+          "label": "Show text",
+          "default": true
+        }
+      }
+    },
+    {
       "type": "brush",
       "name": "Brush",
       "anchors": 2,
@@ -5691,6 +5720,10 @@
           "flag",
           "arrowMark",
           "icon",
+          "signpost",
+          "balloon",
+          "anchoredText",
+          "anchoredNote",
           "brush",
           "highlighter",
           "path",
@@ -6322,6 +6355,10 @@
           "flag",
           "arrowMark",
           "icon",
+          "signpost",
+          "balloon",
+          "anchoredText",
+          "anchoredNote",
           "brush",
           "highlighter",
           "path",

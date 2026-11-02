@@ -215,6 +215,8 @@ export async function buildMcpCatalog(root, indicators) {
       name: d.name,
       anchors: d.requiredAnchors,
       ...(d.creation && d.creation !== 'clicks' ? { creation: d.creation } : {}),
+      // Kept to the screen: its anchors are shares of the plot, not times and prices.
+      ...(d.anchoring === 'screen' ? { anchoring: 'screen' } : {}),
       ...(d.options ? { options: Object.fromEntries(Object.entries(d.options).map(([k, o]) => [k, { kind: o.kind, label: o.label, default: o.default }])) } : {}),
     })),
     chartTypes: Object.keys(widget.CHART_TYPE_ICONS),

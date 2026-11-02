@@ -6,12 +6,12 @@
 
 <svelte:head>
   <title>画线工具 — TradeCanvas 文档</title>
-  <meta name="description" content="69 种内置画线工具，各有独立设置：斐波那契与江恩工具、艾略特波浪、谐波形态、笔记、画笔、支持仓位计算的多/空仓位、画线提醒、分组与图层。" />
+  <meta name="description" content="73 种内置画线工具，各有独立设置：斐波那契与江恩工具、艾略特波浪、谐波形态、笔记、画笔、支持仓位计算的多/空仓位、画线提醒、分组与图层。" />
 </svelte:head>
 
 <h1>画线工具</h1>
 <p>
-  69 种内置画线工具。每种工具都能通过磁吸对齐到K线，支持撤销和重做，
+  73 种内置画线工具。每种工具都能通过磁吸对齐到K线，支持撤销和重做，
   保留各自的设置，并随布局一起保存。
 </p>
 
@@ -306,6 +306,8 @@ chart.on('toolModeChange', (e) => e.payload)      // { eraser } 或 { zoomArea }
 <ul>
   <li><code>text</code>、<code>note</code>（带文字的图钉）、<code>callout</code>、<code>priceLabel</code></li>
   <li><code>arrow</code>、<code>arrowMark</code>（向上、向下、向左或向右，带标签）、<code>flag</code>、<code>icon</code>（星形、心形、对勾、叉号、圆形、三角形、闪电）</li>
+  <li><code>signpost</code>（文字写在立于 K 线上的杆顶牌子上），<code>balloon</code>（文字在指向 K 线的气泡里）</li>
+  <li><code>anchoredText</code>、<code>anchoredNote</code>：固定在屏幕上的某处，图表滚动、缩放或切换品种时保持不动。它们的点是绘图区的比例（<code>{'{'} time: 0.5, price: 0.25 {'}'}</code> 为横向一半、自上而下四分之一），设置中没有坐标选项卡。</li>
 </ul>
 
 <h3>预测</h3>

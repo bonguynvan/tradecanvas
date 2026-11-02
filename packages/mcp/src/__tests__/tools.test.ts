@@ -65,6 +65,13 @@ describe('tools', () => {
     expect(data.usage).toContain('addDrawing');
   });
 
+  it('list_drawing_tools says which tools are kept to the screen, and how their anchors read', () => {
+    const data = call('list_drawing_tools', { query: 'anchored' }).data as { tools: { type: string; anchoring?: string }[]; usage: string };
+    expect(data.tools.find((t) => t.type === 'anchoredText')?.anchoring).toBe('screen');
+    expect(data.tools.find((t) => t.type === 'anchoredVWAP')?.anchoring).toBeUndefined();
+    expect(data.usage).toContain("anchoring: 'screen'");
+  });
+
   it('list_options lists an entry point\'s options with their types and docs', () => {
     const data = call('list_options', { target: 'Chart', query: 'render' }).data as { options: { name: string; values?: string[] }[] };
     expect(data.options.find((o) => o.name === 'renderer')?.values).toContain('webgl');

@@ -134,6 +134,10 @@ export const DRAWING_TOOL_ICONS: Readonly<Record<string, IconDef>> = {
   flag: { d: 'M6 21V4M6 4.5h11l-2.5 3.75L17 12H6', soft: 'M6 4.5h11l-2.5 3.75L17 12H6z', dots: [[6, 21]] }, // Flag Mark
   arrowMark: { d: 'M12 4L18 11H14.5V20H9.5V11H6z' }, // Arrow Mark
   icon: { d: 'M12 3.5l2.6 5.3 5.9.85-4.25 4.15 1 5.85L12 16.9l-5.25 2.75 1-5.85L3.5 9.65l5.9-.85z' }, // Icon
+  signpost: { d: 'M12 20.5V11M5.5 4.5h13v6.5h-13zM8.5 7.75h7', dots: [[12, 20.5]] }, // Signpost
+  balloon: { d: 'M5 4.5h14a1.5 1.5 0 0 1 1.5 1.5v8a1.5 1.5 0 0 1-1.5 1.5h-5.5L12 20l-1.5-4.5H5A1.5 1.5 0 0 1 3.5 14V6A1.5 1.5 0 0 1 5 4.5zM8 9h8M8 12h5' }, // Balloon
+  anchoredText: { d: 'M8 8.5h8M12 8.5v8M3.5 7.5v-4h4M20.5 16.5v4h-4' }, // Anchored Text
+  anchoredNote: { d: 'M7 7h10v6.5l-3.5 3.5H7zM13.5 17v-3.5H17M3.5 7.5v-4h4M20.5 16.5v4h-4' }, // Anchored Note
   brush: { d: 'M3.5 17c2.5 0 3-5 6-5s2.5 5 5.5 5 3.5-6 5.5-9' }, // Brush
   highlighter: { d: 'M14.5 4.5l5 5L11 18H6v-5zM12 7l5 5M4 21h8' }, // Highlighter
   path: { d: 'M4 18L9 10L14 14L20 6M16.2 6.6L20 6L19.6 9.8', dots: [[4, 18], [9, 10], [14, 14]] }, // Path
