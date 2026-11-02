@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 1.68.0 (2026-11-02)
+
+React, Vue and Svelte components: 1.3.60.
+
 ### Drawings
 
 - **A click on a line's words picks it** (`@tradecanvas/core`, `@tradecanvas/chart`).
