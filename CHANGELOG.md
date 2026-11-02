@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 1.61.0 (2026-11-02)
+
+React, Vue and Svelte components: 1.3.53.
+
 ### Drawings
 
 - **Drawings on indicator panes** (`@tradecanvas/commons`, `@tradecanvas/core`, `@tradecanvas/chart`). A trend line, a level, a box or any other tool begun on an indicator pane (RSI, MACD…) is made on that pane. Its anchors' prices are the pane's values, the magnet snaps to the pane's lines instead of the bars, and the drawing moves and scales with the pane and is clipped to it. Selecting, dragging, the eraser, the right-click menu and the toolbar over a selection all work there. `DrawingState.paneId` holds the pane's id, as `getIndicatorPanes()` lists them. It is unset for the price pane, so saved layouts load as before. `addDrawing({ …, paneId })` puts a drawing on a pane from code. When the pane's indicator is removed and another in the pane takes it over, the drawings follow it, through undo and redo too. When a pane goes, its drawings are hidden, and undo brings them back with it. Loading a layout puts drawings back on their panes, and drops those whose pane is not in it. Side panes and folded ones take no drawings. The tools that read the bars' prices (Anchored VWAP, Volume Profile, Long/Short Position; `priceOnly` in a tool's descriptor) stay on the price pane. A pane's drawing takes no price alert. `IndicatorEngine.getPaneValuesAt(pane, bar)` lists the values a pane draws at a bar. The browser audit gains a scene of drawings on panes.
