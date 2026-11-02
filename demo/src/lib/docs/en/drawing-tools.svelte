@@ -72,6 +72,22 @@ chart.addDrawing({
   In the widget, a Text, a Note or a Callout asks for its words as soon as it is drawn: its settings open on the Text tab, the text selected, and Cancel takes the drawing back. A double-click on one opens the same tab. The toolbar over a selection sets the fill and the text colour of the tools that have them.
 </p>
 
+<h3 id="line-text">Text on lines and boxes</h3>
+<p>
+  A trend line, a ray, an extended, info or angle line, an arrow, a horizontal or vertical line and a rectangle take a text too, in the same style. <code>textAlign</code> puts it at the line's left end, its middle or its right end, and <code>textVAlign</code> above the line, on it or under it; in a rectangle they place it inside, at its top, middle or bottom. The text follows the line's slope and always reads left to right, and bottom to top along a vertical line. In the widget the Text tab has the two rows.
+</p>
+<pre><code>{`chart.addDrawing({
+  type: 'trendLine',
+  anchors: [{ time: t1, price: 98 }, { time: t2, price: 104 }],
+  style: { color: '#4c8dff', lineWidth: 2, lineStyle: 'solid',
+    text: 'Breakout', textAlign: 'right', textVAlign: 'top' },  // 'top' | 'middle' | 'bottom'
+})
+chart.addDrawing({ type: 'verticalLine', anchors: [{ time: t3, price: 0 }], options: { showTime: true } })
+chart.addDrawing({ type: 'fibRetracement', anchors: [a, b], options: { trendLine: false, oneColor: true } })`}</code></pre>
+<p>
+  A horizontal line and a horizontal ray hide their price with <code>showPrice: false</code>. A vertical line shows its bar's time with <code>showTime: true</code>, written as the crosshair writes it. A rectangle has eight handles: one at each corner and one in the middle of each side, which moves that side alone. A Fibonacci retracement and extension draw a dashed line through their points (<code>trendLine</code>, on by default) and draw all their levels in the drawing's colour with <code>oneColor</code>.
+</p>
+
 <h2>Settings</h2>
 <p>
   Besides its style (colour, width, line style, fill, text), a tool can offer

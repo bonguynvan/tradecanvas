@@ -72,6 +72,22 @@ chart.addDrawing({
   在组件中，画完文本、便签或标注后会立即询问内容：设置在“文字”页打开，文字已选中，按“取消”会撤回这个绘图。双击它们也会打开同一页。选中时的工具栏可设置有填充或文字的工具的填充色和文字颜色。
 </p>
 
+<h3 id="line-text">线和矩形上的文字</h3>
+<p>
+  趋势线、射线、延长线、信息线、角度线、箭头、水平线、垂直线和矩形也可以带文字，样式相同。<code>textAlign</code> 把文字放在线的左端、中间或右端，<code>textVAlign</code> 放在线的上方、线上或下方；在矩形中，它们把文字放在框内的顶部、中间或底部。文字随线的斜率倾斜，始终从左往右读，垂直线上则从下往上读。在小组件中，文字选项卡有这两行。
+</p>
+<pre><code>{`chart.addDrawing({
+  type: 'trendLine',
+  anchors: [{ time: t1, price: 98 }, { time: t2, price: 104 }],
+  style: { color: '#4c8dff', lineWidth: 2, lineStyle: 'solid',
+    text: 'Breakout', textAlign: 'right', textVAlign: 'top' },  // 'top' | 'middle' | 'bottom'
+})
+chart.addDrawing({ type: 'verticalLine', anchors: [{ time: t3, price: 0 }], options: { showTime: true } })
+chart.addDrawing({ type: 'fibRetracement', anchors: [a, b], options: { trendLine: false, oneColor: true } })`}</code></pre>
+<p>
+  水平线和水平射线用 <code>showPrice: false</code> 隐藏价格。垂直线用 <code>showTime: true</code> 显示其 K 线的时间，写法与十字光标相同。矩形有八个控制点：每个角一个，每条边的中点一个，拖动后只移动那条边。斐波那契回撤和扩展会画一条穿过其各点的虚线（<code>trendLine</code>，默认开启），并可用 <code>oneColor</code> 让所有水平都用绘图的颜色。
+</p>
+
 <h2>设置</h2>
 <p>
   除样式（颜色、线宽、线型、填充、文本）外，工具还可以提供自己的设置：

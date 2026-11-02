@@ -3682,17 +3682,38 @@
     {
       "type": "horizontalLine",
       "name": "Horizontal Line",
-      "anchors": 1
+      "anchors": 1,
+      "options": {
+        "showPrice": {
+          "kind": "boolean",
+          "label": "Show price",
+          "default": true
+        }
+      }
     },
     {
       "type": "horizontalRay",
       "name": "Horizontal Ray",
-      "anchors": 1
+      "anchors": 1,
+      "options": {
+        "showPrice": {
+          "kind": "boolean",
+          "label": "Show price",
+          "default": true
+        }
+      }
     },
     {
       "type": "verticalLine",
       "name": "Vertical Line",
-      "anchors": 1
+      "anchors": 1,
+      "options": {
+        "showTime": {
+          "kind": "boolean",
+          "label": "Show time",
+          "default": false
+        }
+      }
     },
     {
       "type": "ray",
@@ -3911,6 +3932,16 @@
           "label": "Labels",
           "default": "left"
         },
+        "trendLine": {
+          "kind": "boolean",
+          "label": "Trend line",
+          "default": true
+        },
+        "oneColor": {
+          "kind": "boolean",
+          "label": "Use one color",
+          "default": false
+        },
         "background": {
           "kind": "boolean",
           "label": "Background",
@@ -4018,6 +4049,16 @@
           "kind": "choice",
           "label": "Labels",
           "default": "left"
+        },
+        "trendLine": {
+          "kind": "boolean",
+          "label": "Trend line",
+          "default": true
+        },
+        "oneColor": {
+          "kind": "boolean",
+          "label": "Use one color",
+          "default": false
         },
         "background": {
           "kind": "boolean",
