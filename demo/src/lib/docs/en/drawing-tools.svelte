@@ -85,7 +85,7 @@ chart.addDrawing({
 chart.addDrawing({ type: 'verticalLine', anchors: [{ time: t3, price: 0 }], options: { showTime: true } })
 chart.addDrawing({ type: 'fibRetracement', anchors: [a, b], options: { trendLine: false, oneColor: true } })`}</code></pre>
 <p>
-  A horizontal line and a horizontal ray hide their price with <code>showPrice: false</code>. A vertical line shows its bar's time with <code>showTime: true</code>, written as the crosshair writes it. A rectangle has eight handles: one at each corner and one in the middle of each side, which moves that side alone. A Fibonacci retracement and extension draw a dashed line through their points (<code>trendLine</code>, on by default) and draw all their levels in the drawing's colour with <code>oneColor</code>.
+  A horizontal line and a horizontal ray hide their price with <code>showPrice: false</code>. A vertical line shows its bar's time with <code>showTime: true</code>, written as the crosshair writes it. A rectangle has eight handles: one at each corner and one in the middle of each side, which moves that side alone. A Fibonacci retracement and extension draw a dashed line through their points (<code>trendLine</code>, on by default) and draw all their levels in the drawing's colour with <code>oneColor</code>. A click on the words picks the line or the box too.
 </p>
 
 <h2>Settings</h2>
@@ -205,7 +205,7 @@ chart.copyDrawings()                 // the selected ones (Ctrl+C)
 chart.pasteDrawings()                // Ctrl+V, here or on another chart of the page
 chart.canPasteDrawings()             // whether there is something to paste`}</code></pre>
 <p>Clicking one drawing of a group selects the whole group.</p>
-<p>In the widget's object tree, a click on a drawing's name selects it and a double-click renames it. Its row clones it, and its grip drags it onto another row's place in the order; the arrow keys on the grip move it one place.</p>
+<p>In the widget's object tree the drawings are listed as they stack, the one on top first. A click on a drawing's name selects it and a double-click renames it. Its row clones it, and its grip drags it onto another row's place; the arrow keys on the grip move it one row up or down the list and the stack together.</p>
 
 <h2>Eraser, zoom and magnet</h2>
 <pre><code>{`chart.setEraserMode(true)          // each click on a drawing removes it, until Escape
@@ -220,6 +220,7 @@ chart.setDrawingMagnetMode('strong') // 'off' | 'weak' | 'strong'`}</code></pre>
   <li>Hold <kbd>Shift</kbd> while drawing or dragging a handle to keep the line flat, upright or at 45° on screen. On empty chart, <kbd>Shift</kbd> + drag still measures. It holds for lines and paths; a box, a channel's width or a pitchfork's point stays free.</li>
   <li><kbd>←</kbd> <kbd>→</kbd> <kbd>↑</kbd> <kbd>↓</kbd> move the selected drawings a bar across or a pixel up or down; with <kbd>Shift</kbd>, ten. A run of presses is one undo step, and locked drawings stay.</li>
   <li><kbd>Ctrl</kbd>/<kbd>⌘</kbd> + drag on a drawing drags out a copy (of the whole selection when the drawing is in it), one undo step. A <kbd>Ctrl</kbd>/<kbd>⌘</kbd> + click still adds it to the selection or takes it out, and <kbd>Ctrl</kbd>/<kbd>⌘</kbd> + drag on empty chart draws a selection box. On a handle of the selected drawing, <kbd>Ctrl</kbd>/<kbd>⌘</kbd> + drag reshapes it with the magnet turned over instead.</li>
+  <li><kbd>Escape</kbd> while a drawing is dragged calls the drag off: a moved or reshaped drawing goes back where it was, and a copy being dragged out goes, with nothing left to undo.</li>
 </ul>
 
 <h2>Keyboard</h2>

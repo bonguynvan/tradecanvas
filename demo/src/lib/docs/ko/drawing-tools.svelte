@@ -85,7 +85,7 @@ chart.addDrawing({
 chart.addDrawing({ type: 'verticalLine', anchors: [{ time: t3, price: 0 }], options: { showTime: true } })
 chart.addDrawing({ type: 'fibRetracement', anchors: [a, b], options: { trendLine: false, oneColor: true } })`}</code></pre>
 <p>
-  수평선과 수평 레이는 <code>showPrice: false</code>로 가격을 숨깁니다. 수직선은 <code>showTime: true</code>로 그 봉의 시간을 크로스헤어와 같은 방식으로 표시합니다. 사각형에는 핸들이 여덟 개 있습니다. 모서리마다 하나, 각 변의 가운데에 하나씩이며, 변의 핸들은 그 변만 옮깁니다. 피보나치 되돌림과 확장은 점들을 지나는 점선(<code>trendLine</code>, 기본으로 켜짐)을 그리고, <code>oneColor</code>로 모든 레벨을 드로잉 색으로 그립니다.
+  수평선과 수평 레이는 <code>showPrice: false</code>로 가격을 숨깁니다. 수직선은 <code>showTime: true</code>로 그 봉의 시간을 크로스헤어와 같은 방식으로 표시합니다. 사각형에는 핸들이 여덟 개 있습니다. 모서리마다 하나, 각 변의 가운데에 하나씩이며, 변의 핸들은 그 변만 옮깁니다. 피보나치 되돌림과 확장은 점들을 지나는 점선(<code>trendLine</code>, 기본으로 켜짐)을 그리고, <code>oneColor</code>로 모든 레벨을 드로잉 색으로 그립니다. 글자를 클릭해도 그 선이나 상자가 선택됩니다.
 </p>
 
 <h2>설정</h2>
@@ -200,7 +200,7 @@ chart.copyDrawings()                 // 선택한 그림(Ctrl+C)
 chart.pasteDrawings()                // Ctrl+V, 이 차트나 페이지의 다른 차트에
 chart.canPasteDrawings()             // 붙여넣을 것이 있는지`}</code></pre>
 <p>그룹에 속한 그림 하나를 클릭하면 그룹 전체가 선택됩니다.</p>
-<p>위젯의 객체 트리에서 드로잉 이름을 클릭하면 선택되고, 더블클릭하면 이름을 바꿉니다. 행의 버튼으로 복제하고, 그립을 끌어 다른 행의 순서 자리로 옮깁니다. 그립에서 화살표 키를 누르면 한 칸씩 움직입니다.</p>
+<p>위젯의 객체 트리는 드로잉을 쌓인 순서대로, 맨 위의 것부터 나열합니다. 드로잉 이름을 클릭하면 선택되고, 더블클릭하면 이름을 바꿉니다. 행의 버튼으로 복제하고, 그립을 끌어 다른 행의 자리로 옮깁니다. 그립에서 화살표 키를 누르면 목록과 쌓인 순서에서 함께 한 칸씩 위아래로 움직입니다.</p>
 
 <h2>지우개, 확대, 자석</h2>
 <pre><code>{`chart.setEraserMode(true)          // 그림을 클릭할 때마다 삭제, Escape를 누를 때까지
@@ -215,6 +215,7 @@ chart.setDrawingMagnetMode('strong') // 'off' | 'weak' | 'strong'`}</code></pre>
   <li>그리거나 핸들을 끄는 동안 <kbd>Shift</kbd>를 누르고 있으면 선이 화면에서 수평, 수직 또는 45°로 유지됩니다. 차트의 빈 곳에서는 <kbd>Shift</kbd> + 끌기가 여전히 측정입니다. 선과 경로에 적용되며, 사각형, 채널의 폭, 피치포크의 점은 자유롭습니다.</li>
   <li><kbd>←</kbd> <kbd>→</kbd> <kbd>↑</kbd> <kbd>↓</kbd>는 선택한 드로잉을 가로로 봉 하나, 위아래로 1픽셀 옮깁니다. <kbd>Shift</kbd>를 함께 누르면 10입니다. 연달아 누른 것은 실행 취소 한 번이고, 잠긴 드로잉은 움직이지 않습니다.</li>
   <li>드로잉 위에서 <kbd>Ctrl</kbd>/<kbd>⌘</kbd> + 끌기는 복사본을 끌어냅니다(드로잉이 선택에 들어 있으면 선택 전체). 실행 취소는 한 번입니다. <kbd>Ctrl</kbd>/<kbd>⌘</kbd> + 클릭은 여전히 선택에 넣거나 빼고, 빈 곳에서 <kbd>Ctrl</kbd>/<kbd>⌘</kbd> + 끌기는 선택 상자를 그립니다. 선택한 드로잉의 핸들 위에서는 <kbd>Ctrl</kbd>/<kbd>⌘</kbd> + 끌기가 자석을 뒤집은 채 모양을 바꿉니다.</li>
+  <li>드로잉을 끄는 중에 <kbd>Escape</kbd>를 누르면 끌기가 취소됩니다. 옮기거나 모양을 바꾸던 드로잉은 원래대로 돌아가고, 끌어내던 복사본은 사라지며, 실행 취소할 단계도 남지 않습니다.</li>
 </ul>
 
 <h2>키보드</h2>
