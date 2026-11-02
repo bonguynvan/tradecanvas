@@ -1,5 +1,12 @@
 # @tradecanvas/react
 
+## 1.3.60
+
+### Patch Changes
+
+- Updated dependencies [5170c50]
+  - @tradecanvas/chart@1.68.0
+
 ## 1.3.59
 
 ### Patch Changes
