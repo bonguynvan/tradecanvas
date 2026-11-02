@@ -72,6 +72,10 @@ export class SignpostTool extends DrawingBase {
     if (Math.abs(point.x - p.x) <= tolerance && point.y >= postTop - tolerance && point.y <= postBottom + tolerance) return true;
     return inRect(point, box, tolerance);
   }
+
+  textBox(state: DrawingState): Rect | null {
+    return this.boxes.get(state.id) ?? null;
+  }
 }
 
 /** A comment balloon on a bar: its text in a bubble above, with a tail pointing down at the bar's point. */
@@ -113,6 +117,10 @@ export class BalloonTool extends DrawingBase {
     const [tailTop, tailBottom] = box.y > p.y ? [p.y, p.y + TAIL_HEIGHT] : [p.y - TAIL_HEIGHT, p.y];
     if (Math.abs(point.x - p.x) <= TAIL_HALF + tolerance && point.y >= tailTop - tolerance && point.y <= tailBottom + tolerance) return true;
     return inRect(point, box, tolerance);
+  }
+
+  textBox(state: DrawingState): Rect | null {
+    return this.boxes.get(state.id) ?? null;
   }
 }
 

@@ -1323,3 +1323,64 @@ describe('ChartWidget on a wide screen', () => {
     expect(host.querySelector<HTMLElement>('.tcw-root')!.style.getPropertyValue('--tcw-toolbar-h')).toBe('42px');
   });
 });
+
+describe('ChartWidget text typed in place', () => {
+  const setUp = () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false });
+    const fake = FakeChart.last as unknown as Record<string, unknown> & { emit(e: string, p: unknown): void };
+    const calls: unknown[][] = [];
+    fake.getDrawings = () => [{ id: 't', type: 'text', anchors: [], style: { color: '#fff', text: 'Old', fontSize: 16, bold: true }, visible: true, locked: false }];
+    fake.getDrawingTextRect = () => ({ x: 10, y: 20, width: 60, height: 28 });
+    for (const method of ['beginDrawingEdit', 'updateDrawing', 'endDrawingEdit', 'takeBackDrawing']) {
+      fake[method] = (...args: unknown[]) => { calls.push([method, ...args]); return true; };
+    }
+    return { fake, calls };
+  };
+  const area = () => document.querySelector<HTMLTextAreaElement>('.tcw-inline-text-input');
+  const press = (key: string) => area()!.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }));
+
+  afterEach(() => document.querySelectorAll('.tcw-inline-text').forEach((el) => el.remove()));
+
+  it('opens over a text on a double-click instead of its settings, and keeps what is typed', () => {
+    const { fake, calls } = setUp();
+    fake.emit('drawingDoubleClick', { id: 't' });
+    expect(area()?.value).toBe('Old');
+    expect(area()!.style.fontSize).toBe('16px');
+    expect(document.querySelector('.tcw-modal-tab')).toBeNull();
+    area()!.value = 'New words';
+    area()!.dispatchEvent(new Event('input'));
+    press('Enter');
+    expect(calls).toEqual([
+      ['beginDrawingEdit', 't'],
+      ['updateDrawing', 't', { style: { text: 'New words' } }],
+      ['endDrawingEdit', 't', { cancel: false }],
+    ]);
+  });
+
+  it('puts an old text’s words back on Escape, or when emptied', () => {
+    const { fake, calls } = setUp();
+    fake.emit('drawingDoubleClick', { id: 't' });
+    press('Escape');
+    fake.emit('drawingDoubleClick', { id: 't' });
+    area()!.value = '   ';
+    press('Enter');
+    expect(calls.filter((c) => c[0] === 'endDrawingEdit')).toEqual([['endDrawingEdit', 't', { cancel: true }], ['endDrawingEdit', 't', { cancel: true }]]);
+    expect(calls.some((c) => c[0] === 'takeBackDrawing')).toBe(false);
+  });
+
+  it('takes a text just drawn back on Escape', async () => {
+    const { fake, calls } = setUp();
+    fake.emit('drawingCreate', { id: 't', type: 'text', drawn: true });
+    window.dispatchEvent(new Event('pointerup'));
+    await new Promise((r) => setTimeout(r, 0));
+    press('Escape');
+    expect(calls.slice(-2)).toEqual([['endDrawingEdit', 't', { cancel: true }], ['takeBackDrawing', 't']]);
+  });
+
+  it('closes when the text is taken away while it is typed', () => {
+    const { fake } = setUp();
+    fake.emit('drawingDoubleClick', { id: 't' });
+    fake.emit('drawingRemove', { id: 't' });
+    expect(area()).toBeNull();
+  });
+});

@@ -1202,6 +1202,22 @@ export class DrawingManager {
   }
 
   /** A registered tool's descriptor, or null. */
+  /** The tool registered for `type`, or null. */
+  getPlugin(type: DrawingToolType): DrawingPlugin | null {
+    return this.registry.get(type) ?? null;
+  }
+
+  /**
+   * Where a drawing's text box was drawn last, on `main` or its own pane
+   * (its tool's `textBox`); null for a drawing that writes in no box.
+   */
+  textBoxOf(id: string, main: ViewportState): { x: number; y: number; width: number; height: number } | null {
+    const drawing = this.drawings.find((d) => d.id === id);
+    const viewport = drawing ? this.viewportFor(drawing.paneId, main) : null;
+    if (!drawing || !viewport) return null;
+    return this.registry.get(drawing.type)?.textBox?.(drawing, viewport) ?? null;
+  }
+
   getDescriptor(type: DrawingToolType): DrawingPlugin['descriptor'] | null {
     return this.registry.get(type)?.descriptor ?? null;
   }

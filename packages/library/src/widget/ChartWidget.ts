@@ -45,6 +45,7 @@ import { DrawingDefaultsStore, DrawingTemplateStore } from './DrawingTemplateSto
 import { WidgetDrawingSettings, type DrawingTemplateLook } from './WidgetDrawingSettings.js';
 import { WidgetContextMenu, type ContextMenuEntry } from './WidgetContextMenu.js';
 import { TEXT_COLORS, TEXT_LAYOUTS, TEXT_PLACES } from './drawingSettingsTabs.js';
+import { WidgetInlineText } from './WidgetInlineText.js';
 import { drawingMenuEntries, type DrawingMenuAction } from './drawingMenu.js';
 import { CHART_MENU_KEYS, TIMEZONE_ENTRY, chartMenuEntries, priceEntries, scaleModeOf, type ChartMenuAction, type ChartMenuContext } from './chartMenu.js';
 import { WidgetAccountPanel } from './WidgetAccountPanel.js';
@@ -112,6 +113,8 @@ import {
 
 /** How long a just-drawn text waits for its press to end before asking for its words anyway. */
 const TEXT_PROMPT_FALLBACK_MS = 600;
+/** A text drawing's size when neither it nor its tool sets one. */
+const DEFAULT_TEXT_SIZE = 13;
 
 /**
  * A local timeframe switch (resampling static data) that took at least this
@@ -297,6 +300,10 @@ export class ChartWidget {
   private drawingMenu: WidgetContextMenu | null = null;
   /** A text drawn just now whose words the settings ask for: Cancel there takes it back. */
   private justDrawnText: string | null = null;
+  /** A text drawing's words typed in place over it. */
+  private inlineText: WidgetInlineText | null = null;
+  /** The drawing whose words are being typed in place. */
+  private inlineTextId: string | null = null;
   /** Stops waiting to ask for a just-drawn text's words (the widget goes, or another text is drawn first). */
   private cancelTextPrompt: (() => void) | null = null;
   /** The trash button's menu, made the first time it opens. */
@@ -1193,11 +1200,20 @@ export class ChartWidget {
         remove: (name, type) => templates.remove(name, type),
       },
     }, this.t);
+    this.inlineText = new WidgetInlineText(this.overlayHost);
     this.chart.on('drawingDoubleClick', (e) => {
       const id = (e.payload as { id: string }).id;
-      // A text's words are what a double-click on it is for.
+      // A text's words are what a double-click on it is for: typed in place over it.
       const type = this.chart.getDrawings().find((d) => d.id === id)?.type;
+      if (type && TEXT_LAYOUTS[type] && this.editTextInPlace(id, false)) return;
       this.openDrawingSettings(id, type && TEXT_LAYOUTS[type] ? { tab: 'text' } : {});
+    });
+    // A text's drawing gone (undo, the trash, another chart's sync) takes its typing with it.
+    this.chart.on('drawingRemove', (e) => {
+      if ((e.payload as { id: string }).id === this.inlineTextId) {
+        this.inlineText?.close();
+        this.inlineTextId = null;
+      }
     });
     // A text, a note or a callout just drawn asks for its words (not one added from code).
     this.chart.on('drawingCreate', (e) => {
@@ -1216,6 +1232,7 @@ export class ChartWidget {
       const open = () => {
         stop();
         if (this.destroyed || !this.chart.getDrawings().some((d) => d.id === id)) return;
+        if (this.editTextInPlace(id, true)) return;
         this.openDrawingSettings(id, { tab: 'text' });
         if (this.drawingSettings?.isOpen()) this.justDrawnText = id;
       };
@@ -2214,6 +2231,7 @@ export class ChartWidget {
     this.stopNarrow?.();
     this.dockObserver?.disconnect();
     this.scaleObserver?.disconnect();
+    this.inlineText?.close();
     this.stopNarrow = null;
     this.stopFormControls?.();
     this.stopFormControls = null;
@@ -2466,6 +2484,54 @@ export class ChartWidget {
       canFill: this.chart.getDrawingToolDescriptor(primary.type)?.fill === true,
       canText: this.chart.getDrawingToolDescriptor(primary.type)?.text === true,
     });
+  }
+
+  /**
+   * Type a text drawing's words in place, over its box: Enter or a click away
+   * keeps them, Escape puts them back. One just drawn (`justDrawn`) is taken
+   * back on Escape or with no words. False when its box is not on the chart
+   * (hidden, its text turned off): the settings ask for the words instead.
+   */
+  private editTextInPlace(id: string, justDrawn: boolean): boolean {
+    const drawing = this.chart.getDrawings().find((d) => d.id === id);
+    const editor = this.inlineText;
+    if (!drawing || !editor || drawing.locked || !this.chart.beginDrawingEdit(id)) return false;
+    const layout = TEXT_LAYOUTS[drawing.type];
+    const style = drawing.style;
+    const before = style.text ?? '';
+    const end = (keep: boolean) => {
+      this.inlineTextId = null;
+      this.chart.endDrawingEdit(id, { cancel: !keep });
+      if (!keep && justDrawn) this.chart.takeBackDrawing(id);
+      this.refreshObjects();
+    };
+    const opened = editor.open({
+      rect: () => {
+        const box = this.chart.getDrawingTextRect(id);
+        if (!box) return null;
+        const at = this.chartContainer.getBoundingClientRect();
+        return { x: at.left + box.x, y: at.top + box.y, width: box.width, height: box.height };
+      },
+      text: before,
+      font: {
+        size: style.fontSize || layout?.fontSize || DEFAULT_TEXT_SIZE,
+        bold: style.bold === true,
+        italic: style.italic === true,
+        family: this.chart.getFont?.()?.family ?? this.ui.font.family,
+      },
+      color: style.textColor ?? TEXT_COLORS[drawing.type] ?? style.color,
+      label: this.t('drawingSettings.text'),
+      onInput: (text) => this.chart.updateDrawing(id, { style: { text } }),
+      // No words: a text just drawn goes, an old one keeps what it said.
+      onCommit: (text) => end(text.trim().length > 0),
+      onCancel: () => end(false),
+    });
+    if (!opened) {
+      this.chart.endDrawingEdit(id, { cancel: true });
+      return false;
+    }
+    this.inlineTextId = id;
+    return true;
   }
 
   /** Open a drawing's settings (double-click on it, or the object tree's settings button). */

@@ -55,6 +55,11 @@ export class TextAnnotationTool extends DrawingBase {
     const p = this.anchorToPixel(state.anchors[0], viewport);
     return inRect(point, this.boxes.get(state.id) ?? estimateBox(state, p), tolerance);
   }
+
+  textBox(state: DrawingState): Rect | null {
+    return this.boxes.get(state.id) ?? null;
+  }
+
 }
 
 /** Roughly the box a text takes before it is first drawn (a hit test with no canvas). */

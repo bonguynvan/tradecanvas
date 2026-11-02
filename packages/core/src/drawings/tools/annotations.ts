@@ -78,6 +78,10 @@ export class NoteTool extends DrawingBase {
       ?? estimateBox(state, resolveAnnotationText(state, 'Note'), p.x + PIN_RADIUS + 6, p.y - PIN_HEIGHT - PIN_RADIUS);
     return inRect(point, box, tolerance);
   }
+
+  textBox(state: DrawingState): Rect | null {
+    return this.option<boolean>(state, 'showText') ? this.boxes.get(state.id) ?? null : null;
+  }
 }
 
 /** Text in a box, with a line pointing at a bar and price: click the point, then where the box goes. */
@@ -115,6 +119,10 @@ export class CalloutTool extends DrawingBase {
     const box = this.boxes.get(state.id) ?? estimateBox(state, resolveAnnotationText(state, 'Callout'), at.x, at.y);
     return inRect(point, box, tolerance) || this.distanceToLine(point, nearestEdgePoint(box, target), target) <= tolerance;
   }
+
+  textBox(state: DrawingState): Rect | null {
+    return this.boxes.get(state.id) ?? null;
+  }
 }
 
 /** The middle of the side of `box` facing `p`. */
@@ -128,6 +136,7 @@ function nearestEdgePoint(box: Rect, p: Point): Point {
     return { x: dx > 0 ? box.x + box.width : box.x, y: cy };
   }
   return { x: cx, y: dy > 0 ? box.y + box.height : box.y };
+
 }
 
 const FLAG_POLE = 24;
