@@ -109,6 +109,14 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
   <code>phiStep(base, steps, perPhi)</code> vienen de <code>@tradecanvas/commons</code> para un aspecto propio.
 </p>
 
+<h3 id="wide-screens">En pantallas anchas</h3>
+<p>
+  El widget dibuja sus barras, botones, iconos y textos más grandes a medida que se ensancha, para que una pantalla 4K
+  no sea toda letra pequeña: como está hasta full HD, luego un sexto de φ más grande desde 1800 px, un tercio desde
+  2560 (4K al 150%) y la mitad desde 3400 (4K al 100%). El texto de los ejes del gráfico crece con él.
+  <code>ui.scale</code> fija una escala propia en todos los anchos; <code>1</code> mantiene los tamaños.
+</p>
+
 <h2>Tu propio aspecto</h2>
 <p>
   Un tema parte de un preajuste (Print si no indicas ninguno) y cambia solo lo que nombra. Las esquinas fijadas en la
@@ -120,6 +128,7 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
   components: { dialog: 20, tag: 0 },                // a part's own corners
   density: 'compact',                                // compact · comfortable · spacious · airy
   sizes: { toolbar: 40 },                            // px; wins over density
+  scale: 'auto',                                     // or a number; 'auto' grows with the widget's width
   font: {
     family: "'Manrope', system-ui, sans-serif",
     mono: "'JetBrains Mono', monospace",

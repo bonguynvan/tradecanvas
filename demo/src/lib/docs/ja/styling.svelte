@@ -103,6 +103,14 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
   <code>phiStep(base, steps, perPhi)</code> を使えます。
 </p>
 
+<h3 id="wide-screens">ワイド画面で</h3>
+<p>
+  ウィジェットは幅が広がるにつれてバー、ボタン、アイコン、文字を大きく描くので、4K 画面が小さな文字ばかりになりません。
+  フル HD までは設定どおり、1800 px からは φ の 6 分の 1、2560（150% の 4K）からは 3 分の 1、3400（100% の 4K）
+  からは半分大きくなります。チャートの軸の文字も一緒に大きくなります。<code>ui.scale</code> はすべての幅で使う倍率を
+  決め、<code>1</code> ならサイズはそのままです。
+</p>
+
 <h2>独自の外観</h2>
 <p>
   テーマはプリセット（指定しなければ Print）から始まり、指定した項目だけを変更します。スケールで設定した角の丸みは、
@@ -114,6 +122,7 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
   components: { dialog: 20, tag: 0 },                // a part's own corners
   density: 'compact',                                // compact · comfortable · spacious · airy
   sizes: { toolbar: 40 },                            // px; wins over density
+  scale: 'auto',                                     // or a number; 'auto' grows with the widget's width
   font: {
     family: "'Manrope', system-ui, sans-serif",
     mono: "'JetBrains Mono', monospace",

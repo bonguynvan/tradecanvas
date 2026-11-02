@@ -70,7 +70,7 @@ chart.addDrawing({
   },
 })`}</code></pre>
 <p>
-  En el widget, un Texto, una Nota o una Llamada piden sus palabras en cuanto se dibujan: su configuración se abre en la pestaña Texto, con el texto seleccionado, y Cancelar deshace el dibujo. Un doble clic abre la misma pestaña. La barra sobre una selección cambia el relleno y el color del texto de las herramientas que los tienen.
+  En el widget, un texto, una nota, una llamada, una señal, un globo o un texto o nota fijos abren un cuadro sobre sus palabras en cuanto se dibujan y con un doble clic: se escribe encima, Enter o un clic fuera las guarda, Shift+Enter empieza una línea nueva y Escape las devuelve (un texto recién dibujado se quita, también sin palabras). Un solo deshacer quita un texto recién dibujado junto con sus palabras. Su configuración sigue a un clic, en la barra sobre él o en su menú. La barra sobre una selección fija el relleno y el color del texto de las herramientas que los tienen. <code>chart.getDrawingTextRect(id)</code> dice dónde está el cuadro de un texto, para poner encima un editor propio.
 </p>
 
 <h3 id="line-text">Texto en líneas y rectángulos</h3>

@@ -69,7 +69,7 @@ chart.addDrawing({
   },
 })`}</code></pre>
 <p>
-  Trong widget, Text, Note hoặc Callout hỏi nội dung ngay khi vẽ xong: phần cài đặt mở ở tab Chữ, chữ đã được chọn sẵn, và nút Huỷ bỏ luôn hình vẽ. Nhấp đúp vào chúng cũng mở tab đó. Thanh công cụ trên hình đang chọn đặt được màu nền và màu chữ cho các công cụ có những thứ đó.
+  Trong widget, chữ, ghi chú, chú thích, biển chỉ dẫn, bóng chú thích hay chữ và ghi chú cố định mở một ô ngay trên chữ của nó khi vừa vẽ xong và khi nhấp đúp: gõ đè lên, Enter hoặc nhấp ra ngoài để giữ, Shift+Enter xuống dòng, Escape trả lại như cũ (hình vừa vẽ thì bị bỏ, và cả khi không có chữ). Một lần hoàn tác bỏ cả hình vừa vẽ lẫn chữ của nó. Cài đặt vẫn chỉ cách một cú nhấp, trên thanh công cụ phía trên hình hoặc trong menu của nó. Thanh công cụ trên vùng chọn đặt màu nền và màu chữ cho các công cụ có chúng. <code>chart.getDrawingTextRect(id)</code> cho biết ô chữ nằm đâu, để đặt trình sửa của riêng bạn lên trên.
 </p>
 
 <h3 id="line-text">Chữ trên đường và hình chữ nhật</h3>

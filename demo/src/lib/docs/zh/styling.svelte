@@ -97,6 +97,13 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
   <code>@tradecanvas/commons</code> 提供，可用来打造你自己的外观。
 </p>
 
+<h3 id="wide-screens">宽屏上</h3>
+<p>
+  小组件变宽时，工具栏、按钮、图标和文字会画得更大，4K 屏幕上不再满是小字：全高清以内保持不变，从 1800 px 起放大
+  φ 的六分之一，从 2560（150% 的 4K）起放大三分之一，从 3400（100% 的 4K）起放大一半。图表坐标轴的文字也随之变大。
+  <code>ui.scale</code> 可为所有宽度设定自己的比例；<code>1</code> 保持原有尺寸。
+</p>
+
 <h2>自定义外观</h2>
 <p>
   自定义主题从一套预设开始（未指定时为 Print），只修改其中写明的部分。在圆角刻度上设置的值会作用于所有跟随该刻度的部件，
@@ -108,6 +115,7 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
   components: { dialog: 20, tag: 0 },                // a part's own corners
   density: 'compact',                                // compact · comfortable · spacious · airy
   sizes: { toolbar: 40 },                            // px; wins over density
+  scale: 'auto',                                     // or a number; 'auto' grows with the widget's width
   font: {
     family: "'Manrope', system-ui, sans-serif",
     mono: "'JetBrains Mono', monospace",

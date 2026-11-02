@@ -106,6 +106,14 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
   from <code>@tradecanvas/commons</code> for a look of your own.
 </p>
 
+<h3 id="wide-screens">On wide screens</h3>
+<p>
+  The widget draws its bars, buttons, icons and type bigger as it widens, so a 4K screen is not all small print:
+  as set up to full HD, then a sixth of φ bigger from 1800 px wide, a third from 2560 (4K at 150%) and a half from
+  3400 (4K at 100%). The chart's axis type grows with it. <code>ui.scale</code> sets a scale of your own at every
+  width; <code>1</code> keeps the sizes as they are.
+</p>
+
 <h2>Your own look</h2>
 <p>
   A theme starts from a preset (Print when you name none) and changes what it names. Corners set on the scale
@@ -117,6 +125,7 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
   components: { dialog: 20, tag: 0 },                // a part's own corners
   density: 'compact',                                // compact · comfortable · spacious · airy
   sizes: { toolbar: 40 },                            // px; wins over density
+  scale: 'auto',                                     // or a number; 'auto' grows with the widget's width
   font: {
     family: "'Manrope', system-ui, sans-serif",
     mono: "'JetBrains Mono', monospace",
