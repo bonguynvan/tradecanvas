@@ -74,6 +74,21 @@ export class TextHitCache {
     this.boxes.set(id, box);
   }
 
+  /** The upright box round the drawing's words, as drawn (turned with a sloping line); null without words. */
+  bounds(id: string): Rect | null {
+    const box = this.boxes.get(id);
+    if (!box) return null;
+    const cos = Math.cos(box.angle);
+    const sin = Math.sin(box.angle);
+    const corners = [[box.left, box.top], [box.left + box.width, box.top], [box.left, box.top + box.height], [box.left + box.width, box.top + box.height]]
+      .map(([u, v]) => ({ x: box.x + u * cos - v * sin, y: box.y + u * sin + v * cos }));
+    const xs = corners.map((c) => c.x);
+    const ys = corners.map((c) => c.y);
+    const x = Math.min(...xs);
+    const y = Math.min(...ys);
+    return { x, y, width: Math.max(...xs) - x, height: Math.max(...ys) - y };
+  }
+
   /** Whether `point` is on the drawing's words, within `tolerance` px. */
   hit(id: string, point: Point, tolerance: number): boolean {
     const box = this.boxes.get(id);

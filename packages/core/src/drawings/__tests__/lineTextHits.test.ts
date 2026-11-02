@@ -105,3 +105,26 @@ describe('Escape while a drawing is dragged', () => {
     expect(history.getState().canUndo).toBe(false);
   });
 });
+
+describe('the box round a line\'s words', () => {
+  it('is told by each line tool, so the toolbar over a selection keeps clear of the words', () => {
+    const level = drawing('horizontalLine', [{ time: 10, price: 40 }], { id: 'h', style: { ...base, text: 'Support', textAlign: 'center' } });
+    const tool = drawn(new HorizontalLineTool(), level);
+    const box = tool.textBox!(level, unitViewport)!;
+    expect(box.y + box.height).toBeLessThanOrEqual(y(40));
+    expect(box.x).toBeLessThan(500);
+    expect(box.x + box.width).toBeGreaterThan(500);
+    const plain = drawing('horizontalLine', [{ time: 10, price: 40 }], { id: 'p' });
+    expect(drawn(new HorizontalLineTool(), plain).textBox!(plain, unitViewport)).toBeNull();
+  });
+
+  it('bounds the words of a sloping line, turned with it', () => {
+    const state = drawing('trendLine', [{ time: 10, price: 20 }, { time: 30, price: 80 }], { id: 's', style: { ...base, text: 'Up' } });
+    const box = drawn(new TrendLineTool(), state).textBox!(state, unitViewport)!;
+    const mid = { x: (x(10) + x(30)) / 2, y: (y(20) + y(80)) / 2 };
+    // Above the line's middle, up and to the left of it on a rising line.
+    expect(box.y).toBeLessThan(mid.y);
+    expect(box.width).toBeGreaterThan(0);
+    expect(box.height).toBeGreaterThan(0);
+  });
+});

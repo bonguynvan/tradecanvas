@@ -43,6 +43,11 @@ export class ExtendedLineTool extends DrawingBase {
   /** Its text's box as last drawn: a click on the words picks it. */
   private texts = new TextHitCache();
 
+  /** Where its words were drawn: the toolbar over a selection keeps clear of them. */
+  textBox(state: DrawingState): { x: number; y: number; width: number; height: number } | null {
+    return this.texts.bounds(state.id);
+  }
+
   hitTest(point: Point, state: DrawingState, viewport: ViewportState, tolerance: number): boolean {
     return this.texts.hit(state.id, point, tolerance) || this.hitShape(point, state, viewport, tolerance);
   }
