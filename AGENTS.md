@@ -22,7 +22,7 @@ A pnpm workspace, TypeScript strict, no runtime dependencies in any package.
 | `benchmarks` | Those two measured on one machine, by date: what a change to the engine is compared with. |
 | `evals` | Coding agents given tasks with and without the skill (`pnpm eval`); the runs to compare with in `evals/baselines`, and what they turned up in `evals/FINDINGS.md`. |
 | `skills/tradecanvas` | The agent skill users install. Its code examples are type-checked. |
-| `scripts` | Docs generated from the code, and their checks; `bench-render.mjs` (`pnpm bench:render`) times the chart's frames in Chrome, `size-report.mjs` (`pnpm size`) what a page downloads for each entry; `redirects.mjs` sends the old GitHub Pages addresses on to tradecanvas.dev; `record-clips.mjs` records the README clips (`.github/assets/clips`) from the scenes in `scripts/clips`, and with `--web <dir>` an MP4 and a poster of each for a web page; `audit-scenes.mjs` (`pnpm audit:scenes`) shoots the chart's states in `scripts/audit` and checks them. |
+| `scripts` | Docs generated from the code, and their checks; `bench-render.mjs` (`pnpm bench:render`) times the chart's frames in Chrome, `soak.mjs` (`pnpm soak`) leaves the widget on a million bars and a busy feed (`scripts/soak`) for minutes and reads its memory, nodes and frames, `size-report.mjs` (`pnpm size`) what a page downloads for each entry; `redirects.mjs` sends the old GitHub Pages addresses on to tradecanvas.dev; `record-clips.mjs` records the README clips (`.github/assets/clips`) from the scenes in `scripts/clips`, and with `--web <dir>` an MP4 and a poster of each for a web page; `audit-scenes.mjs` (`pnpm audit:scenes`) shoots the chart's states in `scripts/audit` and checks them. |
 
 ## Commands
 

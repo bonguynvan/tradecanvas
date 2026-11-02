@@ -28,6 +28,8 @@ export const MARK_WEIGHT = {
 
 /** The weights, highest first: the order marks are chosen in. */
 const LEVELS: readonly number[] = [...new Set(Object.values(MARK_WEIGHT))].sort((a, b) => b - a);
+/** Weights are bytes. */
+const WEIGHT_RANGE = 256;
 
 /** What a mark's label says: the year, the month, the day of the month, or the time. */
 export type MarkKind = 'year' | 'month' | 'day' | 'time';
@@ -103,8 +105,16 @@ export class TimeMarker {
   private times: number[] = [];
   /** What `weights` and `times` were made for: the bars weighed, the zones, the slots. */
   private weighed: { bars: number; tz: TimeZoneSetting; exchangeZone: string | null; daily: boolean; extent: number; unit: number } | null = null;
+  /**
+   * The array the bars were weighed from: the same one grown in place keeps
+   * its weights without a look at each time. Held weakly, so a series let go
+   * (another symbol) is not kept alive by the axis.
+   */
+  private weighedFrom: WeakRef<ArrayLike<{ time: number }>> | null = null;
+  /** Counts each change to `weights`, which are written in place while they have room. */
+  private revision = 0;
   private chosen: Int32Array = new Int32Array(0);
-  private chosenFor: { gapBars: number; extent: number; weights: Uint8Array } | null = null;
+  private chosenFor: { gapBars: number; extent: number; revision: number } | null = null;
 
   marks(data: ArrayLike<{ time: number }>, query: TimeMarkQuery): TimeMark[] {
     const n = data.length;
@@ -151,16 +161,26 @@ export class TimeMarker {
     if (w && w.tz === tz && w.exchangeZone === exchangeZone && w.daily === daily && w.unit === unit) {
       const limit = Math.min(w.bars, n);
       const times = this.times;
-      while (keep < limit && data[keep].time * unit === times[keep]) keep++;
-      if (keep < limit) keep = 0;
+      if (data === this.weighedFrom?.deref() && n >= w.bars) {
+        // The same array: bars are pushed onto it or replaced by bars at their
+        // times, never moved, so the times weighed stand. Looking at each one
+        // every frame cost most of a frame on a million bars; the last is
+        // looked at all the same.
+        keep = limit > 0 && data[limit - 1].time * unit === times[limit - 1] ? limit : 0;
+      } else {
+        while (keep < limit && data[keep].time * unit === times[keep]) keep++;
+        if (keep < limit) keep = 0;
+      }
     }
+    if (this.weighedFrom?.deref() !== data) this.weighedFrom = new WeakRef(data);
     if (w && keep === n && w.bars === n && w.extent === extent) return;
-    const weights = new Uint8Array(extent);
-    const times = new Array<number>(extent);
-    if (keep > 0) {
-      weights.set(this.weights.subarray(0, keep));
-      for (let i = 0; i < keep; i++) times[i] = this.times[i];
-    }
+    // Bars kept are weighed on in place while there is room; room for an
+    // eighth more, so a live series reallocates now and then, not per bar.
+    const grow = keep > 0 && this.weights.length >= extent;
+    const weights = grow ? this.weights : new Uint8Array(extent + (extent >> 3));
+    const times = keep > 0 ? this.times : [];
+    if (keep > 0 && !grow) weights.set(this.weights.subarray(0, keep));
+    times.length = keep;
     let prev: TimeParts | null = keep > 0 ? partsOf(times[keep - 1]) : null;
     for (let i = keep; i < extent; i++) {
       // Past the last bar the slots' times are extrapolated, as the axis does.
@@ -174,17 +194,27 @@ export class TimeMarker {
     this.weights = weights;
     this.times = times;
     this.weighed = { bars: n, tz, exchangeZone, daily, extent, unit };
+    this.revision++;
   }
 
   private choose(gapBars: number, extent: number): void {
     const c = this.chosenFor;
-    if (c && c.gapBars === gapBars && c.extent === extent && c.weights === this.weights) return;
+    if (c && c.gapBars === gapBars && c.extent === extent && c.revision === this.revision) return;
     const weights = this.weights;
     const blocked = new Uint8Array(extent);
     const picked: number[] = [];
+    // The slots of each weight in order, by a counting sort: each level then
+    // walks its own slots, not all of them once per level.
+    const starts = new Int32Array(WEIGHT_RANGE + 1);
+    for (let i = 0; i < extent; i++) starts[weights[i] + 1]++;
+    for (let k = 1; k <= WEIGHT_RANGE; k++) starts[k] += starts[k - 1];
+    const bySlot = new Int32Array(extent);
+    const next = starts.slice(0, WEIGHT_RANGE);
+    for (let i = 0; i < extent; i++) bySlot[next[weights[i]]++] = i;
     for (const level of LEVELS) {
-      for (let i = 0; i < extent; i++) {
-        if (weights[i] !== level || blocked[i]) continue;
+      for (let k = starts[level]; k < starts[level + 1]; k++) {
+        const i = bySlot[k];
+        if (blocked[i]) continue;
         picked.push(i);
         const lo = Math.max(0, i - gapBars + 1);
         const hi = Math.min(extent - 1, i + gapBars - 1);
@@ -192,6 +222,6 @@ export class TimeMarker {
       }
     }
     this.chosen = Int32Array.from(picked).sort();
-    this.chosenFor = { gapBars, extent, weights };
+    this.chosenFor = { gapBars, extent, revision: this.revision };
   }
 }

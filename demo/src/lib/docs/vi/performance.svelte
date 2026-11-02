@@ -130,6 +130,29 @@ chart.resume()    // back: one frame draws what changed`}</code></pre>
   Widget trên màn hình cảm ứng: ô nhập 16 px để trang không tự zoom khi chạm vào, bảng trượt nằm trên bàn phím ảo, chiều cao theo đơn vị viewport động. Để tự đo trên máy: <code>node scripts/bench-render.mjs --mobile</code>.
 </p>
 
+<h2 id="soak">Mười phút với một feed bận rộn</h2>
+<p>
+  Một bàn giao dịch để chạy liên tục: widget đầy đủ trên 1.000.000 nến một giây, vẽ bằng WebGL, bốn chỉ báo, một vị thế có dừng lỗ và chốt lời, các lệnh chờ được khớp, đặt lại và dời đi, giá mua và giá bán, heatmap độ sâu, và một feed 30.000 lệnh khớp mỗi giây từ một worker đóng vai socket. Mỗi lệnh khớp đến chart dưới dạng một tick. Cứ 30 giây bài soak dọn rác rồi đọc phần bộ nhớ còn giữ.
+</p>
+<table>
+  <thead><tr><th>Số đo</th><th>Sau 1 phút</th><th>Sau 10 phút</th></tr></thead>
+  <tbody>
+    <tr><td>JS heap sau khi dọn rác</td><td>418,0 MB</td><td>418,3 MB</td></tr>
+    <tr><td>Nút DOM</td><td>1.220</td><td>1.220</td></tr>
+    <tr><td>Trình nghe sự kiện</td><td>364</td><td>364</td></tr>
+    <tr><td>Lệnh khớp nhận vào mỗi giây</td><td>30.027</td><td>29.998</td></tr>
+    <tr><td>Khung hình mỗi giây</td><td>56,7</td><td>56,4</td></tr>
+    <tr><td>Khung hình p95</td><td>18,2 ms</td><td>18,2 ms</td></tr>
+    <tr><td>Tác vụ trên 50 ms ở luồng chính</td><td>0</td><td>0</td></tr>
+  </tbody>
+</table>
+<p>
+  Heap tăng 0,3 MB trong chín phút: 600 nến mới và giá trị chỉ báo của chúng. Nhận lệnh khớp tốn khoảng 1% luồng chính; phần lớn khung hình là vẽ. Ở bản 1.68.0, cùng bàn này vẽ khoảng 29 khung hình mỗi giây và cứ mỗi giây có một tác vụ 50 ms: trục thời gian xem thời gian của mọi nến ở mỗi khung hình, đường ngắt ngày đi lại cả lịch sử với mỗi nến mới, và heatmap sắp xếp giá của từng snapshot ở mỗi khung hình. Chrome không giao diện trên Intel UHD 770. Để chạy trên máy của bạn:
+</p>
+<pre><code>{`pnpm build
+pnpm soak                          # 10 minutes, 30,000 trades/s, 1,000,000 bars, WebGL
+pnpm soak --minutes=30 --rate=50000 --renderer=canvas`}</code></pre>
+
 <h2>Luồng chính</h2>
 <p>
   Biểu đồ tính chỉ báo trên luồng chính. <code>IndicatorWorkerHost</code> trong <code>@tradecanvas/core</code> có thể chạy <code>calculate()</code> trong một worker do bạn cung cấp, với API trả về Promise, thời gian chờ cho từng yêu cầu và phương án đồng bộ dự phòng cho SSR và test, nhưng biểu đồ chưa đưa chỉ báo của nó qua đây, và các gói chưa kèm script worker.

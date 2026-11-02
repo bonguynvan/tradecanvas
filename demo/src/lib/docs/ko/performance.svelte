@@ -130,6 +130,29 @@ chart.resume()    // back: one frame draws what changed`}</code></pre>
   터치 화면의 위젯: 입력 칸은 16 px라 포커스될 때 페이지가 확대되지 않고, 시트는 화면 키보드 위에 있으며, 높이는 동적 뷰포트 단위입니다. 직접 측정하려면 <code>node scripts/bench-render.mjs --mobile</code>.
 </p>
 
+<h2 id="soak">바쁜 피드에서 10분</h2>
+<p>
+  계속 켜 두는 라이브 데스크: 1,000,000개의 1초 봉 위의 전체 위젯, WebGL로 그리기, 지표 4개, 손절과 익절이 걸린 포지션, 체결되고 다시 주문되고 옮겨지는 대기 주문, 매수·매도 호가, 호가 히트맵, 그리고 소켓 역할을 하는 워커가 보내는 초당 30,000건의 체결. 모든 체결은 틱으로 차트에 도착합니다. 30초마다 가비지를 수집한 뒤 아직 잡혀 있는 메모리를 읽습니다.
+</p>
+<table>
+  <thead><tr><th>측정 항목</th><th>1분 후</th><th>10분 후</th></tr></thead>
+  <tbody>
+    <tr><td>수집 후 JS 힙</td><td>418.0 MB</td><td>418.3 MB</td></tr>
+    <tr><td>DOM 노드</td><td>1,220</td><td>1,220</td></tr>
+    <tr><td>이벤트 리스너</td><td>364</td><td>364</td></tr>
+    <tr><td>초당 받은 체결</td><td>30,027</td><td>29,998</td></tr>
+    <tr><td>초당 프레임</td><td>56.7</td><td>56.4</td></tr>
+    <tr><td>p95 프레임</td><td>18.2 ms</td><td>18.2 ms</td></tr>
+    <tr><td>50 ms가 넘는 메인 스레드 작업</td><td>0</td><td>0</td></tr>
+  </tbody>
+</table>
+<p>
+  9분 동안 힙은 0.3 MB 늘었습니다. 새 봉 600개와 그 지표 값입니다. 체결을 받는 데는 메인 스레드의 약 1%가 들고, 프레임의 대부분은 그리기입니다. 1.68.0에서는 같은 데스크가 초당 약 29프레임을 그렸고 매초 50 ms 작업이 있었습니다. 시간 축이 매 프레임 모든 봉의 시각을 확인했고, 일 구분선이 새 봉마다 전체 이력을 다시 훑었으며, 히트맵이 매 프레임 스냅숏마다 가격을 정렬했기 때문입니다. Intel UHD 770의 헤드리스 Chrome에서 측정했습니다. 내 컴퓨터에서 실행하려면:
+</p>
+<pre><code>{`pnpm build
+pnpm soak                          # 10 minutes, 30,000 trades/s, 1,000,000 bars, WebGL
+pnpm soak --minutes=30 --rate=50000 --renderer=canvas`}</code></pre>
+
 <h2>메인 스레드</h2>
 <p>
   차트는 메인 스레드에서 지표를 계산합니다. <code>@tradecanvas/core</code>의 <code>IndicatorWorkerHost</code>는 Promise 기반 API, 요청별 타임아웃, SSR과 테스트를 위한 동기식 대체 경로를 갖추고 여러분이 제공한 워커에서 <code>calculate()</code>를 실행할 수 있지만, 차트는 아직 지표를 이를 통해 계산하지 않으며 패키지에 워커 스크립트도 포함되어 있지 않습니다.

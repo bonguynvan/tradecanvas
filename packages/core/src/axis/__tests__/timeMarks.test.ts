@@ -128,4 +128,58 @@ describe('TimeMarker — live series', () => {
     const older = [...hourly(Date.UTC(2024, 11, 1), 50).map((b) => ({ time: b.time })), ...grown];
     expect(marker.marks(older, query(2700))).toEqual(new TimeMarker().marks(older, query(2700)));
   });
+
+  /** Bars that count how often their times are read. */
+  function counted(count: number): { bars: Bar[]; reads: () => number } {
+    let reads = 0;
+    const from = Date.UTC(2025, 0, 1);
+    const bars = Array.from({ length: count }, (_, i) => ({ get time() { reads++; return from + i * HOUR; } }));
+    return { bars, reads: () => reads };
+  }
+
+  // A long series drawn every frame: checking every bar's time each frame cost most of a frame at a million bars.
+  it('reads only a few times on a frame of the same series', () => {
+    const { bars, reads } = counted(100_000);
+    const marker = new TimeMarker();
+    marker.marks(bars, query(100_100));
+    const before = reads();
+    marker.marks(bars, query(100_100));
+    expect(reads() - before).toBeLessThan(500);
+  });
+
+  it('weighs only the bars pushed onto the same series, and gives the marks a fresh marker would', () => {
+    const { bars, reads } = counted(100_000);
+    const marker = new TimeMarker();
+    marker.marks(bars, query(100_100));
+    const all = hourly(Date.UTC(2025, 0, 1), 100_003);
+    bars.push(...all.slice(100_000));
+    const before = reads();
+    const out = marker.marks(bars, query(100_100));
+    expect(reads() - before).toBeLessThan(500);
+    expect(out).toEqual(new TimeMarker().marks(all, query(100_100)));
+  });
+
+  // The same array changed in place in every way the chart changes one: the marks are a fresh marker's each time.
+  it("gives a fresh marker's marks on the same array after its last bar moves, a pop, and pushes past its spare room", () => {
+    const all = hourly(Date.UTC(2025, 0, 1), 4000);
+    const live = all.slice(0, 1000).map((b) => ({ ...b }));
+    const marker = new TimeMarker();
+    const check = (to: number) => {
+      const q = { from: Math.max(0, to - 400), to, gapBars: 12, tz: 0 as const, timesPastData: true };
+      expect(marker.marks(live, q)).toEqual(new TimeMarker().marks(live.map((b) => ({ ...b })), q));
+    };
+    check(1100);
+    // The last bar at another time (a forming bar replaced by the next).
+    live[live.length - 1] = { time: all[1000].time };
+    check(1100);
+    live.pop();
+    live.push({ ...all[999] });
+    check(1100);
+    // A bar at a time, well past the room kept for them, the view's future moving on with it.
+    for (let i = 1000; i < 2600; i++) {
+      live.push({ ...all[i] });
+      if (i % 97 === 0) check(i + 60);
+    }
+    check(2700);
+  });
 });

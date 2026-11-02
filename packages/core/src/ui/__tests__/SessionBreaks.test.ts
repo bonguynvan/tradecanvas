@@ -247,3 +247,53 @@ describe('SessionBreaks on daily bars', () => {
     }
   });
 });
+
+describe('SessionBreaks on a live series', () => {
+  const HOUR = 3_600_000;
+  type Found = { idx: number; kind: string }[];
+  const find = (sb: SessionBreaks, data: DataSeries): Found =>
+    (sb as unknown as { computeBreaksTyped(d: DataSeries): Found }).computeBreaksTyped(data);
+  const bar = (time: number) => ({ time, open: 1, high: 1, low: 1, close: 1, volume: 1 });
+
+  // A new bar a second on a million: going over every bar again for each one held up a frame a second.
+  it('looks only at the bars pushed onto the same series, and finds what a fresh look would', () => {
+    let reads = 0;
+    const from = Date.UTC(2025, 0, 1);
+    const at = (i: number) => {
+      const b = bar(from + i * HOUR);
+      return { ...b, get time() { reads++; return from + i * HOUR; } };
+    };
+    const data = Array.from({ length: 50_000 }, (_, i) => at(i)) as unknown as DataSeries;
+    const sb = new SessionBreaks();
+    sb.setTimezone(0);
+    find(sb, data);
+    for (let i = 50_000; i < 50_030; i++) data.push(at(i));
+    const before = reads;
+    const found = find(sb, data);
+    expect(reads - before).toBeLessThan(500);
+    const fresh = new SessionBreaks();
+    fresh.setTimezone(0);
+    expect(found).toEqual(find(fresh, Array.from({ length: 50_030 }, (_, i) => bar(from + i * HOUR))));
+  });
+
+  it('looks at every bar again when older history is put in front', () => {
+    const from = Date.UTC(2025, 0, 10);
+    const hours = Array.from({ length: 72 }, (_, i) => bar(from + i * HOUR));
+    const sb = new SessionBreaks();
+    sb.setTimezone(0);
+    find(sb, hours);
+    const older = [...Array.from({ length: 48 }, (_, i) => bar(from - (48 - i) * HOUR)), ...hours];
+    const fresh = new SessionBreaks();
+    fresh.setTimezone(0);
+    expect(find(sb, older)).toEqual(find(fresh, older));
+  });
+
+  it('looks at every bar again when the series is another one of the same length', () => {
+    const sb = new SessionBreaks();
+    sb.setTimezone(0);
+    const hours = Array.from({ length: 72 }, (_, i) => bar(Date.UTC(2025, 0, 1) + i * HOUR));
+    const days = Array.from({ length: 72 }, (_, i) => bar(Date.UTC(2025, 0, 1) + i * 24 * HOUR));
+    find(sb, hours);
+    expect(find(sb, days)).toHaveLength(71);
+  });
+});

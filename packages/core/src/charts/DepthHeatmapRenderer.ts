@@ -1,6 +1,6 @@
 import type { DepthData, DepthLevel, ViewportState, Theme } from '@tradecanvas/commons';
 import { timeToX, priceToY } from '../viewport/ScaleMapping.js';
-import { DepthHeatmapBuffer } from './DepthHeatmapBuffer.js';
+import { DepthHeatmapBuffer, levelStep } from './DepthHeatmapBuffer.js';
 
 /**
  * Order-book liquidity heatmap. Each accumulated depth snapshot becomes a
@@ -62,8 +62,8 @@ export class DepthHeatmapRenderer {
       const cx = timeToX(snap.time, viewport);
       if (cx < left - stripWidth || cx > right + stripWidth) continue;
       const x = cx - stripWidth / 2;
-      this.drawSide(ctx, snap.bids, theme.candleUp, x, stripWidth, viewport, invMax, top, bottom);
-      this.drawSide(ctx, snap.asks, theme.candleDown, x, stripWidth, viewport, invMax, top, bottom);
+      this.drawSide(ctx, snap.bids, snap.bidStep ?? levelStep(snap.bids), theme.candleUp, x, stripWidth, viewport, invMax, top, bottom);
+      this.drawSide(ctx, snap.asks, snap.askStep ?? levelStep(snap.asks), theme.candleDown, x, stripWidth, viewport, invMax, top, bottom);
     }
     ctx.restore();
   }
@@ -71,6 +71,7 @@ export class DepthHeatmapRenderer {
   private drawSide(
     ctx: CanvasRenderingContext2D,
     levels: DepthLevel[],
+    step: number,
     color: string,
     x: number,
     width: number,
@@ -80,7 +81,8 @@ export class DepthHeatmapRenderer {
     bottom: number,
   ): void {
     if (levels.length === 0) return;
-    const cellH = levelCellHeight(levels, viewport);
+    // Measured at the side's lower end, whichever way the levels are listed (bids best first, asks lowest first).
+    const cellH = levelCellHeight(Math.min(levels[0].price, levels[levels.length - 1].price), step, viewport);
     ctx.fillStyle = color;
     for (const level of levels) {
       const y = priceToY(level.price, viewport);
@@ -93,18 +95,9 @@ export class DepthHeatmapRenderer {
   }
 }
 
-/** Cell height in px from the median price spacing of the levels. */
-function levelCellHeight(levels: DepthLevel[], viewport: ViewportState): number {
-  if (levels.length < 2) return 3;
-  const prices = levels.map((l) => l.price).sort((a, b) => a - b);
-  const gaps: number[] = [];
-  for (let i = 1; i < prices.length; i++) {
-    const g = prices[i] - prices[i - 1];
-    if (g > 0) gaps.push(g);
-  }
-  if (gaps.length === 0) return 3;
-  gaps.sort((a, b) => a - b);
-  const step = gaps[Math.floor(gaps.length / 2)];
-  const px = Math.abs(priceToY(prices[0], viewport) - priceToY(prices[0] + step, viewport));
+/** Cell height in px: the levels' spacing (`levelStep`) on screen at `price`. */
+function levelCellHeight(price: number, step: number, viewport: ViewportState): number {
+  if (!(step > 0)) return 3;
+  const px = Math.abs(priceToY(price, viewport) - priceToY(price + step, viewport));
   return Math.max(2, Math.min(px, 12));
 }

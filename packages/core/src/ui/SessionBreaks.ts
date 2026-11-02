@@ -78,6 +78,9 @@ export class SessionBreaks {
   // that case rescan every bar on every frame.
   private cacheValid = false;
   private lastDataLength = 0;
+  /** The first bar's time and the last's when the breaks were found: a series that still has them was grown, not replaced. */
+  private firstTime = NaN;
+  private lastTime = NaN;
   private tz: TimeZoneSetting = null;
 
   setConfig(config: Partial<SessionBreakConfig>): void {
@@ -116,16 +119,20 @@ export class SessionBreaks {
   private computeBreaksTyped(data: DataSeries): SessionBreak[] {
     if (data.length < 2) return [];
 
-    // Cache: only recompute when data changes
-    if (this.cacheValid && data.length === this.lastDataLength) {
-      return this.cachedBreaksTyped;
-    }
+    // The same series, or the same with bars added: the breaks found stand, and
+    // only the new bars are looked at. Going over a million bars again for each
+    // new one held up a frame a second.
+    const kept = this.lastDataLength;
+    const grown = this.cacheValid && data.length >= kept
+      && data[0].time === this.firstTime && data[kept - 1].time === this.lastTime;
+    if (grown && data.length === kept) return this.cachedBreaksTyped;
 
-    const out: SessionBreak[] = [];
+    const out: SessionBreak[] = grown ? this.cachedBreaksTyped.slice() : [];
     const unit = barTimeUnit(data);
-    let prev = timeParts(data[0].time * unit, this.tz);
+    const start = grown ? kept : 1;
+    let prev = timeParts(data[start - 1].time * unit, this.tz);
 
-    for (let i = 1; i < data.length; i++) {
+    for (let i = start; i < data.length; i++) {
       const d = timeParts(data[i].time * unit, this.tz);
       if (d.year !== prev.year) {
         out.push({ idx: i, kind: 'year' });
@@ -140,8 +147,10 @@ export class SessionBreaks {
     }
 
     this.lastDataLength = data.length;
+    this.firstTime = data[0].time;
+    this.lastTime = data[data.length - 1].time;
     this.cachedBreaksTyped = out;
-    this.cachedMedianStep = medianBarInterval(data);
+    if (!grown) this.cachedMedianStep = medianBarInterval(data);
     this.cacheValid = true;
     return out;
   }
