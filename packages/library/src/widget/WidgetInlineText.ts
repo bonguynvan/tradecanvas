@@ -60,7 +60,8 @@ export class WidgetInlineText {
    */
   private readonly onPressAway = (e: Event) => {
     if (!this.area || e.target === this.area) return;
-    if (performance.now() - this.openedAt < OPEN_GRACE_MS) {
+    // Only while nothing is typed yet: a quick click away after typing still keeps the words.
+    if (this.area.value === this.target?.text && performance.now() - this.openedAt < OPEN_GRACE_MS) {
       // The second press of the double-click that drew the text: the box keeps the focus.
       e.preventDefault();
       e.stopPropagation();
@@ -183,7 +184,8 @@ export class WidgetInlineText {
     if (!area) return;
     const room = Math.max(MIN_WIDTH, window.innerWidth - EDGE * 2);
     area.style.maxWidth = `${room}px`;
-    area.style.minWidth = `${Math.min(room, Math.max(MIN_WIDTH, rect.width))}px`;
+    // As wide as the text's box, so the words wrap where the chart wraps them.
+    area.style.width = `${Math.min(room, Math.max(MIN_WIDTH, rect.width))}px`;
     area.style.minHeight = `${rect.height}px`;
     const width = area.offsetWidth || Math.max(MIN_WIDTH, rect.width);
     const height = area.offsetHeight || rect.height;

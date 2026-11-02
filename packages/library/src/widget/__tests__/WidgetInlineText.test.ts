@@ -196,3 +196,15 @@ describe('WidgetInlineText at the edges of real use', () => {
     expect(calls.commit).toEqual(['Off']);
   });
 });
+
+describe('WidgetInlineText after typing', () => {
+  it('keeps the words on a quick click away once something is typed', () => {
+    const now = vi.spyOn(performance, 'now').mockReturnValue(1000);
+    editor.open(target());
+    area()!.value = 'Typed fast';
+    area()!.dispatchEvent(new Event('input'));
+    now.mockReturnValue(1100);
+    host.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, cancelable: true }));
+    expect(calls.commit).toEqual(['Typed fast']);
+  });
+});
