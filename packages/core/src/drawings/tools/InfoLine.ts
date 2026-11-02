@@ -36,7 +36,7 @@ export class InfoLineTool extends DrawingBase {
     const rising = b.y <= a.y;
     drawLabelBox(ctx, lines, b.x + (b.x >= a.x ? 8 : -8), b.y + (rising ? -6 : 6), b.x >= a.x ? 'left' : 'right', rising);
 
-    drawLineText(ctx, state.style, this.anchorToPixel(state.anchors[0], viewport), this.anchorToPixel(state.anchors[1], viewport));
+    drawLineText(ctx, state.style, this.anchorToPixel(state.anchors[0], viewport), this.anchorToPixel(state.anchors[1], viewport), viewport.chartRect);
     if (selected) this.renderAnchorHandles(ctx, state, viewport);
   }
 

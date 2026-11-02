@@ -13,6 +13,7 @@ import { VerticalLineTool } from '../tools/VerticalLine.js';
 import { RectangleTool } from '../tools/Rectangle.js';
 import { FibRetracementTool } from '../tools/FibRetracement.js';
 import { FibExtensionTool } from '../tools/FibExtension.js';
+import { setDrawingKeepOut } from '../tools/labels.js';
 
 /** `unitViewport`: bar i at x = i·10 + 5, price p at y = 100 − p. */
 const x = (bar: number) => bar * 10 + 5;
@@ -181,5 +182,55 @@ describe('Fibonacci extras', () => {
     };
     expect(colours().size).toBeGreaterThan(2);
     expect([...colours({ oneColor: true })]).toEqual(['#4c8dff']);
+  });
+});
+
+describe('text kept where it reads', () => {
+  it('writes a ray’s and an extended line’s text along what is drawn on the plot', () => {
+    const ray = drawing('ray', [{ time: 10, price: 50 }, { time: 20, price: 50 }], { style: { color: '#fff', lineWidth: 1, lineStyle: 'solid', text: 'R', textAlign: 'right' } });
+    expect(placed(draw(new RayTool(), ray), 'R')!.x).toBeCloseTo(1000);
+    const ext = drawing('extendedLine', [{ time: 10, price: 50 }, { time: 20, price: 50 }], { style: { color: '#fff', lineWidth: 1, lineStyle: 'solid', text: 'E', textAlign: 'left' } });
+    expect(placed(draw(new ExtendedLineTool(), ext), 'E')!.x).toBeCloseTo(0);
+  });
+
+  it('keeps a trend line’s text on screen when its points are off it', () => {
+    const line = drawing('trendLine', [{ time: -50, price: 50 }, { time: 200, price: 50 }], { style: { color: '#fff', lineWidth: 1, lineStyle: 'solid', text: 'T' } });
+    expect(placed(draw(new TrendLineTool(), line), 'T')!.x).toBeCloseTo(500);
+  });
+
+  it('reads bottom to top along a line a hair off upright, either way', () => {
+    for (const dx of [0.2, -0.2]) {
+      const near = drawing('trendLine', [{ time: 10, price: 80 }, { time: 10 + dx / 10, price: 20 }], { style: { color: '#fff', lineWidth: 1, lineStyle: 'solid', text: 'V' } });
+      expect(placed(draw(new TrendLineTool(), near), 'V')!.angle).toBeLessThan(0);
+    }
+  });
+
+  it('moves a horizontal line’s price out of its text’s way', () => {
+    const line = drawing('horizontalLine', [{ time: 10, price: 40 }], { style: { color: '#fff', lineWidth: 1, lineStyle: 'solid', text: 'Support', textAlign: 'left' } });
+    const rec = recordingCtx();
+    setDrawingKeepOut([]);
+    new HorizontalLineTool().render(rec.ctx, line, unitViewport, false);
+    setDrawingKeepOut(null);
+    const price = rec.calls.find((c) => c.name === 'fillText' && c.args[0] !== 'Support')!;
+    // The text sits at the line's start, above it: the price goes elsewhere.
+    expect(!(Number(price.args[1]) < 60 && Number(price.args[2]) <= y(40))).toBe(true);
+  });
+
+  it('starts a vertical line’s text above its time tag', () => {
+    const viewport = { ...unitViewport, chartRect: { x: 0, y: 0, width: 1000, height: 400 }, formatTime: () => '12:00' };
+    const line = drawing('verticalLine', [{ time: 10, price: 50 }], { options: { showTime: true }, style: { color: '#fff', lineWidth: 1, lineStyle: 'solid', text: 'L', textAlign: 'left' } });
+    expect(placed(draw(new VerticalLineTool(), line, viewport), 'L')!.y).toBeLessThan(400 - 18);
+  });
+
+  it('skips a vertical line’s time when the time format fails', () => {
+    const viewport = { ...unitViewport, formatTime: () => { throw new Error('bad'); } };
+    const line = drawing('verticalLine', [{ time: 10, price: 50 }], { options: { showTime: true } });
+    expect(() => draw(new VerticalLineTool(), line, viewport)).not.toThrow();
+  });
+
+  it('gives a small box’s side handle to the side, not the corner', () => {
+    const small = drawing('rectangle', [{ time: 10, price: 52 }, { time: 11, price: 48 }]);
+    // 10 px wide, 4 px tall: the right side's middle is nearer than any corner.
+    expect(new RectangleTool().hitTestAnchor({ x: x(11), y: y(50) }, small, unitViewport, 8)).toBe(7);
   });
 });

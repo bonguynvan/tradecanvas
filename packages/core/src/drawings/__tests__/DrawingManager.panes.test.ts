@@ -236,3 +236,18 @@ describe('drawing on an indicator pane', () => {
     expect(byId(id).paneId).toBe('rsi');
   });
 });
+
+describe('a pane’s drawings and the chart’s time format', () => {
+  it('writes a vertical line’s time on a pane as on the price pane', () => {
+    const seen: (string | undefined)[] = [];
+    manager.register({
+      descriptor: { type: 'spy', name: 'Spy', requiredAnchors: 1 },
+      render: (_ctx, _state, viewport) => { seen.push(viewport.formatTime?.(3)); },
+      hitTest: () => false,
+      hitTestAnchor: () => -1,
+    });
+    manager.setDrawings([drawing('spy' as never, [{ time: 3, price: 50 }], { id: 'p', paneId: 'rsi' })]);
+    manager.render(textCtx().ctx, { ...unitViewport, formatTime: (t) => `t${t}` });
+    expect(seen).toEqual(['t3']);
+  });
+});

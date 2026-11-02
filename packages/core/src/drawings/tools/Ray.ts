@@ -29,7 +29,7 @@ export class RayTool extends DrawingBase {
     ctx.stroke();
     this.resetLineStyle(ctx);
     drawLineStats(ctx, state, viewport, [p1, p2], selected, this.optionsOf(state));
-    drawLineText(ctx, state.style, this.anchorToPixel(state.anchors[0], viewport), this.anchorToPixel(state.anchors[1], viewport));
+    drawLineText(ctx, state.style, p1, { x: endX, y: endY }, chartRect);
     if (selected) this.renderAnchorHandles(ctx, state, viewport);
   }
 

@@ -53,7 +53,17 @@ export class RectangleTool extends DrawingBase {
 
   hitTestAnchor(point: Point, state: DrawingState, viewport: ViewportState, tolerance: number): number {
     if (state.anchors.length < 2) return super.hitTestAnchor(point, state, viewport, tolerance);
-    return this.handlePoints(state, viewport).findIndex((p) => Math.hypot(point.x - p.x, point.y - p.y) <= tolerance);
+    // The nearest in reach: on a small box a side's handle is not hidden behind a corner's.
+    let best = -1;
+    let bestDistance = tolerance;
+    this.handlePoints(state, viewport).forEach((p, i) => {
+      const distance = Math.hypot(point.x - p.x, point.y - p.y);
+      if (distance < bestDistance || (best < 0 && distance <= tolerance)) {
+        best = i;
+        bestDistance = distance;
+      }
+    });
+    return best;
   }
 
   moveHandle(state: DrawingState, index: number, anchor: AnchorPoint): DrawingState {

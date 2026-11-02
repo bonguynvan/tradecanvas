@@ -27,11 +27,12 @@ export class HorizontalRayTool extends DrawingBase {
     this.strokeHorizontal(ctx, anchor.x, chartRect.x + chartRect.width, y);
     this.resetLineStyle(ctx);
 
+    // The text first: the price label keeps clear of it.
+    drawLineText(ctx, state.style, anchor, { x: chartRect.x + chartRect.width, y }, chartRect);
     if (this.option<boolean>(state, 'showPrice')) {
       ctx.fillStyle = state.style.color;
       fillLevelLabel(ctx, formatDrawingPrice(state.anchors[0].price, state.anchors[0].price, viewport), anchor.x, y, chartRect.x + chartRect.width, chartRect.y);
     }
-    drawLineText(ctx, state.style, anchor, { x: chartRect.x + chartRect.width, y });
 
     if (selected) this.renderAnchorHandles(ctx, state, viewport);
   }

@@ -226,7 +226,9 @@ export class DrawingManager {
   /** The viewport a drawing of `paneId` is drawn and read with: `main` for the price pane; null while its pane isn't drawn. */
   private viewportFor(paneId: string | undefined, main: ViewportState): ViewportState | null {
     if (paneId === undefined) return main;
-    return this.panes?.viewportOf(paneId) ?? null;
+    const pane = this.panes?.viewportOf(paneId) ?? null;
+    // A pane writes a bar's time as the chart does.
+    return pane && main.formatTime && !pane.formatTime ? { ...pane, formatTime: main.formatTime } : pane;
   }
 
   /**

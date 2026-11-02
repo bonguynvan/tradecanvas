@@ -32,7 +32,7 @@ export class TrendLineTool extends DrawingBase {
     drawLineEnds(ctx, [p1, p2], state.style.color, option);
     const anchors = [this.anchorToPixel(state.anchors[0], viewport), this.anchorToPixel(state.anchors[1], viewport)] as const;
     drawLineStats(ctx, state, viewport, anchors, selected, option);
-    drawLineText(ctx, state.style, this.anchorToPixel(state.anchors[0], viewport), this.anchorToPixel(state.anchors[1], viewport));
+    drawLineText(ctx, state.style, p1, p2, viewport.chartRect);
     if (selected) this.renderAnchorHandles(ctx, state, viewport);
   }
 

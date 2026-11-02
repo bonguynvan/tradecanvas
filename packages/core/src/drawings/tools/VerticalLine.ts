@@ -23,15 +23,28 @@ export class VerticalLineTool extends DrawingBase {
     this.applyLineStyle(ctx, state.style);
     this.strokeVertical(ctx, p.x, chartRect.y, bottom);
     this.resetLineStyle(ctx);
-    drawLineText(ctx, state.style, { x: p.x, y: bottom }, { x: p.x, y: chartRect.y });
+    const time = this.option<boolean>(state, 'showTime') ? this.timeText(state, viewport) : null;
+    // The text starts above the time's tag, when there is one.
+    const foot = time ? bottom - TIME_LABEL_GAP * 2 - PILL_HEIGHT : bottom;
+    drawLineText(ctx, state.style, { x: p.x, y: foot }, { x: p.x, y: chartRect.y });
     // The bar's time on a tag at the line's foot, as the chart writes it under the crosshair.
-    if (this.option<boolean>(state, 'showTime') && viewport.formatTime) {
-      const text = viewport.formatTime(state.anchors[0].time);
+    if (time) {
       ctx.font = drawingFont(11);
-      const width = ctx.measureText(text).width + 12;
-      drawPill(ctx, text, p.x - width / 2, bottom - TIME_LABEL_GAP - PILL_HEIGHT / 2, state.style.color);
+      const width = ctx.measureText(time).width + 12;
+      drawPill(ctx, time, p.x - width / 2, bottom - TIME_LABEL_GAP - PILL_HEIGHT / 2, state.style.color);
     }
     if (selected) this.renderAnchorHandles(ctx, state, viewport);
+  }
+
+  /** The bar's time as the chart writes it; null without a format, or when a host's formatter fails. */
+  private timeText(state: DrawingState, viewport: ViewportState): string | null {
+    if (!viewport.formatTime) return null;
+    try {
+      return viewport.formatTime(state.anchors[0].time);
+    } catch {
+      // A host's time formatter that throws costs the label, not the whole drawing pass.
+      return null;
+    }
   }
 
   hitTest(point: Point, state: DrawingState, viewport: ViewportState, tolerance: number): boolean {

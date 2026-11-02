@@ -57,7 +57,7 @@ export class TrendAngleTool extends DrawingBase {
     ctx.textBaseline = 'middle';
     fillTextWithHalo(ctx, `${angle.toFixed(1)}°`, a.x + dir * (ARC_RADIUS + 6), a.y + (angle >= 0 ? -8 : 8));
 
-    drawLineText(ctx, state.style, this.anchorToPixel(state.anchors[0], viewport), this.anchorToPixel(state.anchors[1], viewport));
+    drawLineText(ctx, state.style, this.anchorToPixel(state.anchors[0], viewport), this.anchorToPixel(state.anchors[1], viewport), viewport.chartRect);
     if (selected) this.renderAnchorHandles(ctx, state, viewport);
   }
 
