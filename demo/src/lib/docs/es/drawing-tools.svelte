@@ -52,6 +52,27 @@ chart.addDrawing({
   Cuando se quita el indicador dueño del panel y otro del panel lo toma, los dibujos van con el panel. Cuando el panel se va, sus dibujos se ocultan y vuelven con él al deshacer. Un diseño guardado los vuelve a poner en sus paneles.
 </p>
 
+<h2 id="text">Texto</h2>
+<p>
+  Las herramientas de texto (Texto, Nota, Llamada, Etiqueta de precio, Marca de flecha) comparten un estilo de texto: tamaño, negrita, cursiva y un color propio. Un Texto, una Nota y una Llamada además alinean sus líneas a la izquierda, al centro o a la derecha, pueden tener fondo y borde, y ajustan las líneas a un ancho. Un Texto conserva sus saltos de línea y sigue de largo si no se le da un ancho; una Nota y una Llamada ajustan a 240 px.
+</p>
+<pre><code>{`chart.addDrawing({
+  type: 'text',
+  anchors: [{ time: t1, price: 101.2 }],
+  style: {
+    text: 'Breakout\\nretest here',     // se conservan sus saltos de línea
+    fontSize: 14, bold: true, italic: false,
+    textAlign: 'center',              // 'left' | 'center' | 'right'
+    textColor: '#f2a93b',
+    textBackground: true, fillColor: '#1e222d', fillOpacity: 0.8,
+    textBorder: true, borderColor: '#f2a93b',
+    textWrap: 200,                    // px; 0: solo donde el texto salta
+  },
+})`}</code></pre>
+<p>
+  En el widget, un Texto, una Nota o una Llamada piden sus palabras en cuanto se dibujan: su configuración se abre en la pestaña Texto, con el texto seleccionado, y Cancelar deshace el dibujo. Un doble clic abre la misma pestaña. La barra sobre una selección cambia el relleno y el color del texto de las herramientas que los tienen.
+</p>
+
 <h2>Configuración</h2>
 <p>
   Además de su estilo (color, grosor, estilo de línea, relleno, texto), una
@@ -175,7 +196,7 @@ chart.canPasteDrawings()             // si hay algo que pegar`}</code></pre>
 <pre><code>{`chart.setEraserMode(true)          // cada clic sobre un dibujo lo elimina, hasta pulsar Escape
 chart.setZoomAreaMode(true)        // el siguiente arrastre amplía las barras que quedan dentro del recuadro
 chart.setDrawingMagnetMode('strong') // 'off' | 'weak' | 'strong'`}</code></pre>
-<p>El imán débil ajusta un punto a la apertura, el máximo, el mínimo o el cierre de la barra cuando el puntero está cerca de uno de ellos; el imán fuerte lo hace siempre.</p>
+<p>El imán débil ajusta un punto a la apertura, el máximo, el mínimo o el cierre de la barra cuando el puntero está cerca de uno de ellos; el imán fuerte lo hace siempre. En el widget el imán empieza apagado: un dibujo queda donde se pone hasta que el botón del imán lo enciende.</p>
 
 <h2>Teclado</h2>
 <ul>

@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+### Drawings
+
+- **Text on the chart has a style of its own** (`@tradecanvas/commons`, `@tradecanvas/core`, `@tradecanvas/chart`). `DrawingStyle` takes `bold`, `italic`, `textColor`, `textAlign`, `textBackground` (drawn in `fillColor`), `textBorder` (in `borderColor`) and `textWrap` (px; 0 wraps only where the text breaks). How the text tools use them:
+  - The Text tool writes several lines, wraps at a width when given one, and can have a background and a border. It is picked anywhere on its text as drawn; before, only on a guessed 80 px.
+  - A Note and a Callout keep their box and their 240 px width unless their style says otherwise.
+  - A Price Label and an Arrow Mark write in bold, italics and their text colour.
+- **The widget asks for a text's words and starts without the magnet** (`@tradecanvas/chart`).
+  - The Text tab sets bold, italics and the text colour. For a Text, a Note or a Callout it also sets the alignment, background, border and wrap width.
+  - A Text, a Note or a Callout opens its settings on that tab as soon as it is drawn, with the text selected. Cancel there takes the drawing back. A double-click on one opens the same tab.
+  - The toolbar over a selection sets the fill and the text colour of the tools that have them. For a Text, picking a fill turns its background on.
+  - `chart.takeBackDrawing(id)` takes back a drawing just made. It goes with its undo step when that is the history's last, so nothing is left to undo or redo. The `drawingCreate` event says `drawn: true` for a drawing the pointer just made; a drawing added from code, pasted, or brought back by undo has no such flag.
+  - The widget now starts with the drawing magnet off, so a drawing, text included, goes where it is placed until the magnet button turns it on. The crosshair still follows the bars.
+
 ## 1.61.0 (2026-11-02)
 
 React, Vue and Svelte components: 1.3.53.

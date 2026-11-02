@@ -1166,6 +1166,25 @@ export class DrawingManager {
     return removable.length;
   }
 
+  /**
+   * Take back a drawing just made (the prompt for its text cancelled): with
+   * its undo step when that is the last one, so nothing is left to undo or
+   * redo; else removed as a step of its own.
+   */
+  takeBack(id: string): void {
+    const last = this.undoRedo?.last();
+    if (!this.undoRedo || last?.type !== 'drawingCreate' || last.after?.id !== id) {
+      this.removeDrawing(id);
+      return;
+    }
+    this.undoRedo.dropLast();
+    this.drawings = this.drawings.filter((d) => d.id !== id);
+    this.deselect([id]);
+    this.edits.delete(id);
+    this.eventCallback?.('drawingRemove', { id });
+    this.requestRender?.();
+  }
+
   duplicateDrawing(id: string): string | null {
     const drawing = this.drawings.find(d => d.id === id);
     if (!drawing) return null;
@@ -1350,7 +1369,7 @@ export class DrawingManager {
     this.drawings.push(drawing);
     this.selection.only(drawing.id);
     this.record({ type: 'drawingCreate', before: null, after: structuredClone(drawing) });
-    this.eventCallback?.('drawingCreate', { id: drawing.id, type: drawing.type, drawing });
+    this.eventCallback?.('drawingCreate', { id: drawing.id, type: drawing.type, drawing, drawn: true });
     if (this.stayInDrawingMode && this.activeTool) {
       // Ready for the next one; selecting the finished drawing would get in the way.
       this.selection.clear();

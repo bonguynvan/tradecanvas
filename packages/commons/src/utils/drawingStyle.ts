@@ -5,6 +5,11 @@ const MAX_COLOR = 64;
 const MAX_TEXT = 2000;
 const MAX_LINE_WIDTH = 20;
 const MAX_FONT_SIZE = 200;
+/** Widest a text may be set to run before it wraps, px. */
+const MAX_TEXT_WRAP = 4000;
+/** Narrowest a wrap width may be, px: room for a short word. */
+const MIN_TEXT_WRAP = 20;
+const TEXT_ALIGNS: readonly NonNullable<DrawingStyle['textAlign']>[] = ['left', 'center', 'right'];
 
 function finiteIn(value: unknown, min: number, max: number): number | undefined {
   return typeof value === 'number' && Number.isFinite(value) ? Math.min(max, Math.max(min, value)) : undefined;
@@ -36,5 +41,17 @@ export function sanitizeDrawingStyle(raw: unknown): Partial<DrawingStyle> {
   const fontSize = finiteIn(obj.fontSize, 6, MAX_FONT_SIZE);
   if (fontSize !== undefined) out.fontSize = fontSize;
   if (typeof obj.text === 'string') out.text = obj.text.slice(0, MAX_TEXT);
+  for (const key of ['bold', 'italic', 'textBackground', 'textBorder'] as const) {
+    if (typeof obj[key] === 'boolean') out[key] = obj[key] as boolean;
+  }
+  if (TEXT_ALIGNS.includes(obj.textAlign as NonNullable<DrawingStyle['textAlign']>)) out.textAlign = obj.textAlign as DrawingStyle['textAlign'];
+  const textColor = colorValue(obj.textColor);
+  if (textColor !== undefined) out.textColor = textColor;
+  const borderColor = colorValue(obj.borderColor);
+  if (borderColor !== undefined) out.borderColor = borderColor;
+  // 0 wraps only where the text breaks; any other width is kept to what a word fits in and a screen could use.
+  if (typeof obj.textWrap === 'number' && Number.isFinite(obj.textWrap) && obj.textWrap >= 0) {
+    out.textWrap = obj.textWrap === 0 ? 0 : Math.min(MAX_TEXT_WRAP, Math.max(MIN_TEXT_WRAP, obj.textWrap));
+  }
   return out;
 }

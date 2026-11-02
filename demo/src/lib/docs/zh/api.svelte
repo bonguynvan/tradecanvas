@@ -78,6 +78,7 @@
     <tr><td><code>removeIndicator(instanceId)</code></td><td>删除并销毁。</td></tr>
     <tr><td><code>removeIndicators(instanceIds)</code></td><td>删除多个指标，作为一步撤销。</td></tr>
     <tr><td><code>removeAll(what?)</code></td><td>删除所有绘图（<code>'drawings'</code>）、所有指标（<code>'indicators'</code>）或两者（<code>'all'</code>），作为一步撤销；锁定的绘图保留。返回各删除了多少。</td></tr>
+    <tr><td><code>takeBackDrawing(id)</code></td><td>撤回刚画好的绘图，相当于画完后立即按“取消”：若创建它的那一步是最后一步，则连同这一步一起撤回，不留下可撤销或重做的步骤。对于刚用指针画出的绘图，<code>drawingCreate</code> 事件带有 <code>drawn: true</code>。</td></tr>
     <tr><td><code>updateIndicatorStyle(instanceId, style)</code></td><td>颜色、线宽、不透明度，以及每条线的线型和显示与否（<code>plots: {`{ signal: { lineStyle: 'dashed' } }`}</code>）。</td></tr>
     <tr><td><code>setIndicatorDefaults(id, style | null)</code></td><td>从现在起同类指标的初始样式。</td></tr>
     <tr><td><code>setIndicatorIntervals(instanceId, intervals | null)</code> · <code>getIndicatorIntervals(instanceId)</code></td><td>它显示在哪些周期上（<code>{`{ minutes: false, hours: [1, 4] }`}</code>）；<code>null</code> 表示全部周期。随布局一起保存。</td></tr>

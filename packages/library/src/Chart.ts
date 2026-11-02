@@ -2599,6 +2599,17 @@ export class Chart {
   }
 
   /**
+   * Take back a drawing just made, as a "Cancel" right after it: with the
+   * step that made it when that is the history's last, so nothing is left to
+   * undo or redo; else removed as a step of its own.
+   */
+  takeBackDrawing(id: string): void {
+    if (!this.features.drawings) return;
+    this.drawingManager.takeBack(id);
+    this.markStateChanged();
+  }
+
+  /**
    * Remove every drawing (`'drawings'`), every indicator (`'indicators'`) or
    * both (`'all'`, the default) as one undo step. Locked drawings stay, as
    * they do when a selection is removed. Returns how many of each went.

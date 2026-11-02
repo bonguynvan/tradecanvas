@@ -218,6 +218,69 @@ describe('WidgetDrawingSettings: Text, Coordinates and Visibility', () => {
     expect(calls.change).toEqual([{ style: { text: 'Hello' } }, { style: { fontSize: 16 } }]);
   });
 
+  it('sets bold, italics and the text’s colour for any text', () => {
+    dialog.open({ ...fib(), text: true, style: { ...fib().style, text: 'Hi' } });
+    tab('Text').click();
+    expect(rows().map((r) => r.querySelector('.tcw-settings-label')?.textContent)).toEqual(['Text', 'Font size', 'Text color']);
+    labelled<HTMLInputElement>('Bold').click();
+    labelled<HTMLInputElement>('Italic').click();
+    change(labelled<HTMLInputElement>('Text color'), '#00ff00', 'input');
+    expect(calls.change).toEqual([{ style: { bold: true } }, { style: { italic: true } }, { style: { textColor: '#00ff00' } }]);
+  });
+
+  it('lines a text box up, and gives it a background, a border and a wrap width', () => {
+    dialog.open({ ...fib(), type: 'text', text: true, style: { ...fib().style, text: 'Hi' }, textLayout: { box: false, border: false, wrap: 0, fontSize: 14 } });
+    tab('Text').click();
+    // The size the tool draws when it has none of its own; the row's name is said once, not again by its box.
+    expect(labelled<HTMLSelectElement>('Font size').value).toBe('14');
+    expect(row('Background').textContent).toBe('Background');
+    expect(rows().map((r) => r.querySelector('.tcw-settings-label')?.textContent))
+      .toEqual(['Text', 'Font size', 'Text color', 'Align', 'Background', 'Border', 'Wrap']);
+    change(labelled<HTMLSelectElement>('Align'), 'center');
+    labelled<HTMLInputElement>('Background').click();
+    labelled<HTMLInputElement>('Border').click();
+    labelled<HTMLInputElement>('Wrap').click();
+    expect(calls.change).toEqual([
+      { style: { textAlign: 'center' } },
+      { style: { textBackground: true } },
+      { style: { textBorder: true } },
+      { style: { textWrap: 240 } },
+    ]);
+    // The width field follows the switch.
+    change(labelled<HTMLInputElement>('Wrap width'), '300');
+    expect(calls.change.at(-1)).toEqual({ style: { textWrap: 300 } });
+  });
+
+  it('shows a note’s own box and width as on, until its style says otherwise', () => {
+    dialog.open({ ...fib(), type: 'note', text: true, style: { ...fib().style }, textLayout: { box: true, border: true, wrap: 240, fontSize: 13 } });
+    tab('Text').click();
+    expect(labelled<HTMLInputElement>('Background').checked).toBe(true);
+    expect(labelled<HTMLInputElement>('Wrap').checked).toBe(true);
+    expect(labelled<HTMLInputElement>('Wrap width').value).toBe('240');
+    labelled<HTMLInputElement>('Background').click();
+    expect(calls.change).toEqual([{ style: { textBackground: false } }]);
+  });
+
+  it('shows the text colour a tool writes in when it has none of its own (a price label’s white)', () => {
+    dialog.open({ ...fib(), type: 'priceLabel', text: true, style: { ...fib().style }, textColor: '#ffffff' });
+    tab('Text').click();
+    expect(labelled<HTMLInputElement>('Text color').value).toBe('#ffffff');
+  });
+
+  it('lets the wrap width be set only while the text wraps', () => {
+    dialog.open({ ...fib(), type: 'text', text: true, style: { ...fib().style }, textLayout: { box: false, border: false, wrap: 0, fontSize: 14 } });
+    tab('Text').click();
+    expect(labelled<HTMLInputElement>('Wrap width').disabled).toBe(true);
+    labelled<HTMLInputElement>('Wrap').click();
+    expect(labelled<HTMLInputElement>('Wrap width').disabled).toBe(false);
+  });
+
+  it('opens on the Text tab when asked, the text ready to type over', () => {
+    dialog.open({ ...fib(), type: 'text', text: true, style: { ...fib().style, text: 'Text' }, textLayout: { box: false, border: false, wrap: 0, fontSize: 14 } }, { tab: 'text' });
+    expect(tab('Text').getAttribute('aria-selected')).toBe('true');
+    expect(document.activeElement).toBe(row('Text').querySelector('textarea'));
+  });
+
   it('shows anchor prices on the market’s grid, and puts an edited one on it', () => {
     const changes: unknown[] = [];
     const grid = new WidgetDrawingSettings(host, {

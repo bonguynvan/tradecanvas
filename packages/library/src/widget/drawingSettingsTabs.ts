@@ -5,7 +5,9 @@ import { checkRow, colorAlpha, colorInput, numberInput, selectInput, settingsRow
 
 const LINE_WIDTHS = [1, 2, 3, 4];
 const LINE_STYLES: DrawingStyle['lineStyle'][] = ['solid', 'dashed', 'dotted'];
-const FONT_SIZES = [10, 11, 12, 14, 16, 18, 20, 24, 28, 32];
+const FONT_SIZES = [10, 11, 12, 13, 14, 16, 18, 20, 24, 28, 32];
+/** The size a text tool without a layout of its own draws at (a price label, an arrow's label). */
+const DEFAULT_FONT_SIZE = 12;
 /** Most levels the editor offers to add, like the chart keeps. */
 const MAX_LEVELS = 48;
 /** A new level sits this far past the last one. */
@@ -249,8 +251,73 @@ function levelsEditor(
   return wrap;
 }
 
-/** The Text tab: what the drawing writes, and how large. */
-export function renderTextTab(body: HTMLElement, style: DrawingStyle, onStyle: (patch: Partial<DrawingStyle>) => void, t: Translator): void {
+/**
+ * How a tool lays its text out in a box (a text, a note, a callout): whether
+ * it draws a background and a border unless the style says, and where it
+ * wraps (0: only where the text breaks). Tools without one (a price label)
+ * get the font rows only.
+ */
+export interface TextLayout {
+  box: boolean;
+  border: boolean;
+  wrap: number;
+  /** The size it draws at without one of its own. */
+  fontSize: number;
+}
+
+/** The tools that write in a box, and how: a text has no box and runs on; a note and a callout have one and wrap at 240 px. */
+export const TEXT_LAYOUTS: Readonly<Partial<Record<string, TextLayout>>> = {
+  text: { box: false, border: false, wrap: 0, fontSize: 14 },
+  note: { box: true, border: true, wrap: 240, fontSize: 13 },
+  callout: { box: true, border: true, wrap: 240, fontSize: 13 },
+};
+
+/** The colour a tool writes in without one of its own, when it isn't its line's (a price label writes white on its box). */
+export const TEXT_COLORS: Readonly<Partial<Record<string, string>>> = {
+  priceLabel: '#ffffff',
+};
+
+/** The width a text wraps at when wrapping is turned on and it has none of its own. */
+const DEFAULT_WRAP = 240;
+const MIN_WRAP = 40;
+const MAX_WRAP = 4000;
+const WRAP_STEP = 10;
+const ALIGNS = ['left', 'center', 'right'] as const;
+
+/**
+ * A box ticked or not inside a row of controls, its name written after it
+ * unless the row already says it (`said`): a screen reader hears it either way.
+ */
+function inlineCheck(label: string, value: boolean, onChange: (value: boolean) => void, said = false): HTMLLabelElement {
+  const wrap = document.createElement('label');
+  wrap.className = 'tcw-inline-check';
+  const box = document.createElement('input');
+  box.type = 'checkbox';
+  box.checked = value;
+  box.setAttribute('aria-label', label);
+  box.addEventListener('change', () => onChange(box.checked));
+  wrap.append(box);
+  if (!said) {
+    const text = document.createElement('span');
+    text.textContent = label;
+    wrap.append(text);
+  }
+  return wrap;
+}
+
+/**
+ * The Text tab: what the drawing writes, its size, bold and italics, and its
+ * colour; for a text box (`layout`), its alignment, background, border and
+ * the width it wraps at.
+ */
+export function renderTextTab(
+  body: HTMLElement,
+  style: DrawingStyle,
+  onStyle: (patch: Partial<DrawingStyle>) => void,
+  t: Translator,
+  layout?: TextLayout,
+  textColor?: string,
+): void {
   const block = section();
   const text = document.createElement('textarea');
   text.className = 'tcw-indi-input tcw-drawing-text';
@@ -260,12 +327,66 @@ export function renderTextTab(body: HTMLElement, style: DrawingStyle, onStyle: (
   const textRow = settingsRow(t('drawingSettings.text'), text);
   textRow.classList.add('tcw-text-row');
   block.appendChild(textRow);
-  block.appendChild(settingsRow(t('drawingSettings.fontSize'), selectInput(
+  const size = named(selectInput(
     FONT_SIZES.map((s) => ({ value: String(s), label: `${s} px` })),
-    String(style.fontSize ?? 12),
+    String(style.fontSize ?? layout?.fontSize ?? DEFAULT_FONT_SIZE),
     (v) => onStyle({ fontSize: Number(v) }),
+  ), t('drawingSettings.fontSize'));
+  block.appendChild(controlsRow(
+    t('drawingSettings.fontSize'),
+    size,
+    inlineCheck(t('drawingSettings.bold'), style.bold === true, (on) => onStyle({ bold: on })),
+    inlineCheck(t('drawingSettings.italic'), style.italic === true, (on) => onStyle({ italic: on })),
+  ));
+  block.appendChild(controlsRow(t('drawingSettings.textColor'), named(
+    colorInput(style.textColor ?? textColor ?? style.color, (v) => onStyle({ textColor: v })),
+    t('drawingSettings.textColor'),
   )));
   body.appendChild(block);
+  if (layout) body.appendChild(textBoxSection(style, onStyle, t, layout));
+}
+
+/** A text box's rows: alignment, background, border, and the width it wraps at. */
+function textBoxSection(style: DrawingStyle, onStyle: (patch: Partial<DrawingStyle>) => void, t: Translator, layout: TextLayout): HTMLElement {
+  const box = section();
+  box.appendChild(controlsRow(t('drawingSettings.align'), named(selectInput(
+    ALIGNS.map((a) => ({ value: a, label: t(`drawingSettings.align.${a}`) })),
+    style.textAlign ?? 'left',
+    (v) => onStyle({ textAlign: v as DrawingStyle['textAlign'] }),
+  ), t('drawingSettings.align'))));
+
+  const background = style.fillColor ?? withAlpha(style.color, DEFAULT_FILL_ALPHA);
+  box.appendChild(controlsRow(
+    t('drawingSettings.background'),
+    inlineCheck(t('drawingSettings.background'), style.textBackground ?? layout.box, (on) => onStyle({ textBackground: on }), true),
+    named(colorInput(background, (v) => onStyle({ fillColor: withAlpha(v, colorAlpha(background)) })), t('drawingSettings.backgroundColor')),
+  ));
+  box.appendChild(controlsRow(
+    t('drawingSettings.border'),
+    inlineCheck(t('drawingSettings.border'), style.textBorder ?? layout.border, (on) => onStyle({ textBorder: on }), true),
+    named(colorInput(style.borderColor ?? style.color, (v) => onStyle({ borderColor: v })), t('drawingSettings.borderColor')),
+  ));
+
+  // The width shows what wrapping on would use: the text's own, else the tool's, else a default.
+  const own = style.textWrap ?? layout.wrap;
+  let width = own > 0 ? own : layout.wrap > 0 ? layout.wrap : DEFAULT_WRAP;
+  let wrapping = own > 0;
+  const widthInput = named(numberInput(width, { min: MIN_WRAP, max: MAX_WRAP, step: WRAP_STEP }, (v) => {
+    width = v;
+    if (wrapping) onStyle({ textWrap: v });
+  }), t('drawingSettings.wrapWidth'));
+  // A width means something only while the text wraps.
+  widthInput.disabled = !wrapping;
+  box.appendChild(controlsRow(
+    t('drawingSettings.wrap'),
+    inlineCheck(t('drawingSettings.wrap'), wrapping, (on) => {
+      wrapping = on;
+      widthInput.disabled = !on;
+      onStyle({ textWrap: on ? width : 0 });
+    }, true),
+    widthInput,
+  ));
+  return box;
 }
 
 /** What the Coordinates tab reads and changes. */

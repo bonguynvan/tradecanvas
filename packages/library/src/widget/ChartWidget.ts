@@ -44,6 +44,7 @@ import { WidgetSelectionToolbar } from './WidgetSelectionToolbar.js';
 import { DrawingDefaultsStore, DrawingTemplateStore } from './DrawingTemplateStore.js';
 import { WidgetDrawingSettings, type DrawingTemplateLook } from './WidgetDrawingSettings.js';
 import { WidgetContextMenu, type ContextMenuEntry } from './WidgetContextMenu.js';
+import { TEXT_COLORS, TEXT_LAYOUTS } from './drawingSettingsTabs.js';
 import { drawingMenuEntries, type DrawingMenuAction } from './drawingMenu.js';
 import { CHART_MENU_KEYS, TIMEZONE_ENTRY, chartMenuEntries, priceEntries, scaleModeOf, type ChartMenuAction, type ChartMenuContext } from './chartMenu.js';
 import { WidgetAccountPanel } from './WidgetAccountPanel.js';
@@ -108,6 +109,9 @@ import {
   type WidgetFeatureState,
   type WidgetFeatures,
 } from './widgetFeatures.js';
+
+/** How long a just-drawn text waits for its press to end before asking for its words anyway. */
+const TEXT_PROMPT_FALLBACK_MS = 600;
 
 /**
  * A local timeframe switch (resampling static data) that took at least this
@@ -291,6 +295,10 @@ export class ChartWidget {
   private drawingStyle: WidgetDrawingStyle | null = null;
   private drawingSettings: WidgetDrawingSettings | null = null;
   private drawingMenu: WidgetContextMenu | null = null;
+  /** A text drawn just now whose words the settings ask for: Cancel there takes it back. */
+  private justDrawnText: string | null = null;
+  /** Stops waiting to ask for a just-drawn text's words (the widget goes, or another text is drawn first). */
+  private cancelTextPrompt: (() => void) | null = null;
   /** The trash button's menu, made the first time it opens. */
   private clearMenu: WidgetContextMenu | null = null;
   private selectionToolbar: WidgetSelectionToolbar | null = null;
@@ -610,7 +618,8 @@ export class ChartWidget {
       isDark,
       activeIndicators: new Map(),
       activeTool: null,
-      magnetEnabled: features.drawingMagnet !== false,
+      // Off until the user turns it on: a drawing goes where it is placed.
+      magnetEnabled: false,
       magnetStrong: false,
       eraser: false,
       zoomArea: false,
@@ -872,6 +881,10 @@ export class ChartWidget {
       },
     });
     if (this.featureState.dragDropImport) this.dragDrop.attach();
+
+    // The crosshair snaps to the bars, but a drawing goes where it is placed
+    // until the magnet button is turned on.
+    if (features.drawingMagnet !== false) this.chart.setDrawingMagnetMode('off');
 
     // 6. Create status bar
     this.statusBar = new WidgetStatusBar(this.root, {
@@ -1145,6 +1158,9 @@ export class ChartWidget {
       onChange: (id, patch) => this.chart.updateDrawing(id, patch),
       onEnd: (id, cancel) => {
         this.chart.endDrawingEdit(id, { cancel });
+        // Cancel on the words of a text just drawn takes the text back.
+        if (cancel && id === this.justDrawnText) this.chart.takeBackDrawing(id);
+        this.justDrawnText = null;
         this.refreshObjects();
       },
       toWallTime: (time) => utcToWallTime(time * barTimeUnit(this.chart.getData()), this.displayTimezone()),
@@ -1165,7 +1181,38 @@ export class ChartWidget {
         remove: (name, type) => templates.remove(name, type),
       },
     }, this.t);
-    this.chart.on('drawingDoubleClick', (e) => this.openDrawingSettings((e.payload as { id: string }).id));
+    this.chart.on('drawingDoubleClick', (e) => {
+      const id = (e.payload as { id: string }).id;
+      // A text's words are what a double-click on it is for.
+      const type = this.chart.getDrawings().find((d) => d.id === id)?.type;
+      this.openDrawingSettings(id, type && TEXT_LAYOUTS[type] ? { tab: 'text' } : {});
+    });
+    // A text, a note or a callout just drawn asks for its words (not one added from code).
+    this.chart.on('drawingCreate', (e) => {
+      const { id, type, drawn } = e.payload as { id: string; type: string; drawn?: boolean };
+      if (!drawn || !TEXT_LAYOUTS[type]) return;
+      // The press that drew it is still down: opened now, the chart would take the
+      // keyboard back when it ends. So once it ends, or soon after if it never does.
+      this.cancelTextPrompt?.();
+      let fallback = 0;
+      const stop = () => {
+        window.removeEventListener('pointerup', afterPress);
+        window.removeEventListener('pointercancel', afterPress);
+        clearTimeout(fallback);
+        this.cancelTextPrompt = null;
+      };
+      const open = () => {
+        stop();
+        if (this.destroyed || !this.chart.getDrawings().some((d) => d.id === id)) return;
+        this.openDrawingSettings(id, { tab: 'text' });
+        if (this.drawingSettings?.isOpen()) this.justDrawnText = id;
+      };
+      const afterPress = () => setTimeout(open, 0);
+      window.addEventListener('pointerup', afterPress);
+      window.addEventListener('pointercancel', afterPress);
+      fallback = window.setTimeout(open, TEXT_PROMPT_FALLBACK_MS);
+      this.cancelTextPrompt = stop;
+    });
     this.drawingStyle = new WidgetDrawingStyle(
       this.root,
       {
@@ -1189,7 +1236,13 @@ export class ChartWidget {
     // A click on a drawing: its toolbar right over it, no right-click needed.
     this.selectionToolbar = new WidgetSelectionToolbar(this.root, {
       onStyle: (patch) => {
-        for (const id of this.chart.getSelectedDrawingIds()) this.chart.setSelectedDrawingStyle(patch, id);
+        for (const id of this.chart.getSelectedDrawingIds()) {
+          // A text without a box shows a fill only once its background is on: picking one turns it on.
+          const type = this.chart.getDrawings().find((d) => d.id === id)?.type;
+          const layout = type ? TEXT_LAYOUTS[type] : undefined;
+          const own = patch.fillColor !== undefined && layout && !layout.box ? { ...patch, textBackground: true } : patch;
+          this.chart.setSelectedDrawingStyle(own, id);
+        }
         this.updateSelectionToolbar();
       },
       onSettings: () => {
@@ -2122,6 +2175,7 @@ export class ChartWidget {
     this.drawingSettings?.destroy();
     this.drawingMenu?.destroy();
     this.clearMenu?.destroy();
+    this.cancelTextPrompt?.();
     this.selectionToolbar?.destroy();
     if (this.selectionToolbarFrame !== null) cancelAnimationFrame(this.selectionToolbarFrame);
     this.chartMenu?.destroy();
@@ -2340,11 +2394,13 @@ export class ChartWidget {
       canDelete: drawings.some((d) => !d.locked),
       canSettings: this.drawingSettings !== null && this.featureState.drawingSettings && drawings.length === 1,
       canAlert: this.featureState.alerts && drawings.length === 1 && this.chart.canAddDrawingAlert(primary.id),
+      canFill: this.chart.getDrawingToolDescriptor(primary.type)?.fill === true,
+      canText: this.chart.getDrawingToolDescriptor(primary.type)?.text === true,
     });
   }
 
   /** Open a drawing's settings (double-click on it, or the object tree's settings button). */
-  private openDrawingSettings(id: string): void {
+  private openDrawingSettings(id: string, how: { tab?: 'text' } = {}): void {
     const drawing = this.chart.getDrawings().find((d) => d.id === id);
     const descriptor = drawing ? this.chart.getDrawingToolDescriptor(drawing.type) : null;
     if (!drawing || !descriptor || !this.drawingSettings || !this.featureState.drawingSettings) return;
@@ -2358,8 +2414,10 @@ export class ChartWidget {
       anchors: drawing.anchors.map((a) => ({ ...a })),
       fill: descriptor.fill === true,
       text: descriptor.text === true,
+      textLayout: TEXT_LAYOUTS[drawing.type],
+      textColor: TEXT_COLORS[drawing.type],
       intervals: drawing.intervals ?? null,
-    });
+    }, how);
   }
 
   /** Save a drawing's look as a template of its tool, asking for its name over the drawing's settings. */

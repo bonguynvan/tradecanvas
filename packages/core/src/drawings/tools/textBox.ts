@@ -1,3 +1,4 @@
+import type { DrawingStyle } from '@tradecanvas/commons';
 import { drawingFontFamily } from './labels.js';
 
 /** A box of wrapped text on the chart (a note, a callout), and its size. */
@@ -17,25 +18,57 @@ export interface TextBoxLook {
   fill?: string;
   /** Box border; none when left out. */
   stroke?: string;
-  /** Widest a line gets before it wraps (px). */
+  /** Widest a line gets before it wraps (px); `Infinity`: only where the text breaks. */
   maxWidth: number;
+  bold?: boolean;
+  italic?: boolean;
+  /** Where each line lines up in the box. */
+  align?: 'left' | 'center' | 'right';
+  /** Most lines drawn (12 when left out): a note keeps short, a text says what it has to. */
+  maxLines?: number;
 }
 
-const PAD_X = 8;
-const PAD_Y = 6;
+/**
+ * The look of a drawing's text from its style (`DrawingStyle`'s text
+ * fields), over the tool's own defaults: `box` and `border` say whether
+ * the tool draws them unless the style says, `width` where it wraps.
+ */
+export function textLook(
+  style: DrawingStyle,
+  defaults: { fontSize: number; box: boolean; border: boolean; width: number; fill?: string },
+): TextBoxLook {
+  const box = style.textBackground ?? defaults.box;
+  const border = style.textBorder ?? defaults.border;
+  // The fill as kept, its alpha included, as a note's always was.
+  const fill = style.fillColor ?? defaults.fill;
+  return {
+    fontSize: style.fontSize || defaults.fontSize,
+    color: style.textColor ?? style.color,
+    fill: box && fill ? fill : undefined,
+    stroke: border ? style.borderColor ?? style.color : undefined,
+    maxWidth: style.textWrap === undefined ? defaults.width : style.textWrap > 0 ? style.textWrap : Infinity,
+    bold: style.bold,
+    italic: style.italic,
+    align: style.textAlign,
+  };
+}
+
+
+export const PAD_X = 8;
+export const PAD_Y = 6;
 const LINE_GAP = 1.3;
 /** Most lines shown; the rest is cut with an ellipsis. */
 const MAX_LINES = 12;
 
-export function boxFont(fontSize: number): string {
-  return `${fontSize}px ${drawingFontFamily()}`;
+export function boxFont(fontSize: number, bold = false, italic = false): string {
+  return `${italic ? 'italic ' : ''}${bold ? 'bold ' : ''}${fontSize}px ${drawingFontFamily()}`;
 }
 
 /**
  * `text` in lines no wider than `maxWidth`: its own line breaks kept, words
  * wrapped, a word longer than a line cut. At most `MAX_LINES` lines.
  */
-export function wrapText(measure: (text: string) => number, text: string, maxWidth: number): string[] {
+export function wrapText(measure: (text: string) => number, text: string, maxWidth: number, maxLines = MAX_LINES): string[] {
   const lines: string[] = [];
   for (const paragraph of text.split('\n')) {
     let line = '';
@@ -49,9 +82,9 @@ export function wrapText(measure: (text: string) => number, text: string, maxWid
       line = measure(word) <= maxWidth ? word : cutToWidth(measure, word, maxWidth);
     }
     lines.push(line);
-    if (lines.length >= MAX_LINES) break;
+    if (lines.length >= maxLines) break;
   }
-  if (lines.length > MAX_LINES) lines.length = MAX_LINES;
+  if (lines.length > maxLines) lines.length = maxLines;
   return lines;
 }
 
@@ -72,13 +105,13 @@ function cutToWidth(measure: (text: string) => number, word: string, maxWidth: n
 const MAX_WRAPPED = 200;
 const wrapped = new Map<string, string[]>();
 
-/** `wrapText`, remembered by text, font size and width. */
-function wrapCached(measure: (text: string) => number, text: string, maxWidth: number, fontSize: number): string[] {
-  const key = `${fontSize}|${maxWidth}|${text}`;
+/** `wrapText`, remembered by text, font and width. */
+function wrapCached(measure: (text: string) => number, text: string, maxWidth: number, font: string, maxLines: number): string[] {
+  const key = `${font}|${maxWidth}|${maxLines}|${text}`;
   const hit = wrapped.get(key);
   if (hit) return hit;
   if (wrapped.size >= MAX_WRAPPED) wrapped.clear();
-  const lines = wrapText(measure, text, maxWidth);
+  const lines = wrapText(measure, text, maxWidth, maxLines);
   wrapped.set(key, lines);
   return lines;
 }
@@ -92,9 +125,10 @@ export function textBoxRect(measure: (text: string) => number, lines: readonly s
 
 /** Draw wrapped text in a box with its top-left at (x, y). Returns the box. */
 export function drawTextBox(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, look: TextBoxLook): Rect {
-  ctx.font = boxFont(look.fontSize);
+  const font = boxFont(look.fontSize, look.bold, look.italic);
+  ctx.font = font;
   const measure = (t: string) => ctx.measureText(t).width;
-  const lines = wrapCached(measure, text, look.maxWidth, look.fontSize);
+  const lines = wrapCached(measure, text, look.maxWidth, font, look.maxLines ?? MAX_LINES);
   const rect = textBoxRect(measure, lines, x, y, look.fontSize);
   if (look.fill) {
     ctx.fillStyle = look.fill;
@@ -108,7 +142,12 @@ export function drawTextBox(ctx: CanvasRenderingContext2D, text: string, x: numb
   ctx.fillStyle = look.color;
   ctx.textAlign = 'left';
   ctx.textBaseline = 'top';
-  lines.forEach((line, i) => ctx.fillText(line, x + PAD_X, y + PAD_Y + i * look.fontSize * LINE_GAP));
+  const inner = rect.width - PAD_X * 2;
+  lines.forEach((line, i) => {
+    const room = inner - measure(line);
+    const shift = look.align === 'center' ? room / 2 : look.align === 'right' ? room : 0;
+    ctx.fillText(line, x + PAD_X + shift, y + PAD_Y + i * look.fontSize * LINE_GAP);
+  });
   return rect;
 }
 

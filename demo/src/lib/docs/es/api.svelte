@@ -78,6 +78,7 @@
     <tr><td><code>removeIndicator(instanceId)</code></td><td>Lo quita y libera sus recursos.</td></tr>
     <tr><td><code>removeIndicators(instanceIds)</code></td><td>Quita varios, en un solo paso de deshacer.</td></tr>
     <tr><td><code>removeAll(what?)</code></td><td>Quita todos los dibujos (<code>'drawings'</code>), todos los indicadores (<code>'indicators'</code>) o ambos (<code>'all'</code>), en un solo paso de deshacer; los dibujos bloqueados se quedan. Devuelve cuántos se quitaron de cada uno.</td></tr>
+    <tr><td><code>takeBackDrawing(id)</code></td><td>Retira un dibujo recién hecho, como un Cancelar justo después: junto con el paso que lo hizo cuando es el último, así no queda nada que deshacer ni rehacer. El evento <code>drawingCreate</code> trae <code>drawn: true</code> para un dibujo que el puntero acaba de hacer.</td></tr>
     <tr><td><code>updateIndicatorStyle(instanceId, style)</code></td><td>Colores, grosores, opacidad, y el trazo y la visibilidad de cada plot (<code>plots: {`{ signal: { lineStyle: 'dashed' } }`}</code>).</td></tr>
     <tr><td><code>setIndicatorDefaults(id, style | null)</code></td><td>Con qué estilo empiezan desde ahora los indicadores de un tipo.</td></tr>
     <tr><td><code>setIndicatorIntervals(instanceId, intervals | null)</code> · <code>getIndicatorIntervals(instanceId)</code></td><td>Las temporalidades en las que se muestra (<code>{`{ minutes: false, hours: [1, 4] }`}</code>); <code>null</code>: todas. Se guarda con el diseño.</td></tr>

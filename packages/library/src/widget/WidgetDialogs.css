@@ -398,6 +398,15 @@
   flex: none;
 }
 
+/* A box ticked beside other controls in a row (bold, italics, a text box's background). */
+.tcw-inline-check {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--tcw-space-2);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
 .tcw-indi-plot-controls .tcw-indi-select {
   width: 104px;
 }
