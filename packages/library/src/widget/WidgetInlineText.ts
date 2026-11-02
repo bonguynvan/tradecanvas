@@ -46,6 +46,8 @@ const IME_KEY_CODE = 229;
 const OPEN_GRACE_MS = 500;
 /** How far the box keeps from the window's edges (px). */
 const EDGE = 8;
+/** How long a text stays off the window (ms) before its box closes, keeping the words. */
+const OFF_WINDOW_MS = 400;
 
 export class WidgetInlineText {
   private wrap: HTMLDivElement | null = null;
@@ -54,6 +56,8 @@ export class WidgetInlineText {
   private frame = 0;
   private done = true;
   private openedAt = 0;
+  /** When the text went off the window, or 0 while it is on it. */
+  private offSince = 0;
   /**
    * A press anywhere but the box keeps the words first: before the chart
    * takes the press (a pan, a point placed, another drawing picked).
@@ -134,6 +138,7 @@ export class WidgetInlineText {
     area.focus();
     area.select();
     this.openedAt = performance.now();
+    this.offSince = 0;
     document.addEventListener('pointerdown', this.onPressAway, true);
     document.addEventListener('mousedown', this.onPressAway, true);
     this.follow();
@@ -211,7 +216,11 @@ export class WidgetInlineText {
     this.frame = requestAnimationFrame(() => {
       if (!this.target || this.done) return;
       const rect = this.target.rect();
-      if (!rect || this.offWindow(rect)) {
+      // Off the window for a moment (the window being resized) is not out of sight.
+      const off = rect !== null && this.offWindow(rect);
+      if (!off) this.offSince = 0;
+      else if (this.offSince === 0) this.offSince = performance.now();
+      if (!rect || (off && performance.now() - this.offSince > OFF_WINDOW_MS)) {
         // The text went out of sight (hidden, scrolled away, its pane gone): what was typed is kept.
         this.finish(true, false);
         return;

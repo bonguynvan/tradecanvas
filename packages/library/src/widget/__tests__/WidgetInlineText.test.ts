@@ -185,13 +185,18 @@ describe('WidgetInlineText at the edges of real use', () => {
     width.mockRestore();
   });
 
-  it('keeps what was typed and closes once the text is scrolled off the window', () => {
+  it('keeps what was typed and closes once the text stays off the window', () => {
     let frame: FrameRequestCallback | null = null;
     vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => { frame = cb; return 1; });
     let x = 100;
     editor.open(target({ rect: () => ({ x, y: 50, width: 60, height: 28 }) }));
     area()!.value = 'Off';
+    const now = vi.spyOn(performance, 'now').mockReturnValue(1000);
     x = -5000;
+    frame!(0);
+    // A moment off the window (it is being resized): the box stays.
+    expect(calls.commit).toEqual([]);
+    now.mockReturnValue(1500);
     frame!(0);
     expect(calls.commit).toEqual(['Off']);
   });
