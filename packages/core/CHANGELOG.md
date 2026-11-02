@@ -1,5 +1,21 @@
 # @tradecanvas/core
 
+## 1.61.0
+
+### Minor Changes
+
+- e180585: The widget's trash button opens a menu: remove the drawings, the indicators, or both, each with how many there are, in one undo step. `chart.removeAll(what)` does the same from code (`'drawings'`, `'indicators'` or `'all'`) and returns how many of each went; locked drawings stay. The trash button used to remove every drawing, locked ones too, with no way back.
+
+  A drawing tool of your own now types: `DrawingToolType` takes the name a plugin registered (`setDrawingTool('targetLine')`, `addDrawing({ type: 'targetLine', … })`) and still completes the built-in ones, which `BuiltInDrawingToolType` lists. A misspelt built-in name now compiles too; type a value as `BuiltInDrawingToolType` where you want that caught. `UndoRedoManager.group(fn)` keeps every step `fn` records as one. The MCP server still lists the built-in tools for `drawingFavorites`, and `validate_options` notes a name that looks like a mistyped built-in one instead of rejecting a plugin's.
+
+- 45e18a3: Drawings go on indicator panes. A drawing begun on an RSI or MACD pane is made there, on the pane's scale: its anchors' prices are the pane's values, the magnet snaps to the pane's lines, and it moves, scales and is clipped with the pane. `DrawingState.paneId` names the pane (an id from `getIndicatorPanes()`; unset is the price pane, so saved layouts are unchanged), and `addDrawing({ …, paneId })` puts one there from code. When another indicator takes a pane over, its drawings follow, through undo and redo too; when a pane goes, its drawings are hidden until undo brings it back; a loaded layout puts them back on their panes and drops those whose pane it doesn't have. Side and folded panes take none, the tools that read the bars' prices (`priceOnly` in a tool's descriptor: Anchored VWAP, Volume Profile, Long/Short Position) stay on the price pane, and a pane's drawing takes no price alert. `IndicatorEngine.getPaneValuesAt(pane, bar)` gives the values a pane draws at a bar.
+
+### Patch Changes
+
+- Updated dependencies [e180585]
+- Updated dependencies [45e18a3]
+  - @tradecanvas/commons@1.61.0
+
 ## 1.60.0
 
 ### Patch Changes
