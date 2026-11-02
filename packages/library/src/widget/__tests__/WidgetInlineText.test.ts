@@ -126,7 +126,9 @@ describe('WidgetInlineText in real use', () => {
   });
 
   it('keeps the words as a press lands anywhere else, before what is under it hears it', () => {
+    const now = vi.spyOn(performance, 'now').mockReturnValue(1000);
     editor.open(target());
+    now.mockReturnValue(2000);
     area()!.value = 'Kept first';
     const order: string[] = [];
     const other = document.createElement('div');
@@ -156,5 +158,41 @@ describe('WidgetInlineText in real use', () => {
     frame!(0);
     expect(calls.commit).toEqual(['Typed']);
     expect(area()).toBeNull();
+  });
+});
+
+describe('WidgetInlineText at the edges of real use', () => {
+  it('lets the second press of a clumsy double-click by, the box staying open', () => {
+    const now = vi.spyOn(performance, 'now').mockReturnValue(1000);
+    editor.open(target());
+    const chart = vi.fn();
+    host.addEventListener('pointerdown', chart);
+    now.mockReturnValue(1200);
+    const press = new MouseEvent('pointerdown', { bubbles: true, cancelable: true });
+    host.dispatchEvent(press);
+    expect(press.defaultPrevented).toBe(true);
+    expect(chart).not.toHaveBeenCalled();
+    expect(area()).not.toBeNull();
+    expect(calls.commit).toEqual([]);
+  });
+
+  it('stays inside the window by its right edge, and wraps a long line', () => {
+    vi.stubGlobal('innerWidth', 390);
+    const width = vi.spyOn(HTMLElement.prototype, 'offsetWidth', 'get').mockReturnValue(138);
+    editor.open(target({ rect: () => ({ x: 350, y: 50, width: 60, height: 28 }) }));
+    expect(parseFloat(area()!.style.left)).toBe(390 - 8 - 138);
+    expect(area()!.style.maxWidth).toBe(`${390 - 16}px`);
+    width.mockRestore();
+  });
+
+  it('keeps what was typed and closes once the text is scrolled off the window', () => {
+    let frame: FrameRequestCallback | null = null;
+    vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => { frame = cb; return 1; });
+    let x = 100;
+    editor.open(target({ rect: () => ({ x, y: 50, width: 60, height: 28 }) }));
+    area()!.value = 'Off';
+    x = -5000;
+    frame!(0);
+    expect(calls.commit).toEqual(['Off']);
   });
 });

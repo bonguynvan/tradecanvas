@@ -38,6 +38,14 @@ const LINE_GAP = 1.3;
 const MIN_WIDTH = 120;
 /** The key code a browser gives a key that ends an IME composition (Safari's Enter on a candidate). */
 const IME_KEY_CODE = 229;
+/**
+ * How long after the box opens a press elsewhere is taken as the rest of a
+ * clumsy double-click (ms), not as a click away: it is let go of, and the
+ * box stays open.
+ */
+const OPEN_GRACE_MS = 500;
+/** How far the box keeps from the window's edges (px). */
+const EDGE = 8;
 
 export class WidgetInlineText {
   private wrap: HTMLDivElement | null = null;
@@ -45,12 +53,20 @@ export class WidgetInlineText {
   private target: InlineTextTarget | null = null;
   private frame = 0;
   private done = true;
+  private openedAt = 0;
   /**
    * A press anywhere but the box keeps the words first: before the chart
    * takes the press (a pan, a point placed, another drawing picked).
    */
   private readonly onPressAway = (e: Event) => {
-    if (this.area && e.target !== this.area) this.finish(true, false);
+    if (!this.area || e.target === this.area) return;
+    if (performance.now() - this.openedAt < OPEN_GRACE_MS) {
+      // The second press of the double-click that drew the text: the box keeps the focus.
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
+    this.finish(true, false);
   };
 
   constructor(private readonly layer: () => HTMLElement) {}
@@ -91,6 +107,8 @@ export class WidgetInlineText {
     area.addEventListener('input', () => {
       this.fit();
       this.target?.onInput(area.value);
+      const rect = this.target?.rect();
+      if (rect) this.place(rect);
     });
     area.addEventListener('keydown', (e) => {
       // The chart's and the page's shortcuts stay out of the typing.
@@ -114,7 +132,9 @@ export class WidgetInlineText {
     this.fit();
     area.focus();
     area.select();
+    this.openedAt = performance.now();
     document.addEventListener('pointerdown', this.onPressAway, true);
+    document.addEventListener('mousedown', this.onPressAway, true);
     this.follow();
     return true;
   }
@@ -144,6 +164,7 @@ export class WidgetInlineText {
 
   private teardown(): void {
     document.removeEventListener('pointerdown', this.onPressAway, true);
+    document.removeEventListener('mousedown', this.onPressAway, true);
     cancelAnimationFrame(this.frame);
     this.frame = 0;
     this.wrap?.remove();
@@ -152,13 +173,27 @@ export class WidgetInlineText {
     this.target = null;
   }
 
-  /** Over the text's box, as wide as it at least. */
+  /**
+   * Over the text's box, as wide as it at least, and inside the window: a
+   * text by the right edge or a long line shifts the box in and wraps it, so
+   * what is typed stays in sight.
+   */
   private place(rect: InlineTextRect): void {
-    if (!this.area) return;
-    this.area.style.left = `${rect.x}px`;
-    this.area.style.top = `${rect.y}px`;
-    this.area.style.minWidth = `${Math.max(MIN_WIDTH, rect.width)}px`;
-    this.area.style.minHeight = `${rect.height}px`;
+    const area = this.area;
+    if (!area) return;
+    const room = Math.max(MIN_WIDTH, window.innerWidth - EDGE * 2);
+    area.style.maxWidth = `${room}px`;
+    area.style.minWidth = `${Math.min(room, Math.max(MIN_WIDTH, rect.width))}px`;
+    area.style.minHeight = `${rect.height}px`;
+    const width = area.offsetWidth || Math.max(MIN_WIDTH, rect.width);
+    const height = area.offsetHeight || rect.height;
+    area.style.left = `${Math.max(EDGE, Math.min(rect.x, window.innerWidth - EDGE - width))}px`;
+    area.style.top = `${Math.max(EDGE, Math.min(rect.y, window.innerHeight - EDGE - height))}px`;
+  }
+
+  /** Whether a box is wholly off the window (scrolled away, another interval). */
+  private offWindow(rect: InlineTextRect): boolean {
+    return rect.x > window.innerWidth || rect.x + rect.width < 0 || rect.y > window.innerHeight || rect.y + rect.height < 0;
   }
 
   /** As tall as its lines, so a new line has room. */
@@ -174,8 +209,8 @@ export class WidgetInlineText {
     this.frame = requestAnimationFrame(() => {
       if (!this.target || this.done) return;
       const rect = this.target.rect();
-      if (!rect) {
-        // The text went out of sight (hidden, another interval, its pane gone): what was typed is kept.
+      if (!rect || this.offWindow(rect)) {
+        // The text went out of sight (hidden, scrolled away, its pane gone): what was typed is kept.
         this.finish(true, false);
         return;
       }

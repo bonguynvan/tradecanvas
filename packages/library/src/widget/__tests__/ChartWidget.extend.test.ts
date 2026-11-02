@@ -1415,6 +1415,14 @@ describe('ChartWidget text typed in place', () => {
     expect(calls.at(-1)).toEqual(['endDrawingEdit', 't']);
   });
 
+  it('drops blank lines left at the end of what was typed', () => {
+    const { fake, calls } = setUp();
+    fake.emit('drawingDoubleClick', { id: 't' });
+    area()!.value = 'Line one\n\n';
+    press('Enter');
+    expect(calls).toContainEqual(['updateDrawing', 't', { style: { text: 'Line one' } }]);
+  });
+
   it('opens no second box over a text already being typed in', () => {
     const { fake, calls } = setUp();
     fake.emit('drawingDoubleClick', { id: 't' });

@@ -2513,7 +2513,8 @@ export class ChartWidget {
       : undefined) ?? this.chart.getPlotRect();
     // Over all of them; at the top of the plot when none is on screen (an
     // extended line crossing it far from its anchors).
-    const rect = unionRects(drawings.map((d) => this.chart.getDrawingRect(d.id)))
+    // A text's box with it, so the toolbar never covers the words a double-click is for.
+    const rect = unionRects(drawings.flatMap((d) => [this.chart.getDrawingRect(d.id), this.chart.getDrawingTextRect?.(d.id) ?? null]))
       ?? { x: plot.x + plot.width / 2, y: plot.y, width: 0, height: 0 };
     toolbar.show({
       rect: { x: rect.x + offset.x, y: rect.y + offset.y, width: rect.width, height: rect.height },
@@ -2570,8 +2571,15 @@ export class ChartWidget {
       color: style.textColor ?? TEXT_COLORS[drawing.type] ?? style.color,
       label: this.t('drawingSettings.text'),
       onInput: (text) => (justDrawn ? this.chart.amendNewDrawing(id, { style: { text } }) : this.chart.updateDrawing(id, { style: { text } })),
-      // No words: a text just drawn goes, an old one keeps what it said.
-      onCommit: (text) => end(text.trim().length > 0),
+      // No words: a text just drawn goes, an old one keeps what it said. Blank lines at the end go.
+      onCommit: (text) => {
+        const kept = text.replace(/\s+$/, '');
+        if (kept && kept !== text) {
+          if (justDrawn) this.chart.amendNewDrawing(id, { style: { text: kept } });
+          else this.chart.updateDrawing(id, { style: { text: kept } });
+        }
+        end(kept.length > 0);
+      },
       onCancel: () => end(false),
       returnFocus: () => this.chartContainer.querySelector<HTMLElement>('[tabindex]') ?? this.chartContainer,
     });

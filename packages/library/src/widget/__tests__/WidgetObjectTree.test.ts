@@ -241,3 +241,28 @@ describe('WidgetObjectTree reorder around groups', () => {
     expect(drawingRow('e')).not.toBeNull();
   });
 });
+
+describe('WidgetObjectTree drags that go astray', () => {
+  const drawingRow = (id: string) => host.querySelector<HTMLElement>(`.tcw-tree-row[data-drawing-id="${id}"]`)!;
+  beforeEach(() => {
+    tree.setObjects([], DRAWINGS.map(({ group: _group, ...d }) => d));
+    rows().forEach((r, i) => {
+      r.getBoundingClientRect = () => ({ top: i * 24, bottom: i * 24 + 24, left: 0, right: 200, width: 200, height: 24, x: 0, y: i * 24, toJSON: () => ({}) });
+    });
+  });
+
+  it('moves nothing when let go over the chart, beside the list', () => {
+    drawingRow('c').querySelector('[aria-label="Drag to reorder"]')!.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, clientX: 10, clientY: 2 * 24 + 10, button: 0 }));
+    document.dispatchEvent(new MouseEvent('pointerup', { bubbles: true, clientX: -400, clientY: 6 }));
+    expect(callbacks.onMoveDrawing).not.toHaveBeenCalled();
+  });
+
+  it('lets Escape call the drag off', () => {
+    drawingRow('c').querySelector('[aria-label="Drag to reorder"]')!.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, clientX: 10, clientY: 2 * 24 + 10, button: 0 }));
+    document.dispatchEvent(new MouseEvent('pointermove', { bubbles: true, clientX: 10, clientY: 6 }));
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    expect(host.querySelector('.tcw-tree-drop')).toBeNull();
+    document.dispatchEvent(new MouseEvent('pointerup', { bubbles: true, clientX: 10, clientY: 6 }));
+    expect(callbacks.onMoveDrawing).not.toHaveBeenCalled();
+  });
+});
