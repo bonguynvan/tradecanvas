@@ -1,7 +1,7 @@
 import type { DrawingState, Point, ViewportState } from '@tradecanvas/commons';
 import { DrawingBase, lineSpace } from '../DrawingBase.js';
 import { LINE_STATS_OPTIONS, drawLineStats } from './lineDecor.js';
-import { drawLineText } from './lineText.js';
+import { drawLineText, TextHitCache } from './lineText.js';
 
 export class ExtendedLineTool extends DrawingBase {
   descriptor = { type: 'extendedLine' as const, name: 'Extended Line', requiredAnchors: 2, text: true, options: LINE_STATS_OPTIONS };
@@ -30,7 +30,7 @@ export class ExtendedLineTool extends DrawingBase {
     ctx.stroke();
     this.resetLineStyle(ctx);
     drawLineStats(ctx, state, viewport, [p1, p2], selected, this.optionsOf(state));
-    drawLineText(ctx, state.style, { x: startX, y: startY }, { x: endX, y: endY }, chartRect);
+    this.texts.set(state.id, drawLineText(ctx, state.style, { x: startX, y: startY }, { x: endX, y: endY }, chartRect));
     if (selected) this.renderAnchorHandles(ctx, state, viewport);
   }
 
@@ -40,7 +40,14 @@ export class ExtendedLineTool extends DrawingBase {
     return price === null ? null : [price];
   }
 
+  /** Its text's box as last drawn: a click on the words picks it. */
+  private texts = new TextHitCache();
+
   hitTest(point: Point, state: DrawingState, viewport: ViewportState, tolerance: number): boolean {
+    return this.texts.hit(state.id, point, tolerance) || this.hitShape(point, state, viewport, tolerance);
+  }
+
+  private hitShape(point: Point, state: DrawingState, viewport: ViewportState, tolerance: number): boolean {
     if (state.anchors.length < 2) return false;
     const p1 = this.anchorToPixel(state.anchors[0], viewport);
     const p2 = this.anchorToPixel(state.anchors[1], viewport);

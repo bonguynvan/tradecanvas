@@ -1,7 +1,7 @@
 import { drawingFont, fillTextWithHalo } from './labels.js';
 import type { DrawingState, Point, ViewportState } from '@tradecanvas/commons';
 import { DrawingBase } from '../DrawingBase.js';
-import { drawLineText } from './lineText.js';
+import { drawLineText, TextHitCache } from './lineText.js';
 
 const ARC_RADIUS = 28;
 const REFERENCE_LENGTH = 48;
@@ -57,11 +57,18 @@ export class TrendAngleTool extends DrawingBase {
     ctx.textBaseline = 'middle';
     fillTextWithHalo(ctx, `${angle.toFixed(1)}°`, a.x + dir * (ARC_RADIUS + 6), a.y + (angle >= 0 ? -8 : 8));
 
-    drawLineText(ctx, state.style, this.anchorToPixel(state.anchors[0], viewport), this.anchorToPixel(state.anchors[1], viewport), viewport.chartRect);
+    this.texts.set(state.id, drawLineText(ctx, state.style, this.anchorToPixel(state.anchors[0], viewport), this.anchorToPixel(state.anchors[1], viewport), viewport.chartRect));
     if (selected) this.renderAnchorHandles(ctx, state, viewport);
   }
 
+  /** Its text's box as last drawn: a click on the words picks it. */
+  private texts = new TextHitCache();
+
   hitTest(point: Point, state: DrawingState, viewport: ViewportState, tolerance: number): boolean {
+    return this.texts.hit(state.id, point, tolerance) || this.hitShape(point, state, viewport, tolerance);
+  }
+
+  private hitShape(point: Point, state: DrawingState, viewport: ViewportState, tolerance: number): boolean {
     if (state.anchors.length < 2) return false;
     const a = this.anchorToPixel(state.anchors[0], viewport);
     const b = this.anchorToPixel(state.anchors[1], viewport);

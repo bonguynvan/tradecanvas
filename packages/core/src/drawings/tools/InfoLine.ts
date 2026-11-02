@@ -2,7 +2,7 @@ import type { DrawingState, Point, ViewportState } from '@tradecanvas/commons';
 import { DrawingBase } from '../DrawingBase.js';
 import { barsBetween, drawLabelBox, formatPriceChange, spanBetween } from './labels.js';
 import { screenAngleDeg } from './TrendAngle.js';
-import { drawLineText } from './lineText.js';
+import { drawLineText, TextHitCache } from './lineText.js';
 
 /** The text the info line shows: price change, bars (and time) spanned, angle. */
 export function infoLineLines(state: DrawingState, viewport: ViewportState, angleDeg: number): string[] {
@@ -36,11 +36,18 @@ export class InfoLineTool extends DrawingBase {
     const rising = b.y <= a.y;
     drawLabelBox(ctx, lines, b.x + (b.x >= a.x ? 8 : -8), b.y + (rising ? -6 : 6), b.x >= a.x ? 'left' : 'right', rising);
 
-    drawLineText(ctx, state.style, this.anchorToPixel(state.anchors[0], viewport), this.anchorToPixel(state.anchors[1], viewport), viewport.chartRect);
+    this.texts.set(state.id, drawLineText(ctx, state.style, this.anchorToPixel(state.anchors[0], viewport), this.anchorToPixel(state.anchors[1], viewport), viewport.chartRect));
     if (selected) this.renderAnchorHandles(ctx, state, viewport);
   }
 
+  /** Its text's box as last drawn: a click on the words picks it. */
+  private texts = new TextHitCache();
+
   hitTest(point: Point, state: DrawingState, viewport: ViewportState, tolerance: number): boolean {
+    return this.texts.hit(state.id, point, tolerance) || this.hitShape(point, state, viewport, tolerance);
+  }
+
+  private hitShape(point: Point, state: DrawingState, viewport: ViewportState, tolerance: number): boolean {
     if (state.anchors.length < 2) return false;
     const a = this.anchorToPixel(state.anchors[0], viewport);
     const b = this.anchorToPixel(state.anchors[1], viewport);

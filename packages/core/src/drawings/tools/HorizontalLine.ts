@@ -2,7 +2,7 @@ import type { DrawingState, Point, ViewportState } from '@tradecanvas/commons';
 import { DrawingBase } from '../DrawingBase.js';
 import { priceToY } from '../../viewport/ScaleMapping.js';
 import { formatDrawingPrice, fillLevelLabel } from './labels.js';
-import { drawLineText } from './lineText.js';
+import { drawLineText, TextHitCache } from './lineText.js';
 import { SHOW_PRICE_OPTION } from './options.js';
 
 export class HorizontalLineTool extends DrawingBase {
@@ -21,7 +21,7 @@ export class HorizontalLineTool extends DrawingBase {
     this.resetLineStyle(ctx);
 
     // The text first: the price label keeps clear of it.
-    drawLineText(ctx, state.style, { x: chartRect.x, y }, { x: chartRect.x + chartRect.width, y });
+    this.texts.set(state.id, drawLineText(ctx, state.style, { x: chartRect.x, y }, { x: chartRect.x + chartRect.width, y }));
     // Price label, at the line's start or, under the legend, its end.
     if (this.option<boolean>(state, 'showPrice')) {
       ctx.fillStyle = state.style.color;
@@ -31,7 +31,14 @@ export class HorizontalLineTool extends DrawingBase {
     if (selected) this.renderAnchorHandles(ctx, state, viewport);
   }
 
+  /** Its text's box as last drawn: a click on the words picks it. */
+  private texts = new TextHitCache();
+
   hitTest(point: Point, state: DrawingState, viewport: ViewportState, tolerance: number): boolean {
+    return this.texts.hit(state.id, point, tolerance) || this.hitShape(point, state, viewport, tolerance);
+  }
+
+  private hitShape(point: Point, state: DrawingState, viewport: ViewportState, tolerance: number): boolean {
     if (state.anchors.length < 1) return false;
     const y = priceToY(state.anchors[0].price, viewport);
     return Math.abs(point.y - y) <= tolerance && point.x >= viewport.chartRect.x && point.x <= viewport.chartRect.x + viewport.chartRect.width;

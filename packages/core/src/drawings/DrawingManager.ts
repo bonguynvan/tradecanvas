@@ -1027,6 +1027,19 @@ export class DrawingManager {
 
   /** Escape: put the eraser away, drop the tool being drawn with, else the selection. */
   private escape(): boolean {
+    // A drag under way is called off: a copy being dragged out goes, a moved or reshaped drawing goes back.
+    if (this.pendingCopy || this.copies) {
+      this.dropCopyGesture();
+      this.requestRender?.();
+      return true;
+    }
+    if (this.state === 'moving' || this.state === 'resizing') {
+      const back = new Map(this.drag.end().map(({ before }) => [before.id, cloneDrawing(before)]));
+      this.drawings = this.drawings.map((d) => back.get(d.id) ?? d);
+      this.state = 'selected';
+      this.requestRender?.();
+      return true;
+    }
     if (this.eraser) {
       this.setEraser(false);
       return true;

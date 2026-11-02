@@ -1,7 +1,7 @@
 import type { DrawingState, Point, ViewportState } from '@tradecanvas/commons';
 import { DrawingBase } from '../DrawingBase.js';
 import { fillArrowHead } from './lineDecor.js';
-import { drawLineText } from './lineText.js';
+import { drawLineText, TextHitCache } from './lineText.js';
 
 export class ArrowTool extends DrawingBase {
   descriptor = { type: 'arrow' as const, name: 'Arrow', requiredAnchors: 2, text: true };
@@ -18,11 +18,18 @@ export class ArrowTool extends DrawingBase {
     ctx.stroke();
     fillArrowHead(ctx, p1, p2, state.style.color);
     this.resetLineStyle(ctx);
-    drawLineText(ctx, state.style, this.anchorToPixel(state.anchors[0], viewport), this.anchorToPixel(state.anchors[1], viewport), viewport.chartRect);
+    this.texts.set(state.id, drawLineText(ctx, state.style, this.anchorToPixel(state.anchors[0], viewport), this.anchorToPixel(state.anchors[1], viewport), viewport.chartRect));
     if (selected) this.renderAnchorHandles(ctx, state, viewport);
   }
 
+  /** Its text's box as last drawn: a click on the words picks it. */
+  private texts = new TextHitCache();
+
   hitTest(point: Point, state: DrawingState, viewport: ViewportState, tolerance: number): boolean {
+    return this.texts.hit(state.id, point, tolerance) || this.hitShape(point, state, viewport, tolerance);
+  }
+
+  private hitShape(point: Point, state: DrawingState, viewport: ViewportState, tolerance: number): boolean {
     if (state.anchors.length < 2) return false;
     const p1 = this.anchorToPixel(state.anchors[0], viewport);
     const p2 = this.anchorToPixel(state.anchors[1], viewport);

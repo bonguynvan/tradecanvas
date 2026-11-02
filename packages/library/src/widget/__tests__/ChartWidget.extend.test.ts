@@ -1278,7 +1278,8 @@ describe('ChartWidget object tree drawings', () => {
     expect(row('b').querySelector('.tcw-tree-name')!.textContent).toBe('Ray');
     row('b').querySelector<HTMLElement>('.tcw-tree-name')!.click();
     row('b').querySelector<HTMLButtonElement>('[aria-label="Clone"]')!.click();
-    row('b').querySelector<HTMLElement>('[aria-label="Drag to reorder"]')!.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp' }));
+    // Listed b, a (the top first): down takes b under a, to a's place.
+    row('b').querySelector<HTMLElement>('[aria-label="Drag to reorder"]')!.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown' }));
     const name = row('a').querySelector<HTMLElement>('.tcw-tree-name')!;
     name.dispatchEvent(new MouseEvent('dblclick'));
     const input = row('a').querySelector<HTMLInputElement>('input')!;

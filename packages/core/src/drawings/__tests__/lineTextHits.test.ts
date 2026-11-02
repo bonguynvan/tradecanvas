@@ -1,0 +1,107 @@
+import { describe, it, expect } from 'vitest';
+import type { DrawingPlugin, DrawingState, DrawingStyle } from '@tradecanvas/commons';
+import { drawing, recordingCtx, unitViewport } from './fixtures.js';
+import { TrendLineTool } from '../tools/TrendLine.js';
+import { HorizontalLineTool } from '../tools/HorizontalLine.js';
+import { VerticalLineTool } from '../tools/VerticalLine.js';
+import { RectangleTool } from '../tools/Rectangle.js';
+import { DrawingManager } from '../DrawingManager.js';
+import { registerBuiltInDrawingTools } from '../tools/index.js';
+import { UndoRedoManager } from '../../features/UndoRedoManager.js';
+
+/** `unitViewport`: bar i at x = i·10 + 5, price p at y = 100 − p; the plot is 1000 × 100. */
+const x = (bar: number) => bar * 10 + 5;
+const y = (price: number) => 100 - price;
+const TOLERANCE = 8;
+
+const base: DrawingStyle = { color: '#4c8dff', lineWidth: 1, lineStyle: 'solid' };
+/** Drawn once, as the chart does, so the tool knows where its words went. */
+function drawn(tool: DrawingPlugin, state: DrawingState): DrawingPlugin {
+  tool.render(recordingCtx().ctx, state, unitViewport, false);
+  return tool;
+}
+
+describe('a click on the words on a line picks the line', () => {
+  const flat = (text?: string) => drawing('trendLine', [{ time: 10, price: 50 }, { time: 30, price: 50 }], { style: { ...base, text } });
+  // The words sit above the line's middle: 12 px over it is on them, and past the line's reach.
+  const onWords = { x: (x(10) + x(30)) / 2, y: y(50) - 12 };
+
+  it('on a trend line', () => {
+    expect(drawn(new TrendLineTool(), flat()).hitTest(onWords, flat(), unitViewport, TOLERANCE)).toBe(false);
+    const state = flat('Breakout');
+    expect(drawn(new TrendLineTool(), state).hitTest(onWords, state, unitViewport, TOLERANCE)).toBe(true);
+  });
+
+  it('on a line that slopes, along its slope', () => {
+    const state = drawing('trendLine', [{ time: 10, price: 20 }, { time: 30, price: 80 }], { style: { ...base, text: 'Up' } });
+    const tool = drawn(new TrendLineTool(), state);
+    // The words' middle: above the line's middle, square to it.
+    const angle = Math.atan2(y(80) - y(20), x(30) - x(10));
+    const mid = { x: (x(10) + x(30)) / 2, y: (y(20) + y(80)) / 2 };
+    const up = 12;
+    const point = { x: mid.x + up * Math.sin(angle), y: mid.y - up * Math.cos(angle) };
+    expect(tool.hitTest(point, state, unitViewport, 2)).toBe(true);
+    // As far off, but under the line where no words are.
+    const below = { x: mid.x - up * Math.sin(angle), y: mid.y + up * Math.cos(angle) };
+    expect(tool.hitTest(below, state, unitViewport, 2)).toBe(false);
+  });
+
+  it('on a horizontal and a vertical line', () => {
+    const level = drawing('horizontalLine', [{ time: 10, price: 40 }], { style: { ...base, text: 'Support', textAlign: 'center' } });
+    expect(drawn(new HorizontalLineTool(), level).hitTest({ x: 500, y: y(40) - 12 }, level, unitViewport, TOLERANCE)).toBe(true);
+    const upright = drawing('verticalLine', [{ time: 50, price: 40 }], { style: { ...base, text: 'CPI' } });
+    // Read bottom to top: the words sit left of the line.
+    expect(drawn(new VerticalLineTool(), upright).hitTest({ x: x(50) - 12, y: 50 }, upright, unitViewport, TOLERANCE)).toBe(true);
+  });
+
+  it('inside a box with no fill, where a click used to fall through', () => {
+    const box = (text?: string) => drawing('rectangle', [{ time: 10, price: 90 }, { time: 40, price: 10 }], { style: { ...base, text } });
+    const inside = { x: (x(10) + x(40)) / 2, y: y(90) + 12 };
+    expect(drawn(new RectangleTool(), box()).hitTest(inside, box(), unitViewport, TOLERANCE)).toBe(false);
+    expect(drawn(new RectangleTool(), box('Range')).hitTest(inside, box('Range'), unitViewport, TOLERANCE)).toBe(true);
+  });
+});
+
+describe('Escape while a drawing is dragged', () => {
+  const setUp = () => {
+    const manager = new DrawingManager();
+    registerBuiltInDrawingTools(manager);
+    const history = new UndoRedoManager();
+    manager.setUndoRedoManager(history);
+    manager.setDrawings([drawing('trendLine', [{ time: 10, price: 30 }, { time: 30, price: 70 }], { id: 'a' })]);
+    return { manager, history, anchors: () => manager.getDrawings()[0].anchors };
+  };
+
+  it('puts a moved drawing back, with nothing to undo', () => {
+    const { manager, history, anchors } = setUp();
+    manager.onPointerDown({ x: x(20), y: y(50) }, unitViewport);
+    manager.onPointerMove({ x: x(25), y: y(40) }, unitViewport);
+    expect(manager.onKeyDown('Escape')).toBe(true);
+    manager.onPointerMove({ x: x(28), y: y(35) }, unitViewport);
+    manager.onPointerUp();
+    expect(anchors()).toEqual([{ time: 10, price: 30 }, { time: 30, price: 70 }]);
+    expect(history.getState().canUndo).toBe(false);
+    expect(manager.getSelectedDrawingIds()).toEqual(['a']);
+  });
+
+  it('puts a reshaped drawing back', () => {
+    const { manager, anchors } = setUp();
+    manager.select('a');
+    manager.onPointerDown({ x: x(30), y: y(70) }, unitViewport);
+    manager.onPointerMove({ x: x(40), y: y(60) }, unitViewport);
+    manager.onKeyDown('Escape');
+    manager.onPointerUp();
+    expect(anchors()).toEqual([{ time: 10, price: 30 }, { time: 30, price: 70 }]);
+  });
+
+  it('drops a copy being dragged out', () => {
+    const { manager, history } = setUp();
+    manager.beginCopyDrag({ x: x(20), y: y(50) }, unitViewport);
+    manager.onPointerMove({ x: x(20), y: y(50) - 30 }, unitViewport);
+    expect(manager.getDrawings()).toHaveLength(2);
+    manager.onKeyDown('Escape');
+    manager.onPointerUp();
+    expect(manager.getDrawings().map((d) => d.id)).toEqual(['a']);
+    expect(history.getState().canUndo).toBe(false);
+  });
+});

@@ -1,7 +1,7 @@
 import type { DrawingState, Point, ViewportState } from '@tradecanvas/commons';
 import { DrawingBase } from '../DrawingBase.js';
 import { drawPill, drawingFont, PILL_HEIGHT } from './labels.js';
-import { drawLineText } from './lineText.js';
+import { drawLineText, TextHitCache } from './lineText.js';
 
 /** How far the time label sits above the plot's foot (px). */
 const TIME_LABEL_GAP = 4;
@@ -26,7 +26,7 @@ export class VerticalLineTool extends DrawingBase {
     const time = this.option<boolean>(state, 'showTime') ? this.timeText(state, viewport) : null;
     // The text starts above the time's tag, when there is one.
     const foot = time ? bottom - TIME_LABEL_GAP * 2 - PILL_HEIGHT : bottom;
-    drawLineText(ctx, state.style, { x: p.x, y: foot }, { x: p.x, y: chartRect.y });
+    this.texts.set(state.id, drawLineText(ctx, state.style, { x: p.x, y: foot }, { x: p.x, y: chartRect.y }));
     // The bar's time on a tag at the line's foot, as the chart writes it under the crosshair.
     if (time) {
       ctx.font = drawingFont(11);
@@ -47,7 +47,14 @@ export class VerticalLineTool extends DrawingBase {
     }
   }
 
+  /** Its text's box as last drawn: a click on the words picks it. */
+  private texts = new TextHitCache();
+
   hitTest(point: Point, state: DrawingState, viewport: ViewportState, tolerance: number): boolean {
+    return this.texts.hit(state.id, point, tolerance) || this.hitShape(point, state, viewport, tolerance);
+  }
+
+  private hitShape(point: Point, state: DrawingState, viewport: ViewportState, tolerance: number): boolean {
     if (state.anchors.length < 1) return false;
     const p = this.anchorToPixel(state.anchors[0], viewport);
     const { chartRect } = viewport;
