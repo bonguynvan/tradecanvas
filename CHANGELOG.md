@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 1.67.0 (2026-11-02)
+
+React, Vue and Svelte components: 1.3.59.
+
 ### Widget
 
 - **The widget fits wide screens** (`@tradecanvas/chart`). A 4K screen is no longer all small print.
