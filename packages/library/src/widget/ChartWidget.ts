@@ -2495,14 +2495,18 @@ export class ChartWidget {
   private editTextInPlace(id: string, justDrawn: boolean): boolean {
     const drawing = this.chart.getDrawings().find((d) => d.id === id);
     const editor = this.inlineText;
-    if (!drawing || !editor || drawing.locked || !this.chart.beginDrawingEdit(id)) return false;
+    // A text just drawn takes its words into the step that made it; an old one's edit is a step of its own.
+    if (!drawing || !editor || drawing.locked || (!justDrawn && !this.chart.beginDrawingEdit(id))) return false;
     const layout = TEXT_LAYOUTS[drawing.type];
     const style = drawing.style;
     const before = style.text ?? '';
     const end = (keep: boolean) => {
       this.inlineTextId = null;
-      this.chart.endDrawingEdit(id, { cancel: !keep });
-      if (!keep && justDrawn) this.chart.takeBackDrawing(id);
+      if (justDrawn) {
+        if (!keep) this.chart.takeBackDrawing(id);
+      } else {
+        this.chart.endDrawingEdit(id, { cancel: !keep });
+      }
       this.refreshObjects();
     };
     const opened = editor.open({
@@ -2521,13 +2525,13 @@ export class ChartWidget {
       },
       color: style.textColor ?? TEXT_COLORS[drawing.type] ?? style.color,
       label: this.t('drawingSettings.text'),
-      onInput: (text) => this.chart.updateDrawing(id, { style: { text } }),
+      onInput: (text) => (justDrawn ? this.chart.amendNewDrawing(id, { style: { text } }) : this.chart.updateDrawing(id, { style: { text } })),
       // No words: a text just drawn goes, an old one keeps what it said.
       onCommit: (text) => end(text.trim().length > 0),
       onCancel: () => end(false),
     });
     if (!opened) {
-      this.chart.endDrawingEdit(id, { cancel: true });
+      if (!justDrawn) this.chart.endDrawingEdit(id, { cancel: true });
       return false;
     }
     this.inlineTextId = id;

@@ -2642,6 +2642,17 @@ export class Chart {
     return this.drawingManager.textBoxOf(id, { ...this.viewport.getState(), data: this.getDisplayData() });
   }
 
+  /**
+   * Change a drawing just made within the step that made it (its words typed
+   * in place): one undo takes the drawing and the change away. Once another
+   * step came after it, the change is a step of its own.
+   */
+  amendNewDrawing(id: string, patch: DrawingPatch): boolean {
+    const changed = this.drawingManager.amendNew(id, patch);
+    if (changed) this.markStateChanged();
+    return changed;
+  }
+
   takeBackDrawing(id: string): void {
     if (!this.features.drawings) return;
     this.drawingManager.takeBack(id);

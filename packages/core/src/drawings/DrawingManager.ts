@@ -1434,6 +1434,33 @@ export class DrawingManager {
    * its undo step when that is the last one, so nothing is left to undo or
    * redo; else removed as a step of its own.
    */
+  /**
+   * Change a drawing just made as part of the step that made it (its words
+   * typed in place), so one undo takes the drawing and the change away. Once
+   * another step came after it, the change is a step of its own. False for
+   * an unknown drawing.
+   */
+  amendNew(id: string, patch: DrawingPatch): boolean {
+    const drawing = this.drawings.find((d) => d.id === id);
+    if (!drawing) return false;
+    const last = this.undoRedo?.last();
+    if (!this.undoRedo || last?.type !== 'drawingCreate' || last.after?.id !== id) return this.updateDrawing(id, patch);
+    // The change is made with its own step held back, then the making step takes it in.
+    const held: UndoableAction[] = [];
+    const outer = this.batch;
+    this.batch = held;
+    let changed = false;
+    try {
+      changed = this.updateDrawing(id, patch);
+    } finally {
+      this.batch = outer;
+    }
+    if (!changed) return false;
+    this.undoRedo.dropLast();
+    this.undoRedo.push({ ...last, after: cloneDrawing(drawing) });
+    return true;
+  }
+
   takeBack(id: string): void {
     const last = this.undoRedo?.last();
     if (!this.undoRedo || last?.type !== 'drawingCreate' || last.after?.id !== id) {

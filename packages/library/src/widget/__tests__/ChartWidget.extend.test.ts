@@ -1331,7 +1331,7 @@ describe('ChartWidget text typed in place', () => {
     const calls: unknown[][] = [];
     fake.getDrawings = () => [{ id: 't', type: 'text', anchors: [], style: { color: '#fff', text: 'Old', fontSize: 16, bold: true }, visible: true, locked: false }];
     fake.getDrawingTextRect = () => ({ x: 10, y: 20, width: 60, height: 28 });
-    for (const method of ['beginDrawingEdit', 'updateDrawing', 'endDrawingEdit', 'takeBackDrawing']) {
+    for (const method of ['beginDrawingEdit', 'updateDrawing', 'endDrawingEdit', 'takeBackDrawing', 'amendNewDrawing']) {
       fake[method] = (...args: unknown[]) => { calls.push([method, ...args]); return true; };
     }
     return { fake, calls };
@@ -1373,8 +1373,11 @@ describe('ChartWidget text typed in place', () => {
     fake.emit('drawingCreate', { id: 't', type: 'text', drawn: true });
     window.dispatchEvent(new Event('pointerup'));
     await new Promise((r) => setTimeout(r, 0));
+    area()!.value = 'Typed';
+    area()!.dispatchEvent(new Event('input'));
     press('Escape');
-    expect(calls.slice(-2)).toEqual([['endDrawingEdit', 't', { cancel: true }], ['takeBackDrawing', 't']]);
+    // Its words went into the step that made it, so taking it back leaves nothing to undo.
+    expect(calls).toEqual([['amendNewDrawing', 't', { style: { text: 'Typed' } }], ['takeBackDrawing', 't']]);
   });
 
   it('closes when the text is taken away while it is typed', () => {
