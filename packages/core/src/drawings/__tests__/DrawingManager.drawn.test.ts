@@ -59,3 +59,30 @@ describe('a drawing made with the pointer', () => {
     expect(manager.getDrawings()).toEqual([]);
   });
 });
+
+describe('the words of a drawing just made', () => {
+  it('go into the step that made it, so one undo takes the text and its words away', () => {
+    const id = drawText();
+    expect(manager.amendNew(id, { style: { text: 'Bre' } })).toBe(true);
+    manager.amendNew(id, { style: { text: 'Breakout' } });
+    expect(manager.getDrawings()[0].style.text).toBe('Breakout');
+    manager.undo();
+    expect(manager.getDrawings()).toEqual([]);
+    expect(history.getState().canUndo).toBe(false);
+    manager.redo();
+    expect(manager.getDrawings()[0].style.text).toBe('Breakout');
+  });
+
+  it('are a step of their own once something else came after the drawing', () => {
+    const id = drawText();
+    manager.addDrawing({ type: 'horizontalLine', anchors: [{ time: 1, price: 2 }] });
+    expect(manager.amendNew(id, { style: { text: 'Late' } })).toBe(true);
+    manager.undo();
+    expect(manager.getDrawings().find((d) => d.id === id)!.style.text).not.toBe('Late');
+    expect(manager.getDrawings()).toHaveLength(2);
+  });
+
+  it('change nothing for a drawing that is gone', () => {
+    expect(manager.amendNew('nope', { style: { text: 'x' } })).toBe(false);
+  });
+});

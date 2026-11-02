@@ -3,7 +3,7 @@
  * its bars, as tokens. A preset gives all of them; a theme of yours changes
  * what it names. Colours stay with the widget's dark / light theme.
  */
-import { SANS_FONT_FAMILY, phiStep } from '@tradecanvas/commons';
+import { PHI, SANS_FONT_FAMILY, phiStep } from '@tradecanvas/commons';
 
 export type WidgetUIPreset = 'print' | 'studio' | 'terminal' | 'capsule' | 'desk';
 
@@ -13,6 +13,41 @@ const DEFAULT_PRESET: WidgetUIPreset = 'print';
 const TYPE_STEPS_PER_PHI = 3;
 /** Below this, letters with two marks stacked (Vietnamese ế, ộ) stop reading. */
 const MIN_TYPE_SIZE = 10;
+
+/**
+ * How much bigger the look grows on a wide widget, by its width in CSS px:
+ * a sixth of φ from full HD, a third from 2560 (4K at 150%), a half from
+ * 3400 (4K at 100%). Narrower than the first, it keeps its sizes.
+ */
+const WIDE_STEPS: readonly (readonly [minWidth: number, phiFraction: number])[] = [
+  [3400, 1 / 2],
+  [2560, 1 / 3],
+  [1800, 1 / 6],
+];
+/** The scales a theme may set by hand. */
+const MIN_SCALE = 0.75;
+const MAX_SCALE = 2;
+
+/** The look's scale for a widget `width` px wide (see `WidgetUITheme.scale`): 1 below full HD. */
+export function widgetScaleFor(width: number): number {
+  const step = WIDE_STEPS.find(([min]) => width >= min);
+  return step ? PHI ** step[1] : 1;
+}
+
+/**
+ * The look at `factor` its size: bars, buttons, icons, menu rows and type,
+ * each rounded to a whole pixel. Corners, lines and shadows stay.
+ */
+export function scaledWidgetUI(ui: ResolvedWidgetUI, factor: number): ResolvedWidgetUI {
+  if (factor === 1) return ui;
+  const s = ui.sizes;
+  const at = (n: number) => Math.round(n * factor);
+  return {
+    ...ui,
+    sizes: { toolbar: at(s.toolbar), control: at(s.control), controlSmall: at(s.controlSmall), icon: at(s.icon), sidebar: at(s.sidebar), menuItem: at(s.menuItem) },
+    font: { ...ui.font, size: at(ui.font.size) },
+  };
+}
 
 /** The type size `steps` from `body` on the look's scale, never below 10px. */
 export function typeSize(body: number, steps: number): number {
@@ -113,6 +148,8 @@ export interface ResolvedWidgetUI {
   intervals: 'plain' | 'segmented';
   /** Corners of the price tags and pills the chart draws (999: pills). */
   tagRadius: number;
+  /** How much bigger than its sizes the look is drawn: `'auto'` by the widget's width, or a number. */
+  scale?: number | 'auto';
 }
 
 /** Your look: a preset to start from (Print by default) and what to change. */
@@ -136,6 +173,13 @@ export interface WidgetUITheme {
   sidebar?: ResolvedWidgetUI['sidebar'];
   intervals?: ResolvedWidgetUI['intervals'];
   tagRadius?: number;
+  /**
+   * How much bigger the bars, buttons, icons and type are drawn. `'auto'`
+   * (the default) by the widget's width: as set up to full HD, then a step
+   * of φ's root bigger at a time, so a 4K screen is not all small print. A
+   * number (0.75 to 2) at every width; 1 keeps the sizes as they are.
+   */
+  scale?: number | 'auto';
 }
 
 const SYSTEM_SANS = "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
@@ -306,6 +350,7 @@ function resolvePreset(name: WidgetUIPreset): ResolvedWidgetUI {
     ...base,
     preset: name,
     density: 'comfortable',
+    scale: 'auto',
     radius: { ...base.radius },
     components: componentsFrom(base.radius, base.components),
     sizes: { ...base.sizes },
@@ -394,6 +439,7 @@ export function resolveWidgetUI(theme?: WidgetUIPreset | WidgetUITheme): Resolve
     sidebar: oneOf(t.sidebar, ['docked', 'floating'] as const) ? t.sidebar : base.sidebar,
     intervals: oneOf(t.intervals, ['plain', 'segmented'] as const) ? t.intervals : base.intervals,
     tagRadius: px(t.tagRadius, 0, 999) ? t.tagRadius : base.tagRadius,
+    scale: typeof t.scale === 'number' && Number.isFinite(t.scale) && t.scale >= MIN_SCALE && t.scale <= MAX_SCALE ? t.scale : 'auto',
   };
 }
 

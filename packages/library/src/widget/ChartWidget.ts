@@ -29,7 +29,7 @@ import { WidgetAlertsPanel, describeAlert, type AlertListItem, type AlertSource 
 import { indicatorChipLabel } from '../indicatorLabel.js';
 import { widgetIndicatorLabel } from './indicatorInputWords.js';
 import { readChartTypeOptions, type ChartTypeOptions } from '@tradecanvas/commons';
-import { applyWidgetUI, resolveWidgetUI, typeSize, type ResolvedWidgetUI, type WidgetUIPreset, type WidgetUITheme } from './widgetUI.js';
+import { applyWidgetUI, resolveWidgetUI, scaledWidgetUI, typeSize, widgetScaleFor, widgetUIVariables, type ResolvedWidgetUI, type WidgetUIPreset, type WidgetUITheme } from './widgetUI.js';
 import { WidgetObjectTree, drawingTypeLabel } from './WidgetObjectTree.js';
 import { WidgetIndicatorSettings, type IndicatorDefault } from './WidgetIndicatorSettings.js';
 import { WidgetIndicatorPicker, type IndicatorPickerItem } from './WidgetIndicatorPicker.js';
@@ -45,6 +45,7 @@ import { DrawingDefaultsStore, DrawingTemplateStore } from './DrawingTemplateSto
 import { WidgetDrawingSettings, type DrawingTemplateLook } from './WidgetDrawingSettings.js';
 import { WidgetContextMenu, type ContextMenuEntry } from './WidgetContextMenu.js';
 import { TEXT_COLORS, TEXT_LAYOUTS, TEXT_PLACES } from './drawingSettingsTabs.js';
+import { WidgetInlineText } from './WidgetInlineText.js';
 import { drawingMenuEntries, type DrawingMenuAction } from './drawingMenu.js';
 import { CHART_MENU_KEYS, TIMEZONE_ENTRY, chartMenuEntries, priceEntries, scaleModeOf, type ChartMenuAction, type ChartMenuContext } from './chartMenu.js';
 import { WidgetAccountPanel } from './WidgetAccountPanel.js';
@@ -112,6 +113,15 @@ import {
 
 /** How long a just-drawn text waits for its press to end before asking for its words anyway. */
 const TEXT_PROMPT_FALLBACK_MS = 600;
+/** A text drawing's size when neither it nor its tool sets one. */
+const DEFAULT_TEXT_SIZE = 13;
+/** How far past a scale step (px) the widget must be before its look changes size: no flicker at the edge. */
+const SCALE_DEAD_BAND = 24;
+/** The tokens a bigger scale changes: bars, buttons, icons, menu rows and type. */
+const SCALED_TOKENS = [
+  '--tcw-toolbar-h', '--tcw-control-h', '--tcw-control-h-sm', '--tcw-icon', '--tcw-sidebar-w', '--tcw-menu-item-h',
+  '--tcw-font-size', '--tcw-font-size-sm', '--tcw-font-size-xs', '--tcw-font-size-lg', '--tcw-font-size-xl', '--tcw-font-size-display',
+] as const;
 
 /**
  * A local timeframe switch (resampling static data) that took at least this
@@ -274,6 +284,8 @@ export class ChartWidget {
   /** Stops following presses for the page's shortcuts (see keyTarget). */
   private unregisterKeys: () => void = () => {};
   private readonly onFullscreenChange = () => {
+    // The layer moves with the page: words being typed are kept first.
+    this.inlineText?.commit();
     this.toolbar?.setFullscreen(document.fullscreenElement === this.root);
     if (this.portal.isConnected) this.overlayHost(); // an open modal follows
   };
@@ -297,6 +309,13 @@ export class ChartWidget {
   private drawingMenu: WidgetContextMenu | null = null;
   /** A text drawn just now whose words the settings ask for: Cancel there takes it back. */
   private justDrawnText: string | null = null;
+  /** A text drawing's words typed in place over it. */
+  private inlineText: WidgetInlineText | null = null;
+  /** The drawing whose words are being typed in place, and whether it was just drawn. */
+  private inlineTextId: string | null = null;
+  private inlineTextNew = false;
+  /** The chart's type sizes the look last wrote: a host's own change since makes them the new base. */
+  private chartFontWritten: { sizeSmall: number; sizeMedium: number; sizeLarge: number } | null = null;
   /** Stops waiting to ask for a just-drawn text's words (the widget goes, or another text is drawn first). */
   private cancelTextPrompt: (() => void) | null = null;
   /** The trash button's menu, made the first time it opens. */
@@ -312,6 +331,13 @@ export class ChartWidget {
   private symbolLoads = new Map<string, number>();
   /** The widget's look. */
   private ui!: ResolvedWidgetUI;
+  /** How much bigger than its sizes the look is drawn now (`WidgetUITheme.scale`): 1 up to full HD. */
+  private uiScale = 1;
+  /** Whether the look's tokens go on inline: a look was given, or it is drawn bigger. */
+  private uiVariables = false;
+  /** The chart's type sizes before the look scaled them. */
+  private chartFontBase: { sizeSmall: number; sizeMedium: number; sizeLarge: number } | null = null;
+  private scaleObserver: ResizeObserver | null = null;
   /** The legend row's "more" menu: move the indicator to another pane. */
   private legendMenu: WidgetContextMenu | null = null;
   private templates = new IndicatorTemplateStore();
@@ -658,9 +684,14 @@ export class ChartWidget {
     // alike. Without `ui` the tokens stay the stylesheet's (Print's), so a
     // host's CSS can still set them.
     this.ui = resolveWidgetUI(options.ui);
-    const variables = options.ui !== undefined;
-    applyWidgetUI(this.root, this.ui, { variables });
-    applyWidgetUI(this.portal, this.ui, { variables });
+    this.uiVariables = options.ui !== undefined;
+    this.uiScale = this.scaleNow();
+    this.applyLookTokens();
+    // On a wider screen the bars, buttons, icons and type grow with the widget.
+    if (typeof ResizeObserver !== 'undefined') {
+      this.scaleObserver = new ResizeObserver(() => this.fitScale());
+      this.scaleObserver.observe(this.root);
+    }
     this.markSwitchedOff();
     this.stopFormControls = installFormControls([this.root, this.portal], {
       layer: this.overlayHost,
@@ -1181,11 +1212,22 @@ export class ChartWidget {
         remove: (name, type) => templates.remove(name, type),
       },
     }, this.t);
+    this.inlineText = new WidgetInlineText(this.overlayHost);
     this.chart.on('drawingDoubleClick', (e) => {
       const id = (e.payload as { id: string }).id;
-      // A text's words are what a double-click on it is for.
+      // A text's words are what a double-click on it is for: typed in place over it.
       const type = this.chart.getDrawings().find((d) => d.id === id)?.type;
+      if (type && TEXT_LAYOUTS[type] && this.editTextInPlace(id, false)) return;
       this.openDrawingSettings(id, type && TEXT_LAYOUTS[type] ? { tab: 'text' } : {});
+    });
+    // A text's drawing gone (undo, the trash, another chart's sync) takes its typing with it.
+    this.chart.on('drawingRemove', (e) => {
+      const id = (e.payload as { id: string }).id;
+      if (id !== this.inlineTextId) return;
+      this.inlineText?.close();
+      // Its edit ends with it, so the next change to that id is recorded again.
+      if (!this.inlineTextNew) this.chart.endDrawingEdit(id);
+      this.inlineTextId = null;
     });
     // A text, a note or a callout just drawn asks for its words (not one added from code).
     this.chart.on('drawingCreate', (e) => {
@@ -1204,6 +1246,7 @@ export class ChartWidget {
       const open = () => {
         stop();
         if (this.destroyed || !this.chart.getDrawings().some((d) => d.id === id)) return;
+        if (this.editTextInPlace(id, true)) return;
         this.openDrawingSettings(id, { tab: 'text' });
         if (this.drawingSettings?.isOpen()) this.justDrawnText = id;
       };
@@ -2111,11 +2154,56 @@ export class ChartWidget {
    */
   setUI(theme: WidgetUIPreset | WidgetUITheme): void {
     this.ui = resolveWidgetUI(theme);
-    applyWidgetUI(this.root, this.ui);
-    applyWidgetUI(this.portal, this.ui);
+    this.uiVariables = true;
+    this.uiScale = this.scaleNow();
+    this.applyLookTokens();
     this.applyChartShapes();
     this.applyLegendFont();
     this.applyChartLook();
+  }
+
+  /** The scale the look is drawn at: its own, or by the widget's width when `'auto'` (1 before it is laid out). */
+  private scaleNow(): number {
+    if (this.ui.scale !== 'auto' && this.ui.scale !== undefined) return this.ui.scale;
+    const width = this.root.clientWidth;
+    return width > 0 ? widgetScaleFor(width) : 1;
+  }
+
+  /**
+   * The look's tokens on the root and the modal portal, at its scale. Without
+   * a look given and at scale 1 they stay the stylesheet's, so a host's CSS
+   * can still set them.
+   */
+  private applyLookTokens(): void {
+    const shown = scaledWidgetUI(this.ui, this.uiScale);
+    for (const el of [this.root, this.portal]) {
+      applyWidgetUI(el, shown, { variables: this.uiVariables });
+      // With no look given the host's CSS keeps its tokens; a bigger scale sets only the sizes it grows.
+      if (this.uiVariables) continue;
+      const vars = widgetUIVariables(shown);
+      for (const name of SCALED_TOKENS) {
+        if (this.uiScale !== 1) el.style.setProperty(name, vars[name]);
+        else el.style.removeProperty(name);
+      }
+    }
+  }
+
+  /** The widget was resized: a step wider or narrower draws the look at another scale. */
+  private fitScale(): void {
+    if (this.destroyed) return;
+    const next = this.scaleNow();
+    if (next === this.uiScale) return;
+    // Within a few px of a step the scale stays: bars that grow may push a scrollbar back and forth.
+    if (this.ui.scale === 'auto') {
+      const width = this.root.clientWidth;
+      const past = next > this.uiScale ? widgetScaleFor(width - SCALE_DEAD_BAND) : widgetScaleFor(width + SCALE_DEAD_BAND);
+      if (past === this.uiScale) return;
+    }
+    this.uiScale = next;
+    this.applyLookTokens();
+    this.applyLegendFont();
+    this.applyChartLook();
+    this.toolbar?.fit();
   }
 
   /** The widget's look, every token set. */
@@ -2129,7 +2217,7 @@ export class ChartWidget {
    * block and the prices line up in columns.
    */
   private applyLegendFont(): void {
-    this.chart.setLegend({ fontFamily: this.ui.font.mono, fontSize: typeSize(this.ui.font.size, -1) });
+    this.chart.setLegend({ fontFamily: this.ui.font.mono, fontSize: typeSize(Math.round(this.ui.font.size * this.uiScale), -1) });
   }
 
   /**
@@ -2141,9 +2229,35 @@ export class ChartWidget {
     const airy = this.ui.density === 'airy';
     const given = this.options.chartOptions;
     if (!given?.barLayout) this.chart.setBarLayout(airy ? 'golden' : 'classic');
-    if (given?.font?.family) return;
+    // The chart's type grows with the look, from its sizes before any scaling; sizes `chartOptions.font` sets stay.
+    const sizes = this.scaledChartSizes();
     // setFont goes over the font before it, so the sizes of `chartOptions.font` stay under the look's face.
-    this.chart.setFont({ family: this.ui.font.mono });
+    if (!given?.font?.family) this.chart.setFont({ family: this.ui.font.mono, ...sizes });
+    else if (Object.keys(sizes).length > 0) this.chart.setFont(sizes);
+  }
+
+  /**
+   * The chart's type sizes at the look's scale, or none to set: sizes of
+   * `chartOptions.font` stay, and at scale 1 the chart keeps its own (a
+   * scale gone back to 1 puts them back). The base is the chart's sizes
+   * before the look first scaled them, or since a host changed them.
+   */
+  private scaledChartSizes(): Partial<{ sizeSmall: number; sizeMedium: number; sizeLarge: number }> {
+    const given = this.options.chartOptions?.font;
+    if (given?.sizeSmall !== undefined || given?.sizeMedium !== undefined || given?.sizeLarge !== undefined) return {};
+    const now = this.chart.getFont?.();
+    if (!now) return {};
+    const current = { sizeSmall: now.sizeSmall, sizeMedium: now.sizeMedium, sizeLarge: now.sizeLarge };
+    const written = this.chartFontWritten;
+    const changedByHost = !written || written.sizeSmall !== current.sizeSmall || written.sizeMedium !== current.sizeMedium || written.sizeLarge !== current.sizeLarge;
+    if (changedByHost) this.chartFontBase = current;
+    if (this.uiScale === 1 && !written) return {};
+    const base = this.chartFontBase ?? current;
+    const at = (n: number) => (this.uiScale === 1 ? n : Math.round(n * this.uiScale));
+    const sizes = { sizeSmall: at(base.sizeSmall), sizeMedium: at(base.sizeMedium), sizeLarge: at(base.sizeLarge) };
+    // Back at 1 the base is the chart's own again, and the look stops writing.
+    this.chartFontWritten = this.uiScale === 1 ? null : sizes;
+    return sizes;
   }
 
   /** The chart's own tags and pills take the look's corners. */
@@ -2158,6 +2272,8 @@ export class ChartWidget {
     this.stopKeyboardInset = null;
     this.stopNarrow?.();
     this.dockObserver?.disconnect();
+    this.scaleObserver?.disconnect();
+    this.inlineText?.close();
     this.stopNarrow = null;
     this.stopFormControls?.();
     this.stopFormControls = null;
@@ -2397,7 +2513,8 @@ export class ChartWidget {
       : undefined) ?? this.chart.getPlotRect();
     // Over all of them; at the top of the plot when none is on screen (an
     // extended line crossing it far from its anchors).
-    const rect = unionRects(drawings.map((d) => this.chart.getDrawingRect(d.id)))
+    // A text's box with it, so the toolbar never covers the words a double-click is for.
+    const rect = unionRects(drawings.flatMap((d) => [this.chart.getDrawingRect(d.id), this.chart.getDrawingTextRect?.(d.id) ?? null]))
       ?? { x: plot.x + plot.width / 2, y: plot.y, width: 0, height: 0 };
     toolbar.show({
       rect: { x: rect.x + offset.x, y: rect.y + offset.y, width: rect.width, height: rect.height },
@@ -2410,6 +2527,69 @@ export class ChartWidget {
       canFill: this.chart.getDrawingToolDescriptor(primary.type)?.fill === true,
       canText: this.chart.getDrawingToolDescriptor(primary.type)?.text === true,
     });
+  }
+
+  /**
+   * Type a text drawing's words in place, over its box: Enter or a click away
+   * keeps them, Escape puts them back. One just drawn (`justDrawn`) is taken
+   * back on Escape or with no words. False when its box is not on the chart
+   * (hidden, its text turned off): the settings ask for the words instead.
+   */
+  private editTextInPlace(id: string, justDrawn: boolean): boolean {
+    // Already being typed in: the box is open.
+    if (id === this.inlineTextId && this.inlineText?.isOpen()) return true;
+    const drawing = this.chart.getDrawings().find((d) => d.id === id);
+    const editor = this.inlineText;
+    // A text just drawn takes its words into the step that made it; an old one's edit is a step of its own.
+    if (!drawing || !editor || drawing.locked || (!justDrawn && !this.chart.beginDrawingEdit(id))) return false;
+    const layout = TEXT_LAYOUTS[drawing.type];
+    const style = drawing.style;
+    const before = style.text ?? '';
+    const end = (keep: boolean) => {
+      this.inlineTextId = null;
+      if (justDrawn) {
+        if (!keep) this.chart.takeBackDrawing(id);
+      } else {
+        this.chart.endDrawingEdit(id, { cancel: !keep });
+      }
+      this.refreshObjects();
+    };
+    const opened = editor.open({
+      rect: () => {
+        const box = this.chart.getDrawingTextRect(id);
+        if (!box) return null;
+        const at = this.chartContainer.getBoundingClientRect();
+        return { x: at.left + box.x, y: at.top + box.y, width: box.width, height: box.height };
+      },
+      text: before,
+      font: {
+        size: style.fontSize || layout?.fontSize || DEFAULT_TEXT_SIZE,
+        bold: style.bold === true,
+        italic: style.italic === true,
+        family: this.chart.getFont?.()?.family ?? this.ui.font.family,
+      },
+      color: style.textColor ?? TEXT_COLORS[drawing.type] ?? style.color,
+      label: this.t('drawingSettings.text'),
+      onInput: (text) => (justDrawn ? this.chart.amendNewDrawing(id, { style: { text } }) : this.chart.updateDrawing(id, { style: { text } })),
+      // No words: a text just drawn goes, an old one keeps what it said. Blank lines at the end go.
+      onCommit: (text) => {
+        const kept = text.replace(/\s+$/, '');
+        if (kept && kept !== text) {
+          if (justDrawn) this.chart.amendNewDrawing(id, { style: { text: kept } });
+          else this.chart.updateDrawing(id, { style: { text: kept } });
+        }
+        end(kept.length > 0);
+      },
+      onCancel: () => end(false),
+      returnFocus: () => this.chartContainer.querySelector<HTMLElement>('[tabindex]') ?? this.chartContainer,
+    });
+    if (!opened) {
+      if (!justDrawn) this.chart.endDrawingEdit(id, { cancel: true });
+      return false;
+    }
+    this.inlineTextId = id;
+    this.inlineTextNew = justDrawn;
+    return true;
   }
 
   /** Open a drawing's settings (double-click on it, or the object tree's settings button). */

@@ -188,6 +188,11 @@ export interface DrawingPlugin {
    */
   moveHandle?(state: DrawingState, index: number, anchor: AnchorPoint): DrawingState;
   /**
+   * Where the box of its text was drawn last (its padding included), for a
+   * text to be typed in place over it; null when it shows no text.
+   */
+  textBox?(state: DrawingState, viewport: ViewportState): { x: number; y: number; width: number; height: number } | null;
+  /**
    * The prices of the drawing's lines at `time` (what an alert on it
    * crosses), or null where it doesn't reach. Tools without it take no alerts.
    * With `viewport` the lines follow the chart as drawn: straight across bars

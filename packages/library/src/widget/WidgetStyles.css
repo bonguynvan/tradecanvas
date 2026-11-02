@@ -1396,6 +1396,29 @@
   to { opacity: 1; }
 }
 
+/* A text drawing's words typed in place, over its box on the chart; under any dialog. */
+.tcw-inline-text {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  pointer-events: none;
+}
+.tcw-inline-text-input {
+  position: absolute;
+  box-sizing: border-box;
+  margin: 0;
+  border: 1px solid var(--tcw-accent);
+  border-radius: var(--tcw-radius-xs);
+  background: var(--tcw-bg-elevated);
+  box-shadow: var(--tcw-menu-shadow);
+  outline: none;
+  overflow: hidden;
+  resize: none;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  pointer-events: auto;
+}
+
 .tcw-modal {
   position: fixed;
   z-index: 101;

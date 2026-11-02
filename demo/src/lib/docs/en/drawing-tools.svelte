@@ -69,7 +69,7 @@ chart.addDrawing({
   },
 })`}</code></pre>
 <p>
-  In the widget, a Text, a Note or a Callout asks for its words as soon as it is drawn: its settings open on the Text tab, the text selected, and Cancel takes the drawing back. A double-click on one opens the same tab. The toolbar over a selection sets the fill and the text colour of the tools that have them.
+  In the widget, a text, a note, a callout, a signpost, a balloon or an anchored text or note opens a box over its words as soon as it is drawn and on a double-click: type over them, Enter or a click away keeps them, Shift+Enter starts a new line, and Escape puts them back (a text just drawn goes, with no words too). One undo takes a text just drawn and its words away. Its settings stay a click away, on the toolbar over it or its menu. The toolbar over a selection sets the fill and the text colour of the tools that have them. <code>chart.getDrawingTextRect(id)</code> says where a text's box is, to lay an editor of your own over it.
 </p>
 
 <h3 id="line-text">Text on lines and boxes</h3>

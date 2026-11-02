@@ -1201,6 +1201,22 @@ export class DrawingManager {
     return !!drawing && typeof this.registry.get(drawing.type)?.priceAt === 'function';
   }
 
+  /** The tool registered for `type`, or null. */
+  getPlugin(type: DrawingToolType): DrawingPlugin | null {
+    return this.registry.get(type) ?? null;
+  }
+
+  /**
+   * Where a drawing's text box was drawn last, on `main` or its own pane
+   * (its tool's `textBox`); null for a drawing that writes in no box.
+   */
+  textBoxOf(id: string, main: ViewportState): { x: number; y: number; width: number; height: number } | null {
+    const drawing = this.drawings.find((d) => d.id === id);
+    const viewport = drawing ? this.viewportFor(drawing.paneId, main) : null;
+    if (!drawing || !viewport) return null;
+    return this.registry.get(drawing.type)?.textBox?.(drawing, viewport) ?? null;
+  }
+
   /** A registered tool's descriptor, or null. */
   getDescriptor(type: DrawingToolType): DrawingPlugin['descriptor'] | null {
     return this.registry.get(type)?.descriptor ?? null;
@@ -1411,6 +1427,32 @@ export class DrawingManager {
     if (removable.length === 0) return 0;
     this.batchUndo(() => { for (const id of removable) this.removeDrawing(id); });
     return removable.length;
+  }
+
+  /**
+   * Change a drawing just made as part of the step that made it (its words
+   * typed in place), so one undo takes the drawing and the change away. Once
+   * another step came after it, the change is a step of its own. False for
+   * an unknown drawing.
+   */
+  amendNew(id: string, patch: DrawingPatch): boolean {
+    const drawing = this.drawings.find((d) => d.id === id);
+    if (!drawing) return false;
+    const last = this.undoRedo?.last();
+    if (!this.undoRedo || last?.type !== 'drawingCreate' || last.after?.id !== id) return this.updateDrawing(id, patch);
+    // The change is made with its own step held back, then the making step takes it in.
+    const held: UndoableAction[] = [];
+    const outer = this.batch;
+    this.batch = held;
+    let changed = false;
+    try {
+      changed = this.updateDrawing(id, patch);
+    } finally {
+      this.batch = outer;
+    }
+    if (!changed) return false;
+    this.undoRedo.replaceLast({ ...last, after: cloneDrawing(drawing) });
+    return true;
   }
 
   /**

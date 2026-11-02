@@ -214,6 +214,8 @@ Lines and boxes (`trendLine`, `ray`, `extendedLine`, `infoLine`, `trendAngle`, `
 `showTime: true` shows a vertical line's time, and Fibonacci tools take `trendLine` and `oneColor`.
 `signpost` and `balloon` mark a bar with a text; `anchoredText` and `anchoredNote` stay at a place on the
 screen (anchors are shares of the plot, `{ time: 0.5, price: 0.25 }` halfway across, a quarter down).
+In the widget a text tool's words are typed in place (drawn, or double-clicked); `chart.getDrawingTextRect(id)`
+says where a text's box is for an editor of your own. The widget grows on wide screens (`ui.scale: 'auto'`).
 The widget's magnet starts off; `setDrawingMagnetMode('weak' | 'strong')` turns it on.
 Editing is built in, so don't wire it yourself: the magnet also pulls dragged handles and moved
 drawings, Ctrl/⌘ held turns it over, Shift keeps lines at 45° steps, the arrow keys move the

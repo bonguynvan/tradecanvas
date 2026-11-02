@@ -437,11 +437,18 @@ export class WidgetObjectTree {
       target = row && row.dataset.drawingId !== id ? row : null;
       target?.classList.add('tcw-tree-drop');
     };
-    const rowAt = (y: number) => [...this.drawingsEl.querySelectorAll<HTMLElement>('.tcw-tree-row[data-reorder]')]
-      .find((row) => { const r = row.getBoundingClientRect(); return y >= r.top && y < r.bottom; }) ?? null;
-    const move = (e: Event) => mark(rowAt((e as MouseEvent).clientY));
+    // Only a row the pointer is on: let go over the chart or past the list and nothing moves.
+    const rowAt = (x: number, y: number) => [...this.drawingsEl.querySelectorAll<HTMLElement>('.tcw-tree-row[data-reorder]')]
+      .find((row) => { const r = row.getBoundingClientRect(); return y >= r.top && y < r.bottom && x >= r.left && x < r.right; }) ?? null;
+    const at = (e: Event) => rowAt((e as MouseEvent).clientX, (e as MouseEvent).clientY);
+    const move = (e: Event) => mark(at(e));
+    const escape = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      e.stopPropagation();
+      stop();
+    };
     const up = (e: Event) => {
-      mark(rowAt((e as MouseEvent).clientY));
+      mark(at(e));
       const index = target ? this.drawingIndex.get(target.dataset.drawingId ?? '') : undefined;
       stop();
       if (index !== undefined) this.callbacks.onMoveDrawing?.(id, index);
@@ -451,12 +458,14 @@ export class WidgetObjectTree {
       document.removeEventListener('pointermove', move);
       document.removeEventListener('pointerup', up);
       document.removeEventListener('pointercancel', stop);
+      document.removeEventListener('keydown', escape, true);
       this.dragging = null;
       this.flushPending();
     };
     document.addEventListener('pointermove', move);
     document.addEventListener('pointerup', up);
     document.addEventListener('pointercancel', stop);
+    document.addEventListener('keydown', escape, true);
     this.dragging = { id, stop };
   }
 

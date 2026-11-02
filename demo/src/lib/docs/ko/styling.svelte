@@ -103,6 +103,14 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
   <code>phiStep(base, steps, perPhi)</code>를 쓸 수 있습니다.
 </p>
 
+<h3 id="wide-screens">넓은 화면에서</h3>
+<p>
+  위젯은 넓어질수록 툴바, 버튼, 아이콘, 글자를 더 크게 그려 4K 화면이 작은 글씨로만 채워지지 않게 합니다. 풀 HD까지는
+  설정한 그대로이고, 1800 px부터 φ의 6분의 1, 2560(150% 4K)부터 3분의 1, 3400(100% 4K)부터 절반만큼 커집니다.
+  차트 축의 글자도 함께 커집니다. <code>ui.scale</code>은 모든 너비에서 쓸 배율을 정하며, <code>1</code>이면 크기를
+  그대로 둡니다.
+</p>
+
 <h2>나만의 외관</h2>
 <p>
   테마는 프리셋(지정하지 않으면 Print)에서 출발해 명시한 항목만 바꿉니다. 스케일에 설정한 모서리는 그 스케일을 따르는
@@ -114,6 +122,7 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
   components: { dialog: 20, tag: 0 },                // a part's own corners
   density: 'compact',                                // compact · comfortable · spacious · airy
   sizes: { toolbar: 40 },                            // px; wins over density
+  scale: 'auto',                                     // or a number; 'auto' grows with the widget's width
   font: {
     family: "'Manrope', system-ui, sans-serif",
     mono: "'JetBrains Mono', monospace",

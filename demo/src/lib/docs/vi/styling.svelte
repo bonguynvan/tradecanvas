@@ -105,6 +105,14 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
   trong <code>@tradecanvas/commons</code> để bạn dựng giao diện của riêng mình.
 </p>
 
+<h3 id="wide-screens">Trên màn hình rộng</h3>
+<p>
+  Widget vẽ thanh công cụ, nút, icon và chữ lớn hơn khi nó rộng ra, để màn hình 4K không toàn chữ nhỏ: giữ nguyên
+  đến full HD, rồi lớn hơn một phần sáu của φ từ 1800 px, một phần ba từ 2560 (4K ở 150%) và một nửa từ 3400 (4K
+  ở 100%). Chữ trên trục của biểu đồ cũng lớn theo. <code>ui.scale</code> đặt một tỉ lệ riêng cho mọi bề rộng;
+  <code>1</code> giữ nguyên kích thước.
+</p>
+
 <h2>Giao diện của riêng bạn</h2>
 <p>
   Một giao diện tự định nghĩa bắt đầu từ một preset (Print nếu bạn không chỉ định) và chỉ đổi những gì nó nêu ra.
@@ -116,6 +124,7 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
   components: { dialog: 20, tag: 0 },                // a part's own corners
   density: 'compact',                                // compact · comfortable · spacious · airy
   sizes: { toolbar: 40 },                            // px; wins over density
+  scale: 'auto',                                     // or a number; 'auto' grows with the widget's width
   font: {
     family: "'Manrope', system-ui, sans-serif",
     mono: "'JetBrains Mono', monospace",

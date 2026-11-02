@@ -2627,6 +2627,28 @@ export class Chart {
   }
 
   /**
+   * Where a drawing's text box was drawn last, its padding included, in the
+   * chart's own pixels (as `getDrawingRect`); null for a drawing that writes
+   * in no box, a hidden one, or one not drawn yet. To lay a text box of yours
+   * over its words.
+   */
+  getDrawingTextRect(id: string): { x: number; y: number; width: number; height: number } | null {
+    if (!this.drawingManager.isShown(id)) return null;
+    return this.drawingManager.textBoxOf(id, { ...this.viewport.getState(), data: this.getDisplayData() });
+  }
+
+  /**
+   * Change a drawing just made within the step that made it (its words typed
+   * in place): one undo takes the drawing and the change away. Once another
+   * step came after it, the change is a step of its own.
+   */
+  amendNewDrawing(id: string, patch: DrawingPatch): boolean {
+    const changed = this.drawingManager.amendNew(id, patch);
+    if (changed) this.markStateChanged();
+    return changed;
+  }
+
+  /**
    * Take back a drawing just made, as a "Cancel" right after it: with the
    * step that made it when that is the history's last, so nothing is left to
    * undo or redo; else removed as a step of its own.

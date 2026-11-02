@@ -2,6 +2,38 @@
 
 ## Unreleased
 
+### Widget
+
+- **The widget fits wide screens** (`@tradecanvas/chart`). A 4K screen is no longer all small print.
+  - The bars, buttons, icons and type grow with the widget's width, and the chart's axis type grows with them.
+  - Up to full HD they stay as set up. From there they grow by a fraction of φ: a sixth bigger from 1800 px wide, a third from 2560 (4K at 150%) and a half from 3400 (4K at 100%).
+  - `ui.scale` takes `'auto'` (the default) or a number from 0.75 to 2, which sets the scale at every width. `1` keeps the sizes.
+  - `widgetScaleFor(width)` and `scaledWidgetUI(ui, factor)` give a host the same sizes.
+  - Sizes set in `chartOptions.font` stay as given, and so do sizes a host sets on the chart later.
+  - With no `ui` given, only the sizes that grow are set inline, so a host's own CSS tokens stay.
+  - The scale changes only once the width is 24 px past a step, so a scrollbar cannot make it flicker.
+
+### Drawings
+
+- **Text typed in place** (`@tradecanvas/commons`, `@tradecanvas/core`, `@tradecanvas/chart`).
+  - These tools open a box over their words, in their own font and colour, as soon as they are drawn and on a double-click: a text, a note, a callout, a signpost, a balloon, and an anchored text or note.
+  - Enter or a click away keeps the words. Shift+Enter starts a new line. Escape puts them back.
+  - A text just drawn goes on Escape, or when it is left with no words.
+  - The box follows the text as the chart scrolls or zooms, and the keys typed in it stay out of the chart.
+  - The box stays inside the window and wraps a long line. Once its text has been off the window for a moment, the box closes and keeps the words.
+  - A press anywhere else keeps the words before the chart takes it. On a phone this is a tap.
+  - The second press of a double-click that drew the text does not close the box.
+  - Enter and Escape that pick an IME word stay with the IME, and Enter or Escape give the keyboard back to the chart.
+  - The toolbar over a selected text keeps clear of its words.
+  - One undo takes a text just drawn and its words away together.
+  - The settings dialog stays a click away. A locked text, or one whose words are hidden, still opens its settings.
+  - `DrawingPlugin.textBox(state, viewport)` tells where a tool drew its text box, and `Chart.getDrawingTextRect(id)` reads it, to lay an editor of your own over the words.
+  - `Chart.amendNewDrawing(id, patch)` and `DrawingManager.amendNew` change a drawing just made within the step that made it.
+
+## 1.66.0 (2026-11-02)
+
+React, Vue and Svelte components: 1.3.58.
+
 ### Drawings
 
 - **Signpost, balloon, and a text and a note kept to the screen** (`@tradecanvas/commons`, `@tradecanvas/core`, `@tradecanvas/chart`). There are now 73 drawing tools.
