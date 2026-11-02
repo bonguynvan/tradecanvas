@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 1.63.0 (2026-11-02)
+
+React, Vue and Svelte components: 1.3.55.
+
 ### Drawings
 
 - **Editing drawings with the pointer and the keys** (`@tradecanvas/core`, `@tradecanvas/chart`).
