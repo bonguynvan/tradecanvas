@@ -188,6 +188,8 @@ chart.on('drawingSelect', ({ payload }) => {
 
 <h2>Order and groups</h2>
 <pre><code>{`chart.moveDrawing(id, 'front')       // 'front' | 'forward' | 'backward' | 'back'
+chart.moveDrawing(id, 0)              // or a place in the order: 0 the bottom, as getDrawings() lists them
+chart.updateDrawing(id, { name: 'Weekly support' })  // its name in the object tree; null: its tool's
 const group = chart.groupDrawings([a, b, c], 'Weekly levels')
 chart.setDrawingGroupVisible(group, false)
 chart.setDrawingGroupLocked(group, true)
@@ -203,6 +205,7 @@ chart.copyDrawings()                 // the selected ones (Ctrl+C)
 chart.pasteDrawings()                // Ctrl+V, here or on another chart of the page
 chart.canPasteDrawings()             // whether there is something to paste`}</code></pre>
 <p>Clicking one drawing of a group selects the whole group.</p>
+<p>In the widget's object tree, a click on a drawing's name selects it and a double-click renames it. Its row clones it, and its grip drags it onto another row's place in the order; the arrow keys on the grip move it one place.</p>
 
 <h2>Eraser, zoom and magnet</h2>
 <pre><code>{`chart.setEraserMode(true)          // each click on a drawing removes it, until Escape

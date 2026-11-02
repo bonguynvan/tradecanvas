@@ -182,6 +182,8 @@ chart.on('drawingSelect', ({ payload }) => {
 
 <h2>顺序与分组</h2>
 <pre><code>{`chart.moveDrawing(id, 'front')       // 'front' | 'forward' | 'backward' | 'back'
+chart.moveDrawing(id, 0)              // or a place in the order: 0 the bottom, as getDrawings() lists them
+chart.updateDrawing(id, { name: 'Weekly support' })  // its name in the object tree; null: its tool's
 const group = chart.groupDrawings([a, b, c], 'Weekly levels')
 chart.setDrawingGroupVisible(group, false)
 chart.setDrawingGroupLocked(group, true)
@@ -197,6 +199,7 @@ chart.copyDrawings()                 // 选中的画线（Ctrl+C）
 chart.pasteDrawings()                // Ctrl+V，粘贴到此处或页面上的其他图表
 chart.canPasteDrawings()             // 是否有可粘贴的内容`}</code></pre>
 <p>点击分组中的任意一条画线，会选中整个分组。</p>
+<p>在小组件的对象树中，单击绘图的名称会选中它，双击则重命名。它的行可以克隆它，拖动手柄可把它移到另一行在顺序中的位置；在手柄上按方向键可把它移动一位。</p>
 
 <h2>橡皮擦、缩放与磁吸</h2>
 <pre><code>{`chart.setEraserMode(true)          // 每次点击画线就将其删除，直到按 Escape

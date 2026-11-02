@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+### Drawings
+
+- **Names for drawings, and an object tree that works on them** (`@tradecanvas/commons`, `@tradecanvas/core`, `@tradecanvas/chart`).
+  - `DrawingState.name` names a drawing, in at most 80 characters, and saved layouts keep it. `updateDrawing(id, { name })` sets it, and `null` or a blank name clears it.
+  - The widget's object tree lists a drawing by its name, or by its tool's name when it has none.
+  - In the tree, a click on a drawing's name selects it on the chart, and a double-click renames it.
+  - A button on the row clones the drawing.
+  - A grip drags the drawing onto another row's place in the order. With the grip focused, the arrow keys move the drawing one row up or down. A drawing in a group has no grip: it moves with its group.
+  - `addDrawing` and `setDrawings` take a `name`, and a pasted drawing keeps its original's.
+  - `moveDrawing(id, index)` puts a drawing at a place in the order: 0 is the bottom, as `getDrawings()` lists them. It still takes `'front'`, `'back'`, `'forward'` and `'backward'`.
+
 ## 1.64.0 (2026-11-02)
 
 React, Vue and Svelte components: 1.3.56.

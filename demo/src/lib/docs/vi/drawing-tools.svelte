@@ -188,6 +188,8 @@ chart.on('drawingSelect', ({ payload }) => {
 
 <h2>Thứ tự và nhóm</h2>
 <pre><code>{`chart.moveDrawing(id, 'front')       // 'front' | 'forward' | 'backward' | 'back'
+chart.moveDrawing(id, 0)              // or a place in the order: 0 the bottom, as getDrawings() lists them
+chart.updateDrawing(id, { name: 'Weekly support' })  // its name in the object tree; null: its tool's
 const group = chart.groupDrawings([a, b, c], 'Weekly levels')
 chart.setDrawingGroupVisible(group, false)
 chart.setDrawingGroupLocked(group, true)
@@ -203,6 +205,7 @@ chart.copyDrawings()                 // những hình đang chọn (Ctrl+C)
 chart.pasteDrawings()                // Ctrl+V, tại đây hoặc trên biểu đồ khác trong trang
 chart.canPasteDrawings()             // có gì để dán hay không`}</code></pre>
 <p>Bấm vào một hình vẽ trong nhóm sẽ chọn cả nhóm.</p>
+<p>Trong cây đối tượng của widget, nhấp vào tên một hình vẽ để chọn nó, nhấp đúp để đổi tên. Hàng của nó có nút nhân bản, và tay kéo của nó kéo hình vẽ tới vị trí của một hàng khác trong thứ tự; phím mũi tên trên tay kéo dời nó một bậc.</p>
 
 <h2>Tẩy, phóng to và nam châm</h2>
 <pre><code>{`chart.setEraserMode(true)          // mỗi lần bấm vào một hình vẽ sẽ xoá nó, cho đến khi nhấn Escape
