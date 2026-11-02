@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 1.66.0 (2026-11-02)
+
+React, Vue and Svelte components: 1.3.58.
+
 ### Drawings
 
 - **Signpost, balloon, and a text and a note kept to the screen** (`@tradecanvas/commons`, `@tradecanvas/core`, `@tradecanvas/chart`). There are now 73 drawing tools.
