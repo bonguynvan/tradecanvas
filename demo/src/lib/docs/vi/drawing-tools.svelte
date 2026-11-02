@@ -51,6 +51,27 @@ chart.addDrawing({
   Khi chỉ báo sở hữu panel bị xoá và một chỉ báo khác trong panel nhận lại panel, các hình vẽ đi theo panel. Khi panel mất, các hình vẽ của nó bị ẩn và quay lại cùng panel khi hoàn tác. Layout đã lưu đặt chúng lại đúng panel.
 </p>
 
+<h2 id="text">Chữ</h2>
+<p>
+  Các công cụ chữ (Text, Note, Callout, Price Label, Arrow Mark) dùng chung một kiểu chữ: cỡ chữ, chữ đậm, chữ nghiêng và màu chữ riêng. Text, Note và Callout còn căn các dòng sang trái, giữa hoặc phải, có thể có nền và viền, và xuống dòng ở một độ rộng. Text giữ nguyên các chỗ xuống dòng của nó và chạy dài nếu không được đặt độ rộng; Note và Callout xuống dòng ở 240 px.
+</p>
+<pre><code>{`chart.addDrawing({
+  type: 'text',
+  anchors: [{ time: t1, price: 101.2 }],
+  style: {
+    text: 'Breakout\\nretest here',     // giữ nguyên các chỗ xuống dòng
+    fontSize: 14, bold: true, italic: false,
+    textAlign: 'center',              // 'left' | 'center' | 'right'
+    textColor: '#f2a93b',
+    textBackground: true, fillColor: '#1e222d', fillOpacity: 0.8,
+    textBorder: true, borderColor: '#f2a93b',
+    textWrap: 200,                    // px; 0: chỉ xuống dòng nơi chữ xuống dòng
+  },
+})`}</code></pre>
+<p>
+  Trong widget, Text, Note hoặc Callout hỏi nội dung ngay khi vẽ xong: phần cài đặt mở ở tab Chữ, chữ đã được chọn sẵn, và nút Huỷ bỏ luôn hình vẽ. Nhấp đúp vào chúng cũng mở tab đó. Thanh công cụ trên hình đang chọn đặt được màu nền và màu chữ cho các công cụ có những thứ đó.
+</p>
+
 <h2>Cài đặt</h2>
 <p>
   Ngoài kiểu (màu, độ dày nét, kiểu nét, màu nền, chữ), một công cụ có thể có
@@ -171,7 +192,7 @@ chart.canPasteDrawings()             // có gì để dán hay không`}</code></
 <pre><code>{`chart.setEraserMode(true)          // mỗi lần bấm vào một hình vẽ sẽ xoá nó, cho đến khi nhấn Escape
 chart.setZoomAreaMode(true)        // lần kéo tiếp theo phóng to vào các nến trong khung của nó
 chart.setDrawingMagnetMode('strong') // 'off' | 'weak' | 'strong'`}</code></pre>
-<p>Nam châm yếu hút một điểm vào giá mở cửa, cao, thấp hoặc đóng cửa của nến khi con trỏ ở gần một trong số đó; nam châm mạnh thì luôn làm vậy.</p>
+<p>Nam châm yếu hút một điểm vào giá mở cửa, cao, thấp hoặc đóng cửa của nến khi con trỏ ở gần một trong số đó; nam châm mạnh thì luôn làm vậy. Trong widget, nam châm tắt khi bắt đầu: hình vẽ nằm đúng chỗ được đặt cho đến khi bật nút nam châm.</p>
 
 <h2>Bàn phím</h2>
 <ul>

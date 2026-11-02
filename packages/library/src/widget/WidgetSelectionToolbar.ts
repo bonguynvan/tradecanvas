@@ -18,10 +18,14 @@ export interface SelectionToolbarTarget {
   canDelete: boolean;
   canSettings: boolean;
   canAlert: boolean;
+  /** The drawing fills an area (a fill colour button). */
+  canFill?: boolean;
+  /** The drawing writes text (a text colour button). */
+  canText?: boolean;
 }
 
 export interface SelectionToolbarCallbacks {
-  onStyle: (patch: Partial<Pick<DrawingStyle, 'color' | 'lineWidth' | 'lineStyle'>>) => void;
+  onStyle: (patch: Partial<Pick<DrawingStyle, 'color' | 'lineWidth' | 'lineStyle' | 'fillColor' | 'textColor'>>) => void;
   onSettings: () => void;
   onAlert: () => void;
   onLock: (locked: boolean) => void;
@@ -30,7 +34,10 @@ export interface SelectionToolbarCallbacks {
   onDelete: () => void;
 }
 
-type Pop = 'color' | 'width' | 'lineStyle';
+type Pop = 'color' | 'width' | 'lineStyle' | 'fill' | 'textColor';
+
+/** The style key each colour picker sets. */
+const COLOR_KEYS = { color: 'color', fill: 'fillColor', textColor: 'textColor' } as const;
 
 /** Gap between the toolbar and the selection, px. */
 const GAP = 10;
@@ -138,7 +145,8 @@ export class WidgetSelectionToolbar {
     this.target = target;
     const s = target.style;
     const key = [safeColor(s.color), safeWidth(s.lineWidth), safeLineStyle(s.lineStyle),
-      target.locked, target.canDelete, target.canSettings, target.canAlert].join('|');
+      target.locked, target.canDelete, target.canSettings, target.canAlert,
+      target.canFill === true, target.canText === true, s.fillColor, s.textColor].join('|');
     if (key !== this.built) {
       this.built = key;
       this.render(target);
@@ -179,6 +187,8 @@ export class WidgetSelectionToolbar {
       pop('color', t('drawingSettings.color'), `<span class="tcw-sel-color" style="background:${escapeHtml(color)}"></span>`),
       pop('width', t('drawingSettings.lineWidth'), `<span class="tcw-sel-width" style="--w:${width}px"></span><span class="tcw-sel-num">${width}px</span>`),
       pop('lineStyle', t('drawingSettings.lineStyle'), lineGlyph(lineStyle)),
+      target.canFill ? pop('fill', t('drawingSettings.fill'), `<span class="tcw-sel-color tcw-sel-fill" style="background:${escapeHtml(safeColor(target.style.fillColor ?? color))}"></span>`) : '',
+      target.canText ? pop('textColor', t('drawingSettings.textColor'), `<span class="tcw-sel-text" style="--c:${escapeHtml(safeColor(target.style.textColor ?? color))}">T</span>`) : '',
       '<span class="tcw-sel-sep" aria-hidden="true"></span>',
       target.canSettings ? btn('settings', t('legend.settings'), createIcon('settings', 15)) : '',
       target.canAlert ? btn('alert', t('drawingSettings.addAlert'), createIcon('bell', 15)) : '',
@@ -229,7 +239,7 @@ export class WidgetSelectionToolbar {
     if (!b) return;
     this.rove(b, false);
     const action = b.dataset.action!;
-    if (action === 'color' || action === 'width' || action === 'lineStyle') {
+    if (action === 'color' || action === 'width' || action === 'lineStyle' || action === 'fill' || action === 'textColor') {
       if (this.openPop === action) this.closePop();
       else this.openPopover(action, b);
       return;
@@ -268,13 +278,14 @@ export class WidgetSelectionToolbar {
 
   private openPopover(kind: Pop, anchor: HTMLButtonElement): void {
     const s = this.target!.style;
-    const color = safeColor(s.color).toLowerCase();
+    // Each picker shows the colour it sets: the line's, the fill's or the text's.
+    const color = safeColor(kind === 'fill' ? s.fillColor ?? s.color : kind === 'textColor' ? s.textColor ?? s.color : s.color).toLowerCase();
     const width = safeWidth(s.lineWidth);
     const lineStyle = safeLineStyle(s.lineStyle);
     const pick = (cls: string, on: boolean, attrs: string, inner = '') =>
       `<button type="button" class="${cls}${on ? ' tcw-sel-on' : ''}" aria-pressed="${on}" ${attrs}>${inner}</button>`;
     this.openPop = kind;
-    if (kind === 'color') {
+    if (kind === 'color' || kind === 'fill' || kind === 'textColor') {
       this.pop.innerHTML = SWATCHES.map((c) =>
         pick('tcw-sel-swatch', c.toLowerCase() === color, `data-color="${c}" style="background:${c}" aria-label="${c}"`)).join('');
     } else if (kind === 'width') {
@@ -303,7 +314,7 @@ export class WidgetSelectionToolbar {
     const options = [...this.pop.querySelectorAll<HTMLButtonElement>('button')];
     const i = options.indexOf(document.activeElement as HTMLButtonElement);
     if (i < 0) return;
-    const row = this.openPop === 'color' ? SWATCH_COLUMNS : 1;
+    const row = this.openPop === 'color' || this.openPop === 'fill' || this.openPop === 'textColor' ? SWATCH_COLUMNS : 1;
     const step = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1
       : e.key === 'ArrowDown' ? row : e.key === 'ArrowUp' ? -row : 0;
     if (!step) return;
@@ -321,7 +332,8 @@ export class WidgetSelectionToolbar {
   private onPick(e: MouseEvent): void {
     const b = (e.target as Element).closest<HTMLButtonElement>('button');
     if (!b) return;
-    if (b.dataset.color) this.callbacks.onStyle({ color: b.dataset.color });
+    const colorKey = this.openPop && this.openPop in COLOR_KEYS ? COLOR_KEYS[this.openPop as keyof typeof COLOR_KEYS] : 'color';
+    if (b.dataset.color) this.callbacks.onStyle({ [colorKey]: b.dataset.color });
     else if (b.dataset.width) this.callbacks.onStyle({ lineWidth: Number(b.dataset.width) });
     else if (b.dataset.style) this.callbacks.onStyle({ lineStyle: safeLineStyle(b.dataset.style) });
     this.closePop(true);

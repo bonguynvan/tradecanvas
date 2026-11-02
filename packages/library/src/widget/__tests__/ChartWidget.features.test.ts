@@ -33,6 +33,8 @@ class FakeChart {
     for (const cb of this.listeners.get(event) ?? []) cb({ payload });
   }
   setStayInDrawingMode(on: boolean): void { this.stay.push(on); }
+  magnets: string[] = [];
+  setDrawingMagnetMode(mode: string): void { this.magnets.push(mode); }
   inverted: boolean[] = [];
   setInvertScale(on: boolean): void { this.inverted.push(on); }
   display: string[] = [];
@@ -242,6 +244,16 @@ describe('ChartWidget leaves out switched-off features', () => {
   it('has a magnet button by default', () => {
     make();
     expect(host.querySelector('.tcw-sidebar-btn[title^="Magnet"]')).not.toBeNull();
+  });
+
+  it('starts with the magnet off: a drawing goes where it is placed until the magnet is turned on', () => {
+    make();
+    const magnet = host.querySelector<HTMLButtonElement>('.tcw-sidebar-btn[title^="Magnet"]')!;
+    expect(magnet.title).toBe('Magnet off');
+    expect(magnet.classList.contains('tcw-active')).toBe(false);
+    expect(FakeChart.last.magnets).toEqual(['off']);
+    magnet.click();
+    expect(FakeChart.last.magnets).toEqual(['off', 'weak']);
   });
 });
 

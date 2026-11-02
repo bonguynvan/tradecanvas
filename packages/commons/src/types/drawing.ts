@@ -44,6 +44,24 @@ export interface DrawingStyle {
   fillOpacity?: number;
   fontSize?: number;
   text?: string;
+  /** The text in bold. */
+  bold?: boolean;
+  /** The text in italics. */
+  italic?: boolean;
+  /** Where each line of the text lines up in its box. */
+  textAlign?: 'left' | 'center' | 'right';
+  /** The text's colour; `color` when left out (a note keeps `color` for its pin). */
+  textColor?: string;
+  /**
+   * A box behind the text, in `fillColor` at `fillOpacity`. Left out: as the
+   * tool draws it (a note and a callout have one, a text has none).
+   */
+  textBackground?: boolean;
+  /** A border round the text's box, in `borderColor` (`color` when left out). Left out: as the tool draws it. */
+  textBorder?: boolean;
+  borderColor?: string;
+  /** Widest a line of the text gets before it wraps, px; 0: it breaks only where the text does. Left out: the tool's own width. */
+  textWrap?: number;
 }
 
 export interface DrawingState {

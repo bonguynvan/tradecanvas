@@ -12,7 +12,7 @@ import { keepTabInside } from './focusTrap.js';
 import { EN_TRANSLATOR, fill, type Translator } from './i18n.js';
 import { WidgetContextMenu, type ContextMenuEntry } from './WidgetContextMenu.js';
 import type { DrawingStyleTemplate } from './DrawingTemplateStore.js';
-import { renderCoordinatesTab, renderStyleTab, renderTextTab } from './drawingSettingsTabs.js';
+import { renderCoordinatesTab, renderStyleTab, renderTextTab, type TextLayout } from './drawingSettingsTabs.js';
 import { renderVisibilityTab } from './indicatorSettingsTabs.js';
 
 /** The drawing a settings dialog edits. */
@@ -29,6 +29,10 @@ export interface DrawingSettingsTarget {
   /** Whether the tool fills an area and draws text (the Fill row, the Text tab). */
   fill: boolean;
   text: boolean;
+  /** How the tool lays its text out in a box (the Text tab's alignment, background, border and wrap rows); unset: font rows only. */
+  textLayout?: TextLayout;
+  /** The colour the tool writes in without one of its own, when it isn't the line's. */
+  textColor?: string;
   /** The intervals it shows on; unset or null: all of them. */
   intervals?: IndicatorIntervals | null;
 }
@@ -180,7 +184,11 @@ export class WidgetDrawingSettings {
     return footer;
   }
 
-  open(target: DrawingSettingsTarget): void {
+  /**
+   * Open on `target`. With `tab: 'text'` it opens on the Text tab (a tool
+   * that writes), the text selected so typing replaces it.
+   */
+  open(target: DrawingSettingsTarget, how: { tab?: 'text' } = {}): void {
     if (this.target) this.close(false);
     this.returnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     this.target = target;
@@ -189,7 +197,7 @@ export class WidgetDrawingSettings {
     this.anchors = target.anchors.map((a) => ({ ...a }));
     this.intervals = target.intervals ?? null;
     this.titleEl.textContent = target.name;
-    this.tab = 'style';
+    this.tab = how.tab === 'text' && target.text ? 'text' : 'style';
     this.callbacks.onBegin(target.id);
     try {
       this.renderTabs();
@@ -201,7 +209,13 @@ export class WidgetDrawingSettings {
       throw err;
     }
     this.backdrop.hidden = false;
-    (this.tabButtons[0] ?? this.modal).focus();
+    const text = this.tab === 'text' ? this.bodyEl.querySelector<HTMLTextAreaElement>('textarea') : null;
+    if (text) {
+      text.focus();
+      text.select();
+    } else {
+      (this.tabButtons[0] ?? this.modal).focus();
+    }
   }
 
   /** Close the dialog, keeping the edits or (with `cancel`) putting the drawing back. */
@@ -317,7 +331,7 @@ export class WidgetDrawingSettings {
     if (!target) return;
     switch (this.tab) {
       case 'text':
-        renderTextTab(this.bodyEl, this.style, (patch) => this.setStyle(patch), this.t);
+        renderTextTab(this.bodyEl, this.style, (patch) => this.setStyle(patch), this.t, target.textLayout, target.textColor);
         break;
       case 'coordinates':
         renderCoordinatesTab(this.bodyEl, this.anchors, {

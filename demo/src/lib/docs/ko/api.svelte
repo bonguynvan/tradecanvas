@@ -78,6 +78,7 @@
     <tr><td><code>removeIndicator(instanceId)</code></td><td>지표를 제거하고 정리합니다.</td></tr>
     <tr><td><code>removeIndicators(instanceIds)</code></td><td>여러 지표를 한 번의 실행 취소 단계로 제거합니다.</td></tr>
     <tr><td><code>removeAll(what?)</code></td><td>모든 그리기(<code>'drawings'</code>), 모든 지표(<code>'indicators'</code>) 또는 둘 다(<code>'all'</code>)를 한 번의 실행 취소 단계로 제거합니다. 잠긴 그리기는 남습니다. 각각 몇 개가 제거됐는지 돌려줍니다.</td></tr>
+    <tr><td><code>takeBackDrawing(id)</code></td><td>방금 만든 그리기를 되돌립니다(그린 직후의 취소처럼). 그것을 만든 단계가 마지막 단계면 그 단계째 되돌려, 실행 취소나 다시 실행할 것이 남지 않습니다. 포인터로 방금 그린 그리기에는 <code>drawingCreate</code> 이벤트에 <code>drawn: true</code>가 붙습니다.</td></tr>
     <tr><td><code>updateIndicatorStyle(instanceId, style)</code></td><td>색, 선 두께, 불투명도, 그리고 플롯별 선 종류와 표시(<code>plots: {`{ signal: { lineStyle: 'dashed' } }`}</code>).</td></tr>
     <tr><td><code>setIndicatorDefaults(id, style | null)</code></td><td>앞으로 추가할 같은 종류 지표의 시작 스타일.</td></tr>
     <tr><td><code>setIndicatorIntervals(instanceId, intervals | null)</code> · <code>getIndicatorIntervals(instanceId)</code></td><td>지표가 표시되는 시간 단위(<code>{`{ minutes: false, hours: [1, 4] }`}</code>). <code>null</code>이면 전체. 레이아웃과 함께 저장.</td></tr>

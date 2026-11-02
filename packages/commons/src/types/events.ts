@@ -248,6 +248,8 @@ export interface PriceRangeChangePayload {
 export interface DrawingCreatePayload {
   id: string;
   type: string;
+  /** Made with the pointer just now: not added from code, pasted, or brought back by undo or redo. */
+  drawn?: boolean;
 }
 
 export interface DrawingRemovePayload {

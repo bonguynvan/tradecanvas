@@ -51,6 +51,27 @@ chart.addDrawing({
   When the indicator that owns the pane is removed and another in the pane takes it over, its drawings go with the pane. When the pane goes, its drawings are hidden and come back with it on undo. A saved layout puts them back on their panes.
 </p>
 
+<h2 id="text">Text</h2>
+<p>
+  The text tools (Text, Note, Callout, Price Label, Arrow Mark) share one text style: size, bold, italics and a colour of their own. A Text, a Note and a Callout also line their lines up left, centre or right, can have a background and a border, and wrap at a width. A Text keeps its own line breaks and runs on unless it is given one; a Note and a Callout wrap at 240 px.
+</p>
+<pre><code>{`chart.addDrawing({
+  type: 'text',
+  anchors: [{ time: t1, price: 101.2 }],
+  style: {
+    text: 'Breakout\\nretest here',     // its own line breaks are kept
+    fontSize: 14, bold: true, italic: false,
+    textAlign: 'center',              // 'left' | 'center' | 'right'
+    textColor: '#f2a93b',
+    textBackground: true, fillColor: '#1e222d', fillOpacity: 0.8,
+    textBorder: true, borderColor: '#f2a93b',
+    textWrap: 200,                    // px; 0: only where the text breaks
+  },
+})`}</code></pre>
+<p>
+  In the widget, a Text, a Note or a Callout asks for its words as soon as it is drawn: its settings open on the Text tab, the text selected, and Cancel takes the drawing back. A double-click on one opens the same tab. The toolbar over a selection sets the fill and the text colour of the tools that have them.
+</p>
+
 <h2>Settings</h2>
 <p>
   Besides its style (colour, width, line style, fill, text), a tool can offer
@@ -171,7 +192,7 @@ chart.canPasteDrawings()             // whether there is something to paste`}</c
 <pre><code>{`chart.setEraserMode(true)          // each click on a drawing removes it, until Escape
 chart.setZoomAreaMode(true)        // the next drag zooms to the bars in its box
 chart.setDrawingMagnetMode('strong') // 'off' | 'weak' | 'strong'`}</code></pre>
-<p>The weak magnet snaps a point to the bar's open, high, low or close when the pointer is near one; the strong magnet always does.</p>
+<p>The weak magnet snaps a point to the bar's open, high, low or close when the pointer is near one; the strong magnet always does. In the widget the magnet starts off: a drawing goes where it is placed until the magnet button turns it on.</p>
 
 <h2>Keyboard</h2>
 <ul>

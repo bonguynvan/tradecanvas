@@ -3621,6 +3621,16 @@
   border-radius: 50%;
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tcw-text) 25%, transparent);
 }
+/* The fill picker: a square, where the line colour is a dot. */
+.tcw-sel-fill { border-radius: 3px; }
+/* The text colour picker: a letter over a bar in the text's colour. */
+.tcw-sel-text {
+  font-weight: var(--tcw-weight-strong);
+  font-size: var(--tcw-font-size-sm);
+  line-height: 1;
+  padding-bottom: 1px;
+  border-bottom: 3px solid var(--c, currentColor);
+}
 .tcw-sel-width {
   display: inline-block;
   width: 16px;

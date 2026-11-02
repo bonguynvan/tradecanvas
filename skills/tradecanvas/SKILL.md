@@ -202,6 +202,11 @@ with `updateDrawing(id, { intervals })`, null for all) shows only there: `isDraw
 Trend lines, rays and extended lines take a middle point and stats (`showPriceRange`,
 `showBarsRange`, `showDateRange`, `showAngle`, `alwaysShowStats`, `statsPosition`).
 `riskReward` is a Long/Short position sized from `accountSize` and `risk`.
+Text tools (`text`, `note`, `callout`, `priceLabel`, `arrowMark`) take a text style:
+`style: { text: 'line one\nline two', fontSize, bold, italic, textColor }`, and a text, a note
+or a callout also `textAlign` ('left' | 'center' | 'right'), `textBackground` (in `fillColor`),
+`textBorder` (in `borderColor`) and `textWrap` (px; 0: only at the text's own breaks).
+The widget's magnet starts off; `setDrawingMagnetMode('weak' | 'strong')` turns it on.
 A drawing can sit on an indicator pane: `addDrawing({ …, paneId })` with an id from
 `getIndicatorPanes()`, its anchors' prices then the pane's values (an RSI level at 70). One
 begun with the pointer on a pane goes there by itself; `paneId` unset is the price pane.

@@ -78,6 +78,7 @@
     <tr><td><code>removeIndicator(instanceId)</code></td><td>削除して破棄します。</td></tr>
     <tr><td><code>removeIndicators(instanceIds)</code></td><td>複数をまとめて削除します（元に戻すは 1 回）。</td></tr>
     <tr><td><code>removeAll(what?)</code></td><td>すべての描画（<code>'drawings'</code>）、すべてのインジケーター（<code>'indicators'</code>）、または両方（<code>'all'</code>）を削除します（元に戻すは 1 回）。ロックした描画は残ります。それぞれ削除した数を返します。</td></tr>
+    <tr><td><code>takeBackDrawing(id)</code></td><td>描いたばかりの描画を取り消します（描いた直後のキャンセルのように）。それを作った手順が最後の手順なら、その手順ごと取り消すので、元に戻す・やり直す操作は残りません。ポインターで描いたばかりの描画では、<code>drawingCreate</code> イベントに <code>drawn: true</code> が付きます。</td></tr>
     <tr><td><code>updateIndicatorStyle(instanceId, style)</code></td><td>色、線の太さ、不透明度、そしてプロットごとの線種と表示（<code>plots: {`{ signal: { lineStyle: 'dashed' } }`}</code>）。</td></tr>
     <tr><td><code>setIndicatorDefaults(id, style | null)</code></td><td>これから追加する同じ種類のインジケーターの初期スタイル。</td></tr>
     <tr><td><code>setIndicatorIntervals(instanceId, intervals | null)</code> · <code>getIndicatorIntervals(instanceId)</code></td><td>表示する時間足（<code>{`{ minutes: false, hours: [1, 4] }`}</code>）。<code>null</code> ですべての時間足。レイアウトとともに保存。</td></tr>

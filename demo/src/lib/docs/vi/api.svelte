@@ -78,6 +78,7 @@
     <tr><td><code>removeIndicator(instanceId)</code></td><td>Xoá và dọn dẹp chỉ báo.</td></tr>
     <tr><td><code>removeIndicators(instanceIds)</code></td><td>Xoá nhiều chỉ báo, gộp thành một bước hoàn tác.</td></tr>
     <tr><td><code>removeAll(what?)</code></td><td>Xoá mọi hình vẽ (<code>'drawings'</code>), mọi chỉ báo (<code>'indicators'</code>) hoặc cả hai (<code>'all'</code>), gộp thành một bước hoàn tác; hình vẽ đã khoá thì giữ lại. Trả về số lượng mỗi loại đã xoá.</td></tr>
+    <tr><td><code>takeBackDrawing(id)</code></td><td>Bỏ một hình vẽ vừa tạo, như nút Huỷ ngay sau khi vẽ: bỏ luôn bước đã tạo ra nó nếu đó là bước cuối, nên không còn gì để hoàn tác hay làm lại. Sự kiện <code>drawingCreate</code> có <code>drawn: true</code> cho hình vẽ vừa được vẽ bằng con trỏ.</td></tr>
     <tr><td><code>updateIndicatorStyle(instanceId, style)</code></td><td>Màu, độ dày, độ mờ, và kiểu nét, ẩn/hiện của từng đường (<code>plots: {`{ signal: { lineStyle: 'dashed' } }`}</code>).</td></tr>
     <tr><td><code>setIndicatorDefaults(id, style | null)</code></td><td>Style mà các chỉ báo cùng loại bắt đầu với, từ nay.</td></tr>
     <tr><td><code>setIndicatorIntervals(instanceId, intervals | null)</code> · <code>getIndicatorIntervals(instanceId)</code></td><td>Các khung thời gian mà chỉ báo hiện trên đó (<code>{`{ minutes: false, hours: [1, 4] }`}</code>); <code>null</code>: mọi khung. Lưu cùng bố cục.</td></tr>

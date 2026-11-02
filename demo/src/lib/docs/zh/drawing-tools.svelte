@@ -51,6 +51,27 @@ chart.addDrawing({
   拥有窗格的指标被删除、由窗格中另一个指标接管时，绘图随窗格一起转移。窗格被删除时，其绘图会隐藏，撤销后随窗格一起恢复。保存的布局会把它们放回各自的窗格。
 </p>
 
+<h2 id="text">文字</h2>
+<p>
+  文字类工具（文本、便签、标注、价格标签、箭头标记）共用一套文字样式：字号、粗体、斜体和单独的文字颜色。文本、便签和标注还能左对齐、居中或右对齐，可以加背景和边框，并在指定宽度处换行。文本保留自己的换行，没有设定宽度时不会自动换行；便签和标注在 240 px 处换行。
+</p>
+<pre><code>{`chart.addDrawing({
+  type: 'text',
+  anchors: [{ time: t1, price: 101.2 }],
+  style: {
+    text: 'Breakout\\nretest here',     // 保留文字自己的换行
+    fontSize: 14, bold: true, italic: false,
+    textAlign: 'center',              // 'left' | 'center' | 'right'
+    textColor: '#f2a93b',
+    textBackground: true, fillColor: '#1e222d', fillOpacity: 0.8,
+    textBorder: true, borderColor: '#f2a93b',
+    textWrap: 200,                    // px；0：只在文字换行处换行
+  },
+})`}</code></pre>
+<p>
+  在组件中，画完文本、便签或标注后会立即询问内容：设置在“文字”页打开，文字已选中，按“取消”会撤回这个绘图。双击它们也会打开同一页。选中时的工具栏可设置有填充或文字的工具的填充色和文字颜色。
+</p>
+
 <h2>设置</h2>
 <p>
   除样式（颜色、线宽、线型、填充、文本）外，工具还可以提供自己的设置：
@@ -165,7 +186,7 @@ chart.canPasteDrawings()             // 是否有可粘贴的内容`}</code></pr
 <pre><code>{`chart.setEraserMode(true)          // 每次点击画线就将其删除，直到按 Escape
 chart.setZoomAreaMode(true)        // 下一次拖动会缩放到框内的K线
 chart.setDrawingMagnetMode('strong') // 'off' | 'weak' | 'strong'`}</code></pre>
-<p>弱磁吸会在指针靠近K线的开盘价、最高价、最低价或收盘价时，把点吸附到该价位；强磁吸则始终吸附。</p>
+<p>弱磁吸会在指针靠近K线的开盘价、最高价、最低价或收盘价时，把点吸附到该价位；强磁吸则始终吸附。在组件中磁吸默认关闭：绘图放在哪里就在哪里，直到用磁吸按钮开启。</p>
 
 <h2>键盘</h2>
 <ul>

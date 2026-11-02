@@ -1,6 +1,7 @@
 import type { DrawingState, Point, ViewportState } from '@tradecanvas/commons';
 import { DrawingBase } from '../DrawingBase.js';
-import { formatDrawingPrice, drawingFontFamily } from './labels.js';
+import { formatDrawingPrice } from './labels.js';
+import { BoxCache, boxFont } from './textBox.js';
 
 const OFFSET_X = 14;
 const OFFSET_Y = 18;
@@ -9,6 +10,9 @@ const HEIGHT = 20;
 
 /** Price Label: a callout pinned to a point showing its price (or custom text). */
 export class PriceLabelTool extends DrawingBase {
+  /** Each label's box as last drawn, measured: a hit test has no canvas to measure with. */
+  private drawn = new BoxCache();
+
   descriptor = { type: 'priceLabel' as const, name: 'Price Label', requiredAnchors: 1, text: true };
 
   private text(state: DrawingState, viewport: ViewportState): string {
@@ -26,8 +30,9 @@ export class PriceLabelTool extends DrawingBase {
   render(ctx: CanvasRenderingContext2D, state: DrawingState, viewport: ViewportState, selected: boolean): void {
     if (state.anchors.length < 1) return;
     const p = this.anchorToPixel(state.anchors[0], viewport);
-    ctx.font = `${state.style.fontSize ?? 12}px ${drawingFontFamily()}`;
+    ctx.font = boxFont(state.style.fontSize ?? 12, state.style.bold, state.style.italic);
     const b = this.box(ctx, state, p, viewport);
+    this.drawn.set(state.id, { x: b.x, y: b.y, width: b.w, height: b.h });
 
     // Leader from the point to the callout.
     ctx.strokeStyle = state.style.color;
@@ -40,7 +45,7 @@ export class PriceLabelTool extends DrawingBase {
 
     ctx.fillStyle = state.style.color;
     ctx.fillRect(b.x, b.y, b.w, b.h);
-    ctx.fillStyle = '#FFFFFF';
+    ctx.fillStyle = state.style.textColor ?? '#FFFFFF';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
     ctx.fillText(this.text(state, viewport), b.x + PAD_X, b.y + b.h / 2);
@@ -57,7 +62,9 @@ export class PriceLabelTool extends DrawingBase {
     if (state.anchors.length < 1) return false;
     const p = this.anchorToPixel(state.anchors[0], viewport);
     if (Math.hypot(point.x - p.x, point.y - p.y) <= tolerance) return true;
-    const b = this.box(null, state, p, viewport);
+    const drawn = this.drawn.get(state.id);
+    // Where it was drawn, moved with its point since (a pan between frames).
+    const b = drawn ? { ...this.box(null, state, p, viewport), w: drawn.width } : this.box(null, state, p, viewport);
     return point.x >= b.x - tolerance && point.x <= b.x + b.w + tolerance
       && point.y >= b.y - tolerance && point.y <= b.y + b.h + tolerance;
   }

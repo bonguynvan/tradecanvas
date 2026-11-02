@@ -1,8 +1,7 @@
 import type { DrawingState, Point, ViewportState } from '@tradecanvas/commons';
 import { DrawingBase } from '../DrawingBase.js';
 import { resolveAnnotationText } from './TextAnnotation.js';
-import { BoxCache, drawTextBox, inRect, type Rect } from './textBox.js';
-import { drawingFontFamily } from './labels.js';
+import { BoxCache, boxFont, drawTextBox, inRect, textLook, type Rect } from './textBox.js';
 
 /** Widest a note's or a callout's text runs before it wraps (px). */
 const NOTE_WIDTH = 240;
@@ -12,14 +11,9 @@ function fontSize(state: DrawingState): number {
   return state.style.fontSize || DEFAULT_FONT_SIZE;
 }
 
+/** A note's or a callout's text: in a box with a border unless its style says not, wrapped at `NOTE_WIDTH`. */
 function boxLook(state: DrawingState) {
-  return {
-    fontSize: fontSize(state),
-    color: state.style.color,
-    fill: state.style.fillColor ?? 'rgba(76, 141, 255, 0.1)',
-    stroke: state.style.color,
-    maxWidth: NOTE_WIDTH,
-  };
+  return textLook(state.style, { fontSize: DEFAULT_FONT_SIZE, box: true, border: true, width: NOTE_WIDTH, fill: 'rgba(76, 141, 255, 0.1)' });
 }
 
 /** A box `text` would roughly take before it is drawn (for a hit test). */
@@ -230,7 +224,8 @@ export class ArrowMarkTool extends DrawingBase {
     const text = state.style.text;
     if (text) {
       // The label sits past the tail, on the arrow's line.
-      ctx.font = `${state.style.fontSize || 12}px ${drawingFontFamily()}`;
+      ctx.font = boxFont(state.style.fontSize || 12, state.style.bold, state.style.italic);
+      ctx.fillStyle = state.style.textColor ?? state.style.color;
       ctx.textAlign = dir.x === 0 ? 'center' : dir.x > 0 ? 'right' : 'left';
       ctx.textBaseline = dir.y === 0 ? 'middle' : dir.y < 0 ? 'top' : 'bottom';
       ctx.fillText(text, tail.x - dir.x * 4, tail.y - dir.y * 4);

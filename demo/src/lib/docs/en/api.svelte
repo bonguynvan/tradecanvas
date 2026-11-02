@@ -78,6 +78,7 @@
     <tr><td><code>removeIndicator(instanceId)</code></td><td>Remove and tear down.</td></tr>
     <tr><td><code>removeIndicators(instanceIds)</code></td><td>Remove several, as one undo step.</td></tr>
     <tr><td><code>removeAll(what?)</code></td><td>Every drawing (<code>'drawings'</code>), every indicator (<code>'indicators'</code>) or both (<code>'all'</code>), as one undo step; locked drawings stay. Returns how many of each went.</td></tr>
+    <tr><td><code>takeBackDrawing(id)</code></td><td>Take back a drawing just made, as a Cancel right after it: with the step that made it when that is the last one, so nothing is left to undo or redo. The <code>drawingCreate</code> event says <code>drawn: true</code> for a drawing the pointer just made.</td></tr>
     <tr><td><code>updateIndicatorStyle(instanceId, style)</code></td><td>Colours, line widths, opacity, and each plot's dash and visibility (<code>plots: {`{ signal: { lineStyle: 'dashed' } }`}</code>).</td></tr>
     <tr><td><code>setIndicatorDefaults(id, style | null)</code></td><td>The style indicators of a kind start with from now on.</td></tr>
     <tr><td><code>setIndicatorIntervals(instanceId, intervals | null)</code> · <code>getIndicatorIntervals(instanceId)</code></td><td>The intervals it shows on (<code>{`{ minutes: false, hours: [1, 4] }`}</code>); <code>null</code>: all of them. Saved with the layout.</td></tr>

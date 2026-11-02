@@ -51,6 +51,27 @@ chart.addDrawing({
   패널을 가진 지표를 지우고 패널 안의 다른 지표가 이어받으면 그리기도 패널과 함께 옮겨 갑니다. 패널이 없어지면 그리기는 숨겨지고, 실행 취소하면 패널과 함께 돌아옵니다. 저장한 레이아웃은 그리기를 원래 패널에 다시 놓습니다.
 </p>
 
+<h2 id="text">텍스트</h2>
+<p>
+  텍스트 도구(텍스트, 노트, 말풍선, 가격 라벨, 화살표 마크)는 같은 글자 스타일을 씁니다. 크기, 굵게, 기울임꼴, 그리고 따로 정하는 글자 색입니다. 텍스트, 노트, 말풍선은 줄을 왼쪽·가운데·오른쪽으로 맞추고, 배경과 테두리를 두며, 정한 너비에서 줄을 바꿀 수 있습니다. 텍스트는 자기 줄 바꿈을 지키고 너비를 정하지 않으면 줄을 바꾸지 않으며, 노트와 말풍선은 240 px에서 줄을 바꿉니다.
+</p>
+<pre><code>{`chart.addDrawing({
+  type: 'text',
+  anchors: [{ time: t1, price: 101.2 }],
+  style: {
+    text: 'Breakout\\nretest here',     // 텍스트의 줄 바꿈은 그대로
+    fontSize: 14, bold: true, italic: false,
+    textAlign: 'center',              // 'left' | 'center' | 'right'
+    textColor: '#f2a93b',
+    textBackground: true, fillColor: '#1e222d', fillOpacity: 0.8,
+    textBorder: true, borderColor: '#f2a93b',
+    textWrap: 200,                    // px. 0이면 텍스트가 줄을 바꾸는 곳에서만
+  },
+})`}</code></pre>
+<p>
+  위젯에서는 텍스트, 노트, 말풍선을 그리자마자 내용을 묻습니다. 설정이 텍스트 탭에서 열리고 글자가 선택되어 있으며, 취소를 누르면 그리기가 취소됩니다. 더블 클릭해도 같은 탭이 열립니다. 선택했을 때의 도구 모음에서 채우기와 글자가 있는 도구의 채우기 색과 글자 색을 바꿀 수 있습니다.
+</p>
+
 <h2>설정</h2>
 <p>
   스타일(색상, 선 두께, 선 스타일, 채우기, 텍스트) 외에도 도구마다 고유한 설정을
@@ -166,7 +187,7 @@ chart.canPasteDrawings()             // 붙여넣을 것이 있는지`}</code></
 <pre><code>{`chart.setEraserMode(true)          // 그림을 클릭할 때마다 삭제, Escape를 누를 때까지
 chart.setZoomAreaMode(true)        // 다음 드래그로 상자 안의 봉을 확대
 chart.setDrawingMagnetMode('strong') // 'off' | 'weak' | 'strong'`}</code></pre>
-<p>약한 자석은 포인터가 봉의 시가, 고가, 저가, 종가 가까이에 있을 때 점을 그 값에 스냅하고, 강한 자석은 항상 스냅합니다.</p>
+<p>약한 자석은 포인터가 봉의 시가, 고가, 저가, 종가 가까이에 있을 때 점을 그 값에 스냅하고, 강한 자석은 항상 스냅합니다. 위젯에서는 자석이 꺼진 채로 시작합니다. 자석 버튼으로 켜기 전까지 그리기는 놓은 자리에 그대로 있습니다.</p>
 
 <h2>키보드</h2>
 <ul>

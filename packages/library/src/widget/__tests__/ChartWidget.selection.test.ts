@@ -5,6 +5,9 @@ import { resolveWidgetUI, typeSize } from '../widgetUI.js';
 
 type Box = { x: number; y: number; width: number; height: number };
 
+/** Tools that write text in a box: the fake gives them a Text tab and a fill. */
+const TEXT_TOOLS = ['text', 'note', 'callout'];
+
 /** Stand-in for the canvas-backed Chart: selectable drawings and the calls it gets. */
 class FakeChart {
   static last: FakeChart;
@@ -50,7 +53,14 @@ class FakeChart {
   isEraserMode(): boolean { return false; }
   isZoomAreaMode(): boolean { return false; }
   getPlotRect(): Box { return { x: 0, y: 0, width: 800, height: 500 }; }
-  getDrawingToolDescriptor() { return { type: 'trendLine', name: 'Trend Line', options: {} }; }
+  getDrawingToolDescriptor(type = 'trendLine') { return { type, name: type, options: {}, text: TEXT_TOOLS.includes(type), fill: TEXT_TOOLS.includes(type) }; }
+  undos = 0;
+  undo(): boolean { this.undos += 1; return true; }
+  takenBack: string[] = [];
+  takeBackDrawing(id: string): void { this.takenBack.push(id); }
+  edits: [string, unknown][] = [];
+  beginDrawingEdit(id: string): void { this.edits.push(['begin', id]); }
+  endDrawingEdit(id: string, how: { cancel: boolean }): void { this.edits.push(['end', [id, how.cancel]]); }
   getDrawingOptions() { return {}; }
   canAddDrawingAlert(): boolean { return true; }
   setSelectedDrawingStyle(style: Record<string, unknown>, id?: string): boolean { this.styled.push([style, id]); return true; }
@@ -283,5 +293,79 @@ describe('ChartWidget selection toolbar', () => {
     widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false, features: { selectionToolbar: false } });
     FakeChart.last.select(['d1']);
     expect(bar()?.hidden ?? true).toBe(true);
+  });
+});
+
+describe('ChartWidget and text drawings', () => {
+  const textDrawing = (): DrawingState => ({ id: 't1', type: 'text', visible: true, locked: false, anchors: [{ time: 1, price: 10 }], style: { color: '#2962ff', lineWidth: 1, lineStyle: 'solid', text: 'Text' } });
+  const dialogTab = () => host.querySelector<HTMLElement>('.tcw-modal-tab[aria-selected="true"]')?.dataset.tab;
+
+  it('offers the fill and the text colour on the toolbar over a text, not over a line', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false });
+    FakeChart.last.select(['d1']);
+    expect(bar()!.querySelector('[data-action="textColor"]')).toBeNull();
+    FakeChart.last.drawings = [textDrawing()];
+    FakeChart.last.select(['t1']);
+    button('textColor').click();
+    host.querySelector<HTMLButtonElement>('.tcw-sel-pop [data-color]')!.click();
+    const [style] = FakeChart.last.styled.at(-1)!;
+    expect(Object.keys(style)).toEqual(['textColor']);
+    button('fill').click();
+    host.querySelector<HTMLButtonElement>('.tcw-sel-pop [data-color]')!.click();
+    expect(Object.keys(FakeChart.last.styled.at(-1)![0])).toEqual(['fillColor', 'textBackground']);
+  });
+
+  it('asks for the words as soon as a text is drawn, and takes the text back on Cancel', async () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false });
+    FakeChart.last.drawings = [textDrawing()];
+    FakeChart.last.tool = 'text';
+    FakeChart.last.emit('drawingCreate', { id: 't1', type: 'text', drawing: textDrawing(), drawn: true });
+    // The press that drew it is still down: the dialog waits for it to end, or the chart would take the keyboard back.
+    expect(dialogTab()).toBeUndefined();
+    window.dispatchEvent(new MouseEvent('pointerup'));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(dialogTab()).toBe('text');
+    expect(document.activeElement?.tagName).toBe('TEXTAREA');
+    host.querySelector<HTMLButtonElement>('.tcw-modal-footer [data-act="cancel"]')!.click();
+    expect(FakeChart.last.takenBack).toEqual(['t1']);
+    expect(FakeChart.last.undos).toBe(0);
+  });
+
+  it('opens no dialog for a text added, pasted or brought back while the Text tool is picked', async () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false });
+    FakeChart.last.drawings = [textDrawing()];
+    FakeChart.last.tool = 'text';
+    FakeChart.last.emit('drawingCreate', { id: 't1', type: 'text', drawing: textDrawing() });
+    window.dispatchEvent(new MouseEvent('pointerup'));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(dialogTab()).toBeUndefined();
+  });
+
+  it('turns a text’s background on when its fill is picked on the toolbar', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false });
+    FakeChart.last.drawings = [textDrawing()];
+    FakeChart.last.select(['t1']);
+    button('fill').click();
+    host.querySelector<HTMLButtonElement>('.tcw-sel-pop [data-color]')!.click();
+    expect(FakeChart.last.styled.at(-1)![0]).toMatchObject({ textBackground: true });
+  });
+
+  it('opens no dialog for a text added from code', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false });
+    FakeChart.last.drawings = [textDrawing()];
+    FakeChart.last.emit('drawingCreate', { id: 't1', type: 'text', drawing: textDrawing() });
+    expect(dialogTab()).toBeUndefined();
+  });
+
+  it('opens a text’s settings on its Text tab when it is double-clicked, and a line’s on Style', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false });
+    FakeChart.last.drawings = [textDrawing(), ...FakeChart.last.drawings];
+    FakeChart.last.emit('drawingDoubleClick', { id: 't1' });
+    expect(dialogTab()).toBe('text');
+    host.querySelector<HTMLButtonElement>('.tcw-modal-footer [data-act="cancel"]')!.click();
+    expect(FakeChart.last.undos).toBe(0);
+    FakeChart.last.drawings = [{ ...FakeChart.last.drawings[1] }];
+    FakeChart.last.emit('drawingDoubleClick', { id: 'd1' });
+    expect(dialogTab()).toBe('style');
   });
 });
