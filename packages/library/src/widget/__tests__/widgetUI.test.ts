@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect } from 'vitest';
-import { FIBONACCI, SANS_FONT_FAMILY, phiStep } from '@tradecanvas/commons';
-import { applyWidgetUI, resolveWidgetUI, typeSize, widgetUIVariables, WIDGET_UI_PRESETS, type WidgetUITheme } from '../widgetUI.js';
+import { FIBONACCI, PHI, SANS_FONT_FAMILY, phiStep } from '@tradecanvas/commons';
+import { applyWidgetUI, resolveWidgetUI, scaledWidgetUI, typeSize, widgetScaleFor, widgetUIVariables, WIDGET_UI_PRESETS, type WidgetUITheme } from '../widgetUI.js';
 import { injectWidgetStyles, removeWidgetStyles } from '../WidgetStyles.js';
 
 describe('resolveWidgetUI', () => {
@@ -226,5 +226,30 @@ describe('the look on the page', () => {
       expect(menu, name).toMatch(/var\(--tcw-/);
       expect(dialog, name).toMatch(/var\(--tcw-/);
     }
+  });
+});
+
+describe('the look on a wide screen', () => {
+  it('grows by thirds of φ as the widget widens: none on a laptop, a sixth from full HD, more on 4K', () => {
+    expect(widgetScaleFor(1280)).toBe(1);
+    expect(widgetScaleFor(1920)).toBeCloseTo(PHI ** (1 / 6));
+    expect(widgetScaleFor(2560)).toBeCloseTo(PHI ** (1 / 3));
+    expect(widgetScaleFor(3840)).toBeCloseTo(PHI ** (1 / 2));
+  });
+
+  it('scales the bars, buttons, icons and type, and leaves the corners', () => {
+    const base = resolveWidgetUI('print');
+    const big = scaledWidgetUI(base, widgetScaleFor(2560));
+    expect(big.sizes).toEqual({ toolbar: 49, control: 31, controlSmall: 23, icon: 19, sidebar: 49, menuItem: 39 });
+    expect(big.font.size).toBe(15);
+    expect(big.radius).toEqual(base.radius);
+    expect(scaledWidgetUI(base, 1)).toEqual(base);
+  });
+
+  it('takes a scale of your own, or none: 1 keeps the sizes at every width', () => {
+    expect(resolveWidgetUI().scale).toBe('auto');
+    expect(resolveWidgetUI({ scale: 1 }).scale).toBe(1);
+    expect(resolveWidgetUI({ scale: 1.2 }).scale).toBe(1.2);
+    expect(resolveWidgetUI({ scale: 9 as never }).scale).toBe('auto');
   });
 });

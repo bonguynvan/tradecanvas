@@ -29,7 +29,7 @@ import { WidgetAlertsPanel, describeAlert, type AlertListItem, type AlertSource 
 import { indicatorChipLabel } from '../indicatorLabel.js';
 import { widgetIndicatorLabel } from './indicatorInputWords.js';
 import { readChartTypeOptions, type ChartTypeOptions } from '@tradecanvas/commons';
-import { applyWidgetUI, resolveWidgetUI, typeSize, type ResolvedWidgetUI, type WidgetUIPreset, type WidgetUITheme } from './widgetUI.js';
+import { applyWidgetUI, resolveWidgetUI, scaledWidgetUI, typeSize, widgetScaleFor, type ResolvedWidgetUI, type WidgetUIPreset, type WidgetUITheme } from './widgetUI.js';
 import { WidgetObjectTree, drawingTypeLabel } from './WidgetObjectTree.js';
 import { WidgetIndicatorSettings, type IndicatorDefault } from './WidgetIndicatorSettings.js';
 import { WidgetIndicatorPicker, type IndicatorPickerItem } from './WidgetIndicatorPicker.js';
@@ -312,6 +312,13 @@ export class ChartWidget {
   private symbolLoads = new Map<string, number>();
   /** The widget's look. */
   private ui!: ResolvedWidgetUI;
+  /** How much bigger than its sizes the look is drawn now (`WidgetUITheme.scale`): 1 up to full HD. */
+  private uiScale = 1;
+  /** Whether the look's tokens go on inline: a look was given, or it is drawn bigger. */
+  private uiVariables = false;
+  /** The chart's type sizes before the look scaled them. */
+  private chartFontBase: { sizeSmall: number; sizeMedium: number; sizeLarge: number } | null = null;
+  private scaleObserver: ResizeObserver | null = null;
   /** The legend row's "more" menu: move the indicator to another pane. */
   private legendMenu: WidgetContextMenu | null = null;
   private templates = new IndicatorTemplateStore();
@@ -658,9 +665,14 @@ export class ChartWidget {
     // alike. Without `ui` the tokens stay the stylesheet's (Print's), so a
     // host's CSS can still set them.
     this.ui = resolveWidgetUI(options.ui);
-    const variables = options.ui !== undefined;
-    applyWidgetUI(this.root, this.ui, { variables });
-    applyWidgetUI(this.portal, this.ui, { variables });
+    this.uiVariables = options.ui !== undefined;
+    this.uiScale = this.scaleNow();
+    this.applyLookTokens();
+    // On a wider screen the bars, buttons, icons and type grow with the widget.
+    if (typeof ResizeObserver !== 'undefined') {
+      this.scaleObserver = new ResizeObserver(() => this.fitScale());
+      this.scaleObserver.observe(this.root);
+    }
     this.markSwitchedOff();
     this.stopFormControls = installFormControls([this.root, this.portal], {
       layer: this.overlayHost,
@@ -2111,11 +2123,43 @@ export class ChartWidget {
    */
   setUI(theme: WidgetUIPreset | WidgetUITheme): void {
     this.ui = resolveWidgetUI(theme);
-    applyWidgetUI(this.root, this.ui);
-    applyWidgetUI(this.portal, this.ui);
+    this.uiVariables = true;
+    this.uiScale = this.scaleNow();
+    this.applyLookTokens();
     this.applyChartShapes();
     this.applyLegendFont();
     this.applyChartLook();
+  }
+
+  /** The scale the look is drawn at: its own, or by the widget's width when `'auto'` (1 before it is laid out). */
+  private scaleNow(): number {
+    if (this.ui.scale !== 'auto' && this.ui.scale !== undefined) return this.ui.scale;
+    const width = this.root.clientWidth;
+    return width > 0 ? widgetScaleFor(width) : 1;
+  }
+
+  /**
+   * The look's tokens on the root and the modal portal, at its scale. Without
+   * a look given and at scale 1 they stay the stylesheet's, so a host's CSS
+   * can still set them.
+   */
+  private applyLookTokens(): void {
+    const shown = scaledWidgetUI(this.ui, this.uiScale);
+    const variables = this.uiVariables || this.uiScale !== 1;
+    applyWidgetUI(this.root, shown, { variables });
+    applyWidgetUI(this.portal, shown, { variables });
+  }
+
+  /** The widget was resized: a step wider or narrower draws the look at another scale. */
+  private fitScale(): void {
+    if (this.destroyed) return;
+    const next = this.scaleNow();
+    if (next === this.uiScale) return;
+    this.uiScale = next;
+    this.applyLookTokens();
+    this.applyLegendFont();
+    this.applyChartLook();
+    this.toolbar?.fit();
   }
 
   /** The widget's look, every token set. */
@@ -2129,7 +2173,7 @@ export class ChartWidget {
    * block and the prices line up in columns.
    */
   private applyLegendFont(): void {
-    this.chart.setLegend({ fontFamily: this.ui.font.mono, fontSize: typeSize(this.ui.font.size, -1) });
+    this.chart.setLegend({ fontFamily: this.ui.font.mono, fontSize: typeSize(Math.round(this.ui.font.size * this.uiScale), -1) });
   }
 
   /**
@@ -2141,9 +2185,20 @@ export class ChartWidget {
     const airy = this.ui.density === 'airy';
     const given = this.options.chartOptions;
     if (!given?.barLayout) this.chart.setBarLayout(airy ? 'golden' : 'classic');
-    if (given?.font?.family) return;
+    // The chart's type grows with the look, from its sizes before any scaling; sizes `chartOptions.font` sets stay.
+    const now = this.chart.getFont?.();
+    if (!this.chartFontBase && now) this.chartFontBase = { sizeSmall: now.sizeSmall, sizeMedium: now.sizeMedium, sizeLarge: now.sizeLarge };
+    const ownSizes = given?.font?.sizeSmall !== undefined || given?.font?.sizeMedium !== undefined || given?.font?.sizeLarge !== undefined;
+    const sizes = ownSizes || !this.chartFontBase
+      ? {}
+      : {
+        sizeSmall: Math.round(this.chartFontBase.sizeSmall * this.uiScale),
+        sizeMedium: Math.round(this.chartFontBase.sizeMedium * this.uiScale),
+        sizeLarge: Math.round(this.chartFontBase.sizeLarge * this.uiScale),
+      };
     // setFont goes over the font before it, so the sizes of `chartOptions.font` stay under the look's face.
-    this.chart.setFont({ family: this.ui.font.mono });
+    if (!given?.font?.family) this.chart.setFont({ family: this.ui.font.mono, ...sizes });
+    else if (Object.keys(sizes).length > 0) this.chart.setFont(sizes);
   }
 
   /** The chart's own tags and pills take the look's corners. */
@@ -2158,6 +2213,7 @@ export class ChartWidget {
     this.stopKeyboardInset = null;
     this.stopNarrow?.();
     this.dockObserver?.disconnect();
+    this.scaleObserver?.disconnect();
     this.stopNarrow = null;
     this.stopFormControls?.();
     this.stopFormControls = null;

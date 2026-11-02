@@ -1292,3 +1292,34 @@ describe('ChartWidget object tree drawings', () => {
     ]);
   });
 });
+
+describe('ChartWidget on a wide screen', () => {
+  const wide = (width: number) => vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(width);
+  const chartFont = { family: 'x', sizeSmall: 11, sizeMedium: 13, sizeLarge: 15 };
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    delete (FakeChart.prototype as unknown as Record<string, unknown>).getFont;
+  });
+
+  it('draws its bars, buttons, icons and type bigger on 4K, and the chart’s type with them', () => {
+    (FakeChart.prototype as unknown as Record<string, unknown>).getFont = () => ({ ...chartFont });
+    wide(2600);
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false });
+    const root = host.querySelector<HTMLElement>('.tcw-root')!;
+    expect(root.style.getPropertyValue('--tcw-toolbar-h')).toBe('49px');
+    expect(root.style.getPropertyValue('--tcw-font-size')).toBe('15px');
+    const fonts = FakeChart.last.fonts as Record<string, unknown>[];
+    expect(fonts[fonts.length - 1]).toMatchObject({ sizeSmall: 13, sizeMedium: 15, sizeLarge: 18 });
+  });
+
+  it('keeps its sizes on a laptop, and at every width with a scale of 1', () => {
+    wide(1440);
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false });
+    expect(host.querySelector<HTMLElement>('.tcw-root')!.style.getPropertyValue('--tcw-toolbar-h')).toBe('');
+    widget.destroy();
+    wide(2600);
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false, ui: { scale: 1 } });
+    expect(host.querySelector<HTMLElement>('.tcw-root')!.style.getPropertyValue('--tcw-toolbar-h')).toBe('42px');
+  });
+});
