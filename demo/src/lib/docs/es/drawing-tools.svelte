@@ -192,6 +192,8 @@ chart.on('drawingSelect', ({ payload }) => {
 
 <h2>Orden y grupos</h2>
 <pre><code>{`chart.moveDrawing(id, 'front')       // 'front' | 'forward' | 'backward' | 'back'
+chart.moveDrawing(id, 0)              // or a place in the order: 0 the bottom, as getDrawings() lists them
+chart.updateDrawing(id, { name: 'Weekly support' })  // its name in the object tree; null: its tool's
 const group = chart.groupDrawings([a, b, c], 'Weekly levels')
 chart.setDrawingGroupVisible(group, false)
 chart.setDrawingGroupLocked(group, true)
@@ -207,6 +209,7 @@ chart.copyDrawings()                 // los seleccionados (Ctrl+C)
 chart.pasteDrawings()                // Ctrl+V, aquí o en otro gráfico de la página
 chart.canPasteDrawings()             // si hay algo que pegar`}</code></pre>
 <p>Al hacer clic en un dibujo de un grupo se selecciona todo el grupo.</p>
+<p>En el árbol de objetos del widget, un clic en el nombre de un dibujo lo selecciona y un doble clic lo renombra. Su fila lo clona, y su asa lo arrastra al lugar de otra fila en el orden; las flechas sobre el asa lo mueven un lugar.</p>
 
 <h2>Borrador, zoom e imán</h2>
 <pre><code>{`chart.setEraserMode(true)          // cada clic sobre un dibujo lo elimina, hasta pulsar Escape

@@ -184,6 +184,8 @@ chart.on('drawingSelect', ({ payload }) => {
 
 <h2>順序とグループ</h2>
 <pre><code>{`chart.moveDrawing(id, 'front')       // 'front' | 'forward' | 'backward' | 'back'
+chart.moveDrawing(id, 0)              // or a place in the order: 0 the bottom, as getDrawings() lists them
+chart.updateDrawing(id, { name: 'Weekly support' })  // its name in the object tree; null: its tool's
 const group = chart.groupDrawings([a, b, c], 'Weekly levels')
 chart.setDrawingGroupVisible(group, false)
 chart.setDrawingGroupLocked(group, true)
@@ -199,6 +201,7 @@ chart.copyDrawings()                 // 選択中の描画（Ctrl+C）
 chart.pasteDrawings()                // Ctrl+V。このチャートにも、ページ上の別のチャートにも
 chart.canPasteDrawings()             // 貼り付けられるものがあるかどうか`}</code></pre>
 <p>グループ内の描画を 1 つクリックすると、グループ全体が選択されます。</p>
+<p>ウィジェットのオブジェクトツリーでは、描画の名前をクリックすると選択され、ダブルクリックすると名前を変更できます。行のボタンで複製でき、グリップをドラッグすると別の行の順序の位置へ移ります。グリップ上で矢印キーを押すと 1 つずつ移動します。</p>
 
 <h2>消しゴム、ズーム、マグネット</h2>
 <pre><code>{`chart.setEraserMode(true)          // 描画をクリックするたびに削除する（Escape まで）

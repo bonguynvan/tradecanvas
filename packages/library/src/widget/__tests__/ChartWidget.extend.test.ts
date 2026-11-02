@@ -1258,3 +1258,37 @@ describe('ChartWidget look', () => {
     expect(root.style.getPropertyValue('--tcw-control-h')).toBe('26px');
   });
 });
+
+describe('ChartWidget object tree drawings', () => {
+  it('lists a drawing by its own name, and renames, clones, moves and selects it on the chart', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false });
+    const fake = FakeChart.last as unknown as Record<string, unknown>;
+    const calls: unknown[][] = [];
+    fake.getDrawings = () => [
+      { id: 'a', type: 'trendLine', anchors: [], style: {}, visible: true, locked: false, name: 'Weekly support' },
+      { id: 'b', type: 'ray', anchors: [], style: {}, visible: true, locked: false },
+    ];
+    fake.isDrawingShown = () => true;
+    for (const method of ['updateDrawing', 'duplicateDrawing', 'moveDrawing', 'selectDrawing']) {
+      fake[method] = (...args: unknown[]) => { calls.push([method, ...args]); return true; };
+    }
+    widget.openPanel('objectTree');
+    const row = (id: string) => host.querySelector<HTMLElement>(`.tcw-tree-row[data-drawing-id="${id}"]`)!;
+    expect(row('a').querySelector('.tcw-tree-name')!.textContent).toBe('Weekly support');
+    expect(row('b').querySelector('.tcw-tree-name')!.textContent).toBe('Ray');
+    row('b').querySelector<HTMLElement>('.tcw-tree-name')!.click();
+    row('b').querySelector<HTMLButtonElement>('[aria-label="Clone"]')!.click();
+    row('b').querySelector<HTMLElement>('[aria-label="Drag to reorder"]')!.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp' }));
+    const name = row('a').querySelector<HTMLElement>('.tcw-tree-name')!;
+    name.dispatchEvent(new MouseEvent('dblclick'));
+    const input = row('a').querySelector<HTMLInputElement>('input')!;
+    input.value = '';
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+    expect(calls).toEqual([
+      ['selectDrawing', 'b'],
+      ['duplicateDrawing', 'b'],
+      ['moveDrawing', 'b', 0],
+      ['updateDrawing', 'a', { name: null }],
+    ]);
+  });
+});

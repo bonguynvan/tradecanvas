@@ -32,6 +32,10 @@ beforeEach(() => {
     onToggleGroupLocked: vi.fn(),
     onUngroup: vi.fn(),
     onRenameGroup: vi.fn(),
+    onRenameDrawing: vi.fn(),
+    onCloneDrawing: vi.fn(),
+    onSelectDrawing: vi.fn(),
+    onMoveDrawing: vi.fn(),
     onAddCompare: vi.fn(),
     onRemoveCompare: vi.fn(),
   };
@@ -113,5 +117,127 @@ describe('WidgetObjectTree compares', () => {
   it('has no dots when no compare has a colour of its own', () => {
     tree.setObjects([], [], [{ id: 'c1', label: 'CCC', way: 'Price, on its own scale' }]);
     expect(compareRows()[0].querySelector('.tcw-tree-dot')).toBeNull();
+  });
+});
+
+describe('WidgetObjectTree drawing rows', () => {
+  const drawingRow = (id: string) => host.querySelector<HTMLElement>(`.tcw-tree-row[data-drawing-id="${id}"]`)!;
+  const nameOf = (id: string) => drawingRow(id).querySelector<HTMLElement>('.tcw-tree-name')!;
+  /** jsdom lays nothing out: each row 24 px tall, in the order shown. */
+  const layOut = () => rows().forEach((r, i) => {
+    r.getBoundingClientRect = () => ({ top: i * 24, bottom: i * 24 + 24, left: 0, right: 200, width: 200, height: 24, x: 0, y: i * 24, toJSON: () => ({}) });
+  });
+
+  it('selects the drawing a click on its name picks', () => {
+    nameOf('b').click();
+    expect(callbacks.onSelectDrawing).toHaveBeenCalledWith('b');
+  });
+
+  it('clones a drawing from its row', () => {
+    button(drawingRow('b'), 'Clone').click();
+    expect(callbacks.onCloneDrawing).toHaveBeenCalledWith('b');
+  });
+
+  it('renames a drawing from a double-click on its name; Escape keeps it, an empty name clears it', () => {
+    const rename = (value: string, key: string) => {
+      nameOf('b').dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
+      const input = drawingRow('b').querySelector<HTMLInputElement>('input')!;
+      input.value = value;
+      input.dispatchEvent(new KeyboardEvent('keydown', { key }));
+    };
+    rename('Breakout ray', 'Enter');
+    expect(callbacks.onRenameDrawing).toHaveBeenLastCalledWith('b', 'Breakout ray');
+    rename('nope', 'Escape');
+    expect(callbacks.onRenameDrawing).toHaveBeenCalledTimes(1);
+    rename('  ', 'Enter');
+    expect(callbacks.onRenameDrawing).toHaveBeenLastCalledWith('b', '');
+  });
+
+  it('moves a drawing to where its row is dropped, by its grip', () => {
+    tree.setObjects([], DRAWINGS.map(({ group: _group, ...d }) => d));
+    layOut();
+    const grip = button(drawingRow('b'), 'Drag to reorder');
+    grip.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, clientY: 24 + 10, button: 0 }));
+    document.dispatchEvent(new MouseEvent('pointermove', { bubbles: true, clientY: 6 }));
+    expect(drawingRow('a').classList.contains('tcw-tree-drop')).toBe(true);
+    document.dispatchEvent(new MouseEvent('pointerup', { bubbles: true, clientY: 6 }));
+    // Dropped on the trend line's row: its place, 0, in the chart's order.
+    expect(callbacks.onMoveDrawing).toHaveBeenCalledWith('b', 0);
+    expect(host.querySelector('.tcw-tree-drop')).toBeNull();
+  });
+
+  it('moves nothing when the grip is let go on its own row', () => {
+    tree.setObjects([], DRAWINGS.map(({ group: _group, ...d }) => d));
+    layOut();
+    const grip = button(drawingRow('b'), 'Drag to reorder');
+    grip.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, clientY: 24 + 10, button: 0 }));
+    document.dispatchEvent(new MouseEvent('pointerup', { bubbles: true, clientY: 24 + 12 }));
+    expect(callbacks.onMoveDrawing).not.toHaveBeenCalled();
+  });
+});
+
+describe('WidgetObjectTree reorder around groups', () => {
+  // Chart order a(g), b, c(g), d: the tree shows G, a, c, b, d.
+  const MIXED: ObjectTreeDrawing[] = [
+    { id: 'a', label: 'A', visible: true, locked: false, group },
+    { id: 'b', label: 'B', visible: true, locked: false },
+    { id: 'c', label: 'C', visible: true, locked: false, group },
+    { id: 'd', label: 'D', visible: true, locked: false },
+  ];
+  const drawingRow = (id: string) => host.querySelector<HTMLElement>(`.tcw-tree-row[data-drawing-id="${id}"]`)!;
+  const grip = (id: string) => drawingRow(id).querySelector<HTMLButtonElement>('[aria-label="Drag to reorder"]');
+  const layOut = () => rows().forEach((r, i) => {
+    r.getBoundingClientRect = () => ({ top: i * 24, bottom: i * 24 + 24, left: 0, right: 200, width: 200, height: 24, x: 0, y: i * 24, toJSON: () => ({}) });
+  });
+
+  beforeEach(() => tree.setObjects([], MIXED));
+
+  it('gives a grip only to drawings outside a group: a group moves as one', () => {
+    expect(grip('a')).toBeNull();
+    expect(grip('b')).not.toBeNull();
+  });
+
+  it('drops a drawing beside the row it lands on', () => {
+    layOut();
+    // d (shown last) onto b (shown fourth): d goes where b is, just under it in the list.
+    grip('d')!.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, clientY: 4 * 24 + 10, button: 0 }));
+    document.dispatchEvent(new MouseEvent('pointermove', { bubbles: true, clientY: 3 * 24 + 6 }));
+    expect(drawingRow('c').classList.contains('tcw-tree-drop')).toBe(false);
+    document.dispatchEvent(new MouseEvent('pointerup', { bubbles: true, clientY: 3 * 24 + 6 }));
+    expect(callbacks.onMoveDrawing).toHaveBeenCalledWith('d', 1);
+  });
+
+  it('takes no drop on a grouped drawing’s row', () => {
+    layOut();
+    grip('d')!.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, clientY: 4 * 24 + 10, button: 0 }));
+    document.dispatchEvent(new MouseEvent('pointerup', { bubbles: true, clientY: 2 * 24 + 6 }));
+    expect(callbacks.onMoveDrawing).not.toHaveBeenCalled();
+  });
+
+  it('moves a drawing one row up or down among the others with the arrow keys', () => {
+    grip('d')!.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp' }));
+    expect(callbacks.onMoveDrawing).toHaveBeenLastCalledWith('d', 1);
+    grip('b')!.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown' }));
+    expect(callbacks.onMoveDrawing).toHaveBeenLastCalledWith('b', 3);
+    // Nothing above b but the group: it stays.
+    grip('b')!.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp' }));
+    expect(callbacks.onMoveDrawing).toHaveBeenCalledTimes(2);
+  });
+
+  it('keeps the grip focused through the list being drawn again, so the keys go on moving it', () => {
+    grip('d')!.focus();
+    tree.setObjects([], MIXED);
+    expect(document.activeElement).toBe(grip('d'));
+  });
+
+  it('waits for a rename to end before drawing the list again', () => {
+    drawingRow('b').querySelector<HTMLElement>('.tcw-tree-name')!.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
+    const input = drawingRow('b').querySelector<HTMLInputElement>('input')!;
+    input.value = 'Kept';
+    tree.setObjects([], [...MIXED, { id: 'e', label: 'E', visible: true, locked: false }]);
+    expect(input.isConnected).toBe(true);
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+    expect(callbacks.onRenameDrawing).toHaveBeenCalledWith('b', 'Kept');
+    expect(drawingRow('e')).not.toBeNull();
   });
 });

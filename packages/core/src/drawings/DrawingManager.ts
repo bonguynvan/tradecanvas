@@ -17,6 +17,7 @@ import type { UndoRedoManager, UndoableAction } from '../features/UndoRedoManage
 import {
   MAX_GROUP_NAME,
   cloneDrawing,
+  cleanDrawingName,
   cloneOptions,
   newDrawingId,
   newGroupId,
@@ -667,6 +668,7 @@ export class DrawingManager {
           options: source.options ? cloneOptions(source.options) : undefined,
           intervals: source.intervals,
           meta: source.meta ? structuredClone(source.meta) : undefined,
+          name: source.name,
         }));
       }
     });
@@ -1043,7 +1045,9 @@ export class DrawingManager {
   setDrawings(states: DrawingState[]): void {
     this.dropCopyGesture();
     reserveIds(states);
-    this.drawings = this.upgradeLegacyAnchors(states).map((d) => {
+    this.drawings = this.upgradeLegacyAnchors(states).map((given) => {
+      // A name is kept as `updateDrawing` keeps one: trimmed, cut to length, none when blank.
+      const d = given.name === undefined || given.name === cleanDrawingName(given.name) ? given : withName(given, cleanDrawingName(given.name));
       if (!d.options && d.intervals === undefined) return d;
       const options = sanitizeDrawingOptions(this.optionDefs(d.type), d.options);
       return {
@@ -1066,8 +1070,9 @@ export class DrawingManager {
   // --- Order and groups ---
 
   /**
-   * Draw a drawing on top of the others, under them, or one step up or down
-   * (one undo step). False when it is unknown or already there.
+   * Draw a drawing on top of the others, under them, one step up or down, or
+   * at a place in the order (0 the bottom; one undo step). False when it is
+   * unknown or already there.
    */
   moveDrawing(id: string, to: DrawingOrderMove): boolean {
     const from = this.drawings.findIndex((d) => d.id === id);
@@ -1244,6 +1249,11 @@ export class DrawingManager {
       const options = { ...drawing.options, ...sanitizeDrawingOptions(this.optionDefs(drawing.type), patch.options) };
       drawing.options = Object.keys(options).length > 0 ? options : undefined;
     }
+    if (patch.name !== undefined) {
+      const name = cleanDrawingName(patch.name);
+      if (name === undefined) delete drawing.name;
+      else drawing.name = name;
+    }
     if (patch.intervals !== undefined) {
       drawing.intervals = cleanIntervals(patch.intervals) ?? undefined;
       // An edit (a settings dialog) may yet be cancelled: it lets go on keeping.
@@ -1310,6 +1320,8 @@ export class DrawingManager {
       meta: state.meta,
       ...(typeof state.paneId === 'string' ? { paneId: state.paneId } : {}),
     };
+    const name = cleanDrawingName(state.name);
+    if (name !== undefined) drawing.name = name;
     this.drawings = [...this.drawings, drawing];
     this.record({ type: 'drawingCreate', before: null, after: cloneDrawing(drawing) });
     this.eventCallback?.('drawingCreate', { id, type: drawing.type, drawing });
@@ -1719,6 +1731,12 @@ function renderIsolated(
   ctx.clip();
   plugin.render(ctx, state, viewport, selected);
   ctx.restore();
+}
+
+/** `drawing` with `name`, or with none when it is undefined. */
+function withName(drawing: DrawingState, name: string | undefined): DrawingState {
+  const { name: _old, ...rest } = drawing;
+  return name === undefined ? rest : { ...rest, name };
 }
 
 /** A group name as kept: trimmed and at most `MAX_GROUP_NAME` long. */

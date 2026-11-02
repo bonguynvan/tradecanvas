@@ -146,3 +146,61 @@ describe('DrawingManager selecting from a menu', () => {
   });
 });
 
+
+describe('DrawingManager drawing order by place', () => {
+  it('moves a drawing to a place in the order, one undo step', () => {
+    expect(manager.moveDrawing(a, 2)).toBe(true);
+    expect(ids()).toEqual([b, c, a]);
+    expect(manager.moveDrawing(a, 1)).toBe(true);
+    expect(ids()).toEqual([b, a, c]);
+    manager.undo();
+    expect(ids()).toEqual([b, c, a]);
+  });
+
+  it('keeps a place in range, and says when nothing moved', () => {
+    expect(manager.moveDrawing(c, 99)).toBe(false);
+    expect(manager.moveDrawing(c, -4)).toBe(true);
+    expect(ids()).toEqual([c, a, b]);
+    expect(manager.moveDrawing(c, 0.5)).toBe(false);
+  });
+});
+
+describe('DrawingManager drawing names', () => {
+  it('names a drawing, trimmed and cut to length, and clears the name, each one undo step', () => {
+    expect(manager.updateDrawing(a, { name: '  Weekly support  ' })).toBe(true);
+    expect(manager.getDrawings()[0].name).toBe('Weekly support');
+    manager.updateDrawing(a, { name: 'x'.repeat(200) });
+    expect(manager.getDrawings()[0].name).toHaveLength(80);
+    manager.updateDrawing(a, { name: null });
+    expect(manager.getDrawings()[0].name).toBeUndefined();
+    manager.undo();
+    expect(manager.getDrawings()[0].name).toHaveLength(80);
+  });
+
+  it('takes a blank name as no name', () => {
+    manager.updateDrawing(a, { name: 'Level' });
+    manager.updateDrawing(a, { name: '   ' });
+    expect(manager.getDrawings()[0].name).toBeUndefined();
+  });
+});
+
+describe('DrawingManager drawing names on the way in', () => {
+  it('keeps a name given to addDrawing, and a pasted copy keeps its original’s', () => {
+    const named = manager.addDrawing({ type: 'trendLine', anchors: [{ time: 0, price: 1 }, { time: 5, price: 1 }], name: '  Level  ' } as never);
+    expect(manager.getDrawings().find((d) => d.id === named)!.name).toBe('Level');
+    manager.select(named);
+    manager.copySelection();
+    const [pasted] = manager.paste();
+    expect(manager.getDrawings().find((d) => d.id === pasted)!.name).toBe('Level');
+  });
+
+  it('cleans the names of drawings set as a whole: blank, too long or not text', () => {
+    const base = { type: 'trendLine' as const, anchors: [{ time: 0, price: 1 }, { time: 5, price: 1 }], style: { color: '#fff', lineWidth: 1, lineStyle: 'solid' as const }, visible: true, locked: false };
+    manager.setDrawings([
+      { ...base, id: 'x', name: '' },
+      { ...base, id: 'y', name: 'z'.repeat(300) },
+      { ...base, id: 'w', name: 42 as never },
+    ]);
+    expect(manager.getDrawings().map((d) => d.name)).toEqual([undefined, 'z'.repeat(80), undefined]);
+  });
+});

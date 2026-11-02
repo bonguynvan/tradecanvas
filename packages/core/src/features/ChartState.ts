@@ -3,6 +3,7 @@ import { readChartStyleOverrides, readChartTypeOptions, readIndicatorPlotStyles,
 import { sanitizeDrawingStyle } from '@tradecanvas/commons';
 import { readAlertOptions, type AlertCondition, type PriceAlert } from './AlertManager.js';
 import { cleanIntervals } from '../indicators/intervals.js';
+import { cleanDrawingName } from '../drawings/drawingState.js';
 
 /**
  * Serializable chart state for save/load functionality.
@@ -135,6 +136,7 @@ function validateDrawing(raw: unknown): DrawingState | null {
     options: isObject(raw.options) ? (raw.options as DrawingState['options']) : undefined,
     intervals: cleanIntervals(raw.intervals) ?? undefined,
     group: validateGroup(raw.group),
+    ...(cleanDrawingName(raw.name) !== undefined ? { name: cleanDrawingName(raw.name) } : {}),
     // The indicator pane it is drawn on, by its id; the chart drops it when there is no such pane.
     ...(typeof raw.paneId === 'string' && raw.paneId.length > 0 && raw.paneId.length <= MAX_PANE_ID ? { paneId: raw.paneId } : {}),
     meta: isObject(raw.meta) ? raw.meta : undefined,

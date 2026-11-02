@@ -183,6 +183,8 @@ chart.on('drawingSelect', ({ payload }) => {
 
 <h2>순서와 그룹</h2>
 <pre><code>{`chart.moveDrawing(id, 'front')       // 'front' | 'forward' | 'backward' | 'back'
+chart.moveDrawing(id, 0)              // or a place in the order: 0 the bottom, as getDrawings() lists them
+chart.updateDrawing(id, { name: 'Weekly support' })  // its name in the object tree; null: its tool's
 const group = chart.groupDrawings([a, b, c], 'Weekly levels')
 chart.setDrawingGroupVisible(group, false)
 chart.setDrawingGroupLocked(group, true)
@@ -198,6 +200,7 @@ chart.copyDrawings()                 // 선택한 그림(Ctrl+C)
 chart.pasteDrawings()                // Ctrl+V, 이 차트나 페이지의 다른 차트에
 chart.canPasteDrawings()             // 붙여넣을 것이 있는지`}</code></pre>
 <p>그룹에 속한 그림 하나를 클릭하면 그룹 전체가 선택됩니다.</p>
+<p>위젯의 객체 트리에서 드로잉 이름을 클릭하면 선택되고, 더블클릭하면 이름을 바꿉니다. 행의 버튼으로 복제하고, 그립을 끌어 다른 행의 순서 자리로 옮깁니다. 그립에서 화살표 키를 누르면 한 칸씩 움직입니다.</p>
 
 <h2>지우개, 확대, 자석</h2>
 <pre><code>{`chart.setEraserMode(true)          // 그림을 클릭할 때마다 삭제, Escape를 누를 때까지
