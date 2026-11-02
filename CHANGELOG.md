@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 1.60.0 (2026-11-02)
+
+React, Vue and Svelte components: 1.3.52.
+
 ### Docs and agents
 
 - **The docs' samples match the library** (`@tradecanvas/commons`, `@tradecanvas/chart`, `@tradecanvas/mcp`). Every code sample in the docs was compiled against the built packages. `ReconnectManager` and `ReplayController` are now exported from `@tradecanvas/chart`, as the realtime page imports them, with the replay's types. Ten chart events had no payload type, so `e.payload` was `unknown` in TypeScript: `executionFill`, `ordersChange`, `positionsChange`, `positionReverse`, `chartContextMenu`, `priceAxisAdd`, `drawingUpdate`, `drawingDoubleClick`, `drawingContextMenu` and `toolModeChange` now carry theirs (a cast of one to a shape it does not have no longer compiles; drop it). Samples that were wrong are fixed in all six languages: a trade zone's `direction` (not `side`), `widget.getChart()` (not `widget.chart`), a time formatter given an offset, and the feed events `barClose` and `snapshot`. The styling page's fonts follow the looks as they are now (Print's figures in Segoe UI, Roboto, Helvetica Neue or Arial; Desk in Tahoma), and the READMEs, the styling page and `llms.txt` count five looks with Desk.
