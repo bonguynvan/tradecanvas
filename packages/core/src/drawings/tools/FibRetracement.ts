@@ -1,7 +1,7 @@
 import type { DrawingState, Point, ViewportState } from '@tradecanvas/commons';
 import { DrawingBase } from '../DrawingBase.js';
-import { LEVEL_LABEL_OPTIONS, extendOptions, fibLevelList } from './options.js';
-import { hitPriceLevels, renderPriceLevels, type PriceLevel } from './priceLevels.js';
+import { FIB_EXTRA_OPTIONS, LEVEL_LABEL_OPTIONS, extendOptions, fibLevelList } from './options.js';
+import { hitPriceLevels, inOneColor, renderPriceLevels, strokeTrendLine, type PriceLevel } from './priceLevels.js';
 
 /** The classic retracement ratios, plus extensions the user can turn on. */
 export const RETRACEMENT_LEVELS = fibLevelList([0, 0.236, 0.382, 0.5, 0.618, 0.786, 1], [1.272, 1.414, 1.618, 2.618, 3.618, 4.236]);
@@ -22,6 +22,7 @@ export class FibRetracementTool extends DrawingBase {
       ...extendOptions(true, true),
       reverse: { kind: 'boolean' as const, label: 'Reverse', default: false },
       ...LEVEL_LABEL_OPTIONS,
+      ...FIB_EXTRA_OPTIONS,
       background: { kind: 'boolean' as const, label: 'Background', default: true },
     },
   };
@@ -47,7 +48,11 @@ export class FibRetracementTool extends DrawingBase {
   render(ctx: CanvasRenderingContext2D, state: DrawingState, viewport: ViewportState, selected: boolean): void {
     if (state.anchors.length < 2) return;
     const [x0, x1] = this.span(state, viewport);
-    renderPriceLevels(ctx, state, viewport, this.levels(state), {
+    if (this.option<boolean>(state, 'trendLine')) {
+      strokeTrendLine(ctx, state.anchors.slice(0, 2).map((a) => this.anchorToPixel(a, viewport)), state.style.color);
+    }
+    const levels = this.option<boolean>(state, 'oneColor') ? inOneColor(this.levels(state)) : this.levels(state);
+    renderPriceLevels(ctx, state, viewport, levels, {
       x0,
       x1,
       showLevels: this.option(state, 'showLevels'),

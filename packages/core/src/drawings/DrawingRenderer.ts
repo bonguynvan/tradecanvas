@@ -4,12 +4,18 @@ import type { DrawingManager } from './DrawingManager.js';
 
 export class DrawingRenderer {
   private keepOut: (() => readonly LabelKeepOut[]) | null = null;
+  private formatTime: ((time: number) => string) | null = null;
 
   constructor(private manager: DrawingManager) {}
 
   /** What drawing labels keep clear of on each pass: the legend's boxes, read as the pass starts. */
   setKeepOut(boxes: (() => readonly LabelKeepOut[]) | null): void {
     this.keepOut = boxes;
+  }
+
+  /** How drawings write a bar's time (a vertical line's label): as the crosshair does. */
+  setTimeFormat(format: ((time: number) => string) | null): void {
+    this.formatTime = format;
   }
 
   /** The boxes labels keep clear of now. */
@@ -22,7 +28,7 @@ export class DrawingRenderer {
     setDrawingTheme(theme ?? null);
     setDrawingKeepOut(this.getKeepOut());
     try {
-      this.manager.render(ctx, viewport);
+      this.manager.render(ctx, this.formatTime ? { ...viewport, formatTime: this.formatTime } : viewport);
     } finally {
       setDrawingKeepOut(null);
     }

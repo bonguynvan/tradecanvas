@@ -10,6 +10,7 @@ const MAX_TEXT_WRAP = 4000;
 /** Narrowest a wrap width may be, px: room for a short word. */
 const MIN_TEXT_WRAP = 20;
 const TEXT_ALIGNS: readonly NonNullable<DrawingStyle['textAlign']>[] = ['left', 'center', 'right'];
+const TEXT_VALIGNS: readonly NonNullable<DrawingStyle['textVAlign']>[] = ['top', 'middle', 'bottom'];
 
 function finiteIn(value: unknown, min: number, max: number): number | undefined {
   return typeof value === 'number' && Number.isFinite(value) ? Math.min(max, Math.max(min, value)) : undefined;
@@ -45,6 +46,7 @@ export function sanitizeDrawingStyle(raw: unknown): Partial<DrawingStyle> {
     if (typeof obj[key] === 'boolean') out[key] = obj[key] as boolean;
   }
   if (TEXT_ALIGNS.includes(obj.textAlign as NonNullable<DrawingStyle['textAlign']>)) out.textAlign = obj.textAlign as DrawingStyle['textAlign'];
+  if (TEXT_VALIGNS.includes(obj.textVAlign as NonNullable<DrawingStyle['textVAlign']>)) out.textVAlign = obj.textVAlign as DrawingStyle['textVAlign'];
   const textColor = colorValue(obj.textColor);
   if (textColor !== undefined) out.textColor = textColor;
   const borderColor = colorValue(obj.borderColor);

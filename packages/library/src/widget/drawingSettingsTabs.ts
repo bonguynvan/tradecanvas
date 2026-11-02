@@ -272,6 +272,12 @@ export const TEXT_LAYOUTS: Readonly<Partial<Record<string, TextLayout>>> = {
   callout: { box: true, border: true, wrap: 240, fontSize: 13 },
 };
 
+/** The tools that write their text along a line or in a box, at a place the Text tab picks. */
+export const TEXT_PLACES: ReadonlySet<string> = new Set([
+  'trendLine', 'ray', 'extendedLine', 'infoLine', 'trendAngle', 'arrow',
+  'horizontalLine', 'horizontalRay', 'verticalLine', 'rectangle',
+]);
+
 /** The colour a tool writes in without one of its own, when it isn't its line's (a price label writes white on its box). */
 export const TEXT_COLORS: Readonly<Partial<Record<string, string>>> = {
   priceLabel: '#ffffff',
@@ -283,6 +289,7 @@ const MIN_WRAP = 40;
 const MAX_WRAP = 4000;
 const WRAP_STEP = 10;
 const ALIGNS = ['left', 'center', 'right'] as const;
+const VALIGNS = ['top', 'middle', 'bottom'] as const;
 
 /**
  * A box ticked or not inside a row of controls, its name written after it
@@ -308,7 +315,7 @@ function inlineCheck(label: string, value: boolean, onChange: (value: boolean) =
 /**
  * The Text tab: what the drawing writes, its size, bold and italics, and its
  * colour; for a text box (`layout`), its alignment, background, border and
- * the width it wraps at.
+ * the width it wraps at; for a line's or a box's text (`place`), where it sits.
  */
 export function renderTextTab(
   body: HTMLElement,
@@ -317,6 +324,7 @@ export function renderTextTab(
   t: Translator,
   layout?: TextLayout,
   textColor?: string,
+  place = false,
 ): void {
   const block = section();
   const text = document.createElement('textarea');
@@ -344,6 +352,23 @@ export function renderTextTab(
   )));
   body.appendChild(block);
   if (layout) body.appendChild(textBoxSection(style, onStyle, t, layout));
+  if (place) body.appendChild(textPlaceSection(style, onStyle, t));
+}
+
+/** Where a line's or a box's text sits: at an end or the middle, and above, on or under (at the top, middle or bottom). */
+function textPlaceSection(style: DrawingStyle, onStyle: (patch: Partial<DrawingStyle>) => void, t: Translator): HTMLElement {
+  const place = section();
+  place.appendChild(controlsRow(t('drawingSettings.align'), named(selectInput(
+    ALIGNS.map((a) => ({ value: a, label: t(`drawingSettings.align.${a}`) })),
+    style.textAlign ?? 'center',
+    (v) => onStyle({ textAlign: v as DrawingStyle['textAlign'] }),
+  ), t('drawingSettings.align'))));
+  place.appendChild(controlsRow(t('drawingSettings.vAlign'), named(selectInput(
+    VALIGNS.map((a) => ({ value: a, label: t(`drawingSettings.vAlign.${a}`) })),
+    style.textVAlign ?? 'top',
+    (v) => onStyle({ textVAlign: v as DrawingStyle['textVAlign'] }),
+  ), t('drawingSettings.vAlign'))));
+  return place;
 }
 
 /** A text box's rows: alignment, background, border, and the width it wraps at. */

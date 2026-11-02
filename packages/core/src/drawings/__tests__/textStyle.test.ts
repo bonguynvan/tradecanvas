@@ -40,6 +40,8 @@ describe('a drawing’s text style', () => {
     });
     expect(sanitizeDrawingStyle({ bold: 'yes', textAlign: 'justify', textColor: '', textWrap: -5 })).toEqual({});
     expect(sanitizeDrawingStyle({ textWrap: 0 })).toEqual({ textWrap: 0 });
+    expect(sanitizeDrawingStyle({ textVAlign: 'bottom' })).toEqual({ textVAlign: 'bottom' });
+    expect(sanitizeDrawingStyle({ textVAlign: 'baseline' })).toEqual({});
   });
 });
 

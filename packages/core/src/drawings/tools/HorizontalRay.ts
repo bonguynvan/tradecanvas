@@ -1,6 +1,8 @@
 import type { DrawingState, Point, ViewportState } from '@tradecanvas/commons';
 import { DrawingBase } from '../DrawingBase.js';
 import { formatDrawingPrice, fillLevelLabel } from './labels.js';
+import { drawLineText } from './lineText.js';
+import { SHOW_PRICE_OPTION } from './options.js';
 
 /**
  * A horizontal line that only extends forward in time from its anchor —
@@ -9,7 +11,7 @@ import { formatDrawingPrice, fillLevelLabel } from './labels.js';
  * past too.
  */
 export class HorizontalRayTool extends DrawingBase {
-  descriptor = { type: 'horizontalRay' as const, name: 'Horizontal Ray', requiredAnchors: 1 };
+  descriptor = { type: 'horizontalRay' as const, name: 'Horizontal Ray', requiredAnchors: 1, text: true, options: SHOW_PRICE_OPTION };
 
   priceAt(state: DrawingState, time: number): number[] | null {
     if (state.anchors.length < 1 || time < state.anchors[0].time) return null;
@@ -25,8 +27,11 @@ export class HorizontalRayTool extends DrawingBase {
     this.strokeHorizontal(ctx, anchor.x, chartRect.x + chartRect.width, y);
     this.resetLineStyle(ctx);
 
-    ctx.fillStyle = state.style.color;
-    fillLevelLabel(ctx, formatDrawingPrice(state.anchors[0].price, state.anchors[0].price, viewport), anchor.x, y, chartRect.x + chartRect.width, chartRect.y);
+    if (this.option<boolean>(state, 'showPrice')) {
+      ctx.fillStyle = state.style.color;
+      fillLevelLabel(ctx, formatDrawingPrice(state.anchors[0].price, state.anchors[0].price, viewport), anchor.x, y, chartRect.x + chartRect.width, chartRect.y);
+    }
+    drawLineText(ctx, state.style, anchor, { x: chartRect.x + chartRect.width, y });
 
     if (selected) this.renderAnchorHandles(ctx, state, viewport);
   }

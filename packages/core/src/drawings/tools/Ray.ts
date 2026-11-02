@@ -1,9 +1,10 @@
 import type { DrawingState, Point, ViewportState } from '@tradecanvas/commons';
 import { DrawingBase, lineSpace } from '../DrawingBase.js';
 import { LINE_STATS_OPTIONS, drawLineStats } from './lineDecor.js';
+import { drawLineText } from './lineText.js';
 
 export class RayTool extends DrawingBase {
-  descriptor = { type: 'ray' as const, name: 'Ray', requiredAnchors: 2, options: LINE_STATS_OPTIONS };
+  descriptor = { type: 'ray' as const, name: 'Ray', requiredAnchors: 2, text: true, options: LINE_STATS_OPTIONS };
 
   render(ctx: CanvasRenderingContext2D, state: DrawingState, viewport: ViewportState, selected: boolean): void {
     if (state.anchors.length < 2) return;
@@ -28,6 +29,7 @@ export class RayTool extends DrawingBase {
     ctx.stroke();
     this.resetLineStyle(ctx);
     drawLineStats(ctx, state, viewport, [p1, p2], selected, this.optionsOf(state));
+    drawLineText(ctx, state.style, this.anchorToPixel(state.anchors[0], viewport), this.anchorToPixel(state.anchors[1], viewport));
     if (selected) this.renderAnchorHandles(ctx, state, viewport);
   }
 

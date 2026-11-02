@@ -52,6 +52,12 @@ export interface ViewportState {
   /** The number locale prices on this scale are grouped in (`'vi-VN'`: 72.202,13). Unset: en-US. */
   numberLocale?: string;
   /**
+   * A bar's time as the chart writes it under the crosshair (its time zone,
+   * its time formatter): a vertical line's time label. Unset: drawings show
+   * no time.
+   */
+  formatTime?: (time: number) => string;
+  /**
    * Decimals prices on this scale show, when the market or the symbol sets
    * them (`setMarket`, `SymbolInfo.pricePrecision`): drawing labels, price
    * limits and the tags beside the axis use them. Unset: each label keeps its
