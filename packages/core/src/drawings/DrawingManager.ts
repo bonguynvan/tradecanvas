@@ -29,7 +29,7 @@ import {
 import { orderTarget, redoAction, undoAction } from './drawingHistory.js';
 import { drawingShortcut } from './drawingShortcuts.js';
 import { DrawingCreator, type CreationStep } from './DrawingCreator.js';
-import { snapToBar, type MagnetMode } from './magnetSnap.js';
+import { snapToBar, snapToValues, type MagnetMode } from './magnetSnap.js';
 import { cleanIntervals, shownOnInterval } from '../indicators/intervals.js';
 import { DrawingSelection } from './DrawingSelection.js';
 import { DrawingDrag } from './DrawingDrag.js';
@@ -54,6 +54,27 @@ const LEGACY_INDEX_LIMIT = 1e7;
 /** How far, px, a press may land from a drawing's line and from a handle of the selected one. */
 export type DrawingReach = Pick<PointerReach, 'line' | 'handle'>;
 const MOUSE_REACH: DrawingReach = { line: 8, handle: 8 };
+
+/**
+ * The chart's indicator panes, for drawings made on them: which pane a point
+ * is in, and each pane's viewport (its rect and value range) to draw and
+ * read a drawing with.
+ */
+export interface DrawingPanes {
+  /** The pane under `pos`: its id; undefined for the price pane; null where no drawing goes (an axis, a side or folded pane). */
+  paneAt(pos: Point): string | null | undefined;
+  /** A pane's viewport while it is drawn; null while it is folded or gone. */
+  viewportOf(paneId: string): ViewportState | null;
+  /** Whether the pane is on the chart, folded or not. */
+  hasPane(paneId: string): boolean;
+  /** The values a pane's lines have at a bar, for the magnet. */
+  valuesAt?(paneId: string, barIndex: number): readonly number[];
+}
+
+/** Whether `pos` is inside `rect`, its edges included. */
+function inRect(pos: Point, rect: { x: number; y: number; width: number; height: number }): boolean {
+  return pos.x >= rect.x && pos.x <= rect.x + rect.width && pos.y >= rect.y && pos.y <= rect.y + rect.height;
+}
 
 /** A step of the shared history that isn't about drawings: the chart's indicators, or its owner's. */
 function isForeignStep(action: UndoableAction): boolean {
@@ -151,11 +172,66 @@ export class DrawingManager {
     this.displayDataGetter = getter;
   }
 
+  private panes: DrawingPanes | null = null;
+
+  /**
+   * The chart's indicator panes: drawings begun on one are made, drawn and
+   * moved on its scale. Without them every drawing is the price pane's.
+   */
+  setPanes(panes: DrawingPanes | null): void {
+    this.panes = panes;
+  }
+
+  /** The pane a press lands in: undefined the price pane, null none a drawing takes. */
+  private paneAt(pos: Point): string | null | undefined {
+    return this.panes ? this.panes.paneAt(pos) : undefined;
+  }
+
+  /** The viewport a drawing of `paneId` is drawn and read with: `main` for the price pane; null while its pane isn't drawn. */
+  private viewportFor(paneId: string | undefined, main: ViewportState): ViewportState | null {
+    if (paneId === undefined) return main;
+    return this.panes?.viewportOf(paneId) ?? null;
+  }
+
+  /**
+   * Where a press at `pos` looks for drawings: the pane it lands in and that
+   * pane's viewport; null where no drawing is.
+   */
+  private scopeAt(pos: Point, main: ViewportState): { pane: string | undefined; viewport: ViewportState } | null {
+    // Without the chart's panes, only the price plot has drawings: never an axis beside it.
+    if (!this.panes && !inRect(pos, main.chartRect)) return null;
+    const pane = this.paneAt(pos);
+    if (pane === null) return null;
+    const viewport = this.viewportFor(pane, main);
+    return viewport ? { pane, viewport } : null;
+  }
+
+  /**
+   * Point the drawings of each pane in `renames` (old id to new) at the new
+   * one: the indicator that owned a pane was removed or moved, and another
+   * took the pane over, or a layout gave the indicators new ids.
+   */
+  renamePanes(renames: ReadonlyMap<string, string>): void {
+    let changed = false;
+    this.drawings = this.drawings.map((d) => {
+      const to = d.paneId !== undefined ? renames.get(d.paneId) : undefined;
+      if (to === undefined || to === d.paneId) return d;
+      changed = true;
+      return { ...d, paneId: to };
+    });
+    if (changed) this.requestRender?.();
+  }
+
   // --- Magnet snap ---
 
   /** Snap a point being placed to the bar under it (see `snapToBar`), on the bars as drawn (Heikin Ashi, say). */
-  private snapToOHLC(time: number, price: number, viewport?: ViewportState): AnchorPoint {
+  private snapToOHLC(time: number, price: number, viewport?: ViewportState, paneId?: string): AnchorPoint {
     const bars = this.magnetMode === 'none' ? [] : this.displayDataGetter?.() ?? this.dataGetter?.() ?? [];
+    // On an indicator pane, its lines' values: the bars' prices mean nothing there.
+    if (paneId !== undefined) {
+      const valuesAt = this.panes?.valuesAt;
+      return snapToValues(time, price, this.magnetMode, bars, (i) => valuesAt?.(paneId, i) ?? [], viewport);
+    }
     return snapToBar(time, price, this.magnetMode, bars, viewport);
   }
 
@@ -320,11 +396,13 @@ export class DrawingManager {
 
   /**
    * Select every visible drawing with an anchor inside the pixel rectangle
-   * (the Ctrl/⌘-drag selection). Replaces the current selection.
-   * Returns how many were selected.
+   * (the Ctrl/⌘-drag selection), on pane `paneId` (the price pane when
+   * left out). Replaces the current selection. Returns how many were selected.
    */
-  selectInRect(rect: { x0: number; y0: number; x1: number; y1: number }, viewport: ViewportState): number {
+  selectInRect(rect: { x0: number; y0: number; x1: number; y1: number }, main: ViewportState, paneId?: string): number {
     if (this.state === 'creating') return 0;
+    const viewport = this.viewportFor(paneId, main);
+    if (!viewport) return 0;
     this.selection.clear();
     this.state = 'idle';
     const left = Math.min(rect.x0, rect.x1);
@@ -332,7 +410,7 @@ export class DrawingManager {
     const top = Math.min(rect.y0, rect.y1);
     const bottom = Math.max(rect.y0, rect.y1);
     for (const d of this.drawings) {
-      if (!this.shown(d)) continue;
+      if (!this.shown(d) || d.paneId !== paneId) continue;
       const inside = d.anchors.some((a) => {
         const x = timeToX(a.time, viewport);
         const y = priceToY(a.price, viewport);
@@ -347,11 +425,13 @@ export class DrawingManager {
   /** Ctrl/⌘-click: add the drawing under `pos` to the selection, or take it out. */
   toggleSelectionAt(pos: Point, viewport: ViewportState): boolean {
     if (this.state === 'creating') return false;
+    const scope = this.scopeAt(pos, viewport);
+    if (!scope) return false;
     for (let i = this.drawings.length - 1; i >= 0; i--) {
       const d = this.drawings[i];
-      if (!this.shown(d)) continue;
+      if (!this.shown(d) || d.paneId !== scope.pane) continue;
       const plugin = this.registry.get(d.type);
-      if (!plugin?.hitTest(pos, d, viewport, 8)) continue;
+      if (!plugin?.hitTest(pos, d, scope.viewport, 8)) continue;
       // Out of the selection, another selected drawing becomes the primary.
       if (!this.selection.has(d.id)) this.addToSelection(d.id);
       else this.deselect([d.id]);
@@ -367,7 +447,7 @@ export class DrawingManager {
     const others = this.getSelectedDrawingIds()
       .filter((id) => id !== primary.id)
       .map((id) => this.drawings.find((d) => d.id === id))
-      .filter((d): d is DrawingState => d !== undefined && !d.locked);
+      .filter((d): d is DrawingState => d !== undefined && !d.locked && d.paneId === primary.paneId);
     this.drag.beginMove(pos, [primary, ...others]);
   }
 
@@ -422,8 +502,13 @@ export class DrawingManager {
     return drawing !== undefined && this.shown(drawing);
   }
 
+  /** Whether a drawing's pane is drawn: the price pane always, an indicator pane while it is there and not folded. */
+  private onDrawnPane(drawing: DrawingState): boolean {
+    return drawing.paneId === undefined || (this.panes?.viewportOf(drawing.paneId) ?? null) !== null;
+  }
+
   private shown(drawing: DrawingState): boolean {
-    return drawing.visible && shownOnInterval(drawing.intervals, this.timeframe);
+    return drawing.visible && shownOnInterval(drawing.intervals, this.timeframe) && this.onDrawnPane(drawing);
   }
 
   /** Show or hide a drawing (one undo step). Returns the new value, or null if not found. */
@@ -514,7 +599,10 @@ export class DrawingManager {
     this.batchUndo(() => {
       for (const source of clipboard.drawings) {
         if (!this.canPasteType(source.type)) continue;
+        // A pane's drawing goes back on that pane, where this chart has it; it means nothing on another.
+        if (source.paneId !== undefined && (!this.panes?.hasPane(source.paneId) || this.registry.get(source.type)?.descriptor.priceOnly)) continue;
         ids.push(this.addDrawing({
+          ...(source.paneId !== undefined ? { paneId: source.paneId } : {}),
           type: source.type,
           anchors: source.anchors.map((a) => ({ ...a, time: a.time + shift })),
           style: { ...source.style },
@@ -575,7 +663,10 @@ export class DrawingManager {
    * takes it, px: a finger's is wider than the mouse's 8.
    */
   onPointerDown(pos: Point, viewport: ViewportState, reach: DrawingReach = MOUSE_REACH): boolean {
-    if (this.eraser) return this.erase(pos, viewport, reach.line);
+    if (this.eraser) {
+      const scope = this.scopeAt(pos, viewport);
+      return scope ? this.erase(pos, scope, reach.line) : false;
+    }
     if (this.state === 'creating' && this.activeTool) {
       return this.handleCreationClick(pos, viewport);
     }
@@ -613,14 +704,17 @@ export class DrawingManager {
 
   onPointerMove(pos: Point, viewport: ViewportState): boolean {
     const making = this.state === 'creating' ? this.creator.current : null;
-    if (making && this.creator.move(this.creationAnchor(making.type, pos, viewport), pos)) {
+    const makingOn = making ? this.viewportFor(making.paneId, viewport) : null;
+    if (making && makingOn && this.creator.move(this.creationAnchor(making.type, pos, makingOn, making.paneId), pos)) {
       this.requestRender?.();
       return true;
     }
 
     if ((this.state === 'moving' || this.state === 'resizing') && this.drag.isActive()) {
       const primary = this.drawings.find((d) => d.id === this.selection.primary);
-      if (!this.drag.move(pos, viewport, primary && this.registry.get(primary.type))) return false;
+      // Moved on its own pane's scale, wherever the pointer goes.
+      const on = this.viewportFor(primary?.paneId, viewport);
+      if (!on || !this.drag.move(pos, on, primary && this.registry.get(primary.type))) return false;
       this.requestRender?.();
       return true;
     }
@@ -1006,6 +1100,7 @@ export class DrawingManager {
       options: this.initialOptions(state.type, state.options),
       intervals: cleanIntervals(state.intervals) ?? undefined,
       meta: state.meta,
+      ...(typeof state.paneId === 'string' ? { paneId: state.paneId } : {}),
     };
     this.drawings = [...this.drawings, drawing];
     this.record({ type: 'drawingCreate', before: null, after: cloneDrawing(drawing) });
@@ -1114,28 +1209,26 @@ export class DrawingManager {
   // --- Render ---
 
   render(ctx: CanvasRenderingContext2D, viewport: ViewportState): void {
-    // Clip to chart area so drawings don't bleed into axis areas
+    // Each drawing is clipped to its own pane's plot (renderIsolated).
     ctx.save();
     // The context carries its text state over from the last frame, and the
     // time axis, drawn after the drawings, leaves it right-aligned. Each pass
     // starts from the canvas's own baseline and a left alignment instead.
     ctx.textAlign = 'left';
     ctx.textBaseline = 'alphabetic';
-    ctx.beginPath();
-    ctx.rect(viewport.chartRect.x, viewport.chartRect.y, viewport.chartRect.width, viewport.chartRect.height);
-    ctx.clip();
 
     for (const drawing of this.drawings) {
       if (!this.shown(drawing)) continue;
       const plugin = this.registry.get(drawing.type);
-      if (!plugin) continue;
-      renderIsolated(ctx, plugin, drawing, viewport, this.selection.has(drawing.id));
+      const on = this.viewportFor(drawing.paneId, viewport);
+      if (plugin && on) renderIsolated(ctx, plugin, drawing, on, this.selection.has(drawing.id));
     }
 
     // The drawing being made, with the anchor under the pointer.
     const preview = this.creator.previewState();
     const previewPlugin = preview ? this.registry.get(preview.type) : undefined;
-    if (preview && previewPlugin) renderIsolated(ctx, previewPlugin, preview, viewport, false);
+    const previewOn = preview ? this.viewportFor(preview.paneId, viewport) : null;
+    if (preview && previewPlugin && previewOn) renderIsolated(ctx, previewPlugin, preview, previewOn, false);
 
     ctx.restore();
   }
@@ -1164,16 +1257,23 @@ export class DrawingManager {
   }
 
   /** Where a press or move puts an anchor: magnet-snapped, except for a freehand stroke. */
-  private creationAnchor(type: DrawingToolType, pos: Point, viewport: ViewportState): AnchorPoint {
+  private creationAnchor(type: DrawingToolType, pos: Point, viewport: ViewportState, paneId?: string): AnchorPoint {
     const time = xToTime(pos.x, viewport);
     const price = yToPrice(pos.y, viewport);
-    return this.registry.get(type)?.descriptor.creation === 'freehand' ? { time, price } : this.snapToOHLC(time, price, viewport);
+    return this.registry.get(type)?.descriptor.creation === 'freehand' ? { time, price } : this.snapToOHLC(time, price, viewport, paneId);
   }
 
   private handleCreationClick(pos: Point, viewport: ViewportState): boolean {
     const type = this.activeTool;
     const plugin = type ? this.registry.get(type) : undefined;
     if (!type || !plugin) return false;
+    // A drawing being made stays on the pane it was begun on; a new one begins on the pane pressed.
+    const making = this.creator.current;
+    const pane = making ? making.paneId : this.paneAt(pos);
+    if (pane === null) return false;
+    if (pane !== undefined && plugin.descriptor.priceOnly) return false;
+    const on = this.viewportFor(pane, viewport);
+    if (!on) return false;
     const start = (): DrawingState => ({
       id: newDrawingId(),
       type,
@@ -1182,10 +1282,11 @@ export class DrawingManager {
       visible: true,
       locked: false,
       options: this.initialOptions(type),
+      ...(pane !== undefined ? { paneId: pane } : {}),
     });
     this.creationPressAt = Date.now();
-    const onScreen = (a: AnchorPoint): Point => ({ x: timeToX(a.time, viewport), y: priceToY(a.price, viewport) });
-    this.afterCreationStep(this.creator.press(plugin, start, this.creationAnchor(type, pos, viewport), pos, onScreen));
+    const onScreen = (a: AnchorPoint): Point => ({ x: timeToX(a.time, on), y: priceToY(a.price, on) });
+    this.afterCreationStep(this.creator.press(plugin, start, this.creationAnchor(type, pos, on, pane), pos, onScreen));
     return true;
   }
 
@@ -1216,19 +1317,19 @@ export class DrawingManager {
   }
 
   /** The eraser at `pos`: remove the drawing there. A press off any drawing is left to the chart (a pan). */
-  private erase(pos: Point, viewport: ViewportState, tolerance: number): boolean {
-    const id = this.erasableAt(pos, viewport, tolerance);
+  private erase(pos: Point, scope: { pane: string | undefined; viewport: ViewportState }, tolerance: number): boolean {
+    const id = this.erasableAt(pos, scope, tolerance);
     if (!id) return false;
     this.removeDrawing(id);
     return true;
   }
 
   /** The topmost drawing the eraser would take at `pos`: locked ones are passed over. */
-  private erasableAt(pos: Point, viewport: ViewportState, tolerance = MOUSE_REACH.line): string | null {
+  private erasableAt(pos: Point, scope: { pane: string | undefined; viewport: ViewportState }, tolerance = MOUSE_REACH.line): string | null {
     for (let i = this.drawings.length - 1; i >= 0; i--) {
       const d = this.drawings[i];
-      if (!this.shown(d) || d.locked) continue;
-      if (this.registry.get(d.type)?.hitTest(pos, d, viewport, tolerance)) return d.id;
+      if (!this.shown(d) || d.locked || d.paneId !== scope.pane) continue;
+      if (this.registry.get(d.type)?.hitTest(pos, d, scope.viewport, tolerance)) return d.id;
     }
     return null;
   }
@@ -1273,39 +1374,47 @@ export class DrawingManager {
    */
   /** The topmost visible drawing under `pos` (locked ones too), or null. */
   drawingAt(pos: Point, viewport: ViewportState, tolerance = MOUSE_REACH.line): string | null {
+    const scope = this.scopeAt(pos, viewport);
+    if (!scope) return null;
     for (let i = this.drawings.length - 1; i >= 0; i--) {
       const d = this.drawings[i];
-      if (!this.shown(d)) continue;
-      if (this.registry.get(d.type)?.hitTest(pos, d, viewport, tolerance)) return d.id;
+      if (!this.shown(d) || d.paneId !== scope.pane) continue;
+      if (this.registry.get(d.type)?.hitTest(pos, d, scope.viewport, tolerance)) return d.id;
     }
     return null;
   }
 
-  hoverCursorAt(pos: Point, viewport: ViewportState): 'move' | 'pointer' | null {
-    if (this.eraser) return this.erasableAt(pos, viewport) ? 'pointer' : null;
+  hoverCursorAt(pos: Point, main: ViewportState): 'move' | 'pointer' | null {
+    const scope = this.scopeAt(pos, main);
+    if (!scope) return null;
+    if (this.eraser) return this.erasableAt(pos, scope) ? 'pointer' : null;
     if (this.activeTool || this.state === 'creating') return null;
     const tolerance = MOUSE_REACH.line;
+    const viewport = scope.viewport;
     if (this.selection.primary) {
       const selected = this.drawings.find((d) => d.id === this.selection.primary);
-      const plugin = selected && this.shown(selected) && !selected.locked ? this.registry.get(selected.type) : undefined;
+      const plugin = selected && this.shown(selected) && !selected.locked && selected.paneId === scope.pane ? this.registry.get(selected.type) : undefined;
       if (selected && plugin && plugin.hitTestAnchor(pos, selected, viewport, tolerance) >= 0) return 'move';
     }
     for (let i = this.drawings.length - 1; i >= 0; i--) {
       const d = this.drawings[i];
-      if (!this.shown(d) || d.locked) continue;
+      if (!this.shown(d) || d.locked || d.paneId !== scope.pane) continue;
       const plugin = this.registry.get(d.type);
       if (plugin?.hitTest(pos, d, viewport, tolerance)) return 'pointer';
     }
     return null;
   }
 
-  private handleSelectionClick(pos: Point, viewport: ViewportState, reach: DrawingReach): boolean {
+  private handleSelectionClick(pos: Point, main: ViewportState, reach: DrawingReach): boolean {
     const tolerance = reach.line;
+    const scope = this.scopeAt(pos, main);
+    if (!scope) return false;
+    const viewport = scope.viewport;
 
     // If already selected, check for anchor drag
     if (this.selection.primary) {
       const drawing = this.drawings.find((d) => d.id === this.selection.primary);
-      if (drawing && this.shown(drawing) && !drawing.locked) {
+      if (drawing && this.shown(drawing) && !drawing.locked && drawing.paneId === scope.pane) {
         const plugin = this.registry.get(drawing.type);
         if (plugin) {
           const anchorIdx = plugin.hitTestAnchor(pos, drawing, viewport, reach.handle);
@@ -1325,7 +1434,7 @@ export class DrawingManager {
     // Try to select a drawing
     for (let i = this.drawings.length - 1; i >= 0; i--) {
       const drawing = this.drawings[i];
-      if (!this.shown(drawing)) continue;
+      if (!this.shown(drawing) || drawing.paneId !== scope.pane) continue;
       const plugin = this.registry.get(drawing.type);
       if (!plugin) continue;
       if (plugin.hitTest(pos, drawing, viewport, tolerance)) {
@@ -1361,6 +1470,7 @@ export class DrawingManager {
 /**
  * One drawing in a save/restore of its own, so the alignment, alpha or dash
  * it sets, a host's drawing plugin included, never reaches the next one.
+ * Clipped to its pane's plot: off the axes, and off the other panes.
  */
 function renderIsolated(
   ctx: CanvasRenderingContext2D,
@@ -1369,7 +1479,11 @@ function renderIsolated(
   viewport: ViewportState,
   selected: boolean,
 ): void {
+  const plot = viewport.chartRect;
   ctx.save();
+  ctx.beginPath();
+  ctx.rect(plot.x, plot.y, plot.width, plot.height);
+  ctx.clip();
   plugin.render(ctx, state, viewport, selected);
   ctx.restore();
 }

@@ -38,6 +38,20 @@ chart.setStayInDrawingMode(true)    // mantiene la herramienta tras cada dibujo`
 
 chart.autoFib()   // un retroceso sobre el swing dominante a la vista, o null`}</code></pre>
 
+<h2 id="panes">En los paneles de indicadores</h2>
+<p>
+  Un dibujo empezado en un panel de indicador (RSI, MACD…) se hace en ese panel: los precios de sus anclas son los valores del panel, el imán se ajusta a las líneas del panel y el dibujo sigue la escala del panel, sin salir de él. Los paneles laterales y los plegados no admiten dibujos, y las herramientas que leen los precios de las barras (VWAP anclado, perfil de volumen, posición larga/corta) solo se usan en el panel de precio. Un dibujo de un panel no admite alertas de precio.
+</p>
+<pre><code>{`const rsi = chart.addIndicator('rsi')
+chart.addDrawing({
+  type: 'horizontalLine',
+  anchors: [{ time: t1, price: 70 }],   // 70 en la escala del RSI
+  paneId: rsi,                          // el id del panel, como lo da getIndicatorPanes()
+})`}</code></pre>
+<p>
+  Cuando se quita el indicador dueño del panel y otro del panel lo toma, los dibujos van con el panel. Cuando el panel se va, sus dibujos se ocultan y vuelven con él al deshacer. Un diseño guardado los vuelve a poner en sus paneles.
+</p>
+
 <h2>Configuración</h2>
 <p>
   Además de su estilo (color, grosor, estilo de línea, relleno, texto), una

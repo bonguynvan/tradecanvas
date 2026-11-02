@@ -41,6 +41,7 @@ export function drawing(
     options: overrides.options,
     intervals: overrides.intervals,
     meta: overrides.meta,
+    ...(overrides.paneId !== undefined ? { paneId: overrides.paneId } : {}),
   };
 }
 

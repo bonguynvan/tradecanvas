@@ -210,6 +210,19 @@ describe('shared panes', () => {
     expect(e.getPaneValueRange(rsi, 0, 59)).toEqual({ min: 0, max: 100 });
   });
 
+  it('lists the values a pane draws at a bar, its members’ too, for the drawing magnet', () => {
+    const data = bars(60);
+    const e = engine();
+    const rsi = e.addIndicator('rsi', { period: 14 }, data);
+    const sma = e.addIndicator('sma', { period: 5, source: indicatorSource(rsi, 'value') }, data, { pane: rsi });
+    const at = 40;
+    expect(e.getPaneValuesAt(rsi, at)).toEqual([e.getOutput(rsi)!.series![at]!.value, e.getOutput(sma)!.series![at]!.value]);
+    // A hidden member draws nothing to snap to; a bar past the data has nothing.
+    e.setVisible(sma, false);
+    expect(e.getPaneValuesAt(rsi, at)).toEqual([e.getOutput(rsi)!.series![at]!.value]);
+    expect(e.getPaneValuesAt(rsi, 500)).toEqual([]);
+  });
+
   it('can move an instance into a pane and back', () => {
     const e = engine();
     const rsi = e.addIndicator('rsi');

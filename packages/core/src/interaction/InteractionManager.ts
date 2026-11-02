@@ -810,11 +810,9 @@ export class InteractionManager {
       const vp = getVP();
       if (!vp) return;
       const pos = this.getMousePos(e);
-      // A drawing under the pointer has a menu of its own: in the price pane,
-      // not on an axis or another pane, and not while a tool is drawing.
-      const plot = vp.chartRect;
-      const inPlot = pos.x >= plot.x && pos.x <= plot.x + plot.width && pos.y >= plot.y && pos.y <= plot.y + plot.height;
-      const drawingId = this.onDrawingContextMenu && inPlot && !this.drawingManager?.getActiveTool()
+      // A drawing under the pointer has a menu of its own, on the pane it is
+      // drawn on (the drawing manager finds none on an axis), not while a tool is drawing.
+      const drawingId = this.onDrawingContextMenu && !this.drawingManager?.getActiveTool()
         ? this.drawingManager?.drawingAt(pos, vp)
         : null;
       if (drawingId) {

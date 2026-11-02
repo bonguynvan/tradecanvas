@@ -2323,12 +2323,15 @@ export class ChartWidget {
       return;
     }
     const offset = this.chartOffset();
-    const plot = this.chart.getPlotRect();
+    const primary = drawings[0];
+    // Kept within the pane the drawing is on: the price plot, or an indicator pane.
+    const plot = (primary.paneId !== undefined
+      ? this.chart.getIndicatorPanes().find((pane) => pane.instanceId === primary.paneId)?.rect
+      : undefined) ?? this.chart.getPlotRect();
     // Over all of them; at the top of the plot when none is on screen (an
     // extended line crossing it far from its anchors).
     const rect = unionRects(drawings.map((d) => this.chart.getDrawingRect(d.id)))
       ?? { x: plot.x + plot.width / 2, y: plot.y, width: 0, height: 0 };
-    const primary = drawings[0];
     toolbar.show({
       rect: { x: rect.x + offset.x, y: rect.y + offset.y, width: rect.width, height: rect.height },
       bounds: { x: plot.x + offset.x, y: plot.y + offset.y, width: plot.width, height: plot.height },

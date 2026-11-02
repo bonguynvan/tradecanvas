@@ -37,6 +37,20 @@ chart.setStayInDrawingMode(true)    // keep the tool after each drawing`}</code>
 
 chart.autoFib()   // a retracement over the dominant swing in view, or null`}</code></pre>
 
+<h2 id="panes">On indicator panes</h2>
+<p>
+  A drawing begun on an indicator pane (RSI, MACD…) is made on that pane: its anchors’ prices are the pane’s values, the magnet snaps to the pane’s lines, and it follows the pane’s scale. It stays inside its pane. Side panes and folded ones take no drawings, and the tools that read the bars’ prices (Anchored VWAP, Volume Profile, Long/Short Position) stay on the price pane. A pane’s drawing takes no price alert.
+</p>
+<pre><code>{`const rsi = chart.addIndicator('rsi')
+chart.addDrawing({
+  type: 'horizontalLine',
+  anchors: [{ time: t1, price: 70 }],   // 70 on the RSI scale
+  paneId: rsi,                          // a pane’s id, as getIndicatorPanes() lists them
+})`}</code></pre>
+<p>
+  When the indicator that owns the pane is removed and another in the pane takes it over, its drawings go with the pane. When the pane goes, its drawings are hidden and come back with it on undo. A saved layout puts them back on their panes.
+</p>
+
 <h2>Settings</h2>
 <p>
   Besides its style (colour, width, line style, fill, text), a tool can offer

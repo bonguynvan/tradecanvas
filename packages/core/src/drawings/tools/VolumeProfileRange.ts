@@ -9,7 +9,7 @@ import { formatDrawingPrice, drawingFont } from './labels.js';
  * across price levels within that range and renders a horizontal histogram.
  */
 export class VolumeProfileRangeTool extends DrawingBase {
-  descriptor = { type: 'volumeProfileRange' as const, name: 'Volume Profile (Range)', requiredAnchors: 2, fill: true };
+  descriptor = { type: 'volumeProfileRange' as const, name: 'Volume Profile (Range)', requiredAnchors: 2, fill: true, priceOnly: true };
 
   private dataGetter: (() => DataSeries) | null = null;
   private numBins = 40;

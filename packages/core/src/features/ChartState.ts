@@ -135,11 +135,15 @@ function validateDrawing(raw: unknown): DrawingState | null {
     options: isObject(raw.options) ? (raw.options as DrawingState['options']) : undefined,
     intervals: cleanIntervals(raw.intervals) ?? undefined,
     group: validateGroup(raw.group),
+    // The indicator pane it is drawn on, by its id; the chart drops it when there is no such pane.
+    ...(typeof raw.paneId === 'string' && raw.paneId.length > 0 && raw.paneId.length <= MAX_PANE_ID ? { paneId: raw.paneId } : {}),
     meta: isObject(raw.meta) ? raw.meta : undefined,
   };
 }
 
 const MAX_ANCHORS = 5000;
+/** Longest pane id kept: an indicator's instance id is far shorter. */
+const MAX_PANE_ID = 200;
 const MAX_GROUP_ID = 64;
 const MAX_GROUP_NAME = 80;
 

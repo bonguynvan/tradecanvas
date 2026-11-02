@@ -10,7 +10,7 @@ import { formatDrawingPrice, drawingFont } from './labels.js';
  * Optionally renders +/-1 and +/-2 standard deviation bands.
  */
 export class AnchoredVWAPTool extends DrawingBase {
-  descriptor = { type: 'anchoredVWAP' as const, name: 'Anchored VWAP', requiredAnchors: 1 };
+  descriptor = { type: 'anchoredVWAP' as const, name: 'Anchored VWAP', requiredAnchors: 1, priceOnly: true };
 
   private dataGetter: (() => DataSeries) | null = null;
   /** Moves when a bar was replaced in the same array: the cached line is stale. */
