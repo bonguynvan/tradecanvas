@@ -33,7 +33,7 @@ import { snapToBar, snapToValues, type MagnetMode } from './magnetSnap.js';
 import { cleanIntervals, shownOnInterval } from '../indicators/intervals.js';
 import { DrawingSelection } from './DrawingSelection.js';
 import { DrawingDrag, shiftAnchors, type DragEdit } from './DrawingDrag.js';
-import { constrainedAnchor } from './drawingEditing.js';
+import { constrainedAnchor, keepsAngle } from './drawingEditing.js';
 
 export type { DrawingOrderMove, DrawingPatch } from './drawingState.js';
 
@@ -132,6 +132,8 @@ export class DrawingManager {
   private pendingCopy: { pos: Point; id: string } | null = null;
   /** The copies a Ctrl/⌘-drag is moving; made in the undo history when it ends. */
   private copies: string[] | null = null;
+  /** Each copy's original anchors, to tell a copy dragged back onto its original. */
+  private copySources = new Map<string, AnchorPoint[]>();
   /** The last arrow press: to merge a run of them into one undo step. */
   private lastNudge: { key: string; at: number; before: DrawingState[]; action: UndoableAction | null } | null = null;
   private dataGetter: (() => OHLCBar[]) | null = null;
@@ -279,7 +281,7 @@ export class DrawingManager {
     return {
       handleAt: (pos, d, handle) => {
         // The point the dragged one is kept at 45° steps from: the one before it, or the next for the first.
-        const other = d.anchors.length >= 2 && handle < d.anchors.length ? d.anchors[handle === 0 ? 1 : handle - 1] : undefined;
+        const other = keepsAngle(d.type) && d.anchors.length >= 2 && handle < d.anchors.length ? d.anchors[handle === 0 ? 1 : handle - 1] : undefined;
         if (this.mods.shift && other) return constrainedAnchor(other, pos, viewport);
         return this.snapToOHLC(xToTime(pos.x, viewport), yToPrice(pos.y, viewport), viewport, d.paneId);
       },
@@ -366,6 +368,7 @@ export class DrawingManager {
    * mode, or one picked mid-drawing) stays ready for a fresh drawing.
    */
   private settleAfterHistory(): void {
+    this.dropCopyGesture();
     this.selection.clear();
     this.creator.reset();
     this.state = this.activeTool ? 'creating' : 'idle';
@@ -595,6 +598,7 @@ export class DrawingManager {
 
   setActiveTool(type: DrawingToolType | null): void {
     if (type) this.setEraser(false);
+    this.dropCopyGesture();
     const changed = type !== this.activeTool;
     this.activeTool = type;
     this.state = type ? 'creating' : 'idle';
@@ -820,10 +824,36 @@ export class DrawingManager {
    */
   beginCopyDrag(pos: Point, main: ViewportState, reach: DrawingReach = MOUSE_REACH): boolean {
     if (this.state === 'creating' || this.state === 'moving' || this.state === 'resizing' || this.eraser) return false;
+    // On a handle of the selected drawing, Ctrl/⌘ reshapes it with the magnet turned over.
+    if (this.beginHandleDrag(pos, main, reach)) return true;
     const id = this.drawingAt(pos, main, reach.line);
     if (!id) return false;
     this.pendingCopy = { pos, id };
     return true;
+  }
+
+  /** A press on a handle of the selected, unlocked drawing begins reshaping it. */
+  private beginHandleDrag(pos: Point, main: ViewportState, reach: DrawingReach): boolean {
+    const scope = this.scopeAt(pos, main);
+    const drawing = this.drawings.find((d) => d.id === this.selection.primary);
+    if (!scope || !drawing || drawing.locked || !this.shown(drawing) || drawing.paneId !== scope.pane) return false;
+    const handle = this.registry.get(drawing.type)?.hitTestAnchor(pos, drawing, scope.viewport, reach.handle) ?? -1;
+    if (handle < 0) return false;
+    this.state = 'resizing';
+    this.drag.beginResize(pos, drawing, handle);
+    return true;
+  }
+
+  /** Forget a Ctrl/⌘-drag under way (a tool picked, an undo, new drawings): its copies were never made. */
+  private dropCopyGesture(): void {
+    this.pendingCopy = null;
+    const copies = this.copies;
+    if (!copies) return;
+    this.copies = null;
+    this.drag.end();
+    this.drawings = this.drawings.filter((d) => !copies.includes(d.id));
+    this.deselect(copies);
+    if (this.state === 'moving') this.state = 'idle';
   }
 
   /** The press travelled: copy what it was on and begin moving the copies. */
@@ -831,12 +861,19 @@ export class DrawingManager {
     const { pos, id } = this.pendingCopy!;
     this.pendingCopy = null;
     const sourceIds = this.selection.has(id) ? [id, ...this.getSelectedDrawingIds().filter((other) => other !== id)] : [id];
+    const pressed = this.drawings.find((d) => d.id === id);
+    // Only what moves with the pointer: the pressed drawing's pane, tools this chart allows.
     const sources = sourceIds
       .map((sourceId) => this.drawings.find((d) => d.id === sourceId))
-      .filter((d): d is DrawingState => d !== undefined && this.shown(d));
+      .filter((d): d is DrawingState => d !== undefined && this.shown(d) && d.paneId === pressed?.paneId && this.canPasteType(d.type));
     if (sources.length === 0) return;
-    const copies = sources.map((source) => ({ ...structuredClone(source), id: newDrawingId(), locked: false }));
-    this.drawings.push(...copies);
+    // A copy is a drawing of its own: unlocked, and out of the original's group, as a paste is.
+    const copies = sources.map((source) => {
+      const { group: _group, ...rest } = structuredClone(source);
+      return { ...rest, id: newDrawingId(), locked: false };
+    });
+    this.copySources = new Map(copies.map((c, i) => [c.id, sources[i].anchors.map((a) => ({ ...a }))]));
+    this.drawings = [...this.drawings, ...copies];
     this.copies = copies.map((c) => c.id);
     this.selection.only(copies[0].id, this.copies.slice(1));
     this.beginMove(pos, copies[0]);
@@ -849,7 +886,16 @@ export class DrawingManager {
     this.copies = null;
     this.drag.end();
     this.state = 'selected';
+    const sources = this.copySources;
+    this.copySources = new Map();
     const made = ids.map((id) => this.drawings.find((d) => d.id === id)).filter((d): d is DrawingState => d !== undefined);
+    // Dragged back onto the original: no copy lying on top of it.
+    if (made.every((d) => { const from = sources.get(d.id); return !!from && sameAnchors(d.anchors, from); })) {
+      this.drawings = this.drawings.filter((d) => !ids.includes(d.id));
+      this.deselect(ids);
+      this.requestRender?.();
+      return;
+    }
     this.batchUndo(() => {
       for (const d of made) this.record({ type: 'drawingCreate', before: null, after: cloneDrawing(d) });
     });
@@ -993,6 +1039,7 @@ export class DrawingManager {
   }
 
   setDrawings(states: DrawingState[]): void {
+    this.dropCopyGesture();
     reserveIds(states);
     this.drawings = this.upgradeLegacyAnchors(states).map((d) => {
       if (!d.options && d.intervals === undefined) return d;
@@ -1374,6 +1421,7 @@ export class DrawingManager {
   }
 
   clearDrawings(): void {
+    this.dropCopyGesture();
     this.drawings = [];
     this.selection.clear();
     this.state = 'idle';
@@ -1442,7 +1490,7 @@ export class DrawingManager {
     // Shift keeps the next point at 45° steps from the last one; the magnet would pull it off the angle.
     const placed = this.creator.current?.anchors;
     const last = placed && placed.length > 0 ? placed[placed.length - 1] : undefined;
-    if (this.mods.shift && last) return constrainedAnchor(last, pos, viewport);
+    if (this.mods.shift && last && keepsAngle(type)) return constrainedAnchor(last, pos, viewport);
     return this.snapToOHLC(time, price, viewport, paneId);
   }
 

@@ -5,6 +5,22 @@ import { priceToY, timeToX, xToTime, yToPrice } from '../viewport/ScaleMapping.j
 const SNAP_ANGLE = Math.PI / 4;
 
 /**
+ * The tools whose points Shift keeps at 45° steps from the point before:
+ * lines and paths. A box, a channel's width or a pitchfork's handle has
+ * points that mean something else, and stays free.
+ */
+const ANGLE_TOOLS: ReadonlySet<string> = new Set([
+  'trendLine', 'ray', 'extendedLine', 'infoLine', 'trendAngle', 'arrow', 'horizontalRay',
+  'measure', 'priceRange', 'dateRange', 'dateAndPriceRange', 'path', 'polyline',
+  'fibRetracement', 'fibExtension', 'regressionChannel',
+]);
+
+/** Whether Shift keeps `type`'s points at 45° steps (see `ANGLE_TOOLS`). */
+export function keepsAngle(type: string): boolean {
+  return ANGLE_TOOLS.has(type);
+}
+
+/**
  * `to`, turned about `from` to the nearest multiple of 45° on screen: flat,
  * upright or diagonal, as far along that direction as the pointer reaches.
  * Measured in pixels, so it holds on any zoom and on a log scale.

@@ -3,6 +3,7 @@ import type { OHLCBar } from '@tradecanvas/commons';
 import { DrawingManager } from '../DrawingManager.js';
 import { TrendLineTool } from '../tools/TrendLine.js';
 import { HorizontalLineTool } from '../tools/HorizontalLine.js';
+import { RectangleTool } from '../tools/Rectangle.js';
 import { drawing, unitViewport } from './fixtures.js';
 import { UndoRedoManager } from '../../features/UndoRedoManager.js';
 import { snapToBar } from '../magnetSnap.js';
@@ -156,5 +157,66 @@ describe('Ctrl- or ⌘-drag to copy', () => {
 
   it('takes nothing on empty chart, so a selection box can start there', () => {
     expect(manager.beginCopyDrag({ x: x(30), y: y(80) }, unitViewport)).toBe(false);
+  });
+
+  it('makes the copy a drawing of its own, out of the original’s group', () => {
+    manager.setDrawings([{ ...drawing('horizontalLine', [{ time: 5, price: 30 }], { id: 'a' }), group: { id: 'g', name: 'G' } }]);
+    manager.beginCopyDrag({ x: x(5), y: y(30) }, unitViewport);
+    manager.onPointerMove({ x: x(5), y: y(30) - 20 }, unitViewport);
+    manager.onPointerUp();
+    expect(manager.getDrawings()[1].group).toBeUndefined();
+  });
+
+  it('copies only the tools this chart allows, as a paste does', () => {
+    manager.setToolFilter((type) => type !== 'horizontalLine');
+    manager.beginCopyDrag({ x: x(5), y: y(30) }, unitViewport);
+    manager.onPointerMove({ x: x(5), y: y(30) - 20 }, unitViewport);
+    manager.onPointerUp();
+    expect(manager.getDrawings()).toHaveLength(1);
+  });
+
+  it('makes no copy when it is dragged back onto the original', () => {
+    manager.beginCopyDrag({ x: x(5), y: y(30) }, unitViewport);
+    manager.onPointerMove({ x: x(5), y: y(30) - 20 }, unitViewport);
+    manager.onPointerMove({ x: x(5), y: y(30) }, unitViewport);
+    manager.onPointerUp();
+    expect(manager.getDrawings()).toHaveLength(1);
+    expect(history.getState().canUndo).toBe(false);
+  });
+
+  it('drops the copy when a tool is picked mid-drag', () => {
+    manager.beginCopyDrag({ x: x(5), y: y(30) }, unitViewport);
+    manager.onPointerMove({ x: x(5), y: y(30) - 20 }, unitViewport);
+    manager.setActiveTool('trendLine');
+    manager.onPointerUp();
+    expect(manager.getDrawings()).toHaveLength(1);
+    expect(manager.getSelectedDrawingIds()).toEqual([]);
+    // The tool picked still draws.
+    manager.onPointerDown({ x: x(30), y: y(50) }, unitViewport);
+    manager.onPointerDown({ x: x(40), y: y(50) }, unitViewport);
+    expect(manager.getDrawings().map((d) => d.type)).toEqual(['horizontalLine', 'trendLine']);
+  });
+
+  it('reshapes the selected drawing from its handle instead, the magnet turned over', () => {
+    manager.setDrawings([drawing('trendLine', [{ time: 5, price: 30 }, { time: 20, price: 70 }], { id: 't' })]);
+    manager.setDataGetter(() => bars);
+    manager.select('t');
+    manager.setModifiers({ ctrl: true, shift: false });
+    expect(manager.beginCopyDrag({ x: x(20), y: y(70) }, unitViewport)).toBe(true);
+    manager.onPointerMove({ x: x(30) + 2, y: y(58) }, unitViewport);
+    manager.onPointerUp();
+    expect(manager.getDrawings()).toHaveLength(1);
+    expect(line().anchors[1]).toEqual({ time: 30, price: 60 });
+  });
+});
+
+describe('Shift on tools that are not lines', () => {
+  it('leaves a box’s corner free', () => {
+    manager.register(new RectangleTool());
+    manager.setModifiers({ ctrl: false, shift: true });
+    manager.setActiveTool('rectangle');
+    manager.onPointerDown({ x: x(5), y: y(30) }, unitViewport);
+    manager.onPointerDown({ x: x(15), y: y(34) }, unitViewport);
+    expect(line().anchors[1].price).toBeCloseTo(34);
   });
 });

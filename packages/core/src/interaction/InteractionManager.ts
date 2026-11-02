@@ -789,7 +789,17 @@ export class InteractionManager {
       this.zoomHandler.onWheel(e.deltaY, pos);
     };
 
+    // Shift or Ctrl/⌘ pressed or let go without moving the pointer still counts.
+    const onModifierKey = (e: KeyboardEvent) => {
+      if (e.key === 'Shift' || e.key === 'Control' || e.key === 'Meta') {
+        this.drawingManager?.setModifiers({ ctrl: e.ctrlKey || e.metaKey, shift: e.shiftKey });
+      }
+    };
+    // Keys let go in another window never reach this one.
+    const onWindowBlur = () => this.drawingManager?.setModifiers({ ctrl: false, shift: false });
+
     const onKeyDown = (e: KeyboardEvent) => {
+      onModifierKey(e);
       // Keys pressed in a dialog or menu (a drawing's settings, say) are its own.
       if (focusInOverlay()) return;
       if (e.key === 'Escape' && this.boxSelecting && this.boxSelectHandlers) {
@@ -1088,6 +1098,8 @@ export class InteractionManager {
     this.element.addEventListener('touchend', onTouchEnd);
     this.element.addEventListener('touchcancel', onTouchCancel);
     document.addEventListener('keydown', onKeyDown);
+    document.addEventListener('keyup', onModifierKey);
+    window.addEventListener('blur', onWindowBlur);
     window.addEventListener('resize', onWindowResize);
     document.addEventListener('scroll', onAnyScroll, { capture: true, passive: true });
     this.element.addEventListener('mouseenter', onMouseEnter);
@@ -1095,6 +1107,8 @@ export class InteractionManager {
     this.boundHandlers.push(
       endPress,
       () => this.element.removeEventListener('mousedown', onMouseDown),
+      () => document.removeEventListener('keyup', onModifierKey),
+      () => window.removeEventListener('blur', onWindowBlur),
       () => document.removeEventListener('dragstart', onDragStart, true),
       () => this.element.removeEventListener('mousemove', onMouseMove),
       () => document.removeEventListener('mouseup', onMouseUp),

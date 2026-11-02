@@ -21,6 +21,7 @@ function drawings(tool: string | null = null): void {
     onPointerDown: (pos: Point) => { calls.push(`down ${pos.x}`); return tool !== null || onDrawing(pos); },
     onPointerMove: () => false,
     onPointerUp: () => false,
+    onKeyDown: () => false,
     beginCopyDrag: (pos: Point) => { calls.push(`copy ${pos.x}`); return onDrawing(pos); },
     hoverCursorAt: (pos: Point) => (tool === null && onDrawing(pos) ? 'pointer' : null),
     getActiveTool: () => tool,
@@ -61,6 +62,16 @@ describe('InteractionManager — Shift and Ctrl/⌘ for the drawings', () => {
     document.dispatchEvent(at('mousemove', 290, { buttons: 1, shiftKey: true }));
     expect(mods[0]).toEqual({ ctrl: true, shift: false });
     expect(mods[mods.length - 1]).toEqual({ ctrl: false, shift: true });
+  });
+
+  it('hears Shift let go without a move, and forgets the keys when the window loses focus', () => {
+    drawings();
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Shift', shiftKey: true }));
+    document.dispatchEvent(new KeyboardEvent('keyup', { key: 'Shift' }));
+    expect(mods).toEqual([{ ctrl: false, shift: true }, { ctrl: false, shift: false }]);
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Control', ctrlKey: true }));
+    window.dispatchEvent(new Event('blur'));
+    expect(mods[mods.length - 1]).toEqual({ ctrl: false, shift: false });
   });
 
   it('measures with Shift on empty chart only', () => {
