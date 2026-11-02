@@ -188,6 +188,15 @@ chart.setZoomAreaMode(true)        // 下一次拖动会缩放到框内的K线
 chart.setDrawingMagnetMode('strong') // 'off' | 'weak' | 'strong'`}</code></pre>
 <p>弱磁吸会在指针靠近K线的开盘价、最高价、最低价或收盘价时，把点吸附到该价位；强磁吸则始终吸附。在组件中磁吸默认关闭：绘图放在哪里就在哪里，直到用磁吸按钮开启。</p>
 
+<h2 id="editing">用指针和键盘编辑</h2>
+<ul>
+  <li>拖动控制点或移动整个绘图时磁铁同样起作用：离抓取处最近的点落在价格上，其余的点与它保持相对位置。弱磁铁的范围为 50 px。</li>
+  <li>绘制或拖动时按住 <kbd>Ctrl</kbd>/<kbd>⌘</kbd>，在此期间翻转磁铁：关着时打开，开着时关闭。</li>
+  <li>绘制或拖动控制点时按住 <kbd>Shift</kbd>，让线在屏幕上保持水平、垂直或 45°。在图表空白处，<kbd>Shift</kbd> + 拖动仍是测量。适用于直线和路径；矩形、通道的宽度或叉子的点不受限制。</li>
+  <li><kbd>←</kbd> <kbd>→</kbd> <kbd>↑</kbd> <kbd>↓</kbd> 将选中的绘图横向移动一根 K 线或上下移动一个像素；加按 <kbd>Shift</kbd> 则为十。连续按键只算一步撤销，已锁定的绘图不动。</li>
+  <li>在绘图上 <kbd>Ctrl</kbd>/<kbd>⌘</kbd> + 拖动会拖出一个副本（绘图在选区中时复制整个选区），算一步撤销。<kbd>Ctrl</kbd>/<kbd>⌘</kbd> + 单击仍然把它加入或移出选区，在空白处 <kbd>Ctrl</kbd>/<kbd>⌘</kbd> + 拖动仍然画选择框。在选中绘图的控制点上，<kbd>Ctrl</kbd>/<kbd>⌘</kbd> + 拖动则是在磁铁翻转的状态下调整它。</li>
+</ul>
+
 <h2>键盘</h2>
 <ul>
   <li><kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>Z</kbd> 撤销，<kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>Z</kbd> 或 <kbd>Ctrl</kbd> + <kbd>Y</kbd> 重做。</li>

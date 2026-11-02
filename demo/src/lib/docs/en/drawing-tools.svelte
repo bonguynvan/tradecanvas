@@ -194,6 +194,15 @@ chart.setZoomAreaMode(true)        // the next drag zooms to the bars in its box
 chart.setDrawingMagnetMode('strong') // 'off' | 'weak' | 'strong'`}</code></pre>
 <p>The weak magnet snaps a point to the bar's open, high, low or close when the pointer is near one; the strong magnet always does. In the widget the magnet starts off: a drawing goes where it is placed until the magnet button turns it on.</p>
 
+<h2 id="editing">Editing with the pointer and the keys</h2>
+<ul>
+  <li>The magnet works on a dragged handle and on a moved drawing too: the point nearest where it was grabbed lands on a price, and the rest keep their place to it. The weak magnet reaches 50 px.</li>
+  <li>Hold <kbd>Ctrl</kbd>/<kbd>⌘</kbd> while drawing or dragging to turn the magnet over for that moment: on when it is off, off when it is on.</li>
+  <li>Hold <kbd>Shift</kbd> while drawing or dragging a handle to keep the line flat, upright or at 45° on screen. On empty chart, <kbd>Shift</kbd> + drag still measures. It holds for lines and paths; a box, a channel's width or a pitchfork's point stays free.</li>
+  <li><kbd>←</kbd> <kbd>→</kbd> <kbd>↑</kbd> <kbd>↓</kbd> move the selected drawings a bar across or a pixel up or down; with <kbd>Shift</kbd>, ten. A run of presses is one undo step, and locked drawings stay.</li>
+  <li><kbd>Ctrl</kbd>/<kbd>⌘</kbd> + drag on a drawing drags out a copy (of the whole selection when the drawing is in it), one undo step. A <kbd>Ctrl</kbd>/<kbd>⌘</kbd> + click still adds it to the selection or takes it out, and <kbd>Ctrl</kbd>/<kbd>⌘</kbd> + drag on empty chart draws a selection box. On a handle of the selected drawing, <kbd>Ctrl</kbd>/<kbd>⌘</kbd> + drag reshapes it with the magnet turned over instead.</li>
+</ul>
+
 <h2>Keyboard</h2>
 <ul>
   <li><kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>Z</kbd> undo, <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>Z</kbd> or <kbd>Ctrl</kbd> + <kbd>Y</kbd> redo.</li>
