@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 1.64.0 (2026-11-02)
+
+React, Vue and Svelte components: 1.3.56.
+
 ### Drawings
 
 - **Text on lines and boxes** (`@tradecanvas/commons`, `@tradecanvas/core`, `@tradecanvas/chart`).
