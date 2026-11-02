@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 1.62.0 (2026-11-02)
+
+React, Vue and Svelte components: 1.3.54.
+
 ### Drawings
 
 - **Text on the chart has a style of its own** (`@tradecanvas/commons`, `@tradecanvas/core`, `@tradecanvas/chart`). `DrawingStyle` takes `bold`, `italic`, `textColor`, `textAlign`, `textBackground` (drawn in `fillColor`), `textBorder` (in `borderColor`) and `textWrap` (px; 0 wraps only where the text breaks). How the text tools use them:
