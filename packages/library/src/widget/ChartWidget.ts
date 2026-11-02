@@ -1514,6 +1514,19 @@ export class ChartWidget {
         this.chart.renameDrawingGroup(group, name);
         this.refreshObjects();
       },
+      onSelectDrawing: (id) => this.chart.selectDrawing(id),
+      onRenameDrawing: (id, name) => {
+        this.chart.updateDrawing(id, { name: name || null });
+        this.refreshObjects();
+      },
+      onCloneDrawing: (id) => {
+        this.chart.duplicateDrawing(id);
+        this.refreshObjects();
+      },
+      onMoveDrawing: (id, index) => {
+        this.chart.moveDrawing(id, index);
+        this.refreshObjects();
+      },
       onAddCompare: features.compareSymbols !== false ? () => this.handleAddCompare() : undefined,
       onRemoveCompare: (id) => this.removeCompared(id),
     }, this.t);
@@ -3788,7 +3801,7 @@ export class ChartWidget {
     }));
     const drawings = this.chart.getDrawings().map((d) => ({
       id: d.id,
-      label: drawingTypeLabel(d.type, this.t),
+      label: d.name ?? drawingTypeLabel(d.type, this.t),
       visible: d.visible,
       offInterval: d.visible && !this.chart.isDrawingShown(d.id),
       locked: d.locked,

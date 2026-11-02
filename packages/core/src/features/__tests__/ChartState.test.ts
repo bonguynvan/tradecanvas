@@ -348,3 +348,18 @@ describe('ChartStateManager localStorage round-trip', () => {
     expect(ChartStateManager.loadFromStorage('missing')).toBeNull();
   });
 });
+
+describe('ChartStateManager drawing names', () => {
+  it('keeps a drawing’s name through a save, and drops one that is not text', () => {
+    const base = {
+      type: 'horizontalLine', anchors: [{ time: 1, price: 2 }],
+      style: { color: '#fff', lineWidth: 1, lineStyle: 'solid' }, visible: true, locked: false,
+    };
+    const restored = ChartStateManager.deserialize(JSON.stringify({ version: SNAPSHOT_VERSION, drawings: [
+      { ...base, id: 'a', name: 'Weekly support' },
+      { ...base, id: 'b', name: 42 },
+      { ...base, id: 'c', name: 'y'.repeat(300) },
+    ] }));
+    expect(restored.drawings.map((d) => d.name)).toEqual(['Weekly support', undefined, 'y'.repeat(80)]);
+  });
+});

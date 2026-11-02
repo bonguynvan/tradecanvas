@@ -13,6 +13,8 @@ export function orderDrawings(drawings: readonly DrawingState[], ids: readonly s
 /** Where a drawing at `from` (of `count`) goes for `to`. */
 export function orderTarget(from: number, count: number, to: DrawingOrderMove): number {
   const last = count - 1;
+  // A place that is not a whole number moves nothing.
+  if (typeof to === 'number') return Number.isInteger(to) ? Math.min(last, Math.max(0, to)) : from;
   switch (to) {
     case 'front': return last;
     case 'back': return 0;

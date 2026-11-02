@@ -84,6 +84,8 @@ export interface DrawingState {
   options?: DrawingOptions;
   /** The group it belongs to: drawings selected, hidden and locked together. */
   group?: { id: string; name: string };
+  /** Its own name, as the object tree lists it (at most 80 characters); unset: its tool's name. */
+  name?: string;
   /**
    * The intervals it shows on, as an indicator's are (`{ minutes: false }`:
    * not on minute charts); unset: all of them.

@@ -8,10 +8,28 @@ export interface DrawingPatch {
   options?: DrawingOptions;
   /** Null: every interval. */
   intervals?: IndicatorIntervals | null;
+  /** Its own name, trimmed and cut to `MAX_DRAWING_NAME`; null or blank: none, its tool's name. */
+  name?: string | null;
 }
 
-/** Where `moveDrawing` puts a drawing among the others: drawn on top of all, under all, or one step. */
-export type DrawingOrderMove = 'front' | 'back' | 'forward' | 'backward';
+/**
+ * Where `moveDrawing` puts a drawing among the others: drawn on top of all,
+ * under all, one step, or at a place in the order (0 is the bottom).
+ */
+export type DrawingOrderMove = DrawingOrderStep | number;
+
+/** A step in the order: to the top or the bottom, or one up or down. */
+export type DrawingOrderStep = 'front' | 'back' | 'forward' | 'backward';
+
+/** Longest name a drawing keeps; a longer one is cut. */
+export const MAX_DRAWING_NAME = 80;
+
+/** A drawing's name as kept: trimmed and cut to length; undefined for none. */
+export function cleanDrawingName(name: unknown): string | undefined {
+  if (typeof name !== 'string') return undefined;
+  const clean = name.trim().slice(0, MAX_DRAWING_NAME);
+  return clean.length > 0 ? clean : undefined;
+}
 
 /** Longest group name kept; a longer one is cut. */
 export const MAX_GROUP_NAME = 80;

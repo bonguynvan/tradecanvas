@@ -146,3 +146,40 @@ describe('DrawingManager selecting from a menu', () => {
   });
 });
 
+
+describe('DrawingManager drawing order by place', () => {
+  it('moves a drawing to a place in the order, one undo step', () => {
+    expect(manager.moveDrawing(a, 2)).toBe(true);
+    expect(ids()).toEqual([b, c, a]);
+    expect(manager.moveDrawing(a, 1)).toBe(true);
+    expect(ids()).toEqual([b, a, c]);
+    manager.undo();
+    expect(ids()).toEqual([b, c, a]);
+  });
+
+  it('keeps a place in range, and says when nothing moved', () => {
+    expect(manager.moveDrawing(c, 99)).toBe(false);
+    expect(manager.moveDrawing(c, -4)).toBe(true);
+    expect(ids()).toEqual([c, a, b]);
+    expect(manager.moveDrawing(c, 0.5)).toBe(false);
+  });
+});
+
+describe('DrawingManager drawing names', () => {
+  it('names a drawing, trimmed and cut to length, and clears the name, each one undo step', () => {
+    expect(manager.updateDrawing(a, { name: '  Weekly support  ' })).toBe(true);
+    expect(manager.getDrawings()[0].name).toBe('Weekly support');
+    manager.updateDrawing(a, { name: 'x'.repeat(200) });
+    expect(manager.getDrawings()[0].name).toHaveLength(80);
+    manager.updateDrawing(a, { name: null });
+    expect(manager.getDrawings()[0].name).toBeUndefined();
+    manager.undo();
+    expect(manager.getDrawings()[0].name).toHaveLength(80);
+  });
+
+  it('takes a blank name as no name', () => {
+    manager.updateDrawing(a, { name: 'Level' });
+    manager.updateDrawing(a, { name: '   ' });
+    expect(manager.getDrawings()[0].name).toBeUndefined();
+  });
+});

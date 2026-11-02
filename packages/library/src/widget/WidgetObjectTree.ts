@@ -13,6 +13,7 @@ export interface ObjectTreeIndicator {
 
 export interface ObjectTreeDrawing {
   id: string;
+  /** As the row names it: its own name, else its tool's. */
   label: string;
   visible: boolean;
   /** Shown, but kept to other intervals than the chart's: not drawn now. */
@@ -47,6 +48,13 @@ export interface ObjectTreeCallbacks {
   onToggleGroupLocked?: (groupId: string, locked: boolean) => void;
   onUngroup?: (groupId: string) => void;
   onRenameGroup?: (groupId: string, name: string) => void;
+  /** A drawing's row: a click on its name selects it, a double-click renames it ('' clears the name). */
+  onSelectDrawing?: (id: string) => void;
+  onRenameDrawing?: (id: string, name: string) => void;
+  /** Each drawing row gets a clone button. */
+  onCloneDrawing?: (id: string) => void;
+  /** Each drawing row gets a grip: dragged onto another row, the drawing takes that row's place in the chart's order. */
+  onMoveDrawing?: (id: string, index: number) => void;
   /** When provided, a Compare section with an "add" button is shown. */
   onAddCompare?: () => void;
   onRemoveCompare?: (id: string) => void;
@@ -65,6 +73,10 @@ export class WidgetObjectTree {
   private compareEl: HTMLDivElement | null = null;
   private callbacks: ObjectTreeCallbacks;
   private open = false;
+  /** Each drawing's place in the chart's order (bottom first), as last listed. */
+  private drawingIndex = new Map<string, number>();
+  /** A row being dragged by its grip, and the listeners that follow the pointer. */
+  private dragging: { id: string; stop: () => void } | null = null;
 
   constructor(host: HTMLElement, callbacks: ObjectTreeCallbacks, private readonly t: Translator = EN_TRANSLATOR) {
     this.callbacks = callbacks;
@@ -127,6 +139,7 @@ export class WidgetObjectTree {
   }
 
   destroy(): void {
+    this.dragging?.stop();
     this.el.remove();
   }
 
@@ -202,6 +215,8 @@ export class WidgetObjectTree {
   }
 
   private renderDrawings(drawings: ObjectTreeDrawing[]): void {
+    this.dragging?.stop();
+    this.drawingIndex = new Map(drawings.map((d, i) => [d.id, i]));
     this.drawingsEl.replaceChildren();
     if (drawings.length === 0) {
       this.drawingsEl.appendChild(this.emptyRow(this.t('objects.noDrawings')));
@@ -267,20 +282,30 @@ export class WidgetObjectTree {
 
   /** Swap a group's name for a text box: Enter or leaving it renames, Escape keeps the name. */
   private renameGroup(nameEl: HTMLElement, groupId: string, name: string): void {
+    this.renameInline(nameEl, name, this.t('objects.renameGroup'), (next) => {
+      if (next && next !== name) this.callbacks.onRenameGroup?.(groupId, next);
+    });
+  }
+
+  /**
+   * Swap a name for a text box holding `name`: Enter or leaving it calls
+   * `save` with the trimmed text, Escape keeps the name.
+   */
+  private renameInline(nameEl: HTMLElement, name: string, label: string, save: (next: string) => void): void {
     if (!nameEl.isConnected) return; // already being renamed
     const input = document.createElement('input');
     input.type = 'text';
     input.className = 'tcw-tree-rename';
     input.value = name;
-    input.maxLength = 80;
-    input.setAttribute('aria-label', this.t('objects.renameGroup'));
+    input.maxLength = MAX_NAME;
+    input.setAttribute('aria-label', label);
     let done = false;
-    const finish = (save: boolean) => {
+    const finish = (keep: boolean) => {
       if (done) return;
       done = true;
       const next = input.value.trim();
       if (input.isConnected) input.replaceWith(nameEl);
-      if (save && next && next !== name) this.callbacks.onRenameGroup?.(groupId, next);
+      if (keep) save(next);
     };
     input.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') finish(true);
@@ -297,8 +322,21 @@ export class WidgetObjectTree {
 
   private drawingRow(d: ObjectTreeDrawing): HTMLDivElement {
     const row = this.row(d.label);
+    row.dataset.drawingId = d.id;
     if (!d.visible || d.offInterval) row.classList.add('tcw-tree-hidden');
     if (d.offInterval) row.title = this.t('indicatorSettings.offInterval');
+    if (this.callbacks.onMoveDrawing) row.insertBefore(this.grip(d.id), row.firstChild);
+
+    const nameEl = row.querySelector<HTMLSpanElement>('.tcw-tree-name')!;
+    if (this.callbacks.onSelectDrawing) {
+      nameEl.classList.add('tcw-tree-pick');
+      nameEl.addEventListener('click', () => this.callbacks.onSelectDrawing?.(d.id));
+    }
+    if (this.callbacks.onRenameDrawing) {
+      nameEl.addEventListener('dblclick', () => this.renameInline(nameEl, d.label, this.t('objects.renameDrawing'), (next) => {
+        if (next !== d.label) this.callbacks.onRenameDrawing?.(d.id, next);
+      }));
+    }
 
     const actions = document.createElement('div');
     actions.className = 'tcw-tree-actions';
@@ -314,6 +352,9 @@ export class WidgetObjectTree {
       d.locked ? 'tcw-tree-on' : '',
       () => this.callbacks.onToggleDrawingLocked(d.id, !d.locked),
     ));
+    if (this.callbacks.onCloneDrawing) {
+      actions.appendChild(this.iconButton('copy', this.t('objects.cloneDrawing'), '', () => this.callbacks.onCloneDrawing?.(d.id)));
+    }
     if (this.callbacks.onConfigureDrawing) {
       const gear = this.iconButton('settings', this.t('objects.drawingSettings'), '', () =>
         this.callbacks.onConfigureDrawing?.(d.id),
@@ -326,6 +367,59 @@ export class WidgetObjectTree {
     ));
     row.appendChild(actions);
     return row;
+  }
+
+  /**
+   * A drawing row's grip: dragged onto another drawing's row, the drawing
+   * takes that one's place; the arrow keys move it a place up or down.
+   */
+  private grip(id: string): HTMLButtonElement {
+    const grip = this.iconButton('grip', this.t('objects.dragToReorder'), 'tcw-tree-grip', () => {});
+    grip.addEventListener('pointerdown', (e) => {
+      if ((e as MouseEvent).button !== 0) return;
+      e.preventDefault();
+      this.beginRowDrag(id);
+    });
+    grip.addEventListener('keydown', (e) => {
+      const step = e.key === 'ArrowUp' ? -1 : e.key === 'ArrowDown' ? 1 : 0;
+      const from = this.drawingIndex.get(id);
+      if (!step || from === undefined) return;
+      e.preventDefault();
+      const to = from + step;
+      if (to >= 0 && to < this.drawingIndex.size) this.callbacks.onMoveDrawing?.(id, to);
+    });
+    return grip;
+  }
+
+  /** Follow the pointer from a grip until it is let go: the row under it is marked, and takes the drawing on release. */
+  private beginRowDrag(id: string): void {
+    this.dragging?.stop();
+    let target: HTMLElement | null = null;
+    const mark = (row: HTMLElement | null) => {
+      target?.classList.remove('tcw-tree-drop');
+      target = row && row.dataset.drawingId !== id ? row : null;
+      target?.classList.add('tcw-tree-drop');
+    };
+    const rowAt = (y: number) => [...this.drawingsEl.querySelectorAll<HTMLElement>('.tcw-tree-row[data-drawing-id]')]
+      .find((row) => { const r = row.getBoundingClientRect(); return y >= r.top && y < r.bottom; }) ?? null;
+    const move = (e: Event) => mark(rowAt((e as MouseEvent).clientY));
+    const up = (e: Event) => {
+      mark(rowAt((e as MouseEvent).clientY));
+      const index = target ? this.drawingIndex.get(target.dataset.drawingId ?? '') : undefined;
+      stop();
+      if (index !== undefined) this.callbacks.onMoveDrawing?.(id, index);
+    };
+    const stop = () => {
+      mark(null);
+      document.removeEventListener('pointermove', move);
+      document.removeEventListener('pointerup', up);
+      document.removeEventListener('pointercancel', stop);
+      this.dragging = null;
+    };
+    document.addEventListener('pointermove', move);
+    document.addEventListener('pointerup', up);
+    document.addEventListener('pointercancel', stop);
+    this.dragging = { id, stop };
   }
 
   private renderCompares(compares: ObjectTreeCompare[]): void {
@@ -391,6 +485,9 @@ export class WidgetObjectTree {
     return btn;
   }
 }
+
+/** Longest name a rename takes, as a chart keeps it. */
+const MAX_NAME = 80;
 
 const DRAWING_TYPE_LABELS: Record<string, string> = {
   trendLine: 'Trend Line',

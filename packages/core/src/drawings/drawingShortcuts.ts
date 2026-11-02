@@ -1,14 +1,14 @@
-import type { DrawingOrderMove } from './drawingState.js';
+import type { DrawingOrderStep } from './drawingState.js';
 
 /** What a key does to drawings. */
 export type DrawingShortcut =
   | 'copy' | 'paste' | 'duplicate'
   | 'group' | 'ungroup'
-  | DrawingOrderMove
+  | DrawingOrderStep
   | 'undo' | 'redo'
   | 'escape' | 'delete' | 'finish';
 
-const ORDER_KEYS: Readonly<Record<string, readonly [DrawingOrderMove, DrawingOrderMove]>> = {
+const ORDER_KEYS: Readonly<Record<string, readonly [DrawingOrderStep, DrawingOrderStep]>> = {
   // [without Shift, with Shift]; Shift+] types } on most layouts.
   ']': ['forward', 'front'],
   '}': ['front', 'front'],

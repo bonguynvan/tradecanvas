@@ -3364,6 +3364,24 @@
 .tcw-tree-btn.tcw-tree-on {
   color: var(--tcw-accent);
 }
+/* A drawing row's grip: dragged, it moves the drawing up or down the order. */
+.tcw-tree-btn.tcw-tree-grip {
+  flex: none;
+  cursor: grab;
+  touch-action: none;
+}
+.tcw-tree-row:not(:hover) .tcw-tree-grip:not(:focus-visible) {
+  opacity: 0.45;
+}
+/* The row a dragged drawing would take the place of. */
+.tcw-tree-row.tcw-tree-drop {
+  box-shadow: inset 0 0 0 1px var(--tcw-accent);
+}
+/* A drawing's name selects it on the chart. */
+.tcw-tree-name.tcw-tree-pick {
+  flex: 1 1 auto;
+  cursor: pointer;
+}
 .tcw-tree-btn.tcw-tree-del:hover {
   background: var(--tcw-red-soft);
   color: var(--tcw-red);

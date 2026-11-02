@@ -17,6 +17,7 @@ import type { UndoRedoManager, UndoableAction } from '../features/UndoRedoManage
 import {
   MAX_GROUP_NAME,
   cloneDrawing,
+  cleanDrawingName,
   cloneOptions,
   newDrawingId,
   newGroupId,
@@ -1066,8 +1067,9 @@ export class DrawingManager {
   // --- Order and groups ---
 
   /**
-   * Draw a drawing on top of the others, under them, or one step up or down
-   * (one undo step). False when it is unknown or already there.
+   * Draw a drawing on top of the others, under them, one step up or down, or
+   * at a place in the order (0 the bottom; one undo step). False when it is
+   * unknown or already there.
    */
   moveDrawing(id: string, to: DrawingOrderMove): boolean {
     const from = this.drawings.findIndex((d) => d.id === id);
@@ -1243,6 +1245,11 @@ export class DrawingManager {
     if (patch.options) {
       const options = { ...drawing.options, ...sanitizeDrawingOptions(this.optionDefs(drawing.type), patch.options) };
       drawing.options = Object.keys(options).length > 0 ? options : undefined;
+    }
+    if (patch.name !== undefined) {
+      const name = cleanDrawingName(patch.name);
+      if (name === undefined) delete drawing.name;
+      else drawing.name = name;
     }
     if (patch.intervals !== undefined) {
       drawing.intervals = cleanIntervals(patch.intervals) ?? undefined;

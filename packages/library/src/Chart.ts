@@ -4906,7 +4906,11 @@ export class Chart {
     return this.drawingManager.getSelectedDrawingIds();
   }
 
-  /** Draw a drawing on top of the others, under them, or one step up or down. False when already there. */
+  /**
+   * Draw a drawing on top of the others, under them, one step up or down, or
+   * at a place in the order (`getDrawings()` lists them bottom first, 0 the
+   * bottom). False when already there.
+   */
   moveDrawing(id: string, to: DrawingOrderMove): boolean {
     const moved = this.drawingManager.moveDrawing(id, to);
     if (moved) this.markStateChanged();
