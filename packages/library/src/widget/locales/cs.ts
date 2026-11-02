@@ -916,5 +916,9 @@ export const CS_MESSAGES: WidgetMessages = {
   'hotkeys.orderStep': 'Přenést dopředu / dozadu',
   'hotkeys.orderEnd': 'Přenést do popředí / do pozadí',
   'hotkeys.finishPath': 'Dokončit cestu nebo lomenou čáru',
+  'hotkeys.copyDrag': 'Přetáhnout kopii kresby (na kresbě)',
+  'hotkeys.keepAngle': 'Držet čáru vodorovně, svisle nebo pod 45° (při kreslení nebo úchytem)',
+  'hotkeys.flipMagnet': 'Držet při kreslení: zapnout nebo vypnout magnet',
+  'hotkeys.nudge': 'Posunout vybrané kresby (Shift: 10 kroků)',
   'key.rightClick': 'Pravé kliknutí',
 };

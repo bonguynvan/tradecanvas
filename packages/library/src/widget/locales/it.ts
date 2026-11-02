@@ -916,5 +916,9 @@ export const IT_MESSAGES: WidgetMessages = {
   'hotkeys.orderStep': 'Porta avanti / indietro',
   'hotkeys.orderEnd': 'Porta in primo piano / in secondo piano',
   'hotkeys.finishPath': 'Termina un percorso o una polilinea',
+  'hotkeys.copyDrag': 'Trascina una copia di un disegno (sul disegno)',
+  'hotkeys.keepAngle': 'Mantieni una linea orizzontale, verticale o a 45° (mentre la disegni o da una maniglia)',
+  'hotkeys.flipMagnet': 'Tieni premuto mentre disegni: attiva o disattiva il magnete',
+  'hotkeys.nudge': 'Sposta i disegni selezionati (Shift: 10 passi)',
   'key.rightClick': 'Clic destro',
 };

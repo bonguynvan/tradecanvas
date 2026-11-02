@@ -916,5 +916,9 @@ export const NL_MESSAGES: WidgetMessages = {
   'hotkeys.orderStep': 'Naar voren / naar achteren',
   'hotkeys.orderEnd': 'Naar voorgrond / naar achtergrond',
   'hotkeys.finishPath': 'Een pad of polylijn afronden',
+  'hotkeys.copyDrag': 'Een kopie van een tekening slepen (op de tekening)',
+  'hotkeys.keepAngle': 'Een lijn horizontaal, verticaal of op 45° houden (tijdens het tekenen of aan een greep)',
+  'hotkeys.flipMagnet': 'Ingedrukt houden tijdens het tekenen: magneet aan of uit',
+  'hotkeys.nudge': 'De geselecteerde tekeningen verplaatsen (Shift: 10 stappen)',
   'key.rightClick': 'Rechtsklik',
 };

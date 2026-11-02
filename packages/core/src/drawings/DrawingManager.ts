@@ -32,7 +32,8 @@ import { DrawingCreator, type CreationStep } from './DrawingCreator.js';
 import { snapToBar, snapToValues, type MagnetMode } from './magnetSnap.js';
 import { cleanIntervals, shownOnInterval } from '../indicators/intervals.js';
 import { DrawingSelection } from './DrawingSelection.js';
-import { DrawingDrag } from './DrawingDrag.js';
+import { DrawingDrag, shiftAnchors, type DragEdit } from './DrawingDrag.js';
+import { constrainedAnchor, keepsAngle } from './drawingEditing.js';
 
 export type { DrawingOrderMove, DrawingPatch } from './drawingState.js';
 
@@ -54,6 +55,18 @@ const LEGACY_INDEX_LIMIT = 1e7;
 /** How far, px, a press may land from a drawing's line and from a handle of the selected one. */
 export type DrawingReach = Pick<PointerReach, 'line' | 'handle'>;
 const MOUSE_REACH: DrawingReach = { line: 8, handle: 8 };
+/** Pointer travel (px) before a Ctrl/⌘-press on a drawing makes a copy; less only toggles its selection. */
+const COPY_START_PX = 8;
+/** Arrow presses this close together (ms) on the same selection are one undo step. */
+const NUDGE_MERGE_MS = 1000;
+
+/** The modifier keys held, as the pointer last reported them. */
+export interface DrawingModifiers {
+  /** Ctrl, or ⌘ on a Mac: turns the magnet over while held. */
+  ctrl: boolean;
+  /** Keeps a line being drawn or reshaped at a multiple of 45°. */
+  shift: boolean;
+}
 
 /**
  * The chart's indicator panes, for drawings made on them: which pane a point
@@ -114,6 +127,15 @@ export class DrawingManager {
   private requestRender: (() => void) | null = null;
   private undoRedo: UndoRedoManager | null = null;
   private magnetMode: MagnetMode = 'none';
+  private mods: DrawingModifiers = { ctrl: false, shift: false };
+  /** A Ctrl/⌘-press on a drawing, not yet a copy: where, and on which. */
+  private pendingCopy: { pos: Point; id: string } | null = null;
+  /** The copies a Ctrl/⌘-drag is moving; made in the undo history when it ends. */
+  private copies: string[] | null = null;
+  /** Each copy's original anchors, to tell a copy dragged back onto its original. */
+  private copySources = new Map<string, AnchorPoint[]>();
+  /** The last arrow press: to merge a run of them into one undo step. */
+  private lastNudge: { key: string; at: number; before: DrawingState[]; action: UndoableAction | null } | null = null;
   private dataGetter: (() => OHLCBar[]) | null = null;
   /** Moves when a bar of the same array was replaced: see `setDataGetter`. */
   private dataRevision: () => number = () => 0;
@@ -154,6 +176,20 @@ export class DrawingManager {
 
   getMagnetMode(): MagnetMode {
     return this.magnetMode;
+  }
+
+  /** The modifier keys held: Ctrl/⌘ turns the magnet over, Shift keeps lines at 45° steps. */
+  setModifiers(mods: DrawingModifiers): void {
+    this.mods = { ctrl: mods.ctrl, shift: mods.shift };
+  }
+
+  /**
+   * The magnet as it acts now: Ctrl/⌘ held turns it on when it is off and off
+   * when it is on. Not during a Ctrl/⌘-drag copy, where the key means copy.
+   */
+  private activeMagnet(): MagnetMode {
+    if (!this.mods.ctrl || this.copies) return this.magnetMode;
+    return this.magnetMode === 'none' ? 'strong' : 'none';
   }
 
   /**
@@ -226,13 +262,31 @@ export class DrawingManager {
 
   /** Snap a point being placed to the bar under it (see `snapToBar`), on the bars as drawn (Heikin Ashi, say). */
   private snapToOHLC(time: number, price: number, viewport?: ViewportState, paneId?: string): AnchorPoint {
-    const bars = this.magnetMode === 'none' ? [] : this.displayDataGetter?.() ?? this.dataGetter?.() ?? [];
+    const mode = this.activeMagnet();
+    const bars = mode === 'none' ? [] : this.displayDataGetter?.() ?? this.dataGetter?.() ?? [];
     // On an indicator pane, its lines' values: the bars' prices mean nothing there.
     if (paneId !== undefined) {
       const valuesAt = this.panes?.valuesAt;
-      return snapToValues(time, price, this.magnetMode, bars, (i) => valuesAt?.(paneId, i) ?? [], viewport);
+      return snapToValues(time, price, mode, bars, (i) => valuesAt?.(paneId, i) ?? [], viewport);
     }
-    return snapToBar(time, price, this.magnetMode, bars, viewport);
+    return snapToBar(time, price, mode, bars, viewport);
+  }
+
+  /**
+   * The magnet and the Shift angle for a drag of `drawing` on `viewport`.
+   * None for a freehand stroke: its points are where the hand went.
+   */
+  private dragEdit(drawing: DrawingState, viewport: ViewportState): DragEdit | undefined {
+    if (this.registry.get(drawing.type)?.descriptor.creation === 'freehand') return undefined;
+    return {
+      handleAt: (pos, d, handle) => {
+        // The point the dragged one is kept at 45° steps from: the one before it, or the next for the first.
+        const other = keepsAngle(d.type) && d.anchors.length >= 2 && handle < d.anchors.length ? d.anchors[handle === 0 ? 1 : handle - 1] : undefined;
+        if (this.mods.shift && other) return constrainedAnchor(other, pos, viewport);
+        return this.snapToOHLC(xToTime(pos.x, viewport), yToPrice(pos.y, viewport), viewport, d.paneId);
+      },
+      snap: (anchor) => this.snapToOHLC(anchor.time, anchor.price, viewport, drawing.paneId),
+    };
   }
 
   // --- Undo / Redo ---
@@ -314,6 +368,7 @@ export class DrawingManager {
    * mode, or one picked mid-drawing) stays ready for a fresh drawing.
    */
   private settleAfterHistory(): void {
+    this.dropCopyGesture();
     this.selection.clear();
     this.creator.reset();
     this.state = this.activeTool ? 'creating' : 'idle';
@@ -543,6 +598,7 @@ export class DrawingManager {
 
   setActiveTool(type: DrawingToolType | null): void {
     if (type) this.setEraser(false);
+    this.dropCopyGesture();
     const changed = type !== this.activeTool;
     this.activeTool = type;
     this.state = type ? 'creating' : 'idle';
@@ -710,11 +766,18 @@ export class DrawingManager {
       return true;
     }
 
+    if (this.pendingCopy) {
+      const { pos: from } = this.pendingCopy;
+      if (Math.hypot(pos.x - from.x, pos.y - from.y) < COPY_START_PX) return true;
+      this.startCopy();
+    }
+
     if ((this.state === 'moving' || this.state === 'resizing') && this.drag.isActive()) {
       const primary = this.drawings.find((d) => d.id === this.selection.primary);
       // Moved on its own pane's scale, wherever the pointer goes.
       const on = this.viewportFor(primary?.paneId, viewport);
-      if (!on || !this.drag.move(pos, on, primary && this.registry.get(primary.type))) return false;
+      const edit = primary && on ? this.dragEdit(primary, on) : undefined;
+      if (!on || !this.drag.move(pos, on, primary && this.registry.get(primary.type), edit)) return false;
       this.requestRender?.();
       return true;
     }
@@ -727,6 +790,11 @@ export class DrawingManager {
     const released = this.state === 'creating' ? this.creator.release() : null;
     if (released) {
       this.afterCreationStep(released);
+      return true;
+    }
+    if (this.pendingCopy) return this.toggleCopied();
+    if (this.copies) {
+      this.endCopy();
       return true;
     }
     if (this.state === 'moving' || this.state === 'resizing') {
@@ -744,6 +812,143 @@ export class DrawingManager {
       return true;
     }
     return false;
+  }
+
+  // --- Ctrl/⌘-drag to copy ---
+
+  /**
+   * A Ctrl/⌘-press at `pos`: on a drawing, dragging copies it (the whole
+   * selection when it is selected) and moves the copy, one undo step; let go
+   * without moving, the drawing goes in or out of the selection. False on
+   * empty chart, so a selection box can start there.
+   */
+  beginCopyDrag(pos: Point, main: ViewportState, reach: DrawingReach = MOUSE_REACH): boolean {
+    if (this.state === 'creating' || this.state === 'moving' || this.state === 'resizing' || this.eraser) return false;
+    // On a handle of the selected drawing, Ctrl/⌘ reshapes it with the magnet turned over.
+    if (this.beginHandleDrag(pos, main, reach)) return true;
+    const id = this.drawingAt(pos, main, reach.line);
+    if (!id) return false;
+    this.pendingCopy = { pos, id };
+    return true;
+  }
+
+  /** A press on a handle of the selected, unlocked drawing begins reshaping it. */
+  private beginHandleDrag(pos: Point, main: ViewportState, reach: DrawingReach): boolean {
+    const scope = this.scopeAt(pos, main);
+    const drawing = this.drawings.find((d) => d.id === this.selection.primary);
+    if (!scope || !drawing || drawing.locked || !this.shown(drawing) || drawing.paneId !== scope.pane) return false;
+    const handle = this.registry.get(drawing.type)?.hitTestAnchor(pos, drawing, scope.viewport, reach.handle) ?? -1;
+    if (handle < 0) return false;
+    this.state = 'resizing';
+    this.drag.beginResize(pos, drawing, handle);
+    return true;
+  }
+
+  /** Forget a Ctrl/⌘-drag under way (a tool picked, an undo, new drawings): its copies were never made. */
+  private dropCopyGesture(): void {
+    this.pendingCopy = null;
+    const copies = this.copies;
+    if (!copies) return;
+    this.copies = null;
+    this.drag.end();
+    this.drawings = this.drawings.filter((d) => !copies.includes(d.id));
+    this.deselect(copies);
+    if (this.state === 'moving') this.state = 'idle';
+  }
+
+  /** The press travelled: copy what it was on and begin moving the copies. */
+  private startCopy(): void {
+    const { pos, id } = this.pendingCopy!;
+    this.pendingCopy = null;
+    const sourceIds = this.selection.has(id) ? [id, ...this.getSelectedDrawingIds().filter((other) => other !== id)] : [id];
+    const pressed = this.drawings.find((d) => d.id === id);
+    // Only what moves with the pointer: the pressed drawing's pane, tools this chart allows.
+    const sources = sourceIds
+      .map((sourceId) => this.drawings.find((d) => d.id === sourceId))
+      .filter((d): d is DrawingState => d !== undefined && this.shown(d) && d.paneId === pressed?.paneId && this.canPasteType(d.type));
+    if (sources.length === 0) return;
+    // A copy is a drawing of its own: unlocked, and out of the original's group, as a paste is.
+    const copies = sources.map((source) => {
+      const { group: _group, ...rest } = structuredClone(source);
+      return { ...rest, id: newDrawingId(), locked: false };
+    });
+    this.copySources = new Map(copies.map((c, i) => [c.id, sources[i].anchors.map((a) => ({ ...a }))]));
+    this.drawings = [...this.drawings, ...copies];
+    this.copies = copies.map((c) => c.id);
+    this.selection.only(copies[0].id, this.copies.slice(1));
+    this.beginMove(pos, copies[0]);
+    this.requestRender?.();
+  }
+
+  /** Let go after a copy-drag: the copies, where they ended, are made as one undo step. */
+  private endCopy(): void {
+    const ids = this.copies!;
+    this.copies = null;
+    this.drag.end();
+    this.state = 'selected';
+    const sources = this.copySources;
+    this.copySources = new Map();
+    const made = ids.map((id) => this.drawings.find((d) => d.id === id)).filter((d): d is DrawingState => d !== undefined);
+    // Dragged back onto the original: no copy lying on top of it.
+    if (made.every((d) => { const from = sources.get(d.id); return !!from && sameAnchors(d.anchors, from); })) {
+      this.drawings = this.drawings.filter((d) => !ids.includes(d.id));
+      this.deselect(ids);
+      this.requestRender?.();
+      return;
+    }
+    this.batchUndo(() => {
+      for (const d of made) this.record({ type: 'drawingCreate', before: null, after: cloneDrawing(d) });
+    });
+    for (const d of made) this.eventCallback?.('drawingCreate', { id: d.id, type: d.type, drawing: d });
+    this.requestRender?.();
+  }
+
+  /** Let go of a Ctrl/⌘-press that didn't travel: its drawing goes in or out of the selection. */
+  private toggleCopied(): boolean {
+    const { id } = this.pendingCopy!;
+    this.pendingCopy = null;
+    if (this.selection.has(id)) this.deselect([id]);
+    else this.addToSelection(id);
+    this.requestRender?.();
+    return true;
+  }
+
+  // --- Arrow keys ---
+
+  /**
+   * Move the selection `bars` bars across and `px` pixels down (an arrow
+   * key; negative is left and up). Locked drawings stay. A run of presses
+   * on the same selection is one undo step. False when nothing moved.
+   */
+  nudge(bars: number, px: number, main: ViewportState): boolean {
+    if (this.state !== 'selected') return false;
+    const targets = this.getSelectedDrawingIds()
+      .map((id) => this.drawings.find((d) => d.id === id))
+      .filter((d): d is DrawingState => d !== undefined && !d.locked && this.shown(d));
+    if (targets.length === 0 || (bars === 0 && px === 0)) return false;
+    const key = targets.map((d) => d.id).join(',');
+    const now = Date.now();
+    const last = this.lastNudge;
+    const run = last && last.key === key && now - last.at < NUDGE_MERGE_MS && last.action !== null && this.undoRedo?.last() === last.action ? last : null;
+    const before = run ? run.before : targets.map(cloneDrawing);
+    const moved = targets.filter((d) => {
+      const viewport = this.viewportFor(d.paneId, main);
+      if (!viewport) return false;
+      d.anchors = shiftAnchors(d.anchors, bars, px, viewport);
+      return true;
+    });
+    if (moved.length === 0) return false;
+    if (run) this.undoRedo?.dropLast();
+    this.batchUndo(() => {
+      for (const d of moved) {
+        const was = before.find((b) => b.id === d.id);
+        if (was) this.record({ type: 'drawingModify', before: was, after: cloneDrawing(d) });
+      }
+    });
+    this.lastNudge = { key, at: now, before, action: this.undoRedo?.last() ?? null };
+    for (const d of moved) this.eventCallback?.('drawingUpdate', { id: d.id });
+    this.requestRender?.();
+    return true;
   }
 
   /**
@@ -834,6 +1039,7 @@ export class DrawingManager {
   }
 
   setDrawings(states: DrawingState[]): void {
+    this.dropCopyGesture();
     reserveIds(states);
     this.drawings = this.upgradeLegacyAnchors(states).map((d) => {
       if (!d.options && d.intervals === undefined) return d;
@@ -1215,6 +1421,7 @@ export class DrawingManager {
   }
 
   clearDrawings(): void {
+    this.dropCopyGesture();
     this.drawings = [];
     this.selection.clear();
     this.state = 'idle';
@@ -1279,7 +1486,12 @@ export class DrawingManager {
   private creationAnchor(type: DrawingToolType, pos: Point, viewport: ViewportState, paneId?: string): AnchorPoint {
     const time = xToTime(pos.x, viewport);
     const price = yToPrice(pos.y, viewport);
-    return this.registry.get(type)?.descriptor.creation === 'freehand' ? { time, price } : this.snapToOHLC(time, price, viewport, paneId);
+    if (this.registry.get(type)?.descriptor.creation === 'freehand') return { time, price };
+    // Shift keeps the next point at 45° steps from the last one; the magnet would pull it off the angle.
+    const placed = this.creator.current?.anchors;
+    const last = placed && placed.length > 0 ? placed[placed.length - 1] : undefined;
+    if (this.mods.shift && last && keepsAngle(type)) return constrainedAnchor(last, pos, viewport);
+    return this.snapToOHLC(time, price, viewport, paneId);
   }
 
   private handleCreationClick(pos: Point, viewport: ViewportState): boolean {

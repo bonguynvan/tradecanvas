@@ -916,5 +916,9 @@ export const SK_MESSAGES: WidgetMessages = {
   'hotkeys.orderStep': 'Preniesť dopredu / dozadu',
   'hotkeys.orderEnd': 'Preniesť do popredia / do pozadia',
   'hotkeys.finishPath': 'Dokončiť cestu alebo lomenú čiaru',
+  'hotkeys.copyDrag': 'Potiahnuť kópiu kresby (na kresbe)',
+  'hotkeys.keepAngle': 'Držať čiaru vodorovne, zvisle alebo pod 45° (pri kreslení alebo úchytom)',
+  'hotkeys.flipMagnet': 'Držať pri kreslení: zapnúť alebo vypnúť magnet',
+  'hotkeys.nudge': 'Posunúť vybrané kresby (Shift: 10 krokov)',
   'key.rightClick': 'Pravé kliknutie',
 };

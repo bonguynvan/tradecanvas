@@ -916,5 +916,9 @@ export const SV_MESSAGES: WidgetMessages = {
   'hotkeys.orderStep': 'Flytta framåt / bakåt',
   'hotkeys.orderEnd': 'Placera längst fram / längst bak',
   'hotkeys.finishPath': 'Avsluta en bana eller polylinje',
+  'hotkeys.copyDrag': 'Dra en kopia av en ritning (på ritningen)',
+  'hotkeys.keepAngle': 'Håll en linje vågrät, lodrät eller i 45° (när den ritas eller med ett handtag)',
+  'hotkeys.flipMagnet': 'Håll ned när du ritar: slå på eller av magneten',
+  'hotkeys.nudge': 'Flytta de markerade ritningarna (Shift: 10 steg)',
   'key.rightClick': 'Högerklick',
 };

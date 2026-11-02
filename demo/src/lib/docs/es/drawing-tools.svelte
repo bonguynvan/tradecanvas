@@ -198,6 +198,15 @@ chart.setZoomAreaMode(true)        // el siguiente arrastre amplía las barras q
 chart.setDrawingMagnetMode('strong') // 'off' | 'weak' | 'strong'`}</code></pre>
 <p>El imán débil ajusta un punto a la apertura, el máximo, el mínimo o el cierre de la barra cuando el puntero está cerca de uno de ellos; el imán fuerte lo hace siempre. En el widget el imán empieza apagado: un dibujo queda donde se pone hasta que el botón del imán lo enciende.</p>
 
+<h2 id="editing">Editar con el puntero y las teclas</h2>
+<ul>
+  <li>El imán también actúa al arrastrar un control y al mover un dibujo: el punto más cercano a donde se agarró cae en un precio y el resto conserva su posición respecto a él. El imán débil alcanza 50 px.</li>
+  <li>Mantén <kbd>Ctrl</kbd>/<kbd>⌘</kbd> al dibujar o arrastrar para invertir el imán mientras tanto: se activa si está apagado y se apaga si está activo.</li>
+  <li>Mantén <kbd>Shift</kbd> al dibujar o arrastrar un control para que la línea quede horizontal, vertical o a 45° en pantalla. En una zona vacía del gráfico, <kbd>Shift</kbd> + arrastrar sigue midiendo. Vale para líneas y trazados; un rectángulo, el ancho de un canal o el punto de un pitchfork quedan libres.</li>
+  <li><kbd>←</kbd> <kbd>→</kbd> <kbd>↑</kbd> <kbd>↓</kbd> mueven los dibujos seleccionados una barra a los lados o un píxel arriba o abajo; con <kbd>Shift</kbd>, diez. Una serie de pulsaciones es un solo paso de deshacer, y los dibujos bloqueados no se mueven.</li>
+  <li><kbd>Ctrl</kbd>/<kbd>⌘</kbd> + arrastrar sobre un dibujo saca una copia (de toda la selección si el dibujo está en ella), en un solo paso de deshacer. <kbd>Ctrl</kbd>/<kbd>⌘</kbd> + clic sigue añadiéndolo a la selección o quitándolo, y <kbd>Ctrl</kbd>/<kbd>⌘</kbd> + arrastrar en una zona vacía dibuja un cuadro de selección. Sobre un control del dibujo seleccionado, <kbd>Ctrl</kbd>/<kbd>⌘</kbd> + arrastrar lo reforma con el imán invertido.</li>
+</ul>
+
 <h2>Teclado</h2>
 <ul>
   <li><kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>Z</kbd> deshacer, <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>Z</kbd> o <kbd>Ctrl</kbd> + <kbd>Y</kbd> rehacer.</li>

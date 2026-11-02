@@ -916,5 +916,9 @@ export const FR_MESSAGES: WidgetMessages = {
   'hotkeys.orderStep': 'Avancer / reculer d’un plan',
   'hotkeys.orderEnd': 'Mettre au premier plan / à l’arrière-plan',
   'hotkeys.finishPath': 'Terminer un tracé ou une polyligne',
+  'hotkeys.copyDrag': 'Faire glisser une copie d’un dessin (sur le dessin)',
+  'hotkeys.keepAngle': 'Garder une ligne horizontale, verticale ou à 45° (en la traçant ou par une poignée)',
+  'hotkeys.flipMagnet': 'Maintenir en dessinant : activer ou désactiver l’aimant',
+  'hotkeys.nudge': 'Déplacer les dessins sélectionnés (Shift : 10 pas)',
   'key.rightClick': 'Clic droit',
 };

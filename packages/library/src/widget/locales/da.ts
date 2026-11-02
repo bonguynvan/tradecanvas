@@ -935,5 +935,9 @@ export const DA_MESSAGES: WidgetMessages = {
   'hotkeys.orderStep': 'Flyt fremad / bagud',
   'hotkeys.orderEnd': 'Placer forrest / bagest',
   'hotkeys.finishPath': 'Afslut en sti eller polylinje',
+  'hotkeys.copyDrag': 'Træk en kopi af en tegning (på tegningen)',
+  'hotkeys.keepAngle': 'Hold en linje vandret, lodret eller i 45° (når den tegnes, eller med et håndtag)',
+  'hotkeys.flipMagnet': 'Hold under tegning: slå magneten til eller fra',
+  'hotkeys.nudge': 'Flyt de valgte tegninger (Shift: 10 trin)',
   'key.rightClick': 'Højreklik',
 };

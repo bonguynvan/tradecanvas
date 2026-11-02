@@ -194,6 +194,15 @@ chart.setZoomAreaMode(true)        // lần kéo tiếp theo phóng to vào các
 chart.setDrawingMagnetMode('strong') // 'off' | 'weak' | 'strong'`}</code></pre>
 <p>Nam châm yếu hút một điểm vào giá mở cửa, cao, thấp hoặc đóng cửa của nến khi con trỏ ở gần một trong số đó; nam châm mạnh thì luôn làm vậy. Trong widget, nam châm tắt khi bắt đầu: hình vẽ nằm đúng chỗ được đặt cho đến khi bật nút nam châm.</p>
 
+<h2 id="editing">Sửa bằng chuột và bàn phím</h2>
+<ul>
+  <li>Nam châm cũng tác dụng khi kéo một tay nắm hay di chuyển cả hình vẽ: điểm gần chỗ nắm nhất rơi vào một mức giá, các điểm còn lại giữ nguyên khoảng cách với nó. Nam châm yếu với tới 50 px.</li>
+  <li>Giữ <kbd>Ctrl</kbd>/<kbd>⌘</kbd> khi vẽ hoặc kéo để lật nam châm trong lúc đó: đang tắt thì bật, đang bật thì tắt.</li>
+  <li>Giữ <kbd>Shift</kbd> khi vẽ hoặc kéo tay nắm để đường nằm ngang, thẳng đứng hoặc nghiêng 45° trên màn hình. Trên vùng trống của biểu đồ, <kbd>Shift</kbd> + kéo vẫn là đo. Điều này áp dụng cho đường thẳng và đường nhiều điểm; hình chữ nhật, độ rộng kênh hay điểm của pitchfork vẫn tự do.</li>
+  <li><kbd>←</kbd> <kbd>→</kbd> <kbd>↑</kbd> <kbd>↓</kbd> di chuyển các hình vẽ đang chọn một nến sang ngang hoặc một pixel lên xuống; kèm <kbd>Shift</kbd> thì mười. Nhấn liền nhiều lần chỉ là một bước hoàn tác, và hình vẽ đã khóa không di chuyển.</li>
+  <li><kbd>Ctrl</kbd>/<kbd>⌘</kbd> + kéo trên một hình vẽ kéo ra một bản sao (của cả vùng chọn nếu hình vẽ nằm trong đó), một bước hoàn tác. <kbd>Ctrl</kbd>/<kbd>⌘</kbd> + nhấp vẫn thêm nó vào vùng chọn hoặc bỏ ra, và <kbd>Ctrl</kbd>/<kbd>⌘</kbd> + kéo trên vùng trống vẫn vẽ khung chọn. Trên tay nắm của hình vẽ đang chọn, <kbd>Ctrl</kbd>/<kbd>⌘</kbd> + kéo thì nắn lại hình đó với nam châm được lật.</li>
+</ul>
+
 <h2>Bàn phím</h2>
 <ul>
   <li><kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>Z</kbd> hoàn tác, <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>Z</kbd> hoặc <kbd>Ctrl</kbd> + <kbd>Y</kbd> làm lại.</li>

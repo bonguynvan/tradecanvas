@@ -916,5 +916,9 @@ export const PT_MESSAGES: WidgetMessages = {
   'hotkeys.orderStep': 'Avançar / recuar um nível',
   'hotkeys.orderEnd': 'Trazer para frente / enviar para trás',
   'hotkeys.finishPath': 'Finalizar um caminho ou polilinha',
+  'hotkeys.copyDrag': 'Arrastar uma cópia de um desenho (sobre o desenho)',
+  'hotkeys.keepAngle': 'Manter uma linha horizontal, vertical ou a 45° (ao desenhar ou por uma alça)',
+  'hotkeys.flipMagnet': 'Segurar ao desenhar: ligar ou desligar o ímã',
+  'hotkeys.nudge': 'Mover os desenhos selecionados (Shift: 10 passos)',
   'key.rightClick': 'Clique direito',
 };

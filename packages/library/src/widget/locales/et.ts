@@ -935,5 +935,9 @@ export const ET_MESSAGES: WidgetMessages = {
   'hotkeys.orderStep': 'Too ettepoole / vii tahapoole',
   'hotkeys.orderEnd': 'Too ette / vii taha',
   'hotkeys.finishPath': 'Lõpeta rada või murdjoon',
+  'hotkeys.copyDrag': 'Lohista joonise koopia (joonisel)',
+  'hotkeys.keepAngle': 'Hoia joon rõhtsa, püstise või 45° all (joonistades või pidemest)',
+  'hotkeys.flipMagnet': 'Hoia joonistamisel: lülita magnet sisse või välja',
+  'hotkeys.nudge': 'Liiguta valitud jooniseid (Shift: 10 sammu)',
   'key.rightClick': 'Paremklõps',
 };

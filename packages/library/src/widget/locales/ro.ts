@@ -916,5 +916,9 @@ export const RO_MESSAGES: WidgetMessages = {
   'hotkeys.orderStep': 'Aducere în față / trimitere în spate',
   'hotkeys.orderEnd': 'Aducere în prim-plan / trimitere în fundal',
   'hotkeys.finishPath': 'Finalizare traseu sau linie frântă',
+  'hotkeys.copyDrag': 'Trage o copie a unui desen (pe desen)',
+  'hotkeys.keepAngle': 'Păstrează o linie orizontală, verticală sau la 45° (la desenare sau dintr-un mâner)',
+  'hotkeys.flipMagnet': 'Ține apăsat la desenare: pornește sau oprește magnetul',
+  'hotkeys.nudge': 'Mută desenele selectate (Shift: 10 pași)',
   'key.rightClick': 'Clic dreapta',
 };

@@ -916,5 +916,9 @@ export const TR_MESSAGES: WidgetMessages = {
   'hotkeys.orderStep': 'Bir öne getir / bir arkaya gönder',
   'hotkeys.orderEnd': 'En öne getir / en arkaya gönder',
   'hotkeys.finishPath': 'Bir yolu veya çoklu çizgiyi bitir',
+  'hotkeys.copyDrag': 'Bir çizimin kopyasını sürükle (çizimin üzerinde)',
+  'hotkeys.keepAngle': 'Çizgiyi yatay, dikey veya 45° tut (çizerken ya da bir tutamaçla)',
+  'hotkeys.flipMagnet': 'Çizerken basılı tut: mıknatısı aç veya kapat',
+  'hotkeys.nudge': 'Seçili çizimleri taşı (Shift: 10 adım)',
   'key.rightClick': 'Sağ tıkla',
 };

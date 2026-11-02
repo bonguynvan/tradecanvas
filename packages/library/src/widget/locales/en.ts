@@ -937,6 +937,10 @@ export const EN_MESSAGES = {
   'hotkeys.orderStep': 'Bring forward / send backward',
   'hotkeys.orderEnd': 'Bring to front / send to back',
   'hotkeys.finishPath': 'Finish a path or polyline',
+  'hotkeys.copyDrag': 'Drag a copy of a drawing (on the drawing)',
+  'hotkeys.keepAngle': 'Keep a line flat, upright or at 45° (drawing it, or by a handle)',
+  'hotkeys.flipMagnet': 'Hold while drawing: turn the magnet on or off',
+  'hotkeys.nudge': 'Move the selected drawings (Shift: 10 steps)',
   'key.rightClick': 'Right-click',
 } as const;
 

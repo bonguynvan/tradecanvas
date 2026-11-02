@@ -4,6 +4,20 @@
 
 ### Drawings
 
+- **Editing drawings with the pointer and the keys** (`@tradecanvas/core`, `@tradecanvas/chart`).
+  - The magnet works on a dragged handle and on a moved drawing too. The point nearest where it was grabbed lands on a price, and the rest keep their place to it. The weak magnet reaches 50 px, up from 30.
+  - Hold Ctrl or ⌘ while drawing or dragging to turn the magnet over for that moment: on when it is off, off when it is on.
+  - Hold Shift while drawing or dragging a handle to keep the line flat, upright or at 45° on screen. This holds for lines and paths; a box, a channel's width or a pitchfork's point stays free. Shift + drag measures only on empty chart now, not on a drawing or while a tool places points.
+  - The arrow keys move the selected drawings a bar across or a pixel up or down; with Shift, ten. A run of presses is one undo step, and locked drawings stay. With nothing selected, the arrows scroll the chart as before.
+  - Ctrl/⌘ + drag on a drawing drags out a copy, of the whole selection when the drawing is in it, as one undo step. The copy is unlocked and out of the original's group, only tools the chart allows are copied, and a copy dragged back onto its original is not made. On a handle of the selected drawing, Ctrl/⌘ + drag reshapes it with the magnet turned over instead. Ctrl/⌘ + click still adds a drawing to the selection or takes it out, and Ctrl/⌘ + drag on empty chart still draws a selection box.
+  - The widget's shortcut sheet lists the four. `DrawingManager` gains `setModifiers`, `nudge` and `beginCopyDrag`.
+
+## 1.62.0 (2026-11-02)
+
+React, Vue and Svelte components: 1.3.54.
+
+### Drawings
+
 - **Text on the chart has a style of its own** (`@tradecanvas/commons`, `@tradecanvas/core`, `@tradecanvas/chart`). `DrawingStyle` takes `bold`, `italic`, `textColor`, `textAlign`, `textBackground` (drawn in `fillColor`), `textBorder` (in `borderColor`) and `textWrap` (px; 0 wraps only where the text breaks). How the text tools use them:
   - The Text tool writes several lines, wraps at a width when given one, and can have a background and a border. It is picked anywhere on its text as drawn; before, only on a guessed 80 px.
   - A Note and a Callout keep their box and their 240 px width unless their style says otherwise.

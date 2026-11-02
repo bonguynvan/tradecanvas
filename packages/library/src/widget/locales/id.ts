@@ -916,5 +916,9 @@ export const ID_MESSAGES: WidgetMessages = {
   'hotkeys.orderStep': 'Bawa maju / kirim mundur',
   'hotkeys.orderEnd': 'Bawa ke depan / kirim ke belakang',
   'hotkeys.finishPath': 'Selesaikan jalur atau polyline',
+  'hotkeys.copyDrag': 'Seret salinan gambar (di atas gambar)',
+  'hotkeys.keepAngle': 'Jaga garis tetap datar, tegak, atau 45° (saat menggambar atau lewat pegangan)',
+  'hotkeys.flipMagnet': 'Tahan saat menggambar: nyalakan atau matikan magnet',
+  'hotkeys.nudge': 'Pindahkan gambar yang dipilih (Shift: 10 langkah)',
   'key.rightClick': 'Klik kanan',
 };
