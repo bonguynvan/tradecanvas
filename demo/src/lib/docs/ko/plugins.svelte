@@ -99,6 +99,10 @@ class TargetLine extends DrawingBase {
 registerPlugin({ kind: 'drawing', plugin: new TargetLine() })
 chart.setDrawingTool('targetLine')`}</code></pre>
 <p>
+  도구 이름은 차트가 도구 이름을 받는 곳(<code>setDrawingTool</code>, <code>addDrawing</code> 등)이면 TypeScript에서도 그대로 쓸 수 있습니다.
+  <code>DrawingToolType</code>은 어떤 이름이든 받으면서 기본 도구의 자동 완성도 유지합니다. 기본 도구는 <code>BuiltInDrawingToolType</code>에 있습니다.
+</p>
+<p>
   디스크립터에는 도구를 그리는 방식(<code>creation</code>:
   <code>'clicks'</code>, <code>'freehand'</code> 또는 <code>'path'</code>,
   <code>maxAnchors</code> 포함)과 대화상자에서 채우기(<code>fill</code>)나

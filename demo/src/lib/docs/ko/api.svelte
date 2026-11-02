@@ -77,6 +77,7 @@
     <tr><td><code>updateIndicator(instanceId, params)</code></td><td>실행 중인 지표를 변경합니다.</td></tr>
     <tr><td><code>removeIndicator(instanceId)</code></td><td>지표를 제거하고 정리합니다.</td></tr>
     <tr><td><code>removeIndicators(instanceIds)</code></td><td>여러 지표를 한 번의 실행 취소 단계로 제거합니다.</td></tr>
+    <tr><td><code>removeAll(what?)</code></td><td>모든 그리기(<code>'drawings'</code>), 모든 지표(<code>'indicators'</code>) 또는 둘 다(<code>'all'</code>)를 한 번의 실행 취소 단계로 제거합니다. 잠긴 그리기는 남습니다. 각각 몇 개가 제거됐는지 돌려줍니다.</td></tr>
     <tr><td><code>updateIndicatorStyle(instanceId, style)</code></td><td>색, 선 두께, 불투명도, 그리고 플롯별 선 종류와 표시(<code>plots: {`{ signal: { lineStyle: 'dashed' } }`}</code>).</td></tr>
     <tr><td><code>setIndicatorDefaults(id, style | null)</code></td><td>앞으로 추가할 같은 종류 지표의 시작 스타일.</td></tr>
     <tr><td><code>setIndicatorIntervals(instanceId, intervals | null)</code> · <code>getIndicatorIntervals(instanceId)</code></td><td>지표가 표시되는 시간 단위(<code>{`{ minutes: false, hours: [1, 4] }`}</code>). <code>null</code>이면 전체. 레이아웃과 함께 저장.</td></tr>
@@ -529,7 +530,7 @@ widget.destroy()`}</code></pre>
     </td></tr>
     <tr><td>그리기 도구</td><td>
       각 그룹의 메뉴에는 도구의 단축키(Alt+T는 추세선)가 적혀 있고, 행마다 별이 있어 그 도구를 맨 위에 고정할 수 있습니다.
-      맨 아래에는 그리기 스타일, 자석, 지우개, 영역 확대, 그리기 모드 유지, 모두 잠금, 모두 숨기기, 모두 지우기가 있습니다.
+      맨 아래에는 그리기 스타일, 자석, 지우개, 영역 확대, 그리기 모드 유지, 모두 잠금, 모두 숨기기, 그리고 휴지통 버튼이 있습니다. 휴지통 메뉴는 그리기, 지표 또는 둘 다를 각각의 개수와 함께 한 번의 실행 취소 단계로 제거합니다.
     </td></tr>
     <tr><td>상태 바</td><td>
       기간 프리셋과 날짜로 이동, 시장 상태, 연결, 표시 시간대의 시계(누르면 고를 수 있는 시간대 목록이 열립니다), 가격 눈금의

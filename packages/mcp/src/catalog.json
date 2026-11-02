@@ -5674,7 +5674,8 @@
           "forecast",
           "projection",
           "barsPattern"
-        ]
+        ],
+        "open": true
       },
       {
         "name": "persistSettings",
@@ -6304,7 +6305,8 @@
           "forecast",
           "projection",
           "barsPattern"
-        ]
+        ],
+        "open": true
       },
       {
         "name": "drawingMagnet",

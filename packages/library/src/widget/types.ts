@@ -610,7 +610,8 @@ export interface SidebarCallbacks {
   onToggleEraser?: () => void;
   onToggleZoomArea?: () => void;
   onToggleFavorite?: (tool: DrawingToolType) => void;
-  onClearDrawings: () => void;
+  /** The trash button, pressed: it opens a menu of what to remove beside `anchor`. */
+  onClear: (anchor: HTMLElement) => void;
   /** Lock (true) or unlock every drawing: the button shows when given. */
   onLockAll?: (locked: boolean) => void;
   /** Hide (true) or show every drawing: the button shows when given. */

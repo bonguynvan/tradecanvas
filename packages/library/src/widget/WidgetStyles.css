@@ -3534,8 +3534,8 @@
 .tcw-context-danger, .tcw-context-danger svg { color: var(--tcw-red); }
 .tcw-context-sep { height: 1px; margin: var(--tcw-space-2) var(--tcw-space-4); background: var(--tcw-divider); }
 .tcw-context-label { flex: 1; min-width: 0; }
-/* A shortcut, and the mark of a submenu, at the row's end. */
-.tcw-context-key {
+/* A shortcut, a count, and the mark of a submenu, at the row's end. */
+.tcw-context-key, .tcw-context-count {
   flex: none;
   margin-inline-start: var(--tcw-space-5);
   font: inherit;

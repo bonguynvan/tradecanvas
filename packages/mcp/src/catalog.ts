@@ -32,6 +32,11 @@ export interface OptionEntry {
   values?: (string | number)[];
   /** The values each item takes, when it is an array of such a union. */
   items?: (string | number)[];
+  /**
+   * `values` or `items` are the known ones, and others are taken too: a
+   * drawing tool's name is a built-in one or a plugin's.
+   */
+  open?: boolean;
   /** The one plain kind of value it takes, when it is that simple. */
   kind?: 'boolean' | 'number' | 'string' | 'function';
 }

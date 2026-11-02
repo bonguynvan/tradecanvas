@@ -104,6 +104,10 @@ class TargetLine extends DrawingBase {
 registerPlugin({ kind: 'drawing', plugin: new TargetLine() })
 chart.setDrawingTool('targetLine')`}</code></pre>
 <p>
+  El nombre de la herramienta sirve en todo lugar donde el gráfico acepta uno (<code>setDrawingTool</code>, <code>addDrawing</code>…), también en TypeScript:
+  <code>DrawingToolType</code> acepta cualquier nombre y sigue completando los integrados, que lista <code>BuiltInDrawingToolType</code>.
+</p>
+<p>
   El descriptor también puede indicar cómo se dibuja la herramienta
   (<code>creation</code>: <code>'clicks'</code>, <code>'freehand'</code> o
   <code>'path'</code>, con <code>maxAnchors</code>) y si el diálogo ofrece un

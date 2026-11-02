@@ -55,4 +55,8 @@ test('lists the drawing tools and feature switches from the built packages', () 
   assert.ok(catalog.drawingTools.some((t) => t.type === 'trendLine' && t.anchors === 2));
   assert.ok(catalog.widgetFeatures.includes('toolbar.screenshot'));
   assert.ok(catalog.nested['Chart.features'].some((o) => o.name === 'drawings'));
+  // A tool's name is open to a plugin's, and still lists the built-in ones.
+  const favorites = catalog.options.ChartWidget.find((o) => o.name === 'drawingFavorites');
+  assert.ok(favorites.items.includes('trendLine'));
+  assert.equal(favorites.open, true);
 });

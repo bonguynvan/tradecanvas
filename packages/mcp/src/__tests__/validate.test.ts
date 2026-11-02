@@ -47,6 +47,14 @@ describe('validateOptions', () => {
     expect(problem.suggestion).toBe('renko');
   });
 
+  it('takes a drawing tool of a plugin, and notes a name that looks like a built-in one mistyped', () => {
+    const result = validateOptions('ChartWidget', { drawingFavorites: ['trendLine', 'targetLine', 'trendLIne'] });
+    expect(result.problems).toEqual([]);
+    expect(result.notes.join(' ')).toContain('trendLIne');
+    expect(result.notes.join(' ')).toContain("'trendLine'");
+    expect(result.notes.join(' ')).not.toContain('targetLine');
+  });
+
   it('checks plain kinds: a number given as a string is wrong', () => {
     const [problem] = problems('ChartWidget', { historyLimit: '500' });
     expect(problem.path).toBe('historyLimit');

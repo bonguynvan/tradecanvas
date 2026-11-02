@@ -59,6 +59,21 @@ function setTypes(type) {
   return (type.isUnion() ? type.types : [type]).filter((t) => !(t.flags & ts.TypeFlags.Undefined));
 }
 
+/** `string & {}`: a union's way to take any string and still complete its literals. */
+function isOpenString(type) {
+  return type.isIntersection() && type.types.some((t) => t.flags & ts.TypeFlags.String);
+}
+
+/**
+ * A union's literals and whether it is open (`'a' | 'b' | (string & {})`):
+ * the literals are the known values, and others are allowed too.
+ */
+function knownValues(types) {
+  const open = types.some(isOpenString);
+  const values = literals(open ? types.filter((t) => !isOpenString(t)) : types);
+  return values ? { values, open } : null;
+}
+
 /** The string or number literals a type allows, when it allows nothing else; null otherwise. */
 function literals(types) {
   if (!types.length || !types.every((t) => t.isStringLiteral() || t.isNumberLiteral())) return null;
@@ -135,14 +150,17 @@ function describeProperty(checker, symbol, at) {
   const option = { name: symbol.name, type: typeText(checker, symbol, declaration, at) };
   const doc = shortDoc(ts.displayPartsToString(symbol.getDocumentationComment(checker)));
   if (doc) option.doc = doc;
-  const values = literals(types);
+  const known = knownValues(types);
+  const values = known?.values ?? null;
   if (values) option.values = inWrittenOrder(values, writtenLiterals(checker, declaration?.type));
   // An array of literals (`chartTypes: ChartType[]`): the values each item may take.
   const arrays = types.filter((t) => checker.isArrayType(t));
   if (arrays.length === types.length && arrays.length) {
-    const items = literals(setTypes(checker.getTypeArguments(arrays[0])[0]));
-    if (items) option.items = inWrittenOrder(items, writtenLiterals(checker, elementNode(declaration?.type)));
+    const items = knownValues(setTypes(checker.getTypeArguments(arrays[0])[0]));
+    if (items) option.items = inWrittenOrder(items.values, writtenLiterals(checker, elementNode(declaration?.type)));
+    if (items?.open) option.open = true;
   }
+  if (known?.open) option.open = true;
   const kind = values ? null : plainKind(checker, types);
   if (kind) option.kind = kind;
   return option;

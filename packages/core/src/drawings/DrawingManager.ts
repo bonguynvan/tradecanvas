@@ -55,6 +55,16 @@ const LEGACY_INDEX_LIMIT = 1e7;
 export type DrawingReach = Pick<PointerReach, 'line' | 'handle'>;
 const MOUSE_REACH: DrawingReach = { line: 8, handle: 8 };
 
+/** A step of the shared history that isn't about drawings: the chart's indicators, or its owner's. */
+function isForeignStep(action: UndoableAction): boolean {
+  return action.type === 'indicators' || action.type === 'custom';
+}
+
+/** Whether a batch holds such a step, at any depth. */
+function holdsForeignStep(action: UndoableAction): boolean {
+  return (action.actions ?? []).some((step) => isForeignStep(step) || holdsForeignStep(step));
+}
+
 export class DrawingManager {
   private registry = new Map<DrawingToolType, DrawingPlugin>();
   private drawings: DrawingState[] = [];
@@ -176,16 +186,25 @@ export class DrawingManager {
   }
 
   private applyUndoAction(action: UndoableAction): void {
-    if (action.type === 'indicators' || action.type === 'custom') {
+    if (isForeignStep(action)) {
       this.foreignHistory?.(action, 'undo');
+      return;
+    }
+    // A batch holding indicator or owner steps (the chart cleared at once) goes step by step, last first.
+    if (action.type === 'drawingBatch' && holdsForeignStep(action)) {
+      for (const step of [...(action.actions ?? [])].reverse()) this.applyUndoAction(step);
       return;
     }
     this.applyHistory(undoAction(this.drawings, action));
   }
 
   private applyRedoAction(action: UndoableAction): void {
-    if (action.type === 'indicators' || action.type === 'custom') {
+    if (isForeignStep(action)) {
       this.foreignHistory?.(action, 'redo');
+      return;
+    }
+    if (action.type === 'drawingBatch' && holdsForeignStep(action)) {
+      for (const step of action.actions ?? []) this.applyRedoAction(step);
       return;
     }
     this.applyHistory(redoAction(this.drawings, action));

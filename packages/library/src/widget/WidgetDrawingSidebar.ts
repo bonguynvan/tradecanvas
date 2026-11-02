@@ -340,7 +340,9 @@ export class WidgetDrawingSidebar {
     clearBtn.className = 'tcw-sidebar-btn tcw-danger';
     clearBtn.title = this.t('drawing.clearAll');
     clearBtn.innerHTML = createIcon('trash', 14);
-    clearBtn.addEventListener('click', callbacks.onClearDrawings);
+    clearBtn.setAttribute('aria-haspopup', 'menu');
+    clearBtn.setAttribute('aria-expanded', 'false');
+    clearBtn.addEventListener('click', () => callbacks.onClear(clearBtn));
     markPart(clearBtn, 'sidebar.clear');
     el.appendChild(clearBtn);
   }

@@ -43,6 +43,16 @@ class FakeChart {
     this.drawings = this.drawings.map((d) => (ids.includes(d.id) ? { ...d, visible } : d));
   }
   clearDrawings(): void { this.drawings = []; }
+  activeIndicators: { instanceId: string }[] = [];
+  removed: string[] = [];
+  removeAll(what: string): { drawings: number; indicators: number } {
+    this.removed.push(what);
+    const drawings = what === 'indicators' ? 0 : this.drawings.filter((d) => !d.locked).length;
+    const indicators = what === 'drawings' ? 0 : this.activeIndicators.length;
+    if (what !== 'indicators') this.drawings = this.drawings.filter((d) => d.locked);
+    if (what !== 'drawings') this.activeIndicators = [];
+    return { drawings, indicators };
+  }
   getDrawingRect(): Box { return { x: 200, y: 160, width: 120, height: 60 }; }
   getDrawingTool(): string | null { return null; }
   isEraserMode(): boolean { return false; }
@@ -54,7 +64,7 @@ class FakeChart {
   isAutoScale(): boolean { return this.auto; }
   setAutoScale(on: boolean): void { this.auto = on; }
   getData(): unknown[] { return []; }
-  getActiveIndicators(): unknown[] { return []; }
+  getActiveIndicators(): { instanceId: string }[] { return this.activeIndicators; }
   getIndicatorPanes(): unknown[] { return []; }
   getLegendBottom(): number { return 0; }
   isTimeAligned(): boolean { return true; }
@@ -97,7 +107,8 @@ describe('lock all and hide all', () => {
     widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false });
     role('hideAll')!.click();
     expect(pressed('hideAll')).toBe('true');
-    host.querySelector<HTMLButtonElement>('[data-tcw-part~="sidebar.clear"]')!.click();
+    trash().click();
+    menuItem('drawings')!.click();
     expect(pressed('hideAll')).toBe('false');
   });
 
@@ -106,6 +117,59 @@ describe('lock all and hide all', () => {
     role('lockAll')!.click();
     expect(role('lockAll')!.getAttribute('aria-label')).toBe('Lock all drawings');
     expect(pressed('lockAll')).toBe('true');
+  });
+});
+
+const trash = () => host.querySelector<HTMLButtonElement>('[data-tcw-part~="sidebar.clear"]')!;
+const openItems = () => [...host.querySelectorAll<HTMLElement>('.tcw-context-menu:not([hidden]) [role^=menuitem]')];
+const menuItem = (id: string) => openItems().find((item) => item.dataset.id === id);
+
+describe('the trash button', () => {
+  it('offers to remove the drawings when there are only drawings', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false });
+    trash().click();
+    expect(trash().getAttribute('aria-haspopup')).toBe('menu');
+    expect(trash().getAttribute('aria-expanded')).toBe('true');
+    expect(openItems().map((item) => item.dataset.id)).toEqual(['drawings']);
+  });
+
+  it('offers drawings, indicators or both, each with how many there are', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false });
+    FakeChart.last.activeIndicators = [{ instanceId: 'rsi' }];
+    trash().click();
+    expect(openItems().map((item) => item.dataset.id)).toEqual(['drawings', 'indicators', 'all']);
+    expect(menuItem('drawings')!.textContent).toContain('2');
+    expect(menuItem('indicators')!.textContent).toContain('1');
+    menuItem('all')!.click();
+    expect(FakeChart.last.removed).toEqual(['all']);
+    expect(openItems()).toEqual([]);
+  });
+
+  it('removes only what was picked', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false });
+    FakeChart.last.activeIndicators = [{ instanceId: 'rsi' }];
+    trash().click();
+    menuItem('indicators')!.click();
+    expect(FakeChart.last.removed).toEqual(['indicators']);
+    expect(FakeChart.last.drawings).toHaveLength(2);
+  });
+
+  it('counts locked drawings out, as they stay', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false });
+    FakeChart.last.drawings = FakeChart.last.drawings.map((d) => (d.id === 'd1' ? { ...d, locked: true } : d));
+    trash().click();
+    expect(menuItem('drawings')!.textContent).toContain('1');
+  });
+
+  it('opens nothing when there is nothing to remove, and closes on a second press', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false });
+    trash().click();
+    expect(openItems()).toHaveLength(1);
+    trash().click();
+    expect(openItems()).toEqual([]);
+    FakeChart.last.drawings = [];
+    trash().click();
+    expect(openItems()).toEqual([]);
   });
 });
 

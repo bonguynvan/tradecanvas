@@ -139,6 +139,7 @@ chart.ungroupDrawings(group)
 
 chart.getSelectedDrawingIds()
 chart.removeDrawings(ids)            // 실행 취소 한 단계
+chart.removeAll('drawings')         // 모든 그리기. 'indicators', 둘 다는 'all': 실행 취소 한 단계, 잠긴 그리기는 남음
 chart.setDrawingsVisible(ids, false)
 chart.setDrawingsLocked(ids, true)
 

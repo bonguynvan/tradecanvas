@@ -139,6 +139,29 @@ describe('WidgetContextMenu', () => {
       menu.openUnder(ENTRIES, button(4, 32), () => {}, 'end');
       expect(left()).toBe(4);
     });
+
+    it('opens beside a button of the drawing bar, past its end edge, and before it without room', () => {
+      menu.openBeside(ENTRIES, button(10, 40), () => {});
+      expect([left(), top()]).toEqual([42, 10]);
+      menu.openBeside(ENTRIES, button(360, 390), () => {});
+      expect(left() + MENU_W).toBe(358);
+    });
+
+    it('opens beside it the other way right to left, never over the button', () => {
+      host.dir = 'rtl';
+      menu.openBeside(ENTRIES, button(360, 390), () => {});
+      expect(left() + MENU_W).toBe(358);
+      // No room before it: past its right edge.
+      menu.openBeside(ENTRIES, button(10, 40), () => {});
+      expect(left()).toBe(42);
+    });
+
+    it('gives the keyboard back to the button it hangs from', () => {
+      const btn = button(10, 40);
+      menu.openBeside(ENTRIES, btn, () => {});
+      menu.close();
+      expect(document.activeElement).toBe(btn);
+    });
   });
 
   describe('taller than the room', () => {
@@ -189,6 +212,15 @@ describe('WidgetContextMenu shortcuts, choices and submenus', () => {
     const invert = all('menuitemcheckbox')[0];
     expect(invert.querySelector('.tcw-context-key')?.textContent).toBe('Alt+I');
     expect(invert.getAttribute('aria-keyshortcuts')).toBe('Alt+I');
+  });
+
+  it('writes a count at the row’s end for every reader, not as a key', () => {
+    menu.open([{ id: 'drawings', label: 'Remove drawings', count: 3 }], 0, 0, () => {});
+    const row = items()[0];
+    const count = row.querySelector<HTMLElement>('.tcw-context-count')!;
+    expect(count.textContent).toBe('3');
+    expect(count.getAttribute('aria-hidden')).toBeNull();
+    expect(row.hasAttribute('aria-keyshortcuts')).toBe(false);
   });
 
   it('leads a switch with its icon while off, if it has one, and with a tick while on', () => {

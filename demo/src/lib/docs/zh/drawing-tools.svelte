@@ -138,6 +138,7 @@ chart.ungroupDrawings(group)
 
 chart.getSelectedDrawingIds()
 chart.removeDrawings(ids)            // 一次撤销
+chart.removeAll('drawings')         // 所有绘图；'indicators'，或 'all' 两者都删：一次撤销，锁定的绘图保留
 chart.setDrawingsVisible(ids, false)
 chart.setDrawingsLocked(ids, true)
 

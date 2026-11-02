@@ -77,6 +77,7 @@
     <tr><td><code>updateIndicator(instanceId, params)</code></td><td>Sửa một chỉ báo đang chạy.</td></tr>
     <tr><td><code>removeIndicator(instanceId)</code></td><td>Xoá và dọn dẹp chỉ báo.</td></tr>
     <tr><td><code>removeIndicators(instanceIds)</code></td><td>Xoá nhiều chỉ báo, gộp thành một bước hoàn tác.</td></tr>
+    <tr><td><code>removeAll(what?)</code></td><td>Xoá mọi hình vẽ (<code>'drawings'</code>), mọi chỉ báo (<code>'indicators'</code>) hoặc cả hai (<code>'all'</code>), gộp thành một bước hoàn tác; hình vẽ đã khoá thì giữ lại. Trả về số lượng mỗi loại đã xoá.</td></tr>
     <tr><td><code>updateIndicatorStyle(instanceId, style)</code></td><td>Màu, độ dày, độ mờ, và kiểu nét, ẩn/hiện của từng đường (<code>plots: {`{ signal: { lineStyle: 'dashed' } }`}</code>).</td></tr>
     <tr><td><code>setIndicatorDefaults(id, style | null)</code></td><td>Style mà các chỉ báo cùng loại bắt đầu với, từ nay.</td></tr>
     <tr><td><code>setIndicatorIntervals(instanceId, intervals | null)</code> · <code>getIndicatorIntervals(instanceId)</code></td><td>Các khung thời gian mà chỉ báo hiện trên đó (<code>{`{ minutes: false, hours: [1, 4] }`}</code>); <code>null</code>: mọi khung. Lưu cùng bố cục.</td></tr>
@@ -558,7 +559,7 @@ widget.destroy()`}</code></pre>
     <tr><td>Công cụ vẽ</td><td>
       Menu của mỗi nhóm ghi phím tắt của các công cụ trong nhóm (Alt+T là đường xu hướng) và có một ngôi sao trên mỗi
       dòng để ghim công cụ đó lên đầu. Ở dưới cùng: kiểu vẽ, nam châm, cục tẩy, zoom vùng, giữ chế độ vẽ, khoá tất cả,
-      ẩn tất cả và xoá tất cả.
+      ẩn tất cả, và nút thùng rác: menu của nó xoá các hình vẽ, các chỉ báo hoặc cả hai, kèm số lượng mỗi loại, trong một bước hoàn tác.
     </td></tr>
     <tr><td>Thanh trạng thái</td><td>
       Các khoảng thời gian dựng sẵn và đi tới ngày; trạng thái thị trường, kết nối, một đồng hồ theo múi giờ hiển thị

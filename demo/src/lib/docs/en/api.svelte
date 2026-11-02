@@ -77,6 +77,7 @@
     <tr><td><code>updateIndicator(instanceId, params)</code></td><td>Mutate a live indicator.</td></tr>
     <tr><td><code>removeIndicator(instanceId)</code></td><td>Remove and tear down.</td></tr>
     <tr><td><code>removeIndicators(instanceIds)</code></td><td>Remove several, as one undo step.</td></tr>
+    <tr><td><code>removeAll(what?)</code></td><td>Every drawing (<code>'drawings'</code>), every indicator (<code>'indicators'</code>) or both (<code>'all'</code>), as one undo step; locked drawings stay. Returns how many of each went.</td></tr>
     <tr><td><code>updateIndicatorStyle(instanceId, style)</code></td><td>Colours, line widths, opacity, and each plot's dash and visibility (<code>plots: {`{ signal: { lineStyle: 'dashed' } }`}</code>).</td></tr>
     <tr><td><code>setIndicatorDefaults(id, style | null)</code></td><td>The style indicators of a kind start with from now on.</td></tr>
     <tr><td><code>setIndicatorIntervals(instanceId, intervals | null)</code> · <code>getIndicatorIntervals(instanceId)</code></td><td>The intervals it shows on (<code>{`{ minutes: false, hours: [1, 4] }`}</code>); <code>null</code>: all of them. Saved with the layout.</td></tr>
@@ -554,7 +555,7 @@ widget.destroy()`}</code></pre>
     <tr><td>Drawing tools</td><td>
       Each group's menu names its tools' shortcuts (Alt+T a trend line) and has a star on each row to pin it to the
       top. At the bottom: the drawing style, the magnet, the eraser, the zoom area, staying in drawing mode, lock
-      all, hide all and clear all.
+      all, hide all, and the trash button: its menu removes the drawings, the indicators or both, each with how many, in one undo step.
     </td></tr>
     <tr><td>Status bar</td><td>
       Range presets and go to date; the market's status, the connection, a clock in the display time zone (it

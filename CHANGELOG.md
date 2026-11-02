@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Drawings and indicators
+
+- **The trash button asks what to remove** (`@tradecanvas/core`, `@tradecanvas/chart`). In the widget's drawing bar it opens a menu: remove the drawings, the indicators, or both, each with how many there are. Whatever is picked goes in one undo step, so one Ctrl+Z brings it all back. It used to remove every drawing, locked ones too, with no undo. Locked drawings now stay, as they do when a selection is removed, and are not counted. The command palette offers the three as well. From code, `chart.removeAll(what)` takes `'drawings'`, `'indicators'` or `'all'` (the default) and returns how many of each went. `UndoRedoManager.group(fn)` keeps every step that `fn` records, drawings and indicators alike, as one.
+- **A drawing tool of your own has a type** (`@tradecanvas/commons`, `@tradecanvas/chart`). The name a plugin registers (`descriptor.type`) used to be rejected by TypeScript wherever the chart takes a tool's name, though it worked at run time. `DrawingToolType` now takes any name and still completes the built-in ones. The built-in names are in the new `BuiltInDrawingToolType`. A misspelt built-in name (`'trendLIne'`) now compiles too, so type a value as `BuiltInDrawingToolType` where that should be caught. The MCP server still lists the built-in names, and `validate_options` notes a name that looks like a mistyped one instead of rejecting a plugin's (`@tradecanvas/mcp`).
+
 ## 1.60.0 (2026-11-02)
 
 React, Vue and Svelte components: 1.3.52.
