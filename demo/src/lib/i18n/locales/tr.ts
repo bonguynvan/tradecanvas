@@ -207,13 +207,13 @@ const tr: SiteMessages = {
   scenes: {
     drawings: {
       title: 'Çizim araçları',
-      stat: '69 araç',
+      stat: '73 araç',
       blurb:
-        'Kendi seviyelerinizi kullanabildiğiniz Fibonacci ve Gann araçları, Elliott dalgaları, harmonik formasyonlar, notlar ve fırçalar. Bir çizime çift tıklamak ayarlarını, sağ tıklamak menüsünü açar; alarmlar trend çizgilerini izler, Uzun/Kısa pozisyon aracı pozisyon büyüklüğünü hesaplar.',
+        'Kendi seviyelerinizle Fibonacci ve Gann araçları, Elliott dalgaları, harmonik formasyonlar, tabelalar ve fırçalar. Çizgiler ve kutular yazı taşır, notlar ve tabelalar yerinde düzenlenir; bir not ekranda sabit kalabilir, bir çizim de gösterge panelinde durabilir. Alarmlar trend çizgilerini izler, Long/Short pozisyon büyüklüğünü hesaplar.',
       tryThis: [
-        'Fibonacci düzeltmesine çift tıklayın ve seviyelerini düzenleyin',
-        'Bir çizime sağ tıklayın: bir öne getirin, gruplayın ya da alarm ekleyin',
-        'Fırçayı ya da yol aracını seçin; Enter bir yolu bitirir',
+        'Tabelaya çift tıklayıp yazısının üzerine yazın',
+        'Sağdaki Nesneler’i açın: bir çizimi yeniden adlandırın, sıralayın ya da gizleyin',
+        'Bir çizime sağ tıklayın: gruplayın veya alarm ekleyin',
       ],
     },
     indicators: {

@@ -209,11 +209,11 @@ const vi: SiteMessages = {
       title: 'Công cụ vẽ',
       stat: '73 công cụ',
       blurb:
-        'Công cụ Fibonacci và Gann với mức tự chọn, sóng Elliott, mô hình harmonic, ghi chú và bút vẽ. Nhấp đúp vào hình vẽ để mở cài đặt, nhấp chuột phải để mở menu; cảnh báo bám theo đường xu hướng, và Long/Short tự tính khối lượng.',
+        'Công cụ Fibonacci và Gann với mức tự chọn, sóng Elliott, mô hình harmonic, biển chỉ dẫn và bút vẽ. Đường và hộp mang chữ, ghi chú và biển chỉ dẫn sửa ngay tại chỗ; ghi chú có thể đứng yên trên màn hình, và hình vẽ có thể nằm trên pane chỉ báo. Cảnh báo bám theo đường xu hướng, và Long/Short tự tính khối lượng.',
       tryThis: [
-        'Nhấp đúp vào Fibonacci thoái lui và sửa các mức',
-        'Nhấp chuột phải vào hình vẽ: đưa lên trên, nhóm lại hoặc thêm cảnh báo',
-        'Chọn bút vẽ hoặc công cụ đường nhiều điểm; Enter để kết thúc',
+        'Nhấp đúp vào biển chỉ dẫn và gõ đè lên chữ',
+        'Mở Đối tượng ở bên phải: đổi tên, sắp xếp hoặc ẩn hình vẽ',
+        'Nhấp chuột phải vào hình vẽ: nhóm lại hoặc thêm cảnh báo',
       ],
     },
     indicators: {

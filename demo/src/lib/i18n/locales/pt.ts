@@ -207,13 +207,13 @@ const pt: SiteMessages = {
   scenes: {
     drawings: {
       title: 'Ferramentas de desenho',
-      stat: '69 ferramentas',
+      stat: '73 ferramentas',
       blurb:
-        'Ferramentas de Fibonacci e Gann com níveis próprios, ondas de Elliott, padrões harmônicos, notas e pincéis. Clique duplo em um desenho abre suas configurações e clique direito, seu menu; os alertas acompanham as linhas de tendência, e a ferramenta de posição comprada/vendida calcula o tamanho da posição.',
+        'Ferramentas de Fibonacci e Gann com seus próprios níveis, ondas de Elliott, padrões harmônicos, placas e pincéis. Linhas e caixas levam texto, notas e placas são editadas no próprio lugar, uma nota pode ficar fixa na tela e um desenho pode ficar no painel de um indicador. Os alertas seguem linhas de tendência, e Comprado/Vendido calcula o tamanho da posição.',
       tryThis: [
-        'Dê um clique duplo na retração de Fibonacci e edite seus níveis',
-        'Clique direito em um desenho: avance-o, agrupe-o ou adicione um alerta',
-        'Escolha o pincel ou a ferramenta de caminho; Enter encerra um caminho',
+        'Clique duas vezes na placa e escreva por cima do texto',
+        'Abra Objetos à direita: renomeie, reordene ou oculte um desenho',
+        'Clique com o botão direito em um desenho: agrupe ou adicione um alerta',
       ],
     },
     indicators: {

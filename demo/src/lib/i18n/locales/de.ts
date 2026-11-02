@@ -207,13 +207,13 @@ const de: SiteMessages = {
   scenes: {
     drawings: {
       title: 'Zeichenwerkzeuge',
-      stat: '69 Werkzeuge',
+      stat: '73 Werkzeuge',
       blurb:
-        'Fibonacci- und Gann-Werkzeuge mit eigenen Niveaus, Elliott-Wellen, harmonische Muster, Notizen und Pinsel. Doppelklick auf eine Zeichnung öffnet ihre Einstellungen, Rechtsklick ihr Menü; Alarme folgen Trendlinien, und das Long-/Short-Werkzeug berechnet die Positionsgröße.',
+        'Fibonacci- und Gann-Werkzeuge mit eigenen Levels, Elliott-Wellen, harmonische Muster, Wegweiser und Pinsel. Linien und Rechtecke tragen Text, Notizen und Wegweiser überschreibt man direkt an Ort und Stelle; eine Notiz kann fest auf dem Bildschirm stehen, und eine Zeichnung kann im Bereich eines Indikators liegen. Alarme folgen Trendlinien, und Long/Short berechnet die Positionsgröße.',
       tryThis: [
-        'Doppelklicken Sie auf das Fibonacci-Retracement und bearbeiten Sie seine Niveaus',
-        'Klicken Sie eine Zeichnung mit der rechten Maustaste an: eine Ebene nach vorne holen, gruppieren oder einen Alarm hinzufügen',
-        'Wählen Sie den Pinsel oder das Pfad-Werkzeug; Enter beendet einen Pfad',
+        'Den Wegweiser doppelklicken und seinen Text überschreiben',
+        'Rechts Objekte öffnen: eine Zeichnung umbenennen, umsortieren oder ausblenden',
+        'Rechtsklick auf eine Zeichnung: gruppieren oder einen Alarm setzen',
       ],
     },
     indicators: {

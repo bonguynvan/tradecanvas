@@ -207,13 +207,13 @@ const fr: SiteMessages = {
   scenes: {
     drawings: {
       title: 'Outils de dessin',
-      stat: '69 outils',
+      stat: '73 outils',
       blurb:
-        'Outils de Fibonacci et de Gann avec vos propres niveaux, vagues d’Elliott, figures harmoniques, notes et pinceaux. Un double-clic sur un dessin ouvre ses paramètres, un clic droit son menu ; les alertes suivent les lignes de tendance, et l’outil de position acheteuse/vendeuse calcule la taille de la position.',
+        'Outils de Fibonacci et de Gann avec vos propres niveaux, vagues d’Elliott, figures harmoniques, panneaux et pinceaux. Les lignes et les rectangles portent un texte, les notes et les panneaux se modifient sur place, une note peut rester fixe à l’écran et un dessin peut se placer sur le panneau d’un indicateur. Les alertes suivent les lignes de tendance, et Long/Short calcule la taille de la position.',
       tryThis: [
-        'Double-cliquez sur le retracement de Fibonacci et modifiez ses niveaux',
-        'Faites un clic droit sur un dessin : avancez-le d’un plan, groupez-le ou ajoutez une alerte',
-        'Choisissez le pinceau ou l’outil Tracé ; Entrée termine un tracé',
+        'Double-cliquez sur le panneau et réécrivez son texte',
+        'Ouvrez Objets à droite : renommez, réordonnez ou masquez un dessin',
+        'Clic droit sur un dessin : groupez-le ou ajoutez une alerte',
       ],
     },
     indicators: {

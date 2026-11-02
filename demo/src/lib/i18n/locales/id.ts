@@ -207,13 +207,13 @@ const id: SiteMessages = {
   scenes: {
     drawings: {
       title: 'Alat gambar',
-      stat: '69 alat',
+      stat: '73 alat',
       blurb:
-        'Alat Fibonacci dan Gann dengan level buatan sendiri, gelombang Elliott, pola harmonik, catatan, dan kuas. Klik ganda pada gambar untuk membuka pengaturannya, klik kanan untuk menunya; peringatan mengikuti garis tren, dan alat posisi long/short menghitung ukuran posisi.',
+        'Alat Fibonacci dan Gann dengan level sendiri, gelombang Elliott, pola harmonik, papan penunjuk, dan kuas. Garis dan kotak membawa teks, catatan dan papan penunjuk diedit langsung di tempat; catatan bisa tetap diam di layar, dan gambar bisa diletakkan di panel indikator. Peringatan mengikuti garis tren, dan Long/Short menghitung ukuran posisi.',
       tryThis: [
-        'Klik ganda pada Fibonacci retracement lalu ubah levelnya',
-        'Klik kanan sebuah gambar: bawa maju, kelompokkan, atau tambahkan peringatan',
-        'Pilih kuas atau alat jalur; Enter mengakhiri sebuah jalur',
+        'Klik dua kali papan penunjuk lalu ketik di atas teksnya',
+        'Buka Objek di kanan: ganti nama, urutkan, atau sembunyikan gambar',
+        'Klik kanan sebuah gambar: kelompokkan atau tambahkan peringatan',
       ],
     },
     indicators: {
