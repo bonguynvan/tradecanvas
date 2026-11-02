@@ -168,3 +168,13 @@ describe('markers at the plot’s edge', () => {
     expect(rec.calls.filter((c) => c.name === 'stroke')).toHaveLength(0);
   });
 });
+
+describe('markers scrolled off the plot', () => {
+  it('leave with their bar instead of sliding along the edge', () => {
+    const rec = recordingCtx();
+    new SignpostTool().render(rec.ctx, drawing('signpost', [{ time: -10, price: 30 }], { style: { ...style, text: 'Gone' } }), unitViewport, false);
+    const text = rec.calls.find((c) => c.name === 'fillText')!;
+    // Its bar is 95 px left of the plot: the board stays over it, off the plot too.
+    expect(Number(text.args[1])).toBeLessThan(0);
+  });
+});

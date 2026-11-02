@@ -19,13 +19,17 @@ function markerLook(state: DrawingState): TextBoxLook {
 
 /**
  * Where a marker's box goes for its point `p`: centred over it, `gap` px
- * above, or under it when that would leave the plot's top; and slid along so
- * it stays on the plot sideways. `below` says which way it went.
+ * above, or under it when that would leave the plot's top; and slid along,
+ * still over its point, so it stays on the plot sideways. `below` says which way it went.
  */
 function markerBox(p: Point, size: { width: number; height: number }, gap: number, viewport: ViewportState): Rect & { below: boolean } {
   const plot = viewport.chartRect;
   const below = p.y - gap - size.height < plot.y;
-  const left = Math.max(plot.x, Math.min(p.x - size.width / 2, plot.x + plot.width - size.width));
+  // It slides only as far as still stands over its point: scrolled off, it goes with its bar.
+  const lo = Math.max(plot.x, p.x - size.width);
+  const hi = Math.min(plot.x + plot.width - size.width, p.x);
+  const centred = p.x - size.width / 2;
+  const left = lo <= hi ? Math.max(lo, Math.min(centred, hi)) : centred;
   return { x: left, y: below ? p.y + gap : p.y - gap - size.height, ...size, below };
 }
 
