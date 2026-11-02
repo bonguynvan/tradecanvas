@@ -85,7 +85,7 @@ chart.addDrawing({
 chart.addDrawing({ type: 'verticalLine', anchors: [{ time: t3, price: 0 }], options: { showTime: true } })
 chart.addDrawing({ type: 'fibRetracement', anchors: [a, b], options: { trendLine: false, oneColor: true } })`}</code></pre>
 <p>
-  水平线和水平射线用 <code>showPrice: false</code> 隐藏价格。垂直线用 <code>showTime: true</code> 显示其 K 线的时间，写法与十字光标相同。矩形有八个控制点：每个角一个，每条边的中点一个，拖动后只移动那条边。斐波那契回撤和扩展会画一条穿过其各点的虚线（<code>trendLine</code>，默认开启），并可用 <code>oneColor</code> 让所有水平都用绘图的颜色。
+  水平线和水平射线用 <code>showPrice: false</code> 隐藏价格。垂直线用 <code>showTime: true</code> 显示其 K 线的时间，写法与十字光标相同。矩形有八个控制点：每个角一个，每条边的中点一个，拖动后只移动那条边。斐波那契回撤和扩展会画一条穿过其各点的虚线（<code>trendLine</code>，默认开启），并可用 <code>oneColor</code> 让所有水平都用绘图的颜色。点击文字也能选中该线或矩形。
 </p>
 
 <h2>设置</h2>
@@ -199,7 +199,7 @@ chart.copyDrawings()                 // 选中的画线（Ctrl+C）
 chart.pasteDrawings()                // Ctrl+V，粘贴到此处或页面上的其他图表
 chart.canPasteDrawings()             // 是否有可粘贴的内容`}</code></pre>
 <p>点击分组中的任意一条画线，会选中整个分组。</p>
-<p>在小组件的对象树中，单击绘图的名称会选中它，双击则重命名。它的行可以克隆它，拖动手柄可把它移到另一行在顺序中的位置；在手柄上按方向键可把它移动一位。</p>
+<p>在小组件的对象树中，绘图按叠放顺序列出，最上层的在最前面。单击绘图的名称会选中它，双击则重命名。它的行可以克隆它，拖动手柄可把它移到另一行的位置；在手柄上按方向键可把它在列表和叠放顺序中同时上移或下移一行。</p>
 
 <h2>橡皮擦、缩放与磁吸</h2>
 <pre><code>{`chart.setEraserMode(true)          // 每次点击画线就将其删除，直到按 Escape
@@ -214,6 +214,7 @@ chart.setDrawingMagnetMode('strong') // 'off' | 'weak' | 'strong'`}</code></pre>
   <li>绘制或拖动控制点时按住 <kbd>Shift</kbd>，让线在屏幕上保持水平、垂直或 45°。在图表空白处，<kbd>Shift</kbd> + 拖动仍是测量。适用于直线和路径；矩形、通道的宽度或叉子的点不受限制。</li>
   <li><kbd>←</kbd> <kbd>→</kbd> <kbd>↑</kbd> <kbd>↓</kbd> 将选中的绘图横向移动一根 K 线或上下移动一个像素；加按 <kbd>Shift</kbd> 则为十。连续按键只算一步撤销，已锁定的绘图不动。</li>
   <li>在绘图上 <kbd>Ctrl</kbd>/<kbd>⌘</kbd> + 拖动会拖出一个副本（绘图在选区中时复制整个选区），算一步撤销。<kbd>Ctrl</kbd>/<kbd>⌘</kbd> + 单击仍然把它加入或移出选区，在空白处 <kbd>Ctrl</kbd>/<kbd>⌘</kbd> + 拖动仍然画选择框。在选中绘图的控制点上，<kbd>Ctrl</kbd>/<kbd>⌘</kbd> + 拖动则是在磁铁翻转的状态下调整它。</li>
+  <li>拖动绘图时按 <kbd>Escape</kbd> 会取消拖动：正在移动或调整的绘图回到原处，正在拖出的副本被丢弃，不留下可撤销的步骤。</li>
 </ul>
 
 <h2>键盘</h2>

@@ -2,7 +2,7 @@ import type { DrawingState, Point, ViewportState } from '@tradecanvas/commons';
 import { DrawingBase, lineSpace } from '../DrawingBase.js';
 import { extendOptions } from './options.js';
 import { LINE_END_OPTIONS, LINE_STATS_OPTIONS, drawLineEnds, drawLineStats } from './lineDecor.js';
-import { drawLineText } from './lineText.js';
+import { drawLineText, TextHitCache } from './lineText.js';
 
 export class TrendLineTool extends DrawingBase {
   descriptor = {
@@ -20,6 +20,8 @@ export class TrendLineTool extends DrawingBase {
   }
 
   render(ctx: CanvasRenderingContext2D, state: DrawingState, viewport: ViewportState, selected: boolean): void {
+    // Words not drawn this time (no text, the line off the plot or its points together) are not there to click.
+    this.texts.set(state.id, null);
     if (state.anchors.length < 2) return;
     const [p1, p2] = this.segment(state, viewport);
     this.applyLineStyle(ctx, state.style);
@@ -32,7 +34,7 @@ export class TrendLineTool extends DrawingBase {
     drawLineEnds(ctx, [p1, p2], state.style.color, option);
     const anchors = [this.anchorToPixel(state.anchors[0], viewport), this.anchorToPixel(state.anchors[1], viewport)] as const;
     drawLineStats(ctx, state, viewport, anchors, selected, option);
-    drawLineText(ctx, state.style, p1, p2, viewport.chartRect);
+    this.texts.set(state.id, drawLineText(ctx, state.style, p1, p2, viewport.chartRect));
     if (selected) this.renderAnchorHandles(ctx, state, viewport);
   }
 
@@ -42,7 +44,19 @@ export class TrendLineTool extends DrawingBase {
     return price === null ? null : [price];
   }
 
+  /** Its text's box as last drawn: a click on the words picks it. */
+  private texts = new TextHitCache();
+
+  /** Where its words were drawn: the toolbar over a selection keeps clear of them. */
+  textBox(state: DrawingState): { x: number; y: number; width: number; height: number } | null {
+    return this.texts.bounds(state.id);
+  }
+
   hitTest(point: Point, state: DrawingState, viewport: ViewportState, tolerance: number): boolean {
+    return this.texts.hit(state.id, point, tolerance) || this.hitShape(point, state, viewport, tolerance);
+  }
+
+  private hitShape(point: Point, state: DrawingState, viewport: ViewportState, tolerance: number): boolean {
     if (state.anchors.length < 2) return false;
     const [p1, p2] = this.segment(state, viewport);
     return this.distanceToLine(point, p1, p2) <= tolerance;

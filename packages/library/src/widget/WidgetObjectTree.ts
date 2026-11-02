@@ -235,9 +235,11 @@ export class WidgetObjectTree {
     const focusedGrip = (document.activeElement as HTMLElement | null)?.closest<HTMLElement>('.tcw-tree-grip')
       ?.closest<HTMLElement>('[data-drawing-id]')?.dataset.drawingId;
     this.drawingIndex = new Map(drawings.map((d, i) => [d.id, i]));
-    this.loose = drawings.filter((d) => !d.group).map((d) => d.id);
+    // Listed as they stack, the one on top first (the chart's order runs bottom first).
+    const shown = [...drawings].reverse();
+    this.loose = shown.filter((d) => !d.group).map((d) => d.id);
     this.drawingsEl.replaceChildren();
-    this.listDrawings(drawings);
+    this.listDrawings(shown);
     if (focusedGrip) this.drawingsEl.querySelector<HTMLElement>(`[data-drawing-id="${focusedGrip}"] .tcw-tree-grip`)?.focus();
   }
 

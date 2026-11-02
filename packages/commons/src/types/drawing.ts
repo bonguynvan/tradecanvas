@@ -189,7 +189,8 @@ export interface DrawingPlugin {
   moveHandle?(state: DrawingState, index: number, anchor: AnchorPoint): DrawingState;
   /**
    * Where the box of its text was drawn last (its padding included), for a
-   * text to be typed in place over it; null when it shows no text.
+   * text to be typed in place over it, or a line's words to be kept clear
+   * of; null when it shows no text.
    */
   textBox?(state: DrawingState, viewport: ViewportState): { x: number; y: number; width: number; height: number } | null;
   /**

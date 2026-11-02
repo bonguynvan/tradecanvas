@@ -49,9 +49,10 @@ afterEach(() => {
 });
 
 describe('WidgetObjectTree groups', () => {
-  it('lists a group where its first drawing is, its drawings under it', () => {
+  it('lists the drawings as they stack, the one on top first, a group where its top drawing is', () => {
     const names = rows().map((r) => r.querySelector('.tcw-tree-name')!.textContent!.trim());
-    expect(names).toEqual(['Weekly levels', 'Trend Line', 'Horizontal Line', 'Ray']);
+    // Chart order a(g), b, c(g): c is on top.
+    expect(names).toEqual(['Weekly levels', 'Horizontal Line', 'Trend Line', 'Ray']);
     expect(rows().map((r) => r.classList.contains('tcw-tree-member'))).toEqual([false, true, true, false]);
   });
 
@@ -156,13 +157,14 @@ describe('WidgetObjectTree drawing rows', () => {
   it('moves a drawing to where its row is dropped, by its grip', () => {
     tree.setObjects([], DRAWINGS.map(({ group: _group, ...d }) => d));
     layOut();
+    // Listed c, b, a: the ray in the middle.
     const grip = button(drawingRow('b'), 'Drag to reorder');
     grip.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, clientY: 24 + 10, button: 0 }));
     document.dispatchEvent(new MouseEvent('pointermove', { bubbles: true, clientY: 6 }));
-    expect(drawingRow('a').classList.contains('tcw-tree-drop')).toBe(true);
+    expect(drawingRow('c').classList.contains('tcw-tree-drop')).toBe(true);
     document.dispatchEvent(new MouseEvent('pointerup', { bubbles: true, clientY: 6 }));
-    // Dropped on the trend line's row: its place, 0, in the chart's order.
-    expect(callbacks.onMoveDrawing).toHaveBeenCalledWith('b', 0);
+    // Dropped on the top row: the horizontal line's place, 2, in the chart's order.
+    expect(callbacks.onMoveDrawing).toHaveBeenCalledWith('b', 2);
     expect(host.querySelector('.tcw-tree-drop')).toBeNull();
   });
 
@@ -199,12 +201,12 @@ describe('WidgetObjectTree reorder around groups', () => {
 
   it('drops a drawing beside the row it lands on', () => {
     layOut();
-    // d (shown last) onto b (shown fourth): d goes where b is, just under it in the list.
-    grip('d')!.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, clientY: 4 * 24 + 10, button: 0 }));
-    document.dispatchEvent(new MouseEvent('pointermove', { bubbles: true, clientY: 3 * 24 + 6 }));
-    expect(drawingRow('c').classList.contains('tcw-tree-drop')).toBe(false);
-    document.dispatchEvent(new MouseEvent('pointerup', { bubbles: true, clientY: 3 * 24 + 6 }));
-    expect(callbacks.onMoveDrawing).toHaveBeenCalledWith('d', 1);
+    // Listed d, G, c, a, b: b (shown last) onto d (shown first) goes to the top.
+    grip('b')!.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, clientY: 4 * 24 + 10, button: 0 }));
+    document.dispatchEvent(new MouseEvent('pointermove', { bubbles: true, clientY: 6 }));
+    expect(drawingRow('d').classList.contains('tcw-tree-drop')).toBe(true);
+    document.dispatchEvent(new MouseEvent('pointerup', { bubbles: true, clientY: 6 }));
+    expect(callbacks.onMoveDrawing).toHaveBeenCalledWith('b', 3);
   });
 
   it('takes no drop on a grouped drawing’s row', () => {
@@ -214,13 +216,14 @@ describe('WidgetObjectTree reorder around groups', () => {
     expect(callbacks.onMoveDrawing).not.toHaveBeenCalled();
   });
 
-  it('moves a drawing one row up or down among the others with the arrow keys', () => {
-    grip('d')!.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp' }));
-    expect(callbacks.onMoveDrawing).toHaveBeenLastCalledWith('d', 1);
-    grip('b')!.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown' }));
-    expect(callbacks.onMoveDrawing).toHaveBeenLastCalledWith('b', 3);
-    // Nothing above b but the group: it stays.
+  it('moves a drawing one row up or down among the others with the arrow keys: up is toward the top', () => {
+    // Listed d, b among the loose ones: up brings b over d, to d's place on top.
     grip('b')!.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp' }));
+    expect(callbacks.onMoveDrawing).toHaveBeenLastCalledWith('b', 3);
+    grip('d')!.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown' }));
+    expect(callbacks.onMoveDrawing).toHaveBeenLastCalledWith('d', 1);
+    // Nothing above d: it stays.
+    grip('d')!.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp' }));
     expect(callbacks.onMoveDrawing).toHaveBeenCalledTimes(2);
   });
 

@@ -43,6 +43,70 @@ export function clipSegment(a: Point, b: Point, rect: Rect): [Point, Point] | nu
   return [{ x: a.x + t0 * dx, y: a.y + t0 * dy }, { x: a.x + t1 * dx, y: a.y + t1 * dy }];
 }
 
+/**
+ * Where a line's or a box's text was drawn: `width` × `height` from
+ * (`left`, `top`) in a frame turned `angle` about (`x`, `y`). A box's
+ * text is not turned.
+ */
+export interface TextHitBox {
+  x: number;
+  y: number;
+  angle: number;
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+}
+
+/** Most drawings' text boxes kept; past it the one drawn longest ago goes. */
+const MAX_TEXT_BOXES = 10_000;
+
+/** Each drawing's text box as last drawn, by id: a click on the words picks the drawing. */
+export class TextHitCache {
+  private boxes = new Map<string, TextHitBox>();
+
+  set(id: string, box: TextHitBox | null): void {
+    if (!box) {
+      this.boxes.delete(id);
+      return;
+    }
+    // Set again, an entry moves to the newest end; a full cache lets the oldest go (a removed drawing's, in time).
+    this.boxes.delete(id);
+    if (this.boxes.size >= MAX_TEXT_BOXES) this.boxes.delete(this.boxes.keys().next().value!);
+    this.boxes.set(id, box);
+  }
+
+  /** The upright box round the drawing's words, as drawn (turned with a sloping line); null without words. */
+  bounds(id: string): Rect | null {
+    const box = this.boxes.get(id);
+    if (!box) return null;
+    const cos = Math.cos(box.angle);
+    const sin = Math.sin(box.angle);
+    const corners = [[box.left, box.top], [box.left + box.width, box.top], [box.left, box.top + box.height], [box.left + box.width, box.top + box.height]]
+      .map(([u, v]) => ({ x: box.x + u * cos - v * sin, y: box.y + u * sin + v * cos }));
+    const xs = corners.map((c) => c.x);
+    const ys = corners.map((c) => c.y);
+    const x = Math.min(...xs);
+    const y = Math.min(...ys);
+    return { x, y, width: Math.max(...xs) - x, height: Math.max(...ys) - y };
+  }
+
+  /** Whether `point` is on the drawing's words, within `tolerance` px. */
+  hit(id: string, point: Point, tolerance: number): boolean {
+    const box = this.boxes.get(id);
+    if (!box) return false;
+    // Into the words' own frame: along the line and square to it.
+    const dx = point.x - box.x;
+    const dy = point.y - box.y;
+    const cos = Math.cos(box.angle);
+    const sin = Math.sin(box.angle);
+    const along = dx * cos + dy * sin;
+    const across = -dx * sin + dy * cos;
+    return along >= box.left - tolerance && along <= box.left + box.width + tolerance
+      && across >= box.top - tolerance && across <= box.top + box.height + tolerance;
+  }
+}
+
 /** The text's lines, or none without a text. */
 function textLines(style: DrawingStyle): string[] {
   const text = style.text?.trim();
@@ -63,11 +127,11 @@ function setFont(ctx: CanvasRenderingContext2D, style: DrawingStyle): number {
  * bottom to top along an upright line. With `plot`, only the part of the
  * line on it counts, so the text stays in sight as the line runs off.
  */
-export function drawLineText(ctx: CanvasRenderingContext2D, style: DrawingStyle, a: Point, b: Point, plot?: Rect): void {
+export function drawLineText(ctx: CanvasRenderingContext2D, style: DrawingStyle, a: Point, b: Point, plot?: Rect): TextHitBox | null {
   const lines = textLines(style);
-  if (lines.length === 0) return;
+  if (lines.length === 0) return null;
   const seen = plot ? clipSegment(a, b, plot) : [a, b] as [Point, Point];
-  if (!seen) return;
+  if (!seen) return null;
   const [p, q] = seen;
   // The start is the left end; on an upright line, or one a hair off it, the lower one, so the text runs upward.
   const upright = Math.abs(q.x - p.x) < UPRIGHT_PX;
@@ -83,7 +147,9 @@ export function drawLineText(ctx: CanvasRenderingContext2D, style: DrawingStyle,
   ctx.textAlign = align;
   const v = style.textVAlign ?? 'top';
   ctx.textBaseline = v === 'top' ? 'bottom' : v === 'bottom' ? 'top' : 'middle';
+  let widest = 0;
   lines.forEach((line, i) => {
+    widest = Math.max(widest, ctx.measureText(line).width);
     const y = v === 'top'
       ? -LINE_TEXT_GAP - (lines.length - 1 - i) * lineHeight
       : v === 'bottom' ? LINE_TEXT_GAP + i * lineHeight : (i - (lines.length - 1) / 2) * lineHeight;
@@ -97,15 +163,25 @@ export function drawLineText(ctx: CanvasRenderingContext2D, style: DrawingStyle,
     }
   });
   ctx.restore();
+  const height = lines.length * lineHeight;
+  return {
+    x: at.x,
+    y: at.y,
+    angle,
+    left: inset - (align === 'left' ? 0 : align === 'right' ? widest : widest / 2),
+    top: v === 'top' ? -LINE_TEXT_GAP - height : v === 'bottom' ? LINE_TEXT_GAP : -height / 2,
+    width: widest,
+    height,
+  };
 }
 
 /**
  * A box's text (`style.text`) inside it: on its left, its middle or its
  * right (`textAlign`), at its top, its middle or its bottom (`textVAlign`).
  */
-export function drawBoxText(ctx: CanvasRenderingContext2D, style: DrawingStyle, box: Rect): void {
+export function drawBoxText(ctx: CanvasRenderingContext2D, style: DrawingStyle, box: Rect): TextHitBox | null {
   const lines = textLines(style);
-  if (lines.length === 0) return;
+  if (lines.length === 0) return null;
   ctx.save();
   const lineHeight = setFont(ctx, style);
   const align = style.textAlign ?? 'center';
@@ -115,6 +191,12 @@ export function drawBoxText(ctx: CanvasRenderingContext2D, style: DrawingStyle, 
   const top = v === 'top' ? box.y + PAD_Y : v === 'bottom' ? box.y + box.height - PAD_Y - height : box.y + (box.height - height) / 2;
   ctx.textAlign = align;
   ctx.textBaseline = 'top';
-  lines.forEach((line, i) => fillTextWithHalo(ctx, line, x, top + i * lineHeight));
+  let widest = 0;
+  lines.forEach((line, i) => {
+    widest = Math.max(widest, ctx.measureText(line).width);
+    fillTextWithHalo(ctx, line, x, top + i * lineHeight);
+  });
   ctx.restore();
+  const left = align === 'left' ? x : align === 'right' ? x - widest : x - widest / 2;
+  return { x: 0, y: 0, angle: 0, left, top, width: widest, height };
 }

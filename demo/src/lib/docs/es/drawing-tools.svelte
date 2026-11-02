@@ -86,7 +86,7 @@ chart.addDrawing({
 chart.addDrawing({ type: 'verticalLine', anchors: [{ time: t3, price: 0 }], options: { showTime: true } })
 chart.addDrawing({ type: 'fibRetracement', anchors: [a, b], options: { trendLine: false, oneColor: true } })`}</code></pre>
 <p>
-  Una línea horizontal y un rayo horizontal ocultan su precio con <code>showPrice: false</code>. Una línea vertical muestra la hora de su barra con <code>showTime: true</code>, escrita como la escribe la cruz. Un rectángulo tiene ocho controles: uno en cada esquina y uno en el centro de cada lado, que mueve solo ese lado. Un retroceso y una extensión de Fibonacci dibujan una línea discontinua por sus puntos (<code>trendLine</code>, activada por defecto) y dibujan todos sus niveles en el color del dibujo con <code>oneColor</code>.
+  Una línea horizontal y un rayo horizontal ocultan su precio con <code>showPrice: false</code>. Una línea vertical muestra la hora de su barra con <code>showTime: true</code>, escrita como la escribe la cruz. Un rectángulo tiene ocho controles: uno en cada esquina y uno en el centro de cada lado, que mueve solo ese lado. Un retroceso y una extensión de Fibonacci dibujan una línea discontinua por sus puntos (<code>trendLine</code>, activada por defecto) y dibujan todos sus niveles en el color del dibujo con <code>oneColor</code>. Un clic en las palabras también selecciona la línea o el rectángulo.
 </p>
 
 <h2>Configuración</h2>
@@ -209,7 +209,7 @@ chart.copyDrawings()                 // los seleccionados (Ctrl+C)
 chart.pasteDrawings()                // Ctrl+V, aquí o en otro gráfico de la página
 chart.canPasteDrawings()             // si hay algo que pegar`}</code></pre>
 <p>Al hacer clic en un dibujo de un grupo se selecciona todo el grupo.</p>
-<p>En el árbol de objetos del widget, un clic en el nombre de un dibujo lo selecciona y un doble clic lo renombra. Su fila lo clona, y su asa lo arrastra al lugar de otra fila en el orden; las flechas sobre el asa lo mueven un lugar.</p>
+<p>En el árbol de objetos del widget los dibujos aparecen según se apilan, el de arriba primero. Un clic en el nombre de un dibujo lo selecciona y un doble clic lo renombra. Su fila lo clona, y su asa lo arrastra al lugar de otra fila; las flechas sobre el asa lo mueven una fila arriba o abajo en la lista y en el apilado a la vez.</p>
 
 <h2>Borrador, zoom e imán</h2>
 <pre><code>{`chart.setEraserMode(true)          // cada clic sobre un dibujo lo elimina, hasta pulsar Escape
@@ -224,6 +224,7 @@ chart.setDrawingMagnetMode('strong') // 'off' | 'weak' | 'strong'`}</code></pre>
   <li>Mantén <kbd>Shift</kbd> al dibujar o arrastrar un control para que la línea quede horizontal, vertical o a 45° en pantalla. En una zona vacía del gráfico, <kbd>Shift</kbd> + arrastrar sigue midiendo. Vale para líneas y trazados; un rectángulo, el ancho de un canal o el punto de un pitchfork quedan libres.</li>
   <li><kbd>←</kbd> <kbd>→</kbd> <kbd>↑</kbd> <kbd>↓</kbd> mueven los dibujos seleccionados una barra a los lados o un píxel arriba o abajo; con <kbd>Shift</kbd>, diez. Una serie de pulsaciones es un solo paso de deshacer, y los dibujos bloqueados no se mueven.</li>
   <li><kbd>Ctrl</kbd>/<kbd>⌘</kbd> + arrastrar sobre un dibujo saca una copia (de toda la selección si el dibujo está en ella), en un solo paso de deshacer. <kbd>Ctrl</kbd>/<kbd>⌘</kbd> + clic sigue añadiéndolo a la selección o quitándolo, y <kbd>Ctrl</kbd>/<kbd>⌘</kbd> + arrastrar en una zona vacía dibuja un cuadro de selección. Sobre un control del dibujo seleccionado, <kbd>Ctrl</kbd>/<kbd>⌘</kbd> + arrastrar lo reforma con el imán invertido.</li>
+  <li><kbd>Escape</kbd> mientras se arrastra un dibujo cancela el arrastre: un dibujo movido o reformado vuelve a donde estaba, y una copia que se estaba sacando desaparece, sin dejar nada que deshacer.</li>
 </ul>
 
 <h2>Teclado</h2>

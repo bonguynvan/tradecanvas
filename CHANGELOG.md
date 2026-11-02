@@ -2,6 +2,25 @@
 
 ## Unreleased
 
+### Drawings
+
+- **A click on a line's words picks it** (`@tradecanvas/core`, `@tradecanvas/chart`).
+  - These drawings are picked by a click on their words as well as on the line: a trend line, ray, extended, info or angle line, arrow, and horizontal or vertical line.
+  - A rectangle with no fill is picked by a click on its words inside it.
+  - A tap on a phone works the same way.
+  - The toolbar over a selected line keeps clear of the words, so a press on them grabs the line.
+- **Escape calls a drag off** (`@tradecanvas/core`).
+  - While a drawing is moved or reshaped, Escape puts it back where it was.
+  - A copy being dragged out with Ctrl or ⌘ goes.
+  - Nothing is left to undo, and moving on before letting go moves nothing.
+- **The object tree lists the top drawing first** (`@tradecanvas/chart`).
+  - The widget's object tree lists the drawings as they stack, the one on top first.
+  - The arrow keys on a grip move a drawing one row up or down the list and the stack together.
+
+## 1.67.0 (2026-11-02)
+
+React, Vue and Svelte components: 1.3.59.
+
 ### Widget
 
 - **The widget fits wide screens** (`@tradecanvas/chart`). A 4K screen is no longer all small print.

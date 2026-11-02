@@ -85,7 +85,7 @@ chart.addDrawing({
 chart.addDrawing({ type: 'verticalLine', anchors: [{ time: t3, price: 0 }], options: { showTime: true } })
 chart.addDrawing({ type: 'fibRetracement', anchors: [a, b], options: { trendLine: false, oneColor: true } })`}</code></pre>
 <p>
-  Đường ngang và tia ngang ẩn giá bằng <code>showPrice: false</code>. Đường dọc hiện thời gian của nến bằng <code>showTime: true</code>, viết như crosshair viết. Hình chữ nhật có tám tay nắm: mỗi góc một cái và giữa mỗi cạnh một cái, kéo cạnh đó riêng. Fibonacci thoái lui và mở rộng vẽ một đường đứt nét qua các điểm của nó (<code>trendLine</code>, bật sẵn) và vẽ mọi mức bằng màu của hình vẽ với <code>oneColor</code>.
+  Đường ngang và tia ngang ẩn giá bằng <code>showPrice: false</code>. Đường dọc hiện thời gian của nến bằng <code>showTime: true</code>, viết như crosshair viết. Hình chữ nhật có tám tay nắm: mỗi góc một cái và giữa mỗi cạnh một cái, kéo cạnh đó riêng. Fibonacci thoái lui và mở rộng vẽ một đường đứt nét qua các điểm của nó (<code>trendLine</code>, bật sẵn) và vẽ mọi mức bằng màu của hình vẽ với <code>oneColor</code>. Nhấp vào chữ cũng chọn được đường hoặc hình chữ nhật đó.
 </p>
 
 <h2>Cài đặt</h2>
@@ -205,7 +205,7 @@ chart.copyDrawings()                 // những hình đang chọn (Ctrl+C)
 chart.pasteDrawings()                // Ctrl+V, tại đây hoặc trên biểu đồ khác trong trang
 chart.canPasteDrawings()             // có gì để dán hay không`}</code></pre>
 <p>Bấm vào một hình vẽ trong nhóm sẽ chọn cả nhóm.</p>
-<p>Trong cây đối tượng của widget, nhấp vào tên một hình vẽ để chọn nó, nhấp đúp để đổi tên. Hàng của nó có nút nhân bản, và tay kéo của nó kéo hình vẽ tới vị trí của một hàng khác trong thứ tự; phím mũi tên trên tay kéo dời nó một bậc.</p>
+<p>Trong cây đối tượng của widget, các hình vẽ được liệt kê theo thứ tự chồng lớp, hình nằm trên cùng đứng đầu. Nhấp vào tên một hình vẽ để chọn nó, nhấp đúp để đổi tên. Hàng của nó có nút nhân bản, và tay kéo của nó kéo hình vẽ tới vị trí của một hàng khác; phím mũi tên trên tay kéo dời nó lên hoặc xuống một hàng, trong danh sách và trong thứ tự lớp cùng lúc.</p>
 
 <h2>Tẩy, phóng to và nam châm</h2>
 <pre><code>{`chart.setEraserMode(true)          // mỗi lần bấm vào một hình vẽ sẽ xoá nó, cho đến khi nhấn Escape
@@ -220,6 +220,7 @@ chart.setDrawingMagnetMode('strong') // 'off' | 'weak' | 'strong'`}</code></pre>
   <li>Giữ <kbd>Shift</kbd> khi vẽ hoặc kéo tay nắm để đường nằm ngang, thẳng đứng hoặc nghiêng 45° trên màn hình. Trên vùng trống của biểu đồ, <kbd>Shift</kbd> + kéo vẫn là đo. Điều này áp dụng cho đường thẳng và đường nhiều điểm; hình chữ nhật, độ rộng kênh hay điểm của pitchfork vẫn tự do.</li>
   <li><kbd>←</kbd> <kbd>→</kbd> <kbd>↑</kbd> <kbd>↓</kbd> di chuyển các hình vẽ đang chọn một nến sang ngang hoặc một pixel lên xuống; kèm <kbd>Shift</kbd> thì mười. Nhấn liền nhiều lần chỉ là một bước hoàn tác, và hình vẽ đã khóa không di chuyển.</li>
   <li><kbd>Ctrl</kbd>/<kbd>⌘</kbd> + kéo trên một hình vẽ kéo ra một bản sao (của cả vùng chọn nếu hình vẽ nằm trong đó), một bước hoàn tác. <kbd>Ctrl</kbd>/<kbd>⌘</kbd> + nhấp vẫn thêm nó vào vùng chọn hoặc bỏ ra, và <kbd>Ctrl</kbd>/<kbd>⌘</kbd> + kéo trên vùng trống vẫn vẽ khung chọn. Trên tay nắm của hình vẽ đang chọn, <kbd>Ctrl</kbd>/<kbd>⌘</kbd> + kéo thì nắn lại hình đó với nam châm được lật.</li>
+  <li><kbd>Escape</kbd> khi đang kéo một hình vẽ thì hủy thao tác kéo: hình đang di chuyển hoặc đang nắn quay về chỗ cũ, bản sao đang kéo ra thì bị bỏ, không để lại bước hoàn tác nào.</li>
 </ul>
 
 <h2>Bàn phím</h2>
