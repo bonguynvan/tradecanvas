@@ -58,8 +58,8 @@ export interface TextHitBox {
   height: number;
 }
 
-/** Most drawings' text boxes kept; past it the cache starts again (a host that makes thousands). */
-const MAX_TEXT_BOXES = 2000;
+/** Most drawings' text boxes kept; past it the one drawn longest ago goes. */
+const MAX_TEXT_BOXES = 10_000;
 
 /** Each drawing's text box as last drawn, by id: a click on the words picks the drawing. */
 export class TextHitCache {
@@ -70,7 +70,9 @@ export class TextHitCache {
       this.boxes.delete(id);
       return;
     }
-    if (this.boxes.size >= MAX_TEXT_BOXES && !this.boxes.has(id)) this.boxes.clear();
+    // Set again, an entry moves to the newest end; a full cache lets the oldest go (a removed drawing's, in time).
+    this.boxes.delete(id);
+    if (this.boxes.size >= MAX_TEXT_BOXES) this.boxes.delete(this.boxes.keys().next().value!);
     this.boxes.set(id, box);
   }
 

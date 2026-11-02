@@ -20,6 +20,8 @@ export class TrendLineTool extends DrawingBase {
   }
 
   render(ctx: CanvasRenderingContext2D, state: DrawingState, viewport: ViewportState, selected: boolean): void {
+    // Words not drawn this time (no text, the line off the plot or its points together) are not there to click.
+    this.texts.set(state.id, null);
     if (state.anchors.length < 2) return;
     const [p1, p2] = this.segment(state, viewport);
     this.applyLineStyle(ctx, state.style);

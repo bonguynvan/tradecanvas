@@ -5,6 +5,8 @@ import { TrendLineTool } from '../tools/TrendLine.js';
 import { HorizontalLineTool } from '../tools/HorizontalLine.js';
 import { VerticalLineTool } from '../tools/VerticalLine.js';
 import { RectangleTool } from '../tools/Rectangle.js';
+import { RayTool } from '../tools/Ray.js';
+import { TextHitCache } from '../tools/lineText.js';
 import { DrawingManager } from '../DrawingManager.js';
 import { registerBuiltInDrawingTools } from '../tools/index.js';
 import { UndoRedoManager } from '../../features/UndoRedoManager.js';
@@ -126,5 +128,42 @@ describe('the box round a line\'s words', () => {
     expect(box.y).toBeLessThan(mid.y);
     expect(box.width).toBeGreaterThan(0);
     expect(box.height).toBeGreaterThan(0);
+  });
+});
+
+describe('the words\' boxes kept right', () => {
+  it('forget a line\'s words once it is drawn with none to show (its points on top of each other)', () => {
+    const tool = new RayTool();
+    const shown = drawing('ray', [{ time: 10, price: 50 }, { time: 30, price: 50 }], { id: 'r', style: { ...base, text: 'Gone soon', textAlign: 'center' } });
+    tool.render(recordingCtx().ctx, shown, unitViewport, false);
+    const words = tool.textBox!(shown, unitViewport)!;
+    const at = { x: words.x + words.width / 2, y: words.y + words.height / 2 };
+    const collapsed = { ...shown, anchors: [{ time: 10, price: 50 }, { time: 10, price: 50 }] };
+    tool.render(recordingCtx().ctx, collapsed, unitViewport, false);
+    expect(tool.hitTest(at, collapsed, unitViewport, 2)).toBe(false);
+    expect(tool.textBox!(collapsed, unitViewport)).toBeNull();
+  });
+
+  it('keep every drawing\'s words in a chart of thousands', () => {
+    const cache = new TextHitCache();
+    const box = { x: 0, y: 0, angle: 0, left: 0, top: 0, width: 10, height: 10 };
+    for (let i = 0; i < 3000; i++) cache.set(`d${i}`, box);
+    expect(cache.hit('d0', { x: 5, y: 5 }, 0)).toBe(true);
+    expect(cache.hit('d2999', { x: 5, y: 5 }, 0)).toBe(true);
+  });
+});
+
+describe('Escape on a copy being dragged out', () => {
+  it('gives the selection back to the drawings it was copied from', () => {
+    const manager = new DrawingManager();
+    registerBuiltInDrawingTools(manager);
+    manager.setUndoRedoManager(new UndoRedoManager());
+    manager.setDrawings([drawing('trendLine', [{ time: 10, price: 30 }, { time: 30, price: 70 }], { id: 'a' })]);
+    manager.select('a');
+    manager.beginCopyDrag({ x: x(20), y: y(50) }, unitViewport);
+    manager.onPointerMove({ x: x(20), y: y(50) - 30 }, unitViewport);
+    manager.onKeyDown('Escape');
+    manager.onPointerUp();
+    expect(manager.getSelectedDrawingIds()).toEqual(['a']);
   });
 });

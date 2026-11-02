@@ -20,6 +20,8 @@ export class InfoLineTool extends DrawingBase {
   descriptor = { type: 'infoLine' as const, name: 'Info Line', requiredAnchors: 2, text: true };
 
   render(ctx: CanvasRenderingContext2D, state: DrawingState, viewport: ViewportState, selected: boolean): void {
+    // Words not drawn this time (no text, the line off the plot or its points together) are not there to click.
+    this.texts.set(state.id, null);
     if (state.anchors.length < 2) return;
     const a = this.anchorToPixel(state.anchors[0], viewport);
     const b = this.anchorToPixel(state.anchors[1], viewport);

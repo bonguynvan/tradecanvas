@@ -139,6 +139,8 @@ export class DrawingManager {
   private pendingCopy: { pos: Point; id: string } | null = null;
   /** The copies a Ctrl/⌘-drag is moving; made in the undo history when it ends. */
   private copies: string[] | null = null;
+  /** What was selected when a copy-drag began: Escape gives it back. */
+  private copiedFrom: string[] = [];
   /** Each copy's original anchors, to tell a copy dragged back onto its original. */
   private copySources = new Map<string, AnchorPoint[]>();
   /** The last arrow press: to merge a run of them into one undo step. */
@@ -872,6 +874,7 @@ export class DrawingManager {
     const copies = this.copies;
     if (!copies) return;
     this.copies = null;
+    this.copySources = new Map();
     this.drag.end();
     this.drawings = this.drawings.filter((d) => !copies.includes(d.id));
     this.deselect(copies);
@@ -897,6 +900,7 @@ export class DrawingManager {
     this.copySources = new Map(copies.map((c, i) => [c.id, sources[i].anchors.map((a) => ({ ...a }))]));
     this.drawings = [...this.drawings, ...copies];
     this.copies = copies.map((c) => c.id);
+    this.copiedFrom = this.getSelectedDrawingIds();
     this.selection.only(copies[0].id, this.copies.slice(1));
     this.beginMove(pos, copies[0]);
     this.requestRender?.();
@@ -1029,7 +1033,13 @@ export class DrawingManager {
   private escape(): boolean {
     // A drag under way is called off: a copy being dragged out goes, a moved or reshaped drawing goes back.
     if (this.pendingCopy || this.copies) {
+      const before = this.copies ? this.copiedFrom.filter((id) => this.isShown(id)) : [];
       this.dropCopyGesture();
+      // The drawings it was copied from are selected again, as before the drag.
+      if (before.length > 0) {
+        this.selection.only(before[0], before.slice(1));
+        this.state = 'selected';
+      }
       this.requestRender?.();
       return true;
     }

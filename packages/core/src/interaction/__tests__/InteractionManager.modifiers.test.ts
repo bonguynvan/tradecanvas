@@ -96,3 +96,27 @@ describe('InteractionManager — Shift and Ctrl/⌘ for the drawings', () => {
     expect(calls).toEqual(['copy 120', 'copy 300', 'box']);
   });
 });
+
+describe('InteractionManager — Escape during a drawing drag', () => {
+  it('takes the grabbing hand away with the drag', () => {
+    let dragging = true;
+    const dm = {
+      setModifiers: () => {},
+      onPointerDown: () => true,
+      onPointerMove: () => false,
+      onPointerUp: () => false,
+      onKeyDown: (key: string) => { if (key === 'Escape') dragging = false; return key === 'Escape'; },
+      isDragging: () => dragging,
+      isEraser: () => false,
+      getActiveTool: () => null,
+      hoverCursorAt: () => null,
+      drawingAt: () => null,
+      justFinished: () => false,
+    } as unknown as DrawingManager;
+    im.setDrawingManager(dm, () => ({ chartRect: { x: 0, y: 0, width: 400, height: 300 } } as ViewportState));
+    el.dispatchEvent(at('mousedown', 120, { button: 0, buttons: 1 }));
+    expect(el.style.cursor).toBe('grabbing');
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    expect(el.style.cursor).not.toBe('grabbing');
+  });
+});

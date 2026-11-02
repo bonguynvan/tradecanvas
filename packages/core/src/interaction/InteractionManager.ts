@@ -818,7 +818,12 @@ export class InteractionManager {
       // never to a text field being typed in. Escape still cancels a tool
       // picked from outside the chart.
       if (e.key !== 'Escape' && !this.ownsShortcuts()) return;
-      if (this.drawingManager?.onKeyDown(e.key, e.ctrlKey || e.metaKey, e.shiftKey)) e.preventDefault();
+      const dragging = this.drawingManager?.isDragging() ?? false;
+      if (this.drawingManager?.onKeyDown(e.key, e.ctrlKey || e.metaKey, e.shiftKey)) {
+        e.preventDefault();
+        // A drag called off leaves no grabbing hand behind.
+        if (dragging && e.key === 'Escape') setCursor(idleCursor());
+      }
     };
 
     const onContextMenu = (e: MouseEvent) => {

@@ -16,6 +16,8 @@ export class VerticalLineTool extends DrawingBase {
   };
 
   render(ctx: CanvasRenderingContext2D, state: DrawingState, viewport: ViewportState, selected: boolean): void {
+    // Words not drawn this time (no text, the line off the plot or its points together) are not there to click.
+    this.texts.set(state.id, null);
     if (state.anchors.length < 1) return;
     const p = this.anchorToPixel(state.anchors[0], viewport);
     const { chartRect } = viewport;
