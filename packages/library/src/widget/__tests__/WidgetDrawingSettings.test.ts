@@ -109,6 +109,11 @@ describe('WidgetDrawingSettings: tabs', () => {
     expect(tabNames()).toEqual(['Style', 'Visibility']);
   });
 
+  it('leaves Coordinates out for a drawing kept to the screen: its points are no bars or prices', () => {
+    dialog.open({ ...fib(), text: true, coordinates: false });
+    expect(tabNames()).toEqual(['Style', 'Text', 'Visibility']);
+  });
+
   it('moves between tabs with the arrow keys', () => {
     dialog.open(fib());
     tab('Style').dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));

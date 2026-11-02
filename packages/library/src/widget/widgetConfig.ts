@@ -172,6 +172,10 @@ export const DRAWING_TOOL_GROUPS: DrawingToolGroupDef[] = [
       { label: 'Flag Mark', value: 'flag' as DrawingToolType },
       { label: 'Arrow Mark', value: 'arrowMark' as DrawingToolType },
       { label: 'Icon', value: 'icon' as DrawingToolType },
+      { label: 'Signpost', value: 'signpost' as DrawingToolType },
+      { label: 'Balloon', value: 'balloon' as DrawingToolType },
+      { label: 'Anchored Text', value: 'anchoredText' as DrawingToolType },
+      { label: 'Anchored Note', value: 'anchoredNote' as DrawingToolType },
     ],
   },
 ];

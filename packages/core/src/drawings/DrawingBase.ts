@@ -11,6 +11,7 @@ import type {
 } from '@tradecanvas/commons';
 import { crispX, crispY } from '../charts/pixelGrid.js';
 import { drawingHandleFill } from './tools/labels.js';
+import { isScreenAnchored, pixelToScreenPoint, screenPointToPixel } from './screenAnchors.js';
 import { priceToY, resolveBarIndex, timeToX, xToTime, yToPrice } from '../viewport/ScaleMapping.js';
 
 /**
@@ -168,12 +169,15 @@ export abstract class DrawingBase implements DrawingPlugin {
   }
 
   protected anchorToPixel(anchor: AnchorPoint, viewport: ViewportState): Point {
+    // A tool kept to the screen holds its points as shares of the plot.
+    if (isScreenAnchored(this.descriptor)) return screenPointToPixel(anchor, viewport);
     const x = timeToX(anchor.time, viewport);
     const y = priceToY(anchor.price, viewport);
     return { x, y };
   }
 
   protected pixelToAnchor(point: Point, viewport: ViewportState): AnchorPoint {
+    if (isScreenAnchored(this.descriptor)) return pixelToScreenPoint(point, viewport);
     const time = xToTime(point.x, viewport);
     const price = yToPrice(point.y, viewport);
     return { time, price };

@@ -114,8 +114,6 @@ import {
   xToBarIndex,
   xToTime,
   yToPrice,
-  timeToX,
-  priceToY,
   PriceAxisAddButton,
   PRICE_AXIS_ADD_STRIP,
   findDominantSwing,
@@ -5656,8 +5654,8 @@ export class Chart {
     let top = Infinity;
     let bottom = -Infinity;
     for (const anchor of drawing.anchors) {
-      const x = timeToX(anchor.time, vs);
-      const y = priceToY(anchor.price, vs);
+      // A drawing kept to the screen holds its points as shares of the plot.
+      const { x, y } = this.drawingManager.anchorPoint(drawing.type, anchor, vs);
       left = Math.min(left, x);
       right = Math.max(right, x);
       top = Math.min(top, y);

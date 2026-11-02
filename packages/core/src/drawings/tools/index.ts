@@ -34,6 +34,7 @@ export { XABCDPatternTool, ABCDPatternTool, HeadAndShouldersTool } from './patte
 export { CircleTool } from './Circle.js';
 export { DateAndPriceRangeTool } from './DateAndPriceRange.js';
 export { CyclicLinesTool } from './CyclicLines.js';
+export { SignpostTool, BalloonTool, AnchoredTextTool, AnchoredNoteTool } from './markers.js';
 export { PriceLabelTool } from './PriceLabel.js';
 export { NoteTool, CalloutTool, FlagTool, ArrowMarkTool, IconTool, ICON_GLYPHS, type IconGlyph } from './annotations.js';
 export { BrushTool, HighlighterTool, PathTool, PolylineTool, CurveTool, ArcTool, curvePoints, arcPoints } from './freehand.js';
@@ -84,6 +85,7 @@ import { DateAndPriceRangeTool } from './DateAndPriceRange.js';
 import { CyclicLinesTool } from './CyclicLines.js';
 import { PriceLabelTool } from './PriceLabel.js';
 import { NoteTool, CalloutTool, FlagTool, ArrowMarkTool, IconTool } from './annotations.js';
+import { SignpostTool, BalloonTool, AnchoredTextTool, AnchoredNoteTool } from './markers.js';
 import { BrushTool, HighlighterTool, PathTool, PolylineTool, CurveTool, ArcTool } from './freehand.js';
 import { FibCirclesTool, FibArcsTool, FibWedgeTool, FibSpiralTool, PitchfanTool, GannSquareTool } from './fibGeometry.js';
 import {
@@ -139,6 +141,10 @@ export function registerBuiltInDrawingTools(manager: DrawingManager): void {
   manager.register(new FlagTool());
   manager.register(new ArrowMarkTool());
   manager.register(new IconTool());
+  manager.register(new SignpostTool());
+  manager.register(new BalloonTool());
+  manager.register(new AnchoredTextTool());
+  manager.register(new AnchoredNoteTool());
   manager.register(new BrushTool());
   manager.register(new HighlighterTool());
   manager.register(new PathTool());

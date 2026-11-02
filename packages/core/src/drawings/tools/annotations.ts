@@ -1,4 +1,4 @@
-import type { DrawingState, Point, ViewportState } from '@tradecanvas/commons';
+import type { DrawingDescriptor, DrawingState, Point, ViewportState } from '@tradecanvas/commons';
 import { DrawingBase } from '../DrawingBase.js';
 import { resolveAnnotationText } from './TextAnnotation.js';
 import { BoxCache, boxFont, drawTextBox, inRect, textLook, type Rect } from './textBox.js';
@@ -29,14 +29,14 @@ const PIN_HEIGHT = 16;
 
 /** A note pinned to a bar and price: a pin, and its text in a box beside it. */
 export class NoteTool extends DrawingBase {
-  descriptor = {
-    type: 'note' as const,
+  descriptor: DrawingDescriptor = {
+    type: 'note',
     name: 'Note',
     requiredAnchors: 1,
     text: true,
     fill: true,
     options: {
-      showText: { kind: 'boolean' as const, label: 'Show text', default: true },
+      showText: { kind: 'boolean', label: 'Show text', default: true },
     },
   };
 

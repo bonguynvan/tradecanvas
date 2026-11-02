@@ -2430,6 +2430,7 @@ export class ChartWidget {
       textLayout: TEXT_LAYOUTS[drawing.type],
       textColor: TEXT_COLORS[drawing.type],
       textPlace: TEXT_PLACES.has(drawing.type),
+      coordinates: descriptor.anchoring !== 'screen',
       intervals: drawing.intervals ?? null,
     }, how);
   }

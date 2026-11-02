@@ -123,6 +123,15 @@ export function textBoxRect(measure: (text: string) => number, lines: readonly s
   return { x, y, width, height };
 }
 
+/** The size the box of `text` takes under `look`, before it is drawn (to place it by its middle or foot). */
+export function measureTextBox(ctx: CanvasRenderingContext2D, text: string, look: TextBoxLook): { width: number; height: number } {
+  const font = boxFont(look.fontSize, look.bold, look.italic);
+  ctx.font = font;
+  const measure = (t: string) => ctx.measureText(t).width;
+  const { width, height } = textBoxRect(measure, wrapCached(measure, text, look.maxWidth, font, look.maxLines ?? MAX_LINES), 0, 0, look.fontSize);
+  return { width, height };
+}
+
 /** Draw wrapped text in a box with its top-left at (x, y). Returns the box. */
 export function drawTextBox(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, look: TextBoxLook): Rect {
   const font = boxFont(look.fontSize, look.bold, look.italic);
