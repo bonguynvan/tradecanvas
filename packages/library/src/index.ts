@@ -64,6 +64,7 @@ export type {
   TradeZoneAddPayload,
   TradeZoneRemovePayload,
   DrawingToolType,
+  BuiltInDrawingToolType,
   DrawingState,
   DrawingStyle,
   DrawingPlugin,

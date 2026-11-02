@@ -144,6 +144,7 @@ chart.ungroupDrawings(group)
 
 chart.getSelectedDrawingIds()
 chart.removeDrawings(ids)            // một bước hoàn tác
+chart.removeAll('drawings')         // mọi hình vẽ; 'indicators', hoặc 'all' cho cả hai: một bước hoàn tác, hình vẽ đã khoá thì giữ lại
 chart.setDrawingsVisible(ids, false)
 chart.setDrawingsLocked(ids, true)
 

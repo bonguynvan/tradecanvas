@@ -98,6 +98,10 @@ class TargetLine extends DrawingBase {
 registerPlugin({ kind: 'drawing', plugin: new TargetLine() })
 chart.setDrawingTool('targetLine')`}</code></pre>
 <p>
+  工具的名称在图表接受工具名的地方（<code>setDrawingTool</code>、<code>addDrawing</code>…）都能用，在 TypeScript 中也一样：
+  <code>DrawingToolType</code> 接受任何名称，同时仍会补全内置工具，内置工具列在 <code>BuiltInDrawingToolType</code> 中。
+</p>
+<p>
   描述对象还可以说明工具的绘制方式（<code>creation</code>：
   <code>'clicks'</code>、<code>'freehand'</code> 或 <code>'path'</code>，并可配合
   <code>maxAnchors</code>），以及对话框是否提供填充（<code>fill</code>）或文本

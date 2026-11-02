@@ -2,7 +2,8 @@ import type { Point, ViewportState } from './rendering.js';
 import type { OHLCBar } from './ohlc.js';
 import type { IndicatorIntervals } from './indicator.js';
 
-export type DrawingToolType =
+/** The drawing tools TradeCanvas ships. */
+export type BuiltInDrawingToolType =
   | 'trendLine' | 'horizontalLine' | 'horizontalRay' | 'verticalLine' | 'ray' | 'extendedLine'
   | 'crossLine' | 'trendAngle' | 'infoLine'
   | 'parallelChannel' | 'regressionChannel'
@@ -23,6 +24,12 @@ export type DrawingToolType =
   | 'threeDrives' | 'cypherPattern'
   | 'timeCycles' | 'sineLine'
   | 'forecast' | 'projection' | 'barsPattern';
+
+/**
+ * A drawing tool's name: a built-in one, or the name a plugin registered
+ * (`DrawingPlugin.descriptor.type`). Built-in names still complete in an editor.
+ */
+export type DrawingToolType = BuiltInDrawingToolType | (string & {});
 
 export interface AnchorPoint {
   time: number;

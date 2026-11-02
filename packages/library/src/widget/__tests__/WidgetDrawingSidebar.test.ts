@@ -22,7 +22,7 @@ beforeEach(() => {
   sidebar = new WidgetDrawingSidebar(host, { drawingToolGroups: DRAWING_TOOL_GROUPS }, {
     onDrawingTool: (tool) => { picked.push(tool); },
     onCancelDrawing: () => {},
-    onClearDrawings: () => {},
+    onClear: () => {},
   });
   sidebar.update({ activeTool: null, magnetEnabled: false, stayInDrawing: false } as unknown as WidgetState);
 });
@@ -144,7 +144,7 @@ describe('pinning from a tool menu', () => {
   it('has a star on each row to pin with, and no tooltip on the rows themselves', () => {
     sidebar.destroy();
     sidebar = new WidgetDrawingSidebar(host, { drawingToolGroups: DRAWING_TOOL_GROUPS }, {
-      onDrawingTool: () => {}, onCancelDrawing: () => {}, onClearDrawings: () => {},
+      onDrawingTool: () => {}, onCancelDrawing: () => {}, onClear: () => {},
       onToggleFavorite: () => {},
     });
     enter(wraps()[0]);
@@ -171,7 +171,7 @@ describe('sections', () => {
   it('draws no section dividers for groups without sections', () => {
     sidebar.destroy();
     sidebar = new WidgetDrawingSidebar(host, { drawingToolGroups: DRAWING_TOOL_GROUPS.map(({ section: _, ...g }) => g) }, {
-      onDrawingTool: () => {}, onCancelDrawing: () => {}, onClearDrawings: () => {},
+      onDrawingTool: () => {}, onCancelDrawing: () => {}, onClear: () => {},
     });
     const kids = [...host.querySelector('.tcw-sidebar')!.children];
     const firstGroup = kids.findIndex((el) => el.classList.contains('tcw-tool-group-wrap'));

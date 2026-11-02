@@ -16,6 +16,8 @@ export type ContextMenuEntry =
       checked?: boolean;
       radio?: boolean;
       shortcut?: string;
+      /** How many things it acts on ("Remove drawings 3"), at the row's end and read with its name. */
+      count?: number;
       submenu?: readonly ContextMenuEntry[];
       remove?: string;
     }
@@ -169,6 +171,22 @@ export class WidgetContextMenu {
   }
 
   /**
+   * Open beside `anchor` (a button of the drawing bar), level with its top:
+   * past its end edge, or before its start edge without room there; ending
+   * at its bottom when there is no room below.
+   */
+  openBeside(entries: readonly ContextMenuEntry[], anchor: HTMLElement, onPick: (id: string) => void): void {
+    const at = anchor.getBoundingClientRect();
+    const box = this.host.getBoundingClientRect();
+    // Starting past its right edge, or ending before its left one: right to left, the left first.
+    const right = at.right - box.left + MENU_GAP;
+    const left = at.left - box.left - MENU_GAP;
+    this.show(entries, { x: right, y: at.top - box.top, xBack: left, yBack: at.bottom - box.top, before: this.rtl() }, onPick, anchor, undefined, true);
+    // Safari doesn't focus a pressed button: the keyboard goes back to it all the same.
+    this.returnFocus = anchor;
+  }
+
+  /**
    * Close every menu open under `anchor`, and say whether one was. Its
    * button shows it open (aria-expanded), so a press on it closes it.
    */
@@ -314,8 +332,14 @@ export class WidgetContextMenu {
     return entry.remove ? this.removableRow(item, entry.remove) : item;
   }
 
-  /** The shortcut, or the mark of a submenu, at the row's end. */
+  /** The count, the shortcut, or the mark of a submenu, at the row's end. */
   private appendEnd(item: HTMLButtonElement, entry: MenuItem): void {
+    if (entry.count !== undefined) {
+      const count = document.createElement('span');
+      count.className = 'tcw-context-count';
+      count.textContent = String(entry.count);
+      item.appendChild(count);
+    }
     if (entry.shortcut) {
       // Named once, by aria-keyshortcuts: the key is for the eye.
       item.setAttribute('aria-keyshortcuts', entry.shortcut);

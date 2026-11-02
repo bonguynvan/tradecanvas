@@ -77,6 +77,7 @@
     <tr><td><code>updateIndicator(instanceId, params)</code></td><td>表示中のインジケーターを変更します。</td></tr>
     <tr><td><code>removeIndicator(instanceId)</code></td><td>削除して破棄します。</td></tr>
     <tr><td><code>removeIndicators(instanceIds)</code></td><td>複数をまとめて削除します（元に戻すは 1 回）。</td></tr>
+    <tr><td><code>removeAll(what?)</code></td><td>すべての描画（<code>'drawings'</code>）、すべてのインジケーター（<code>'indicators'</code>）、または両方（<code>'all'</code>）を削除します（元に戻すは 1 回）。ロックした描画は残ります。それぞれ削除した数を返します。</td></tr>
     <tr><td><code>updateIndicatorStyle(instanceId, style)</code></td><td>色、線の太さ、不透明度、そしてプロットごとの線種と表示（<code>plots: {`{ signal: { lineStyle: 'dashed' } }`}</code>）。</td></tr>
     <tr><td><code>setIndicatorDefaults(id, style | null)</code></td><td>これから追加する同じ種類のインジケーターの初期スタイル。</td></tr>
     <tr><td><code>setIndicatorIntervals(instanceId, intervals | null)</code> · <code>getIndicatorIntervals(instanceId)</code></td><td>表示する時間足（<code>{`{ minutes: false, hours: [1, 4] }`}</code>）。<code>null</code> ですべての時間足。レイアウトとともに保存。</td></tr>
@@ -529,7 +530,7 @@ widget.destroy()`}</code></pre>
     </td></tr>
     <tr><td>描画ツール</td><td>
       各グループのメニューにはツールのショートカット（Alt+T でトレンドライン）が書かれ、各行の星でそのツールを上部に固定できます。
-      下部には、描画スタイル、マグネット、消しゴム、範囲ズーム、描画モードの維持、すべてロック、すべて非表示、すべて消去があります。
+      下部には、描画スタイル、マグネット、消しゴム、範囲ズーム、描画モードの維持、すべてロック、すべて非表示、そしてゴミ箱ボタンがあります。ゴミ箱のメニューは描画、インジケーター、またはその両方を、それぞれの数を示して 1 回の元に戻す単位で削除します。
     </td></tr>
     <tr><td>ステータスバー</td><td>
       表示期間のプリセットと日付へ移動。市場の状態、接続、表示タイムゾーンの時計（クリックすると選べるタイムゾーンの一覧が開きます）、

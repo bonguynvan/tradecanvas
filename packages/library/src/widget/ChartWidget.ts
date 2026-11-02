@@ -291,6 +291,8 @@ export class ChartWidget {
   private drawingStyle: WidgetDrawingStyle | null = null;
   private drawingSettings: WidgetDrawingSettings | null = null;
   private drawingMenu: WidgetContextMenu | null = null;
+  /** The trash button's menu, made the first time it opens. */
+  private clearMenu: WidgetContextMenu | null = null;
   private selectionToolbar: WidgetSelectionToolbar | null = null;
   private selectionToolbarFrame: number | null = null;
   private chartMenu: WidgetContextMenu | null = null;
@@ -718,11 +720,7 @@ export class ChartWidget {
         onToggleEraser: () => this.chart.setEraserMode(!this.chart.isEraserMode()),
         onToggleZoomArea: () => this.chart.setZoomAreaMode(!this.chart.isZoomAreaMode()),
         onToggleFavorite: (tool) => this.handleToggleFavorite(tool),
-        onClearDrawings: () => {
-          this.chart.clearDrawings();
-          this.state = { ...this.state, activeTool: null };
-          this.updateUI();
-        },
+        onClear: (anchor) => this.openClearMenu(anchor),
         onToggleStyle: () => this.drawingStyle?.toggle(),
         onToggleStayInDrawing: () => this.handleToggleStayInDrawing(),
         onLockAll: (locked) => {
@@ -2123,6 +2121,7 @@ export class ChartWidget {
     this.drawingStyle?.destroy();
     this.drawingSettings?.destroy();
     this.drawingMenu?.destroy();
+    this.clearMenu?.destroy();
     this.selectionToolbar?.destroy();
     if (this.selectionToolbarFrame !== null) cancelAnimationFrame(this.selectionToolbarFrame);
     this.chartMenu?.destroy();
@@ -4337,6 +4336,8 @@ export class ChartWidget {
       { id: 'settings', label: this.t('action.settings'), category: 'action' },
       { id: 'autoFib', label: this.t('action.autoFib'), category: 'action' },
       { id: 'clearDrawings', label: this.t('action.clearDrawings'), category: 'action' },
+      { id: 'clearIndicators', label: this.t('clear.indicators'), category: 'action' },
+      { id: 'clearAll', label: this.t('clear.all'), category: 'action' },
       { id: 'hotkeys', label: this.t('hotkeys.title'), category: 'action', shortcut: this.keysShown('hotkeys.help', '?') },
     );
 
@@ -4373,6 +4374,33 @@ export class ChartWidget {
   private commandOn(id: string): boolean {
     const name = commandFeature(id);
     return name === undefined || this.featureState[name];
+  }
+
+  /**
+   * The trash button's menu: the drawings, the indicators, or both, each with
+   * how many would go (locked drawings stay). Nothing to remove, no menu; a
+   * second press closes it.
+   */
+  private openClearMenu(anchor: HTMLElement): void {
+    if (WidgetContextMenu.closeAnchoredTo(anchor)) return;
+    const drawings = this.chart.getDrawings().filter((d) => !d.locked).length;
+    const indicators = this.chart.getActiveIndicators().length;
+    const entries: ContextMenuEntry[] = [];
+    if (drawings > 0) entries.push({ id: 'drawings', label: this.t('clear.drawings'), icon: 'penLine', count: drawings });
+    if (indicators > 0) entries.push({ id: 'indicators', label: this.t('clear.indicators'), icon: 'trendingUp', count: indicators });
+    if (drawings > 0 && indicators > 0) entries.push('separator', { id: 'all', label: this.t('clear.all'), icon: 'trash', danger: true });
+    if (entries.length === 0) return;
+    this.clearMenu ??= new WidgetContextMenu(this.root, this.t('drawing.clearAll'));
+    this.clearMenu.openBeside(entries, anchor, (id) => this.removeAll(id as 'drawings' | 'indicators' | 'all'));
+  }
+
+  /** Remove the drawings, the indicators or both, as one undo step, and leave any drawing tool. */
+  private removeAll(what: 'drawings' | 'indicators' | 'all'): void {
+    this.chart.removeAll(what);
+    this.state = { ...this.state, activeTool: null };
+    this.updateUI();
+    this.refreshDrawingsState();
+    this.refreshObjects();
   }
 
   private handleAction(id: string): void {
@@ -4432,9 +4460,13 @@ export class ChartWidget {
         this.toggleSymbolInfo();
         break;
       case 'clearDrawings':
-        this.chart.clearDrawings();
-        this.state = { ...this.state, activeTool: null };
-        this.updateUI();
+        this.removeAll('drawings');
+        break;
+      case 'clearIndicators':
+        this.removeAll('indicators');
+        break;
+      case 'clearAll':
+        this.removeAll('all');
         break;
     }
   }

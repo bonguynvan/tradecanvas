@@ -100,6 +100,10 @@ class TargetLine extends DrawingBase {
 registerPlugin({ kind: 'drawing', plugin: new TargetLine() })
 chart.setDrawingTool('targetLine')`}</code></pre>
 <p>
+  Tên của công cụ dùng được ở mọi chỗ chart nhận tên công cụ (<code>setDrawingTool</code>, <code>addDrawing</code>…), cả trong TypeScript:
+  <code>DrawingToolType</code> nhận mọi tên mà vẫn gợi ý các công cụ có sẵn, liệt kê trong <code>BuiltInDrawingToolType</code>.
+</p>
+<p>
   Descriptor còn có thể cho biết công cụ được vẽ ra sao (<code>creation</code>:
   <code>'clicks'</code>, <code>'freehand'</code> hoặc <code>'path'</code>, kèm
   <code>maxAnchors</code>) và hộp thoại có cho chọn màu nền

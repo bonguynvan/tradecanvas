@@ -25,12 +25,18 @@ export class UndoRedoManager {
   private redoStack: UndoableAction[] = [];
   private maxHistory = 50;
   private onChange: (() => void) | null = null;
+  /** The steps pushed inside `group`, kept to become one. */
+  private grouped: UndoableAction[] | null = null;
 
   setOnChange(cb: () => void): void {
     this.onChange = cb;
   }
 
   push(action: UndoableAction): void {
+    if (this.grouped) {
+      this.grouped.push(action);
+      return;
+    }
     this.undoStack.push(action);
     if (this.undoStack.length > this.maxHistory) {
       this.undoStack.shift();
@@ -70,13 +76,37 @@ export class UndoRedoManager {
     this.onChange?.();
   }
 
-  /** The step an undo would take back, or null. */
+  /**
+   * Run `fn`, keeping every step it pushes as one: an undo takes them all
+   * back, a redo makes them all again. A group inside a group joins it.
+   * Returns what `fn` returns. When `fn` throws, what it changed before that
+   * is still kept as one step, and the error goes on.
+   */
+  group<T>(fn: () => T): T {
+    if (this.grouped) return fn();
+    const steps: UndoableAction[] = [];
+    this.grouped = steps;
+    try {
+      return fn();
+    } finally {
+      this.grouped = null;
+      if (steps.length === 1) this.push(steps[0]);
+      else if (steps.length > 1) this.push({ type: 'drawingBatch', before: null, after: null, actions: steps });
+    }
+  }
+
+  /** The step an undo would take back, or null; inside `group`, the group's last. */
   last(): UndoableAction | null {
+    if (this.grouped) return this.grouped[this.grouped.length - 1] ?? null;
     return this.undoStack[this.undoStack.length - 1] ?? null;
   }
 
   /** Forget the last step (nothing to redo after it either). */
   dropLast(): void {
+    if (this.grouped) {
+      this.grouped.pop();
+      return;
+    }
     if (this.undoStack.pop()) {
       this.redoStack.length = 0;
       this.onChange?.();
@@ -85,6 +115,12 @@ export class UndoRedoManager {
 
   /** Put `action` in place of the last step (a burst of edits as one step); nothing to redo after it. */
   replaceLast(action: UndoableAction): void {
+    if (this.grouped) {
+      // An empty group has no last step of its own: the step joins it.
+      if (this.grouped.length > 0) this.grouped[this.grouped.length - 1] = action;
+      else this.grouped.push(action);
+      return;
+    }
     if (this.undoStack.length === 0) {
       this.push(action);
       return;

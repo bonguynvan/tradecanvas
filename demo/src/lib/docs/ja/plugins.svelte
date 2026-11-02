@@ -100,6 +100,10 @@ class TargetLine extends DrawingBase {
 registerPlugin({ kind: 'drawing', plugin: new TargetLine() })
 chart.setDrawingTool('targetLine')`}</code></pre>
 <p>
+  ツールの名前は、チャートがツール名を受け取るところ（<code>setDrawingTool</code>、<code>addDrawing</code> など）で TypeScript でもそのまま使えます。
+  <code>DrawingToolType</code> はどんな名前も受け取り、組み込みツールの補完も残ります。組み込みツールは <code>BuiltInDrawingToolType</code> にあります。
+</p>
+<p>
   ディスクリプターでは、ツールの描き方（<code>creation</code>：
   <code>'clicks'</code>、<code>'freehand'</code>、<code>'path'</code>。
   <code>maxAnchors</code> も指定できます）と、ダイアログで塗りつぶし

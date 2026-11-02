@@ -148,6 +148,7 @@ chart.ungroupDrawings(group)
 
 chart.getSelectedDrawingIds()
 chart.removeDrawings(ids)            // un solo paso de deshacer
+chart.removeAll('drawings')         // todos los dibujos; 'indicators', o 'all' para ambos: un paso de deshacer, los dibujos bloqueados se quedan
 chart.setDrawingsVisible(ids, false)
 chart.setDrawingsLocked(ids, true)
 

@@ -149,6 +149,7 @@ const latestRsi = series[series.length - 1]?.value;
 
 chart.removeIndicator(rsi); // also removes `smoothed`, which reads from it
 chart.removeIndicators(chart.getActiveIndicators().map((i) => i.instanceId)); // several, one undo step
+chart.removeAll('indicators'); // or 'drawings', or 'all': everything of that kind, one undo step
 ```
 
 - Panel indicators may share a pane: `addIndicator('stochastic', {}, 'bottom', { pane: rsi })`.
@@ -201,6 +202,9 @@ with `updateDrawing(id, { intervals })`, null for all) shows only there: `isDraw
 Trend lines, rays and extended lines take a middle point and stats (`showPriceRange`,
 `showBarsRange`, `showDateRange`, `showAngle`, `alwaysShowStats`, `statsPosition`).
 `riskReward` is a Long/Short position sized from `accountSize` and `risk`.
+A tool of your own (`registerPlugin({ kind: 'drawing', plugin })`) is named by its
+`descriptor.type`, and that name types as a `DrawingToolType` wherever a tool's is taken
+(`setDrawingTool('targetLine')`, `addDrawing`); `BuiltInDrawingToolType` lists the built-in ones.
 Positions and orders get a tag at the right end of their lines (quantity, side, open profit;
 what a stop or a target would make) with × and ⇅ (`setTradingConfig({ lineButtons })`), and
 their prices on the axis; a press on an order's, a stop's or a target's tag drags its line.

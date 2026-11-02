@@ -2573,6 +2573,20 @@ export class Chart {
     return this.drawingManager.removeDrawings(ids);
   }
 
+  /**
+   * Remove every drawing (`'drawings'`), every indicator (`'indicators'`) or
+   * both (`'all'`, the default) as one undo step. Locked drawings stay, as
+   * they do when a selection is removed. Returns how many of each went.
+   */
+  removeAll(what: 'drawings' | 'indicators' | 'all' = 'all'): { drawings: number; indicators: number } {
+    return this.undoRedoManager.group(() => {
+      const drawings = what === 'indicators' ? 0 : this.removeDrawings(this.getDrawings().map((d) => d.id));
+      const ids = what === 'drawings' ? [] : this.getActiveIndicators().map((i) => i.instanceId);
+      if (ids.length > 0) this.removeIndicators(ids);
+      return { drawings, indicators: ids.length };
+    });
+  }
+
   /** A drawing tool's name, anchors, options and style fields; null for an unknown tool. */
   getDrawingToolDescriptor(type: DrawingToolType): DrawingDescriptor | null {
     const descriptor = this.drawingManager.getDescriptor(type);

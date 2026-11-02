@@ -140,6 +140,7 @@ chart.ungroupDrawings(group)
 
 chart.getSelectedDrawingIds()
 chart.removeDrawings(ids)            // 元に戻す操作は 1 回分
+chart.removeAll('drawings')         // すべての描画。'indicators'、または両方なら 'all'。元に戻すは 1 回、ロックした描画は残る
 chart.setDrawingsVisible(ids, false)
 chart.setDrawingsLocked(ids, true)
 

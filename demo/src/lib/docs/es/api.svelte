@@ -77,6 +77,7 @@
     <tr><td><code>updateIndicator(instanceId, params)</code></td><td>Modifica un indicador activo.</td></tr>
     <tr><td><code>removeIndicator(instanceId)</code></td><td>Lo quita y libera sus recursos.</td></tr>
     <tr><td><code>removeIndicators(instanceIds)</code></td><td>Quita varios, en un solo paso de deshacer.</td></tr>
+    <tr><td><code>removeAll(what?)</code></td><td>Quita todos los dibujos (<code>'drawings'</code>), todos los indicadores (<code>'indicators'</code>) o ambos (<code>'all'</code>), en un solo paso de deshacer; los dibujos bloqueados se quedan. Devuelve cuántos se quitaron de cada uno.</td></tr>
     <tr><td><code>updateIndicatorStyle(instanceId, style)</code></td><td>Colores, grosores, opacidad, y el trazo y la visibilidad de cada plot (<code>plots: {`{ signal: { lineStyle: 'dashed' } }`}</code>).</td></tr>
     <tr><td><code>setIndicatorDefaults(id, style | null)</code></td><td>Con qué estilo empiezan desde ahora los indicadores de un tipo.</td></tr>
     <tr><td><code>setIndicatorIntervals(instanceId, intervals | null)</code> · <code>getIndicatorIntervals(instanceId)</code></td><td>Las temporalidades en las que se muestra (<code>{`{ minutes: false, hours: [1, 4] }`}</code>); <code>null</code>: todas. Se guarda con el diseño.</td></tr>
@@ -570,7 +571,7 @@ widget.destroy()`}</code></pre>
     <tr><td>Herramientas de dibujo</td><td>
       El menú de cada grupo indica los atajos de sus herramientas (Alt+T una línea de tendencia) y tiene una estrella en
       cada fila para fijar la herramienta arriba. Abajo: el estilo de dibujo, el imán, la goma, el zoom de área, mantener
-      el modo de dibujo, bloquear todo, ocultar todo y borrar todo.
+      el modo de dibujo, bloquear todo, ocultar todo y la papelera: su menú quita los dibujos, los indicadores o ambos, con cuántos hay de cada uno, en un solo paso de deshacer.
     </td></tr>
     <tr><td>Barra de estado</td><td>
       Los rangos predefinidos e ir a fecha; el estado del mercado, la conexión, un reloj en la zona horaria de la vista

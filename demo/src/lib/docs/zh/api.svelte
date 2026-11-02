@@ -77,6 +77,7 @@
     <tr><td><code>updateIndicator(instanceId, params)</code></td><td>修改一个运行中的指标。</td></tr>
     <tr><td><code>removeIndicator(instanceId)</code></td><td>删除并销毁。</td></tr>
     <tr><td><code>removeIndicators(instanceIds)</code></td><td>删除多个指标，作为一步撤销。</td></tr>
+    <tr><td><code>removeAll(what?)</code></td><td>删除所有绘图（<code>'drawings'</code>）、所有指标（<code>'indicators'</code>）或两者（<code>'all'</code>），作为一步撤销；锁定的绘图保留。返回各删除了多少。</td></tr>
     <tr><td><code>updateIndicatorStyle(instanceId, style)</code></td><td>颜色、线宽、不透明度，以及每条线的线型和显示与否（<code>plots: {`{ signal: { lineStyle: 'dashed' } }`}</code>）。</td></tr>
     <tr><td><code>setIndicatorDefaults(id, style | null)</code></td><td>从现在起同类指标的初始样式。</td></tr>
     <tr><td><code>setIndicatorIntervals(instanceId, intervals | null)</code> · <code>getIndicatorIntervals(instanceId)</code></td><td>它显示在哪些周期上（<code>{`{ minutes: false, hours: [1, 4] }`}</code>）；<code>null</code> 表示全部周期。随布局一起保存。</td></tr>
@@ -514,7 +515,7 @@ widget.destroy()`}</code></pre>
     </td></tr>
     <tr><td>画线工具</td><td>
       每个分组的菜单都标出其中工具的快捷键（Alt+T 为趋势线），每一行都有一个星标，可把该工具固定到顶部。底部依次是：
-      画线样式、磁吸、橡皮擦、区域缩放、保持画线模式、全部锁定、全部隐藏和全部清除。
+      画线样式、磁吸、橡皮擦、区域缩放、保持画线模式、全部锁定、全部隐藏，以及垃圾桶按钮：它的菜单可删除绘图、指标或两者，并显示各自的数量，作为一步撤销。
     </td></tr>
     <tr><td>状态栏</td><td>
       区间预设和跳转到日期；市场状态、连接状态、一个按显示时区走的时钟（点击它会打开可选的时区列表），以及价格轴的

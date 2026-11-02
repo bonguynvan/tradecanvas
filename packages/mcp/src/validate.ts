@@ -34,6 +34,16 @@ function problem(ctx: Context, path: string, message: string, candidates: readon
   ctx.problems.push(suggestion ? { path, message, suggestion } : { path, message });
 }
 
+/**
+ * A value of an open union (a drawing tool's name) that isn't a known one is
+ * fine, a plugin's; one close to a known one is noted, as likely mistyped.
+ */
+function noteUnknown(ctx: Context, path: string, value: unknown, known: readonly (string | number)[]): void {
+  if (typeof value !== 'string' || known.includes(value)) return;
+  const meant = closest(value, strings(known))[0];
+  if (meant) ctx.notes.push(`${path}: '${value}' is not a built-in name, so it works only if a plugin registers it. Did you mean '${meant}'?`);
+}
+
 /** Where an option of another entry point goes instead. */
 const ELSEWHERE: Record<Target, Partial<Record<Target, string>>> = {
   ChartWidget: { Chart: 'It is a Chart option: on ChartWidget it goes in `chartOptions`.' },
@@ -205,15 +215,17 @@ function checkValue(ctx: Context, owner: string, entry: OptionEntry, value: unkn
     value.forEach((tf, i) => checkTimeframe(ctx, tf, `${path}[${i}]`));
     return;
   }
-  const { values, items } = entry;
+  const { values, items, open } = entry;
   if (values) {
-    if (!values.includes(value as string | number)) problem(ctx, path, `'${entry.name}' is one of ${quoted(values)}.`, strings(values), value);
+    if (open) noteUnknown(ctx, path, value, values);
+    else if (!values.includes(value as string | number)) problem(ctx, path, `'${entry.name}' is one of ${quoted(values)}.`, strings(values), value);
     return;
   }
   if (items) {
     if (!Array.isArray(value)) return problem(ctx, path, `'${entry.name}' is an array of ${quoted(items)}.`);
     value.forEach((item, i) => {
-      if (!items.includes(item as string | number)) problem(ctx, `${path}[${i}]`, `${JSON.stringify(item)} is not one of ${quoted(items)}.`, strings(items), item);
+      if (open) noteUnknown(ctx, `${path}[${i}]`, item, items);
+      else if (!items.includes(item as string | number)) problem(ctx, `${path}[${i}]`, `${JSON.stringify(item)} is not one of ${quoted(items)}.`, strings(items), item);
     });
     return;
   }

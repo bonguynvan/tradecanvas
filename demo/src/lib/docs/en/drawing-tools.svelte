@@ -144,6 +144,7 @@ chart.ungroupDrawings(group)
 
 chart.getSelectedDrawingIds()
 chart.removeDrawings(ids)            // one undo step
+chart.removeAll('drawings')         // every drawing; 'indicators', or 'all' for both: one undo step, locked drawings stay
 chart.setDrawingsVisible(ids, false)
 chart.setDrawingsLocked(ids, true)
 
