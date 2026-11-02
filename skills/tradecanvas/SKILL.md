@@ -193,7 +193,7 @@ chart.setPositions([{ id: 'p1', side: 'buy', entryPrice: 62_500, quantity: 0.5, 
 chart.on('positionModify', (e) => console.log('stop or target dragged', e.payload));
 ```
 
-69 drawing tools; each keeps its own settings (`setDrawingOptions`, `updateDrawing`),
+73 drawing tools; each keeps its own settings (`setDrawingOptions`, `updateDrawing`),
 and drawings can be named (`updateDrawing(id, { name })`, what the object tree lists),
 grouped (`groupDrawings`), reordered (`moveDrawing` with a step or a place, 0 the bottom), erased
 (`setEraserMode`), and copied to another chart of the page (`copyDrawings`, then
@@ -212,6 +212,8 @@ Lines and boxes (`trendLine`, `ray`, `extendedLine`, `infoLine`, `trendAngle`, `
 `textAlign` (end or middle) and `textVAlign` ('top' | 'middle' | 'bottom'); don't add a separate
 `text` drawing beside a line to label it. `showPrice: false` hides a horizontal line's price,
 `showTime: true` shows a vertical line's time, and Fibonacci tools take `trendLine` and `oneColor`.
+`signpost` and `balloon` mark a bar with a text; `anchoredText` and `anchoredNote` stay at a place on the
+screen (anchors are shares of the plot, `{ time: 0.5, price: 0.25 }` halfway across, a quarter down).
 The widget's magnet starts off; `setDrawingMagnetMode('weak' | 'strong')` turns it on.
 Editing is built in, so don't wire it yourself: the magnet also pulls dragged handles and moved
 drawings, Ctrl/⌘ held turns it over, Shift keeps lines at 45° steps, the arrow keys move the

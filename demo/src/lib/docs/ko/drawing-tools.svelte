@@ -6,12 +6,12 @@
 
 <svelte:head>
   <title>그리기 도구 — TradeCanvas 문서</title>
-  <meta name="description" content="도구마다 고유한 설정을 가진 내장 그리기 도구 69종: 피보나치와 갠 도구, 엘리엇 파동, 하모닉 패턴, 노트, 브러시, 수량 계산을 지원하는 롱/숏 포지션, 그림에 거는 알림, 그룹과 레이어." />
+  <meta name="description" content="도구마다 고유한 설정을 가진 내장 그리기 도구 73종: 피보나치와 갠 도구, 엘리엇 파동, 하모닉 패턴, 노트, 브러시, 수량 계산을 지원하는 롱/숏 포지션, 그림에 거는 알림, 그룹과 레이어." />
 </svelte:head>
 
 <h1>그리기 도구</h1>
 <p>
-  내장 그리기 도구 69종을 제공합니다. 모든 도구는 자석으로 봉에 스냅되고,
+  내장 그리기 도구 73종을 제공합니다. 모든 도구는 자석으로 봉에 스냅되고,
   실행 취소와 다시 실행을 지원하며, 각자의 설정을 유지하고, 레이아웃과 함께 저장됩니다.
 </p>
 
@@ -307,6 +307,8 @@ chart.on('toolModeChange', (e) => e.payload)      // { eraser } 또는 { zoomAre
 <ul>
   <li><code>text</code>, <code>note</code>(텍스트가 붙은 핀), <code>callout</code>, <code>priceLabel</code></li>
   <li><code>arrow</code>, <code>arrowMark</code>(위, 아래, 왼쪽 또는 오른쪽, 라벨 포함), <code>flag</code>, <code>icon</code>(별, 하트, 체크, 엑스, 원, 삼각형, 번개)</li>
+  <li><code>signpost</code>(봉에 세운 기둥 위 표지판에 쓴 텍스트), <code>balloon</code>(봉을 가리키는 말풍선 안의 텍스트)</li>
+  <li><code>anchoredText</code>, <code>anchoredNote</code>: 화면의 한 자리에 고정되어 차트를 스크롤하거나 확대하거나 종목을 바꿔도 그대로 있습니다. 점은 플롯 영역에 대한 비율이며(<code>{'{'} time: 0.5, price: 0.25 {'}'}</code>는 가로 절반, 위에서 4분의 1), 설정에 좌표 탭이 없습니다.</li>
 </ul>
 
 <h3>예측</h3>

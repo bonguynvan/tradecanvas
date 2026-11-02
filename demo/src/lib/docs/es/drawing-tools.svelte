@@ -6,12 +6,12 @@
 
 <svelte:head>
   <title>Herramientas de dibujo — Documentación de TradeCanvas</title>
-  <meta name="description" content="69 herramientas de dibujo integradas, cada una con su propia configuración: herramientas de Fibonacci y Gann, ondas de Elliott, patrones armónicos, notas, pinceles, posición larga/corta con cálculo del tamaño, alertas en dibujos, grupos y capas." />
+  <meta name="description" content="73 herramientas de dibujo integradas, cada una con su propia configuración: herramientas de Fibonacci y Gann, ondas de Elliott, patrones armónicos, notas, pinceles, posición larga/corta con cálculo del tamaño, alertas en dibujos, grupos y capas." />
 </svelte:head>
 
 <h1>Herramientas de dibujo</h1>
 <p>
-  69 herramientas de dibujo integradas. Todas se ajustan a las barras con el imán,
+  73 herramientas de dibujo integradas. Todas se ajustan a las barras con el imán,
   admiten deshacer y rehacer, guardan su propia configuración y se guardan con el
   diseño.
 </p>
@@ -316,6 +316,8 @@ chart.on('toolModeChange', (e) => e.payload)      // { eraser } o { zoomArea }`}
 <ul>
   <li><code>text</code>, <code>note</code> (una chincheta con su texto), <code>callout</code>, <code>priceLabel</code></li>
   <li><code>arrow</code>, <code>arrowMark</code> (arriba, abajo, izquierda o derecha, con etiqueta), <code>flag</code>, <code>icon</code> (estrella, corazón, marca de verificación, cruz, círculo, triángulos, rayo)</li>
+  <li><code>signpost</code> (su texto en un cartel sobre un poste clavado en una barra), <code>balloon</code> (su texto en un globo que señala una barra)</li>
+  <li><code>anchoredText</code>, <code>anchoredNote</code>: fijos en un lugar de la pantalla, no se mueven cuando el gráfico se desplaza, hace zoom o cambia de símbolo. Sus puntos son fracciones del área del gráfico (<code>{'{'} time: 0.5, price: 0.25 {'}'}</code> es la mitad a lo ancho y un cuarto desde arriba), y la configuración no tiene pestaña de Coordenadas.</li>
 </ul>
 
 <h3>Previsión</h3>

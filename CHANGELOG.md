@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+### Drawings
+
+- **Signpost, balloon, and a text and a note kept to the screen** (`@tradecanvas/commons`, `@tradecanvas/core`, `@tradecanvas/chart`). There are now 73 drawing tools.
+  - `signpost` writes its text on a board atop a post that stands on a bar.
+  - `balloon` writes its text in a bubble whose tail points at a bar.
+  - `anchoredText` and `anchoredNote` stay where they are put on the plot as the chart scrolls, zooms or changes symbol. A per-symbol layout (`layoutKeyPrefix`) that loads its own drawings replaces them, as it does any drawing.
+  - A signpost's board hangs under its point near the plot's top, and a signpost or a balloon slides along to stay on the plot sideways.
+  - `DrawingDescriptor.anchoring: 'screen'` keeps a tool's points as shares of its pane's plot: `time` across from the left edge, `price` down from the top, each from 0 to 1. A plugin can use it too. Points given or loaded outside 0 to 1 are kept to the plot's edges, and a screen point is drawn far enough in from the edges for its text to show. Creating, dragging, the arrow keys, pasting, duplicating, the selection box, loading a layout and `getDrawingRect` all read such points that way.
+  - `DrawingManager.anchorPoint(type, anchor, viewport)` says where any drawing's point shows on the plot.
+  - The MCP server's `list_drawing_tools` marks these tools `anchoring: 'screen'` and says how their anchors read (`@tradecanvas/mcp`).
+  - The widget lists the four in its annotation group and asks for their words as soon as they are drawn. A drawing kept to the screen has no Coordinates tab in its settings.
+
 ## 1.65.0 (2026-11-02)
 
 React, Vue and Svelte components: 1.3.57.

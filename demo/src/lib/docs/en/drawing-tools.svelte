@@ -6,12 +6,12 @@
 
 <svelte:head>
   <title>Drawing tools — TradeCanvas docs</title>
-  <meta name="description" content="69 built-in drawing tools with their own settings: Fibonacci and Gann tools, Elliott waves, harmonic patterns, notes, brushes, Long/Short Position with sizing, alerts on drawings, groups and layers." />
+  <meta name="description" content="73 built-in drawing tools with their own settings: Fibonacci and Gann tools, Elliott waves, harmonic patterns, notes, brushes, Long/Short Position with sizing, alerts on drawings, groups and layers." />
 </svelte:head>
 
 <h1>Drawing tools</h1>
 <p>
-  69 built-in drawing tools. Each one snaps to the bars with the magnet, takes
+  73 built-in drawing tools. Each one snaps to the bars with the magnet, takes
   undo and redo, keeps its own settings, and is saved with the layout.
 </p>
 
@@ -312,6 +312,8 @@ chart.on('toolModeChange', (e) => e.payload)      // { eraser } or { zoomArea }`
 <ul>
   <li><code>text</code>, <code>note</code> (a pin with its text), <code>callout</code>, <code>priceLabel</code></li>
   <li><code>arrow</code>, <code>arrowMark</code> (up, down, left or right, with a label), <code>flag</code>, <code>icon</code> (star, heart, tick, cross, circle, triangles, bolt)</li>
+  <li><code>signpost</code> (its text on a board atop a post on a bar), <code>balloon</code> (its text in a bubble pointing at a bar)</li>
+  <li><code>anchoredText</code>, <code>anchoredNote</code>: kept to a place on the screen, they stay put as the chart scrolls, zooms or changes symbol. Their points are shares of the plot (<code>{'{'} time: 0.5, price: 0.25 {'}'}</code> is halfway across, a quarter down), and the settings have no Coordinates tab.</li>
 </ul>
 
 <h3>Forecasting</h3>

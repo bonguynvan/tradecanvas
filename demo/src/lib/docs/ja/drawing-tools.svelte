@@ -6,12 +6,12 @@
 
 <svelte:head>
   <title>描画ツール — TradeCanvas ドキュメント</title>
-  <meta name="description" content="69 種類の組み込み描画ツール。それぞれ独自の設定を持ちます：フィボナッチとギャンのツール、エリオット波動、ハーモニックパターン、ノート、ブラシ、数量計算付きのロング/ショートポジション、描画へのアラート、グループとレイヤー。" />
+  <meta name="description" content="73 種類の組み込み描画ツール。それぞれ独自の設定を持ちます：フィボナッチとギャンのツール、エリオット波動、ハーモニックパターン、ノート、ブラシ、数量計算付きのロング/ショートポジション、描画へのアラート、グループとレイヤー。" />
 </svelte:head>
 
 <h1>描画ツール</h1>
 <p>
-  69 種類の組み込み描画ツールがあります。どのツールもマグネットでバーに吸着し、
+  73 種類の組み込み描画ツールがあります。どのツールもマグネットでバーに吸着し、
   元に戻す / やり直すに対応し、独自の設定を持ち、レイアウトと一緒に保存されます。
 </p>
 
@@ -308,6 +308,8 @@ chart.on('toolModeChange', (e) => e.payload)      // { eraser } または { zoom
 <ul>
   <li><code>text</code>、<code>note</code>（テキスト付きのピン）、<code>callout</code>、<code>priceLabel</code></li>
   <li><code>arrow</code>、<code>arrowMark</code>（上・下・左・右、ラベル付き）、<code>flag</code>、<code>icon</code>（星、ハート、チェック、バツ、円、三角、稲妻）</li>
+  <li><code>signpost</code>（バーに立てた柱の上の看板にテキスト）、<code>balloon</code>（バーを指す吹き出しにテキスト）</li>
+  <li><code>anchoredText</code>、<code>anchoredNote</code>：画面上の位置に固定され、チャートをスクロール・ズームしたり銘柄を変えたりしても動きません。点はプロット領域に対する割合です（<code>{'{'} time: 0.5, price: 0.25 {'}'}</code> は横の中央、上から 4 分の 1）。設定に座標タブはありません。</li>
 </ul>
 
 <h3>予測</h3>

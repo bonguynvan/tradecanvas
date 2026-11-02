@@ -4,7 +4,7 @@ const vi: SiteMessages = {
   meta: {
     title: 'TradeCanvas · Biểu đồ giao dịch Canvas cho web',
     description:
-      'TradeCanvas là thư viện biểu đồ giao dịch cho web, vẽ bằng Canvas 2D hoặc WebGL: 18 loại biểu đồ, 134 chỉ báo, 69 công cụ vẽ, dữ liệu trực tiếp từ sàn, đặt lệnh ngay trên biểu đồ, phát lại và backtest, bằng 30 ngôn ngữ. Không phụ thuộc thư viện nào, giấy phép MIT.',
+      'TradeCanvas là thư viện biểu đồ giao dịch cho web, vẽ bằng Canvas 2D hoặc WebGL: 18 loại biểu đồ, 134 chỉ báo, 73 công cụ vẽ, dữ liệu trực tiếp từ sàn, đặt lệnh ngay trên biểu đồ, phát lại và backtest, bằng 30 ngôn ngữ. Không phụ thuộc thư viện nào, giấy phép MIT.',
   },
 
   nav: {
@@ -47,7 +47,7 @@ const vi: SiteMessages = {
     release: 'bộ vẽ WebGL, 30 ngôn ngữ',
     title: 'Bộ máy biểu đồ cho ứng dụng giao dịch.',
     ledeHtml:
-      'Từ nến Nhật đến Renko, 134 chỉ báo, 69 công cụ vẽ, dữ liệu trực tiếp từ sàn và đặt lệnh ngay trên biểu đồ. Vẽ bằng Canvas 2D hoặc WebGL, không phụ thuộc thư viện nào. Gắn nguyên <code>ChartWidget</code> đầy đủ, hoặc tự dựng giao diện riêng trên <code>Chart</code> headless.',
+      'Từ nến Nhật đến Renko, 134 chỉ báo, 73 công cụ vẽ, dữ liệu trực tiếp từ sàn và đặt lệnh ngay trên biểu đồ. Vẽ bằng Canvas 2D hoặc WebGL, không phụ thuộc thư viện nào. Gắn nguyên <code>ChartWidget</code> đầy đủ, hoặc tự dựng giao diện riêng trên <code>Chart</code> headless.',
     getStarted: 'Bắt đầu',
     browseExamples: 'Xem ví dụ',
     specsLabel: 'Các con số chính',
@@ -72,7 +72,7 @@ const vi: SiteMessages = {
           text: 'Dải băng, đường trung bình và dao động trên các cây nến, mức Fibonacci và đường xu hướng vẽ lên trên, mỗi thứ có cài đặt và cảnh báo riêng.',
           points: [
             '134 chỉ báo, chỉ báo này chồng lên chỉ báo kia, như đường trung bình của RSI',
-            '69 công cụ vẽ, có nam châm, nhóm và hoàn tác',
+            '73 công cụ vẽ, có nam châm, nhóm và hoàn tác',
             'Cảnh báo theo giá, theo đường vẽ và khi chỉ báo cắt nhau',
           ],
         },
@@ -207,7 +207,7 @@ const vi: SiteMessages = {
   scenes: {
     drawings: {
       title: 'Công cụ vẽ',
-      stat: '69 công cụ',
+      stat: '73 công cụ',
       blurb:
         'Công cụ Fibonacci và Gann với mức tự chọn, sóng Elliott, mô hình harmonic, ghi chú và bút vẽ. Nhấp đúp vào hình vẽ để mở cài đặt, nhấp chuột phải để mở menu; cảnh báo bám theo đường xu hướng, và Long/Short tự tính khối lượng.',
       tryThis: [
@@ -552,7 +552,7 @@ const vi: SiteMessages = {
       },
       widget: {
         title: 'ChartWidget',
-        blurb: 'Toàn bộ giao diện giao dịch trong một lệnh gọi: thanh công cụ, 69 công cụ vẽ, danh mục theo dõi, giao dịch, phát lại, bằng 30 ngôn ngữ.',
+        blurb: 'Toàn bộ giao diện giao dịch trong một lệnh gọi: thanh công cụ, 73 công cụ vẽ, danh mục theo dõi, giao dịch, phát lại, bằng 30 ngôn ngữ.',
       },
       react: {
         title: 'React',
@@ -707,7 +707,7 @@ const vi: SiteMessages = {
         { name: 'Cập nhật tăng dần theo tick', detail: 'update() chỉ tính lại nến đang hình thành' },
       ],
       drawings: [
-        { name: '69 công cụ vẽ', detail: 'Đường, kênh, Fibonacci, Gann, pitchfork, sóng Elliott, mô hình giá, chu kỳ, dự phóng' },
+        { name: '73 công cụ vẽ', detail: 'Đường, kênh, Fibonacci, Gann, pitchfork, sóng Elliott, mô hình giá, chu kỳ, dự phóng' },
         { name: 'Cài đặt riêng cho từng công cụ', detail: 'Kiểu, thuộc tính và toạ độ theo lưới giá của mã' },
         { name: 'Vị thế mua và bán', detail: 'Tỉ lệ lời:lỗ, khối lượng tính từ rủi ro theo % hoặc theo tiền' },
         { name: 'Cảnh báo theo hình vẽ', detail: 'Khi giá cắt đường xu hướng hay kênh đúng như đã vẽ, cả trên thang log' },
