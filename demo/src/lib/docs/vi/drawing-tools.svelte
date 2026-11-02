@@ -37,6 +37,20 @@ chart.setStayInDrawingMode(true)    // giữ công cụ sau mỗi hình vẽ`}</
 
 chart.autoFib()   // một Fibonacci thoái lui trên con sóng chính đang hiện, hoặc null`}</code></pre>
 
+<h2 id="panes">Trên panel chỉ báo</h2>
+<p>
+  Hình vẽ bắt đầu trên một panel chỉ báo (RSI, MACD…) thì nằm trên panel đó: giá của các điểm neo là giá trị của panel, nam châm bám vào các đường của panel, và hình vẽ đi theo thang của panel. Hình vẽ không ra ngoài panel của nó. Panel bên cạnh và panel đang thu gọn thì không vẽ được, và các công cụ đọc giá của nến (Anchored VWAP, Volume Profile, Long/Short Position) chỉ dùng trên panel giá. Hình vẽ trên panel không gắn được cảnh báo giá.
+</p>
+<pre><code>{`const rsi = chart.addIndicator('rsi')
+chart.addDrawing({
+  type: 'horizontalLine',
+  anchors: [{ time: t1, price: 70 }],   // 70 trên thang RSI
+  paneId: rsi,                          // id của panel, như getIndicatorPanes() liệt kê
+})`}</code></pre>
+<p>
+  Khi chỉ báo sở hữu panel bị xoá và một chỉ báo khác trong panel nhận lại panel, các hình vẽ đi theo panel. Khi panel mất, các hình vẽ của nó bị ẩn và quay lại cùng panel khi hoàn tác. Layout đã lưu đặt chúng lại đúng panel.
+</p>
+
 <h2>Cài đặt</h2>
 <p>
   Ngoài kiểu (màu, độ dày nét, kiểu nét, màu nền, chữ), một công cụ có thể có

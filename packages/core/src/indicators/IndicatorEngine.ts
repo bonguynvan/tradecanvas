@@ -734,6 +734,27 @@ export class IndicatorEngine {
     return range;
   }
 
+  /**
+   * The values a pane draws at bar `barIndex`, its members' too: each shown
+   * line's value, for a drawing's magnet on the pane. Empty past the data.
+   */
+  getPaneValuesAt(instanceId: string, barIndex: number): number[] {
+    this.flush();
+    const values: number[] = [];
+    for (const id of [instanceId, ...this.getPaneMembers(instanceId)]) {
+      const instance = this.instances.get(id);
+      if (!instance || !isShown(instance)) continue;
+      const point = instance.output?.series?.[barIndex];
+      if (!point) continue;
+      const keys = shownKeys(instance) ?? Object.keys(point);
+      for (const key of keys) {
+        const value = point[key];
+        if (typeof value === 'number' && Number.isFinite(value)) values.push(value);
+      }
+    }
+    return values;
+  }
+
   /** Get descriptor for an active indicator instance */
   getIndicatorDescriptor(instanceId: string): IndicatorDescriptor | null {
     return this.instances.get(instanceId)?.plugin.descriptor ?? null;

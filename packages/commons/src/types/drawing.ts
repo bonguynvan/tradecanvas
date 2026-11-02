@@ -62,6 +62,12 @@ export interface DrawingState {
    * not on minute charts); unset: all of them.
    */
   intervals?: IndicatorIntervals;
+  /**
+   * The indicator pane it is drawn on: the pane's id, as `getIndicatorPanes()`
+   * lists them, and its anchors' prices are that pane's values. Unset: the
+   * price pane.
+   */
+  paneId?: string;
   meta?: Record<string, unknown>;
 }
 
@@ -109,6 +115,11 @@ export interface DrawingDescriptor {
   creation?: 'clicks' | 'freehand' | 'path';
   /** Most points a 'path' takes (100 when left out). */
   maxAnchors?: number;
+  /**
+   * It reads the bars' prices or volumes (an anchored VWAP, a volume profile,
+   * a position): drawn on the price pane only, never on an indicator pane.
+   */
+  priceOnly?: boolean;
 }
 
 export interface DrawingPlugin {

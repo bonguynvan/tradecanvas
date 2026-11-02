@@ -24,7 +24,7 @@ const { chromium } = await import(process.env.PLAYWRIGHT ? pathToFileURL(process
 
 const UI = process.env.UI ?? '';
 if (UI && !/^[a-z]+$/.test(UI)) throw new Error(`UI must be a look's name, not ${UI}`);
-const SCENES = ['orderAtPrice', 'linkedGrid', 'replay', 'compare', 'renko', 'priceLimits', 'indicators', 'ichimoku', 'krx'];
+const SCENES = ['orderAtPrice', 'linkedGrid', 'replay', 'compare', 'renko', 'priceLimits', 'indicators', 'ichimoku', 'krx', 'paneDrawings'];
 const THEMES = ['dark', 'light'];
 const SIZES = {
   phone: { viewport: { width: 390, height: 760 }, isMobile: true, hasTouch: true },

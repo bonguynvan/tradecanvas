@@ -238,6 +238,11 @@ with `updateDrawing(id, { intervals })`, null for all) shows only there: `isDraw
 Trend lines, rays and extended lines take a middle point and stats (`showPriceRange`,
 `showBarsRange`, `showDateRange`, `showAngle`, `alwaysShowStats`, `statsPosition`).
 `riskReward` is a Long/Short position sized from `accountSize` and `risk`.
+A drawing can sit on an indicator pane: `addDrawing({ …, paneId })` with an id from
+`getIndicatorPanes()`, its anchors' prices then the pane's values (an RSI level at 70). One
+begun with the pointer on a pane goes there by itself; `paneId` unset is the price pane.
+Price-only tools (`anchoredVWAP`, `volumeProfileRange`, `riskReward`) and side or folded
+panes take none, and a pane's drawing takes no price alert.
 A tool of your own (`registerPlugin({ kind: 'drawing', plugin })`) is named by its
 `descriptor.type`, and that name types as a `DrawingToolType` wherever a tool's is taken
 (`setDrawingTool('targetLine')`, `addDrawing`); `BuiltInDrawingToolType` lists the built-in ones.

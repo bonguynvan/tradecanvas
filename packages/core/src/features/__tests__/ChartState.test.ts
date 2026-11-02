@@ -285,6 +285,18 @@ describe('ChartStateManager.deserialize validation', () => {
     expect(restored.indicators[2].intervals).toBeUndefined();
   });
 
+  it('keeps the indicator pane a drawing is on, and only a pane id that is a name', () => {
+    const restored = ChartStateManager.deserialize(JSON.stringify({
+      version: 2,
+      drawings: [
+        { ...drawing, id: 'a', paneId: 'rsi-1' },
+        { ...drawing, id: 'b', paneId: 42 },
+        { ...drawing, id: 'c', paneId: '' },
+      ],
+    }));
+    expect(restored.drawings.map((d) => d.paneId)).toEqual(['rsi-1', undefined, undefined]);
+  });
+
   it('drops indicators missing id, instanceId, or params', () => {
     const tampered = JSON.stringify({
       version: 1,

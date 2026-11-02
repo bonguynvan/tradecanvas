@@ -147,6 +147,20 @@ const SCENES = {
     return s;
   },
 
+  /** Drawings on indicator panes: a trend line and a box on RSI, a level on MACD, a line on the price pane. */
+  async paneDrawings() {
+    const s = await widget();
+    const rsi = s.chart.addIndicator('rsi');
+    const macd = s.chart.addIndicator('macd');
+    const bars = s.chart.getData();
+    const t = (back) => bars[bars.length - back].time;
+    s.chart.addDrawing({ type: 'trendLine', anchors: [{ time: t(90), price: 25 }, { time: t(10), price: 75 }], paneId: rsi });
+    s.chart.addDrawing({ type: 'rectangle', anchors: [{ time: t(60), price: 80 }, { time: t(30), price: 60 }], paneId: rsi });
+    s.chart.addDrawing({ type: 'horizontalLine', anchors: [{ time: t(40), price: 0 }], paneId: macd });
+    s.chart.addDrawing({ type: 'trendLine', anchors: [{ time: t(80), price: bars[bars.length - 80].low }, { time: t(5), price: bars[bars.length - 5].high }] });
+    return s;
+  },
+
   /** Overlays and panes, their values tagged on the axes. */
   async indicators() {
     const s = await widget();

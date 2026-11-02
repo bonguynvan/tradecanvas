@@ -37,6 +37,20 @@ chart.setStayInDrawingMode(true)    // 每次绘制完成后保留当前工具`}
 
 chart.autoFib()   // 在当前可见范围内的主要波段上绘制回撤，没有则返回 null`}</code></pre>
 
+<h2 id="panes">在指标窗格上</h2>
+<p>
+  在指标窗格（RSI、MACD…）上开始的绘图就画在该窗格上：锚点的价格是该窗格的数值，磁吸吸附到窗格的线，绘图跟随窗格的刻度，不会超出所在窗格。侧边窗格和折叠的窗格不能绘图；读取K线价格的工具（锚定 VWAP、成交量分布、多空头寸）只用于价格窗格。窗格上的绘图不能添加价格提醒。
+</p>
+<pre><code>{`const rsi = chart.addIndicator('rsi')
+chart.addDrawing({
+  type: 'horizontalLine',
+  anchors: [{ time: t1, price: 70 }],   // RSI 刻度上的 70
+  paneId: rsi,                          // 窗格 id，即 getIndicatorPanes() 列出的
+})`}</code></pre>
+<p>
+  拥有窗格的指标被删除、由窗格中另一个指标接管时，绘图随窗格一起转移。窗格被删除时，其绘图会隐藏，撤销后随窗格一起恢复。保存的布局会把它们放回各自的窗格。
+</p>
+
 <h2>设置</h2>
 <p>
   除样式（颜色、线宽、线型、填充、文本）外，工具还可以提供自己的设置：

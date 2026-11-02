@@ -15,7 +15,14 @@ export interface UndoableAction {
   /** For 'drawingOrder': the drawings' ids, bottom to top, before and after. */
   order?: { before: string[]; after: string[] };
   /** For 'indicators': the indicators before and after, and what changed (to merge a burst of edits). */
-  indicators?: { before: SnapshotIndicator[]; after: SnapshotIndicator[]; subject?: string; at?: number };
+  indicators?: {
+    before: SnapshotIndicator[];
+    after: SnapshotIndicator[];
+    subject?: string;
+    at?: number;
+    /** Panes another indicator took over in this step, old id to new: the drawings on them follow back and forth. */
+    renames?: [string, string][];
+  };
   /** For 'custom': a change recorded by its owner (`Chart.recordUndo`), and what it was about (to merge a burst). */
   custom?: { undo: () => void; redo: () => void; subject?: string; at: number };
 }

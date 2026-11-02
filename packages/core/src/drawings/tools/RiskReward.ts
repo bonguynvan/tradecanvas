@@ -36,6 +36,7 @@ export class RiskRewardTool extends DrawingBase {
   descriptor = {
     type: 'riskReward' as const,
     name: 'Long/Short Position',
+    priceOnly: true,
     requiredAnchors: 2,
     options: {
       rewardRatio: { kind: 'number' as const, label: 'Reward:risk', default: 2, min: MIN_RATIO, max: MAX_RATIO, step: 0.1 },

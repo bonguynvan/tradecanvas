@@ -179,6 +179,13 @@ const LEFT_SCALE_PADDING = 0.08;
 const VOLUME_GAP = PHI ** -7;
 /** Changes to one indicator closer together than this are one undo step (a colour dragged, a period typed). */
 const INDICATOR_EDIT_MERGE_MS = 800;
+/** A pane with less plot than this, px, takes no drawings: there is no room to place one. */
+const MIN_DRAWING_PANE_HEIGHT = 24;
+
+/** An indicator step's pane renames, when it made any. */
+function withRenames(renames: [string, string][]): { renames?: [string, string][] } {
+  return renames.length > 0 ? { renames } : {};
+}
 /** Fewest bars ahead of the view that trigger the next history page. */
 const HISTORY_AHEAD_MIN_BARS = 20;
 
@@ -968,6 +975,13 @@ export class Chart {
         // timestamps (survives timeframe/symbol switches).
         () => ({ ...this.viewport.getState(), data: this.getDisplayData() }),
       );
+      // Drawings begun on an indicator pane are made and drawn on its scale.
+      this.drawingManager.setPanes({
+        paneAt: (pos) => this.drawingPaneAt(pos),
+        viewportOf: (id) => this.drawingPaneViewport(id),
+        hasPane: (id) => this.layoutManager.getPanels().some((panel) => panel.id === id),
+        valuesAt: (id, barIndex) => this.indicatorEngine.getPaneValuesAt(id, barIndex),
+      });
       this.interactionManager.setDrawingDoubleClick((id) => this.eventBus.emit('drawingDoubleClick', { id }));
       this.interactionManager.setDrawingContextMenu((id, pos) => {
         if (this.drawingManager.select(id)) this.eventBus.emit('drawingContextMenu', { id, x: pos.x, y: pos.y });
@@ -1089,17 +1103,24 @@ export class Chart {
     });
 
     // Ctrl/⌘-drag: select every drawing the box covers; Ctrl/⌘-click adds or
-    // removes one. The box is kept inside the plot (moves are followed
-    // off-chart), so the selection matches what the box showed.
+    // removes one. The box is kept inside the plot it began in, the price
+    // pane's or an indicator pane's (moves are followed off-chart), so the
+    // selection matches what the box showed.
+    let boxPane: string | null | undefined;
     const inPlot = (pos: { x: number; y: number }) => {
-      const r = this.viewport.getState().chartRect;
+      const pane = boxPane ? this.drawingPaneViewport(boxPane) : null;
+      const r = pane ? pane.chartRect : this.viewport.getState().chartRect;
       return {
         x: Math.max(r.x, Math.min(r.x + r.width, pos.x)),
         y: Math.max(r.y, Math.min(r.y + r.height, pos.y)),
       };
     };
     this.interactionManager.setBoxSelectHandlers({
-      begin: (pos) => this.selectionBoxOverlay.begin(inPlot(pos)),
+      begin: (pos) => {
+        // Zooming to an area is the price pane's; a selection, the pane pressed.
+        boxPane = this.zoomAreaMode ? undefined : this.drawingPaneAt(pos);
+        this.selectionBoxOverlay.begin(inPlot(pos));
+      },
       move: (pos) => this.selectionBoxOverlay.update(inPlot(pos)),
       end: () => {
         const box = this.selectionBoxOverlay.end();
@@ -1113,8 +1134,9 @@ export class Chart {
         if (!box || !this.features.drawings) return;
         // With the bar series, so anchors resolve as timestamps (as for drawing hit-tests).
         const vs = { ...this.viewport.getState(), data: this.getDisplayData() };
+        if (boxPane === null) return;
         if (box.isClick) this.drawingManager.toggleSelectionAt({ x: box.x1, y: box.y1 }, vs);
-        else this.drawingManager.selectInRect(box, vs);
+        else this.drawingManager.selectInRect(box, vs, boxPane);
         this.engine.requestRender(LayerType.Overlay);
       },
       cancel: () => {
@@ -2017,7 +2039,7 @@ export class Chart {
     this.paneStyles.delete(instanceId);
     if (heir) {
       this.indicatorEngine.setPane(heir, null);
-      this.layoutManager.renamePanel(instanceId, heir);
+      this.renamePane(instanceId, heir);
       if (paneStyle) this.paneStyles.set(heir, paneStyle);
     } else {
       this.layoutManager.removePanel(instanceId);
@@ -2181,7 +2203,7 @@ export class Chart {
       this.paneStyles.delete(instanceId);
       if (heir) {
         this.indicatorEngine.setPane(heir, null);
-        this.layoutManager.renamePanel(instanceId, heir);
+        this.renamePane(instanceId, heir);
         if (paneStyle) this.paneStyles.set(heir, paneStyle);
         for (const m of staying) if (m !== heir) this.indicatorEngine.setPane(m, heir);
       } else {
@@ -2543,9 +2565,12 @@ export class Chart {
     locked?: boolean;
     /** The intervals it shows on (`{ minutes: false }`: not on minute charts); unset: all. */
     intervals?: IndicatorIntervals;
+    /** The indicator pane it goes on (an id from `getIndicatorPanes()`): its anchors' prices are that pane's values. Unset: the price pane. */
+    paneId?: string;
     meta?: Record<string, unknown>;
   }): string | null {
     if (!this.features.drawings) return null;
+    if (state.paneId !== undefined && !this.takesDrawing(state.paneId, state.type)) return null;
     const id = this.drawingManager.addDrawing(state);
     this.markStateChanged();
     return id;
@@ -4892,6 +4917,8 @@ export class Chart {
    * scale; null when it has none there (a trend line that ends before it).
    */
   private drawingLevelsNow(drawingId: string): number[] | null {
+    // A pane's drawing is at the pane's values, not at prices.
+    if (this.drawingManager.getDrawings().find((d) => d.id === drawingId)?.paneId !== undefined) return null;
     // Alerts watch the live market, during a replay too.
     const data = this.replaySession ? this.series.liveBars() : this.getDisplayData();
     if (data.length === 0) return null;
@@ -5576,7 +5603,8 @@ export class Chart {
   getDrawingRect(id: string): { x: number; y: number; width: number; height: number } | null {
     const drawing = this.drawingManager.getDrawings().find((d) => d.id === id);
     if (!drawing || !this.drawingManager.isShown(id) || drawing.anchors.length === 0) return null;
-    const vs = { ...this.viewport.getState(), data: this.getDisplayData() };
+    const vs = drawing.paneId === undefined ? { ...this.viewport.getState(), data: this.getDisplayData() } : this.drawingPaneViewport(drawing.paneId);
+    if (!vs) return null;
     const plot = vs.chartRect;
     let left = Infinity;
     let right = -Infinity;
@@ -5659,7 +5687,12 @@ export class Chart {
   private captureSnapshot(): import('@tradecanvas/core').ChartSnapshot {
     return ChartStateManager.capture(
       {
-        getDrawings: () => this.getDrawings(),
+        // A drawing of a pane that is gone is kept for undo, not saved: a
+        // reload's new ids could put it on another pane.
+        getDrawings: () => [
+          ...this.getDrawings().filter((d) => d.paneId === undefined || this.layoutManager.getPanels().some((panel) => panel.id === d.paneId)),
+          ...this.keptPaneDrawings,
+        ],
         // The theme as set: the overrides go apart, the user's saved by theme.
         getTheme: () => this.themeManager.getBaseTheme(),
         getAlerts: () => this.getAlerts(),
@@ -5912,7 +5945,15 @@ export class Chart {
   private recordIndicators<T>(subject: string | undefined, change: () => T): T {
     if (this.indicatorHistoryDepth > 0 || !this.features.drawingUndoRedo) return change();
     const before = this.getIndicatorSetup();
-    const result = this.withoutIndicatorHistory(change);
+    const renames: [string, string][] = [];
+    const outer = this.paneRenames;
+    this.paneRenames = renames;
+    let result: T;
+    try {
+      result = this.withoutIndicatorHistory(change);
+    } finally {
+      this.paneRenames = outer;
+    }
     const after = this.getIndicatorSetup();
     if (JSON.stringify(before) === JSON.stringify(after)) return result;
     const now = performance.now();
@@ -5924,9 +5965,9 @@ export class Chart {
     if (merge && last?.indicators) {
       // Back where the burst began (hidden, then shown again): no step left.
       if (JSON.stringify(last.indicators.before) === JSON.stringify(after)) this.undoRedoManager.dropLast();
-      else this.undoRedoManager.replaceLast({ ...step, indicators: { ...last.indicators, after, at: now } });
+      else this.undoRedoManager.replaceLast({ ...step, indicators: { ...last.indicators, after, at: now, ...withRenames([...(last.indicators.renames ?? []), ...renames]) } });
     } else {
-      this.undoRedoManager.push({ ...step, indicators: { before, after, subject, at: now } });
+      this.undoRedoManager.push({ ...step, indicators: { before, after, subject, at: now, ...withRenames(renames) } });
     }
     return result;
   }
@@ -5936,7 +5977,60 @@ export class Chart {
     const step = action.indicators;
     if (!step) return;
     this.withoutIndicatorHistory(() => this.restoreIndicators(direction === 'undo' ? step.before : step.after, true));
+    // The drawings on a pane another indicator took over go with it, either way.
+    const renames = step.renames ?? [];
+    const walk = direction === 'undo' ? [...renames].reverse().map(([from, to]) => [to, from] as const) : renames;
+    for (const [from, to] of walk) this.drawingManager.renamePanes(new Map([[from, to]]));
     this.markStateChanged();
+  }
+
+  /** Drawings of indicators a loaded layout could not restore: not on the chart, saved again as they were. */
+  private keptPaneDrawings: DrawingState[] = [];
+
+  /** Whether pane `paneId` is on the chart and takes a `type` drawing: no price-only tool goes on a pane. */
+  private takesDrawing(paneId: string, type: string): boolean {
+    if (!this.layoutManager.getPanels().some((panel) => panel.id === paneId)) return false;
+    return !this.drawingManager.getDescriptor(type)?.priceOnly;
+  }
+
+  /** The panes renamed by the indicator change being recorded (`recordIndicators`), null outside one. */
+  private paneRenames: [string, string][] | null = null;
+
+  /** Hand pane `from` to the indicator `to`: its layout and its drawings. */
+  private renamePane(from: string, to: string): void {
+    this.layoutManager.renamePanel(from, to);
+    this.drawingManager.renamePanes(new Map([[from, to]]));
+    this.paneRenames?.push([from, to]);
+  }
+
+  /**
+   * The pane a drawing begun at `pos` goes on: undefined the price pane, an
+   * indicator pane's id, null where none takes drawings (an axis, a header,
+   * a side or folded pane).
+   */
+  private drawingPaneAt(pos: { x: number; y: number }): string | null | undefined {
+    const inside = (r: { x: number; y: number; width: number; height: number }) =>
+      pos.x >= r.x && pos.x <= r.x + r.width && pos.y >= r.y && pos.y <= r.y + r.height;
+    if (inside(this.viewport.getState().chartRect)) return undefined;
+    for (const panel of this.layoutManager.getPanels()) {
+      const viewport = this.drawingPaneViewport(panel.id);
+      if (viewport && inside(viewport.chartRect)) return panel.id;
+    }
+    return null;
+  }
+
+  /**
+   * The viewport a pane's drawings are drawn and read with: its plot under
+   * the header, its value scale, the bars' times. Null for a pane that takes
+   * none: on a side (its x is not the time), folded, or too short to draw in.
+   */
+  private drawingPaneViewport(paneId: string): ViewportState | null {
+    const panel = this.layoutManager.getPanels().find((p) => p.id === paneId);
+    if (!panel || (panel.position !== 'top' && panel.position !== 'bottom')) return null;
+    if (this.layoutManager.isPanelShownCollapsed(paneId)) return null;
+    const info = this.buildPanelRenderInfos().find((p) => p.instanceId === paneId);
+    if (!info || info.viewport.chartRect.height < MIN_DRAWING_PANE_HEIGHT) return null;
+    return { ...info.viewport, data: this.getDisplayData() };
   }
 
   /**
@@ -5980,6 +6074,15 @@ export class Chart {
     const instanceIds = snapshot.version >= 2 && this.features.indicators
       ? this.withoutIndicatorHistory(() => this.restoreIndicators(snapshot.indicators, false))
       : new Map<string, string>();
+    // A drawing on a pane follows the pane's indicator to its new id. One of
+    // an indicator the layout could not restore is kept aside, unseen, and
+    // saved again as it was; one of a pane the layout lacks goes.
+    this.drawingManager.renamePanes(instanceIds);
+    const unrestored = new Set(this.unrestoredIndicators.map((ind) => ind.instanceId));
+    const drawings = this.drawingManager.getDrawings();
+    const placed = drawings.filter((d) => d.paneId === undefined || this.takesDrawing(d.paneId, d.type));
+    this.keptPaneDrawings = drawings.filter((d) => d.paneId !== undefined && unrestored.has(d.paneId));
+    if (placed.length !== drawings.length) this.drawingManager.setDrawings(placed);
     // Another layout: the old steps no longer apply to it.
     this.undoRedoManager.clear();
 
