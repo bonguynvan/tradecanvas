@@ -14,3 +14,5 @@ export type {
   ReplayStatus,
 } from './ReplayController.js';
 export * from './adapters/index.js';
+export { adapterFromFeed, feedFromAdapter, isDataFeed, streamAdapterOf } from './feeds/feedAdapter.js';
+export { ManualFeed } from './feeds/ManualFeed.js';

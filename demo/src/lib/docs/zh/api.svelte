@@ -494,7 +494,7 @@ const widget = new ChartWidget(host, {
   symbol: 'BTCUSDT',
   timeframe: '5m',
   theme: 'dark',
-  adapter: new BinanceAdapter(),
+  adapter: new BinanceAdapter(),   // 或 feed：图表从中拉取数据的 DataFeed（见“实时数据”）
   historyLimit: 500,
   trading: true,
   features: { 'toolbar.replay': false },   // 组件的开关：见“定制”
@@ -1034,6 +1034,7 @@ const grid = new ChartWidgetGrid(host, {
   layout: '2x2',                                   // '1x1' '1x2' '2x1' '2x2' '1x3' '3x1' '2x3' '3x2'
   widget: { timeframe: '1h' },                    // 作用于每个图表
   adapter: () => new BinanceAdapter(),            // 每个图表一个：一个适配器只维持一条数据流
+  // 或 widget: { timeframe: '1h', feed }：一个 DataFeed 服务所有图表
   cells: [{ symbol: 'BTCUSDT' }, { symbol: 'ETHUSDT' }, { symbol: 'SOLUSDT' }, { symbol: 'BNBUSDT' }],
   sync: { crosshair: true, time: false, symbol: false, interval: false, drawings: false, replay: false },
 })

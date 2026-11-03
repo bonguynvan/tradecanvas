@@ -282,6 +282,37 @@ describe('ChartWidgetGrid', () => {
     expect(made).toEqual([0, 1]);
   });
 
+  it('lets one feed in the shared options serve every chart, each with its own adapter', () => {
+    const feed = { name: 'pulled', getBars: async () => [], subscribeBars: () => () => {} };
+    make({ widget: { watchlist: false, feed } });
+    const adapters = grid.getWidgets().map((w) => (w as unknown as { adapter: { name: string } }).adapter);
+    expect(adapters.map((a) => a.name)).toEqual(['pulled', 'pulled']);
+    expect(adapters[0]).not.toBe(adapters[1]);
+  });
+
+  it("keeps a chart's own feed over the grid's adapter maker", () => {
+    const feed = { name: 'own', getBars: async () => [], subscribeBars: () => () => {} };
+    make({ adapter: (i) => ({ name: `feed${i}` }) as never, cells: [{ symbol: 'AAA', feed }, { symbol: 'BBB' }] });
+    const names = grid.getWidgets().map((w) => (w as unknown as { adapter: { name: string } }).adapter.name);
+    expect(names).toEqual(['own', 'feed1']);
+  });
+
+  it("uses a shared feed over the grid's adapter maker, which it then never calls", () => {
+    const feed = { name: 'shared', getBars: async () => [], subscribeBars: () => () => {} };
+    const maker = vi.fn((i: number) => ({ name: `feed${i}` }) as never);
+    make({ widget: { watchlist: false, feed }, adapter: maker });
+    const names = grid.getWidgets().map((w) => (w as unknown as { adapter: { name: string } }).adapter.name);
+    expect(names).toEqual(['shared', 'shared']);
+    expect(maker).not.toHaveBeenCalled();
+  });
+
+  it("keeps a chart's own adapter over a feed shared by all", () => {
+    const feed = { name: 'shared', getBars: async () => [], subscribeBars: () => () => {} };
+    make({ widget: { watchlist: false, feed }, cells: [{ symbol: 'AAA', adapter: { name: 'mine' } as never }, { symbol: 'BBB' }] });
+    const names = grid.getWidgets().map((w) => (w as unknown as { adapter: { name: string } }).adapter.name);
+    expect(names).toEqual(['mine', 'shared']);
+  });
+
   it('saves with Ctrl+S once used, asking for a name first', () => {
     make();
     host.querySelector('.tcw-grid-cell')!.dispatchEvent(new Event('pointerdown'));

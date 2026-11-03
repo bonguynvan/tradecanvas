@@ -91,7 +91,7 @@ new ChartWidget(document.getElementById('chart')!, {
 })
 ```
 
-El `Chart` sin interfaz recibe tus propias barras (`chart.setData(bars)`) y te deja la interfaz a ti. Para React, Vue y Svelte, `@tradecanvas/react`, `/vue` y `/svelte` lo envuelven en un componente con las mismas props.
+El `Chart` sin interfaz recibe tus propias barras (`chart.setData(bars)`) y te deja la interfaz a ti. Una fuente propia es un `DataFeed` de dos métodos (`getBars`, `subscribeBars`), que se pasa como `feed` donde va un adaptador; un mismo feed sirve a cualquier número de gráficos. Para React, Vue y Svelte, `@tradecanvas/react`, `/vue` y `/svelte` lo envuelven en un componente con las mismas props.
 
 ## Documentación
 

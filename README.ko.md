@@ -91,7 +91,7 @@ new ChartWidget(document.getElementById('chart')!, {
 })
 ```
 
-헤드리스 `Chart`는 직접 준비한 봉 데이터(`chart.setData(bars)`)를 받고 화면은 여러분에게 맡깁니다. React, Vue, Svelte에서는 `@tradecanvas/react`, `/vue`, `/svelte`가 같은 props의 컴포넌트로 감쌉니다.
+헤드리스 `Chart`는 직접 준비한 봉 데이터(`chart.setData(bars)`)를 받고 화면은 여러분에게 맡깁니다. 직접 만든 데이터 소스는 두 메서드(`getBars`, `subscribeBars`)만 있는 `DataFeed`로 작성해, 어댑터를 넘기는 곳이면 어디든 `feed`로 넘기면 됩니다. 피드 하나로 차트를 몇 개든 채울 수 있습니다. React, Vue, Svelte에서는 `@tradecanvas/react`, `/vue`, `/svelte`가 같은 props의 컴포넌트로 감쌉니다.
 
 ## 문서
 

@@ -6,6 +6,7 @@ import type {
   TimeFrame,
   DrawingToolType,
   DataAdapter,
+  DataFeed,
   ChartOptions,
   NewsItem,
   PriceScaleMode,
@@ -210,6 +211,13 @@ export interface ChartWidgetOptions {
    * to `onTimeframeChange`.
    */
   adapter?: DataAdapter;
+  /**
+   * Your data feed as a source the widget pulls from (`DataFeed`, or a
+   * `ManualFeed` you push bars to), instead of `adapter`: it does all an
+   * adapter does here. Give one or the other, not both. One feed can serve
+   * several widgets: each subscribes on its own.
+   */
+  feed?: DataFeed;
   /**
    * Search symbols as the user types in the symbol search (names, exchanges).
    * Defaults to the adapter's `searchSymbols`; without either, the search

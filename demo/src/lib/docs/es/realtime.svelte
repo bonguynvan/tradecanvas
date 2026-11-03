@@ -30,6 +30,71 @@ chart.connect({ adapter: new UpbitAdapter(),   symbol: 'KRW-BTC', timeframe: '1m
   <code>MARKET_UPBIT_KRW</code> da los pasos y colores del mercado KRW.
 </p>
 
+<h2 id="data-feed">Un feed del que tira el gráfico</h2>
+<p>
+  Un <code>DataFeed</code> es la forma más corta de conectar tus datos: dos métodos, con Promises.
+  El gráfico pide barras (<code>getBars</code>) y se suscribe a las de en vivo (<code>subscribeBars</code>);
+  pagina hacia atrás, se reconecta, construye las temporalidades que le faltan al feed y se suscribe de nuevo
+  al cambiar, así que el feed solo responde. Pásalo a <code>connect</code> o a la opción <code>feed</code>
+  de un widget, donde iría un adaptador.
+</p>
+<pre><code>{`import type { DataFeed } from '@tradecanvas/chart'
+
+const feed: DataFeed = {
+  name: 'my-api',
+  // Las countBack barras más recientes, o las anteriores a \`before\` cuando el gráfico pagina hacia atrás.
+  // Un array vacío: no hay más.
+  getBars: ({ symbol, timeframe, countBack, before, signal }) =>
+    fetch(\`/candles?s=\${symbol}&tf=\${timeframe}&n=\${countBack}&before=\${before ?? ''}\`, { signal })
+      .then((r) => r.json()),
+  subscribeBars: ({ symbol, timeframe }, on) => {
+    const ws = new WebSocket(\`wss://example.com/\${symbol}/\${timeframe}\`)
+    ws.onmessage = (m) => {
+      const k = JSON.parse(m.data)
+      on.bar(k.bar, k.closed)   // de nuevo la barra en formación, una nueva, o sus valores definitivos
+    }
+    ws.onclose = () => on.connection('disconnected')   // el gráfico carga y se suscribe de nuevo
+    return () => ws.close()
+  },
+}
+
+chart.connect({ feed, symbol: 'AAPL', timeframe: '1d' })
+new ChartWidget(el, { feed, symbol: 'AAPL' })`}</code></pre>
+<p>
+  El suscriptor también recibe <code>tick</code> (operaciones y cotizaciones), <code>connection</code>
+  (un feed que nunca lo llama se da por conectado en cuanto <code>subscribeBars</code> devuelve),
+  <code>symbolInfo</code> y <code>error</code>. La <code>signal</code> se aborta cuando el gráfico ya no necesita
+  la respuesta: un cambio de símbolo o una desconexión. Lo que una suscripción envía después de cancelarse se
+  descarta, así que un socket que se cierra tarde no puede poner las barras del símbolo anterior en el nuevo.
+  Los métodos opcionales son los de un adaptador: <code>supportedTimeframes</code>,
+  <code>resolveSymbol</code>, <code>searchSymbols</code>, <code>subscribeQuotes</code>,
+  <code>fetchNews</code>, <code>fetchTrades</code> y <code>subscribeTrades</code>. Un feed que solo tiene las barras más recientes pone <code>pagesBack: false</code>, y el gráfico no le pide barras anteriores. El gráfico no toma un feed callado por uno caído (un gráfico diario, un mercado cerrado): un feed cuyo socket puede cortarse sin aviso lo informa con <code>connection</code>.
+</p>
+<p>
+  Un feed sirve a cualquier número de gráficos: cada uno se suscribe por su cuenta, así que una cuadrícula
+  toma un solo feed para todos sus gráficos (<code>widget: {'{'} feed {'}'}</code> en <code>ChartWidgetGrid</code>,
+  <code>grid.connectAll(feed, symbols, '1h')</code>), donde toma un adaptador por gráfico. Los adaptadores siguen
+  funcionando en todas partes, y uno se convierte en el otro: <code>feedFromAdapter(new BinanceAdapter())</code>
+  es un feed y <code>adapterFromFeed(feed)</code> un adaptador. Un <code>connect</code> con un adaptador y un feed a la vez lanza un error.
+</p>
+
+<h3 id="manual-feed">Barras que empujas tú: ManualFeed</h3>
+<p>
+  Para las barras que tu aplicación ya tiene, <code>ManualFeed</code> guarda el historial de cada símbolo y
+  temporalidad y envía las barras que empujas a los gráficos suscritos a esa serie. Las cargas posteriores (una
+  reconexión, volver a cambiar) las incluyen, así que las barras tienen un solo escritor, el feed, en lugar de
+  llamadas a <code>setData</code> y <code>appendBar</code> junto a un stream. Una barra empujada más antigua que
+  la más reciente da los valores definitivos de la barra de su hora; una para la que la serie no tiene barra lanza un error.
+</p>
+<pre><code>{`import { ManualFeed } from '@tradecanvas/chart'
+
+const feed = new ManualFeed()
+feed.setBars('AAPL', '1d', history)
+chart.connect({ feed, symbol: 'AAPL', timeframe: '1d' })
+
+feed.pushBar('AAPL', '1d', formingBar)        // una y otra vez mientras se forma
+feed.pushBar('AAPL', '1d', finalBar, true)    // cerrada`}</code></pre>
+
 <h2>Interfaz DataAdapter</h2>
 <pre><code>{`interface DataAdapter {
   name: string

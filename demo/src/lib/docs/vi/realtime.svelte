@@ -30,6 +30,70 @@ chart.connect({ adapter: new UpbitAdapter(),   symbol: 'KRW-BTC', timeframe: '1m
   bước giá và màu của chợ KRW.
 </p>
 
+<h2 id="data-feed">Nguồn dữ liệu để biểu đồ tự lấy</h2>
+<p>
+  <code>DataFeed</code> là cách ngắn hơn để cắm dữ liệu của bạn vào: hai phương thức, dùng Promise.
+  Biểu đồ xin nến (<code>getBars</code>) và đăng ký nhận nến trực tiếp (<code>subscribeBars</code>);
+  nó tự tải ngược về quá khứ, kết nối lại, dựng các khung thời gian nguồn dữ liệu không có và đăng ký
+  lại khi chuyển mã hay khung, nên nguồn dữ liệu chỉ việc trả lời. Truyền nó cho <code>connect</code>
+  hoặc tùy chọn <code>feed</code> của widget, ở chỗ lẽ ra là adapter.
+</p>
+<pre><code>{`import type { DataFeed } from '@tradecanvas/chart'
+
+const feed: DataFeed = {
+  name: 'my-api',
+  // countBack nến mới nhất, hoặc các nến trước \`before\` khi biểu đồ tải ngược về trước.
+  // Mảng rỗng: hết dữ liệu.
+  getBars: ({ symbol, timeframe, countBack, before, signal }) =>
+    fetch(\`/candles?s=\${symbol}&tf=\${timeframe}&n=\${countBack}&before=\${before ?? ''}\`, { signal })
+      .then((r) => r.json()),
+  subscribeBars: ({ symbol, timeframe }, on) => {
+    const ws = new WebSocket(\`wss://example.com/\${symbol}/\${timeframe}\`)
+    ws.onmessage = (m) => {
+      const k = JSON.parse(m.data)
+      on.bar(k.bar, k.closed)   // lại nến đang hình thành, một nến mới, hoặc giá trị cuối của nó
+    }
+    ws.onclose = () => on.connection('disconnected')   // biểu đồ tải lại và đăng ký lại
+    return () => ws.close()
+  },
+}
+
+chart.connect({ feed, symbol: 'AAPL', timeframe: '1d' })
+new ChartWidget(el, { feed, symbol: 'AAPL' })`}</code></pre>
+<p>
+  Đối tượng nhận còn có <code>tick</code> (giao dịch và báo giá), <code>connection</code>
+  (nguồn dữ liệu không bao giờ gọi nó được coi là đã kết nối khi <code>subscribeBars</code> trả về),
+  <code>symbolInfo</code> và <code>error</code>. <code>signal</code> bị hủy khi biểu đồ không cần câu
+  trả lời nữa: khi chuyển mã hoặc ngắt kết nối. Những gì một lượt đăng ký gửi sau khi đã hủy đăng ký
+  đều bị bỏ, nên một socket đóng muộn không thể đặt nến của mã cũ lên mã mới. Các phương thức tùy chọn
+  là của adapter: <code>supportedTimeframes</code>, <code>resolveSymbol</code>, <code>searchSymbols</code>,
+  <code>subscribeQuotes</code>, <code>fetchNews</code>, <code>fetchTrades</code> và <code>subscribeTrades</code>. Feed chỉ có các nến mới nhất thì đặt <code>pagesBack: false</code>, biểu đồ sẽ không hỏi nến cũ hơn. Biểu đồ không coi một feed im lặng là đã chết (biểu đồ ngày, thị trường đóng cửa): feed nào có socket có thể rớt mà không báo thì tự báo qua <code>connection</code>.
+</p>
+<p>
+  Một nguồn dữ liệu phục vụ bao nhiêu biểu đồ cũng được: mỗi biểu đồ tự đăng ký riêng, nên một lưới
+  chỉ cần một nguồn dữ liệu cho mọi biểu đồ (<code>widget: {'{'} feed {'}'}</code> trong <code>ChartWidgetGrid</code>,
+  <code>grid.connectAll(feed, symbols, '1h')</code>), còn với adapter thì mỗi biểu đồ cần một cái.
+  Adapter vẫn dùng được ở mọi nơi, và hai loại đổi qua lại được: <code>feedFromAdapter(new BinanceAdapter())</code>
+  là một nguồn dữ liệu, <code>adapterFromFeed(feed)</code> là một adapter. Gọi <code>connect</code> với cả adapter lẫn nguồn dữ liệu sẽ báo lỗi.
+</p>
+
+<h3 id="manual-feed">Nến bạn tự đẩy vào: ManualFeed</h3>
+<p>
+  Với nến mà ứng dụng của bạn đã có sẵn, <code>ManualFeed</code> giữ lịch sử của từng mã và khung
+  thời gian, và gửi các nến bạn đẩy vào tới những biểu đồ đang đăng ký chuỗi đó. Các lần tải sau (kết
+  nối lại, chuyển về) đều có chúng, nên nến chỉ có một nơi ghi là nguồn dữ liệu, thay vì các lệnh gọi
+  <code>setData</code> và <code>appendBar</code> nằm cạnh một luồng dữ liệu. Nến đẩy vào mà cũ hơn nến
+  mới nhất là giá trị cuối của nến ở thời điểm đó; nến mà chuỗi không có nến nào cùng thời điểm thì báo lỗi.
+</p>
+<pre><code>{`import { ManualFeed } from '@tradecanvas/chart'
+
+const feed = new ManualFeed()
+feed.setBars('AAPL', '1d', history)
+chart.connect({ feed, symbol: 'AAPL', timeframe: '1d' })
+
+feed.pushBar('AAPL', '1d', formingBar)        // lặp lại mỗi khi nến thay đổi
+feed.pushBar('AAPL', '1d', finalBar, true)    // đã đóng`}</code></pre>
+
 <h2>Interface DataAdapter</h2>
 <pre><code>{`interface DataAdapter {
   name: string

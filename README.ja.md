@@ -91,7 +91,7 @@ new ChartWidget(document.getElementById('chart')!, {
 })
 ```
 
-ヘッドレスの `Chart` は自前のバー（`chart.setData(bars)`）を受け取り、画面づくりはあなたに任せます。React、Vue、Svelte では `@tradecanvas/react`、`/vue`、`/svelte` が同じ props のコンポーネントとして包みます。
+ヘッドレスの `Chart` は自前のバー（`chart.setData(bars)`）を受け取り、画面づくりはあなたに任せます。独自のデータ源は 2 つのメソッド（`getBars`、`subscribeBars`）だけの `DataFeed` として書け、アダプターを渡す場所ならどこでも `feed` として渡せます。1 つの feed で何枚のチャートにも配信できます。React、Vue、Svelte では `@tradecanvas/react`、`/vue`、`/svelte` が同じ props のコンポーネントとして包みます。
 
 ## ドキュメント
 

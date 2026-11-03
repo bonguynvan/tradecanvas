@@ -55,6 +55,7 @@ import TradeCanvas from './TradeCanvas.vue';
 beforeEach(() => vi.clearAllMocks());
 
 const BAR = { time: 1, open: 1, high: 1, low: 1, close: 1, volume: 1 };
+const FEED = { name: 'pulled', getBars: async () => [], subscribeBars: () => () => {} };
 
 describe('<TradeCanvas> (vue)', () => {
   it('passes options through to the Chart, under its own props', () => {
@@ -88,6 +89,12 @@ describe('<TradeCanvas> (vue)', () => {
     expect(chart.connect).toHaveBeenCalledWith(
       expect.objectContaining({ symbol: 'ETHUSDT', timeframe: '1m' }),
     );
+  });
+
+  it('connects to a feed instead of an adapter when given one', () => {
+    mount(TradeCanvas, { props: { feed: FEED, symbol: 'AAA', timeframe: '1h' } });
+    expect(chart.connect).toHaveBeenCalledWith(expect.objectContaining({ feed: FEED, symbol: 'AAA', timeframe: '1h' }));
+    expect((chart.connect.mock.calls[0] as unknown[])[0]).not.toHaveProperty('adapter');
   });
 
   it('uses setData for static data and does not connect', () => {

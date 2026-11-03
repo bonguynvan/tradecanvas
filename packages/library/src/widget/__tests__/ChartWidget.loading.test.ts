@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import type { DataAdapter, OHLCBar, StreamConfig } from '@tradecanvas/commons';
+import type { DataAdapter, DataFeed, OHLCBar, StreamConfig } from '@tradecanvas/commons';
 
 /**
  * Stand-in for the canvas-backed Chart (jsdom has no 2D context). Only what
@@ -235,5 +235,36 @@ describe('ChartWidget.toggleReplay', () => {
     expect(document.querySelector('.tcw-replay-bar')).not.toBeNull();
     widget.toggleReplay();
     expect(document.querySelector('.tcw-replay-bar')).toBeNull();
+  });
+});
+
+describe('ChartWidget with a feed', () => {
+  const feed = {
+    name: 'pulled',
+    getBars: async () => bars(10),
+    subscribeBars: () => () => {},
+  } as unknown as DataFeed;
+
+  it('connects its chart through an adapter made from the feed, as a live widget', async () => {
+    widget = new ChartWidget(host, { feed, symbol: 'AAA', timeframe: '5m', watchlist: false });
+    const config = FakeChart.last.connects[0].config;
+    expect(config.adapter?.name).toBe('pulled');
+    expect(config.feed).toBeUndefined();
+    expect(visible()).toBe(true);
+    FakeChart.last.connects[0].resolve(bars(10));
+    await vi.advanceTimersByTimeAsync(0);
+    expect(visible()).toBe(false);
+  });
+
+  it('gives each widget its own adapter, so one feed serves several', () => {
+    widget = new ChartWidget(host, { feed, symbol: 'AAA', watchlist: false });
+    const first = FakeChart.last.connects[0].config.adapter;
+    const other = new ChartWidget(document.body.appendChild(document.createElement('div')), { feed, symbol: 'BBB', watchlist: false });
+    expect(FakeChart.last.connects[0].config.adapter).not.toBe(first);
+    other.destroy();
+  });
+
+  it('refuses both an adapter and a feed', () => {
+    expect(() => new ChartWidget(host, { feed, adapter, symbol: 'AAA', watchlist: false })).toThrow(/not both/);
   });
 });

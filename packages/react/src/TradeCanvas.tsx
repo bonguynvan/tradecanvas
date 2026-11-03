@@ -19,6 +19,7 @@ import type {
   SignalMarkerStyle,
   TradeZoneStyle,
   DataAdapter,
+  DataFeed,
   StreamConfig,
   ChartStyleOverrides,
   IndicatorSpec,
@@ -36,7 +37,7 @@ export interface TradeCanvasRef {
  * `theme`, `chartType`, `indicators`, `data`, `stream`, `features`,
  * `overrides`, the markers and zones and `onCrosshairMove` go to it
  * (`setTheme`, `setChartType`, `setData`…). `options` and `autoScale` are
- * read at mount; `adapter`, `historyLimit` and `watermarkText` when the
+ * read at mount; `adapter`, `feed`, `historyLimit` and `watermarkText` when the
  * stream connects (at mount, or for a new symbol or interval). Unmounting
  * closes the chart's stream and destroys it.
  */
@@ -70,6 +71,8 @@ export interface TradeCanvasProps {
   data?: OHLCBar[];
   /** The stream's feed (Binance by default), taken when the stream connects. */
   adapter?: DataAdapter;
+  /** The stream's source as a feed the chart pulls from (`DataFeed`, `ManualFeed`); over `adapter` when both are given. */
+  feed?: DataFeed;
   /** `false`: no stream until you say so (no Binance by default); the chart waits for `data`. Default `true`. */
   stream?: boolean;
   historyLimit?: number;
@@ -117,6 +120,7 @@ export const TradeCanvas = forwardRef<TradeCanvasRef, TradeCanvasProps>(
       indicators = [],
       data,
       adapter,
+      feed,
       stream = true,
       historyLimit = 500,
       features,
@@ -190,8 +194,9 @@ export const TradeCanvas = forwardRef<TradeCanvasRef, TradeCanvasProps>(
 
       fedRef.current = data ? feedBars(chart, data, null) : null;
       if (!data && stream) {
-        const dataAdapter = adapter ?? new BinanceAdapter();
-        chart.connect({ adapter: dataAdapter, symbol, timeframe, historyLimit });
+        // A feed when given, else the adapter (Binance by default).
+        const source = feed ? { feed: feed } : { adapter: adapter ?? new BinanceAdapter() };
+        chart.connect({ ...source, symbol, timeframe, historyLimit });
         streamKeyRef.current = `${symbol}|${timeframe}`;
       }
 
@@ -221,12 +226,13 @@ export const TradeCanvas = forwardRef<TradeCanvasRef, TradeCanvasProps>(
       streamKeyRef.current = key;
 
       chart.disconnectStream();
-      const dataAdapter = adapter ?? new BinanceAdapter();
-      chart.connect({ adapter: dataAdapter, symbol, timeframe, historyLimit });
+      // A feed when given, else the adapter (Binance by default).
+      const source = feed ? { feed: feed } : { adapter: adapter ?? new BinanceAdapter() };
+      chart.connect({ ...source, symbol, timeframe, historyLimit });
       if (watermarkText !== undefined) {
         chart.setWatermark(watermarkText);
       }
-    }, [symbol, timeframe, adapter, historyLimit, data, stream, watermarkText]);
+    }, [symbol, timeframe, adapter, feed, historyLimit, data, stream, watermarkText]);
 
     useEffect(() => {
       const next = JSON.stringify(features ?? null);

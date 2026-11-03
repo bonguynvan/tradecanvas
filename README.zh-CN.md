@@ -91,7 +91,7 @@ new ChartWidget(document.getElementById('chart')!, {
 })
 ```
 
-无界面的 `Chart` 接收你自己的 K 线（`chart.setData(bars)`），界面由你决定。React、Vue 和 Svelte 用户可使用 `@tradecanvas/react`、`/vue` 和 `/svelte`，它们以相同的 props 封装成组件。
+无界面的 `Chart` 接收你自己的 K 线（`chart.setData(bars)`），界面由你决定。自有数据源可写成只有两个方法（`getBars`、`subscribeBars`）的 `DataFeed`，在任何接受 adapter 的地方以 `feed` 传入；一个 feed 可同时供任意多个图表使用。React、Vue 和 Svelte 用户可使用 `@tradecanvas/react`、`/vue` 和 `/svelte`，它们以相同的 props 封装成组件。
 
 ## 文档
 

@@ -5589,6 +5589,11 @@
         "doc": "Your data feed: the widget connects it and loads each symbol and interval the user picks. Without one nothing connects, Binance or any other: the widget shows the bars you give `setData`."
       },
       {
+        "name": "feed",
+        "type": "DataFeed",
+        "doc": "Your data feed as a source the widget pulls from (`DataFeed`, or a `ManualFeed` you push bars to), instead of `adapter`: it does all an adapter does here. Give one or the other, not both. One feed can serve several widgets: each subscribes on its own."
+      },
+      {
         "name": "searchSymbols",
         "type": "(query: string, signal: AbortSignal) => Promise<SymbolInfo[]>",
         "doc": "Search symbols as the user types in the symbol search (names, exchanges). Defaults to the adapter's `searchSymbols`; without either, the search filters `symbols`.",
@@ -6035,12 +6040,12 @@
       {
         "name": "widget",
         "type": "ChartWidgetOptions",
-        "doc": "Options for every chart. Leave `adapter` out of these when there is more than one chart: an adapter keeps one stream, so each chart needs its own (see `adapter`)."
+        "doc": "Options for every chart. Leave `adapter` out of these when there is more than one chart: an adapter keeps one stream, so each chart needs its own (see `adapter`). A `feed` here serves every chart."
       },
       {
         "name": "adapter",
         "type": "(index: number) => DataAdapter",
-        "doc": "Makes each chart's data adapter, `new BinanceAdapter()` say; called once per chart.",
+        "doc": "Makes each chart's data adapter, `new BinanceAdapter()` say; called once per chart, but not for one with a `feed` (its own or `widget`'s).",
         "kind": "function"
       },
       {

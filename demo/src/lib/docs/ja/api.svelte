@@ -508,7 +508,7 @@ const widget = new ChartWidget(host, {
   symbol: 'BTCUSDT',
   timeframe: '5m',
   theme: 'dark',
-  adapter: new BinanceAdapter(),
+  adapter: new BinanceAdapter(),   // または feed：チャートが取りに行く DataFeed（「リアルタイム」を参照）
   historyLimit: 500,
   trading: true,
   features: { 'toolbar.replay': false },   // ウィジェットのスイッチ：「カスタマイズ」を参照
@@ -1081,6 +1081,7 @@ const grid = new ChartWidgetGrid(host, {
   layout: '2x2',                                   // '1x1' '1x2' '2x1' '2x2' '1x3' '3x1' '2x3' '3x2'
   widget: { timeframe: '1h' },                    // すべてのチャートに適用
   adapter: () => new BinanceAdapter(),            // チャートごとに 1 つ：アダプターは 1 本のストリームを保持する
+  // または widget: { timeframe: '1h', feed }：1 つの DataFeed ですべてのチャートに対応
   cells: [{ symbol: 'BTCUSDT' }, { symbol: 'ETHUSDT' }, { symbol: 'SOLUSDT' }, { symbol: 'BNBUSDT' }],
   sync: { crosshair: true, time: false, symbol: false, interval: false, drawings: false, replay: false },
 })

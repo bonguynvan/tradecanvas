@@ -114,6 +114,9 @@ chart.updateLastBar({ ...chart.getData()[chart.getData().length - 1], close: las
 
 For a live feed, give the chart an adapter instead and it handles history,
 streaming and reconnects: `chart.connect({ adapter, symbol, timeframe })`.
+For a source of your own, write a `DataFeed` (`getBars` and `subscribeBars`,
+Promise-based) and pass `{ feed }` instead; bars your app pushes go through a
+`ManualFeed`. One feed serves many charts, a widget or a grid takes one as `feed`.
 Built-in adapters: `BinanceAdapter`, `CoinbaseAdapter`, `BybitAdapter`,
 `KrakenAdapter`, `UpbitAdapter` (Korea; a browser needs its own proxy as
 `restBase`), `MockAdapter` (random data for demos), and two bases for your

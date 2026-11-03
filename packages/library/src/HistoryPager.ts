@@ -116,6 +116,11 @@ export class HistoryPager {
     } catch (err: unknown) {
       if (seq !== this.seq) return 0;
       this.loading = false;
+      // Cancelled by its feed (the stream reconnected): no failure, nothing to wait out.
+      if (err instanceof Error && err.name === 'AbortError') {
+        this.emit({ state: 'loaded', count: 0 });
+        return 0;
+      }
       this.failures++;
       this.retryAt = this.now() + Math.min(HISTORY_RETRY_MAX_MS, HISTORY_RETRY_MS * 2 ** (this.failures - 1));
       this.emit({ state: 'error', count: 0, error: err instanceof Error ? err.message : String(err) });

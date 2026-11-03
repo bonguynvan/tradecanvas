@@ -30,6 +30,67 @@ chart.connect({ adapter: new UpbitAdapter(),   symbol: 'KRW-BTC', timeframe: '1m
   단위와 색을 적용합니다.
 </p>
 
+<h2 id="data-feed">차트가 직접 가져가는 피드</h2>
+<p>
+  <code>DataFeed</code>는 데이터를 연결하는 더 짧은 방법입니다. Promise를 쓰는 메서드 두 개면 됩니다.
+  차트가 봉을 요청하고(<code>getBars</code>) 실시간 봉을 구독합니다(<code>subscribeBars</code>). 과거로 페이지를 넘기고,
+  다시 연결하고, 피드에 없는 시간 단위를 만들고, 바꿀 때 다시 구독하는 일은 차트가 하므로 피드는 답하기만 하면 됩니다.
+  어댑터가 들어갈 자리, 곧 <code>connect</code>나 위젯의 <code>feed</code> 옵션에 넘기세요.
+</p>
+<pre><code>{`import type { DataFeed } from '@tradecanvas/chart'
+
+const feed: DataFeed = {
+  name: 'my-api',
+  // 가장 새 봉 countBack개, 또는 차트가 과거로 넘길 때는 \`before\` 이전의 봉.
+  // 빈 배열: 더 없음.
+  getBars: ({ symbol, timeframe, countBack, before, signal }) =>
+    fetch(\`/candles?s=\${symbol}&tf=\${timeframe}&n=\${countBack}&before=\${before ?? ''}\`, { signal })
+      .then((r) => r.json()),
+  subscribeBars: ({ symbol, timeframe }, on) => {
+    const ws = new WebSocket(\`wss://example.com/\${symbol}/\${timeframe}\`)
+    ws.onmessage = (m) => {
+      const k = JSON.parse(m.data)
+      on.bar(k.bar, k.closed)   // 형성 중인 봉을 다시, 새 봉, 또는 그 봉의 확정치
+    }
+    ws.onclose = () => on.connection('disconnected')   // 차트가 다시 불러오고 다시 구독함
+    return () => ws.close()
+  },
+}
+
+chart.connect({ feed, symbol: 'AAPL', timeframe: '1d' })
+new ChartWidget(el, { feed, symbol: 'AAPL' })`}</code></pre>
+<p>
+  구독 객체는 <code>tick</code>(체결과 호가), <code>connection</code>(한 번도 부르지 않는 피드는
+  <code>subscribeBars</code>가 반환되면 연결된 것으로 봅니다), <code>symbolInfo</code>, <code>error</code>도 받습니다.
+  <code>signal</code>은 차트에 더 이상 답이 필요 없을 때, 곧 종목을 바꾸거나 연결을 끊을 때 중단됩니다. 구독을 해제한
+  뒤에 온 것은 버리므로, 늦게 닫히는 소켓이 이전 종목의 봉을 새 종목에 올릴 수 없습니다. 선택 메서드는 어댑터의 것과 같은
+  <code>supportedTimeframes</code>, <code>resolveSymbol</code>, <code>searchSymbols</code>, <code>subscribeQuotes</code>,
+  <code>fetchNews</code>, <code>fetchTrades</code>, <code>subscribeTrades</code>입니다. 최신 봉만 있는 피드는 <code>pagesBack: false</code>를 설정하면 차트가 더 오래된 봉을 요청하지 않습니다. 차트는 조용한 피드(일봉, 장 마감)를 끊긴 것으로 보지 않으므로, 소켓이 조용히 끊길 수 있는 피드는 <code>connection</code>으로 알려야 합니다.
+</p>
+<p>
+  피드 하나로 차트를 몇 개든 쓸 수 있습니다. 차트마다 따로 구독하므로, 그리드는 차트마다 어댑터를 하나씩 받는 대신
+  모든 차트에 피드 하나를 씁니다(<code>ChartWidgetGrid</code>의 <code>widget: {'{'} feed {'}'}</code>,
+  <code>grid.connectAll(feed, symbols, '1h')</code>). 어댑터는 어디서나 그대로 쓸 수 있고, 둘은 서로 바꿀 수 있습니다.
+  <code>feedFromAdapter(new BinanceAdapter())</code>는 피드이고 <code>adapterFromFeed(feed)</code>는 어댑터입니다.
+  어댑터와 피드를 함께 넘긴 <code>connect</code>는 오류를 던집니다.
+</p>
+
+<h3 id="manual-feed">직접 넣는 봉: ManualFeed</h3>
+<p>
+  앱이 이미 가진 봉에는 <code>ManualFeed</code>가 종목과 시간 단위마다 기록을 보관하고, 넣은 봉을 그 시리즈를 구독한
+  차트에 보냅니다. 이후의 불러오기(다시 연결하거나 다시 바꿔 올 때)에도 포함되므로, 스트림 옆에서 <code>setData</code>와
+  <code>appendBar</code>를 부르는 대신 봉을 쓰는 곳은 피드 하나가 됩니다. 가장 새 봉보다 오래된 봉을 넣으면 그 시각 봉의
+  확정치가 되고, 시리즈에 그 시각의 봉이 없으면 오류를 던집니다.
+</p>
+<pre><code>{`import { ManualFeed } from '@tradecanvas/chart'
+
+const feed = new ManualFeed()
+feed.setBars('AAPL', '1d', history)
+chart.connect({ feed, symbol: 'AAPL', timeframe: '1d' })
+
+feed.pushBar('AAPL', '1d', formingBar)        // 형성되는 동안 계속
+feed.pushBar('AAPL', '1d', finalBar, true)    // 마감`}</code></pre>
+
 <h2>DataAdapter 인터페이스</h2>
 <pre><code>{`interface DataAdapter {
   name: string

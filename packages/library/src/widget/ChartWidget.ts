@@ -78,7 +78,7 @@ import { WidgetTooltip } from './WidgetTooltip.js';
 import { WidgetIndicatorLegend, type IndicatorLegendPane, type IndicatorLegendRow, type PaneAction } from './WidgetIndicatorLegend.js';
 import { formatIndicatorValue, indicatorPointAt, legendValues } from './legendValues.js';
 import { compareLegendRows } from './compareLegend.js';
-import { RANGE_PRESETS, ResamplingAdapter, SYMBOL_INDICATOR_IDS, indicatorCategory, rangePresetStart, servesTimeframe, sourceParam, withResampling, type RangePreset } from '@tradecanvas/core';
+import { RANGE_PRESETS, ResamplingAdapter, SYMBOL_INDICATOR_IDS, adapterFromFeed, indicatorCategory, rangePresetStart, servesTimeframe, sourceParam, withResampling, type RangePreset } from '@tradecanvas/core';
 import { WidgetBracketBar } from './WidgetBracketBar.js';
 import { AlertNotifier } from './AlertNotifier.js';
 import { WidgetDepthLadder } from './WidgetDepthLadder.js';
@@ -251,6 +251,16 @@ const pageHidden = (): boolean => typeof document !== 'undefined' && document.hi
 
 /** Recent bars looked at to tell a market open on weekends. */
 const WEEKDAY_SAMPLE = 200;
+
+/**
+ * The options with a `feed` made into the widget's own adapter, so all
+ * after reads `adapter` alone: one per widget, as a feed serves many.
+ */
+function withFeedAdapter(options: ChartWidgetOptions): ChartWidgetOptions {
+  if (!options.feed) return options;
+  if (options.adapter) throw new TypeError('A widget takes an adapter or a feed, not both');
+  return { ...options, adapter: adapterFromFeed(options.feed), feed: undefined };
+}
 
 export class ChartWidget {
   private chart: Chart;
@@ -529,7 +539,8 @@ export class ChartWidget {
   /** Whether the chart shows the "+" by the price axis while its switch is on. */
   private priceAxisAddDefault = false;
 
-  constructor(container: HTMLElement, options: ChartWidgetOptions = {}) {
+  constructor(container: HTMLElement, givenOptions: ChartWidgetOptions = {}) {
+    const options = withFeedAdapter(givenOptions);
     this.options = options;
     this.replayStep = options.replayStep ?? 'auto';
     // Read once, as plain JavaScript may hand over anything: tickers from here on, the info kept aside.

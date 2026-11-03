@@ -1,4 +1,5 @@
-import type { ChartOptions, Theme, TimeFrame, DataSeries, DataAdapter, StreamConfig } from '@tradecanvas/commons';
+import type { ChartOptions, Theme, TimeFrame, DataSeries, DataAdapter, DataFeed, StreamConfig } from '@tradecanvas/commons';
+import { isDataFeed } from '@tradecanvas/core';
 import { Chart } from '../Chart.js';
 
 export type GridLayout = '1x1' | '1x2' | '2x1' | '2x2' | '1x3' | '3x1' | '2x3' | '3x2';
@@ -198,12 +199,12 @@ export class ChartGrid {
   }
 
   /**
-   * Connect each chart to a symbol. An adapter keeps one stream, so pass a
-   * function that makes one per chart (`() => new BinanceAdapter()`); a single
-   * adapter object serves one chart only.
+   * Connect each chart to a symbol. A feed (`DataFeed`) serves them all. An
+   * adapter keeps one stream, so pass a function that makes one per chart
+   * (`() => new BinanceAdapter()`); a single adapter object serves one chart only.
    */
   async connectAll(
-    adapter: DataAdapter | ((symbol: string, index: number) => DataAdapter),
+    source: DataFeed | DataAdapter | ((symbol: string, index: number) => DataAdapter),
     symbols: string[],
     timeframe: TimeFrame,
     historyLimit = 500,
@@ -211,7 +212,9 @@ export class ChartGrid {
     const promises: Promise<void>[] = [];
     for (let i = 0; i < this.cells.length && i < symbols.length; i++) {
       promises.push(this.connectCell(i, {
-        adapter: typeof adapter === 'function' ? adapter(symbols[i], i) : adapter,
+        ...(typeof source === 'function'
+          ? { adapter: source(symbols[i], i) }
+          : isDataFeed(source) ? { feed: source } : { adapter: source }),
         symbol: symbols[i],
         timeframe,
         historyLimit,

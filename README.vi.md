@@ -91,7 +91,7 @@ new ChartWidget(document.getElementById('chart')!, {
 })
 ```
 
-`Chart` không giao diện nhận dữ liệu nến của bạn (`chart.setData(bars)`) và để giao diện cho bạn tự làm. Với React, Vue và Svelte, `@tradecanvas/react`, `/vue` và `/svelte` bọc nó trong một component có cùng props.
+`Chart` không giao diện nhận dữ liệu nến của bạn (`chart.setData(bars)`) và để giao diện cho bạn tự làm. Nguồn dữ liệu của riêng bạn là một `DataFeed` gồm hai phương thức (`getBars`, `subscribeBars`), truyền vào `feed` ở mọi chỗ nhận adapter; một feed phục vụ được bao nhiêu chart cũng được. Với React, Vue và Svelte, `@tradecanvas/react`, `/vue` và `/svelte` bọc nó trong một component có cùng props.
 
 ## Tài liệu
 

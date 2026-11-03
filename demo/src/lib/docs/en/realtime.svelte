@@ -30,6 +30,71 @@ chart.connect({ adapter: new UpbitAdapter(),   symbol: 'KRW-BTC', timeframe: '1m
   market's steps and colours.
 </p>
 
+<h2 id="data-feed">A feed the chart pulls from</h2>
+<p>
+  A <code>DataFeed</code> is the shorter way to plug in your data: two methods, with Promises.
+  The chart asks for bars (<code>getBars</code>) and subscribes to live ones
+  (<code>subscribeBars</code>); it pages back, reconnects, builds the timeframes the feed lacks
+  and subscribes again on a switch, so the feed only answers. Give it to <code>connect</code>
+  or a widget's <code>feed</code> option, where an adapter would go.
+</p>
+<pre><code>{`import type { DataFeed } from '@tradecanvas/chart'
+
+const feed: DataFeed = {
+  name: 'my-api',
+  // The newest countBack bars, or the ones before \`before\` when the chart pages back.
+  // An empty array: no more.
+  getBars: ({ symbol, timeframe, countBack, before, signal }) =>
+    fetch(\`/candles?s=\${symbol}&tf=\${timeframe}&n=\${countBack}&before=\${before ?? ''}\`, { signal })
+      .then((r) => r.json()),
+  subscribeBars: ({ symbol, timeframe }, on) => {
+    const ws = new WebSocket(\`wss://example.com/\${symbol}/\${timeframe}\`)
+    ws.onmessage = (m) => {
+      const k = JSON.parse(m.data)
+      on.bar(k.bar, k.closed)   // the forming bar again, a new one, or its final values
+    }
+    ws.onclose = () => on.connection('disconnected')   // the chart loads and subscribes again
+    return () => ws.close()
+  },
+}
+
+chart.connect({ feed, symbol: 'AAPL', timeframe: '1d' })
+new ChartWidget(el, { feed, symbol: 'AAPL' })`}</code></pre>
+<p>
+  The subscriber also takes <code>tick</code> (trades and quotes), <code>connection</code>
+  (a feed that never calls it is taken as connected once <code>subscribeBars</code> returns),
+  <code>symbolInfo</code> and <code>error</code>. The <code>signal</code> is aborted when the
+  chart no longer needs the answer: a symbol switch or a disconnect. What a subscription sends
+  after its unsubscribe is dropped, so a socket that closes late can't put the old symbol's bars
+  on the new one. The optional methods are an adapter's: <code>supportedTimeframes</code>,
+  <code>resolveSymbol</code>, <code>searchSymbols</code>, <code>subscribeQuotes</code>,
+  <code>fetchNews</code>, <code>fetchTrades</code> and <code>subscribeTrades</code>. A feed with only the newest bars sets <code>pagesBack: false</code>, so the chart never asks for older ones. The chart doesn't take a quiet feed for a dead one (a daily chart, a closed market): a feed whose socket can drop silently reports it through <code>connection</code>.
+</p>
+<p>
+  One feed serves any number of charts: each subscribes on its own, so a grid takes one feed
+  for all its charts (<code>widget: {'{'} feed {'}'}</code> in <code>ChartWidgetGrid</code>,
+  <code>grid.connectAll(feed, symbols, '1h')</code>), where it takes an adapter per chart.
+  Adapters keep working everywhere, and the two convert: <code>feedFromAdapter(new BinanceAdapter())</code>
+  is a feed, <code>adapterFromFeed(feed)</code> an adapter. A connect with both an adapter and a feed throws.
+</p>
+
+<h3 id="manual-feed">Bars you push: ManualFeed</h3>
+<p>
+  For bars your app already has, <code>ManualFeed</code> keeps the history of each symbol and
+  timeframe and sends the bars you push to the charts subscribed to that series. Later loads (a
+  reconnect, a switch back) include them, so the bars have one writer, the feed, instead of
+  <code>setData</code> and <code>appendBar</code> calls next to a stream. A pushed bar older than
+  the newest is the final values of the bar at its time; one the series has no bar for throws.
+</p>
+<pre><code>{`import { ManualFeed } from '@tradecanvas/chart'
+
+const feed = new ManualFeed()
+feed.setBars('AAPL', '1d', history)
+chart.connect({ feed, symbol: 'AAPL', timeframe: '1d' })
+
+feed.pushBar('AAPL', '1d', formingBar)        // again and again as it forms
+feed.pushBar('AAPL', '1d', finalBar, true)    // closed`}</code></pre>
+
 <h2>DataAdapter interface</h2>
 <pre><code>{`interface DataAdapter {
   name: string

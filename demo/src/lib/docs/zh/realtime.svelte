@@ -29,6 +29,63 @@ chart.connect({ adapter: new UpbitAdapter(),   symbol: 'KRW-BTC', timeframe: '1m
   市场的价格档位和配色。
 </p>
 
+<h2 id="data-feed">由图表拉取的数据源</h2>
+<p>
+  <code>DataFeed</code> 是接入自有数据更简短的方式：两个方法，基于 Promise。图表请求K线（<code>getBars</code>）
+  并订阅实时K线（<code>subscribeBars</code>）；向前分页、断线重连、构建数据源没有的周期以及切换后重新订阅都由图表完成，
+  数据源只需回答。把它传给 <code>connect</code> 或组件的 <code>feed</code> 选项，也就是原本放适配器的位置。
+</p>
+<pre><code>{`import type { DataFeed } from '@tradecanvas/chart'
+
+const feed: DataFeed = {
+  name: 'my-api',
+  // 最新的 countBack 根K线；图表向前分页时，为 \`before\` 之前的K线。
+  // 空数组：没有更多了。
+  getBars: ({ symbol, timeframe, countBack, before, signal }) =>
+    fetch(\`/candles?s=\${symbol}&tf=\${timeframe}&n=\${countBack}&before=\${before ?? ''}\`, { signal })
+      .then((r) => r.json()),
+  subscribeBars: ({ symbol, timeframe }, on) => {
+    const ws = new WebSocket(\`wss://example.com/\${symbol}/\${timeframe}\`)
+    ws.onmessage = (m) => {
+      const k = JSON.parse(m.data)
+      on.bar(k.bar, k.closed)   // 再次发送正在形成的K线、一根新K线，或其最终数据
+    }
+    ws.onclose = () => on.connection('disconnected')   // 图表会重新加载并重新订阅
+    return () => ws.close()
+  },
+}
+
+chart.connect({ feed, symbol: 'AAPL', timeframe: '1d' })
+new ChartWidget(el, { feed, symbol: 'AAPL' })`}</code></pre>
+<p>
+  订阅对象还接收 <code>tick</code>（成交与报价）、<code>connection</code>（从不调用它的数据源，在
+  <code>subscribeBars</code> 返回后即视为已连接）、<code>symbolInfo</code> 和 <code>error</code>。图表不再需要回答时
+  （切换品种或断开连接），<code>signal</code> 会被中止。订阅取消之后发来的内容会被丢弃，因此关闭得晚的 socket
+  不会把旧品种的K线放到新品种上。可选方法与适配器相同：<code>supportedTimeframes</code>、<code>resolveSymbol</code>、
+  <code>searchSymbols</code>、<code>subscribeQuotes</code>、<code>fetchNews</code>、<code>fetchTrades</code> 和 <code>subscribeTrades</code>。只有最新K线的数据源设置 <code>pagesBack: false</code>，图表便不会再请求更早的K线。图表不会把安静的数据源（日线图、休市）当作已断开：socket 可能无声断开的数据源，请通过 <code>connection</code> 自行报告。
+</p>
+<p>
+  一个数据源可服务任意数量的图表：每个图表各自订阅，因此网格的所有图表只需一个数据源（<code>ChartWidgetGrid</code>
+  中的 <code>widget: {'{'} feed {'}'}</code>、<code>grid.connectAll(feed, symbols, '1h')</code>），而适配器需要每个图表一个。
+  适配器在各处照常可用，两者也可互相转换：<code>feedFromAdapter(new BinanceAdapter())</code> 是一个数据源，
+  <code>adapterFromFeed(feed)</code> 是一个适配器。同时传入适配器和数据源的 <code>connect</code> 会抛出错误。
+</p>
+
+<h3 id="manual-feed">自己推送的K线：ManualFeed</h3>
+<p>
+  对于应用中已有的K线，<code>ManualFeed</code> 保存每个品种和周期的历史，并把你推送的K线发给订阅了该序列的图表。
+  之后的加载（重新连接、切换回来）也包含这些K线，因此K线只有一个写入方，即数据源，而不是在数据流旁边调用
+  <code>setData</code> 和 <code>appendBar</code>。推送的K线若早于最新K线，就是该时间K线的最终数据；序列中没有对应时间K线的则抛出错误。
+</p>
+<pre><code>{`import { ManualFeed } from '@tradecanvas/chart'
+
+const feed = new ManualFeed()
+feed.setBars('AAPL', '1d', history)
+chart.connect({ feed, symbol: 'AAPL', timeframe: '1d' })
+
+feed.pushBar('AAPL', '1d', formingBar)        // 形成过程中反复推送
+feed.pushBar('AAPL', '1d', finalBar, true)    // 已收盘`}</code></pre>
+
 <h2>DataAdapter 接口</h2>
 <pre><code>{`interface DataAdapter {
   name: string

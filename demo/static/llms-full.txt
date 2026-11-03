@@ -150,6 +150,9 @@ chart.updateLastBar({ ...chart.getData()[chart.getData().length - 1], close: las
 
 For a live feed, give the chart an adapter instead and it handles history,
 streaming and reconnects: `chart.connect({ adapter, symbol, timeframe })`.
+For a source of your own, write a `DataFeed` (`getBars` and `subscribeBars`,
+Promise-based) and pass `{ feed }` instead; bars your app pushes go through a
+`ManualFeed`. One feed serves many charts, a widget or a grid takes one as `feed`.
 Built-in adapters: `BinanceAdapter`, `CoinbaseAdapter`, `BybitAdapter`,
 `KrakenAdapter`, `UpbitAdapter` (Korea; a browser needs its own proxy as
 `restBase`), `MockAdapter` (random data for demos), and two bases for your
@@ -435,6 +438,68 @@ skills/tradecanvas/references/recipes.md
 
 Worked examples. Every `ts` block here is type-checked against the library in
 CI (`pnpm docs:check`), so the calls are real.
+
+## Your own data feed: a DataFeed
+
+For a source of your own, a `DataFeed` is the shortest contract: the chart asks
+for bars (`getBars`) and subscribes to live ones (`subscribeBars`), and does the
+paging back, reconnecting, timeframes the feed lacks and resubscribing on a
+switch itself. Give it as `feed` where an adapter would go. One feed serves any
+number of charts (each subscribes on its own), so a grid takes one for all.
+
+```ts
+import { Chart, type DataFeed, type OHLCBar } from '@tradecanvas/chart';
+import { ChartWidget } from '@tradecanvas/chart/widget';
+
+const feed: DataFeed = {
+  name: 'my-api',
+  // The newest `countBack` bars, or the ones before `before` (the oldest bar's
+  // time) when the chart pages back. An empty array means no more.
+  getBars: async ({ symbol, timeframe, countBack, before, signal }): Promise<OHLCBar[]> => {
+    const url = `/api/candles?symbol=${symbol}&tf=${timeframe}&limit=${countBack}&before=${before ?? ''}`;
+    const res = await fetch(url, { signal });
+    return res.json();
+  },
+  subscribeBars: ({ symbol, timeframe }, on) => {
+    const ws = new WebSocket(`wss://example.com/klines/${symbol}/${timeframe}`);
+    ws.onmessage = (m) => {
+      const k: { bar: OHLCBar; closed: boolean } = JSON.parse(m.data);
+      on.bar(k.bar, k.closed);             // the forming bar again, a new one, or its final values
+    };
+    ws.onclose = () => on.connection('disconnected');   // the chart loads and subscribes again
+    return () => ws.close();
+  },
+};
+
+const chart = new Chart(document.getElementById('chart')!, { theme: 'dark' });
+await chart.connect({ feed, symbol: 'AAPL', timeframe: '1h' });
+new ChartWidget(document.getElementById('widget')!, { feed, symbol: 'AAPL' });
+```
+
+The subscriber also has `tick`, `symbolInfo` and `error`; a feed that never
+calls `connection` counts as connected once `subscribeBars` returns. The
+`signal` is aborted when the answer is no longer needed (a switch, a
+disconnect), and what a subscription sends after its unsubscribe is dropped.
+`feedFromAdapter(adapter)` and `adapterFromFeed(feed)` convert between the two
+contracts; a connect given both an adapter and a feed throws.
+
+Bars your app already has go through a `ManualFeed`: it keeps each series and
+sends the bars you push to the charts subscribed to it, so the bars have one
+writer instead of `setData` calls beside a stream.
+
+```ts
+import { Chart, ManualFeed, type OHLCBar } from '@tradecanvas/chart';
+
+declare const chart: Chart;
+declare const history: OHLCBar[];
+declare const forming: OHLCBar;
+
+const feed = new ManualFeed();
+feed.setBars('AAPL', '1d', history);
+await chart.connect({ feed, symbol: 'AAPL', timeframe: '1d' });
+feed.pushBar('AAPL', '1d', forming);          // again as it forms
+feed.pushBar('AAPL', '1d', forming, true);    // closed
+```
 
 ## Your own data feed over REST
 
@@ -1662,7 +1727,7 @@ new ChartWidget(document.getElementById('chart')!, {
 })
 ```
 
-The headless `Chart` takes your own bars (`chart.setData(bars)`) and leaves the interface to you. For React, Vue and Svelte, `@tradecanvas/react`, `/vue` and `/svelte` wrap it in a component with the same props.
+The headless `Chart` takes your own bars (`chart.setData(bars)`) and leaves the interface to you. A source of your own is a `DataFeed` of two methods (`getBars`, `subscribeBars`), given as `feed` wherever an adapter goes; one feed serves any number of charts. For React, Vue and Svelte, `@tradecanvas/react`, `/vue` and `/svelte` wrap it in a component with the same props.
 
 ## Documentation
 

@@ -24,6 +24,7 @@ import type {
   SignalMarkerStyle,
   TradeZoneStyle,
   DataAdapter,
+  DataFeed,
   ChartStyleOverrides,
   ChartOptions,
   IndicatorSpec,
@@ -51,6 +52,8 @@ const props = withDefaults(
      */
     data?: OHLCBar[];
     adapter?: DataAdapter;
+    /** The stream's source as a feed the chart pulls from (`DataFeed`, `ManualFeed`); over `adapter` when both are given. */
+    feed?: DataFeed;
     /** `false`: no stream until you say so (no Binance by default); the chart waits for `data`. Default `true`. */
     stream?: boolean;
     historyLimit?: number;
@@ -123,8 +126,9 @@ function syncStream(): void {
   const opened = streamKey !== null;
   streamKey = key;
   if (opened) chart.disconnectStream();
-  const adapter = props.adapter ?? new BinanceAdapter();
-  chart.connect({ adapter, symbol: props.symbol, timeframe: props.timeframe, historyLimit: props.historyLimit });
+  // A feed when given, else the adapter (Binance by default).
+  const source = props.feed ? { feed: props.feed } : { adapter: props.adapter ?? new BinanceAdapter() };
+  chart.connect({ ...source, symbol: props.symbol, timeframe: props.timeframe, historyLimit: props.historyLimit });
   if (opened && props.watermarkText) chart.setWatermark(props.watermarkText);
 }
 
