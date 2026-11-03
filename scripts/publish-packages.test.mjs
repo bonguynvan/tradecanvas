@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { publishOrder, internalDeps, tagLine, remoteTagNames, untagged } from './publish-packages.mjs';
+import { publishOrder, internalDeps, remoteTagNames, untagged, stageId, approvalSteps, bumped, releaseNotes, firstCommitOf } from './publish-packages.mjs';
 
 const pkg = (name, deps = []) => ({ name, version: '1.0.0', deps });
 
@@ -43,14 +43,6 @@ test('only workspace packages count as dependencies, from dependencies, peers an
   assert.deepEqual(internalDeps(manifest, workspace).sort(), ['@tradecanvas/chart', '@tradecanvas/commons', '@tradecanvas/extra']);
 });
 
-test('the tag line is the one the release action reads to make a GitHub release', () => {
-  const line = tagLine({ name: '@tradecanvas/chart', version: '1.68.1' });
-  assert.equal(line, 'New tag: @tradecanvas/chart@1.68.1');
-  // The action's own pattern for a monorepo.
-  const m = line.match(/New tag:\s+(@[^/]+\/[^@]+|[^/]+)@([^\s]+)/);
-  assert.deepEqual([m[1], m[2]], ['@tradecanvas/chart', '1.68.1']);
-});
-
 test('the tags on origin are read from git ls-remote, peeled tags once', () => {
   const out = [
     'aaa\trefs/tags/@tradecanvas/chart@1.68.1',
@@ -69,4 +61,53 @@ test('a package on npm without its tag on origin is tagged again, so a rerun aft
   ];
   const remote = new Set(['@tradecanvas/chart@1.68.1', '@tradecanvas/commons@1.68.1']);
   assert.deepEqual(untagged(onNpm, remote).map((p) => p.name), ['@tradecanvas/commons']);
+});
+
+test('the stage id is read from what npm prints after staging', () => {
+  assert.equal(stageId('npm notice ...\r\n+ @tradecanvas/commons@1.69.0 (staged with id 4f2a9c)\r\n'), '4f2a9c');
+  // An older registry answer has no id: the version is staged, approved on npmjs.com by name.
+  assert.equal(stageId('+ @tradecanvas/commons@1.69.0 (staged)\n'), null);
+});
+
+test('the approval steps keep the staging order, so no package goes live before one it pins', () => {
+  const staged = [
+    { name: '@tradecanvas/commons', version: '1.69.0', id: 'a1' },
+    { name: '@tradecanvas/core', version: '1.69.0', id: null },
+  ];
+  assert.deepEqual(approvalSteps(staged), [
+    '1. @tradecanvas/commons@1.69.0: npm stage approve a1',
+    '2. @tradecanvas/core@1.69.0: on npmjs.com, Staged Packages',
+  ]);
+});
+
+test('only the packages this commit moved to a new version are staged, so a later push stages nothing again', () => {
+  const pkgs = [
+    { name: '@tradecanvas/commons', version: '1.69.0' },
+    { name: '@tradecanvas/react', version: '1.3.61' },
+    { name: '@tradecanvas/new', version: '0.1.0' },
+  ];
+  const before = new Map([['@tradecanvas/commons', '1.68.1'], ['@tradecanvas/react', '1.3.61']]);
+  assert.deepEqual(bumped(pkgs, before).map((p) => p.name), ['@tradecanvas/commons', '@tradecanvas/new']);
+});
+
+test("a release's notes are its version's section of the package changelog", () => {
+  const md = '# @tradecanvas/commons\n\n## 1.69.0\n\n### Minor Changes\n\n- c2ed723: A feed.\n\n## 1.68.1\n\n## 1.68.0\n';
+  assert.equal(releaseNotes(md, '1.69.0'), '### Minor Changes\n\n- c2ed723: A feed.');
+  assert.equal(releaseNotes(md, '1.68.1'), '');
+  // A checkout on Windows has CRLF line ends.
+  assert.equal(releaseNotes(md.replace(/\n/g, '\r\n'), '1.69.0'), '### Minor Changes\n\n- c2ed723: A feed.');
+  assert.equal(releaseNotes(md, '9.9.9'), '');
+});
+
+test('the tag goes on the commit that set the version, not a later one that left it as it was', () => {
+  // Newest first: a docs commit kept 1.69.0, the version commit set it, a revert of an
+  // earlier 1.69.0 sits further back and must not be picked.
+  const history = [
+    { sha: 'docs', version: '1.69.0' },
+    { sha: 'bump', version: '1.69.0' },
+    { sha: 'prev', version: '1.68.1' },
+    { sha: 'old', version: '1.69.0' },
+  ];
+  assert.equal(firstCommitOf(history, '1.69.0'), 'bump');
+  assert.equal(firstCommitOf(history, '1.70.0'), null);
 });

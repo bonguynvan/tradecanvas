@@ -1,31 +1,38 @@
-// Publishes the workspace packages that are not on npm yet, one at a time,
-// each after the packages it depends on, and waits for each to show on the
-// registry before the next. `changeset publish` sends them all at once, so a
-// package could appear before the exact version of a package it pins
-// (@tradecanvas/mcp before @tradecanvas/commons on 1.59.3), and
-// `npx @tradecanvas/mcp@latest` failed with ETARGET in between.
+// A release in two steps, as the npm trusted publishers allow staging only.
+//
+// Stage (the version PR's merge): the packages this commit moved to a new
+// version are staged on npm one at a time, each after the packages it depends
+// on, and the order to approve them in is printed. `changeset publish` sent
+// them all at once, so a package could appear before the exact version of a
+// package it pins (@tradecanvas/mcp before @tradecanvas/commons on 1.59.3),
+// and `npx @tradecanvas/mcp@latest` failed with ETARGET in between; approving
+// in the printed order keeps that from happening. A maintainer approves each
+// with 2FA, on npmjs.com or with `npm stage approve <id>`. Only a commit that
+// moved a version stages, so a later push does not stage the same versions
+// again while they wait.
+//
+// Tag (`--tag-only`, the workflow run by hand after approving): each version
+// live on npm without its tag gets the tag, on the commit that set the
+// version, and a GitHub release with its changelog section. It stages
+// nothing, so a version still waiting is reported, not staged twice.
 //
 // Auth is npm trusted publishing: in GitHub Actions npm swaps the job's OIDC
-// token for a one-time publish token, and records provenance on its own.
-// `pnpm pack` writes the tarball (it turns `workspace:*` into versions), and
-// `npm publish` sends it, as trusted publishing needs npm 11.5.1 or later.
+// token for a one-time token, and records provenance on its own. `pnpm pack`
+// writes the tarball (it turns `workspace:*` into versions) and
+// `npm stage publish` sends it (npm 11.21 or later).
 //
-// For each package published it creates the git tag and prints
-// `New tag: <name>@<version>`, the line changesets/action reads to push the
-// tag and make the GitHub release, as `changeset publish` did.
-//
-//   node scripts/publish-packages.mjs            publish
-//   node scripts/publish-packages.mjs --dry-run  pack and dry-run, no tags
+//   node scripts/publish-packages.mjs             stage this commit's versions
+//   node scripts/publish-packages.mjs --tag-only  tag and release the approved ones
+//   node scripts/publish-packages.mjs --stage-all stage every version not live (by hand;
+//                                                 one already waiting is staged again)
+//   node scripts/publish-packages.mjs --dry-run   pack and dry-run the staging
 import { execFileSync, execSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, readdirSync, existsSync, rmSync } from 'node:fs';
+import { mkdtempSync, readFileSync, readdirSync, existsSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join, dirname } from 'node:path';
+import { join, dirname, basename } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
-/** How long a new version may take to show on the registry before the release stops. */
-const VISIBLE_TIMEOUT_MS = 180_000;
-const VISIBLE_POLL_MS = 5_000;
 
 /** The workspace packages a manifest needs at install time: its dependencies and peers. */
 export function internalDeps(manifest, workspaceNames) {
@@ -52,8 +59,6 @@ export function publishOrder(pkgs) {
   return order;
 }
 
-export const tagLine = (p) => `New tag: ${p.name}@${p.version}`;
-
 /** The tag names in `git ls-remote --tags` output; an annotated tag's peeled line counts once. */
 export function remoteTagNames(output) {
   const names = output
@@ -70,6 +75,31 @@ export function remoteTagNames(output) {
  * GitHub releases when it is run again.
  */
 export const untagged = (onNpm, remoteTags) => onNpm.filter((p) => !remoteTags.has(`${p.name}@${p.version}`));
+
+/** The id npm prints for a staged version, or null when the registry gave none. */
+export function stageId(output) {
+  return output.match(/\(staged with id ([^)\s]+)\)/)?.[1] ?? null;
+}
+
+/** What to approve, in staging order: a package after every one it pins. */
+export function approvalSteps(staged) {
+  return staged.map((p, i) => {
+    const how = p.id ? `npm stage approve ${p.id}` : 'on npmjs.com, Staged Packages';
+    return `${i + 1}. ${p.name}@${p.version}: ${how}`;
+  });
+}
+
+/** The packages whose version differs from the one before this commit; one that was not there counts. */
+export const bumped = (pkgs, versionsBefore) => pkgs.filter((p) => versionsBefore.get(p.name) !== p.version);
+
+/** A version's section of a changesets CHANGELOG.md, without its heading; empty when it has none. */
+export function releaseNotes(markdown, version) {
+  const lines = markdown.replace(/\r\n/g, '\n').split('\n');
+  const start = lines.indexOf(`## ${version}`);
+  if (start === -1) return '';
+  const end = lines.findIndex((line, i) => i > start && line.startsWith('## '));
+  return lines.slice(start + 1, end === -1 ? undefined : end).join('\n').trim();
+}
 
 /** Run a tool and return its output; on Windows pnpm and npm are .cmd files, which only a shell starts. */
 function run(command, args, cwd = ROOT) {
@@ -93,15 +123,15 @@ function readWorkspace() {
     version: manifest.version,
     access: manifest.publishConfig?.access ?? 'public',
     dir,
+    rel: `packages/${basename(dir)}`,
     deps: internalDeps(manifest, names),
   }));
 }
 
 /**
- * Whether npm has this exact version. A 404 means no; any other failure stops
- * the release. `--prefer-online` asks the registry each time: npm keeps a
- * package's versions for five minutes, so a cached answer from before a
- * publish would say no until the wait ran out.
+ * Whether npm has this exact version live; a staged one is not. A 404 means
+ * no; any other failure stops the release. `--prefer-online` asks the
+ * registry each time instead of npm's five-minute cache.
  */
 function onRegistry(p) {
   try {
@@ -109,14 +139,6 @@ function onRegistry(p) {
   } catch (err) {
     if (/E404|404 Not Found/.test(`${err.stdout}${err.stderr}`)) return false;
     throw err;
-  }
-}
-
-async function waitUntilVisible(p) {
-  const until = Date.now() + VISIBLE_TIMEOUT_MS;
-  while (!onRegistry(p)) {
-    if (Date.now() > until) throw new Error(`publish: ${p.name}@${p.version} not on the registry after ${VISIBLE_TIMEOUT_MS / 1000} s`);
-    await new Promise((resolve) => setTimeout(resolve, VISIBLE_POLL_MS));
   }
 }
 
@@ -128,58 +150,129 @@ function pack(p, outDir) {
   return join(outDir, made);
 }
 
-function tag(p) {
+/** Each package's version in the commit before HEAD (its first parent, so main before a merge). */
+function versionsBefore(pkgs) {
+  const before = new Map();
+  for (const p of pkgs) {
+    try {
+      before.set(p.name, JSON.parse(run('git', ['show', `HEAD^1:${p.rel}/package.json`])).version);
+    } catch {
+      // Not there before: a new package, which counts as moved.
+    }
+  }
+  return before;
+}
+
+/**
+ * In a manifest's history (newest first), the oldest commit of the newest run
+ * that has this version: the one that set it. Null when the newest has another.
+ */
+export function firstCommitOf(history, version) {
+  let found = null;
+  for (const { sha, version: v } of history) {
+    if (v !== version) break;
+    found = sha;
+  }
+  return found;
+}
+
+/** The commit that set this version in the manifest; a later commit on main must not carry the tag. */
+function versionCommit(p) {
+  const path = `${p.rel}/package.json`;
+  const shas = run('git', ['log', '--format=%H', '--', path]).trim().split('\n').filter(Boolean);
+  const history = [];
+  for (const sha of shas) {
+    const version = JSON.parse(run('git', ['show', `${sha}:${path}`])).version;
+    history.push({ sha, version });
+    // Past the first other version the run is over; no need to read further back.
+    if (version !== p.version) break;
+  }
+  const sha = firstCommitOf(history, p.version);
+  if (!sha) throw new Error(`publish: no commit sets ${p.name} to ${p.version}`);
+  return sha;
+}
+
+/** The tag on the version's commit, pushed, and its GitHub release with the changelog section. */
+function tagAndRelease(p) {
   const name = `${p.name}@${p.version}`;
-  const existing = run('git', ['tag', '--list', name]).trim();
-  if (!existing) run('git', ['tag', name]);
+  if (!run('git', ['tag', '--list', name]).trim()) run('git', ['tag', name, versionCommit(p)]);
+  run('git', ['push', 'origin', `refs/tags/${name}`]);
+  const changelog = join(p.dir, 'CHANGELOG.md');
+  const notes = existsSync(changelog) ? releaseNotes(readFileSync(changelog, 'utf8'), p.version) : '';
+  const notesDir = mkdtempSync(join(tmpdir(), 'tc-notes-'));
+  try {
+    const notesFile = join(notesDir, 'notes.md');
+    writeFileSync(notesFile, notes || `${name}`);
+    run('gh', ['release', 'create', name, '--verify-tag', '--title', name, '--notes-file', notesFile]);
+  } finally {
+    rmSync(notesDir, { recursive: true, force: true });
+  }
+  console.log(`publish: tagged and released ${name}`);
 }
 
-function tagAndAnnounce(p) {
-  tag(p);
-  console.log(tagLine(p));
+/** Tags and releases each version live on npm without its tag; stages nothing. */
+function tagApproved(order) {
+  const live = order.filter((p) => onRegistry(p));
+  const waiting = order.filter((p) => !live.includes(p));
+  const todo = untagged(live, remoteTagNames(run('git', ['ls-remote', '--tags', 'origin'])));
+  for (const p of todo) tagAndRelease(p);
+  if (todo.length === 0) console.log('publish: every version on npm has its tag');
+  for (const p of waiting) {
+    console.log(`publish: ${p.name}@${p.version} is not live on npm yet; approve it, then run this again`);
+  }
 }
 
-async function main() {
+function stage(pkgs, dryRun) {
+  const staged = [];
+  const outDir = mkdtempSync(join(tmpdir(), 'tc-publish-'));
+  try {
+    for (const p of pkgs) {
+      console.log(`publish: staging ${p.name}@${p.version}`);
+      const tarball = pack(p, outDir);
+      const args = ['stage', 'publish', tarball, '--access', p.access];
+      if (dryRun) args.push('--dry-run');
+      const out = run('npm', args);
+      process.stdout.write(out);
+      staged.push({ ...p, id: stageId(out) });
+    }
+  } finally {
+    rmSync(outDir, { recursive: true, force: true });
+    // Printed even when a package fails part way: the ones before it are staged.
+    if (!dryRun && staged.length > 0) {
+      console.log('\npublish: staged. Approve them in this order, then run the Publish workflow by hand for the tags and GitHub releases:');
+      for (const line of approvalSteps(staged)) console.log(`  ${line}`);
+    }
+  }
+}
+
+function main() {
   const dryRun = process.argv.includes('--dry-run');
   // Pre mode publishes under its own dist-tag, which this script does not set.
   if (existsSync(join(ROOT, '.changeset', 'pre.json'))) {
     throw new Error('publish: .changeset/pre.json found; prereleases would go out as latest');
   }
   const order = publishOrder(readWorkspace());
-  const pending = order.filter((p) => !onRegistry(p));
-  if (!dryRun) {
-    const onNpm = order.filter((p) => !pending.includes(p));
-    for (const p of untagged(onNpm, remoteTagNames(run('git', ['ls-remote', '--tags', 'origin'])))) {
-      console.log(`publish: ${p.name}@${p.version} is on npm without its tag`);
-      tagAndAnnounce(p);
-    }
-  }
-  if (pending.length === 0) {
-    console.log('publish: every package is on npm already');
+  if (process.argv.includes('--tag-only')) {
+    tagApproved(order);
     return;
   }
-  const outDir = mkdtempSync(join(tmpdir(), 'tc-publish-'));
-  try {
-    for (const p of pending) {
-      console.log(`publish: ${p.name}@${p.version}`);
-      const tarball = pack(p, outDir);
-      const args = ['publish', tarball, '--access', p.access];
-      if (dryRun) args.push('--dry-run');
-      process.stdout.write(run('npm', args));
-      if (dryRun) continue;
-      // If the wait runs out the release stops and these tags are not pushed;
-      // the next run finds the package on npm without its tag and tags it then.
-      tagAndAnnounce(p);
-      await waitUntilVisible(p);
-    }
-  } finally {
-    rmSync(outDir, { recursive: true, force: true });
+  // A dry run and --stage-all take every version not live yet, staged or not;
+  // a release only the versions this commit set.
+  const everything = dryRun || process.argv.includes('--stage-all');
+  const candidates = everything ? order : bumped(order, versionsBefore(order));
+  const pending = candidates.filter((p) => !onRegistry(p));
+  if (pending.length === 0) {
+    console.log('publish: this commit moved no package to a version that is not on npm; nothing to stage');
+    return;
   }
+  stage(pending, dryRun);
 }
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
-  main().catch((err) => {
+  try {
+    main();
+  } catch (err) {
     console.error(err.stderr || err.message);
     process.exit(1);
-  });
+  }
 }
