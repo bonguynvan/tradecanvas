@@ -58,6 +58,7 @@ import {
   ResamplingAdapter,
   withResampling,
   servesTimeframe,
+  streamAdapterOf,
   SYMBOL_ZONE_WAIT_MS,
   GridRenderer,
   PriceAxis,
@@ -3346,8 +3347,14 @@ export class Chart {
    *   symbol: 'BTCUSDT',
    *   timeframe: '1m',
    * });
+   *
+   * Or from a feed the chart pulls from (`DataFeed`, `ManualFeed`):
+   * `chart.connect({ feed, symbol: 'AAPL', timeframe: '1d' })`.
+   * Throws when the config has both an adapter and a feed, or neither.
    */
-  async connect(config: StreamConfig): Promise<void> {
+  async connect(options: StreamConfig): Promise<void> {
+    // One adapter for the whole connection: a feed's is made once, here.
+    const config: StreamConfig & { adapter: DataAdapter } = { ...options, adapter: streamAdapterOf(options), feed: undefined };
     if (!servesTimeframe(config.adapter, config.timeframe)) {
       throw new RangeError(`${config.adapter.name} cannot serve the ${config.timeframe} timeframe`);
     }

@@ -112,6 +112,10 @@ export type {
   DataAdapter,
   DataAdapterConfig,
   DataAdapterEventType,
+  DataFeed,
+  BarsRequest,
+  BarsSubscription,
+  FeedSubscriber,
   StreamConfig,
   ConnectionState,
   ConnectionInfo,
@@ -211,7 +215,7 @@ export { IndicatorBase, IndicatorValueMap, DrawingBase, indicatorCategory, INDIC
 export { barIndexToX, xToBarIndex, priceToY, priceToYMapper, yToPrice, timeToX, xToTime, timestampToBarIndex } from '@tradecanvas/core';
 
 // Re-export realtime module
-export { StreamManager, ReconnectManager, ReplayController, BinanceAdapter, MockAdapter, TickAggregator, CurrentPriceLine, PaperExecutionAdapter, WebSocketAdapter, PollingAdapter, CoinbaseAdapter, BybitAdapter, KrakenAdapter, UpbitAdapter, ResamplingAdapter, withResampling, servesTimeframe, KEPT_BUCKETS, TickBarBuilder, TickBarAdapter, withTickBars } from '@tradecanvas/core';
+export { StreamManager, ReconnectManager, ReplayController, BinanceAdapter, MockAdapter, TickAggregator, CurrentPriceLine, PaperExecutionAdapter, WebSocketAdapter, PollingAdapter, CoinbaseAdapter, BybitAdapter, KrakenAdapter, UpbitAdapter, ResamplingAdapter, ManualFeed, adapterFromFeed, feedFromAdapter, isDataFeed, withResampling, servesTimeframe, KEPT_BUCKETS, TickBarBuilder, TickBarAdapter, withTickBars } from '@tradecanvas/core';
 export type { ReplayBarEvent, ReplayEventMap, ReplayOptions, ReplayStateChangeEvent, ReplayStatus } from '@tradecanvas/core';
 export type { PaperExecutionOptions, WebSocketAdapterOptions, WsParseResult, PollingAdapterOptions, CoinbaseAdapterOptions, BybitAdapterOptions, KrakenAdapterOptions, UpbitAdapterOptions } from '@tradecanvas/core';
 export { DEFAULT_RECONNECT, DEFAULT_STREAM_CONFIG } from '@tradecanvas/commons';

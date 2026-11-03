@@ -16,6 +16,7 @@ import { ReconnectManager } from './ReconnectManager.js';
 import { CurrentPriceLine } from './CurrentPriceLine.js';
 import { ResamplingAdapter, withResampling } from './adapters/ResamplingAdapter.js';
 import { withTickBars } from './TickBars.js';
+import { isFeedAdapter, streamAdapterOf } from './feeds/feedAdapter.js';
 
 export interface StreamEvents {
   /**
@@ -111,6 +112,11 @@ export class StreamManager extends Emitter<StreamEvents> {
   private historyEnd: number | null = null;
   /** The wrapper that builds the timeframes the feed lacks (null: it serves every one): bars from ticks start where its do. */
   private resampler: ResamplingAdapter | null = null;
+  /**
+   * Whether silence means a dead connection. A feed's doesn't: it says when
+   * its connection drops, and a quiet one (a daily chart, a closed market) is fine.
+   */
+  private watchSilence = true;
 
   constructor() {
     super();
@@ -126,12 +132,14 @@ export class StreamManager extends Emitter<StreamEvents> {
 
     // Timeframes the feed lacks (7m, 90m…) are built from one it has.
     // Tick timeframes (100T) are built from the feed's trades.
-    const resampled = withResampling(config.adapter);
+    const source = streamAdapterOf(config);
+    this.watchSilence = !isFeedAdapter(source);
+    const resampled = withResampling(source);
     this.resampler = resampled instanceof ResamplingAdapter ? resampled : null;
     // A fresh load: no bars of the symbol are kept to merge its history with.
     this.resampler?.renewZone(config.symbol);
     const adapter = withTickBars(resampled);
-    this.config = { ...DEFAULT_STREAM_CONFIG, ...config, adapter } as StreamConfig;
+    this.config = { ...DEFAULT_STREAM_CONFIG, ...config, adapter, feed: undefined } as StreamConfig;
     this.adapter = adapter;
     this.aggregator = new TickAggregator(config.timeframe);
     this.historyEnd = null;
@@ -480,7 +488,7 @@ export class StreamManager extends Emitter<StreamEvents> {
     if (!this.adapter || !this.config) return;
     if (this.state === 'connecting' || this.state === 'disconnected') return;
     if (this.state === 'connected' && reason === 'visible'
-        && Date.now() - this.lastMessageTime <= RESUME_STALE_MS) return;
+        && (!this.watchSilence || Date.now() - this.lastMessageTime <= RESUME_STALE_MS)) return;
     // As switchTo: the reconnector stopped around the disconnect, so the
     // adapter's 'disconnected' doesn't queue a retry behind this connect.
     this.reconnector.stop();
@@ -492,7 +500,7 @@ export class StreamManager extends Emitter<StreamEvents> {
   private startHeartbeat(): void {
     this.stopHeartbeat();
     this.heartbeatTimer = setInterval(() => {
-      const stale = Date.now() - this.lastMessageTime > 60000;
+      const stale = this.watchSilence && Date.now() - this.lastMessageTime > 60000;
       if (stale && this.state === 'connected') {
         this.emit('error', { message: 'Heartbeat timeout', code: 'HEARTBEAT_TIMEOUT' });
         this.adapter?.disconnect();

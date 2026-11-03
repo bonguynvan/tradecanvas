@@ -30,6 +30,67 @@ chart.connect({ adapter: new UpbitAdapter(),   symbol: 'KRW-BTC', timeframe: '1m
   マーケットの呼値と配色を設定できます。
 </p>
 
+<h2 id="data-feed">チャートが取りに行くフィード</h2>
+<p>
+  <code>DataFeed</code> は、自分のデータをつなぐより短い方法です。メソッドは 2 つで、Promise を使います。
+  チャートはバーを求め（<code>getBars</code>）、ライブのバーを購読します（<code>subscribeBars</code>）。過去へのページ送り、
+  再接続、フィードにない時間足の作成、切り替え時の再購読はチャートが行うので、フィードは答えるだけです。アダプターを
+  渡す場所、つまり <code>connect</code> やウィジェットの <code>feed</code> オプションに渡します。
+</p>
+<pre><code>{`import type { DataFeed } from '@tradecanvas/chart'
+
+const feed: DataFeed = {
+  name: 'my-api',
+  // 最新の countBack 本のバー。チャートが過去へページ送りするときは \`before\` より前のバー。
+  // 空の配列: これ以上ない。
+  getBars: ({ symbol, timeframe, countBack, before, signal }) =>
+    fetch(\`/candles?s=\${symbol}&tf=\${timeframe}&n=\${countBack}&before=\${before ?? ''}\`, { signal })
+      .then((r) => r.json()),
+  subscribeBars: ({ symbol, timeframe }, on) => {
+    const ws = new WebSocket(\`wss://example.com/\${symbol}/\${timeframe}\`)
+    ws.onmessage = (m) => {
+      const k = JSON.parse(m.data)
+      on.bar(k.bar, k.closed)   // 形成中のバーをもう一度、新しいバー、またはその確定値
+    }
+    ws.onclose = () => on.connection('disconnected')   // チャートが読み込み直して購読し直す
+    return () => ws.close()
+  },
+}
+
+chart.connect({ feed, symbol: 'AAPL', timeframe: '1d' })
+new ChartWidget(el, { feed, symbol: 'AAPL' })`}</code></pre>
+<p>
+  購読のオブジェクトは <code>tick</code>（約定と気配）、<code>connection</code>（一度も呼ばないフィードは、
+  <code>subscribeBars</code> が戻った時点で接続済みとみなされます）、<code>symbolInfo</code>、<code>error</code> も受け取ります。
+  <code>signal</code> は、チャートが答えを必要としなくなったとき（銘柄の切り替えや切断）に中断されます。購読解除の後に
+  送られたものは捨てられるので、遅れて閉じるソケットが前の銘柄のバーを新しい銘柄に載せることはありません。省略できる
+  メソッドはアダプターと同じく、<code>supportedTimeframes</code>、<code>resolveSymbol</code>、<code>searchSymbols</code>、
+  <code>subscribeQuotes</code>、<code>fetchNews</code>、<code>fetchTrades</code>、<code>subscribeTrades</code> です。最新のバーしか持たないフィードは <code>pagesBack: false</code> を設定すると、チャートは古いバーを求めません。チャートは静かなフィード（日足、休場中）を切断とは見なしません。ソケットが黙って切れうるフィードは <code>connection</code> で知らせてください。
+</p>
+<p>
+  1 つのフィードで何枚のチャートにも対応できます。各チャートが個別に購読するので、グリッドではチャートごとに
+  アダプターを 1 つ渡すところを、全チャートでフィード 1 つで済ませられます（<code>ChartWidgetGrid</code> の
+  <code>widget: {'{'} feed {'}'}</code>、<code>grid.connectAll(feed, symbols, '1h')</code>）。アダプターはこれまでどおり
+  どこでも使え、両者は変換できます。<code>feedFromAdapter(new BinanceAdapter())</code> はフィード、
+  <code>adapterFromFeed(feed)</code> はアダプターになります。アダプターとフィードの両方を渡した <code>connect</code> はエラーを投げます。
+</p>
+
+<h3 id="manual-feed">自分で送るバー：ManualFeed</h3>
+<p>
+  アプリがすでに持っているバーには <code>ManualFeed</code> を使います。銘柄と時間足ごとに履歴を保ち、送ったバーを
+  その系列を購読しているチャートに届けます。後の読み込み（再接続や、切り替えて戻ったとき）にも含まれるので、ストリームの
+  横で <code>setData</code> や <code>appendBar</code> を呼ぶ代わりに、バーを書き込むのはフィードだけになります。最新より古い
+  バーを送ると、その時刻のバーの確定値になります。系列にその時刻のバーがなければエラーを投げます。
+</p>
+<pre><code>{`import { ManualFeed } from '@tradecanvas/chart'
+
+const feed = new ManualFeed()
+feed.setBars('AAPL', '1d', history)
+chart.connect({ feed, symbol: 'AAPL', timeframe: '1d' })
+
+feed.pushBar('AAPL', '1d', formingBar)        // 形成中は何度でも
+feed.pushBar('AAPL', '1d', finalBar, true)    // 確定`}</code></pre>
+
 <h2>DataAdapter インターフェース</h2>
 <pre><code>{`interface DataAdapter {
   name: string

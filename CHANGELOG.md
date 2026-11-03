@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+### Data
+
+- **A data source of your own in two methods: `DataFeed`** (`@tradecanvas/commons`, `@tradecanvas/core`, `@tradecanvas/chart`, React, Vue and Svelte components).
+  - `getBars({ symbol, timeframe, countBack, before, signal })` answers with bars; `subscribeBars(request, subscriber)` sends live ones and returns its unsubscribe. The chart pages back, reconnects, builds the timeframes the feed lacks and subscribes again on a switch.
+  - The signal is aborted when the answer is no longer needed, and what a subscription sends after its unsubscribe is dropped, so a late socket can't put one symbol's bars on another.
+  - It goes where an adapter goes: `chart.connect({ feed, … })`, the widget's `feed` option, `ChartGrid.connectAll(feed, …)` and the components' `feed` prop. One feed serves any number of charts, a whole `ChartWidgetGrid` included.
+  - `ManualFeed` keeps the bars you give it and sends the ones you push to the charts on that series, so pushed bars have one writer.
+  - A feed with only the newest bars sets `pagesBack: false`. A quiet feed (a daily chart, a closed market) is not taken for a dead one: a feed reports a dropped connection itself.
+  - `feedFromAdapter` and `adapterFromFeed` convert between the two; adapters work as before. `StreamConfig.adapter` is now optional (give it or `feed`).
+
 ## 1.68.1 (2026-11-03)
 
 React, Vue and Svelte components: 1.3.61.

@@ -91,7 +91,7 @@ new ChartWidget(document.getElementById('chart')!, {
 })
 ```
 
-The headless `Chart` takes your own bars (`chart.setData(bars)`) and leaves the interface to you. For React, Vue and Svelte, `@tradecanvas/react`, `/vue` and `/svelte` wrap it in a component with the same props.
+The headless `Chart` takes your own bars (`chart.setData(bars)`) and leaves the interface to you. A source of your own is a `DataFeed` of two methods (`getBars`, `subscribeBars`), given as `feed` wherever an adapter goes; one feed serves any number of charts. For React, Vue and Svelte, `@tradecanvas/react`, `/vue` and `/svelte` wrap it in a component with the same props.
 
 ## Documentation
 

@@ -57,10 +57,10 @@ export interface ChartWidgetGridOptions {
   /**
    * Options for every chart. Leave `adapter` out of these when there is more
    * than one chart: an adapter keeps one stream, so each chart needs its own
-   * (see `adapter`).
+   * (see `adapter`). A `feed` here serves every chart.
    */
   widget?: ChartWidgetOptions;
-  /** Makes each chart's data adapter, `new BinanceAdapter()` say; called once per chart. */
+  /** Makes each chart's data adapter, `new BinanceAdapter()` say; called once per chart, but not for one with a `feed` (its own or `widget`'s). */
   adapter?: (index: number) => DataAdapter;
   /** Each chart's own options, by position (its symbol and interval, say), over `widget`. */
   cells?: readonly ChartWidgetOptions[];
@@ -444,9 +444,13 @@ export class ChartWidgetGrid {
     const widget = new ChartWidget(el, {
       ...shared,
       ...own,
+      // A chart's own source wins over the shared one, of the other kind too.
+      ...(own.adapter ? { feed: undefined } : {}),
+      ...(own.feed ? { adapter: undefined } : {}),
       ...(lead && this.sync.symbol ? { symbol: lead.getSymbol() } : {}),
       ...(lead && this.sync.interval ? { timeframe: lead.getTimeframe() } : {}),
-      ...(this.options.adapter && !own.adapter ? { adapter: this.options.adapter(index) } : {}),
+      // The maker serves a chart with no source of its own, nor a feed shared by all.
+      ...(this.options.adapter && !own.adapter && !own.feed && !shared.feed ? { adapter: this.options.adapter(index) } : {}),
       // A look set on the grid since (setUI) for a chart it adds too.
       ...(this.uiTheme ? { ui: this.uiTheme } : {}),
       // The grid keeps the layouts, of all its charts at once.

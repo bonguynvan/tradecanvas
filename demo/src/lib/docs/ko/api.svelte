@@ -508,7 +508,7 @@ const widget = new ChartWidget(host, {
   symbol: 'BTCUSDT',
   timeframe: '5m',
   theme: 'dark',
-  adapter: new BinanceAdapter(),
+  adapter: new BinanceAdapter(),   // 또는 feed: 차트가 가져가는 DataFeed (실시간 참고)
   historyLimit: 500,
   trading: true,
   features: { 'toolbar.replay': false },   // 위젯의 스위치: 커스터마이징 참고
@@ -1087,6 +1087,7 @@ const grid = new ChartWidgetGrid(host, {
   layout: '2x2',                                   // '1x1' '1x2' '2x1' '2x2' '1x3' '3x1' '2x3' '3x2'
   widget: { timeframe: '1h' },                    // 모든 차트에 적용
   adapter: () => new BinanceAdapter(),            // 차트마다 하나: 어댑터 하나는 스트림 하나를 유지
+  // 또는 widget: { timeframe: '1h', feed }: DataFeed 하나로 모든 차트에
   cells: [{ symbol: 'BTCUSDT' }, { symbol: 'ETHUSDT' }, { symbol: 'SOLUSDT' }, { symbol: 'BNBUSDT' }],
   sync: { crosshair: true, time: false, symbol: false, interval: false, drawings: false, replay: false },
 })

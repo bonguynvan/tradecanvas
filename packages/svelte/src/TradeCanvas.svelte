@@ -20,6 +20,7 @@
     SignalMarkerStyle,
     TradeZoneStyle,
     DataAdapter,
+    DataFeed,
     ChartStyleOverrides,
     ChartOptions,
     IndicatorSpec,
@@ -46,6 +47,8 @@
      */
     data?: OHLCBar[];
     adapter?: DataAdapter;
+    /** The stream's source as a feed the chart pulls from (`DataFeed`, `ManualFeed`); over `adapter` when both are given. */
+    feed?: DataFeed;
     /** `false`: no stream until you say so (no Binance by default); the chart waits for `data`. Default `true`. */
     stream?: boolean;
     historyLimit?: number;
@@ -78,6 +81,7 @@
     indicators = [] as IndicatorSpec[],
     data = undefined as OHLCBar[] | undefined,
     adapter = undefined as DataAdapter | undefined,
+    feed = undefined as DataFeed | undefined,
     stream = true,
     historyLimit = 500,
     features = undefined as FeaturesConfig | undefined,
@@ -141,10 +145,11 @@
     chart = instance;
 
     if (data) {
-      feed(instance, data);
+      feedData(instance, data);
     } else if (stream) {
-      const dataAdapter = adapter ?? new BinanceAdapter();
-      instance.connect({ adapter: dataAdapter, symbol, timeframe, historyLimit });
+      // A feed when given, else the adapter (Binance by default).
+      const source = feed ? { feed: feed } : { adapter: adapter ?? new BinanceAdapter() };
+      instance.connect({ ...source, symbol, timeframe, historyLimit });
       streamKey = `${symbol}|${timeframe}`;
     }
     featuresKey = JSON.stringify($state.snapshot(features) ?? null);
@@ -175,8 +180,9 @@
     if (hasData || streamKey === key) return;
     streamKey = key;
     instance.disconnectStream();
-    const dataAdapter = adapter ?? new BinanceAdapter();
-    instance.connect({ adapter: dataAdapter, symbol, timeframe, historyLimit });
+    // A feed when given, else the adapter (Binance by default).
+    const source = feed ? { feed: feed } : { adapter: adapter ?? new BinanceAdapter() };
+    instance.connect({ ...source, symbol, timeframe, historyLimit });
     if (watermarkText) instance.setWatermark(watermarkText);
   });
 
@@ -198,7 +204,7 @@
    * view stays put and only the end is recalculated; anything else is a new
    * series. The chart gets plain copies, not $state proxies, to read in its frames.
    */
-  function feed(target: Chart, bars: OHLCBar[]): void {
+  function feedData(target: Chart, bars: OHLCBar[]): void {
     fed = feedBars(target, bars, fed);
   }
 
@@ -213,7 +219,7 @@
       return;
     }
     for (const bar of bars.slice(-1 - CORRECTABLE_BARS)) void barKey(bar);
-    untrack(() => { if (instance) feed(instance, bars); });
+    untrack(() => { if (instance) feedData(instance, bars); });
   });
 
   $effect(() => {

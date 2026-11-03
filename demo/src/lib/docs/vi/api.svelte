@@ -535,7 +535,7 @@ const widget = new ChartWidget(host, {
   symbol: 'BTCUSDT',
   timeframe: '5m',
   theme: 'dark',
-  adapter: new BinanceAdapter(),
+  adapter: new BinanceAdapter(),   // hoặc feed: một DataFeed mà nó tự lấy dữ liệu (xem Thời gian thực)
   historyLimit: 500,
   trading: true,
   features: { 'toolbar.replay': false },   // công tắc của widget: xem Tùy biến
@@ -1147,6 +1147,7 @@ const grid = new ChartWidgetGrid(host, {
   layout: '2x2',                                   // '1x1' '1x2' '2x1' '2x2' '1x3' '3x1' '2x3' '3x2'
   widget: { timeframe: '1h' },                    // cho mọi biểu đồ
   adapter: () => new BinanceAdapter(),            // mỗi biểu đồ một adapter: một adapter giữ một luồng
+  // hoặc widget: { timeframe: '1h', feed }: một DataFeed phục vụ mọi biểu đồ
   cells: [{ symbol: 'BTCUSDT' }, { symbol: 'ETHUSDT' }, { symbol: 'SOLUSDT' }, { symbol: 'BNBUSDT' }],
   sync: { crosshair: true, time: false, symbol: false, interval: false, drawings: false, replay: false },
 })

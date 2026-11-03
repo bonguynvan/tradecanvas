@@ -137,4 +137,13 @@ describe('ChartGrid connectAll', () => {
     expect(made).toEqual(['0:AAA', '1:BBB']);
     expect(connects.map((c) => (c.mock.calls[0][0].adapter as unknown as { name: string }).name)).toEqual(['AAA', 'BBB']);
   });
+
+  it('connects every chart to one feed: each subscribes on its own', async () => {
+    grid = new ChartGrid(host, { layout: '1x2' });
+    const connects = grid.getCharts().map((chart) => vi.spyOn(chart, 'connect').mockResolvedValue());
+    const feed = { name: 'pulled', getBars: async () => [], subscribeBars: () => () => {} };
+    await grid.connectAll(feed, ['AAA', 'BBB'], '5m');
+    expect(connects.map((c) => [c.mock.calls[0][0].feed, c.mock.calls[0][0].symbol])).toEqual([[feed, 'AAA'], [feed, 'BBB']]);
+    expect(connects.every((c) => c.mock.calls[0][0].adapter === undefined)).toBe(true);
+  });
 });

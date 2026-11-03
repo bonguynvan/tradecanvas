@@ -200,3 +200,16 @@ describe('HistoryPager after failures', () => {
     report.mockRestore();
   });
 });
+
+describe('HistoryPager and a cancelled page', () => {
+  it('takes a page its feed cancelled (a reconnect) for no failure: no error, no wait before the next', async () => {
+    const { pager, events } = setup();
+    const abort = Object.assign(new Error('The operation was aborted'), { name: 'AbortError' });
+    const loader = vi.fn().mockRejectedValueOnce(abort).mockResolvedValueOnce(bars(70, 30));
+    pager.setLoader(loader, 30);
+    expect(await pager.loadMore()).toBe(0);
+    expect(events.map((e) => e.state)).toEqual(['loading', 'loaded']);
+    expect(pager.canLoad()).toBe(true);
+    expect(await pager.loadMore()).toBe(30);
+  });
+});

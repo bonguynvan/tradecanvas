@@ -13,6 +13,7 @@ export * from './trading.js';
 export * from './execution.js';
 export * from './signal.js';
 export * from './realtime.js';
+export * from './feed.js';
 export * from './finance.js';
 export * from './symbol.js';
 export * from './quote.js';

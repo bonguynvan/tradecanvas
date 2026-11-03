@@ -532,7 +532,7 @@ const widget = new ChartWidget(host, {
   symbol: 'BTCUSDT',
   timeframe: '5m',
   theme: 'dark',
-  adapter: new BinanceAdapter(),
+  adapter: new BinanceAdapter(),   // or feed: a DataFeed it pulls from (see Realtime)
   historyLimit: 500,
   trading: true,
   features: { 'toolbar.replay': false },   // the widget's switches: see Customization
@@ -1147,6 +1147,7 @@ const grid = new ChartWidgetGrid(host, {
   layout: '2x2',                                   // '1x1' '1x2' '2x1' '2x2' '1x3' '3x1' '2x3' '3x2'
   widget: { timeframe: '1h' },                    // every chart
   adapter: () => new BinanceAdapter(),            // one per chart: an adapter keeps one stream
+  // or widget: { timeframe: '1h', feed }: one DataFeed serves every chart
   cells: [{ symbol: 'BTCUSDT' }, { symbol: 'ETHUSDT' }, { symbol: 'SOLUSDT' }, { symbol: 'BNBUSDT' }],
   sync: { crosshair: true, time: false, symbol: false, interval: false, drawings: false, replay: false },
 })

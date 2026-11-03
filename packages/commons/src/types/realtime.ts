@@ -2,6 +2,7 @@ import type { OHLCBar, TimeFrame } from './ohlc.js';
 import type { SymbolInfo, SymbolSearchOptions } from './symbol.js';
 import type { Quote } from './quote.js';
 import type { NewsItem } from './news.js';
+import type { DataFeed } from './feed.js';
 
 /** One trade: when (ms), at what price, how much. */
 export interface Trade {
@@ -172,7 +173,10 @@ export interface DataAdapter {
 // --- Stream Manager Config ---
 
 export interface StreamConfig {
-  adapter: DataAdapter;
+  /** Where the bars come from, as an adapter. Give this or `feed`, not both. */
+  adapter?: DataAdapter;
+  /** Where the bars come from, as a feed the chart pulls from (`DataFeed`). Give this or `adapter`, not both. */
+  feed?: DataFeed;
   symbol: string;
   timeframe: TimeFrame;
   /** Bars to load at the start. Default 500. */
