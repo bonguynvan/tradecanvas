@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 1.68.1 (2026-11-03)
+
+React, Vue and Svelte components: 1.3.61.
+
 ### Performance
 
 - **A long history keeps its frame rate under a busy feed** (`@tradecanvas/core`, `@tradecanvas/chart`).
