@@ -133,6 +133,29 @@ chart.resume()    // back: one frame draws what changed`}</code></pre>
   El widget en una pantalla táctil: campos a 16 px para que la página no haga zoom al enfocarlos, paneles por encima del teclado en pantalla, alturas en unidades de viewport dinámicas. Para medir en su equipo: <code>node scripts/bench-render.mjs --mobile</code>.
 </p>
 
+<h2 id="soak">Diez minutos con un feed cargado</h2>
+<p>
+  Una mesa en vivo que se deja correr: el widget completo sobre 1.000.000 de velas de un segundo, dibujado con WebGL, cuatro indicadores, una posición con su stop y su objetivo, órdenes pendientes que se ejecutan, se vuelven a colocar y se mueven, el bid y el ask, un mapa de calor de profundidad y un feed de 30.000 operaciones por segundo desde un worker que hace de socket. Cada operación llega al gráfico como un tick. Cada 30 segundos la prueba recoge la basura y lee lo que sigue retenido.
+</p>
+<table>
+  <thead><tr><th>Lectura</th><th>Al minuto 1</th><th>Al minuto 10</th></tr></thead>
+  <tbody>
+    <tr><td>Heap de JS tras recoger la basura</td><td>418,0 MB</td><td>418,3 MB</td></tr>
+    <tr><td>Nodos DOM</td><td>1.220</td><td>1.220</td></tr>
+    <tr><td>Listeners de eventos</td><td>364</td><td>364</td></tr>
+    <tr><td>Operaciones recibidas por segundo</td><td>30.027</td><td>29.998</td></tr>
+    <tr><td>Fotogramas por segundo</td><td>56,7</td><td>56,4</td></tr>
+    <tr><td>Fotograma p95</td><td>18,2 ms</td><td>18,2 ms</td></tr>
+    <tr><td>Tareas de más de 50 ms en el hilo principal</td><td>0</td><td>0</td></tr>
+  </tbody>
+</table>
+<p>
+  El heap creció 0,3 MB en nueve minutos: las 600 velas nuevas y sus valores de indicadores. Recibir las operaciones cuesta alrededor del 1% del hilo principal; casi todo el fotograma es dibujo. En 1.68.0, la misma mesa dibujaba unos 29 fotogramas por segundo con una tarea de 50 ms cada segundo: el eje de tiempo miraba la hora de cada vela en cada fotograma, las líneas de día recorrían todo el historial con cada vela nueva y el mapa de calor ordenaba los precios de cada instantánea en cada fotograma. Chrome sin interfaz en una Intel UHD 770. Para ejecutarlo en tu máquina:
+</p>
+<pre><code>{`pnpm build
+pnpm soak                          # 10 minutes, 30,000 trades/s, 1,000,000 bars, WebGL
+pnpm soak --minutes=30 --rate=50000 --renderer=canvas`}</code></pre>
+
 <h2>El hilo principal</h2>
 <p>
   El gráfico calcula los indicadores en el hilo principal. <code>IndicatorWorkerHost</code> de <code>@tradecanvas/core</code> puede ejecutar <code>calculate()</code> en un worker que tú proporciones, con una API basada en Promise, un tiempo de espera por solicitud y una alternativa síncrona para SSR y tests, pero el gráfico todavía no pasa sus indicadores por él y los paquetes no incluyen un script de worker.

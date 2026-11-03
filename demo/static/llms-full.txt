@@ -1608,7 +1608,7 @@ packages/library/README.md
 - **18 chart types, 134 indicators, 73 drawing tools**, indicators on indicators, alerts on lines, undo and redo.
 - **Trading on the chart**: positions with live P&L, orders and stops you drag, a paper broker or your own.
 - **Live data** from Binance, Bybit, Coinbase, Kraken and Upbit, or your own feed in about twenty lines.
-- **Fast**: a million bars panned at 60 fps with WebGL; a live tick in about a microsecond.
+- **Fast**: a million bars panned at 60 fps with WebGL; a live tick in about a microsecond; ten minutes of 30,000 trades a second on a million bars with no memory growth ([soak](https://github.com/bonguynvan/tradecanvas/blob/main/benchmarks/2026-11-03.md)).
 - **A workspace**: grids of charts, layouts, bar replay, backtesting.
 - **Yours to shape**: themes, five looks, 133 switches, plugins; 30 languages; phones and apps.
 

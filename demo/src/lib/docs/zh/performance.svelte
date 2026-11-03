@@ -129,6 +129,29 @@ chart.resume()    // back: one frame draws what changed`}</code></pre>
   触摸屏上的组件：输入框为 16 px，获得焦点时页面不会缩放；面板位于屏幕键盘之上；高度使用动态视口单位。在自己的机器上测量：<code>node scripts/bench-render.mjs --mobile</code>。
 </p>
 
+<h2 id="soak">繁忙行情下的十分钟</h2>
+<p>
+  一个持续运行的实时交易台：完整的 widget，1,000,000 根一秒 K 线，用 WebGL 绘制，四个指标，一个带止损和止盈的持仓，会成交、重新下单和移动的挂单，买价和卖价，深度热力图，以及由一个充当 socket 的 worker 发出的每秒 30,000 笔成交。每笔成交都以 tick 的形式到达图表。每隔 30 秒，测试先回收垃圾，再读取仍被占用的内存。
+</p>
+<table>
+  <thead><tr><th>读数</th><th>第 1 分钟</th><th>第 10 分钟</th></tr></thead>
+  <tbody>
+    <tr><td>回收后的 JS 堆</td><td>418.0 MB</td><td>418.3 MB</td></tr>
+    <tr><td>DOM 节点</td><td>1,220</td><td>1,220</td></tr>
+    <tr><td>事件监听器</td><td>364</td><td>364</td></tr>
+    <tr><td>每秒接收的成交</td><td>30,027</td><td>29,998</td></tr>
+    <tr><td>每秒帧数</td><td>56.7</td><td>56.4</td></tr>
+    <tr><td>p95 帧时间</td><td>18.2 ms</td><td>18.2 ms</td></tr>
+    <tr><td>主线程上超过 50 ms 的任务</td><td>0</td><td>0</td></tr>
+  </tbody>
+</table>
+<p>
+  九分钟内堆增长了 0.3 MB：即 600 根新 K 线及其指标值。接收成交约占主线程的 1%，一帧的大部分时间用于绘制。在 1.68.0 中，同一个交易台每秒约绘制 29 帧，并且每秒有一个 50 ms 的任务：时间轴每帧都查看每根 K 线的时间，日分隔线在每根新 K 线到来时遍历全部历史，热力图每帧都对每个快照的价格排序。测试环境为 Intel UHD 770 上的无头 Chrome。在你的机器上运行：
+</p>
+<pre><code>{`pnpm build
+pnpm soak                          # 10 minutes, 30,000 trades/s, 1,000,000 bars, WebGL
+pnpm soak --minutes=30 --rate=50000 --renderer=canvas`}</code></pre>
+
 <h2>主线程</h2>
 <p>
   图表在主线程上计算指标。<code>@tradecanvas/core</code> 中的 <code>IndicatorWorkerHost</code> 可以在你提供的 worker 中运行 <code>calculate()</code>，提供基于 Promise 的 API、按请求设置的超时，以及用于 SSR 和测试的同步回退，但图表目前还没有让其指标经由它计算，各个包也没有附带 worker 脚本。

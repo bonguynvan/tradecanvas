@@ -37,7 +37,7 @@
 - **18 loại biểu đồ, 134 chỉ báo, 73 công cụ vẽ**, chỉ báo trên chỉ báo, cảnh báo trên đường vẽ, hoàn tác và làm lại.
 - **Giao dịch trên biểu đồ**: vị thế với lãi lỗ trực tiếp, lệnh và điểm dừng kéo được, broker giấy hoặc broker của bạn.
 - **Dữ liệu trực tiếp** từ Binance, Bybit, Coinbase và Kraken, hoặc nguồn của bạn trong khoảng hai mươi dòng.
-- **Nhanh**: một triệu nến kéo mượt 60 fps với WebGL; một tick trực tiếp trong khoảng một micro giây.
+- **Nhanh**: một triệu nến kéo mượt 60 fps với WebGL; một tick trực tiếp trong khoảng một micro giây; mười phút 30.000 lệnh khớp mỗi giây trên một triệu nến mà bộ nhớ không tăng ([bài đo](benchmarks/2026-11-03.md)).
 - **Không gian làm việc**: lưới nhiều biểu đồ, bố cục, tua lại nến, backtest.
 - **Tùy biến theo ý bạn**: theme, ba phong cách, 114 công tắc, plugin; 30 ngôn ngữ; điện thoại và ứng dụng.
 

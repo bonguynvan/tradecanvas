@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Performance
+
+- **A long history keeps its frame rate under a busy feed** (`@tradecanvas/core`, `@tradecanvas/chart`).
+  - The time axis no longer looks at every bar's time on each frame; the day and month lines look only at the bars that arrive; the depth heatmap measures how far apart a snapshot's levels are once, when it comes in.
+  - On a million one-second bars, with 30,000 trades a second, four indicators, orders and the heatmap, the widget went from about 29 to about 57 frames a second, and the main-thread tasks over 50 ms, about one a second, are gone. Over ten minutes its memory, its DOM nodes and its event listeners stayed level.
+  - `pnpm soak` runs this on your machine.
+
 ## 1.68.0 (2026-11-02)
 
 React, Vue and Svelte components: 1.3.60.

@@ -4,6 +4,24 @@ export interface DepthSnapshot {
   time: number;
   bids: DepthLevel[];
   asks: DepthLevel[];
+  /** The median gap between the bids' prices, 0 with fewer than two: how tall a cell is drawn. */
+  bidStep?: number;
+  /** The same for the asks. */
+  askStep?: number;
+}
+
+/** The median gap between the levels' prices, 0 when there is none. */
+export function levelStep(levels: readonly DepthLevel[]): number {
+  if (levels.length < 2) return 0;
+  const prices = levels.map((l) => l.price).sort((a, b) => a - b);
+  const gaps: number[] = [];
+  for (let i = 1; i < prices.length; i++) {
+    const g = prices[i] - prices[i - 1];
+    if (g > 0) gaps.push(g);
+  }
+  if (gaps.length === 0) return 0;
+  gaps.sort((a, b) => a - b);
+  return gaps[Math.floor(gaps.length / 2)];
 }
 
 /**
@@ -21,10 +39,13 @@ export class DepthHeatmapBuffer {
   }
 
   push(time: number, depth: DepthData): void {
+    // The spacing is measured here, once, not on every frame the snapshot is drawn.
     const snapshot: DepthSnapshot = {
       time,
       bids: depth.bids.map((l) => ({ ...l })),
       asks: depth.asks.map((l) => ({ ...l })),
+      bidStep: levelStep(depth.bids),
+      askStep: levelStep(depth.asks),
     };
     const at = this.indexAfter(time);
     if (at > 0 && this.buffer[at - 1].time === time) {

@@ -130,6 +130,29 @@ chart.resume()    // back: one frame draws what changed`}</code></pre>
   The widget on a touch screen: inputs at 16 px so the page doesn’t zoom when one takes focus, sheets above the on-screen keyboard, heights in dynamic viewport units. To measure on your machine: <code>node scripts/bench-render.mjs --mobile</code>.
 </p>
 
+<h2 id="soak">Ten minutes on a busy feed</h2>
+<p>
+  A live desk left running: the full widget on 1,000,000 one-second bars, drawn with WebGL, four indicators, a position with its stop and target, working orders that are filled, placed again and moved, the bid and ask, a depth heatmap, and a feed of 30,000 trades a second from a worker standing in for the socket. Every trade reaches the chart as a tick. Every 30 seconds the soak collects garbage and reads what is still held.
+</p>
+<table>
+  <thead><tr><th>What was read</th><th>At 1 minute</th><th>At 10 minutes</th></tr></thead>
+  <tbody>
+    <tr><td>JS heap after a collection</td><td>418.0 MB</td><td>418.3 MB</td></tr>
+    <tr><td>DOM nodes</td><td>1,220</td><td>1,220</td></tr>
+    <tr><td>Event listeners</td><td>364</td><td>364</td></tr>
+    <tr><td>Trades taken in, a second</td><td>30,027</td><td>29,998</td></tr>
+    <tr><td>Frames a second</td><td>56.7</td><td>56.4</td></tr>
+    <tr><td>p95 frame</td><td>18.2 ms</td><td>18.2 ms</td></tr>
+    <tr><td>Main-thread tasks over 50 ms</td><td>0</td><td>0</td></tr>
+  </tbody>
+</table>
+<p>
+  The heap grew 0.3 MB in nine minutes: the 600 new bars and their indicator values. Taking the trades in costs about 1% of the main thread; most of a frame is drawing. In 1.68.0 the same desk drew about 29 frames a second with a 50 ms task every second: the time axis looked at every bar's time on each frame, the day lines went over the whole history for each new bar, and the heatmap sorted each snapshot's prices on every frame. Headless Chrome on an Intel UHD 770. To run it on your machine:
+</p>
+<pre><code>{`pnpm build
+pnpm soak                          # 10 minutes, 30,000 trades/s, 1,000,000 bars, WebGL
+pnpm soak --minutes=30 --rate=50000 --renderer=canvas`}</code></pre>
+
 <h2>The main thread</h2>
 <p>
   The chart computes indicators on the main thread. <code>IndicatorWorkerHost</code> from <code>@tradecanvas/core</code> can run <code>calculate()</code> in a worker you provide, with a Promise-based API, a per-request timeout and a synchronous fallback for SSR and tests, but the chart does not route its indicators through it yet, and the packages do not ship a worker script.

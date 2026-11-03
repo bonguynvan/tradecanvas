@@ -37,7 +37,7 @@
 - **18 tipos de gráfico, 134 indicadores, 73 herramientas de dibujo**, indicadores sobre indicadores, alertas en líneas, deshacer y rehacer.
 - **Trading en el gráfico**: posiciones con P&L en vivo, órdenes y stops que arrastras, un bróker simulado o el tuyo.
 - **Datos en vivo** de Binance, Bybit, Coinbase y Kraken, o tu propio feed en unas veinte líneas.
-- **Rápido**: un millón de barras desplazadas a 60 fps con WebGL; un tick en vivo en un microsegundo, más o menos.
+- **Rápido**: un millón de barras desplazadas a 60 fps con WebGL; un tick en vivo en un microsegundo, más o menos; diez minutos de 30.000 operaciones por segundo sobre un millón de barras sin que crezca la memoria ([prueba](benchmarks/2026-11-03.md)).
 - **Un espacio de trabajo**: cuadrículas de gráficos, diseños, repetición de barras, backtesting.
 - **A tu medida**: temas, tres aspectos, 114 interruptores, plugins; 30 idiomas; móviles y apps.
 
