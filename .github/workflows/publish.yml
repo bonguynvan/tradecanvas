@@ -6,9 +6,11 @@ on:
       - 'packages/**'
       - '.changeset/**'
 
+# A release publishes package by package; a push in the middle waits for it
+# instead of stopping it with half the packages out.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   publish:
@@ -16,7 +18,9 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
-      # npm provenance: the registry records which workflow run built each version.
+      # npm trusted publishing: npm swaps this job's OIDC token for a one-time
+      # publish token, so no npm token is stored here, and it records provenance
+      # (which workflow run built each version) on its own.
       id-token: write
     steps:
       - uses: actions/checkout@v4
@@ -27,6 +31,9 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
+
+      # Trusted publishing needs npm 11.5.1 or later; Node 22 comes with npm 10.
+      - run: npm install -g npm@11.11.0
 
       - run: pnpm install --no-frozen-lockfile
       - run: pnpm build
@@ -40,5 +47,3 @@ jobs:
           commit: 'chore: version packages'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-          NPM_CONFIG_PROVENANCE: true
