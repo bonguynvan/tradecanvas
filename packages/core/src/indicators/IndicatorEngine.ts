@@ -780,6 +780,23 @@ export class IndicatorEngine {
     return result;
   }
 
+  /**
+   * Put the indicators in the order of `instanceIds` (the order they are
+   * listed, drawn and stacked in a pane in), those not in it after, as they
+   * were. Unknown ids are skipped. A reader is still computed after the
+   * indicator it reads.
+   */
+  orderIndicators(instanceIds: readonly string[]): void {
+    const next = new Map<string, IndicatorInstance>();
+    for (const id of instanceIds) {
+      const instance = this.instances.get(id);
+      if (instance && !next.has(id)) next.set(id, instance);
+    }
+    for (const [id, instance] of this.instances) if (!next.has(id)) next.set(id, instance);
+    this.instances = next;
+    this.order = null;
+  }
+
   /** The style the indicator draws with (a copy). */
   getIndicatorStyle(instanceId: string): ResolvedIndicatorStyle | null {
     const style = this.instances.get(instanceId)?.style;

@@ -5579,8 +5579,20 @@ export class Chart {
       for (const cur of current) {
         if (!kept.has(cur.instanceId)) this.removeIndicator(cur.instanceId);
       }
-      // A reader taken down with its source comes back with it.
-      for (const id of [...kept]) if (!this.indicatorEngine.getIndicatorConfig(id)) kept.delete(id);
+      // A reader taken down with its source comes back with it, and so does
+      // one drawn in the pane of an indicator taken down (it would stay where
+      // the take-down left it): until none is left to take down.
+      const hostOf = new Map(current.map((cur) => [cur.instanceId, cur.pane]));
+      for (let changed = true; changed;) {
+        changed = false;
+        for (const id of [...kept]) {
+          const host = hostOf.get(id);
+          if (this.indicatorEngine.getIndicatorConfig(id) && !(host && !kept.has(host))) continue;
+          if (this.indicatorEngine.getIndicatorConfig(id)) this.removeIndicator(id);
+          kept.delete(id);
+          changed = true;
+        }
+      }
     } else {
       for (const active of this.indicatorEngine.getActiveIndicators()) this.removeIndicator(active.instanceId);
     }
@@ -5618,6 +5630,9 @@ export class Chart {
       restored.push([ind, instanceId]);
       this.restoreLooks(instanceId, ind);
     }
+    // Restored hosts and sources first, they go back in the order they were
+    // listed in: the legend, the drawing order and a pane's stack stay as saved.
+    this.indicatorEngine.orderIndicators(list.flatMap((ind) => instanceIds.get(ind.instanceId) ?? []));
     restorePanes(this.layoutManager, restored);
     this.updateViewportAndRender();
     return instanceIds;
@@ -5718,7 +5733,14 @@ export class Chart {
   private applyIndicatorStep(action: import('@tradecanvas/core').UndoableAction, direction: 'undo' | 'redo'): void {
     const step = action.indicators;
     if (!step) return;
-    this.indicatorHistory.quietly(() => this.restoreIndicators(direction === 'undo' ? step.before : step.after, true));
+    // Indicators taken down on the way hand their panes on, but the drawings
+    // stay put: the step's own renames below are where they belong.
+    this.replayingIndicatorStep = true;
+    try {
+      this.indicatorHistory.quietly(() => this.restoreIndicators(direction === 'undo' ? step.before : step.after, true));
+    } finally {
+      this.replayingIndicatorStep = false;
+    }
     // The drawings on a pane another indicator took over go with it, either way.
     const renames = step.renames ?? [];
     const walk = direction === 'undo' ? [...renames].reverse().map(([from, to]) => [to, from] as const) : renames;
@@ -5728,6 +5750,8 @@ export class Chart {
 
   /** Drawings of indicators a loaded layout could not restore: not on the chart, saved again as they were. */
   private keptPaneDrawings: DrawingState[] = [];
+  /** An undo or a redo is putting the indicators back: their drawings move only by the step's renames. */
+  private replayingIndicatorStep = false;
 
   /** Whether pane `paneId` is on the chart and takes a `type` drawing: no price-only tool goes on a pane. */
   private takesDrawing(paneId: string, type: string): boolean {
@@ -5737,7 +5761,7 @@ export class Chart {
   /** Hand pane `from` to the indicator `to`: its layout and its drawings. */
   private renamePane(from: string, to: string): void {
     this.layoutManager.renamePanel(from, to);
-    this.drawingManager.renamePanes(new Map([[from, to]]));
+    if (!this.replayingIndicatorStep) this.drawingManager.renamePanes(new Map([[from, to]]));
     this.indicatorHistory.renamed(from, to);
   }
 
