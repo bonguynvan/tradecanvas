@@ -188,3 +188,34 @@ describe('DataManager.replaceBar', () => {
     expect(dm.getData()[1]).toBe(stored[1]);
   });
 });
+
+describe('DataManager.version', () => {
+  it('moves on every write that changes the bars, and only then', () => {
+    const dm = new DataManager();
+    const moved = (write: () => void): boolean => {
+      const before = dm.version();
+      write();
+      return dm.version() !== before;
+    };
+    expect(moved(() => dm.setData([bar(10, 1, 2, 1, 2)]))).toBe(true);
+    expect(moved(() => dm.appendBar(bar(20, 1, 2, 1, 2)))).toBe(true);
+    // In place: the array is the same one, so only the version tells.
+    expect(moved(() => dm.updateLastBar(bar(20, 1, 3, 1, 3)))).toBe(true);
+    expect(moved(() => dm.updateLastBarFromTick({ time: 20, price: 4 }))).toBe(true);
+    expect(moved(() => dm.replaceBar(bar(10, 1, 5, 1, 5)))).toBe(true);
+    expect(moved(() => dm.prependBars([bar(5, 1, 2, 1, 2)]))).toBe(true);
+    expect(moved(() => dm.clear())).toBe(true);
+  });
+
+  it('stays when nothing was written', () => {
+    const dm = new DataManager();
+    dm.setData([bar(10, 1, 2, 1, 2), bar(20, 1, 2, 1, 2)]);
+    const before = dm.version();
+    dm.replaceBar(bar(10, 1, 2, 1, 2)); // the bar it has
+    dm.replaceBar(bar(15, 1, 2, 1, 2)); // no bar at that time
+    dm.prependBars([bar(30, 1, 2, 1, 2)]); // not older
+    dm.appendBar({ ...bar(30, 1, 2, 1, 2), high: Number.NaN });
+    dm.updateLastBarFromTick({ time: 20, price: -1 });
+    expect(dm.version()).toBe(before);
+  });
+});

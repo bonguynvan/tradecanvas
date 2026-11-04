@@ -122,6 +122,11 @@ export class SeriesStore {
     return this.shownRevision;
   }
 
+  /** Moves on every write to the bars shown: see `DataManager.version`. */
+  version(): number {
+    return this.shown.version();
+  }
+
   /** The live series: kept aside during a replay, else every bar, hidden ones too. */
   liveBars(): DataSeries {
     return this.aside?.getData() ?? this.whole ?? this.shown.getData();

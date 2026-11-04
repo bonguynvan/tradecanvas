@@ -80,6 +80,8 @@ export function withTimeOf<T extends { time: number }>(series: readonly { time: 
 
 export class DataManager {
   private data: DataSeries = [];
+  /** Moves on every write to the bars, in place or not. */
+  private changes = 0;
 
   private withSeriesTime<T extends { time: number }>(item: T): T {
     return withTimeOf(this.data, item);
@@ -87,6 +89,14 @@ export class DataManager {
 
   getData(): DataSeries {
     return this.data;
+  }
+
+  /**
+   * Moves on every write to the bars: what is made from them (the series a
+   * chart type draws) is current while it is the same.
+   */
+  version(): number {
+    return this.changes;
   }
 
   setData(data: DataSeries): void {
@@ -102,6 +112,7 @@ export class DataManager {
       out.push(isSanitized(bar) ? bar : sanitizeBar(bar));
     }
     this.data = out;
+    this.changes++;
   }
 
   /**
@@ -126,17 +137,20 @@ export class DataManager {
     }
     older.length = kept;
     this.data = older.concat(this.data);
+    this.changes++;
     return kept;
   }
 
   appendBar(bar: OHLCBar): void {
     if (!isValidBar(bar)) return;
     this.data.push(sanitizeBar(this.withSeriesTime(bar)));
+    this.changes++;
   }
 
   updateLastBar(bar: OHLCBar): void {
     if (!isValidBar(bar)) return;
     const sanitized = sanitizeBar(this.withSeriesTime(bar));
+    this.changes++;
     if (this.data.length === 0) {
       this.data.push(sanitized);
       return;
@@ -158,6 +172,7 @@ export class DataManager {
     const repaired = sanitizeBar(timed);
     if (sameBar(this.data[index], repaired)) return { index, changed: false };
     this.data[index] = repaired;
+    this.changes++;
     return { index, changed: true };
   }
 
@@ -166,6 +181,7 @@ export class DataManager {
     if (!isFinite(tick.price) || tick.price < 0) return;
     if (tick.volume !== undefined && (!isFinite(tick.volume) || tick.volume < 0)) return;
     this.data[this.data.length - 1] = mergeBar(this.data[this.data.length - 1], this.withSeriesTime(tick));
+    this.changes++;
   }
 
   getLength(): number {
@@ -174,5 +190,6 @@ export class DataManager {
 
   clear(): void {
     this.data = [];
+    this.changes++;
   }
 }

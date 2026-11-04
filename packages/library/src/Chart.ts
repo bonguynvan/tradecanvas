@@ -43,9 +43,9 @@ import type {
 } from '@tradecanvas/commons';
 import { isValidTimeZone, sessionMinute, symbolTimeZone, LayerType, setLocale as setGlobalLocale, computePriceLimits, createMarketTheme, priceStepAt, PRICE_AXIS_WIDTH, autoPricePrecision, formatPrice, parseIndicatorSource, indicatorSource, stepDecimals, priceFormatterFor, fractionTick } from '@tradecanvas/commons';
 import type { BarLayout, ChartTypeOptions, DataUpdatePayload, FontConfig, IndicatorId, IndicatorParamsFor, PriceFormatter, PriceFraction, ShapeConfig, TimeFormatter } from '@tradecanvas/commons';
-import type { ChartStyleKey, ChartStyleOverrides, ChartStyleOverridesPatch, IndicatorIntervals, IndicatorStyleConfig, PaneStyle, ResolvedChartStyle, StyleLayer } from '@tradecanvas/commons';
-import { PHI, computePriceRange, readChartTypeOptions, tickBarCount, barTimeUnit, readChartStyleOverrides, readIndicatorPlotStyles, readPaneStyle } from '@tradecanvas/commons';
-import { PRICE_SCALE_MARGIN, PriceLines, type BidAsk, SymbolSeriesStore, CompareSymbolIndicator, CompareSymbolPaneIndicator, SpreadIndicator, CorrelationCoefficientIndicator, CorrelationLogIndicator, SYMBOL_INDICATOR_IDS, axisTimes, HiLoRenderer, PointAndFigureRenderer, ReshapeMemo, isPriceLevelAlert, loadWebGL, gpuContextsLeft, whenGpuContextFree } from '@tradecanvas/core';
+import type { ResolvedLayout, ChartStyleKey, ChartStyleOverrides, ChartStyleOverridesPatch, IndicatorIntervals, IndicatorStyleConfig, PaneStyle, ResolvedChartStyle, StyleLayer } from '@tradecanvas/commons';
+import { readChartTypeOptions, tickBarCount, barTimeUnit, readChartStyleOverrides, readIndicatorPlotStyles, readPaneStyle } from '@tradecanvas/commons';
+import { PriceLines, type BidAsk, SymbolSeriesStore, CompareSymbolIndicator, CompareSymbolPaneIndicator, SpreadIndicator, CorrelationCoefficientIndicator, CorrelationLogIndicator, SYMBOL_INDICATOR_IDS, axisTimes, HiLoRenderer, PointAndFigureRenderer, isPriceLevelAlert, loadWebGL, gpuContextsLeft, whenGpuContextFree } from '@tradecanvas/core';
 import type { GpuRenderer, RendererMode } from '@tradecanvas/core';
 import { regularHoursFilter } from './regularHours.js';
 import { ChartA11y } from './chartA11y.js';
@@ -122,10 +122,13 @@ import {
 } from '@tradecanvas/core';
 import type { ChartRendererInterface, CompareValue, RangePreset, SessionHoursConfig, DrawingPatch, DrawingOrderMove } from '@tradecanvas/core';
 import { timeframeToMs } from '@tradecanvas/commons';
-import { resolveRenderer, resolveDisplayData, isReshapedChartType, pointAndFigureDisplay, rangeBarsStep } from './charts/ChartTypeStrategy.js';
+import { resolveRenderer, isReshapedChartType } from './charts/ChartTypeStrategy.js';
 import { AutoSaveScheduler } from './state/AutoSaveScheduler.js';
 import { isValidBar } from './DataManager.js';
 import { SeriesStore, isWholeBar, type LiveChange } from './SeriesStore.js';
+import { PriceFit, hasVolume } from './model/PriceFit.js';
+import { DisplaySeries } from './model/DisplaySeries.js';
+import { PaneLayout } from './model/PaneLayout.js';
 import { HistoryPager, type HistoryLoader } from './HistoryPager.js';
 import { ThemeManager } from './ThemeManager.js';
 import { startOverrides } from './style/styleOptions.js';
@@ -143,9 +146,6 @@ import { resolveReplayStep } from './replay/replayStep.js';
 // Replaced at build time by Vite `define` (see vite.config.ts). The `typeof`
 // guard keeps this safe when the source runs un-bundled (tests, ts-node).
 declare const __TC_VERSION__: string;
-
-/** The scale of an indicator pane with nothing to fit yet. */
-const DEFAULT_PANE_RANGE = { min: 0, max: 100 } as const;
 
 /** `setTimeZone(EXCHANGE_TIME_ZONE)` shows the zone of the symbol's exchange, else of its market (`getExchangeTimeZone`). */
 export const EXCHANGE_TIME_ZONE = 'exchange';
@@ -174,8 +174,6 @@ function withBothZoneSpellings(info: SymbolInfo, held: string | undefined): Symb
 
 /** Room above and below the left scale's overlays, as a share of their range. */
 const LEFT_SCALE_PADDING = 0.08;
-/** Between the lowest candle and the volume bars: φ⁻⁷ (3%) of the plot's height. */
-const VOLUME_GAP = PHI ** -7;
 /** Changes to one indicator closer together than this are one undo step (a colour dragged, a period typed). */
 const INDICATOR_EDIT_MERGE_MS = 800;
 /** A pane with less plot than this, px, takes no drawings: there is no room to place one. */
@@ -224,19 +222,14 @@ export class Chart {
   private executionAdapter: ExecutionAdapter | null = null;
   private execTeardown: (() => void) | null = null;
   private autoScrollOnNewBar = true;
-  private displayDataCache: DataSeries | null = null;
   /** The drawn series (Renko bricks…) the indicators were last worked out on; null: the data bars. */
   private indicatorsOnDrawn: DataSeries | null = null;
-  /** The size a reshaped type was raised to on this series, so a tick walks it once (cleared when the series is replaced). */
-  private readonly reshapeMemo = new ReshapeMemo();
-  /** The price step the cached range bars were built on: a new step (the symbol's `minTick` arrives) builds them again. */
-  private displayDataStep: number | undefined;
+  /** The series the chart type draws, kept between frames. */
+  private readonly display: DisplaySeries;
   /** Earliest bar of an `indicatorUpdate` waiting to be emitted; null = none pending. */
   private indicatorUpdateFrom: number | null = null;
-  private resolvedLayoutCache: import('@tradecanvas/commons').ResolvedLayout | null = null;
-  private panelInfoCache: import('@tradecanvas/core').PanelRenderInfo[] | null = null;
-  /** Panes' own styles, by the instance whose pane it is (`setPaneStyle`). */
-  private paneStyles = new Map<string, PaneStyle>();
+  /** The indicator panes as drawn: their layout, scales and own styles. */
+  private readonly panes: PaneLayout;
   /** The background last put on the container (setTheme, a style change), so a host's own stays. */
   private lastBackground: string | null = null;
   private renderScheduled = false;
@@ -392,27 +385,8 @@ export class Chart {
   /** A fraction format's smallest step (a 32nd), or null. */
   private priceUnit: number | null = null;
   private paneTitles = true;
-  /**
-   * The `autoScale` the chart was constructed with — distinct from
-   * `this.options.autoScale`, which drag-to-scale/vertical-pan mutate at
-   * runtime to freeze the Y-axis. `setData()` restores this default so a
-   * freeze on the old symbol doesn't silently carry over to a new one.
-   */
-  private defaultAutoScale: boolean;
-  /**
-   * A new series whose prices aren't on the axis yet (the first bars, or
-   * `setData`'s): they are fitted once even with auto-scale off, which then
-   * holds them. Off, a chart would otherwise keep its empty 0 to 1, or the
-   * last symbol's prices.
-   */
-  private priceFitPending = true;
-  /**
-   * The series began with no bars (a new chart, `setData([])`, an empty
-   * history), so its bars come one by one: see `priceFitDone`. A hold the
-   * user or the host asks for (a drag of the price axis, `setAutoScale(false)`)
-   * ends it.
-   */
-  private seriesArriving = true;
+  /** When the price scale is fitted to the bars, and to what. */
+  private readonly priceFit: PriceFit;
   private keyboardHandler: KeyboardHandler | null = null;
   private a11y: ChartA11y | null = null;
   private onWindowKeyDown: ((e: KeyboardEvent) => void) | null = null;
@@ -445,7 +419,18 @@ export class Chart {
     this.container = container;
     this.options = { ...options, chartType: options.chartType ?? 'candlestick' };
     this.numberLocale = options.numberLocale ?? 'en-US';
-    this.defaultAutoScale = options.autoScale !== false;
+    this.priceFit = new PriceFit(options.autoScale !== false);
+    this.display = new DisplaySeries({
+      bars: () => this.series.bars(),
+      version: () => this.series.version(),
+      chartType: () => this.options.chartType,
+      chartTypeOptions: () => this.chartTypeOptions,
+      lookup: (t) => this.pluginManager.getChartType(t),
+      stepAt: (price) => this.stepAt(price),
+      onBoxSize: (box) => {
+        if (this.chartRenderer instanceof PointAndFigureRenderer) this.chartRenderer.setBoxSize(box);
+      },
+    });
 
     // Resolve feature flags (all default to true)
     const f = options.features ?? {};
@@ -509,6 +494,7 @@ export class Chart {
     this.applyStyle(startOverrides(options), 'host', false);
     this.layoutManager = new LayoutManager();
     this.indicatorEngine = new IndicatorEngine();
+    this.panes = new PaneLayout(this.layoutManager, this.indicatorEngine, (bounds) => this.crosshairHandler.setReportBounds(bounds));
     this.pluginManager = new PluginManager(this.indicatorEngine, { plugins: options.plugins });
     this.eventBus = new EventBus();
 
@@ -915,7 +901,7 @@ export class Chart {
             // recompute the range on the next frame, so engaging the drag
             // turns it off (double-click the price axis to restore), mirroring
             // the price-axis drag-scale gesture.
-            if (verticalGate.step(deltaX, deltaY, this.options.autoScale !== false) && deltaY) {
+            if (verticalGate.step(deltaX, deltaY, this.priceFit.isAuto()) && deltaY) {
               this.holdPriceScale();
               this.viewport.panPriceRange(deltaY);
             }
@@ -930,7 +916,7 @@ export class Chart {
     // overlays' labels only, or mirrors the price scale and scales it.
     this.interactionManager.setAxisStrips(() => ({
       plot: this.viewport.getState().chartRect,
-      timeAxisTop: this.timeAxisTop(),
+      timeAxisTop: this.panes.timeAxisTop(),
       left: {
         width: this.isLeftPriceScaleShown() ? this.leftAxisWidth : 0,
         scales: !this.indicatorEngine.hasLeftScaleOverlays(),
@@ -971,7 +957,7 @@ export class Chart {
         () => this.viewport.getState(),
         (axis) => {
           if (axis === 'price') {
-            this.options.autoScale = true;
+            this.priceFit.resume();
             this.updateViewportAndRender();
           } else {
             this.fitContent();
@@ -1204,8 +1190,7 @@ export class Chart {
     this.history.reset();
     this.series.load(data);
     this.crosshairHandler.setData(this.series.bars());
-    this.displayDataCache = null;
-    this.reshapeMemo.clear();
+    this.display.reset();
     this.sessionBreaks.invalidateCache();
     // A full data replace means a new series (symbol/timeframe switch, not
     // a live tick — those go through appendBar/updateLastBar instead), so
@@ -1213,13 +1198,11 @@ export class Chart {
     // Otherwise a price-axis drag or vertical pan on the old symbol silently
     // keeps the new symbol's chart stuck on the old price range. Auto-scale
     // set off fits the new series once too, then holds it.
-    this.options.autoScale = this.defaultAutoScale;
-    this.priceFitPending = true;
+    this.priceFit.newSeries(this.series.length() === 0);
     // New data context (symbol / timeframe) — drop stale alert prev-values so
     // the next tick seeds cleanly instead of crossing against the old series.
     // The bars kept: a bar the chart can't take is left out.
     const kept = this.series.bars();
-    this.seriesArriving = kept.length === 0;
     const lastKept = kept[kept.length - 1];
     if (!restoring) {
       this.alertManager.clearLastValues();
@@ -1268,8 +1251,7 @@ export class Chart {
     if (added === 0) return taken;
     const data = this.series.bars();
     this.crosshairHandler.setData(data);
-    this.displayDataCache = null;
-    this.reshapeMemo.clear();
+    this.display.reset();
     this.sessionBreaks.invalidateCache();
     // Both hold bar positions that just moved.
     if (this.pinnedTooltip.isPinned()) this.pinnedTooltip.unpin();
@@ -1296,8 +1278,7 @@ export class Chart {
     }
     const merged = this.series.bars();
     this.crosshairHandler.setData(merged);
-    this.displayDataCache = null;
-    this.reshapeMemo.clear();
+    this.display.reset();
     this.sessionBreaks.invalidateCache();
     // The same series goes on (a reconnect): alerts keep their bars and last values.
     this.recalcIndicators(merged);
@@ -1387,8 +1368,6 @@ export class Chart {
   appendBar(bar: OHLCBar): void {
     if (!isValidBar(bar)) return;
     const write = this.series.append(bar);
-    // Before anything reads the bars shown: the price follows on the bars as they are now.
-    if (write.refiltered) this.displayDataCache = null;
     if (write.to !== 'shown') {
       this.takeLivePrice(bar.close);
       if (write.to === 'hidden') this.scheduleRender();
@@ -1400,7 +1379,6 @@ export class Chart {
     const before = write.before;
     const data = this.series.bars();
     this.crosshairHandler.setData(data);
-    this.displayDataCache = null;
     // Re-finalise the bar that just closed (its last tick may differ from the
     // final close) and compute the new one; everything older is untouched.
     this.recalcIndicatorsFrom(data, data.length - 2);
@@ -1422,7 +1400,6 @@ export class Chart {
     if (bars.length === 0) return;
     const price = bars[bars.length - 1].close;
     const write = this.series.appendMany(bars);
-    if (write.refiltered) this.displayDataCache = null;
     if (write.shown === 0) {
       this.takeLivePrice(price);
       if (!write.aside) this.scheduleRender();
@@ -1431,7 +1408,6 @@ export class Chart {
     // As `appendBar`: the live edge only while the view is there and auto-scroll is on.
     const follow = this.autoScrollOnNewBar && this.viewport.isAtEnd();
     const before = write.before;
-    this.displayDataCache = null;
     const data = this.series.bars();
     this.recalcIndicatorsFrom(data, before - 1);
     this.crosshairHandler.setData(data);
@@ -1450,21 +1426,12 @@ export class Chart {
   updateLastBar(bar: OHLCBar): void {
     if (!isValidBar(bar)) return;
     const write = this.series.updateLast(bar);
-    if (write.refiltered) this.displayDataCache = null;
     if (write.to !== 'shown') {
       this.takeLivePrice(bar.close);
       if (write.to === 'hidden') this.scheduleRender();
       return;
     }
     this.currentPriceLine.setPrice(bar.close);
-    // For non-transform chart types, the displayDataCache still points to the
-    // same raw array (mutated in place), so no need to invalidate.
-    // Only invalidate for transform types that produce derived arrays.
-    if (this.options.chartType !== 'candlestick' && this.options.chartType !== 'line'
-        && this.options.chartType !== 'area' && this.options.chartType !== 'bar'
-        && this.options.chartType !== 'hollowCandle') {
-      this.displayDataCache = null;
-    }
     // Keep indicator lines in sync with the forming bar. Without this, panel
     // + overlay indicators freeze until bar close. Only the last bar changed.
     const data = this.series.bars();
@@ -1486,11 +1453,6 @@ export class Chart {
       return;
     }
     this.currentPriceLine.setPrice(tick.price);
-    if (this.options.chartType !== 'candlestick' && this.options.chartType !== 'line'
-        && this.options.chartType !== 'area' && this.options.chartType !== 'bar'
-        && this.options.chartType !== 'hollowCandle') {
-      this.displayDataCache = null;
-    }
     const data = this.series.bars();
     this.recalcIndicatorsFrom(data, data.length - 1);
     this.followLivePrice(tick.price);
@@ -1531,8 +1493,7 @@ export class Chart {
   private showCorrection(i: number): void {
     const data = this.series.bars();
     const bar = data[i];
-    this.displayDataCache = null;
-    this.reshapeMemo.clear();
+    this.display.reset();
     // Deferred: corrections before the next read cost one computation, from the earliest.
     this.indicatorEngine.deferRecalculateFrom(data, i);
     this.announceIndicatorUpdate(i);
@@ -1579,8 +1540,9 @@ export class Chart {
     // The series' own style keys for this type.
     this.themeManager.setChartType(type as ChartType);
     this.chartRenderer = this.createChartRenderer(type);
+    // A new renderer, even for the type set: it takes what the series is built on (the point & figure box) on the next build.
+    this.display.invalidate();
     this.chartLegend.setChartType(type as ChartType);
-    this.displayDataCache = null;
     this.applyTimeSpacing();
     this.updateViewportAndRender(true);
     this.fitFewColumns();
@@ -1622,7 +1584,6 @@ export class Chart {
    */
   setChartTypeOptions(options: ChartTypeOptions): void {
     this.chartTypeOptions = { ...this.chartTypeOptions, ...readChartTypeOptions(options) };
-    this.displayDataCache = null;
     this.updateViewportAndRender(true);
     this.fitFewColumns();
     // New settings build other bars: a screen reader hears the new summary, as after a new type.
@@ -1661,8 +1622,7 @@ export class Chart {
     if (!this.series.refilter()) return;
     const data = this.series.bars();
     this.crosshairHandler.setData(data);
-    this.displayDataCache = null;
-    this.reshapeMemo.clear();
+    this.display.reset();
     this.sessionBreaks.invalidateCache();
     this.recalcIndicators(data);
     this.updateViewportAndRender(true);
@@ -2049,12 +2009,10 @@ export class Chart {
     const heir = panel ? members.find(isPanel) ?? null : null;
     this.indicatorEngine.removeIndicator(instanceId);
     // A pane's own style goes with the pane: to its heir, or away with it.
-    const paneStyle = this.paneStyles.get(instanceId);
-    this.paneStyles.delete(instanceId);
+    this.panes.passStyle(instanceId, heir);
     if (heir) {
       this.indicatorEngine.setPane(heir, null);
       this.renamePane(instanceId, heir);
-      if (paneStyle) this.paneStyles.set(heir, paneStyle);
     } else {
       this.layoutManager.removePanel(instanceId);
     }
@@ -2101,10 +2059,7 @@ export class Chart {
   }
 
   private setPaneStyleNow(instanceId: string, style: PaneStyle | null): void {
-    if (JSON.stringify(style) === JSON.stringify(this.paneStyles.get(instanceId) ?? null)) return;
-    if (style) this.paneStyles.set(instanceId, style);
-    else this.paneStyles.delete(instanceId);
-    this.panelInfoCache = null;
+    if (!this.panes.setStyle(instanceId, style)) return;
     this.syncRenderContext();
     this.engine.requestRender();
     this.markStateChanged();
@@ -2112,7 +2067,7 @@ export class Chart {
 
   /** The own style of the pane `instanceId` is drawn in, or null when it has none. */
   getPaneStyle(instanceId: string): PaneStyle | null {
-    const style = this.paneStyles.get(this.paneOf(instanceId));
+    const style = this.panes.style(this.paneOf(instanceId));
     return style ? { ...style } : null;
   }
 
@@ -2213,18 +2168,16 @@ export class Chart {
       const staying = members.filter((m) => !readers.has(m));
       const heir = staying.find((m) => this.indicatorEngine.getIndicatorDescriptor(m)?.placement === 'panel') ?? null;
       // Its pane's own style goes with the pane: to the heir, or away with it.
-      const paneStyle = this.paneStyles.get(instanceId);
-      this.paneStyles.delete(instanceId);
+      this.panes.passStyle(instanceId, heir);
       if (heir) {
         this.indicatorEngine.setPane(heir, null);
         this.renamePane(instanceId, heir);
-        if (paneStyle) this.paneStyles.set(heir, paneStyle);
         for (const m of staying) if (m !== heir) this.indicatorEngine.setPane(m, heir);
       } else {
         this.layoutManager.removePanel(instanceId);
         for (const m of staying) this.indicatorEngine.setPane(m, null);
       }
-      this.panelInfoCache = null;
+      this.panes.invalidateScales();
       for (const m of members) {
         if (readers.has(m)) this.indicatorEngine.setPane(m, host ?? instanceId);
         changed.add(m);
@@ -2285,21 +2238,6 @@ export class Chart {
   getPaneScale(instanceId: string): { log: boolean; invert: boolean; percent: boolean } {
     const panel = this.layoutManager.getPanels().find((p) => p.id === this.paneOf(instanceId));
     return { log: !!panel?.logScale, invert: !!panel?.invertScale, percent: !!panel?.percentScale };
-  }
-
-  /** A pane's first value on screen (its own indicator's first line), the 0% of a percent scale. */
-  private paneBaseline(instanceId: string, from: number, to: number): number | undefined {
-    const series = this.indicatorEngine.getOutput(instanceId)?.series;
-    const descriptor = this.indicatorEngine.getIndicatorDescriptor(instanceId);
-    if (!series || !descriptor) return undefined;
-    const key = descriptor.plots?.[0]?.key;
-    for (let i = Math.max(0, from); i <= to && i < series.length; i++) {
-      const point = series[i];
-      if (!point) continue;
-      const value = key !== undefined ? point[key] : Object.values(point).find((v) => typeof v === 'number' && Number.isFinite(v));
-      if (typeof value === 'number' && Number.isFinite(value) && value !== 0) return value;
-    }
-    return undefined;
   }
 
   /** Move a pane one place up (`-1`) or down (`1`) among the panes on its side. */
@@ -3389,7 +3327,6 @@ export class Chart {
     this.streamManager.on('barClose', (bar) => {
       if (!isValidBar(bar)) return;
       const write = this.series.placeStreamBar(bar);
-      if (write.refiltered) this.displayDataCache = null;
       if (write.to === 'none') {
         this.updateBar(bar);
         return;
@@ -3401,7 +3338,6 @@ export class Chart {
       const before = write.before;
       const data = this.series.bars();
       this.crosshairHandler.setData(data);
-      this.displayDataCache = null;
       this.recalcIndicatorsFrom(data, data.length - 2);
       this.updateViewportAndRender(follow);
       if (data.length !== before) this.emitBars(data.length);
@@ -3416,7 +3352,6 @@ export class Chart {
     this.streamManager.on('barUpdate', (bar) => {
       if (!isValidBar(bar)) return;
       const write = this.series.placeStreamBar(bar);
-      if (write.refiltered) this.displayDataCache = null;
       // A frame of a bar older than the last is stale: it moves nothing, the price line included.
       if (write.to === 'none') return;
       if (!this.replaySession) this.currentPriceLine.setPrice(bar.close);
@@ -3743,23 +3678,6 @@ export class Chart {
    */
   private comparesDrawn(): boolean {
     return this.isTimeAligned();
-  }
-
-  /**
-   * The panes with nothing to draw on this chart type: every indicator in
-   * them is left off it (a compare in its own pane, a correlation, on
-   * Renko). They are laid out as if they weren't there, so no empty pane
-   * with a made-up scale takes the plot's room; back on candles they return.
-   */
-  private panesOffChartType(): Set<string> {
-    const active = this.indicatorEngine.getActiveIndicators();
-    const off = new Set(active.filter((ind) => ind.offChartType).map((ind) => ind.instanceId));
-    const aside = new Set<string>();
-    for (const panel of this.layoutManager.getPanels()) {
-      const members = active.filter((ind) => ind.instanceId === panel.id || ind.pane === panel.id);
-      if (members.length > 0 && members.every((ind) => off.has(ind.instanceId))) aside.add(panel.id);
-    }
-    return aside;
   }
 
   /** Take every compare line off, each told as a `compareChange` of `'remove'`. */
@@ -4197,24 +4115,20 @@ export class Chart {
    * fitted until they fill it.
    */
   setAutoScale(enabled: boolean): void {
-    this.options.autoScale = enabled;
     // Unlike the drag-to-scale/vertical-pan gesture freeze, an explicit call
-    // here is a deliberate preference — it should survive the next setData()
-    // the same way a constructor-time `autoScale: false` would.
-    this.defaultAutoScale = enabled;
-    // Off once bars are coming in: held from what is on screen now, not after the next.
-    if (!enabled && this.series.length() > 0) this.seriesArriving = false;
+    // here is a deliberate preference: it survives the next setData() the
+    // same way a constructor-time `autoScale: false` would.
+    this.priceFit.setAuto(enabled, this.series.length() > 0);
     this.updateViewportAndRender();
   }
 
   /** A drag of the price axis or a vertical pan: the range on screen is the user's, held from here. */
   private holdPriceScale(): void {
-    this.options.autoScale = false;
-    this.priceFitPending = false;
+    this.priceFit.hold();
   }
 
   isAutoScale(): boolean {
-    return this.options.autoScale !== false;
+    return this.priceFit.isAuto();
   }
 
   // --- Crosshair ---
@@ -5188,7 +5102,7 @@ export class Chart {
     this.useReplayLoader(session, true);
     const steps = rawSteps ? this.replayStepsOver(session, coarse, true) : null;
     // A replay fits each step; a price-axis drag from before shouldn't pin it.
-    this.options.autoScale = true;
+    this.priceFit.resume();
     this.buildReplay(coarse, steps, windowStart);
     const stepped = this.replayStepsSeries;
     if (stepped && playConfig.startIndex !== undefined) playConfig.startIndex = lastStepOfBar(stepped, coarse, playConfig.startIndex);
@@ -5290,10 +5204,8 @@ export class Chart {
       if (this.replaySession) this.replaySession.until = until;
       // Markers and trades as far as the replay has shown, in the same frame as its bars.
       if (this.replayRevealMarks) this.revealReplayMarks(until);
-      // The display cache isn't keyed to the data array — without this the
-      // chart kept drawing the pre-replay series.
-      this.displayDataCache = null;
-      this.reshapeMemo.clear();
+      // The replay's bars are a series of their own: what was kept is of no use.
+      this.display.reset();
       this.updateViewportAndRender(follow);
       if (animate) this.feedReplayForming(coarse, index, formed?.index === index ? formed.path : this.replayPathOf(coarse, index), 1);
       else this.feedReplaySteps(series, index);
@@ -5330,13 +5242,12 @@ export class Chart {
     this.currentPriceLine.setPrice(bar.close, previousClose);
     const data = this.series.bars();
     this.recalcIndicatorsFrom(data, data.length - 1);
-    if (appended || !PLAIN_CHART_TYPES.has(this.options.chartType)) this.displayDataCache = null;
     if (!appended) {
       this.scheduleRender();
       return;
     }
     this.crosshairHandler.setData(data);
-    this.reshapeMemo.clear();
+    this.display.reset();
     this.updateViewportAndRender(follow);
   }
 
@@ -5911,7 +5822,7 @@ export class Chart {
           pane: ind.pane,
           scale: config?.scale,
           ...(config?.intervals ? { intervals: this.indicatorEngine.getIntervals(ind.instanceId) ?? undefined } : {}),
-          ...(panel && this.paneStyles.has(ind.instanceId) ? { paneStyle: { ...this.paneStyles.get(ind.instanceId) } } : {}),
+          ...(panel && this.panes.style(ind.instanceId) ? { paneStyle: { ...this.panes.style(ind.instanceId) } } : {}),
           ...(panel
             ? {
                 paneSize: panel.size,
@@ -6131,8 +6042,7 @@ export class Chart {
     const snapshot = ChartStateManager.deserialize(json);
     // The saved type's settings (none saved: the defaults).
     this.chartTypeOptions = snapshot.chartTypeOptions ?? {};
-    this.displayDataCache = null;
-    this.reshapeMemo.clear();
+    this.display.reset();
     if (snapshot.chartType) this.setChartType(snapshot.chartType);
     if (snapshot.drawings) this.setDrawings(snapshot.drawings);
     // A save names its theme: a built-in one loads, another (only its name was
@@ -6428,7 +6338,6 @@ export class Chart {
     return renderer;
   }
 
-  /** Cached display data. Invalidated when raw data or chart type changes. */
   /**
    * The bars the crosshair reports: the data bars where each drawn bar is one
    * (candles, Heikin-Ashi: the real prices), the series drawn where it isn't
@@ -6439,30 +6348,7 @@ export class Chart {
   }
 
   private getDisplayData(): DataSeries {
-    const raw = this.series.bars();
-    // Range bars go on the market's own grid, not the decimals the axis shows, which follow the view: the
-    // coarsest step of the bars their range is measured on, so a last price over a band edge rebuilds nothing.
-    const step = this.options.chartType === 'rangeBars' ? rangeBarsStep(raw, (price) => this.stepAt(price)) : undefined;
-    if (this.displayDataCache && step === this.displayDataStep) return this.displayDataCache;
-    if (raw.length === 0) return raw;
-    const result = this.displaySeries(raw, step);
-    this.displayDataCache = result;
-    this.displayDataStep = step;
-    return result;
-  }
-
-  /**
-   * The series the chart type draws. The built-in point & figure's columns
-   * come with the box they were built on, which its renderer draws them at,
-   * in the one walk (a plugin's chart type keeps its own).
-   */
-  private displaySeries(raw: DataSeries, step: number | undefined): DataSeries {
-    const type = this.options.chartType;
-    const lookup = (t: string) => this.pluginManager.getChartType(t);
-    if (type !== 'pointAndFigure' || lookup(type)) return resolveDisplayData(type, raw, lookup, this.chartTypeOptions, step, this.reshapeMemo);
-    const { columns, boxSize } = pointAndFigureDisplay(raw, this.chartTypeOptions, this.reshapeMemo);
-    if (this.chartRenderer instanceof PointAndFigureRenderer) this.chartRenderer.setBoxSize(boxSize);
-    return columns;
+    return this.display.get();
   }
 
   /** Recompute indicators from bar `from` on, and say so (live ticks, closes, replay steps). */
@@ -6562,7 +6448,7 @@ export class Chart {
 
   private refitForTick(): void {
     // A tick moves indicator values: refit the panes' scales.
-    this.panelInfoCache = null;
+    this.panes.invalidateScales();
     this.fitDataAndAxes();
     this.syncRenderContext();
     this.engine.requestRender();
@@ -6580,7 +6466,6 @@ export class Chart {
   private applyDataToViewport(scrollToEnd = false): DataSeries {
     const displayData = this.getDisplayData();
     this.syncIndicatorBars(displayData);
-    const autoScale = this.options.autoScale !== false || this.priceFitPending;
 
     // updateData first so dataLength is current for scrollToEnd — but only
     // fit the price range once the FINAL visible window is known. Fitting
@@ -6602,40 +6487,26 @@ export class Chart {
     }
 
     // Fitted on the new baseline: percent compare lines start there.
-    if (autoScale) this.fitPriceScale(displayData, this.viewport.getState());
+    if (this.priceFit.shouldFit()) this.fitPriceScale(displayData, this.viewport.getState());
     return displayData;
   }
 
-  /**
-   * Fit the price scale to the bars on view, the overlay indicators (BB,
-   * Ichimoku…) and the compare lines, in margins of φ⁻⁵ above and below;
-   * with volume on view, the band at the bottom is left to it.
-   */
+  /** Fit the price scale to the bars on view and what else is on it: see `PriceFit.fit`. */
   private fitPriceScale(displayData: DataSeries, vs: ViewportState): void {
-    if (displayData.length === 0) return;
-    const from = Math.max(0, vs.visibleRange.from);
-    const to = Math.min(vs.visibleRange.to, displayData.length - 1);
-    const range = joinRanges(
-      joinRanges(computePriceRange(displayData, from, to, 0), this.indicatorEngine.getOverlayPriceRange(from, to)),
-      this.features.compareSymbols && this.comparesDrawn() ? this.compareRenderer.getPriceRange(displayData, vs) : null,
-    )!;
-    const volume = this.features.volume && this.volumeRenderer.isVisible() && hasVolume(displayData, from, to);
-    const band = volume ? this.volumeRenderer.getHeightRatio() + VOLUME_GAP : PRICE_SCALE_MARGIN;
-    // The band is at the screen's bottom: on an upside-down scale that is above the highest price.
-    this.viewport.setScaleMargins(this.viewport.isInvertScale()
-      ? { top: band, bottom: PRICE_SCALE_MARGIN }
-      : { top: PRICE_SCALE_MARGIN, bottom: band });
-    this.viewport.fitToPrices(range.min, range.max);
+    this.priceFit.fit(this.viewport, displayData, vs, {
+      overlayRange: (from, to) => this.indicatorEngine.getOverlayPriceRange(from, to),
+      compareRange: (data, state) => (this.features.compareSymbols && this.comparesDrawn() ? this.compareRenderer.getPriceRange(data, state) : null),
+      volumeRatio: (data, from, to) =>
+        (this.features.volume && this.volumeRenderer.isVisible() && hasVolume(data, from, to) ? this.volumeRenderer.getHeightRatio() : null),
+    });
   }
 
   /** Full update: resolve layout, update viewport, sync context, request render. */
   private updateViewportAndRender(scrollToEnd = false): void {
     // Before the layout and the scales: an indicator that reads another symbol by time is not drawn on bricks.
     this.indicatorEngine.setBarsTimed(this.comparesDrawn());
-    this.layoutManager.setPanelsAside(this.panesOffChartType());
-    // Invalidate layout cache
-    this.resolvedLayoutCache = null;
-    this.panelInfoCache = null;
+    this.layoutManager.setPanelsAside(this.panes.offChartType());
+    this.panes.invalidate();
 
     this.layoutManager.setLeftAxisWidth(this.isLeftPriceScaleShown() ? this.leftAxisWidth : 0);
     const resolved = this.getResolvedLayout();
@@ -6660,21 +6531,7 @@ export class Chart {
     this.leftViewport = this.computeLeftViewport();
     if (this.fitLeftAxisWidth() || priceResized) this.applyDataToViewport(scrollToEnd);
     // The new series' prices are on the axis: auto-scale off holds them from here.
-    if (this.priceFitPending && this.priceFitDone(shown)) this.priceFitPending = false;
-  }
-
-  /**
-   * Whether the new series' bars on view were fitted: there are some, on a
-   * plot with room for them. A chart with no size yet (a hidden tab or
-   * panel) has none on view, so it fits them once it gets one. A series that
-   * began with no bars is still coming in while all of it fits on screen:
-   * each bar it gets one by one is fitted too, not just its first.
-   */
-  private priceFitDone(shown: DataSeries): boolean {
-    const { chartRect, offset, barWidth, barSpacing } = this.viewport.getState();
-    if (shown.length === 0 || chartRect.width <= 0) return false;
-    const allOnView = offset <= 0 && shown.length * (barWidth + barSpacing) - offset <= chartRect.width;
-    return !(this.seriesArriving && allOnView);
+    this.priceFit.settle(this.viewport.getState(), shown.length);
   }
 
   /** Size the left scale to its widest label; true when the layout changed. */
@@ -6696,8 +6553,7 @@ export class Chart {
     if (next === this.leftAxisWidth) return false;
     this.leftAxisWidth = next;
     this.layoutManager.setLeftAxisWidth(next);
-    this.resolvedLayoutCache = null;
-    this.panelInfoCache = null;
+    this.panes.invalidate();
     this.viewport.setChartRect(this.getResolvedLayout().mainChartRect);
     return true;
   }
@@ -6730,8 +6586,7 @@ export class Chart {
     this.priceAxisWidth = next;
     this.layoutManager.setPriceAxisWidth(next);
     this.viewport.setPriceAxisWidth(next);
-    this.resolvedLayoutCache = null;
-    this.panelInfoCache = null;
+    this.panes.invalidate();
     this.viewport.setChartRect(this.getResolvedLayout().mainChartRect);
     return true;
   }
@@ -6801,25 +6656,8 @@ export class Chart {
     this.checkHistory();
   }
 
-  private getResolvedLayout() {
-    if (!this.resolvedLayoutCache) {
-      this.resolvedLayoutCache = this.layoutManager.resolve();
-      this.syncCrosshairBounds(this.resolvedLayoutCache);
-    }
-    return this.resolvedLayoutCache;
-  }
-
-  /** The hovered bar is reported over the price pane and the panes above and below it. */
-  private syncCrosshairBounds(layout: import('@tradecanvas/commons').ResolvedLayout): void {
-    const main = layout.mainChartRect;
-    let top = main.y;
-    let bottom = main.y + main.height;
-    for (const panel of layout.panels) {
-      if (panel.config.position !== 'top' && panel.config.position !== 'bottom') continue;
-      top = Math.min(top, panel.rect.y);
-      bottom = Math.max(bottom, panel.rect.y + panel.rect.height);
-    }
-    this.crosshairHandler.setReportBounds({ top, bottom });
+  private getResolvedLayout(): ResolvedLayout {
+    return this.panes.resolved();
   }
 
   /** Cache container size for 500ms to avoid layout thrashing on rapid calls */
@@ -6833,63 +6671,7 @@ export class Chart {
   }
 
   private buildPanelRenderInfos(): import('@tradecanvas/core').PanelRenderInfo[] {
-    if (this.panelInfoCache) return this.panelInfoCache;
-
-    const resolved = this.getResolvedLayout();
-    const mainVP = this.viewport.getState();
-
-    const { from, to } = mainVP.visibleRange;
-    const panels = resolved.panels.map((panel) => {
-      // The pane's one value scale: plots, axis, crosshair and levels all use it.
-      // On a log scale only while all its values are above 0.
-      const logRange = panel.config.logScale ? this.indicatorEngine.getPaneValueRange(panel.config.id, from, to, true) : null;
-      const priceRange = logRange ?? this.indicatorEngine.getPaneValueRange(panel.config.id, from, to) ?? { ...DEFAULT_PANE_RANGE };
-
-      // Inset the indicator drawing area below the panel header (title + divider)
-      const PANEL_HEADER_HEIGHT = 20;
-      const insetRect = {
-        x: panel.rect.x,
-        y: panel.rect.y + PANEL_HEADER_HEIGHT,
-        width: panel.rect.width,
-        height: Math.max(0, panel.rect.height - PANEL_HEADER_HEIGHT),
-      };
-
-      const style = this.paneStyles.get(panel.config.id);
-      return {
-        instanceId: panel.config.id,
-        members: this.indicatorEngine.getPaneMembers(panel.config.id),
-        ...(style ? { style } : {}),
-        rect: panel.rect,
-        viewport: {
-          ...mainVP,
-          chartRect: insetRect,
-          priceRange,
-          // Each pane has its own value scale: linear unless set to log (and
-          // all its values are above 0), upright unless set upside down.
-          logScale: logRange !== null,
-          // In percent: labels only, of its first value on screen.
-          scaleMode: panel.config.percentScale ? 'percentage' as const : 'regular' as const,
-          scaleBaseline: panel.config.percentScale ? this.paneBaseline(panel.config.id, from, to) : undefined,
-          // A pane's values are its own, not prices.
-          formatPrice: undefined,
-          pricePrecision: undefined,
-          priceUnit: undefined,
-          invertScale: !!panel.config.invertScale,
-        },
-      };
-    });
-
-    this.panelInfoCache = panels;
-    return panels;
-  }
-
-  /** Where the time axis starts: below the main chart and every pane under it. */
-  private timeAxisTop(): number {
-    const resolved = this.getResolvedLayout();
-    const bottomPanelHeight = resolved.panels
-      .filter(p => p.config.position === 'bottom')
-      .reduce((sum, p) => sum + p.rect.height, 0);
-    return resolved.mainChartRect.y + resolved.mainChartRect.height + bottomPanelHeight;
+    return this.panes.panels(() => this.viewport.getState());
   }
 
   private syncRenderContext(): void {
@@ -6904,7 +6686,7 @@ export class Chart {
     }
 
     const panels = this.features.indicators ? this.buildPanelRenderInfos() : [];
-    const timeAxisY = this.timeAxisTop();
+    const timeAxisY = this.panes.timeAxisTop();
 
     const displayData = this.getDisplayData();
     this.leftViewport = this.computeLeftViewport();
@@ -7056,22 +6838,6 @@ function readShapes(shapes: ShapeConfig): ShapeConfig {
   return typeof r === 'number' && Number.isFinite(r) && r >= 0 ? { tagRadius: Math.min(r, 999) } : {};
 }
 
-/** Whether any bar from `from` to `to` traded. */
-function hasVolume(data: DataSeries, from: number, to: number): boolean {
-  for (let i = from; i <= to; i++) if (data[i].volume > 0) return true;
-  return false;
-}
-
-/** Both ranges in one (either may be null). */
-function joinRanges(
-  a: { min: number; max: number } | null,
-  b: { min: number; max: number } | null,
-): { min: number; max: number } | null {
-  if (!a) return b;
-  if (!b) return a;
-  return { min: Math.min(a.min, b.min), max: Math.max(a.max, b.max) };
-}
-
 /** An alert as its events carry it. */
 function alertPayload(alert: import('@tradecanvas/core').PriceAlert): import('@tradecanvas/commons').AlertPayload {
   return {
@@ -7091,9 +6857,6 @@ function alertPayload(alert: import('@tradecanvas/core').PriceAlert): import('@t
 
 /** How far ahead of the bar forming a replay has its finer bars fetched, in playback time (ms). */
 const REPLAY_LOOKAHEAD_MS = 8000;
-
-/** Chart types that draw the series itself: a bar written in place needs no new display data. */
-const PLAIN_CHART_TYPES: ReadonlySet<string> = new Set(['candlestick', 'line', 'area', 'bar', 'hollowCandle']);
 
 /** At most this many pages of older bars a replay loads to reach its time on a new series. */
 const MAX_REPLAY_PAGES_BACK = 10;
