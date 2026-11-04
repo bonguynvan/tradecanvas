@@ -107,9 +107,21 @@ describe('sameKindAndPlace and keptInPlace', () => {
   });
 
   it('keeps those wanted under the same id and alike', () => {
-    const current = [ind('a'), ind('b'), ind('c', { pane: 'a' })];
+    const current = [ind('a', { params: { period: 14 } }), ind('b'), ind('c', { pane: 'a' })];
     const wanted = [ind('a', { params: { period: 3 } }), ind('c'), ind('d')];
     expect([...keptInPlace(current, wanted)]).toEqual(['a']);
+  });
+
+  it('does not keep one whose inputs differ: an input it has can\'t be taken away in place', () => {
+    const current = [ind('a', { params: { fast: 12, period: 6 } }), ind('b', { params: { fast: 12 } })];
+    const wanted = [ind('a', { params: { fast: 12 } }), ind('b', { params: { fast: 12, period: 6 } })];
+    expect([...keptInPlace(current, wanted)]).toEqual([]);
+  });
+
+  it('does not keep one drawn in the pane of a host that is not kept', () => {
+    const current = [ind('host', { params: { period: 6 } }), ind('member', { pane: 'host' }), ind('other')];
+    const wanted = [ind('host'), ind('member', { pane: 'host' }), ind('other')];
+    expect([...keptInPlace(current, wanted)]).toEqual(['other']);
   });
 });
 

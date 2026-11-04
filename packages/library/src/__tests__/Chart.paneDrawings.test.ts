@@ -60,6 +60,22 @@ describe('drawings on indicator panes', () => {
     expect(paneOf(id)).toBe(stoch);
   });
 
+  it('comes back on undo when the pane it followed had others drawn in it', () => {
+    const rsi = chart.addIndicator('rsi')!;
+    const macd = chart.addIndicator('macd', {}, 'bottom', { pane: rsi })!;
+    chart.addIndicator('stochastic', {}, 'bottom', { pane: rsi });
+    const id = levelOn(rsi);
+    chart.removeIndicator(rsi);
+    expect(paneOf(id)).toBe(macd);
+    // The undo takes the heir down to put it back in its old pane: the
+    // drawing must not go on to the heir's own heir on the way.
+    chart.undo();
+    expect(paneOf(id)).toBe(rsi);
+    expect(chart.isDrawingShown(id)).toBe(true);
+    chart.redo();
+    expect(paneOf(id)).toBe(macd);
+  });
+
   it('is kept but not shown once its pane is gone, and shows again when undo brings the pane back', () => {
     const rsi = chart.addIndicator('rsi')!;
     const id = levelOn(rsi);

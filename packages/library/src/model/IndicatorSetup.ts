@@ -102,15 +102,30 @@ export function sameKindAndPlace(a: SnapshotIndicator, b: SnapshotIndicator): bo
     && (a.position === undefined) === (b.position === undefined);
 }
 
-/** The indicators of `current` an undo may change in place: in `wanted` under the same id, alike in kind and place. */
+/**
+ * The indicators of `current` an undo may change in place: in `wanted` under
+ * the same id, alike in kind and place, with the same inputs (changing their
+ * values only: an input one has and the other lacks can't be taken away in place),
+ * in a pane whose host is kept too: one drawn in a pane taken down would
+ * fall back to the price pane, so it is put back with its host.
+ */
 export function keptInPlace(current: readonly SnapshotIndicator[], wanted: readonly SnapshotIndicator[]): Set<string> {
   const byId = new Map(wanted.map((ind) => [ind.instanceId, ind]));
   const kept = new Set<string>();
   for (const cur of current) {
     const want = byId.get(cur.instanceId);
-    if (want && sameKindAndPlace(cur, want)) kept.add(cur.instanceId);
+    if (want && sameKindAndPlace(cur, want) && sameInputs(cur, want)) kept.add(cur.instanceId);
   }
+  // A pane's host owns its pane and is drawn in no other, so one pass does
+  // here; a host taken down later with the source it reads is the caller's.
+  for (const cur of current) if (cur.pane && !kept.has(cur.pane)) kept.delete(cur.instanceId);
   return kept;
+}
+
+/** Whether two indicators have the same inputs, whatever their values. */
+function sameInputs(a: SnapshotIndicator, b: SnapshotIndicator): boolean {
+  const names = Object.keys(a.params);
+  return names.length === Object.keys(b.params).length && names.every((name) => name in b.params);
 }
 
 /** `params` with each line read from another indicator following that indicator's new id (`ids`: old → new). */

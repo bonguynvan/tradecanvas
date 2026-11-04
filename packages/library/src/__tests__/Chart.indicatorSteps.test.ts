@@ -1,6 +1,5 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import type { SnapshotIndicator } from '@tradecanvas/core';
 import { Chart } from '../Chart.js';
 import { installChartStubs, sizedHost } from './chartTestEnv.js';
 import { chartState, runIndicatorScript, scriptBars } from './indicatorScript.js';
@@ -50,22 +49,7 @@ function broken(chart: Chart): string[] {
 }
 
 /**
- * The chart's state with its indicators in no order, in the list and in a
- * pane. One an undo takes down and puts back comes last among them; the
- * panes keep their order.
- */
-function unordered(chart: Chart): unknown {
-  const state = chartState(chart) as { setup: SnapshotIndicator[]; panes: string[][] };
-  return {
-    ...state,
-    setup: [...state.setup].sort((a, b) => a.instanceId.localeCompare(b.instanceId)),
-    // Each pane's owner first, then those drawn in it.
-    panes: state.panes.map(([owner, ...members]) => [owner, ...members.sort()]),
-  };
-}
-
-/**
- * The indicators with no ids and in no order: each by its kind, the kinds
+ * The indicators in their order with no ids: each by its kind, the kinds
  * whose lines it reads and the kind owning the pane it shares. To compare
  * charts whose ids differ.
  */
@@ -78,7 +62,7 @@ function canonical(chart: Chart): string[] {
     instanceId: undefined,
     pane: ind.pane === undefined ? undefined : kind.get(ind.pane) ?? ind.pane,
     params: Object.fromEntries(Object.entries(ind.params).map(([k, v]) => [k, rename(v)])),
-  })).sort();
+  }));
 }
 
 describe('Chart: indicator and pane changes keep the chart whole', () => {
@@ -87,12 +71,12 @@ describe('Chart: indicator and pane changes keep the chart whole', () => {
     let checked = 0;
     runIndicatorScript(chart, seed, 160, clock, (step, i) => {
       expect(broken(chart), `step ${i} (${step.what})`).toEqual([]);
-      const state = unordered(chart);
+      const state = chartState(chart);
       if (!chart.getUndoRedoState().canUndo) return;
       chart.undo();
       expect(broken(chart), `step ${i} (${step.what}), undone`).toEqual([]);
       chart.redo();
-      expect(unordered(chart), `step ${i} (${step.what}), undone and redone`).toEqual(state);
+      expect(chartState(chart), `step ${i} (${step.what}), undone and redone`).toEqual(state);
       checked++;
     });
     // Most steps leave something to undo (the rest: nothing done yet, or all undone).

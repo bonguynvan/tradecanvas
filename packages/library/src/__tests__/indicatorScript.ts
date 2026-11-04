@@ -56,9 +56,9 @@ export function runIndicatorScript(chart: Chart, seed: number, steps: number, cl
       what = `remove ${target}`;
       chart.removeIndicator(target);
     } else if (roll < 0.36) {
-      // A number input it has (period, fast…).
+      // A number input it has (period, fast…), or now and then one it lacks.
       const params = chart.getIndicatorConfig(target)?.params ?? {};
-      const name = Object.keys(params).find((k) => typeof params[k] === 'number')!;
+      const name = random() < 0.2 ? 'period' : Object.keys(params).find((k) => typeof params[k] === 'number')!;
       const value = 3 + Math.floor(random() * 20);
       what = `${name} ${target} ${value}`;
       chart.updateIndicator(target, { [name]: value });
