@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { publishOrder, internalDeps, remoteTagNames, untagged, stageId, approvalSteps, bumped, releaseNotes, firstCommitOf } from './publish-packages.mjs';
+import { publishOrder, internalDeps, remoteTagNames, untagged, stageId, approvalSteps, bumped, releaseNotes, firstCommitOf, tagTarget } from './publish-packages.mjs';
 
 const pkg = (name, deps = []) => ({ name, version: '1.0.0', deps });
 
@@ -110,4 +110,13 @@ test('the tag goes on the commit that set the version, not a later one that left
   ];
   assert.equal(firstCommitOf(history, '1.69.0'), 'bump');
   assert.equal(firstCommitOf(history, '1.70.0'), null);
+});
+
+test('a version is tagged on main as it is now when its package has not changed since, as Actions may not tag an older workflow', () => {
+  // 1.69.0: only CI changed after the version commit, publish.yml among it.
+  assert.equal(tagTarget({ versionSha: 'bump', headSha: 'head', changedSince: false }), 'head');
+});
+
+test('a version whose package changed since is tagged on its own commit, so the tag holds what was released', () => {
+  assert.equal(tagTarget({ versionSha: 'bump', headSha: 'head', changedSince: true }), 'bump');
 });
