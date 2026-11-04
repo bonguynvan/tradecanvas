@@ -192,11 +192,39 @@ function versionCommit(p) {
   return sha;
 }
 
-/** The tag on the version's commit, pushed, and its GitHub release with the changelog section. */
+/**
+ * The commit a version's tag goes on: main as it is now while nothing in the
+ * package changed after the version's commit (the same files, so the same
+ * release), else the version's commit. Actions' token may not push a tag on
+ * a commit whose workflows differ from main's, which a version's commit has
+ * once a later change touched them (1.69.0, then publish.yml).
+ */
+export function tagTarget({ versionSha, headSha, changedSince }) {
+  return changedSince ? versionSha : headSha;
+}
+
+/** Whether a file of the package changed in a commit after `sha`, up to HEAD. */
+function packageChangedSince(p, sha) {
+  return run('git', ['log', '-1', '--format=%H', `${sha}..HEAD`, '--', p.rel]).trim() !== '';
+}
+
+/** The tag (see `tagTarget`), pushed, and its GitHub release with the changelog section. */
 function tagAndRelease(p) {
   const name = `${p.name}@${p.version}`;
-  if (!run('git', ['tag', '--list', name]).trim()) run('git', ['tag', name, versionCommit(p)]);
-  run('git', ['push', 'origin', `refs/tags/${name}`]);
+  if (!run('git', ['tag', '--list', name]).trim()) {
+    const versionSha = versionCommit(p);
+    const headSha = run('git', ['rev-parse', 'HEAD']).trim();
+    run('git', ['tag', name, tagTarget({ versionSha, headSha, changedSince: packageChangedSince(p, versionSha) })]);
+  }
+  try {
+    run('git', ['push', 'origin', `refs/tags/${name}`]);
+  } catch (err) {
+    // The package changed after its version's commit, and a workflow did too: only a person's credentials may tag there.
+    if (/without `workflows?` permission/.test(`${err.stderr}`)) {
+      throw new Error(`publish: Actions may not tag ${name} on its version's commit (its workflows differ from main's). Run \`node scripts/publish-packages.mjs --tag-only\` on a machine signed in to git and gh.`);
+    }
+    throw err;
+  }
   const changelog = join(p.dir, 'CHANGELOG.md');
   const notes = existsSync(changelog) ? releaseNotes(readFileSync(changelog, 'utf8'), p.version) : '';
   const notesDir = mkdtempSync(join(tmpdir(), 'tc-notes-'));
