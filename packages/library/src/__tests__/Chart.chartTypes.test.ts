@@ -208,6 +208,16 @@ describe('point & figure boxes', () => {
     expect(setBox.mock.calls.at(-1)?.[0]).toBe(250);
   });
 
+  it('hands the box to the new renderer when the type is set again', () => {
+    chart.setChartType('pointAndFigure');
+    chart.setChartTypeOptions({ pointAndFigure: { boxSize: 4 } });
+    // Setting it again makes a new renderer, whose box starts at 1.
+    chart.setChartType('pointAndFigure');
+    const renderer = (chart as unknown as { chartRenderer: unknown }).chartRenderer;
+    expect(renderer).toBeInstanceOf(PointAndFigureRenderer);
+    expect((renderer as unknown as { boxSize: number }).boxSize).toBe(4);
+  });
+
   it('fits its columns to the view when they are fewer than it holds, on a new type, box or series', () => {
     type View = { viewport: { getState(): { visibleRange: { from: number; to: number }; chartRect: { width: number }; barWidth: number; barSpacing: number } } };
     const state = () => (chart as unknown as View).viewport.getState();

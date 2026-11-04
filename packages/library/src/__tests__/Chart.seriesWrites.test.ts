@@ -37,10 +37,12 @@ describe('Chart: every write path agrees with setData', () => {
   }
   const LINES = ['ema', 'rsi', 'vwap', 'zz'] as const;
 
-  it.each([3, 11, 29])('after a seeded run of writes (seed %i)', (start) => {
-    installChartStubs();
-    const live = make();
-    const oracle = make();
+  /**
+   * A seeded run of writes on `live`, each step loaded whole on `oracle`
+   * with `setData`, then `check`ed. How many steps had bars hidden, and how
+   * many bars were corrected.
+   */
+  function seededRun(start: number, live: Chart, oracle: Chart, check: (where: string) => void, steps = 250): { hidden: number; corrected: number } {
     let seed = start;
     const random = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
     const price = () => 5 + Math.round(random() * 100) / 10;
@@ -54,12 +56,12 @@ describe('Chart: every write path agrees with setData', () => {
     let whole = series(0, 20);
     // Hidden from the start, where most of the trouble lies.
     let hoursShown = false;
-    live.chart.setExtendedHours(false);
-    live.chart.setData(whole.slice());
+    live.setExtendedHours(false);
+    live.setData(whole.slice());
 
     let hidden = 0;
     let corrected = 0;
-    for (let step = 0; step < 250; step++) {
+    for (let step = 0; step < steps; step++) {
       const last = whole[whole.length - 1];
       const lastSlot = Math.round((last.time - T0) / HALF_HOUR);
       const roll = random();
@@ -67,17 +69,17 @@ describe('Chart: every write path agrees with setData', () => {
       if (roll < 0.22) {
         what = 'appendBar';
         const bar = at(lastSlot + 1);
-        live.chart.appendBar(bar);
+        live.appendBar(bar);
         whole.push(bar);
       } else if (roll < 0.32) {
         what = 'appendBars';
         const bars = series(lastSlot + 1, 2 + Math.floor(random() * 3));
-        live.chart.appendBars(bars);
+        live.appendBars(bars);
         whole.push(...bars);
       } else if (roll < 0.45) {
         what = 'updateLastBar';
         const bar = { ...at(lastSlot), time: last.time };
-        live.chart.updateLastBar(bar);
+        live.updateLastBar(bar);
         whole[whole.length - 1] = bar;
       } else if (roll < 0.53) {
         what = 'updateBar';
@@ -85,16 +87,16 @@ describe('Chart: every write path agrees with setData', () => {
         const reach = random() < 0.7 ? 6 : 60;
         const k = whole.length - 1 - Math.floor(random() * Math.min(whole.length, reach));
         const bar = { ...at(0), time: whole[k].time };
-        expect(live.chart.updateBar(bar), `seed ${start}, step ${step}`).toBe(true);
+        expect(live.updateBar(bar), `seed ${start}, step ${step}`).toBe(true);
         whole[k] = bar;
         corrected++;
       } else if (roll < 0.55) {
         what = 'updateBar: no such time';
-        expect(live.chart.updateBar({ ...at(0), time: last.time + 7 })).toBe(false);
+        expect(live.updateBar({ ...at(0), time: last.time + 7 })).toBe(false);
       } else if (roll < 0.72) {
         what = 'tick';
         const tick = { time: last.time + (1 + Math.floor(random() * 29)) * 60_000, price: price(), volume: 1 };
-        live.chart.updateLastBarFromTick(tick);
+        live.updateLastBarFromTick(tick);
         // A tick outside the hours shown moves the price, not a bar.
         const keep = hoursShown ? null : regularHoursFilter(NYSE, whole);
         if (!keep || keep(tick.time)) whole[whole.length - 1] = mergeBar(last, tick);
@@ -103,30 +105,53 @@ describe('Chart: every write path agrees with setData', () => {
         const firstSlot = Math.round((whole[0].time - T0) / HALF_HOUR);
         const count = 1 + Math.floor(random() * 6);
         const older = series(firstSlot - count, count);
-        live.chart.prependBars(older);
+        live.prependBars(older);
         whole = [...older, ...whole];
       } else if (roll < 0.86) {
         what = 'setData';
         whole = series(lastSlot + 3, 10 + Math.floor(random() * 20));
-        live.chart.setData(whole.slice());
+        live.setData(whole.slice());
       } else {
         what = 'extendedHours';
         hoursShown = !hoursShown;
-        live.chart.setExtendedHours(hoursShown);
+        live.setExtendedHours(hoursShown);
       }
-      oracle.chart.setExtendedHours(hoursShown);
-      oracle.chart.setData(whole.slice());
-      const where = `seed ${start}, step ${step} (${what})`;
+      oracle.setExtendedHours(hoursShown);
+      oracle.setData(whole.slice());
+      check(`seed ${start}, step ${step} (${what})`);
+      if (live.getData().length < whole.length) hidden++;
+    }
+    return { hidden, corrected };
+  }
+
+  it.each([3, 11, 29])('after a seeded run of writes (seed %i)', (start) => {
+    installChartStubs();
+    const live = make();
+    const oracle = make();
+    const { hidden, corrected } = seededRun(start, live.chart, oracle.chart, (where) => {
       expect(live.chart.getData(), where).toEqual(oracle.chart.getData());
       for (const key of LINES) {
         expect(live.chart.getIndicatorOutput(live[key])?.series, `${where}, ${key}`)
           .toEqual(oracle.chart.getIndicatorOutput(oracle[key])?.series);
       }
-      if (live.chart.getData().length < whole.length) hidden++;
-    }
+    });
     // Not by luck: most steps had bars hidden, and many bars were corrected.
     expect(hidden).toBeGreaterThan(100);
     expect(corrected).toBeGreaterThan(10);
+  });
+
+  // The series a chart type draws is kept between frames: every write path has to reach it.
+  it.each(['heikinAshi', 'renko', 'kagi', 'lineBreak', 'rangeBars', 'pointAndFigure'] as const)('draws the same %s as setData would', (type) => {
+    installChartStubs();
+    type Inside = { getDisplayData(): unknown[] };
+    const live = make().chart;
+    const oracle = make().chart;
+    live.setChartType(type);
+    oracle.setChartType(type);
+    seededRun(7, live, oracle, (where) => {
+      // Read on every step, as a frame would, so a stale copy is caught on the next.
+      expect((live as unknown as Inside).getDisplayData(), where).toEqual((oracle as unknown as Inside).getDisplayData());
+    }, 120);
   });
 
   /** A feed whose bars the test sends, as an adapter's `bar` events. */

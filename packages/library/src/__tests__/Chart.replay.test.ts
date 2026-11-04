@@ -150,9 +150,9 @@ describe('Chart replay session', () => {
   });
 
   it('turns auto-scale back on for the replay', () => {
-    (chart as unknown as { options: { autoScale: boolean } }).options.autoScale = false;
+    chart.setAutoScale(false);
     chart.replayStart({ startIndex: 50, interval: 100, speed: 1, paused: true });
-    expect((chart as unknown as { options: { autoScale: boolean } }).options.autoScale).toBe(true);
+    expect(chart.isAutoScale()).toBe(true);
   });
 
   it('keeps live ticks and setCurrentPrice off the replayed bar and price line', () => {
