@@ -117,7 +117,6 @@ import {
   PriceAxisAddButton,
   PRICE_AXIS_ADD_STRIP,
   findDominantSwing,
-  readAlertOptions,
 } from '@tradecanvas/core';
 import type { ChartRendererInterface, CompareValue, RangePreset, SessionHoursConfig, DrawingPatch, DrawingOrderMove } from '@tradecanvas/core';
 import { timeframeToMs } from '@tradecanvas/commons';
@@ -144,8 +143,10 @@ import { PluginManager } from './plugins/PluginManager.js';
 import { wireExecution } from './trading/wireExecution.js';
 import { overlaysForLayer, type ChartPlugin } from './plugins/contracts.js';
 import { ReplayStepLoader } from './replay/ReplayStepLoader.js';
-import { formingAt, intrabarPath, pathMarks, pathStop, type IntrabarPath } from './replay/intrabarPath.js';
+import { formingAt, intrabarPath, pathStop, type IntrabarPath } from './replay/intrabarPath.js';
 import { resolveReplayStep } from './replay/replayStep.js';
+import { checkAlerts, DrawingAlertStash, moveAlertsToHeirs, restoreLayoutAlerts } from './model/AlertWatch.js';
+import { firstAfter, firstAtOrAfter, formingFeed, stepFeed, type ReplayMark } from './model/ReplayMarks.js';
 
 // Replaced at build time by Vite `define` (see vite.config.ts). The `typeof`
 // guard keeps this safe when the source runs un-bundled (tests, ts-node).
@@ -258,8 +259,8 @@ export class Chart {
    * the layout again doesn't drop them.
    */
   private unrestoredIndicators: import('@tradecanvas/core').SnapshotIndicator[] = [];
-  /** Alerts of deleted drawings, put back if an undo brings the drawing back. */
-  private removedDrawingAlerts = new Map<string, import('@tradecanvas/core').PriceAlert[]>();
+  /** Alerts of deleted drawings, put back if an undo brings the drawing back (none before the alerts are made). */
+  private drawingAlerts: DrawingAlertStash | null = null;
   /** The zoom-area tool is waiting for its box. */
   private zoomAreaMode = false;
   /** The "+" by the price axis. */
@@ -837,6 +838,7 @@ export class Chart {
     // Alerts on drawings check the drawing's lines where they are at the latest bar.
     this.alertManager.setDrawingLevels((id) => this.drawingLevelsNow(id));
     this.alertManager.setRequestRender(() => this.engine.requestRender(LayerType.Overlay));
+    this.drawingAlerts = new DrawingAlertStash(this.alertManager);
     // A compare's label at its line's end keeps clear of an alert's label at the plot's right edge.
     this.compareRenderer.setReservedLevels(() => this.alertManager.getAlerts().filter(isPriceLevelAlert).map((a) => a.price));
     this.alertManager.on('triggered', (alert) => {
@@ -3106,35 +3108,8 @@ export class Chart {
    */
   private checkAlerts(price: number): void {
     const live = this.replaySession ? this.series.liveBars() : this.series.bars();
-    this.alertManager.setBarTime(live.length > 0 ? live[live.length - 1].time : null);
-    const values = new Map<string, number>([['price', price]]);
-    if (!this.replaySession) this.collectIndicatorValues(values);
-    // A line against a line only with both of this moment (not during a replay).
-    this.alertManager.checkChannels(values, { together: true });
-    this.alertManager.checkDrawings(price);
-  }
-
-  /**
-   * The latest values of the indicator lines alerts watch or compare with.
-   * Channel format: `<instanceId>:<key>`; instanceIds are `tc_<id>_<n>` and
-   * built-in keys are colon-free, so the first colon splits them. Values come
-   * from the recalculated series, so indicator alerts evaluate at bar cadence
-   * (the live intrabar tick doesn't repaint closed-bar indicator values).
-   * Cheap — only walks alerts whose channel isn't `'price'`, usually none.
-   */
-  private collectIndicatorValues(into: Map<string, number>): void {
-    if (this.series.length() === 0) return;
-    const channels = this.alertManager.getAlerts().flatMap((a) => (a.target ? [a.channel, a.target] : [a.channel]));
-    for (const channel of channels) {
-      if (into.has(channel)) continue;
-      const sep = channel.indexOf(':');
-      if (sep < 0) continue;
-      // The line's last value: at the last bar, or on Renko and the like the last brick.
-      const series = this.indicatorEngine.getOutput(channel.slice(0, sep))?.series;
-      const point = series?.[series.length - 1];
-      const value = point?.[channel.slice(sep + 1)];
-      if (typeof value === 'number' && Number.isFinite(value)) into.set(channel, value);
-    }
+    const lines = this.replaySession || this.series.length() === 0 ? null : (id: string) => this.indicatorEngine.getOutput(id)?.series;
+    checkAlerts(this.alertManager, { price, barTime: live.length > 0 ? live[live.length - 1].time : null, lines });
   }
 
   setTradingConfig(config: Partial<TradingConfig>): void {
@@ -4787,23 +4762,15 @@ export class Chart {
    * brings the drawing back.
    */
   private followDrawingAlerts(event: string, drawingId: string | undefined): void {
-    if (!drawingId || !this.alertManager) return;
-    if (event === 'drawingRemove') {
-      const taken = this.alertManager.takeDrawingAlerts(drawingId);
-      if (taken.length > 0) this.removedDrawingAlerts.set(drawingId, taken);
-    } else if (event === 'drawingCreate') {
-      const back = this.removedDrawingAlerts.get(drawingId);
-      if (!back) return;
-      this.removedDrawingAlerts.delete(drawingId);
-      this.alertManager.restoreAlerts(back);
-    }
+    if (!drawingId || !this.drawingAlerts) return;
+    if (event === 'drawingRemove') this.drawingAlerts.removed(drawingId);
+    else if (event === 'drawingCreate') this.drawingAlerts.created(drawingId);
   }
 
   /** Remove alerts on drawings no longer on the chart (drawings replaced or cleared). */
   private dropOrphanDrawingAlerts(): void {
-    this.removedDrawingAlerts.clear();
-    if (!this.alertManager) return;
-    const removed = this.alertManager.pruneDrawingAlerts(new Set(this.drawingManager.getDrawings().map((d) => d.id)));
+    if (!this.drawingAlerts) return;
+    const removed = this.drawingAlerts.prune(new Set(this.drawingManager.getDrawings().map((d) => d.id)));
     if (removed > 0) this.markStateChanged();
   }
 
@@ -5175,30 +5142,19 @@ export class Chart {
    */
   private feedReplayForming(coarse: DataSeries, index: number, path: IntrabarPath, fraction: number): void {
     const session = this.replaySession;
+    if (!session || !this.executionAdapter?.setMarkPrice) return;
+    const fed = { time: session.fedTime, fraction: session.fedFraction };
+    const feed = formingFeed(coarse, index, path, fraction, fed, (c, i) => this.replayPathOf(c, i));
+    if (!feed) return;
+    session.fedTime = feed.fed.time;
+    session.fedFraction = feed.fed.fraction;
+    this.feedReplayMarks(feed.marks);
+  }
+
+  /** Marks of a replay to a paper account in order, and the orders on the chart to the last of them. */
+  private feedReplayMarks(marks: readonly ReplayMark[]): void {
     const adapter = this.executionAdapter;
-    const bar = coarse[index];
-    if (!session || !adapter?.setMarkPrice || !bar) return;
-    const fedTime = session.fedTime;
-    if (fedTime === null) {
-      session.fedTime = bar.time;
-      session.fedFraction = fraction;
-      this.feedReplayPrice(formingAt(path, fraction).close, bar.time);
-      return;
-    }
-    if (bar.time < fedTime || (bar.time === fedTime && fraction <= session.fedFraction)) return;
-    const marks: [number, number][] = [];
-    if (bar.time > fedTime) {
-      const part = firstAtOrAfter(coarse, fedTime);
-      if (coarse[part]?.time === fedTime && session.fedFraction < 1) marks.push(...pathMarks(this.replayPathOf(coarse, part), session.fedFraction, 1));
-      const passed = coarse.slice(firstAfter(coarse, fedTime), index);
-      const size = Math.ceil(passed.length / MAX_REPLAY_CHUNKS);
-      for (let i = 0; i < passed.length; i += size) marks.push(...replayMarks(passed.slice(i, i + size)));
-      marks.push(...pathMarks(path, -1, fraction));
-    } else {
-      marks.push(...pathMarks(path, session.fedFraction, fraction));
-    }
-    session.fedTime = bar.time;
-    session.fedFraction = fraction;
+    if (!adapter?.setMarkPrice) return;
     for (const [price, time] of marks) adapter.setMarkPrice(price, time);
     const price = marks[marks.length - 1]?.[0];
     if (price !== undefined) this.tradingManager.setCurrentPrice(price);
@@ -5372,23 +5328,11 @@ export class Chart {
    */
   private feedReplaySteps(series: DataSeries, index: number): void {
     const session = this.replaySession;
-    const adapter = this.executionAdapter;
-    const bar = series[index];
-    if (!session || !adapter?.setMarkPrice || !bar) return;
-    if (session.fedTime === null) {
-      // The start: the account's mark is where the replay begins.
-      session.fedTime = bar.time;
-      this.feedReplayPrice(bar.close, bar.time);
-      return;
-    }
-    if (bar.time <= session.fedTime) return;
-    const run = series.slice(firstAfter(series, session.fedTime), index + 1);
-    session.fedTime = bar.time;
-    const size = Math.ceil(run.length / MAX_REPLAY_CHUNKS);
-    for (let i = 0; i < run.length; i += size) {
-      for (const [price, time] of replayMarks(run.slice(i, i + size))) adapter.setMarkPrice(price, time);
-    }
-    this.tradingManager.setCurrentPrice(bar.close);
+    if (!session || !this.executionAdapter?.setMarkPrice) return;
+    const feed = stepFeed(series, index, { time: session.fedTime, fraction: session.fedFraction });
+    if (!feed) return;
+    session.fedTime = feed.fed.time;
+    this.feedReplayMarks(feed.marks);
   }
 
   /**
@@ -5689,30 +5633,7 @@ export class Chart {
    */
   private followIndicatorAlerts(before: ReadonlyMap<string, string>, added: readonly string[]): void {
     if (!this.features.alerts) return;
-    // A channel on a replaced indicator → the one new indicator of its kind (or null: leave it).
-    const heirOf = (channel: string): string | null => {
-      const sep = channel.indexOf(':');
-      if (sep <= 0) return null;
-      const from = channel.slice(0, sep);
-      const kind = before.get(from);
-      if (!kind || this.indicatorEngine.getIndicatorConfig(from)) return null;
-      const heirs = added.filter((id) => this.indicatorEngine.getIndicatorConfig(id)?.id === kind);
-      return heirs.length === 1 ? heirs[0] + channel.slice(sep) : null;
-    };
-    for (const alert of this.alertManager.getAlerts()) {
-      const channel = heirOf(alert.channel);
-      const target = alert.target ? heirOf(alert.target) : null;
-      if (!channel && !target) continue;
-      const { target: _t, percent, bars, onBarClose, expiresAt } = alert;
-      this.alertManager.removeAlert(alert.id);
-      this.alertManager.addAlert(alert.price, alert.condition, alert.message, alert.repeating, channel ?? alert.channel, alert.label, {
-        ...(alert.target ? { target: target ?? alert.target } : {}),
-        ...(percent !== undefined ? { percent } : {}),
-        ...(bars !== undefined ? { bars } : {}),
-        ...(onBarClose ? { onBarClose } : {}),
-        ...(expiresAt !== undefined ? { expiresAt } : {}),
-      });
-    }
+    moveAlertsToHeirs(this.alertManager, before, added, (id) => this.indicatorEngine.getIndicatorConfig(id)?.id);
   }
 
   /**
@@ -5842,31 +5763,9 @@ export class Chart {
     this.undoRedoManager.clear();
 
     if (snapshot.alerts && this.features.alerts) {
-      this.alertManager.clearAlerts();
-      for (const a of snapshot.alerts) {
-        // A one-shot alert that already fired stays fired (as AlertManager's own storage does).
-        if (a.triggered && !a.repeating) continue;
-        // `<instanceId>:<key>` channels follow their indicator to its new id.
-        const follow = (ch: string) => {
-          const sep = ch.indexOf(':');
-          const renamed = sep > 0 ? instanceIds.get(ch.slice(0, sep)) : undefined;
-          return renamed ? renamed + ch.slice(sep) : ch;
-        };
-        const channel = follow(a.channel);
-        const options = { ...readAlertOptions(a as unknown as Record<string, unknown>), ...(a.target ? { target: follow(a.target) } : {}) };
-        if (a.expired) continue;
-        if (a.drawingId) {
-          if (this.drawingManager.hasPriceLevels(a.drawingId) && (a.condition === 'crossing' || a.condition === 'crossingUp' || a.condition === 'crossingDown')) {
-            this.alertManager.addDrawingAlert(a.drawingId, a.condition, a.message, a.repeating, a.label);
-          }
-          continue;
-        }
-        try {
-          this.alertManager.addAlert(a.price, a.condition, a.message, a.repeating, channel, a.label, options);
-        } catch (err) {
-          console.warn('Layout alert left out:', err);
-        }
-      }
+      restoreLayoutAlerts(this.alertManager, snapshot.alerts, instanceIds, (id) => this.drawingManager.hasPriceLevels(id), (err) => {
+        console.warn('Layout alert left out:', err);
+      });
     }
     this.markStateChanged();
   }
@@ -6703,52 +6602,6 @@ function stepsFit(steps: DataSeries, coarse: DataSeries): boolean {
     if (steps[i].close > bar.high + slack || steps[i].close < bar.low - slack) return false;
   }
   return true;
-}
-
-/** At most this many marks per jump go to a paper account (a long jump goes by in chunks). */
-const MAX_REPLAY_CHUNKS = 500;
-
-/** Index of the first bar at or after `time` (the length when none is). */
-function firstAtOrAfter(series: DataSeries, time: number): number {
-  let lo = 0;
-  let hi = series.length;
-  while (lo < hi) {
-    const mid = (lo + hi) >> 1;
-    if (series[mid].time < time) lo = mid + 1;
-    else hi = mid;
-  }
-  return lo;
-}
-
-/** The first bar of `series` after `time` (its length when none is). */
-function firstAfter(series: DataSeries, time: number): number {
-  let lo = 0;
-  let hi = series.length;
-  while (lo < hi) {
-    const mid = (lo + hi) >> 1;
-    if (series[mid].time <= time) lo = mid + 1;
-    else hi = mid;
-  }
-  return lo;
-}
-
-/**
- * The prices a run of bars went through, in order, as far as the bars tell:
- * each extreme with its time, the earlier one first (within one bar, a rising
- * bar dipped first), then the close.
- */
-function replayMarks(run: readonly OHLCBar[]): [number, number][] {
-  let lowAt = 0;
-  let highAt = 0;
-  for (let i = 1; i < run.length; i++) {
-    if (run[i].low < run[lowAt].low) lowAt = i;
-    if (run[i].high > run[highAt].high) highAt = i;
-  }
-  const low: [number, number] = [run[lowAt].low, run[lowAt].time];
-  const high: [number, number] = [run[highAt].high, run[highAt].time];
-  const lowFirst = lowAt !== highAt ? lowAt < highAt : run[lowAt].close >= run[lowAt].open;
-  const last = run[run.length - 1];
-  return [...(lowFirst ? [low, high] : [high, low]), [last.close, last.time]];
 }
 
 /** How far the last of `coarse` reaches: its widest recent spacing (months differ, weekends skip). */
