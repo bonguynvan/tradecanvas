@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 1.69.0 (2026-11-03)
+
 ### Data
 
 - **A data source of your own in two methods: `DataFeed`** (`@tradecanvas/commons`, `@tradecanvas/core`, `@tradecanvas/chart`, React, Vue and Svelte components).
