@@ -223,10 +223,13 @@ describe('Chart indicators on bricks', () => {
     chart.setData(weekdays(Date.UTC(2016, 0, 4), Date.UTC(2026, 9, 21)));
     const sma = chart.addIndicator('sma', { period: 3 })!;
     chart.setChartType('renko');
-    const values = new Map<string, number>();
-    (chart as unknown as { collectIndicatorValues(into: Map<string, number>): void; alertManager: { getAlerts(): unknown[] } })
-      .alertManager.getAlerts = () => [{ channel: `${sma}:value` }];
-    (chart as unknown as { collectIndicatorValues(into: Map<string, number>): void }).collectIndicatorValues(values);
+    chart.addAlert(1, 'greaterThan', undefined, `${sma}:value`);
+    // The values the alerts are checked against, as of the next price.
+    const alerts = (chart as unknown as { alertManager: { checkChannels(values: Map<string, number>): void } }).alertManager;
+    const checked = vi.spyOn(alerts, 'checkChannels');
+    chart.setCurrentPrice(chart.getData().at(-1)!.close);
+    expect(checked).toHaveBeenCalled();
+    const values = checked.mock.calls[0][0];
     const series = chart.getIndicatorOutput(sma)!.series!;
     expect(values.get(`${sma}:value`)).toBe(series[series.length - 1]!.value);
   });
