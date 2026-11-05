@@ -1,10 +1,7 @@
-import type { IndicatorDescriptor, DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue, ResolvedIndicatorStyle, ViewportState } from '@tradecanvas/commons';
+import type { IndicatorDescriptor, DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue } from '@tradecanvas/commons';
 import { IndicatorBase } from '../IndicatorBase.js';
 import { IndicatorValueMap } from '../IndicatorValueMap.js';
 import { getIntParam, getNumberParam } from '../params.js';
-import { withAlpha } from '@tradecanvas/commons';
-import { barIndexToX, priceToY } from '../../viewport/ScaleMapping.js';
-import { plotLook } from '../plots.js';
 
 export class KeltnerChannelIndicator extends IndicatorBase {
   descriptor: IndicatorDescriptor = {
@@ -14,6 +11,7 @@ export class KeltnerChannelIndicator extends IndicatorBase {
     defaultConfig: { emaPeriod: 20, atrPeriod: 10, multiplier: 1.5 },
     inputs: { emaPeriod: { kind: 'int', min: 1 }, atrPeriod: { kind: 'int', min: 1 }, multiplier: { kind: 'number', min: 0.1, step: 0.1 } },
     shortName: 'KC',
+    fills: [{ between: ['upper', 'lower'], color: 0, opacity: 0.08 }],
     plots: [
       { key: 'upper', title: 'Upper', color: 0 },
       { key: 'middle', title: 'Basis', color: 1 },
@@ -66,29 +64,5 @@ export class KeltnerChannelIndicator extends IndicatorBase {
       series[i] = val;
     }
     return { values, series };
-  }
-
-  render(ctx: CanvasRenderingContext2D, output: IndicatorOutput, viewport: ViewportState, style: ResolvedIndicatorStyle): void {
-    const series = output.series;
-    if (!series) return;
-    const { from, to } = viewport.visibleRange;
-
-    const upperPts: { x: number; y: number }[] = [];
-    const middlePts: { x: number; y: number }[] = [];
-    const lowerPts: { x: number; y: number }[] = [];
-
-    for (let i = from; i <= to && i < series.length; i++) {
-      const val = series[i];
-      if (!val) continue;
-      const x = barIndexToX(i, viewport);
-      if (val.upper !== undefined) upperPts.push({ x, y: priceToY(val.upper, viewport) });
-      if (val.middle !== undefined) middlePts.push({ x, y: priceToY(val.middle, viewport) });
-      if (val.lower !== undefined) lowerPts.push({ x, y: priceToY(val.lower, viewport) });
-    }
-
-    this.drawBand(ctx, upperPts, lowerPts, withAlpha(style.colors[0], 0.08));
-    this.drawLine(ctx, upperPts, style.colors[0], style.lineWidths[0], plotLook(style, 'upper', style.lineWidths[0]));
-    this.drawLine(ctx, middlePts, style.colors[1] ?? style.colors[0], style.lineWidths[0], plotLook(style, 'middle', style.lineWidths[0]));
-    this.drawLine(ctx, lowerPts, style.colors[0], style.lineWidths[0], plotLook(style, 'lower', style.lineWidths[0]));
   }
 }

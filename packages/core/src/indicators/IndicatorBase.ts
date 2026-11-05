@@ -39,8 +39,9 @@ export abstract class IndicatorBase implements IndicatorPlugin {
     else out.values.delete(data[i].time);
   }
   /**
-   * Draws the descriptor's `plots` with the viewport's value scale. Indicators
-   * that draw more (bands, clouds, profiles) override it.
+   * Draws the descriptor's `fills` and `plots` with the viewport's value
+   * scale. Indicators drawn other than one value a bar (a cloud ahead of the
+   * bars, a price profile) override it.
    */
   render(
     ctx: CanvasRenderingContext2D,
@@ -48,7 +49,7 @@ export abstract class IndicatorBase implements IndicatorPlugin {
     viewport: ViewportState,
     style: ResolvedIndicatorStyle,
   ): void {
-    if (this.descriptor.plots) renderPlots(ctx, output, viewport, style, this.descriptor.plots);
+    if (this.descriptor.plots) renderPlots(ctx, output, viewport, style, this.descriptor.plots, this.descriptor.fills);
   }
 
   protected drawLine(

@@ -324,8 +324,9 @@ chart.setIndicatorDefaults('ema', { colors: ['#f5a623'], lineWidths: [2] })
 chart.setPaneStyle(rsiId, { background: '#101418', separator: '#f5a623' })`}</code></pre>
 <p>
   Đường bị ẩn không có nhãn giá trị và không có giá trị trong legend. Mọi chỉ báo đều bỏ qua đường bị ẩn, và
-  hầu hết nhận kiểu nét của các đường; vài chỉ báo vẽ hình riêng (chấm Parabolic SAR, Supertrend, Zig Zag,
-  volume profile) giữ nét vẽ của mình.
+  hầu hết nhận kiểu nét của các đường; vài chỉ báo vẽ hình riêng (Zig Zag, volume profile, dấu mẫu nến) giữ
+  nét vẽ của mình. Đường mà chỉ báo tự vẽ nét đứt (Chandelier Exit, các mức pivot, dải của Session VWAP) vẫn
+  đứt cho tới khi kiểu của đường đó nói khác.
 </p>
 
 <h2>Nhãn trên biểu đồ</h2>

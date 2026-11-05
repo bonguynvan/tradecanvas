@@ -1079,6 +1079,29 @@ so declare the lowest value your `calculate` really uses (a period your code
 raises to 2 is `min: 2`). `describeInputs(descriptor)` lists the inputs as the
 dialog reads them.
 
+A band or channel needs no `render` of yours either: declare its shading and
+each line's look, and the chart draws them, the settings dialog shows and
+restores a declared dash, and zoomed far out the fill goes a pixel column at a
+time like the built-ins'.
+
+```ts
+import type { IndicatorDescriptor } from '@tradecanvas/chart';
+
+const channelLook: Pick<IndicatorDescriptor, 'plots' | 'fills'> = {
+  plots: [
+    { key: 'upper', title: 'Upper', color: 0 },
+    // width: kept at 1 whatever the indicator's width; lineStyle: dashed until its style says otherwise
+    { key: 'middle', title: 'Basis', color: 1, width: 1, lineStyle: 'dashed' },
+    { key: 'lower', title: 'Lower', color: 0 },
+  ],
+  // Shaded under the lines, where both have a value
+  fills: [{ between: ['upper', 'lower'], color: 0, opacity: 0.1 }],
+};
+```
+
+A plot's `opacity` sets it back (bands around a line), and `breakOn: 'session'`
+breaks its line where that output field changes, as VWAP does each session.
+
 An indicator that starts again each day, week or month reads the exchange's
 IANA zone as `config.exchangeTimeZone`: the chart sets it from the symbol's
 `timeZone`, else the market's (`setSymbolInfo`, `setMarket`), and leaves it

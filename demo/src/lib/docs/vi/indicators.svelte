@@ -221,6 +221,20 @@ CANDLE_PATTERNS.length                                 // 64`}</code></pre>
   mult: { kind: 'number', min: 0.1, step: 0.1 },
   source: { source: true },
 }`}</code></pre>
+<p>
+  Descriptor cũng ghi các đường trông thế nào, và chart vẽ đúng như vậy: <code>fills</code> tô vùng giữa hai
+  đường ở những nến cả hai đều có giá trị, nằm dưới các đường; <code>width</code> của một đường giữ nó ở độ
+  dày đó bất kể độ dày của chỉ báo (một đường giữa mảnh); <code>lineStyle</code> vẽ nó nét đứt cho tới khi
+  kiểu của nó nói khác, và hộp cài đặt hiện và trả lại đúng nét đó; <code>opacity</code> làm nó mờ đi;
+  <code>breakOn</code> là tên một trường đánh số kỳ, và đường ngắt ở chỗ trường đó đổi. Các kênh, dải,
+  Supertrend và Parabolic SAR có sẵn được vẽ theo cách này.
+</p>
+<pre><code>{`plots: [
+  { key: 'upper', title: 'Upper', color: 0 },
+  { key: 'middle', title: 'Basis', color: 1, width: 1, lineStyle: 'dashed' },
+  { key: 'lower', title: 'Lower', color: 0 },
+],
+fills: [{ between: ['upper', 'lower'], color: 0, opacity: 0.1 }],`}</code></pre>
 
 <h2>Bảng: đổi kích thước, thu gọn, phóng to, sắp xếp lại</h2>
 <p>

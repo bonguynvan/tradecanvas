@@ -214,6 +214,20 @@ CANDLE_PATTERNS.length                                 // 64`}</code></pre>
   mult: { kind: 'number', min: 0.1, step: 0.1 },
   source: { source: true },
 }`}</code></pre>
+<p>
+  디스크립터는 플롯의 모양도 밝히고, 차트는 그대로 그립니다. <code>fills</code>는 두 플롯에 모두 값이 있는
+  곳에서 그 사이를 선 아래에 칠합니다. 플롯의 <code>width</code>는 지표의 굵기와 상관없이 그 굵기를
+  유지합니다(가는 중심선 등). <code>lineStyle</code>은 스타일이 달리 정할 때까지 점선으로 그리고, 설정
+  대화상자도 그 선 종류를 보여 주고 되돌립니다. <code>opacity</code>는 선을 옅게 합니다. <code>breakOn</code>은
+  기간에 번호를 매기는 필드를 가리키며, 그 값이 바뀌는 곳에서 선이 끊깁니다. 기본 제공 채널, 밴드,
+  Supertrend, 파라볼릭 SAR이 이렇게 그려집니다.
+</p>
+<pre><code>{`plots: [
+  { key: 'upper', title: 'Upper', color: 0 },
+  { key: 'middle', title: 'Basis', color: 1, width: 1, lineStyle: 'dashed' },
+  { key: 'lower', title: 'Lower', color: 0 },
+],
+fills: [{ between: ['upper', 'lower'], color: 0, opacity: 0.1 }],`}</code></pre>
 
 <h2>패널: 크기 조절, 접기, 최대화, 순서 바꾸기</h2>
 <p>

@@ -243,6 +243,26 @@ describe('WidgetIndicatorSettings Cancel, Ok and the defaults', () => {
     expect(dialog.isOpen()).toBe(false);
   });
 
+  it('shows a line declared dashed as dashed, and puts it back dashed on Cancel and Reset', () => {
+    const d = descriptor('chandelier');
+    const target: IndicatorSettingsTarget = {
+      instanceId: 'c1', indicatorId: 'chandelier', name: d.name, defaults: d.defaultConfig, params: { ...d.defaultConfig },
+      inputs: d.inputs, plots: d.plots, colors: ['#1fa874', '#e8505b'], lineWidth: 1.5, levels: [], defaultLevels: [],
+    };
+    dialog.open(target);
+    tab('style');
+    const dash = host.querySelector<HTMLSelectElement>('[data-plot="long"] select')!;
+    expect(dash.value).toBe('dashed');
+    change(dash, 'solid');
+    footer('cancel').click();
+    expect(onStyle).toHaveBeenLastCalledWith('c1', { plots: { long: { visible: true, lineStyle: 'dashed' } } });
+
+    dialog.open({ ...target, plotStyles: { short: { lineStyle: 'dotted' } } });
+    footer('defaults').click();
+    menuItem('Reset settings').click();
+    expect(onStyle).toHaveBeenLastCalledWith('c1', { plots: { short: { visible: true, lineStyle: 'dashed' } } });
+  });
+
   it('undoes nothing that was not changed', () => {
     dialog.open(macdTarget());
     footer('cancel').click();

@@ -1,8 +1,7 @@
-import type { IndicatorDescriptor, DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue, ResolvedIndicatorStyle, ViewportState } from '@tradecanvas/commons';
+import type { IndicatorDescriptor, DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue } from '@tradecanvas/commons';
 import { IndicatorBase } from '../IndicatorBase.js';
 import { IndicatorValueMap } from '../IndicatorValueMap.js';
 import { getNumberParam } from '../params.js';
-import { barIndexToX, priceToY } from '../../viewport/ScaleMapping.js';
 
 export class ParabolicSARIndicator extends IndicatorBase {
   descriptor: IndicatorDescriptor = {
@@ -72,24 +71,5 @@ export class ParabolicSARIndicator extends IndicatorBase {
       series[i] = val;
     }
     return { values, series };
-  }
-
-  render(ctx: CanvasRenderingContext2D, output: IndicatorOutput, viewport: ViewportState, style: ResolvedIndicatorStyle): void {
-    const series = output.series;
-    if (!series) return;
-    if (style.plots?.value?.visible === false) return;
-    const { from, to } = viewport.visibleRange;
-    const dotRadius = Math.max(1.5, viewport.barWidth * 0.15);
-
-    for (let i = from; i <= to && i < series.length; i++) {
-      const val = series[i];
-      if (!val || val.value === undefined) continue;
-      const x = barIndexToX(i, viewport);
-      const y = priceToY(val.value, viewport);
-      ctx.beginPath();
-      ctx.arc(x, y, dotRadius, 0, Math.PI * 2);
-      ctx.fillStyle = val.trend === 1 ? (style.colors[0]) : (style.colors[1] ?? '#e8505b');
-      ctx.fill();
-    }
   }
 }

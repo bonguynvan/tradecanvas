@@ -191,6 +191,7 @@ export type {
   PriceSource,
   IndicatorPlot,
   IndicatorPlotKind,
+  IndicatorFill,
   IndicatorScale,
   IndicatorInputSpec,
   IndicatorInputKind,

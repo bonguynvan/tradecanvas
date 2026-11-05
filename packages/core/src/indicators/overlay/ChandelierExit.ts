@@ -1,9 +1,7 @@
-import type { IndicatorDescriptor, DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue, ResolvedIndicatorStyle, ViewportState } from '@tradecanvas/commons';
+import type { IndicatorDescriptor, DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue } from '@tradecanvas/commons';
 import { IndicatorBase } from '../IndicatorBase.js';
 import { IndicatorValueMap } from '../IndicatorValueMap.js';
 import { getNumberParam, getIntParam } from '../params.js';
-import { barIndexToX, priceToY } from '../../viewport/ScaleMapping.js';
-import { lineDash } from '@tradecanvas/commons';
 
 /**
  * Chandelier Exit (Chuck LeBeau) — ATR-based trailing stop levels.
@@ -21,8 +19,8 @@ export class ChandelierExitIndicator extends IndicatorBase {
     inputs: { period: { kind: 'int', min: 1 }, multiplier: { kind: 'number', min: 0.1, step: 0.1 } },
     shortName: 'CE',
     plots: [
-      { key: 'long', title: 'Long', color: 0 },
-      { key: 'short', title: 'Short', color: 1 },
+      { key: 'long', title: 'Long', color: 0, lineStyle: 'dashed' },
+      { key: 'short', title: 'Short', color: 1, lineStyle: 'dashed' },
     ],
   };
 
@@ -57,36 +55,5 @@ export class ChandelierExitIndicator extends IndicatorBase {
       series[i] = val;
     }
     return { values, series };
-  }
-
-  render(ctx: CanvasRenderingContext2D, output: IndicatorOutput, viewport: ViewportState, style: ResolvedIndicatorStyle): void {
-    const series = output.series;
-    if (!series) return;
-    const { from, to } = viewport.visibleRange;
-
-    const drawLine = (key: 'long' | 'short', color: string) => {
-      // Its plots are dashed unless their style says otherwise.
-      const own = style.plots?.[key];
-      if (own?.visible === false) return;
-      ctx.beginPath();
-      ctx.strokeStyle = color;
-      ctx.lineWidth = style.lineWidths[0];
-      ctx.lineJoin = 'round';
-      ctx.setLineDash(own?.lineStyle ? lineDash(own.lineStyle, [5, 3], style.lineWidths[0]) : [5, 3]);
-      let started = false;
-      for (let i = from; i <= to && i < series.length; i++) {
-        const val = series[i];
-        if (!val || val[key] === undefined) { started = false; continue; }
-        const x = barIndexToX(i, viewport);
-        const y = priceToY(val[key]!, viewport);
-        if (!started) { ctx.moveTo(x, y); started = true; }
-        else ctx.lineTo(x, y);
-      }
-      ctx.stroke();
-      ctx.setLineDash([]);
-    };
-
-    drawLine('long', style.colors[0] ?? '#1fa874');
-    drawLine('short', style.colors[1] ?? '#e8505b');
   }
 }

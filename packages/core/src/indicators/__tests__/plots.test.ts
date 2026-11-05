@@ -131,6 +131,77 @@ describe('renderPlots', () => {
   });
 });
 
+describe("renderPlots: the look a descriptor declares", () => {
+  const hex = { colors: ['#102030', '#405060'], lineWidths: [2], opacity: 1 };
+  const band: IndicatorPlot[] = [{ key: 'upper', title: 'Upper', color: 0 }, { key: 'lower', title: 'Lower', color: 0 }];
+
+  it('shades between two plots in the fill colour at its opacity, under the lines', () => {
+    const rec = strokeRecorder();
+    const order: string[] = [];
+    const ctx = new Proxy(rec.ctx, {
+      get: (target, key) => {
+        const value = Reflect.get(target, key);
+        if (key === 'fill' || key === 'stroke') return () => { order.push(key); (value as () => void)(); };
+        return value;
+      },
+    });
+    renderPlots(ctx, out([{ upper: 60, lower: 40 }, { upper: 70, lower: 30 }]), viewport, hex, band, [{ between: ['upper', 'lower'], color: 1, opacity: 0.2 }]);
+    expect(rec.pathFills.map((f) => f.color)).toEqual(['rgba(64, 80, 96, 0.2)']);
+    expect(order[0]).toBe('fill');
+    expect(rec.strokes).toHaveLength(2);
+  });
+
+  it('shades only where both plots have a value, in one piece per run', () => {
+    const rec = strokeRecorder();
+    const series = out([{ upper: 60, lower: 40 }, { upper: 61, lower: 41 }, { upper: 62 }, { upper: 63, lower: 43 }, { upper: 64, lower: 44 }]);
+    renderPlots(rec.ctx, series, { ...viewport, visibleRange: { from: 0, to: 4 } }, hex, band, [{ between: ['upper', 'lower'], color: 0 }]);
+    expect(rec.pathFills).toHaveLength(2);
+    // Unset, a fill is drawn at a tenth of its colour.
+    expect(rec.pathFills[0].color).toBe('rgba(16, 32, 48, 0.1)');
+  });
+
+  it('draws a plot at its own width, unless the style gives one for its place', () => {
+    const plots: IndicatorPlot[] = [{ key: 'a', title: 'A', color: 0 }, { key: 'b', title: 'B', color: 1, width: 1 }];
+    const series = out([{ a: 20, b: 30 }, { a: 40, b: 50 }]);
+    const own = strokeRecorder();
+    renderPlots(own.ctx, series, viewport, hex, plots);
+    expect(own.strokes.map((s) => s.width)).toEqual([2, 1]);
+    const set = strokeRecorder();
+    renderPlots(set.ctx, series, viewport, { ...hex, lineWidths: [2, 3] }, plots);
+    expect(set.strokes.map((s) => s.width)).toEqual([2, 3]);
+  });
+
+  it('dashes a plot declared dashed, until its style says otherwise', () => {
+    const plots: IndicatorPlot[] = [{ key: 'a', title: 'A', color: 0, lineStyle: 'dashed' }];
+    const series = out([{ a: 20 }, { a: 40 }]);
+    const dashed = strokeRecorder();
+    renderPlots(dashed.ctx, series, viewport, hex, plots);
+    expect(dashed.strokes[0].dash.length).toBeGreaterThan(0);
+    const solid = strokeRecorder();
+    renderPlots(solid.ctx, series, viewport, { ...hex, plots: { a: { lineStyle: 'solid' } } }, plots);
+    expect(solid.strokes[0].dash).toEqual([]);
+  });
+
+  it('draws a plot at its own opacity, and leaves the context as it found it', () => {
+    const rec = strokeRecorder();
+    const plots: IndicatorPlot[] = [{ key: 'a', title: 'A', color: 0, opacity: 0.5 }, { key: 'b', title: 'B', color: 1 }];
+    renderPlots(rec.ctx, out([{ a: 20, b: 30 }, { a: 40, b: 50 }]), viewport, hex, plots);
+    expect(rec.strokes.map((s) => s.alpha)).toEqual([0.5, 1]);
+    expect(rec.ctx.globalAlpha).toBe(1);
+  });
+
+  it('breaks a line where its period field changes, except between periods of one bar each', () => {
+    const plots: IndicatorPlot[] = [{ key: 'value', title: 'VWAP', color: 0, breakOn: 'session' }];
+    const wide = { ...viewport, visibleRange: { from: 0, to: 3 } };
+    const intraday = strokeRecorder();
+    renderPlots(intraday.ctx, out([{ value: 10, session: 1 }, { value: 20, session: 1 }, { value: 30, session: 2 }, { value: 40, session: 2 }]), wide, hex, plots);
+    expect(intraday.strokes[0].segments.map((s) => s[3])).toEqual([80, 60]);
+    const daily = strokeRecorder();
+    renderPlots(daily.ctx, out([{ value: 10, session: 1 }, { value: 20, session: 2 }, { value: 30, session: 3 }]), wide, hex, plots);
+    expect(daily.strokes[0].segments).toHaveLength(2);
+  });
+});
+
 describe('paneLogRange', () => {
   it('pads by ratio and leaves zero out, so a volume pane can go log', () => {
     const range = paneLogRange(out([{ value: 10 }, { value: 1000 }]), 0, 1, { keys: null, zero: true, levels: [0, 500] }) as { min: number; max: number };

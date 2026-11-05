@@ -9,6 +9,14 @@
   - The settings no longer take a period below the lowest value the indicator uses, step Parabolic SAR's step and maximum by 0.01, and round a whole number as it is typed, so the field shows the value the indicator computes with.
   - `describeInputs(descriptor)` lists an indicator's inputs as the settings dialog reads them. The generated docs, the notes on `BuiltInIndicators` and the MCP catalog read the same list, and the catalog adds each indicator's group.
   - Supertrend no longer throws with a period of 1.
+- **An indicator's look is declared in its descriptor** (`@tradecanvas/commons`, `@tradecanvas/core`, `@tradecanvas/chart`).
+  - `fills` shade between two plots, under the lines, where both have a value: `{ between: ['upper', 'lower'], color: 0, opacity: 0.1 }`.
+  - A plot's `width` keeps it at that width whatever the indicator's, `lineStyle` dashes it until its style says otherwise, `opacity` sets it back, and `breakOn` breaks its line where a field such as `session` changes.
+  - A band or channel of your own needs no `render` method. The built-in moving averages, channels, bands, VWAPs, pivot points, Chandelier Exit, Supertrend and Parabolic SAR are drawn this way; only those drawn other than one value a bar (Ichimoku, Zig Zag, the volume profiles, candle patterns, Chop Zone, Elder Ray) draw themselves.
+  - In ChartWidget's indicator settings, a line its indicator dashes shows as dashed, and Cancel and Reset put it back dashed instead of solid.
+  - Supertrend is drawn at the width the settings show, half a pixel thinner than before. The dashed lines of Chandelier Exit, the pivot levels and Session VWAP's bands take the same dash as the other indicators.
+  - The pivot levels other than P stay 1 px whatever the width set, like Session VWAP's bands and Donchian's middle line; before, they were drawn 1 px thinner than it.
+  - Zoomed far out, Parabolic SAR draws one dot per pixel column, like the other dot plots. Session VWAP's bands are drawn over its line instead of under it.
 
 ## 1.70.0 (2026-11-04)
 
