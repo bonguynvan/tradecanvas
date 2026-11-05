@@ -1,38 +1,47 @@
-// A release in two steps, as the npm trusted publishers allow staging only.
+// The release's publish step, run by the Publish workflow on every push to
+// main (and by hand to finish a release that stopped).
 //
-// Stage (the version PR's merge): the packages this commit moved to a new
-// version are staged on npm one at a time, each after the packages it depends
-// on, and the order to approve them in is printed. `changeset publish` sent
-// them all at once, so a package could appear before the exact version of a
-// package it pins (@tradecanvas/mcp before @tradecanvas/commons on 1.59.3),
-// and `npx @tradecanvas/mcp@latest` failed with ETARGET in between; approving
-// in the printed order keeps that from happening. A maintainer approves each
-// with 2FA, on npmjs.com or with `npm stage approve <id>`. Only a commit that
-// moved a version stages, so a later push does not stage the same versions
-// again while they wait.
+// Each workspace package not on npm at its version is published, one at a
+// time, each after the packages it depends on, and the next waits until the
+// one before is live. `changeset publish` sent them all at once, so a package
+// could appear before the exact version of a package it pins
+// (@tradecanvas/mcp before @tradecanvas/commons on 1.59.3), and
+// `npx @tradecanvas/mcp@latest` failed with ETARGET in between.
 //
-// Tag (`--tag-only`, the workflow run by hand after approving): each version
-// live on npm without its tag gets the tag, on the commit that set the
-// version, and a GitHub release with its changelog section. It stages
-// nothing, so a version still waiting is reported, not staged twice.
+// Each version once live gets its git tag and a GitHub release with its
+// changelog section. A version on npm without its tag or its release (a run
+// that stopped part way) is finished after the new ones go out, so running it
+// again finishes a release, and one that cannot be tagged holds back nothing.
 //
-// Auth is npm trusted publishing: in GitHub Actions npm swaps the job's OIDC
-// token for a one-time token, and records provenance on its own. `pnpm pack`
-// writes the tarball (it turns `workspace:*` into versions) and
-// `npm stage publish` sends it (npm 11.21 or later).
+// In CI the packing and the publishing are two jobs: installing and building
+// run the dependencies' own code, so the job that does it may not publish,
+// and the job that publishes installs nothing. Auth is npm trusted
+// publishing: npm swaps the job's OIDC token for a one-time token, and
+// records provenance on its own. `pnpm pack` writes the tarball (it turns
+// `workspace:*` into versions) and `npm publish` sends it (npm 11.5.1 or later).
 //
-//   node scripts/publish-packages.mjs             stage this commit's versions
-//   node scripts/publish-packages.mjs --tag-only  tag and release the approved ones
-//   node scripts/publish-packages.mjs --stage-all stage every version not live (by hand;
-//                                                 one already waiting is staged again)
-//   node scripts/publish-packages.mjs --dry-run   pack and dry-run the staging
+//   node scripts/publish-packages.mjs                    pack, publish, tag and release
+//   node scripts/publish-packages.mjs --check            whether there is anything to publish, tag or
+//                                                        release (work=true|false in $GITHUB_OUTPUT)
+//   node scripts/publish-packages.mjs --pack-to <dir>    pack each version not on npm, listed in packed.json
+//   node scripts/publish-packages.mjs --publish-from <dir>  publish what --pack-to packed, tag and release
+//   node scripts/publish-packages.mjs --tag-only         tag and release what is on npm; publish nothing
+//                                                        (on a machine signed in to git and gh, when
+//                                                        Actions may not push a tag)
+//   node scripts/publish-packages.mjs --dry-run          pack and dry-run the publishing, no tags
 import { execFileSync, execSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, readdirSync, existsSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, readFileSync, readdirSync, existsSync, rmSync, writeFileSync, appendFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join, dirname, basename } from 'node:path';
+import { gunzipSync } from 'node:zlib';
+import { join, dirname, basename, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
+/** How long a new version may take to show on npm before the release stops. */
+const LIVE_TIMEOUT_MS = 180_000;
+const LIVE_POLL_MS = 5_000;
+const TARBALL_NAME = /^[\w.-]+\.tgz$/;
+const ACCESS = new Set(['public', 'restricted']);
 
 /** The workspace packages a manifest needs at install time: its dependencies and peers. */
 export function internalDeps(manifest, workspaceNames) {
@@ -76,21 +85,88 @@ export function remoteTagNames(output) {
  */
 export const untagged = (onNpm, remoteTags) => onNpm.filter((p) => !remoteTags.has(`${p.name}@${p.version}`));
 
-/** The id npm prints for a staged version, or null when the registry gave none. */
-export function stageId(output) {
-  return output.match(/\(staged with id ([^)\s]+)\)/)?.[1] ?? null;
+/**
+ * What a release does, in publishing order: publish the versions not on npm,
+ * and finish the ones on npm without their tag on origin or their GitHub
+ * release. Every version not on npm goes out, so once a release is done a
+ * later push publishes nothing, and a push after a release that was missed
+ * publishes it.
+ */
+export function releasePlan(order, isLive, isReleased) {
+  const live = order.filter((p) => isLive(p));
+  return {
+    tag: live.filter((p) => !isReleased(p)),
+    publish: order.filter((p) => !live.includes(p)),
+  };
 }
 
-/** What to approve, in staging order: a package after every one it pins. */
-export function approvalSteps(staged) {
-  return staged.map((p, i) => {
-    const how = p.id ? `npm stage approve ${p.id}` : 'on npmjs.com, Staged Packages';
-    return `${i + 1}. ${p.name}@${p.version}: ${how}`;
-  });
+/**
+ * The tarballs a release packed, in publishing order. Each must be the
+ * version its package has in this checkout, so a tarball from another commit
+ * never goes out.
+ */
+export function packedInOrder(packed, order) {
+  for (const t of packed) {
+    // The list comes from a job that ran the build's tools: it may name a file
+    // in its own folder and an npm access, and put nothing else on npm's command line.
+    if (!TARBALL_NAME.test(t.file ?? '')) throw new Error(`publish: ${JSON.stringify(t.file)} is not a tarball name`);
+    if (!ACCESS.has(t.access)) throw new Error(`publish: ${JSON.stringify(t.access)} is not an npm access`);
+    if (!order.some((p) => p.name === t.name && p.version === t.version)) {
+      throw new Error(`publish: the tarball of ${t.name}@${t.version} is not a version this checkout has`);
+    }
+  }
+  return order.flatMap((p) => packed.filter((t) => t.name === p.name && t.version === p.version));
 }
 
-/** The packages whose version differs from the one before this commit; one that was not there counts. */
-export const bumped = (pkgs, versionsBefore) => pkgs.filter((p) => versionsBefore.get(p.name) !== p.version);
+const TAR_BLOCK = 512;
+
+/**
+ * A file's text in a .tgz, or null when it has none. Reads the plain ustar
+ * headers npm and pnpm write (the name at 0, the size in octal at 124), so
+ * it needs no `tar`, whose GNU build takes `D:\...` for a remote host.
+ */
+export function fileInTarball(tgz, path) {
+  const tar = gunzipSync(tgz);
+  for (let at = 0; at + TAR_BLOCK <= tar.length; ) {
+    const header = tar.subarray(at, at + TAR_BLOCK);
+    const name = header.subarray(0, 100).toString('utf8').replace(/\0.*$/s, '');
+    if (!name) break;
+    const size = parseInt(header.subarray(124, 136).toString('utf8').replace(/\0.*$/s, '').trim() || '0', 8);
+    const body = at + TAR_BLOCK;
+    if (name === path) return tar.subarray(body, body + size).toString('utf8');
+    at = body + Math.ceil(size / TAR_BLOCK) * TAR_BLOCK;
+  }
+  return null;
+}
+
+/** Whether a release has anything to publish or finish; without, the build and the publishing job are skipped. */
+export const hasWork = (plan) => plan.tag.length > 0 || plan.publish.length > 0;
+
+/** Runs `fn` on each item in turn; one that throws does not stop the rest. Gives back the failures. */
+export async function eachSettled(items, fn) {
+  const failures = [];
+  for (const item of items) {
+    try {
+      await fn(item);
+    } catch (error) {
+      failures.push({ item, error });
+    }
+  }
+  return failures;
+}
+
+/**
+ * Resolves once `check` says yes, asking every `pollMs`; throws after
+ * `timeoutMs`, so a version that never shows stops the release before the
+ * packages that pin it.
+ */
+export async function waitUntil(check, { timeoutMs, pollMs, what, now = Date.now, sleep = (ms) => new Promise((r) => setTimeout(r, ms)) }) {
+  const until = now() + timeoutMs;
+  while (!check()) {
+    if (now() >= until) throw new Error(`publish: ${what} is not live on npm after ${timeoutMs / 1000} s`);
+    await sleep(pollMs);
+  }
+}
 
 /** A version's section of a changesets CHANGELOG.md, without its heading; empty when it has none. */
 export function releaseNotes(markdown, version) {
@@ -129,7 +205,7 @@ function readWorkspace() {
 }
 
 /**
- * Whether npm has this exact version live; a staged one is not. A 404 means
+ * Whether npm has this exact version. A 404 means
  * no; any other failure stops the release. `--prefer-online` asks the
  * registry each time instead of npm's five-minute cache.
  */
@@ -148,19 +224,6 @@ function pack(p, outDir) {
   const made = readdirSync(outDir).find((f) => !before.has(f) && f.endsWith('.tgz'));
   if (!made) throw new Error(`publish: pnpm pack made no tarball for ${p.name}`);
   return join(outDir, made);
-}
-
-/** Each package's version in the commit before HEAD (its first parent, so main before a merge). */
-function versionsBefore(pkgs) {
-  const before = new Map();
-  for (const p of pkgs) {
-    try {
-      before.set(p.name, JSON.parse(run('git', ['show', `HEAD^1:${p.rel}/package.json`])).version);
-    } catch {
-      // Not there before: a new package, which counts as moved.
-    }
-  }
-  return before;
 }
 
 /**
@@ -208,7 +271,18 @@ function packageChangedSince(p, sha) {
   return run('git', ['log', '-1', '--format=%H', `${sha}..HEAD`, '--', p.rel]).trim() !== '';
 }
 
-/** The tag (see `tagTarget`), pushed, and its GitHub release with the changelog section. */
+/** Whether GitHub has a release for this tag. */
+function hasRelease(name) {
+  try {
+    run('gh', ['release', 'view', name, '--json', 'tagName']);
+    return true;
+  } catch (err) {
+    if (/release not found/i.test(`${err.stderr}`)) return false;
+    throw err;
+  }
+}
+
+/** The tag (see `tagTarget`), pushed, and its GitHub release with the changelog section, each unless it is there. */
 function tagAndRelease(p) {
   const name = `${p.name}@${p.version}`;
   if (!run('git', ['tag', '--list', name]).trim()) {
@@ -225,6 +299,10 @@ function tagAndRelease(p) {
     }
     throw err;
   }
+  if (hasRelease(name)) {
+    console.log(`publish: tagged ${name}; its GitHub release was there`);
+    return;
+  }
   const changelog = join(p.dir, 'CHANGELOG.md');
   const notes = existsSync(changelog) ? releaseNotes(readFileSync(changelog, 'utf8'), p.version) : '';
   const notesDir = mkdtempSync(join(tmpdir(), 'tc-notes-'));
@@ -238,69 +316,124 @@ function tagAndRelease(p) {
   console.log(`publish: tagged and released ${name}`);
 }
 
-/** Tags and releases each version live on npm without its tag; stages nothing. */
-function tagApproved(order) {
-  const live = order.filter((p) => onRegistry(p));
-  const waiting = order.filter((p) => !live.includes(p));
-  const todo = untagged(live, remoteTagNames(run('git', ['ls-remote', '--tags', 'origin'])));
-  for (const p of todo) tagAndRelease(p);
-  if (todo.length === 0) console.log('publish: every version on npm has its tag');
-  for (const p of waiting) {
-    console.log(`publish: ${p.name}@${p.version} is not live on npm yet; approve it, then run this again`);
+const PACKED_LIST = 'packed.json';
+
+/** Packs each package into `dir` and lists the tarballs in `packed.json`. */
+function packAll(pkgs, dir) {
+  mkdirSync(dir, { recursive: true });
+  const packed = pkgs.map((p) => {
+    console.log(`publish: packing ${p.name}@${p.version}`);
+    return { name: p.name, version: p.version, access: p.access, file: basename(pack(p, dir)) };
+  });
+  writeFileSync(join(dir, PACKED_LIST), `${JSON.stringify(packed, null, 2)}\n`);
+  return packed;
+}
+
+/** npm publishes the manifest inside the tarball, so it must be the package and version listed. */
+function checkTarball(file, p) {
+  const text = fileInTarball(readFileSync(file), 'package/package.json');
+  if (text === null) throw new Error(`publish: ${basename(file)} has no package/package.json`);
+  const manifest = JSON.parse(text);
+  if (manifest.name !== p.name || manifest.version !== p.version) {
+    throw new Error(`publish: ${basename(file)} holds ${manifest.name}@${manifest.version}, not ${p.name}@${p.version}`);
   }
 }
 
-function stage(pkgs, dryRun) {
-  const staged = [];
-  const outDir = mkdtempSync(join(tmpdir(), 'tc-publish-'));
-  try {
-    for (const p of pkgs) {
-      console.log(`publish: staging ${p.name}@${p.version}`);
-      const tarball = pack(p, outDir);
-      const args = ['stage', 'publish', tarball, '--access', p.access];
-      if (dryRun) args.push('--dry-run');
-      const out = run('npm', args);
-      process.stdout.write(out);
-      staged.push({ ...p, id: stageId(out) });
+/** Publishes each tarball in turn and, once it is live, tags and releases its version. */
+async function publishPacked(packed, dir, order, dryRun) {
+  for (const t of packedInOrder(packed, order)) {
+    const p = order.find((o) => o.name === t.name);
+    if (!dryRun && onRegistry(p)) {
+      console.log(`publish: ${p.name}@${p.version} is on npm already`);
+      continue;
     }
-  } finally {
-    rmSync(outDir, { recursive: true, force: true });
-    // Printed even when a package fails part way: the ones before it are staged.
-    if (!dryRun && staged.length > 0) {
-      console.log('\npublish: staged. Approve them in this order, then run the Publish workflow by hand for the tags and GitHub releases:');
-      for (const line of approvalSteps(staged)) console.log(`  ${line}`);
-    }
+    console.log(`publish: ${p.name}@${p.version}`);
+    checkTarball(join(dir, t.file), p);
+    const args = ['publish', join(dir, t.file), '--access', t.access];
+    if (dryRun) args.push('--dry-run');
+    process.stdout.write(run('npm', args));
+    if (dryRun) continue;
+    await waitUntil(() => onRegistry(p), { timeoutMs: LIVE_TIMEOUT_MS, pollMs: LIVE_POLL_MS, what: `${p.name}@${p.version}` });
+    // If tagging fails, the version is on npm without its tag: the next run tags it.
+    tagAndRelease(p);
   }
 }
 
-function main() {
+/** Tags and releases the versions on npm a release never finished; one that fails does not stop the rest. */
+async function finish(pkgs) {
+  const failures = await eachSettled(pkgs, (p) => {
+    console.log(`publish: ${p.name}@${p.version} is on npm without its tag or GitHub release`);
+    tagAndRelease(p);
+  });
+  if (failures.length > 0) {
+    throw new Error(failures.map(({ item, error }) => `${item.name}@${item.version}: ${error.stderr || error.message}`).join('\n'));
+  }
+}
+
+function argAfter(flag) {
+  const i = process.argv.indexOf(flag);
+  if (i === -1) return null;
+  const value = process.argv[i + 1];
+  if (!value || value.startsWith('--')) throw new Error(`publish: ${flag} needs a folder`);
+  // pnpm pack runs in each package's folder, so a relative path would land there.
+  return resolve(value);
+}
+
+async function main() {
   const dryRun = process.argv.includes('--dry-run');
   // Pre mode publishes under its own dist-tag, which this script does not set.
   if (existsSync(join(ROOT, '.changeset', 'pre.json'))) {
     throw new Error('publish: .changeset/pre.json found; prereleases would go out as latest');
   }
   const order = publishOrder(readWorkspace());
+  const remoteTags = remoteTagNames(run('git', ['ls-remote', '--tags', 'origin']));
+  const isReleased = (p) => !untagged([p], remoteTags).length && hasRelease(`${p.name}@${p.version}`);
+
+  const plan = releasePlan(order, onRegistry, isReleased);
+  // In CI, before the install: whether this push has anything to do.
+  if (process.argv.includes('--check')) {
+    const work = hasWork(plan);
+    console.log(work ? `publish: ${plan.publish.length} to publish, ${plan.tag.length} to tag or release` : 'publish: nothing to publish, tag or release');
+    if (process.env.GITHUB_OUTPUT) appendFileSync(process.env.GITHUB_OUTPUT, `work=${work}\n`);
+    return;
+  }
+
+  // Packing runs the build's tools; it has no npm or git rights of its own.
+  const packTo = argAfter('--pack-to');
+  if (packTo) {
+    packAll(plan.publish, packTo);
+    console.log(plan.publish.length ? `publish: packed ${plan.publish.length} into ${packTo}` : 'publish: every version is on npm already');
+    return;
+  }
+
   if (process.argv.includes('--tag-only')) {
-    tagApproved(order);
+    for (const p of plan.publish) console.log(`publish: ${p.name}@${p.version} is not on npm; left for a release`);
+    await finish(plan.tag);
     return;
   }
-  // A dry run and --stage-all take every version not live yet, staged or not;
-  // a release only the versions this commit set.
-  const everything = dryRun || process.argv.includes('--stage-all');
-  const candidates = everything ? order : bumped(order, versionsBefore(order));
-  const pending = candidates.filter((p) => !onRegistry(p));
-  if (pending.length === 0) {
-    console.log('publish: this commit moved no package to a version that is not on npm; nothing to stage');
+
+  // From the tarballs a packing job made, or packed here when run by hand.
+  const from = argAfter('--publish-from');
+  const dir = from ?? mkdtempSync(join(tmpdir(), 'tc-publish-'));
+  try {
+    const packed = from ? JSON.parse(readFileSync(join(dir, PACKED_LIST), 'utf8')) : packAll(plan.publish, dir);
+    if (packed.length === 0) console.log('publish: every version is on npm already');
+    await publishPacked(packed, dir, order, dryRun);
+  } finally {
+    if (!from) rmSync(dir, { recursive: true, force: true });
+  }
+  // Last, so a version that cannot be tagged here holds back none of the new
+  // ones. A failed publish above skips it; the next run finishes them.
+  if (dryRun) {
+    for (const p of plan.tag) console.log(`publish: ${p.name}@${p.version} would be tagged and released`);
     return;
   }
-  stage(pending, dryRun);
+  await finish(plan.tag);
 }
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
-  try {
-    main();
-  } catch (err) {
+  main().catch((err) => {
     console.error(err.stderr || err.message);
     process.exit(1);
-  }
+  });
 }

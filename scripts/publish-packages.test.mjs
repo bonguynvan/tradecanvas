@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { publishOrder, internalDeps, remoteTagNames, untagged, stageId, approvalSteps, bumped, releaseNotes, firstCommitOf, tagTarget } from './publish-packages.mjs';
+import { gzipSync } from 'node:zlib';
+import { publishOrder, internalDeps, remoteTagNames, untagged, releasePlan, waitUntil, packedInOrder, eachSettled, hasWork, fileInTarball, releaseNotes, firstCommitOf, tagTarget } from './publish-packages.mjs';
 
 const pkg = (name, deps = []) => ({ name, version: '1.0.0', deps });
 
@@ -63,31 +64,118 @@ test('a package on npm without its tag on origin is tagged again, so a rerun aft
   assert.deepEqual(untagged(onNpm, remote).map((p) => p.name), ['@tradecanvas/commons']);
 });
 
-test('the stage id is read from what npm prints after staging', () => {
-  assert.equal(stageId('npm notice ...\r\n+ @tradecanvas/commons@1.69.0 (staged with id 4f2a9c)\r\n'), '4f2a9c');
-  // An older registry answer has no id: the version is staged, approved on npmjs.com by name.
-  assert.equal(stageId('+ @tradecanvas/commons@1.69.0 (staged)\n'), null);
+test('a release publishes every version not on npm, in order, and tags the ones on npm without a tag', () => {
+  // 1.71.0 went out while releases were staged and was never tagged; react's 1.4.3 is new.
+  const order = [
+    { name: '@tradecanvas/commons', version: '1.71.0' },
+    { name: '@tradecanvas/chart', version: '1.72.0' },
+    { name: '@tradecanvas/react', version: '1.4.3' },
+    { name: '@tradecanvas/vue', version: '1.4.2' },
+  ];
+  const live = new Set(['@tradecanvas/commons@1.71.0', '@tradecanvas/vue@1.4.2']);
+  const released = new Set(['@tradecanvas/vue@1.4.2']);
+  const key = (p) => `${p.name}@${p.version}`;
+  const plan = releasePlan(order, (p) => live.has(key(p)), (p) => released.has(key(p)));
+  assert.deepEqual(plan.tag.map((p) => p.name), ['@tradecanvas/commons']);
+  assert.deepEqual(plan.publish.map((p) => p.name), ['@tradecanvas/chart', '@tradecanvas/react']);
 });
 
-test('the approval steps keep the staging order, so no package goes live before one it pins', () => {
-  const staged = [
-    { name: '@tradecanvas/commons', version: '1.69.0', id: 'a1' },
-    { name: '@tradecanvas/core', version: '1.69.0', id: null },
+test('with every version on npm and tagged, a release does nothing, so a later push publishes nothing again', () => {
+  const order = [{ name: '@tradecanvas/commons', version: '1.71.0' }];
+  const plan = releasePlan(order, () => true, () => true);
+  assert.deepEqual(plan, { tag: [], publish: [] });
+});
+
+test('a version tagged on origin whose GitHub release was never made is finished, not skipped', () => {
+  const order = [{ name: '@tradecanvas/core', version: '1.71.0' }];
+  // The tag went up, then gh release create failed: the release is what is missing.
+  const plan = releasePlan(order, () => true, () => false);
+  assert.deepEqual(plan.tag.map((p) => p.name), ['@tradecanvas/core']);
+});
+
+test('the tarballs packed for a release go out in the order of the workspace, each the version it has now', () => {
+  const order = [
+    { name: '@tradecanvas/commons', version: '1.72.0' },
+    { name: '@tradecanvas/chart', version: '1.72.0' },
   ];
-  assert.deepEqual(approvalSteps(staged), [
-    '1. @tradecanvas/commons@1.69.0: npm stage approve a1',
-    '2. @tradecanvas/core@1.69.0: on npmjs.com, Staged Packages',
+  const packed = [
+    { name: '@tradecanvas/chart', version: '1.72.0', access: 'public', file: 'chart.tgz' },
+    { name: '@tradecanvas/commons', version: '1.72.0', access: 'public', file: 'commons.tgz' },
+  ];
+  assert.deepEqual(packedInOrder(packed, order).map((t) => t.file), ['commons.tgz', 'chart.tgz']);
+});
+
+test('a tarball of another version than the workspace has stops the release before anything goes out', () => {
+  const order = [{ name: '@tradecanvas/commons', version: '1.72.0' }];
+  assert.throws(() => packedInOrder([{ name: '@tradecanvas/commons', version: '1.71.0', access: 'public', file: 'x.tgz' }], order), /commons@1.71.0/);
+  assert.throws(() => packedInOrder([{ name: '@tradecanvas/other', version: '1.0.0', access: 'public', file: 'y.tgz' }], order), /other@1.0.0/);
+});
+
+test('the list a packing job hands over names only a tarball in its folder and an npm access, nothing for the command line', () => {
+  const order = [{ name: '@tradecanvas/commons', version: '1.72.0' }];
+  const entry = (more) => [{ name: '@tradecanvas/commons', version: '1.72.0', access: 'public', file: 'tradecanvas-commons-1.72.0.tgz', ...more }];
+  assert.equal(packedInOrder(entry({}), order).length, 1);
+  assert.throws(() => packedInOrder(entry({ file: '../../etc/x.tgz' }), order), /tarball name/);
+  assert.throws(() => packedInOrder(entry({ file: 'a.tgz --tag next' }), order), /tarball name/);
+  assert.throws(() => packedInOrder(entry({ access: 'public --otp 1' }), order), /access/);
+});
+
+test('a push with nothing to publish and nothing to finish skips the build and the publishing job', () => {
+  assert.equal(hasWork({ tag: [], publish: [] }), false);
+  assert.equal(hasWork({ tag: [{ name: 'a' }], publish: [] }), true);
+  assert.equal(hasWork({ tag: [], publish: [{ name: 'a' }] }), true);
+});
+
+/** A one-file-at-a-time tar, as npm and pnpm write them: a 512-byte header, then the body padded to 512. */
+function tarball(files) {
+  const blocks = [];
+  for (const [path, text] of files) {
+    const body = Buffer.from(text);
+    const header = Buffer.alloc(512);
+    header.write(path, 0);
+    header.write(body.length.toString(8).padStart(11, '0'), 124);
+    header.write('0', 156);
+    blocks.push(header, body, Buffer.alloc((512 - (body.length % 512)) % 512));
+  }
+  blocks.push(Buffer.alloc(1024));
+  return gzipSync(Buffer.concat(blocks));
+}
+
+test("the manifest npm will publish is read from inside the tarball, not from the list beside it", () => {
+  const tgz = tarball([
+    ['package/README.md', 'x'.repeat(700)],
+    ['package/package.json', '{"name":"@tradecanvas/commons","version":"1.72.0"}'],
   ]);
+  assert.deepEqual(JSON.parse(fileInTarball(tgz, 'package/package.json')), { name: '@tradecanvas/commons', version: '1.72.0' });
+  assert.equal(fileInTarball(tgz, 'package/missing.json'), null);
 });
 
-test('only the packages this commit moved to a new version are staged, so a later push stages nothing again', () => {
-  const pkgs = [
-    { name: '@tradecanvas/commons', version: '1.69.0' },
-    { name: '@tradecanvas/react', version: '1.3.61' },
-    { name: '@tradecanvas/new', version: '0.1.0' },
-  ];
-  const before = new Map([['@tradecanvas/commons', '1.68.1'], ['@tradecanvas/react', '1.3.61']]);
-  assert.deepEqual(bumped(pkgs, before).map((p) => p.name), ['@tradecanvas/commons', '@tradecanvas/new']);
+test('one version that fails to tag does not stop the others, and the failures are given back', async () => {
+  const done = [];
+  const failures = await eachSettled(['a', 'b', 'c'], async (x) => {
+    if (x === 'b') throw new Error('push refused');
+    done.push(x);
+  });
+  assert.deepEqual(done, ['a', 'c']);
+  assert.deepEqual(failures.map((f) => [f.item, f.error.message]), [['b', 'push refused']]);
+});
+
+test('the next package waits until the one before is live on npm, so none is installed before a version it pins', async () => {
+  let t = 0;
+  let checks = 0;
+  const clock = { now: () => t, sleep: async (ms) => { t += ms; } };
+  await waitUntil(() => ++checks === 3, { timeoutMs: 60_000, pollMs: 5_000, ...clock, what: 'commons@1.72.0' });
+  assert.equal(checks, 3);
+  assert.equal(t, 10_000);
+});
+
+test('a version that never shows on npm stops the release instead of publishing what pins it', async () => {
+  let t = 0;
+  const clock = { now: () => t, sleep: async (ms) => { t += ms; } };
+  await assert.rejects(
+    waitUntil(() => false, { timeoutMs: 20_000, pollMs: 5_000, ...clock, what: 'commons@1.72.0' }),
+    /commons@1.72.0 is not live on npm after 20 s/,
+  );
 });
 
 test("a release's notes are its version's section of the package changelog", () => {

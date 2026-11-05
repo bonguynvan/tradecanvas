@@ -5,87 +5,107 @@ on:
     paths:
       - 'packages/**'
       - '.changeset/**'
-  # By hand. "tag" after the staged versions are approved on npm: it finds
-  # them live, tags the commit that set each version and makes the GitHub
-  # releases, and stages nothing; run it before the next version PR is merged,
-  # as it looks at the versions on main. "stage" stages every version not live yet,
-  # for a release whose staging failed or never ran.
+  # By hand, to finish a release that stopped part way: it publishes every
+  # version not on npm and tags and releases every one without its tag or release.
   workflow_dispatch:
-    inputs:
-      step:
-        description: 'tag: tag and release the approved versions; stage: stage every version not live'
-        type: choice
-        options: [tag, stage]
-        default: tag
 
-# A release stages package by package; a push in the middle waits for it
-# instead of stopping it with half the packages staged.
+# A release publishes package by package; a push in the middle waits for it
+# instead of stopping it with half the packages out.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
 
-env:
-  STAGING: ${{ github.event_name == 'push' || inputs.step == 'stage' }}
-
 jobs:
-  publish:
-    # A run by hand from another branch would stage, tag and release from it.
-    if: github.ref == 'refs/heads/main'
+  # With changesets waiting, opens or updates the version PR. It cannot publish.
+  version:
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     permissions:
       contents: write
       pull-requests: write
-      # npm trusted publishing: npm swaps this job's OIDC token for a one-time
-      # token, so no npm token is stored here, and it records provenance (which
-      # workflow run built each version) on its own. The trusted publishers
-      # allow staging only: a maintainer approves each version with 2FA.
-      id-token: write
     steps:
-      # The whole history: staging compares each version with the commit
-      # before, and a tag goes on the commit that set its version.
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
       - uses: pnpm/action-setup@v4
-        if: env.STAGING == 'true'
-
       - uses: actions/setup-node@v4
-        if: env.STAGING == 'true'
         with:
           node-version: 22
           cache: pnpm
-
-      # `npm stage publish` needs npm 11.21 or later; Node 22 comes with npm 10.
-      - run: npm install -g npm@11.21.1
-        if: env.STAGING == 'true'
-
-      - run: pnpm install --no-frozen-lockfile
-        if: env.STAGING == 'true'
-      - run: pnpm build
-        if: env.STAGING == 'true'
-
-      # With changesets waiting: opens or updates the version PR. Without (the
-      # version PR's merge): stages the versions it set.
-      - name: Create Release PR or Stage
-        if: github.event_name == 'push'
-        uses: changesets/action@v1
+      - run: pnpm install --frozen-lockfile
+      - uses: changesets/action@v1
         with:
-          publish: pnpm changeset:publish
           version: pnpm changeset:version
           title: 'chore: version packages'
           commit: 'chore: version packages'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Stage every version not live
-        if: github.event_name == 'workflow_dispatch' && inputs.step == 'stage'
-        run: node scripts/publish-packages.mjs --stage-all
+  # Builds and packs every version not on npm. Installing and building run the
+  # dependencies' own code, so this job holds no right to publish or push.
+  pack:
+    # A run by hand from another branch would publish, tag and release from it.
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      work: ${{ steps.check.outputs.work }}
+    steps:
+      - uses: actions/checkout@v4
+      # Most pushes release nothing: then the install, the build and the
+      # publishing job are skipped. It needs only Node, npm, git and gh.
+      - id: check
+        run: node scripts/publish-packages.mjs --check
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: pnpm/action-setup@v4
+        if: steps.check.outputs.work == 'true'
+      - uses: actions/setup-node@v4
+        if: steps.check.outputs.work == 'true'
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+        if: steps.check.outputs.work == 'true'
+      - run: pnpm build
+        if: steps.check.outputs.work == 'true'
+      - run: node scripts/publish-packages.mjs --pack-to "$RUNNER_TEMP/packed"
+        if: steps.check.outputs.work == 'true'
+      - uses: actions/upload-artifact@v4
+        if: steps.check.outputs.work == 'true'
+        with:
+          name: packed
+          path: ${{ runner.temp }}/packed
+          retention-days: 1
 
-      # Outside changesets/action, so changesets waiting on main for the next
-      # release do not hold back the tags of this one.
-      - name: Tag and release the approved versions
-        if: github.event_name == 'workflow_dispatch' && inputs.step == 'tag'
-        run: node scripts/publish-packages.mjs --tag-only
+  # Publishes the packed tarballs one at a time, each after the ones it pins
+  # and once they are live, then tags and releases each version. It installs
+  # nothing from the workspace. It runs after any push to main with work to
+  # do, not only the version PR's merge, so a release whose run was skipped
+  # goes out with the next one.
+  publish:
+    needs: pack
+    if: needs.pack.outputs.work == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      # npm trusted publishing: npm swaps this job's OIDC token for a one-time
+      # token, so no npm token is stored here, and it records provenance (which
+      # workflow run built each version) on its own.
+      id-token: write
+    steps:
+      # The whole history: a tag goes on the commit that set its version.
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      # Trusted publishing needs npm 11.5.1 or later; Node 22 comes with npm 10.
+      - run: npm install -g npm@11.21.1
+      - uses: actions/download-artifact@v4
+        with:
+          name: packed
+          path: ${{ runner.temp }}/packed
+      - run: node scripts/publish-packages.mjs --publish-from "$RUNNER_TEMP/packed"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
