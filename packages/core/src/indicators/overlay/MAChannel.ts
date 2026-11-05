@@ -22,10 +22,10 @@ export class MAChannelIndicator extends IndicatorBase {
     defaultConfig: { upperLength: 20, lowerLength: 20, upperOffset: 0, lowerOffset: 0 },
     shortName: 'MA Channel',
     inputs: {
-      upperLength: { min: 1 },
-      lowerLength: { min: 1 },
-      upperOffset: { min: -MAX_OFFSET, max: MAX_OFFSET },
-      lowerOffset: { min: -MAX_OFFSET, max: MAX_OFFSET },
+      upperLength: { kind: 'int', min: 1 },
+      lowerLength: { kind: 'int', min: 1 },
+      upperOffset: { kind: 'int', min: -MAX_OFFSET, max: MAX_OFFSET },
+      lowerOffset: { kind: 'int', min: -MAX_OFFSET, max: MAX_OFFSET },
     },
     plots: [
       { key: 'upper', title: 'Upper', color: 0 },

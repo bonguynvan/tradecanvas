@@ -15,7 +15,7 @@ export class McGinleyDynamicIndicator extends IndicatorBase {
     placement: 'overlay',
     defaultConfig: { period: 14, source: 'close' },
     shortName: 'McGinley',
-    inputs: { period: { min: 1 }, source: { source: true } },
+    inputs: { period: { kind: 'int', min: 1 }, source: { source: true } },
     plots: [{ key: 'value', title: 'McGinley', color: 0 }],
   };
 

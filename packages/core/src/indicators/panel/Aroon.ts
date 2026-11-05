@@ -9,6 +9,7 @@ export class AroonIndicator extends IndicatorBase {
     name: 'Aroon',
     placement: 'panel' as const,
     defaultConfig: { period: 25 },
+    inputs: { period: { kind: 'int', min: 1 } },
     shortName: 'Aroon',
     plots: [
       { key: 'up', title: 'Up', color: 0 },

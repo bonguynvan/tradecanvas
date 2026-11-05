@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+### Indicators
+
+- **Every built-in indicator says what each input takes** (`@tradecanvas/commons`, `@tradecanvas/core`, `@tradecanvas/chart`, `@tradecanvas/mcp`).
+  - An input's new `kind` (`'int'`, `'number'`, `'boolean'`, `'choice'`, `'source'`, `'color'`, `'text'`), with its `min`, `max` and `step`, decides its field in ChartWidget's indicator settings. Unset, it is read from the default, as before.
+  - The settings no longer take a period below the lowest value the indicator uses, step Parabolic SAR's step and maximum by 0.01, and round a whole number as it is typed, so the field shows the value the indicator computes with.
+  - `describeInputs(descriptor)` lists an indicator's inputs as the settings dialog reads them. The generated docs, the notes on `BuiltInIndicators` and the MCP catalog read the same list, and the catalog adds each indicator's group.
+  - Supertrend no longer throws with a period of 1.
+
 ## 1.70.0 (2026-11-04)
 
 ### Indicators

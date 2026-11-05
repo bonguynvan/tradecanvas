@@ -14,7 +14,7 @@ export class WilliamsFractalsIndicator extends PointwiseIndicator<number> {
     placement: 'overlay',
     defaultConfig: { period: 2 },
     shortName: 'Fractals',
-    inputs: { period: { min: 1, max: 10 } },
+    inputs: { period: { kind: 'int', min: 1, max: 10 } },
     plots: [
       { key: 'up', title: 'Up', color: 0, kind: 'dots' },
       { key: 'down', title: 'Down', color: 1, kind: 'dots' },

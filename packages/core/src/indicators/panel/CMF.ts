@@ -9,6 +9,7 @@ export class CMFIndicator extends IndicatorBase {
     name: 'Chaikin Money Flow',
     placement: 'panel' as const,
     defaultConfig: { period: 20 },
+    inputs: { period: { kind: 'int', min: 1 } },
     shortName: 'CMF',
     plots: [{ key: 'value', title: 'CMF', color: 0, kind: 'histogram', tone: 'sign', downColor: 1 }],
   };

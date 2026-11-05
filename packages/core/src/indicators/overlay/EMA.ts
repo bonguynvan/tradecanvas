@@ -13,7 +13,7 @@ export class EMAIndicator extends IndicatorBase {
     placement: 'overlay' as const,
     defaultConfig: { period: 20, source: 'close' },
     shortName: 'EMA',
-    inputs: { source: { source: true } },
+    inputs: { source: { source: true }, period: { kind: 'int', min: 1 } },
     plots: [{ key: 'value', title: 'EMA', color: 0 }],
   };
 

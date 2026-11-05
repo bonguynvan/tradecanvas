@@ -15,6 +15,7 @@ export class ZigZagIndicator extends IndicatorBase {
     name: 'ZigZag',
     placement: 'overlay' as const,
     defaultConfig: { deviation: 5 },
+    inputs: { deviation: { kind: 'number', min: 0.1, step: 0.1 } },
     shortName: 'ZigZag',
     plots: [{ key: 'pivot', title: 'Pivot', color: 0 }],
   };

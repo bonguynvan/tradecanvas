@@ -10,7 +10,7 @@ export class ROCIndicator extends IndicatorBase {
     placement: 'panel' as const,
     defaultConfig: { period: 12, source: 'close' },
     shortName: 'ROC',
-    inputs: { source: { source: true } },
+    inputs: { source: { source: true }, period: { kind: 'int', min: 1 } },
     plots: [{ key: 'value', title: 'ROC', color: 0 }],
     levels: [0],
   };

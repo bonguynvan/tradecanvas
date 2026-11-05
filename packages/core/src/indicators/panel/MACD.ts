@@ -10,7 +10,7 @@ export class MACDIndicator extends IndicatorBase {
     placement: 'panel' as const,
     defaultConfig: { fast: 12, slow: 26, signal: 9, source: 'close' },
     shortName: 'MACD',
-    inputs: { source: { source: true } },
+    inputs: { source: { source: true }, fast: { kind: 'int', min: 1 }, slow: { kind: 'int', min: 1 }, signal: { kind: 'int', min: 1 } },
     plots: [
       { key: 'histogram', title: 'Histogram', color: 2, kind: 'histogram', tone: 'sign', downColor: 3 },
       { key: 'macd', title: 'MACD', color: 0 },

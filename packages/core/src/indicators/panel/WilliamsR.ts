@@ -9,6 +9,7 @@ export class WilliamsRIndicator extends IndicatorBase {
     name: 'Williams %R',
     placement: 'panel' as const,
     defaultConfig: { period: 14 },
+    inputs: { period: { kind: 'int', min: 1 } },
     shortName: '%R',
     plots: [{ key: 'value', title: '%R', color: 0 }],
     scale: { min: -100, max: 0 },

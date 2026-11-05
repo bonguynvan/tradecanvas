@@ -17,7 +17,7 @@ export class HullMAIndicator extends IndicatorBase {
     placement: 'overlay' as const,
     defaultConfig: { period: 21, source: 'close' },
     shortName: 'HMA',
-    inputs: { source: { source: true } },
+    inputs: { source: { source: true }, period: { kind: 'int', min: 2 } },
     plots: [{ key: 'value', title: 'HMA', color: 0 }],
   };
 

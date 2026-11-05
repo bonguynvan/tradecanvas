@@ -14,6 +14,7 @@ export class MassIndexIndicator extends IndicatorBase {
     name: 'Mass Index',
     placement: 'panel' as const,
     defaultConfig: { ema: 9, sum: 25 },
+    inputs: { ema: { kind: 'int', min: 1 }, sum: { kind: 'int', min: 1 } },
     shortName: 'Mass',
     plots: [{ key: 'value', title: 'Mass', color: 0 }],
     levels: [26.5, 27],

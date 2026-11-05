@@ -27,6 +27,13 @@ describe('SupertrendIndicator', () => {
     expect(series!.findIndex((v) => v !== null)).toBe(params.period - 1);
   });
 
+  it('takes a period of 1, starting at the first bar', () => {
+    const data = ohlcBars(Array.from({ length: 10 }, (_, i) => ({ o: 100 + i, h: 102 + i, l: 99 + i, c: 101 + i })));
+    const { series } = supertrend.calculate(data, indicatorConfig('st', { period: 1, multiplier: 3 }));
+    expect(series!.findIndex((v) => v !== null)).toBe(0);
+    expect(series!.every((v) => v !== null && Number.isFinite(v.value))).toBe(true);
+  });
+
   it('reports trend = 1 (up) when price stays above the lower band', () => {
     // Strong, smooth uptrend → ATR small, hl2 + 3*ATR sits well above price → trend stays up.
     const data = ohlcBars(

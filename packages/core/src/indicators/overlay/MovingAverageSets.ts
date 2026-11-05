@@ -42,7 +42,7 @@ export class MADoubleIndicator extends MovingAverageSet {
     placement: 'overlay',
     defaultConfig: { first: 20, second: 50, type: 'sma', source: 'close' },
     shortName: 'MA x2',
-    inputs: { first: { min: 1 }, second: { min: 1 }, type: { options: KINDS }, source: { source: true } },
+    inputs: { first: { kind: 'int', min: 1 }, second: { kind: 'int', min: 1 }, type: { options: KINDS }, source: { source: true } },
     plots: [
       { key: 'ma1', title: 'MA 1', color: 0 },
       { key: 'ma2', title: 'MA 2', color: 1 },
@@ -59,7 +59,7 @@ export class MATripleIndicator extends MovingAverageSet {
     placement: 'overlay',
     defaultConfig: { first: 10, second: 20, third: 50, type: 'sma', source: 'close' },
     shortName: 'MA x3',
-    inputs: { first: { min: 1 }, second: { min: 1 }, third: { min: 1 }, type: { options: KINDS }, source: { source: true } },
+    inputs: { first: { kind: 'int', min: 1 }, second: { kind: 'int', min: 1 }, third: { kind: 'int', min: 1 }, type: { options: KINDS }, source: { source: true } },
     plots: [
       { key: 'ma1', title: 'MA 1', color: 0 },
       { key: 'ma2', title: 'MA 2', color: 1 },

@@ -9,6 +9,7 @@ export class AwesomeOscillatorIndicator extends IndicatorBase {
     name: 'Awesome Oscillator',
     placement: 'panel' as const,
     defaultConfig: { fast: 5, slow: 34 },
+    inputs: { fast: { kind: 'int', min: 1 }, slow: { kind: 'int', min: 1 } },
     shortName: 'AO',
     plots: [{ key: 'value', title: 'AO', color: 0, kind: 'histogram', tone: { field: 'up' }, downColor: 1 }],
   };

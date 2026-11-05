@@ -10,7 +10,7 @@ export class MajorityRuleIndicator extends PointwiseIndicator<{ period: number }
     placement: 'panel',
     defaultConfig: { period: 14 },
     shortName: 'Majority',
-    inputs: { period: { min: 1 } },
+    inputs: { period: { kind: 'int', min: 1 } },
     plots: [{ key: 'value', title: 'Majority', color: 0 }],
     scale: { min: 0, max: 100 },
     levels: [50],

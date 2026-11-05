@@ -16,6 +16,7 @@ export class ChaikinVolatilityIndicator extends IndicatorBase {
     name: 'Chaikin Volatility',
     placement: 'panel' as const,
     defaultConfig: { ema: 10, roc: 10 },
+    inputs: { ema: { kind: 'int', min: 1 }, roc: { kind: 'int', min: 1 } },
     shortName: 'CV',
     plots: [{ key: 'value', title: 'CV', color: 0 }],
     levels: [0],

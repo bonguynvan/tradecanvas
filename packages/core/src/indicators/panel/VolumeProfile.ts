@@ -17,6 +17,7 @@ export class VolumeProfileIndicator extends IndicatorBase {
     name: 'Volume Profile',
     placement: 'overlay' as const,
     defaultConfig: { rows: 24 },
+    inputs: { rows: { kind: 'int', min: 1 } },
     shortName: 'VP',
     plots: [],
   };

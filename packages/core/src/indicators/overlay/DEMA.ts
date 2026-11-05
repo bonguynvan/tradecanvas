@@ -11,7 +11,7 @@ export class DEMAIndicator extends IndicatorBase {
     placement: 'overlay',
     defaultConfig: { period: 20, source: 'close' },
     shortName: 'DEMA',
-    inputs: { period: { min: 1 }, source: { source: true } },
+    inputs: { period: { kind: 'int', min: 1 }, source: { source: true } },
     plots: [{ key: 'value', title: 'DEMA', color: 0 }],
   };
 

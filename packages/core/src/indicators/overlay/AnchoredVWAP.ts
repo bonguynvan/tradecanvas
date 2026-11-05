@@ -19,6 +19,7 @@ export class AnchoredVWAPIndicator extends IndicatorBase {
     name: 'Anchored VWAP',
     placement: 'overlay' as const,
     defaultConfig: { anchorTime: 0 },
+    inputs: { anchorTime: { kind: 'int' } },
     shortName: 'AVWAP',
     plots: [{ key: 'value', title: 'AVWAP', color: 0 }],
   };

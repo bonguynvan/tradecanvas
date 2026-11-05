@@ -11,7 +11,7 @@ export class StandardErrorIndicator extends PointwiseIndicator<number> {
     placement: 'panel',
     defaultConfig: { period: 14 },
     shortName: 'StdErr',
-    inputs: { period: { min: 3 } },
+    inputs: { period: { kind: 'int', min: 3 } },
     plots: [{ key: 'value', title: 'StdErr', color: 0 }],
     scale: { min: 0 },
   };

@@ -1,6 +1,6 @@
 import type { IndicatorInputSpec, IndicatorIntervals, IndicatorPlot, IndicatorPlotStyle, IndicatorStyleConfig } from '@tradecanvas/commons';
 import { PRICE_SOURCES, parseIndicatorSource } from '@tradecanvas/commons';
-import { isSeriesPalette } from '@tradecanvas/core';
+import { describeInputs, isSeriesPalette, type IndicatorInputInfo } from '@tradecanvas/core';
 import { FOCUSABLE, keepTabInside } from './focusTrap.js';
 import { createIcon } from './icons.js';
 import { EN_MESSAGES, type Translator } from './i18n.js';
@@ -76,7 +76,6 @@ interface Look {
 /** Ids for the dialog's labelling (several widgets may share a page). */
 let nextDialogId = 1;
 
-const HEX_RE = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
 const DEFAULT_LINE_WIDTH = 1.5;
 /** A line as it is with no style of its own. */
 const PLAIN_PLOT: IndicatorPlotStyle = { visible: true, lineStyle: 'solid' };
@@ -384,27 +383,29 @@ export class WidgetIndicatorSettings {
   private renderInputs(): void {
     const section = document.createElement('div');
     section.className = 'tcw-settings-section';
-    const keys = Object.keys(this.target!.defaults);
-    if (keys.length === 0) section.appendChild(this.note(this.t('indicatorSettings.noInputs')));
-    for (const key of keys) section.appendChild(this.fieldRow(key));
+    const inputs = describeInputs({ defaultConfig: this.target!.defaults, inputs: this.target!.inputs });
+    if (inputs.length === 0) section.appendChild(this.note(this.t('indicatorSettings.noInputs')));
+    for (const input of inputs) section.appendChild(this.fieldRow(input));
     this.bodyEl.appendChild(section);
   }
 
-  private fieldRow(key: string): HTMLLabelElement {
-    const spec = this.target?.inputs?.[key];
+  /** One input's row: its control follows the kind the indicator declares, or the one its default implies. */
+  private fieldRow(input: IndicatorInputInfo): HTMLLabelElement {
+    const key = input.name;
     const value = this.currentValue(key);
-    const defType = typeof (this.target?.defaults[key] ?? value);
     let control: HTMLElement;
-    if (spec?.source) control = this.sourceControl(key, String(value ?? 'close'));
-    else if (spec?.options) control = this.choiceControl(key, spec.options, value);
-    else if (defType === 'boolean') control = toggleSwitch(Boolean(value), (v) => this.setValue(key, v));
-    else if (defType === 'number') {
-      const n = Number(value);
-      // Integer-looking defaults step by 1; fractional defaults step by 0.1.
-      control = numberInput(n, { min: spec?.min, max: spec?.max, step: spec?.step ?? (Number.isInteger(n) ? 1 : 0.1) }, (v) => this.setValue(key, v));
-    } else if (typeof value === 'string' && HEX_RE.test(value)) control = colorInput(value, (v) => this.setValue(key, v));
-    else control = this.textControl(key, String(value ?? ''));
-    return settingsRow(spec?.label ?? inputLabel(key, this.t) ?? titleCase(key), control);
+    switch (input.kind) {
+      case 'source': control = this.sourceControl(key, String(value ?? 'close')); break;
+      case 'choice': control = this.choiceControl(key, input.options ?? [], value); break;
+      case 'boolean': control = toggleSwitch(Boolean(value), (v) => this.setValue(key, v)); break;
+      case 'int':
+      case 'number':
+        control = numberInput(Number(value), { min: input.min, max: input.max, step: input.step, whole: input.kind === 'int' }, (v) => this.setValue(key, v));
+        break;
+      case 'color': control = colorInput(String(value), (v) => this.setValue(key, v)); break;
+      default: control = this.textControl(key, String(value ?? ''));
+    }
+    return settingsRow(input.label ?? inputLabel(key, this.t) ?? titleCase(key), control);
   }
 
   private sourceControl(key: string, value: string): HTMLSelectElement {

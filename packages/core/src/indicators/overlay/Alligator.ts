@@ -20,6 +20,7 @@ export class AlligatorIndicator extends IndicatorBase {
     name: 'Alligator',
     placement: 'overlay' as const,
     defaultConfig: { jaw: 13, teeth: 8, lips: 5, jawShift: 8, teethShift: 5, lipsShift: 3 },
+    inputs: { jaw: { kind: 'int', min: 1 }, teeth: { kind: 'int', min: 1 }, lips: { kind: 'int', min: 1 }, jawShift: { kind: 'int', min: 0 }, teethShift: { kind: 'int', min: 0 }, lipsShift: { kind: 'int', min: 0 } },
     shortName: 'Alligator',
     plots: [
       { key: 'jaw', title: 'Jaw', color: 0 },

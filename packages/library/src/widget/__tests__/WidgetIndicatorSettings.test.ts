@@ -86,6 +86,26 @@ describe('WidgetIndicatorSettings', () => {
     expect(onApply).toHaveBeenLastCalledWith('r1', { period: 50 });
   });
 
+  it('steps and bounds each number as its indicator declares it', () => {
+    const d = descriptor('psar');
+    dialog.open({ instanceId: 'p1', indicatorId: 'psar', name: d.name, defaults: d.defaultConfig, params: { ...d.defaultConfig }, inputs: d.inputs });
+    const [step, max] = [...host.querySelectorAll<HTMLInputElement>('input[type="number"]')];
+    expect([step.step, step.min, max.step, max.min]).toEqual(['0.01', '0.01', '0.01', '0.01']);
+    change(step, '0');
+    expect(onApply).toHaveBeenLastCalledWith('p1', { step: 0.01 });
+  });
+
+  it('takes a whole number for a period, as the indicator reads it', () => {
+    dialog.open(rsiTarget());
+    const input = host.querySelector<HTMLInputElement>('input[type="number"]')!;
+    expect(input.min).toBe('1');
+    change(input, '14.6');
+    expect(input.value).toBe('15');
+    expect(onApply).toHaveBeenLastCalledWith('r1', { period: 15 });
+    change(input, '0');
+    expect(onApply).toHaveBeenLastCalledWith('r1', { period: 1 });
+  });
+
   it('picks where VWAP starts again', () => {
     const d = descriptor('vwap');
     dialog.open({ instanceId: 'v1', indicatorId: 'vwap', name: d.name, defaults: d.defaultConfig, params: { ...d.defaultConfig }, inputs: d.inputs, plots: d.plots });

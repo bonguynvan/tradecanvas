@@ -19,6 +19,7 @@ export class BinaryWaveIndicator extends IndicatorBase {
     name: 'Binary Wave',
     placement: 'panel',
     defaultConfig: { ma: 20, fast: 12, slow: 26, signal: 9, roc: 12, stoch: 14 },
+    inputs: { ma: { kind: 'int', min: 1 }, fast: { kind: 'int', min: 1 }, slow: { kind: 'int', min: 1 }, signal: { kind: 'int', min: 1 }, roc: { kind: 'int', min: 1 }, stoch: { kind: 'int', min: 1 } },
     shortName: 'Binary Wave',
     plots: [{ key: 'value', title: 'Wave', color: 0, kind: 'step' }],
     scale: { min: -4, max: 4 },

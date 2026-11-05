@@ -1,13 +1,32 @@
 import data from './catalog.json';
 
+/** One input of an indicator, as the widget's settings dialog edits it. */
+export interface IndicatorInputEntry {
+  /** What kind of value it takes: `'int'` is a whole number. */
+  kind: 'int' | 'number' | 'boolean' | 'choice' | 'source' | 'color' | 'text';
+  /** Its label in the settings, when the indicator gives one. */
+  label?: string;
+  /** Its lowest value. */
+  min?: number;
+  /** Its highest value. */
+  max?: number;
+  /** How far the settings field moves a number. */
+  step?: number;
+  /** For a choice: the values to choose from. */
+  options?: (string | number)[];
+}
+
 /** A built-in indicator: what `chart.addIndicator(id, params)` takes and what it draws. */
 export interface IndicatorEntry {
   id: string;
   name: string;
   shortName: string;
   placement: 'overlay' | 'panel';
+  /** The group the widget's indicator picker lists it under. */
+  category: string;
   params: Record<string, unknown>;
-  inputs?: Record<string, unknown>;
+  /** Each input by name: the kind of value it takes and its limits. */
+  inputs: Record<string, IndicatorInputEntry>;
   plots: { key: string; title: string; kind: string }[];
   levels?: number[];
   scale?: unknown;
@@ -63,4 +82,5 @@ export interface Catalog {
 }
 
 /** Generated from the code by scripts/gen-ai-docs.mjs. */
-export const CATALOG = data as Catalog;
+// The JSON's inferred type is a union of every entry's own shape, which no longer overlaps the declared one by itself.
+export const CATALOG = data as unknown as Catalog;

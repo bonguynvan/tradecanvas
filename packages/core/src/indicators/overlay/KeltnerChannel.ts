@@ -12,6 +12,7 @@ export class KeltnerChannelIndicator extends IndicatorBase {
     name: 'Keltner Channel',
     placement: 'overlay' as const,
     defaultConfig: { emaPeriod: 20, atrPeriod: 10, multiplier: 1.5 },
+    inputs: { emaPeriod: { kind: 'int', min: 1 }, atrPeriod: { kind: 'int', min: 1 }, multiplier: { kind: 'number', min: 0.1, step: 0.1 } },
     shortName: 'KC',
     plots: [
       { key: 'upper', title: 'Upper', color: 0 },

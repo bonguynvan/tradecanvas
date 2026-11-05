@@ -15,7 +15,7 @@ export interface BuiltInIndicators {
   /** Simple Moving Average, on the price pane. Lines: `value` (SMA). */
   sma: {
     params: {
-      /** Default 20. */
+      /** A whole number, at least 1. Default 20. */
       period?: NumberParam;
       /** A price (`'close'`, `'hl2'` …) or another indicator's line (`indicatorSource(instanceId, key)`). Default `'close'`. */
       source?: string;
@@ -25,7 +25,7 @@ export interface BuiltInIndicators {
   /** Exponential Moving Average, on the price pane. Lines: `value` (EMA). */
   ema: {
     params: {
-      /** Default 20. */
+      /** A whole number, at least 1. Default 20. */
       period?: NumberParam;
       /** A price (`'close'`, `'hl2'` …) or another indicator's line (`indicatorSource(instanceId, key)`). Default `'close'`. */
       source?: string;
@@ -35,9 +35,9 @@ export interface BuiltInIndicators {
   /** Bollinger Bands, on the price pane. Lines: `upper` (Upper), `middle` (Basis), `lower` (Lower). */
   bb: {
     params: {
-      /** Default 20. */
+      /** A whole number, at least 1. Default 20. */
       period?: NumberParam;
-      /** Default 2. */
+      /** At least 0.1, in steps of 0.1. Default 2. */
       stdDev?: NumberParam;
       /** A price (`'close'`, `'hl2'` …) or another indicator's line (`indicatorSource(instanceId, key)`). Default `'close'`. */
       source?: string;
@@ -55,13 +55,13 @@ export interface BuiltInIndicators {
   /** Ichimoku Cloud, on the price pane. Lines: `tenkan` (Conversion), `kijun` (Base), `senkouA` (Lead A), `senkouB` (Lead B), `chikou` (Lagging Span). */
   ichimoku: {
     params: {
-      /** Default 9. */
+      /** A whole number, at least 1. Default 9. */
       tenkan?: NumberParam;
-      /** Default 26. */
+      /** A whole number, at least 1. Default 26. */
       kijun?: NumberParam;
-      /** Default 52. */
+      /** A whole number, at least 1. Default 52. */
       senkou?: NumberParam;
-      /** Default 26. */
+      /** A whole number, at least 0. Default 26. */
       displacement?: NumberParam;
     };
     lines: 'tenkan' | 'kijun' | 'senkouA' | 'senkouB' | 'chikou';
@@ -69,9 +69,9 @@ export interface BuiltInIndicators {
   /** Parabolic SAR, on the price pane. Lines: `value` (SAR). */
   psar: {
     params: {
-      /** Default 0.02. */
+      /** At least 0.01, in steps of 0.01. Default 0.02. */
       step?: NumberParam;
-      /** Default 0.2. */
+      /** At least 0.01, in steps of 0.01. Default 0.2. */
       max?: NumberParam;
     };
     lines: 'value';
@@ -79,9 +79,9 @@ export interface BuiltInIndicators {
   /** Supertrend, on the price pane. Lines: `value` (Supertrend). */
   supertrend: {
     params: {
-      /** Default 10. */
+      /** A whole number, at least 1. Default 10. */
       period?: NumberParam;
-      /** Default 3. */
+      /** At least 0.1, in steps of 0.1. Default 3. */
       multiplier?: NumberParam;
     };
     lines: 'value';
@@ -89,11 +89,11 @@ export interface BuiltInIndicators {
   /** Keltner Channel, on the price pane. Lines: `upper` (Upper), `middle` (Basis), `lower` (Lower). */
   keltner: {
     params: {
-      /** Default 20. */
+      /** A whole number, at least 1. Default 20. */
       emaPeriod?: NumberParam;
-      /** Default 10. */
+      /** A whole number, at least 1. Default 10. */
       atrPeriod?: NumberParam;
-      /** Default 1.5. */
+      /** At least 0.1, in steps of 0.1. Default 1.5. */
       multiplier?: NumberParam;
     };
     lines: 'upper' | 'middle' | 'lower';
@@ -101,7 +101,7 @@ export interface BuiltInIndicators {
   /** Donchian Channel, on the price pane. Lines: `upper` (Upper), `middle` (Basis), `lower` (Lower). */
   donchian: {
     params: {
-      /** Default 20. */
+      /** A whole number, at least 1. Default 20. */
       period?: NumberParam;
     };
     lines: 'upper' | 'middle' | 'lower';
@@ -109,7 +109,7 @@ export interface BuiltInIndicators {
   /** Pivot Points, on the price pane. Lines: `r3` (R3), `r2` (R2), `r1` (R1), `pp` (P), `s1` (S1), `s2` (S2), `s3` (S3). */
   pivots: {
     params: {
-      /** At least 1. Default 24. */
+      /** A whole number, at least 1. Default 24. */
       lookback?: NumberParam;
       /** Default `'traditional'`. */
       type?: 'traditional' | 'fibonacci' | 'woodie' | 'classic' | 'camarilla' | 'dm' | (string & {});
@@ -119,7 +119,7 @@ export interface BuiltInIndicators {
   /** Anchored VWAP, on the price pane. Lines: `value` (AVWAP). */
   avwap: {
     params: {
-      /** Default 0. */
+      /** A whole number. Default 0. */
       anchorTime?: NumberParam;
     };
     lines: 'value';
@@ -127,7 +127,7 @@ export interface BuiltInIndicators {
   /** ZigZag, on the price pane. Lines: `pivot` (Pivot). */
   zigzag: {
     params: {
-      /** Default 5. */
+      /** At least 0.1, in steps of 0.1. Default 5. */
       deviation?: NumberParam;
     };
     lines: 'pivot';
@@ -135,9 +135,9 @@ export interface BuiltInIndicators {
   /** Linear Regression Channel, on the price pane. Lines: `upper` (Upper), `middle` (Basis), `lower` (Lower). */
   lrc: {
     params: {
-      /** Default 100. */
+      /** A whole number, at least 2. Default 100. */
       period?: NumberParam;
-      /** Default 2. */
+      /** At least 0.1, in steps of 0.1. Default 2. */
       stdDev?: NumberParam;
       /** A price (`'close'`, `'hl2'` …) or another indicator's line (`indicatorSource(instanceId, key)`). Default `'close'`. */
       source?: string;
@@ -147,7 +147,7 @@ export interface BuiltInIndicators {
   /** Hull Moving Average, on the price pane. Lines: `value` (HMA). */
   hma: {
     params: {
-      /** Default 21. */
+      /** A whole number, at least 2. Default 21. */
       period?: NumberParam;
       /** A price (`'close'`, `'hl2'` …) or another indicator's line (`indicatorSource(instanceId, key)`). Default `'close'`. */
       source?: string;
@@ -157,7 +157,7 @@ export interface BuiltInIndicators {
   /** MTF Moving Average, on the price pane. Lines: `value` (MA). */
   mtfma: {
     params: {
-      /** Default 50. */
+      /** A whole number, at least 1. Default 50. */
       period?: NumberParam;
       /** Default `'1d'`. */
       timeframe?: string;
@@ -169,7 +169,7 @@ export interface BuiltInIndicators {
   /** Session VWAP, on the price pane. Lines: `value` (VWAP), `u1` (+1σ), `l1` (−1σ), `u2` (+2σ), `l2` (−2σ), `u3` (+3σ), `l3` (−3σ). */
   svwap: {
     params: {
-      /** Default 1. */
+      /** A whole number, at least 0, at most 3. Default 1. */
       bands?: NumberParam;
     };
     lines: 'value' | 'u1' | 'l1' | 'u2' | 'l2' | 'u3' | 'l3';
@@ -177,9 +177,9 @@ export interface BuiltInIndicators {
   /** Chandelier Exit, on the price pane. Lines: `long` (Long), `short` (Short). */
   chandelier: {
     params: {
-      /** Default 22. */
+      /** A whole number, at least 1. Default 22. */
       period?: NumberParam;
-      /** Default 3. */
+      /** At least 0.1, in steps of 0.1. Default 3. */
       multiplier?: NumberParam;
     };
     lines: 'long' | 'short';
@@ -187,17 +187,17 @@ export interface BuiltInIndicators {
   /** Alligator, on the price pane. Lines: `jaw` (Jaw), `teeth` (Teeth), `lips` (Lips). */
   alligator: {
     params: {
-      /** Default 13. */
+      /** A whole number, at least 1. Default 13. */
       jaw?: NumberParam;
-      /** Default 8. */
+      /** A whole number, at least 1. Default 8. */
       teeth?: NumberParam;
-      /** Default 5. */
+      /** A whole number, at least 1. Default 5. */
       lips?: NumberParam;
-      /** Default 8. */
+      /** A whole number, at least 0. Default 8. */
       jawShift?: NumberParam;
-      /** Default 5. */
+      /** A whole number, at least 0. Default 5. */
       teethShift?: NumberParam;
-      /** Default 3. */
+      /** A whole number, at least 0. Default 3. */
       lipsShift?: NumberParam;
     };
     lines: 'jaw' | 'teeth' | 'lips';
@@ -205,7 +205,7 @@ export interface BuiltInIndicators {
   /** Volume Weighted Moving Average, on the price pane. Lines: `value` (VWMA). */
   vwma: {
     params: {
-      /** Default 20. */
+      /** A whole number, at least 1. Default 20. */
       period?: NumberParam;
       /** A price (`'close'`, `'hl2'` …) or another indicator's line (`indicatorSource(instanceId, key)`). Default `'close'`. */
       source?: string;
@@ -215,7 +215,7 @@ export interface BuiltInIndicators {
   /** Weighted Moving Average, on the price pane. Lines: `value` (WMA). */
   wma: {
     params: {
-      /** Default 20. */
+      /** A whole number, at least 1. Default 20. */
       period?: NumberParam;
       /** A price (`'close'`, `'hl2'` …) or another indicator's line (`indicatorSource(instanceId, key)`). Default `'close'`. */
       source?: string;
@@ -225,9 +225,9 @@ export interface BuiltInIndicators {
   /** Moving Average Envelope, on the price pane. Lines: `upper` (Upper), `basis` (Basis), `lower` (Lower). */
   envelope: {
     params: {
-      /** Default 20. */
+      /** A whole number, at least 1. Default 20. */
       period?: NumberParam;
-      /** Default 2.5. */
+      /** At least 0, in steps of 0.1. Default 2.5. */
       percent?: NumberParam;
       /** A price (`'close'`, `'hl2'` …) or another indicator's line (`indicatorSource(instanceId, key)`). Default `'close'`. */
       source?: string;
@@ -237,7 +237,7 @@ export interface BuiltInIndicators {
   /** Triple EMA, on the price pane. Lines: `value` (TEMA). */
   tema: {
     params: {
-      /** Default 20. */
+      /** A whole number, at least 1. Default 20. */
       period?: NumberParam;
       /** A price (`'close'`, `'hl2'` …) or another indicator's line (`indicatorSource(instanceId, key)`). Default `'close'`. */
       source?: string;
@@ -247,7 +247,7 @@ export interface BuiltInIndicators {
   /** Relative Strength Index, in a pane of its own. Lines: `value` (RSI). Levels at 30, 70. */
   rsi: {
     params: {
-      /** Default 14. */
+      /** A whole number, at least 1. Default 14. */
       period?: NumberParam;
       /** A price (`'close'`, `'hl2'` …) or another indicator's line (`indicatorSource(instanceId, key)`). Default `'close'`. */
       source?: string;
@@ -257,11 +257,11 @@ export interface BuiltInIndicators {
   /** MACD, in a pane of its own. Lines: `histogram` (Histogram), `macd` (MACD), `signal` (Signal). */
   macd: {
     params: {
-      /** Default 12. */
+      /** A whole number, at least 1. Default 12. */
       fast?: NumberParam;
-      /** Default 26. */
+      /** A whole number, at least 1. Default 26. */
       slow?: NumberParam;
-      /** Default 9. */
+      /** A whole number, at least 1. Default 9. */
       signal?: NumberParam;
       /** A price (`'close'`, `'hl2'` …) or another indicator's line (`indicatorSource(instanceId, key)`). Default `'close'`. */
       source?: string;
@@ -271,11 +271,11 @@ export interface BuiltInIndicators {
   /** Stochastic Oscillator, in a pane of its own. Lines: `k` (%K), `d` (%D). Levels at 20, 80. */
   stochastic: {
     params: {
-      /** Default 14. */
+      /** A whole number, at least 1. Default 14. */
       kPeriod?: NumberParam;
-      /** Default 3. */
+      /** A whole number, at least 1. Default 3. */
       dPeriod?: NumberParam;
-      /** Default 3. */
+      /** A whole number, at least 1. Default 3. */
       smooth?: NumberParam;
     };
     lines: 'k' | 'd';
@@ -283,7 +283,7 @@ export interface BuiltInIndicators {
   /** Average True Range, in a pane of its own. Lines: `value` (ATR). */
   atr: {
     params: {
-      /** Default 14. */
+      /** A whole number, at least 1. Default 14. */
       period?: NumberParam;
     };
     lines: 'value';
@@ -291,7 +291,7 @@ export interface BuiltInIndicators {
   /** Average Directional Index, in a pane of its own. Lines: `adx` (ADX), `plusDI` (+DI), `minusDI` (−DI). */
   adx: {
     params: {
-      /** Default 14. */
+      /** A whole number, at least 1. Default 14. */
       period?: NumberParam;
     };
     lines: 'adx' | 'plusDI' | 'minusDI';
@@ -304,7 +304,7 @@ export interface BuiltInIndicators {
   /** Williams %R, in a pane of its own. Lines: `value` (%R). Levels at -80, -20. */
   williamsR: {
     params: {
-      /** Default 14. */
+      /** A whole number, at least 1. Default 14. */
       period?: NumberParam;
     };
     lines: 'value';
@@ -312,7 +312,7 @@ export interface BuiltInIndicators {
   /** Commodity Channel Index, in a pane of its own. Lines: `value` (CCI). Levels at -100, 0, 100. */
   cci: {
     params: {
-      /** Default 20. */
+      /** A whole number, at least 1. Default 20. */
       period?: NumberParam;
     };
     lines: 'value';
@@ -320,7 +320,7 @@ export interface BuiltInIndicators {
   /** Money Flow Index, in a pane of its own. Lines: `value` (MFI). Levels at 20, 80. */
   mfi: {
     params: {
-      /** Default 14. */
+      /** A whole number, at least 1. Default 14. */
       period?: NumberParam;
     };
     lines: 'value';
@@ -328,7 +328,7 @@ export interface BuiltInIndicators {
   /** Aroon, in a pane of its own. Lines: `up` (Up), `down` (Down). */
   aroon: {
     params: {
-      /** Default 25. */
+      /** A whole number, at least 1. Default 25. */
       period?: NumberParam;
     };
     lines: 'up' | 'down';
@@ -336,7 +336,7 @@ export interface BuiltInIndicators {
   /** Rate of Change, in a pane of its own. Lines: `value` (ROC). Levels at 0. */
   roc: {
     params: {
-      /** Default 12. */
+      /** A whole number, at least 1. Default 12. */
       period?: NumberParam;
       /** A price (`'close'`, `'hl2'` …) or another indicator's line (`indicatorSource(instanceId, key)`). Default `'close'`. */
       source?: string;
@@ -346,11 +346,11 @@ export interface BuiltInIndicators {
   /** True Strength Index, in a pane of its own. Lines: `tsi` (TSI), `signal` (Signal). Levels at 0. */
   tsi: {
     params: {
-      /** Default 25. */
+      /** A whole number, at least 1. Default 25. */
       longPeriod?: NumberParam;
-      /** Default 13. */
+      /** A whole number, at least 1. Default 13. */
       shortPeriod?: NumberParam;
-      /** Default 7. */
+      /** A whole number, at least 1. Default 7. */
       signalPeriod?: NumberParam;
       /** A price (`'close'`, `'hl2'` …) or another indicator's line (`indicatorSource(instanceId, key)`). Default `'close'`. */
       source?: string;
@@ -360,7 +360,7 @@ export interface BuiltInIndicators {
   /** Chaikin Money Flow, in a pane of its own. Lines: `value` (CMF). */
   cmf: {
     params: {
-      /** Default 20. */
+      /** A whole number, at least 1. Default 20. */
       period?: NumberParam;
     };
     lines: 'value';
@@ -368,7 +368,7 @@ export interface BuiltInIndicators {
   /** Standard Deviation, in a pane of its own. Lines: `value` (StdDev). */
   stddev: {
     params: {
-      /** Default 20. */
+      /** A whole number, at least 1. Default 20. */
       period?: NumberParam;
       /** A price (`'close'`, `'hl2'` …) or another indicator's line (`indicatorSource(instanceId, key)`). Default `'close'`. */
       source?: string;
@@ -378,7 +378,7 @@ export interface BuiltInIndicators {
   /** Volume Profile, on the price pane. No lines. */
   volumeProfile: {
     params: {
-      /** Default 24. */
+      /** A whole number, at least 1. Default 24. */
       rows?: NumberParam;
     };
     lines: never;
@@ -391,7 +391,7 @@ export interface BuiltInIndicators {
   /** Volume Rate of Change, in a pane of its own. Lines: `value` (VROC). Levels at 0. */
   vroc: {
     params: {
-      /** Default 14. */
+      /** A whole number, at least 1. Default 14. */
       period?: NumberParam;
     };
     lines: 'value';
@@ -399,9 +399,9 @@ export interface BuiltInIndicators {
   /** Awesome Oscillator, in a pane of its own. Lines: `value` (AO). */
   ao: {
     params: {
-      /** Default 5. */
+      /** A whole number, at least 1. Default 5. */
       fast?: NumberParam;
-      /** Default 34. */
+      /** A whole number, at least 1. Default 34. */
       slow?: NumberParam;
     };
     lines: 'value';
@@ -409,9 +409,9 @@ export interface BuiltInIndicators {
   /** Chaikin Oscillator, in a pane of its own. Lines: `value` (Chaikin). */
   chaikinOsc: {
     params: {
-      /** Default 3. */
+      /** A whole number, at least 1. Default 3. */
       fast?: NumberParam;
-      /** Default 10. */
+      /** A whole number, at least 1. Default 10. */
       slow?: NumberParam;
     };
     lines: 'value';
@@ -419,7 +419,7 @@ export interface BuiltInIndicators {
   /** Volume Delta, in a pane of its own. Lines: `value` (Delta). */
   voldelta: {
     params: {
-      /** Default 0. */
+      /** A whole number, at least 0, at most 1. Default 0. */
       mode?: NumberParam;
     };
     lines: 'value';
@@ -427,7 +427,7 @@ export interface BuiltInIndicators {
   /** Vortex Indicator, in a pane of its own. Lines: `viPlus` (VI+), `viMinus` (VI−). Levels at 1. */
   vortex: {
     params: {
-      /** Default 14. */
+      /** A whole number, at least 1. Default 14. */
       period?: NumberParam;
     };
     lines: 'viPlus' | 'viMinus';
@@ -435,7 +435,7 @@ export interface BuiltInIndicators {
   /** Choppiness Index, in a pane of its own. Lines: `value` (CHOP). Levels at 38.2, 61.8. */
   chop: {
     params: {
-      /** Default 14. */
+      /** A whole number, at least 2. Default 14. */
       period?: NumberParam;
     };
     lines: 'value';
@@ -443,11 +443,11 @@ export interface BuiltInIndicators {
   /** Ultimate Oscillator, in a pane of its own. Lines: `value` (UO). Levels at 30, 70. */
   uo: {
     params: {
-      /** Default 7. */
+      /** A whole number, at least 1. Default 7. */
       fast?: NumberParam;
-      /** Default 14. */
+      /** A whole number, at least 1. Default 14. */
       mid?: NumberParam;
-      /** Default 28. */
+      /** A whole number, at least 1. Default 28. */
       slow?: NumberParam;
     };
     lines: 'value';
@@ -455,7 +455,7 @@ export interface BuiltInIndicators {
   /** Force Index, in a pane of its own. Lines: `value` (EFI). Levels at 0. */
   fi: {
     params: {
-      /** Default 13. */
+      /** A whole number, at least 1. Default 13. */
       period?: NumberParam;
     };
     lines: 'value';
@@ -463,11 +463,11 @@ export interface BuiltInIndicators {
   /** Connors RSI, in a pane of its own. Lines: `value` (CRSI). Levels at 10, 90. */
   crsi: {
     params: {
-      /** Default 3. */
+      /** A whole number, at least 1. Default 3. */
       rsiPeriod?: NumberParam;
-      /** Default 2. */
+      /** A whole number, at least 1. Default 2. */
       streakPeriod?: NumberParam;
-      /** Default 100. */
+      /** A whole number, at least 1. Default 100. */
       rankPeriod?: NumberParam;
       /** A price (`'close'`, `'hl2'` …) or another indicator's line (`indicatorSource(instanceId, key)`). Default `'close'`. */
       source?: string;
@@ -477,11 +477,11 @@ export interface BuiltInIndicators {
   /** Coppock Curve, in a pane of its own. Lines: `value` (Coppock). Levels at 0. */
   coppock: {
     params: {
-      /** Default 14. */
+      /** A whole number, at least 1. Default 14. */
       longRoc?: NumberParam;
-      /** Default 11. */
+      /** A whole number, at least 1. Default 11. */
       shortRoc?: NumberParam;
-      /** Default 10. */
+      /** A whole number, at least 1. Default 10. */
       wma?: NumberParam;
       /** A price (`'close'`, `'hl2'` …) or another indicator's line (`indicatorSource(instanceId, key)`). Default `'close'`. */
       source?: string;
@@ -491,23 +491,23 @@ export interface BuiltInIndicators {
   /** Know Sure Thing, in a pane of its own. Lines: `value` (KST), `signal` (Signal). Levels at 0. */
   kst: {
     params: {
-      /** Default 10. */
+      /** A whole number, at least 1. Default 10. */
       roc1?: NumberParam;
-      /** Default 15. */
+      /** A whole number, at least 1. Default 15. */
       roc2?: NumberParam;
-      /** Default 20. */
+      /** A whole number, at least 1. Default 20. */
       roc3?: NumberParam;
-      /** Default 30. */
+      /** A whole number, at least 1. Default 30. */
       roc4?: NumberParam;
-      /** Default 10. */
+      /** A whole number, at least 1. Default 10. */
       sma1?: NumberParam;
-      /** Default 10. */
+      /** A whole number, at least 1. Default 10. */
       sma2?: NumberParam;
-      /** Default 10. */
+      /** A whole number, at least 1. Default 10. */
       sma3?: NumberParam;
-      /** Default 15. */
+      /** A whole number, at least 1. Default 15. */
       sma4?: NumberParam;
-      /** Default 9. */
+      /** A whole number, at least 1. Default 9. */
       signal?: NumberParam;
       /** A price (`'close'`, `'hl2'` …) or another indicator's line (`indicatorSource(instanceId, key)`). Default `'close'`. */
       source?: string;
@@ -517,7 +517,7 @@ export interface BuiltInIndicators {
   /** Elder Ray, in a pane of its own. Lines: `bull` (Bull), `bear` (Bear). */
   elderray: {
     params: {
-      /** Default 13. */
+      /** A whole number, at least 1. Default 13. */
       period?: NumberParam;
     };
     lines: 'bull' | 'bear';
@@ -525,11 +525,11 @@ export interface BuiltInIndicators {
   /** Schaff Trend Cycle, in a pane of its own. Lines: `value` (STC). Levels at 25, 75. */
   stc: {
     params: {
-      /** Default 23. */
+      /** A whole number, at least 1. Default 23. */
       fast?: NumberParam;
-      /** Default 50. */
+      /** A whole number, at least 1. Default 50. */
       slow?: NumberParam;
-      /** Default 10. */
+      /** A whole number, at least 1. Default 10. */
       cycle?: NumberParam;
       /** A price (`'close'`, `'hl2'` …) or another indicator's line (`indicatorSource(instanceId, key)`). Default `'close'`. */
       source?: string;
@@ -539,11 +539,11 @@ export interface BuiltInIndicators {
   /** Klinger Oscillator, in a pane of its own. Lines: `value` (KVO), `signal` (Signal). Levels at 0. */
   kvo: {
     params: {
-      /** Default 34. */
+      /** A whole number, at least 1. Default 34. */
       fast?: NumberParam;
-      /** Default 55. */
+      /** A whole number, at least 1. Default 55. */
       slow?: NumberParam;
-      /** Default 13. */
+      /** A whole number, at least 1. Default 13. */
       signal?: NumberParam;
     };
     lines: 'value' | 'signal';
@@ -551,7 +551,7 @@ export interface BuiltInIndicators {
   /** Fisher Transform, in a pane of its own. Lines: `value` (Fisher), `trigger` (Trigger). Levels at 0. */
   fisher: {
     params: {
-      /** Default 9. */
+      /** A whole number, at least 1. Default 9. */
       period?: NumberParam;
     };
     lines: 'value' | 'trigger';
@@ -559,7 +559,7 @@ export interface BuiltInIndicators {
   /** Detrended Price Oscillator, in a pane of its own. Lines: `value` (DPO). */
   dpo: {
     params: {
-      /** Default 20. */
+      /** A whole number, at least 2. Default 20. */
       period?: NumberParam;
       /** A price (`'close'`, `'hl2'` …) or another indicator's line (`indicatorSource(instanceId, key)`). Default `'close'`. */
       source?: string;
@@ -569,7 +569,7 @@ export interface BuiltInIndicators {
   /** Balance of Power, in a pane of its own. Lines: `value` (BOP). Levels at 0. */
   bop: {
     params: {
-      /** Default 14. */
+      /** A whole number, at least 1. Default 14. */
       smooth?: NumberParam;
     };
     lines: 'value';
@@ -577,9 +577,9 @@ export interface BuiltInIndicators {
   /** Mass Index, in a pane of its own. Lines: `value` (Mass). Levels at 26.5, 27. */
   massindex: {
     params: {
-      /** Default 9. */
+      /** A whole number, at least 1. Default 9. */
       ema?: NumberParam;
-      /** Default 25. */
+      /** A whole number, at least 1. Default 25. */
       sum?: NumberParam;
     };
     lines: 'value';
@@ -587,7 +587,7 @@ export interface BuiltInIndicators {
   /** Chande Momentum, in a pane of its own. Lines: `value` (CMO). Levels at -50, 0, 50. */
   cmo: {
     params: {
-      /** Default 9. */
+      /** A whole number, at least 1. Default 9. */
       period?: NumberParam;
       /** A price (`'close'`, `'hl2'` …) or another indicator's line (`indicatorSource(instanceId, key)`). Default `'close'`. */
       source?: string;
@@ -597,9 +597,9 @@ export interface BuiltInIndicators {
   /** TRIX, in a pane of its own. Lines: `value` (TRIX), `signal` (Signal). Levels at 0. */
   trix: {
     params: {
-      /** Default 15. */
+      /** A whole number, at least 1. Default 15. */
       period?: NumberParam;
-      /** Default 9. */
+      /** A whole number, at least 1. Default 9. */
       signal?: NumberParam;
       /** A price (`'close'`, `'hl2'` …) or another indicator's line (`indicatorSource(instanceId, key)`). Default `'close'`. */
       source?: string;
@@ -609,7 +609,7 @@ export interface BuiltInIndicators {
   /** Ease of Movement, in a pane of its own. Lines: `value` (EOM). Levels at 0. */
   emv: {
     params: {
-      /** Default 14. */
+      /** A whole number, at least 1. Default 14. */
       period?: NumberParam;
     };
     lines: 'value';
@@ -627,9 +627,9 @@ export interface BuiltInIndicators {
   /** Chaikin Volatility, in a pane of its own. Lines: `value` (CV). Levels at 0. */
   chaikinvol: {
     params: {
-      /** Default 10. */
+      /** A whole number, at least 1. Default 10. */
       ema?: NumberParam;
-      /** Default 10. */
+      /** A whole number, at least 1. Default 10. */
       roc?: NumberParam;
     };
     lines: 'value';
@@ -637,7 +637,7 @@ export interface BuiltInIndicators {
   /** Relative Vigor Index, in a pane of its own. Lines: `value` (RVGI), `signal` (Signal). Levels at 0. */
   rvi: {
     params: {
-      /** Default 10. */
+      /** A whole number, at least 1. Default 10. */
       period?: NumberParam;
     };
     lines: 'value' | 'signal';
@@ -645,13 +645,13 @@ export interface BuiltInIndicators {
   /** Stochastic RSI, in a pane of its own. Lines: `k` (%K), `d` (%D). Levels at 20, 80. */
   stochrsi: {
     params: {
-      /** Default 14. */
+      /** A whole number, at least 1. Default 14. */
       rsiPeriod?: NumberParam;
-      /** Default 14. */
+      /** A whole number, at least 1. Default 14. */
       stochPeriod?: NumberParam;
-      /** Default 3. */
+      /** A whole number, at least 1. Default 3. */
       k?: NumberParam;
-      /** Default 3. */
+      /** A whole number, at least 1. Default 3. */
       d?: NumberParam;
       /** A price (`'close'`, `'hl2'` …) or another indicator's line (`indicatorSource(instanceId, key)`). Default `'close'`. */
       source?: string;
@@ -661,11 +661,11 @@ export interface BuiltInIndicators {
   /** Percentage Price Oscillator, in a pane of its own. Lines: `hist` (Histogram), `value` (PPO), `signal` (Signal). Levels at 0. */
   ppo: {
     params: {
-      /** Default 12. */
+      /** A whole number, at least 1. Default 12. */
       fast?: NumberParam;
-      /** Default 26. */
+      /** A whole number, at least 1. Default 26. */
       slow?: NumberParam;
-      /** Default 9. */
+      /** A whole number, at least 1. Default 9. */
       signal?: NumberParam;
       /** A price (`'close'`, `'hl2'` …) or another indicator's line (`indicatorSource(instanceId, key)`). Default `'close'`. */
       source?: string;
@@ -680,9 +680,9 @@ export interface BuiltInIndicators {
   /** Relative Momentum Index, in a pane of its own. Lines: `value` (RMI). Levels at 30, 70. */
   rmi: {
     params: {
-      /** Default 20. */
+      /** A whole number, at least 1. Default 20. */
       period?: NumberParam;
-      /** Default 5. */
+      /** A whole number, at least 1. Default 5. */
       momentum?: NumberParam;
       /** A price (`'close'`, `'hl2'` …) or another indicator's line (`indicatorSource(instanceId, key)`). Default `'close'`. */
       source?: string;
@@ -692,7 +692,7 @@ export interface BuiltInIndicators {
   /** Disparity Index, in a pane of its own. Lines: `value` (DI). Levels at 0. */
   disparity: {
     params: {
-      /** Default 14. */
+      /** A whole number, at least 1. Default 14. */
       period?: NumberParam;
       /** A price (`'close'`, `'hl2'` …) or another indicator's line (`indicatorSource(instanceId, key)`). Default `'close'`. */
       source?: string;
@@ -702,7 +702,7 @@ export interface BuiltInIndicators {
   /** Qstick, in a pane of its own. Lines: `value` (Qstick). Levels at 0. */
   qstick: {
     params: {
-      /** Default 8. */
+      /** A whole number, at least 1. Default 8. */
       period?: NumberParam;
     };
     lines: 'value';
@@ -710,7 +710,7 @@ export interface BuiltInIndicators {
   /** Pretty Good Oscillator, in a pane of its own. Lines: `value` (PGO). Levels at -3, 0, 3. */
   pgo: {
     params: {
-      /** Default 14. */
+      /** A whole number, at least 1. Default 14. */
       period?: NumberParam;
     };
     lines: 'value';
@@ -718,7 +718,7 @@ export interface BuiltInIndicators {
   /** Double Exponential Moving Average, on the price pane. Lines: `value` (DEMA). */
   dema: {
     params: {
-      /** At least 1. Default 20. */
+      /** A whole number, at least 1. Default 20. */
       period?: NumberParam;
       /** A price (`'close'`, `'hl2'` …) or another indicator's line (`indicatorSource(instanceId, key)`). Default `'close'`. */
       source?: string;
@@ -728,7 +728,7 @@ export interface BuiltInIndicators {
   /** Smoothed Moving Average, on the price pane. Lines: `value` (SMMA). */
   smma: {
     params: {
-      /** At least 1. Default 14. */
+      /** A whole number, at least 1. Default 14. */
       period?: NumberParam;
       /** A price (`'close'`, `'hl2'` …) or another indicator's line (`indicatorSource(instanceId, key)`). Default `'close'`. */
       source?: string;
@@ -738,7 +738,7 @@ export interface BuiltInIndicators {
   /** Arnaud Legoux Moving Average, on the price pane. Lines: `value` (ALMA). */
   alma: {
     params: {
-      /** At least 1, at most 5000. Default 9. */
+      /** A whole number, at least 1, at most 5000. Default 9. */
       period?: NumberParam;
       /** At least 0, at most 1, in steps of 0.05. Default 0.85. */
       offset?: NumberParam;
@@ -752,11 +752,11 @@ export interface BuiltInIndicators {
   /** Kaufman Adaptive Moving Average, on the price pane. Lines: `value` (KAMA). */
   kama: {
     params: {
-      /** At least 1. Default 10. */
+      /** A whole number, at least 1. Default 10. */
       period?: NumberParam;
-      /** At least 1. Default 2. */
+      /** A whole number, at least 1. Default 2. */
       fast?: NumberParam;
-      /** At least 1. Default 30. */
+      /** A whole number, at least 1. Default 30. */
       slow?: NumberParam;
       /** A price (`'close'`, `'hl2'` …) or another indicator's line (`indicatorSource(instanceId, key)`). Default `'close'`. */
       source?: string;
@@ -766,9 +766,9 @@ export interface BuiltInIndicators {
   /** Least Squares Moving Average, on the price pane. Lines: `value` (LSMA). */
   lsma: {
     params: {
-      /** At least 2, at most 5000. Default 25. */
+      /** A whole number, at least 2, at most 5000. Default 25. */
       period?: NumberParam;
-      /** In steps of 1. Default 0. */
+      /** A whole number, in steps of 1. Default 0. */
       offset?: NumberParam;
       /** A price (`'close'`, `'hl2'` …) or another indicator's line (`indicatorSource(instanceId, key)`). Default `'close'`. */
       source?: string;
@@ -778,7 +778,7 @@ export interface BuiltInIndicators {
   /** McGinley Dynamic, on the price pane. Lines: `value` (McGinley). */
   mcginley: {
     params: {
-      /** At least 1. Default 14. */
+      /** A whole number, at least 1. Default 14. */
       period?: NumberParam;
       /** A price (`'close'`, `'hl2'` …) or another indicator's line (`indicatorSource(instanceId, key)`). Default `'close'`. */
       source?: string;
@@ -788,9 +788,9 @@ export interface BuiltInIndicators {
   /** MA Cross, on the price pane. Lines: `fast` (Fast), `slow` (Slow). */
   macross: {
     params: {
-      /** At least 1. Default 9. */
+      /** A whole number, at least 1. Default 9. */
       fast?: NumberParam;
-      /** At least 1. Default 21. */
+      /** A whole number, at least 1. Default 21. */
       slow?: NumberParam;
       /** Default `'sma'`. */
       type?: 'sma' | 'ema' | 'sma-ema' | (string & {});
@@ -802,7 +802,7 @@ export interface BuiltInIndicators {
   /** Williams Fractals, on the price pane. Lines: `up` (Up), `down` (Down). */
   fractals: {
     params: {
-      /** At least 1, at most 10. Default 2. */
+      /** A whole number, at least 1, at most 10. Default 2. */
       period?: NumberParam;
     };
     lines: 'up' | 'down';
@@ -810,11 +810,11 @@ export interface BuiltInIndicators {
   /** Chande Kroll Stop, on the price pane. Lines: `long` (Stop Long), `short` (Stop Short). */
   cks: {
     params: {
-      /** ATR length. At least 1. Default 10. */
+      /** ATR length. A whole number, at least 1. Default 10. */
       p?: NumberParam;
       /** ATR multiplier. At least 0, in steps of 0.1. Default 1. */
       x?: NumberParam;
-      /** Stop length. At least 1. Default 9. */
+      /** Stop length. A whole number, at least 1. Default 9. */
       q?: NumberParam;
     };
     lines: 'long' | 'short';
@@ -822,7 +822,7 @@ export interface BuiltInIndicators {
   /** Bollinger Bands %B, in a pane of its own. Lines: `value` (%B). Levels at 0, 0.5, 1. */
   bbpb: {
     params: {
-      /** At least 2. Default 20. */
+      /** A whole number, at least 2. Default 20. */
       period?: NumberParam;
       /** At least 0.1, in steps of 0.1. Default 2. */
       stdDev?: NumberParam;
@@ -834,7 +834,7 @@ export interface BuiltInIndicators {
   /** Bollinger BandWidth, in a pane of its own. Lines: `value` (BBW). */
   bbw: {
     params: {
-      /** At least 2. Default 20. */
+      /** A whole number, at least 2. Default 20. */
       period?: NumberParam;
       /** At least 0.1, in steps of 0.1. Default 2. */
       stdDev?: NumberParam;
@@ -846,7 +846,7 @@ export interface BuiltInIndicators {
   /** Momentum, in a pane of its own. Lines: `value` (MOM). Levels at 0. */
   mom: {
     params: {
-      /** At least 1. Default 10. */
+      /** A whole number, at least 1. Default 10. */
       period?: NumberParam;
       /** A price (`'close'`, `'hl2'` …) or another indicator's line (`indicatorSource(instanceId, key)`). Default `'close'`. */
       source?: string;
@@ -856,7 +856,7 @@ export interface BuiltInIndicators {
   /** Historical Volatility, in a pane of its own. Lines: `value` (HV). */
   hv: {
     params: {
-      /** At least 2. Default 10. */
+      /** A whole number, at least 2. Default 10. */
       period?: NumberParam;
       /** Bars per year. At least 1. Default 365. */
       annual?: NumberParam;
@@ -868,9 +868,9 @@ export interface BuiltInIndicators {
   /** Volume Oscillator, in a pane of its own. Lines: `value` (Vol Osc). Levels at 0. */
   vo: {
     params: {
-      /** At least 1. Default 5. */
+      /** A whole number, at least 1. Default 5. */
       short?: NumberParam;
-      /** At least 1. Default 10. */
+      /** A whole number, at least 1. Default 10. */
       long?: NumberParam;
     };
     lines: 'value';
@@ -878,7 +878,7 @@ export interface BuiltInIndicators {
   /** Ulcer Index, in a pane of its own. Lines: `value` (Ulcer). */
   ulcer: {
     params: {
-      /** At least 1. Default 14. */
+      /** A whole number, at least 1. Default 14. */
       period?: NumberParam;
       /** A price (`'close'`, `'hl2'` …) or another indicator's line (`indicatorSource(instanceId, key)`). Default `'close'`. */
       source?: string;
@@ -888,11 +888,11 @@ export interface BuiltInIndicators {
   /** Stochastic Momentum Index, in a pane of its own. Lines: `smi` (SMI), `signal` (Signal). Levels at 40, -40. */
   smi: {
     params: {
-      /** At least 1. Default 10. */
+      /** A whole number, at least 1. Default 10. */
       period?: NumberParam;
-      /** At least 1. Default 3. */
+      /** A whole number, at least 1. Default 3. */
       smooth?: NumberParam;
-      /** At least 1. Default 3. */
+      /** A whole number, at least 1. Default 3. */
       signal?: NumberParam;
     };
     lines: 'smi' | 'signal';
@@ -900,9 +900,9 @@ export interface BuiltInIndicators {
   /** Relative Volatility Index, in a pane of its own. Lines: `value` (RVI). Levels at 80, 50, 20. */
   rvix: {
     params: {
-      /** At least 2. Default 10. */
+      /** A whole number, at least 2. Default 10. */
       period?: NumberParam;
-      /** At least 1. Default 14. */
+      /** A whole number, at least 1. Default 14. */
       smooth?: NumberParam;
     };
     lines: 'value';
@@ -910,7 +910,7 @@ export interface BuiltInIndicators {
   /** Trend Strength Index, in a pane of its own. Lines: `value` (Trend). Levels at 0. */
   trendstrength: {
     params: {
-      /** At least 2. Default 14. */
+      /** A whole number, at least 2. Default 14. */
       period?: NumberParam;
     };
     lines: 'value';
@@ -918,7 +918,7 @@ export interface BuiltInIndicators {
   /** Linear Regression Slope, in a pane of its own. Lines: `value` (Slope). Levels at 0. */
   lrslope: {
     params: {
-      /** At least 2. Default 14. */
+      /** A whole number, at least 2. Default 14. */
       period?: NumberParam;
     };
     lines: 'value';
@@ -926,7 +926,7 @@ export interface BuiltInIndicators {
   /** Standard Error, in a pane of its own. Lines: `value` (StdErr). */
   stderror: {
     params: {
-      /** At least 3. Default 14. */
+      /** A whole number, at least 3. Default 14. */
       period?: NumberParam;
     };
     lines: 'value';
@@ -934,7 +934,7 @@ export interface BuiltInIndicators {
   /** Average Day Range, in a pane of its own. Lines: `value` (ADR). */
   adr: {
     params: {
-      /** At least 1. Default 14. */
+      /** A whole number, at least 1. Default 14. */
       period?: NumberParam;
     };
     lines: 'value';
@@ -947,11 +947,11 @@ export interface BuiltInIndicators {
   /** Standard Error Bands, on the price pane. Lines: `upper` (Upper), `middle` (Middle), `lower` (Lower). */
   seb: {
     params: {
-      /** At least 3. Default 21. */
+      /** A whole number, at least 3. Default 21. */
       period?: NumberParam;
       /** At least 0, in steps of 0.1. Default 2. */
       mult?: NumberParam;
-      /** At least 1. Default 3. */
+      /** A whole number, at least 1. Default 3. */
       smooth?: NumberParam;
     };
     lines: 'upper' | 'middle' | 'lower';
@@ -964,15 +964,15 @@ export interface BuiltInIndicators {
   /** Moving Average Ribbon, on the price pane. Lines: `ma1` (MA 1), `ma2` (MA 2), `ma3` (MA 3), `ma4` (MA 4). */
   maribbon: {
     params: {
-      /** At least 1. Default 20. */
+      /** A whole number, at least 1. Default 20. */
       ma1?: NumberParam;
-      /** At least 1. Default 50. */
+      /** A whole number, at least 1. Default 50. */
       ma2?: NumberParam;
-      /** At least 1. Default 100. */
+      /** A whole number, at least 1. Default 100. */
       ma3?: NumberParam;
-      /** At least 1. Default 200. */
+      /** A whole number, at least 1. Default 200. */
       ma4?: NumberParam;
-      /** At least 0, at most 1. Default 0. */
+      /** A whole number, at least 0, at most 1. Default 0. */
       exponential?: NumberParam;
     };
     lines: 'ma1' | 'ma2' | 'ma3' | 'ma4';
@@ -995,13 +995,13 @@ export interface BuiltInIndicators {
   /** Moving Average Channel, on the price pane. Lines: `upper` (Upper), `lower` (Lower). */
   machannel: {
     params: {
-      /** At least 1. Default 20. */
+      /** A whole number, at least 1. Default 20. */
       upperLength?: NumberParam;
-      /** At least 1. Default 20. */
+      /** A whole number, at least 1. Default 20. */
       lowerLength?: NumberParam;
-      /** At least -500, at most 500. Default 0. */
+      /** A whole number, at least -500, at most 500. Default 0. */
       upperOffset?: NumberParam;
-      /** At least -500, at most 500. Default 0. */
+      /** A whole number, at least -500, at most 500. Default 0. */
       lowerOffset?: NumberParam;
     };
     lines: 'upper' | 'lower';
@@ -1009,7 +1009,7 @@ export interface BuiltInIndicators {
   /** Moving Average Hamming, on the price pane. Lines: `value` (MA). */
   hamming: {
     params: {
-      /** At least 2, at most 500. Default 10. */
+      /** A whole number, at least 2, at most 500. Default 10. */
       period?: NumberParam;
       /** A price (`'close'`, `'hl2'` …) or another indicator's line (`indicatorSource(instanceId, key)`). Default `'close'`. */
       source?: string;
@@ -1019,9 +1019,9 @@ export interface BuiltInIndicators {
   /** Moving Average Double, on the price pane. Lines: `ma1` (MA 1), `ma2` (MA 2). */
   madouble: {
     params: {
-      /** At least 1. Default 20. */
+      /** A whole number, at least 1. Default 20. */
       first?: NumberParam;
-      /** At least 1. Default 50. */
+      /** A whole number, at least 1. Default 50. */
       second?: NumberParam;
       /** Default `'sma'`. */
       type?: 'sma' | 'ema' | 'wma' | (string & {});
@@ -1033,11 +1033,11 @@ export interface BuiltInIndicators {
   /** Moving Average Triple, on the price pane. Lines: `ma1` (MA 1), `ma2` (MA 2), `ma3` (MA 3). */
   matriple: {
     params: {
-      /** At least 1. Default 10. */
+      /** A whole number, at least 1. Default 10. */
       first?: NumberParam;
-      /** At least 1. Default 20. */
+      /** A whole number, at least 1. Default 20. */
       second?: NumberParam;
-      /** At least 1. Default 50. */
+      /** A whole number, at least 1. Default 50. */
       third?: NumberParam;
       /** Default `'sma'`. */
       type?: 'sma' | 'ema' | 'wma' | (string & {});
@@ -1049,7 +1049,7 @@ export interface BuiltInIndicators {
   /** Volatility Index, on the price pane. Lines: `sar` (Stop). */
   volindex: {
     params: {
-      /** At least 1. Default 7. */
+      /** A whole number, at least 1. Default 7. */
       period?: NumberParam;
       /** ATR multiple. At least 0.1, in steps of 0.1. Default 3. */
       mult?: NumberParam;
@@ -1067,7 +1067,7 @@ export interface BuiltInIndicators {
   /** Advance/Decline, in a pane of its own. Lines: `value` (Ratio). */
   advdecline: {
     params: {
-      /** At least 1. Default 10. */
+      /** A whole number, at least 1. Default 10. */
       length?: NumberParam;
     };
     lines: 'value';
@@ -1075,7 +1075,7 @@ export interface BuiltInIndicators {
   /** Majority Rule, in a pane of its own. Lines: `value` (Majority). Levels at 50. */
   majority: {
     params: {
-      /** At least 1. Default 14. */
+      /** A whole number, at least 1. Default 14. */
       period?: NumberParam;
     };
     lines: 'value';
@@ -1088,11 +1088,11 @@ export interface BuiltInIndicators {
   /** SMI Ergodic, in a pane of its own. Lines: `oscillator` (Oscillator), `indicator` (Indicator), `signal` (Signal). */
   smiergodic: {
     params: {
-      /** At least 1. Default 5. */
+      /** A whole number, at least 1. Default 5. */
       short?: NumberParam;
-      /** At least 1. Default 20. */
+      /** A whole number, at least 1. Default 20. */
       long?: NumberParam;
-      /** At least 1. Default 5. */
+      /** A whole number, at least 1. Default 5. */
       signal?: NumberParam;
       /** A price (`'close'`, `'hl2'` …) or another indicator's line (`indicatorSource(instanceId, key)`). Default `'close'`. */
       source?: string;
@@ -1102,9 +1102,9 @@ export interface BuiltInIndicators {
   /** Price Oscillator, in a pane of its own. Lines: `value` (PO). */
   po: {
     params: {
-      /** At least 1. Default 10. */
+      /** A whole number, at least 1. Default 10. */
       short?: NumberParam;
-      /** At least 1. Default 21. */
+      /** A whole number, at least 1. Default 21. */
       long?: NumberParam;
       /** A price (`'close'`, `'hl2'` …) or another indicator's line (`indicatorSource(instanceId, key)`). Default `'close'`. */
       source?: string;
@@ -1114,7 +1114,7 @@ export interface BuiltInIndicators {
   /** Volatility O-H-L-C, in a pane of its own. Lines: `value` (Volatility). */
   volohlc: {
     params: {
-      /** At least 1. Default 10. */
+      /** A whole number, at least 1. Default 10. */
       period?: NumberParam;
       /** Bars per year. At least 1. Default 365. */
       annual?: NumberParam;
@@ -1124,7 +1124,7 @@ export interface BuiltInIndicators {
   /** Volatility Zero Trend Close-to-Close, in a pane of its own. Lines: `value` (Volatility). */
   volzt: {
     params: {
-      /** At least 1. Default 10. */
+      /** A whole number, at least 1. Default 10. */
       period?: NumberParam;
       /** Bars per year. At least 1. Default 365. */
       annual?: NumberParam;
@@ -1134,7 +1134,7 @@ export interface BuiltInIndicators {
   /** Psychological Line, in a pane of its own. Lines: `value` (PSY). Levels at 25, 75. */
   psy: {
     params: {
-      /** Default 10. */
+      /** A whole number, at least 1. Default 10. */
       period?: NumberParam;
     };
     lines: 'value';
@@ -1142,7 +1142,7 @@ export interface BuiltInIndicators {
   /** New Psychological Line, in a pane of its own. Lines: `value` (New PSY). Levels at -50, 0, 50. */
   newpsy: {
     params: {
-      /** Default 10. */
+      /** A whole number, at least 1. Default 10. */
       period?: NumberParam;
     };
     lines: 'value';
@@ -1150,7 +1150,7 @@ export interface BuiltInIndicators {
   /** Volume Ratio, in a pane of its own. Lines: `value` (VR). Levels at 70, 150, 450. */
   vr: {
     params: {
-      /** Default 20. */
+      /** A whole number, at least 1. Default 20. */
       period?: NumberParam;
     };
     lines: 'value';
@@ -1158,7 +1158,7 @@ export interface BuiltInIndicators {
   /** AB Ratio, in a pane of its own. Lines: `a` (A), `b` (B). Levels at 100. */
   abratio: {
     params: {
-      /** Default 26. */
+      /** A whole number, at least 1. Default 26. */
       period?: NumberParam;
     };
     lines: 'a' | 'b';
@@ -1166,11 +1166,11 @@ export interface BuiltInIndicators {
   /** Sonar, in a pane of its own. Lines: `sonar` (Sonar), `signal` (Signal). Levels at 0. */
   sonar: {
     params: {
-      /** Default 20. */
+      /** A whole number, at least 1. Default 20. */
       period?: NumberParam;
-      /** Default 9. */
+      /** A whole number, at least 1. Default 9. */
       lookback?: NumberParam;
-      /** Default 9. */
+      /** A whole number, at least 1. Default 9. */
       signal?: NumberParam;
     };
     lines: 'sonar' | 'signal';
@@ -1178,7 +1178,7 @@ export interface BuiltInIndicators {
   /** Sigma, in a pane of its own. Lines: `value` (Sigma). Levels at -2, 0, 2. */
   sigma: {
     params: {
-      /** Default 20. */
+      /** A whole number, at least 2. Default 20. */
       period?: NumberParam;
     };
     lines: 'value';
@@ -1186,7 +1186,7 @@ export interface BuiltInIndicators {
   /** Vertical Horizontal Filter, in a pane of its own. Lines: `value` (VHF). */
   vhf: {
     params: {
-      /** Default 28. */
+      /** A whole number, at least 1. Default 28. */
       period?: NumberParam;
     };
     lines: 'value';
@@ -1194,7 +1194,7 @@ export interface BuiltInIndicators {
   /** R-Squared, in a pane of its own. Lines: `value` (R²). */
   rsquared: {
     params: {
-      /** Default 14. */
+      /** A whole number, at least 2. Default 14. */
       period?: NumberParam;
     };
     lines: 'value';
@@ -1202,7 +1202,7 @@ export interface BuiltInIndicators {
   /** Random Walk Index, in a pane of its own. Lines: `high` (RWI High), `low` (RWI Low). Levels at 1. */
   rwi: {
     params: {
-      /** Default 14. */
+      /** A whole number, at least 2. Default 14. */
       period?: NumberParam;
     };
     lines: 'high' | 'low';
@@ -1210,7 +1210,7 @@ export interface BuiltInIndicators {
   /** Negative Volume Index, in a pane of its own. Lines: `value` (NVI), `signal` (Signal). */
   nvi: {
     params: {
-      /** Default 255. */
+      /** A whole number, at least 1. Default 255. */
       signal?: NumberParam;
     };
     lines: 'value' | 'signal';
@@ -1218,7 +1218,7 @@ export interface BuiltInIndicators {
   /** Positive Volume Index, in a pane of its own. Lines: `value` (PVI), `signal` (Signal). */
   pvi: {
     params: {
-      /** Default 255. */
+      /** A whole number, at least 1. Default 255. */
       signal?: NumberParam;
     };
     lines: 'value' | 'signal';
@@ -1231,7 +1231,7 @@ export interface BuiltInIndicators {
   /** Intraday Intensity, in a pane of its own. Lines: `value` (III %). Levels at 0. */
   iii: {
     params: {
-      /** Default 21. */
+      /** A whole number, at least 1. Default 21. */
       period?: NumberParam;
     };
     lines: 'value';
@@ -1239,7 +1239,7 @@ export interface BuiltInIndicators {
   /** Volume vs Average, in a pane of its own. Lines: `value` (Vol %). Levels at 0. */
   volpct: {
     params: {
-      /** Default 20. */
+      /** A whole number, at least 1. Default 20. */
       period?: NumberParam;
     };
     lines: 'value';
@@ -1257,17 +1257,17 @@ export interface BuiltInIndicators {
   /** Binary Wave, in a pane of its own. Lines: `value` (Wave). Levels at 0. */
   binarywave: {
     params: {
-      /** Default 20. */
+      /** A whole number, at least 1. Default 20. */
       ma?: NumberParam;
-      /** Default 12. */
+      /** A whole number, at least 1. Default 12. */
       fast?: NumberParam;
-      /** Default 26. */
+      /** A whole number, at least 1. Default 26. */
       slow?: NumberParam;
-      /** Default 9. */
+      /** A whole number, at least 1. Default 9. */
       signal?: NumberParam;
-      /** Default 12. */
+      /** A whole number, at least 1. Default 12. */
       roc?: NumberParam;
-      /** Default 14. */
+      /** A whole number, at least 1. Default 14. */
       stoch?: NumberParam;
     };
     lines: 'value';
@@ -1275,9 +1275,9 @@ export interface BuiltInIndicators {
   /** Smoothed Rate of Change, in a pane of its own. Lines: `value` (S-ROC). Levels at 0. */
   sroc: {
     params: {
-      /** Default 13. */
+      /** A whole number, at least 1. Default 13. */
       ema?: NumberParam;
-      /** Default 21. */
+      /** A whole number, at least 1. Default 21. */
       roc?: NumberParam;
     };
     lines: 'value';
@@ -1285,7 +1285,7 @@ export interface BuiltInIndicators {
   /** Time Series Forecast, on the price pane. Lines: `value` (TSF). */
   tsf: {
     params: {
-      /** Default 14. */
+      /** A whole number, at least 2. Default 14. */
       period?: NumberParam;
     };
     lines: 'value';
@@ -1303,13 +1303,13 @@ export interface BuiltInIndicators {
   /** Moving Average Rainbow, on the price pane. Lines: `ma1` (MA 1), `ma2` (MA 2), `ma3` (MA 3), `ma4` (MA 4), `ma5` (MA 5), `ma6` (MA 6), `ma7` (MA 7), `ma8` (MA 8), `ma9` (MA 9), `ma10` (MA 10), `ma11` (MA 11), `ma12` (MA 12), `ma13` (MA 13), `ma14` (MA 14), `ma15` (MA 15), `ma16` (MA 16), `ma17` (MA 17), `ma18` (MA 18), `ma19` (MA 19), `ma20` (MA 20). */
   rainbow: {
     params: {
-      /** At least 1. Default 10. */
+      /** A whole number, at least 1. Default 10. */
       first?: NumberParam;
-      /** At least 1. Default 10. */
+      /** A whole number, at least 1. Default 10. */
       step?: NumberParam;
-      /** At least 1, at most 20. Default 10. */
+      /** A whole number, at least 1, at most 20. Default 10. */
       count?: NumberParam;
-      /** At least 0, at most 1. Default 0. */
+      /** A whole number, at least 0, at most 1. Default 0. */
       exponential?: NumberParam;
     };
     lines: 'ma1' | 'ma2' | 'ma3' | 'ma4' | 'ma5' | 'ma6' | 'ma7' | 'ma8' | 'ma9' | 'ma10' | 'ma11' | 'ma12' | 'ma13' | 'ma14' | 'ma15' | 'ma16' | 'ma17' | 'ma18' | 'ma19' | 'ma20';
@@ -1317,13 +1317,13 @@ export interface BuiltInIndicators {
   /** Candlestick Patterns, on the price pane. Lines: `bull` (Bullish), `bear` (Bearish), `neutral` (Indecision). */
   candlepatterns: {
     params: {
-      /** At least 2. Default 10. */
+      /** A whole number, at least 2. Default 10. */
       trendPeriod?: NumberParam;
-      /** At least 0, at most 1. Default 1. */
+      /** A whole number, at least 0, at most 1. Default 1. */
       reversal?: NumberParam;
-      /** At least 0, at most 1. Default 1. */
+      /** A whole number, at least 0, at most 1. Default 1. */
       continuation?: NumberParam;
-      /** At least 0, at most 1. Default 0. */
+      /** A whole number, at least 0, at most 1. Default 0. */
       indecision?: NumberParam;
     };
     lines: 'bull' | 'bear' | 'neutral';

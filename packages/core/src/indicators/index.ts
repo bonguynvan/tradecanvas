@@ -65,6 +65,8 @@ export { DisparityIndexIndicator } from './panel/DisparityIndex.js';
 export { QstickIndicator } from './panel/Qstick.js';
 export { PrettyGoodOscillatorIndicator } from './panel/PrettyGoodOscillator.js';
 export { getNumberParam, getIntParam } from './params.js';
+export { describeInputs } from './inputs.js';
+export type { IndicatorInputInfo } from './inputs.js';
 export { IndicatorWorkerHost } from './worker/IndicatorWorkerHost.js';
 export type { WorkerLike, IndicatorWorkerHostOptions } from './worker/IndicatorWorkerHost.js';
 export type { IndicatorWorkerRequest, IndicatorWorkerResponse } from './worker/messages.js';

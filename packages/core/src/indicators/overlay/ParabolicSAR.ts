@@ -10,6 +10,7 @@ export class ParabolicSARIndicator extends IndicatorBase {
     name: 'Parabolic SAR',
     placement: 'overlay' as const,
     defaultConfig: { step: 0.02, max: 0.2 },
+    inputs: { step: { kind: 'number', min: 0.01, step: 0.01 }, max: { kind: 'number', min: 0.01, step: 0.01 } },
     shortName: 'SAR',
     plots: [{ key: 'value', title: 'SAR', color: 0, kind: 'dots', tone: { field: 'trend' }, downColor: 1 }],
   };

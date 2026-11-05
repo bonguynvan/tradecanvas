@@ -15,7 +15,7 @@ export class StochasticMomentumIndexIndicator extends IndicatorBase {
     placement: 'panel',
     defaultConfig: { period: 10, smooth: 3, signal: 3 },
     shortName: 'SMI',
-    inputs: { period: { min: 1 }, smooth: { min: 1 }, signal: { min: 1 } },
+    inputs: { period: { kind: 'int', min: 1 }, smooth: { kind: 'int', min: 1 }, signal: { kind: 'int', min: 1 } },
     plots: [
       { key: 'smi', title: 'SMI', color: 0 },
       { key: 'signal', title: 'Signal', color: 1 },

@@ -17,7 +17,7 @@ export class CoppockIndicator extends IndicatorBase {
     placement: 'panel' as const,
     defaultConfig: { longRoc: 14, shortRoc: 11, wma: 10, source: 'close' },
     shortName: 'Coppock',
-    inputs: { source: { source: true } },
+    inputs: { source: { source: true }, longRoc: { kind: 'int', min: 1 }, shortRoc: { kind: 'int', min: 1 }, wma: { kind: 'int', min: 1 } },
     plots: [{ key: 'value', title: 'Coppock', color: 0 }],
     levels: [0],
   };

@@ -10,7 +10,7 @@ export class StdDevIndicator extends IndicatorBase {
     placement: 'panel' as const,
     defaultConfig: { period: 20, source: 'close' },
     shortName: 'StdDev',
-    inputs: { source: { source: true } },
+    inputs: { source: { source: true }, period: { kind: 'int', min: 1 } },
     plots: [{ key: 'value', title: 'StdDev', color: 0 }],
   };
 

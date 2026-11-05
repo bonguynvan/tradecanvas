@@ -9,6 +9,7 @@ export class CCIIndicator extends IndicatorBase {
     name: 'Commodity Channel Index',
     placement: 'panel' as const,
     defaultConfig: { period: 20 },
+    inputs: { period: { kind: 'int', min: 1 } },
     shortName: 'CCI',
     plots: [{ key: 'value', title: 'CCI', color: 0 }],
     levels: [-100, 0, 100],

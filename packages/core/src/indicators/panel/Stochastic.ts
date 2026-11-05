@@ -9,6 +9,7 @@ export class StochasticIndicator extends IndicatorBase {
     name: 'Stochastic Oscillator',
     placement: 'panel' as const,
     defaultConfig: { kPeriod: 14, dPeriod: 3, smooth: 3 },
+    inputs: { kPeriod: { kind: 'int', min: 1 }, dPeriod: { kind: 'int', min: 1 }, smooth: { kind: 'int', min: 1 } },
     shortName: 'Stoch',
     plots: [
       { key: 'k', title: '%K', color: 0 },

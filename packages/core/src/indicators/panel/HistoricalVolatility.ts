@@ -14,7 +14,7 @@ export class HistoricalVolatilityIndicator extends PointwiseIndicator<{ period: 
     placement: 'panel',
     defaultConfig: { period: 10, annual: 365, source: 'close' },
     shortName: 'HV',
-    inputs: { period: { min: 2 }, annual: { label: 'Bars per year', min: 1 }, source: { source: true } },
+    inputs: { period: { kind: 'int', min: 2 }, annual: { kind: 'number', label: 'Bars per year', min: 1 }, source: { source: true } },
     plots: [{ key: 'value', title: 'HV', color: 0 }],
     scale: { min: 0 },
   };

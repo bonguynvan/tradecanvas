@@ -11,7 +11,7 @@ export class VolumeOscillatorIndicator extends IndicatorBase {
     placement: 'panel',
     defaultConfig: { short: 5, long: 10 },
     shortName: 'Vol Osc',
-    inputs: { short: { min: 1 }, long: { min: 1 } },
+    inputs: { short: { kind: 'int', min: 1 }, long: { kind: 'int', min: 1 } },
     plots: [{ key: 'value', title: 'Vol Osc', color: 0 }],
     levels: [0],
   };

@@ -4,13 +4,19 @@
     "name": "Simple Moving Average",
     "shortName": "SMA",
     "placement": "overlay",
+    "category": "movingAverages",
     "params": {
       "period": 20,
       "source": "close"
     },
     "inputs": {
+      "period": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      },
       "source": {
-        "source": true
+        "kind": "source"
       }
     },
     "plots": [
@@ -26,13 +32,19 @@
     "name": "Exponential Moving Average",
     "shortName": "EMA",
     "placement": "overlay",
+    "category": "movingAverages",
     "params": {
       "period": 20,
       "source": "close"
     },
     "inputs": {
+      "period": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      },
       "source": {
-        "source": true
+        "kind": "source"
       }
     },
     "plots": [
@@ -48,14 +60,25 @@
     "name": "Bollinger Bands",
     "shortName": "BB",
     "placement": "overlay",
+    "category": "bands",
     "params": {
       "period": 20,
       "stdDev": 2,
       "source": "close"
     },
     "inputs": {
+      "period": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      },
+      "stdDev": {
+        "kind": "number",
+        "min": 0.1,
+        "step": 0.1
+      },
       "source": {
-        "source": true
+        "kind": "source"
       }
     },
     "plots": [
@@ -81,11 +104,13 @@
     "name": "Volume Weighted Average Price",
     "shortName": "VWAP",
     "placement": "overlay",
+    "category": "volume",
     "params": {
       "anchor": "session"
     },
     "inputs": {
       "anchor": {
+        "kind": "choice",
         "options": [
           "session",
           "week",
@@ -107,11 +132,34 @@
     "name": "Ichimoku Cloud",
     "shortName": "Ichimoku",
     "placement": "overlay",
+    "category": "trend",
     "params": {
       "tenkan": 9,
       "kijun": 26,
       "senkou": 52,
       "displacement": 26
+    },
+    "inputs": {
+      "tenkan": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      },
+      "kijun": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      },
+      "senkou": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      },
+      "displacement": {
+        "kind": "int",
+        "min": 0,
+        "step": 1
+      }
     },
     "plots": [
       {
@@ -146,9 +194,22 @@
     "name": "Parabolic SAR",
     "shortName": "SAR",
     "placement": "overlay",
+    "category": "trend",
     "params": {
       "step": 0.02,
       "max": 0.2
+    },
+    "inputs": {
+      "step": {
+        "kind": "number",
+        "min": 0.01,
+        "step": 0.01
+      },
+      "max": {
+        "kind": "number",
+        "min": 0.01,
+        "step": 0.01
+      }
     },
     "plots": [
       {
@@ -163,9 +224,22 @@
     "name": "Supertrend",
     "shortName": "Supertrend",
     "placement": "overlay",
+    "category": "trend",
     "params": {
       "period": 10,
       "multiplier": 3
+    },
+    "inputs": {
+      "period": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      },
+      "multiplier": {
+        "kind": "number",
+        "min": 0.1,
+        "step": 0.1
+      }
     },
     "plots": [
       {
@@ -180,10 +254,28 @@
     "name": "Keltner Channel",
     "shortName": "KC",
     "placement": "overlay",
+    "category": "bands",
     "params": {
       "emaPeriod": 20,
       "atrPeriod": 10,
       "multiplier": 1.5
+    },
+    "inputs": {
+      "emaPeriod": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      },
+      "atrPeriod": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      },
+      "multiplier": {
+        "kind": "number",
+        "min": 0.1,
+        "step": 0.1
+      }
     },
     "plots": [
       {
@@ -208,8 +300,16 @@
     "name": "Donchian Channel",
     "shortName": "DC",
     "placement": "overlay",
+    "category": "bands",
     "params": {
       "period": 20
+    },
+    "inputs": {
+      "period": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      }
     },
     "plots": [
       {
@@ -234,15 +334,19 @@
     "name": "Pivot Points",
     "shortName": "Pivots",
     "placement": "overlay",
+    "category": "patterns",
     "params": {
       "lookback": 24,
       "type": "traditional"
     },
     "inputs": {
       "lookback": {
-        "min": 1
+        "kind": "int",
+        "min": 1,
+        "step": 1
       },
       "type": {
+        "kind": "choice",
         "options": [
           "traditional",
           "fibonacci",
@@ -296,8 +400,15 @@
     "name": "Anchored VWAP",
     "shortName": "AVWAP",
     "placement": "overlay",
+    "category": "volume",
     "params": {
       "anchorTime": 0
+    },
+    "inputs": {
+      "anchorTime": {
+        "kind": "int",
+        "step": 1
+      }
     },
     "plots": [
       {
@@ -312,8 +423,16 @@
     "name": "ZigZag",
     "shortName": "ZigZag",
     "placement": "overlay",
+    "category": "patterns",
     "params": {
       "deviation": 5
+    },
+    "inputs": {
+      "deviation": {
+        "kind": "number",
+        "min": 0.1,
+        "step": 0.1
+      }
     },
     "plots": [
       {
@@ -328,14 +447,25 @@
     "name": "Linear Regression Channel",
     "shortName": "LRC",
     "placement": "overlay",
+    "category": "bands",
     "params": {
       "period": 100,
       "stdDev": 2,
       "source": "close"
     },
     "inputs": {
+      "period": {
+        "kind": "int",
+        "min": 2,
+        "step": 1
+      },
+      "stdDev": {
+        "kind": "number",
+        "min": 0.1,
+        "step": 0.1
+      },
       "source": {
-        "source": true
+        "kind": "source"
       }
     },
     "plots": [
@@ -361,13 +491,19 @@
     "name": "Hull Moving Average",
     "shortName": "HMA",
     "placement": "overlay",
+    "category": "movingAverages",
     "params": {
       "period": 21,
       "source": "close"
     },
     "inputs": {
+      "period": {
+        "kind": "int",
+        "min": 2,
+        "step": 1
+      },
       "source": {
-        "source": true
+        "kind": "source"
       }
     },
     "plots": [
@@ -383,14 +519,23 @@
     "name": "MTF Moving Average",
     "shortName": "MTF MA",
     "placement": "overlay",
+    "category": "movingAverages",
     "params": {
       "period": 50,
       "timeframe": "1d",
       "source": "close"
     },
     "inputs": {
+      "period": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      },
+      "timeframe": {
+        "kind": "text"
+      },
       "source": {
-        "source": true
+        "kind": "source"
       }
     },
     "plots": [
@@ -406,8 +551,17 @@
     "name": "Session VWAP",
     "shortName": "SVWAP",
     "placement": "overlay",
+    "category": "volume",
     "params": {
       "bands": 1
+    },
+    "inputs": {
+      "bands": {
+        "kind": "int",
+        "min": 0,
+        "max": 3,
+        "step": 1
+      }
     },
     "plots": [
       {
@@ -452,9 +606,22 @@
     "name": "Chandelier Exit",
     "shortName": "CE",
     "placement": "overlay",
+    "category": "trend",
     "params": {
       "period": 22,
       "multiplier": 3
+    },
+    "inputs": {
+      "period": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      },
+      "multiplier": {
+        "kind": "number",
+        "min": 0.1,
+        "step": 0.1
+      }
     },
     "plots": [
       {
@@ -474,6 +641,7 @@
     "name": "Alligator",
     "shortName": "Alligator",
     "placement": "overlay",
+    "category": "movingAverages",
     "params": {
       "jaw": 13,
       "teeth": 8,
@@ -481,6 +649,38 @@
       "jawShift": 8,
       "teethShift": 5,
       "lipsShift": 3
+    },
+    "inputs": {
+      "jaw": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      },
+      "teeth": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      },
+      "lips": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      },
+      "jawShift": {
+        "kind": "int",
+        "min": 0,
+        "step": 1
+      },
+      "teethShift": {
+        "kind": "int",
+        "min": 0,
+        "step": 1
+      },
+      "lipsShift": {
+        "kind": "int",
+        "min": 0,
+        "step": 1
+      }
     },
     "plots": [
       {
@@ -505,13 +705,19 @@
     "name": "Volume Weighted Moving Average",
     "shortName": "VWMA",
     "placement": "overlay",
+    "category": "movingAverages",
     "params": {
       "period": 20,
       "source": "close"
     },
     "inputs": {
+      "period": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      },
       "source": {
-        "source": true
+        "kind": "source"
       }
     },
     "plots": [
@@ -527,13 +733,19 @@
     "name": "Weighted Moving Average",
     "shortName": "WMA",
     "placement": "overlay",
+    "category": "movingAverages",
     "params": {
       "period": 20,
       "source": "close"
     },
     "inputs": {
+      "period": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      },
       "source": {
-        "source": true
+        "kind": "source"
       }
     },
     "plots": [
@@ -549,14 +761,25 @@
     "name": "Moving Average Envelope",
     "shortName": "Env",
     "placement": "overlay",
+    "category": "bands",
     "params": {
       "period": 20,
       "percent": 2.5,
       "source": "close"
     },
     "inputs": {
+      "period": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      },
+      "percent": {
+        "kind": "number",
+        "min": 0,
+        "step": 0.1
+      },
       "source": {
-        "source": true
+        "kind": "source"
       }
     },
     "plots": [
@@ -582,13 +805,19 @@
     "name": "Triple EMA",
     "shortName": "TEMA",
     "placement": "overlay",
+    "category": "movingAverages",
     "params": {
       "period": 20,
       "source": "close"
     },
     "inputs": {
+      "period": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      },
       "source": {
-        "source": true
+        "kind": "source"
       }
     },
     "plots": [
@@ -604,13 +833,19 @@
     "name": "Relative Strength Index",
     "shortName": "RSI",
     "placement": "panel",
+    "category": "oscillators",
     "params": {
       "period": 14,
       "source": "close"
     },
     "inputs": {
+      "period": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      },
       "source": {
-        "source": true
+        "kind": "source"
       }
     },
     "plots": [
@@ -634,6 +869,7 @@
     "name": "MACD",
     "shortName": "MACD",
     "placement": "panel",
+    "category": "oscillators",
     "params": {
       "fast": 12,
       "slow": 26,
@@ -641,8 +877,23 @@
       "source": "close"
     },
     "inputs": {
+      "fast": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      },
+      "slow": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      },
+      "signal": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      },
       "source": {
-        "source": true
+        "kind": "source"
       }
     },
     "plots": [
@@ -668,10 +919,28 @@
     "name": "Stochastic Oscillator",
     "shortName": "Stoch",
     "placement": "panel",
+    "category": "oscillators",
     "params": {
       "kPeriod": 14,
       "dPeriod": 3,
       "smooth": 3
+    },
+    "inputs": {
+      "kPeriod": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      },
+      "dPeriod": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      },
+      "smooth": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      }
     },
     "plots": [
       {
@@ -699,8 +968,16 @@
     "name": "Average True Range",
     "shortName": "ATR",
     "placement": "panel",
+    "category": "volatility",
     "params": {
       "period": 14
+    },
+    "inputs": {
+      "period": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      }
     },
     "plots": [
       {
@@ -715,8 +992,16 @@
     "name": "Average Directional Index",
     "shortName": "ADX",
     "placement": "panel",
+    "category": "trend",
     "params": {
       "period": 14
+    },
+    "inputs": {
+      "period": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      }
     },
     "plots": [
       {
@@ -744,7 +1029,9 @@
     "name": "On Balance Volume",
     "shortName": "OBV",
     "placement": "panel",
+    "category": "volume",
     "params": {},
+    "inputs": {},
     "plots": [
       {
         "key": "value",
@@ -758,8 +1045,16 @@
     "name": "Williams %R",
     "shortName": "%R",
     "placement": "panel",
+    "category": "oscillators",
     "params": {
       "period": 14
+    },
+    "inputs": {
+      "period": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      }
     },
     "plots": [
       {
@@ -782,8 +1077,16 @@
     "name": "Commodity Channel Index",
     "shortName": "CCI",
     "placement": "panel",
+    "category": "oscillators",
     "params": {
       "period": 20
+    },
+    "inputs": {
+      "period": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      }
     },
     "plots": [
       {
@@ -803,8 +1106,16 @@
     "name": "Money Flow Index",
     "shortName": "MFI",
     "placement": "panel",
+    "category": "volume",
     "params": {
       "period": 14
+    },
+    "inputs": {
+      "period": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      }
     },
     "plots": [
       {
@@ -827,8 +1138,16 @@
     "name": "Aroon",
     "shortName": "Aroon",
     "placement": "panel",
+    "category": "trend",
     "params": {
       "period": 25
+    },
+    "inputs": {
+      "period": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      }
     },
     "plots": [
       {
@@ -852,13 +1171,19 @@
     "name": "Rate of Change",
     "shortName": "ROC",
     "placement": "panel",
+    "category": "oscillators",
     "params": {
       "period": 12,
       "source": "close"
     },
     "inputs": {
+      "period": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      },
       "source": {
-        "source": true
+        "kind": "source"
       }
     },
     "plots": [
@@ -877,6 +1202,7 @@
     "name": "True Strength Index",
     "shortName": "TSI",
     "placement": "panel",
+    "category": "oscillators",
     "params": {
       "longPeriod": 25,
       "shortPeriod": 13,
@@ -884,8 +1210,23 @@
       "source": "close"
     },
     "inputs": {
+      "longPeriod": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      },
+      "shortPeriod": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      },
+      "signalPeriod": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      },
       "source": {
-        "source": true
+        "kind": "source"
       }
     },
     "plots": [
@@ -909,8 +1250,16 @@
     "name": "Chaikin Money Flow",
     "shortName": "CMF",
     "placement": "panel",
+    "category": "volume",
     "params": {
       "period": 20
+    },
+    "inputs": {
+      "period": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      }
     },
     "plots": [
       {
@@ -925,13 +1274,19 @@
     "name": "Standard Deviation",
     "shortName": "StdDev",
     "placement": "panel",
+    "category": "volatility",
     "params": {
       "period": 20,
       "source": "close"
     },
     "inputs": {
+      "period": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      },
       "source": {
-        "source": true
+        "kind": "source"
       }
     },
     "plots": [
@@ -947,8 +1302,16 @@
     "name": "Volume Profile",
     "shortName": "VP",
     "placement": "overlay",
+    "category": "volume",
     "params": {
       "rows": 24
+    },
+    "inputs": {
+      "rows": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      }
     },
     "plots": []
   },
@@ -957,7 +1320,9 @@
     "name": "Accumulation/Distribution",
     "shortName": "A/D",
     "placement": "panel",
+    "category": "volume",
     "params": {},
+    "inputs": {},
     "plots": [
       {
         "key": "value",
@@ -971,8 +1336,16 @@
     "name": "Volume Rate of Change",
     "shortName": "VROC",
     "placement": "panel",
+    "category": "volume",
     "params": {
       "period": 14
+    },
+    "inputs": {
+      "period": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      }
     },
     "plots": [
       {
@@ -990,9 +1363,22 @@
     "name": "Awesome Oscillator",
     "shortName": "AO",
     "placement": "panel",
+    "category": "oscillators",
     "params": {
       "fast": 5,
       "slow": 34
+    },
+    "inputs": {
+      "fast": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      },
+      "slow": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      }
     },
     "plots": [
       {
@@ -1007,9 +1393,22 @@
     "name": "Chaikin Oscillator",
     "shortName": "Chaikin Osc",
     "placement": "panel",
+    "category": "volume",
     "params": {
       "fast": 3,
       "slow": 10
+    },
+    "inputs": {
+      "fast": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      },
+      "slow": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      }
     },
     "plots": [
       {
@@ -1024,8 +1423,17 @@
     "name": "Volume Delta",
     "shortName": "Vol Δ",
     "placement": "panel",
+    "category": "volume",
     "params": {
       "mode": 0
+    },
+    "inputs": {
+      "mode": {
+        "kind": "int",
+        "min": 0,
+        "max": 1,
+        "step": 1
+      }
     },
     "plots": [
       {
@@ -1040,8 +1448,16 @@
     "name": "Vortex Indicator",
     "shortName": "VI",
     "placement": "panel",
+    "category": "trend",
     "params": {
       "period": 14
+    },
+    "inputs": {
+      "period": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      }
     },
     "plots": [
       {
@@ -1064,8 +1480,16 @@
     "name": "Choppiness Index",
     "shortName": "CHOP",
     "placement": "panel",
+    "category": "trend",
     "params": {
       "period": 14
+    },
+    "inputs": {
+      "period": {
+        "kind": "int",
+        "min": 2,
+        "step": 1
+      }
     },
     "plots": [
       {
@@ -1088,10 +1512,28 @@
     "name": "Ultimate Oscillator",
     "shortName": "UO",
     "placement": "panel",
+    "category": "oscillators",
     "params": {
       "fast": 7,
       "mid": 14,
       "slow": 28
+    },
+    "inputs": {
+      "fast": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      },
+      "mid": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      },
+      "slow": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      }
     },
     "plots": [
       {
@@ -1114,8 +1556,16 @@
     "name": "Force Index",
     "shortName": "EFI",
     "placement": "panel",
+    "category": "volume",
     "params": {
       "period": 13
+    },
+    "inputs": {
+      "period": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      }
     },
     "plots": [
       {
@@ -1133,6 +1583,7 @@
     "name": "Connors RSI",
     "shortName": "CRSI",
     "placement": "panel",
+    "category": "oscillators",
     "params": {
       "rsiPeriod": 3,
       "streakPeriod": 2,
@@ -1140,8 +1591,23 @@
       "source": "close"
     },
     "inputs": {
+      "rsiPeriod": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      },
+      "streakPeriod": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      },
+      "rankPeriod": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      },
       "source": {
-        "source": true
+        "kind": "source"
       }
     },
     "plots": [
@@ -1165,6 +1631,7 @@
     "name": "Coppock Curve",
     "shortName": "Coppock",
     "placement": "panel",
+    "category": "oscillators",
     "params": {
       "longRoc": 14,
       "shortRoc": 11,
@@ -1172,8 +1639,23 @@
       "source": "close"
     },
     "inputs": {
+      "longRoc": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      },
+      "shortRoc": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      },
+      "wma": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      },
       "source": {
-        "source": true
+        "kind": "source"
       }
     },
     "plots": [
@@ -1192,6 +1674,7 @@
     "name": "Know Sure Thing",
     "shortName": "KST",
     "placement": "panel",
+    "category": "oscillators",
     "params": {
       "roc1": 10,
       "roc2": 15,
@@ -1205,8 +1688,53 @@
       "source": "close"
     },
     "inputs": {
+      "roc1": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      },
+      "roc2": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      },
+      "roc3": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      },
+      "roc4": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      },
+      "sma1": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      },
+      "sma2": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      },
+      "sma3": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      },
+      "sma4": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      },
+      "signal": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      },
       "source": {
-        "source": true
+        "kind": "source"
       }
     },
     "plots": [
@@ -1230,8 +1758,16 @@
     "name": "Elder Ray",
     "shortName": "Elder Ray",
     "placement": "panel",
+    "category": "oscillators",
     "params": {
       "period": 13
+    },
+    "inputs": {
+      "period": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      }
     },
     "plots": [
       {
@@ -1251,6 +1787,7 @@
     "name": "Schaff Trend Cycle",
     "shortName": "STC",
     "placement": "panel",
+    "category": "oscillators",
     "params": {
       "fast": 23,
       "slow": 50,
@@ -1258,8 +1795,23 @@
       "source": "close"
     },
     "inputs": {
+      "fast": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      },
+      "slow": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      },
+      "cycle": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      },
       "source": {
-        "source": true
+        "kind": "source"
       }
     },
     "plots": [
@@ -1283,10 +1835,28 @@
     "name": "Klinger Oscillator",
     "shortName": "KVO",
     "placement": "panel",
+    "category": "volume",
     "params": {
       "fast": 34,
       "slow": 55,
       "signal": 13
+    },
+    "inputs": {
+      "fast": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      },
+      "slow": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      },
+      "signal": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      }
     },
     "plots": [
       {
@@ -1309,8 +1879,16 @@
     "name": "Fisher Transform",
     "shortName": "Fisher",
     "placement": "panel",
+    "category": "oscillators",
     "params": {
       "period": 9
+    },
+    "inputs": {
+      "period": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      }
     },
     "plots": [
       {
@@ -1333,13 +1911,19 @@
     "name": "Detrended Price Oscillator",
     "shortName": "DPO",
     "placement": "panel",
+    "category": "oscillators",
     "params": {
       "period": 20,
       "source": "close"
     },
     "inputs": {
+      "period": {
+        "kind": "int",
+        "min": 2,
+        "step": 1
+      },
       "source": {
-        "source": true
+        "kind": "source"
       }
     },
     "plots": [
@@ -1355,8 +1939,16 @@
     "name": "Balance of Power",
     "shortName": "BOP",
     "placement": "panel",
+    "category": "oscillators",
     "params": {
       "smooth": 14
+    },
+    "inputs": {
+      "smooth": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      }
     },
     "plots": [
       {
@@ -1378,9 +1970,22 @@
     "name": "Mass Index",
     "shortName": "Mass",
     "placement": "panel",
+    "category": "volatility",
     "params": {
       "ema": 9,
       "sum": 25
+    },
+    "inputs": {
+      "ema": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      },
+      "sum": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      }
     },
     "plots": [
       {
@@ -1399,13 +2004,19 @@
     "name": "Chande Momentum",
     "shortName": "CMO",
     "placement": "panel",
+    "category": "oscillators",
     "params": {
       "period": 9,
       "source": "close"
     },
     "inputs": {
+      "period": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      },
       "source": {
-        "source": true
+        "kind": "source"
       }
     },
     "plots": [
@@ -1430,14 +2041,25 @@
     "name": "TRIX",
     "shortName": "TRIX",
     "placement": "panel",
+    "category": "oscillators",
     "params": {
       "period": 15,
       "signal": 9,
       "source": "close"
     },
     "inputs": {
+      "period": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      },
+      "signal": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      },
       "source": {
-        "source": true
+        "kind": "source"
       }
     },
     "plots": [
@@ -1461,8 +2083,16 @@
     "name": "Ease of Movement",
     "shortName": "EOM",
     "placement": "panel",
+    "category": "volume",
     "params": {
       "period": 14
+    },
+    "inputs": {
+      "period": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      }
     },
     "plots": [
       {
@@ -1480,7 +2110,9 @@
     "name": "Price Volume Trend",
     "shortName": "PVT",
     "placement": "panel",
+    "category": "volume",
     "params": {},
+    "inputs": {},
     "plots": [
       {
         "key": "value",
@@ -1494,7 +2126,9 @@
     "name": "Williams A/D",
     "shortName": "WAD",
     "placement": "panel",
+    "category": "volume",
     "params": {},
+    "inputs": {},
     "plots": [
       {
         "key": "value",
@@ -1508,9 +2142,22 @@
     "name": "Chaikin Volatility",
     "shortName": "CV",
     "placement": "panel",
+    "category": "volatility",
     "params": {
       "ema": 10,
       "roc": 10
+    },
+    "inputs": {
+      "ema": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      },
+      "roc": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      }
     },
     "plots": [
       {
@@ -1528,8 +2175,16 @@
     "name": "Relative Vigor Index",
     "shortName": "RVGI",
     "placement": "panel",
+    "category": "oscillators",
     "params": {
       "period": 10
+    },
+    "inputs": {
+      "period": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      }
     },
     "plots": [
       {
@@ -1552,6 +2207,7 @@
     "name": "Stochastic RSI",
     "shortName": "Stoch RSI",
     "placement": "panel",
+    "category": "oscillators",
     "params": {
       "rsiPeriod": 14,
       "stochPeriod": 14,
@@ -1560,8 +2216,28 @@
       "source": "close"
     },
     "inputs": {
+      "rsiPeriod": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      },
+      "stochPeriod": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      },
+      "k": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      },
+      "d": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      },
       "source": {
-        "source": true
+        "kind": "source"
       }
     },
     "plots": [
@@ -1590,6 +2266,7 @@
     "name": "Percentage Price Oscillator",
     "shortName": "PPO",
     "placement": "panel",
+    "category": "oscillators",
     "params": {
       "fast": 12,
       "slow": 26,
@@ -1597,8 +2274,23 @@
       "source": "close"
     },
     "inputs": {
+      "fast": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      },
+      "slow": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      },
+      "signal": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      },
       "source": {
-        "source": true
+        "kind": "source"
       }
     },
     "plots": [
@@ -1627,7 +2319,9 @@
     "name": "Accelerator Oscillator",
     "shortName": "AC",
     "placement": "panel",
+    "category": "oscillators",
     "params": {},
+    "inputs": {},
     "plots": [
       {
         "key": "value",
@@ -1641,14 +2335,25 @@
     "name": "Relative Momentum Index",
     "shortName": "RMI",
     "placement": "panel",
+    "category": "oscillators",
     "params": {
       "period": 20,
       "momentum": 5,
       "source": "close"
     },
     "inputs": {
+      "period": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      },
+      "momentum": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      },
       "source": {
-        "source": true
+        "kind": "source"
       }
     },
     "plots": [
@@ -1672,13 +2377,19 @@
     "name": "Disparity Index",
     "shortName": "DI",
     "placement": "panel",
+    "category": "oscillators",
     "params": {
       "period": 14,
       "source": "close"
     },
     "inputs": {
+      "period": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      },
       "source": {
-        "source": true
+        "kind": "source"
       }
     },
     "plots": [
@@ -1697,8 +2408,16 @@
     "name": "Qstick",
     "shortName": "Qstick",
     "placement": "panel",
+    "category": "oscillators",
     "params": {
       "period": 8
+    },
+    "inputs": {
+      "period": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      }
     },
     "plots": [
       {
@@ -1716,8 +2435,16 @@
     "name": "Pretty Good Oscillator",
     "shortName": "PGO",
     "placement": "panel",
+    "category": "oscillators",
     "params": {
       "period": 14
+    },
+    "inputs": {
+      "period": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      }
     },
     "plots": [
       {
@@ -1737,16 +2464,19 @@
     "name": "Double Exponential Moving Average",
     "shortName": "DEMA",
     "placement": "overlay",
+    "category": "movingAverages",
     "params": {
       "period": 20,
       "source": "close"
     },
     "inputs": {
       "period": {
-        "min": 1
+        "kind": "int",
+        "min": 1,
+        "step": 1
       },
       "source": {
-        "source": true
+        "kind": "source"
       }
     },
     "plots": [
@@ -1762,16 +2492,19 @@
     "name": "Smoothed Moving Average",
     "shortName": "SMMA",
     "placement": "overlay",
+    "category": "movingAverages",
     "params": {
       "period": 14,
       "source": "close"
     },
     "inputs": {
       "period": {
-        "min": 1
+        "kind": "int",
+        "min": 1,
+        "step": 1
       },
       "source": {
-        "source": true
+        "kind": "source"
       }
     },
     "plots": [
@@ -1787,6 +2520,7 @@
     "name": "Arnaud Legoux Moving Average",
     "shortName": "ALMA",
     "placement": "overlay",
+    "category": "movingAverages",
     "params": {
       "period": 9,
       "offset": 0.85,
@@ -1795,20 +2529,24 @@
     },
     "inputs": {
       "period": {
+        "kind": "int",
         "min": 1,
-        "max": 5000
+        "max": 5000,
+        "step": 1
       },
       "offset": {
+        "kind": "number",
         "min": 0,
         "max": 1,
         "step": 0.05
       },
       "sigma": {
+        "kind": "number",
         "min": 0.5,
         "step": 0.5
       },
       "source": {
-        "source": true
+        "kind": "source"
       }
     },
     "plots": [
@@ -1824,6 +2562,7 @@
     "name": "Kaufman Adaptive Moving Average",
     "shortName": "KAMA",
     "placement": "overlay",
+    "category": "movingAverages",
     "params": {
       "period": 10,
       "fast": 2,
@@ -1832,16 +2571,22 @@
     },
     "inputs": {
       "period": {
-        "min": 1
+        "kind": "int",
+        "min": 1,
+        "step": 1
       },
       "fast": {
-        "min": 1
+        "kind": "int",
+        "min": 1,
+        "step": 1
       },
       "slow": {
-        "min": 1
+        "kind": "int",
+        "min": 1,
+        "step": 1
       },
       "source": {
-        "source": true
+        "kind": "source"
       }
     },
     "plots": [
@@ -1857,6 +2602,7 @@
     "name": "Least Squares Moving Average",
     "shortName": "LSMA",
     "placement": "overlay",
+    "category": "movingAverages",
     "params": {
       "period": 25,
       "offset": 0,
@@ -1864,14 +2610,17 @@
     },
     "inputs": {
       "period": {
+        "kind": "int",
         "min": 2,
-        "max": 5000
+        "max": 5000,
+        "step": 1
       },
       "offset": {
+        "kind": "int",
         "step": 1
       },
       "source": {
-        "source": true
+        "kind": "source"
       }
     },
     "plots": [
@@ -1887,16 +2636,19 @@
     "name": "McGinley Dynamic",
     "shortName": "McGinley",
     "placement": "overlay",
+    "category": "movingAverages",
     "params": {
       "period": 14,
       "source": "close"
     },
     "inputs": {
       "period": {
-        "min": 1
+        "kind": "int",
+        "min": 1,
+        "step": 1
       },
       "source": {
-        "source": true
+        "kind": "source"
       }
     },
     "plots": [
@@ -1912,6 +2664,7 @@
     "name": "MA Cross",
     "shortName": "MA Cross",
     "placement": "overlay",
+    "category": "movingAverages",
     "params": {
       "fast": 9,
       "slow": 21,
@@ -1920,12 +2673,17 @@
     },
     "inputs": {
       "fast": {
-        "min": 1
+        "kind": "int",
+        "min": 1,
+        "step": 1
       },
       "slow": {
-        "min": 1
+        "kind": "int",
+        "min": 1,
+        "step": 1
       },
       "type": {
+        "kind": "choice",
         "options": [
           "sma",
           "ema",
@@ -1933,7 +2691,7 @@
         ]
       },
       "source": {
-        "source": true
+        "kind": "source"
       }
     },
     "plots": [
@@ -1954,13 +2712,16 @@
     "name": "Williams Fractals",
     "shortName": "Fractals",
     "placement": "overlay",
+    "category": "patterns",
     "params": {
       "period": 2
     },
     "inputs": {
       "period": {
+        "kind": "int",
         "min": 1,
-        "max": 10
+        "max": 10,
+        "step": 1
       }
     },
     "plots": [
@@ -1981,6 +2742,7 @@
     "name": "Chande Kroll Stop",
     "shortName": "CKS",
     "placement": "overlay",
+    "category": "trend",
     "params": {
       "p": 10,
       "x": 1,
@@ -1988,17 +2750,22 @@
     },
     "inputs": {
       "p": {
+        "kind": "int",
         "label": "ATR length",
-        "min": 1
+        "min": 1,
+        "step": 1
       },
       "x": {
+        "kind": "number",
         "label": "ATR multiplier",
         "min": 0,
         "step": 0.1
       },
       "q": {
+        "kind": "int",
         "label": "Stop length",
-        "min": 1
+        "min": 1,
+        "step": 1
       }
     },
     "plots": [
@@ -2019,6 +2786,7 @@
     "name": "Bollinger Bands %B",
     "shortName": "%B",
     "placement": "panel",
+    "category": "oscillators",
     "params": {
       "period": 20,
       "stdDev": 2,
@@ -2026,14 +2794,17 @@
     },
     "inputs": {
       "period": {
-        "min": 2
+        "kind": "int",
+        "min": 2,
+        "step": 1
       },
       "stdDev": {
+        "kind": "number",
         "min": 0.1,
         "step": 0.1
       },
       "source": {
-        "source": true
+        "kind": "source"
       }
     },
     "plots": [
@@ -2054,6 +2825,7 @@
     "name": "Bollinger BandWidth",
     "shortName": "BBW",
     "placement": "panel",
+    "category": "volatility",
     "params": {
       "period": 20,
       "stdDev": 2,
@@ -2061,14 +2833,17 @@
     },
     "inputs": {
       "period": {
-        "min": 2
+        "kind": "int",
+        "min": 2,
+        "step": 1
       },
       "stdDev": {
+        "kind": "number",
         "min": 0.1,
         "step": 0.1
       },
       "source": {
-        "source": true
+        "kind": "source"
       }
     },
     "plots": [
@@ -2084,16 +2859,19 @@
     "name": "Momentum",
     "shortName": "MOM",
     "placement": "panel",
+    "category": "oscillators",
     "params": {
       "period": 10,
       "source": "close"
     },
     "inputs": {
       "period": {
-        "min": 1
+        "kind": "int",
+        "min": 1,
+        "step": 1
       },
       "source": {
-        "source": true
+        "kind": "source"
       }
     },
     "plots": [
@@ -2112,6 +2890,7 @@
     "name": "Historical Volatility",
     "shortName": "HV",
     "placement": "panel",
+    "category": "volatility",
     "params": {
       "period": 10,
       "annual": 365,
@@ -2119,14 +2898,18 @@
     },
     "inputs": {
       "period": {
-        "min": 2
+        "kind": "int",
+        "min": 2,
+        "step": 1
       },
       "annual": {
+        "kind": "number",
         "label": "Bars per year",
-        "min": 1
+        "min": 1,
+        "step": 1
       },
       "source": {
-        "source": true
+        "kind": "source"
       }
     },
     "plots": [
@@ -2145,16 +2928,21 @@
     "name": "Volume Oscillator",
     "shortName": "Vol Osc",
     "placement": "panel",
+    "category": "volume",
     "params": {
       "short": 5,
       "long": 10
     },
     "inputs": {
       "short": {
-        "min": 1
+        "kind": "int",
+        "min": 1,
+        "step": 1
       },
       "long": {
-        "min": 1
+        "kind": "int",
+        "min": 1,
+        "step": 1
       }
     },
     "plots": [
@@ -2173,16 +2961,19 @@
     "name": "Ulcer Index",
     "shortName": "Ulcer",
     "placement": "panel",
+    "category": "volatility",
     "params": {
       "period": 14,
       "source": "close"
     },
     "inputs": {
       "period": {
-        "min": 1
+        "kind": "int",
+        "min": 1,
+        "step": 1
       },
       "source": {
-        "source": true
+        "kind": "source"
       }
     },
     "plots": [
@@ -2201,6 +2992,7 @@
     "name": "Stochastic Momentum Index",
     "shortName": "SMI",
     "placement": "panel",
+    "category": "oscillators",
     "params": {
       "period": 10,
       "smooth": 3,
@@ -2208,13 +3000,19 @@
     },
     "inputs": {
       "period": {
-        "min": 1
+        "kind": "int",
+        "min": 1,
+        "step": 1
       },
       "smooth": {
-        "min": 1
+        "kind": "int",
+        "min": 1,
+        "step": 1
       },
       "signal": {
-        "min": 1
+        "kind": "int",
+        "min": 1,
+        "step": 1
       }
     },
     "plots": [
@@ -2239,16 +3037,21 @@
     "name": "Relative Volatility Index",
     "shortName": "RVI (vol)",
     "placement": "panel",
+    "category": "volatility",
     "params": {
       "period": 10,
       "smooth": 14
     },
     "inputs": {
       "period": {
-        "min": 2
+        "kind": "int",
+        "min": 2,
+        "step": 1
       },
       "smooth": {
-        "min": 1
+        "kind": "int",
+        "min": 1,
+        "step": 1
       }
     },
     "plots": [
@@ -2273,12 +3076,15 @@
     "name": "Trend Strength Index",
     "shortName": "TSI (trend)",
     "placement": "panel",
+    "category": "trend",
     "params": {
       "period": 14
     },
     "inputs": {
       "period": {
-        "min": 2
+        "kind": "int",
+        "min": 2,
+        "step": 1
       }
     },
     "plots": [
@@ -2301,12 +3107,15 @@
     "name": "Linear Regression Slope",
     "shortName": "LR Slope",
     "placement": "panel",
+    "category": "trend",
     "params": {
       "period": 14
     },
     "inputs": {
       "period": {
-        "min": 2
+        "kind": "int",
+        "min": 2,
+        "step": 1
       }
     },
     "plots": [
@@ -2325,12 +3134,15 @@
     "name": "Standard Error",
     "shortName": "StdErr",
     "placement": "panel",
+    "category": "volatility",
     "params": {
       "period": 14
     },
     "inputs": {
       "period": {
-        "min": 3
+        "kind": "int",
+        "min": 3,
+        "step": 1
       }
     },
     "plots": [
@@ -2349,12 +3161,15 @@
     "name": "Average Day Range",
     "shortName": "ADR",
     "placement": "panel",
+    "category": "volatility",
     "params": {
       "period": 14
     },
     "inputs": {
       "period": {
-        "min": 1
+        "kind": "int",
+        "min": 1,
+        "step": 1
       }
     },
     "plots": [
@@ -2373,7 +3188,9 @@
     "name": "Net Volume",
     "shortName": "Net Vol",
     "placement": "panel",
+    "category": "volume",
     "params": {},
+    "inputs": {},
     "plots": [
       {
         "key": "value",
@@ -2390,6 +3207,7 @@
     "name": "Standard Error Bands",
     "shortName": "SEB",
     "placement": "overlay",
+    "category": "bands",
     "params": {
       "period": 21,
       "mult": 2,
@@ -2397,14 +3215,19 @@
     },
     "inputs": {
       "period": {
-        "min": 3
+        "kind": "int",
+        "min": 3,
+        "step": 1
       },
       "mult": {
+        "kind": "number",
         "min": 0,
         "step": 0.1
       },
       "smooth": {
-        "min": 1
+        "kind": "int",
+        "min": 1,
+        "step": 1
       }
     },
     "plots": [
@@ -2430,7 +3253,9 @@
     "name": "Guppy Multiple Moving Average",
     "shortName": "GMMA",
     "placement": "overlay",
+    "category": "movingAverages",
     "params": {},
+    "inputs": {},
     "plots": [
       {
         "key": "s3",
@@ -2499,6 +3324,7 @@
     "name": "Moving Average Ribbon",
     "shortName": "MA Ribbon",
     "placement": "overlay",
+    "category": "movingAverages",
     "params": {
       "ma1": 20,
       "ma2": 50,
@@ -2508,20 +3334,30 @@
     },
     "inputs": {
       "ma1": {
-        "min": 1
+        "kind": "int",
+        "min": 1,
+        "step": 1
       },
       "ma2": {
-        "min": 1
+        "kind": "int",
+        "min": 1,
+        "step": 1
       },
       "ma3": {
-        "min": 1
+        "kind": "int",
+        "min": 1,
+        "step": 1
       },
       "ma4": {
-        "min": 1
+        "kind": "int",
+        "min": 1,
+        "step": 1
       },
       "exponential": {
+        "kind": "int",
         "min": 0,
-        "max": 1
+        "max": 1,
+        "step": 1
       }
     },
     "plots": [
@@ -2552,7 +3388,9 @@
     "name": "Average Price",
     "shortName": "OHLC4",
     "placement": "overlay",
+    "category": "patterns",
     "params": {},
+    "inputs": {},
     "plots": [
       {
         "key": "value",
@@ -2566,7 +3404,9 @@
     "name": "Median Price",
     "shortName": "HL2",
     "placement": "overlay",
+    "category": "patterns",
     "params": {},
+    "inputs": {},
     "plots": [
       {
         "key": "value",
@@ -2580,7 +3420,9 @@
     "name": "Typical Price",
     "shortName": "HLC3",
     "placement": "overlay",
+    "category": "patterns",
     "params": {},
+    "inputs": {},
     "plots": [
       {
         "key": "value",
@@ -2594,6 +3436,7 @@
     "name": "Moving Average Channel",
     "shortName": "MA Channel",
     "placement": "overlay",
+    "category": "bands",
     "params": {
       "upperLength": 20,
       "lowerLength": 20,
@@ -2602,18 +3445,26 @@
     },
     "inputs": {
       "upperLength": {
-        "min": 1
+        "kind": "int",
+        "min": 1,
+        "step": 1
       },
       "lowerLength": {
-        "min": 1
+        "kind": "int",
+        "min": 1,
+        "step": 1
       },
       "upperOffset": {
+        "kind": "int",
         "min": -500,
-        "max": 500
+        "max": 500,
+        "step": 1
       },
       "lowerOffset": {
+        "kind": "int",
         "min": -500,
-        "max": 500
+        "max": 500,
+        "step": 1
       }
     },
     "plots": [
@@ -2634,17 +3485,20 @@
     "name": "Moving Average Hamming",
     "shortName": "HMA (Hamming)",
     "placement": "overlay",
+    "category": "movingAverages",
     "params": {
       "period": 10,
       "source": "close"
     },
     "inputs": {
       "period": {
+        "kind": "int",
         "min": 2,
-        "max": 500
+        "max": 500,
+        "step": 1
       },
       "source": {
-        "source": true
+        "kind": "source"
       }
     },
     "plots": [
@@ -2660,6 +3514,7 @@
     "name": "Moving Average Double",
     "shortName": "MA x2",
     "placement": "overlay",
+    "category": "movingAverages",
     "params": {
       "first": 20,
       "second": 50,
@@ -2668,12 +3523,17 @@
     },
     "inputs": {
       "first": {
-        "min": 1
+        "kind": "int",
+        "min": 1,
+        "step": 1
       },
       "second": {
-        "min": 1
+        "kind": "int",
+        "min": 1,
+        "step": 1
       },
       "type": {
+        "kind": "choice",
         "options": [
           "sma",
           "ema",
@@ -2681,7 +3541,7 @@
         ]
       },
       "source": {
-        "source": true
+        "kind": "source"
       }
     },
     "plots": [
@@ -2702,6 +3562,7 @@
     "name": "Moving Average Triple",
     "shortName": "MA x3",
     "placement": "overlay",
+    "category": "movingAverages",
     "params": {
       "first": 10,
       "second": 20,
@@ -2711,15 +3572,22 @@
     },
     "inputs": {
       "first": {
-        "min": 1
+        "kind": "int",
+        "min": 1,
+        "step": 1
       },
       "second": {
-        "min": 1
+        "kind": "int",
+        "min": 1,
+        "step": 1
       },
       "third": {
-        "min": 1
+        "kind": "int",
+        "min": 1,
+        "step": 1
       },
       "type": {
+        "kind": "choice",
         "options": [
           "sma",
           "ema",
@@ -2727,7 +3595,7 @@
         ]
       },
       "source": {
-        "source": true
+        "kind": "source"
       }
     },
     "plots": [
@@ -2753,15 +3621,19 @@
     "name": "Volatility Index",
     "shortName": "VI",
     "placement": "overlay",
+    "category": "trend",
     "params": {
       "period": 7,
       "mult": 3
     },
     "inputs": {
       "period": {
-        "min": 1
+        "kind": "int",
+        "min": 1,
+        "step": 1
       },
       "mult": {
+        "kind": "number",
         "label": "ATR multiple",
         "min": 0.1,
         "step": 0.1
@@ -2780,11 +3652,13 @@
     "name": "Accumulative Swing Index",
     "shortName": "ASI",
     "placement": "panel",
+    "category": "trend",
     "params": {
       "limit": 10
     },
     "inputs": {
       "limit": {
+        "kind": "number",
         "label": "Limit move",
         "min": 0.0001,
         "step": 0.1
@@ -2806,12 +3680,15 @@
     "name": "Advance/Decline",
     "shortName": "A/D Ratio",
     "placement": "panel",
+    "category": "oscillators",
     "params": {
       "length": 10
     },
     "inputs": {
       "length": {
-        "min": 1
+        "kind": "int",
+        "min": 1,
+        "step": 1
       }
     },
     "plots": [
@@ -2830,12 +3707,15 @@
     "name": "Majority Rule",
     "shortName": "Majority",
     "placement": "panel",
+    "category": "trend",
     "params": {
       "period": 14
     },
     "inputs": {
       "period": {
-        "min": 1
+        "kind": "int",
+        "min": 1,
+        "step": 1
       }
     },
     "plots": [
@@ -2858,7 +3738,9 @@
     "name": "Chop Zone",
     "shortName": "Chop Zone",
     "placement": "panel",
+    "category": "trend",
     "params": {},
+    "inputs": {},
     "plots": [
       {
         "key": "angle",
@@ -2875,6 +3757,7 @@
     "name": "SMI Ergodic",
     "shortName": "SMIIO",
     "placement": "panel",
+    "category": "oscillators",
     "params": {
       "short": 5,
       "long": 20,
@@ -2883,16 +3766,22 @@
     },
     "inputs": {
       "short": {
-        "min": 1
+        "kind": "int",
+        "min": 1,
+        "step": 1
       },
       "long": {
-        "min": 1
+        "kind": "int",
+        "min": 1,
+        "step": 1
       },
       "signal": {
-        "min": 1
+        "kind": "int",
+        "min": 1,
+        "step": 1
       },
       "source": {
-        "source": true
+        "kind": "source"
       }
     },
     "plots": [
@@ -2921,6 +3810,7 @@
     "name": "Price Oscillator",
     "shortName": "PO",
     "placement": "panel",
+    "category": "oscillators",
     "params": {
       "short": 10,
       "long": 21,
@@ -2928,13 +3818,17 @@
     },
     "inputs": {
       "short": {
-        "min": 1
+        "kind": "int",
+        "min": 1,
+        "step": 1
       },
       "long": {
-        "min": 1
+        "kind": "int",
+        "min": 1,
+        "step": 1
       },
       "source": {
-        "source": true
+        "kind": "source"
       }
     },
     "plots": [
@@ -2953,17 +3847,22 @@
     "name": "Volatility O-H-L-C",
     "shortName": "Vol OHLC",
     "placement": "panel",
+    "category": "volatility",
     "params": {
       "period": 10,
       "annual": 365
     },
     "inputs": {
       "period": {
-        "min": 1
+        "kind": "int",
+        "min": 1,
+        "step": 1
       },
       "annual": {
+        "kind": "number",
         "label": "Bars per year",
-        "min": 1
+        "min": 1,
+        "step": 1
       }
     },
     "plots": [
@@ -2982,17 +3881,22 @@
     "name": "Volatility Zero Trend Close-to-Close",
     "shortName": "Vol ZT",
     "placement": "panel",
+    "category": "volatility",
     "params": {
       "period": 10,
       "annual": 365
     },
     "inputs": {
       "period": {
-        "min": 1
+        "kind": "int",
+        "min": 1,
+        "step": 1
       },
       "annual": {
+        "kind": "number",
         "label": "Bars per year",
-        "min": 1
+        "min": 1,
+        "step": 1
       }
     },
     "plots": [
@@ -3011,8 +3915,16 @@
     "name": "Psychological Line",
     "shortName": "PSY",
     "placement": "panel",
+    "category": "oscillators",
     "params": {
       "period": 10
+    },
+    "inputs": {
+      "period": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      }
     },
     "plots": [
       {
@@ -3035,8 +3947,16 @@
     "name": "New Psychological Line",
     "shortName": "New PSY",
     "placement": "panel",
+    "category": "oscillators",
     "params": {
       "period": 10
+    },
+    "inputs": {
+      "period": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      }
     },
     "plots": [
       {
@@ -3060,8 +3980,16 @@
     "name": "Volume Ratio",
     "shortName": "VR",
     "placement": "panel",
+    "category": "volume",
     "params": {
       "period": 20
+    },
+    "inputs": {
+      "period": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      }
     },
     "plots": [
       {
@@ -3081,8 +4009,16 @@
     "name": "AB Ratio",
     "shortName": "AB Ratio",
     "placement": "panel",
+    "category": "oscillators",
     "params": {
       "period": 26
+    },
+    "inputs": {
+      "period": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      }
     },
     "plots": [
       {
@@ -3105,10 +4041,28 @@
     "name": "Sonar",
     "shortName": "Sonar",
     "placement": "panel",
+    "category": "oscillators",
     "params": {
       "period": 20,
       "lookback": 9,
       "signal": 9
+    },
+    "inputs": {
+      "period": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      },
+      "lookback": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      },
+      "signal": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      }
     },
     "plots": [
       {
@@ -3131,8 +4085,16 @@
     "name": "Sigma",
     "shortName": "Sigma",
     "placement": "panel",
+    "category": "volatility",
     "params": {
       "period": 20
+    },
+    "inputs": {
+      "period": {
+        "kind": "int",
+        "min": 2,
+        "step": 1
+      }
     },
     "plots": [
       {
@@ -3152,8 +4114,16 @@
     "name": "Vertical Horizontal Filter",
     "shortName": "VHF",
     "placement": "panel",
+    "category": "trend",
     "params": {
       "period": 28
+    },
+    "inputs": {
+      "period": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      }
     },
     "plots": [
       {
@@ -3168,8 +4138,16 @@
     "name": "R-Squared",
     "shortName": "R²",
     "placement": "panel",
+    "category": "trend",
     "params": {
       "period": 14
+    },
+    "inputs": {
+      "period": {
+        "kind": "int",
+        "min": 2,
+        "step": 1
+      }
     },
     "plots": [
       {
@@ -3188,8 +4166,16 @@
     "name": "Random Walk Index",
     "shortName": "RWI",
     "placement": "panel",
+    "category": "trend",
     "params": {
       "period": 14
+    },
+    "inputs": {
+      "period": {
+        "kind": "int",
+        "min": 2,
+        "step": 1
+      }
     },
     "plots": [
       {
@@ -3212,8 +4198,16 @@
     "name": "Negative Volume Index",
     "shortName": "NVI",
     "placement": "panel",
+    "category": "volume",
     "params": {
       "signal": 255
+    },
+    "inputs": {
+      "signal": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      }
     },
     "plots": [
       {
@@ -3233,8 +4227,16 @@
     "name": "Positive Volume Index",
     "shortName": "PVI",
     "placement": "panel",
+    "category": "volume",
     "params": {
       "signal": 255
+    },
+    "inputs": {
+      "signal": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      }
     },
     "plots": [
       {
@@ -3254,7 +4256,9 @@
     "name": "True Range",
     "shortName": "TR",
     "placement": "panel",
+    "category": "volatility",
     "params": {},
+    "inputs": {},
     "plots": [
       {
         "key": "value",
@@ -3268,8 +4272,16 @@
     "name": "Intraday Intensity",
     "shortName": "III",
     "placement": "panel",
+    "category": "volume",
     "params": {
       "period": 21
+    },
+    "inputs": {
+      "period": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      }
     },
     "plots": [
       {
@@ -3290,8 +4302,16 @@
     "name": "Volume vs Average",
     "shortName": "Vol %",
     "placement": "panel",
+    "category": "volume",
     "params": {
       "period": 20
+    },
+    "inputs": {
+      "period": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      }
     },
     "plots": [
       {
@@ -3312,7 +4332,9 @@
     "name": "Volume Change",
     "shortName": "Vol Δ",
     "placement": "panel",
+    "category": "volume",
     "params": {},
+    "inputs": {},
     "plots": [
       {
         "key": "value",
@@ -3329,7 +4351,9 @@
     "name": "Trade Value",
     "shortName": "Value",
     "placement": "panel",
+    "category": "volume",
     "params": {},
+    "inputs": {},
     "plots": [
       {
         "key": "value",
@@ -3346,6 +4370,7 @@
     "name": "Binary Wave",
     "shortName": "Binary Wave",
     "placement": "panel",
+    "category": "oscillators",
     "params": {
       "ma": 20,
       "fast": 12,
@@ -3353,6 +4378,38 @@
       "signal": 9,
       "roc": 12,
       "stoch": 14
+    },
+    "inputs": {
+      "ma": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      },
+      "fast": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      },
+      "slow": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      },
+      "signal": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      },
+      "roc": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      },
+      "stoch": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      }
     },
     "plots": [
       {
@@ -3374,9 +4431,22 @@
     "name": "Smoothed Rate of Change",
     "shortName": "S-ROC",
     "placement": "panel",
+    "category": "oscillators",
     "params": {
       "ema": 13,
       "roc": 21
+    },
+    "inputs": {
+      "ema": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      },
+      "roc": {
+        "kind": "int",
+        "min": 1,
+        "step": 1
+      }
     },
     "plots": [
       {
@@ -3394,8 +4464,16 @@
     "name": "Time Series Forecast",
     "shortName": "TSF",
     "placement": "overlay",
+    "category": "movingAverages",
     "params": {
       "period": 14
+    },
+    "inputs": {
+      "period": {
+        "kind": "int",
+        "min": 2,
+        "step": 1
+      }
     },
     "plots": [
       {
@@ -3410,7 +4488,9 @@
     "name": "Weighted Close",
     "shortName": "HLCC4",
     "placement": "overlay",
+    "category": "patterns",
     "params": {},
+    "inputs": {},
     "plots": [
       {
         "key": "value",
@@ -3424,7 +4504,9 @@
     "name": "DeMark Projected Range",
     "shortName": "DeMark",
     "placement": "overlay",
+    "category": "patterns",
     "params": {},
+    "inputs": {},
     "plots": [
       {
         "key": "high",
@@ -3443,6 +4525,7 @@
     "name": "Moving Average Rainbow",
     "shortName": "Rainbow",
     "placement": "overlay",
+    "category": "movingAverages",
     "params": {
       "first": 10,
       "step": 10,
@@ -3451,18 +4534,26 @@
     },
     "inputs": {
       "first": {
-        "min": 1
+        "kind": "int",
+        "min": 1,
+        "step": 1
       },
       "step": {
-        "min": 1
+        "kind": "int",
+        "min": 1,
+        "step": 1
       },
       "count": {
+        "kind": "int",
         "min": 1,
-        "max": 20
+        "max": 20,
+        "step": 1
       },
       "exponential": {
+        "kind": "int",
         "min": 0,
-        "max": 1
+        "max": 1,
+        "step": 1
       }
     },
     "plots": [
@@ -3573,6 +4664,7 @@
     "name": "Candlestick Patterns",
     "shortName": "Patterns",
     "placement": "overlay",
+    "category": "patterns",
     "params": {
       "trendPeriod": 10,
       "reversal": 1,
@@ -3581,19 +4673,27 @@
     },
     "inputs": {
       "trendPeriod": {
-        "min": 2
+        "kind": "int",
+        "min": 2,
+        "step": 1
       },
       "reversal": {
+        "kind": "int",
         "min": 0,
-        "max": 1
+        "max": 1,
+        "step": 1
       },
       "continuation": {
+        "kind": "int",
         "min": 0,
-        "max": 1
+        "max": 1,
+        "step": 1
       },
       "indecision": {
+        "kind": "int",
         "min": 0,
-        "max": 1
+        "max": 1,
+        "step": 1
       }
     },
     "plots": [

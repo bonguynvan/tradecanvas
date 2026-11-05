@@ -8,7 +8,7 @@
   const params = (i: Entry) =>
     Object.entries(i.params).map(([k, v]) => `${k}: ${JSON.stringify(v)}`).join(', ');
   const lines = (i: Entry) => i.plots.map((p) => p.title).join(', ');
-  const hasSource = (i: Entry) => 'inputs' in i && Object.values(i.inputs ?? {}).some((x) => (x as { source?: boolean }).source);
+  const hasSource = (i: Entry) => Object.values(i.inputs).some((x) => x.kind === 'source');
 </script>
 
 <svelte:head>
@@ -201,6 +201,19 @@ CANDLE_PATTERNS.length                                 // 64`}</code></pre>
   다시 계산합니다. 시간대를 읽지 않는 직접 만든 지표는 descriptor에
   <code>readsExchangeTimeZone: false</code>를 적으면 그대로 남습니다.
 </p>
+<p>
+  각 입력의 <code>kind</code>(<code>'int'</code>, <code>'number'</code>, <code>'boolean'</code>,
+  <code>'choice'</code>, <code>'source'</code>, <code>'color'</code>, <code>'text'</code>)와
+  <code>min</code>, <code>max</code>, <code>step</code>이 설정 창의 입력란을 정합니다.
+  <code>'int'</code>는 기간을 읽는 방식대로 입력하는 즉시 정수로 반올림됩니다. <code>kind</code>가 없으면
+  기본값에서 판단합니다(숫자는 <code>'number'</code>이며, <code>'int'</code>로 선언한 것만 반올림됩니다). <code>describeInputs(descriptor)</code>는 설정 대화상자,
+  이 문서, MCP 서버가 읽는 그대로 입력을 나열합니다.
+</p>
+<pre><code>{`inputs: {
+  period: { kind: 'int', min: 2, max: 500 },
+  mult: { kind: 'number', min: 0.1, step: 0.1 },
+  source: { source: true },
+}`}</code></pre>
 
 <h2>패널: 크기 조절, 접기, 최대화, 순서 바꾸기</h2>
 <p>

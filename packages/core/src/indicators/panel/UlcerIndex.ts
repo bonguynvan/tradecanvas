@@ -15,7 +15,7 @@ export class UlcerIndexIndicator extends IndicatorBase {
     placement: 'panel',
     defaultConfig: { period: 14, source: 'close' },
     shortName: 'Ulcer',
-    inputs: { period: { min: 1 }, source: { source: true } },
+    inputs: { period: { kind: 'int', min: 1 }, source: { source: true } },
     plots: [{ key: 'value', title: 'Ulcer', color: 0 }],
     scale: { min: 0 },
   };

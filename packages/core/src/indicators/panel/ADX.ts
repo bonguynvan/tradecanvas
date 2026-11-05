@@ -9,6 +9,7 @@ export class ADXIndicator extends IndicatorBase {
     name: 'Average Directional Index',
     placement: 'panel' as const,
     defaultConfig: { period: 14 },
+    inputs: { period: { kind: 'int', min: 1 } },
     shortName: 'ADX',
     plots: [
       { key: 'adx', title: 'ADX', color: 0 },

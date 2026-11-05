@@ -17,6 +17,7 @@ export class QstickIndicator extends IndicatorBase {
     name: 'Qstick',
     placement: 'panel' as const,
     defaultConfig: { period: 8 },
+    inputs: { period: { kind: 'int', min: 1 } },
     shortName: 'Qstick',
     plots: [{ key: 'value', title: 'Qstick', color: 0 }],
     levels: [0],

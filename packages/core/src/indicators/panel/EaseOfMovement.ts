@@ -18,6 +18,7 @@ export class EaseOfMovementIndicator extends IndicatorBase {
     name: 'Ease of Movement',
     placement: 'panel' as const,
     defaultConfig: { period: 14 },
+    inputs: { period: { kind: 'int', min: 1 } },
     shortName: 'EOM',
     plots: [{ key: 'value', title: 'EOM', color: 0 }],
     levels: [0],

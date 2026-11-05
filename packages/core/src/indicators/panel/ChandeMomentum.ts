@@ -17,7 +17,7 @@ export class ChandeMomentumIndicator extends IndicatorBase {
     placement: 'panel' as const,
     defaultConfig: { period: 9, source: 'close' },
     shortName: 'CMO',
-    inputs: { source: { source: true } },
+    inputs: { source: { source: true }, period: { kind: 'int', min: 1 } },
     plots: [{ key: 'value', title: 'CMO', color: 0 }],
     scale: { min: -100, max: 100 },
     levels: [-50, 0, 50],

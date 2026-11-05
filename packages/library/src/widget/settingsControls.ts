@@ -51,7 +51,7 @@ export function toggleSwitch(value: boolean, onChange: (value: boolean) => void)
 
 export function numberInput(
   value: number,
-  range: { min?: number; max?: number; step?: number | 'any' },
+  range: { min?: number; max?: number; step?: number | 'any'; whole?: boolean },
   onChange: (value: number) => void,
 ): HTMLInputElement {
   const input = document.createElement('input');
@@ -65,6 +65,8 @@ export function numberInput(
     if (input.value.trim() === '') return;
     let n = Number(input.value);
     if (!Number.isFinite(n)) return;
+    // A whole number (a period): what is typed is rounded, so the field shows the value used.
+    if (range.whole) n = Math.round(n);
     if (range.min !== undefined) n = Math.max(range.min, n);
     if (range.max !== undefined) n = Math.min(range.max, n);
     input.value = String(n);

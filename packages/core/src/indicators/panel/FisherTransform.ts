@@ -15,6 +15,7 @@ export class FisherTransformIndicator extends IndicatorBase {
     name: 'Fisher Transform',
     placement: 'panel' as const,
     defaultConfig: { period: 9 },
+    inputs: { period: { kind: 'int', min: 1 } },
     shortName: 'Fisher',
     plots: [
       { key: 'value', title: 'Fisher', color: 0 },

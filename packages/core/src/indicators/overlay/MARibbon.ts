@@ -11,7 +11,7 @@ export class MARibbonIndicator extends IndicatorBase {
     placement: 'overlay',
     defaultConfig: { ma1: 20, ma2: 50, ma3: 100, ma4: 200, exponential: 0 },
     shortName: 'MA Ribbon',
-    inputs: { ma1: { min: 1 }, ma2: { min: 1 }, ma3: { min: 1 }, ma4: { min: 1 }, exponential: { min: 0, max: 1 } },
+    inputs: { ma1: { kind: 'int', min: 1 }, ma2: { kind: 'int', min: 1 }, ma3: { kind: 'int', min: 1 }, ma4: { kind: 'int', min: 1 }, exponential: { kind: 'int', min: 0, max: 1 } },
     plots: [
       { key: 'ma1', title: 'MA 1', color: 0 },
       { key: 'ma2', title: 'MA 2', color: 1 },

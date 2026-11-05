@@ -17,6 +17,7 @@ export class UltimateOscillatorIndicator extends IndicatorBase {
     name: 'Ultimate Oscillator',
     placement: 'panel' as const,
     defaultConfig: { fast: 7, mid: 14, slow: 28 },
+    inputs: { fast: { kind: 'int', min: 1 }, mid: { kind: 'int', min: 1 }, slow: { kind: 'int', min: 1 } },
     shortName: 'UO',
     plots: [{ key: 'value', title: 'UO', color: 0 }],
     scale: { min: 0, max: 100 },

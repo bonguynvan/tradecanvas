@@ -22,6 +22,7 @@ export class RandomWalkIndexIndicator extends PointwiseIndicator<number> {
     name: 'Random Walk Index',
     placement: 'panel',
     defaultConfig: { period: 14 },
+    inputs: { period: { kind: 'int', min: 2 } },
     shortName: 'RWI',
     plots: [
       { key: 'high', title: 'RWI High', color: 0 },

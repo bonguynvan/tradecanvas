@@ -25,6 +25,7 @@ export class SessionVWAPIndicator extends IndicatorBase {
     name: 'Session VWAP',
     placement: 'overlay' as const,
     defaultConfig: { bands: 1 },
+    inputs: { bands: { kind: 'int', min: 0, max: 3 } },
     shortName: 'SVWAP',
     plots: [
       { key: 'value', title: 'VWAP', color: 0 },

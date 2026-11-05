@@ -10,7 +10,7 @@ export class MomentumIndicator extends PointwiseIndicator<number> {
     placement: 'panel',
     defaultConfig: { period: 10, source: 'close' },
     shortName: 'MOM',
-    inputs: { period: { min: 1 }, source: { source: true } },
+    inputs: { period: { kind: 'int', min: 1 }, source: { source: true } },
     plots: [{ key: 'value', title: 'MOM', color: 0 }],
     levels: [0],
   };
