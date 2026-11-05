@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 1.70.0 (2026-11-04)
+
 ### Indicators
 
 - **An undo, a redo and a loaded layout put the indicators back as they were** (`@tradecanvas/chart`, `@tradecanvas/core`).
