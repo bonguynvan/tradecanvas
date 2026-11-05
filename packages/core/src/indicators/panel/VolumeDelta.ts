@@ -16,6 +16,7 @@ export class VolumeDeltaIndicator extends IndicatorBase {
     name: 'Volume Delta',
     placement: 'panel' as const,
     defaultConfig: { mode: 0 },
+    inputs: { mode: { kind: 'int', min: 0, max: 1 } },
     shortName: 'Vol Δ',
     plots: [{ key: 'value', title: 'Delta', color: 0, kind: 'histogram', tone: { field: 'up' }, downColor: 1 }],
   };

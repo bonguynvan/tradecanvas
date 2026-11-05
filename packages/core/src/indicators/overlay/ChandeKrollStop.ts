@@ -18,7 +18,7 @@ export class ChandeKrollStopIndicator extends IndicatorBase {
     placement: 'overlay',
     defaultConfig: { p: 10, x: 1, q: 9 },
     shortName: 'CKS',
-    inputs: { p: { label: 'ATR length', min: 1 }, x: { label: 'ATR multiplier', min: 0, step: 0.1 }, q: { label: 'Stop length', min: 1 } },
+    inputs: { p: { kind: 'int', label: 'ATR length', min: 1 }, x: { kind: 'number', label: 'ATR multiplier', min: 0, step: 0.1 }, q: { kind: 'int', label: 'Stop length', min: 1 } },
     plots: [{ key: 'long', title: 'Stop Long', color: 0 }, { key: 'short', title: 'Stop Short', color: 1 }],
   };
 

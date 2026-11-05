@@ -11,6 +11,7 @@ export class SupertrendIndicator extends IndicatorBase {
     name: 'Supertrend',
     placement: 'overlay' as const,
     defaultConfig: { period: 10, multiplier: 3 },
+    inputs: { period: { kind: 'int', min: 1 }, multiplier: { kind: 'number', min: 0.1, step: 0.1 } },
     shortName: 'Supertrend',
     plots: [{ key: 'value', title: 'Supertrend', color: 0, tone: { field: 'trend' }, downColor: 1 }],
   };
@@ -51,8 +52,10 @@ export class SupertrendIndicator extends IndicatorBase {
       const basicUpper = hl2 + multiplier * atr;
       const basicLower = hl2 - multiplier * atr;
 
-      upperBand = (basicUpper < prevUpperBand || data[i - 1].close > prevUpperBand) ? basicUpper : prevUpperBand;
-      lowerBand = (basicLower > prevLowerBand || data[i - 1].close < prevLowerBand) ? basicLower : prevLowerBand;
+      // The first bar has none before it (a period of 1): its own close stands in.
+      const prevClose = data[Math.max(0, i - 1)].close;
+      upperBand = (basicUpper < prevUpperBand || prevClose > prevUpperBand) ? basicUpper : prevUpperBand;
+      lowerBand = (basicLower > prevLowerBand || prevClose < prevLowerBand) ? basicLower : prevLowerBand;
 
       if (prevSupertrend === prevUpperBand) {
         supertrend = data[i].close <= upperBand ? upperBand : lowerBand;

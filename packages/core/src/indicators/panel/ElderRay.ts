@@ -17,6 +17,7 @@ export class ElderRayIndicator extends IndicatorBase {
     name: 'Elder Ray',
     placement: 'panel' as const,
     defaultConfig: { period: 13 },
+    inputs: { period: { kind: 'int', min: 1 } },
     shortName: 'Elder Ray',
     plots: [
       { key: 'bull', title: 'Bull', color: 0, kind: 'histogram' },

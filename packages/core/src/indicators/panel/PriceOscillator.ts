@@ -11,7 +11,7 @@ export class PriceOscillatorIndicator extends IndicatorBase {
     placement: 'panel',
     defaultConfig: { short: 10, long: 21, source: 'close' },
     shortName: 'PO',
-    inputs: { short: { min: 1 }, long: { min: 1 }, source: { source: true } },
+    inputs: { short: { kind: 'int', min: 1 }, long: { kind: 'int', min: 1 }, source: { source: true } },
     plots: [{ key: 'value', title: 'PO', color: 0 }],
     scale: { zero: true },
   };

@@ -8,7 +8,7 @@
   const params = (i: Entry) =>
     Object.entries(i.params).map(([k, v]) => `${k}: ${JSON.stringify(v)}`).join(', ');
   const lines = (i: Entry) => i.plots.map((p) => p.title).join(', ');
-  const hasSource = (i: Entry) => 'inputs' in i && Object.values(i.inputs ?? {}).some((x) => (x as { source?: boolean }).source);
+  const hasSource = (i: Entry) => Object.values(i.inputs).some((x) => x.kind === 'source');
 </script>
 
 <svelte:head>
@@ -217,6 +217,19 @@ CANDLE_PATTERNS.length                                 // 64`}</code></pre>
   calcular solo los indicadores que la leen y los que leen sus líneas: uno tuyo que no la lee puede
   decir <code>readsExchangeTimeZone: false</code> en su descriptor y queda como está.
 </p>
+<p>
+  El <code>kind</code> de cada entrada (<code>'int'</code>, <code>'number'</code>, <code>'boolean'</code>,
+  <code>'choice'</code>, <code>'source'</code>, <code>'color'</code>, <code>'text'</code>) y sus
+  <code>min</code>, <code>max</code> y <code>step</code> deciden su campo en los ajustes: un
+  <code>'int'</code> se redondea al escribirlo, como se lee un periodo. Sin <code>kind</code>, se deduce del
+  valor por defecto (un número es <code>'number'</code>: solo se redondea un <code>'int'</code> declarado). <code>describeInputs(descriptor)</code> lista
+  las entradas tal como las leen el diálogo de ajustes, esta documentación y el servidor MCP.
+</p>
+<pre><code>{`inputs: {
+  period: { kind: 'int', min: 2, max: 500 },
+  mult: { kind: 'number', min: 0.1, step: 0.1 },
+  source: { source: true },
+}`}</code></pre>
 
 <h2>Paneles: redimensionar, contraer, maximizar, reordenar</h2>
 <p>

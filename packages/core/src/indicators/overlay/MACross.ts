@@ -20,7 +20,7 @@ export class MACrossIndicator extends IndicatorBase {
     placement: 'overlay',
     defaultConfig: { fast: 9, slow: 21, type: 'sma', source: 'close' },
     shortName: 'MA Cross',
-    inputs: { fast: { min: 1 }, slow: { min: 1 }, type: { options: ['sma', 'ema', 'sma-ema'] }, source: { source: true } },
+    inputs: { fast: { kind: 'int', min: 1 }, slow: { kind: 'int', min: 1 }, type: { options: ['sma', 'ema', 'sma-ema'] }, source: { source: true } },
     plots: [{ key: 'fast', title: 'Fast', color: 0 }, { key: 'slow', title: 'Slow', color: 1 }],
   };
 

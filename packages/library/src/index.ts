@@ -193,6 +193,7 @@ export type {
   IndicatorPlotKind,
   IndicatorScale,
   IndicatorInputSpec,
+  IndicatorInputKind,
   IndicatorSettingsChangePayload,
 } from '@tradecanvas/commons';
 
@@ -210,7 +211,8 @@ export {
 export type { PriceStepBand, VN30FContract } from '@tradecanvas/commons';
 
 // Re-export base classes for custom indicators and drawing tools
-export { IndicatorBase, IndicatorValueMap, DrawingBase, indicatorCategory, INDICATOR_CATEGORIES } from '@tradecanvas/core';
+export { IndicatorBase, IndicatorValueMap, DrawingBase, indicatorCategory, INDICATOR_CATEGORIES, describeInputs } from '@tradecanvas/core';
+export type { IndicatorInputInfo } from '@tradecanvas/core';
 // Screen geometry of a frame, for plugins that draw (indicators, overlays, chart types).
 export { barIndexToX, xToBarIndex, priceToY, priceToYMapper, yToPrice, timeToX, xToTime, timestampToBarIndex } from '@tradecanvas/core';
 

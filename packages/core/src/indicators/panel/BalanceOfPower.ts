@@ -14,6 +14,7 @@ export class BalanceOfPowerIndicator extends IndicatorBase {
     name: 'Balance of Power',
     placement: 'panel' as const,
     defaultConfig: { smooth: 14 },
+    inputs: { smooth: { kind: 'int', min: 1 } },
     shortName: 'BOP',
     plots: [{ key: 'value', title: 'BOP', color: 0 }],
     scale: { min: -1, max: 1 },

@@ -13,6 +13,7 @@ export class TimeSeriesForecastIndicator extends PointwiseIndicator<number> {
     name: 'Time Series Forecast',
     placement: 'overlay',
     defaultConfig: { period: 14 },
+    inputs: { period: { kind: 'int', min: 2 } },
     shortName: 'TSF',
     plots: [{ key: 'value', title: 'TSF', color: 0 }],
   };

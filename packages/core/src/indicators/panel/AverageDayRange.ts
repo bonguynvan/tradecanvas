@@ -10,7 +10,7 @@ export class AverageDayRangeIndicator extends PointwiseIndicator<number> {
     placement: 'panel',
     defaultConfig: { period: 14 },
     shortName: 'ADR',
-    inputs: { period: { min: 1 } },
+    inputs: { period: { kind: 'int', min: 1 } },
     plots: [{ key: 'value', title: 'ADR', color: 0 }],
     scale: { min: 0 },
   };

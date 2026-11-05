@@ -9,6 +9,7 @@ export class VROCIndicator extends IndicatorBase {
     name: 'Volume Rate of Change',
     placement: 'panel' as const,
     defaultConfig: { period: 14 },
+    inputs: { period: { kind: 'int', min: 1 } },
     shortName: 'VROC',
     plots: [{ key: 'value', title: 'VROC', color: 0 }],
     levels: [0],

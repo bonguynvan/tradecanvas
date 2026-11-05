@@ -15,7 +15,7 @@ export class RelativeVolatilityIndexIndicator extends IndicatorBase {
     placement: 'panel',
     defaultConfig: { period: 10, smooth: 14 },
     shortName: 'RVI (vol)',
-    inputs: { period: { min: 2 }, smooth: { min: 1 } },
+    inputs: { period: { kind: 'int', min: 2 }, smooth: { kind: 'int', min: 1 } },
     plots: [{ key: 'value', title: 'RVI', color: 0 }],
     levels: [80, 50, 20],
     scale: { min: 0, max: 100 },

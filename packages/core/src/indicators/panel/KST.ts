@@ -16,7 +16,7 @@ export class KSTIndicator extends IndicatorBase {
     placement: 'panel' as const,
     defaultConfig: { roc1: 10, roc2: 15, roc3: 20, roc4: 30, sma1: 10, sma2: 10, sma3: 10, sma4: 15, signal: 9, source: 'close' },
     shortName: 'KST',
-    inputs: { source: { source: true } },
+    inputs: { source: { source: true }, roc1: { kind: 'int', min: 1 }, roc2: { kind: 'int', min: 1 }, roc3: { kind: 'int', min: 1 }, roc4: { kind: 'int', min: 1 }, sma1: { kind: 'int', min: 1 }, sma2: { kind: 'int', min: 1 }, sma3: { kind: 'int', min: 1 }, sma4: { kind: 'int', min: 1 }, signal: { kind: 'int', min: 1 } },
     plots: [
       { key: 'value', title: 'KST', color: 0 },
       { key: 'signal', title: 'Signal', color: 1 },

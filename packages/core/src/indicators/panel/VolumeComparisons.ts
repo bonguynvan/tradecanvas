@@ -9,6 +9,7 @@ export class VolumeVsAverageIndicator extends PointwiseIndicator<number> {
     name: 'Volume vs Average',
     placement: 'panel',
     defaultConfig: { period: 20 },
+    inputs: { period: { kind: 'int', min: 1 } },
     shortName: 'Vol %',
     plots: [{ key: 'value', title: 'Vol %', color: 0, kind: 'histogram', tone: 'sign', downColor: 1 }],
     scale: { zero: true },

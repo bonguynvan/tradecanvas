@@ -9,6 +9,7 @@ export class ATRIndicator extends IndicatorBase {
     name: 'Average True Range',
     placement: 'panel' as const,
     defaultConfig: { period: 14 },
+    inputs: { period: { kind: 'int', min: 1 } },
     shortName: 'ATR',
     plots: [{ key: 'value', title: 'ATR', color: 0 }],
   };

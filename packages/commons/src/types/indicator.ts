@@ -63,8 +63,27 @@ export interface IndicatorScale {
   zero?: boolean;
 }
 
+/**
+ * What kind of value an input takes, which decides how it is edited:
+ * - `'int'`: a whole number, stepped by 1 (a period);
+ * - `'number'`: any number (a multiplier);
+ * - `'boolean'`: on or off;
+ * - `'choice'`: one of `options`;
+ * - `'source'`: a price or another indicator's line;
+ * - `'color'`: a `#rrggbb` colour;
+ * - `'text'`: free text.
+ */
+export type IndicatorInputKind = 'int' | 'number' | 'boolean' | 'choice' | 'source' | 'color' | 'text';
+
 /** How a parameter is edited. Types not described here are inferred from the default value. */
 export interface IndicatorInputSpec {
+  /**
+   * What kind of value it takes. Unset, it is read from the rest of the spec
+   * and the default: `source`, `options`, then the default's type (a number
+   * is `'number'`, stepped by 1 when whole; a `#rrggbb` text `'color'`).
+   * Only a declared `'int'` is rounded as it is typed.
+   */
+  kind?: IndicatorInputKind;
   /** Label in settings; defaults to the parameter name in words. */
   label?: string;
   min?: number;

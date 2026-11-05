@@ -62,7 +62,7 @@ export class TEMAIndicator extends IndicatorBase {
     placement: 'overlay' as const,
     defaultConfig: { period: 20, source: 'close' },
     shortName: 'TEMA',
-    inputs: { source: { source: true } },
+    inputs: { source: { source: true }, period: { kind: 'int', min: 1 } },
     plots: [{ key: 'value', title: 'TEMA', color: 0 }],
   };
 

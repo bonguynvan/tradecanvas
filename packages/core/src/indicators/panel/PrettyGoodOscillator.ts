@@ -17,6 +17,7 @@ export class PrettyGoodOscillatorIndicator extends IndicatorBase {
     name: 'Pretty Good Oscillator',
     placement: 'panel' as const,
     defaultConfig: { period: 14 },
+    inputs: { period: { kind: 'int', min: 1 } },
     shortName: 'PGO',
     plots: [{ key: 'value', title: 'PGO', color: 0 }],
     levels: [-3, 0, 3],

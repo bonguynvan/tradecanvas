@@ -15,6 +15,7 @@ export class ForceIndexIndicator extends IndicatorBase {
     name: 'Force Index',
     placement: 'panel' as const,
     defaultConfig: { period: 13 },
+    inputs: { period: { kind: 'int', min: 1 } },
     shortName: 'EFI',
     plots: [{ key: 'value', title: 'EFI', color: 0 }],
     levels: [0],

@@ -15,7 +15,7 @@ export class SMIErgodicIndicator extends IndicatorBase {
     placement: 'panel',
     defaultConfig: { short: 5, long: 20, signal: 5, source: 'close' },
     shortName: 'SMIIO',
-    inputs: { short: { min: 1 }, long: { min: 1 }, signal: { min: 1 }, source: { source: true } },
+    inputs: { short: { kind: 'int', min: 1 }, long: { kind: 'int', min: 1 }, signal: { kind: 'int', min: 1 }, source: { source: true } },
     plots: [
       { key: 'oscillator', title: 'Oscillator', color: 2, kind: 'histogram', tone: 'sign', downColor: 3 },
       { key: 'indicator', title: 'Indicator', color: 0 },

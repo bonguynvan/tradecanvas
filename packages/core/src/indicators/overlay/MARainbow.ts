@@ -21,7 +21,7 @@ export class MARainbowIndicator extends IndicatorBase {
     placement: 'overlay',
     defaultConfig: { first: 10, step: 10, count: 10, exponential: 0 },
     shortName: 'Rainbow',
-    inputs: { first: { min: 1 }, step: { min: 1 }, count: { min: 1, max: MAX_RAINBOW_LINES }, exponential: { min: 0, max: 1 } },
+    inputs: { first: { kind: 'int', min: 1 }, step: { kind: 'int', min: 1 }, count: { kind: 'int', min: 1, max: MAX_RAINBOW_LINES }, exponential: { kind: 'int', min: 0, max: 1 } },
     plots: Array.from({ length: MAX_RAINBOW_LINES }, (_, k): IndicatorPlot => ({
       key: `ma${k + 1}`,
       title: `MA ${k + 1}`,

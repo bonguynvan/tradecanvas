@@ -15,7 +15,7 @@ export class LSMAIndicator extends PointwiseIndicator<Params> {
     placement: 'overlay',
     defaultConfig: { period: 25, offset: 0, source: 'close' },
     shortName: 'LSMA',
-    inputs: { period: { min: 2, max: 5000 }, offset: { step: 1 }, source: { source: true } },
+    inputs: { period: { kind: 'int', min: 2, max: 5000 }, offset: { kind: 'int', step: 1 }, source: { source: true } },
     plots: [{ key: 'value', title: 'LSMA', color: 0 }],
   };
 

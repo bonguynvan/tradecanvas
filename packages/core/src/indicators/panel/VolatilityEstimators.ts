@@ -12,7 +12,7 @@ const readParams = (config: IndicatorConfig): VolatilityParams => ({
   annual: Math.max(1, getNumberParam(config, 'annual', 365)),
 });
 
-const INPUTS = { period: { min: 1 }, annual: { label: 'Bars per year', min: 1 } } as const;
+const INPUTS = { period: { kind: 'int', min: 1 }, annual: { kind: 'number', label: 'Bars per year', min: 1 } } as const;
 
 /**
  * Volatility O-H-L-C (Garman–Klass): each bar's variance read from its range

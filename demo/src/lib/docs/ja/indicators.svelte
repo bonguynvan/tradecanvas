@@ -8,7 +8,7 @@
   const params = (i: Entry) =>
     Object.entries(i.params).map(([k, v]) => `${k}: ${JSON.stringify(v)}`).join(', ');
   const lines = (i: Entry) => i.plots.map((p) => p.title).join(', ');
-  const hasSource = (i: Entry) => 'inputs' in i && Object.values(i.inputs ?? {}).some((x) => (x as { source?: boolean }).source);
+  const hasSource = (i: Entry) => Object.values(i.inputs).some((x) => x.kind === 'source');
 </script>
 
 <svelte:head>
@@ -201,6 +201,19 @@ CANDLE_PATTERNS.length                                 // 64`}</code></pre>
   その線を読むものだけを計算し直します。タイムゾーンを読まない自作のインジケーターは、descriptor に
   <code>readsExchangeTimeZone: false</code> と書けばそのまま残ります。
 </p>
+<p>
+  各入力の <code>kind</code>（<code>'int'</code>、<code>'number'</code>、<code>'boolean'</code>、
+  <code>'choice'</code>、<code>'source'</code>、<code>'color'</code>、<code>'text'</code>）と
+  <code>min</code>・<code>max</code>・<code>step</code> が、設定画面での入力欄を決めます。
+  <code>'int'</code> は期間の読み方と同じく、入力した時点で整数に丸められます。<code>kind</code>
+  がなければ既定値から判断します（数値は <code>'number'</code>。丸められるのは <code>'int'</code> と宣言したものだけです）。<code>describeInputs(descriptor)</code>
+  は、設定ダイアログ、このドキュメント、MCP サーバーが読むとおりに入力を一覧にします。
+</p>
+<pre><code>{`inputs: {
+  period: { kind: 'int', min: 2, max: 500 },
+  mult: { kind: 'number', min: 0.1, step: 0.1 },
+  source: { source: true },
+}`}</code></pre>
 
 <h2>ペイン：サイズ変更、折りたたみ、最大化、並べ替え</h2>
 <p>

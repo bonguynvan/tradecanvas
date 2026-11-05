@@ -11,7 +11,7 @@ export class TrendStrengthIndexIndicator extends PointwiseIndicator<number> {
     placement: 'panel',
     defaultConfig: { period: 14 },
     shortName: 'TSI (trend)',
-    inputs: { period: { min: 2 } },
+    inputs: { period: { kind: 'int', min: 2 } },
     plots: [{ key: 'value', title: 'Trend', color: 0 }],
     levels: [0],
     scale: { min: -1, max: 1 },

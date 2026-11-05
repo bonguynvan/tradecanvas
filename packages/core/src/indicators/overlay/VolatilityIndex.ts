@@ -16,7 +16,7 @@ export class VolatilityIndexIndicator extends IndicatorBase {
     placement: 'overlay',
     defaultConfig: { period: 7, mult: 3 },
     shortName: 'VI',
-    inputs: { period: { min: 1 }, mult: { label: 'ATR multiple', min: 0.1, step: 0.1 } },
+    inputs: { period: { kind: 'int', min: 1 }, mult: { kind: 'number', label: 'ATR multiple', min: 0.1, step: 0.1 } },
     plots: [{ key: 'sar', title: 'Stop', color: 0, kind: 'dots', tone: { field: 'long' }, downColor: 1 }],
   };
 

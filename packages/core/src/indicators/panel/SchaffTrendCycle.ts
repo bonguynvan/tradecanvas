@@ -16,7 +16,7 @@ export class SchaffTrendCycleIndicator extends IndicatorBase {
     placement: 'panel' as const,
     defaultConfig: { fast: 23, slow: 50, cycle: 10, source: 'close' },
     shortName: 'STC',
-    inputs: { source: { source: true } },
+    inputs: { source: { source: true }, fast: { kind: 'int', min: 1 }, slow: { kind: 'int', min: 1 }, cycle: { kind: 'int', min: 1 } },
     plots: [{ key: 'value', title: 'STC', color: 0 }],
     scale: { min: 0, max: 100 },
     levels: [25, 75],

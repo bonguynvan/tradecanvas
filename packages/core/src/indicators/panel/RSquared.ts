@@ -14,6 +14,7 @@ export class RSquaredIndicator extends PointwiseIndicator<number> {
     name: 'R-Squared',
     placement: 'panel',
     defaultConfig: { period: 14 },
+    inputs: { period: { kind: 'int', min: 2 } },
     shortName: 'R²',
     plots: [{ key: 'value', title: 'R²', color: 0 }],
     scale: { min: 0, max: 1 },

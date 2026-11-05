@@ -18,9 +18,9 @@ export class ALMAIndicator extends PointwiseIndicator<Params> {
     defaultConfig: { period: 9, offset: 0.85, sigma: 6, source: 'close' },
     shortName: 'ALMA',
     inputs: {
-      period: { min: 1, max: 5000 },
-      offset: { min: 0, max: 1, step: 0.05 },
-      sigma: { min: 0.5, step: 0.5 },
+      period: { kind: 'int', min: 1, max: 5000 },
+      offset: { kind: 'number', min: 0, max: 1, step: 0.05 },
+      sigma: { kind: 'number', min: 0.5, step: 0.5 },
       source: { source: true },
     },
     plots: [{ key: 'value', title: 'ALMA', color: 0 }],

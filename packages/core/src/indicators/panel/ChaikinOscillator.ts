@@ -14,6 +14,7 @@ export class ChaikinOscillatorIndicator extends IndicatorBase {
     name: 'Chaikin Oscillator',
     placement: 'panel' as const,
     defaultConfig: { fast: 3, slow: 10 },
+    inputs: { fast: { kind: 'int', min: 1 }, slow: { kind: 'int', min: 1 } },
     shortName: 'Chaikin Osc',
     plots: [{ key: 'value', title: 'Chaikin', color: 0, kind: 'histogram', tone: 'sign', downColor: 1 }],
   };

@@ -137,7 +137,7 @@ function correlationOf(xs: readonly number[], ys: readonly number[]): number | n
 const CORRELATION_DESCRIPTOR = {
   placement: 'panel',
   defaultConfig: { symbol: '', length: 20 },
-  inputs: { length: { min: 2 } },
+  inputs: { length: { kind: 'int', min: 2 } },
   plots: [{ key: 'value', title: 'Correlation', color: 0 }],
   scale: { min: -1, max: 1 },
   levels: [0],

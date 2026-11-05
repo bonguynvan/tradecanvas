@@ -17,7 +17,7 @@ export class PercentagePriceOscillatorIndicator extends IndicatorBase {
     placement: 'panel' as const,
     defaultConfig: { fast: 12, slow: 26, signal: 9, source: 'close' },
     shortName: 'PPO',
-    inputs: { source: { source: true } },
+    inputs: { source: { source: true }, fast: { kind: 'int', min: 1 }, slow: { kind: 'int', min: 1 }, signal: { kind: 'int', min: 1 } },
     plots: [
       { key: 'hist', title: 'Histogram', color: 2, kind: 'histogram', tone: 'sign', downColor: 3 },
       { key: 'value', title: 'PPO', color: 0 },

@@ -8,7 +8,7 @@
   const params = (i: Entry) =>
     Object.entries(i.params).map(([k, v]) => `${k}: ${JSON.stringify(v)}`).join(', ');
   const lines = (i: Entry) => i.plots.map((p) => p.title).join(', ');
-  const hasSource = (i: Entry) => 'inputs' in i && Object.values(i.inputs ?? {}).some((x) => (x as { source?: boolean }).source);
+  const hasSource = (i: Entry) => Object.values(i.inputs).some((x) => x.kind === 'source');
 </script>
 
 <svelte:head>
@@ -207,6 +207,20 @@ CANDLE_PATTERNS.length                                 // 64`}</code></pre>
   đọc đường của chúng được tính lại: chỉ báo của bạn không đọc múi giờ có thể ghi
   <code>readsExchangeTimeZone: false</code> trong descriptor để được giữ nguyên.
 </p>
+<p>
+  <code>kind</code> của mỗi input (<code>'int'</code>, <code>'number'</code>, <code>'boolean'</code>,
+  <code>'choice'</code>, <code>'source'</code>, <code>'color'</code>, <code>'text'</code>) cùng
+  <code>min</code>, <code>max</code> và <code>step</code> quyết định ô nhập của nó trong phần cài đặt:
+  một <code>'int'</code> được làm tròn ngay khi gõ, đúng như cách chu kỳ được đọc. Không có
+  <code>kind</code> thì kiểu được suy từ giá trị mặc định (một số là <code>'number'</code>: chỉ <code>'int'</code> được khai báo mới bị làm tròn).
+  <code>describeInputs(descriptor)</code> liệt kê các input đúng như hộp thoại cài đặt, tài liệu này và
+  máy chủ MCP đọc chúng.
+</p>
+<pre><code>{`inputs: {
+  period: { kind: 'int', min: 2, max: 500 },
+  mult: { kind: 'number', min: 0.1, step: 0.1 },
+  source: { source: true },
+}`}</code></pre>
 
 <h2>Bảng: đổi kích thước, thu gọn, phóng to, sắp xếp lại</h2>
 <p>

@@ -25,6 +25,7 @@ export class IchimokuIndicator extends IndicatorBase {
     name: 'Ichimoku Cloud',
     placement: 'overlay' as const,
     defaultConfig: { tenkan: 9, kijun: 26, senkou: 52, displacement: 26 },
+    inputs: { tenkan: { kind: 'int', min: 1 }, kijun: { kind: 'int', min: 1 }, senkou: { kind: 'int', min: 1 }, displacement: { kind: 'int', min: 0 } },
     shortName: 'Ichimoku',
     plots: [
       { key: 'tenkan', title: 'Conversion', color: 0 },

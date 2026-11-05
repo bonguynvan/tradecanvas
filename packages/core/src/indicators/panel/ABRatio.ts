@@ -16,6 +16,7 @@ export class ABRatioIndicator extends PointwiseIndicator<number> {
     name: 'AB Ratio',
     placement: 'panel',
     defaultConfig: { period: 26 },
+    inputs: { period: { kind: 'int', min: 1 } },
     shortName: 'AB Ratio',
     plots: [
       { key: 'a', title: 'A', color: 0 },

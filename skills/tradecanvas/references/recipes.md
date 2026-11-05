@@ -603,7 +603,7 @@ class RangePosition extends IndicatorBase {
     placement: 'panel',
     category: 'oscillators', // its group in ChartWidget's Indicators dialog
     defaultConfig: { period: 20 },
-    inputs: { period: { min: 2, max: 500 } },
+    inputs: { period: { kind: 'int', min: 2, max: 500 } },
     plots: [{ key: 'value', title: 'RP', color: 0 }],
     scale: { min: 0, max: 100 },
     levels: [20, 80],
@@ -635,6 +635,13 @@ chart.addIndicator('rangePosition', { period: 30 });
 
 Declare `inputs: { source: { source: true } }` and read `data[i].close` to let
 users run it on another price or another indicator's line.
+
+Give each number input a `kind` (`'int'` for a period, `'number'` for a
+multiplier) and the `min`, `max` and `step` your code takes: the settings
+dialog bounds and steps its field by them and rounds an `'int'` as it is typed,
+so declare the lowest value your `calculate` really uses (a period your code
+raises to 2 is `min: 2`). `describeInputs(descriptor)` lists the inputs as the
+dialog reads them.
 
 An indicator that starts again each day, week or month reads the exchange's
 IANA zone as `config.exchangeTimeZone`: the chart sets it from the symbol's

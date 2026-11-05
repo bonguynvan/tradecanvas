@@ -13,6 +13,7 @@ export class VerticalHorizontalFilterIndicator extends PointwiseIndicator<number
     name: 'Vertical Horizontal Filter',
     placement: 'panel',
     defaultConfig: { period: 28 },
+    inputs: { period: { kind: 'int', min: 1 } },
     shortName: 'VHF',
     plots: [{ key: 'value', title: 'VHF', color: 0 }],
   };

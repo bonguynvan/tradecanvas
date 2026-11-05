@@ -14,7 +14,7 @@ export class BollingerBandsIndicator extends IndicatorBase {
     placement: 'overlay' as const,
     defaultConfig: { period: 20, stdDev: 2, source: 'close' },
     shortName: 'BB',
-    inputs: { source: { source: true } },
+    inputs: { source: { source: true }, period: { kind: 'int', min: 1 }, stdDev: { kind: 'number', min: 0.1, step: 0.1 } },
     plots: [
       { key: 'upper', title: 'Upper', color: 0 },
       { key: 'middle', title: 'Basis', color: 1 },

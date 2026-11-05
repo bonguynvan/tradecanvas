@@ -11,7 +11,7 @@ export class LinearRegressionSlopeIndicator extends PointwiseIndicator<number> {
     placement: 'panel',
     defaultConfig: { period: 14 },
     shortName: 'LR Slope',
-    inputs: { period: { min: 2 } },
+    inputs: { period: { kind: 'int', min: 2 } },
     plots: [{ key: 'value', title: 'Slope', color: 0 }],
     levels: [0],
   };

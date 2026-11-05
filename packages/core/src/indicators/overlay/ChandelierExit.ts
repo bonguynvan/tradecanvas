@@ -18,6 +18,7 @@ export class ChandelierExitIndicator extends IndicatorBase {
     name: 'Chandelier Exit',
     placement: 'overlay' as const,
     defaultConfig: { period: 22, multiplier: 3 },
+    inputs: { period: { kind: 'int', min: 1 }, multiplier: { kind: 'number', min: 0.1, step: 0.1 } },
     shortName: 'CE',
     plots: [
       { key: 'long', title: 'Long', color: 0 },

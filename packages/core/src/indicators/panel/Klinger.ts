@@ -18,6 +18,7 @@ export class KlingerIndicator extends IndicatorBase {
     name: 'Klinger Oscillator',
     placement: 'panel' as const,
     defaultConfig: { fast: 34, slow: 55, signal: 13 },
+    inputs: { fast: { kind: 'int', min: 1 }, slow: { kind: 'int', min: 1 }, signal: { kind: 'int', min: 1 } },
     shortName: 'KVO',
     plots: [
       { key: 'value', title: 'KVO', color: 0 },

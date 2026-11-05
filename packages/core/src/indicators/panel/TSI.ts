@@ -10,7 +10,7 @@ export class TSIIndicator extends IndicatorBase {
     placement: 'panel' as const,
     defaultConfig: { longPeriod: 25, shortPeriod: 13, signalPeriod: 7, source: 'close' },
     shortName: 'TSI',
-    inputs: { source: { source: true } },
+    inputs: { source: { source: true }, longPeriod: { kind: 'int', min: 1 }, shortPeriod: { kind: 'int', min: 1 }, signalPeriod: { kind: 'int', min: 1 } },
     plots: [
       { key: 'tsi', title: 'TSI', color: 0 },
       { key: 'signal', title: 'Signal', color: 1 },

@@ -14,6 +14,7 @@ export class SigmaIndicator extends PointwiseIndicator<number> {
     name: 'Sigma',
     placement: 'panel',
     defaultConfig: { period: 20 },
+    inputs: { period: { kind: 'int', min: 2 } },
     shortName: 'Sigma',
     plots: [{ key: 'value', title: 'Sigma', color: 0 }],
     levels: [-2, 0, 2],

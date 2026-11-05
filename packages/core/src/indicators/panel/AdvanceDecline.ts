@@ -13,7 +13,7 @@ export class AdvanceDeclineIndicator extends PointwiseIndicator<{ length: number
     placement: 'panel',
     defaultConfig: { length: 10 },
     shortName: 'A/D Ratio',
-    inputs: { length: { min: 1 } },
+    inputs: { length: { kind: 'int', min: 1 } },
     plots: [{ key: 'value', title: 'Ratio', color: 0 }],
     scale: { min: 0 },
   };

@@ -16,6 +16,7 @@ export class IntradayIntensityIndicator extends PointwiseIndicator<number> {
     name: 'Intraday Intensity',
     placement: 'panel',
     defaultConfig: { period: 21 },
+    inputs: { period: { kind: 'int', min: 1 } },
     shortName: 'III',
     plots: [{ key: 'value', title: 'III %', color: 0, kind: 'histogram', tone: 'sign', downColor: 1 }],
     scale: { zero: true },

@@ -8,7 +8,7 @@
   const params = (i: Entry) =>
     Object.entries(i.params).map(([k, v]) => `${k}: ${JSON.stringify(v)}`).join(', ');
   const lines = (i: Entry) => i.plots.map((p) => p.title).join(', ');
-  const hasSource = (i: Entry) => 'inputs' in i && Object.values(i.inputs ?? {}).some((x) => (x as { source?: boolean }).source);
+  const hasSource = (i: Entry) => Object.values(i.inputs).some((x) => x.kind === 'source');
 </script>
 
 <svelte:head>
@@ -206,6 +206,19 @@ CANDLE_PATTERNS.length                                 // 64`}</code></pre>
   the indicators that read it and those that read their lines: one of yours that doesn't can say
   <code>readsExchangeTimeZone: false</code> in its descriptor, and is left as it is.
 </p>
+<p>
+  Each input's <code>kind</code> (<code>'int'</code>, <code>'number'</code>, <code>'boolean'</code>,
+  <code>'choice'</code>, <code>'source'</code>, <code>'color'</code>, <code>'text'</code>) and its
+  <code>min</code>, <code>max</code> and <code>step</code> decide its field in the settings: an
+  <code>'int'</code> is rounded as it is typed, as a period is read. Without a kind it is read from the
+  default (a number is a <code>'number'</code>: only a declared <code>'int'</code> is rounded). <code>describeInputs(descriptor)</code> lists the
+  inputs as the settings dialog, these docs and the MCP server read them.
+</p>
+<pre><code>{`inputs: {
+  period: { kind: 'int', min: 2, max: 500 },
+  mult: { kind: 'number', min: 0.1, step: 0.1 },
+  source: { source: true },
+}`}</code></pre>
 
 <h2>Panes: resize, fold, maximise, reorder</h2>
 <p>

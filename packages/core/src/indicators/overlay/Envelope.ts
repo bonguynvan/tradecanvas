@@ -14,7 +14,7 @@ export class EnvelopeIndicator extends IndicatorBase {
     placement: 'overlay' as const,
     defaultConfig: { period: 20, percent: 2.5, source: 'close' },
     shortName: 'Env',
-    inputs: { source: { source: true } },
+    inputs: { source: { source: true }, period: { kind: 'int', min: 1 }, percent: { kind: 'number', min: 0, step: 0.1 } },
     plots: [
       { key: 'upper', title: 'Upper', color: 0 },
       { key: 'basis', title: 'Basis', color: 1 },

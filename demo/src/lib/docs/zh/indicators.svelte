@@ -8,7 +8,7 @@
   const params = (i: Entry) =>
     Object.entries(i.params).map(([k, v]) => `${k}: ${JSON.stringify(v)}`).join(', ');
   const lines = (i: Entry) => i.plots.map((p) => p.title).join(', ');
-  const hasSource = (i: Entry) => 'inputs' in i && Object.values(i.inputs ?? {}).some((x) => (x as { source?: boolean }).source);
+  const hasSource = (i: Entry) => Object.values(i.inputs).some((x) => x.kind === 'source');
 </script>
 
 <svelte:head>
@@ -192,6 +192,18 @@ CANDLE_PATTERNS.length                                 // 64`}</code></pre>
   按日、周或月分组K线的指标可从 <code>config.exchangeTimeZone</code> 读取交易所时区（由图表设置；未设置时为 UTC）。时区改变时，只有读取它的指标以及读取这些指标线条的指标会重新计算：
   你自己的指标若不读取时区，可在 descriptor 中写 <code>readsExchangeTimeZone: false</code>，从而保持不变。
 </p>
+<p>
+  每个输入的 <code>kind</code>（<code>'int'</code>、<code>'number'</code>、<code>'boolean'</code>、
+  <code>'choice'</code>、<code>'source'</code>、<code>'color'</code>、<code>'text'</code>）以及它的
+  <code>min</code>、<code>max</code> 和 <code>step</code> 决定它在设置中的输入框：<code>'int'</code>
+  在输入时即取整，与周期的读取方式一致。未写 <code>kind</code> 时由默认值推断（数字为 <code>'number'</code>：只有声明为
+  <code>'int'</code> 的才会取整）。<code>describeInputs(descriptor)</code> 按设置对话框、本文档和 MCP 服务器读取的方式列出这些输入。
+</p>
+<pre><code>{`inputs: {
+  period: { kind: 'int', min: 2, max: 500 },
+  mult: { kind: 'number', min: 0.1, step: 0.1 },
+  source: { source: true },
+}`}</code></pre>
 
 <h2>窗格：调整大小、收起、最大化、重新排序</h2>
 <p>

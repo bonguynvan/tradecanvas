@@ -15,7 +15,7 @@ export class StandardErrorBandsIndicator extends IndicatorBase {
     placement: 'overlay',
     defaultConfig: { period: 21, mult: 2, smooth: 3 },
     shortName: 'SEB',
-    inputs: { period: { min: 3 }, mult: { min: 0, step: 0.1 }, smooth: { min: 1 } },
+    inputs: { period: { kind: 'int', min: 3 }, mult: { kind: 'number', min: 0, step: 0.1 }, smooth: { kind: 'int', min: 1 } },
     plots: [
       { key: 'upper', title: 'Upper', color: 1 },
       { key: 'middle', title: 'Middle', color: 0 },

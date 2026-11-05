@@ -15,7 +15,7 @@ export class KAMAIndicator extends IndicatorBase {
     placement: 'overlay',
     defaultConfig: { period: 10, fast: 2, slow: 30, source: 'close' },
     shortName: 'KAMA',
-    inputs: { period: { min: 1 }, fast: { min: 1 }, slow: { min: 1 }, source: { source: true } },
+    inputs: { period: { kind: 'int', min: 1 }, fast: { kind: 'int', min: 1 }, slow: { kind: 'int', min: 1 }, source: { source: true } },
     plots: [{ key: 'value', title: 'KAMA', color: 0 }],
   };
 

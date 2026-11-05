@@ -16,7 +16,7 @@ export class AccumulativeSwingIndexIndicator extends IndicatorBase {
     placement: 'panel',
     defaultConfig: { limit: 10 },
     shortName: 'ASI',
-    inputs: { limit: { label: 'Limit move', min: 0.0001, step: 0.1 } },
+    inputs: { limit: { kind: 'number', label: 'Limit move', min: 0.0001, step: 0.1 } },
     plots: [{ key: 'value', title: 'ASI', color: 0 }],
     scale: { zero: true },
   };

@@ -11,7 +11,7 @@ export class BollingerBandWidthIndicator extends PointwiseIndicator<{ period: nu
     placement: 'panel',
     defaultConfig: { period: 20, stdDev: 2, source: 'close' },
     shortName: 'BBW',
-    inputs: { period: { min: 2 }, stdDev: { min: 0.1, step: 0.1 }, source: { source: true } },
+    inputs: { period: { kind: 'int', min: 2 }, stdDev: { kind: 'number', min: 0.1, step: 0.1 }, source: { source: true } },
     plots: [{ key: 'value', title: 'BBW', color: 0 }],
   };
 

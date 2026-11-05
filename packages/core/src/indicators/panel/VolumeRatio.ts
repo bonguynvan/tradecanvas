@@ -14,6 +14,7 @@ export class VolumeRatioIndicator extends PointwiseIndicator<number> {
     name: 'Volume Ratio',
     placement: 'panel',
     defaultConfig: { period: 20 },
+    inputs: { period: { kind: 'int', min: 1 } },
     shortName: 'VR',
     plots: [{ key: 'value', title: 'VR', color: 0 }],
     levels: [70, 150, 450],

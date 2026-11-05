@@ -16,7 +16,7 @@ export class RelativeMomentumIndexIndicator extends IndicatorBase {
     placement: 'panel' as const,
     defaultConfig: { period: 20, momentum: 5, source: 'close' },
     shortName: 'RMI',
-    inputs: { source: { source: true } },
+    inputs: { source: { source: true }, period: { kind: 'int', min: 1 }, momentum: { kind: 'int', min: 1 } },
     plots: [{ key: 'value', title: 'RMI', color: 0 }],
     scale: { min: 0, max: 100 },
     levels: [30, 70],

@@ -26,38 +26,47 @@ const commons = await import(pathToFileURL(join(ROOT, 'packages/commons/dist/ind
 const engine = new core.IndicatorEngine();
 core.registerBuiltInIndicators(engine);
 const descriptors = engine.getAvailableIndicators();
+/** Each built-in's own input specs, for what it declares beyond its kind. */
+const specs = new Map(descriptors.map((d) => [d.id, d.inputs ?? {}]));
 
-/** The catalog: each built-in indicator's id, name, inputs, lines and levels. */
+/**
+ * The catalog: each built-in indicator's id, name, group, inputs (each with
+ * the kind of value it takes and its limits, as the settings dialog reads
+ * them), lines and levels.
+ */
 const catalog = descriptors.map((d) => ({
   id: d.id,
   name: d.name,
   shortName: d.shortName ?? d.id.toUpperCase(),
   placement: d.placement,
+  category: core.indicatorCategory(d),
   params: d.defaultConfig,
-  ...(d.inputs ? { inputs: d.inputs } : {}),
+  inputs: Object.fromEntries(core.describeInputs(d).map(({ name, default: _, ...input }) => [name, input])),
   plots: (d.plots ?? []).map((p) => ({ key: p.key, title: p.title, kind: p.kind ?? 'line' })),
   ...(d.levels?.length ? { levels: d.levels } : {}),
   ...(d.scale ? { scale: d.scale } : {}),
 }));
 
 /**
- * A built-in input's type: one of its kinds (offered as you type, any text
- * still taken, as it was), a price or a line, a number, or text.
+ * A built-in input's type: one of its choices (offered as you type, any text
+ * still taken, as it was), on or off, a number, or text (a price or a line too).
  */
-function inputType(value, input = {}) {
-  if (input.options) return `${input.options.map((o) => `'${o}'`).join(' | ')} | (string & {})`;
-  if (input.source || typeof value !== 'number') return typeof value === 'boolean' ? 'boolean' : 'string';
-  return 'NumberParam';
+function inputType(input) {
+  if (input.kind === 'choice') return `${input.options.map((o) => `'${o}'`).join(' | ')} | (string & {})`;
+  if (input.kind === 'boolean') return 'boolean';
+  return input.kind === 'int' || input.kind === 'number' ? 'NumberParam' : 'string';
 }
 
 /** What an input's note says: its label, its range, where a source may come from, and its default. */
-function inputNote(value, input = {}) {
+function inputNote(value, input, spec = {}) {
   const parts = [];
   if (input.label) parts.push(`${input.label}.`);
-  if (input.source) parts.push("A price (`'close'`, `'hl2'` …) or another indicator's line (`indicatorSource(instanceId, key)`).");
-  const range = [input.min != null && `at least ${input.min}`, input.max != null && `at most ${input.max}`, input.step != null && `in steps of ${input.step}`]
+  if (input.kind === 'source') parts.push("A price (`'close'`, `'hl2'` …) or another indicator's line (`indicatorSource(instanceId, key)`).");
+  // The step is said only when the indicator declares one: a whole number steps by 1 anyway.
+  const range = [input.min != null && `at least ${input.min}`, input.max != null && `at most ${input.max}`, spec.step != null && `in steps of ${spec.step}`]
     .filter(Boolean).join(', ');
-  if (range) parts.push(`${range[0].toUpperCase()}${range.slice(1)}.`);
+  if (input.kind === 'int') parts.push(range ? `A whole number, ${range}.` : 'A whole number.');
+  else if (range) parts.push(`${range[0].toUpperCase()}${range.slice(1)}.`);
   parts.push(`Default ${typeof value === 'string' ? `\`'${value}'\`` : value}.`);
   return parts.join(' ');
 }
@@ -89,9 +98,9 @@ function indicatorTypes() {
     const params = Object.entries(ind.params);
     out.push(params.length ? '    params: {' : '    params: {};');
     for (const [key, value] of params) {
-      const input = ind.inputs?.[key];
-      out.push(`      /** ${inputNote(value, input)} */`);
-      out.push(`      ${key}?: ${inputType(value, input)};`);
+      const input = ind.inputs[key];
+      out.push(`      /** ${inputNote(value, input, specs.get(ind.id)?.[key])} */`);
+      out.push(`      ${key}?: ${inputType(input)};`);
     }
     if (params.length) out.push('    };');
     out.push(`    lines: ${ind.plots.length ? ind.plots.map((p) => `'${p.key}'`).join(' | ') : 'never'};`);
@@ -147,7 +156,7 @@ function styleKeysMarkdown() {
 
 const cell = (s) => String(s).replace(/\|/g, '\\|');
 const paramsText = (params) => Object.entries(params).map(([k, v]) => `${k}: ${JSON.stringify(v)}`).join(', ') || '—';
-const sourceNote = (ind) => (ind.inputs && Object.values(ind.inputs).some((i) => i.source) ? ' ✓' : '');
+const sourceNote = (ind) => (Object.values(ind.inputs).some((i) => i.kind === 'source') ? ' ✓' : '');
 
 function indicatorsMarkdown() {
   const section = (placement, title, blurb) => {

@@ -15,6 +15,7 @@ export class VortexIndicator extends IndicatorBase {
     name: 'Vortex Indicator',
     placement: 'panel' as const,
     defaultConfig: { period: 14 },
+    inputs: { period: { kind: 'int', min: 1 } },
     shortName: 'VI',
     plots: [
       { key: 'viPlus', title: 'VI+', color: 0 },

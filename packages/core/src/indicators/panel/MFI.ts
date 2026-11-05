@@ -9,6 +9,7 @@ export class MFIIndicator extends IndicatorBase {
     name: 'Money Flow Index',
     placement: 'panel' as const,
     defaultConfig: { period: 14 },
+    inputs: { period: { kind: 'int', min: 1 } },
     shortName: 'MFI',
     plots: [{ key: 'value', title: 'MFI', color: 0 }],
     scale: { min: 0, max: 100 },

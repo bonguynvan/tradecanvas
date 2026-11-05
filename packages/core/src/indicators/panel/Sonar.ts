@@ -15,6 +15,7 @@ export class SonarIndicator extends IndicatorBase {
     name: 'Sonar',
     placement: 'panel',
     defaultConfig: { period: 20, lookback: 9, signal: 9 },
+    inputs: { period: { kind: 'int', min: 1 }, lookback: { kind: 'int', min: 1 }, signal: { kind: 'int', min: 1 } },
     shortName: 'Sonar',
     plots: [
       { key: 'sonar', title: 'Sonar', color: 0 },

@@ -16,6 +16,7 @@ export class ChoppinessIndexIndicator extends IndicatorBase {
     name: 'Choppiness Index',
     placement: 'panel' as const,
     defaultConfig: { period: 14 },
+    inputs: { period: { kind: 'int', min: 2 } },
     shortName: 'CHOP',
     plots: [{ key: 'value', title: 'CHOP', color: 0 }],
     scale: { min: 0, max: 100 },

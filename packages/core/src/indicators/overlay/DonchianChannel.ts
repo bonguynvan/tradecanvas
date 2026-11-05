@@ -12,6 +12,7 @@ export class DonchianChannelIndicator extends IndicatorBase {
     name: 'Donchian Channel',
     placement: 'overlay' as const,
     defaultConfig: { period: 20 },
+    inputs: { period: { kind: 'int', min: 1 } },
     shortName: 'DC',
     plots: [
       { key: 'upper', title: 'Upper', color: 0 },

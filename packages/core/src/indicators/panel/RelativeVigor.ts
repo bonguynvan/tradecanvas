@@ -15,6 +15,7 @@ export class RelativeVigorIndicator extends IndicatorBase {
     name: 'Relative Vigor Index',
     placement: 'panel' as const,
     defaultConfig: { period: 10 },
+    inputs: { period: { kind: 'int', min: 1 } },
     shortName: 'RVGI',
     plots: [
       { key: 'value', title: 'RVGI', color: 0 },

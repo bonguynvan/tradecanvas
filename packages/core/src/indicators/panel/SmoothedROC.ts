@@ -14,6 +14,7 @@ export class SmoothedROCIndicator extends IndicatorBase {
     name: 'Smoothed Rate of Change',
     placement: 'panel',
     defaultConfig: { ema: 13, roc: 21 },
+    inputs: { ema: { kind: 'int', min: 1 }, roc: { kind: 'int', min: 1 } },
     shortName: 'S-ROC',
     plots: [{ key: 'value', title: 'S-ROC', color: 0 }],
     levels: [0],

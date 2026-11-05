@@ -18,7 +18,7 @@ export class ConnorsRSIIndicator extends IndicatorBase {
     placement: 'panel' as const,
     defaultConfig: { rsiPeriod: 3, streakPeriod: 2, rankPeriod: 100, source: 'close' },
     shortName: 'CRSI',
-    inputs: { source: { source: true } },
+    inputs: { source: { source: true }, rsiPeriod: { kind: 'int', min: 1 }, streakPeriod: { kind: 'int', min: 1 }, rankPeriod: { kind: 'int', min: 1 } },
     plots: [{ key: 'value', title: 'CRSI', color: 0 }],
     scale: { min: 0, max: 100 },
     levels: [10, 90],

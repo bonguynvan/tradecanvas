@@ -30,7 +30,7 @@ export class CandlePatternsIndicator extends PointwiseIndicator<Params> {
     placement: 'overlay',
     defaultConfig: { trendPeriod: DEFAULT_TREND_PERIOD, reversal: 1, continuation: 1, indecision: 0 },
     shortName: 'Patterns',
-    inputs: { trendPeriod: { min: 2 }, reversal: { min: 0, max: 1 }, continuation: { min: 0, max: 1 }, indecision: { min: 0, max: 1 } },
+    inputs: { trendPeriod: { kind: 'int', min: 2 }, reversal: { kind: 'int', min: 0, max: 1 }, continuation: { kind: 'int', min: 0, max: 1 }, indecision: { kind: 'int', min: 0, max: 1 } },
     plots: [
       { key: 'bull', title: 'Bullish', color: 3, kind: 'dots' },
       { key: 'bear', title: 'Bearish', color: 4, kind: 'dots' },

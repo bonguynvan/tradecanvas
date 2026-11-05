@@ -14,7 +14,7 @@ export class BollingerPercentBIndicator extends PointwiseIndicator<{ period: num
     placement: 'panel',
     defaultConfig: { period: 20, stdDev: 2, source: 'close' },
     shortName: '%B',
-    inputs: { period: { min: 2 }, stdDev: { min: 0.1, step: 0.1 }, source: { source: true } },
+    inputs: { period: { kind: 'int', min: 2 }, stdDev: { kind: 'number', min: 0.1, step: 0.1 }, source: { source: true } },
     plots: [{ key: 'value', title: '%B', color: 0 }],
     levels: [0, 0.5, 1],
   };

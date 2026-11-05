@@ -39,6 +39,7 @@ export class NegativeVolumeIndexIndicator extends VolumeIndex {
     name: 'Negative Volume Index',
     placement: 'panel',
     defaultConfig: { signal: 255 },
+    inputs: { signal: { kind: 'int', min: 1 } },
     shortName: 'NVI',
     plots: [
       { key: 'value', title: 'NVI', color: 0 },
@@ -58,6 +59,7 @@ export class PositiveVolumeIndexIndicator extends VolumeIndex {
     name: 'Positive Volume Index',
     placement: 'panel',
     defaultConfig: { signal: 255 },
+    inputs: { signal: { kind: 'int', min: 1 } },
     shortName: 'PVI',
     plots: [
       { key: 'value', title: 'PVI', color: 0 },

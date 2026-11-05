@@ -14,7 +14,7 @@ export class VWMAIndicator extends IndicatorBase {
     placement: 'overlay' as const,
     defaultConfig: { period: 20, source: 'close' },
     shortName: 'VWMA',
-    inputs: { source: { source: true } },
+    inputs: { source: { source: true }, period: { kind: 'int', min: 1 } },
     plots: [{ key: 'value', title: 'VWMA', color: 0 }],
   };
 

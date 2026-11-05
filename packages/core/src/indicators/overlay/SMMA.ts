@@ -15,7 +15,7 @@ export class SMMAIndicator extends IndicatorBase {
     placement: 'overlay',
     defaultConfig: { period: 14, source: 'close' },
     shortName: 'SMMA',
-    inputs: { period: { min: 1 }, source: { source: true } },
+    inputs: { period: { kind: 'int', min: 1 }, source: { source: true } },
     plots: [{ key: 'value', title: 'SMMA', color: 0 }],
   };
 

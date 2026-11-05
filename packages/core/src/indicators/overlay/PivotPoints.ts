@@ -23,7 +23,7 @@ export class PivotPointsIndicator extends IndicatorBase {
     placement: 'overlay' as const,
     defaultConfig: { lookback: 24, type: 'traditional' },
     shortName: 'Pivots',
-    inputs: { lookback: { min: 1 }, type: { options: KINDS } },
+    inputs: { lookback: { kind: 'int', min: 1 }, type: { options: KINDS } },
     plots: [
       { key: 'r3', title: 'R3', color: 1 },
       { key: 'r2', title: 'R2', color: 1 },

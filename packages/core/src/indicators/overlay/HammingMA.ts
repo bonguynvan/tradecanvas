@@ -23,7 +23,7 @@ export class HammingMAIndicator extends PointwiseIndicator<HammingParams> {
     placement: 'overlay',
     defaultConfig: { period: 10, source: 'close' },
     shortName: 'HMA (Hamming)',
-    inputs: { period: { min: 2, max: MAX_PERIOD }, source: { source: true } },
+    inputs: { period: { kind: 'int', min: 2, max: MAX_PERIOD }, source: { source: true } },
     plots: [{ key: 'value', title: 'MA', color: 0 }],
   };
 
