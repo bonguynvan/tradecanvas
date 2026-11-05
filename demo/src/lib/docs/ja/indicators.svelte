@@ -214,6 +214,20 @@ CANDLE_PATTERNS.length                                 // 64`}</code></pre>
   mult: { kind: 'number', min: 0.1, step: 0.1 },
   source: { source: true },
 }`}</code></pre>
+<p>
+  ディスクリプターはプロットの見た目も宣言し、チャートはそのとおりに描きます。<code>fills</code> は両方に値がある
+  バーで 2 本のプロットの間を線の下に塗ります。プロットの <code>width</code> はインジケーターの太さにかかわらず
+  その太さに保ちます（細い中心線など）。<code>lineStyle</code> はスタイルが別の指定をするまで破線にし、設定
+  ダイアログもその線種を表示して元に戻します。<code>opacity</code> は線を控えめにします。<code>breakOn</code>
+  は期間に番号を振るフィールドを指し、その値が変わる所で線が途切れます。組み込みのチャネル、バンド、
+  Supertrend、パラボリック SAR はこの方法で描かれます。
+</p>
+<pre><code>{`plots: [
+  { key: 'upper', title: 'Upper', color: 0 },
+  { key: 'middle', title: 'Basis', color: 1, width: 1, lineStyle: 'dashed' },
+  { key: 'lower', title: 'Lower', color: 0 },
+],
+fills: [{ between: ['upper', 'lower'], color: 0, opacity: 0.1 }],`}</code></pre>
 
 <h2>ペイン：サイズ変更、折りたたみ、最大化、並べ替え</h2>
 <p>

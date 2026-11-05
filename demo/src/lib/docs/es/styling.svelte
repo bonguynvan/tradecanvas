@@ -332,8 +332,10 @@ chart.setIndicatorDefaults('ema', { colors: ['#f5a623'], lineWidths: [2] })
 chart.setPaneStyle(rsiId, { background: '#101418', separator: '#f5a623' })`}</code></pre>
 <p>
   Un plot oculto no muestra etiqueta de valor ni valor en la leyenda. Todos los indicadores dejan fuera un plot
-  oculto, y casi todos toman el trazo de sus plots; unos pocos que dibujan formas propias (los puntos del Parabolic
-  SAR, Supertrend, Zig Zag, los perfiles de volumen) mantienen su propio trazo.
+  oculto, y casi todos toman el trazo de sus plots; unos pocos que dibujan formas propias (Zig Zag, los perfiles
+  de volumen, las marcas de patrones de velas) mantienen su propio trazo. Las líneas que un indicador dibuja
+  discontinuas (Chandelier Exit, los niveles pivote, las bandas de Session VWAP) siguen así hasta que el estilo
+  de su plot diga otra cosa.
 </p>
 
 <h2>Las etiquetas del gráfico</h2>

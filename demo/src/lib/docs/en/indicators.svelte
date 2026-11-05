@@ -219,6 +219,20 @@ CANDLE_PATTERNS.length                                 // 64`}</code></pre>
   mult: { kind: 'number', min: 0.1, step: 0.1 },
   source: { source: true },
 }`}</code></pre>
+<p>
+  The descriptor also says how its plots look, and the chart draws them so: <code>fills</code> shade between two
+  plots where both have a value, under the lines; a plot's <code>width</code> keeps it at that width whatever the
+  indicator's (a thin middle line); <code>lineStyle</code> dashes it until its style says otherwise, and the
+  settings show and restore that dash; <code>opacity</code> sets it back; <code>breakOn</code> names a field
+  that numbers periods, and the line breaks where it changes. The built-in channels, bands, Supertrend and
+  Parabolic SAR are drawn this way.
+</p>
+<pre><code>{`plots: [
+  { key: 'upper', title: 'Upper', color: 0 },
+  { key: 'middle', title: 'Basis', color: 1, width: 1, lineStyle: 'dashed' },
+  { key: 'lower', title: 'Lower', color: 0 },
+],
+fills: [{ between: ['upper', 'lower'], color: 0, opacity: 0.1 }],`}</code></pre>
 
 <h2>Panes: resize, fold, maximise, reorder</h2>
 <p>

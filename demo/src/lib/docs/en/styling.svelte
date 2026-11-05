@@ -329,8 +329,9 @@ chart.setIndicatorDefaults('ema', { colors: ['#f5a623'], lineWidths: [2] })
 chart.setPaneStyle(rsiId, { background: '#101418', separator: '#f5a623' })`}</code></pre>
 <p>
   A hidden plot shows no value tag and no legend value. Every indicator leaves a hidden plot out, and nearly every
-  one takes its plots' dash; a few that draw shapes of their own (Parabolic SAR's dots, Supertrend, Zig Zag, the
-  volume profiles) keep their own stroke.
+  one takes its plots' dash; a few that draw shapes of their own (Zig Zag, the volume profiles, the candle
+  pattern marks) keep their own stroke. Lines an indicator dashes itself (Chandelier Exit, the pivot levels,
+  Session VWAP's bands) stay dashed until their plot style says otherwise.
 </p>
 
 <h2>The chart's tags</h2>

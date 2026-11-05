@@ -1,9 +1,7 @@
-import type { IndicatorDescriptor, DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue, ResolvedIndicatorStyle, ViewportState } from '@tradecanvas/commons';
+import type { IndicatorDescriptor, DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue } from '@tradecanvas/commons';
 import { IndicatorBase } from '../IndicatorBase.js';
 import { IndicatorValueMap } from '../IndicatorValueMap.js';
 import { getIntParam, getNumberParam } from '../params.js';
-import { barIndexToX, priceToY } from '../../viewport/ScaleMapping.js';
-import { LinePen, isDenseSlots } from '../linePen.js';
 
 export class SupertrendIndicator extends IndicatorBase {
   descriptor: IndicatorDescriptor = {
@@ -74,35 +72,5 @@ export class SupertrendIndicator extends IndicatorBase {
       prevSupertrend = supertrend;
     }
     return { values, series };
-  }
-
-  render(ctx: CanvasRenderingContext2D, output: IndicatorOutput, viewport: ViewportState, style: ResolvedIndicatorStyle): void {
-    const series = output.series;
-    if (!series) return;
-    if (style.plots?.value?.visible === false) return;
-    const { from, to } = viewport.visibleRange;
-
-    const upColor = style.colors[0];
-    const downColor = style.colors[1] ?? '#e8505b';
-
-    // Each segment in the colour of the trend it ends in: one pen per colour,
-    // joined where a run continues.
-    const dense = isDenseSlots(viewport);
-    const width = style.lineWidths[0] + 0.5;
-    for (const [color, side] of [[upColor, 1], [downColor, -1]] as const) {
-      const pen = new LinePen(ctx, color, width, dense);
-      let prevX = 0, prevY = 0, hasPrev = false;
-      for (let i = from; i <= to && i < series.length; i++) {
-        const val = series[i];
-        if (!val || val.value === undefined) continue;
-        const x = barIndexToX(i, viewport);
-        const y = priceToY(val.value, viewport);
-        if (hasPrev && (val.trend ?? 1) === side) pen.segment(prevX, prevY, x, y);
-        prevX = x;
-        prevY = y;
-        hasPrev = true;
-      }
-      pen.finish();
-    }
   }
 }

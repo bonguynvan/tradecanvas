@@ -51,6 +51,32 @@ export interface IndicatorPlot {
   tone?: 'sign' | { field: string };
   /** Index into `style.colors` of the down colour of a two-tone plot. */
   downColor?: number;
+  /**
+   * Its own line width, whatever the indicator's (`lineWidths[0]`): a thin
+   * guide such as a channel's middle line. A width the style gives for its
+   * own place in `lineWidths`, after the first, still wins.
+   */
+  width?: number;
+  /** How it is dashed until its style (`style.plots[key].lineStyle`) says otherwise; default `'solid'`. */
+  lineStyle?: LineStyle;
+  /** Its strength, 0 to 1, for a line that should sit back (bands around a line); default 1. */
+  opacity?: number;
+  /**
+   * An output field that numbers periods (`'session'`): the line breaks
+   * between two bars of different periods, except where each is a period of
+   * its own (daily bars of a daily average, joined into one line).
+   */
+  breakOn?: string;
+}
+
+/** A shaded area between two of an indicator's plots (a channel's band). */
+export interface IndicatorFill {
+  /** The keys of the two plots it fills between; only where both have a value. */
+  between: readonly [string, string];
+  /** Index into `style.colors` it is shaded in. */
+  color: number;
+  /** Its strength, 0 to 1; default 0.1. */
+  opacity?: number;
 }
 
 /** The value scale of an indicator's pane. */
@@ -107,6 +133,8 @@ export interface IndicatorDescriptor {
   shortName?: string;
   /** What it draws, in drawing order. Without it every output field counts as drawn. */
   plots?: readonly IndicatorPlot[];
+  /** Areas shaded between two of its plots, drawn under the plots. */
+  fills?: readonly IndicatorFill[];
   /** Its pane's value scale (panel indicators). */
   scale?: IndicatorScale;
   /** Default horizontal reference levels (RSI 30 / 70), drawn by the chart and editable per instance. */

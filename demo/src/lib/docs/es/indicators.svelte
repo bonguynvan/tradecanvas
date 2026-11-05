@@ -230,6 +230,20 @@ CANDLE_PATTERNS.length                                 // 64`}</code></pre>
   mult: { kind: 'number', min: 0.1, step: 0.1 },
   source: { source: true },
 }`}</code></pre>
+<p>
+  El descriptor también dice cómo se ven sus plots, y el gráfico los dibuja así: <code>fills</code> sombrea entre
+  dos plots donde ambos tienen valor, bajo las líneas; el <code>width</code> de un plot lo mantiene en ese grosor
+  sea cual sea el del indicador (una línea media fina); <code>lineStyle</code> lo dibuja discontinuo hasta que su
+  estilo diga otra cosa, y la configuración muestra y restaura ese trazo; <code>opacity</code> lo atenúa;
+  <code>breakOn</code> nombra un campo que numera periodos, y la línea se corta donde cambia. Los canales, las
+  bandas, Supertrend y Parabolic SAR integrados se dibujan así.
+</p>
+<pre><code>{`plots: [
+  { key: 'upper', title: 'Upper', color: 0 },
+  { key: 'middle', title: 'Basis', color: 1, width: 1, lineStyle: 'dashed' },
+  { key: 'lower', title: 'Lower', color: 0 },
+],
+fills: [{ between: ['upper', 'lower'], color: 0, opacity: 0.1 }],`}</code></pre>
 
 <h2>Paneles: redimensionar, contraer, maximizar, reordenar</h2>
 <p>

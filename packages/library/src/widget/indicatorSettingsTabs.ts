@@ -101,7 +101,7 @@ function plotRow(plot: IndicatorPlot, state: StyleTabState, actions: StyleTabAct
   if ((plot.kind ?? 'line') === 'line' || plot.kind === 'step') {
     const dash = selectInput(
       LINE_STYLES.map((s) => ({ value: s, label: t(`drawingSettings.lineStyle.${s}`) })),
-      own.lineStyle ?? 'solid',
+      own.lineStyle ?? plot.lineStyle ?? 'solid',
       (v) => actions.plot(plot.key, { lineStyle: v as LineStyle }),
     );
     dash.setAttribute('aria-label', `${plot.title}: ${t('drawingSettings.lineStyle')}`);

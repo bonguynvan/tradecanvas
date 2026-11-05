@@ -204,6 +204,19 @@ CANDLE_PATTERNS.length                                 // 64`}</code></pre>
   mult: { kind: 'number', min: 0.1, step: 0.1 },
   source: { source: true },
 }`}</code></pre>
+<p>
+  描述符也说明各条线的外观，图表照此绘制：<code>fills</code> 在两条线都有值的地方为其间着色，位于线条之下；
+  线条的 <code>width</code> 使其保持该粗细，不随指标的粗细变化（例如较细的中线）；<code>lineStyle</code>
+  让它显示为虚线，直到其样式另有设定，设置对话框也会显示并恢复这一线型；<code>opacity</code> 让它淡一些；
+  <code>breakOn</code> 指定一个为周期编号的字段，线条在该字段变化处断开。内置的通道、带、Supertrend 和
+  Parabolic SAR 都以这种方式绘制。
+</p>
+<pre><code>{`plots: [
+  { key: 'upper', title: 'Upper', color: 0 },
+  { key: 'middle', title: 'Basis', color: 1, width: 1, lineStyle: 'dashed' },
+  { key: 'lower', title: 'Lower', color: 0 },
+],
+fills: [{ between: ['upper', 'lower'], color: 0, opacity: 0.1 }],`}</code></pre>
 
 <h2>窗格：调整大小、收起、最大化、重新排序</h2>
 <p>

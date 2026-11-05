@@ -321,8 +321,9 @@ chart.setIndicatorDefaults('ema', { colors: ['#f5a623'], lineWidths: [2] })
 chart.setPaneStyle(rsiId, { background: '#101418', separator: '#f5a623' })`}</code></pre>
 <p>
   숨긴 플롯은 값 태그도 범례 값도 없습니다. 모든 지표가 숨긴 플롯을 그리지 않고, 거의 모든 지표가 플롯의
-  선 종류도 따릅니다. 자체 도형을 그리는 일부(파라볼릭 SAR 점, Supertrend, 지그재그, 거래량 프로파일)는
-  자기 선을 유지합니다.
+  선 종류도 따릅니다. 자체 도형을 그리는 일부(지그재그, 거래량 프로파일, 캔들 패턴 표시)는 자기 선을
+  유지합니다. 지표가 스스로 점선으로 그리는 선(Chandelier Exit, 피벗 각 수준, Session VWAP의 밴드)은 그
+  플롯의 스타일이 달리 정할 때까지 점선으로 남습니다.
 </p>
 
 <h2>차트의 라벨</h2>

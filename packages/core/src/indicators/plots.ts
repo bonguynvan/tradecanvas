@@ -1,14 +1,16 @@
 import type {
   IndicatorDescriptor,
+  IndicatorFill,
   IndicatorOutput,
   IndicatorPlot,
   IndicatorValue,
   ResolvedIndicatorStyle,
   ViewportState,
 } from '@tradecanvas/commons';
-import { lineDash } from '@tradecanvas/commons';
+import { lineDash, withAlpha } from '@tradecanvas/commons';
 import { barIndexToX, priceToYMapper } from '../viewport/ScaleMapping.js';
-import { LinePen, isDenseSlots } from './linePen.js';
+import { LinePen, fillDenseBand, isDenseSlots } from './linePen.js';
+import { breaksBetween } from './periods.js';
 
 /** Room left above and below the values in an auto-fitted pane, as a share of their span. */
 const PANE_PADDING = 0.1;
@@ -179,8 +181,10 @@ export function hasHistogram(plots: readonly IndicatorPlot[] | undefined): boole
 /**
  * Draw `plots` from `output` with the viewport's value scale, so the lines
  * sit where the axis, crosshair and labels say they are. Gaps (bars with no
- * value) break lines. Plot `n` uses `style.lineWidths[n]`, falling back to
- * the first width.
+ * value) break lines, and so do changes of a plot's `breakOn` field. Plot
+ * `n` uses a width the style sets for its place after the first, else its
+ * own `width`, else the first width. `fills` are shaded first, under the
+ * plots.
  */
 export function renderPlots(
   ctx: CanvasRenderingContext2D,
@@ -188,6 +192,7 @@ export function renderPlots(
   viewport: ViewportState,
   style: ResolvedIndicatorStyle,
   plots: readonly IndicatorPlot[],
+  fills: readonly IndicatorFill[] = [],
 ): void {
   const series = output.series;
   if (!series) return;
@@ -195,27 +200,93 @@ export function renderPlots(
   const to = Math.min(viewport.visibleRange.to, series.length - 1);
   if (to < from) return;
   const toY = priceToYMapper(viewport);
+  for (const fill of fills) {
+    const color = withAlpha(style.colors[fill.color] ?? style.colors[0], fill.opacity ?? FILL_OPACITY);
+    drawFill(ctx, series, fill.between, from, to, viewport, toY, color);
+  }
   for (let n = 0; n < plots.length; n++) {
     const plot = plots[n];
     if (!plotShown(plot, style)) continue;
-    const width = style.lineWidths[n] ?? style.lineWidths[0] ?? 1.5;
-    const dash = lineDash(style.plots?.[plot.key]?.lineStyle ?? 'solid', PLOT_DASH, width);
+    // The first width is the indicator's own; a plot with a width of its own keeps to that.
+    const width = (n > 0 ? style.lineWidths[n] : undefined) ?? plot.width ?? style.lineWidths[0] ?? 1.5;
+    const dash = lineDash(style.plots?.[plot.key]?.lineStyle ?? plot.lineStyle ?? 'solid', PLOT_DASH, width);
     const kind = plot.kind ?? 'line';
+    const field = plot.breakOn;
+    const breaks = field === undefined ? null : (a: number, b: number) => breaksBetween(series, a, b, field);
+    const alpha = ctx.globalAlpha;
+    if (plot.opacity !== undefined) ctx.globalAlpha = alpha * plot.opacity;
     const passes = plot.tone && plot.downColor !== undefined ? [true, false] : [null];
-    for (const up of passes) {
-      // A shorter colour list (one colour set by hand) falls back to its first colour.
-      const upColor = style.colors[plot.color] ?? style.colors[0];
-      const color = up === false ? style.colors[plot.downColor!] ?? upColor : upColor;
-      const take = (val: IndicatorValue) => up === null || isUpTone(plot, val) === up;
-      if (kind === 'histogram') drawHistogram(ctx, series, plot.key, from, to, viewport, toY, color, take);
-      else if (kind === 'dots') drawDots(ctx, series, plot.key, from, to, viewport, toY, color, take);
-      else drawPath(ctx, series, plot.key, from, to, viewport, toY, color, width, kind === 'step', up === null ? null : take, dash);
+    try {
+      for (const up of passes) {
+        // A shorter colour list (one colour set by hand) falls back to its first colour.
+        const upColor = style.colors[plot.color] ?? style.colors[0];
+        const color = up === false ? style.colors[plot.downColor!] ?? upColor : upColor;
+        const take = (val: IndicatorValue) => up === null || isUpTone(plot, val) === up;
+        if (kind === 'histogram') drawHistogram(ctx, series, plot.key, from, to, viewport, toY, color, take);
+        else if (kind === 'dots') drawDots(ctx, series, plot.key, from, to, viewport, toY, color, take);
+        else drawPath(ctx, series, plot.key, from, to, viewport, toY, color, width, kind === 'step', up === null ? null : take, dash, breaks);
+      }
+    } finally {
+      // The chart draws the next indicator on the same context.
+      ctx.globalAlpha = alpha;
     }
   }
 }
 
+/** A fill's strength when its descriptor gives none. */
+const FILL_OPACITY = 0.1;
+
 type Series = readonly (IndicatorValue | null)[];
 type Take = (val: IndicatorValue) => boolean;
+
+/**
+ * The area between two fields, one piece per run of bars that have both.
+ * Zoomed out below a pixel per bar, it is filled a pixel column at a time.
+ */
+function drawFill(
+  ctx: CanvasRenderingContext2D, series: Series, between: readonly [string, string], from: number, to: number,
+  viewport: ViewportState, toY: (v: number) => number, color: string,
+): void {
+  const size = to - from + 1;
+  const xs = new Float64Array(size);
+  const tops = new Float64Array(size);
+  const bottoms = new Float64Array(size);
+  const dense = isDenseSlots(viewport);
+  let count = 0;
+  const flush = () => {
+    if (count >= 2) {
+      if (dense) fillDenseBand(ctx, xs, tops, bottoms, color, count);
+      else fillPolygon(ctx, xs, tops, bottoms, color, count);
+    }
+    count = 0;
+  };
+  for (let i = from; i <= to; i++) {
+    const a = finite(series[i], between[0]);
+    const b = finite(series[i], between[1]);
+    if (a === undefined || b === undefined) {
+      flush();
+      continue;
+    }
+    xs[count] = barIndexToX(i, viewport);
+    tops[count] = toY(a);
+    bottoms[count] = toY(b);
+    count++;
+  }
+  flush();
+}
+
+/** One edge left to right, the other back: a band's outline, filled. */
+function fillPolygon(
+  ctx: CanvasRenderingContext2D, xs: Float64Array, tops: Float64Array, bottoms: Float64Array, color: string, count: number,
+): void {
+  ctx.beginPath();
+  ctx.moveTo(xs[0], tops[0]);
+  for (let i = 1; i < count; i++) ctx.lineTo(xs[i], tops[i]);
+  for (let i = count - 1; i >= 0; i--) ctx.lineTo(xs[i], bottoms[i]);
+  ctx.closePath();
+  ctx.fillStyle = color;
+  ctx.fill();
+}
 
 function finite(val: IndicatorValue | null, key: string): number | undefined {
   const v = val?.[key];
@@ -225,17 +296,20 @@ function finite(val: IndicatorValue | null, key: string): number | undefined {
 /**
  * A line (or steps). Two-tone: each segment takes the colour of the bar it
  * ends on. Zoomed out below a pixel per bar, the pen fills a span per pixel
- * column instead of stroking thousands of segments.
+ * column instead of stroking thousands of segments. `breaks` says where the
+ * line stops between two bars that both have a value.
  */
 function drawPath(
   ctx: CanvasRenderingContext2D, series: Series, key: string, from: number, to: number,
   viewport: ViewportState, toY: (v: number) => number, color: string, width: number,
   step: boolean, take: Take | null, dash: readonly number[] = [],
+  breaks: ((a: number, b: number) => boolean) | null = null,
 ): void {
   const pen = new LinePen(ctx, color, width, isDenseSlots(viewport), dash);
   let prevX = 0;
   let prevY = 0;
   let hasPrev = false;
+  let prevIndex = -1;
   for (let i = from; i <= to; i++) {
     const val = series[i];
     const v = finite(val, key);
@@ -244,6 +318,11 @@ function drawPath(
       pen.gap();
       continue;
     }
+    if (hasPrev && breaks?.(prevIndex, i)) {
+      hasPrev = false;
+      pen.gap();
+    }
+    prevIndex = i;
     const x = barIndexToX(i, viewport);
     const y = toY(v);
     if (!take) {

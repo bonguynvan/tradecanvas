@@ -82,20 +82,21 @@ export function periodKeyer(data: ArrayLike<{ time: number }>, period: PeriodAnc
 type PeriodSeries = ArrayLike<IndicatorValue | null | undefined>;
 
 /** Whether bar `i` holds its period alone: neither bar beside it is in the same one. */
-function alone(series: PeriodSeries, i: number): boolean {
-  const key = series[i]?.session;
-  return series[i - 1]?.session !== key && series[i + 1]?.session !== key;
+function alone(series: PeriodSeries, i: number, field: string): boolean {
+  const key = series[i]?.[field];
+  return series[i - 1]?.[field] !== key && series[i + 1]?.[field] !== key;
 }
 
 /**
- * Whether a line drawn by period (each point's `session` key) breaks between
+ * Whether a line drawn by period (each point's `field`, `session` unless
+ * another is named) breaks between
  * the points of bars `a` and `b`: they are in different periods, unless each
  * holds its period alone. A session's average on daily bars is then one line
  * through the bars' typical prices, while two longer periods are never
  * joined. Read from the bars beside each, not from what is on screen, so the
  * line stays the same as it scrolls.
  */
-export function breaksBetween(series: PeriodSeries, a: number, b: number): boolean {
-  if (series[a]?.session === series[b]?.session) return false;
-  return !(alone(series, a) && alone(series, b));
+export function breaksBetween(series: PeriodSeries, a: number, b: number, field = 'session'): boolean {
+  if (series[a]?.[field] === series[b]?.[field]) return false;
+  return !(alone(series, a, field) && alone(series, b, field));
 }

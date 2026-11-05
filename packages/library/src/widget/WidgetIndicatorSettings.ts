@@ -77,8 +77,10 @@ interface Look {
 let nextDialogId = 1;
 
 const DEFAULT_LINE_WIDTH = 1.5;
-/** A line as it is with no style of its own. */
-const PLAIN_PLOT: IndicatorPlotStyle = { visible: true, lineStyle: 'solid' };
+/** A line as it is with no style of its own: shown, and dashed as its indicator declares it. */
+function plainPlot(plots: readonly IndicatorPlot[] | undefined, key: string): IndicatorPlotStyle {
+  return { visible: true, lineStyle: plots?.find((p) => p.key === key)?.lineStyle ?? 'solid' };
+}
 
 const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
 /** A copy of plain values (numbers, strings, flags, lists of them). */
@@ -93,8 +95,12 @@ function titleCase(key: string): string {
 }
 
 /** Each line put back as `to` has it; one `to` has no style for goes back to plain. */
-function plotsBack(from: Record<string, IndicatorPlotStyle>, to: Record<string, IndicatorPlotStyle>): Record<string, IndicatorPlotStyle> {
-  return Object.fromEntries([...new Set([...Object.keys(from), ...Object.keys(to)])].map((key) => [key, { ...PLAIN_PLOT, ...to[key] }]));
+function plotsBack(
+  from: Record<string, IndicatorPlotStyle>,
+  to: Record<string, IndicatorPlotStyle>,
+  plots: readonly IndicatorPlot[] | undefined,
+): Record<string, IndicatorPlotStyle> {
+  return Object.fromEntries([...new Set([...Object.keys(from), ...Object.keys(to)])].map((key) => [key, { ...plainPlot(plots, key), ...to[key] }]));
 }
 
 /**
@@ -265,7 +271,7 @@ export class WidgetIndicatorSettings {
     const style: IndicatorStyleConfig = {};
     if (!same(this.look.colors, was.colors)) style.colors = [...was.colors];
     if (this.look.lineWidth !== was.lineWidth) style.lineWidths = [was.lineWidth];
-    if (!same(this.look.plots, was.plots)) style.plots = plotsBack(this.look.plots, was.plots);
+    if (!same(this.look.plots, was.plots)) style.plots = plotsBack(this.look.plots, was.plots, target.plots);
     if (Object.keys(style).length > 0) this.callbacks.onStyle?.(id, style);
     if (!same(this.look.levels, was.levels)) this.callbacks.onLevels?.(id, target.ownLevels ? [...was.levels] : null);
     if (this.look.scale !== was.scale && was.scale) this.callbacks.onScale?.(id, was.scale);
@@ -533,7 +539,7 @@ export class WidgetIndicatorSettings {
     this.draft = { ...params };
     this.callbacks.onApply(id, { ...params });
     if (Object.keys(this.look.plots).length > 0) {
-      this.callbacks.onStyle?.(id, { plots: plotsBack(this.look.plots, {}) });
+      this.callbacks.onStyle?.(id, { plots: plotsBack(this.look.plots, {}, target.plots) });
       this.look.plots = {};
     }
     if (target.levels && this.callbacks.onLevels) {

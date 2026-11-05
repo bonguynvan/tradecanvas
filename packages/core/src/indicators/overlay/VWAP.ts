@@ -1,10 +1,7 @@
-import type { IndicatorDescriptor, DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue, ResolvedIndicatorStyle, ViewportState } from '@tradecanvas/commons';
+import type { IndicatorDescriptor, DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue } from '@tradecanvas/commons';
 import { IndicatorBase } from '../IndicatorBase.js';
 import { IndicatorValueMap } from '../IndicatorValueMap.js';
-import { barIndexToX, priceToY } from '../../viewport/ScaleMapping.js';
-import { LinePen, isDenseSlots } from '../linePen.js';
-import { plotLook } from '../plots.js';
-import { breaksBetween, periodKeyer, type PeriodKeyer } from '../periods.js';
+import { periodKeyer, type PeriodKeyer } from '../periods.js';
 
 /** Where the average starts again: each trading day, each week, each month, or never (every bar loaded). */
 export const VWAP_ANCHORS = ['session', 'week', 'month', 'all'] as const;
@@ -57,7 +54,7 @@ export class VWAPIndicator extends IndicatorBase {
     defaultConfig: { anchor: 'session' },
     shortName: 'VWAP',
     inputs: { anchor: { options: VWAP_ANCHORS } },
-    plots: [{ key: 'value', title: 'VWAP', color: 0 }],
+    plots: [{ key: 'value', title: 'VWAP', color: 0, breakOn: 'session' }],
   };
 
   /** The running sums through each output's last bars, which the average alone cannot be turned back into. */
@@ -120,24 +117,5 @@ export class VWAPIndicator extends IndicatorBase {
       this.writePoint(out, data, i, val);
     }
     return kept;
-  }
-
-  render(ctx: CanvasRenderingContext2D, output: IndicatorOutput, viewport: ViewportState, style: ResolvedIndicatorStyle): void {
-    const series = output.series;
-    if (!series) return;
-    const { from, to } = viewport.visibleRange;
-
-    const look = plotLook(style, 'value', style.lineWidths[0]);
-    if (!look.visible) return;
-    const pen = new LinePen(ctx, style.colors[0], style.lineWidths[0], isDenseSlots(viewport), look.dash);
-    let last = -1;
-    for (let i = from; i <= to && i < series.length; i++) {
-      const val = series[i];
-      if (!val || val.value === undefined) continue;
-      if (last >= 0 && breaksBetween(series, last, i)) pen.gap();
-      pen.add(barIndexToX(i, viewport), priceToY(val.value, viewport));
-      last = i;
-    }
-    pen.finish();
   }
 }

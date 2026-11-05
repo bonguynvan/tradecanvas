@@ -1,10 +1,7 @@
-import type { IndicatorDescriptor, DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue, ResolvedIndicatorStyle, ViewportState } from '@tradecanvas/commons';
-import { withAlpha } from '@tradecanvas/commons';
+import type { IndicatorDescriptor, DataSeries, IndicatorConfig, IndicatorOutput, IndicatorValue } from '@tradecanvas/commons';
 import { IndicatorBase } from '../IndicatorBase.js';
 import { getIntParam } from '../params.js';
 import { outputOf, smaOf } from '../math.js';
-import { barIndexToX, priceToY } from '../../viewport/ScaleMapping.js';
-import { plotLook } from '../plots.js';
 
 /** How far a line may be shifted, either way. */
 const MAX_OFFSET = 500;
@@ -27,6 +24,7 @@ export class MAChannelIndicator extends IndicatorBase {
       upperOffset: { kind: 'int', min: -MAX_OFFSET, max: MAX_OFFSET },
       lowerOffset: { kind: 'int', min: -MAX_OFFSET, max: MAX_OFFSET },
     },
+    fills: [{ between: ['upper', 'lower'], color: 0, opacity: 0.08 }],
     plots: [
       { key: 'upper', title: 'Upper', color: 0 },
       { key: 'lower', title: 'Lower', color: 1 },
@@ -42,33 +40,6 @@ export class MAChannelIndicator extends IndicatorBase {
       return { ...(u !== undefined ? { upper: u } : {}), ...(l !== undefined ? { lower: l } : {}) };
     });
     return outputOf(data, points);
-  }
-
-  render(ctx: CanvasRenderingContext2D, output: IndicatorOutput, viewport: ViewportState, style: ResolvedIndicatorStyle): void {
-    const series = output.series;
-    if (!series) return;
-    const { from, to } = viewport.visibleRange;
-    const upper: { x: number; y: number }[] = [];
-    const lower: { x: number; y: number }[] = [];
-    // Shaded only where both lines are: offsets can leave one without the other.
-    const bandUpper: { x: number; y: number }[] = [];
-    const bandLower: { x: number; y: number }[] = [];
-    for (let i = from; i <= to && i < series.length; i++) {
-      const v = series[i];
-      if (!v) continue;
-      const x = barIndexToX(i, viewport);
-      const u = v.upper !== undefined ? { x, y: priceToY(v.upper, viewport) } : null;
-      const l = v.lower !== undefined ? { x, y: priceToY(v.lower, viewport) } : null;
-      if (u) upper.push(u);
-      if (l) lower.push(l);
-      if (u && l) {
-        bandUpper.push(u);
-        bandLower.push(l);
-      }
-    }
-    this.drawBand(ctx, bandUpper, bandLower, withAlpha(style.colors[0], 0.08));
-    this.drawLine(ctx, upper, style.colors[0], style.lineWidths[0], plotLook(style, 'upper', style.lineWidths[0]));
-    this.drawLine(ctx, lower, style.colors[1] ?? style.colors[0], style.lineWidths[1] ?? style.lineWidths[0], plotLook(style, 'lower', style.lineWidths[1] ?? style.lineWidths[0]));
   }
 }
 

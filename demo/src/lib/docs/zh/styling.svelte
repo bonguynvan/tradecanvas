@@ -309,7 +309,8 @@ chart.setIndicatorDefaults('ema', { colors: ['#f5a623'], lineWidths: [2] })
 chart.setPaneStyle(rsiId, { background: '#101418', separator: '#f5a623' })`}</code></pre>
 <p>
   隐藏的线条没有数值标签，也不在图例中显示数值。所有指标都不绘制隐藏的线条，几乎所有指标也支持线条的线型；
-  少数绘制自有图形的指标（Parabolic SAR 点、Supertrend、Zig Zag、成交量分布）保持自己的笔触。
+  少数绘制自有图形的指标（Zig Zag、成交量分布、K 线形态标记）保持自己的笔触。指标自己画成虚线的线条
+  （Chandelier Exit、枢轴点各级、Session VWAP 的带）保持虚线，直到该线的样式另有设定。
 </p>
 
 <h2>图表上的标签</h2>
