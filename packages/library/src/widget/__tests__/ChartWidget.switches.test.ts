@@ -473,7 +473,7 @@ describe('ChartWidget keys and behaviours by switch', () => {
   it('opens no settings with them switched off', () => {
     const open = vi.spyOn(WidgetSettings.prototype, 'open');
     make({ features: { settings: false } });
-    (widget as unknown as { openSettings(): void }).openSettings();
+    (widget as unknown as { chartSettings: { openSettings(): void } }).chartSettings.openSettings();
     expect(open).not.toHaveBeenCalled();
     open.mockRestore();
   });

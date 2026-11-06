@@ -21,13 +21,13 @@ export interface ComparesHost {
   readonly featureState: ChartWidget['featureState'];
   readonly options: ChartWidget['options'];
   refreshObjects: ChartWidget['docking']['refreshObjects'];
-  refreshScaleSwitches: ChartWidget['refreshScaleSwitches'];
+  refreshScaleSwitches: ChartWidget['chartSettings']['refreshScaleSwitches'];
   say: ChartWidget['say'];
   scheduleLegend: ChartWidget['legend']['scheduleLegend'];
   readonly settings: ChartWidget['settings'];
-  readonly settingsState: ChartWidget['settingsState'];
-  showScaleMode: ChartWidget['showScaleMode'];
-  shownSettings: ChartWidget['shownSettings'];
+  readonly settingsState: ChartWidget['chartSettings']['settingsState'];
+  showScaleMode: ChartWidget['chartSettings']['showScaleMode'];
+  shownSettings: ChartWidget['chartSettings']['shownSettings'];
   readonly state: ChartWidget['state'];
   symbolEntries: ChartWidget['symbolEntries'];
   readonly symbolLoads: ChartWidget['symbolLoads'];

@@ -66,7 +66,7 @@ vi.mock('../../Chart.js', () => ({ Chart: FakeChart }));
 
 const { ChartWidget } = await import('../ChartWidget.js');
 
-type Internals = { openSettings(tab?: string): void; openHotkeySheet(): void };
+type Internals = { chartSettings: { openSettings(tab?: string): void }; openHotkeySheet(): void };
 
 let host: HTMLDivElement;
 let widget: InstanceType<typeof ChartWidget>;
@@ -98,8 +98,8 @@ describe('ChartWidget dialogs loaded when first opened', () => {
   it('has no dialog code in until one is opened, then opens it once it is in, as the last ask said', async () => {
     make();
     expect(DIALOGS.settings.get()).toBeNull();
-    inner().openSettings();
-    inner().openSettings('scales');
+    inner().chartSettings.openSettings();
+    inner().chartSettings.openSettings('scales');
     expect(document.querySelector('.tcw-set')).toBeNull();
     await loaded();
     expect(document.querySelectorAll('.tcw-set')).toHaveLength(1);
@@ -109,7 +109,7 @@ describe('ChartWidget dialogs loaded when first opened', () => {
   it('opens at once in another widget once the code is in', async () => {
     await loaded();
     make();
-    inner().openSettings();
+    inner().chartSettings.openSettings();
     expect(document.querySelector('.tcw-set')).not.toBeNull();
   });
 
@@ -123,7 +123,7 @@ describe('ChartWidget dialogs loaded when first opened', () => {
 
   it('opens nothing when its switch went off while its code loaded', async () => {
     make();
-    inner().openSettings();
+    inner().chartSettings.openSettings();
     widget.setFeatures({ settings: false });
     await loaded();
     expect(document.querySelector('.tcw-set')).toBeNull();
@@ -131,7 +131,7 @@ describe('ChartWidget dialogs loaded when first opened', () => {
 
   it('opens nothing, and leaves nothing behind, when the widget went while its code loaded', async () => {
     make();
-    inner().openSettings();
+    inner().chartSettings.openSettings();
     widget.destroy();
     await loaded();
     expect(document.querySelector('.tcw-set')).toBeNull();

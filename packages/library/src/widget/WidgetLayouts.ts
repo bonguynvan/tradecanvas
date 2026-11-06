@@ -21,15 +21,15 @@ const FEATURE_SET_SETTINGS: readonly (keyof ChartSettingsState)[] = ['legendVisi
 
 /** What the layouts read of the widget around them, and ask of it. */
 export interface LayoutsHost {
-  allowedSettings: ChartWidget['allowedSettings'];
+  allowedSettings: ChartWidget['chartSettings']['allowedSettings'];
   applyChartType: ChartWidget['applyChartType'];
-  applySettings: ChartWidget['applySettings'];
+  applySettings: ChartWidget['chartSettings']['applySettings'];
   readonly chart: ChartWidget['chart'];
   readonly chosenTimeframe: ChartWidget['chosenTimeframe'];
-  claimSettings: ChartWidget['claimSettings'];
+  claimSettings: ChartWidget['chartSettings']['claimSettings'];
   readonly destroyed: ChartWidget['destroyed'];
   displayTimezone: ChartWidget['displayTimezone'];
-  getSettings: ChartWidget['getSettings'];
+  getSettings: ChartWidget['chartSettings']['getSettings'];
   keysShown: ChartWidget['keysShown'];
   readonly options: ChartWidget['options'];
   overViewerTypeOptions: ChartWidget['overViewerTypeOptions'];
@@ -38,9 +38,9 @@ export interface LayoutsHost {
   setSymbol: ChartWidget['setSymbol'];
   setTimeframe: ChartWidget['setTimeframe'];
   readonly settings: ChartWidget['settings'];
-  readonly settingsDefaults: ChartWidget['settingsDefaults'];
-  showLinkSettings: ChartWidget['showLinkSettings'];
-  shownSettings: ChartWidget['shownSettings'];
+  readonly settingsDefaults: ChartWidget['chartSettings']['settingsDefaults'];
+  showLinkSettings: ChartWidget['chartSettings']['showLinkSettings'];
+  shownSettings: ChartWidget['chartSettings']['shownSettings'];
   state: ChartWidget['state'];
   syncIndicatorsFromChart: ChartWidget['syncIndicatorsFromChart'];
   readonly t: ChartWidget['t'];

@@ -66,12 +66,12 @@ afterEach(() => {
 });
 
 const calls = (name: string) => FakeChart.last.calls.filter(([n]) => n === name).map(([, v]) => v);
-const openSettings = () => (widget as unknown as { openSettings(): void }).openSettings();
+const openSettings = () => (widget as unknown as { chartSettings: { openSettings(): void } }).chartSettings.openSettings();
 const tab = (name: string) => document.querySelector<HTMLButtonElement>(`[role="tab"][data-tab="${name}"]`)!.click();
 const footer = (act: string) => document.querySelector<HTMLButtonElement>(`.tcw-set .tcw-modal-footer [data-act="${act}"]`)!;
 const menuItem = (text: string) => [...document.querySelectorAll<HTMLButtonElement>('[role="menuitem"]')].find((b) => b.textContent === text)!;
 /** The grid as the widget's own setting: back on, the way a shortcut or the host would. */
-const toggleGrid = (on: boolean) => (widget as unknown as { applySettings(p: object): void }).applySettings({ gridVisible: on });
+const toggleGrid = (on: boolean) => (widget as unknown as { chartSettings: { applySettings(p: object): void } }).chartSettings.applySettings({ gridVisible: on });
 /** The grid's own switch, "Show" in the Grid lines section. */
 const gridToggle = () => document.querySelector<HTMLButtonElement>('.tcw-settings-section[aria-label="Grid lines"] button[aria-label="Show"]')!;
 const toggleFor = (label: string) => [...document.querySelectorAll<HTMLElement>('.tcw-settings-row')]

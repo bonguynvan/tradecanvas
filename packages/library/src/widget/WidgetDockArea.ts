@@ -37,7 +37,7 @@ export interface DockHost {
   readonly objectTree: ChartWidget['objectTree'];
   refreshDrawingsState: ChartWidget['refreshDrawingsState'];
   readonly root: ChartWidget['root'];
-  readonly settingsState: ChartWidget['settingsState'];
+  readonly settingsState: ChartWidget['chartSettings']['settingsState'];
   readonly symbolInfoPanel: ChartWidget['symbolInfoPanel'];
   readonly t: ChartWidget['t'];
   readonly toolbar: ChartWidget['toolbar'];

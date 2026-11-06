@@ -11,7 +11,7 @@ import type { ChartWidget } from './ChartWidget.js';
 export interface CommandsHost {
   readonly adapter: ChartWidget['adapter'];
   cancelWaiting: ChartWidget['cancelWaiting'];
-  changeSettings: ChartWidget['changeSettings'];
+  changeSettings: ChartWidget['chartSettings']['changeSettings'];
   readonly chart: ChartWidget['chart'];
   readonly commandPalette: ChartWidget['commandPalette'];
   readonly commandPalettePart: ChartWidget['commandPalettePart'];
@@ -26,15 +26,15 @@ export interface CommandsHost {
   readonly menus: ChartWidget['menus'];
   openHotkeySheet: ChartWidget['openHotkeySheet'];
   openPanel: ChartWidget['docking']['openPanel'];
-  openSettings: ChartWidget['openSettings'];
+  openSettings: ChartWidget['chartSettings']['openSettings'];
   openSymbolSearch: ChartWidget['openSymbolSearch'];
   readonly options: ChartWidget['options'];
   resetView: ChartWidget['resetView'];
   saveLayout: ChartWidget['layouts']['saveLayout'];
   say: ChartWidget['say'];
   readonly settings: ChartWidget['settings'];
-  readonly settingsState: ChartWidget['settingsState'];
-  shownSettings: ChartWidget['shownSettings'];
+  readonly settingsState: ChartWidget['chartSettings']['settingsState'];
+  shownSettings: ChartWidget['chartSettings']['shownSettings'];
   readonly state: ChartWidget['state'];
   readonly t: ChartWidget['t'];
   readonly timeframes: ChartWidget['timeframes'];

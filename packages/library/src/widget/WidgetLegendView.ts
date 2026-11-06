@@ -43,7 +43,7 @@ export interface LegendHost {
   openIndicatorSettings: ChartWidget['openIndicatorSettings'];
   readonly options: ChartWidget['options'];
   readonly root: ChartWidget['root'];
-  readonly settingsState: ChartWidget['settingsState'];
+  readonly settingsState: ChartWidget['chartSettings']['settingsState'];
   readonly t: ChartWidget['t'];
 }
 

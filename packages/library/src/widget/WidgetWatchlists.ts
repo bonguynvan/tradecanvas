@@ -15,7 +15,7 @@ export interface WatchlistsHost {
   refreshSymbolInfo: ChartWidget['refreshSymbolInfo'];
   sessionRefPrice: ChartWidget['sessionRefPrice'];
   setSymbol: ChartWidget['setSymbol'];
-  readonly settingsState: ChartWidget['settingsState'];
+  readonly settingsState: ChartWidget['chartSettings']['settingsState'];
   readonly state: ChartWidget['state'];
   symbolEntries: ChartWidget['symbolEntries'];
   symbolSearchFn: ChartWidget['symbolSearchFn'];

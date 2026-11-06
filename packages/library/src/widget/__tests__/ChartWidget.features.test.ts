@@ -277,7 +277,7 @@ describe('ChartWidget range bar', () => {
 
   it('applies the legend, countdown, indicator value and label alignment toggles to the chart', () => {
     make();
-    const apply = (p: object) => (widget as unknown as { applySettings(p: object): void }).applySettings(p);
+    const apply = (p: object) => (widget as unknown as { chartSettings: { applySettings(p: object): void } }).chartSettings.applySettings(p);
     apply({ legendVisible: false });
     apply({ barCountdown: false });
     apply({ indicatorValueLabels: false });
@@ -291,7 +291,7 @@ describe('ChartWidget range bar', () => {
   it('goes to the date typed in the dialog, read in the display timezone', () => {
     make();
     FakeChart.last.data = [{ time: T_FIRST }, { time: T_LAST }];
-    (widget as unknown as { applySettings(p: object): void }).applySettings({ timezone: '0' }); // UTC, via the settings panel's handler
+    (widget as unknown as { chartSettings: { applySettings(p: object): void } }).chartSettings.applySettings({ timezone: '0' }); // UTC, via the settings panel's handler
     host.querySelector<HTMLButtonElement>('[data-role="goto"]')!.click();
     expect([field('date')!.value, field('time')!.value]).toEqual(['2026-03-01', '12:00']); // starts at the last bar
     field('date')!.value = '2026-02-10';
@@ -304,7 +304,7 @@ describe('ChartWidget range bar', () => {
     make({ timeframe: '1h' });
     const fake = FakeChart.last;
     fake.data = [T_FIRST, Date.UTC(2026, 1, 1), Date.UTC(2026, 1, 20), T_LAST].map((time) => ({ time }));
-    (widget as unknown as { applySettings(p: object): void }).applySettings({ timezone: '0' });
+    (widget as unknown as { chartSettings: { applySettings(p: object): void } }).chartSettings.applySettings({ timezone: '0' });
     // The bars on screen, as the chart draws them (a Renko chart's bricks, say).
     fake.visibleTimes = { from: Date.UTC(2026, 1, 1), to: Date.UTC(2026, 1, 20) };
     host.querySelector<HTMLButtonElement>('[data-role="goto"]')!.click();
@@ -319,7 +319,7 @@ describe('ChartWidget range bar', () => {
   it('goes to a date on bars timed in seconds', () => {
     make();
     FakeChart.last.data = [{ time: T_FIRST / 1000 }, { time: T_LAST / 1000 }];
-    (widget as unknown as { applySettings(p: object): void }).applySettings({ timezone: '0' });
+    (widget as unknown as { chartSettings: { applySettings(p: object): void } }).chartSettings.applySettings({ timezone: '0' });
     host.querySelector<HTMLButtonElement>('[data-role="goto"]')!.click();
     expect([field('date')!.value, field('time')!.value]).toEqual(['2026-03-01', '12:00']);
     field('date')!.value = '2026-02-10';
@@ -338,13 +338,13 @@ describe('ChartWidget range bar', () => {
 
   it('starts from the host’s time zone and left scale, and Reset keeps them', () => {
     make({ chartOptions: { timeZone: 'America/New_York', leftPriceScale: true } });
-    const settings = () => (widget as unknown as { settingsState: { timezone: string; leftPriceScale: boolean } }).settingsState;
+    const settings = () => (widget as unknown as { chartSettings: { settingsState: { timezone: string; leftPriceScale: boolean } } }).chartSettings.settingsState;
     expect(settings().timezone).toBe('America/New_York');
     expect(settings().leftPriceScale).toBe(true);
-    (widget as unknown as { applySettings(p: object): void }).applySettings({ timezone: 'local', leftPriceScale: false });
+    (widget as unknown as { chartSettings: { applySettings(p: object): void } }).chartSettings.applySettings({ timezone: 'local', leftPriceScale: false });
     FakeChart.last.timezones = [];
     FakeChart.last.leftScale = [];
-    (widget as unknown as { resetSettings(): void }).resetSettings();
+    (widget as unknown as { chartSettings: { resetSettings(): void } }).chartSettings.resetSettings();
     expect(FakeChart.last.timezones).toEqual(['America/New_York']);
     expect(FakeChart.last.leftScale).toEqual([true]);
   });
