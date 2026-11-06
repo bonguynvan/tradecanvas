@@ -9,31 +9,38 @@
   max-height: none;
 }
 
+/* A dialog's search is a band across it, under its title, with a rule beneath: no box, no ring when
+   focused. The caret and the dialog itself say where typing goes; a lit box around the one field a
+   search dialog has only shouted it. As tall as the field and its margins were, set in as the title. */
 .tcw-ip-search,
 .tcw-ss-search {
   display: flex;
   align-items: center;
-  gap: var(--tcw-space-3);
+  gap: var(--tcw-space-4);
   flex: none;
-  height: var(--tcw-control-h);
-  margin: var(--tcw-space-4) var(--tcw-space-6);
-  padding: 0 var(--tcw-space-4);
-  border: var(--tcw-border-w) solid var(--tcw-border);
-  border-radius: var(--tcw-input-radius);
-  background: var(--tcw-bg);
+  height: calc(var(--tcw-control-h) + 2 * var(--tcw-space-4));
+  margin: 0;
+  padding: 0 var(--tcw-space-6);
+  border: none;
+  border-bottom: 1px solid var(--tcw-divider);
+  border-radius: 0;
+  background: transparent;
   color: var(--tcw-text-muted);
-  transition: border-color var(--tcw-dur-fast) var(--tcw-ease), box-shadow var(--tcw-dur-fast) var(--tcw-ease);
+  transition: color var(--tcw-dur-fast) var(--tcw-ease);
 }
 
+/* Focused, only the magnifier takes the text's colour. */
 .tcw-ip-search:focus-within,
 .tcw-ss-search:focus-within {
-  border-color: var(--tcw-accent);
-  box-shadow: var(--tcw-ring);
+  color: var(--tcw-text);
 }
 
+/* The magnifier root phi of the typed text (19 at 15), as the close is of the title. */
 .tcw-ip-search svg,
 .tcw-ss-search svg {
   flex: none;
+  width: calc(var(--tcw-font-size-lg) * 1.272);
+  height: calc(var(--tcw-font-size-lg) * 1.272);
 }
 
 .tcw-ip-search input,
@@ -46,7 +53,36 @@
   background: transparent;
   color: var(--tcw-text);
   font: inherit;
-  font-size: var(--tcw-font-size);
+  font-size: var(--tcw-font-size-lg);
+}
+
+/* In forced colours the muted and the text's colour may be one: the band keeps an outline there,
+   so the field is still found. */
+@media (forced-colors: active) {
+  .tcw-ip-search:focus-within,
+  .tcw-ss-search:focus-within {
+    outline: 2px solid Highlight;
+    outline-offset: -2px;
+  }
+}
+
+/* The browser's clear button for a search field (bold, and blue in Chrome's light scheme) as the
+   icon set's close, in the muted text, the text's on hover. A mask, so it takes the colour. */
+.tcw-ip-search input::-webkit-search-cancel-button,
+.tcw-ss-search input::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  appearance: none;
+  width: calc(var(--tcw-font-size-lg) * 1.272);
+  height: calc(var(--tcw-font-size-lg) * 1.272);
+  background: var(--tcw-text-muted);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M6 6L18 18M18 6L6 18' fill='none' stroke='%23000' stroke-width='1.75' stroke-linecap='round'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M6 6L18 18M18 6L6 18' fill='none' stroke='%23000' stroke-width='1.75' stroke-linecap='round'/%3E%3C/svg%3E") center / contain no-repeat;
+  cursor: pointer;
+}
+
+.tcw-ip-search input::-webkit-search-cancel-button:hover,
+.tcw-ss-search input::-webkit-search-cancel-button:hover {
+  background: var(--tcw-text);
 }
 
 .tcw-ip-search input::placeholder,
@@ -59,7 +95,6 @@
   grid-template-columns: 233px minmax(0, 1fr);
   flex: 1;
   min-height: 0;
-  border-top: 1px solid var(--tcw-divider);
 }
 
 .tcw-ip-nav,
@@ -316,11 +351,6 @@
     /* Above the on-screen keyboard: the sheet's top stays on the screen. */
     height: calc(92vh - var(--tcw-keyboard-inset, 0px));
     height: calc(92dvh - var(--tcw-keyboard-inset, 0px));
-  }
-
-  .tcw-ip-search,
-  .tcw-ss-search {
-    margin-inline: var(--tcw-space-4);
   }
 
   .tcw-ip-body {
@@ -1239,7 +1269,6 @@ img.tcw-ss-badge {
   overflow-y: auto;
   overscroll-behavior: contain;
   padding: 0 var(--tcw-space-6) var(--tcw-space-5);
-  border-top: 1px solid var(--tcw-divider);
 }
 
 /* Two columns as tall as their groups, inside the box that scrolls: on the box itself, of a fixed
@@ -1350,10 +1379,6 @@ img.tcw-ss-badge {
   animation: none;
 }
 
-.tcw-cp .tcw-cp-search {
-  margin-top: var(--tcw-space-5);
-}
-
 .tcw-cp-results {
   flex: 1;
   min-height: 0;
@@ -1362,7 +1387,6 @@ img.tcw-ss-badge {
   /* A row the arrows reach scrolls in below its group's heading, not under it. */
   scroll-padding-block-start: calc(var(--tcw-space-5) + var(--tcw-space-2) + var(--tcw-font-size-xs) * 1.5);
   padding: 0 var(--tcw-space-4) var(--tcw-space-4);
-  border-top: 1px solid var(--tcw-divider);
 }
 
 .tcw-cp-heading {
@@ -1437,7 +1461,6 @@ img.tcw-ss-badge {
   overflow-y: auto;
   overscroll-behavior: contain;
   padding: var(--tcw-space-3) var(--tcw-space-4) var(--tcw-space-5);
-  border-top: 1px solid var(--tcw-divider);
 }
 
 .tcw-layouts-list {
@@ -1578,14 +1601,6 @@ img.tcw-ss-badge {
     top: auto;
     transform: none;
     animation: tcw-modal-in var(--tcw-dur-slow) var(--tcw-ease-out);
-  }
-
-  .tcw-cp .tcw-cp-search {
-    margin-top: var(--tcw-space-3);
-  }
-
-  :is(.tcw-hotkey-search, .tcw-cp-search, .tcw-layouts-search-row) {
-    margin-inline: var(--tcw-space-4);
   }
 
   .tcw-cp-row {
