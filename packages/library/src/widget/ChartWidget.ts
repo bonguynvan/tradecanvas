@@ -1,10 +1,10 @@
-import type { ChartType, DataAdapter, DataUpdatePayload, DrawingToolType, FeaturesConfig, HistoryLoadPayload, OHLCBar, PriceScaleMode, Quote, QuoteSource, SymbolInfo, Theme, TimeFrame, TimeZoneSetting } from '@tradecanvas/commons';
-import { barTimeUnit, marketStatus, offsetAt, readQuote, stepDecimals, tickBarCount, timeframeFollowsDays, tzLabel } from '@tradecanvas/commons';
+import type { ChartType, DataUpdatePayload, DrawingToolType, FeaturesConfig, HistoryLoadPayload, OHLCBar, Quote, SymbolInfo, Theme, TimeFrame, TimeZoneSetting } from '@tradecanvas/commons';
+import { barTimeUnit, marketStatus, offsetAt, stepDecimals, timeframeFollowsDays, tzLabel } from '@tradecanvas/commons';
 import { settingToTimezone, timezoneOptions, timezoneToSetting } from './widgetTimezones.js';
 import { installFormControls } from './formControls.js';
 import { Chart } from '../Chart.js';
 import { DARK_THEME, LIGHT_THEME, indicatorSource, parseIndicatorSource } from '@tradecanvas/commons';
-import type { ActiveIndicatorInfo, ChartWidgetOptions, WidgetState, ChartSettingsState, SettingsStylePatch, WidgetPanel } from './types.js';
+import type { ActiveIndicatorInfo, ChartWidgetOptions, WidgetState, ChartSettingsState, WidgetPanel } from './types.js';
 import { CHART_TYPES, DRAWING_TOOL_GROUPS, DEFAULT_SYMBOLS, DEFAULT_SETTINGS } from './widgetConfig.js';
 import { SETTINGS_LOOK_KEYS } from './widgetSettingsLook.js';
 import { injectWidgetStyles, removeWidgetStyles } from './WidgetStyles.js';
@@ -12,64 +12,57 @@ import { WidgetToolbar } from './WidgetToolbar.js';
 import { setHostButtonActive, setHostButtonText } from './hostButtons.js';
 import { createScope, effect, signal, type Signal } from './signals.js';
 import { WidgetDrawingSidebar } from './WidgetDrawingSidebar.js';
-import type { WidgetSettings, SettingsTab } from './WidgetSettings.js';
+import type { WidgetSettings } from './WidgetSettings.js';
 import { WidgetStatusBar } from './WidgetStatusBar.js';
 import type { WidgetCommandPalette } from './WidgetCommandPalette.js';
 import type { WidgetSymbolSearch, SymbolSearchFn } from './WidgetSymbolSearch.js';
 import type { WidgetHotkeySheet } from './WidgetHotkeySheet.js';
-import { MOD_KEY } from './platformKeys.js';
-import { WidgetReplayBar, DEFAULT_REPLAY_RATE } from './WidgetReplayBar.js';
-import { WidgetWatchlist, type WatchlistEntry } from './WidgetWatchlist.js';
-import { WatchlistStore, type WatchlistList } from './WatchlistStore.js';
+import { WidgetReplay, type ReplayHost } from './WidgetReplay.js';
+import { browserStorage, pageHidden } from './pageEnv.js';
+import { type WatchlistEntry } from './WidgetWatchlist.js';
+import { type WatchlistList } from './WatchlistStore.js';
 import { WidgetSymbolInfo, type SymbolInfoView } from './WidgetSymbolInfo.js';
 import { SymbolNews, buildSymbolInfoView } from './symbolInfoView.js';
 import { chartInfoFor, cleanSymbolInfo, mergeSymbolInfo, readSymbolCatalog, symbolTitle } from './symbolCatalog.js';
 import { TOOL_HOTKEYS, toolShortcuts } from './drawingHotkeys.js';
 import { WidgetChartNav } from './WidgetChartNav.js';
-import { WidgetAlertsPanel, describeAlert, type AlertListItem, type AlertSource } from './WidgetAlertsPanel.js';
+import { WidgetAlertsPanel } from './WidgetAlertsPanel.js';
 import { indicatorChipLabel } from '../indicatorLabel.js';
 import { widgetIndicatorLabel } from './indicatorInputWords.js';
 import { readChartTypeOptions, type ChartTypeOptions } from '@tradecanvas/commons';
 import { applyWidgetUI, resolveWidgetUI, scaledWidgetUI, typeSize, widgetScaleFor, widgetUIVariables, type ResolvedWidgetUI, type WidgetUIPreset, type WidgetUITheme } from './widgetUI.js';
-import { WidgetObjectTree, drawingTypeLabel } from './WidgetObjectTree.js';
+import { WidgetObjectTree } from './WidgetObjectTree.js';
 import type { WidgetIndicatorSettings, IndicatorDefault } from './WidgetIndicatorSettings.js';
 import type { WidgetIndicatorPicker, IndicatorPickerItem } from './WidgetIndicatorPicker.js';
 import { IndicatorDefaultsStore } from './indicatorDefaults.js';
-import { ChartTemplateStore } from './chartTemplates.js';
 import {
-  ChartSettingsStore, LAYOUT_LEAVES, SHARE_LEAVES, VIEWER_KEYS, hasTypeSettings, pickSettings, readChartSettings, shareDelta, settingsStoreKey,
-  typesAtDefaults, typesWithSettings,
+  ChartSettingsStore,
+  hasTypeSettings,
+  settingsStoreKey,
 } from './chartSettingsStore.js';
 import { WidgetDrawingStyle } from './WidgetDrawingStyle.js';
 import { WidgetSelectionToolbar } from './WidgetSelectionToolbar.js';
 import { DrawingDefaultsStore, DrawingTemplateStore } from './DrawingTemplateStore.js';
-import type { WidgetDrawingSettings, DrawingTemplateLook } from './WidgetDrawingSettings.js';
-import { WidgetContextMenu, type ContextMenuEntry } from './WidgetContextMenu.js';
-import { TEXT_COLORS, TEXT_LAYOUTS, TEXT_PLACES } from './drawingText.js';
+import type { WidgetDrawingSettings } from './WidgetDrawingSettings.js';
+import { WidgetContextMenu } from './WidgetContextMenu.js';
+import { TEXT_LAYOUTS } from './drawingText.js';
 import { WidgetInlineText } from './WidgetInlineText.js';
-import { drawingMenuEntries, type DrawingMenuAction } from './drawingMenu.js';
-import { CHART_MENU_KEYS, TIMEZONE_ENTRY, chartMenuEntries, priceEntries, scaleModeOf, type ChartMenuAction, type ChartMenuContext } from './chartMenu.js';
+import { chartMenuEntries, priceEntries } from './chartMenu.js';
 import { WidgetAccountPanel } from './WidgetAccountPanel.js';
 import { WidgetOrderTicket } from './WidgetOrderTicket.js';
-import type { OrderTicketRules } from './orderTicket.js';
-import { WidgetLayoutsUI } from './WidgetLayoutsUI.js';
 import { WidgetNamePrompt } from './WidgetNamePrompt.js';
 import { WidgetIntervalInput } from './WidgetIntervalInput.js';
 import { IndicatorTemplateStore } from './indicatorTemplates.js';
-import { isKeyTarget, isTyping, registerKeyRoot } from './keyTarget.js';
-import { layoutChartState, readWidgetLayout, parseLayoutJson, type WidgetLayoutContent } from './widgetLayout.js';
+import { IME_KEY_CODE, inOverlay, isKeyTarget, isTyping, registerKeyRoot } from './keyTarget.js';
+import { type WidgetLayoutContent } from './widgetLayout.js';
 import { LayoutSession } from '../state/LayoutSession.js';
-import { localStorageLayouts, type SavedLayout } from '../state/layoutStorage.js';
 import { DrawingFavoritesStore } from './DrawingFavoritesStore.js';
 import { createIcon } from './icons.js';
 import { watchKeyboardInset } from './keyboardInset.js';
-import { NARROW_WIDGET_PX, watchNarrow } from './narrowMode.js';
+import { watchNarrow } from './narrowMode.js';
 import {
   availableTimeframes,
   initialTimeframeFavorites,
-  parseTimeframeInput,
-  timeframeForRange,
-  timeframeLabel,
   withExtraTimeframes,
 } from './widgetTimeframes.js';
 import type { GoToTarget, WidgetGoToDate } from './WidgetGoToDate.js';
@@ -77,35 +70,41 @@ import { LazyPart, type Lazy, type ModuleRef } from './lazyPart.js';
 import { DIALOGS, preloadDialogs } from './widgetDialogs.js';
 import { utcToWallTime, wallTimeToUtc } from './wallTime.js';
 import { WidgetDock } from './WidgetDock.js';
-import { barsBefore, comparedEntries, compareWayOptions, isCompareWay, withOlderBars, type CompareWay, type PercentCompare } from './widgetCompare.js';
+import { type CompareWay } from './widgetCompare.js';
 import { WidgetTooltip } from './WidgetTooltip.js';
-import { WidgetIndicatorLegend, type IndicatorLegendPane, type IndicatorLegendRow, type PaneAction } from './WidgetIndicatorLegend.js';
-import { formatIndicatorValue, indicatorPointAt, legendValues } from './legendValues.js';
-import { compareLegendRows } from './compareLegend.js';
-import { RANGE_PRESETS, ResamplingAdapter, SYMBOL_INDICATOR_IDS, adapterFromFeed, indicatorCategory, rangePresetStart, servesTimeframe, sourceParam, withResampling, type RangePreset } from '@tradecanvas/core';
+import { WidgetIndicatorLegend } from './WidgetIndicatorLegend.js';
+import { formatIndicatorValue } from './legendValues.js';
+import { RANGE_PRESETS, SYMBOL_INDICATOR_IDS, adapterFromFeed, indicatorCategory, sourceParam } from '@tradecanvas/core';
 import { WidgetBracketBar } from './WidgetBracketBar.js';
 import { AlertNotifier } from './AlertNotifier.js';
 import { WidgetDepthLadder } from './WidgetDepthLadder.js';
-import { WidgetDataWindow, PERCENT_DECIMALS as DATA_WINDOW_PERCENT_DECIMALS, type DataWindowModel } from './WidgetDataWindow.js';
+import { WidgetDataWindow, PERCENT_DECIMALS as DATA_WINDOW_PERCENT_DECIMALS } from './WidgetDataWindow.js';
 import type { DepthData } from '@tradecanvas/commons';
-import { encodeWidgetState, decodeWidgetState, readShareHash, buildShareUrl } from './widgetShareState.js';
 import { DragDropImporter, resampleOHLCV, inferTimeframeMs } from '../io/index.js';
-import type { CrosshairMovePayload, CrosshairSyncPayload, DataSeries, ReplayStepPayload, ReplayStepsLoadPayload } from '@tradecanvas/commons';
-import { formatVolumeLoc, timeframeToMs, zonedDateFormatter } from '@tradecanvas/commons';
-import { replayStepChoices, resolveReplayStep } from '../replay/replayStep.js';
-import type { CommandItem } from './WidgetCommandPalette.js';
+import type { CrosshairMovePayload, CrosshairSyncPayload, DataSeries } from '@tradecanvas/commons';
+import { formatVolumeLoc, timeframeToMs } from '@tradecanvas/commons';
 import { resolveMessages, createTranslator, fill, type MessageKey, type Translator } from './i18n.js';
-import { chartTypeLabel, localizeToolGroups } from './widgetLocales.js';
+import { localizeToolGroups } from './widgetLocales.js';
 import { WidgetLoadingOverlay } from './WidgetLoadingOverlay.js';
 import { WidgetHistoryPill } from './WidgetHistoryPill.js';
 import { pickHostItem, withHostItems } from './hostMenus.js';
 import { isChartKey, matchesHotkey, parseHotkey, typedIntoField, type ParsedHotkey } from './hostHotkeys.js';
 import { CHART_STYLE_KEYS, type ChartStyleKey } from '@tradecanvas/commons';
+import { WidgetCompares, type ComparesHost } from './WidgetCompares.js';
+import { WidgetWatchlists, type WatchlistsHost } from './WidgetWatchlists.js';
+import { WidgetAlerts, type AlertsHost } from './WidgetAlerts.js';
+import { WidgetTrading, type TradingHost } from './WidgetTrading.js';
+import { WidgetMenus, type MenusHost } from './WidgetMenus.js';
+import { WidgetLegendView, type LegendHost, LEGEND_INSET, STACK_GAP } from './WidgetLegendView.js';
+import { WidgetCommands, type CommandsHost } from './WidgetCommands.js';
+import { WidgetLayouts, type LayoutsHost } from './WidgetLayouts.js';
+import { WidgetDockArea, type DockHost } from './WidgetDockArea.js';
+import { WidgetChartSettings, type ChartSettingsHost } from './WidgetChartSettings.js';
+import { WidgetDrawingEdit, type DrawingEditHost } from './WidgetDrawingEdit.js';
+import { WidgetIntervals, type IntervalsHost } from './WidgetIntervals.js';
 import {
   markPart,
-  commandFeature,
   CHART_MENU_FEATURES,
-  DRAWING_MENU_FEATURES,
   filterMenuEntries,
   offFeatures,
   readWidgetFeatures,
@@ -117,8 +116,6 @@ import {
 
 /** How long a just-drawn text waits for its press to end before asking for its words anyway. */
 const TEXT_PROMPT_FALLBACK_MS = 600;
-/** A text drawing's size when neither it nor its tool sets one. */
-const DEFAULT_TEXT_SIZE = 13;
 /** How far past a scale step (px) the widget must be before its look changes size: no flicker at the edge. */
 const SCALE_DEAD_BAND = 24;
 /** The tokens a bigger scale changes: bars, buttons, icons, menu rows and type. */
@@ -154,18 +151,8 @@ function afterPaint(): Promise<void> {
   });
 }
 
-/**
- * Distinct line colours for comparison overlays, cycled by add order. Each
- * keeps 3:1 on both the dark ink and the light paper, as the palette's marks
- * do, and the first is none of the indicators' first colours (the blue of a
- * first EMA, a drawing and an alert).
- */
-const COMPARE_COLORS = ['#b552c9', '#1398a8', '#d4622b', '#e25592', '#6f7a8c', '#3e9a4f'];
-
 /** A day: bars this long or longer have no time of day to go to. */
 const DAY_MS = 86_400_000;
-/** A bar of the chart at 1×, ms. */
-const REPLAY_BAR_MS = 1000;
 /** How long the dialogs' code waits for the page to be idle before it loads anyway. */
 const PRELOAD_IDLE_TIMEOUT_MS = 5000;
 /** Where there is no idle callback (Safari): the code loads this long after the widget is up. */
@@ -175,20 +162,8 @@ const WATERMARK_FONT_SIZE = 48;
 const WATERMARK_ON_DARK = 'rgba(255,255,255,0.03)';
 const WATERMARK_ON_LIGHT = 'rgba(0,0,0,0.03)';
 
-/** The switch each of the dock's panels, but the watchlist (an option), goes with. */
-const PANEL_FEATURES = {
-  alerts: 'alerts',
-  objectTree: 'objectTree',
-  dataWindow: 'dataWindow',
-  symbolInfo: 'symbolInfo',
-  depthLadder: 'depthLadder',
-} as const satisfies Record<Exclude<WidgetPanel, 'watchlist'>, WidgetFeature>;
-
 /** Money is written to the price step's decimals, but to no more than these. */
 const MONEY_DECIMALS = 2;
-
-/** The toolbar's button for a panel, where it has one. */
-const PANEL_TOOLBAR_ROLES: Partial<Record<WidgetPanel, string>> = { alerts: 'alerts', objectTree: 'objects', symbolInfo: 'symbolInfo', depthLadder: 'trade' };
 
 /**
  * The Latin letter a plain key press types, for a symbol search started on
@@ -205,35 +180,8 @@ function typedLetter(e: KeyboardEvent): string | null {
   return place && [...e.key].length === 1 && !/[\s\d]/.test(e.key) ? place[1].toLowerCase() : null;
 }
 
-/** Gap between the on-chart indicator rows and the plot or pane edge, px. */
-const LEGEND_INSET = 4;
-/** How far under the OHLCV legend's foot the indicator rows start (px). */
-const STACK_GAP = 1;
-/** A pane's row starts below the divider's grab zone (±6 px), so it never blocks a resize. */
-const PANE_ROW_TOP = 7;
-/** Rows of the indicators sharing a pane, one under the other (px). */
-const PANE_ROW_STEP = 17;
-/** Where a pane's buttons (move, fold, maximise) sit below its top edge. */
-const PANE_CONTROLS_TOP = 3;
-/** How often the replay panel follows the chart (ms). */
-const REPLAY_POLL_MS = 150;
-/** The most finer bars fetched for one replay. */
-const MAX_REPLAY_STEPS = 5000;
-/** The replay bar's margin over the main pane, each side (the --tcw-space-4 step). */
-const REPLAY_BAR_MARGIN = 8;
-const MINUTE_MS = 60_000;
-/** Focus is in a dialog or a menu (the widget's or the page's): its keys are its own. */
-const inOverlay = (): boolean => {
-  const active = document.activeElement;
-  return active instanceof Element && active.closest('[role="dialog"], [aria-modal="true"], [role="menu"]') !== null;
-};
-
-/** `keyCode` of a key press that goes to an IME composing text. */
-const IME_KEY_CODE = 229;
 /** How often the status bar's clock moves on. */
 const CLOCK_TICK_MS = 1000;
-/** Settings a layout doesn't hold (the viewer's own, and auto-scale, which a drag changes): a change to them leaves the open layout as saved. */
-const NOT_IN_LAYOUT = new Set<keyof ChartSettingsState>([...VIEWER_KEYS, 'autoScale']);
 /**
  * The switches a host feature of the same meaning has: with the feature off
  * the chart never draws it, so nothing kept, shared or set may turn it on.
@@ -244,25 +192,10 @@ const FEATURE_SWITCHES = [
   ['legendVisible', 'legend'],
   ['volumeVisible', 'volume'],
 ] as const satisfies readonly (readonly [keyof ChartSettingsState, keyof FeaturesConfig])[];
-/**
- * The switches that start where the host's features put them. A share link
- * measures them from the sender's start, not the library's: a switch the
- * sender's app turned off is the app's, not the sender's choice, and would
- * turn it off in an app that has it on.
- */
-const FEATURE_SET_SETTINGS: readonly (keyof ChartSettingsState)[] = ['legendVisible', 'volumeVisible', 'barCountdown', 'indicatorValueLabels', 'alignAxisLabels'];
 /** The settings' style keys that aren't colours: they go with the user from theme to theme. */
 const LOOK_KEYS: readonly ChartStyleKey[] = SETTINGS_LOOK_KEYS.filter((key) => CHART_STYLE_KEYS[key] !== 'color');
 
 /** The widget pressed last: with several on a page, Alt+ shortcuts act on that one. */
-
-
-
-/** Whether the page is hidden: another tab, the app in the background. */
-const pageHidden = (): boolean => typeof document !== 'undefined' && document.hidden;
-
-/** Recent bars looked at to tell a market open on weekends. */
-const WEEKDAY_SAMPLE = 200;
 
 /**
  * The options with a `feed` made into the widget's own adapter, so all
@@ -275,6 +208,30 @@ function withFeedAdapter(options: ChartWidgetOptions): ChartWidgetOptions {
 }
 
 export class ChartWidget {
+  /** The intervals the widget offers: the menu, the ones pinned, typed ones and the range bar's. */
+  private readonly intervals = new WidgetIntervals(this.intervalsHost());
+  /** Editing a drawing: its toolbar, its words typed in place, its settings and its templates. */
+  private readonly drawingEdit = new WidgetDrawingEdit(this.drawingEditHost());
+  /** The chart settings: their state, where they are kept, the dialog's edit, and the scale they show. */
+  private readonly chartSettings = new WidgetChartSettings(this.chartSettingsHost());
+  /** The dock by the chart: its panels, its rail and how wide it is. */
+  private readonly docking = new WidgetDockArea(this.dockingHost());
+  /** Saved layouts and shared views: what a layout holds, where it is kept, and the link to a view. */
+  private readonly layouts = new WidgetLayouts(this.layoutsHost());
+  /** The command palette's entries and the actions they run. */
+  private readonly commands = new WidgetCommands(this.commandsHost());
+  /** The legend over the chart: the symbol's row and the indicators' rows, and their menu. */
+  private readonly legend = new WidgetLegendView(this.legendHost());
+  /** The chart's context menus: on the chart, on a drawing, and the clear menu. */
+  private readonly menus = new WidgetMenus(this.menusHost());
+  /** Trading by the chart: the account panel, the order ticket, the depth ladder and the bracket bar. */
+  private readonly trading = new WidgetTrading(this.tradingHost());
+  /** Price alerts: their panel, what they are checked against, and the notices when one fires. */
+  private readonly alerting = new WidgetAlerts(this.alertingHost());
+  /** The watchlists by the chart: their symbols, lists and quotes. */
+  private readonly watching = new WidgetWatchlists(this.watchingHost());
+  /** Other symbols compared with the chart's: their bars, the compare dialog, the scale they hold. */
+  private readonly comparing = new WidgetCompares(this.comparingHost());
   private chart: Chart;
   private state: WidgetState;
   /** The theme for each mode: the host's own where it gave one, so the toggle brings it back. */
@@ -292,7 +249,6 @@ export class ChartWidget {
   }
   private readonly tooltip: WidgetTooltip;
   private indicatorLegend: WidgetIndicatorLegend | null = null;
-  private legendFrame = 0;
   /**
    * Modals (settings, search, command palette, hotkeys) mount here: it carries
    * the theme tokens to `document.body`, and moves inside the widget while
@@ -313,7 +269,7 @@ export class ChartWidget {
   private unregisterKeys: () => void = () => {};
   private readonly onFullscreenChange = () => {
     // The layer moves with the page: words being typed are kept first.
-    this.inlineText?.commit();
+    this.drawingEdit.inlineText?.commit();
     this.toolbar?.setFullscreen(document.fullscreenElement === this.root);
     if (this.portal.isConnected) this.overlayHost(); // an open modal follows
   };
@@ -327,19 +283,13 @@ export class ChartWidget {
   }
   /** Letters typed on the chart while the symbol search's code loads: it opens with all of them. */
   private typedWhileLoading = '';
-  /** The panels by the chart (watchlist, alerts, objects, data window, symbol info) and their rail. */
-  private dock: WidgetDock | null = null;
-  /** Whether the widget was narrow when the dock last looked (null: not yet). */
-  private dockNarrow: boolean | null = null;
-  /** Follows the widget's width for the dock. */
-  private dockObserver: ResizeObserver | null = null;
   private hotkeySheetPart: Lazy<WidgetHotkeySheet> | null = null;
   private get hotkeySheet(): WidgetHotkeySheet | null {
     return this.hotkeySheetPart?.get() ?? null;
   }
-  private replayBar: WidgetReplayBar | null = null;
+  /** Bar replay: its panel over the chart and the session it drives. Made in the constructor, once the chart is up. */
+  private replay!: WidgetReplay;
   private dragDrop: DragDropImporter | null = null;
-  private alertsPanel: WidgetAlertsPanel | null = null;
   private objectTree: WidgetObjectTree | null = null;
   private indicatorSettingsPart: Lazy<WidgetIndicatorSettings> | null = null;
   private get indicatorSettings(): WidgetIndicatorSettings | null {
@@ -354,25 +304,6 @@ export class ChartWidget {
   private get drawingSettings(): WidgetDrawingSettings | null {
     return this.drawingSettingsPart?.get() ?? null;
   }
-  private drawingMenu: WidgetContextMenu | null = null;
-  /** A text drawn just now whose words the settings ask for: Cancel there takes it back. */
-  private justDrawnText: string | null = null;
-  /** A text drawing's words typed in place over it. */
-  private inlineText: WidgetInlineText | null = null;
-  /** The drawing whose words are being typed in place, and whether it was just drawn. */
-  private inlineTextId: string | null = null;
-  private inlineTextNew = false;
-  /** The chart's type sizes the look last wrote: a host's own change since makes them the new base. */
-  private chartFontWritten: { sizeSmall: number; sizeMedium: number; sizeLarge: number } | null = null;
-  /** Stops waiting to ask for a just-drawn text's words (the widget goes, or another text is drawn first). */
-  private cancelTextPrompt: (() => void) | null = null;
-  /** The trash button's menu, made the first time it opens. */
-  private clearMenu: WidgetContextMenu | null = null;
-  private selectionToolbar: WidgetSelectionToolbar | null = null;
-  private selectionToolbarFrame: number | null = null;
-  private chartMenu: WidgetContextMenu | null = null;
-  /** The pane a chart menu was opened on (its scale switches act on it). */
-  private menuPane: string | null = null;
   /** Whether the chart menu offers a download of the data. */
   private canExport = true;
   /** The latest fetch of each symbol the chart's indicators read. */
@@ -386,39 +317,10 @@ export class ChartWidget {
   /** The chart's type sizes before the look scaled them. */
   private chartFontBase: { sizeSmall: number; sizeMedium: number; sizeLarge: number } | null = null;
   private scaleObserver: ResizeObserver | null = null;
-  /** The legend row's "more" menu: move the indicator to another pane. */
-  private legendMenu: WidgetContextMenu | null = null;
   private templates = new IndicatorTemplateStore();
   private templatePrompt: WidgetNamePrompt | null = null;
-  /** The chart templates of the settings' Template menu, and the prompt that names a new one. */
-  private chartTemplates = new ChartTemplateStore();
-  private chartTemplatePrompt: WidgetNamePrompt | null = null;
-  /** Asks a drawing template's name, over the drawing's settings. */
-  private drawingTemplatePrompt: WidgetNamePrompt | null = null;
-  /**
-   * The settings open now: as they were on opening, and the keys changed since
-   * (a change, a reset, a template). Cancel puts those back, OK records them
-   * as one step; the rest (an axis dragged meanwhile) is left as it is.
-   */
-  private settingsEdit: {
-    settings: ChartSettingsState;
-    style: { theme: string; overrides: SettingsStylePatch };
-    keys: Set<keyof ChartSettingsState>;
-    styleKeys: Set<ChartStyleKey>;
-    /** Whether percent compares held the price scale in percent on opening. */
-    held: boolean;
-  } | null = null;
-  private intervalInput: WidgetIntervalInput | null = null;
   /** The note shown over a signal marker under the pointer. */
   private markerTip: HTMLDivElement | null = null;
-  private accountPanel: WidgetAccountPanel | null = null;
-  private orderTicket: WidgetOrderTicket | null = null;
-  private accountFrame = 0;
-  private layoutSession: LayoutSession | null = null;
-  private layoutsUI: WidgetLayoutsUI | null = null;
-  private bracketBar: WidgetBracketBar | null = null;
-  private alertNotifier: AlertNotifier | null = null;
-  private depthLadder: WidgetDepthLadder | null = null;
   private dataWindow: WidgetDataWindow | null = null;
   private lastHoverIndex: number | null = null;
   /** The bar the crosshair reported at it: on Renko and the like a brick, not a data bar. */
@@ -439,21 +341,7 @@ export class ChartWidget {
   private customTimeframes = new DrawingFavoritesStore('tcw:tf-custom');
   /** Timeframes on offer, shortest first. */
   private timeframes: TimeFrame[] = [];
-  private watchlist: WidgetWatchlist | null = null;
-  private watchlistSparkBuffer = new Map<string, number[]>();
   private sessionRefPrice: number | null = null;
-  /** Per-symbol refPrice explicitly pushed by the host via `setWatchlistEntry` — takes precedence over `sessionRefPrice`. */
-  private hostWatchlistRefPrice = new Map<string, number>();
-  private watchlistInterval: ReturnType<typeof setInterval> | null = null;
-  private watchlistStore: WatchlistStore | null = null;
-  /** The list follows `setSymbols` (no lists given, none kept). */
-  private watchlistFromSymbols = false;
-  private quoteSource: QuoteSource | null = null;
-  private stopQuotes: (() => void) | null = null;
-  /** The symbols quotes are coming for, joined. */
-  private quotedKey = '';
-  /** The latest quote of each symbol. */
-  private quotes = new Map<string, Quote>();
   private symbolInfoPanel: WidgetSymbolInfo | null = null;
   /** Headlines per symbol, kept a few minutes; a late answer for an earlier symbol is dropped. */
   private news = new SymbolNews();
@@ -463,29 +351,6 @@ export class ChartWidget {
   private chartNav: WidgetChartNav | null = null;
   /** Bars on screen, for the navigation's scroll step. */
   private visibleBarCount = 50;
-  private replayPollInterval: ReturnType<typeof setInterval> | null = null;
-  /** The replay's speed, a multiplier: 1 plays one bar of the chart a second. */
-  private replaySpeed = DEFAULT_REPLAY_RATE;
-  /** The chart's bars the replay goes through, and when the step shown opened (from `replayStep`). */
-  private replayBarsTotal: number | null = null;
-  private replayStepTime: number | null = null;
-  /** The symbol and interval of the finer steps given to the replay running (null: none given). */
-  private replayStepsKey: string | null = null;
-  /** `'auto'`, `'bar'`, or the finer interval a replay steps through. */
-  private replayStep = 'auto';
-  private replayStartSeq = 0;
-  /** The time of a bar picked while the next bars loaded: the replay starts there once they come. */
-  private replayPickTime: number | null = null;
-  /** A replay start waiting for its finer steps: a Play pressed meanwhile plays it once it starts. */
-  private replayStartPending = false;
-  private replayPlayWanted = false;
-  /** Finer bars fetched or built for the last replay in steps. */
-  private replayStepsCache: { key: string; steps: DataSeries } | null = null;
-  /** While picking the start bar: shades the bars right of the pointer. */
-  private replayShade: HTMLDivElement | null = null;
-  private layoutKeyPrefix: string | null = null;
-  private layoutDebounceMs = 1500;
-  private activeLayoutKey: string | null = null;
   private root: HTMLDivElement;
   private chartContainer: HTMLDivElement;
   private loading: WidgetLoadingOverlay;
@@ -520,26 +385,6 @@ export class ChartWidget {
    * told of the new one; anything told since is the new one's.
    */
   private chartInfoAtSwitch: SymbolInfo | null = null;
-  private settingsState: ChartSettingsState;
-  /** What Reset in the settings panel goes back to: the defaults, as the host's features set them. */
-  private settingsDefaults: ChartSettingsState;
-  /** Where `persistSettings` keeps the settings; null while it is off. */
-  private settingsStore: ChartSettingsStore | null = null;
-  /**
-   * The settings as last kept and told to the listeners, as JSON: a change
-   * that leaves them so (a Cancel, a call setting what is already set) is
-   * neither. Null while the widget is being made, which tells nobody.
-   */
-  private settingsPublished: string | null = null;
-  /**
-   * The settings shared links set this visit (`shown`) and the viewer's own
-   * they took the place of (`own`): what `persistSettings` keeps for a
-   * setting still as a link set it. Null when no link set any.
-   */
-  private linkSettings: { shown: Partial<ChartSettingsState>; own: Partial<ChartSettingsState> } | null = null;
-  private readonly settingsListeners = new Set<(settings: ChartSettingsState) => void>();
-  /** Switches the host's features turned off: a setting kept, shared or in a layout can't turn them on. */
-  private settingsLocked: ReadonlySet<keyof ChartSettingsState> = new Set();
   private t: Translator;
   private adapter: import('@tradecanvas/commons').DataAdapter | null = null;
   private boundGlobalKeydown: ((e: KeyboardEvent) => void) | null = null;
@@ -552,28 +397,6 @@ export class ChartWidget {
   private builtInZone: string | null | undefined = undefined;
   /** The timeframe the user (or the host) picked: ranges never show finer than it, layouts keep it. */
   private chosenTimeframe: TimeFrame | null = null;
-  /** Counts range clicks and the user's own picks: a range waiting behind a newer one gives way. */
-  private rangeSeq = 0;
-  /** Ranges apply one at a time, each reading the bars the last one brought. */
-  private rangeQueue: Promise<void> = Promise.resolve();
-  private compares: PercentCompare[] = [];
-  /** How the compare dialog adds a symbol: the way picked last. */
-  private compareWay: CompareWay = 'percent';
-  /** Symbols whose bars are on the way to be compared in percent. */
-  private readonly comparesLoading = new Set<string>();
-  /**
-   * Set by the first percent compare, cleared when the last one goes or the
-   * user picks a scale meanwhile: while set, a regular price scale reads in
-   * percent, as the compare lines do (`effectiveScaleMode`). Never saved.
-   */
-  private compareScaleHeld = false;
-  /** The latest round of percent compare fetches: an older round's answers are dropped. */
-  private compareFetchSeq = 0;
-  /** The percent compares' older stretches are on their way; `compareOlderAgain`: more pages came meanwhile. */
-  private compareOlderBusy = false;
-  private compareOlderAgain = false;
-  /** Older bars asked no stretch of a compare whose bars were still at another interval: a round once they come. */
-  private compareOlderPassed = false;
   /** Every switch, on or off (see `setFeatures`). */
   private featureState: WidgetFeatureState;
   /** The host's own shortcuts, first added first. */
@@ -588,7 +411,6 @@ export class ChartWidget {
   constructor(container: HTMLElement, givenOptions: ChartWidgetOptions = {}) {
     const options = withFeedAdapter(givenOptions);
     this.options = options;
-    this.replayStep = options.replayStep ?? 'auto';
     // Read once, as plain JavaScript may hand over anything: tickers from here on, the info kept aside.
     const catalog = readSymbolCatalog(options.symbols ?? DEFAULT_SYMBOLS);
     this.symbols = catalog.names;
@@ -601,7 +423,7 @@ export class ChartWidget {
     // DEFAULT_SETTINGS until the host touches the Settings UI. Seed it from
     // the same options so both layers start in sync.
     const chartOptions = options.chartOptions;
-    this.settingsState = {
+    this.chartSettings.settingsState = {
       ...DEFAULT_SETTINGS,
       ...(chartOptions?.crosshair?.mode ? { crosshairMode: chartOptions.crosshair.mode } : {}),
       ...(chartOptions?.logScale && chartOptions.features?.logScale !== false ? { logScale: true, scaleMode: 'logarithmic' as const } : {}),
@@ -619,12 +441,12 @@ export class ChartWidget {
     // `false` so existing apps don't suddenly start writing to localStorage.
     if (options.persistLayouts) {
       const cfg = options.persistLayouts === true ? {} : options.persistLayouts;
-      this.layoutKeyPrefix = cfg.keyPrefix ?? 'tcw:layout:';
-      this.layoutDebounceMs = cfg.debounceMs ?? 1500;
+      this.layouts.layoutKeyPrefix = cfg.keyPrefix ?? 'tcw:layout:';
+      this.layouts.layoutDebounceMs = cfg.debounceMs ?? 1500;
     }
     // The Chart Settings kept in this browser: opt-in too.
     const settingsKey = settingsStoreKey(options.persistSettings);
-    if (settingsKey) this.settingsStore = new ChartSettingsStore(settingsKey);
+    if (settingsKey) this.chartSettings.settingsStore = new ChartSettingsStore(settingsKey);
 
     // Resolve theme
     const isDark = this.resolveIsDark(options.theme);
@@ -666,17 +488,17 @@ export class ChartWidget {
     };
 
     this.canExport = features.dataExport !== false;
-    this.settingsLocked = new Set(FEATURE_SWITCHES.filter(([, feature]) => features[feature] === false).map(([key]) => key));
+    this.chartSettings.settingsLocked = new Set(FEATURE_SWITCHES.filter(([, feature]) => features[feature] === false).map(([key]) => key));
     // The display toggles start where the host's features put them, and Reset goes back there.
-    this.settingsDefaults = {
-      ...this.settingsState,
+    this.chartSettings.settingsDefaults = {
+      ...this.chartSettings.settingsState,
       legendVisible: features.legend !== false,
       volumeVisible: features.volume !== false,
       barCountdown: features.barCountdown !== false,
       indicatorValueLabels: features.indicatorValueLabels === true,
       alignAxisLabels: features.alignAxisLabels !== false,
     };
-    this.settingsState = { ...this.settingsDefaults };
+    this.chartSettings.settingsState = { ...this.chartSettings.settingsDefaults };
 
     this.timeframes = withExtraTimeframes(
       availableTimeframes(options.timeframes, features.timeframes),
@@ -712,7 +534,6 @@ export class ChartWidget {
       connectionMessage: options.adapter ? this.t('status.connecting') : '',
     };
 
-
     // 1. Inject styles
     injectWidgetStyles();
 
@@ -744,7 +565,7 @@ export class ChartWidget {
       // The toolbar's own width may not change as the switch flips: fit it again.
       this.toolbar?.fit();
       if (!narrow) this.sidebar?.closeOverlay();
-      this.syncRail();
+      this.docking.syncRail();
     });
     // The look: tokens and layout switches on the root and the modal portal
     // alike. Without `ui` the tokens stay the stylesheet's (Print's), so a
@@ -770,8 +591,8 @@ export class ChartWidget {
       this.root,
       {
         symbols: this.symbols,
-        timeframes: this.timeframeMenu(),
-        timeframeFavorites: this.pinnedTimeframes(),
+        timeframes: this.intervals.timeframeMenu(),
+        timeframeFavorites: this.intervals.pinnedTimeframes(),
         chartTypes: options.chartTypes
           ? CHART_TYPES.filter(ct => (options.chartTypes as ChartType[]).includes(ct.value))
           : CHART_TYPES,
@@ -780,23 +601,23 @@ export class ChartWidget {
         onSymbolClick: () => this.handleSymbolClick(),
         onSymbolInfo: () => this.toggleSymbolInfo(),
         onTimeframe: (tf) => this.handleTimeframe(tf),
-        onToggleTimeframeFavorite: (tf) => this.handleToggleTimeframeFavorite(tf),
-        onAddTimeframe: (text) => this.handleAddTimeframe(text),
-        onRemoveTimeframe: (tf) => this.handleRemoveTimeframe(tf),
+        onToggleTimeframeFavorite: (tf) => this.intervals.handleToggleTimeframeFavorite(tf),
+        onAddTimeframe: (text) => this.intervals.handleAddTimeframe(text),
+        onRemoveTimeframe: (tf) => this.intervals.handleRemoveTimeframe(tf),
         onChartType: (type) => this.handleChartType(type),
         onIndicators: () => this.toggleIndicatorPicker(),
         onScreenshot: () => this.chart.screenshot(),
-        onSettings: () => this.openSettings(),
+        onSettings: () => this.chartSettings.openSettings(),
         onToggleTheme: () => this.handleToggleTheme(),
         onToggleReplay: () => this.toggleReplay(),
-        onToggleAlerts: () => this.toggleAlerts(),
-        onToggleObjects: () => this.toggleObjects(),
-        onToggleAccount: options.trading !== false ? () => this.toggleAccountPanel() : undefined,
-        onLayouts: options.layouts !== false ? (anchor) => void this.layoutsUI?.openMenu(anchor) : undefined,
-        onBracket: options.trading !== false ? (side) => this.startBracket(side) : undefined,
-        onToggleLadder: options.trading !== false && options.depthLadder ? () => this.toggleLadder() : undefined,
-        onOrderTicket: options.trading !== false ? () => this.openOrderTicket() : undefined,
-        onCompare: options.adapter && features.compareSymbols !== false ? () => this.handleAddCompare() : undefined,
+        onToggleAlerts: () => this.alerting.toggleAlerts(),
+        onToggleObjects: () => this.docking.toggleObjects(),
+        onToggleAccount: options.trading !== false ? () => this.trading.toggleAccountPanel() : undefined,
+        onLayouts: options.layouts !== false ? (anchor) => void this.layouts.layoutsUI?.openMenu(anchor) : undefined,
+        onBracket: options.trading !== false ? (side) => this.trading.startBracket(side) : undefined,
+        onToggleLadder: options.trading !== false && options.depthLadder ? () => this.trading.toggleLadder() : undefined,
+        onOrderTicket: options.trading !== false ? () => this.trading.openOrderTicket() : undefined,
+        onCompare: options.adapter && features.compareSymbols !== false ? () => this.comparing.handleAddCompare() : undefined,
         onUndo: () => this.chart.undo(),
         onRedo: () => this.chart.redo(),
         onToggleFullscreen: typeof document !== 'undefined' && document.fullscreenEnabled
@@ -826,18 +647,18 @@ export class ChartWidget {
         onToggleEraser: () => this.chart.setEraserMode(!this.chart.isEraserMode()),
         onToggleZoomArea: () => this.chart.setZoomAreaMode(!this.chart.isZoomAreaMode()),
         onToggleFavorite: (tool) => this.handleToggleFavorite(tool),
-        onClear: (anchor) => this.openClearMenu(anchor),
+        onClear: (anchor) => this.menus.openClearMenu(anchor),
         onToggleStyle: () => this.drawingStyle?.toggle(),
         onToggleStayInDrawing: () => this.handleToggleStayInDrawing(),
         onLockAll: (locked) => {
           this.chart.setDrawingsLocked(this.chart.getDrawings().map((d) => d.id), locked);
           this.refreshDrawingsState();
-          this.refreshObjects();
+          this.docking.refreshObjects();
         },
         onHideAll: (hidden) => {
           this.chart.setDrawingsVisible(this.chart.getDrawings().map((d) => d.id), !hidden);
           this.refreshDrawingsState();
-          this.refreshObjects();
+          this.docking.refreshObjects();
         },
       },
     this.t,
@@ -857,15 +678,15 @@ export class ChartWidget {
     });
 
     // The dock: after the chart in the row, so its panel sits beside the chart and its rail at the edge.
-    this.dock = new WidgetDock(body, {
+    this.docking.dock = new WidgetDock(body, {
       labels: { rail: this.t('dock.rail'), resize: this.t('dock.resize') },
       savedWidth: () => readDockWidth(),
       saveWidth: (width) => writeDockWidth(width),
-      railShown: () => this.railShown(),
-      focusAfterClose: (page) => this.panelFocusTarget(page as WidgetPanel),
+      railShown: () => this.docking.railShown(),
+      focusAfterClose: (page) => this.docking.panelFocusTarget(page as WidgetPanel),
       room: () => body.clientWidth,
     });
-    if (options.watchlist) this.createWatchlist(body, options.watchlist === true ? {} : options.watchlist);
+    if (options.watchlist) this.watching.createWatchlist(body, options.watchlist === true ? {} : options.watchlist);
 
     this.root.appendChild(body);
     // The account panel docks under the chart, above the status bar.
@@ -932,7 +753,7 @@ export class ChartWidget {
       const payload = e.payload as HistoryLoadPayload;
       this.historyPill.update(payload);
       // Older bars in: the percent compares as deep, so their lines start where the chart does.
-      if (payload.state === 'loaded') void this.extendPercentCompares();
+      if (payload.state === 'loaded') void this.comparing.extendPercentCompares();
     });
     this.chart.on('symbolInfoChange', () => {
       this.refreshSymbolTitle();
@@ -949,7 +770,7 @@ export class ChartWidget {
     // Symbol info: the panel, and the market's status in the status bar,
     // kept current as the clock runs toward the next open or close.
     this.symbolInfoPanel = new WidgetSymbolInfo(this.root, this.t, {
-      onClose: () => this.closePanelByHand('symbolInfo'),
+      onClose: () => this.docking.closePanelByHand('symbolInfo'),
       onToggle: (open) => {
         this.toolbar?.setActive('symbolInfo', open);
         if (open) {
@@ -990,7 +811,7 @@ export class ChartWidget {
       groupLabel: this.t('range.presets'),
       goToLabel: this.t('range.goTo'),
       moreLabel: this.t('toolbar.more'),
-      onPreset: (preset) => void this.applyRangePreset(preset),
+      onPreset: (preset) => void this.intervals.applyRangePreset(preset),
       onGoTo: () => this.toggleGoToDate(),
       goToKeys: () => this.keysShown('hotkeys.goToDate', 'Alt+G'),
     }, {
@@ -999,10 +820,10 @@ export class ChartWidget {
         label: this.t('settings.timezone'),
         now: () => this.clockNow(),
         options: () => ({
-          current: this.settingsState.timezone,
-          list: timezoneOptions(this.settingsState.timezone, Date.now(), this.t('settings.timezone.local'), this.exchangeChoice()),
+          current: this.chartSettings.settingsState.timezone,
+          list: timezoneOptions(this.chartSettings.settingsState.timezone, Date.now(), this.t('settings.timezone.local'), this.menus.exchangeChoice()),
         }),
-        onPick: (value) => this.changeSettings({ timezone: value }),
+        onPick: (value) => this.chartSettings.changeSettings({ timezone: value }),
       },
       scale: {
         labels: {
@@ -1012,9 +833,9 @@ export class ChartWidget {
           auto: this.t('settings.autoScale'),
         },
         texts: { log: this.t('statusBar.log'), auto: this.t('statusBar.auto') },
-        onPercent: () => this.toggleScaleMode('percentage'),
-        onLog: features.logScale !== false ? () => this.toggleScaleMode('logarithmic') : undefined,
-        onAuto: () => this.changeSettings({ autoScale: !this.chart.isAutoScale() }),
+        onPercent: () => this.chartSettings.toggleScaleMode('percentage'),
+        onLog: features.logScale !== false ? () => this.chartSettings.toggleScaleMode('logarithmic') : undefined,
+        onAuto: () => this.chartSettings.changeSettings({ autoScale: !this.chart.isAutoScale() }),
       },
     });
     // The clock each second, while the page is in view.
@@ -1022,8 +843,8 @@ export class ChartWidget {
       if (!pageHidden() && this.featureState.statusBar && this.featureState['statusBar.clock']) this.statusBar?.tick();
     }, CLOCK_TICK_MS);
     // A drag on the price axis turns auto off without a settings change: the switch follows the chart.
-    this.chart.on('priceRangeChange', () => this.refreshScaleSwitches());
-    this.refreshScaleSwitches();
+    this.chart.on('priceRangeChange', () => this.chartSettings.refreshScaleSwitches());
+    this.chartSettings.refreshScaleSwitches();
     this.goToDatePart = this.lazyPart(DIALOGS.goToDate, ({ WidgetGoToDate }) => new WidgetGoToDate(this.overlayHost, () => ({
       title: this.t('goTo.title'),
       date: this.t('range.date'),
@@ -1039,25 +860,25 @@ export class ChartWidget {
 
     // 7. Create settings (lazy, not appended until opened)
     this.settingsPart = this.lazyPart(DIALOGS.settings, ({ WidgetSettings }) => new WidgetSettings({
-      onChange: (patch) => this.changeSettings(patch),
-      onReset: () => this.resetSettings(),
-      onClose: () => this.endSettingsEdit(true),
-      onCancel: () => this.endSettingsEdit(false),
+      onChange: (patch) => this.chartSettings.changeSettings(patch),
+      onReset: () => this.chartSettings.resetSettings(),
+      onClose: () => this.chartSettings.endSettingsEdit(true),
+      onCancel: () => this.chartSettings.endSettingsEdit(false),
       templates: {
-        list: () => this.chartTemplates.list().map((t) => t.name),
-        apply: (name) => this.applyChartTemplate(name),
-        remove: (name) => this.chartTemplates.remove(name),
-        save: () => this.promptSaveChartTemplate(),
+        list: () => this.chartSettings.chartTemplates.list().map((t) => t.name),
+        apply: (name) => this.chartSettings.applyChartTemplate(name),
+        remove: (name) => this.chartSettings.chartTemplates.remove(name),
+        save: () => this.chartSettings.promptSaveChartTemplate(),
       },
       styleValue: (key) => this.chart.getStyleValue?.(key) ?? null,
-      onStyleChange: (patch) => this.changeStyle(patch),
+      onStyleChange: (patch) => this.chartSettings.changeStyle(patch),
     }, this.t, {
       barCountdown: features.barCountdown,
       logScale: features.logScale,
       legend: features.legend,
       volume: features.volume,
       trading: features.trading !== false,
-      exchangeZone: () => this.exchangeChoice()?.zone,
+      exchangeZone: () => this.menus.exchangeChoice()?.zone,
     }, this.overlayHost));
 
     // 8a. Symbol search
@@ -1091,7 +912,7 @@ export class ChartWidget {
     this.chart.on('indicatorRemove', () => this.syncIndicatorsFromChart());
 
     // The OHLCV rows drawn taller or shorter (a switch wrapped their line): the stack under them follows.
-    this.chart.on('legendResize', () => this.scheduleLegend());
+    this.chart.on('legendResize', () => this.legend.scheduleLegend());
 
     // The indicators on the chart itself, instead of toolbar chips that overflow.
     this.chart.setPaneTitlesVisible(!this.featureState.indicatorLegend);
@@ -1100,20 +921,20 @@ export class ChartWidget {
       onToggleVisible: (iid, visible, kind) => {
         if (kind === 'compare') this.chart.setCompareVisible(iid, visible);
         else this.chart.setIndicatorVisible(iid, visible);
-        this.scheduleLegend();
-        if (this.objectTree?.isOpen()) this.refreshObjects();
+        this.legend.scheduleLegend();
+        if (this.objectTree?.isOpen()) this.docking.refreshObjects();
       },
       // The name opens the settings too: it goes with the row's settings button.
       onSettings: (iid) => {
         if (this.featureState['indicatorLegend.settings']) this.openIndicatorSettings(iid);
       },
       onRemove: (iid, kind) => {
-        if (this.isPercentCompare(iid)) this.handleRemoveCompare(iid);
-        else if (kind === 'compare') this.removeHostCompare(iid);
+        if (this.comparing.isPercentCompare(iid)) this.comparing.handleRemoveCompare(iid);
+        else if (kind === 'compare') this.comparing.removeHostCompare(iid);
         else this.handleRemoveIndicator(iid);
       },
-      onMore: (iid, anchor) => this.openLegendMenu(iid, anchor),
-      onPaneAction: (iid, action) => this.runPaneAction(iid, action),
+      onMore: (iid, anchor) => this.legend.openLegendMenu(iid, anchor),
+      onPaneAction: (iid, action) => this.legend.runPaneAction(iid, action),
       // From the plot's left edge and the legend's foot, as the stack is placed: the drawings' labels keep clear of it.
       onStackResize: (size) => this.chart.setLegendStack?.(size ? { width: LEGEND_INSET + size.width, height: STACK_GAP + size.height } : null),
     }, {
@@ -1133,105 +954,59 @@ export class ChartWidget {
       offInterval: this.t('indicatorSettings.offInterval'),
       offChartType: this.t('legend.offChartType'),
     });
-    this.legendMenu = new WidgetContextMenu(this.root, this.t('legend.more'));
+    this.legend.legendMenu = new WidgetContextMenu(this.root, this.t('legend.more'));
     this.chart.on('crosshairMove', (e) => {
       const p = e.payload as { barIndex?: number };
       this.pointerOnChart = true;
       this.legendHoverIndex = typeof p.barIndex === 'number' ? p.barIndex : null;
-      this.scheduleLegend();
+      this.legend.scheduleLegend();
     });
     // Off the chart, the values go back to the latest bar.
     this.chart.on('crosshairLeave', () => {
       this.pointerOnChart = false;
       this.legendHoverIndex = null;
-      this.scheduleLegend();
+      this.legend.scheduleLegend();
     });
     // Another chart of a grid points at a bar here: its values, as under the pointer.
     this.chart.on('crosshairSync', (e) => {
       if (this.pointerOnChart) return;
       const p = e.payload as CrosshairSyncPayload;
       this.legendHoverIndex = p.bar && p.barIndex !== null ? p.barIndex : null;
-      this.scheduleLegend();
+      this.legend.scheduleLegend();
     });
     // A pan too: a compare's change is counted from the first bar on screen.
     // A compare line the host adds on the chart itself gets its row at once, as the widget's do.
     for (const event of ['indicatorUpdate', 'indicatorChange', 'dataUpdate', 'resize', 'paneResize', 'paneChange', 'themeChange', 'timeframeChange', 'visibleRangeChange', 'compareChange'] as const) {
-      this.chart.on(event, () => this.scheduleLegend());
+      this.chart.on(event, () => this.legend.scheduleLegend());
     }
     // Whoever changes the chart type: percent compares hold the scale only where their lines are drawn.
     this.chart.on('chartTypeChange', () => {
-      if (this.compareScaleHeld) this.showHeldScale();
-      this.scheduleLegend();
+      if (this.comparing.compareScaleHeld) this.comparing.showHeldScale();
+      this.legend.scheduleLegend();
     });
 
-    // Replay: while picking, a click starts the replay at that bar; during a
-    // replay it jumps the cursor there.
-    this.chart.on('barClick', (e) => {
-      if (!this.replayBar?.isMounted()) return;
-      const { barIndex: idx, bar: clicked } = e.payload as { barIndex?: number; bar?: { time?: number } };
-      if (typeof idx !== 'number') return;
-      // While the next bars load, the bar clicked is one of the old ones: keep its time and
-      // start there once they come (syncReplayBar), rather than drop the click.
-      if (this.seriesPending()) {
-        const time = clicked?.time ?? this.chart.getData()[idx]?.time;
-        if (this.replayBar.getMode() === 'select' && typeof time === 'number') this.replayPickTime = time;
-        return;
-      }
-      if (this.replayBar.getMode() === 'select') {
-        this.startReplayAt(idx, false, true);
-        return;
-      }
-      if (this.chart.getReplayState() === 'playing') this.chart.replayPause();
-      // To the end of the bar clicked (in finer steps, its last step).
-      this.chart.replaySeekToBar(idx);
-      this.replayBar.setState('paused');
-    });
-    // While picking the start bar, shade the bars that would be hidden.
-    this.chart.on('crosshairMove', (e) => {
-      if (this.replayBar?.getMode() !== 'select' || !this.replayBar.isMounted()) return;
-      const point = (e.payload as { point?: { x: number } | null }).point;
-      this.positionReplayShade(this.seriesPending() ? null : point?.x ?? null);
-    });
-    // The replay went on over new bars (another interval, say): the panel follows.
-    this.chart.on('replayStep', (e) => {
-      const step = e.payload as ReplayStepPayload;
-      this.replayBarsTotal = step.total;
-      this.replayStepTime = typeof step.stepTime === 'number' ? step.stepTime : step.time;
-      // Read once the chart is done: a carry-over resumes after its step, and the next bar starts to form after it.
-      queueMicrotask(() => {
-        if (this.destroyed) return;
-        if (step.cause === 'series') this.afterReplayCarryOver();
-        else this.syncReplayBar();
-      });
-    });
-    // The bar keeps to the main pane's foot as the chart lays out again.
+    // Bar replay: its panel, the start bar picked on the chart, its keys.
+    this.replay = new WidgetReplay(this.replayHost());
+    this.replay.attach();
     // The phone's drawing button keeps to the plot as the chart lays out, or a left scale comes.
     for (const event of ['resize', 'dataUpdate', 'symbolInfoChange'] as const) {
       this.chart.on(event, () => this.placeDrawingButton());
     }
     this.placeDrawingButton();
-    for (const event of ['resize', 'paneResize', 'paneChange'] as const) {
-      this.chart.on(event, () => this.layoutReplayBar());
-    }
-    // The finer bars a replay fetches for itself failed: its bars form from their own prices.
-    this.chart.on('replayStepsLoad', (e) => {
-      if ((e.payload as ReplayStepsLoadPayload).state === 'error') this.say(this.t('replay.stepsFailed'), 'error');
-    });
-    this.chart.on('timeframeChange', () => this.refreshReplaySteps());
 
     // Data Window — precise OHLCV + indicator values at the hovered bar.
     this.dataWindow = new WidgetDataWindow(this.root, {
       formatPrice: (p) => this.formatAlertPrice(p),
       formatPercent: (pct) => this.formatNumber(pct, DATA_WINDOW_PERCENT_DECIMALS),
       formatVolume: (volume) => this.formatVolume(volume),
-      onClose: () => this.closePanelByHand('dataWindow'),
+      onClose: () => this.docking.closePanelByHand('dataWindow'),
     }, this.t);
     this.chart.on('crosshairMove', (e) => {
       const p = e.payload as CrosshairMovePayload;
       this.lastHoverIndex = typeof p.barIndex === 'number' ? p.barIndex : null;
       this.lastHoverBar = p.bar ?? null;
       this.lastHoverPrevClose = typeof p.prevClose === 'number' ? p.prevClose : null;
-      if (this.dataWindow?.isOpen()) this.dataWindow.render(this.buildDataWindowModel());
+      if (this.dataWindow?.isOpen()) this.dataWindow.render(this.docking.buildDataWindowModel());
     });
     // The bar another chart of a grid points at here, or the latest again when it goes.
     this.chart.on('crosshairSync', (e) => {
@@ -1240,7 +1015,7 @@ export class ChartWidget {
       this.lastHoverIndex = p.bar && p.barIndex !== null ? p.barIndex : null;
       this.lastHoverBar = p.bar ?? null;
       this.lastHoverPrevClose = typeof p.prevClose === 'number' ? p.prevClose : null;
-      if (this.dataWindow?.isOpen()) this.dataWindow.render(this.buildDataWindowModel());
+      if (this.dataWindow?.isOpen()) this.dataWindow.render(this.docking.buildDataWindowModel());
     });
 
     // Drawing style + templates popover (paired with the sidebar palette button)
@@ -1256,9 +1031,9 @@ export class ChartWidget {
       onEnd: (id, cancel) => {
         this.chart.endDrawingEdit(id, { cancel });
         // Cancel on the words of a text just drawn takes the text back.
-        if (cancel && id === this.justDrawnText) this.chart.takeBackDrawing(id);
-        this.justDrawnText = null;
-        this.refreshObjects();
+        if (cancel && id === this.drawingEdit.justDrawnText) this.chart.takeBackDrawing(id);
+        this.drawingEdit.justDrawnText = null;
+        this.docking.refreshObjects();
       },
       toWallTime: (time) => utcToWallTime(time * barTimeUnit(this.chart.getData()), this.displayTimezone()),
       fromWallTime: (date, time) => {
@@ -1274,26 +1049,26 @@ export class ChartWidget {
       },
       templates: {
         list: (type) => templates.list(type),
-        save: (look) => this.promptSaveDrawingTemplate(templates, look),
+        save: (look) => this.drawingEdit.promptSaveDrawingTemplate(templates, look),
         remove: (name, type) => templates.remove(name, type),
       },
     }, this.t));
-    this.inlineText = new WidgetInlineText(this.overlayHost);
+    this.drawingEdit.inlineText = new WidgetInlineText(this.overlayHost);
     this.chart.on('drawingDoubleClick', (e) => {
       const id = (e.payload as { id: string }).id;
       // A text's words are what a double-click on it is for: typed in place over it.
       const type = this.chart.getDrawings().find((d) => d.id === id)?.type;
-      if (type && TEXT_LAYOUTS[type] && this.editTextInPlace(id, false)) return;
-      this.openDrawingSettings(id, type && TEXT_LAYOUTS[type] ? { tab: 'text' } : {});
+      if (type && TEXT_LAYOUTS[type] && this.drawingEdit.editTextInPlace(id, false)) return;
+      this.drawingEdit.openDrawingSettings(id, type && TEXT_LAYOUTS[type] ? { tab: 'text' } : {});
     });
     // A text's drawing gone (undo, the trash, another chart's sync) takes its typing with it.
     this.chart.on('drawingRemove', (e) => {
       const id = (e.payload as { id: string }).id;
-      if (id !== this.inlineTextId) return;
-      this.inlineText?.close();
+      if (id !== this.drawingEdit.inlineTextId) return;
+      this.drawingEdit.inlineText?.close();
       // Its edit ends with it, so the next change to that id is recorded again.
-      if (!this.inlineTextNew) this.chart.endDrawingEdit(id);
-      this.inlineTextId = null;
+      if (!this.drawingEdit.inlineTextNew) this.chart.endDrawingEdit(id);
+      this.drawingEdit.inlineTextId = null;
     });
     // A text, a note or a callout just drawn asks for its words (not one added from code).
     this.chart.on('drawingCreate', (e) => {
@@ -1301,25 +1076,25 @@ export class ChartWidget {
       if (!drawn || !TEXT_LAYOUTS[type]) return;
       // The press that drew it is still down: opened now, the chart would take the
       // keyboard back when it ends. So once it ends, or soon after if it never does.
-      this.cancelTextPrompt?.();
+      this.drawingEdit.cancelTextPrompt?.();
       let fallback = 0;
       const stop = () => {
         window.removeEventListener('pointerup', afterPress);
         window.removeEventListener('pointercancel', afterPress);
         clearTimeout(fallback);
-        this.cancelTextPrompt = null;
+        this.drawingEdit.cancelTextPrompt = null;
       };
       const open = () => {
         stop();
         if (this.destroyed || !this.chart.getDrawings().some((d) => d.id === id)) return;
-        if (this.editTextInPlace(id, true)) return;
-        this.openDrawingSettings(id, { tab: 'text', justDrawn: true });
+        if (this.drawingEdit.editTextInPlace(id, true)) return;
+        this.drawingEdit.openDrawingSettings(id, { tab: 'text', justDrawn: true });
       };
       const afterPress = () => setTimeout(open, 0);
       window.addEventListener('pointerup', afterPress);
       window.addEventListener('pointercancel', afterPress);
       fallback = window.setTimeout(open, TEXT_PROMPT_FALLBACK_MS);
-      this.cancelTextPrompt = stop;
+      this.drawingEdit.cancelTextPrompt = stop;
     });
     this.drawingStyle = new WidgetDrawingStyle(
       this.root,
@@ -1335,14 +1110,14 @@ export class ChartWidget {
     );
 
     // Right-click on a drawing: settings, alert, order, group, lock, hide, delete.
-    this.drawingMenu = new WidgetContextMenu(this.root, this.t('drawingMenu.label'));
+    this.menus.drawingMenu = new WidgetContextMenu(this.root, this.t('drawingMenu.label'));
     this.chart.on('drawingContextMenu', (e) => {
       const { id, x, y } = e.payload as { id: string; x: number; y: number };
-      this.openDrawingMenu(id, x, y);
+      this.menus.openDrawingMenu(id, x, y);
     });
 
     // A click on a drawing: its toolbar right over it, no right-click needed.
-    this.selectionToolbar = new WidgetSelectionToolbar(this.root, {
+    this.drawingEdit.selectionToolbar = new WidgetSelectionToolbar(this.root, {
       onStyle: (patch) => {
         for (const id of this.chart.getSelectedDrawingIds()) {
           // A text without a box shows a fill only once its background is on: picking one turns it on.
@@ -1351,32 +1126,32 @@ export class ChartWidget {
           const own = patch.fillColor !== undefined && layout && !layout.box ? { ...patch, textBackground: true } : patch;
           this.chart.setSelectedDrawingStyle(own, id);
         }
-        this.updateSelectionToolbar();
+        this.drawingEdit.updateSelectionToolbar();
       },
       onSettings: () => {
         const id = this.chart.getSelectedDrawingIds()[0];
-        if (id) this.openDrawingSettings(id);
+        if (id) this.drawingEdit.openDrawingSettings(id);
       },
       onAlert: () => {
         const id = this.chart.getSelectedDrawingIds()[0];
-        if (id) this.addDrawingAlert(id);
+        if (id) this.alerting.addDrawingAlert(id);
       },
       onLock: (locked) => {
         this.chart.setDrawingsLocked(this.chart.getSelectedDrawingIds(), locked);
-        this.refreshObjects();
-        this.updateSelectionToolbar();
+        this.docking.refreshObjects();
+        this.drawingEdit.updateSelectionToolbar();
       },
       onMore: (x, y) => {
         const id = this.chart.getSelectedDrawingIds()[0];
         if (!id) return;
         const offset = this.chartOffset();
-        this.openDrawingMenu(id, x - offset.x, y - offset.y);
+        this.menus.openDrawingMenu(id, x - offset.x, y - offset.y);
       },
       onDelete: () => {
         // Locked drawings stay, and stay selected.
         this.chart.removeDrawings(this.chart.getSelectedDrawingIds());
-        this.refreshObjects();
-        this.updateSelectionToolbar();
+        this.docking.refreshObjects();
+        this.drawingEdit.updateSelectionToolbar();
       },
     }, this.t);
     // Lock all and hide all show whether every drawing is.
@@ -1390,7 +1165,7 @@ export class ChartWidget {
     });
     // Selecting, or picking a tool, the eraser or the zoom area: at once.
     for (const event of ['drawingSelect', 'drawingToolChange', 'toolModeChange'] as const) {
-      this.chart.on(event, () => this.updateSelectionToolbar());
+      this.chart.on(event, () => this.drawingEdit.updateSelectionToolbar());
     }
     // While it shows, it follows the drawing through edits, undo, pans, zooms,
     // rescales and replay steps, once a frame.
@@ -1398,47 +1173,47 @@ export class ChartWidget {
       'drawingUpdate', 'drawingRemove', 'historyChange', 'visibleRangeChange', 'priceRangeChange', 'zoomChange',
       'resize', 'paneResize', 'paneChange', 'dataUpdate', 'replayStep', 'chartTypeChange',
     ] as const) {
-      this.chart.on(event, () => this.scheduleSelectionToolbar());
+      this.chart.on(event, () => this.drawingEdit.scheduleSelectionToolbar());
     }
 
     // Right-click elsewhere: what the plot, an axis or a pane offers. The "+"
     // by the price axis: what to do at its price.
-    this.chartMenu = new WidgetContextMenu(this.root, this.t('chartMenu.label'), this.t('common.back'));
+    this.menus.chartMenu = new WidgetContextMenu(this.root, this.t('chartMenu.label'), this.t('common.back'));
     // Indicators that read another symbol (a compare on its own scale, a spread) ask for its bars.
-    this.chart.on('symbolSeriesRequest', (e) => void this.loadSymbolSeries(e.payload.symbol));
+    this.chart.on('symbolSeriesRequest', (e) => void this.comparing.loadSymbolSeries(e.payload.symbol));
     // Prices from the pointer go on the market's grid (its smallest step).
     this.chart.on('chartContextMenu', (e) => {
       if (!this.featureState['menu.chart']) return;
       const { area, x, y, price: raw, time, pane } = e.payload as import('@tradecanvas/commons').ChartContextMenuPayload;
       const price = raw === undefined ? undefined : this.chart.roundPrice(raw);
-      const context = { ...this.chartMenuContext(price), ...(pane ? { pane: this.chart.getPaneScale(pane) } : {}) };
-      this.menuPane = pane ?? null;
-      this.openChartMenu(filterMenuEntries(chartMenuEntries(area, context, this.t), CHART_MENU_FEATURES, this.featureState), x, y, { area, price, time });
+      const context = { ...this.menus.chartMenuContext(price), ...(pane ? { pane: this.chart.getPaneScale(pane) } : {}) };
+      this.menus.menuPane = pane ?? null;
+      this.menus.openChartMenu(filterMenuEntries(chartMenuEntries(area, context, this.t), CHART_MENU_FEATURES, this.featureState), x, y, { area, price, time });
     });
     this.chart.on('priceAxisAdd', (e) => {
       if (!this.featureState['menu.priceAxisAdd']) return;
       const { price: raw, x, y } = e.payload as import('@tradecanvas/commons').PriceAxisAddPayload;
       const price = this.chart.roundPrice(raw);
-      const entries = filterMenuEntries(priceEntries(this.chartMenuContext(price), this.t), CHART_MENU_FEATURES, this.featureState);
-      this.openChartMenu(entries, x, y, { area: 'priceAxisAdd', price });
+      const entries = filterMenuEntries(priceEntries(this.menus.chartMenuContext(price), this.t), CHART_MENU_FEATURES, this.featureState);
+      this.menus.openChartMenu(entries, x, y, { area: 'priceAxisAdd', price });
     });
 
     // A signal marker under the pointer says what it is.
     this.chart.on('signalMarkerHover', (e) => this.showMarkerTip(e.payload));
 
     // Typing a number on the chart changes the interval.
-    this.intervalInput = new WidgetIntervalInput(this.chartContainer, {
+    this.intervals.intervalInput = new WidgetIntervalInput(this.chartContainer, {
       title: this.t('interval.title'),
       hint: this.t('interval.hint'),
       invalid: this.t('interval.invalid'),
-    }, (tf) => this.selectTypedTimeframe(tf));
+    }, (tf) => this.intervals.selectTypedTimeframe(tf));
 
     // Named layouts: save, open, rename, delete, auto-save.
-    if (options.layouts !== false) this.setupLayouts(options.layouts === true || options.layouts === undefined ? {} : options.layouts);
+    if (options.layouts !== false) this.layouts.setupLayouts(options.layouts === true || options.layouts === undefined ? {} : options.layouts);
 
     // Account panel and order ticket.
     if (options.trading !== false) {
-      this.orderTicket = new WidgetOrderTicket(this.root, {
+      this.trading.orderTicket = new WidgetOrderTicket(this.root, {
         onSubmit: (intent) => {
           this.chart.placeOrderIntent(intent);
           this.say(fill(this.t('ticket.sent'), {
@@ -1451,11 +1226,11 @@ export class ChartWidget {
         formatAmount: (v) => this.formatMoney(v),
         formatNumber: (v, d) => this.formatNumber(v, d),
       }, this.t);
-      this.accountPanel = new WidgetAccountPanel(accountHost, {
+      this.trading.accountPanel = new WidgetAccountPanel(accountHost, {
         onClosePosition: (id) => this.chart.closePositionIntent(id),
         onReversePosition: (id) => this.chart.reversePositionIntent(id),
         onCancelOrder: (id) => this.chart.cancelOrderIntent(id),
-        onNewOrder: () => this.openOrderTicket(),
+        onNewOrder: () => this.trading.openOrderTicket(),
         formatPrice: (p) => this.formatAlertPrice(p),
         formatTime: (ms) => {
           const { date, time } = utcToWallTime(ms, this.displayTimezone());
@@ -1465,33 +1240,33 @@ export class ChartWidget {
         formatNumber: (v, d) => this.formatNumber(v, d),
         onToggle: (open) => {
           this.toolbar?.setActive('account', open);
-          this.refreshAccount();
+          this.trading.refreshAccount();
         },
       }, this.t);
       // indicatorUpdate comes once per tick, so open P&L follows the price.
       for (const event of ['ordersChange', 'positionsChange', 'executionFill', 'dataUpdate', 'indicatorUpdate'] as const) {
-        this.chart.on(event, () => this.refreshAccountSoon());
+        this.chart.on(event, () => this.trading.refreshAccountSoon());
       }
     }
 
     // Bracket-order placement: floating confirm/cancel bar + event wiring.
     if (options.trading !== false) {
-      this.bracketBar = new WidgetBracketBar(this.chartContainer, {
+      this.trading.bracketBar = new WidgetBracketBar(this.chartContainer, {
         onConfirm: () => this.chart.confirmBracket(),
         onCancel: () => {
           this.chart.cancelBracket();
-          this.bracketBar?.hide();
+          this.trading.bracketBar?.hide();
         },
       }, this.t);
       this.chart.on('bracketPlace', (e) => {
         const b = e.payload;
-        this.bracketBar?.hide();
+        this.trading.bracketBar?.hide();
         this.say(fill(this.t(b.side === 'buy' ? 'bracket.longPlaced' : 'bracket.shortPlaced'), { rr: b.riskReward.toFixed(2) }));
       });
 
       // Depth-of-market ladder (opt-in; fed via widget.setDepth)
       if (options.depthLadder) {
-        this.depthLadder = new WidgetDepthLadder(this.root, {
+        this.trading.depthLadder = new WidgetDepthLadder(this.root, {
           onTrade: (side, price) => {
             this.chart.placeOrderIntent({ side, type: 'limit', price });
             this.say(fill(this.t(side === 'buy' ? 'order.buyLimit' : 'order.sellLimit'), { price: this.formatAlertPrice(price) }));
@@ -1499,21 +1274,21 @@ export class ChartWidget {
           formatPrice: (p) => this.formatAlertPrice(p),
           priceStep: (p) => this.chart.getPriceStep(p),
           onToggle: (open) => this.toolbar?.setActive('ladder', open),
-          onClose: () => this.closePanelByHand('depthLadder'),
+          onClose: () => this.docking.closePanelByHand('depthLadder'),
         }, undefined, this.t);
         // Your working orders, marked on the rows where they wait.
-        const ladder = this.depthLadder;
+        const ladder = this.trading.depthLadder;
         this.chart.on('ordersChange', () => ladder.setOrders(this.chart.getOrders()));
       }
       // Esc-cancel originates in the chart; reflect it in the bar.
       this.chart.on('dataUpdate', (e) => {
-        if (e.payload.kind === 'bracket') this.bracketBar?.hide();
+        if (e.payload.kind === 'bracket') this.trading.bracketBar?.hide();
       });
     }
 
     // 8a-bis. Price alerts panel (floating popover, toggled from the bell button)
-    this.alertsPanel = new WidgetAlertsPanel(this.root, {
-      onClose: () => this.closePanelByHand('alerts'),
+    this.alerting.alertsPanel = new WidgetAlertsPanel(this.root, {
+      onClose: () => this.docking.closePanelByHand('alerts'),
       onAdd: ({ price, condition, message, channel, label, options }) => {
         try {
           this.chart.addAlert(price, condition, message, channel, label, options);
@@ -1529,29 +1304,29 @@ export class ChartWidget {
       },
       onRemove: (id) => this.chart.removeAlert(id),
       onClear: () => this.chart.clearAlerts(),
-      getChannelValue: (channel) => this.getAlertChannelValue(channel),
+      getChannelValue: (channel) => this.alerting.getAlertChannelValue(channel),
       formatPrice: (p) => this.formatAlertPrice(p),
     }, this.t);
 
     // Keep the panel list and toasts in sync with the chart's AlertManager.
-    this.chart.on('alertAdd', () => this.refreshAlerts());
-    this.chart.on('alertRemove', () => this.refreshAlerts());
-    this.chart.on('alertUpdate', () => this.refreshAlerts());
+    this.chart.on('alertAdd', () => this.alerting.refreshAlerts());
+    this.chart.on('alertRemove', () => this.alerting.refreshAlerts());
+    this.chart.on('alertUpdate', () => this.alerting.refreshAlerts());
     this.chart.on('alertExpired', (e) => {
       const p = e.payload;
-      this.refreshAlerts();
-      if (this.featureState.alerts) this.say(fill(this.t('alerts.expiredToast'), { text: p.message ?? this.alertText(p) }));
+      this.alerting.refreshAlerts();
+      if (this.featureState.alerts) this.say(fill(this.t('alerts.expiredToast'), { text: p.message ?? this.alerting.alertText(p) }));
     });
     if (options.alertNotifications) {
-      this.alertNotifier = new AlertNotifier(options.alertNotifications);
+      this.alerting.alertNotifier = new AlertNotifier(options.alertNotifications);
     }
     this.chart.on('alertTriggered', (e) => {
       const p = e.payload;
-      this.refreshAlerts();
+      this.alerting.refreshAlerts();
       if (!this.featureState.alerts) return;
-      const text = `${this.alertText(p)}${p.message ? ` — ${p.message}` : ''}`;
+      const text = `${this.alerting.alertText(p)}${p.message ? ` — ${p.message}` : ''}`;
       this.say(fill(this.t('alerts.fired'), { text }), 'info', 'bell');
-      this.alertNotifier?.notify(text);
+      this.alerting.alertNotifier?.notify(text);
     });
 
     // The indicators dialog, from the toolbar's Indicators button.
@@ -1584,61 +1359,61 @@ export class ChartWidget {
       onClose: () => this.chart.endIndicatorEdit(),
     }, this.t));
     this.objectTree = new WidgetObjectTree(this.root, {
-      onClose: () => this.closePanelByHand('objectTree'),
+      onClose: () => this.docking.closePanelByHand('objectTree'),
       onRemoveIndicator: (iid) => this.handleRemoveIndicator(iid),
       onConfigureIndicator: (iid) => this.openIndicatorSettings(iid),
       onToggleIndicatorVisible: (iid, visible) => {
         this.chart.setIndicatorVisible(iid, visible);
-        this.refreshObjects();
-        this.scheduleLegend();
+        this.docking.refreshObjects();
+        this.legend.scheduleLegend();
       },
       onRemoveDrawing: (id) => {
         if (this.drawingSettings?.editing() === id) this.drawingSettings.close(true);
         this.chart.removeDrawing(id);
-        this.refreshObjects();
+        this.docking.refreshObjects();
       },
-      onConfigureDrawing: (id) => this.openDrawingSettings(id),
+      onConfigureDrawing: (id) => this.drawingEdit.openDrawingSettings(id),
       onToggleDrawingVisible: (id, visible) => {
         this.chart.setDrawingVisible(id, visible);
-        this.refreshObjects();
+        this.docking.refreshObjects();
       },
       onToggleDrawingLocked: (id, locked) => {
         this.chart.setDrawingLocked(id, locked);
-        this.refreshObjects();
+        this.docking.refreshObjects();
       },
       onToggleGroupVisible: (group, visible) => {
         this.chart.setDrawingGroupVisible(group, visible);
-        this.refreshObjects();
+        this.docking.refreshObjects();
       },
       onToggleGroupLocked: (group, locked) => {
         this.chart.setDrawingGroupLocked(group, locked);
-        this.refreshObjects();
+        this.docking.refreshObjects();
       },
       onUngroup: (group) => {
         this.chart.ungroupDrawings(group);
-        this.refreshObjects();
+        this.docking.refreshObjects();
       },
       onRenameGroup: (group, name) => {
         this.chart.renameDrawingGroup(group, name);
-        this.refreshObjects();
+        this.docking.refreshObjects();
       },
       onSelectDrawing: (id) => this.chart.selectDrawing(id),
       onRenameDrawing: (id, name) => {
         this.chart.updateDrawing(id, { name: name || null });
-        this.refreshObjects();
+        this.docking.refreshObjects();
       },
       onCloneDrawing: (id) => {
         this.chart.duplicateDrawing(id);
-        this.refreshObjects();
+        this.docking.refreshObjects();
       },
       onMoveDrawing: (id, index) => {
         this.chart.moveDrawing(id, index);
-        this.refreshObjects();
+        this.docking.refreshObjects();
       },
-      onAddCompare: features.compareSymbols !== false ? () => this.handleAddCompare() : undefined,
-      onRemoveCompare: (id) => this.removeCompared(id),
+      onAddCompare: features.compareSymbols !== false ? () => this.comparing.handleAddCompare() : undefined,
+      onRemoveCompare: (id) => this.comparing.removeCompared(id),
     }, this.t);
-    const refresh = () => { if (this.objectTree?.isOpen()) this.refreshObjects(); };
+    const refresh = () => { if (this.objectTree?.isOpen()) this.docking.refreshObjects(); };
     // A drawing changes many times a second while its settings are edited
     // (a colour being picked): rebuild the list once a frame at most.
     let refreshFrame = 0;
@@ -1659,11 +1434,11 @@ export class ChartWidget {
     this.chart.on('indicatorChange', refresh);
     // Compared symbols that are indicators come and go in the compare dialog's list.
     for (const event of ['indicatorAdd', 'indicatorRemove', 'indicatorChange'] as const) {
-      this.chart.on(event, () => this.refreshCompareDialog());
+      this.chart.on(event, () => this.comparing.refreshCompareDialog());
     }
 
     // Every panel made: into the dock, in the rail's order.
-    this.setupDock();
+    this.docking.setupDock();
 
     // 8b. Command palette
     this.commandPalettePart = this.lazyPart(DIALOGS.commandPalette, ({ WidgetCommandPalette }) => new WidgetCommandPalette({
@@ -1671,7 +1446,7 @@ export class ChartWidget {
       onChartType: (type) => this.handleChartType(type),
       onDrawingTool: (tool) => this.handleDrawingTool(tool),
       onTimeframe: (tf) => this.handleTimeframe(tf),
-      onAction: (id) => this.handleAction(id),
+      onAction: (id) => this.commands.handleAction(id),
       onClose: () => {},
     }, this.overlayHost, this.t, {
       list: () => readRecentCommands(),
@@ -1680,7 +1455,7 @@ export class ChartWidget {
 
     this.boundGlobalKeydown = (e: KeyboardEvent) => {
       if (this.handleHostHotkey(e)) return;
-      if (this.featureState.hotkeys && this.replayBar?.isMounted() && this.handleReplayKey(e)) return;
+      if (this.featureState.hotkeys && this.replay.isOpen() && this.replay.handleReplayKey(e)) return;
       // With several widgets on the page, the shortcuts go to the one used last.
       const mine = isKeyTarget(this.root);
       // The widget's keys may be switched off all together, or one by one.
@@ -1688,7 +1463,7 @@ export class ChartWidget {
       if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
         if (!mine || !keyOn('hotkeys.commandPalette') || !this.featureState.commandPalette) return;
         e.preventDefault();
-        this.toggleCommandPalette();
+        this.commands.toggleCommandPalette();
       } else if ((e.ctrlKey || e.metaKey) && (e.key === 'p' || e.key === 'P')) {
         // Ctrl/Cmd+P → symbol search (matches Bloomberg / many trading UIs)
         if (!mine || !keyOn('hotkeys.symbolSearch') || !this.featureState.symbolSearch) return;
@@ -1696,9 +1471,9 @@ export class ChartWidget {
         this.openSymbolSearch();
       } else if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && (e.key === 's' || e.key === 'S')) {
         // Ctrl/Cmd+S → save the layout (rather than the page), once this widget was used.
-        if (!this.layoutSession || !keyOn('hotkeys.save') || !this.featureState.layouts || isTyping() || !isKeyTarget(this.root, true)) return;
+        if (!this.layouts.layoutSession || !keyOn('hotkeys.save') || !this.featureState.layouts || isTyping() || !isKeyTarget(this.root, true)) return;
         e.preventDefault();
-        void this.saveLayout();
+        void this.layouts.saveLayout();
       } else if (e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey && TOOL_HOTKEYS[e.code]) {
         // Alt+T trend line, Alt+H horizontal line… (the drawing tools' keys).
         if (e.defaultPrevented || isTyping() || !mine || inOverlay() || !keyOn('hotkeys.tools')) return;
@@ -1706,12 +1481,12 @@ export class ChartWidget {
         this.handleDrawingTool(TOOL_HOTKEYS[e.code]);
       } else if (/^[0-9]$/.test(e.key) && !e.ctrlKey && !e.metaKey && !e.altKey) {
         // A number typed on the chart starts an interval (5, 15m, 1h…).
-        if (e.defaultPrevented || !this.intervalInput || !keyOn('intervalTyping') || isTyping() || inOverlay() || !isKeyTarget(this.root, true)) return;
+        if (e.defaultPrevented || !this.intervals.intervalInput || !keyOn('intervalTyping') || isTyping() || inOverlay() || !isKeyTarget(this.root, true)) return;
         const active = document.activeElement;
         // Focus in another part of the page: the keys are its.
         if (active && active !== document.body && !this.root.contains(active)) return;
         e.preventDefault();
-        this.intervalInput.open(e.key);
+        this.intervals.intervalInput.open(e.key);
       } else if (typedLetter(e) !== null) {
         // A letter typed on the chart starts a symbol search with it.
         if (e.defaultPrevented || !keyOn('symbolTyping') || !this.featureState.symbolSearch || isTyping() || inOverlay() || !isKeyTarget(this.root, true)) return;
@@ -1727,8 +1502,8 @@ export class ChartWidget {
           // Alt+I → invert the price scale.
           if (!keyOn('hotkeys.invertScale')) return;
           e.preventDefault();
-          this.changeSettings({ invertScale: !this.settingsState.invertScale });
-          this.settings?.refresh(this.shownSettings());
+          this.chartSettings.changeSettings({ invertScale: !this.chartSettings.settingsState.invertScale });
+          this.settings?.refresh(this.chartSettings.shownSettings());
         } else if (e.code === 'KeyR') {
           // Alt+R → the whole series in view, the price scale fitted to it.
           if (!keyOn('hotkeys.resetView')) return;
@@ -1752,7 +1527,7 @@ export class ChartWidget {
     this.unregisterKeys = registerKeyRoot(this.root, [this.portal]);
 
     // The settings the user kept in this browser, over the host's starting values (Reset goes back to those).
-    this.restoreKeptSettings();
+    this.chartSettings.restoreKeptSettings();
 
     // 9. Connect stream
     if (options.adapter) {
@@ -1766,8 +1541,8 @@ export class ChartWidget {
     // Watchlist live-update loop. 1s cadence keeps DOM churn low while still
     // feeling responsive; for sub-second visual response, apps can call
     // `setWatchlistEntry` directly from their own WebSocket.
-    if (this.watchlist) {
-      this.watchlistInterval = setInterval(() => this.tickWatchlist(), 1000);
+    if (this.watching.watchlist) {
+      this.watching.watchlistInterval = setInterval(() => this.watching.tickWatchlist(), 1000);
     }
 
     // Initial UI update (the bars now built take the switches), and the dividers again once laid out
@@ -1791,7 +1566,7 @@ export class ChartWidget {
         options.onReady?.(this.chart, this);
       } finally {
         // An error in onReady is the host's to see; the shared view still comes.
-        if (!this.destroyed) this.restoreSharedView();
+        if (!this.destroyed) this.layouts.restoreSharedView();
       }
     });
     this.preloadDialogsWhenIdle();
@@ -1819,13 +1594,6 @@ export class ChartWidget {
     }
   }
 
-  /** A view shared in the URL (`#tcw=`), when `shareUrl` is on. */
-  private restoreSharedView(): void {
-    if (!this.options.shareUrl || typeof location === 'undefined') return;
-    const encoded = readShareHash(location.hash);
-    if (encoded) void this.importState(encoded);
-  }
-
   // --- Public API ---
 
   /**
@@ -1838,8 +1606,8 @@ export class ChartWidget {
     this.symbols = catalog.names;
     this.symbolCatalog = catalog.info;
     // A list made from the symbols follows them; lists given or kept stay.
-    const store = this.watchlistStore;
-    if (store && this.watchlistFromSymbols) {
+    const store = this.watching.watchlistStore;
+    if (store && this.watching.watchlistFromSymbols) {
       store.replace(store.getLists().map((l) => (l.id === 'default' ? { ...l, symbols: catalog.names } : l)));
     }
     this.refreshSymbolTitle();
@@ -1880,31 +1648,30 @@ export class ChartWidget {
 
   /** Every watchlist, in order. */
   getWatchlists(): WatchlistList[] {
-    return this.watchlistStore?.getLists() ?? [];
+    return this.watching.getWatchlists();
   }
 
   /** The shown watchlist's id, or null without a watchlist. */
   getActiveWatchlist(): string | null {
-    return this.watchlistStore?.getActive().id ?? null;
+    return this.watching.getActiveWatchlist();
   }
 
   /** Replace every watchlist (and which one shows). */
   setWatchlists(lists: WatchlistList[], activeList?: string): void {
-    this.watchlistFromSymbols = false;
-    this.watchlistStore?.replace(lists, activeList);
+    return this.watching.setWatchlists(lists, activeList);
   }
 
   setActiveWatchlist(id: string): void {
-    this.watchlistStore?.setActive(id);
+    return this.watching.setActiveWatchlist(id);
   }
 
   /** Add a symbol to a watchlist (the shown one by default). */
   addToWatchlist(symbol: string, listId?: string): void {
-    this.watchlistStore?.add(symbol, listId);
+    return this.watching.addToWatchlist(symbol, listId);
   }
 
   removeFromWatchlist(symbol: string, listId?: string): void {
-    this.watchlistStore?.removeSymbol(symbol, listId);
+    return this.watching.removeFromWatchlist(symbol, listId);
   }
 
   /**
@@ -1912,14 +1679,12 @@ export class ChartWidget {
    * What isn't a quote (no symbol, no finite last price) is left out.
    */
   setQuotes(quotes: readonly Quote[]): void {
-    const read = quotes.map(readQuote).filter((q): q is Quote => q !== null);
-    if (read.length > 0) this.takeQuotes(read);
+    return this.watching.setQuotes(quotes);
   }
 
   /** The latest quote of a symbol, from the quote source or `setQuotes`. */
   getQuote(symbol: string): Quote | null {
-    const quote = this.quotes.get(symbol);
-    return quote ? { ...quote } : null;
+    return this.watching.getQuote(symbol);
   }
 
   /**
@@ -1928,26 +1693,17 @@ export class ChartWidget {
    * depth ladder (the `depthLadder` option), or its switch off.
    */
   openPanel(panel: WidgetPanel): boolean {
-    if (!this.hasPanel(panel) || !this.dock) return false;
-    this.dock.open(panel);
-    return this.dock.current() === panel;
-  }
-
-  /** Whether the widget has `panel`: the watchlist and the ladder only when made with them, every one with its switch on. */
-  private hasPanel(panel: WidgetPanel): boolean {
-    if (panel === 'watchlist') return this.watchlist !== null;
-    if (panel === 'depthLadder' && this.depthLadder === null) return false;
-    return this.featureState[PANEL_FEATURES[panel]];
+    return this.docking.openPanel(panel);
   }
 
   /** Shut the dock. */
   closePanel(): void {
-    this.dock?.close();
+    return this.docking.closePanel();
   }
 
   /** The panel open in the dock, or null. */
   getOpenPanel(): WidgetPanel | null {
-    return (this.dock?.current() as WidgetPanel | null | undefined) ?? null;
+    return this.docking.getOpenPanel();
   }
 
   /** Open or close the symbol info panel (toggle when `open` is left out). */
@@ -1957,8 +1713,8 @@ export class ChartWidget {
     const opening = open ?? !panel.isOpen();
     // Switched off, it only closes.
     if (opening && !this.featureState.symbolInfo) return;
-    if (opening) this.dock?.open('symbolInfo');
-    else this.dock?.closePage('symbolInfo');
+    if (opening) this.docking.dock?.open('symbolInfo');
+    else this.docking.dock?.closePage('symbolInfo');
   }
 
   /** The market's status in the status bar, and the panel when it's open. */
@@ -1986,7 +1742,7 @@ export class ChartWidget {
       symbol,
       info: this.chart.getSymbolInfo(),
       names: this.displayInfo(),
-      quote: this.quotes.get(symbol),
+      quote: this.watching.quotes.get(symbol),
       bars: this.chart.getData(),
       formatPrice: (p) => this.formatAlertPrice(p),
       t: this.t,
@@ -2007,7 +1763,7 @@ export class ChartWidget {
 
   /** The BCP 47 tag numbers in the panels are written in. */
   private intlLocale(): string {
-    return this.settingsState.numberLocale || this.options.locale || 'en';
+    return this.chartSettings.settingsState.numberLocale || this.options.locale || 'en';
   }
 
   /** The language words in the panels are written in ("in 3 hours", weekday names): the widget's. */
@@ -2015,106 +1771,10 @@ export class ChartWidget {
     return this.options.locale || 'en';
   }
 
-  private createWatchlist(body: HTMLElement, opts: import('./types.js').WatchlistOptions): void {
-    const storage = opts.persist ? browserStorage() : null;
-    const store = new WatchlistStore({
-      lists: opts.lists,
-      activeList: opts.activeList,
-      symbols: this.symbols,
-      defaultName: this.t('watchlist.title'),
-      storage,
-      storageKey: opts.storageKey,
-    });
-    this.watchlistStore = store;
-    this.watchlistFromSymbols = !opts.lists && !opts.persist;
-    this.quoteSource = opts.quotes === false ? null : opts.quotes ?? (this.options.adapter?.subscribeQuotes ? this.options.adapter as QuoteSource : null);
-
-    const t = (key: Parameters<typeof this.t>[0]) => this.t(key);
-    this.watchlist = new WidgetWatchlist(body, {
-      onSelect: (sym) => { void this.setSymbol(sym); },
-      onAdd: () => this.withSymbolSearch(() => true, (search) => search.open({
-        symbols: this.symbolEntries(), current: this.state.symbol, currentInfo: this.chartSymbolInfo(),
-        onPick: (sym) => store.add(sym), search: this.symbolSearchFn(),
-      })),
-      onRemove: (sym) => store.removeSymbol(sym),
-      onMove: (sym, index) => store.move(sym, index),
-      onPickList: (id) => store.setActive(id),
-      onCreateList: (name) => store.create(name),
-      onRenameList: (id, name) => store.rename(id, name),
-      onDeleteList: (id) => store.remove(id),
-      onClose: () => this.closePanelByHand('watchlist'),
-    }, {
-      close: t('common.close'),
-      title: t('watchlist.title'),
-      lists: t('watchlist.lists'),
-      newList: t('watchlist.newList'),
-      rename: t('watchlist.rename'),
-      deleteList: t('watchlist.deleteList'),
-      confirmDelete: t('watchlist.confirmDelete'),
-      add: t('watchlist.add'),
-      remove: t('watchlist.remove'),
-      empty: t('watchlist.empty'),
-      listName: t('watchlist.listName'),
-    });
-    this.watchlist.setActive(this.state.symbol);
-    this.watchlist.setLocale(this.settingsState.numberLocale || undefined);
-    const show = () => {
-      this.watchlist?.setLists(store.getLists(), store.getActive().id);
-      this.followQuotes();
-    };
-    store.subscribe(() => {
-      show();
-      opts.onChange?.(store.getLists(), store.getActive().id);
-    });
-    show();
-  }
-
-  /** Quotes for the shown list's symbols: a new subscription when they change. */
-  private followQuotes(): void {
-    if (!this.quoteSource || !this.watchlistStore || this.destroyed) return;
-    const symbols = this.watchlistStore.getActive().symbols;
-    // The same symbols in another order (a row moved) keep their subscription.
-    const key = [...symbols].sort().join('\u0000');
-    if (key === this.quotedKey) return;
-    this.quotedKey = key;
-    this.stopQuotes?.();
-    this.stopQuotes = null;
-    if (symbols.length === 0) return;
-    try {
-      this.stopQuotes = this.quoteSource.subscribeQuotes(symbols, (quotes) => {
-        if (this.destroyed || !Array.isArray(quotes)) return;
-        // A source of the host's is untrusted: what isn't a quote is left out.
-        const read = quotes.map(readQuote).filter((q): q is Quote => q !== null);
-        if (read.length > 0) this.takeQuotes(read);
-      });
-    } catch {
-      this.stopQuotes = null;
-    }
-  }
-
-  private takeQuotes(quotes: readonly Quote[]): void {
-    for (const update of quotes) {
-      // A stream frame carries less than a snapshot: what it leaves out stays.
-      const quote = { ...this.quotes.get(update.symbol), ...update };
-      this.quotes.set(quote.symbol, quote);
-      const buf = this.watchlistSparkBuffer.get(quote.symbol) ?? [];
-      buf.push(quote.last);
-      if (buf.length > 40) buf.shift();
-      this.watchlistSparkBuffer.set(quote.symbol, buf);
-      const hostRef = this.hostWatchlistRefPrice.get(quote.symbol);
-      this.watchlist?.setEntry(quote.symbol, {
-        lastPrice: quote.last,
-        refPrice: hostRef ?? (quote.change !== undefined ? quote.last - quote.change : undefined),
-        sparkline: buf.slice(),
-      });
-    }
-    if (quotes.some((q) => q.symbol === this.state.symbol)) this.refreshSymbolInfo();
-  }
-
   async setSymbol(symbol: string): Promise<void> {
     // Flush the outgoing symbol's layout BEFORE switching state, so the
     // saved snapshot reflects what the user actually saw under that ticker.
-    this.flushActiveLayout();
+    this.layouts.flushActiveLayout();
     if (symbol !== this.state.symbol) {
       // Fill marks sit on this symbol's bars; the next symbol starts with none.
       this.chart.clearFills();
@@ -2125,10 +1785,10 @@ export class ChartWidget {
     this.options.onSymbolChange?.(symbol);
     this.updateUI();
     this.refreshSymbolTitle();
-    this.watchlist?.setActive(symbol);
+    this.watching.watchlist?.setActive(symbol);
     this.refreshMarket();
     this.loadNews();
-    this.layoutSession?.changed();
+    this.layouts.layoutSession?.changed();
     if (this.adapter) {
       await this.connectStream();
     }
@@ -2144,39 +1804,7 @@ export class ChartWidget {
    * auto-tick loop stops clobbering it (see `tickWatchlist`).
    */
   setWatchlistEntry(symbol: string, entry: Partial<WatchlistEntry>): void {
-    if (entry.refPrice !== undefined) {
-      this.hostWatchlistRefPrice.set(symbol, entry.refPrice);
-    }
-    this.watchlist?.setEntry(symbol, entry);
-  }
-
-  private tickWatchlist(): void {
-    // A symbol with quotes shows them (the day's move), not the loaded bars'.
-    if (!this.watchlist || this.quotes.has(this.state.symbol)) return;
-    // No one sees it: a hidden page, the app in the background.
-    if (pageHidden()) return;
-    const data = this.chart.getData();
-    if (data.length === 0) return;
-    const last = data[data.length - 1];
-    const hostRef = this.hostWatchlistRefPrice.get(this.state.symbol);
-    // Reference price: first bar of the loaded slice — that's the closest
-    // approximation of "session open" without timezone bookkeeping. Only
-    // used as a fallback; a refPrice the host already pushed via
-    // `setWatchlistEntry` (even for the active symbol) always wins.
-    if (hostRef === undefined && this.sessionRefPrice === null) {
-      this.sessionRefPrice = data[0].open;
-    }
-
-    const buf = this.watchlistSparkBuffer.get(this.state.symbol) ?? [];
-    buf.push(last.close);
-    if (buf.length > 40) buf.shift();
-    this.watchlistSparkBuffer.set(this.state.symbol, buf);
-
-    this.watchlist.setEntry(this.state.symbol, {
-      lastPrice: last.close,
-      refPrice: hostRef ?? this.sessionRefPrice ?? data[0].open,
-      sparkline: buf.slice(),
-    });
+    return this.watching.setWatchlistEntry(symbol, entry);
   }
 
   /** Ignored when the chart's `features.timeframes` whitelist leaves `tf` out. */
@@ -2184,7 +1812,7 @@ export class ChartWidget {
     if (!this.chart.isTimeframeAllowed(tf)) return;
     // The user's pick: it bounds the range bar from now on, and wins over a range on its way.
     this.chosenTimeframe = tf;
-    this.rangeSeq++;
+    this.intervals.rangeSeq++;
     await this.switchTimeframe(tf);
   }
 
@@ -2197,7 +1825,7 @@ export class ChartWidget {
     this.state = { ...this.state, timeframe: tf };
     this.options.onTimeframeChange?.(tf);
     this.updateUI();
-    this.layoutSession?.changed();
+    this.layouts.layoutSession?.changed();
     if (this.adapter) {
       // Live adapter owns the data — refetch at the native resolution.
       await this.connectStream();
@@ -2334,7 +1962,7 @@ export class ChartWidget {
     const now = this.chart.getFont?.();
     if (!now) return {};
     const current = { sizeSmall: now.sizeSmall, sizeMedium: now.sizeMedium, sizeLarge: now.sizeLarge };
-    const written = this.chartFontWritten;
+    const written = this.drawingEdit.chartFontWritten;
     const changedByHost = !written || written.sizeSmall !== current.sizeSmall || written.sizeMedium !== current.sizeMedium || written.sizeLarge !== current.sizeLarge;
     if (changedByHost) this.chartFontBase = current;
     if (this.uiScale === 1 && !written) return {};
@@ -2342,7 +1970,7 @@ export class ChartWidget {
     const at = (n: number) => (this.uiScale === 1 ? n : Math.round(n * this.uiScale));
     const sizes = { sizeSmall: at(base.sizeSmall), sizeMedium: at(base.sizeMedium), sizeLarge: at(base.sizeLarge) };
     // Back at 1 the base is the chart's own again, and the look stops writing.
-    this.chartFontWritten = this.uiScale === 1 ? null : sizes;
+    this.drawingEdit.chartFontWritten = this.uiScale === 1 ? null : sizes;
     return sizes;
   }
 
@@ -2359,9 +1987,9 @@ export class ChartWidget {
     this.stopKeyboardInset?.();
     this.stopKeyboardInset = null;
     this.stopNarrow?.();
-    this.dockObserver?.disconnect();
+    this.docking.dockObserver?.disconnect();
     this.scaleObserver?.disconnect();
-    this.inlineText?.close();
+    this.drawingEdit.inlineText?.close();
     this.stopNarrow = null;
     this.stopFormControls?.();
     this.stopFormControls = null;
@@ -2372,59 +2000,57 @@ export class ChartWidget {
     document.removeEventListener('fullscreenchange', this.onFullscreenChange);
     this.unregisterKeys();
     this.tooltip.destroy();
-    if (this.legendFrame) cancelAnimationFrame(this.legendFrame);
+    if (this.legend.legendFrame) cancelAnimationFrame(this.legend.legendFrame);
     this.indicatorLegend?.destroy();
     this.portal.remove();
     if (document.fullscreenElement === this.root) void document.exitFullscreen().catch(() => {});
-    this.flushActiveLayout();
+    this.layouts.flushActiveLayout();
     this.commandPalettePart?.destroy();
     this.symbolSearchPart?.destroy();
     this.hotkeySheetPart?.destroy();
-    if (this.replayPollInterval) clearInterval(this.replayPollInterval);
-    this.replayShade?.remove();
-    this.replayBar?.destroy();
+    this.replay.destroy();
     this.dragDrop?.detach();
-    this.alertsPanel?.destroy();
+    this.alerting.alertsPanel?.destroy();
     this.objectTree?.destroy();
     this.indicatorSettingsPart?.destroy();
     this.indicatorPickerPart?.destroy();
     this.drawingStyle?.destroy();
     this.drawingSettingsPart?.destroy();
-    this.drawingMenu?.destroy();
-    this.clearMenu?.destroy();
-    this.cancelTextPrompt?.();
-    this.selectionToolbar?.destroy();
-    if (this.selectionToolbarFrame !== null) cancelAnimationFrame(this.selectionToolbarFrame);
-    this.chartMenu?.destroy();
-    this.legendMenu?.destroy();
+    this.menus.drawingMenu?.destroy();
+    this.menus.clearMenu?.destroy();
+    this.drawingEdit.cancelTextPrompt?.();
+    this.drawingEdit.selectionToolbar?.destroy();
+    if (this.drawingEdit.selectionToolbarFrame !== null) cancelAnimationFrame(this.drawingEdit.selectionToolbarFrame);
+    this.menus.chartMenu?.destroy();
+    this.legend.legendMenu?.destroy();
     for (const menu of this.hostMenus) menu.destroy();
     this.hostMenus.clear();
     this.templatePrompt?.destroy();
-    this.chartTemplatePrompt?.destroy();
-    this.drawingTemplatePrompt?.destroy();
-    this.intervalInput?.destroy();
+    this.chartSettings.chartTemplatePrompt?.destroy();
+    this.drawingEdit.drawingTemplatePrompt?.destroy();
+    this.intervals.intervalInput?.destroy();
     this.markerTip?.remove();
-    this.layoutSession?.destroy();
-    this.layoutsUI?.destroy();
-    this.settingsListeners.clear();
-    this.accountPanel?.destroy();
-    this.orderTicket?.destroy();
-    if (this.accountFrame) cancelAnimationFrame(this.accountFrame);
-    this.bracketBar?.destroy();
-    this.alertNotifier?.destroy();
-    this.depthLadder?.destroy();
+    this.layouts.layoutSession?.destroy();
+    this.layouts.layoutsUI?.destroy();
+    this.chartSettings.settingsListeners.clear();
+    this.trading.accountPanel?.destroy();
+    this.trading.orderTicket?.destroy();
+    if (this.trading.accountFrame) cancelAnimationFrame(this.trading.accountFrame);
+    this.trading.bracketBar?.destroy();
+    this.alerting.alertNotifier?.destroy();
+    this.trading.depthLadder?.destroy();
     this.dataWindow?.destroy();
-    if (this.watchlistInterval) clearInterval(this.watchlistInterval);
+    if (this.watching.watchlistInterval) clearInterval(this.watching.watchlistInterval);
     if (this.marketTimer) clearInterval(this.marketTimer);
     if (this.clockTimer) clearInterval(this.clockTimer);
     if (this.onPageShown) document.removeEventListener('visibilitychange', this.onPageShown);
     this.onPageShown = null;
     this.chartNav?.destroy();
     this.symbolInfoPanel?.destroy();
-    this.dock?.destroy();
-    this.stopQuotes?.();
-    this.stopQuotes = null;
-    this.watchlist?.destroy();
+    this.docking.dock?.destroy();
+    this.watching.stopQuotes?.();
+    this.watching.stopQuotes = null;
+    this.watching.watchlist?.destroy();
     this.toolbar?.destroy();
     this.sidebar?.destroy();
     this.settingsPart?.destroy();
@@ -2481,77 +2107,6 @@ export class ChartWidget {
     void this.setTimeframe(tf);
   }
 
-  /**
-   * A range from the range bar. A long one switches to the timeframe whose
-   * bars it fits (five years of days in weeks, decades in months), a short
-   * one back toward the user's own (`timeframeForRange`); then the range is
-   * shown. Off with `features: { 'statusBar.rangeTimeframe': false }`.
-   */
-  private applyRangePreset(preset: RangePreset): Promise<void> {
-    const seq = ++this.rangeSeq;
-    // One at a time; a newer click, or the user's own pick, skips one still waiting.
-    this.rangeQueue = this.rangeQueue
-      .then(() => this.runRangePreset(preset, seq))
-      .catch((err: unknown) => {
-        this.say(err instanceof Error ? err.message : String(err), 'error');
-      });
-    return this.rangeQueue;
-  }
-
-  private async runRangePreset(preset: RangePreset, seq: number): Promise<void> {
-    const current = () => seq === this.rangeSeq && !this.destroyed;
-    if (!current()) return;
-    // The timeframe the widget started on counts as the user's until they pick one.
-    this.chosenTimeframe ??= this.state.timeframe;
-    const tf = this.featureState['statusBar.rangeTimeframe'] ? this.timeframeForPreset(preset) : this.state.timeframe;
-    if (tf !== this.state.timeframe) {
-      await this.switchTimeframe(tf);
-      // Superseded while loading, or the load failed: the bars aren't the range's.
-      if (!current() || (this.adapter && this.state.connectionState === 'error')) return;
-    }
-    this.chart.setVisibleRangePreset(preset);
-  }
-
-  /** The timeframe `preset` shows in, from the bars on the chart now. */
-  private timeframeForPreset(preset: RangePreset): TimeFrame {
-    const current = this.state.timeframe;
-    const data = this.chart.getData();
-    if (data.length < 2) return current;
-    const unit = barTimeUnit(data);
-    const end = data[data.length - 1].time * unit;
-    const start = preset === 'All' ? data[0].time * unit : rangePresetStart(preset, end, this.displayTimezone());
-    if (start === null) return current;
-    let first = data.length - 1;
-    while (first > 0 && data[first - 1].time * unit >= start) first--;
-    // Days a market trades in a week: all seven if any recent bar falls on a weekend.
-    const tz = this.displayTimezone();
-    const weekend = data.slice(-WEEKDAY_SAMPLE).some((bar) => {
-      const ms = bar.time * unit;
-      const day = new Date(ms + offsetAt(tz, ms) * 60_000).getUTCDay();
-      return day === 0 || day === 6;
-    });
-    return timeframeForRange({
-      dayShare: weekend ? 1 : 5 / 7,
-      spanMs: end - start,
-      barsInSpan: data.length - first,
-      width: this.chart.getPlotRect().width,
-      current,
-      chosen: this.chosenTimeframe ?? current,
-      available: this.timeframes.filter((tf) => this.chart.isTimeframeAllowed(tf) && this.canShowTimeframe(tf)),
-    });
-  }
-
-  /** Whether a switch to `tf` brings bars: the feed serves it, or the bars here resample to it. */
-  private canShowTimeframe(tf: TimeFrame): boolean {
-    if (this.adapter) return servesTimeframe(this.adapter, tf);
-    if (this.options.resampleTimeframes === false) return false;
-    const data = this.chart.getData();
-    if (data.length < 2) return false;
-    // Resampling only makes bars coarser than those it starts from.
-    const base = this.baseSeries ? this.baseTimeframeMs : inferTimeframeMs(data);
-    return !(base > 0) || timeframeToMs(tf) >= base;
-  }
-
   /** Fill the screen with the widget, or leave fullscreen. */
   toggleFullscreen(): void {
     if (document.fullscreenElement === this.root) {
@@ -2577,322 +2132,6 @@ export class ChartWidget {
     return { x: chartRect.left - rootRect.left, y: chartRect.top - rootRect.top };
   }
 
-  /** `updateSelectionToolbar` on the next frame, once, while the toolbar shows. */
-  private scheduleSelectionToolbar(): void {
-    if (this.selectionToolbarFrame !== null || !this.selectionToolbar?.isOpen()) return;
-    this.selectionToolbarFrame = requestAnimationFrame(() => {
-      this.selectionToolbarFrame = null;
-      this.updateSelectionToolbar();
-    });
-  }
-
-  /**
-   * Show the selection toolbar over the selected drawings, or hide it: when
-   * nothing is selected, or while a tool, the eraser or the zoom area is on.
-   */
-  private updateSelectionToolbar(): void {
-    const toolbar = this.selectionToolbar;
-    if (!toolbar || this.destroyed) return;
-    const selected = this.chart.getSelectedDrawingIds();
-    if (!this.featureState.selectionToolbar || !selected?.length) {
-      toolbar.hide();
-      return;
-    }
-    const ids = new Set(selected);
-    const drawings = this.chart.getDrawings().filter((d) => ids.has(d.id) && this.chart.isDrawingShown(d.id));
-    const busy = this.chart.getDrawingTool() !== null || this.chart.isEraserMode() || this.chart.isZoomAreaMode();
-    if (busy || drawings.length === 0) {
-      toolbar.hide();
-      return;
-    }
-    const offset = this.chartOffset();
-    const primary = drawings[0];
-    // Kept within the pane the drawing is on: the price plot, or an indicator pane.
-    const plot = (primary.paneId !== undefined
-      ? this.chart.getIndicatorPanes().find((pane) => pane.instanceId === primary.paneId)?.rect
-      : undefined) ?? this.chart.getPlotRect();
-    // Over all of them; at the top of the plot when none is on screen (an
-    // extended line crossing it far from its anchors).
-    // A text's box with it, so the toolbar never covers the words a double-click is for.
-    const rect = unionRects(drawings.flatMap((d) => [this.chart.getDrawingRect(d.id), this.chart.getDrawingTextRect?.(d.id) ?? null]))
-      ?? { x: plot.x + plot.width / 2, y: plot.y, width: 0, height: 0 };
-    toolbar.show({
-      rect: { x: rect.x + offset.x, y: rect.y + offset.y, width: rect.width, height: rect.height },
-      bounds: { x: plot.x + offset.x, y: plot.y + offset.y, width: plot.width, height: plot.height },
-      style: primary.style,
-      locked: drawings.every((d) => d.locked),
-      canDelete: drawings.some((d) => !d.locked),
-      canSettings: this.featureState.drawingSettings && drawings.length === 1,
-      canAlert: this.featureState.alerts && drawings.length === 1 && this.chart.canAddDrawingAlert(primary.id),
-      canFill: this.chart.getDrawingToolDescriptor(primary.type)?.fill === true,
-      canText: this.chart.getDrawingToolDescriptor(primary.type)?.text === true,
-    });
-  }
-
-  /**
-   * Type a text drawing's words in place, over its box: Enter or a click away
-   * keeps them, Escape puts them back. One just drawn (`justDrawn`) is taken
-   * back on Escape or with no words. False when its box is not on the chart
-   * (hidden, its text turned off): the settings ask for the words instead.
-   */
-  private editTextInPlace(id: string, justDrawn: boolean): boolean {
-    // Already being typed in: the box is open.
-    if (id === this.inlineTextId && this.inlineText?.isOpen()) return true;
-    const drawing = this.chart.getDrawings().find((d) => d.id === id);
-    const editor = this.inlineText;
-    // A text just drawn takes its words into the step that made it; an old one's edit is a step of its own.
-    if (!drawing || !editor || drawing.locked || (!justDrawn && !this.chart.beginDrawingEdit(id))) return false;
-    const layout = TEXT_LAYOUTS[drawing.type];
-    const style = drawing.style;
-    const before = style.text ?? '';
-    const end = (keep: boolean) => {
-      this.inlineTextId = null;
-      if (justDrawn) {
-        if (!keep) this.chart.takeBackDrawing(id);
-      } else {
-        this.chart.endDrawingEdit(id, { cancel: !keep });
-      }
-      this.refreshObjects();
-    };
-    const opened = editor.open({
-      rect: () => {
-        const box = this.chart.getDrawingTextRect(id);
-        if (!box) return null;
-        const at = this.chartContainer.getBoundingClientRect();
-        return { x: at.left + box.x, y: at.top + box.y, width: box.width, height: box.height };
-      },
-      text: before,
-      font: {
-        size: style.fontSize || layout?.fontSize || DEFAULT_TEXT_SIZE,
-        bold: style.bold === true,
-        italic: style.italic === true,
-        family: this.chart.getFont?.()?.family ?? this.ui.font.family,
-      },
-      color: style.textColor ?? TEXT_COLORS[drawing.type] ?? style.color,
-      label: this.t('drawingSettings.text'),
-      onInput: (text) => (justDrawn ? this.chart.amendNewDrawing(id, { style: { text } }) : this.chart.updateDrawing(id, { style: { text } })),
-      // No words: a text just drawn goes, an old one keeps what it said. Blank lines at the end go.
-      onCommit: (text) => {
-        const kept = text.replace(/\s+$/, '');
-        if (kept && kept !== text) {
-          if (justDrawn) this.chart.amendNewDrawing(id, { style: { text: kept } });
-          else this.chart.updateDrawing(id, { style: { text: kept } });
-        }
-        end(kept.length > 0);
-      },
-      onCancel: () => end(false),
-      returnFocus: () => this.chartContainer.querySelector<HTMLElement>('[tabindex]') ?? this.chartContainer,
-    });
-    if (!opened) {
-      if (!justDrawn) this.chart.endDrawingEdit(id, { cancel: true });
-      return false;
-    }
-    this.inlineTextId = id;
-    this.inlineTextNew = justDrawn;
-    return true;
-  }
-
-  /** Open a drawing's settings (double-click on it, or the object tree's settings button). */
-  private openDrawingSettings(id: string, how: { tab?: 'text'; justDrawn?: boolean } = {}): void {
-    this.whenLoaded(this.drawingSettingsPart, () => this.featureState.drawingSettings, (dialog) => this.showDrawingSettings(dialog, id, how));
-  }
-
-  private showDrawingSettings(dialog: WidgetDrawingSettings, id: string, how: { tab?: 'text'; justDrawn?: boolean }): void {
-    // Looked up once the dialog is in: the drawing may have gone while its code loaded.
-    const drawing = this.chart.getDrawings().find((d) => d.id === id);
-    const descriptor = drawing ? this.chart.getDrawingToolDescriptor(drawing.type) : null;
-    if (!drawing || !descriptor) return;
-    dialog.open({
-      id,
-      type: drawing.type,
-      name: this.drawingToolName(drawing.type),
-      style: { ...drawing.style },
-      options: this.chart.getDrawingOptions(id),
-      defs: descriptor.options ?? {},
-      anchors: drawing.anchors.map((a) => ({ ...a })),
-      fill: descriptor.fill === true,
-      text: descriptor.text === true,
-      textLayout: TEXT_LAYOUTS[drawing.type],
-      textColor: TEXT_COLORS[drawing.type],
-      textPlace: TEXT_PLACES.has(drawing.type),
-      coordinates: descriptor.anchoring !== 'screen',
-      intervals: drawing.intervals ?? null,
-    }, { tab: how.tab });
-    // Set once it is open (opening ends the edit before it): a Cancel on the words of a text just drawn takes the text back.
-    if (how.justDrawn && dialog.isOpen()) this.justDrawnText = id;
-  }
-
-  /** Save a drawing's look as a template of its tool, asking for its name over the drawing's settings. */
-  private promptSaveDrawingTemplate(templates: DrawingTemplateStore, look: DrawingTemplateLook): void {
-    this.drawingTemplatePrompt ??= new WidgetNamePrompt(this.root, this.t);
-    this.drawingTemplatePrompt.open({
-      title: this.t('drawingSettings.saveTemplateTitle'),
-      submitLabel: this.t('common.save'),
-      placeholder: this.drawingToolName(look.type),
-      onSubmit: (name) => {
-        templates.save(name, look.style, { type: look.type, options: look.options });
-        this.say(fill(this.t('templates.saved'), { name: name.trim() }));
-      },
-    });
-  }
-
-  /** Add a "price crosses this drawing" alert and say so. */
-  private addDrawingAlert(id: string): void {
-    if (!this.featureState.alerts) return;
-    const drawing = this.chart.getDrawings().find((d) => d.id === id);
-    const name = drawing ? this.drawingToolName(drawing.type) : '';
-    if (this.chart.addDrawingAlert(id, { label: name })) {
-      this.say(fill(this.t('drawingSettings.alertAdded'), { name }));
-    }
-  }
-
-  /** The menu of a right-clicked drawing; the chart has selected it (and its group) by now. */
-  private openDrawingMenu(id: string, x: number, y: number): void {
-    if (!this.drawingMenu || !this.featureState['menu.drawing']) return;
-    const drawings = new Map(this.chart.getDrawings().map((d) => [d.id, d]));
-    const selected = this.chart.getSelectedDrawingIds().flatMap((sid) => {
-      const d = drawings.get(sid);
-      return d ? [{ id: d.id, locked: d.locked, groupId: d.group?.id ?? null }] : [];
-    });
-    if (selected.length === 0) return;
-    const entries = filterMenuEntries(drawingMenuEntries({
-      selected,
-      canConfigure: true,
-      canAlert: this.chart.canAddDrawingAlert(id),
-    }, this.t), DRAWING_MENU_FEATURES, this.featureState);
-    const ids = selected.map((d) => d.id);
-    const drawing = drawings.get(id);
-    const extra = drawing ? this.options.drawingMenuItems?.({ id, type: drawing.type, selected: ids }) ?? [] : [];
-    const all = withHostItems(entries, extra);
-    if (all.length === 0) return;
-    const chartRect = this.chartContainer.getBoundingClientRect();
-    const rootRect = this.root.getBoundingClientRect();
-    this.drawingMenu.open(all, chartRect.left - rootRect.left + x, chartRect.top - rootRect.top + y, (action) => {
-      if (!pickHostItem(action, extra)) this.runDrawingMenuAction(id, ids, action as DrawingMenuAction);
-    });
-  }
-
-  private runDrawingMenuAction(id: string, ids: readonly string[], action: DrawingMenuAction): void {
-    switch (action) {
-      case 'settings':
-        this.openDrawingSettings(id);
-        return;
-      case 'alert':
-        this.addDrawingAlert(id);
-        return;
-      case 'front':
-      case 'forward':
-      case 'backward':
-      case 'back':
-        this.chart.moveDrawing(id, action);
-        break;
-      case 'group':
-        this.chart.groupDrawings(ids);
-        break;
-      case 'ungroup': {
-        const groups = new Set(this.chart.getDrawings().filter((d) => ids.includes(d.id)).map((d) => d.group?.id));
-        for (const group of groups) if (group) this.chart.ungroupDrawings(group);
-        break;
-      }
-      case 'lock':
-      case 'unlock':
-        this.chart.setDrawingsLocked(ids, action === 'lock');
-        break;
-      case 'hide':
-        this.chart.setDrawingsVisible(ids, false);
-        break;
-      case 'duplicate':
-        this.chart.duplicateDrawing(id);
-        break;
-      case 'delete': {
-        const editing = this.drawingSettings?.editing();
-        if (editing && ids.includes(editing)) this.drawingSettings?.close(true);
-        this.chart.removeDrawings(ids);
-        break;
-      }
-    }
-    if (this.objectTree?.isOpen()) this.refreshObjects();
-  }
-
-  /** What the chart's menus can offer here, and how the chart is set now. */
-  private chartMenuContext(price: number | undefined): ChartMenuContext {
-    const drawings = this.chart.getDrawings();
-    const data = this.chart.getData();
-    const s = this.settingsState;
-    const features = this.chart.getFeatures();
-    return {
-      price,
-      lastPrice: data.length > 0 ? data[data.length - 1].close : null,
-      formatPrice: (p) => this.formatAlertPrice(p),
-      canAlert: this.alertsPanel !== null,
-      canTrade: this.options.trading !== false,
-      canOrderTicket: this.orderTicket !== null,
-      canDraw: true,
-      hasDrawings: drawings.length > 0,
-      drawingsHidden: drawings.length > 0 && drawings.every((d) => !d.visible),
-      canPaste: this.chart.canPasteDrawings(),
-      hasIndicators: features.indicators !== false && this.removableIndicators().length > 0,
-      canGoToDate: true,
-      canExport: this.canExport,
-      autoScale: this.chart.isAutoScale(),
-      scaleMode: this.effectiveScaleMode(),
-      canLog: features.logScale !== false,
-      inverted: this.chart.isInvertScale(),
-      leftScale: s.leftPriceScale,
-      labels: { values: s.indicatorValueLabels, aligned: s.alignAxisLabels, ...(features.barCountdown !== false ? { countdown: s.barCountdown } : {}) },
-      lines: { highLow: s.highLowLines, lastPrice: this.chart.getStyleValue('lastPrice.visible') !== false },
-      timezone: { current: s.timezone, options: this.timezoneChoices() },
-      keys: Object.fromEntries(CHART_MENU_KEYS
-        .filter((k) => this.featureState.hotkeys && this.featureState[k.feature])
-        .map((k) => [k.action, k.keys])),
-    };
-  }
-
-  /** The indicators "Remove indicators" takes away: a comparison with another symbol stays, as it has a dialog of its own. */
-  private removableIndicators(): string[] {
-    return this.chart.getActiveIndicators().filter((ind) => !SYMBOL_INDICATOR_IDS.has(ind.id)).map((ind) => ind.instanceId);
-  }
-
-  /**
-   * The exchange's zone, offered when the chart knows one (the symbol's, or
-   * its market's) or the adapter can name the symbol's; its zone is null
-   * while unknown.
-   */
-  private exchangeChoice(): { label: string; zone: string | null } | undefined {
-    const zone = this.chart.getExchangeTimeZone() ?? null;
-    if (zone === null && !this.adapter?.resolveSymbol) return undefined;
-    return { label: this.t('settings.timezone.exchange'), zone };
-  }
-
-  /** The time zones on offer, the exchange's among them when there is one. */
-  private timezoneChoices(): { value: string; label: string }[] {
-    return timezoneOptions(this.settingsState.timezone, Date.now(), this.t('settings.timezone.local'), this.exchangeChoice())
-      .map(({ value, label }) => ({ value, label }));
-  }
-
-  /**
-   * Open a chart menu at (x, y) in the chart's pixels, the host's own entries
-   * last; nothing when it has no entries.
-   */
-  private openChartMenu(
-    entries: import('./WidgetContextMenu.js').ContextMenuEntry[],
-    x: number,
-    y: number,
-    context: import('./types.js').ChartMenuItemsContext,
-  ): void {
-    if (!this.chartMenu) return;
-    const extra = this.options.chartMenuItems?.(context) ?? [];
-    const all = withHostItems(entries, extra);
-    if (all.length === 0) return;
-    const chartRect = this.chartContainer.getBoundingClientRect();
-    const rootRect = this.root.getBoundingClientRect();
-    this.chartMenu.open(all, chartRect.left - rootRect.left + x, chartRect.top - rootRect.top + y, (action) => {
-      if (pickHostItem(action, extra)) return;
-      if (action.startsWith(TIMEZONE_ENTRY)) this.changeSettings({ timezone: action.slice(TIMEZONE_ENTRY.length) });
-      else this.runChartMenuAction(action as ChartMenuAction, context);
-    });
-  }
-
   // --- Feature switches ---
 
   /**
@@ -2907,10 +2146,10 @@ export class ChartWidget {
     const changed = (name: WidgetFeature): boolean => before[name] !== this.featureState[name];
     this.markSwitchedOff();
     this.closeSwitchedOff((name) => before[name] && !this.featureState[name]);
-    if (changed('selectionToolbar')) this.updateSelectionToolbar();
+    if (changed('selectionToolbar')) this.drawingEdit.updateSelectionToolbar();
     if (changed('indicatorLegend')) {
       this.chart.setPaneTitlesVisible(!this.featureState.indicatorLegend);
-      this.scheduleLegend();
+      this.legend.scheduleLegend();
     }
     if (changed('menu.priceAxisAdd')) {
       this.chart.setFeatures({ priceAxisAddButton: this.priceAxisAddDefault && this.featureState['menu.priceAxisAdd'] });
@@ -2941,15 +2180,15 @@ export class ChartWidget {
 
   /** What a switch just turned off was showing goes with it: a replay ends, its panel, dialog or menu closes. */
   private closeSwitchedOff(turnedOff: (name: WidgetFeature) => boolean): void {
-    if (turnedOff('replay') && this.replayBar?.isMounted()) this.exitReplay();
+    if (turnedOff('replay') && this.replay.isOpen()) this.replay.exitReplay();
     const closers: readonly [WidgetFeature, () => void][] = [
-      ['alerts', () => this.dock?.closePage('alerts')],
-      ['objectTree', () => this.dock?.closePage('objectTree')],
-      ['symbolInfo', () => this.dock?.closePage('symbolInfo')],
-      ['dataWindow', () => this.dock?.closePage('dataWindow')],
-      ['accountPanel', () => this.toggleAccountPanel(false)],
-      ['orderTicket', () => this.orderTicket?.close()],
-      ['depthLadder', () => this.dock?.closePage('depthLadder')],
+      ['alerts', () => this.docking.dock?.closePage('alerts')],
+      ['objectTree', () => this.docking.dock?.closePage('objectTree')],
+      ['symbolInfo', () => this.docking.dock?.closePage('symbolInfo')],
+      ['dataWindow', () => this.docking.dock?.closePage('dataWindow')],
+      ['accountPanel', () => this.trading.toggleAccountPanel(false)],
+      ['orderTicket', () => this.trading.orderTicket?.close()],
+      ['depthLadder', () => this.docking.dock?.closePage('depthLadder')],
       ['goToDate', () => this.goToDate?.close()],
       ['settings', () => this.settings?.close()],
       ['indicatorSettings', () => this.indicatorSettings?.close()],
@@ -2962,11 +2201,11 @@ export class ChartWidget {
       ['compare', () => {
         if (this.symbolSearch?.isComparing()) this.symbolSearch.close();
       }],
-      ['menu.chart', () => this.chartMenu?.close()],
-      ['menu.priceAxisAdd', () => this.chartMenu?.close()],
-      ['menu.drawing', () => this.drawingMenu?.close()],
-      ['indicatorLegend', () => this.legendMenu?.close()],
-      ['indicatorLegend.more', () => this.legendMenu?.close()],
+      ['menu.chart', () => this.menus.chartMenu?.close()],
+      ['menu.priceAxisAdd', () => this.menus.chartMenu?.close()],
+      ['menu.drawing', () => this.menus.drawingMenu?.close()],
+      ['indicatorLegend', () => this.legend.legendMenu?.close()],
+      ['indicatorLegend.more', () => this.legend.legendMenu?.close()],
     ];
     for (const [name, close] of closers) if (turnedOff(name)) close();
   }
@@ -3027,7 +2266,7 @@ export class ChartWidget {
    */
   private keepingLook(change: () => void): void {
     // The open settings keep what they changed: its colours belong to the theme that is going.
-    if (this.settingsEdit) this.settings?.close();
+    if (this.chartSettings.settingsEdit) this.settings?.close();
     const user = (this.chart.getOverrides?.({ layer: 'user' }) ?? {}) as Record<string, unknown>;
     const kept = Object.fromEntries(LOOK_KEYS.filter((key) => user[key] !== undefined).map((key) => [key, user[key]]));
     change();
@@ -3042,9 +2281,9 @@ export class ChartWidget {
       case 'hotkeys.commandPalette': return f.commandPalette;
       case 'hotkeys.symbolSearch': return f.symbolSearch;
       case 'hotkeys.goToDate': return f.goToDate;
-      case 'hotkeys.save': return f.layouts && this.layoutSession !== null;
+      case 'hotkeys.save': return f.layouts && this.layouts.layoutSession !== null;
       case 'hotkeys.help': return f.hotkeySheet;
-      case 'intervalTyping': return this.intervalInput !== null;
+      case 'intervalTyping': return this.intervals.intervalInput !== null;
       case 'symbolTyping': return f.symbolSearch;
       default: return true;
     }
@@ -3060,7 +2299,7 @@ export class ChartWidget {
     this.toolbar?.setSymbolSearch(this.featureState.symbolSearch);
     this.toolbar?.tidy();
     this.sidebar?.tidy();
-    this.syncRail();
+    this.docking.syncRail();
     // A preset, go to date or the market's word shown or hidden changes what the status bar must fit.
     this.statusBar?.fit();
   }
@@ -3186,171 +2425,9 @@ export class ChartWidget {
     }
   }
 
-  private runChartMenuAction(action: ChartMenuAction, context: import('./types.js').ChartMenuItemsContext): void {
-    const { price } = context;
-    const at = price ?? NaN;
-    const s = this.settingsState;
-    const mode = scaleModeOf(action);
-    if (mode) {
-      this.changeSettings({ scaleMode: mode });
-      return;
-    }
-    switch (action) {
-      case 'alert':
-        this.chart.addAlert(at, 'crossing');
-        this.say(fill(this.t('chartMenu.alertAdded'), { price: this.formatAlertPrice(at) }));
-        break;
-      case 'buyLimit':
-      case 'sellLimit':
-      case 'buyStop':
-      case 'sellStop':
-        this.placeOrderAt(action, at);
-        break;
-      case 'orderTicket':
-        this.openOrderTicket(price);
-        break;
-      case 'exportData':
-        // Every bar loaded, with the indicator lines, named after the symbol and interval.
-        this.chart.exportAllData('csv', `${this.state.symbol}-${this.state.timeframe}.csv`.replace(/[^\w.-]+/g, '_'));
-        break;
-      case 'paneLog':
-      case 'paneInvert':
-      case 'panePercent': {
-        const pane = this.menuPane;
-        if (!pane) break;
-        const scale = this.chart.getPaneScale(pane);
-        this.chart.setPaneScale(pane, action === 'paneLog' ? { log: !scale.log }
-          : action === 'paneInvert' ? { invert: !scale.invert } : { percent: !scale.percent });
-        break;
-      }
-      case 'horizontalLine': {
-        const data = this.chart.getData();
-        if (data.length > 0) this.chart.addDrawing({ type: 'horizontalLine', anchors: [{ time: data[data.length - 1].time, price: at }] });
-        break;
-      }
-      case 'resetView':
-        this.resetView();
-        break;
-      case 'resetPriceScale':
-        this.changeSettings({ autoScale: true });
-        break;
-      case 'paste':
-        this.chart.pasteDrawings();
-        break;
-      case 'removeIndicators':
-        this.chart.removeIndicators(this.removableIndicators());
-        break;
-      case 'hideDrawings':
-        this.chart.setDrawingsVisible(this.chart.getDrawings().map((d) => d.id), false);
-        break;
-      case 'showDrawings':
-        this.chart.setDrawingsVisible(this.chart.getDrawings().map((d) => d.id), true);
-        break;
-      case 'removeDrawings':
-        // One undo step; locked drawings stay.
-        this.chart.removeDrawings(this.chart.getDrawings().map((d) => d.id));
-        break;
-      case 'settings':
-        // From the price axis, its tab.
-        this.openSettings(context.area === 'priceAxis' ? 'scales' : undefined);
-        break;
-      case 'autoScale':
-        this.changeSettings({ autoScale: !this.chart.isAutoScale() });
-        break;
-      case 'invertScale':
-        this.changeSettings({ invertScale: !this.chart.isInvertScale() });
-        break;
-      case 'leftScale':
-        this.changeSettings({ leftPriceScale: !s.leftPriceScale });
-        break;
-      case 'indicatorValueLabels':
-        this.changeSettings({ indicatorValueLabels: !s.indicatorValueLabels });
-        break;
-      case 'alignAxisLabels':
-        this.changeSettings({ alignAxisLabels: !s.alignAxisLabels });
-        break;
-      case 'barCountdown':
-        this.changeSettings({ barCountdown: !s.barCountdown });
-        break;
-      case 'highLowLines':
-        this.changeSettings({ highLowLines: !s.highLowLines });
-        break;
-      case 'lastPriceLine':
-        this.changeStyle({ 'lastPrice.visible': this.chart.getStyleValue('lastPrice.visible') === false });
-        break;
-      case 'goToDate':
-        this.toggleGoToDate();
-        break;
-    }
-    if (this.objectTree?.isOpen()) this.refreshObjects();
-  }
-
   /** Open or close the account panel (no argument: the other way from now). */
   toggleAccountPanel(open?: boolean): void {
-    const panel = this.accountPanel;
-    if (!panel || open === panel.isOpen()) return;
-    // Switched off, it only closes.
-    if (!panel.isOpen() && !this.featureState.accountPanel) return;
-    panel.toggle();
-  }
-
-  /** The order ticket, at a price from the chart (or the market). */
-  private openOrderTicket(price?: number): void {
-    if (!this.featureState.orderTicket) return;
-    const data = this.chart.getData();
-    this.orderTicket?.open({
-      price,
-      lastPrice: data.length > 0 ? data[data.length - 1].close : null,
-      rules: this.orderRules(),
-      symbol: this.state.symbol,
-      // − and + move a price by the market's step; a click on the chart lands between steps.
-      step: (p) => this.chart.getPriceStep(p),
-      round: (p) => this.chart.roundPrice(p),
-    });
-  }
-
-  /** A market's rules for the order ticket (`setMarket`): its step, the day's limits, its lot. */
-  private orderRules(): OrderTicketRules {
-    const market = this.chart.getMarket();
-    if (!market) return {};
-    const stepped = market.priceStep !== undefined || (market.priceSteps?.length ?? 0) > 0;
-    return {
-      roundPrice: stepped ? (p) => this.chart.roundPrice(p) : undefined,
-      limits: this.chart.getPriceLimits(),
-      lot: market.volumeUnit,
-      multiplier: market.contractMultiplier,
-    };
-  }
-
-  /** Redraw the account panel once a frame at most (ticks, fills and order changes come in bursts). */
-  private refreshAccountSoon(): void {
-    if (this.accountFrame || !this.accountPanel) return;
-    this.accountFrame = requestAnimationFrame(() => {
-      this.accountFrame = 0;
-      if (!this.destroyed) this.refreshAccount();
-    });
-  }
-
-  private refreshAccount(): void {
-    if (!this.accountPanel) return;
-    const data = this.chart.getData();
-    const price = data.length > 0 ? data[data.length - 1].close : null;
-    this.accountPanel.update({
-      positions: this.chart.getPositions(),
-      orders: this.chart.getOrders(),
-      fills: this.chart.getFills(),
-      price,
-      realisedPnl: this.chart.getRealisedPnl(),
-    });
-    this.orderTicket?.setLastPrice(price);
-  }
-
-  /** Ask for a limit or stop order at `price` (one unit), and say so. */
-  private placeOrderAt(kind: 'buyLimit' | 'sellLimit' | 'buyStop' | 'sellStop', price: number): void {
-    const side = kind.startsWith('buy') ? 'buy' : 'sell';
-    const stop = kind.endsWith('Stop');
-    this.chart.placeOrderIntent(stop ? { side, type: 'stop', price, stopPrice: price, quantity: 1 } : { side, type: 'limit', price, quantity: 1 });
-    this.say(fill(this.t(`order.${kind}` as MessageKey), { price: this.formatAlertPrice(price) }));
+    return this.trading.toggleAccountPanel(open);
   }
 
   /** The time now in the display zone ("14:05:09") and the zone's offset ("UTC+7"), for the status bar's clock. */
@@ -3372,19 +2449,9 @@ export class ChartWidget {
     });
   }
 
-  /** The status bar's scale switches as the chart is now (a shared link or your code may have set it). */
-  private refreshScaleSwitches(): void {
-    this.statusBar?.setScale({ mode: this.chart.getScaleMode(), auto: this.chart.isAutoScale() });
-  }
-
-  /** `mode` on, or back to a regular scale when it is on already, through the settings. */
-  private toggleScaleMode(mode: 'percentage' | 'logarithmic'): void {
-    this.changeSettings({ scaleMode: this.chart.getScaleMode() === mode ? 'regular' : mode });
-  }
-
   /** The display timezone from the settings; 'exchange' is the zone the chart resolved it to. */
   private displayTimezone(): TimeZoneSetting {
-    const tz = settingToTimezone(this.settingsState.timezone);
+    const tz = settingToTimezone(this.chartSettings.settingsState.timezone);
     return tz === 'exchange' ? this.chart.getEffectiveTimeZone() : tz;
   }
 
@@ -3436,35 +2503,6 @@ export class ChartWidget {
     if (Math.min(from, to) / unit < data[0].time) this.say(this.t('range.beforeData'));
   }
 
-  /** Pinned timeframes that are still on offer, shortest first. */
-  private pinnedTimeframes(): TimeFrame[] {
-    const pinned = this.timeframeFavorites.list();
-    return this.timeframes.filter((tf) => pinned.includes(tf));
-  }
-
-  /** The timeframe menu's rows, typed intervals marked so they can be removed. */
-  private timeframeMenu(): { value: TimeFrame; label: string; custom: boolean }[] {
-    return this.timeframes.map((value) => ({ value, label: timeframeLabel(value), custom: this.customTimeframes.has(value) }));
-  }
-
-  /** A typed interval: switch to it, adding and pinning it when it is new. False when it isn't one. */
-  private handleAddTimeframe(text: string): boolean {
-    if (!this.featureState.customTimeframes) return false;
-    const tf = parseTimeframeInput(text);
-    if (!tf || !this.chart.isTimeframeAllowed(tf)) return false;
-    if (this.adapter && !servesTimeframe(this.adapter, tf)) return false;
-    // Tick bars come from a feed's trades; bars on the chart can't make them.
-    if (!this.adapter && tickBarCount(tf) !== null) return false;
-    if (!this.timeframes.includes(tf)) {
-      this.customTimeframes.add(tf);
-      this.timeframeFavorites.add(tf);
-      this.timeframes = withExtraTimeframes(this.timeframes, [tf]);
-      this.toolbar?.setTimeframes(this.timeframeMenu(), this.pinnedTimeframes());
-    }
-    this.handleTimeframe(tf);
-    return true;
-  }
-
   /** A note by a signal marker: its source or label, side, confidence, price and time; null hides it. */
   private showMarkerTip(hover: { marker: import('@tradecanvas/commons').SignalMarker | null; x: number; y: number }): void {
     const { marker } = hover;
@@ -3494,21 +2532,6 @@ export class ChartWidget {
     const top = Math.max(0, hover.y - this.markerTip.offsetHeight - 10);
     this.markerTip.style.left = `${left}px`;
     this.markerTip.style.top = `${top}px`;
-  }
-
-  /** A typed interval: one on offer is picked; another joins the menu (not the toolbar's pins). */
-  private selectTypedTimeframe(tf: TimeFrame): boolean {
-    if (!this.chart.isTimeframeAllowed(tf)) return false;
-    // One not on offer would be added as a custom interval.
-    if (!this.timeframes.includes(tf) && !this.featureState.customTimeframes) return false;
-    if (this.adapter && !servesTimeframe(this.adapter, tf)) return false;
-    if (!this.timeframes.includes(tf)) {
-      this.customTimeframes.add(tf);
-      this.timeframes = withExtraTimeframes(this.timeframes, [tf]);
-      this.toolbar?.setTimeframes(this.timeframeMenu(), this.pinnedTimeframes());
-    }
-    this.handleTimeframe(tf);
-    return true;
   }
 
   /** Put a template's indicators in place of the chart's (one undo step). */
@@ -3545,21 +2568,6 @@ export class ChartWidget {
         this.say(fill(this.t('templates.saved'), { name }));
       },
     });
-  }
-
-  private handleRemoveTimeframe(tf: TimeFrame): void {
-    if (!this.customTimeframes.has(tf)) return;
-    this.customTimeframes.remove(tf);
-    this.timeframeFavorites.remove(tf);
-    this.timeframes = this.timeframes.filter((t) => t !== tf);
-    this.toolbar?.setTimeframes(this.timeframeMenu(), this.pinnedTimeframes());
-    this.updateUI();
-  }
-
-  private handleToggleTimeframeFavorite(tf: TimeFrame): void {
-    this.timeframeFavorites.toggle(tf);
-    this.toolbar?.setTimeframeFavorites(this.pinnedTimeframes());
-    this.updateUI();
   }
 
   /**
@@ -3706,17 +2714,6 @@ export class ChartWidget {
     this.updateUI();
   }
 
-  /** The depth ladder, a page of the dock: open or shut it (the Trade menu's entry). */
-  private toggleLadder(): void {
-    if (!this.depthLadder || !this.featureState.depthLadder) return;
-    this.dock?.toggle('depthLadder');
-  }
-
-  private toggleAlerts(): void {
-    if (!this.alertsPanel || !this.featureState.alerts) return;
-    this.dock?.toggle('alerts');
-  }
-
   private handleToggleFavorite(tool: DrawingToolType): void {
     const pinned = this.favoritesStore.toggle(tool);
     this.sidebar?.setFavorites(this.favoritesStore.list());
@@ -3730,95 +2727,12 @@ export class ChartWidget {
    * host's features set, from where they set them).
    */
   exportState(): string {
-    const indicators = this.chart.getActiveIndicators().map((i) => ({
-      id: i.id,
-      params: i.params as Record<string, number | string | boolean>,
-    }));
-    const settings = this.getSettings();
-    // Only what differs from the defaults, so a link stays short; the switches
-    // the host's features set, from where they set them.
-    const base = { ...DEFAULT_SETTINGS, ...Object.fromEntries(FEATURE_SET_SETTINGS.map((key) => [key, this.settingsDefaults[key]])) };
-    const changed = shareDelta(settings, base);
-    return encodeWidgetState({
-      v: 1,
-      symbol: this.state.symbol,
-      timeframe: this.state.timeframe,
-      chartType: this.state.chartType,
-      scaleMode: settings.scaleMode,
-      indicators,
-      drawings: this.chart.getDrawings(),
-      ...(Object.keys(changed).length > 0 ? { settings: changed } : {}),
-    });
-  }
-
-  /**
-   * A link's settings, for this visit: shown, but neither kept nor told.
-   * They are someone else's choices (an upside-down scale, a hidden price),
-   * so `persistSettings` keeps the viewer's own in their place until the
-   * viewer changes them, and listeners hear of them with the next change.
-   */
-  private showLinkSettings(patch: Partial<ChartSettingsState>): void {
-    const before = this.getSettings();
-    const keys = Object.keys(patch) as (keyof ChartSettingsState)[];
-    const earlier = this.linkSettings;
-    // A second link takes the place of the first's: the viewer's own are still from before both.
-    const own = { ...Object.fromEntries(keys.map((key) => [key, before[key]])), ...earlier?.own } as Partial<ChartSettingsState>;
-    this.applySettings(patch, false);
-    this.linkSettings = { shown: { ...earlier?.shown, ...patch }, own };
-    this.markSettingsTold();
-  }
-
-  /** `settings` with each one still as a link set it back to the viewer's own: what `persistSettings` keeps. */
-  private ownSettings(settings: ChartSettingsState): ChartSettingsState {
-    const link = this.linkSettings;
-    if (!link) return settings;
-    const still = (Object.keys(link.shown) as (keyof ChartSettingsState)[])
-      .filter((key) => JSON.stringify(settings[key]) === JSON.stringify(link.shown[key]));
-    return { ...settings, ...Object.fromEntries(still.map((key) => [key, link.own[key]])) };
-  }
-
-  /**
-   * Settings the viewer or the host just set: a link's no more, so from here
-   * on they are kept as they are, the link's value too when it is picked
-   * again on purpose. Kept at once, since a pick of the value on screen (a
-   * Reset where the link set the defaults) changes nothing to tell.
-   */
-  private claimSettings(keys: Iterable<keyof ChartSettingsState>): void {
-    const link = this.linkSettings;
-    if (!link) return;
-    const claimed = new Set(keys);
-    const left = (from: Partial<ChartSettingsState>) => Object.fromEntries(
-      Object.entries(from).filter(([key]) => !claimed.has(key as keyof ChartSettingsState)),
-    ) as Partial<ChartSettingsState>;
-    const shown = left(link.shown);
-    if (Object.keys(shown).length === Object.keys(link.shown).length) return;
-    this.linkSettings = Object.keys(shown).length > 0 ? { shown, own: left(link.own) } : null;
-    if (this.settingsPublished !== null && !this.destroyed) this.settingsStore?.save(this.ownSettings(this.getSettings()), this.settingsDefaults);
+    return this.layouts.exportState();
   }
 
   /** Restore a view from an `exportState()` string. Returns false if malformed. */
   async importState(encoded: string): Promise<boolean> {
-    const s = decodeWidgetState(encoded);
-    if (!s) return false;
-
-    // Symbol/timeframe first so any stream/layout restore happens before we
-    // overlay the shared view on top.
-    if (s.symbol && s.symbol !== this.state.symbol) await this.setSymbol(s.symbol);
-    if (s.timeframe && s.timeframe !== this.state.timeframe) await this.setTimeframe(s.timeframe);
-
-    if (s.chartType) this.applyChartType(s.chartType);
-    // Through the settings, so a percent compare keeps its scale and the settings show the shared one;
-    // the sender's overlays with it, never their time zone or number format (the reader leaves those out).
-    const { chartTypeOptions, ...shared } = this.allowedSettings({ scaleMode: s.scaleMode, ...readChartSettings(s.settings, SHARE_LEAVES) });
-    const typeOptions = this.overViewerTypeOptions(s.chartType, chartTypeOptions);
-    this.showLinkSettings(typeOptions ? { ...shared, chartTypeOptions: typeOptions } : shared);
-    this.settings?.refresh(this.shownSettings());
-
-    // The shared indicators in place of the chart's, as one undo step.
-    this.chart.applyIndicatorSetup(s.indicators.map((ind, i) => ({ id: ind.id, instanceId: `shared_${i}`, params: ind.params })));
-    this.chart.setDrawings(s.drawings);
-    this.updateUI();
-    return true;
+    return this.layouts.importState(encoded);
   }
 
   /**
@@ -3830,7 +2744,7 @@ export class ChartWidget {
   private overViewerTypeOptions(shown: ChartType | undefined, shared: ChartTypeOptions | undefined): ChartTypeOptions | undefined {
     const named: ChartTypeOptions = { ...(hasTypeSettings(shown) ? { [shown]: {} } : {}), ...shared };
     if (Object.keys(named).length === 0) return undefined;
-    return { ...this.getSettings().chartTypeOptions, ...named };
+    return { ...this.chartSettings.getSettings().chartTypeOptions, ...named };
   }
 
   /** Copy the chart image to the clipboard, with a toast on success/failure. */
@@ -3841,220 +2755,17 @@ export class ChartWidget {
 
   /** Copy a shareable deep-link (current view encoded in the URL hash) to the clipboard. */
   async copyShareLink(): Promise<void> {
-    const base = typeof location !== 'undefined' ? location.href : '';
-    const url = buildShareUrl(base, this.exportState());
-    try {
-      await navigator.clipboard.writeText(url);
-      this.say(this.t('toast.linkCopied'));
-    } catch {
-      this.say(this.t('toast.copyFailed'), 'error');
-    }
+    return this.layouts.copyShareLink();
   }
 
   /** Feed order-book depth to the chart overlay, depth ladder, and heatmap. */
   setDepth(depth: DepthData | null): void {
-    this.chart.setDepthData(depth);
-    this.depthLadder?.setData(depth);
-    if (depth) this.chart.pushDepthSnapshot(depth);
+    return this.trading.setDepth(depth);
   }
 
   /** Begin a draggable bracket order at the latest price and show the action bar. */
   startBracket(side: 'buy' | 'sell'): void {
-    if (this.chart.startBracket(side)) {
-      this.bracketBar?.show(side);
-    }
-  }
-
-  /**
-   * The bar under the pointer and the close before it. On candles the data
-   * bar at the index, as it is now (a live tick moves it); on Renko and the
-   * like the brick the crosshair reported, whose index is not the data's.
-   */
-  private hoveredBar(): { bar: OHLCBar; prevClose: number } | null {
-    const idx = this.lastHoverIndex;
-    if (idx === null || idx < 0) return null;
-    if (!this.chart.isTimeAligned()) {
-      const bar = this.lastHoverBar;
-      return bar ? { bar, prevClose: this.lastHoverPrevClose ?? bar.open } : null;
-    }
-    const data = this.chart.getData();
-    if (idx >= data.length) return null;
-    return { bar: data[idx], prevClose: idx > 0 ? data[idx - 1].close : data[idx].open };
-  }
-
-  private buildDataWindowModel(): DataWindowModel {
-    const idx = this.lastHoverIndex;
-    const hovered = this.hoveredBar();
-    if (idx === null || !hovered) {
-      return { ohlc: null, change: 0, changePct: 0, indicators: [] };
-    }
-    const { bar, prevClose } = hovered;
-    const change = bar.close - prevClose;
-    const changePct = prevClose !== 0 ? (change / prevClose) * 100 : 0;
-    const inOwnPane = new Set(this.chart.getIndicatorPanes().flatMap((pane) => pane.instanceIds ?? [pane.instanceId]));
-    const locale = this.settingsState.numberLocale || 'en-US';
-
-    const indicators = this.chart.getActiveIndicators().map((ind) => {
-      const series = this.chart.getIndicatorOutput(ind.instanceId)?.series;
-      const point = series?.[idx] ?? null;
-      const inPriceUnits = !inOwnPane.has(ind.instanceId) && readsChartPrices(ind);
-      // The drawn lines by their titles ("Signal"), else every field by its key.
-      const fields = ind.descriptor.plots?.map((p) => [p.key, p.title] as const)
-        ?? Object.keys(point ?? {}).map((k) => [k, k] as const);
-      const values = point
-        ? fields
-            .filter(([key]) => typeof point[key] === 'number' && Number.isFinite(point[key]))
-            .map(([key, title]) => {
-              const value = point[key] as number;
-              return { key: title, value, text: this.indicatorValueText(value, inPriceUnits, locale) };
-            })
-        : [];
-      return { name: ind.descriptor.name, values };
-    }).filter((i) => i.values.length > 0);
-
-    return {
-      ohlc: { open: bar.open, high: bar.high, low: bar.low, close: bar.close, volume: bar.volume },
-      change,
-      // In the decimals the bar's prices show: a change of 18.7494 on 100,000 reads 18.75.
-      changeText: this.formatAlertPrice(change, bar.close),
-      changePct,
-      indicators,
-    };
-  }
-
-  private toggleDataWindow(): void {
-    if (!this.dataWindow || !this.featureState.dataWindow) return;
-    this.dock?.toggle('dataWindow');
-  }
-
-  private toggleObjects(): void {
-    if (!this.objectTree || !this.featureState.objectTree) return;
-    this.dock?.toggle('objectTree');
-  }
-
-  /**
-   * The dock's pages, in the rail's order: the watchlist, alerts, objects,
-   * the data window, the symbol info and the depth ladder, all shut to start
-   * with. Each draws itself as it shows, and says so on the toolbar's button.
-   */
-  private setupDock(): void {
-    const dock = this.dock;
-    if (!dock) return;
-    if (this.watchlist) {
-      const list = this.watchlist;
-      // Hidden, its sparklines were drawn at no size: drawn again as it shows.
-      dock.addPage({ id: 'watchlist', label: this.t('watchlist.title'), icon: 'list', element: list.element, parts: ['dock.watchlist'], onShow: () => list.redraw() });
-    }
-    const alerts = this.alertsPanel;
-    if (alerts) {
-      dock.addPage({
-        id: 'alerts', label: this.t('alerts.title'), icon: 'bell', element: alerts.element, parts: ['dock.alerts', 'alerts'],
-        onShow: () => {
-          alerts.openPanel();
-          this.refreshAlerts();
-          this.toolbar?.setActive('alerts', true);
-        },
-        onHide: () => {
-          alerts.close();
-          this.toolbar?.setActive('alerts', false);
-        },
-      });
-    }
-    const tree = this.objectTree;
-    if (tree) {
-      dock.addPage({
-        id: 'objectTree', label: this.t('objects.title'), icon: 'layers', element: tree.element, parts: ['dock.objectTree', 'objectTree'],
-        onShow: () => {
-          tree.openPanel();
-          this.refreshObjects();
-          this.toolbar?.setActive('objects', true);
-        },
-        onHide: () => {
-          tree.close();
-          this.toolbar?.setActive('objects', false);
-        },
-      });
-    }
-    const data = this.dataWindow;
-    if (data) {
-      dock.addPage({
-        id: 'dataWindow', label: this.t('dataWindow.title'), icon: 'table', element: data.element, parts: ['dock.dataWindow', 'dataWindow'],
-        onShow: () => {
-          data.openPanel();
-          data.render(this.buildDataWindowModel());
-        },
-        onHide: () => data.close(),
-      });
-    }
-    const info = this.symbolInfoPanel;
-    if (info) {
-      dock.addPage({
-        id: 'symbolInfo', label: this.t('symbolInfo.title'), icon: 'info', element: info.element, parts: ['dock.symbolInfo', 'symbolInfo'],
-        onShow: () => info.open(),
-        onHide: () => info.close(),
-      });
-    }
-    const ladder = this.depthLadder;
-    if (ladder) {
-      dock.addPage({
-        id: 'depthLadder', label: this.t('ladder.title'), icon: 'ladder', element: ladder.element, parts: ['dock.depthLadder', 'depthLadder'],
-        onShow: () => ladder.openPanel(),
-        onHide: () => ladder.close(),
-      });
-    }
-    this.syncRail();
-    this.fitDockToWidth();
-    if (typeof ResizeObserver !== 'undefined') {
-      this.dockObserver = new ResizeObserver(() => this.fitDockToWidth());
-      this.dockObserver.observe(this.root);
-    }
-  }
-
-  /**
-   * The dock and the widget's width. Going narrow (a phone, a rotated
-   * tablet) shuts any panel: it would be a sheet over the chart. No panel
-   * opens by itself: the chart has the room until one is asked for.
-   */
-  private fitDockToWidth(): void {
-    const dock = this.dock;
-    const width = this.root.clientWidth;
-    if (!dock || width === 0) return;
-    const narrow = width < NARROW_WIDGET_PX;
-    const was = this.dockNarrow;
-    this.dockNarrow = narrow;
-    if (narrow && was !== true) dock.close();
-  }
-
-  /** Whether the rail shows now: on, and the widget not narrow. */
-  private railShown(): boolean {
-    return this.featureState.dock && !this.root.hasAttribute('data-tcw-narrow');
-  }
-
-  /**
-   * The rail's Tab stop on a button that shows, and the toolbar's alerts and
-   * objects buttons hidden while the rail has its own for them (so the
-   * "more" menu leaves them out too).
-   */
-  private syncRail(): void {
-    this.dock?.syncRail();
-    const rail = this.railShown();
-    this.toolbar?.setRailed('alerts', rail && this.featureState['dock.alerts']);
-    this.toolbar?.setRailed('objects', rail && this.featureState['dock.objectTree']);
-    this.toolbar?.fit();
-  }
-
-  /** Where the keyboard goes when a panel shuts and the rail can't take it: its toolbar button, or "more" on a phone. */
-  private panelFocusTarget(page: WidgetPanel): HTMLElement | null {
-    const role = PANEL_TOOLBAR_ROLES[page];
-    const own = role ? this.root.querySelector<HTMLElement>(`.tcw-toolbar [data-role="${role}"]`) : null;
-    const narrow = this.root.hasAttribute('data-tcw-narrow');
-    if (own && !own.hidden && !(narrow && own.classList.contains('tcw-toolbar-overflow'))) return own;
-    return this.root.querySelector<HTMLElement>('.tcw-toolbar-more') ?? this.chartContainer;
-  }
-
-  /** A panel shut by its own close button: by hand. */
-  private closePanelByHand(page: WidgetPanel): void {
-    this.dock?.closePage(page);
+    return this.trading.startBracket(side);
   }
 
   private openIndicatorSettings(instanceId: string): void {
@@ -4091,63 +2802,6 @@ export class ChartWidget {
     });
   }
 
-  private refreshObjects(): void {
-    this.refreshDrawingsState();
-    if (!this.objectTree) return;
-    // Named as the chips and the legend name them: a compare by its symbol, two EMAs by their periods;
-    // the full name in the tooltip.
-    const indicators = this.chart.getActiveIndicators().map((i) => ({
-      instanceId: i.instanceId,
-      name: widgetIndicatorLabel(i, this.t),
-      title: i.descriptor.name,
-      visible: i.visible,
-    }));
-    const drawings = this.chart.getDrawings().map((d) => ({
-      id: d.id,
-      label: d.name || drawingTypeLabel(d.type, this.t),
-      visible: d.visible,
-      offInterval: d.visible && !this.chart.isDrawingShown(d.id),
-      locked: d.locked,
-      group: d.group,
-    }));
-    // Every compare, as the compare dialog lists it: the percent lines and the indicators on another symbol.
-    const compares = this.comparedNow().map((c) => ({ id: c.id, label: c.symbol, color: c.color, way: c.way }));
-    this.objectTree.setObjects(indicators, drawings, compares);
-  }
-
-  private async handleAddCompare(): Promise<void> {
-    if (!this.featureState.compare) return;
-    if (!this.adapter) {
-      this.say(this.t('toast.compareNeedsAdapter'), 'error');
-      return;
-    }
-    this.withSymbolSearch(() => this.featureState.compare, (search) => search.openCompare({
-      symbols: this.symbolEntries(),
-      current: this.state.symbol,
-      search: this.symbolSearchFn(),
-      ways: compareWayOptions(this.t),
-      way: this.compareWay,
-      compared: this.comparedNow(),
-      onAdd: (symbol, way) => {
-        if (!isCompareWay(way)) return;
-        this.compareWay = way;
-        void this.addCompareSymbol(symbol, way);
-      },
-      onRemove: (id) => this.removeCompared(id),
-    }));
-  }
-
-  /** What is compared with the chart's symbol now, as the compare dialog lists it. */
-  private comparedNow(): ReturnType<typeof comparedEntries> {
-    const ownPanes = new Set(this.chart.getIndicatorPanes().flatMap((p) => p.instanceIds));
-    return comparedEntries(this.compares, this.chart.getActiveIndicators(), ownPanes, this.t);
-  }
-
-  /** The compare dialog's list, after something was compared or taken off. */
-  private refreshCompareDialog(): void {
-    if (this.symbolSearch?.isComparing()) this.symbolSearch.setCompared(this.comparedNow());
-  }
-
   /**
    * Compare with another symbol: its percent change on the price scale
    * (`'percent'`, the default), its price on a scale of its own (`'scale'`)
@@ -4158,394 +2812,14 @@ export class ChartWidget {
    * no bars at the chart's interval, nothing is added and a toast says why.
    */
   async addCompareSymbol(symbol: string, way: CompareWay = 'percent'): Promise<void> {
-    if (!this.adapter) {
-      this.say(this.t('toast.compareNeedsAdapter'), 'error');
-      return;
-    }
-    if (way !== 'percent') {
-      await this.addCompareIndicator(this.adapter, symbol, way);
-      return;
-    }
-    // The chart takes no compare lines: none to list, nor a scale to hold for them.
-    if (this.chart.getFeatures()?.compareSymbols === false) return;
-    // On the chart already, or its bars on the way (picked twice in a row).
-    if (this.compares.some((c) => c.symbol === symbol) || this.comparesLoading.has(symbol)) return;
-    const id = `cmp_${symbol}`;
-    this.comparesLoading.add(symbol);
-    try {
-      const bars = await this.fetchCompareBars(this.adapter, symbol);
-      if (!bars || this.compares.some((c) => c.symbol === symbol)) return;
-      // They come at the interval on screen.
-      const timeframe = this.state.timeframe;
-      const color = COMPARE_COLORS[this.compares.length % COMPARE_COLORS.length];
-      // Each line is its symbol's change from the first bar on screen, so
-      // symbols of any price (BTC beside a $2 coin) read on one percent scale.
-      if (this.compares.length === 0) this.chart.setCompareMode('percent');
-      this.chart.addCompareSymbol(id, symbol, bars, color);
-      this.compares = [...this.compares, { id, symbol, color, bars, timeframe }];
-      if (this.compares.length === 1) this.holdCompareScale(true);
-      this.scheduleLegend();
-      this.refreshObjects();
-      this.refreshCompareDialog();
-      this.say(fill(this.t('toast.comparing'), { symbol }));
-    } finally {
-      this.comparesLoading.delete(symbol);
-    }
-  }
-
-  /**
-   * A compare that is an indicator (on its own scale or pane, a spread, a
-   * correlation), its bars first, as the percent way does. A symbol the feed
-   * can't serve at this interval then adds nothing, rather than an empty
-   * line that stays in the chart's saves. The bars go to the chart before
-   * the indicator, so it finds them there and asks for none.
-   */
-  private async addCompareIndicator(adapter: DataAdapter, symbol: string, way: Exclude<CompareWay, 'percent'>): Promise<void> {
-    const bars = await this.fetchCompareBars(adapter, symbol);
-    if (!bars) return;
-    this.chart.setSymbolSeries(symbol, bars);
-    // The pane way is an indicator of its own: a price-pane line can't open a pane.
-    if (way === 'scale') this.chart.addIndicator('compareSymbol', { symbol }, 'bottom', { scale: 'left' });
-    else if (way === 'pane') this.chart.addIndicator('compareSymbolPane', { symbol });
-    else if (way === 'correlation') this.chart.addIndicator('correlation', { symbol });
-    else if (way === 'correlationLog') this.chart.addIndicator('correlationlog', { symbol });
-    else this.chart.addIndicator('spread', { symbol, mode: way });
-  }
-
-  /**
-   * The other symbol's bars at the chart's interval, for a compare about to
-   * be added: fetched again when the interval changed while they loaded, so
-   * they are checked, and added, at the one on screen. Null, with a toast,
-   * when they fail or there are none.
-   */
-  private async fetchCompareBars(adapter: DataAdapter, symbol: string): Promise<OHLCBar[] | null> {
-    for (;;) {
-      const timeframe = this.state.timeframe;
-      let bars: OHLCBar[] | null = null;
-      let failure: unknown = null;
-      try {
-        bars = await withResampling(adapter).fetchHistory(symbol, timeframe, this.compareDepth());
-      } catch (err: unknown) {
-        failure = err;
-      }
-      if (this.destroyed) return null;
-      // Another interval picked meanwhile: its bars instead. Only a pick made during a fetch asks again.
-      if (timeframe !== this.state.timeframe) continue;
-      if (bars && bars.length > 0) return bars;
-      // An empty answer is no failure: the feed has no bars of it at this interval, and another may have some.
-      if (failure === null) this.say(fill(this.t('toast.compareNoBars'), { symbol, interval: timeframeLabel(timeframe) }), 'error');
-      else this.sayCompareFailed(symbol, failure);
-      return null;
-    }
-  }
-
-  /** The other symbol's bars didn't come: the adapter's reason, or that they failed. */
-  private sayCompareFailed(symbol: string, err?: unknown): void {
-    this.say(`${symbol}: ${err instanceof Error ? err.message : this.t('toast.loadFailed')}`, 'error');
-  }
-
-  /** Take a compare off, an overlay or an indicator, as the compare dialog and Objects do. */
-  private removeCompared(id: string): void {
-    if (this.compares.some((c) => c.id === id)) this.handleRemoveCompare(id);
-    else this.chart.removeIndicator(id);
-  }
-
-  private handleRemoveCompare(id: string): void {
-    this.chart.removeCompareSymbol(id);
-    this.compares = this.compares.filter((c) => c.id !== id);
-    if (this.compares.length === 0) this.holdCompareScale(false);
-    this.scheduleLegend();
-    this.refreshObjects();
-    this.refreshCompareDialog();
-  }
-
-  /** A compare line the host added on the chart itself: the widget holds no scale nor list for it. */
-  private removeHostCompare(id: string): void {
-    this.chart.removeCompareSymbol(id);
-    this.scheduleLegend();
-  }
-
-  /** `id` is a symbol compared in percent (a line, not an indicator). */
-  private isPercentCompare(id: string): boolean {
-    return this.compares.some((c) => c.id === id);
-  }
-
-  /**
-   * How many bars of another symbol to fetch: as many as the chart has (it
-   * may have paged older ones in), so a compare starts where the chart does.
-   */
-  private compareDepth(): number {
-    return Math.max(this.chart.getData().length, this.options.historyLimit ?? 500);
-  }
-
-  /**
-   * Percent compares hold a regular price scale in percent: the user's has
-   * not been picked meanwhile, and the chart draws their lines (Renko, Kagi
-   * and the like draw none).
-   */
-  private holdsPercentScale(): boolean {
-    return this.compareScaleHeld && this.compares.length > 0 && this.settingsState.scaleMode === 'regular'
-      && this.chart.isTimeAligned();
-  }
-
-  /**
-   * The scale on screen: the user's, or percent while percent compares hold a
-   * regular one. Logarithmic, percentage and indexed to 100 are left alone: a
-   * log scale draws the compare lines true, and the other two read them right.
-   */
-  private effectiveScaleMode(): PriceScaleMode {
-    return this.holdsPercentScale() ? 'percentage' : this.settingsState.scaleMode;
-  }
-
-  /** The scale the user picked, for a shared link, a layout and the settings: never the percent a compare holds. */
-  private userScaleMode(): PriceScaleMode {
-    return this.holdsPercentScale() ? this.settingsState.scaleMode : this.chart.getScaleMode();
-  }
-
-  /** The settings as the dialog shows them: the scale on screen. */
-  private shownSettings(): ChartSettingsState {
-    return { ...this.settingsState, scaleMode: this.effectiveScaleMode() };
-  }
-
-  /** Put the chart's price scale on the one it should show now. */
-  private showScaleMode(): void {
-    const mode = this.effectiveScaleMode();
-    if (this.chart.getScaleMode() !== mode) this.chart.setScaleMode(mode);
-  }
-
-  /** The first percent compare holds the scale in percent; the last one gone lets it go. */
-  private holdCompareScale(held: boolean): void {
-    if (held === this.compareScaleHeld) return;
-    this.compareScaleHeld = held;
-    this.showHeldScale();
-  }
-
-  /** The scale a hold of percent compares puts on screen, in the status bar and in the settings. */
-  private showHeldScale(): void {
-    this.showScaleMode();
-    this.refreshScaleSwitches();
-    this.settings?.refresh(this.shownSettings());
-  }
-
-  /**
-   * Bars of a symbol the chart's indicators read (a compare on its own
-   * scale, a spread), at the chart's interval. A later interval wins.
-   */
-  private async loadSymbolSeries(symbol: string): Promise<void> {
-    if (!this.adapter) {
-      this.say(this.t('toast.compareNeedsAdapter'), 'error');
-      return;
-    }
-    const timeframe = this.state.timeframe;
-    const seq = (this.symbolLoads.get(symbol) ?? 0) + 1;
-    this.symbolLoads.set(symbol, seq);
-    // Only the latest fetch of a symbol, at the interval on screen, answers.
-    const stale = () => this.destroyed || timeframe !== this.state.timeframe || this.symbolLoads.get(symbol) !== seq;
-    try {
-      const bars = await withResampling(this.adapter).fetchHistory(symbol, timeframe, this.compareDepth());
-      if (stale()) return;
-      this.chart.setSymbolSeries(symbol, bars);
-    } catch (err: unknown) {
-      if (stale()) return;
-      // Keep what the chart had; an indicator on the symbol may ask again.
-      this.chart.setSymbolSeries(symbol, this.chart.getSymbolSeries(symbol));
-      this.sayCompareFailed(symbol, err);
-    }
-  }
-
-  /** Refetch every comparison overlay at the current symbol/timeframe. */
-  private async refetchCompares(): Promise<void> {
-    // The symbols indicators read, at the new interval.
-    for (const symbol of this.chart.getRequiredSymbols?.() ?? []) void this.loadSymbolSeries(symbol);
-    if (!this.adapter || this.compares.length === 0) return;
-    // A comparison against the now-active symbol is redundant — drop it.
-    const stale = this.compares.filter((c) => c.symbol === this.state.symbol);
-    for (const c of stale) this.handleRemoveCompare(c.id);
-    await this.refetchPercentCompares();
-  }
-
-  /** Each percent compare's bars again, as deep as the chart's, at its interval. The latest round wins. */
-  private async refetchPercentCompares(): Promise<void> {
-    if (!this.adapter || this.compares.length === 0) return;
-    const seq = ++this.compareFetchSeq;
-    const adapter = withResampling(this.adapter);
-    // Each one's bars are on their way again.
-    this.compares = this.compares.map((x) => ({ ...x, failedAt: undefined }));
-    for (const c of this.compares) {
-      const timeframe = this.state.timeframe;
-      try {
-        const bars = await adapter.fetchHistory(c.symbol, timeframe, this.compareDepth());
-        if (this.destroyed || seq !== this.compareFetchSeq) return;
-        if (this.isPercentCompare(c.id)) this.setCompareBars(c.id, bars, timeframe);
-      } catch {
-        // The stale overlay stays, and no older stretch waits for bars that aren't coming.
-        if (!this.destroyed && seq === this.compareFetchSeq) this.compareFailedAt(c.id, timeframe);
-      }
-    }
-    // Older bars that loaded meanwhile were fetched only as deep as the chart was before them.
-    if (this.compareOlderPassed) {
-      this.compareOlderPassed = false;
-      void this.extendPercentCompares();
-    }
-  }
-
-  /**
-   * Older bars in: each percent compare's older stretch, so its line starts
-   * where the chart does. One round at a time: pages that load meanwhile
-   * get one more round, for what is missing by then.
-   */
-  private async extendPercentCompares(): Promise<void> {
-    if (this.compareOlderBusy) {
-      this.compareOlderAgain = true;
-      return;
-    }
-    this.compareOlderBusy = true;
-    try {
-      do {
-        this.compareOlderAgain = false;
-        await this.fetchOlderCompares();
-      } while (this.compareOlderAgain && !this.destroyed);
-    } finally {
-      this.compareOlderBusy = false;
-    }
-  }
-
-  /**
-   * Each percent compare's bars before its first, as many as the chart has
-   * before it; from a feed that can't page back, its bars again, as deep as
-   * the chart's. A round of full fetches meanwhile (a new interval) drops them.
-   */
-  private async fetchOlderCompares(): Promise<void> {
-    if (!this.adapter || this.compares.length === 0) return;
-    const adapter = withResampling(this.adapter);
-    const seq = this.compareFetchSeq;
-    const timeframe = this.state.timeframe;
-    for (const c of this.compares) {
-      // Its bars still at the interval before: older ones at this interval would mix two in one line.
-      // A round follows once they come, unless they failed to.
-      if (c.timeframe !== timeframe) {
-        if (c.failedAt !== timeframe) this.compareOlderPassed = true;
-        continue;
-      }
-      const first = c.bars[0]?.time;
-      if (first === undefined || c.atStart) continue;
-      const missing = barsBefore(this.chart.getData(), first);
-      if (missing === 0) continue;
-      try {
-        if (adapter.fetchHistoryBefore) {
-          const older = await adapter.fetchHistoryBefore(c.symbol, timeframe, first, missing);
-          if (this.destroyed || seq !== this.compareFetchSeq) return;
-          this.prependCompareBars(c.id, older, timeframe);
-        } else {
-          const depth = this.compareDepth();
-          const bars = await adapter.fetchHistory(c.symbol, timeframe, depth);
-          if (this.destroyed || seq !== this.compareFetchSeq) return;
-          this.deepenCompareBars(c.id, bars, depth, first, timeframe);
-        }
-      } catch { /* the line keeps the bars it has; the next page asks again */ }
-    }
-  }
-
-  /**
-   * A percent compare's bars fetched again `depth` deep, from a feed that
-   * can't page back. Fewer than asked, or none older than `first`: the
-   * feed's history starts there, and no page asks again.
-   */
-  private deepenCompareBars(id: string, bars: OHLCBar[], depth: number, first: number, timeframe: TimeFrame): void {
-    if (!this.isPercentCompare(id)) return;
-    this.setCompareBars(id, bars, timeframe);
-    const atStart = bars.length < depth || !(bars[0].time < first);
-    if (atStart) this.compares = this.compares.map((x) => (x.id === id ? { ...x, atStart: true } : x));
-  }
-
-  /** A percent compare's older bars in front of its own; none older: the feed's history starts there. */
-  private prependCompareBars(id: string, older: readonly OHLCBar[], timeframe: TimeFrame): void {
-    const c = this.compares.find((x) => x.id === id);
-    if (!c) return;
-    const bars = withOlderBars(c.bars, older);
-    if (bars) this.setCompareBars(id, bars, timeframe);
-    else this.compares = this.compares.map((x) => (x.id === id ? { ...x, atStart: true } : x));
-  }
-
-  /** A percent compare's line on new bars at `timeframe`, which may reach further back again. */
-  private setCompareBars(id: string, bars: OHLCBar[], timeframe: TimeFrame): void {
-    this.chart.updateCompareData(id, bars);
-    this.compares = this.compares.map((x) => (x.id === id ? { ...x, bars, timeframe, atStart: false, failedAt: undefined } : x));
-  }
-
-  /** A percent compare's bars at `timeframe` didn't come: it keeps the ones it has. */
-  private compareFailedAt(id: string, timeframe: TimeFrame): void {
-    this.compares = this.compares.map((x) => (x.id === id ? { ...x, failedAt: timeframe } : x));
-  }
-
-  private refreshAlerts(): void {
-    if (!this.alertsPanel) return;
-    const sources = this.buildAlertSources();
-    this.alertsPanel.setSources(sources);
-    this.alertsPanel.setAlerts(this.chart.getAlerts().map((a) => this.alertListItem(a, sources)));
+    return this.comparing.addCompareSymbol(symbol, way);
   }
 
   /** The prices the panels show, written again in the decimals the chart has now. */
   private refreshPriceTexts(): void {
-    this.refreshAlerts();
-    this.refreshAccountSoon();
-    if (this.dataWindow?.isOpen()) this.dataWindow.render(this.buildDataWindowModel());
-  }
-
-  private alertListItem(a: AlertListItem, sources: readonly AlertSource[]): AlertListItem {
-    return {
-      id: a.id,
-      price: a.price,
-      condition: a.condition,
-      message: a.message,
-      triggered: a.triggered,
-      channel: a.channel,
-      label: a.label,
-      drawingId: a.drawingId,
-      target: a.target,
-      targetLabel: a.target ? sources.find((s) => s.channel === a.target)?.label : undefined,
-      percent: a.percent,
-      bars: a.bars,
-      onBarClose: a.onBarClose,
-      expiresAt: a.expiresAt,
-      expired: a.expired,
-    };
-  }
-
-  /** An alert in words, for a toast or a notification: "Price crossing EMA 20", "RSI greater than 70". */
-  private alertText(p: AlertListItem): string {
-    return describeAlert(this.alertListItem(p, this.buildAlertSources()), this.t, (price) => this.formatAlertPrice(price), true);
-  }
-
-  /** Price + every active indicator line, as selectable alert sources. */
-  private buildAlertSources(): { channel: string; label: string }[] {
-    const sources = [{ channel: 'price', label: this.t('alerts.source.price') }];
-    for (const ind of this.chart.getActiveIndicators()) {
-      // Use the latest point — multi-output indicators (MACD, Stochastic) only
-      // have all their lines populated once warmed up; the first point may not.
-      const series = this.chart.getIndicatorOutput(ind.instanceId)?.series;
-      const point = series && series.length > 0 ? series[series.length - 1] : null;
-      const keys = point ? Object.keys(point).filter((k) => typeof point[k] === 'number') : [];
-      for (const key of keys) {
-        const label = keys.length > 1 ? `${ind.descriptor.name} ${key}` : ind.descriptor.name;
-        sources.push({ channel: `${ind.instanceId}:${key}`, label });
-      }
-    }
-    return sources;
-  }
-
-  /** Latest value for an alert source channel (price or indicator line). */
-  private getAlertChannelValue(channel: string): number | null {
-    const data = this.chart.getData();
-    // The price as the chart shows it: on its tick grid, or at its precision.
-    if (channel === 'price') return data.length > 0 ? this.chart.roundPrice(data[data.length - 1].close) : null;
-    const sep = channel.indexOf(':');
-    if (sep < 0 || data.length === 0) return null;
-    const instanceId = channel.slice(0, sep);
-    const key = channel.slice(sep + 1);
-    // The line's last value: on Renko and the like its series ends at the last brick, not the last bar.
-    const v = indicatorPointAt(this.chart.getIndicatorOutput(instanceId)?.series, null)?.[key];
-    return typeof v === 'number' && Number.isFinite(v) ? v : null;
+    this.alerting.refreshAlerts();
+    this.trading.refreshAccountSoon();
+    if (this.dataWindow?.isOpen()) this.dataWindow.render(this.docking.buildDataWindowModel());
   }
 
   /**
@@ -4559,13 +2833,13 @@ export class ChartWidget {
 
   /** A volume as the data window shows it: in 만, 억 and 조 when the chart's numbers are Korean. */
   private formatVolume(volume: number): string {
-    const locale = this.settingsState.numberLocale || 'en-US';
+    const locale = this.chartSettings.settingsState.numberLocale || 'en-US';
     return formatVolumeLoc(volume, locale);
   }
 
   /** A plain figure to `decimals`, in the number locale. */
   private formatNumber(value: number, decimals: number): string {
-    const locale = this.settingsState.numberLocale || undefined;
+    const locale = this.chartSettings.settingsState.numberLocale || undefined;
     return value.toLocaleString(locale, { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
   }
 
@@ -4582,7 +2856,7 @@ export class ChartWidget {
     // sub-dollar alt (0.04821) both read sensibly, whatever is on view.
     const abs = Math.abs(scale);
     const digits = abs >= 1000 ? 2 : abs >= 1 ? 4 : 6;
-    const locale = this.settingsState.numberLocale || undefined;
+    const locale = this.chartSettings.settingsState.numberLocale || undefined;
     return price.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: digits });
   }
 
@@ -4614,7 +2888,7 @@ export class ChartWidget {
     this.state = { ...this.state, chartType: type };
     this.chart.setChartType(type);
     // Settings open: their Symbol tab shows the type's own colours.
-    this.settings?.refresh(this.shownSettings(), type);
+    this.settings?.refresh(this.chartSettings.shownSettings(), type);
     this.updateUI();
   }
 
@@ -4642,96 +2916,6 @@ export class ChartWidget {
     this.chart.removeIndicator(instanceId);
   }
 
-  private toggleCommandPalette(): void {
-    if (this.commandPalette?.isOpen()) {
-      this.commandPalette.close();
-      return;
-    }
-    if (this.cancelWaiting(this.commandPalettePart)) return;
-    this.whenLoaded(this.commandPalettePart, () => this.featureState.commandPalette, (palette) => {
-      if (!palette.isOpen()) palette.open(this.buildCommandItems());
-    });
-  }
-
-  private buildCommandItems(): CommandItem[] {
-    const items: CommandItem[] = [];
-
-    for (const ind of this.indicatorPickerItems()) {
-      items.push({
-        id: ind.id,
-        label: ind.name,
-        category: 'indicator',
-        active: [...this.state.activeIndicators.values()].some((a) => a.id === ind.id),
-      });
-    }
-
-    for (const ct of CHART_TYPES) {
-      items.push({
-        id: ct.value,
-        label: chartTypeLabel(ct, this.t),
-        category: 'chartType',
-        active: this.state.chartType === ct.value,
-      });
-    }
-
-    const toolKeys = toolShortcuts();
-    for (const group of localizeToolGroups(DRAWING_TOOL_GROUPS, this.t)) {
-      for (const tool of group.tools) {
-        items.push({
-          id: tool.value,
-          label: tool.label,
-          category: 'drawing',
-          shortcut: toolKeys[tool.value] ? this.keysShown('hotkeys.tools', toolKeys[tool.value]!) : undefined,
-          active: this.state.activeTool === tool.value,
-        });
-      }
-    }
-
-    for (const tf of this.timeframes) {
-      items.push({
-        id: tf,
-        label: timeframeLabel(tf),
-        category: 'timeframe',
-        active: this.state.timeframe === tf,
-      });
-    }
-
-    // The widget's own, with the keys the sheet lists for them.
-    items.push(
-      { id: 'symbolSearch', label: this.t('hotkeys.symbolSearch'), category: 'action', shortcut: this.keysShown('hotkeys.symbolSearch', `${MOD_KEY}+P`) },
-      { id: 'compare', label: this.t('compare.title'), category: 'action' },
-      { id: 'goToDate', label: this.t('hotkeys.goToDate'), category: 'action', shortcut: this.keysShown('hotkeys.goToDate', 'Alt+G') },
-      { id: 'resetView', label: this.t('chartMenu.resetView'), category: 'action', shortcut: this.keysShown('hotkeys.resetView', 'Alt+R') },
-      { id: 'invertScale', label: this.t('hotkeys.invertScale'), category: 'action', shortcut: this.keysShown('hotkeys.invertScale', 'Alt+I') },
-      { id: 'saveLayout', label: this.t('hotkeys.saveLayout'), category: 'action', shortcut: this.keysShown('hotkeys.save', `${MOD_KEY}+S`) },
-      { id: 'watchlist', label: this.t('watchlist.title'), category: 'action' },
-      { id: 'alerts', label: this.t('alerts.title'), category: 'action' },
-      { id: 'objectTree', label: this.t('objects.title'), category: 'action' },
-      { id: 'dataWindow', label: this.t('action.dataWindow'), category: 'action' },
-      { id: 'symbolInfo', label: this.t('action.symbolInfo'), category: 'action' },
-      { id: 'screenshot', label: this.t('action.screenshot'), category: 'action' },
-      { id: 'copyImage', label: this.t('action.copyImage'), category: 'action' },
-      { id: 'shareView', label: this.t('action.shareView'), category: 'action' },
-      { id: 'toggleTheme', label: this.t('action.toggleTheme'), category: 'action' },
-      { id: 'settings', label: this.t('action.settings'), category: 'action' },
-      { id: 'autoFib', label: this.t('action.autoFib'), category: 'action' },
-      { id: 'clearDrawings', label: this.t('action.clearDrawings'), category: 'action' },
-      { id: 'clearIndicators', label: this.t('clear.indicators'), category: 'action' },
-      { id: 'clearAll', label: this.t('clear.all'), category: 'action' },
-      { id: 'hotkeys', label: this.t('hotkeys.title'), category: 'action', shortcut: this.keysShown('hotkeys.help', '?') },
-    );
-
-    return items.filter((item) => item.category !== 'action' || (this.commandOn(item.id) && this.commandThere(item.id)));
-  }
-
-  /** Whether the widget has what a command works on: a watchlist, a feed to compare from, layouts to save to. */
-  private commandThere(id: string): boolean {
-    if (id === 'watchlist') return this.watchlist !== null;
-    if (id === 'compare') return this.adapter !== null && this.options.chartOptions?.features?.compareSymbols !== false;
-    if (id === 'saveLayout') return this.layoutSession !== null;
-    return true;
-  }
-
   /**
    * `keys` as a command's shortcut, where they work: their switch on (and
    * what they need there), and no shortcut of the host's on them instead.
@@ -4748,107 +2932,6 @@ export class ChartWidget {
       isOn: (name) => this.sheetKeyOn(name),
       extra: this.hostHotkeys.map((h) => ({ keys: h.parsed.display, text: h.spec.label })),
     }));
-  }
-
-  /** Whether a command's switch (when it has one) is on. */
-  private commandOn(id: string): boolean {
-    const name = commandFeature(id);
-    return name === undefined || this.featureState[name];
-  }
-
-  /**
-   * The trash button's menu: the drawings, the indicators, or both, each with
-   * how many would go (locked drawings stay). Nothing to remove, no menu; a
-   * second press closes it.
-   */
-  private openClearMenu(anchor: HTMLElement): void {
-    if (WidgetContextMenu.closeAnchoredTo(anchor)) return;
-    const drawings = this.chart.getDrawings().filter((d) => !d.locked).length;
-    const indicators = this.chart.getActiveIndicators().length;
-    const entries: ContextMenuEntry[] = [];
-    if (drawings > 0) entries.push({ id: 'drawings', label: this.t('clear.drawings'), icon: 'penLine', count: drawings });
-    if (indicators > 0) entries.push({ id: 'indicators', label: this.t('clear.indicators'), icon: 'trendingUp', count: indicators });
-    if (drawings > 0 && indicators > 0) entries.push('separator', { id: 'all', label: this.t('clear.all'), icon: 'trash', danger: true });
-    if (entries.length === 0) return;
-    this.clearMenu ??= new WidgetContextMenu(this.root, this.t('drawing.clearAll'));
-    this.clearMenu.openBeside(entries, anchor, (id) => this.removeAll(id as 'drawings' | 'indicators' | 'all'));
-  }
-
-  /** Remove the drawings, the indicators or both, as one undo step, and leave any drawing tool. */
-  private removeAll(what: 'drawings' | 'indicators' | 'all'): void {
-    this.chart.removeAll(what);
-    this.state = { ...this.state, activeTool: null };
-    this.updateUI();
-    this.refreshDrawingsState();
-    this.refreshObjects();
-  }
-
-  private handleAction(id: string): void {
-    if (!this.commandOn(id)) return;
-    switch (id) {
-      case 'symbolSearch':
-        this.openSymbolSearch();
-        break;
-      case 'compare':
-        void this.handleAddCompare();
-        break;
-      case 'goToDate':
-        this.toggleGoToDate();
-        break;
-      case 'resetView':
-        this.resetView();
-        break;
-      case 'invertScale':
-        this.changeSettings({ invertScale: !this.settingsState.invertScale });
-        this.settings?.refresh(this.shownSettings());
-        break;
-      case 'saveLayout':
-        void this.saveLayout();
-        break;
-      case 'watchlist':
-      case 'alerts':
-      case 'objectTree':
-        this.openPanel(id);
-        break;
-      case 'hotkeys':
-        this.openHotkeySheet();
-        break;
-      case 'screenshot':
-        this.chart.screenshot();
-        break;
-      case 'toggleTheme':
-        this.handleToggleTheme();
-        break;
-      case 'settings':
-        this.openSettings();
-        break;
-      case 'copyImage':
-        void this.copyChartImage();
-        break;
-      case 'shareView':
-        void this.copyShareLink();
-        break;
-      case 'autoFib': {
-        const id = this.chart.autoFib();
-        this.say(id ? this.t('toast.autoFibAdded') : this.t('toast.noSwing'));
-        break;
-      }
-      case 'dataWindow':
-        this.toggleDataWindow();
-        break;
-      case 'symbolInfo':
-        this.toggleSymbolInfo();
-        break;
-      case 'clearDrawings':
-        this.removeAll('drawings');
-        break;
-      case 'clearIndicators':
-        this.removeAll('indicators');
-        break;
-      case 'clearAll':
-        this.removeAll('all');
-        break;
-    }
   }
 
   private handleDrawingTool(tool: DrawingToolType): void {
@@ -4890,23 +2973,6 @@ export class ChartWidget {
     this.updateUI();
   }
 
-  private openSettings(tab?: SettingsTab): void {
-    this.whenLoaded(this.settingsPart, () => this.featureState.settings, (dialog) => this.showSettings(dialog, tab));
-  }
-
-  private showSettings(dialog: WidgetSettings, tab?: SettingsTab): void {
-    if (dialog.isOpen()) return;
-    // What it opens on is read now, once its code is in. The chart's own settings of its type (a layout may have brought them), its scale as a drag left it.
-    this.syncSettingsFromChart();
-    // What the dialog opens on is what listeners last heard: a drag that turned auto-scale off told
-    // nobody, and Cancel, or an OK that changes nothing, must not tell them now.
-    this.markSettingsTold();
-    this.settingsEdit = {
-      settings: { ...this.settingsState }, style: this.settingsStyle(), keys: new Set(), styleKeys: new Set(), held: this.compareScaleHeld,
-    };
-    dialog.open(this.shownSettings(), this.state.chartType, tab);
-  }
-
   /** A dialog's code, loaded the first time it opens; a failed load says so. */
   private lazyPart<M, T extends { destroy(): void }>(module: ModuleRef<M>, build: (module: M) => T): LazyPart<M, T> {
     return new LazyPart(module, build, (part) => part.destroy(), () => this.say(this.t('common.partFailed'), 'error'));
@@ -4942,87 +3008,8 @@ export class ChartWidget {
   /** The whole series in view, the price scale fitted to it (the menus' Reset, Alt+R). */
   private resetView(): void {
     this.chart.fitContent();
-    this.changeSettings({ autoScale: true });
-    this.settings?.refresh(this.shownSettings());
-  }
-
-  /** The settings closed: OK keeps what they changed as one undo step, Cancel puts it back as it was on opening. */
-  private endSettingsEdit(keep: boolean): void {
-    const edit = this.settingsEdit;
-    this.settingsEdit = null;
-    if (!edit) return;
-    const keys = [...edit.keys];
-    const pick = (from: ChartSettingsState): Partial<ChartSettingsState> => Object.fromEntries(keys.map((k) => [k, from[k]]));
-    const styleKeys = [...edit.styleKeys];
-    const before = pick(edit.settings);
-    const beforeStyle = styleKeys.length > 0
-      ? { theme: edit.style.theme, overrides: Object.fromEntries(styleKeys.map((k) => [k, edit.style.overrides[k] ?? null])) as SettingsStylePatch }
-      : null;
-    // A scale picked in the settings let a compare's hold go: Cancel and an undo give it back.
-    const scale = edit.keys.has('scaleMode');
-    const heldAfter = this.compareScaleHeld;
-    if (!keep) {
-      // Put back as they were, which tells nobody: they are as last told.
-      this.restoreSettings(before, beforeStyle, scale ? edit.held : undefined);
-      return;
-    }
-    const after = pick(this.getSettings());
-    const afterStyle = styleKeys.length > 0 ? this.settingsStyle(styleKeys) : null;
-    const changed = JSON.stringify([before, beforeStyle]) !== JSON.stringify([after, afterStyle]) || (scale && edit.held !== heldAfter);
-    // The undo step before the listeners hear of it, so a host's listener that throws can't cost it.
-    if (changed) {
-      this.chart.recordUndo({
-        undo: () => this.restoreSettings(before, beforeStyle, scale ? edit.held : undefined),
-        redo: () => this.restoreSettings(after, afterStyle, scale ? heldAfter : undefined),
-      });
-    }
-    this.claimSettings(keys);
-    this.publishSettings();
-  }
-
-  /**
-   * The keys a change touched: in the open settings, what Cancel and the
-   * undo step go by (and what OK takes from a link); outside them, a link's
-   * no more.
-   */
-  private touchSettings(keys: Iterable<keyof ChartSettingsState>, styleKeys: Iterable<ChartStyleKey> = []): void {
-    if (!this.settingsEdit) {
-      this.claimSettings(keys);
-      return;
-    }
-    for (const key of keys) this.settingsEdit.keys.add(key);
-    for (const key of styleKeys) this.settingsEdit.styleKeys.add(key);
-  }
-
-  /** A chart template in place of the chart's look: its switches, and its colours over the theme's. */
-  private applyChartTemplate(name: string): void {
-    const template = this.chartTemplates.get(name);
-    if (!template) return;
-    // Saved where the features were on, or by another app: it turns on nothing they switched off here.
-    const settings = this.allowedSettings(template.settings);
-    this.touchSettings(Object.keys(settings) as (keyof ChartSettingsState)[], SETTINGS_LOOK_KEYS);
-    this.applySettings(settings);
-    this.chart.resetOverrides([...SETTINGS_LOOK_KEYS], { layer: 'user' });
-    this.chart.applyOverrides(template.style, { layer: 'user' });
-    this.settings?.refresh(this.shownSettings());
-    this.say(fill(this.t('templates.applied'), { name }));
-  }
-
-  /** Save the chart's look as a template, asking for its name over the open settings. */
-  private promptSaveChartTemplate(): void {
-    this.chartTemplatePrompt ??= new WidgetNamePrompt(this.overlayHost(), this.t);
-    this.chartTemplatePrompt.open({
-      title: this.t('settings.saveTemplateTitle'),
-      submitLabel: this.t('common.save'),
-      placeholder: this.t('settings.templatePlaceholder'),
-      onSubmit: (name) => {
-        if (!this.chartTemplates.save(name, this.settingsState, this.settingsStyle().overrides)) {
-          this.say(this.t('templates.saveFailed'), 'error');
-          throw new Error('The template could not be saved');
-        }
-        this.say(fill(this.t('templates.saved'), { name }));
-      },
-    });
+    this.chartSettings.changeSettings({ autoScale: true });
+    this.settings?.refresh(this.chartSettings.shownSettings());
   }
 
   // --- Toast ---
@@ -5073,7 +3060,7 @@ export class ChartWidget {
 
   /** Named layouts: save, open, rename, delete, auto-save. `null` with `layouts: false`. */
   getLayoutSession(): LayoutSession | null {
-    return this.layoutSession;
+    return this.layouts.getLayoutSession();
   }
 
   /** The symbol showing. */
@@ -5092,58 +3079,22 @@ export class ChartWidget {
    * theme). A copy, free to keep.
    */
   captureLayout(): WidgetLayoutContent {
-    const settings = this.getSettings();
-    const json = this.chart.saveState();
-    const state = json ? parseLayoutJson(json) : null;
-    // The theme stays the viewer's; the time of the capture would make every capture differ.
-    const chart = state && typeof state === 'object' ? layoutChartState(state as Record<string, unknown>) : null;
-    return {
-      v: 1,
-      symbol: this.state.symbol,
-      // The user's timeframe, not one a long range switched to.
-      timeframe: this.chosenTimeframe ?? this.state.timeframe,
-      scaleMode: settings.scaleMode,
-      invertScale: settings.invertScale,
-      chart,
-      // All of them, not only those changed: the layout opens as it was saved.
-      settings: pickSettings(settings, LAYOUT_LEAVES),
-    };
+    return this.layouts.captureLayout();
   }
 
   /** Show a layout from `captureLayout()`. */
   async restoreLayout(content: WidgetLayoutContent): Promise<void> {
-    if (content.symbol !== this.state.symbol) await this.setSymbol(content.symbol);
-    if (content.timeframe !== this.state.timeframe) await this.setTimeframe(content.timeframe);
-    if (this.destroyed) return;
-    if (content.chart) {
-      this.chart.loadState(JSON.stringify(layoutChartState(content.chart)));
-      const type = content.chart.chartType;
-      if (typeof type === 'string') this.state = { ...this.state, chartType: type as ChartType };
-    }
-    // A layout saved before the settings were kept has none: they stay as they are.
-    const settings = this.allowedSettings({
-      scaleMode: content.scaleMode,
-      invertScale: content.invertScale,
-      ...readChartSettings(content.settings, LAYOUT_LEAVES),
-    });
-    this.claimSettings(Object.keys(settings) as (keyof ChartSettingsState)[]);
-    this.applySettings(settings);
-    this.syncIndicatorsFromChart();
-    this.updateUI();
-    this.settings?.refresh(this.shownSettings(), this.state.chartType);
+    return this.layouts.restoreLayout(content);
   }
 
   /** `captureLayout()` as JSON. */
   getLayoutContent(): string {
-    return JSON.stringify(this.captureLayout());
+    return this.layouts.getLayoutContent();
   }
 
   /** Show a layout from `getLayoutContent()`; `false` when it is not one. */
   async applyLayoutContent(content: string): Promise<boolean> {
-    const layout = readWidgetLayout(parseLayoutJson(content));
-    if (!layout) return false;
-    await this.restoreLayout(layout);
-    return true;
+    return this.layouts.applyLayoutContent(content);
   }
 
   // --- Chart Settings ---
@@ -5155,8 +3106,7 @@ export class ChartWidget {
    * `getChart()` itself is in it.
    */
   getSettings(): ChartSettingsState {
-    this.syncSettingsFromChart();
-    return JSON.parse(JSON.stringify(this.settingsState)) as ChartSettingsState;
+    return this.chartSettings.getSettings();
   }
 
   /**
@@ -5168,20 +3118,7 @@ export class ChartWidget {
    * safe to give back right after the constructor.
    */
   setSettings(patch: Partial<ChartSettingsState>): void {
-    const settings = this.allowedSettings(this.withoutEarlyFreeze(readChartSettings(patch)));
-    this.claimSettings(Object.keys(settings) as (keyof ChartSettingsState)[]);
-    this.applySettings(settings);
-    this.settings?.refresh(this.shownSettings());
-  }
-
-  /**
-   * A patch without auto-scale off while the chart has no bars. Off holds the
-   * price range on screen; before the first bars there is none, and the chart
-   * would keep its empty 0 to 1 for every series after them.
-   */
-  private withoutEarlyFreeze(patch: Partial<ChartSettingsState>): Partial<ChartSettingsState> {
-    if (patch.autoScale !== false || this.chart.getData().length > 0) return patch;
-    return Object.fromEntries(Object.entries(patch).filter(([key]) => key !== 'autoScale')) as Partial<ChartSettingsState>;
+    return this.chartSettings.setSettings(patch);
   }
 
   /**
@@ -5190,143 +3127,17 @@ export class ChartWidget {
    * change that leaves them as they were. Returns the function that stops it.
    */
   onSettingsChange(listener: (settings: ChartSettingsState) => void): () => void {
-    this.settingsListeners.add(listener);
-    return () => { this.settingsListeners.delete(listener); };
-  }
-
-  /**
-   * The settings the chart says itself, over the widget's: what a host set
-   * on `getChart()` directly, a scale a drag or a switched-off feature
-   * changed, a type's own settings a layout brought. The scale is the
-   * user's, never the percent a compare holds.
-   */
-  private syncSettingsFromChart(): void {
-    const chart = this.chart;
-    const zone = chart.getTimeZone?.();
-    const profile = chart.getMarketProfileConfig?.();
-    const pivots = chart.getPivotMarkersConfig?.();
-    const read = this.allowedSettings(readChartSettings({
-      gridVisible: chart.isGridVisible?.(),
-      volumeVisible: chart.isVolumeVisible?.(),
-      legendVisible: chart.isLegendVisible?.(),
-      barCountdown: chart.isBarCountdownVisible?.(),
-      indicatorValueLabels: chart.isIndicatorValueLabelsVisible?.(),
-      alignAxisLabels: chart.isAxisLabelsAligned?.(),
-      leftPriceScale: chart.isLeftPriceScaleVisible?.(),
-      volumeProfileVisible: chart.isVolumeProfileVisible?.(),
-      marketProfileVisible: chart.isMarketProfileVisible?.(),
-      marketProfileSplit: profile?.splitBySession,
-      marketProfileLetters: profile?.letters,
-      marketProfileBuckets: profile?.buckets,
-      marketProfileOpacity: profile?.opacity,
-      depthHeatmapVisible: chart.isDepthHeatmapVisible?.(),
-      depthHeatmapOpacity: chart.getDepthHeatmapConfig?.()?.opacity,
-      pivotMarkersVisible: chart.isPivotMarkersVisible?.(),
-      pivotStrength: pivots?.left,
-      pivotStructureLabels: pivots?.structureLabels,
-      sessionShadingVisible: chart.isSessionShadingVisible?.(),
-      periodLevelsVisible: chart.isPeriodLevelsVisible?.(),
-      periodLevelsPeriod: chart.getPeriodLevelsPeriod?.(),
-      crosshairMode: chart.getCrosshairMode?.(),
-      scaleMode: this.userScaleMode(),
-      autoScale: chart.isAutoScale?.(),
-      invertScale: chart.isInvertScale?.(),
-      timezone: zone === undefined ? undefined : timezoneToSetting(zone),
-      numberLocale: chart.getNumberLocale?.(),
-      highLowLines: chart.isHighLowLinesVisible?.(),
-      extendedHours: chart.isExtendedHoursVisible?.(),
-      mainSeriesVisible: chart.isMainSeriesVisible?.(),
-      chartTypeOptions: chart.getChartTypeOptions?.(),
-    }));
-    // The log flag goes with the scale.
-    const scale = read.scaleMode ? { logScale: read.scaleMode === 'logarithmic' } : {};
-    // A type at its defaults is as one never set: a reset, or a box typed and cancelled, changes nothing to listeners.
-    const types = read.chartTypeOptions ? { chartTypeOptions: typesWithSettings(read.chartTypeOptions) } : {};
-    this.settingsState = { ...this.settingsState, ...read, ...scale, ...types };
-  }
-
-  /**
-   * A patch without what the host's features switched off: a bar countdown,
-   * a legend, a volume or a log scale that isn't there stays off. Keys given
-   * no value are left out too.
-   */
-  private allowedSettings(patch: Partial<ChartSettingsState>): Partial<ChartSettingsState> {
-    const locked = this.settingsLocked;
-    const turnsOnLocked = (key: keyof ChartSettingsState, value: unknown): boolean => (key === 'scaleMode'
-      ? value === 'logarithmic' && locked.has('logScale')
-      : value === true && locked.has(key));
-    return Object.fromEntries(Object.entries(patch)
-      .filter(([key, value]) => value !== undefined && !turnsOnLocked(key as keyof ChartSettingsState, value))) as Partial<ChartSettingsState>;
-  }
-
-  /** The settings the user kept in this browser (`persistSettings`) back on the chart; from here on each change is kept and told. */
-  private restoreKeptSettings(): void {
-    const kept = this.allowedSettings(this.settingsStore?.load() ?? {});
-    if (Object.keys(kept).length > 0) this.applySettings(kept);
-    this.settingsPublished = JSON.stringify(this.getSettings());
-  }
-
-  /** Once telling has begun, the settings as they are now count as told: the next change is measured from them. */
-  private markSettingsTold(): void {
-    if (this.settingsPublished !== null) this.settingsPublished = JSON.stringify(this.getSettings());
-  }
-
-  /** The settings changed: kept (`persistSettings`) and told to the listeners, unless they are as last time. */
-  private publishSettings(): void {
-    if (this.settingsPublished === null || this.destroyed) return;
-    const settings = this.getSettings();
-    const json = JSON.stringify(settings);
-    if (json === this.settingsPublished) return;
-    this.settingsPublished = json;
-    this.settingsStore?.save(this.ownSettings(settings), this.settingsDefaults);
-    // Each its own copy: a listener that changes what it gets changes nothing else.
-    for (const listener of [...this.settingsListeners]) {
-      // One that throws is the host's bug: said, and the others still hear.
-      try {
-        listener(JSON.parse(json) as ChartSettingsState);
-      } catch (err: unknown) {
-        console.error('[TradeCanvas] An onSettingsChange listener threw:', err);
-      }
-    }
-  }
-
-  private setupLayouts(cfg: import('./types.js').WidgetLayoutsOptions): void {
-    const session = new LayoutSession(cfg.storage ?? localStorageLayouts(), {
-      capture: () => ({ content: this.getLayoutContent(), symbol: this.state.symbol, timeframe: this.chosenTimeframe ?? this.state.timeframe }),
-      apply: async (layout: SavedLayout) => {
-        if (!(await this.applyLayoutContent(layout.content))) throw new Error('Not a widget layout');
-      },
-    }, {
-      autoSave: cfg.autoSave,
-      debounceMs: cfg.debounceMs,
-      onChange: () => this.toolbar?.setLayout(session.current()?.name ?? null, session.isDirty()),
-      onError: () => this.say(this.t('layouts.saveFailed'), 'error'),
-    });
-    this.layoutSession = session;
-    this.layoutsUI = new WidgetLayoutsUI(session, {
-      root: this.root,
-      t: this.t,
-      saveKeys: () => this.keysShown('hotkeys.save', `${MOD_KEY}+S`),
-      toast: (message, kind) => this.say(message, kind),
-      formatTime: (ms) => {
-        const { date, time } = utcToWallTime(ms, this.displayTimezone());
-        return `${date} ${time}`;
-      },
-    });
-    this.chart.on('stateChange', () => session.changed());
-    if (cfg.openLast) {
-      void session.list().then(([last]) => (last && !this.destroyed ? this.openLayout(last.id) : undefined), () => undefined);
-    }
+    return this.chartSettings.onSettingsChange(listener);
   }
 
   /** Save into the open layout, or ask for a name when there is none. */
   async saveLayout(): Promise<void> {
-    await this.layoutsUI?.save();
+    return this.layouts.saveLayout();
   }
 
   /** Open a saved layout by id; `false` when it could not be. */
   async openLayout(id: string): Promise<boolean> {
-    return (await this.layoutsUI?.open(id)) ?? false;
+    return this.layouts.openLayout(id);
   }
 
   // --- Layout persistence ---
@@ -5336,36 +3147,7 @@ export class ChartWidget {
    * Useful as an "Reset layout" command in user-facing menus.
    */
   clearSavedLayout(symbol?: string): void {
-    if (!this.layoutKeyPrefix) return;
-    const target = symbol ?? this.state.symbol;
-    try {
-      localStorage.removeItem(this.layoutKeyPrefix + target);
-    } catch { /* localStorage may be unavailable (private mode, SSR, etc.) */ }
-  }
-
-  private applySymbolLayout(symbol: string): void {
-    if (!this.layoutKeyPrefix) return;
-    const key = this.layoutKeyPrefix + symbol;
-    this.activeLayoutKey = key;
-
-    try {
-      // Best-effort load. If parsing or any restore step throws, we silently
-      // fall back to a fresh layout — a corrupted layout shouldn't break the
-      // chart.
-      const ok = this.chart.loadStateFromStorage(key);
-      if (ok) this.syncIndicatorsFromChart();
-    } catch { /* swallow — layout will be rebuilt from user actions */ }
-
-    // Wire chart-level auto-save so any further drawing/indicator change
-    // flushes itself into this symbol's slot.
-    this.chart.setAutoSave(key, this.layoutDebounceMs);
-  }
-
-  private flushActiveLayout(): void {
-    if (!this.activeLayoutKey) return;
-    try { this.chart.saveState(this.activeLayoutKey); } catch { /* same */ }
-    this.chart.disableAutoSave();
-    this.activeLayoutKey = null;
+    return this.layouts.clearSavedLayout(symbol);
   }
 
   /** Rebuild the chip strip from the chart's indicator instances. */
@@ -5429,191 +3211,40 @@ export class ChartWidget {
 
   /** Open (or close) bar replay with its scrubber — what the toolbar's Replay button does. */
   toggleReplay(): void {
-    if (this.replayBar?.isMounted()) {
-      this.exitReplay();
-    } else if (this.featureState.replay) {
-      this.enterReplay();
-    }
+    this.replay.toggleReplay();
   }
 
   /**
-   * Open replay in "pick a start bar" mode: the bars right of the pointer
-   * are shaded, and a click cuts the chart there and waits paused. Play
-   * starts from a default point; "random bar" picks one.
+   * Open replay (if it isn't open) and start it at bar `index` — paused, or
+   * playing when `play` is set — skipping the pick-a-bar step.
    */
-  private enterReplay(): void {
-    if (this.replayTotal() < 2) return;
-
-    const t = this.t;
-    this.replayBar = new WidgetReplayBar(
-      {
-        onPlay: () => {
-          if (this.replayBar?.getMode() === 'select') {
-            if (!this.seriesPending()) this.startReplayAt(Math.max(1, this.replayTotal() - 100), true);
-            return;
-          }
-          // A start still waiting for its steps plays once it starts.
-          if (this.replayStartPending) this.replayPlayWanted = true;
-          else if (this.chart.getReplayState() === 'paused') this.chart.replayResume();
-          this.syncReplayBar();
-        },
-        onPause: () => {
-          this.replayPlayWanted = false;
-          this.chart.replayPause();
-          this.syncReplayBar();
-        },
-        onStepBack: () => this.stepReplay(-1),
-        onStepForward: () => this.stepReplay(1),
-        onSeek: (idx) => {
-          if (this.seriesPending()) return;
-          if (this.chart.getReplayState() === 'playing') this.chart.replayPause();
-          this.chart.replaySeek(idx);
-          this.replayBar?.setState('paused');
-        },
-        onSpeedChange: (rate) => {
-          this.replaySpeed = rate;
-          this.chart.setReplaySpeed(rate);
-        },
-        onRandomStart: () => {
-          if (this.seriesPending()) return;
-          // The chart's bars, not the steps of a replay in finer steps.
-          const n = this.replayBarCount();
-          // Somewhere in the middle 80%, so there is history before and bars after.
-          const lo = Math.max(1, Math.floor(n * 0.1));
-          const hi = Math.max(lo, Math.floor(n * 0.9));
-          this.startReplayAt(lo + Math.floor(Math.random() * (hi - lo + 1)), false, true);
-        },
-        onClose: () => this.exitReplay(),
-        onSelectBar: () => this.pickReplayBarAgain(),
-        onCancelPick: () => this.cancelReplayPick(),
-        onStepChange: (step) => {
-          this.replayStep = step;
-          if (this.replayBar?.getMode() !== 'replay') return;
-          // Mid-replay: start again in the new steps from the bar before the
-          // forming one (so the rest of it isn't given away), playing if it was.
-          const playing = this.chart.getReplayState() === 'playing';
-          this.startReplayAt(Math.max(0, this.chart.getReplayBarIndex() - 1), playing);
-        },
-      },
-      {
-        selectHint: t('replay.selectHint'),
-        loading: t('status.loading'),
-        random: t('replay.random'),
-        realtime: t('replay.realtime'),
-        play: t('replay.play'),
-        pause: t('replay.pause'),
-        stepBack: t('replay.stepBack'),
-        stepForward: t('replay.stepForward'),
-        replay: t('replay.label'),
-        position: t('replay.position'),
-        speed: t('replay.speed'),
-        step: t('replay.step'),
-        selectBar: t('replay.selectBar'),
-        cancel: t('common.cancel'),
-        rate: t('replay.rate'),
-        rateHint: t('replay.rateHint'),
-        playingAt: t('replay.playingAt'),
-        pausedAt: t('replay.pausedAt'),
-        endedAt: t('replay.endedAt'),
-      },
-    );
-    const steps = this.replayStepMenu();
-    this.replayBar.mount(this.chartContainer, {
-      total: this.replayTotal(),
-      rate: this.replaySpeed,
-      mode: 'select',
-      steps,
-      step: this.replayStep,
-      dir: this.root.dir === 'rtl' ? 'rtl' : 'ltr',
-      formatRate: (rate) => fill(t('replay.rate'), { rate: rate.toLocaleString(this.intlLocale()) }),
-    });
-    this.watchReplayBar();
-    this.toolbar?.setActive('replay', true);
-    this.root.setAttribute('data-tcw-replay', '');
-    this.showReplayShade();
-    this.layoutReplayBar();
+  replayFrom(index: number, play = false): void {
+    this.replay.replayFrom(index, play);
   }
 
-  /** While picking the start bar: the shade over the bars a pick would hide. */
-  private showReplayShade(): void {
-    if (this.replayShade) return;
-    this.replayShade = document.createElement('div');
-    this.replayShade.className = 'tcw-replay-shade';
-    this.replayShade.hidden = true;
-    this.chartContainer.appendChild(this.replayShade);
-    this.chartContainer.addEventListener('mouseleave', this.hideReplayShade);
-  }
-
-  private removeReplayShade(): void {
-    this.replayShade?.remove();
-    this.replayShade = null;
-    this.chartContainer.removeEventListener('mouseleave', this.hideReplayShade);
-  }
-
-  /**
-   * Select bar, inside the replay: it pauses and picks again among the bars
-   * shown, so the bars still to come stay hidden, the view stays and grid
-   * followers go on. Cancel (or Esc) comes back to the same place.
-   */
-  private pickReplayBarAgain(): void {
-    const bar = this.replayBar;
-    if (!bar?.isMounted() || this.seriesPending()) return;
-    this.replayPlayWanted = false;
-    if (this.chart.getReplayState() === 'playing') this.chart.replayPause();
-    bar.setState('paused');
-    bar.setMode('select');
-    this.showReplayShade();
-    this.layoutReplayBar();
-  }
-
-  /** Cancel picking: back to the replay when there is one, else out of it. */
-  private cancelReplayPick(): void {
-    const bar = this.replayBar;
-    if (!bar?.isMounted()) return;
-    if (!this.chart.isReplayActive() && !this.replayStartPending) {
-      this.exitReplay();
-      return;
-    }
-    this.removeReplayShade();
-    bar.setMode('replay');
-    this.syncReplayBar();
-    this.layoutReplayBar();
-  }
-
-  /**
-   * Where the bar sits: on the main pane's foot (bottom panes stay
-   * readable), centred on its plot, in the tier its width allows; and how
-   * high it reaches, for the toasts and the drawing button to clear it.
-   */
-  private layoutReplayBar(): void {
-    const el = this.replayBar?.element();
-    if (!el || !this.replayBar) return;
-    const plot = this.chart.getPlotRect();
-    const box = this.chartContainer;
-    const px = (n: number) => `${Math.max(0, Math.round(n))}px`;
-    el.style.setProperty('--tcw-replay-foot', px(box.clientHeight - (plot.y + plot.height)));
-    el.style.setProperty('--tcw-replay-plot-start', px(plot.x));
-    el.style.setProperty('--tcw-replay-plot-end', px(box.clientWidth - (plot.x + plot.width)));
-    this.replayBar.setRoom(plot.width - 2 * REPLAY_BAR_MARGIN);
-    this.liftOverReplayBar();
-  }
-
-  /**
-   * How high the bar reaches over the widget's foot and its body's, for the
-   * toasts and the drawing button to clear it. Also run as the panel follows
-   * the chart: the bar's height changes with its rows and its words.
-   */
-  private liftOverReplayBar(): void {
-    const el = this.replayBar?.element();
-    if (!el) return;
-    const top = el.getBoundingClientRect().top;
-    const set = (host: HTMLElement | null) => {
-      if (!host) return;
-      const lift = `${Math.max(0, Math.round(host.getBoundingClientRect().bottom - top))}px`;
-      if (host.style.getPropertyValue('--tcw-replay-lift') !== lift) host.style.setProperty('--tcw-replay-lift', lift);
+  /** What the replay reads of the widget and asks of it. */
+  private replayHost(): ReplayHost {
+    return {
+      chart: () => this.chart,
+      root: this.root,
+      chartContainer: this.chartContainer,
+      options: this.options,
+      t: (key) => this.t(key),
+      isOn: () => this.featureState.replay,
+      isDestroyed: () => this.destroyed,
+      loading: this.loading,
+      symbol: () => this.state.symbol,
+      timeframe: () => this.state.timeframe,
+      adapter: () => this.adapter,
+      baseSeries: () => this.baseSeries,
+      baseTimeframeMs: () => this.baseTimeframeMs,
+      resampleOptions: (zone) => this.resampleOptions(zone),
+      textLocale: () => this.textLocale(),
+      intlLocale: () => this.intlLocale(),
+      say: (text, kind) => this.say(text, kind),
+      markActive: (on) => this.toolbar?.setActive('replay', on),
+      bodyEl: () => this.bodyEl(),
     };
-    set(this.root);
-    set(this.bodyEl());
   }
 
   /** Where the plot starts in the body, for the phone's drawing button to sit over it. */
@@ -5626,554 +3257,6 @@ export class ChartWidget {
 
   private bodyEl(): HTMLElement | null {
     return this.root.querySelector<HTMLElement>(':scope > .tcw-body');
-  }
-
-  /**
-   * Where the replay is, as the readout says it: the step's open time in
-   * the display timezone and the widget's language; the date alone on a
-   * daily chart and above, seconds under a minute (or with no interval),
-   * the year only when it isn't this one.
-   */
-  private replayTimeText(): string | undefined {
-    // The bar forming is the one on screen: name it, not the whole one before it.
-    const progress = this.chart.getReplayProgress();
-    const forming = this.chart.getReplayBarIndex() > progress.current ? progress.time : null;
-    const time = forming ?? this.replayStepTime;
-    if (time === null) return undefined;
-    const locale = this.textLocale();
-    const zone = this.chart.getTimeZone?.() ?? null;
-    const ms = timeframeToMs(this.state.timeframe);
-    const yearOf = zonedDateFormatter(locale, { year: 'numeric' }, zone);
-    const date: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric' };
-    if (yearOf(time) !== yearOf(Date.now())) date.year = 'numeric';
-    const day = zonedDateFormatter(locale, date, zone)(time);
-    if (Number.isFinite(ms) && ms >= DAY_MS) return day;
-    const clock: Intl.DateTimeFormatOptions = { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' };
-    if (!Number.isFinite(ms) || ms < MINUTE_MS) clock.second = '2-digit';
-    return `${day} · ${zonedDateFormatter(locale, clock, zone)(time)}`;
-  }
-
-  /** The chart's bars the replay goes through (not its steps), or those loaded before it starts. */
-  private replayBarCount(): number {
-    return this.chart.isReplayActive() && this.replayBarsTotal !== null ? this.replayBarsTotal : this.chart.getData().length;
-  }
-
-  private readonly hideReplayShade = (): void => this.positionReplayShade(null);
-
-  /**
-   * Open replay (if it isn't open) and start it at bar `index` — paused, or
-   * playing when `play` is set — skipping the pick-a-bar step.
-   */
-  replayFrom(index: number, play = false): void {
-    if (!this.featureState.replay) return;
-    if (!this.replayBar?.isMounted()) this.enterReplay();
-    this.startReplayAt(index, play);
-  }
-
-  /**
-   * The steps a replay can take on this interval, the one picked kept while
-   * it is still one of them (else whole bars).
-   */
-  private replayStepMenu(): { value: string; label: string }[] {
-    const steps = [
-      { value: 'auto', label: this.t('replay.step.auto') },
-      { value: 'bar', label: this.t('replay.step.bar') },
-      ...this.replayStepOptions().map((tf) => ({ value: tf, label: tf })),
-    ];
-    if (!steps.some((s) => s.value === this.replayStep)) this.replayStep = 'auto';
-    return steps;
-  }
-
-  /** The interval changed: the step menu offers its steps. */
-  private refreshReplaySteps(): void {
-    if (!this.replayBar?.isMounted()) return;
-    const steps = this.replayStepMenu();
-    this.replayBar.setSteps(steps, this.replayStep);
-  }
-
-  /**
-   * The replay went on over new bars at the same time: the panel shows their
-   * total, and a replay in finer steps fetches them for the new bars and
-   * goes on from the bar it is on.
-   */
-  private afterReplayCarryOver(): void {
-    const bar = this.replayBar;
-    if (!bar?.isMounted() || bar.getMode() !== 'replay') return;
-    this.syncReplayBar();
-    // Whole bars, or the chart fetching the finer ones for the new bars itself.
-    if (this.replayStep === 'bar' || this.chartFetchesReplaySteps()) return;
-    // The same symbol and interval (a corrected bar, older bars): its steps still serve, and it keeps its place in the bar.
-    if (this.replayStepsKey === this.replayStepsKeyNow()) return;
-    this.startReplayAt(this.chart.getReplayBarIndex(), this.chart.getReplayState() === 'playing');
-  }
-
-  /**
-   * A bar picked while the next bars loaded: once they are in, start the replay at the bar
-   * holding its time; let it go if they failed or the pick was left.
-   */
-  private startPickedReplay(): void {
-    const time = this.replayPickTime;
-    if (time === null) return;
-    if (this.loading.hasFailed() || this.replayBar?.getMode() !== 'select') {
-      this.replayPickTime = null;
-      return;
-    }
-    if (this.seriesPending()) return;
-    this.replayPickTime = null;
-    const bars = this.chart.getData();
-    // Another symbol's bars may not reach the time: the bar asks for a pick again.
-    if (!pickWithin(bars, time)) return;
-    let index = 0;
-    while (index + 1 < bars.length && bars[index + 1].time <= time) index++;
-    this.startReplayAt(index, false, true);
-  }
-
-  /** Whether the bars on screen are about to be replaced: a new symbol's or interval's on their way. */
-  private seriesPending(): boolean {
-    return this.loading.isActive() && !this.loading.hasFailed();
-  }
-
-  /** The panel follows the chart, and whether the bars are on their way, a few times a second. */
-  private watchReplayBar(): void {
-    if (this.replayPollInterval) clearInterval(this.replayPollInterval);
-    this.replayPollInterval = setInterval(() => this.syncReplayBar(), REPLAY_POLL_MS);
-  }
-
-  /**
-   * Cut the chart at `index` and wait paused (or play at once). `ofBars`:
-   * `index` is one of the chart's bars (a pick), not a step of the replay.
-   */
-  private startReplayAt(index: number, play = false, ofBars = false): void {
-    const bar = this.replayBar;
-    if (!bar) return;
-    const n = ofBars ? this.replayBarCount() : this.replayTotal();
-    const start = Math.max(0, Math.min(Number.isFinite(index) ? Math.floor(index) : 0, n - 1));
-    // By time: bars that land while its steps load don't move it.
-    const startTime = this.chart.getData()[start]?.time;
-    this.removeReplayShade();
-    bar.setMode('replay');
-    this.layoutReplayBar();
-    // A newer start (a quicker step choice) wins over one still fetching its steps.
-    const seq = ++this.replayStartSeq;
-    this.replayPlayWanted = play;
-    const animate = this.options.replayAnimate !== false;
-    const fetchedByChart = this.chartFetchesReplaySteps();
-    const go = (steps: DataSeries | null) => {
-      if (this.destroyed || this.replayBar !== bar || !bar.isMounted() || seq !== this.replayStartSeq) return;
-      this.replayStartPending = false;
-      this.replayStepsKey = steps ? this.replayStepsKeyNow() : null;
-      this.chart.replayStart({
-        speed: this.replaySpeed,
-        // 1× is a bar of the chart a second, whatever the step.
-        interval: animate ? REPLAY_BAR_MS : REPLAY_BAR_MS / this.replayStepsPerBar(steps ? tf : null),
-        ...(startTime !== undefined ? { startTime } : { startIndex: start }),
-        paused: true,
-        revealMarks: this.options.replayRevealMarks !== false,
-        animate,
-        ...(fetchedByChart ? { step: this.replayStep as TimeFrame | 'auto' } : {}),
-        ...(steps ? { steps } : {}),
-      });
-      if (this.replayPlayWanted) this.chart.replayResume();
-      this.replayPlayWanted = false;
-      this.syncReplayBar();
-      this.watchReplayBar();
-    };
-    const tf = this.replayStepInterval();
-    if (fetchedByChart || tf === null) {
-      go(null);
-      return;
-    }
-    this.replayStartPending = true;
-    void this.replayStepsFor(tf).then((steps) => {
-      if (seq !== this.replayStartSeq) return; // a newer start took over
-      if (!steps) this.say(this.t('replay.stepsFailed'), 'error');
-      go(steps);
-    });
-  }
-
-  private replayStepsKeyNow(): string {
-    return `${this.state.symbol}|${this.state.timeframe}`;
-  }
-
-  /** How many steps of `tf` make a bar of the chart (1 for whole bars, or a chart without an interval). */
-  private replayStepsPerBar(tf: TimeFrame | null): number {
-    if (tf === null) return 1;
-    const ratio = timeframeToMs(this.state.timeframe) / timeframeToMs(tf);
-    return Number.isFinite(ratio) && ratio >= 1 ? Math.round(ratio) : 1;
-  }
-
-  /** Finer intervals a replay can step through: they divide the chart's, and the feed (or the bars loaded) has them. */
-  private replayStepOptions(): TimeFrame[] {
-    return replayStepChoices(this.state.timeframe, (tf) => this.hasReplayStep(tf));
-  }
-
-  /** Whether the feed serves `tf`, or the bars loaded build it. */
-  private hasReplayStep(tf: TimeFrame): boolean {
-    if (this.adapter) return servesTimeframe(this.adapter, tf);
-    const ms = timeframeToMs(tf);
-    return this.baseSeries !== null && this.baseTimeframeMs > 0 && ms >= this.baseTimeframeMs && ms % this.baseTimeframeMs === 0;
-  }
-
-  /** The finer interval the step picked stands for (`'auto'` worked out here); null for whole bars. */
-  private replayStepInterval(): TimeFrame | null {
-    // Without animate, Auto is whole bars: finer steps of their own are a choice, as they were.
-    if (this.replayStep === 'bar' || (this.replayStep === 'auto' && this.options.replayAnimate === false)) return null;
-    return resolveReplayStep(this.replayStep as TimeFrame | 'auto', this.state.timeframe, (tf) => this.hasReplayStep(tf));
-  }
-
-  /**
-   * Whether the chart fetches a replay's finer bars itself: its bars form, a
-   * step is picked and the feed pages back. A feed that can't page back gets
-   * its finer bars fetched here, in one request, as before.
-   */
-  private chartFetchesReplaySteps(): boolean {
-    if (this.options.replayAnimate === false || !this.adapter || this.replayStep === 'bar') return false;
-    return withResampling(this.adapter).fetchHistoryBefore !== undefined;
-  }
-
-  /** The finer bars for a replay in `tf` steps: from the feed, or built from the bars loaded. Null when there are none. */
-  private async replayStepsFor(tf: TimeFrame): Promise<DataSeries | null> {
-    const zone = this.chart.getExchangeTimeZone() ?? null;
-    const { symbol, timeframe } = this.state;
-    const key = () => `${symbol}|${timeframe}|${tf}|${zone}|${this.builtStepsZone(symbol, tf)}`;
-    if (this.replayStepsCache?.key === key()) return this.replayStepsCache.steps;
-    let steps: DataSeries | null = null;
-    if (this.adapter) {
-      const ratio = Math.max(1, Math.round(timeframeToMs(timeframe) / timeframeToMs(tf)));
-      const limit = Math.min(MAX_REPLAY_STEPS, Math.max(this.chart.getData().length, 100) * ratio);
-      try {
-        steps = await withResampling(this.adapter).fetchHistory(symbol, tf, limit);
-      } catch {
-        steps = null;
-      }
-    } else if (this.baseSeries) {
-      steps = timeframeToMs(tf) === this.baseTimeframeMs ? this.baseSeries : resampleOHLCV(this.baseSeries, tf, this.resampleOptions(zone));
-    }
-    if (!steps || steps.length === 0) return null;
-    // Kept under the zone the fetch settled: a first answer about the symbol comes during it.
-    this.replayStepsCache = { key: key(), steps };
-    return steps;
-  }
-
-  /**
-   * The zone the feed's wrapper builds `tf` in for `symbol` ('' when the feed
-   * serves it): after no answer about the symbol it builds on UTC's days
-   * until the chart loads the symbol afresh, so steps fetched before then
-   * are stale after it.
-   */
-  private builtStepsZone(symbol: string, tf: TimeFrame): string {
-    const feed = this.adapter ? withResampling(this.adapter) : null;
-    if (!(feed instanceof ResamplingAdapter)) return '';
-    const bucket = feed.bucketFor(symbol, tf);
-    return bucket ? String(bucket.timeZone ?? 'UTC') : '';
-  }
-
-  /** Bars available to replay: the whole series, not the slice on screen. */
-  private replayTotal(): number {
-    return this.chart.isReplayActive() ? this.chart.getReplayProgress().total : this.chart.getData().length;
-  }
-
-  /** Mirror the replay engine in the bar; close it if the session ended elsewhere. */
-  private syncReplayBar(): void {
-    const bar = this.replayBar;
-    if (!bar?.isMounted()) return;
-    bar.setPending(this.seriesPending());
-    this.startPickedReplay();
-    this.liftOverReplayBar();
-    if (bar.getMode() !== 'replay') return;
-    if (this.replayStartPending) {
-      // Waiting for its steps: no session yet, so nothing plays.
-      bar.setState('paused');
-      return;
-    }
-    if (!this.chart.isReplayActive()) {
-      // The host ended it (replayStop), or a paper account's symbol changed.
-      this.teardownReplayUi();
-      return;
-    }
-    const p = this.chart.getReplayProgress();
-    const state = this.chart.getReplayState();
-    bar.setProgress(p.current, p.total, this.replayTimeText());
-    bar.setState(state === 'stopped' ? 'paused' : state);
-    bar.setEnded(state !== 'playing' && p.total > 0 && p.current >= p.total - 1);
-  }
-
-  private stepReplay(delta: number): void {
-    if (this.replayBar?.getMode() !== 'replay' || this.seriesPending()) return;
-    const p = this.chart.getReplayProgress();
-    if (this.chart.getReplayState() === 'playing') this.chart.replayPause();
-    // A bar half drawn: forward completes it first; back leaves the one before it whole.
-    const forming = this.chart.getReplayBarIndex() > p.current;
-    const target = forming ? (delta > 0 ? this.chart.getReplayBarIndex() : p.current) : p.current + delta;
-    this.chart.replaySeek(Math.max(0, Math.min(p.total - 1, target)));
-    this.replayBar.setState('paused');
-    this.syncReplayBar();
-  }
-
-  /**
-   * Replay shortcuts: Shift+←/→ step one bar, Space on the chart plays or
-   * pauses, Escape cancels picking a start bar. Only for the widget used
-   * last, with focus in it (or nowhere), not while typing or in a dialog.
-   */
-  private handleReplayKey(e: KeyboardEvent): boolean {
-    if (e.defaultPrevented || e.isComposing || e.keyCode === IME_KEY_CODE) return false;
-    if (isTyping() || inOverlay() || !isKeyTarget(this.root, true)) return false;
-    const active = document.activeElement as HTMLElement | null;
-    if (active && active !== document.body && !this.root.contains(active)) return false;
-    if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.tagName === 'SELECT' || active.isContentEditable)) {
-      return false;
-    }
-    const mode = this.replayBar?.getMode();
-    if (e.shiftKey && (e.key === 'ArrowRight' || e.key === 'ArrowLeft') && mode === 'replay') {
-      e.preventDefault();
-      // The chart's own Shift+Arrow scrolls ten bars; this one steps the replay.
-      e.stopPropagation();
-      this.stepReplay(e.key === 'ArrowRight' ? 1 : -1);
-      return true;
-    }
-    if (e.key === ' ' && mode === 'replay' && this.onChartSurface(active)) {
-      // Before the chart's own Space (fit content), which listens on window.
-      e.preventDefault();
-      e.stopPropagation();
-      this.toggleReplayPlay();
-      return true;
-    }
-    if (e.key === 'Escape' && mode === 'select') {
-      this.cancelReplayPick();
-      return true;
-    }
-    return false;
-  }
-
-  /** Focus on the chart itself (its container or the canvas in it), not on a control over it. */
-  private onChartSurface(active: HTMLElement | null): boolean {
-    if (!active || !this.chartContainer.contains(active)) return false;
-    return active === this.chartContainer || active.closest('button, [role="button"], a, .tcw-replay-bar') === null;
-  }
-
-  private toggleReplayPlay(): void {
-    if (this.replayStartPending) {
-      this.replayPlayWanted = !this.replayPlayWanted;
-      return;
-    }
-    if (this.chart.getReplayState() === 'playing') this.chart.replayPause();
-    else if (!this.replayBarAtEnd()) this.chart.replayResume();
-    this.syncReplayBar();
-  }
-
-  private replayBarAtEnd(): boolean {
-    const p = this.chart.getReplayProgress();
-    return p.total > 0 && p.current >= p.total - 1;
-  }
-
-  private positionReplayShade(x: number | null): void {
-    const shade = this.replayShade;
-    if (!shade) return;
-    const plot = this.chart.getPlotRect();
-    if (x === null || x < plot.x || x > plot.x + plot.width) {
-      shade.hidden = true;
-      return;
-    }
-    shade.hidden = false;
-    shade.style.left = `${x}px`;
-    shade.style.top = `${plot.y}px`;
-    shade.style.width = `${plot.x + plot.width - x}px`;
-    shade.style.height = `${plot.height}px`;
-  }
-
-  /** Leave replay and return to the live series (with updates that arrived meanwhile). */
-  private exitReplay(): void {
-    this.teardownReplayUi();
-    this.chart.replayStop();
-  }
-
-  private teardownReplayUi(): void {
-    this.replayStartSeq++; // a start still fetching its steps is dropped
-    this.replayPickTime = null;
-    this.replayStartPending = false;
-    this.replayPlayWanted = false;
-    if (this.replayPollInterval) {
-      clearInterval(this.replayPollInterval);
-      this.replayPollInterval = null;
-    }
-    this.removeReplayShade();
-    const hadFocus = !!this.replayBar?.element()?.contains(document.activeElement);
-    this.replayBar?.unmount();
-    this.replayBar = null;
-    this.replayBarsTotal = null;
-    this.replayStepTime = null;
-    this.toolbar?.setActive('replay', false);
-    this.root.removeAttribute('data-tcw-replay');
-    this.root.style.removeProperty('--tcw-replay-lift');
-    this.bodyEl()?.style.removeProperty('--tcw-replay-lift');
-    if (hadFocus) this.focusAfterReplay();
-  }
-
-  /**
-   * Focus was in the bar: back to the toolbar's Bar replay button, or the
-   * "more" menu that folds it on a narrow toolbar, or the chart.
-   */
-  private focusAfterReplay(): void {
-    const visible = (el: HTMLElement | null) => !!el && !el.hidden && !el.closest('[hidden]') && getComputedStyle(el).display !== 'none';
-    const btn = this.root.querySelector<HTMLElement>('.tcw-toolbar [data-role="replay"]');
-    const more = this.root.querySelector<HTMLElement>('.tcw-toolbar .tcw-toolbar-more');
-    const target = visible(btn) ? btn : visible(more) ? more : this.chartContainer;
-    target?.focus();
-  }
-
-  /** `told` false leaves the change unkept and untold (a link's). */
-  private applySettings(patch: Partial<ChartSettingsState>, told = true): void {
-    this.settingsState = { ...this.settingsState, ...patch };
-    if ((Object.keys(patch) as (keyof ChartSettingsState)[]).some((key) => !NOT_IN_LAYOUT.has(key))) this.layoutSession?.changed();
-    this.scheduleLegend(); // the OHLCV legend's rows and the locale move or reword it
-
-    if (patch.gridVisible !== undefined) this.chart.setGridVisible(patch.gridVisible);
-    if (patch.volumeVisible !== undefined) this.chart.setVolumeVisible(patch.volumeVisible);
-    if (patch.volumeProfileVisible !== undefined) this.chart.setVolumeProfileVisible(patch.volumeProfileVisible);
-    if (patch.marketProfileVisible !== undefined) this.chart.setMarketProfileVisible(patch.marketProfileVisible);
-    if (patch.marketProfileSplit !== undefined) this.chart.setMarketProfileConfig({ splitBySession: patch.marketProfileSplit });
-    if (patch.marketProfileLetters !== undefined) this.chart.setMarketProfileConfig({ letters: patch.marketProfileLetters });
-    if (patch.marketProfileBuckets !== undefined) this.chart.setMarketProfileConfig({ buckets: patch.marketProfileBuckets });
-    if (patch.marketProfileOpacity !== undefined) this.chart.setMarketProfileConfig({ opacity: patch.marketProfileOpacity });
-    if (patch.depthHeatmapVisible !== undefined) this.chart.setDepthHeatmapVisible(patch.depthHeatmapVisible);
-    if (patch.depthHeatmapOpacity !== undefined) this.chart.setDepthHeatmapConfig({ opacity: patch.depthHeatmapOpacity });
-    if (patch.sessionShadingVisible !== undefined) this.chart.setSessionShadingVisible(patch.sessionShadingVisible);
-    if (patch.pivotMarkersVisible !== undefined) this.chart.setPivotMarkersVisible(patch.pivotMarkersVisible);
-    if (patch.pivotStrength !== undefined) this.chart.setPivotMarkersConfig({ left: patch.pivotStrength, right: patch.pivotStrength });
-    if (patch.pivotStructureLabels !== undefined) this.chart.setPivotMarkersConfig({ structureLabels: patch.pivotStructureLabels });
-    if (patch.periodLevelsVisible !== undefined) this.chart.setPeriodLevelsVisible(patch.periodLevelsVisible);
-    if (patch.periodLevelsPeriod !== undefined) this.chart.setPeriodLevelsPeriod(patch.periodLevelsPeriod);
-    if (patch.legendVisible !== undefined) this.chart.setLegend({ visible: patch.legendVisible });
-    if (patch.barCountdown !== undefined) this.chart.setBarCountdownVisible(patch.barCountdown);
-    if (patch.indicatorValueLabels !== undefined) this.chart.setIndicatorValueLabelsVisible(patch.indicatorValueLabels);
-    if (patch.alignAxisLabels !== undefined) this.chart.setAxisLabelsAligned(patch.alignAxisLabels);
-    if (patch.crosshairMode !== undefined) this.chart.setCrosshairMode(patch.crosshairMode);
-    if (patch.autoScale !== undefined) this.chart.setAutoScale(patch.autoScale);
-    if (patch.invertScale !== undefined) this.chart.setInvertScale(patch.invertScale);
-    if (patch.leftPriceScale !== undefined) {
-      this.chart.setLeftPriceScaleVisible(patch.leftPriceScale);
-      this.placeDrawingButton();
-    }
-    if (patch.scaleMode !== undefined || patch.autoScale !== undefined) queueMicrotask(() => this.refreshScaleSwitches());
-    // Another zone: the clock says so at once.
-    if (patch.timezone !== undefined) queueMicrotask(() => this.statusBar?.tick());
-    if (patch.scaleMode !== undefined) {
-      // Keep the legacy logScale flag mirrored so persisted layouts stay valid.
-      this.settingsState = { ...this.settingsState, logScale: patch.scaleMode === 'logarithmic' };
-      this.showScaleMode();
-    } else if (patch.logScale !== undefined) {
-      this.settingsState = { ...this.settingsState, scaleMode: patch.logScale ? 'logarithmic' : 'regular' };
-      this.showScaleMode();
-    }
-    if (patch.numberLocale !== undefined) {
-      this.chart.setNumberLocale(patch.numberLocale);
-      this.watchlist?.setLocale(patch.numberLocale || undefined);
-    }
-    if (patch.timezone !== undefined) {
-      this.chart.setTimeZone(settingToTimezone(patch.timezone));
-    }
-    if (patch.highLowLines !== undefined) this.chart.setHighLowLines(patch.highLowLines);
-    if (patch.extendedHours !== undefined) this.chart.setExtendedHours(patch.extendedHours);
-    if (patch.mainSeriesVisible !== undefined) this.chart.setMainSeriesVisible(patch.mainSeriesVisible);
-    if (patch.chartTypeOptions !== undefined) {
-      // Every type: one left out goes back to its defaults (a reset).
-      this.chart.setChartTypeOptions({ ...typesAtDefaults(), ...patch.chartTypeOptions });
-    }
-    // Kept and told once done: an open dialog's changes wait for its OK or Cancel.
-    if (told && !this.settingsEdit) this.publishSettings();
-  }
-
-  private resetSettings(): void {
-    // The look goes back to the theme's (not to a theme's of its own); the rest to the defaults.
-    const before = { ...this.settingsState };
-    const beforeStyle = this.settingsStyle();
-    const defaults = { ...this.settingsDefaults };
-    this.touchSettings(Object.keys(defaults) as (keyof ChartSettingsState)[], SETTINGS_LOOK_KEYS);
-    this.applySettings(defaults);
-    this.chart.resetOverrides([...SETTINGS_LOOK_KEYS], { layer: 'user' });
-    const after = { ...this.settingsState };
-    const afterStyle = this.settingsStyle();
-    this.settings?.refresh(this.shownSettings());
-    // In the open settings, OK records it with the rest.
-    if (this.settingsEdit || JSON.stringify([before, beforeStyle]) === JSON.stringify([after, afterStyle])) return;
-    this.chart.recordUndo({ undo: () => this.restoreSettings(before, beforeStyle), redo: () => this.restoreSettings(after, afterStyle) });
-  }
-
-  /**
-   * A change to the look in the settings: style keys on the user's layer (null
-   * takes one away), kept with the theme they were picked on, and in the
-   * chart's undo history. A burst on the same keys (a colour dragged across
-   * the picker) is one step.
-   */
-  private changeStyle(patch: SettingsStylePatch): void {
-    // Only the keys it touched: an undo leaves the rest (the host's own user overrides) as they are.
-    const keys = Object.keys(patch) as ChartStyleKey[];
-    this.touchSettings([], keys);
-    const before = this.settingsStyle(keys);
-    this.chart.applyOverrides(patch, { layer: 'user' });
-    const after = this.settingsStyle(keys);
-    if (this.settingsEdit || JSON.stringify(before) === JSON.stringify(after)) return;
-    this.chart.recordUndo({
-      subject: `style:${Object.keys(patch).sort().join(',')}`,
-      undo: () => this.restoreSettings({}, before),
-      redo: () => this.restoreSettings({}, after),
-    });
-  }
-
-  /**
-   * A settings change the user made: applied, and put in the chart's undo
-   * history with its drawings and indicators. A burst on the same settings
-   * (a colour dragged across the picker) is one step.
-   */
-  private changeSettings(patch: Partial<ChartSettingsState>): void {
-    const keys = Object.keys(patch) as (keyof ChartSettingsState)[];
-    // The scale mode and the legacy log flag move together.
-    if (keys.includes('scaleMode') || keys.includes('logScale')) {
-      for (const k of ['scaleMode', 'logScale'] as const) if (!keys.includes(k)) keys.push(k);
-    }
-    const pick = (): Partial<ChartSettingsState> => Object.fromEntries(keys.map((k) => [k, this.settingsState[k]]));
-    this.touchSettings(keys);
-    const before = pick();
-    const scale = keys.includes('scaleMode');
-    const heldBefore = this.compareScaleHeld;
-    // A scale the user picks while comparing is theirs, the last compare gone too.
-    if (scale) this.compareScaleHeld = false;
-    this.applySettings(patch);
-    const after = pick();
-    if (this.settingsEdit || (JSON.stringify(before) === JSON.stringify(after) && heldBefore === this.compareScaleHeld)) return;
-    // Undone, a pick made while comparing gives the percent scale back.
-    this.chart.recordUndo({
-      subject: `settings:${Object.keys(patch).sort().join(',')}`,
-      undo: () => this.restoreSettings(before, null, scale ? heldBefore : undefined),
-      redo: () => this.restoreSettings(after, null, scale ? false : undefined),
-    });
-  }
-
-  /**
-   * The user's overrides on `keys` (null: none set), with the theme they go
-   * with: what an undo of the look puts back.
-   */
-  private settingsStyle(keys: readonly ChartStyleKey[] = SETTINGS_LOOK_KEYS): { theme: string; overrides: SettingsStylePatch } {
-    const user = (this.chart.getOverrides?.({ layer: 'user' }) ?? {}) as Record<string, unknown>;
-    const overrides = Object.fromEntries(keys.map((key) => {
-      const value = user[key];
-      return [key, typeof value === 'string' || typeof value === 'boolean' || typeof value === 'number' ? value : null];
-    })) as SettingsStylePatch;
-    return { theme: this.chart.getTheme()?.name ?? '', overrides };
-  }
-
-  /**
-   * Settings back as they were (an undo or redo), shown in the settings if
-   * they're open; `held` puts back whether percent compares held the scale.
-   */
-  private restoreSettings(values: Partial<ChartSettingsState>, style: { theme: string; overrides: SettingsStylePatch } | null = null, held?: boolean): void {
-    if (held !== undefined) this.compareScaleHeld = held && this.compares.length > 0;
-    this.applySettings(values);
-    // The look picked on another theme stays with that theme.
-    if (style && style.theme === (this.chart.getTheme()?.name ?? '')) {
-      this.chart.applyOverrides(style.overrides, { layer: 'user' });
-    }
-    this.settings?.refresh(this.shownSettings());
   }
 
   private async connectStream(): Promise<void> {
@@ -6207,7 +3290,7 @@ export class ChartWidget {
       // Re-apply per-symbol layout (indicators, drawings, chart type) after
       // the new history is in. Doing this *after* connect ensures indicators
       // recalculate against the loaded data, not the previous symbol's data.
-      this.applySymbolLayout(this.state.symbol);
+      this.layouts.applySymbolLayout(this.state.symbol);
 
       if (this.loading.hasFailed()) {
         // History failed to load; the stream keeps retrying and the next
@@ -6225,7 +3308,7 @@ export class ChartWidget {
       // Re-pull comparison overlays at the (possibly new) timeframe so they
       // stay aligned with the main series. Drop the active symbol if it ended
       // up in the compare set after a symbol switch.
-      void this.refetchCompares();
+      void this.comparing.refetchCompares();
     } catch (err: unknown) {
       if (seq !== this.connectSeq || this.destroyed) return;
       this.loading.fail(this.t('status.connectionFailed'));
@@ -6239,136 +3322,9 @@ export class ChartWidget {
     this.updateUI();
   }
 
-  /** Redraw the on-chart indicator list on the next frame (coalesced). */
-  private scheduleLegend(): void {
-    if (!this.indicatorLegend || this.legendFrame || !this.featureState.indicatorLegend) return;
-    this.legendFrame = requestAnimationFrame(() => {
-      this.legendFrame = 0;
-      this.renderLegend();
-    });
-  }
-
-  private renderLegend(): void {
-    if (!this.indicatorLegend || this.destroyed) return;
-    const last = this.chart.getData().length - 1;
-    // On Renko, Kagi and the like the hovered index is a brick's, and the
-    // indicators are worked out on the bricks: each reads its own series there.
-    const aligned = this.chart.isTimeAligned();
-    const hover = this.legendHoverIndex;
-    const idx = hover === null ? last : Math.min(Math.max(hover, 0), last);
-    // Each pane's indicators, its own first, stacked down from its top.
-    const panes = new Map<string, { x: number; y: number; width: number; height: number; row: number }>();
-    for (const pane of this.chart.getIndicatorPanes()) {
-      (pane.instanceIds ?? [pane.instanceId]).forEach((id, row) => panes.set(id, { ...pane.rect, row }));
-    }
-    const locale = this.settingsState.numberLocale || 'en-US';
-    // The symbols compared in percent first: the lines on the price scale itself. With nothing
-    // hovered, at the chart's own latest bar (no index: on Renko and the like it is not the data's).
-    const compareValues = idx >= 0 ? this.chart.getCompareValues?.(hover === null || !aligned ? undefined : idx) ?? [] : [];
-    const compares = compareLegendRows(compareValues, locale, aligned);
-    const indicators: IndicatorLegendRow[] = this.chart.getActiveIndicators().map((ind) => {
-      const pane = panes.get(ind.instanceId) ?? null;
-      const point = indicatorPointAt(this.chart.getIndicatorOutput(ind.instanceId)?.series, hover);
-      const style = this.chart.getIndicatorStyle(ind.instanceId);
-      // Not drawn on this chart type (another symbol read by time, on bricks) or interval: no values to read off it.
-      const offChartType = ind.visible && ind.offChartType === true;
-      const offInterval = ind.visible && ind.shown === false && !offChartType;
-      const values = offInterval || offChartType ? [] : legendValues(ind.descriptor, point, style?.colors ?? [], style?.plots);
-      return {
-        instanceId: ind.instanceId,
-        label: widgetIndicatorLabel(ind, this.t),
-        visible: ind.visible,
-        offInterval,
-        offChartType,
-        values: values.map((v) => ({
-          text: this.indicatorValueText(v.value, pane === null && readsChartPrices(ind), locale),
-          color: v.color,
-        })),
-        pane: pane
-          ? {
-            x: pane.x + LEGEND_INSET,
-            // A short pane with many indicators: the last rows overlap rather than spill out.
-            y: pane.y + Math.min(PANE_ROW_TOP + pane.row * PANE_ROW_STEP, Math.max(PANE_ROW_TOP, pane.height - PANE_ROW_STEP)),
-            width: pane.width - 2 * LEGEND_INSET,
-          }
-          : null,
-      };
-    });
-    const rows = [...compares, ...indicators];
-    const plot = this.chart.getPlotRect();
-    const maximized = this.chart.getMaximizedPane();
-    const labelOf = (id: string) => rows.find((r) => r.instanceId === id)?.label ?? '';
-    // As the panes show: one maximised folds the others.
-    const paneControls: IndicatorLegendPane[] = this.chart.getIndicatorPanes().map((pane) => ({
-      instanceId: pane.instanceId,
-      x: pane.rect.x + pane.rect.width - LEGEND_INSET,
-      y: pane.rect.y + PANE_CONTROLS_TOP,
-      label: labelOf(pane.instanceId),
-      collapsed: this.chart.isPaneCollapsed(pane.instanceId),
-      maximized: maximized === pane.instanceId,
-      canMoveUp: this.chart.canMovePane(pane.instanceId, -1),
-      canMoveDown: this.chart.canMovePane(pane.instanceId, 1),
-    }));
-    this.indicatorLegend.update(rows, { left: plot.x + LEGEND_INSET, top: this.chart.getLegendBottom() + STACK_GAP }, paneControls);
-  }
-
-  /** A pane's button on the chart. */
-  private runPaneAction(instanceId: string, action: PaneAction): void {
-    if (action === 'up' || action === 'down') this.chart.movePane(instanceId, action === 'up' ? -1 : 1);
-    else if (action === 'collapse' || action === 'expand') this.chart.setPaneCollapsed(instanceId, action === 'collapse');
-    else this.chart.setMaximizedPane(action === 'maximize' ? instanceId : null);
-    this.scheduleLegend();
-  }
-
-  /**
-   * An indicator's "more" menu: into the pane above or below it (the price
-   * pane at the top), a pane of its own, back to the price pane; then its
-   * settings and remove.
-   */
-  private openLegendMenu(instanceId: string, anchor: HTMLElement): void {
-    const menu = this.legendMenu;
-    if (!menu) return;
-    if (menu.isOpen()) {
-      menu.close();
-      return;
-    }
-    // The price pane, then each indicator pane top to bottom.
-    const places = ['price', ...this.chart.getIndicatorPanes().map((p) => p.instanceId)];
-    const at = 1 + this.chart.getIndicatorPanes().findIndex((p) => p.instanceIds.includes(instanceId));
-    const above = places[at - 1];
-    const below = places[at + 1];
-    const can = (target: string | undefined) => target !== undefined && this.chart.canMoveIndicatorToPane(instanceId, target);
-    const entries: ContextMenuEntry[] = [];
-    if (can(above)) entries.push({ id: `move:${above}`, label: this.t(above === 'price' ? 'legend.movePrice' : 'legend.moveUp'), icon: 'arrowUp' });
-    if (can(below)) entries.push({ id: `move:${below}`, label: this.t('legend.moveDown'), icon: 'arrowDown' });
-    if (can('new')) entries.push({ id: 'move:new', label: this.t('legend.moveNew'), icon: 'plus' });
-    if (above !== 'price' && can('price')) entries.push({ id: 'move:price', label: this.t('legend.movePrice'), icon: 'trendingUp' });
-    // Settings and remove go with the row's own buttons.
-    const row: ContextMenuEntry[] = [];
-    if (this.featureState.indicatorSettings && this.featureState['indicatorLegend.settings']) {
-      row.push({ id: 'settings', label: this.t('legend.settings'), icon: 'settings' });
-    }
-    if (this.featureState['indicatorLegend.remove']) row.push({ id: 'remove', label: this.t('legend.remove'), icon: 'trash', danger: true });
-    if (entries.length > 0 && row.length > 0) entries.push('separator');
-    entries.push(...row);
-    const indicatorId = this.chart.getActiveIndicators().find((i) => i.instanceId === instanceId)?.id ?? '';
-    const extra = this.options.indicatorMenuItems?.({ instanceId, indicatorId }) ?? [];
-    const all = withHostItems(entries, extra);
-    if (all.length === 0) return;
-    const box = anchor.getBoundingClientRect();
-    const root = this.root.getBoundingClientRect();
-    menu.open(all, box.left - root.left, box.bottom - root.top + 2, (id) => {
-      if (pickHostItem(id, extra)) return;
-      if (id === 'settings') this.openIndicatorSettings(instanceId);
-      else if (id === 'remove') this.handleRemoveIndicator(instanceId);
-      else if (id.startsWith('move:')) this.chart.moveIndicatorToPane(instanceId, id.slice('move:'.length));
-      this.scheduleLegend();
-    }, anchor);
-  }
-
   private updateUI(): void {
     this.refreshDrawingsState();
-    this.scheduleLegend();
+    this.legend.scheduleLegend();
     this.toolbar?.update(this.state);
     this.sidebar?.update(this.state);
     this.statusBar?.update({
@@ -6405,6 +3361,321 @@ export class ChartWidget {
       return (r + g + b) < 384;
     }
     return true;
+  }
+
+  /** What WidgetCompares reads of the widget and asks of it. */
+  private comparingHost(): ComparesHost {
+    // Getters, so the host reads the widget as it is when asked, not as it was now.
+    const w = this;
+    return {
+      get adapter() { return w.adapter; },
+      get chart() { return w.chart; },
+      get destroyed() { return w.destroyed; },
+      get featureState() { return w.featureState; },
+      get options() { return w.options; },
+      refreshObjects: (...args) => w.docking.refreshObjects(...args),
+      refreshScaleSwitches: (...args) => w.chartSettings.refreshScaleSwitches(...args),
+      say: (...args) => w.say(...args),
+      scheduleLegend: (...args) => w.legend.scheduleLegend(...args),
+      get settings() { return w.settings; },
+      get settingsState() { return w.chartSettings.settingsState; },
+      showScaleMode: (...args) => w.chartSettings.showScaleMode(...args),
+      shownSettings: (...args) => w.chartSettings.shownSettings(...args),
+      get state() { return w.state; },
+      symbolEntries: (...args) => w.symbolEntries(...args),
+      get symbolLoads() { return w.symbolLoads; },
+      get symbolSearch() { return w.symbolSearch; },
+      symbolSearchFn: (...args) => w.symbolSearchFn(...args),
+      get t() { return w.t; },
+      withSymbolSearch: (...args) => w.withSymbolSearch(...args),
+    };
+  }
+
+  /** What WidgetWatchlists reads of the widget and asks of it. */
+  private watchingHost(): WatchlistsHost {
+    // Getters, so the host reads the widget as it is when asked, not as it was now.
+    const w = this;
+    return {
+      get chart() { return w.chart; },
+      chartSymbolInfo: (...args) => w.chartSymbolInfo(...args),
+      closePanelByHand: (...args) => w.docking.closePanelByHand(...args),
+      get destroyed() { return w.destroyed; },
+      get options() { return w.options; },
+      refreshSymbolInfo: (...args) => w.refreshSymbolInfo(...args),
+      get sessionRefPrice() { return w.sessionRefPrice; },
+      set sessionRefPrice(value) { w.sessionRefPrice = value; },
+      setSymbol: (...args) => w.setSymbol(...args),
+      get settingsState() { return w.chartSettings.settingsState; },
+      get state() { return w.state; },
+      symbolEntries: (...args) => w.symbolEntries(...args),
+      symbolSearchFn: (...args) => w.symbolSearchFn(...args),
+      get symbols() { return w.symbols; },
+      get t() { return w.t; },
+      withSymbolSearch: (...args) => w.withSymbolSearch(...args),
+    };
+  }
+
+  /** What WidgetAlerts reads of the widget and asks of it. */
+  private alertingHost(): AlertsHost {
+    // Getters, so the host reads the widget as it is when asked, not as it was now.
+    const w = this;
+    return {
+      get chart() { return w.chart; },
+      get dock() { return w.docking.dock; },
+      drawingToolName: (...args) => w.drawingToolName(...args),
+      get featureState() { return w.featureState; },
+      formatAlertPrice: (...args) => w.formatAlertPrice(...args),
+      say: (...args) => w.say(...args),
+      get t() { return w.t; },
+    };
+  }
+
+  /** What WidgetTrading reads of the widget and asks of it. */
+  private tradingHost(): TradingHost {
+    // Getters, so the host reads the widget as it is when asked, not as it was now.
+    const w = this;
+    return {
+      get chart() { return w.chart; },
+      get destroyed() { return w.destroyed; },
+      get dock() { return w.docking.dock; },
+      get featureState() { return w.featureState; },
+      formatAlertPrice: (...args) => w.formatAlertPrice(...args),
+      say: (...args) => w.say(...args),
+      get state() { return w.state; },
+      get t() { return w.t; },
+    };
+  }
+
+  /** What WidgetMenus reads of the widget and asks of it. */
+  private menusHost(): MenusHost {
+    // Getters, so the host reads the widget as it is when asked, not as it was now.
+    const w = this;
+    return {
+      get adapter() { return w.adapter; },
+      get alerting() { return w.alerting; },
+      get canExport() { return w.canExport; },
+      changeSettings: (...args) => w.chartSettings.changeSettings(...args),
+      changeStyle: (...args) => w.chartSettings.changeStyle(...args),
+      get chart() { return w.chart; },
+      get chartContainer() { return w.chartContainer; },
+      get drawingSettings() { return w.drawingSettings; },
+      effectiveScaleMode: (...args) => w.chartSettings.effectiveScaleMode(...args),
+      get featureState() { return w.featureState; },
+      formatAlertPrice: (...args) => w.formatAlertPrice(...args),
+      get objectTree() { return w.objectTree; },
+      openDrawingSettings: (...args) => w.drawingEdit.openDrawingSettings(...args),
+      openSettings: (...args) => w.chartSettings.openSettings(...args),
+      get options() { return w.options; },
+      refreshDrawingsState: (...args) => w.refreshDrawingsState(...args),
+      refreshObjects: (...args) => w.docking.refreshObjects(...args),
+      resetView: (...args) => w.resetView(...args),
+      get root() { return w.root; },
+      say: (...args) => w.say(...args),
+      get settingsState() { return w.chartSettings.settingsState; },
+      get state() { return w.state; },
+      set state(value) { w.state = value; },
+      get t() { return w.t; },
+      toggleGoToDate: (...args) => w.toggleGoToDate(...args),
+      get trading() { return w.trading; },
+      updateUI: (...args) => w.updateUI(...args),
+    };
+  }
+
+  /** What WidgetLegendView reads of the widget and asks of it. */
+  private legendHost(): LegendHost {
+    // Getters, so the host reads the widget as it is when asked, not as it was now.
+    const w = this;
+    return {
+      get chart() { return w.chart; },
+      get destroyed() { return w.destroyed; },
+      get featureState() { return w.featureState; },
+      handleRemoveIndicator: (...args) => w.handleRemoveIndicator(...args),
+      get indicatorLegend() { return w.indicatorLegend; },
+      indicatorValueText: (...args) => w.indicatorValueText(...args),
+      get legendHoverIndex() { return w.legendHoverIndex; },
+      openIndicatorSettings: (...args) => w.openIndicatorSettings(...args),
+      get options() { return w.options; },
+      get root() { return w.root; },
+      get settingsState() { return w.chartSettings.settingsState; },
+      get t() { return w.t; },
+    };
+  }
+
+  /** What WidgetCommands reads of the widget and asks of it. */
+  private commandsHost(): CommandsHost {
+    // Getters, so the host reads the widget as it is when asked, not as it was now.
+    const w = this;
+    return {
+      get adapter() { return w.adapter; },
+      cancelWaiting: (...args) => w.cancelWaiting(...args),
+      changeSettings: (...args) => w.chartSettings.changeSettings(...args),
+      get chart() { return w.chart; },
+      get commandPalette() { return w.commandPalette; },
+      get commandPalettePart() { return w.commandPalettePart; },
+      get comparing() { return w.comparing; },
+      copyChartImage: (...args) => w.copyChartImage(...args),
+      copyShareLink: (...args) => w.layouts.copyShareLink(...args),
+      get featureState() { return w.featureState; },
+      handleToggleTheme: (...args) => w.handleToggleTheme(...args),
+      indicatorPickerItems: (...args) => w.indicatorPickerItems(...args),
+      keysShown: (...args) => w.keysShown(...args),
+      get layoutSession() { return w.layouts.layoutSession; },
+      get menus() { return w.menus; },
+      openHotkeySheet: (...args) => w.openHotkeySheet(...args),
+      openPanel: (...args) => w.docking.openPanel(...args),
+      openSettings: (...args) => w.chartSettings.openSettings(...args),
+      openSymbolSearch: (...args) => w.openSymbolSearch(...args),
+      get options() { return w.options; },
+      resetView: (...args) => w.resetView(...args),
+      saveLayout: (...args) => w.layouts.saveLayout(...args),
+      say: (...args) => w.say(...args),
+      get settings() { return w.settings; },
+      get settingsState() { return w.chartSettings.settingsState; },
+      shownSettings: (...args) => w.chartSettings.shownSettings(...args),
+      get state() { return w.state; },
+      get t() { return w.t; },
+      get timeframes() { return w.timeframes; },
+      toggleDataWindow: (...args) => w.docking.toggleDataWindow(...args),
+      toggleGoToDate: (...args) => w.toggleGoToDate(...args),
+      toggleSymbolInfo: (...args) => w.toggleSymbolInfo(...args),
+      get watching() { return w.watching; },
+      whenLoaded: (...args) => w.whenLoaded(...args),
+    };
+  }
+
+  /** What WidgetLayouts reads of the widget and asks of it. */
+  private layoutsHost(): LayoutsHost {
+    // Getters, so the host reads the widget as it is when asked, not as it was now.
+    const w = this;
+    return {
+      allowedSettings: (...args) => w.chartSettings.allowedSettings(...args),
+      applyChartType: (...args) => w.applyChartType(...args),
+      applySettings: (...args) => w.chartSettings.applySettings(...args),
+      get chart() { return w.chart; },
+      get chosenTimeframe() { return w.chosenTimeframe; },
+      claimSettings: (...args) => w.chartSettings.claimSettings(...args),
+      get destroyed() { return w.destroyed; },
+      displayTimezone: (...args) => w.displayTimezone(...args),
+      getSettings: (...args) => w.chartSettings.getSettings(...args),
+      keysShown: (...args) => w.keysShown(...args),
+      get options() { return w.options; },
+      overViewerTypeOptions: (...args) => w.overViewerTypeOptions(...args),
+      get root() { return w.root; },
+      say: (...args) => w.say(...args),
+      setSymbol: (...args) => w.setSymbol(...args),
+      setTimeframe: (...args) => w.setTimeframe(...args),
+      get settings() { return w.settings; },
+      get settingsDefaults() { return w.chartSettings.settingsDefaults; },
+      showLinkSettings: (...args) => w.chartSettings.showLinkSettings(...args),
+      shownSettings: (...args) => w.chartSettings.shownSettings(...args),
+      get state() { return w.state; },
+      set state(value) { w.state = value; },
+      syncIndicatorsFromChart: (...args) => w.syncIndicatorsFromChart(...args),
+      get t() { return w.t; },
+      get toolbar() { return w.toolbar; },
+      updateUI: (...args) => w.updateUI(...args),
+    };
+  }
+
+  /** What WidgetDockArea reads of the widget and asks of it. */
+  private dockingHost(): DockHost {
+    // Getters, so the host reads the widget as it is when asked, not as it was now.
+    const w = this;
+    return {
+      get alerting() { return w.alerting; },
+      get chart() { return w.chart; },
+      get chartContainer() { return w.chartContainer; },
+      get comparing() { return w.comparing; },
+      get dataWindow() { return w.dataWindow; },
+      get featureState() { return w.featureState; },
+      formatAlertPrice: (...args) => w.formatAlertPrice(...args),
+      indicatorValueText: (...args) => w.indicatorValueText(...args),
+      get lastHoverBar() { return w.lastHoverBar; },
+      get lastHoverIndex() { return w.lastHoverIndex; },
+      get lastHoverPrevClose() { return w.lastHoverPrevClose; },
+      get objectTree() { return w.objectTree; },
+      refreshDrawingsState: (...args) => w.refreshDrawingsState(...args),
+      get root() { return w.root; },
+      get settingsState() { return w.chartSettings.settingsState; },
+      get symbolInfoPanel() { return w.symbolInfoPanel; },
+      get t() { return w.t; },
+      get toolbar() { return w.toolbar; },
+      get trading() { return w.trading; },
+      get watching() { return w.watching; },
+    };
+  }
+
+  /** What WidgetChartSettings reads of the widget and asks of it. */
+  private chartSettingsHost(): ChartSettingsHost {
+    // Getters, so the host reads the widget as it is when asked, not as it was now.
+    const w = this;
+    return {
+      get chart() { return w.chart; },
+      get comparing() { return w.comparing; },
+      get destroyed() { return w.destroyed; },
+      get featureState() { return w.featureState; },
+      get layouts() { return w.layouts; },
+      get legend() { return w.legend; },
+      get overlayHost() { return w.overlayHost; },
+      placeDrawingButton: (...args) => w.placeDrawingButton(...args),
+      say: (...args) => w.say(...args),
+      get settings() { return w.settings; },
+      get settingsPart() { return w.settingsPart; },
+      get state() { return w.state; },
+      get statusBar() { return w.statusBar; },
+      get t() { return w.t; },
+      get watching() { return w.watching; },
+      whenLoaded: (...args) => w.whenLoaded(...args),
+    };
+  }
+
+  /** What WidgetDrawingEdit reads of the widget and asks of it. */
+  private drawingEditHost(): DrawingEditHost {
+    // Getters, so the host reads the widget as it is when asked, not as it was now.
+    const w = this;
+    return {
+      get chart() { return w.chart; },
+      get chartContainer() { return w.chartContainer; },
+      chartOffset: (...args) => w.chartOffset(...args),
+      get destroyed() { return w.destroyed; },
+      get docking() { return w.docking; },
+      get drawingSettingsPart() { return w.drawingSettingsPart; },
+      drawingToolName: (...args) => w.drawingToolName(...args),
+      get featureState() { return w.featureState; },
+      get root() { return w.root; },
+      say: (...args) => w.say(...args),
+      get t() { return w.t; },
+      get ui() { return w.ui; },
+      whenLoaded: (...args) => w.whenLoaded(...args),
+    };
+  }
+
+  /** What WidgetIntervals reads of the widget and asks of it. */
+  private intervalsHost(): IntervalsHost {
+    // Getters, so the host reads the widget as it is when asked, not as it was now.
+    const w = this;
+    return {
+      get adapter() { return w.adapter; },
+      get baseSeries() { return w.baseSeries; },
+      get baseTimeframeMs() { return w.baseTimeframeMs; },
+      get chart() { return w.chart; },
+      get chosenTimeframe() { return w.chosenTimeframe; },
+      set chosenTimeframe(value) { w.chosenTimeframe = value; },
+      get customTimeframes() { return w.customTimeframes; },
+      get destroyed() { return w.destroyed; },
+      displayTimezone: (...args) => w.displayTimezone(...args),
+      get featureState() { return w.featureState; },
+      handleTimeframe: (...args) => w.handleTimeframe(...args),
+      get options() { return w.options; },
+      say: (...args) => w.say(...args),
+      get state() { return w.state; },
+      switchTimeframe: (...args) => w.switchTimeframe(...args),
+      get timeframeFavorites() { return w.timeframeFavorites; },
+      get timeframes() { return w.timeframes; },
+      set timeframes(value) { w.timeframes = value; },
+      get toolbar() { return w.toolbar; },
+      updateUI: (...args) => w.updateUI(...args),
+    };
   }
 }
 
@@ -6447,7 +3718,6 @@ export function lineSourcesFor(instanceId: string, active: readonly ActiveIndica
   return out;
 }
 
-/** The page's localStorage, or null where it can't be used (private mode, SSR). */
 /** Where the command palette's recent commands are kept, in this browser, and how many. */
 const RECENT_COMMANDS_KEY = 'tcw:recentCommands';
 const RECENT_COMMANDS_KEPT = 10;
@@ -6485,48 +3755,7 @@ function writeDockWidth(width: number): void {
   } catch { /* storage full or refused: the width lasts this session */ }
 }
 
-function browserStorage(): Storage | null {
-  try {
-    return typeof localStorage !== 'undefined' ? localStorage : null;
-  } catch {
-    return null;
-  }
-}
-
-type Box = { x: number; y: number; width: number; height: number };
-
-/** The box around all the given boxes (nulls skipped); null when there are none. */
-function unionRects(rects: (Box | null)[]): Box | null {
-  const boxes = rects.filter((r): r is Box => r !== null);
-  if (boxes.length === 0) return null;
-  const x = Math.min(...boxes.map((r) => r.x));
-  const y = Math.min(...boxes.map((r) => r.y));
-  const right = Math.max(...boxes.map((r) => r.x + r.width));
-  const bottom = Math.max(...boxes.map((r) => r.y + r.height));
-  return { x, y, width: right - x, height: bottom - y };
-}
-
 function isRtlLocale(locale: string | undefined): boolean {
   return !!locale && /^(ar|he|iw|fa|ur|ps|yi|dv|ckb|sd|ug)(-|$)/i.test(locale);
 }
 
-/**
- * Whether `time` falls in the span of `bars`: from the first bar's start to the last one's
- * end, the last bar taken as long as the one before it.
- */
-function pickWithin(bars: readonly { time: number }[], time: number): boolean {
-  const n = bars.length;
-  if (n === 0 || time < bars[0].time) return false;
-  const last = bars[n - 1].time;
-  const lastSpan = n > 1 ? last - bars[n - 2].time : 0;
-  return time < last + lastSpan || time === last;
-}
-
-/**
- * Whether an indicator's lines are in the chart's own prices, written as it
- * writes them: not another symbol's (a compare, a spread, a ratio), nor one
- * on a scale of its own on the left.
- */
-function readsChartPrices(ind: { id: string; scale?: 'left' }): boolean {
-  return !SYMBOL_INDICATOR_IDS.has(ind.id) && ind.scale !== 'left';
-}

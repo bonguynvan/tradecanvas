@@ -388,7 +388,7 @@ describe('ChartWidget keys and behaviours by switch', () => {
     expect(row('resetView')?.querySelector('kbd')?.textContent).toBe('Alt+R');
     key({ key: 'k', ctrlKey: true });
     widget.setFeatures({ hotkeys: false });
-    (widget as unknown as { toggleCommandPalette(): void }).toggleCommandPalette();
+    (widget as unknown as { commands: { toggleCommandPalette(): void } }).commands.toggleCommandPalette();
     expect(document.querySelectorAll('.tcw-cp-row kbd')).toHaveLength(0);
   });
 
@@ -463,7 +463,7 @@ describe('ChartWidget keys and behaviours by switch', () => {
 
   it('leaves switched-off commands out of the command palette', () => {
     make({ features: { settings: false, autoFib: false } });
-    const items = (widget as unknown as { buildCommandItems(): { id: string; category: string }[] }).buildCommandItems();
+    const items = (widget as unknown as { commands: { buildCommandItems(): { id: string; category: string }[] } }).commands.buildCommandItems();
     const actions = items.filter((i) => i.category === 'action').map((i) => i.id);
     expect(actions).not.toContain('settings');
     expect(actions).not.toContain('autoFib');
@@ -473,7 +473,7 @@ describe('ChartWidget keys and behaviours by switch', () => {
   it('opens no settings with them switched off', () => {
     const open = vi.spyOn(WidgetSettings.prototype, 'open');
     make({ features: { settings: false } });
-    (widget as unknown as { openSettings(): void }).openSettings();
+    (widget as unknown as { chartSettings: { openSettings(): void } }).chartSettings.openSettings();
     expect(open).not.toHaveBeenCalled();
     open.mockRestore();
   });
@@ -481,10 +481,9 @@ describe('ChartWidget keys and behaviours by switch', () => {
 
 describe('ChartWidget switches after review', () => {
   type Inner = {
-    openLegendMenu(id: string, anchor: HTMLElement): void;
-    toggleAlerts(): void;
-    alertsPanel: { isOpen(): boolean };
-    selectTypedTimeframe(tf: string): boolean;
+    legend: { openLegendMenu(id: string, anchor: HTMLElement): void };
+    alerting: { toggleAlerts(): void; alertsPanel: { isOpen(): boolean } };
+    intervals: { selectTypedTimeframe(tf: string): boolean };
     say(message: string, kind?: 'info' | 'error'): void;
   };
   const inner = () => widget as unknown as Inner;
@@ -494,18 +493,18 @@ describe('ChartWidget switches after review', () => {
     const anchor = document.createElement('button');
     host.appendChild(anchor);
     FakeChart.last.getActiveIndicators = () => [{ instanceId: 'tc_rsi_1', id: 'rsi' }];
-    inner().openLegendMenu('tc_rsi_1', anchor);
+    inner().legend.openLegendMenu('tc_rsi_1', anchor);
     expect(menuLabels()).toEqual([]);
   });
 
   it('closes what a switch turns off, and opens nothing switched off', () => {
     make();
-    inner().toggleAlerts();
-    expect(inner().alertsPanel.isOpen()).toBe(true);
+    inner().alerting.toggleAlerts();
+    expect(inner().alerting.alertsPanel.isOpen()).toBe(true);
     widget.setFeatures({ alerts: false });
-    expect(inner().alertsPanel.isOpen()).toBe(false);
-    inner().toggleAlerts();
-    expect(inner().alertsPanel.isOpen()).toBe(false);
+    expect(inner().alerting.alertsPanel.isOpen()).toBe(false);
+    inner().alerting.toggleAlerts();
+    expect(inner().alerting.alertsPanel.isOpen()).toBe(false);
     widget.setFeatures({ symbolInfo: false });
     widget.toggleSymbolInfo(true);
     expect(getComputedStyle(host.querySelector('.tcw-syminfo')!).display).toBe('none');
@@ -514,7 +513,7 @@ describe('ChartWidget switches after review', () => {
   it('fills a new alert with the price on the chart’s grid, not every digit of the last close', () => {
     make();
     FakeChart.last.getData = () => [{ close: 35217.052956, time: 0 }];
-    inner().toggleAlerts();
+    inner().alerting.toggleAlerts();
     expect(host.querySelector<HTMLInputElement>('.tcw-alerts-form input[type="number"]')!.value).toBe('35217');
   });
 
@@ -534,7 +533,7 @@ describe('ChartWidget switches after review', () => {
 
   it('adds no interval typed on the chart without custom intervals', () => {
     make({ features: { customTimeframes: false } });
-    expect(inner().selectTypedTimeframe('7m')).toBe(false);
+    expect(inner().intervals.selectTypedTimeframe('7m')).toBe(false);
   });
 
   it('still shows the widget’s errors with the notices off', () => {
@@ -569,7 +568,7 @@ describe('ChartWidget bracket bar', () => {
 
   it('reads right to left in a right-to-left widget, though the chart under it does not', () => {
     make({ trading: true, dir: 'rtl' });
-    (widget as unknown as { bracketBar: { show(side: 'buy' | 'sell'): void } }).bracketBar.show('buy');
+    (widget as unknown as { trading: { bracketBar: { show(side: 'buy' | 'sell'): void } } }).trading.bracketBar.show('buy');
     expect(host.querySelector<HTMLElement>('.tcw-chart-container')!.dir).toBe('ltr');
     expect(host.querySelector<HTMLElement>('.tcw-bracket-bar')!.dir).toBe('rtl');
   });
@@ -580,7 +579,7 @@ describe('ChartWidget order ticket', () => {
     make({ trading: true, symbol: 'AAA' });
     const chart = FakeChart.last as unknown as { getPriceStep: (p: number) => number };
     chart.getPriceStep = () => 0.5;
-    (widget as unknown as { openOrderTicket(price?: number): void }).openOrderTicket(95.123456);
+    (widget as unknown as { trading: { openOrderTicket(price?: number): void } }).trading.openOrderTicket(95.123456);
     expect(host.querySelector('.tcw-ticket-symbol')?.textContent).toBe('AAA');
     const price = host.querySelector<HTMLInputElement>('input[data-ticket-field="price"]')!;
     expect(price.value).toBe('95.0'); // the fake chart rounds to whole prices, its step is 0.5
@@ -591,7 +590,7 @@ describe('ChartWidget order ticket', () => {
   it('writes money to the decimals of the chart’s price step', () => {
     make({ trading: true, symbol: 'AAA' });
     (FakeChart.last as unknown as { getPriceStep: (p: number) => number }).getPriceStep = () => 0.5;
-    (widget as unknown as { openOrderTicket(price?: number): void }).openOrderTicket();
+    (widget as unknown as { trading: { openOrderTicket(price?: number): void } }).trading.openOrderTicket();
     host.querySelectorAll<HTMLButtonElement>('.tcw-ticket-optional .tcw-toggle')[0].click();
     // A buy at the fake chart's 100 with its stop 1% under: one unit risks 1, written as the step's one decimal.
     expect(host.querySelector('.tcw-ticket-away')!.textContent).toBe('-1.00% · -1.0');

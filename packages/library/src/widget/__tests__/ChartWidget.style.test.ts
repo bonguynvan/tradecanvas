@@ -67,12 +67,14 @@ vi.mock('../../Chart.js', () => ({ Chart: FakeChart }));
 const { ChartWidget } = await import('../ChartWidget.js');
 
 type Internals = {
-  openSettings(): void;
-  changeSettings(patch: Record<string, unknown>): void;
-  changeStyle(patch: Record<string, unknown>): void;
-  resetSettings(): void;
   handleToggleTheme(): void;
-  settingsState: Record<string, unknown>;
+  chartSettings: {
+    openSettings(): void;
+    changeSettings(patch: Record<string, unknown>): void;
+    changeStyle(patch: Record<string, unknown>): void;
+    resetSettings(): void;
+    settingsState: Record<string, unknown>;
+  };
 };
 
 let host: HTMLDivElement;
@@ -101,7 +103,7 @@ beforeAll(preloadDialogs);
 describe('ChartWidget colours in the settings', () => {
   it("puts the look picked in the settings among the user's overrides, not into the theme", () => {
     make();
-    inner().changeStyle({ 'series.heikinAshi.upColor': '#00ff00', 'grid.horizontal.width': 2, 'trading.buyColor': '#0000ff' });
+    inner().chartSettings.changeStyle({ 'series.heikinAshi.upColor': '#00ff00', 'grid.horizontal.width': 2, 'trading.buyColor': '#0000ff' });
     expect(FakeChart.last.overrideCalls).toEqual([[{
       'series.heikinAshi.upColor': '#00ff00',
       'grid.horizontal.width': 2,
@@ -112,7 +114,7 @@ describe('ChartWidget colours in the settings', () => {
 
   it('undoes a colour back to no override at all, not to the colour it resolved to', () => {
     make();
-    inner().changeStyle({ 'series.candlestick.upColor': '#00ff00' });
+    inner().chartSettings.changeStyle({ 'series.candlestick.upColor': '#00ff00' });
     FakeChart.last.steps.at(-1)!.undo();
     expect(FakeChart.last.user).toEqual({});
     FakeChart.last.steps.at(-1)!.redo();
@@ -121,7 +123,7 @@ describe('ChartWidget colours in the settings', () => {
 
   it('undoes only the keys it changed, leaving what the host set on the user’s layer since', () => {
     make();
-    inner().changeStyle({ 'background.color': '#010101' });
+    inner().chartSettings.changeStyle({ 'background.color': '#010101' });
     widget.getChart().applyOverrides({ 'grid.horizontal.color': '#222222' }, { layer: 'user' });
     FakeChart.last.steps.at(-1)!.undo();
     expect(FakeChart.last.user).toEqual({ 'grid.horizontal.color': '#222222' });
@@ -129,8 +131,8 @@ describe('ChartWidget colours in the settings', () => {
 
   it('takes a key back to the part’s own with null, as one more step', () => {
     make();
-    inner().changeStyle({ 'markers.longColor': '#00ff00' });
-    inner().changeStyle({ 'markers.longColor': null });
+    inner().chartSettings.changeStyle({ 'markers.longColor': '#00ff00' });
+    inner().chartSettings.changeStyle({ 'markers.longColor': null });
     expect(FakeChart.last.user).toEqual({});
     FakeChart.last.steps.at(-1)!.undo();
     expect(FakeChart.last.user).toEqual({ 'markers.longColor': '#00ff00' });
@@ -138,8 +140,8 @@ describe('ChartWidget colours in the settings', () => {
 
   it('makes a colour dragged across the picker one step', () => {
     make();
-    inner().changeStyle({ 'background.color': '#010101' });
-    inner().changeStyle({ 'background.color': '#020202' });
+    inner().chartSettings.changeStyle({ 'background.color': '#010101' });
+    inner().chartSettings.changeStyle({ 'background.color': '#020202' });
     const [a, b] = FakeChart.last.steps.slice(-2);
     expect(a.subject).toBeDefined();
     expect(a.subject).toBe(b.subject);
@@ -147,7 +149,7 @@ describe('ChartWidget colours in the settings', () => {
 
   it('leaves the colours of another theme alone on an undo', () => {
     make();
-    inner().changeStyle({ 'background.color': '#010101' });
+    inner().chartSettings.changeStyle({ 'background.color': '#010101' });
     FakeChart.last.themeName = 'light';
     const calls = FakeChart.last.overrideCalls.length;
     FakeChart.last.steps.at(-1)!.undo();
@@ -157,15 +159,15 @@ describe('ChartWidget colours in the settings', () => {
   it("shows the chart's look when the settings open", () => {
     make();
     FakeChart.last.user['series.candlestick.upColor'] = '#123456';
-    inner().openSettings();
+    inner().chartSettings.openSettings();
     const up = document.querySelector<HTMLInputElement>('.tcw-modal input[aria-label="Up body"]')!;
     expect(up.closest('.tcw-settings-row')!.querySelector('.tcw-color-hex')!.textContent).toBe('#123456');
   });
 
   it("resets the look to the theme's, whatever theme it is, every chart type's too", () => {
     make({ theme: 'light' });
-    inner().changeStyle({ 'background.color': '#010101', 'series.kagi.upColor': '#00ff00', 'tradeZones.activeColor': '#0000ff' });
-    inner().resetSettings();
+    inner().chartSettings.changeStyle({ 'background.color': '#010101', 'series.kagi.upColor': '#00ff00', 'tradeZones.activeColor': '#0000ff' });
+    inner().chartSettings.resetSettings();
     const [keys, options] = FakeChart.last.resets.at(-1)!;
     expect(keys).toEqual(expect.arrayContaining([
       'background.color', 'series.candlestick.upColor', 'series.kagi.upColor', 'grid.vertical.width',
@@ -190,7 +192,7 @@ describe('ChartWidget colours in the settings', () => {
       if (!buckets.has(name)) buckets.set(name, {});
       chart.user = buckets.get(name)!;
     };
-    inner().changeStyle({
+    inner().chartSettings.changeStyle({
       'grid.vertical.visible': false,
       'crosshair.horizontal.style': 'dotted',
       'series.line.lineWidth': 3,

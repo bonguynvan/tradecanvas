@@ -859,7 +859,7 @@ describe('ChartWidget percent compares and the price scale', () => {
       .find((b) => b.querySelector('.tcw-context-label')?.textContent === label)!;
   };
   const scaleSelect = () => document.querySelector<HTMLSelectElement>('select[aria-label="Price scale"]')!;
-  const openSettings = () => (widget as unknown as { openSettings(tab: string): void }).openSettings('scales');
+  const openSettings = () => (widget as unknown as { chartSettings: { openSettings(tab: string): void } }).chartSettings.openSettings('scales');
 
   it('reads the price scale in percent while a symbol is compared in percent, and goes back after the last', async () => {
     const fake = make();
@@ -1151,7 +1151,7 @@ describe('ChartWidget round 8 review', () => {
       symbol: 'AAA', watchlist: false,
       chartOptions: { highLowLines: true, extendedHours: false, chartTypeOptions: { renko: { boxSize: 5 } } },
     });
-    const settings = (widget as unknown as { settingsState: Record<string, unknown> }).settingsState;
+    const settings = (widget as unknown as { chartSettings: { settingsState: Record<string, unknown> } }).chartSettings.settingsState;
     expect(settings).toMatchObject({ highLowLines: true, extendedHours: false, chartTypeOptions: { renko: { boxSize: 5 } } });
   });
 });

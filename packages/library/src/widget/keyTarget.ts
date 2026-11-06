@@ -56,3 +56,12 @@ export function isTyping(): boolean {
   const active = document.activeElement as HTMLElement | null;
   return !!active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.tagName === 'SELECT' || active.isContentEditable);
 }
+
+/** Focus is in a dialog or a menu (the widget's or the page's): its keys are its own. */
+export function inOverlay(): boolean {
+  const active = document.activeElement;
+  return active instanceof Element && active.closest('[role="dialog"], [aria-modal="true"], [role="menu"]') !== null;
+}
+
+/** `keyCode` of a key press that goes to an IME composing text. */
+export const IME_KEY_CODE = 229;

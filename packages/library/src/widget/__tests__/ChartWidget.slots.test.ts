@@ -195,7 +195,7 @@ describe('ChartWidget host entries in the drawing and indicator menus', () => {
     make({ indicatorMenuItems: (context) => { seen.push(context); return [{ label: 'Explain', onSelect: () => {} }]; } });
     const anchor = document.createElement('button');
     host.appendChild(anchor);
-    (widget as unknown as { openLegendMenu(id: string, anchor: HTMLElement): void }).openLegendMenu('tc_rsi_1', anchor);
+    (widget as unknown as { legend: { openLegendMenu(id: string, anchor: HTMLElement): void } }).legend.openLegendMenu('tc_rsi_1', anchor);
     expect(seen).toEqual([{ instanceId: 'tc_rsi_1', indicatorId: 'rsi' }]);
     expect(shownMenu().map((b) => b.textContent).at(-1)).toBe('Explain');
   });

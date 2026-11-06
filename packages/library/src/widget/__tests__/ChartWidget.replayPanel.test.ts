@@ -308,7 +308,7 @@ describe('Select bar: picking again inside the replay', async () => {
     a.widget.toggleReplay();
     const loading = (a.widget as unknown as { loading: { begin(c: boolean, i: boolean): void; end(): void } }).loading;
     loading.begin(true, true);
-    (a.widget as unknown as { syncReplayBar(): void }).syncReplayBar();
+    (a.widget as unknown as { replay: { syncReplayBar(): void } }).replay.syncReplayBar();
     const D = 24 * H;
     a.chart.emit('barClick', { barIndex: 3, bar: { time: T0 + 3 * D } });
     expect(a.chart.replays).toHaveLength(0);
@@ -316,7 +316,7 @@ describe('Select bar: picking again inside the replay', async () => {
     // The hours come: 30 days of them.
     a.chart.barsLoaded = Array.from({ length: 30 * 24 }, (_, i) => ({ time: T0 + i * H, open: 1, high: 2, low: 0.5, close: 1.5, volume: 1 }));
     loading.end();
-    (a.widget as unknown as { syncReplayBar(): void }).syncReplayBar();
+    (a.widget as unknown as { replay: { syncReplayBar(): void } }).replay.syncReplayBar();
     expect(a.chart.replays).toHaveLength(1);
     expect(a.chart.replays[0]).toMatchObject({ startTime: T0 + 3 * D });
   });
@@ -328,9 +328,9 @@ describe('Select bar: picking again inside the replay', async () => {
     loading.begin(true, true);
     a.chart.emit('barClick', { barIndex: 3, bar: { time: T0 + 3 * H } });
     loading.fail('no');
-    (a.widget as unknown as { syncReplayBar(): void }).syncReplayBar();
+    (a.widget as unknown as { replay: { syncReplayBar(): void } }).replay.syncReplayBar();
     loading.end();
-    (a.widget as unknown as { syncReplayBar(): void }).syncReplayBar();
+    (a.widget as unknown as { replay: { syncReplayBar(): void } }).replay.syncReplayBar();
     expect(a.chart.replays).toHaveLength(0);
   });
 
@@ -341,7 +341,7 @@ describe('Select bar: picking again inside the replay', async () => {
       const a = await make();
       a.widget.toggleReplay();
       const loading = (a.widget as unknown as { loading: { begin(c: boolean, i: boolean): void; end(): void } }).loading;
-      const sync = () => (a.widget as unknown as { syncReplayBar(): void }).syncReplayBar();
+      const sync = () => (a.widget as unknown as { replay: { syncReplayBar(): void } }).replay.syncReplayBar();
       loading.begin(true, true);
       sync();
       a.chart.emit('barClick', { barIndex: 0, bar: { time: T0 + offset } });
@@ -357,7 +357,7 @@ describe('Select bar: picking again inside the replay', async () => {
     a.widget.replayFrom(10);
     act(a.host, 'selectBar').click();
     const loading = (a.widget as unknown as { loading: { begin(c: boolean, i: boolean): void; end(): void } }).loading;
-    const sync = () => (a.widget as unknown as { syncReplayBar(): void }).syncReplayBar();
+    const sync = () => (a.widget as unknown as { replay: { syncReplayBar(): void } }).replay.syncReplayBar();
     loading.begin(true, true);
     a.chart.emit('barClick', { barIndex: 3, bar: { time: T0 + 3 * H } });
     act(a.host, 'cancel').click();

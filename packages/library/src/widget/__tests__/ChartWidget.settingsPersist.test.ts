@@ -72,7 +72,7 @@ const make = (options: ConstructorParameters<typeof ChartWidget>[1] = {}) => {
   return widget;
 };
 const calls = (name: string) => FakeChart.last.calls.filter(([n]) => n === name).map(([, v]) => v);
-const openSettings = () => (widget as unknown as { openSettings(): void }).openSettings();
+const openSettings = () => (widget as unknown as { chartSettings: { openSettings(): void } }).chartSettings.openSettings();
 const tab = (name: string) => document.querySelector<HTMLButtonElement>(`[role="tab"][data-tab="${name}"]`)!.click();
 const footer = (act: string) => document.querySelector<HTMLButtonElement>(`.tcw-set .tcw-modal-footer [data-act="${act}"]`)!.click();
 const menuItem = (text: string) => [...document.querySelectorAll<HTMLButtonElement>('[role="menuitem"]')].find((b) => b.textContent === text)!.click();

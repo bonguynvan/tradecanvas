@@ -120,6 +120,17 @@ These fail CI, often far from the line that caused them.
   value import. Open one through `whenLoaded()`, which reads the widget's
   state once the code is in, and in a test that opens one, add
   `beforeAll(preloadDialogs)`.
+- `ChartWidget.ts` keeps the widget's public API, its setup and what ties
+  the areas together. Each area is a class of its own in `src/widget`:
+  `WidgetReplay`, `WidgetCompares`, `WidgetWatchlists`, `WidgetAlerts`,
+  `WidgetTrading`, `WidgetMenus`, `WidgetLegendView`, `WidgetCommands`,
+  `WidgetLayouts`, `WidgetDockArea`, `WidgetChartSettings`,
+  `WidgetDrawingEdit` and `WidgetIntervals`. Each reads the widget only
+  through the host interface it is given (`ReplayHost`, `ComparesHost`…),
+  which lists what it uses, typed from the widget's members. Add code to
+  the area it belongs to; a public method stays on `ChartWidget` and hands
+  on to its area. A test that reaches into an area goes through its field
+  (`widget.chartSettings.openSettings()`).
 - Widget state that several parts show is a signal (`src/widget/signals.ts`):
   one effect updates what shows it, instead of each writer calling each
   update. The theme is one so far.
