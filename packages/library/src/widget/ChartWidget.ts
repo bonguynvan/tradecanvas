@@ -27,7 +27,7 @@ import { SymbolNews, buildSymbolInfoView } from './symbolInfoView.js';
 import { chartInfoFor, cleanSymbolInfo, mergeSymbolInfo, readSymbolCatalog, symbolTitle } from './symbolCatalog.js';
 import { TOOL_HOTKEYS, toolShortcuts } from './drawingHotkeys.js';
 import { WidgetChartNav } from './WidgetChartNav.js';
-import { WidgetAlertsPanel, describeAlert, type AlertListItem, type AlertSource } from './WidgetAlertsPanel.js';
+import { WidgetAlertsPanel } from './WidgetAlertsPanel.js';
 import { indicatorChipLabel } from '../indicatorLabel.js';
 import { widgetIndicatorLabel } from './indicatorInputWords.js';
 import { readChartTypeOptions, type ChartTypeOptions } from '@tradecanvas/commons';
@@ -52,7 +52,6 @@ import { drawingMenuEntries, type DrawingMenuAction } from './drawingMenu.js';
 import { CHART_MENU_KEYS, TIMEZONE_ENTRY, chartMenuEntries, priceEntries, scaleModeOf, type ChartMenuAction, type ChartMenuContext } from './chartMenu.js';
 import { WidgetAccountPanel } from './WidgetAccountPanel.js';
 import { WidgetOrderTicket } from './WidgetOrderTicket.js';
-import type { OrderTicketRules } from './orderTicket.js';
 import { WidgetLayoutsUI } from './WidgetLayoutsUI.js';
 import { WidgetNamePrompt } from './WidgetNamePrompt.js';
 import { WidgetIntervalInput } from './WidgetIntervalInput.js';
@@ -103,6 +102,8 @@ import { isChartKey, matchesHotkey, parseHotkey, typedIntoField, type ParsedHotk
 import { CHART_STYLE_KEYS, type ChartStyleKey } from '@tradecanvas/commons';
 import { WidgetCompares, type ComparesHost } from './WidgetCompares.js';
 import { WidgetWatchlists, type WatchlistsHost } from './WidgetWatchlists.js';
+import { WidgetAlerts, type AlertsHost } from './WidgetAlerts.js';
+import { WidgetTrading, type TradingHost } from './WidgetTrading.js';
 import {
   markPart,
   commandFeature,
@@ -248,6 +249,10 @@ function withFeedAdapter(options: ChartWidgetOptions): ChartWidgetOptions {
 }
 
 export class ChartWidget {
+  /** Trading by the chart: the account panel, the order ticket, the depth ladder and the bracket bar. */
+  private readonly trading = new WidgetTrading(this.tradingHost());
+  /** Price alerts: their panel, what they are checked against, and the notices when one fires. */
+  private readonly alerting = new WidgetAlerts(this.alertingHost());
   /** The watchlists by the chart: their symbols, lists and quotes. */
   private readonly watching = new WidgetWatchlists(this.watchingHost());
   /** Other symbols compared with the chart's: their bars, the compare dialog, the scale they hold. */
@@ -317,7 +322,6 @@ export class ChartWidget {
   /** Bar replay: its panel over the chart and the session it drives. Made in the constructor, once the chart is up. */
   private replay!: WidgetReplay;
   private dragDrop: DragDropImporter | null = null;
-  private alertsPanel: WidgetAlertsPanel | null = null;
   private objectTree: WidgetObjectTree | null = null;
   private indicatorSettingsPart: Lazy<WidgetIndicatorSettings> | null = null;
   private get indicatorSettings(): WidgetIndicatorSettings | null {
@@ -389,14 +393,8 @@ export class ChartWidget {
   private intervalInput: WidgetIntervalInput | null = null;
   /** The note shown over a signal marker under the pointer. */
   private markerTip: HTMLDivElement | null = null;
-  private accountPanel: WidgetAccountPanel | null = null;
-  private orderTicket: WidgetOrderTicket | null = null;
-  private accountFrame = 0;
   private layoutSession: LayoutSession | null = null;
   private layoutsUI: WidgetLayoutsUI | null = null;
-  private bracketBar: WidgetBracketBar | null = null;
-  private alertNotifier: AlertNotifier | null = null;
-  private depthLadder: WidgetDepthLadder | null = null;
   private dataWindow: WidgetDataWindow | null = null;
   private lastHoverIndex: number | null = null;
   /** The bar the crosshair reported at it: on Renko and the like a brick, not a data bar. */
@@ -713,13 +711,13 @@ export class ChartWidget {
         onSettings: () => this.openSettings(),
         onToggleTheme: () => this.handleToggleTheme(),
         onToggleReplay: () => this.toggleReplay(),
-        onToggleAlerts: () => this.toggleAlerts(),
+        onToggleAlerts: () => this.alerting.toggleAlerts(),
         onToggleObjects: () => this.toggleObjects(),
-        onToggleAccount: options.trading !== false ? () => this.toggleAccountPanel() : undefined,
+        onToggleAccount: options.trading !== false ? () => this.trading.toggleAccountPanel() : undefined,
         onLayouts: options.layouts !== false ? (anchor) => void this.layoutsUI?.openMenu(anchor) : undefined,
-        onBracket: options.trading !== false ? (side) => this.startBracket(side) : undefined,
-        onToggleLadder: options.trading !== false && options.depthLadder ? () => this.toggleLadder() : undefined,
-        onOrderTicket: options.trading !== false ? () => this.openOrderTicket() : undefined,
+        onBracket: options.trading !== false ? (side) => this.trading.startBracket(side) : undefined,
+        onToggleLadder: options.trading !== false && options.depthLadder ? () => this.trading.toggleLadder() : undefined,
+        onOrderTicket: options.trading !== false ? () => this.trading.openOrderTicket() : undefined,
         onCompare: options.adapter && features.compareSymbols !== false ? () => this.comparing.handleAddCompare() : undefined,
         onUndo: () => this.chart.undo(),
         onRedo: () => this.chart.redo(),
@@ -1237,7 +1235,7 @@ export class ChartWidget {
       },
       onAlert: () => {
         const id = this.chart.getSelectedDrawingIds()[0];
-        if (id) this.addDrawingAlert(id);
+        if (id) this.alerting.addDrawingAlert(id);
       },
       onLock: (locked) => {
         this.chart.setDrawingsLocked(this.chart.getSelectedDrawingIds(), locked);
@@ -1316,7 +1314,7 @@ export class ChartWidget {
 
     // Account panel and order ticket.
     if (options.trading !== false) {
-      this.orderTicket = new WidgetOrderTicket(this.root, {
+      this.trading.orderTicket = new WidgetOrderTicket(this.root, {
         onSubmit: (intent) => {
           this.chart.placeOrderIntent(intent);
           this.say(fill(this.t('ticket.sent'), {
@@ -1329,11 +1327,11 @@ export class ChartWidget {
         formatAmount: (v) => this.formatMoney(v),
         formatNumber: (v, d) => this.formatNumber(v, d),
       }, this.t);
-      this.accountPanel = new WidgetAccountPanel(accountHost, {
+      this.trading.accountPanel = new WidgetAccountPanel(accountHost, {
         onClosePosition: (id) => this.chart.closePositionIntent(id),
         onReversePosition: (id) => this.chart.reversePositionIntent(id),
         onCancelOrder: (id) => this.chart.cancelOrderIntent(id),
-        onNewOrder: () => this.openOrderTicket(),
+        onNewOrder: () => this.trading.openOrderTicket(),
         formatPrice: (p) => this.formatAlertPrice(p),
         formatTime: (ms) => {
           const { date, time } = utcToWallTime(ms, this.displayTimezone());
@@ -1343,33 +1341,33 @@ export class ChartWidget {
         formatNumber: (v, d) => this.formatNumber(v, d),
         onToggle: (open) => {
           this.toolbar?.setActive('account', open);
-          this.refreshAccount();
+          this.trading.refreshAccount();
         },
       }, this.t);
       // indicatorUpdate comes once per tick, so open P&L follows the price.
       for (const event of ['ordersChange', 'positionsChange', 'executionFill', 'dataUpdate', 'indicatorUpdate'] as const) {
-        this.chart.on(event, () => this.refreshAccountSoon());
+        this.chart.on(event, () => this.trading.refreshAccountSoon());
       }
     }
 
     // Bracket-order placement: floating confirm/cancel bar + event wiring.
     if (options.trading !== false) {
-      this.bracketBar = new WidgetBracketBar(this.chartContainer, {
+      this.trading.bracketBar = new WidgetBracketBar(this.chartContainer, {
         onConfirm: () => this.chart.confirmBracket(),
         onCancel: () => {
           this.chart.cancelBracket();
-          this.bracketBar?.hide();
+          this.trading.bracketBar?.hide();
         },
       }, this.t);
       this.chart.on('bracketPlace', (e) => {
         const b = e.payload;
-        this.bracketBar?.hide();
+        this.trading.bracketBar?.hide();
         this.say(fill(this.t(b.side === 'buy' ? 'bracket.longPlaced' : 'bracket.shortPlaced'), { rr: b.riskReward.toFixed(2) }));
       });
 
       // Depth-of-market ladder (opt-in; fed via widget.setDepth)
       if (options.depthLadder) {
-        this.depthLadder = new WidgetDepthLadder(this.root, {
+        this.trading.depthLadder = new WidgetDepthLadder(this.root, {
           onTrade: (side, price) => {
             this.chart.placeOrderIntent({ side, type: 'limit', price });
             this.say(fill(this.t(side === 'buy' ? 'order.buyLimit' : 'order.sellLimit'), { price: this.formatAlertPrice(price) }));
@@ -1380,17 +1378,17 @@ export class ChartWidget {
           onClose: () => this.closePanelByHand('depthLadder'),
         }, undefined, this.t);
         // Your working orders, marked on the rows where they wait.
-        const ladder = this.depthLadder;
+        const ladder = this.trading.depthLadder;
         this.chart.on('ordersChange', () => ladder.setOrders(this.chart.getOrders()));
       }
       // Esc-cancel originates in the chart; reflect it in the bar.
       this.chart.on('dataUpdate', (e) => {
-        if (e.payload.kind === 'bracket') this.bracketBar?.hide();
+        if (e.payload.kind === 'bracket') this.trading.bracketBar?.hide();
       });
     }
 
     // 8a-bis. Price alerts panel (floating popover, toggled from the bell button)
-    this.alertsPanel = new WidgetAlertsPanel(this.root, {
+    this.alerting.alertsPanel = new WidgetAlertsPanel(this.root, {
       onClose: () => this.closePanelByHand('alerts'),
       onAdd: ({ price, condition, message, channel, label, options }) => {
         try {
@@ -1407,29 +1405,29 @@ export class ChartWidget {
       },
       onRemove: (id) => this.chart.removeAlert(id),
       onClear: () => this.chart.clearAlerts(),
-      getChannelValue: (channel) => this.getAlertChannelValue(channel),
+      getChannelValue: (channel) => this.alerting.getAlertChannelValue(channel),
       formatPrice: (p) => this.formatAlertPrice(p),
     }, this.t);
 
     // Keep the panel list and toasts in sync with the chart's AlertManager.
-    this.chart.on('alertAdd', () => this.refreshAlerts());
-    this.chart.on('alertRemove', () => this.refreshAlerts());
-    this.chart.on('alertUpdate', () => this.refreshAlerts());
+    this.chart.on('alertAdd', () => this.alerting.refreshAlerts());
+    this.chart.on('alertRemove', () => this.alerting.refreshAlerts());
+    this.chart.on('alertUpdate', () => this.alerting.refreshAlerts());
     this.chart.on('alertExpired', (e) => {
       const p = e.payload;
-      this.refreshAlerts();
-      if (this.featureState.alerts) this.say(fill(this.t('alerts.expiredToast'), { text: p.message ?? this.alertText(p) }));
+      this.alerting.refreshAlerts();
+      if (this.featureState.alerts) this.say(fill(this.t('alerts.expiredToast'), { text: p.message ?? this.alerting.alertText(p) }));
     });
     if (options.alertNotifications) {
-      this.alertNotifier = new AlertNotifier(options.alertNotifications);
+      this.alerting.alertNotifier = new AlertNotifier(options.alertNotifications);
     }
     this.chart.on('alertTriggered', (e) => {
       const p = e.payload;
-      this.refreshAlerts();
+      this.alerting.refreshAlerts();
       if (!this.featureState.alerts) return;
-      const text = `${this.alertText(p)}${p.message ? ` — ${p.message}` : ''}`;
+      const text = `${this.alerting.alertText(p)}${p.message ? ` — ${p.message}` : ''}`;
       this.say(fill(this.t('alerts.fired'), { text }), 'info', 'bell');
-      this.alertNotifier?.notify(text);
+      this.alerting.alertNotifier?.notify(text);
     });
 
     // The indicators dialog, from the toolbar's Indicators button.
@@ -1811,7 +1809,7 @@ export class ChartWidget {
   /** Whether the widget has `panel`: the watchlist and the ladder only when made with them, every one with its switch on. */
   private hasPanel(panel: WidgetPanel): boolean {
     if (panel === 'watchlist') return this.watching.watchlist !== null;
-    if (panel === 'depthLadder' && this.depthLadder === null) return false;
+    if (panel === 'depthLadder' && this.trading.depthLadder === null) return false;
     return this.featureState[PANEL_FEATURES[panel]];
   }
 
@@ -2129,7 +2127,7 @@ export class ChartWidget {
     this.hotkeySheetPart?.destroy();
     this.replay.destroy();
     this.dragDrop?.detach();
-    this.alertsPanel?.destroy();
+    this.alerting.alertsPanel?.destroy();
     this.objectTree?.destroy();
     this.indicatorSettingsPart?.destroy();
     this.indicatorPickerPart?.destroy();
@@ -2152,12 +2150,12 @@ export class ChartWidget {
     this.layoutSession?.destroy();
     this.layoutsUI?.destroy();
     this.settingsListeners.clear();
-    this.accountPanel?.destroy();
-    this.orderTicket?.destroy();
-    if (this.accountFrame) cancelAnimationFrame(this.accountFrame);
-    this.bracketBar?.destroy();
-    this.alertNotifier?.destroy();
-    this.depthLadder?.destroy();
+    this.trading.accountPanel?.destroy();
+    this.trading.orderTicket?.destroy();
+    if (this.trading.accountFrame) cancelAnimationFrame(this.trading.accountFrame);
+    this.trading.bracketBar?.destroy();
+    this.alerting.alertNotifier?.destroy();
+    this.trading.depthLadder?.destroy();
     this.dataWindow?.destroy();
     if (this.watching.watchlistInterval) clearInterval(this.watching.watchlistInterval);
     if (this.marketTimer) clearInterval(this.marketTimer);
@@ -2481,16 +2479,6 @@ export class ChartWidget {
     });
   }
 
-  /** Add a "price crosses this drawing" alert and say so. */
-  private addDrawingAlert(id: string): void {
-    if (!this.featureState.alerts) return;
-    const drawing = this.chart.getDrawings().find((d) => d.id === id);
-    const name = drawing ? this.drawingToolName(drawing.type) : '';
-    if (this.chart.addDrawingAlert(id, { label: name })) {
-      this.say(fill(this.t('drawingSettings.alertAdded'), { name }));
-    }
-  }
-
   /** The menu of a right-clicked drawing; the chart has selected it (and its group) by now. */
   private openDrawingMenu(id: string, x: number, y: number): void {
     if (!this.drawingMenu || !this.featureState['menu.drawing']) return;
@@ -2523,7 +2511,7 @@ export class ChartWidget {
         this.openDrawingSettings(id);
         return;
       case 'alert':
-        this.addDrawingAlert(id);
+        this.alerting.addDrawingAlert(id);
         return;
       case 'front':
       case 'forward':
@@ -2569,9 +2557,9 @@ export class ChartWidget {
       price,
       lastPrice: data.length > 0 ? data[data.length - 1].close : null,
       formatPrice: (p) => this.formatAlertPrice(p),
-      canAlert: this.alertsPanel !== null,
+      canAlert: this.alerting.alertsPanel !== null,
       canTrade: this.options.trading !== false,
-      canOrderTicket: this.orderTicket !== null,
+      canOrderTicket: this.trading.orderTicket !== null,
       canDraw: true,
       hasDrawings: drawings.length > 0,
       drawingsHidden: drawings.length > 0 && drawings.every((d) => !d.visible),
@@ -2692,8 +2680,8 @@ export class ChartWidget {
       ['objectTree', () => this.dock?.closePage('objectTree')],
       ['symbolInfo', () => this.dock?.closePage('symbolInfo')],
       ['dataWindow', () => this.dock?.closePage('dataWindow')],
-      ['accountPanel', () => this.toggleAccountPanel(false)],
-      ['orderTicket', () => this.orderTicket?.close()],
+      ['accountPanel', () => this.trading.toggleAccountPanel(false)],
+      ['orderTicket', () => this.trading.orderTicket?.close()],
       ['depthLadder', () => this.dock?.closePage('depthLadder')],
       ['goToDate', () => this.goToDate?.close()],
       ['settings', () => this.settings?.close()],
@@ -2949,10 +2937,10 @@ export class ChartWidget {
       case 'sellLimit':
       case 'buyStop':
       case 'sellStop':
-        this.placeOrderAt(action, at);
+        this.trading.placeOrderAt(action, at);
         break;
       case 'orderTicket':
-        this.openOrderTicket(price);
+        this.trading.openOrderTicket(price);
         break;
       case 'exportData':
         // Every bar loaded, with the indicator lines, named after the symbol and interval.
@@ -3032,70 +3020,7 @@ export class ChartWidget {
 
   /** Open or close the account panel (no argument: the other way from now). */
   toggleAccountPanel(open?: boolean): void {
-    const panel = this.accountPanel;
-    if (!panel || open === panel.isOpen()) return;
-    // Switched off, it only closes.
-    if (!panel.isOpen() && !this.featureState.accountPanel) return;
-    panel.toggle();
-  }
-
-  /** The order ticket, at a price from the chart (or the market). */
-  private openOrderTicket(price?: number): void {
-    if (!this.featureState.orderTicket) return;
-    const data = this.chart.getData();
-    this.orderTicket?.open({
-      price,
-      lastPrice: data.length > 0 ? data[data.length - 1].close : null,
-      rules: this.orderRules(),
-      symbol: this.state.symbol,
-      // − and + move a price by the market's step; a click on the chart lands between steps.
-      step: (p) => this.chart.getPriceStep(p),
-      round: (p) => this.chart.roundPrice(p),
-    });
-  }
-
-  /** A market's rules for the order ticket (`setMarket`): its step, the day's limits, its lot. */
-  private orderRules(): OrderTicketRules {
-    const market = this.chart.getMarket();
-    if (!market) return {};
-    const stepped = market.priceStep !== undefined || (market.priceSteps?.length ?? 0) > 0;
-    return {
-      roundPrice: stepped ? (p) => this.chart.roundPrice(p) : undefined,
-      limits: this.chart.getPriceLimits(),
-      lot: market.volumeUnit,
-      multiplier: market.contractMultiplier,
-    };
-  }
-
-  /** Redraw the account panel once a frame at most (ticks, fills and order changes come in bursts). */
-  private refreshAccountSoon(): void {
-    if (this.accountFrame || !this.accountPanel) return;
-    this.accountFrame = requestAnimationFrame(() => {
-      this.accountFrame = 0;
-      if (!this.destroyed) this.refreshAccount();
-    });
-  }
-
-  private refreshAccount(): void {
-    if (!this.accountPanel) return;
-    const data = this.chart.getData();
-    const price = data.length > 0 ? data[data.length - 1].close : null;
-    this.accountPanel.update({
-      positions: this.chart.getPositions(),
-      orders: this.chart.getOrders(),
-      fills: this.chart.getFills(),
-      price,
-      realisedPnl: this.chart.getRealisedPnl(),
-    });
-    this.orderTicket?.setLastPrice(price);
-  }
-
-  /** Ask for a limit or stop order at `price` (one unit), and say so. */
-  private placeOrderAt(kind: 'buyLimit' | 'sellLimit' | 'buyStop' | 'sellStop', price: number): void {
-    const side = kind.startsWith('buy') ? 'buy' : 'sell';
-    const stop = kind.endsWith('Stop');
-    this.chart.placeOrderIntent(stop ? { side, type: 'stop', price, stopPrice: price, quantity: 1 } : { side, type: 'limit', price, quantity: 1 });
-    this.say(fill(this.t(`order.${kind}` as MessageKey), { price: this.formatAlertPrice(price) }));
+    return this.trading.toggleAccountPanel(open);
   }
 
   /** The time now in the display zone ("14:05:09") and the zone's offset ("UTC+7"), for the status bar's clock. */
@@ -3451,17 +3376,6 @@ export class ChartWidget {
     this.updateUI();
   }
 
-  /** The depth ladder, a page of the dock: open or shut it (the Trade menu's entry). */
-  private toggleLadder(): void {
-    if (!this.depthLadder || !this.featureState.depthLadder) return;
-    this.dock?.toggle('depthLadder');
-  }
-
-  private toggleAlerts(): void {
-    if (!this.alertsPanel || !this.featureState.alerts) return;
-    this.dock?.toggle('alerts');
-  }
-
   private handleToggleFavorite(tool: DrawingToolType): void {
     const pinned = this.favoritesStore.toggle(tool);
     this.sidebar?.setFavorites(this.favoritesStore.list());
@@ -3598,16 +3512,12 @@ export class ChartWidget {
 
   /** Feed order-book depth to the chart overlay, depth ladder, and heatmap. */
   setDepth(depth: DepthData | null): void {
-    this.chart.setDepthData(depth);
-    this.depthLadder?.setData(depth);
-    if (depth) this.chart.pushDepthSnapshot(depth);
+    return this.trading.setDepth(depth);
   }
 
   /** Begin a draggable bracket order at the latest price and show the action bar. */
   startBracket(side: 'buy' | 'sell'): void {
-    if (this.chart.startBracket(side)) {
-      this.bracketBar?.show(side);
-    }
+    return this.trading.startBracket(side);
   }
 
   /**
@@ -3690,13 +3600,13 @@ export class ChartWidget {
       // Hidden, its sparklines were drawn at no size: drawn again as it shows.
       dock.addPage({ id: 'watchlist', label: this.t('watchlist.title'), icon: 'list', element: list.element, parts: ['dock.watchlist'], onShow: () => list.redraw() });
     }
-    const alerts = this.alertsPanel;
+    const alerts = this.alerting.alertsPanel;
     if (alerts) {
       dock.addPage({
         id: 'alerts', label: this.t('alerts.title'), icon: 'bell', element: alerts.element, parts: ['dock.alerts', 'alerts'],
         onShow: () => {
           alerts.openPanel();
-          this.refreshAlerts();
+          this.alerting.refreshAlerts();
           this.toolbar?.setActive('alerts', true);
         },
         onHide: () => {
@@ -3739,7 +3649,7 @@ export class ChartWidget {
         onHide: () => info.close(),
       });
     }
-    const ladder = this.depthLadder;
+    const ladder = this.trading.depthLadder;
     if (ladder) {
       dock.addPage({
         id: 'depthLadder', label: this.t('ladder.title'), icon: 'ladder', element: ladder.element, parts: ['dock.depthLadder', 'depthLadder'],
@@ -3898,74 +3808,11 @@ export class ChartWidget {
     if (this.chart.getScaleMode() !== mode) this.chart.setScaleMode(mode);
   }
 
-  private refreshAlerts(): void {
-    if (!this.alertsPanel) return;
-    const sources = this.buildAlertSources();
-    this.alertsPanel.setSources(sources);
-    this.alertsPanel.setAlerts(this.chart.getAlerts().map((a) => this.alertListItem(a, sources)));
-  }
-
   /** The prices the panels show, written again in the decimals the chart has now. */
   private refreshPriceTexts(): void {
-    this.refreshAlerts();
-    this.refreshAccountSoon();
+    this.alerting.refreshAlerts();
+    this.trading.refreshAccountSoon();
     if (this.dataWindow?.isOpen()) this.dataWindow.render(this.buildDataWindowModel());
-  }
-
-  private alertListItem(a: AlertListItem, sources: readonly AlertSource[]): AlertListItem {
-    return {
-      id: a.id,
-      price: a.price,
-      condition: a.condition,
-      message: a.message,
-      triggered: a.triggered,
-      channel: a.channel,
-      label: a.label,
-      drawingId: a.drawingId,
-      target: a.target,
-      targetLabel: a.target ? sources.find((s) => s.channel === a.target)?.label : undefined,
-      percent: a.percent,
-      bars: a.bars,
-      onBarClose: a.onBarClose,
-      expiresAt: a.expiresAt,
-      expired: a.expired,
-    };
-  }
-
-  /** An alert in words, for a toast or a notification: "Price crossing EMA 20", "RSI greater than 70". */
-  private alertText(p: AlertListItem): string {
-    return describeAlert(this.alertListItem(p, this.buildAlertSources()), this.t, (price) => this.formatAlertPrice(price), true);
-  }
-
-  /** Price + every active indicator line, as selectable alert sources. */
-  private buildAlertSources(): { channel: string; label: string }[] {
-    const sources = [{ channel: 'price', label: this.t('alerts.source.price') }];
-    for (const ind of this.chart.getActiveIndicators()) {
-      // Use the latest point — multi-output indicators (MACD, Stochastic) only
-      // have all their lines populated once warmed up; the first point may not.
-      const series = this.chart.getIndicatorOutput(ind.instanceId)?.series;
-      const point = series && series.length > 0 ? series[series.length - 1] : null;
-      const keys = point ? Object.keys(point).filter((k) => typeof point[k] === 'number') : [];
-      for (const key of keys) {
-        const label = keys.length > 1 ? `${ind.descriptor.name} ${key}` : ind.descriptor.name;
-        sources.push({ channel: `${ind.instanceId}:${key}`, label });
-      }
-    }
-    return sources;
-  }
-
-  /** Latest value for an alert source channel (price or indicator line). */
-  private getAlertChannelValue(channel: string): number | null {
-    const data = this.chart.getData();
-    // The price as the chart shows it: on its tick grid, or at its precision.
-    if (channel === 'price') return data.length > 0 ? this.chart.roundPrice(data[data.length - 1].close) : null;
-    const sep = channel.indexOf(':');
-    if (sep < 0 || data.length === 0) return null;
-    const instanceId = channel.slice(0, sep);
-    const key = channel.slice(sep + 1);
-    // The line's last value: on Renko and the like its series ends at the last brick, not the last bar.
-    const v = indicatorPointAt(this.chart.getIndicatorOutput(instanceId)?.series, null)?.[key];
-    return typeof v === 'number' && Number.isFinite(v) ? v : null;
   }
 
   /**
@@ -5332,6 +5179,37 @@ export class ChartWidget {
       get symbols() { return w.symbols; },
       get t() { return w.t; },
       withSymbolSearch: (...args) => w.withSymbolSearch(...args),
+    };
+  }
+
+  /** What WidgetAlerts reads of the widget and asks of it. */
+  private alertingHost(): AlertsHost {
+    // Getters, so the host reads the widget as it is when asked, not as it was now.
+    const w = this;
+    return {
+      get chart() { return w.chart; },
+      get dock() { return w.dock; },
+      drawingToolName: (...args) => w.drawingToolName(...args),
+      get featureState() { return w.featureState; },
+      formatAlertPrice: (...args) => w.formatAlertPrice(...args),
+      say: (...args) => w.say(...args),
+      get t() { return w.t; },
+    };
+  }
+
+  /** What WidgetTrading reads of the widget and asks of it. */
+  private tradingHost(): TradingHost {
+    // Getters, so the host reads the widget as it is when asked, not as it was now.
+    const w = this;
+    return {
+      get chart() { return w.chart; },
+      get destroyed() { return w.destroyed; },
+      get dock() { return w.dock; },
+      get featureState() { return w.featureState; },
+      formatAlertPrice: (...args) => w.formatAlertPrice(...args),
+      say: (...args) => w.say(...args),
+      get state() { return w.state; },
+      get t() { return w.t; },
     };
   }
 }
