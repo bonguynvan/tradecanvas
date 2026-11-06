@@ -22,7 +22,7 @@ export interface MenusHost {
   readonly featureState: ChartWidget['featureState'];
   formatAlertPrice: ChartWidget['formatAlertPrice'];
   readonly objectTree: ChartWidget['objectTree'];
-  openDrawingSettings: ChartWidget['openDrawingSettings'];
+  openDrawingSettings: ChartWidget['drawingEdit']['openDrawingSettings'];
   openSettings: ChartWidget['chartSettings']['openSettings'];
   readonly options: ChartWidget['options'];
   refreshDrawingsState: ChartWidget['refreshDrawingsState'];

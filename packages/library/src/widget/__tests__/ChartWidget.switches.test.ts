@@ -483,7 +483,7 @@ describe('ChartWidget switches after review', () => {
   type Inner = {
     legend: { openLegendMenu(id: string, anchor: HTMLElement): void };
     alerting: { toggleAlerts(): void; alertsPanel: { isOpen(): boolean } };
-    selectTypedTimeframe(tf: string): boolean;
+    intervals: { selectTypedTimeframe(tf: string): boolean };
     say(message: string, kind?: 'info' | 'error'): void;
   };
   const inner = () => widget as unknown as Inner;
@@ -533,7 +533,7 @@ describe('ChartWidget switches after review', () => {
 
   it('adds no interval typed on the chart without custom intervals', () => {
     make({ features: { customTimeframes: false } });
-    expect(inner().selectTypedTimeframe('7m')).toBe(false);
+    expect(inner().intervals.selectTypedTimeframe('7m')).toBe(false);
   });
 
   it('still shows the widget’s errors with the notices off', () => {

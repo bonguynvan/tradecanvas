@@ -1,5 +1,5 @@
 import type { ChartType, DataUpdatePayload, DrawingToolType, FeaturesConfig, HistoryLoadPayload, OHLCBar, Quote, SymbolInfo, Theme, TimeFrame, TimeZoneSetting } from '@tradecanvas/commons';
-import { barTimeUnit, marketStatus, offsetAt, stepDecimals, tickBarCount, timeframeFollowsDays, tzLabel } from '@tradecanvas/commons';
+import { barTimeUnit, marketStatus, offsetAt, stepDecimals, timeframeFollowsDays, tzLabel } from '@tradecanvas/commons';
 import { settingToTimezone, timezoneOptions, timezoneToSetting } from './widgetTimezones.js';
 import { installFormControls } from './formControls.js';
 import { Chart } from '../Chart.js';
@@ -43,9 +43,9 @@ import {
 import { WidgetDrawingStyle } from './WidgetDrawingStyle.js';
 import { WidgetSelectionToolbar } from './WidgetSelectionToolbar.js';
 import { DrawingDefaultsStore, DrawingTemplateStore } from './DrawingTemplateStore.js';
-import type { WidgetDrawingSettings, DrawingTemplateLook } from './WidgetDrawingSettings.js';
+import type { WidgetDrawingSettings } from './WidgetDrawingSettings.js';
 import { WidgetContextMenu } from './WidgetContextMenu.js';
-import { TEXT_COLORS, TEXT_LAYOUTS, TEXT_PLACES } from './drawingText.js';
+import { TEXT_LAYOUTS } from './drawingText.js';
 import { WidgetInlineText } from './WidgetInlineText.js';
 import { chartMenuEntries, priceEntries } from './chartMenu.js';
 import { WidgetAccountPanel } from './WidgetAccountPanel.js';
@@ -63,9 +63,6 @@ import { watchNarrow } from './narrowMode.js';
 import {
   availableTimeframes,
   initialTimeframeFavorites,
-  parseTimeframeInput,
-  timeframeForRange,
-  timeframeLabel,
   withExtraTimeframes,
 } from './widgetTimeframes.js';
 import type { GoToTarget, WidgetGoToDate } from './WidgetGoToDate.js';
@@ -77,7 +74,7 @@ import { type CompareWay } from './widgetCompare.js';
 import { WidgetTooltip } from './WidgetTooltip.js';
 import { WidgetIndicatorLegend } from './WidgetIndicatorLegend.js';
 import { formatIndicatorValue } from './legendValues.js';
-import { RANGE_PRESETS, SYMBOL_INDICATOR_IDS, adapterFromFeed, indicatorCategory, rangePresetStart, servesTimeframe, sourceParam, type RangePreset } from '@tradecanvas/core';
+import { RANGE_PRESETS, SYMBOL_INDICATOR_IDS, adapterFromFeed, indicatorCategory, sourceParam } from '@tradecanvas/core';
 import { WidgetBracketBar } from './WidgetBracketBar.js';
 import { AlertNotifier } from './AlertNotifier.js';
 import { WidgetDepthLadder } from './WidgetDepthLadder.js';
@@ -103,6 +100,8 @@ import { WidgetCommands, type CommandsHost } from './WidgetCommands.js';
 import { WidgetLayouts, type LayoutsHost } from './WidgetLayouts.js';
 import { WidgetDockArea, type DockHost } from './WidgetDockArea.js';
 import { WidgetChartSettings, type ChartSettingsHost } from './WidgetChartSettings.js';
+import { WidgetDrawingEdit, type DrawingEditHost } from './WidgetDrawingEdit.js';
+import { WidgetIntervals, type IntervalsHost } from './WidgetIntervals.js';
 import {
   markPart,
   CHART_MENU_FEATURES,
@@ -117,8 +116,6 @@ import {
 
 /** How long a just-drawn text waits for its press to end before asking for its words anyway. */
 const TEXT_PROMPT_FALLBACK_MS = 600;
-/** A text drawing's size when neither it nor its tool sets one. */
-const DEFAULT_TEXT_SIZE = 13;
 /** How far past a scale step (px) the widget must be before its look changes size: no flicker at the edge. */
 const SCALE_DEAD_BAND = 24;
 /** The tokens a bigger scale changes: bars, buttons, icons, menu rows and type. */
@@ -200,9 +197,6 @@ const LOOK_KEYS: readonly ChartStyleKey[] = SETTINGS_LOOK_KEYS.filter((key) => C
 
 /** The widget pressed last: with several on a page, Alt+ shortcuts act on that one. */
 
-/** Recent bars looked at to tell a market open on weekends. */
-const WEEKDAY_SAMPLE = 200;
-
 /**
  * The options with a `feed` made into the widget's own adapter, so all
  * after reads `adapter` alone: one per widget, as a feed serves many.
@@ -214,6 +208,10 @@ function withFeedAdapter(options: ChartWidgetOptions): ChartWidgetOptions {
 }
 
 export class ChartWidget {
+  /** The intervals the widget offers: the menu, the ones pinned, typed ones and the range bar's. */
+  private readonly intervals = new WidgetIntervals(this.intervalsHost());
+  /** Editing a drawing: its toolbar, its words typed in place, its settings and its templates. */
+  private readonly drawingEdit = new WidgetDrawingEdit(this.drawingEditHost());
   /** The chart settings: their state, where they are kept, the dialog's edit, and the scale they show. */
   private readonly chartSettings = new WidgetChartSettings(this.chartSettingsHost());
   /** The dock by the chart: its panels, its rail and how wide it is. */
@@ -271,7 +269,7 @@ export class ChartWidget {
   private unregisterKeys: () => void = () => {};
   private readonly onFullscreenChange = () => {
     // The layer moves with the page: words being typed are kept first.
-    this.inlineText?.commit();
+    this.drawingEdit.inlineText?.commit();
     this.toolbar?.setFullscreen(document.fullscreenElement === this.root);
     if (this.portal.isConnected) this.overlayHost(); // an open modal follows
   };
@@ -306,19 +304,6 @@ export class ChartWidget {
   private get drawingSettings(): WidgetDrawingSettings | null {
     return this.drawingSettingsPart?.get() ?? null;
   }
-  /** A text drawn just now whose words the settings ask for: Cancel there takes it back. */
-  private justDrawnText: string | null = null;
-  /** A text drawing's words typed in place over it. */
-  private inlineText: WidgetInlineText | null = null;
-  /** The drawing whose words are being typed in place, and whether it was just drawn. */
-  private inlineTextId: string | null = null;
-  private inlineTextNew = false;
-  /** The chart's type sizes the look last wrote: a host's own change since makes them the new base. */
-  private chartFontWritten: { sizeSmall: number; sizeMedium: number; sizeLarge: number } | null = null;
-  /** Stops waiting to ask for a just-drawn text's words (the widget goes, or another text is drawn first). */
-  private cancelTextPrompt: (() => void) | null = null;
-  private selectionToolbar: WidgetSelectionToolbar | null = null;
-  private selectionToolbarFrame: number | null = null;
   /** Whether the chart menu offers a download of the data. */
   private canExport = true;
   /** The latest fetch of each symbol the chart's indicators read. */
@@ -334,9 +319,6 @@ export class ChartWidget {
   private scaleObserver: ResizeObserver | null = null;
   private templates = new IndicatorTemplateStore();
   private templatePrompt: WidgetNamePrompt | null = null;
-  /** Asks a drawing template's name, over the drawing's settings. */
-  private drawingTemplatePrompt: WidgetNamePrompt | null = null;
-  private intervalInput: WidgetIntervalInput | null = null;
   /** The note shown over a signal marker under the pointer. */
   private markerTip: HTMLDivElement | null = null;
   private dataWindow: WidgetDataWindow | null = null;
@@ -415,10 +397,6 @@ export class ChartWidget {
   private builtInZone: string | null | undefined = undefined;
   /** The timeframe the user (or the host) picked: ranges never show finer than it, layouts keep it. */
   private chosenTimeframe: TimeFrame | null = null;
-  /** Counts range clicks and the user's own picks: a range waiting behind a newer one gives way. */
-  private rangeSeq = 0;
-  /** Ranges apply one at a time, each reading the bars the last one brought. */
-  private rangeQueue: Promise<void> = Promise.resolve();
   /** Every switch, on or off (see `setFeatures`). */
   private featureState: WidgetFeatureState;
   /** The host's own shortcuts, first added first. */
@@ -613,8 +591,8 @@ export class ChartWidget {
       this.root,
       {
         symbols: this.symbols,
-        timeframes: this.timeframeMenu(),
-        timeframeFavorites: this.pinnedTimeframes(),
+        timeframes: this.intervals.timeframeMenu(),
+        timeframeFavorites: this.intervals.pinnedTimeframes(),
         chartTypes: options.chartTypes
           ? CHART_TYPES.filter(ct => (options.chartTypes as ChartType[]).includes(ct.value))
           : CHART_TYPES,
@@ -623,9 +601,9 @@ export class ChartWidget {
         onSymbolClick: () => this.handleSymbolClick(),
         onSymbolInfo: () => this.toggleSymbolInfo(),
         onTimeframe: (tf) => this.handleTimeframe(tf),
-        onToggleTimeframeFavorite: (tf) => this.handleToggleTimeframeFavorite(tf),
-        onAddTimeframe: (text) => this.handleAddTimeframe(text),
-        onRemoveTimeframe: (tf) => this.handleRemoveTimeframe(tf),
+        onToggleTimeframeFavorite: (tf) => this.intervals.handleToggleTimeframeFavorite(tf),
+        onAddTimeframe: (text) => this.intervals.handleAddTimeframe(text),
+        onRemoveTimeframe: (tf) => this.intervals.handleRemoveTimeframe(tf),
         onChartType: (type) => this.handleChartType(type),
         onIndicators: () => this.toggleIndicatorPicker(),
         onScreenshot: () => this.chart.screenshot(),
@@ -833,7 +811,7 @@ export class ChartWidget {
       groupLabel: this.t('range.presets'),
       goToLabel: this.t('range.goTo'),
       moreLabel: this.t('toolbar.more'),
-      onPreset: (preset) => void this.applyRangePreset(preset),
+      onPreset: (preset) => void this.intervals.applyRangePreset(preset),
       onGoTo: () => this.toggleGoToDate(),
       goToKeys: () => this.keysShown('hotkeys.goToDate', 'Alt+G'),
     }, {
@@ -1053,8 +1031,8 @@ export class ChartWidget {
       onEnd: (id, cancel) => {
         this.chart.endDrawingEdit(id, { cancel });
         // Cancel on the words of a text just drawn takes the text back.
-        if (cancel && id === this.justDrawnText) this.chart.takeBackDrawing(id);
-        this.justDrawnText = null;
+        if (cancel && id === this.drawingEdit.justDrawnText) this.chart.takeBackDrawing(id);
+        this.drawingEdit.justDrawnText = null;
         this.docking.refreshObjects();
       },
       toWallTime: (time) => utcToWallTime(time * barTimeUnit(this.chart.getData()), this.displayTimezone()),
@@ -1071,26 +1049,26 @@ export class ChartWidget {
       },
       templates: {
         list: (type) => templates.list(type),
-        save: (look) => this.promptSaveDrawingTemplate(templates, look),
+        save: (look) => this.drawingEdit.promptSaveDrawingTemplate(templates, look),
         remove: (name, type) => templates.remove(name, type),
       },
     }, this.t));
-    this.inlineText = new WidgetInlineText(this.overlayHost);
+    this.drawingEdit.inlineText = new WidgetInlineText(this.overlayHost);
     this.chart.on('drawingDoubleClick', (e) => {
       const id = (e.payload as { id: string }).id;
       // A text's words are what a double-click on it is for: typed in place over it.
       const type = this.chart.getDrawings().find((d) => d.id === id)?.type;
-      if (type && TEXT_LAYOUTS[type] && this.editTextInPlace(id, false)) return;
-      this.openDrawingSettings(id, type && TEXT_LAYOUTS[type] ? { tab: 'text' } : {});
+      if (type && TEXT_LAYOUTS[type] && this.drawingEdit.editTextInPlace(id, false)) return;
+      this.drawingEdit.openDrawingSettings(id, type && TEXT_LAYOUTS[type] ? { tab: 'text' } : {});
     });
     // A text's drawing gone (undo, the trash, another chart's sync) takes its typing with it.
     this.chart.on('drawingRemove', (e) => {
       const id = (e.payload as { id: string }).id;
-      if (id !== this.inlineTextId) return;
-      this.inlineText?.close();
+      if (id !== this.drawingEdit.inlineTextId) return;
+      this.drawingEdit.inlineText?.close();
       // Its edit ends with it, so the next change to that id is recorded again.
-      if (!this.inlineTextNew) this.chart.endDrawingEdit(id);
-      this.inlineTextId = null;
+      if (!this.drawingEdit.inlineTextNew) this.chart.endDrawingEdit(id);
+      this.drawingEdit.inlineTextId = null;
     });
     // A text, a note or a callout just drawn asks for its words (not one added from code).
     this.chart.on('drawingCreate', (e) => {
@@ -1098,25 +1076,25 @@ export class ChartWidget {
       if (!drawn || !TEXT_LAYOUTS[type]) return;
       // The press that drew it is still down: opened now, the chart would take the
       // keyboard back when it ends. So once it ends, or soon after if it never does.
-      this.cancelTextPrompt?.();
+      this.drawingEdit.cancelTextPrompt?.();
       let fallback = 0;
       const stop = () => {
         window.removeEventListener('pointerup', afterPress);
         window.removeEventListener('pointercancel', afterPress);
         clearTimeout(fallback);
-        this.cancelTextPrompt = null;
+        this.drawingEdit.cancelTextPrompt = null;
       };
       const open = () => {
         stop();
         if (this.destroyed || !this.chart.getDrawings().some((d) => d.id === id)) return;
-        if (this.editTextInPlace(id, true)) return;
-        this.openDrawingSettings(id, { tab: 'text', justDrawn: true });
+        if (this.drawingEdit.editTextInPlace(id, true)) return;
+        this.drawingEdit.openDrawingSettings(id, { tab: 'text', justDrawn: true });
       };
       const afterPress = () => setTimeout(open, 0);
       window.addEventListener('pointerup', afterPress);
       window.addEventListener('pointercancel', afterPress);
       fallback = window.setTimeout(open, TEXT_PROMPT_FALLBACK_MS);
-      this.cancelTextPrompt = stop;
+      this.drawingEdit.cancelTextPrompt = stop;
     });
     this.drawingStyle = new WidgetDrawingStyle(
       this.root,
@@ -1139,7 +1117,7 @@ export class ChartWidget {
     });
 
     // A click on a drawing: its toolbar right over it, no right-click needed.
-    this.selectionToolbar = new WidgetSelectionToolbar(this.root, {
+    this.drawingEdit.selectionToolbar = new WidgetSelectionToolbar(this.root, {
       onStyle: (patch) => {
         for (const id of this.chart.getSelectedDrawingIds()) {
           // A text without a box shows a fill only once its background is on: picking one turns it on.
@@ -1148,11 +1126,11 @@ export class ChartWidget {
           const own = patch.fillColor !== undefined && layout && !layout.box ? { ...patch, textBackground: true } : patch;
           this.chart.setSelectedDrawingStyle(own, id);
         }
-        this.updateSelectionToolbar();
+        this.drawingEdit.updateSelectionToolbar();
       },
       onSettings: () => {
         const id = this.chart.getSelectedDrawingIds()[0];
-        if (id) this.openDrawingSettings(id);
+        if (id) this.drawingEdit.openDrawingSettings(id);
       },
       onAlert: () => {
         const id = this.chart.getSelectedDrawingIds()[0];
@@ -1161,7 +1139,7 @@ export class ChartWidget {
       onLock: (locked) => {
         this.chart.setDrawingsLocked(this.chart.getSelectedDrawingIds(), locked);
         this.docking.refreshObjects();
-        this.updateSelectionToolbar();
+        this.drawingEdit.updateSelectionToolbar();
       },
       onMore: (x, y) => {
         const id = this.chart.getSelectedDrawingIds()[0];
@@ -1173,7 +1151,7 @@ export class ChartWidget {
         // Locked drawings stay, and stay selected.
         this.chart.removeDrawings(this.chart.getSelectedDrawingIds());
         this.docking.refreshObjects();
-        this.updateSelectionToolbar();
+        this.drawingEdit.updateSelectionToolbar();
       },
     }, this.t);
     // Lock all and hide all show whether every drawing is.
@@ -1187,7 +1165,7 @@ export class ChartWidget {
     });
     // Selecting, or picking a tool, the eraser or the zoom area: at once.
     for (const event of ['drawingSelect', 'drawingToolChange', 'toolModeChange'] as const) {
-      this.chart.on(event, () => this.updateSelectionToolbar());
+      this.chart.on(event, () => this.drawingEdit.updateSelectionToolbar());
     }
     // While it shows, it follows the drawing through edits, undo, pans, zooms,
     // rescales and replay steps, once a frame.
@@ -1195,7 +1173,7 @@ export class ChartWidget {
       'drawingUpdate', 'drawingRemove', 'historyChange', 'visibleRangeChange', 'priceRangeChange', 'zoomChange',
       'resize', 'paneResize', 'paneChange', 'dataUpdate', 'replayStep', 'chartTypeChange',
     ] as const) {
-      this.chart.on(event, () => this.scheduleSelectionToolbar());
+      this.chart.on(event, () => this.drawingEdit.scheduleSelectionToolbar());
     }
 
     // Right-click elsewhere: what the plot, an axis or a pane offers. The "+"
@@ -1224,11 +1202,11 @@ export class ChartWidget {
     this.chart.on('signalMarkerHover', (e) => this.showMarkerTip(e.payload));
 
     // Typing a number on the chart changes the interval.
-    this.intervalInput = new WidgetIntervalInput(this.chartContainer, {
+    this.intervals.intervalInput = new WidgetIntervalInput(this.chartContainer, {
       title: this.t('interval.title'),
       hint: this.t('interval.hint'),
       invalid: this.t('interval.invalid'),
-    }, (tf) => this.selectTypedTimeframe(tf));
+    }, (tf) => this.intervals.selectTypedTimeframe(tf));
 
     // Named layouts: save, open, rename, delete, auto-save.
     if (options.layouts !== false) this.layouts.setupLayouts(options.layouts === true || options.layouts === undefined ? {} : options.layouts);
@@ -1394,7 +1372,7 @@ export class ChartWidget {
         this.chart.removeDrawing(id);
         this.docking.refreshObjects();
       },
-      onConfigureDrawing: (id) => this.openDrawingSettings(id),
+      onConfigureDrawing: (id) => this.drawingEdit.openDrawingSettings(id),
       onToggleDrawingVisible: (id, visible) => {
         this.chart.setDrawingVisible(id, visible);
         this.docking.refreshObjects();
@@ -1503,12 +1481,12 @@ export class ChartWidget {
         this.handleDrawingTool(TOOL_HOTKEYS[e.code]);
       } else if (/^[0-9]$/.test(e.key) && !e.ctrlKey && !e.metaKey && !e.altKey) {
         // A number typed on the chart starts an interval (5, 15m, 1h…).
-        if (e.defaultPrevented || !this.intervalInput || !keyOn('intervalTyping') || isTyping() || inOverlay() || !isKeyTarget(this.root, true)) return;
+        if (e.defaultPrevented || !this.intervals.intervalInput || !keyOn('intervalTyping') || isTyping() || inOverlay() || !isKeyTarget(this.root, true)) return;
         const active = document.activeElement;
         // Focus in another part of the page: the keys are its.
         if (active && active !== document.body && !this.root.contains(active)) return;
         e.preventDefault();
-        this.intervalInput.open(e.key);
+        this.intervals.intervalInput.open(e.key);
       } else if (typedLetter(e) !== null) {
         // A letter typed on the chart starts a symbol search with it.
         if (e.defaultPrevented || !keyOn('symbolTyping') || !this.featureState.symbolSearch || isTyping() || inOverlay() || !isKeyTarget(this.root, true)) return;
@@ -1834,7 +1812,7 @@ export class ChartWidget {
     if (!this.chart.isTimeframeAllowed(tf)) return;
     // The user's pick: it bounds the range bar from now on, and wins over a range on its way.
     this.chosenTimeframe = tf;
-    this.rangeSeq++;
+    this.intervals.rangeSeq++;
     await this.switchTimeframe(tf);
   }
 
@@ -1984,7 +1962,7 @@ export class ChartWidget {
     const now = this.chart.getFont?.();
     if (!now) return {};
     const current = { sizeSmall: now.sizeSmall, sizeMedium: now.sizeMedium, sizeLarge: now.sizeLarge };
-    const written = this.chartFontWritten;
+    const written = this.drawingEdit.chartFontWritten;
     const changedByHost = !written || written.sizeSmall !== current.sizeSmall || written.sizeMedium !== current.sizeMedium || written.sizeLarge !== current.sizeLarge;
     if (changedByHost) this.chartFontBase = current;
     if (this.uiScale === 1 && !written) return {};
@@ -1992,7 +1970,7 @@ export class ChartWidget {
     const at = (n: number) => (this.uiScale === 1 ? n : Math.round(n * this.uiScale));
     const sizes = { sizeSmall: at(base.sizeSmall), sizeMedium: at(base.sizeMedium), sizeLarge: at(base.sizeLarge) };
     // Back at 1 the base is the chart's own again, and the look stops writing.
-    this.chartFontWritten = this.uiScale === 1 ? null : sizes;
+    this.drawingEdit.chartFontWritten = this.uiScale === 1 ? null : sizes;
     return sizes;
   }
 
@@ -2011,7 +1989,7 @@ export class ChartWidget {
     this.stopNarrow?.();
     this.docking.dockObserver?.disconnect();
     this.scaleObserver?.disconnect();
-    this.inlineText?.close();
+    this.drawingEdit.inlineText?.close();
     this.stopNarrow = null;
     this.stopFormControls?.();
     this.stopFormControls = null;
@@ -2040,17 +2018,17 @@ export class ChartWidget {
     this.drawingSettingsPart?.destroy();
     this.menus.drawingMenu?.destroy();
     this.menus.clearMenu?.destroy();
-    this.cancelTextPrompt?.();
-    this.selectionToolbar?.destroy();
-    if (this.selectionToolbarFrame !== null) cancelAnimationFrame(this.selectionToolbarFrame);
+    this.drawingEdit.cancelTextPrompt?.();
+    this.drawingEdit.selectionToolbar?.destroy();
+    if (this.drawingEdit.selectionToolbarFrame !== null) cancelAnimationFrame(this.drawingEdit.selectionToolbarFrame);
     this.menus.chartMenu?.destroy();
     this.legend.legendMenu?.destroy();
     for (const menu of this.hostMenus) menu.destroy();
     this.hostMenus.clear();
     this.templatePrompt?.destroy();
     this.chartSettings.chartTemplatePrompt?.destroy();
-    this.drawingTemplatePrompt?.destroy();
-    this.intervalInput?.destroy();
+    this.drawingEdit.drawingTemplatePrompt?.destroy();
+    this.intervals.intervalInput?.destroy();
     this.markerTip?.remove();
     this.layouts.layoutSession?.destroy();
     this.layouts.layoutsUI?.destroy();
@@ -2129,77 +2107,6 @@ export class ChartWidget {
     void this.setTimeframe(tf);
   }
 
-  /**
-   * A range from the range bar. A long one switches to the timeframe whose
-   * bars it fits (five years of days in weeks, decades in months), a short
-   * one back toward the user's own (`timeframeForRange`); then the range is
-   * shown. Off with `features: { 'statusBar.rangeTimeframe': false }`.
-   */
-  private applyRangePreset(preset: RangePreset): Promise<void> {
-    const seq = ++this.rangeSeq;
-    // One at a time; a newer click, or the user's own pick, skips one still waiting.
-    this.rangeQueue = this.rangeQueue
-      .then(() => this.runRangePreset(preset, seq))
-      .catch((err: unknown) => {
-        this.say(err instanceof Error ? err.message : String(err), 'error');
-      });
-    return this.rangeQueue;
-  }
-
-  private async runRangePreset(preset: RangePreset, seq: number): Promise<void> {
-    const current = () => seq === this.rangeSeq && !this.destroyed;
-    if (!current()) return;
-    // The timeframe the widget started on counts as the user's until they pick one.
-    this.chosenTimeframe ??= this.state.timeframe;
-    const tf = this.featureState['statusBar.rangeTimeframe'] ? this.timeframeForPreset(preset) : this.state.timeframe;
-    if (tf !== this.state.timeframe) {
-      await this.switchTimeframe(tf);
-      // Superseded while loading, or the load failed: the bars aren't the range's.
-      if (!current() || (this.adapter && this.state.connectionState === 'error')) return;
-    }
-    this.chart.setVisibleRangePreset(preset);
-  }
-
-  /** The timeframe `preset` shows in, from the bars on the chart now. */
-  private timeframeForPreset(preset: RangePreset): TimeFrame {
-    const current = this.state.timeframe;
-    const data = this.chart.getData();
-    if (data.length < 2) return current;
-    const unit = barTimeUnit(data);
-    const end = data[data.length - 1].time * unit;
-    const start = preset === 'All' ? data[0].time * unit : rangePresetStart(preset, end, this.displayTimezone());
-    if (start === null) return current;
-    let first = data.length - 1;
-    while (first > 0 && data[first - 1].time * unit >= start) first--;
-    // Days a market trades in a week: all seven if any recent bar falls on a weekend.
-    const tz = this.displayTimezone();
-    const weekend = data.slice(-WEEKDAY_SAMPLE).some((bar) => {
-      const ms = bar.time * unit;
-      const day = new Date(ms + offsetAt(tz, ms) * 60_000).getUTCDay();
-      return day === 0 || day === 6;
-    });
-    return timeframeForRange({
-      dayShare: weekend ? 1 : 5 / 7,
-      spanMs: end - start,
-      barsInSpan: data.length - first,
-      width: this.chart.getPlotRect().width,
-      current,
-      chosen: this.chosenTimeframe ?? current,
-      available: this.timeframes.filter((tf) => this.chart.isTimeframeAllowed(tf) && this.canShowTimeframe(tf)),
-    });
-  }
-
-  /** Whether a switch to `tf` brings bars: the feed serves it, or the bars here resample to it. */
-  private canShowTimeframe(tf: TimeFrame): boolean {
-    if (this.adapter) return servesTimeframe(this.adapter, tf);
-    if (this.options.resampleTimeframes === false) return false;
-    const data = this.chart.getData();
-    if (data.length < 2) return false;
-    // Resampling only makes bars coarser than those it starts from.
-    const base = this.baseSeries ? this.baseTimeframeMs : inferTimeframeMs(data);
-    return !(base > 0) || timeframeToMs(tf) >= base;
-  }
-
   /** Fill the screen with the widget, or leave fullscreen. */
   toggleFullscreen(): void {
     if (document.fullscreenElement === this.root) {
@@ -2225,165 +2132,6 @@ export class ChartWidget {
     return { x: chartRect.left - rootRect.left, y: chartRect.top - rootRect.top };
   }
 
-  /** `updateSelectionToolbar` on the next frame, once, while the toolbar shows. */
-  private scheduleSelectionToolbar(): void {
-    if (this.selectionToolbarFrame !== null || !this.selectionToolbar?.isOpen()) return;
-    this.selectionToolbarFrame = requestAnimationFrame(() => {
-      this.selectionToolbarFrame = null;
-      this.updateSelectionToolbar();
-    });
-  }
-
-  /**
-   * Show the selection toolbar over the selected drawings, or hide it: when
-   * nothing is selected, or while a tool, the eraser or the zoom area is on.
-   */
-  private updateSelectionToolbar(): void {
-    const toolbar = this.selectionToolbar;
-    if (!toolbar || this.destroyed) return;
-    const selected = this.chart.getSelectedDrawingIds();
-    if (!this.featureState.selectionToolbar || !selected?.length) {
-      toolbar.hide();
-      return;
-    }
-    const ids = new Set(selected);
-    const drawings = this.chart.getDrawings().filter((d) => ids.has(d.id) && this.chart.isDrawingShown(d.id));
-    const busy = this.chart.getDrawingTool() !== null || this.chart.isEraserMode() || this.chart.isZoomAreaMode();
-    if (busy || drawings.length === 0) {
-      toolbar.hide();
-      return;
-    }
-    const offset = this.chartOffset();
-    const primary = drawings[0];
-    // Kept within the pane the drawing is on: the price plot, or an indicator pane.
-    const plot = (primary.paneId !== undefined
-      ? this.chart.getIndicatorPanes().find((pane) => pane.instanceId === primary.paneId)?.rect
-      : undefined) ?? this.chart.getPlotRect();
-    // Over all of them; at the top of the plot when none is on screen (an
-    // extended line crossing it far from its anchors).
-    // A text's box with it, so the toolbar never covers the words a double-click is for.
-    const rect = unionRects(drawings.flatMap((d) => [this.chart.getDrawingRect(d.id), this.chart.getDrawingTextRect?.(d.id) ?? null]))
-      ?? { x: plot.x + plot.width / 2, y: plot.y, width: 0, height: 0 };
-    toolbar.show({
-      rect: { x: rect.x + offset.x, y: rect.y + offset.y, width: rect.width, height: rect.height },
-      bounds: { x: plot.x + offset.x, y: plot.y + offset.y, width: plot.width, height: plot.height },
-      style: primary.style,
-      locked: drawings.every((d) => d.locked),
-      canDelete: drawings.some((d) => !d.locked),
-      canSettings: this.featureState.drawingSettings && drawings.length === 1,
-      canAlert: this.featureState.alerts && drawings.length === 1 && this.chart.canAddDrawingAlert(primary.id),
-      canFill: this.chart.getDrawingToolDescriptor(primary.type)?.fill === true,
-      canText: this.chart.getDrawingToolDescriptor(primary.type)?.text === true,
-    });
-  }
-
-  /**
-   * Type a text drawing's words in place, over its box: Enter or a click away
-   * keeps them, Escape puts them back. One just drawn (`justDrawn`) is taken
-   * back on Escape or with no words. False when its box is not on the chart
-   * (hidden, its text turned off): the settings ask for the words instead.
-   */
-  private editTextInPlace(id: string, justDrawn: boolean): boolean {
-    // Already being typed in: the box is open.
-    if (id === this.inlineTextId && this.inlineText?.isOpen()) return true;
-    const drawing = this.chart.getDrawings().find((d) => d.id === id);
-    const editor = this.inlineText;
-    // A text just drawn takes its words into the step that made it; an old one's edit is a step of its own.
-    if (!drawing || !editor || drawing.locked || (!justDrawn && !this.chart.beginDrawingEdit(id))) return false;
-    const layout = TEXT_LAYOUTS[drawing.type];
-    const style = drawing.style;
-    const before = style.text ?? '';
-    const end = (keep: boolean) => {
-      this.inlineTextId = null;
-      if (justDrawn) {
-        if (!keep) this.chart.takeBackDrawing(id);
-      } else {
-        this.chart.endDrawingEdit(id, { cancel: !keep });
-      }
-      this.docking.refreshObjects();
-    };
-    const opened = editor.open({
-      rect: () => {
-        const box = this.chart.getDrawingTextRect(id);
-        if (!box) return null;
-        const at = this.chartContainer.getBoundingClientRect();
-        return { x: at.left + box.x, y: at.top + box.y, width: box.width, height: box.height };
-      },
-      text: before,
-      font: {
-        size: style.fontSize || layout?.fontSize || DEFAULT_TEXT_SIZE,
-        bold: style.bold === true,
-        italic: style.italic === true,
-        family: this.chart.getFont?.()?.family ?? this.ui.font.family,
-      },
-      color: style.textColor ?? TEXT_COLORS[drawing.type] ?? style.color,
-      label: this.t('drawingSettings.text'),
-      onInput: (text) => (justDrawn ? this.chart.amendNewDrawing(id, { style: { text } }) : this.chart.updateDrawing(id, { style: { text } })),
-      // No words: a text just drawn goes, an old one keeps what it said. Blank lines at the end go.
-      onCommit: (text) => {
-        const kept = text.replace(/\s+$/, '');
-        if (kept && kept !== text) {
-          if (justDrawn) this.chart.amendNewDrawing(id, { style: { text: kept } });
-          else this.chart.updateDrawing(id, { style: { text: kept } });
-        }
-        end(kept.length > 0);
-      },
-      onCancel: () => end(false),
-      returnFocus: () => this.chartContainer.querySelector<HTMLElement>('[tabindex]') ?? this.chartContainer,
-    });
-    if (!opened) {
-      if (!justDrawn) this.chart.endDrawingEdit(id, { cancel: true });
-      return false;
-    }
-    this.inlineTextId = id;
-    this.inlineTextNew = justDrawn;
-    return true;
-  }
-
-  /** Open a drawing's settings (double-click on it, or the object tree's settings button). */
-  private openDrawingSettings(id: string, how: { tab?: 'text'; justDrawn?: boolean } = {}): void {
-    this.whenLoaded(this.drawingSettingsPart, () => this.featureState.drawingSettings, (dialog) => this.showDrawingSettings(dialog, id, how));
-  }
-
-  private showDrawingSettings(dialog: WidgetDrawingSettings, id: string, how: { tab?: 'text'; justDrawn?: boolean }): void {
-    // Looked up once the dialog is in: the drawing may have gone while its code loaded.
-    const drawing = this.chart.getDrawings().find((d) => d.id === id);
-    const descriptor = drawing ? this.chart.getDrawingToolDescriptor(drawing.type) : null;
-    if (!drawing || !descriptor) return;
-    dialog.open({
-      id,
-      type: drawing.type,
-      name: this.drawingToolName(drawing.type),
-      style: { ...drawing.style },
-      options: this.chart.getDrawingOptions(id),
-      defs: descriptor.options ?? {},
-      anchors: drawing.anchors.map((a) => ({ ...a })),
-      fill: descriptor.fill === true,
-      text: descriptor.text === true,
-      textLayout: TEXT_LAYOUTS[drawing.type],
-      textColor: TEXT_COLORS[drawing.type],
-      textPlace: TEXT_PLACES.has(drawing.type),
-      coordinates: descriptor.anchoring !== 'screen',
-      intervals: drawing.intervals ?? null,
-    }, { tab: how.tab });
-    // Set once it is open (opening ends the edit before it): a Cancel on the words of a text just drawn takes the text back.
-    if (how.justDrawn && dialog.isOpen()) this.justDrawnText = id;
-  }
-
-  /** Save a drawing's look as a template of its tool, asking for its name over the drawing's settings. */
-  private promptSaveDrawingTemplate(templates: DrawingTemplateStore, look: DrawingTemplateLook): void {
-    this.drawingTemplatePrompt ??= new WidgetNamePrompt(this.root, this.t);
-    this.drawingTemplatePrompt.open({
-      title: this.t('drawingSettings.saveTemplateTitle'),
-      submitLabel: this.t('common.save'),
-      placeholder: this.drawingToolName(look.type),
-      onSubmit: (name) => {
-        templates.save(name, look.style, { type: look.type, options: look.options });
-        this.say(fill(this.t('templates.saved'), { name: name.trim() }));
-      },
-    });
-  }
-
   // --- Feature switches ---
 
   /**
@@ -2398,7 +2146,7 @@ export class ChartWidget {
     const changed = (name: WidgetFeature): boolean => before[name] !== this.featureState[name];
     this.markSwitchedOff();
     this.closeSwitchedOff((name) => before[name] && !this.featureState[name]);
-    if (changed('selectionToolbar')) this.updateSelectionToolbar();
+    if (changed('selectionToolbar')) this.drawingEdit.updateSelectionToolbar();
     if (changed('indicatorLegend')) {
       this.chart.setPaneTitlesVisible(!this.featureState.indicatorLegend);
       this.legend.scheduleLegend();
@@ -2535,7 +2283,7 @@ export class ChartWidget {
       case 'hotkeys.goToDate': return f.goToDate;
       case 'hotkeys.save': return f.layouts && this.layouts.layoutSession !== null;
       case 'hotkeys.help': return f.hotkeySheet;
-      case 'intervalTyping': return this.intervalInput !== null;
+      case 'intervalTyping': return this.intervals.intervalInput !== null;
       case 'symbolTyping': return f.symbolSearch;
       default: return true;
     }
@@ -2755,35 +2503,6 @@ export class ChartWidget {
     if (Math.min(from, to) / unit < data[0].time) this.say(this.t('range.beforeData'));
   }
 
-  /** Pinned timeframes that are still on offer, shortest first. */
-  private pinnedTimeframes(): TimeFrame[] {
-    const pinned = this.timeframeFavorites.list();
-    return this.timeframes.filter((tf) => pinned.includes(tf));
-  }
-
-  /** The timeframe menu's rows, typed intervals marked so they can be removed. */
-  private timeframeMenu(): { value: TimeFrame; label: string; custom: boolean }[] {
-    return this.timeframes.map((value) => ({ value, label: timeframeLabel(value), custom: this.customTimeframes.has(value) }));
-  }
-
-  /** A typed interval: switch to it, adding and pinning it when it is new. False when it isn't one. */
-  private handleAddTimeframe(text: string): boolean {
-    if (!this.featureState.customTimeframes) return false;
-    const tf = parseTimeframeInput(text);
-    if (!tf || !this.chart.isTimeframeAllowed(tf)) return false;
-    if (this.adapter && !servesTimeframe(this.adapter, tf)) return false;
-    // Tick bars come from a feed's trades; bars on the chart can't make them.
-    if (!this.adapter && tickBarCount(tf) !== null) return false;
-    if (!this.timeframes.includes(tf)) {
-      this.customTimeframes.add(tf);
-      this.timeframeFavorites.add(tf);
-      this.timeframes = withExtraTimeframes(this.timeframes, [tf]);
-      this.toolbar?.setTimeframes(this.timeframeMenu(), this.pinnedTimeframes());
-    }
-    this.handleTimeframe(tf);
-    return true;
-  }
-
   /** A note by a signal marker: its source or label, side, confidence, price and time; null hides it. */
   private showMarkerTip(hover: { marker: import('@tradecanvas/commons').SignalMarker | null; x: number; y: number }): void {
     const { marker } = hover;
@@ -2813,21 +2532,6 @@ export class ChartWidget {
     const top = Math.max(0, hover.y - this.markerTip.offsetHeight - 10);
     this.markerTip.style.left = `${left}px`;
     this.markerTip.style.top = `${top}px`;
-  }
-
-  /** A typed interval: one on offer is picked; another joins the menu (not the toolbar's pins). */
-  private selectTypedTimeframe(tf: TimeFrame): boolean {
-    if (!this.chart.isTimeframeAllowed(tf)) return false;
-    // One not on offer would be added as a custom interval.
-    if (!this.timeframes.includes(tf) && !this.featureState.customTimeframes) return false;
-    if (this.adapter && !servesTimeframe(this.adapter, tf)) return false;
-    if (!this.timeframes.includes(tf)) {
-      this.customTimeframes.add(tf);
-      this.timeframes = withExtraTimeframes(this.timeframes, [tf]);
-      this.toolbar?.setTimeframes(this.timeframeMenu(), this.pinnedTimeframes());
-    }
-    this.handleTimeframe(tf);
-    return true;
   }
 
   /** Put a template's indicators in place of the chart's (one undo step). */
@@ -2864,21 +2568,6 @@ export class ChartWidget {
         this.say(fill(this.t('templates.saved'), { name }));
       },
     });
-  }
-
-  private handleRemoveTimeframe(tf: TimeFrame): void {
-    if (!this.customTimeframes.has(tf)) return;
-    this.customTimeframes.remove(tf);
-    this.timeframeFavorites.remove(tf);
-    this.timeframes = this.timeframes.filter((t) => t !== tf);
-    this.toolbar?.setTimeframes(this.timeframeMenu(), this.pinnedTimeframes());
-    this.updateUI();
-  }
-
-  private handleToggleTimeframeFavorite(tf: TimeFrame): void {
-    this.timeframeFavorites.toggle(tf);
-    this.toolbar?.setTimeframeFavorites(this.pinnedTimeframes());
-    this.updateUI();
   }
 
   /**
@@ -3774,7 +3463,7 @@ export class ChartWidget {
       get featureState() { return w.featureState; },
       formatAlertPrice: (...args) => w.formatAlertPrice(...args),
       get objectTree() { return w.objectTree; },
-      openDrawingSettings: (...args) => w.openDrawingSettings(...args),
+      openDrawingSettings: (...args) => w.drawingEdit.openDrawingSettings(...args),
       openSettings: (...args) => w.chartSettings.openSettings(...args),
       get options() { return w.options; },
       refreshDrawingsState: (...args) => w.refreshDrawingsState(...args),
@@ -3939,6 +3628,55 @@ export class ChartWidget {
       whenLoaded: (...args) => w.whenLoaded(...args),
     };
   }
+
+  /** What WidgetDrawingEdit reads of the widget and asks of it. */
+  private drawingEditHost(): DrawingEditHost {
+    // Getters, so the host reads the widget as it is when asked, not as it was now.
+    const w = this;
+    return {
+      get chart() { return w.chart; },
+      get chartContainer() { return w.chartContainer; },
+      chartOffset: (...args) => w.chartOffset(...args),
+      get destroyed() { return w.destroyed; },
+      get docking() { return w.docking; },
+      get drawingSettingsPart() { return w.drawingSettingsPart; },
+      drawingToolName: (...args) => w.drawingToolName(...args),
+      get featureState() { return w.featureState; },
+      get root() { return w.root; },
+      say: (...args) => w.say(...args),
+      get t() { return w.t; },
+      get ui() { return w.ui; },
+      whenLoaded: (...args) => w.whenLoaded(...args),
+    };
+  }
+
+  /** What WidgetIntervals reads of the widget and asks of it. */
+  private intervalsHost(): IntervalsHost {
+    // Getters, so the host reads the widget as it is when asked, not as it was now.
+    const w = this;
+    return {
+      get adapter() { return w.adapter; },
+      get baseSeries() { return w.baseSeries; },
+      get baseTimeframeMs() { return w.baseTimeframeMs; },
+      get chart() { return w.chart; },
+      get chosenTimeframe() { return w.chosenTimeframe; },
+      set chosenTimeframe(value) { w.chosenTimeframe = value; },
+      get customTimeframes() { return w.customTimeframes; },
+      get destroyed() { return w.destroyed; },
+      displayTimezone: (...args) => w.displayTimezone(...args),
+      get featureState() { return w.featureState; },
+      handleTimeframe: (...args) => w.handleTimeframe(...args),
+      get options() { return w.options; },
+      say: (...args) => w.say(...args),
+      get state() { return w.state; },
+      switchTimeframe: (...args) => w.switchTimeframe(...args),
+      get timeframeFavorites() { return w.timeframeFavorites; },
+      get timeframes() { return w.timeframes; },
+      set timeframes(value) { w.timeframes = value; },
+      get toolbar() { return w.toolbar; },
+      updateUI: (...args) => w.updateUI(...args),
+    };
+  }
 }
 
 export { indicatorChipLabel };
@@ -4016,19 +3754,6 @@ function writeDockWidth(width: number): void {
   try {
     browserStorage()?.setItem(DOCK_WIDTH_KEY, String(width));
   } catch { /* storage full or refused: the width lasts this session */ }
-}
-
-type Box = { x: number; y: number; width: number; height: number };
-
-/** The box around all the given boxes (nulls skipped); null when there are none. */
-function unionRects(rects: (Box | null)[]): Box | null {
-  const boxes = rects.filter((r): r is Box => r !== null);
-  if (boxes.length === 0) return null;
-  const x = Math.min(...boxes.map((r) => r.x));
-  const y = Math.min(...boxes.map((r) => r.y));
-  const right = Math.max(...boxes.map((r) => r.x + r.width));
-  const bottom = Math.max(...boxes.map((r) => r.y + r.height));
-  return { x, y, width: right - x, height: bottom - y };
 }
 
 function isRtlLocale(locale: string | undefined): boolean {
