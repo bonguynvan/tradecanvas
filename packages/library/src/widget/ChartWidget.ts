@@ -1,5 +1,5 @@
-import type { ChartType, DataUpdatePayload, DrawingToolType, FeaturesConfig, HistoryLoadPayload, OHLCBar, PriceScaleMode, Quote, QuoteSource, SymbolInfo, Theme, TimeFrame, TimeZoneSetting } from '@tradecanvas/commons';
-import { barTimeUnit, marketStatus, offsetAt, readQuote, stepDecimals, tickBarCount, timeframeFollowsDays, tzLabel } from '@tradecanvas/commons';
+import type { ChartType, DataUpdatePayload, DrawingToolType, FeaturesConfig, HistoryLoadPayload, OHLCBar, PriceScaleMode, Quote, SymbolInfo, Theme, TimeFrame, TimeZoneSetting } from '@tradecanvas/commons';
+import { barTimeUnit, marketStatus, offsetAt, stepDecimals, tickBarCount, timeframeFollowsDays, tzLabel } from '@tradecanvas/commons';
 import { settingToTimezone, timezoneOptions, timezoneToSetting } from './widgetTimezones.js';
 import { installFormControls } from './formControls.js';
 import { Chart } from '../Chart.js';
@@ -19,8 +19,9 @@ import type { WidgetSymbolSearch, SymbolSearchFn } from './WidgetSymbolSearch.js
 import type { WidgetHotkeySheet } from './WidgetHotkeySheet.js';
 import { MOD_KEY } from './platformKeys.js';
 import { WidgetReplay, type ReplayHost } from './WidgetReplay.js';
-import { WidgetWatchlist, type WatchlistEntry } from './WidgetWatchlist.js';
-import { WatchlistStore, type WatchlistList } from './WatchlistStore.js';
+import { browserStorage, pageHidden } from './pageEnv.js';
+import { type WatchlistEntry } from './WidgetWatchlist.js';
+import { type WatchlistList } from './WatchlistStore.js';
 import { WidgetSymbolInfo, type SymbolInfoView } from './WidgetSymbolInfo.js';
 import { SymbolNews, buildSymbolInfoView } from './symbolInfoView.js';
 import { chartInfoFor, cleanSymbolInfo, mergeSymbolInfo, readSymbolCatalog, symbolTitle } from './symbolCatalog.js';
@@ -101,6 +102,7 @@ import { pickHostItem, withHostItems } from './hostMenus.js';
 import { isChartKey, matchesHotkey, parseHotkey, typedIntoField, type ParsedHotkey } from './hostHotkeys.js';
 import { CHART_STYLE_KEYS, type ChartStyleKey } from '@tradecanvas/commons';
 import { WidgetCompares, type ComparesHost } from './WidgetCompares.js';
+import { WidgetWatchlists, type WatchlistsHost } from './WidgetWatchlists.js';
 import {
   markPart,
   commandFeature,
@@ -231,8 +233,6 @@ const LOOK_KEYS: readonly ChartStyleKey[] = SETTINGS_LOOK_KEYS.filter((key) => C
 
 /** The widget pressed last: with several on a page, Alt+ shortcuts act on that one. */
 
-/** Whether the page is hidden: another tab, the app in the background. */
-const pageHidden = (): boolean => typeof document !== 'undefined' && document.hidden;
 
 /** Recent bars looked at to tell a market open on weekends. */
 const WEEKDAY_SAMPLE = 200;
@@ -248,6 +248,8 @@ function withFeedAdapter(options: ChartWidgetOptions): ChartWidgetOptions {
 }
 
 export class ChartWidget {
+  /** The watchlists by the chart: their symbols, lists and quotes. */
+  private readonly watching = new WidgetWatchlists(this.watchingHost());
   /** Other symbols compared with the chart's: their bars, the compare dialog, the scale they hold. */
   private readonly comparing = new WidgetCompares(this.comparingHost());
   private chart: Chart;
@@ -415,21 +417,7 @@ export class ChartWidget {
   private customTimeframes = new DrawingFavoritesStore('tcw:tf-custom');
   /** Timeframes on offer, shortest first. */
   private timeframes: TimeFrame[] = [];
-  private watchlist: WidgetWatchlist | null = null;
-  private watchlistSparkBuffer = new Map<string, number[]>();
   private sessionRefPrice: number | null = null;
-  /** Per-symbol refPrice explicitly pushed by the host via `setWatchlistEntry` — takes precedence over `sessionRefPrice`. */
-  private hostWatchlistRefPrice = new Map<string, number>();
-  private watchlistInterval: ReturnType<typeof setInterval> | null = null;
-  private watchlistStore: WatchlistStore | null = null;
-  /** The list follows `setSymbols` (no lists given, none kept). */
-  private watchlistFromSymbols = false;
-  private quoteSource: QuoteSource | null = null;
-  private stopQuotes: (() => void) | null = null;
-  /** The symbols quotes are coming for, joined. */
-  private quotedKey = '';
-  /** The latest quote of each symbol. */
-  private quotes = new Map<string, Quote>();
   private symbolInfoPanel: WidgetSymbolInfo | null = null;
   /** Headlines per symbol, kept a few minutes; a late answer for an earlier symbol is dropped. */
   private news = new SymbolNews();
@@ -801,7 +789,7 @@ export class ChartWidget {
       focusAfterClose: (page) => this.panelFocusTarget(page as WidgetPanel),
       room: () => body.clientWidth,
     });
-    if (options.watchlist) this.createWatchlist(body, options.watchlist === true ? {} : options.watchlist);
+    if (options.watchlist) this.watching.createWatchlist(body, options.watchlist === true ? {} : options.watchlist);
 
     this.root.appendChild(body);
     // The account panel docks under the chart, above the status bar.
@@ -1656,8 +1644,8 @@ export class ChartWidget {
     // Watchlist live-update loop. 1s cadence keeps DOM churn low while still
     // feeling responsive; for sub-second visual response, apps can call
     // `setWatchlistEntry` directly from their own WebSocket.
-    if (this.watchlist) {
-      this.watchlistInterval = setInterval(() => this.tickWatchlist(), 1000);
+    if (this.watching.watchlist) {
+      this.watching.watchlistInterval = setInterval(() => this.watching.tickWatchlist(), 1000);
     }
 
     // Initial UI update (the bars now built take the switches), and the dividers again once laid out
@@ -1728,8 +1716,8 @@ export class ChartWidget {
     this.symbols = catalog.names;
     this.symbolCatalog = catalog.info;
     // A list made from the symbols follows them; lists given or kept stay.
-    const store = this.watchlistStore;
-    if (store && this.watchlistFromSymbols) {
+    const store = this.watching.watchlistStore;
+    if (store && this.watching.watchlistFromSymbols) {
       store.replace(store.getLists().map((l) => (l.id === 'default' ? { ...l, symbols: catalog.names } : l)));
     }
     this.refreshSymbolTitle();
@@ -1770,31 +1758,30 @@ export class ChartWidget {
 
   /** Every watchlist, in order. */
   getWatchlists(): WatchlistList[] {
-    return this.watchlistStore?.getLists() ?? [];
+    return this.watching.getWatchlists();
   }
 
   /** The shown watchlist's id, or null without a watchlist. */
   getActiveWatchlist(): string | null {
-    return this.watchlistStore?.getActive().id ?? null;
+    return this.watching.getActiveWatchlist();
   }
 
   /** Replace every watchlist (and which one shows). */
   setWatchlists(lists: WatchlistList[], activeList?: string): void {
-    this.watchlistFromSymbols = false;
-    this.watchlistStore?.replace(lists, activeList);
+    return this.watching.setWatchlists(lists, activeList);
   }
 
   setActiveWatchlist(id: string): void {
-    this.watchlistStore?.setActive(id);
+    return this.watching.setActiveWatchlist(id);
   }
 
   /** Add a symbol to a watchlist (the shown one by default). */
   addToWatchlist(symbol: string, listId?: string): void {
-    this.watchlistStore?.add(symbol, listId);
+    return this.watching.addToWatchlist(symbol, listId);
   }
 
   removeFromWatchlist(symbol: string, listId?: string): void {
-    this.watchlistStore?.removeSymbol(symbol, listId);
+    return this.watching.removeFromWatchlist(symbol, listId);
   }
 
   /**
@@ -1802,14 +1789,12 @@ export class ChartWidget {
    * What isn't a quote (no symbol, no finite last price) is left out.
    */
   setQuotes(quotes: readonly Quote[]): void {
-    const read = quotes.map(readQuote).filter((q): q is Quote => q !== null);
-    if (read.length > 0) this.takeQuotes(read);
+    return this.watching.setQuotes(quotes);
   }
 
   /** The latest quote of a symbol, from the quote source or `setQuotes`. */
   getQuote(symbol: string): Quote | null {
-    const quote = this.quotes.get(symbol);
-    return quote ? { ...quote } : null;
+    return this.watching.getQuote(symbol);
   }
 
   /**
@@ -1825,7 +1810,7 @@ export class ChartWidget {
 
   /** Whether the widget has `panel`: the watchlist and the ladder only when made with them, every one with its switch on. */
   private hasPanel(panel: WidgetPanel): boolean {
-    if (panel === 'watchlist') return this.watchlist !== null;
+    if (panel === 'watchlist') return this.watching.watchlist !== null;
     if (panel === 'depthLadder' && this.depthLadder === null) return false;
     return this.featureState[PANEL_FEATURES[panel]];
   }
@@ -1876,7 +1861,7 @@ export class ChartWidget {
       symbol,
       info: this.chart.getSymbolInfo(),
       names: this.displayInfo(),
-      quote: this.quotes.get(symbol),
+      quote: this.watching.quotes.get(symbol),
       bars: this.chart.getData(),
       formatPrice: (p) => this.formatAlertPrice(p),
       t: this.t,
@@ -1905,102 +1890,6 @@ export class ChartWidget {
     return this.options.locale || 'en';
   }
 
-  private createWatchlist(body: HTMLElement, opts: import('./types.js').WatchlistOptions): void {
-    const storage = opts.persist ? browserStorage() : null;
-    const store = new WatchlistStore({
-      lists: opts.lists,
-      activeList: opts.activeList,
-      symbols: this.symbols,
-      defaultName: this.t('watchlist.title'),
-      storage,
-      storageKey: opts.storageKey,
-    });
-    this.watchlistStore = store;
-    this.watchlistFromSymbols = !opts.lists && !opts.persist;
-    this.quoteSource = opts.quotes === false ? null : opts.quotes ?? (this.options.adapter?.subscribeQuotes ? this.options.adapter as QuoteSource : null);
-
-    const t = (key: Parameters<typeof this.t>[0]) => this.t(key);
-    this.watchlist = new WidgetWatchlist(body, {
-      onSelect: (sym) => { void this.setSymbol(sym); },
-      onAdd: () => this.withSymbolSearch(() => true, (search) => search.open({
-        symbols: this.symbolEntries(), current: this.state.symbol, currentInfo: this.chartSymbolInfo(),
-        onPick: (sym) => store.add(sym), search: this.symbolSearchFn(),
-      })),
-      onRemove: (sym) => store.removeSymbol(sym),
-      onMove: (sym, index) => store.move(sym, index),
-      onPickList: (id) => store.setActive(id),
-      onCreateList: (name) => store.create(name),
-      onRenameList: (id, name) => store.rename(id, name),
-      onDeleteList: (id) => store.remove(id),
-      onClose: () => this.closePanelByHand('watchlist'),
-    }, {
-      close: t('common.close'),
-      title: t('watchlist.title'),
-      lists: t('watchlist.lists'),
-      newList: t('watchlist.newList'),
-      rename: t('watchlist.rename'),
-      deleteList: t('watchlist.deleteList'),
-      confirmDelete: t('watchlist.confirmDelete'),
-      add: t('watchlist.add'),
-      remove: t('watchlist.remove'),
-      empty: t('watchlist.empty'),
-      listName: t('watchlist.listName'),
-    });
-    this.watchlist.setActive(this.state.symbol);
-    this.watchlist.setLocale(this.settingsState.numberLocale || undefined);
-    const show = () => {
-      this.watchlist?.setLists(store.getLists(), store.getActive().id);
-      this.followQuotes();
-    };
-    store.subscribe(() => {
-      show();
-      opts.onChange?.(store.getLists(), store.getActive().id);
-    });
-    show();
-  }
-
-  /** Quotes for the shown list's symbols: a new subscription when they change. */
-  private followQuotes(): void {
-    if (!this.quoteSource || !this.watchlistStore || this.destroyed) return;
-    const symbols = this.watchlistStore.getActive().symbols;
-    // The same symbols in another order (a row moved) keep their subscription.
-    const key = [...symbols].sort().join('\u0000');
-    if (key === this.quotedKey) return;
-    this.quotedKey = key;
-    this.stopQuotes?.();
-    this.stopQuotes = null;
-    if (symbols.length === 0) return;
-    try {
-      this.stopQuotes = this.quoteSource.subscribeQuotes(symbols, (quotes) => {
-        if (this.destroyed || !Array.isArray(quotes)) return;
-        // A source of the host's is untrusted: what isn't a quote is left out.
-        const read = quotes.map(readQuote).filter((q): q is Quote => q !== null);
-        if (read.length > 0) this.takeQuotes(read);
-      });
-    } catch {
-      this.stopQuotes = null;
-    }
-  }
-
-  private takeQuotes(quotes: readonly Quote[]): void {
-    for (const update of quotes) {
-      // A stream frame carries less than a snapshot: what it leaves out stays.
-      const quote = { ...this.quotes.get(update.symbol), ...update };
-      this.quotes.set(quote.symbol, quote);
-      const buf = this.watchlistSparkBuffer.get(quote.symbol) ?? [];
-      buf.push(quote.last);
-      if (buf.length > 40) buf.shift();
-      this.watchlistSparkBuffer.set(quote.symbol, buf);
-      const hostRef = this.hostWatchlistRefPrice.get(quote.symbol);
-      this.watchlist?.setEntry(quote.symbol, {
-        lastPrice: quote.last,
-        refPrice: hostRef ?? (quote.change !== undefined ? quote.last - quote.change : undefined),
-        sparkline: buf.slice(),
-      });
-    }
-    if (quotes.some((q) => q.symbol === this.state.symbol)) this.refreshSymbolInfo();
-  }
-
   async setSymbol(symbol: string): Promise<void> {
     // Flush the outgoing symbol's layout BEFORE switching state, so the
     // saved snapshot reflects what the user actually saw under that ticker.
@@ -2015,7 +1904,7 @@ export class ChartWidget {
     this.options.onSymbolChange?.(symbol);
     this.updateUI();
     this.refreshSymbolTitle();
-    this.watchlist?.setActive(symbol);
+    this.watching.watchlist?.setActive(symbol);
     this.refreshMarket();
     this.loadNews();
     this.layoutSession?.changed();
@@ -2034,39 +1923,7 @@ export class ChartWidget {
    * auto-tick loop stops clobbering it (see `tickWatchlist`).
    */
   setWatchlistEntry(symbol: string, entry: Partial<WatchlistEntry>): void {
-    if (entry.refPrice !== undefined) {
-      this.hostWatchlistRefPrice.set(symbol, entry.refPrice);
-    }
-    this.watchlist?.setEntry(symbol, entry);
-  }
-
-  private tickWatchlist(): void {
-    // A symbol with quotes shows them (the day's move), not the loaded bars'.
-    if (!this.watchlist || this.quotes.has(this.state.symbol)) return;
-    // No one sees it: a hidden page, the app in the background.
-    if (pageHidden()) return;
-    const data = this.chart.getData();
-    if (data.length === 0) return;
-    const last = data[data.length - 1];
-    const hostRef = this.hostWatchlistRefPrice.get(this.state.symbol);
-    // Reference price: first bar of the loaded slice — that's the closest
-    // approximation of "session open" without timezone bookkeeping. Only
-    // used as a fallback; a refPrice the host already pushed via
-    // `setWatchlistEntry` (even for the active symbol) always wins.
-    if (hostRef === undefined && this.sessionRefPrice === null) {
-      this.sessionRefPrice = data[0].open;
-    }
-
-    const buf = this.watchlistSparkBuffer.get(this.state.symbol) ?? [];
-    buf.push(last.close);
-    if (buf.length > 40) buf.shift();
-    this.watchlistSparkBuffer.set(this.state.symbol, buf);
-
-    this.watchlist.setEntry(this.state.symbol, {
-      lastPrice: last.close,
-      refPrice: hostRef ?? this.sessionRefPrice ?? data[0].open,
-      sparkline: buf.slice(),
-    });
+    return this.watching.setWatchlistEntry(symbol, entry);
   }
 
   /** Ignored when the chart's `features.timeframes` whitelist leaves `tf` out. */
@@ -2302,7 +2159,7 @@ export class ChartWidget {
     this.alertNotifier?.destroy();
     this.depthLadder?.destroy();
     this.dataWindow?.destroy();
-    if (this.watchlistInterval) clearInterval(this.watchlistInterval);
+    if (this.watching.watchlistInterval) clearInterval(this.watching.watchlistInterval);
     if (this.marketTimer) clearInterval(this.marketTimer);
     if (this.clockTimer) clearInterval(this.clockTimer);
     if (this.onPageShown) document.removeEventListener('visibilitychange', this.onPageShown);
@@ -2310,9 +2167,9 @@ export class ChartWidget {
     this.chartNav?.destroy();
     this.symbolInfoPanel?.destroy();
     this.dock?.destroy();
-    this.stopQuotes?.();
-    this.stopQuotes = null;
-    this.watchlist?.destroy();
+    this.watching.stopQuotes?.();
+    this.watching.stopQuotes = null;
+    this.watching.watchlist?.destroy();
     this.toolbar?.destroy();
     this.sidebar?.destroy();
     this.settingsPart?.destroy();
@@ -3828,8 +3685,8 @@ export class ChartWidget {
   private setupDock(): void {
     const dock = this.dock;
     if (!dock) return;
-    if (this.watchlist) {
-      const list = this.watchlist;
+    if (this.watching.watchlist) {
+      const list = this.watching.watchlist;
       // Hidden, its sparklines were drawn at no size: drawn again as it shows.
       dock.addPage({ id: 'watchlist', label: this.t('watchlist.title'), icon: 'list', element: list.element, parts: ['dock.watchlist'], onShow: () => list.redraw() });
     }
@@ -4289,7 +4146,7 @@ export class ChartWidget {
 
   /** Whether the widget has what a command works on: a watchlist, a feed to compare from, layouts to save to. */
   private commandThere(id: string): boolean {
-    if (id === 'watchlist') return this.watchlist !== null;
+    if (id === 'watchlist') return this.watching.watchlist !== null;
     if (id === 'compare') return this.adapter !== null && this.options.chartOptions?.features?.compareSymbols !== false;
     if (id === 'saveLayout') return this.layoutSession !== null;
     return true;
@@ -5086,7 +4943,7 @@ export class ChartWidget {
     }
     if (patch.numberLocale !== undefined) {
       this.chart.setNumberLocale(patch.numberLocale);
-      this.watchlist?.setLocale(patch.numberLocale || undefined);
+      this.watching.watchlist?.setLocale(patch.numberLocale || undefined);
     }
     if (patch.timezone !== undefined) {
       this.chart.setTimeZone(settingToTimezone(patch.timezone));
@@ -5453,6 +5310,30 @@ export class ChartWidget {
       withSymbolSearch: (...args) => w.withSymbolSearch(...args),
     };
   }
+
+  /** What WidgetWatchlists reads of the widget and asks of it. */
+  private watchingHost(): WatchlistsHost {
+    // Getters, so the host reads the widget as it is when asked, not as it was now.
+    const w = this;
+    return {
+      get chart() { return w.chart; },
+      chartSymbolInfo: (...args) => w.chartSymbolInfo(...args),
+      closePanelByHand: (...args) => w.closePanelByHand(...args),
+      get destroyed() { return w.destroyed; },
+      get options() { return w.options; },
+      refreshSymbolInfo: (...args) => w.refreshSymbolInfo(...args),
+      get sessionRefPrice() { return w.sessionRefPrice; },
+      set sessionRefPrice(value) { w.sessionRefPrice = value; },
+      setSymbol: (...args) => w.setSymbol(...args),
+      get settingsState() { return w.settingsState; },
+      get state() { return w.state; },
+      symbolEntries: (...args) => w.symbolEntries(...args),
+      symbolSearchFn: (...args) => w.symbolSearchFn(...args),
+      get symbols() { return w.symbols; },
+      get t() { return w.t; },
+      withSymbolSearch: (...args) => w.withSymbolSearch(...args),
+    };
+  }
 }
 
 export { indicatorChipLabel };
@@ -5530,14 +5411,6 @@ function writeDockWidth(width: number): void {
   try {
     browserStorage()?.setItem(DOCK_WIDTH_KEY, String(width));
   } catch { /* storage full or refused: the width lasts this session */ }
-}
-
-function browserStorage(): Storage | null {
-  try {
-    return typeof localStorage !== 'undefined' ? localStorage : null;
-  } catch {
-    return null;
-  }
 }
 
 type Box = { x: number; y: number; width: number; height: number };
