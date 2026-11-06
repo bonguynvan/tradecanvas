@@ -26,7 +26,7 @@ export interface MenusHost {
   openSettings: ChartWidget['openSettings'];
   readonly options: ChartWidget['options'];
   refreshDrawingsState: ChartWidget['refreshDrawingsState'];
-  refreshObjects: ChartWidget['refreshObjects'];
+  refreshObjects: ChartWidget['docking']['refreshObjects'];
   resetView: ChartWidget['resetView'];
   readonly root: ChartWidget['root'];
   say: ChartWidget['say'];

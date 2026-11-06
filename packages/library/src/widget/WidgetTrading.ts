@@ -11,7 +11,7 @@ import type { ChartWidget } from './ChartWidget.js';
 export interface TradingHost {
   readonly chart: ChartWidget['chart'];
   readonly destroyed: ChartWidget['destroyed'];
-  readonly dock: ChartWidget['dock'];
+  readonly dock: ChartWidget['docking']['dock'];
   readonly featureState: ChartWidget['featureState'];
   formatAlertPrice: ChartWidget['formatAlertPrice'];
   say: ChartWidget['say'];

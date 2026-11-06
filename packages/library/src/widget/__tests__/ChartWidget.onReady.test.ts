@@ -29,6 +29,8 @@ class FakeChart {
 vi.mock('../../Chart.js', () => ({ Chart: FakeChart }));
 
 const { ChartWidget } = await import('../ChartWidget.js');
+// The view shared in the URL is put back by the widget's layouts.
+const { WidgetLayouts } = await import('../WidgetLayouts.js');
 type Widget = InstanceType<typeof ChartWidget>;
 
 let host: HTMLDivElement;
@@ -72,7 +74,7 @@ describe('onReady', () => {
 
   it('runs before a view shared in the URL is put back, so the shared view is what shows', async () => {
     const order: string[] = [];
-    const restore = vi.spyOn(ChartWidget.prototype, 'importState').mockImplementation(async () => {
+    const restore = vi.spyOn(WidgetLayouts.prototype, 'importState').mockImplementation(async () => {
       order.push('shared view');
       return true;
     });

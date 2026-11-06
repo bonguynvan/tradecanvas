@@ -7,7 +7,7 @@ import type { ChartWidget } from './ChartWidget.js';
 /** What the alerts read of the widget around them, and ask of it. */
 export interface AlertsHost {
   readonly chart: ChartWidget['chart'];
-  readonly dock: ChartWidget['dock'];
+  readonly dock: ChartWidget['docking']['dock'];
   drawingToolName: ChartWidget['drawingToolName'];
   readonly featureState: ChartWidget['featureState'];
   formatAlertPrice: ChartWidget['formatAlertPrice'];

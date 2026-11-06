@@ -17,7 +17,6 @@ import { WidgetStatusBar } from './WidgetStatusBar.js';
 import type { WidgetCommandPalette } from './WidgetCommandPalette.js';
 import type { WidgetSymbolSearch, SymbolSearchFn } from './WidgetSymbolSearch.js';
 import type { WidgetHotkeySheet } from './WidgetHotkeySheet.js';
-import { MOD_KEY } from './platformKeys.js';
 import { WidgetReplay, type ReplayHost } from './WidgetReplay.js';
 import { browserStorage, pageHidden } from './pageEnv.js';
 import { type WatchlistEntry } from './WidgetWatchlist.js';
@@ -32,14 +31,19 @@ import { indicatorChipLabel } from '../indicatorLabel.js';
 import { widgetIndicatorLabel } from './indicatorInputWords.js';
 import { readChartTypeOptions, type ChartTypeOptions } from '@tradecanvas/commons';
 import { applyWidgetUI, resolveWidgetUI, scaledWidgetUI, typeSize, widgetScaleFor, widgetUIVariables, type ResolvedWidgetUI, type WidgetUIPreset, type WidgetUITheme } from './widgetUI.js';
-import { WidgetObjectTree, drawingTypeLabel } from './WidgetObjectTree.js';
+import { WidgetObjectTree } from './WidgetObjectTree.js';
 import type { WidgetIndicatorSettings, IndicatorDefault } from './WidgetIndicatorSettings.js';
 import type { WidgetIndicatorPicker, IndicatorPickerItem } from './WidgetIndicatorPicker.js';
 import { IndicatorDefaultsStore } from './indicatorDefaults.js';
 import { ChartTemplateStore } from './chartTemplates.js';
 import {
-  ChartSettingsStore, LAYOUT_LEAVES, SHARE_LEAVES, VIEWER_KEYS, hasTypeSettings, pickSettings, readChartSettings, shareDelta, settingsStoreKey,
-  typesAtDefaults, typesWithSettings,
+  ChartSettingsStore,
+  VIEWER_KEYS,
+  hasTypeSettings,
+  readChartSettings,
+  settingsStoreKey,
+  typesAtDefaults,
+  typesWithSettings,
 } from './chartSettingsStore.js';
 import { WidgetDrawingStyle } from './WidgetDrawingStyle.js';
 import { WidgetSelectionToolbar } from './WidgetSelectionToolbar.js';
@@ -51,18 +55,16 @@ import { WidgetInlineText } from './WidgetInlineText.js';
 import { chartMenuEntries, priceEntries } from './chartMenu.js';
 import { WidgetAccountPanel } from './WidgetAccountPanel.js';
 import { WidgetOrderTicket } from './WidgetOrderTicket.js';
-import { WidgetLayoutsUI } from './WidgetLayoutsUI.js';
 import { WidgetNamePrompt } from './WidgetNamePrompt.js';
 import { WidgetIntervalInput } from './WidgetIntervalInput.js';
 import { IndicatorTemplateStore } from './indicatorTemplates.js';
 import { IME_KEY_CODE, inOverlay, isKeyTarget, isTyping, registerKeyRoot } from './keyTarget.js';
-import { layoutChartState, readWidgetLayout, parseLayoutJson, type WidgetLayoutContent } from './widgetLayout.js';
+import { type WidgetLayoutContent } from './widgetLayout.js';
 import { LayoutSession } from '../state/LayoutSession.js';
-import { localStorageLayouts, type SavedLayout } from '../state/layoutStorage.js';
 import { DrawingFavoritesStore } from './DrawingFavoritesStore.js';
 import { createIcon } from './icons.js';
 import { watchKeyboardInset } from './keyboardInset.js';
-import { NARROW_WIDGET_PX, watchNarrow } from './narrowMode.js';
+import { watchNarrow } from './narrowMode.js';
 import {
   availableTimeframes,
   initialTimeframeFavorites,
@@ -84,9 +86,8 @@ import { RANGE_PRESETS, SYMBOL_INDICATOR_IDS, adapterFromFeed, indicatorCategory
 import { WidgetBracketBar } from './WidgetBracketBar.js';
 import { AlertNotifier } from './AlertNotifier.js';
 import { WidgetDepthLadder } from './WidgetDepthLadder.js';
-import { WidgetDataWindow, PERCENT_DECIMALS as DATA_WINDOW_PERCENT_DECIMALS, type DataWindowModel } from './WidgetDataWindow.js';
+import { WidgetDataWindow, PERCENT_DECIMALS as DATA_WINDOW_PERCENT_DECIMALS } from './WidgetDataWindow.js';
 import type { DepthData } from '@tradecanvas/commons';
-import { encodeWidgetState, decodeWidgetState, readShareHash, buildShareUrl } from './widgetShareState.js';
 import { DragDropImporter, resampleOHLCV, inferTimeframeMs } from '../io/index.js';
 import type { CrosshairMovePayload, CrosshairSyncPayload, DataSeries } from '@tradecanvas/commons';
 import { formatVolumeLoc, timeframeToMs } from '@tradecanvas/commons';
@@ -102,8 +103,10 @@ import { WidgetWatchlists, type WatchlistsHost } from './WidgetWatchlists.js';
 import { WidgetAlerts, type AlertsHost } from './WidgetAlerts.js';
 import { WidgetTrading, type TradingHost } from './WidgetTrading.js';
 import { WidgetMenus, type MenusHost } from './WidgetMenus.js';
-import { WidgetLegendView, type LegendHost, LEGEND_INSET, STACK_GAP, readsChartPrices } from './WidgetLegendView.js';
+import { WidgetLegendView, type LegendHost, LEGEND_INSET, STACK_GAP } from './WidgetLegendView.js';
 import { WidgetCommands, type CommandsHost } from './WidgetCommands.js';
+import { WidgetLayouts, type LayoutsHost } from './WidgetLayouts.js';
+import { WidgetDockArea, type DockHost } from './WidgetDockArea.js';
 import {
   markPart,
   CHART_MENU_FEATURES,
@@ -166,20 +169,8 @@ const WATERMARK_FONT_SIZE = 48;
 const WATERMARK_ON_DARK = 'rgba(255,255,255,0.03)';
 const WATERMARK_ON_LIGHT = 'rgba(0,0,0,0.03)';
 
-/** The switch each of the dock's panels, but the watchlist (an option), goes with. */
-const PANEL_FEATURES = {
-  alerts: 'alerts',
-  objectTree: 'objectTree',
-  dataWindow: 'dataWindow',
-  symbolInfo: 'symbolInfo',
-  depthLadder: 'depthLadder',
-} as const satisfies Record<Exclude<WidgetPanel, 'watchlist'>, WidgetFeature>;
-
 /** Money is written to the price step's decimals, but to no more than these. */
 const MONEY_DECIMALS = 2;
-
-/** The toolbar's button for a panel, where it has one. */
-const PANEL_TOOLBAR_ROLES: Partial<Record<WidgetPanel, string>> = { alerts: 'alerts', objectTree: 'objects', symbolInfo: 'symbolInfo', depthLadder: 'trade' };
 
 /**
  * The Latin letter a plain key press types, for a symbol search started on
@@ -210,13 +201,6 @@ const FEATURE_SWITCHES = [
   ['legendVisible', 'legend'],
   ['volumeVisible', 'volume'],
 ] as const satisfies readonly (readonly [keyof ChartSettingsState, keyof FeaturesConfig])[];
-/**
- * The switches that start where the host's features put them. A share link
- * measures them from the sender's start, not the library's: a switch the
- * sender's app turned off is the app's, not the sender's choice, and would
- * turn it off in an app that has it on.
- */
-const FEATURE_SET_SETTINGS: readonly (keyof ChartSettingsState)[] = ['legendVisible', 'volumeVisible', 'barCountdown', 'indicatorValueLabels', 'alignAxisLabels'];
 /** The settings' style keys that aren't colours: they go with the user from theme to theme. */
 const LOOK_KEYS: readonly ChartStyleKey[] = SETTINGS_LOOK_KEYS.filter((key) => CHART_STYLE_KEYS[key] !== 'color');
 
@@ -236,6 +220,10 @@ function withFeedAdapter(options: ChartWidgetOptions): ChartWidgetOptions {
 }
 
 export class ChartWidget {
+  /** The dock by the chart: its panels, its rail and how wide it is. */
+  private readonly docking = new WidgetDockArea(this.dockingHost());
+  /** Saved layouts and shared views: what a layout holds, where it is kept, and the link to a view. */
+  private readonly layouts = new WidgetLayouts(this.layoutsHost());
   /** The command palette's entries and the actions they run. */
   private readonly commands = new WidgetCommands(this.commandsHost());
   /** The legend over the chart: the symbol's row and the indicators' rows, and their menu. */
@@ -301,12 +289,6 @@ export class ChartWidget {
   }
   /** Letters typed on the chart while the symbol search's code loads: it opens with all of them. */
   private typedWhileLoading = '';
-  /** The panels by the chart (watchlist, alerts, objects, data window, symbol info) and their rail. */
-  private dock: WidgetDock | null = null;
-  /** Whether the widget was narrow when the dock last looked (null: not yet). */
-  private dockNarrow: boolean | null = null;
-  /** Follows the widget's width for the dock. */
-  private dockObserver: ResizeObserver | null = null;
   private hotkeySheetPart: Lazy<WidgetHotkeySheet> | null = null;
   private get hotkeySheet(): WidgetHotkeySheet | null {
     return this.hotkeySheetPart?.get() ?? null;
@@ -377,8 +359,6 @@ export class ChartWidget {
   private intervalInput: WidgetIntervalInput | null = null;
   /** The note shown over a signal marker under the pointer. */
   private markerTip: HTMLDivElement | null = null;
-  private layoutSession: LayoutSession | null = null;
-  private layoutsUI: WidgetLayoutsUI | null = null;
   private dataWindow: WidgetDataWindow | null = null;
   private lastHoverIndex: number | null = null;
   /** The bar the crosshair reported at it: on Renko and the like a brick, not a data bar. */
@@ -409,9 +389,6 @@ export class ChartWidget {
   private chartNav: WidgetChartNav | null = null;
   /** Bars on screen, for the navigation's scroll step. */
   private visibleBarCount = 50;
-  private layoutKeyPrefix: string | null = null;
-  private layoutDebounceMs = 1500;
-  private activeLayoutKey: string | null = null;
   private root: HTMLDivElement;
   private chartContainer: HTMLDivElement;
   private loading: WidgetLoadingOverlay;
@@ -526,8 +503,8 @@ export class ChartWidget {
     // `false` so existing apps don't suddenly start writing to localStorage.
     if (options.persistLayouts) {
       const cfg = options.persistLayouts === true ? {} : options.persistLayouts;
-      this.layoutKeyPrefix = cfg.keyPrefix ?? 'tcw:layout:';
-      this.layoutDebounceMs = cfg.debounceMs ?? 1500;
+      this.layouts.layoutKeyPrefix = cfg.keyPrefix ?? 'tcw:layout:';
+      this.layouts.layoutDebounceMs = cfg.debounceMs ?? 1500;
     }
     // The Chart Settings kept in this browser: opt-in too.
     const settingsKey = settingsStoreKey(options.persistSettings);
@@ -650,7 +627,7 @@ export class ChartWidget {
       // The toolbar's own width may not change as the switch flips: fit it again.
       this.toolbar?.fit();
       if (!narrow) this.sidebar?.closeOverlay();
-      this.syncRail();
+      this.docking.syncRail();
     });
     // The look: tokens and layout switches on the root and the modal portal
     // alike. Without `ui` the tokens stay the stylesheet's (Print's), so a
@@ -696,9 +673,9 @@ export class ChartWidget {
         onToggleTheme: () => this.handleToggleTheme(),
         onToggleReplay: () => this.toggleReplay(),
         onToggleAlerts: () => this.alerting.toggleAlerts(),
-        onToggleObjects: () => this.toggleObjects(),
+        onToggleObjects: () => this.docking.toggleObjects(),
         onToggleAccount: options.trading !== false ? () => this.trading.toggleAccountPanel() : undefined,
-        onLayouts: options.layouts !== false ? (anchor) => void this.layoutsUI?.openMenu(anchor) : undefined,
+        onLayouts: options.layouts !== false ? (anchor) => void this.layouts.layoutsUI?.openMenu(anchor) : undefined,
         onBracket: options.trading !== false ? (side) => this.trading.startBracket(side) : undefined,
         onToggleLadder: options.trading !== false && options.depthLadder ? () => this.trading.toggleLadder() : undefined,
         onOrderTicket: options.trading !== false ? () => this.trading.openOrderTicket() : undefined,
@@ -738,12 +715,12 @@ export class ChartWidget {
         onLockAll: (locked) => {
           this.chart.setDrawingsLocked(this.chart.getDrawings().map((d) => d.id), locked);
           this.refreshDrawingsState();
-          this.refreshObjects();
+          this.docking.refreshObjects();
         },
         onHideAll: (hidden) => {
           this.chart.setDrawingsVisible(this.chart.getDrawings().map((d) => d.id), !hidden);
           this.refreshDrawingsState();
-          this.refreshObjects();
+          this.docking.refreshObjects();
         },
       },
     this.t,
@@ -763,12 +740,12 @@ export class ChartWidget {
     });
 
     // The dock: after the chart in the row, so its panel sits beside the chart and its rail at the edge.
-    this.dock = new WidgetDock(body, {
+    this.docking.dock = new WidgetDock(body, {
       labels: { rail: this.t('dock.rail'), resize: this.t('dock.resize') },
       savedWidth: () => readDockWidth(),
       saveWidth: (width) => writeDockWidth(width),
-      railShown: () => this.railShown(),
-      focusAfterClose: (page) => this.panelFocusTarget(page as WidgetPanel),
+      railShown: () => this.docking.railShown(),
+      focusAfterClose: (page) => this.docking.panelFocusTarget(page as WidgetPanel),
       room: () => body.clientWidth,
     });
     if (options.watchlist) this.watching.createWatchlist(body, options.watchlist === true ? {} : options.watchlist);
@@ -855,7 +832,7 @@ export class ChartWidget {
     // Symbol info: the panel, and the market's status in the status bar,
     // kept current as the clock runs toward the next open or close.
     this.symbolInfoPanel = new WidgetSymbolInfo(this.root, this.t, {
-      onClose: () => this.closePanelByHand('symbolInfo'),
+      onClose: () => this.docking.closePanelByHand('symbolInfo'),
       onToggle: (open) => {
         this.toolbar?.setActive('symbolInfo', open);
         if (open) {
@@ -1007,7 +984,7 @@ export class ChartWidget {
         if (kind === 'compare') this.chart.setCompareVisible(iid, visible);
         else this.chart.setIndicatorVisible(iid, visible);
         this.legend.scheduleLegend();
-        if (this.objectTree?.isOpen()) this.refreshObjects();
+        if (this.objectTree?.isOpen()) this.docking.refreshObjects();
       },
       // The name opens the settings too: it goes with the row's settings button.
       onSettings: (iid) => {
@@ -1084,14 +1061,14 @@ export class ChartWidget {
       formatPrice: (p) => this.formatAlertPrice(p),
       formatPercent: (pct) => this.formatNumber(pct, DATA_WINDOW_PERCENT_DECIMALS),
       formatVolume: (volume) => this.formatVolume(volume),
-      onClose: () => this.closePanelByHand('dataWindow'),
+      onClose: () => this.docking.closePanelByHand('dataWindow'),
     }, this.t);
     this.chart.on('crosshairMove', (e) => {
       const p = e.payload as CrosshairMovePayload;
       this.lastHoverIndex = typeof p.barIndex === 'number' ? p.barIndex : null;
       this.lastHoverBar = p.bar ?? null;
       this.lastHoverPrevClose = typeof p.prevClose === 'number' ? p.prevClose : null;
-      if (this.dataWindow?.isOpen()) this.dataWindow.render(this.buildDataWindowModel());
+      if (this.dataWindow?.isOpen()) this.dataWindow.render(this.docking.buildDataWindowModel());
     });
     // The bar another chart of a grid points at here, or the latest again when it goes.
     this.chart.on('crosshairSync', (e) => {
@@ -1100,7 +1077,7 @@ export class ChartWidget {
       this.lastHoverIndex = p.bar && p.barIndex !== null ? p.barIndex : null;
       this.lastHoverBar = p.bar ?? null;
       this.lastHoverPrevClose = typeof p.prevClose === 'number' ? p.prevClose : null;
-      if (this.dataWindow?.isOpen()) this.dataWindow.render(this.buildDataWindowModel());
+      if (this.dataWindow?.isOpen()) this.dataWindow.render(this.docking.buildDataWindowModel());
     });
 
     // Drawing style + templates popover (paired with the sidebar palette button)
@@ -1118,7 +1095,7 @@ export class ChartWidget {
         // Cancel on the words of a text just drawn takes the text back.
         if (cancel && id === this.justDrawnText) this.chart.takeBackDrawing(id);
         this.justDrawnText = null;
-        this.refreshObjects();
+        this.docking.refreshObjects();
       },
       toWallTime: (time) => utcToWallTime(time * barTimeUnit(this.chart.getData()), this.displayTimezone()),
       fromWallTime: (date, time) => {
@@ -1223,7 +1200,7 @@ export class ChartWidget {
       },
       onLock: (locked) => {
         this.chart.setDrawingsLocked(this.chart.getSelectedDrawingIds(), locked);
-        this.refreshObjects();
+        this.docking.refreshObjects();
         this.updateSelectionToolbar();
       },
       onMore: (x, y) => {
@@ -1235,7 +1212,7 @@ export class ChartWidget {
       onDelete: () => {
         // Locked drawings stay, and stay selected.
         this.chart.removeDrawings(this.chart.getSelectedDrawingIds());
-        this.refreshObjects();
+        this.docking.refreshObjects();
         this.updateSelectionToolbar();
       },
     }, this.t);
@@ -1294,7 +1271,7 @@ export class ChartWidget {
     }, (tf) => this.selectTypedTimeframe(tf));
 
     // Named layouts: save, open, rename, delete, auto-save.
-    if (options.layouts !== false) this.setupLayouts(options.layouts === true || options.layouts === undefined ? {} : options.layouts);
+    if (options.layouts !== false) this.layouts.setupLayouts(options.layouts === true || options.layouts === undefined ? {} : options.layouts);
 
     // Account panel and order ticket.
     if (options.trading !== false) {
@@ -1359,7 +1336,7 @@ export class ChartWidget {
           formatPrice: (p) => this.formatAlertPrice(p),
           priceStep: (p) => this.chart.getPriceStep(p),
           onToggle: (open) => this.toolbar?.setActive('ladder', open),
-          onClose: () => this.closePanelByHand('depthLadder'),
+          onClose: () => this.docking.closePanelByHand('depthLadder'),
         }, undefined, this.t);
         // Your working orders, marked on the rows where they wait.
         const ladder = this.trading.depthLadder;
@@ -1373,7 +1350,7 @@ export class ChartWidget {
 
     // 8a-bis. Price alerts panel (floating popover, toggled from the bell button)
     this.alerting.alertsPanel = new WidgetAlertsPanel(this.root, {
-      onClose: () => this.closePanelByHand('alerts'),
+      onClose: () => this.docking.closePanelByHand('alerts'),
       onAdd: ({ price, condition, message, channel, label, options }) => {
         try {
           this.chart.addAlert(price, condition, message, channel, label, options);
@@ -1444,61 +1421,61 @@ export class ChartWidget {
       onClose: () => this.chart.endIndicatorEdit(),
     }, this.t));
     this.objectTree = new WidgetObjectTree(this.root, {
-      onClose: () => this.closePanelByHand('objectTree'),
+      onClose: () => this.docking.closePanelByHand('objectTree'),
       onRemoveIndicator: (iid) => this.handleRemoveIndicator(iid),
       onConfigureIndicator: (iid) => this.openIndicatorSettings(iid),
       onToggleIndicatorVisible: (iid, visible) => {
         this.chart.setIndicatorVisible(iid, visible);
-        this.refreshObjects();
+        this.docking.refreshObjects();
         this.legend.scheduleLegend();
       },
       onRemoveDrawing: (id) => {
         if (this.drawingSettings?.editing() === id) this.drawingSettings.close(true);
         this.chart.removeDrawing(id);
-        this.refreshObjects();
+        this.docking.refreshObjects();
       },
       onConfigureDrawing: (id) => this.openDrawingSettings(id),
       onToggleDrawingVisible: (id, visible) => {
         this.chart.setDrawingVisible(id, visible);
-        this.refreshObjects();
+        this.docking.refreshObjects();
       },
       onToggleDrawingLocked: (id, locked) => {
         this.chart.setDrawingLocked(id, locked);
-        this.refreshObjects();
+        this.docking.refreshObjects();
       },
       onToggleGroupVisible: (group, visible) => {
         this.chart.setDrawingGroupVisible(group, visible);
-        this.refreshObjects();
+        this.docking.refreshObjects();
       },
       onToggleGroupLocked: (group, locked) => {
         this.chart.setDrawingGroupLocked(group, locked);
-        this.refreshObjects();
+        this.docking.refreshObjects();
       },
       onUngroup: (group) => {
         this.chart.ungroupDrawings(group);
-        this.refreshObjects();
+        this.docking.refreshObjects();
       },
       onRenameGroup: (group, name) => {
         this.chart.renameDrawingGroup(group, name);
-        this.refreshObjects();
+        this.docking.refreshObjects();
       },
       onSelectDrawing: (id) => this.chart.selectDrawing(id),
       onRenameDrawing: (id, name) => {
         this.chart.updateDrawing(id, { name: name || null });
-        this.refreshObjects();
+        this.docking.refreshObjects();
       },
       onCloneDrawing: (id) => {
         this.chart.duplicateDrawing(id);
-        this.refreshObjects();
+        this.docking.refreshObjects();
       },
       onMoveDrawing: (id, index) => {
         this.chart.moveDrawing(id, index);
-        this.refreshObjects();
+        this.docking.refreshObjects();
       },
       onAddCompare: features.compareSymbols !== false ? () => this.comparing.handleAddCompare() : undefined,
       onRemoveCompare: (id) => this.comparing.removeCompared(id),
     }, this.t);
-    const refresh = () => { if (this.objectTree?.isOpen()) this.refreshObjects(); };
+    const refresh = () => { if (this.objectTree?.isOpen()) this.docking.refreshObjects(); };
     // A drawing changes many times a second while its settings are edited
     // (a colour being picked): rebuild the list once a frame at most.
     let refreshFrame = 0;
@@ -1523,7 +1500,7 @@ export class ChartWidget {
     }
 
     // Every panel made: into the dock, in the rail's order.
-    this.setupDock();
+    this.docking.setupDock();
 
     // 8b. Command palette
     this.commandPalettePart = this.lazyPart(DIALOGS.commandPalette, ({ WidgetCommandPalette }) => new WidgetCommandPalette({
@@ -1556,9 +1533,9 @@ export class ChartWidget {
         this.openSymbolSearch();
       } else if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && (e.key === 's' || e.key === 'S')) {
         // Ctrl/Cmd+S → save the layout (rather than the page), once this widget was used.
-        if (!this.layoutSession || !keyOn('hotkeys.save') || !this.featureState.layouts || isTyping() || !isKeyTarget(this.root, true)) return;
+        if (!this.layouts.layoutSession || !keyOn('hotkeys.save') || !this.featureState.layouts || isTyping() || !isKeyTarget(this.root, true)) return;
         e.preventDefault();
-        void this.saveLayout();
+        void this.layouts.saveLayout();
       } else if (e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey && TOOL_HOTKEYS[e.code]) {
         // Alt+T trend line, Alt+H horizontal line… (the drawing tools' keys).
         if (e.defaultPrevented || isTyping() || !mine || inOverlay() || !keyOn('hotkeys.tools')) return;
@@ -1651,7 +1628,7 @@ export class ChartWidget {
         options.onReady?.(this.chart, this);
       } finally {
         // An error in onReady is the host's to see; the shared view still comes.
-        if (!this.destroyed) this.restoreSharedView();
+        if (!this.destroyed) this.layouts.restoreSharedView();
       }
     });
     this.preloadDialogsWhenIdle();
@@ -1677,13 +1654,6 @@ export class ChartWidget {
       const timer = setTimeout(load, PRELOAD_DELAY_MS);
       this.stopPreload = () => clearTimeout(timer);
     }
-  }
-
-  /** A view shared in the URL (`#tcw=`), when `shareUrl` is on. */
-  private restoreSharedView(): void {
-    if (!this.options.shareUrl || typeof location === 'undefined') return;
-    const encoded = readShareHash(location.hash);
-    if (encoded) void this.importState(encoded);
   }
 
   // --- Public API ---
@@ -1785,26 +1755,17 @@ export class ChartWidget {
    * depth ladder (the `depthLadder` option), or its switch off.
    */
   openPanel(panel: WidgetPanel): boolean {
-    if (!this.hasPanel(panel) || !this.dock) return false;
-    this.dock.open(panel);
-    return this.dock.current() === panel;
-  }
-
-  /** Whether the widget has `panel`: the watchlist and the ladder only when made with them, every one with its switch on. */
-  private hasPanel(panel: WidgetPanel): boolean {
-    if (panel === 'watchlist') return this.watching.watchlist !== null;
-    if (panel === 'depthLadder' && this.trading.depthLadder === null) return false;
-    return this.featureState[PANEL_FEATURES[panel]];
+    return this.docking.openPanel(panel);
   }
 
   /** Shut the dock. */
   closePanel(): void {
-    this.dock?.close();
+    return this.docking.closePanel();
   }
 
   /** The panel open in the dock, or null. */
   getOpenPanel(): WidgetPanel | null {
-    return (this.dock?.current() as WidgetPanel | null | undefined) ?? null;
+    return this.docking.getOpenPanel();
   }
 
   /** Open or close the symbol info panel (toggle when `open` is left out). */
@@ -1814,8 +1775,8 @@ export class ChartWidget {
     const opening = open ?? !panel.isOpen();
     // Switched off, it only closes.
     if (opening && !this.featureState.symbolInfo) return;
-    if (opening) this.dock?.open('symbolInfo');
-    else this.dock?.closePage('symbolInfo');
+    if (opening) this.docking.dock?.open('symbolInfo');
+    else this.docking.dock?.closePage('symbolInfo');
   }
 
   /** The market's status in the status bar, and the panel when it's open. */
@@ -1875,7 +1836,7 @@ export class ChartWidget {
   async setSymbol(symbol: string): Promise<void> {
     // Flush the outgoing symbol's layout BEFORE switching state, so the
     // saved snapshot reflects what the user actually saw under that ticker.
-    this.flushActiveLayout();
+    this.layouts.flushActiveLayout();
     if (symbol !== this.state.symbol) {
       // Fill marks sit on this symbol's bars; the next symbol starts with none.
       this.chart.clearFills();
@@ -1889,7 +1850,7 @@ export class ChartWidget {
     this.watching.watchlist?.setActive(symbol);
     this.refreshMarket();
     this.loadNews();
-    this.layoutSession?.changed();
+    this.layouts.layoutSession?.changed();
     if (this.adapter) {
       await this.connectStream();
     }
@@ -1926,7 +1887,7 @@ export class ChartWidget {
     this.state = { ...this.state, timeframe: tf };
     this.options.onTimeframeChange?.(tf);
     this.updateUI();
-    this.layoutSession?.changed();
+    this.layouts.layoutSession?.changed();
     if (this.adapter) {
       // Live adapter owns the data — refetch at the native resolution.
       await this.connectStream();
@@ -2088,7 +2049,7 @@ export class ChartWidget {
     this.stopKeyboardInset?.();
     this.stopKeyboardInset = null;
     this.stopNarrow?.();
-    this.dockObserver?.disconnect();
+    this.docking.dockObserver?.disconnect();
     this.scaleObserver?.disconnect();
     this.inlineText?.close();
     this.stopNarrow = null;
@@ -2105,7 +2066,7 @@ export class ChartWidget {
     this.indicatorLegend?.destroy();
     this.portal.remove();
     if (document.fullscreenElement === this.root) void document.exitFullscreen().catch(() => {});
-    this.flushActiveLayout();
+    this.layouts.flushActiveLayout();
     this.commandPalettePart?.destroy();
     this.symbolSearchPart?.destroy();
     this.hotkeySheetPart?.destroy();
@@ -2131,8 +2092,8 @@ export class ChartWidget {
     this.drawingTemplatePrompt?.destroy();
     this.intervalInput?.destroy();
     this.markerTip?.remove();
-    this.layoutSession?.destroy();
-    this.layoutsUI?.destroy();
+    this.layouts.layoutSession?.destroy();
+    this.layouts.layoutsUI?.destroy();
     this.settingsListeners.clear();
     this.trading.accountPanel?.destroy();
     this.trading.orderTicket?.destroy();
@@ -2148,7 +2109,7 @@ export class ChartWidget {
     this.onPageShown = null;
     this.chartNav?.destroy();
     this.symbolInfoPanel?.destroy();
-    this.dock?.destroy();
+    this.docking.dock?.destroy();
     this.watching.stopQuotes?.();
     this.watching.stopQuotes = null;
     this.watching.watchlist?.destroy();
@@ -2379,7 +2340,7 @@ export class ChartWidget {
       } else {
         this.chart.endDrawingEdit(id, { cancel: !keep });
       }
-      this.refreshObjects();
+      this.docking.refreshObjects();
     };
     const opened = editor.open({
       rect: () => {
@@ -2513,13 +2474,13 @@ export class ChartWidget {
   private closeSwitchedOff(turnedOff: (name: WidgetFeature) => boolean): void {
     if (turnedOff('replay') && this.replay.isOpen()) this.replay.exitReplay();
     const closers: readonly [WidgetFeature, () => void][] = [
-      ['alerts', () => this.dock?.closePage('alerts')],
-      ['objectTree', () => this.dock?.closePage('objectTree')],
-      ['symbolInfo', () => this.dock?.closePage('symbolInfo')],
-      ['dataWindow', () => this.dock?.closePage('dataWindow')],
+      ['alerts', () => this.docking.dock?.closePage('alerts')],
+      ['objectTree', () => this.docking.dock?.closePage('objectTree')],
+      ['symbolInfo', () => this.docking.dock?.closePage('symbolInfo')],
+      ['dataWindow', () => this.docking.dock?.closePage('dataWindow')],
       ['accountPanel', () => this.trading.toggleAccountPanel(false)],
       ['orderTicket', () => this.trading.orderTicket?.close()],
-      ['depthLadder', () => this.dock?.closePage('depthLadder')],
+      ['depthLadder', () => this.docking.dock?.closePage('depthLadder')],
       ['goToDate', () => this.goToDate?.close()],
       ['settings', () => this.settings?.close()],
       ['indicatorSettings', () => this.indicatorSettings?.close()],
@@ -2612,7 +2573,7 @@ export class ChartWidget {
       case 'hotkeys.commandPalette': return f.commandPalette;
       case 'hotkeys.symbolSearch': return f.symbolSearch;
       case 'hotkeys.goToDate': return f.goToDate;
-      case 'hotkeys.save': return f.layouts && this.layoutSession !== null;
+      case 'hotkeys.save': return f.layouts && this.layouts.layoutSession !== null;
       case 'hotkeys.help': return f.hotkeySheet;
       case 'intervalTyping': return this.intervalInput !== null;
       case 'symbolTyping': return f.symbolSearch;
@@ -2630,7 +2591,7 @@ export class ChartWidget {
     this.toolbar?.setSymbolSearch(this.featureState.symbolSearch);
     this.toolbar?.tidy();
     this.sidebar?.tidy();
-    this.syncRail();
+    this.docking.syncRail();
     // A preset, go to date or the market's word shown or hidden changes what the status bar must fit.
     this.statusBar?.fit();
   }
@@ -3127,25 +3088,7 @@ export class ChartWidget {
    * host's features set, from where they set them).
    */
   exportState(): string {
-    const indicators = this.chart.getActiveIndicators().map((i) => ({
-      id: i.id,
-      params: i.params as Record<string, number | string | boolean>,
-    }));
-    const settings = this.getSettings();
-    // Only what differs from the defaults, so a link stays short; the switches
-    // the host's features set, from where they set them.
-    const base = { ...DEFAULT_SETTINGS, ...Object.fromEntries(FEATURE_SET_SETTINGS.map((key) => [key, this.settingsDefaults[key]])) };
-    const changed = shareDelta(settings, base);
-    return encodeWidgetState({
-      v: 1,
-      symbol: this.state.symbol,
-      timeframe: this.state.timeframe,
-      chartType: this.state.chartType,
-      scaleMode: settings.scaleMode,
-      indicators,
-      drawings: this.chart.getDrawings(),
-      ...(Object.keys(changed).length > 0 ? { settings: changed } : {}),
-    });
+    return this.layouts.exportState();
   }
 
   /**
@@ -3195,27 +3138,7 @@ export class ChartWidget {
 
   /** Restore a view from an `exportState()` string. Returns false if malformed. */
   async importState(encoded: string): Promise<boolean> {
-    const s = decodeWidgetState(encoded);
-    if (!s) return false;
-
-    // Symbol/timeframe first so any stream/layout restore happens before we
-    // overlay the shared view on top.
-    if (s.symbol && s.symbol !== this.state.symbol) await this.setSymbol(s.symbol);
-    if (s.timeframe && s.timeframe !== this.state.timeframe) await this.setTimeframe(s.timeframe);
-
-    if (s.chartType) this.applyChartType(s.chartType);
-    // Through the settings, so a percent compare keeps its scale and the settings show the shared one;
-    // the sender's overlays with it, never their time zone or number format (the reader leaves those out).
-    const { chartTypeOptions, ...shared } = this.allowedSettings({ scaleMode: s.scaleMode, ...readChartSettings(s.settings, SHARE_LEAVES) });
-    const typeOptions = this.overViewerTypeOptions(s.chartType, chartTypeOptions);
-    this.showLinkSettings(typeOptions ? { ...shared, chartTypeOptions: typeOptions } : shared);
-    this.settings?.refresh(this.shownSettings());
-
-    // The shared indicators in place of the chart's, as one undo step.
-    this.chart.applyIndicatorSetup(s.indicators.map((ind, i) => ({ id: ind.id, instanceId: `shared_${i}`, params: ind.params })));
-    this.chart.setDrawings(s.drawings);
-    this.updateUI();
-    return true;
+    return this.layouts.importState(encoded);
   }
 
   /**
@@ -3238,14 +3161,7 @@ export class ChartWidget {
 
   /** Copy a shareable deep-link (current view encoded in the URL hash) to the clipboard. */
   async copyShareLink(): Promise<void> {
-    const base = typeof location !== 'undefined' ? location.href : '';
-    const url = buildShareUrl(base, this.exportState());
-    try {
-      await navigator.clipboard.writeText(url);
-      this.say(this.t('toast.linkCopied'));
-    } catch {
-      this.say(this.t('toast.copyFailed'), 'error');
-    }
+    return this.layouts.copyShareLink();
   }
 
   /** Feed order-book depth to the chart overlay, depth ladder, and heatmap. */
@@ -3256,198 +3172,6 @@ export class ChartWidget {
   /** Begin a draggable bracket order at the latest price and show the action bar. */
   startBracket(side: 'buy' | 'sell'): void {
     return this.trading.startBracket(side);
-  }
-
-  /**
-   * The bar under the pointer and the close before it. On candles the data
-   * bar at the index, as it is now (a live tick moves it); on Renko and the
-   * like the brick the crosshair reported, whose index is not the data's.
-   */
-  private hoveredBar(): { bar: OHLCBar; prevClose: number } | null {
-    const idx = this.lastHoverIndex;
-    if (idx === null || idx < 0) return null;
-    if (!this.chart.isTimeAligned()) {
-      const bar = this.lastHoverBar;
-      return bar ? { bar, prevClose: this.lastHoverPrevClose ?? bar.open } : null;
-    }
-    const data = this.chart.getData();
-    if (idx >= data.length) return null;
-    return { bar: data[idx], prevClose: idx > 0 ? data[idx - 1].close : data[idx].open };
-  }
-
-  private buildDataWindowModel(): DataWindowModel {
-    const idx = this.lastHoverIndex;
-    const hovered = this.hoveredBar();
-    if (idx === null || !hovered) {
-      return { ohlc: null, change: 0, changePct: 0, indicators: [] };
-    }
-    const { bar, prevClose } = hovered;
-    const change = bar.close - prevClose;
-    const changePct = prevClose !== 0 ? (change / prevClose) * 100 : 0;
-    const inOwnPane = new Set(this.chart.getIndicatorPanes().flatMap((pane) => pane.instanceIds ?? [pane.instanceId]));
-    const locale = this.settingsState.numberLocale || 'en-US';
-
-    const indicators = this.chart.getActiveIndicators().map((ind) => {
-      const series = this.chart.getIndicatorOutput(ind.instanceId)?.series;
-      const point = series?.[idx] ?? null;
-      const inPriceUnits = !inOwnPane.has(ind.instanceId) && readsChartPrices(ind);
-      // The drawn lines by their titles ("Signal"), else every field by its key.
-      const fields = ind.descriptor.plots?.map((p) => [p.key, p.title] as const)
-        ?? Object.keys(point ?? {}).map((k) => [k, k] as const);
-      const values = point
-        ? fields
-            .filter(([key]) => typeof point[key] === 'number' && Number.isFinite(point[key]))
-            .map(([key, title]) => {
-              const value = point[key] as number;
-              return { key: title, value, text: this.indicatorValueText(value, inPriceUnits, locale) };
-            })
-        : [];
-      return { name: ind.descriptor.name, values };
-    }).filter((i) => i.values.length > 0);
-
-    return {
-      ohlc: { open: bar.open, high: bar.high, low: bar.low, close: bar.close, volume: bar.volume },
-      change,
-      // In the decimals the bar's prices show: a change of 18.7494 on 100,000 reads 18.75.
-      changeText: this.formatAlertPrice(change, bar.close),
-      changePct,
-      indicators,
-    };
-  }
-
-  private toggleDataWindow(): void {
-    if (!this.dataWindow || !this.featureState.dataWindow) return;
-    this.dock?.toggle('dataWindow');
-  }
-
-  private toggleObjects(): void {
-    if (!this.objectTree || !this.featureState.objectTree) return;
-    this.dock?.toggle('objectTree');
-  }
-
-  /**
-   * The dock's pages, in the rail's order: the watchlist, alerts, objects,
-   * the data window, the symbol info and the depth ladder, all shut to start
-   * with. Each draws itself as it shows, and says so on the toolbar's button.
-   */
-  private setupDock(): void {
-    const dock = this.dock;
-    if (!dock) return;
-    if (this.watching.watchlist) {
-      const list = this.watching.watchlist;
-      // Hidden, its sparklines were drawn at no size: drawn again as it shows.
-      dock.addPage({ id: 'watchlist', label: this.t('watchlist.title'), icon: 'list', element: list.element, parts: ['dock.watchlist'], onShow: () => list.redraw() });
-    }
-    const alerts = this.alerting.alertsPanel;
-    if (alerts) {
-      dock.addPage({
-        id: 'alerts', label: this.t('alerts.title'), icon: 'bell', element: alerts.element, parts: ['dock.alerts', 'alerts'],
-        onShow: () => {
-          alerts.openPanel();
-          this.alerting.refreshAlerts();
-          this.toolbar?.setActive('alerts', true);
-        },
-        onHide: () => {
-          alerts.close();
-          this.toolbar?.setActive('alerts', false);
-        },
-      });
-    }
-    const tree = this.objectTree;
-    if (tree) {
-      dock.addPage({
-        id: 'objectTree', label: this.t('objects.title'), icon: 'layers', element: tree.element, parts: ['dock.objectTree', 'objectTree'],
-        onShow: () => {
-          tree.openPanel();
-          this.refreshObjects();
-          this.toolbar?.setActive('objects', true);
-        },
-        onHide: () => {
-          tree.close();
-          this.toolbar?.setActive('objects', false);
-        },
-      });
-    }
-    const data = this.dataWindow;
-    if (data) {
-      dock.addPage({
-        id: 'dataWindow', label: this.t('dataWindow.title'), icon: 'table', element: data.element, parts: ['dock.dataWindow', 'dataWindow'],
-        onShow: () => {
-          data.openPanel();
-          data.render(this.buildDataWindowModel());
-        },
-        onHide: () => data.close(),
-      });
-    }
-    const info = this.symbolInfoPanel;
-    if (info) {
-      dock.addPage({
-        id: 'symbolInfo', label: this.t('symbolInfo.title'), icon: 'info', element: info.element, parts: ['dock.symbolInfo', 'symbolInfo'],
-        onShow: () => info.open(),
-        onHide: () => info.close(),
-      });
-    }
-    const ladder = this.trading.depthLadder;
-    if (ladder) {
-      dock.addPage({
-        id: 'depthLadder', label: this.t('ladder.title'), icon: 'ladder', element: ladder.element, parts: ['dock.depthLadder', 'depthLadder'],
-        onShow: () => ladder.openPanel(),
-        onHide: () => ladder.close(),
-      });
-    }
-    this.syncRail();
-    this.fitDockToWidth();
-    if (typeof ResizeObserver !== 'undefined') {
-      this.dockObserver = new ResizeObserver(() => this.fitDockToWidth());
-      this.dockObserver.observe(this.root);
-    }
-  }
-
-  /**
-   * The dock and the widget's width. Going narrow (a phone, a rotated
-   * tablet) shuts any panel: it would be a sheet over the chart. No panel
-   * opens by itself: the chart has the room until one is asked for.
-   */
-  private fitDockToWidth(): void {
-    const dock = this.dock;
-    const width = this.root.clientWidth;
-    if (!dock || width === 0) return;
-    const narrow = width < NARROW_WIDGET_PX;
-    const was = this.dockNarrow;
-    this.dockNarrow = narrow;
-    if (narrow && was !== true) dock.close();
-  }
-
-  /** Whether the rail shows now: on, and the widget not narrow. */
-  private railShown(): boolean {
-    return this.featureState.dock && !this.root.hasAttribute('data-tcw-narrow');
-  }
-
-  /**
-   * The rail's Tab stop on a button that shows, and the toolbar's alerts and
-   * objects buttons hidden while the rail has its own for them (so the
-   * "more" menu leaves them out too).
-   */
-  private syncRail(): void {
-    this.dock?.syncRail();
-    const rail = this.railShown();
-    this.toolbar?.setRailed('alerts', rail && this.featureState['dock.alerts']);
-    this.toolbar?.setRailed('objects', rail && this.featureState['dock.objectTree']);
-    this.toolbar?.fit();
-  }
-
-  /** Where the keyboard goes when a panel shuts and the rail can't take it: its toolbar button, or "more" on a phone. */
-  private panelFocusTarget(page: WidgetPanel): HTMLElement | null {
-    const role = PANEL_TOOLBAR_ROLES[page];
-    const own = role ? this.root.querySelector<HTMLElement>(`.tcw-toolbar [data-role="${role}"]`) : null;
-    const narrow = this.root.hasAttribute('data-tcw-narrow');
-    if (own && !own.hidden && !(narrow && own.classList.contains('tcw-toolbar-overflow'))) return own;
-    return this.root.querySelector<HTMLElement>('.tcw-toolbar-more') ?? this.chartContainer;
-  }
-
-  /** A panel shut by its own close button: by hand. */
-  private closePanelByHand(page: WidgetPanel): void {
-    this.dock?.closePage(page);
   }
 
   private openIndicatorSettings(instanceId: string): void {
@@ -3482,30 +3206,6 @@ export class ChartWidget {
       ownLevels,
       scale: pane ? undefined : this.chart.getIndicatorScale(instanceId),
     });
-  }
-
-  private refreshObjects(): void {
-    this.refreshDrawingsState();
-    if (!this.objectTree) return;
-    // Named as the chips and the legend name them: a compare by its symbol, two EMAs by their periods;
-    // the full name in the tooltip.
-    const indicators = this.chart.getActiveIndicators().map((i) => ({
-      instanceId: i.instanceId,
-      name: widgetIndicatorLabel(i, this.t),
-      title: i.descriptor.name,
-      visible: i.visible,
-    }));
-    const drawings = this.chart.getDrawings().map((d) => ({
-      id: d.id,
-      label: d.name || drawingTypeLabel(d.type, this.t),
-      visible: d.visible,
-      offInterval: d.visible && !this.chart.isDrawingShown(d.id),
-      locked: d.locked,
-      group: d.group,
-    }));
-    // Every compare, as the compare dialog lists it: the percent lines and the indicators on another symbol.
-    const compares = this.comparing.comparedNow().map((c) => ({ id: c.id, label: c.symbol, color: c.color, way: c.way }));
-    this.objectTree.setObjects(indicators, drawings, compares);
   }
 
   /**
@@ -3550,7 +3250,7 @@ export class ChartWidget {
   private refreshPriceTexts(): void {
     this.alerting.refreshAlerts();
     this.trading.refreshAccountSoon();
-    if (this.dataWindow?.isOpen()) this.dataWindow.render(this.buildDataWindowModel());
+    if (this.dataWindow?.isOpen()) this.dataWindow.render(this.docking.buildDataWindowModel());
   }
 
   /**
@@ -3887,7 +3587,7 @@ export class ChartWidget {
 
   /** Named layouts: save, open, rename, delete, auto-save. `null` with `layouts: false`. */
   getLayoutSession(): LayoutSession | null {
-    return this.layoutSession;
+    return this.layouts.getLayoutSession();
   }
 
   /** The symbol showing. */
@@ -3906,58 +3606,22 @@ export class ChartWidget {
    * theme). A copy, free to keep.
    */
   captureLayout(): WidgetLayoutContent {
-    const settings = this.getSettings();
-    const json = this.chart.saveState();
-    const state = json ? parseLayoutJson(json) : null;
-    // The theme stays the viewer's; the time of the capture would make every capture differ.
-    const chart = state && typeof state === 'object' ? layoutChartState(state as Record<string, unknown>) : null;
-    return {
-      v: 1,
-      symbol: this.state.symbol,
-      // The user's timeframe, not one a long range switched to.
-      timeframe: this.chosenTimeframe ?? this.state.timeframe,
-      scaleMode: settings.scaleMode,
-      invertScale: settings.invertScale,
-      chart,
-      // All of them, not only those changed: the layout opens as it was saved.
-      settings: pickSettings(settings, LAYOUT_LEAVES),
-    };
+    return this.layouts.captureLayout();
   }
 
   /** Show a layout from `captureLayout()`. */
   async restoreLayout(content: WidgetLayoutContent): Promise<void> {
-    if (content.symbol !== this.state.symbol) await this.setSymbol(content.symbol);
-    if (content.timeframe !== this.state.timeframe) await this.setTimeframe(content.timeframe);
-    if (this.destroyed) return;
-    if (content.chart) {
-      this.chart.loadState(JSON.stringify(layoutChartState(content.chart)));
-      const type = content.chart.chartType;
-      if (typeof type === 'string') this.state = { ...this.state, chartType: type as ChartType };
-    }
-    // A layout saved before the settings were kept has none: they stay as they are.
-    const settings = this.allowedSettings({
-      scaleMode: content.scaleMode,
-      invertScale: content.invertScale,
-      ...readChartSettings(content.settings, LAYOUT_LEAVES),
-    });
-    this.claimSettings(Object.keys(settings) as (keyof ChartSettingsState)[]);
-    this.applySettings(settings);
-    this.syncIndicatorsFromChart();
-    this.updateUI();
-    this.settings?.refresh(this.shownSettings(), this.state.chartType);
+    return this.layouts.restoreLayout(content);
   }
 
   /** `captureLayout()` as JSON. */
   getLayoutContent(): string {
-    return JSON.stringify(this.captureLayout());
+    return this.layouts.getLayoutContent();
   }
 
   /** Show a layout from `getLayoutContent()`; `false` when it is not one. */
   async applyLayoutContent(content: string): Promise<boolean> {
-    const layout = readWidgetLayout(parseLayoutJson(content));
-    if (!layout) return false;
-    await this.restoreLayout(layout);
-    return true;
+    return this.layouts.applyLayoutContent(content);
   }
 
   // --- Chart Settings ---
@@ -4104,43 +3768,14 @@ export class ChartWidget {
     }
   }
 
-  private setupLayouts(cfg: import('./types.js').WidgetLayoutsOptions): void {
-    const session = new LayoutSession(cfg.storage ?? localStorageLayouts(), {
-      capture: () => ({ content: this.getLayoutContent(), symbol: this.state.symbol, timeframe: this.chosenTimeframe ?? this.state.timeframe }),
-      apply: async (layout: SavedLayout) => {
-        if (!(await this.applyLayoutContent(layout.content))) throw new Error('Not a widget layout');
-      },
-    }, {
-      autoSave: cfg.autoSave,
-      debounceMs: cfg.debounceMs,
-      onChange: () => this.toolbar?.setLayout(session.current()?.name ?? null, session.isDirty()),
-      onError: () => this.say(this.t('layouts.saveFailed'), 'error'),
-    });
-    this.layoutSession = session;
-    this.layoutsUI = new WidgetLayoutsUI(session, {
-      root: this.root,
-      t: this.t,
-      saveKeys: () => this.keysShown('hotkeys.save', `${MOD_KEY}+S`),
-      toast: (message, kind) => this.say(message, kind),
-      formatTime: (ms) => {
-        const { date, time } = utcToWallTime(ms, this.displayTimezone());
-        return `${date} ${time}`;
-      },
-    });
-    this.chart.on('stateChange', () => session.changed());
-    if (cfg.openLast) {
-      void session.list().then(([last]) => (last && !this.destroyed ? this.openLayout(last.id) : undefined), () => undefined);
-    }
-  }
-
   /** Save into the open layout, or ask for a name when there is none. */
   async saveLayout(): Promise<void> {
-    await this.layoutsUI?.save();
+    return this.layouts.saveLayout();
   }
 
   /** Open a saved layout by id; `false` when it could not be. */
   async openLayout(id: string): Promise<boolean> {
-    return (await this.layoutsUI?.open(id)) ?? false;
+    return this.layouts.openLayout(id);
   }
 
   // --- Layout persistence ---
@@ -4150,36 +3785,7 @@ export class ChartWidget {
    * Useful as an "Reset layout" command in user-facing menus.
    */
   clearSavedLayout(symbol?: string): void {
-    if (!this.layoutKeyPrefix) return;
-    const target = symbol ?? this.state.symbol;
-    try {
-      localStorage.removeItem(this.layoutKeyPrefix + target);
-    } catch { /* localStorage may be unavailable (private mode, SSR, etc.) */ }
-  }
-
-  private applySymbolLayout(symbol: string): void {
-    if (!this.layoutKeyPrefix) return;
-    const key = this.layoutKeyPrefix + symbol;
-    this.activeLayoutKey = key;
-
-    try {
-      // Best-effort load. If parsing or any restore step throws, we silently
-      // fall back to a fresh layout — a corrupted layout shouldn't break the
-      // chart.
-      const ok = this.chart.loadStateFromStorage(key);
-      if (ok) this.syncIndicatorsFromChart();
-    } catch { /* swallow — layout will be rebuilt from user actions */ }
-
-    // Wire chart-level auto-save so any further drawing/indicator change
-    // flushes itself into this symbol's slot.
-    this.chart.setAutoSave(key, this.layoutDebounceMs);
-  }
-
-  private flushActiveLayout(): void {
-    if (!this.activeLayoutKey) return;
-    try { this.chart.saveState(this.activeLayoutKey); } catch { /* same */ }
-    this.chart.disableAutoSave();
-    this.activeLayoutKey = null;
+    return this.layouts.clearSavedLayout(symbol);
   }
 
   /** Rebuild the chip strip from the chart's indicator instances. */
@@ -4294,7 +3900,7 @@ export class ChartWidget {
   /** `told` false leaves the change unkept and untold (a link's). */
   private applySettings(patch: Partial<ChartSettingsState>, told = true): void {
     this.settingsState = { ...this.settingsState, ...patch };
-    if ((Object.keys(patch) as (keyof ChartSettingsState)[]).some((key) => !NOT_IN_LAYOUT.has(key))) this.layoutSession?.changed();
+    if ((Object.keys(patch) as (keyof ChartSettingsState)[]).some((key) => !NOT_IN_LAYOUT.has(key))) this.layouts.layoutSession?.changed();
     this.legend.scheduleLegend(); // the OHLCV legend's rows and the locale move or reword it
 
     if (patch.gridVisible !== undefined) this.chart.setGridVisible(patch.gridVisible);
@@ -4477,7 +4083,7 @@ export class ChartWidget {
       // Re-apply per-symbol layout (indicators, drawings, chart type) after
       // the new history is in. Doing this *after* connect ensures indicators
       // recalculate against the loaded data, not the previous symbol's data.
-      this.applySymbolLayout(this.state.symbol);
+      this.layouts.applySymbolLayout(this.state.symbol);
 
       if (this.loading.hasFailed()) {
         // History failed to load; the stream keeps retrying and the next
@@ -4560,7 +4166,7 @@ export class ChartWidget {
       get destroyed() { return w.destroyed; },
       get featureState() { return w.featureState; },
       get options() { return w.options; },
-      refreshObjects: (...args) => w.refreshObjects(...args),
+      refreshObjects: (...args) => w.docking.refreshObjects(...args),
       refreshScaleSwitches: (...args) => w.refreshScaleSwitches(...args),
       say: (...args) => w.say(...args),
       scheduleLegend: (...args) => w.legend.scheduleLegend(...args),
@@ -4585,7 +4191,7 @@ export class ChartWidget {
     return {
       get chart() { return w.chart; },
       chartSymbolInfo: (...args) => w.chartSymbolInfo(...args),
-      closePanelByHand: (...args) => w.closePanelByHand(...args),
+      closePanelByHand: (...args) => w.docking.closePanelByHand(...args),
       get destroyed() { return w.destroyed; },
       get options() { return w.options; },
       refreshSymbolInfo: (...args) => w.refreshSymbolInfo(...args),
@@ -4608,7 +4214,7 @@ export class ChartWidget {
     const w = this;
     return {
       get chart() { return w.chart; },
-      get dock() { return w.dock; },
+      get dock() { return w.docking.dock; },
       drawingToolName: (...args) => w.drawingToolName(...args),
       get featureState() { return w.featureState; },
       formatAlertPrice: (...args) => w.formatAlertPrice(...args),
@@ -4624,7 +4230,7 @@ export class ChartWidget {
     return {
       get chart() { return w.chart; },
       get destroyed() { return w.destroyed; },
-      get dock() { return w.dock; },
+      get dock() { return w.docking.dock; },
       get featureState() { return w.featureState; },
       formatAlertPrice: (...args) => w.formatAlertPrice(...args),
       say: (...args) => w.say(...args),
@@ -4654,7 +4260,7 @@ export class ChartWidget {
       openSettings: (...args) => w.openSettings(...args),
       get options() { return w.options; },
       refreshDrawingsState: (...args) => w.refreshDrawingsState(...args),
-      refreshObjects: (...args) => w.refreshObjects(...args),
+      refreshObjects: (...args) => w.docking.refreshObjects(...args),
       resetView: (...args) => w.resetView(...args),
       get root() { return w.root; },
       say: (...args) => w.say(...args),
@@ -4701,20 +4307,20 @@ export class ChartWidget {
       get commandPalettePart() { return w.commandPalettePart; },
       get comparing() { return w.comparing; },
       copyChartImage: (...args) => w.copyChartImage(...args),
-      copyShareLink: (...args) => w.copyShareLink(...args),
+      copyShareLink: (...args) => w.layouts.copyShareLink(...args),
       get featureState() { return w.featureState; },
       handleToggleTheme: (...args) => w.handleToggleTheme(...args),
       indicatorPickerItems: (...args) => w.indicatorPickerItems(...args),
       keysShown: (...args) => w.keysShown(...args),
-      get layoutSession() { return w.layoutSession; },
+      get layoutSession() { return w.layouts.layoutSession; },
       get menus() { return w.menus; },
       openHotkeySheet: (...args) => w.openHotkeySheet(...args),
-      openPanel: (...args) => w.openPanel(...args),
+      openPanel: (...args) => w.docking.openPanel(...args),
       openSettings: (...args) => w.openSettings(...args),
       openSymbolSearch: (...args) => w.openSymbolSearch(...args),
       get options() { return w.options; },
       resetView: (...args) => w.resetView(...args),
-      saveLayout: (...args) => w.saveLayout(...args),
+      saveLayout: (...args) => w.layouts.saveLayout(...args),
       say: (...args) => w.say(...args),
       get settings() { return w.settings; },
       get settingsState() { return w.settingsState; },
@@ -4722,11 +4328,73 @@ export class ChartWidget {
       get state() { return w.state; },
       get t() { return w.t; },
       get timeframes() { return w.timeframes; },
-      toggleDataWindow: (...args) => w.toggleDataWindow(...args),
+      toggleDataWindow: (...args) => w.docking.toggleDataWindow(...args),
       toggleGoToDate: (...args) => w.toggleGoToDate(...args),
       toggleSymbolInfo: (...args) => w.toggleSymbolInfo(...args),
       get watching() { return w.watching; },
       whenLoaded: (...args) => w.whenLoaded(...args),
+    };
+  }
+
+  /** What WidgetLayouts reads of the widget and asks of it. */
+  private layoutsHost(): LayoutsHost {
+    // Getters, so the host reads the widget as it is when asked, not as it was now.
+    const w = this;
+    return {
+      allowedSettings: (...args) => w.allowedSettings(...args),
+      applyChartType: (...args) => w.applyChartType(...args),
+      applySettings: (...args) => w.applySettings(...args),
+      get chart() { return w.chart; },
+      get chosenTimeframe() { return w.chosenTimeframe; },
+      claimSettings: (...args) => w.claimSettings(...args),
+      get destroyed() { return w.destroyed; },
+      displayTimezone: (...args) => w.displayTimezone(...args),
+      getSettings: (...args) => w.getSettings(...args),
+      keysShown: (...args) => w.keysShown(...args),
+      get options() { return w.options; },
+      overViewerTypeOptions: (...args) => w.overViewerTypeOptions(...args),
+      get root() { return w.root; },
+      say: (...args) => w.say(...args),
+      setSymbol: (...args) => w.setSymbol(...args),
+      setTimeframe: (...args) => w.setTimeframe(...args),
+      get settings() { return w.settings; },
+      get settingsDefaults() { return w.settingsDefaults; },
+      showLinkSettings: (...args) => w.showLinkSettings(...args),
+      shownSettings: (...args) => w.shownSettings(...args),
+      get state() { return w.state; },
+      set state(value) { w.state = value; },
+      syncIndicatorsFromChart: (...args) => w.syncIndicatorsFromChart(...args),
+      get t() { return w.t; },
+      get toolbar() { return w.toolbar; },
+      updateUI: (...args) => w.updateUI(...args),
+    };
+  }
+
+  /** What WidgetDockArea reads of the widget and asks of it. */
+  private dockingHost(): DockHost {
+    // Getters, so the host reads the widget as it is when asked, not as it was now.
+    const w = this;
+    return {
+      get alerting() { return w.alerting; },
+      get chart() { return w.chart; },
+      get chartContainer() { return w.chartContainer; },
+      get comparing() { return w.comparing; },
+      get dataWindow() { return w.dataWindow; },
+      get featureState() { return w.featureState; },
+      formatAlertPrice: (...args) => w.formatAlertPrice(...args),
+      indicatorValueText: (...args) => w.indicatorValueText(...args),
+      get lastHoverBar() { return w.lastHoverBar; },
+      get lastHoverIndex() { return w.lastHoverIndex; },
+      get lastHoverPrevClose() { return w.lastHoverPrevClose; },
+      get objectTree() { return w.objectTree; },
+      refreshDrawingsState: (...args) => w.refreshDrawingsState(...args),
+      get root() { return w.root; },
+      get settingsState() { return w.settingsState; },
+      get symbolInfoPanel() { return w.symbolInfoPanel; },
+      get t() { return w.t; },
+      get toolbar() { return w.toolbar; },
+      get trading() { return w.trading; },
+      get watching() { return w.watching; },
     };
   }
 }

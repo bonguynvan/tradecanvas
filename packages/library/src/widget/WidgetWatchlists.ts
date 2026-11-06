@@ -9,7 +9,7 @@ import type { ChartWidget } from './ChartWidget.js';
 export interface WatchlistsHost {
   readonly chart: ChartWidget['chart'];
   chartSymbolInfo: ChartWidget['chartSymbolInfo'];
-  closePanelByHand: ChartWidget['closePanelByHand'];
+  closePanelByHand: ChartWidget['docking']['closePanelByHand'];
   readonly destroyed: ChartWidget['destroyed'];
   readonly options: ChartWidget['options'];
   refreshSymbolInfo: ChartWidget['refreshSymbolInfo'];

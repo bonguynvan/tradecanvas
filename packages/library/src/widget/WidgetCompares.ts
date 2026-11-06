@@ -20,7 +20,7 @@ export interface ComparesHost {
   readonly destroyed: ChartWidget['destroyed'];
   readonly featureState: ChartWidget['featureState'];
   readonly options: ChartWidget['options'];
-  refreshObjects: ChartWidget['refreshObjects'];
+  refreshObjects: ChartWidget['docking']['refreshObjects'];
   refreshScaleSwitches: ChartWidget['refreshScaleSwitches'];
   say: ChartWidget['say'];
   scheduleLegend: ChartWidget['legend']['scheduleLegend'];
