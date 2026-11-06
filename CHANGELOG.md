@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 1.72.1 (2026-11-06)
+
+React, Vue and Svelte components: 1.4.4.
+
 ### Widget
 
 - **The indicators dialog, the command palette and the symbol search load when they are needed** (`@tradecanvas/chart`).
