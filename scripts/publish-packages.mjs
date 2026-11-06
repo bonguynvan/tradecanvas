@@ -37,8 +37,11 @@ import { join, dirname, basename, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
-/** How long a new version may take to show on npm before the release stops. */
-const LIVE_TIMEOUT_MS = 180_000;
+/**
+ * How long a new version may take to show on npm before the release stops.
+ * npm has taken more than three minutes (1.72.2's commons: about 190 s).
+ */
+const LIVE_TIMEOUT_MS = 600_000;
 const LIVE_POLL_MS = 5_000;
 const TARBALL_NAME = /^[\w.-]+\.tgz$/;
 const ACCESS = new Set(['public', 'restricted']);
