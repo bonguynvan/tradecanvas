@@ -3718,7 +3718,6 @@ export function lineSourcesFor(instanceId: string, active: readonly ActiveIndica
   return out;
 }
 
-/** The page's localStorage, or null where it can't be used (private mode, SSR). */
 /** Where the command palette's recent commands are kept, in this browser, and how many. */
 const RECENT_COMMANDS_KEY = 'tcw:recentCommands';
 const RECENT_COMMANDS_KEPT = 10;
