@@ -218,6 +218,8 @@ export const NL_MESSAGES: WidgetMessages = {
   'hotkeys.group.more': 'Meer',
 
   'common.close': 'Sluiten',
+
+  'common.partFailed': 'Kon niet openen: controleer de verbinding en probeer het opnieuw',
   'common.cancel': 'Annuleren',
   'common.save': 'Opslaan',
   'common.show': 'Tonen',

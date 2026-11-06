@@ -153,6 +153,11 @@ chart.resume()    // back: one frame draws what changed`}</code></pre>
 pnpm soak                          # 10 minutes, 30,000 trades/s, 1,000,000 bars, WebGL
 pnpm soak --minutes=30 --rate=50000 --renderer=canvas`}</code></pre>
 
+<h2 id="download">ページがダウンロードするもの</h2>
+<p>
+  <code>new ChartWidget()</code> が読み込む JavaScript は gzip で 394 kB（圧縮前 1.49 MB）で、英語の文字列を含みます。ページの読み込み時には要らないダイアログ（チャート設定、インジケーターと描画の設定、移動、ショートカット一覧）はさらに 21 kB です。どれかを初めて開いたとき、またはウィジェットが表示されたあとページが空いたときの、早いほうで読み込まれます。バンドラーはこれらを別のファイルにします。パッケージから直接配信する場合は、エントリーと同じ <code>dist</code> フォルダーにあるので、フォルダーごとコピーしてください。<code>pnpm build</code> のあとに <code>pnpm size</code> を実行すると、エントリーごとにこの数字が出ます。
+</p>
+
 <h2>メインスレッド</h2>
 <p>
   チャートはメインスレッドでインジケーターを計算します。<code>@tradecanvas/core</code> の <code>IndicatorWorkerHost</code> は、Promise ベースの API、リクエストごとのタイムアウト、SSR やテスト向けの同期フォールバックを備え、あなたが用意したワーカーで <code>calculate()</code> を実行できますが、チャートはまだインジケーターをこれ経由で計算しておらず、パッケージにワーカースクリプトは含まれていません。

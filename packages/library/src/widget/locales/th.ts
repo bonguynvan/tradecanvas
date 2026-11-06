@@ -218,6 +218,8 @@ export const TH_MESSAGES: WidgetMessages = {
   'hotkeys.group.more': 'อื่นๆ',
 
   'common.close': 'ปิด',
+
+  'common.partFailed': 'เปิดไม่ได้ ตรวจสอบการเชื่อมต่อแล้วลองอีกครั้ง',
   'common.cancel': 'ยกเลิก',
   'common.save': 'บันทึก',
   'common.show': 'แสดง',

@@ -218,6 +218,8 @@ export const CS_MESSAGES: WidgetMessages = {
   'hotkeys.group.more': 'Další',
 
   'common.close': 'Zavřít',
+
+  'common.partFailed': 'Nepodařilo se otevřít: zkontrolujte připojení a zkuste to znovu',
   'common.cancel': 'Zrušit',
   'common.save': 'Uložit',
   'common.show': 'Zobrazit',

@@ -153,6 +153,11 @@ chart.resume()    // back: one frame draws what changed`}</code></pre>
 pnpm soak                          # 10 minutes, 30,000 trades/s, 1,000,000 bars, WebGL
 pnpm soak --minutes=30 --rate=50000 --renderer=canvas`}</code></pre>
 
+<h2 id="download">페이지가 내려받는 것</h2>
+<p>
+  <code>new ChartWidget()</code>는 gzip 기준 394 kB(압축 전 1.49 MB)의 JavaScript를 불러오며, 영어 문자열이 포함됩니다. 페이지가 열릴 때는 필요 없는 대화상자(차트 설정, 지표 설정과 드로잉 설정, 이동, 단축키 표)는 21 kB가 더 있습니다. 이들은 하나가 처음 열릴 때, 또는 위젯이 뜬 뒤 페이지가 한가할 때 중 먼저 오는 때에 불러옵니다. 번들러는 이들을 별도 파일로 나눕니다. 패키지에서 바로 제공한다면 엔트리와 같은 <code>dist</code> 폴더에 있으니 폴더 전체를 복사하세요. <code>pnpm build</code> 뒤에 <code>pnpm size</code>를 실행하면 엔트리마다 이 숫자를 보여 줍니다.
+</p>
+
 <h2>메인 스레드</h2>
 <p>
   차트는 메인 스레드에서 지표를 계산합니다. <code>@tradecanvas/core</code>의 <code>IndicatorWorkerHost</code>는 Promise 기반 API, 요청별 타임아웃, SSR과 테스트를 위한 동기식 대체 경로를 갖추고 여러분이 제공한 워커에서 <code>calculate()</code>를 실행할 수 있지만, 차트는 아직 지표를 이를 통해 계산하지 않으며 패키지에 워커 스크립트도 포함되어 있지 않습니다.

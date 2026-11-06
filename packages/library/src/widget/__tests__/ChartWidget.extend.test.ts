@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, beforeAll, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { preloadDialogs } from '../widgetDialogs.js';
 import { SANS_FONT_FAMILY, type ChartOptions } from '@tradecanvas/commons';
 import { withResampling, type ResamplingAdapter } from '@tradecanvas/core';
 import { decodeWidgetState } from '../widgetShareState.js';
@@ -126,6 +127,9 @@ afterEach(() => {
 });
 
 const menuItems = () => [...host.querySelectorAll<HTMLElement>('.tcw-context-menu [role^=menuitem]')];
+
+// The dialogs load their code when first opened; here it is in up front, so each opens at once.
+beforeAll(preloadDialogs);
 
 describe('ChartWidget toolbar buttons of the host', () => {
   it('adds a button that calls back, switches and goes away', () => {

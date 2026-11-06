@@ -218,6 +218,8 @@ export const EL_MESSAGES: WidgetMessages = {
   'hotkeys.group.more': 'Περισσότερα',
 
   'common.close': 'Κλείσιμο',
+
+  'common.partFailed': 'Δεν ήταν δυνατό το άνοιγμα: ελέγξτε τη σύνδεση και δοκιμάστε ξανά',
   'common.cancel': 'Άκυρο',
   'common.save': 'Αποθήκευση',
   'common.show': 'Εμφάνιση',

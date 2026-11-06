@@ -225,6 +225,7 @@ export const AR_MESSAGES: WidgetMessages = {
 
   // Common
   'common.close': 'إغلاق',
+  'common.partFailed': 'تعذّر فتحه: تحقّق من الاتصال وحاول مرة أخرى',
   'common.cancel': 'إلغاء',
   'common.save': 'حفظ',
   'common.show': 'إظهار',

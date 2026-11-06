@@ -225,6 +225,7 @@ export const FA_MESSAGES: WidgetMessages = {
 
   // Common
   'common.close': 'بستن',
+  'common.partFailed': 'باز نشد: اتصال را بررسی کنید و دوباره امتحان کنید',
   'common.cancel': 'لغو',
   'common.save': 'ذخیره',
   'common.show': 'نمایش',

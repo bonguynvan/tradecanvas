@@ -225,6 +225,7 @@ export const ET_MESSAGES: WidgetMessages = {
 
   // Common
   'common.close': 'Sulge',
+  'common.partFailed': 'Ei õnnestunud avada: kontrollige ühendust ja proovige uuesti',
   'common.cancel': 'Loobu',
   'common.save': 'Salvesta',
   'common.show': 'Näita',

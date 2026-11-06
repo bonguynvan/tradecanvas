@@ -12,7 +12,7 @@ import { LayoutSession } from '../state/LayoutSession.js';
 import { localStorageLayouts, type SavedLayout } from '../state/layoutStorage.js';
 import { parseLayoutJson, readWidgetLayout, type WidgetLayoutContent } from './widgetLayout.js';
 import { settingsStoreKey } from './chartSettingsStore.js';
-import { utcToWallTime } from './WidgetGoToDate.js';
+import { utcToWallTime } from './wallTime.js';
 import { isKeyTarget, isTyping, registerKeyRoot } from './keyTarget.js';
 import { applyWidgetUI, resolveWidgetUI, type ResolvedWidgetUI, type WidgetUIPreset, type WidgetUITheme } from './widgetUI.js';
 import { watchNarrow } from './narrowMode.js';

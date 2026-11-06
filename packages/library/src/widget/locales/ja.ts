@@ -218,6 +218,8 @@ export const JA_MESSAGES: WidgetMessages = {
   'hotkeys.group.more': 'その他',
 
   'common.close': '閉じる',
+
+  'common.partFailed': '開けませんでした。接続を確認して、もう一度お試しください',
   'common.cancel': 'キャンセル',
   'common.save': '保存',
   'common.show': '表示',

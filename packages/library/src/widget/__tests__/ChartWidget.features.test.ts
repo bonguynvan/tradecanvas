@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, beforeAll, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { preloadDialogs } from '../widgetDialogs.js';
 import type { ChartOptions, DataAdapter, TimeFrame } from '@tradecanvas/commons';
 
 /**
@@ -105,6 +106,9 @@ afterEach(() => {
   widget?.destroy();
   host.remove();
 });
+
+// The dialogs load their code when first opened; here it is in up front, so each opens at once.
+beforeAll(preloadDialogs);
 
 describe('ChartWidget timeframes', () => {
   it('shows the standard favourites and lists the rest in the menu', () => {

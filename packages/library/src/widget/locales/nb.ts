@@ -225,6 +225,7 @@ export const NB_MESSAGES: WidgetMessages = {
 
   // Common
   'common.close': 'Lukk',
+  'common.partFailed': 'Kunne ikke åpnes: sjekk tilkoblingen og prøv igjen',
   'common.cancel': 'Avbryt',
   'common.save': 'Lagre',
   'common.show': 'Vis',

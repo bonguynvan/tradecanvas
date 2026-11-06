@@ -218,6 +218,8 @@ export const ZH_MESSAGES: WidgetMessages = {
   'hotkeys.group.more': '更多',
 
   'common.close': '关闭',
+
+  'common.partFailed': '无法打开：请检查网络连接后重试',
   'common.cancel': '取消',
   'common.save': '保存',
   'common.show': '显示',

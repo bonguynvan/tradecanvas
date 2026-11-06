@@ -227,6 +227,7 @@ export const EN_MESSAGES = {
 
   // Common
   'common.close': 'Close',
+  'common.partFailed': 'Couldn\'t open it: check the connection and try again',
   'common.cancel': 'Cancel',
   'common.save': 'Save',
   'common.show': 'Show',

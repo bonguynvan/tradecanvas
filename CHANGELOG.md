@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+### Widget
+
+- **The dialogs load when they are needed** (`@tradecanvas/chart`).
+  - The chart settings, an indicator's and a drawing's settings, Go to and the shortcut sheet load their code the first time one opens, or once the page is idle after the widget is up, whichever comes first.
+  - `new ChartWidget()` brings in 394.6 kB of JavaScript gzipped instead of 405.3 kB (1,491 kB instead of 1,549 kB before compression).
+  - A bundler puts the dialogs in files of their own. If you serve the package's files yourself, copy the whole `dist` folder, not only the entry files.
+  - If a dialog's code can't be loaded (a dropped connection), the widget says so, and tries again the next time it is opened.
+  - `widget.setTheme()` gives the watermark the ink of the new mode, as the theme button does; before, it kept the old one.
+
 ### Indicators
 
 - **Every built-in indicator says what each input takes** (`@tradecanvas/commons`, `@tradecanvas/core`, `@tradecanvas/chart`, `@tradecanvas/mcp`).

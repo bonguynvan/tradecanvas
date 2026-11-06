@@ -218,6 +218,8 @@ export const VI_MESSAGES: WidgetMessages = {
   'hotkeys.group.more': 'Khác',
 
   'common.close': 'Đóng',
+
+  'common.partFailed': 'Không mở được: hãy kiểm tra kết nối rồi thử lại',
   'common.cancel': 'Huỷ',
   'common.save': 'Lưu',
   'common.show': 'Hiện',

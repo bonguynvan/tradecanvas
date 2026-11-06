@@ -218,6 +218,8 @@ export const RU_MESSAGES: WidgetMessages = {
   'hotkeys.group.more': 'Другие',
 
   'common.close': 'Закрыть',
+
+  'common.partFailed': 'Не удалось открыть: проверьте подключение и попробуйте ещё раз',
   'common.cancel': 'Отмена',
   'common.save': 'Сохранить',
   'common.show': 'Показать',

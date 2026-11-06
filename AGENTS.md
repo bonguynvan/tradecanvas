@@ -113,6 +113,15 @@ These fail CI, often far from the line that caused them.
 - Dialogs and menus open in the overlay layer (`overlayHost`), so they sit
   above the chart and inside the widget in fullscreen. Place a menu with
   `placeMenu()`; it flips above the anchor when there is no room below.
+- The larger dialogs load their code when first opened (`DIALOGS` in
+  `src/widget/widgetDialogs.ts`, a `LazyPart` each in `ChartWidget`), so
+  import them only as types elsewhere; `lazyDialogs.test.ts` fails on a
+  value import. Open one through `whenLoaded()`, which reads the widget's
+  state once the code is in, and in a test that opens one, add
+  `beforeAll(preloadDialogs)`.
+- Widget state that several parts show is a signal (`src/widget/signals.ts`):
+  one effect updates what shows it, instead of each writer calling each
+  update. The theme is one so far.
 - A visible change needs a look in a real browser at a phone width, a laptop
   width and a wide one, in both themes and the three looks, before the pull
   request. Put a screenshot or a short clip in it.

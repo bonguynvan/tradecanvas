@@ -225,6 +225,7 @@ export const MS_MESSAGES: WidgetMessages = {
 
   // Common
   'common.close': 'Tutup',
+  'common.partFailed': 'Tidak dapat dibuka: semak sambungan dan cuba lagi',
   'common.cancel': 'Batal',
   'common.save': 'Simpan',
   'common.show': 'Tunjukkan',

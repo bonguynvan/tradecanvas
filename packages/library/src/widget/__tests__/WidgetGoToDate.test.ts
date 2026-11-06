@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { WidgetGoToDate, utcToWallTime, wallTimeToUtc, type GoToTarget } from '../WidgetGoToDate.js';
+import { WidgetGoToDate, type GoToTarget } from '../WidgetGoToDate.js';
+import { utcToWallTime, wallTimeToUtc } from '../wallTime.js';
 
 const labels = {
   title: 'Go to', date: 'Date', range: 'Custom range', from: 'From', to: 'To', time: 'Time', submit: 'Go to', cancel: 'Cancel', close: 'Close',

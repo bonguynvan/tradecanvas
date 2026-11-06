@@ -218,6 +218,8 @@ export const HU_MESSAGES: WidgetMessages = {
   'hotkeys.group.more': 'Továbbiak',
 
   'common.close': 'Bezárás',
+
+  'common.partFailed': 'Nem sikerült megnyitni: ellenőrizze a kapcsolatot, és próbálja újra',
   'common.cancel': 'Mégse',
   'common.save': 'Mentés',
   'common.show': 'Megjelenítés',

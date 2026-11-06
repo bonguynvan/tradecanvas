@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, beforeAll, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { preloadDialogs } from '../widgetDialogs.js';
 import type { ChartOptions, DrawingState } from '@tradecanvas/commons';
 import { resolveWidgetUI, typeSize } from '../widgetUI.js';
 
@@ -103,6 +104,9 @@ const nextFrame = () => new Promise((resolve) => requestAnimationFrame(() => res
 const bar = () => host.querySelector<HTMLElement>('.tcw-sel-toolbar');
 const button = (name: string) => bar()!.querySelector<HTMLButtonElement>(`[data-action="${name}"]`)!;
 const key = (el: Element, k: string) => el.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true }));
+
+// The dialogs load their code when first opened; here it is in up front, so each opens at once.
+beforeAll(preloadDialogs);
 
 describe('ChartWidget OHLCV legend font', () => {
   it('draws the legend in the look’s figures face, at the size of the indicator rows', () => {
