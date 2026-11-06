@@ -116,7 +116,6 @@ export class WidgetLayouts {
     const { chartTypeOptions, ...shared } = this.host.allowedSettings({ scaleMode: s.scaleMode, ...readChartSettings(s.settings, SHARE_LEAVES) });
     const typeOptions = this.host.overViewerTypeOptions(s.chartType, chartTypeOptions);
     this.host.showLinkSettings(typeOptions ? { ...shared, chartTypeOptions: typeOptions } : shared);
-    this.host.settings?.refresh(this.host.shownSettings());
 
     // The shared indicators in place of the chart's, as one undo step.
     this.host.chart.applyIndicatorSetup(s.indicators.map((ind, i) => ({ id: ind.id, instanceId: `shared_${i}`, params: ind.params })));

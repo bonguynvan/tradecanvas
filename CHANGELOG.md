@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Widget
+
+- **The open Chart Settings follow every change** (`@tradecanvas/chart`).
+  - A setting read back from the chart (`widget.getSettings()` after a change made on `getChart()`) shows in the open dialog; it used to keep the old value.
+  - The dialog is built again only when something it shows changed, so `widget.setSettings()` with the values it already shows no longer redraws it under the user's pointer.
+
 ## 1.72.1 (2026-11-06)
 
 React, Vue and Svelte components: 1.4.4.

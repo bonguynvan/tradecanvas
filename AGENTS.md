@@ -136,7 +136,15 @@ These fail CI, often far from the line that caused them.
   (`widget.chartSettings.openSettings()`).
 - Widget state that several parts show is a signal (`src/widget/signals.ts`):
   one effect updates what shows it, instead of each writer calling each
-  update. The theme is one so far.
+  update. These are signals so far:
+  - the theme (`look`);
+  - what is open, by its toolbar button's role (`openRoles`, written with
+    `markOpen(role, open)`);
+  - the Chart Settings (`chartSettings.settingsState`), which an open
+    settings dialog follows.
+
+  A refresh of the dialog by hand is left only where something other than
+  the settings changed: a look, the chart type, a compare's hold.
 - A visible change needs a look in a real browser at a phone width, a laptop
   width and a wide one, in both themes and the three looks, before the pull
   request. Put a screenshot or a short clip in it.

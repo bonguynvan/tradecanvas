@@ -105,6 +105,12 @@ export class WidgetSettings {
     return this.modal !== null;
   }
 
+  /** Show `settings` when they differ from what the dialog shows: a change made outside it while it is open. */
+  follow(settings: ChartSettingsState): void {
+    if (!this.modal || (this.currentSettings && sameSettings(this.currentSettings, settings))) return;
+    this.refresh(settings);
+  }
+
   /** The settings as they are now (after an undo, a template), on the tab that's open; `chartType` when it changed. */
   refresh(settings: ChartSettingsState, chartType?: ChartType | null): void {
     if (!this.modal) return;
@@ -578,6 +584,23 @@ export class WidgetSettings {
     if (this.currentSettings) Object.assign(this.currentSettings, partial);
     this.callbacks.onChange(partial);
   }
+}
+
+/** Whether two settings say the same, whatever order their keys were set in, at any depth. */
+function sameSettings(a: ChartSettingsState, b: ChartSettingsState): boolean {
+  return sameValue(a, b);
+}
+
+function sameValue(a: unknown, b: unknown): boolean {
+  if (a === b) return true;
+  if (typeof a !== 'object' || typeof b !== 'object' || a === null || b === null) return false;
+  if (Array.isArray(a) !== Array.isArray(b)) return false;
+  const x = a as Record<string, unknown>;
+  const y = b as Record<string, unknown>;
+  // A key set to undefined is as one not there, as JSON has it.
+  const keys = new Set([...Object.keys(x), ...Object.keys(y)].filter((k) => x[k] !== undefined || y[k] !== undefined));
+  for (const key of keys) if (!sameValue(x[key], y[key])) return false;
+  return true;
 }
 
 /** `settings` with `key` set to `value`, or without it (back to its default) for null. */

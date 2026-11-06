@@ -165,7 +165,6 @@ export class WidgetCommands {
         break;
       case 'invertScale':
         this.host.changeSettings({ invertScale: !this.host.settingsState.invertScale });
-        this.host.settings?.refresh(this.host.shownSettings());
         break;
       case 'saveLayout':
         void this.host.saveLayout();

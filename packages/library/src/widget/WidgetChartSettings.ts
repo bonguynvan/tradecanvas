@@ -10,6 +10,8 @@ import { fill } from './i18n.js';
 import { type ChartStyleKey } from '@tradecanvas/commons';
 import { VIEWER_KEYS } from './chartSettingsStore.js';
 import type { ChartWidget } from './ChartWidget.js';
+import { signal, effect, batch, type Dispose } from './signals.js';
+import { DEFAULT_SETTINGS } from './widgetConfig.js';
 
 /** Settings a layout doesn't hold (the viewer's own, and auto-scale, which a drag changes): a change to them leaves the open layout as saved. */
 const NOT_IN_LAYOUT = new Set<keyof ChartSettingsState>([...VIEWER_KEYS, 'autoScale']);
@@ -61,7 +63,19 @@ export class WidgetChartSettings {
     held: boolean;
   } | null = null;
 
-  settingsState!: ChartSettingsState;
+  /** The Chart Settings, followed by the open settings dialog (`followSettings`). */
+  private readonly state = signal<ChartSettingsState>(DEFAULT_SETTINGS);
+  /** A change made in the settings dialog is running: it shows it already. */
+  private dialogChanging = 0;
+
+  /** The Chart Settings now. Read without following, so an effect that only asks for them doesn't run again on each change. */
+  get settingsState(): ChartSettingsState {
+    return this.state.peek();
+  }
+
+  set settingsState(value: ChartSettingsState) {
+    this.state.set(value);
+  }
 
   /** What Reset in the settings panel goes back to: the defaults, as the host's features set them. */
   settingsDefaults!: ChartSettingsState;
@@ -287,7 +301,6 @@ export class WidgetChartSettings {
     const settings = this.allowedSettings(this.withoutEarlyFreeze(readChartSettings(patch)));
     this.claimSettings(Object.keys(settings) as (keyof ChartSettingsState)[]);
     this.applySettings(settings);
-    this.host.settings?.refresh(this.shownSettings());
   }
 
   /**
@@ -406,8 +419,36 @@ export class WidgetChartSettings {
     }
   }
 
-  /** `told` false leaves the change unkept and untold (a link's). */
+  /**
+   * The open settings show the Chart Settings as they change, from code, the
+   * keys, the palette, a layout or the chart read back, once a change is
+   * done. A change made in them they show already, and they are not built
+   * again for it or for one that changes nothing they show.
+   */
+  followSettings(): Dispose {
+    return effect(() => {
+      this.state.get();
+      if (this.dialogChanging > 0) return;
+      this.host.settings?.follow(this.shownSettings());
+    });
+  }
+
+  /** A change made in the settings dialog. */
+  changeFromDialog(patch: Partial<ChartSettingsState>): void {
+    this.dialogChanging++;
+    try {
+      this.changeSettings(patch);
+    } finally {
+      this.dialogChanging--;
+    }
+  }
+
+  /** `told` false leaves the change unkept and untold (a link's). The open settings show it once it is all done. */
   applySettings(patch: Partial<ChartSettingsState>, told = true): void {
+    batch(() => this.applySettingsNow(patch, told));
+  }
+
+  private applySettingsNow(patch: Partial<ChartSettingsState>, told: boolean): void {
     this.settingsState = { ...this.settingsState, ...patch };
     if ((Object.keys(patch) as (keyof ChartSettingsState)[]).some((key) => !NOT_IN_LAYOUT.has(key))) this.host.layouts.layoutSession?.changed();
     this.host.legend.scheduleLegend(); // the OHLCV legend's rows and the locale move or reword it

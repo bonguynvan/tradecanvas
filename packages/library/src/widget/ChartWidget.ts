@@ -237,6 +237,8 @@ export class ChartWidget {
   /** The theme for each mode: the host's own where it gave one, so the toggle brings it back. */
   private themeOf: { dark: Theme; light: Theme } = { dark: DARK_THEME, light: LIGHT_THEME };
   private toolbar: WidgetToolbar | null = null;
+  /** What is open, by its toolbar button's role (`'alerts'`, `'account'`, `'indicators'`…): one effect shows it on the toolbar. */
+  private readonly openRoles = signal<ReadonlySet<string>>(new Set());
   private sidebar: WidgetDrawingSidebar | null = null;
   private settingsPart: Lazy<WidgetSettings> | null = null;
   private get settings(): WidgetSettings | null {
@@ -650,6 +652,17 @@ export class ChartWidget {
       this.t,
       this.overlayHost,
     );
+    // A button changes only when its role opens or closes, so one never opened keeps the state it was made with.
+    let shown: ReadonlySet<string> = new Set();
+    this.scope.run(() => effect(() => {
+      const open = this.openRoles.get();
+      for (const role of new Set([...shown, ...open])) {
+        if (shown.has(role) === open.has(role)) continue;
+        if (role === 'indicators') this.toolbar?.setIndicatorsOpen(open.has(role));
+        else this.toolbar?.setActive(role, open.has(role));
+      }
+      shown = open;
+    }));
   }
 
   /** The row under the toolbar: the drawing tools, the chart's box, the dock and the watchlist; and the account panel's place under it. */
@@ -800,7 +813,7 @@ export class ChartWidget {
     this.symbolInfoPanel = new WidgetSymbolInfo(this.root, this.t, {
       onClose: () => this.docking.closePanelByHand('symbolInfo'),
       onToggle: (open) => {
-        this.toolbar?.setActive('symbolInfo', open);
+        this.markOpen('symbolInfo', open);
         if (open) {
           this.refreshSymbolInfo();
           this.loadNews();
@@ -892,7 +905,7 @@ export class ChartWidget {
   /** The settings, the symbol search and the shortcut sheet, each made when first opened. */
   private buildDialogs(features: FeaturesConfig): void {
     this.settingsPart = this.lazyPart(DIALOGS.settings, ({ WidgetSettings }) => new WidgetSettings({
-      onChange: (patch) => this.chartSettings.changeSettings(patch),
+      onChange: (patch) => this.chartSettings.changeFromDialog(patch),
       onReset: () => this.chartSettings.resetSettings(),
       onClose: () => this.chartSettings.endSettingsEdit(true),
       onCancel: () => this.chartSettings.endSettingsEdit(false),
@@ -917,6 +930,7 @@ export class ChartWidget {
       onClose: () => {},
     }, this.overlayHost, this.t));
     this.hotkeySheetPart = this.lazyPart(DIALOGS.hotkeySheet, ({ WidgetHotkeySheet }) => new WidgetHotkeySheet({ onClose: () => {} }, this.t, this.overlayHost));
+    this.scope.run(() => this.chartSettings.followSettings());
   }
 
   /** The bars, the legend, compares, replay and the data window follow the chart's events. */
@@ -1281,7 +1295,7 @@ export class ChartWidget {
         formatAmount: (v) => this.formatMoney(v),
         formatNumber: (v, d) => this.formatNumber(v, d),
         onToggle: (open) => {
-          this.toolbar?.setActive('account', open);
+          this.markOpen('account', open);
           this.trading.refreshAccount();
         },
       }, this.t);
@@ -1315,7 +1329,7 @@ export class ChartWidget {
           },
           formatPrice: (p) => this.formatAlertPrice(p),
           priceStep: (p) => this.chart.getPriceStep(p),
-          onToggle: (open) => this.toolbar?.setActive('ladder', open),
+          onToggle: (open) => this.markOpen('ladder', open),
           onClose: () => this.docking.closePanelByHand('depthLadder'),
         }, undefined, this.t);
         // Your working orders, marked on the rows where they wait.
@@ -1385,7 +1399,7 @@ export class ChartWidget {
         },
         onSave: () => this.promptSaveIndicatorTemplate(),
       },
-      onClose: () => this.toolbar?.setIndicatorsOpen(false),
+      onClose: () => this.markOpen('indicators', false),
     }, this.t));
   }
 
@@ -1551,7 +1565,6 @@ export class ChartWidget {
           if (!keyOn('hotkeys.invertScale')) return;
           e.preventDefault();
           this.chartSettings.changeSettings({ invertScale: !this.chartSettings.settingsState.invertScale });
-          this.settings?.refresh(this.chartSettings.shownSettings());
         } else if (e.code === 'KeyR') {
           // Alt+R → the whole series in view, the price scale fitted to it.
           if (!keyOn('hotkeys.resetView')) return;
@@ -3060,7 +3073,6 @@ export class ChartWidget {
   private resetView(): void {
     this.chart.fitContent();
     this.chartSettings.changeSettings({ autoScale: true });
-    this.settings?.refresh(this.chartSettings.shownSettings());
   }
 
   // --- Toast ---
@@ -3227,7 +3239,7 @@ export class ChartWidget {
         templates: this.featureState.indicatorTemplates ? this.templateNames() : null,
         counts: this.indicatorCounts(),
       });
-      this.toolbar?.setIndicatorsOpen(true);
+      this.markOpen('indicators', true);
     });
   }
 
@@ -3293,7 +3305,7 @@ export class ChartWidget {
       textLocale: () => this.textLocale(),
       intlLocale: () => this.intlLocale(),
       say: (text, kind) => this.say(text, kind),
-      markActive: (on) => this.toolbar?.setActive('replay', on),
+      markActive: (on) => this.markOpen('replay', on),
       bodyEl: () => this.bodyEl(),
     };
   }
@@ -3384,6 +3396,16 @@ export class ChartWidget {
       symbol: this.state.symbol,
       timeframe: this.state.timeframe,
     });
+  }
+
+  /** Mark `role` open or closed; the toolbar's effect shows it. */
+  private markOpen(role: string, open: boolean): void {
+    const now = this.openRoles.peek();
+    if (now.has(role) === open) return;
+    const next = new Set(now);
+    if (open) next.add(role);
+    else next.delete(role);
+    this.openRoles.set(next);
   }
 
   private resolveIsDark(theme?: import('@tradecanvas/commons').ThemeName | Theme): boolean {
@@ -3633,6 +3655,7 @@ export class ChartWidget {
     // Getters, so the host reads the widget as it is when asked, not as it was now.
     const w = this;
     return {
+      markOpen: (...args) => w.markOpen(...args),
       get alerting() { return w.alerting; },
       get chart() { return w.chart; },
       get chartContainer() { return w.chartContainer; },
