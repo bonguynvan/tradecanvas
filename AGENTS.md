@@ -120,6 +120,11 @@ These fail CI, often far from the line that caused them.
   value import. Open one through `whenLoaded()`, which reads the widget's
   state once the code is in, and in a test that opens one, add
   `beforeAll(preloadDialogs)`.
+- `ChartWidget.ts` is being split by area. Bar replay is the first:
+  `src/widget/WidgetReplay.ts` holds its panel, the start bar picked on the
+  chart, the session and its keys, and reads the widget only through the
+  `ReplayHost` it is given. A part moved out the same way gets its own
+  host interface, not the widget itself.
 - Widget state that several parts show is a signal (`src/widget/signals.ts`):
   one effect updates what shows it, instead of each writer calling each
   update. The theme is one so far.
