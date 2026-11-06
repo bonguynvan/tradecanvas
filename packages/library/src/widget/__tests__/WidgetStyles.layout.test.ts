@@ -120,6 +120,26 @@ describe('the symbol search', () => {
     expect(blocks(rules, '.tcw-ss-venue').join('')).toMatch(/width:\s*0;/);
     expect(blocks(rules, '.tcw-ss-symbol').join('')).toMatch(/justify-self:\s*stretch/);
   });
+
+  // At 1920 the search stayed a 610 box, and "HYPERLIQUID:xyz:SP500" lost its venue to the ellipsis
+  // in a 144 column with 8 px before its name.
+  it('grows with a wide screen, phi steps from 610 to 987', () => {
+    expect(blocks(dialogs, '.tcw-modal.tcw-ss')[0]).toMatch(/width:\s*min\(987px, max\(610px, 38\.2vw\)\);/);
+  });
+
+  it('gives the symbol column up to 233 as the dialog grows, and a clear gap before the name', () => {
+    expect(blocks(dialogs, '.tcw-ss-results')[0]).toMatch(/grid-template-columns:\s*max-content fit-content\(clamp\(144px, 25%, 233px\)\) minmax\(0, 1fr\)/);
+    expect(blocks(dialogs, '.tcw-modal.tcw-ss').join('')).toMatch(/--tcw-ss-name-gap:\s*var\(--tcw-space-4\);/);
+    // On the name's side: the cell is left to right in any widget, so a side, not its end.
+    expect(blocks(dialogs, '.tcw-ss-symbol')[0]).toMatch(/padding-right:\s*var\(--tcw-ss-name-gap\)/);
+    const rtl = blocks(dialogs, "[dir='rtl'] .tcw-ss-symbol").join('');
+    expect(rtl).toMatch(/padding-right:\s*0/);
+    expect(rtl).toMatch(/padding-left:\s*var\(--tcw-ss-name-gap\)/);
+    // A phone keeps its column's room for the ticker.
+    expect(blocks(phone(dialogs), '.tcw-modal.tcw-ss').join('')).toMatch(/--tcw-ss-name-gap:\s*0px/);
+    // As specific as the base, so it wins only after it.
+    expect(dialogs.indexOf('--tcw-ss-name-gap: 0px')).toBeGreaterThan(dialogs.indexOf('--tcw-ss-name-gap: var(--tcw-space-4)'));
+  });
 });
 
 describe('the symbol search’s venue', () => {
