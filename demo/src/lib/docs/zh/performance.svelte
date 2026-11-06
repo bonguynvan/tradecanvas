@@ -154,7 +154,7 @@ pnpm soak --minutes=30 --rate=50000 --renderer=canvas`}</code></pre>
 
 <h2 id="download">页面要下载什么</h2>
 <p>
-  <code>new ChartWidget()</code> 加载 394 kB gzip 后的 JavaScript（压缩前 1.49 MB），其中包括英文字符串。页面加载时用不到的对话框（图表设置、指标设置和绘图设置、跳转和快捷键表）另有 21 kB。它们在其中一个第一次打开时加载，或者在组件显示后页面空闲时加载，以先到者为准。打包工具会把它们放进单独的文件；直接从包里提供时，它们在包的 <code>dist</code> 文件夹里，和各个入口放在一起，所以要复制整个文件夹。在 <code>pnpm build</code> 之后运行 <code>pnpm size</code>，会列出每个入口的这些数字。
+  <code>new ChartWidget()</code> 加载 386 kB gzip 后的 JavaScript（压缩前 1.46 MB），其中包括英文字符串。页面加载时用不到的对话框（指标对话框、命令面板、品种搜索、图表设置、指标设置和绘图设置、跳转和快捷键表）另有 34 kB。它们在其中一个第一次打开时加载，或者在组件显示后页面空闲时加载，以先到者为准。打包工具会把它们放进单独的文件；直接从包里提供时，它们在包的 <code>dist</code> 文件夹里，和各个入口放在一起，所以要复制整个文件夹。在 <code>pnpm build</code> 之后运行 <code>pnpm size</code>，会列出每个入口的这些数字。
 </p>
 
 <h2>主线程</h2>

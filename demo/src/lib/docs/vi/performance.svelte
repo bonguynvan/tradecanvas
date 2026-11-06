@@ -155,7 +155,7 @@ pnpm soak --minutes=30 --rate=50000 --renderer=canvas`}</code></pre>
 
 <h2 id="download">Trang tải về những gì</h2>
 <p>
-  <code>new ChartWidget()</code> tải 394 kB JavaScript đã gzip (1,49 MB khi chưa nén), gồm cả chuỗi tiếng Anh. Các hộp thoại trang chưa cần lúc mới tải (cài đặt chart, cài đặt của một chỉ báo và của một hình vẽ, Đi tới và bảng phím tắt) là thêm 21 kB. Chúng được tải lần đầu một hộp thoại mở, hoặc khi trang rảnh sau khi widget đã hiện, tùy việc nào đến trước. Bundler đặt chúng vào các file riêng; nếu phục vụ thẳng từ package, chúng nằm trong thư mục <code>dist</code> cạnh các entry, nên hãy chép cả thư mục. <code>pnpm size</code>, chạy sau <code>pnpm build</code>, in các con số này cho từng entry.
+  <code>new ChartWidget()</code> tải 386 kB JavaScript đã gzip (1,46 MB khi chưa nén), gồm cả chuỗi tiếng Anh. Các hộp thoại trang chưa cần lúc mới tải (hộp chọn chỉ báo, bảng lệnh, tìm symbol, cài đặt chart, cài đặt của một chỉ báo và của một hình vẽ, Đi tới và bảng phím tắt) là thêm 34 kB. Chúng được tải lần đầu một hộp thoại mở, hoặc khi trang rảnh sau khi widget đã hiện, tùy việc nào đến trước. Bundler đặt chúng vào các file riêng; nếu phục vụ thẳng từ package, chúng nằm trong thư mục <code>dist</code> cạnh các entry, nên hãy chép cả thư mục. <code>pnpm size</code>, chạy sau <code>pnpm build</code>, in các con số này cho từng entry.
 </p>
 
 <h2>Luồng chính</h2>

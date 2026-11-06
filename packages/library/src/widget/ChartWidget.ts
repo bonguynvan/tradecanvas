@@ -14,8 +14,8 @@ import { createScope, effect, signal, type Signal } from './signals.js';
 import { WidgetDrawingSidebar } from './WidgetDrawingSidebar.js';
 import type { WidgetSettings, SettingsTab } from './WidgetSettings.js';
 import { WidgetStatusBar } from './WidgetStatusBar.js';
-import { WidgetCommandPalette } from './WidgetCommandPalette.js';
-import { WidgetSymbolSearch, type SymbolSearchFn } from './WidgetSymbolSearch.js';
+import type { WidgetCommandPalette } from './WidgetCommandPalette.js';
+import type { WidgetSymbolSearch, SymbolSearchFn } from './WidgetSymbolSearch.js';
 import type { WidgetHotkeySheet } from './WidgetHotkeySheet.js';
 import { MOD_KEY } from './platformKeys.js';
 import { WidgetReplayBar, DEFAULT_REPLAY_RATE } from './WidgetReplayBar.js';
@@ -33,7 +33,7 @@ import { readChartTypeOptions, type ChartTypeOptions } from '@tradecanvas/common
 import { applyWidgetUI, resolveWidgetUI, scaledWidgetUI, typeSize, widgetScaleFor, widgetUIVariables, type ResolvedWidgetUI, type WidgetUIPreset, type WidgetUITheme } from './widgetUI.js';
 import { WidgetObjectTree, drawingTypeLabel } from './WidgetObjectTree.js';
 import type { WidgetIndicatorSettings, IndicatorDefault } from './WidgetIndicatorSettings.js';
-import { WidgetIndicatorPicker, type IndicatorPickerItem } from './WidgetIndicatorPicker.js';
+import type { WidgetIndicatorPicker, IndicatorPickerItem } from './WidgetIndicatorPicker.js';
 import { IndicatorDefaultsStore } from './indicatorDefaults.js';
 import { ChartTemplateStore } from './chartTemplates.js';
 import {
@@ -317,8 +317,16 @@ export class ChartWidget {
     this.toolbar?.setFullscreen(document.fullscreenElement === this.root);
     if (this.portal.isConnected) this.overlayHost(); // an open modal follows
   };
-  private commandPalette: WidgetCommandPalette | null = null;
-  private symbolSearch: WidgetSymbolSearch | null = null;
+  private commandPalettePart: Lazy<WidgetCommandPalette> | null = null;
+  private get commandPalette(): WidgetCommandPalette | null {
+    return this.commandPalettePart?.get() ?? null;
+  }
+  private symbolSearchPart: Lazy<WidgetSymbolSearch> | null = null;
+  private get symbolSearch(): WidgetSymbolSearch | null {
+    return this.symbolSearchPart?.get() ?? null;
+  }
+  /** Letters typed on the chart while the symbol search's code loads: it opens with all of them. */
+  private typedWhileLoading = '';
   /** The panels by the chart (watchlist, alerts, objects, data window, symbol info) and their rail. */
   private dock: WidgetDock | null = null;
   /** Whether the widget was narrow when the dock last looked (null: not yet). */
@@ -337,7 +345,10 @@ export class ChartWidget {
   private get indicatorSettings(): WidgetIndicatorSettings | null {
     return this.indicatorSettingsPart?.get() ?? null;
   }
-  private indicatorPicker: WidgetIndicatorPicker | null = null;
+  private indicatorPickerPart: Lazy<WidgetIndicatorPicker> | null = null;
+  private get indicatorPicker(): WidgetIndicatorPicker | null {
+    return this.indicatorPickerPart?.get() ?? null;
+  }
   private drawingStyle: WidgetDrawingStyle | null = null;
   private drawingSettingsPart: Lazy<WidgetDrawingSettings> | null = null;
   private get drawingSettings(): WidgetDrawingSettings | null {
@@ -1050,10 +1061,10 @@ export class ChartWidget {
     }, this.overlayHost));
 
     // 8a. Symbol search
-    this.symbolSearch = new WidgetSymbolSearch({
+    this.symbolSearchPart = this.lazyPart(DIALOGS.symbolSearch, ({ WidgetSymbolSearch }) => new WidgetSymbolSearch({
       onPick: (sym) => { void this.setSymbol(sym); },
       onClose: () => {},
-    }, this.overlayHost, this.t);
+    }, this.overlayHost, this.t));
     this.hotkeySheetPart = this.lazyPart(DIALOGS.hotkeySheet, ({ WidgetHotkeySheet }) => new WidgetHotkeySheet({ onClose: () => {} }, this.t, this.overlayHost));
 
     // The sidebar follows the chart's drawing tool: finished, cancelled with
@@ -1544,7 +1555,7 @@ export class ChartWidget {
     });
 
     // The indicators dialog, from the toolbar's Indicators button.
-    this.indicatorPicker = new WidgetIndicatorPicker(this.overlayHost, {
+    this.indicatorPickerPart = this.lazyPart(DIALOGS.indicatorPicker, ({ WidgetIndicatorPicker }) => new WidgetIndicatorPicker(this.overlayHost, {
       onAdd: (id) => this.handleAddIndicator(id),
       onFavorite: (id, on) => (on ? this.indicatorFavorites.add(id) : this.indicatorFavorites.remove(id)),
       templates: {
@@ -1556,7 +1567,7 @@ export class ChartWidget {
         onSave: () => this.promptSaveIndicatorTemplate(),
       },
       onClose: () => this.toolbar?.setIndicatorsOpen(false),
-    }, this.t);
+    }, this.t));
 
     // 8a-ter. Object tree (indicators + drawings manager)
     this.indicatorSettingsPart = this.lazyPart(DIALOGS.indicatorSettings, ({ WidgetIndicatorSettings }) => new WidgetIndicatorSettings(this.root, {
@@ -1655,7 +1666,7 @@ export class ChartWidget {
     this.setupDock();
 
     // 8b. Command palette
-    this.commandPalette = new WidgetCommandPalette({
+    this.commandPalettePart = this.lazyPart(DIALOGS.commandPalette, ({ WidgetCommandPalette }) => new WidgetCommandPalette({
       onIndicator: (id) => this.handleAddIndicator(id),
       onChartType: (type) => this.handleChartType(type),
       onDrawingTool: (tool) => this.handleDrawingTool(tool),
@@ -1665,7 +1676,7 @@ export class ChartWidget {
     }, this.overlayHost, this.t, {
       list: () => readRecentCommands(),
       add: (key) => writeRecentCommands([key, ...readRecentCommands().filter((k) => k !== key)]),
-    });
+    }));
 
     this.boundGlobalKeydown = (e: KeyboardEvent) => {
       if (this.handleHostHotkey(e)) return;
@@ -2021,10 +2032,10 @@ export class ChartWidget {
     const t = (key: Parameters<typeof this.t>[0]) => this.t(key);
     this.watchlist = new WidgetWatchlist(body, {
       onSelect: (sym) => { void this.setSymbol(sym); },
-      onAdd: () => this.symbolSearch?.open({
+      onAdd: () => this.withSymbolSearch(() => true, (search) => search.open({
         symbols: this.symbolEntries(), current: this.state.symbol, currentInfo: this.chartSymbolInfo(),
         onPick: (sym) => store.add(sym), search: this.symbolSearchFn(),
-      }),
+      })),
       onRemove: (sym) => store.removeSymbol(sym),
       onMove: (sym, index) => store.move(sym, index),
       onPickList: (id) => store.setActive(id),
@@ -2366,8 +2377,8 @@ export class ChartWidget {
     this.portal.remove();
     if (document.fullscreenElement === this.root) void document.exitFullscreen().catch(() => {});
     this.flushActiveLayout();
-    this.commandPalette?.destroy();
-    this.symbolSearch?.destroy();
+    this.commandPalettePart?.destroy();
+    this.symbolSearchPart?.destroy();
     this.hotkeySheetPart?.destroy();
     if (this.replayPollInterval) clearInterval(this.replayPollInterval);
     this.replayShade?.remove();
@@ -2376,7 +2387,7 @@ export class ChartWidget {
     this.alertsPanel?.destroy();
     this.objectTree?.destroy();
     this.indicatorSettingsPart?.destroy();
-    this.indicatorPicker?.destroy();
+    this.indicatorPickerPart?.destroy();
     this.drawingStyle?.destroy();
     this.drawingSettingsPart?.destroy();
     this.drawingMenu?.destroy();
@@ -2435,15 +2446,27 @@ export class ChartWidget {
 
   /** The symbol search, started from `query` (a letter typed on the chart). */
   private openSymbolSearch(query?: string): void {
-    this.symbolSearch?.open({
-      symbols: this.symbolEntries(),
-      current: this.state.symbol,
-      currentInfo: this.chartSymbolInfo(),
-      search: this.symbolSearchFn(),
-      query,
-      // Said where it can be done: letters typed on the chart open it.
-      hint: this.sheetKeyOn('symbolTyping') ? this.t('symbolSearch.typeHint') : undefined,
+    // Letters typed while its code loads add up, so none is lost; any other ask starts afresh.
+    const typed = query === undefined ? '' : (this.symbolSearchPart?.isLoading() ? this.typedWhileLoading : '') + query;
+    this.typedWhileLoading = typed;
+    this.whenLoaded(this.symbolSearchPart, () => this.featureState.symbolSearch, (search) => {
+      this.typedWhileLoading = '';
+      search.open({
+        symbols: this.symbolEntries(),
+        current: this.state.symbol,
+        currentInfo: this.chartSymbolInfo(),
+        search: this.symbolSearchFn(),
+        query: query === undefined ? undefined : typed,
+        // Said where it can be done: letters typed on the chart open it.
+        hint: this.sheetKeyOn('symbolTyping') ? this.t('symbolSearch.typeHint') : undefined,
+      });
     });
+  }
+
+  /** The symbol search for another job (a symbol to add to a list, one to compare with), once its code is in. */
+  private withSymbolSearch(on: () => boolean, show: (search: WidgetSymbolSearch) => void): void {
+    this.typedWhileLoading = '';
+    this.whenLoaded(this.symbolSearchPart, on, show);
   }
 
   /** The host's symbol search, else the adapter's; none filters `symbols`. */
@@ -4098,7 +4121,7 @@ export class ChartWidget {
       this.say(this.t('toast.compareNeedsAdapter'), 'error');
       return;
     }
-    this.symbolSearch?.openCompare({
+    this.withSymbolSearch(() => this.featureState.compare, (search) => search.openCompare({
       symbols: this.symbolEntries(),
       current: this.state.symbol,
       search: this.symbolSearchFn(),
@@ -4111,7 +4134,7 @@ export class ChartWidget {
         void this.addCompareSymbol(symbol, way);
       },
       onRemove: (id) => this.removeCompared(id),
-    });
+    }));
   }
 
   /** What is compared with the chart's symbol now, as the compare dialog lists it. */
@@ -4624,8 +4647,10 @@ export class ChartWidget {
       this.commandPalette.close();
       return;
     }
-    if (!this.featureState.commandPalette) return;
-    this.commandPalette?.open(this.buildCommandItems());
+    if (this.cancelWaiting(this.commandPalettePart)) return;
+    this.whenLoaded(this.commandPalettePart, () => this.featureState.commandPalette, (palette) => {
+      if (!palette.isOpen()) palette.open(this.buildCommandItems());
+    });
   }
 
   private buildCommandItems(): CommandItem[] {
@@ -4907,6 +4932,11 @@ export class ChartWidget {
       this.waitingShow.delete(part);
       if (done && latest && !this.destroyed && on()) latest(done);
     });
+  }
+
+  /** A toggle pressed again while its dialog's code loads: the dialog no longer opens. Whether one was waiting. */
+  private cancelWaiting(part: Lazy<unknown> | null): boolean {
+    return part !== null && part.isLoading() && this.waitingShow.delete(part);
   }
 
   /** The whole series in view, the price scale fitted to it (the menus' Reset, Alt+R). */
@@ -5355,14 +5385,17 @@ export class ChartWidget {
       this.indicatorPicker.close();
       return;
     }
-    if (!this.indicatorPicker || !this.featureState['toolbar.indicators']) return;
-    this.indicatorPicker.open({
-      items: this.indicatorPickerItems(),
-      favorites: this.indicatorFavorites.list(),
-      templates: this.featureState.indicatorTemplates ? this.templateNames() : null,
-      counts: this.indicatorCounts(),
+    if (this.cancelWaiting(this.indicatorPickerPart)) return;
+    this.whenLoaded(this.indicatorPickerPart, () => this.featureState['toolbar.indicators'], (picker) => {
+      if (picker.isOpen()) return;
+      picker.open({
+        items: this.indicatorPickerItems(),
+        favorites: this.indicatorFavorites.list(),
+        templates: this.featureState.indicatorTemplates ? this.templateNames() : null,
+        counts: this.indicatorCounts(),
+      });
+      this.toolbar?.setIndicatorsOpen(true);
     });
-    this.toolbar?.setIndicatorsOpen(true);
   }
 
   /**

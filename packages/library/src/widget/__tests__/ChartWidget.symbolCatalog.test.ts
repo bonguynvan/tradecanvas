@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeAll, beforeEach, afterEach, vi } from 'vitest';
 import type { ChartOptions, DataAdapter, SymbolInfo } from '@tradecanvas/commons';
 
 /** Stand-in for the canvas-backed Chart: anything not written here is a no-op. */
@@ -41,6 +41,7 @@ class FakeChart {
 vi.mock('../../Chart.js', () => ({ Chart: FakeChart }));
 
 const { ChartWidget } = await import('../ChartWidget.js');
+const { preloadDialogs } = await import('../widgetDialogs.js');
 
 let host: HTMLDivElement;
 let widget: InstanceType<typeof ChartWidget>;
@@ -65,6 +66,9 @@ const symbolButton = () => host.querySelector<HTMLButtonElement>('[data-role="sy
 const searchRows = () => [...document.querySelectorAll<HTMLElement>('.tcw-ss-row')];
 const desc = (row: Element | undefined) => row?.querySelector('.tcw-ss-desc')?.textContent;
 const panel = () => host.querySelector<HTMLElement>('.tcw-syminfo')!;
+
+// The symbol search loads its code when first opened; here it is in up front, so it opens at once.
+beforeAll(preloadDialogs);
 
 describe('ChartWidget symbols given with their info', () => {
   it('starts the chart on the first, and makes the watchlist of their tickers', () => {
