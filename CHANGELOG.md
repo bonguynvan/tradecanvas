@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 1.72.0 (2026-11-06)
+
 ### Widget
 
 - **The dialogs load when they are needed** (`@tradecanvas/chart`).
@@ -10,6 +12,8 @@
   - A bundler puts the dialogs in files of their own. If you serve the package's files yourself, copy the whole `dist` folder, not only the entry files.
   - If a dialog's code can't be loaded (a dropped connection), the widget says so, and tries again the next time it is opened.
   - `widget.setTheme()` gives the watermark the ink of the new mode, as the theme button does; before, it kept the old one.
+
+## 1.71.0 (2026-11-05)
 
 ### Indicators
 
