@@ -155,7 +155,7 @@ pnpm soak --minutes=30 --rate=50000 --renderer=canvas`}</code></pre>
 
 <h2 id="download">What a page downloads</h2>
 <p>
-  <code>new ChartWidget()</code> brings in 394 kB of JavaScript gzipped (1.49 MB before compression), its English strings included. The dialogs a page has no need of as it loads (the chart settings, an indicator's and a drawing's settings, Go to and the shortcut sheet) are 21 kB more. They load the first time one opens, or once the page is idle after the widget is up, whichever comes first. A bundler puts them in files of their own; served straight from the package, they sit in its <code>dist</code> folder beside the entries, so copy the whole folder. <code>pnpm size</code>, after <code>pnpm build</code>, prints these numbers for each entry.
+  <code>new ChartWidget()</code> brings in 386 kB of JavaScript gzipped (1.46 MB before compression), its English strings included. The dialogs a page has no need of as it loads (the indicators dialog, the command palette, the symbol search, the chart settings, an indicator's and a drawing's settings, Go to and the shortcut sheet) are 34 kB more. They load the first time one opens, or once the page is idle after the widget is up, whichever comes first. A bundler puts them in files of their own; served straight from the package, they sit in its <code>dist</code> folder beside the entries, so copy the whole folder. <code>pnpm size</code>, after <code>pnpm build</code>, prints these numbers for each entry.
 </p>
 
 <h2>The main thread</h2>

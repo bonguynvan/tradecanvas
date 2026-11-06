@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeAll, beforeEach, afterEach, vi } from 'vitest';
 import type { ChartOptions, DataAdapter, Quote } from '@tradecanvas/commons';
 
 /** Stand-in for the canvas-backed Chart: anything not written here is a no-op. */
@@ -35,6 +35,7 @@ class FakeChart {
 vi.mock('../../Chart.js', () => ({ Chart: FakeChart }));
 
 const { ChartWidget } = await import('../ChartWidget.js');
+const { preloadDialogs } = await import('../widgetDialogs.js');
 
 let host: HTMLDivElement;
 let widget: InstanceType<typeof ChartWidget>;
@@ -70,6 +71,9 @@ function quoteSource() {
     },
   };
 }
+
+// The symbol search loads its code when first opened; here it is in up front, so it opens at once.
+beforeAll(preloadDialogs);
 
 describe('ChartWidget watchlists', () => {
   it('starts with one list of the symbols, as before', () => {

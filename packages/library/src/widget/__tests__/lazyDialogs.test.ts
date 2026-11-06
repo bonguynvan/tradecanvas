@@ -14,6 +14,14 @@ const LAZY = new Set([
   'drawingSettingsTabs',
   'WidgetGoToDate',
   'WidgetHotkeySheet',
+  'WidgetIndicatorPicker',
+  'indicatorSearch',
+  'WidgetCommandPalette',
+  'WidgetSymbolSearch',
+  'symbolSearchFilters',
+  'symbolCell',
+  'symbolBadge',
+  'symbolMatch',
 ]);
 
 function sources(dir: string): string[] {

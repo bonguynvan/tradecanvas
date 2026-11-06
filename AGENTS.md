@@ -113,7 +113,8 @@ These fail CI, often far from the line that caused them.
 - Dialogs and menus open in the overlay layer (`overlayHost`), so they sit
   above the chart and inside the widget in fullscreen. Place a menu with
   `placeMenu()`; it flips above the anchor when there is no room below.
-- The larger dialogs load their code when first opened (`DIALOGS` in
+- The larger dialogs, the indicators dialog, the command palette and the
+  symbol search load their code when first opened (`DIALOGS` in
   `src/widget/widgetDialogs.ts`, a `LazyPart` each in `ChartWidget`), so
   import them only as types elsewhere; `lazyDialogs.test.ts` fails on a
   value import. Open one through `whenLoaded()`, which reads the widget's

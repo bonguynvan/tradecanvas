@@ -158,7 +158,7 @@ pnpm soak --minutes=30 --rate=50000 --renderer=canvas`}</code></pre>
 
 <h2 id="download">Lo que descarga una página</h2>
 <p>
-  <code>new ChartWidget()</code> trae 394 kB de JavaScript con gzip (1,49 MB sin comprimir), con sus textos en inglés. Los diálogos que la página no necesita al cargar (los ajustes del gráfico, los de un indicador y los de un dibujo, Ir a y la hoja de atajos) son 21 kB más. Se cargan la primera vez que se abre uno, o cuando la página queda libre después de mostrarse el widget, lo que llegue antes. Un bundler los pone en archivos propios; si se sirven directamente desde el paquete, están en su carpeta <code>dist</code> junto a los puntos de entrada, así que copia la carpeta entera. <code>pnpm size</code>, después de <code>pnpm build</code>, muestra estas cifras para cada punto de entrada.
+  <code>new ChartWidget()</code> trae 386 kB de JavaScript con gzip (1,46 MB sin comprimir), con sus textos en inglés. Los diálogos que la página no necesita al cargar (el diálogo de indicadores, la paleta de comandos, la búsqueda de símbolos, los ajustes del gráfico, los de un indicador y los de un dibujo, Ir a y la hoja de atajos) son 34 kB más. Se cargan la primera vez que se abre uno, o cuando la página queda libre después de mostrarse el widget, lo que llegue antes. Un bundler los pone en archivos propios; si se sirven directamente desde el paquete, están en su carpeta <code>dist</code> junto a los puntos de entrada, así que copia la carpeta entera. <code>pnpm size</code>, después de <code>pnpm build</code>, muestra estas cifras para cada punto de entrada.
 </p>
 
 <h2>El hilo principal</h2>

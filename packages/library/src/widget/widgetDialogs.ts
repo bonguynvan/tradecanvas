@@ -10,6 +10,9 @@ export const DIALOGS = {
   drawingSettings: lazyModule(() => import('./WidgetDrawingSettings.js')),
   goToDate: lazyModule(() => import('./WidgetGoToDate.js')),
   hotkeySheet: lazyModule(() => import('./WidgetHotkeySheet.js')),
+  indicatorPicker: lazyModule(() => import('./WidgetIndicatorPicker.js')),
+  commandPalette: lazyModule(() => import('./WidgetCommandPalette.js')),
+  symbolSearch: lazyModule(() => import('./WidgetSymbolSearch.js')),
 };
 
 /** Loads every dialog's code; a failure is left for the dialog to report when it is opened. */
