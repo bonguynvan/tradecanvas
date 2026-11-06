@@ -1,5 +1,18 @@
 # @tradecanvas/chart
 
+## 1.72.0
+
+### Minor Changes
+
+- 5c5d273: An indicator's descriptor now says how its plots look, and the chart draws them from it: `fills` shade between two plots (`{ between: ['upper', 'lower'], color: 0, opacity: 0.1 }`), and a plot's `width`, `lineStyle`, `opacity` and `breakOn` keep it at a width of its own, dash it until its style says otherwise, set it back, and break its line where a field such as `session` changes. A band or channel of your own needs no `render` method. The built-in moving averages, channels, bands, VWAPs, pivot points, Chandelier Exit, Supertrend and Parabolic SAR are drawn this way. In ChartWidget's indicator settings, a line its indicator dashes shows as dashed, and Cancel and Reset put it back dashed instead of solid. Supertrend is drawn at the width the settings show, half a pixel thinner than before, and the dashed lines of Chandelier Exit, the pivot levels and Session VWAP's bands take the same dash as the other indicators. The pivot levels other than P stay 1 px whatever the width set, like Session VWAP's bands and Donchian's middle line. Zoomed far out, Parabolic SAR draws one dot per pixel column, and Session VWAP's bands are drawn over its line instead of under it.
+
+### Patch Changes
+
+- b7a154d: ChartWidget loads less up front: the chart settings, an indicator's and a drawing's settings, Go to and the shortcut sheet load their code the first time one opens, or once the page is idle after the widget is up, whichever comes first. `new ChartWidget()` now brings in 394.6 kB of JavaScript gzipped instead of 405.3 kB (1,491 kB instead of 1,549 kB before compression). A bundler puts the dialogs in files of their own; if you serve the package's files yourself, copy the whole `dist` folder, not only the entry files. If a dialog's code can't be loaded (a dropped connection), the widget says so and tries again the next time it is opened. `widget.setTheme()` now gives the watermark the ink of the new mode, as the theme button does; before, it kept the old one.
+- Updated dependencies [5c5d273]
+  - @tradecanvas/commons@1.72.0
+  - @tradecanvas/core@1.72.0
+
 ## 1.71.0
 
 ### Minor Changes
