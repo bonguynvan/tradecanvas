@@ -41,6 +41,7 @@ export interface DockHost {
   readonly symbolInfoPanel: ChartWidget['symbolInfoPanel'];
   readonly t: ChartWidget['t'];
   readonly toolbar: ChartWidget['toolbar'];
+  markOpen: ChartWidget['markOpen'];
   readonly trading: ChartWidget['trading'];
   readonly watching: ChartWidget['watching'];
 }
@@ -177,11 +178,11 @@ export class WidgetDockArea {
         onShow: () => {
           alerts.openPanel();
           this.host.alerting.refreshAlerts();
-          this.host.toolbar?.setActive('alerts', true);
+          this.host.markOpen('alerts', true);
         },
         onHide: () => {
           alerts.close();
-          this.host.toolbar?.setActive('alerts', false);
+          this.host.markOpen('alerts', false);
         },
       });
     }
@@ -192,11 +193,11 @@ export class WidgetDockArea {
         onShow: () => {
           tree.openPanel();
           this.refreshObjects();
-          this.host.toolbar?.setActive('objects', true);
+          this.host.markOpen('objects', true);
         },
         onHide: () => {
           tree.close();
-          this.host.toolbar?.setActive('objects', false);
+          this.host.markOpen('objects', false);
         },
       });
     }
