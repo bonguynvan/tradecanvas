@@ -121,7 +121,10 @@ These fail CI, often far from the line that caused them.
   state once the code is in, and in a test that opens one, add
   `beforeAll(preloadDialogs)`.
 - `ChartWidget.ts` keeps the widget's public API, its setup and what ties
-  the areas together. Each area is a class of its own in `src/widget`:
+  the areas together. Its setup is a list of steps in the constructor, a
+  private method each (`readOptions`, `buildRoot`, `buildToolbar`…
+  `finishSetup`), in the order the parts need each other; a new part goes in
+  the step it belongs to. Each area is a class of its own in `src/widget`:
   `WidgetReplay`, `WidgetCompares`, `WidgetWatchlists`, `WidgetAlerts`,
   `WidgetTrading`, `WidgetMenus`, `WidgetLegendView`, `WidgetCommands`,
   `WidgetLayouts`, `WidgetDockArea`, `WidgetChartSettings`,

@@ -232,8 +232,8 @@ export class ChartWidget {
   private readonly watching = new WidgetWatchlists(this.watchingHost());
   /** Other symbols compared with the chart's: their bars, the compare dialog, the scale they hold. */
   private readonly comparing = new WidgetCompares(this.comparingHost());
-  private chart: Chart;
-  private state: WidgetState;
+  private chart!: Chart;
+  private state!: WidgetState;
   /** The theme for each mode: the host's own where it gave one, so the toggle brings it back. */
   private themeOf: { dark: Theme; light: Theme } = { dark: DARK_THEME, light: LIGHT_THEME };
   private toolbar: WidgetToolbar | null = null;
@@ -247,7 +247,7 @@ export class ChartWidget {
   private get goToDate(): WidgetGoToDate | null {
     return this.goToDatePart?.get() ?? null;
   }
-  private readonly tooltip: WidgetTooltip;
+  private tooltip!: WidgetTooltip;
   private indicatorLegend: WidgetIndicatorLegend | null = null;
   /**
    * Modals (settings, search, command palette, hotkeys) mount here: it carries
@@ -351,10 +351,10 @@ export class ChartWidget {
   private chartNav: WidgetChartNav | null = null;
   /** Bars on screen, for the navigation's scroll step. */
   private visibleBarCount = 50;
-  private root: HTMLDivElement;
-  private chartContainer: HTMLDivElement;
-  private loading: WidgetLoadingOverlay;
-  private historyPill: WidgetHistoryPill;
+  private root!: HTMLDivElement;
+  private chartContainer!: HTMLDivElement;
+  private loading!: WidgetLoadingOverlay;
+  private historyPill!: WidgetHistoryPill;
   /** Bumped per stream connect; a connect that is no longer the latest leaves the UI to the newer one. */
   private connectSeq = 0;
   /** Bumped per local resample and widget.setData; a deferred local switch that is no longer the latest is skipped. */
@@ -372,20 +372,20 @@ export class ChartWidget {
   private look!: Signal<{ dark: boolean; theme: Theme }>;
   private options: ChartWidgetOptions;
   /** The tickers on offer, cleaned: what the toolbar, the watchlist and the saved state work with. */
-  private symbols: string[];
+  private symbols!: string[];
   /**
    * What came with the symbols given as SymbolInfo, by ticker: names, kinds,
    * exchanges and logos for the search and the symbol's titles. Never the
    * chart's: price steps and hours come from the feed or `setSymbolInfo`.
    */
-  private symbolCatalog: Map<string, SymbolInfo>;
+  private symbolCatalog!: Map<string, SymbolInfo>;
   /**
    * What the chart knew of a symbol when the widget last switched from it.
    * With no feed to clear it, it stays the last symbol's until the chart is
    * told of the new one; anything told since is the new one's.
    */
   private chartInfoAtSwitch: SymbolInfo | null = null;
-  private t: Translator;
+  private t!: Translator;
   private adapter: import('@tradecanvas/commons').DataAdapter | null = null;
   private boundGlobalKeydown: ((e: KeyboardEvent) => void) | null = null;
   // Finest-resolution series the widget has seen. When no live adapter is
@@ -398,7 +398,7 @@ export class ChartWidget {
   /** The timeframe the user (or the host) picked: ranges never show finer than it, layouts keep it. */
   private chosenTimeframe: TimeFrame | null = null;
   /** Every switch, on or off (see `setFeatures`). */
-  private featureState: WidgetFeatureState;
+  private featureState!: WidgetFeatureState;
   /** The host's own shortcuts, first added first. */
   private hostHotkeys: { spec: import('./types.js').HotkeySpec; parsed: ParsedHotkey }[] = [];
   /** The menus of the host's toolbar dropdowns. */
@@ -411,6 +411,25 @@ export class ChartWidget {
   constructor(container: HTMLElement, givenOptions: ChartWidgetOptions = {}) {
     const options = withFeedAdapter(givenOptions);
     this.options = options;
+    const { isDark, resolvedTheme, features, chartFeatures } = this.readOptions(options);
+    this.buildRoot(container, options, isDark, resolvedTheme);
+    this.buildToolbar(options, features);
+    const accountHost = this.buildBody(options, features);
+    this.buildChart(options, resolvedTheme, features, chartFeatures);
+    this.buildStatusBar(features);
+    this.buildDialogs(features);
+    this.followChart();
+    this.wireDrawingEditing();
+    this.wireChartMenus();
+    this.buildTrading(options, accountHost);
+    this.buildAlerts(options);
+    this.buildPanels(features);
+    this.buildCommandPalette();
+    this.finishSetup(options);
+  }
+
+  /** The options read once: the symbols, the settings they seed, the theme, the chart's features, the intervals and the starting state. */
+  private readOptions(options: ChartWidgetOptions): { isDark: boolean; resolvedTheme: Theme; features: FeaturesConfig; chartFeatures: FeaturesConfig } {
     // Read once, as plain JavaScript may hand over anything: tickers from here on, the info kept aside.
     const catalog = readSymbolCatalog(options.symbols ?? DEFAULT_SYMBOLS);
     this.symbols = catalog.names;
@@ -533,11 +552,13 @@ export class ChartWidget {
       connectionState: options.adapter ? 'connecting' : 'disconnected',
       connectionMessage: options.adapter ? this.t('status.connecting') : '',
     };
+    return { isDark, resolvedTheme, features, chartFeatures };
+  }
 
-    // 1. Inject styles
+  /** The widget's root and portal, its direction and theme, and the look's tokens on both. */
+  private buildRoot(container: HTMLElement, options: ChartWidgetOptions, isDark: boolean, resolvedTheme: Theme): void {
     injectWidgetStyles();
 
-    // 2. Create DOM skeleton
     this.root = document.createElement('div');
     this.root.className = 'tcw-root';
     // Right to left for Arabic, Hebrew and the like (or as asked); the chart itself runs left to right.
@@ -585,8 +606,10 @@ export class ChartWidget {
       labels: () => ({ prevMonth: this.t('calendar.prevMonth'), nextMonth: this.t('calendar.nextMonth'), today: this.t('calendar.today') }),
       locale: () => this.intlLocale(),
     });
+  }
 
-    // 3. Create toolbar
+  /** The toolbar along the top. */
+  private buildToolbar(options: ChartWidgetOptions, features: FeaturesConfig): void {
     this.toolbar = new WidgetToolbar(
       this.root,
       {
@@ -627,8 +650,10 @@ export class ChartWidget {
       this.t,
       this.overlayHost,
     );
+  }
 
-    // 4. Create body
+  /** The row under the toolbar: the drawing tools, the chart's box, the dock and the watchlist; and the account panel's place under it. */
+  private buildBody(options: ChartWidgetOptions, features: FeaturesConfig): HTMLDivElement {
     const body = document.createElement('div');
     body.className = 'tcw-body';
 
@@ -694,8 +719,11 @@ export class ChartWidget {
     accountHost.className = 'tcw-account-dock';
     markPart(accountHost, 'accountPanel');
     this.root.appendChild(accountHost);
+    return accountHost;
+  }
 
-    // 5. Create chart
+  /** The chart, and what follows its bars, its market and the page. */
+  private buildChart(options: ChartWidgetOptions, resolvedTheme: Theme, features: FeaturesConfig, chartFeatures: FeaturesConfig): void {
     this.chart = new Chart(this.chartContainer, {
       chartType: this.state.chartType,
       theme: resolvedTheme,
@@ -803,8 +831,10 @@ export class ChartWidget {
     // The crosshair snaps to the bars, but a drawing goes where it is placed
     // until the magnet button is turned on.
     if (features.drawingMagnet !== false) this.chart.setDrawingMagnetMode('off');
+  }
 
-    // 6. Create status bar
+  /** The status bar along the bottom. */
+  private buildStatusBar(features: FeaturesConfig): void {
     this.statusBar = new WidgetStatusBar(this.root, {
       presets: RANGE_PRESETS,
       presetLabels: { All: this.t('range.all') },
@@ -857,8 +887,10 @@ export class ChartWidget {
       close: this.t('common.close'),
       calendar: { prevMonth: this.t('calendar.prevMonth'), nextMonth: this.t('calendar.nextMonth'), today: this.t('calendar.today') },
     }), () => this.intlLocale(), (target) => this.goTo(target)));
+  }
 
-    // 7. Create settings (lazy, not appended until opened)
+  /** The settings, the symbol search and the shortcut sheet, each made when first opened. */
+  private buildDialogs(features: FeaturesConfig): void {
     this.settingsPart = this.lazyPart(DIALOGS.settings, ({ WidgetSettings }) => new WidgetSettings({
       onChange: (patch) => this.chartSettings.changeSettings(patch),
       onReset: () => this.chartSettings.resetSettings(),
@@ -880,14 +912,15 @@ export class ChartWidget {
       trading: features.trading !== false,
       exchangeZone: () => this.menus.exchangeChoice()?.zone,
     }, this.overlayHost));
-
-    // 8a. Symbol search
     this.symbolSearchPart = this.lazyPart(DIALOGS.symbolSearch, ({ WidgetSymbolSearch }) => new WidgetSymbolSearch({
       onPick: (sym) => { void this.setSymbol(sym); },
       onClose: () => {},
     }, this.overlayHost, this.t));
     this.hotkeySheetPart = this.lazyPart(DIALOGS.hotkeySheet, ({ WidgetHotkeySheet }) => new WidgetHotkeySheet({ onClose: () => {} }, this.t, this.overlayHost));
+  }
 
+  /** The bars, the legend, compares, replay and the data window follow the chart's events. */
+  private followChart(): void {
     // The sidebar follows the chart's drawing tool: finished, cancelled with
     // Esc, or kept for the next drawing in stay-in-drawing mode.
     this.chart.on('drawingToolChange', (e) => {
@@ -1017,7 +1050,10 @@ export class ChartWidget {
       this.lastHoverPrevClose = typeof p.prevClose === 'number' ? p.prevClose : null;
       if (this.dataWindow?.isOpen()) this.dataWindow.render(this.docking.buildDataWindowModel());
     });
+  }
 
+  /** Drawing styles, templates, defaults and the text typed in place. */
+  private wireDrawingEditing(): void {
     // Drawing style + templates popover (paired with the sidebar palette button)
     const templates = new DrawingTemplateStore();
     // Each tool's saved defaults ("Save as default" in a drawing's settings).
@@ -1108,7 +1144,10 @@ export class ChartWidget {
       templates,
     this.t,
     );
+  }
 
+  /** The drawing's and the chart's menus, its toolbar when selected, undo and redo, and typing an interval. */
+  private wireChartMenus(): void {
     // Right-click on a drawing: settings, alert, order, group, lock, hide, delete.
     this.menus.drawingMenu = new WidgetContextMenu(this.root, this.t('drawingMenu.label'));
     this.chart.on('drawingContextMenu', (e) => {
@@ -1207,7 +1246,10 @@ export class ChartWidget {
       hint: this.t('interval.hint'),
       invalid: this.t('interval.invalid'),
     }, (tf) => this.intervals.selectTypedTimeframe(tf));
+  }
 
+  /** Named layouts, the account panel, the order ticket and bracket orders. */
+  private buildTrading(options: ChartWidgetOptions, accountHost: HTMLDivElement): void {
     // Named layouts: save, open, rename, delete, auto-save.
     if (options.layouts !== false) this.layouts.setupLayouts(options.layouts === true || options.layouts === undefined ? {} : options.layouts);
 
@@ -1285,8 +1327,10 @@ export class ChartWidget {
         if (e.payload.kind === 'bracket') this.trading.bracketBar?.hide();
       });
     }
+  }
 
-    // 8a-bis. Price alerts panel (floating popover, toggled from the bell button)
+  /** Price alerts, and the indicators dialog. */
+  private buildAlerts(options: ChartWidgetOptions): void {
     this.alerting.alertsPanel = new WidgetAlertsPanel(this.root, {
       onClose: () => this.docking.closePanelByHand('alerts'),
       onAdd: ({ price, condition, message, channel, label, options }) => {
@@ -1343,8 +1387,10 @@ export class ChartWidget {
       },
       onClose: () => this.toolbar?.setIndicatorsOpen(false),
     }, this.t));
+  }
 
-    // 8a-ter. Object tree (indicators + drawings manager)
+  /** The object tree, and every panel into the dock. */
+  private buildPanels(features: FeaturesConfig): void {
     this.indicatorSettingsPart = this.lazyPart(DIALOGS.indicatorSettings, ({ WidgetIndicatorSettings }) => new WidgetIndicatorSettings(this.root, {
       onApply: (instanceId, params) => {
         this.chart.updateIndicator(instanceId, params);
@@ -1439,8 +1485,10 @@ export class ChartWidget {
 
     // Every panel made: into the dock, in the rail's order.
     this.docking.setupDock();
+  }
 
-    // 8b. Command palette
+  /** The command palette, fullscreen and the keys. */
+  private buildCommandPalette(): void {
     this.commandPalettePart = this.lazyPart(DIALOGS.commandPalette, ({ WidgetCommandPalette }) => new WidgetCommandPalette({
       onIndicator: (id) => this.handleAddIndicator(id),
       onChartType: (type) => this.handleChartType(type),
@@ -1525,11 +1573,14 @@ export class ChartWidget {
     document.addEventListener('fullscreenchange', this.onFullscreenChange);
     // A press in the widget's layer (a dialog, a menu) is a press in the widget.
     this.unregisterKeys = registerKeyRoot(this.root, [this.portal]);
+  }
 
+  /** The kept settings, the stream, the watchlist's ticks, the first update and onReady. */
+  private finishSetup(options: ChartWidgetOptions): void {
     // The settings the user kept in this browser, over the host's starting values (Reset goes back to those).
     this.chartSettings.restoreKeptSettings();
 
-    // 9. Connect stream
+    // The stream, or the interval from here without one.
     if (options.adapter) {
       this.adapter = options.adapter;
       this.connectStream();
@@ -1556,7 +1607,7 @@ export class ChartWidget {
     this.refreshMarket();
     this.updateUI();
 
-    // 9. Once the constructor has returned (the name the host gives the
+    // Once the constructor has returned (the name the host gives the
     // widget is set by then: `onReady: () => widget.openPanel('watchlist')`),
     // onReady, then a view shared in the URL over what it set up. The last
     // step here: a widget whose making failed calls neither.
