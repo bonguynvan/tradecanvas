@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, beforeAll, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { preloadDialogs } from '../widgetDialogs.js';
 import type { DataAdapter, IndicatorDescriptor } from '@tradecanvas/commons';
 import { IndicatorEngine, registerBuiltInIndicators } from '@tradecanvas/core';
 
@@ -180,6 +181,9 @@ afterEach(() => {
   widget.destroy();
   host.remove();
 });
+
+// The dialogs load their code when first opened; here it is in up front, so each opens at once.
+beforeAll(preloadDialogs);
 
 describe('ChartWidget indicators', () => {
   it('adds another instance each time an indicator is picked, listed on the chart', async () => {

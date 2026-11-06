@@ -156,6 +156,11 @@ chart.resume()    // back: one frame draws what changed`}</code></pre>
 pnpm soak                          # 10 minutes, 30,000 trades/s, 1,000,000 bars, WebGL
 pnpm soak --minutes=30 --rate=50000 --renderer=canvas`}</code></pre>
 
+<h2 id="download">Lo que descarga una página</h2>
+<p>
+  <code>new ChartWidget()</code> trae 394 kB de JavaScript con gzip (1,49 MB sin comprimir), con sus textos en inglés. Los diálogos que la página no necesita al cargar (los ajustes del gráfico, los de un indicador y los de un dibujo, Ir a y la hoja de atajos) son 21 kB más. Se cargan la primera vez que se abre uno, o cuando la página queda libre después de mostrarse el widget, lo que llegue antes. Un bundler los pone en archivos propios; si se sirven directamente desde el paquete, están en su carpeta <code>dist</code> junto a los puntos de entrada, así que copia la carpeta entera. <code>pnpm size</code>, después de <code>pnpm build</code>, muestra estas cifras para cada punto de entrada.
+</p>
+
 <h2>El hilo principal</h2>
 <p>
   El gráfico calcula los indicadores en el hilo principal. <code>IndicatorWorkerHost</code> de <code>@tradecanvas/core</code> puede ejecutar <code>calculate()</code> en un worker que tú proporciones, con una API basada en Promise, un tiempo de espera por solicitud y una alternativa síncrona para SSR y tests, pero el gráfico todavía no pasa sus indicadores por él y los paquetes no incluyen un script de worker.

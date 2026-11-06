@@ -153,6 +153,11 @@ chart.resume()    // back: one frame draws what changed`}</code></pre>
 pnpm soak                          # 10 minutes, 30,000 trades/s, 1,000,000 bars, WebGL
 pnpm soak --minutes=30 --rate=50000 --renderer=canvas`}</code></pre>
 
+<h2 id="download">What a page downloads</h2>
+<p>
+  <code>new ChartWidget()</code> brings in 394 kB of JavaScript gzipped (1.49 MB before compression), its English strings included. The dialogs a page has no need of as it loads (the chart settings, an indicator's and a drawing's settings, Go to and the shortcut sheet) are 21 kB more. They load the first time one opens, or once the page is idle after the widget is up, whichever comes first. A bundler puts them in files of their own; served straight from the package, they sit in its <code>dist</code> folder beside the entries, so copy the whole folder. <code>pnpm size</code>, after <code>pnpm build</code>, prints these numbers for each entry.
+</p>
+
 <h2>The main thread</h2>
 <p>
   The chart computes indicators on the main thread. <code>IndicatorWorkerHost</code> from <code>@tradecanvas/core</code> can run <code>calculate()</code> in a worker you provide, with a Promise-based API, a per-request timeout and a synchronous fallback for SSR and tests, but the chart does not route its indicators through it yet, and the packages do not ship a worker script.

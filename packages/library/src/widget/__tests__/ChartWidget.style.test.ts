@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, beforeAll, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { preloadDialogs } from '../widgetDialogs.js';
 import { DARK_THEME, LIGHT_THEME, type ChartOptions, type Theme } from '@tradecanvas/commons';
 
 type Step = { undo: () => void; redo: () => void; subject?: string };
@@ -27,6 +28,8 @@ class FakeChart {
   setChartType(type: string): void { this.chartType = type; }
   themeName = 'dark';
   setTheme(theme: unknown): void { this.themes.push(theme); }
+  watermarks: { color?: string }[] = [];
+  setWatermark(_text: string, opts: { color?: string }): void { this.watermarks.push(opts); }
   getTheme(): Theme { return { ...DARK_THEME, name: this.themeName }; }
   applyOverrides(patch: Record<string, unknown>, options: unknown): void {
     this.overrideCalls.push([patch, options]);
@@ -91,6 +94,9 @@ afterEach(() => {
   document.querySelectorAll('.tcw-portal').forEach((p) => p.remove());
   host.remove();
 });
+
+// The dialogs load their code when first opened; here it is in up front, so each opens at once.
+beforeAll(preloadDialogs);
 
 describe('ChartWidget colours in the settings', () => {
   it("puts the look picked in the settings among the user's overrides, not into the theme", () => {
@@ -202,6 +208,16 @@ describe('ChartWidget colours in the settings', () => {
     expect(FakeChart.last.themes.at(-1)).toEqual(DARK_THEME);
     inner().handleToggleTheme();
     expect(FakeChart.last.themes.at(-1)).toEqual(brand);
+  });
+
+  it('gives the watermark the ink of a theme set later, as the toggle does', () => {
+    make();
+    widget.setTheme('light');
+    expect(FakeChart.last.watermarks.at(-1)?.color).toBe('rgba(0,0,0,0.03)');
+    expect(host.querySelector<HTMLElement>('[data-tcw-theme]')?.dataset.tcwTheme).toBe('light');
+    expect(document.querySelector<HTMLElement>('.tcw-portal')?.dataset.tcwTheme).toBe('light');
+    widget.setTheme('dark');
+    expect(FakeChart.last.watermarks.at(-1)?.color).toBe('rgba(255,255,255,0.03)');
   });
 
   it('remembers a theme set later for its mode', () => {

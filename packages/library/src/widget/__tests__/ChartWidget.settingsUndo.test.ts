@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, beforeAll, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { preloadDialogs } from '../widgetDialogs.js';
 import type { ChartOptions } from '@tradecanvas/commons';
 
 type Step = { undo: () => void; redo: () => void; subject?: string };
@@ -76,6 +77,9 @@ const gridToggle = () => document.querySelector<HTMLButtonElement>('.tcw-setting
 const toggleFor = (label: string) => [...document.querySelectorAll<HTMLElement>('.tcw-settings-row')]
   .find((r) => r.querySelector('.tcw-settings-label')?.textContent === label)!
   .querySelector<HTMLButtonElement>('.tcw-toggle')!;
+
+// The dialogs load their code when first opened; here it is in up front, so each opens at once.
+beforeAll(preloadDialogs);
 
 describe('ChartWidget settings undo', () => {
   it('records what the settings changed as one step on OK, and undoes and redoes it', () => {

@@ -218,6 +218,8 @@ export const FR_MESSAGES: WidgetMessages = {
   'hotkeys.group.more': 'Plus',
 
   'common.close': 'Fermer',
+
+  'common.partFailed': 'Impossible d\'ouvrir : vérifiez la connexion et réessayez',
   'common.cancel': 'Annuler',
   'common.save': 'Enregistrer',
   'common.show': 'Afficher',

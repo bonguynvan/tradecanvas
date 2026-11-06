@@ -218,6 +218,8 @@ export const ZH_HANT_MESSAGES: WidgetMessages = {
   'hotkeys.group.more': '更多',
 
   'common.close': '關閉',
+
+  'common.partFailed': '無法開啟：請檢查網路連線後再試一次',
   'common.cancel': '取消',
   'common.save': '儲存',
   'common.show': '顯示',

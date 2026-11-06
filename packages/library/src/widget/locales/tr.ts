@@ -218,6 +218,8 @@ export const TR_MESSAGES: WidgetMessages = {
   'hotkeys.group.more': 'Diğer',
 
   'common.close': 'Kapat',
+
+  'common.partFailed': 'Açılamadı: bağlantıyı kontrol edip yeniden deneyin',
   'common.cancel': 'İptal',
   'common.save': 'Kaydet',
   'common.show': 'Göster',

@@ -218,6 +218,8 @@ export const RO_MESSAGES: WidgetMessages = {
   'hotkeys.group.more': 'Altele',
 
   'common.close': 'Închidere',
+
+  'common.partFailed': 'Nu s-a putut deschide: verificați conexiunea și încercați din nou',
   'common.cancel': 'Anulare',
   'common.save': 'Salvare',
   'common.show': 'Afișare',

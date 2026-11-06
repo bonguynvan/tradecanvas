@@ -218,6 +218,8 @@ export const SK_MESSAGES: WidgetMessages = {
   'hotkeys.group.more': 'Ďalšie',
 
   'common.close': 'Zavrieť',
+
+  'common.partFailed': 'Nepodarilo sa otvoriť: skontrolujte pripojenie a skúste to znova',
   'common.cancel': 'Zrušiť',
   'common.save': 'Uložiť',
   'common.show': 'Zobraziť',

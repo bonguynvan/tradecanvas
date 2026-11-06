@@ -10,12 +10,13 @@ import { SETTINGS_LOOK_KEYS } from './widgetSettingsLook.js';
 import { injectWidgetStyles, removeWidgetStyles } from './WidgetStyles.js';
 import { WidgetToolbar } from './WidgetToolbar.js';
 import { setHostButtonActive, setHostButtonText } from './hostButtons.js';
+import { createScope, effect, signal, type Signal } from './signals.js';
 import { WidgetDrawingSidebar } from './WidgetDrawingSidebar.js';
-import { WidgetSettings, type SettingsTab } from './WidgetSettings.js';
+import type { WidgetSettings, SettingsTab } from './WidgetSettings.js';
 import { WidgetStatusBar } from './WidgetStatusBar.js';
 import { WidgetCommandPalette } from './WidgetCommandPalette.js';
 import { WidgetSymbolSearch, type SymbolSearchFn } from './WidgetSymbolSearch.js';
-import { WidgetHotkeySheet } from './WidgetHotkeySheet.js';
+import type { WidgetHotkeySheet } from './WidgetHotkeySheet.js';
 import { MOD_KEY } from './platformKeys.js';
 import { WidgetReplayBar, DEFAULT_REPLAY_RATE } from './WidgetReplayBar.js';
 import { WidgetWatchlist, type WatchlistEntry } from './WidgetWatchlist.js';
@@ -31,7 +32,7 @@ import { widgetIndicatorLabel } from './indicatorInputWords.js';
 import { readChartTypeOptions, type ChartTypeOptions } from '@tradecanvas/commons';
 import { applyWidgetUI, resolveWidgetUI, scaledWidgetUI, typeSize, widgetScaleFor, widgetUIVariables, type ResolvedWidgetUI, type WidgetUIPreset, type WidgetUITheme } from './widgetUI.js';
 import { WidgetObjectTree, drawingTypeLabel } from './WidgetObjectTree.js';
-import { WidgetIndicatorSettings, type IndicatorDefault } from './WidgetIndicatorSettings.js';
+import type { WidgetIndicatorSettings, IndicatorDefault } from './WidgetIndicatorSettings.js';
 import { WidgetIndicatorPicker, type IndicatorPickerItem } from './WidgetIndicatorPicker.js';
 import { IndicatorDefaultsStore } from './indicatorDefaults.js';
 import { ChartTemplateStore } from './chartTemplates.js';
@@ -42,9 +43,9 @@ import {
 import { WidgetDrawingStyle } from './WidgetDrawingStyle.js';
 import { WidgetSelectionToolbar } from './WidgetSelectionToolbar.js';
 import { DrawingDefaultsStore, DrawingTemplateStore } from './DrawingTemplateStore.js';
-import { WidgetDrawingSettings, type DrawingTemplateLook } from './WidgetDrawingSettings.js';
+import type { WidgetDrawingSettings, DrawingTemplateLook } from './WidgetDrawingSettings.js';
 import { WidgetContextMenu, type ContextMenuEntry } from './WidgetContextMenu.js';
-import { TEXT_COLORS, TEXT_LAYOUTS, TEXT_PLACES } from './drawingSettingsTabs.js';
+import { TEXT_COLORS, TEXT_LAYOUTS, TEXT_PLACES } from './drawingText.js';
 import { WidgetInlineText } from './WidgetInlineText.js';
 import { drawingMenuEntries, type DrawingMenuAction } from './drawingMenu.js';
 import { CHART_MENU_KEYS, TIMEZONE_ENTRY, chartMenuEntries, priceEntries, scaleModeOf, type ChartMenuAction, type ChartMenuContext } from './chartMenu.js';
@@ -71,7 +72,10 @@ import {
   timeframeLabel,
   withExtraTimeframes,
 } from './widgetTimeframes.js';
-import { WidgetGoToDate, utcToWallTime, wallTimeToUtc, type GoToTarget } from './WidgetGoToDate.js';
+import type { GoToTarget, WidgetGoToDate } from './WidgetGoToDate.js';
+import { LazyPart, type Lazy, type ModuleRef } from './lazyPart.js';
+import { DIALOGS, preloadDialogs } from './widgetDialogs.js';
+import { utcToWallTime, wallTimeToUtc } from './wallTime.js';
 import { WidgetDock } from './WidgetDock.js';
 import { barsBefore, comparedEntries, compareWayOptions, isCompareWay, withOlderBars, type CompareWay, type PercentCompare } from './widgetCompare.js';
 import { WidgetTooltip } from './WidgetTooltip.js';
@@ -162,6 +166,14 @@ const COMPARE_COLORS = ['#b552c9', '#1398a8', '#d4622b', '#e25592', '#6f7a8c', '
 const DAY_MS = 86_400_000;
 /** A bar of the chart at 1×, ms. */
 const REPLAY_BAR_MS = 1000;
+/** How long the dialogs' code waits for the page to be idle before it loads anyway. */
+const PRELOAD_IDLE_TIMEOUT_MS = 5000;
+/** Where there is no idle callback (Safari): the code loads this long after the widget is up. */
+const PRELOAD_DELAY_MS = 2000;
+/** The watermark: the symbol, large and faint, behind the bars. */
+const WATERMARK_FONT_SIZE = 48;
+const WATERMARK_ON_DARK = 'rgba(255,255,255,0.03)';
+const WATERMARK_ON_LIGHT = 'rgba(0,0,0,0.03)';
 
 /** The switch each of the dock's panels, but the watchlist (an option), goes with. */
 const PANEL_FEATURES = {
@@ -269,9 +281,15 @@ export class ChartWidget {
   private themeOf: { dark: Theme; light: Theme } = { dark: DARK_THEME, light: LIGHT_THEME };
   private toolbar: WidgetToolbar | null = null;
   private sidebar: WidgetDrawingSidebar | null = null;
-  private settings: WidgetSettings | null = null;
+  private settingsPart: Lazy<WidgetSettings> | null = null;
+  private get settings(): WidgetSettings | null {
+    return this.settingsPart?.get() ?? null;
+  }
   private statusBar: WidgetStatusBar | null = null;
-  private goToDate: WidgetGoToDate | null = null;
+  private goToDatePart: Lazy<WidgetGoToDate> | null = null;
+  private get goToDate(): WidgetGoToDate | null {
+    return this.goToDatePart?.get() ?? null;
+  }
   private readonly tooltip: WidgetTooltip;
   private indicatorLegend: WidgetIndicatorLegend | null = null;
   private legendFrame = 0;
@@ -307,15 +325,24 @@ export class ChartWidget {
   private dockNarrow: boolean | null = null;
   /** Follows the widget's width for the dock. */
   private dockObserver: ResizeObserver | null = null;
-  private hotkeySheet: WidgetHotkeySheet | null = null;
+  private hotkeySheetPart: Lazy<WidgetHotkeySheet> | null = null;
+  private get hotkeySheet(): WidgetHotkeySheet | null {
+    return this.hotkeySheetPart?.get() ?? null;
+  }
   private replayBar: WidgetReplayBar | null = null;
   private dragDrop: DragDropImporter | null = null;
   private alertsPanel: WidgetAlertsPanel | null = null;
   private objectTree: WidgetObjectTree | null = null;
-  private indicatorSettings: WidgetIndicatorSettings | null = null;
+  private indicatorSettingsPart: Lazy<WidgetIndicatorSettings> | null = null;
+  private get indicatorSettings(): WidgetIndicatorSettings | null {
+    return this.indicatorSettingsPart?.get() ?? null;
+  }
   private indicatorPicker: WidgetIndicatorPicker | null = null;
   private drawingStyle: WidgetDrawingStyle | null = null;
-  private drawingSettings: WidgetDrawingSettings | null = null;
+  private drawingSettingsPart: Lazy<WidgetDrawingSettings> | null = null;
+  private get drawingSettings(): WidgetDrawingSettings | null {
+    return this.drawingSettingsPart?.get() ?? null;
+  }
   private drawingMenu: WidgetContextMenu | null = null;
   /** A text drawn just now whose words the settings ask for: Cancel there takes it back. */
   private justDrawnText: string | null = null;
@@ -459,6 +486,14 @@ export class ChartWidget {
   /** Duration of the last local resample + setData, for SLOW_LOCAL_SWITCH_MS. */
   private lastLocalSwitchMs = 0;
   private destroyed = false;
+  /** The widget's effects, disposed with it. */
+  private readonly scope = createScope();
+  /** Calls off the dialogs' preload when the widget goes before it ran. */
+  private stopPreload: (() => void) | null = null;
+  /** What each dialog loading now opens with when its code is in: the last ask. */
+  private readonly waitingShow = new Map<Lazy<unknown>, (part: unknown) => void>();
+  /** The mode and the theme shown: what the root, the portal, the chart and the watermark follow. */
+  private look!: Signal<{ dark: boolean; theme: Theme }>;
   private options: ChartWidgetOptions;
   /** The tickers on offer, cleaned: what the toolbar, the watchlist and the saved state work with. */
   private symbols: string[];
@@ -673,7 +708,6 @@ export class ChartWidget {
     // 2. Create DOM skeleton
     this.root = document.createElement('div');
     this.root.className = 'tcw-root';
-    this.root.dataset.tcwTheme = isDark ? 'dark' : 'light';
     // Right to left for Arabic, Hebrew and the like (or as asked); the chart itself runs left to right.
     const dir = options.dir === 'ltr' || options.dir === 'rtl' ? options.dir : isRtlLocale(options.locale) ? 'rtl' : 'ltr';
     this.root.dir = dir;
@@ -681,7 +715,17 @@ export class ChartWidget {
     container.appendChild(this.root);
     this.tooltip = new WidgetTooltip(this.root);
     this.portal.className = 'tcw-root tcw-portal';
-    this.portal.dataset.tcwTheme = this.root.dataset.tcwTheme;
+    this.look = signal({ dark: isDark, theme: resolvedTheme });
+    let built = false;
+    this.scope.run(() => effect(() => {
+      const { dark, theme } = this.look.get();
+      this.root.dataset.tcwTheme = this.portal.dataset.tcwTheme = dark ? 'dark' : 'light';
+      // The chart is made with its theme below; a later change goes to it, the watermark's ink too.
+      if (!built) return;
+      this.keepingLook(() => this.chart.setTheme(theme));
+      this.paintWatermark();
+    }));
+    built = true;
     // Sheets on a phone keep above the on-screen keyboard.
     this.stopKeyboardInset = watchKeyboardInset([this.root, this.portal]);
     // Narrow (a phone, a narrow column): a compact toolbar, the drawing tools behind a button.
@@ -969,7 +1013,7 @@ export class ChartWidget {
     // A drag on the price axis turns auto off without a settings change: the switch follows the chart.
     this.chart.on('priceRangeChange', () => this.refreshScaleSwitches());
     this.refreshScaleSwitches();
-    this.goToDate = new WidgetGoToDate(this.overlayHost, () => ({
+    this.goToDatePart = this.lazyPart(DIALOGS.goToDate, ({ WidgetGoToDate }) => new WidgetGoToDate(this.overlayHost, () => ({
       title: this.t('goTo.title'),
       date: this.t('range.date'),
       range: this.t('goTo.range'),
@@ -980,10 +1024,10 @@ export class ChartWidget {
       cancel: this.t('range.cancel'),
       close: this.t('common.close'),
       calendar: { prevMonth: this.t('calendar.prevMonth'), nextMonth: this.t('calendar.nextMonth'), today: this.t('calendar.today') },
-    }), () => this.intlLocale(), (target) => this.goTo(target));
+    }), () => this.intlLocale(), (target) => this.goTo(target)));
 
     // 7. Create settings (lazy, not appended until opened)
-    this.settings = new WidgetSettings({
+    this.settingsPart = this.lazyPart(DIALOGS.settings, ({ WidgetSettings }) => new WidgetSettings({
       onChange: (patch) => this.changeSettings(patch),
       onReset: () => this.resetSettings(),
       onClose: () => this.endSettingsEdit(true),
@@ -1003,14 +1047,14 @@ export class ChartWidget {
       volume: features.volume,
       trading: features.trading !== false,
       exchangeZone: () => this.exchangeChoice()?.zone,
-    }, this.overlayHost);
+    }, this.overlayHost));
 
     // 8a. Symbol search
     this.symbolSearch = new WidgetSymbolSearch({
       onPick: (sym) => { void this.setSymbol(sym); },
       onClose: () => {},
     }, this.overlayHost, this.t);
-    this.hotkeySheet = new WidgetHotkeySheet({ onClose: () => {} }, this.t, this.overlayHost);
+    this.hotkeySheetPart = this.lazyPart(DIALOGS.hotkeySheet, ({ WidgetHotkeySheet }) => new WidgetHotkeySheet({ onClose: () => {} }, this.t, this.overlayHost));
 
     // The sidebar follows the chart's drawing tool: finished, cancelled with
     // Esc, or kept for the next drawing in stay-in-drawing mode.
@@ -1195,7 +1239,7 @@ export class ChartWidget {
     for (const [type, toolOptions] of Object.entries(defaults.all())) {
       this.chart.setDrawingToolDefaults(type as DrawingToolType, toolOptions ?? null);
     }
-    this.drawingSettings = new WidgetDrawingSettings(this.root, {
+    this.drawingSettingsPart = this.lazyPart(DIALOGS.drawingSettings, ({ WidgetDrawingSettings }) => new WidgetDrawingSettings(this.root, {
       onBegin: (id) => this.chart.beginDrawingEdit(id),
       onChange: (id, patch) => this.chart.updateDrawing(id, patch),
       onEnd: (id, cancel) => {
@@ -1222,7 +1266,7 @@ export class ChartWidget {
         save: (look) => this.promptSaveDrawingTemplate(templates, look),
         remove: (name, type) => templates.remove(name, type),
       },
-    }, this.t);
+    }, this.t));
     this.inlineText = new WidgetInlineText(this.overlayHost);
     this.chart.on('drawingDoubleClick', (e) => {
       const id = (e.payload as { id: string }).id;
@@ -1258,8 +1302,7 @@ export class ChartWidget {
         stop();
         if (this.destroyed || !this.chart.getDrawings().some((d) => d.id === id)) return;
         if (this.editTextInPlace(id, true)) return;
-        this.openDrawingSettings(id, { tab: 'text' });
-        if (this.drawingSettings?.isOpen()) this.justDrawnText = id;
+        this.openDrawingSettings(id, { tab: 'text', justDrawn: true });
       };
       const afterPress = () => setTimeout(open, 0);
       window.addEventListener('pointerup', afterPress);
@@ -1516,7 +1559,7 @@ export class ChartWidget {
     }, this.t);
 
     // 8a-ter. Object tree (indicators + drawings manager)
-    this.indicatorSettings = new WidgetIndicatorSettings(this.root, {
+    this.indicatorSettingsPart = this.lazyPart(DIALOGS.indicatorSettings, ({ WidgetIndicatorSettings }) => new WidgetIndicatorSettings(this.root, {
       onApply: (instanceId, params) => {
         this.chart.updateIndicator(instanceId, params);
         this.syncIndicatorsFromChart(); // the legend shows the parameters
@@ -1528,7 +1571,7 @@ export class ChartWidget {
       onSaveDefault: (indicatorId, saved) => this.saveIndicatorDefault(indicatorId, saved),
       // Its changes are one undo step, none after a Cancel.
       onClose: () => this.chart.endIndicatorEdit(),
-    }, this.t);
+    }, this.t));
     this.objectTree = new WidgetObjectTree(this.root, {
       onClose: () => this.closePanelByHand('objectTree'),
       onRemoveIndicator: (iid) => this.handleRemoveIndicator(iid),
@@ -1543,7 +1586,7 @@ export class ChartWidget {
         this.chart.removeDrawing(id);
         this.refreshObjects();
       },
-      onConfigureDrawing: this.drawingSettings ? (id) => this.openDrawingSettings(id) : undefined,
+      onConfigureDrawing: (id) => this.openDrawingSettings(id),
       onToggleDrawingVisible: (id, visible) => {
         this.chart.setDrawingVisible(id, visible);
         this.refreshObjects();
@@ -1680,7 +1723,7 @@ export class ChartWidget {
           if (!keyOn('hotkeys.resetView')) return;
           e.preventDefault();
           this.resetView();
-        } else if (this.goToDate && keyOn('hotkeys.goToDate') && this.featureState.goToDate) {
+        } else if (keyOn('hotkeys.goToDate') && this.featureState.goToDate) {
           // Alt+G → go to date.
           e.preventDefault();
           this.toggleGoToDate();
@@ -1740,6 +1783,29 @@ export class ChartWidget {
         if (!this.destroyed) this.restoreSharedView();
       }
     });
+    this.preloadDialogsWhenIdle();
+  }
+
+  /**
+   * The dialogs' code, loaded once the page has a moment to spare: not in the way of the chart
+   * coming up, and in before the user opens one, so the first opens at once too.
+   */
+  private preloadDialogsWhenIdle(): void {
+    const load = (): void => {
+      if (!this.destroyed) void preloadDialogs();
+    };
+    const page = globalThis as {
+      requestIdleCallback?: (run: () => void, options?: { timeout: number }) => number;
+      cancelIdleCallback?: (handle: number) => void;
+    };
+    if (page.requestIdleCallback && page.cancelIdleCallback) {
+      const handle = page.requestIdleCallback(load, { timeout: PRELOAD_IDLE_TIMEOUT_MS });
+      const cancel = page.cancelIdleCallback;
+      this.stopPreload = () => cancel(handle);
+    } else {
+      const timer = setTimeout(load, PRELOAD_DELAY_MS);
+      this.stopPreload = () => clearTimeout(timer);
+    }
   }
 
   /** A view shared in the URL (`#tcw=`), when `shareUrl` is on. */
@@ -2145,9 +2211,7 @@ export class ChartWidget {
     const resolved = this.resolveTheme(theme);
     this.themeOf = { ...this.themeOf, [isDark ? 'dark' : 'light']: resolved };
     this.state = { ...this.state, isDark };
-    this.root.dataset.tcwTheme = isDark ? 'dark' : 'light';
-    this.portal.dataset.tcwTheme = this.root.dataset.tcwTheme;
-    this.keepingLook(() => this.chart.setTheme(resolved));
+    this.look.set({ dark: isDark, theme: resolved });
     this.updateUI();
   }
 
@@ -2279,6 +2343,8 @@ export class ChartWidget {
   destroy(): void {
     if (this.destroyed) return;
     this.destroyed = true;
+    this.scope.dispose();
+    this.stopPreload?.();
     this.stopKeyboardInset?.();
     this.stopKeyboardInset = null;
     this.stopNarrow?.();
@@ -2302,17 +2368,17 @@ export class ChartWidget {
     this.flushActiveLayout();
     this.commandPalette?.destroy();
     this.symbolSearch?.destroy();
-    this.hotkeySheet?.destroy();
+    this.hotkeySheetPart?.destroy();
     if (this.replayPollInterval) clearInterval(this.replayPollInterval);
     this.replayShade?.remove();
     this.replayBar?.destroy();
     this.dragDrop?.detach();
     this.alertsPanel?.destroy();
     this.objectTree?.destroy();
-    this.indicatorSettings?.destroy();
+    this.indicatorSettingsPart?.destroy();
     this.indicatorPicker?.destroy();
     this.drawingStyle?.destroy();
-    this.drawingSettings?.destroy();
+    this.drawingSettingsPart?.destroy();
     this.drawingMenu?.destroy();
     this.clearMenu?.destroy();
     this.cancelTextPrompt?.();
@@ -2350,9 +2416,9 @@ export class ChartWidget {
     this.watchlist?.destroy();
     this.toolbar?.destroy();
     this.sidebar?.destroy();
-    this.settings?.destroy();
+    this.settingsPart?.destroy();
     this.statusBar?.destroy();
-    this.goToDate?.destroy();
+    this.goToDatePart?.destroy();
     this.loading.destroy();
     this.historyPill.destroy();
     this.chart.destroy();
@@ -2533,7 +2599,7 @@ export class ChartWidget {
       style: primary.style,
       locked: drawings.every((d) => d.locked),
       canDelete: drawings.some((d) => !d.locked),
-      canSettings: this.drawingSettings !== null && this.featureState.drawingSettings && drawings.length === 1,
+      canSettings: this.featureState.drawingSettings && drawings.length === 1,
       canAlert: this.featureState.alerts && drawings.length === 1 && this.chart.canAddDrawingAlert(primary.id),
       canFill: this.chart.getDrawingToolDescriptor(primary.type)?.fill === true,
       canText: this.chart.getDrawingToolDescriptor(primary.type)?.text === true,
@@ -2604,11 +2670,16 @@ export class ChartWidget {
   }
 
   /** Open a drawing's settings (double-click on it, or the object tree's settings button). */
-  private openDrawingSettings(id: string, how: { tab?: 'text' } = {}): void {
+  private openDrawingSettings(id: string, how: { tab?: 'text'; justDrawn?: boolean } = {}): void {
+    this.whenLoaded(this.drawingSettingsPart, () => this.featureState.drawingSettings, (dialog) => this.showDrawingSettings(dialog, id, how));
+  }
+
+  private showDrawingSettings(dialog: WidgetDrawingSettings, id: string, how: { tab?: 'text'; justDrawn?: boolean }): void {
+    // Looked up once the dialog is in: the drawing may have gone while its code loaded.
     const drawing = this.chart.getDrawings().find((d) => d.id === id);
     const descriptor = drawing ? this.chart.getDrawingToolDescriptor(drawing.type) : null;
-    if (!drawing || !descriptor || !this.drawingSettings || !this.featureState.drawingSettings) return;
-    this.drawingSettings.open({
+    if (!drawing || !descriptor) return;
+    dialog.open({
       id,
       type: drawing.type,
       name: this.drawingToolName(drawing.type),
@@ -2623,7 +2694,9 @@ export class ChartWidget {
       textPlace: TEXT_PLACES.has(drawing.type),
       coordinates: descriptor.anchoring !== 'screen',
       intervals: drawing.intervals ?? null,
-    }, how);
+    }, { tab: how.tab });
+    // Set once it is open (opening ends the edit before it): a Cancel on the words of a text just drawn takes the text back.
+    if (how.justDrawn && dialog.isOpen()) this.justDrawnText = id;
   }
 
   /** Save a drawing's look as a template of its tool, asking for its name over the drawing's settings. */
@@ -2661,7 +2734,7 @@ export class ChartWidget {
     if (selected.length === 0) return;
     const entries = filterMenuEntries(drawingMenuEntries({
       selected,
-      canConfigure: this.drawingSettings !== null,
+      canConfigure: true,
       canAlert: this.chart.canAddDrawingAlert(id),
     }, this.t), DRAWING_MENU_FEATURES, this.featureState);
     const ids = selected.map((d) => d.id);
@@ -2736,7 +2809,7 @@ export class ChartWidget {
       drawingsHidden: drawings.length > 0 && drawings.every((d) => !d.visible),
       canPaste: this.chart.canPasteDrawings(),
       hasIndicators: features.indicators !== false && this.removableIndicators().length > 0,
-      canGoToDate: this.goToDate !== null,
+      canGoToDate: true,
       canExport: this.canExport,
       autoScale: this.chart.isAutoScale(),
       scaleMode: this.effectiveScaleMode(),
@@ -2915,6 +2988,14 @@ export class ChartWidget {
     e.preventDefault();
     hit.spec.onPress(e);
     return true;
+  }
+
+  /** The symbol behind the bars, in the ink of the mode shown. */
+  private paintWatermark(): void {
+    this.chart.setWatermark(this.state.symbol.replace('USDT', ' / USDT'), {
+      fontSize: WATERMARK_FONT_SIZE,
+      color: this.state.isDark ? WATERMARK_ON_DARK : WATERMARK_ON_LIGHT,
+    });
   }
 
   /**
@@ -3285,9 +3366,12 @@ export class ChartWidget {
   }
 
   private toggleGoToDate(): void {
-    if (!this.goToDate || !this.featureState.goToDate) return;
-    if (this.goToDate.isOpen()) {
-      this.goToDate.close();
+    this.whenLoaded(this.goToDatePart, () => this.featureState.goToDate, (dialog) => this.toggleLoadedGoToDate(dialog));
+  }
+
+  private toggleLoadedGoToDate(dialog: WidgetGoToDate): void {
+    if (dialog.isOpen()) {
+      dialog.close();
       return;
     }
     const data = this.chart.getData();
@@ -3299,7 +3383,7 @@ export class ChartWidget {
     // The bars on screen, as the chart draws them (a Renko chart's bricks).
     const shown = this.chart.getVisibleTimeRange() ?? { from: data[0].time, to: last };
     const today = utcToWallTime(Date.now(), tz).date;
-    this.goToDate.open({
+    dialog.open({
       date: wall(last),
       range: { from: wall(shown.from), to: wall(shown.to) },
       // Daily bars and longer have no time of day.
@@ -3951,7 +4035,11 @@ export class ChartWidget {
   }
 
   private openIndicatorSettings(instanceId: string): void {
-    if (!this.indicatorSettings || !this.featureState.indicatorSettings) return;
+    this.whenLoaded(this.indicatorSettingsPart, () => this.featureState.indicatorSettings, (dialog) => this.showIndicatorSettings(dialog, instanceId));
+  }
+
+  private showIndicatorSettings(dialog: WidgetIndicatorSettings, instanceId: string): void {
+    // Looked up once the dialog is in: the indicator may have gone while its code loaded.
     const active = this.chart.getActiveIndicators();
     const ind = active.find((i) => i.instanceId === instanceId);
     if (!ind) return;
@@ -3959,7 +4047,7 @@ export class ChartWidget {
     const pane = ind.descriptor.placement === 'panel' || !!ind.pane;
     const ownLevels = (this.chart.getIndicatorSetup() ?? []).find((s) => s.instanceId === instanceId)?.levels !== undefined;
     this.chart.beginIndicatorEdit(instanceId);
-    this.indicatorSettings.open({
+    dialog.open({
       instanceId,
       indicatorId: ind.id,
       name: ind.descriptor.name,
@@ -4631,10 +4719,10 @@ export class ChartWidget {
 
   /** The shortcut sheet: the keys switched on, and the host's. */
   private openHotkeySheet(): void {
-    this.hotkeySheet?.open({
+    this.whenLoaded(this.hotkeySheetPart, () => this.featureState.hotkeySheet, (sheet) => sheet.open({
       isOn: (name) => this.sheetKeyOn(name),
       extra: this.hostHotkeys.map((h) => ({ keys: h.parsed.display, text: h.spec.label })),
-    });
+    }));
   }
 
   /** Whether a command's switch (when it has one) is on. */
@@ -4772,20 +4860,18 @@ export class ChartWidget {
     if (!this.featureState.themeToggle) return;
     const isDark = !this.state.isDark;
     this.state = { ...this.state, isDark };
-    this.root.dataset.tcwTheme = isDark ? 'dark' : 'light';
-    this.portal.dataset.tcwTheme = this.root.dataset.tcwTheme;
     // The mode's theme: the host's own, or the built-in one. The user's colours stay with each.
-    this.keepingLook(() => this.chart.setTheme(isDark ? this.themeOf.dark : this.themeOf.light));
-    this.chart.setWatermark(this.state.symbol.replace('USDT', ' / USDT'), {
-      fontSize: 48,
-      color: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)',
-    });
+    this.look.set({ dark: isDark, theme: isDark ? this.themeOf.dark : this.themeOf.light });
     this.updateUI();
   }
 
   private openSettings(tab?: SettingsTab): void {
-    if (!this.featureState.settings || this.settings?.isOpen()) return;
-    // The chart's own settings of its type (a layout may have brought them), its scale as a drag left it.
+    this.whenLoaded(this.settingsPart, () => this.featureState.settings, (dialog) => this.showSettings(dialog, tab));
+  }
+
+  private showSettings(dialog: WidgetSettings, tab?: SettingsTab): void {
+    if (dialog.isOpen()) return;
+    // What it opens on is read now, once its code is in. The chart's own settings of its type (a layout may have brought them), its scale as a drag left it.
     this.syncSettingsFromChart();
     // What the dialog opens on is what listeners last heard: a drag that turned auto-scale off told
     // nobody, and Cancel, or an OK that changes nothing, must not tell them now.
@@ -4793,7 +4879,34 @@ export class ChartWidget {
     this.settingsEdit = {
       settings: { ...this.settingsState }, style: this.settingsStyle(), keys: new Set(), styleKeys: new Set(), held: this.compareScaleHeld,
     };
-    this.settings?.open(this.shownSettings(), this.state.chartType, tab);
+    dialog.open(this.shownSettings(), this.state.chartType, tab);
+  }
+
+  /** A dialog's code, loaded the first time it opens; a failed load says so. */
+  private lazyPart<M, T extends { destroy(): void }>(module: ModuleRef<M>, build: (module: M) => T): LazyPart<M, T> {
+    return new LazyPart(module, build, (part) => part.destroy(), () => this.say(this.t('common.partFailed'), 'error'));
+  }
+
+  /**
+   * Runs `show` with a dialog: at once when its code is in, else once it has loaded, unless the
+   * widget went or its switch turned off meanwhile. Of the asks made while it loads, the last
+   * one opens it (another indicator's settings, another tab), once.
+   */
+  private whenLoaded<T>(part: Lazy<T> | null, on: () => boolean, show: (part: T) => void): void {
+    if (!part || !on()) return;
+    const loaded = part.now();
+    if (loaded) {
+      show(loaded);
+      return;
+    }
+    const waiting = part.isLoading();
+    this.waitingShow.set(part, show as (part: unknown) => void);
+    if (waiting) return;
+    void part.load().then((done) => {
+      const latest = this.waitingShow.get(part);
+      this.waitingShow.delete(part);
+      if (done && latest && !this.destroyed && on()) latest(done);
+    });
   }
 
   /** The whole series in view, the price scale fitted to it (the menus' Reset, Alt+R). */
@@ -6056,10 +6169,7 @@ export class ChartWidget {
       // A newer switch started while this one was loading — it owns the UI now.
       if (seq !== this.connectSeq || this.destroyed) return;
 
-      this.chart.setWatermark(this.state.symbol.replace('USDT', ' / USDT'), {
-        fontSize: 48,
-        color: this.state.isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)',
-      });
+      this.paintWatermark();
 
       // Re-apply per-symbol layout (indicators, drawings, chart type) after
       // the new history is in. Doing this *after* connect ensures indicators

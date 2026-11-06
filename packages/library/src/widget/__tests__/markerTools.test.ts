@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { DRAWING_TOOL_GROUPS } from '../widgetConfig.js';
-import { TEXT_LAYOUTS } from '../drawingSettingsTabs.js';
+import { TEXT_LAYOUTS } from '../drawingText.js';
 import { EN_MESSAGES } from '../locales/en.js';
 import { drawingTypeLabel } from '../WidgetObjectTree.js';
 import { createToolIcon } from '../icons.js';

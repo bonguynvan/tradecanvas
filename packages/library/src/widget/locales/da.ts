@@ -225,6 +225,7 @@ export const DA_MESSAGES: WidgetMessages = {
 
   // Common
   'common.close': 'Luk',
+  'common.partFailed': 'Kunne ikke åbnes: tjek forbindelsen, og prøv igen',
   'common.cancel': 'Annuller',
   'common.save': 'Gem',
   'common.show': 'Vis',

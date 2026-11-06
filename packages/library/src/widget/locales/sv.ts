@@ -218,6 +218,8 @@ export const SV_MESSAGES: WidgetMessages = {
   'hotkeys.group.more': 'Fler',
 
   'common.close': 'Stäng',
+
+  'common.partFailed': 'Kunde inte öppnas: kontrollera anslutningen och försök igen',
   'common.cancel': 'Avbryt',
   'common.save': 'Spara',
   'common.show': 'Visa',

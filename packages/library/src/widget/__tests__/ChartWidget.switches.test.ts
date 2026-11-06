@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, beforeAll, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { preloadDialogs } from '../widgetDialogs.js';
 import type { ChartOptions, FeaturesConfig } from '@tradecanvas/commons';
 
 /** Stand-in for the canvas-backed Chart: emits the menus' events on demand and records what's switched. */
@@ -101,6 +102,9 @@ const menuLabels = () => menuItems().map((b) => b.querySelector('.tcw-context-la
 const menuItem = (label: string) => menuItems().find((b) => b.querySelector('.tcw-context-label')?.textContent === label)!;
 const press = () => root().dispatchEvent(new Event('pointerdown'));
 const key = (init: KeyboardEventInit) => document.dispatchEvent(new KeyboardEvent('keydown', { cancelable: true, ...init }));
+
+// The dialogs load their code when first opened; here it is in up front, so each opens at once.
+beforeAll(preloadDialogs);
 
 describe('ChartWidget feature switches', () => {
   it('marks the parts of the bars and their buttons with their switches', () => {

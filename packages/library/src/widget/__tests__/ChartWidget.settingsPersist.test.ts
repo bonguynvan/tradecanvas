@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, beforeAll, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { preloadDialogs } from '../widgetDialogs.js';
 import { readChartTypeOptions, type ChartOptions } from '@tradecanvas/commons';
 import { decodeWidgetState, encodeWidgetState } from '../widgetShareState.js';
 import type { ChartSettingsState } from '../types.js';
@@ -102,6 +103,9 @@ afterEach(() => {
   document.querySelectorAll('.tcw-portal').forEach((p) => p.remove());
   host.remove();
 });
+
+// The dialogs load their code when first opened; here it is in up front, so each opens at once.
+beforeAll(preloadDialogs);
 
 describe('ChartWidget settings API', () => {
   it('getSettings returns what the settings dialog set, as a copy', () => {

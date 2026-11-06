@@ -218,6 +218,8 @@ export const KO_MESSAGES: WidgetMessages = {
   'hotkeys.group.more': '기타',
 
   'common.close': '닫기',
+
+  'common.partFailed': '열 수 없습니다. 연결을 확인하고 다시 시도하세요',
   'common.cancel': '취소',
   'common.save': '저장',
   'common.show': '표시',

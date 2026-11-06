@@ -225,6 +225,7 @@ export const HE_MESSAGES: WidgetMessages = {
 
   // Common
   'common.close': 'סגירה',
+  'common.partFailed': 'לא ניתן לפתוח: בדקו את החיבור ונסו שוב',
   'common.cancel': 'ביטול',
   'common.save': 'שמירה',
   'common.show': 'הצגה',

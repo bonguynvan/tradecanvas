@@ -218,6 +218,8 @@ export const ID_MESSAGES: WidgetMessages = {
   'hotkeys.group.more': 'Lainnya',
 
   'common.close': 'Tutup',
+
+  'common.partFailed': 'Tidak dapat dibuka: periksa koneksi lalu coba lagi',
   'common.cancel': 'Batal',
   'common.save': 'Simpan',
   'common.show': 'Tampilkan',

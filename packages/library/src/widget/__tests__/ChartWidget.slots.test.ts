@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, beforeAll, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { preloadDialogs } from '../widgetDialogs.js';
 import type { ChartOptions } from '@tradecanvas/commons';
 
 /** Stand-in for the canvas-backed Chart: emits the menus' events on demand. */
@@ -64,6 +65,9 @@ const make = (options: ConstructorParameters<typeof ChartWidget>[1] = {}) => {
   return widget;
 };
 const shownMenu = () => [...host.querySelectorAll<HTMLElement>('.tcw-context-menu:not([hidden]) [role^=menuitem]')];
+
+// The dialogs load their code when first opened; here it is in up front, so each opens at once.
+beforeAll(preloadDialogs);
 
 describe('ChartWidget toolbar menus of the host', () => {
   it('adds a button that opens the host’s entries, asked for each time', () => {
