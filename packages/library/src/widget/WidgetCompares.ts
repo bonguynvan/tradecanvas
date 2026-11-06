@@ -23,7 +23,7 @@ export interface ComparesHost {
   refreshObjects: ChartWidget['refreshObjects'];
   refreshScaleSwitches: ChartWidget['refreshScaleSwitches'];
   say: ChartWidget['say'];
-  scheduleLegend: ChartWidget['scheduleLegend'];
+  scheduleLegend: ChartWidget['legend']['scheduleLegend'];
   readonly settings: ChartWidget['settings'];
   readonly settingsState: ChartWidget['settingsState'];
   showScaleMode: ChartWidget['showScaleMode'];

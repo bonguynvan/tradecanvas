@@ -45,11 +45,10 @@ import { WidgetDrawingStyle } from './WidgetDrawingStyle.js';
 import { WidgetSelectionToolbar } from './WidgetSelectionToolbar.js';
 import { DrawingDefaultsStore, DrawingTemplateStore } from './DrawingTemplateStore.js';
 import type { WidgetDrawingSettings, DrawingTemplateLook } from './WidgetDrawingSettings.js';
-import { WidgetContextMenu, type ContextMenuEntry } from './WidgetContextMenu.js';
+import { WidgetContextMenu } from './WidgetContextMenu.js';
 import { TEXT_COLORS, TEXT_LAYOUTS, TEXT_PLACES } from './drawingText.js';
 import { WidgetInlineText } from './WidgetInlineText.js';
-import { drawingMenuEntries, type DrawingMenuAction } from './drawingMenu.js';
-import { CHART_MENU_KEYS, TIMEZONE_ENTRY, chartMenuEntries, priceEntries, scaleModeOf, type ChartMenuAction, type ChartMenuContext } from './chartMenu.js';
+import { chartMenuEntries, priceEntries } from './chartMenu.js';
 import { WidgetAccountPanel } from './WidgetAccountPanel.js';
 import { WidgetOrderTicket } from './WidgetOrderTicket.js';
 import { WidgetLayoutsUI } from './WidgetLayoutsUI.js';
@@ -79,9 +78,8 @@ import { utcToWallTime, wallTimeToUtc } from './wallTime.js';
 import { WidgetDock } from './WidgetDock.js';
 import { type CompareWay } from './widgetCompare.js';
 import { WidgetTooltip } from './WidgetTooltip.js';
-import { WidgetIndicatorLegend, type IndicatorLegendPane, type IndicatorLegendRow, type PaneAction } from './WidgetIndicatorLegend.js';
-import { formatIndicatorValue, indicatorPointAt, legendValues } from './legendValues.js';
-import { compareLegendRows } from './compareLegend.js';
+import { WidgetIndicatorLegend } from './WidgetIndicatorLegend.js';
+import { formatIndicatorValue } from './legendValues.js';
 import { RANGE_PRESETS, SYMBOL_INDICATOR_IDS, adapterFromFeed, indicatorCategory, rangePresetStart, servesTimeframe, sourceParam, type RangePreset } from '@tradecanvas/core';
 import { WidgetBracketBar } from './WidgetBracketBar.js';
 import { AlertNotifier } from './AlertNotifier.js';
@@ -92,9 +90,8 @@ import { encodeWidgetState, decodeWidgetState, readShareHash, buildShareUrl } fr
 import { DragDropImporter, resampleOHLCV, inferTimeframeMs } from '../io/index.js';
 import type { CrosshairMovePayload, CrosshairSyncPayload, DataSeries } from '@tradecanvas/commons';
 import { formatVolumeLoc, timeframeToMs } from '@tradecanvas/commons';
-import type { CommandItem } from './WidgetCommandPalette.js';
 import { resolveMessages, createTranslator, fill, type MessageKey, type Translator } from './i18n.js';
-import { chartTypeLabel, localizeToolGroups } from './widgetLocales.js';
+import { localizeToolGroups } from './widgetLocales.js';
 import { WidgetLoadingOverlay } from './WidgetLoadingOverlay.js';
 import { WidgetHistoryPill } from './WidgetHistoryPill.js';
 import { pickHostItem, withHostItems } from './hostMenus.js';
@@ -104,11 +101,12 @@ import { WidgetCompares, type ComparesHost } from './WidgetCompares.js';
 import { WidgetWatchlists, type WatchlistsHost } from './WidgetWatchlists.js';
 import { WidgetAlerts, type AlertsHost } from './WidgetAlerts.js';
 import { WidgetTrading, type TradingHost } from './WidgetTrading.js';
+import { WidgetMenus, type MenusHost } from './WidgetMenus.js';
+import { WidgetLegendView, type LegendHost, LEGEND_INSET, STACK_GAP, readsChartPrices } from './WidgetLegendView.js';
+import { WidgetCommands, type CommandsHost } from './WidgetCommands.js';
 import {
   markPart,
-  commandFeature,
   CHART_MENU_FEATURES,
-  DRAWING_MENU_FEATURES,
   filterMenuEntries,
   offFeatures,
   readWidgetFeatures,
@@ -198,16 +196,6 @@ function typedLetter(e: KeyboardEvent): string | null {
   return place && [...e.key].length === 1 && !/[\s\d]/.test(e.key) ? place[1].toLowerCase() : null;
 }
 
-/** Gap between the on-chart indicator rows and the plot or pane edge, px. */
-const LEGEND_INSET = 4;
-/** How far under the OHLCV legend's foot the indicator rows start (px). */
-const STACK_GAP = 1;
-/** A pane's row starts below the divider's grab zone (±6 px), so it never blocks a resize. */
-const PANE_ROW_TOP = 7;
-/** Rows of the indicators sharing a pane, one under the other (px). */
-const PANE_ROW_STEP = 17;
-/** Where a pane's buttons (move, fold, maximise) sit below its top edge. */
-const PANE_CONTROLS_TOP = 3;
 /** How often the status bar's clock moves on. */
 const CLOCK_TICK_MS = 1000;
 /** Settings a layout doesn't hold (the viewer's own, and auto-scale, which a drag changes): a change to them leaves the open layout as saved. */
@@ -234,7 +222,6 @@ const LOOK_KEYS: readonly ChartStyleKey[] = SETTINGS_LOOK_KEYS.filter((key) => C
 
 /** The widget pressed last: with several on a page, Alt+ shortcuts act on that one. */
 
-
 /** Recent bars looked at to tell a market open on weekends. */
 const WEEKDAY_SAMPLE = 200;
 
@@ -249,6 +236,12 @@ function withFeedAdapter(options: ChartWidgetOptions): ChartWidgetOptions {
 }
 
 export class ChartWidget {
+  /** The command palette's entries and the actions they run. */
+  private readonly commands = new WidgetCommands(this.commandsHost());
+  /** The legend over the chart: the symbol's row and the indicators' rows, and their menu. */
+  private readonly legend = new WidgetLegendView(this.legendHost());
+  /** The chart's context menus: on the chart, on a drawing, and the clear menu. */
+  private readonly menus = new WidgetMenus(this.menusHost());
   /** Trading by the chart: the account panel, the order ticket, the depth ladder and the bracket bar. */
   private readonly trading = new WidgetTrading(this.tradingHost());
   /** Price alerts: their panel, what they are checked against, and the notices when one fires. */
@@ -274,7 +267,6 @@ export class ChartWidget {
   }
   private readonly tooltip: WidgetTooltip;
   private indicatorLegend: WidgetIndicatorLegend | null = null;
-  private legendFrame = 0;
   /**
    * Modals (settings, search, command palette, hotkeys) mount here: it carries
    * the theme tokens to `document.body`, and moves inside the widget while
@@ -336,7 +328,6 @@ export class ChartWidget {
   private get drawingSettings(): WidgetDrawingSettings | null {
     return this.drawingSettingsPart?.get() ?? null;
   }
-  private drawingMenu: WidgetContextMenu | null = null;
   /** A text drawn just now whose words the settings ask for: Cancel there takes it back. */
   private justDrawnText: string | null = null;
   /** A text drawing's words typed in place over it. */
@@ -348,13 +339,8 @@ export class ChartWidget {
   private chartFontWritten: { sizeSmall: number; sizeMedium: number; sizeLarge: number } | null = null;
   /** Stops waiting to ask for a just-drawn text's words (the widget goes, or another text is drawn first). */
   private cancelTextPrompt: (() => void) | null = null;
-  /** The trash button's menu, made the first time it opens. */
-  private clearMenu: WidgetContextMenu | null = null;
   private selectionToolbar: WidgetSelectionToolbar | null = null;
   private selectionToolbarFrame: number | null = null;
-  private chartMenu: WidgetContextMenu | null = null;
-  /** The pane a chart menu was opened on (its scale switches act on it). */
-  private menuPane: string | null = null;
   /** Whether the chart menu offers a download of the data. */
   private canExport = true;
   /** The latest fetch of each symbol the chart's indicators read. */
@@ -368,8 +354,6 @@ export class ChartWidget {
   /** The chart's type sizes before the look scaled them. */
   private chartFontBase: { sizeSmall: number; sizeMedium: number; sizeLarge: number } | null = null;
   private scaleObserver: ResizeObserver | null = null;
-  /** The legend row's "more" menu: move the indicator to another pane. */
-  private legendMenu: WidgetContextMenu | null = null;
   private templates = new IndicatorTemplateStore();
   private templatePrompt: WidgetNamePrompt | null = null;
   /** The chart templates of the settings' Template menu, and the prompt that names a new one. */
@@ -748,7 +732,7 @@ export class ChartWidget {
         onToggleEraser: () => this.chart.setEraserMode(!this.chart.isEraserMode()),
         onToggleZoomArea: () => this.chart.setZoomAreaMode(!this.chart.isZoomAreaMode()),
         onToggleFavorite: (tool) => this.handleToggleFavorite(tool),
-        onClear: (anchor) => this.openClearMenu(anchor),
+        onClear: (anchor) => this.menus.openClearMenu(anchor),
         onToggleStyle: () => this.drawingStyle?.toggle(),
         onToggleStayInDrawing: () => this.handleToggleStayInDrawing(),
         onLockAll: (locked) => {
@@ -922,7 +906,7 @@ export class ChartWidget {
         now: () => this.clockNow(),
         options: () => ({
           current: this.settingsState.timezone,
-          list: timezoneOptions(this.settingsState.timezone, Date.now(), this.t('settings.timezone.local'), this.exchangeChoice()),
+          list: timezoneOptions(this.settingsState.timezone, Date.now(), this.t('settings.timezone.local'), this.menus.exchangeChoice()),
         }),
         onPick: (value) => this.changeSettings({ timezone: value }),
       },
@@ -979,7 +963,7 @@ export class ChartWidget {
       legend: features.legend,
       volume: features.volume,
       trading: features.trading !== false,
-      exchangeZone: () => this.exchangeChoice()?.zone,
+      exchangeZone: () => this.menus.exchangeChoice()?.zone,
     }, this.overlayHost));
 
     // 8a. Symbol search
@@ -1013,7 +997,7 @@ export class ChartWidget {
     this.chart.on('indicatorRemove', () => this.syncIndicatorsFromChart());
 
     // The OHLCV rows drawn taller or shorter (a switch wrapped their line): the stack under them follows.
-    this.chart.on('legendResize', () => this.scheduleLegend());
+    this.chart.on('legendResize', () => this.legend.scheduleLegend());
 
     // The indicators on the chart itself, instead of toolbar chips that overflow.
     this.chart.setPaneTitlesVisible(!this.featureState.indicatorLegend);
@@ -1022,7 +1006,7 @@ export class ChartWidget {
       onToggleVisible: (iid, visible, kind) => {
         if (kind === 'compare') this.chart.setCompareVisible(iid, visible);
         else this.chart.setIndicatorVisible(iid, visible);
-        this.scheduleLegend();
+        this.legend.scheduleLegend();
         if (this.objectTree?.isOpen()) this.refreshObjects();
       },
       // The name opens the settings too: it goes with the row's settings button.
@@ -1034,8 +1018,8 @@ export class ChartWidget {
         else if (kind === 'compare') this.comparing.removeHostCompare(iid);
         else this.handleRemoveIndicator(iid);
       },
-      onMore: (iid, anchor) => this.openLegendMenu(iid, anchor),
-      onPaneAction: (iid, action) => this.runPaneAction(iid, action),
+      onMore: (iid, anchor) => this.legend.openLegendMenu(iid, anchor),
+      onPaneAction: (iid, action) => this.legend.runPaneAction(iid, action),
       // From the plot's left edge and the legend's foot, as the stack is placed: the drawings' labels keep clear of it.
       onStackResize: (size) => this.chart.setLegendStack?.(size ? { width: LEGEND_INSET + size.width, height: STACK_GAP + size.height } : null),
     }, {
@@ -1055,35 +1039,35 @@ export class ChartWidget {
       offInterval: this.t('indicatorSettings.offInterval'),
       offChartType: this.t('legend.offChartType'),
     });
-    this.legendMenu = new WidgetContextMenu(this.root, this.t('legend.more'));
+    this.legend.legendMenu = new WidgetContextMenu(this.root, this.t('legend.more'));
     this.chart.on('crosshairMove', (e) => {
       const p = e.payload as { barIndex?: number };
       this.pointerOnChart = true;
       this.legendHoverIndex = typeof p.barIndex === 'number' ? p.barIndex : null;
-      this.scheduleLegend();
+      this.legend.scheduleLegend();
     });
     // Off the chart, the values go back to the latest bar.
     this.chart.on('crosshairLeave', () => {
       this.pointerOnChart = false;
       this.legendHoverIndex = null;
-      this.scheduleLegend();
+      this.legend.scheduleLegend();
     });
     // Another chart of a grid points at a bar here: its values, as under the pointer.
     this.chart.on('crosshairSync', (e) => {
       if (this.pointerOnChart) return;
       const p = e.payload as CrosshairSyncPayload;
       this.legendHoverIndex = p.bar && p.barIndex !== null ? p.barIndex : null;
-      this.scheduleLegend();
+      this.legend.scheduleLegend();
     });
     // A pan too: a compare's change is counted from the first bar on screen.
     // A compare line the host adds on the chart itself gets its row at once, as the widget's do.
     for (const event of ['indicatorUpdate', 'indicatorChange', 'dataUpdate', 'resize', 'paneResize', 'paneChange', 'themeChange', 'timeframeChange', 'visibleRangeChange', 'compareChange'] as const) {
-      this.chart.on(event, () => this.scheduleLegend());
+      this.chart.on(event, () => this.legend.scheduleLegend());
     }
     // Whoever changes the chart type: percent compares hold the scale only where their lines are drawn.
     this.chart.on('chartTypeChange', () => {
       if (this.comparing.compareScaleHeld) this.comparing.showHeldScale();
-      this.scheduleLegend();
+      this.legend.scheduleLegend();
     });
 
     // Bar replay: its panel, the start bar picked on the chart, its keys.
@@ -1211,10 +1195,10 @@ export class ChartWidget {
     );
 
     // Right-click on a drawing: settings, alert, order, group, lock, hide, delete.
-    this.drawingMenu = new WidgetContextMenu(this.root, this.t('drawingMenu.label'));
+    this.menus.drawingMenu = new WidgetContextMenu(this.root, this.t('drawingMenu.label'));
     this.chart.on('drawingContextMenu', (e) => {
       const { id, x, y } = e.payload as { id: string; x: number; y: number };
-      this.openDrawingMenu(id, x, y);
+      this.menus.openDrawingMenu(id, x, y);
     });
 
     // A click on a drawing: its toolbar right over it, no right-click needed.
@@ -1246,7 +1230,7 @@ export class ChartWidget {
         const id = this.chart.getSelectedDrawingIds()[0];
         if (!id) return;
         const offset = this.chartOffset();
-        this.openDrawingMenu(id, x - offset.x, y - offset.y);
+        this.menus.openDrawingMenu(id, x - offset.x, y - offset.y);
       },
       onDelete: () => {
         // Locked drawings stay, and stay selected.
@@ -1279,7 +1263,7 @@ export class ChartWidget {
 
     // Right-click elsewhere: what the plot, an axis or a pane offers. The "+"
     // by the price axis: what to do at its price.
-    this.chartMenu = new WidgetContextMenu(this.root, this.t('chartMenu.label'), this.t('common.back'));
+    this.menus.chartMenu = new WidgetContextMenu(this.root, this.t('chartMenu.label'), this.t('common.back'));
     // Indicators that read another symbol (a compare on its own scale, a spread) ask for its bars.
     this.chart.on('symbolSeriesRequest', (e) => void this.comparing.loadSymbolSeries(e.payload.symbol));
     // Prices from the pointer go on the market's grid (its smallest step).
@@ -1287,16 +1271,16 @@ export class ChartWidget {
       if (!this.featureState['menu.chart']) return;
       const { area, x, y, price: raw, time, pane } = e.payload as import('@tradecanvas/commons').ChartContextMenuPayload;
       const price = raw === undefined ? undefined : this.chart.roundPrice(raw);
-      const context = { ...this.chartMenuContext(price), ...(pane ? { pane: this.chart.getPaneScale(pane) } : {}) };
-      this.menuPane = pane ?? null;
-      this.openChartMenu(filterMenuEntries(chartMenuEntries(area, context, this.t), CHART_MENU_FEATURES, this.featureState), x, y, { area, price, time });
+      const context = { ...this.menus.chartMenuContext(price), ...(pane ? { pane: this.chart.getPaneScale(pane) } : {}) };
+      this.menus.menuPane = pane ?? null;
+      this.menus.openChartMenu(filterMenuEntries(chartMenuEntries(area, context, this.t), CHART_MENU_FEATURES, this.featureState), x, y, { area, price, time });
     });
     this.chart.on('priceAxisAdd', (e) => {
       if (!this.featureState['menu.priceAxisAdd']) return;
       const { price: raw, x, y } = e.payload as import('@tradecanvas/commons').PriceAxisAddPayload;
       const price = this.chart.roundPrice(raw);
-      const entries = filterMenuEntries(priceEntries(this.chartMenuContext(price), this.t), CHART_MENU_FEATURES, this.featureState);
-      this.openChartMenu(entries, x, y, { area: 'priceAxisAdd', price });
+      const entries = filterMenuEntries(priceEntries(this.menus.chartMenuContext(price), this.t), CHART_MENU_FEATURES, this.featureState);
+      this.menus.openChartMenu(entries, x, y, { area: 'priceAxisAdd', price });
     });
 
     // A signal marker under the pointer says what it is.
@@ -1466,7 +1450,7 @@ export class ChartWidget {
       onToggleIndicatorVisible: (iid, visible) => {
         this.chart.setIndicatorVisible(iid, visible);
         this.refreshObjects();
-        this.scheduleLegend();
+        this.legend.scheduleLegend();
       },
       onRemoveDrawing: (id) => {
         if (this.drawingSettings?.editing() === id) this.drawingSettings.close(true);
@@ -1547,7 +1531,7 @@ export class ChartWidget {
       onChartType: (type) => this.handleChartType(type),
       onDrawingTool: (tool) => this.handleDrawingTool(tool),
       onTimeframe: (tf) => this.handleTimeframe(tf),
-      onAction: (id) => this.handleAction(id),
+      onAction: (id) => this.commands.handleAction(id),
       onClose: () => {},
     }, this.overlayHost, this.t, {
       list: () => readRecentCommands(),
@@ -1564,7 +1548,7 @@ export class ChartWidget {
       if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
         if (!mine || !keyOn('hotkeys.commandPalette') || !this.featureState.commandPalette) return;
         e.preventDefault();
-        this.toggleCommandPalette();
+        this.commands.toggleCommandPalette();
       } else if ((e.ctrlKey || e.metaKey) && (e.key === 'p' || e.key === 'P')) {
         // Ctrl/Cmd+P → symbol search (matches Bloomberg / many trading UIs)
         if (!mine || !keyOn('hotkeys.symbolSearch') || !this.featureState.symbolSearch) return;
@@ -2117,7 +2101,7 @@ export class ChartWidget {
     document.removeEventListener('fullscreenchange', this.onFullscreenChange);
     this.unregisterKeys();
     this.tooltip.destroy();
-    if (this.legendFrame) cancelAnimationFrame(this.legendFrame);
+    if (this.legend.legendFrame) cancelAnimationFrame(this.legend.legendFrame);
     this.indicatorLegend?.destroy();
     this.portal.remove();
     if (document.fullscreenElement === this.root) void document.exitFullscreen().catch(() => {});
@@ -2133,13 +2117,13 @@ export class ChartWidget {
     this.indicatorPickerPart?.destroy();
     this.drawingStyle?.destroy();
     this.drawingSettingsPart?.destroy();
-    this.drawingMenu?.destroy();
-    this.clearMenu?.destroy();
+    this.menus.drawingMenu?.destroy();
+    this.menus.clearMenu?.destroy();
     this.cancelTextPrompt?.();
     this.selectionToolbar?.destroy();
     if (this.selectionToolbarFrame !== null) cancelAnimationFrame(this.selectionToolbarFrame);
-    this.chartMenu?.destroy();
-    this.legendMenu?.destroy();
+    this.menus.chartMenu?.destroy();
+    this.legend.legendMenu?.destroy();
     for (const menu of this.hostMenus) menu.destroy();
     this.hostMenus.clear();
     this.templatePrompt?.destroy();
@@ -2479,153 +2463,6 @@ export class ChartWidget {
     });
   }
 
-  /** The menu of a right-clicked drawing; the chart has selected it (and its group) by now. */
-  private openDrawingMenu(id: string, x: number, y: number): void {
-    if (!this.drawingMenu || !this.featureState['menu.drawing']) return;
-    const drawings = new Map(this.chart.getDrawings().map((d) => [d.id, d]));
-    const selected = this.chart.getSelectedDrawingIds().flatMap((sid) => {
-      const d = drawings.get(sid);
-      return d ? [{ id: d.id, locked: d.locked, groupId: d.group?.id ?? null }] : [];
-    });
-    if (selected.length === 0) return;
-    const entries = filterMenuEntries(drawingMenuEntries({
-      selected,
-      canConfigure: true,
-      canAlert: this.chart.canAddDrawingAlert(id),
-    }, this.t), DRAWING_MENU_FEATURES, this.featureState);
-    const ids = selected.map((d) => d.id);
-    const drawing = drawings.get(id);
-    const extra = drawing ? this.options.drawingMenuItems?.({ id, type: drawing.type, selected: ids }) ?? [] : [];
-    const all = withHostItems(entries, extra);
-    if (all.length === 0) return;
-    const chartRect = this.chartContainer.getBoundingClientRect();
-    const rootRect = this.root.getBoundingClientRect();
-    this.drawingMenu.open(all, chartRect.left - rootRect.left + x, chartRect.top - rootRect.top + y, (action) => {
-      if (!pickHostItem(action, extra)) this.runDrawingMenuAction(id, ids, action as DrawingMenuAction);
-    });
-  }
-
-  private runDrawingMenuAction(id: string, ids: readonly string[], action: DrawingMenuAction): void {
-    switch (action) {
-      case 'settings':
-        this.openDrawingSettings(id);
-        return;
-      case 'alert':
-        this.alerting.addDrawingAlert(id);
-        return;
-      case 'front':
-      case 'forward':
-      case 'backward':
-      case 'back':
-        this.chart.moveDrawing(id, action);
-        break;
-      case 'group':
-        this.chart.groupDrawings(ids);
-        break;
-      case 'ungroup': {
-        const groups = new Set(this.chart.getDrawings().filter((d) => ids.includes(d.id)).map((d) => d.group?.id));
-        for (const group of groups) if (group) this.chart.ungroupDrawings(group);
-        break;
-      }
-      case 'lock':
-      case 'unlock':
-        this.chart.setDrawingsLocked(ids, action === 'lock');
-        break;
-      case 'hide':
-        this.chart.setDrawingsVisible(ids, false);
-        break;
-      case 'duplicate':
-        this.chart.duplicateDrawing(id);
-        break;
-      case 'delete': {
-        const editing = this.drawingSettings?.editing();
-        if (editing && ids.includes(editing)) this.drawingSettings?.close(true);
-        this.chart.removeDrawings(ids);
-        break;
-      }
-    }
-    if (this.objectTree?.isOpen()) this.refreshObjects();
-  }
-
-  /** What the chart's menus can offer here, and how the chart is set now. */
-  private chartMenuContext(price: number | undefined): ChartMenuContext {
-    const drawings = this.chart.getDrawings();
-    const data = this.chart.getData();
-    const s = this.settingsState;
-    const features = this.chart.getFeatures();
-    return {
-      price,
-      lastPrice: data.length > 0 ? data[data.length - 1].close : null,
-      formatPrice: (p) => this.formatAlertPrice(p),
-      canAlert: this.alerting.alertsPanel !== null,
-      canTrade: this.options.trading !== false,
-      canOrderTicket: this.trading.orderTicket !== null,
-      canDraw: true,
-      hasDrawings: drawings.length > 0,
-      drawingsHidden: drawings.length > 0 && drawings.every((d) => !d.visible),
-      canPaste: this.chart.canPasteDrawings(),
-      hasIndicators: features.indicators !== false && this.removableIndicators().length > 0,
-      canGoToDate: true,
-      canExport: this.canExport,
-      autoScale: this.chart.isAutoScale(),
-      scaleMode: this.effectiveScaleMode(),
-      canLog: features.logScale !== false,
-      inverted: this.chart.isInvertScale(),
-      leftScale: s.leftPriceScale,
-      labels: { values: s.indicatorValueLabels, aligned: s.alignAxisLabels, ...(features.barCountdown !== false ? { countdown: s.barCountdown } : {}) },
-      lines: { highLow: s.highLowLines, lastPrice: this.chart.getStyleValue('lastPrice.visible') !== false },
-      timezone: { current: s.timezone, options: this.timezoneChoices() },
-      keys: Object.fromEntries(CHART_MENU_KEYS
-        .filter((k) => this.featureState.hotkeys && this.featureState[k.feature])
-        .map((k) => [k.action, k.keys])),
-    };
-  }
-
-  /** The indicators "Remove indicators" takes away: a comparison with another symbol stays, as it has a dialog of its own. */
-  private removableIndicators(): string[] {
-    return this.chart.getActiveIndicators().filter((ind) => !SYMBOL_INDICATOR_IDS.has(ind.id)).map((ind) => ind.instanceId);
-  }
-
-  /**
-   * The exchange's zone, offered when the chart knows one (the symbol's, or
-   * its market's) or the adapter can name the symbol's; its zone is null
-   * while unknown.
-   */
-  private exchangeChoice(): { label: string; zone: string | null } | undefined {
-    const zone = this.chart.getExchangeTimeZone() ?? null;
-    if (zone === null && !this.adapter?.resolveSymbol) return undefined;
-    return { label: this.t('settings.timezone.exchange'), zone };
-  }
-
-  /** The time zones on offer, the exchange's among them when there is one. */
-  private timezoneChoices(): { value: string; label: string }[] {
-    return timezoneOptions(this.settingsState.timezone, Date.now(), this.t('settings.timezone.local'), this.exchangeChoice())
-      .map(({ value, label }) => ({ value, label }));
-  }
-
-  /**
-   * Open a chart menu at (x, y) in the chart's pixels, the host's own entries
-   * last; nothing when it has no entries.
-   */
-  private openChartMenu(
-    entries: import('./WidgetContextMenu.js').ContextMenuEntry[],
-    x: number,
-    y: number,
-    context: import('./types.js').ChartMenuItemsContext,
-  ): void {
-    if (!this.chartMenu) return;
-    const extra = this.options.chartMenuItems?.(context) ?? [];
-    const all = withHostItems(entries, extra);
-    if (all.length === 0) return;
-    const chartRect = this.chartContainer.getBoundingClientRect();
-    const rootRect = this.root.getBoundingClientRect();
-    this.chartMenu.open(all, chartRect.left - rootRect.left + x, chartRect.top - rootRect.top + y, (action) => {
-      if (pickHostItem(action, extra)) return;
-      if (action.startsWith(TIMEZONE_ENTRY)) this.changeSettings({ timezone: action.slice(TIMEZONE_ENTRY.length) });
-      else this.runChartMenuAction(action as ChartMenuAction, context);
-    });
-  }
-
   // --- Feature switches ---
 
   /**
@@ -2643,7 +2480,7 @@ export class ChartWidget {
     if (changed('selectionToolbar')) this.updateSelectionToolbar();
     if (changed('indicatorLegend')) {
       this.chart.setPaneTitlesVisible(!this.featureState.indicatorLegend);
-      this.scheduleLegend();
+      this.legend.scheduleLegend();
     }
     if (changed('menu.priceAxisAdd')) {
       this.chart.setFeatures({ priceAxisAddButton: this.priceAxisAddDefault && this.featureState['menu.priceAxisAdd'] });
@@ -2695,11 +2532,11 @@ export class ChartWidget {
       ['compare', () => {
         if (this.symbolSearch?.isComparing()) this.symbolSearch.close();
       }],
-      ['menu.chart', () => this.chartMenu?.close()],
-      ['menu.priceAxisAdd', () => this.chartMenu?.close()],
-      ['menu.drawing', () => this.drawingMenu?.close()],
-      ['indicatorLegend', () => this.legendMenu?.close()],
-      ['indicatorLegend.more', () => this.legendMenu?.close()],
+      ['menu.chart', () => this.menus.chartMenu?.close()],
+      ['menu.priceAxisAdd', () => this.menus.chartMenu?.close()],
+      ['menu.drawing', () => this.menus.drawingMenu?.close()],
+      ['indicatorLegend', () => this.legend.legendMenu?.close()],
+      ['indicatorLegend.more', () => this.legend.legendMenu?.close()],
     ];
     for (const [name, close] of closers) if (turnedOff(name)) close();
   }
@@ -2917,105 +2754,6 @@ export class ChartWidget {
       }
       default: return null;
     }
-  }
-
-  private runChartMenuAction(action: ChartMenuAction, context: import('./types.js').ChartMenuItemsContext): void {
-    const { price } = context;
-    const at = price ?? NaN;
-    const s = this.settingsState;
-    const mode = scaleModeOf(action);
-    if (mode) {
-      this.changeSettings({ scaleMode: mode });
-      return;
-    }
-    switch (action) {
-      case 'alert':
-        this.chart.addAlert(at, 'crossing');
-        this.say(fill(this.t('chartMenu.alertAdded'), { price: this.formatAlertPrice(at) }));
-        break;
-      case 'buyLimit':
-      case 'sellLimit':
-      case 'buyStop':
-      case 'sellStop':
-        this.trading.placeOrderAt(action, at);
-        break;
-      case 'orderTicket':
-        this.trading.openOrderTicket(price);
-        break;
-      case 'exportData':
-        // Every bar loaded, with the indicator lines, named after the symbol and interval.
-        this.chart.exportAllData('csv', `${this.state.symbol}-${this.state.timeframe}.csv`.replace(/[^\w.-]+/g, '_'));
-        break;
-      case 'paneLog':
-      case 'paneInvert':
-      case 'panePercent': {
-        const pane = this.menuPane;
-        if (!pane) break;
-        const scale = this.chart.getPaneScale(pane);
-        this.chart.setPaneScale(pane, action === 'paneLog' ? { log: !scale.log }
-          : action === 'paneInvert' ? { invert: !scale.invert } : { percent: !scale.percent });
-        break;
-      }
-      case 'horizontalLine': {
-        const data = this.chart.getData();
-        if (data.length > 0) this.chart.addDrawing({ type: 'horizontalLine', anchors: [{ time: data[data.length - 1].time, price: at }] });
-        break;
-      }
-      case 'resetView':
-        this.resetView();
-        break;
-      case 'resetPriceScale':
-        this.changeSettings({ autoScale: true });
-        break;
-      case 'paste':
-        this.chart.pasteDrawings();
-        break;
-      case 'removeIndicators':
-        this.chart.removeIndicators(this.removableIndicators());
-        break;
-      case 'hideDrawings':
-        this.chart.setDrawingsVisible(this.chart.getDrawings().map((d) => d.id), false);
-        break;
-      case 'showDrawings':
-        this.chart.setDrawingsVisible(this.chart.getDrawings().map((d) => d.id), true);
-        break;
-      case 'removeDrawings':
-        // One undo step; locked drawings stay.
-        this.chart.removeDrawings(this.chart.getDrawings().map((d) => d.id));
-        break;
-      case 'settings':
-        // From the price axis, its tab.
-        this.openSettings(context.area === 'priceAxis' ? 'scales' : undefined);
-        break;
-      case 'autoScale':
-        this.changeSettings({ autoScale: !this.chart.isAutoScale() });
-        break;
-      case 'invertScale':
-        this.changeSettings({ invertScale: !this.chart.isInvertScale() });
-        break;
-      case 'leftScale':
-        this.changeSettings({ leftPriceScale: !s.leftPriceScale });
-        break;
-      case 'indicatorValueLabels':
-        this.changeSettings({ indicatorValueLabels: !s.indicatorValueLabels });
-        break;
-      case 'alignAxisLabels':
-        this.changeSettings({ alignAxisLabels: !s.alignAxisLabels });
-        break;
-      case 'barCountdown':
-        this.changeSettings({ barCountdown: !s.barCountdown });
-        break;
-      case 'highLowLines':
-        this.changeSettings({ highLowLines: !s.highLowLines });
-        break;
-      case 'lastPriceLine':
-        this.changeStyle({ 'lastPrice.visible': this.chart.getStyleValue('lastPrice.visible') === false });
-        break;
-      case 'goToDate':
-        this.toggleGoToDate();
-        break;
-    }
-    if (this.objectTree?.isOpen()) this.refreshObjects();
   }
 
   /** Open or close the account panel (no argument: the other way from now). */
@@ -3909,96 +3647,6 @@ export class ChartWidget {
     this.chart.removeIndicator(instanceId);
   }
 
-  private toggleCommandPalette(): void {
-    if (this.commandPalette?.isOpen()) {
-      this.commandPalette.close();
-      return;
-    }
-    if (this.cancelWaiting(this.commandPalettePart)) return;
-    this.whenLoaded(this.commandPalettePart, () => this.featureState.commandPalette, (palette) => {
-      if (!palette.isOpen()) palette.open(this.buildCommandItems());
-    });
-  }
-
-  private buildCommandItems(): CommandItem[] {
-    const items: CommandItem[] = [];
-
-    for (const ind of this.indicatorPickerItems()) {
-      items.push({
-        id: ind.id,
-        label: ind.name,
-        category: 'indicator',
-        active: [...this.state.activeIndicators.values()].some((a) => a.id === ind.id),
-      });
-    }
-
-    for (const ct of CHART_TYPES) {
-      items.push({
-        id: ct.value,
-        label: chartTypeLabel(ct, this.t),
-        category: 'chartType',
-        active: this.state.chartType === ct.value,
-      });
-    }
-
-    const toolKeys = toolShortcuts();
-    for (const group of localizeToolGroups(DRAWING_TOOL_GROUPS, this.t)) {
-      for (const tool of group.tools) {
-        items.push({
-          id: tool.value,
-          label: tool.label,
-          category: 'drawing',
-          shortcut: toolKeys[tool.value] ? this.keysShown('hotkeys.tools', toolKeys[tool.value]!) : undefined,
-          active: this.state.activeTool === tool.value,
-        });
-      }
-    }
-
-    for (const tf of this.timeframes) {
-      items.push({
-        id: tf,
-        label: timeframeLabel(tf),
-        category: 'timeframe',
-        active: this.state.timeframe === tf,
-      });
-    }
-
-    // The widget's own, with the keys the sheet lists for them.
-    items.push(
-      { id: 'symbolSearch', label: this.t('hotkeys.symbolSearch'), category: 'action', shortcut: this.keysShown('hotkeys.symbolSearch', `${MOD_KEY}+P`) },
-      { id: 'compare', label: this.t('compare.title'), category: 'action' },
-      { id: 'goToDate', label: this.t('hotkeys.goToDate'), category: 'action', shortcut: this.keysShown('hotkeys.goToDate', 'Alt+G') },
-      { id: 'resetView', label: this.t('chartMenu.resetView'), category: 'action', shortcut: this.keysShown('hotkeys.resetView', 'Alt+R') },
-      { id: 'invertScale', label: this.t('hotkeys.invertScale'), category: 'action', shortcut: this.keysShown('hotkeys.invertScale', 'Alt+I') },
-      { id: 'saveLayout', label: this.t('hotkeys.saveLayout'), category: 'action', shortcut: this.keysShown('hotkeys.save', `${MOD_KEY}+S`) },
-      { id: 'watchlist', label: this.t('watchlist.title'), category: 'action' },
-      { id: 'alerts', label: this.t('alerts.title'), category: 'action' },
-      { id: 'objectTree', label: this.t('objects.title'), category: 'action' },
-      { id: 'dataWindow', label: this.t('action.dataWindow'), category: 'action' },
-      { id: 'symbolInfo', label: this.t('action.symbolInfo'), category: 'action' },
-      { id: 'screenshot', label: this.t('action.screenshot'), category: 'action' },
-      { id: 'copyImage', label: this.t('action.copyImage'), category: 'action' },
-      { id: 'shareView', label: this.t('action.shareView'), category: 'action' },
-      { id: 'toggleTheme', label: this.t('action.toggleTheme'), category: 'action' },
-      { id: 'settings', label: this.t('action.settings'), category: 'action' },
-      { id: 'autoFib', label: this.t('action.autoFib'), category: 'action' },
-      { id: 'clearDrawings', label: this.t('action.clearDrawings'), category: 'action' },
-      { id: 'clearIndicators', label: this.t('clear.indicators'), category: 'action' },
-      { id: 'clearAll', label: this.t('clear.all'), category: 'action' },
-      { id: 'hotkeys', label: this.t('hotkeys.title'), category: 'action', shortcut: this.keysShown('hotkeys.help', '?') },
-    );
-
-    return items.filter((item) => item.category !== 'action' || (this.commandOn(item.id) && this.commandThere(item.id)));
-  }
-
-  /** Whether the widget has what a command works on: a watchlist, a feed to compare from, layouts to save to. */
-  private commandThere(id: string): boolean {
-    if (id === 'watchlist') return this.watching.watchlist !== null;
-    if (id === 'compare') return this.adapter !== null && this.options.chartOptions?.features?.compareSymbols !== false;
-    if (id === 'saveLayout') return this.layoutSession !== null;
-    return true;
-  }
-
   /**
    * `keys` as a command's shortcut, where they work: their switch on (and
    * what they need there), and no shortcut of the host's on them instead.
@@ -4015,107 +3663,6 @@ export class ChartWidget {
       isOn: (name) => this.sheetKeyOn(name),
       extra: this.hostHotkeys.map((h) => ({ keys: h.parsed.display, text: h.spec.label })),
     }));
-  }
-
-  /** Whether a command's switch (when it has one) is on. */
-  private commandOn(id: string): boolean {
-    const name = commandFeature(id);
-    return name === undefined || this.featureState[name];
-  }
-
-  /**
-   * The trash button's menu: the drawings, the indicators, or both, each with
-   * how many would go (locked drawings stay). Nothing to remove, no menu; a
-   * second press closes it.
-   */
-  private openClearMenu(anchor: HTMLElement): void {
-    if (WidgetContextMenu.closeAnchoredTo(anchor)) return;
-    const drawings = this.chart.getDrawings().filter((d) => !d.locked).length;
-    const indicators = this.chart.getActiveIndicators().length;
-    const entries: ContextMenuEntry[] = [];
-    if (drawings > 0) entries.push({ id: 'drawings', label: this.t('clear.drawings'), icon: 'penLine', count: drawings });
-    if (indicators > 0) entries.push({ id: 'indicators', label: this.t('clear.indicators'), icon: 'trendingUp', count: indicators });
-    if (drawings > 0 && indicators > 0) entries.push('separator', { id: 'all', label: this.t('clear.all'), icon: 'trash', danger: true });
-    if (entries.length === 0) return;
-    this.clearMenu ??= new WidgetContextMenu(this.root, this.t('drawing.clearAll'));
-    this.clearMenu.openBeside(entries, anchor, (id) => this.removeAll(id as 'drawings' | 'indicators' | 'all'));
-  }
-
-  /** Remove the drawings, the indicators or both, as one undo step, and leave any drawing tool. */
-  private removeAll(what: 'drawings' | 'indicators' | 'all'): void {
-    this.chart.removeAll(what);
-    this.state = { ...this.state, activeTool: null };
-    this.updateUI();
-    this.refreshDrawingsState();
-    this.refreshObjects();
-  }
-
-  private handleAction(id: string): void {
-    if (!this.commandOn(id)) return;
-    switch (id) {
-      case 'symbolSearch':
-        this.openSymbolSearch();
-        break;
-      case 'compare':
-        void this.comparing.handleAddCompare();
-        break;
-      case 'goToDate':
-        this.toggleGoToDate();
-        break;
-      case 'resetView':
-        this.resetView();
-        break;
-      case 'invertScale':
-        this.changeSettings({ invertScale: !this.settingsState.invertScale });
-        this.settings?.refresh(this.shownSettings());
-        break;
-      case 'saveLayout':
-        void this.saveLayout();
-        break;
-      case 'watchlist':
-      case 'alerts':
-      case 'objectTree':
-        this.openPanel(id);
-        break;
-      case 'hotkeys':
-        this.openHotkeySheet();
-        break;
-      case 'screenshot':
-        this.chart.screenshot();
-        break;
-      case 'toggleTheme':
-        this.handleToggleTheme();
-        break;
-      case 'settings':
-        this.openSettings();
-        break;
-      case 'copyImage':
-        void this.copyChartImage();
-        break;
-      case 'shareView':
-        void this.copyShareLink();
-        break;
-      case 'autoFib': {
-        const id = this.chart.autoFib();
-        this.say(id ? this.t('toast.autoFibAdded') : this.t('toast.noSwing'));
-        break;
-      }
-      case 'dataWindow':
-        this.toggleDataWindow();
-        break;
-      case 'symbolInfo':
-        this.toggleSymbolInfo();
-        break;
-      case 'clearDrawings':
-        this.removeAll('drawings');
-        break;
-      case 'clearIndicators':
-        this.removeAll('indicators');
-        break;
-      case 'clearAll':
-        this.removeAll('all');
-        break;
-    }
   }
 
   private handleDrawingTool(tool: DrawingToolType): void {
@@ -4748,7 +4295,7 @@ export class ChartWidget {
   private applySettings(patch: Partial<ChartSettingsState>, told = true): void {
     this.settingsState = { ...this.settingsState, ...patch };
     if ((Object.keys(patch) as (keyof ChartSettingsState)[]).some((key) => !NOT_IN_LAYOUT.has(key))) this.layoutSession?.changed();
-    this.scheduleLegend(); // the OHLCV legend's rows and the locale move or reword it
+    this.legend.scheduleLegend(); // the OHLCV legend's rows and the locale move or reword it
 
     if (patch.gridVisible !== undefined) this.chart.setGridVisible(patch.gridVisible);
     if (patch.volumeVisible !== undefined) this.chart.setVolumeVisible(patch.volumeVisible);
@@ -4962,136 +4509,9 @@ export class ChartWidget {
     this.updateUI();
   }
 
-  /** Redraw the on-chart indicator list on the next frame (coalesced). */
-  private scheduleLegend(): void {
-    if (!this.indicatorLegend || this.legendFrame || !this.featureState.indicatorLegend) return;
-    this.legendFrame = requestAnimationFrame(() => {
-      this.legendFrame = 0;
-      this.renderLegend();
-    });
-  }
-
-  private renderLegend(): void {
-    if (!this.indicatorLegend || this.destroyed) return;
-    const last = this.chart.getData().length - 1;
-    // On Renko, Kagi and the like the hovered index is a brick's, and the
-    // indicators are worked out on the bricks: each reads its own series there.
-    const aligned = this.chart.isTimeAligned();
-    const hover = this.legendHoverIndex;
-    const idx = hover === null ? last : Math.min(Math.max(hover, 0), last);
-    // Each pane's indicators, its own first, stacked down from its top.
-    const panes = new Map<string, { x: number; y: number; width: number; height: number; row: number }>();
-    for (const pane of this.chart.getIndicatorPanes()) {
-      (pane.instanceIds ?? [pane.instanceId]).forEach((id, row) => panes.set(id, { ...pane.rect, row }));
-    }
-    const locale = this.settingsState.numberLocale || 'en-US';
-    // The symbols compared in percent first: the lines on the price scale itself. With nothing
-    // hovered, at the chart's own latest bar (no index: on Renko and the like it is not the data's).
-    const compareValues = idx >= 0 ? this.chart.getCompareValues?.(hover === null || !aligned ? undefined : idx) ?? [] : [];
-    const compares = compareLegendRows(compareValues, locale, aligned);
-    const indicators: IndicatorLegendRow[] = this.chart.getActiveIndicators().map((ind) => {
-      const pane = panes.get(ind.instanceId) ?? null;
-      const point = indicatorPointAt(this.chart.getIndicatorOutput(ind.instanceId)?.series, hover);
-      const style = this.chart.getIndicatorStyle(ind.instanceId);
-      // Not drawn on this chart type (another symbol read by time, on bricks) or interval: no values to read off it.
-      const offChartType = ind.visible && ind.offChartType === true;
-      const offInterval = ind.visible && ind.shown === false && !offChartType;
-      const values = offInterval || offChartType ? [] : legendValues(ind.descriptor, point, style?.colors ?? [], style?.plots);
-      return {
-        instanceId: ind.instanceId,
-        label: widgetIndicatorLabel(ind, this.t),
-        visible: ind.visible,
-        offInterval,
-        offChartType,
-        values: values.map((v) => ({
-          text: this.indicatorValueText(v.value, pane === null && readsChartPrices(ind), locale),
-          color: v.color,
-        })),
-        pane: pane
-          ? {
-            x: pane.x + LEGEND_INSET,
-            // A short pane with many indicators: the last rows overlap rather than spill out.
-            y: pane.y + Math.min(PANE_ROW_TOP + pane.row * PANE_ROW_STEP, Math.max(PANE_ROW_TOP, pane.height - PANE_ROW_STEP)),
-            width: pane.width - 2 * LEGEND_INSET,
-          }
-          : null,
-      };
-    });
-    const rows = [...compares, ...indicators];
-    const plot = this.chart.getPlotRect();
-    const maximized = this.chart.getMaximizedPane();
-    const labelOf = (id: string) => rows.find((r) => r.instanceId === id)?.label ?? '';
-    // As the panes show: one maximised folds the others.
-    const paneControls: IndicatorLegendPane[] = this.chart.getIndicatorPanes().map((pane) => ({
-      instanceId: pane.instanceId,
-      x: pane.rect.x + pane.rect.width - LEGEND_INSET,
-      y: pane.rect.y + PANE_CONTROLS_TOP,
-      label: labelOf(pane.instanceId),
-      collapsed: this.chart.isPaneCollapsed(pane.instanceId),
-      maximized: maximized === pane.instanceId,
-      canMoveUp: this.chart.canMovePane(pane.instanceId, -1),
-      canMoveDown: this.chart.canMovePane(pane.instanceId, 1),
-    }));
-    this.indicatorLegend.update(rows, { left: plot.x + LEGEND_INSET, top: this.chart.getLegendBottom() + STACK_GAP }, paneControls);
-  }
-
-  /** A pane's button on the chart. */
-  private runPaneAction(instanceId: string, action: PaneAction): void {
-    if (action === 'up' || action === 'down') this.chart.movePane(instanceId, action === 'up' ? -1 : 1);
-    else if (action === 'collapse' || action === 'expand') this.chart.setPaneCollapsed(instanceId, action === 'collapse');
-    else this.chart.setMaximizedPane(action === 'maximize' ? instanceId : null);
-    this.scheduleLegend();
-  }
-
-  /**
-   * An indicator's "more" menu: into the pane above or below it (the price
-   * pane at the top), a pane of its own, back to the price pane; then its
-   * settings and remove.
-   */
-  private openLegendMenu(instanceId: string, anchor: HTMLElement): void {
-    const menu = this.legendMenu;
-    if (!menu) return;
-    if (menu.isOpen()) {
-      menu.close();
-      return;
-    }
-    // The price pane, then each indicator pane top to bottom.
-    const places = ['price', ...this.chart.getIndicatorPanes().map((p) => p.instanceId)];
-    const at = 1 + this.chart.getIndicatorPanes().findIndex((p) => p.instanceIds.includes(instanceId));
-    const above = places[at - 1];
-    const below = places[at + 1];
-    const can = (target: string | undefined) => target !== undefined && this.chart.canMoveIndicatorToPane(instanceId, target);
-    const entries: ContextMenuEntry[] = [];
-    if (can(above)) entries.push({ id: `move:${above}`, label: this.t(above === 'price' ? 'legend.movePrice' : 'legend.moveUp'), icon: 'arrowUp' });
-    if (can(below)) entries.push({ id: `move:${below}`, label: this.t('legend.moveDown'), icon: 'arrowDown' });
-    if (can('new')) entries.push({ id: 'move:new', label: this.t('legend.moveNew'), icon: 'plus' });
-    if (above !== 'price' && can('price')) entries.push({ id: 'move:price', label: this.t('legend.movePrice'), icon: 'trendingUp' });
-    // Settings and remove go with the row's own buttons.
-    const row: ContextMenuEntry[] = [];
-    if (this.featureState.indicatorSettings && this.featureState['indicatorLegend.settings']) {
-      row.push({ id: 'settings', label: this.t('legend.settings'), icon: 'settings' });
-    }
-    if (this.featureState['indicatorLegend.remove']) row.push({ id: 'remove', label: this.t('legend.remove'), icon: 'trash', danger: true });
-    if (entries.length > 0 && row.length > 0) entries.push('separator');
-    entries.push(...row);
-    const indicatorId = this.chart.getActiveIndicators().find((i) => i.instanceId === instanceId)?.id ?? '';
-    const extra = this.options.indicatorMenuItems?.({ instanceId, indicatorId }) ?? [];
-    const all = withHostItems(entries, extra);
-    if (all.length === 0) return;
-    const box = anchor.getBoundingClientRect();
-    const root = this.root.getBoundingClientRect();
-    menu.open(all, box.left - root.left, box.bottom - root.top + 2, (id) => {
-      if (pickHostItem(id, extra)) return;
-      if (id === 'settings') this.openIndicatorSettings(instanceId);
-      else if (id === 'remove') this.handleRemoveIndicator(instanceId);
-      else if (id.startsWith('move:')) this.chart.moveIndicatorToPane(instanceId, id.slice('move:'.length));
-      this.scheduleLegend();
-    }, anchor);
-  }
-
   private updateUI(): void {
     this.refreshDrawingsState();
-    this.scheduleLegend();
+    this.legend.scheduleLegend();
     this.toolbar?.update(this.state);
     this.sidebar?.update(this.state);
     this.statusBar?.update({
@@ -5143,7 +4563,7 @@ export class ChartWidget {
       refreshObjects: (...args) => w.refreshObjects(...args),
       refreshScaleSwitches: (...args) => w.refreshScaleSwitches(...args),
       say: (...args) => w.say(...args),
-      scheduleLegend: (...args) => w.scheduleLegend(...args),
+      scheduleLegend: (...args) => w.legend.scheduleLegend(...args),
       get settings() { return w.settings; },
       get settingsState() { return w.settingsState; },
       showScaleMode: (...args) => w.showScaleMode(...args),
@@ -5210,6 +4630,103 @@ export class ChartWidget {
       say: (...args) => w.say(...args),
       get state() { return w.state; },
       get t() { return w.t; },
+    };
+  }
+
+  /** What WidgetMenus reads of the widget and asks of it. */
+  private menusHost(): MenusHost {
+    // Getters, so the host reads the widget as it is when asked, not as it was now.
+    const w = this;
+    return {
+      get adapter() { return w.adapter; },
+      get alerting() { return w.alerting; },
+      get canExport() { return w.canExport; },
+      changeSettings: (...args) => w.changeSettings(...args),
+      changeStyle: (...args) => w.changeStyle(...args),
+      get chart() { return w.chart; },
+      get chartContainer() { return w.chartContainer; },
+      get drawingSettings() { return w.drawingSettings; },
+      effectiveScaleMode: (...args) => w.effectiveScaleMode(...args),
+      get featureState() { return w.featureState; },
+      formatAlertPrice: (...args) => w.formatAlertPrice(...args),
+      get objectTree() { return w.objectTree; },
+      openDrawingSettings: (...args) => w.openDrawingSettings(...args),
+      openSettings: (...args) => w.openSettings(...args),
+      get options() { return w.options; },
+      refreshDrawingsState: (...args) => w.refreshDrawingsState(...args),
+      refreshObjects: (...args) => w.refreshObjects(...args),
+      resetView: (...args) => w.resetView(...args),
+      get root() { return w.root; },
+      say: (...args) => w.say(...args),
+      get settingsState() { return w.settingsState; },
+      get state() { return w.state; },
+      set state(value) { w.state = value; },
+      get t() { return w.t; },
+      toggleGoToDate: (...args) => w.toggleGoToDate(...args),
+      get trading() { return w.trading; },
+      updateUI: (...args) => w.updateUI(...args),
+    };
+  }
+
+  /** What WidgetLegendView reads of the widget and asks of it. */
+  private legendHost(): LegendHost {
+    // Getters, so the host reads the widget as it is when asked, not as it was now.
+    const w = this;
+    return {
+      get chart() { return w.chart; },
+      get destroyed() { return w.destroyed; },
+      get featureState() { return w.featureState; },
+      handleRemoveIndicator: (...args) => w.handleRemoveIndicator(...args),
+      get indicatorLegend() { return w.indicatorLegend; },
+      indicatorValueText: (...args) => w.indicatorValueText(...args),
+      get legendHoverIndex() { return w.legendHoverIndex; },
+      openIndicatorSettings: (...args) => w.openIndicatorSettings(...args),
+      get options() { return w.options; },
+      get root() { return w.root; },
+      get settingsState() { return w.settingsState; },
+      get t() { return w.t; },
+    };
+  }
+
+  /** What WidgetCommands reads of the widget and asks of it. */
+  private commandsHost(): CommandsHost {
+    // Getters, so the host reads the widget as it is when asked, not as it was now.
+    const w = this;
+    return {
+      get adapter() { return w.adapter; },
+      cancelWaiting: (...args) => w.cancelWaiting(...args),
+      changeSettings: (...args) => w.changeSettings(...args),
+      get chart() { return w.chart; },
+      get commandPalette() { return w.commandPalette; },
+      get commandPalettePart() { return w.commandPalettePart; },
+      get comparing() { return w.comparing; },
+      copyChartImage: (...args) => w.copyChartImage(...args),
+      copyShareLink: (...args) => w.copyShareLink(...args),
+      get featureState() { return w.featureState; },
+      handleToggleTheme: (...args) => w.handleToggleTheme(...args),
+      indicatorPickerItems: (...args) => w.indicatorPickerItems(...args),
+      keysShown: (...args) => w.keysShown(...args),
+      get layoutSession() { return w.layoutSession; },
+      get menus() { return w.menus; },
+      openHotkeySheet: (...args) => w.openHotkeySheet(...args),
+      openPanel: (...args) => w.openPanel(...args),
+      openSettings: (...args) => w.openSettings(...args),
+      openSymbolSearch: (...args) => w.openSymbolSearch(...args),
+      get options() { return w.options; },
+      resetView: (...args) => w.resetView(...args),
+      saveLayout: (...args) => w.saveLayout(...args),
+      say: (...args) => w.say(...args),
+      get settings() { return w.settings; },
+      get settingsState() { return w.settingsState; },
+      shownSettings: (...args) => w.shownSettings(...args),
+      get state() { return w.state; },
+      get t() { return w.t; },
+      get timeframes() { return w.timeframes; },
+      toggleDataWindow: (...args) => w.toggleDataWindow(...args),
+      toggleGoToDate: (...args) => w.toggleGoToDate(...args),
+      toggleSymbolInfo: (...args) => w.toggleSymbolInfo(...args),
+      get watching() { return w.watching; },
+      whenLoaded: (...args) => w.whenLoaded(...args),
     };
   }
 }
@@ -5308,11 +4825,3 @@ function isRtlLocale(locale: string | undefined): boolean {
   return !!locale && /^(ar|he|iw|fa|ur|ps|yi|dv|ckb|sd|ug)(-|$)/i.test(locale);
 }
 
-/**
- * Whether an indicator's lines are in the chart's own prices, written as it
- * writes them: not another symbol's (a compare, a spread, a ratio), nor one
- * on a scale of its own on the left.
- */
-function readsChartPrices(ind: { id: string; scale?: 'left' }): boolean {
-  return !SYMBOL_INDICATOR_IDS.has(ind.id) && ind.scale !== 'left';
-}

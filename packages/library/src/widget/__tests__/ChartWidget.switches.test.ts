@@ -388,7 +388,7 @@ describe('ChartWidget keys and behaviours by switch', () => {
     expect(row('resetView')?.querySelector('kbd')?.textContent).toBe('Alt+R');
     key({ key: 'k', ctrlKey: true });
     widget.setFeatures({ hotkeys: false });
-    (widget as unknown as { toggleCommandPalette(): void }).toggleCommandPalette();
+    (widget as unknown as { commands: { toggleCommandPalette(): void } }).commands.toggleCommandPalette();
     expect(document.querySelectorAll('.tcw-cp-row kbd')).toHaveLength(0);
   });
 
@@ -463,7 +463,7 @@ describe('ChartWidget keys and behaviours by switch', () => {
 
   it('leaves switched-off commands out of the command palette', () => {
     make({ features: { settings: false, autoFib: false } });
-    const items = (widget as unknown as { buildCommandItems(): { id: string; category: string }[] }).buildCommandItems();
+    const items = (widget as unknown as { commands: { buildCommandItems(): { id: string; category: string }[] } }).commands.buildCommandItems();
     const actions = items.filter((i) => i.category === 'action').map((i) => i.id);
     expect(actions).not.toContain('settings');
     expect(actions).not.toContain('autoFib');
@@ -481,7 +481,7 @@ describe('ChartWidget keys and behaviours by switch', () => {
 
 describe('ChartWidget switches after review', () => {
   type Inner = {
-    openLegendMenu(id: string, anchor: HTMLElement): void;
+    legend: { openLegendMenu(id: string, anchor: HTMLElement): void };
     alerting: { toggleAlerts(): void; alertsPanel: { isOpen(): boolean } };
     selectTypedTimeframe(tf: string): boolean;
     say(message: string, kind?: 'info' | 'error'): void;
@@ -493,7 +493,7 @@ describe('ChartWidget switches after review', () => {
     const anchor = document.createElement('button');
     host.appendChild(anchor);
     FakeChart.last.getActiveIndicators = () => [{ instanceId: 'tc_rsi_1', id: 'rsi' }];
-    inner().openLegendMenu('tc_rsi_1', anchor);
+    inner().legend.openLegendMenu('tc_rsi_1', anchor);
     expect(menuLabels()).toEqual([]);
   });
 

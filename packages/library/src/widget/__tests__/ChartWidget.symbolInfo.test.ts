@@ -165,9 +165,9 @@ describe('ChartWidget symbol info', () => {
   });
 
   it("offers the exchange's zone as the chart resolves it, a market's too, with no adapter", () => {
-    type Choices = { timezoneChoices(): { value: string; label: string }[] };
+    type Choices = { menus: { timezoneChoices(): { value: string; label: string }[] } };
     widget = new ChartWidget(host, { symbol: 'VNM', symbols: ['VNM'] });
-    const exchange = () => (widget as unknown as Choices).timezoneChoices().find((c) => c.value === 'exchange');
+    const exchange = () => (widget as unknown as Choices).menus.timezoneChoices().find((c) => c.value === 'exchange');
     expect(exchange()).toBeUndefined();
     FakeChart.exchangeZone = 'Asia/Ho_Chi_Minh';
     expect(exchange()?.label).toBe('Exchange (UTC+7)');
