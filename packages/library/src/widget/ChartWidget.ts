@@ -1,4 +1,4 @@
-import type { ChartType, DataAdapter, DataUpdatePayload, DrawingToolType, FeaturesConfig, HistoryLoadPayload, OHLCBar, PriceScaleMode, Quote, QuoteSource, SymbolInfo, Theme, TimeFrame, TimeZoneSetting } from '@tradecanvas/commons';
+import type { ChartType, DataUpdatePayload, DrawingToolType, FeaturesConfig, HistoryLoadPayload, OHLCBar, PriceScaleMode, Quote, QuoteSource, SymbolInfo, Theme, TimeFrame, TimeZoneSetting } from '@tradecanvas/commons';
 import { barTimeUnit, marketStatus, offsetAt, readQuote, stepDecimals, tickBarCount, timeframeFollowsDays, tzLabel } from '@tradecanvas/commons';
 import { settingToTimezone, timezoneOptions, timezoneToSetting } from './widgetTimezones.js';
 import { installFormControls } from './formControls.js';
@@ -77,12 +77,12 @@ import { LazyPart, type Lazy, type ModuleRef } from './lazyPart.js';
 import { DIALOGS, preloadDialogs } from './widgetDialogs.js';
 import { utcToWallTime, wallTimeToUtc } from './wallTime.js';
 import { WidgetDock } from './WidgetDock.js';
-import { barsBefore, comparedEntries, compareWayOptions, isCompareWay, withOlderBars, type CompareWay, type PercentCompare } from './widgetCompare.js';
+import { type CompareWay } from './widgetCompare.js';
 import { WidgetTooltip } from './WidgetTooltip.js';
 import { WidgetIndicatorLegend, type IndicatorLegendPane, type IndicatorLegendRow, type PaneAction } from './WidgetIndicatorLegend.js';
 import { formatIndicatorValue, indicatorPointAt, legendValues } from './legendValues.js';
 import { compareLegendRows } from './compareLegend.js';
-import { RANGE_PRESETS, SYMBOL_INDICATOR_IDS, adapterFromFeed, indicatorCategory, rangePresetStart, servesTimeframe, sourceParam, withResampling, type RangePreset } from '@tradecanvas/core';
+import { RANGE_PRESETS, SYMBOL_INDICATOR_IDS, adapterFromFeed, indicatorCategory, rangePresetStart, servesTimeframe, sourceParam, type RangePreset } from '@tradecanvas/core';
 import { WidgetBracketBar } from './WidgetBracketBar.js';
 import { AlertNotifier } from './AlertNotifier.js';
 import { WidgetDepthLadder } from './WidgetDepthLadder.js';
@@ -100,6 +100,7 @@ import { WidgetHistoryPill } from './WidgetHistoryPill.js';
 import { pickHostItem, withHostItems } from './hostMenus.js';
 import { isChartKey, matchesHotkey, parseHotkey, typedIntoField, type ParsedHotkey } from './hostHotkeys.js';
 import { CHART_STYLE_KEYS, type ChartStyleKey } from '@tradecanvas/commons';
+import { WidgetCompares, type ComparesHost } from './WidgetCompares.js';
 import {
   markPart,
   commandFeature,
@@ -152,14 +153,6 @@ function afterPaint(): Promise<void> {
     }, 0));
   });
 }
-
-/**
- * Distinct line colours for comparison overlays, cycled by add order. Each
- * keeps 3:1 on both the dark ink and the light paper, as the palette's marks
- * do, and the first is none of the indicators' first colours (the blue of a
- * first EMA, a drawing and an alert).
- */
-const COMPARE_COLORS = ['#b552c9', '#1398a8', '#d4622b', '#e25592', '#6f7a8c', '#3e9a4f'];
 
 /** A day: bars this long or longer have no time of day to go to. */
 const DAY_MS = 86_400_000;
@@ -238,8 +231,6 @@ const LOOK_KEYS: readonly ChartStyleKey[] = SETTINGS_LOOK_KEYS.filter((key) => C
 
 /** The widget pressed last: with several on a page, Alt+ shortcuts act on that one. */
 
-
-
 /** Whether the page is hidden: another tab, the app in the background. */
 const pageHidden = (): boolean => typeof document !== 'undefined' && document.hidden;
 
@@ -257,6 +248,8 @@ function withFeedAdapter(options: ChartWidgetOptions): ChartWidgetOptions {
 }
 
 export class ChartWidget {
+  /** Other symbols compared with the chart's: their bars, the compare dialog, the scale they hold. */
+  private readonly comparing = new WidgetCompares(this.comparingHost());
   private chart: Chart;
   private state: WidgetState;
   /** The theme for each mode: the host's own where it gave one, so the toggle brings it back. */
@@ -519,24 +512,6 @@ export class ChartWidget {
   private rangeSeq = 0;
   /** Ranges apply one at a time, each reading the bars the last one brought. */
   private rangeQueue: Promise<void> = Promise.resolve();
-  private compares: PercentCompare[] = [];
-  /** How the compare dialog adds a symbol: the way picked last. */
-  private compareWay: CompareWay = 'percent';
-  /** Symbols whose bars are on the way to be compared in percent. */
-  private readonly comparesLoading = new Set<string>();
-  /**
-   * Set by the first percent compare, cleared when the last one goes or the
-   * user picks a scale meanwhile: while set, a regular price scale reads in
-   * percent, as the compare lines do (`effectiveScaleMode`). Never saved.
-   */
-  private compareScaleHeld = false;
-  /** The latest round of percent compare fetches: an older round's answers are dropped. */
-  private compareFetchSeq = 0;
-  /** The percent compares' older stretches are on their way; `compareOlderAgain`: more pages came meanwhile. */
-  private compareOlderBusy = false;
-  private compareOlderAgain = false;
-  /** Older bars asked no stretch of a compare whose bars were still at another interval: a round once they come. */
-  private compareOlderPassed = false;
   /** Every switch, on or off (see `setFeatures`). */
   private featureState: WidgetFeatureState;
   /** The host's own shortcuts, first added first. */
@@ -674,7 +649,6 @@ export class ChartWidget {
       connectionMessage: options.adapter ? this.t('status.connecting') : '',
     };
 
-
     // 1. Inject styles
     injectWidgetStyles();
 
@@ -758,7 +732,7 @@ export class ChartWidget {
         onBracket: options.trading !== false ? (side) => this.startBracket(side) : undefined,
         onToggleLadder: options.trading !== false && options.depthLadder ? () => this.toggleLadder() : undefined,
         onOrderTicket: options.trading !== false ? () => this.openOrderTicket() : undefined,
-        onCompare: options.adapter && features.compareSymbols !== false ? () => this.handleAddCompare() : undefined,
+        onCompare: options.adapter && features.compareSymbols !== false ? () => this.comparing.handleAddCompare() : undefined,
         onUndo: () => this.chart.undo(),
         onRedo: () => this.chart.redo(),
         onToggleFullscreen: typeof document !== 'undefined' && document.fullscreenEnabled
@@ -894,7 +868,7 @@ export class ChartWidget {
       const payload = e.payload as HistoryLoadPayload;
       this.historyPill.update(payload);
       // Older bars in: the percent compares as deep, so their lines start where the chart does.
-      if (payload.state === 'loaded') void this.extendPercentCompares();
+      if (payload.state === 'loaded') void this.comparing.extendPercentCompares();
     });
     this.chart.on('symbolInfoChange', () => {
       this.refreshSymbolTitle();
@@ -1070,8 +1044,8 @@ export class ChartWidget {
         if (this.featureState['indicatorLegend.settings']) this.openIndicatorSettings(iid);
       },
       onRemove: (iid, kind) => {
-        if (this.isPercentCompare(iid)) this.handleRemoveCompare(iid);
-        else if (kind === 'compare') this.removeHostCompare(iid);
+        if (this.comparing.isPercentCompare(iid)) this.comparing.handleRemoveCompare(iid);
+        else if (kind === 'compare') this.comparing.removeHostCompare(iid);
         else this.handleRemoveIndicator(iid);
       },
       onMore: (iid, anchor) => this.openLegendMenu(iid, anchor),
@@ -1122,7 +1096,7 @@ export class ChartWidget {
     }
     // Whoever changes the chart type: percent compares hold the scale only where their lines are drawn.
     this.chart.on('chartTypeChange', () => {
-      if (this.compareScaleHeld) this.showHeldScale();
+      if (this.comparing.compareScaleHeld) this.comparing.showHeldScale();
       this.scheduleLegend();
     });
 
@@ -1321,7 +1295,7 @@ export class ChartWidget {
     // by the price axis: what to do at its price.
     this.chartMenu = new WidgetContextMenu(this.root, this.t('chartMenu.label'), this.t('common.back'));
     // Indicators that read another symbol (a compare on its own scale, a spread) ask for its bars.
-    this.chart.on('symbolSeriesRequest', (e) => void this.loadSymbolSeries(e.payload.symbol));
+    this.chart.on('symbolSeriesRequest', (e) => void this.comparing.loadSymbolSeries(e.payload.symbol));
     // Prices from the pointer go on the market's grid (its smallest step).
     this.chart.on('chartContextMenu', (e) => {
       if (!this.featureState['menu.chart']) return;
@@ -1551,8 +1525,8 @@ export class ChartWidget {
         this.chart.moveDrawing(id, index);
         this.refreshObjects();
       },
-      onAddCompare: features.compareSymbols !== false ? () => this.handleAddCompare() : undefined,
-      onRemoveCompare: (id) => this.removeCompared(id),
+      onAddCompare: features.compareSymbols !== false ? () => this.comparing.handleAddCompare() : undefined,
+      onRemoveCompare: (id) => this.comparing.removeCompared(id),
     }, this.t);
     const refresh = () => { if (this.objectTree?.isOpen()) this.refreshObjects(); };
     // A drawing changes many times a second while its settings are edited
@@ -1575,7 +1549,7 @@ export class ChartWidget {
     this.chart.on('indicatorChange', refresh);
     // Compared symbols that are indicators come and go in the compare dialog's list.
     for (const event of ['indicatorAdd', 'indicatorRemove', 'indicatorChange'] as const) {
-      this.chart.on(event, () => this.refreshCompareDialog());
+      this.chart.on(event, () => this.comparing.refreshCompareDialog());
     }
 
     // Every panel made: into the dock, in the rail's order.
@@ -4025,41 +3999,8 @@ export class ChartWidget {
       group: d.group,
     }));
     // Every compare, as the compare dialog lists it: the percent lines and the indicators on another symbol.
-    const compares = this.comparedNow().map((c) => ({ id: c.id, label: c.symbol, color: c.color, way: c.way }));
+    const compares = this.comparing.comparedNow().map((c) => ({ id: c.id, label: c.symbol, color: c.color, way: c.way }));
     this.objectTree.setObjects(indicators, drawings, compares);
-  }
-
-  private async handleAddCompare(): Promise<void> {
-    if (!this.featureState.compare) return;
-    if (!this.adapter) {
-      this.say(this.t('toast.compareNeedsAdapter'), 'error');
-      return;
-    }
-    this.withSymbolSearch(() => this.featureState.compare, (search) => search.openCompare({
-      symbols: this.symbolEntries(),
-      current: this.state.symbol,
-      search: this.symbolSearchFn(),
-      ways: compareWayOptions(this.t),
-      way: this.compareWay,
-      compared: this.comparedNow(),
-      onAdd: (symbol, way) => {
-        if (!isCompareWay(way)) return;
-        this.compareWay = way;
-        void this.addCompareSymbol(symbol, way);
-      },
-      onRemove: (id) => this.removeCompared(id),
-    }));
-  }
-
-  /** What is compared with the chart's symbol now, as the compare dialog lists it. */
-  private comparedNow(): ReturnType<typeof comparedEntries> {
-    const ownPanes = new Set(this.chart.getIndicatorPanes().flatMap((p) => p.instanceIds));
-    return comparedEntries(this.compares, this.chart.getActiveIndicators(), ownPanes, this.t);
-  }
-
-  /** The compare dialog's list, after something was compared or taken off. */
-  private refreshCompareDialog(): void {
-    if (this.symbolSearch?.isComparing()) this.symbolSearch.setCompared(this.comparedNow());
   }
 
   /**
@@ -4072,134 +4013,7 @@ export class ChartWidget {
    * no bars at the chart's interval, nothing is added and a toast says why.
    */
   async addCompareSymbol(symbol: string, way: CompareWay = 'percent'): Promise<void> {
-    if (!this.adapter) {
-      this.say(this.t('toast.compareNeedsAdapter'), 'error');
-      return;
-    }
-    if (way !== 'percent') {
-      await this.addCompareIndicator(this.adapter, symbol, way);
-      return;
-    }
-    // The chart takes no compare lines: none to list, nor a scale to hold for them.
-    if (this.chart.getFeatures()?.compareSymbols === false) return;
-    // On the chart already, or its bars on the way (picked twice in a row).
-    if (this.compares.some((c) => c.symbol === symbol) || this.comparesLoading.has(symbol)) return;
-    const id = `cmp_${symbol}`;
-    this.comparesLoading.add(symbol);
-    try {
-      const bars = await this.fetchCompareBars(this.adapter, symbol);
-      if (!bars || this.compares.some((c) => c.symbol === symbol)) return;
-      // They come at the interval on screen.
-      const timeframe = this.state.timeframe;
-      const color = COMPARE_COLORS[this.compares.length % COMPARE_COLORS.length];
-      // Each line is its symbol's change from the first bar on screen, so
-      // symbols of any price (BTC beside a $2 coin) read on one percent scale.
-      if (this.compares.length === 0) this.chart.setCompareMode('percent');
-      this.chart.addCompareSymbol(id, symbol, bars, color);
-      this.compares = [...this.compares, { id, symbol, color, bars, timeframe }];
-      if (this.compares.length === 1) this.holdCompareScale(true);
-      this.scheduleLegend();
-      this.refreshObjects();
-      this.refreshCompareDialog();
-      this.say(fill(this.t('toast.comparing'), { symbol }));
-    } finally {
-      this.comparesLoading.delete(symbol);
-    }
-  }
-
-  /**
-   * A compare that is an indicator (on its own scale or pane, a spread, a
-   * correlation), its bars first, as the percent way does. A symbol the feed
-   * can't serve at this interval then adds nothing, rather than an empty
-   * line that stays in the chart's saves. The bars go to the chart before
-   * the indicator, so it finds them there and asks for none.
-   */
-  private async addCompareIndicator(adapter: DataAdapter, symbol: string, way: Exclude<CompareWay, 'percent'>): Promise<void> {
-    const bars = await this.fetchCompareBars(adapter, symbol);
-    if (!bars) return;
-    this.chart.setSymbolSeries(symbol, bars);
-    // The pane way is an indicator of its own: a price-pane line can't open a pane.
-    if (way === 'scale') this.chart.addIndicator('compareSymbol', { symbol }, 'bottom', { scale: 'left' });
-    else if (way === 'pane') this.chart.addIndicator('compareSymbolPane', { symbol });
-    else if (way === 'correlation') this.chart.addIndicator('correlation', { symbol });
-    else if (way === 'correlationLog') this.chart.addIndicator('correlationlog', { symbol });
-    else this.chart.addIndicator('spread', { symbol, mode: way });
-  }
-
-  /**
-   * The other symbol's bars at the chart's interval, for a compare about to
-   * be added: fetched again when the interval changed while they loaded, so
-   * they are checked, and added, at the one on screen. Null, with a toast,
-   * when they fail or there are none.
-   */
-  private async fetchCompareBars(adapter: DataAdapter, symbol: string): Promise<OHLCBar[] | null> {
-    for (;;) {
-      const timeframe = this.state.timeframe;
-      let bars: OHLCBar[] | null = null;
-      let failure: unknown = null;
-      try {
-        bars = await withResampling(adapter).fetchHistory(symbol, timeframe, this.compareDepth());
-      } catch (err: unknown) {
-        failure = err;
-      }
-      if (this.destroyed) return null;
-      // Another interval picked meanwhile: its bars instead. Only a pick made during a fetch asks again.
-      if (timeframe !== this.state.timeframe) continue;
-      if (bars && bars.length > 0) return bars;
-      // An empty answer is no failure: the feed has no bars of it at this interval, and another may have some.
-      if (failure === null) this.say(fill(this.t('toast.compareNoBars'), { symbol, interval: timeframeLabel(timeframe) }), 'error');
-      else this.sayCompareFailed(symbol, failure);
-      return null;
-    }
-  }
-
-  /** The other symbol's bars didn't come: the adapter's reason, or that they failed. */
-  private sayCompareFailed(symbol: string, err?: unknown): void {
-    this.say(`${symbol}: ${err instanceof Error ? err.message : this.t('toast.loadFailed')}`, 'error');
-  }
-
-  /** Take a compare off, an overlay or an indicator, as the compare dialog and Objects do. */
-  private removeCompared(id: string): void {
-    if (this.compares.some((c) => c.id === id)) this.handleRemoveCompare(id);
-    else this.chart.removeIndicator(id);
-  }
-
-  private handleRemoveCompare(id: string): void {
-    this.chart.removeCompareSymbol(id);
-    this.compares = this.compares.filter((c) => c.id !== id);
-    if (this.compares.length === 0) this.holdCompareScale(false);
-    this.scheduleLegend();
-    this.refreshObjects();
-    this.refreshCompareDialog();
-  }
-
-  /** A compare line the host added on the chart itself: the widget holds no scale nor list for it. */
-  private removeHostCompare(id: string): void {
-    this.chart.removeCompareSymbol(id);
-    this.scheduleLegend();
-  }
-
-  /** `id` is a symbol compared in percent (a line, not an indicator). */
-  private isPercentCompare(id: string): boolean {
-    return this.compares.some((c) => c.id === id);
-  }
-
-  /**
-   * How many bars of another symbol to fetch: as many as the chart has (it
-   * may have paged older ones in), so a compare starts where the chart does.
-   */
-  private compareDepth(): number {
-    return Math.max(this.chart.getData().length, this.options.historyLimit ?? 500);
-  }
-
-  /**
-   * Percent compares hold a regular price scale in percent: the user's has
-   * not been picked meanwhile, and the chart draws their lines (Renko, Kagi
-   * and the like draw none).
-   */
-  private holdsPercentScale(): boolean {
-    return this.compareScaleHeld && this.compares.length > 0 && this.settingsState.scaleMode === 'regular'
-      && this.chart.isTimeAligned();
+    return this.comparing.addCompareSymbol(symbol, way);
   }
 
   /**
@@ -4208,12 +4022,12 @@ export class ChartWidget {
    * log scale draws the compare lines true, and the other two read them right.
    */
   private effectiveScaleMode(): PriceScaleMode {
-    return this.holdsPercentScale() ? 'percentage' : this.settingsState.scaleMode;
+    return this.comparing.holdsPercentScale() ? 'percentage' : this.settingsState.scaleMode;
   }
 
   /** The scale the user picked, for a shared link, a layout and the settings: never the percent a compare holds. */
   private userScaleMode(): PriceScaleMode {
-    return this.holdsPercentScale() ? this.settingsState.scaleMode : this.chart.getScaleMode();
+    return this.comparing.holdsPercentScale() ? this.settingsState.scaleMode : this.chart.getScaleMode();
   }
 
   /** The settings as the dialog shows them: the scale on screen. */
@@ -4225,171 +4039,6 @@ export class ChartWidget {
   private showScaleMode(): void {
     const mode = this.effectiveScaleMode();
     if (this.chart.getScaleMode() !== mode) this.chart.setScaleMode(mode);
-  }
-
-  /** The first percent compare holds the scale in percent; the last one gone lets it go. */
-  private holdCompareScale(held: boolean): void {
-    if (held === this.compareScaleHeld) return;
-    this.compareScaleHeld = held;
-    this.showHeldScale();
-  }
-
-  /** The scale a hold of percent compares puts on screen, in the status bar and in the settings. */
-  private showHeldScale(): void {
-    this.showScaleMode();
-    this.refreshScaleSwitches();
-    this.settings?.refresh(this.shownSettings());
-  }
-
-  /**
-   * Bars of a symbol the chart's indicators read (a compare on its own
-   * scale, a spread), at the chart's interval. A later interval wins.
-   */
-  private async loadSymbolSeries(symbol: string): Promise<void> {
-    if (!this.adapter) {
-      this.say(this.t('toast.compareNeedsAdapter'), 'error');
-      return;
-    }
-    const timeframe = this.state.timeframe;
-    const seq = (this.symbolLoads.get(symbol) ?? 0) + 1;
-    this.symbolLoads.set(symbol, seq);
-    // Only the latest fetch of a symbol, at the interval on screen, answers.
-    const stale = () => this.destroyed || timeframe !== this.state.timeframe || this.symbolLoads.get(symbol) !== seq;
-    try {
-      const bars = await withResampling(this.adapter).fetchHistory(symbol, timeframe, this.compareDepth());
-      if (stale()) return;
-      this.chart.setSymbolSeries(symbol, bars);
-    } catch (err: unknown) {
-      if (stale()) return;
-      // Keep what the chart had; an indicator on the symbol may ask again.
-      this.chart.setSymbolSeries(symbol, this.chart.getSymbolSeries(symbol));
-      this.sayCompareFailed(symbol, err);
-    }
-  }
-
-  /** Refetch every comparison overlay at the current symbol/timeframe. */
-  private async refetchCompares(): Promise<void> {
-    // The symbols indicators read, at the new interval.
-    for (const symbol of this.chart.getRequiredSymbols?.() ?? []) void this.loadSymbolSeries(symbol);
-    if (!this.adapter || this.compares.length === 0) return;
-    // A comparison against the now-active symbol is redundant — drop it.
-    const stale = this.compares.filter((c) => c.symbol === this.state.symbol);
-    for (const c of stale) this.handleRemoveCompare(c.id);
-    await this.refetchPercentCompares();
-  }
-
-  /** Each percent compare's bars again, as deep as the chart's, at its interval. The latest round wins. */
-  private async refetchPercentCompares(): Promise<void> {
-    if (!this.adapter || this.compares.length === 0) return;
-    const seq = ++this.compareFetchSeq;
-    const adapter = withResampling(this.adapter);
-    // Each one's bars are on their way again.
-    this.compares = this.compares.map((x) => ({ ...x, failedAt: undefined }));
-    for (const c of this.compares) {
-      const timeframe = this.state.timeframe;
-      try {
-        const bars = await adapter.fetchHistory(c.symbol, timeframe, this.compareDepth());
-        if (this.destroyed || seq !== this.compareFetchSeq) return;
-        if (this.isPercentCompare(c.id)) this.setCompareBars(c.id, bars, timeframe);
-      } catch {
-        // The stale overlay stays, and no older stretch waits for bars that aren't coming.
-        if (!this.destroyed && seq === this.compareFetchSeq) this.compareFailedAt(c.id, timeframe);
-      }
-    }
-    // Older bars that loaded meanwhile were fetched only as deep as the chart was before them.
-    if (this.compareOlderPassed) {
-      this.compareOlderPassed = false;
-      void this.extendPercentCompares();
-    }
-  }
-
-  /**
-   * Older bars in: each percent compare's older stretch, so its line starts
-   * where the chart does. One round at a time: pages that load meanwhile
-   * get one more round, for what is missing by then.
-   */
-  private async extendPercentCompares(): Promise<void> {
-    if (this.compareOlderBusy) {
-      this.compareOlderAgain = true;
-      return;
-    }
-    this.compareOlderBusy = true;
-    try {
-      do {
-        this.compareOlderAgain = false;
-        await this.fetchOlderCompares();
-      } while (this.compareOlderAgain && !this.destroyed);
-    } finally {
-      this.compareOlderBusy = false;
-    }
-  }
-
-  /**
-   * Each percent compare's bars before its first, as many as the chart has
-   * before it; from a feed that can't page back, its bars again, as deep as
-   * the chart's. A round of full fetches meanwhile (a new interval) drops them.
-   */
-  private async fetchOlderCompares(): Promise<void> {
-    if (!this.adapter || this.compares.length === 0) return;
-    const adapter = withResampling(this.adapter);
-    const seq = this.compareFetchSeq;
-    const timeframe = this.state.timeframe;
-    for (const c of this.compares) {
-      // Its bars still at the interval before: older ones at this interval would mix two in one line.
-      // A round follows once they come, unless they failed to.
-      if (c.timeframe !== timeframe) {
-        if (c.failedAt !== timeframe) this.compareOlderPassed = true;
-        continue;
-      }
-      const first = c.bars[0]?.time;
-      if (first === undefined || c.atStart) continue;
-      const missing = barsBefore(this.chart.getData(), first);
-      if (missing === 0) continue;
-      try {
-        if (adapter.fetchHistoryBefore) {
-          const older = await adapter.fetchHistoryBefore(c.symbol, timeframe, first, missing);
-          if (this.destroyed || seq !== this.compareFetchSeq) return;
-          this.prependCompareBars(c.id, older, timeframe);
-        } else {
-          const depth = this.compareDepth();
-          const bars = await adapter.fetchHistory(c.symbol, timeframe, depth);
-          if (this.destroyed || seq !== this.compareFetchSeq) return;
-          this.deepenCompareBars(c.id, bars, depth, first, timeframe);
-        }
-      } catch { /* the line keeps the bars it has; the next page asks again */ }
-    }
-  }
-
-  /**
-   * A percent compare's bars fetched again `depth` deep, from a feed that
-   * can't page back. Fewer than asked, or none older than `first`: the
-   * feed's history starts there, and no page asks again.
-   */
-  private deepenCompareBars(id: string, bars: OHLCBar[], depth: number, first: number, timeframe: TimeFrame): void {
-    if (!this.isPercentCompare(id)) return;
-    this.setCompareBars(id, bars, timeframe);
-    const atStart = bars.length < depth || !(bars[0].time < first);
-    if (atStart) this.compares = this.compares.map((x) => (x.id === id ? { ...x, atStart: true } : x));
-  }
-
-  /** A percent compare's older bars in front of its own; none older: the feed's history starts there. */
-  private prependCompareBars(id: string, older: readonly OHLCBar[], timeframe: TimeFrame): void {
-    const c = this.compares.find((x) => x.id === id);
-    if (!c) return;
-    const bars = withOlderBars(c.bars, older);
-    if (bars) this.setCompareBars(id, bars, timeframe);
-    else this.compares = this.compares.map((x) => (x.id === id ? { ...x, atStart: true } : x));
-  }
-
-  /** A percent compare's line on new bars at `timeframe`, which may reach further back again. */
-  private setCompareBars(id: string, bars: OHLCBar[], timeframe: TimeFrame): void {
-    this.chart.updateCompareData(id, bars);
-    this.compares = this.compares.map((x) => (x.id === id ? { ...x, bars, timeframe, atStart: false, failedAt: undefined } : x));
-  }
-
-  /** A percent compare's bars at `timeframe` didn't come: it keeps the ones it has. */
-  private compareFailedAt(id: string, timeframe: TimeFrame): void {
-    this.compares = this.compares.map((x) => (x.id === id ? { ...x, failedAt: timeframe } : x));
   }
 
   private refreshAlerts(): void {
@@ -4704,7 +4353,7 @@ export class ChartWidget {
         this.openSymbolSearch();
         break;
       case 'compare':
-        void this.handleAddCompare();
+        void this.comparing.handleAddCompare();
         break;
       case 'goToDate':
         this.toggleGoToDate();
@@ -4816,7 +4465,7 @@ export class ChartWidget {
     // nobody, and Cancel, or an OK that changes nothing, must not tell them now.
     this.markSettingsTold();
     this.settingsEdit = {
-      settings: { ...this.settingsState }, style: this.settingsStyle(), keys: new Set(), styleKeys: new Set(), held: this.compareScaleHeld,
+      settings: { ...this.settingsState }, style: this.settingsStyle(), keys: new Set(), styleKeys: new Set(), held: this.comparing.compareScaleHeld,
     };
     dialog.open(this.shownSettings(), this.state.chartType, tab);
   }
@@ -4874,7 +4523,7 @@ export class ChartWidget {
       : null;
     // A scale picked in the settings let a compare's hold go: Cancel and an undo give it back.
     const scale = edit.keys.has('scaleMode');
-    const heldAfter = this.compareScaleHeld;
+    const heldAfter = this.comparing.compareScaleHeld;
     if (!keep) {
       // Put back as they were, which tells nobody: they are as last told.
       this.restoreSettings(before, beforeStyle, scale ? edit.held : undefined);
@@ -5505,12 +5154,12 @@ export class ChartWidget {
     this.touchSettings(keys);
     const before = pick();
     const scale = keys.includes('scaleMode');
-    const heldBefore = this.compareScaleHeld;
+    const heldBefore = this.comparing.compareScaleHeld;
     // A scale the user picks while comparing is theirs, the last compare gone too.
-    if (scale) this.compareScaleHeld = false;
+    if (scale) this.comparing.compareScaleHeld = false;
     this.applySettings(patch);
     const after = pick();
-    if (this.settingsEdit || (JSON.stringify(before) === JSON.stringify(after) && heldBefore === this.compareScaleHeld)) return;
+    if (this.settingsEdit || (JSON.stringify(before) === JSON.stringify(after) && heldBefore === this.comparing.compareScaleHeld)) return;
     // Undone, a pick made while comparing gives the percent scale back.
     this.chart.recordUndo({
       subject: `settings:${Object.keys(patch).sort().join(',')}`,
@@ -5537,7 +5186,7 @@ export class ChartWidget {
    * they're open; `held` puts back whether percent compares held the scale.
    */
   private restoreSettings(values: Partial<ChartSettingsState>, style: { theme: string; overrides: SettingsStylePatch } | null = null, held?: boolean): void {
-    if (held !== undefined) this.compareScaleHeld = held && this.compares.length > 0;
+    if (held !== undefined) this.comparing.compareScaleHeld = held && this.comparing.compares.length > 0;
     this.applySettings(values);
     // The look picked on another theme stays with that theme.
     if (style && style.theme === (this.chart.getTheme()?.name ?? '')) {
@@ -5595,7 +5244,7 @@ export class ChartWidget {
       // Re-pull comparison overlays at the (possibly new) timeframe so they
       // stay aligned with the main series. Drop the active symbol if it ended
       // up in the compare set after a symbol switch.
-      void this.refetchCompares();
+      void this.comparing.refetchCompares();
     } catch (err: unknown) {
       if (seq !== this.connectSeq || this.destroyed) return;
       this.loading.fail(this.t('status.connectionFailed'));
@@ -5775,6 +5424,34 @@ export class ChartWidget {
       return (r + g + b) < 384;
     }
     return true;
+  }
+
+  /** What WidgetCompares reads of the widget and asks of it. */
+  private comparingHost(): ComparesHost {
+    // Getters, so the host reads the widget as it is when asked, not as it was now.
+    const w = this;
+    return {
+      get adapter() { return w.adapter; },
+      get chart() { return w.chart; },
+      get destroyed() { return w.destroyed; },
+      get featureState() { return w.featureState; },
+      get options() { return w.options; },
+      refreshObjects: (...args) => w.refreshObjects(...args),
+      refreshScaleSwitches: (...args) => w.refreshScaleSwitches(...args),
+      say: (...args) => w.say(...args),
+      scheduleLegend: (...args) => w.scheduleLegend(...args),
+      get settings() { return w.settings; },
+      get settingsState() { return w.settingsState; },
+      showScaleMode: (...args) => w.showScaleMode(...args),
+      shownSettings: (...args) => w.shownSettings(...args),
+      get state() { return w.state; },
+      symbolEntries: (...args) => w.symbolEntries(...args),
+      get symbolLoads() { return w.symbolLoads; },
+      get symbolSearch() { return w.symbolSearch; },
+      symbolSearchFn: (...args) => w.symbolSearchFn(...args),
+      get t() { return w.t; },
+      withSymbolSearch: (...args) => w.withSymbolSearch(...args),
+    };
   }
 }
 
