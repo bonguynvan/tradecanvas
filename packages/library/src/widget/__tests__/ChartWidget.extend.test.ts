@@ -1213,11 +1213,34 @@ describe('ChartWidget look', () => {
     expect(FakeChart.last.shapes.at(-1)).toEqual({ tagRadius: 999 });
   });
 
+  // The 10 px slot showed about 168 bars across a 1920 px screen; φ⁴ ≈ 6.85 shows about 250.
+  it('opens the chart with golden bars in every look, and the classic 2 px gap only when compact', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false });
+    expect(FakeChart.last.barLayouts.at(-1)).toBe('golden');
+    widget.setUI({ density: 'compact' });
+    expect(FakeChart.last.barLayouts.at(-1)).toBe('classic');
+    for (const preset of ['studio', 'terminal', 'capsule', 'desk'] as const) {
+      widget.setUI(preset);
+      expect(FakeChart.last.barLayouts.at(-1), preset).toBe('golden');
+    }
+    widget.setUI({ preset: 'terminal', density: 'spacious' });
+    expect(FakeChart.last.barLayouts.at(-1)).toBe('golden');
+  });
+
+  it('leaves the bars chartOptions.barLayout gives, in the default look and in compact', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false, chartOptions: { barLayout: 'classic' } });
+    widget.setUI('studio');
+    expect(FakeChart.last.barLayouts).toEqual([]);
+    widget.destroy();
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false, ui: { density: 'compact' }, chartOptions: { barLayout: 'golden' } });
+    expect(FakeChart.last.barLayouts).toEqual([]);
+  });
+
   it('gives the chart golden bars and sans figures in the airy look, and takes them back', () => {
     widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false, ui: { density: 'airy' } });
     expect(FakeChart.last.barLayouts.at(-1)).toBe('golden');
     expect(FakeChart.last.fonts.at(-1)).toEqual({ family: SANS_FONT_FAMILY });
-    widget.setUI('terminal');
+    widget.setUI({ preset: 'terminal', density: 'compact' });
     expect(FakeChart.last.barLayouts.at(-1)).toBe('classic');
     expect(FakeChart.last.fonts.at(-1)).toEqual({ family: widget.getUI().font.mono });
   });

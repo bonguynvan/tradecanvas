@@ -128,11 +128,12 @@ export interface WidgetUIShadows {
 }
 
 /**
- * How roomy the look is: its controls' sizes, and for `'airy'` the chart too.
- * `'airy'` is spacious controls, the figures (legend, axes) in the look's
- * sans face and golden bars (the body φ⁻¹ of its slot), the look 2.0 opens
- * with; `chartOptions.barLayout` and a `chartOptions.font.family` win over
- * it, and sizes alone in `chartOptions.font` keep the look's face.
+ * How roomy the look is: its controls' sizes, and the chart's bars. The
+ * chart opens with golden bars (the body φ⁻¹ of its slot), except when
+ * `'compact'`, which keeps the classic 2 px gap. `'airy'` is spacious
+ * controls with the figures (legend, axes) in the look's sans face too.
+ * `chartOptions.barLayout` and a `chartOptions.font.family` win over it, and
+ * sizes alone in `chartOptions.font` keep the look's face.
  */
 export type WidgetUIDensity = 'compact' | 'comfortable' | 'spacious' | 'airy';
 
@@ -171,7 +172,7 @@ export interface WidgetUITheme {
   /**
    * Control sizes at once: compact, comfortable (the preset's) or spacious;
    * `sizes` win over it. `'airy'`: spacious, with the chart's figures in the
-   * sans face and golden bars (see `WidgetUIDensity`).
+   * sans face. Compact also keeps the chart's classic bars (see `WidgetUIDensity`).
    */
   density?: WidgetUIDensity;
   sizes?: Partial<WidgetUISizes>;

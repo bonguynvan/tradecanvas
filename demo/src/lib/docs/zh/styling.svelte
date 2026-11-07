@@ -56,8 +56,9 @@ grid.getUI()`}</code></pre>
 
 <h2>疏朗的外观</h2>
 <p>
-  <code>density: 'airy'</code> 让图表打开时屏幕上的 K 线更多、彼此之间留有空隙：在任何缩放下，K 线实体都是所在格子的
-  φ⁻¹（62%），图表打开时每格 φ⁴ ≈ 6.85 px（<code>barLayout: 'golden'</code>）。控件更宽松，坐标轴和图例中的数字使用外观的无衬线字体。
+  组件打开图表时屏幕上的 K 线更多、彼此之间留有空隙：在任何缩放下，K 线实体都是所在格子的 φ⁻¹（62%），图表打开时每格
+  φ⁴ ≈ 6.85 px（<code>barLayout: 'golden'</code>），1920 px 宽的屏幕上约 250 根。<code>density: 'compact'</code>
+  保留经典 K 线，10 px 格子中留 2 px 间隙。<code>density: 'airy'</code> 再加上更宽松的控件，坐标轴和图例中的数字使用外观的无衬线字体。
   这就是 2.0 默认打开的外观。
 </p>
 <pre><code>{`new ChartWidget(host, { ui: { density: 'airy' } })

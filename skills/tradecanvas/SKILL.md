@@ -342,8 +342,8 @@ and call no `onSettingsChange` listener.
 The chart's own text (axes, tags, crosshair pills) over any theme: `font: { family: SANS_FONT_FAMILY, sizeSmall: 12 }`
 or `chart.setFont(...)` (`null`: the theme's); the legend takes the face at its own size (`chart.setLegend({ fontSize })`),
 and in the widget its face and size come from `ui.font`. Bars: `barLayout: 'golden'` (body φ⁻¹ of the slot, more bars on
-screen) or `'classic'` (the default, a 2 px gap); `chart.setBarLayout`. The widget's
-`ui: { density: 'airy' }` turns on golden bars, sans figures and spacious controls together.
+screen) or `'classic'` (a `Chart`'s default, a 2 px gap); `chart.setBarLayout`. The widget opens
+with golden bars, but `ui: { density: 'compact' }` keeps classic ones; `'airy'` adds sans figures and spacious controls.
 The legend's rows sit on a see-through ground (`setLegend({ ground: false })`
 leaves it out; the widget's indicator rows: the CSS variable `--tcw-legend-ground`).
 

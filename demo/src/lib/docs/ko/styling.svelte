@@ -60,9 +60,10 @@ grid.getUI()`}</code></pre>
 
 <h2>여유로운 외관</h2>
 <p>
-  <code>density: 'airy'</code>는 화면에 더 많은 봉을 띄우고 그 사이에 여백을 두어 차트를 엽니다. 어떤 확대 수준에서도 캔들 몸통은
-  칸의 φ⁻¹(62%)이고, 차트는 칸당 φ⁴ ≈ 6.85 px로 열립니다(<code>barLayout: 'golden'</code>). 컨트롤은 넉넉해지고, 축과 범례의
-  숫자는 외관의 산세리프 글꼴을 씁니다. 2.0이 처음 열 외관입니다.
+  위젯은 화면에 더 많은 봉을 띄우고 그 사이에 여백을 두어 차트를 엽니다. 어떤 확대 수준에서도 캔들 몸통은 칸의
+  φ⁻¹(62%)이고, 차트는 칸당 φ⁴ ≈ 6.85 px로 열립니다(<code>barLayout: 'golden'</code>). 너비 1920 px 화면에서 약
+  250개입니다. <code>density: 'compact'</code>는 기존 봉(10 px 칸에 2 px 간격)을 유지합니다. <code>density: 'airy'</code>는
+  컨트롤을 넉넉하게 하고, 축과 범례의 숫자에 외관의 산세리프 글꼴을 씁니다. 2.0이 처음 열 외관입니다.
 </p>
 <pre><code>{`new ChartWidget(host, { ui: { density: 'airy' } })
 

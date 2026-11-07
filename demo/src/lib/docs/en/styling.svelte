@@ -61,10 +61,11 @@ grid.getUI()`}</code></pre>
 
 <h2>An airy look</h2>
 <p>
-  <code>density: 'airy'</code> opens the chart with more bars on screen and air between them: a candle's body is
-  the slot × φ⁻¹ (62%) at every zoom, and the chart opens at φ⁴ ≈ 6.85 px a slot (<code>barLayout: 'golden'</code>).
-  The controls are spacious, and the figures on the axes and in the legend are in the look's sans face. It is the
-  look 2.0 will open with.
+  The widget opens the chart with more bars on screen and air between them: a candle's body is the slot × φ⁻¹
+  (62%) at every zoom, and the chart opens at φ⁴ ≈ 6.85 px a slot (<code>barLayout: 'golden'</code>), about 250 bars
+  across a 1920 px screen. <code>density: 'compact'</code> keeps the classic bars, a 2 px gap in a 10 px slot.
+  <code>density: 'airy'</code> adds spacious controls, with the figures on the axes and in the legend in the look's
+  sans face. It is the look 2.0 will open with.
 </p>
 <pre><code>{`new ChartWidget(host, { ui: { density: 'airy' } })
 
