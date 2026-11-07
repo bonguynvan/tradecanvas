@@ -25,8 +25,8 @@
   display: inline-grid;
   place-items: center;
   flex: none;
-  width: var(--tcw-control-h);
-  height: var(--tcw-control-h);
+  width: var(--tcw-tool-size);
+  height: var(--tcw-tool-size);
   padding: 0;
   border: none;
   border-radius: var(--tcw-control-radius);
@@ -37,8 +37,8 @@
 }
 
 .tcw-dock-btn svg {
-  width: var(--tcw-icon);
-  height: var(--tcw-icon);
+  width: var(--tcw-tool-icon-size);
+  height: var(--tcw-tool-icon-size);
 }
 
 .tcw-dock-btn:hover {

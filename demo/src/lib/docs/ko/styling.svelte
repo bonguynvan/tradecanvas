@@ -85,7 +85,7 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
 <table>
   <thead><tr><th>대상</th><th>규칙</th><th>값(px)</th></tr></thead>
   <tbody>
-    <tr><td>크기</td><td>아이콘에서 시작해 φ의 반 단계씩: 아이콘, 그 작은 버튼, 그 버튼, 메뉴 행, 바.</td><td>16 · 20 · 26 · 33 · 42</td></tr>
+    <tr><td>크기</td><td>아이콘에서 시작해 φ의 반 단계씩: 아이콘, 그 작은 버튼, 그 버튼, 메뉴 행, 바, 그리기 도구 열. 그리기 도구는 다른 버튼보다 반 단계 큽니다: 버튼 33, 아이콘 20.</td><td>16 · 20 · 26 · 33 · 42 · 53</td></tr>
     <tr><td>간격</td><td>피보나치 수. 각 수가 앞의 두 수의 합이라, 이웃한 두 수는 거의 φ배 차이가 납니다.</td><td>2 · 3 · 5 · 8 · 13 · 21 · 34</td></tr>
     <tr><td>모서리</td><td>
       역시 피보나치 수. 안쪽 모서리는 바깥 모서리에서 그 사이의 여백을 뺀 값이라 곡선이 나란히 이어집니다. 메뉴의 5는
@@ -152,7 +152,10 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
     <tr><td><code>density</code> / <code>sizes</code></td><td>
       <code>toolbar</code> 높이, <code>control</code>과 <code>controlSmall</code> 높이, <code>icon</code>,
       <code>sidebar</code> 너비, <code>menuItem</code> 높이, 단위 px. <code>compact</code>와 <code>spacious</code>는
-      Print의 크기를 φ의 반 단계 내리거나 올린 것입니다.
+      Print의 크기를 φ의 반 단계 내리거나 올린 것입니다. 그리기 도구의 버튼과 아이콘은
+      <code>control</code>과 <code>icon</code>보다 φ의 반 단계 큽니다(<code>compact</code>에서는 같음).
+      <code>sidebar</code> 열의 양쪽에서 6 px 안쪽에 놓이며, 열이 낮아 모두 들어가지 않으면 스크롤하기 전에
+      <code>control</code> 크기까지 작아집니다.
     </td></tr>
     <tr><td><code>font</code></td><td>
       글꼴 패밀리(CSS 목록), 본문 <code>size</code>(11–20 px; 다른 크기는 φ의 3분의 1 단계 간격으로 이를 따름), 굵기, 그리고 섹션 제목 같은 작은 라벨의

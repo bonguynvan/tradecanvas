@@ -91,7 +91,7 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
 <table>
   <thead><tr><th>Qué</th><th>Regla</th><th>Valores (px)</th></tr></thead>
   <tbody>
-    <tr><td>Tamaños</td><td>Medios pasos de φ desde el icono: un icono, su botón pequeño, su botón, una fila de menú, la barra.</td><td>16 · 20 · 26 · 33 · 42</td></tr>
+    <tr><td>Tamaños</td><td>Medios pasos de φ desde el icono: un icono, su botón pequeño, su botón, una fila de menú, la barra, la columna de herramientas de dibujo. Las herramientas de dibujo van medio paso por encima de los demás botones: un botón de 33 y un icono de 20.</td><td>16 · 20 · 26 · 33 · 42 · 53</td></tr>
     <tr><td>Espaciado</td><td>Números de Fibonacci, cada uno la suma de los dos anteriores, así que dos vecinos guardan una razón cercana a φ.</td><td>2 · 3 · 5 · 8 · 13 · 21 · 34</td></tr>
     <tr><td>Esquinas</td><td>
       También números de Fibonacci. Una esquina anidada es la que la rodea menos el relleno que hay entre ambas, así las
@@ -159,7 +159,10 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
     <tr><td><code>density</code> / <code>sizes</code></td><td>
       Alto de <code>toolbar</code>, alto de <code>control</code> y <code>controlSmall</code>, <code>icon</code>,
       ancho de <code>sidebar</code> y alto de <code>menuItem</code>, en px. <code>compact</code> y
-      <code>spacious</code> son los tamaños de Print medio paso de φ más abajo o más arriba.
+      <code>spacious</code> son los tamaños de Print medio paso de φ más abajo o más arriba. Los botones e iconos de las
+      herramientas de dibujo van medio paso de φ por encima de <code>control</code> e <code>icon</code> (iguales en
+      <code>compact</code>). Quedan a 6 px de cada lado de la columna <code>sidebar</code> y, si la columna es demasiado
+      baja para todas, se encogen, hasta <code>control</code>, antes de que la columna se desplace.
     </td></tr>
     <tr><td><code>font</code></td><td>
       Familias (listas CSS), <code>size</code> del texto base (11–20 px; los demás tamaños lo siguen, separados un tercio de paso de φ), pesos, y las mayúsculas y

@@ -85,7 +85,7 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
 <table>
   <thead><tr><th>対象</th><th>規則</th><th>値（px）</th></tr></thead>
   <tbody>
-    <tr><td>サイズ</td><td>アイコンから φ の半段ずつ：アイコン、その小さいボタン、そのボタン、メニューの行、バー。</td><td>16 · 20 · 26 · 33 · 42</td></tr>
+    <tr><td>サイズ</td><td>アイコンから φ の半段ずつ：アイコン、その小さいボタン、そのボタン、メニューの行、バー、描画ツールの列。描画ツールは他のボタンより半段大きく、ボタン 33・アイコン 20。</td><td>16 · 20 · 26 · 33 · 42 · 53</td></tr>
     <tr><td>余白</td><td>フィボナッチ数。どれも前の 2 つの和なので、隣どうしはほぼ φ 倍の関係になります。</td><td>2 · 3 · 5 · 8 · 13 · 21 · 34</td></tr>
     <tr><td>角</td><td>
       これもフィボナッチ数。内側の角は外側の角から間の余白を引いた値なので、曲線が平行に走ります。メニューの 5 は、
@@ -152,7 +152,10 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
     <tr><td><code>density</code> / <code>sizes</code></td><td>
       <code>toolbar</code> の高さ、<code>control</code> と <code>controlSmall</code> の高さ、<code>icon</code>、
       <code>sidebar</code> の幅、<code>menuItem</code> の高さ（px）。<code>compact</code> と <code>spacious</code> は、
-      Print のサイズを φ の半段だけ下げたものと上げたものです。
+      Print のサイズを φ の半段だけ下げたものと上げたものです。描画ツールのボタンとアイコンは
+      <code>control</code> と <code>icon</code> より φ の半段大きくなります（<code>compact</code> では同じ）。
+      <code>sidebar</code> の列の両端から 6 px 内側に収まり、列が低くて全部入らないときは、スクロールする前に
+      <code>control</code> まで小さくなります。
     </td></tr>
     <tr><td><code>font</code></td><td>
       フォントファミリー（CSS のリスト）、本文の <code>size</code>（11–20 px。ほかのサイズは φ の 3 分の 1 段ずつ離れてこれに連動）、ウェイト、そしてセクション

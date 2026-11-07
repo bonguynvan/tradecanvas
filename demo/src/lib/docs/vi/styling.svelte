@@ -87,7 +87,7 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
 <table>
   <thead><tr><th>Phần</th><th>Quy tắc</th><th>Giá trị (px)</th></tr></thead>
   <tbody>
-    <tr><td>Kích thước</td><td>Các nửa bậc φ tính từ biểu tượng: một biểu tượng, nút nhỏ của nó, nút của nó, một dòng menu, thanh công cụ.</td><td>16 · 20 · 26 · 33 · 42</td></tr>
+    <tr><td>Kích thước</td><td>Các nửa bậc φ tính từ biểu tượng: một biểu tượng, nút nhỏ của nó, nút của nó, một dòng menu, thanh công cụ, cột công cụ vẽ. Các công cụ vẽ to hơn các nút khác nửa bậc: nút 33, biểu tượng 20.</td><td>16 · 20 · 26 · 33 · 42 · 53</td></tr>
     <tr><td>Khoảng cách</td><td>Các số Fibonacci, mỗi số là tổng của hai số trước, nên hai số kề nhau cách nhau gần φ lần.</td><td>2 · 3 · 5 · 8 · 13 · 21 · 34</td></tr>
     <tr><td>Góc bo</td><td>
       Cũng là các số Fibonacci. Góc lồng bên trong bằng góc bao quanh nó trừ đi phần đệm ở giữa, nên các đường cong
@@ -154,7 +154,10 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
     <tr><td><code>density</code> / <code>sizes</code></td><td>
       Chiều cao <code>toolbar</code>, chiều cao <code>control</code> và <code>controlSmall</code>, <code>icon</code>,
       độ rộng <code>sidebar</code> và chiều cao <code>menuItem</code>, tính bằng px. <code>compact</code> và
-      <code>spacious</code> là các kích thước của Print, dời xuống hoặc lên nửa bậc φ.
+      <code>spacious</code> là các kích thước của Print, dời xuống hoặc lên nửa bậc φ. Nút và biểu tượng của công cụ vẽ
+      lớn hơn <code>control</code> và <code>icon</code> nửa bậc φ (bằng nhau ở <code>compact</code>). Chúng cách mỗi
+      bên cột <code>sidebar</code> 6 px, và khi cột quá thấp để chứa hết thì chúng nhỏ lại, tới cỡ <code>control</code>,
+      trước khi cột phải cuộn.
     </td></tr>
     <tr><td><code>font</code></td><td>
       Họ font (danh sách CSS), <code>size</code> của chữ thân (11–20 px; các cỡ khác đi theo nó, cách nhau một phần ba bậc φ), độ đậm, cùng kiểu chữ hoa/thường
