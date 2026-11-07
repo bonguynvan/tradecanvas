@@ -188,6 +188,11 @@ describe('the symbol search', () => {
     expect(blocks(dialogs, '.tcw-modal.tcw-ss')[0]).toMatch(/width:\s*min\(987px, max\(610px, 38\.2vw\)\);/);
   });
 
+  // 'XYZ · HYPERLIQUID' showed 'XYZ · HYPERLI…' in an 89 px column beside a short name with room.
+  it('lets an exchange take its width up to 144, the name giving way first', () => {
+    expect(blocks(dialogs, '.tcw-ss-results')[0]).toContain('minmax(0, 1fr) fit-content(89px) fit-content(144px) auto;');
+  });
+
   it('gives the symbol column up to 233 as the dialog grows, and a clear gap before the name', () => {
     expect(blocks(dialogs, '.tcw-ss-results')[0]).toMatch(/grid-template-columns:\s*max-content fit-content\(clamp\(144px, 25%, 233px\)\) minmax\(0, 1fr\)/);
     expect(blocks(dialogs, '.tcw-modal.tcw-ss').join('')).toMatch(/--tcw-ss-name-gap:\s*var\(--tcw-space-4\);/);

@@ -753,11 +753,11 @@
 
 /* What scrolls is one grid, and the heads, the list and each row are its subgrids, so a column is
    as wide in every row: the badge, the symbol up to a quarter of the list (144 at 610, 233 in a wide
-   dialog, the next Fibonacci number), the name the rest, the kind and the exchange up to 89 each,
-   the check. An empty cell keeps its column. */
+   dialog, the next Fibonacci number), the name the rest, the kind up to 89, the exchange up to 144
+   ('XYZ · HYPERLIQUID' whole), the check. An empty cell keeps its column. */
 .tcw-ss-results {
   display: grid;
-  grid-template-columns: max-content fit-content(clamp(144px, 25%, 233px)) minmax(0, 1fr) fit-content(89px) fit-content(89px) auto;
+  grid-template-columns: max-content fit-content(clamp(144px, 25%, 233px)) minmax(0, 1fr) fit-content(89px) fit-content(144px) auto;
   align-content: start;
   column-gap: var(--tcw-space-4);
   flex: 1;
