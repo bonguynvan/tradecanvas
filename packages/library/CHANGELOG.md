@@ -1,5 +1,19 @@
 # @tradecanvas/chart
 
+## 1.73.0
+
+### Minor Changes
+
+- 5ac707a: The drawing tools are a size bigger. Their buttons and icons are a half step of φ over the widget's other buttons: in the Print look a 33 px button with a 20 px icon, in a 53 px column (it was 26 and 16 in 42). The dock's rail matches the column. Where the column is too short for every tool, the buttons shrink back, down to the other buttons' size, before it scrolls. A tool group's menu opens at the column's edge, with no gap a slow pointer could fall into on its way. `density: 'compact'` keeps them at the other buttons' size. The cursor's icon is no longer drawn two pixels smaller than the others.
+- 51e3a07: The widget opens the chart with more bars on screen: golden bars, the body φ⁻¹ of its slot at every zoom, opening at φ⁴ ≈ 6.85 px a slot. That is about 250 bars across a 1920 px screen, from about 170. `ui: { density: 'compact' }` keeps the classic bars, a 2 px gap in a 10 px slot, and `chartOptions.barLayout` still wins over the look. A `Chart` of your own keeps `'classic'` as its default.
+
+### Patch Changes
+
+- 91a8abe: The dialogs' search fields (symbol search, indicators, command palette, keyboard shortcuts, layouts) are a band across the dialog with a rule under it: no box and no ring when focused, the typed text a size larger. A dialog's close is sized from its title, and a search field's clear button is the widget's own quiet icon instead of the browser's.
+- b42037e: The symbol search grows with a wide screen: 610 px up to a 1597 px screen, then 38.2% of it, up to 987 px. Its symbol column takes up to a quarter of the list (144 to 233 px), so ids with a venue before the ticker show whole, and a symbol keeps a clear gap before its description.
+  - @tradecanvas/commons@1.73.0
+  - @tradecanvas/core@1.73.0
+
 ## 1.72.2
 
 ### Patch Changes
