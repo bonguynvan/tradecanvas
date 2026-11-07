@@ -586,9 +586,11 @@
 
 /* === The symbol search, and the same dialog comparing === */
 
-/* As wide and as still as the indicators dialog: 610, a fixed height while a search shortens the list. */
+/* As still as the indicators dialog: a fixed height while a search shortens the list. As wide as it,
+   610, up to a screen 1597 wide; past that a phi share of the screen (1 / phi^2), up to 987, the next
+   Fibonacci number: about 733 at 1920, 978 at 2560, room for ids with a venue before the ticker. */
 .tcw-modal.tcw-ss {
-  width: 610px;
+  width: min(987px, max(610px, 38.2vw));
   height: min(610px, 86vh);
   height: min(610px, 86dvh);
   max-height: none;
@@ -616,9 +618,15 @@
   padding-block: 0;
 }
 
-/* The heads' height, which the rows scroll in below. */
+/* The heads' height, which the rows scroll in below; the room after a symbol before its name. */
 .tcw-modal.tcw-ss {
   --tcw-ss-head-h: var(--tcw-control-h);
+  --tcw-ss-name-gap: var(--tcw-space-4);
+}
+
+[dir='rtl'] .tcw-ss-symbol {
+  padding-right: 0;
+  padding-left: var(--tcw-ss-name-gap);
 }
 
 /* Over the list: the kinds the rows come in, and their exchanges once there are two. The exchanges sit
@@ -714,11 +722,12 @@
 }
 
 /* What scrolls is one grid, and the heads, the list and each row are its subgrids, so a column is
-   as wide in every row: the badge, the symbol up to 144 (89 x phi), the name the rest, the kind and
-   the exchange up to 89 each, the check. An empty cell keeps its column. */
+   as wide in every row: the badge, the symbol up to a quarter of the list (144 at 610, 233 in a wide
+   dialog, the next Fibonacci number), the name the rest, the kind and the exchange up to 89 each,
+   the check. An empty cell keeps its column. */
 .tcw-ss-results {
   display: grid;
-  grid-template-columns: max-content fit-content(144px) minmax(0, 1fr) fit-content(89px) fit-content(89px) auto;
+  grid-template-columns: max-content fit-content(clamp(144px, 25%, 233px)) minmax(0, 1fr) fit-content(89px) fit-content(89px) auto;
   align-content: start;
   column-gap: var(--tcw-space-4);
   flex: 1;
@@ -824,13 +833,16 @@ img.tcw-ss-badge {
 }
 
 /* The figures of a ticker, in the mono face, left to right in any widget, at the start of its column;
-   the chart's own in ink. */
+   the chart's own in ink. Padding on the name's side, counted in the column, keeps the longest id a
+   gap twice the columns' from the name ("BINANCE:BTCUSDT" ran into "BTC perpetual"). The cell is
+   left to right itself, so the side is named, not its end. */
 .tcw-ss-symbol {
   grid-column: 2;
   display: flex;
   justify-self: start;
   max-width: 100%;
   min-width: 0;
+  padding-right: var(--tcw-ss-name-gap);
   overflow: hidden;
   color: var(--tcw-text);
   font-family: var(--tcw-font-mono);
@@ -1114,6 +1126,8 @@ img.tcw-ss-badge {
     /* Above the on-screen keyboard: the sheet's top stays on the screen. */
     height: calc(92vh - var(--tcw-keyboard-inset, 0px));
     height: calc(92dvh - var(--tcw-keyboard-inset, 0px));
+    /* The column's room goes to the ticker; the columns' own gap is enough here. */
+    --tcw-ss-name-gap: 0px;
   }
 
   .tcw-ss-way,

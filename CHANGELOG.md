@@ -4,6 +4,15 @@
 
 ### Widget
 
+- **The symbol search grows with a wide screen** (`@tradecanvas/chart`).
+  - It is 610 px wide up to a 1597 px screen, then 38.2% of the screen, up to 987 px: about 733 px at 1920, 978 px at 2560.
+  - Its symbol column takes up to a quarter of the list, from 144 px to 233 px, so ids with a venue before the ticker (`HYPERLIQUID:xyz:SP500`) show whole on a wide screen.
+  - A symbol keeps a gap twice the columns' from its description (`BINANCE:BTCUSDT` ran into its name). On a phone the column keeps that room for the ticker, as before.
+
+## 1.72.2
+
+### Widget
+
 - **The open Chart Settings follow every change** (`@tradecanvas/chart`).
   - A setting read back from the chart (`widget.getSettings()` after a change made on `getChart()`) shows in the open dialog; it used to keep the old value.
   - The dialog is built again only when something it shows changed, so `widget.setSettings()` with the values it already shows no longer redraws it under the user's pointer.
