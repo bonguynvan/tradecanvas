@@ -88,6 +88,16 @@ describe('watchToolFit', () => {
     expect(fit()).toBe('');
   });
 
+  it('fits again on a window resize, should the column’s observer miss it', async () => {
+    const { box, column, flush, fit } = setup(700, 745);
+    watchToolFit(column);
+    await flush();
+    box.height = 900;
+    window.dispatchEvent(new Event('resize'));
+    await flush();
+    expect(fit()).toBe('');
+  });
+
   it('sets nothing when the column cannot be measured, and stops when told', async () => {
     const { column, box, flush, fit } = setup(0, 745);
     const stop = watchToolFit(column);

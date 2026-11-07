@@ -1213,6 +1213,11 @@
 
 .tcw-tool-group-wrap {
   position: relative;
+  /* The column's width, its button centred: the pointer on its way to the menu, which opens at
+     the column's edge, stays over the group the whole way. */
+  align-self: stretch;
+  display: flex;
+  justify-content: center;
 }
 
 .tcw-sidebar-btn {
@@ -1289,7 +1294,6 @@
 
 .tcw-flyout {
   position: absolute;
-  margin-inline-start: 6px;
   overflow-y: auto;
   overscroll-behavior: contain;
   min-width: 180px;

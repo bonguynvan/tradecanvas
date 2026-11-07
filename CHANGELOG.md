@@ -8,6 +8,7 @@
   - Their buttons and icons are a half step of φ over the widget's other buttons. In the Print look the button is 33 px with a 20 px icon, in a 53 px column; it was 26 px with a 16 px icon, in a 42 px column. At 1920 px that is 36 and 22. The dock's rail matches the column.
   - Where the column is too short for every tool (a 1366 × 768 laptop), the buttons shrink back, down to the other buttons' size, before it scrolls. The icons keep their size.
   - `density: 'compact'` keeps them at the other buttons' size. A narrower `sizes.sidebar` shrinks them to fit, 6 px in from each side.
+  - A tool group's menu opens at the column's edge, and the group answers the pointer across the column's whole width, so a slow move from a button to its menu no longer closes it.
   - The cursor's icon is no longer drawn smaller than the other tools' icons (the browser's button padding squeezed it).
 - **Quieter search fields and a close you can see in the dialogs** (`@tradecanvas/chart`).
   - The search in the symbol search, the indicators dialog, the command palette, the keyboard shortcuts and the layouts is a band across the dialog with a rule under it, set in as the title. It has no box and no accent ring when focused, and its text is a size larger (15 px by default).

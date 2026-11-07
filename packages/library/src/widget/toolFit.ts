@@ -65,8 +65,12 @@ export function watchToolFit(column: HTMLElement): () => void {
   const tools = typeof MutationObserver === 'undefined' ? null : new MutationObserver(schedule);
   tools?.observe(column, { childList: true, subtree: true });
   const roots = typeof MutationObserver === 'undefined' ? null : new MutationObserver(schedule);
+  // A backstop for the observer: a window resize always fits again.
+  const view = column.ownerDocument.defaultView;
+  view?.addEventListener('resize', schedule);
   schedule();
   return () => {
+    view?.removeEventListener('resize', schedule);
     if (frame) cancelAnimationFrame(frame);
     resize?.disconnect();
     tools?.disconnect();
