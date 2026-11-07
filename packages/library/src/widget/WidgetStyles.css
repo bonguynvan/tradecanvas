@@ -161,7 +161,9 @@
   --tcw-control-h: 26px;
   --tcw-control-h-sm: 20px;
   --tcw-icon: 16px;
-  --tcw-sidebar-w: 42px;
+  --tcw-sidebar-w: 53px;
+  --tcw-tool-h: 33px;
+  --tcw-tool-icon: 20px;
   --tcw-menu-item-h: 33px;
   --tcw-font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   --tcw-font-size: 13px;
@@ -1177,6 +1179,15 @@
 
 /* === Sidebar === */
 
+/* The drawing tools' button and icon as drawn (the dock's rail has the same): never wider than
+   their column less 6 px a side (a narrow `sizes.sidebar` of yours shrinks them), nor taller
+   than a short column leaves room for (`--tcw-tool-fit`, set by toolFit.ts on the column); the
+   icon at most four fifths of its button, as a compact look's 16 in 20. */
+.tcw-root, .tcw-sidebar {
+  --tcw-tool-size: min(var(--tcw-tool-h), calc(var(--tcw-sidebar-w) - 12px), var(--tcw-tool-fit, 999px));
+  --tcw-tool-icon-size: min(var(--tcw-tool-icon), calc(var(--tcw-tool-size) * 0.8));
+}
+
 .tcw-sidebar {
   width: var(--tcw-sidebar-w);
   flex-shrink: 0;
@@ -1202,12 +1213,19 @@
 
 .tcw-tool-group-wrap {
   position: relative;
+  /* The column's width, its button centred: the pointer on its way to the menu, which opens at
+     the column's edge, stays over the group the whole way. */
+  align-self: stretch;
+  display: flex;
+  justify-content: center;
 }
 
 .tcw-sidebar-btn {
-  width: var(--tcw-control-h);
-  height: var(--tcw-control-h);
+  width: var(--tcw-tool-size);
+  height: var(--tcw-tool-size);
   margin: 1px 0;
+  /* The browser's button padding squeezed a glyph set straight in it (the cursor's) under its size. */
+  padding: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1226,8 +1244,9 @@
 }
 
 .tcw-sidebar-btn svg {
-  width: var(--tcw-icon);
-  height: var(--tcw-icon);
+  flex: none;
+  width: var(--tcw-tool-icon-size);
+  height: var(--tcw-tool-icon-size);
 }
 
 .tcw-sidebar-btn:hover {
@@ -1260,7 +1279,7 @@
 /* The drawing tools' sections: always a hairline (it groups the tools), even in
    looks that drop the rules between toolbar groups. */
 .tcw-sidebar-divider {
-  width: 20px;
+  width: calc(var(--tcw-tool-size) * 0.618);
   height: max(1px, var(--tcw-sep-w));
   background: var(--tcw-divider);
   margin: 5px 0;
@@ -1275,7 +1294,6 @@
 
 .tcw-flyout {
   position: absolute;
-  margin-inline-start: 6px;
   overflow-y: auto;
   overscroll-behavior: contain;
   min-width: 180px;
@@ -2556,8 +2574,8 @@
     width: max(44px, var(--tcw-sidebar-w));
   }
   .tcw-sidebar-btn {
-    width: max(40px, var(--tcw-control-h));
-    height: max(40px, var(--tcw-control-h));
+    width: max(40px, var(--tcw-tool-size));
+    height: max(40px, var(--tcw-tool-size));
   }
   .tcw-modal {
     width: 94vw;

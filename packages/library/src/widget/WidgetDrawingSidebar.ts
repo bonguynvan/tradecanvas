@@ -3,6 +3,7 @@ import type { SidebarButtonSpec, SidebarConfig, SidebarCallbacks, WidgetState } 
 import { createIcon, createToolIcon } from './icons.js';
 import { EN_TRANSLATOR, fill, type Translator } from './i18n.js';
 import { WIDGET_FEATURES, markPart, tidyDividers, type WidgetFeature } from './widgetFeatures.js';
+import { watchToolFit } from './toolFit.js';
 
 /** Drawing tool icons carry more detail than interface glyphs: a size up. */
 const TOOL_ICON_PX = 16;
@@ -60,6 +61,8 @@ export class WidgetDrawingSidebar {
   private fab: HTMLButtonElement;
   /** The tool the drawing button shows ('' for the pen). */
   private fabShows = '';
+  /** Stops fitting the tools to a short column. */
+  private readonly stopFit: () => void;
   private readonly onPressAway = (e: Event) => {
     const target = e.target as Node | null;
     if (target && (this.el.contains(target) || this.fab.contains(target) || this.flyoutEl?.contains(target))) return;
@@ -84,6 +87,7 @@ export class WidgetDrawingSidebar {
     // On a short screen the sidebar scrolls; a menu left open would point at the wrong button.
     this.el.addEventListener('scroll', () => this.hideFlyout(), { passive: true });
     host.appendChild(this.el);
+    this.stopFit = watchToolFit(this.el);
 
     this.fab = document.createElement('button');
     this.fab.type = 'button';
@@ -525,16 +529,18 @@ export class WidgetDrawingSidebar {
   private placeFlyout(flyout: HTMLElement, button: HTMLElement): void {
     const host = this.host.getBoundingClientRect();
     const at = button.getBoundingClientRect();
+    // Its side from the column's edge, not the button's: the column is wider than its buttons.
+    const column = this.el.getBoundingClientRect();
     // Taller than the chart, the menu scrolls.
     flyout.style.maxHeight = `${Math.max(0, this.host.clientHeight - FLYOUT_MARGIN * 2)}px`;
     const room = this.host.clientHeight - flyout.offsetHeight - FLYOUT_MARGIN;
-    // Beside the button, toward the chart: its right, or its left in a right-to-left widget.
+    // Beside the column, toward the chart: its right, or its left in a right-to-left widget.
     if (this.host.closest('[dir]')?.getAttribute('dir') === 'rtl') {
       flyout.style.left = '';
-      flyout.style.right = `${host.right - at.left}px`;
+      flyout.style.right = `${host.right - column.left}px`;
     } else {
       flyout.style.right = '';
-      flyout.style.left = `${at.right - host.left}px`;
+      flyout.style.left = `${column.right - host.left}px`;
     }
     flyout.style.top = `${Math.max(0, Math.min(at.top - host.top, room))}px`;
   }
@@ -676,6 +682,7 @@ export class WidgetDrawingSidebar {
   }
 
   destroy(): void {
+    this.stopFit();
     this.setOpen(false);
     this.hideFlyout();
     this.fab.remove();

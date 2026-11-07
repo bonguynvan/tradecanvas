@@ -34,7 +34,7 @@
     { id: 'desk', name: 'Desk' },
   ];
   let look = $state<WidgetUIPreset>('print');
-  /** The airy density on top of the look: golden bars, sans figures, spacious controls. */
+  /** The airy density on top of the look: sans figures and spacious controls (the bars are golden either way). */
   let airy = $state(false);
   /** The renderer for scenes with a renderer picker. */
   const RENDERERS: readonly { id: 'canvas' | 'webgl'; name: string }[] = [
@@ -267,13 +267,10 @@
     applyLook();
   }
 
-  /**
-   * The airy density on or off. The scene opens again: a chart opens at its
-   * layout's slot, so only a fresh one shows how many more bars fit.
-   */
+  /** The airy density on or off: `setUI` on the chart as it is, as for a look. */
   function toggleAiry() {
     airy = !airy;
-    if (started) showScene(active);
+    applyLook();
   }
 
   function applyLook() {

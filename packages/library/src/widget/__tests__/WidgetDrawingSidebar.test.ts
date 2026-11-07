@@ -34,6 +34,16 @@ afterEach(() => {
 });
 
 describe('drawing tool menu', () => {
+  // The column is wider than its buttons: from the button's edge the menu lay over the column's own right.
+  it('opens beside the column, not beside its button', () => {
+    const rect = (left: number, width: number) => ({ left, right: left + width, top: 40, bottom: 73, width, height: 33, x: left, y: 40, toJSON: () => ({}) }) as DOMRect;
+    host.getBoundingClientRect = () => rect(0, 800);
+    host.querySelector<HTMLElement>('.tcw-sidebar')!.getBoundingClientRect = () => rect(0, 53);
+    wraps()[0].querySelector<HTMLElement>('.tcw-sidebar-btn')!.getBoundingClientRect = () => rect(10, 33);
+    enter(wraps()[0]);
+    expect((flyout() as HTMLElement).style.left).toBe('53px');
+  });
+
   it('stays open while the pointer crosses from the button to the menu', () => {
     const lines = wraps()[0];
     enter(lines);

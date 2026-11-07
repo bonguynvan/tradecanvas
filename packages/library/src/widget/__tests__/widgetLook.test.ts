@@ -56,7 +56,25 @@ describe('the stylesheet’s look', () => {
     expect(ruleBody('.tcw-sidebar')).toContain('width: var(--tcw-sidebar-w)');
     expect(ruleBody('.tcw-btn')).toContain('height: var(--tcw-control-h)');
     expect(ruleBody('.tcw-btn-icon')).toContain('height: var(--tcw-control-h)');
-    expect(ruleBody('.tcw-sidebar-btn')).toContain('height: var(--tcw-control-h)');
+    // The drawing tools take their own size, never wider than their column leaves room for.
+    expect(ruleBody('.tcw-sidebar-btn')).toContain('height: var(--tcw-tool-size)');
+    // Declared on the column too, so a short one's fit (set on it) reaches its buttons.
+    const tool = ruleBody('.tcw-root, .tcw-sidebar');
+    expect(tool).toMatch(/--tcw-tool-size: min\(var\(--tcw-tool-h\), calc\(var\(--tcw-sidebar-w\) - \d+px\), var\(--tcw-tool-fit, \d+px\)\);/);
+    expect(tool).toMatch(/--tcw-tool-icon-size: min\(var\(--tcw-tool-icon\), /);
+    expect(ruleBody('.tcw-sidebar-btn svg')).toContain('width: var(--tcw-tool-icon-size)');
+    // A tool menu opens at the column's edge; the pointer on its way there from a button crosses the
+    // column's side room, so the group's hover area spans it and the menu leaves no gap after it
+    // (a slow move through a 16 px gap closed the menu).
+    expect(ruleBody('.tcw-tool-group-wrap')).toMatch(/align-self:\s*stretch;/);
+    expect(ruleBody('.tcw-tool-group-wrap')).toMatch(/justify-content:\s*center;/);
+    expect(ruleBody('.tcw-flyout')).not.toMatch(/margin-inline-start:\s*[1-9]/);
+    // The cursor's glyph sits straight in its button: the browser's padding squeezed it to 14 of 16.
+    expect(ruleBody('.tcw-sidebar-btn')).toContain('padding: 0;');
+    expect(ruleBody('.tcw-sidebar-btn svg')).toContain('flex: none;');
+    // The dock's rail, as wide as the tools on the other side, has buttons as theirs.
+    const panels = readFileSync(fileURLToPath(new URL('../WidgetPanels.css', import.meta.url)), 'utf8').replace(/\r\n/g, '\n');
+    expect(panels.match(/\n\.tcw-dock-btn \{([^{}]*)\}/)?.[1]).toContain('height: var(--tcw-tool-size)');
     expect(ruleBody('.tcw-dropdown-item')).toContain('min-height: var(--tcw-menu-item-h)');
     expect(ruleBody('.tcw-toolbar-sep')).toContain('width: var(--tcw-sep-w)');
     // The drawing tools' sections keep a hairline even where the toolbar drops its rules.

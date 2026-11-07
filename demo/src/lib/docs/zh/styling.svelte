@@ -56,8 +56,9 @@ grid.getUI()`}</code></pre>
 
 <h2>疏朗的外观</h2>
 <p>
-  <code>density: 'airy'</code> 让图表打开时屏幕上的 K 线更多、彼此之间留有空隙：在任何缩放下，K 线实体都是所在格子的
-  φ⁻¹（62%），图表打开时每格 φ⁴ ≈ 6.85 px（<code>barLayout: 'golden'</code>）。控件更宽松，坐标轴和图例中的数字使用外观的无衬线字体。
+  组件打开图表时屏幕上的 K 线更多、彼此之间留有空隙：在任何缩放下，K 线实体都是所在格子的 φ⁻¹（62%），图表打开时每格
+  φ⁴ ≈ 6.85 px（<code>barLayout: 'golden'</code>），1920 px 宽的屏幕上约 250 根。<code>density: 'compact'</code>
+  保留经典 K 线，10 px 格子中留 2 px 间隙。<code>density: 'airy'</code> 再加上更宽松的控件，坐标轴和图例中的数字使用外观的无衬线字体。
   这就是 2.0 默认打开的外观。
 </p>
 <pre><code>{`new ChartWidget(host, { ui: { density: 'airy' } })
@@ -79,7 +80,7 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
 <table>
   <thead><tr><th>对象</th><th>规则</th><th>取值（px）</th></tr></thead>
   <tbody>
-    <tr><td>尺寸</td><td>从图标起按 φ 的半步递增：图标、它的小按钮、它的按钮、菜单行、工具栏。</td><td>16 · 20 · 26 · 33 · 42</td></tr>
+    <tr><td>尺寸</td><td>从图标起按 φ 的半步递增：图标、它的小按钮、它的按钮、菜单行、工具栏、绘图工具栏。绘图工具比其他按钮大半步：按钮 33，图标 20。</td><td>16 · 20 · 26 · 33 · 42 · 53</td></tr>
     <tr><td>间距</td><td>斐波那契数，每个数是前两个数之和，因此相邻两个数之比接近 φ。</td><td>2 · 3 · 5 · 8 · 13 · 21 · 34</td></tr>
     <tr><td>圆角</td><td>
       同样是斐波那契数。内层圆角等于外层圆角减去两者之间的内边距，这样两条曲线彼此平行：菜单的 5 就是其中各行的 2
@@ -145,7 +146,9 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
     <tr><td><code>density</code> / <code>sizes</code></td><td>
       <code>toolbar</code> 高度、<code>control</code> 与 <code>controlSmall</code> 高度、<code>icon</code>、
       <code>sidebar</code> 宽度以及 <code>menuItem</code> 高度，单位 px。<code>compact</code> 和
-      <code>spacious</code> 是把 Print 的尺寸下调或上调 φ 的半步。
+      <code>spacious</code> 是把 Print 的尺寸下调或上调 φ 的半步。绘图工具的按钮和图标比
+      <code>control</code> 和 <code>icon</code> 大 φ 的半步（<code>compact</code> 下相同）。它们距 <code>sidebar</code>
+      栏两侧各 6 px；栏太矮放不下全部工具时，它们会先缩小（最小到 <code>control</code>），然后栏才滚动。
     </td></tr>
     <tr><td><code>font</code></td><td>
       字体族（CSS 字体列表）、正文 <code>size</code>（11–20 px；其他字号随之变化，彼此相隔 φ 的三分之一步）、字重，以及小标签（如分区标题）的大小写和字间距（em）。

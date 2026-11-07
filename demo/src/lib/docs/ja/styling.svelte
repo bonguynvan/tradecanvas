@@ -60,9 +60,10 @@ grid.getUI()`}</code></pre>
 
 <h2>ゆとりのある外観</h2>
 <p>
-  <code>density: 'airy'</code> は、画面に多くのバーを並べ、その間に余白を取ってチャートを開きます。どのズームでもローソク足の実体は
-  枠の φ⁻¹（62%）で、チャートは 1 枠 φ⁴ ≈ 6.85 px で開きます（<code>barLayout: 'golden'</code>）。コントロールはゆったりし、
-  軸と凡例の数字は外観のサンセリフ書体になります。2.0 が最初に開く外観です。
+  ウィジェットは、画面に多くのバーを並べ、その間に余白を取ってチャートを開きます。どのズームでもローソク足の実体は枠の
+  φ⁻¹（62%）で、チャートは 1 枠 φ⁴ ≈ 6.85 px で開きます（<code>barLayout: 'golden'</code>）。幅 1920 px の画面で約 250 本です。
+  <code>density: 'compact'</code> は従来のバー（10 px の枠に 2 px の隙間）を保ちます。<code>density: 'airy'</code>
+  はさらにコントロールをゆったりさせ、軸と凡例の数字を外観のサンセリフ書体にします。2.0 が最初に開く外観です。
 </p>
 <pre><code>{`new ChartWidget(host, { ui: { density: 'airy' } })
 
@@ -85,7 +86,7 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
 <table>
   <thead><tr><th>対象</th><th>規則</th><th>値（px）</th></tr></thead>
   <tbody>
-    <tr><td>サイズ</td><td>アイコンから φ の半段ずつ：アイコン、その小さいボタン、そのボタン、メニューの行、バー。</td><td>16 · 20 · 26 · 33 · 42</td></tr>
+    <tr><td>サイズ</td><td>アイコンから φ の半段ずつ：アイコン、その小さいボタン、そのボタン、メニューの行、バー、描画ツールの列。描画ツールは他のボタンより半段大きく、ボタン 33・アイコン 20。</td><td>16 · 20 · 26 · 33 · 42 · 53</td></tr>
     <tr><td>余白</td><td>フィボナッチ数。どれも前の 2 つの和なので、隣どうしはほぼ φ 倍の関係になります。</td><td>2 · 3 · 5 · 8 · 13 · 21 · 34</td></tr>
     <tr><td>角</td><td>
       これもフィボナッチ数。内側の角は外側の角から間の余白を引いた値なので、曲線が平行に走ります。メニューの 5 は、
@@ -152,7 +153,10 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
     <tr><td><code>density</code> / <code>sizes</code></td><td>
       <code>toolbar</code> の高さ、<code>control</code> と <code>controlSmall</code> の高さ、<code>icon</code>、
       <code>sidebar</code> の幅、<code>menuItem</code> の高さ（px）。<code>compact</code> と <code>spacious</code> は、
-      Print のサイズを φ の半段だけ下げたものと上げたものです。
+      Print のサイズを φ の半段だけ下げたものと上げたものです。描画ツールのボタンとアイコンは
+      <code>control</code> と <code>icon</code> より φ の半段大きくなります（<code>compact</code> では同じ）。
+      <code>sidebar</code> の列の両端から 6 px 内側に収まり、列が低くて全部入らないときは、スクロールする前に
+      <code>control</code> まで小さくなります。
     </td></tr>
     <tr><td><code>font</code></td><td>
       フォントファミリー（CSS のリスト）、本文の <code>size</code>（11–20 px。ほかのサイズは φ の 3 分の 1 段ずつ離れてこれに連動）、ウェイト、そしてセクション

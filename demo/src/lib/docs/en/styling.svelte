@@ -61,10 +61,11 @@ grid.getUI()`}</code></pre>
 
 <h2>An airy look</h2>
 <p>
-  <code>density: 'airy'</code> opens the chart with more bars on screen and air between them: a candle's body is
-  the slot × φ⁻¹ (62%) at every zoom, and the chart opens at φ⁴ ≈ 6.85 px a slot (<code>barLayout: 'golden'</code>).
-  The controls are spacious, and the figures on the axes and in the legend are in the look's sans face. It is the
-  look 2.0 will open with.
+  The widget opens the chart with more bars on screen and air between them: a candle's body is the slot × φ⁻¹
+  (62%) at every zoom, and the chart opens at φ⁴ ≈ 6.85 px a slot (<code>barLayout: 'golden'</code>), about 250 bars
+  across a 1920 px screen. <code>density: 'compact'</code> keeps the classic bars, a 2 px gap in a 10 px slot.
+  <code>density: 'airy'</code> adds spacious controls, with the figures on the axes and in the legend in the look's
+  sans face. It is the look 2.0 will open with.
 </p>
 <pre><code>{`new ChartWidget(host, { ui: { density: 'airy' } })
 
@@ -88,7 +89,7 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
 <table>
   <thead><tr><th>What</th><th>Rule</th><th>Values (px)</th></tr></thead>
   <tbody>
-    <tr><td>Sizes</td><td>Half steps of φ from the icon: an icon, its small button, its button, a menu row, the bar.</td><td>16 · 20 · 26 · 33 · 42</td></tr>
+    <tr><td>Sizes</td><td>Half steps of φ from the icon: an icon, its small button, its button, a menu row, the bar, the drawing tools' column. The drawing tools are a half step over the other buttons: a 33 button and a 20 icon.</td><td>16 · 20 · 26 · 33 · 42 · 53</td></tr>
     <tr><td>Spacing</td><td>Fibonacci numbers, each the sum of the two before, so neighbours are near φ apart.</td><td>2 · 3 · 5 · 8 · 13 · 21 · 34</td></tr>
     <tr><td>Corners</td><td>
       Fibonacci numbers too. A nested corner is the one around it less the padding between, so the curves run
@@ -155,7 +156,10 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
     <tr><td><code>density</code> / <code>sizes</code></td><td>
       <code>toolbar</code> height, <code>control</code> and <code>controlSmall</code> heights, <code>icon</code>,
       <code>sidebar</code> width and <code>menuItem</code> height, px. <code>compact</code> and
-      <code>spacious</code> are Print's sizes a half step of φ down or up.
+      <code>spacious</code> are Print's sizes a half step of φ down or up. The drawing tools' buttons and icons are a
+      half step of φ over <code>control</code> and <code>icon</code> (the same size in <code>compact</code>). They stay
+      6 px in from each side of the <code>sidebar</code> column, and where the column is too short for them all they
+      shrink, down to <code>control</code>, before it scrolls.
     </td></tr>
     <tr><td><code>font</code></td><td>
       Families (CSS lists), body <code>size</code> (11–20 px; the other sizes follow it a third of φ apart), weights,

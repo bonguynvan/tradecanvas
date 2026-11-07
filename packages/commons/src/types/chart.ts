@@ -188,8 +188,9 @@ export interface ChartOptions {
   maxBarSpacing?: number;
   /**
    * How a bar fills its slot: `'golden'`, the body φ⁻¹ of the slot at every
-   * zoom (more bars on screen, air between them), or `'classic'` (the
-   * default), a 2 px gap. Change it with `chart.setBarLayout`.
+   * zoom (more bars on screen, air between them), or `'classic'` (a
+   * `Chart`'s default), a 2 px gap. ChartWidget opens golden, but when its
+   * `ui.density` is `'compact'`. Change it with `chart.setBarLayout`.
    */
   barLayout?: BarLayout;
   /** The grid's lines: shorthand for the `grid.*` overrides. */
