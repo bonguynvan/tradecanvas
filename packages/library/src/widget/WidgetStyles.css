@@ -1460,9 +1460,18 @@
   letter-spacing: -0.015em;
 }
 
+/* The close sized from the title, so it holds its own beside it in every look: its target phi times
+   the title (34 at 21), its icon root phi of it (27), whose cross, half the icon's grid, is about the
+   title's capitals, its stroke near 2 px. At 16 the cross was 8 px of 1.2 px lines under a 21 px title.
+   The negative margins keep the header as tall as before and the cross's edge at the text's edge. */
 .tcw-modal-close {
-  width: var(--tcw-control-h-sm);
-  height: var(--tcw-control-h-sm);
+  --tcw-close-box: calc(var(--tcw-font-size-display) * 1.618);
+  --tcw-close-icon: calc(var(--tcw-font-size-display) * 1.272);
+  flex: none;
+  width: var(--tcw-close-box);
+  height: var(--tcw-close-box);
+  margin-block: calc((var(--tcw-close-box) - var(--tcw-font-size-display) * 1.2) / -2);
+  margin-inline-end: calc((var(--tcw-close-box) - var(--tcw-close-icon) / 2) / -2);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1477,6 +1486,16 @@
 .tcw-modal-close:hover {
   background: var(--tcw-hover-bg);
   color: var(--tcw-text);
+}
+
+.tcw-modal-close:focus-visible {
+  outline: none;
+  box-shadow: var(--tcw-ring);
+}
+
+.tcw-modal-close svg {
+  width: var(--tcw-close-icon);
+  height: var(--tcw-close-icon);
 }
 
 .tcw-modal-tabs {

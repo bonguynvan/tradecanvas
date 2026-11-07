@@ -4,6 +4,10 @@
 
 ### Widget
 
+- **Quieter search fields and a close you can see in the dialogs** (`@tradecanvas/chart`).
+  - The search in the symbol search, the indicators dialog, the command palette, the keyboard shortcuts and the layouts is a band across the dialog with a rule under it, set in as the title. It has no box and no accent ring when focused, and its text is a size larger (15 px by default).
+  - A dialog's close is sized from its title: about 13 px across at a 21 px title, a 34 px target, its edge at the text's edge. It was 8 px of thin lines. The header keeps its height.
+  - A search field's clear button is the widget's close icon in the muted text, instead of the browser's (bold, and blue in Chrome's light scheme).
 - **The symbol search grows with a wide screen** (`@tradecanvas/chart`).
   - It is 610 px wide up to a 1597 px screen, then 38.2% of the screen, up to 987 px: about 733 px at 1920, 978 px at 2560.
   - Its symbol column takes up to a quarter of the list, from 144 px to 233 px, so ids with a venue before the ticker (`HYPERLIQUID:xyz:SP500`) show whole on a wide screen.

@@ -106,6 +106,67 @@ describe('the dock', () => {
   });
 });
 
+describe('a dialog’s search field', () => {
+  // A boxed field that lit up in the accent with a ring when focused looked loud in every search
+  // dialog; the caret and the dialog itself already say where typing goes.
+  const field = () => blocks(dialogs, '.tcw-ss-search').find((b) => /display:\s*flex/.test(b))!;
+
+  it('is a band across the dialog, a rule under it, no box', () => {
+    const band = field();
+    expect(band).toMatch(/margin:\s*0;/);
+    expect(band).toMatch(/border:\s*none;/);
+    expect(band).toMatch(/border-bottom:\s*1px solid var\(--tcw-divider\);/);
+    expect(band).toMatch(/border-radius:\s*0;/);
+    expect(band).toMatch(/padding:\s*0 var\(--tcw-space-6\);/);
+  });
+
+  it('does not light up or ring when focused, but where the system sets the colours', () => {
+    const forced = '@media (forced-colors: active)';
+    const at = dialogs.indexOf(forced);
+    expect(at).toBeGreaterThan(-1);
+    const own = dialogs.slice(0, at) + dialogs.slice(dialogs.indexOf('\n}\n', at) + 3);
+    expect(blocks(own, '.tcw-ss-search:focus-within').join('')).not.toMatch(/box-shadow|border-color|outline/);
+    expect(dialogs.slice(at, dialogs.indexOf('\n}\n', at))).toMatch(/outline:\s*2px solid Highlight/);
+  });
+
+  it('types in the size above the text, as the reading it starts', () => {
+    expect(blocks(dialogs, '.tcw-ss-search input')[0]).toMatch(/font-size:\s*var\(--tcw-font-size-lg\);/);
+  });
+
+  // Each dialog drew its own rule under the band as well, or set the band in from the edges.
+  it('keeps one rule under it and no inset of its own anywhere', () => {
+    for (const below of ['.tcw-ip-body', '.tcw-hotkey-body', '.tcw-cp-results', '.tcw-layouts-body']) {
+      expect(blocks(dialogs, below).join(''), below).not.toMatch(/border-top/);
+    }
+    expect(dialogs).not.toMatch(/\.tcw-cp \.tcw-cp-search\s*\{/);
+    expect(phone(dialogs)).not.toMatch(/:is\(\.tcw-hotkey-search, \.tcw-cp-search, \.tcw-layouts-search-row\)/);
+    expect(blocks(phone(dialogs), '.tcw-ss-search').join('')).not.toMatch(/margin/);
+  });
+});
+
+describe('a dialog’s close', () => {
+  // Drawn at 16, its cross was 8 px of 1.2 px lines under a 21 px title.
+  it('is sized from the title, its icon root phi of the title, its target phi', () => {
+    const close = rule('.tcw-modal-close');
+    expect(close).toMatch(/--tcw-close-box:\s*calc\(var\(--tcw-font-size-display\) \* 1\.618\);/);
+    expect(close).toMatch(/--tcw-close-icon:\s*calc\(var\(--tcw-font-size-display\) \* 1\.272\);/);
+    expect(close).toMatch(/width:\s*var\(--tcw-close-box\);/);
+    expect(rule('.tcw-modal-close svg')).toMatch(/width:\s*var\(--tcw-close-icon\);/);
+    // The keyboard finds it.
+    expect(rule('.tcw-modal-close:focus-visible')).toMatch(/box-shadow:\s*var\(--tcw-ring\)/);
+  });
+});
+
+describe('a search field’s clear button', () => {
+  // The browser's own: bold, and blue in Chrome's light scheme.
+  it('is the icon set’s close in the muted text', () => {
+    const clear = blocks(dialogs, '.tcw-ss-search input::-webkit-search-cancel-button').join('');
+    expect(clear).toMatch(/-webkit-appearance:\s*none/);
+    expect(clear).toMatch(/background:\s*var\(--tcw-text-muted\)/);
+    expect(clear).toMatch(/M6 6L18 18M18 6L6 18/);
+  });
+});
+
 describe('the symbol search', () => {
   // Eight kinds at 1366 wrap "Perpetual" onto a line of its own: the exchange list stays on the first.
   it('keeps the exchange list on the kind tabs’ first line when they wrap', () => {
