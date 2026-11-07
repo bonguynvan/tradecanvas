@@ -61,9 +61,11 @@ grid.getUI()`}</code></pre>
 
 <h2>Giao diện thoáng</h2>
 <p>
-  <code>density: 'airy'</code> mở chart với nhiều nến hơn trên màn hình và khoảng trống giữa chúng: thân nến là ô ×
-  φ⁻¹ (62%) ở mọi mức zoom, và chart mở ở φ⁴ ≈ 6,85 px mỗi ô (<code>barLayout: 'golden'</code>). Các nút điều khiển
-  rộng rãi, các con số trên trục và trong legend dùng font sans của giao diện. Đây là giao diện mà 2.0 sẽ mở ra.
+  Widget mở chart với nhiều nến hơn trên màn hình và khoảng trống giữa chúng: thân nến là ô × φ⁻¹ (62%) ở mọi mức
+  zoom, và chart mở ở φ⁴ ≈ 6,85 px mỗi ô (<code>barLayout: 'golden'</code>), khoảng 250 nến trên màn hình rộng 1920 px.
+  <code>density: 'compact'</code> giữ nến kiểu cũ, khe 2 px trong ô 10 px. <code>density: 'airy'</code> thêm các nút
+  điều khiển rộng rãi, và các con số trên trục và trong legend dùng font sans của giao diện. Đây là giao diện mà 2.0
+  sẽ mở ra.
 </p>
 <pre><code>{`new ChartWidget(host, { ui: { density: 'airy' } })
 

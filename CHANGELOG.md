@@ -4,6 +4,10 @@
 
 ### Widget
 
+- **The widget opens with more bars on screen** (`@tradecanvas/chart`).
+  - Its chart opens with golden bars: a candle's body is φ⁻¹ (62%) of its slot at every zoom, and the slot opens at φ⁴ ≈ 6.85 px. A 1920 px screen shows about 250 bars, from about 170; a 1280 px one about 160, from 107.
+  - `ui: { density: 'compact' }` keeps the classic bars, a 2 px gap in a 10 px slot. `chartOptions.barLayout` still wins over the look.
+  - Golden bars were on only with `density: 'airy'`, which now adds the spacious controls and the sans figures. A `Chart` of your own keeps `'classic'` as its default.
 - **Quieter search fields and a close you can see in the dialogs** (`@tradecanvas/chart`).
   - The search in the symbol search, the indicators dialog, the command palette, the keyboard shortcuts and the layouts is a band across the dialog with a rule under it, set in as the title. It has no box and no accent ring when focused, and its text is a size larger (15 px by default).
   - A dialog's close is sized from its title: about 13 px across at a 21 px title, a 34 px target, its edge at the text's edge. It was 8 px of thin lines. The header keeps its height.

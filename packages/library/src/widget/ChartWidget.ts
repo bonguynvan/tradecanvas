@@ -1926,7 +1926,7 @@ export class ChartWidget {
    * Change the widget's look: a preset (`'print'`, `'studio'`,
    * `'terminal'`, `'capsule'`, `'desk'`) or your theme over one. Colours stay with
    * `setTheme`. The look sets the chart's bar layout and face too (its figures
-   * face, which is the system's sans in Print; golden bars when airy),
+   * face, which is the system's sans in Print; golden bars, except when compact),
    * over any set on the chart itself, unless `chartOptions` set the bar
    * layout or a `font.family`; the sizes of `chartOptions.font` stay.
    */
@@ -2000,13 +2000,13 @@ export class ChartWidget {
 
   /**
    * The look's chart: its figures (axes, tags) in the look's figures face, and
-   * golden bars when airy. `chartOptions` that set the bars or a face win;
+   * golden bars, but the classic 2 px gap when compact. `chartOptions` that set the bars or a face win;
    * sizes alone keep the look's face.
    */
   private applyChartLook(): void {
-    const airy = this.ui.density === 'airy';
     const given = this.options.chartOptions;
-    if (!given?.barLayout) this.chart.setBarLayout(airy ? 'golden' : 'classic');
+    // More bars on screen with air between them (about 250 across 1920 px, from about 170); compact keeps the tight classic bars.
+    if (!given?.barLayout) this.chart.setBarLayout(this.ui.density === 'compact' ? 'classic' : 'golden');
     // The chart's type grows with the look, from its sizes before any scaling; sizes `chartOptions.font` sets stay.
     const sizes = this.scaledChartSizes();
     // setFont goes over the font before it, so the sizes of `chartOptions.font` stay under the look's face.

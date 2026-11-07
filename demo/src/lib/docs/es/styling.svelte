@@ -64,10 +64,11 @@ grid.getUI()`}</code></pre>
 
 <h2>Un aspecto con aire</h2>
 <p>
-  <code>density: 'airy'</code> abre el gráfico con más barras en pantalla y aire entre ellas: el cuerpo de una vela es
-  el hueco × φ⁻¹ (62%) en cualquier zoom, y el gráfico se abre a φ⁴ ≈ 6,85 px por hueco (<code>barLayout: 'golden'</code>).
-  Los controles son holgados, y las cifras de los ejes y de la leyenda usan la fuente sans del aspecto. Es el
-  aspecto con el que abrirá la 2.0.
+  El widget abre el gráfico con más barras en pantalla y aire entre ellas: el cuerpo de una vela es el hueco × φ⁻¹
+  (62%) en cualquier zoom, y el gráfico se abre a φ⁴ ≈ 6,85 px por hueco (<code>barLayout: 'golden'</code>), unas 250
+  barras en una pantalla de 1920 px. <code>density: 'compact'</code> mantiene las barras clásicas, un hueco de 2 px en
+  10 px. <code>density: 'airy'</code> añade controles holgados, y las cifras de los ejes y de la leyenda usan la fuente
+  sans del aspecto. Es el aspecto con el que abrirá la 2.0.
 </p>
 <pre><code>{`new ChartWidget(host, { ui: { density: 'airy' } })
 
