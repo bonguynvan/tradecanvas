@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.73.0 (2026-11-07)
 
 ### Widget
 
@@ -23,7 +23,7 @@
   - Its symbol column takes up to a quarter of the list, from 144 px to 233 px, so ids with a venue before the ticker (`HYPERLIQUID:xyz:SP500`) show whole on a wide screen.
   - A symbol keeps a gap twice the columns' from its description (`BINANCE:BTCUSDT` ran into its name). On a phone the column keeps that room for the ticker, as before.
 
-## 1.72.2
+## 1.72.2 (2026-11-07)
 
 ### Widget
 
