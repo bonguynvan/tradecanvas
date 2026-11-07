@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Widget
+
+- **An exchange shows whole in the symbol search** (`@tradecanvas/chart`). Its column takes the exchange's width up to 144 px, from 89, and the description gives way first, so "XYZ · HYPERLIQUID" no longer ends in an ellipsis in a desktop-sized dialog. A phone keeps its 55 px column.
+
 ## 1.73.0 (2026-11-07)
 
 ### Widget
