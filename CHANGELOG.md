@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Widget
+
+- **A toolbar a fraction of a pixel wide keeps its buttons** (`@tradecanvas/chart`). A widget in half of a 1535 px grid has a toolbar 767.5 px wide. Collapsed, its "more" sits right at the end of the room, which the fit counted as a pixel past it, so every button folded and the bar switched to icons: buttons from `addToolbarButton` or `addToolbarDropdown` with `side: 'left'` folded too, with half the bar empty. Now only the buttons that do not fit fold.
+
 ## 1.73.1 (2026-11-07)
 
 ### Widget

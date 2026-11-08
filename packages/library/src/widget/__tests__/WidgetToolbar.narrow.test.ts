@@ -370,6 +370,27 @@ describe('WidgetToolbar — fitting its width', () => {
       expect(folded(el)).toEqual(['Chart Settings', 'Toggle theme']);
     });
 
+    // A grid cell half of 1535 px makes a toolbar 767.5 wide. Collapsed, its spacer puts "more" right
+    // at the end of its room, 759.5: rounded up against the room rounded down, that never fit, so
+    // every button folded, a host's on the left too, with half the bar empty.
+    it('keeps what ends exactly at the end of a toolbar a share of a pixel wide', () => {
+      const el = layout(767.5, (t) => (collapsed(t) ? Math.max(759.5, need(t)) : need(t)));
+      el.style.paddingRight = '8px';
+      toolbar.fit();
+      expect(folded(el)).toEqual(['Toggle theme']);
+      expect(iconsOnly(el)).toBe(false);
+    });
+
+    it('right to left, keeps what ends exactly at its start in a toolbar a share of a pixel wide', () => {
+      const el = root.querySelector<HTMLElement>('.tcw-toolbar')!;
+      el.style.direction = 'rtl';
+      el.style.paddingLeft = '8px';
+      layout(767.5, (t) => (collapsed(t) ? Math.max(759.5, need(t)) : need(t)));
+      toolbar.fit();
+      expect(folded(el)).toEqual(['Toggle theme']);
+      expect(iconsOnly(el)).toBe(false);
+    });
+
     // The scroll width counts the padding at the end as room: "more" sat on the edge, in a bar that
     // keeps 8 px clear at its end everywhere else.
     it('keeps the padding at its end clear', () => {
