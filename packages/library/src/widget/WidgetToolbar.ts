@@ -185,8 +185,11 @@ export class WidgetToolbar {
    * Whether the toolbar's controls end inside its content box: the padding
    * at its end clear (its left right to left), in its own layout px, as a
    * container's transform or zoom leaves them. Widths are fractional ("more"
-   * ending at 1366.19 in a bar 1365 wide): the reach is rounded up to a
-   * whole px and the room down, so no share of a pixel hangs past the edge.
+   * ending at 1366.19 in a bar 1365 wide): a reach past the room by more
+   * than the layout's own 1/64 px is past the edge. Each is taken as it is,
+   * not rounded to a whole px: the spacer puts "more" right at the end of the
+   * room, and in a bar 767.5 wide, rounding the reach up and the room down put
+   * "more" a pixel past its end of 759.5, so nothing ever fit.
    */
   private fits(): boolean {
     const { el } = this;
@@ -206,7 +209,7 @@ export class WidgetToolbar {
       const at = child.getBoundingClientRect();
       reach = Math.max(reach, (rtl ? box.right - at.left : at.right - box.left) / scale);
     }
-    return Math.ceil(reach - SUBPIXEL) <= Math.floor(room + SUBPIXEL);
+    return reach - room <= SUBPIXEL;
   }
 
   /** What is folded, and whether "more" shows, as one word to tell a refit that changed them. */
