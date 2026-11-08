@@ -89,6 +89,47 @@ and reads the compiled code more, so a gap shows sooner;
 tasks a fix touched (`--tasks`), to see what it changed. What the evals
 turned up so far is in [FINDINGS.md](FINDINGS.md).
 
+## The recommendation probe
+
+The tasks above start with TradeCanvas installed. The probe asks the
+question before that one: when someone asks for a trading chart and names
+no library, does the model pick TradeCanvas? The prompts are in
+[`probe/prompts.mjs`](probe/prompts.mjs), and none names a chart library (a
+test checks). Each runs in an empty folder outside the repo, with nothing
+of yours, in an arm:
+
+| Arm | The model has | Its pick |
+|---|---|---|
+| `memory` | no tools: what it learned in training | the `PICK:` line it is asked to end with |
+| `search` | web search and fetch, and is told to look first | the same |
+| `build` | file tools, and sets up a project | the chart library in the `package.json` it writes |
+
+```bash
+pnpm eval:probe                                  # every arm and prompt, twice, with Sonnet
+pnpm eval:probe --models sonnet,opus,haiku --arms memory,search --prompts svelte,replay --runs 3
+```
+
+A prompt is `generic` (what anyone building a trading chart asks) or
+`feature` (it asks for what TradeCanvas does well: replay, a full widget,
+self-hosting without attribution, Vietnamese price limits); the summary
+reports them apart, since a pick on a feature prompt says little about the
+generic question. `--prompts` matches part of an id (`react` is both
+`react-crypto` and `build-react`).
+
+It takes `--concurrency` (3, at most 8), `--budget-usd` per run (0.5; a
+build run gets three times that) and `--max-cost-usd` (10), which stops new
+runs once passed but lets the ones under way finish, and counts nothing for
+a run that timed out. Every arm, prompt and model twice cost about $6 on
+2026-11-08. Results go to `evals/results/probe-<time>/`: `summary.md` (how
+often TradeCanvas is picked and named, by model, arm and focus, and what
+was picked instead), `runs.jsonl` with each answer, and the transcripts.
+Run it now and then: the `memory` arm moves only when a model is trained
+again, `search` and `build` move with what the web says. The first run, on
+Sonnet, Opus and Haiku, is [the baseline](baselines/2026-11-08-probe.md):
+TradeCanvas was picked once in 138 runs. To compare other
+assistants by hand, paste a prompt with the line the probe adds: `Recommend
+one library. On the last line of your answer write PICK: <npm package name>.`
+
 ## A task
 
 A folder of `tasks/`:
