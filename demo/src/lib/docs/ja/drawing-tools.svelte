@@ -101,6 +101,7 @@ chart.addDrawing({ type: 'fibRetracement', anchors: [a, b], options: { trendLine
   <li>描いている間は、置いた点がハンドルとして表示されます。</li>
   <li>破線と点線は線の太さに合わせて大きくなり、点は丸く、実線の端も丸くなります。矢じりも線に合わせて大きくなります。</li>
   <li>塗りつぶしは、個別に設定しない限り線の色を淡くしたものです。描画を赤にすれば塗りも赤になります。色付きタグのラベルは、黒と白のうち読みやすいほうで書かれます。統計ボックスはどちらのテーマでもチャート自身の面と文字の色を使います。描画の色の文字は、明るい背景で読みにくいところでは濃くなります。</li>
+  <li>ツール本来の線はその線のスタイルに従い、グリッド、ガイド、補助の角度線は 1 px で淡く描かれます。ラベルがほかのラベルに重なるレベル、角度、分割にはラベルを付けません。ただし 0 と 1 のレベルには必ず付けます。パーセントは整数のときは整数で書き（50.0% ではなく 50%）、ほかの比率と一緒に描くフィボナッチ比率にはそれぞれ専用の色が付きます。</li>
 </ul>
 
 <h2>設定</h2>
@@ -265,14 +266,15 @@ chart.on('toolModeChange', (e) => e.payload)      // { eraser } または { zoom
 
 <h3>チャネル</h3>
 <ul>
-  <li><code>parallelChannel</code> — 任意の中央線付きで、どちらの方向にも延長できます。</li>
-  <li><code>regressionChannel</code></li>
+  <li><code>parallelChannel</code> — 最初の 2 点を通る線を、3 点目まで真上か真下に平行移動したもの（アラートもこの形で判定します）。任意の中央線付きで、どちらの方向にも延長できます。</li>
+  <li><code>regressionChannel</code> — 2 点の間の終値に当てはめた最小二乗法の直線と、その両側に標準偏差 2 つ分のバンド。2 点で対象のバーが決まり、ハンドルは直線の上にあります。</li>
 </ul>
 
 <h3>フィボナッチ</h3>
 <ul>
   <li><code>fibRetracement</code>、<code>fibExtension</code> — 編集可能なレベル、価格とパーセント表示、左右どちらかのラベル、背景、反転。</li>
-  <li><code>fibChannel</code>、<code>fibTimeZones</code>、<code>fibSpeedResistanceFan</code></li>
+  <li><code>fibChannel</code>、<code>fibSpeedResistanceFan</code> — ファンの半直線はそれぞれのレベルの色で、時間の半直線は破線。どちらにもラベルが付きます。</li>
+  <li><code>fibTimeZones</code> — ゾーンの始点（0）から先に描かれます。このツールと <code>cyclicLines</code> のハンドルは、それぞれの線上、プロットの下端近くにあります。</li>
   <li><code>fibArcs</code> — 値動きの起点を中心にした円弧。半円または全円。</li>
   <li><code>fibCircles</code> — 半径のフィボナッチ倍数の位置に描く円。</li>
   <li><code>fibSpiral</code> — 中心から広がる黄金螺旋。</li>
@@ -283,7 +285,7 @@ chart.on('toolModeChange', (e) => e.payload)      // { eraser } または { zoom
 <ul>
   <li><code>pitchfork</code>、<code>schiffPitchfork</code>、<code>modifiedSchiffPitchfork</code></li>
   <li><code>pitchfan</code> — ピボットから、2 点の間にあるレベルを通る半直線。</li>
-  <li><code>gannFan</code>、<code>gannBox</code>、<code>gannSquare</code></li>
+  <li><code>gannFan</code> — 各角度線にはプロットから出る位置でラベルが付きます。<code>gannBox</code> — 分割に価格と時間のラベルが付きます。<code>gannSquare</code></li>
 </ul>
 
 <h3>図形</h3>

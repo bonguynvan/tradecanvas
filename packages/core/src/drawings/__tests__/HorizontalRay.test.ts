@@ -30,11 +30,11 @@ describe('HorizontalRayTool.hitTest', () => {
 
 describe('HorizontalRayTool price label', () => {
   it('is left-aligned by its anchor whatever alignment the context was left with', () => {
-    // anchor (time 5, price 30) -> pixel (55, 70); the label starts 4px after it.
+    // anchor (time 5, price 30) -> pixel (55, 70); the label starts 4px past its handle (a 4.5 px radius at width 1).
     const { ctx, drawn } = textCtx();
     ctx.textAlign = 'right';
     new HorizontalRayTool().render(ctx, drawing('horizontalRay', [{ time: 5, price: 30 }]), unitViewport, false);
     const label = drawn.find((d) => d.text === '30.00');
-    expect(label).toMatchObject({ align: 'left', baseline: 'bottom', left: 59, y: 67 });
+    expect(label).toMatchObject({ align: 'left', baseline: 'bottom', left: 63.5, y: 67 });
   });
 });

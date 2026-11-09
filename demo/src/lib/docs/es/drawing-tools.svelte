@@ -102,6 +102,7 @@ chart.addDrawing({ type: 'fibRetracement', anchors: [a, b], options: { trendLine
   <li>Mientras se crea un dibujo, los puntos colocados se muestran como controles.</li>
   <li>Los guiones y los puntos crecen con la línea, los puntos son redondos y los extremos de una línea continua son redondeados. Las puntas de flecha también crecen con la línea.</li>
   <li>Un relleno es el color de la línea, atenuado, salvo que se haya fijado aparte: un dibujo que pasa a rojo se rellena de rojo. Una etiqueta sobre una marca de color se escribe en negro o en blanco, el que mejor se lea; un cuadro de estadísticas usa la superficie y el color de texto del propio gráfico, en ambos temas; las palabras en el color de un dibujo se oscurecen donde no se leerían sobre un fondo claro.</li>
+  <li>Las líneas propias de una herramienta siguen su estilo de línea; sus cuadrículas, guías y ángulos secundarios son de 1 px y más claros. Un nivel, un ángulo o una división cuya etiqueta taparía otra queda sin etiqueta, nunca los niveles 0 y 1. Los porcentajes se escriben enteros cuando lo son (50%, no 50.0%), y cada ratio de Fibonacci dibujado junto a otros tiene un color propio.</li>
 </ul>
 
 <h2>Configuración</h2>
@@ -273,14 +274,15 @@ chart.on('toolModeChange', (e) => e.payload)      // { eraser } o { zoomArea }`}
 
 <h3>Canales</h3>
 <ul>
-  <li><code>parallelChannel</code> — con una línea central opcional, que se extiende en cualquiera de los dos sentidos.</li>
-  <li><code>regressionChannel</code></li>
+  <li><code>parallelChannel</code> — la línea que pasa por sus dos primeros puntos, desplazada en vertical hasta el tercero (así la leen sus alertas), con una línea central opcional, que se extiende en cualquiera de los dos sentidos.</li>
+  <li><code>regressionChannel</code> — la recta de mínimos cuadrados de los cierres entre sus dos puntos, con bandas a dos desviaciones estándar a cada lado; sus puntos fijan las barras, y sus controles quedan sobre la recta.</li>
 </ul>
 
 <h3>Fibonacci</h3>
 <ul>
   <li><code>fibRetracement</code>, <code>fibExtension</code> — niveles editables, precios y porcentajes, etiquetas a la izquierda o a la derecha, fondo, invertir.</li>
-  <li><code>fibChannel</code>, <code>fibTimeZones</code>, <code>fibSpeedResistanceFan</code></li>
+  <li><code>fibChannel</code>, <code>fibSpeedResistanceFan</code> — los rayos del abanico en los colores de sus niveles, los rayos de tiempo discontinuos, ambos con etiqueta.</li>
+  <li><code>fibTimeZones</code> — desde el inicio de la zona (0) en adelante; sus controles, y los de <code>cyclicLines</code>, quedan sobre sus líneas, al pie del área del gráfico.</li>
   <li><code>fibArcs</code> — arcos alrededor del inicio de un movimiento, semicírculos o círculos completos.</li>
   <li><code>fibCircles</code> — círculos en múltiplos de Fibonacci de un radio.</li>
   <li><code>fibSpiral</code> — una espiral áurea desde su centro.</li>
@@ -291,7 +293,7 @@ chart.on('toolModeChange', (e) => e.payload)      // { eraser } o { zoomArea }`}
 <ul>
   <li><code>pitchfork</code>, <code>schiffPitchfork</code>, <code>modifiedSchiffPitchfork</code></li>
   <li><code>pitchfan</code> — rayos desde un pivote a través de niveles entre dos puntos.</li>
-  <li><code>gannFan</code>, <code>gannBox</code>, <code>gannSquare</code></li>
+  <li><code>gannFan</code> — cada ángulo lleva su etiqueta donde sale del área del gráfico; <code>gannBox</code> — sus divisiones llevan etiqueta en precio y en tiempo; <code>gannSquare</code></li>
 </ul>
 
 <h3>Formas</h3>

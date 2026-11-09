@@ -393,6 +393,23 @@ export function fillLabelSurface(ctx: CanvasRenderingContext2D, x: number, y: nu
   ctx.stroke();
 }
 
+/** A label's box on screen: left, top, right, bottom (CSS px). */
+export interface LabelBox {
+  left: number;
+  top: number;
+  right: number;
+  bottom: number;
+}
+
+/**
+ * The first of `spots` clear of the legend and of `placed` (a tool's own
+ * labels so far), or null when none is.
+ */
+export function clearSpot(spots: readonly LabelBox[], placed: readonly LabelBox[]): LabelBox | null {
+  return spots.find((b) => !overlapsKeepOut(b.left, b.top, b.right, b.bottom)
+    && placed.every((p) => b.right <= p.left || p.right <= b.left || b.bottom <= p.top || p.bottom <= b.top)) ?? null;
+}
+
 /** Ratio of two price legs, e.g. |BC| / |AB|, as text ("0.618"). */
 export function legRatio(state: DrawingState, num: [number, number], den: [number, number]): string {
   const n = Math.abs(state.anchors[num[1]].price - state.anchors[num[0]].price);

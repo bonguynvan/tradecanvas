@@ -23,10 +23,11 @@ describe('FibChannelTool', () => {
     { time: 10, price: 60 },
   ]);
 
-  it('labels every level', () => {
+  it('labels every level where they have room (a channel 160 px wide)', () => {
     const { ctx, texts } = recordingCtx();
-    tool.render(ctx, state, unitViewport, false);
-    expect(texts).toEqual(FIB_CHANNEL_LEVELS.map(String));
+    tool.render(ctx, state, { ...unitViewport, chartRect: { x: 0, y: 0, width: 1000, height: 800 } }, false);
+    // The 0 and 1 labels drawn first, then the others.
+    expect([...texts].sort()).toEqual(FIB_CHANNEL_LEVELS.map(String).sort());
   });
 
   it('hits on a level line inside the channel', () => {
@@ -59,7 +60,8 @@ describe('FibSpeedResistanceFanTool', () => {
   it('labels the price levels', () => {
     const { ctx, texts } = recordingCtx();
     tool.render(ctx, state, unitViewport, false);
-    expect(texts).toEqual(SPEED_FAN_LEVELS.map(String));
+    // Each level's price ray and its time ray.
+    expect(texts).toEqual(SPEED_FAN_LEVELS.flatMap((v) => [String(v), String(v)]));
   });
 
   it('hits on a ray beyond B, since the rays extend', () => {

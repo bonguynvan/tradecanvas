@@ -101,6 +101,7 @@ chart.addDrawing({ type: 'fibRetracement', anchors: [a, b], options: { trendLine
   <li>그림을 그리는 동안 찍은 점은 핸들로 보입니다.</li>
   <li>파선과 점선은 선 두께를 따라 커지고, 점은 둥글며, 실선의 끝도 둥급니다. 화살촉도 선을 따라 커집니다.</li>
   <li>채우기는 따로 정하지 않았다면 선 색을 옅게 한 것입니다. 그림을 빨간색으로 바꾸면 채우기도 빨개집니다. 색이 있는 태그의 라벨은 검정과 흰색 중 잘 읽히는 쪽으로 쓰입니다. 통계 상자는 두 테마 모두에서 차트 자체의 바탕색과 글자 색을 씁니다. 그림 색으로 쓴 글은 밝은 배경에서 잘 읽히지 않을 때 더 진해집니다.</li>
+  <li>도구 고유의 선은 그 선 스타일을 따르고, 격자, 가이드, 보조 각도선은 1 px에 더 옅게 그려집니다. 라벨이 다른 라벨을 가리는 레벨, 각도, 분할에는 라벨을 달지 않지만, 0과 1 레벨은 예외입니다. 퍼센트는 정수일 때 정수로 쓰고(50.0%가 아니라 50%), 다른 비율과 함께 그리는 피보나치 비율마다 고유한 색이 있습니다.</li>
 </ul>
 
 <h2>설정</h2>
@@ -264,14 +265,15 @@ chart.on('toolModeChange', (e) => e.payload)      // { eraser } 또는 { zoomAre
 
 <h3>채널</h3>
 <ul>
-  <li><code>parallelChannel</code> — 선택 사항인 중간선이 있고, 양쪽 어느 방향으로든 연장할 수 있습니다.</li>
-  <li><code>regressionChannel</code></li>
+  <li><code>parallelChannel</code> — 처음 두 점을 지나는 선을 세 번째 점까지 수직으로 위나 아래로 옮긴 것이며(알림도 이렇게 읽습니다), 선택 사항인 중간선이 있고, 양쪽 어느 방향으로든 연장할 수 있습니다.</li>
+  <li><code>regressionChannel</code> — 두 점 사이 종가의 최소제곱 직선과, 양쪽으로 표준편차의 두 배만큼 떨어진 밴드. 두 점이 계산할 봉을 정하고, 핸들은 직선 위에 있습니다.</li>
 </ul>
 
 <h3>피보나치</h3>
 <ul>
   <li><code>fibRetracement</code>, <code>fibExtension</code> — 편집 가능한 레벨, 가격과 퍼센트, 왼쪽 또는 오른쪽 라벨, 배경, 반전.</li>
-  <li><code>fibChannel</code>, <code>fibTimeZones</code>, <code>fibSpeedResistanceFan</code></li>
+  <li><code>fibChannel</code>, <code>fibSpeedResistanceFan</code> — 팬의 반직선은 각 레벨의 색이고, 시간 반직선은 파선이며, 둘 다 라벨이 붙습니다.</li>
+  <li><code>fibTimeZones</code> — 구간의 시작점(0)부터 그려집니다. 이 도구와 <code>cyclicLines</code>의 핸들은 각자의 선 위, 플롯 아래쪽 가장자리 근처에 있습니다.</li>
   <li><code>fibArcs</code> — 움직임의 시작점을 중심으로 한 호, 반원 또는 전체 원.</li>
   <li><code>fibCircles</code> — 반지름의 피보나치 배수 위치에 그리는 원.</li>
   <li><code>fibSpiral</code> — 중심에서 뻗어 나가는 황금 나선.</li>
@@ -282,7 +284,7 @@ chart.on('toolModeChange', (e) => e.payload)      // { eraser } 또는 { zoomAre
 <ul>
   <li><code>pitchfork</code>, <code>schiffPitchfork</code>, <code>modifiedSchiffPitchfork</code></li>
   <li><code>pitchfan</code> — 피벗에서 두 점 사이의 레벨을 지나는 반직선.</li>
-  <li><code>gannFan</code>, <code>gannBox</code>, <code>gannSquare</code></li>
+  <li><code>gannFan</code> — 각 각도선은 플롯을 벗어나는 곳에 라벨이 붙습니다. <code>gannBox</code> — 분할에 가격과 시간 라벨이 붙습니다. <code>gannSquare</code></li>
 </ul>
 
 <h3>도형</h3>

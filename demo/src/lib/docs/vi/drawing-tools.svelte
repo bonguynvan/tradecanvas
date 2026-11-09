@@ -101,6 +101,7 @@ chart.addDrawing({ type: 'fibRetracement', anchors: [a, b], options: { trendLine
   <li>Trong lúc vẽ, các điểm đã đặt hiện thành tay nắm.</li>
   <li>Gạch và chấm lớn theo độ dày nét, chấm thì tròn, và hai đầu của nét liền được bo tròn. Đầu mũi tên cũng lớn theo nét.</li>
   <li>Màu nền là màu của nét, pha nhạt, trừ khi được đặt riêng: hình vẽ đổi sang đỏ thì tô đỏ. Nhãn trên thẻ có màu được viết bằng đen hoặc trắng, màu nào dễ đọc hơn; hộp thống kê dùng màu bề mặt và màu chữ của chính biểu đồ, ở cả theme sáng lẫn tối; chữ mang màu của hình vẽ được làm đậm hơn ở chỗ nó khó đọc trên nền sáng.</li>
+  <li>Các đường chính của một công cụ theo kiểu nét của nó; lưới, đường dẫn và các góc phụ dày 1 px và nhạt hơn. Một mức, một góc hay một phần chia mà nhãn sẽ che nhãn khác thì được để trống nhãn, nhưng không bao giờ là mức 0 và 1. Phần trăm được viết số tròn khi tròn (50%, không phải 50.0%), và mỗi tỷ lệ Fibonacci vẽ cùng các tỷ lệ khác có màu riêng.</li>
 </ul>
 
 <h2>Cài đặt</h2>
@@ -269,14 +270,15 @@ chart.on('toolModeChange', (e) => e.payload)      // { eraser } hoặc { zoomAre
 
 <h3>Kênh</h3>
 <ul>
-  <li><code>parallelChannel</code> — kèm đường giữa tuỳ chọn, kéo dài được về cả hai phía.</li>
-  <li><code>regressionChannel</code></li>
+  <li><code>parallelChannel</code> — đường qua hai điểm đầu được dời thẳng lên hoặc xuống tới điểm thứ ba (đúng như cảnh báo của nó đọc), kèm đường giữa tuỳ chọn, kéo dài được về cả hai phía.</li>
+  <li><code>regressionChannel</code> — đường bình phương tối thiểu qua giá đóng cửa giữa hai điểm của nó, với dải cách hai độ lệch chuẩn ở mỗi bên; các điểm quyết định những nến được tính, và tay nắm nằm trên đường.</li>
 </ul>
 
 <h3>Fibonacci</h3>
 <ul>
   <li><code>fibRetracement</code>, <code>fibExtension</code> — các mức, giá và phần trăm có thể sửa, nhãn bên trái hoặc phải, nền, đảo chiều.</li>
-  <li><code>fibChannel</code>, <code>fibTimeZones</code>, <code>fibSpeedResistanceFan</code></li>
+  <li><code>fibChannel</code>, <code>fibSpeedResistanceFan</code> — các tia của quạt mang màu của mức tương ứng, các tia thời gian là nét đứt, cả hai đều có nhãn.</li>
+  <li><code>fibTimeZones</code> — tính từ điểm bắt đầu của vùng (0) trở đi; tay nắm của nó, và của <code>cyclicLines</code>, nằm trên đường của chúng, sát chân vùng vẽ.</li>
   <li><code>fibArcs</code> — các cung quanh điểm bắt đầu của một nhịp, nửa hoặc cả vòng tròn.</li>
   <li><code>fibCircles</code> — các vòng tròn ở bội số Fibonacci của một bán kính.</li>
   <li><code>fibSpiral</code> — xoắn ốc vàng từ tâm của nó.</li>
@@ -287,7 +289,7 @@ chart.on('toolModeChange', (e) => e.payload)      // { eraser } hoặc { zoomAre
 <ul>
   <li><code>pitchfork</code>, <code>schiffPitchfork</code>, <code>modifiedSchiffPitchfork</code></li>
   <li><code>pitchfan</code> — các tia từ một điểm pivot đi qua các mức nằm giữa hai điểm.</li>
-  <li><code>gannFan</code>, <code>gannBox</code>, <code>gannSquare</code></li>
+  <li><code>gannFan</code> — mỗi góc có nhãn ở chỗ nó rời vùng vẽ; <code>gannBox</code> — các phần chia có nhãn theo giá và theo thời gian; <code>gannSquare</code></li>
 </ul>
 
 <h3>Hình</h3>

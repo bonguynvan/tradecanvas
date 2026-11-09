@@ -1,6 +1,7 @@
 import type { DrawingState, Point, ViewportState } from '@tradecanvas/commons';
 import { DrawingBase } from '../DrawingBase.js';
-import { roleFont } from '../drawingLook.js';
+import { drawingLook, readableText, roleFont } from '../drawingLook.js';
+import { fillTextWithHalo } from './labels.js';
 
 /**
  * Gann Box drawing tool.
@@ -9,6 +10,13 @@ import { roleFont } from '../drawingLook.js';
  */
 
 const DIVISIONS = [0, 0.25, 0.333, 0.5, 0.667, 0.75, 1];
+/** The divisions inside the box. */
+const INNER = DIVISIONS.filter((d) => d > 0 && d < 1);
+/** How strongly the grid shows. */
+const GRID_ALPHA = 0.3;
+/** How far a label sits off the box, px, and the least room between two labels. */
+const LABEL_GAP = 4;
+const LABEL_ROOM = 2;
 
 export class GannBoxTool extends DrawingBase {
   descriptor = { type: 'gannBox' as const, name: 'Gann Box', requiredAnchors: 2 };
@@ -28,66 +36,71 @@ export class GannBoxTool extends DrawingBase {
 
     if (w < 2 || h < 2) return;
 
+    // The box on whole pixels, in the drawing's line.
     this.applyLineStyle(ctx, state.style);
+    this.strokeCrispRect(ctx, left, top, w, h);
 
-    // Outer rectangle
-    ctx.strokeRect(left, top, w, h);
-
-    // Horizontal divisions
+    // Its divisions: a 1 px grid, lighter than the box, each line sharp.
     ctx.save();
-    ctx.globalAlpha = 0.35;
-    for (const d of DIVISIONS) {
-      if (d === 0 || d === 1) continue;
-      const y = top + h * d;
-      ctx.beginPath();
-      ctx.moveTo(left, y);
-      ctx.lineTo(right, y);
-      ctx.stroke();
+    this.applyGuideStyle(ctx, state.style.color);
+    ctx.globalAlpha = GRID_ALPHA;
+    for (const d of INNER) {
+      this.strokeHorizontal(ctx, left, right, top + h * d);
+      ctx.lineWidth = 1;
+      this.strokeVertical(ctx, left + w * d, top, bottom);
+      ctx.lineWidth = 1;
     }
-
-    // Vertical divisions
-    for (const d of DIVISIONS) {
-      if (d === 0 || d === 1) continue;
-      const x = left + w * d;
-      ctx.beginPath();
-      ctx.moveTo(x, top);
-      ctx.lineTo(x, bottom);
-      ctx.stroke();
-    }
-
-    // Diagonal lines (Gann angles)
-    ctx.globalAlpha = 0.5;
-    ctx.setLineDash([4, 3]);
-
-    // Main diagonal
+    // The Gann angles corner to corner, dashed.
+    this.applyGuideStyle(ctx, state.style.color, true);
     ctx.beginPath();
     ctx.moveTo(left, top);
     ctx.lineTo(right, bottom);
-    ctx.stroke();
-
-    // Anti-diagonal
-    ctx.beginPath();
     ctx.moveTo(right, top);
     ctx.lineTo(left, bottom);
     ctx.stroke();
-
     ctx.restore();
     this.resetLineStyle(ctx);
 
-    // Labels for divisions
-    ctx.fillStyle = state.style.color;
-    ctx.font = roleFont('mark');
-    ctx.globalAlpha = 0.6;
-    ctx.textBaseline = 'bottom';
-    ctx.textAlign = 'right';
-    for (const d of DIVISIONS) {
-      if (d === 0 || d === 1) continue;
-      const y = top + h * d;
-      ctx.fillText(`${(d * 100).toFixed(0)}%`, left - 3, y);
-    }
-    ctx.globalAlpha = 1;
+    this.renderLabels(ctx, state, { left, right, top, bottom, w, h });
 
     if (selected) this.renderAnchorHandles(ctx, state, viewport);
+  }
+
+  /**
+   * The divisions' shares, in price down the box's left side and in time
+   * under it; a label that would cover one already drawn is left out, the
+   * half kept first.
+   */
+  private renderLabels(ctx: CanvasRenderingContext2D, state: DrawingState, box: { left: number; right: number; top: number; bottom: number; w: number; h: number }): void {
+    const size = drawingLook().sizes.mark;
+    ctx.font = roleFont('mark');
+    ctx.fillStyle = readableText(state.style.color);
+    const order = [...INNER].sort((a, b) => Math.abs(a - 0.5) - Math.abs(b - 0.5));
+    const taken: { x0: number; x1: number; y0: number; y1: number }[] = [];
+    const free = (r: { x0: number; x1: number; y0: number; y1: number }) =>
+      taken.every((t) => r.x1 + LABEL_ROOM <= t.x0 || t.x1 + LABEL_ROOM <= r.x0 || r.y1 + LABEL_ROOM <= t.y0 || t.y1 + LABEL_ROOM <= r.y0);
+    for (const d of order) {
+      const text = `${Math.round(d * 100)}%`;
+      const width = ctx.measureText(text).width;
+      // In price: right-aligned left of the box, centred on its line.
+      const y = box.top + box.h * d;
+      const price = { x0: box.left - LABEL_GAP - width, x1: box.left - LABEL_GAP, y0: y - size / 2, y1: y + size / 2 };
+      if (free(price)) {
+        taken.push(price);
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'middle';
+        fillTextWithHalo(ctx, text, price.x1, y);
+      }
+      // In time: centred under its line.
+      const x = box.left + box.w * d;
+      const time = { x0: x - width / 2, x1: x + width / 2, y0: box.bottom + LABEL_GAP, y1: box.bottom + LABEL_GAP + size };
+      if (free(time)) {
+        taken.push(time);
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        fillTextWithHalo(ctx, text, x, time.y0);
+      }
+    }
   }
 
   hitTest(point: Point, state: DrawingState, viewport: ViewportState, tolerance: number): boolean {
