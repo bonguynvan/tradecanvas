@@ -103,6 +103,7 @@ chart.addDrawing({ type: 'fibRetracement', anchors: [a, b], options: { trendLine
   <li>채우기는 따로 정하지 않았다면 선 색을 옅게 한 것입니다. 그림을 빨간색으로 바꾸면 채우기도 빨개집니다. 색이 있는 태그의 라벨은 검정과 흰색 중 잘 읽히는 쪽으로 쓰입니다. 통계 상자는 두 테마 모두에서 차트 자체의 바탕색과 글자 색을 씁니다. 그림 색으로 쓴 글은 밝은 배경에서 잘 읽히지 않을 때 더 진해집니다.</li>
   <li>도구 고유의 선은 그 선 스타일을 따르고, 격자, 가이드, 보조 각도선은 1 px에 더 옅게 그려집니다. 라벨이 다른 라벨을 가리는 레벨, 각도, 분할에는 라벨을 달지 않지만, 0과 1 레벨은 예외입니다. 퍼센트는 정수일 때 정수로 쓰고(50.0%가 아니라 50%), 다른 비율과 함께 그리는 피보나치 비율마다 고유한 색이 있습니다.</li>
   <li>상승과 하락(가격 범위, 롱/숏 포지션의 목표와 손절, 예측의 결과)은 테마의 수익 색과 손실 색(스타일 키 <code>trading.profitColor</code>와 <code>trading.lossColor</code>)을 쓰며, 지정하지 않으면 초록색과 빨간색입니다.</li>
+  <li>텍스트, 아이콘, 화살표 마크에는 핸들이 표시되지 않습니다. 핸들이 글자나 기호 위에 놓이기 때문입니다. 선택하면 테두리로 표시되고, 어디를 눌러도 옮길 수 있습니다.</li>
 </ul>
 
 <h2>설정</h2>
@@ -283,7 +284,7 @@ chart.on('toolModeChange', (e) => e.payload)      // { eraser } 또는 { zoomAre
 
 <h3>갠 및 피치포크</h3>
 <ul>
-  <li><code>pitchfork</code>, <code>schiffPitchfork</code>, <code>modifiedSchiffPitchfork</code></li>
+  <li><code>pitchfork</code>, <code>schiffPitchfork</code>, <code>modifiedSchiffPitchfork</code> — B–C 선이 갈래를 잇고, 갈래 사이는 플롯 끝까지 옅게 칠해집니다.</li>
   <li><code>pitchfan</code> — 피벗에서 두 점 사이의 레벨을 지나는 반직선.</li>
   <li><code>gannFan</code> — 각 각도선은 플롯을 벗어나는 곳에 라벨이 붙습니다. <code>gannBox</code> — 분할에 가격과 시간 라벨이 붙습니다. <code>gannSquare</code></li>
 </ul>
@@ -303,13 +304,13 @@ chart.on('toolModeChange', (e) => e.payload)      // { eraser } 또는 { zoomAre
 
 <h3>패턴</h3>
 <ul>
-  <li><code>xabcdPattern</code>, <code>cypherPattern</code>, <code>abcdPattern</code>, <code>threeDrives</code> — 각 비율이 표시됩니다.</li>
-  <li><code>headAndShoulders</code> — 넥라인이 포함됩니다.</li>
+  <li><code>xabcdPattern</code>, <code>cypherPattern</code>, <code>abcdPattern</code>, <code>threeDrives</code> — 각 비율이 표시됩니다. 점 이름은 핸들을 피해 점 바깥쪽에 놓이고, 각 비율은 그 가이드선 위에, 선 위에 자리가 없으면 선 바로 옆에 놓이며, 이름, 핸들, 다른 비율을 가리지 않습니다.</li>
+  <li><code>headAndShoulders</code> — 넥라인이 포함되고, 각 고점의 이름이 그 위에 표시되며, 전체 이름이 서로 닿을 때는 LS, H, RS로 줄여 씁니다.</li>
 </ul>
 
 <h3>엘리엇 파동</h3>
 <ul>
-  <li><code>elliottWave</code>(1–5, A–C), <code>elliottImpulse</code>, <code>elliottCorrection</code>, <code>elliottTriangle</code>, <code>elliottDoubleCombo</code>, <code>elliottTripleCombo</code> — 라벨은 파동 차수에 맞는 스타일로 표시됩니다: ①, (1), 1 또는 i.</li>
+  <li><code>elliottWave</code>(1–5, A–C), <code>elliottImpulse</code>, <code>elliottCorrection</code>, <code>elliottTriangle</code>, <code>elliottDoubleCombo</code>, <code>elliottTripleCombo</code> — 라벨은 파동 차수에 맞는 스타일로 점 바깥쪽에 표시됩니다: 원 안의 숫자, (1), 1 또는 i.</li>
 </ul>
 
 <h3>주기</h3>

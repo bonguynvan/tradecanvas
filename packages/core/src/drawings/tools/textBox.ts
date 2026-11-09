@@ -1,5 +1,5 @@
 import type { DrawingStyle } from '@tradecanvas/commons';
-import { drawingFill, drawingLook, readableText, textSize } from '../drawingLook.js';
+import { drawingFill, drawingLook, extendExtent, readableText, textSize } from '../drawingLook.js';
 import { fillTextWithHalo } from './labels.js';
 
 /** A box of wrapped text on the chart (a note, a callout), and its size. */
@@ -27,6 +27,11 @@ export interface TextBoxLook {
   align?: 'left' | 'center' | 'right';
   /** Most lines drawn (12 when left out): a note keeps short, a text says what it has to. */
   maxLines?: number;
+  /**
+   * Traces the box's outline (on whole pixels) in place of a rounded box, for a
+   * box with more to its shape (a balloon's tail): filled and outlined as one.
+   */
+  traceBox?: (ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, radius: number) => void;
 }
 
 /**
@@ -152,7 +157,8 @@ export function drawTextBox(ctx: CanvasRenderingContext2D, text: string, x: numb
     const bx = Math.round(rect.x) + 0.5;
     const by = Math.round(rect.y) + 0.5;
     ctx.beginPath();
-    if (typeof ctx.roundRect === 'function') ctx.roundRect(bx, by, Math.round(rect.width) - 1, Math.round(rect.height) - 1, BOX_RADIUS);
+    if (look.traceBox) look.traceBox(ctx, bx, by, Math.round(rect.width) - 1, Math.round(rect.height) - 1, BOX_RADIUS);
+    else if (typeof ctx.roundRect === 'function') ctx.roundRect(bx, by, Math.round(rect.width) - 1, Math.round(rect.height) - 1, BOX_RADIUS);
     else ctx.rect(bx, by, Math.round(rect.width) - 1, Math.round(rect.height) - 1);
     if (look.fill) {
       ctx.fillStyle = look.fill;
@@ -178,6 +184,44 @@ export function drawTextBox(ctx: CanvasRenderingContext2D, text: string, x: numb
     else fillTextWithHalo(ctx, line, x + PAD_X + shift, ty);
   });
   return rect;
+}
+
+/** How far a selection frame sits outside what it frames, px: clear of a box's own border. */
+const FRAME_GAP = 3;
+
+/**
+ * A selected one-point drawing's frame (a text, a mark): 1 px, solid, rounded
+ * and on whole pixels, in `color`, `FRAME_GAP` outside `rect`. These drawings
+ * show it in place of a handle, which would sit on their letters or glyph.
+ * Its room is noted as covered whether or not it is drawn: a toolbar placed as
+ * the drawing is picked, before the frame shows, keeps clear of it.
+ */
+export function strokeSelectionFrame(ctx: CanvasRenderingContext2D, rect: Rect, color: string, selected = true): void {
+  const left = Math.round(rect.x - FRAME_GAP) + 0.5;
+  const top = Math.round(rect.y - FRAME_GAP) + 0.5;
+  const width = Math.round(rect.width + FRAME_GAP * 2) - 1;
+  const height = Math.round(rect.height + FRAME_GAP * 2) - 1;
+  extendExtent(left - 1, top - 1, width + 2, height + 2);
+  if (!selected) return;
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1;
+  ctx.globalAlpha = 1;
+  ctx.setLineDash([]);
+  ctx.beginPath();
+  if (typeof ctx.roundRect === 'function') ctx.roundRect(left, top, width, height, BOX_RADIUS + FRAME_GAP);
+  else ctx.rect(left, top, width, height);
+  ctx.stroke();
+  ctx.restore();
+}
+
+/** The box round `points` (a glyph's outline). */
+export function boundsOf(points: readonly { x: number; y: number }[]): Rect {
+  const xs = points.map((p) => p.x);
+  const ys = points.map((p) => p.y);
+  const x = Math.min(...xs);
+  const y = Math.min(...ys);
+  return { x, y, width: Math.max(...xs) - x, height: Math.max(...ys) - y };
 }
 
 export function inRect(point: { x: number; y: number }, rect: Rect, tolerance = 0): boolean {

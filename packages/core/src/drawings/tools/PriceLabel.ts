@@ -2,12 +2,25 @@ import type { DrawingState, Point, ViewportState } from '@tradecanvas/commons';
 import { DrawingBase } from '../DrawingBase.js';
 import { formatDrawingPrice } from './labels.js';
 import { BoxCache, boxFont } from './textBox.js';
-import { textSize } from '../drawingLook.js';
+import { labelInk, textSize } from '../drawingLook.js';
 
+/** How far the label's box sits right of and above its point, px. */
 const OFFSET_X = 14;
 const OFFSET_Y = 18;
-const PAD_X = 6;
-const HEIGHT = 20;
+/** Room round the words in the box, px: as the other annotation boxes give theirs. */
+const PAD_X = 8;
+const PAD_Y = 5;
+/** A line's height, as a share of the type size. */
+const LINE_RATIO = 1.35;
+/** The box's corners, px. */
+const RADIUS = 3;
+/** The dot on the point, px. */
+const DOT_RADIUS = 3;
+
+/** The box's height for type `fontSize` px tall. */
+function boxHeight(fontSize: number): number {
+  return Math.round(fontSize * LINE_RATIO) + PAD_Y * 2;
+}
 
 /** Price Label: a callout pinned to a point showing its price (or custom text). */
 export class PriceLabelTool extends DrawingBase {
@@ -25,13 +38,15 @@ export class PriceLabelTool extends DrawingBase {
     const text = this.text(state, viewport);
     // Without a context (hit-testing) estimate the width from the font size.
     const textW = ctx ? ctx.measureText(text).width : text.length * fontSize * 0.6;
-    return { x: p.x + OFFSET_X, y: p.y - OFFSET_Y - HEIGHT / 2, w: textW + PAD_X * 2, h: HEIGHT };
+    const h = boxHeight(fontSize);
+    return { x: p.x + OFFSET_X, y: p.y - OFFSET_Y - h / 2, w: Math.ceil(textW) + PAD_X * 2, h };
   }
 
   render(ctx: CanvasRenderingContext2D, state: DrawingState, viewport: ViewportState, selected: boolean): void {
     if (state.anchors.length < 1) return;
     const p = this.anchorToPixel(state.anchors[0], viewport);
-    ctx.font = boxFont(textSize(state.style, 'label'), state.style.bold, state.style.italic, false);
+    // Words people write, in the prose face; a price reads as well in it as in the figures face.
+    ctx.font = boxFont(textSize(state.style, 'label'), state.style.bold, state.style.italic);
     const b = this.box(ctx, state, p, viewport);
     this.drawn.set(state.id, { x: b.x, y: b.y, width: b.w, height: b.h });
 
@@ -44,19 +59,30 @@ export class PriceLabelTool extends DrawingBase {
     ctx.lineTo(b.x, b.y + b.h);
     ctx.stroke();
 
-    ctx.fillStyle = state.style.color;
-    ctx.fillRect(b.x, b.y, b.w, b.h);
-    ctx.fillStyle = state.style.textColor ?? '#FFFFFF';
+    this.fillBox(ctx, b, state.style.color);
+    // Black or white, whichever reads on its colour, in either theme.
+    ctx.fillStyle = state.style.textColor ?? labelInk(state.style.color);
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
     ctx.fillText(this.text(state, viewport), b.x + PAD_X, b.y + b.h / 2);
 
     ctx.beginPath();
-    ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+    ctx.arc(p.x, p.y, DOT_RADIUS, 0, Math.PI * 2);
     ctx.fillStyle = state.style.color;
     ctx.fill();
 
     if (selected) this.renderAnchorHandles(ctx, state, viewport);
+  }
+
+  /** The box, rounded and on whole pixels, filled with `color`. */
+  private fillBox(ctx: CanvasRenderingContext2D, b: { x: number; y: number; w: number; h: number }, color: string): void {
+    const x = Math.round(b.x);
+    const y = Math.round(b.y);
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    if (typeof ctx.roundRect === 'function') ctx.roundRect(x, y, Math.round(b.w), Math.round(b.h), RADIUS);
+    else ctx.rect(x, y, Math.round(b.w), Math.round(b.h));
+    ctx.fill();
   }
 
   hitTest(point: Point, state: DrawingState, viewport: ViewportState, tolerance: number): boolean {

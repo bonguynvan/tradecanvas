@@ -1,13 +1,10 @@
 import type { DrawingDescriptor, DrawingState, Point, ViewportState } from '@tradecanvas/commons';
 import { DrawingBase } from '../DrawingBase.js';
-import { BoxCache, PAD_X, PAD_Y, drawTextBox, inRect, textLook, type Rect } from './textBox.js';
+import { BoxCache, PAD_X, PAD_Y, drawTextBox, inRect, strokeSelectionFrame, textLook, type Rect } from './textBox.js';
 import { textSize } from '../drawingLook.js';
 
 /** Most lines a text draws: it says what it has to, a note keeps short. */
 const MAX_TEXT_LINES = 500;
-/** How far the dashed outline of a selected text sits outside its box. */
-const OUTLINE_GAP = 2;
-
 /**
  * Pull annotation text from `style.text`, then `meta.text`, then a literal default.
  * Pure helper — exported so it can be unit-tested without a canvas.
@@ -38,16 +35,16 @@ export class TextAnnotationTool extends DrawingBase {
     const box = drawTextBox(ctx, resolveAnnotationText(state), p.x - PAD_X, p.y - PAD_Y, look);
     this.boxes.set(state.id, box);
 
-    if (selected) {
-      if (!look.stroke) {
-        ctx.strokeStyle = state.style.color;
-        ctx.lineWidth = 1;
-        ctx.setLineDash([3, 3]);
-        ctx.strokeRect(box.x - OUTLINE_GAP, box.y - OUTLINE_GAP, box.width + OUTLINE_GAP * 2, box.height + OUTLINE_GAP * 2);
-        ctx.setLineDash([]);
-      }
-      this.renderAnchorHandles(ctx, state, viewport);
-    }
+    strokeSelectionFrame(ctx, box, state.style.color, selected);
+  }
+
+  /**
+   * No handle: its point is inside the box's padding, on the first letter, and
+   * a handle dragged sets the point to the pointer, which would make the text
+   * jump. A press anywhere on it moves it whole; the frame shows it is picked.
+   */
+  protected override handlePoints(): Point[] {
+    return [];
   }
 
   hitTest(point: Point, state: DrawingState, viewport: ViewportState, tolerance: number): boolean {

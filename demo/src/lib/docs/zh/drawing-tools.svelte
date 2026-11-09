@@ -103,6 +103,7 @@ chart.addDrawing({ type: 'fibRetracement', anchors: [a, b], options: { trendLine
   <li>填充是线条颜色的浅色，除非单独设置过：画线改成红色，填充也随之变红。彩色标签上的文字用黑色或白色，取更易读的一种；统计框使用图表自身的底色和文字颜色，深浅两种主题都是如此；使用画线颜色的文字在浅色背景上难以看清时会加深。</li>
   <li>工具自身的线条遵循其线型；网格、辅助线和次要角度线为 1 px，颜色更浅。某个级别、角度或分割的标签会遮住另一个时，它不显示标签，但 0 和 1 级别始终保留标签。百分比为整数时写成整数（50%，而不是 50.0%），与其他比率一起绘制的每个斐波那契比率都有自己的颜色。</li>
   <li>涨跌（价格区间、多/空仓位的目标和止损、预测的结果）使用主题的盈利色和亏损色（样式键 <code>trading.profitColor</code> 和 <code>trading.lossColor</code>），未设置时为绿色和红色。</li>
+  <li>文字、图标和箭头标记不显示控制点，因为控制点会压在其文字或图形上：选中后它会加上边框，按住它的任意位置即可移动。</li>
 </ul>
 
 <h2>设置</h2>
@@ -282,7 +283,7 @@ chart.on('toolModeChange', (e) => e.payload)      // { eraser } 或 { zoomArea }
 
 <h3>江恩与叉线</h3>
 <ul>
-  <li><code>pitchfork</code>、<code>schiffPitchfork</code>、<code>modifiedSchiffPitchfork</code></li>
+  <li><code>pitchfork</code>、<code>schiffPitchfork</code>、<code>modifiedSchiffPitchfork</code> — B–C 线连接各齿，齿之间着淡色，一直延伸到绘图区边缘。</li>
   <li><code>pitchfan</code> — 从枢轴点出发、穿过两点之间各级别的射线。</li>
   <li><code>gannFan</code> — 每条角度线在离开绘图区处标注；<code>gannBox</code> — 其分割按价格和时间标注；<code>gannSquare</code></li>
 </ul>
@@ -302,13 +303,13 @@ chart.on('toolModeChange', (e) => e.payload)      // { eraser } 或 { zoomArea }
 
 <h3>形态</h3>
 <ul>
-  <li><code>xabcdPattern</code>、<code>cypherPattern</code>、<code>abcdPattern</code>、<code>threeDrives</code> — 标注各自的比例。</li>
-  <li><code>headAndShoulders</code> — 带颈线。</li>
+  <li><code>xabcdPattern</code>、<code>cypherPattern</code>、<code>abcdPattern</code>、<code>threeDrives</code> — 标注各自的比例。点名位于各点外侧，避开控制点；每个比例位于其辅助线上，线上没有空位时紧挨在线旁，从不遮住点名、控制点或其他比例。</li>
+  <li><code>headAndShoulders</code> — 带颈线，各峰的名称标在峰上方，完整名称会相互碰到时缩写为 LS、H 和 RS。</li>
 </ul>
 
 <h3>艾略特波浪</h3>
 <ul>
-  <li><code>elliottWave</code>（1–5、A–C）、<code>elliottImpulse</code>、<code>elliottCorrection</code>、<code>elliottTriangle</code>、<code>elliottDoubleCombo</code>、<code>elliottTripleCombo</code> — 标签采用对应波浪级别的样式：①、(1)、1 或 i。</li>
+  <li><code>elliottWave</code>（1–5、A–C）、<code>elliottImpulse</code>、<code>elliottCorrection</code>、<code>elliottTriangle</code>、<code>elliottDoubleCombo</code>、<code>elliottTripleCombo</code> — 标签采用对应波浪级别的样式：带圈数字、(1)、1 或 i，位于各点外侧。</li>
 </ul>
 
 <h3>周期</h3>

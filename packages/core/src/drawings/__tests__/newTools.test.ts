@@ -211,7 +211,8 @@ describe('patterns', () => {
   it('three drives shows each drive against its pullback', () => {
     const { ctx, texts } = recordingCtx();
     // Pullback A 20, drive 2 30 → 1.500; pullback B 10, drive 3 25 → 2.500.
-    const pts = [at(0, 10), at(1, 50), at(2, 30), at(3, 60), at(4, 50), at(5, 75)];
+    // Ten bars a leg: room for each ratio on its guide, clear of the handles and the point names.
+    const pts = [at(0, 10), at(10, 50), at(20, 30), at(30, 60), at(40, 50), at(50, 75)];
     new ThreeDrivesTool().render(ctx, drawing('threeDrives', pts), vp, false);
     expect(texts).toEqual(expect.arrayContaining(['1', 'A', '2', 'B', '3', '1.500', '2.500']));
   });
@@ -219,7 +220,7 @@ describe('patterns', () => {
   it('a cypher measures D against X to C', () => {
     const { ctx, texts } = recordingCtx();
     // X 10, A 50, B 30, C 60, D 20: CD 40 / XC 50 = 0.800.
-    new CypherPatternTool().render(ctx, drawing('cypherPattern', [at(0, 10), at(1, 50), at(2, 30), at(3, 60), at(4, 20)]), vp, false);
+    new CypherPatternTool().render(ctx, drawing('cypherPattern', [at(0, 10), at(10, 50), at(20, 30), at(30, 60), at(40, 20)]), vp, false);
     expect(texts).toContain('0.800');
   });
 });

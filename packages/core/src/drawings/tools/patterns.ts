@@ -1,8 +1,9 @@
 import type { DrawingState, Point, ViewportState } from '@tradecanvas/commons';
 import { DrawingBase } from '../DrawingBase.js';
-import { legRatio, fillTextWithHalo } from './labels.js';
-import { roleFont } from '../drawingLook.js';
-import { drawingFill } from '../drawingLook.js';
+import { legRatio } from './labels.js';
+import { drawingFill, drawingLook, readableText, roleFont } from '../drawingLook.js';
+import { drawGuideRatio, drawVertexLabels, handleBoxes, type VertexMark } from './patternLabels.js';
+import type { LabelBox } from './labels.js';
 
 /** A dashed connector between two pattern points labelled with a leg ratio. */
 interface RatioLink {
@@ -18,7 +19,7 @@ interface RatioLink {
  * links (e.g. XB = |AB| / |XA|) as harmonic-pattern traders read them.
  */
 abstract class PatternTool extends DrawingBase {
-  protected abstract readonly pointLabels: string[];
+  protected abstract readonly pointLabels: readonly (string | VertexMark)[];
   protected readonly ratioLinks: RatioLink[] = [];
   /** Triangles (by anchor index) filled with the drawing's fill color. */
   protected readonly triangles: [number, number, number][] = [];
@@ -37,15 +38,22 @@ abstract class PatternTool extends DrawingBase {
     ctx.stroke();
     this.resetLineStyle(ctx);
 
-    this.renderRatioLinks(ctx, state, pts);
-    this.renderPointLabels(ctx, state, pts);
+    this.renderGuides(ctx, state, pts);
     this.renderExtras(ctx, state, pts, viewport);
+    // The names first, then the ratios where they leave room: a name says which point is which.
+    const names = this.renderPointLabels(ctx, state, pts);
+    this.renderRatios(ctx, state, pts, [...handleBoxes(pts, state.style.lineWidth), ...names]);
 
     if (selected) this.renderAnchorHandles(ctx, state, viewport);
   }
 
   /** Hook for pattern-specific decoration (e.g. a neckline). */
   protected renderExtras(_ctx: CanvasRenderingContext2D, _state: DrawingState, _pts: Point[], _viewport: ViewportState): void {}
+
+  /** The font the point names are set in: the letters' size, in the figures' face. */
+  protected pointFont(): { font: string; height: number } {
+    return { font: roleFont('letter', { weight: 600 }), height: drawingLook().sizes.letter };
+  }
 
   private renderTriangles(ctx: CanvasRenderingContext2D, state: DrawingState, pts: Point[]): void {
     // fillColor carries its own alpha (as with Rectangle); without one, tint
@@ -59,45 +67,39 @@ abstract class PatternTool extends DrawingBase {
       ctx.closePath();
       ctx.fill();
     }
-    ctx.globalAlpha = 1;
   }
 
-  private renderRatioLinks(ctx: CanvasRenderingContext2D, state: DrawingState, pts: Point[]): void {
-    ctx.font = roleFont('label');
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    for (const link of this.ratioLinks) {
-      const needed = Math.max(link.from, link.to, ...link.num, ...link.den);
-      if (needed >= pts.length) continue;
-      const p = pts[link.from];
-      const q = pts[link.to];
-      ctx.strokeStyle = state.style.color;
-      ctx.lineWidth = 1;
-      ctx.globalAlpha = 0.7;
-      ctx.setLineDash([4, 4]);
+  /** The ratio links whose points are all drawn so far. */
+  private linksIn(pts: Point[]): RatioLink[] {
+    return this.ratioLinks.filter((link) => Math.max(link.from, link.to, ...link.num, ...link.den) < pts.length);
+  }
+
+  private renderGuides(ctx: CanvasRenderingContext2D, state: DrawingState, pts: Point[]): void {
+    ctx.save();
+    this.applyGuideStyle(ctx, state.style.color, true);
+    for (const link of this.linksIn(pts)) {
       ctx.beginPath();
-      ctx.moveTo(p.x, p.y);
-      ctx.lineTo(q.x, q.y);
+      ctx.moveTo(pts[link.from].x, pts[link.from].y);
+      ctx.lineTo(pts[link.to].x, pts[link.to].y);
       ctx.stroke();
-      ctx.setLineDash([]);
-      ctx.globalAlpha = 1;
-      ctx.fillStyle = state.style.color;
-      fillTextWithHalo(ctx, legRatio(state, link.num, link.den), (p.x + q.x) / 2, (p.y + q.y) / 2);
+    }
+    ctx.restore();
+  }
+
+  private renderRatios(ctx: CanvasRenderingContext2D, state: DrawingState, pts: Point[], taken: LabelBox[]): void {
+    const placed = [...taken];
+    ctx.fillStyle = readableText(state.style.color);
+    for (const link of this.linksIn(pts)) {
+      const box = drawGuideRatio(ctx, legRatio(state, link.num, link.den), pts[link.from], pts[link.to], placed);
+      if (box) placed.push(box);
     }
   }
 
-  private renderPointLabels(ctx: CanvasRenderingContext2D, state: DrawingState, pts: Point[]): void {
-    ctx.font = roleFont('letter', { weight: 600 });
-    ctx.fillStyle = state.style.color;
-    ctx.textAlign = 'center';
-    for (let i = 0; i < pts.length && i < this.pointLabels.length; i++) {
-      // Label above a local high, below a local low.
-      const prev = pts[i - 1] ?? pts[i + 1];
-      const next = pts[i + 1] ?? pts[i - 1];
-      const isHigh = !prev || !next ? true : pts[i].y <= Math.min(prev.y, next.y);
-      ctx.textBaseline = isHigh ? 'bottom' : 'top';
-      fillTextWithHalo(ctx, this.pointLabels[i], pts[i].x, pts[i].y + (isHigh ? -6 : 6));
-    }
+  private renderPointLabels(ctx: CanvasRenderingContext2D, state: DrawingState, pts: Point[]): LabelBox[] {
+    const { font, height } = this.pointFont();
+    ctx.font = font;
+    const marks = this.pointLabels.map((m) => (typeof m === 'string' ? { text: m } : m));
+    return drawVertexLabels(ctx, state, pts, marks, height);
   }
 
   hitTest(point: Point, state: DrawingState, viewport: ViewportState, tolerance: number): boolean {
@@ -139,7 +141,20 @@ export class ABCDPatternTool extends PatternTool {
  */
 export class HeadAndShouldersTool extends PatternTool {
   descriptor = { type: 'headAndShoulders' as const, name: 'Head and Shoulders', requiredAnchors: 7, fill: true };
-  protected readonly pointLabels = ['', 'Left Shoulder', '', 'Head', '', 'Right Shoulder', ''];
+  protected readonly pointLabels: readonly VertexMark[] = [
+    { text: '' },
+    { text: 'Left Shoulder', short: 'LS' },
+    { text: '' },
+    { text: 'Head', short: 'H', first: true },
+    { text: '' },
+    { text: 'Right Shoulder', short: 'RS' },
+    { text: '' },
+  ];
+
+  /** The names are words: set in the prose face, at the labels' size. */
+  protected override pointFont(): { font: string; height: number } {
+    return { font: roleFont('label', { weight: 600, prose: true }), height: drawingLook().sizes.label };
+  }
   protected override readonly triangles: [number, number, number][] = [[0, 1, 2], [2, 3, 4], [4, 5, 6]];
 
   protected override renderExtras(ctx: CanvasRenderingContext2D, state: DrawingState, pts: Point[]): void {

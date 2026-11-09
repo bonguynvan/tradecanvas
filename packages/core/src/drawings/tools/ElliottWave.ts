@@ -1,7 +1,7 @@
-import { fillTextWithHalo } from './labels.js';
 import type { DrawingState, Point, ViewportState } from '@tradecanvas/commons';
 import { DrawingBase, nearPolyline } from '../DrawingBase.js';
-import { roleFont } from '../drawingLook.js';
+import { drawingLook, roleFont } from '../drawingLook.js';
+import { drawVertexLabels, type VertexMark } from './patternLabels.js';
 
 /** How a wave degree writes its labels: ① Ⓐ, (1) (A), 1 A, or i a. */
 export type WaveDegree = 'primary' | 'intermediate' | 'minor' | 'minute';
@@ -22,6 +22,16 @@ export function waveLabel(label: string, degree: WaveDegree): string {
     default:
       return label;
   }
+}
+
+/**
+ * A wave label as the chart draws it: a primary degree's figure plain, in a
+ * ring drawn round it, since the circled glyphs are too small to read at a
+ * label's size and missing from many fonts; the others as `waveLabel` writes
+ * them.
+ */
+export function waveMark(label: string, degree: WaveDegree): VertexMark {
+  return degree === 'primary' ? { text: label, ring: true } : { text: waveLabel(label, degree) };
 }
 
 const DEGREE_OPTION = {
@@ -56,15 +66,8 @@ abstract class WaveTool extends DrawingBase {
 
     const degree = this.option<string>(state, 'degree') as WaveDegree;
     ctx.font = roleFont('letter', { weight: 600 });
-    ctx.fillStyle = state.style.color;
-    ctx.textAlign = 'center';
-    for (let i = 0; i < pts.length && i < this.labels.length; i++) {
-      const prev = pts[i - 1] ?? pts[i + 1];
-      const next = pts[i + 1] ?? pts[i - 1];
-      const high = pts[i].y <= Math.min(prev.y, next.y);
-      ctx.textBaseline = high ? 'bottom' : 'top';
-      fillTextWithHalo(ctx, waveLabel(this.labels[i], degree), pts[i].x, pts[i].y + (high ? -6 : 6));
-    }
+    const marks = this.labels.map((label) => waveMark(label, degree));
+    drawVertexLabels(ctx, state, pts, marks, drawingLook().sizes.letter);
     if (selected) this.renderAnchorHandles(ctx, state, viewport);
   }
 

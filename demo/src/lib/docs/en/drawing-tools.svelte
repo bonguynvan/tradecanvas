@@ -103,6 +103,7 @@ chart.addDrawing({ type: 'fibRetracement', anchors: [a, b], options: { trendLine
   <li>A fill is the line's colour, tinted, unless it was set on its own: a drawing turned red fills red. A label on a coloured tag is written in black or white, whichever reads; a stats box is the chart's own surface and text colour, in both themes; words in a drawing's colour are deepened where they would not read on a light background.</li>
   <li>A tool's own lines follow its line style; its grids, guides and secondary angles are 1 px and lighter. A level, an angle or a division whose label would cover another's is left unlabelled, never the 0 and 1 levels. Percentages are written whole when they are (50%, not 50.0%), and each Fibonacci ratio drawn with others has a colour of its own.</li>
   <li>Rises and falls (a price range, a Long/Short position's target and stop, a forecast's outcome) take the theme's profit and loss colours (the <code>trading.profitColor</code> and <code>trading.lossColor</code> style keys), green and red without them.</li>
+  <li>A text, an icon or an arrow mark shows no handle, which would sit on its letters or its glyph: selected, it is framed, and a press anywhere on it moves it.</li>
 </ul>
 
 <h2>Settings</h2>
@@ -288,7 +289,7 @@ chart.on('toolModeChange', (e) => e.payload)      // { eraser } or { zoomArea }`
 
 <h3>Gann and pitchforks</h3>
 <ul>
-  <li><code>pitchfork</code>, <code>schiffPitchfork</code>, <code>modifiedSchiffPitchfork</code></li>
+  <li><code>pitchfork</code>, <code>schiffPitchfork</code>, <code>modifiedSchiffPitchfork</code> — the B–C line joins the tines, and the fork is tinted between them to the plot's edge.</li>
   <li><code>pitchfan</code> — rays from a pivot through levels between two points.</li>
   <li><code>gannFan</code> — each angle labelled where it leaves the plot; <code>gannBox</code> — its divisions labelled in price and in time; <code>gannSquare</code></li>
 </ul>
@@ -308,13 +309,13 @@ chart.on('toolModeChange', (e) => e.payload)      // { eraser } or { zoomArea }`
 
 <h3>Patterns</h3>
 <ul>
-  <li><code>xabcdPattern</code>, <code>cypherPattern</code>, <code>abcdPattern</code>, <code>threeDrives</code> — with their ratios.</li>
-  <li><code>headAndShoulders</code> — with the neckline.</li>
+  <li><code>xabcdPattern</code>, <code>cypherPattern</code>, <code>abcdPattern</code>, <code>threeDrives</code> — with their ratios. Point names sit outside their points, clear of the handles; each ratio sits on its guide, or just off it where the line is taken, never over a name, a handle or another ratio.</li>
+  <li><code>headAndShoulders</code> — with the neckline, its peaks named over them, shortened to LS, H and RS where the full names would meet.</li>
 </ul>
 
 <h3>Elliott waves</h3>
 <ul>
-  <li><code>elliottWave</code> (1–5, A–C), <code>elliottImpulse</code>, <code>elliottCorrection</code>, <code>elliottTriangle</code>, <code>elliottDoubleCombo</code>, <code>elliottTripleCombo</code> — labels in the style of the wave degree: ①, (1), 1 or i.</li>
+  <li><code>elliottWave</code> (1–5, A–C), <code>elliottImpulse</code>, <code>elliottCorrection</code>, <code>elliottTriangle</code>, <code>elliottDoubleCombo</code>, <code>elliottTripleCombo</code> — labels in the style of the wave degree: a figure in a ring, (1), 1 or i, outside their points.</li>
 </ul>
 
 <h3>Cycles</h3>
