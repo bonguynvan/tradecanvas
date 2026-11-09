@@ -1,7 +1,8 @@
-import { drawingFont, fillTextWithHalo } from './labels.js';
+import { fillTextWithHalo } from './labels.js';
 import type { DrawingState, Point, ViewportState } from '@tradecanvas/commons';
 import { DrawingBase } from '../DrawingBase.js';
 import { drawLineText, TextHitCache } from './lineText.js';
+import { roleFont } from '../drawingLook.js';
 
 const ARC_RADIUS = 28;
 const REFERENCE_LENGTH = 48;
@@ -53,7 +54,7 @@ export class TrendAngleTool extends DrawingBase {
     ctx.arc(a.x, a.y, ARC_RADIUS, Math.min(refRad, lineRad), Math.max(refRad, lineRad));
     ctx.stroke();
 
-    ctx.font = drawingFont(11);
+    ctx.font = roleFont('label');
     ctx.fillStyle = state.style.color;
     ctx.textAlign = dir > 0 ? 'left' : 'right';
     ctx.textBaseline = 'middle';

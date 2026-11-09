@@ -1,6 +1,6 @@
-import { drawingFont } from './labels.js';
 import type { DrawingState, Point, ViewportState } from '@tradecanvas/commons';
 import { DrawingBase } from '../DrawingBase.js';
+import { roleFont } from '../drawingLook.js';
 
 /**
  * Gann Box drawing tool.
@@ -76,7 +76,7 @@ export class GannBoxTool extends DrawingBase {
 
     // Labels for divisions
     ctx.fillStyle = state.style.color;
-    ctx.font = drawingFont(8);
+    ctx.font = roleFont('mark');
     ctx.globalAlpha = 0.6;
     ctx.textBaseline = 'bottom';
     ctx.textAlign = 'right';

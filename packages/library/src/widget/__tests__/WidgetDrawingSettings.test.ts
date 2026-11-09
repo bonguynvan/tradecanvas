@@ -149,7 +149,7 @@ describe('WidgetDrawingSettings: the Style tab', () => {
     change(row('Fill').querySelector<HTMLInputElement>('input[type=color]')!, '#00ff00', 'input');
     change(labelled<HTMLInputElement>('Opacity (%)'), '50');
     expect(calls.change).toEqual([
-      { style: { fillColor: 'rgba(0, 255, 0, 0.1)', fillOpacity: 0.1 } },
+      { style: { fillColor: 'rgba(0, 255, 0, 0.12)', fillOpacity: 0.12 } },
       { style: { fillColor: 'rgba(0, 255, 0, 0.5)', fillOpacity: 0.5 } },
     ]);
   });

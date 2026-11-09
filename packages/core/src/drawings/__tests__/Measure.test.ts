@@ -9,11 +9,12 @@ const plot: ViewportState = { ...unitViewport, chartRect: { x: 20, y: 10, width:
 const RIGHT = 20 + 300;
 const BOTTOM = 10 + 200;
 
-/** The label's box: the one fillRect the tool draws. */
+/** The label's box: the one rounded box the tool draws (its 1 px edge half a pixel in). */
 function labelBox(state: ReturnType<typeof drawing>, viewport: ViewportState) {
   const { ctx, calls } = recordingCtx();
   new MeasureTool().render(ctx, state, viewport, false);
-  const [x, y, w, h] = calls.find((c) => c.name === 'fillRect')!.args as number[];
+  const [ex, ey, ew, eh] = calls.find((c) => c.name === 'roundRect')!.args as number[];
+  const [x, y, w, h] = [ex - 0.5, ey - 0.5, ew + 1, eh + 1];
   return { left: x, top: y, right: x + w, bottom: y + h };
 }
 

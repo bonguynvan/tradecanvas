@@ -3,10 +3,10 @@ import { DrawingBase } from '../DrawingBase.js';
 import { resolveAnnotationText, TextAnnotationTool } from './TextAnnotation.js';
 import { NoteTool } from './annotations.js';
 import { BoxCache, drawTextBox, inRect, measureTextBox, textLook, type Rect, type TextBoxLook } from './textBox.js';
+import { textSize } from '../drawingLook.js';
 
 /** Widest a signpost's or a balloon's text runs before it wraps (px). */
 const MARKER_WIDTH = 200;
-const DEFAULT_FONT_SIZE = 13;
 /** A signpost's post: from its bar's point up to its board (px). */
 const POST_HEIGHT = 36;
 /** A balloon's tail: from its bubble down to its bar's point (px), and half its width where it leaves the bubble. */
@@ -14,7 +14,7 @@ const TAIL_HEIGHT = 12;
 const TAIL_HALF = 6;
 
 function markerLook(state: DrawingState): TextBoxLook {
-  return textLook(state.style, { fontSize: DEFAULT_FONT_SIZE, box: true, border: true, width: MARKER_WIDTH, fill: 'rgba(76, 141, 255, 0.1)' });
+  return textLook(state.style, { box: true, border: true, width: MARKER_WIDTH, fill: true });
 }
 
 /**
@@ -35,7 +35,7 @@ function markerBox(p: Point, size: { width: number; height: number }, gap: numbe
 
 /** A box `text` would roughly take before it is drawn (for a hit test). */
 function estimateSize(state: DrawingState, text: string): { width: number; height: number } {
-  const size = state.style.fontSize || DEFAULT_FONT_SIZE;
+  const size = textSize(state.style);
   const lines = text.split('\n');
   const longest = Math.max(...lines.map((line) => line.length));
   return { width: Math.min(MARKER_WIDTH, longest * size * 0.6) + 16, height: lines.length * size * 1.3 + 12 };

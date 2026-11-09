@@ -2010,7 +2010,9 @@ export class ChartWidget {
     // The chart's type grows with the look, from its sizes before any scaling; sizes `chartOptions.font` sets stay.
     const sizes = this.scaledChartSizes();
     // setFont goes over the font before it, so the sizes of `chartOptions.font` stay under the look's face.
-    if (!given?.font?.family) this.chart.setFont({ family: this.ui.font.mono, ...sizes });
+    // Words written on drawings in the look's own sans face, its figures in its figures face;
+    // a host that gave the chart a face keeps it for both.
+    if (!given?.font?.family) this.chart.setFont({ family: this.ui.font.mono, ...(given?.font?.textFamily ? {} : { textFamily: this.ui.font.family }), ...sizes });
     else if (Object.keys(sizes).length > 0) this.chart.setFont(sizes);
   }
 

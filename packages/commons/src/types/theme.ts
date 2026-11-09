@@ -7,6 +7,12 @@ export interface FontConfig {
   sizeSmall: number;
   sizeMedium: number;
   sizeLarge: number;
+  /**
+   * The face for words people write on drawings (a Text drawing, a note, a
+   * callout, the text on a line); their figures stay in `family`. Unset: the
+   * system's sans face.
+   */
+  textFamily?: string;
 }
 
 export interface ShapeConfig {

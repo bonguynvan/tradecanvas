@@ -769,6 +769,8 @@ export class InteractionManager {
       setCursor('');
       this.panHandler?.onPointerUp();
       this.drawingManager?.onPointerUp();
+      // A drawing that glowed under the pointer stops when the pointer goes.
+      this.drawingManager?.clearHover();
       this.tradingManager?.onPointerUp();
       this.alertDragHandler?.end();
       this.paneResizeHandler?.end();

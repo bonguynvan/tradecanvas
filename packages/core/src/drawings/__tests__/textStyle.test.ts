@@ -13,18 +13,24 @@ function recorder() {
   const texts: { text: string; x: number; y: number; font: string; color: string }[] = [];
   const fills: number[][] = [];
   const strokes: number[][] = [];
+  /** Rounded boxes laid out (a text box's background and border). */
+  const boxes: number[][] = [];
   const props: Record<string, unknown> = { font: '', fillStyle: '', strokeStyle: '' };
   const methods: Record<string, (...args: never[]) => unknown> = {
     measureText: (t: string) => ({ width: t.length * CHAR }),
     fillText: (text: string, x: number, y: number) => { texts.push({ text, x, y, font: String(props.font), color: String(props.fillStyle) }); },
     fillRect: (...r: number[]) => { fills.push(r); },
     strokeRect: (...r: number[]) => { strokes.push(r); },
+    // A box is a rounded path, filled and stroked.
+    roundRect: (...r: number[]) => { boxes.push(r); },
+    fill: () => { fills.push([]); },
+    stroke: () => { strokes.push([]); },
   };
   const ctx = new Proxy({} as Record<string, unknown>, {
     get: (_t, key: string) => (key in methods ? methods[key] : key in props ? props[key] : () => undefined),
     set: (_t, key: string, value) => { props[key] = value; return true; },
   }) as unknown as CanvasRenderingContext2D;
-  return { ctx, texts, fills, strokes };
+  return { ctx, texts, fills, strokes, boxes };
 }
 
 const style = (extra: Record<string, unknown> = {}) => ({ color: '#ff0000', lineWidth: 1, lineStyle: 'solid' as const, fontSize: 10, ...extra });
@@ -115,7 +121,9 @@ describe('a note’s text', () => {
     const r = recorder();
     new NoteTool().render(r.ctx, drawing('note', [{ time: 10, price: 50 }], { style: style({ text: 'n', textColor: '#00ff00', textBackground: false }) }), unitViewport, false);
     expect(r.texts[0].color).toBe('#00ff00');
-    expect(r.fills).toEqual([]);
+    // Only its pin and the pin's eye are filled: no box behind the text (its border stays).
+    expect(r.fills).toHaveLength(2);
+    expect(r.boxes).toHaveLength(1);
   });
 });
 
@@ -148,7 +156,7 @@ describe('a text box’s colours and length', () => {
     const r = recorder();
     const fills: string[] = [];
     const ctx = new Proxy(r.ctx as unknown as Record<string, unknown>, {
-      get: (t, key: string) => (key === 'fillRect' ? () => fills.push(String((t as Record<string, unknown>).fillStyle)) : (t as Record<string, unknown>)[key]),
+      get: (t, key: string) => (key === 'fill' ? () => fills.push(String((t as Record<string, unknown>).fillStyle)) : (t as Record<string, unknown>)[key]),
       set: (t, key: string, v) => { (t as Record<string, unknown>)[key] = v; return true; },
     }) as unknown as CanvasRenderingContext2D;
     new TextAnnotationTool().render(ctx, drawing('text', [{ time: 10, price: 50 }], { style: style({ text: 'x', textBackground: true, fillColor: '#123456', fillOpacity: 0.1 }) }), unitViewport, false);

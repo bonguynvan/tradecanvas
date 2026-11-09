@@ -1,7 +1,8 @@
 import type { DrawingState, Point, ViewportState, DataSeries } from '@tradecanvas/commons';
 import { DrawingBase } from '../DrawingBase.js';
 import { barIndexToX, priceToY, resolveBarIndex } from '../../viewport/ScaleMapping.js';
-import { formatDrawingPrice, drawingFont } from './labels.js';
+import { fillTextWithHalo, formatDrawingPrice } from './labels.js';
+import { keepOnPlot, roleFont } from '../drawingLook.js';
 
 /**
  * Anchored VWAP drawing tool.
@@ -9,6 +10,9 @@ import { formatDrawingPrice, drawingFont } from './labels.js';
  * to the end of visible data using cumulative (price * volume) / volume.
  * Optionally renders +/-1 and +/-2 standard deviation bands.
  */
+/** How far the label sits right of its last bar, px. */
+const LABEL_GAP = 6;
+
 export class AnchoredVWAPTool extends DrawingBase {
   descriptor = { type: 'anchoredVWAP' as const, name: 'Anchored VWAP', requiredAnchors: 1, priceOnly: true };
 
@@ -71,10 +75,13 @@ export class AnchoredVWAPTool extends DrawingBase {
       const y = priceToY(lastPrice, viewport);
       if (x >= chartRect.x && x <= chartRect.x + chartRect.width) {
         ctx.fillStyle = state.style.color;
-        ctx.font = drawingFont(9, 'bold');
-        ctx.textAlign = 'left';
+        ctx.font = roleFont('mark', { weight: 600 });
         ctx.textBaseline = 'middle';
-        ctx.fillText(`AVWAP ${formatDrawingPrice(lastPrice, lastPrice, viewport)}`, x + 6, y);
+        const text = `AVWAP ${formatDrawingPrice(lastPrice, lastPrice, viewport)}`;
+        // Beside its last bar, or moved in to stay on the plot by the price axis.
+        const at = keepOnPlot(x + LABEL_GAP, y, ctx.measureText(text).width, 0);
+        ctx.textAlign = 'left';
+        fillTextWithHalo(ctx, text, at.left, y);
       }
     }
 

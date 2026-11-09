@@ -18,7 +18,7 @@ export class ArrowTool extends DrawingBase {
     ctx.moveTo(p1.x, p1.y);
     ctx.lineTo(p2.x, p2.y);
     ctx.stroke();
-    fillArrowHead(ctx, p1, p2, state.style.color);
+    fillArrowHead(ctx, p1, p2, state.style.color, state.style.lineWidth);
     this.resetLineStyle(ctx);
     this.texts.set(state.id, drawLineText(ctx, state.style, this.anchorToPixel(state.anchors[0], viewport), this.anchorToPixel(state.anchors[1], viewport), viewport.chartRect));
     if (selected) this.renderAnchorHandles(ctx, state, viewport);

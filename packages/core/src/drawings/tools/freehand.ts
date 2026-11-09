@@ -1,10 +1,10 @@
 import type { AnchorPoint, DrawingDescriptor, DrawingState, Point, ViewportState } from '@tradecanvas/commons';
 import { DrawingBase, nearPolyline } from '../DrawingBase.js';
 import { priceToY, timeToX } from '../../viewport/ScaleMapping.js';
+import { arrowHeadSize, drawingFill } from '../drawingLook.js';
 
 /** Segments a curve or an arc is drawn and hit-tested with. */
 const CURVE_STEPS = 48;
-const ARROW_HEAD = 10;
 
 /** Draw a line through `pts`, smoothed: each corner rounded through the midpoints of its segments. */
 function strokeSmooth(ctx: CanvasRenderingContext2D, pts: readonly Point[]): void {
@@ -31,13 +31,19 @@ function strokePolyline(ctx: CanvasRenderingContext2D, pts: readonly Point[], cl
 }
 
 /** An open arrow head at `to`, coming from `from`. */
-export function drawArrowHead(ctx: CanvasRenderingContext2D, from: Point, to: Point, size = ARROW_HEAD): void {
+export function drawArrowHead(ctx: CanvasRenderingContext2D, from: Point, to: Point, size = arrowHeadSize(Number(ctx.lineWidth) || 1)): void {
   const angle = Math.atan2(to.y - from.y, to.x - from.x);
+  ctx.save();
+  // Solid and with a round point, whatever the line's dash and join.
+  ctx.setLineDash([]);
+  ctx.lineJoin = 'round';
+  ctx.lineCap = 'round';
   ctx.beginPath();
   ctx.moveTo(to.x - size * Math.cos(angle - Math.PI / 6), to.y - size * Math.sin(angle - Math.PI / 6));
   ctx.lineTo(to.x, to.y);
   ctx.lineTo(to.x - size * Math.cos(angle + Math.PI / 6), to.y - size * Math.sin(angle + Math.PI / 6));
   ctx.stroke();
+  ctx.restore();
 }
 
 /** Whether `point` is inside the polygon `pts` (even-odd rule). */
@@ -179,7 +185,7 @@ export class PolylineTool extends DrawingBase {
     const closed = pts.length >= 3;
     strokePolyline(ctx, pts, closed);
     if (closed) {
-      ctx.fillStyle = state.style.fillColor ?? 'rgba(76, 141, 255, 0.1)';
+      ctx.fillStyle = drawingFill(state.style);
       ctx.fill();
     }
     this.applyLineStyle(ctx, state.style);

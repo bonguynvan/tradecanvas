@@ -211,11 +211,25 @@ export interface DrawingPlugin {
   setDataGetter?(getter: () => readonly OHLCBar[], revision?: () => number): void;
 }
 
+/**
+ * The fill a new drawing gets: read as "its line's colour, tinted", so the
+ * fill follows the colour picked for it. Drawings saved with it read the same.
+ */
+export const LINE_TINT_FILL = 'rgba(76, 141, 255, 0.1)';
+
+/** A drawing's fill colour of its own: none when it has the default, which follows its line. */
+export function ownFillColor(style: Pick<DrawingStyle, 'fillColor'>): string | undefined {
+  const fill = style.fillColor;
+  return fill && fill.replace(/\s+/g, '') !== LINE_TINT_FILL_COMPACT ? fill : undefined;
+}
+/** The default fill without its spaces, as it may be saved. */
+const LINE_TINT_FILL_COMPACT = LINE_TINT_FILL.replace(/\s+/g, '');
+
 export const DEFAULT_DRAWING_STYLE: DrawingStyle = {
   color: '#4c8dff',
   lineWidth: 1,
   lineStyle: 'solid',
-  fillColor: 'rgba(76, 141, 255, 0.1)',
-  fillOpacity: 0.1,
-  fontSize: 12,
+  fillColor: LINE_TINT_FILL,
+  /** As strong as the chart tints a fill that follows the line. */
+  fillOpacity: 0.12,
 };

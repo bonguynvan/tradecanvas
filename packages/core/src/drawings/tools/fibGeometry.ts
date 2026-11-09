@@ -1,7 +1,8 @@
-import { drawingFont, fillTextWithHalo } from './labels.js';
+import { fillTextWithHalo } from './labels.js';
 import type { DrawingLevel, DrawingState, Point, ViewportState } from '@tradecanvas/commons';
 import { DrawingBase, distanceToSegment, nearPolyline } from '../DrawingBase.js';
 import { fibLevelList } from './options.js';
+import { roleFont } from '../drawingLook.js';
 
 const PHI = (1 + Math.sqrt(5)) / 2;
 const ARC_STEPS = 64;
@@ -70,7 +71,7 @@ abstract class LevelShapesTool extends DrawingBase {
     ctx.globalAlpha = 1;
     this.applyLineStyle(ctx, state.style);
     const showLevels = this.option<boolean>(state, 'showLevels');
-    ctx.font = drawingFont(11);
+    ctx.font = roleFont('label');
     ctx.textAlign = 'left';
     ctx.textBaseline = 'bottom';
     const shapes = this.shapes(pts, this.visibleLevels(state), viewport, state);

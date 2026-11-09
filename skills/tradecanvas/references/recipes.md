@@ -958,7 +958,7 @@ theme switches and is never saved. A grid of charts takes them for every
 chart with `grid.applyOverrides(patch)`. Orders and positions (`trading.*`),
 signal markers (`markers.*`), trade zones (`tradeZones.*`) and a selected
 drawing's handles (`drawings.handleColor`) read back `null` until set: they
-keep their own colours. In the widget, Settings → Style and Settings →
+keep their own colours (a handle is filled with the chart's background). In the widget, Settings → Style and Settings →
 Trading edit every key on the user's layer, with Auto for those.
 
 ## The widget with only the parts you want, and parts of your own

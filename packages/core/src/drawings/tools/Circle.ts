@@ -1,5 +1,6 @@
 import type { DrawingState, Point, ViewportState } from '@tradecanvas/commons';
 import { DrawingBase } from '../DrawingBase.js';
+import { drawingFill } from '../drawingLook.js';
 
 /** Circle from a center point and a point on its edge. */
 export class CircleTool extends DrawingBase {
@@ -18,7 +19,7 @@ export class CircleTool extends DrawingBase {
     ctx.beginPath();
     ctx.arc(c.x, c.y, r, 0, Math.PI * 2);
     if (state.style.fillColor) {
-      ctx.fillStyle = state.style.fillColor;
+      ctx.fillStyle = drawingFill(state.style);
       ctx.fill();
     }
     this.applyLineStyle(ctx, state.style);

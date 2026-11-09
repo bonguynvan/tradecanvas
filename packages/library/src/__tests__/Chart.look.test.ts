@@ -58,6 +58,13 @@ describe('Chart: bar layout and figures font', () => {
     expect(chart.getFont()).toMatchObject({ family: SANS_FONT_FAMILY, sizeSmall: 12 });
   });
 
+  it('takes a face for words written on drawings, checked as the figures’ face is', () => {
+    const chart = make({ theme: 'dark', font: { textFamily: "'Inter', sans-serif" } });
+    expect(chart.getFont().textFamily).toBe("'Inter', sans-serif");
+    chart.setFont({ textFamily: 'x; } body { color: red' });
+    expect(chart.getFont().textFamily).toBe("'Inter', sans-serif");
+  });
+
   it('goes back to the theme’s font when its own is taken away', () => {
     const chart = make({ theme: 'dark' });
     const themes = chart.getFont().family;

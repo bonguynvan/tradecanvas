@@ -1,6 +1,7 @@
-import { drawingFont, fillTextWithHalo } from './labels.js';
+import { fillTextWithHalo } from './labels.js';
 import type { DrawingState, Point, ViewportState } from '@tradecanvas/commons';
 import { DrawingBase, nearPolyline } from '../DrawingBase.js';
+import { roleFont } from '../drawingLook.js';
 
 /** How a wave degree writes its labels: ① Ⓐ, (1) (A), 1 A, or i a. */
 export type WaveDegree = 'primary' | 'intermediate' | 'minor' | 'minute';
@@ -54,7 +55,7 @@ abstract class WaveTool extends DrawingBase {
     this.resetLineStyle(ctx);
 
     const degree = this.option<string>(state, 'degree') as WaveDegree;
-    ctx.font = drawingFont(12, 'bold');
+    ctx.font = roleFont('letter', { weight: 600 });
     ctx.fillStyle = state.style.color;
     ctx.textAlign = 'center';
     for (let i = 0; i < pts.length && i < this.labels.length; i++) {

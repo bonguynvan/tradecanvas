@@ -2,18 +2,17 @@ import type { DrawingDescriptor, DrawingState, Point, ViewportState } from '@tra
 import { DrawingBase } from '../DrawingBase.js';
 import { resolveAnnotationText } from './TextAnnotation.js';
 import { BoxCache, boxFont, drawTextBox, inRect, textLook, type Rect } from './textBox.js';
+import { drawingLook, textSize } from '../drawingLook.js';
 
 /** Widest a note's or a callout's text runs before it wraps (px). */
 const NOTE_WIDTH = 240;
-const DEFAULT_FONT_SIZE = 13;
-
 function fontSize(state: DrawingState): number {
-  return state.style.fontSize || DEFAULT_FONT_SIZE;
+  return textSize(state.style);
 }
 
 /** A note's or a callout's text: in a box with a border unless its style says not, wrapped at `NOTE_WIDTH`. */
 function boxLook(state: DrawingState) {
-  return textLook(state.style, { fontSize: DEFAULT_FONT_SIZE, box: true, border: true, width: NOTE_WIDTH, fill: 'rgba(76, 141, 255, 0.1)' });
+  return textLook(state.style, { box: true, border: true, width: NOTE_WIDTH, fill: true });
 }
 
 /** A box `text` would roughly take before it is drawn (for a hit test). */
@@ -62,7 +61,8 @@ export class NoteTool extends DrawingBase {
     ctx.arc(p.x, cy, PIN_RADIUS, Math.PI * 0.8, Math.PI * 0.2);
     ctx.closePath();
     ctx.fill();
-    ctx.fillStyle = '#ffffff';
+    // The pin's eye: the chart's background through it, white or paper.
+    ctx.fillStyle = drawingLook().background;
     ctx.beginPath();
     ctx.arc(p.x, cy, PIN_RADIUS * 0.4, 0, Math.PI * 2);
     ctx.fill();
@@ -233,7 +233,7 @@ export class ArrowMarkTool extends DrawingBase {
     const text = state.style.text;
     if (text) {
       // The label sits past the tail, on the arrow's line.
-      ctx.font = boxFont(state.style.fontSize || 12, state.style.bold, state.style.italic);
+      ctx.font = boxFont(textSize(state.style, 'label'), state.style.bold, state.style.italic);
       ctx.fillStyle = state.style.textColor ?? state.style.color;
       ctx.textAlign = dir.x === 0 ? 'center' : dir.x > 0 ? 'right' : 'left';
       ctx.textBaseline = dir.y === 0 ? 'middle' : dir.y < 0 ? 'top' : 'bottom';

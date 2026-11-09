@@ -4,6 +4,7 @@ import { barIndexToX, priceToY, resolveBarIndex, timestampToBarIndex } from '../
 import { drawArrowHead } from './freehand.js';
 import { barsBetween, drawLabelBox, formatDrawingPrice, formatPriceChange, spanBetween } from './labels.js';
 import { inRect, type Rect } from './textBox.js';
+import { drawingFill } from '../drawingLook.js';
 
 const UP_COLOR = '#26a69a';
 const DOWN_COLOR = '#ef5350';
@@ -105,7 +106,7 @@ export class ProjectionTool extends DrawingBase {
     if (state.anchors.length >= 3) {
       const c = pts[2];
       const d = this.target(state, viewport);
-      ctx.fillStyle = state.style.fillColor ?? 'rgba(76, 141, 255, 0.1)';
+      ctx.fillStyle = drawingFill(state.style);
       ctx.fillRect(Math.min(c.x, d.x), Math.min(c.y, d.y), Math.abs(d.x - c.x), Math.abs(d.y - c.y));
       this.applyLineStyle(ctx, state.style);
       ctx.beginPath();

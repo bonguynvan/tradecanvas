@@ -1,8 +1,8 @@
 import type { DrawingDescriptor, DrawingState, Point, ViewportState } from '@tradecanvas/commons';
 import { DrawingBase } from '../DrawingBase.js';
 import { BoxCache, PAD_X, PAD_Y, drawTextBox, inRect, textLook, type Rect } from './textBox.js';
+import { textSize } from '../drawingLook.js';
 
-const DEFAULT_FONT_SIZE = 14;
 /** Most lines a text draws: it says what it has to, a note keeps short. */
 const MAX_TEXT_LINES = 500;
 /** How far the dashed outline of a selected text sits outside its box. */
@@ -34,7 +34,7 @@ export class TextAnnotationTool extends DrawingBase {
   render(ctx: CanvasRenderingContext2D, state: DrawingState, viewport: ViewportState, selected: boolean): void {
     if (state.anchors.length < 1) return;
     const p = this.anchorToPixel(state.anchors[0], viewport);
-    const look = { ...textLook(state.style, { fontSize: DEFAULT_FONT_SIZE, box: false, border: false, width: Infinity }), maxLines: MAX_TEXT_LINES };
+    const look = { ...textLook(state.style, { box: false, border: false, width: Infinity }), maxLines: MAX_TEXT_LINES };
     const box = drawTextBox(ctx, resolveAnnotationText(state), p.x - PAD_X, p.y - PAD_Y, look);
     this.boxes.set(state.id, box);
 
@@ -64,7 +64,7 @@ export class TextAnnotationTool extends DrawingBase {
 
 /** Roughly the box a text takes before it is first drawn (a hit test with no canvas). */
 function estimateBox(state: DrawingState, p: Point): Rect {
-  const size = state.style.fontSize || DEFAULT_FONT_SIZE;
+  const size = textSize(state.style);
   const lines = resolveAnnotationText(state).split('\n');
   const longest = Math.max(...lines.map((line) => line.length));
   return { x: p.x - PAD_X, y: p.y - PAD_Y, width: longest * size * 0.6 + PAD_X * 2, height: lines.length * size * 1.3 + PAD_Y * 2 };

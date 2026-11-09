@@ -1,5 +1,6 @@
 import type { DrawingState, Point, ViewportState } from '@tradecanvas/commons';
 import { DrawingBase, nearPolyline } from '../DrawingBase.js';
+import { drawingFill } from '../drawingLook.js';
 
 /** Most cycles drawn, however small they are on screen. */
 const MAX_CYCLES = 400;
@@ -56,7 +57,7 @@ export class TimeCyclesTool extends DrawingBase {
   render(ctx: CanvasRenderingContext2D, state: DrawingState, viewport: ViewportState, selected: boolean): void {
     if (state.anchors.length < 2) return;
     const cycles = this.cycles(state, viewport);
-    ctx.fillStyle = state.style.fillColor ?? 'rgba(76, 141, 255, 0.1)';
+    ctx.fillStyle = drawingFill(state.style);
     this.applyLineStyle(ctx, state.style);
     for (const pts of cycles) {
       ctx.beginPath();

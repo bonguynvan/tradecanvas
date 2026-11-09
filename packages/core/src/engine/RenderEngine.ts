@@ -529,6 +529,8 @@ export class RenderEngine {
     layer.clear();
     const c = layer.ctx;
 
+    // The drawing under the pointer glows here, under the crosshair: crossing drawings repaints only this layer.
+    ctx.drawingRenderer?.renderHover(c, viewport, theme);
     ctx.measureOverlay?.render(c, viewport, theme);
     ctx.selectionBoxOverlay?.render(c, viewport, theme);
     ctx.crosshairHandler?.render(c, viewport, theme);

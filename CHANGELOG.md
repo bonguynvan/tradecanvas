@@ -2,6 +2,22 @@
 
 ## Unreleased
 
+### Drawings
+
+- **Every drawing tool is drawn one way, and reads better** (`@tradecanvas/chart`, `@tradecanvas/core`, `@tradecanvas/commons`).
+  - Handles are rings in the drawing's colour, filled with the chart's background (`drawings.handleColor` still sets the fill), a size over the line: 9 px across on a 1 px line, up to 16 px on a thick one. They were 8 px white squares at any width. The handle under the pointer grows and the one being dragged fills with the colour. The others of a selection and a locked drawing show small dots, since a drag doesn't reshape them, and the nearest handle in reach is the one taken, not the first.
+  - A drawing under the pointer glows a little on its lines, so it is plain which one a click takes; the glow goes when the pointer leaves the chart. It is drawn on the pointer's layer, so crossing many drawings never draws them all again. A drawing being made shows its placed points as handles, the first one too, before the pointer moves on (a tap on a phone).
+  - Text people write (a Text, a note, a callout, a signpost, the words on a line or a box) is set at 14 px in the system's sans face, and figures (level prices, ratios, stats, Gann and volume profile marks) at 12 px, or 11 px for dense marks, from 8 to 12 px before. Both grow with the chart's type, so the widget's wide-screen sizes reach them. New `font.textFamily` on the chart (and `setFont`) gives the words a face of their own; the widget gives them its look's. A saved size of 12, the old default for every drawing, reads as none, so the widget's size list no longer offers 12; `DEFAULT_DRAWING_STYLE` no longer sets `fontSize`.
+  - A drawing's fill follows its colour unless one was set on its own: a rectangle, a note, a polyline or a date range turned red fills red, where it stayed blue (a date and price range's fall stays red). The old default fill reads as "follow the line" (`LINE_TINT_FILL`, and `ownFillColor` for a fill set by hand, in `@tradecanvas/commons`), and `DEFAULT_DRAWING_STYLE.fillOpacity` is 0.12, as strong as that tint. The volume profile's point of control, which took that fill and could not be seen, is amber.
+  - Dashes and dots are in proportion to the line, dots are round, and a solid line's ends are round. Arrowheads grow with the line, and a path's arrowhead is solid and pointed whatever the line's dash.
+  - Stats and measure boxes are the chart's own surface and text colour with rounded corners, not a dark box in both themes. Text on a coloured tag (Long/Short labels, a vertical line's time) is black or white, whichever reads. Words in a drawing's colour are deepened where they would not read on a light background, and text without a box has a halo. Text boxes have rounded corners on whole pixels. Stats boxes and the anchored VWAP's and the volume profile's labels stay on the plot instead of running under the price axis.
+
+### Chart
+
+- **A chart paints its element in the theme's background from the start** (`@tradecanvas/chart`). It did so only on `setTheme`, so a `new Chart(el, { theme: 'dark' })` on a light page drew its dark theme on white. An element the host gave a background keeps it.
+
+## 1.74.0 (2026-11-09)
+
 ### Widget
 
 - **The Print look is lighter to look at** (`@tradecanvas/chart`).

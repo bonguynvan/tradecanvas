@@ -1,4 +1,5 @@
 import type { DrawingStyle } from '@tradecanvas/commons';
+import { ownFillColor } from '@tradecanvas/commons';
 import { createIcon } from './icons.js';
 import { EN_TRANSLATOR, type Translator } from './i18n.js';
 import { escapeHtml } from './escapeHtml.js';
@@ -187,7 +188,7 @@ export class WidgetSelectionToolbar {
       pop('color', t('drawingSettings.color'), `<span class="tcw-sel-color" style="background:${escapeHtml(color)}"></span>`),
       pop('width', t('drawingSettings.lineWidth'), `<span class="tcw-sel-width" style="--w:${width}px"></span><span class="tcw-sel-num">${width}px</span>`),
       pop('lineStyle', t('drawingSettings.lineStyle'), lineGlyph(lineStyle)),
-      target.canFill ? pop('fill', t('drawingSettings.fill'), `<span class="tcw-sel-color tcw-sel-fill" style="background:${escapeHtml(safeColor(target.style.fillColor ?? color))}"></span>`) : '',
+      target.canFill ? pop('fill', t('drawingSettings.fill'), `<span class="tcw-sel-color tcw-sel-fill" style="background:${escapeHtml(safeColor(ownFillColor(target.style) ?? color))}"></span>`) : '',
       target.canText ? pop('textColor', t('drawingSettings.textColor'), `<span class="tcw-sel-text" style="--c:${escapeHtml(safeColor(target.style.textColor ?? color))}">T</span>`) : '',
       '<span class="tcw-sel-sep" aria-hidden="true"></span>',
       target.canSettings ? btn('settings', t('legend.settings'), createIcon('settings', 15)) : '',
@@ -279,7 +280,7 @@ export class WidgetSelectionToolbar {
   private openPopover(kind: Pop, anchor: HTMLButtonElement): void {
     const s = this.target!.style;
     // Each picker shows the colour it sets: the line's, the fill's or the text's.
-    const color = safeColor(kind === 'fill' ? s.fillColor ?? s.color : kind === 'textColor' ? s.textColor ?? s.color : s.color).toLowerCase();
+    const color = safeColor(kind === 'fill' ? ownFillColor(s) ?? s.color : kind === 'textColor' ? s.textColor ?? s.color : s.color).toLowerCase();
     const width = safeWidth(s.lineWidth);
     const lineStyle = safeLineStyle(s.lineStyle);
     const pick = (cls: string, on: boolean, attrs: string, inner = '') =>

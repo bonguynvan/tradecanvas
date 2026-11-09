@@ -55,6 +55,9 @@ chart.addDrawing({
 <p>
   Các công cụ chữ (Text, Note, Callout, Price Label, Arrow Mark) dùng chung một kiểu chữ: cỡ chữ, chữ đậm, chữ nghiêng và màu chữ riêng. Text, Note và Callout còn căn các dòng sang trái, giữa hoặc phải, có thể có nền và viền, và xuống dòng ở một độ rộng. Text giữ nguyên các chỗ xuống dòng của nó và chạy dài nếu không được đặt độ rộng; Note và Callout xuống dòng ở 240 px.
 </p>
+<p>
+  Khi không có cỡ riêng, chữ được đặt ở 14 px và số liệu (giá của một mức, một tỉ lệ, một hộp thống kê) ở 12 px, cả hai lớn hơn chữ trên trục ít nhất một bậc và lớn lên theo nó (<code>chart.setFont</code>, và widget trên màn hình rộng). Cỡ 12 được lưu từ phiên bản trước được đọc như không có cỡ. Chữ người dùng viết dùng font sans của hệ thống, số liệu dùng font của biểu đồ; <code>font: {'{'} textFamily {'}'}</code> (hoặc <code>chart.setFont({'{'} textFamily {'}'})</code>) đặt cho chữ một font của riêng bạn, còn widget đặt cho chúng font của preset đang dùng.
+</p>
 <pre><code>{`chart.addDrawing({
   type: 'text',
   anchors: [{ time: t1, price: 101.2 }],
@@ -87,6 +90,18 @@ chart.addDrawing({ type: 'fibRetracement', anchors: [a, b], options: { trendLine
 <p>
   Đường ngang và tia ngang ẩn giá bằng <code>showPrice: false</code>. Đường dọc hiện thời gian của nến bằng <code>showTime: true</code>, viết như crosshair viết. Hình chữ nhật có tám tay nắm: mỗi góc một cái và giữa mỗi cạnh một cái, kéo cạnh đó riêng. Fibonacci thoái lui và mở rộng vẽ một đường đứt nét qua các điểm của nó (<code>trendLine</code>, bật sẵn) và vẽ mọi mức bằng màu của hình vẽ với <code>oneColor</code>. Nhấp vào chữ cũng chọn được đường hoặc hình chữ nhật đó.
 </p>
+
+<h2 id="look">Hình vẽ trông thế nào</h2>
+<p>
+  Mọi công cụ được vẽ theo cùng một cách:
+</p>
+<ul>
+  <li>Tay nắm của hình vẽ đang được chọn là các vòng tròn mang màu của hình, tô bằng màu nền của biểu đồ (khóa kiểu <code>drawings.handleColor</code> tô chúng bằng màu của bạn), lớn hơn nét một bậc: rộng 9 px với nét 1 px, lớn hơn với nét dày hơn. Tay nắm dưới con trỏ to lên, còn tay nắm đang kéo được tô kín bằng màu đó. Chỉ hình vẽ mà một lần kéo sẽ đổi dạng mới hiện vòng tròn; các hình khác trong vùng chọn, và hình vẽ đã khóa, hiện chấm nhỏ.</li>
+  <li>Hình vẽ dưới con trỏ sáng lên một chút, để thấy rõ cú nhấp sẽ chọn hình nào.</li>
+  <li>Trong lúc vẽ, các điểm đã đặt hiện thành tay nắm.</li>
+  <li>Gạch và chấm lớn theo độ dày nét, chấm thì tròn, và hai đầu của nét liền được bo tròn. Đầu mũi tên cũng lớn theo nét.</li>
+  <li>Màu nền là màu của nét, pha nhạt, trừ khi được đặt riêng: hình vẽ đổi sang đỏ thì tô đỏ. Nhãn trên thẻ có màu được viết bằng đen hoặc trắng, màu nào dễ đọc hơn; hộp thống kê dùng màu bề mặt và màu chữ của chính biểu đồ, ở cả theme sáng lẫn tối; chữ mang màu của hình vẽ được làm đậm hơn ở chỗ nó khó đọc trên nền sáng.</li>
+</ul>
 
 <h2>Cài đặt</h2>
 <p>

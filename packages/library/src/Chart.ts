@@ -488,6 +488,13 @@ export class Chart {
     this.themeManager = new ThemeManager(options.theme);
     this.themeManager.setChartType(this.options.chartType ?? 'candlestick');
     this.applyStyle(startOverrides(options), 'host', false);
+    // The canvases are see-through: the theme's background from the start, as setTheme gives it
+    // later, so a dark chart on a light page isn't drawn on white. A background the host gave its
+    // element stays.
+    if (!this.container.style.backgroundColor) {
+      this.container.style.backgroundColor = this.themeManager.getTheme().background;
+      this.lastBackground = this.themeManager.getTheme().background;
+    }
     this.layoutManager = new LayoutManager();
     this.indicatorEngine = new IndicatorEngine();
     this.panes = new PaneLayout(this.layoutManager, this.indicatorEngine, (bounds) => this.crosshairHandler.setReportBounds(bounds));
@@ -6462,8 +6469,9 @@ const MAX_FONT_FAMILY = 300;
 function readFont(font: Partial<FontConfig>): Partial<FontConfig> {
   const out: Partial<FontConfig> = {};
   // A list of faces, nothing a style sheet could read more into (the family also reaches CSS text).
-  const family = font.family;
-  if (typeof family === 'string' && family.trim() !== '' && family.length <= MAX_FONT_FAMILY && !/[;{}<>\\]|\/\*/.test(family)) out.family = family;
+  const face = (v: unknown): v is string => typeof v === 'string' && v.trim() !== '' && v.length <= MAX_FONT_FAMILY && !/[;{}<>\\]|\/\*/.test(v);
+  if (face(font.family)) out.family = font.family;
+  if (face(font.textFamily)) out.textFamily = font.textFamily;
   for (const key of ['sizeSmall', 'sizeMedium', 'sizeLarge'] as const) {
     const size = font[key];
     if (typeof size === 'number' && Number.isFinite(size) && size > 0) out[key] = size;
