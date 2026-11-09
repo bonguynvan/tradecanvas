@@ -1,7 +1,8 @@
 /**
  * The drawing tools' column on a short screen. Its buttons are a size over
  * the widget's others; where the column is too short for all of them, they
- * give back what it lacks, down to the others' size, before it scrolls.
+ * give back what it lacks, down to the widget's icon and 2 px a side, before
+ * it scrolls (the icon shrinks inside them).
  */
 
 /** The custom property the stylesheet caps the tools' size with. */
@@ -14,7 +15,7 @@ export interface ToolFitInput {
   count: number;
   /** How much taller its content is than the column (px); 0 or less when it fits. */
   overflow: number;
-  /** The smallest the buttons go: the widget's other buttons (px). */
+  /** The smallest the buttons go (px). */
   min: number;
 }
 
@@ -22,6 +23,13 @@ export interface ToolFitInput {
 export function toolFitSize({ button, count, overflow, min }: ToolFitInput): number | null {
   if (overflow <= 0 || count <= 0 || button <= min) return null;
   return Math.max(min, button - Math.ceil(overflow / count));
+}
+
+/** The widget's icon with 2 px a side: the smallest a tool button still reads at. */
+const TOOL_MIN_PAD = 2;
+function smallestTool(column: HTMLElement): number {
+  const icon = parseFloat(getComputedStyle(column).getPropertyValue('--tcw-icon'));
+  return Number.isFinite(icon) ? icon + 2 * TOOL_MIN_PAD : 0;
 }
 
 /** Fit the tools in `column` now: measured at their own size, then capped. */
@@ -33,7 +41,7 @@ function fit(column: HTMLElement): void {
     button: buttons[0]?.offsetHeight ?? 0,
     count: buttons.length,
     overflow: column.scrollHeight - column.clientHeight,
-    min: parseFloat(getComputedStyle(column).getPropertyValue('--tcw-control-h')) || 0,
+    min: smallestTool(column),
   });
   if (size !== null) column.style.setProperty(TOOL_FIT, `${size}px`);
 }

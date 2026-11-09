@@ -22,7 +22,7 @@
   <tbody>
     <tr><td><code>print</code>（默认）</td><td>
       纸与墨。近白或近黑的底色，常规内容一律用灰色，只在有含义的地方用颜色；细线、3 px 控件、5 px 菜单和 8 px 对话框；
-      标签大写；所有数字（图表上的也一样）使用数字等宽的无衬线字体（Windows 上为 Segoe UI，Apple 系统上为 Helvetica Neue，Android 上为 Roboto），价格仍按列对齐。选中的按钮是实心墨色，选中的工具是墨蓝色。
+      大图标、细线条；标签保持原样书写，强调处用中等字重；使用系统自带字体（Windows 11 上为 Segoe UI Variable）；所有数字（图表上的也一样）使用数字等宽的无衬线字体（Windows 上为 Segoe UI，Apple 系统上为 Helvetica Neue，Android 上为 Roboto），价格仍按列对齐。选中的按钮是实心墨色，选中的工具是墨蓝色。
     </td></tr>
     <tr><td><code>studio</code></td><td>
       控件圆角 7 px，菜单 11 px，对话框 16 px。分组之间用间距而非分隔线隔开，菜单浮在柔和的阴影之上，
@@ -80,7 +80,7 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
 <table>
   <thead><tr><th>对象</th><th>规则</th><th>取值（px）</th></tr></thead>
   <tbody>
-    <tr><td>尺寸</td><td>从图标起按 φ 的半步递增：图标、它的小按钮、它的按钮、菜单行、工具栏、绘图工具栏。绘图工具比其他按钮大半步：按钮 33，图标 20。</td><td>16 · 20 · 26 · 33 · 42 · 53</td></tr>
+    <tr><td>尺寸</td><td>按 φ 的半步递增：图标、它的小按钮、它的按钮、工具栏、绘图工具栏；菜单行与按钮等高。绘图工具的图标比其他图标大半步（26 对 20），按钮则比这一步略小，以便在栏内两侧各留 8 px。</td><td>20 · 26 · 33 · 42 · 53</td></tr>
     <tr><td>间距</td><td>斐波那契数，每个数是前两个数之和，因此相邻两个数之比接近 φ。</td><td>2 · 3 · 5 · 8 · 13 · 21 · 34</td></tr>
     <tr><td>圆角</td><td>
       同样是斐波那契数。内层圆角等于外层圆角减去两者之间的内边距，这样两条曲线彼此平行：菜单的 5 就是其中各行的 2
@@ -131,6 +131,7 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
   sidebar: 'floating',
   intervals: 'segmented',                            // plain · segmented
   tagRadius: 999,                                    // the chart's price tags and pills
+  iconStroke: 1,                                     // icon lines, CSS px at every size (0: as drawn)
 })`}</code></pre>
 
 <table>
@@ -147,8 +148,8 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
       <code>toolbar</code> 高度、<code>control</code> 与 <code>controlSmall</code> 高度、<code>icon</code>、
       <code>sidebar</code> 宽度以及 <code>menuItem</code> 高度，单位 px。<code>compact</code> 和
       <code>spacious</code> 是把 Print 的尺寸下调或上调 φ 的半步。绘图工具的按钮和图标比
-      <code>control</code> 和 <code>icon</code> 大 φ 的半步（<code>compact</code> 下相同）。它们距 <code>sidebar</code>
-      栏两侧各 6 px；栏太矮放不下全部工具时，它们会先缩小（最小到 <code>control</code>），然后栏才滚动。
+      <code>control</code> 和 <code>icon</code> 大 φ 的半步（<code>compact</code> 下相同）。它们在 <code>sidebar</code>
+      栏内两侧留有空隙；栏太矮放不下全部工具时，它们会先缩小（最小到 <code>icon</code> 的尺寸，两侧各加 2 px），然后栏才滚动。
     </td></tr>
     <tr><td><code>font</code></td><td>
       字体族（CSS 字体列表）、正文 <code>size</code>（11–20 px；其他字号随之变化，彼此相隔 φ 的三分之一步）、字重，以及小标签（如分区标题）的大小写和字间距（em）。
@@ -160,6 +161,10 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
     <tr><td><code>toolbar</code> / <code>sidebar</code></td><td>沿边停靠，或像小岛一样悬浮。</td></tr>
     <tr><td><code>intervals</code></td><td>周期按钮保持原样，或放入分段式轨道中。</td></tr>
     <tr><td><code>tagRadius</code></td><td>图表绘制的价格标签、坐标轴胶囊标签和订单徽标的圆角。</td></tr>
+    <tr><td><code>iconStroke</code></td><td>
+      图标的线宽，单位 CSS px，范围 0.5 到 3，在任何图标尺寸下都一样粗（小于 14 px 的图标最多 1 px）。<code>0</code> 按图标集原样绘制，图标越大线条越粗。
+      Print 为 1.25；其他外观按原样绘制。
+    </td></tr>
   </tbody>
 </table>
 <p>无法使用的值（超出范围，或可能跳出其声明的 CSS）会被忽略，并沿用预设中的值。</p>

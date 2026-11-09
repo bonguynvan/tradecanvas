@@ -899,12 +899,13 @@ widget.setUI({
   toolbar: 'floating',
   active: 'solid',              // tint · solid · underline
   tagRadius: 999,               // pill price tags on the chart
+  iconStroke: 1,                // icon lines, CSS px at every size (0: as drawn)
 });
 console.log(widget.getUI().sizes.control, WIDGET_UI_PRESETS.capsule.components.control);
 ```
 
 The look changes shapes and sizes only; colours stay with `theme`. Print
-keeps to the golden ratio: sizes in half steps of φ (16, 20, 26, 33, 42),
+keeps to the golden ratio: sizes in half steps of φ (20, 26, 33, 42, 53),
 Fibonacci spacing and corners, type a third of φ apart (11, 13, 15, 18, 21);
 `PHI`, `FIBONACCI` and `phiStep` from `@tradecanvas/commons` do the same for
 yours. The widget loads no fonts, so load the families a look names (Print

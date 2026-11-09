@@ -23,7 +23,8 @@
   <tbody>
     <tr><td><code>print</code> (기본값)</td><td>
       종이와 잉크. 흰색에 가까운 바탕이나 검정에 가까운 바탕에, 평범한 것은 모두 회색이고 색은 뜻이 있는 곳에만 씁니다.
-      가는 선, 3 px 컨트롤, 5 px 메뉴, 8 px 대화 상자, 대문자 라벨. 차트의 숫자를 포함해 모든 숫자는 숫자 폭이
+      가는 선, 3 px 컨트롤, 5 px 메뉴, 8 px 대화 상자, 가는 선으로 그린 큰 아이콘,
+      쓴 그대로의 라벨과 강조용 중간 굵기, 시스템 자체 글꼴(Windows 11에서는 Segoe UI Variable). 차트의 숫자를 포함해 모든 숫자는 숫자 폭이
       같은 산세리프 글꼴(Windows에서는 Segoe UI, Apple 시스템에서는 Helvetica Neue, Android에서는 Roboto)이라 가격이 열에 맞춰 정렬됩니다. 선택된 버튼은 잉크색으로 꽉 채워지고, 선택된 도구는 잉크 파랑입니다.
     </td></tr>
     <tr><td><code>studio</code></td><td>
@@ -86,7 +87,7 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
 <table>
   <thead><tr><th>대상</th><th>규칙</th><th>값(px)</th></tr></thead>
   <tbody>
-    <tr><td>크기</td><td>아이콘에서 시작해 φ의 반 단계씩: 아이콘, 그 작은 버튼, 그 버튼, 메뉴 행, 바, 그리기 도구 열. 그리기 도구는 다른 버튼보다 반 단계 큽니다: 버튼 33, 아이콘 20.</td><td>16 · 20 · 26 · 33 · 42 · 53</td></tr>
+    <tr><td>크기</td><td>φ의 반 단계씩: 아이콘, 그 작은 버튼, 그 버튼, 바, 그리기 도구 열. 메뉴 행은 버튼과 높이가 같습니다. 그리기 도구의 아이콘은 다른 아이콘보다 반 단계 크고(20 대비 26), 버튼은 그보다 조금 작게 해서 열의 양쪽에 8 px씩 남깁니다.</td><td>20 · 26 · 33 · 42 · 53</td></tr>
     <tr><td>간격</td><td>피보나치 수. 각 수가 앞의 두 수의 합이라, 이웃한 두 수는 거의 φ배 차이가 납니다.</td><td>2 · 3 · 5 · 8 · 13 · 21 · 34</td></tr>
     <tr><td>모서리</td><td>
       역시 피보나치 수. 안쪽 모서리는 바깥 모서리에서 그 사이의 여백을 뺀 값이라 곡선이 나란히 이어집니다. 메뉴의 5는
@@ -138,6 +139,7 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
   sidebar: 'floating',
   intervals: 'segmented',                            // plain · segmented
   tagRadius: 999,                                    // the chart's price tags and pills
+  iconStroke: 1,                                     // icon lines, CSS px at every size (0: as drawn)
 })`}</code></pre>
 
 <table>
@@ -155,8 +157,8 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
       <code>sidebar</code> 너비, <code>menuItem</code> 높이, 단위 px. <code>compact</code>와 <code>spacious</code>는
       Print의 크기를 φ의 반 단계 내리거나 올린 것입니다. 그리기 도구의 버튼과 아이콘은
       <code>control</code>과 <code>icon</code>보다 φ의 반 단계 큽니다(<code>compact</code>에서는 같음).
-      <code>sidebar</code> 열의 양쪽에서 6 px 안쪽에 놓이며, 열이 낮아 모두 들어가지 않으면 스크롤하기 전에
-      <code>control</code> 크기까지 작아집니다.
+      <code>sidebar</code> 열의 양쪽에 여백을 두며, 열이 낮아 모두 들어가지 않으면 스크롤하기 전에
+      <code>icon</code> 크기에 양쪽 2 px를 더한 크기까지 작아집니다.
     </td></tr>
     <tr><td><code>font</code></td><td>
       글꼴 패밀리(CSS 목록), 본문 <code>size</code>(11–20 px; 다른 크기는 φ의 3분의 1 단계 간격으로 이를 따름), 굵기, 그리고 섹션 제목 같은 작은 라벨의
@@ -169,6 +171,10 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
     <tr><td><code>toolbar</code> / <code>sidebar</code></td><td>가장자리에 붙이거나, 섬처럼 띄웁니다.</td></tr>
     <tr><td><code>intervals</code></td><td>시간 단위 버튼을 그대로 두거나, 세그먼트 트랙 안에 넣습니다.</td></tr>
     <tr><td><code>tagRadius</code></td><td>차트가 그리는 가격 라벨, 축 알약, 주문 배지의 모서리.</td></tr>
+    <tr><td><code>iconStroke</code></td><td>
+      아이콘 선의 굵기, 단위 CSS px(0.5–3)이며 아이콘 크기와 상관없이 같은 굵기입니다(14 px 미만 아이콘은 최대 1 px). <code>0</code>이면 아이콘 세트
+      그대로 그려서 아이콘이 클수록 선도 굵어집니다. Print는 1.25이고, 다른 외관은 그대로 그립니다.
+    </td></tr>
   </tbody>
 </table>
 <p>쓸 수 없는 값(범위를 벗어나거나, 선언 밖으로 빠져나갈 수 있는 CSS)은 무시되고 프리셋의 값이 유지됩니다.</p>
