@@ -23,7 +23,8 @@
   <tbody>
     <tr><td><code>print</code>（既定）</td><td>
       紙とインク。白に近い地か黒に近い地に、ふつうのものはすべてグレー、色は意味のある所だけ。細い線、3 px のコントロール、
-      5 px のメニュー、8 px のダイアログ、大文字のラベル。数字はチャート上も含めてすべて数字の幅がそろったサンセリフ体（Windows では Segoe UI、Apple のシステムでは Helvetica Neue、Android では Roboto）で、価格が列にそろいます。選択中のボタンは
+      5 px のメニュー、8 px のダイアログ、細い線で描いた大きめのアイコン、
+      書いたままのラベルと強調用の中くらいの太さ、システム自身の書体（Windows 11 では Segoe UI Variable）。数字はチャート上も含めてすべて数字の幅がそろったサンセリフ体（Windows では Segoe UI、Apple のシステムでは Helvetica Neue、Android では Roboto）で、価格が列にそろいます。選択中のボタンは
       インクの塗りつぶし、選択中のツールはインクブルーです。
     </td></tr>
     <tr><td><code>studio</code></td><td>
@@ -86,7 +87,7 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
 <table>
   <thead><tr><th>対象</th><th>規則</th><th>値（px）</th></tr></thead>
   <tbody>
-    <tr><td>サイズ</td><td>アイコンから φ の半段ずつ：アイコン、その小さいボタン、そのボタン、メニューの行、バー、描画ツールの列。描画ツールは他のボタンより半段大きく、ボタン 33・アイコン 20。</td><td>16 · 20 · 26 · 33 · 42 · 53</td></tr>
+    <tr><td>サイズ</td><td>φ の半段ずつ：アイコン、その小さいボタン、そのボタン、バー、描画ツールの列。メニューの行はボタンと同じ高さです。描画ツールのアイコンは他より半段大きく（20 に対して 26）、ボタンはそれより少し小さめにして、列の両側に 8 px ずつ空けます。</td><td>20 · 26 · 33 · 42 · 53</td></tr>
     <tr><td>余白</td><td>フィボナッチ数。どれも前の 2 つの和なので、隣どうしはほぼ φ 倍の関係になります。</td><td>2 · 3 · 5 · 8 · 13 · 21 · 34</td></tr>
     <tr><td>角</td><td>
       これもフィボナッチ数。内側の角は外側の角から間の余白を引いた値なので、曲線が平行に走ります。メニューの 5 は、
@@ -138,6 +139,7 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
   sidebar: 'floating',
   intervals: 'segmented',                            // plain · segmented
   tagRadius: 999,                                    // the chart's price tags and pills
+  iconStroke: 1,                                     // icon lines, CSS px at every size (0: as drawn)
 })`}</code></pre>
 
 <table>
@@ -155,8 +157,8 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
       <code>sidebar</code> の幅、<code>menuItem</code> の高さ（px）。<code>compact</code> と <code>spacious</code> は、
       Print のサイズを φ の半段だけ下げたものと上げたものです。描画ツールのボタンとアイコンは
       <code>control</code> と <code>icon</code> より φ の半段大きくなります（<code>compact</code> では同じ）。
-      <code>sidebar</code> の列の両端から 6 px 内側に収まり、列が低くて全部入らないときは、スクロールする前に
-      <code>control</code> まで小さくなります。
+      <code>sidebar</code> の列の両側に余白を残し、列が低くて全部入らないときは、スクロールする前に
+      <code>icon</code> の大きさに左右 2 px を足した大きさまで小さくなります。
     </td></tr>
     <tr><td><code>font</code></td><td>
       フォントファミリー（CSS のリスト）、本文の <code>size</code>（11–20 px。ほかのサイズは φ の 3 分の 1 段ずつ離れてこれに連動）、ウェイト、そしてセクション
@@ -169,6 +171,10 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
     <tr><td><code>toolbar</code> / <code>sidebar</code></td><td>端に沿わせるか、島のように浮かせるか。</td></tr>
     <tr><td><code>intervals</code></td><td>時間足のボタンをそのまま並べるか、セグメント型のトラックに収めるか。</td></tr>
     <tr><td><code>tagRadius</code></td><td>チャートが描く価格ラベル、軸のピル、注文バッジの角の丸み。</td></tr>
+    <tr><td><code>iconStroke</code></td><td>
+      アイコンの線の太さ（CSS px、0.5–3）で、アイコンの大きさによらず同じ太さです（14 px 未満のアイコンは最大 1 px）。<code>0</code> ではアイコンセットの
+      とおりに描き、アイコンが大きいほど線も太くなります。Print は 1.25、ほかの外観はそのまま描きます。
+    </td></tr>
   </tbody>
 </table>
 <p>使えない値（範囲外の値や、宣言の外に抜け出しうる CSS）は無視され、プリセットの値がそのまま残ります。</p>

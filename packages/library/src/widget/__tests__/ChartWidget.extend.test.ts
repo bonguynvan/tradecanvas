@@ -1345,10 +1345,11 @@ describe('ChartWidget on a wide screen', () => {
     wide(2600);
     widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false });
     const root = host.querySelector<HTMLElement>('.tcw-root')!;
-    expect(root.style.getPropertyValue('--tcw-icon')).toBe('19px');
-    // The drawing tools grow with the rest, a half step over them: 39 and 24 against 31 and 19.
-    expect(root.style.getPropertyValue('--tcw-tool-h')).toBe('39px');
-    expect(root.style.getPropertyValue('--tcw-tool-icon')).toBe('24px');
+    expect(root.style.getPropertyValue('--tcw-icon')).toBe('23px');
+    // The drawing tools grow with the rest: their icon a half step over (30 against 23), their
+    // button as wide as the grown column keeps 8 px either side of (46 in 62).
+    expect(root.style.getPropertyValue('--tcw-tool-h')).toBe('46px');
+    expect(root.style.getPropertyValue('--tcw-tool-icon')).toBe('30px');
     expect(root.style.getPropertyValue('--tcw-radius')).toBe('');
     expect(root.style.getPropertyValue('--tcw-font')).toBe('');
   });

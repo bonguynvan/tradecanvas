@@ -51,6 +51,25 @@ describe('the stylesheet’s look', () => {
     }
   });
 
+  it('draws the icons’ lines at the look’s width, on the widget and in its portal, only when it sets one', () => {
+    expect(ruleBody("[data-tcw-icon-stroke='set'] .tc-icon")).toContain('stroke-width: var(--tcw-icon-stroke)');
+    // The same width at every icon size: the line isn't scaled with the drawing.
+    expect(ruleBody("[data-tcw-icon-stroke='set'] .tc-icon > *")).toContain('vector-effect: non-scaling-stroke');
+    // A small icon is no heavier than the rest: drawn as it is, its line was under 1 px.
+    expect(ruleBody("[data-tcw-icon-stroke='set'] .tc-icon:is([width='10'], [width='11'], [width='12'], [width='13'])"))
+      .toContain('stroke-width: min(var(--tcw-icon-stroke), 1px)');
+  });
+
+  it('draws the chart type’s icon at the size of the other toolbar icons', () => {
+    expect(ruleBody(".tcw-dropdown-trigger[data-role='charttype'] svg")).toContain('width: var(--tcw-icon)');
+  });
+
+  it('sets the small labels at the look’s label size', () => {
+    for (const sel of ['.tcw-dropdown-label', '.tcw-flyout-header', '.tcw-settings-section-title']) {
+      expect(ruleBody(sel), sel).toContain('font-size: var(--tcw-label-size)');
+    }
+  });
+
   it('sizes the bars and their controls by the tokens', () => {
     expect(ruleBody('.tcw-toolbar')).toContain('height: var(--tcw-toolbar-h)');
     expect(ruleBody('.tcw-sidebar')).toContain('width: var(--tcw-sidebar-w)');

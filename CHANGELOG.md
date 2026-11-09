@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased
+
+### Widget
+
+- **The Print look is lighter to look at** (`@tradecanvas/chart`).
+  - Its icons are a size larger, 20 px in the toolbar and 26 px in the drawing tools, from 16 and 20, and drawn in 1.25 px lines at every size, about the width the 16 px icons had, so they read finer; icons of 10 to 13 px, such as the legend's, at 1 px. Buttons are 33 px, from 26; the toolbar stays 42 px. Compact and spacious move a half step of φ with them.
+  - Labels such as section titles are written as they are, not in spaced capitals, a size up (11 px) so they still read, and emphasis is a medium weight (500), not semibold. In every look, labels as written are a size up from labels in capitals.
+  - The chart type's icon in the toolbar is the size of the other toolbar icons.
+  - On Windows 11 the face is Segoe UI Variable, lighter than Segoe UI with a true medium weight; older Windows keeps Segoe UI. Figures on the chart stay in Segoe UI, whose digits are one width.
+  - Menus and dialogs sit on a fainter line with a wider shadow.
+  - New `ui.iconStroke`: the icons' line width in CSS px, the same at every icon size, from 0.5 to 3. `0` draws them as the icon set does, as the Studio, Terminal, Capsule and Desk looks still do.
+  - Where the drawing tools' column is too short for them all (a 1366 × 768 laptop), they shrink down to the icon size and 2 px a side (24 px in Print) before it scrolls, not the button size, so the column fits a 768 px tall window.
+- **`iconSvg` marks its SVG with the class `tc-icon`** (`@tradecanvas/commons`), which the widget's line width reads.
+
 ## 1.73.2 (2026-11-08)
 
 ### Widget

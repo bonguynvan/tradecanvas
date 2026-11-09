@@ -158,14 +158,15 @@
   --tcw-toolbar-radius: 0px;
   --tcw-sidebar-radius: 0px;
   --tcw-toolbar-h: 42px;
-  --tcw-control-h: 26px;
-  --tcw-control-h-sm: 20px;
-  --tcw-icon: 16px;
+  --tcw-control-h: 33px;
+  --tcw-control-h-sm: 26px;
+  --tcw-icon: 20px;
   --tcw-sidebar-w: 53px;
-  --tcw-tool-h: 33px;
-  --tcw-tool-icon: 20px;
+  --tcw-tool-h: 37px;
+  --tcw-tool-icon: 26px;
   --tcw-menu-item-h: 33px;
-  --tcw-font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --tcw-icon-stroke: 1.25px;
+  --tcw-font: -apple-system, BlinkMacSystemFont, 'Segoe UI Variable Text', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   --tcw-font-size: 13px;
   --tcw-font-size-sm: 11px;
   --tcw-font-size-xs: 10px;
@@ -173,13 +174,14 @@
   --tcw-font-size-xl: 18px;
   --tcw-font-size-display: 21px;
   --tcw-weight: 400;
-  --tcw-weight-strong: 600;
-  --tcw-label-case: uppercase;
-  --tcw-label-tracking: 0.06em;
+  --tcw-weight-strong: 500;
+  --tcw-label-case: none;
+  --tcw-label-tracking: 0em;
+  --tcw-label-size: 11px;
   --tcw-border-w: 1px;
   --tcw-sep-w: 1px;
-  --tcw-menu-shadow: 0 0 0 1px var(--tcw-border), var(--tcw-shadow-md);
-  --tcw-dialog-shadow: 0 0 0 1px var(--tcw-border), var(--tcw-shadow-lg);
+  --tcw-menu-shadow: 0 0 0 1px var(--tcw-divider), var(--tcw-shadow-lg);
+  --tcw-dialog-shadow: 0 0 0 1px var(--tcw-divider), var(--tcw-shadow-lg);
   --tcw-tooltip-shadow: var(--tcw-shadow-sm);
   --tcw-blur: 0px;
   --tcw-surface-opacity: 100%;
@@ -708,7 +710,7 @@
 
 .tcw-dropdown-label {
   text-transform: var(--tcw-label-case);
-  font-size: var(--tcw-font-size-xs);
+  font-size: var(--tcw-label-size);
   color: var(--tcw-text-muted);
   letter-spacing: var(--tcw-label-tracking);
   padding: var(--tcw-space-4) var(--tcw-space-4) var(--tcw-space-2);
@@ -1180,11 +1182,11 @@
 /* === Sidebar === */
 
 /* The drawing tools' button and icon as drawn (the dock's rail has the same): never wider than
-   their column less 6 px a side (a narrow `sizes.sidebar` of yours shrinks them), nor taller
+   their column less 8 px a side (a narrow `sizes.sidebar` of yours shrinks them), nor taller
    than a short column leaves room for (`--tcw-tool-fit`, set by toolFit.ts on the column); the
    icon at most four fifths of its button, as a compact look's 16 in 20. */
 .tcw-root, .tcw-sidebar {
-  --tcw-tool-size: min(var(--tcw-tool-h), calc(var(--tcw-sidebar-w) - 12px), var(--tcw-tool-fit, 999px));
+  --tcw-tool-size: min(var(--tcw-tool-h), calc(var(--tcw-sidebar-w) - 16px), var(--tcw-tool-fit, 999px));
   --tcw-tool-icon-size: min(var(--tcw-tool-icon), calc(var(--tcw-tool-size) * 0.8));
 }
 
@@ -1325,7 +1327,7 @@
 
 .tcw-flyout-header {
   text-transform: var(--tcw-label-case);
-  font-size: var(--tcw-font-size-xs);
+  font-size: var(--tcw-label-size);
   color: var(--tcw-text-muted);
   letter-spacing: var(--tcw-label-tracking);
   padding: var(--tcw-space-3) var(--tcw-space-4) var(--tcw-space-2);
@@ -1573,7 +1575,7 @@
 }
 
 .tcw-settings-section-title {
-  font-size: var(--tcw-font-size-xs);
+  font-size: var(--tcw-label-size);
   font-weight: var(--tcw-weight-strong);
   text-transform: var(--tcw-label-case);
   letter-spacing: var(--tcw-label-tracking);
@@ -4433,6 +4435,20 @@
  * Each switch sets variables on its own root, which its parts read: a grid's
  * look never reaches into a chart that has one of its own. */
 
+/* The icons' lines (`ui.iconStroke`): one width at every icon size, on the widget and in its
+ * portal, when the look sets one; otherwise as the icon set draws them. */
+[data-tcw-icon-stroke='set'] .tc-icon {
+  stroke-width: var(--tcw-icon-stroke);
+}
+[data-tcw-icon-stroke='set'] .tc-icon > * {
+  vector-effect: non-scaling-stroke;
+}
+/* A small icon (the legend's, a pin, 10 to 13 px) at most 1 px, so it isn't heavier than the
+   rest: drawn as it is, its line was under 1 px. */
+[data-tcw-icon-stroke='set'] .tc-icon:is([width='10'], [width='11'], [width='12'], [width='13']) {
+  stroke-width: min(var(--tcw-icon-stroke), 1px);
+}
+
 /* A chosen button (`ui.active`): a tinted fill (default), a solid pill, or an underline.
  * Dialog tabs are chips, or underlined in the underline look. Panels sit below the
  * toolbar and beside the drawing tools. */
@@ -4591,6 +4607,10 @@
   justify-content: center;
   width: var(--tcw-control-h);
   padding: 0;
+}
+.tcw-dropdown-trigger[data-role='charttype'] svg {
+  width: var(--tcw-icon);
+  height: var(--tcw-icon);
 }
 
 /* Undo and redo with nothing to do: there, quiet, not pressable. */

@@ -23,7 +23,8 @@
   <tbody>
     <tr><td><code>print</code> (mặc định)</td><td>
       Giấy và mực. Nền trắng ngà hoặc đen than, màu xám cho mọi thứ bình thường và chỉ dùng màu ở chỗ nó mang ý
-      nghĩa; đường kẻ mảnh, nút 3 px, menu 5 px và hộp thoại 8 px; nhãn chữ in hoa; mọi con số, kể cả trên chart, dùng
+      nghĩa; đường kẻ mảnh, nút 3 px, menu 5 px và hộp thoại 8 px; biểu tượng lớn vẽ bằng nét mảnh; nhãn giữ nguyên cách viết, nhấn mạnh
+      bằng nét chữ vừa; font của chính hệ thống (Segoe UI Variable trên Windows 11); mọi con số, kể cả trên chart, dùng
       font sans có chữ số rộng bằng nhau (Segoe UI trên Windows, Helvetica Neue trên máy Apple, Roboto trên Android) nên
       giá vẫn thẳng hàng theo cột. Nút đang chọn tô đặc màu mực, công cụ đang chọn màu xanh mực.
     </td></tr>
@@ -89,7 +90,7 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
 <table>
   <thead><tr><th>Phần</th><th>Quy tắc</th><th>Giá trị (px)</th></tr></thead>
   <tbody>
-    <tr><td>Kích thước</td><td>Các nửa bậc φ tính từ biểu tượng: một biểu tượng, nút nhỏ của nó, nút của nó, một dòng menu, thanh công cụ, cột công cụ vẽ. Các công cụ vẽ to hơn các nút khác nửa bậc: nút 33, biểu tượng 20.</td><td>16 · 20 · 26 · 33 · 42 · 53</td></tr>
+    <tr><td>Kích thước</td><td>Các nửa bậc φ: một biểu tượng, nút nhỏ của nó, nút của nó, thanh công cụ, cột công cụ vẽ; một dòng menu cao bằng một nút. Biểu tượng của công cụ vẽ lớn hơn các biểu tượng khác nửa bậc (26 so với 20), còn nút của chúng nhỏ hơn mức đó một chút, để chừa 8 px mỗi bên trong cột.</td><td>20 · 26 · 33 · 42 · 53</td></tr>
     <tr><td>Khoảng cách</td><td>Các số Fibonacci, mỗi số là tổng của hai số trước, nên hai số kề nhau cách nhau gần φ lần.</td><td>2 · 3 · 5 · 8 · 13 · 21 · 34</td></tr>
     <tr><td>Góc bo</td><td>
       Cũng là các số Fibonacci. Góc lồng bên trong bằng góc bao quanh nó trừ đi phần đệm ở giữa, nên các đường cong
@@ -141,6 +142,7 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
   sidebar: 'floating',
   intervals: 'segmented',                            // plain · segmented
   tagRadius: 999,                                    // the chart's price tags and pills
+  iconStroke: 1,                                     // icon lines, CSS px at every size (0: as drawn)
 })`}</code></pre>
 
 <table>
@@ -157,9 +159,9 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
       Chiều cao <code>toolbar</code>, chiều cao <code>control</code> và <code>controlSmall</code>, <code>icon</code>,
       độ rộng <code>sidebar</code> và chiều cao <code>menuItem</code>, tính bằng px. <code>compact</code> và
       <code>spacious</code> là các kích thước của Print, dời xuống hoặc lên nửa bậc φ. Nút và biểu tượng của công cụ vẽ
-      lớn hơn <code>control</code> và <code>icon</code> nửa bậc φ (bằng nhau ở <code>compact</code>). Chúng cách mỗi
-      bên cột <code>sidebar</code> 6 px, và khi cột quá thấp để chứa hết thì chúng nhỏ lại, tới cỡ <code>control</code>,
-      trước khi cột phải cuộn.
+      lớn hơn <code>control</code> và <code>icon</code> nửa bậc φ (bằng nhau ở <code>compact</code>). Chúng chừa khoảng
+      trống hai bên trong cột <code>sidebar</code>, và khi cột quá thấp để chứa hết thì chúng nhỏ lại, tới cỡ
+      <code>icon</code> cộng 2 px mỗi bên, trước khi cột phải cuộn.
     </td></tr>
     <tr><td><code>font</code></td><td>
       Họ font (danh sách CSS), <code>size</code> của chữ thân (11–20 px; các cỡ khác đi theo nó, cách nhau một phần ba bậc φ), độ đậm, cùng kiểu chữ hoa/thường
@@ -172,6 +174,10 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
     <tr><td><code>toolbar</code> / <code>sidebar</code></td><td>Gắn dọc theo cạnh, hoặc nổi như một hòn đảo.</td></tr>
     <tr><td><code>intervals</code></td><td>Các nút khung thời gian để nguyên, hoặc đặt trong một rãnh phân đoạn.</td></tr>
     <tr><td><code>tagRadius</code></td><td>Góc bo của nhãn giá, nhãn trên trục và huy hiệu lệnh do biểu đồ vẽ.</td></tr>
+    <tr><td><code>iconStroke</code></td><td>
+      Nét của các biểu tượng, tính bằng CSS px từ 0.5 đến 3, dày như nhau ở mọi cỡ biểu tượng (tối đa 1 px ở biểu tượng dưới 14 px). <code>0</code> vẽ chúng
+      như bộ biểu tượng gốc, nét dày dần khi biểu tượng lớn lên. Print dùng 1.25; các giao diện khác vẽ nguyên như vậy.
+    </td></tr>
   </tbody>
 </table>
 <p>Giá trị nào không dùng được (nằm ngoài khoảng cho phép, hoặc CSS có thể thoát khỏi khai báo của nó) sẽ bị bỏ qua và giữ giá trị của preset.</p>

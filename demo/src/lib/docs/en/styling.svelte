@@ -23,9 +23,10 @@
   <tbody>
     <tr><td><code>print</code> (default)</td><td>
       Paper and ink. An off-white and an off-black ground, grey for everything that is normal and colour only where
-      it means something; hairlines, 3 px controls, 5 px menus and 8 px dialogs; capital labels; every figure, on the
-      chart too, in a sans face whose digits are one width (Segoe UI on Windows, Helvetica Neue on Apple systems, Roboto on
-      Android), so prices line up in columns. A chosen button is solid ink, a chosen tool ink blue.
+      it means something; hairlines, 3 px controls, 5 px menus and 8 px dialogs; large icons drawn in fine lines;
+      labels as written and a medium weight for emphasis; the system's own face (Segoe UI Variable on Windows 11);
+      every figure, on the chart too, in a sans face whose digits are one width (Segoe UI on Windows, Helvetica Neue on
+      Apple systems, Roboto on Android), so prices line up in columns. A chosen button is solid ink, a chosen tool ink blue.
     </td></tr>
     <tr><td><code>studio</code></td><td>
       Rounded 7 px controls, 11 px menus and 16 px dialogs. Groups are spaced instead of ruled, menus float on soft
@@ -89,7 +90,7 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
 <table>
   <thead><tr><th>What</th><th>Rule</th><th>Values (px)</th></tr></thead>
   <tbody>
-    <tr><td>Sizes</td><td>Half steps of φ from the icon: an icon, its small button, its button, a menu row, the bar, the drawing tools' column. The drawing tools are a half step over the other buttons: a 33 button and a 20 icon.</td><td>16 · 20 · 26 · 33 · 42 · 53</td></tr>
+    <tr><td>Sizes</td><td>Half steps of φ: an icon, its small button, its button, the bar, the drawing tools' column; a menu row is as tall as a button. The drawing tools' icons are a half step over the others' (26 against 20), their buttons a little short of it, to keep 8 px either side in the column.</td><td>20 · 26 · 33 · 42 · 53</td></tr>
     <tr><td>Spacing</td><td>Fibonacci numbers, each the sum of the two before, so neighbours are near φ apart.</td><td>2 · 3 · 5 · 8 · 13 · 21 · 34</td></tr>
     <tr><td>Corners</td><td>
       Fibonacci numbers too. A nested corner is the one around it less the padding between, so the curves run
@@ -141,6 +142,7 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
   sidebar: 'floating',
   intervals: 'segmented',                            // plain · segmented
   tagRadius: 999,                                    // the chart's price tags and pills
+  iconStroke: 1,                                     // icon lines, CSS px at every size (0: as drawn)
 })`}</code></pre>
 
 <table>
@@ -157,9 +159,9 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
       <code>toolbar</code> height, <code>control</code> and <code>controlSmall</code> heights, <code>icon</code>,
       <code>sidebar</code> width and <code>menuItem</code> height, px. <code>compact</code> and
       <code>spacious</code> are Print's sizes a half step of φ down or up. The drawing tools' buttons and icons are a
-      half step of φ over <code>control</code> and <code>icon</code> (the same size in <code>compact</code>). They stay
-      6 px in from each side of the <code>sidebar</code> column, and where the column is too short for them all they
-      shrink, down to <code>control</code>, before it scrolls.
+      half step of φ over <code>control</code> and <code>icon</code> (the same size in <code>compact</code>). They keep
+      room either side in the <code>sidebar</code> column, and where the column is too short for them all they shrink,
+      down to the <code>icon</code> size and 2 px a side, before it scrolls.
     </td></tr>
     <tr><td><code>font</code></td><td>
       Families (CSS lists), body <code>size</code> (11–20 px; the other sizes follow it a third of φ apart), weights,
@@ -172,6 +174,10 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
     <tr><td><code>toolbar</code> / <code>sidebar</code></td><td>Along the edge, or floating as an island.</td></tr>
     <tr><td><code>intervals</code></td><td>The interval buttons as they are, or in a segmented track.</td></tr>
     <tr><td><code>tagRadius</code></td><td>Corners of the price tags, axis pills and order badges the chart draws.</td></tr>
+    <tr><td><code>iconStroke</code></td><td>
+      The icons' lines, CSS px from 0.5 to 3, the same width at every icon size (at most 1 px on icons under 14 px). <code>0</code> draws them as the
+      icon set does, thicker as the icon grows. Print's are 1.25; the other looks draw them as they are.
+    </td></tr>
   </tbody>
 </table>
 <p>Values it can't use (out of range, or CSS that could leave its declaration) are ignored and keep the preset's.</p>

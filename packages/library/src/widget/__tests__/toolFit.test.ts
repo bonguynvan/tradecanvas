@@ -32,8 +32,11 @@ describe('watchToolFit', () => {
     vi.stubGlobal('cancelAnimationFrame', () => {});
     const root = document.createElement('div');
     root.className = 'tcw-root';
-    root.style.setProperty('--tcw-control-h', '26px');
     const column = document.createElement('div');
+    // The look's icon: the tools give way down to it and 2 px a side. On the column, as
+    // jsdom's computed style doesn't inherit custom properties.
+    column.style.setProperty('--tcw-control-h', '30px');
+    column.style.setProperty('--tcw-icon', '20px');
     root.appendChild(column);
     document.body.appendChild(root);
     const box = { height, content };
@@ -74,6 +77,13 @@ describe('watchToolFit', () => {
     watchToolFit(tall.column);
     await tall.flush();
     expect(tall.fit()).toBe('');
+  });
+
+  it('gives way down to the look’s icon and 2 px a side, not its buttons, before the column scrolls', async () => {
+    const { column, flush, fit } = setup(500, 745);
+    watchToolFit(column);
+    await flush();
+    expect(fit()).toBe('24px');
   });
 
   it('fits again when the root changes what shows the tools, though the column keeps its size', async () => {

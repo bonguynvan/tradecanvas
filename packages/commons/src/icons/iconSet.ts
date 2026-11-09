@@ -206,5 +206,5 @@ function markup(icon: IconDef): string {
 
 /** The icon as an inline SVG string at `size` px, coloured by `currentColor`. */
 export function iconSvg(icon: IconDef, size: number): string {
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">${markup(icon)}</svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" class="tc-icon" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">${markup(icon)}</svg>`;
 }

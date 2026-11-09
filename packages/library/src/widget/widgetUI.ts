@@ -30,6 +30,11 @@ const WIDE_STEPS: readonly (readonly [minWidth: number, phiFraction: number])[] 
  * Compact keeps them at the others' size.
  */
 const TOOL_STEP = Math.sqrt(PHI);
+/** The room either side of a drawing tool in its column, px, at the least. */
+const TOOL_SIDE_ROOM = 8;
+/** The icon lines a theme may set, CSS px (0: as drawn). */
+const MIN_ICON_STROKE = 0.5;
+const MAX_ICON_STROKE = 3;
 /** The scales a theme may set by hand. */
 const MIN_SCALE = 0.75;
 const MAX_SCALE = 2;
@@ -160,6 +165,11 @@ export interface ResolvedWidgetUI {
   intervals: 'plain' | 'segmented';
   /** Corners of the price tags and pills the chart draws (999: pills). */
   tagRadius: number;
+  /**
+   * The icons' lines, in CSS px at every icon size (0: as drawn, 1.75 of the
+   * icon's 24 units, so thicker as the icon grows). Always set by `resolveWidgetUI`; 0 when left out.
+   */
+  iconStroke?: number;
   /** How much bigger than its sizes the look is drawn: `'auto'` by the widget's width, or a number. */
   scale?: number | 'auto';
 }
@@ -185,6 +195,8 @@ export interface WidgetUITheme {
   sidebar?: ResolvedWidgetUI['sidebar'];
   intervals?: ResolvedWidgetUI['intervals'];
   tagRadius?: number;
+  /** The icons' lines, CSS px from 0.5 to 3, the same at every icon size; 0 draws them as the icon set does. */
+  iconStroke?: number;
   /**
    * How much bigger the bars, buttons, icons and type are drawn. `'auto'`
    * (the default) by the widget's width: as set up to full HD, then a step
@@ -196,8 +208,12 @@ export interface WidgetUITheme {
 
 const SYSTEM_SANS = "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
 const MONO = "'JetBrains Mono', 'SF Mono', 'Cascadia Code', 'Fira Code', 'Consolas', ui-monospace, monospace";
-/** The face every system has: the widget's labels without a font to load. */
-const PRINT_SANS = SANS_FONT_FAMILY;
+/**
+ * Print's face: each system's own, with nothing to load. On Windows 11 that is
+ * Segoe UI Variable, lighter than Segoe UI at the same size and with a true
+ * medium weight; older Windows keeps Segoe UI.
+ */
+const PRINT_SANS = SANS_FONT_FAMILY.replace("'Segoe UI'", "'Segoe UI Variable Text', 'Segoe UI'");
 /**
  * Print's figures, on the chart and in the panels: sans faces every system has
  * whose digits are one width as they come. San Francisco's are not, and the
@@ -221,25 +237,28 @@ const PRESETS: Record<WidgetUIPreset, PresetBase> = {
   /*
    * Print, the default: paper and ink, hairlines, figures that line up. It
    * keeps to the golden ratio. Sizes climb in half steps of φ from the icon
-   * (16, 20, 26, 33, 42), the drawing tools' column the step after (53), corners are Fibonacci numbers, and a nested corner
-   * is the one around it less the padding between (a menu's 5 = its rows'
-   * 2 + its 3 of padding).
+   * (20, 26, 33, 42), the drawing tools' column the step after (53), a menu
+   * row as tall as a button; corners are Fibonacci numbers, and a nested
+   * corner is the one around it less the padding between (a menu's 5 = its
+   * rows' 2 + its 3 of padding). Large icons in fine lines, labels as written,
+   * a medium weight for emphasis, and surfaces lifted by a shadow more than
+   * outlined keep it light to look at all day.
    */
   print: {
     radius: { xs: 1, sm: 2, md: 3, lg: 5, xl: 8 },
     components: { tag: 2, toolbar: 0, sidebar: 0 },
-    sizes: { toolbar: 42, control: 26, controlSmall: 20, icon: 16, sidebar: 53, menuItem: 33 },
-    // A half step of φ down or up; compact keeps its icons and small buttons whole.
+    sizes: { toolbar: 42, control: 33, controlSmall: 26, icon: 20, sidebar: 53, menuItem: 33 },
+    // A half step of φ down or up.
     density: {
-      compact: { toolbar: 33, control: 20, controlSmall: 20, icon: 16, sidebar: 33, menuItem: 26 },
-      spacious: { toolbar: 53, control: 33, controlSmall: 26, icon: 20, sidebar: 62, menuItem: 42 },
+      compact: { toolbar: 33, control: 26, controlSmall: 20, icon: 16, sidebar: 42, menuItem: 26 },
+      spacious: { toolbar: 53, control: 42, controlSmall: 33, icon: 26, sidebar: 68, menuItem: 42 },
     },
-    font: { family: PRINT_SANS, mono: PRINT_FIGURES, size: 13, weight: 400, strongWeight: 600, labelCase: 'uppercase', labelTracking: 0.06 },
+    font: { family: PRINT_SANS, mono: PRINT_FIGURES, size: 13, weight: 400, strongWeight: 500, labelCase: 'none', labelTracking: 0 },
     borders: { width: 1, separators: true },
-    // A hairline round each surface, and a soft shadow to lift it off the chart.
+    // A faint line round each surface, and a soft shadow to lift it off the chart.
     shadows: {
-      menu: '0 0 0 1px var(--tcw-border), var(--tcw-shadow-md)',
-      dialog: '0 0 0 1px var(--tcw-border), var(--tcw-shadow-lg)',
+      menu: '0 0 0 1px var(--tcw-divider), var(--tcw-shadow-lg)',
+      dialog: '0 0 0 1px var(--tcw-divider), var(--tcw-shadow-lg)',
       tooltip: 'var(--tcw-shadow-sm)',
     },
     blur: 0,
@@ -248,6 +267,7 @@ const PRESETS: Record<WidgetUIPreset, PresetBase> = {
     sidebar: 'docked',
     intervals: 'plain',
     tagRadius: 2,
+    iconStroke: 1.25,
   },
   studio: {
     radius: { xs: 3, sm: 5, md: 7, lg: 11, xl: 16 },
@@ -263,6 +283,7 @@ const PRESETS: Record<WidgetUIPreset, PresetBase> = {
     sidebar: 'docked',
     intervals: 'segmented',
     tagRadius: 4,
+    iconStroke: 0,
   },
   terminal: {
     radius: { xs: 1, sm: 2, md: 2, lg: 2, xl: 3 },
@@ -285,6 +306,7 @@ const PRESETS: Record<WidgetUIPreset, PresetBase> = {
     sidebar: 'docked',
     intervals: 'plain',
     tagRadius: 0,
+    iconStroke: 0,
   },
   capsule: {
     radius: { xs: 6, sm: 10, md: 999, lg: 18, xl: 24 },
@@ -303,6 +325,7 @@ const PRESETS: Record<WidgetUIPreset, PresetBase> = {
     sidebar: 'floating',
     intervals: 'segmented',
     tagRadius: 999,
+    iconStroke: 0,
   },
   /*
    * Desk: a desktop trading platform's window. Tahoma at 12px throughout,
@@ -325,6 +348,7 @@ const PRESETS: Record<WidgetUIPreset, PresetBase> = {
     sidebar: 'docked',
     intervals: 'plain',
     tagRadius: 0,
+    iconStroke: 0,
   },
 };
 
@@ -432,8 +456,10 @@ export function resolveWidgetUI(theme?: WidgetUIPreset | WidgetUITheme): Resolve
     if (key === 'labelCase') return v === 'none' || v === 'uppercase';
     return px(v, 0, 0.5);
   });
-  // Airy figures read in the look's own sans face, unless its figures face is set.
-  const font = density === 'airy' && t.font?.mono === undefined ? { ...picked, mono: picked.family } : picked;
+  // Airy figures read in the look's own sans face, unless its figures face is set; Print's in
+  // plain Segoe UI, as Segoe UI Variable's digits are not one width and the chart's canvas can't ask.
+  const figures = picked.family === PRINT_SANS ? SANS_FONT_FAMILY : picked.family;
+  const font = density === 'airy' && t.font?.mono === undefined ? { ...picked, mono: figures } : picked;
   // Corners the theme sets on the scale reach the parts that follow it.
   const components = pick(componentsFrom(radius, base.components), t.components, (_, v) => px(v, 0, 999));
   return {
@@ -451,6 +477,7 @@ export function resolveWidgetUI(theme?: WidgetUIPreset | WidgetUITheme): Resolve
     sidebar: oneOf(t.sidebar, ['docked', 'floating'] as const) ? t.sidebar : base.sidebar,
     intervals: oneOf(t.intervals, ['plain', 'segmented'] as const) ? t.intervals : base.intervals,
     tagRadius: px(t.tagRadius, 0, 999) ? t.tagRadius : base.tagRadius,
+    iconStroke: t.iconStroke === 0 || px(t.iconStroke, MIN_ICON_STROKE, MAX_ICON_STROKE) ? t.iconStroke : base.iconStroke,
     scale: typeof t.scale === 'number' && Number.isFinite(t.scale) && t.scale >= MIN_SCALE && t.scale <= MAX_SCALE ? t.scale : 'auto',
   };
 }
@@ -462,7 +489,10 @@ export function widgetUIVariables(ui: ResolvedWidgetUI): Record<string, string> 
   const c = ui.components;
   const s = ui.sizes;
   const f = ui.font;
-  const tool = ui.density === 'compact' ? 1 : TOOL_STEP;
+  const compact = ui.density === 'compact';
+  const tool = compact ? 1 : TOOL_STEP;
+  // A half step over the other buttons, but never so wide the column keeps less than its room a side.
+  const toolH = compact ? s.control : Math.min(Math.round(s.control * TOOL_STEP), s.sidebar - 2 * TOOL_SIDE_ROOM);
   return {
     '--tcw-radius-xs': p(r.xs),
     '--tcw-radius-sm': p(r.sm),
@@ -484,10 +514,12 @@ export function widgetUIVariables(ui: ResolvedWidgetUI): Record<string, string> 
     '--tcw-control-h-sm': p(s.controlSmall),
     '--tcw-icon': p(s.icon),
     '--tcw-sidebar-w': p(s.sidebar),
-    '--tcw-tool-h': p(Math.round(s.control * tool)),
+    '--tcw-tool-h': p(toolH),
     // An even size, so a 24-unit icon's strokes land on whole pixels.
     '--tcw-tool-icon': p(2 * Math.round((s.icon * tool) / 2)),
     '--tcw-menu-item-h': p(s.menuItem),
+    // 0 leaves the icons as drawn: the switch below turns the line width on.
+    '--tcw-icon-stroke': p(ui.iconStroke ?? 0),
     '--tcw-font': f.family,
     '--tcw-font-mono': f.mono,
     '--tcw-font-size': p(f.size),
@@ -500,6 +532,8 @@ export function widgetUIVariables(ui: ResolvedWidgetUI): Record<string, string> 
     '--tcw-weight-strong': String(f.strongWeight),
     '--tcw-label-case': f.labelCase,
     '--tcw-label-tracking': `${f.labelTracking}em`,
+    // Labels in capitals read at the smallest size; labels as written need the next.
+    '--tcw-label-size': p(typeSize(f.size, f.labelCase === 'uppercase' ? -2 : -1)),
     '--tcw-border-w': p(ui.borders.width),
     '--tcw-sep-w': ui.borders.separators ? p(Math.max(1, ui.borders.width)) : '0px',
     '--tcw-menu-shadow': ui.shadows.menu,
@@ -530,4 +564,5 @@ export function applyWidgetUI(el: HTMLElement, ui: ResolvedWidgetUI, options: { 
   el.dataset.tcwSidebar = ui.sidebar;
   el.dataset.tcwIntervals = ui.intervals;
   el.dataset.tcwSeparators = ui.borders.separators ? 'on' : 'off';
+  el.dataset.tcwIconStroke = (ui.iconStroke ?? 0) > 0 ? 'set' : 'drawn';
 }

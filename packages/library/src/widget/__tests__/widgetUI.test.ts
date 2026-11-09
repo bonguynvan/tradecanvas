@@ -8,18 +8,19 @@ describe('resolveWidgetUI', () => {
   it('is the Print look by default', () => {
     const ui = resolveWidgetUI();
     expect(ui.preset).toBe('print');
-    expect(ui).toMatchObject({ toolbar: 'docked', sidebar: 'docked', intervals: 'plain', active: 'solid', borders: { separators: true }, font: { labelCase: 'uppercase' } });
+    expect(ui).toMatchObject({ toolbar: 'docked', sidebar: 'docked', intervals: 'plain', active: 'solid', borders: { separators: true }, font: { labelCase: 'none', strongWeight: 500 }, iconStroke: 1.25 });
     expect(ui.components.menu).toBe(ui.radius.lg);
     expect(ui).toEqual(resolveWidgetUI('print'));
   });
 
   it('keeps Print to the golden ratio: sizes in half steps of φ, corners Fibonacci numbers', () => {
     const { sizes, radius, components, tagRadius } = resolveWidgetUI('print');
-    // An icon, its small button, its button, a menu row, the bar: each √φ the one before.
-    const ladder = [sizes.icon, sizes.controlSmall, sizes.control, sizes.menuItem, sizes.toolbar];
-    expect(ladder).toEqual(ladder.map((_, n) => phiStep(sizes.icon, n, 2)));
-    // The drawing tools' column is the step after the bar.
-    expect(sizes.sidebar).toBe(phiStep(sizes.icon, ladder.length, 2));
+    // An icon, its small button, its button, the bar, the drawing tools' column: each √φ the one before.
+    const ladder = [sizes.icon, sizes.controlSmall, sizes.control, sizes.toolbar, sizes.sidebar];
+    // (The ladder from 16 rounded: 20, 26, 33, 42, 53.)
+    expect(ladder).toEqual(ladder.map((_, n) => phiStep(16, n + 1, 2)));
+    // A menu row is as tall as a button.
+    expect(sizes.menuItem).toBe(sizes.control);
     for (const r of [...Object.values(radius), ...Object.values(components), tagRadius]) {
       expect(r === 0 || (FIBONACCI as readonly number[]).includes(r), String(r)).toBe(true);
     }
@@ -27,10 +28,11 @@ describe('resolveWidgetUI', () => {
 
   it('draws the drawing tools a half step of φ over the other buttons, and keeps them so when compact', () => {
     const vars = (theme: WidgetUITheme) => widgetUIVariables(resolveWidgetUI(theme));
-    // Print: a 26 button and a 16 icon elsewhere, 33 and 20 in a 53 column.
-    expect(vars({})).toMatchObject({ '--tcw-tool-h': '33px', '--tcw-tool-icon': '20px', '--tcw-sidebar-w': '53px' });
-    expect(vars({ density: 'spacious' })).toMatchObject({ '--tcw-tool-h': '42px', '--tcw-tool-icon': '26px' });
-    expect(vars({ density: 'compact' })).toMatchObject({ '--tcw-tool-h': '20px', '--tcw-tool-icon': '16px', '--tcw-sidebar-w': '33px' });
+    // Print: a 33 button and a 20 icon elsewhere; a 26 icon in a 53 column, its button
+    // short of the half step (42) to keep 8 px either side.
+    expect(vars({})).toMatchObject({ '--tcw-tool-h': '37px', '--tcw-tool-icon': '26px', '--tcw-sidebar-w': '53px' });
+    expect(vars({ density: 'spacious' })).toMatchObject({ '--tcw-tool-h': '52px', '--tcw-tool-icon': '34px', '--tcw-sidebar-w': '68px' });
+    expect(vars({ density: 'compact' })).toMatchObject({ '--tcw-tool-h': '26px', '--tcw-tool-icon': '16px', '--tcw-sidebar-w': '42px' });
     // Each look's column holds its tool with room either side, its icon an even size.
     for (const preset of ['print', 'studio', 'terminal', 'capsule', 'desk'] as const) {
       const v = vars({ preset });
@@ -40,6 +42,36 @@ describe('resolveWidgetUI', () => {
       expect(icon % 2, preset).toBe(0);
       expect(parseInt(v['--tcw-sidebar-w']) - tool, preset).toBeGreaterThanOrEqual(16);
     }
+  });
+
+  it('draws Print’s icons in fine lines, the same width at every size, and the other looks’ as drawn', () => {
+    expect(widgetUIVariables(resolveWidgetUI('print'))['--tcw-icon-stroke']).toBe('1.25px');
+    for (const preset of ['studio', 'terminal', 'capsule', 'desk'] as const) {
+      expect(resolveWidgetUI(preset).iconStroke, preset).toBe(0);
+    }
+    expect(resolveWidgetUI({ preset: 'studio', iconStroke: 1 }).iconStroke).toBe(1);
+    expect(resolveWidgetUI({ iconStroke: 0 }).iconStroke).toBe(0);
+    for (const bad of [0.2, 4, -1, Number.NaN, '1px']) {
+      expect(resolveWidgetUI({ iconStroke: bad as never }).iconStroke, String(bad)).toBe(1.25);
+    }
+    // The line width is a switch on the root: a look that draws them as they are leaves them be.
+    const el = document.createElement('div');
+    applyWidgetUI(el, resolveWidgetUI('print'));
+    expect(el.dataset.tcwIconStroke).toBe('set');
+    applyWidgetUI(el, resolveWidgetUI('studio'));
+    expect(el.dataset.tcwIconStroke).toBe('drawn');
+  });
+
+  it('sets labels as written a size up from labels in capitals, which read at the smaller one', () => {
+    expect(widgetUIVariables(resolveWidgetUI('print'))['--tcw-label-size']).toBe('11px');
+    expect(widgetUIVariables(resolveWidgetUI('terminal'))['--tcw-label-size']).toBe('10px');
+  });
+
+  it('writes Print in its system’s own face, the lighter one on Windows 11', () => {
+    const family = resolveWidgetUI('print').font.family;
+    expect(family.indexOf("'Segoe UI Variable Text'")).toBeGreaterThanOrEqual(0);
+    expect(family.indexOf("'Segoe UI Variable Text'")).toBeLessThan(family.indexOf("'Segoe UI'"));
+    expect(family.startsWith('-apple-system')).toBe(true);
   });
 
   it('sets type on a scale of thirds of φ, never under 10px', () => {
@@ -70,8 +102,8 @@ describe('resolveWidgetUI', () => {
   });
 
   it('moves Print’s sizes a half step of φ by density, and keeps the other looks’ density sizes', () => {
-    expect(resolveWidgetUI({ density: 'compact' }).sizes).toEqual({ toolbar: 33, control: 20, controlSmall: 20, icon: 16, sidebar: 33, menuItem: 26 });
-    expect(resolveWidgetUI({ density: 'spacious' }).sizes).toEqual({ toolbar: 53, control: 33, controlSmall: 26, icon: 20, sidebar: 62, menuItem: 42 });
+    expect(resolveWidgetUI({ density: 'compact' }).sizes).toEqual({ toolbar: 33, control: 26, controlSmall: 20, icon: 16, sidebar: 42, menuItem: 26 });
+    expect(resolveWidgetUI({ density: 'spacious' }).sizes).toEqual({ toolbar: 53, control: 42, controlSmall: 33, icon: 26, sidebar: 68, menuItem: 42 });
     for (const preset of ['studio', 'terminal', 'capsule'] as const) {
       expect(resolveWidgetUI({ preset, density: 'compact' }).sizes, preset).toEqual({ toolbar: 38, control: 26, controlSmall: 20, icon: 16, sidebar: 40, menuItem: 26 });
       expect(resolveWidgetUI({ preset, density: 'spacious' }).sizes, preset).toEqual({ toolbar: 52, control: 34, controlSmall: 28, icon: 20, sidebar: 63, menuItem: 34 });
@@ -100,7 +132,9 @@ describe('resolveWidgetUI', () => {
     const airy = resolveWidgetUI({ density: 'airy' });
     expect(airy.density).toBe('airy');
     expect(airy.sizes).toEqual(resolveWidgetUI({ density: 'spacious' }).sizes);
-    expect(airy.font.mono).toBe(airy.font.family);
+    // Print's sans face for figures is plain Segoe UI: Segoe UI Variable's digits are not one width.
+    expect(airy.font.mono).toBe(SANS_FONT_FAMILY);
+    expect(resolveWidgetUI({ preset: 'studio', density: 'airy' }).font.mono).toBe(resolveWidgetUI('studio').font.family);
     expect(resolveWidgetUI({ density: 'airy', font: { mono: 'Plex Mono' } }).font.mono).toBe('Plex Mono');
     expect(resolveWidgetUI().density).toBe('comfortable');
     expect(resolveWidgetUI(airy)).toEqual(airy);
@@ -258,7 +292,9 @@ describe('the look on a wide screen', () => {
   it('scales the bars, buttons, icons and type, and leaves the corners', () => {
     const base = resolveWidgetUI('print');
     const big = scaledWidgetUI(base, widgetScaleFor(2560));
-    expect(big.sizes).toEqual({ toolbar: 49, control: 31, controlSmall: 23, icon: 19, sidebar: 62, menuItem: 39 });
+    expect(big.sizes).toEqual({ toolbar: 49, control: 39, controlSmall: 31, icon: 23, sidebar: 62, menuItem: 39 });
+    // The icons' lines stay as fine on a wide screen.
+    expect(big.iconStroke).toBe(base.iconStroke);
     expect(big.font.size).toBe(15);
     expect(big.radius).toEqual(base.radius);
     expect(scaledWidgetUI(base, 1)).toEqual(base);

@@ -24,7 +24,9 @@
   <tbody>
     <tr><td><code>print</code> (predeterminado)</td><td>
       Papel y tinta. Un fondo casi blanco o casi negro, gris para todo lo normal y color solo donde significa algo;
-      líneas finas, controles de 3 px, menús de 5 px y diálogos de 8 px; etiquetas en mayúsculas; todas las cifras, también las del
+      líneas finas, controles de 3 px, menús de 5 px y diálogos de 8 px; iconos grandes de trazo fino;
+      etiquetas tal como se escriben y un peso medio para destacar; la fuente del propio sistema (Segoe UI Variable en
+      Windows 11); todas las cifras, también las del
       gráfico, en una fuente sans de dígitos del mismo ancho (Segoe UI en Windows, Helvetica Neue en Apple, Roboto en
       Android), así que los precios se alinean en columnas. Un botón elegido es de tinta sólida; una
       herramienta elegida, azul tinta.
@@ -92,7 +94,7 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
 <table>
   <thead><tr><th>Qué</th><th>Regla</th><th>Valores (px)</th></tr></thead>
   <tbody>
-    <tr><td>Tamaños</td><td>Medios pasos de φ desde el icono: un icono, su botón pequeño, su botón, una fila de menú, la barra, la columna de herramientas de dibujo. Las herramientas de dibujo van medio paso por encima de los demás botones: un botón de 33 y un icono de 20.</td><td>16 · 20 · 26 · 33 · 42 · 53</td></tr>
+    <tr><td>Tamaños</td><td>Medios pasos de φ: un icono, su botón pequeño, su botón, la barra, la columna de herramientas de dibujo; una fila de menú mide lo mismo que un botón. Los iconos de las herramientas de dibujo van medio paso por encima de los demás (26 frente a 20), y sus botones algo por debajo de ese paso, para dejar 8 px a cada lado en la columna.</td><td>20 · 26 · 33 · 42 · 53</td></tr>
     <tr><td>Espaciado</td><td>Números de Fibonacci, cada uno la suma de los dos anteriores, así que dos vecinos guardan una razón cercana a φ.</td><td>2 · 3 · 5 · 8 · 13 · 21 · 34</td></tr>
     <tr><td>Esquinas</td><td>
       También números de Fibonacci. Una esquina anidada es la que la rodea menos el relleno que hay entre ambas, así las
@@ -144,6 +146,7 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
   sidebar: 'floating',
   intervals: 'segmented',                            // plain · segmented
   tagRadius: 999,                                    // the chart's price tags and pills
+  iconStroke: 1,                                     // icon lines, CSS px at every size (0: as drawn)
 })`}</code></pre>
 
 <table>
@@ -162,8 +165,8 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
       ancho de <code>sidebar</code> y alto de <code>menuItem</code>, en px. <code>compact</code> y
       <code>spacious</code> son los tamaños de Print medio paso de φ más abajo o más arriba. Los botones e iconos de las
       herramientas de dibujo van medio paso de φ por encima de <code>control</code> e <code>icon</code> (iguales en
-      <code>compact</code>). Quedan a 6 px de cada lado de la columna <code>sidebar</code> y, si la columna es demasiado
-      baja para todas, se encogen, hasta <code>control</code>, antes de que la columna se desplace.
+      <code>compact</code>). Dejan espacio a cada lado en la columna <code>sidebar</code> y, si la columna es demasiado
+      baja para todas, se encogen, hasta el tamaño de <code>icon</code> más 2 px a cada lado, antes de que la columna se desplace.
     </td></tr>
     <tr><td><code>font</code></td><td>
       Familias (listas CSS), <code>size</code> del texto base (11–20 px; los demás tamaños lo siguen, separados un tercio de paso de φ), pesos, y las mayúsculas y
@@ -176,6 +179,11 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
     <tr><td><code>toolbar</code> / <code>sidebar</code></td><td>Pegada al borde, o flotando como una isla.</td></tr>
     <tr><td><code>intervals</code></td><td>Los botones de temporalidad tal cual, o en un carril segmentado.</td></tr>
     <tr><td><code>tagRadius</code></td><td>Esquinas de las etiquetas de precio, las píldoras del eje y las insignias de órdenes que dibuja el gráfico.</td></tr>
+    <tr><td><code>iconStroke</code></td><td>
+      Las líneas de los iconos, en px CSS de 0.5 a 3, del mismo grosor en cualquier tamaño de icono (como mucho 1 px en iconos de menos de 14 px). <code>0</code> los
+      dibuja como el juego de iconos, más gruesos cuanto mayor es el icono. Los de Print son de 1.25; los demás aspectos
+      los dibujan tal cual.
+    </td></tr>
   </tbody>
 </table>
 <p>Los valores que no puede usar (fuera de rango, o CSS que podría salirse de su declaración) se ignoran y se conserva el del preajuste.</p>
