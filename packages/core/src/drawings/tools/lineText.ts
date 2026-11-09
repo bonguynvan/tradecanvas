@@ -1,9 +1,8 @@
 import type { DrawingStyle, Point } from '@tradecanvas/commons';
 import { fillTextWithHalo, takeLabelBox } from './labels.js';
 import { boxFont, PAD_X, PAD_Y, type Rect } from './textBox.js';
+import { textSize } from '../drawingLook.js';
 
-/** The size a line's or a box's text is written at without one of its own (px). */
-const LINE_TEXT_SIZE = 13;
 /** How far the text sits off its line, above or under it (px). */
 const LINE_TEXT_GAP = 4;
 /** How far in from an end of the line the text starts (px). */
@@ -114,7 +113,7 @@ function textLines(style: DrawingStyle): string[] {
 }
 
 function setFont(ctx: CanvasRenderingContext2D, style: DrawingStyle): number {
-  const size = style.fontSize || LINE_TEXT_SIZE;
+  const size = textSize(style);
   ctx.font = boxFont(size, style.bold, style.italic);
   ctx.fillStyle = style.textColor ?? style.color;
   return size * LINE_HEIGHT;

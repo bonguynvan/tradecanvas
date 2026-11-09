@@ -1,7 +1,8 @@
-import { drawingFont, fillTextWithHalo } from './labels.js';
+import { fillTextWithHalo } from './labels.js';
 import type { DrawingState, Point, ViewportState } from '@tradecanvas/commons';
 import { DrawingBase } from '../DrawingBase.js';
 import { fibLevelList } from './options.js';
+import { roleFont } from '../drawingLook.js';
 
 export const FIB_CHANNEL_LEVELS = [0, 0.236, 0.382, 0.5, 0.618, 0.786, 1, 1.618];
 
@@ -55,7 +56,7 @@ export class FibChannelTool extends DrawingBase {
     }
 
     const c = this.anchorToPixel(state.anchors[2], viewport);
-    ctx.font = drawingFont(11);
+    ctx.font = roleFont('label');
     ctx.textAlign = 'right';
     ctx.textBaseline = 'middle';
     for (const { value: level, color } of this.visibleLevels(state)) {

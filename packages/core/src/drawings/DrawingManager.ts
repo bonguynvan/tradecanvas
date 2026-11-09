@@ -33,9 +33,12 @@ import { DrawingCreator, type CreationStep } from './DrawingCreator.js';
 import { snapToBar, snapToValues, type MagnetMode } from './magnetSnap.js';
 import { cleanIntervals, shownOnInterval } from '../indicators/intervals.js';
 import { DrawingSelection } from './DrawingSelection.js';
+import { drawAnchorHandles, setHandleFocus, type HandleRef } from './handles.js';
+import { LINE_TINT_FILL, withAlpha } from '@tradecanvas/commons';
 import { DrawingDrag, shiftAnchors, type DragEdit } from './DrawingDrag.js';
 import { constrainedAnchor, keepsAngle } from './drawingEditing.js';
 import { clampScreenPoints, isScreenAnchored, offsetScreenPoints, pixelToScreenPoint, screenPointToPixel, shiftScreenPoints } from './screenAnchors.js';
+import { setDrawingPlot } from './drawingLook.js';
 
 export type { DrawingOrderMove, DrawingPatch } from './drawingState.js';
 
@@ -112,10 +115,13 @@ export class DrawingManager {
     color: '#4c8dff',
     lineWidth: 1,
     lineStyle: 'solid',
-    fillColor: 'rgba(76, 141, 255, 0.1)',
-    fillOpacity: 0.1,
-    fontSize: 12,
+    // Read as "tint the line's colour" (see `drawingFill`), so a fill follows the colour picked.
+    fillColor: LINE_TINT_FILL,
+    fillOpacity: 0.12,
   };
+  /** The handle under the pointer, and the drawing under it: the pass draws them lifted. */
+  private hoverHandle: HandleRef | null = null;
+  private hoverDrawing: string | null = null;
   /** The drawing being made with the pointer. */
   private creator = new DrawingCreator();
   /** When the last drawing was finished, and the last press that drew (ms). */
@@ -619,6 +625,7 @@ export class DrawingManager {
 
   setActiveTool(type: DrawingToolType | null): void {
     if (type) this.setEraser(false);
+    this.clearHover();
     this.dropCopyGesture();
     const changed = type !== this.activeTool;
     this.activeTool = type;
@@ -833,6 +840,8 @@ export class DrawingManager {
         }
       });
       this.state = 'selected';
+      // The handle in hand goes back to a ring.
+      this.requestRender?.();
       return true;
     }
     return false;
@@ -1421,6 +1430,7 @@ export class DrawingManager {
   }
 
   removeDrawing(id: string): void {
+    if (this.hoverDrawing === id) this.clearHover();
     const index = this.drawings.findIndex((d) => d.id === id);
     const removed = this.drawings[index];
     this.drawings = this.drawings.filter((d) => d.id !== id);
@@ -1551,18 +1561,34 @@ export class DrawingManager {
     ctx.textAlign = 'left';
     ctx.textBaseline = 'alphabetic';
 
-    for (const drawing of this.drawings) {
-      if (!this.shown(drawing)) continue;
-      const plugin = this.registry.get(drawing.type);
-      const on = this.viewportFor(drawing.paneId, viewport);
-      if (plugin && on) renderIsolated(ctx, plugin, drawing, on, this.selection.has(drawing.id));
-    }
+    // Handles reshape only the primary of a selection; the one under the pointer or in hand is lifted.
+    const primary = this.selection.primary;
+    const dragged = this.state === 'resizing' && primary ? this.drag.activeHandle() : -1;
+    setHandleFocus({ primary, hover: this.hoverHandle, drag: dragged >= 0 && primary ? { id: primary, index: dragged } : null });
+    try {
+      for (const drawing of this.drawings) {
+        if (!this.shown(drawing)) continue;
+        const plugin = this.registry.get(drawing.type);
+        const on = this.viewportFor(drawing.paneId, viewport);
+        if (plugin && on) renderIsolated(ctx, plugin, drawing, on, this.selection.has(drawing.id));
+      }
 
-    // The drawing being made, with the anchor under the pointer.
-    const preview = this.creator.previewState();
-    const previewPlugin = preview ? this.registry.get(preview.type) : undefined;
-    const previewOn = preview ? this.viewportFor(preview.paneId, viewport) : null;
-    if (preview && previewPlugin && previewOn) renderIsolated(ctx, previewPlugin, preview, previewOn, false);
+      // The drawing being made, with the anchor under the pointer: its points placed as handles.
+      const preview = this.creator.previewState();
+      const previewPlugin = preview ? this.registry.get(preview.type) : undefined;
+      const previewOn = preview ? this.viewportFor(preview.paneId, viewport) : null;
+      if (preview && previewPlugin && previewOn) {
+        setHandleFocus({ primary: preview.id, hover: null, drag: null });
+        renderIsolated(ctx, previewPlugin, preview, previewOn, true);
+        // A tool draws nothing from one point: the point placed shows anyway, before the pointer moves on (a tap).
+        if (preview.anchors.length < 2) {
+          const on = previewOn;
+          drawAnchorHandles(ctx, preview, preview.anchors.map((a) => (this.onScreen(preview.type) ? screenPointToPixel(a, on) : { x: timeToX(a.time, on), y: priceToY(a.price, on) })));
+        }
+      }
+    } finally {
+      setHandleFocus(null);
+    }
 
     ctx.restore();
   }
@@ -1643,6 +1669,7 @@ export class DrawingManager {
   setEraser(on: boolean): void {
     if (on === this.eraser) return;
     this.eraser = on;
+    this.clearHover();
     if (on) {
       this.setActiveTool(null);
       this.selection.clear();
@@ -1725,24 +1752,61 @@ export class DrawingManager {
   }
 
   hoverCursorAt(pos: Point, main: ViewportState): 'move' | 'pointer' | null {
+    const found = this.hoverAt(pos, main);
+    const handleChanged = found.handle?.id !== this.hoverHandle?.id || found.handle?.index !== this.hoverHandle?.index;
+    this.hoverHandle = found.handle;
+    this.hoverDrawing = found.drawing;
+    // A lifted handle is drawn with the drawings: draw them again when it changed. The glow of a
+    // drawing under the pointer is on the pointer's layer, which repaints as the pointer moves.
+    if (handleChanged) this.requestRender?.();
+    return found.cursor;
+  }
+
+  /** Nothing is under the pointer any more (it left the chart): no glow, no lifted handle. */
+  clearHover(): void {
+    const handle = this.hoverHandle;
+    this.hoverHandle = null;
+    this.hoverDrawing = null;
+    if (handle) this.requestRender?.();
+  }
+
+  /**
+   * The pointer's layer: the drawing under the pointer once more, its lines
+   * only, glowing. Drawn over the drawings as the pointer moves, so crossing
+   * drawings never draws them all again.
+   */
+  renderHover(ctx: CanvasRenderingContext2D, viewport: ViewportState): void {
+    const id = this.hoverDrawing;
+    if (!id || this.selection.has(id) || this.activeTool || this.state === 'creating') return;
+    const drawing = this.drawings.find((d) => d.id === id);
+    if (!drawing || drawing.locked || !this.shown(drawing)) return;
+    const plugin = this.registry.get(drawing.type);
+    const on = this.viewportFor(drawing.paneId, viewport);
+    if (plugin && on) renderIsolated(ctx, plugin, drawing, on, false, true);
+  }
+
+  /** What the pointer is over: a handle of the selected drawing, or a drawing, and the cursor for it. */
+  private hoverAt(pos: Point, main: ViewportState): { cursor: 'move' | 'pointer' | null; handle: HandleRef | null; drawing: string | null } {
+    const none = { cursor: null, handle: null, drawing: null };
     const scope = this.scopeAt(pos, main);
-    if (!scope) return null;
-    if (this.eraser) return this.erasableAt(pos, scope) ? 'pointer' : null;
-    if (this.activeTool || this.state === 'creating') return null;
-    const tolerance = MOUSE_REACH.line;
+    if (!scope) return none;
+    if (this.eraser) return { ...none, cursor: this.erasableAt(pos, scope) ? 'pointer' : null };
+    if (this.activeTool || this.state === 'creating') return none;
+    const tolerance = MOUSE_REACH.handle;
     const viewport = scope.viewport;
     if (this.selection.primary) {
       const selected = this.drawings.find((d) => d.id === this.selection.primary);
       const plugin = selected && this.shown(selected) && !selected.locked && selected.paneId === scope.pane ? this.registry.get(selected.type) : undefined;
-      if (selected && plugin && plugin.hitTestAnchor(pos, selected, viewport, tolerance) >= 0) return 'move';
+      const index = selected && plugin ? plugin.hitTestAnchor(pos, selected, viewport, tolerance) : -1;
+      if (selected && index >= 0) return { cursor: 'move', handle: { id: selected.id, index }, drawing: selected.id };
     }
     for (let i = this.drawings.length - 1; i >= 0; i--) {
       const d = this.drawings[i];
       if (!this.shown(d) || d.locked || d.paneId !== scope.pane) continue;
       const plugin = this.registry.get(d.type);
-      if (plugin?.hitTest(pos, d, viewport, tolerance)) return 'pointer';
+      if (plugin?.hitTest(pos, d, viewport, MOUSE_REACH.line)) return { cursor: 'pointer', handle: null, drawing: d.id };
     }
-    return null;
+    return none;
   }
 
   private handleSelectionClick(pos: Point, main: ViewportState, reach: DrawingReach): boolean {
@@ -1812,20 +1876,50 @@ export class DrawingManager {
  * it sets, a host's drawing plugin included, never reaches the next one.
  * Clipped to its pane's plot: off the axes, and off the other panes.
  */
+/** The glow of a drawing under the pointer: its colour's strength, and how far it spreads (px). */
+const HOVER_GLOW_ALPHA = 0.55;
+const HOVER_GLOW_BLUR = 6;
+
+/** What a glow leaves out: the drawing's fills and text, drawn already on the layer under it. */
+const UNGLOWED = ['fill', 'fillRect', 'fillText', 'strokeText'] as const;
+
+/**
+ * A soft glow of `color` on the lines drawn on `ctx` from now on; its fills
+ * and text are left out (they are drawn on the layer below), until the
+ * function it returns is called.
+ */
+function glowLines(ctx: CanvasRenderingContext2D, color: string): () => void {
+  ctx.shadowColor = withAlpha(color, HOVER_GLOW_ALPHA);
+  ctx.shadowBlur = HOVER_GLOW_BLUR;
+  const own = ctx as unknown as Record<string, unknown>;
+  for (const name of UNGLOWED) own[name] = () => undefined;
+  return () => {
+    for (const name of UNGLOWED) delete own[name];
+  };
+}
+
 function renderIsolated(
   ctx: CanvasRenderingContext2D,
   plugin: DrawingPlugin,
   state: DrawingState,
   viewport: ViewportState,
   selected: boolean,
+  hovered = false,
 ): void {
   const plot = viewport.chartRect;
   ctx.save();
   ctx.beginPath();
   ctx.rect(plot.x, plot.y, plot.width, plot.height);
   ctx.clip();
-  plugin.render(ctx, state, viewport, selected);
-  ctx.restore();
+  setDrawingPlot(plot);
+  const unglow = hovered ? glowLines(ctx, state.style.color) : null;
+  try {
+    plugin.render(ctx, state, viewport, selected);
+  } finally {
+    unglow?.();
+    setDrawingPlot(null);
+    ctx.restore();
+  }
 }
 
 /** `drawing` with `name`, or with none when it is undefined. */

@@ -1,8 +1,9 @@
-import { drawingFont, fillTextWithHalo } from './labels.js';
+import { fillTextWithHalo } from './labels.js';
 import type { DrawingState, Point, ViewportState } from '@tradecanvas/commons';
 import { DrawingBase } from '../DrawingBase.js';
 import { timeToX } from '../../viewport/ScaleMapping.js';
 import { levelList } from './options.js';
+import { roleFont } from '../drawingLook.js';
 
 /**
  * Vertical lines at Fibonacci intervals (1, 2, 3, 5, 8, 13, 21, 34, 55)
@@ -35,7 +36,7 @@ export class FibTimeZonesTool extends DrawingBase {
     if (unit === 0) return;
 
     const { chartRect } = viewport;
-    ctx.font = drawingFont(11);
+    ctx.font = roleFont('label');
     ctx.textBaseline = 'top';
     ctx.textAlign = 'center';
 

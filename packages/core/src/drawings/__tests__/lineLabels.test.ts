@@ -134,7 +134,8 @@ describe('the box', () => {
     const at = (px: number, py: number) => tool.hitTestAnchor({ x: px, y: py }, state, unitViewport, 4);
     expect([at(x(10), y(80)), at(x(30), y(40)), at(x(10), y(40)), at(x(30), y(80))]).toEqual([0, 1, 2, 3]);
     expect([at(mid.x, y(80)), at(mid.x, y(40)), at(x(10), mid.y), at(x(30), mid.y)]).toEqual([4, 5, 6, 7]);
-    const drawn = draw(tool, state, unitViewport, true).calls.filter((c) => c.name === 'fillRect');
+    // Each handle a ring.
+    const drawn = draw(tool, state, unitViewport, true).calls.filter((c) => c.name === 'arc');
     expect(drawn).toHaveLength(8);
   });
 

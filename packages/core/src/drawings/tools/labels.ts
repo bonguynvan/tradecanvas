@@ -1,7 +1,7 @@
 import type { DrawingState, Theme, ViewportState } from '@tradecanvas/commons';
-import { DEFAULT_FONT_FAMILY, formatPrice, priceTagText } from '@tradecanvas/commons';
+import { formatPrice, priceTagText, withAlpha } from '@tradecanvas/commons';
 import { resolveBarIndex } from '../../viewport/ScaleMapping.js';
-import { drawingHandleColor } from '../../style/overlayColors.js';
+import { drawingLook, keepOnPlot, labelInk, roleFont, setDrawingLook } from '../drawingLook.js';
 
 /** Shared label helpers for the measuring / pattern drawing tools. */
 
@@ -9,35 +9,30 @@ const DEFAULT_HALO = 'rgba(12, 16, 22, 0.85)';
 
 /** The chart's background, around drawing text so it stays legible over bars and grid. */
 let labelHalo = DEFAULT_HALO;
-/** The chart's type family, for drawing text. */
-let fontFamily = DEFAULT_FONT_FAMILY;
-/** The fill of a selected drawing's handles. */
-let handleFill = drawingHandleColor(null);
 
 /**
  * The theme the next drawing pass renders in: its background for the text
  * halo, its font family for the text. Set by the drawing renderer right
  * before each (synchronous) pass; none puts the defaults back.
  */
-export function setDrawingTheme(theme: Pick<Theme, 'background' | 'style'> & { font?: { family?: string } } | null): void {
+export function setDrawingTheme(theme: (Pick<Theme, 'background' | 'style'> & Partial<Pick<Theme, 'text' | 'font'>>) | null): void {
   labelHalo = theme?.background ?? DEFAULT_HALO;
-  fontFamily = theme?.font?.family || DEFAULT_FONT_FAMILY;
-  handleFill = drawingHandleColor(theme);
+  setDrawingLook(theme);
 }
 
-/** The fill of a selected drawing's handles: white, or the `drawings.handleColor` key's. */
+/** The fill of a selected drawing's handles: the chart's background, or the `drawings.handleColor` key's. */
 export function drawingHandleFill(): string {
-  return handleFill;
+  return drawingLook().handleFill;
 }
 
-/** The family drawing text is set in: the theme's. */
+/** The family drawing figures are set in: the theme's. */
 export function drawingFontFamily(): string {
-  return fontFamily;
+  return drawingLook().figures;
 }
 
 /** Text in drawings: the theme's type at `size` px (not the browser's default sans). */
 export function drawingFont(size: number, weight?: 'bold'): string {
-  return `${weight ? `${weight} ` : ''}${size}px ${fontFamily}`;
+  return `${weight ? `${weight} ` : ''}${size}px ${drawingLook().figures}`;
 }
 
 /**
@@ -47,17 +42,20 @@ export function drawingFont(size: number, weight?: 'bold'): string {
 export function fillTextWithHalo(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, halo = labelHalo): void {
   ctx.save();
   ctx.lineJoin = 'round';
-  ctx.lineWidth = 3;
+  // Wide and solid enough that a dashed guide or a candle under the text doesn't show through.
+  ctx.lineWidth = HALO_WIDTH;
   ctx.strokeStyle = halo;
-  ctx.globalAlpha *= 0.85;
   ctx.setLineDash([]);
   ctx.strokeText(text, x, y);
   ctx.restore();
   ctx.fillText(text, x, y);
 }
 
-/** A level label's font size (px). */
-const LEVEL_LABEL_SIZE = 11;
+/** The width of the halo around drawing text, px. */
+const HALO_WIDTH = 4;
+
+/** A level label's font size (px): the look's label size. */
+const levelLabelSize = (): number => drawingLook().sizes.label;
 /** How far a level label starts right of where its line starts (px). */
 const LEVEL_LABEL_INSET = 4;
 /** How far a level label sits above its line, or below it (px). */
@@ -150,7 +148,7 @@ interface LevelLabelSpot {
 }
 
 /** How far under its line a level label may go to clear the legend: two labels' height (px). */
-const LEVEL_LABEL_REACH = 2 * LEVEL_LABEL_SIZE;
+const levelLabelReach = (): number => 2 * levelLabelSize();
 
 /**
  * A price level's text by its line at `y`: above its start at `x` when that
@@ -166,13 +164,13 @@ const LEVEL_LABEL_REACH = 2 * LEVEL_LABEL_SIZE;
  * glyph.
  */
 export function fillLevelLabel(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, right = x, plotTop = -Infinity): void {
-  ctx.font = drawingFont(LEVEL_LABEL_SIZE);
+  ctx.font = roleFont('label');
   const width = ctx.measureText(text).width;
   const spot = levelLabelSpot(x, right, y, width, plotTop);
   ctx.textAlign = spot.align;
   ctx.textBaseline = spot.baseline;
   fillTextWithHalo(ctx, text, spot.x, spot.y);
-  takeLabelBox(spot.left, spot.top, spot.left + width, spot.top + LEVEL_LABEL_SIZE);
+  takeLabelBox(spot.left, spot.top, spot.left + width, spot.top + levelLabelSize());
 }
 
 function levelLabelSpot(start: number, end: number, y: number, width: number, plotTop: number): LevelLabelSpot {
@@ -180,8 +178,8 @@ function levelLabelSpot(start: number, end: number, y: number, width: number, pl
   // The end has a spot of its own only where the line is long enough to hold the label there.
   const endLeft = end - LEVEL_LABEL_INSET - width;
   const lefts = endLeft > left ? [left, endLeft] : [left];
-  const above = { top: y - LEVEL_LABEL_GAP - LEVEL_LABEL_SIZE, bottom: y - LEVEL_LABEL_GAP };
-  const below = { top: y + LEVEL_LABEL_GAP, bottom: y + LEVEL_LABEL_GAP + LEVEL_LABEL_SIZE };
+  const above = { top: y - LEVEL_LABEL_GAP - levelLabelSize(), bottom: y - LEVEL_LABEL_GAP };
+  const below = { top: y + LEVEL_LABEL_GAP, bottom: y + LEVEL_LABEL_GAP + levelLabelSize() };
   for (const side of [above, below]) {
     // Above the plot's top the label would be cut off.
     if (side.top < plotTop) continue;
@@ -193,13 +191,13 @@ function levelLabelSpot(start: number, end: number, y: number, width: number, pl
     }
   }
   const unders = lefts.map((l) => ({ l, top: belowKeepOut(l, l + width, y) + LEVEL_LABEL_GAP }));
-  const near = unders.find((u) => u.top - y <= LEVEL_LABEL_REACH);
+  const near = unders.find((u) => u.top - y <= levelLabelReach());
   if (near) return { x: near.l, y: near.top, align: 'left', baseline: 'top', left: near.l, top: near.top };
   // Far under the line it would read as the price of whatever is drawn there: on the line
   // instead, by the price axis, through its halo, where nothing covers it there.
   const axisSide = end - LEVEL_LABEL_INSET;
-  const onLine = { left: axisSide - width, top: y - LEVEL_LABEL_SIZE / 2 };
-  if (!labelBlocked(onLine.left, onLine.top, axisSide, onLine.top + LEVEL_LABEL_SIZE)) {
+  const onLine = { left: axisSide - width, top: y - levelLabelSize() / 2 };
+  if (!labelBlocked(onLine.left, onLine.top, axisSide, onLine.top + levelLabelSize())) {
     return { x: axisSide, y, align: 'right', baseline: 'middle', ...onLine };
   }
   // The legend spans the plot there too (a phone): under it all, under the labels moved before it.
@@ -208,12 +206,18 @@ function levelLabelSpot(start: number, end: number, y: number, width: number, pl
 }
 
 
-/** Height of a label pill (CSS px). */
-export const PILL_HEIGHT = 18;
+/** A pill's height for the look's label size (18 px at 12 px type). */
+export function pillHeight(): number {
+  return Math.round(drawingLook().sizes.label * PILL_HEIGHT_RATIO);
+}
+const PILL_HEIGHT_RATIO = 1.5;
+/** A pill's corners and inner padding, px. */
+const PILL_RADIUS = 4;
+const PILL_PAD_X = 6;
 
 /** Width of a pill for `text` in the current font. */
 export function pillWidth(ctx: CanvasRenderingContext2D, text: string): number {
-  return Math.ceil(ctx.measureText(text).width) + 12;
+  return Math.ceil(ctx.measureText(text).width) + 2 * PILL_PAD_X;
 }
 
 /**
@@ -226,26 +230,30 @@ export function drawPill(
   x: number,
   centerY: number,
   background: string,
-  color = '#ffffff',
+  color = labelInk(background),
 ): number {
   const width = pillWidth(ctx, text);
-  const top = Math.round(centerY - PILL_HEIGHT / 2);
+  const height = pillHeight();
+  const top = Math.round(centerY - height / 2);
   ctx.fillStyle = background;
   ctx.beginPath();
-  if (typeof ctx.roundRect === 'function') ctx.roundRect(x, top, width, PILL_HEIGHT, 4);
-  else ctx.rect(x, top, width, PILL_HEIGHT);
+  if (typeof ctx.roundRect === 'function') ctx.roundRect(Math.round(x), top, width, height, PILL_RADIUS);
+  else ctx.rect(Math.round(x), top, width, height);
   ctx.fill();
   ctx.fillStyle = color;
   ctx.textAlign = 'left';
   ctx.textBaseline = 'middle';
-  ctx.fillText(text, x + 6, top + PILL_HEIGHT / 2 + 0.5);
+  ctx.fillText(text, Math.round(x) + PILL_PAD_X, top + height / 2 + 0.5);
   return width;
 }
-const LABEL_LINE_HEIGHT = 14;
-const LABEL_PAD_X = 6;
-const LABEL_PAD_Y = 4;
-const LABEL_BG = 'rgba(19, 23, 34, 0.85)';
-const LABEL_FG = '#FFFFFF';
+/** A label box's line height, as a share of its type size. */
+const LABEL_LINE_RATIO = 1.35;
+const LABEL_PAD_X = 8;
+const LABEL_PAD_Y = 5;
+const LABEL_RADIUS = 4;
+/** A label box's surface: the chart's background, nearly opaque, on a faint line of its text colour. */
+const LABEL_SURFACE_ALPHA = 0.94;
+const LABEL_EDGE_ALPHA = 0.16;
 
 const MS_MINUTE = 60_000;
 const MS_HOUR = 60 * MS_MINUTE;
@@ -329,7 +337,7 @@ export function spanBetween(state: DrawingState, a: number, b: number, viewport:
 }
 
 /**
- * Multi-line label on a dark rounded box. `(x, y)` is the box's anchor point:
+ * Multi-line label on a box of the chart's own surface, in its text colour. `(x, y)` is the box's anchor point:
  * `align` picks which horizontal edge/center sits on x, and the box grows
  * upward from y when `above`, downward otherwise. Returns the box rect.
  */
@@ -341,23 +349,48 @@ export function drawLabelBox(
   align: 'left' | 'center' | 'right' = 'center',
   above = true,
 ): { x: number; y: number; width: number; height: number } {
-  ctx.font = drawingFont(11);
+  const look = drawingLook();
+  ctx.font = roleFont('label');
+  const lineHeight = Math.round(look.sizes.label * LABEL_LINE_RATIO);
   let textW = 0;
   for (const line of lines) textW = Math.max(textW, ctx.measureText(line).width);
-  const width = textW + LABEL_PAD_X * 2;
-  const height = lines.length * LABEL_LINE_HEIGHT + LABEL_PAD_Y * 2;
-  const left = align === 'left' ? x : align === 'right' ? x - width : x - width / 2;
-  const top = above ? y - height : y;
+  const width = Math.ceil(textW + LABEL_PAD_X * 2);
+  const height = lines.length * lineHeight + LABEL_PAD_Y * 2;
+  // On the plot: a box by its edge moves in rather than run under the price axis.
+  const at = keepOnPlot(align === 'left' ? x : align === 'right' ? x - width : x - width / 2, above ? y - height : y, width, height);
+  const left = Math.round(at.left);
+  const top = Math.round(at.top);
 
-  ctx.fillStyle = LABEL_BG;
-  ctx.fillRect(left, top, width, height);
-  ctx.fillStyle = LABEL_FG;
+  fillLabelSurface(ctx, left, top, width, height);
+  ctx.fillStyle = look.ink;
   ctx.textAlign = 'left';
   ctx.textBaseline = 'top';
   for (let i = 0; i < lines.length; i++) {
-    ctx.fillText(lines[i], left + LABEL_PAD_X, top + LABEL_PAD_Y + i * LABEL_LINE_HEIGHT);
+    ctx.fillText(lines[i], left + LABEL_PAD_X, top + LABEL_PAD_Y + i * lineHeight + (lineHeight - look.sizes.label) / 2);
   }
   return { x: left, y: top, width, height };
+}
+
+/**
+ * A label box's surface at (x, y), `width` × `height` (whole px): the chart's
+ * background, nearly opaque, rounded, on a faint line of its text colour.
+ * Leaves the fill style for the box's text to set.
+ */
+export function fillLabelSurface(ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number): void {
+  const look = drawingLook();
+  const left = Math.round(x);
+  const top = Math.round(y);
+  const w = Math.round(width);
+  const h = Math.round(height);
+  ctx.beginPath();
+  if (typeof ctx.roundRect === 'function') ctx.roundRect(left + 0.5, top + 0.5, w - 1, h - 1, LABEL_RADIUS);
+  else ctx.rect(left + 0.5, top + 0.5, w - 1, h - 1);
+  ctx.fillStyle = withAlpha(look.background, LABEL_SURFACE_ALPHA);
+  ctx.fill();
+  ctx.strokeStyle = withAlpha(look.ink, LABEL_EDGE_ALPHA);
+  ctx.lineWidth = 1;
+  ctx.setLineDash([]);
+  ctx.stroke();
 }
 
 /** Ratio of two price legs, e.g. |BC| / |AB|, as text ("0.618"). */

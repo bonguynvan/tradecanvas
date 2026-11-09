@@ -1,7 +1,8 @@
-import { drawingFont, fillTextWithHalo } from './labels.js';
+import { fillTextWithHalo } from './labels.js';
 import type { DrawingState, Point, ViewportState } from '@tradecanvas/commons';
 import { DrawingBase } from '../DrawingBase.js';
 import { fibLevelList } from './options.js';
+import { roleFont } from '../drawingLook.js';
 
 export const SPEED_FAN_LEVELS = [0.25, 0.382, 0.5, 0.618, 0.75];
 
@@ -62,7 +63,7 @@ export class FibSpeedResistanceFanTool extends DrawingBase {
     ctx.strokeRect(Math.min(a.x, b.x), Math.min(a.y, b.y), Math.abs(b.x - a.x), Math.abs(b.y - a.y));
     ctx.globalAlpha = 1;
 
-    ctx.font = drawingFont(11);
+    ctx.font = roleFont('label');
     ctx.textBaseline = 'middle';
     for (const target of this.targets(state, a, b)) {
       const end = rayEnd(a, target.point, viewport);

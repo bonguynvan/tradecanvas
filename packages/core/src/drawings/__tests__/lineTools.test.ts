@@ -128,6 +128,6 @@ describe('InfoLineTool', () => {
     const { ctx, texts, calls } = recordingCtx();
     tool.render(ctx, state, unitViewport, false);
     expect(texts).toContain('+5.00 (+10.00%)');
-    expect(calls.some((c) => c.name === 'fillRect')).toBe(true);
+    expect(calls.some((c) => c.name === 'roundRect')).toBe(true);
   });
 });

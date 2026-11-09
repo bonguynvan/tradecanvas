@@ -1,5 +1,7 @@
 import type { DrawingStyle } from '@tradecanvas/commons';
-import { drawingFontFamily } from './labels.js';
+import { drawingFill, drawingLook, textSize } from '../drawingLook.js';
+import { fillTextWithHalo } from './labels.js';
+import { readableOn } from '@tradecanvas/commons';
 
 /** A box of wrapped text on the chart (a note, a callout), and its size. */
 
@@ -35,15 +37,17 @@ export interface TextBoxLook {
  */
 export function textLook(
   style: DrawingStyle,
-  defaults: { fontSize: number; box: boolean; border: boolean; width: number; fill?: string },
+  defaults: { box: boolean; border: boolean; width: number; fill?: boolean },
 ): TextBoxLook {
   const box = style.textBackground ?? defaults.box;
   const border = style.textBorder ?? defaults.border;
-  // The fill as kept, its alpha included, as a note's always was.
-  const fill = style.fillColor ?? defaults.fill;
+  // A fill set by hand as kept, its alpha included; else the line's colour, tinted, where the tool fills.
+  const fill = !defaults.fill && !style.fillColor ? undefined : drawingFill(style);
+  const look = drawingLook();
   return {
-    fontSize: style.fontSize || defaults.fontSize,
-    color: style.textColor ?? style.color,
+    fontSize: textSize(style),
+    // Text in the line's colour, deepened where it would not read on the chart (a light background).
+    color: style.textColor ?? readableText(style.color, look.background, look.ink),
     fill: box && fill ? fill : undefined,
     stroke: border ? style.borderColor ?? style.color : undefined,
     maxWidth: style.textWrap === undefined ? defaults.width : style.textWrap > 0 ? style.textWrap : Infinity,
@@ -60,8 +64,29 @@ const LINE_GAP = 1.3;
 /** Most lines shown; the rest is cut with an ellipsis. */
 const MAX_LINES = 12;
 
-export function boxFont(fontSize: number, bold = false, italic = false): string {
-  return `${italic ? 'italic ' : ''}${bold ? 'bold ' : ''}${fontSize}px ${drawingFontFamily()}`;
+/** The contrast a drawing's text keeps on the chart's background (WCAG for small text). */
+const TEXT_CONTRAST = 4.5;
+/** Text colours that read, by colour, background and ink: worked out once, not on every frame. */
+const readable = new Map<string, string>();
+const READABLE_CACHE_SIZE = 64;
+
+function readableText(color: string, background: string, ink: string): string {
+  const key = `${color}|${background}|${ink}`;
+  let out = readable.get(key);
+  if (out === undefined) {
+    if (readable.size >= READABLE_CACHE_SIZE) readable.clear();
+    out = readableOn(color, background, ink, TEXT_CONTRAST);
+    readable.set(key, out);
+  }
+  return out;
+}
+/** A text box's corners, px. */
+const BOX_RADIUS = 3;
+
+/** The font of text people write: the prose face, or the figures face for a price (`prose` false). */
+export function boxFont(fontSize: number, bold = false, italic = false, prose = true): string {
+  const look = drawingLook();
+  return `${italic ? 'italic ' : ''}${bold ? 'bold ' : ''}${fontSize}px ${prose ? look.prose : look.figures}`;
 }
 
 /**
@@ -139,14 +164,23 @@ export function drawTextBox(ctx: CanvasRenderingContext2D, text: string, x: numb
   const measure = (t: string) => ctx.measureText(t).width;
   const lines = wrapCached(measure, text, look.maxWidth, font, look.maxLines ?? MAX_LINES);
   const rect = textBoxRect(measure, lines, x, y, look.fontSize);
-  if (look.fill) {
-    ctx.fillStyle = look.fill;
-    ctx.fillRect(rect.x, rect.y, rect.width, rect.height);
-  }
-  if (look.stroke) {
-    ctx.strokeStyle = look.stroke;
-    ctx.lineWidth = 1;
-    ctx.strokeRect(rect.x + 0.5, rect.y + 0.5, rect.width - 1, rect.height - 1);
+  if (look.fill || look.stroke) {
+    // On whole pixels: the box's edges sharp, a 1 px border one row.
+    const bx = Math.round(rect.x) + 0.5;
+    const by = Math.round(rect.y) + 0.5;
+    ctx.beginPath();
+    if (typeof ctx.roundRect === 'function') ctx.roundRect(bx, by, Math.round(rect.width) - 1, Math.round(rect.height) - 1, BOX_RADIUS);
+    else ctx.rect(bx, by, Math.round(rect.width) - 1, Math.round(rect.height) - 1);
+    if (look.fill) {
+      ctx.fillStyle = look.fill;
+      ctx.fill();
+    }
+    if (look.stroke) {
+      ctx.strokeStyle = look.stroke;
+      ctx.lineWidth = 1;
+      ctx.setLineDash([]);
+      ctx.stroke();
+    }
   }
   ctx.fillStyle = look.color;
   ctx.textAlign = 'left';
@@ -155,7 +189,10 @@ export function drawTextBox(ctx: CanvasRenderingContext2D, text: string, x: numb
   lines.forEach((line, i) => {
     const room = inner - measure(line);
     const shift = look.align === 'center' ? room / 2 : look.align === 'right' ? room : 0;
-    ctx.fillText(line, x + PAD_X + shift, y + PAD_Y + i * look.fontSize * LINE_GAP);
+    const ty = y + PAD_Y + i * look.fontSize * LINE_GAP;
+    // Without a box, a halo of the chart's background keeps the text off the bars.
+    if (look.fill) ctx.fillText(line, x + PAD_X + shift, ty);
+    else fillTextWithHalo(ctx, line, x + PAD_X + shift, ty);
   });
   return rect;
 }

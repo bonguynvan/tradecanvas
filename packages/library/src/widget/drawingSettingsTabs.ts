@@ -1,4 +1,5 @@
 import type { AnchorPoint, DrawingLevel, DrawingOptionDef, DrawingOptionDefs, DrawingOptions, DrawingStyle } from '@tradecanvas/commons';
+import { ownFillColor } from '@tradecanvas/commons';
 import { createIcon } from './icons.js';
 import { fill, type MessageKey, type Translator } from './i18n.js';
 import type { TextLayout } from './drawingText.js';
@@ -8,15 +9,21 @@ export type { TextLayout };
 
 const LINE_WIDTHS = [1, 2, 3, 4];
 const LINE_STYLES: DrawingStyle['lineStyle'][] = ['solid', 'dashed', 'dotted'];
-const FONT_SIZES = [10, 11, 12, 13, 14, 16, 18, 20, 24, 28, 32];
+/**
+ * The sizes offered for a drawing's text. Not 12: drawings saved with the old default
+ * all carry it, so the chart reads it as no size of their own and draws its default.
+ */
+const FONT_SIZES = [10, 11, 13, 14, 16, 18, 20, 24, 28, 32];
 /** The size a text tool without a layout of its own draws at (a price label, an arrow's label). */
-const DEFAULT_FONT_SIZE = 12;
+const DEFAULT_FONT_SIZE = 14;
+/** The old default every drawing was saved with: the chart draws its own default for it. */
+const LEGACY_FONT_SIZE = 12;
 /** Most levels the editor offers to add, like the chart keeps. */
 const MAX_LEVELS = 48;
 /** A new level sits this far past the last one. */
 const LEVEL_STEP = 0.5;
 /** The fill's opacity a drawing without one starts from. */
-const DEFAULT_FILL_ALPHA = 0.1;
+const DEFAULT_FILL_ALPHA = 0.12;
 /** Options set in the line's own row, not listed with the tool's others. */
 const END_KEYS = ['leftEnd', 'rightEnd'] as const;
 
@@ -123,11 +130,11 @@ function lineRow(style: DrawingStyle, actions: StyleTabActions, followers: reado
 }
 
 function fillRow(style: DrawingStyle, actions: StyleTabActions, followers: ColorFollower[], t: Translator): HTMLDivElement {
-  const current = style.fillColor ?? withAlpha(style.color, DEFAULT_FILL_ALPHA);
+  const current = ownFillColor(style) ?? withAlpha(style.color, DEFAULT_FILL_ALPHA);
   let hex = toHex(current);
   let alpha = colorAlpha(current);
   // Without a fill of its own the drawing fills in its line's colour, until one is set here.
-  let own = style.fillColor !== undefined;
+  let own = ownFillColor(style) !== undefined;
   const apply = () => {
     own = true;
     actions.style({ fillColor: withAlpha(hex, alpha), fillOpacity: alpha });
@@ -308,7 +315,7 @@ export function renderTextTab(
   block.appendChild(textRow);
   const size = named(selectInput(
     FONT_SIZES.map((s) => ({ value: String(s), label: `${s} px` })),
-    String(style.fontSize ?? layout?.fontSize ?? DEFAULT_FONT_SIZE),
+    String((style.fontSize !== LEGACY_FONT_SIZE ? style.fontSize : undefined) ?? layout?.fontSize ?? DEFAULT_FONT_SIZE),
     (v) => onStyle({ fontSize: Number(v) }),
   ), t('drawingSettings.fontSize'));
   block.appendChild(controlsRow(
@@ -351,7 +358,7 @@ function textBoxSection(style: DrawingStyle, onStyle: (patch: Partial<DrawingSty
     (v) => onStyle({ textAlign: v as DrawingStyle['textAlign'] }),
   ), t('drawingSettings.align'))));
 
-  const background = style.fillColor ?? withAlpha(style.color, DEFAULT_FILL_ALPHA);
+  const background = ownFillColor(style) ?? withAlpha(style.color, DEFAULT_FILL_ALPHA);
   box.appendChild(controlsRow(
     t('drawingSettings.background'),
     inlineCheck(t('drawingSettings.background'), style.textBackground ?? layout.box, (on) => onStyle({ textBackground: on }), true),

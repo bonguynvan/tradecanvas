@@ -1,7 +1,10 @@
 import type { DrawingState, Point, ViewportState, DataSeries } from '@tradecanvas/commons';
 import { DrawingBase } from '../DrawingBase.js';
 import { barIndexToX, priceToY, resolveBarIndex } from '../../viewport/ScaleMapping.js';
-import { formatDrawingPrice, drawingFont } from './labels.js';
+import { fillTextWithHalo, formatDrawingPrice } from './labels.js';
+import { hasOwnFill, keepOnPlot, roleFont } from '../drawingLook.js';
+/** The point of control's colour, unless the drawing has a fill of its own. */
+const POC_COLOR = '#f2a93b';
 
 /**
  * Volume Profile (Visible/Fixed Range) drawing tool.
@@ -68,7 +71,8 @@ export class VolumeProfileRangeTool extends DrawingBase {
     const rightX = barIndexToX(endIdx, viewport) + viewport.barWidth;
     const maxBarWidth = 100; // Max histogram bar width in pixels
     const color = state.style.color;
-    const pocColor = state.style.fillColor ?? '#f2a93b';
+    // Its own fill colour when one was set by hand; the old blue default would leave it unseen.
+    const pocColor = hasOwnFill(state.style) ? state.style.fillColor! : POC_COLOR;
 
     ctx.save();
 
@@ -102,11 +106,14 @@ export class VolumeProfileRangeTool extends DrawingBase {
 
     // POC label
     ctx.fillStyle = pocColor;
-    ctx.font = drawingFont(9);
+    ctx.font = roleFont('mark');
     ctx.textAlign = 'left';
     ctx.textBaseline = 'bottom';
-    ctx.globalAlpha = 0.8;
-    ctx.fillText(`POC ${formatDrawingPrice(pocPrice, pocPrice, viewport)}`, rightX + maxBarWidth + 4, pocY - 2);
+    // At full strength on a halo, and moved in to stay on the plot by the price axis.
+    ctx.globalAlpha = 1;
+    const text = `POC ${formatDrawingPrice(pocPrice, pocPrice, viewport)}`;
+    const at = keepOnPlot(rightX + maxBarWidth + 4, pocY - 2, ctx.measureText(text).width, 0);
+    fillTextWithHalo(ctx, text, at.left, pocY - 2);
 
     ctx.restore();
 

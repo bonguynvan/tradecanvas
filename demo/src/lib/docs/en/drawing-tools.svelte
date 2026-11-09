@@ -55,6 +55,9 @@ chart.addDrawing({
 <p>
   The text tools (Text, Note, Callout, Price Label, Arrow Mark) share one text style: size, bold, italics and a colour of their own. A Text, a Note and a Callout also line their lines up left, centre or right, can have a background and a border, and wrap at a width. A Text keeps its own line breaks and runs on unless it is given one; a Note and a Callout wrap at 240 px.
 </p>
+<p>
+  Without a size of their own, words are set at 14 px and figures (a level's price, a ratio, a stats box) at 12 px, both a step or more over the axis type and growing with it (<code>chart.setFont</code>, and the widget on a wide screen). A size of 12 saved by an earlier version reads as none. Words people write are set in the system's sans face, figures in the chart's face; <code>font: {'{'} textFamily {'}'}</code> (or <code>chart.setFont({'{'} textFamily {'}'})</code>) gives the words a face of your own, and the widget gives them its look's.
+</p>
 <pre><code>{`chart.addDrawing({
   type: 'text',
   anchors: [{ time: t1, price: 101.2 }],
@@ -87,6 +90,18 @@ chart.addDrawing({ type: 'fibRetracement', anchors: [a, b], options: { trendLine
 <p>
   A horizontal line and a horizontal ray hide their price with <code>showPrice: false</code>. A vertical line shows its bar's time with <code>showTime: true</code>, written as the crosshair writes it. A rectangle has eight handles: one at each corner and one in the middle of each side, which moves that side alone. A Fibonacci retracement and extension draw a dashed line through their points (<code>trendLine</code>, on by default) and draw all their levels in the drawing's colour with <code>oneColor</code>. A click on the words picks the line or the box too.
 </p>
+
+<h2 id="look">How drawings look</h2>
+<p>
+  Every tool is drawn the same way:
+</p>
+<ul>
+  <li>A selected drawing's handles are rings in its colour, filled with the chart's background (the <code>drawings.handleColor</code> style key fills them with a colour of yours), a size over its line: 9 px across on a 1 px line, more on a thicker one. The handle under the pointer grows, and the one in hand fills with the colour. Only the drawing a drag would reshape shows rings; the others of a selection, and a locked drawing, show small dots.</li>
+  <li>A drawing under the pointer glows a little, so it is plain which one a click takes.</li>
+  <li>While a drawing is made, the points placed show as handles.</li>
+  <li>Dashes and dots grow with the line, dots are round, and a solid line's ends are round. Arrowheads grow with the line too.</li>
+  <li>A fill is the line's colour, tinted, unless it was set on its own: a drawing turned red fills red. A label on a coloured tag is written in black or white, whichever reads; a stats box is the chart's own surface and text colour, in both themes; words in a drawing's colour are deepened where they would not read on a light background.</li>
+</ul>
 
 <h2>Settings</h2>
 <p>

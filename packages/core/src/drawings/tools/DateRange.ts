@@ -1,7 +1,11 @@
-import { drawingFont } from './labels.js';
 import type { DrawingState, Point, ViewportState } from '@tradecanvas/commons';
 import { DrawingBase } from '../DrawingBase.js';
 import { resolveBarIndex } from '../../viewport/ScaleMapping.js';
+import { roleFont } from '../drawingLook.js';
+import { drawingFill } from '../drawingLook.js';
+
+/** How strongly the range is tinted: lighter than a box, as it runs the plot's height. */
+const RANGE_FILL_ALPHA = 0.08;
 
 export class DateRangeTool extends DrawingBase {
   descriptor = { type: 'dateRange' as const, name: 'Date Range', requiredAnchors: 2 };
@@ -13,7 +17,8 @@ export class DateRangeTool extends DrawingBase {
     const { chartRect } = viewport;
     const x1 = Math.min(p1.x, p2.x), x2 = Math.max(p1.x, p2.x);
 
-    ctx.fillStyle = 'rgba(76, 141, 255, 0.08)';
+    // The range in the line's colour, lightly: it spans the whole plot.
+    ctx.fillStyle = drawingFill(state.style, RANGE_FILL_ALPHA);
     ctx.fillRect(x1, chartRect.y, x2 - x1, chartRect.height);
 
     this.applyLineStyle(ctx, state.style);
@@ -32,7 +37,7 @@ export class DateRangeTool extends DrawingBase {
     const idx0 = resolveBarIndex(state.anchors[0].time, viewport);
     const idx1 = resolveBarIndex(state.anchors[1].time, viewport);
     const bars = Math.max(0, Math.round(Math.abs(idx1 - idx0)));
-    ctx.font = drawingFont(12);
+    ctx.font = roleFont('label');
     ctx.fillStyle = state.style.color;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'top';

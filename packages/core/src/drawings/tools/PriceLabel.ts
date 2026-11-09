@@ -2,6 +2,7 @@ import type { DrawingState, Point, ViewportState } from '@tradecanvas/commons';
 import { DrawingBase } from '../DrawingBase.js';
 import { formatDrawingPrice } from './labels.js';
 import { BoxCache, boxFont } from './textBox.js';
+import { textSize } from '../drawingLook.js';
 
 const OFFSET_X = 14;
 const OFFSET_Y = 18;
@@ -20,7 +21,7 @@ export class PriceLabelTool extends DrawingBase {
   }
 
   private box(ctx: CanvasRenderingContext2D | null, state: DrawingState, p: Point, viewport: ViewportState): { x: number; y: number; w: number; h: number } {
-    const fontSize = state.style.fontSize ?? 12;
+    const fontSize = textSize(state.style, 'label');
     const text = this.text(state, viewport);
     // Without a context (hit-testing) estimate the width from the font size.
     const textW = ctx ? ctx.measureText(text).width : text.length * fontSize * 0.6;
@@ -30,7 +31,7 @@ export class PriceLabelTool extends DrawingBase {
   render(ctx: CanvasRenderingContext2D, state: DrawingState, viewport: ViewportState, selected: boolean): void {
     if (state.anchors.length < 1) return;
     const p = this.anchorToPixel(state.anchors[0], viewport);
-    ctx.font = boxFont(state.style.fontSize ?? 12, state.style.bold, state.style.italic);
+    ctx.font = boxFont(textSize(state.style, 'label'), state.style.bold, state.style.italic, false);
     const b = this.box(ctx, state, p, viewport);
     this.drawn.set(state.id, { x: b.x, y: b.y, width: b.w, height: b.h });
 

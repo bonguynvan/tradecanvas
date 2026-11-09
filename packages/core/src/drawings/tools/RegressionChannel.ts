@@ -1,5 +1,6 @@
 import type { DrawingState, Point, ViewportState } from '@tradecanvas/commons';
 import { DrawingBase } from '../DrawingBase.js';
+import { drawingFill } from '../drawingLook.js';
 
 export class RegressionChannelTool extends DrawingBase {
   descriptor = { type: 'regressionChannel' as const, name: 'Regression Channel', requiredAnchors: 2, fill: true };
@@ -37,7 +38,7 @@ export class RegressionChannelTool extends DrawingBase {
     ctx.stroke();
 
     if (state.style.fillColor) {
-      ctx.fillStyle = state.style.fillColor;
+      ctx.fillStyle = drawingFill(state.style);
       ctx.beginPath();
       ctx.moveTo(p1.x + nx, p1.y + ny);
       ctx.lineTo(p2.x + nx, p2.y + ny);

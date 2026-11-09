@@ -1,5 +1,6 @@
 import type { DrawingState, Point, ViewportState } from '@tradecanvas/commons';
 import { DrawingBase } from '../DrawingBase.js';
+import { drawingFill } from '../drawingLook.js';
 
 export class TriangleTool extends DrawingBase {
   descriptor = { type: 'triangle' as const, name: 'Triangle', requiredAnchors: 3, fill: true };
@@ -27,7 +28,7 @@ export class TriangleTool extends DrawingBase {
     ctx.closePath();
 
     if (state.style.fillColor) {
-      ctx.fillStyle = state.style.fillColor;
+      ctx.fillStyle = drawingFill(state.style);
       ctx.fill();
     }
     this.applyLineStyle(ctx, state.style);

@@ -1,7 +1,9 @@
-import { belowKeepOut, drawingFont, drawPill, formatPercent, labelBlocked, pillWidth, PILL_HEIGHT, rightOfKeepOut, takeLabelBox } from './labels.js';
+import { belowKeepOut, drawPill, formatPercent, labelBlocked, pillWidth, pillHeight, rightOfKeepOut, takeLabelBox } from './labels.js';
 import type { AnchorPoint, DrawingState, Point, ViewportState } from '@tradecanvas/commons';
 import { autoPricePrecision, formatPrice, priceTagText } from '@tradecanvas/commons';
 import { DrawingBase } from '../DrawingBase.js';
+import { roleFont } from '../drawingLook.js';
+import { drawAnchorHandles } from '../handles.js';
 
 /** Narrowest the zones are drawn, so a position placed with one click is still visible. */
 const MIN_WIDTH_PX = 40;
@@ -115,15 +117,15 @@ export class RiskRewardTool extends DrawingBase {
       const pct = (price: number) => (g.entry !== 0 ? ((price - g.entry) / g.entry) * 100 : 0);
       // In the locale too, as the quantity and the amounts beside it are.
       const ratio = g.ratio.toLocaleString(locale, { maximumFractionDigits: RATIO_DECIMALS });
-      ctx.font = drawingFont(11);
+      ctx.font = roleFont('label');
       const price = (p: number) => priceTagText(p, viewport, decimals);
       const money = (amount: number) => formatPrice(amount, MONEY_DECIMALS, locale);
       const signed = (p: number) => `${p >= g.entry ? '+' : '−'}${formatPercent(Math.abs(pct(p)), viewport)}%`;
       // Tags: the entry's on its line, the target's and the stop's just outside
       // their zones, pushed apart when the zones are thin so none overlap, and
       // kept on the plot.
-      const gap = PILL_HEIGHT + 2;
-      const half = PILL_HEIGHT / 2;
+      const gap = pillHeight() + 2;
+      const half = pillHeight() / 2;
       const outside = (edgeY: number) => {
         const up = edgeY < entryPt.y;
         const y = edgeY + (up ? -1 : 1) * (half + 2);
@@ -139,12 +141,12 @@ export class RiskRewardTool extends DrawingBase {
         const w = pillWidth(ctx, text);
         let left = Math.max(plotLeft + 4, Math.min(x + 4, plotRight - 4 - w));
         let top = y - half;
-        if (labelBlocked(left, top, left + w, top + PILL_HEIGHT)) {
-          const beside = (rightOfKeepOut(top, top + PILL_HEIGHT) ?? left) + TAG_SLIDE_GAP;
-          if (beside + w <= plotRight - 4 && !labelBlocked(beside, top, beside + w, top + PILL_HEIGHT)) left = beside;
+        if (labelBlocked(left, top, left + w, top + pillHeight())) {
+          const beside = (rightOfKeepOut(top, top + pillHeight()) ?? left) + TAG_SLIDE_GAP;
+          if (beside + w <= plotRight - 4 && !labelBlocked(beside, top, beside + w, top + pillHeight())) left = beside;
           else top = belowKeepOut(left, left + w, top) + 2;
         }
-        takeLabelBox(left, top, left + w, top + PILL_HEIGHT);
+        takeLabelBox(left, top, left + w, top + pillHeight());
         return { left, top };
       };
       const tags: PositionTag[] = [
@@ -169,14 +171,7 @@ export class RiskRewardTool extends DrawingBase {
   }
 
   private renderHandles(ctx: CanvasRenderingContext2D, state: DrawingState, viewport: ViewportState): void {
-    const size = 4;
-    ctx.fillStyle = '#FFFFFF';
-    ctx.strokeStyle = state.style.color;
-    ctx.lineWidth = 1;
-    for (const p of this.handles(state, viewport)) {
-      ctx.fillRect(p.x - size, p.y - size, size * 2, size * 2);
-      ctx.strokeRect(p.x - size, p.y - size, size * 2, size * 2);
-    }
+    drawAnchorHandles(ctx, state, this.handles(state, viewport));
   }
 
   override hitTestAnchor(point: Point, state: DrawingState, viewport: ViewportState, tolerance: number): number {

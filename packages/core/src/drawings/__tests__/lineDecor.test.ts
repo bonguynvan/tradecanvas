@@ -67,7 +67,7 @@ describe('a trend line’s ends, middle point and stats', () => {
 
   it('puts the stats by the end, the middle or the start', () => {
     const boxLeft = (statsPosition: string) =>
-      draw({ showBarsRange: true, alwaysShowStats: true, statsPosition }).calls.find((c) => c.name === 'fillRect')!.args[0] as number;
+      draw({ showBarsRange: true, alwaysShowStats: true, statsPosition }).calls.find((c) => c.name === 'roundRect')!.args[0] as number;
     expect(boxLeft('right')).toBeGreaterThan(85);
     expect(boxLeft('left') + 6 * '6 bars'.length + 12).toBeLessThan(25);
     expect(boxLeft('center')).toBeLessThan(55);

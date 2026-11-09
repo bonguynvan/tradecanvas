@@ -1,5 +1,6 @@
 import type { DrawingState, Point, ViewportState } from '@tradecanvas/commons';
 import { DrawingBase } from '../DrawingBase.js';
+import { drawingFill } from '../drawingLook.js';
 
 export class EllipseTool extends DrawingBase {
   descriptor = { type: 'ellipse' as const, name: 'Ellipse', requiredAnchors: 2, fill: true };
@@ -14,7 +15,7 @@ export class EllipseTool extends DrawingBase {
     ctx.beginPath();
     ctx.ellipse(cx, cy, Math.max(rx, 1), Math.max(ry, 1), 0, 0, Math.PI * 2);
     if (state.style.fillColor) {
-      ctx.fillStyle = state.style.fillColor;
+      ctx.fillStyle = drawingFill(state.style);
       ctx.fill();
     }
     this.applyLineStyle(ctx, state.style);

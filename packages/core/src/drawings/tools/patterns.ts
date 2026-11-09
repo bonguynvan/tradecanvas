@@ -1,6 +1,8 @@
 import type { DrawingState, Point, ViewportState } from '@tradecanvas/commons';
 import { DrawingBase } from '../DrawingBase.js';
-import { legRatio, drawingFont, fillTextWithHalo } from './labels.js';
+import { legRatio, fillTextWithHalo } from './labels.js';
+import { roleFont } from '../drawingLook.js';
+import { drawingFill } from '../drawingLook.js';
 
 /** A dashed connector between two pattern points labelled with a leg ratio. */
 interface RatioLink {
@@ -48,8 +50,7 @@ abstract class PatternTool extends DrawingBase {
   private renderTriangles(ctx: CanvasRenderingContext2D, state: DrawingState, pts: Point[]): void {
     // fillColor carries its own alpha (as with Rectangle); without one, tint
     // the line color.
-    ctx.fillStyle = state.style.fillColor ?? state.style.color;
-    ctx.globalAlpha = state.style.fillColor ? 1 : 0.12;
+    ctx.fillStyle = drawingFill(state.style);
     for (const [i, j, k] of this.triangles) {
       ctx.beginPath();
       ctx.moveTo(pts[i].x, pts[i].y);
@@ -62,7 +63,7 @@ abstract class PatternTool extends DrawingBase {
   }
 
   private renderRatioLinks(ctx: CanvasRenderingContext2D, state: DrawingState, pts: Point[]): void {
-    ctx.font = drawingFont(11);
+    ctx.font = roleFont('label');
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     for (const link of this.ratioLinks) {
@@ -86,7 +87,7 @@ abstract class PatternTool extends DrawingBase {
   }
 
   private renderPointLabels(ctx: CanvasRenderingContext2D, state: DrawingState, pts: Point[]): void {
-    ctx.font = drawingFont(12, 'bold');
+    ctx.font = roleFont('letter', { weight: 600 });
     ctx.fillStyle = state.style.color;
     ctx.textAlign = 'center';
     for (let i = 0; i < pts.length && i < this.pointLabels.length; i++) {

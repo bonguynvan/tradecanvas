@@ -52,6 +52,11 @@ export class DrawingDrag {
     return this.start !== null;
   }
 
+  /** The handle being dragged, or -1 while moving or idle. */
+  activeHandle(): number {
+    return this.start === null ? -1 : this.handle;
+  }
+
   /** Grab drawings to move together; the first is the one under the pointer. */
   beginMove(pos: Point, drawings: readonly DrawingState[]): void {
     this.start = pos;

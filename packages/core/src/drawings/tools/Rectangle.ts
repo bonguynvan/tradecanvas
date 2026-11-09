@@ -1,10 +1,11 @@
 import type { AnchorPoint, DrawingState, Point, ViewportState } from '@tradecanvas/commons';
 import { DrawingBase } from '../DrawingBase.js';
-import { drawingHandleFill } from './labels.js';
 import { drawBoxText, TextHitCache } from './lineText.js';
+import { drawingFill } from '../drawingLook.js';
+import { drawAnchorHandles } from '../handles.js';
 
-/** Half a handle's side (px), as the other tools draw theirs. */
-const HANDLE_HALF = 4;
+/** The handles between the corners: the sides' middles, drawn a size smaller. */
+const SIDE_HANDLES: ReadonlySet<number> = new Set([4, 5, 6, 7]);
 
 /**
  * A box between two corners (its anchors). Eight handles reshape it: 0 and 1
@@ -25,7 +26,7 @@ export class RectangleTool extends DrawingBase {
     const w = Math.abs(p2.x - p1.x), h = Math.abs(p2.y - p1.y);
 
     if (state.style.fillColor) {
-      ctx.fillStyle = state.style.fillColor;
+      ctx.fillStyle = drawingFill(state.style);
       ctx.fillRect(x, y, w, h);
     }
     this.applyLineStyle(ctx, state.style);
@@ -44,13 +45,8 @@ export class RectangleTool extends DrawingBase {
   }
 
   private renderBoxHandles(ctx: CanvasRenderingContext2D, state: DrawingState, viewport: ViewportState): void {
-    ctx.fillStyle = drawingHandleFill();
-    ctx.strokeStyle = state.style.color;
-    ctx.lineWidth = 1;
-    for (const p of this.handlePoints(state, viewport)) {
-      ctx.fillRect(p.x - HANDLE_HALF, p.y - HANDLE_HALF, HANDLE_HALF * 2, HANDLE_HALF * 2);
-      ctx.strokeRect(p.x - HANDLE_HALF, p.y - HANDLE_HALF, HANDLE_HALF * 2, HANDLE_HALF * 2);
-    }
+    // The corners, then the sides' middles a size smaller.
+    drawAnchorHandles(ctx, state, this.handlePoints(state, viewport), { sides: SIDE_HANDLES });
   }
 
   hitTestAnchor(point: Point, state: DrawingState, viewport: ViewportState, tolerance: number): number {

@@ -10,7 +10,8 @@ import type {
   AnchorPoint,
 } from '@tradecanvas/commons';
 import { crispX, crispY } from '../charts/pixelGrid.js';
-import { drawingHandleFill } from './tools/labels.js';
+import { drawAnchorHandles } from './handles.js';
+import { dashFor } from './drawingLook.js';
 import { isScreenAnchored, pixelToScreenPoint, screenPointToPixel } from './screenAnchors.js';
 import { priceToY, resolveBarIndex, timeToX, xToTime, yToPrice } from '../viewport/ScaleMapping.js';
 
@@ -89,12 +90,18 @@ export abstract class DrawingBase implements DrawingPlugin {
     viewport: ViewportState,
     tolerance: number,
   ): number {
+    // The nearest in reach: on a small drawing two handles can both be in reach of the pointer.
+    let best = -1;
+    let bestDist = Infinity;
     for (let i = 0; i < state.anchors.length; i++) {
       const px = this.anchorToPixel(state.anchors[i], viewport);
       const dist = Math.hypot(point.x - px.x, point.y - px.y);
-      if (dist <= tolerance) return i;
+      if (dist <= tolerance && dist < bestDist) {
+        best = i;
+        bestDist = dist;
+      }
     }
-    return -1;
+    return best;
   }
 
   /** One of the drawing's options (see `descriptor.options`), its default when unset. */
@@ -186,16 +193,13 @@ export abstract class DrawingBase implements DrawingPlugin {
   protected applyLineStyle(ctx: CanvasRenderingContext2D, style: DrawingStyle): void {
     ctx.strokeStyle = style.color;
     ctx.lineWidth = style.lineWidth;
-    // Corners turn round, which reads softer than mitred points. Ends stay
-    // square: tools dash lines of their own, and round caps would eat into
-    // every gap.
-    ctx.lineCap = 'butt';
+    // Corners turn round, which reads softer than mitred points. A solid line's ends are round
+    // too, so a thick one doesn't end cut off; dots are round dots on a round cap. Dashes keep
+    // square ends, which round caps would eat into every gap of.
+    ctx.lineCap = style.lineStyle === 'dashed' ? 'butt' : 'round';
     ctx.lineJoin = 'round';
-    switch (style.lineStyle) {
-      case 'dashed': ctx.setLineDash([6, 4]); break;
-      case 'dotted': ctx.setLineDash([2, 2]); break;
-      default: ctx.setLineDash([]); break;
-    }
+    // Dashes and dots in proportion to the line, so a thick dotted line is still dots.
+    ctx.setLineDash(dashFor(style.lineStyle, style.lineWidth));
   }
 
   /** A horizontal line from `x0` to `x1` at `y`, on whole device pixels (sharp, not smeared). */
@@ -225,15 +229,7 @@ export abstract class DrawingBase implements DrawingPlugin {
   }
 
   protected renderAnchorHandles(ctx: CanvasRenderingContext2D, state: DrawingState, viewport: ViewportState): void {
-    const size = 4;
-    ctx.fillStyle = drawingHandleFill();
-    ctx.strokeStyle = state.style.color;
-    ctx.lineWidth = 1;
-    for (const anchor of state.anchors) {
-      const p = this.anchorToPixel(anchor, viewport);
-      ctx.fillRect(p.x - size, p.y - size, size * 2, size * 2);
-      ctx.strokeRect(p.x - size, p.y - size, size * 2, size * 2);
-    }
+    drawAnchorHandles(ctx, state, state.anchors.map((anchor) => this.anchorToPixel(anchor, viewport)));
   }
 
   protected distanceToLine(point: Point, p1: Point, p2: Point): number {

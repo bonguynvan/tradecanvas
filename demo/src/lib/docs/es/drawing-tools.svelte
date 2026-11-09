@@ -56,6 +56,9 @@ chart.addDrawing({
 <p>
   Las herramientas de texto (Texto, Nota, Llamada, Etiqueta de precio, Marca de flecha) comparten un estilo de texto: tamaño, negrita, cursiva y un color propio. Un Texto, una Nota y una Llamada además alinean sus líneas a la izquierda, al centro o a la derecha, pueden tener fondo y borde, y ajustan las líneas a un ancho. Un Texto conserva sus saltos de línea y sigue de largo si no se le da un ancho; una Nota y una Llamada ajustan a 240 px.
 </p>
+<p>
+  Sin un tamaño propio, las palabras se escriben a 14 px y las cifras (el precio de un nivel, una proporción, un cuadro de estadísticas) a 12 px, ambas un paso o más por encima del texto de los ejes y creciendo con él (<code>chart.setFont</code>, y el widget en una pantalla ancha). Un tamaño de 12 guardado por una versión anterior se lee como ninguno. Las palabras que escribe la gente van en la fuente sans del sistema, y las cifras en la del gráfico; <code>font: {'{'} textFamily {'}'}</code> (o <code>chart.setFont({'{'} textFamily {'}'})</code>) da a las palabras una fuente propia, y el widget les da la de su preajuste.
+</p>
 <pre><code>{`chart.addDrawing({
   type: 'text',
   anchors: [{ time: t1, price: 101.2 }],
@@ -88,6 +91,18 @@ chart.addDrawing({ type: 'fibRetracement', anchors: [a, b], options: { trendLine
 <p>
   Una línea horizontal y un rayo horizontal ocultan su precio con <code>showPrice: false</code>. Una línea vertical muestra la hora de su barra con <code>showTime: true</code>, escrita como la escribe la cruz. Un rectángulo tiene ocho controles: uno en cada esquina y uno en el centro de cada lado, que mueve solo ese lado. Un retroceso y una extensión de Fibonacci dibujan una línea discontinua por sus puntos (<code>trendLine</code>, activada por defecto) y dibujan todos sus niveles en el color del dibujo con <code>oneColor</code>. Un clic en las palabras también selecciona la línea o el rectángulo.
 </p>
+
+<h2 id="look">Cómo se ven los dibujos</h2>
+<p>
+  Todas las herramientas se dibujan de la misma manera:
+</p>
+<ul>
+  <li>Los controles de un dibujo seleccionado son anillos de su color, rellenos con el fondo del gráfico (la clave de estilo <code>drawings.handleColor</code> los rellena con un color tuyo), un tamaño por encima de su línea: 9 px de diámetro en una línea de 1 px, más en una más gruesa. El control bajo el puntero crece, y el que se arrastra se rellena con el color. Solo el dibujo que un arrastre cambiaría de forma muestra anillos; los demás de una selección, y un dibujo bloqueado, muestran puntos pequeños.</li>
+  <li>Un dibujo bajo el puntero brilla un poco, para que quede claro cuál toma un clic.</li>
+  <li>Mientras se crea un dibujo, los puntos colocados se muestran como controles.</li>
+  <li>Los guiones y los puntos crecen con la línea, los puntos son redondos y los extremos de una línea continua son redondeados. Las puntas de flecha también crecen con la línea.</li>
+  <li>Un relleno es el color de la línea, atenuado, salvo que se haya fijado aparte: un dibujo que pasa a rojo se rellena de rojo. Una etiqueta sobre una marca de color se escribe en negro o en blanco, el que mejor se lea; un cuadro de estadísticas usa la superficie y el color de texto del propio gráfico, en ambos temas; las palabras en el color de un dibujo se oscurecen donde no se leerían sobre un fondo claro.</li>
+</ul>
 
 <h2>Configuración</h2>
 <p>

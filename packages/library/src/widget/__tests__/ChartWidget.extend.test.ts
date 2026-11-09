@@ -1239,20 +1239,22 @@ describe('ChartWidget look', () => {
   it('gives the chart golden bars and sans figures in the airy look, and takes them back', () => {
     widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false, ui: { density: 'airy' } });
     expect(FakeChart.last.barLayouts.at(-1)).toBe('golden');
-    expect(FakeChart.last.fonts.at(-1)).toEqual({ family: SANS_FONT_FAMILY });
+    // Words on drawings in the look's own sans face.
+    expect(FakeChart.last.fonts.at(-1)).toEqual({ family: SANS_FONT_FAMILY, textFamily: widget.getUI().font.family });
     widget.setUI({ preset: 'terminal', density: 'compact' });
     expect(FakeChart.last.barLayouts.at(-1)).toBe('classic');
-    expect(FakeChart.last.fonts.at(-1)).toEqual({ family: widget.getUI().font.mono });
+    expect(FakeChart.last.fonts.at(-1)).toEqual({ family: widget.getUI().font.mono, textFamily: widget.getUI().font.family });
   });
 
   it('draws the chart’s figures in the look’s figures face: a sans face by default, Tahoma in Desk, and back', () => {
     widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false });
     const print = widget.getUI().font.mono;
-    expect(FakeChart.last.fonts.at(-1)).toEqual({ family: print });
+    const words = widget.getUI().font.family;
+    expect(FakeChart.last.fonts.at(-1)).toEqual({ family: print, textFamily: words });
     widget.setUI('desk');
     expect((FakeChart.last.fonts.at(-1) as { family: string }).family).toMatch(/^Tahoma,/);
     widget.setUI('print');
-    expect(FakeChart.last.fonts.at(-1)).toEqual({ family: print });
+    expect(FakeChart.last.fonts.at(-1)).toEqual({ family: print, textFamily: words });
   });
 
   it('leaves a chart face of yours in Print and Desk too', () => {
@@ -1273,9 +1275,9 @@ describe('ChartWidget look', () => {
     widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false, ui: { density: 'airy' }, chartOptions: { font: yours } });
     // The font as drawn: each setFont goes over the one before, null goes back to the theme's.
     const drawn = () => FakeChart.last.fonts.reduce<object>((font, next) => (next === null ? {} : { ...font, ...(next as object) }), yours);
-    expect(drawn()).toEqual({ sizeSmall: 13, family: SANS_FONT_FAMILY });
+    expect(drawn()).toEqual({ sizeSmall: 13, family: SANS_FONT_FAMILY, textFamily: widget.getUI().font.family });
     widget.setUI('terminal');
-    expect(drawn()).toEqual({ sizeSmall: 13, family: widget.getUI().font.mono });
+    expect(drawn()).toEqual({ sizeSmall: 13, family: widget.getUI().font.mono, textFamily: widget.getUI().font.family });
   });
 
   it('takes the look from its options', () => {

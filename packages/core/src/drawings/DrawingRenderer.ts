@@ -23,6 +23,16 @@ export class DrawingRenderer {
     return this.keepOut?.() ?? [];
   }
 
+  /** The pointer's layer: the drawing under the pointer, glowing (see `DrawingManager.renderHover`). */
+  renderHover(ctx: CanvasRenderingContext2D, viewport: ViewportState, theme?: Theme): void {
+    setDrawingTheme(theme ?? null);
+    try {
+      this.manager.renderHover(ctx, viewport);
+    } finally {
+      setDrawingTheme(null);
+    }
+  }
+
   render(ctx: CanvasRenderingContext2D, viewport: ViewportState, theme?: Theme): void {
     // Drawing text: the theme's font, on a halo of the chart's background, clear of the legend.
     setDrawingTheme(theme ?? null);
@@ -31,6 +41,8 @@ export class DrawingRenderer {
       this.manager.render(ctx, this.formatTime ? { ...viewport, formatTime: this.formatTime } : viewport);
     } finally {
       setDrawingKeepOut(null);
+      // Helpers drawn outside a pass (a compare's labels) don't take this chart's look.
+      setDrawingTheme(null);
     }
   }
 }

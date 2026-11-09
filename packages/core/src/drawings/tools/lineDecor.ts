@@ -1,11 +1,13 @@
 import type { DrawingOptionDefs, DrawingOptionValue, DrawingState, Point, ViewportState } from '@tradecanvas/commons';
 import { barsBetween, drawLabelBox, drawingHandleFill, formatPriceChange, spanBetween } from './labels.js';
 import { screenAngleDeg } from './TrendAngle.js';
+import { arrowHeadSize, handleRadius } from '../drawingLook.js';
 
 /** An arrowhead's length (px), as the arrow tool draws it. */
-const ARROW_HEAD = 12;
 /** The middle point's radius (px). */
 const MIDDLE_RADIUS = 3.5;
+/** The middle point's ring, px: as a handle's. */
+const MIDDLE_RING = 1.5;
 /** How far the stats box sits from the end or the middle it is by (px). */
 const STATS_GAP = 8;
 
@@ -41,7 +43,8 @@ export const LINE_STATS_OPTIONS: DrawingOptionDefs = {
 export type OptionReader = <T extends DrawingOptionValue>(key: string) => T;
 
 /** A filled arrowhead at `tip`, pointing away from `from` (the freehand tools draw an open one). */
-export function fillArrowHead(ctx: CanvasRenderingContext2D, from: Point, tip: Point, color: string): void {
+export function fillArrowHead(ctx: CanvasRenderingContext2D, from: Point, tip: Point, color: string, lineWidth = 1): void {
+  const ARROW_HEAD = arrowHeadSize(lineWidth);
   const angle = Math.atan2(tip.y - from.y, tip.x - from.x);
   ctx.beginPath();
   ctx.moveTo(tip.x, tip.y);
@@ -56,8 +59,8 @@ export function fillArrowHead(ctx: CanvasRenderingContext2D, from: Point, tip: P
 export function drawLineEnds(ctx: CanvasRenderingContext2D, segment: readonly [Point, Point], color: string, option: OptionReader): void {
   const [start, end] = segment;
   if (start.x === end.x && start.y === end.y) return;
-  if (option<string>('leftEnd') === 'arrow') fillArrowHead(ctx, end, start, color);
-  if (option<string>('rightEnd') === 'arrow') fillArrowHead(ctx, start, end, color);
+  if (option<string>('leftEnd') === 'arrow') fillArrowHead(ctx, end, start, color, Number(ctx.lineWidth) || 1);
+  if (option<string>('rightEnd') === 'arrow') fillArrowHead(ctx, start, end, color, Number(ctx.lineWidth) || 1);
 }
 
 /** The stats asked for, between the drawing's first two points (`a` and `b` on screen). */
@@ -86,12 +89,14 @@ export function drawLineStats(
 ): void {
   const mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
   if (option<boolean>('showMiddlePoint')) {
+    // A ring as the handles are, a size smaller, filled with the chart's background.
     ctx.beginPath();
-    ctx.arc(mid.x, mid.y, MIDDLE_RADIUS, 0, Math.PI * 2);
+    ctx.arc(mid.x, mid.y, Math.max(MIDDLE_RADIUS, handleRadius(state.style.lineWidth) - 1), 0, Math.PI * 2);
     ctx.fillStyle = drawingHandleFill();
     ctx.fill();
     ctx.strokeStyle = state.style.color;
-    ctx.lineWidth = 1;
+    ctx.lineWidth = MIDDLE_RING;
+    ctx.setLineDash([]);
     ctx.stroke();
   }
   if (!selected && !option<boolean>('alwaysShowStats')) return;

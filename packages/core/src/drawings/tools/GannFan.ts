@@ -1,6 +1,7 @@
-import { drawingFont, fillTextWithHalo } from './labels.js';
+import { fillTextWithHalo } from './labels.js';
 import type { DrawingState, Point, ViewportState } from '@tradecanvas/commons';
 import { DrawingBase } from '../DrawingBase.js';
+import { roleFont } from '../drawingLook.js';
 
 /**
  * Gann Fan drawing tool.
@@ -64,7 +65,7 @@ export class GannFanTool extends DrawingBase {
       if (labelY > chartRect.y && labelY < chartRect.y + chartRect.height) {
         ctx.globalAlpha = 0.7;
         ctx.fillStyle = state.style.color;
-        ctx.font = drawingFont(9);
+        ctx.font = roleFont('mark');
         ctx.textAlign = direction > 0 ? 'right' : 'left';
         ctx.textBaseline = 'bottom';
         fillTextWithHalo(ctx, label, labelX, labelY - 2);

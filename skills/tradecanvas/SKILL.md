@@ -340,7 +340,7 @@ and call no `onSettingsChange` listener.
 `theme: 'dark' | 'light'` or a `Theme` object (`{ ...DARK_THEME, candleUp: '#1fa874' }`);
 `chart.setTheme(...)` at runtime. Numbers follow `numberLocale` (`'en-US'`, `'vi-VN'` …).
 The chart's own text (axes, tags, crosshair pills) over any theme: `font: { family: SANS_FONT_FAMILY, sizeSmall: 12 }`
-or `chart.setFont(...)` (`null`: the theme's); the legend takes the face at its own size (`chart.setLegend({ fontSize })`),
+or `chart.setFont(...)` (`null`: the theme's), and words written on drawings in `font.textFamily` (the system sans when unset); the legend takes the face at its own size (`chart.setLegend({ fontSize })`),
 and in the widget its face and size come from `ui.font`. Bars: `barLayout: 'golden'` (body φ⁻¹ of the slot, more bars on
 screen) or `'classic'` (a `Chart`'s default, a 2 px gap); `chart.setBarLayout`. The widget opens
 with golden bars, but `ui: { density: 'compact' }` keeps classic ones; `'airy'` adds sans figures and spacious controls.

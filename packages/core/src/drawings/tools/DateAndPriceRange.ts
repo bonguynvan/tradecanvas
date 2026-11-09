@@ -3,8 +3,8 @@ import { formatVolumeLoc } from '@tradecanvas/commons';
 import { DrawingBase } from '../DrawingBase.js';
 import { resolveBarIndex } from '../../viewport/ScaleMapping.js';
 import { barsBetween, drawLabelBox, formatPriceChange, spanBetween } from './labels.js';
+import { drawingFill } from '../drawingLook.js';
 
-const UP_FILL = 'rgba(76, 141, 255, 0.12)';
 const DOWN_FILL = 'rgba(232, 80, 91, 0.12)';
 
 /** Summed volume of the bars between the two anchors, or null without data. */
@@ -48,7 +48,8 @@ export class DateAndPriceRangeTool extends DrawingBase {
     const h = Math.abs(p1.y - p0.y);
     const up = state.anchors[1].price >= state.anchors[0].price;
 
-    ctx.fillStyle = up ? UP_FILL : DOWN_FILL;
+    // A rise in the line's own colour, a fall in red.
+    ctx.fillStyle = up ? drawingFill(state.style) : DOWN_FILL;
     ctx.fillRect(x, y, w, h);
 
     // Arrows along both measured axes, from the start toward the end anchor.

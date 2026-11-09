@@ -1,8 +1,9 @@
 import type { DrawingLevel, DrawingState, ViewportState } from '@tradecanvas/commons';
 import { formatPrice } from '@tradecanvas/commons';
 import { priceToY } from '../../viewport/ScaleMapping.js';
-import { formatDrawingPrice, drawingFont, fillTextWithHalo } from './labels.js';
+import { formatDrawingPrice, fillTextWithHalo } from './labels.js';
 import { crispY } from '../../charts/pixelGrid.js';
+import { roleFont } from '../drawingLook.js';
 
 /** Decimals a level's percentage shows (61.8%). */
 const LEVEL_PERCENT_DECIMALS = 1;
@@ -72,7 +73,7 @@ export function renderPriceLevels(
     ctx.globalAlpha = 1;
   }
 
-  ctx.font = drawingFont(11);
+  ctx.font = roleFont('label');
   ctx.textBaseline = 'bottom';
   ctx.textAlign = look.labelPosition === 'right' ? 'right' : 'left';
   const labelX = look.labelPosition === 'right' ? look.x1 - 4 : look.x0 + 4;

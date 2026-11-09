@@ -1,7 +1,8 @@
 import type { DrawingState, Point, ViewportState } from '@tradecanvas/commons';
 import { DrawingBase } from '../DrawingBase.js';
 import { resolveBarIndex } from '../../viewport/ScaleMapping.js';
-import { formatPriceChange, drawingFont, belowKeepOut, overlapsKeepOut } from './labels.js';
+import { formatPriceChange, belowKeepOut, fillLabelSurface, overlapsKeepOut } from './labels.js';
+import { dashFor, drawingLook, roleFont } from '../drawingLook.js';
 
 export class MeasureTool extends DrawingBase {
   descriptor = { type: 'measure' as const, name: 'Measure', requiredAnchors: 2 };
@@ -11,9 +12,10 @@ export class MeasureTool extends DrawingBase {
     const p1 = this.anchorToPixel(state.anchors[0], viewport);
     const p2 = this.anchorToPixel(state.anchors[1], viewport);
 
-    // Dotted line from p1 to p2
+    // A dashed line from p1 to p2, whatever the line style: a measure, not a line drawn.
     this.applyLineStyle(ctx, state.style);
-    ctx.setLineDash([4, 4]); // Always dashed for measure
+    ctx.lineCap = 'butt';
+    ctx.setLineDash(dashFor('dashed', state.style.lineWidth));
     ctx.beginPath();
     ctx.moveTo(p1.x, p1.y);
     ctx.lineTo(p2.x, p2.y);
@@ -31,7 +33,7 @@ export class MeasureTool extends DrawingBase {
       `Bars: ${barsDiff}`,
     ];
 
-    ctx.font = drawingFont(11);
+    ctx.font = roleFont('label');
     ctx.textAlign = 'center';
     ctx.textBaseline = 'bottom';
 
@@ -39,10 +41,9 @@ export class MeasureTool extends DrawingBase {
     // onto the plot where that would run off it (a measure by its edge).
     const textWidth = Math.max(...lines.map((l) => ctx.measureText(l).width));
     const box = labelBox((p1.x + p2.x) / 2, (p1.y + p2.y) / 2, textWidth, lines.length, viewport);
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-    ctx.fillRect(box.x, box.y, box.width, box.height);
-
-    ctx.fillStyle = '#FFFFFF';
+    // The chart's own surface and text colour, as the other stats boxes.
+    fillLabelSurface(ctx, box.x, box.y, box.width, box.height);
+    ctx.fillStyle = drawingLook().ink;
     const centerX = box.x + box.width / 2;
     const lastBaseline = box.y + box.height - LABEL_PAD_Y;
     for (let i = 0; i < lines.length; i++) {

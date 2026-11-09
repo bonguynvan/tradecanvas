@@ -1,6 +1,7 @@
 import type { DrawingState, Point, ViewportState } from '@tradecanvas/commons';
 import { DrawingBase, lineSpace } from '../DrawingBase.js';
 import { extendOptions } from './options.js';
+import { drawingFill } from '../drawingLook.js';
 
 export class ParallelChannelTool extends DrawingBase {
   descriptor = {
@@ -66,7 +67,7 @@ export class ParallelChannelTool extends DrawingBase {
 
     // Fill between the anchors' span.
     if (corners && state.style.fillColor) {
-      ctx.fillStyle = state.style.fillColor;
+      ctx.fillStyle = drawingFill(state.style);
       ctx.beginPath();
       ctx.moveTo(corners[0].x, corners[0].y);
       for (const p of corners.slice(1)) ctx.lineTo(p.x, p.y);
