@@ -1,5 +1,12 @@
 # @tradecanvas/mcp
 
+## 1.75.0
+
+### Patch Changes
+
+- Updated dependencies [db3cedc]
+  - @tradecanvas/commons@1.75.0
+
 ## 1.74.0
 
 ### Patch Changes

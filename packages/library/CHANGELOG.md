@@ -1,5 +1,20 @@
 # @tradecanvas/chart
 
+## 1.75.0
+
+### Minor Changes
+
+- db3cedc: Drawings are drawn one way, and easier to read. Handles are rings in the drawing's colour filled with the chart's background, sized to the line, bigger under the pointer and filled while dragged; the others of a selection and locked drawings show small dots, and the nearest handle in reach is the one taken. A drawing under the pointer glows a little, and a drawing being made shows its placed points. Text people write is set at 14 px in the system's sans face (new `font.textFamily` on the chart, set by the widget from its look), and figures at 12 px, both growing with the chart's type; a saved size of 12, the old default, reads as none. Fills follow the line's colour unless set on their own (the old default blue reads as "follow the line"; `LINE_TINT_FILL` and `ownFillColor` in commons). Dashes, dots and arrowheads grow with the line; label boxes take the chart's surface and text colour; text on coloured tags is black or white, whichever reads. A `Chart` paints its element in the theme's background from the start unless the host gave it one, so a dark chart on a light page is no longer drawn on white. `DEFAULT_DRAWING_STYLE` no longer sets `fontSize`.
+
+### Patch Changes
+
+- ae71c05: Measuring tools, positions and profiles read cleaner. A price range is tinted and edged in the rise or fall colour with an arrow and its change on a tag; a date range has an arrow and its bars and time on a tag, its handles halfway up the plot (as Fibonacci time zones' and cyclic lines' now are); a date and price range draws its arrow heads; a measure drops "Price:" and "Bars:", and a measure too short for its arrow head leaves it off. A price range keeps a colour picked for it. Rises and falls take the theme's `trading.profitColor` and `trading.lossColor`, green and red without them (price ranges, Long/Short positions, forecasts). A bars pattern marks the bars it copies with a band instead of a line across the price, and draws its copy sharp. A volume profile draws its histogram inside its range with the range outlined and the value area shaded, and its handles, like an anchored VWAP's, sit where its lines are, not at prices that mean nothing to it. `Chart.getDrawingRect` takes in a drawing's tags and handles, so the widget's floating toolbar keeps clear of them, and a position's entry tag sits past its handle.
+- Updated dependencies [5044b7b]
+- Updated dependencies [db3cedc]
+- Updated dependencies [ae71c05]
+  - @tradecanvas/core@1.75.0
+  - @tradecanvas/commons@1.75.0
+
 ## 1.74.0
 
 ### Minor Changes
