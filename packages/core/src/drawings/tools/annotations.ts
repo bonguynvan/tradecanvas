@@ -1,8 +1,8 @@
 import type { DrawingDescriptor, DrawingState, Point, ViewportState } from '@tradecanvas/commons';
 import { DrawingBase } from '../DrawingBase.js';
 import { resolveAnnotationText } from './TextAnnotation.js';
-import { BoxCache, boxFont, drawTextBox, inRect, textLook, type Rect } from './textBox.js';
-import { drawingLook, textSize } from '../drawingLook.js';
+import { BoxCache, boundsOf, boxFont, drawTextBox, inRect, measureTextBox, strokeSelectionFrame, textLook, type Rect } from './textBox.js';
+import { drawingLook, keepOnPlot, textSize } from '../drawingLook.js';
 
 /** Widest a note's or a callout's text runs before it wraps (px). */
 const NOTE_WIDTH = 240;
@@ -99,7 +99,10 @@ export class CalloutTool extends DrawingBase {
     ctx.fill();
     if (state.anchors.length < 2) return;
     const at = this.anchorToPixel(state.anchors[1], viewport);
-    const box = drawTextBox(ctx, resolveAnnotationText(state, 'Callout'), at.x, at.y, boxLook(state));
+    const text = resolveAnnotationText(state, 'Callout');
+    const look = boxLook(state);
+    const landed = calloutBoxAt(at, measureTextBox(ctx, text, look), viewport);
+    const box = drawTextBox(ctx, text, landed.left, landed.top, look);
     this.boxes.set(state.id, box);
     // The pointer leaves the box from the middle of its nearest side.
     const from = nearestEdgePoint(box, target);
@@ -123,6 +126,24 @@ export class CalloutTool extends DrawingBase {
   textBox(state: DrawingState): Rect | null {
     return this.boxes.get(state.id) ?? null;
   }
+
+  /** The box's handle on the box as drawn (kept on the plot), so a drag from it starts where it shows. */
+  protected override handlePoints(state: DrawingState, viewport: ViewportState): Point[] {
+    const points = super.handlePoints(state, viewport);
+    const box = this.boxes.get(state.id);
+    return box && points.length > 1 ? [points[0], { x: box.x, y: box.y }] : points;
+  }
+}
+
+/**
+ * Where a callout's box of `size` goes for its point `at`: moved in from an
+ * edge of the plot it would run past (under the price axis), while its point
+ * is on the plot. Scrolled off, it goes with its bars instead of sticking.
+ */
+function calloutBoxAt(at: Point, size: { width: number; height: number }, viewport: ViewportState): { left: number; top: number } {
+  const plot = viewport.chartRect;
+  const onPlot = at.x >= plot.x && at.x <= plot.x + plot.width && at.y >= plot.y && at.y <= plot.y + plot.height;
+  return onPlot ? keepOnPlot(at.x, at.y, size.width, size.height) : { left: at.x, top: at.y };
 }
 
 /** The middle of the side of `box` facing `p`. */
@@ -239,16 +260,17 @@ export class ArrowMarkTool extends DrawingBase {
       ctx.textBaseline = dir.y === 0 ? 'middle' : dir.y < 0 ? 'top' : 'bottom';
       ctx.fillText(text, tail.x - dir.x * 4, tail.y - dir.y * 4);
     }
-    if (selected) this.renderAnchorHandles(ctx, state, viewport);
+    strokeSelectionFrame(ctx, boundsOf(points), state.style.color, selected);
+  }
+
+  /** No handle: one at its tip would cover the arrow's head. A press on it moves it; the frame shows it is picked. */
+  protected override handlePoints(): Point[] {
+    return [];
   }
 
   hitTest(point: Point, state: DrawingState, viewport: ViewportState, tolerance: number): boolean {
     if (state.anchors.length < 1) return false;
-    const { points } = this.outline(state, viewport);
-    const xs = points.map((p) => p.x);
-    const ys = points.map((p) => p.y);
-    const box = { x: Math.min(...xs), y: Math.min(...ys), width: Math.max(...xs) - Math.min(...xs), height: Math.max(...ys) - Math.min(...ys) };
-    return inRect(point, box, tolerance);
+    return inRect(point, boundsOf(this.outline(state, viewport).points), tolerance);
   }
 }
 
@@ -359,7 +381,12 @@ export class IconTool extends DrawingBase {
       ctx.fillStyle = state.style.color;
       ctx.fill();
     }
-    if (selected) this.renderAnchorHandles(ctx, state, viewport);
+    strokeSelectionFrame(ctx, { x: c.x - size / 2, y: c.y - size / 2, width: size, height: size }, state.style.color, selected);
+  }
+
+  /** No handle: one at its point, the glyph's middle, would cover the glyph. A press on it moves it; the frame shows it is picked. */
+  protected override handlePoints(): Point[] {
+    return [];
   }
 
   hitTest(point: Point, state: DrawingState, viewport: ViewportState, tolerance: number): boolean {

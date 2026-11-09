@@ -104,6 +104,7 @@ chart.addDrawing({ type: 'fibRetracement', anchors: [a, b], options: { trendLine
   <li>Un relleno es el color de la línea, atenuado, salvo que se haya fijado aparte: un dibujo que pasa a rojo se rellena de rojo. Una etiqueta sobre una marca de color se escribe en negro o en blanco, el que mejor se lea; un cuadro de estadísticas usa la superficie y el color de texto del propio gráfico, en ambos temas; las palabras en el color de un dibujo se oscurecen donde no se leerían sobre un fondo claro.</li>
   <li>Las líneas propias de una herramienta siguen su estilo de línea; sus cuadrículas, guías y ángulos secundarios son de 1 px y más claros. Un nivel, un ángulo o una división cuya etiqueta taparía otra queda sin etiqueta, nunca los niveles 0 y 1. Los porcentajes se escriben enteros cuando lo son (50%, no 50.0%), y cada ratio de Fibonacci dibujado junto a otros tiene un color propio.</li>
   <li>Las subidas y las bajadas (un rango de precio, el objetivo y el stop de una Posición larga/corta, el resultado de una previsión) toman los colores de ganancia y pérdida del tema (las claves de estilo <code>trading.profitColor</code> y <code>trading.lossColor</code>), verde y rojo sin ellas.</li>
+  <li>Un texto, un icono o una marca de flecha no muestra controles, que quedarían sobre sus letras o su glifo: al seleccionarlo se enmarca, y se mueve pulsando en cualquier parte de él.</li>
 </ul>
 
 <h2>Configuración</h2>
@@ -292,7 +293,7 @@ chart.on('toolModeChange', (e) => e.payload)      // { eraser } o { zoomArea }`}
 
 <h3>Gann y horquillas</h3>
 <ul>
-  <li><code>pitchfork</code>, <code>schiffPitchfork</code>, <code>modifiedSchiffPitchfork</code></li>
+  <li><code>pitchfork</code>, <code>schiffPitchfork</code>, <code>modifiedSchiffPitchfork</code> — la línea B–C une las púas, y la horquilla se tiñe entre ellas hasta el borde del área del gráfico.</li>
   <li><code>pitchfan</code> — rayos desde un pivote a través de niveles entre dos puntos.</li>
   <li><code>gannFan</code> — cada ángulo lleva su etiqueta donde sale del área del gráfico; <code>gannBox</code> — sus divisiones llevan etiqueta en precio y en tiempo; <code>gannSquare</code></li>
 </ul>
@@ -312,13 +313,13 @@ chart.on('toolModeChange', (e) => e.payload)      // { eraser } o { zoomArea }`}
 
 <h3>Patrones</h3>
 <ul>
-  <li><code>xabcdPattern</code>, <code>cypherPattern</code>, <code>abcdPattern</code>, <code>threeDrives</code> — con sus proporciones.</li>
-  <li><code>headAndShoulders</code> — con la línea clavicular.</li>
+  <li><code>xabcdPattern</code>, <code>cypherPattern</code>, <code>abcdPattern</code>, <code>threeDrives</code> — con sus proporciones. Los nombres de los puntos quedan por fuera de ellos, lejos de los controles; cada proporción va sobre su guía, o justo al lado si la línea está ocupada, sin tapar nunca un nombre, un control u otra proporción.</li>
+  <li><code>headAndShoulders</code> — con la línea clavicular y el nombre de cada pico sobre él, abreviado a LS, H y RS donde los nombres completos se tocarían.</li>
 </ul>
 
 <h3>Ondas de Elliott</h3>
 <ul>
-  <li><code>elliottWave</code> (1–5, A–C), <code>elliottImpulse</code>, <code>elliottCorrection</code>, <code>elliottTriangle</code>, <code>elliottDoubleCombo</code>, <code>elliottTripleCombo</code> — etiquetas al estilo del grado de la onda: ①, (1), 1 o i.</li>
+  <li><code>elliottWave</code> (1–5, A–C), <code>elliottImpulse</code>, <code>elliottCorrection</code>, <code>elliottTriangle</code>, <code>elliottDoubleCombo</code>, <code>elliottTripleCombo</code> — etiquetas al estilo del grado de la onda: una cifra en un círculo, (1), 1 o i, por fuera de sus puntos.</li>
 </ul>
 
 <h3>Ciclos</h3>

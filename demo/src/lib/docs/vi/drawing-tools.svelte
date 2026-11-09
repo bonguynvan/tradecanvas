@@ -103,6 +103,7 @@ chart.addDrawing({ type: 'fibRetracement', anchors: [a, b], options: { trendLine
   <li>Màu nền là màu của nét, pha nhạt, trừ khi được đặt riêng: hình vẽ đổi sang đỏ thì tô đỏ. Nhãn trên thẻ có màu được viết bằng đen hoặc trắng, màu nào dễ đọc hơn; hộp thống kê dùng màu bề mặt và màu chữ của chính biểu đồ, ở cả theme sáng lẫn tối; chữ mang màu của hình vẽ được làm đậm hơn ở chỗ nó khó đọc trên nền sáng.</li>
   <li>Các đường chính của một công cụ theo kiểu nét của nó; lưới, đường dẫn và các góc phụ dày 1 px và nhạt hơn. Một mức, một góc hay một phần chia mà nhãn sẽ che nhãn khác thì được để trống nhãn, nhưng không bao giờ là mức 0 và 1. Phần trăm được viết số tròn khi tròn (50%, không phải 50.0%), và mỗi tỷ lệ Fibonacci vẽ cùng các tỷ lệ khác có màu riêng.</li>
   <li>Tăng và giảm (một vùng giá, mục tiêu và điểm dừng lỗ của Vị thế Long/Short, kết quả của một dự báo) dùng màu lãi và màu lỗ của theme (các khóa kiểu <code>trading.profitColor</code> và <code>trading.lossColor</code>), không có chúng thì là xanh và đỏ.</li>
+  <li>Một chữ, một biểu tượng hay một dấu mũi tên không hiện tay nắm, vì tay nắm sẽ đè lên chữ hay hình của nó: khi được chọn, nó được đóng khung, và nhấn vào bất cứ đâu trên nó là di chuyển được.</li>
 </ul>
 
 <h2>Cài đặt</h2>
@@ -288,7 +289,7 @@ chart.on('toolModeChange', (e) => e.payload)      // { eraser } hoặc { zoomAre
 
 <h3>Gann và Pitchfork</h3>
 <ul>
-  <li><code>pitchfork</code>, <code>schiffPitchfork</code>, <code>modifiedSchiffPitchfork</code></li>
+  <li><code>pitchfork</code>, <code>schiffPitchfork</code>, <code>modifiedSchiffPitchfork</code> — đường B–C nối các nhánh, và phần giữa các nhánh được tô màu nhạt đến mép vùng vẽ.</li>
   <li><code>pitchfan</code> — các tia từ một điểm pivot đi qua các mức nằm giữa hai điểm.</li>
   <li><code>gannFan</code> — mỗi góc có nhãn ở chỗ nó rời vùng vẽ; <code>gannBox</code> — các phần chia có nhãn theo giá và theo thời gian; <code>gannSquare</code></li>
 </ul>
@@ -308,13 +309,13 @@ chart.on('toolModeChange', (e) => e.payload)      // { eraser } hoặc { zoomAre
 
 <h3>Mô hình</h3>
 <ul>
-  <li><code>xabcdPattern</code>, <code>cypherPattern</code>, <code>abcdPattern</code>, <code>threeDrives</code> — kèm các tỷ lệ của chúng.</li>
-  <li><code>headAndShoulders</code> — kèm đường viền cổ.</li>
+  <li><code>xabcdPattern</code>, <code>cypherPattern</code>, <code>abcdPattern</code>, <code>threeDrives</code> — kèm các tỷ lệ của chúng. Tên điểm nằm bên ngoài điểm, tránh các tay nắm; mỗi tỷ lệ nằm trên đường dẫn của nó, hoặc ngay cạnh đường khi chỗ trên đường đã kín, không bao giờ che một tên, một tay nắm hay một tỷ lệ khác.</li>
+  <li><code>headAndShoulders</code> — kèm đường viền cổ, các đỉnh có tên ghi phía trên, rút gọn thành LS, H và RS khi tên đầy đủ chạm nhau.</li>
 </ul>
 
 <h3>Sóng Elliott</h3>
 <ul>
-  <li><code>elliottWave</code> (1–5, A–C), <code>elliottImpulse</code>, <code>elliottCorrection</code>, <code>elliottTriangle</code>, <code>elliottDoubleCombo</code>, <code>elliottTripleCombo</code> — nhãn theo kiểu của cấp sóng: ①, (1), 1 hoặc i.</li>
+  <li><code>elliottWave</code> (1–5, A–C), <code>elliottImpulse</code>, <code>elliottCorrection</code>, <code>elliottTriangle</code>, <code>elliottDoubleCombo</code>, <code>elliottTripleCombo</code> — nhãn theo kiểu của cấp sóng: một chữ số trong vòng tròn, (1), 1 hoặc i, nằm bên ngoài các điểm.</li>
 </ul>
 
 <h3>Chu kỳ</h3>

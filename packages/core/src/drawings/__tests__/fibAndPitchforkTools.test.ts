@@ -2,7 +2,9 @@ import { describe, it, expect } from 'vitest';
 import { FibChannelTool, fibChannelSegment, FIB_CHANNEL_LEVELS } from '../tools/FibChannel.js';
 import { FibSpeedResistanceFanTool, speedFanTargets, SPEED_FAN_LEVELS } from '../tools/FibSpeedResistanceFan.js';
 import { PitchforkTool, SchiffPitchforkTool, ModifiedSchiffPitchforkTool } from '../tools/Pitchfork.js';
-import { drawing, recordingCtx, unitViewport } from './fixtures.js';
+import { withAlpha } from '@tradecanvas/commons';
+import { FILL_ALPHA } from '../drawingLook.js';
+import { defaultStyle, drawing, recordingCtx, unitViewport } from './fixtures.js';
 
 describe('FibChannelTool', () => {
   const tool = new FibChannelTool();
@@ -111,5 +113,79 @@ describe('Pitchfork variants', () => {
     const { ctx: ctx2, calls: calls2 } = recordingCtx();
     new PitchforkTool().render(ctx2, drawing('pitchfork', anchors), unitViewport, false);
     expect(calls2.some((c) => c.name === 'setLineDash' && (c.args[0] as number[])[0] === 3)).toBe(false);
+  });
+
+  const tools = [
+    ['pitchfork', new PitchforkTool()],
+    ['schiffPitchfork', new SchiffPitchforkTool()],
+    ['modifiedSchiffPitchfork', new ModifiedSchiffPitchforkTool()],
+  ] as const;
+
+  it.each(tools)('%s joins B and C with a line, so the fork reads as one shape', (type, tool) => {
+    const { ctx, calls } = recordingCtx();
+    tool.render(ctx, drawing(type, anchors), unitViewport, false);
+    const at = (args: unknown[], x: number, y: number) => {
+      const [px, py] = args as number[];
+      return Math.abs(px - x) < 1e-6 && Math.abs(py - y) < 1e-6;
+    };
+    // Stroked, not just the edge of the shade.
+    const joined = calls.some((c, i) =>
+      c.name === 'moveTo' && at(c.args, 105, 30) &&
+      calls[i + 1]?.name === 'lineTo' && at(calls[i + 1].args, 105, 70) &&
+      calls[i + 2]?.name === 'stroke');
+    expect(joined).toBe(true);
+  });
+
+  it.each(tools)('%s shades between its tines in the line colour, under the lines', (type, tool) => {
+    const { ctx, calls } = recordingCtx();
+    const state = drawing(type, anchors);
+    tool.render(ctx, state, unitViewport, false);
+    const fill = calls.findIndex((c) => c.name === 'fill');
+    const firstStroke = calls.findIndex((c) => c.name === 'stroke');
+    expect(fill).toBeGreaterThanOrEqual(0);
+    expect(fill).toBeLessThan(firstStroke);
+    expect(ctx.fillStyle).toBe(withAlpha(state.style.color, FILL_ALPHA));
+    expect(tool.descriptor.fill).toBe(true);
+  });
+
+  it('fills with a fill colour set by hand', () => {
+    const { ctx } = recordingCtx();
+    const state = drawing('pitchfork', anchors, { style: { ...defaultStyle, fillColor: 'rgba(255, 0, 0, 0.3)' } });
+    new PitchforkTool().render(ctx, state, unitViewport, false);
+    expect(ctx.fillStyle).toBe('rgba(255, 0, 0, 0.3)');
+  });
+
+  it('stops its lines at the edge of the plot', () => {
+    const { ctx, calls } = recordingCtx();
+    new PitchforkTool().render(ctx, drawing('pitchfork', anchors), unitViewport, false);
+    const { width, height } = unitViewport.chartRect;
+    for (const c of calls.filter((call) => call.name === 'lineTo')) {
+      const [x, y] = c.args as number[];
+      expect(x).toBeLessThanOrEqual(width + 1e-6);
+      expect(y).toBeGreaterThanOrEqual(-1e-6);
+      expect(y).toBeLessThanOrEqual(height + 1e-6);
+    }
+  });
+
+  it('draws the handles after the fill and the lines', () => {
+    const { ctx, calls } = recordingCtx();
+    new SchiffPitchforkTool().render(ctx, drawing('schiffPitchfork', anchors), unitViewport, true);
+    const firstArc = calls.findIndex((c) => c.name === 'arc');
+    const lastLine = calls.map((c) => c.name).lastIndexOf('lineTo');
+    expect(firstArc).toBeGreaterThan(calls.findIndex((c) => c.name === 'fill'));
+    expect(firstArc).toBeGreaterThan(lastLine);
+  });
+});
+
+describe('Pitchfork hit test follows what is drawn', () => {
+  const state = drawing('pitchfork', [{ time: 10, price: 50 }, { time: 30, price: 80 }, { time: 40, price: 30 }]);
+  it('a press on the B–C line picks the fork', () => {
+    // A quarter of the way from B (305, 20) to C (405, 70): clear of the median and the tines.
+    expect(new PitchforkTool().hitTest({ x: 330, y: 32.5 }, state, unitViewport, 4)).toBe(true);
+  });
+  it('a press past the plot, on where the median would run on, does not', () => {
+    // The median from A (105, 50) through B–C's middle (355, 45), carried on past the plot's right edge.
+    const k = (1100 - 105) / 250;
+    expect(new PitchforkTool().hitTest({ x: 1100, y: 50 - 5 * k }, state, unitViewport, 4)).toBe(false);
   });
 });

@@ -9,9 +9,46 @@ import { textSize } from '../drawingLook.js';
 const MARKER_WIDTH = 200;
 /** A signpost's post: from its bar's point up to its board (px). */
 const POST_HEIGHT = 36;
-/** A balloon's tail: from its bubble down to its bar's point (px), and half its width where it leaves the bubble. */
-const TAIL_HEIGHT = 12;
-const TAIL_HALF = 6;
+/** A balloon's tail is this share of its bubble's height long: it reads as the bubble's, at any type size. */
+const TAIL_RATIO = 0.4;
+/** The shortest a balloon's tail gets, px: shorter, it reads as a notch. */
+const MIN_TAIL = 8;
+/** Half a tail's width where it leaves the bubble, as a share of its length. */
+const TAIL_SPREAD = 0.6;
+
+/** A balloon's tail for a bubble `boxHeight` px tall: its length from the bubble to the point, and half its width at the bubble. */
+function tailFor(boxHeight: number): { length: number; half: number } {
+  const length = Math.max(MIN_TAIL, Math.round(boxHeight * TAIL_RATIO));
+  return { length, half: Math.round(length * TAIL_SPREAD) };
+}
+
+/**
+ * A bubble's outline with its tail in it, one path round both, clockwise
+ * from the top-left corner: filled and outlined at once, no seam where the
+ * tail leaves the bubble. The tail's foot keeps clear of the round corners.
+ */
+function balloonOutline(tip: Point, half: number, below: boolean) {
+  return (ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number): void => {
+    const right = x + w;
+    const bottom = y + h;
+    const first = x + r + half;
+    const last = right - r - half;
+    const mid = first <= last ? Math.max(first, Math.min(tip.x, last)) : (x + right) / 2;
+    const tail = (edge: number, from: number, to: number) => {
+      ctx.lineTo(mid + from, edge);
+      ctx.lineTo(tip.x, tip.y);
+      ctx.lineTo(mid + to, edge);
+    };
+    ctx.moveTo(x + r, y);
+    if (below) tail(y, -half, half);
+    ctx.arcTo(right, y, right, bottom, r);
+    ctx.arcTo(right, bottom, x, bottom, r);
+    if (!below) tail(bottom, half, -half);
+    ctx.arcTo(x, bottom, x, y, r);
+    ctx.arcTo(x, y, right, y, r);
+    ctx.closePath();
+  };
+}
 
 function markerLook(state: DrawingState): TextBoxLook {
   return textLook(state.style, { box: true, border: true, width: MARKER_WIDTH, fill: true });
@@ -89,33 +126,23 @@ export class BalloonTool extends DrawingBase {
     const p = this.anchorToPixel(state.anchors[0], viewport);
     const text = resolveAnnotationText(state, 'Comment');
     const look = markerLook(state);
-    const box = markerBox(p, measureTextBox(ctx, text, look), TAIL_HEIGHT, viewport);
-    // The tail first, from the bubble's edge nearest the point (its foot, or its top when it hangs under).
-    const base = box.below ? p.y + TAIL_HEIGHT : p.y - TAIL_HEIGHT;
-    ctx.beginPath();
-    ctx.moveTo(p.x - TAIL_HALF, base);
-    ctx.lineTo(p.x, p.y);
-    ctx.lineTo(p.x + TAIL_HALF, base);
-    if (look.fill) {
-      ctx.fillStyle = look.fill;
-      ctx.fill();
-    }
-    // Its two sides only, and only with the bubble's border: the bubble's own edge closes it.
-    if (look.stroke) {
-      ctx.strokeStyle = look.stroke;
-      ctx.lineWidth = 1;
-      ctx.stroke();
-    }
-    this.boxes.set(state.id, drawTextBox(ctx, text, box.x, box.y, look));
+    const size = measureTextBox(ctx, text, look);
+    const tail = tailFor(size.height);
+    const box = markerBox(p, size, tail.length, viewport);
+    // The tail in the bubble's own outline, from its edge nearest the point (its foot, or its top when it hangs under).
+    const outlined = { ...look, traceBox: balloonOutline(p, tail.half, box.below) };
+    this.boxes.set(state.id, drawTextBox(ctx, text, box.x, box.y, outlined));
     if (selected) this.renderAnchorHandles(ctx, state, viewport);
   }
 
   hitTest(point: Point, state: DrawingState, viewport: ViewportState, tolerance: number): boolean {
     if (state.anchors.length < 1) return false;
     const p = this.anchorToPixel(state.anchors[0], viewport);
-    const box: Rect = this.boxes.get(state.id) ?? markerBox(p, estimateSize(state, resolveAnnotationText(state, 'Comment')), TAIL_HEIGHT, viewport);
-    const [tailTop, tailBottom] = box.y > p.y ? [p.y, p.y + TAIL_HEIGHT] : [p.y - TAIL_HEIGHT, p.y];
-    if (Math.abs(point.x - p.x) <= TAIL_HALF + tolerance && point.y >= tailTop - tolerance && point.y <= tailBottom + tolerance) return true;
+    const estimate = estimateSize(state, resolveAnnotationText(state, 'Comment'));
+    const box: Rect = this.boxes.get(state.id) ?? markerBox(p, estimate, tailFor(estimate.height).length, viewport);
+    const tail = tailFor(box.height);
+    const [tailTop, tailBottom] = box.y > p.y ? [p.y, p.y + tail.length] : [p.y - tail.length, p.y];
+    if (Math.abs(point.x - p.x) <= tail.half + tolerance && point.y >= tailTop - tolerance && point.y <= tailBottom + tolerance) return true;
     return inRect(point, box, tolerance);
   }
 

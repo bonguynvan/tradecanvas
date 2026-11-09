@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+### Drawings
+
+- **Text, notes, marks, patterns, Elliott waves and pitchforks read cleaner** (`@tradecanvas/core`).
+  - A text, an icon or an arrow mark shows no handle: its ring sat on the text's first letter, hid the arrow's head and turned the star hollow. Selected, it is framed in its colour, and a press anywhere on it moves it, as dragging its point did.
+  - A callout keeps its box on the plot, its leader running to where the box lands; it ran under the price axis and was cut off.
+  - A price label is written in the prose face at the label size, on a box that grows with the type, in black or white, whichever reads on its colour; it was small figures in the numbers face.
+  - A balloon's bubble and tail are one outline, with no seam across the tail's base.
+  - Pattern and Elliott wave points are named outside them, over a peak and under a trough, clear of the handles; a name could sit under its handle or against the line. Ratios sit on their guides, moved along one, or just off it, to stay clear of names, handles and each other; one sat under point B. Primary-degree Elliott labels are figures in a ring of their own, which read at any size.
+  - A head and shoulders names its peaks in the prose face, shortened to LS, H and RS where the full names would meet; "Head" and "Right Shoulder" printed over each other.
+  - A pitchfork joins its tines with the B–C line and is tinted between them, its lines stopping at the plot's edge; a press on the B–C line picks it, and one past the plot's edge no longer does. The Schiff forks' guide to their shifted start is a light dashed line.
+
 ## 1.74.0 (2026-11-09)
 
 ### Drawings

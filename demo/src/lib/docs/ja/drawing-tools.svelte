@@ -103,6 +103,7 @@ chart.addDrawing({ type: 'fibRetracement', anchors: [a, b], options: { trendLine
   <li>塗りつぶしは、個別に設定しない限り線の色を淡くしたものです。描画を赤にすれば塗りも赤になります。色付きタグのラベルは、黒と白のうち読みやすいほうで書かれます。統計ボックスはどちらのテーマでもチャート自身の面と文字の色を使います。描画の色の文字は、明るい背景で読みにくいところでは濃くなります。</li>
   <li>ツール本来の線はその線のスタイルに従い、グリッド、ガイド、補助の角度線は 1 px で淡く描かれます。ラベルがほかのラベルに重なるレベル、角度、分割にはラベルを付けません。ただし 0 と 1 のレベルには必ず付けます。パーセントは整数のときは整数で書き（50.0% ではなく 50%）、ほかの比率と一緒に描くフィボナッチ比率にはそれぞれ専用の色が付きます。</li>
   <li>上昇と下落（価格レンジ、ロング/ショートポジションのターゲットとストップ、予測の結果）は、テーマの利益と損失の色（スタイルキー <code>trading.profitColor</code> と <code>trading.lossColor</code>）で描かれ、指定がなければ緑と赤です。</li>
+  <li>テキスト、アイコン、矢印マークにはハンドルを表示しません。ハンドルが文字や図形に重なってしまうためです。選択すると枠で囲まれ、どこを押しても移動できます。</li>
 </ul>
 
 <h2>設定</h2>
@@ -284,7 +285,7 @@ chart.on('toolModeChange', (e) => e.payload)      // { eraser } または { zoom
 
 <h3>ギャンとピッチフォーク</h3>
 <ul>
-  <li><code>pitchfork</code>、<code>schiffPitchfork</code>、<code>modifiedSchiffPitchfork</code></li>
+  <li><code>pitchfork</code>、<code>schiffPitchfork</code>、<code>modifiedSchiffPitchfork</code> — B–C 線が歯をつなぎ、歯の間はプロットの端まで薄く色付けされます。</li>
   <li><code>pitchfan</code> — ピボットから、2 点の間にあるレベルを通る半直線。</li>
   <li><code>gannFan</code> — 各角度線にはプロットから出る位置でラベルが付きます。<code>gannBox</code> — 分割に価格と時間のラベルが付きます。<code>gannSquare</code></li>
 </ul>
@@ -304,13 +305,13 @@ chart.on('toolModeChange', (e) => e.payload)      // { eraser } または { zoom
 
 <h3>パターン</h3>
 <ul>
-  <li><code>xabcdPattern</code>、<code>cypherPattern</code>、<code>abcdPattern</code>、<code>threeDrives</code> — それぞれの比率を表示します。</li>
-  <li><code>headAndShoulders</code> — ネックライン付き。</li>
+  <li><code>xabcdPattern</code>、<code>cypherPattern</code>、<code>abcdPattern</code>、<code>threeDrives</code> — それぞれの比率を表示します。点の名前は点の外側、ハンドルにかからない位置に置かれます。各比率はそのガイド線上に、線上に空きがなければ線のすぐそばに置かれ、名前、ハンドル、ほかの比率に重なることはありません。</li>
+  <li><code>headAndShoulders</code> — ネックライン付きで、各ピークの名前がその上に表示され、正式名同士がぶつかる場合は LS、H、RS に短縮されます。</li>
 </ul>
 
 <h3>エリオット波動</h3>
 <ul>
-  <li><code>elliottWave</code>（1–5、A–C）、<code>elliottImpulse</code>、<code>elliottCorrection</code>、<code>elliottTriangle</code>、<code>elliottDoubleCombo</code>、<code>elliottTripleCombo</code> — ラベルは波動の次数に応じた表記になります：①、(1)、1、i。</li>
+  <li><code>elliottWave</code>（1–5、A–C）、<code>elliottImpulse</code>、<code>elliottCorrection</code>、<code>elliottTriangle</code>、<code>elliottDoubleCombo</code>、<code>elliottTripleCombo</code> — ラベルは波動の次数に応じた表記になります：丸囲み数字、(1)、1、i で、点の外側に置かれます。</li>
 </ul>
 
 <h3>サイクル</h3>
