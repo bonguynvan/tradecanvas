@@ -173,7 +173,7 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
     <tr><td><code>tagRadius</code></td><td>チャートが描く価格ラベル、軸のピル、注文バッジの角の丸み。</td></tr>
     <tr><td><code>iconStroke</code></td><td>
       アイコンの線の太さ（CSS px、0.5–3）で、アイコンの大きさによらず同じ太さです（14 px 未満のアイコンは最大 1 px）。<code>0</code> ではアイコンセットの
-      とおりに描き、アイコンが大きいほど線も太くなります。Print は 1.25、ほかの外観はそのまま描きます。
+      とおりに描き、アイコンが大きいほど線も太くなります。Print は 1、ほかの外観はそのまま描きます。
     </td></tr>
   </tbody>
 </table>

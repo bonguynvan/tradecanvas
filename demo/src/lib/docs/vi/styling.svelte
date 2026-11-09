@@ -176,7 +176,7 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
     <tr><td><code>tagRadius</code></td><td>Góc bo của nhãn giá, nhãn trên trục và huy hiệu lệnh do biểu đồ vẽ.</td></tr>
     <tr><td><code>iconStroke</code></td><td>
       Nét của các biểu tượng, tính bằng CSS px từ 0.5 đến 3, dày như nhau ở mọi cỡ biểu tượng (tối đa 1 px ở biểu tượng dưới 14 px). <code>0</code> vẽ chúng
-      như bộ biểu tượng gốc, nét dày dần khi biểu tượng lớn lên. Print dùng 1.25; các giao diện khác vẽ nguyên như vậy.
+      như bộ biểu tượng gốc, nét dày dần khi biểu tượng lớn lên. Print dùng 1; các giao diện khác vẽ nguyên như vậy.
     </td></tr>
   </tbody>
 </table>

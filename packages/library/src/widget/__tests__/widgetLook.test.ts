@@ -51,10 +51,22 @@ describe('the stylesheet’s look', () => {
     }
   });
 
+  it('marks a tool group with a triangle in its button’s corner, not a dot like the tools’ anchors', () => {
+    const mark = ruleBody('.tcw-multi-dot');
+    expect(mark).toMatch(/clip-path: polygon\(/);
+    expect(mark).not.toContain('border-radius: 50%');
+    // In the very corner, away from the icon, and in the other corner right to left.
+    expect(mark).toContain('inset-block-end: 1px');
+    expect(mark).toContain('inset-inline-end: 1px');
+    expect(ruleBody("[dir='rtl'] .tcw-multi-dot")).toMatch(/clip-path: polygon\(/);
+  });
+
   it('draws the icons’ lines at the look’s width, on the widget and in its portal, only when it sets one', () => {
     expect(ruleBody("[data-tcw-icon-stroke='set'] .tc-icon")).toContain('stroke-width: var(--tcw-icon-stroke)');
     // The same width at every icon size: the line isn't scaled with the drawing.
     expect(ruleBody("[data-tcw-icon-stroke='set'] .tc-icon > *")).toContain('vector-effect: non-scaling-stroke');
+    // Its filled dots (a tool's anchors) shrink with the line, so they don't outweigh it.
+    expect(ruleBody("[data-tcw-icon-stroke='set'] .tc-icon > circle[stroke='none']")).toMatch(/transform: scale\(0\.\d+\)/);
     // A small icon is no heavier than the rest: drawn as it is, its line was under 1 px.
     expect(ruleBody("[data-tcw-icon-stroke='set'] .tc-icon:is([width='10'], [width='11'], [width='12'], [width='13'])"))
       .toContain('stroke-width: min(var(--tcw-icon-stroke), 1px)');

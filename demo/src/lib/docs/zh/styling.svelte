@@ -163,7 +163,7 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
     <tr><td><code>tagRadius</code></td><td>图表绘制的价格标签、坐标轴胶囊标签和订单徽标的圆角。</td></tr>
     <tr><td><code>iconStroke</code></td><td>
       图标的线宽，单位 CSS px，范围 0.5 到 3，在任何图标尺寸下都一样粗（小于 14 px 的图标最多 1 px）。<code>0</code> 按图标集原样绘制，图标越大线条越粗。
-      Print 为 1.25；其他外观按原样绘制。
+      Print 为 1；其他外观按原样绘制。
     </td></tr>
   </tbody>
 </table>

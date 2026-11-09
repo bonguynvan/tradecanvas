@@ -181,7 +181,7 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
     <tr><td><code>tagRadius</code></td><td>Esquinas de las etiquetas de precio, las píldoras del eje y las insignias de órdenes que dibuja el gráfico.</td></tr>
     <tr><td><code>iconStroke</code></td><td>
       Las líneas de los iconos, en px CSS de 0.5 a 3, del mismo grosor en cualquier tamaño de icono (como mucho 1 px en iconos de menos de 14 px). <code>0</code> los
-      dibuja como el juego de iconos, más gruesos cuanto mayor es el icono. Los de Print son de 1.25; los demás aspectos
+      dibuja como el juego de iconos, más gruesos cuanto mayor es el icono. Los de Print son de 1; los demás aspectos
       los dibujan tal cual.
     </td></tr>
   </tbody>

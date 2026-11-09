@@ -8,7 +8,7 @@ describe('resolveWidgetUI', () => {
   it('is the Print look by default', () => {
     const ui = resolveWidgetUI();
     expect(ui.preset).toBe('print');
-    expect(ui).toMatchObject({ toolbar: 'docked', sidebar: 'docked', intervals: 'plain', active: 'solid', borders: { separators: true }, font: { labelCase: 'none', strongWeight: 500 }, iconStroke: 1.25 });
+    expect(ui).toMatchObject({ toolbar: 'docked', sidebar: 'docked', intervals: 'plain', active: 'solid', borders: { separators: true }, font: { labelCase: 'none', strongWeight: 500 }, iconStroke: 1 });
     expect(ui.components.menu).toBe(ui.radius.lg);
     expect(ui).toEqual(resolveWidgetUI('print'));
   });
@@ -45,14 +45,14 @@ describe('resolveWidgetUI', () => {
   });
 
   it('draws Print’s icons in fine lines, the same width at every size, and the other looks’ as drawn', () => {
-    expect(widgetUIVariables(resolveWidgetUI('print'))['--tcw-icon-stroke']).toBe('1.25px');
+    expect(widgetUIVariables(resolveWidgetUI('print'))['--tcw-icon-stroke']).toBe('1px');
     for (const preset of ['studio', 'terminal', 'capsule', 'desk'] as const) {
       expect(resolveWidgetUI(preset).iconStroke, preset).toBe(0);
     }
     expect(resolveWidgetUI({ preset: 'studio', iconStroke: 1 }).iconStroke).toBe(1);
     expect(resolveWidgetUI({ iconStroke: 0 }).iconStroke).toBe(0);
     for (const bad of [0.2, 4, -1, Number.NaN, '1px']) {
-      expect(resolveWidgetUI({ iconStroke: bad as never }).iconStroke, String(bad)).toBe(1.25);
+      expect(resolveWidgetUI({ iconStroke: bad as never }).iconStroke, String(bad)).toBe(1);
     }
     // The line width is a switch on the root: a look that draws them as they are leaves them be.
     const el = document.createElement('div');
