@@ -290,14 +290,14 @@ chart.on('toolModeChange', (e) => e.payload)      // { eraser } 或 { zoomArea }
 
 <h3>形状</h3>
 <ul>
-  <li><code>rectangle</code>、<code>circle</code>、<code>ellipse</code>、<code>triangle</code></li>
+  <li><code>rectangle</code>、<code>circle</code>、<code>ellipse</code>、<code>triangle</code> — 椭圆的控制点位于曲线上，每个移动一条边。</li>
   <li><code>polyline</code> — 封闭图形，每次点击一个点。</li>
   <li><code>curve</code> — 经过第三个点弯曲；<code>arc</code> — 经过三个点的圆弧。</li>
 </ul>
 
 <h3>画笔</h3>
 <ul>
-  <li><code>brush</code>、<code>highlighter</code> — 手绘。</li>
+  <li><code>brush</code>、<code>highlighter</code> — 手绘；选中时笔画像文字一样带框，按住其上任意处即可移动。</li>
   <li><code>path</code> — 经过各点的线，末端带箭头。</li>
 </ul>
 

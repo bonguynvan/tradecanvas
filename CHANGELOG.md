@@ -4,6 +4,7 @@
 
 ### Drawings
 
+- **Ellipses and freehand strokes, selected, read as the other shapes do** (`@tradecanvas/core`). An ellipse's handles sit on its curve, at its top, foot and sides, each moving that side; they sat on the corners of its box, off the shape. A selected brush or highlighter stroke is framed as a text is, solid and rounded, in place of a dashed box, and the frame's room counts toward what the drawing covers, so the floating toolbar placed as it is picked keeps clear of it.
 - **Text, notes, marks, patterns, Elliott waves and pitchforks read cleaner** (`@tradecanvas/core`).
   - A text, an icon or an arrow mark shows no handle: its ring sat on the text's first letter, hid the arrow's head and turned the star hollow. Selected, it is framed in its colour, and a press anywhere on it moves it, as dragging its point did.
   - A callout keeps its box on the plot, its leader running to where the box lands; it ran under the price axis and was cut off.
@@ -13,7 +14,7 @@
   - A head and shoulders names its peaks in the prose face, shortened to LS, H and RS where the full names would meet; "Head" and "Right Shoulder" printed over each other.
   - A pitchfork joins its tines with the B–C line and is tinted between them, its lines stopping at the plot's edge; a press on the B–C line picks it, and one past the plot's edge no longer does. The Schiff forks' guide to their shifted start is a light dashed line.
 
-## 1.74.0 (2026-11-09)
+## 1.75.0 (2026-11-09)
 
 ### Drawings
 
