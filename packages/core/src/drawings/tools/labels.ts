@@ -1,7 +1,7 @@
 import type { DrawingState, Theme, ViewportState } from '@tradecanvas/commons';
 import { formatPrice, priceTagText, withAlpha } from '@tradecanvas/commons';
 import { resolveBarIndex } from '../../viewport/ScaleMapping.js';
-import { drawingLook, keepOnPlot, labelInk, roleFont, setDrawingLook } from '../drawingLook.js';
+import { drawingLook, extendExtent, keepOnPlot, labelInk, roleFont, setDrawingLook } from '../drawingLook.js';
 
 /** Shared label helpers for the measuring / pattern drawing tools. */
 
@@ -235,6 +235,7 @@ export function drawPill(
   const width = pillWidth(ctx, text);
   const height = pillHeight();
   const top = Math.round(centerY - height / 2);
+  extendExtent(Math.round(x), top, width, height);
   ctx.fillStyle = background;
   ctx.beginPath();
   if (typeof ctx.roundRect === 'function') ctx.roundRect(Math.round(x), top, width, height, PILL_RADIUS);
@@ -382,6 +383,7 @@ export function fillLabelSurface(ctx: CanvasRenderingContext2D, x: number, y: nu
   const top = Math.round(y);
   const w = Math.round(width);
   const h = Math.round(height);
+  extendExtent(left, top, w, h);
   ctx.beginPath();
   if (typeof ctx.roundRect === 'function') ctx.roundRect(left + 0.5, top + 0.5, w - 1, h - 1, LABEL_RADIUS);
   else ctx.rect(left + 0.5, top + 0.5, w - 1, h - 1);

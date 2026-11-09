@@ -29,9 +29,9 @@ export class FibTimeZonesTool extends DrawingBase {
     options: { levels: { kind: 'levels' as const, label: 'Levels', default: levelList([0, ...FIB_TIME_LEVELS], [89, 144]) } },
   };
 
-  /** Its handles on the zone's start and its unit, by the plot's foot: the anchors' prices mean nothing to it. */
+  /** Its handles on the zone's start and its unit, halfway up the plot: the anchors' prices mean nothing to it. */
   protected override handlePoints(state: DrawingState, viewport: ViewportState): Point[] {
-    return this.footHandles(state, viewport);
+    return this.timeHandles(state, viewport);
   }
 
   render(

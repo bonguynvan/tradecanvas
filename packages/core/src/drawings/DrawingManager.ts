@@ -38,7 +38,7 @@ import { LINE_TINT_FILL, withAlpha } from '@tradecanvas/commons';
 import { DrawingDrag, shiftAnchors, type DragEdit } from './DrawingDrag.js';
 import { constrainedAnchor, keepsAngle } from './drawingEditing.js';
 import { clampScreenPoints, isScreenAnchored, offsetScreenPoints, pixelToScreenPoint, screenPointToPixel, shiftScreenPoints } from './screenAnchors.js';
-import { setDrawingPlot } from './drawingLook.js';
+import { beginExtent, endExtent, setDrawingPlot, type ExtentRect } from './drawingLook.js';
 
 export type { DrawingOrderMove, DrawingPatch } from './drawingState.js';
 
@@ -121,6 +121,8 @@ export class DrawingManager {
   };
   /** The handle under the pointer, and the drawing under it: the pass draws them lifted. */
   private hoverHandle: HandleRef | null = null;
+  /** What each drawing covered on screen when last drawn, beyond its points: its tags and handles. */
+  private extents = new Map<string, ExtentRect>();
   private hoverDrawing: string | null = null;
   /** The drawing being made with the pointer. */
   private creator = new DrawingCreator();
@@ -1565,12 +1567,23 @@ export class DrawingManager {
     const primary = this.selection.primary;
     const dragged = this.state === 'resizing' && primary ? this.drag.activeHandle() : -1;
     setHandleFocus({ primary, hover: this.hoverHandle, drag: dragged >= 0 && primary ? { id: primary, index: dragged } : null });
+    const extents = new Map<string, ExtentRect>();
+    this.extents = extents;
     try {
       for (const drawing of this.drawings) {
         if (!this.shown(drawing)) continue;
         const plugin = this.registry.get(drawing.type);
         const on = this.viewportFor(drawing.paneId, viewport);
-        if (plugin && on) renderIsolated(ctx, plugin, drawing, on, this.selection.has(drawing.id));
+        if (!plugin || !on) continue;
+        beginExtent();
+        let covered: ExtentRect | null = null;
+        try {
+          renderIsolated(ctx, plugin, drawing, on, this.selection.has(drawing.id));
+        } finally {
+          // Stop noting even when the drawing threw, so the passes after it don't add to it.
+          covered = endExtent();
+        }
+        if (covered) extents.set(drawing.id, covered);
       }
 
       // The drawing being made, with the anchor under the pointer: its points placed as handles.
@@ -1760,6 +1773,14 @@ export class DrawingManager {
     // drawing under the pointer is on the pointer's layer, which repaints as the pointer moves.
     if (handleChanged) this.requestRender?.();
     return found.cursor;
+  }
+
+  /**
+   * What a drawing covered on screen when last drawn beyond its points (its
+   * tags, its stats, its handles), in the plot's pixels; null when it drew none.
+   */
+  drawnExtent(id: string): ExtentRect | null {
+    return this.extents.get(id) ?? null;
   }
 
   /** Nothing is under the pointer any more (it left the chart): no glow, no lifted handle. */

@@ -21,9 +21,9 @@ export function cycleLineXs(a: Point, b: Point, viewport: ViewportState): number
 export class CyclicLinesTool extends DrawingBase {
   descriptor = { type: 'cyclicLines' as const, name: 'Cyclic Lines', requiredAnchors: 2 };
 
-  /** Its handles on its first two lines, by the plot's foot: the anchors' prices mean nothing to it. */
+  /** Its handles on its first two lines, halfway up the plot: the anchors' prices mean nothing to it. */
   protected override handlePoints(state: DrawingState, viewport: ViewportState): Point[] {
-    return this.footHandles(state, viewport);
+    return this.timeHandles(state, viewport);
   }
 
   render(ctx: CanvasRenderingContext2D, state: DrawingState, viewport: ViewportState, selected: boolean): void {

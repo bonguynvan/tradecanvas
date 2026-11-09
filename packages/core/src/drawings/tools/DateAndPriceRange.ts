@@ -1,11 +1,13 @@
 import type { DrawingState, Point, ViewportState } from '@tradecanvas/commons';
-import { formatVolumeLoc } from '@tradecanvas/commons';
+import { formatVolumeLoc, withAlpha } from '@tradecanvas/commons';
 import { DrawingBase } from '../DrawingBase.js';
 import { resolveBarIndex } from '../../viewport/ScaleMapping.js';
 import { barsBetween, drawLabelBox, formatPriceChange, spanBetween } from './labels.js';
-import { drawingFill } from '../drawingLook.js';
+import { FILL_ALPHA, drawingFill, drawingLook } from '../drawingLook.js';
+import { fillMeasureHead } from './lineDecor.js';
 
-const DOWN_FILL = 'rgba(232, 80, 91, 0.12)';
+/** How strongly the box's edge shows. */
+const EDGE_ALPHA = 0.5;
 
 /** Summed volume of the bars between the two anchors, or null without data. */
 export function volumeBetween(state: DrawingState, viewport: ViewportState): number | null {
@@ -26,7 +28,7 @@ export function dateAndPriceRangeLines(state: DrawingState, viewport: ViewportSt
   const bars = barsBetween(state, 0, 1, viewport);
   const lines = [
     formatPriceChange(state.anchors[0].price, state.anchors[1].price, viewport),
-    span ? `${bars} bars, ${span}` : `${bars} bars`,
+    span ? `${bars} bars · ${span}` : `${bars} bars`,
   ];
   const vol = volumeBetween(state, viewport);
   // As the chart's numbers read: K, M and B in the locale's mark; 만, 억 and 조 in Korean.
@@ -48,12 +50,19 @@ export class DateAndPriceRangeTool extends DrawingBase {
     const h = Math.abs(p1.y - p0.y);
     const up = state.anchors[1].price >= state.anchors[0].price;
 
-    // A rise in the line's own colour, a fall in red.
-    ctx.fillStyle = up ? drawingFill(state.style) : DOWN_FILL;
+    // A rise in the line's own colour, a fall in the fall colour; a faint edge round it.
+    const look = drawingLook();
+    const color = up ? state.style.color : look.fall;
+    ctx.fillStyle = up ? drawingFill(state.style) : withAlpha(look.fall, FILL_ALPHA);
     ctx.fillRect(x, y, w, h);
+    ctx.save();
+    this.applyGuideStyle(ctx, color);
+    ctx.globalAlpha = EDGE_ALPHA;
+    this.strokeCrispRect(ctx, x, y, w, h);
+    ctx.restore();
 
     // Arrows along both measured axes, from the start toward the end anchor.
-    this.applyLineStyle(ctx, state.style);
+    this.applyLineStyle(ctx, { ...state.style, color });
     const midX = x + w / 2;
     const midY = y + h / 2;
     ctx.beginPath();
@@ -63,6 +72,8 @@ export class DateAndPriceRangeTool extends DrawingBase {
     ctx.lineTo(p1.x, midY);
     ctx.stroke();
     this.resetLineStyle(ctx);
+    fillMeasureHead(ctx, { x: midX, y: p0.y }, { x: midX, y: p1.y }, color, state.style.lineWidth);
+    fillMeasureHead(ctx, { x: p0.x, y: midY }, { x: p1.x, y: midY }, color, state.style.lineWidth);
 
     const lines = dateAndPriceRangeLines(state, viewport);
     // Below the box for a drop, above it for a rise — out of the way of the move.

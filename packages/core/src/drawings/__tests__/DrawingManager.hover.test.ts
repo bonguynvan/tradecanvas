@@ -136,3 +136,19 @@ describe('handles as a drawing is reshaped and made', () => {
     expect(Math.abs(arcs[0][1] - 70)).toBeLessThanOrEqual(0.5);
   });
 });
+
+describe('what a drawing covers on screen', () => {
+  it('takes in its tags and its handles where they sit off its points, so a toolbar over it keeps clear', async () => {
+    const { PriceRangeTool } = await import('../tools/PriceRange.js');
+    const manager = new DrawingManager();
+    manager.register(new PriceRangeTool());
+    // A rise from 40 to 60 over bars 10..30: its change's tag over the box, above y 40.
+    manager.setDrawings([drawing('priceRange', [{ time: 10, price: 40 }, { time: 30, price: 60 }], { id: 'r' })]);
+    manager.select('r');
+    manager.render(textCtx().ctx, unitViewport);
+    const drawn = manager.drawnExtent('r');
+    expect(drawn).not.toBeNull();
+    expect(drawn!.y).toBeLessThan(40 - 6);
+    expect(manager.drawnExtent('none')).toBeNull();
+  });
+});

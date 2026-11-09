@@ -102,6 +102,7 @@ chart.addDrawing({ type: 'fibRetracement', anchors: [a, b], options: { trendLine
   <li>Gạch và chấm lớn theo độ dày nét, chấm thì tròn, và hai đầu của nét liền được bo tròn. Đầu mũi tên cũng lớn theo nét.</li>
   <li>Màu nền là màu của nét, pha nhạt, trừ khi được đặt riêng: hình vẽ đổi sang đỏ thì tô đỏ. Nhãn trên thẻ có màu được viết bằng đen hoặc trắng, màu nào dễ đọc hơn; hộp thống kê dùng màu bề mặt và màu chữ của chính biểu đồ, ở cả theme sáng lẫn tối; chữ mang màu của hình vẽ được làm đậm hơn ở chỗ nó khó đọc trên nền sáng.</li>
   <li>Các đường chính của một công cụ theo kiểu nét của nó; lưới, đường dẫn và các góc phụ dày 1 px và nhạt hơn. Một mức, một góc hay một phần chia mà nhãn sẽ che nhãn khác thì được để trống nhãn, nhưng không bao giờ là mức 0 và 1. Phần trăm được viết số tròn khi tròn (50%, không phải 50.0%), và mỗi tỷ lệ Fibonacci vẽ cùng các tỷ lệ khác có màu riêng.</li>
+  <li>Tăng và giảm (một vùng giá, mục tiêu và điểm dừng lỗ của Vị thế Long/Short, kết quả của một dự báo) dùng màu lãi và màu lỗ của theme (các khóa kiểu <code>trading.profitColor</code> và <code>trading.lossColor</code>), không có chúng thì là xanh và đỏ.</li>
 </ul>
 
 <h2>Cài đặt</h2>
@@ -278,7 +279,7 @@ chart.on('toolModeChange', (e) => e.payload)      // { eraser } hoặc { zoomAre
 <ul>
   <li><code>fibRetracement</code>, <code>fibExtension</code> — các mức, giá và phần trăm có thể sửa, nhãn bên trái hoặc phải, nền, đảo chiều.</li>
   <li><code>fibChannel</code>, <code>fibSpeedResistanceFan</code> — các tia của quạt mang màu của mức tương ứng, các tia thời gian là nét đứt, cả hai đều có nhãn.</li>
-  <li><code>fibTimeZones</code> — tính từ điểm bắt đầu của vùng (0) trở đi; tay nắm của nó, và của <code>cyclicLines</code>, nằm trên đường của chúng, sát chân vùng vẽ.</li>
+  <li><code>fibTimeZones</code> — tính từ điểm bắt đầu của vùng (0) trở đi; tay nắm của nó, và của <code>cyclicLines</code>, nằm trên đường của chúng, ở giữa chiều cao vùng vẽ.</li>
   <li><code>fibArcs</code> — các cung quanh điểm bắt đầu của một nhịp, nửa hoặc cả vòng tròn.</li>
   <li><code>fibCircles</code> — các vòng tròn ở bội số Fibonacci của một bán kính.</li>
   <li><code>fibSpiral</code> — xoắn ốc vàng từ tâm của nó.</li>
@@ -323,7 +324,9 @@ chart.on('toolModeChange', (e) => e.payload)      // { eraser } hoặc { zoomAre
 
 <h3>Đo lường</h3>
 <ul>
-  <li><code>measure</code>, <code>priceRange</code>, <code>dateRange</code>, <code>dateAndPriceRange</code></li>
+  <li><code>priceRange</code> — một hộp mang màu tăng hoặc màu giảm (hoặc màu bạn chọn cho nó), có mũi tên lên hoặc xuống dọc theo nó và mức thay đổi trên một thẻ ngay sau đầu của nó.</li>
+  <li><code>dateRange</code> — các nến giữa hai thời điểm, một mũi tên chạy ngang qua, số nến và thời gian trên một thẻ; tay nắm của nó ở hai đầu mũi tên, giữa chiều cao vùng vẽ.</li>
+  <li><code>dateAndPriceRange</code> — cả hai cùng lúc, mỗi phép đo một mũi tên và khối lượng ở bên trong; <code>measure</code> — mức thay đổi và số nến giữa hai điểm.</li>
 </ul>
 
 <h3>Chú thích và đánh dấu</h3>
@@ -337,10 +340,10 @@ chart.on('toolModeChange', (e) => e.payload)      // { eraser } hoặc { zoomAre
 <h3>Dự báo</h3>
 <ul>
   <li><code>riskReward</code> — Vị thế Long/Short (ở trên).</li>
-  <li><code>forecast</code> — chuyển xanh khi giá chạm mục tiêu, chuyển đỏ khi hết thời gian trước đó.</li>
+  <li><code>forecast</code> — chuyển sang màu tăng khi giá chạm mục tiêu, sang màu giảm khi hết thời gian trước đó.</li>
   <li><code>projection</code> — một nhịp được chiếu tiếp từ điểm thứ ba.</li>
-  <li><code>barsPattern</code> — bản sao của một số nến, dưới dạng nến, đường hoặc cao-thấp, đảo chiều thời gian hoặc lật ngược.</li>
-  <li><code>anchoredVWAP</code>, <code>volumeProfileRange</code></li>
+  <li><code>barsPattern</code> — bản sao của một số nến, dưới dạng nến, đường hoặc cao-thấp, đảo chiều thời gian hoặc lật ngược; các nến được sao chép nằm dưới một dải nhạt.</li>
+  <li><code>anchoredVWAP</code> — tay nắm của nó nằm trên VWAP, tại chỗ đường bắt đầu; <code>volumeProfileRange</code> — khối lượng tại mỗi mức giá dưới dạng histogram trong hộp của vùng, vùng giá trị (70% khối lượng) được tô bóng, điểm kiểm soát (POC) vẽ ngang qua; tay nắm của nó ở các góc hộp.</li>
 </ul>
 
 <h2>Lưu</h2>

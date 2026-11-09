@@ -28,9 +28,10 @@ export class MeasureTool extends DrawingBase {
     const idx1 = resolveBarIndex(state.anchors[1].time, viewport);
     const barsDiff = Math.max(0, Math.round(Math.abs(idx1 - idx0)));
 
+    // Its figures as they read: the change, then the bars.
     const lines = [
-      `Price: ${formatPriceChange(state.anchors[0].price, state.anchors[1].price, viewport)}`,
-      `Bars: ${barsDiff}`,
+      formatPriceChange(state.anchors[0].price, state.anchors[1].price, viewport),
+      `${barsDiff} bars`,
     ];
 
     ctx.font = roleFont('label');

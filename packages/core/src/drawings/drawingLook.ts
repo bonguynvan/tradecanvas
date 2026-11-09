@@ -35,6 +35,10 @@ export interface DrawingLook {
   handleFill: string;
   /** How much bigger than the default the chart's type is (1 at the default, more on a wide widget). */
   scale: number;
+  /** A rise's colour (a gain, a target, a move up): the theme's profit colour, else green. */
+  rise: string;
+  /** A fall's colour (a loss, a stop, a move down): the theme's loss colour, else red. */
+  fall: string;
 }
 
 /** The axis type size the drawing sizes are reckoned from. */
@@ -48,6 +52,9 @@ const LEGACY_FONT_SIZE = 12;
 /** How strongly a drawing's area is tinted with its line's colour. */
 export const FILL_ALPHA = 0.12;
 const DARK_BACKGROUND = '#131416';
+/** A rise and a fall without the theme's own profit and loss colours. */
+const RISE_COLOR = '#1fa874';
+const FALL_COLOR = '#e8505b';
 const DARK_INK = '#e6e3dc';
 
 /** What a look is worked out from: a theme, or the parts of one a drawing pass has. */
@@ -64,12 +71,48 @@ function lookFor(theme: LookTheme | null): DrawingLook {
     prose: font?.textFamily || SANS_FONT_FAMILY,
     background,
     ink: theme?.text ?? DARK_INK,
-    handleFill: theme?.style?.drawings.handle ?? background,
+    handleFill: theme?.style?.drawings?.handle ?? background,
     scale: Math.max(1, axis / BASE_AXIS_SIZE),
+    rise: theme?.style?.trading?.profit ?? RISE_COLOR,
+    fall: theme?.style?.trading?.loss ?? FALL_COLOR,
   };
 }
 
 let look: DrawingLook = lookFor(null);
+
+/** A box on screen, CSS px. */
+export interface ExtentRect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+/** What the drawing being drawn covers so far beyond its points (its tags, its handles), or null when not collecting. */
+let extent: { x0: number; y0: number; x1: number; y1: number } | null = null;
+let collecting = false;
+
+/** Start noting what the next drawing covers; `endExtent` gives it back. */
+export function beginExtent(): void {
+  collecting = true;
+  extent = null;
+}
+
+/** Add a box the drawing being drawn covers (a tag, a stats box, a handle). */
+export function extendExtent(x: number, y: number, width: number, height: number): void {
+  if (!collecting) return;
+  extent = extent
+    ? { x0: Math.min(extent.x0, x), y0: Math.min(extent.y0, y), x1: Math.max(extent.x1, x + width), y1: Math.max(extent.y1, y + height) }
+    : { x0: x, y0: y, x1: x + width, y1: y + height };
+}
+
+/** What the drawing covered, and stop noting. */
+export function endExtent(): ExtentRect | null {
+  collecting = false;
+  const e = extent;
+  extent = null;
+  return e ? { x: e.x0, y: e.y0, width: e.x1 - e.x0, height: e.y1 - e.y0 } : null;
+}
 
 /** The plot the drawing being drawn is clipped to: its labels keep inside it. */
 let plot: { x: number; y: number; width: number; height: number } | null = null;

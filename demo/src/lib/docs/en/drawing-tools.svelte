@@ -102,6 +102,7 @@ chart.addDrawing({ type: 'fibRetracement', anchors: [a, b], options: { trendLine
   <li>Dashes and dots grow with the line, dots are round, and a solid line's ends are round. Arrowheads grow with the line too.</li>
   <li>A fill is the line's colour, tinted, unless it was set on its own: a drawing turned red fills red. A label on a coloured tag is written in black or white, whichever reads; a stats box is the chart's own surface and text colour, in both themes; words in a drawing's colour are deepened where they would not read on a light background.</li>
   <li>A tool's own lines follow its line style; its grids, guides and secondary angles are 1 px and lighter. A level, an angle or a division whose label would cover another's is left unlabelled, never the 0 and 1 levels. Percentages are written whole when they are (50%, not 50.0%), and each Fibonacci ratio drawn with others has a colour of its own.</li>
+  <li>Rises and falls (a price range, a Long/Short position's target and stop, a forecast's outcome) take the theme's profit and loss colours (the <code>trading.profitColor</code> and <code>trading.lossColor</code> style keys), green and red without them.</li>
 </ul>
 
 <h2>Settings</h2>
@@ -278,7 +279,7 @@ chart.on('toolModeChange', (e) => e.payload)      // { eraser } or { zoomArea }`
 <ul>
   <li><code>fibRetracement</code>, <code>fibExtension</code> — editable levels, prices and percentages, labels left or right, background, reverse.</li>
   <li><code>fibChannel</code>, <code>fibSpeedResistanceFan</code> — the fan's rays in their levels' colours, the time rays dashed, both labelled.</li>
-  <li><code>fibTimeZones</code> — from the zone's start (0) on; its handles, and those of <code>cyclicLines</code>, sit on their lines by the plot's foot.</li>
+  <li><code>fibTimeZones</code> — from the zone's start (0) on; its handles, and those of <code>cyclicLines</code>, sit on their lines halfway up the plot.</li>
   <li><code>fibArcs</code> — arcs around the start of a move, half or full circles.</li>
   <li><code>fibCircles</code> — circles at Fibonacci multiples of a radius.</li>
   <li><code>fibSpiral</code> — a golden spiral from its centre.</li>
@@ -323,7 +324,9 @@ chart.on('toolModeChange', (e) => e.payload)      // { eraser } or { zoomArea }`
 
 <h3>Measuring</h3>
 <ul>
-  <li><code>measure</code>, <code>priceRange</code>, <code>dateRange</code>, <code>dateAndPriceRange</code></li>
+  <li><code>priceRange</code> — a box in the rise or fall colour (or the colour you pick for it) with an arrow up or down it and the change on a tag past its end.</li>
+  <li><code>dateRange</code> — the bars between two times, an arrow across and the bars and time on a tag; its handles at the ends of its arrow, halfway up the plot.</li>
+  <li><code>dateAndPriceRange</code> — both at once, with an arrow on each measure and the volume inside; <code>measure</code> — the change and the bars between two points.</li>
 </ul>
 
 <h3>Notes and marks</h3>
@@ -337,10 +340,10 @@ chart.on('toolModeChange', (e) => e.payload)      // { eraser } or { zoomArea }`
 <h3>Forecasting</h3>
 <ul>
   <li><code>riskReward</code> — Long/Short Position (above).</li>
-  <li><code>forecast</code> — green once the price reaches the target, red when its time runs out first.</li>
+  <li><code>forecast</code> — in the rise colour once the price reaches the target, the fall colour when its time runs out first.</li>
   <li><code>projection</code> — a move carried over from a third point.</li>
-  <li><code>barsPattern</code> — a copy of some bars, as bars, a line or high-low, mirrored or flipped.</li>
-  <li><code>anchoredVWAP</code>, <code>volumeProfileRange</code></li>
+  <li><code>barsPattern</code> — a copy of some bars, as bars, a line or high-low, mirrored or flipped; the bars it copies under a light band.</li>
+  <li><code>anchoredVWAP</code> — its handle on the VWAP where it starts; <code>volumeProfileRange</code> — the volume at each price as a histogram inside the range's box, the value area (70% of the volume) shaded, the point of control across; its handles on the box's corners.</li>
 </ul>
 
 <h2>Saving</h2>

@@ -102,6 +102,7 @@ chart.addDrawing({ type: 'fibRetracement', anchors: [a, b], options: { trendLine
   <li>破線と点線は線の太さに合わせて大きくなり、点は丸く、実線の端も丸くなります。矢じりも線に合わせて大きくなります。</li>
   <li>塗りつぶしは、個別に設定しない限り線の色を淡くしたものです。描画を赤にすれば塗りも赤になります。色付きタグのラベルは、黒と白のうち読みやすいほうで書かれます。統計ボックスはどちらのテーマでもチャート自身の面と文字の色を使います。描画の色の文字は、明るい背景で読みにくいところでは濃くなります。</li>
   <li>ツール本来の線はその線のスタイルに従い、グリッド、ガイド、補助の角度線は 1 px で淡く描かれます。ラベルがほかのラベルに重なるレベル、角度、分割にはラベルを付けません。ただし 0 と 1 のレベルには必ず付けます。パーセントは整数のときは整数で書き（50.0% ではなく 50%）、ほかの比率と一緒に描くフィボナッチ比率にはそれぞれ専用の色が付きます。</li>
+  <li>上昇と下落（価格レンジ、ロング/ショートポジションのターゲットとストップ、予測の結果）は、テーマの利益と損失の色（スタイルキー <code>trading.profitColor</code> と <code>trading.lossColor</code>）で描かれ、指定がなければ緑と赤です。</li>
 </ul>
 
 <h2>設定</h2>
@@ -274,7 +275,7 @@ chart.on('toolModeChange', (e) => e.payload)      // { eraser } または { zoom
 <ul>
   <li><code>fibRetracement</code>、<code>fibExtension</code> — 編集可能なレベル、価格とパーセント表示、左右どちらかのラベル、背景、反転。</li>
   <li><code>fibChannel</code>、<code>fibSpeedResistanceFan</code> — ファンの半直線はそれぞれのレベルの色で、時間の半直線は破線。どちらにもラベルが付きます。</li>
-  <li><code>fibTimeZones</code> — ゾーンの始点（0）から先に描かれます。このツールと <code>cyclicLines</code> のハンドルは、それぞれの線上、プロットの下端近くにあります。</li>
+  <li><code>fibTimeZones</code> — ゾーンの始点（0）から先に描かれます。このツールと <code>cyclicLines</code> のハンドルは、それぞれの線上、プロットの高さの中ほどにあります。</li>
   <li><code>fibArcs</code> — 値動きの起点を中心にした円弧。半円または全円。</li>
   <li><code>fibCircles</code> — 半径のフィボナッチ倍数の位置に描く円。</li>
   <li><code>fibSpiral</code> — 中心から広がる黄金螺旋。</li>
@@ -319,7 +320,9 @@ chart.on('toolModeChange', (e) => e.payload)      // { eraser } または { zoom
 
 <h3>計測</h3>
 <ul>
-  <li><code>measure</code>、<code>priceRange</code>、<code>dateRange</code>、<code>dateAndPriceRange</code></li>
+  <li><code>priceRange</code> — 上昇か下落の色（または指定した色）のボックスに上向きか下向きの矢印が通り、変化幅は端の先のタグに表示されます。</li>
+  <li><code>dateRange</code> — 2 つの時刻の間のバー。横切る矢印と、バー数と時間を示すタグが付き、ハンドルは矢印の両端、プロットの高さの中ほどにあります。</li>
+  <li><code>dateAndPriceRange</code> — その両方。測る向きごとに矢印があり、内側に出来高が表示されます。<code>measure</code> — 2 点間の変化幅とバー数。</li>
 </ul>
 
 <h3>注釈とマーク</h3>
@@ -333,10 +336,10 @@ chart.on('toolModeChange', (e) => e.payload)      // { eraser } または { zoom
 <h3>予測</h3>
 <ul>
   <li><code>riskReward</code> — ロング/ショートポジション（上記）。</li>
-  <li><code>forecast</code> — 価格がターゲットに届くと緑、その前に期限が過ぎると赤になります。</li>
+  <li><code>forecast</code> — 価格がターゲットに届くと上昇の色、その前に期限が過ぎると下落の色になります。</li>
   <li><code>projection</code> — 値動きを 3 点目を起点に写し取ります。</li>
-  <li><code>barsPattern</code> — 一部のバーのコピー。バー、ライン、高値-安値のいずれかで表示でき、左右反転や上下反転もできます。</li>
-  <li><code>anchoredVWAP</code>、<code>volumeProfileRange</code></li>
+  <li><code>barsPattern</code> — 一部のバーのコピー。バー、ライン、高値-安値のいずれかで表示でき、左右反転や上下反転もできます。コピー元のバーには淡い帯が敷かれます。</li>
+  <li><code>anchoredVWAP</code> — ハンドルは開始点の VWAP 上にあります。<code>volumeProfileRange</code> — 価格ごとの出来高をレンジのボックス内にヒストグラムで表示し、バリューエリア（出来高の 70%）を網掛けし、POC（Point of Control）を横切る線で示します。ハンドルはボックスの角にあります。</li>
 </ul>
 
 <h2>保存</h2>

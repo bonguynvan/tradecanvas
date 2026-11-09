@@ -1,9 +1,14 @@
 import { belowKeepOut, drawPill, formatPercent, labelBlocked, pillWidth, pillHeight, rightOfKeepOut, takeLabelBox } from './labels.js';
 import type { AnchorPoint, DrawingState, Point, ViewportState } from '@tradecanvas/commons';
-import { autoPricePrecision, formatPrice, priceTagText } from '@tradecanvas/commons';
+import { autoPricePrecision, formatPrice, priceTagText, withAlpha } from '@tradecanvas/commons';
 import { DrawingBase } from '../DrawingBase.js';
-import { roleFont } from '../drawingLook.js';
+import { drawingLook, handleRadius, roleFont } from '../drawingLook.js';
 import { drawAnchorHandles } from '../handles.js';
+
+/** How strongly the profit and loss zones are tinted. */
+const ZONE_ALPHA = 0.14;
+/** How strongly the zones' far edges (the target and the stop) show. */
+const EDGE_ALPHA = 0.6;
 
 /** Narrowest the zones are drawn, so a position placed with one click is still visible. */
 const MIN_WIDTH_PX = 40;
@@ -19,12 +24,16 @@ const MONEY_DECIMALS = 2;
 const RATIO_DECIMALS = 2;
 /** Gap between a tag slid right and what it slid clear of (px). */
 const TAG_SLIDE_GAP = 4;
+/** Gap between the entry's handle and its tag (px), past what the handle grows to under the pointer. */
+const HANDLE_TAG_GAP = 6;
 
 /** A tag of a position: its text, the row it belongs on and its colour. */
 interface PositionTag {
   text: string;
   y: number;
   color: string;
+  /** Where on its row it may start at the earliest, px: past a handle there. */
+  start?: number;
 }
 
 /**
@@ -91,18 +100,25 @@ export class RiskRewardTool extends DrawingBase {
     const { x, width } = this.span(state, viewport);
     const [entryPt, stopPt, targetPt] = this.handles(state, viewport);
 
-    ctx.fillStyle = 'rgba(232, 80, 91, 0.18)';
+    // The loss and profit zones in the theme's colours, each edged at its far price.
+    const look = drawingLook();
+    ctx.fillStyle = withAlpha(look.fall, ZONE_ALPHA);
     ctx.fillRect(x, Math.min(entryPt.y, stopPt.y), width, Math.abs(stopPt.y - entryPt.y));
-    ctx.fillStyle = 'rgba(31, 168, 116, 0.18)';
+    ctx.fillStyle = withAlpha(look.rise, ZONE_ALPHA);
     ctx.fillRect(x, Math.min(entryPt.y, targetPt.y), width, Math.abs(targetPt.y - entryPt.y));
+    ctx.save();
+    for (const [edgeY, color] of [[stopPt.y, look.fall], [targetPt.y, look.rise]] as const) {
+      this.applyGuideStyle(ctx, color);
+      ctx.globalAlpha = EDGE_ALPHA;
+      this.strokeHorizontal(ctx, x, x + width, edgeY);
+    }
+    ctx.restore();
 
-    ctx.strokeStyle = state.style.color;
-    ctx.lineWidth = 1;
+    // The entry in the drawing's line, sharp.
+    this.applyLineStyle(ctx, state.style);
     ctx.setLineDash([]);
-    ctx.beginPath();
-    ctx.moveTo(x, entryPt.y);
-    ctx.lineTo(x + width, entryPt.y);
-    ctx.stroke();
+    this.strokeHorizontal(ctx, x, x + width, entryPt.y);
+    this.resetLineStyle(ctx);
 
     const { chartRect } = viewport;
     const plotLeft = chartRect.x;
@@ -137,9 +153,9 @@ export class RiskRewardTool extends DrawingBase {
       // them on its own row, else goes down under them (by the plot's top on a
       // phone). They are laid out top to bottom, so moved ones still read in
       // the order of their prices.
-      const place = ({ text, y }: PositionTag): { left: number; top: number } => {
+      const place = ({ text, y, start }: PositionTag): { left: number; top: number } => {
         const w = pillWidth(ctx, text);
-        let left = Math.max(plotLeft + 4, Math.min(x + 4, plotRight - 4 - w));
+        let left = Math.max(plotLeft + 4, Math.min(Math.max(x + 4, start ?? -Infinity), plotRight - 4 - w));
         let top = y - half;
         if (labelBlocked(left, top, left + w, top + pillHeight())) {
           const beside = (rightOfKeepOut(top, top + pillHeight()) ?? left) + TAG_SLIDE_GAP;
@@ -150,13 +166,15 @@ export class RiskRewardTool extends DrawingBase {
         return { left, top };
       };
       const tags: PositionTag[] = [
-        { text: `${g.isLong ? 'Long' : 'Short'} · Qty ${formatPrice(g.qty, qtyDecimals, locale)} · R:R ${ratio}`, y: entryPt.y, color: state.style.color },
+        { text: `${g.isLong ? 'Long' : 'Short'} · Qty ${formatPrice(g.qty, qtyDecimals, locale)} · R:R ${ratio}`, y: entryPt.y, color: state.style.color,
+          // Past the entry's handle on its row, selected or not, so the tag doesn't jump when it's picked.
+          start: entryPt.x + handleRadius(state.style.lineWidth) + HANDLE_TAG_GAP },
       ];
       // A stop on the entry (while it's being placed) has no zones to label yet.
       if (Math.abs(stopPt.y - entryPt.y) >= 1) {
         tags.push(
-          { text: `Target ${price(g.target)} (${signed(g.target)}) · ${money(g.rewardAmount)}`, y: outside(targetPt.y), color: '#1fa874' },
-          { text: `Stop ${price(g.stop)} (${signed(g.stop)}) · ${money(g.riskAmount)}`, y: outside(stopPt.y), color: '#e8505b' },
+          { text: `Target ${price(g.target)} (${signed(g.target)}) · ${money(g.rewardAmount)}`, y: outside(targetPt.y), color: look.rise },
+          { text: `Stop ${price(g.stop)} (${signed(g.stop)}) · ${money(g.riskAmount)}`, y: outside(stopPt.y), color: look.fall },
         );
       }
       // Placed top to bottom, drawn entry first as before.

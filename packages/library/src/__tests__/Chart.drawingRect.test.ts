@@ -49,3 +49,24 @@ describe('Chart.getDrawingRect', () => {
     expect(chart.getDrawingRect(gone)).toBeNull();
   });
 });
+
+describe('Chart.getDrawingRect, once drawn', () => {
+  it('takes in a selected drawing’s tag above its points, so a toolbar over it keeps clear', async () => {
+    const id = chart.addDrawing({ type: 'priceRange', anchors: [{ time: T0 + 150 * HOUR, price: 99 }, { time: T0 + 180 * HOUR, price: 101 }] })!;
+    const anchorsOnly = chart.getDrawingRect(id)!;
+    chart.selectDrawing(id);
+    await new Promise((r) => setTimeout(r, 60));
+    const drawn = chart.getDrawingRect(id)!;
+    // The change's tag sits over the box, a rise: the box reaches above the top point.
+    expect(drawn.y).toBeLessThan(anchorsOnly.y - 6);
+  });
+});
+
+describe('Chart.getDrawingRect, all off screen once drawn', () => {
+  it('is still null when the drawing’s tag is kept on the plot', async () => {
+    const id = chart.addDrawing({ type: 'priceRange', anchors: [{ time: T0 - 900 * HOUR, price: 99 }, { time: T0 - 800 * HOUR, price: 101 }] })!;
+    chart.selectDrawing(id);
+    await new Promise((r) => setTimeout(r, 60));
+    expect(chart.getDrawingRect(id)).toBeNull();
+  });
+});

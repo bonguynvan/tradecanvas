@@ -40,7 +40,7 @@ describe('DateAndPriceRangeTool', () => {
   it('measures price, bars and time, and sums the volume inside', () => {
     const state = drawing('dateAndPriceRange', [{ time: 0, price: 50 }, { time: 4 * HOUR, price: 60 }]);
     expect(volumeBetween(state, dataViewport)).toBe(10); // 5 bars × 2
-    expect(dateAndPriceRangeLines(state, dataViewport)).toEqual(['+10.00 (+20.00%)', '4 bars, 4h', 'Vol 10']);
+    expect(dateAndPriceRangeLines(state, dataViewport)).toEqual(['+10.00 (+20.00%)', '4 bars · 4h', 'Vol 10']);
   });
 
   it('writes the volume as the chart’s numbers read: 만, 억 and 조 in Korean, the locale’s mark elsewhere', () => {
