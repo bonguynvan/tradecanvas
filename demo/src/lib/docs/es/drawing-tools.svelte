@@ -103,6 +103,7 @@ chart.addDrawing({ type: 'fibRetracement', anchors: [a, b], options: { trendLine
   <li>Los guiones y los puntos crecen con la línea, los puntos son redondos y los extremos de una línea continua son redondeados. Las puntas de flecha también crecen con la línea.</li>
   <li>Un relleno es el color de la línea, atenuado, salvo que se haya fijado aparte: un dibujo que pasa a rojo se rellena de rojo. Una etiqueta sobre una marca de color se escribe en negro o en blanco, el que mejor se lea; un cuadro de estadísticas usa la superficie y el color de texto del propio gráfico, en ambos temas; las palabras en el color de un dibujo se oscurecen donde no se leerían sobre un fondo claro.</li>
   <li>Las líneas propias de una herramienta siguen su estilo de línea; sus cuadrículas, guías y ángulos secundarios son de 1 px y más claros. Un nivel, un ángulo o una división cuya etiqueta taparía otra queda sin etiqueta, nunca los niveles 0 y 1. Los porcentajes se escriben enteros cuando lo son (50%, no 50.0%), y cada ratio de Fibonacci dibujado junto a otros tiene un color propio.</li>
+  <li>Las subidas y las bajadas (un rango de precio, el objetivo y el stop de una Posición larga/corta, el resultado de una previsión) toman los colores de ganancia y pérdida del tema (las claves de estilo <code>trading.profitColor</code> y <code>trading.lossColor</code>), verde y rojo sin ellas.</li>
 </ul>
 
 <h2>Configuración</h2>
@@ -282,7 +283,7 @@ chart.on('toolModeChange', (e) => e.payload)      // { eraser } o { zoomArea }`}
 <ul>
   <li><code>fibRetracement</code>, <code>fibExtension</code> — niveles editables, precios y porcentajes, etiquetas a la izquierda o a la derecha, fondo, invertir.</li>
   <li><code>fibChannel</code>, <code>fibSpeedResistanceFan</code> — los rayos del abanico en los colores de sus niveles, los rayos de tiempo discontinuos, ambos con etiqueta.</li>
-  <li><code>fibTimeZones</code> — desde el inicio de la zona (0) en adelante; sus controles, y los de <code>cyclicLines</code>, quedan sobre sus líneas, al pie del área del gráfico.</li>
+  <li><code>fibTimeZones</code> — desde el inicio de la zona (0) en adelante; sus controles, y los de <code>cyclicLines</code>, quedan sobre sus líneas, a media altura del área del gráfico.</li>
   <li><code>fibArcs</code> — arcos alrededor del inicio de un movimiento, semicírculos o círculos completos.</li>
   <li><code>fibCircles</code> — círculos en múltiplos de Fibonacci de un radio.</li>
   <li><code>fibSpiral</code> — una espiral áurea desde su centro.</li>
@@ -327,7 +328,9 @@ chart.on('toolModeChange', (e) => e.payload)      // { eraser } o { zoomArea }`}
 
 <h3>Medición</h3>
 <ul>
-  <li><code>measure</code>, <code>priceRange</code>, <code>dateRange</code>, <code>dateAndPriceRange</code></li>
+  <li><code>priceRange</code> — un cuadro en el color de subida o de bajada (o el que elijas para él) con una flecha que lo recorre hacia arriba o hacia abajo y el cambio en una marca pasado su extremo.</li>
+  <li><code>dateRange</code> — las barras entre dos momentos, una flecha que lo cruza y las barras y el tiempo en una marca; sus controles en los extremos de su flecha, a media altura del área del gráfico.</li>
+  <li><code>dateAndPriceRange</code> — ambos a la vez, con una flecha en cada medida y el volumen dentro; <code>measure</code> — el cambio y las barras entre dos puntos.</li>
 </ul>
 
 <h3>Notas y marcas</h3>
@@ -341,10 +344,10 @@ chart.on('toolModeChange', (e) => e.payload)      // { eraser } o { zoomArea }`}
 <h3>Previsión</h3>
 <ul>
   <li><code>riskReward</code> — Posición larga/corta (arriba).</li>
-  <li><code>forecast</code> — verde cuando el precio alcanza el objetivo, rojo si antes se agota su tiempo.</li>
+  <li><code>forecast</code> — en el color de subida cuando el precio alcanza el objetivo, en el de bajada si antes se agota su tiempo.</li>
   <li><code>projection</code> — un movimiento trasladado desde un tercer punto.</li>
-  <li><code>barsPattern</code> — una copia de algunas barras, como barras, línea o máximo-mínimo, reflejada o volteada.</li>
-  <li><code>anchoredVWAP</code>, <code>volumeProfileRange</code></li>
+  <li><code>barsPattern</code> — una copia de algunas barras, como barras, línea o máximo-mínimo, reflejada o volteada; las barras que copia quedan bajo una banda clara.</li>
+  <li><code>anchoredVWAP</code> — su control sobre el VWAP donde empieza; <code>volumeProfileRange</code> — el volumen en cada precio como un histograma dentro del cuadro del rango, el área de valor (70% del volumen) sombreada y el punto de control atravesándolo; sus controles en las esquinas del cuadro.</li>
 </ul>
 
 <h2>Guardado</h2>

@@ -5401,7 +5401,8 @@ export class Chart {
    * The box a drawing covers on screen, in CSS pixels relative to the chart
    * container, cut to the plot: where a host puts a toolbar or a note over
    * it. Lines that run across the whole plot (horizontal, vertical, cross)
-   * span it on that side. Null for an unknown or hidden drawing (or one kept
+   * span it on that side. Its tags and handles count once it has been drawn,
+   * where they sit off its points. Null for an unknown or hidden drawing (or one kept
    * off this interval), or one that is all off screen.
    */
   getDrawingRect(id: string): { x: number; y: number; width: number; height: number } | null {
@@ -5425,6 +5426,16 @@ export class Chart {
     if (FULL_WIDTH_DRAWINGS.has(drawing.type)) [left, right] = [plot.x, plot.x + plot.width];
     else if (drawing.type === 'horizontalRay') right = plot.x + plot.width;
     if (FULL_HEIGHT_DRAWINGS.has(drawing.type)) [top, bottom] = [plot.y, plot.y + plot.height];
+    // All off screen: its tags, kept on the plot, don't make it shown.
+    if (right < plot.x || left > plot.x + plot.width || bottom < plot.y || top > plot.y + plot.height) return null;
+    // Its tags and handles where they sit off its points: a toolbar over it keeps clear of them too.
+    const drawn = this.drawingManager.drawnExtent(id);
+    if (drawn) {
+      left = Math.min(left, drawn.x);
+      right = Math.max(right, drawn.x + drawn.width);
+      top = Math.min(top, drawn.y);
+      bottom = Math.max(bottom, drawn.y + drawn.height);
+    }
     left = Math.max(left, plot.x);
     right = Math.min(right, plot.x + plot.width);
     top = Math.max(top, plot.y);

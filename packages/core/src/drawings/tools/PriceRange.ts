@@ -1,8 +1,20 @@
 import type { DrawingState, Point, ViewportState } from '@tradecanvas/commons';
+import { DEFAULT_DRAWING_STYLE, withAlpha } from '@tradecanvas/commons';
 import { DrawingBase } from '../DrawingBase.js';
-import { formatPriceChange } from './labels.js';
-import { roleFont } from '../drawingLook.js';
+import { drawPill, formatPriceChange, pillHeight, pillWidth } from './labels.js';
+import { FILL_ALPHA, drawingLook, keepOnPlot, roleFont } from '../drawingLook.js';
+import { fillMeasureHead } from './lineDecor.js';
 
+/** How strongly the measured box's edge shows. */
+const EDGE_ALPHA = 0.6;
+/** How far the change's tag sits off the box, px. */
+const TAG_GAP = 6;
+
+/**
+ * Price Range: a box from one price to another, tinted and edged in the
+ * rise or fall colour, an arrow up or down its middle, and the change on a
+ * tag just past the end it went to.
+ */
 export class PriceRangeTool extends DrawingBase {
   descriptor = { type: 'priceRange' as const, name: 'Price Range', requiredAnchors: 2 };
 
@@ -12,24 +24,39 @@ export class PriceRangeTool extends DrawingBase {
     const p2 = this.anchorToPixel(state.anchors[1], viewport);
     const x = Math.min(p1.x, p2.x), w = Math.abs(p2.x - p1.x);
     const top = Math.min(p1.y, p2.y), h = Math.abs(p2.y - p1.y);
+    const look = drawingLook();
+    const isUp = state.anchors[1].price >= state.anchors[0].price;
+    // A colour picked for it wins; the default line colour means "say rise or fall".
+    const own = state.style.color.toLowerCase() !== DEFAULT_DRAWING_STYLE.color;
+    const color = own ? state.style.color : isUp ? look.rise : look.fall;
 
-    // Fill
-    const isUp = state.anchors[1].price > state.anchors[0].price;
-    ctx.fillStyle = isUp ? 'rgba(31, 168, 116, 0.15)' : 'rgba(232, 80, 91, 0.15)';
+    ctx.fillStyle = withAlpha(color, FILL_ALPHA);
     ctx.fillRect(x, top, w, h);
+    // Its edge 1 px and sharp, lighter than the arrow that is the measure.
+    ctx.save();
+    this.applyGuideStyle(ctx, color);
+    ctx.globalAlpha = EDGE_ALPHA;
+    this.strokeCrispRect(ctx, x, top, w, h);
+    ctx.restore();
 
-    this.applyLineStyle(ctx, state.style);
-    ctx.strokeRect(x, top, w, h);
+    // The arrow up or down the box's middle, from the first price to the second.
+    const midX = x + w / 2;
+    this.applyLineStyle(ctx, { ...state.style, color });
+    ctx.beginPath();
+    ctx.moveTo(midX, p1.y);
+    ctx.lineTo(midX, p2.y);
+    ctx.stroke();
     this.resetLineStyle(ctx);
+    fillMeasureHead(ctx, { x: midX, y: p1.y }, { x: midX, y: p2.y }, color, state.style.lineWidth);
 
-    // Label
-    const label = formatPriceChange(state.anchors[0].price, state.anchors[1].price, viewport);
-
+    // The change on a tag past the end it went to: over the box for a rise, under it for a fall.
     ctx.font = roleFont('label');
-    ctx.fillStyle = isUp ? '#1fa874' : '#e8505b';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(label, x + w / 2, top + h / 2);
+    const text = formatPriceChange(state.anchors[0].price, state.anchors[1].price, viewport);
+    const tagW = pillWidth(ctx, text);
+    const tagH = pillHeight();
+    const tagTop = isUp ? top - TAG_GAP - tagH : top + h + TAG_GAP;
+    const at = keepOnPlot(midX - tagW / 2, tagTop, tagW, tagH);
+    drawPill(ctx, text, at.left, at.top + tagH / 2, color);
 
     if (selected) this.renderAnchorHandles(ctx, state, viewport);
   }

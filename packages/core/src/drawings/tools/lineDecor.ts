@@ -55,6 +55,15 @@ export function fillArrowHead(ctx: CanvasRenderingContext2D, from: Point, tip: P
   ctx.fill();
 }
 
+/** How many heads long a measure's arrow must be to wear one: a shorter one would be all head, out past its box. */
+const MIN_ARROW_IN_HEADS = 1.5;
+
+/** A measuring tool's arrow head at `tip`, left off an arrow too short to carry it. */
+export function fillMeasureHead(ctx: CanvasRenderingContext2D, from: Point, tip: Point, color: string, lineWidth = 1): void {
+  if (Math.hypot(tip.x - from.x, tip.y - from.y) < arrowHeadSize(lineWidth) * MIN_ARROW_IN_HEADS) return;
+  fillArrowHead(ctx, from, tip, color, lineWidth);
+}
+
 /** Arrowheads on the ends of the drawn line `segment` that ask for one. */
 export function drawLineEnds(ctx: CanvasRenderingContext2D, segment: readonly [Point, Point], color: string, option: OptionReader): void {
   const [start, end] = segment;

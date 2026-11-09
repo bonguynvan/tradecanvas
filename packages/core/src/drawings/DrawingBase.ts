@@ -67,11 +67,6 @@ function optionKindMatches(def: NonNullable<DrawingDescriptor['options']>[string
   }
 }
 
-/**
- * How far above the plot's foot a time tool's handles sit, px: past a pane divider's touch
- * reach there, so a finger on one drags the handle, not the divider.
- */
-const FOOT_HANDLE_RISE = 28;
 /** How strongly a tool's secondary lines show. */
 const GUIDE_ALPHA = 0.55;
 
@@ -246,12 +241,13 @@ export abstract class DrawingBase implements DrawingPlugin {
   }
 
   /**
-   * Handles of a tool that only sets times (vertical lines): on their lines by the plot's foot,
-   * not at the anchors' prices, which mean nothing to it.
+   * Handles of a tool that only sets times (vertical lines): on their lines halfway up the plot,
+   * not at the anchors' prices, which mean nothing to it. There they keep clear of the legend
+   * at the top, and at the foot of a pane divider's touch reach and the buttons over the time axis.
    */
-  protected footHandles(state: DrawingState, viewport: ViewportState): Point[] {
-    const foot = viewport.chartRect.y + viewport.chartRect.height - FOOT_HANDLE_RISE;
-    return state.anchors.map((anchor) => ({ x: this.anchorToPixel(anchor, viewport).x, y: foot }));
+  protected timeHandles(state: DrawingState, viewport: ViewportState): Point[] {
+    const middle = viewport.chartRect.y + viewport.chartRect.height / 2;
+    return state.anchors.map((anchor) => ({ x: this.anchorToPixel(anchor, viewport).x, y: middle }));
   }
 
   /** A rectangle's outline on whole device pixels, each side one sharp row or column. */

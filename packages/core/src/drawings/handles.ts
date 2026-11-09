@@ -7,7 +7,7 @@
  */
 import type { DrawingState, Point } from '@tradecanvas/commons';
 import { withAlpha } from '@tradecanvas/commons';
-import { drawingLook, handleRadius } from './drawingLook.js';
+import { drawingLook, extendExtent, handleRadius } from './drawingLook.js';
 
 /** Which handle the pointer is on, or drags: a drawing's id and the handle's index. */
 export interface HandleRef {
@@ -74,6 +74,8 @@ export function drawAnchorHandles(
   points.forEach((p, i) => {
     const x = snap(p.x, t.a || 1, t.e ?? 0);
     const y = snap(p.y, t.d || 1, t.f ?? 0);
+    const reach = handleRadius(state.style.lineWidth) + HOVER_GROWTH;
+    extendExtent(x - reach, y - reach, reach * 2, reach * 2);
     if (!active) {
       circle(ctx, x, y, PASSIVE_RADIUS * look.scale);
       ctx.globalAlpha = PASSIVE_ALPHA;

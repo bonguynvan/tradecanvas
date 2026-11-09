@@ -4,10 +4,14 @@ import { barIndexToX, priceToY, resolveBarIndex, timestampToBarIndex } from '../
 import { drawArrowHead } from './freehand.js';
 import { barsBetween, drawLabelBox, formatDrawingPrice, formatPriceChange, spanBetween } from './labels.js';
 import { inRect, type Rect } from './textBox.js';
-import { drawingFill } from '../drawingLook.js';
+import { drawingFill, drawingLook } from '../drawingLook.js';
+import { withAlpha } from '@tradecanvas/commons';
 
-const UP_COLOR = '#26a69a';
-const DOWN_COLOR = '#ef5350';
+/** The ring round a forecast's target, px. */
+const TARGET_RING = 5;
+/** How strongly a bars pattern's copy and the band over its source show. */
+const COPY_ALPHA = 0.85;
+const SOURCE_ALPHA = 0.08;
 /** Most bars a bars pattern copies. */
 const MAX_PATTERN_BARS = 500;
 
@@ -49,23 +53,27 @@ export class ForecastTool extends DrawingBase {
     const a = this.anchorToPixel(from, viewport);
     const b = this.anchorToPixel(to, viewport);
     const outcome = forecastOutcome(this.bars(), from, to);
-    const color = outcome === 'reached' ? UP_COLOR : outcome === 'missed' ? DOWN_COLOR : state.style.color;
+    const look = drawingLook();
+    const color = outcome === 'reached' ? look.rise : outcome === 'missed' ? look.fall : state.style.color;
+    // The line to the target's ring, not into it: the ring is the target.
+    const len = Math.hypot(b.x - a.x, b.y - a.y);
+    const end = len > TARGET_RING ? { x: b.x - ((b.x - a.x) / len) * TARGET_RING, y: b.y - ((b.y - a.y) / len) * TARGET_RING } : b;
     this.applyLineStyle(ctx, { ...state.style, color });
     ctx.beginPath();
     ctx.moveTo(a.x, a.y);
-    ctx.lineTo(b.x, b.y);
+    ctx.lineTo(end.x, end.y);
     ctx.stroke();
-    drawArrowHead(ctx, a, b);
     this.resetLineStyle(ctx);
     ctx.strokeStyle = color;
+    ctx.lineWidth = Math.max(1, state.style.lineWidth);
     ctx.beginPath();
-    ctx.arc(b.x, b.y, 5, 0, Math.PI * 2);
+    ctx.arc(b.x, b.y, TARGET_RING, 0, Math.PI * 2);
     ctx.stroke();
 
     const span = spanBetween(state, 0, 1, viewport);
     const lines = [
       formatPriceChange(from.price, to.price, viewport),
-      `${formatDrawingPrice(to.price, from.price, viewport)} · ${barsBetween(state, 0, 1, viewport)} bars${span ? `, ${span}` : ''}`,
+      `${formatDrawingPrice(to.price, from.price, viewport)} · ${barsBetween(state, 0, 1, viewport)} bars${span ? ` · ${span}` : ''}`,
       outcome === 'reached' ? 'Target reached' : outcome === 'missed' ? 'Target missed' : 'Pending',
     ];
     drawLabelBox(ctx, lines, b.x, b.y + (b.y < a.y ? -10 : 10), 'center', b.y < a.y);
@@ -201,19 +209,68 @@ export class BarsPatternTool extends DrawingBase {
     return { x: x0, y: Math.min(top, bottom), width: x1 - x0, height: Math.abs(bottom - top) };
   }
 
+  /**
+   * The bars being copied: from the first point's bar to the second's, over
+   * their highs and lows; null before there are bars. Its corners are where
+   * its first two handles sit.
+   */
+  private source(state: DrawingState, viewport: ViewportState): Rect | null {
+    const data = this.bars();
+    if (data.length === 0) return null;
+    const [a, b] = state.anchors;
+    const i0 = Math.max(0, Math.round(timestampToBarIndex(Math.min(a.time, b.time), data)));
+    const i1 = Math.min(data.length - 1, Math.round(timestampToBarIndex(Math.max(a.time, b.time), data)));
+    if (i1 < i0) return null;
+    let high = -Infinity;
+    let low = Infinity;
+    for (let i = i0; i <= i1; i++) {
+      if (data[i].high > high) high = data[i].high;
+      if (data[i].low < low) low = data[i].low;
+    }
+    const x0 = barIndexToX(resolveBarIndex(data[i0].time, viewport), viewport) - viewport.barWidth / 2;
+    const x1 = barIndexToX(resolveBarIndex(data[i1].time, viewport), viewport) + viewport.barWidth / 2;
+    const top = priceToY(high, viewport);
+    const bottom = priceToY(low, viewport);
+    return { x: x0, y: Math.min(top, bottom), width: x1 - x0, height: Math.abs(bottom - top) };
+  }
+
+  /**
+   * Its first two handles on the band's top, over the first and last bars it copies (on a
+   * bar's centre a drag lands on that bar); the third where the copy starts.
+   */
+  protected override handlePoints(state: DrawingState, viewport: ViewportState): Point[] {
+    const points = super.handlePoints(state, viewport);
+    const band = this.source(state, viewport);
+    if (!band || points.length < 2) return points;
+    const [a, b] = state.anchors;
+    const leftFirst = a.time <= b.time;
+    const half = viewport.barWidth / 2;
+    const first = band.x + half;
+    const last = band.x + band.width - half;
+    return [
+      { x: leftFirst ? first : last, y: band.y },
+      { x: leftFirst ? last : first, y: band.y },
+      ...points.slice(2),
+    ];
+  }
+
   render(ctx: CanvasRenderingContext2D, state: DrawingState, viewport: ViewportState, selected: boolean): void {
     if (state.anchors.length < 2) return;
-    const a = this.anchorToPixel(state.anchors[0], viewport);
-    const b = this.anchorToPixel(state.anchors[1], viewport);
-    // The bars being copied, marked under them.
-    this.applyLineStyle(ctx, state.style);
-    ctx.setLineDash([4, 4]);
-    ctx.beginPath();
-    ctx.moveTo(a.x, a.y);
-    ctx.lineTo(b.x, b.y);
-    ctx.stroke();
-    this.resetLineStyle(ctx);
+    // The bars being copied, under a light band in the drawing's colour.
+    const band = this.source(state, viewport);
+    if (band) {
+      ctx.fillStyle = withAlpha(state.style.color, SOURCE_ALPHA);
+      ctx.fillRect(band.x, band.y, band.width, band.height);
+    }
     if (state.anchors.length >= 3) this.renderCopy(ctx, state, viewport);
+    // While selected, the copy's outline, so it reads as one thing.
+    const copy = selected && state.anchors.length >= 3 ? this.box(state, viewport, this.copied(state)) : null;
+    if (copy) {
+      ctx.save();
+      this.applyGuideStyle(ctx, state.style.color, true);
+      this.strokeCrispRect(ctx, copy.x, copy.y, copy.width, copy.height);
+      ctx.restore();
+    }
     if (selected) this.renderAnchorHandles(ctx, state, viewport);
   }
 
@@ -225,7 +282,7 @@ export class BarsPatternTool extends DrawingBase {
     ctx.strokeStyle = state.style.color;
     ctx.fillStyle = state.style.color;
     ctx.lineWidth = 1;
-    ctx.globalAlpha = 0.7;
+    ctx.globalAlpha = COPY_ALPHA;
     if (mode === 'line') {
       ctx.beginPath();
       bars.forEach((bar, i) => {
@@ -238,17 +295,20 @@ export class BarsPatternTool extends DrawingBase {
     } else {
       const half = Math.max(1, viewport.barWidth / 2);
       bars.forEach((bar, i) => {
-        const x = barIndexToX(start + i, viewport);
-        ctx.beginPath();
-        ctx.moveTo(x, priceToY(bar.high, viewport));
-        ctx.lineTo(x, priceToY(bar.low, viewport));
-        ctx.stroke();
+        // On whole pixels: the wick one sharp column, the body's edges sharp.
+        const x = Math.round(barIndexToX(start + i, viewport)) + 0.5;
+        ctx.lineWidth = 1;
+        this.strokeVertical(ctx, x, priceToY(bar.high, viewport), priceToY(bar.low, viewport));
         if (mode === 'highLow') return;
         // A rising bar is hollow, a falling one filled.
-        const top = priceToY(Math.max(bar.open, bar.close), viewport);
-        const height = Math.max(1, priceToY(Math.min(bar.open, bar.close), viewport) - top);
-        if (bar.close >= bar.open) ctx.strokeRect(x - half, top, half * 2, height);
-        else ctx.fillRect(x - half, top, half * 2, height);
+        const top = Math.round(priceToY(Math.max(bar.open, bar.close), viewport));
+        const height = Math.max(1, Math.round(priceToY(Math.min(bar.open, bar.close), viewport)) - top);
+        const left = Math.round(x - half);
+        const width = Math.max(1, Math.round(half * 2));
+        if (bar.close >= bar.open) {
+          ctx.lineWidth = 1;
+          this.strokeCrispRect(ctx, left, top, width, height);
+        } else ctx.fillRect(left, top, width, height);
       });
     }
     ctx.globalAlpha = 1;
@@ -256,9 +316,8 @@ export class BarsPatternTool extends DrawingBase {
 
   hitTest(point: Point, state: DrawingState, viewport: ViewportState, tolerance: number): boolean {
     if (state.anchors.length < 2) return false;
-    const a = this.anchorToPixel(state.anchors[0], viewport);
-    const b = this.anchorToPixel(state.anchors[1], viewport);
-    if (distanceToSegment(point, a, b) <= tolerance) return true;
+    const band = this.source(state, viewport);
+    if (band && inRect(point, band, tolerance)) return true;
     const box = state.anchors.length >= 3 ? this.box(state, viewport, this.copied(state)) : null;
     return box !== null && inRect(point, box, tolerance);
   }

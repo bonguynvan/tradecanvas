@@ -102,6 +102,7 @@ chart.addDrawing({ type: 'fibRetracement', anchors: [a, b], options: { trendLine
   <li>虚线和点线随线宽变大，点是圆的，实线的两端是圆头。箭头也随线宽变大。</li>
   <li>填充是线条颜色的浅色，除非单独设置过：画线改成红色，填充也随之变红。彩色标签上的文字用黑色或白色，取更易读的一种；统计框使用图表自身的底色和文字颜色，深浅两种主题都是如此；使用画线颜色的文字在浅色背景上难以看清时会加深。</li>
   <li>工具自身的线条遵循其线型；网格、辅助线和次要角度线为 1 px，颜色更浅。某个级别、角度或分割的标签会遮住另一个时，它不显示标签，但 0 和 1 级别始终保留标签。百分比为整数时写成整数（50%，而不是 50.0%），与其他比率一起绘制的每个斐波那契比率都有自己的颜色。</li>
+  <li>涨跌（价格区间、多/空仓位的目标和止损、预测的结果）使用主题的盈利色和亏损色（样式键 <code>trading.profitColor</code> 和 <code>trading.lossColor</code>），未设置时为绿色和红色。</li>
 </ul>
 
 <h2>设置</h2>
@@ -272,7 +273,7 @@ chart.on('toolModeChange', (e) => e.payload)      // { eraser } 或 { zoomArea }
 <ul>
   <li><code>fibRetracement</code>、<code>fibExtension</code> — 可编辑的级别、价格和百分比，标签可置于左侧或右侧，背景，反转。</li>
   <li><code>fibChannel</code>、<code>fibSpeedResistanceFan</code> — 扇形射线使用各自级别的颜色，时间射线为虚线，两者都带标签。</li>
-  <li><code>fibTimeZones</code> — 从区域起点（0）开始；它的控制点以及 <code>cyclicLines</code> 的控制点位于各自的线上，靠近绘图区底部。</li>
+  <li><code>fibTimeZones</code> — 从区域起点（0）开始；它的控制点以及 <code>cyclicLines</code> 的控制点位于各自的线上，在绘图区高度的一半处。</li>
   <li><code>fibArcs</code> — 以一段走势的起点为中心的圆弧，半圆或整圆。</li>
   <li><code>fibCircles</code> — 半径按斐波那契倍数取值的圆。</li>
   <li><code>fibSpiral</code> — 从中心展开的黄金螺旋。</li>
@@ -317,7 +318,9 @@ chart.on('toolModeChange', (e) => e.payload)      // { eraser } 或 { zoomArea }
 
 <h3>测量</h3>
 <ul>
-  <li><code>measure</code>、<code>priceRange</code>、<code>dateRange</code>、<code>dateAndPriceRange</code></li>
+  <li><code>priceRange</code> — 一个上涨色或下跌色（或你为它选的颜色）的方框，一支向上或向下的箭头贯穿其中，变化值写在末端外侧的标签上。</li>
+  <li><code>dateRange</code> — 两个时间之间的K线，一支横贯的箭头，K线数和时长写在标签上；其控制点位于箭头两端，在绘图区高度的一半处。</li>
+  <li><code>dateAndPriceRange</code> — 两者兼有，每个度量各有一支箭头，框内显示成交量；<code>measure</code> — 两点之间的变化和K线数。</li>
 </ul>
 
 <h3>标注与标记</h3>
@@ -331,10 +334,10 @@ chart.on('toolModeChange', (e) => e.payload)      // { eraser } 或 { zoomArea }
 <h3>预测</h3>
 <ul>
   <li><code>riskReward</code> — 多/空仓位（见上文）。</li>
-  <li><code>forecast</code> — 价格触及目标时变绿，若在此之前时间用完则变红。</li>
+  <li><code>forecast</code> — 价格触及目标时变为上涨色，若在此之前时间用完则变为下跌色。</li>
   <li><code>projection</code> — 从第三个点起平移复制一段走势。</li>
-  <li><code>barsPattern</code> — 复制若干根K线，以K线、折线或最高-最低的形式显示，可左右镜像或上下翻转。</li>
-  <li><code>anchoredVWAP</code>、<code>volumeProfileRange</code></li>
+  <li><code>barsPattern</code> — 复制若干根K线，以K线、折线或最高-最低的形式显示，可左右镜像或上下翻转；被复制的K线下方衬一条浅色带。</li>
+  <li><code>anchoredVWAP</code> — 其控制点位于起点处的 VWAP 上；<code>volumeProfileRange</code> — 在区间方框内以直方图显示每个价位的成交量，价值区（70% 的成交量）加阴影，控制点价位（POC）横贯其中；其控制点位于方框的四角。</li>
 </ul>
 
 <h2>保存</h2>

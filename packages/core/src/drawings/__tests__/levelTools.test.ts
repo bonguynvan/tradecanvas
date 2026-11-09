@@ -58,16 +58,16 @@ describe('a level’s label', () => {
 });
 
 describe('Fibonacci time zones', () => {
-  it('draw the zone’s start, and put their handles by the plot’s foot, on the lines they move', () => {
+  it('draw the zone’s start, and put their handles halfway up the plot, on the lines they move', () => {
     const tool = new FibTimeZonesTool();
     const state = drawing('fibTimeZones', [{ time: 2, price: 90 }, { time: 4, price: 10 }]);
     const { ctx, texts } = recordingCtx();
     tool.render(ctx, state, unitViewport, false);
     expect(texts).toContain('0');
-    // The handles at bars 2 and 4 near the foot, whatever the anchors' prices.
-    const foot = unitViewport.chartRect.y + unitViewport.chartRect.height;
-    expect(tool.hitTestAnchor({ x: 25, y: foot - 28 }, state, unitViewport, 6)).toBe(0);
-    expect(tool.hitTestAnchor({ x: 45, y: foot - 28 }, state, unitViewport, 6)).toBe(1);
+    // The handles at bars 2 and 4 halfway up, whatever the anchors' prices: clear of the legend, the pane's foot and the buttons over it.
+    const middle = unitViewport.chartRect.y + unitViewport.chartRect.height / 2;
+    expect(tool.hitTestAnchor({ x: 25, y: middle }, state, unitViewport, 6)).toBe(0);
+    expect(tool.hitTestAnchor({ x: 45, y: middle }, state, unitViewport, 6)).toBe(1);
     expect(tool.hitTestAnchor({ x: 25, y: 10 }, state, unitViewport, 6)).toBe(-1);
   });
 });

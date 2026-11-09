@@ -102,6 +102,7 @@ chart.addDrawing({ type: 'fibRetracement', anchors: [a, b], options: { trendLine
   <li>파선과 점선은 선 두께를 따라 커지고, 점은 둥글며, 실선의 끝도 둥급니다. 화살촉도 선을 따라 커집니다.</li>
   <li>채우기는 따로 정하지 않았다면 선 색을 옅게 한 것입니다. 그림을 빨간색으로 바꾸면 채우기도 빨개집니다. 색이 있는 태그의 라벨은 검정과 흰색 중 잘 읽히는 쪽으로 쓰입니다. 통계 상자는 두 테마 모두에서 차트 자체의 바탕색과 글자 색을 씁니다. 그림 색으로 쓴 글은 밝은 배경에서 잘 읽히지 않을 때 더 진해집니다.</li>
   <li>도구 고유의 선은 그 선 스타일을 따르고, 격자, 가이드, 보조 각도선은 1 px에 더 옅게 그려집니다. 라벨이 다른 라벨을 가리는 레벨, 각도, 분할에는 라벨을 달지 않지만, 0과 1 레벨은 예외입니다. 퍼센트는 정수일 때 정수로 쓰고(50.0%가 아니라 50%), 다른 비율과 함께 그리는 피보나치 비율마다 고유한 색이 있습니다.</li>
+  <li>상승과 하락(가격 범위, 롱/숏 포지션의 목표와 손절, 예측의 결과)은 테마의 수익 색과 손실 색(스타일 키 <code>trading.profitColor</code>와 <code>trading.lossColor</code>)을 쓰며, 지정하지 않으면 초록색과 빨간색입니다.</li>
 </ul>
 
 <h2>설정</h2>
@@ -273,7 +274,7 @@ chart.on('toolModeChange', (e) => e.payload)      // { eraser } 또는 { zoomAre
 <ul>
   <li><code>fibRetracement</code>, <code>fibExtension</code> — 편집 가능한 레벨, 가격과 퍼센트, 왼쪽 또는 오른쪽 라벨, 배경, 반전.</li>
   <li><code>fibChannel</code>, <code>fibSpeedResistanceFan</code> — 팬의 반직선은 각 레벨의 색이고, 시간 반직선은 파선이며, 둘 다 라벨이 붙습니다.</li>
-  <li><code>fibTimeZones</code> — 구간의 시작점(0)부터 그려집니다. 이 도구와 <code>cyclicLines</code>의 핸들은 각자의 선 위, 플롯 아래쪽 가장자리 근처에 있습니다.</li>
+  <li><code>fibTimeZones</code> — 구간의 시작점(0)부터 그려집니다. 이 도구와 <code>cyclicLines</code>의 핸들은 각자의 선 위, 플롯 높이의 중간에 있습니다.</li>
   <li><code>fibArcs</code> — 움직임의 시작점을 중심으로 한 호, 반원 또는 전체 원.</li>
   <li><code>fibCircles</code> — 반지름의 피보나치 배수 위치에 그리는 원.</li>
   <li><code>fibSpiral</code> — 중심에서 뻗어 나가는 황금 나선.</li>
@@ -318,7 +319,9 @@ chart.on('toolModeChange', (e) => e.payload)      // { eraser } 또는 { zoomAre
 
 <h3>측정</h3>
 <ul>
-  <li><code>measure</code>, <code>priceRange</code>, <code>dateRange</code>, <code>dateAndPriceRange</code></li>
+  <li><code>priceRange</code> — 상승 또는 하락 색(또는 직접 고른 색)의 상자에 위나 아래로 화살표가 지나가고, 변화폭은 끝 너머의 태그에 표시됩니다.</li>
+  <li><code>dateRange</code> — 두 시각 사이의 봉에 가로지르는 화살표와 봉 수와 시간을 적은 태그가 붙고, 핸들은 화살표 양 끝, 플롯 높이의 중간에 있습니다.</li>
+  <li><code>dateAndPriceRange</code> — 둘을 함께 보여 주며, 측정마다 화살표가 있고 안쪽에 거래량이 표시됩니다. <code>measure</code> — 두 점 사이의 변화폭과 봉 수.</li>
 </ul>
 
 <h3>주석과 표시</h3>
@@ -332,10 +335,10 @@ chart.on('toolModeChange', (e) => e.payload)      // { eraser } 또는 { zoomAre
 <h3>예측</h3>
 <ul>
   <li><code>riskReward</code> — 롱/숏 포지션(위 참고).</li>
-  <li><code>forecast</code> — 가격이 목표에 닿으면 초록색, 그 전에 시간이 다 지나면 빨간색이 됩니다.</li>
+  <li><code>forecast</code> — 가격이 목표에 닿으면 상승 색, 그 전에 시간이 다 지나면 하락 색이 됩니다.</li>
   <li><code>projection</code> — 움직임을 세 번째 점에서 시작하도록 옮겨 그립니다.</li>
-  <li><code>barsPattern</code> — 일부 봉의 복사본을 바, 선, 고가-저가 중 하나로 표시하며, 좌우 반전이나 상하 반전도 할 수 있습니다.</li>
-  <li><code>anchoredVWAP</code>, <code>volumeProfileRange</code></li>
+  <li><code>barsPattern</code> — 일부 봉의 복사본을 바, 선, 고가-저가 중 하나로 표시하며, 좌우 반전이나 상하 반전도 할 수 있습니다. 복사한 원래 봉 아래에는 옅은 띠가 깔립니다.</li>
+  <li><code>anchoredVWAP</code> — 핸들은 시작점의 VWAP 위에 있습니다. <code>volumeProfileRange</code> — 범위 상자 안에 가격별 거래량을 히스토그램으로 보여 주고, 밸류 에어리어(거래량의 70%)는 음영으로, POC(Point of Control)는 가로지르는 선으로 표시합니다. 핸들은 상자의 모서리에 있습니다.</li>
 </ul>
 
 <h2>저장</h2>

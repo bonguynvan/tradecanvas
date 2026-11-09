@@ -30,6 +30,17 @@ export class AnchoredVWAPTool extends DrawingBase {
     this.showBands = show;
   }
 
+  /** Its handle on the VWAP where it starts: the anchor's price means nothing to it. */
+  protected override handlePoints(state: DrawingState, viewport: ViewportState): Point[] {
+    const data = this.dataGetter?.();
+    const startIdx = Math.max(0, Math.round(resolveBarIndex(state.anchors[0]?.time ?? 0, viewport)));
+    if (!data || state.anchors.length < 1 || startIdx >= data.length) return super.handlePoints(state, viewport);
+    // The VWAP at its first bar is that bar's typical price: no need to work out the line for it.
+    const bar = data[startIdx];
+    const first = (bar.high + bar.low + bar.close) / 3;
+    return [{ x: barIndexToX(startIdx, viewport), y: priceToY(first, viewport) }];
+  }
+
   render(ctx: CanvasRenderingContext2D, state: DrawingState, viewport: ViewportState, selected: boolean): void {
     if (state.anchors.length < 1 || !this.dataGetter) return;
 
