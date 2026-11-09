@@ -267,7 +267,7 @@ const PRESETS: Record<WidgetUIPreset, PresetBase> = {
     sidebar: 'docked',
     intervals: 'plain',
     tagRadius: 2,
-    iconStroke: 1.25,
+    iconStroke: 1,
   },
   studio: {
     radius: { xs: 3, sm: 5, md: 7, lg: 11, xl: 16 },

@@ -165,7 +165,7 @@
   --tcw-tool-h: 37px;
   --tcw-tool-icon: 26px;
   --tcw-menu-item-h: 33px;
-  --tcw-icon-stroke: 1.25px;
+  --tcw-icon-stroke: 1px;
   --tcw-font: -apple-system, BlinkMacSystemFont, 'Segoe UI Variable Text', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   --tcw-font-size: 13px;
   --tcw-font-size-sm: 11px;
@@ -1267,15 +1267,21 @@
   background: var(--tcw-red-soft);
 }
 
+/* A group with more tools: a small triangle in the very corner of its button, pointing out. Not a
+   dot, which the drawing tools' icons use for their anchors, and away from the icon, so it doesn't
+   read as part of the tool. Right to left it sits in the other corner. */
 .tcw-multi-dot {
   position: absolute;
-  bottom: 3px;
-  right: 3px;
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
+  inset-block-end: 1px;
+  inset-inline-end: 1px;
+  width: 5px;
+  height: 5px;
+  clip-path: polygon(100% 0, 100% 100%, 0 100%);
   background: var(--tcw-text-muted);
-  opacity: 0.7;
+  opacity: 0.8;
+}
+[dir='rtl'] .tcw-multi-dot {
+  clip-path: polygon(0 0, 100% 100%, 0 100%);
 }
 
 /* The drawing tools' sections: always a hairline (it groups the tools), even in
@@ -4442,6 +4448,13 @@
 }
 [data-tcw-icon-stroke='set'] .tc-icon > * {
   vector-effect: non-scaling-stroke;
+}
+/* Its filled dots (a drawing tool's anchors) were sized for the drawn line: smaller with the fine
+   one, so they don't outweigh it. */
+[data-tcw-icon-stroke='set'] .tc-icon > circle[stroke='none'] {
+  transform-box: fill-box;
+  transform-origin: center;
+  transform: scale(0.7);
 }
 /* A small icon (the legend's, a pin, 10 to 13 px) at most 1 px, so it isn't heavier than the
    rest: drawn as it is, its line was under 1 px. */

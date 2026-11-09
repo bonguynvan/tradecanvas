@@ -176,7 +176,7 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
     <tr><td><code>tagRadius</code></td><td>Corners of the price tags, axis pills and order badges the chart draws.</td></tr>
     <tr><td><code>iconStroke</code></td><td>
       The icons' lines, CSS px from 0.5 to 3, the same width at every icon size (at most 1 px on icons under 14 px). <code>0</code> draws them as the
-      icon set does, thicker as the icon grows. Print's are 1.25; the other looks draw them as they are.
+      icon set does, thicker as the icon grows. Print's are 1; the other looks draw them as they are.
     </td></tr>
   </tbody>
 </table>

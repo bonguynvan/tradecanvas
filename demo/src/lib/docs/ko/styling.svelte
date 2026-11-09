@@ -173,7 +173,7 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
     <tr><td><code>tagRadius</code></td><td>차트가 그리는 가격 라벨, 축 알약, 주문 배지의 모서리.</td></tr>
     <tr><td><code>iconStroke</code></td><td>
       아이콘 선의 굵기, 단위 CSS px(0.5–3)이며 아이콘 크기와 상관없이 같은 굵기입니다(14 px 미만 아이콘은 최대 1 px). <code>0</code>이면 아이콘 세트
-      그대로 그려서 아이콘이 클수록 선도 굵어집니다. Print는 1.25이고, 다른 외관은 그대로 그립니다.
+      그대로 그려서 아이콘이 클수록 선도 굵어집니다. Print는 1이고, 다른 외관은 그대로 그립니다.
     </td></tr>
   </tbody>
 </table>
