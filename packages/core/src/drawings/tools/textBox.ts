@@ -1,7 +1,6 @@
 import type { DrawingStyle } from '@tradecanvas/commons';
-import { drawingFill, drawingLook, textSize } from '../drawingLook.js';
+import { drawingFill, drawingLook, readableText, textSize } from '../drawingLook.js';
 import { fillTextWithHalo } from './labels.js';
-import { readableOn } from '@tradecanvas/commons';
 
 /** A box of wrapped text on the chart (a note, a callout), and its size. */
 
@@ -43,11 +42,10 @@ export function textLook(
   const border = style.textBorder ?? defaults.border;
   // A fill set by hand as kept, its alpha included; else the line's colour, tinted, where the tool fills.
   const fill = !defaults.fill && !style.fillColor ? undefined : drawingFill(style);
-  const look = drawingLook();
   return {
     fontSize: textSize(style),
     // Text in the line's colour, deepened where it would not read on the chart (a light background).
-    color: style.textColor ?? readableText(style.color, look.background, look.ink),
+    color: style.textColor ?? readableText(style.color),
     fill: box && fill ? fill : undefined,
     stroke: border ? style.borderColor ?? style.color : undefined,
     maxWidth: style.textWrap === undefined ? defaults.width : style.textWrap > 0 ? style.textWrap : Infinity,
@@ -64,22 +62,7 @@ const LINE_GAP = 1.3;
 /** Most lines shown; the rest is cut with an ellipsis. */
 const MAX_LINES = 12;
 
-/** The contrast a drawing's text keeps on the chart's background (WCAG for small text). */
-const TEXT_CONTRAST = 4.5;
-/** Text colours that read, by colour, background and ink: worked out once, not on every frame. */
-const readable = new Map<string, string>();
-const READABLE_CACHE_SIZE = 64;
 
-function readableText(color: string, background: string, ink: string): string {
-  const key = `${color}|${background}|${ink}`;
-  let out = readable.get(key);
-  if (out === undefined) {
-    if (readable.size >= READABLE_CACHE_SIZE) readable.clear();
-    out = readableOn(color, background, ink, TEXT_CONTRAST);
-    readable.set(key, out);
-  }
-  return out;
-}
 /** A text box's corners, px. */
 const BOX_RADIUS = 3;
 

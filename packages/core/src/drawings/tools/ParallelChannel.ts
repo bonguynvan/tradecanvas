@@ -1,7 +1,12 @@
 import type { DrawingState, Point, ViewportState } from '@tradecanvas/commons';
 import { DrawingBase, lineSpace } from '../DrawingBase.js';
 import { extendOptions } from './options.js';
-import { drawingFill } from '../drawingLook.js';
+import { dashFor, drawingFill } from '../drawingLook.js';
+
+/** How strongly the middle line shows. */
+const MIDDLE_ALPHA = 0.7;
+/** A base line narrower than this across, px, is upright: its parallel moves sideways. */
+const UPRIGHT_PX = 0.5;
 
 export class ParallelChannelTool extends DrawingBase {
   descriptor = {
@@ -25,14 +30,14 @@ export class ParallelChannelTool extends DrawingBase {
     if (state.anchors.length < 3) return { base, parallel: null, middle: null, corners: null };
 
     const p3 = this.anchorToPixel(state.anchors[2], viewport);
-    // Perpendicular offset from the base line (p1→p2) to the third anchor.
+    // The base line moved straight up or down to the third anchor, as its alerts read it
+    // (`priceAt`): over the same bars, so a steep channel doesn't slide off in time. An upright
+    // base line moves sideways instead.
     const dx = p2.x - p1.x;
-    const dy = p2.y - p1.y;
-    const len = Math.hypot(dx, dy) || 1;
-    const nx = -dy / len;
-    const ny = dx / len;
-    const dist = (p3.x - p1.x) * nx + (p3.y - p1.y) * ny;
-    const shift = (p: Point, k: number): Point => ({ x: p.x + nx * dist * k, y: p.y + ny * dist * k });
+    const upright = Math.abs(dx) < UPRIGHT_PX;
+    const baseY = upright ? p3.y : p1.y + ((p3.x - p1.x) * (p2.y - p1.y)) / dx;
+    const off = upright ? { x: p3.x - p1.x, y: 0 } : { x: 0, y: p3.y - baseY };
+    const shift = (p: Point, k: number): Point => ({ x: p.x + off.x * k, y: p.y + off.y * k });
     const p1b = shift(p1, 1);
     const p2b = shift(p2, 1);
     return {
@@ -45,9 +50,32 @@ export class ParallelChannelTool extends DrawingBase {
     };
   }
 
+  /**
+   * Its first two handles at its points; the third on its parallel, halfway along, not where
+   * it was clicked (often past the span, off every drawn line). Dragged, it sets the third point
+   * where it is let go, so the parallel goes through it.
+   */
+  protected override handlePoints(state: DrawingState, viewport: ViewportState): Point[] {
+    const points = super.handlePoints(state, viewport);
+    const { corners } = this.lines(state, viewport);
+    if (!corners || points.length < 3) return points;
+    const [, , q2, q1] = corners;
+    return [points[0], points[1], { x: (q1.x + q2.x) / 2, y: (q1.y + q2.y) / 2 }];
+  }
+
   render(ctx: CanvasRenderingContext2D, state: DrawingState, viewport: ViewportState, selected: boolean): void {
     if (state.anchors.length < 2) return;
     const { base, parallel, middle, corners } = this.lines(state, viewport);
+
+    // The fill between the anchors' span first, so it doesn't dim the lines over it.
+    if (corners && state.style.fillColor) {
+      ctx.fillStyle = drawingFill(state.style);
+      ctx.beginPath();
+      ctx.moveTo(corners[0].x, corners[0].y);
+      for (const p of corners.slice(1)) ctx.lineTo(p.x, p.y);
+      ctx.closePath();
+      ctx.fill();
+    }
 
     this.applyLineStyle(ctx, state.style);
     for (const line of [base, parallel]) {
@@ -57,22 +85,16 @@ export class ParallelChannelTool extends DrawingBase {
       ctx.lineTo(line[1].x, line[1].y);
       ctx.stroke();
     }
+    // The middle line dashed, a little lighter: a guide between the sides.
     if (middle) {
-      ctx.setLineDash([4, 4]);
+      ctx.setLineDash(dashFor('dashed', state.style.lineWidth));
+      ctx.lineCap = 'butt';
+      ctx.globalAlpha = MIDDLE_ALPHA;
       ctx.beginPath();
       ctx.moveTo(middle[0].x, middle[0].y);
       ctx.lineTo(middle[1].x, middle[1].y);
       ctx.stroke();
-    }
-
-    // Fill between the anchors' span.
-    if (corners && state.style.fillColor) {
-      ctx.fillStyle = drawingFill(state.style);
-      ctx.beginPath();
-      ctx.moveTo(corners[0].x, corners[0].y);
-      for (const p of corners.slice(1)) ctx.lineTo(p.x, p.y);
-      ctx.closePath();
-      ctx.fill();
+      ctx.globalAlpha = 1;
     }
     this.resetLineStyle(ctx);
     if (selected) this.renderAnchorHandles(ctx, state, viewport);

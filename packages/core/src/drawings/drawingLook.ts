@@ -5,7 +5,7 @@
  * one look instead of each keeping numbers of its own.
  */
 import type { DrawingStyle, Theme } from '@tradecanvas/commons';
-import { DEFAULT_FONT_FAMILY, SANS_FONT_FAMILY, inkOn, ownFillColor, withAlpha } from '@tradecanvas/commons';
+import { DEFAULT_FONT_FAMILY, SANS_FONT_FAMILY, inkOn, ownFillColor, readableOn, withAlpha } from '@tradecanvas/commons';
 
 /** The type drawings set their words and figures in, px. */
 export interface DrawingTypeSizes {
@@ -128,6 +128,24 @@ export function arrowHeadSize(lineWidth: number): number {
 }
 const ARROW_HEAD_BASE = 9;
 const ARROW_HEAD_GROWTH = 3;
+
+/** Text colours that read, by colour, background and ink: worked out once, not on every frame. */
+const readable = new Map<string, string>();
+const READABLE_CACHE_SIZE = 64;
+/** The contrast a drawing's small text keeps on the chart's background (WCAG). */
+const TEXT_CONTRAST = 4.5;
+
+/** `color`, deepened toward the chart's text colour as far as it must to read as small text on its background. */
+export function readableText(color: string): string {
+  const key = `${color}|${look.background}|${look.ink}`;
+  let out = readable.get(key);
+  if (out === undefined) {
+    if (readable.size >= READABLE_CACHE_SIZE) readable.clear();
+    out = readableOn(color, look.background, look.ink, TEXT_CONTRAST);
+    readable.set(key, out);
+  }
+  return out;
+}
 
 /** A handle's radius for a line `lineWidth` px wide: a ring always wider than the line it sits on. */
 export function handleRadius(lineWidth: number, scale = look.scale): number {

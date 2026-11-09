@@ -67,6 +67,14 @@ function optionKindMatches(def: NonNullable<DrawingDescriptor['options']>[string
   }
 }
 
+/**
+ * How far above the plot's foot a time tool's handles sit, px: past a pane divider's touch
+ * reach there, so a finger on one drags the handle, not the divider.
+ */
+const FOOT_HANDLE_RISE = 28;
+/** How strongly a tool's secondary lines show. */
+const GUIDE_ALPHA = 0.55;
+
 export abstract class DrawingBase implements DrawingPlugin {
   abstract descriptor: DrawingDescriptor;
 
@@ -93,8 +101,9 @@ export abstract class DrawingBase implements DrawingPlugin {
     // The nearest in reach: on a small drawing two handles can both be in reach of the pointer.
     let best = -1;
     let bestDist = Infinity;
-    for (let i = 0; i < state.anchors.length; i++) {
-      const px = this.anchorToPixel(state.anchors[i], viewport);
+    const handles = this.handlePoints(state, viewport);
+    for (let i = 0; i < handles.length; i++) {
+      const px = handles[i];
       const dist = Math.hypot(point.x - px.x, point.y - px.y);
       if (dist <= tolerance && dist < bestDist) {
         best = i;
@@ -228,8 +237,46 @@ export abstract class DrawingBase implements DrawingPlugin {
     ctx.lineJoin = 'miter';
   }
 
+  /**
+   * Where the drawing's handles are on screen, one per anchor: at its anchors, unless a tool
+   * shows them elsewhere (a time tool's by the plot's foot, a fitted line's on the line).
+   */
+  protected handlePoints(state: DrawingState, viewport: ViewportState): Point[] {
+    return state.anchors.map((anchor) => this.anchorToPixel(anchor, viewport));
+  }
+
+  /**
+   * Handles of a tool that only sets times (vertical lines): on their lines by the plot's foot,
+   * not at the anchors' prices, which mean nothing to it.
+   */
+  protected footHandles(state: DrawingState, viewport: ViewportState): Point[] {
+    const foot = viewport.chartRect.y + viewport.chartRect.height - FOOT_HANDLE_RISE;
+    return state.anchors.map((anchor) => ({ x: this.anchorToPixel(anchor, viewport).x, y: foot }));
+  }
+
+  /** A rectangle's outline on whole device pixels, each side one sharp row or column. */
+  protected strokeCrispRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number): void {
+    const left = Math.min(x, x + w);
+    const right = Math.max(x, x + w);
+    const top = Math.min(y, y + h);
+    const bottom = Math.max(y, y + h);
+    this.strokeHorizontal(ctx, left, right, top);
+    this.strokeHorizontal(ctx, left, right, bottom);
+    this.strokeVertical(ctx, left, top, bottom);
+    this.strokeVertical(ctx, right, top, bottom);
+  }
+
+  /** A tool's secondary lines (grids, guides): 1 px in `color`, lighter than its own lines. */
+  protected applyGuideStyle(ctx: CanvasRenderingContext2D, color: string, dashed = false): void {
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1;
+    ctx.lineCap = 'butt';
+    ctx.globalAlpha = GUIDE_ALPHA;
+    ctx.setLineDash(dashed ? dashFor('guide', 1) : []);
+  }
+
   protected renderAnchorHandles(ctx: CanvasRenderingContext2D, state: DrawingState, viewport: ViewportState): void {
-    drawAnchorHandles(ctx, state, state.anchors.map((anchor) => this.anchorToPixel(anchor, viewport)));
+    drawAnchorHandles(ctx, state, this.handlePoints(state, viewport));
   }
 
   protected distanceToLine(point: Point, p1: Point, p2: Point): number {

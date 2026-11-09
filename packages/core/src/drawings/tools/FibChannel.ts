@@ -1,8 +1,13 @@
-import { fillTextWithHalo } from './labels.js';
+import { clearSpot, fillTextWithHalo, type LabelBox } from './labels.js';
 import type { DrawingState, Point, ViewportState } from '@tradecanvas/commons';
 import { DrawingBase } from '../DrawingBase.js';
 import { fibLevelList } from './options.js';
-import { roleFont } from '../drawingLook.js';
+import { drawingLook, readableText, roleFont } from '../drawingLook.js';
+
+/** How strongly the levels between the channel's sides show. */
+const INNER_ALPHA = 0.7;
+/** How far left of a level's start its label sits, px: clear of a handle there. */
+const LABEL_GAP = 10;
 
 export const FIB_CHANNEL_LEVELS = [0, 0.236, 0.382, 0.5, 0.618, 0.786, 1, 1.618];
 
@@ -59,19 +64,33 @@ export class FibChannelTool extends DrawingBase {
     ctx.font = roleFont('label');
     ctx.textAlign = 'right';
     ctx.textBaseline = 'middle';
-    for (const { value: level, color } of this.visibleLevels(state)) {
+    const levels = this.visibleLevels(state);
+    for (const { value: level, color } of levels) {
       const [p, q] = fibChannelSegment(a, b, c, level);
       this.applyLineStyle(ctx, { ...state.style, color: color ?? state.style.color });
-      ctx.globalAlpha = level === 0 || level === 1 ? 1 : 0.6;
+      ctx.globalAlpha = level === 0 || level === 1 ? 1 : INNER_ALPHA;
       ctx.beginPath();
       ctx.moveTo(p.x, p.y);
       ctx.lineTo(q.x, q.y);
       ctx.stroke();
-      ctx.fillStyle = color ?? state.style.color;
-      const left = p.x <= q.x ? p : q;
-      fillTextWithHalo(ctx, String(level), left.x - 4, left.y);
     }
+    // The labels at full strength, left of each level's start: 0 and 1 first, the others left
+    // out where they would cover one.
     ctx.globalAlpha = 1;
+    const size = drawingLook().sizes.label;
+    const placed: LabelBox[] = [];
+    const key = (v: number) => v === 0 || v === 1;
+    for (const { value: level, color } of [...levels].sort((m, n) => Number(key(n.value)) - Number(key(m.value)))) {
+      const [p, q] = fibChannelSegment(a, b, c, level);
+      const left = p.x <= q.x ? p : q;
+      const text = String(level);
+      const width = ctx.measureText(text).width;
+      const box = { left: left.x - LABEL_GAP - width, right: left.x - LABEL_GAP, top: left.y - size / 2, bottom: left.y + size / 2 };
+      if (!clearSpot([box], placed) && !key(level)) continue;
+      placed.push(box);
+      ctx.fillStyle = readableText(color ?? state.style.color);
+      fillTextWithHalo(ctx, text, box.right, left.y);
+    }
     this.resetLineStyle(ctx);
 
     if (selected) this.renderAnchorHandles(ctx, state, viewport);

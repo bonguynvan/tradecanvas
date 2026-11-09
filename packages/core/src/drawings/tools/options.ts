@@ -1,27 +1,28 @@
 import type { DrawingLevel, DrawingOptionDefs } from '@tradecanvas/commons';
 
 /**
- * Each Fibonacci ratio's colour: the ends neutral, the ratios between in the
- * chart's palette (shades that keep their contrast on dark and on white), so
+ * Each Fibonacci ratio's colour: the ends neutral, the ratios between each a
+ * hue of its own among the ones drawn together (shades that keep 3:1 as lines
+ * on dark and on paper; their text is deepened where it needs to read), so
  * the levels read apart at a glance.
  */
 export const FIB_LEVEL_COLORS: Readonly<Record<number, string>> = {
-  0: '#7d8696',
+  0: '#787b86',
   0.236: '#e8505b',
   0.25: '#e8505b',
-  0.382: '#c98316',
-  0.5: '#1fa874',
-  0.618: '#1398a8',
-  0.75: '#1398a8',
-  0.786: '#4c8dff',
-  1: '#7d8696',
-  1.272: '#a57cff',
-  1.414: '#e25592',
-  1.618: '#4c8dff',
-  2: '#a57cff',
+  0.382: '#d97a0e',
+  0.5: '#1a9a6a',
+  0.618: '#0e93a3',
+  0.75: '#2f7fd8',
+  0.786: '#5b6cf0',
+  1: '#787b86',
+  1.272: '#b25ad1',
+  1.414: '#d6487f',
+  1.618: '#2f7fd8',
+  2: '#7a5cff',
   2.618: '#e8505b',
-  3.618: '#a57cff',
-  4.236: '#e25592',
+  3.618: '#b25ad1',
+  4.236: '#d6487f',
 };
 
 /** `levelList` with each ratio in its Fibonacci colour. */

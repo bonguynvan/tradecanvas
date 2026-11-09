@@ -4938,7 +4938,7 @@
             {
               "value": 0,
               "visible": true,
-              "color": "#7d8696"
+              "color": "#787b86"
             },
             {
               "value": 0.236,
@@ -4948,42 +4948,42 @@
             {
               "value": 0.382,
               "visible": true,
-              "color": "#c98316"
+              "color": "#d97a0e"
             },
             {
               "value": 0.5,
               "visible": true,
-              "color": "#1fa874"
+              "color": "#1a9a6a"
             },
             {
               "value": 0.618,
               "visible": true,
-              "color": "#1398a8"
+              "color": "#0e93a3"
             },
             {
               "value": 0.786,
               "visible": true,
-              "color": "#4c8dff"
+              "color": "#5b6cf0"
             },
             {
               "value": 1,
               "visible": true,
-              "color": "#7d8696"
+              "color": "#787b86"
             },
             {
               "value": 1.272,
               "visible": false,
-              "color": "#a57cff"
+              "color": "#b25ad1"
             },
             {
               "value": 1.414,
               "visible": false,
-              "color": "#e25592"
+              "color": "#d6487f"
             },
             {
               "value": 1.618,
               "visible": false,
-              "color": "#4c8dff"
+              "color": "#2f7fd8"
             },
             {
               "value": 2.618,
@@ -4993,12 +4993,12 @@
             {
               "value": 3.618,
               "visible": false,
-              "color": "#a57cff"
+              "color": "#b25ad1"
             },
             {
               "value": 4.236,
               "visible": false,
-              "color": "#e25592"
+              "color": "#d6487f"
             }
           ]
         },
@@ -5061,52 +5061,52 @@
             {
               "value": 0,
               "visible": true,
-              "color": "#7d8696"
+              "color": "#787b86"
             },
             {
               "value": 0.382,
               "visible": false,
-              "color": "#c98316"
+              "color": "#d97a0e"
             },
             {
               "value": 0.5,
               "visible": false,
-              "color": "#1fa874"
+              "color": "#1a9a6a"
             },
             {
               "value": 0.618,
               "visible": true,
-              "color": "#1398a8"
+              "color": "#0e93a3"
             },
             {
               "value": 0.786,
               "visible": false,
-              "color": "#4c8dff"
+              "color": "#5b6cf0"
             },
             {
               "value": 1,
               "visible": true,
-              "color": "#7d8696"
+              "color": "#787b86"
             },
             {
               "value": 1.272,
               "visible": false,
-              "color": "#a57cff"
+              "color": "#b25ad1"
             },
             {
               "value": 1.414,
               "visible": false,
-              "color": "#e25592"
+              "color": "#d6487f"
             },
             {
               "value": 1.618,
               "visible": true,
-              "color": "#4c8dff"
+              "color": "#2f7fd8"
             },
             {
               "value": 2,
               "visible": true,
-              "color": "#a57cff"
+              "color": "#7a5cff"
             },
             {
               "value": 2.618,
@@ -5116,12 +5116,12 @@
             {
               "value": 3.618,
               "visible": true,
-              "color": "#a57cff"
+              "color": "#b25ad1"
             },
             {
               "value": 4.236,
               "visible": true,
-              "color": "#e25592"
+              "color": "#d6487f"
             }
           ]
         },
@@ -5255,7 +5255,7 @@
           "default": [
             {
               "value": 0,
-              "visible": false
+              "visible": true
             },
             {
               "value": 1,
@@ -5369,7 +5369,7 @@
             {
               "value": 0,
               "visible": true,
-              "color": "#7d8696"
+              "color": "#787b86"
             },
             {
               "value": 0.236,
@@ -5379,32 +5379,32 @@
             {
               "value": 0.382,
               "visible": true,
-              "color": "#c98316"
+              "color": "#d97a0e"
             },
             {
               "value": 0.5,
               "visible": true,
-              "color": "#1fa874"
+              "color": "#1a9a6a"
             },
             {
               "value": 0.618,
               "visible": true,
-              "color": "#1398a8"
+              "color": "#0e93a3"
             },
             {
               "value": 0.786,
               "visible": true,
-              "color": "#4c8dff"
+              "color": "#5b6cf0"
             },
             {
               "value": 1,
               "visible": true,
-              "color": "#7d8696"
+              "color": "#787b86"
             },
             {
               "value": 1.618,
               "visible": true,
-              "color": "#4c8dff"
+              "color": "#2f7fd8"
             },
             {
               "value": 2.618,
@@ -5414,12 +5414,12 @@
             {
               "value": 3.618,
               "visible": false,
-              "color": "#a57cff"
+              "color": "#b25ad1"
             },
             {
               "value": 4.236,
               "visible": false,
-              "color": "#e25592"
+              "color": "#d6487f"
             }
           ]
         }
@@ -5447,27 +5447,27 @@
             {
               "value": 0.382,
               "visible": true,
-              "color": "#c98316"
+              "color": "#d97a0e"
             },
             {
               "value": 0.5,
               "visible": true,
-              "color": "#1fa874"
+              "color": "#1a9a6a"
             },
             {
               "value": 0.618,
               "visible": true,
-              "color": "#1398a8"
+              "color": "#0e93a3"
             },
             {
               "value": 0.75,
               "visible": true,
-              "color": "#1398a8"
+              "color": "#2f7fd8"
             },
             {
               "value": 0.786,
               "visible": false,
-              "color": "#4c8dff"
+              "color": "#5b6cf0"
             }
           ]
         }
@@ -5661,32 +5661,32 @@
             {
               "value": 0.382,
               "visible": true,
-              "color": "#c98316"
+              "color": "#d97a0e"
             },
             {
               "value": 0.5,
               "visible": true,
-              "color": "#1fa874"
+              "color": "#1a9a6a"
             },
             {
               "value": 0.618,
               "visible": true,
-              "color": "#1398a8"
+              "color": "#0e93a3"
             },
             {
               "value": 0.786,
               "visible": true,
-              "color": "#4c8dff"
+              "color": "#5b6cf0"
             },
             {
               "value": 1,
               "visible": true,
-              "color": "#7d8696"
+              "color": "#787b86"
             },
             {
               "value": 1.618,
               "visible": true,
-              "color": "#4c8dff"
+              "color": "#2f7fd8"
             },
             {
               "value": 2.618,
@@ -5696,12 +5696,12 @@
             {
               "value": 3.618,
               "visible": false,
-              "color": "#a57cff"
+              "color": "#b25ad1"
             },
             {
               "value": 4.236,
               "visible": false,
-              "color": "#e25592"
+              "color": "#d6487f"
             }
           ]
         },
@@ -5741,27 +5741,27 @@
             {
               "value": 0.382,
               "visible": true,
-              "color": "#c98316"
+              "color": "#d97a0e"
             },
             {
               "value": 0.5,
               "visible": true,
-              "color": "#1fa874"
+              "color": "#1a9a6a"
             },
             {
               "value": 0.618,
               "visible": true,
-              "color": "#1398a8"
+              "color": "#0e93a3"
             },
             {
               "value": 0.786,
               "visible": true,
-              "color": "#4c8dff"
+              "color": "#5b6cf0"
             },
             {
               "value": 1,
               "visible": true,
-              "color": "#7d8696"
+              "color": "#787b86"
             }
           ]
         },
@@ -5794,27 +5794,27 @@
             {
               "value": 0.382,
               "visible": true,
-              "color": "#c98316"
+              "color": "#d97a0e"
             },
             {
               "value": 0.5,
               "visible": true,
-              "color": "#1fa874"
+              "color": "#1a9a6a"
             },
             {
               "value": 0.618,
               "visible": true,
-              "color": "#1398a8"
+              "color": "#0e93a3"
             },
             {
               "value": 0.786,
               "visible": true,
-              "color": "#4c8dff"
+              "color": "#5b6cf0"
             },
             {
               "value": 1,
               "visible": true,
-              "color": "#7d8696"
+              "color": "#787b86"
             }
           ]
         },
@@ -5837,7 +5837,7 @@
             {
               "value": 0,
               "visible": true,
-              "color": "#7d8696"
+              "color": "#787b86"
             },
             {
               "value": 0.25,
@@ -5847,27 +5847,27 @@
             {
               "value": 0.382,
               "visible": true,
-              "color": "#c98316"
+              "color": "#d97a0e"
             },
             {
               "value": 0.5,
               "visible": true,
-              "color": "#1fa874"
+              "color": "#1a9a6a"
             },
             {
               "value": 0.618,
               "visible": true,
-              "color": "#1398a8"
+              "color": "#0e93a3"
             },
             {
               "value": 0.75,
               "visible": true,
-              "color": "#1398a8"
+              "color": "#2f7fd8"
             },
             {
               "value": 1,
               "visible": true,
-              "color": "#7d8696"
+              "color": "#787b86"
             }
           ]
         },
@@ -5895,22 +5895,22 @@
             {
               "value": 0.382,
               "visible": true,
-              "color": "#c98316"
+              "color": "#d97a0e"
             },
             {
               "value": 0.5,
               "visible": true,
-              "color": "#1fa874"
+              "color": "#1a9a6a"
             },
             {
               "value": 0.618,
               "visible": true,
-              "color": "#1398a8"
+              "color": "#0e93a3"
             },
             {
               "value": 0.75,
               "visible": true,
-              "color": "#1398a8"
+              "color": "#2f7fd8"
             }
           ]
         },

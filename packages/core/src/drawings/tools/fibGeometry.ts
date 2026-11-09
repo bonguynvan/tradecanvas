@@ -2,13 +2,24 @@ import { fillTextWithHalo } from './labels.js';
 import type { DrawingLevel, DrawingState, Point, ViewportState } from '@tradecanvas/commons';
 import { DrawingBase, distanceToSegment, nearPolyline } from '../DrawingBase.js';
 import { fibLevelList } from './options.js';
-import { roleFont } from '../drawingLook.js';
+import { drawingLook, readableText, roleFont } from '../drawingLook.js';
 
 const PHI = (1 + Math.sqrt(5)) / 2;
 const ARC_STEPS = 64;
-/** How close two level labels may be before the second is left out (px). */
-const LABEL_GAP_X = 34;
-const LABEL_GAP_Y = 12;
+/** The least room between two level labels, px: one that would come closer is left out. */
+const LABEL_ROOM = 2;
+/** How far a level's label sits off its shape, px. */
+const LABEL_OFFSET = 6;
+/** Where on a circle its label goes: up and to the right, so labels of circles one inside another step apart. */
+const CIRCLE_LABEL_ANGLE = -Math.PI / 4;
+/** How strongly a tool's guide (the line its levels measure) shows. */
+const GUIDE_ALPHA = 0.7;
+/** The grid of a Gann square, lighter than its box and diagonals. */
+const SQUARE_GRID_ALPHA = 0.3;
+/** How strongly a Gann square's arcs show. */
+const SQUARE_ARC_ALPHA = 0.7;
+/** The tightest a spiral winds in to, px: tighter, it is a dot under its centre handle. */
+const SPIRAL_MIN_RADIUS = 8;
 
 function levelOptions(shown: readonly number[], hidden: readonly number[] = []) {
   return {
@@ -39,6 +50,20 @@ function strokePoints(ctx: CanvasRenderingContext2D, pts: readonly Point[]): voi
   ctx.stroke();
 }
 
+/** One level's shape: its points, and where its label goes, `away` the way it leans off the shape. */
+interface LevelShape {
+  level: DrawingLevel;
+  points: Point[];
+  label: Point;
+  away?: Point;
+}
+
+/** The unit vector a quarter turn from `a`→`b`: off a line, to one side. */
+function normal(a: Point, b: Point): Point {
+  const len = Math.hypot(b.x - a.x, b.y - a.y) || 1;
+  return { x: -(b.y - a.y) / len, y: (b.x - a.x) / len };
+}
+
 /**
  * Tools drawn as one shape per level (circles, arcs, rays): each level in
  * its colour, labelled with its ratio when asked.
@@ -50,7 +75,7 @@ abstract class LevelShapesTool extends DrawingBase {
     levels: DrawingLevel[],
     viewport: ViewportState,
     state: DrawingState,
-  ): { level: DrawingLevel; points: Point[]; label: Point }[];
+  ): LevelShape[];
 
   /** Lines drawn besides the levels (the trend line the levels measure). */
   protected guides(pts: Point[]): [Point, Point][] {
@@ -64,9 +89,9 @@ abstract class LevelShapesTool extends DrawingBase {
   render(ctx: CanvasRenderingContext2D, state: DrawingState, viewport: ViewportState, selected: boolean): void {
     if (state.anchors.length < 2) return;
     const pts = this.pixels(state, viewport);
-    this.applyLineStyle(ctx, state.style);
-    ctx.globalAlpha = 0.6;
-    ctx.setLineDash([4, 4]);
+    // The guides as dashed 1 px lines under the levels.
+    this.applyGuideStyle(ctx, state.style.color, true);
+    ctx.globalAlpha = GUIDE_ALPHA;
     for (const [a, b] of this.guides(pts)) strokePoints(ctx, [a, b]);
     ctx.globalAlpha = 1;
     this.applyLineStyle(ctx, state.style);
@@ -85,17 +110,31 @@ abstract class LevelShapesTool extends DrawingBase {
   }
 
   /**
-   * The levels' ratios. Labels of levels close together (small circles) would
-   * pile up: going from the outermost in, one that would cover a label
-   * already drawn is left out.
+   * The levels' ratios, each beside its shape, off its guide. Labels of
+   * levels close together (small circles) would pile up: the 1 level is
+   * labelled first, then from the outermost in, and one that would cover a
+   * label already drawn is left out.
    */
-  private renderLabels(ctx: CanvasRenderingContext2D, state: DrawingState, shapes: readonly { level: DrawingLevel; label: Point }[]): void {
-    const placed: Point[] = [];
-    for (const { level, label } of [...shapes].reverse()) {
-      if (placed.some((p) => Math.abs(p.x - label.x) < LABEL_GAP_X && Math.abs(p.y - label.y) < LABEL_GAP_Y)) continue;
-      placed.push(label);
-      ctx.fillStyle = level.color ?? state.style.color;
-      fillTextWithHalo(ctx, levelText(level.value), label.x + 3, label.y - 2);
+  private renderLabels(ctx: CanvasRenderingContext2D, state: DrawingState, shapes: readonly LevelShape[]): void {
+    const size = drawingLook().sizes.label;
+    const taken: { x0: number; x1: number; y0: number; y1: number }[] = [];
+    const order = [...shapes].reverse().sort((a, b) => Number(b.level.value === 1) - Number(a.level.value === 1));
+    for (const { level, label, away } of order) {
+      const text = levelText(level.value);
+      const width = ctx.measureText(text).width;
+      const lean = away ?? { x: 0, y: -1 };
+      const x = label.x + lean.x * LABEL_OFFSET;
+      const y = label.y + lean.y * LABEL_OFFSET;
+      // The text leans the way it is pushed: left of the point when pushed left, above when up.
+      const x0 = lean.x < -0.3 ? x - width : lean.x > 0.3 ? x : x - width / 2;
+      const y0 = lean.y < -0.3 ? y - size : lean.y > 0.3 ? y : y - size / 2;
+      const box = { x0, x1: x0 + width, y0, y1: y0 + size };
+      if (taken.some((t) => box.x1 + LABEL_ROOM > t.x0 && t.x1 + LABEL_ROOM > box.x0 && box.y1 + LABEL_ROOM > t.y0 && t.y1 + LABEL_ROOM > box.y0)) continue;
+      taken.push(box);
+      ctx.fillStyle = readableText(level.color ?? state.style.color);
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'top';
+      fillTextWithHalo(ctx, text, box.x0, box.y0);
     }
   }
 
@@ -121,7 +160,8 @@ export class FibCirclesTool extends LevelShapesTool {
     const radius = Math.hypot(edge.x - c.x, edge.y - c.y);
     return levels.map((level) => {
       const r = radius * level.value;
-      return { level, points: ellipsePoints(c, r, r, 0, Math.PI * 2), label: { x: c.x + r, y: c.y } };
+      const label = { x: c.x + r * Math.cos(CIRCLE_LABEL_ANGLE), y: c.y + r * Math.sin(CIRCLE_LABEL_ANGLE) };
+      return { level, points: ellipsePoints(c, r, r, 0, Math.PI * 2), label, away: { x: Math.SQRT1_2, y: -Math.SQRT1_2 } };
     });
   }
 }
@@ -151,7 +191,7 @@ export class FibArcsTool extends LevelShapesTool {
       const points = full
         ? ellipsePoints(a, r, r, 0, Math.PI * 2)
         : ellipsePoints(a, r, r, toward - Math.PI / 2, Math.PI);
-      return { level, points, label: { x: a.x + r * Math.cos(toward), y: a.y + r * Math.sin(toward) } };
+      return { level, points, label: { x: a.x + r * Math.cos(toward), y: a.y + r * Math.sin(toward) }, away: normal(a, b) };
     });
   }
 }
@@ -175,7 +215,10 @@ export class FibWedgeTool extends LevelShapesTool {
     if (sweep < -Math.PI) sweep += 2 * Math.PI;
     return levels.map((level) => {
       const r = length * level.value;
-      return { level, points: ellipsePoints(apex, r, r, from, sweep, 32), label: { x: apex.x + r * Math.cos(from), y: apex.y + r * Math.sin(from) } };
+      // Off its first line, on the side away from the arcs.
+      const off = normal(apex, b);
+      const side = sweep > 0 ? -1 : 1;
+      return { level, points: ellipsePoints(apex, r, r, from, sweep, 32), label: { x: apex.x + r * Math.cos(from), y: apex.y + r * Math.sin(from) }, away: { x: off.x * side, y: off.y * side } };
     });
   }
 }
@@ -204,7 +247,7 @@ export class PitchfanTool extends LevelShapesTool {
       const through = { x: b.x + (c.x - b.x) * level.value, y: b.y + (c.y - b.y) * level.value };
       const len = Math.hypot(through.x - pivot.x, through.y - pivot.y) || 1;
       const end = { x: pivot.x + ((through.x - pivot.x) / len) * reach, y: pivot.y + ((through.y - pivot.y) / len) * reach };
-      return { level, points: [pivot, end], label: through };
+      return { level, points: [pivot, end], label: through, away: normal(pivot, through) };
     });
   }
 }
@@ -232,7 +275,7 @@ export class FibSpiralTool extends DrawingBase {
     // Growing by φ every quarter turn: r = r0 · φ^(2θ/π).
     const quarter = Math.PI / 2;
     const outward = Math.log(reach / r0) / Math.log(PHI); // quarter turns to reach
-    const inward = Math.log(r0 / 2) / Math.log(PHI);
+    const inward = Math.log(r0 / SPIRAL_MIN_RADIUS) / Math.log(PHI);
     const from = -Math.max(0, inward) * quarter;
     const to = Math.max(1, outward) * quarter;
     const pts: Point[] = [];
@@ -302,16 +345,31 @@ export class GannSquareTool extends DrawingBase {
   render(ctx: CanvasRenderingContext2D, state: DrawingState, viewport: ViewportState, selected: boolean): void {
     if (state.anchors.length < 2) return;
     const { grid, arcs } = this.lines(state, viewport);
+    // The box and its diagonals in the drawing's line; its sides on whole pixels.
     this.applyLineStyle(ctx, state.style);
-    grid.forEach(([p, q], i) => {
-      ctx.globalAlpha = i < 6 ? 1 : 0.55; // the box and its diagonals stand out
-      strokePoints(ctx, [p, q]);
+    grid.slice(0, 6).forEach(([p, q]) => this.strokeSegment(ctx, p, q, state.style.lineWidth));
+    // The grid as sharp 1 px guides, lighter.
+    this.applyGuideStyle(ctx, state.style.color);
+    ctx.globalAlpha = SQUARE_GRID_ALPHA;
+    grid.slice(6).forEach(([p, q]) => this.strokeSegment(ctx, p, q, 1));
+    // The arcs in their levels' colours (the last, at 1, in the drawing's).
+    const levels = this.visibleLevels(state);
+    arcs.forEach((arc, i) => {
+      this.applyLineStyle(ctx, { ...state.style, color: levels[i]?.color ?? state.style.color });
+      ctx.globalAlpha = SQUARE_ARC_ALPHA;
+      strokePoints(ctx, arc);
     });
-    ctx.globalAlpha = 0.8;
-    for (const arc of arcs) strokePoints(ctx, arc);
     ctx.globalAlpha = 1;
     this.resetLineStyle(ctx);
     if (selected) this.renderAnchorHandles(ctx, state, viewport);
+  }
+
+  /** A segment: on whole pixels when it is level or upright, as it is otherwise. */
+  private strokeSegment(ctx: CanvasRenderingContext2D, p: Point, q: Point, width: number): void {
+    ctx.lineWidth = width;
+    if (Math.abs(p.y - q.y) < 0.5) this.strokeHorizontal(ctx, p.x, q.x, p.y);
+    else if (Math.abs(p.x - q.x) < 0.5) this.strokeVertical(ctx, p.x, p.y, q.y);
+    else strokePoints(ctx, [p, q]);
   }
 
   hitTest(point: Point, state: DrawingState, viewport: ViewportState, tolerance: number): boolean {

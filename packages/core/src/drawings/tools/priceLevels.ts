@@ -1,12 +1,18 @@
 import type { DrawingLevel, DrawingState, ViewportState } from '@tradecanvas/commons';
 import { formatPrice } from '@tradecanvas/commons';
 import { priceToY } from '../../viewport/ScaleMapping.js';
-import { formatDrawingPrice, fillTextWithHalo } from './labels.js';
+import { belowKeepOut, clearSpot, formatDrawingPrice, fillTextWithHalo, type LabelBox } from './labels.js';
 import { crispY } from '../../charts/pixelGrid.js';
-import { roleFont } from '../drawingLook.js';
+import { drawingFill, drawingLook, readableText, roleFont } from '../drawingLook.js';
 
-/** Decimals a level's percentage shows (61.8%). */
+/** Decimals a level's percentage shows (61.8%); none for a whole one (50%). */
 const LEVEL_PERCENT_DECIMALS = 1;
+/** How strongly a band between two levels is shaded. */
+const BAND_ALPHA = 0.06;
+/** How far above its line a level's label sits, px. */
+const LABEL_LIFT = 3;
+/** How strongly the levels between 0 and 1 show. */
+const INNER_ALPHA = 0.8;
 
 /** A Fibonacci level at its price. */
 export interface PriceLevel {
@@ -38,7 +44,9 @@ export function levelLabel(
   format: (price: number) => string = (p) => p.toFixed(2),
   locale = 'en-US',
 ): string {
-  const pct = `${formatPrice(level * 100, LEVEL_PERCENT_DECIMALS, locale)}%`;
+  const percent = level * 100;
+  const decimals = Math.abs(percent - Math.round(percent)) < 1e-9 ? 0 : LEVEL_PERCENT_DECIMALS;
+  const pct = `${formatPrice(percent, decimals, locale)}%`;
   const value = format(price);
   if (showLevels && showPrices) return `${pct} (${value})`;
   return showLevels ? pct : showPrices ? value : '';
@@ -63,11 +71,10 @@ export function renderPriceLevels(
     for (let i = 0; i < sorted.length - 1; i++) {
       const yA = priceToY(sorted[i].price, viewport);
       const yB = priceToY(sorted[i + 1].price, viewport);
+      // Each band in its upper level's colour, all as light: a rainbow of rising strengths read as noise.
       const own = sorted[i + 1].level.color;
-      const fill = own ?? state.style.fillColor;
-      if (!fill) continue;
-      ctx.fillStyle = fill;
-      ctx.globalAlpha = own ? 0.07 : 0.05 + i * 0.02;
+      ctx.fillStyle = own ?? drawingFill(state.style, 1);
+      ctx.globalAlpha = BAND_ALPHA;
       ctx.fillRect(look.x0, Math.min(yA, yB), width, Math.abs(yB - yA));
     }
     ctx.globalAlpha = 1;
@@ -77,11 +84,16 @@ export function renderPriceLevels(
   ctx.textBaseline = 'bottom';
   ctx.textAlign = look.labelPosition === 'right' ? 'right' : 'left';
   const labelX = look.labelPosition === 'right' ? look.x1 - 4 : look.x0 + 4;
-  for (const { level, price } of levels) {
-    const y = priceToY(price, viewport);
+  // The 0 and 1 levels' labels first, which the others are read against and which are never
+  // left out; then the others, each left out where it would cover a label already drawn.
+  const labelHeight = drawingLook().sizes.label;
+  const placed: LabelBox[] = [];
+  const isKey = (value: number) => value === 0 || value === 1;
+  const lines = levels.map(({ level, price }) => ({ level, price, y: priceToY(price, viewport) }));
+  for (const { level, y } of lines) {
     const color = level.color ?? state.style.color;
     applyLineStyle(color);
-    ctx.globalAlpha = level.value === 0 || level.value === 1 ? 1 : 0.8;
+    ctx.globalAlpha = isKey(level.value) ? 1 : INNER_ALPHA;
     // On whole device pixels: one sharp row per level, not a soft smear.
     const line = crispY(ctx, y, Number(ctx.lineWidth) || 1);
     ctx.lineWidth = line.width;
@@ -89,20 +101,35 @@ export function renderPriceLevels(
     ctx.moveTo(look.x0, line.y);
     ctx.lineTo(look.x1, line.y);
     ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+  const order = [...lines].sort((a, b) => Number(isKey(b.level.value)) - Number(isKey(a.level.value)));
+  for (const { level, price, y } of order) {
     const text = levelLabel(level.value, price, look.showLevels, look.showPrices, (p) => formatDrawingPrice(p, p, viewport), viewport.numberLocale);
-    if (text) {
-      ctx.globalAlpha = 1;
-      ctx.fillStyle = color;
-      fillTextWithHalo(ctx, text, labelX, y - 3);
-    }
+    if (!text) continue;
+    // Above its line, or under it where the legend or a label drawn before covers that; a level
+    // with neither clear is left unlabelled, but never 0 or 1, which go above their line anyway.
+    const width = ctx.measureText(text).width;
+    const left = look.labelPosition === 'right' ? labelX - width : labelX;
+    const above = { left, right: left + width, top: y - LABEL_LIFT - labelHeight, bottom: y - LABEL_LIFT };
+    const under = { left, right: left + width, top: y + LABEL_LIFT, bottom: y + LABEL_LIFT + labelHeight };
+    // Pushed under the legend, where it covers both.
+    const legendFoot = belowKeepOut(left, left + width, y + LABEL_LIFT) + LABEL_LIFT;
+    const pushed = { left, right: left + width, top: legendFoot, bottom: legendFoot + labelHeight };
+    const spot = clearSpot([above, under, pushed], placed) ?? (isKey(level.value) ? pushed : null);
+    if (!spot) continue;
+    placed.push(spot);
+    ctx.fillStyle = readableText(level.color ?? state.style.color);
+    ctx.textBaseline = 'top';
+    fillTextWithHalo(ctx, text, labelX, spot.top);
   }
   ctx.globalAlpha = 1;
 }
 
 /** The dashes of a Fibonacci tool's trend line (px). */
-const TREND_DASH = [4, 4];
+const TREND_DASH = [5, 4];
 /** How strongly the trend line shows under the levels. */
-const TREND_ALPHA = 0.6;
+const TREND_ALPHA = 0.8;
 
 /** A Fibonacci tool's dashed trend line through its points, on screen. */
 export function strokeTrendLine(ctx: CanvasRenderingContext2D, points: readonly { x: number; y: number }[], color: string): void {

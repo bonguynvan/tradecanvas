@@ -37,7 +37,7 @@ export class RectangleTool extends DrawingBase {
   }
 
   /** The eight handles on screen, in their order. */
-  private handlePoints(state: DrawingState, viewport: ViewportState): Point[] {
+  protected override handlePoints(state: DrawingState, viewport: ViewportState): Point[] {
     const a = this.anchorToPixel(state.anchors[0], viewport);
     const b = this.anchorToPixel(state.anchors[1], viewport);
     const mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };

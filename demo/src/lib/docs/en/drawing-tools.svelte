@@ -101,6 +101,7 @@ chart.addDrawing({ type: 'fibRetracement', anchors: [a, b], options: { trendLine
   <li>While a drawing is made, the points placed show as handles.</li>
   <li>Dashes and dots grow with the line, dots are round, and a solid line's ends are round. Arrowheads grow with the line too.</li>
   <li>A fill is the line's colour, tinted, unless it was set on its own: a drawing turned red fills red. A label on a coloured tag is written in black or white, whichever reads; a stats box is the chart's own surface and text colour, in both themes; words in a drawing's colour are deepened where they would not read on a light background.</li>
+  <li>A tool's own lines follow its line style; its grids, guides and secondary angles are 1 px and lighter. A level, an angle or a division whose label would cover another's is left unlabelled, never the 0 and 1 levels. Percentages are written whole when they are (50%, not 50.0%), and each Fibonacci ratio drawn with others has a colour of its own.</li>
 </ul>
 
 <h2>Settings</h2>
@@ -269,14 +270,15 @@ chart.on('toolModeChange', (e) => e.payload)      // { eraser } or { zoomArea }`
 
 <h3>Channels</h3>
 <ul>
-  <li><code>parallelChannel</code> — with an optional middle line, extending either way.</li>
-  <li><code>regressionChannel</code></li>
+  <li><code>parallelChannel</code> — the line through its first two points moved straight up or down to its third (as its alerts read it), with an optional middle line, extending either way.</li>
+  <li><code>regressionChannel</code> — the least-squares line through the closes between its two points, with bands two standard deviations either side; its points set the bars, and its handles sit on the line.</li>
 </ul>
 
 <h3>Fibonacci</h3>
 <ul>
   <li><code>fibRetracement</code>, <code>fibExtension</code> — editable levels, prices and percentages, labels left or right, background, reverse.</li>
-  <li><code>fibChannel</code>, <code>fibTimeZones</code>, <code>fibSpeedResistanceFan</code></li>
+  <li><code>fibChannel</code>, <code>fibSpeedResistanceFan</code> — the fan's rays in their levels' colours, the time rays dashed, both labelled.</li>
+  <li><code>fibTimeZones</code> — from the zone's start (0) on; its handles, and those of <code>cyclicLines</code>, sit on their lines by the plot's foot.</li>
   <li><code>fibArcs</code> — arcs around the start of a move, half or full circles.</li>
   <li><code>fibCircles</code> — circles at Fibonacci multiples of a radius.</li>
   <li><code>fibSpiral</code> — a golden spiral from its centre.</li>
@@ -287,7 +289,7 @@ chart.on('toolModeChange', (e) => e.payload)      // { eraser } or { zoomArea }`
 <ul>
   <li><code>pitchfork</code>, <code>schiffPitchfork</code>, <code>modifiedSchiffPitchfork</code></li>
   <li><code>pitchfan</code> — rays from a pivot through levels between two points.</li>
-  <li><code>gannFan</code>, <code>gannBox</code>, <code>gannSquare</code></li>
+  <li><code>gannFan</code> — each angle labelled where it leaves the plot; <code>gannBox</code> — its divisions labelled in price and in time; <code>gannSquare</code></li>
 </ul>
 
 <h3>Shapes</h3>

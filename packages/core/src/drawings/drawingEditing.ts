@@ -12,7 +12,7 @@ const SNAP_ANGLE = Math.PI / 4;
 const ANGLE_TOOLS: ReadonlySet<string> = new Set([
   'trendLine', 'ray', 'extendedLine', 'infoLine', 'trendAngle', 'arrow', 'horizontalRay',
   'measure', 'priceRange', 'dateRange', 'dateAndPriceRange', 'path', 'polyline',
-  'fibRetracement', 'fibExtension', 'regressionChannel',
+  'fibRetracement', 'fibExtension',
 ]);
 
 /** Whether Shift keeps `type`'s points at 45° steps (see `ANGLE_TOOLS`). */

@@ -21,6 +21,11 @@ export function cycleLineXs(a: Point, b: Point, viewport: ViewportState): number
 export class CyclicLinesTool extends DrawingBase {
   descriptor = { type: 'cyclicLines' as const, name: 'Cyclic Lines', requiredAnchors: 2 };
 
+  /** Its handles on its first two lines, by the plot's foot: the anchors' prices mean nothing to it. */
+  protected override handlePoints(state: DrawingState, viewport: ViewportState): Point[] {
+    return this.footHandles(state, viewport);
+  }
+
   render(ctx: CanvasRenderingContext2D, state: DrawingState, viewport: ViewportState, selected: boolean): void {
     if (state.anchors.length < 2) return;
     const a = this.anchorToPixel(state.anchors[0], viewport);
@@ -28,13 +33,12 @@ export class CyclicLinesTool extends DrawingBase {
     const { chartRect } = viewport;
 
     this.applyLineStyle(ctx, state.style);
-    ctx.beginPath();
+    // Each line on whole pixels: one sharp column, not a two-pixel smear.
     for (const x of cycleLineXs(a, b, viewport)) {
       if (x < chartRect.x) continue;
-      ctx.moveTo(x, chartRect.y);
-      ctx.lineTo(x, chartRect.y + chartRect.height);
+      this.strokeVertical(ctx, x, chartRect.y, chartRect.y + chartRect.height);
+      ctx.lineWidth = state.style.lineWidth;
     }
-    ctx.stroke();
     this.resetLineStyle(ctx);
 
     if (selected) this.renderAnchorHandles(ctx, state, viewport);

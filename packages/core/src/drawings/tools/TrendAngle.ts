@@ -2,7 +2,7 @@ import { fillTextWithHalo } from './labels.js';
 import type { DrawingState, Point, ViewportState } from '@tradecanvas/commons';
 import { DrawingBase } from '../DrawingBase.js';
 import { drawLineText, TextHitCache } from './lineText.js';
-import { roleFont } from '../drawingLook.js';
+import { readableText, roleFont } from '../drawingLook.js';
 
 const ARC_RADIUS = 28;
 const REFERENCE_LENGTH = 48;
@@ -35,10 +35,8 @@ export class TrendAngleTool extends DrawingBase {
     ctx.stroke();
     this.resetLineStyle(ctx);
 
-    // Dashed horizontal reference + arc between it and the line.
-    ctx.strokeStyle = state.style.color;
-    ctx.lineWidth = 1;
-    ctx.setLineDash([3, 3]);
+    // A dashed level reference and the arc between it and the line, as 1 px guides.
+    this.applyGuideStyle(ctx, state.style.color, true);
     ctx.beginPath();
     ctx.moveTo(a.x, a.y);
     ctx.lineTo(a.x + dir * REFERENCE_LENGTH, a.y);
@@ -54,8 +52,9 @@ export class TrendAngleTool extends DrawingBase {
     ctx.arc(a.x, a.y, ARC_RADIUS, Math.min(refRad, lineRad), Math.max(refRad, lineRad));
     ctx.stroke();
 
+    ctx.globalAlpha = 1;
     ctx.font = roleFont('label');
-    ctx.fillStyle = state.style.color;
+    ctx.fillStyle = readableText(state.style.color);
     ctx.textAlign = dir > 0 ? 'left' : 'right';
     ctx.textBaseline = 'middle';
     fillTextWithHalo(ctx, `${angle.toFixed(1)}°`, a.x + dir * (ARC_RADIUS + 6), a.y + (angle >= 0 ? -8 : 8));

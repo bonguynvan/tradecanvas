@@ -5,7 +5,7 @@ import { HorizontalLineTool } from '../tools/HorizontalLine.js';
 import { drawing, recordingCtx, unitViewport } from './fixtures.js';
 
 /** A view around 100,000, where the market's one decimal differs from the size's two. */
-const near100k: ViewportState = { ...unitViewport, priceRange: { min: 98_000, max: 101_000 } };
+const near100k: ViewportState = { ...unitViewport, priceRange: { min: 98_000, max: 101_000 }, chartRect: { x: 0, y: 0, width: 1000, height: 400 } };
 const FIB_ANCHORS = [{ time: 0, price: 98_753.9 }, { time: 50, price: 100_327.1 }];
 
 const fibTexts = (viewport: ViewportState) => {
@@ -18,7 +18,7 @@ describe('drawing price labels', () => {
   it('write a fib level’s price in the market’s decimals, grouped as the axis does', () => {
     const texts = fibTexts({ ...near100k, pricePrecision: 1 });
     expect(texts).toContain('23.6% (99,125.2)');
-    expect(texts).toContain('100.0% (100,327.1)');
+    expect(texts).toContain('100% (100,327.1)');
   });
 
   it('group a fib level’s price without a market precision, at the decimals they had', () => {

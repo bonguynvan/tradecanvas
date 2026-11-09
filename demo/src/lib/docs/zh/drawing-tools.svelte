@@ -101,6 +101,7 @@ chart.addDrawing({ type: 'fibRetracement', anchors: [a, b], options: { trendLine
   <li>绘制过程中，已放置的点显示为控制点。</li>
   <li>虚线和点线随线宽变大，点是圆的，实线的两端是圆头。箭头也随线宽变大。</li>
   <li>填充是线条颜色的浅色，除非单独设置过：画线改成红色，填充也随之变红。彩色标签上的文字用黑色或白色，取更易读的一种；统计框使用图表自身的底色和文字颜色，深浅两种主题都是如此；使用画线颜色的文字在浅色背景上难以看清时会加深。</li>
+  <li>工具自身的线条遵循其线型；网格、辅助线和次要角度线为 1 px，颜色更浅。某个级别、角度或分割的标签会遮住另一个时，它不显示标签，但 0 和 1 级别始终保留标签。百分比为整数时写成整数（50%，而不是 50.0%），与其他比率一起绘制的每个斐波那契比率都有自己的颜色。</li>
 </ul>
 
 <h2>设置</h2>
@@ -263,14 +264,15 @@ chart.on('toolModeChange', (e) => e.payload)      // { eraser } 或 { zoomArea }
 
 <h3>通道</h3>
 <ul>
-  <li><code>parallelChannel</code> — 可选中线，可向任一方向延伸。</li>
-  <li><code>regressionChannel</code></li>
+  <li><code>parallelChannel</code> — 将穿过前两个点的直线竖直上移或下移到第三个点（其警报也按此读取），可选中线，可向任一方向延伸。</li>
+  <li><code>regressionChannel</code> — 两点之间收盘价的最小二乘直线，两侧各有相距两个标准差的通道带；两点决定参与计算的 K 线，控制点位于直线上。</li>
 </ul>
 
 <h3>斐波那契</h3>
 <ul>
   <li><code>fibRetracement</code>、<code>fibExtension</code> — 可编辑的级别、价格和百分比，标签可置于左侧或右侧，背景，反转。</li>
-  <li><code>fibChannel</code>、<code>fibTimeZones</code>、<code>fibSpeedResistanceFan</code></li>
+  <li><code>fibChannel</code>、<code>fibSpeedResistanceFan</code> — 扇形射线使用各自级别的颜色，时间射线为虚线，两者都带标签。</li>
+  <li><code>fibTimeZones</code> — 从区域起点（0）开始；它的控制点以及 <code>cyclicLines</code> 的控制点位于各自的线上，靠近绘图区底部。</li>
   <li><code>fibArcs</code> — 以一段走势的起点为中心的圆弧，半圆或整圆。</li>
   <li><code>fibCircles</code> — 半径按斐波那契倍数取值的圆。</li>
   <li><code>fibSpiral</code> — 从中心展开的黄金螺旋。</li>
@@ -281,7 +283,7 @@ chart.on('toolModeChange', (e) => e.payload)      // { eraser } 或 { zoomArea }
 <ul>
   <li><code>pitchfork</code>、<code>schiffPitchfork</code>、<code>modifiedSchiffPitchfork</code></li>
   <li><code>pitchfan</code> — 从枢轴点出发、穿过两点之间各级别的射线。</li>
-  <li><code>gannFan</code>、<code>gannBox</code>、<code>gannSquare</code></li>
+  <li><code>gannFan</code> — 每条角度线在离开绘图区处标注；<code>gannBox</code> — 其分割按价格和时间标注；<code>gannSquare</code></li>
 </ul>
 
 <h3>形状</h3>

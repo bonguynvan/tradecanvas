@@ -47,34 +47,37 @@ describe('ParallelChannelTool options', () => {
 
 describe('FibRetracementTool options', () => {
   const tool = new FibRetracementTool();
-  // 0% at the first anchor (price 80), 100% at the second (price 20).
+  // 0% at the first anchor (price 80), 100% at the second (price 20). A plot tall enough that no
+  // level's label is left out for covering the one above.
   const anchors = [{ time: 10, price: 80 }, { time: 30, price: 20 }];
+  const tallView = { ...unitViewport, chartRect: { x: 0, y: 0, width: 1000, height: 400 } };
   const texts = (options?: DrawingOptions) => {
     const { ctx, texts: out } = recordingCtx();
-    tool.render(ctx, drawing('fibRetracement', anchors, { options }), unitViewport, false);
+    tool.render(ctx, drawing('fibRetracement', anchors, { options }), tallView, false);
     return out;
   };
 
   it('labels the classic levels with percent and price by default', () => {
     expect(texts()).toEqual([
-      '0.0% (80.00)', '23.6% (65.84)', '38.2% (57.08)', '50.0% (50.00)', '61.8% (42.92)', '78.6% (32.84)', '100.0% (20.00)',
+      // The 0 and 100% labels first, which the others are read against.
+      '0% (80.00)', '100% (20.00)', '23.6% (65.84)', '38.2% (57.08)', '50% (50.00)', '61.8% (42.92)', '78.6% (32.84)',
     ]);
   });
 
   it('draws only the levels left visible, including added ones', () => {
     const levels = [{ value: 0.5, visible: true }, { value: 0.618, visible: false }, { value: 1.618, visible: true }];
-    expect(texts({ levels })).toEqual(['50.0% (50.00)', '161.8% (-17.08)']);
+    expect(texts({ levels })).toEqual(['50% (50.00)', '161.8% (-17.08)']);
   });
 
   it('shows levels, prices, both or neither', () => {
     const levels = [{ value: 0.5, visible: true }];
-    expect(texts({ levels, showPrices: false })).toEqual(['50.0%']);
+    expect(texts({ levels, showPrices: false })).toEqual(['50%']);
     expect(texts({ levels, showLevels: false })).toEqual(['50.00']);
     expect(texts({ levels, showLevels: false, showPrices: false })).toEqual([]);
   });
 
   it('measures from the second anchor when reversed', () => {
-    expect(texts({ levels: [{ value: 0, visible: true }], reverse: true })).toEqual(['0.0% (20.00)']);
+    expect(texts({ levels: [{ value: 0, visible: true }], reverse: true })).toEqual(['0% (20.00)']);
   });
 
   it('spans only its anchors unless extended', () => {
@@ -104,7 +107,7 @@ describe('FibExtensionTool', () => {
   it('projects the A→B move from C in the direction of the trend', () => {
     const { ctx, texts } = recordingCtx();
     tool.render(ctx, drawing('fibExtension', anchors, { options: { levels: [{ value: 1, visible: true }, { value: 1.618, visible: true }] } }), unitViewport, false);
-    expect(texts).toEqual(['100.0% (130.00)', '161.8% (142.36)']);
+    expect(texts).toEqual(['100% (130.00)', '161.8% (142.36)']);
   });
 });
 
@@ -114,7 +117,8 @@ describe('level options on the other Fibonacci tools', () => {
     const state = drawing('fibChannel', [{ time: 0, price: 80 }, { time: 20, price: 80 }, { time: 10, price: 60 }], {
       options: { levels: [{ value: 0, visible: true }, { value: 0.5, visible: true }, { value: 1, visible: false }] },
     });
-    new FibChannelTool().render(ctx, state, unitViewport, false);
+    // On a plot tall enough that the two labels have room (a channel 80 px wide).
+    new FibChannelTool().render(ctx, state, { ...unitViewport, chartRect: { x: 0, y: 0, width: 1000, height: 400 } }, false);
     expect(texts).toEqual(['0', '0.5']);
   });
 
@@ -124,7 +128,8 @@ describe('level options on the other Fibonacci tools', () => {
       options: { levels: [{ value: 0.5, visible: true }] },
     });
     new FibSpeedResistanceFanTool().render(ctx, state, unitViewport, false);
-    expect(texts).toEqual(['0.5']);
+    // Its price ray and its time ray.
+    expect(texts).toEqual(['0.5', '0.5']);
   });
 
   it('time zones mark the chosen bar counts', () => {

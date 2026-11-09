@@ -2,7 +2,14 @@ import { fillTextWithHalo } from './labels.js';
 import type { DrawingState, Point, ViewportState } from '@tradecanvas/commons';
 import { DrawingBase } from '../DrawingBase.js';
 import { fibLevelList } from './options.js';
-import { roleFont } from '../drawingLook.js';
+import { readableText, roleFont } from '../drawingLook.js';
+
+/** How strongly the reference box from A to B shows. */
+const BOX_ALPHA = 0.4;
+/** How strongly the rays other than the 1/1 show. */
+const RAY_ALPHA = 0.8;
+/** How far a ray's label sits past the box, px. */
+const LABEL_GAP = 4;
 
 export const SPEED_FAN_LEVELS = [0.25, 0.382, 0.5, 0.618, 0.75];
 
@@ -51,33 +58,49 @@ export class FibSpeedResistanceFanTool extends DrawingBase {
     return speedFanTargets(a, b, this.visibleLevels(state).map((level) => level.value));
   }
 
+  /** A level's colour, the drawing's when it has none. */
+  private colorOf(state: DrawingState, level: number): string {
+    return this.visibleLevels(state).find((l) => l.value === level)?.color ?? state.style.color;
+  }
+
   render(ctx: CanvasRenderingContext2D, state: DrawingState, viewport: ViewportState, selected: boolean): void {
     if (state.anchors.length < 2) return;
     const a = this.anchorToPixel(state.anchors[0], viewport);
     const b = this.anchorToPixel(state.anchors[1], viewport);
 
-    // Faint reference box A..B.
-    ctx.strokeStyle = state.style.color;
-    ctx.lineWidth = 1;
-    ctx.globalAlpha = 0.25;
-    ctx.strokeRect(Math.min(a.x, b.x), Math.min(a.y, b.y), Math.abs(b.x - a.x), Math.abs(b.y - a.y));
-    ctx.globalAlpha = 1;
+    // The reference box A..B, a sharp 1 px guide.
+    ctx.save();
+    this.applyGuideStyle(ctx, state.style.color);
+    ctx.globalAlpha = BOX_ALPHA;
+    this.strokeCrispRect(ctx, Math.min(a.x, b.x), Math.min(a.y, b.y), Math.abs(b.x - a.x), Math.abs(b.y - a.y));
+    ctx.restore();
 
     ctx.font = roleFont('label');
-    ctx.textBaseline = 'middle';
+    const right = b.x >= a.x;
+    const down = b.y >= a.y;
     for (const target of this.targets(state, a, b)) {
       const end = rayEnd(a, target.point, viewport);
       if (!end) continue;
-      this.applyLineStyle(ctx, state.style);
-      ctx.globalAlpha = target.kind === 'diagonal' ? 1 : 0.65;
+      // Each ray in its level's colour; the time rays dashed, so they read apart from the price rays.
+      const color = target.kind === 'diagonal' ? state.style.color : this.colorOf(state, target.level);
+      this.applyLineStyle(ctx, { ...state.style, color, lineStyle: target.kind === 'time' ? 'dashed' : state.style.lineStyle });
+      ctx.globalAlpha = target.kind === 'diagonal' ? 1 : RAY_ALPHA;
       ctx.beginPath();
       ctx.moveTo(a.x, a.y);
       ctx.lineTo(end.x, end.y);
       ctx.stroke();
+      if (target.kind === 'diagonal') continue;
+      // Its ratio past the box: price rays beside B's side, time rays under (or over) B's edge.
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = readableText(color);
       if (target.kind === 'price') {
-        ctx.fillStyle = state.style.color;
-        ctx.textAlign = b.x >= a.x ? 'left' : 'right';
-        fillTextWithHalo(ctx, String(target.level), target.point.x + (b.x >= a.x ? 4 : -4), target.point.y);
+        ctx.textAlign = right ? 'left' : 'right';
+        ctx.textBaseline = 'middle';
+        fillTextWithHalo(ctx, String(target.level), target.point.x + (right ? LABEL_GAP : -LABEL_GAP), target.point.y);
+      } else {
+        ctx.textAlign = 'center';
+        ctx.textBaseline = down ? 'top' : 'bottom';
+        fillTextWithHalo(ctx, String(target.level), target.point.x, target.point.y + (down ? LABEL_GAP : -LABEL_GAP));
       }
     }
     ctx.globalAlpha = 1;

@@ -1,6 +1,7 @@
 import type { DrawingState, Point, ViewportState } from '@tradecanvas/commons';
 import { DrawingBase } from '../DrawingBase.js';
 import { formatDrawingPrice, fillLevelLabel } from './labels.js';
+import { handleRadius, readableText } from '../drawingLook.js';
 import { drawLineText, TextHitCache } from './lineText.js';
 import { SHOW_PRICE_OPTION } from './options.js';
 
@@ -32,8 +33,10 @@ export class HorizontalRayTool extends DrawingBase {
     // The text first: the price label keeps clear of it.
     this.texts.set(state.id, drawLineText(ctx, state.style, anchor, { x: chartRect.x + chartRect.width, y }, chartRect));
     if (this.option<boolean>(state, 'showPrice')) {
-      ctx.fillStyle = state.style.color;
-      fillLevelLabel(ctx, formatDrawingPrice(state.anchors[0].price, state.anchors[0].price, viewport), anchor.x, y, chartRect.x + chartRect.width, chartRect.y);
+      ctx.fillStyle = readableText(state.style.color);
+      // Past the handle at its start, so a selected ray's ring doesn't cover its first digit.
+      const start = anchor.x + handleRadius(state.style.lineWidth);
+      fillLevelLabel(ctx, formatDrawingPrice(state.anchors[0].price, state.anchors[0].price, viewport), start, y, chartRect.x + chartRect.width, chartRect.y);
     }
 
     if (selected) this.renderAnchorHandles(ctx, state, viewport);
