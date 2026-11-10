@@ -613,6 +613,20 @@ emits `ready` and `crosshairMove` instead of the callback props). To drive the
 widget or a bare `Chart` from a framework, create it in the mount hook on a
 sized element and call `destroy()` in the unmount hook.
 
+An app that wants to credit TradeCanvas places the badge: the words, the mark
+and the wordmark as one link, in the text colour around it (so it follows the
+app's theme). `size` / `height` is the mark's height in px, from 12; 14–16
+fits a status strip.
+
+```ts
+import { createPoweredBy } from '@tradecanvas/chart';
+
+document.querySelector('#status-bar')?.append(createPoweredBy({ height: 14 }));
+```
+
+In Svelte: `import { PoweredBy } from '@tradecanvas/svelte'` and
+`<PoweredBy size={14} />` (`href`, `target` and `class` too).
+
 ## A feed that corrects a closed bar
 
 A venue sends its final for a bar after the next one has started, or revises

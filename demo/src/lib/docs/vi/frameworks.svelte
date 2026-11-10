@@ -118,3 +118,16 @@ const adapter = new BinanceAdapter()
   để dùng toàn bộ API — hình vẽ, giao dịch, adapter khớp lệnh, plugin, bảng
   đổi được kích thước và nhiều thứ khác.
 </blockquote>
+
+<h2 id="powered-by">Badge Powered by</h2>
+<p>Để ghi nguồn TradeCanvas trong ứng dụng, hãy đặt badge: dòng chữ, biểu tượng TC và wordmark thành một liên kết tới tradecanvas.dev, trình đọc màn hình đọc là “Powered by TradeCanvas”. Badge lấy màu chữ xung quanh nên tự theo giao diện sáng hoặc tối; chỉ cây nến trong biểu tượng giữ màu hổ phách của thương hiệu.</p>
+<pre><code>{'<' + `script lang="ts">
+  import { PoweredBy } from '@tradecanvas/svelte'
+` + '<' + `/script>
+
+<PoweredBy size={14} />`}</code></pre>
+
+<pre><code>{`import { createPoweredBy } from '@tradecanvas/chart'
+
+statusBar.append(createPoweredBy({ height: 14 }))`}</code></pre>
+<p><code>size</code> (Svelte) hoặc <code>height</code> là chiều cao biểu tượng tính bằng pixel, từ 12: 14–16 hợp với thanh trạng thái, 24 hợp với footer. Dòng chữ dùng phông của trang và không bao giờ nhỏ hơn 10 px. <code>href</code> và <code>target</code> (mặc định <code>_blank</code>) gắn vào liên kết; <code>poweredByHtml()</code> trả về mã HTML, còn <code>TRADECANVAS_MARK_SVG</code> và <code>TRADECANVAS_WORDMARK_SVG</code> là riêng phần hình.</p>

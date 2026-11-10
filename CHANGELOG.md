@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Features
+
+- **A "Powered by TradeCanvas" badge** (`@tradecanvas/chart`, `@tradecanvas/svelte`). For an app built on TradeCanvas that wants to say so: the words, the TC mark and the wordmark in one link to tradecanvas.dev, named "Powered by TradeCanvas" for screen readers. It takes the text colour around it, so it follows a light or dark theme with nothing to set; only the mark's candle keeps the brand's amber. It reads from 12 px up (14–16 in a status strip, 24 in a footer); the words are set in the page's own face and never fall under 10 px. In Svelte, `<PoweredBy size={14} />`; anywhere else, `createPoweredBy({ height: 14 })` gives the element and `poweredByHtml()` its markup, and `TRADECANVAS_MARK_SVG` and `TRADECANVAS_WORDMARK_SVG` are the outlined art alone.
+
+## 1.76.0 (2026-11-10)
+
 ### Drawings
 
 - **Ellipses and freehand strokes, selected, read as the other shapes do** (`@tradecanvas/core`). An ellipse's handles sit on its curve, at its top, foot and sides, each moving that side; they sat on the corners of its box, off the shape. A selected brush or highlighter stroke is framed as a text is, solid and rounded, in place of a dashed box, and the frame's room counts toward what the drawing covers, so the floating toolbar placed as it is picked keeps clear of it.

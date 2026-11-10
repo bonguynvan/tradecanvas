@@ -118,3 +118,16 @@ const adapter = new BinanceAdapter()
   (Svelte) para usar la API completa: dibujos, trading, adaptadores de ejecución,
   plugins, paneles redimensionables y más.
 </blockquote>
+
+<h2 id="powered-by">Insignia Powered by</h2>
+<p>Para dar crédito a TradeCanvas en tu aplicación, coloca la insignia: el texto, la marca TC y el logotipo forman un solo enlace a tradecanvas.dev, que los lectores de pantalla leen como “Powered by TradeCanvas”. Toma el color del texto que la rodea, así que sigue el tema claro u oscuro; solo la vela de la marca conserva el ámbar de la marca.</p>
+<pre><code>{'<' + `script lang="ts">
+  import { PoweredBy } from '@tradecanvas/svelte'
+` + '<' + `/script>
+
+<PoweredBy size={14} />`}</code></pre>
+
+<pre><code>{`import { createPoweredBy } from '@tradecanvas/chart'
+
+statusBar.append(createPoweredBy({ height: 14 }))`}</code></pre>
+<p><code>size</code> (Svelte) o <code>height</code> es la altura de la marca en píxeles, desde 12: 14–16 para una barra de estado, 24 para un pie de página. El texto usa la fuente de tu página y nunca baja de 10 px. <code>href</code> y <code>target</code> (por defecto <code>_blank</code>) van al enlace; <code>poweredByHtml()</code> da el marcado, y <code>TRADECANVAS_MARK_SVG</code> y <code>TRADECANVAS_WORDMARK_SVG</code> solo el dibujo.</p>

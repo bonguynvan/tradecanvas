@@ -7,6 +7,18 @@ export { DataManager } from './DataManager.js';
 export { HISTORY_RETRY_MS, DEFAULT_HISTORY_PAGE_SIZE } from './HistoryPager.js';
 export type { HistoryLoader } from './HistoryPager.js';
 export { ThemeManager } from './ThemeManager.js';
+export {
+  createPoweredBy,
+  opensElsewhere,
+  poweredByHtml,
+  poweredByLayout,
+  safeBadgeHref,
+  POWERED_BY_LABEL,
+  TRADECANVAS_MARK_SVG,
+  TRADECANVAS_URL,
+  TRADECANVAS_WORDMARK_SVG,
+} from './brand/poweredBy.js';
+export type { PoweredByLayout, PoweredByOptions } from './brand/poweredBy.js';
 export { LayoutManager } from './layout/LayoutManager.js';
 export * from './plugins/index.js';
 export { parseOHLCV, DragDropImporter } from './io/index.js';

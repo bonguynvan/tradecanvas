@@ -118,3 +118,16 @@ const adapter = new BinanceAdapter()
   描画、トレーディング、執行アダプター、プラグイン、サイズ変更できるペインなど、
   API のすべてを使えます。
 </blockquote>
+
+<h2 id="powered-by">Powered by バッジ</h2>
+<p>アプリで TradeCanvas のクレジットを表示するには、このバッジを置きます。文字、TC マーク、ワードマークが tradecanvas.dev への 1 つのリンクになり、スクリーンリーダーでは「Powered by TradeCanvas」と読まれます。周囲の文字色を使うので、ライトとダークのテーマに自動で合います。ブランドのアンバーを保つのはマークのローソク足だけです。</p>
+<pre><code>{'<' + `script lang="ts">
+  import { PoweredBy } from '@tradecanvas/svelte'
+` + '<' + `/script>
+
+<PoweredBy size={14} />`}</code></pre>
+
+<pre><code>{`import { createPoweredBy } from '@tradecanvas/chart'
+
+statusBar.append(createPoweredBy({ height: 14 }))`}</code></pre>
+<p><code>size</code>（Svelte）または <code>height</code> はマークの高さ（ピクセル、12 以上）です。ステータスバーには 14–16、フッターには 24 が合います。文字はページのフォントで組まれ、10 px より小さくなりません。<code>href</code> と <code>target</code>（既定は <code>_blank</code>）はリンクに渡されます。<code>poweredByHtml()</code> はマークアップを、<code>TRADECANVAS_MARK_SVG</code> と <code>TRADECANVAS_WORDMARK_SVG</code> は図形だけを返します。</p>

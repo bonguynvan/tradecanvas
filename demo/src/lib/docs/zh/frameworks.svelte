@@ -117,3 +117,16 @@ const adapter = new BinanceAdapter()
   <code>bind:chart</code>（Svelte）拿到底层的 <code>Chart</code>，使用完整 API——
   画线、交易、执行适配器、插件、可调整大小的窗格等等。
 </blockquote>
+
+<h2 id="powered-by">Powered by 徽标</h2>
+<p>想在应用中注明使用了 TradeCanvas，可以放上这个徽标：文字、TC 标志和字标组成一个指向 tradecanvas.dev 的链接，读屏软件读作“Powered by TradeCanvas”。它沿用周围的文字颜色，因此会跟随浅色或深色主题；只有标志中的蜡烛保留品牌的琥珀色。</p>
+<pre><code>{'<' + `script lang="ts">
+  import { PoweredBy } from '@tradecanvas/svelte'
+` + '<' + `/script>
+
+<PoweredBy size={14} />`}</code></pre>
+
+<pre><code>{`import { createPoweredBy } from '@tradecanvas/chart'
+
+statusBar.append(createPoweredBy({ height: 14 }))`}</code></pre>
+<p><code>size</code>（Svelte）或 <code>height</code> 是标志的高度（像素），最小 12：状态栏用 14–16，页脚用 24。文字使用页面自己的字体，且不会小于 10 px。<code>href</code> 和 <code>target</code>（默认 <code>_blank</code>）作用于链接；<code>poweredByHtml()</code> 返回其标记，<code>TRADECANVAS_MARK_SVG</code> 和 <code>TRADECANVAS_WORDMARK_SVG</code> 是单独的图形。</p>

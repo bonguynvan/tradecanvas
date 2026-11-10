@@ -118,3 +118,16 @@ const adapter = new BinanceAdapter()
   for the full API — drawings, trading, execution adapters, plugins, resizable
   panes, and more.
 </blockquote>
+
+<h2 id="powered-by">Powered by badge</h2>
+<p>To credit TradeCanvas in your app, place the badge: the words, the TC mark and the wordmark as one link to tradecanvas.dev, read by screen readers as “Powered by TradeCanvas”. It takes the text colour around it, so it follows a light or dark theme; only the mark's candle keeps the brand's amber.</p>
+<pre><code>{'<' + `script lang="ts">
+  import { PoweredBy } from '@tradecanvas/svelte'
+` + '<' + `/script>
+
+<PoweredBy size={14} />`}</code></pre>
+
+<pre><code>{`import { createPoweredBy } from '@tradecanvas/chart'
+
+statusBar.append(createPoweredBy({ height: 14 }))`}</code></pre>
+<p><code>size</code> (Svelte) or <code>height</code> is the mark's height in pixels, from 12: 14–16 fits a status strip, 24 a footer. The words are set in your page's face and never fall under 10 px. <code>href</code> and <code>target</code> (default <code>_blank</code>) go to the link; <code>poweredByHtml()</code> gives the markup, and <code>TRADECANVAS_MARK_SVG</code> and <code>TRADECANVAS_WORDMARK_SVG</code> the art alone.</p>
