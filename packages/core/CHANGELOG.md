@@ -1,5 +1,16 @@
 # @tradecanvas/core
 
+## 1.76.0
+
+### Minor Changes
+
+- a8d79d4: An ellipse's handles sit on its curve, each moving one side, instead of on the corners of its box. A selected brush or highlighter stroke is framed as a text is, and the floating toolbar keeps clear of the frame.
+- 854449e: Text, notes, marks, patterns, Elliott waves and pitchforks read cleaner. A text, an icon or an arrow mark shows no handle over its letters or glyph: selected, it is framed, and a press anywhere on it moves it. A callout keeps its box on the plot; a price label is written in the prose face on a box that fits it; a balloon's tail is one outline with its bubble. Pattern and Elliott points are named outside them, clear of the handles, and ratios sit on their guides, or just off them, without covering names, handles or each other. A head and shoulders shortens its names where they would meet. A pitchfork draws its B–C line and is tinted between its tines, its lines stopping at the plot's edge.
+
+### Patch Changes
+
+- @tradecanvas/commons@1.76.0
+
 ## 1.75.0
 
 ### Minor Changes

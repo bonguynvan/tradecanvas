@@ -1,5 +1,14 @@
 # @tradecanvas/chart
 
+## 1.76.0
+
+### Patch Changes
+
+- Updated dependencies [a8d79d4]
+- Updated dependencies [854449e]
+  - @tradecanvas/core@1.76.0
+  - @tradecanvas/commons@1.76.0
+
 ## 1.75.0
 
 ### Minor Changes
