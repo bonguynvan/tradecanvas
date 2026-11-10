@@ -914,6 +914,7 @@ const tr: SiteMessages = {
       'getting-started': 'Başlarken',
       frameworks: 'Framework’ler',
       embed: 'Gömülebilir Widget',
+      'how-it-works': 'Nasıl çalışır',
       api: 'API Referansı',
       styling: 'Görünüm',
       customization: 'Özelleştirme',

@@ -914,6 +914,7 @@ const pt: SiteMessages = {
       'getting-started': 'Primeiros passos',
       frameworks: 'Frameworks',
       embed: 'Widget incorporável',
+      'how-it-works': 'Como funciona',
       api: 'Referência da API',
       styling: 'Aparência',
       customization: 'Personalização',
