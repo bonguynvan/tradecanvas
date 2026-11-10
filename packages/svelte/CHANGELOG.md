@@ -1,5 +1,16 @@
 # @tradecanvas/svelte
 
+## 1.5.0
+
+### Minor Changes
+
+- 95151d5: A "Powered by TradeCanvas" badge: the words, the TC mark and the wordmark in one link, in the text colour around it so it follows a light or dark theme. `<PoweredBy size={14} />` in Svelte; `createPoweredBy()` or `poweredByHtml()` from `@tradecanvas/chart` anywhere else.
+
+### Patch Changes
+
+- Updated dependencies [95151d5]
+  - @tradecanvas/chart@1.77.0
+
 ## 1.4.11
 
 ### Patch Changes

@@ -1,5 +1,11 @@
 # @tradecanvas/core
 
+## 1.77.0
+
+### Patch Changes
+
+- @tradecanvas/commons@1.77.0
+
 ## 1.76.0
 
 ### Minor Changes
