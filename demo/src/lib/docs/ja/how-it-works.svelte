@@ -39,7 +39,7 @@
     engine: { note: '変更レイヤー · rAF' },
     scene: { title: 'scene キャンバス', note: '系列 · 軸 · 描画' },
     top: { title: 'top キャンバス', note: 'クロスヘア · 凡例' },
-    input: { title: 'マウス · ホイール · キー' },
+    input: { title: 'マウス・ホイール・キー' },
   };
 
   const widgetWords: DiagramWords = {

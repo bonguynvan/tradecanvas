@@ -110,7 +110,7 @@
     return `<style>
 ${root}{--dg-accent:var(--accent,var(--brand,#e8961e));--dg-wash:color-mix(in srgb,var(--dg-accent) 14%,transparent);--dg-mono:var(--font-mono,var(--mono,ui-monospace,monospace));margin:24px 0 28px}
 ${root} .dg-scroll{overflow-x:auto;border:1px solid ${LINE};border-radius:8px;background:var(--bg-elevated,var(--card,transparent));padding:12px}
-${root} svg{display:block;width:100%;min-width:600px;height:auto;max-width:100%}
+${root} svg{display:block;width:100%;min-width:600px;height:auto;max-width:min(100%,800px);margin-inline:auto}
 ${root} g[data-node],${root} g[data-edge]{transition:opacity .15s}
 ${root} .dg-label{font:11.5px var(--dg-mono);paint-order:stroke;stroke:var(--bg-elevated,var(--card,var(--bg,var(--page,Canvas))));stroke-width:4px;stroke-linejoin:round}
 ${root}:has(li[data-step]:is(:hover,:focus)) g[data-node],${root}:has(li[data-step]:is(:hover,:focus)) g[data-edge]{opacity:.35}
