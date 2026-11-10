@@ -1,7 +1,13 @@
-import type { DrawingState, Point, ViewportState } from '@tradecanvas/commons';
+import type { AnchorPoint, DrawingState, Point, ViewportState } from '@tradecanvas/commons';
 import { DrawingBase } from '../DrawingBase.js';
 import { drawingFill } from '../drawingLook.js';
 
+/**
+ * An ellipse in the box between two corners (its anchors). Its four handles sit on
+ * its curve, at the middles of the box's sides: 0 the first anchor's price, 1 the
+ * second's, 2 the first's time, 3 the second's, each moving that side. On the box's
+ * corners they floated off the shape, away from anything drawn.
+ */
 export class EllipseTool extends DrawingBase {
   descriptor = { type: 'ellipse' as const, name: 'Ellipse', requiredAnchors: 2, fill: true };
 
@@ -22,6 +28,25 @@ export class EllipseTool extends DrawingBase {
     ctx.stroke();
     this.resetLineStyle(ctx);
     if (selected) this.renderAnchorHandles(ctx, state, viewport);
+  }
+
+  protected override handlePoints(state: DrawingState, viewport: ViewportState): Point[] {
+    if (state.anchors.length < 2) return super.handlePoints(state, viewport);
+    const a = this.anchorToPixel(state.anchors[0], viewport);
+    const b = this.anchorToPixel(state.anchors[1], viewport);
+    const mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+    return [{ x: mid.x, y: a.y }, { x: mid.x, y: b.y }, { x: a.x, y: mid.y }, { x: b.x, y: mid.y }];
+  }
+
+  moveHandle(state: DrawingState, index: number, anchor: AnchorPoint): DrawingState {
+    const [a, b] = state.anchors;
+    const moved: Record<number, [AnchorPoint, AnchorPoint]> = {
+      0: [{ time: a.time, price: anchor.price }, b],
+      1: [a, { time: b.time, price: anchor.price }],
+      2: [{ time: anchor.time, price: a.price }, b],
+      3: [a, { time: anchor.time, price: b.price }],
+    };
+    return moved[index] ? { ...state, anchors: moved[index] } : state;
   }
 
   hitTest(point: Point, state: DrawingState, viewport: ViewportState, tolerance: number): boolean {

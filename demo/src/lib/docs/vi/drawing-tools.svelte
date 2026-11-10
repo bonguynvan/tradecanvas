@@ -296,14 +296,14 @@ chart.on('toolModeChange', (e) => e.payload)      // { eraser } hoặc { zoomAre
 
 <h3>Hình</h3>
 <ul>
-  <li><code>rectangle</code>, <code>circle</code>, <code>ellipse</code>, <code>triangle</code></li>
+  <li><code>rectangle</code>, <code>circle</code>, <code>ellipse</code>, <code>triangle</code> — tay nắm của hình elip nằm trên chính đường cong, mỗi tay nắm kéo một cạnh.</li>
   <li><code>polyline</code> — một hình khép kín, mỗi lần bấm một điểm.</li>
   <li><code>curve</code> — uốn cong qua điểm thứ ba; <code>arc</code> — một cung tròn đi qua ba điểm.</li>
 </ul>
 
 <h3>Bút vẽ</h3>
 <ul>
-  <li><code>brush</code>, <code>highlighter</code> — vẽ tay.</li>
+  <li><code>brush</code>, <code>highlighter</code> — vẽ tay; khi được chọn, nét vẽ có khung như một đoạn text, và nhấn vào đâu trên nó cũng kéo đi được.</li>
   <li><code>path</code> — một đường đi qua các điểm, có mũi tên ở cuối.</li>
 </ul>
 

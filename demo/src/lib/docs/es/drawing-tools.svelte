@@ -300,14 +300,14 @@ chart.on('toolModeChange', (e) => e.payload)      // { eraser } o { zoomArea }`}
 
 <h3>Formas</h3>
 <ul>
-  <li><code>rectangle</code>, <code>circle</code>, <code>ellipse</code>, <code>triangle</code></li>
+  <li><code>rectangle</code>, <code>circle</code>, <code>ellipse</code>, <code>triangle</code> — los controles de una elipse están sobre su curva y cada uno mueve un lado.</li>
   <li><code>polyline</code> — una forma cerrada, un punto por clic.</li>
   <li><code>curve</code> — curvada a través de un tercer punto; <code>arc</code> — un arco de circunferencia por tres puntos.</li>
 </ul>
 
 <h3>Pinceles</h3>
 <ul>
-  <li><code>brush</code>, <code>highlighter</code> — a mano alzada.</li>
+  <li><code>brush</code>, <code>highlighter</code> — a mano alzada; seleccionado, el trazo se enmarca como un texto y se mueve pulsando en cualquier punto de él.</li>
   <li><code>path</code> — una línea a través de puntos, con una flecha al final.</li>
 </ul>
 

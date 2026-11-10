@@ -296,14 +296,14 @@ chart.on('toolModeChange', (e) => e.payload)      // { eraser } or { zoomArea }`
 
 <h3>Shapes</h3>
 <ul>
-  <li><code>rectangle</code>, <code>circle</code>, <code>ellipse</code>, <code>triangle</code></li>
+  <li><code>rectangle</code>, <code>circle</code>, <code>ellipse</code>, <code>triangle</code> — an ellipse's handles sit on its curve, each moving one side.</li>
   <li><code>polyline</code> — a closed shape, a point per click.</li>
   <li><code>curve</code> — bent through a third point; <code>arc</code> — a circle arc through three points.</li>
 </ul>
 
 <h3>Brushes</h3>
 <ul>
-  <li><code>brush</code>, <code>highlighter</code> — freehand.</li>
+  <li><code>brush</code>, <code>highlighter</code> — freehand; selected, a stroke is framed as a text is, and moved by a press anywhere on it.</li>
   <li><code>path</code> — a line through points, with an arrow at the end.</li>
 </ul>
 

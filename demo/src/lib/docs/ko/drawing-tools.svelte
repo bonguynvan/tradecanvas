@@ -291,14 +291,14 @@ chart.on('toolModeChange', (e) => e.payload)      // { eraser } 또는 { zoomAre
 
 <h3>도형</h3>
 <ul>
-  <li><code>rectangle</code>, <code>circle</code>, <code>ellipse</code>, <code>triangle</code></li>
+  <li><code>rectangle</code>, <code>circle</code>, <code>ellipse</code>, <code>triangle</code> — 타원의 핸들은 곡선 위에 있으며 각각 한 변을 움직입니다.</li>
   <li><code>polyline</code> — 닫힌 도형, 클릭마다 점 하나.</li>
   <li><code>curve</code> — 세 번째 점을 지나며 휘어지는 곡선, <code>arc</code> — 세 점을 지나는 원호.</li>
 </ul>
 
 <h3>브러시</h3>
 <ul>
-  <li><code>brush</code>, <code>highlighter</code> — 프리핸드.</li>
+  <li><code>brush</code>, <code>highlighter</code> — 프리핸드. 선택하면 텍스트처럼 틀이 둘러지고, 어디를 눌러도 옮길 수 있습니다.</li>
   <li><code>path</code> — 점들을 잇는 선, 끝에 화살표가 붙습니다.</li>
 </ul>
 

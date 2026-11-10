@@ -292,14 +292,14 @@ chart.on('toolModeChange', (e) => e.payload)      // { eraser } または { zoom
 
 <h3>図形</h3>
 <ul>
-  <li><code>rectangle</code>、<code>circle</code>、<code>ellipse</code>、<code>triangle</code></li>
+  <li><code>rectangle</code>、<code>circle</code>、<code>ellipse</code>、<code>triangle</code> — 楕円のハンドルは曲線上にあり、それぞれが一辺を動かします。</li>
   <li><code>polyline</code> — 閉じた図形。クリックごとに 1 点。</li>
   <li><code>curve</code> — 3 点目を通って曲がる線。<code>arc</code> — 3 点を通る円弧。</li>
 </ul>
 
 <h3>ブラシ</h3>
 <ul>
-  <li><code>brush</code>、<code>highlighter</code> — フリーハンド。</li>
+  <li><code>brush</code>、<code>highlighter</code> — フリーハンド。選択するとテキストと同じように枠で囲まれ、どこを押しても移動できます。</li>
   <li><code>path</code> — 点を通る線で、終点に矢印が付きます。</li>
 </ul>
 

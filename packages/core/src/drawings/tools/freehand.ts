@@ -2,6 +2,7 @@ import type { AnchorPoint, DrawingDescriptor, DrawingState, Point, ViewportState
 import { DrawingBase, nearPolyline } from '../DrawingBase.js';
 import { priceToY, timeToX } from '../../viewport/ScaleMapping.js';
 import { arrowHeadSize, drawingFill } from '../drawingLook.js';
+import { strokeSelectionFrame } from './textBox.js';
 
 /** Segments a curve or an arc is drawn and hit-tested with. */
 const CURVE_STEPS = 48;
@@ -98,18 +99,18 @@ export class BrushTool extends DrawingBase {
     ctx.lineCap = 'butt';
     ctx.lineJoin = 'miter';
     this.resetLineStyle(ctx);
-    if (selected) this.renderBounds(ctx, state, viewport);
+    this.renderBounds(ctx, state, viewport, selected);
   }
 
-  /** A selected stroke shows the box around it instead of hundreds of handles. */
-  private renderBounds(ctx: CanvasRenderingContext2D, state: DrawingState, viewport: ViewportState): void {
+  /**
+   * A selected stroke is framed as a text is, instead of showing hundreds of handles;
+   * the frame's room counts as covered either way, for a toolbar placed as it is picked.
+   */
+  private renderBounds(ctx: CanvasRenderingContext2D, state: DrawingState, viewport: ViewportState, selected: boolean): void {
     const box = this.screenBox(state, viewport);
-    const pad = this.stroke(state).width / 2 + 3;
-    ctx.strokeStyle = state.style.color;
-    ctx.lineWidth = 1;
-    ctx.setLineDash([3, 3]);
-    ctx.strokeRect(box.x0 - pad, box.y0 - pad, box.x1 - box.x0 + pad * 2, box.y1 - box.y0 + pad * 2);
-    ctx.setLineDash([]);
+    const pad = this.stroke(state).width / 2;
+    const rect = { x: box.x0 - pad, y: box.y0 - pad, width: box.x1 - box.x0 + pad * 2, height: box.y1 - box.y0 + pad * 2 };
+    strokeSelectionFrame(ctx, rect, state.style.color, selected);
   }
 
   /** The stroke's box on screen, from its time and price span. */
