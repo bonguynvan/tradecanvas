@@ -108,7 +108,13 @@ The agent skill in [`skills/tradecanvas`](https://github.com/bonguynvan/tradecan
 /plugin install tradecanvas@tradecanvas
 ```
 
-Other agents (Cursor, Codex, Copilot and more): `npx skills add bonguynvan/tradecanvas`. Without a skill, [`llms.txt`](https://tradecanvas.dev/llms.txt) and [`llms-full.txt`](https://tradecanvas.dev/llms-full.txt) give an assistant the docs in one file. Changing TradeCanvas itself with an agent? [AGENTS.md](https://github.com/bonguynvan/tradecanvas/blob/main/AGENTS.md) holds the repo's rules.
+Other agents (Cursor, Codex, Copilot and more): `npx skills add bonguynvan/tradecanvas`. Or ask any agent to set it all up, the package, the skill and the MCP server, asking you the scope first:
+
+```text
+Install TradeCanvas for me by reading https://tradecanvas.dev/llms.txt
+```
+
+Without a skill, [`llms.txt`](https://tradecanvas.dev/llms.txt) and [`llms-full.txt`](https://tradecanvas.dev/llms-full.txt) give an assistant the docs in one file. Changing TradeCanvas itself with an agent? [AGENTS.md](https://github.com/bonguynvan/tradecanvas/blob/main/AGENTS.md) holds the repo's rules.
 
 The MCP server `@tradecanvas/mcp` looks up indicators, drawing tools, options, feature switches and style keys in the library's own catalog, and checks an options object before it is used ([set it up in other clients](https://tradecanvas.dev/docs/getting-started/#ai)):
 

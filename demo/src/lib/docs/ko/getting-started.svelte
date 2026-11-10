@@ -75,6 +75,8 @@ chart.addIndicator('sma', { period: 20 })`}</code></pre>
 </p>
 
 <h2 id="ai">코딩 에이전트와 함께</h2>
+<p>가장 빠른 방법은 어떤 도구에서든 에이전트에게 전부 설치해 달라고 하는 것입니다. 에이전트는 <code>llms.txt</code>의 설치 단계를 읽고, 각 명령이 무엇을 하는지 알려 주고, skill을 이 프로젝트에만 둘지 모든 프로젝트에 둘지 물은 뒤, 패키지와 skill, 원하면 MCP 서버까지 추가합니다. 코드는 건드리지 않습니다.</p>
+<pre><code>{`Install TradeCanvas for me by reading https://tradecanvas.dev/llms.txt`}</code></pre>
 <p>코딩 에이전트는 TradeCanvas를 추측하지 않고 배울 수 있습니다. <strong>에이전트 스킬</strong>은 타입 검사를 거친 예제로 API를 알려 주며, Claude Code에서는 명령 두 줄로 설치합니다:</p>
 <pre><code>{`/plugin marketplace add bonguynvan/tradecanvas
 /plugin install tradecanvas@tradecanvas`}</code></pre>

@@ -75,6 +75,8 @@ chart.addIndicator('sma', { period: 20 })`}</code></pre>
 </p>
 
 <h2 id="ai">Dùng với coding agent</h2>
+<p>Cách nhanh nhất: nhờ agent của bạn, ở bất kỳ công cụ nào, cài hết mọi thứ. Agent đọc các bước cài trong <code>llms.txt</code>, nói rõ từng lệnh sẽ chạy gì, hỏi bạn cài skill cho dự án này hay cho mọi dự án, rồi thêm package, skill và, nếu bạn muốn, MCP server, mà không đụng vào code của bạn:</p>
+<pre><code>{`Install TradeCanvas for me by reading https://tradecanvas.dev/llms.txt`}</code></pre>
 <p>Coding agent có thể học TradeCanvas thay vì đoán. <strong>Agent skill</strong> dạy API qua các ví dụ được kiểm kiểu; trong Claude Code, cài bằng hai lệnh:</p>
 <pre><code>{`/plugin marketplace add bonguynvan/tradecanvas
 /plugin install tradecanvas@tradecanvas`}</code></pre>

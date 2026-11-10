@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.77.0 (2026-11-10)
 
 ### Features
 
