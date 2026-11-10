@@ -4,7 +4,7 @@ const id: SiteMessages = {
   meta: {
     title: 'TradeCanvas · Grafik trading berbasis Canvas untuk web',
     description:
-      'TradeCanvas adalah pustaka grafik trading untuk web, digambar dengan Canvas 2D atau WebGL: 18 jenis grafik, 134 indikator, 69 alat gambar, feed bursa langsung, order di grafik, replay dan backtesting, dalam 30 bahasa. Tanpa dependensi, MIT.',
+      'TradeCanvas adalah pustaka grafik trading untuk web, digambar dengan Canvas 2D atau WebGL: 18 jenis grafik, 134 indikator, 73 alat gambar, feed bursa langsung, order di grafik, replay dan backtesting, dalam 30 bahasa. Tanpa dependensi, MIT.',
   },
 
   nav: {
@@ -47,7 +47,7 @@ const id: SiteMessages = {
     release: 'perender WebGL, 30 bahasa',
     title: 'Mesin grafik untuk aplikasi trading.',
     ledeHtml:
-      'Dari candlestick hingga Renko, 134 indikator, 69 alat gambar, feed bursa langsung, dan order di grafik. Digambar dengan Canvas 2D atau WebGL, tanpa dependensi. Pasang <code>ChartWidget</code> yang lengkap, atau bangun UI Anda sendiri di atas <code>Chart</code> yang headless.',
+      'Dari candlestick hingga Renko, 134 indikator, 73 alat gambar, feed bursa langsung, dan order di grafik. Digambar dengan Canvas 2D atau WebGL, tanpa dependensi. Pasang <code>ChartWidget</code> yang lengkap, atau bangun UI Anda sendiri di atas <code>Chart</code> yang headless.',
     getStarted: 'Mulai',
     browseExamples: 'Lihat contoh',
     specsLabel: 'Angka kunci',
@@ -72,7 +72,7 @@ const id: SiteMessages = {
           text: 'Band, rata-rata, dan osilator di atas bar, level Fibonacci dan garis tren di atasnya, masing-masing dengan pengaturan dan peringatannya sendiri.',
           points: [
             '134 indikator, satu di atas yang lain, seperti rata-rata dari RSI',
-            '69 alat gambar dengan magnet, grup, dan undo',
+            '73 alat gambar dengan magnet, grup, dan undo',
             'Peringatan pada harga, garis, dan persilangan indikator',
           ],
         },
@@ -552,7 +552,7 @@ const id: SiteMessages = {
       },
       widget: {
         title: 'ChartWidget',
-        blurb: 'UI trading lengkap dalam satu panggilan: bilah alat, 69 alat gambar, daftar pantauan, trading, putar ulang, dalam 30 bahasa.',
+        blurb: 'UI trading lengkap dalam satu panggilan: bilah alat, 73 alat gambar, daftar pantauan, trading, putar ulang, dalam 30 bahasa.',
       },
       react: {
         title: 'React',
@@ -707,7 +707,7 @@ const id: SiteMessages = {
         { name: 'Pembaruan inkremental pada tick langsung', detail: 'update() hanya menghitung ulang bar yang sedang terbentuk' },
       ],
       drawings: [
-        { name: '69 alat gambar', detail: 'Garis, kanal, Fibonacci, Gann, pitchfork, gelombang Elliott, pola, siklus, proyeksi' },
+        { name: '73 alat gambar', detail: 'Garis, kanal, Fibonacci, Gann, pitchfork, gelombang Elliott, pola, siklus, proyeksi' },
         { name: 'Pengaturan khusus setiap alat', detail: 'Gaya, properti, dan koordinat pada kisi harga pasar' },
         { name: 'Posisi long dan short', detail: 'Risk:reward, kuantitas dari risiko dalam persen atau uang' },
         { name: 'Peringatan pada gambar', detail: 'Saat harga melintasi garis tren atau kanal sesuai gambarnya, termasuk pada skala log' },

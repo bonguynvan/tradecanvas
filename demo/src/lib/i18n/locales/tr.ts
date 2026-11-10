@@ -4,7 +4,7 @@ const tr: SiteMessages = {
   meta: {
     title: 'TradeCanvas · Web için Canvas alım satım grafikleri',
     description:
-      'TradeCanvas, Canvas 2D veya WebGL ile çizen, web için bir alım satım grafik kütüphanesidir: 18 grafik türü, 134 gösterge, 69 çizim aracı, canlı borsa akışları, grafik üzerinde emirler, replay ve backtest, 30 dilde. Sıfır bağımlılık, MIT.',
+      'TradeCanvas, Canvas 2D veya WebGL ile çizen, web için bir alım satım grafik kütüphanesidir: 18 grafik türü, 134 gösterge, 73 çizim aracı, canlı borsa akışları, grafik üzerinde emirler, replay ve backtest, 30 dilde. Sıfır bağımlılık, MIT.',
   },
 
   nav: {
@@ -47,7 +47,7 @@ const tr: SiteMessages = {
     release: 'WebGL oluşturucu, 30 dil',
     title: 'Alım satım uygulamaları için grafik motoru.',
     ledeHtml:
-      'Mum grafiklerinden Renko’ya, 134 gösterge, 69 çizim aracı, canlı borsa akışları ve grafik üzerinde emirler. Canvas 2D veya WebGL ile, sıfır bağımlılıkla çizilir. Hazır <code>ChartWidget</code>’ı ekleyin ya da kendi arayüzünüzü headless <code>Chart</code> üzerine kurun.',
+      'Mum grafiklerinden Renko’ya, 134 gösterge, 73 çizim aracı, canlı borsa akışları ve grafik üzerinde emirler. Canvas 2D veya WebGL ile, sıfır bağımlılıkla çizilir. Hazır <code>ChartWidget</code>’ı ekleyin ya da kendi arayüzünüzü headless <code>Chart</code> üzerine kurun.',
     getStarted: 'Başlayın',
     browseExamples: 'Örneklere göz atın',
     specsLabel: 'Temel rakamlar',
@@ -72,7 +72,7 @@ const tr: SiteMessages = {
           text: 'Mumların üzerinde bantlar, ortalamalar ve osilatörler, onların üstünde Fibonacci seviyeleri ve trend çizgileri; her birinin kendi ayarları ve alarmları var.',
           points: [
             '134 gösterge, biri diğerinin üzerinde, örneğin RSI’ın ortalaması',
-            'Mıknatıs, gruplar ve geri almayla 69 çizim aracı',
+            'Mıknatıs, gruplar ve geri almayla 73 çizim aracı',
             'Fiyatlar, çizgiler ve gösterge kesişimleri için alarmlar',
           ],
         },
@@ -552,7 +552,7 @@ const tr: SiteMessages = {
       },
       widget: {
         title: 'ChartWidget',
-        blurb: 'Tek çağrıyla eksiksiz alım satım arayüzü: araç çubuğu, 69 çizim aracı, izleme listesi, alım satım, tekrar; 30 dilde.',
+        blurb: 'Tek çağrıyla eksiksiz alım satım arayüzü: araç çubuğu, 73 çizim aracı, izleme listesi, alım satım, tekrar; 30 dilde.',
       },
       react: {
         title: 'React',
@@ -707,7 +707,7 @@ const tr: SiteMessages = {
         { name: 'Canlı tick’lerde artımlı güncellemeler', detail: 'update() yalnızca oluşmakta olan barı yeniden hesaplar' },
       ],
       drawings: [
-        { name: '69 çizim aracı', detail: 'Çizgiler, kanallar, Fibonacci, Gann, pitchfork’lar, Elliott dalgaları, formasyonlar, döngüler, projeksiyonlar' },
+        { name: '73 çizim aracı', detail: 'Çizgiler, kanallar, Fibonacci, Gann, pitchfork’lar, Elliott dalgaları, formasyonlar, döngüler, projeksiyonlar' },
         { name: 'Her aracın kendi ayarları', detail: 'Stil, özellikler ve piyasanın fiyat ızgarasında koordinatlar' },
         { name: 'Uzun ve kısa pozisyonlar', detail: 'Risk:ödül, yüzde ya da para cinsinden riske göre miktar' },
         { name: 'Çizim üzerinde alarmlar', detail: 'Fiyat bir trend çizgisini veya kanalı çizildiği hâliyle kestiğinde, logaritmik ölçek dahil' },

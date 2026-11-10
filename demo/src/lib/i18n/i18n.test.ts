@@ -4,6 +4,7 @@ import { DEFAULT_LANG, SITE_LANGUAGES, docsLang } from './languages';
 import { localizePath, splitLang, switchLang } from './paths';
 import { fill } from './messages';
 import { DOC_SLUGS } from '../docs';
+import indicators from '../generated/indicators.json';
 
 const dictionaries = import.meta.glob<{ default: unknown }>('./locales/*.ts', { eager: true });
 const docPages = new Set(Object.keys(import.meta.glob('../docs/*/*.svelte')));
@@ -15,6 +16,15 @@ const OPTIONAL: Record<string, string[]> = { notTranslated: ['language'] };
 
 const placeholders = (s: string, key: string) =>
   [...s.matchAll(/\{(\w+)\}/g)].map((m) => m[1]).filter((name) => !OPTIONAL[key]?.includes(name)).sort();
+/**
+ * The figures a string gives. The headline ones, those the site's description
+ * states (chart types, indicators, drawing tools, languages), are kept by every
+ * translation of a string that gives them, so a count changed in English is
+ * changed in every language. Other figures may be written the language's way
+ * (100 as 百, 200,000 as 20万).
+ */
+const figures = (s: string) => [...s.matchAll(/\d{2,}/g)].map((m) => m[0]).filter((n) => HEADLINE.includes(n));
+const HEADLINE = [...en.meta.description.matchAll(/\d{2,}/g)].map((m) => m[0]);
 const tags = (s: string) => [...s.matchAll(/<\/?([a-z]+)[^>]*>/g)].map((m) => m[0].startsWith('</') ? `/${m[1]}` : m[1]);
 
 /** Every way `other` differs from `source`: missing or extra keys, array lengths, placeholders, markup. */
@@ -24,6 +34,8 @@ function differences(source: Tree, other: unknown, path: string, key = ''): stri
     const out: string[] = [];
     if (placeholders(source, key).join() !== placeholders(other, key).join()) out.push(`${path}: placeholders differ`);
     if (key.endsWith('Html') && tags(source).sort().join() !== tags(other).sort().join()) out.push(`${path}: markup differs`);
+    const lost = figures(source).filter((n) => !figures(other).includes(n));
+    if (lost.length) out.push(`${path}: says ${lost.join(', ')} in English, not here`);
     return out;
   }
   if (Array.isArray(source)) {
@@ -44,6 +56,10 @@ describe('site strings', () => {
   it.each(SITE_LANGUAGES.map((l) => l.code))('%s has the English keys, placeholders and markup', (code) => {
     const dictionary = dictionaries[`./locales/${code}.ts`]?.default;
     expect(differences(en as Tree, dictionary, code)).toEqual([]);
+  });
+
+  it('gives the indicator count the code has', () => {
+    expect(HEADLINE).toContain(String(indicators.length));
   });
 
   it('fills placeholders and leaves unknown ones', () => {

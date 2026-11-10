@@ -4,7 +4,7 @@ const fr: SiteMessages = {
   meta: {
     title: 'TradeCanvas · Graphiques de trading en Canvas pour le web',
     description:
-      'TradeCanvas est une bibliothèque de graphiques de trading pour le web, dessinée en Canvas 2D ou WebGL : 18 types de graphiques, 134 indicateurs, 69 outils de dessin, flux de marché en direct, ordres sur le graphique, replay et backtesting, en 30 langues. Aucune dépendance, MIT.',
+      'TradeCanvas est une bibliothèque de graphiques de trading pour le web, dessinée en Canvas 2D ou WebGL : 18 types de graphiques, 134 indicateurs, 73 outils de dessin, flux de marché en direct, ordres sur le graphique, replay et backtesting, en 30 langues. Aucune dépendance, MIT.',
   },
 
   nav: {
@@ -47,7 +47,7 @@ const fr: SiteMessages = {
     release: 'moteur de rendu WebGL, 30 langues',
     title: 'Le moteur de graphiques des applications de trading.',
     ledeHtml:
-      'Des chandeliers au Renko, 134 indicateurs, 69 outils de dessin, des flux de marché en direct et des ordres sur le graphique. Dessiné en Canvas 2D ou WebGL, sans aucune dépendance. Intégrez le <code>ChartWidget</code> complet ou bâtissez votre propre interface sur le moteur headless <code>Chart</code>.',
+      'Des chandeliers au Renko, 134 indicateurs, 73 outils de dessin, des flux de marché en direct et des ordres sur le graphique. Dessiné en Canvas 2D ou WebGL, sans aucune dépendance. Intégrez le <code>ChartWidget</code> complet ou bâtissez votre propre interface sur le moteur headless <code>Chart</code>.',
     getStarted: 'Commencer',
     browseExamples: 'Voir les exemples',
     specsLabel: 'Chiffres clés',
@@ -72,7 +72,7 @@ const fr: SiteMessages = {
           text: 'Bandes, moyennes et oscillateurs sur les bougies, niveaux de Fibonacci et lignes de tendance par-dessus, chacun avec ses réglages et ses alertes.',
           points: [
             '134 indicateurs, l’un sur l’autre, comme une moyenne du RSI',
-            '69 outils de dessin avec aimant, groupes et annulation',
+            '73 outils de dessin avec aimant, groupes et annulation',
             'Alertes sur les prix, les lignes et les croisements d’indicateurs',
           ],
         },
@@ -552,7 +552,7 @@ const fr: SiteMessages = {
       },
       widget: {
         title: 'ChartWidget',
-        blurb: 'Toute l’interface de trading en un appel : barre d’outils, 69 outils de dessin, liste de suivi, trading, relecture, en 30 langues.',
+        blurb: 'Toute l’interface de trading en un appel : barre d’outils, 73 outils de dessin, liste de suivi, trading, relecture, en 30 langues.',
       },
       react: {
         title: 'React',
@@ -707,7 +707,7 @@ const fr: SiteMessages = {
         { name: 'Mises à jour incrémentales sur les ticks en direct', detail: 'update() ne recalcule que la barre en formation' },
       ],
       drawings: [
-        { name: '69 outils de dessin', detail: 'Lignes, canaux, Fibonacci, Gann, fourchettes, vagues d’Elliott, figures, cycles, projections' },
+        { name: '73 outils de dessin', detail: 'Lignes, canaux, Fibonacci, Gann, fourchettes, vagues d’Elliott, figures, cycles, projections' },
         { name: 'Les réglages propres à chaque outil', detail: 'Style, propriétés et coordonnées sur la grille de prix du marché' },
         { name: 'Positions acheteuses et vendeuses', detail: 'Rapport risque/rendement, quantité à partir du risque en pourcentage ou en montant' },
         { name: 'Alertes sur un dessin', detail: 'Quand le prix franchit une ligne de tendance ou un canal tel qu’il est dessiné, échelle logarithmique comprise' },
