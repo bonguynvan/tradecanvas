@@ -118,3 +118,16 @@ const adapter = new BinanceAdapter()
   그림, 트레이딩, 실행 어댑터, 플러그인, 크기 조절 가능한 패널 등
   전체 API를 사용할 수 있습니다.
 </blockquote>
+
+<h2 id="powered-by">Powered by 배지</h2>
+<p>앱에서 TradeCanvas를 표기하려면 이 배지를 넣으세요. 문구, TC 마크, 워드마크가 tradecanvas.dev로 가는 하나의 링크가 되며, 스크린 리더는 “Powered by TradeCanvas”로 읽습니다. 주변 글자 색을 따르므로 라이트·다크 테마에 저절로 맞고, 마크의 캔들만 브랜드의 앰버 색을 유지합니다.</p>
+<pre><code>{'<' + `script lang="ts">
+  import { PoweredBy } from '@tradecanvas/svelte'
+` + '<' + `/script>
+
+<PoweredBy size={14} />`}</code></pre>
+
+<pre><code>{`import { createPoweredBy } from '@tradecanvas/chart'
+
+statusBar.append(createPoweredBy({ height: 14 }))`}</code></pre>
+<p><code>size</code>(Svelte) 또는 <code>height</code>는 마크의 높이(픽셀, 12 이상)입니다. 상태 표시줄에는 14–16, 푸터에는 24가 어울립니다. 문구는 페이지의 글꼴로 표시되며 10 px보다 작아지지 않습니다. <code>href</code>와 <code>target</code>(기본값 <code>_blank</code>)은 링크에 적용됩니다. <code>poweredByHtml()</code>은 마크업을, <code>TRADECANVAS_MARK_SVG</code>와 <code>TRADECANVAS_WORDMARK_SVG</code>는 그림만 제공합니다.</p>
