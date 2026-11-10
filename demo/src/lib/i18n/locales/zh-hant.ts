@@ -914,6 +914,7 @@ const zhHant: SiteMessages = {
       'getting-started': '快速入門',
       frameworks: '框架整合',
       embed: '可嵌入的元件',
+      'how-it-works': '運作原理',
       api: 'API 參考',
       styling: '樣式',
       customization: '自訂',

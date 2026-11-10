@@ -914,6 +914,7 @@ const th: SiteMessages = {
       'getting-started': 'เริ่มต้นใช้งาน',
       frameworks: 'เฟรมเวิร์ก',
       embed: 'วิดเจ็ตแบบฝัง',
+      'how-it-works': 'วิธีการทำงาน',
       api: 'เอกสารอ้างอิง API',
       styling: 'การปรับแต่งหน้าตา',
       customization: 'การปรับแต่งเชิงลึก',

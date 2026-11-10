@@ -915,6 +915,7 @@ const zh: SiteMessages = {
       'getting-started': '快速开始',
       frameworks: '框架',
       embed: '可嵌入组件',
+      'how-it-works': '工作原理',
       api: 'API 参考',
       styling: '样式',
       customization: '定制',
