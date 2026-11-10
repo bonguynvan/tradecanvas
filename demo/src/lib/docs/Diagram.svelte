@@ -112,14 +112,14 @@ ${root}{--dg-accent:var(--accent,var(--brand,#e8961e));--dg-wash:color-mix(in sr
 ${root} .dg-scroll{overflow-x:auto;border:1px solid ${LINE};border-radius:8px;background:var(--bg-elevated,var(--card,transparent));padding:12px}
 ${root} svg{display:block;width:100%;min-width:600px;height:auto;max-width:100%}
 ${root} g[data-node],${root} g[data-edge]{transition:opacity .15s}
-${root} .dg-label{font:11.5px var(--dg-mono);paint-order:stroke;stroke:var(--bg-elevated,var(--card,#fff));stroke-width:4px;stroke-linejoin:round}
+${root} .dg-label{font:11.5px var(--dg-mono);paint-order:stroke;stroke:var(--bg-elevated,var(--card,var(--bg,var(--page,Canvas))));stroke-width:4px;stroke-linejoin:round}
 ${root}:has(li[data-step]:is(:hover,:focus)) g[data-node],${root}:has(li[data-step]:is(:hover,:focus)) g[data-edge]{opacity:.35}
 ${root} ol{list-style:none;margin:16px 0 0!important;padding:0!important;display:grid;gap:4px}
 ${root} li{display:grid;grid-template-columns:24px minmax(0,1fr);gap:10px;margin:0!important;padding:8px 10px;border-radius:6px;cursor:default;outline:none}
 ${root} li:is(:hover,:focus){background:var(--dg-wash)}
 ${root} li:focus-visible{box-shadow:inset 0 0 0 2px var(--dg-accent)}
 ${root} li .dg-n{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;border:1px solid ${LINE};font:600 12px/1 var(--dg-mono);color:var(--text)}
-${root} li:is(:hover,:focus) .dg-n{border-color:var(--dg-accent);background:var(--dg-accent);color:var(--accent-ink,var(--on-brand,#141412))}
+${root} li:is(:hover,:focus) .dg-n{border-color:var(--dg-accent);background:var(--dg-accent);color:var(--bg,var(--page,Canvas))}
 ${root} li strong{color:var(--text)}
 ${root} figcaption{font-size:13px;color:var(--text-muted,var(--text-3));margin-top:8px}
 ${rules.join('\n')}
@@ -165,7 +165,7 @@ ${rules.join('\n')}
       {/each}
     </svg>
   </div>
-  <ol>
+  <ol role="list">
     {#each steps as step, i}
       <!-- A step takes focus so that a keyboard lights up its boxes, as a pointer does. -->
       <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
@@ -175,5 +175,5 @@ ${rules.join('\n')}
       </li>
     {/each}
   </ol>
-  <figcaption>{label}</figcaption>
+  <figcaption aria-hidden="true">{label}</figcaption>
 </figure>

@@ -12,6 +12,7 @@ const LANGS = Object.keys(PAGES);
 describe('the How it works diagrams', () => {
   it.each(SHAPES.map((s) => [s.id, s] as const))('%s keeps every box inside the picture and apart', (_, shape) => {
     const ids = shape.nodes.map((n) => n.id);
+    for (const id of [shape.id, ...ids]) expect(id).toMatch(/^[a-z][a-z0-9-]*$/);
     expect(new Set(ids).size).toBe(ids.length);
     for (const n of shape.nodes) {
       expect(n.x).toBeGreaterThanOrEqual(10);
