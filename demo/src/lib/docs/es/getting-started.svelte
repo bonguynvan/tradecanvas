@@ -79,6 +79,8 @@ chart.addIndicator('sma', { period: 20 })`}</code></pre>
 </p>
 
 <h2 id="ai">Con un agente de programación</h2>
+<p>La forma más rápida: pide a tu agente, en cualquier herramienta, que lo instale todo. Lee los pasos de instalación de <code>llms.txt</code>, te dice qué ejecuta cada comando, te pregunta si el skill va en este proyecto o en todos, y añade el paquete, el skill y, si lo quieres, el servidor MCP, sin tocar tu código:</p>
+<pre><code>{`Install TradeCanvas for me by reading https://tradecanvas.dev/llms.txt`}</code></pre>
 <p>Los agentes de programación pueden aprender TradeCanvas en lugar de adivinarlo. La <strong>skill para agentes</strong> enseña la API con ejemplos cuyos tipos se comprueban; en Claude Code se instala con dos comandos:</p>
 <pre><code>{`/plugin marketplace add bonguynvan/tradecanvas
 /plugin install tradecanvas@tradecanvas`}</code></pre>

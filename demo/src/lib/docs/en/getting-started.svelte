@@ -75,6 +75,8 @@ chart.addIndicator('sma', { period: 20 })`}</code></pre>
 </p>
 
 <h2 id="ai">With a coding agent</h2>
+<p>The quickest way: ask your agent, in any tool, to set it all up. It reads the install steps in <code>llms.txt</code>, tells you what each command runs, asks whether the skill goes in this project or every one, and adds the package, the skill and, if you want it, the MCP server, without touching your code:</p>
+<pre><code>{`Install TradeCanvas for me by reading https://tradecanvas.dev/llms.txt`}</code></pre>
 <p>Coding agents can learn TradeCanvas instead of guessing it. The <strong>agent skill</strong> teaches the API with examples that are type-checked; in Claude Code it installs with two commands:</p>
 <pre><code>{`/plugin marketplace add bonguynvan/tradecanvas
 /plugin install tradecanvas@tradecanvas`}</code></pre>

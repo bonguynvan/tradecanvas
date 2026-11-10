@@ -75,6 +75,8 @@ chart.addIndicator('sma', { period: 20 })`}</code></pre>
 </p>
 
 <h2 id="ai">コーディングエージェントと使う</h2>
+<p>いちばん手早い方法は、使っているエージェント（どのツールでも）にまとめて入れてもらうことです。エージェントは <code>llms.txt</code> のインストール手順を読み、各コマンドが何をするかを伝え、skill をこのプロジェクトだけに入れるか全プロジェクトに入れるかを確認してから、パッケージと skill、必要なら MCP サーバーを追加します。コードには手を触れません。</p>
+<pre><code>{`Install TradeCanvas for me by reading https://tradecanvas.dev/llms.txt`}</code></pre>
 <p>コーディングエージェントは TradeCanvas を推測せずに学べます。<strong>エージェントスキル</strong>は型チェック済みのサンプルで API を教えます。Claude Code では 2 つのコマンドでインストールできます:</p>
 <pre><code>{`/plugin marketplace add bonguynvan/tradecanvas
 /plugin install tradecanvas@tradecanvas`}</code></pre>

@@ -74,6 +74,8 @@ chart.addIndicator('sma', { period: 20 })`}</code></pre>
 </p>
 
 <h2 id="ai">配合编程 agent 使用</h2>
+<p>最快的方式：让你的 agent（任何工具都行）把一切装好。它会读取 <code>llms.txt</code> 中的安装步骤，说明每条命令会做什么，询问 skill 装在当前项目还是所有项目，然后添加 package、skill，以及你需要的话 MCP server，不会改动你的代码：</p>
+<pre><code>{`Install TradeCanvas for me by reading https://tradecanvas.dev/llms.txt`}</code></pre>
 <p>编程 agent 可以学会 TradeCanvas，而不必靠猜。<strong>agent 技能</strong>通过经过类型检查的示例讲解 API；在 Claude Code 中用两条命令安装：</p>
 <pre><code>{`/plugin marketplace add bonguynvan/tradecanvas
 /plugin install tradecanvas@tradecanvas`}</code></pre>
