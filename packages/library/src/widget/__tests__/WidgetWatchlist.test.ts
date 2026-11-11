@@ -208,6 +208,21 @@ describe('WidgetWatchlist rows, one line of figures', () => {
     plain.destroy();
   });
 
+  it('puts a symbol’s logo before its ticker, and nothing for a symbol without one', () => {
+    const other = document.createElement('div');
+    const logos = new WidgetWatchlist(other, calls, LABELS, {
+      infoOf: (symbol) => (symbol === lists[0].symbols[0] ? { symbol, logo: 'https://example.com/a.svg' } : undefined),
+    });
+    logos.setLists(lists, 'a');
+    const rows = [...other.querySelectorAll<HTMLElement>('.tcw-watchlist-row')];
+    const logo = rows[0].querySelector<HTMLImageElement>('.tcw-watchlist-symbol img.tcw-watchlist-logo');
+    expect(logo?.src).toBe('https://example.com/a.svg');
+    expect(logo?.getAttribute('aria-hidden')).toBe('true');
+    expect(rows[0].querySelector('.tcw-watchlist-symbol')?.textContent).toBe('BTC/USDT');
+    expect(rows.slice(1).every((r) => !r.querySelector('.tcw-watchlist-logo'))).toBe(true);
+    logos.destroy();
+  });
+
   it('draws sparklines when asked', () => {
     const other = document.createElement('div');
     const spark = new WidgetWatchlist(other, calls, LABELS, { sparkline: true });

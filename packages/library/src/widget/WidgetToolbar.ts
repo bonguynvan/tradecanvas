@@ -408,6 +408,15 @@ export class WidgetToolbar {
     }
 
     // The panels' buttons are switches from the start (`setActive`), so "more" lists them as such when off too.
+    // Each shows only where the dock's rail has none for its panel (`setRailed`): a grid's charts have no rail.
+    if (callbacks.onToggleWatchlist) {
+      const watchlistBtn = this.iconBtn('list', this.t('watchlist.title'), callbacks.onToggleWatchlist);
+      watchlistBtn.dataset.role = 'watchlist';
+      watchlistBtn.setAttribute('aria-pressed', 'false');
+      markPart(watchlistBtn, 'dock.watchlist');
+      el.appendChild(watchlistBtn);
+    }
+
     if (callbacks.onToggleObjects) {
       const objectsBtn = this.iconBtn('layers', this.t('toolbar.objects'), callbacks.onToggleObjects);
       objectsBtn.dataset.role = 'objects';

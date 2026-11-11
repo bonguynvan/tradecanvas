@@ -1031,7 +1031,7 @@ new ChartWidget(host, {
 <pre><code>{`import { ChartWidgetGrid } from '@tradecanvas/chart/widget'
 
 const grid = new ChartWidgetGrid(host, {
-  layout: '2x2',                                   // '1x1' '1x2' '2x1' '2x2' '1x3' '3x1' '2x3' '3x2'
+  layout: '2x2',                                   // '1x2'、'2x2'、'3x3'、'1+2'、'1/3'…（完整列表见 ChartGrid）
   widget: { timeframe: '1h' },                    // 作用于每个图表
   adapter: () => new BinanceAdapter(),            // 每个图表一个：一个适配器只维持一条数据流
   // 或 widget: { timeframe: '1h', feed }：一个 DataFeed 服务所有图表
@@ -1067,4 +1067,14 @@ const grid = new ChartGrid(host, { layout: '2x2', theme: 'dark' })
 await grid.connectAll(() => new BinanceAdapter(), ['BTCUSDT','ETHUSDT','SOLUSDT','BNBUSDT'], '5m')
 grid.setLayout('1x2')`}</code></pre>
 
-<p>布局：<code>'1x1'</code>、<code>'1x2'</code>、<code>'2x1'</code>、<code>'2x2'</code>、<code>'1x3'</code>、<code>'3x1'</code>、<code>'2x3'</code>、<code>'3x2'</code>。</p>
+<p>
+  布局，<code>ChartGrid</code> 与 <code>ChartWidgetGrid</code> 通用。
+  普通网格按“行 × 列”命名（<code>'1x2'</code> 是一行两个图表）：<code>'1x1'</code>、<code>'1x2'</code>、<code>'2x1'</code>、<code>'1x3'</code>、<code>'3x1'</code>、<code>'2x2'</code>、<code>'1x4'</code>、<code>'4x1'</code>、<code>'2x3'</code>、<code>'3x2'</code>、<code>'2x4'</code>、<code>'3x3'</code>。
+  其余布局有一个大图：<code>'1+2'</code> 和 <code>'1+3'</code>（大图在左，右侧上下排列两个或三个），
+  <code>'2+1'</code>（左侧上下排列两个，大图在右），<code>'1/2'</code> 和 <code>'1/3'</code>（大图在上，下方两个或三个），
+  <code>'2/1'</code>（上方两个，下方一个宽图）。大图是第一个图表，<code>'2+1'</code> 和 <code>'2/1'</code> 中则是最后一个。
+  <code>GRID_SHAPES</code> 给出每种布局的 <code>cols</code>、<code>rows</code>，以及带大图布局中各图表所占的
+  <code>areas</code>（<code>[col, row, colSpan, rowSpan]</code>，按图表顺序）。
+  <code>ChartWidgetGrid</code> 的工具栏用一个按钮显示当前布局，点击后打开布局选择面板，按图表数量分行；
+  <code>layoutChoices</code> 可限制可选的布局。
+</p>

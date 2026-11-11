@@ -317,7 +317,7 @@ await workspace.getLayoutSession()?.saveAs('Pair')`,
     data: (symbol) => generateBars(500, symbol, 15 * 60_000, 2500),
     grid: () => ({
       layout: '1x2',
-      layoutChoices: ['1x1', '1x2', '2x1', '2x2'],
+      layoutChoices: ['1x1', '1x2', '2x1', '1+2', '2/1', '2x2', '1/3'],
       cells: [{ symbol: 'DEMO' }, { symbol: 'ALPHA', timeframe: '1h' }, { symbol: 'BETA' }, { symbol: 'GAMMA', timeframe: '4h' }],
       sync: { crosshair: true },
     }),

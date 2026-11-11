@@ -638,6 +638,7 @@ export class ChartWidget {
         onToggleReplay: () => this.toggleReplay(),
         onToggleAlerts: () => this.alerting.toggleAlerts(),
         onToggleObjects: () => this.docking.toggleObjects(),
+        onToggleWatchlist: options.watchlist ? () => this.docking.toggleWatchlist() : undefined,
         onToggleAccount: options.trading !== false ? () => this.trading.toggleAccountPanel() : undefined,
         onLayouts: options.layouts !== false ? (anchor) => void this.layouts.layoutsUI?.openMenu(anchor) : undefined,
         onBracket: options.trading !== false ? (side) => this.trading.startBracket(side) : undefined,

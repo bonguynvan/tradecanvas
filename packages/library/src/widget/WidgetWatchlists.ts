@@ -1,4 +1,4 @@
-import type { Quote, QuoteSource } from '@tradecanvas/commons';
+import type { Quote, QuoteSource, SymbolInfo } from '@tradecanvas/commons';
 import { readQuote } from '@tradecanvas/commons';
 import { browserStorage, pageHidden } from './pageEnv.js';
 import { WidgetWatchlist, type WatchlistEntry } from './WidgetWatchlist.js';
@@ -145,7 +145,11 @@ export class WidgetWatchlists {
         move: t('watchlist.columnMove'),
         change: t('watchlist.columnChange'),
       },
-    }, { sparkline: opts.sparkline === true });
+    }, {
+      sparkline: opts.sparkline === true,
+      // The logos given with the symbols (`symbols` as SymbolInfo), as the symbol search shows them.
+      infoOf: (sym) => this.host.symbolEntries().find((e): e is SymbolInfo => typeof e !== 'string' && e.symbol === sym),
+    });
     this.watchlist.setActive(this.host.state.symbol);
     this.watchlist.setLocale(this.host.settingsState.numberLocale || undefined);
     const show = () => {

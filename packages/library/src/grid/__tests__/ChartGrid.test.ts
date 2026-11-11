@@ -147,3 +147,37 @@ describe('ChartGrid connectAll', () => {
     expect(connects.every((c) => c.mock.calls[0][0].adapter === undefined)).toBe(true);
   });
 });
+
+describe('ChartGrid layouts', () => {
+  const areas = () => [...host.firstElementChild!.children].map((c) => (c as HTMLElement).style.gridArea);
+
+  it('places a large chart over several cells', () => {
+    grid = new ChartGrid(host, { layout: '1+2' });
+    const root = host.firstElementChild as HTMLElement;
+    expect(root.style.gridTemplateColumns).toBe('repeat(2, minmax(0, 1fr))');
+    expect(root.style.gridTemplateRows).toBe('repeat(2, minmax(0, 1fr))');
+    expect(areas()).toEqual(['1 / 1 / span 2 / span 1', '1 / 2 / span 1 / span 1', '2 / 2 / span 1 / span 1']);
+  });
+
+  it('grows, shrinks and moves its charts to the new places', () => {
+    grid = new ChartGrid(host, { layout: '1x2' });
+    const first = grid.getChart(0);
+    grid.setLayout('3x3');
+    expect(grid.getCellCount()).toBe(9);
+    expect(grid.getLayout()).toBe('3x3');
+    grid.setLayout('2/1');
+    expect(grid.getCellCount()).toBe(3);
+    expect(grid.getChart(0)).toBe(first);
+    expect(areas()).toEqual(['1 / 1 / span 1 / span 1', '1 / 2 / span 1 / span 1', '2 / 1 / span 1 / span 2']);
+    grid.setLayout('1/3');
+    expect(grid.getCellCount()).toBe(4);
+    expect(areas()[0]).toBe('1 / 1 / span 1 / span 3');
+  });
+
+  it('turns down an arrangement it does not know', () => {
+    grid = new ChartGrid(host, { layout: 'nope' as never });
+    expect(grid.getLayout()).toBe('2x2');
+    grid.setLayout('constructor' as never);
+    expect(grid.getCellCount()).toBe(4);
+  });
+});

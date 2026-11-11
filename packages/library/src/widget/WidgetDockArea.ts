@@ -20,7 +20,7 @@ const PANEL_FEATURES = {
 } as const satisfies Record<Exclude<WidgetPanel, 'watchlist'>, WidgetFeature>;
 
 /** The toolbar's button for a panel, where it has one. */
-const PANEL_TOOLBAR_ROLES: Partial<Record<WidgetPanel, string>> = { alerts: 'alerts', objectTree: 'objects', symbolInfo: 'symbolInfo', depthLadder: 'trade' };
+const PANEL_TOOLBAR_ROLES: Partial<Record<WidgetPanel, string>> = { watchlist: 'watchlist', alerts: 'alerts', objectTree: 'objects', symbolInfo: 'symbolInfo', depthLadder: 'trade' };
 
 /** What the dock reads of the widget around it, and asks of it. */
 export interface DockHost {
@@ -154,6 +154,11 @@ export class WidgetDockArea {
     this.dock?.toggle('dataWindow');
   }
 
+  toggleWatchlist(): void {
+    if (!this.host.watching.watchlist) return;
+    this.dock?.toggle('watchlist');
+  }
+
   toggleObjects(): void {
     if (!this.host.objectTree || !this.host.featureState.objectTree) return;
     this.dock?.toggle('objectTree');
@@ -170,7 +175,14 @@ export class WidgetDockArea {
     if (this.host.watching.watchlist) {
       const list = this.host.watching.watchlist;
       // Hidden, its sparklines were drawn at no size: drawn again as it shows.
-      dock.addPage({ id: 'watchlist', label: this.host.t('watchlist.title'), icon: 'list', element: list.element, parts: ['dock.watchlist'], onShow: () => list.redraw() });
+      dock.addPage({
+        id: 'watchlist', label: this.host.t('watchlist.title'), icon: 'list', element: list.element, parts: ['dock.watchlist'],
+        onShow: () => {
+          list.redraw();
+          this.host.markOpen('watchlist', true);
+        },
+        onHide: () => this.host.markOpen('watchlist', false),
+      });
     }
     const alerts = this.host.alerting.alertsPanel;
     if (alerts) {
@@ -265,6 +277,7 @@ export class WidgetDockArea {
   syncRail(): void {
     this.dock?.syncRail();
     const rail = this.railShown();
+    this.host.toolbar?.setRailed('watchlist', rail && this.host.featureState['dock.watchlist']);
     this.host.toolbar?.setRailed('alerts', rail && this.host.featureState['dock.alerts']);
     this.host.toolbar?.setRailed('objects', rail && this.host.featureState['dock.objectTree']);
     this.host.toolbar?.fit();

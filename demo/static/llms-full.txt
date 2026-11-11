@@ -1191,16 +1191,26 @@ grid.getChart(0)?.addIndicator('ema', { period: 50 });
 ```
 
 With the full widget on each chart, `ChartWidgetGrid` adds a bar to pick the
-arrangement and the sync, and saves the whole grid as a named layout:
+arrangement and the sync, and saves the whole grid as a named layout.
+
+Both grids take the same layouts. Plain ones are rows × columns: `'1x1'`,
+`'1x2'` (one row of two), `'2x1'`, `'1x3'`, `'3x1'`, `'2x2'`, `'1x4'`, `'4x1'`,
+`'2x3'`, `'3x2'`, `'2x4'`, `'3x3'`. The others have one large chart: `'1+2'`
+and `'1+3'` (large on the left), `'2+1'` (large on the right), `'1/2'` and
+`'1/3'` (large on top), `'2/1'` (wide at the bottom). The large chart is the
+first, except in `'2+1'` and `'2/1'`, where it is the last. `GRID_SHAPES`
+gives each layout's `cols`, `rows` and `areas`; `layoutChoices` narrows the
+widget grid's picker.
 
 ```ts
 import { ChartWidgetGrid } from '@tradecanvas/chart/widget';
 import { BinanceAdapter } from '@tradecanvas/chart';
 
 const workspace = new ChartWidgetGrid(document.getElementById('grid')!, {
-  layout: '1x2',
+  layout: '1+2',                         // one large on the left, two beside it
+  layoutChoices: ['1x2', '1+2', '2x2', '1/3'],
   adapter: () => new BinanceAdapter(),   // one per chart
-  cells: [{ symbol: 'BTCUSDT' }, { symbol: 'ETHUSDT', timeframe: '1h' }],
+  cells: [{ symbol: 'BTCUSDT' }, { symbol: 'ETHUSDT', timeframe: '1h' }, { symbol: 'SOLUSDT' }],
   sync: { crosshair: true, interval: true },
 });
 workspace.getActiveWidget().getChart().addIndicator('rsi', { period: 14 });

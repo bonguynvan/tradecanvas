@@ -7115,26 +7115,46 @@
           "1x1",
           "1x2",
           "2x1",
-          "2x2",
           "1x3",
           "3x1",
+          "1+2",
+          "2+1",
+          "1/2",
+          "2/1",
+          "2x2",
+          "1x4",
+          "4x1",
+          "1+3",
+          "1/3",
           "2x3",
-          "3x2"
+          "3x2",
+          "2x4",
+          "3x3"
         ]
       },
       {
         "name": "layoutChoices",
         "type": "readonly GridLayout[]",
-        "doc": "The arrangements the bar offers. Default all of them.",
+        "doc": "The arrangements the bar's picker offers, listed by chart count. Default all of them.",
         "items": [
           "1x1",
           "1x2",
           "2x1",
-          "2x2",
           "1x3",
           "3x1",
+          "1+2",
+          "2+1",
+          "1/2",
+          "2/1",
+          "2x2",
+          "1x4",
+          "4x1",
+          "1+3",
+          "1/3",
           "2x3",
-          "3x2"
+          "3x2",
+          "2x4",
+          "3x3"
         ]
       },
       {

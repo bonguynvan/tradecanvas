@@ -2176,6 +2176,16 @@
   white-space: nowrap;
 }
 
+/* A symbol's logo before its ticker, as tall as the ticker's capitals, cornered as the look's tags. */
+.tcw-watchlist-symbol .tcw-watchlist-logo {
+  width: 1.25em;
+  height: 1.25em;
+  margin-inline-end: var(--tcw-space-2);
+  vertical-align: -0.25em;
+  border-radius: var(--tcw-tag-radius);
+  object-fit: contain;
+}
+
 .tcw-watchlist-spark {
   width: 48px;
   height: 18px;
@@ -4073,6 +4083,37 @@
   border: 1px solid var(--tcw-accent);
   pointer-events: none;
   z-index: 5;
+}
+/* The arrangement button: the one in use, and the picker it opens. */
+.tcw-grid-layout-btn {
+  gap: var(--tcw-space-2);
+  padding: 0 var(--tcw-space-3);
+}
+.tcw-grid-layout-btn > svg:first-child { color: var(--tcw-text); }
+.tcw-grid-layout-btn[aria-expanded='true'] { background: var(--tcw-hover-bg); color: var(--tcw-text); }
+/* A row for each chart count: the count, then its arrangements. */
+.tcw-grid-picker { min-width: 0; }
+.tcw-grid-picker-group {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--tcw-space-3);
+  padding: 1px var(--tcw-space-2);
+}
+.tcw-grid-picker-group + .tcw-grid-picker-group { border-top: 1px solid var(--tcw-divider); }
+.tcw-grid-picker-count {
+  flex: none;
+  min-width: 1.5em;
+  line-height: var(--tcw-control-h);
+  text-align: end;
+  font-size: var(--tcw-font-size-xs);
+  font-variant-numeric: tabular-nums;
+  color: var(--tcw-text-muted);
+}
+.tcw-grid-picker-row { display: flex; flex-wrap: wrap; gap: 2px; }
+.tcw-grid-picker-item[aria-checked='true'] {
+  background: var(--tcw-on-icon-bg);
+  color: var(--tcw-on-icon-fg);
+  box-shadow: var(--tcw-on-icon-ring);
 }
 
 /* --- Host toolbar buttons --- */

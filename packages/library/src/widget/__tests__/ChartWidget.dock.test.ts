@@ -285,6 +285,30 @@ describe('ChartWidget dock', () => {
     expect(panel().hidden).toBe(true);
   });
 
+  it('with the rail off, opens and shuts the watchlist from a toolbar button, as a grid’s charts have it', () => {
+    make({ watchlist: { lists: [{ id: 'a', name: 'A', symbols: ['AAA'] }] } });
+    const button = () => host.querySelector<HTMLButtonElement>('.tcw-toolbar [data-role="watchlist"]')!;
+    // The rail has its own button for it.
+    expect(visible(button())).toBe(false);
+    widget.setFeatures({ dock: false });
+    expect(visible(button())).toBe(true);
+    button().click();
+    expect(widget.getOpenPanel()).toBe('watchlist');
+    expect(button().getAttribute('aria-pressed')).toBe('true');
+    button().click();
+    expect(panel().hidden).toBe(true);
+    expect(button().getAttribute('aria-pressed')).toBe('false');
+  });
+
+  it('has no watchlist button without a watchlist, or with its switch off', () => {
+    make();
+    widget.setFeatures({ dock: false });
+    expect(host.querySelector('.tcw-toolbar [data-role="watchlist"]')).toBeNull();
+    widget.destroy();
+    make({ watchlist: { lists: [{ id: 'a', name: 'A', symbols: ['AAA'] }] }, features: { dock: false, 'dock.watchlist': false } });
+    expect(visible(host.querySelector('.tcw-toolbar [data-role="watchlist"]'))).toBe(false);
+  });
+
   it('takes a panel away with its switch, shutting it if it was open', () => {
     make();
     railButton('alerts').click();

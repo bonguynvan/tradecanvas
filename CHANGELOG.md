@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+### Widget
+
+- **A watchlist kept between visits takes the lists added later** (`@tradecanvas/chart`). With `watchlist.persist`, the lists the user kept used to replace `watchlist.lists` for good, so a list a site added later never reached someone who had visited before. Now:
+  - the user's lists stay as they left them;
+  - a list added to `lists` later is added after theirs;
+  - one they removed stays removed.
+- **The watchlist opens from the toolbar where there is no rail** (`@tradecanvas/chart`). A grid's charts have no rail of panels, so once the watchlist was shut, nothing opened it again. The toolbar now has a Watchlist button wherever the rail has none, as it has for the alerts and the objects.
+- **A watchlist row shows the symbol's logo** (`@tradecanvas/chart`), before its ticker, when the symbol has one (`symbols` given as `SymbolInfo` with a `logo`, as the symbol search shows them). A symbol without one shows no initial: the ticker beside it says the same.
+
+## 1.82.0 (2026-11-11)
+
 ### Drawings
 
 - **Cursor kinds** (`@tradecanvas/chart`, `@tradecanvas/core`, `@tradecanvas/commons`). What the pointer looks like over the chart is now a choice:
