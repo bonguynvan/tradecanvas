@@ -1,11 +1,6 @@
-import type { SymbolInfo } from '@tradecanvas/commons';
+import { MAX_SYMBOL_LENGTH, type SymbolInfo } from '@tradecanvas/commons';
 
-/**
- * The longest symbol the widget keeps, in a watchlist or a list of symbols:
- * room for a venue, a DEX pool's address (a Uniswap v4 pool's is 66
- * characters) and its pair. 64 dropped such pools from the lists unseen.
- */
-export const MAX_SYMBOL_LENGTH = 160;
+export { MAX_SYMBOL_LENGTH };
 /** The longest logo address taken, and the longest image written in a `data:` one. */
 const MAX_LOGO_URL = 2048;
 const MAX_LOGO_DATA = 65_536;

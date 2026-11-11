@@ -1,6 +1,13 @@
 import type { SymbolInfo } from '../types/symbol.js';
 
 /**
+ * The longest symbol kept, in a watchlist, a list of symbols or a quote: room
+ * for a venue, a DEX pool's address (a Uniswap v4 pool's is 66 characters)
+ * and its pair. 64 dropped such pools unseen.
+ */
+export const MAX_SYMBOL_LENGTH = 160;
+
+/**
  * A symbol as a trader says it: without the venue before its last colon
  * ("HYPERLIQUID:xyz:NVDA" is NVDA, "KBS:VCB" is VCB). A symbol that starts or
  * ends with a colon has no venue to leave out, and is given whole.

@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Data
+
+- **A quote for a long symbol reaches the watchlist** (`@tradecanvas/commons`, `@tradecanvas/chart`). 1.80.0 let a symbol be up to 160 characters, but a quote for one longer than 64 was still dropped, so a DEX pool whose symbol names its network, address and pair could sit in the watchlist with no price. Quotes now take the same 160. `MAX_SYMBOL_LENGTH` is exported from `@tradecanvas/commons`.
+
+## 1.80.0 (2026-11-11)
+
 ### Widget
 
 - **A quieter loading screen** (`@tradecanvas/chart`). The candles that say a chart is loading stand alone: the yellow progress line under them and the panel behind them are gone. A slow switch of symbol or interval no longer blanks the chart under it to 55%. It dims it to 45% and blurs it slightly, so the chart stays in view while the next one loads.

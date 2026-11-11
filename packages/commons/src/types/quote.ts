@@ -1,3 +1,5 @@
+import { MAX_SYMBOL_LENGTH } from '../utils/symbols.js';
+
 /**
  * A symbol's latest quote: its price and the day's move, for a watchlist row
  * or a symbol's details. Prices are in the symbol's quote currency.
@@ -44,7 +46,7 @@ export function readQuote(raw: unknown): Quote | null {
   if (!raw || typeof raw !== 'object') return null;
   const r = raw as Record<string, unknown>;
   const symbol = typeof r.symbol === 'string' ? r.symbol.trim() : '';
-  if (!symbol || symbol.length > 64 || !isFiniteNumber(r.last)) return null;
+  if (!symbol || symbol.length > MAX_SYMBOL_LENGTH || !isFiniteNumber(r.last)) return null;
   const quote: Quote = { symbol, last: r.last };
   for (const key of QUOTE_NUMBERS) {
     const v = r[key];
