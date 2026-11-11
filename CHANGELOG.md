@@ -4,7 +4,7 @@
 
 ### Widget
 
-- **The ticker everywhere a symbol is named** (`@tradecanvas/chart`, `@tradecanvas/core`). An indicator on another symbol ("Compare NVDA", "Ratio ETHUSDT"), also named so among the alert sources, shows the ticker without the venue before it, as the toolbar and the legend have since 1.79.0. So do a compare line's label, the compare toasts, the object tree's compares, the layouts dialog, the grid's tabs and the order ticket. `tickerOf(symbol)` from `@tradecanvas/commons` gives the same.
+- **The ticker everywhere a symbol is named** (`@tradecanvas/chart`, `@tradecanvas/core`). An indicator on another symbol ("Compare NVDA", "Ratio ETHUSDT"), also named so among the alert sources, shows the ticker without the venue before it, as the toolbar and the legend have since 1.79.0. So do a compare line's label, the compare toasts, the object tree's compares, the layouts dialog, the grid's tabs and the order ticket. `tickerOf(symbol)`, from `@tradecanvas/chart` or `@tradecanvas/commons`, gives the same. A data export's column for such an indicator is headed the same way ("Compare ETHUSDT").
 
 ## 1.79.2 (2026-11-11)
 

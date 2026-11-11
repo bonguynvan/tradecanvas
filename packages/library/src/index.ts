@@ -186,7 +186,7 @@ export {
 export type { KnownTimeFrame, TimeFrameUnit, BucketOptions, TimeZoneSetting, HistoryLoadPayload, ReplayStepsLoadPayload, DataUpdatePayload, OverlayScale } from '@tradecanvas/commons';
 
 // Symbol search and what a feed knows about a symbol
-export { rankSymbols, stepDecimals } from '@tradecanvas/commons';
+export { rankSymbols, stepDecimals, tickerOf } from '@tradecanvas/commons';
 export { formatFraction, fractionTick, priceFormatterFor } from '@tradecanvas/commons';
 export type { PriceFormatter, PriceFraction, TimeFormatter, TimeFormatContext } from '@tradecanvas/commons';
 export type { SymbolInfo, SymbolSession, SymbolSearchOptions } from '@tradecanvas/commons';
