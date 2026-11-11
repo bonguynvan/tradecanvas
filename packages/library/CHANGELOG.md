@@ -1,5 +1,13 @@
 # @tradecanvas/chart
 
+## 1.79.1
+
+### Patch Changes
+
+- f1a3c79: A watchlist panel under 300 px drops the move, where it dropped it under 250 px. In the dock, which opens at 262, the names keep their room: a list with a price as small as 0.00000528 cut them to "ETH/US…".
+  - @tradecanvas/commons@1.79.1
+  - @tradecanvas/core@1.79.1
+
 ## 1.79.0
 
 ### Minor Changes
