@@ -70,7 +70,8 @@ export class GridLayoutPicker {
     const target = e.target as Node;
     if (!this.panel?.contains(target) && !this.button.contains(target)) this.close(false);
   };
-  private readonly onAway = () => this.close(false);
+  /** A resize or the window losing focus closes it; the keyboard, if it was in the menu, goes back to the button. */
+  private readonly onAway = () => this.close(this.panel?.contains(document.activeElement) === true);
 
   constructor(private readonly options: GridLayoutPickerOptions) {
     // In the table's order, which lists them by count, whatever order they were given in.
@@ -82,6 +83,12 @@ export class GridLayoutPicker {
     this.button.setAttribute('aria-haspopup', 'menu');
     this.button.setAttribute('aria-expanded', 'false');
     this.button.addEventListener('click', () => (this.isOpen() ? this.close() : this.open()));
+    // The arrows open it from its button, as a menu button's do.
+    this.button.addEventListener('keydown', (e) => {
+      if ((e.key !== 'ArrowDown' && e.key !== 'ArrowUp') || this.isOpen()) return;
+      e.preventDefault();
+      this.open();
+    });
     this.render();
   }
 

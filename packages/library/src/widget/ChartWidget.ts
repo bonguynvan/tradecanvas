@@ -1691,6 +1691,11 @@ export class ChartWidget {
     return this.symbols.map((symbol) => this.symbolCatalog.get(symbol) ?? symbol);
   }
 
+  /** What `symbols` gave of one symbol (its names, kind, logo), or undefined. */
+  private symbolInfoOf(symbol: string): SymbolInfo | undefined {
+    return this.symbolCatalog.get(symbol);
+  }
+
   /**
    * What the chart knows of its symbol, to name it; null while it is still
    * another symbol's. It is this symbol's when it names it (in any case, or
@@ -3507,6 +3512,7 @@ export class ChartWidget {
       get settingsState() { return w.chartSettings.settingsState; },
       get state() { return w.state; },
       symbolEntries: (...args) => w.symbolEntries(...args),
+      symbolInfoOf: (...args) => w.symbolInfoOf(...args),
       symbolSearchFn: (...args) => w.symbolSearchFn(...args),
       get symbols() { return w.symbols; },
       get t() { return w.t; },

@@ -1,4 +1,4 @@
-import type { Quote, QuoteSource, SymbolInfo } from '@tradecanvas/commons';
+import type { Quote, QuoteSource } from '@tradecanvas/commons';
 import { readQuote } from '@tradecanvas/commons';
 import { browserStorage, pageHidden } from './pageEnv.js';
 import { WidgetWatchlist, type WatchlistEntry } from './WidgetWatchlist.js';
@@ -18,6 +18,7 @@ export interface WatchlistsHost {
   readonly settingsState: ChartWidget['chartSettings']['settingsState'];
   readonly state: ChartWidget['state'];
   symbolEntries: ChartWidget['symbolEntries'];
+  symbolInfoOf: ChartWidget['symbolInfoOf'];
   symbolSearchFn: ChartWidget['symbolSearchFn'];
   readonly symbols: ChartWidget['symbols'];
   readonly t: ChartWidget['t'];
@@ -148,7 +149,7 @@ export class WidgetWatchlists {
     }, {
       sparkline: opts.sparkline === true,
       // The logos given with the symbols (`symbols` as SymbolInfo), as the symbol search shows them.
-      infoOf: (sym) => this.host.symbolEntries().find((e): e is SymbolInfo => typeof e !== 'string' && e.symbol === sym),
+      infoOf: (sym) => this.host.symbolInfoOf(sym),
     });
     this.watchlist.setActive(this.host.state.symbol);
     this.watchlist.setLocale(this.host.settingsState.numberLocale || undefined);

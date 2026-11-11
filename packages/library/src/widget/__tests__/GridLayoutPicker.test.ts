@@ -190,3 +190,22 @@ describe('GridLayoutPicker', () => {
 function btn(): HTMLButtonElement {
   return picker!.button;
 }
+
+describe('GridLayoutPicker from the keys and on a resize', () => {
+  it('opens with the down arrow on its button, on the layout in use', () => {
+    make();
+    picker.button.focus();
+    key('ArrowDown');
+    expect(panel()?.hidden).toBe(false);
+    expect(picker.button.getAttribute('aria-expanded')).toBe('true');
+    expect((document.activeElement as HTMLElement).dataset.layout).toBe(current);
+  });
+
+  it('gives the keyboard back to its button when a resize closes it', () => {
+    make();
+    picker.open();
+    window.dispatchEvent(new Event('resize'));
+    expect(panel()?.hidden).toBe(true);
+    expect(document.activeElement).toBe(picker.button);
+  });
+});

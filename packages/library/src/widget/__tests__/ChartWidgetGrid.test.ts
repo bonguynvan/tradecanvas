@@ -341,6 +341,16 @@ describe('ChartWidgetGrid arrangements', () => {
     expect(layoutButton().querySelectorAll('svg rect')).toHaveLength(3);
   });
 
+  it('puts the arrangement before the charts’ tabs, which narrow would push it off the bar', () => {
+    make({ layout: '3x3' });
+    const bar = host.querySelector<HTMLElement>('.tcw-grid-bar')!;
+    const parts = [...bar.children];
+    const layout = parts.findIndex((el) => el.querySelector('.tcw-grid-layout-btn'));
+    const tabs = parts.findIndex((el) => el.classList.contains('tcw-grid-tabs'));
+    expect(layout).toBeGreaterThanOrEqual(0);
+    expect(layout).toBeLessThan(tabs);
+  });
+
   it('opens a picker of the arrangements offered, the one in use checked', () => {
     make({ layoutChoices: ['1x1', '1x2', '1+2', '3x3', 'nope' as never] });
     layoutButton().click();

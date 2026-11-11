@@ -8,6 +8,7 @@
   - the user's lists stay as they left them;
   - a list added to `lists` later is added after theirs;
   - one they removed stays removed.
+  - Lists kept before this version did not note what they were offered: a host list removed before then comes back once.
 - **The watchlist opens from the toolbar where there is no rail** (`@tradecanvas/chart`). A grid's charts have no rail of panels, so once the watchlist was shut, nothing opened it again. The toolbar now has a Watchlist button wherever the rail has none, as it has for the alerts and the objects.
 - **A watchlist row shows the symbol's logo** (`@tradecanvas/chart`), before its ticker, when the symbol has one (`symbols` given as `SymbolInfo` with a `logo`, as the symbol search shows them). A symbol without one shows no initial: the ticker beside it says the same.
 

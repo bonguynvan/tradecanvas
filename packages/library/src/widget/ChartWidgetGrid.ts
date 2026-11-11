@@ -657,7 +657,6 @@ export class ChartWidgetGrid {
     this.root.classList.add('tcw-grid-has-tabs');
     this.tabsEl.setAttribute('role', 'group');
     this.tabsEl.setAttribute('aria-label', this.t('grid.charts'));
-    bar.appendChild(this.tabsEl);
 
     const shapes = document.createElement('div');
     shapes.className = 'tcw-grid-group';
@@ -674,6 +673,9 @@ export class ChartWidgetGrid {
       });
       shapes.appendChild(this.layoutPicker.button);
     }
+    // The arrangement before the charts' tabs: narrow, nine tabs would push it off the bar's end.
+    bar.appendChild(shapes);
+    bar.appendChild(this.tabsEl);
 
     const sync = document.createElement('div');
     sync.className = 'tcw-grid-group';
@@ -696,7 +698,7 @@ export class ChartWidgetGrid {
 
     const spacer = document.createElement('span');
     spacer.className = 'tcw-toolbar-spacer';
-    bar.append(shapes, this.sep(), sync, spacer);
+    bar.append(this.sep(), sync, spacer);
 
     if (this.options.layouts !== false) {
       this.layoutsButton = document.createElement('button');

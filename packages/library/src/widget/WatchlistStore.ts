@@ -130,7 +130,8 @@ export class WatchlistStore {
     const fresh = host.filter((l) => !had.has(l.id) && !saved.lists.some((k) => k.id === l.id));
     this.lists = [...saved.lists, ...fresh].slice(0, MAX_LISTS);
     this.active = saved.active;
-    this.offered = new Set([...had, ...host.map((l) => l.id)]);
+    // A list left out for want of room is not had: it comes once there is room.
+    this.offered = new Set([...had, ...this.lists.map((l) => l.id)]);
     return fresh.length > 0;
   }
 
