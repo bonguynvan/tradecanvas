@@ -1,5 +1,16 @@
 # @tradecanvas/chart
 
+## 1.78.0
+
+### Minor Changes
+
+- 1262b47: The watchlist reads a line a symbol: the ticker, last price, move and % change, in columns under their names, about half as tall as before. The sparkline beside each price is off by default; `watchlist: { sparkline: true }` brings it back in the move's place. A ticker shows without its venue (`HYPERLIQUID:xyz:NVDA` reads NVDA, the whole symbol on hover).
+
+### Patch Changes
+
+- @tradecanvas/commons@1.78.0
+- @tradecanvas/core@1.78.0
+
 ## 1.77.0
 
 ### Minor Changes
