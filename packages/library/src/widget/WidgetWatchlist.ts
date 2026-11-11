@@ -526,6 +526,8 @@ function formatSymbol(symbol: string): string {
   // The ticker without its venue ('HYPERLIQUID:xyz:NVDA' is NVDA), which the row's tooltip keeps.
   // A symbol that ends in ':' has no ticker to show: it shows whole.
   const ticker = symbol.slice(symbol.lastIndexOf(':') + 1) || symbol;
+  // A pair already written as one (a DEX pool's "WETH/USDC") stays as it is.
+  if (ticker.includes('/')) return ticker;
   // Add a /  separator for typical crypto pair suffixes; leaves stock tickers
   // (AAPL, NVDA) alone.
   for (const quote of ['USDT', 'USD', 'BTC', 'ETH', 'EUR']) {
