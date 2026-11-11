@@ -12,6 +12,10 @@
   - While a recompute is out, the chart keeps drawing the previous output: after a symbol switch the previous lines stay until the new ones land, and a new indicator shows nothing yet. An alert on an indicator's line waits for the result instead of forcing the work onto the main thread.
 - **The core package no longer ships the indicator worker's 732 kB sourcemap.**
 
+### Chart
+
+- **The "+" by the price axis takes the click over a drawing's body** (`@tradecanvas/chart`, `@tradecanvas/core`). A position's zone, or any filled drawing, that reached the price axis swallowed a click on the "+", though the "+" was drawn over it: no alert or order could be added at a price inside the zone. The "+" now comes first there, and the drawing under it no longer glows; only the selected drawing's handle still takes the press. Away from the "+" the drawing takes the click as before.
+
 ## 1.83.1 (2026-11-11)
 
 ### Widget

@@ -61,6 +61,36 @@ describe('Chart "+" by the price axis', () => {
     expect(adds[0].price).toBeCloseTo((min + max) / 2, 1);
   });
 
+  it('takes the click over a drawing’s body: a position’s zone reaching the axis does not swallow it', () => {
+    const adds: { price: number }[] = [];
+    chart.on('priceAxisAdd', (e) => adds.push(e.payload as { price: number }));
+    // Entry at 100, stop at 99, from bar 150 to past the last bar: the zone runs under the "+".
+    const id = chart.addDrawing({ type: 'riskReward', anchors: [{ time: T0 + 150 * HOUR, price: 100 }, { time: T0 + 400 * HOUR, price: 99 }] });
+    const { chartRect: plot, priceRange } = state();
+    const y = plot.y + ((priceRange.max - 99.5) / (priceRange.max - priceRange.min)) * plot.height;
+    mouse('mousedown', plot.x + plot.width - 8, y);
+    mouse('mouseup', plot.x + plot.width - 8, y);
+    expect(adds).toHaveLength(1);
+    expect(adds[0].price).toBeCloseTo(99.5, 1);
+    expect(chart.getSelectedDrawingId()).toBeNull();
+    // Away from the strip the zone takes the click, as before.
+    mouse('mousedown', plot.x + plot.width - 60, y);
+    mouse('mouseup', plot.x + plot.width - 60, y);
+    expect([adds.length, chart.getSelectedDrawingId()]).toEqual([1, id]);
+  });
+
+  it('leaves the eraser the drawing under it', () => {
+    const adds: unknown[] = [];
+    chart.on('priceAxisAdd', (e) => adds.push(e.payload));
+    chart.addDrawing({ type: 'riskReward', anchors: [{ time: T0 + 150 * HOUR, price: 100 }, { time: T0 + 400 * HOUR, price: 99 }] });
+    const { chartRect: plot, priceRange } = state();
+    const y = plot.y + ((priceRange.max - 99.5) / (priceRange.max - priceRange.min)) * plot.height;
+    chart.setEraserMode(true);
+    mouse('mousedown', plot.x + plot.width - 8, y);
+    mouse('mouseup', plot.x + plot.width - 8, y);
+    expect([adds.length, chart.getDrawings().length]).toEqual([0, 0]);
+  });
+
   it('keeps the trading tags clear of it, and gives the room back when it is off', () => {
     const inset = () => (chart as unknown as { tradingManager: { tagInset: number } }).tradingManager.tagInset;
     expect(inset()).toBe(PRICE_AXIS_ADD_STRIP);
