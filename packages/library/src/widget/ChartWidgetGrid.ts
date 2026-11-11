@@ -1,4 +1,5 @@
 import type { ChartStyleOverrides, ChartStyleOverridesPatch, DataAdapter, DrawingState, Theme, ThemeName, VisibleRangeChangePayload } from '@tradecanvas/commons';
+import { tickerOf } from '@tradecanvas/commons';
 import { ChartWidget } from './ChartWidget.js';
 import type { ChartWidgetOptions, WidgetLayoutsOptions } from './types.js';
 import { readWidgetFeatures, type WidgetFeatures } from './widgetFeatures.js';
@@ -645,7 +646,7 @@ export class ChartWidgetGrid {
   private renderTabs(): void {
     const tabs = this.tabsEl;
     if (!tabs) return;
-    const want = this.cells.map((c) => `${c.widget.getSymbol()} · ${c.widget.getTimeframe()}`);
+    const want = this.cells.map((c) => `${tickerOf(c.widget.getSymbol())} · ${c.widget.getTimeframe()}`);
     while (tabs.children.length > want.length) tabs.lastElementChild?.remove();
     while (tabs.children.length < want.length) {
       const index = tabs.children.length;

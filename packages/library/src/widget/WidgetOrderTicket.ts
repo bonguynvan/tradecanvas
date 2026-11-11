@@ -1,5 +1,5 @@
 import type { OrderPlaceIntent, OrderSide, TimeInForce } from '@tradecanvas/commons';
-import { stepDecimals } from '@tradecanvas/commons';
+import { stepDecimals, tickerOf } from '@tradecanvas/commons';
 import { createIcon } from './icons.js';
 import { EN_TRANSLATOR, fill, type MessageKey, type Translator } from './i18n.js';
 import { segmentedControl, stepperField, toggleSwitch } from './settingsControls.js';
@@ -155,7 +155,7 @@ export class WidgetOrderTicket {
     this.step = start.step ?? defaultStep;
     this.round = start.round ?? ((p) => roundLike(p, p));
     this.typed.clear();
-    this.symbolEl.textContent = start.symbol ?? '';
+    this.symbolEl.textContent = start.symbol ? tickerOf(start.symbol) : '';
     const price = this.round(start.price ?? start.lastPrice ?? 0);
     const side = start.side ?? 'buy';
     // A price away from the market starts as the order that waits there.

@@ -1,4 +1,5 @@
 import type { OHLCBar } from '@tradecanvas/commons';
+import { tickerOf } from '@tradecanvas/commons';
 import type { WidgetPanel } from './types.js';
 import { widgetIndicatorLabel } from './indicatorInputWords.js';
 import { drawingTypeLabel } from './WidgetObjectTree.js';
@@ -303,7 +304,7 @@ export class WidgetDockArea {
       group: d.group,
     }));
     // Every compare, as the compare dialog lists it: the percent lines and the indicators on another symbol.
-    const compares = this.host.comparing.comparedNow().map((c) => ({ id: c.id, label: c.symbol, color: c.color, way: c.way }));
+    const compares = this.host.comparing.comparedNow().map((c) => ({ id: c.id, label: tickerOf(c.symbol), color: c.color, way: c.way }));
     this.host.objectTree.setObjects(indicators, drawings, compares);
   }
 }

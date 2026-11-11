@@ -114,6 +114,18 @@ describe('ChartWidget named layouts', () => {
     expect(menuItems()[0].hasAttribute('aria-keyshortcuts')).toBe(false);
   });
 
+  it('names a layout’s symbol by its ticker, without the venue before it', async () => {
+    make();
+    await storage.save({ id: 'n', name: 'Nvidia', symbol: 'HYPERLIQUID:xyz:NVDA', timeframe: '1h', updatedAt: 1, content: '{}' });
+    layoutsButton()!.click();
+    await flush();
+    pick('Open layout…');
+    await flush();
+    const row = [...host.querySelectorAll<HTMLElement>('.tcw-layouts-row')].find((r) => r.querySelector('.tcw-layouts-name')?.textContent === 'Nvidia')!;
+    expect(row.querySelector('.tcw-layouts-meta')!.textContent).toContain('NVDA · 1h');
+    expect(row.querySelector('.tcw-layouts-meta')!.textContent).not.toContain('HYPERLIQUID');
+  });
+
   it('marks the layout open in the dialog with a check, and its name in ink', async () => {
     make();
     await widget.getLayoutSession()!.saveAs('Alpha');

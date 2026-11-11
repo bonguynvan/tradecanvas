@@ -1,5 +1,15 @@
 import type { SymbolInfo } from '../types/symbol.js';
 
+/**
+ * A symbol as a trader says it: without the venue before its last colon
+ * ("HYPERLIQUID:xyz:NVDA" is NVDA, "KBS:VCB" is VCB). A symbol that starts or
+ * ends with a colon has no venue to leave out, and is given whole.
+ */
+export function tickerOf(symbol: string): string {
+  const at = symbol.lastIndexOf(':');
+  return at <= 0 || at === symbol.length - 1 ? symbol : symbol.slice(at + 1);
+}
+
 /** How well `query` (upper case) matches `text` (upper case): 0 when it doesn't. */
 function score(text: string, query: string): number {
   if (!text) return 0;

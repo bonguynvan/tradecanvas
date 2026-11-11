@@ -1,5 +1,5 @@
 import type { ViewportState, Theme, OHLCBar, DataSeries } from '@tradecanvas/commons';
-import { autoPricePrecision, formatPrice, formatVolumeLoc } from '@tradecanvas/commons';
+import { autoPricePrecision, formatPrice, formatVolumeLoc, tickerOf } from '@tradecanvas/commons';
 
 export interface LegendConfig {
   visible: boolean;
@@ -355,12 +355,6 @@ interface LegendCell {
   width: number;
   color: string;
   font: string;
-}
-
-/** A symbol without the venue before its last colon ("KBS:VCB" is VCB); one ending in a colon whole. */
-function tickerOf(symbol: string): string {
-  const at = symbol.lastIndexOf(':');
-  return at <= 0 || at === symbol.length - 1 ? symbol : symbol.slice(at + 1);
 }
 
 /** Room above the legend's first line, and to the plot's side edge (px). */
