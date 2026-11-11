@@ -1,5 +1,19 @@
 # @tradecanvas/chart
 
+## 1.83.0
+
+### Minor Changes
+
+- 0c79dad: The watchlist:
+  - with `persist`, a list added to `lists` later is added to the lists the user kept, and one they removed stays removed;
+  - where there is no rail (a grid's charts), the toolbar has a Watchlist button to open it again;
+  - a row shows the symbol's logo before its ticker when the symbol has one.
+
+### Patch Changes
+
+- @tradecanvas/commons@1.83.0
+- @tradecanvas/core@1.83.0
+
 ## 1.82.0
 
 ### Minor Changes
