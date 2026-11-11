@@ -1,5 +1,18 @@
 # @tradecanvas/chart
 
+## 1.81.0
+
+### Minor Changes
+
+- c6889dc: A quieter loading screen: the candles that say a chart is loading stand alone, with no progress line under them and no panel behind them. A slow switch dims the chart under it less (45%, where it was 55%) and blurs it slightly.
+
+### Patch Changes
+
+- d6bc169: A quote for a symbol longer than 64 characters (a DEX pool's, which names its network, address and pair) reaches the watchlist: quotes take symbols up to 160 characters, as the watchlist and the symbol search have since 1.80.0. `MAX_SYMBOL_LENGTH` is exported from `@tradecanvas/commons`.
+- Updated dependencies [d6bc169]
+  - @tradecanvas/commons@1.81.0
+  - @tradecanvas/core@1.81.0
+
 ## 1.80.0
 
 ### Minor Changes
