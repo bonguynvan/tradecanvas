@@ -290,6 +290,7 @@ export const TR_MESSAGES: WidgetMessages = {
   'settings.alignAxisLabels': 'Etiketler üst üste binmesin',
   'settings.barCountdown': 'Bar geri sayımı',
   'settings.crosshairMode': 'Artı imleç',
+  'settings.crosshairCursor': 'İmleç',
   'settings.crosshair.magnet': 'Mıknatıs',
   'settings.crosshair.normal': 'Normal',
   'settings.crosshair.hidden': 'Gizli',
@@ -352,6 +353,14 @@ export const TR_MESSAGES: WidgetMessages = {
   'objects.removeComparison': 'Karşılaştırmayı kaldır',
 
   'drawing.cursor': 'İmleç',
+
+  'drawing.cursors': 'İmleçler',
+
+  'drawing.cursorCross': 'Artı',
+
+  'drawing.cursorDot': 'Nokta',
+
+  'drawing.cursorArrow': 'Ok',
   'drawing.tools': 'Çizim araçları',
   'drawing.style': 'Çizim stili ve şablonlar',
   'drawing.magnet': 'Mıknatıs',

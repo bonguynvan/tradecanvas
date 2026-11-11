@@ -7,7 +7,7 @@ import { drawLineText, TextHitCache } from './lineText.js';
 import { SHOW_PRICE_OPTION } from './options.js';
 
 export class HorizontalLineTool extends DrawingBase {
-  descriptor = { type: 'horizontalLine' as const, name: 'Horizontal Line', requiredAnchors: 1, text: true, options: SHOW_PRICE_OPTION };
+  descriptor = { type: 'horizontalLine' as const, name: 'Horizontal Line', requiredAnchors: 1, text: true, options: SHOW_PRICE_OPTION, axisSpan: 'price' as const };
 
   priceAt(state: DrawingState): number[] | null {
     return state.anchors.length < 1 ? null : [state.anchors[0].price];

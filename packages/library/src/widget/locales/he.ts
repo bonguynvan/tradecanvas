@@ -297,6 +297,7 @@ export const HE_MESSAGES: WidgetMessages = {
   'settings.alignAxisLabels': 'ללא תוויות חופפות',
   'settings.barCountdown': 'ספירה לאחור לסגירת הנר',
   'settings.crosshairMode': 'כוונת',
+  'settings.crosshairCursor': 'סמן',
   'settings.crosshair.magnet': 'מגנט',
   'settings.crosshair.normal': 'רגיל',
   'settings.crosshair.hidden': 'מוסתר',
@@ -362,6 +363,10 @@ export const HE_MESSAGES: WidgetMessages = {
 
   // Drawing sidebar and style panel
   'drawing.cursor': 'סמן',
+  'drawing.cursors': 'סמנים',
+  'drawing.cursorCross': 'צלב',
+  'drawing.cursorDot': 'נקודה',
+  'drawing.cursorArrow': 'חץ',
   'drawing.tools': 'כלי שרטוט',
   'drawing.style': 'סגנון ציור ותבניות',
   'drawing.magnet': 'מגנט',

@@ -229,3 +229,137 @@ describe('CrosshairHandler.formatTime', () => {
     expect(handler.formatTime(bars[2].time, bars)).toBe(`t${bars[2].time}`);
   });
 });
+
+describe('CrosshairHandler cursor kinds', () => {
+  it('starts as the cross, and keeps the kind set', () => {
+    const handler = new CrosshairHandler();
+    expect(handler.getCursor()).toBe('cross');
+    handler.setCursor('dot');
+    expect(handler.getCursor()).toBe('dot');
+  });
+
+  it.each(['cross', 'dot'] as const)('%s: draws both lines', (kind) => {
+    const handler = new CrosshairHandler();
+    handler.setData(bars);
+    handler.setCursor(kind);
+    handler.onPointerMove({ x: 204, y: 150 });
+    const { ctx, lines } = recorder();
+    handler.render(ctx, viewport, theme);
+    expect(lines.length).toBe(2);
+  });
+
+  it('arrow: draws no lines, but the price and time still follow the pointer on the axes', () => {
+    const handler = new CrosshairHandler();
+    handler.setData(bars);
+    handler.setCursor('arrow');
+    handler.onPointerMove({ x: 204, y: 150 });
+    const drawn = recorder();
+    handler.render(drawn.ctx, viewport, theme);
+    expect(drawn.lines).toEqual([]);
+    const labels = recorder();
+    handler.renderAxisLabels(labels.ctx, viewport, theme, bars);
+    expect(labels.texts).toHaveLength(2);
+  });
+
+  it('arrow: a crosshair mirrored from another chart draws no line either', () => {
+    const handler = new CrosshairHandler();
+    handler.setData(bars);
+    handler.setCursor('arrow');
+    handler.setSyncedSlot(12);
+    const { ctx, lines } = recorder();
+    handler.render(ctx, viewport, theme);
+    expect(lines).toEqual([]);
+  });
+
+  it('shows the lines of a kind that draws them', () => {
+    const handler = new CrosshairHandler();
+    expect(handler.drawsLines()).toBe(true);
+    handler.setCursor('arrow');
+    expect(handler.drawsLines()).toBe(false);
+    handler.setCursor('dot');
+    handler.setMode('hidden');
+    expect(handler.drawsLines()).toBe(false);
+  });
+});
+
+describe('CrosshairHandler — a drawing’s span on the axes', () => {
+  /** Records filled boxes as [x, y, w, h, colour] and the text with its colour. */
+  function spanRecorder() {
+    const boxes: (number | string)[][] = [];
+    const texts: [string, string][] = [];
+    const store: Record<string, unknown> = {};
+    const ctx = new Proxy(store, {
+      get: (target, prop) => {
+        if (prop === 'measureText') return (t: string) => ({ width: t.length * 6 });
+        if (prop === 'fillRect') return (x: number, y: number, w: number, h: number) => boxes.push([x, y, w, h, String(target.fillStyle)]);
+        if (prop === 'fillText') return (t: string) => texts.push([t, String(target.fillStyle)]);
+        if (prop in target) return target[prop as string];
+        return () => {};
+      },
+      set: (target, prop, value) => { target[prop as string] = value; return true; },
+    }) as unknown as CanvasRenderingContext2D;
+    return { ctx, boxes, texts };
+  }
+  const main = { ...viewport, data: bars } as ViewportState;
+  const span = (prices: number[], times: number[], on: ViewportState = main) => ({ prices, times, color: '#ff8800', viewport: on });
+
+  it('tints the price axis between the two prices and labels each in the drawing’s colour', () => {
+    const handler = new CrosshairHandler();
+    handler.setData(bars);
+    const { ctx, boxes, texts } = spanRecorder();
+    handler.renderSpan(ctx, span([95, 105], []), main, theme, bars, 300);
+    // 20 points over 300 px: 105 at y 75, 95 at y 225; the axis starts at x 500.
+    expect(boxes.find((b) => b[0] === 500 && b[1] === 75 && b[3] === 150)?.[4]).toMatch(/rgba\(255, 136, 0, 0\.2\)/);
+    expect(texts.map(([t]) => t)).toEqual(['95.00', '105.00']);
+  });
+
+  it('tints the time axis between the two times and labels each', () => {
+    const handler = new CrosshairHandler();
+    handler.setData(bars);
+    const { ctx, boxes, texts } = spanRecorder();
+    handler.renderSpan(ctx, span([], [bars[10].time, bars[20].time]), main, theme, bars, 300);
+    // Bar 10 centred at x 104, bar 20 at x 204; the time axis starts at y 300.
+    expect(boxes.some((b) => b[0] === 104 && b[1] === 300 && b[2] === 100)).toBe(true);
+    expect(texts).toHaveLength(2);
+  });
+
+  it('labels a price off the plot nowhere', () => {
+    const handler = new CrosshairHandler();
+    handler.setData(bars);
+    const { ctx, texts } = spanRecorder();
+    handler.renderSpan(ctx, span([95, 500], []), main, theme, bars, 300);
+    expect(texts.map(([t]) => t)).toEqual(['95.00']);
+  });
+  it('writes a pane’s prices as the pane’s price at the pointer does', () => {
+    const handler = new CrosshairHandler();
+    handler.setData(bars);
+    const pane = { ...main, priceRange: { min: 0, max: 100 } } as ViewportState;
+    const { ctx, texts } = spanRecorder();
+    handler.renderSpan(ctx, span([30, 70], [], pane), main, theme, bars, 300);
+    expect(texts.map(([t]) => t)).toEqual(['30', '70']);
+  });
+
+  it('keeps a span’s tint under a time label the crosshair’s time clears', () => {
+    const handler = new CrosshairHandler();
+    handler.setData(bars);
+    handler.beginSpans();
+    handler.renderSpan(spanRecorder().ctx, span([], [bars[10].time, bars[30].time]), main, theme, bars, 300);
+    handler.onPointerMove({ x: 204, y: 150 });
+    const { ctx, boxes } = spanRecorder();
+    // A tick label at x 214–240, half under the crosshair's time pill at bar 20.
+    handler.renderAxisLabels(ctx, main, theme, bars, 300, [], [{ left: 214, right: 240 }]);
+    expect(boxes.some((b) => b[0] === 212 && /rgba\(255, 136, 0, 0\.2\)/.test(String(b[4])))).toBe(true);
+  });
+
+  it('forgets last frame’s tints once a frame starts with no span', () => {
+    const handler = new CrosshairHandler();
+    handler.setData(bars);
+    handler.renderSpan(spanRecorder().ctx, span([], [bars[10].time, bars[30].time]), main, theme, bars, 300);
+    handler.beginSpans();
+    handler.onPointerMove({ x: 204, y: 150 });
+    const { ctx, boxes } = spanRecorder();
+    handler.renderAxisLabels(ctx, main, theme, bars, 300, [], [{ left: 214, right: 240 }]);
+    expect(boxes.some((b) => /rgba\(255, 136, 0/.test(String(b[4])))).toBe(false);
+  });
+});
+

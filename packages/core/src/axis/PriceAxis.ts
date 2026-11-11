@@ -82,6 +82,12 @@ function nextRoundStep(step: number): number {
   return (frac < 1.5 ? 2 : frac < 3.5 ? 5 : 10) * base;
 }
 
+/** Decimals for a pane's axis labels and header values, from its tick step. */
+export function panelPrecision(step: number): number {
+  if (step < 1) return Math.ceil(-Math.log10(step)) + 1;
+  return step < 10 ? 1 : 0;
+}
+
 /** A round step for `min`..`max` on a scale `height` px tall, its labels at least `MIN_PRICE_LABEL_GAP_PX` apart. */
 export function roundStep(min: number, max: number, height: number): number {
   let step = computeTickStep(min, max, tickTarget(height));

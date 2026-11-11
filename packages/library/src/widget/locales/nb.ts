@@ -297,6 +297,7 @@ export const NB_MESSAGES: WidgetMessages = {
   'settings.alignAxisLabels': 'Ingen overlappende etiketter',
   'settings.barCountdown': 'Nedtelling til neste lys',
   'settings.crosshairMode': 'Trådkors',
+  'settings.crosshairCursor': 'Markør',
   'settings.crosshair.magnet': 'Magnet',
   'settings.crosshair.normal': 'Normal',
   'settings.crosshair.hidden': 'Skjult',
@@ -362,6 +363,10 @@ export const NB_MESSAGES: WidgetMessages = {
 
   // Drawing sidebar and style panel
   'drawing.cursor': 'Markør',
+  'drawing.cursors': 'Markører',
+  'drawing.cursorCross': 'Kryss',
+  'drawing.cursorDot': 'Prikk',
+  'drawing.cursorArrow': 'Pil',
   'drawing.tools': 'Tegneverktøy',
   'drawing.style': 'Tegnestil og maler',
   'drawing.magnet': 'Magnet',

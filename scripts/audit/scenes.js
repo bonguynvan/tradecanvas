@@ -161,6 +161,27 @@ const SCENES = {
     return s;
   },
 
+  /** A trend line selected, its end at the last price: its span's labels meet the last price's tag. */
+  async selectedDrawing() {
+    const s = await widget();
+    const bars = s.chart.getData();
+    const back = (n) => bars[bars.length - n];
+    const id = s.chart.addDrawing({ type: 'trendLine', anchors: [{ time: back(70).time, price: back(70).low }, { time: back(1).time, price: back(1).close }] });
+    s.chart.selectDrawing(id);
+    return s;
+  },
+
+  /** A trend line selected in the RSI pane: its span on the pane's own axis. */
+  async selectedPaneDrawing() {
+    const s = await widget();
+    const rsi = s.chart.addIndicator('rsi');
+    const bars = s.chart.getData();
+    const t = (back) => bars[bars.length - back].time;
+    const id = s.chart.addDrawing({ type: 'trendLine', anchors: [{ time: t(80), price: 30 }, { time: t(20), price: 70 }], paneId: rsi });
+    s.chart.selectDrawing(id);
+    return s;
+  },
+
   /** Overlays and panes, their values tagged on the axes. */
   async indicators() {
     const s = await widget();

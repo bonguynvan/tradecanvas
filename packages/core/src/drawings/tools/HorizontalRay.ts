@@ -12,7 +12,7 @@ import { SHOW_PRICE_OPTION } from './options.js';
  * past too.
  */
 export class HorizontalRayTool extends DrawingBase {
-  descriptor = { type: 'horizontalRay' as const, name: 'Horizontal Ray', requiredAnchors: 1, text: true, options: SHOW_PRICE_OPTION };
+  descriptor = { type: 'horizontalRay' as const, name: 'Horizontal Ray', requiredAnchors: 1, text: true, options: SHOW_PRICE_OPTION, axisSpan: 'price' as const };
 
   priceAt(state: DrawingState, time: number): number[] | null {
     if (state.anchors.length < 1 || time < state.anchors[0].time) return null;

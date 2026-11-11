@@ -1157,6 +1157,14 @@
   justify-content: center;
 }
 
+/* The cursor button and its menu, as a drawing group's. */
+.tcw-cursor-wrap {
+  position: relative;
+  align-self: stretch;
+  display: flex;
+  justify-content: center;
+}
+
 .tcw-sidebar-btn {
   width: var(--tcw-tool-size);
   height: var(--tcw-tool-size);

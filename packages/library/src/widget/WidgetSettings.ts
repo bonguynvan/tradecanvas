@@ -424,7 +424,12 @@ export class WidgetSettings {
       { label: this.t('settings.crosshair.magnet'), value: 'magnet' },
       { label: this.t('settings.crosshair.normal'), value: 'normal' },
       { label: this.t('settings.crosshair.hidden'), value: 'hidden' },
-    ], (v) => this.patch({ crosshairMode: v as ChartSettingsState['crosshairMode'] }))]);
+    ], (v) => this.patch({ crosshairMode: v as ChartSettingsState['crosshairMode'] })),
+    selectRow(this.t('settings.crosshairCursor'), s.crosshairCursor, [
+      { label: this.t('drawing.cursorCross'), value: 'cross' },
+      { label: this.t('drawing.cursorDot'), value: 'dot' },
+      { label: this.t('drawing.cursorArrow'), value: 'arrow' },
+    ], (v) => this.patch({ crosshairCursor: v as ChartSettingsState['crosshairCursor'] }))]);
     for (const section of rest) this.renderLookSection(section);
   }
 

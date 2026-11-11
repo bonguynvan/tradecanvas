@@ -625,6 +625,8 @@ export interface SidebarCallbacks {
   onToggleEraser?: () => void;
   onToggleZoomArea?: () => void;
   onToggleFavorite?: (tool: DrawingToolType) => void;
+  /** A cursor kind picked from the cursor button's menu: the menu shows when given. */
+  onCrosshairCursor?: (kind: import('@tradecanvas/commons').CrosshairCursor) => void;
   /** The trash button, pressed: it opens a menu of what to remove beside `anchor`. */
   onClear: (anchor: HTMLElement) => void;
   /** Lock (true) or unlock every drawing: the button shows when given. */
@@ -716,6 +718,8 @@ export interface ChartSettingsState {
   leftPriceScale: boolean;
   /** The crosshair follows the pointer (`'normal'`), snaps to the bars' prices (`'magnet'`) or is hidden. */
   crosshairMode: 'normal' | 'magnet' | 'hidden';
+  /** What the pointer looks like over the chart: the cross, a dot, or the arrow with no lines. The viewer's own. */
+  crosshairCursor: import('@tradecanvas/commons').CrosshairCursor;
   /** The number format, a locale tag (`'de-DE'`): the viewer's own. */
   numberLocale: string;
   /**

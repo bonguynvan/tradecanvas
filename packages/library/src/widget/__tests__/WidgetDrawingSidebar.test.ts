@@ -78,13 +78,35 @@ describe('drawing tool menu', () => {
     expect(flyout()).toBeNull();
   });
 
-  it('switches straight to another group', () => {
+  it('switches to another group a moment after the pointer reaches it, never with no menu between', () => {
     const [lines, fibonacci] = wraps();
     enter(lines);
     leave(lines);
     enter(fibonacci);
     expect(host.querySelectorAll('.tcw-flyout')).toHaveLength(1);
+    vi.advanceTimersByTime(130);
+    expect(host.querySelectorAll('.tcw-flyout')).toHaveLength(1);
     expect(flyout()?.getAttribute('aria-label')).toBe('Fibonacci');
+  });
+
+  it('keeps the open menu when the pointer crosses another button on its way into it', () => {
+    const [lines, fibonacci] = wraps();
+    enter(lines);
+    const menu = flyout()!;
+    leave(lines);
+    enter(fibonacci); // a diagonal move down to the menu's lower items…
+    leave(fibonacci);
+    enter(menu); // …reaches the menu
+    vi.advanceTimersByTime(500);
+    expect(flyout()).toBe(menu);
+  });
+
+  it('gives the focus back to the button after a tool picked from a menu opened by the keys', () => {
+    const button = wraps()[0].querySelector<HTMLButtonElement>('.tcw-sidebar-btn')!;
+    button.focus();
+    button.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+    (document.activeElement as HTMLElement).click();
+    expect(document.activeElement).toBe(button);
   });
 });
 
@@ -284,5 +306,106 @@ describe('drawing sidebar — narrow (a phone)', () => {
   it('wide, a tap on a group still picks its tool', () => {
     wraps()[0].querySelector('button')!.click();
     expect(picked).toHaveLength(1);
+  });
+});
+
+describe('cursor menu', () => {
+  let kinds: string[];
+  let cancelled: number;
+
+  beforeEach(() => {
+    sidebar.destroy();
+    kinds = [];
+    cancelled = 0;
+    sidebar = new WidgetDrawingSidebar(host, { drawingToolGroups: DRAWING_TOOL_GROUPS }, {
+      onDrawingTool: (tool) => { picked.push(tool); },
+      onCancelDrawing: () => { cancelled++; },
+      onClear: () => {},
+      onCrosshairCursor: (kind) => { kinds.push(kind); },
+    });
+    sidebar.update({ activeTool: null, magnetEnabled: false, stayInDrawing: false } as unknown as WidgetState);
+  });
+
+  const cursorWrap = () => host.querySelector<HTMLElement>('.tcw-cursor-wrap')!;
+  const cursorButton = () => cursorWrap().querySelector<HTMLButtonElement>('.tcw-sidebar-btn')!;
+  const items = () => [...(flyout()?.querySelectorAll<HTMLElement>('.tcw-flyout-item') ?? [])];
+
+  it('lists the cross, the dot and the arrow under a heading, the one in use ticked', () => {
+    sidebar.showCrosshairCursor('dot');
+    enter(cursorWrap());
+    expect(flyout()?.querySelector('.tcw-flyout-heading')?.textContent).toBe('Cursors');
+    expect(items().map((i) => i.dataset.cursor)).toEqual(['cross', 'dot', 'arrow']);
+    expect(items().map((i) => i.getAttribute('aria-checked'))).toEqual(['false', 'true', 'false']);
+    expect(items().every((i) => i.getAttribute('role') === 'menuitemradio')).toBe(true);
+  });
+
+  it('picks a kind from the menu, and leaves the drawing tools for the cursor', () => {
+    enter(cursorWrap());
+    items()[2].click();
+    expect(kinds).toEqual(['arrow']);
+    expect(cancelled).toBe(1);
+    expect(flyout()).toBeNull();
+  });
+
+  it('shows the kind in use on its button', () => {
+    sidebar.showCrosshairCursor('arrow');
+    const arrow = cursorButton().innerHTML;
+    sidebar.showCrosshairCursor('dot');
+    expect(cursorButton().innerHTML).not.toBe(arrow);
+    expect(cursorButton().getAttribute('aria-label')).toBe('Cursor: Dot');
+  });
+
+  it('a click on the button keeps its old work: back to the cursor', () => {
+    cursorButton().click();
+    expect(cancelled).toBe(1);
+    expect(kinds).toEqual([]);
+  });
+
+  it('a host that cannot change the kind gets the plain button, with no menu', () => {
+    sidebar.destroy();
+    sidebar = new WidgetDrawingSidebar(host, { drawingToolGroups: DRAWING_TOOL_GROUPS }, {
+      onDrawingTool: () => {}, onCancelDrawing: () => {}, onClear: () => {},
+    });
+    enter(cursorWrap());
+    expect(flyout()).toBeNull();
+    expect(cursorButton().hasAttribute('aria-haspopup')).toBe(false);
+  });
+
+  it('narrow, a tap opens the menu and a second closes it; a kind picked goes back to the cursor', () => {
+    host.setAttribute('data-tcw-narrow', '');
+    cursorButton().click();
+    expect(items()).toHaveLength(3);
+    expect(cancelled).toBe(0);
+    cursorButton().click();
+    expect(flyout()).toBeNull();
+    cursorButton().click();
+    items()[1].click();
+    expect(kinds).toEqual(['dot']);
+    expect(cancelled).toBe(1);
+  });
+
+  it('closes a menu the pointer opened with Escape on its button', () => {
+    enter(cursorWrap());
+    cursorButton().focus();
+    cursorButton().dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    expect(flyout()).toBeNull();
+    expect(cursorButton().getAttribute('aria-expanded')).toBe('false');
+  });
+
+  it('gives the focus back to its button after a kind picked with the keys', () => {
+    cursorButton().focus();
+    cursorButton().dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+    items()[1].click();
+    expect(kinds).toEqual(['dot']);
+    expect(document.activeElement).toBe(cursorButton());
+  });
+
+  it('opens from the keyboard and goes back to its button with Escape', () => {
+    cursorButton().focus();
+    cursorButton().dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+    expect(document.activeElement).toBe(items()[0]);
+    items()[0].dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    expect(flyout()).toBeNull();
+    expect(document.activeElement).toBe(cursorButton());
   });
 });

@@ -297,6 +297,7 @@ export const MS_MESSAGES: WidgetMessages = {
   'settings.alignAxisLabels': 'Tiada label bertindih',
   'settings.barCountdown': 'Kira detik bar',
   'settings.crosshairMode': 'Crosshair',
+  'settings.crosshairCursor': 'Kursor',
   'settings.crosshair.magnet': 'Magnet',
   'settings.crosshair.normal': 'Biasa',
   'settings.crosshair.hidden': 'Tersembunyi',
@@ -362,6 +363,10 @@ export const MS_MESSAGES: WidgetMessages = {
 
   // Drawing sidebar and style panel
   'drawing.cursor': 'Kursor',
+  'drawing.cursors': 'Kursor',
+  'drawing.cursorCross': 'Silang',
+  'drawing.cursorDot': 'Titik',
+  'drawing.cursorArrow': 'Anak panah',
   'drawing.tools': 'Alat lukisan',
   'drawing.style': 'Gaya lukisan & templat',
   'drawing.magnet': 'Magnet',

@@ -13,6 +13,7 @@ export class VerticalLineTool extends DrawingBase {
     name: 'Vertical Line',
     requiredAnchors: 1,
     text: true,
+    axisSpan: 'time' as const,
     options: { showTime: { kind: 'boolean' as const, label: 'Show time', default: false } },
   };
 

@@ -158,6 +158,14 @@ export interface DrawingDescriptor {
    * a position): drawn on the price pane only, never on an indicator pane.
    */
   priceOnly?: boolean;
+  /**
+   * What it marks on the axes while selected or being drawn: the band from
+   * its lowest to its highest price on the price axis and from its first to
+   * its last time on the time axis, with their labels. 'both' (the default),
+   * 'price' (a level), 'time' (a vertical line) or 'none'. A drawing kept to
+   * the screen marks neither.
+   */
+  axisSpan?: 'both' | 'price' | 'time' | 'none';
 }
 
 export interface DrawingPlugin {

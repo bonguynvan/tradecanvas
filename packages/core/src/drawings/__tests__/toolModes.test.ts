@@ -91,6 +91,36 @@ describe('eraser', () => {
   });
 });
 
+describe('eraser: what it would remove glows', () => {
+  const line = (id: string, price: number, locked = false) =>
+    drawing('trendLine', [{ time: 0, price }, { time: 10, price }], { id, locked });
+  // Any call goes: the tool's own drawing is what is watched.
+  const ctx = new Proxy({}, { get: () => () => {} }) as unknown as CanvasRenderingContext2D;
+
+  /** What the pointer's layer draws once the pointer is at `y`: the drawings' ids. */
+  function glowAt(y: number, selected?: string): string[] {
+    const drawn: string[] = [];
+    vi.spyOn(TrendLineTool.prototype, 'render').mockImplementation((_c, d) => { drawn.push(d.id); });
+    if (selected) manager.select(selected);
+    manager.setEraser(true);
+    expect(manager.hoverCursorAt({ x: 55, y }, unitViewport)).toBe(y === 50 ? 'pointer' : null);
+    manager.renderHover(ctx, unitViewport);
+    vi.restoreAllMocks();
+    return drawn;
+  }
+
+  it('glows the drawing under the pointer, the selected one too', () => {
+    manager.setDrawings([line('a', 50), line('b', 20)]);
+    expect(glowAt(50)).toEqual(['a']);
+    expect(glowAt(50, 'a')).toEqual(['a']);
+  });
+
+  it('glows nothing off the drawings, nor over a locked one', () => {
+    manager.setDrawings([line('a', 50, true)]);
+    expect(glowAt(90)).toEqual([]);
+  });
+});
+
 describe('eraser and locked drawings', () => {
   it('reaches a drawing under a locked one, and shows no pointer over a locked one alone', () => {
     const under = drawing('trendLine', [{ time: 0, price: 50 }, { time: 10, price: 50 }], { id: 'under' });

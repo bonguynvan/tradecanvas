@@ -973,3 +973,70 @@ describe('RenderEngine — tags on the price axis', () => {
     expect(placed.trading).toBeUndefined();
   });
 });
+
+describe('RenderEngine — the crosshair in the panes', () => {
+  /** A pointer in an RSI pane under the chart, with the crosshair drawing lines or not. */
+  function paneUnderPointer(drawsLines: boolean, mode = 'normal') {
+    const { ctx } = makeContext();
+    ctx.indicatorEngine = fakeIndicators([], { rsi: () => {} });
+    ctx.panels = [{ instanceId: 'rsi', rect: { x: 0, y: 200, width: 300, height: 100 }, viewport: { ...ctx.viewport, chartRect: { x: 0, y: 200, width: 300, height: 100 } } }];
+    ctx.crosshairHandler = {
+      render: () => {},
+      renderAxisLabels: () => {},
+      getPosition: () => ({ x: 150, y: 250 }),
+      drawsLines: () => drawsLines,
+      getMode: () => mode,
+    } as unknown as RenderContext['crosshairHandler'];
+    engine.setRenderContext(ctx);
+    engine.start();
+    const top = engine.layerManager.getLayer(LayerType.Hover)!.ctx;
+    const lineTo = vi.fn();
+    const fillText = vi.fn();
+    top.lineTo = lineTo;
+    top.fillText = fillText;
+    runFrame();
+    return { lineTo, fillText };
+  }
+
+  it('draws the lines in the pane under the pointer', () => {
+    expect(paneUnderPointer(true).lineTo).toHaveBeenCalled();
+  });
+
+  it('draws none with the arrow cursor or a hidden crosshair', () => {
+    expect(paneUnderPointer(false).lineTo).not.toHaveBeenCalled();
+    expect(paneUnderPointer(false, 'hidden').lineTo).not.toHaveBeenCalled();
+  });
+
+  it('keeps the pane’s price at the pointer with the arrow, and drops it when the crosshair is hidden', () => {
+    expect(paneUnderPointer(false, 'normal').fillText).toHaveBeenCalled();
+    const hidden = paneUnderPointer(false, 'hidden').fillText.mock.calls.map(([t]) => t);
+    expect(hidden.filter((t) => /^-?[\d.,]+$/.test(String(t)))).toEqual([]);
+  });
+});
+
+describe('RenderEngine — a drawing’s span on the axes', () => {
+  function spans(on: boolean | undefined) {
+    const { ctx } = makeContext();
+    const span = { prices: [10, 20], times: [], color: '#ff8800', viewport: ctx.viewport };
+    const renderSpan = vi.fn();
+    ctx.drawingRenderer = { render: () => {}, renderHover: () => {}, axisSpans: () => [span] } as unknown as RenderContext['drawingRenderer'];
+    ctx.crosshairHandler = { render: () => {}, renderAxisLabels: () => {}, getPosition: () => null, renderSpan } as unknown as RenderContext['crosshairHandler'];
+    if (on !== undefined) ctx.drawingAxisSpans = on;
+    engine.setRenderContext(ctx);
+    engine.start();
+    runFrame();
+    return { renderSpan, span, ctx };
+  }
+
+  it('marks the span on the scene, after the axes', () => {
+    const { renderSpan, span, ctx } = spans(undefined);
+    const [canvas, given, main] = renderSpan.mock.calls[0];
+    expect(canvas).toBe(engine.layerManager.getLayer(LayerType.Main)!.ctx);
+    expect(given).toBe(span);
+    expect(main).toBe(ctx.viewport);
+  });
+
+  it('marks none when switched off', () => {
+    expect(spans(false).renderSpan).not.toHaveBeenCalled();
+  });
+});

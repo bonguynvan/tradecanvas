@@ -40,12 +40,13 @@ import type {
   FeaturesConfig,
   ExecutionAdapter,
   ExecutionConfig,
+  CrosshairCursor,
 } from '@tradecanvas/commons';
 import { isValidTimeZone, sessionMinute, symbolTimeZone, LayerType, setLocale as setGlobalLocale, computePriceLimits, createMarketTheme, priceStepAt, PRICE_AXIS_WIDTH, autoPricePrecision, formatPrice, stepDecimals, priceFormatterFor, fractionTick } from '@tradecanvas/commons';
 import type { BarLayout, ChartTypeOptions, DataUpdatePayload, FontConfig, IndicatorId, IndicatorParamsFor, PriceFormatter, PriceFraction, ShapeConfig, TimeFormatter } from '@tradecanvas/commons';
 import type { ResolvedLayout, ChartStyleKey, ChartStyleOverrides, ChartStyleOverridesPatch, IndicatorIntervals, IndicatorStyleConfig, PaneStyle, ResolvedChartStyle, StyleLayer } from '@tradecanvas/commons';
 import { readChartTypeOptions, tickBarCount, barTimeUnit, readChartStyleOverrides, readIndicatorPlotStyles, readPaneStyle } from '@tradecanvas/commons';
-import { PriceLines, type BidAsk, SymbolSeriesStore, CompareSymbolIndicator, CompareSymbolPaneIndicator, SpreadIndicator, CorrelationCoefficientIndicator, CorrelationLogIndicator, axisTimes, HiLoRenderer, PointAndFigureRenderer, isPriceLevelAlert, loadWebGL, gpuContextsLeft, whenGpuContextFree } from '@tradecanvas/core';
+import { PriceLines, type BidAsk, SymbolSeriesStore, CompareSymbolIndicator, CompareSymbolPaneIndicator, SpreadIndicator, CorrelationCoefficientIndicator, CorrelationLogIndicator, axisTimes, HiLoRenderer, PointAndFigureRenderer, isPriceLevelAlert, loadWebGL, gpuContextsLeft, whenGpuContextFree, idleCssCursor, isCrosshairCursor } from '@tradecanvas/core';
 import type { GpuRenderer, RendererMode } from '@tradecanvas/core';
 import { regularHoursFilter } from './regularHours.js';
 import { ChartA11y } from './chartA11y.js';
@@ -453,6 +454,7 @@ export class Chart {
       legend: f.legend ?? true,
       indicatorValueLabels: f.indicatorValueLabels ?? false,
       alignAxisLabels: f.alignAxisLabels ?? true,
+      drawingAxisSpans: f.drawingAxisSpans ?? true,
       volume: f.volume ?? true,
       watermark: f.watermark ?? true,
       saveLoad: f.saveLoad ?? true,
@@ -634,6 +636,7 @@ export class Chart {
     if (options.crosshair?.mode) {
       this.crosshairHandler.setMode(options.crosshair.mode);
     }
+    if (isCrosshairCursor(options.crosshair?.cursor)) this.crosshairHandler.setCursor(options.crosshair.cursor);
     // Crosshair callback — fired via microtask AFTER render, only when the bar
     // changes: no extra render requests, and the tooltip's one measurement
     // happens once per bar, not per mouse move.
@@ -982,6 +985,7 @@ export class Chart {
     }
     if (this.features.crosshair) {
       this.interactionManager.setCrosshairHandler(this.crosshairHandler);
+      this.applyIdleCursor();
     }
     if (this.features.drawings) {
       this.interactionManager.setDrawingManager(
@@ -2175,6 +2179,17 @@ export class Chart {
 
   isAxisLabelsAligned(): boolean {
     return this.features.alignAxisLabels;
+  }
+
+  /** Mark the selected (or the drawn) drawing's span on the axes, its ends labelled (on by default). */
+  setDrawingAxisSpansVisible(visible: boolean): void {
+    this.features.drawingAxisSpans = visible;
+    this.syncRenderContext();
+    this.engine.requestRender();
+  }
+
+  isDrawingAxisSpansVisible(): boolean {
+    return this.features.drawingAxisSpans;
   }
 
   /** Write each pane's indicator name and hovered values in its header (default); off when you label panes yourself. */
@@ -3859,6 +3874,7 @@ export class Chart {
   setTheme(themeOrName: ThemeName | Theme): void {
     this.themeManager.setTheme(themeOrName);
     this.syncRenderContext();
+    this.applyIdleCursor();
     this.container.style.backgroundColor = this.themeManager.getTheme().background;
     this.lastBackground = this.themeManager.getTheme().background;
     this.engine.requestRender();
@@ -3938,6 +3954,7 @@ export class Chart {
 
   private styleChanged(layer: StyleLayer): void {
     this.syncRenderContext();
+    this.applyIdleCursor();
     // The container's background only when the chart's changed: a host's own stays otherwise.
     const background = this.themeManager.getTheme().background;
     if (background !== this.lastBackground) {
@@ -3992,6 +4009,31 @@ export class Chart {
 
   getCrosshairMode(): string {
     return this.crosshairHandler.getMode();
+  }
+
+  /**
+   * What the pointer looks like over the chart: `'cross'` (the crosshair's
+   * lines, a crosshair cursor), `'dot'` (the lines, a small dot for a cursor)
+   * or `'arrow'` (no lines, the arrow cursor; the price and the time still
+   * follow the pointer on the axes). Emits `crosshairCursorChange`.
+   */
+  setCrosshairCursor(cursor: CrosshairCursor): void {
+    if (!isCrosshairCursor(cursor) || cursor === this.crosshairHandler.getCursor()) return;
+    this.crosshairHandler.setCursor(cursor);
+    this.applyIdleCursor();
+    this.engine.requestRender(LayerType.Hover);
+    this.eventBus.emit('crosshairCursorChange', { cursor });
+  }
+
+  getCrosshairCursor(): CrosshairCursor {
+    return this.crosshairHandler.getCursor();
+  }
+
+  /** The CSS cursor over the plot for the cursor kind, in the crosshair's colour as now resolved. */
+  private applyIdleCursor(): void {
+    const theme = this.themeManager.getTheme();
+    const color = theme.style?.crosshair.vertical.color ?? theme.crosshair;
+    this.interactionManager.setIdleCursor(idleCssCursor(this.crosshairHandler.getCursor(), color, theme.background));
   }
 
   setCrosshairPosition(point: { x: number; y: number } | null): void {
@@ -6426,6 +6468,7 @@ export class Chart {
       paneTitles: this.paneTitles,
       indicatorValueLabels: this.features.indicatorValueLabels,
       alignAxisLabels: this.features.alignAxisLabels,
+      drawingAxisSpans: this.features.drawingAxisSpans,
       formatPrice: (price) => this.formatPrice(price),
       renderOverlayPlugins: (c, layer) => this.drawOverlayPlugins(c, layer),
     });

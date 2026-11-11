@@ -1,4 +1,4 @@
-import type { ChartType, DataUpdatePayload, DrawingToolType, FeaturesConfig, HistoryLoadPayload, OHLCBar, Quote, SymbolInfo, Theme, TimeFrame, TimeZoneSetting } from '@tradecanvas/commons';
+import type { ChartType, CrosshairCursor, DataUpdatePayload, DrawingToolType, FeaturesConfig, HistoryLoadPayload, OHLCBar, Quote, SymbolInfo, Theme, TimeFrame, TimeZoneSetting } from '@tradecanvas/commons';
 import { barTimeUnit, marketStatus, offsetAt, stepDecimals, timeframeFollowsDays, tzLabel } from '@tradecanvas/commons';
 import { settingToTimezone, timezoneOptions, timezoneToSetting } from './widgetTimezones.js';
 import { installFormControls } from './formControls.js';
@@ -74,7 +74,7 @@ import { type CompareWay } from './widgetCompare.js';
 import { WidgetTooltip } from './WidgetTooltip.js';
 import { WidgetIndicatorLegend } from './WidgetIndicatorLegend.js';
 import { formatIndicatorValue } from './legendValues.js';
-import { RANGE_PRESETS, SYMBOL_INDICATOR_IDS, adapterFromFeed, indicatorCategory, sourceParam } from '@tradecanvas/core';
+import { RANGE_PRESETS, SYMBOL_INDICATOR_IDS, adapterFromFeed, indicatorCategory, isCrosshairCursor, sourceParam } from '@tradecanvas/core';
 import { WidgetBracketBar } from './WidgetBracketBar.js';
 import { AlertNotifier } from './AlertNotifier.js';
 import { WidgetDepthLadder } from './WidgetDepthLadder.js';
@@ -447,6 +447,7 @@ export class ChartWidget {
     this.chartSettings.settingsState = {
       ...DEFAULT_SETTINGS,
       ...(chartOptions?.crosshair?.mode ? { crosshairMode: chartOptions.crosshair.mode } : {}),
+      ...(isCrosshairCursor(chartOptions?.crosshair?.cursor) ? { crosshairCursor: chartOptions.crosshair.cursor } : {}),
       ...(chartOptions?.logScale && chartOptions.features?.logScale !== false ? { logScale: true, scaleMode: 'logarithmic' as const } : {}),
       ...(chartOptions?.numberLocale ? { numberLocale: chartOptions.numberLocale } : {}),
       ...(chartOptions?.timeZone != null ? { timezone: timezoneToSetting(chartOptions.timeZone) } : {}),
@@ -681,6 +682,7 @@ export class ChartWidget {
       {
         onDrawingTool: (tool) => this.handleDrawingTool(tool),
         onCancelDrawing: () => this.handleCancelDrawing(),
+        onCrosshairCursor: (kind) => this.setCrosshairCursor(kind),
         onToggleMagnet: features.drawingMagnet !== false ? () => this.handleToggleMagnet() : undefined,
         onToggleEraser: () => this.chart.setEraserMode(!this.chart.isEraserMode()),
         onToggleZoomArea: () => this.chart.setZoomAreaMode(!this.chart.isZoomAreaMode()),
@@ -701,6 +703,11 @@ export class ChartWidget {
       },
     this.t,
     );
+    // The cursor button shows the kind in use, however it was changed (its menu, the settings, the API).
+    this.scope.run(() => effect(() => {
+      const kind = this.chartSettings.followCrosshairCursor();
+      this.sidebar?.showCrosshairCursor(kind);
+    }));
 
     this.chartContainer = document.createElement('div');
     this.chartContainer.className = 'tcw-chart-container';
@@ -3173,6 +3180,21 @@ export class ChartWidget {
    */
   getSettings(): ChartSettingsState {
     return this.chartSettings.getSettings();
+  }
+
+  /**
+   * What the pointer looks like over the chart: `'cross'`, `'dot'` (the
+   * crosshair's lines with a dot for a cursor) or `'arrow'` (no lines; the
+   * price and the time still follow it on the axes). A Chart Setting, the
+   * viewer's own: kept with `persistSettings`, never in a layout or a link.
+   */
+  setCrosshairCursor(kind: CrosshairCursor): void {
+    if (!isCrosshairCursor(kind)) return;
+    this.setSettings({ crosshairCursor: kind });
+  }
+
+  getCrosshairCursor(): CrosshairCursor {
+    return this.chartSettings.settingsState.crosshairCursor;
   }
 
   /**

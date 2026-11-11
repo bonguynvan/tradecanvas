@@ -1,11 +1,24 @@
-import type { Point, ViewportState, Theme, DataSeries, TimeFormatter, TimeZoneSetting, ResolvedLineLook } from '@tradecanvas/commons';
-import { PRICE_AXIS_WIDTH, autoPricePrecision, timeParts, isDateOnly, barDateParts, barsAreDaily, barTimeUnit, lineDash } from '@tradecanvas/commons';
+import type { Point, ViewportState, Theme, DataSeries, TimeFormatter, TimeZoneSetting, ResolvedLineLook, CrosshairCursor } from '@tradecanvas/commons';
+import { PRICE_AXIS_WIDTH, TIME_AXIS_HEIGHT, autoPricePrecision, timeParts, isDateOnly, barDateParts, barsAreDaily, barTimeUnit, lineDash, withAlpha } from '@tradecanvas/commons';
 import { crosshairLooks } from './crosshairLooks.js';
 import { crispX, crispY } from '../charts/pixelGrid.js';
-import { priceScaleText } from '../axis/PriceAxis.js';
+import { panelPrecision, priceScaleText, roundStep } from '../axis/PriceAxis.js';
 import { fillTag } from '../ui/shapes.js';
 import { axisTimes } from '../charts/transforms/axisTimes.js';
-import { xToBarIndex, yToPrice, barIndexToX, barIndexToTime } from '../viewport/ScaleMapping.js';
+import { xToBarIndex, yToPrice, barIndexToX, barIndexToTime, priceToY, timeToX } from '../viewport/ScaleMapping.js';
+import { readableText } from '../finance/colorScale.js';
+import type { AxisSpan } from '../drawings/axisSpan.js';
+
+/** How strongly a drawing's span tints the axes: enough to see, light enough to read the scale through. */
+const SPAN_TINT_ALPHA = 0.2;
+
+/** A span's tint on the chart's own price axis (y) or the time axis (x), from one end to the other. */
+interface SpanTint {
+  axis: 'price' | 'time';
+  from: number;
+  to: number;
+  tint: string;
+}
 
 export type CrosshairCallback = (barIndex: number | null, point: Point | null) => void;
 
@@ -51,6 +64,9 @@ export class CrosshairHandler {
   }
   private magnetMode = true;
   private mode: CrosshairMode = 'magnet';
+  private cursor: CrosshairCursor = 'cross';
+  /** The span tints drawn on the axes this frame: a label cleared for a pill gets its tint back. */
+  private spanTints: SpanTint[] = [];
   /** Fixed decimals for the price pill; `null` follows the price axis. */
   private pricePrecision: number | null = null;
   private locale = 'en-US';
@@ -98,6 +114,20 @@ export class CrosshairHandler {
 
   getMode(): CrosshairMode {
     return this.mode;
+  }
+
+  /** What the pointer looks like: the arrow keeps the axis labels but draws no lines. */
+  setCursor(cursor: CrosshairCursor): void {
+    this.cursor = cursor;
+  }
+
+  getCursor(): CrosshairCursor {
+    return this.cursor;
+  }
+
+  /** Whether the crosshair's lines are drawn: not when it is hidden, nor with the arrow. */
+  drawsLines(): boolean {
+    return this.mode !== 'hidden' && this.cursor !== 'arrow';
   }
 
   setPricePrecision(precision: number | null): void {
@@ -166,8 +196,10 @@ export class CrosshairHandler {
 
   render(ctx: CanvasRenderingContext2D, viewport: ViewportState, theme: Theme): void {
     if (this.mode === 'hidden') return;
+    // The arrow draws no lines; the hovered bar is still reported below, for the legend.
+    const lines = this.cursor !== 'arrow';
     if (!this.position) {
-      if (this.syncedSlot !== null) this.renderSynced(ctx, viewport, theme, this.syncedSlot);
+      if (this.syncedSlot !== null && lines) this.renderSynced(ctx, viewport, theme, this.syncedSlot);
       return;
     }
     const { chartRect } = viewport;
@@ -200,7 +232,7 @@ export class CrosshairHandler {
       this.lastCallbackBarIndex = barIndex;
       this.scheduleCallback();
     }
-    if (!inPlot) return;
+    if (!inPlot || !lines) return;
 
     // Subtle "hovered bar" tint — a translucent column behind the crosshair
     // so users have unambiguous visual feedback about which bar they're
@@ -268,7 +300,7 @@ export class CrosshairHandler {
     const precision = this.pricePrecision ?? autoPricePrecision(viewport.priceRange.min, viewport.priceRange.max);
     const priceText = priceScaleText(price, viewport, precision, this.locale);
     const priceAxisX = chartRect.x + chartRect.width;
-    clearCoveredRows(ctx, priceRows, y, priceAxisX, viewport.priceAxisWidth ?? PRICE_AXIS_WIDTH, theme);
+    clearCoveredRows(ctx, priceRows, y, priceAxisX, viewport.priceAxisWidth ?? PRICE_AXIS_WIDTH, theme, this.spanTints);
     drawAxisPill(ctx, {
       text: priceText,
       anchorX: priceAxisX,
@@ -282,6 +314,83 @@ export class CrosshairHandler {
 
     // ── Time pill (bottom axis) ──
     this.drawTimePill(ctx, viewport, theme, data, slot, x, timeAxisY, timeColumns);
+  }
+
+  /**
+   * A drawing's span on the axes (selected, or being drawn): a tint from its
+   * lowest to its highest price on its price axis and from its first to its
+   * last time on the time axis, each end labelled in the drawing's colour.
+   * The price is the drawing's viewport's (a pane's own), the time the chart's.
+   */
+  /** A frame's spans start: those of the last frame are gone. */
+  beginSpans(): void {
+    this.spanTints = [];
+  }
+
+  renderSpan(
+    ctx: CanvasRenderingContext2D,
+    span: AxisSpan,
+    main: ViewportState,
+    theme: Theme,
+    data: DataSeries,
+    timeAxisY?: number,
+  ): void {
+    const font = `600 ${theme.font.sizeSmall}px ${theme.font.family}`;
+    const tint = withAlpha(span.color, SPAN_TINT_ALPHA);
+    const fg = readableText(span.color);
+    if (span.prices.length > 0) this.renderPriceSpan(ctx, span, theme, font, tint, fg, main);
+    if (span.times.length > 0) this.renderTimeSpan(ctx, span, main, theme, data, font, tint, fg, timeAxisY);
+  }
+
+  private renderPriceSpan(ctx: CanvasRenderingContext2D, span: AxisSpan, theme: Theme, font: string, tint: string, fg: string, main: ViewportState): void {
+    const vp = span.viewport;
+    const plot = vp.chartRect;
+    const axisX = plot.x + plot.width;
+    const axisWidth = vp.priceAxisWidth ?? PRICE_AXIS_WIDTH;
+    const ys = span.prices.map((price) => priceToY(price, vp));
+    // The chart's precision on its own scale; a pane's as its price at the pointer reads.
+    const precision = vp === main
+      ? this.pricePrecision ?? autoPricePrecision(vp.priceRange.min, vp.priceRange.max)
+      : panelPrecision(roundStep(vp.priceRange.min, vp.priceRange.max, plot.height));
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(axisX, plot.y, axisWidth, plot.height);
+    ctx.clip();
+    if (ys.length > 1) {
+      ctx.fillStyle = tint;
+      ctx.fillRect(axisX, Math.min(...ys), axisWidth, Math.abs(ys[ys.length - 1] - ys[0]));
+      if (vp === main) this.spanTints.push({ axis: 'price', from: Math.min(...ys), to: Math.max(...ys), tint });
+    }
+    span.prices.forEach((price, i) => {
+      const y = ys[i];
+      if (y < plot.y || y > plot.y + plot.height) return;
+      drawAxisPill(ctx, { text: priceScaleText(price, vp, precision, this.locale), anchorX: axisX, anchorY: y, orientation: 'right', bg: span.color, fg, theme, font });
+    });
+    ctx.restore();
+  }
+
+  private renderTimeSpan(
+    ctx: CanvasRenderingContext2D, span: AxisSpan, main: ViewportState, theme: Theme, data: DataSeries,
+    font: string, tint: string, fg: string, timeAxisY?: number,
+  ): void {
+    const plot = main.chartRect;
+    const axisY = timeAxisY ?? plot.y + plot.height;
+    const xs = span.times.map((time) => timeToX(time, main));
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(plot.x, axisY, plot.width, TIME_AXIS_HEIGHT);
+    ctx.clip();
+    if (xs.length > 1) {
+      ctx.fillStyle = tint;
+      ctx.fillRect(Math.min(...xs), axisY, Math.abs(xs[xs.length - 1] - xs[0]), TIME_AXIS_HEIGHT);
+      this.spanTints.push({ axis: 'time', from: Math.min(...xs), to: Math.max(...xs), tint });
+    }
+    span.times.forEach((time, i) => {
+      const x = xs[i];
+      if (x < plot.x || x > plot.x + plot.width) return;
+      drawAxisPill(ctx, { text: this.formatTime(time, data), anchorX: x, anchorY: axisY, orientation: 'bottom', bg: span.color, fg, theme, font });
+    });
+    ctx.restore();
   }
 
   /** The mirrored crosshair: only the time is shared, so only the vertical line. */
@@ -344,7 +453,7 @@ export class CrosshairHandler {
     const axisY = timeAxisY ?? (viewport.chartRect.y + viewport.chartRect.height);
     ctx.font = font;
     const half = Math.ceil(ctx.measureText(timeText).width) / 2 + PILL_PAD_X;
-    clearCoveredColumns(ctx, timeColumns, x - half, x + half, axisY, theme);
+    clearCoveredColumns(ctx, timeColumns, x - half, x + half, axisY, theme, this.spanTints);
     drawAxisPill(ctx, {
       text: timeText,
       anchorX: x,
@@ -422,12 +531,29 @@ const PILL_PAD_X = 8;
 type TimeColumn = { left: number; right: number };
 
 /** Paint the axis's ground over each time label the pill from `left` to `right` would half cover. */
-function clearCoveredColumns(ctx: CanvasRenderingContext2D, columns: readonly TimeColumn[], left: number, right: number, axisY: number, theme: Theme): void {
+function clearCoveredColumns(
+  ctx: CanvasRenderingContext2D, columns: readonly TimeColumn[], left: number, right: number, axisY: number, theme: Theme,
+  tints: readonly SpanTint[] = [],
+): void {
   const covered = columns.filter((c) => c.right > left - 2 && c.left < right + 2);
   if (covered.length === 0) return;
   ctx.save();
-  ctx.fillStyle = theme.background;
-  for (const c of covered) ctx.fillRect(c.left - 2, axisY + 1, c.right - c.left + 4, theme.font.sizeSmall + 12);
+  const height = theme.font.sizeSmall + 12;
+  for (const c of covered) {
+    const x = c.left - 2;
+    const width = c.right - c.left + 4;
+    ctx.fillStyle = theme.background;
+    ctx.fillRect(x, axisY + 1, width, height);
+    // A selected drawing's tint over the axis stays under the label taken away.
+    for (const span of tints) {
+      if (span.axis !== 'time') continue;
+      const from = Math.max(x, span.from);
+      const to = Math.min(x + width, span.to);
+      if (to <= from) continue;
+      ctx.fillStyle = span.tint;
+      ctx.fillRect(from, axisY + 1, to - from, height);
+    }
+  }
   ctx.restore();
 }
 
@@ -435,13 +561,27 @@ function clearCoveredColumns(ctx: CanvasRenderingContext2D, columns: readonly Ti
  * Paint the axis's ground over each tick label the price pill at `y` would
  * half cover, so the pill reads alone instead of over a cut-off number.
  */
-function clearCoveredRows(ctx: CanvasRenderingContext2D, rows: readonly number[], y: number, axisX: number, axisWidth: number, theme: Theme): void {
+function clearCoveredRows(
+  ctx: CanvasRenderingContext2D, rows: readonly number[], y: number, axisX: number, axisWidth: number, theme: Theme,
+  tints: readonly SpanTint[] = [],
+): void {
   const half = Math.ceil(theme.font.sizeSmall / 2) + 1;
   const covered = rows.filter((row) => Math.abs(row - y) < PILL_HEIGHT / 2 + half);
   if (covered.length === 0) return;
   ctx.save();
-  ctx.fillStyle = theme.background;
-  for (const row of covered) ctx.fillRect(axisX + 1, row - half, axisWidth - 1, half * 2);
+  for (const row of covered) {
+    ctx.fillStyle = theme.background;
+    ctx.fillRect(axisX + 1, row - half, axisWidth - 1, half * 2);
+    // A selected drawing's tint over the axis stays under the label taken away.
+    for (const span of tints) {
+      if (span.axis !== 'price') continue;
+      const from = Math.max(row - half, span.from);
+      const to = Math.min(row + half, span.to);
+      if (to <= from) continue;
+      ctx.fillStyle = span.tint;
+      ctx.fillRect(axisX + 1, from, axisWidth - 1, to - from);
+    }
+  }
   ctx.restore();
 }
 

@@ -297,6 +297,7 @@ export const FA_MESSAGES: WidgetMessages = {
   'settings.alignAxisLabels': 'بدون همپوشانی برچسب‌ها',
   'settings.barCountdown': 'شمارش معکوس کندل',
   'settings.crosshairMode': 'کراس‌هیر',
+  'settings.crosshairCursor': 'نشانگر',
   'settings.crosshair.magnet': 'آهنربا',
   'settings.crosshair.normal': 'عادی',
   'settings.crosshair.hidden': 'پنهان',
@@ -362,6 +363,10 @@ export const FA_MESSAGES: WidgetMessages = {
 
   // Drawing sidebar and style panel
   'drawing.cursor': 'مکان‌نما',
+  'drawing.cursors': 'نشانگرها',
+  'drawing.cursorCross': 'به‌علاوه',
+  'drawing.cursorDot': 'نقطه',
+  'drawing.cursorArrow': 'پیکان',
   'drawing.tools': 'ابزارهای ترسیم',
   'drawing.style': 'سبک ترسیم و قالب‌ها',
   'drawing.magnet': 'آهنربا',

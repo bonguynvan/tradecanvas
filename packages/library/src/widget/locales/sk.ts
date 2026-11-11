@@ -290,6 +290,7 @@ export const SK_MESSAGES: WidgetMessages = {
   'settings.alignAxisLabels': 'Bez prekrývajúcich sa popiskov',
   'settings.barCountdown': 'Odpočet do zatvorenia sviečky',
   'settings.crosshairMode': 'Nitkový kríž',
+  'settings.crosshairCursor': 'Kurzor',
   'settings.crosshair.magnet': 'Magnet',
   'settings.crosshair.normal': 'Normálny',
   'settings.crosshair.hidden': 'Skrytý',
@@ -352,6 +353,14 @@ export const SK_MESSAGES: WidgetMessages = {
   'objects.removeComparison': 'Odobrať porovnanie',
 
   'drawing.cursor': 'Kurzor',
+
+  'drawing.cursors': 'Kurzory',
+
+  'drawing.cursorCross': 'Kríž',
+
+  'drawing.cursorDot': 'Bodka',
+
+  'drawing.cursorArrow': 'Šípka',
   'drawing.tools': 'Kresliace nástroje',
   'drawing.style': 'Štýl kreslenia a šablóny',
   'drawing.magnet': 'Magnet',

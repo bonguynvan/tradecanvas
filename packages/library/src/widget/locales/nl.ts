@@ -290,6 +290,7 @@ export const NL_MESSAGES: WidgetMessages = {
   'settings.alignAxisLabels': 'Geen overlappende labels',
   'settings.barCountdown': 'Afteller van de bar',
   'settings.crosshairMode': 'Dradenkruis',
+  'settings.crosshairCursor': 'Cursor',
   'settings.crosshair.magnet': 'Magneet',
   'settings.crosshair.normal': 'Normaal',
   'settings.crosshair.hidden': 'Verborgen',
@@ -352,6 +353,14 @@ export const NL_MESSAGES: WidgetMessages = {
   'objects.removeComparison': 'Vergelijking verwijderen',
 
   'drawing.cursor': 'Cursor',
+
+  'drawing.cursors': 'Cursors',
+
+  'drawing.cursorCross': 'Kruis',
+
+  'drawing.cursorDot': 'Punt',
+
+  'drawing.cursorArrow': 'Pijl',
   'drawing.tools': 'Tekengereedschap',
   'drawing.style': 'Tekenstijl en sjablonen',
   'drawing.magnet': 'Magneet',

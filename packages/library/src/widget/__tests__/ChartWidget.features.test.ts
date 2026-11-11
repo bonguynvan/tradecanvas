@@ -385,7 +385,7 @@ describe('ChartWidget drawing tools', () => {
   it('follows the chart when its drawing tool ends', () => {
     make();
     const cursorActive = () =>
-      host.querySelector('.tcw-sidebar-btn[title="Cursor"]')!.classList.contains('tcw-active');
+      host.querySelector('.tcw-cursor-wrap .tcw-sidebar-btn')!.classList.contains('tcw-active');
     FakeChart.last.emit('drawingToolChange', { tool: 'trendLine' });
     expect(cursorActive()).toBe(false);
     FakeChart.last.emit('drawingToolChange', { tool: null });

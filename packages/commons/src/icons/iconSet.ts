@@ -19,6 +19,8 @@ export interface IconDef {
 /** Toolbar, sidebar and panel glyphs. */
 export const UI_ICONS: Readonly<Record<string, IconDef>> = {
   cursor: { d: 'M6 3.5L18.5 12.5L12.6 13.6L9.7 19.4z' }, // Cursor
+  crosshairCursor: { d: 'M12 3.5v6M12 14.5v6M3.5 12h6M14.5 12h6' }, // Cross cursor
+  dotCursor: { dots: [[12, 12, 3]] }, // Dot cursor
   trendingUp: { d: 'M3 17L9 11L13 14.5L21 6.5M15 6.5H21V12.5' }, // Indicators / Long
   trendingDown: { d: 'M3 7L9 13L13 9.5L21 17.5M15 17.5H21V11.5' }, // Short
   minus: { d: 'M5 12H19' }, // Minus

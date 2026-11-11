@@ -290,6 +290,7 @@ export const JA_MESSAGES: WidgetMessages = {
   'settings.alignAxisLabels': 'ラベルを重ねない',
   'settings.barCountdown': 'バーのカウントダウン',
   'settings.crosshairMode': 'クロスヘア',
+  'settings.crosshairCursor': 'カーソル',
   'settings.crosshair.magnet': 'マグネット',
   'settings.crosshair.normal': '通常',
   'settings.crosshair.hidden': '非表示',
@@ -352,6 +353,14 @@ export const JA_MESSAGES: WidgetMessages = {
   'objects.removeComparison': '比較を削除',
 
   'drawing.cursor': 'カーソル',
+
+  'drawing.cursors': 'カーソル',
+
+  'drawing.cursorCross': '十字',
+
+  'drawing.cursorDot': 'ドット',
+
+  'drawing.cursorArrow': '矢印',
   'drawing.tools': '描画ツール',
   'drawing.style': '描画スタイルとテンプレート',
   'drawing.magnet': 'マグネット',

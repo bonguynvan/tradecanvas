@@ -39,6 +39,7 @@ import { DrawingDrag, shiftAnchors, type DragEdit } from './DrawingDrag.js';
 import { constrainedAnchor, keepsAngle } from './drawingEditing.js';
 import { clampScreenPoints, isScreenAnchored, offsetScreenPoints, pixelToScreenPoint, screenPointToPixel, shiftScreenPoints } from './screenAnchors.js';
 import { beginExtent, endExtent, setDrawingPlot, type ExtentRect } from './drawingLook.js';
+import { drawingAxisSpan, type AxisSpan } from './axisSpan.js';
 
 export type { DrawingOrderMove, DrawingPatch } from './drawingState.js';
 
@@ -1798,7 +1799,8 @@ export class DrawingManager {
    */
   renderHover(ctx: CanvasRenderingContext2D, viewport: ViewportState): void {
     const id = this.hoverDrawing;
-    if (!id || this.selection.has(id) || this.activeTool || this.state === 'creating') return;
+    // A selected drawing shows its own handles, unless the eraser is about to take it.
+    if (!id || (this.selection.has(id) && !this.eraser) || this.activeTool || this.state === 'creating') return;
     const drawing = this.drawings.find((d) => d.id === id);
     if (!drawing || drawing.locked || !this.shown(drawing)) return;
     const plugin = this.registry.get(drawing.type);
@@ -1806,12 +1808,30 @@ export class DrawingManager {
     if (plugin && on) renderIsolated(ctx, plugin, drawing, on, false, true);
   }
 
+  /**
+   * What to mark on the axes: the span of the drawing being made, else of
+   * the selected one (moved or reshaped too), on the viewport it is drawn on.
+   */
+  axisSpans(main: ViewportState): AxisSpan[] {
+    const preview = this.creator.previewState();
+    const target = preview ?? (this.selection.primary ? this.drawings.find((d) => d.id === this.selection.primary) : undefined);
+    if (!target || (!preview && !this.shown(target))) return [];
+    const plugin = this.registry.get(target.type);
+    const viewport = this.viewportFor(target.paneId, main);
+    const extent = plugin && viewport ? drawingAxisSpan(target, plugin.descriptor) : null;
+    return extent && viewport ? [{ ...extent, color: target.style.color, viewport }] : [];
+  }
+
   /** What the pointer is over: a handle of the selected drawing, or a drawing, and the cursor for it. */
   private hoverAt(pos: Point, main: ViewportState): { cursor: 'move' | 'pointer' | null; handle: HandleRef | null; drawing: string | null } {
     const none = { cursor: null, handle: null, drawing: null };
     const scope = this.scopeAt(pos, main);
     if (!scope) return none;
-    if (this.eraser) return { ...none, cursor: this.erasableAt(pos, scope) ? 'pointer' : null };
+    if (this.eraser) {
+      // What a click would remove glows, so the eraser never takes the wrong one.
+      const erasable = this.erasableAt(pos, scope);
+      return { ...none, cursor: erasable ? 'pointer' : null, drawing: erasable };
+    }
     if (this.activeTool || this.state === 'creating') return none;
     const tolerance = MOUSE_REACH.handle;
     const viewport = scope.viewport;

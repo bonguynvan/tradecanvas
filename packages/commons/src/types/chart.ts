@@ -135,6 +135,12 @@ export interface FeaturesConfig {
    * keeps each tag on its line.
    */
   alignAxisLabels?: boolean;
+  /**
+   * While a drawing is selected or being drawn, tint the price axis from its
+   * lowest to its highest price and the time axis from its first to its last
+   * time, and label each end in the drawing's colour. Default true.
+   */
+  drawingAxisSpans?: boolean;
   /** Show volume bars below candles */
   volume?: boolean;
   /** Show watermark text */
@@ -367,8 +373,18 @@ export interface GridOptions {
   vLineStyle?: LineStyle;
 }
 
+/**
+ * What the pointer looks like over the chart. `'cross'` draws the crosshair's
+ * lines with a crosshair cursor; `'dot'` draws the same lines with a small dot
+ * for a cursor; `'arrow'` draws no lines, with the arrow cursor, while the
+ * price and the time still follow the pointer on the axes.
+ */
+export type CrosshairCursor = 'cross' | 'dot' | 'arrow';
+
 export interface CrosshairOptions {
   mode: 'normal' | 'magnet' | 'hidden';
+  /** What the pointer looks like over the chart (see `CrosshairCursor`). Default `'cross'`. */
+  cursor?: CrosshairCursor;
   hLine?: CrosshairLineOptions;
   vLine?: CrosshairLineOptions;
 }

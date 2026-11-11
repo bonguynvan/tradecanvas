@@ -231,6 +231,15 @@ chart.setZoomAreaMode(true)        // the next drag zooms to the bars in its box
 chart.setDrawingMagnetMode('strong') // 'off' | 'weak' | 'strong'`}</code></pre>
 <p>The weak magnet snaps a point to the bar's open, high, low or close when the pointer is near one; the strong magnet always does. In the widget the magnet starts off: a drawing goes where it is placed until the magnet button turns it on.</p>
 
+<h2 id="cursors">Cursors, and a drawing's span on the axes</h2>
+<pre><code>{`new Chart(el, { crosshair: { mode: 'magnet', cursor: 'dot' } })
+chart.setCrosshairCursor('arrow')        // 'cross' | 'dot' | 'arrow'
+chart.on('crosshairCursorChange', (e) => e.payload)  // { cursor }
+widget.setCrosshairCursor('dot')         // the widget's, a Chart Setting
+chart.setDrawingAxisSpansVisible(false)  // or features: { drawingAxisSpans: false }`}</code></pre>
+<p><strong>Cross</strong> draws the crosshair's lines with a crosshair cursor. <strong>Dot</strong> draws the same lines with a small dot in the crosshair's colour for a cursor. <strong>Arrow</strong> draws no lines and keeps the arrow cursor, while the price and the time still follow the pointer on the axes. In the widget, the cursor button at the top of the drawing tools opens a menu of the three, and the Chart Settings have the row. The kind is the viewer's own: <code>persistSettings</code> keeps it, and a layout or a shared link never carries it.</p>
+<p>While a drawing is selected, moved or being drawn, the price axis is tinted from its lowest to its highest price and the time axis from its first to its last time, and each end is labelled in the drawing's colour. A horizontal line marks only its price and a vertical line only its time; a drawing kept to the screen marks neither. The eraser glows the drawing a click would remove.</p>
+
 <h2 id="editing">Editing with the pointer and the keys</h2>
 <ul>
   <li>The magnet works on a dragged handle and on a moved drawing too: the point nearest where it was grabbed lands on a price, and the rest keep their place to it. The weak magnet reaches 50 px.</li>

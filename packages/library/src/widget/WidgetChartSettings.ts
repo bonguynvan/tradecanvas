@@ -77,6 +77,11 @@ export class WidgetChartSettings {
     this.state.set(value);
   }
 
+  /** The cursor kind, followed: an effect that reads it runs again when it changes. */
+  followCrosshairCursor(): ChartSettingsState['crosshairCursor'] {
+    return this.state.get().crosshairCursor;
+  }
+
   /** What Reset in the settings panel goes back to: the defaults, as the host's features set them. */
   settingsDefaults!: ChartSettingsState;
 
@@ -357,6 +362,7 @@ export class WidgetChartSettings {
       periodLevelsVisible: chart.isPeriodLevelsVisible?.(),
       periodLevelsPeriod: chart.getPeriodLevelsPeriod?.(),
       crosshairMode: chart.getCrosshairMode?.(),
+      crosshairCursor: chart.getCrosshairCursor?.(),
       scaleMode: this.userScaleMode(),
       autoScale: chart.isAutoScale?.(),
       invertScale: chart.isInvertScale?.(),
@@ -474,6 +480,7 @@ export class WidgetChartSettings {
     if (patch.indicatorValueLabels !== undefined) this.host.chart.setIndicatorValueLabelsVisible(patch.indicatorValueLabels);
     if (patch.alignAxisLabels !== undefined) this.host.chart.setAxisLabelsAligned(patch.alignAxisLabels);
     if (patch.crosshairMode !== undefined) this.host.chart.setCrosshairMode(patch.crosshairMode);
+    if (patch.crosshairCursor !== undefined) this.host.chart.setCrosshairCursor(patch.crosshairCursor);
     if (patch.autoScale !== undefined) this.host.chart.setAutoScale(patch.autoScale);
     if (patch.invertScale !== undefined) this.host.chart.setInvertScale(patch.invertScale);
     if (patch.leftPriceScale !== undefined) {
