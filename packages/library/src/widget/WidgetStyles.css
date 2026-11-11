@@ -800,26 +800,12 @@
   opacity: 0;
 }
 
-.tcw-loading-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 14px;
-  padding: 22px 26px 20px;
-  border: 1px solid transparent;
-  border-radius: var(--tcw-panel-radius);
-}
-
-/* A slow switch: the previous chart stays readable underneath, dimmed, so the
-   click visibly registered without blanking the screen. */
+/* A slow switch: the previous chart stays underneath, lightly dimmed and blurred, so the click
+   visibly registered without blanking the screen; the candles stand on it with no panel. */
 .tcw-loading-overlay--veil {
-  background: color-mix(in srgb, var(--tcw-bg) 55%, transparent);
-}
-
-.tcw-loading-overlay--veil .tcw-loading-card {
-  background: var(--tcw-bg-elevated);
-  border-color: var(--tcw-border);
-  box-shadow: var(--tcw-menu-shadow);
+  background: color-mix(in srgb, var(--tcw-bg) 45%, transparent);
+  -webkit-backdrop-filter: blur(3px);
+  backdrop-filter: blur(3px);
 }
 
 .tcw-loading-candles {
@@ -870,30 +856,6 @@
   20% { opacity: 1; transform: translateY(-2px); }
 }
 
-.tcw-loading-track {
-  position: relative;
-  width: 100%;
-  min-width: 88px;
-  height: 2px;
-  border-radius: 1px;
-  background: var(--tcw-border);
-  overflow: hidden;
-}
-
-.tcw-loading-track > span {
-  position: absolute;
-  inset: 0;
-  width: 40%;
-  border-radius: 1px;
-  background: linear-gradient(90deg, transparent, var(--tcw-accent), transparent);
-  animation: tcw-loading-sweep 1.6s var(--tcw-ease) infinite;
-}
-
-@keyframes tcw-loading-sweep {
-  from { transform: translateX(-100%); }
-  to { transform: translateX(250%); }
-}
-
 /* The status text is announced, not shown — the candles say "loading". */
 .tcw-loading-label {
   position: absolute;
@@ -904,8 +866,7 @@
   white-space: nowrap;
 }
 
-.tcw-loading-overlay--error .tcw-loading-candles,
-.tcw-loading-overlay--error .tcw-loading-track {
+.tcw-loading-overlay--error .tcw-loading-candles {
   display: none;
 }
 
@@ -923,28 +884,28 @@
   font-size: var(--tcw-font-size);
 }
 
+/* Over a veiled chart the message gets a plate of its own: red text straight on candles and
+   gridlines that are only dimmed would be hard to read. */
+.tcw-loading-overlay--veil.tcw-loading-overlay--error .tcw-loading-label {
+  padding: var(--tcw-space-3) var(--tcw-space-4);
+  background: var(--tcw-bg-elevated);
+  border: var(--tcw-border-w) solid var(--tcw-border);
+  border-radius: var(--tcw-radius);
+  box-shadow: var(--tcw-shadow-md);
+}
+
 /* Reduced motion: nothing slides or lifts, but the candles still glow in
-   turn and the track breathes, so the wait never looks frozen. */
+   turn, so the wait never looks frozen. */
 @media (prefers-reduced-motion: reduce) {
   .tcw-loading-candle {
     animation: tcw-candle-glow 2.4s ease-in-out infinite;
     animation-delay: var(--tcw-delay, 0ms);
-  }
-  .tcw-loading-track > span {
-    width: 100%;
-    background: var(--tcw-accent);
-    animation: tcw-loading-breathe 2.4s ease-in-out infinite;
   }
 }
 
 @keyframes tcw-candle-glow {
   0%, 60%, 100% { opacity: 0.28; }
   25% { opacity: 0.9; }
-}
-
-@keyframes tcw-loading-breathe {
-  0%, 100% { opacity: 0.15; }
-  50% { opacity: 0.7; }
 }
 
 /* === On-chart indicator legend (WidgetIndicatorLegend) === */
@@ -3574,8 +3535,7 @@
 
   /* Except the loader's slow glow (opacity only): without it a long wait
      looks frozen. */
-  .tcw-root .tcw-loading-candle,
-  .tcw-root .tcw-loading-track > span {
+  .tcw-root .tcw-loading-candle {
     animation-duration: 2.4s !important;
     animation-iteration-count: infinite !important;
     animation-delay: var(--tcw-delay, 0ms) !important;

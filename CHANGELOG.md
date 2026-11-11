@@ -4,6 +4,12 @@
 
 ### Widget
 
+- **A quieter loading screen** (`@tradecanvas/chart`). The candles that say a chart is loading stand alone: the yellow progress line under them and the panel behind them are gone. A slow switch of symbol or interval no longer blanks the chart under it to 55%. It dims it to 45% and blurs it slightly, so the chart stays in view while the next one loads.
+
+## 1.80.0 (2026-11-11)
+
+### Widget
+
 - **The ticker everywhere a symbol is named** (`@tradecanvas/chart`, `@tradecanvas/core`). An indicator on another symbol ("Compare NVDA", "Ratio ETHUSDT"), also named so among the alert sources, shows the ticker without the venue before it, as the toolbar and the legend have since 1.79.0. So do a compare line's label, the compare toasts, the object tree's compares, the layouts dialog, the grid's tabs and the order ticket. `tickerOf(symbol)`, from `@tradecanvas/chart` or `@tradecanvas/commons`, gives the same. A data export's column for such an indicator is headed the same way ("Compare ETHUSDT"). A watchlist row keeps a pair already written with its slash (a DEX pool's "WBTC/WETH") as it is, where it read "WBTC/W/ETH". A symbol may be up to 160 characters, where it was 64: a DEX pool's, which names its network, its address and its pair, was dropped from the watchlist and the search unseen.
 
 ## 1.79.2 (2026-11-11)

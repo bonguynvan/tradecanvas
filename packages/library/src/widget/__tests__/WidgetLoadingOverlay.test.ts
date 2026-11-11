@@ -29,6 +29,13 @@ describe('WidgetLoadingOverlay', () => {
     expect(label()).toBe('Loading chart...');
   });
 
+  // A progress line and a card behind the candles were more than a wait needs: the candles say it.
+  it('draws the candles alone, with no progress line and no card around them', () => {
+    expect(parent.querySelector('.tcw-loading-track')).toBeNull();
+    expect(parent.querySelector('.tcw-loading-card')).toBeNull();
+    expect(el().querySelector(':scope > .tcw-loading-candles')).not.toBeNull();
+  });
+
   it('starts visible and loading — the widget mounts before its first bars', () => {
     expect(visible()).toBe(true);
     expect(overlay.isActive()).toBe(true);

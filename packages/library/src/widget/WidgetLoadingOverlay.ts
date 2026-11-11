@@ -45,11 +45,8 @@ export class WidgetLoadingOverlay {
     this.el.setAttribute('role', 'status');
     this.el.setAttribute('aria-live', 'polite');
 
-    // Candles + label share a card: transparent on the opaque first-load
-    // screen, a raised panel when veiling a chart so it reads over the candles.
-    const card = document.createElement('div');
-    card.className = 'tcw-loading-card';
-
+    // The candles alone say "loading": no panel behind them and no progress
+    // line. Over a chart already drawn, the veil dims and blurs it instead.
     const candles = document.createElement('div');
     candles.className = 'tcw-loading-candles';
     candles.setAttribute('aria-hidden', 'true');
@@ -64,19 +61,12 @@ export class WidgetLoadingOverlay {
       candle.style.setProperty('--tcw-delay', `${i * 110}ms`);
       candles.appendChild(candle);
     });
-    card.appendChild(candles);
-
-    const track = document.createElement('div');
-    track.className = 'tcw-loading-track';
-    track.setAttribute('aria-hidden', 'true');
-    track.appendChild(document.createElement('span'));
-    card.appendChild(track);
+    this.el.appendChild(candles);
 
     this.label = document.createElement('div');
     this.label.className = 'tcw-loading-label';
     this.label.textContent = loadingText;
-    card.appendChild(this.label);
-    this.el.appendChild(card);
+    this.el.appendChild(this.label);
 
     parent.appendChild(this.el);
   }
