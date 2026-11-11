@@ -174,8 +174,8 @@ export interface WidgetUIShadows {
  * - `'comfortable'` (the default): every size and gap an even number of
  *   pixels, a step more padding in controls, and a comfortable chart (see
  *   `ChartDensity`).
- * - `'classic'`: the widget as it was before 2.0, to the pixel: the sizes and
- *   Fibonacci spacing of 1.x, golden bars, the chart's compact margins.
+ * - `'classic'`: the widget as it was before 2.0: the sizes and Fibonacci
+ *   spacing of 1.x, golden bars, the chart's compact margins.
  * - `'compact'`: smaller controls on the 1.x spacing, the chart compact with
  *   the classic 2 px gap between bars. Unchanged from 1.x.
  * - `'spacious'`: bigger controls. `'airy'`: spacious, with the figures

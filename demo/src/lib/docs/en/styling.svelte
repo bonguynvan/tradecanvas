@@ -78,7 +78,7 @@ grid.getUI()`}</code></pre>
   <thead><tr><th><code>ui.density</code></th><th>The widget</th><th>Its chart</th></tr></thead>
   <tbody>
     <tr><td><code>'comfortable'</code></td><td>The default: even sizes (a 34 px button, a 20 px icon), spacing 2 · 4 · 6 · 8 · 12 · 20 · 32, 12 px of padding in a control.</td><td>Comfortable, golden bars.</td></tr>
-    <tr><td><code>'classic'</code></td><td>As it was before 2.0, to the pixel: a 33 px button, spacing 2 · 3 · 5 · 8 · 13 · 21 · 34, 8 px of padding in a control.</td><td>Compact, with the golden bars the widget had.</td></tr>
+    <tr><td><code>'classic'</code></td><td>As it was before 2.0 (at a screen scale of 100% the same pixels, but for the price axis's tick marks, which are sharper): a 33 px button, spacing 2 · 3 · 5 · 8 · 13 · 21 · 34, 8 px of padding in a control.</td><td>Compact, with the golden bars the widget had.</td></tr>
     <tr><td><code>'compact'</code></td><td>Smaller controls (a 26 px button, a 16 px icon) on the classic spacing. Unchanged from 1.x.</td><td>Compact, classic bars.</td></tr>
     <tr><td><code>'spacious'</code></td><td>Bigger controls (a 42 px button, a 26 px icon).</td><td>Comfortable, golden bars.</td></tr>
     <tr><td><code>'airy'</code></td><td>Spacious, with the figures on the axes and in the legend in the look's sans face.</td><td>Comfortable, golden bars.</td></tr>

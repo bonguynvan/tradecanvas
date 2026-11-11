@@ -9,7 +9,7 @@
 
 The chart and the widget open with more room, on even pixels, and sharp at 125% and 150%. This changes how they look by default; one option gives the look of 1.x back.
 
-**To keep the look of 1.x**: `new ChartWidget(host, { ui: { density: 'classic' } })` (or `widget.setUI({ density: 'classic' })`) is the widget as it was, to the pixel. For a `Chart` of your own, `new Chart(host, { density: 'compact' })`. `ui: { density: 'compact' }`, the smaller controls with classic bars, is unchanged.
+**To keep the look of 1.x**: `new ChartWidget(host, { ui: { density: 'classic' } })` (or `widget.setUI({ density: 'classic' })`) is the widget as it was (at 100% the same pixels, but for the price axis's tick marks, which are sharper). For a `Chart` of your own, `new Chart(host, { density: 'compact' })`. `ui: { density: 'compact' }`, the smaller controls with classic bars, is unchanged.
 
 What is new by default:
 

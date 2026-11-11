@@ -14,7 +14,7 @@
   - Padding: 12 px beside a toolbar button's label, a menu row's text and the toolbar's first button, from 8 (`--tcw-control-pad`, `--tcw-bar-pad`, `--tcw-menu-row-pad`).
   - A line of body text is 18 px at 13 px (`--tcw-line-height`), and an indicator's row on the chart 20 px (`--tcw-legend-line`).
   - The toolbar's and the bottom bar's text buttons are a whole number of pixels wide where the browser can round a box sized by its content (Chrome and Edge 129 and later), so the icons after them are sharp too (`--tcw-text-w`).
-- **`ui: { density: 'classic' }` is the widget as it was before 2.0** (`@tradecanvas/chart`). The sizes, spacing, padding and chart of 1.x, to the pixel at 100%. `ui: { density: 'compact' }`, the smaller controls with classic bars, is unchanged. `chartOptions.density` wins over the look's.
+- **`ui: { density: 'classic' }` is the widget as it was before 2.0** (`@tradecanvas/chart`). The sizes, spacing, padding and chart of 1.x: at 100% the same pixels, but for the price axis's tick marks, which are sharper. `ui: { density: 'compact' }`, the smaller controls with classic bars, is unchanged. `chartOptions.density` wins over the look's.
 - **Lines are sharp at a screen scale of 125% and 150%** (`@tradecanvas/core`, `@tradecanvas/chart`).
   - The canvases take the browser's own count of device pixels where it gives one, so they are no longer stretched or shifted by a fraction of a pixel. Rounding the CSS size was off by one pixel as often as not, which softened everything drawn.
   - The grid, the axes' lines and ticks, the last price's line, order, alert, limit and level lines, a pane's divider and the edges of price tags land on whole device pixels.
