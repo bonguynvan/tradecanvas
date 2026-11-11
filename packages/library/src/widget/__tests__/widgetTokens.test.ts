@@ -166,6 +166,13 @@ describe('dialog styles', () => {
   /** The innermost rules, selector and body: every dialog's, the symbol search's and the compare dialog's (`.tcw-ss…`) among them. */
   const rules = [...dialogs.matchAll(/([^{}]+)\{([^{}]*)\}/g)];
 
+  // The search is a band with a rule under it: the row under it (the filters, or the compare's way)
+  // stands off that rule as it stands off the list, instead of a tab's or a select's border on it.
+  it('set the row under the symbol search’s band off its rule', () => {
+    const gap = rules.find((m) => m[1].includes('.tcw-ss-search + .tcw-ss-filters') && m[1].includes('.tcw-ss-search + .tcw-ss-way'));
+    expect(gap?.[2]).toMatch(/margin-top:\s*var\(--tcw-space-4\)/);
+  });
+
   it('write every colour through a token, the symbol search’s kind tabs’ fade too', () => {
     expect(rules.filter((m) => m[1].includes('.tcw-ss')).length).toBeGreaterThan(0);
     const literal = /#[0-9a-f]{3,8}\b|\b(?:rgba?|hsla?|oklch|oklab)\(|(?<![-\w])(?:black|white)(?![-\w])/i;

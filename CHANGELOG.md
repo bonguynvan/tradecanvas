@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Widget
+
+- **The symbol search's filters stand off the search field** (`@tradecanvas/chart`). The row of kinds and the exchange filter sat right on the rule under the search field, "All exchanges" border to border with it. The row under the field (in the compare dialog, the way to compare) now keeps the same space from it as from the list.
+
 ## 1.83.0 (2026-11-11)
 
 ### Widget
