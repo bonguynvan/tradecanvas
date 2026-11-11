@@ -1,6 +1,6 @@
 {
   "name": "@tradecanvas/react",
-  "version": "1.4.17",
+  "version": "1.4.18",
   "type": "module",
   "description": "React component for @tradecanvas/chart — reactive props, ref forwarding, zero boilerplate.",
   "license": "MIT",
