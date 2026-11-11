@@ -224,6 +224,12 @@ describe('loading overlay styles', () => {
     expect(css).not.toMatch(/tcw-loading-track|tcw-loading-card|tcw-loading-sweep/);
   });
 
+  it('puts an error over a veiled chart on a plate, so it reads over the candles', () => {
+    const plate = css.match(/\.tcw-loading-overlay--veil\.tcw-loading-overlay--error \.tcw-loading-label\s*\{([^}]*)\}/)?.[1] ?? '';
+    expect(plate).toMatch(/background:\s*var\(--tcw-bg-elevated\)/);
+    expect(plate).toMatch(/padding:/);
+  });
+
   it('never shows the loading text, only an error', () => {
     expect(block).not.toMatch(/\.tcw-loading-label/);
     expect(css).toMatch(/\.tcw-loading-overlay--error \.tcw-loading-label\s*{[^}]*position:\s*static/);

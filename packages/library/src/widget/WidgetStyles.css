@@ -884,6 +884,16 @@
   font-size: var(--tcw-font-size);
 }
 
+/* Over a veiled chart the message gets a plate of its own: red text straight on candles and
+   gridlines that are only dimmed would be hard to read. */
+.tcw-loading-overlay--veil.tcw-loading-overlay--error .tcw-loading-label {
+  padding: var(--tcw-space-3) var(--tcw-space-4);
+  background: var(--tcw-bg-elevated);
+  border: var(--tcw-border-w) solid var(--tcw-border);
+  border-radius: var(--tcw-radius);
+  box-shadow: var(--tcw-shadow-md);
+}
+
 /* Reduced motion: nothing slides or lifts, but the candles still glow in
    turn, so the wait never looks frozen. */
 @media (prefers-reduced-motion: reduce) {
