@@ -183,10 +183,10 @@ describe('WidgetDock', () => {
     expect(dock.current()).toBeNull();
   });
 
-  it('opens 296 wide, or as wide as kept last within 233 to 377', () => {
+  it('opens 262 wide, or as wide as kept last within 233 to 377', () => {
     make();
-    expect(DOCK_WIDTH).toEqual({ min: 233, default: 296, max: 377 });
-    expect(width()).toBe(296);
+    expect(DOCK_WIDTH).toEqual({ min: 233, default: 262, max: 377 });
+    expect(width()).toBe(262);
     dock.destroy();
     host.replaceChildren();
     make({ savedWidth: () => 999 });
@@ -199,7 +199,7 @@ describe('WidgetDock', () => {
     dock.open('alerts');
     pointer(handle(), 'pointerdown', 500);
     pointer(document, 'pointermove', 460);
-    expect(width()).toBe(336);
+    expect(width()).toBe(302);
     pointer(document, 'pointermove', 100);
     expect(width()).toBe(377);
     pointer(document, 'pointerup', 100);
@@ -213,7 +213,7 @@ describe('WidgetDock', () => {
     make();
     pointer(handle(), 'pointerdown', 500);
     pointer(document, 'pointermove', 520);
-    expect(width()).toBe(316);
+    expect(width()).toBe(282);
     pointer(document, 'pointerup', 520);
   });
 
@@ -223,15 +223,15 @@ describe('WidgetDock', () => {
     expect(h.getAttribute('role')).toBe('separator');
     expect(h.getAttribute('aria-label')).toBe('Resize the panel');
     expect(h.tabIndex).toBe(0);
-    expect([h.getAttribute('aria-valuemin'), h.getAttribute('aria-valuemax'), h.getAttribute('aria-valuenow')]).toEqual(['233', '377', '296']);
+    expect([h.getAttribute('aria-valuemin'), h.getAttribute('aria-valuemax'), h.getAttribute('aria-valuenow')]).toEqual(['233', '377', '262']);
     h.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true }));
-    expect(width()).toBe(296 + DOCK_WIDTH_STEP);
-    expect(h.getAttribute('aria-valuenow')).toBe(String(296 + DOCK_WIDTH_STEP));
+    expect(width()).toBe(262 + DOCK_WIDTH_STEP);
+    expect(h.getAttribute('aria-valuenow')).toBe(String(262 + DOCK_WIDTH_STEP));
     h.dispatchEvent(new KeyboardEvent('keydown', { key: 'Home', bubbles: true }));
     expect(width()).toBe(233);
     h.dispatchEvent(new KeyboardEvent('keydown', { key: 'End', bubbles: true }));
     expect(width()).toBe(377);
-    expect(saved).toEqual([296 + DOCK_WIDTH_STEP, 233, 377]);
+    expect(saved).toEqual([262 + DOCK_WIDTH_STEP, 233, 377]);
   });
 
   it('marks its rail and each button with their switches', () => {
@@ -250,7 +250,7 @@ describe('WidgetDock', () => {
     pointer(document, 'pointermove', 400);
     pointer(document, 'pointerup', 400);
     expect(host.querySelector('.tcw-dock')).toBeNull();
-    expect(element.style.getPropertyValue('--tcw-dock-w')).toBe('296px');
+    expect(element.style.getPropertyValue('--tcw-dock-w')).toBe('262px');
     expect(saved).toEqual([]);
     dock = new WidgetDock(host, { labels });
   });

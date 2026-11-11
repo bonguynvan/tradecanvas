@@ -596,7 +596,7 @@ widget.destroy()`}</code></pre>
   izquierda en un widget de derecha a izquierda). Un botón del riel abre su panel, o lo cierra si es el que está
   abierto; el botón de cerrar de cada panel también lo cierra. Ningún panel se abre solo: el gráfico tiene el espacio hasta que se pide uno
   (<code>widget.openPanel('watchlist')</code> lo abre desde tu código). Arrastra el borde del panel, o usa las flechas
-  del teclado sobre él, para darle un ancho de 233 a 377 px (296 al principio), que se guarda en este navegador; nunca
+  del teclado sobre él, para darle un ancho de 233 a 377 px (262 al principio), que se guarda en este navegador; nunca
   ocupa más del 38,2% de la fila, y el resto queda para el gráfico.
 </p>
 <p>

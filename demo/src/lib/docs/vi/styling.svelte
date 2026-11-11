@@ -90,7 +90,7 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
 <table>
   <thead><tr><th>Phần</th><th>Quy tắc</th><th>Giá trị (px)</th></tr></thead>
   <tbody>
-    <tr><td>Kích thước</td><td>Các nửa bậc φ: một biểu tượng, nút nhỏ của nó, nút của nó, thanh công cụ, cột công cụ vẽ; một dòng menu cao bằng một nút. Biểu tượng của công cụ vẽ lớn hơn các biểu tượng khác nửa bậc (26 so với 20), còn nút của chúng nhỏ hơn mức đó một chút, để chừa 8 px mỗi bên trong cột.</td><td>20 · 26 · 33 · 42 · 53</td></tr>
+    <tr><td>Kích thước</td><td>Các nửa bậc φ: một biểu tượng, nút nhỏ của nó, nút của nó, thanh công cụ, cột công cụ vẽ; một dòng menu cao bằng một nút. Biểu tượng của công cụ vẽ lớn hơn các biểu tượng khác nửa bậc (26 so với 20), còn nút của chúng nhỏ hơn mức đó một chút, để chừa 3 px mỗi bên trong cột.</td><td>20 · 26 · 33 · 42</td></tr>
     <tr><td>Khoảng cách</td><td>Các số Fibonacci, mỗi số là tổng của hai số trước, nên hai số kề nhau cách nhau gần φ lần.</td><td>2 · 3 · 5 · 8 · 13 · 21 · 34</td></tr>
     <tr><td>Góc bo</td><td>
       Cũng là các số Fibonacci. Góc lồng bên trong bằng góc bao quanh nó trừ đi phần đệm ở giữa, nên các đường cong
