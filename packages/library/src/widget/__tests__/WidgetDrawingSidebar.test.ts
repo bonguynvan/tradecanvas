@@ -107,6 +107,17 @@ describe('drawing tool buttons, a kind each', () => {
     expect(heading.getAttribute('role')).toBe('presentation');
   });
 
+  it('keeps the group’s name over a menu whose first tools have no heading', () => {
+    sidebar.destroy();
+    sidebar = new WidgetDrawingSidebar(host, {
+      drawingToolGroups: [{ label: 'Mine', tools: [{ label: 'Ray', value: 'ray' }, { label: 'Trend', value: 'trendLine' }, { label: 'Box', value: 'rectangle', heading: 'Boxes' }] }],
+    }, { onDrawingTool: () => {}, onCancelDrawing: () => {}, onClear: () => {} });
+    sidebar.update({ activeTool: null, magnetEnabled: false, stayInDrawing: false } as unknown as WidgetState);
+    enter(wraps()[0]);
+    expect(flyout()?.querySelector('.tcw-flyout-header')?.textContent).toBe('Mine');
+    expect(headings()).toEqual(['Boxes']);
+  });
+
   it('keeps the name over a menu of one kind', () => {
     enter(wraps()[5]);
     expect(headings()).toEqual([]);
