@@ -213,7 +213,15 @@ describe('loading overlay styles', () => {
     expect(block).not.toMatch(/translate/);
     expect(css).toMatch(/@keyframes tcw-candle-glow\s*{[^@]*opacity[^@]*}/);
     // The widget-wide reduced-motion reset must leave the loader running.
-    expect(css).toMatch(/\.tcw-root \.tcw-loading-candle,[^{]*{[^}]*animation-iteration-count:\s*infinite !important/);
+    expect(css).toMatch(/\.tcw-root \.tcw-loading-candle\s*{[^}]*animation-iteration-count:\s*infinite !important/);
+  });
+
+  // A slow switch dims and blurs the chart behind, lightly, with no panel behind the candles.
+  it('veils a chart lightly, blurred, and draws no panel or progress line', () => {
+    const veil = css.match(/\.tcw-loading-overlay--veil\s*\{([^}]*)\}/)?.[1] ?? '';
+    expect(veil).toMatch(/backdrop-filter:\s*blur\(/);
+    expect(veil).toContain('color-mix(in srgb, var(--tcw-bg) 45%, transparent)');
+    expect(css).not.toMatch(/tcw-loading-track|tcw-loading-card|tcw-loading-sweep/);
   });
 
   it('never shows the loading text, only an error', () => {
