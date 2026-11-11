@@ -21,6 +21,16 @@ export class MACDIndicator extends IndicatorBase {
   /** Fast/slow EMA per bar — `macd = fast - slow` can't be split back into the two. */
   private emas = new WeakMap<IndicatorOutput, { fast: number[]; slow: number[] }>();
 
+  /** What `update` reads beside an output, sent from the worker with it (`WorkerStateful`). */
+  workerState(output: IndicatorOutput): unknown {
+    return this.emas.get(output);
+  }
+
+  /** Keep what the worker sent beside an output it computed (`WorkerStateful`). */
+  adoptWorkerState(output: IndicatorOutput, state: unknown): void {
+    if (state) this.emas.set(output, state as { fast: number[]; slow: number[] });
+  }
+
   calculate(data: DataSeries, config: IndicatorConfig): IndicatorOutput {
     const fast = getIntParam(config, 'fast', 12, 1);
     const slow = getIntParam(config, 'slow', 26, 1);

@@ -28,6 +28,24 @@ export class IndicatorValueMap extends Map<number, IndicatorValue> {
     super();
   }
 
+  /**
+   * A map of `keys[i]` to `values[i]`, taking both arrays as they are when
+   * the keys strictly ascend (no entry is set one by one), else set in turn.
+   * The arrays are the map's afterwards: don't change them.
+   */
+  static fromAscending(keys: number[], values: IndicatorValue[]): IndicatorValueMap {
+    const map = new IndicatorValueMap();
+    for (let i = 1; i < keys.length; i++) {
+      if (!(keys[i] > keys[i - 1])) {
+        for (let j = 0; j < keys.length; j++) map.set(keys[j], values[j]);
+        return map;
+      }
+    }
+    map.keyBuf = keys;
+    map.valBuf = values;
+    return map;
+  }
+
   override set(key: number, value: IndicatorValue): this {
     if (this.folded) return super.set(key, value);
     const keys = this.keyBuf;

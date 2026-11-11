@@ -2,85 +2,31 @@ import type {
   IndicatorPlugin,
   IndicatorConfig,
   IndicatorOutput,
-  IndicatorValue,
   IndicatorDescriptor,
   ResolvedIndicatorStyle,
   IndicatorStyleConfig,
   IndicatorPlotStyle,
   IndicatorIntervals,
   DataSeries,
-  OHLCBar,
   ViewportState,
   OverlayScale,
 } from '@tradecanvas/commons';
-import { TC_SERIES_COLORS, isUtcTimeZone, isValidTimeZone } from '@tradecanvas/commons';
-import { drawnKeys, hasHistogram, paneLogRange, paneValueRange, plotColor, plotShown } from './plots.js';
+import { isUtcTimeZone, isValidTimeZone } from '@tradecanvas/commons';
+import { colorsInPane, freeColor, isShown, latestValues, overlayLatestValues, overlayPriceRange, paneRange, paneValuesAt } from './instanceReads.js';
 import { alignOutput, emptyOutput, inputSource, lineSourceBars, priceSourceBars, sourceParam } from './sources.js';
 import { cleanIntervals, shownOnInterval } from './intervals.js';
 import { copyIntervals, copyPlots, isSeriesPalette, paletteFrom } from './palette.js';
 import { BUILT_IN_PLUGINS } from './builtIns.js';
 import { SYMBOL_INDICATOR_IDS } from './symbols/symbolIndicators.js';
+import type { IndicatorWorkerClient } from './worker/IndicatorWorkerPool.js';
+import { IndicatorWorkerBridge } from './worker/IndicatorWorkerBridge.js';
+import type { IndicatorWorkerOptions } from './worker/IndicatorWorkerBridge.js';
+import type { ActiveIndicatorInfo, IndicatorInstance } from './indicatorInstance.js';
 
-interface IndicatorInstance {
-  plugin: IndicatorPlugin;
-  config: IndicatorConfig;
-  output: IndicatorOutput | null;
-  style: ResolvedIndicatorStyle;
-  /** Bars with `close` replaced by the price source, kept for incremental updates. */
-  sourceBars?: OHLCBar[];
-  /** What an indicator read from another's line was computed on, kept for incremental updates. */
-  lineInput?: LineInput;
-  /**
-   * The first bar whose values the last computation may have changed: what
-   * indicators read from this one must recompute from. 0 after a full
-   * computation.
-   */
-  changedFrom: number;
-  /** Not shown on the chart's interval (its `intervals` leave it out). */
-  offInterval: boolean;
-  /** Not shown on the chart's type: it reads another symbol by time, and the bars drawn carry none. */
-  offChartType: boolean;
-}
-
-interface LineInput {
-  sourceId: string;
-  key: string;
-  /** Index in the chart's bars of the line's first value. */
-  start: number;
-  /** Bars made of the line, from `start` on. */
-  bars: OHLCBar[];
-  /** The plugin's own output over `bars`. */
-  raw: IndicatorOutput;
-  /** `raw` re-indexed to the chart's bars: the instance's output. */
-  aligned: IndicatorOutput;
-}
+export type { ActiveIndicatorInfo } from './indicatorInstance.js';
+export type { IndicatorWorkerOptions } from './worker/IndicatorWorkerBridge.js';
 
 let nextId = 1;
-
-/** An active indicator instance as listed by `getActiveIndicators`. */
-export interface ActiveIndicatorInfo {
-  instanceId: string;
-  id: string;
-  params: Record<string, unknown>;
-  descriptor: IndicatorDescriptor;
-  visible: boolean;
-  /** Whether it is drawn now: visible, on the chart's interval, and on its type. */
-  shown: boolean;
-  /**
-   * True while the chart's type draws bars with no time of their own (Renko,
-   * Kagi, line break, point & figure, range bars) and the indicator reads
-   * another symbol by time (a compare on its own scale or in a pane, a
-   * spread, a ratio, a correlation) or counts days (VWAP and the others
-   * whose descriptor says `readsExchangeTimeZone`): it is not drawn there.
-   */
-  offChartType?: true;
-  /** The intervals it shows on, when not all. */
-  intervals?: IndicatorIntervals;
-  /** The instance whose pane it is drawn in, when not its own. */
-  pane?: string;
-  /** `'left'`: an overlay on a price scale of its own on the left, not the chart's prices. */
-  scale?: 'left';
-}
 
 /** Whether a plugin's values move with the exchange's zone: it says so, or it is the host's and says nothing. */
 function readsZone(plugin: IndicatorPlugin): boolean {
@@ -112,6 +58,25 @@ export class IndicatorEngine {
   private exchangeTimeZone: string | null = null;
   /** Whether the bars drawn carry times of their own: not Renko bricks, Kagi lines and the like. */
   private barsTimed = true;
+  /** The full recomputes sent to the indicator worker (`useWorker`), and their replies. */
+  private worker = new IndicatorWorkerBridge({
+    instance: (id) => this.instances.get(id),
+    ordered: () => this.ordered(),
+    dependents: (id) => this.getDependents(id),
+    compute: (instance, data, from, here) => this.compute(instance, data, from, here),
+    runPending: () => this.runPending(),
+  });
+
+  /**
+   * Send full recomputes of built-in indicators over at least `minBars` bars
+   * to `client`'s worker; null: compute everything on this thread again.
+   * While one runs, the instance is drawn with its last output; reading an
+   * output (`getOutput`, `flush`) computes it here first, so a read never
+   * sees one out of date. Ticks are always computed here.
+   */
+  useWorker(client: IndicatorWorkerClient | null, options: IndicatorWorkerOptions = {}): void {
+    this.worker.use(client, options);
+  }
 
   register(plugin: IndicatorPlugin): void {
     this.registry.set(plugin.descriptor.id, plugin);
@@ -149,13 +114,13 @@ export class IndicatorEngine {
     const defaults = this.styleDefaults.get(id);
     const plots = { ...defaults?.plots, ...config.style?.plots };
     const style: ResolvedIndicatorStyle = {
-      colors: config.style?.colors ?? defaults?.colors?.slice() ?? paletteFrom(this.freeColor(id, plugin.descriptor.placement, config.pane ?? null)),
+      colors: config.style?.colors ?? defaults?.colors?.slice() ?? paletteFrom(freeColor([...this.instances.values()], id, plugin.descriptor.placement, config.pane ?? null)),
       lineWidths: config.style?.lineWidths ?? defaults?.lineWidths?.slice() ?? [1.5],
       opacity: config.style?.opacity ?? defaults?.opacity ?? 1,
       ...(Object.keys(plots).length > 0 ? { plots: copyPlots(plots) } : {}),
     };
 
-    this.flush();
+    this.runPending();
     const instance: IndicatorInstance = { plugin, config, output: null, style, changedFrom: 0, offInterval: false, offChartType: false };
     this.placeOnChartType(instance);
     this.instances.set(instanceId, instance);
@@ -165,6 +130,7 @@ export class IndicatorEngine {
   }
 
   removeIndicator(instanceId: string): void {
+    this.worker.drop(instanceId);
     this.instances.delete(instanceId);
     this.order = null;
   }
@@ -175,7 +141,7 @@ export class IndicatorEngine {
    * instance itself is ignored (the old source stays).
    */
   updateIndicator(instanceId: string, params: Record<string, number | string | boolean>, data?: DataSeries): void {
-    this.flush();
+    this.runPending();
     const instance = this.instances.get(instanceId);
     if (!instance) return;
     const name = sourceParam(instance.plugin.descriptor);
@@ -207,6 +173,7 @@ export class IndicatorEngine {
    * frames then costs one recalculation a frame, not one a tick.
    */
   deferRecalculateFrom(data: DataSeries, from: number): void {
+    this.worker.barsChanged();
     const pending = this.waitingOn(data);
     pending.from = Math.min(pending.from, from);
   }
@@ -216,13 +183,23 @@ export class IndicatorEngine {
     const pending = this.pending;
     if (pending && pending.data === data) return pending;
     // Another series than the one waiting: that one first.
-    this.flush();
+    this.runPending();
     this.pending = { data, from: Infinity, full: new Set() };
     return this.pending;
   }
 
-  /** Run a deferred recalculation now, if one is waiting. */
+  /**
+   * Run a deferred recalculation now, if one is waiting, and finish here
+   * the full recomputes still running in the worker: every output is then
+   * the bars' own.
+   */
   flush(): void {
+    this.worker.settle();
+    this.runPending();
+  }
+
+  /** The deferred recalculation, if one is waiting; what runs in the worker goes on there. */
+  private runPending(): void {
     const pending = this.pending;
     if (!pending) return;
     this.pending = null;
@@ -246,7 +223,7 @@ export class IndicatorEngine {
   recalculateFrom(data: DataSeries, from: number): void {
     // A tick waiting joins this one, from the earlier of the two bars.
     this.deferRecalculateFrom(data, from);
-    this.flush();
+    this.runPending();
   }
 
   /**
@@ -255,7 +232,8 @@ export class IndicatorEngine {
    * unchanged (and so are the lines read from them) and an incremental
    * `update` is tried first.
    */
-  private compute(instance: IndicatorInstance, data: DataSeries, from?: number): void {
+  private compute(instance: IndicatorInstance, data: DataSeries, from?: number, here = false): void {
+    if (!here && this.worker.takes(instance, data, from)) return;
     const { plugin, config } = instance;
     const source = inputSource(plugin.descriptor, config.params);
     if (source.kind === 'line') {
@@ -440,46 +418,32 @@ export class IndicatorEngine {
     if (isSeriesPalette(instance.style.colors)) {
       const placement = instance.plugin.descriptor.placement;
       const pane = instance.config.pane ?? null;
-      if (this.colorsInPane(placement, pane, instanceId).has(instance.style.colors[0])) {
-        instance.style.colors = paletteFrom(this.freeColor(instance.config.id, placement, pane, instanceId));
+      const others = [...this.instances.values()];
+      if (colorsInPane(others, placement, pane, instanceId).has(instance.style.colors[0])) {
+        instance.style.colors = paletteFrom(freeColor(others, instance.config.id, placement, pane, instanceId));
       }
     }
     return true;
   }
 
-  /**
-   * The main colours of the lines drawn where an indicator would go: the
-   * price pane (an overlay), another instance's pane, or a pane of its own.
-   */
-  private colorsInPane(placement: IndicatorDescriptor['placement'], pane: string | null, except?: string): Set<string> {
-    const out = new Set<string>();
-    for (const other of this.instances.values()) {
-      if (other.config.instanceId === except) continue;
-      const there = pane !== null
-        ? other.config.instanceId === pane || other.config.pane === pane
-        : placement === 'overlay' && other.plugin.descriptor.placement === 'overlay' && !other.config.pane;
-      if (there) out.add(other.style.colors[0]);
-    }
-    return out;
-  }
-
-  /**
-   * The first palette colour no line in the indicator's pane and no other
-   * instance of it starts with, so a second EMA, or an SMA next to an EMA,
-   * does not look like the first.
-   */
-  private freeColor(id: string, placement: IndicatorDescriptor['placement'], pane: string | null, except?: string): number {
-    const taken = this.colorsInPane(placement, pane, except);
-    for (const other of this.instances.values()) {
-      if (other.config.id === id && other.config.instanceId !== except) taken.add(other.style.colors[0]);
-    }
-    const free = TC_SERIES_COLORS.findIndex((c) => !taken.has(c));
-    return free >= 0 ? free : taken.size % TC_SERIES_COLORS.length;
-  }
-
+  /** The instance's output over the bars as they are now: one still computing in the worker is finished here first. */
   getOutput(instanceId: string): IndicatorOutput | null {
     this.flush();
     return this.instances.get(instanceId)?.output ?? null;
+  }
+
+  /**
+   * The output drawn now, without waiting for the worker: while a full
+   * recompute runs there, the last one (null for an indicator just added).
+   */
+  peekOutput(instanceId: string): IndicatorOutput | null {
+    this.runPending();
+    return this.instances.get(instanceId)?.output ?? null;
+  }
+
+  /** Whether a full recompute of any indicator is still running in the worker. */
+  isComputingInWorker(): boolean {
+    return this.worker.busy;
   }
 
   /** Price-pane overlays; those on the left scale draw with `leftViewport` (its range). */
@@ -489,7 +453,7 @@ export class IndicatorEngine {
 
   /** The visible overlays as one drawing each, in order, for any 2D context (the chart's, or one recording for the GPU). */
   overlayDraws(viewport: ViewportState, leftViewport?: ViewportState): ((ctx: CanvasRenderingContext2D) => void)[] {
-    this.flush();
+    this.runPending();
     const draws: ((ctx: CanvasRenderingContext2D) => void)[] = [];
     for (const instance of this.instances.values()) {
       const output = instance.output;
@@ -526,7 +490,7 @@ export class IndicatorEngine {
     instanceId: string,
     viewport: ViewportState,
   ): void {
-    this.flush();
+    this.runPending();
     const instance = this.instances.get(instanceId);
     if (!instance?.output || !isShown(instance)) return;
     instance.plugin.render(ctx, instance.output, viewport, instance.style);
@@ -537,21 +501,15 @@ export class IndicatorEngine {
    * the tags on the value axis. Empty while hidden or still warming up.
    */
   getLatestValues(instanceId: string): { value: number; color: string }[] {
-    this.flush();
+    this.runPending();
     const instance = this.instances.get(instanceId);
     return instance ? latestValues(instance) : [];
   }
 
   /** `getLatestValues` of every visible price-pane indicator on one scale. */
   getLatestOverlayValues(scale: OverlayScale = 'right'): { value: number; color: string }[] {
-    this.flush();
-    const out: { value: number; color: string }[] = [];
-    for (const instance of this.instances.values()) {
-      if (instance.plugin.descriptor.placement !== 'overlay' || instance.config.pane) continue;
-      if ((instance.config.scale === 'left') !== (scale === 'left')) continue;
-      out.push(...latestValues(instance));
-    }
-    return out;
+    this.runPending();
+    return overlayLatestValues(this.instances.values(), scale);
   }
 
   /** Get config for an active indicator instance */
@@ -703,35 +661,14 @@ export class IndicatorEngine {
   }
 
   /**
-   * The value range of a pane indicator over bars `[from, to]`: its drawn
-   * values, its levels, zero for histograms and its fixed bounds. Null when
-   * there is nothing to fit.
-   */
-  /**
    * The value range of a pane over bars `[from, to]`, its members included.
    * With `log`, the range for a logarithmic scale: null when any of them has
    * a value at or below zero there (the pane stays linear); a member with
    * nothing visible yet is left out, as on a linear scale.
    */
   getPaneValueRange(instanceId: string, from: number, to: number, log = false): { min: number; max: number } | null {
-    this.flush();
-    let range: { min: number; max: number } | null = null;
-    // The pane's own indicator and those drawn in it share one scale.
-    for (const id of [instanceId, ...this.getPaneMembers(instanceId)]) {
-      const instance = this.instances.get(id);
-      if (!instance || !isShown(instance)) continue;
-      const descriptor = instance.plugin.descriptor;
-      const options = {
-        keys: shownKeys(instance),
-        scale: descriptor.scale,
-        levels: instance.config.levels ?? descriptor.levels,
-        zero: hasHistogram(descriptor.plots),
-      };
-      const own = log ? paneLogRange(instance.output, from, to, options) : paneValueRange(instance.output, from, to, options);
-      if (own === false) return null; // a value at or below zero: no log scale
-      if (own) range = range ? { min: Math.min(range.min, own.min), max: Math.max(range.max, own.max) } : own;
-    }
-    return range;
+    this.runPending();
+    return paneRange(this.paneInstances(instanceId), from, to, log);
   }
 
   /**
@@ -739,20 +676,14 @@ export class IndicatorEngine {
    * line's value, for a drawing's magnet on the pane. Empty past the data.
    */
   getPaneValuesAt(instanceId: string, barIndex: number): number[] {
-    this.flush();
-    const values: number[] = [];
-    for (const id of [instanceId, ...this.getPaneMembers(instanceId)]) {
-      const instance = this.instances.get(id);
-      if (!instance || !isShown(instance)) continue;
-      const point = instance.output?.series?.[barIndex];
-      if (!point) continue;
-      const keys = shownKeys(instance) ?? Object.keys(point);
-      for (const key of keys) {
-        const value = point[key];
-        if (typeof value === 'number' && Number.isFinite(value)) values.push(value);
-      }
-    }
-    return values;
+    this.runPending();
+    return paneValuesAt(this.paneInstances(instanceId), barIndex);
+  }
+
+  /** The pane's own indicator and those drawn in it, which share one scale. */
+  private paneInstances(instanceId: string): IndicatorInstance[] {
+    const ids = [instanceId, ...this.getPaneMembers(instanceId)];
+    return ids.map((id) => this.instances.get(id)).filter((instance) => instance !== undefined);
   }
 
   /** Get descriptor for an active indicator instance */
@@ -851,52 +782,8 @@ export class IndicatorEngine {
    * `output.values` Map and discarding everything outside the range.
    */
   getOverlayPriceRange(from: number, to: number, scale: OverlayScale = 'right'): { min: number; max: number } | null {
-    this.flush();
-    let gMin = Infinity;
-    let gMax = -Infinity;
-
-    for (const instance of this.instances.values()) {
-      if (!instance.output || !isShown(instance)) continue;
-      if (instance.plugin.descriptor.placement !== 'overlay' || instance.config.pane) continue;
-      // Overlays on the left scale have a range of their own.
-      if ((instance.config.scale === 'left') !== (scale === 'left')) continue;
-
-      const series = instance.output.series;
-      if (!series) continue; // no array form published — nothing to scan safely in range
-
-      // Only what is drawn: a trend flag (±1) or a session key must not
-      // stretch the price scale.
-      const keys = shownKeys(instance);
-      const end = Math.min(to, series.length - 1);
-      // Values drawn past the latest bar (Ichimoku's cloud ahead, `meta.ahead`)
-      // count while that bar is in range: they sit just right of it.
-      const ahead = to >= series.length - 1 ? instance.output.meta?.ahead : undefined;
-      const extra = Array.isArray(ahead) ? (ahead as (IndicatorValue | null)[]) : [];
-      for (let idx = Math.max(0, from); idx <= end + extra.length; idx++) {
-        const val = idx <= end ? series[idx] : extra[idx - end - 1];
-        if (!val) continue;
-        if (keys) {
-          for (let k = 0; k < keys.length; k++) {
-            const v = val[keys[k]];
-            if (v !== undefined && isFinite(v)) {
-              if (v < gMin) gMin = v;
-              if (v > gMax) gMax = v;
-            }
-          }
-          continue;
-        }
-        for (const key in val) {
-          const v = val[key];
-          if (v !== undefined && isFinite(v)) {
-            if (v < gMin) gMin = v;
-            if (v > gMax) gMax = v;
-          }
-        }
-      }
-    }
-
-    if (gMin === Infinity) return null;
-    return { min: gMin, max: gMax };
+    this.runPending();
+    return overlayPriceRange(this.instances.values(), from, to, scale);
   }
 
   getPanelIndicators(): { instanceId: string; descriptor: IndicatorDescriptor }[] {
@@ -910,29 +797,3 @@ export class IndicatorEngine {
   }
 }
 
-/** Whether an instance is drawn: switched on, on the chart's interval, and on its type. */
-function isShown(instance: IndicatorInstance): boolean {
-  return instance.config.visible !== false && !instance.offInterval && !instance.offChartType;
-}
-
-/** The fields an instance draws and shows: a hidden plot stretches no scale. */
-function shownKeys(instance: IndicatorInstance): readonly string[] | null {
-  const keys = drawnKeys(instance.plugin.descriptor);
-  const plots = instance.style.plots;
-  return keys && plots ? keys.filter((key) => plots[key]?.visible !== false) : keys;
-}
-
-function latestValues(instance: IndicatorInstance): { value: number; color: string }[] {
-  const series = instance.output?.series;
-  const plots = instance.plugin.descriptor.plots;
-  if (!series || !plots || !isShown(instance)) return [];
-  const point = series[series.length - 1];
-  if (!point) return [];
-  const out: { value: number; color: string }[] = [];
-  for (const plot of plots) {
-    if (!plotShown(plot, instance.style)) continue;
-    const v = point[plot.key];
-    if (v !== undefined && Number.isFinite(v)) out.push({ value: v, color: plotColor(plot, instance.style, point) });
-  }
-  return out;
-}

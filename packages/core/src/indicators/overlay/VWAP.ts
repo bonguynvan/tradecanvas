@@ -60,6 +60,16 @@ export class VWAPIndicator extends IndicatorBase {
   /** The running sums through each output's last bars, which the average alone cannot be turned back into. */
   private kept = new WeakMap<IndicatorOutput, RunningSums[]>();
 
+  /** What `update` reads beside an output, sent from the worker with it (`WorkerStateful`). */
+  workerState(output: IndicatorOutput): unknown {
+    return this.kept.get(output);
+  }
+
+  /** Keep what the worker sent beside an output it computed (`WorkerStateful`). */
+  adoptWorkerState(output: IndicatorOutput, state: unknown): void {
+    if (state) this.kept.set(output, state as RunningSums[]);
+  }
+
   calculate(data: DataSeries, config: IndicatorConfig): IndicatorOutput {
     const out: IndicatorOutput = { values: new IndicatorValueMap(), series: new Array(data.length).fill(null) };
     const keyOf = keyerFor(data, config);

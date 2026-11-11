@@ -18,6 +18,16 @@ export class DEMAIndicator extends IndicatorBase {
   /** The two EMAs behind each output, so a tick extends them instead of starting over. */
   private emas = new WeakMap<IndicatorOutput, { e1: Num[]; e2: Num[] }>();
 
+  /** What `update` reads beside an output, sent from the worker with it (`WorkerStateful`). */
+  workerState(output: IndicatorOutput): unknown {
+    return this.emas.get(output);
+  }
+
+  /** Keep what the worker sent beside an output it computed (`WorkerStateful`). */
+  adoptWorkerState(output: IndicatorOutput, state: unknown): void {
+    if (state) this.emas.set(output, state as { e1: Num[]; e2: Num[] });
+  }
+
   calculate(data: DataSeries, config: IndicatorConfig): IndicatorOutput {
     const period = getIntParam(config, 'period', 20, 1);
     const e1 = emaOf(closes(data), period);

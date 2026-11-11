@@ -71,6 +71,13 @@ export { IndicatorWorkerHost } from './worker/IndicatorWorkerHost.js';
 export type { WorkerLike, IndicatorWorkerHostOptions } from './worker/IndicatorWorkerHost.js';
 export type { IndicatorWorkerRequest, IndicatorWorkerResponse } from './worker/messages.js';
 export { isWorkerResponse } from './worker/messages.js';
+export { createIndicatorWorker } from './worker/spawnWorker.js';
+export { IndicatorWorkerClient, IndicatorWorkerPool, indicatorWorkerPool } from './worker/IndicatorWorkerPool.js';
+export type { IndicatorWorkerLease, WorkerSpawn, WorkerJob, WorkerJobDone } from './worker/IndicatorWorkerPool.js';
+export { INDICATOR_WORKER_MIN_BARS } from './worker/workerJobs.js';
+export { barsToColumns, columnsToBars, columnsToOutput, outputToColumns } from './worker/columns.js';
+export type { BarColumns, OutputColumns } from './worker/columns.js';
+export type { IndicatorWorkerOptions } from './worker/IndicatorWorkerBridge.js';
 // Panels
 export { RSIIndicator } from './panel/RSI.js';
 export { MACDIndicator } from './panel/MACD.js';

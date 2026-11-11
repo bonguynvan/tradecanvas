@@ -15,6 +15,16 @@ export abstract class PointwiseIndicator<P> extends IndicatorBase {
    */
   private times = new WeakMap<IndicatorOutput, number[]>();
 
+  /** Nothing to send with an output from the worker: the times kept are the bars' own (`WorkerStateful`). */
+  workerState(): undefined {
+    return undefined;
+  }
+
+  /** Keep the times of the bars an output from the worker was computed on (`WorkerStateful`). */
+  adoptWorkerState(output: IndicatorOutput, _state: unknown, times: ArrayLike<number>): void {
+    this.times.set(output, Array.from(times));
+  }
+
   /** Read the parameters once per computation. */
   protected abstract read(config: IndicatorConfig): P;
 

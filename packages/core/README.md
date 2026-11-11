@@ -44,18 +44,18 @@ Extensible via `IndicatorBase` for custom indicators.
 
 ### Indicator math in a worker
 
-`IndicatorWorkerHost` wraps a `Worker` you create and exposes a Promise-based `calculate()`, with a per-request timeout and a `ping()` health check:
+The chart computes its indicators in a Web Worker with `indicatorWorker: 'auto'` (a `ChartOptions` field of `@tradecanvas/chart`): full recomputes over 50,000 bars or more go there, and the results come back as columns of numbers. The worker ships inside the package, inlined in a chunk that loads the first time it is needed and starts from a Blob URL, so there is nothing to serve.
+
+To compute an indicator off the main thread yourself, hand the same worker to `IndicatorWorkerHost`, which has a Promise-based `calculate()`, a per-request timeout and a `ping()` health check:
 
 ```ts
-import { IndicatorWorkerHost } from '@tradecanvas/core'
+import { IndicatorWorkerHost, createIndicatorWorker } from '@tradecanvas/core'
 
-// Your own worker, built from src/indicators/worker/indicator.worker.ts in the repository
-const worker = new Worker(new URL('./indicator.worker.ts', import.meta.url), { type: 'module' })
-const host = new IndicatorWorkerHost(worker)
+const host = new IndicatorWorkerHost(await createIndicatorWorker())
 const output = await host.calculate('rsi', config, bars)
 ```
 
-Pass `null` instead of a worker to calculate synchronously (SSR, tests). The package does not ship a built worker script, and the chart computes its own indicators on the main thread; it does not route them through this host yet.
+Pass `null` instead of a worker to calculate synchronously (SSR, tests). `createIndicatorWorker()` rejects where there are no workers, or where a Content Security Policy refuses `blob:` and `data:` workers.
 
 ### Drawing Tools (24)
 

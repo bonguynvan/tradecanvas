@@ -266,12 +266,17 @@ new ChartWidget(host, { indicatorTemplates: true })  // the default`}</code></pr
 
 <h2>在图表之外计算</h2>
 <p>
-  <code>IndicatorWorkerHost</code> 根据K线计算指标，使用的消息与 Web Worker 相同。
-  Worker 脚本目前尚未包含在发布的包中，因此请传入 <code>null</code> 并注册插件，
-  以便在当前线程中计算（SSR、测试、脚本）：
+  <code>IndicatorWorkerHost</code> 在包内自带的 worker（<code>createIndicatorWorker()</code>）中根据K线计算指标，
+  也就是图表在 <code>indicatorWorker: 'auto'</code> 时使用的那个 worker。
+  也可以传入 <code>null</code> 并注册插件，在当前线程中计算（SSR、测试、脚本）：
 </p>
-<pre><code>{`import { IndicatorWorkerHost, RSIIndicator } from '@tradecanvas/core'
+<pre><code>{`import { IndicatorWorkerHost, RSIIndicator, createIndicatorWorker } from '@tradecanvas/core'
 
-const host = new IndicatorWorkerHost(null)
-host.registerFallbackPlugin(new RSIIndicator())
-const output = await host.calculate('rsi', { id: 'rsi', instanceId: 'rsi-1', params: { period: 14 } }, bars)`}</code></pre>
+const config = { id: 'rsi', instanceId: 'rsi-1', params: { period: 14 } }
+
+const inWorker = new IndicatorWorkerHost(await createIndicatorWorker())
+const output = await inWorker.calculate('rsi', config, bars)
+
+const inPlace = new IndicatorWorkerHost(null)
+inPlace.registerFallbackPlugin(new RSIIndicator())
+const same = await inPlace.calculate('rsi', config, bars)`}</code></pre>

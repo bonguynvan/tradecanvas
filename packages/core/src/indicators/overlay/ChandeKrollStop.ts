@@ -25,6 +25,16 @@ export class ChandeKrollStopIndicator extends IndicatorBase {
   /** ATR and the first stops behind each output, so a tick extends them. */
   private states = new WeakMap<IndicatorOutput, State>();
 
+  /** What `update` reads beside an output, sent from the worker with it (`WorkerStateful`). */
+  workerState(output: IndicatorOutput): unknown {
+    return this.states.get(output);
+  }
+
+  /** Keep what the worker sent beside an output it computed (`WorkerStateful`). */
+  adoptWorkerState(output: IndicatorOutput, state: unknown): void {
+    if (state) this.states.set(output, state as State);
+  }
+
   calculate(data: DataSeries, config: IndicatorConfig): IndicatorOutput {
     const p = getIntParam(config, 'p', 10, 1);
     const x = getNumberParam(config, 'x', 1);

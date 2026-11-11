@@ -23,6 +23,16 @@ export class UlcerIndexIndicator extends IndicatorBase {
   /** Each bar's drawdown behind each output, so a tick redoes only the new ones. */
   private drawdowns = new WeakMap<IndicatorOutput, Num[]>();
 
+  /** What `update` reads beside an output, sent from the worker with it (`WorkerStateful`). */
+  workerState(output: IndicatorOutput): unknown {
+    return this.drawdowns.get(output);
+  }
+
+  /** Keep what the worker sent beside an output it computed (`WorkerStateful`). */
+  adoptWorkerState(output: IndicatorOutput, state: unknown): void {
+    if (state) this.drawdowns.set(output, state as Num[]);
+  }
+
   calculate(data: DataSeries, config: IndicatorConfig): IndicatorOutput {
     const period = getIntParam(config, 'period', 14, 1);
     const dd: Num[] = data.map((_, i) => drawdownAt(data, i, period));

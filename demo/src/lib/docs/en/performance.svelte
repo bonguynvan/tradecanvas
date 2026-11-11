@@ -155,10 +155,27 @@ pnpm soak --minutes=30 --rate=50000 --renderer=canvas`}</code></pre>
 
 <h2 id="download">What a page downloads</h2>
 <p>
-  <code>new ChartWidget()</code> brings in 386 kB of JavaScript gzipped (1.46 MB before compression), its English strings included. The dialogs a page has no need of as it loads (the indicators dialog, the command palette, the symbol search, the chart settings, an indicator's and a drawing's settings, Go to and the shortcut sheet) are 34 kB more. They load the first time one opens, or once the page is idle after the widget is up, whichever comes first. A bundler puts them in files of their own; served straight from the package, they sit in its <code>dist</code> folder beside the entries, so copy the whole folder. <code>pnpm size</code>, after <code>pnpm build</code>, prints these numbers for each entry.
+  <code>new ChartWidget()</code> brings in 386 kB of JavaScript gzipped (1.46 MB before compression), its English strings included. The dialogs a page has no need of as it loads (the indicators dialog, the command palette, the symbol search, the chart settings, an indicator's and a drawing's settings, Go to and the shortcut sheet) are 34 kB more. They load the first time one opens, or once the page is idle after the widget is up, whichever comes first. The indicator worker (<code>indicatorWorker: 'auto'</code>) is 36 kB more, loaded the first time a chart sends it work, never with <code>'off'</code>. A bundler puts them in files of their own; served straight from the package, they sit in its <code>dist</code> folder beside the entries, so copy the whole folder. <code>pnpm size</code>, after <code>pnpm build</code>, prints these numbers for each entry.
 </p>
 
-<h2>The main thread</h2>
+<h2 id="worker">The main thread</h2>
 <p>
-  The chart computes indicators on the main thread. <code>IndicatorWorkerHost</code> from <code>@tradecanvas/core</code> can run <code>calculate()</code> in a worker you provide, with a Promise-based API, a per-request timeout and a synchronous fallback for SSR and tests, but the chart does not route its indicators through it yet, and the packages do not ship a worker script.
+  Indicators are computed on the main thread by default. With <code>indicatorWorker: 'auto'</code>, computing them in full (on <code>setData</code>, a new symbol or interval, a new indicator or new parameters) over 50,000 bars or more goes to a Web Worker the package ships. Its code is inlined in a chunk that loads the first time it is needed and starts from a Blob URL, so there is nothing to serve, and one worker serves every chart on the page. The bars go to it as columns of numbers and the results come back the same way, made into points again a slice of bars at a time, so the page keeps drawing and answering input. Live ticks stay incremental on the main thread.
+</p>
+<pre><code>{`new Chart(el, { indicatorWorker: 'auto' })
+new ChartWidget(el, { chartOptions: { indicatorWorker: 'auto' } })`}</code></pre>
+<p>
+  Until a result arrives the chart draws the last one (nothing, for an indicator just added). Reading values, with <code>getIndicatorOutput</code>, an alert or an export, first computes on the main thread whatever is still in the worker, so a read is never out of date; <code>getIndicatorOutput(id, {'{'} drawn: true {'}'})</code> returns what is drawn without waiting. Indicators that read another indicator's line or another symbol, and your own (<code>registerIndicator</code>), are computed on the main thread, as is everything where workers can't run: a server, jsdom, or a Content Security Policy that refuses <code>blob:</code> workers.
+</p>
+<table>
+  <thead><tr><th>setData, then EMA, RSI, MACD and Bollinger Bands</th><th>200,000 bars, off</th><th>auto</th><th>1,000,000 bars, off</th><th>auto</th></tr></thead>
+  <tbody>
+    <tr><td>Main thread held by the calls</td><td>74 ms</td><td>21 ms</td><td>269 ms</td><td>43 ms</td></tr>
+    <tr><td>Tasks over 50 ms</td><td>1</td><td>0</td><td>1</td><td>0</td></tr>
+    <tr><td>Longest time between frames</td><td>50 ms</td><td>33 ms</td><td>250 ms</td><td>33 ms</td></tr>
+    <tr><td>Every line drawn after</td><td>74 ms</td><td>243 ms</td><td>269 ms</td><td>1,025 ms</td></tr>
+  </tbody>
+</table>
+<p>
+  The worker saves no work: making its results into points again costs the main thread about what computing them does. It splits that work into slices a frame can afford, at the price of the lines coming later, which is why it starts at 50,000 bars. Headless Chrome on a desktop, the median of three runs; <code>pnpm bench</code> times both halves in Node (<code>recompute.bench.ts</code>).
 </p>

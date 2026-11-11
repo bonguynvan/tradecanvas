@@ -278,12 +278,17 @@ new ChartWidget(host, { indicatorTemplates: true })  // the default`}</code></pr
 
 <h2>チャートの外での計算</h2>
 <p>
-  <code>IndicatorWorkerHost</code> は、Web Worker が使うのと同じメッセージで、バーからインジケーターを計算します。
-  ワーカースクリプトはまだ公開パッケージに含まれていないため、<code>null</code> を渡してプラグインを登録し、
-  その場で計算してください（SSR、テスト、スクリプト向け）：
+  <code>IndicatorWorkerHost</code> は、パッケージに含まれるワーカー（<code>createIndicatorWorker()</code>）でバーからインジケーターを計算します。
+  チャートが <code>indicatorWorker: 'auto'</code> で使うのと同じワーカーです。
+  代わりに <code>null</code> を渡してプラグインを登録すれば、その場で計算します（SSR、テスト、スクリプト向け）：
 </p>
-<pre><code>{`import { IndicatorWorkerHost, RSIIndicator } from '@tradecanvas/core'
+<pre><code>{`import { IndicatorWorkerHost, RSIIndicator, createIndicatorWorker } from '@tradecanvas/core'
 
-const host = new IndicatorWorkerHost(null)
-host.registerFallbackPlugin(new RSIIndicator())
-const output = await host.calculate('rsi', { id: 'rsi', instanceId: 'rsi-1', params: { period: 14 } }, bars)`}</code></pre>
+const config = { id: 'rsi', instanceId: 'rsi-1', params: { period: 14 } }
+
+const inWorker = new IndicatorWorkerHost(await createIndicatorWorker())
+const output = await inWorker.calculate('rsi', config, bars)
+
+const inPlace = new IndicatorWorkerHost(null)
+inPlace.registerFallbackPlugin(new RSIIndicator())
+const same = await inPlace.calculate('rsi', config, bars)`}</code></pre>

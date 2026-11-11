@@ -19,6 +19,16 @@ export class RSIIndicator extends IndicatorBase {
   /** Wilder's running averages per bar — the RSI value alone can't be inverted back into them. */
   private smoothing = new WeakMap<IndicatorOutput, { gain: number[]; loss: number[] }>();
 
+  /** What `update` reads beside an output, sent from the worker with it (`WorkerStateful`). */
+  workerState(output: IndicatorOutput): unknown {
+    return this.smoothing.get(output);
+  }
+
+  /** Keep what the worker sent beside an output it computed (`WorkerStateful`). */
+  adoptWorkerState(output: IndicatorOutput, state: unknown): void {
+    if (state) this.smoothing.set(output, state as { gain: number[]; loss: number[] });
+  }
+
   calculate(data: DataSeries, config: IndicatorConfig): IndicatorOutput {
     const period = getIntParam(config, 'period', 14, 1);
     const values = new IndicatorValueMap();

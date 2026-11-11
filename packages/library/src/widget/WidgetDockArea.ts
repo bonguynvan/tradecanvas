@@ -122,7 +122,8 @@ export class WidgetDockArea {
     const locale = this.host.settingsState.numberLocale || 'en-US';
 
     const indicators = this.host.chart.getActiveIndicators().map((ind) => {
-      const series = this.host.chart.getIndicatorOutput(ind.instanceId)?.series;
+      // The values drawn: a recompute in the indicator worker is not finished here on each move.
+      const series = this.host.chart.getIndicatorOutput(ind.instanceId, { drawn: true })?.series;
       const point = series?.[idx] ?? null;
       const inPriceUnits = !inOwnPane.has(ind.instanceId) && readsChartPrices(ind);
       // The drawn lines by their titles ("Signal"), else every field by its key.

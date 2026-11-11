@@ -19,6 +19,16 @@ export class VolumeOscillatorIndicator extends IndicatorBase {
   /** The two volume EMAs behind each output, so a tick extends them. */
   private emas = new WeakMap<IndicatorOutput, { fast: Num[]; slow: Num[] }>();
 
+  /** What `update` reads beside an output, sent from the worker with it (`WorkerStateful`). */
+  workerState(output: IndicatorOutput): unknown {
+    return this.emas.get(output);
+  }
+
+  /** Keep what the worker sent beside an output it computed (`WorkerStateful`). */
+  adoptWorkerState(output: IndicatorOutput, state: unknown): void {
+    if (state) this.emas.set(output, state as { fast: Num[]; slow: Num[] });
+  }
+
   calculate(data: DataSeries, config: IndicatorConfig): IndicatorOutput {
     const volume = data.map((bar) => bar.volume);
     const fast = emaOf(volume, getIntParam(config, 'short', 5, 1));

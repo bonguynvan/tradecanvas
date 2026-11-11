@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import type { IndicatorValue } from '@tradecanvas/commons';
 import { IndicatorValueMap } from '../IndicatorValueMap.js';
-import { toCloneableOutput } from '../worker/messages.js';
+import { columnsToOutput, outputToColumns } from '../worker/columns.js';
 
 const v = (value: number): IndicatorValue => ({ value });
 
@@ -105,7 +105,7 @@ describe('IndicatorValueMap', () => {
   });
 });
 
-describe('toCloneableOutput (worker → main thread)', () => {
+describe('output columns (worker → main thread)', () => {
   it('posts values intact even though structuredClone skips IndicatorValueMap entries', () => {
     const values = new IndicatorValueMap();
     values.set(1, v(1)).set(2, v(2));
@@ -114,13 +114,30 @@ describe('toCloneableOutput (worker → main thread)', () => {
     // The pitfall this guards against: the raw map clones empty.
     expect(structuredClone(output).values.size).toBe(0);
 
-    const cloned = structuredClone(toCloneableOutput(output));
-    expect(cloned.values).toEqual(new Map([[1, v(1)], [2, v(2)]]));
+    const cloned = columnsToOutput(structuredClone(outputToColumns(output, Float64Array.from([1, 2]))), [1, 2]);
+    expect(new Map(cloned.values)).toEqual(new Map([[1, v(1)], [2, v(2)]]));
     expect(cloned.series).toEqual(output.series);
   });
 
-  it('passes plain-Map outputs through untouched', () => {
-    const output = { values: new Map([[1, v(1)]]) };
-    expect(toCloneableOutput(output)).toBe(output);
+  it('posts values kept apart from the series intact', () => {
+    const values = new IndicatorValueMap();
+    values.set(5, v(9));
+    const output = { values, series: [v(1), v(2)] };
+    const cloned = columnsToOutput(structuredClone(outputToColumns(output, Float64Array.from([1, 2]))), [1, 2]);
+    expect(new Map(cloned.values)).toEqual(new Map([[5, v(9)]]));
+  });
+});
+
+describe('IndicatorValueMap.fromAscending', () => {
+  it('takes keys in ascending order as they are', () => {
+    const m = IndicatorValueMap.fromAscending([1, 2, 5], [v(1), v(2), v(5)]);
+    expect(m.size).toBe(3);
+    expect(m.get(5)).toEqual(v(5));
+    expect([...m]).toEqual([[1, v(1)], [2, v(2)], [5, v(5)]]);
+  });
+
+  it('behaves as a Map when the keys are not ascending', () => {
+    const m = IndicatorValueMap.fromAscending([3, 1, 3], [v(3), v(1), v(4)]);
+    expect([...m]).toEqual([[3, v(4)], [1, v(1)]]);
   });
 });

@@ -727,6 +727,44 @@ chart.requestRender();
 An indicator's own `render` gets the viewport alone: `priceToY`, `barIndexToX`,
 `timeToX` and their inverses are exported for it.
 
+## A long history: indicators computed in a worker
+
+With hundreds of thousands of bars, computing every indicator again (on
+`setData`, a new indicator, new parameters) holds the main thread for a few
+hundred milliseconds. `indicatorWorker: 'auto'` sends those recomputes to a
+Web Worker the package ships, from 50,000 bars on; nothing to serve or
+configure. Live ticks stay incremental on the main thread.
+
+```ts
+import { Chart, type OHLCBar } from '@tradecanvas/chart';
+import { ChartWidget } from '@tradecanvas/chart/widget';
+
+const history: OHLCBar[] = await fetch('/api/bars?symbol=BTCUSDT&tf=1m').then((r) => r.json());
+
+const chart = new Chart(document.getElementById('chart')!, { indicatorWorker: 'auto' });
+chart.setData(history);
+const rsi = chart.addIndicator('rsi', { period: 14 })!;
+
+// Until the worker answers, the last values are drawn (none for a new indicator).
+// { drawn: true } reads those without waiting: for a legend under the pointer.
+const legend = document.getElementById('legend')!;
+chart.on('indicatorUpdate', () => {
+  const drawn = chart.getIndicatorOutput(rsi, { drawn: true })?.series;
+  legend.textContent = drawn?.at(-1)?.value?.toFixed(2) ?? '';
+});
+
+// A plain read is never out of date: what is still in the worker is computed here first.
+const latest = chart.getIndicatorOutput(rsi)?.series?.at(-1)?.value;
+
+// The widget passes it on to its chart.
+new ChartWidget(document.getElementById('widget')!, { chartOptions: { indicatorWorker: 'auto' } });
+```
+
+Indicators reading another indicator's line or another symbol, and those
+registered with `registerIndicator`, are computed on the main thread. Where
+workers can't run (SSR, jsdom, a Content Security Policy refusing `blob:`
+workers), everything is.
+
 ## Several charts in a grid
 
 ```ts

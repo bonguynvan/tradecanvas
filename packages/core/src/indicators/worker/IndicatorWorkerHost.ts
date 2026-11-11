@@ -5,6 +5,7 @@ import type {
   IndicatorPlugin,
 } from '@tradecanvas/commons';
 import { isWorkerResponse } from './messages.js';
+import { barColumnBuffers, barsToColumns, columnsToOutput } from './columns.js';
 import type { IndicatorWorkerRequest, IndicatorWorkerResponse } from './messages.js';
 
 /**
@@ -12,7 +13,8 @@ import type { IndicatorWorkerRequest, IndicatorWorkerResponse } from './messages
  * Real `Worker` instances satisfy this interface; tests can pass a stub.
  */
 export interface WorkerLike {
-  postMessage(msg: unknown): void;
+  /** `transfer` hands over the buffers of the columns sent, instead of copying them. */
+  postMessage(msg: unknown, transfer?: Transferable[]): void;
   addEventListener(
     type: 'message' | 'error' | 'messageerror',
     listener: (ev: MessageEvent | ErrorEvent) => void,
@@ -28,6 +30,8 @@ interface PendingRequest {
   resolve: (output: IndicatorOutput) => void;
   reject: (err: Error) => void;
   timer: ReturnType<typeof setTimeout> | null;
+  /** The times of the bars sent: the keys of the output's `values`. */
+  times?: ArrayLike<number>;
 }
 
 export interface IndicatorWorkerHostOptions {
@@ -90,16 +94,13 @@ export class IndicatorWorkerHost {
     }
 
     const requestId = this.nextRequestId++;
-    const req: IndicatorWorkerRequest = {
-      type: 'calculate',
-      requestId,
-      indicatorId,
-      config,
-      data,
-    };
+    const bars = barsToColumns(data);
+    const req: IndicatorWorkerRequest = { type: 'calculate', bars, jobs: [{ requestId, indicatorId, config }] };
+    // Kept here: the columns' buffers go to the worker.
+    const times = bars.time.slice();
 
     return new Promise<IndicatorOutput>((resolve, reject) => {
-      const entry: PendingRequest = { resolve, reject, timer: null };
+      const entry: PendingRequest = { resolve, reject, timer: null, times };
       if (this.timeoutMs > 0) {
         entry.timer = setTimeout(() => {
           this.pending.delete(requestId);
@@ -107,7 +108,7 @@ export class IndicatorWorkerHost {
         }, this.timeoutMs);
       }
       this.pending.set(requestId, entry);
-      this.worker!.postMessage(req);
+      this.worker!.postMessage(req, barColumnBuffers(bars));
     });
   }
 
@@ -177,6 +178,6 @@ export class IndicatorWorkerHost {
       entry.resolve(undefined as unknown as IndicatorOutput);
       return;
     }
-    entry.resolve(res.output);
+    entry.resolve(columnsToOutput(res.output, entry.times ?? []));
   }
 }

@@ -155,10 +155,27 @@ pnpm soak --minutes=30 --rate=50000 --renderer=canvas`}</code></pre>
 
 <h2 id="download">ページがダウンロードするもの</h2>
 <p>
-  <code>new ChartWidget()</code> が読み込む JavaScript は gzip で 386 kB（圧縮前 1.46 MB）で、英語の文字列を含みます。ページの読み込み時には要らないダイアログ（インジケーターの一覧、コマンドパレット、銘柄検索、チャート設定、インジケーターと描画の設定、移動、ショートカット一覧）はさらに 34 kB です。どれかを初めて開いたとき、またはウィジェットが表示されたあとページが空いたときの、早いほうで読み込まれます。バンドラーはこれらを別のファイルにします。パッケージから直接配信する場合は、エントリーと同じ <code>dist</code> フォルダーにあるので、フォルダーごとコピーしてください。<code>pnpm build</code> のあとに <code>pnpm size</code> を実行すると、エントリーごとにこの数字が出ます。
+  <code>new ChartWidget()</code> が読み込む JavaScript は gzip で 386 kB（圧縮前 1.46 MB）で、英語の文字列を含みます。ページの読み込み時には要らないダイアログ（インジケーターの一覧、コマンドパレット、銘柄検索、チャート設定、インジケーターと描画の設定、移動、ショートカット一覧）はさらに 34 kB です。どれかを初めて開いたとき、またはウィジェットが表示されたあとページが空いたときの、早いほうで読み込まれます。バンドラーはこれらを別のファイルにします。パッケージから直接配信する場合は、エントリーと同じ <code>dist</code> フォルダーにあるので、フォルダーごとコピーしてください。<code>pnpm build</code> のあとに <code>pnpm size</code> を実行すると、エントリーごとにこの数字が出ます。インジケーターワーカー（<code>indicatorWorker: 'auto'</code>）はさらに 36 kB で、チャートが初めて処理を送るときに読み込まれ、<code>'off'</code> では読み込まれません。
 </p>
 
-<h2>メインスレッド</h2>
+<h2 id="worker">メインスレッド</h2>
 <p>
-  チャートはメインスレッドでインジケーターを計算します。<code>@tradecanvas/core</code> の <code>IndicatorWorkerHost</code> は、Promise ベースの API、リクエストごとのタイムアウト、SSR やテスト向けの同期フォールバックを備え、あなたが用意したワーカーで <code>calculate()</code> を実行できますが、チャートはまだインジケーターをこれ経由で計算しておらず、パッケージにワーカースクリプトは含まれていません。
+  既定では、インジケーターはメインスレッドで計算されます。<code>indicatorWorker: 'auto'</code> にすると、50,000 本以上のバーに対する全体の再計算（<code>setData</code>、銘柄や時間足の切り替え、インジケーターの追加、パラメーターの変更のとき）は、パッケージに含まれる Web Worker で行われます。そのコードは初めて必要になったときに読み込まれるチャンクにインライン化され、Blob URL から起動するため、配信するファイルはありません。ページ上のすべてのチャートが 1 つのワーカーを共有します。バーは数値の列として送られ、結果も同じ形で戻り、バーの区間ごとに少しずつポイントへ戻されるため、その間もページは描画と操作への応答を続けます。リアルタイムのティックはメインスレッドで差分計算されたままです。
+</p>
+<pre><code>{`new Chart(el, { indicatorWorker: 'auto' })
+new ChartWidget(el, { chartOptions: { indicatorWorker: 'auto' } })`}</code></pre>
+<p>
+  結果が届くまで、チャートは前回の結果を描きます（追加したばかりのインジケーターは何も描きません）。<code>getIndicatorOutput</code>、アラート、エクスポートで値を読むと、ワーカーに残っている分を先にメインスレッドで計算するため、読んだ値が古いことはありません。<code>getIndicatorOutput(id, {'{'} drawn: true {'}'})</code> は待たずに、いま描かれている値を返します。他のインジケーターのラインや他の銘柄を読むインジケーター、そして独自のもの（<code>registerIndicator</code>）はメインスレッドで計算されます。ワーカーが動かない環境（サーバー、jsdom、<code>blob:</code> ワーカーを拒否する Content Security Policy）でも、すべてメインスレッドです。
+</p>
+<table>
+  <thead><tr><th>setData のあと EMA、RSI、MACD、ボリンジャーバンド</th><th>200,000 本、off</th><th>auto</th><th>1,000,000 本、off</th><th>auto</th></tr></thead>
+  <tbody>
+    <tr><td>呼び出しがメインスレッドを占有した時間</td><td>74 ms</td><td>21 ms</td><td>269 ms</td><td>43 ms</td></tr>
+    <tr><td>50 ms を超えるタスク</td><td>1</td><td>0</td><td>1</td><td>0</td></tr>
+    <tr><td>フレーム間の最長の間隔</td><td>50 ms</td><td>33 ms</td><td>250 ms</td><td>33 ms</td></tr>
+    <tr><td>すべてのラインが描かれるまで</td><td>74 ms</td><td>243 ms</td><td>269 ms</td><td>1,025 ms</td></tr>
+  </tbody>
+</table>
+<p>
+  ワーカーで仕事が減るわけではありません。結果をポイントに戻す処理は、計算とほぼ同じだけメインスレッドの時間を使います。その仕事を 1 フレームに収まる小分けにする代わりに、ラインの表示は遅れます。そのため 50,000 本から使います。デスクトップのヘッドレス Chrome、3 回の中央値です。<code>pnpm bench</code> は両方を Node で計測します（<code>recompute.bench.ts</code>）。
 </p>

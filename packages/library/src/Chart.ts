@@ -48,6 +48,7 @@ import type { ResolvedLayout, ChartStyleKey, ChartStyleOverrides, ChartStyleOver
 import { readChartTypeOptions, tickBarCount, barTimeUnit, readChartStyleOverrides, readIndicatorPlotStyles, readPaneStyle } from '@tradecanvas/commons';
 import { PriceLines, type BidAsk, SymbolSeriesStore, CompareSymbolIndicator, CompareSymbolPaneIndicator, SpreadIndicator, CorrelationCoefficientIndicator, CorrelationLogIndicator, axisTimes, HiLoRenderer, PointAndFigureRenderer, isPriceLevelAlert, loadWebGL, gpuContextsLeft, whenGpuContextFree, idleCssCursor, isCrosshairCursor } from '@tradecanvas/core';
 import type { GpuRenderer, RendererMode } from '@tradecanvas/core';
+import { indicatorWorkerPool, INDICATOR_WORKER_MIN_BARS, type IndicatorWorkerLease } from '@tradecanvas/core';
 import { regularHoursFilter } from './regularHours.js';
 import { ChartA11y } from './chartA11y.js';
 import { barDateZone, barsAreDaily, zonedDateFormatter } from '@tradecanvas/commons';
@@ -210,6 +211,8 @@ export class Chart {
   private layoutManager: LayoutManager;
   private pluginManager: PluginManager;
   private indicatorEngine: IndicatorEngine;
+  /** The page's indicator worker, held while `indicatorWorker` is 'auto'. */
+  private indicatorWorker: IndicatorWorkerLease | null = null;
   private drawingManager: DrawingManager;
   private drawingRenderer: DrawingRenderer;
   private tradingManager: TradingManager;
@@ -516,6 +519,7 @@ export class Chart {
     this.indicatorEngine.register(new SpreadIndicator(this.symbolSeries));
     this.indicatorEngine.register(new CorrelationCoefficientIndicator(this.symbolSeries));
     this.indicatorEngine.register(new CorrelationLogIndicator(this.symbolSeries));
+    if (options.indicatorWorker === 'auto') this.useIndicatorWorker();
 
     // Drawing tools
     this.drawingManager = new DrawingManager();
@@ -2024,13 +2028,35 @@ export class Chart {
    * it has none yet (before its period fills). `values` holds the same by
    * bar time.
    *
+   * With `indicatorWorker: 'auto'`, an indicator still being computed in the
+   * worker is computed here first, so the values are always the bars' own;
+   * `{ drawn: true }` returns the ones drawn now instead, without waiting (the
+   * last ones, or null for an indicator just added): what a legend or a
+   * data window that follows the pointer reads.
+   *
    * @example
    * const rsi = chart.addIndicator('rsi', { period: 14 })!;
    * const out = chart.getIndicatorOutput(rsi);
    * const latest = out?.series?.[chart.getData().length - 1]?.value;
    */
-  getIndicatorOutput(instanceId: string): IndicatorOutput | null {
-    return this.indicatorEngine.getOutput(instanceId);
+  getIndicatorOutput(instanceId: string, options: { drawn?: boolean } = {}): IndicatorOutput | null {
+    return options.drawn ? this.indicatorEngine.peekOutput(instanceId) : this.indicatorEngine.getOutput(instanceId);
+  }
+
+  /** Full recomputes over many bars in the page's indicator worker (`indicatorWorker: 'auto'`). */
+  private useIndicatorWorker(): void {
+    this.indicatorWorker = indicatorWorkerPool.acquire();
+    this.indicatorEngine.useWorker(this.indicatorWorker.client, {
+      minBars: INDICATOR_WORKER_MIN_BARS,
+      onLand: () => this.indicatorsLanded(),
+    });
+  }
+
+  /** Outputs computed in the worker are in place: say so, and draw them. */
+  private indicatorsLanded(): void {
+    if (this.disposed) return;
+    this.announceIndicatorUpdate(0);
+    this.updateViewportAndRender();
   }
 
   registerIndicator(plugin: IndicatorPlugin): void {
@@ -6031,6 +6057,8 @@ export class Chart {
 
   destroy(): void {
     this.disposed = true;
+    this.indicatorWorker?.release();
+    this.indicatorWorker = null;
     this.stopWatchingVisibility?.();
     this.stopWatchingVisibility = null;
     this.waitForGpu(null);

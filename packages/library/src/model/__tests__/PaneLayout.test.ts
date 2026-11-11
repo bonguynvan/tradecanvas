@@ -16,7 +16,7 @@ function sources(values: Record<string, (number | undefined)[]>, extra: Partial<
   return {
     getPaneValueRange: range,
     getPaneMembers: () => [],
-    getOutput: (id) => (values[id] ? { series: values[id].map((v): Line => ({ value: v })) } : null),
+    peekOutput: (id) => (values[id] ? { series: values[id].map((v): Line => ({ value: v })) } : null),
     getIndicatorDescriptor: (id) => (values[id] ? { plots: [{ key: 'value' }] } : null),
     getActiveIndicators: () => Object.keys(values).map((instanceId) => ({ instanceId })),
     ...extra,

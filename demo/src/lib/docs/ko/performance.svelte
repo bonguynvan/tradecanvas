@@ -155,10 +155,27 @@ pnpm soak --minutes=30 --rate=50000 --renderer=canvas`}</code></pre>
 
 <h2 id="download">페이지가 내려받는 것</h2>
 <p>
-  <code>new ChartWidget()</code>는 gzip 기준 386 kB(압축 전 1.46 MB)의 JavaScript를 불러오며, 영어 문자열이 포함됩니다. 페이지가 열릴 때는 필요 없는 대화상자(지표 대화상자, 명령 팔레트, 종목 검색, 차트 설정, 지표 설정과 드로잉 설정, 이동, 단축키 표)는 34 kB가 더 있습니다. 이들은 하나가 처음 열릴 때, 또는 위젯이 뜬 뒤 페이지가 한가할 때 중 먼저 오는 때에 불러옵니다. 번들러는 이들을 별도 파일로 나눕니다. 패키지에서 바로 제공한다면 엔트리와 같은 <code>dist</code> 폴더에 있으니 폴더 전체를 복사하세요. <code>pnpm build</code> 뒤에 <code>pnpm size</code>를 실행하면 엔트리마다 이 숫자를 보여 줍니다.
+  <code>new ChartWidget()</code>는 gzip 기준 386 kB(압축 전 1.46 MB)의 JavaScript를 불러오며, 영어 문자열이 포함됩니다. 페이지가 열릴 때는 필요 없는 대화상자(지표 대화상자, 명령 팔레트, 종목 검색, 차트 설정, 지표 설정과 드로잉 설정, 이동, 단축키 표)는 34 kB가 더 있습니다. 이들은 하나가 처음 열릴 때, 또는 위젯이 뜬 뒤 페이지가 한가할 때 중 먼저 오는 때에 불러옵니다. 번들러는 이들을 별도 파일로 나눕니다. 패키지에서 바로 제공한다면 엔트리와 같은 <code>dist</code> 폴더에 있으니 폴더 전체를 복사하세요. <code>pnpm build</code> 뒤에 <code>pnpm size</code>를 실행하면 엔트리마다 이 숫자를 보여 줍니다. 지표 워커(<code>indicatorWorker: 'auto'</code>)는 36 kB가 더 들며, 차트가 처음 작업을 보낼 때 불러오고 <code>'off'</code>에서는 불러오지 않습니다.
 </p>
 
-<h2>메인 스레드</h2>
+<h2 id="worker">메인 스레드</h2>
 <p>
-  차트는 메인 스레드에서 지표를 계산합니다. <code>@tradecanvas/core</code>의 <code>IndicatorWorkerHost</code>는 Promise 기반 API, 요청별 타임아웃, SSR과 테스트를 위한 동기식 대체 경로를 갖추고 여러분이 제공한 워커에서 <code>calculate()</code>를 실행할 수 있지만, 차트는 아직 지표를 이를 통해 계산하지 않으며 패키지에 워커 스크립트도 포함되어 있지 않습니다.
+  기본적으로 지표는 메인 스레드에서 계산됩니다. <code>indicatorWorker: 'auto'</code>로 두면 50,000봉 이상인 시리즈의 전체 재계산(<code>setData</code>, 종목이나 주기 변경, 지표 추가, 파라미터 변경 시)은 패키지에 포함된 Web Worker에서 이루어집니다. 그 코드는 처음 필요할 때 불러오는 청크에 인라인으로 들어 있고 Blob URL에서 시작되므로 따로 서빙할 파일이 없으며, 페이지의 모든 차트가 워커 하나를 함께 씁니다. 봉 데이터는 숫자 열로 보내지고 결과도 같은 방식으로 돌아오며, 봉 구간 단위로 조금씩 포인트로 되돌려지므로 그동안에도 페이지는 계속 그리고 입력에 응답합니다. 실시간 틱은 계속 메인 스레드에서 증분 계산됩니다.
+</p>
+<pre><code>{`new Chart(el, { indicatorWorker: 'auto' })
+new ChartWidget(el, { chartOptions: { indicatorWorker: 'auto' } })`}</code></pre>
+<p>
+  결과가 도착할 때까지 차트는 직전 결과를 그립니다(방금 추가한 지표는 아무것도 그리지 않습니다). <code>getIndicatorOutput</code>, 알림, 내보내기로 값을 읽으면 아직 워커에 있는 계산을 먼저 메인 스레드에서 끝내므로 읽은 값이 오래된 경우는 없습니다. <code>getIndicatorOutput(id, {'{'} drawn: true {'}'})</code>는 기다리지 않고 지금 그려진 값을 돌려줍니다. 다른 지표의 선이나 다른 종목을 읽는 지표, 그리고 직접 만든 지표(<code>registerIndicator</code>)는 메인 스레드에서 계산되며, 워커를 쓸 수 없는 환경(서버, jsdom, <code>blob:</code> 워커를 막는 Content Security Policy)에서는 모두 메인 스레드에서 계산됩니다.
+</p>
+<table>
+  <thead><tr><th>setData 후 EMA, RSI, MACD, 볼린저 밴드</th><th>200,000봉, off</th><th>auto</th><th>1,000,000봉, off</th><th>auto</th></tr></thead>
+  <tbody>
+    <tr><td>호출이 메인 스레드를 붙잡은 시간</td><td>74 ms</td><td>21 ms</td><td>269 ms</td><td>43 ms</td></tr>
+    <tr><td>50 ms를 넘는 작업</td><td>1</td><td>0</td><td>1</td><td>0</td></tr>
+    <tr><td>프레임 사이 가장 긴 간격</td><td>50 ms</td><td>33 ms</td><td>250 ms</td><td>33 ms</td></tr>
+    <tr><td>모든 선이 그려진 시점</td><td>74 ms</td><td>243 ms</td><td>269 ms</td><td>1,025 ms</td></tr>
+  </tbody>
+</table>
+<p>
+  워커가 일을 줄여 주지는 않습니다. 결과를 포인트로 되돌리는 데 드는 메인 스레드 시간은 계산하는 시간과 비슷합니다. 대신 그 일을 한 프레임이 감당할 수 있는 조각으로 나누고, 선이 늦게 나타나는 대가를 치릅니다. 그래서 50,000봉부터 사용합니다. 데스크톱의 헤드리스 Chrome, 세 번 실행한 중앙값입니다. <code>pnpm bench</code>는 두 부분을 Node에서 측정합니다(<code>recompute.bench.ts</code>).
 </p>

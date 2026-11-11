@@ -395,5 +395,5 @@ own CSS through `--tcw-*` variables and `[data-tcw-part~="name"]` (stable throug
 
 - [references/indicators.md](references/indicators.md) — every built-in indicator: id, default params, lines, levels, source support (generated from the code).
 - [references/style-keys.md](references/style-keys.md) — every style key for `applyOverrides` and its kind (generated from the code).
-- [references/recipes.md](references/recipes.md) — worked examples: custom data feeds, frameworks, indicators on indicators, a custom indicator, multi-chart layouts.
+- [references/recipes.md](references/recipes.md) — worked examples: custom data feeds, frameworks, indicators on indicators, a custom indicator, indicators on a long history computed in a worker (`indicatorWorker`), multi-chart layouts.
 - Docs site: https://tradecanvas.dev/ · API: https://tradecanvas.dev/docs/api
