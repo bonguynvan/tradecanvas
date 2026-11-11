@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.79.2 (2026-11-11)
 
 ### Widget
 
