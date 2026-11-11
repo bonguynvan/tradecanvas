@@ -225,6 +225,8 @@ export class WidgetWatchlist {
     for (const sym of symbols) if (!this.rowMap.has(sym)) this.makeRow(sym);
     // In list order, under the head when there are rows to head; nodes already in place stay.
     const rows = symbols.map((sym) => this.rowMap.get(sym)!.row);
+    // With a logo in the list, the rows without one keep its room, so the tickers line up.
+    this.listEl.classList.toggle('tcw-watchlist-logos', rows.some((row) => row.querySelector('.tcw-watchlist-symbol-logo')));
     this.listEl.replaceChildren(...(this.headEl && rows.length ? [this.headEl] : []), ...rows);
     if (symbols.length === 0) {
       const empty = document.createElement('div');
@@ -288,7 +290,10 @@ export class WidgetWatchlist {
     if (symbol.includes(':')) label.title = symbol;
     // A logo only where the symbol has one: a row of initials would only repeat the tickers.
     const logo = rowLogo(this.options.infoOf?.(symbol));
-    if (logo) label.prepend(logo);
+    if (logo) {
+      label.prepend(logo);
+      label.classList.add('tcw-watchlist-symbol-logo');
+    }
     this.place(label, 'symbol');
     row.appendChild(label);
 
@@ -603,7 +608,7 @@ function drawSparkline(canvas: HTMLCanvasElement, samples: number[], ref: number
 
 /**
  * A row's logo: decoration, as the ticker beside it says the same. One that
- * fails to load (a blocked host, a page's image policy) just goes.
+ * fails to load (a blocked host, a page's image policy) shows nothing.
  */
 function rowLogo(info: SymbolInfo | undefined): HTMLImageElement | null {
   const src = logoSrc(info?.logo);
@@ -617,7 +622,8 @@ function rowLogo(info: SymbolInfo | undefined): HTMLImageElement | null {
   img.setAttribute('decoding', 'async');
   // The logo's host learns nothing of the page it is shown on.
   img.setAttribute('referrerpolicy', 'no-referrer');
-  img.addEventListener('error', () => img.remove(), { once: true });
+  // Its room stays, empty, so its ticker still lines up with the others.
+  img.addEventListener('error', () => { img.style.visibility = 'hidden'; }, { once: true });
   img.src = src;
   return img;
 }

@@ -2176,6 +2176,11 @@
   white-space: nowrap;
 }
 
+/* With a logo in the list, a row without one keeps its room: the tickers line up. */
+.tcw-watchlist-logos .tcw-watchlist-symbol:not(.tcw-watchlist-symbol-logo) {
+  padding-inline-start: calc(1.25em + var(--tcw-space-2));
+}
+
 /* A symbol's logo before its ticker, as tall as the ticker's capitals, cornered as the look's tags. */
 .tcw-watchlist-symbol .tcw-watchlist-logo {
   width: 1.25em;

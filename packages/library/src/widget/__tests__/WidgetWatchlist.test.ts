@@ -220,7 +220,22 @@ describe('WidgetWatchlist rows, one line of figures', () => {
     expect(logo?.getAttribute('aria-hidden')).toBe('true');
     expect(rows[0].querySelector('.tcw-watchlist-symbol')?.textContent).toBe('BTC/USDT');
     expect(rows.slice(1).every((r) => !r.querySelector('.tcw-watchlist-logo'))).toBe(true);
+    // The tickers line up: with a logo in the list, the rows without one keep its room.
+    expect(other.querySelector('.tcw-watchlist-list, [role="list"]')?.classList.contains('tcw-watchlist-logos')).toBe(true);
+    expect(rows[0].querySelector('.tcw-watchlist-symbol')?.classList.contains('tcw-watchlist-symbol-logo')).toBe(true);
+    // A logo that fails to load keeps its room too, empty.
+    logo!.dispatchEvent(new Event('error'));
+    expect(logo!.parentElement).not.toBeNull();
+    expect(logo!.style.visibility).toBe('hidden');
     logos.destroy();
+  });
+
+  it('keeps no room for logos in a list that has none', () => {
+    const other = document.createElement('div');
+    const plain = new WidgetWatchlist(other, calls, LABELS, { infoOf: () => undefined });
+    plain.setLists(lists, 'a');
+    expect(other.querySelector('.tcw-watchlist-logos')).toBeNull();
+    plain.destroy();
   });
 
   it('draws sparklines when asked', () => {
