@@ -414,7 +414,8 @@ export class WidgetDrawingSidebar {
     flyout.addEventListener('keydown', (e) => this.onFlyoutKey(e, idx));
 
     // A menu of several kinds names each over its tools; a menu of one kind, the group over all.
-    const headed = group.tools.some((tool) => tool.heading !== undefined);
+    // Headed from its first tool on: a group whose first tools have none keeps its name over them.
+    const headed = group.tools[0]?.heading !== undefined;
     if (!headed) {
       const header = document.createElement('div');
       header.className = 'tcw-flyout-header';

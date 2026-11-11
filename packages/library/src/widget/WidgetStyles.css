@@ -1351,7 +1351,7 @@
 }
 
 /* A hairline over each kind but the first sets them apart. */
-.tcw-flyout-heading + .tcw-flyout-row ~ .tcw-flyout-heading {
+.tcw-flyout-row + .tcw-flyout-heading {
   border-top: 1px solid var(--tcw-border);
   margin-top: var(--tcw-space-2);
 }
@@ -1982,7 +1982,8 @@
 /* === Watchlist === */
 
 .tcw-watchlist {
-  width: 220px;
+  /* The dock's width to start (a panel of the dock takes the panel's): four figures fit. */
+  width: 262px;
   flex-shrink: 0;
   /* Its rows read its width: a narrow panel drops a column (see the move, below). */
   container: tcw-watchlist / inline-size;

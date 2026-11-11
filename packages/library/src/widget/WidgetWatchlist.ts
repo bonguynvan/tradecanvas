@@ -65,6 +65,9 @@ interface RowRef {
   sparkCanvas: HTMLCanvasElement | null;
 }
 
+/** The cells of a row, and of the head over them. */
+type WatchlistCell = 'symbol' | 'spark' | 'price' | 'move' | 'change' | 'remove';
+
 export interface WatchlistViewOptions {
   /** A small chart of recent prices in each row. Default `false`: the row's figures only. */
   sparkline?: boolean;
@@ -228,6 +231,20 @@ export class WidgetWatchlist {
     if (this.active) this.setActive(this.active);
   }
 
+  /**
+   * A cell's column, set rather than left to the grid's flow: a narrow panel
+   * hides the move, and the cells after it would slide into its track, the
+   * remove button into the change's.
+   */
+  private place(el: HTMLElement, cell: WatchlistCell): void {
+    const cells: WatchlistCell[] = [
+      'symbol', ...(this.options.sparkline ? ['spark', 'price'] as const : ['price', 'move'] as const), 'change',
+      ...(this.callbacks.onRemove ? ['remove'] as const : []),
+    ];
+    // After the leading gutter, the first column.
+    el.style.gridColumnStart = String(cells.indexOf(cell) + 2);
+  }
+
   /** The names over the columns, when the labels give them: a row of the list's grid, read by eye only. */
   private makeHead(): HTMLDivElement | null {
     const names = this.labels.columns;
@@ -236,10 +253,11 @@ export class WidgetWatchlist {
     head.className = 'tcw-watchlist-columns';
     // Each row reads its figures out itself; the head is for the eye.
     head.setAttribute('aria-hidden', 'true');
-    const cell = (text: string, name: string) => {
+    const cell = (text: string, name: WatchlistCell) => {
       const el = document.createElement('span');
       el.className = `tcw-watchlist-column-${name}`;
       el.textContent = text;
+      this.place(el, name);
       head.appendChild(el);
     };
     cell(names.symbol, 'symbol');
@@ -264,6 +282,7 @@ export class WidgetWatchlist {
     label.textContent = formatSymbol(symbol);
     // The venue the name leaves out ('HYPERLIQUID:xyz:'), on hover.
     if (symbol.includes(':')) label.title = symbol;
+    this.place(label, 'symbol');
     row.appendChild(label);
 
     let sparkCanvas: HTMLCanvasElement | null = null;
@@ -272,14 +291,16 @@ export class WidgetWatchlist {
       sparkCanvas.className = 'tcw-watchlist-spark';
       sparkCanvas.width = 64;
       sparkCanvas.height = 22;
+      this.place(sparkCanvas, 'spark');
       row.appendChild(sparkCanvas);
     }
 
     // The figures, each a cell of the list's grid, so a column lines up from row to row.
-    const figure = (name: string, text = '') => {
+    const figure = (name: WatchlistCell, text = '') => {
       const el = document.createElement('span');
       el.className = `tcw-watchlist-${name}`;
       el.textContent = text;
+      this.place(el, name);
       row.appendChild(el);
       return el;
     };
@@ -302,6 +323,7 @@ export class WidgetWatchlist {
         e.stopPropagation();
         this.callbacks.onRemove?.(symbol);
       });
+      this.place(remove, 'remove');
       row.appendChild(remove);
     }
 
