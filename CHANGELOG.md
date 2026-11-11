@@ -1,12 +1,10 @@
 # Changelog
 
-## Unreleased
+## 1.81.0 (2026-11-11)
 
 ### Data
 
 - **A quote for a long symbol reaches the watchlist** (`@tradecanvas/commons`, `@tradecanvas/chart`). 1.80.0 let a symbol be up to 160 characters, but a quote for one longer than 64 was still dropped, so a DEX pool whose symbol names its network, address and pair could sit in the watchlist with no price. Quotes now take the same 160. `MAX_SYMBOL_LENGTH` is exported from `@tradecanvas/commons`.
-
-## 1.80.0 (2026-11-11)
 
 ### Widget
 
