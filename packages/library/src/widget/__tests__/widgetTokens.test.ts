@@ -166,6 +166,13 @@ describe('dialog styles', () => {
   /** The innermost rules, selector and body: every dialog's, the symbol search's and the compare dialog's (`.tcw-ss…`) among them. */
   const rules = [...dialogs.matchAll(/([^{}]+)\{([^{}]*)\}/g)];
 
+  // The search is a band with a rule under it: the row under it (the filters, or the compare's way)
+  // stands off that rule as it stands off the list, instead of a tab's or a select's border on it.
+  it('set the row under the symbol search’s band off its rule', () => {
+    const gap = rules.find((m) => m[1].includes('.tcw-ss-search + .tcw-ss-filters') && m[1].includes('.tcw-ss-search + .tcw-ss-way'));
+    expect(gap?.[2]).toMatch(/margin-top:\s*var\(--tcw-space-4\)/);
+  });
+
   it('write every colour through a token, the symbol search’s kind tabs’ fade too', () => {
     expect(rules.filter((m) => m[1].includes('.tcw-ss')).length).toBeGreaterThan(0);
     const literal = /#[0-9a-f]{3,8}\b|\b(?:rgba?|hsla?|oklch|oklab)\(|(?<![-\w])(?:black|white)(?![-\w])/i;
@@ -203,6 +210,14 @@ function mix(fg: string, bg: string, alpha: number): string {
   const a = Math.round(alpha * 255) / 255;
   return `#${[1, 3, 5].map((i) => Math.round(channel(fg, i) * a + channel(bg, i) * (1 - a)).toString(16).padStart(2, '0')).join('')}`;
 }
+
+describe('watchlist logo', () => {
+  // A page's reset (`img { display: block }`) put the logo on a line of its own, over its ticker.
+  it('stays inline before the ticker whatever the page says of images', () => {
+    const rule = css.match(/\.tcw-watchlist-symbol \.tcw-watchlist-logo\s*\{([^}]*)\}/)?.[1] ?? '';
+    expect(rule).toMatch(/display:\s*inline-block/);
+  });
+});
 
 describe('loading overlay styles', () => {
   const reduced = css.slice(css.indexOf('@media (prefers-reduced-motion: reduce)'));

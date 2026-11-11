@@ -669,6 +669,13 @@
   margin: 0 var(--tcw-space-6) var(--tcw-space-4);
 }
 
+/* The row right under the search's band (the filters, or the compare's way) stands off its rule as
+   it stands off the list: the tabs' and the exchanges' borders never sit on the rule. */
+.tcw-ss-search + .tcw-ss-filters,
+.tcw-ss-search + .tcw-ss-way {
+  margin-top: var(--tcw-space-4);
+}
+
 /* The kinds as tabs (All, stock, crypto…), showing the one picked as the look shows a choice. */
 .tcw-ss-kinds {
   display: flex;
