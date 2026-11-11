@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { readQuote, type Quote } from '@tradecanvas/commons';
+import { MAX_SYMBOL_LENGTH, readQuote, type Quote } from '@tradecanvas/commons';
 import { BinanceAdapter } from '../BinanceAdapter.js';
 import { ResamplingAdapter } from '../ResamplingAdapter.js';
 import { MockAdapter } from '../MockAdapter.js';
@@ -42,8 +42,16 @@ describe('readQuote', () => {
     expect(readQuote({ symbol: 'X', last: 5, change: -1 })).toEqual({ symbol: 'X', last: 5, change: -1, changePercent: (-1 / 6) * 100 });
   });
 
+  // A watchlist keeps a DEX pool's symbol (a venue, the pool's address, its pair), so its quotes must reach it.
+  it('takes a quote for a symbol as long as a watchlist keeps, a DEX pool’s among them', () => {
+    const pool = 'DEX:solana:31p1hptjhFo6ZD8oBqkfutNXQKGGPyi7YcEAfsyKW777:BONK/USDC';
+    expect(pool.length).toBeGreaterThan(64);
+    expect(readQuote({ symbol: pool, last: 0.0000028 })).toEqual({ symbol: pool, last: 0.0000028 });
+    expect(readQuote({ symbol: 'x'.repeat(MAX_SYMBOL_LENGTH), last: 1 })).not.toBeNull();
+  });
+
   it('is null for what isn’t a quote', () => {
-    for (const raw of [null, 'AAPL', { symbol: 'A' }, { symbol: '', last: 1 }, { symbol: 'A', last: Infinity }, { symbol: 'x'.repeat(65), last: 1 }]) {
+    for (const raw of [null, 'AAPL', { symbol: 'A' }, { symbol: '', last: 1 }, { symbol: 'A', last: Infinity }, { symbol: 'x'.repeat(MAX_SYMBOL_LENGTH + 1), last: 1 }]) {
       expect(readQuote(raw), JSON.stringify(raw)).toBeNull();
     }
   });
