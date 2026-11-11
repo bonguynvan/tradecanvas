@@ -1,5 +1,24 @@
 # Changelog
 
+## Unreleased
+
+### Drawings
+
+- **Cursor kinds** (`@tradecanvas/chart`, `@tradecanvas/core`, `@tradecanvas/commons`). What the pointer looks like over the chart is now a choice:
+  - `'cross'` (the default) draws the crosshair's lines with a crosshair cursor;
+  - `'dot'` draws the same lines with a small dot for a cursor, in the crosshair's colour;
+  - `'arrow'` draws no lines and keeps the arrow cursor, while the price and the time still follow the pointer on the axes.
+
+  Set it with `crosshair.cursor` in the options or `chart.setCrosshairCursor(kind)`, which emits `crosshairCursorChange`. In ChartWidget, the cursor button at the top of the drawing tools opens a menu of the three, and the Chart Settings have the row; `widget.setCrosshairCursor(kind)` sets it. It is the viewer's own setting: `persistSettings` keeps it, and a layout or a shared link never carries it.
+- **A drawing's span on the axes** (`@tradecanvas/chart`, `@tradecanvas/core`, `@tradecanvas/commons`). While a drawing is selected, moved or being drawn:
+  - the price axis is tinted from its lowest to its highest price, and the time axis from its first to its last time;
+  - each end is labelled in the drawing's colour;
+  - a horizontal line marks only its price and a vertical line only its time, and a drawing kept to the screen marks neither (a tool says which with `DrawingDescriptor.axisSpan`).
+
+  Turn it off with `features.drawingAxisSpans: false` or `chart.setDrawingAxisSpansVisible(false)`.
+- **The eraser shows what it takes.** With the eraser on, the drawing a click would remove glows under the pointer, a selected one too.
+- **A hidden crosshair is hidden in the indicator panes too.** With the crosshair hidden, the panes no longer draw its lines or its price on their axis.
+
 ## 1.81.0 (2026-11-11)
 
 ### Data

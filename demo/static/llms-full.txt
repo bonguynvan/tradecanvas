@@ -245,6 +245,10 @@ and drawings can be named (`updateDrawing(id, { name })`, what the object tree l
 grouped (`groupDrawings`), reordered (`moveDrawing` with a step or a place, 0 the bottom), erased
 (`setEraserMode`), and copied to another chart of the page (`copyDrawings`, then
 `pasteDrawings` there; `canPasteDrawings()` says whether there is something to paste).
+A selected drawing (or one being drawn) marks its span on the axes, its ends labelled in its
+colour (`features.drawingAxisSpans: false` turns that off). What the pointer looks like is
+`crosshair.cursor` / `setCrosshairCursor`: `'cross'`, `'dot'`, or `'arrow'` (no lines, the axis
+labels still follow); on `ChartWidget` it is a Chart Setting, `widget.setCrosshairCursor(kind)`.
 A drawing kept to some intervals (`intervals`, the rules of `IndicatorIntervals`; change them
 with `updateDrawing(id, { intervals })`, null for all) shows only there: `isDrawingShown(id)`.
 Trend lines, rays and extended lines take a middle point and stats (`showPriceRange`,
