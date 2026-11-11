@@ -880,19 +880,7 @@ img.tcw-ss-badge {
   white-space: nowrap;
 }
 
-/* A venue before the ticker ("BINANCE:"), dim, is what a narrow column shortens; the ticker never
-   shrinks (a share of a pixel would end it in an ellipsis), and is cut only when it alone is wider.
-   A gap keeps the venue's ellipsis off the ticker ("HYPERLIQ… GOLD"). */
-.tcw-ss-venue {
-  flex: 0 1 auto;
-  min-width: 0;
-  margin-inline-end: var(--tcw-space-1);
-  overflow: hidden;
-  color: var(--tcw-text-muted);
-  font-weight: var(--tcw-weight);
-  text-overflow: ellipsis;
-}
-
+/* The ticker alone (a venue before it is the exchange column's): cut only when it is wider than its column. */
 .tcw-ss-ticker {
   flex: none;
   max-width: 100%;
@@ -1183,28 +1171,6 @@ img.tcw-ss-badge {
      row, and the name gives way first. The exchange's up to 55, each cut in its own row. */
   .tcw-ss-results {
     grid-template-columns: max-content fit-content(min(144px, 38.2%)) minmax(0, 1fr) fit-content(55px) auto;
-  }
-
-  /* A venue counts for nothing in that width (its own is 0): it shows, dim and shortened, in what
-     its ticker leaves, if that is 2em, a letter and an ellipsis as on the toolbar. With less, it
-     wraps to a second line the cell clips, never a sliver ("H.GOLD"). The ticker comes first in the
-     line, laid from the end, so it is the one that stays, at the column's start when alone. */
-  .tcw-ss-symbol {
-    justify-self: stretch;
-    flex-direction: row-reverse;
-    flex-wrap: wrap;
-    justify-content: flex-end;
-    align-content: flex-start;
-    height: 1lh;
-  }
-
-  .tcw-ss-ticker {
-    order: -1;
-  }
-
-  .tcw-ss-venue {
-    flex: 1 1 2em;
-    width: 0;
   }
 
   /* The head over the exchanges reads whole, over the gap before it if it must. */

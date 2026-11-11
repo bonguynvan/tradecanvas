@@ -161,8 +161,8 @@
   --tcw-control-h: 33px;
   --tcw-control-h-sm: 26px;
   --tcw-icon: 20px;
-  --tcw-sidebar-w: 53px;
-  --tcw-tool-h: 37px;
+  --tcw-sidebar-w: 42px;
+  --tcw-tool-h: 36px;
   --tcw-tool-icon: 26px;
   --tcw-menu-item-h: 33px;
   --tcw-icon-stroke: 1px;
@@ -296,35 +296,9 @@
   background: transparent;
 }
 
-/* With everything folded and still no room (a long symbol on a phone), the symbol gives way so
-   "more" stays on the bar, a step at a time (`data-tcw-squeeze`). First its venue
-   ("HYPERLIQUID:xyz:") is cut short before anything else shrinks, down to its first letter and an
-   ellipsis, a gap keeping it off the ticker. That is 2em: a line's first letter is cut, never
-   swapped for the ellipsis, so less shows a letter and a sliver ("H."). The venue's column counts
-   only those 2em in the button's smallest width, so the ticker stays whole and the buttons beside it
-   give the rest. With room, the symbol shows as it always has. */
-.tcw-toolbar[data-tcw-squeeze='venue'] > .tcw-toolbar-symbol--venue {
-  display: inline-grid;
-  grid-template-columns: minmax(2em, max-content) auto;
-  column-gap: var(--tcw-space-1);
-  align-items: center;
-  /* Shrinking is shared by width times this: the symbol takes it all until it is at its smallest. */
-  flex-shrink: 1000;
-}
-
-.tcw-toolbar[data-tcw-squeeze='venue'] .tcw-toolbar-venue {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* Then, with no room even for the ellipsis (a 320 phone in the Capsule look), the venue goes, the
-   ticker whole; and last of all, the ticker is cut short. */
-.tcw-toolbar[data-tcw-squeeze='ticker'] .tcw-toolbar-venue,
-.tcw-toolbar[data-tcw-squeeze='cut'] .tcw-toolbar-venue {
-  display: none;
-}
-
+/* With everything folded and still no room (a long ticker on a phone), the ticker is cut short so
+   "more" stays on the bar (`data-tcw-squeeze`). The button shows the ticker alone: a venue before it
+   ("HYPERLIQUID:xyz:") is the legend's and the tooltip's to name. */
 .tcw-toolbar[data-tcw-squeeze='cut'] > .tcw-toolbar-symbol {
   min-width: 0;
 }
@@ -1182,11 +1156,11 @@
 /* === Sidebar === */
 
 /* The drawing tools' button and icon as drawn (the dock's rail has the same): never wider than
-   their column less 8 px a side (a narrow `sizes.sidebar` of yours shrinks them), nor taller
+   their column less 3 px a side (a narrow `sizes.sidebar` of yours shrinks them), nor taller
    than a short column leaves room for (`--tcw-tool-fit`, set by toolFit.ts on the column); the
    icon at most four fifths of its button, as a compact look's 16 in 20. */
 .tcw-root, .tcw-sidebar {
-  --tcw-tool-size: min(var(--tcw-tool-h), calc(var(--tcw-sidebar-w) - 16px), var(--tcw-tool-fit, 999px));
+  --tcw-tool-size: min(var(--tcw-tool-h), calc(var(--tcw-sidebar-w) - 6px), var(--tcw-tool-fit, 999px));
   --tcw-tool-icon-size: min(var(--tcw-tool-icon), calc(var(--tcw-tool-size) * 0.8));
 }
 
@@ -1338,6 +1312,22 @@
   letter-spacing: var(--tcw-label-tracking);
   padding: var(--tcw-space-3) var(--tcw-space-4) var(--tcw-space-2);
   font-weight: var(--tcw-weight-strong);
+}
+
+/* A kind's name in a menu of several, set as a menu's own name is. */
+.tcw-flyout-heading {
+  text-transform: var(--tcw-label-case);
+  font-size: var(--tcw-label-size);
+  color: var(--tcw-text-muted);
+  letter-spacing: var(--tcw-label-tracking);
+  padding: var(--tcw-space-3) var(--tcw-space-4) var(--tcw-space-2);
+  font-weight: var(--tcw-weight-strong);
+}
+
+/* A hairline over each kind but the first sets them apart. */
+.tcw-flyout-row + .tcw-flyout-heading {
+  border-top: 1px solid var(--tcw-border);
+  margin-top: var(--tcw-space-2);
 }
 
 .tcw-flyout-hint {
@@ -1966,8 +1956,11 @@
 /* === Watchlist === */
 
 .tcw-watchlist {
-  width: 220px;
+  /* The dock's width to start (a panel of the dock takes the panel's): four figures fit. */
+  width: 262px;
   flex-shrink: 0;
+  /* Its rows read its width: a narrow panel drops a column (see the move, below). */
+  container: tcw-watchlist / inline-size;
   background: var(--tcw-bg-surface);
   border-inline-start: 1px solid var(--tcw-border);
   display: flex;
@@ -2128,14 +2121,14 @@
  */
 .tcw-watchlist-list {
   --tcw-watchlist-remove: 20px;
-  /* With the gap beside it, 12px from the panel's edge to the first and last cell. */
+  /* With the gap beside it, 10px from the panel's edge to the first and last cell. */
   --tcw-watchlist-gutter: 2px;
   flex: 1;
   overflow-y: auto;
   padding: 0 0 4px;
   display: grid;
   grid-template-columns: var(--tcw-watchlist-columns, var(--tcw-watchlist-gutter) minmax(0, 1fr) auto auto auto var(--tcw-watchlist-gutter));
-  column-gap: 10px;
+  column-gap: 8px;
   align-content: start;
 }
 
@@ -2157,7 +2150,7 @@
   position: sticky;
   top: 0;
   z-index: 1;
-  height: 24px;
+  height: 20px;
   background: var(--tcw-bg-surface);
   border-bottom: 1px solid var(--tcw-border);
   font-size: var(--tcw-font-size-xs);
@@ -2168,10 +2161,10 @@
   text-align: end;
 }
 
-/* A line a symbol: its figures and nothing else. */
+/* A line a symbol, as short as its figures read: more of the list in sight. */
 .tcw-watchlist-row {
   position: relative;
-  min-height: 28px;
+  min-height: 24px;
   cursor: pointer;
   transition: background var(--tcw-dur-fast) var(--tcw-ease);
   outline: none;
@@ -2234,6 +2227,14 @@
 
 .tcw-watchlist-price {
   color: var(--tcw-text);
+}
+
+/* A panel too narrow for four figures drops the move first: the price and the % still read. */
+@container tcw-watchlist (width < 250px) {
+  .tcw-watchlist-move,
+  .tcw-watchlist-column-move {
+    display: none;
+  }
 }
 
 .tcw-watchlist-move.tcw-up,

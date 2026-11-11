@@ -596,7 +596,7 @@ widget.destroy()`}</code></pre>
   izquierda en un widget de derecha a izquierda). Un botón del riel abre su panel, o lo cierra si es el que está
   abierto; el botón de cerrar de cada panel también lo cierra. Ningún panel se abre solo: el gráfico tiene el espacio hasta que se pide uno
   (<code>widget.openPanel('watchlist')</code> lo abre desde tu código). Arrastra el borde del panel, o usa las flechas
-  del teclado sobre él, para darle un ancho de 233 a 377 px (296 al principio), que se guarda en este navegador; nunca
+  del teclado sobre él, para darle un ancho de 233 a 377 px (262 al principio), que se guarda en este navegador; nunca
   ocupa más del 38,2% de la fila, y el resto queda para el gráfico.
 </p>
 <p>
@@ -649,8 +649,8 @@ new ChartWidget(host, { features: { 'dock.dataWindow': false } })  // no button 
   Cuando una búsqueda ya ha informado de un símbolo, las palabras del feed lo nombran también en la lista con la que
   se abre la búsqueda, no solo entre los resultados. Un nombre, tipo, bolsa o logo que no sea texto (el
   <code>null</code> de un feed JSON, un código de bolsa numérico), en los resultados de un feed o en lo que sabe el gráfico, cuenta como no dado: ni se muestra ni borra los
-  tuyos. Un prefijo de mercado antes de los dos puntos (<code>BINANCE:BTCUSDT</code>) se atenúa, y es lo primero que
-  acorta una columna estrecha; en un teléfono, las pestañas de tipo se desplazan en una sola línea y se desvanecen en
+  tuyos. Un símbolo se muestra como su ticker, sin el mercado antes de los dos puntos (<code>BINANCE:BTCUSDT</code> se lee BTCUSDT; <code>HYPERLIQUID:xyz:NVDA</code>, NVDA)
+  en la barra, la leyenda, las filas y el panel de información: el mercado va en la columna de bolsa cuando el feed no la nombra, y el símbolo entero se ve al pasar el ratón; en un teléfono, las pestañas de tipo se desplazan en una sola línea y se desvanecen en
   el extremo que tiene más detrás. Lo que el gráfico sabe de su símbolo lo nombra en la barra de herramientas y en el
   panel de información cuando es del mismo símbolo (en mayúsculas o minúsculas, con o sin un prefijo de mercado antes
   de los dos puntos) o se fijó después de cambiar de símbolo, así que la forma de escribirlo propia de un feed

@@ -59,6 +59,18 @@ describe('the legend’s title line', () => {
     expect(open.x).toBeGreaterThan(title.x);
   });
 
+  // "HYPERLIQUID:xyz:NVDA · 1h · Hyperliquid xyz" said the venue twice and filled the line.
+  it('names a symbol by its ticker, the venue before it left to the exchange', () => {
+    const legend = new ChartLegend();
+    legend.setSymbol('HYPERLIQUID:xyz:NVDA');
+    legend.setTimeframe('1h');
+    legend.setExchange('Hyperliquid xyz');
+    const { ctx, texts } = recorder();
+    legend.render(ctx, viewport(1200), LIGHT_THEME, data);
+    expect(texts.some((t) => t.text === 'NVDA · 1h · Hyperliquid xyz')).toBe(true);
+    expect(texts.some((t) => t.text.includes('HYPERLIQUID'))).toBe(false);
+  });
+
   it('wraps what doesn’t fit onto the next line instead of running off the plot', () => {
     const { texts } = legendWith(260);
     const title = texts.find((t) => t.text.startsWith('BTCUSDT'))!;

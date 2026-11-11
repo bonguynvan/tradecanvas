@@ -194,6 +194,10 @@ describe('WidgetWatchlist rows, one line of figures', () => {
   it('gives the list its columns: a last one for the remove button; a sparkline takes the move’s', () => {
     const columns = (el: Element) => (el.querySelector('.tcw-watchlist-list') as HTMLElement).style.getPropertyValue('--tcw-watchlist-columns');
     expect(columns(host)).toBe('var(--tcw-watchlist-gutter) minmax(0, 1fr) auto auto auto var(--tcw-watchlist-remove) var(--tcw-watchlist-gutter)');
+    // Each cell has its column set: when a narrow panel hides the move, the change and the
+    // remove button keep theirs rather than slide one track left.
+    const placed = [...rows()[0].children].map((c) => [c.className.split(' ')[0], (c as HTMLElement).style.gridColumnStart]);
+    expect(placed).toEqual([['tcw-watchlist-symbol', '2'], ['tcw-watchlist-price', '3'], ['tcw-watchlist-move', '4'], ['tcw-watchlist-change', '5'], ['tcw-watchlist-remove', '6']]);
     const other = document.createElement('div');
     const plain = new WidgetWatchlist(other, { onSelect: vi.fn() }, { ...LABELS, columns: { symbol: 'S', price: 'L', move: 'M', change: 'C' } }, { sparkline: true });
     plain.setLists(lists, 'a');

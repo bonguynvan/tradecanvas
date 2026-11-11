@@ -32,24 +32,11 @@ describe('the widget’s own box', () => {
 });
 
 describe('the toolbar’s symbol', () => {
-  // "HYPERLIQUID:xyz:GOLD" on a 390 phone held its width and pushed "more" off the bar.
-  it('gives way only when the fit squeezes it, its venue to an ellipsis before anything else shrinks', () => {
+  // A long ticker on a 390 phone held its width and pushed "more" off the bar.
+  it('gives way only when the fit squeezes it, its ticker cut short', () => {
     expect(rule('.tcw-toolbar-symbol')).not.toMatch(/min-width|flex-shrink/);
-    const symbol = rule(".tcw-toolbar[data-tcw-squeeze='venue'] > .tcw-toolbar-symbol--venue");
-    expect(symbol).toMatch(/display:\s*inline-grid/);
-    // The venue's column counts a letter and an ellipsis in the smallest width (never a sliver), the ticker all of itself.
-    expect(symbol).toMatch(/grid-template-columns:\s*minmax\(2em, max-content\) auto/);
-    expect(symbol).toMatch(/column-gap:\s*var\(--tcw-space-1\)/);
-    expect(symbol).toMatch(/flex-shrink:\s*1000/);
-    const venue = rule(".tcw-toolbar[data-tcw-squeeze='venue'] .tcw-toolbar-venue");
-    expect(venue).toMatch(/min-width:\s*0/);
-    expect(venue).toMatch(/overflow:\s*hidden/);
-    expect(venue).toMatch(/text-overflow:\s*ellipsis/);
-  });
-
-  it('then drops its venue, and last cuts its ticker short', () => {
-    expect(blocks(css, ".tcw-toolbar[data-tcw-squeeze='ticker'] .tcw-toolbar-venue").join('')).toMatch(/display:\s*none/);
-    expect(blocks(css, ".tcw-toolbar[data-tcw-squeeze='cut'] .tcw-toolbar-venue").join('')).toMatch(/display:\s*none/);
+    // The button shows the ticker alone: nothing is left styling a venue on it.
+    expect(css).not.toMatch(/tcw-toolbar-venue|tcw-toolbar-symbol--venue/);
     expect(rule(".tcw-toolbar[data-tcw-squeeze='cut'] > .tcw-toolbar-symbol")).toMatch(/min-width:\s*0/);
     const ticker = rule(".tcw-toolbar[data-tcw-squeeze='cut'] .tcw-toolbar-ticker");
     expect(ticker).toMatch(/min-width:\s*0/);
@@ -175,11 +162,9 @@ describe('the symbol search', () => {
 
   // On a phone "OKX:BTC-USDT-SWAP" showed "BTC-USDT-S…" beside a name with room, and one long exchange
   // held the exchange column at 89 on every row.
-  it('keeps a ticker whole on a phone before its name, a venue counting for nothing in its column', () => {
+  it('keeps a ticker whole on a phone before its name', () => {
     const rules = phone(dialogs);
     expect(rules).toMatch(/\.tcw-ss-results\s*\{\s*grid-template-columns:\s*max-content fit-content\(min\(144px, 38\.2%\)\) minmax\(0, 1fr\) fit-content\(55px\) auto;/);
-    expect(blocks(rules, '.tcw-ss-venue').join('')).toMatch(/width:\s*0;/);
-    expect(blocks(rules, '.tcw-ss-symbol').join('')).toMatch(/justify-self:\s*stretch/);
   });
 
   // At 1920 the search stayed a 610 box, and "HYPERLIQUID:xyz:SP500" lost its venue to the ellipsis
@@ -208,24 +193,13 @@ describe('the symbol search', () => {
   });
 });
 
-describe('the symbol search’s venue', () => {
-  // On a phone "HYPERLIQ…GOLD": the venue's ellipsis touched the ticker. The cell reads left to right
-  // in any widget, so the end margin is on the ticker's side both ways.
-  it('keeps a gap between its ellipsis and the ticker', () => {
-    expect(blocks(dialogs, '.tcw-ss-venue')[0]).toMatch(/margin-inline-end:\s*var\(--tcw-space-1\)/);
-  });
-
-  // On a phone, a search that leaves only short tickers with a venue ("HYPER") sized the column to
-  // the ticker, and the venue showed as a sliver ("|GOLD", "H.GOLD").
-  it('shows on a phone a letter and an ellipsis or nothing, never a sliver', () => {
-    const rules = phone(dialogs);
-    // Its basis, not a least width: that would widen the column for every row by the venue's 2em.
-    expect(blocks(rules, '.tcw-ss-venue').join('')).toMatch(/flex:\s*1 1 2em/);
-    const cell = blocks(rules, '.tcw-ss-symbol').join('');
-    expect(cell).toMatch(/flex-wrap:\s*wrap/);
-    expect(cell).toMatch(/flex-direction:\s*row-reverse/);
-    expect(cell).toMatch(/height:\s*1lh/);
-    expect(blocks(rules, '.tcw-ss-ticker').join('')).toMatch(/order:\s*-1/);
+describe('the symbol search’s ticker', () => {
+  // A row shows the ticker alone; the venue is the exchange column's.
+  it('has nothing left styling a venue, and cuts a ticker only when it alone is wider', () => {
+    expect(dialogs).not.toMatch(/tcw-ss-venue/);
+    const ticker = blocks(dialogs, '.tcw-ss-ticker')[0];
+    expect(ticker).toMatch(/text-overflow:\s*ellipsis/);
+    expect(ticker).toMatch(/flex:\s*none/);
   });
 });
 
@@ -290,6 +264,13 @@ describe('a watchlist row’s remove button', () => {
     expect(rule('.tcw-watchlist-row')).toMatch(/grid-template-columns:\s*subgrid/);
     // An empty list's message spans the grid; placed as a cell it fell into the 2px gutter.
     expect(rule('.tcw-watchlist-empty')).toMatch(/grid-column:\s*1 \/ -1/);
+  });
+
+  it('keeps its rows short, and drops the move first in a narrow panel', () => {
+    expect(rule('.tcw-watchlist-row')).not.toMatch(/padding:\s*\d+px \d/);
+    expect(css).toMatch(/\.tcw-watchlist-row \{[^}]*min-height:\s*24px/);
+    expect(rule('.tcw-watchlist')).toMatch(/container:\s*tcw-watchlist \/ inline-size/);
+    expect(css).toMatch(/@container tcw-watchlist \(width < 250px\) \{\s*\.tcw-watchlist-move,\s*\.tcw-watchlist-column-move \{\s*display:\s*none/);
     const button = rule('.tcw-watchlist-remove');
     expect(button).not.toMatch(/position:\s*absolute/);
     expect(button).toMatch(/width:\s*var\(--tcw-watchlist-remove\)/);

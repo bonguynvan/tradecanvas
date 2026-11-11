@@ -19,12 +19,11 @@ const FOLDED_ATTR = 'data-tcw-folded';
 /** The browser lays boxes out in 64ths of a pixel: a difference this small is the same edge. */
 const SUBPIXEL = 1 / 64;
 /**
- * How far the symbol gives way when even everything folded has no room, a
- * step at a time (`data-tcw-squeeze` on the toolbar, which the stylesheet
- * reads): its venue cut short to an ellipsis, then the venue gone and the
- * ticker whole, then the ticker cut short.
+ * How far the symbol gives way when even everything folded has no room
+ * (`data-tcw-squeeze` on the toolbar, which the stylesheet reads): its ticker
+ * cut short.
  */
-const SQUEEZE_STEPS = ['venue', 'ticker', 'cut'] as const;
+const SQUEEZE_STEPS = ['cut'] as const;
 
 /** The heading of each unit's section in the interval menu. */
 const UNIT_HEADINGS = {
@@ -136,11 +135,9 @@ export class WidgetToolbar {
    * fold last. When even that isn't enough, the menus show their icons only
    * and the interval buttons give way to the interval menu, and as many
    * buttons as then fit come back, from the left. Last of all, with nothing
-   * left to fold (a long symbol on a phone), the symbol gives way, in
-   * `SQUEEZE_STEPS`: its venue ("HYPERLIQUID:xyz:") is cut short to an
-   * ellipsis before anything else shrinks, its ticker kept whole while the
-   * buttons beside it can give. Each fit measures it whole, so it takes its
-   * room back as soon as there is room.
+   * left to fold (a long ticker on a phone), the symbol gives way, in
+   * `SQUEEZE_STEPS`: its ticker is cut short to an ellipsis. Each fit
+   * measures it whole, so it takes its room back as soon as there is room.
    *
    * A refit that changes what is folded closes the menus hanging from "more"
    * or from a button that folded, whose place is gone, and the keyboard stays
@@ -758,24 +755,18 @@ export class WidgetToolbar {
   }
 
   /**
-   * The symbol on its button, its venue ("BINANCE:") apart from its ticker,
-   * the button marked when it has one: a toolbar with no room left cuts the
-   * venue short first (`refit`).
+   * The symbol on its button, as a trader says it: the ticker, without the
+   * venue before it ("HYPERLIQUID:xyz:GOLD" reads GOLD). The exchange is the
+   * legend's and the tooltip's to name; the label keeps the whole symbol.
    */
   private renderSymbol(symbol: string): void {
     const btn = this.el.querySelector<HTMLButtonElement>('[data-role="symbol"]');
     if (!btn || this.symbolShown === symbol) return;
     this.symbolShown = symbol;
-    const { venue, ticker } = splitVenue(symbol);
-    const part = (className: string, text: string) => {
-      const span = document.createElement('span');
-      span.className = className;
-      span.textContent = text;
-      return span;
-    };
-    btn.replaceChildren(...(venue ? [part('tcw-toolbar-venue', venue)] : []), part('tcw-toolbar-ticker', ticker));
-    btn.classList.toggle('tcw-toolbar-symbol--venue', venue !== '');
-    // A flex box reads its two parts apart, and a full bar hides the venue: the label keeps it whole.
+    const ticker = document.createElement('span');
+    ticker.className = 'tcw-toolbar-ticker';
+    ticker.textContent = splitVenue(symbol).ticker;
+    btn.replaceChildren(ticker);
     btn.setAttribute('aria-label', symbol);
   }
 

@@ -94,7 +94,7 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
 <table>
   <thead><tr><th>Qué</th><th>Regla</th><th>Valores (px)</th></tr></thead>
   <tbody>
-    <tr><td>Tamaños</td><td>Medios pasos de φ: un icono, su botón pequeño, su botón, la barra, la columna de herramientas de dibujo; una fila de menú mide lo mismo que un botón. Los iconos de las herramientas de dibujo van medio paso por encima de los demás (26 frente a 20), y sus botones algo por debajo de ese paso, para dejar 8 px a cada lado en la columna.</td><td>20 · 26 · 33 · 42 · 53</td></tr>
+    <tr><td>Tamaños</td><td>Medios pasos de φ: un icono, su botón pequeño, su botón, la barra, la columna de herramientas de dibujo; una fila de menú mide lo mismo que un botón. Los iconos de las herramientas de dibujo van medio paso por encima de los demás (26 frente a 20), y sus botones algo por debajo de ese paso, para dejar 3 px a cada lado en la columna.</td><td>20 · 26 · 33 · 42</td></tr>
     <tr><td>Espaciado</td><td>Números de Fibonacci, cada uno la suma de los dos anteriores, así que dos vecinos guardan una razón cercana a φ.</td><td>2 · 3 · 5 · 8 · 13 · 21 · 34</td></tr>
     <tr><td>Esquinas</td><td>
       También números de Fibonacci. Una esquina anidada es la que la rodea menos el relleno que hay entre ambas, así las

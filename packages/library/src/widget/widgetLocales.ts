@@ -55,7 +55,9 @@ export function localizeToolGroups(groups: readonly DrawingToolGroupDef[], t: Tr
     tools: group.tools.map((tool) => {
       const key = `tool.${tool.value}` as MessageKey;
       const label = t(key);
-      return { ...tool, label: label === key ? tool.label : label };
+      // A heading is a former group's name, translated as one.
+      const heading = tool.heading !== undefined && TOOL_GROUP_KEYS[tool.heading] ? t(TOOL_GROUP_KEYS[tool.heading]) : tool.heading;
+      return { ...tool, label: label === key ? tool.label : label, ...(heading !== undefined ? { heading } : {}) };
     }),
   }));
 }

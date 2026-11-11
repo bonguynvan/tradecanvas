@@ -4,6 +4,22 @@
 
 ### Widget
 
+- **A symbol shows as its ticker** (`@tradecanvas/chart`, `@tradecanvas/core`). The venue before a colon no longer shows: `HYPERLIQUID:xyz:NVDA` reads NVDA and `BINANCE:BTCUSDT` reads BTCUSDT. This holds on the toolbar, in the legend (`NVDA · 1h · Hyperliquid xyz`), in the watermark, in the symbol search and in the info panel.
+  - The exchange names where a symbol trades. A search row whose feed names no exchange shows the venue in the exchange column, and the exchange filter offers it.
+  - The whole symbol is in each tooltip, and the toolbar button's label keeps it for a screen reader.
+  - A long ticker on a phone is cut short only when nothing else is left to give way.
+- **A shorter watchlist** (`@tradecanvas/chart`). A row is 24 px and its head 20, so a panel shows more symbols. A panel narrower than 250 px drops the move, so the price and the % still read.
+- **The dock opens narrower** (`@tradecanvas/chart`). A panel beside the chart starts 262 px wide, where it was 296, leaving the chart more room. It still widens from its edge up to 377 px.
+- **Big drawing tools in a narrow column** (`@tradecanvas/chart`). The tools are six buttons where there were thirteen: Lines, Fibonacci, Patterns, Forecasting, Shapes and Annotation.
+  - Each button's menu lists its tools under the kinds it gathers; Lines, for example, has lines, horizontal and vertical, and channels.
+  - With fewer buttons the column has room for them all: an icon is drawn at its full 26 px, where a short screen squeezed it to 23.
+  - The column is its buttons and little more: 42 px in Print, where it was 53. Each look's column narrows the same way, a tool keeping 3 px either side.
+  - A tool group of your own can head its tools the same way, with `heading` on the tool that starts each kind.
+
+## 1.78.0 (2026-11-11)
+
+### Widget
+
 - **The watchlist reads a line a symbol** (`@tradecanvas/chart`). A row is the ticker, the last price, the move and the % change, in columns under their names, which stay at the top as the list scrolls. A row is about half as tall as before, so a panel shows twice the symbols.
   - The sparkline beside each price is off; `watchlist: { sparkline: true }` brings it back, in the move's column, so a narrow panel still holds a name and three figures.
   - A ticker shows without its venue: `HYPERLIQUID:xyz:NVDA` reads NVDA, with the whole symbol on hover. A long name no longer pushes the figures out of a narrow panel. The same ticker on two venues reads the same in one list: keep each venue's symbols in a list of its own.

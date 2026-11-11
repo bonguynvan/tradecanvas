@@ -413,13 +413,26 @@ export class WidgetDrawingSidebar {
     flyout.setAttribute('aria-label', group.label);
     flyout.addEventListener('keydown', (e) => this.onFlyoutKey(e, idx));
 
-    const header = document.createElement('div');
-    header.className = 'tcw-flyout-header';
-    header.textContent = group.label;
-    flyout.appendChild(header);
+    // A menu of several kinds names each over its tools; a menu of one kind, the group over all.
+    // Headed from its first tool on: a group whose first tools have none keeps its name over them.
+    const headed = group.tools[0]?.heading !== undefined;
+    if (!headed) {
+      const header = document.createElement('div');
+      header.className = 'tcw-flyout-header';
+      header.textContent = group.label;
+      flyout.appendChild(header);
+    }
 
     const pinLabel = this.t('drawing.pinFavorite');
     for (const tool of group.tools) {
+      if (tool.heading !== undefined) {
+        const heading = document.createElement('div');
+        heading.className = 'tcw-flyout-heading';
+        // Read with the items it heads, not as one: the menu's arrows skip it.
+        heading.setAttribute('role', 'presentation');
+        heading.textContent = tool.heading;
+        flyout.appendChild(heading);
+      }
       // A row: the tool (its icon, name and shortcut), and a star beside it to pin it.
       const row = document.createElement('div');
       row.className = 'tcw-flyout-row';

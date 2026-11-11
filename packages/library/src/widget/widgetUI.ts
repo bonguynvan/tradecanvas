@@ -30,8 +30,11 @@ const WIDE_STEPS: readonly (readonly [minWidth: number, phiFraction: number])[] 
  * Compact keeps them at the others' size.
  */
 const TOOL_STEP = Math.sqrt(PHI);
-/** The room either side of a drawing tool in its column, px, at the least. */
-const TOOL_SIDE_ROOM = 8;
+/**
+ * The room either side of a drawing tool in its column, px, at the least: the
+ * column is its buttons and little more, so big icons cost the chart no width.
+ */
+const TOOL_SIDE_ROOM = 3;
 /** The icon lines a theme may set, CSS px (0: as drawn). */
 const MIN_ICON_STROKE = 0.5;
 const MAX_ICON_STROKE = 3;
@@ -237,7 +240,7 @@ const PRESETS: Record<WidgetUIPreset, PresetBase> = {
   /*
    * Print, the default: paper and ink, hairlines, figures that line up. It
    * keeps to the golden ratio. Sizes climb in half steps of φ from the icon
-   * (20, 26, 33, 42), the drawing tools' column the step after (53), a menu
+   * (20, 26, 33, 42), the drawing tools' column 42, their buttons and no more, a menu
    * row as tall as a button; corners are Fibonacci numbers, and a nested
    * corner is the one around it less the padding between (a menu's 5 = its
    * rows' 2 + its 3 of padding). Large icons in fine lines, labels as written,
@@ -247,11 +250,11 @@ const PRESETS: Record<WidgetUIPreset, PresetBase> = {
   print: {
     radius: { xs: 1, sm: 2, md: 3, lg: 5, xl: 8 },
     components: { tag: 2, toolbar: 0, sidebar: 0 },
-    sizes: { toolbar: 42, control: 33, controlSmall: 26, icon: 20, sidebar: 53, menuItem: 33 },
+    sizes: { toolbar: 42, control: 33, controlSmall: 26, icon: 20, sidebar: 42, menuItem: 33 },
     // A half step of φ down or up.
     density: {
-      compact: { toolbar: 33, control: 26, controlSmall: 20, icon: 16, sidebar: 42, menuItem: 26 },
-      spacious: { toolbar: 53, control: 42, controlSmall: 33, icon: 26, sidebar: 68, menuItem: 42 },
+      compact: { toolbar: 33, control: 26, controlSmall: 20, icon: 16, sidebar: 32, menuItem: 26 },
+      spacious: { toolbar: 53, control: 42, controlSmall: 33, icon: 26, sidebar: 59, menuItem: 42 },
     },
     font: { family: PRINT_SANS, mono: PRINT_FIGURES, size: 13, weight: 400, strongWeight: 500, labelCase: 'none', labelTracking: 0 },
     borders: { width: 1, separators: true },
@@ -272,7 +275,7 @@ const PRESETS: Record<WidgetUIPreset, PresetBase> = {
   studio: {
     radius: { xs: 3, sm: 5, md: 7, lg: 11, xl: 16 },
     components: { toolbar: 0, sidebar: 0 },
-    sizes: { toolbar: 46, control: 30, controlSmall: 24, icon: 18, sidebar: 58, menuItem: 30 },
+    sizes: { toolbar: 46, control: 30, controlSmall: 24, icon: 18, sidebar: 44, menuItem: 30 },
     font: { family: `'Manrope', 'Inter', ${SYSTEM_SANS}`, mono: MONO, size: 13, weight: 500, strongWeight: 600, labelCase: 'none', labelTracking: 0 },
     borders: { width: 1, separators: false },
     // Shadows from the theme's tokens, so they suit dark and light alike.
@@ -288,7 +291,7 @@ const PRESETS: Record<WidgetUIPreset, PresetBase> = {
   terminal: {
     radius: { xs: 1, sm: 2, md: 2, lg: 2, xl: 3 },
     components: { tag: 0, toolbar: 0, sidebar: 0 },
-    sizes: { toolbar: 36, control: 26, controlSmall: 20, icon: 16, sidebar: 53, menuItem: 26 },
+    sizes: { toolbar: 36, control: 26, controlSmall: 20, icon: 16, sidebar: 39, menuItem: 26 },
     font: {
       family: `'IBM Plex Sans Condensed', 'Roboto Condensed', 'Arial Narrow', ${SYSTEM_SANS}`,
       mono: "'IBM Plex Mono', ui-monospace, monospace",
@@ -311,7 +314,7 @@ const PRESETS: Record<WidgetUIPreset, PresetBase> = {
   capsule: {
     radius: { xs: 6, sm: 10, md: 999, lg: 18, xl: 24 },
     components: { tooltip: 10, toolbar: 999, sidebar: 999, toast: 999, tag: 999 },
-    sizes: { toolbar: 44, control: 32, controlSmall: 26, icon: 18, sidebar: 61, menuItem: 34 },
+    sizes: { toolbar: 44, control: 32, controlSmall: 26, icon: 18, sidebar: 47, menuItem: 34 },
     font: { family: `'Sora', 'Manrope', ${SYSTEM_SANS}`, mono: MONO, size: 13, weight: 500, strongWeight: 600, labelCase: 'none', labelTracking: 0 },
     borders: { width: 1, separators: false },
     shadows: {
@@ -334,7 +337,7 @@ const PRESETS: Record<WidgetUIPreset, PresetBase> = {
   desk: {
     radius: { xs: 0, sm: 1, md: 2, lg: 2, xl: 3 },
     components: { tag: 0, toolbar: 0, sidebar: 0 },
-    sizes: { toolbar: 34, control: 24, controlSmall: 20, icon: 16, sidebar: 51, menuItem: 24 },
+    sizes: { toolbar: 34, control: 24, controlSmall: 20, icon: 16, sidebar: 37, menuItem: 24 },
     font: { family: DESK_SANS, mono: DESK_SANS, size: 12, weight: 400, strongWeight: 700, labelCase: 'none', labelTracking: 0 },
     borders: { width: 1, separators: true },
     shadows: {
@@ -354,8 +357,8 @@ const PRESETS: Record<WidgetUIPreset, PresetBase> = {
 
 /** Compact and spacious sizes for the looks without their own. */
 const DENSITY: Record<Density, WidgetUISizes> = {
-  compact: { toolbar: 38, control: 26, controlSmall: 20, icon: 16, sidebar: 40, menuItem: 26 },
-  spacious: { toolbar: 52, control: 34, controlSmall: 28, icon: 20, sidebar: 63, menuItem: 34 },
+  compact: { toolbar: 38, control: 26, controlSmall: 20, icon: 16, sidebar: 32, menuItem: 26 },
+  spacious: { toolbar: 52, control: 34, controlSmall: 28, icon: 20, sidebar: 49, menuItem: 34 },
 };
 
 /** Each part's corners from the scale (where the preset sets none of its own). */
