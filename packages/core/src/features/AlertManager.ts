@@ -3,6 +3,7 @@ import { priceToY } from '../viewport/ScaleMapping.js';
 import { Emitter } from '../realtime/Emitter.js';
 import { UI_ICONS, priceTagText } from '@tradecanvas/commons';
 import { drawIcon } from '../ui/drawIcon.js';
+import { hLine } from '../charts/pixelGrid.js';
 
 /** The bell beside an alert line's price, px, and the space between them. */
 const LABEL_ICON_SIZE = 12;
@@ -594,8 +595,7 @@ export class AlertManager extends Emitter<AlertEvents> {
       ctx.strokeStyle = color;
       ctx.lineWidth = 1;
       ctx.beginPath();
-      ctx.moveTo(chartRect.x, Math.round(y) + 0.5);
-      ctx.lineTo(chartRect.x + chartRect.width, Math.round(y) + 0.5);
+      hLine(ctx, chartRect.x, chartRect.x + chartRect.width, Math.round(y) + 0.5);
       ctx.stroke();
       ctx.setLineDash([]);
 

@@ -77,9 +77,17 @@ export function barColumns(barWidth: number, ratio: number): { body: number; wic
   return { body: Math.max(body, wick), wick };
 }
 
-/** Snap a line's centre (in CSS px) so a `width`-wide stroke covers whole device pixels. */
+/** Under a whole number by less than this, a width in device pixels is that number (1.1 × 10 is 11, not 10.999…). */
+const WIDTH_NOISE = 1e-6;
+
+/**
+ * Snap a line's centre (in CSS px) so a `width`-wide stroke covers whole
+ * device pixels. The width goes down to them, never under one: a 1 px line is
+ * one device pixel at 1.25 and at 1.5, as the browser draws a 1 px border and
+ * as a bar's wick is, not one at 1.25 and two at 1.5.
+ */
 function snap(v: number, width: number, scale: number, shift: number): { at: number; width: number } {
-  const w = Math.max(1, Math.round(width * scale));
+  const w = Math.max(1, Math.floor(width * scale + WIDTH_NOISE));
   const half = w % 2 ? 0.5 : 0;
   return { at: (toPixel(v * scale + shift - half) + half - shift) / scale, width: w / scale };
 }
@@ -92,6 +100,41 @@ export function crispY(ctx: CanvasRenderingContext2D, y: number, width: number):
   const t = transformOf(ctx);
   const s = snap(y, width, t.d, t.f);
   return { y: s.at, width: s.width };
+}
+
+/**
+ * Add a horizontal hairline to the path: from `x1` to `x2` at `y` (its
+ * centre in CSS px, `Math.round(y) + 0.5` at 1 px), on whole device pixels at
+ * any ratio. It sets the line width too: 1 CSS px is 1.25 or 1.5 device pixels
+ * on a screen scaled so, and a line that wide has soft edges wherever it lies.
+ */
+export function hLine(ctx: CanvasRenderingContext2D, x1: number, x2: number, y: number, width = 1): void {
+  const row = crispY(ctx, y, width);
+  ctx.lineWidth = row.width;
+  ctx.moveTo(x1, row.y);
+  ctx.lineTo(x2, row.y);
+}
+
+/** Add a vertical hairline to the path, from `y1` to `y2` at `x`, as `hLine` does. */
+export function vLine(ctx: CanvasRenderingContext2D, x: number, y1: number, y2: number, width = 1): void {
+  const column = crispX(ctx, x, width);
+  ctx.lineWidth = column.width;
+  ctx.moveTo(column.x, y1);
+  ctx.lineTo(column.x, y2);
+}
+
+/**
+ * A filled box with its four edges on whole device pixels, where the ratio is
+ * a fraction (1.25, 1.5): a tag's flat sides are then hard, not a row of half
+ * colour. At a whole ratio the box is left exactly as given.
+ */
+export function crispBox(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number): { x: number; y: number; w: number; h: number } {
+  const t = transformOf(ctx);
+  if (Number.isInteger(t.a) && Number.isInteger(t.d)) return { x, y, w, h };
+  const edge = (v: number, scale: number, shift: number) => (toPixel(v * scale + shift) - shift) / scale;
+  const left = edge(x, t.a, t.e);
+  const top = edge(y, t.d, t.f);
+  return { x: left, y: top, w: edge(x + w, t.a, t.e) - left, h: edge(y + h, t.d, t.f) - top };
 }
 
 /** A vertical line's x and width, snapped like `crispY`. */

@@ -3,7 +3,7 @@
  * its bars, as tokens. A preset gives all of them; a theme of yours changes
  * what it names. Colours stay with the widget's dark / light theme.
  */
-import { PHI, SANS_FONT_FAMILY, phiStep } from '@tradecanvas/commons';
+import { PHI, SANS_FONT_FAMILY, evenPx, phiStep } from '@tradecanvas/commons';
 
 export type WidgetUIPreset = 'print' | 'studio' | 'terminal' | 'capsule' | 'desk';
 
@@ -35,6 +35,36 @@ const TOOL_STEP = Math.sqrt(PHI);
  * column is its buttons and little more, so big icons cost the chart no width.
  */
 const TOOL_SIDE_ROOM = 3;
+/** A line of text over its type size, before any rounding. */
+const LINE_RATIO = 1.4;
+/**
+ * Spacing, px, `--tcw-space-1` to `-7`. Fibonacci numbers on a 4 px grid (1, 2,
+ * 3, 5, 8 times 4), with 2 and 6, the halves of 4 and 12, under them: every
+ * step even, so what a gap or a padding centres lands on a whole pixel. From
+ * 8 up neighbours stand at 1.5, 1.67 and 1.6, near φ; the small steps (2, 4,
+ * 6, 8) climb by 2 px instead, where a ratio of φ has no even numbers to land
+ * on. The classic and compact densities keep the plain Fibonacci numbers.
+ */
+const SPACE_EVEN = [2, 4, 6, 8, 12, 20, 32] as const;
+const SPACE_FIBONACCI = [2, 3, 5, 8, 13, 21, 34] as const;
+/**
+ * The room inside a control beside its label, a bar beside its first button
+ * and a menu row beside its text: a step up the spacing ladder from the
+ * classic 8 px.
+ */
+const CONTROL_PAD = { even: SPACE_EVEN[4], classic: SPACE_FIBONACCI[3] } as const;
+/** A box as wide as its content, rounded up to a whole pixel. */
+const TEXT_WIDTH_ROUNDED = 'calc-size(max-content, round(up, size, 1px))';
+/** An on-chart indicator row's line, on the plot and in a pane, px. */
+const LEGEND_LINE = { even: [20, 16], classic: [19, 15] } as const;
+
+/**
+ * Whether a density is laid out on even pixels. Classic and compact are the
+ * look as it was before 2.0, odd sizes and all.
+ */
+function isEvenDensity(density: WidgetUIDensity | undefined): boolean {
+  return density !== 'classic' && density !== 'compact';
+}
 /** The icon lines a theme may set, CSS px (0: as drawn). */
 const MIN_ICON_STROKE = 0.5;
 const MAX_ICON_STROKE = 3;
@@ -50,16 +80,18 @@ export function widgetScaleFor(width: number): number {
 
 /**
  * The look at `factor` its size: bars, buttons, icons, menu rows and type,
- * each rounded to a whole pixel. Corners, lines and shadows stay.
+ * each rounded to a whole pixel, the sizes to an even one (but in the classic
+ * and compact densities). Corners, lines and shadows stay.
  */
 export function scaledWidgetUI(ui: ResolvedWidgetUI, factor: number): ResolvedWidgetUI {
   if (factor === 1) return ui;
   const s = ui.sizes;
-  const at = (n: number) => Math.round(n * factor);
+  const even = isEvenDensity(ui.density);
+  const at = (n: number) => (even ? evenPx(n * factor) : Math.round(n * factor));
   return {
     ...ui,
     sizes: { toolbar: at(s.toolbar), control: at(s.control), controlSmall: at(s.controlSmall), icon: at(s.icon), sidebar: at(s.sidebar), menuItem: at(s.menuItem) },
-    font: { ...ui.font, size: at(ui.font.size) },
+    font: { ...ui.font, size: Math.round(ui.font.size * factor) },
   };
 }
 
@@ -136,14 +168,24 @@ export interface WidgetUIShadows {
 }
 
 /**
- * How roomy the look is: its controls' sizes, and the chart's bars. The
- * chart opens with golden bars (the body φ⁻¹ of its slot), except when
- * `'compact'`, which keeps the classic 2 px gap. `'airy'` is spacious
- * controls with the figures (legend, axes) in the look's sans face too.
- * `chartOptions.barLayout` and a `chartOptions.font.family` win over it, and
- * sizes alone in `chartOptions.font` keep the look's face.
+ * How roomy the look is: its controls' sizes, the spacing between them, and
+ * the room the chart leaves around its bars.
+ *
+ * - `'comfortable'` (the default): every size and gap an even number of
+ *   pixels, a step more padding in controls, and a comfortable chart (see
+ *   `ChartDensity`).
+ * - `'classic'`: the widget as it was before 2.0, to the pixel: the sizes and
+ *   Fibonacci spacing of 1.x, golden bars, the chart's compact margins.
+ * - `'compact'`: smaller controls on the 1.x spacing, the chart compact with
+ *   the classic 2 px gap between bars. Unchanged from 1.x.
+ * - `'spacious'`: bigger controls. `'airy'`: spacious, with the figures
+ *   (legend, axes) in the look's sans face too.
+ *
+ * `chartOptions.density`, `chartOptions.barLayout` and a
+ * `chartOptions.font.family` win over it, and sizes alone in
+ * `chartOptions.font` keep the look's face.
  */
-export type WidgetUIDensity = 'compact' | 'comfortable' | 'spacious' | 'airy';
+export type WidgetUIDensity = 'compact' | 'classic' | 'comfortable' | 'spacious' | 'airy';
 
 /** The whole look, every token set. */
 export interface ResolvedWidgetUI {
@@ -183,8 +225,9 @@ export interface WidgetUITheme {
   radius?: Partial<WidgetUIRadius>;
   components?: Partial<WidgetUIComponentRadius>;
   /**
-   * Control sizes at once: compact, comfortable (the preset's) or spacious;
-   * `sizes` win over it. `'airy'`: spacious, with the chart's figures in the
+   * Control sizes, spacing and the chart's room at once: compact, comfortable
+   * (the preset's) or spacious; `sizes` win over it. `'classic'` is the widget
+   * as it was before 2.0. `'airy'`: spacious, with the chart's figures in the
    * sans face. Compact also keeps the chart's classic bars (see `WidgetUIDensity`).
    */
   density?: WidgetUIDensity;
@@ -234,13 +277,19 @@ type PresetBase = Omit<ResolvedWidgetUI, 'components' | 'preset' | 'density'> & 
   components: Partial<WidgetUIComponentRadius>;
   /** Its sizes when compact or spacious; the shared table when it has none. */
   density?: Record<Density, WidgetUISizes>;
+  /** What its sizes were before 2.0, where they differ: the classic density's. */
+  classic?: Partial<WidgetUISizes>;
 };
 
 const PRESETS: Record<WidgetUIPreset, PresetBase> = {
   /*
    * Print, the default: paper and ink, hairlines, figures that line up. It
    * keeps to the golden ratio. Sizes climb in half steps of φ from the icon
-   * (20, 26, 33, 42), the drawing tools' column 42, their buttons and no more, a menu
+   * (20, 26, 34, 42), each the even number nearest its step so an icon centres
+   * on whole pixels in its button and a button in its bar. The one that departs
+   * is the button: the step is 32.9, whose nearest even number is 32, and 34 is
+   * taken, to stay the size the 33 of 1.x read as and leave a 20 px icon 7 px a
+   * side. The drawing tools' column is 42, their buttons and no more, a menu
    * row as tall as a button; corners are Fibonacci numbers, and a nested
    * corner is the one around it less the padding between (a menu's 5 = its
    * rows' 2 + its 3 of padding). Large icons in fine lines, labels as written,
@@ -250,11 +299,12 @@ const PRESETS: Record<WidgetUIPreset, PresetBase> = {
   print: {
     radius: { xs: 1, sm: 2, md: 3, lg: 5, xl: 8 },
     components: { tag: 2, toolbar: 0, sidebar: 0 },
-    sizes: { toolbar: 42, control: 33, controlSmall: 26, icon: 20, sidebar: 42, menuItem: 33 },
-    // A half step of φ down or up.
+    sizes: { toolbar: 42, control: 34, controlSmall: 26, icon: 20, sidebar: 42, menuItem: 34 },
+    classic: { control: 33, menuItem: 33 },
+    // A half step of φ down or up; spacious to the even numbers (53.3 and 59 are 54 and 60).
     density: {
       compact: { toolbar: 33, control: 26, controlSmall: 20, icon: 16, sidebar: 32, menuItem: 26 },
-      spacious: { toolbar: 53, control: 42, controlSmall: 33, icon: 26, sidebar: 59, menuItem: 42 },
+      spacious: { toolbar: 54, control: 42, controlSmall: 34, icon: 26, sidebar: 60, menuItem: 42 },
     },
     font: { family: PRINT_SANS, mono: PRINT_FIGURES, size: 13, weight: 400, strongWeight: 500, labelCase: 'none', labelTracking: 0 },
     borders: { width: 1, separators: true },
@@ -291,7 +341,8 @@ const PRESETS: Record<WidgetUIPreset, PresetBase> = {
   terminal: {
     radius: { xs: 1, sm: 2, md: 2, lg: 2, xl: 3 },
     components: { tag: 0, toolbar: 0, sidebar: 0 },
-    sizes: { toolbar: 36, control: 26, controlSmall: 20, icon: 16, sidebar: 39, menuItem: 26 },
+    sizes: { toolbar: 36, control: 26, controlSmall: 20, icon: 16, sidebar: 40, menuItem: 26 },
+    classic: { sidebar: 39 },
     font: {
       family: `'IBM Plex Sans Condensed', 'Roboto Condensed', 'Arial Narrow', ${SYSTEM_SANS}`,
       mono: "'IBM Plex Mono', ui-monospace, monospace",
@@ -314,7 +365,8 @@ const PRESETS: Record<WidgetUIPreset, PresetBase> = {
   capsule: {
     radius: { xs: 6, sm: 10, md: 999, lg: 18, xl: 24 },
     components: { tooltip: 10, toolbar: 999, sidebar: 999, toast: 999, tag: 999 },
-    sizes: { toolbar: 44, control: 32, controlSmall: 26, icon: 18, sidebar: 47, menuItem: 34 },
+    sizes: { toolbar: 44, control: 32, controlSmall: 26, icon: 18, sidebar: 48, menuItem: 34 },
+    classic: { sidebar: 47 },
     font: { family: `'Sora', 'Manrope', ${SYSTEM_SANS}`, mono: MONO, size: 13, weight: 500, strongWeight: 600, labelCase: 'none', labelTracking: 0 },
     borders: { width: 1, separators: false },
     shadows: {
@@ -337,7 +389,8 @@ const PRESETS: Record<WidgetUIPreset, PresetBase> = {
   desk: {
     radius: { xs: 0, sm: 1, md: 2, lg: 2, xl: 3 },
     components: { tag: 0, toolbar: 0, sidebar: 0 },
-    sizes: { toolbar: 34, control: 24, controlSmall: 20, icon: 16, sidebar: 37, menuItem: 24 },
+    sizes: { toolbar: 34, control: 24, controlSmall: 20, icon: 16, sidebar: 38, menuItem: 24 },
+    classic: { sidebar: 37 },
     font: { family: DESK_SANS, mono: DESK_SANS, size: 12, weight: 400, strongWeight: 700, labelCase: 'none', labelTracking: 0 },
     borders: { width: 1, separators: true },
     shadows: {
@@ -358,8 +411,16 @@ const PRESETS: Record<WidgetUIPreset, PresetBase> = {
 /** Compact and spacious sizes for the looks without their own. */
 const DENSITY: Record<Density, WidgetUISizes> = {
   compact: { toolbar: 38, control: 26, controlSmall: 20, icon: 16, sidebar: 32, menuItem: 26 },
-  spacious: { toolbar: 52, control: 34, controlSmall: 28, icon: 20, sidebar: 49, menuItem: 34 },
+  spacious: { toolbar: 52, control: 34, controlSmall: 28, icon: 20, sidebar: 50, menuItem: 34 },
 };
+
+/** A preset's sizes at a density. */
+function densitySizes(base: PresetBase, density: WidgetUIDensity): WidgetUISizes {
+  if (density === 'classic') return { ...base.sizes, ...base.classic };
+  if (density === 'compact') return (base.density ?? DENSITY).compact;
+  if (density === 'spacious' || density === 'airy') return (base.density ?? DENSITY).spacious;
+  return base.sizes;
+}
 
 /** Each part's corners from the scale (where the preset sets none of its own). */
 function componentsFrom(radius: WidgetUIRadius, own: Partial<WidgetUIComponentRadius>): WidgetUIComponentRadius {
@@ -384,7 +445,7 @@ export const WIDGET_UI_PRESETS: Readonly<Record<WidgetUIPreset, Readonly<Resolve
 );
 
 function resolvePreset(name: WidgetUIPreset): ResolvedWidgetUI {
-  const { density: _density, ...base } = PRESETS[name];
+  const { density: _density, classic: _classic, ...base } = PRESETS[name];
   return {
     ...base,
     preset: name,
@@ -448,10 +509,8 @@ export function resolveWidgetUI(theme?: WidgetUIPreset | WidgetUITheme): Resolve
   const base = PRESETS[name];
 
   const radius = pick(base.radius, t.radius, (_, v) => px(v, 0, 999));
-  const density = oneOf(t.density, ['compact', 'comfortable', 'spacious', 'airy'] as const) ? t.density : 'comfortable';
-  const step = density === 'airy' ? 'spacious' : density;
-  const stepSizes = step === 'compact' || step === 'spacious' ? (base.density ?? DENSITY)[step] : base.sizes;
-  const sizes = pick(stepSizes, t.sizes, (key, v) => (key === 'icon' ? px(v, 10, 32) : px(v, 16, 80)));
+  const density = oneOf(t.density, ['compact', 'classic', 'comfortable', 'spacious', 'airy'] as const) ? t.density : 'comfortable';
+  const sizes = pick(densitySizes(base, density), t.sizes, (key, v) => (key === 'icon' ? px(v, 10, 32) : px(v, 16, 80)));
   const picked = pick(base.font, t.font, (key, v) => {
     if (key === 'family' || key === 'mono') return cssValue(v);
     if (key === 'size') return px(v, 11, 20);
@@ -493,10 +552,28 @@ export function widgetUIVariables(ui: ResolvedWidgetUI): Record<string, string> 
   const s = ui.sizes;
   const f = ui.font;
   const compact = ui.density === 'compact';
+  const even = isEvenDensity(ui.density);
   const tool = compact ? 1 : TOOL_STEP;
-  // A half step over the other buttons, but never so wide the column keeps less than its room a side.
-  const toolH = compact ? s.control : Math.min(Math.round(s.control * TOOL_STEP), s.sidebar - 2 * TOOL_SIDE_ROOM);
+  // A half step over the other buttons (an even size, so the icon centres on whole pixels),
+  // but never so wide the column keeps less than its room a side.
+  const toolStep = even ? evenPx(s.control * TOOL_STEP) : Math.round(s.control * TOOL_STEP);
+  const toolH = compact ? s.control : Math.min(toolStep, s.sidebar - 2 * TOOL_SIDE_ROOM);
+  const space = even ? SPACE_EVEN : SPACE_FIBONACCI;
+  const pad = p(even ? CONTROL_PAD.even : CONTROL_PAD.classic);
+  const [legendLine, paneLine] = even ? LEGEND_LINE.even : LEGEND_LINE.classic;
   return {
+    ...Object.fromEntries(space.map((n, i) => [`--tcw-space-${i + 1}`, p(n)])),
+    '--tcw-control-pad': pad,
+    '--tcw-bar-pad': pad,
+    '--tcw-menu-row-pad': pad,
+    // A line of body text an even number of pixels tall, so one line centres on whole pixels;
+    // unitless, so smaller and larger type keeps the ratio.
+    '--tcw-line-height': even ? String(Math.round((evenPx(f.size * LINE_RATIO) / f.size) * 1e5) / 1e5) : String(LINE_RATIO),
+    '--tcw-legend-line': p(legendLine),
+    '--tcw-legend-line-pane': p(paneLine),
+    '--tcw-line-xs': even ? p(evenPx(typeSize(f.size, -2) * LINE_RATIO)) : String(LINE_RATIO),
+    // The bars' text buttons a whole number of pixels wide, where the browser can round a box sized by its content.
+    '--tcw-text-w': even ? TEXT_WIDTH_ROUNDED : 'auto',
     '--tcw-radius-xs': p(r.xs),
     '--tcw-radius-sm': p(r.sm),
     '--tcw-radius': p(r.md),

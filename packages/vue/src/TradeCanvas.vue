@@ -150,7 +150,6 @@ onMounted(() => {
   if (!containerEl.value) return;
 
   chart = new Chart(containerEl.value, {
-    rightMargin: 5,
     crosshair: { mode: 'magnet' },
     ...props.options,
     chartType: props.chartType,

@@ -1,8 +1,7 @@
-import { PHI, computePriceRange, type DataSeries, type ViewportState } from '@tradecanvas/commons';
-import { PRICE_SCALE_MARGIN } from '@tradecanvas/core';
+import { CHART_SPACING, DEFAULT_CHART_DENSITY, computePriceRange, type ChartSpacing, type DataSeries, type ViewportState } from '@tradecanvas/commons';
 
-/** Between the volume band and the lowest candle. */
-const VOLUME_GAP = PHI ** -7;
+/** The margins a fit leaves: above and below the prices, and between the volume band and the lowest candle. */
+export type FitSpacing = Pick<ChartSpacing, 'priceMargin' | 'volumeGap'>;
 
 export interface PriceRange {
   min: number;
@@ -47,10 +46,16 @@ export class PriceFit {
   private pending = true;
   /** The series began with no bars, so they come one by one: see `settle`. */
   private arriving = true;
+  private spacing: FitSpacing = CHART_SPACING[DEFAULT_CHART_DENSITY];
 
   constructor(autoScale: boolean) {
     this.auto = autoScale;
     this.preferred = autoScale;
+  }
+
+  /** The margins the next fit leaves (the chart's density). */
+  setSpacing(spacing: FitSpacing): void {
+    this.spacing = spacing;
   }
 
   isAuto(): boolean {
@@ -102,8 +107,8 @@ export class PriceFit {
 
   /**
    * Fit the scale to the bars on view, the overlay indicators and the compare
-   * lines, in margins of φ⁻⁵ above and below; with volume on view, the band
-   * at the bottom is left to it.
+   * lines, in the density's margins above and below; with volume on view, the
+   * band at the bottom is left to it, and a gap over it.
    */
   fit(target: FitTarget, data: DataSeries, vs: ViewportState, sources: FitSources): void {
     if (data.length === 0) return;
@@ -114,11 +119,12 @@ export class PriceFit {
       sources.compareRange(data, vs),
     )!;
     const ratio = sources.volumeRatio(data, from, to);
-    const band = ratio === null ? PRICE_SCALE_MARGIN : ratio + VOLUME_GAP;
+    const { priceMargin, volumeGap } = this.spacing;
+    const band = ratio === null ? priceMargin : ratio + volumeGap;
     // The band is at the screen's bottom: on an upside-down scale that is above the highest price.
     target.setScaleMargins(target.isInvertScale()
-      ? { top: band, bottom: PRICE_SCALE_MARGIN }
-      : { top: PRICE_SCALE_MARGIN, bottom: band });
+      ? { top: band, bottom: priceMargin }
+      : { top: priceMargin, bottom: band });
     target.fitToPrices(range.min, range.max);
   }
 }

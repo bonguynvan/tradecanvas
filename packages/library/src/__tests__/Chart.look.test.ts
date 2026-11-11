@@ -27,20 +27,20 @@ describe('Chart: bar layout and figures font', () => {
     vi.unstubAllGlobals();
   });
 
-  it('opens golden at φ⁴ px a slot when asked, classic otherwise', () => {
-    const golden = make({ barLayout: 'golden' });
+  it('opens golden at φ⁴ px a slot, and classic when asked', () => {
+    const golden = make();
     golden.setData(bars(300));
     expect(golden.getBarLayout()).toBe('golden');
     expect(slot(golden).unit).toBeCloseTo(PHI ** 4, 9);
     expect(slot(golden).barWidth / slot(golden).unit).toBeCloseTo(1 / PHI, 9);
-    const classic = make();
+    const classic = make({ barLayout: 'classic' });
     classic.setData(bars(300));
     expect(classic.getBarLayout()).toBe('classic');
     expect(slot(classic)).toMatchObject({ barWidth: 8, barSpacing: 2 });
   });
 
   it('changes the layout over the bars on screen, keeping their zoom', () => {
-    const chart = make();
+    const chart = make({ barLayout: 'classic' });
     chart.setData(bars(300));
     const before = slot(chart).unit;
     chart.setBarLayout('golden');
@@ -77,10 +77,66 @@ describe('Chart: bar layout and figures font', () => {
     const chart = make();
     const zooms: unknown[] = [];
     chart.on('zoomChange', (e) => zooms.push(e.payload));
-    chart.setBarLayout('classic');
+    chart.setBarLayout('golden');
     expect(zooms).toEqual([]);
     chart.setData(bars(300));
     expect(zooms.length).toBe(1);
+  });
+
+  describe('density', () => {
+    type Probe = { viewport: { getRightMargin(): number; getScaleMargins(): { top: number; bottom: number } } };
+    const inside = (chart: Chart) => (chart as unknown as Probe).viewport;
+    const flat = (n: number): OHLCBar[] => bars(n).map((b) => ({ ...b, volume: 0 }));
+
+    it('is comfortable by default: golden bars, 8 bars of room past the newest, φ⁻⁴·⁵ above and below', () => {
+      const chart = make();
+      chart.setData(flat(300));
+      expect(chart.getDensity()).toBe('comfortable');
+      expect(chart.getBarLayout()).toBe('golden');
+      expect(inside(chart).getRightMargin()).toBe(8);
+      expect(inside(chart).getScaleMargins().top).toBeCloseTo(PHI ** -4.5, 9);
+      expect(inside(chart).getScaleMargins().bottom).toBeCloseTo(PHI ** -4.5, 9);
+    });
+
+    it('is the chart of 1.x when compact: classic bars 10 px a slot, 5 bars of room, φ⁻⁵ above and below', () => {
+      const chart = make({ density: 'compact' });
+      chart.setData(flat(300));
+      expect(chart.getDensity()).toBe('compact');
+      expect(slot(chart)).toMatchObject({ barWidth: 8, barSpacing: 2 });
+      expect(inside(chart).getRightMargin()).toBe(5);
+      expect(inside(chart).getScaleMargins().top).toBeCloseTo(PHI ** -5, 9);
+      expect(inside(chart).getScaleMargins().bottom).toBeCloseTo(PHI ** -5, 9);
+    });
+
+    it('leaves the bars and the room past the newest as the options gave them', () => {
+      const chart = make({ density: 'compact', barLayout: 'golden', rightMargin: 3 });
+      expect(chart.getBarLayout()).toBe('golden');
+      expect(inside(chart).getRightMargin()).toBe(3);
+      chart.setDensity('comfortable');
+      expect(chart.getBarLayout()).toBe('golden');
+      expect(inside(chart).getRightMargin()).toBe(3);
+    });
+
+    it('changes over the bars on screen: the margins at the next fit, the bars and the room at once', () => {
+      const chart = make();
+      chart.setData(flat(300));
+      chart.setDensity('compact');
+      expect(chart.getDensity()).toBe('compact');
+      expect(chart.getBarLayout()).toBe('classic');
+      expect(inside(chart).getRightMargin()).toBe(5);
+      expect(inside(chart).getScaleMargins().top).toBeCloseTo(PHI ** -5, 9);
+    });
+
+    it('runs nothing for the density it has, and reads one it doesn’t know as comfortable', () => {
+      const chart = make({ density: 'tight' as never });
+      expect(chart.getDensity()).toBe('comfortable');
+      const zooms: unknown[] = [];
+      chart.on('zoomChange', (e) => zooms.push(e.payload));
+      chart.setDensity('comfortable');
+      chart.setDensity('snug' as never);
+      expect(zooms).toEqual([]);
+      expect(chart.getDensity()).toBe('comfortable');
+    });
   });
 
   it('reads a layout it doesn’t know as classic', () => {

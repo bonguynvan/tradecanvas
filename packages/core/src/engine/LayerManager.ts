@@ -1,6 +1,7 @@
 import type { Size } from '@tradecanvas/commons';
 import { LayerType } from '@tradecanvas/commons';
 import { CanvasLayer } from './CanvasLayer.js';
+import { sizeCanvas } from './DPRManager.js';
 
 /**
  * Two stacked canvases: the scene (grid, series, indicators, chart objects,
@@ -22,6 +23,7 @@ export class LayerManager {
   private gpuCanvas: HTMLCanvasElement | null = null;
   private size: Size | null = null;
   private dpr = 1;
+  private device: Size | null = null;
 
   constructor(private container: HTMLElement) {}
 
@@ -43,7 +45,7 @@ export class LayerManager {
     if (!this.back) {
       this.back = new CanvasLayer(this.container, 0);
       this.container.insertBefore(this.back.canvas, this.gpuCanvas);
-      if (this.size) this.back.resize(this.size, this.dpr);
+      if (this.size) this.back.resize(this.size, this.dpr, this.device);
     }
     return this.back;
   }
@@ -84,12 +86,14 @@ export class LayerManager {
     this.gpuCanvas = null;
   }
 
-  resize(size: Size, dpr: number): void {
+  /** `device`: the container in device pixels where the browser reports it (see `backingSize`). */
+  resize(size: Size, dpr: number, device: Size | null = null): void {
     this.size = size;
     this.dpr = dpr;
-    this.scene?.resize(size, dpr);
-    this.top?.resize(size, dpr);
-    this.back?.resize(size, dpr);
+    this.device = device;
+    this.scene?.resize(size, dpr, device);
+    this.top?.resize(size, dpr, device);
+    this.back?.resize(size, dpr, device);
     this.sizeGpu(size, dpr);
   }
 
@@ -104,13 +108,6 @@ export class LayerManager {
   private sizeGpu(size: Size, dpr: number): void {
     const canvas = this.gpuCanvas;
     if (!canvas) return;
-    const w = Math.round(size.width * dpr);
-    const h = Math.round(size.height * dpr);
-    if (canvas.width !== w || canvas.height !== h) {
-      canvas.width = w;
-      canvas.height = h;
-    }
-    canvas.style.width = `${size.width}px`;
-    canvas.style.height = `${size.height}px`;
+    sizeCanvas(canvas, size, dpr, this.device);
   }
 }

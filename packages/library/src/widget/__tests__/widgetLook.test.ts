@@ -185,10 +185,23 @@ describe('the stylesheet’s look', () => {
     expect(physical).toEqual([]);
   });
 
-  it('spaces by Fibonacci numbers', () => {
-    const space = Object.entries(root).filter(([name]) => name.startsWith('--tcw-space-'));
-    expect(space.length).toBeGreaterThan(5);
-    for (const [name, value] of space) expect((FIBONACCI as readonly number[]).includes(parseFloat(value)), name).toBe(true);
+  it('spaces by Fibonacci numbers on a 4 px grid, with 2 and 6 under them: every step even', () => {
+    const space = Object.entries(root).filter(([name]) => name.startsWith('--tcw-space-')).map(([, value]) => parseFloat(value));
+    expect(space).toEqual([2, 4, 6, 8, 12, 20, 32]);
+    expect(space.slice(1).filter((n) => n % 4 === 0).map((n) => n / 4)).toEqual((FIBONACCI as readonly number[]).slice(0, 5));
+    for (const n of space) expect(n % 2, String(n)).toBe(0);
+  });
+
+  it('pads its controls, bars and menu rows by the token for it, a step up the spacing', () => {
+    expect([root['--tcw-control-pad'], root['--tcw-bar-pad'], root['--tcw-menu-row-pad']]).toEqual(['12px', '12px', '12px']);
+    expect(ruleBody('.tcw-toolbar')).toContain('padding: 0 var(--tcw-bar-pad)');
+    for (const control of ['.tcw-btn', '.tcw-dropdown-trigger', '.tcw-toolbar-symbol']) expect(ruleBody(control), control).toContain('padding: 0 var(--tcw-control-pad)');
+    for (const row of ['.tcw-dropdown-item', '.tcw-flyout-item', '.tcw-context-item']) expect(ruleBody(row), row).toContain('var(--tcw-menu-row-pad)');
+  });
+
+  it('rounds the bars’ text buttons up to whole pixels, with no specificity', () => {
+    expect(root['--tcw-text-w']).toBe('calc-size(max-content, round(up, size, 1px))');
+    expect(css).toMatch(/:where\([^)]*\.tcw-toolbar \.tcw-btn[^)]*\) \{\n  width: var\(--tcw-text-w, auto\);/);
   });
 
   it('nests a menu’s corners: its rows’ corner is its own less its padding', () => {

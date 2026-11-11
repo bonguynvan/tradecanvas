@@ -1,4 +1,5 @@
 import type { ViewportState } from '@tradecanvas/commons';
+import { hLine } from '../charts/pixelGrid.js';
 
 /** Whether a line at `y` lies on the main plot (not above it, nor over the time axis or a pane below). */
 export function inPlot(y: number, viewport: ViewportState): boolean {
@@ -19,8 +20,7 @@ export function levelLine(ctx: CanvasRenderingContext2D, viewport: ViewportState
   ctx.strokeStyle = color;
   ctx.lineWidth = 1;
   ctx.beginPath();
-  ctx.moveTo(chartRect.x, Math.round(y) + 0.5);
-  ctx.lineTo(chartRect.x + chartRect.width, Math.round(y) + 0.5);
+  hLine(ctx, chartRect.x, chartRect.x + chartRect.width, Math.round(y) + 0.5);
   ctx.stroke();
   ctx.setLineDash([]);
 }

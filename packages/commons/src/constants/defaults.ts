@@ -1,8 +1,40 @@
-import type { ChartOptions } from '../types/chart.js';
+import type { ChartDensity, ChartOptions, ChartSpacing } from '../types/chart.js';
+import { PHI } from './golden.js';
+
+/**
+ * The room each density leaves around the bars. Comfortable is compact a step
+ * up its own ladder: the bars from the 2 px gap to golden, the room past the
+ * newest bar from 5 slots to 8 (the next Fibonacci number), the price margins
+ * a half step of φ wider (φ⁻⁵ to φ⁻⁴·⁵), the gap over the volume band a whole
+ * step (φ⁻⁷ to φ⁻⁶), and the legend's insets from 8, 6 and 3 px to 12, 8 and 4
+ * (the widget's even spacing ladder, so its text sits on whole pixels).
+ */
+export const CHART_SPACING: Readonly<Record<ChartDensity, Readonly<ChartSpacing>>> = Object.freeze({
+  comfortable: Object.freeze({
+    barLayout: 'golden',
+    rightMargin: 8,
+    priceMargin: PHI ** -4.5,
+    volumeGap: PHI ** -6,
+    legendInset: 12,
+    legendTop: 8,
+    legendLineGap: 4,
+  }),
+  compact: Object.freeze({
+    barLayout: 'classic',
+    rightMargin: 5,
+    priceMargin: PHI ** -5,
+    volumeGap: PHI ** -7,
+    legendInset: 8,
+    legendTop: 6,
+    legendLineGap: 3,
+  }),
+});
+
+export const DEFAULT_CHART_DENSITY: ChartDensity = 'comfortable';
 
 export const DEFAULT_CHART_OPTIONS: Required<Pick<ChartOptions, 'autoScale' | 'rightMargin' | 'minBarSpacing' | 'maxBarSpacing'>> & Pick<ChartOptions, 'grid' | 'crosshair'> = {
   autoScale: true,
-  rightMargin: 5,
+  rightMargin: CHART_SPACING[DEFAULT_CHART_DENSITY].rightMargin,
   minBarSpacing: 2,
   maxBarSpacing: 30,
   grid: {

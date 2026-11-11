@@ -158,7 +158,6 @@ export const TradeCanvas = forwardRef<TradeCanvasRef, TradeCanvasProps>(
       if (!container) return;
 
       const opts: ChartOptions = {
-        rightMargin: 5,
         crosshair: { mode: 'magnet' },
         ...options,
         chartType,

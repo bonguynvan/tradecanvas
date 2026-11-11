@@ -2,6 +2,25 @@
 
 ## 1.84.0 (2026-11-12)
 
+### Breaking: the default look
+
+- **The chart and the widget open with more room** (`@tradecanvas/chart`, `@tradecanvas/core`, `@tradecanvas/commons`). A `Chart` now has a `density`: `'comfortable'` (the default) or `'compact'`, the chart as it was.
+  - Comfortable: golden bars (the body 62% of its slot, which only the widget opened with before), 8 slots past the newest bar (from 5), φ⁻⁴·⁵ or 11.5% of the height free above and below the prices (from φ⁻⁵, 9%), a gap of φ⁻⁶ or 5.6% between the candles and the volume band (from φ⁻⁷, 3.4%), and the legend 12 px in from the plot's corner and 8 px down (from 8 and 6).
+  - `new Chart(host, { density: 'compact' })` keeps the chart of 1.x. `chart.setDensity()` and `getDensity()` change and read it, and `CHART_SPACING` holds each density's numbers. `barLayout` and `rightMargin` still win when set.
+  - The React, Vue and Svelte components no longer set `rightMargin: 5` themselves, so they take the chart's room too (`@tradecanvas/react`, `@tradecanvas/vue`, `@tradecanvas/svelte`).
+- **The widget is laid out on even pixels** (`@tradecanvas/chart`). A 33 px button around a 20 px icon left 6.5 px a side, and the icon's lines were soft. Every size and gap is now an even number, so what is centred lands on whole pixels.
+  - Sizes: Print's button and menu row are 34 px (from 33). The drawing tools' column is 40 px in Terminal, 48 in Capsule and 38 in Desk (from 39, 47, 37). Spacious sizes are even too, and on a wide screen each grown size goes to the even number nearest.
+  - Spacing (`--tcw-space-1` to `-7`): 2, 4, 6, 8, 12, 20, 32, from 2, 3, 5, 8, 13, 21, 34. They are Fibonacci numbers on a 4 px grid, with 2 and 6 under them.
+  - Padding: 12 px beside a toolbar button's label, a menu row's text and the toolbar's first button, from 8 (`--tcw-control-pad`, `--tcw-bar-pad`, `--tcw-menu-row-pad`).
+  - A line of body text is 18 px at 13 px (`--tcw-line-height`), and an indicator's row on the chart 20 px (`--tcw-legend-line`).
+  - The toolbar's and the bottom bar's text buttons are a whole number of pixels wide where the browser can round a box sized by its content (Chrome and Edge 129 and later), so the icons after them are sharp too (`--tcw-text-w`).
+- **`ui: { density: 'classic' }` is the widget as it was before 2.0** (`@tradecanvas/chart`). The sizes, spacing, padding and chart of 1.x, to the pixel at 100%. `ui: { density: 'compact' }`, the smaller controls with classic bars, is unchanged. `chartOptions.density` wins over the look's.
+- **Lines are sharp at a screen scale of 125% and 150%** (`@tradecanvas/core`, `@tradecanvas/chart`).
+  - The canvases take the browser's own count of device pixels where it gives one, so they are no longer stretched or shifted by a fraction of a pixel. Rounding the CSS size was off by one pixel as often as not, which softened everything drawn.
+  - The grid, the axes' lines and ticks, the last price's line, order, alert, limit and level lines, a pane's divider and the edges of price tags land on whole device pixels.
+  - A 1 px line is one device pixel wide at 125% and at 150%, as the browser draws a 1 px border. The crosshair was two pixels wide at 150%.
+- For a look of your own, `evenPx(n)` rounds a size to the even number nearest (`@tradecanvas/commons`). `PRICE_SCALE_MARGIN` is now φ⁻⁴·⁵, the default density's margin (`@tradecanvas/core`).
+
 ### Performance
 
 - **Full indicator recomputes in a Web Worker** (`@tradecanvas/chart`, `@tradecanvas/core`, `@tradecanvas/commons`). With `indicatorWorker: 'auto'`, a full recompute moves off the main thread when the series has 50,000 bars or more. A full recompute happens on new data, when an indicator is added, or when its inputs change. Ticks stay on the main thread.

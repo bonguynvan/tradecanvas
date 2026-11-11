@@ -4,6 +4,7 @@ import { type IndicatorLegendPane, type IndicatorLegendRow, type PaneAction } fr
 import { indicatorPointAt, legendValues } from './legendValues.js';
 import { compareLegendRows } from './compareLegend.js';
 import { pickHostItem, withHostItems } from './hostMenus.js';
+import { CHART_SPACING, type ChartDensity } from '@tradecanvas/commons';
 import { SYMBOL_INDICATOR_IDS } from '@tradecanvas/core';
 import type { ChartWidget } from './ChartWidget.js';
 
@@ -16,8 +17,17 @@ const PANE_ROW_STEP = 17;
 /** Where a pane's buttons (move, fold, maximise) sit below its top edge. */
 const PANE_CONTROLS_TOP = 3;
 
-/** Gap between the on-chart indicator rows and the plot or pane edge, px. */
-export const LEGEND_INSET = 4;
+/** A row's own padding either side of its text, px: what it stands nearer the edge than the chart's legend. */
+const ROW_PAD = 4;
+
+/**
+ * Gap between the on-chart indicator rows and the plot or pane edge, px: the
+ * chart's legend inset less the rows' padding, so their text starts where the
+ * price legend's does (4 on a compact chart, 8 on a comfortable one).
+ */
+export function legendRowInset(chart: { getDensity?: () => ChartDensity }): number {
+  return CHART_SPACING[chart.getDensity?.() ?? 'comfortable'].legendInset - ROW_PAD;
+}
 
 /** How far under the OHLCV legend's foot the indicator rows start (px). */
 export const STACK_GAP = 1;
@@ -75,6 +85,7 @@ export class WidgetLegendView {
     // indicators are worked out on the bricks: each reads its own series there.
     const aligned = this.host.chart.isTimeAligned();
     const hover = this.host.legendHoverIndex;
+    const inset = legendRowInset(this.host.chart);
     const idx = hover === null ? last : Math.min(Math.max(hover, 0), last);
     // Each pane's indicators, its own first, stacked down from its top.
     const panes = new Map<string, { x: number; y: number; width: number; height: number; row: number }>();
@@ -107,10 +118,10 @@ export class WidgetLegendView {
         })),
         pane: pane
           ? {
-            x: pane.x + LEGEND_INSET,
+            x: pane.x + inset,
             // A short pane with many indicators: the last rows overlap rather than spill out.
             y: pane.y + Math.min(PANE_ROW_TOP + pane.row * PANE_ROW_STEP, Math.max(PANE_ROW_TOP, pane.height - PANE_ROW_STEP)),
-            width: pane.width - 2 * LEGEND_INSET,
+            width: pane.width - 2 * inset,
           }
           : null,
       };
@@ -122,7 +133,7 @@ export class WidgetLegendView {
     // As the panes show: one maximised folds the others.
     const paneControls: IndicatorLegendPane[] = this.host.chart.getIndicatorPanes().map((pane) => ({
       instanceId: pane.instanceId,
-      x: pane.rect.x + pane.rect.width - LEGEND_INSET,
+      x: pane.rect.x + pane.rect.width - inset,
       y: pane.rect.y + PANE_CONTROLS_TOP,
       label: labelOf(pane.instanceId),
       collapsed: this.host.chart.isPaneCollapsed(pane.instanceId),
@@ -130,7 +141,7 @@ export class WidgetLegendView {
       canMoveUp: this.host.chart.canMovePane(pane.instanceId, -1),
       canMoveDown: this.host.chart.canMovePane(pane.instanceId, 1),
     }));
-    this.host.indicatorLegend.update(rows, { left: plot.x + LEGEND_INSET, top: this.host.chart.getLegendBottom() + STACK_GAP }, paneControls);
+    this.host.indicatorLegend.update(rows, { left: plot.x + inset, top: this.host.chart.getLegendBottom() + STACK_GAP }, paneControls);
   }
 
   /** A pane's button on the chart. */

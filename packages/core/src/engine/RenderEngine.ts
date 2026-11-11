@@ -15,7 +15,7 @@ import type { ChartRendererInterface } from '../charts/ChartRenderer.js';
 import { gridFitsGpu, type GridRenderer } from '../axis/GridRenderer.js';
 import type { GridMarks } from '../axis/gridLines.js';
 import { crosshairLooks } from '../interaction/crosshairLooks.js';
-import { crispX, crispY } from '../charts/pixelGrid.js';
+import { crispX, crispY, hLine, vLine } from '../charts/pixelGrid.js';
 import type { PriceAxis } from '../axis/PriceAxis.js';
 import type { TimeAxis } from '../axis/TimeAxis.js';
 import type { CrosshairHandler } from '../interaction/CrosshairHandler.js';
@@ -38,6 +38,8 @@ import type { PriceLineKind } from '../ui/PriceLines.js';
 
 /** Height of an indicator pane's title strip; the indicator draws below it. */
 const PANEL_HEADER_HEIGHT = 20;
+/** The bar across a pane's top, CSS px. */
+const PANE_DIVIDER_HEIGHT = 3;
 /** Below this a pane (folded to its header) draws no scale. */
 const MIN_PANE_PLOT_HEIGHT = 8;
 /** Height of a price limit's tag on the axis. */
@@ -234,7 +236,7 @@ export class RenderEngine {
     this.renderLoop.setCallback((dirtyLayers) => this.render(dirtyLayers));
 
     this.dprManager.onResize((size, dpr) => {
-      this.layerManager.resize(size, dpr);
+      this.layerManager.resize(size, dpr, this.dprManager.getDeviceSize());
       this.renderLoop.markAllDirty();
       // Notify the Chart so it can update viewport.chartRect + layout.
       // Without this, container resizes leave the viewport's idea of width
@@ -244,7 +246,7 @@ export class RenderEngine {
 
     const size = this.dprManager.getContainerSize();
     const dpr = this.dprManager.getDpr();
-    this.layerManager.resize(size, dpr);
+    this.layerManager.resize(size, dpr, this.dprManager.getDeviceSize());
   }
 
   private cacheLayerRefs(): void {
@@ -647,7 +649,9 @@ export class RenderEngine {
 
       // Thick divider bar at top of panel
       c.fillStyle = own?.separator ?? theme.style?.panes.separator ?? theme.axisLine;
-      c.fillRect(rect.x, rect.y, rect.width, 3);
+      // On whole device pixels, top and bottom: at 125% or 150% its edges would be soft.
+      const bar = crispY(c, rect.y + PANE_DIVIDER_HEIGHT / 2, PANE_DIVIDER_HEIGHT);
+      c.fillRect(rect.x, bar.y - bar.width / 2, rect.width, bar.width);
 
       // Panel indicator name in header area
       c.fillStyle = theme.style?.panes.title ?? theme.textSecondary;
@@ -766,8 +770,7 @@ export class RenderEngine {
     c.beginPath();
     for (const level of levels) {
       const y = Math.round(priceToY(level, viewport)) + 0.5;
-      c.moveTo(chartRect.x, y);
-      c.lineTo(chartRect.x + chartRect.width, y);
+      hLine(c, chartRect.x, chartRect.x + chartRect.width, y);
     }
     c.stroke();
     c.restore();
@@ -795,8 +798,7 @@ export class RenderEngine {
       c.strokeStyle = axisLine;
       c.lineWidth = 1;
       c.beginPath();
-      c.moveTo(axisX + 0.5, pr.y);
-      c.lineTo(axisX + 0.5, pr.y + pr.height);
+      vLine(c, axisX + 0.5, pr.y, pr.y + pr.height);
       c.stroke();
 
       const step = roundStep(min, max, insetRect.height);
@@ -811,8 +813,7 @@ export class RenderEngine {
         if (y < insetRect.y || y > insetRect.y + insetRect.height) continue;
         c.strokeStyle = axisLine;
         c.beginPath();
-        c.moveTo(axisX, Math.round(y) + 0.5);
-        c.lineTo(axisX + 4, Math.round(y) + 0.5);
+        hLine(c, axisX, axisX + 4, Math.round(y) + 0.5);
         c.stroke();
         c.fillStyle = axisText;
         c.fillText(priceScaleText(val, pv, precision, locale), axisX + 6, y);
@@ -984,8 +985,7 @@ export class RenderEngine {
       ctx.strokeStyle = color;
       ctx.lineWidth = 1;
       ctx.beginPath();
-      ctx.moveTo(chartRect.x, Math.round(y) + 0.5);
-      ctx.lineTo(chartRect.x + chartRect.width, Math.round(y) + 0.5);
+      hLine(ctx, chartRect.x, chartRect.x + chartRect.width, Math.round(y) + 0.5);
       ctx.stroke();
       ctx.setLineDash([]);
 

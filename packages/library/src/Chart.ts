@@ -43,7 +43,8 @@ import type {
   CrosshairCursor,
 } from '@tradecanvas/commons';
 import { isValidTimeZone, sessionMinute, symbolTimeZone, LayerType, setLocale as setGlobalLocale, computePriceLimits, createMarketTheme, priceStepAt, PRICE_AXIS_WIDTH, autoPricePrecision, formatPrice, stepDecimals, priceFormatterFor, fractionTick } from '@tradecanvas/commons';
-import type { BarLayout, ChartTypeOptions, DataUpdatePayload, FontConfig, IndicatorId, IndicatorParamsFor, PriceFormatter, PriceFraction, ShapeConfig, TimeFormatter } from '@tradecanvas/commons';
+import { CHART_SPACING } from '@tradecanvas/commons';
+import type { BarLayout, ChartDensity, ChartSpacing, ChartTypeOptions, DataUpdatePayload, FontConfig, IndicatorId, IndicatorParamsFor, PriceFormatter, PriceFraction, ShapeConfig, TimeFormatter } from '@tradecanvas/commons';
 import type { ResolvedLayout, ChartStyleKey, ChartStyleOverrides, ChartStyleOverridesPatch, IndicatorIntervals, IndicatorStyleConfig, PaneStyle, ResolvedChartStyle, StyleLayer } from '@tradecanvas/commons';
 import { readChartTypeOptions, tickBarCount, barTimeUnit, readChartStyleOverrides, readIndicatorPlotStyles, readPaneStyle } from '@tradecanvas/commons';
 import { PriceLines, type BidAsk, SymbolSeriesStore, CompareSymbolIndicator, CompareSymbolPaneIndicator, SpreadIndicator, CorrelationCoefficientIndicator, CorrelationLogIndicator, axisTimes, HiLoRenderer, PointAndFigureRenderer, isPriceLevelAlert, loadWebGL, gpuContextsLeft, whenGpuContextFree, idleCssCursor, isCrosshairCursor } from '@tradecanvas/core';
@@ -389,6 +390,8 @@ export class Chart {
   private paneTitles = true;
   /** When the price scale is fitted to the bars, and to what. */
   private readonly priceFit: PriceFit;
+  /** How much room the chart leaves around its bars (`options.density`, `setDensity`). */
+  private density: ChartDensity;
   private keyboardHandler: KeyboardHandler | null = null;
   private a11y: ChartA11y | null = null;
   private onWindowKeyDown: ((e: KeyboardEvent) => void) | null = null;
@@ -422,6 +425,9 @@ export class Chart {
     this.options = { ...options, chartType: options.chartType ?? 'candlestick' };
     this.numberLocale = options.numberLocale ?? 'en-US';
     this.priceFit = new PriceFit(options.autoScale !== false);
+    this.density = options.density === 'compact' ? 'compact' : 'comfortable';
+    const spacing = CHART_SPACING[this.density];
+    this.priceFit.setSpacing(spacing);
     this.display = new DisplaySeries({
       bars: () => this.series.bars(),
       version: () => this.series.version(),
@@ -591,9 +597,9 @@ export class Chart {
       size.height,
       options.minBarSpacing ?? 2,
       options.maxBarSpacing ?? 30,
-      options.rightMargin ?? 5,
+      options.rightMargin ?? spacing.rightMargin,
     );
-    if (options.barLayout) this.viewport.setBarLayout(options.barLayout);
+    this.viewport.setBarLayout(options.barLayout ?? spacing.barLayout);
     this.viewport.setPanLimits({
       freePan: options.freePan ?? true,
       minVisibleBars: options.panLimits?.minVisibleBars ?? 3,
@@ -707,6 +713,7 @@ export class Chart {
     this.chartLegend = new ChartLegend();
     this.chartLegend.setChartType(this.options.chartType);
     this.chartLegend.setLocale(this.numberLocale);
+    this.chartLegend.setSpacing(legendSpacing(spacing));
     // Drawn taller or shorter: what a host stacks under it (the widget's indicator rows) moves,
     // and the drawings' labels are placed again around it.
     this.chartLegend.setResizeListener(() => {
@@ -1716,6 +1723,27 @@ export class Chart {
 
   getBarLayout(): BarLayout {
     return this.viewport.getBarLayout();
+  }
+
+  /**
+   * How much room the chart leaves around its bars: `'comfortable'` or
+   * `'compact'`, the chart as it was before 2.0 (see `ChartDensity`). The
+   * `barLayout` and `rightMargin` the chart was made with stay as given.
+   */
+  setDensity(density: ChartDensity): void {
+    // The same density again runs nothing: no pass, no events (a widget sets it on every look).
+    if ((density !== 'comfortable' && density !== 'compact') || density === this.density) return;
+    this.density = density;
+    const spacing = CHART_SPACING[density];
+    this.priceFit.setSpacing(spacing);
+    this.chartLegend.setSpacing(legendSpacing(spacing));
+    if (this.options.rightMargin === undefined) this.viewport.setRightMargin(spacing.rightMargin);
+    if (!this.options.barLayout) this.viewport.setBarLayout(spacing.barLayout);
+    this.updateViewportAndRender();
+  }
+
+  getDensity(): ChartDensity {
+    return this.density;
   }
 
   /** Show or hide the main series (its bars, candles or line); the rest of the chart stays. */
@@ -6073,7 +6101,7 @@ export class Chart {
     this.containerSizeCacheTime = Date.now();
     // Resize canvas layers immediately (don't wait for DPRManager's debounced callback)
     const dpr = this.engine.dprManager.getDpr();
-    this.engine.layerManager.resize(size, dpr);
+    this.engine.layerManager.resize(size, dpr, this.engine.dprManager.getDeviceSize());
     // Check if viewport was at the end before resize
     const wasAtEnd = this.viewport.isAtEnd();
     this.viewport.resize(size.width, size.height);
@@ -6805,6 +6833,11 @@ function piecesByBar(steps: DataSeries, coarse: DataSeries): Map<number, OHLCBar
 /** Whether the system asks for less motion: a forming bar then steps between its prices. */
 function prefersReducedMotion(): boolean {
   return typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
+/** The part of a density's spacing the legend is laid out with. */
+function legendSpacing(spacing: ChartSpacing): { inset: number; top: number; lineGap: number } {
+  return { inset: spacing.legendInset, top: spacing.legendTop, lineGap: spacing.legendLineGap };
 }
 
 /** `bar` with one more step in it. */

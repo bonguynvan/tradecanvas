@@ -1,5 +1,5 @@
 import type { ViewportState, Theme, OHLCBar, DataSeries } from '@tradecanvas/commons';
-import { autoPricePrecision, formatPrice, formatVolumeLoc, tickerOf } from '@tradecanvas/commons';
+import { CHART_SPACING, DEFAULT_CHART_DENSITY, autoPricePrecision, formatPrice, formatVolumeLoc, tickerOf } from '@tradecanvas/commons';
 
 export interface LegendConfig {
   visible: boolean;
@@ -50,6 +50,10 @@ export class ChartLegend {
   /** How far right of the plot's edge the top rows reached on the last draw (px). */
   private drawnWidth = 0;
   private locale = 'en-US';
+  /** Room to the plot's side and top, and under each line (px): the chart's density sets them. */
+  private inset = LEGEND_INSET;
+  private top = LEGEND_TOP;
+  private lineGap = LINE_GAP;
   private pricePrecision: number | null = null;
   /** The height last told to the resize listener; null before the first draw. */
   private reportedHeight: number | null = null;
@@ -224,12 +228,26 @@ export class ChartLegend {
    * last drawn, wrapped lines included. 0 when hidden or drawn in the
    * top-right corner.
    */
+  /** The legend's distance from the plot's side and top, and the space under each of its lines, px. */
+  setSpacing(spacing: { inset: number; top: number; lineGap: number }): void {
+    if (spacing.inset === this.inset && spacing.top === this.top && spacing.lineGap === this.lineGap) return;
+    this.inset = spacing.inset;
+    this.top = spacing.top;
+    this.lineGap = spacing.lineGap;
+    this.drawnHeight = null;
+  }
+
+  /** The legend's distance from the plot's side, px. */
+  getInset(): number {
+    return this.inset;
+  }
+
   getHeight(): number {
     if (!this.config.visible || this.config.position !== 'top-left') return 0;
     if (this.drawnHeight !== null) return this.drawnHeight;
     const fs = this.config.fontSize;
-    let h = LEGEND_TOP;
-    if (this.config.showOHLC || this.title() || this.statusText) h += fs + LINE_GAP;
+    let h = this.top;
+    if (this.config.showOHLC || this.title() || this.statusText) h += fs + this.lineGap;
     if (this.config.showVolume) h += fs + 2;
     return h;
   }
@@ -263,8 +281,8 @@ export class ChartLegend {
     const label = theme.style?.legend.label ?? theme.textSecondary;
     const isLeft = this.config.position === 'top-left';
 
-    const x = isLeft ? chartRect.x + LEGEND_INSET : chartRect.x + chartRect.width - LEGEND_INSET;
-    let y = chartRect.y + LEGEND_TOP;
+    const x = isLeft ? chartRect.x + this.inset : chartRect.x + chartRect.width - this.inset;
+    let y = chartRect.y + this.top;
 
     ctx.textAlign = isLeft ? 'left' : 'right';
     ctx.textBaseline = 'top';
@@ -277,7 +295,7 @@ export class ChartLegend {
     if (cells.length > 0) {
       ctx.font = `${fs}px ${family}`;
       const gap = ctx.measureText('  ').width;
-      for (const line of wrapCells(cells, gap, chartRect.width - 2 * LEGEND_INSET)) {
+      for (const line of wrapCells(cells, gap, chartRect.width - 2 * this.inset)) {
         const total = line.reduce((sum, c) => sum + c.labelWidth + c.width + gap, -gap);
         widest = Math.max(widest, total);
         let cx = isLeft ? x : x - total;
@@ -294,7 +312,7 @@ export class ChartLegend {
           ctx.fillText(cell.value, cx, y);
           cx += cell.width + gap;
         }
-        y += fs + LINE_GAP;
+        y += fs + this.lineGap;
       }
       ctx.textAlign = isLeft ? 'left' : 'right';
     }
@@ -313,7 +331,7 @@ export class ChartLegend {
       y += fs + 2;
     }
     this.drawnHeight = isLeft ? y - chartRect.y : null;
-    this.drawnWidth = isLeft ? LEGEND_INSET + widest : 0;
+    this.drawnWidth = isLeft ? this.inset + widest : 0;
     this.reportResize();
 
     // Active indicator values
@@ -342,7 +360,7 @@ export class ChartLegend {
     ctx.save();
     ctx.globalAlpha = GROUND_ALPHA;
     ctx.fillStyle = theme.background;
-    ctx.fillRect(left - GROUND_PAD_X, y - GROUND_PAD_Y, width + 2 * GROUND_PAD_X, fontSize + LINE_GAP);
+    ctx.fillRect(left - GROUND_PAD_X, y - GROUND_PAD_Y, width + 2 * GROUND_PAD_X, fontSize + this.lineGap);
     ctx.restore();
   }
 }
@@ -357,11 +375,8 @@ interface LegendCell {
   font: string;
 }
 
-/** Room above the legend's first line, and to the plot's side edge (px). */
-const LEGEND_TOP = 6;
-const LEGEND_INSET = 8;
-/** Space under each of its lines (px). */
-const LINE_GAP = 3;
+/** Room above the legend's first line, to the plot's side edge and under each of its lines (px), until `setSpacing`. */
+const { legendTop: LEGEND_TOP, legendInset: LEGEND_INSET, legendLineGap: LINE_GAP } = CHART_SPACING[DEFAULT_CHART_DENSITY];
 /** The rows' ground: enough to read the text over a line, thin enough to still see the bars under it. */
 const GROUND_ALPHA = 0.72;
 const GROUND_PAD_X = 3;

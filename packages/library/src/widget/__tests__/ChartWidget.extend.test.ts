@@ -68,6 +68,8 @@ class FakeChart {
   setShapes(shapes: unknown): void { this.shapes.push(shapes); }
   barLayouts: unknown[] = [];
   setBarLayout(layout: unknown): void { this.barLayouts.push(layout); }
+  densities: unknown[] = [];
+  setDensity(density: unknown): void { this.densities.push(density); }
   fonts: unknown[] = [];
   setFont(font: unknown): void { this.fonts.push(font); }
   chartTypeOptions: unknown = {};
@@ -1227,6 +1229,41 @@ describe('ChartWidget look', () => {
     expect(FakeChart.last.barLayouts.at(-1)).toBe('golden');
   });
 
+  it('gives the chart room around its bars, and the room of 1.x in the classic and compact densities', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false });
+    expect(FakeChart.last.densities.at(-1)).toBe('comfortable');
+    // Classic is the widget of 1.x: the chart's compact margins, with the golden bars it had.
+    widget.setUI({ density: 'classic' });
+    expect(FakeChart.last.densities.at(-1)).toBe('compact');
+    expect(FakeChart.last.barLayouts.at(-1)).toBe('golden');
+    widget.setUI({ density: 'compact' });
+    expect(FakeChart.last.densities.at(-1)).toBe('compact');
+    expect(FakeChart.last.barLayouts.at(-1)).toBe('classic');
+    for (const density of ['spacious', 'airy'] as const) {
+      widget.setUI({ density });
+      expect(FakeChart.last.densities.at(-1), density).toBe('comfortable');
+    }
+  });
+
+  it('leaves the density chartOptions.density gives', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false, chartOptions: { density: 'compact' } });
+    widget.setUI({ density: 'spacious' });
+    expect(FakeChart.last.densities).toEqual([]);
+    expect(FakeChart.last.options.density).toBe('compact');
+  });
+
+  it('writes the classic density’s spacing on the root, and takes it off for the stylesheet’s', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false, ui: { density: 'classic' } });
+    const root = host.querySelector<HTMLElement>('.tcw-root')!;
+    expect(root.style.getPropertyValue('--tcw-space-2')).toBe('3px');
+    expect(root.style.getPropertyValue('--tcw-control-h')).toBe('33px');
+    expect(root.style.getPropertyValue('--tcw-text-w')).toBe('auto');
+    widget.setUI({ density: 'comfortable' });
+    expect(root.style.getPropertyValue('--tcw-space-2')).toBe('4px');
+    expect(root.style.getPropertyValue('--tcw-control-h')).toBe('34px');
+    expect(root.style.getPropertyValue('--tcw-text-w')).not.toBe('auto');
+  });
+
   it('leaves the bars chartOptions.barLayout gives, in the default look and in compact', () => {
     widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false, chartOptions: { barLayout: 'classic' } });
     widget.setUI('studio');
@@ -1337,7 +1374,7 @@ describe('ChartWidget on a wide screen', () => {
     wide(2600);
     widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false });
     const root = host.querySelector<HTMLElement>('.tcw-root')!;
-    expect(root.style.getPropertyValue('--tcw-toolbar-h')).toBe('49px');
+    expect(root.style.getPropertyValue('--tcw-toolbar-h')).toBe('50px');
     expect(root.style.getPropertyValue('--tcw-font-size')).toBe('15px');
     const fonts = FakeChart.last.fonts as Record<string, unknown>[];
     expect(fonts[fonts.length - 1]).toMatchObject({ sizeSmall: 13, sizeMedium: 15, sizeLarge: 18 });
@@ -1347,11 +1384,15 @@ describe('ChartWidget on a wide screen', () => {
     wide(2600);
     widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false });
     const root = host.querySelector<HTMLElement>('.tcw-root')!;
-    expect(root.style.getPropertyValue('--tcw-icon')).toBe('23px');
-    // The drawing tools grow with the rest: their icon a half step over (30 against 23), their
-    // button as wide as the grown column keeps 3 px either side of (43 in 49).
-    expect(root.style.getPropertyValue('--tcw-tool-h')).toBe('43px');
+    expect(root.style.getPropertyValue('--tcw-icon')).toBe('24px');
+    // The drawing tools grow with the rest: their icon a half step over (30 against 24), their
+    // button as wide as the grown column keeps 3 px either side of (44 in 50).
+    expect(root.style.getPropertyValue('--tcw-tool-h')).toBe('44px');
     expect(root.style.getPropertyValue('--tcw-tool-icon')).toBe('30px');
+    // A line of the grown type is an even height too: 22 px at 15 px.
+    expect(parseFloat(root.style.getPropertyValue('--tcw-line-height')) * 15).toBeCloseTo(22, 3);
+    // Spacing is the stylesheet's still.
+    expect(root.style.getPropertyValue('--tcw-space-2')).toBe('');
     expect(root.style.getPropertyValue('--tcw-radius')).toBe('');
     expect(root.style.getPropertyValue('--tcw-font')).toBe('');
   });

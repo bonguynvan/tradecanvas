@@ -60,26 +60,71 @@ const grid = new ChartWidgetGrid(host, { layout: '2x2', widget: { ui: 'terminal'
 grid.setUI('studio')
 grid.getUI()`}</code></pre>
 
-<h2>An airy look</h2>
+<h2 id="density">Density</h2>
 <p>
-  The widget opens the chart with more bars on screen and air between them: a candle's body is the slot × φ⁻¹
-  (62%) at every zoom, and the chart opens at φ⁴ ≈ 6.85 px a slot (<code>barLayout: 'golden'</code>), about 250 bars
-  across a 1920 px screen. <code>density: 'compact'</code> keeps the classic bars, a 2 px gap in a 10 px slot.
-  <code>density: 'airy'</code> adds spacious controls, with the figures on the axes and in the legend in the look's
-  sans face. It is the look 2.0 will open with.
+  The chart and the widget open with room around what they draw. A candle's body is the slot × φ⁻¹ (62%) at every
+  zoom, the rest a gap, and the chart opens at φ⁴ ≈ 6.85 px a slot (<code>barLayout: 'golden'</code>), about 250
+  bars across a 1920 px screen. The newest bar rests 8 slots from the price axis. The prices keep φ⁻⁴·⁵ (11.5%)
+  of the plot's height free above the highest high and below the lowest low; with volume on, the volume band is
+  under the candles with a gap of φ⁻⁶ (5.6%) between, so the two never overlap. The legend stands 12 px in from the
+  plot's corner. In the widget every size and gap is an even number of pixels, and buttons, bars and menu rows
+  have 12 px beside their text.
 </p>
-<pre><code>{`new ChartWidget(host, { ui: { density: 'airy' } })
-
-// The same on a chart of your own
-import { Chart, SANS_FONT_FAMILY } from '@tradecanvas/chart'
-const chart = new Chart(host, { barLayout: 'golden', font: { family: SANS_FONT_FAMILY } })
-chart.setBarLayout('classic')    // a 2 px gap, as before
-chart.setFont({ sizeSmall: 12 }) // the axes' and tags' size
-chart.setFont(null)              // the theme's own font again`}</code></pre>
 <p>
-  <code>chartOptions.barLayout</code> and a <code>family</code> in <code>chartOptions.font</code> win over the look's;
-  sizes alone in <code>chartOptions.font</code> keep the look's face. Over bars on screen a new layout keeps the zoom
-  and only splits each slot again.
+  <code>density</code> sets all of it at once, for the widget in <code>ui</code> and for a chart of your own in its
+  options:
+</p>
+<table>
+  <thead><tr><th><code>ui.density</code></th><th>The widget</th><th>Its chart</th></tr></thead>
+  <tbody>
+    <tr><td><code>'comfortable'</code></td><td>The default: even sizes (a 34 px button, a 20 px icon), spacing 2 · 4 · 6 · 8 · 12 · 20 · 32, 12 px of padding in a control.</td><td>Comfortable, golden bars.</td></tr>
+    <tr><td><code>'classic'</code></td><td>As it was before 2.0, to the pixel: a 33 px button, spacing 2 · 3 · 5 · 8 · 13 · 21 · 34, 8 px of padding in a control.</td><td>Compact, with the golden bars the widget had.</td></tr>
+    <tr><td><code>'compact'</code></td><td>Smaller controls (a 26 px button, a 16 px icon) on the classic spacing. Unchanged from 1.x.</td><td>Compact, classic bars.</td></tr>
+    <tr><td><code>'spacious'</code></td><td>Bigger controls (a 42 px button, a 26 px icon).</td><td>Comfortable, golden bars.</td></tr>
+    <tr><td><code>'airy'</code></td><td>Spacious, with the figures on the axes and in the legend in the look's sans face.</td><td>Comfortable, golden bars.</td></tr>
+  </tbody>
+</table>
+<table>
+  <thead><tr><th>A chart's <code>density</code></th><th>Bars</th><th>Room past the newest bar</th><th>Above and below the prices</th><th>Over the volume band</th><th>Legend from the corner</th></tr></thead>
+  <tbody>
+    <tr><td><code>'comfortable'</code> (default)</td><td>golden</td><td>8 slots</td><td>φ⁻⁴·⁵ (11.5%)</td><td>φ⁻⁶ (5.6%)</td><td>12 px in, 8 px down</td></tr>
+    <tr><td><code>'compact'</code> (as before 2.0)</td><td>classic: a 2 px gap, 10 px a slot to open</td><td>5 slots</td><td>φ⁻⁵ (9%)</td><td>φ⁻⁷ (3.4%)</td><td>8 px in, 6 px down</td></tr>
+  </tbody>
+</table>
+<pre><code>{`// The widget as it was before 2.0
+new ChartWidget(host, { ui: { density: 'classic' } })
+widget.setUI({ density: 'classic' })
+
+// A chart of your own as it was before 2.0
+import { Chart, CHART_SPACING, SANS_FONT_FAMILY } from '@tradecanvas/chart'
+const chart = new Chart(host, { density: 'compact' })
+chart.setDensity('comfortable')  // and back
+chart.getDensity()               // 'comfortable'
+CHART_SPACING.comfortable        // the numbers each density sets
+
+// One part of it
+new Chart(host, { barLayout: 'classic' })   // a 2 px gap between bars, the rest comfortable
+new Chart(host, { rightMargin: 5 })         // 5 slots past the newest bar
+chart.setBarLayout('golden')
+chart.setFont({ family: SANS_FONT_FAMILY, sizeSmall: 12 }) // the axes' and tags' face and size
+chart.setFont(null)                         // the theme's own font again`}</code></pre>
+<p>
+  The <code>barLayout</code> and <code>rightMargin</code> a chart is made with stay through a change of density.
+  In the widget, <code>chartOptions.density</code>, <code>chartOptions.barLayout</code> and a <code>family</code> in
+  <code>chartOptions.font</code> win over the look's; sizes alone in <code>chartOptions.font</code> keep the look's
+  face. Over bars on screen a new layout keeps the zoom and only splits each slot again.
+</p>
+
+<h3 id="whole-pixels">On whole pixels</h3>
+<p>
+  At a screen scale of 125% or 150% a CSS pixel is 1.25 or 1.5 device pixels, and a line drawn 1 px wide between
+  two of them goes soft. The chart sizes its canvases by the browser's own count of device pixels and puts its
+  hairlines on them: the grid, the axes' lines and ticks, the crosshair, the last price's line, order, alert and
+  level lines, wicks, a pane's divider and the edges of price tags. A 1 px line is one device pixel wide at 125%
+  and at 150%, as the browser draws a 1 px border. In the widget, sizes are even so that an icon sits a whole
+  number of pixels from its button's edge and a button from its bar's, and the toolbar's text buttons are a
+  whole number of pixels wide where the browser can round a box sized by its content (Chrome and Edge 129 and
+  later), so the icons after them stay sharp too.
 </p>
 
 <h2>The golden ratio</h2>
@@ -90,11 +135,11 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
 <table>
   <thead><tr><th>What</th><th>Rule</th><th>Values (px)</th></tr></thead>
   <tbody>
-    <tr><td>Sizes</td><td>Half steps of φ: an icon, its small button, its button, the bar, and the drawing tools' column on the bar's step; a menu row is as tall as a button. The drawing tools' icons are a half step over the others' (26 against 20), their buttons a little short of it, to keep 3 px either side in the column.</td><td>20 · 26 · 33 · 42</td></tr>
-    <tr><td>Spacing</td><td>Fibonacci numbers, each the sum of the two before, so neighbours are near φ apart.</td><td>2 · 3 · 5 · 8 · 13 · 21 · 34</td></tr>
+    <tr><td>Sizes</td><td>Half steps of φ, each the even number nearest its step (20.4, 25.9, 32.9, 41.9): an icon, its small button, its button, the bar, and the drawing tools' column on the bar's step; a menu row is as tall as a button. The button departs from the rule: 32 is nearer its step, and it is 34, the size the 33 of 1.x read as, which leaves a 20 px icon 7 px a side. The drawing tools' icons are a half step over the others' (26 against 20), their buttons a little short of it, to keep 3 px either side in the column.</td><td>20 · 26 · 34 · 42</td></tr>
+    <tr><td>Spacing</td><td>Fibonacci numbers on a 4 px grid (1, 2, 3, 5, 8 times 4), with 2 and 6, the halves of 4 and 12, under them. From 8 up neighbours stand at 1.5, 1.67 and 1.6, near φ; the small steps climb by 2 px, where a ratio of φ has no even numbers to land on. The classic and compact densities keep the plain Fibonacci numbers, 2 · 3 · 5 · 8 · 13 · 21 · 34.</td><td>2 · 4 · 6 · 8 · 12 · 20 · 32</td></tr>
     <tr><td>Corners</td><td>
-      Fibonacci numbers too. A nested corner is the one around it less the padding between, so the curves run
-      parallel: a menu's 5 is its rows' 2 and its 3 of padding.
+      Fibonacci numbers. A nested corner is the one around it less the padding between, so the curves run
+      parallel: a menu's 5 is its rows' 1 and its 4 of padding.
     </td><td>1 · 2 · 3 · 5 · 8</td></tr>
     <tr><td>Type</td><td>
       Steps of the cube root of φ, so every third size is φ larger: a dialog's title is φ times its text. Never
@@ -103,16 +148,17 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
   </tbody>
 </table>
 <p>
-  The type steps follow the body size you set (<code>font.size</code>), and <code>density</code> moves the sizes a
-  half step down or up. <code>PHI</code>, <code>FIBONACCI</code> and <code>phiStep(base, steps, perPhi)</code> come
-  from <code>@tradecanvas/commons</code> for a look of your own.
+  The type steps follow the body size you set (<code>font.size</code>); a line of body text is an even height
+  (18 px at 13 px). <code>density</code> moves the sizes a half step down or up. <code>PHI</code>,
+  <code>FIBONACCI</code>, <code>phiStep(base, steps, perPhi)</code> and <code>evenPx(n)</code> come from
+  <code>@tradecanvas/commons</code> for a look of your own.
 </p>
 
 <h3 id="wide-screens">On wide screens</h3>
 <p>
   The widget draws its bars, buttons, icons and type bigger as it widens, so a 4K screen is not all small print:
   as set up to full HD, then a sixth of φ bigger from 1800 px wide, a third from 2560 (4K at 150%) and a half from
-  3400 (4K at 100%). The chart's axis type grows with it. <code>ui.scale</code> sets a scale of your own at every
+  3400 (4K at 100%), each size to the even number nearest. The chart's axis type grows with it. <code>ui.scale</code> sets a scale of your own at every
   width; <code>1</code> keeps the sizes as they are.
 </p>
 
@@ -125,7 +171,7 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
   preset: 'studio',
   radius: { xs: 3, sm: 5, md: 10, lg: 12, xl: 18 },  // the scale, px (999: pills)
   components: { dialog: 20, tag: 0 },                // a part's own corners
-  density: 'compact',                                // compact · comfortable · spacious · airy
+  density: 'compact',                                // compact · classic · comfortable · spacious · airy
   sizes: { toolbar: 40 },                            // px; wins over density
   scale: 'auto',                                     // or a number; 'auto' grows with the widget's width
   font: {
@@ -158,7 +204,8 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
     <tr><td><code>density</code> / <code>sizes</code></td><td>
       <code>toolbar</code> height, <code>control</code> and <code>controlSmall</code> heights, <code>icon</code>,
       <code>sidebar</code> width and <code>menuItem</code> height, px. <code>compact</code> and
-      <code>spacious</code> are Print's sizes a half step of φ down or up. The drawing tools' buttons and icons are a
+      <code>spacious</code> are Print's sizes a half step of φ down or up, and <code>classic</code> is the widget as
+      it was before 2.0 (see <a href="#density">Density</a>, which also sets the spacing and the chart's room). The drawing tools' buttons and icons are a
       half step of φ over <code>control</code> and <code>icon</code> (the same size in <code>compact</code>). They keep
       room either side in the <code>sidebar</code> column, and where the column is too short for them all they shrink,
       down to the <code>icon</code> size and 2 px a side, before it scrolls.
@@ -215,7 +262,10 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
     <tr><td><code>--tcw-border-w</code>, <code>--tcw-sep-w</code></td><td><code>borders</code></td></tr>
     <tr><td><code>--tcw-menu-shadow</code>, <code>--tcw-dialog-shadow</code>, <code>--tcw-tooltip-shadow</code></td><td><code>shadows</code></td></tr>
     <tr><td><code>--tcw-blur</code>, <code>--tcw-surface-opacity</code></td><td><code>blur</code></td></tr>
-    <tr><td><code>--tcw-space-1</code> … <code>--tcw-space-7</code></td><td>The stylesheet: Fibonacci spacing, 2 to 34 px</td></tr>
+    <tr><td><code>--tcw-space-1</code> … <code>--tcw-space-7</code></td><td><code>density</code>: spacing, 2 to 32 px (2 to 34 in <code>classic</code> and <code>compact</code>)</td></tr>
+    <tr><td><code>--tcw-control-pad</code>, <code>--tcw-bar-pad</code>, <code>--tcw-menu-row-pad</code></td><td><code>density</code>: the room beside a button's label, a bar's first button and a menu row's text</td></tr>
+    <tr><td><code>--tcw-line-height</code>, <code>--tcw-line-xs</code>, <code>--tcw-legend-line</code>, <code>--tcw-legend-line-pane</code></td><td><code>density</code>: a line of body text, of the smallest type, and of an indicator's row on the chart and in a pane</td></tr>
+    <tr><td><code>--tcw-text-w</code></td><td><code>density</code>: the bars' text buttons a whole number of pixels wide (<code>auto</code>: as wide as their text)</td></tr>
     <tr><td><code>--tcw-kind-1</code> … <code>--tcw-kind-5</code></td><td>The stylesheet: the symbol search’s colours for the kinds of symbol (stock, futures, index, crypto, forex), set for the dark and the light theme. Set them in a palette of your own, or the badges keep these hues.</td></tr>
     <tr><td><code>--tcw-font-features</code></td><td>The stylesheet: <code>normal</code>, the faces as drawn. The <code>ui</code> option never sets it, so a rule of yours on <code>.tcw-root</code> turns on your face's OpenType features (Inter's one-storey a and open digits: <code>'cv11', 'ss01'</code>). They reach the widget's text, its buttons and fields too; the chart's text (its canvases and its tooltips) never takes them.</td></tr>
   </tbody>

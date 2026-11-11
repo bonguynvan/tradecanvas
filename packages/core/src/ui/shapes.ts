@@ -1,4 +1,5 @@
 import type { Theme } from '@tradecanvas/commons';
+import { crispBox } from '../charts/pixelGrid.js';
 
 /** The corner radius a tag `w` by `h` takes from the theme: none it can't use, half its side at most. */
 function cornerRadius(theme: Theme, w: number, h: number): number {
@@ -31,12 +32,16 @@ export function tagPath(ctx: CanvasRenderingContext2D, x: number, y: number, w: 
   ctx.closePath();
 }
 
-/** Fill a tag's box in the theme's corner shape, with the context's current fill. */
+/**
+ * Fill a tag's box in the theme's corner shape, with the context's current
+ * fill, its edges on whole device pixels (see `crispBox`).
+ */
 export function fillTag(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, theme: Theme): void {
-  if (!(cornerRadius(theme, w, h) > 0)) {
-    ctx.fillRect(x, y, w, h);
+  const box = crispBox(ctx, x, y, w, h);
+  if (!(cornerRadius(theme, box.w, box.h) > 0)) {
+    ctx.fillRect(box.x, box.y, box.w, box.h);
     return;
   }
-  tagPath(ctx, x, y, w, h, theme);
+  tagPath(ctx, box.x, box.y, box.w, box.h, theme);
   ctx.fill();
 }

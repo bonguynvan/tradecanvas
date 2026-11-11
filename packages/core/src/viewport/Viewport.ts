@@ -1,5 +1,5 @@
 import type { BarLayout, ViewportState, Rect, DataSeries, PriceScaleMode, ScaleMargins } from '@tradecanvas/commons';
-import { PHI, clamp, computePriceRange, fitPriceRange } from '@tradecanvas/commons';
+import { CHART_SPACING, DEFAULT_CHART_DENSITY, PHI, clamp, computePriceRange, fitPriceRange } from '@tradecanvas/commons';
 import { DEFAULT_BAR_WIDTH, DEFAULT_BAR_SPACING, PRICE_AXIS_WIDTH, TIME_AXIS_HEIGHT } from '@tradecanvas/commons';
 
 /**
@@ -16,8 +16,12 @@ const GOLDEN_BODY = 1 / PHI;
 /** Where a golden chart opens: φ⁴ px a slot. */
 const GOLDEN_OPENING_SLOT = PHI ** 4;
 
-/** Room above the highest high and below the lowest low: φ⁻⁵ (9%) of the scale's height. */
-export const PRICE_SCALE_MARGIN = PHI ** -5;
+/**
+ * Room above the highest high and below the lowest low, a share of the scale's
+ * height: φ⁻⁴·⁵ (11.5%), the default density's. A chart of another density
+ * fits with its own (`CHART_SPACING`).
+ */
+export const PRICE_SCALE_MARGIN = CHART_SPACING[DEFAULT_CHART_DENSITY].priceMargin;
 /** Margins must leave the prices at least this share of the height. */
 const MIN_PRICE_SHARE = 0.2;
 
@@ -51,7 +55,7 @@ export class Viewport {
     containerHeight: number,
     minBarWidth = 2,
     maxBarWidth = 30,
-    rightMarginBars = 5,
+    rightMarginBars = CHART_SPACING[DEFAULT_CHART_DENSITY].rightMargin,
   ) {
     this.minBarWidth = minBarWidth;
     this.maxBarWidth = maxBarWidth;

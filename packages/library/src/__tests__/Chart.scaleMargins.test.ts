@@ -49,10 +49,19 @@ function roomBelow(data: OHLCBar[]): number {
 }
 
 describe('the price scale and the volume band', () => {
-  it('keeps the candles above the volume bars, with a gap of φ⁻⁷', () => {
+  it('keeps the candles above the volume bars, with a gap of φ⁻⁶', () => {
+    const data = swinging(120, 50);
+    chart.setData(data);
+    expect(roomBelow(data)).toBeCloseTo(PHI ** -4.5 + PHI ** -6, 6);
+  });
+
+  it('keeps the gap of φ⁻⁷ and the margins of φ⁻⁵ on a compact chart', () => {
+    chart.destroy();
+    chart = new Chart(host, { chartType: 'candlestick', density: 'compact' });
     const data = swinging(120, 50);
     chart.setData(data);
     expect(roomBelow(data)).toBeCloseTo(PHI ** -4.5 + PHI ** -7, 6);
+    expect(roomAbove(data)).toBeCloseTo(PHI ** -5, 6);
   });
 
   it('gives the band back to a chart started with volume off', () => {
@@ -60,7 +69,7 @@ describe('the price scale and the volume band', () => {
     chart = new Chart(host, { chartType: 'candlestick', features: { volume: false } });
     const data = swinging(120, 50);
     chart.setData(data);
-    expect(roomBelow(data)).toBeCloseTo(PHI ** -5, 6);
+    expect(roomBelow(data)).toBeCloseTo(PHI ** -4.5, 6);
   });
 
   it('keeps the band at the bottom of the screen on an upside-down scale', () => {
@@ -71,20 +80,20 @@ describe('the price scale and the volume band', () => {
     const state = (chart as unknown as Probe).viewport.getState();
     const { y, height } = state.chartRect;
     const high = Math.max(...data.slice(state.visibleRange.from, state.visibleRange.to + 1).map((b) => b.high));
-    expect((y + height - priceToY(high, state)) / height).toBeCloseTo(PHI ** -4.5 + PHI ** -7, 6);
+    expect((y + height - priceToY(high, state)) / height).toBeCloseTo(PHI ** -4.5 + PHI ** -6, 6);
     expect(roomAbove(data)).toBeGreaterThan(0);
   });
 
   it('gives the band back when there is no volume to show', () => {
     const quiet = swinging(120, 0);
     chart.setData(quiet);
-    expect(roomBelow(quiet)).toBeCloseTo(PHI ** -5, 6);
+    expect(roomBelow(quiet)).toBeCloseTo(PHI ** -4.5, 6);
 
     const data = swinging(120, 50);
     chart.setData(data);
     chart.setVolumeVisible(false);
-    expect(roomBelow(data)).toBeCloseTo(PHI ** -5, 6);
+    expect(roomBelow(data)).toBeCloseTo(PHI ** -4.5, 6);
     chart.setVolumeVisible(true);
-    expect(roomBelow(data)).toBeCloseTo(PHI ** -4.5 + PHI ** -7, 6);
+    expect(roomBelow(data)).toBeCloseTo(PHI ** -4.5 + PHI ** -6, 6);
   });
 });

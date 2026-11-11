@@ -268,8 +268,8 @@ describe('on-chart indicator legend', () => {
       Object.defineProperty(stack, 'offsetWidth', { configurable: true, value: 214 });
       Object.defineProperty(stack, 'offsetHeight', { configurable: true, value: 58 });
       observers.find((o) => o.els.includes(stack))!.cb();
-      // From the plot's left edge (the stack is 4 px in) and the legend's foot (1 px under it).
-      expect(FakeChart.last.legendStacks.at(-1)).toEqual({ width: 4 + 214, height: 1 + 58 });
+      // From the plot's left edge (the stack is 8 px in) and the legend's foot (1 px under it).
+      expect(FakeChart.last.legendStacks.at(-1)).toEqual({ width: 8 + 214, height: 1 + 58 });
     } finally {
       vi.unstubAllGlobals();
     }
@@ -290,8 +290,8 @@ describe('on-chart indicator legend', () => {
     await frame();
     const [rsi] = rows();
     expect(rsi.classList.contains('tcw-ind-legend-row--pane')).toBe(true);
-    expect([rsi.style.left, rsi.style.top]).toEqual(['4px', '307px']); // below the divider's grab zone
-    expect(rsi.style.maxWidth).toBe('592px'); // stays inside its pane
+    expect([rsi.style.left, rsi.style.top]).toEqual(['8px', '307px']); // below the divider's grab zone
+    expect(rsi.style.maxWidth).toBe('584px'); // stays inside its pane
     expect(values(rsi).map((v) => v.textContent)).toEqual(['54.32']);
   });
 

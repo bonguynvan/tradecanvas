@@ -1,6 +1,7 @@
 import type { DataSeries, ViewportState, Theme } from '@tradecanvas/commons';
 import { priceToY } from '../viewport/ScaleMapping.js';
 import { fillTag } from '../ui/shapes.js';
+import { hLine } from './pixelGrid.js';
 import { computePeriodLevels, type LevelPeriod, type PriceLevel } from './periodLevels.js';
 
 /**
@@ -54,8 +55,7 @@ export class PeriodLevelsRenderer {
       ctx.lineWidth = 1;
       ctx.setLineDash([5, 4]);
       ctx.beginPath();
-      ctx.moveTo(chartRect.x, Math.round(y) + 0.5);
-      ctx.lineTo(chartRect.x + chartRect.width, Math.round(y) + 0.5);
+      hLine(ctx, chartRect.x, chartRect.x + chartRect.width, Math.round(y) + 0.5);
       ctx.stroke();
       ctx.setLineDash([]);
 

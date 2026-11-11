@@ -52,6 +52,7 @@ function onUnits(step: number, unit: number | undefined): number {
   return s;
 }
 import { priceToY, priceToYMapper } from '../viewport/ScaleMapping.js';
+import { hLine, vLine } from '../charts/pixelGrid.js';
 
 /** The spacing (px) price labels aim for: how many fit follows the scale's height. */
 export const PRICE_LABEL_SPACING_PX = 56;
@@ -261,8 +262,7 @@ export class PriceAxis {
     ctx.lineWidth = 1;
     ctx.globalAlpha = 0.65;
     ctx.beginPath();
-    ctx.moveTo(axisX + 0.5, chartRect.y);
-    ctx.lineTo(axisX + 0.5, chartRect.y + chartRect.height);
+    vLine(ctx, axisX + 0.5, chartRect.y, chartRect.y + chartRect.height);
     ctx.stroke();
     ctx.globalAlpha = 1;
 
@@ -296,8 +296,7 @@ export class PriceAxis {
     ctx.beginPath();
     const tick = left ? -1 : 1;
     for (const { y } of labels) {
-      ctx.moveTo(axisX + tick, y + 0.5);
-      ctx.lineTo(axisX + 4 * tick, y + 0.5);
+      hLine(ctx, axisX + tick, axisX + 4 * tick, y + 0.5);
     }
     ctx.stroke();
     ctx.globalAlpha = 1;
