@@ -67,10 +67,12 @@ export class SymbolSearchFilters {
       remember(this.kinds, info?.type);
       remember(this.exchanges, info?.exchange);
     }
-    if (this.kinds.size !== kindsBefore) this.renderKinds();
     if (this.exchanges.size !== exchangesBefore) this.renderExchanges();
-    this.kindsEl.hidden = this.kinds.size === 0;
     this.exchangeEl.hidden = this.exchanges.size < MIN_EXCHANGES;
+    // An exchange filter shows beside the kind tabs, "All" at the least: alone, it stood at the end of
+    // an empty row.
+    if (this.kinds.size !== kindsBefore || (!this.exchangeEl.hidden && this.kindsEl.childElementCount === 0)) this.renderKinds();
+    this.kindsEl.hidden = this.kinds.size === 0 && this.exchangeEl.hidden;
     this.el.hidden = this.kindsEl.hidden && this.exchangeEl.hidden;
     this.markMore();
   }

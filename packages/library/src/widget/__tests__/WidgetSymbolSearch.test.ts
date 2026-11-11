@@ -941,6 +941,19 @@ describe('WidgetSymbolSearch comparing', () => {
     expect(rowText()).toEqual(['ETHUSD']);
   });
 
+  // With no kinds to tab between, "All exchanges" stood alone at the end of an empty row.
+  it('heads the row its exchange filter is in with "All", though no kind is known', () => {
+    search.open({ symbols: ['BINANCE:BTCUSDT', 'KRAKEN:ETHUSD'], current: '' });
+    const tabs = [...host.querySelectorAll<HTMLButtonElement>('.tcw-ss-type')].filter((b) => !b.closest('[hidden]'));
+    expect(tabs.map((b) => b.textContent)).toEqual(['All']);
+    expect(tabs[0].getAttribute('aria-pressed')).toBe('true');
+  });
+
+  it('shows no filter row at all with neither kinds nor two exchanges', () => {
+    search.open({ symbols: ['BTCUSDT', 'ETHUSDT'], current: '' });
+    expect(host.querySelector<HTMLElement>('.tcw-ss-filters')?.hidden).toBe(true);
+  });
+
   it('shows a symbol compared by its ticker, as the rows below do', () => {
     compare([{ id: 'a', symbol: 'KBS:VCB', way: 'Ratio' }]);
     const symbol = host.querySelector('.tcw-ss-added-row .tcw-ss-symbol')!;
