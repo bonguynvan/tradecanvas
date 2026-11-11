@@ -2229,8 +2229,10 @@
   color: var(--tcw-text);
 }
 
-/* A panel too narrow for four figures drops the move first: the price and the % still read. */
-@container tcw-watchlist (width < 250px) {
+/* A panel too narrow for four figures drops the move first: the price and the % still read, and the
+   name keeps its room. 300 holds the longest a row's figures run to, a price of 0.00000528 and a
+   move of -0.00000003, beside "DOGE/USDT"; the dock opens narrower, so it starts with three. */
+@container tcw-watchlist (width < 300px) {
   .tcw-watchlist-move,
   .tcw-watchlist-column-move {
     display: none;

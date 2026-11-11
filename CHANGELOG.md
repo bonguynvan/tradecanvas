@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Widget
+
+- **A watchlist's names keep their room** (`@tradecanvas/chart`). A panel under 300 px drops the move, where it dropped it under 250 px. The dock opens at 262, so a watchlist starts as Symbol, Last and Chg%, and the move comes back as it is widened. At 262, a list with a price as small as PEPE's (0.00000528, a move of -0.00000003) ran its figures so wide that the names were cut to "ETH/US…" and "DOGE/…".
+
 ## 1.79.0 (2026-11-11)
 
 ### Widget
