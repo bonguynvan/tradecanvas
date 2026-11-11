@@ -290,6 +290,7 @@ export const ID_MESSAGES: WidgetMessages = {
   'settings.alignAxisLabels': 'Label tidak tumpang tindih',
   'settings.barCountdown': 'Hitung mundur bar',
   'settings.crosshairMode': 'Crosshair',
+  'settings.crosshairCursor': 'Kursor',
   'settings.crosshair.magnet': 'Magnet',
   'settings.crosshair.normal': 'Normal',
   'settings.crosshair.hidden': 'Tersembunyi',
@@ -352,6 +353,14 @@ export const ID_MESSAGES: WidgetMessages = {
   'objects.removeComparison': 'Hapus perbandingan',
 
   'drawing.cursor': 'Kursor',
+
+  'drawing.cursors': 'Kursor',
+
+  'drawing.cursorCross': 'Silang',
+
+  'drawing.cursorDot': 'Titik',
+
+  'drawing.cursorArrow': 'Panah',
   'drawing.tools': 'Alat gambar',
   'drawing.style': 'Gaya gambar & templat',
   'drawing.magnet': 'Magnet',

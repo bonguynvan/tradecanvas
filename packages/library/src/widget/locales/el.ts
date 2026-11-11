@@ -290,6 +290,7 @@ export const EL_MESSAGES: WidgetMessages = {
   'settings.alignAxisLabels': 'Χωρίς επικαλυπτόμενες ετικέτες',
   'settings.barCountdown': 'Αντίστροφη μέτρηση κεριού',
   'settings.crosshairMode': 'Σταυρόνημα',
+  'settings.crosshairCursor': 'Δείκτης',
   'settings.crosshair.magnet': 'Μαγνήτης',
   'settings.crosshair.normal': 'Κανονικό',
   'settings.crosshair.hidden': 'Κρυφό',
@@ -352,6 +353,14 @@ export const EL_MESSAGES: WidgetMessages = {
   'objects.removeComparison': 'Αφαίρεση σύγκρισης',
 
   'drawing.cursor': 'Δρομέας',
+
+  'drawing.cursors': 'Δείκτες',
+
+  'drawing.cursorCross': 'Σταυρός',
+
+  'drawing.cursorDot': 'Τελεία',
+
+  'drawing.cursorArrow': 'Βέλος',
   'drawing.tools': 'Εργαλεία σχεδίασης',
   'drawing.style': 'Στυλ σχεδίου και πρότυπα',
   'drawing.magnet': 'Μαγνήτης',

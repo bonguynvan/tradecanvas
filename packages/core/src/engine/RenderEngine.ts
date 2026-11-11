@@ -826,7 +826,8 @@ export class RenderEngine {
   /** Crosshair lines inside the hovered indicator pane. */
   private renderPanelCrosshair(c: CanvasRenderingContext2D, ctx: RenderContext): void {
     const cursorPos = ctx.crosshairHandler?.getPosition();
-    if (!cursorPos || ctx.panels.length === 0) return;
+    // A hidden crosshair, or the arrow cursor, draws no lines in the panes either.
+    if (!cursorPos || ctx.panels.length === 0 || !ctx.crosshairHandler?.drawsLines()) return;
     const { theme } = ctx;
     for (const panel of ctx.panels) {
       const pr = panel.rect;
@@ -890,7 +891,9 @@ export class RenderEngine {
       const axisX = pr.x + pr.width;
       const precision = panelPrecision(roundStep(min, max, pv.chartRect.height));
 
-      if (cursorPos.x >= pr.x && cursorPos.x <= pr.x + pr.width && cursorPos.y >= pr.y && cursorPos.y <= pr.y + pr.height) {
+      // The pane's price at the pointer, as the main chart's axis has it: not while the crosshair is hidden.
+      const badge = ctx.crosshairHandler?.getMode() !== 'hidden';
+      if (badge && cursorPos.x >= pr.x && cursorPos.x <= pr.x + pr.width && cursorPos.y >= pr.y && cursorPos.y <= pr.y + pr.height) {
         const valText = priceScaleText(yToPrice(cursorPos.y, pv), pv, precision, locale);
         c.font = `bold ${theme.font.sizeSmall}px ${theme.font.family}`;
         const tw = c.measureText(valText).width;

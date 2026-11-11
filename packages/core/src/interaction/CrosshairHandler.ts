@@ -1,4 +1,4 @@
-import type { Point, ViewportState, Theme, DataSeries, TimeFormatter, TimeZoneSetting, ResolvedLineLook } from '@tradecanvas/commons';
+import type { Point, ViewportState, Theme, DataSeries, TimeFormatter, TimeZoneSetting, ResolvedLineLook, CrosshairCursor } from '@tradecanvas/commons';
 import { PRICE_AXIS_WIDTH, autoPricePrecision, timeParts, isDateOnly, barDateParts, barsAreDaily, barTimeUnit, lineDash } from '@tradecanvas/commons';
 import { crosshairLooks } from './crosshairLooks.js';
 import { crispX, crispY } from '../charts/pixelGrid.js';
@@ -51,6 +51,7 @@ export class CrosshairHandler {
   }
   private magnetMode = true;
   private mode: CrosshairMode = 'magnet';
+  private cursor: CrosshairCursor = 'cross';
   /** Fixed decimals for the price pill; `null` follows the price axis. */
   private pricePrecision: number | null = null;
   private locale = 'en-US';
@@ -98,6 +99,20 @@ export class CrosshairHandler {
 
   getMode(): CrosshairMode {
     return this.mode;
+  }
+
+  /** What the pointer looks like: the arrow keeps the axis labels but draws no lines. */
+  setCursor(cursor: CrosshairCursor): void {
+    this.cursor = cursor;
+  }
+
+  getCursor(): CrosshairCursor {
+    return this.cursor;
+  }
+
+  /** Whether the crosshair's lines are drawn: not when it is hidden, nor with the arrow. */
+  drawsLines(): boolean {
+    return this.mode !== 'hidden' && this.cursor !== 'arrow';
   }
 
   setPricePrecision(precision: number | null): void {
@@ -166,8 +181,10 @@ export class CrosshairHandler {
 
   render(ctx: CanvasRenderingContext2D, viewport: ViewportState, theme: Theme): void {
     if (this.mode === 'hidden') return;
+    // The arrow draws no lines; the hovered bar is still reported below, for the legend.
+    const lines = this.cursor !== 'arrow';
     if (!this.position) {
-      if (this.syncedSlot !== null) this.renderSynced(ctx, viewport, theme, this.syncedSlot);
+      if (this.syncedSlot !== null && lines) this.renderSynced(ctx, viewport, theme, this.syncedSlot);
       return;
     }
     const { chartRect } = viewport;
@@ -200,7 +217,7 @@ export class CrosshairHandler {
       this.lastCallbackBarIndex = barIndex;
       this.scheduleCallback();
     }
-    if (!inPlot) return;
+    if (!inPlot || !lines) return;
 
     // Subtle "hovered bar" tint — a translucent column behind the crosshair
     // so users have unambiguous visual feedback about which bar they're

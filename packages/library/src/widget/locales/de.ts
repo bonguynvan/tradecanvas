@@ -290,6 +290,7 @@ export const DE_MESSAGES: WidgetMessages = {
   'settings.alignAxisLabels': 'Keine überlappenden Beschriftungen',
   'settings.barCountdown': 'Countdown der Kerze',
   'settings.crosshairMode': 'Fadenkreuz',
+  'settings.crosshairCursor': 'Zeiger',
   'settings.crosshair.magnet': 'Magnet',
   'settings.crosshair.normal': 'Normal',
   'settings.crosshair.hidden': 'Ausgeblendet',
@@ -352,6 +353,14 @@ export const DE_MESSAGES: WidgetMessages = {
   'objects.removeComparison': 'Vergleich entfernen',
 
   'drawing.cursor': 'Cursor',
+
+  'drawing.cursors': 'Zeiger',
+
+  'drawing.cursorCross': 'Kreuz',
+
+  'drawing.cursorDot': 'Punkt',
+
+  'drawing.cursorArrow': 'Pfeil',
   'drawing.tools': 'Zeichenwerkzeuge',
   'drawing.style': 'Zeichenstil und Vorlagen',
   'drawing.magnet': 'Magnet',

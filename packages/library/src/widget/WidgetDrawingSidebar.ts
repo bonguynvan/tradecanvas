@@ -1,7 +1,7 @@
-import type { DrawingToolType } from '@tradecanvas/commons';
+import type { CrosshairCursor, DrawingToolType } from '@tradecanvas/commons';
 import type { SidebarButtonSpec, SidebarConfig, SidebarCallbacks, WidgetState } from './types.js';
 import { createIcon, createToolIcon } from './icons.js';
-import { EN_TRANSLATOR, fill, type Translator } from './i18n.js';
+import { EN_TRANSLATOR, fill, type MessageKey, type Translator } from './i18n.js';
 import { WIDGET_FEATURES, markPart, tidyDividers, type WidgetFeature } from './widgetFeatures.js';
 import { watchToolFit } from './toolFit.js';
 
@@ -10,6 +10,14 @@ const TOOL_ICON_PX = 16;
 
 /** How long a tool menu stays after the pointer leaves it. */
 const FLYOUT_CLOSE_DELAY_MS = 150;
+/** The cursor button's menu among the menus, which number the drawing groups from 0. */
+const CURSOR_MENU = -2;
+/** The cursor kinds in the menu's order, with their icons and names. */
+const CURSOR_KINDS: readonly { kind: CrosshairCursor; icon: string; label: MessageKey }[] = [
+  { kind: 'cross', icon: 'crosshairCursor', label: 'drawing.cursorCross' },
+  { kind: 'dot', icon: 'dotCursor', label: 'drawing.cursorDot' },
+  { kind: 'arrow', icon: 'cursor', label: 'drawing.cursorArrow' },
+];
 /** Room kept between a tool menu and the bottom of the chart (px). */
 const FLYOUT_MARGIN = 4;
 
@@ -41,6 +49,8 @@ export class WidgetDrawingSidebar {
   private groupIcons: HTMLSpanElement[] = [];
   private groupTools: DrawingToolType[] = [];
   private cursorBtn: HTMLButtonElement | null = null;
+  private cursorWrap: HTMLDivElement | null = null;
+  private cursorKind: CrosshairCursor = 'cross';
   private magnetBtn: HTMLButtonElement | null = null;
   private eraserBtn: HTMLButtonElement | null = null;
   private zoomBtn: HTMLButtonElement | null = null;
@@ -155,17 +165,7 @@ export class WidgetDrawingSidebar {
   private build(): void {
     const { config, callbacks, el } = this;
 
-    // Cursor button
-    this.cursorBtn = document.createElement('button');
-    this.cursorBtn.className = 'tcw-sidebar-btn';
-    this.cursorBtn.title = this.t('drawing.cursor');
-    this.cursorBtn.innerHTML = createIcon('cursor', 14);
-    this.cursorBtn.addEventListener('click', () => {
-      callbacks.onCancelDrawing();
-      this.closeForChart();
-    });
-    markPart(this.cursorBtn, 'sidebar.cursor');
-    el.appendChild(this.cursorBtn);
+    this.buildCursorButton();
 
     el.appendChild(this.divider());
 
@@ -396,6 +396,130 @@ export class WidgetDrawingSidebar {
     }
   }
 
+  /**
+   * The cursor button: back to the cursor from a drawing tool, and, when the
+   * host lets the kind change, a menu of the kinds (the cross, the dot, the
+   * arrow), opened as a drawing group's is.
+   */
+  private buildCursorButton(): void {
+    const { callbacks } = this;
+    const wrap = document.createElement('div');
+    wrap.className = 'tcw-cursor-wrap';
+    const btn = document.createElement('button');
+    btn.className = 'tcw-sidebar-btn';
+    btn.addEventListener('click', () => {
+      callbacks.onCancelDrawing();
+      this.closeForChart();
+    });
+    markPart(wrap, 'sidebar.cursor');
+    wrap.appendChild(btn);
+    this.cursorBtn = btn;
+    this.cursorWrap = wrap;
+    this.showCrosshairCursor(this.cursorKind);
+    if (callbacks.onCrosshairCursor) {
+      btn.setAttribute('aria-haspopup', 'menu');
+      btn.setAttribute('aria-expanded', 'false');
+      btn.addEventListener('keydown', (e) => {
+        if (e.key !== 'ArrowRight' && e.key !== 'ArrowDown') return;
+        e.preventDefault();
+        this.showCursorFlyout();
+        this.focusFlyoutItem(0);
+      });
+      wrap.addEventListener('mouseenter', () => { if (!this.isNarrow()) this.showCursorFlyout(); });
+      wrap.addEventListener('mouseleave', () => { if (!this.isNarrow()) this.scheduleHideFlyout(); });
+    }
+    this.el.appendChild(wrap);
+  }
+
+  /** The cursor kind in use, shown on the cursor button and ticked in its menu. */
+  showCrosshairCursor(kind: CrosshairCursor): void {
+    this.cursorKind = kind;
+    const btn = this.cursorBtn;
+    if (!btn) return;
+    const entry = CURSOR_KINDS.find((k) => k.kind === kind) ?? CURSOR_KINDS[0];
+    btn.innerHTML = createIcon(entry.icon, 14);
+    if (this.callbacks.onCrosshairCursor) {
+      // A button with a menu names the kind it shows; its menu has the rest.
+      btn.removeAttribute('title');
+      btn.setAttribute('aria-label', `${this.t('drawing.cursor')}: ${this.t(entry.label)}`);
+    } else {
+      btn.title = this.t('drawing.cursor');
+    }
+    this.flyoutEl?.querySelectorAll<HTMLElement>('[data-cursor]').forEach((item) => {
+      const on = item.dataset.cursor === kind;
+      item.setAttribute('aria-checked', String(on));
+      item.classList.toggle('tcw-active', on);
+    });
+  }
+
+  private showCursorFlyout(): void {
+    this.cancelHideFlyout();
+    if (this.flyoutEl && this.flyoutIdx === CURSOR_MENU) return;
+    this.hideFlyout();
+    const flyout = document.createElement('div');
+    flyout.className = 'tcw-flyout';
+    flyout.setAttribute('role', 'menu');
+    flyout.setAttribute('aria-label', this.t('drawing.cursors'));
+    flyout.addEventListener('keydown', (e) => this.onFlyoutKey(e, CURSOR_MENU));
+    const heading = document.createElement('div');
+    heading.className = 'tcw-flyout-heading';
+    heading.setAttribute('role', 'presentation');
+    heading.textContent = this.t('drawing.cursors');
+    flyout.appendChild(heading);
+    for (const entry of CURSOR_KINDS) {
+      const row = document.createElement('div');
+      row.className = 'tcw-flyout-row';
+      row.setAttribute('role', 'none');
+      const item = document.createElement('button');
+      item.className = 'tcw-flyout-item';
+      item.setAttribute('role', 'menuitemradio');
+      item.tabIndex = -1;
+      item.dataset.cursor = entry.kind;
+      item.innerHTML = createIcon(entry.icon, TOOL_ICON_PX);
+      const name = document.createElement('span');
+      name.className = 'tcw-flyout-name';
+      name.textContent = this.t(entry.label);
+      item.appendChild(name);
+      item.addEventListener('click', () => {
+        this.hideFlyout();
+        this.callbacks.onCancelDrawing();
+        this.callbacks.onCrosshairCursor?.(entry.kind);
+        this.closeForChart();
+      });
+      row.appendChild(item);
+      flyout.appendChild(row);
+    }
+    this.openFlyout(flyout, CURSOR_MENU);
+    this.showCrosshairCursor(this.cursorKind);
+  }
+
+  /** A menu's button: the cursor button's, or a drawing group's. */
+  private flyoutButton(idx: number): HTMLElement | null {
+    return idx === CURSOR_MENU ? this.cursorBtn : this.groupButtons[idx] ?? null;
+  }
+
+  private flyoutWrap(idx: number): HTMLElement | null {
+    return idx === CURSOR_MENU ? this.cursorWrap : this.groupWraps[idx] ?? null;
+  }
+
+  /** Puts a built menu beside its button, open, and closes it as the pointer or the focus leaves. */
+  private openFlyout(flyout: HTMLDivElement, idx: number): void {
+    // The menu sits beside the sidebar, not in it, so the sidebar can scroll
+    // without cutting it off.
+    flyout.addEventListener('mouseenter', () => this.cancelHideFlyout());
+    flyout.addEventListener('mouseleave', () => this.scheduleHideFlyout());
+    flyout.addEventListener('focusout', (e) => {
+      const to = e.relatedTarget as Node | null;
+      if (!flyout.contains(to) && !this.flyoutWrap(idx)?.contains(to)) this.scheduleHideFlyout();
+    });
+    this.flyoutEl = flyout;
+    this.flyoutIdx = idx;
+    this.host.appendChild(flyout);
+    const button = this.flyoutButton(idx);
+    if (button) this.placeFlyout(flyout, button);
+    button?.setAttribute('aria-expanded', 'true');
+  }
+
   private showFlyout(idx: number): void {
     this.cancelHideFlyout();
     if (this.flyoutEl && this.flyoutIdx === idx) return; // back before it closed: keep it
@@ -488,19 +612,7 @@ export class WidgetDrawingSidebar {
       flyout.appendChild(row);
     }
 
-    // The menu sits beside the sidebar, not in it, so the sidebar can scroll
-    // without cutting it off.
-    flyout.addEventListener('mouseenter', () => this.cancelHideFlyout());
-    flyout.addEventListener('mouseleave', () => this.scheduleHideFlyout());
-    flyout.addEventListener('focusout', (e) => {
-      const to = e.relatedTarget as Node | null;
-      if (!flyout.contains(to) && !this.groupWraps[idx].contains(to)) this.scheduleHideFlyout();
-    });
-    this.flyoutEl = flyout;
-    this.flyoutIdx = idx;
-    this.host.appendChild(flyout);
-    this.placeFlyout(flyout, this.groupButtons[idx]);
-    this.groupButtons[idx].setAttribute('aria-expanded', 'true');
+    this.openFlyout(flyout, idx);
   }
 
   private flyoutItems(): HTMLButtonElement[] {
@@ -526,11 +638,11 @@ export class WidgetDrawingSidebar {
       case 'ArrowLeft':
         e.stopPropagation();
         this.hideFlyout();
-        this.groupButtons[idx]?.focus();
+        this.flyoutButton(idx)?.focus();
         break;
       case 'Tab':
         this.hideFlyout();
-        this.groupButtons[idx]?.focus();
+        this.flyoutButton(idx)?.focus();
         return; // the Tab itself moves on from the button
       default:
         return;
@@ -582,7 +694,7 @@ export class WidgetDrawingSidebar {
       this.flyoutEl.remove();
       this.flyoutEl = null;
     }
-    this.groupButtons[this.flyoutIdx]?.setAttribute('aria-expanded', 'false');
+    this.flyoutButton(this.flyoutIdx)?.setAttribute('aria-expanded', 'false');
     this.flyoutIdx = -1;
   }
 
@@ -618,6 +730,8 @@ export class WidgetDrawingSidebar {
     if (this.flyoutEl) {
       this.flyoutEl.querySelectorAll('.tcw-flyout-item').forEach((item) => {
         const el = item as HTMLElement;
+        // The cursor menu ticks the kind in use instead (`showCrosshairCursor`).
+        if (el.dataset.cursor) return;
         el.classList.toggle('tcw-active', el.dataset.toolValue === state.activeTool);
       });
     }

@@ -573,3 +573,34 @@ describe('ChartWidget settings where the host switched a feature off', () => {
     expect(widget.getSettings()).toMatchObject({ legendVisible: false, volumeVisible: false, barCountdown: false, scaleMode: 'regular' });
   });
 });
+
+describe('ChartWidget cursor kind', () => {
+  it('starts with the cross, or the kind chartOptions give, and puts it on the chart', () => {
+    make();
+    expect(widget.getCrosshairCursor()).toBe('cross');
+    widget.destroy();
+    make({ chartOptions: { crosshair: { mode: 'magnet', cursor: 'dot' } } });
+    expect(widget.getCrosshairCursor()).toBe('dot');
+    expect(widget.getSettings().crosshairCursor).toBe('dot');
+  });
+
+  it('setCrosshairCursor changes the chart’s and the settings’, and leaves an unknown kind alone', () => {
+    make();
+    widget.setCrosshairCursor('arrow');
+    expect(calls('setCrosshairCursor')).toEqual(['arrow']);
+    expect(widget.getSettings().crosshairCursor).toBe('arrow');
+    widget.setCrosshairCursor('laser' as never);
+    expect(widget.getCrosshairCursor()).toBe('arrow');
+  });
+
+  it('is the viewer’s own: kept for the next visit, never in a shared link', () => {
+    make({ persistSettings: true });
+    widget.setCrosshairCursor('dot');
+    expect(stored()!.settings).toEqual({ crosshairCursor: 'dot' });
+    expect(decodeWidgetState(widget.exportState())?.settings ?? {}).not.toHaveProperty('crosshairCursor');
+    widget.destroy();
+    make({ persistSettings: true });
+    expect(widget.getCrosshairCursor()).toBe('dot');
+    expect(calls('setCrosshairCursor')).toEqual(['dot']);
+  });
+});

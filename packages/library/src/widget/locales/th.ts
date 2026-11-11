@@ -290,6 +290,7 @@ export const TH_MESSAGES: WidgetMessages = {
   'settings.alignAxisLabels': 'ป้ายไม่ซ้อนทับกัน',
   'settings.barCountdown': 'นับถอยหลังแท่งเทียน',
   'settings.crosshairMode': 'เป้าเล็ง',
+  'settings.crosshairCursor': 'เคอร์เซอร์',
   'settings.crosshair.magnet': 'แม่เหล็ก',
   'settings.crosshair.normal': 'ปกติ',
   'settings.crosshair.hidden': 'ซ่อน',
@@ -352,6 +353,14 @@ export const TH_MESSAGES: WidgetMessages = {
   'objects.removeComparison': 'ลบการเปรียบเทียบ',
 
   'drawing.cursor': 'เคอร์เซอร์',
+
+  'drawing.cursors': 'เคอร์เซอร์',
+
+  'drawing.cursorCross': 'กากบาท',
+
+  'drawing.cursorDot': 'จุด',
+
+  'drawing.cursorArrow': 'ลูกศร',
   'drawing.tools': 'เครื่องมือวาด',
   'drawing.style': 'รูปแบบการวาดและเทมเพลต',
   'drawing.magnet': 'แม่เหล็ก',

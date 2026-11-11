@@ -1148,7 +1148,8 @@
   flex-shrink: 0;
 }
 
-.tcw-tool-group-wrap {
+.tcw-tool-group-wrap,
+.tcw-cursor-wrap {
   position: relative;
   /* The column's width, its button centred: the pointer on its way to the menu, which opens at
      the column's edge, stays over the group the whole way. */

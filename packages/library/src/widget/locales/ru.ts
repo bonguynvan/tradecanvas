@@ -290,6 +290,7 @@ export const RU_MESSAGES: WidgetMessages = {
   'settings.alignAxisLabels': 'Метки без наложения',
   'settings.barCountdown': 'Обратный отсчёт бара',
   'settings.crosshairMode': 'Перекрестие',
+  'settings.crosshairCursor': 'Курсор',
   'settings.crosshair.magnet': 'Магнит',
   'settings.crosshair.normal': 'Обычное',
   'settings.crosshair.hidden': 'Скрыто',
@@ -352,6 +353,14 @@ export const RU_MESSAGES: WidgetMessages = {
   'objects.removeComparison': 'Удалить сравнение',
 
   'drawing.cursor': 'Курсор',
+
+  'drawing.cursors': 'Курсоры',
+
+  'drawing.cursorCross': 'Перекрестие',
+
+  'drawing.cursorDot': 'Точка',
+
+  'drawing.cursorArrow': 'Стрелка',
   'drawing.tools': 'Инструменты рисования',
   'drawing.style': 'Стиль рисования и шаблоны',
   'drawing.magnet': 'Магнит',

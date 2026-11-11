@@ -367,8 +367,18 @@ export interface GridOptions {
   vLineStyle?: LineStyle;
 }
 
+/**
+ * What the pointer looks like over the chart. `'cross'` draws the crosshair's
+ * lines with a crosshair cursor; `'dot'` draws the same lines with a small dot
+ * for a cursor; `'arrow'` draws no lines, with the arrow cursor, while the
+ * price and the time still follow the pointer on the axes.
+ */
+export type CrosshairCursor = 'cross' | 'dot' | 'arrow';
+
 export interface CrosshairOptions {
   mode: 'normal' | 'magnet' | 'hidden';
+  /** What the pointer looks like over the chart (see `CrosshairCursor`). Default `'cross'`. */
+  cursor?: CrosshairCursor;
   hLine?: CrosshairLineOptions;
   vLine?: CrosshairLineOptions;
 }

@@ -11,6 +11,7 @@ export type { PointerKind, PointerReach } from './pointerReach.js';
 export { TapTracker, DOUBLE_TAP_MS, DOUBLE_TAP_PX } from './TapTracker.js';
 export { CrosshairHandler } from './CrosshairHandler.js';
 export type { CrosshairMode } from './CrosshairHandler.js';
+export { idleCssCursor, isCrosshairCursor, CROSSHAIR_CURSORS } from './cursorKinds.js';
 export { KeyboardHandler } from './KeyboardHandler.js';
 export { CrosshairTooltip, formatTooltipTime } from './CrosshairTooltip.js';
 export type { CrosshairTooltipContext } from './CrosshairTooltip.js';

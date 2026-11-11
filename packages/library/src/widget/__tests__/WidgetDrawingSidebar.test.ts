@@ -286,3 +286,75 @@ describe('drawing sidebar — narrow (a phone)', () => {
     expect(picked).toHaveLength(1);
   });
 });
+
+describe('cursor menu', () => {
+  let kinds: string[];
+  let cancelled: number;
+
+  beforeEach(() => {
+    sidebar.destroy();
+    kinds = [];
+    cancelled = 0;
+    sidebar = new WidgetDrawingSidebar(host, { drawingToolGroups: DRAWING_TOOL_GROUPS }, {
+      onDrawingTool: (tool) => { picked.push(tool); },
+      onCancelDrawing: () => { cancelled++; },
+      onClear: () => {},
+      onCrosshairCursor: (kind) => { kinds.push(kind); },
+    });
+    sidebar.update({ activeTool: null, magnetEnabled: false, stayInDrawing: false } as unknown as WidgetState);
+  });
+
+  const cursorWrap = () => host.querySelector<HTMLElement>('.tcw-cursor-wrap')!;
+  const cursorButton = () => cursorWrap().querySelector<HTMLButtonElement>('.tcw-sidebar-btn')!;
+  const items = () => [...(flyout()?.querySelectorAll<HTMLElement>('.tcw-flyout-item') ?? [])];
+
+  it('lists the cross, the dot and the arrow under a heading, the one in use ticked', () => {
+    sidebar.showCrosshairCursor('dot');
+    enter(cursorWrap());
+    expect(flyout()?.querySelector('.tcw-flyout-heading')?.textContent).toBe('Cursors');
+    expect(items().map((i) => i.dataset.cursor)).toEqual(['cross', 'dot', 'arrow']);
+    expect(items().map((i) => i.getAttribute('aria-checked'))).toEqual(['false', 'true', 'false']);
+    expect(items().every((i) => i.getAttribute('role') === 'menuitemradio')).toBe(true);
+  });
+
+  it('picks a kind from the menu, and leaves the drawing tools for the cursor', () => {
+    enter(cursorWrap());
+    items()[2].click();
+    expect(kinds).toEqual(['arrow']);
+    expect(cancelled).toBe(1);
+    expect(flyout()).toBeNull();
+  });
+
+  it('shows the kind in use on its button', () => {
+    sidebar.showCrosshairCursor('arrow');
+    const arrow = cursorButton().innerHTML;
+    sidebar.showCrosshairCursor('dot');
+    expect(cursorButton().innerHTML).not.toBe(arrow);
+    expect(cursorButton().getAttribute('aria-label')).toBe('Cursor: Dot');
+  });
+
+  it('a click on the button keeps its old work: back to the cursor', () => {
+    cursorButton().click();
+    expect(cancelled).toBe(1);
+    expect(kinds).toEqual([]);
+  });
+
+  it('a host that cannot change the kind gets the plain button, with no menu', () => {
+    sidebar.destroy();
+    sidebar = new WidgetDrawingSidebar(host, { drawingToolGroups: DRAWING_TOOL_GROUPS }, {
+      onDrawingTool: () => {}, onCancelDrawing: () => {}, onClear: () => {},
+    });
+    enter(cursorWrap());
+    expect(flyout()).toBeNull();
+    expect(cursorButton().hasAttribute('aria-haspopup')).toBe(false);
+  });
+
+  it('opens from the keyboard and goes back to its button with Escape', () => {
+    cursorButton().focus();
+    cursorButton().dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+    expect(document.activeElement).toBe(items()[0]);
+    items()[0].dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    expect(flyout()).toBeNull();
+    expect(document.activeElement).toBe(cursorButton());
+  });
+});

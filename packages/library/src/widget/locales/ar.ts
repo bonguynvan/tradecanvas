@@ -297,6 +297,7 @@ export const AR_MESSAGES: WidgetMessages = {
   'settings.alignAxisLabels': 'بدون تداخل التسميات',
   'settings.barCountdown': 'العد التنازلي للشمعة',
   'settings.crosshairMode': 'الخطوط المتقاطعة',
+  'settings.crosshairCursor': 'المؤشر',
   'settings.crosshair.magnet': 'مغناطيس',
   'settings.crosshair.normal': 'عادي',
   'settings.crosshair.hidden': 'مخفي',
@@ -362,6 +363,10 @@ export const AR_MESSAGES: WidgetMessages = {
 
   // Drawing sidebar and style panel
   'drawing.cursor': 'مؤشر الماوس',
+  'drawing.cursors': 'المؤشرات',
+  'drawing.cursorCross': 'تقاطع',
+  'drawing.cursorDot': 'نقطة',
+  'drawing.cursorArrow': 'سهم',
   'drawing.tools': 'أدوات الرسم',
   'drawing.style': 'نمط الرسم والقوالب',
   'drawing.magnet': 'المغناطيس',

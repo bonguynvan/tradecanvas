@@ -58,6 +58,7 @@ export type ChartEventType =
   | 'drawingDoubleClick'
   | 'drawingContextMenu'
   | 'toolModeChange'
+  | 'crosshairCursorChange'
   | 'chartContextMenu'
   | 'priceAxisAdd'
   | 'drawingRemove'
@@ -437,6 +438,8 @@ export interface ChartEventMap {
   drawingContextMenu: { id: string; x: number; y: number };
   /** The eraser or the zoom-area tool turned on or off: the one that changed. */
   toolModeChange: { eraser?: boolean; zoomArea?: boolean };
+  /** The pointer's look over the chart changed (`setCrosshairCursor`). */
+  crosshairCursorChange: { cursor: import('./chart.js').CrosshairCursor };
   /** The active drawing tool changed — picked, finished, or cancelled (`tool: null`). */
   drawingToolChange: { tool: DrawingToolType | null };
   signalMarkerAdd: SignalMarkerAddPayload;

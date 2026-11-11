@@ -73,3 +73,46 @@ describe('Chart magnet modes', () => {
     expect(chart.getDrawingMagnetMode()).toBe('weak');
   });
 });
+
+describe('Chart cursor kinds', () => {
+  /** The CSS cursor over the middle of the plot. */
+  const cursorOverPlot = (): string => {
+    const plot = state().chartRect;
+    host.dispatchEvent(new MouseEvent('mousemove', { clientX: plot.x + plot.width / 2, clientY: plot.y + plot.height / 2, bubbles: true }));
+    const shown = [host, ...host.querySelectorAll<HTMLElement>('*')].find((el) => el.style.cursor);
+    return shown?.style.cursor ?? '';
+  };
+
+  it('starts with the cross', () => {
+    expect(chart.getCrosshairCursor()).toBe('cross');
+    expect(cursorOverPlot()).toBe('crosshair');
+  });
+
+  it('takes the kind from the options', () => {
+    chart.destroy();
+    chart = new Chart(host, { chartType: 'candlestick', crosshair: { mode: 'normal', cursor: 'arrow' } });
+    chart.setData(hourly(300));
+    expect(chart.getCrosshairCursor()).toBe('arrow');
+    expect(cursorOverPlot()).toBe('default');
+  });
+
+  it('shows a dot in the crosshair’s colour, and follows a new crosshair colour', () => {
+    chart.setCrosshairCursor('dot');
+    expect(cursorOverPlot()).toMatch(/^url\("data:image\/svg\+xml,/);
+    chart.applyOverrides({ 'crosshair.vertical.color': '#123456' });
+    expect(decodeURIComponent(cursorOverPlot())).toContain("fill='#123456'");
+  });
+
+  it('says so when the kind changes, and not when it stays', () => {
+    const changes: unknown[] = [];
+    chart.on('crosshairCursorChange', (e) => changes.push(e.payload));
+    chart.setCrosshairCursor('arrow');
+    chart.setCrosshairCursor('arrow');
+    expect(changes).toEqual([{ cursor: 'arrow' }]);
+  });
+
+  it('leaves an unknown kind alone', () => {
+    chart.setCrosshairCursor('laser' as never);
+    expect(chart.getCrosshairCursor()).toBe('cross');
+  });
+});

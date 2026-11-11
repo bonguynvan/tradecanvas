@@ -290,6 +290,7 @@ export const FR_MESSAGES: WidgetMessages = {
   'settings.alignAxisLabels': 'Étiquettes sans chevauchement',
   'settings.barCountdown': 'Compte à rebours de la barre',
   'settings.crosshairMode': 'Réticule',
+  'settings.crosshairCursor': 'Curseur',
   'settings.crosshair.magnet': 'Aimant',
   'settings.crosshair.normal': 'Normal',
   'settings.crosshair.hidden': 'Masqué',
@@ -352,6 +353,14 @@ export const FR_MESSAGES: WidgetMessages = {
   'objects.removeComparison': 'Supprimer la comparaison',
 
   'drawing.cursor': 'Curseur',
+
+  'drawing.cursors': 'Curseurs',
+
+  'drawing.cursorCross': 'Croix',
+
+  'drawing.cursorDot': 'Point',
+
+  'drawing.cursorArrow': 'Flèche',
   'drawing.tools': 'Outils de dessin',
   'drawing.style': 'Style de dessin et modèles',
   'drawing.magnet': 'Aimant',

@@ -71,6 +71,8 @@ export class InteractionManager {
   private onDrawingContextMenu: ((id: string, pos: Point) => void) | null = null;
   /** The zoom-area tool: a drag draws the box to zoom into. */
   private zoomArea = false;
+  /** The CSS cursor over the chart where nothing else asks for one: the cursor kind's (see `idleCssCursor`). */
+  private idleCss = 'crosshair';
   /** The host's menu for a right-click off any drawing; true when it took it. */
   private onChartContextMenu: ((area: ChartArea, pos: Point) => boolean) | null = null;
   /** The "+" by the price axis, and what a click on it does. */
@@ -151,6 +153,13 @@ export class InteractionManager {
   setPanHandler(handler: PanHandler): void { this.panHandler = handler; this.refreshTouchAction(); }
   setZoomHandler(handler: ZoomHandler): void { this.zoomHandler = handler; this.refreshTouchAction(); }
   setCrosshairHandler(handler: CrosshairHandler): void { this.crosshairHandler = handler; }
+
+  /** The CSS cursor over the chart where nothing else asks for one. Shown at once where it was showing. */
+  setIdleCursor(css: string): void {
+    const was = this.idleCss;
+    this.idleCss = css;
+    if (this.element.style.cursor === was) this.element.style.cursor = css;
+  }
 
   /**
    * Enable drag-to-scale on the price + time axis regions. The viewport getter
@@ -388,7 +397,7 @@ export class InteractionManager {
 
     const idleCursor = (): string => {
       if (this.zoomArea) return 'zoom-in';
-      return this.crosshairHandler && this.crosshairHandler.getMode() !== 'hidden' ? 'crosshair' : '';
+      return this.crosshairHandler && this.crosshairHandler.getMode() !== 'hidden' ? this.idleCss : '';
     };
 
     const setCursor = (cursor: string) => {

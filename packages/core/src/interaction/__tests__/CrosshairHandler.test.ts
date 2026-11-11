@@ -229,3 +229,55 @@ describe('CrosshairHandler.formatTime', () => {
     expect(handler.formatTime(bars[2].time, bars)).toBe(`t${bars[2].time}`);
   });
 });
+
+describe('CrosshairHandler cursor kinds', () => {
+  it('starts as the cross, and keeps the kind set', () => {
+    const handler = new CrosshairHandler();
+    expect(handler.getCursor()).toBe('cross');
+    handler.setCursor('dot');
+    expect(handler.getCursor()).toBe('dot');
+  });
+
+  it.each(['cross', 'dot'] as const)('%s: draws both lines', (kind) => {
+    const handler = new CrosshairHandler();
+    handler.setData(bars);
+    handler.setCursor(kind);
+    handler.onPointerMove({ x: 204, y: 150 });
+    const { ctx, lines } = recorder();
+    handler.render(ctx, viewport, theme);
+    expect(lines.length).toBe(2);
+  });
+
+  it('arrow: draws no lines, but the price and time still follow the pointer on the axes', () => {
+    const handler = new CrosshairHandler();
+    handler.setData(bars);
+    handler.setCursor('arrow');
+    handler.onPointerMove({ x: 204, y: 150 });
+    const drawn = recorder();
+    handler.render(drawn.ctx, viewport, theme);
+    expect(drawn.lines).toEqual([]);
+    const labels = recorder();
+    handler.renderAxisLabels(labels.ctx, viewport, theme, bars);
+    expect(labels.texts).toHaveLength(2);
+  });
+
+  it('arrow: a crosshair mirrored from another chart draws no line either', () => {
+    const handler = new CrosshairHandler();
+    handler.setData(bars);
+    handler.setCursor('arrow');
+    handler.setSyncedSlot(12);
+    const { ctx, lines } = recorder();
+    handler.render(ctx, viewport, theme);
+    expect(lines).toEqual([]);
+  });
+
+  it('shows the lines of a kind that draws them', () => {
+    const handler = new CrosshairHandler();
+    expect(handler.drawsLines()).toBe(true);
+    handler.setCursor('arrow');
+    expect(handler.drawsLines()).toBe(false);
+    handler.setCursor('dot');
+    handler.setMode('hidden');
+    expect(handler.drawsLines()).toBe(false);
+  });
+});

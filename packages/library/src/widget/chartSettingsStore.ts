@@ -17,7 +17,7 @@ const STORE_VERSION = 1;
  */
 const NEVER_KEPT: readonly SettingsKey[] = ['logScale', 'autoScale'];
 /** The viewer's own: a layout or a link from someone else leaves them as they are. */
-export const VIEWER_KEYS: ReadonlySet<SettingsKey> = new Set<SettingsKey>(['timezone', 'numberLocale']);
+export const VIEWER_KEYS: ReadonlySet<SettingsKey> = new Set<SettingsKey>(['timezone', 'numberLocale', 'crosshairCursor']);
 /**
  * What `persistSettings` leaves out: besides the flags never kept, a chart
  * type's own settings, which are the chart's state (a layout loaded puts
@@ -66,6 +66,7 @@ export function typesAtDefaults(): ChartTypeOptions {
 /** The choices a setting takes, where it is one of a few words. */
 const CHOICES: Partial<Record<SettingsKey, readonly string[]>> = {
   crosshairMode: ['normal', 'magnet', 'hidden'],
+  crosshairCursor: ['cross', 'dot', 'arrow'],
   scaleMode: ['regular', 'logarithmic', 'percentage', 'indexedTo100'],
   periodLevelsPeriod: ['day', 'week'],
 };

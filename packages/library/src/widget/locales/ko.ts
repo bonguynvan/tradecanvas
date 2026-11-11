@@ -290,6 +290,7 @@ export const KO_MESSAGES: WidgetMessages = {
   'settings.alignAxisLabels': '라벨 겹치지 않기',
   'settings.barCountdown': '봉 카운트다운',
   'settings.crosshairMode': '십자선',
+  'settings.crosshairCursor': '커서',
   'settings.crosshair.magnet': '자석',
   'settings.crosshair.normal': '일반',
   'settings.crosshair.hidden': '숨김',
@@ -352,6 +353,14 @@ export const KO_MESSAGES: WidgetMessages = {
   'objects.removeComparison': '비교 삭제',
 
   'drawing.cursor': '커서',
+
+  'drawing.cursors': '커서',
+
+  'drawing.cursorCross': '십자',
+
+  'drawing.cursorDot': '점',
+
+  'drawing.cursorArrow': '화살표',
   'drawing.tools': '드로잉 도구',
   'drawing.style': '그리기 스타일 및 템플릿',
   'drawing.magnet': '자석',

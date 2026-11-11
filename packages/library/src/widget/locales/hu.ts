@@ -290,6 +290,7 @@ export const HU_MESSAGES: WidgetMessages = {
   'settings.alignAxisLabels': 'Nem átfedő címkék',
   'settings.barCountdown': 'Gyertyazárás visszaszámláló',
   'settings.crosshairMode': 'Szálkereszt',
+  'settings.crosshairCursor': 'Kurzor',
   'settings.crosshair.magnet': 'Mágnes',
   'settings.crosshair.normal': 'Normál',
   'settings.crosshair.hidden': 'Rejtett',
@@ -352,6 +353,14 @@ export const HU_MESSAGES: WidgetMessages = {
   'objects.removeComparison': 'Összehasonlítás eltávolítása',
 
   'drawing.cursor': 'Kurzor',
+
+  'drawing.cursors': 'Kurzorok',
+
+  'drawing.cursorCross': 'Kereszt',
+
+  'drawing.cursorDot': 'Pont',
+
+  'drawing.cursorArrow': 'Nyíl',
   'drawing.tools': 'Rajzeszközök',
   'drawing.style': 'Rajzstílus és sablonok',
   'drawing.magnet': 'Mágnes',

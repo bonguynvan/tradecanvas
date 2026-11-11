@@ -290,6 +290,7 @@ export const SV_MESSAGES: WidgetMessages = {
   'settings.alignAxisLabels': 'Inga överlappande etiketter',
   'settings.barCountdown': 'Nedräkning för stapeln',
   'settings.crosshairMode': 'Hårkors',
+  'settings.crosshairCursor': 'Markör',
   'settings.crosshair.magnet': 'Magnet',
   'settings.crosshair.normal': 'Normal',
   'settings.crosshair.hidden': 'Dolt',
@@ -352,6 +353,14 @@ export const SV_MESSAGES: WidgetMessages = {
   'objects.removeComparison': 'Ta bort jämförelse',
 
   'drawing.cursor': 'Markör',
+
+  'drawing.cursors': 'Markörer',
+
+  'drawing.cursorCross': 'Kors',
+
+  'drawing.cursorDot': 'Punkt',
+
+  'drawing.cursorArrow': 'Pil',
   'drawing.tools': 'Ritverktyg',
   'drawing.style': 'Ritstil och mallar',
   'drawing.magnet': 'Magnet',

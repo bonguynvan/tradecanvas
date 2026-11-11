@@ -290,6 +290,7 @@ export const RO_MESSAGES: WidgetMessages = {
   'settings.alignAxisLabels': 'Etichete fără suprapunere',
   'settings.barCountdown': 'Numărătoare inversă a barei',
   'settings.crosshairMode': 'Reticul',
+  'settings.crosshairCursor': 'Cursor',
   'settings.crosshair.magnet': 'Magnet',
   'settings.crosshair.normal': 'Normal',
   'settings.crosshair.hidden': 'Ascuns',
@@ -352,6 +353,14 @@ export const RO_MESSAGES: WidgetMessages = {
   'objects.removeComparison': 'Eliminare comparație',
 
   'drawing.cursor': 'Cursor',
+
+  'drawing.cursors': 'Cursoare',
+
+  'drawing.cursorCross': 'Cruce',
+
+  'drawing.cursorDot': 'Punct',
+
+  'drawing.cursorArrow': 'Săgeată',
   'drawing.tools': 'Instrumente de desen',
   'drawing.style': 'Stil de desen și șabloane',
   'drawing.magnet': 'Magnet',

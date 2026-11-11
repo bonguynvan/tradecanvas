@@ -1798,7 +1798,8 @@ export class DrawingManager {
    */
   renderHover(ctx: CanvasRenderingContext2D, viewport: ViewportState): void {
     const id = this.hoverDrawing;
-    if (!id || this.selection.has(id) || this.activeTool || this.state === 'creating') return;
+    // A selected drawing shows its own handles, unless the eraser is about to take it.
+    if (!id || (this.selection.has(id) && !this.eraser) || this.activeTool || this.state === 'creating') return;
     const drawing = this.drawings.find((d) => d.id === id);
     if (!drawing || drawing.locked || !this.shown(drawing)) return;
     const plugin = this.registry.get(drawing.type);
@@ -1811,7 +1812,11 @@ export class DrawingManager {
     const none = { cursor: null, handle: null, drawing: null };
     const scope = this.scopeAt(pos, main);
     if (!scope) return none;
-    if (this.eraser) return { ...none, cursor: this.erasableAt(pos, scope) ? 'pointer' : null };
+    if (this.eraser) {
+      // What a click would remove glows, so the eraser never takes the wrong one.
+      const erasable = this.erasableAt(pos, scope);
+      return { ...none, cursor: erasable ? 'pointer' : null, drawing: erasable };
+    }
     if (this.activeTool || this.state === 'creating') return none;
     const tolerance = MOUSE_REACH.handle;
     const viewport = scope.viewport;

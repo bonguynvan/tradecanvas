@@ -299,6 +299,7 @@ export const EN_MESSAGES = {
   'settings.alignAxisLabels': 'No overlapping labels',
   'settings.barCountdown': 'Bar countdown',
   'settings.crosshairMode': 'Crosshair',
+  'settings.crosshairCursor': 'Cursor',
   'settings.crosshair.magnet': 'Magnet',
   'settings.crosshair.normal': 'Normal',
   'settings.crosshair.hidden': 'Hidden',
@@ -364,6 +365,10 @@ export const EN_MESSAGES = {
 
   // Drawing sidebar and style panel
   'drawing.cursor': 'Cursor',
+  'drawing.cursors': 'Cursors',
+  'drawing.cursorCross': 'Cross',
+  'drawing.cursorDot': 'Dot',
+  'drawing.cursorArrow': 'Arrow',
   'drawing.tools': 'Drawing tools',
   'drawing.style': 'Drawing style & templates',
   'drawing.magnet': 'Magnet',

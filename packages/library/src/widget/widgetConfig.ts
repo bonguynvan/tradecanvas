@@ -171,6 +171,7 @@ export const DEFAULT_SETTINGS: ChartSettingsState = {
   invertScale: false,
   leftPriceScale: false,
   crosshairMode: 'magnet',
+  crosshairCursor: 'cross',
   numberLocale: 'en-US',
   timezone: 'local',
   highLowLines: false,

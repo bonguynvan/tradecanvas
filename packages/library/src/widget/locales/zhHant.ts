@@ -290,6 +290,7 @@ export const ZH_HANT_MESSAGES: WidgetMessages = {
   'settings.alignAxisLabels': '標籤不重疊',
   'settings.barCountdown': 'K線倒數計時',
   'settings.crosshairMode': '十字游標',
+  'settings.crosshairCursor': '游標',
   'settings.crosshair.magnet': '吸附',
   'settings.crosshair.normal': '一般',
   'settings.crosshair.hidden': '隱藏',
@@ -352,6 +353,14 @@ export const ZH_HANT_MESSAGES: WidgetMessages = {
   'objects.removeComparison': '移除比較',
 
   'drawing.cursor': '游標',
+
+  'drawing.cursors': '游標',
+
+  'drawing.cursorCross': '十字',
+
+  'drawing.cursorDot': '圓點',
+
+  'drawing.cursorArrow': '箭頭',
   'drawing.tools': '繪圖工具',
   'drawing.style': '繪圖樣式與範本',
   'drawing.magnet': '磁吸',

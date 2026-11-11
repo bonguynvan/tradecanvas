@@ -290,6 +290,7 @@ export const VI_MESSAGES: WidgetMessages = {
   'settings.alignAxisLabels': 'Nhãn không chồng nhau',
   'settings.barCountdown': 'Đếm ngược nến',
   'settings.crosshairMode': 'Con trỏ chữ thập',
+  'settings.crosshairCursor': 'Con trỏ',
   'settings.crosshair.magnet': 'Hút vào giá',
   'settings.crosshair.normal': 'Thường',
   'settings.crosshair.hidden': 'Ẩn',
@@ -352,6 +353,14 @@ export const VI_MESSAGES: WidgetMessages = {
   'objects.removeComparison': 'Bỏ so sánh',
 
   'drawing.cursor': 'Con trỏ',
+
+  'drawing.cursors': 'Con trỏ',
+
+  'drawing.cursorCross': 'Chữ thập',
+
+  'drawing.cursorDot': 'Chấm',
+
+  'drawing.cursorArrow': 'Mũi tên',
   'drawing.tools': 'Công cụ vẽ',
   'drawing.style': 'Kiểu vẽ & mẫu',
   'drawing.magnet': 'Hút vào giá',

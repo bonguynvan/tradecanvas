@@ -297,6 +297,7 @@ export const ET_MESSAGES: WidgetMessages = {
   'settings.alignAxisLabels': 'Sildid ei kattu',
   'settings.barCountdown': 'Aeg küünla sulgumiseni',
   'settings.crosshairMode': 'Sihtrist',
+  'settings.crosshairCursor': 'Kursor',
   'settings.crosshair.magnet': 'Magnet',
   'settings.crosshair.normal': 'Tavaline',
   'settings.crosshair.hidden': 'Peidetud',
@@ -362,6 +363,10 @@ export const ET_MESSAGES: WidgetMessages = {
 
   // Drawing sidebar and style panel
   'drawing.cursor': 'Kursor',
+  'drawing.cursors': 'Kursorid',
+  'drawing.cursorCross': 'Rist',
+  'drawing.cursorDot': 'Punkt',
+  'drawing.cursorArrow': 'Nool',
   'drawing.tools': 'Joonistusvahendid',
   'drawing.style': 'Joonise stiil ja mallid',
   'drawing.magnet': 'Magnet',
