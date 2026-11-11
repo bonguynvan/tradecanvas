@@ -146,6 +146,10 @@ export const SV_MESSAGES: WidgetMessages = {
   'watchlist.remove': 'Ta bort {symbol}',
   'watchlist.empty': 'Inga symboler än. Lägg till en med +.',
   'watchlist.listName': 'Listans namn',
+  'watchlist.columnSymbol': 'Symbol',
+  'watchlist.columnPrice': 'Senast',
+  'watchlist.columnMove': 'Förändr.',
+  'watchlist.columnChange': 'Förändr.%',
 
   // Symbol info
   'symbolInfo.title': 'Symbolinfo',

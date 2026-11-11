@@ -149,6 +149,10 @@ export const ET_MESSAGES: WidgetMessages = {
   'watchlist.remove': 'Eemalda {symbol}',
   'watchlist.empty': 'Sümboleid veel pole. Lisa üks nupuga +.',
   'watchlist.listName': 'Nimekirja nimi',
+  'watchlist.columnSymbol': 'Sümbol',
+  'watchlist.columnPrice': 'Viimane',
+  'watchlist.columnMove': 'Muut.',
+  'watchlist.columnChange': 'Muut.%',
 
   // Symbol info
   'symbolInfo.title': 'Sümboli info',

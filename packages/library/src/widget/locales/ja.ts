@@ -146,6 +146,10 @@ export const JA_MESSAGES: WidgetMessages = {
   'watchlist.remove': '{symbol} を削除',
   'watchlist.empty': 'シンボルはまだありません。+ で追加してください。',
   'watchlist.listName': 'リスト名',
+  'watchlist.columnSymbol': '銘柄',
+  'watchlist.columnPrice': '現在値',
+  'watchlist.columnMove': '増減',
+  'watchlist.columnChange': '騰落率',
 
   // Symbol info
   'symbolInfo.title': 'シンボル情報',

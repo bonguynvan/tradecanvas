@@ -284,7 +284,12 @@ describe('the dialogs’ layout rules', () => {
 describe('a watchlist row’s remove button', () => {
   // Shown on focus from the keyboard (or on hover), it sat over the price and the change.
   it('has a column of its own after the numbers, never over them', () => {
-    expect(rule('.tcw-watchlist-row.tcw-watchlist-removable')).toMatch(/grid-template-columns:\s*1fr auto auto var\(--tcw-watchlist-remove\)/);
+    // The list is one grid, its columns set by the script, with a last one for the button when rows
+    // can be removed; every row is a subgrid of it, so the button keeps that column.
+    expect(rule('.tcw-watchlist-list')).toMatch(/grid-template-columns:\s*var\(--tcw-watchlist-columns/);
+    expect(rule('.tcw-watchlist-row')).toMatch(/grid-template-columns:\s*subgrid/);
+    // An empty list's message spans the grid; placed as a cell it fell into the 2px gutter.
+    expect(rule('.tcw-watchlist-empty')).toMatch(/grid-column:\s*1 \/ -1/);
     const button = rule('.tcw-watchlist-remove');
     expect(button).not.toMatch(/position:\s*absolute/);
     expect(button).toMatch(/width:\s*var\(--tcw-watchlist-remove\)/);

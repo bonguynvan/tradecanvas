@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+### Widget
+
+- **The watchlist reads a line a symbol** (`@tradecanvas/chart`). A row is the ticker, the last price, the move and the % change, in columns under their names, which stay at the top as the list scrolls. A row is about half as tall as before, so a panel shows twice the symbols.
+  - The sparkline beside each price is off; `watchlist: { sparkline: true }` brings it back, in the move's column, so a narrow panel still holds a name and three figures.
+  - A ticker shows without its venue: `HYPERLIQUID:xyz:NVDA` reads NVDA, with the whole symbol on hover. A long name no longer pushes the figures out of a narrow panel. The same ticker on two venues reads the same in one list: keep each venue's symbols in a list of its own.
+
 ## 1.77.0 (2026-11-10)
 
 ### Features

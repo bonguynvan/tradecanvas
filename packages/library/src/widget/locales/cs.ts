@@ -146,6 +146,10 @@ export const CS_MESSAGES: WidgetMessages = {
   'watchlist.remove': 'Odebrat {symbol}',
   'watchlist.empty': 'Zatím žádné symboly. Přidejte je pomocí +.',
   'watchlist.listName': 'Název seznamu',
+  'watchlist.columnSymbol': 'Symbol',
+  'watchlist.columnPrice': 'Poslední',
+  'watchlist.columnMove': 'Změna',
+  'watchlist.columnChange': 'Změna %',
 
   // Symbol info
   'symbolInfo.title': 'Informace o symbolu',

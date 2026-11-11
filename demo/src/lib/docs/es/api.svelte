@@ -938,7 +938,7 @@ const dayStart = timeframeBucketStart(trade.time, '1d', { timeZone: 'Asia/Ho_Chi
 
 <h3>Listas de seguimiento</h3>
 <p>
-  Un panel del dock con listas de símbolos; cada fila lleva el último precio, el % de cambio y un minigráfico. Las
+  Un panel del dock con listas de símbolos; cada símbolo en una línea con el último precio, la variación y el % de cambio bajo los nombres de las columnas (con <code>sparkline: true</code>, un minigráfico en lugar de la variación; el mercado delante del ticker, como <code>HYPERLIQUID:xyz:</code>, se ve al pasar el ratón). Las
   listas se cambian, crean, renombran y borran desde su menú; los símbolos se añaden desde la búsqueda de símbolos
   (+), se quitan y se reordenan arrastrando o con Alt+↑/↓. Las filas toman las cotizaciones del
   <code>subscribeQuotes</code> del adaptador, de una fuente de cotizaciones tuya o de lo que tú envíes.

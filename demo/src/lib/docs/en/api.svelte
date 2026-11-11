@@ -908,7 +908,7 @@ const dayStart = timeframeBucketStart(trade.time, '1d', { timeZone: 'Asia/Ho_Chi
 
 <h3>Watchlists</h3>
 <p>
-  A panel of the dock: lists of symbols, each row with last price, % change and a sparkline. Lists
+  A panel of the dock: lists of symbols, a line each of last price, move and % change under the columns' names (a sparkline in place of the move with <code>sparkline: true</code>; the venue before a ticker, as in <code>HYPERLIQUID:xyz:NVDA</code>, shows on hover). Lists
   are switched, created, renamed and deleted from its menu; symbols are added from the symbol search
   (+), removed, and reordered by dragging or Alt+↑/↓. Rows take quotes from the adapter's
   <code>subscribeQuotes</code>, a quote source of yours, or what you push.

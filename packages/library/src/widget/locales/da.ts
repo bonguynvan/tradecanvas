@@ -149,6 +149,10 @@ export const DA_MESSAGES: WidgetMessages = {
   'watchlist.remove': 'Fjern {symbol}',
   'watchlist.empty': 'Ingen symboler endnu. Tilføj et med +.',
   'watchlist.listName': 'Listenavn',
+  'watchlist.columnSymbol': 'Symbol',
+  'watchlist.columnPrice': 'Seneste',
+  'watchlist.columnMove': 'Ændr.',
+  'watchlist.columnChange': 'Ændr.%',
 
   // Symbol info
   'symbolInfo.title': 'Symbolinfo',

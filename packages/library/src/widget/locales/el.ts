@@ -146,6 +146,10 @@ export const EL_MESSAGES: WidgetMessages = {
   'watchlist.remove': 'Αφαίρεση {symbol}',
   'watchlist.empty': 'Δεν υπάρχουν ακόμη σύμβολα. Προσθέστε ένα με το +.',
   'watchlist.listName': 'Όνομα λίστας',
+  'watchlist.columnSymbol': 'Σύμβολο',
+  'watchlist.columnPrice': 'Τελευταία',
+  'watchlist.columnMove': 'Μεταβ.',
+  'watchlist.columnChange': 'Μεταβ.%',
 
   // Symbol info
   'symbolInfo.title': 'Πληροφορίες συμβόλου',

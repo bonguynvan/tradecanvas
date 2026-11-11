@@ -3,8 +3,9 @@ import { fill } from './i18n.js';
 import { createIcon } from './icons.js';
 
 /**
- * Watchlist sidebar: the shown list's symbols, each with last price, % change
- * and a mini sparkline. A menu switches, creates, renames and deletes lists;
+ * Watchlist sidebar: the shown list's symbols, a line each: the ticker (its
+ * venue left to the tooltip), last price, the move and the % change, under
+ * the columns' names; a mini sparkline when asked for. A menu switches, creates, renames and deletes lists;
  * rows are added, removed and reordered (drag, or Alt+↑/↓). It only renders
  * and reports: the widget keeps the lists (see WatchlistStore).
  *
@@ -50,13 +51,23 @@ export interface WatchlistLabels {
   listName: string;
   /** The close button's name. */
   close?: string;
+  /** The names over the columns; without them the list has no head row. */
+  columns?: { symbol: string; price: string; move: string; change: string };
 }
 
 interface RowRef {
   row: HTMLDivElement;
   priceEl: HTMLSpanElement;
+  /** The move from the reference price, in price. */
+  moveEl: HTMLSpanElement | null;
+  /** The same move, in percent. */
   changeEl: HTMLSpanElement;
-  sparkCanvas: HTMLCanvasElement;
+  sparkCanvas: HTMLCanvasElement | null;
+}
+
+export interface WatchlistViewOptions {
+  /** A small chart of recent prices in each row. Default `false`: the row's figures only. */
+  sparkline?: boolean;
 }
 
 export class WidgetWatchlist {
@@ -65,6 +76,7 @@ export class WidgetWatchlist {
   private nameBtn: HTMLButtonElement;
   private menuEl: HTMLDivElement;
   private listEl: HTMLDivElement;
+  private headEl: HTMLDivElement | null;
   private rowMap = new Map<string, RowRef>();
   private entries = new Map<string, WatchlistEntry>();
   private lists: WatchlistList[] = [];
@@ -80,6 +92,7 @@ export class WidgetWatchlist {
     host: HTMLElement,
     private readonly callbacks: WatchlistCallbacks,
     private readonly labels: WatchlistLabels,
+    private readonly options: WatchlistViewOptions = {},
   ) {
     this.el = document.createElement('div');
     this.el.className = 'tcw-watchlist';
@@ -124,7 +137,16 @@ export class WidgetWatchlist {
     this.listEl = document.createElement('div');
     this.listEl.className = 'tcw-watchlist-list';
     this.listEl.setAttribute('role', 'list');
+    // One grid for the head and every row: between a gutter at each edge, the name, three
+    // figures (the price, the move and the change; with a sparkline, the chart, the price and
+    // the change), and the remove button's room.
+    const columns = [
+      'var(--tcw-watchlist-gutter)', 'minmax(0, 1fr)', 'auto', 'auto', 'auto',
+      ...(callbacks.onRemove ? ['var(--tcw-watchlist-remove)'] : []), 'var(--tcw-watchlist-gutter)',
+    ];
+    this.listEl.style.setProperty('--tcw-watchlist-columns', columns.join(' '));
     this.el.appendChild(this.listEl);
+    this.headEl = this.makeHead();
 
     host.appendChild(this.el);
   }
@@ -194,8 +216,9 @@ export class WidgetWatchlist {
       }
     }
     for (const sym of symbols) if (!this.rowMap.has(sym)) this.makeRow(sym);
-    // In list order; nodes already in place stay.
-    this.listEl.replaceChildren(...symbols.map((sym) => this.rowMap.get(sym)!.row));
+    // In list order, under the head when there are rows to head; nodes already in place stay.
+    const rows = symbols.map((sym) => this.rowMap.get(sym)!.row);
+    this.listEl.replaceChildren(...(this.headEl && rows.length ? [this.headEl] : []), ...rows);
     if (symbols.length === 0) {
       const empty = document.createElement('div');
       empty.className = 'tcw-watchlist-empty';
@@ -203,6 +226,29 @@ export class WidgetWatchlist {
       this.listEl.appendChild(empty);
     }
     if (this.active) this.setActive(this.active);
+  }
+
+  /** The names over the columns, when the labels give them: a row of the list's grid, read by eye only. */
+  private makeHead(): HTMLDivElement | null {
+    const names = this.labels.columns;
+    if (!names) return null;
+    const head = document.createElement('div');
+    head.className = 'tcw-watchlist-columns';
+    // Each row reads its figures out itself; the head is for the eye.
+    head.setAttribute('aria-hidden', 'true');
+    const cell = (text: string, name: string) => {
+      const el = document.createElement('span');
+      el.className = `tcw-watchlist-column-${name}`;
+      el.textContent = text;
+      head.appendChild(el);
+    };
+    cell(names.symbol, 'symbol');
+    if (this.options.sparkline) cell('', 'spark');
+    cell(names.price, 'price');
+    if (!this.options.sparkline) cell(names.move, 'move');
+    cell(names.change, 'change');
+    if (this.callbacks.onRemove) cell('', 'remove');
+    return head;
   }
 
   private makeRow(symbol: string): void {
@@ -216,21 +262,31 @@ export class WidgetWatchlist {
     const label = document.createElement('div');
     label.className = 'tcw-watchlist-symbol';
     label.textContent = formatSymbol(symbol);
+    // The venue the name leaves out ('HYPERLIQUID:xyz:'), on hover.
+    if (symbol.includes(':')) label.title = symbol;
+    row.appendChild(label);
 
-    const spark = document.createElement('canvas');
-    spark.className = 'tcw-watchlist-spark';
-    spark.width = 64;
-    spark.height = 22;
+    let sparkCanvas: HTMLCanvasElement | null = null;
+    if (this.options.sparkline) {
+      sparkCanvas = document.createElement('canvas');
+      sparkCanvas.className = 'tcw-watchlist-spark';
+      sparkCanvas.width = 64;
+      sparkCanvas.height = 22;
+      row.appendChild(sparkCanvas);
+    }
 
-    const right = document.createElement('div');
-    right.className = 'tcw-watchlist-stats';
-    const priceEl = document.createElement('span');
-    priceEl.className = 'tcw-watchlist-price';
-    priceEl.textContent = '—';
-    const changeEl = document.createElement('span');
-    changeEl.className = 'tcw-watchlist-change';
-    right.append(priceEl, changeEl);
-    row.append(label, spark, right);
+    // The figures, each a cell of the list's grid, so a column lines up from row to row.
+    const figure = (name: string, text = '') => {
+      const el = document.createElement('span');
+      el.className = `tcw-watchlist-${name}`;
+      el.textContent = text;
+      row.appendChild(el);
+      return el;
+    };
+    const priceEl = figure('price', '—');
+    // With a sparkline the move gives its column to the chart: a narrow panel holds four figures, not five.
+    const moveEl = this.options.sparkline ? null : figure('move');
+    const changeEl = figure('change');
 
     if (this.callbacks.onRemove) {
       row.classList.add('tcw-watchlist-removable');
@@ -273,7 +329,7 @@ export class WidgetWatchlist {
       this.callbacks.onMove?.(from, order.indexOf(symbol));
     });
 
-    this.rowMap.set(symbol, { row, priceEl, changeEl, sparkCanvas: spark });
+    this.rowMap.set(symbol, { row, priceEl, moveEl, changeEl, sparkCanvas });
     this.renderRow(symbol);
   }
 
@@ -316,14 +372,20 @@ export class WidgetWatchlist {
       const diff = entry.lastPrice - entry.refPrice;
       const pct = (diff / entry.refPrice) * 100;
       const sign = diff >= 0 ? '+' : '-';
+      const tone = diff >= 0 ? 'tcw-up' : 'tcw-down';
       const pctText = Math.abs(pct).toLocaleString(this.locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      if (ref.moveEl) {
+        ref.moveEl.textContent = `${sign}${formatMove(Math.abs(diff), entry.lastPrice, this.locale)}`;
+        ref.moveEl.className = `tcw-watchlist-move ${tone}`;
+      }
       ref.changeEl.textContent = `${sign}${pctText}%`;
-      ref.changeEl.className = `tcw-watchlist-change ${diff >= 0 ? 'tcw-up' : 'tcw-down'}`;
+      ref.changeEl.className = `tcw-watchlist-change ${tone}`;
     } else {
+      if (ref.moveEl) ref.moveEl.textContent = '';
       ref.changeEl.textContent = '';
     }
 
-    if (entry.sparkline && entry.sparkline.length >= 2) {
+    if (ref.sparkCanvas && entry.sparkline && entry.sparkline.length >= 2) {
       drawSparkline(ref.sparkCanvas, entry.sparkline, entry.refPrice ?? entry.sparkline[0]);
     }
   }
@@ -439,14 +501,17 @@ export class WidgetWatchlist {
 }
 
 function formatSymbol(symbol: string): string {
+  // The ticker without its venue ('HYPERLIQUID:xyz:NVDA' is NVDA), which the row's tooltip keeps.
+  // A symbol that ends in ':' has no ticker to show: it shows whole.
+  const ticker = symbol.slice(symbol.lastIndexOf(':') + 1) || symbol;
   // Add a /  separator for typical crypto pair suffixes; leaves stock tickers
   // (AAPL, NVDA) alone.
   for (const quote of ['USDT', 'USD', 'BTC', 'ETH', 'EUR']) {
-    if (symbol.length > quote.length && symbol.endsWith(quote)) {
-      return symbol.slice(0, -quote.length) + '/' + quote;
+    if (ticker.length > quote.length && ticker.endsWith(quote)) {
+      return ticker.slice(0, -quote.length) + '/' + quote;
     }
   }
-  return symbol;
+  return ticker;
 }
 
 function formatPrice(v: number, locale: string | undefined): string {
@@ -459,6 +524,16 @@ function formatPrice(v: number, locale: string | undefined): string {
   // fixed-notation output through Number.toLocaleString for the separator.
   const precise = Number(v.toPrecision(4));
   return precise.toLocaleString(locale, { maximumFractionDigits: 10 });
+}
+
+/** A move in the price's own decimals: 956.12 beside 73,843.88, 0.0000003 beside 0.0000068. */
+function formatMove(move: number, price: number, locale: string | undefined): string {
+  const abs = Math.abs(price);
+  if (abs >= 1000) return move.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  if (abs >= 1) return move.toLocaleString(locale, { minimumFractionDigits: 4, maximumFractionDigits: 4 });
+  // A price under 1 shows four significant figures: the move goes as far down.
+  const decimals = abs > 0 ? Math.min(10, Math.max(0, 3 - Math.floor(Math.log10(abs)))) : 4;
+  return move.toLocaleString(locale, { maximumFractionDigits: decimals });
 }
 
 function drawSparkline(canvas: HTMLCanvasElement, samples: number[], ref: number): void {

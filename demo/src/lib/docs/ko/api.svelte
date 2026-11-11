@@ -859,7 +859,7 @@ const dayStart = timeframeBucketStart(trade.time, '1d', { timeZone: 'Asia/Ho_Chi
 
 <h3>관심 종목</h3>
 <p>
-  도크의 패널 중 하나로, 종목 목록을 담고 각 행에 현재가, % 변화, 스파크라인을 보여 줍니다. 목록은 메뉴에서 전환, 생성,
+  도크의 패널 중 하나로, 종목 목록을 담고 종목마다 한 줄로, 열 이름 아래에 현재가, 변동, % 변화를 보여 줍니다(<code>sparkline: true</code>면 변동 대신 스파크라인을 표시하고, <code>HYPERLIQUID:xyz:</code>처럼 종목 앞의 거래소는 마우스를 올리면 보입니다). 목록은 메뉴에서 전환, 생성,
   이름 바꾸기, 삭제하고, 종목은 종목 검색(+)으로 추가하고 삭제하며 드래그나 Alt+↑/↓로 순서를 바꿉니다. 각 행의
   시세는 어댑터의 <code>subscribeQuotes</code>, 직접 만든 시세 소스, 또는 직접 넣은 값에서 가져옵니다.
 </p>

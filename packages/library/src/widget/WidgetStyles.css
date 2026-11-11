@@ -2079,6 +2079,8 @@
 }
 
 .tcw-watchlist-empty {
+  /* Across the list's grid: on its own it would land in the 2px gutter. */
+  grid-column: 1 / -1;
   padding: 16px 14px;
   color: var(--tcw-text-muted);
   font-size: var(--tcw-font-size-sm);
@@ -2117,28 +2119,71 @@
   opacity: 0.45;
 }
 
+/*
+ * One grid for the head and the rows (each a subgrid of it), so the price,
+ * the move and the change line up in columns from row to row. The columns
+ * come from the script (`--tcw-watchlist-columns`): a sparkline and the
+ * remove button each add one. The edges are columns too, a gutter each: a
+ * subgrid's own padding would push its last cell past the panel.
+ */
 .tcw-watchlist-list {
+  --tcw-watchlist-remove: 20px;
+  /* With the gap beside it, 12px from the panel's edge to the first and last cell. */
+  --tcw-watchlist-gutter: 2px;
   flex: 1;
   overflow-y: auto;
-  padding: 4px 0;
+  padding: 0 0 4px;
+  display: grid;
+  grid-template-columns: var(--tcw-watchlist-columns, var(--tcw-watchlist-gutter) minmax(0, 1fr) auto auto auto var(--tcw-watchlist-gutter));
+  column-gap: 10px;
+  align-content: start;
 }
 
+.tcw-watchlist-columns,
 .tcw-watchlist-row {
-  --tcw-watchlist-remove: 20px;
-  position: relative;
+  grid-column: 1 / -1;
   display: grid;
-  grid-template-columns: 1fr auto auto;
+  grid-template-columns: subgrid;
   align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
+}
+/* The cells start after the leading gutter; the rest follow in order. */
+.tcw-watchlist-columns > :first-child,
+.tcw-watchlist-row > :first-child {
+  grid-column-start: 2;
+}
+
+/* The columns' names: small and quiet, held at the top as the rows scroll. */
+.tcw-watchlist-columns {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  height: 24px;
+  background: var(--tcw-bg-surface);
+  border-bottom: 1px solid var(--tcw-border);
+  font-size: var(--tcw-font-size-xs);
+  color: var(--tcw-text-muted);
+  white-space: nowrap;
+}
+.tcw-watchlist-columns > :not(.tcw-watchlist-column-symbol) {
+  text-align: end;
+}
+
+/* A line a symbol: its figures and nothing else. */
+.tcw-watchlist-row {
+  position: relative;
+  min-height: 28px;
   cursor: pointer;
   transition: background var(--tcw-dur-fast) var(--tcw-ease);
-  border-inline-start: 2px solid transparent;
   outline: none;
 }
 
-.tcw-watchlist-row.tcw-watchlist-removable {
-  grid-template-columns: 1fr auto auto var(--tcw-watchlist-remove);
+/* The mark of the row in use or under the keyboard: a bar at its start, in the leading gutter. */
+.tcw-watchlist-row::before {
+  content: '';
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  width: 2px;
 }
 
 .tcw-watchlist-row:hover {
@@ -2147,15 +2192,21 @@
 
 .tcw-watchlist-row:focus-visible {
   background: var(--tcw-hover-bg);
-  border-inline-start-color: var(--tcw-accent);
 }
 
 .tcw-watchlist-row.tcw-watchlist-active {
   background: var(--tcw-accent-soft);
-  border-inline-start-color: var(--tcw-accent);
+}
+
+.tcw-watchlist-row:focus-visible::before,
+.tcw-watchlist-row.tcw-watchlist-active::before {
+  background: var(--tcw-accent);
 }
 
 .tcw-watchlist-symbol {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
   font-size: var(--tcw-font-size-sm);
   font-weight: var(--tcw-weight-strong);
   color: var(--tcw-text);
@@ -2164,36 +2215,33 @@
 }
 
 .tcw-watchlist-spark {
-  width: 56px;
-  height: 22px;
+  width: 48px;
+  height: 18px;
   align-self: center;
 }
 
-.tcw-watchlist-stats {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 1px;
-  font-variant-numeric: tabular-nums;
+.tcw-watchlist-price,
+.tcw-watchlist-move,
+.tcw-watchlist-change {
+  text-align: end;
+  white-space: nowrap;
   font-family: var(--tcw-font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--tcw-font-size-xs);
+  font-weight: var(--tcw-weight);
+  color: var(--tcw-text-muted);
 }
 
 .tcw-watchlist-price {
-  font-size: var(--tcw-font-size-sm);
   color: var(--tcw-text);
-  font-weight: var(--tcw-weight);
 }
 
-.tcw-watchlist-change {
-  font-size: var(--tcw-font-size-xs);
-  color: var(--tcw-text-muted);
-  font-weight: var(--tcw-weight);
-}
-
+.tcw-watchlist-move.tcw-up,
 .tcw-watchlist-change.tcw-up {
   color: var(--tcw-green);
 }
 
+.tcw-watchlist-move.tcw-down,
 .tcw-watchlist-change.tcw-down {
   color: var(--tcw-red);
 }
@@ -4403,6 +4451,7 @@
 
 /* Numbers keep their sign on the left, and mixed text its own order, in a right-to-left widget too. */
 .tcw-watchlist-price,
+.tcw-watchlist-move,
 .tcw-watchlist-change,
 .tcw-syminfo-price,
 .tcw-syminfo-change {

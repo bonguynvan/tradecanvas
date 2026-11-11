@@ -149,6 +149,10 @@ export const HE_MESSAGES: WidgetMessages = {
   'watchlist.remove': 'הסרת {symbol}',
   'watchlist.empty': 'אין עדיין סימולים. אפשר להוסיף עם +.',
   'watchlist.listName': 'שם הרשימה',
+  'watchlist.columnSymbol': 'סימול',
+  'watchlist.columnPrice': 'אחרון',
+  'watchlist.columnMove': 'שינוי',
+  'watchlist.columnChange': 'שינוי %',
 
   // Symbol info
   'symbolInfo.title': 'פרטי הסימול',

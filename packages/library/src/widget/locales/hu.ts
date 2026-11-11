@@ -146,6 +146,10 @@ export const HU_MESSAGES: WidgetMessages = {
   'watchlist.remove': '{symbol} eltávolítása',
   'watchlist.empty': 'Még nincsenek szimbólumok. Adjon hozzá egyet a + gombbal.',
   'watchlist.listName': 'Lista neve',
+  'watchlist.columnSymbol': 'Szimbólum',
+  'watchlist.columnPrice': 'Utolsó',
+  'watchlist.columnMove': 'Vált.',
+  'watchlist.columnChange': 'Vált.%',
 
   // Symbol info
   'symbolInfo.title': 'Szimbólum adatai',

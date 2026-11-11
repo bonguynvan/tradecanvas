@@ -149,6 +149,10 @@ export const NB_MESSAGES: WidgetMessages = {
   'watchlist.remove': 'Fjern {symbol}',
   'watchlist.empty': 'Ingen symboler ennå. Legg til et med +.',
   'watchlist.listName': 'Listenavn',
+  'watchlist.columnSymbol': 'Symbol',
+  'watchlist.columnPrice': 'Siste',
+  'watchlist.columnMove': 'Endr.',
+  'watchlist.columnChange': 'Endr.%',
 
   // Symbol info
   'symbolInfo.title': 'Symbolinfo',
