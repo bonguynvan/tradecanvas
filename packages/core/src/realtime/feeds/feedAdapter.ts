@@ -74,7 +74,12 @@ export function adapterFromFeed(feed: DataFeed): DataAdapter {
   return adapter;
 }
 
-class FeedAdapter implements DataAdapter {
+/**
+ * The adapter `adapterFromFeed` makes. A stream takes the feed's live bars
+ * through `subscribe`, as the feed sends them, and loads through
+ * `fetchHistory`: the adapter's part is then the requests it aborts.
+ */
+export class FeedAdapter implements DataAdapter {
   readonly name: string;
   readonly supportedTimeframes?: readonly TimeFrame[];
   /** Older bars before `before`; left out for a feed with only the newest (`pagesBack: false`). */
@@ -102,9 +107,17 @@ class FeedAdapter implements DataAdapter {
   }
 
   connect(config: DataAdapterConfig): void {
+    this.subscribe({ symbol: config.symbol, timeframe: config.timeframe });
+  }
+
+  /**
+   * Live bars of `request`, in place of the series subscribed before: sent
+   * as the adapter's events, and to `to` as the feed sends them. `disconnect`
+   * stops them.
+   */
+  subscribe(request: BarsSubscription, to?: FeedSubscriber): void {
     this.stopSubscription();
-    const request: BarsSubscription = { symbol: config.symbol, timeframe: config.timeframe };
-    this.streamed = seriesKey(config.symbol, config.timeframe);
+    this.streamed = seriesKey(request.symbol, request.timeframe);
     let live = true;
     let reported = false;
     let stop: (() => void) | null = null;
@@ -113,17 +126,37 @@ class FeedAdapter implements DataAdapter {
       live = false;
       stop?.();
     };
+    const connection = (state: ConnectionState): void => {
+      this.setState(state);
+      to?.connection(state);
+    };
     // Every call checks `live`: a socket of the last subscription may still send.
     const subscriber: FeedSubscriber = {
-      bar: (bar, closed) => { if (live) this.emit('bar', { bar, closed }); },
-      tick: (tick: RawTick) => { if (live) this.emit('tick', tick); },
+      bar: (bar, closed) => {
+        if (!live) return;
+        this.emit('bar', { bar, closed });
+        to?.bar(bar, closed);
+      },
+      tick: (tick: RawTick) => {
+        if (!live) return;
+        this.emit('tick', tick);
+        to?.tick(tick);
+      },
       connection: (state) => {
         if (!live) return;
         reported = true;
-        this.setState(state);
+        connection(state);
       },
-      symbolInfo: (info: SymbolInfo) => { if (live) this.emit('symbolInfo', info); },
-      error: (message) => { if (live) this.emit('error', { message }); },
+      symbolInfo: (info: SymbolInfo) => {
+        if (!live) return;
+        this.emit('symbolInfo', info);
+        to?.symbolInfo(info);
+      },
+      error: (message) => {
+        if (!live) return;
+        this.emit('error', { message });
+        to?.error(message);
+      },
     };
     const unsubscribe = this.feed.subscribeBars(request, subscriber);
     if (!live) {
@@ -131,7 +164,7 @@ class FeedAdapter implements DataAdapter {
       return;
     }
     stop = unsubscribe;
-    if (!reported) this.setState('connected');
+    if (!reported) connection('connected');
   }
 
   disconnect(): void {

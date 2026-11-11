@@ -2,7 +2,7 @@ import type {
   StreamConfig,
   ConnectionState,
   ConnectionInfo,
-  DataAdapter,
+  FeedSubscriber,
   OHLCBar,
   RawTick,
   AggregatedBar,
@@ -14,9 +14,7 @@ import { Emitter } from './Emitter.js';
 import { TickAggregator } from './TickAggregator.js';
 import { ReconnectManager } from './ReconnectManager.js';
 import { CurrentPriceLine } from './CurrentPriceLine.js';
-import { ResamplingAdapter, withResampling } from './adapters/ResamplingAdapter.js';
-import { withTickBars } from './TickBars.js';
-import { isFeedAdapter, streamAdapterOf } from './feeds/feedAdapter.js';
+import { UNNAMED_SOURCE_ERROR, streamSourceOf, type StreamSource } from './feeds/streamSource.js';
 
 export interface StreamEvents {
   /**
@@ -50,10 +48,14 @@ export interface StreamEvents {
 }
 
 /**
- * StreamManager — orchestrates data flow from adapter to chart.
+ * StreamManager — orchestrates data flow from a feed to the chart.
+ *
+ * It reads its source as a feed (`StreamSource`): it asks for the newest
+ * bars, subscribes to the live ones and hears them as a `FeedSubscriber`.
+ * An adapter is wrapped into one where it comes in (`streamSourceOf`).
  *
  * Responsibilities:
- * 1. Manages adapter lifecycle (connect, disconnect, reconnect)
+ * 1. Manages the source's lifecycle (connect, disconnect, reconnect)
  * 2. Loads historical data on connect
  * 3. Routes incoming data through TickAggregator
  * 4. Maintains current price for the price line
@@ -68,6 +70,11 @@ export interface StreamEvents {
  */
 /** Silence after which a connection the page comes back to is taken for dead (a quiet market still sends a heartbeat or a tick). */
 const RESUME_STALE_MS = 20_000;
+/** Silence after which the heartbeat takes a connection for dead, and how often it looks. */
+const HEARTBEAT_STALE_MS = 60_000;
+const HEARTBEAT_EVERY_MS = 30_000;
+/** Bars of history loaded on a connect when the config names no limit. */
+const DEFAULT_HISTORY_LIMIT = 500;
 const DAY_MS = 86_400_000;
 
 /**
@@ -89,7 +96,8 @@ function onZoneGrid(time: number, tf: TimeFrame, zone: string): boolean {
 
 export class StreamManager extends Emitter<StreamEvents> {
   private config: StreamConfig | null = null;
-  private adapter: DataAdapter | null = null;
+  /** Where the bars come from: a feed, or an adapter as one. */
+  private source: StreamSource | null = null;
   private aggregator: TickAggregator | null = null;
   private reconnector: ReconnectManager;
   readonly priceLine = new CurrentPriceLine();
@@ -101,7 +109,6 @@ export class StreamManager extends Emitter<StreamEvents> {
   private sentPreviousClose: number | null = null;
   /** When the bar `previousClose` is the close of starts, ms: a correction of it moves the close. */
   private previousCloseTime: number | null = null;
-  private unsubscribers: (() => void)[] = [];
   private heartbeatTimer: ReturnType<typeof setInterval> | null = null;
   private lastMessageTime = 0;
   /** Bumped by every connect attempt and by disconnect — see doConnect. */
@@ -110,13 +117,6 @@ export class StreamManager extends Emitter<StreamEvents> {
   private timeZone: string | null = null;
   /** When the history's last bar starts, ms (null: no history yet): bars from ticks follow its grid. */
   private historyEnd: number | null = null;
-  /** The wrapper that builds the timeframes the feed lacks (null: it serves every one): bars from ticks start where its do. */
-  private resampler: ResamplingAdapter | null = null;
-  /**
-   * Whether silence means a dead connection. A feed's doesn't: it says when
-   * its connection drops, and a quiet one (a daily chart, a closed market) is fine.
-   */
-  private watchSilence = true;
 
   constructor() {
     super();
@@ -130,17 +130,11 @@ export class StreamManager extends Emitter<StreamEvents> {
     // Clean up previous connection
     this.disconnect();
 
-    // Timeframes the feed lacks (7m, 90m…) are built from one it has.
-    // Tick timeframes (100T) are built from the feed's trades.
-    const source = streamAdapterOf(config);
-    this.watchSilence = !isFeedAdapter(source);
-    const resampled = withResampling(source);
-    this.resampler = resampled instanceof ResamplingAdapter ? resampled : null;
+    const source = streamSourceOf(config);
     // A fresh load: no bars of the symbol are kept to merge its history with.
-    this.resampler?.renewZone(config.symbol);
-    const adapter = withTickBars(resampled);
-    this.config = { ...DEFAULT_STREAM_CONFIG, ...config, adapter, feed: undefined } as StreamConfig;
-    this.adapter = adapter;
+    source.resampler?.renewZone(config.symbol);
+    this.config = { ...DEFAULT_STREAM_CONFIG, ...config } as StreamConfig;
+    this.source = source;
     this.aggregator = new TickAggregator(config.timeframe);
     this.historyEnd = null;
     this.applyTickZone();
@@ -167,8 +161,8 @@ export class StreamManager extends Emitter<StreamEvents> {
       this.emit('barCorrection', bar);
     });
 
-    // Wire adapter events
-    this.wireAdapter();
+    // What the source sends -> the handlers below
+    source.listen(this.subscriber());
 
     // Start connection
     this.reconnector.start();
@@ -180,19 +174,16 @@ export class StreamManager extends Emitter<StreamEvents> {
     this.reconnector.stop();
     this.stopHeartbeat();
 
-    for (const unsub of this.unsubscribers) unsub();
-    this.unsubscribers = [];
-
-    if (this.adapter) {
-      this.adapter.disconnect();
-      this.adapter = null;
+    if (this.source) {
+      this.source.release();
+      this.source.unsubscribe();
+      this.source = null;
     }
 
     this.aggregator?.reset();
     this.aggregator?.removeAllListeners();
     this.aggregator = null;
     this.config = null;
-    this.resampler = null;
     this.historyEnd = null;
     this.lastPrice = null;
     this.previousClose = null;
@@ -207,14 +198,14 @@ export class StreamManager extends Emitter<StreamEvents> {
    * Reloads history and restarts streaming.
    */
   async switchTo(symbol: string, timeframe: TimeFrame): Promise<void> {
-    if (!this.config || !this.adapter) return;
+    if (!this.config || !this.source) return;
 
     // A deliberate switch isn't a dropped connection. Stop the reconnector
     // around the disconnect so an adapter that reports 'disconnected' (or a
     // retry already pending) can't schedule a doConnect that would later
     // supersede this switch's history request.
     this.reconnector.stop();
-    this.adapter.disconnect();
+    this.source.unsubscribe();
     this.reconnector.start();
     this.aggregator?.reset();
     this.aggregator?.setTimeframe(timeframe);
@@ -224,7 +215,7 @@ export class StreamManager extends Emitter<StreamEvents> {
     this.sentPreviousClose = null;
 
     // Another symbol or timeframe is a new series; the same again is merged with the bars loaded.
-    if (symbol !== this.config.symbol || timeframe !== this.config.timeframe) this.resampler?.renewZone(symbol);
+    if (symbol !== this.config.symbol || timeframe !== this.config.timeframe) this.source.resampler?.renewZone(symbol);
     this.config.symbol = symbol;
     this.config.timeframe = timeframe;
 
@@ -280,7 +271,7 @@ export class StreamManager extends Emitter<StreamEvents> {
     if (!this.aggregator || !config) return;
     const last = this.historyEnd;
     const datedHistory = last !== null && last % DAY_MS === 0;
-    const built = this.resampler?.bucketFor(config.symbol, config.timeframe);
+    const built = this.source?.resampler?.bucketFor(config.symbol, config.timeframe);
     if (built) {
       // Only bars built from dated days are dated: ones from hours start at the zone's midnight.
       const dated = built.dates === true && datedHistory;
@@ -298,23 +289,19 @@ export class StreamManager extends Emitter<StreamEvents> {
   }
 
   private async doConnect(): Promise<void> {
-    if (!this.config || !this.adapter) return;
+    if (!this.config || !this.source) return;
     const seq = ++this.connectSeq;
-    const { symbol, timeframe } = this.config;
+    const series = { symbol: this.config.symbol, timeframe: this.config.timeframe };
 
     this.setState('connecting');
 
     try {
       // 1. Load historical data
-      const history = await this.adapter.fetchHistory(
-        symbol,
-        timeframe,
-        this.config.historyLimit ?? 500,
-      );
+      const history = await this.source.getBars(series, this.config.historyLimit ?? DEFAULT_HISTORY_LIMIT);
       // A newer connect, switchTo or disconnect started while this request
       // was in flight (fast symbol/timeframe switching). Its history would
       // land on top of the newer one, so drop it.
-      if (seq !== this.connectSeq || !this.adapter) return;
+      if (seq !== this.connectSeq || !this.source) return;
 
       const last = history.length > 0 ? history[history.length - 1] : null;
       this.historyEnd = last ? normalizeBarTime(last.time) : null;
@@ -332,7 +319,7 @@ export class StreamManager extends Emitter<StreamEvents> {
       this.emit('snapshot', withForming(history, forming));
 
       // 2. Start streaming
-      this.adapter.connect({ symbol, timeframe });
+      this.source.subscribeBars(series);
 
       this.startHeartbeat();
     } catch (err) {
@@ -359,70 +346,48 @@ export class StreamManager extends Emitter<StreamEvents> {
     });
   }
 
-  private wireAdapter(): void {
-    if (!this.adapter) return;
-    const adapter = this.adapter;
-
-    // Connection state changes
-    const onConnectionChange = (e: any) => {
-      const newState = e.data as ConnectionState;
-      this.lastMessageTime = Date.now();
-
-      if (newState === 'connected') {
-        this.reconnector.onConnected();
-        this.setState('connected');
-      } else if (newState === 'disconnected' || newState === 'error') {
-        this.reconnector.schedule(() => this.doConnect());
-      }
+  /** The stream as its source's subscriber. */
+  private subscriber(): FeedSubscriber {
+    return {
+      connection: (state) => this.onConnection(state),
+      tick: (tick) => this.onTick(tick),
+      bar: (bar, closed) => this.onBar(bar, closed),
+      // A feed written in plain JavaScript may send no message.
+      error: (message) => this.emit('error', { message: message ?? UNNAMED_SOURCE_ERROR }),
+      // What the feed learned about the symbol
+      symbolInfo: (info) => {
+        if (info && typeof info === 'object') this.emit('symbolInfo', info);
+      },
     };
-    adapter.on('connectionChange', onConnectionChange as any);
-    this.unsubscribers.push(() => adapter.off('connectionChange', onConnectionChange as any));
+  }
 
-    // Tick data
-    const onTick = (e: any) => {
-      this.lastMessageTime = Date.now();
-      const tick = e.data as RawTick;
-      this.emit('tick', tick);
-      if (tick.bid !== undefined || tick.ask !== undefined) this.emit('quote', { bid: tick.bid, ask: tick.ask });
+  private onConnection(state: ConnectionState): void {
+    this.lastMessageTime = Date.now();
 
-      if (this.config?.aggregateTicks && this.aggregator) {
-        this.aggregator.processTick(tick);
-      } else {
-        this.updatePrice(tick.price);
-      }
-    };
-    adapter.on('tick', onTick as any);
-    this.unsubscribers.push(() => adapter.off('tick', onTick as any));
-
-    // Pre-formed bar data (most adapters provide this)
-    const onBar = (e: any) => {
-      this.lastMessageTime = Date.now();
-      const { bar, closed } = e.data as { bar: OHLCBar; closed: boolean };
-
-      if (this.aggregator) {
-        this.aggregator.processBar(bar, closed);
-      }
-    };
-    adapter.on('bar', onBar as any);
-    this.unsubscribers.push(() => adapter.off('bar', onBar as any));
-
-    // Error
-    const onError = (e: any) => {
-      this.emit('error', { message: e.data?.message ?? 'Adapter error' });
-    };
-    adapter.on('error', onError as any);
-    this.unsubscribers.push(() => adapter.off('error', onError as any));
-
-    // What the feed learned about the symbol
-    const onSymbolInfo = (e: any) => {
-      if (e?.data && typeof e.data === 'object') this.emit('symbolInfo', e.data as SymbolInfo);
-    };
-    try {
-      adapter.on('symbolInfo', onSymbolInfo as any);
-      this.unsubscribers.push(() => adapter.off('symbolInfo', onSymbolInfo as any));
-    } catch {
-      // An adapter with a fixed list of events: it sends none of this one either.
+    if (state === 'connected') {
+      this.reconnector.onConnected();
+      this.setState('connected');
+    } else if (state === 'disconnected' || state === 'error') {
+      this.reconnector.schedule(() => this.doConnect());
     }
+  }
+
+  private onTick(tick: RawTick): void {
+    this.lastMessageTime = Date.now();
+    this.emit('tick', tick);
+    if (tick.bid !== undefined || tick.ask !== undefined) this.emit('quote', { bid: tick.bid, ask: tick.ask });
+
+    if (this.config?.aggregateTicks && this.aggregator) {
+      this.aggregator.processTick(tick);
+    } else {
+      this.updatePrice(tick.price);
+    }
+  }
+
+  /** A bar the source formed itself (most do). */
+  private onBar(bar: OHLCBar, closed: boolean): void {
+    this.lastMessageTime = Date.now();
+    this.aggregator?.processBar(bar, closed);
   }
 
   /** The close the price's change is measured from: `bar`'s. */
@@ -485,14 +450,14 @@ export class StreamManager extends Emitter<StreamEvents> {
    * round. A connect under way (a symbol switch) is left alone.
    */
   wake(reason: 'visible' | 'online'): void {
-    if (!this.adapter || !this.config) return;
+    if (!this.source || !this.config) return;
     if (this.state === 'connecting' || this.state === 'disconnected') return;
     if (this.state === 'connected' && reason === 'visible'
-        && (!this.watchSilence || Date.now() - this.lastMessageTime <= RESUME_STALE_MS)) return;
+        && (!this.source.watchSilence || Date.now() - this.lastMessageTime <= RESUME_STALE_MS)) return;
     // As switchTo: the reconnector stopped around the disconnect, so the
     // adapter's 'disconnected' doesn't queue a retry behind this connect.
     this.reconnector.stop();
-    this.adapter.disconnect();
+    this.source.unsubscribe();
     this.reconnector.start();
     void this.doConnect();
   }
@@ -500,13 +465,13 @@ export class StreamManager extends Emitter<StreamEvents> {
   private startHeartbeat(): void {
     this.stopHeartbeat();
     this.heartbeatTimer = setInterval(() => {
-      const stale = this.watchSilence && Date.now() - this.lastMessageTime > 60000;
+      const stale = this.source?.watchSilence === true && Date.now() - this.lastMessageTime > HEARTBEAT_STALE_MS;
       if (stale && this.state === 'connected') {
         this.emit('error', { message: 'Heartbeat timeout', code: 'HEARTBEAT_TIMEOUT' });
-        this.adapter?.disconnect();
+        this.source?.unsubscribe();
         this.reconnector.schedule(() => this.doConnect());
       }
-    }, 30000);
+    }, HEARTBEAT_EVERY_MS);
   }
 
   private stopHeartbeat(): void {
