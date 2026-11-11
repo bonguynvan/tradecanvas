@@ -1,5 +1,13 @@
 # @tradecanvas/chart
 
+## 1.79.2
+
+### Patch Changes
+
+- ef7b429: The symbol search's exchange filter shows beside an "All" kind tab even when no kind is known: with plain symbols that name their venues (`BINANCE:BTCUSDT`, `KRAKEN:ETHUSD`), "All exchanges" stood alone at the end of an empty row.
+  - @tradecanvas/commons@1.79.2
+  - @tradecanvas/core@1.79.2
+
 ## 1.79.1
 
 ### Patch Changes
