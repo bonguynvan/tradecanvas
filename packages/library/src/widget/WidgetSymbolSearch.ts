@@ -84,6 +84,17 @@ type Mode = { kind: 'search'; start: SymbolSearchStart } | { kind: 'compare'; st
 
 let nextSearchId = 1;
 
+/** A row's exchange: the one its feed names, else the venue before its ticker ("BINANCE:" is BINANCE). */
+function exchangeOf(row: Row): string {
+  return row.info?.exchange?.trim() || venueName(row.symbol);
+}
+
+/** What the kind and exchange filters read of a row: its exchange as its column shows it. */
+function filterInfo(row: Row): SymbolInfo | undefined {
+  const exchange = exchangeOf(row);
+  return exchange ? { ...(row.info ?? { symbol: row.symbol }), exchange } : row.info;
+}
+
 /**
  * The symbol search, and the same dialog for adding a symbol to compare.
  *
@@ -483,7 +494,7 @@ export class WidgetSymbolSearch {
    */
   private afterResults(atCurrent: boolean): void {
     const listable = this.listableRows();
-    this.filters?.see(listable.map((r) => r.info));
+    this.filters?.see(listable.map(filterInfo));
     this.shown = this.visibleRows(listable);
     const current = atCurrent ? this.shown.findIndex((r) => r.symbol === this.mode?.start.current) : -1;
     // The chart's symbol past the rows listed is not there to start on.
@@ -509,7 +520,7 @@ export class WidgetSymbolSearch {
    */
   private visibleRows(listable: readonly Row[]): Row[] {
     const filters = this.filters;
-    return filters ? listable.filter((r) => filters.passes(r.info, this.rowsGiven)) : [...listable];
+    return filters ? listable.filter((r) => filters.passes(filterInfo(r), this.rowsGiven)) : [...listable];
   }
 
   // --- Drawing ---
@@ -595,7 +606,7 @@ export class WidgetSymbolSearch {
     // Every row has the same cells, empty where nothing was said, so the columns line up.
     const kind = this.tag('tcw-ss-kind', row.info?.type?.trim() ?? '');
     // The exchange the feed names, else the venue before the ticker, which the symbol cell leaves out.
-    const exchange = this.tag('tcw-ss-exchange', row.info?.exchange?.trim() || venueName(row.symbol));
+    const exchange = this.tag('tcw-ss-exchange', exchangeOf(row));
     kind.dir = exchange.dir = 'auto';
     el.append(createSymbolBadge(row.symbol, row.info), createSymbolCell(row.symbol, query), this.descriptionCell(row), kind, exchange);
     if (isCurrent || onChart) {

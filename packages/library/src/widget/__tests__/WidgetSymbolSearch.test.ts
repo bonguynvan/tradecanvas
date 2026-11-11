@@ -929,6 +929,18 @@ describe('WidgetSymbolSearch comparing', () => {
     expect(host.querySelectorAll('.tcw-ss-added-row')).toHaveLength(0);
   });
 
+  // The exchange column showed BINANCE and KRAKEN from the venues while the filter, reading only
+  // the feed's words, offered no exchange to pick.
+  it('filters by the venue it shows in the exchange column, when a feed names none', () => {
+    search.open({ symbols: ['BINANCE:BTCUSDT', 'KRAKEN:ETHUSD', 'BINANCE:SOLUSDT'], current: '' });
+    const select = host.querySelector<HTMLSelectElement>('select.tcw-ss-exchange-filter')!;
+    expect(select.hidden).toBe(false);
+    const kraken = [...select.options].find((o) => o.textContent === 'KRAKEN')!;
+    select.value = kraken.value;
+    select.dispatchEvent(new Event('change'));
+    expect(rowText()).toEqual(['ETHUSD']);
+  });
+
   it('shows a symbol compared by its ticker, as the rows below do', () => {
     compare([{ id: 'a', symbol: 'KBS:VCB', way: 'Ratio' }]);
     const symbol = host.querySelector('.tcw-ss-added-row .tcw-ss-symbol')!;

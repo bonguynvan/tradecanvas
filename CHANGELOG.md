@@ -5,7 +5,7 @@
 ### Widget
 
 - **A symbol shows as its ticker** (`@tradecanvas/chart`, `@tradecanvas/core`). The venue before a colon no longer shows: `HYPERLIQUID:xyz:NVDA` reads NVDA and `BINANCE:BTCUSDT` reads BTCUSDT. This holds on the toolbar, in the legend (`NVDA · 1h · Hyperliquid xyz`), in the watermark, in the symbol search and in the info panel.
-  - The exchange names where a symbol trades. A search row whose feed names no exchange shows the venue in the exchange column.
+  - The exchange names where a symbol trades. A search row whose feed names no exchange shows the venue in the exchange column, and the exchange filter offers it.
   - The whole symbol is in each tooltip, and the toolbar button's label keeps it for a screen reader.
   - A long ticker on a phone is cut short only when nothing else is left to give way.
 - **A shorter watchlist** (`@tradecanvas/chart`). A row is 24 px and its head 20, so a panel shows more symbols. A panel narrower than 250 px drops the move, so the price and the % still read.
