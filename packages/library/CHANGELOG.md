@@ -1,5 +1,16 @@
 # @tradecanvas/chart
 
+## 1.83.1
+
+### Patch Changes
+
+- 956525f: The symbol search's kinds and exchange filter (and the compare dialog's row under its search) stand off the search field's rule instead of touching it.
+
+  A watchlist row's logo stays beside its ticker on a page whose reset makes images blocks.
+
+  - @tradecanvas/commons@1.83.1
+  - @tradecanvas/core@1.83.1
+
 ## 1.83.0
 
 ### Minor Changes
