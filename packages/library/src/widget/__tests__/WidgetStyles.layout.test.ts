@@ -270,7 +270,9 @@ describe('a watchlist row’s remove button', () => {
     expect(rule('.tcw-watchlist-row')).not.toMatch(/padding:\s*\d+px \d/);
     expect(css).toMatch(/\.tcw-watchlist-row \{[^}]*min-height:\s*24px/);
     expect(rule('.tcw-watchlist')).toMatch(/container:\s*tcw-watchlist \/ inline-size/);
-    expect(css).toMatch(/@container tcw-watchlist \(width < 250px\) \{\s*\.tcw-watchlist-move,\s*\.tcw-watchlist-column-move \{\s*display:\s*none/);
+    // Under 300: at the dock's 262, "PEPE/USDT" at 0.00000528, its move -0.00000003, left the names
+    // "ETH/US…" and "DOGE/…".
+    expect(css).toMatch(/@container tcw-watchlist \(width < 300px\) \{\s*\.tcw-watchlist-move,\s*\.tcw-watchlist-column-move \{\s*display:\s*none/);
     const button = rule('.tcw-watchlist-remove');
     expect(button).not.toMatch(/position:\s*absolute/);
     expect(button).toMatch(/width:\s*var\(--tcw-watchlist-remove\)/);
