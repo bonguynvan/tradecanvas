@@ -264,6 +264,11 @@ export class InteractionManager {
   }
 
   /** The "+" by the price axis: a click on it (not while placing something) calls `onClick`. */
+  /** What of a drawing under the "+" comes before it: the selected one's handle, and anything the eraser is over. */
+  private takesPressFromAddButton(cursor: 'move' | 'pointer' | null): boolean {
+    return cursor === 'move' || (cursor !== null && !!this.drawingManager?.isEraser());
+  }
+
   setPriceAxisAddButton(button: PriceAxisAddButton, onClick: (pos: Point) => void): void {
     this.priceAxisAdd = { button, onClick };
   }
@@ -423,8 +428,15 @@ export class InteractionManager {
       // The zoom tool keeps its cursor over drawings too.
       if (this.zoomArea) return 'zoom-in';
       const drawingCursor = vp ? this.drawingManager?.hoverCursorAt(pos, vp) : null;
+      // The "+" is drawn over the drawings, so it is what a click there reaches: only the
+      // selected drawing's handle, drawn over it in turn, comes first.
+      // The eraser keeps what it is over, there as anywhere.
+      if (this.takesPressFromAddButton(drawingCursor ?? null)) return drawingCursor ?? idleCursor();
+      if (vp && this.priceAxisAdd?.button.hit(pos, vp)) {
+        this.drawingManager?.clearHover();
+        return 'pointer';
+      }
       if (drawingCursor) return drawingCursor;
-      if (vp && this.priceAxisAdd?.button.hit(pos, vp)) return 'pointer';
       return idleCursor();
     };
 
@@ -535,14 +547,17 @@ export class InteractionManager {
       }
 
       // The "+" by the price axis offers what to do at that price, unless a
-      // line, an alert or a drawing is under the pointer (as the cursor says).
+      // line, an alert or a drawing's handle is under the pointer (as the cursor
+      // says). A drawing's body is not: the "+" is drawn over it, and a zone
+      // that reaches the axis would leave no way to press it.
       if (
         this.priceAxisAdd && vp && !placing && this.priceAxisAdd.button.hit(pos, vp)
         && !this.alertDragHandler?.isOverAlert(pos)
         && !this.tradingManager?.isOverButton(pos)
         && !this.tradingManager?.isOverDraggableLine(pos, vp)
-        && !this.drawingManager?.hoverCursorAt(pos, vp)
+        && !this.takesPressFromAddButton(this.drawingManager?.hoverCursorAt(pos, vp) ?? null)
       ) {
+        this.drawingManager?.clearHover();
         this.priceAxisAdd.onClick(pos);
         return 'menu';
       }
