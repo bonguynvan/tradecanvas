@@ -211,6 +211,14 @@ function mix(fg: string, bg: string, alpha: number): string {
   return `#${[1, 3, 5].map((i) => Math.round(channel(fg, i) * a + channel(bg, i) * (1 - a)).toString(16).padStart(2, '0')).join('')}`;
 }
 
+describe('watchlist logo', () => {
+  // A page's reset (`img { display: block }`) put the logo on a line of its own, over its ticker.
+  it('stays inline before the ticker whatever the page says of images', () => {
+    const rule = css.match(/\.tcw-watchlist-symbol \.tcw-watchlist-logo\s*\{([^}]*)\}/)?.[1] ?? '';
+    expect(rule).toMatch(/display:\s*inline-block/);
+  });
+});
+
 describe('loading overlay styles', () => {
   const reduced = css.slice(css.indexOf('@media (prefers-reduced-motion: reduce)'));
   const block = reduced.slice(0, reduced.indexOf('\n}\n') + 2);

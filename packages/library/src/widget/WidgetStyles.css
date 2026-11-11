@@ -2181,8 +2181,10 @@
   padding-inline-start: calc(1.25em + var(--tcw-space-2));
 }
 
-/* A symbol's logo before its ticker, as tall as the ticker's capitals, cornered as the look's tags. */
+/* A symbol's logo before its ticker, as tall as the ticker's capitals, cornered as the look's tags.
+   Inline whatever the page's own reset says of images (`img { display: block }` put it on a line of its own). */
 .tcw-watchlist-symbol .tcw-watchlist-logo {
+  display: inline-block;
   width: 1.25em;
   height: 1.25em;
   margin-inline-end: var(--tcw-space-2);

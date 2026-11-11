@@ -4,6 +4,7 @@
 
 ### Widget
 
+- **A watchlist logo stays beside its ticker on any page** (`@tradecanvas/chart`). A page whose reset makes images blocks (`img { display: block }`) put each row's logo on a line of its own, over the ticker, doubling the row's height. The logo is now inline whatever the page says.
 - **The symbol search's filters stand off the search field** (`@tradecanvas/chart`). The row of kinds and the exchange filter sat right on the rule under the search field, "All exchanges" border to border with it. The row under the field (in the compare dialog, the way to compare) now keeps the same space from it as from the list.
 
 ## 1.83.0 (2026-11-11)
