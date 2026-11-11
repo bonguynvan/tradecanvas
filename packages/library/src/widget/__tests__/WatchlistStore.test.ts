@@ -56,7 +56,7 @@ describe('WatchlistStore', () => {
   it('ignores names and symbols it can’t use', () => {
     const store = new WatchlistStore({ symbols: ['A'] });
     expect(store.add('')).toBe(false);
-    expect(store.add('x'.repeat(65))).toBe(false);
+    expect(store.add('x'.repeat(161))).toBe(false);
     const before = store.getLists();
     store.rename('default', '   ');
     store.create('');

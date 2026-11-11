@@ -9,8 +9,11 @@ describe('cleanSymbol', () => {
     expect(cleanSymbol('   ')).toBeNull();
     expect(cleanSymbol(42)).toBeNull();
     expect(cleanSymbol({ symbol: 'VNM' })).toBeNull();
-    expect(cleanSymbol('X'.repeat(64))).toBe('X'.repeat(64));
-    expect(cleanSymbol('X'.repeat(65))).toBeNull();
+    // A DEX pool's symbol names its network, its address (a Uniswap v4 pool's is 66 characters) and its pair.
+    const pool = 'DEX:eth:0xe500210c7ea6bfd9f69dce044b09ef384ec2b34832f132baec3b418208e3a657:USDC/WETH';
+    expect(cleanSymbol(pool)).toBe(pool);
+    expect(cleanSymbol('X'.repeat(160))).toBe('X'.repeat(160));
+    expect(cleanSymbol('X'.repeat(161))).toBeNull();
   });
 });
 
