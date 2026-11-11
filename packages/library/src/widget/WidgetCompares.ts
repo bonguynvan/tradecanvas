@@ -1,4 +1,5 @@
 import type { DataAdapter, OHLCBar, TimeFrame } from '@tradecanvas/commons';
+import { tickerOf } from '@tradecanvas/commons';
 import { timeframeLabel } from './widgetTimeframes.js';
 import { barsBefore, comparedEntries, compareWayOptions, isCompareWay, withOlderBars, type CompareWay, type PercentCompare } from './widgetCompare.js';
 import { withResampling } from '@tradecanvas/core';
@@ -137,13 +138,14 @@ export class WidgetCompares {
       // Each line is its symbol's change from the first bar on screen, so
       // symbols of any price (BTC beside a $2 coin) read on one percent scale.
       if (this.compares.length === 0) this.host.chart.setCompareMode('percent');
-      this.host.chart.addCompareSymbol(id, symbol, bars, color);
+      // The line is named by its ticker, as the toolbar names a symbol.
+      this.host.chart.addCompareSymbol(id, tickerOf(symbol), bars, color);
       this.compares = [...this.compares, { id, symbol, color, bars, timeframe }];
       if (this.compares.length === 1) this.holdCompareScale(true);
       this.host.scheduleLegend();
       this.host.refreshObjects();
       this.refreshCompareDialog();
-      this.host.say(fill(this.host.t('toast.comparing'), { symbol }));
+      this.host.say(fill(this.host.t('toast.comparing'), { symbol: tickerOf(symbol) }));
     } finally {
       this.comparesLoading.delete(symbol);
     }
@@ -189,7 +191,7 @@ export class WidgetCompares {
       if (timeframe !== this.host.state.timeframe) continue;
       if (bars && bars.length > 0) return bars;
       // An empty answer is no failure: the feed has no bars of it at this interval, and another may have some.
-      if (failure === null) this.host.say(fill(this.host.t('toast.compareNoBars'), { symbol, interval: timeframeLabel(timeframe) }), 'error');
+      if (failure === null) this.host.say(fill(this.host.t('toast.compareNoBars'), { symbol: tickerOf(symbol), interval: timeframeLabel(timeframe) }), 'error');
       else this.sayCompareFailed(symbol, failure);
       return null;
     }
@@ -197,7 +199,7 @@ export class WidgetCompares {
 
   /** The other symbol's bars didn't come: the adapter's reason, or that they failed. */
   private sayCompareFailed(symbol: string, err?: unknown): void {
-    this.host.say(`${symbol}: ${err instanceof Error ? err.message : this.host.t('toast.loadFailed')}`, 'error');
+    this.host.say(`${tickerOf(symbol)}: ${err instanceof Error ? err.message : this.host.t('toast.loadFailed')}`, 'error');
   }
 
   /** Take a compare off, an overlay or an indicator, as the compare dialog and Objects do. */

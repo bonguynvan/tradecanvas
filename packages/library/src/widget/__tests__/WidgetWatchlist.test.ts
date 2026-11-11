@@ -217,9 +217,10 @@ describe('WidgetWatchlist rows, one line of figures', () => {
   });
 
   it('names a row by its ticker, the venue before it in its tooltip', () => {
-    wl.setLists([{ id: 'v', name: 'Venues', symbols: ['HYPERLIQUID:xyz:NVDA', 'ECB:EURUSD', 'BINANCE:BTCUSDT', 'ODD:'] }], 'v');
+    wl.setLists([{ id: 'v', name: 'Venues', symbols: ['HYPERLIQUID:xyz:NVDA', 'ECB:EURUSD', 'BINANCE:BTCUSDT', 'ODD:', 'DEX:eth:0x88e6:WBTC/WETH', 'DEX:eth:0x11b8:WETH/USDT'] }], 'v');
     // A symbol ending in ':' has no ticker after it, and shows whole.
-    expect(rows().map((r) => cell(r, 'symbol'))).toEqual(['NVDA', 'EUR/USD', 'BTC/USDT', 'ODD:']);
+    // A pair already written with its slash (a DEX pool) is not split again: WBTC/W/ETH, WETH//USDT.
+    expect(rows().map((r) => cell(r, 'symbol'))).toEqual(['NVDA', 'EUR/USD', 'BTC/USDT', 'ODD:', 'WBTC/WETH', 'WETH/USDT']);
     expect(rows()[0].querySelector('.tcw-watchlist-symbol')!.getAttribute('title')).toBe('HYPERLIQUID:xyz:NVDA');
     // A row keeps its whole symbol: it is what a pick loads.
     rows()[0].click();

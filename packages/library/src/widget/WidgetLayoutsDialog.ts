@@ -1,3 +1,4 @@
+import { tickerOf } from '@tradecanvas/commons';
 import { createIcon } from './icons.js';
 import { EN_TRANSLATOR, fill, type Translator } from './i18n.js';
 import type { SavedLayoutSummary } from '../state/layoutStorage.js';
@@ -165,7 +166,8 @@ export class WidgetLayoutsDialog {
     const meta = document.createElement('span');
     meta.className = 'tcw-layouts-meta';
     meta.textContent = [
-      [layout.symbol, layout.timeframe].filter(Boolean).join(' · '),
+      // The symbol by its ticker, as the toolbar shows it; the search below still finds the whole.
+      [layout.symbol ? tickerOf(layout.symbol) : '', layout.timeframe].filter(Boolean).join(' · '),
       fill(this.t('layouts.updated'), { time: this.callbacks.formatTime(layout.updatedAt) }),
     ].filter(Boolean).join(' — ');
     open.append(name, meta);

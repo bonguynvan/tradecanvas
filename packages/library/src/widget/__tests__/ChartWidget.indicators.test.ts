@@ -535,6 +535,13 @@ describe('percent comparisons in the on-chart legend', () => {
 });
 
 describe('indicatorChipLabel', () => {
+  // 'Compare HYPERLIQUID:xyz:NVDA' filled the legend and the alert sources: the ticker, as the toolbar shows it.
+  it('names an indicator on another symbol by the ticker, without the venue before it', () => {
+    expect(indicatorChipLabel('compareSymbol', { symbol: 'HYPERLIQUID:xyz:NVDA' }, undefined, 'Compare')).toBe('Compare NVDA');
+    expect(indicatorChipLabel('spread', { symbol: 'BINANCE:ETHUSDT', mode: 'ratio' })).toBe('Ratio ETHUSDT');
+    expect(indicatorChipLabel('compareSymbol', { symbol: 'ETHUSDT' }, undefined, 'Compare')).toBe('Compare ETHUSDT');
+  });
+
   it('lists up to three numeric parameters in the indicator’s own order', () => {
     expect(indicatorChipLabel('macd', { signal: 9, slow: 26, fast: 12 }, { fast: 12, slow: 26, signal: 9 }))
       .toBe('MACD 12 26 9');

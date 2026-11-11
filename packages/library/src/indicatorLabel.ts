@@ -1,3 +1,5 @@
+import { tickerOf } from '@tradecanvas/commons';
+
 /** How many numeric parameters a label shows, so a long list stays short. */
 const LABEL_NUMBERS = 3;
 
@@ -27,8 +29,8 @@ export function indicatorChipLabel(
     .filter((v): v is number => typeof v === 'number' && Number.isFinite(v))
     .slice(0, LABEL_NUMBERS_BY_ID[id] ?? LABEL_NUMBERS)
     .map((v) => String(Number(v.toFixed(4))));
-  // An indicator on another symbol is named after it ("Compare ETHUSDT", "Ratio ETHUSDT").
-  const symbol = typeof params.symbol === 'string' && params.symbol ? [params.symbol] : [];
+  // An indicator on another symbol is named after its ticker ("Compare ETHUSDT", "Ratio NVDA"), as the toolbar shows it.
+  const symbol = typeof params.symbol === 'string' && params.symbol ? [tickerOf(params.symbol)] : [];
   const name = id === 'spread' && params.mode === 'ratio' ? 'Ratio' : shortName ?? id.toUpperCase();
   return [name, ...symbol, ...numbers].join(' ');
 }
