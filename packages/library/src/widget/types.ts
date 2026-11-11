@@ -33,6 +33,12 @@ export interface WatchlistOptions {
    * `setQuotes` / `setWatchlistEntry`.
    */
   quotes?: QuoteSource | false;
+  /**
+   * A small chart of recent prices in each row, in the place of the move:
+   * the symbol, the chart, last price and % change. Default `false`: a row is
+   * one line, the symbol, last price, move and % change.
+   */
+  sparkline?: boolean;
   /** After every change to the lists (to keep them yourself). */
   onChange?: (lists: WatchlistList[], activeList: string) => void;
 }
@@ -237,8 +243,9 @@ export interface ChartWidgetOptions {
   chartOptions?: Partial<ChartOptions>;
 
   /**
-   * A watchlist, a panel of the dock beside the chart: lists of symbols with
-   * last price, % change and a mini sparkline; lists can be added, renamed,
+   * A watchlist, a panel of the dock beside the chart: lists of symbols, a
+   * line each with last price, move and % change (a mini sparkline with
+   * `{ sparkline: true }`); lists can be added, renamed,
    * deleted and reordered. `true` starts with one list of `symbols`.
    * Default `false`. Like every panel it starts shut, with its button on the
    * dock's rail: `widget.openPanel('watchlist')` opens it (in `onReady`, for

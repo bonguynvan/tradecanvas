@@ -146,6 +146,10 @@ export const SK_MESSAGES: WidgetMessages = {
   'watchlist.remove': 'Odobrať {symbol}',
   'watchlist.empty': 'Zatiaľ žiadne symboly. Pridajte ich pomocou +.',
   'watchlist.listName': 'Názov zoznamu',
+  'watchlist.columnSymbol': 'Symbol',
+  'watchlist.columnPrice': 'Posledná',
+  'watchlist.columnMove': 'Zmena',
+  'watchlist.columnChange': 'Zmena %',
 
   // Symbol info
   'symbolInfo.title': 'Informácie o symbole',

@@ -149,6 +149,10 @@ export const FA_MESSAGES: WidgetMessages = {
   'watchlist.remove': 'حذف {symbol}',
   'watchlist.empty': 'هنوز نمادی اضافه نشده است. با + یکی اضافه کنید.',
   'watchlist.listName': 'نام فهرست',
+  'watchlist.columnSymbol': 'نماد',
+  'watchlist.columnPrice': 'آخرین',
+  'watchlist.columnMove': 'تغییر',
+  'watchlist.columnChange': 'تغییر ٪',
 
   // Symbol info
   'symbolInfo.title': 'اطلاعات نماد',

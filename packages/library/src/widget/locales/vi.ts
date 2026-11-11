@@ -146,6 +146,10 @@ export const VI_MESSAGES: WidgetMessages = {
   'watchlist.remove': 'Bỏ {symbol}',
   'watchlist.empty': 'Chưa có mã nào. Thêm bằng nút +.',
   'watchlist.listName': 'Tên danh sách',
+  'watchlist.columnSymbol': 'Mã',
+  'watchlist.columnPrice': 'Giá',
+  'watchlist.columnMove': '+/-',
+  'watchlist.columnChange': '%',
 
   // Symbol info
   'symbolInfo.title': 'Thông tin mã',

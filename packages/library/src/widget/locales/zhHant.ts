@@ -146,6 +146,10 @@ export const ZH_HANT_MESSAGES: WidgetMessages = {
   'watchlist.remove': '刪除 {symbol}',
   'watchlist.empty': '尚無代碼。點擊 + 新增。',
   'watchlist.listName': '清單名稱',
+  'watchlist.columnSymbol': '代碼',
+  'watchlist.columnPrice': '最新',
+  'watchlist.columnMove': '漲跌',
+  'watchlist.columnChange': '漲跌幅',
 
   // Symbol info
   'symbolInfo.title': '商品資訊',

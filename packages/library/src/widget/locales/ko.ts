@@ -146,6 +146,10 @@ export const KO_MESSAGES: WidgetMessages = {
   'watchlist.remove': '{symbol} 삭제',
   'watchlist.empty': '아직 종목이 없습니다. +로 추가하세요.',
   'watchlist.listName': '목록 이름',
+  'watchlist.columnSymbol': '종목',
+  'watchlist.columnPrice': '현재가',
+  'watchlist.columnMove': '대비',
+  'watchlist.columnChange': '등락률',
 
   // Symbol info
   'symbolInfo.title': '종목 정보',

@@ -139,7 +139,13 @@ export class WidgetWatchlists {
       remove: t('watchlist.remove'),
       empty: t('watchlist.empty'),
       listName: t('watchlist.listName'),
-    });
+      columns: {
+        symbol: t('watchlist.columnSymbol'),
+        price: t('watchlist.columnPrice'),
+        move: t('watchlist.columnMove'),
+        change: t('watchlist.columnChange'),
+      },
+    }, { sparkline: opts.sparkline === true });
     this.watchlist.setActive(this.host.state.symbol);
     this.watchlist.setLocale(this.host.settingsState.numberLocale || undefined);
     const show = () => {

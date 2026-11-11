@@ -146,6 +146,10 @@ export const RU_MESSAGES: WidgetMessages = {
   'watchlist.remove': 'Удалить {symbol}',
   'watchlist.empty': 'Символов пока нет. Добавьте с помощью +.',
   'watchlist.listName': 'Название списка',
+  'watchlist.columnSymbol': 'Тикер',
+  'watchlist.columnPrice': 'Цена',
+  'watchlist.columnMove': 'Изм.',
+  'watchlist.columnChange': 'Изм.%',
 
   // Symbol info
   'symbolInfo.title': 'Информация о символе',

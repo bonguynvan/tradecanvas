@@ -146,6 +146,10 @@ export const IT_MESSAGES: WidgetMessages = {
   'watchlist.remove': 'Rimuovi {symbol}',
   'watchlist.empty': 'Ancora nessun simbolo. Aggiungine uno con +.',
   'watchlist.listName': 'Nome della lista',
+  'watchlist.columnSymbol': 'Simbolo',
+  'watchlist.columnPrice': 'Ultimo',
+  'watchlist.columnMove': 'Var.',
+  'watchlist.columnChange': 'Var.%',
 
   // Symbol info
   'symbolInfo.title': 'Info simbolo',

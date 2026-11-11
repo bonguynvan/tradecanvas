@@ -816,7 +816,7 @@ const dayStart = timeframeBucketStart(trade.time, '1d', { timeZone: 'Asia/Ho_Chi
 
 <h3>自选列表</h3>
 <p>
-  停靠区中的一个面板，含多个品种列表，每一行显示最新价、涨跌幅 % 和走势图。列表可在面板菜单中切换、新建、重命名和删除；
+  停靠区中的一个面板，含多个品种列表，每个品种一行，在列名下显示最新价、涨跌和涨跌幅 %（设 <code>sparkline: true</code> 则以走势图代替涨跌；代码前的交易场所，如 <code>HYPERLIQUID:xyz:</code>，悬停时显示）。列表可在面板菜单中切换、新建、重命名和删除；
   品种可从代码搜索（+）添加，可移除，也可通过拖动或 Alt+↑/↓ 重新排序。各行的报价来自适配器的
   <code>subscribeQuotes</code>、你自己的报价源，或你推送的数据。
 </p>

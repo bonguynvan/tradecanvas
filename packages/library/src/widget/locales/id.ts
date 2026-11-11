@@ -146,6 +146,10 @@ export const ID_MESSAGES: WidgetMessages = {
   'watchlist.remove': 'Hapus {symbol}',
   'watchlist.empty': 'Belum ada simbol. Tambahkan dengan +.',
   'watchlist.listName': 'Nama daftar',
+  'watchlist.columnSymbol': 'Simbol',
+  'watchlist.columnPrice': 'Terakhir',
+  'watchlist.columnMove': 'Ubah',
+  'watchlist.columnChange': 'Ubah%',
 
   // Symbol info
   'symbolInfo.title': 'Info simbol',

@@ -149,6 +149,10 @@ export const MS_MESSAGES: WidgetMessages = {
   'watchlist.remove': 'Alih keluar {symbol}',
   'watchlist.empty': 'Belum ada simbol. Tambah satu dengan +.',
   'watchlist.listName': 'Nama senarai',
+  'watchlist.columnSymbol': 'Simbol',
+  'watchlist.columnPrice': 'Terakhir',
+  'watchlist.columnMove': 'Ubah',
+  'watchlist.columnChange': 'Ubah%',
 
   // Symbol info
   'symbolInfo.title': 'Maklumat simbol',

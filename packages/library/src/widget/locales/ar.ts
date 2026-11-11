@@ -149,6 +149,10 @@ export const AR_MESSAGES: WidgetMessages = {
   'watchlist.remove': 'إزالة {symbol}',
   'watchlist.empty': 'لا توجد رموز بعد. أضف رمزًا باستخدام +.',
   'watchlist.listName': 'اسم القائمة',
+  'watchlist.columnSymbol': 'الرمز',
+  'watchlist.columnPrice': 'الأخير',
+  'watchlist.columnMove': 'التغير',
+  'watchlist.columnChange': 'التغير %',
 
   // Symbol info
   'symbolInfo.title': 'معلومات الرمز',

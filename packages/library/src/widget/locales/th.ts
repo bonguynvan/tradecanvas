@@ -146,6 +146,10 @@ export const TH_MESSAGES: WidgetMessages = {
   'watchlist.remove': 'ลบ {symbol}',
   'watchlist.empty': 'ยังไม่มีสัญลักษณ์ เพิ่มได้ด้วยปุ่ม +',
   'watchlist.listName': 'ชื่อรายการ',
+  'watchlist.columnSymbol': 'สัญลักษณ์',
+  'watchlist.columnPrice': 'ล่าสุด',
+  'watchlist.columnMove': 'เปลี่ยน',
+  'watchlist.columnChange': 'เปลี่ยน%',
 
   // Symbol info
   'symbolInfo.title': 'ข้อมูลสัญลักษณ์',

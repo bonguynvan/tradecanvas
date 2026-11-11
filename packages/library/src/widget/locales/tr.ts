@@ -146,6 +146,10 @@ export const TR_MESSAGES: WidgetMessages = {
   'watchlist.remove': 'Kaldır: {symbol}',
   'watchlist.empty': 'Henüz sembol yok. + ile ekleyin.',
   'watchlist.listName': 'Liste adı',
+  'watchlist.columnSymbol': 'Sembol',
+  'watchlist.columnPrice': 'Son',
+  'watchlist.columnMove': 'Değ.',
+  'watchlist.columnChange': 'Değ.%',
 
   // Symbol info
   'symbolInfo.title': 'Sembol bilgisi',

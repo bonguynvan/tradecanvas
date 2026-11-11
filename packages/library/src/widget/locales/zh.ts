@@ -146,6 +146,10 @@ export const ZH_MESSAGES: WidgetMessages = {
   'watchlist.remove': '删除 {symbol}',
   'watchlist.empty': '暂无代码。点击 + 添加。',
   'watchlist.listName': '列表名称',
+  'watchlist.columnSymbol': '代码',
+  'watchlist.columnPrice': '最新',
+  'watchlist.columnMove': '涨跌',
+  'watchlist.columnChange': '涨跌幅',
 
   // Symbol info
   'symbolInfo.title': '品种信息',

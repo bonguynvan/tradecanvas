@@ -146,6 +146,10 @@ export const RO_MESSAGES: WidgetMessages = {
   'watchlist.remove': 'Eliminare {symbol}',
   'watchlist.empty': 'Încă nu există simboluri. Adăugați unul cu +.',
   'watchlist.listName': 'Numele listei',
+  'watchlist.columnSymbol': 'Simbol',
+  'watchlist.columnPrice': 'Ultimul',
+  'watchlist.columnMove': 'Var.',
+  'watchlist.columnChange': 'Var.%',
 
   // Symbol info
   'symbolInfo.title': 'Informații simbol',

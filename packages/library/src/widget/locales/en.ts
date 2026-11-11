@@ -151,6 +151,10 @@ export const EN_MESSAGES = {
   'watchlist.remove': 'Remove {symbol}',
   'watchlist.empty': 'No symbols yet. Add one with +.',
   'watchlist.listName': 'List name',
+  'watchlist.columnSymbol': 'Symbol',
+  'watchlist.columnPrice': 'Last',
+  'watchlist.columnMove': 'Chg',
+  'watchlist.columnChange': 'Chg%',
 
   // Symbol info
   'symbolInfo.title': 'Symbol info',

@@ -6718,7 +6718,7 @@
       {
         "name": "watchlist",
         "type": "boolean | WatchlistOptions",
-        "doc": "A watchlist, a panel of the dock beside the chart: lists of symbols with last price, % change and a mini sparkline; lists can be added, renamed, deleted and reordered. `true` starts with one list of `symbols`. Default `false`."
+        "doc": "A watchlist, a panel of the dock beside the chart: lists of symbols, a line each with last price, move and % change (a mini sparkline with `{ sparkline: true }`); lists can be added, renamed, deleted and reordered. `true` starts with one list of `symbols`. Default `false`."
       },
       {
         "name": "symbolInfo",

@@ -1072,6 +1072,9 @@ widget.setQuotes([{ symbol: 'AAPL', last: 190.2, prevClose: 188.1 }]);
 console.log(marketStatus({ symbol: 'AAPL', timeZone: 'America/New_York', sessions: [{ start: '09:30', end: '16:00', days: [1, 2, 3, 4, 5] }] }, Date.now()).state);
 ```
 
+A watchlist row is one line: the ticker (a venue before it, `HYPERLIQUID:xyz:NVDA`,
+shows on hover), last price, move and % change; `watchlist: { sparkline: true }`
+puts a small chart of recent prices in place of the move.
 Quotes come from a feed's `subscribeQuotes` (or `watchlist.quotes`, or
 `setQuotes`); tick timeframes need a feed with `fetchTrades` and
 `subscribeTrades`. The watchlist, alerts, object tree, data window, symbol

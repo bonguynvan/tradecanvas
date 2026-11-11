@@ -172,3 +172,65 @@ describe('WidgetWatchlist keys, after review', () => {
     expect(outside).not.toHaveBeenCalled();
   });
 });
+
+describe('WidgetWatchlist rows, one line of figures', () => {
+  const cell = (row: Element, name: string) => row.querySelector(`.tcw-watchlist-${name}`)?.textContent;
+
+  it('draws no sparkline unless asked, and gives each row its price, move and change on one line', () => {
+    expect(host.querySelector('canvas')).toBeNull();
+    wl.setEntry('ETHUSDT', { lastPrice: 2000, refPrice: 1900, sparkline: [1900, 1950, 2000] });
+    const eth = rows()[1];
+    expect(cell(eth, 'symbol')).toBe('ETH/USDT');
+    expect(cell(eth, 'price')).toBe('2,000.00');
+    // In the price's own decimals.
+    expect(cell(eth, 'move')).toBe('+100.00');
+    expect(cell(eth, 'change')).toBe('+5.26%');
+    expect(eth.querySelector('.tcw-watchlist-move')!.classList.contains('tcw-up')).toBe(true);
+    wl.setEntry('SOLUSDT', { lastPrice: 90, refPrice: 100 });
+    expect(cell(rows()[2], 'move')).toBe('-10.0000');
+    expect(rows()[2].querySelector('.tcw-watchlist-change')!.classList.contains('tcw-down')).toBe(true);
+  });
+
+  it('gives the list its columns: a last one for the remove button; a sparkline takes the move’s', () => {
+    const columns = (el: Element) => (el.querySelector('.tcw-watchlist-list') as HTMLElement).style.getPropertyValue('--tcw-watchlist-columns');
+    expect(columns(host)).toBe('var(--tcw-watchlist-gutter) minmax(0, 1fr) auto auto auto var(--tcw-watchlist-remove) var(--tcw-watchlist-gutter)');
+    const other = document.createElement('div');
+    const plain = new WidgetWatchlist(other, { onSelect: vi.fn() }, { ...LABELS, columns: { symbol: 'S', price: 'L', move: 'M', change: 'C' } }, { sparkline: true });
+    plain.setLists(lists, 'a');
+    expect(columns(other)).toBe('var(--tcw-watchlist-gutter) minmax(0, 1fr) auto auto auto var(--tcw-watchlist-gutter)');
+    // A narrow panel holds the name and three figures: with the chart, no move.
+    expect(other.querySelector('.tcw-watchlist-move')).toBeNull();
+    expect([...other.querySelectorAll('.tcw-watchlist-columns > *')].map((h) => h.textContent)).toEqual(['S', '', 'L', 'C']);
+    plain.destroy();
+  });
+
+  it('draws sparklines when asked', () => {
+    const other = document.createElement('div');
+    const spark = new WidgetWatchlist(other, calls, LABELS, { sparkline: true });
+    spark.setLists(lists, 'a');
+    expect(other.querySelectorAll('canvas.tcw-watchlist-spark')).toHaveLength(3);
+    spark.destroy();
+  });
+
+  it('names a row by its ticker, the venue before it in its tooltip', () => {
+    wl.setLists([{ id: 'v', name: 'Venues', symbols: ['HYPERLIQUID:xyz:NVDA', 'ECB:EURUSD', 'BINANCE:BTCUSDT', 'ODD:'] }], 'v');
+    // A symbol ending in ':' has no ticker after it, and shows whole.
+    expect(rows().map((r) => cell(r, 'symbol'))).toEqual(['NVDA', 'EUR/USD', 'BTC/USDT', 'ODD:']);
+    expect(rows()[0].querySelector('.tcw-watchlist-symbol')!.getAttribute('title')).toBe('HYPERLIQUID:xyz:NVDA');
+    // A row keeps its whole symbol: it is what a pick loads.
+    rows()[0].click();
+    expect(calls.onSelect).toHaveBeenCalledWith('HYPERLIQUID:xyz:NVDA');
+  });
+
+  it('heads its columns when given their names, one name over each figure', () => {
+    expect(host.querySelector('.tcw-watchlist-columns')).toBeNull();
+    const other = document.createElement('div');
+    const titled = new WidgetWatchlist(other, calls, { ...LABELS, columns: { symbol: 'Symbol', price: 'Last', move: 'Chg', change: 'Chg%' } });
+    titled.setLists(lists, 'a');
+    const heads = [...other.querySelectorAll('.tcw-watchlist-columns > *')].map((h) => h.textContent);
+    expect(heads).toEqual(['Symbol', 'Last', 'Chg', 'Chg%', '']);
+    // The list and its head share one grid, so the figures line up under their names.
+    expect(other.querySelector('.tcw-watchlist-list')!.contains(other.querySelector('.tcw-watchlist-columns'))).toBe(true);
+    titled.destroy();
+  });
+});

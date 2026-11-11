@@ -909,7 +909,7 @@ const dayStart = timeframeBucketStart(trade.time, '1d', { timeZone: 'Asia/Ho_Chi
 
 <h3>Danh mục theo dõi</h3>
 <p>
-  Một bảng trong ngăn bên, gồm các danh sách mã, mỗi dòng có giá cuối, % thay đổi và một sparkline. Chuyển, tạo,
+  Một bảng trong ngăn bên, gồm các danh sách mã, mỗi mã một dòng gồm giá cuối, mức thay đổi và % thay đổi dưới tên các cột (sparkline thay cho mức thay đổi với <code>sparkline: true</code>; phần sàn đứng trước mã, như <code>HYPERLIQUID:xyz:</code>, hiện khi rê chuột). Chuyển, tạo,
   đổi tên và xoá danh sách từ menu của bảng; thêm mã từ ô tìm mã (+), bỏ mã, và sắp xếp lại bằng cách kéo
   hoặc Alt+↑/↓. Các dòng lấy giá từ <code>subscribeQuotes</code> của adapter, từ một nguồn giá của riêng bạn,
   hoặc từ những gì bạn đẩy vào.

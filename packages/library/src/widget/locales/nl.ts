@@ -146,6 +146,10 @@ export const NL_MESSAGES: WidgetMessages = {
   'watchlist.remove': '{symbol} verwijderen',
   'watchlist.empty': 'Nog geen symbolen. Voeg er een toe met +.',
   'watchlist.listName': 'Naam van de lijst',
+  'watchlist.columnSymbol': 'Symbool',
+  'watchlist.columnPrice': 'Laatst',
+  'watchlist.columnMove': 'Wijz.',
+  'watchlist.columnChange': 'Wijz.%',
 
   // Symbol info
   'symbolInfo.title': 'Symboolinfo',
