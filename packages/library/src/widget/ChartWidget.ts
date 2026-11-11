@@ -23,7 +23,7 @@ import { type WatchlistEntry } from './WidgetWatchlist.js';
 import { type WatchlistList } from './WatchlistStore.js';
 import { WidgetSymbolInfo, type SymbolInfoView } from './WidgetSymbolInfo.js';
 import { SymbolNews, buildSymbolInfoView } from './symbolInfoView.js';
-import { chartInfoFor, cleanSymbolInfo, mergeSymbolInfo, readSymbolCatalog, symbolTitle } from './symbolCatalog.js';
+import { chartInfoFor, cleanSymbolInfo, mergeSymbolInfo, readSymbolCatalog, splitVenue, symbolTitle } from './symbolCatalog.js';
 import { TOOL_HOTKEYS, toolShortcuts } from './drawingHotkeys.js';
 import { WidgetChartNav } from './WidgetChartNav.js';
 import { WidgetAlertsPanel } from './WidgetAlertsPanel.js';
@@ -2320,7 +2320,8 @@ export class ChartWidget {
 
   /** The symbol behind the bars, in the ink of the mode shown. */
   private paintWatermark(): void {
-    this.chart.setWatermark(this.state.symbol.replace('USDT', ' / USDT'), {
+    // The ticker, as the toolbar shows it: a venue before it is the legend's exchange.
+    this.chart.setWatermark(splitVenue(this.state.symbol).ticker.replace('USDT', ' / USDT'), {
       fontSize: WATERMARK_FONT_SIZE,
       color: this.state.isDark ? WATERMARK_ON_DARK : WATERMARK_ON_LIGHT,
     });

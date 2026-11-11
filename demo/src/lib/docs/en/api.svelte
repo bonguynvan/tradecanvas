@@ -630,8 +630,8 @@ new ChartWidget(host, { features: { 'dock.dataWindow': false } })  // no button 
 <p>
   Once a search has told of a symbol, the feed's words name it on the list the search opens with too, not only
   among the results. A name, kind, exchange or logo that isn't text (a JSON feed's <code>null</code>, a numeric
-  exchange code), in a feed's results or in what the chart knows, counts as not given: it neither shows nor erases yours. A venue before a colon
-  (<code>BINANCE:BTCUSDT</code>) is dimmed, and is what a narrow column shortens first; on a phone the kind tabs
+  exchange code), in a feed's results or in what the chart knows, counts as not given: it neither shows nor erases yours. A symbol shows as its ticker,
+  without the venue before a colon (<code>BINANCE:BTCUSDT</code> reads BTCUSDT; <code>HYPERLIQUID:xyz:NVDA</code>, NVDA) on the toolbar, in the legend, the rows and the info panel: the venue goes in the exchange column when the feed names none, and the whole symbol shows on hover; on a phone the kind tabs
   scroll in one line and fade at an end with more past it. What the chart knows of its symbol names it on the
   toolbar and in the info panel when it is of the same symbol (in any case, with or without a venue before a colon)
   or was set since the symbol changed, so a feed's own spelling (<code>BTC-USD</code> for <code>BTCUSD</code>)

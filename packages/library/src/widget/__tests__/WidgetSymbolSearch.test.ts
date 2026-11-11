@@ -652,18 +652,19 @@ describe('WidgetSymbolSearch symbols given with their info', () => {
     expect(rowText()).toEqual(['AB']);
   });
 
-  it('shows a venue before the ticker apart, so the ticker is what a narrow column keeps', () => {
-    search.open({ symbols: ['BINANCE:BTCUSDT', 'HYPERLIQUID:xyz:GOLD', 'VNM'], current: '' });
-    const parts = (row: HTMLElement) => [...row.querySelector('.tcw-ss-symbol')!.children].map((c) => [c.className, c.textContent]);
-    expect(parts(rows()[0])).toEqual([['tcw-ss-venue', 'BINANCE:'], ['tcw-ss-ticker', 'BTCUSDT']]);
-    expect(parts(rows()[1])).toEqual([['tcw-ss-venue', 'HYPERLIQUID:xyz:'], ['tcw-ss-ticker', 'GOLD']]);
-    expect(parts(rows()[2])).toEqual([['tcw-ss-ticker', 'VNM']]);
-    expect(rowText()).toEqual(['BINANCE:BTCUSDT', 'HYPERLIQUID:xyz:GOLD', 'VNM']);
-    // The letters typed are marked in either part, and across the colon.
-    type('e:b');
-    const marked = (part: string) => [...rows()[0].querySelectorAll(`.${part} mark`)].map((m) => m.textContent).join('');
-    expect(marked('tcw-ss-venue')).toBe('E:');
-    expect(marked('tcw-ss-ticker')).toBe('B');
+  // "HYPERLIQUID:xyz:GOLD" filled the symbol column: a row shows the ticker, as a trader says it,
+  // and its exchange in the exchange column, the venue's words where the feed names none.
+  it('shows the ticker alone, the venue in the exchange column when none is named', () => {
+    search.open({ symbols: ['BINANCE:BTCUSDT', { symbol: 'HYPERLIQUID:xyz:GOLD', exchange: 'Hyperliquid xyz' }, 'VNM'], current: '' });
+    expect(rowText()).toEqual(['BTCUSDT', 'GOLD', 'VNM']);
+    const exchanges = rows().map((r) => r.querySelector('.tcw-ss-exchange')?.textContent);
+    expect(exchanges).toEqual(['BINANCE', 'Hyperliquid xyz', '']);
+    // The whole symbol on hover.
+    expect(rows()[1].querySelector('.tcw-ss-symbol')?.getAttribute('title')).toBe('HYPERLIQUID:xyz:GOLD');
+    expect(rows()[2].querySelector('.tcw-ss-symbol')?.hasAttribute('title')).toBe(false);
+    // The letters typed are marked in the ticker.
+    type('btc');
+    expect([...rows()[0].querySelectorAll('.tcw-ss-symbol mark')].map((m) => m.textContent).join('')).toBe('BTC');
   });
 
   it('without a search, finds a given symbol by its name too, the tickers first', () => {
@@ -928,10 +929,11 @@ describe('WidgetSymbolSearch comparing', () => {
     expect(host.querySelectorAll('.tcw-ss-added-row')).toHaveLength(0);
   });
 
-  it('shows the venue of a symbol compared apart from its ticker, as the rows below do', () => {
+  it('shows a symbol compared by its ticker, as the rows below do', () => {
     compare([{ id: 'a', symbol: 'KBS:VCB', way: 'Ratio' }]);
     const symbol = host.querySelector('.tcw-ss-added-row .tcw-ss-symbol')!;
-    expect([...symbol.children].map((c) => c.textContent)).toEqual(['KBS:', 'VCB']);
+    expect(symbol.textContent).toBe('VCB');
+    expect(symbol.getAttribute('title')).toBe('KBS:VCB');
   });
 
   it('lists the names it was given, and what is compared, in the same columns', () => {

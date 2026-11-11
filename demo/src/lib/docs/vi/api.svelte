@@ -634,8 +634,8 @@ new ChartWidget(host, { features: { 'dock.dataWindow': false } })  // no button 
 </p>
 <p>
   Khi một lần tìm đã cho biết về một mã, tên của nguồn dữ liệu cũng hiện trên danh sách lúc hộp thoại mở ra, không
-  chỉ trong kết quả tìm. Tên, loại, sàn hay logo không phải là chữ (<code>null</code> của một nguồn JSON, mã sàn dạng số), trong kết quả của nguồn dữ liệu hay trong thông tin biểu đồ biết, được coi như không có: nó không hiện ra và không xoá thông tin của bạn. Tên sàn đứng trước dấu hai chấm
-  (<code>BINANCE:BTCUSDT</code>) hiện mờ hơn và được rút gọn trước tiên khi cột hẹp; trên điện thoại, các thẻ loại mã cuộn
+  chỉ trong kết quả tìm. Tên, loại, sàn hay logo không phải là chữ (<code>null</code> của một nguồn JSON, mã sàn dạng số), trong kết quả của nguồn dữ liệu hay trong thông tin biểu đồ biết, được coi như không có: nó không hiện ra và không xoá thông tin của bạn. Mã hiện ở dạng ticker,
+  bỏ phần sàn trước dấu hai chấm (<code>BINANCE:BTCUSDT</code> là BTCUSDT; <code>HYPERLIQUID:xyz:NVDA</code> là NVDA) trên thanh công cụ, trong legend, các dòng và bảng thông tin: phần sàn sang cột sàn khi nguồn dữ liệu không nêu tên sàn, và mã đầy đủ hiện khi rê chuột; trên điện thoại, các thẻ loại mã cuộn
   trên một dòng và mờ dần ở đầu còn thẻ bị khuất. Thông tin biểu đồ biết về mã của nó đặt tên cho mã trên thanh công
   cụ và trong bảng thông tin khi nó nói về đúng mã đó (không phân biệt chữ hoa chữ thường, có hay không có tên sàn
   trước dấu hai chấm) hoặc được đặt sau khi đổi mã, nên cách viết riêng của nguồn dữ liệu (<code>BTC-USD</code> cho

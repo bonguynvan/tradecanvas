@@ -5,7 +5,7 @@ import { keepTabInside } from './focusTrap.js';
 import { markPart } from './widgetFeatures.js';
 import { cleanSymbolInfo, mergeSymbolInfo, readSymbolCatalog, readSymbolResults } from './symbolCatalog.js';
 import { createSymbolBadge } from './symbolBadge.js';
-import { createSymbolCell } from './symbolCell.js';
+import { createSymbolCell, venueName } from './symbolCell.js';
 import { foldMarks, scoreSymbol, symbolQuery } from './symbolMatch.js';
 import { SymbolSearchFilters } from './symbolSearchFilters.js';
 
@@ -594,7 +594,8 @@ export class WidgetSymbolSearch {
 
     // Every row has the same cells, empty where nothing was said, so the columns line up.
     const kind = this.tag('tcw-ss-kind', row.info?.type?.trim() ?? '');
-    const exchange = this.tag('tcw-ss-exchange', row.info?.exchange?.trim() ?? '');
+    // The exchange the feed names, else the venue before the ticker, which the symbol cell leaves out.
+    const exchange = this.tag('tcw-ss-exchange', row.info?.exchange?.trim() || venueName(row.symbol));
     kind.dir = exchange.dir = 'auto';
     el.append(createSymbolBadge(row.symbol, row.info), createSymbolCell(row.symbol, query), this.descriptionCell(row), kind, exchange);
     if (isCurrent || onChart) {

@@ -29,6 +29,15 @@ describe('WidgetSymbolInfo', () => {
     expect(panel.isOpen()).toBe(false);
   });
 
+  it('names a symbol by its ticker, the whole symbol on hover', () => {
+    panel = new WidgetSymbolInfo(host, EN_TRANSLATOR, { onToggle: vi.fn() });
+    panel.open();
+    panel.render({ symbol: 'HYPERLIQUID:xyz:NVDA', meta: 'Hyperliquid xyz · futures', status: { state: 'always', text: 'Open 24/7' }, stats: [] });
+    const symbol = [...host.querySelectorAll('.tcw-syminfo')].at(-1)!.querySelector('.tcw-syminfo-symbol')!;
+    expect(symbol.textContent).toBe('NVDA');
+    expect(symbol.getAttribute('title')).toBe('HYPERLIQUID:xyz:NVDA');
+  });
+
   it('shows the symbol, its price and move, its status and its numbers, as text', () => {
     const onChange = vi.fn();
     panel = new WidgetSymbolInfo(host, EN_TRANSLATOR, { onToggle: onChange });

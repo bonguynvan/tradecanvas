@@ -1,6 +1,7 @@
 import { createIcon } from './icons.js';
 import { EN_TRANSLATOR, type Translator } from './i18n.js';
 import { markPart } from './widgetFeatures.js';
+import { splitVenue } from './symbolCatalog.js';
 
 /** What the symbol info panel shows, formatted by the widget. */
 export interface SymbolInfoView {
@@ -112,7 +113,11 @@ export class WidgetSymbolInfo {
   render(view: SymbolInfoView): void {
     const head = document.createElement('div');
     head.className = 'tcw-syminfo-head';
-    head.append(text('div', 'tcw-syminfo-symbol', view.symbol));
+    // The ticker, as the toolbar shows it; the meta line names the exchange, the tooltip the whole symbol.
+    const { venue, ticker } = splitVenue(view.symbol);
+    const symbol = text('div', 'tcw-syminfo-symbol', ticker);
+    if (venue) symbol.title = view.symbol;
+    head.append(symbol);
     if (view.description) head.append(text('div', 'tcw-syminfo-desc', view.description));
     if (view.meta) head.append(text('div', 'tcw-syminfo-meta', view.meta));
 

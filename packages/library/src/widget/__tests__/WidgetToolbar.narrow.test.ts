@@ -265,58 +265,37 @@ describe('WidgetToolbar — fitting its width', () => {
   });
 
   describe('a long symbol', () => {
-    /** The symbol's venue and ticker, and what is left of the venue squeezed (a letter and an ellipsis): px. */
-    const [VENUE_W, TICKER_W, VENUE_LEAST_W] = [120, 30, 30];
+    /** A long ticker's width, px (a venue before it is never shown: it reads as the ticker alone). */
+    const TICKER_W = 120;
     const symbolBtn = () => root.querySelector<HTMLButtonElement>('[data-role="symbol"]')!;
     const squeeze = (el: HTMLElement) => el.dataset.tcwSqueeze;
     const squeezed = (el: HTMLElement) => squeeze(el) !== undefined;
-    /**
-     * `base(el)` and the symbol, as the stylesheet lets it give way to fit `width` at each step: to
-     * a letter of its venue, an ellipsis and its ticker; to its ticker; to nothing.
-     */
+    /** `base(el)` and the symbol, as the stylesheet lets it give way to fit `width`: cut short, to nothing at the least. */
     const withSymbol = (width: number, base: (el: HTMLElement) => number = need) => (el: HTMLElement) => {
-      const whole = base(el) + VENUE_W + TICKER_W;
-      const least: number | undefined = ({ venue: VENUE_LEAST_W + TICKER_W, ticker: TICKER_W, cut: 0 } as Record<string, number>)[squeeze(el) ?? ''];
-      return least === undefined ? whole : Math.max(base(el) + least, Math.min(whole, width));
+      const whole = base(el) + TICKER_W;
+      return squeeze(el) === 'cut' ? Math.max(base(el), Math.min(whole, width)) : whole;
     };
 
-    it('shows its venue apart from its ticker, left to right in any widget, and reads whole', () => {
+    // "HYPERLIQUID:xyz:GOLD" filled a phone's bar: the venue is the exchange's, which the legend and
+    // the symbol's tooltip name, and the button shows the ticker as a trader says it.
+    it('shows its ticker alone, left to right in any widget, and reads whole', () => {
       toolbar.update({ ...state, symbol: 'HYPERLIQUID:xyz:GOLD' } as WidgetState);
       expect(symbolBtn().dir).toBe('ltr');
-      expect(symbolBtn().querySelector('.tcw-toolbar-venue')?.textContent).toBe('HYPERLIQUID:xyz:');
-      expect(symbolBtn().querySelector('.tcw-toolbar-ticker')?.textContent).toBe('GOLD');
-      expect(symbolBtn().textContent).toBe('HYPERLIQUID:xyz:GOLD');
-      // Its two parts sit in a flex box, which reads them apart, and a squeezed bar hides the venue:
-      // the label keeps the whole symbol for a screen reader.
-      expect(symbolBtn().getAttribute('aria-label')).toBe('HYPERLIQUID:xyz:GOLD');
-      expect(symbolBtn().classList.contains('tcw-toolbar-symbol--venue')).toBe(true);
-      toolbar.update(state);
+      expect(symbolBtn().textContent).toBe('GOLD');
       expect(symbolBtn().querySelector('.tcw-toolbar-venue')).toBeNull();
-      expect(symbolBtn().classList.contains('tcw-toolbar-symbol--venue')).toBe(false);
-      expect(symbolBtn().querySelector('.tcw-toolbar-ticker')?.textContent).toBe('BTCUSDT');
+      // A screen reader hears the whole symbol.
+      expect(symbolBtn().getAttribute('aria-label')).toBe('HYPERLIQUID:xyz:GOLD');
+      toolbar.update(state);
+      expect(symbolBtn().textContent).toBe('BTCUSDT');
       expect(symbolBtn().getAttribute('aria-label')).toBe('BTCUSDT');
     });
 
-    // On a 390 phone "HYPERLIQUID:xyz:GOLD" pushed "more" to 380-408, where a tap on it missed:
+    // On a 390 phone a long symbol pushed "more" to 380-408, where a tap on it missed:
     // everything that folds was folded already, so nothing was left to give way.
     it('gives way on a narrow toolbar, with everything folded, so "more" stays on the bar', () => {
       root.setAttribute('data-tcw-narrow', '');
       // 300 for the chart's controls and "more": a narrow toolbar shows nothing that folds.
       const el = layout(390, withSymbol(390, () => 300));
-      toolbar.fit();
-      expect(squeezed(el)).toBe(true);
-    });
-
-    // Capsule at 320: even a letter of the venue and its ellipsis before "GOLD" left "more" past the bar.
-    it('drops the venue only when even a letter of it has no room, and cuts the ticker short last of all', () => {
-      root.setAttribute('data-tcw-narrow', '');
-      const el = layout(380, withSymbol(380, () => 300));
-      toolbar.fit();
-      expect(squeeze(el)).toBe('venue');
-      layout(340, withSymbol(340, () => 300));
-      toolbar.fit();
-      expect(squeeze(el)).toBe('ticker');
-      layout(320, withSymbol(320, () => 300));
       toolbar.fit();
       expect(squeeze(el)).toBe('cut');
       layout(500, withSymbol(500, () => 300));

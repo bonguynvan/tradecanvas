@@ -141,10 +141,14 @@ export class ChartLegend {
     this.forgetHeight();
   }
 
-  /** Symbol · interval · exchange, as far as they are known ('' with none or `showSymbol` off). */
+  /**
+   * Ticker · interval · exchange, as far as they are known ('' with none or
+   * `showSymbol` off). The ticker is the symbol without the venue before it
+   * ("HYPERLIQUID:xyz:NVDA" reads NVDA): the exchange names where it trades.
+   */
   private title(): string {
     if (!this.config.showSymbol) return '';
-    return [this.symbol, this.timeframe, this.exchange].filter(Boolean).join(' · ');
+    return [tickerOf(this.symbol), this.timeframe, this.exchange].filter(Boolean).join(' · ');
   }
 
   private titleCells(ctx: CanvasRenderingContext2D, fs: number, family: string, text: string, label: string): LegendCell[] {
@@ -351,6 +355,12 @@ interface LegendCell {
   width: number;
   color: string;
   font: string;
+}
+
+/** A symbol without the venue before its last colon ("KBS:VCB" is VCB); one ending in a colon whole. */
+function tickerOf(symbol: string): string {
+  const at = symbol.lastIndexOf(':');
+  return at <= 0 || at === symbol.length - 1 ? symbol : symbol.slice(at + 1);
 }
 
 /** Room above the legend's first line, and to the plot's side edge (px). */
