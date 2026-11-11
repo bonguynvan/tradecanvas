@@ -93,6 +93,43 @@ describe('IndicatorEngine with a worker', () => {
     expect(engine.getOutput(id)).toBe(read);
   });
 
+  it('tells onLand when a read finished a recompute here, so the chart draws and fits it', () => {
+    const { engine, onLand } = setup();
+    const id = engine.addIndicator('ema', { period: 20 }, walkBars(300));
+    expect(onLand).not.toHaveBeenCalled();
+    engine.getOutput(id);
+    expect(onLand).toHaveBeenCalledTimes(1);
+    engine.getOutput(id); // nothing left to finish
+    expect(onLand).toHaveBeenCalledTimes(1);
+  });
+
+  it('says which indicators are computing in the worker: those sent, and those reading their lines', () => {
+    const { engine } = setup();
+    const data = walkBars(300);
+    const rsi = engine.addIndicator('rsi', { period: 14 }, data);
+    const smoothed = engine.addIndicator('sma', { period: 5, source: `${rsi}:value` }, data);
+    expect(engine.isComputingInWorker(rsi)).toBe(true);
+    expect(engine.isComputingInWorker(smoothed)).toBe(true);
+    expect(engine.isComputingInWorker('nope')).toBe(false);
+    engine.flush();
+    expect(engine.isComputingInWorker(rsi)).toBe(false);
+    expect(engine.isComputingInWorker(smoothed)).toBe(false);
+  });
+
+  it('drops what runs in the worker without computing it when the worker is stopped (the chart is going)', async () => {
+    const { engine, worker, onLand } = setup();
+    worker.hold();
+    const id = engine.addIndicator('ema', { period: 20 }, walkBars(300));
+    await drain();
+    engine.stopWorker();
+    expect(engine.isComputingInWorker()).toBe(false);
+    expect(worker.posted.at(-1)).toMatchObject({ type: 'cancel' });
+    worker.release();
+    await drain();
+    expect(engine.peekOutput(id)).toBeNull();
+    expect(onLand).not.toHaveBeenCalled();
+  });
+
   it('finishes running recomputes on flush()', () => {
     const { engine } = setup();
     const data = walkBars(300);

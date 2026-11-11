@@ -7,6 +7,20 @@ import { outputOf } from './math.js';
  * nothing else (no running state). A live tick then only recomputes the bars
  * the change can reach: those from `from` on, and `lookback` bars before it.
  */
+/**
+ * The times of the bars a worker computation was sent, as an array, made
+ * once for every output it brought back (a million bars is 8 MB each).
+ * Sharing is safe: the outputs follow the same chart's bars, so each one's
+ * `update` checks and writes the same times as the others'.
+ */
+const timesOfComputation = new WeakMap<object, number[]>();
+
+function sharedTimes(times: ArrayLike<number>): number[] {
+  let kept = timesOfComputation.get(times);
+  if (!kept) timesOfComputation.set(times, (kept = Array.from(times)));
+  return kept;
+}
+
 export abstract class PointwiseIndicator<P> extends IndicatorBase {
   /**
    * The bar times each output was computed on. Bars without a point leave no
@@ -20,9 +34,12 @@ export abstract class PointwiseIndicator<P> extends IndicatorBase {
     return undefined;
   }
 
-  /** Keep the times of the bars an output from the worker was computed on (`WorkerStateful`). */
+  /**
+   * Keep the times of the bars an output from the worker was computed on
+   * (`WorkerStateful`): one array for all the outputs of a computation.
+   */
   adoptWorkerState(output: IndicatorOutput, _state: unknown, times: ArrayLike<number>): void {
-    this.times.set(output, Array.from(times));
+    this.times.set(output, sharedTimes(times));
   }
 
   /** Read the parameters once per computation. */

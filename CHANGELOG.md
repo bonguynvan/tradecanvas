@@ -9,6 +9,7 @@
   - Every built-in that reads only the bars and its inputs runs there; symbol indicators, chains on another indicator's line and `registerIndicator`'s run where they did.
   - The worker ships inside the package and loads on first use: nothing for the page to serve. Without workers (tests, a page whose CSP blocks `blob:`) it computes on the main thread.
   - A read of an indicator's output (`getIndicatorOutput`, alerts, export) finishes a pending recompute first, so reads stay synchronous. `getIndicatorOutput(id, { drawn: true })` gives what is drawn without waiting; the legend and the data window use it.
+  - While a recompute is out, the chart keeps drawing the previous output: after a symbol switch the previous lines stay until the new ones land, and a new indicator shows nothing yet. An alert on an indicator's line waits for the result instead of forcing the work onto the main thread.
 - **The core package no longer ships the indicator worker's 732 kB sourcemap.**
 
 ## 1.83.1 (2026-11-11)

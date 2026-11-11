@@ -165,7 +165,7 @@ pnpm soak --minutes=30 --rate=50000 --renderer=canvas`}</code></pre>
 <pre><code>{`new Chart(el, { indicatorWorker: 'auto' })
 new ChartWidget(el, { chartOptions: { indicatorWorker: 'auto' } })`}</code></pre>
 <p>
-  結果が届くまで、チャートは前回の結果を描きます（追加したばかりのインジケーターは何も描きません）。<code>getIndicatorOutput</code>、アラート、エクスポートで値を読むと、ワーカーに残っている分を先にメインスレッドで計算するため、読んだ値が古いことはありません。<code>getIndicatorOutput(id, {'{'} drawn: true {'}'})</code> は待たずに、いま描かれている値を返します。他のインジケーターのラインや他の銘柄を読むインジケーター、そして独自のもの（<code>registerIndicator</code>）はメインスレッドで計算されます。ワーカーが動かない環境（サーバー、jsdom、<code>blob:</code> ワーカーを拒否する Content Security Policy）でも、すべてメインスレッドです。
+  結果が届くまで、チャートは前回の結果を描き続けます。銘柄や時間足を切り替えた後なら前の系列のライン、追加したばかりのインジケーターなら何も描かれません。<code>getIndicatorOutput</code> やエクスポートで値を読むと、ワーカーに残っている分を先にメインスレッドで計算するため、読んだ値が古いことはありません。まだワーカーで計算中のラインに対するアラートは、結果が届いたときに判定されます。<code>getIndicatorOutput(id, {'{'} drawn: true {'}'})</code> は待たずに、いま描かれている値を返します。他のインジケーターのラインや他の銘柄を読むインジケーター、そして独自のもの（<code>registerIndicator</code>）はメインスレッドで計算されます。ワーカーが動かない環境（サーバー、jsdom、<code>blob:</code> ワーカーを拒否する Content Security Policy）でも、すべてメインスレッドです。
 </p>
 <table>
   <thead><tr><th>setData のあと EMA、RSI、MACD、ボリンジャーバンド</th><th>200,000 本、off</th><th>auto</th><th>1,000,000 本、off</th><th>auto</th></tr></thead>

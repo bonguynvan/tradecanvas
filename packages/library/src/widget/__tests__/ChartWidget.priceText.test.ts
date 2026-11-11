@@ -222,6 +222,16 @@ describe('ChartWidget data window’s indicator values', () => {
     expect(indicatorValues()).toEqual(['100,012.3', '54.32']);
   });
 
+  it('follow new values under the pointer, as from the indicator worker, without a pointer move', async () => {
+    addIndicators();
+    widget.openPanel('dataWindow');
+    hoverBar();
+    FakeChart.last.outputs = { ema: { series: [{ value: 100_020 }] }, rsi: { series: [{ value: 61.5 }] } };
+    FakeChart.last.emit('indicatorUpdate', { from: 0 });
+    await new Promise((resolve) => requestAnimationFrame(() => resolve(null)));
+    expect(indicatorValues()).toEqual(['100,020.00', '61.50']);
+  });
+
   it('are in the number locale', () => {
     widget.destroy();
     widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false, chartOptions: { numberLocale: 'de-DE' } });

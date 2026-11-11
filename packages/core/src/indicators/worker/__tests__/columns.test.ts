@@ -47,6 +47,20 @@ describe('output columns', () => {
     expect(back.meta).toEqual({ pivots: [1, 3] });
   });
 
+  it('keeps a NaN value apart from a missing one', () => {
+    const output = seriesOutput(times, [{ value: NaN }, { value: 1 }, {}, { value: NaN, other: 2 }]);
+    const back = columnsToOutput(outputToColumns(output, time), times);
+    expect(back.series!.map((p) => (p ? Object.keys(p) : null))).toEqual([['value'], ['value'], [], ['value', 'other']]);
+    expect(back.series![0]!.value).toBeNaN();
+    expect(back.series![3]!.value).toBeNaN();
+    expect([...back.values.keys()]).toEqual(times);
+  });
+
+  it('sends a mask of NaN values only for a key that has one', () => {
+    const columns = outputToColumns(seriesOutput(times, [{ a: NaN, b: 1 }, { a: 1, b: 2 }, null, null]), time);
+    expect(columns.nans.map((mask) => (mask ? Array.from(mask) : null))).toEqual([[1, 0, 0, 0], null]);
+  });
+
   it('sends one column per key, NaN where there is no value', () => {
     const output = seriesOutput(times, [null, { a: 1, b: 2 }, { a: 3 }, { b: 4 }]);
     const columns = outputToColumns(output, time);

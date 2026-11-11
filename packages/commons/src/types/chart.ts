@@ -327,12 +327,14 @@ export interface ChartOptions {
    * input meanwhile: the results are taken back a slice of bars at a time,
    * and the lines show once they are all in. One worker serves every chart
    * on the page; its code loads the first time it is needed. Built-in
-   * indicators reading the bars or a price go
-   * there; those reading another indicator's line, another symbol, and
-   * yours (`registerIndicator`) stay on the main thread, as do live ticks.
-   * Until a result arrives the last one is drawn; reading values
-   * (`getIndicatorOutput`, alerts, export) computes them at once instead,
-   * so they are never out of date. Where workers are not available (a
+   * indicators reading the bars or a price go there; those reading another
+   * indicator's line, another symbol, and yours (`registerIndicator`) stay
+   * on the main thread, as do live ticks. Until a result arrives the chart
+   * keeps drawing the previous output: after a new symbol or interval, the
+   * previous series' lines; for an indicator just added, nothing. Reading
+   * values (`getIndicatorOutput`, an export) computes them at once instead,
+   * so a read is never out of date; an alert on a line still in the worker
+   * is checked when it lands. Where workers are not available (a
    * server, jsdom) or the page's Content Security Policy refuses `blob:`
    * workers, everything is computed on the main thread.
    */

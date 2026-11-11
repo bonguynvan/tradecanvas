@@ -1193,7 +1193,8 @@ const chart = new Chart(document.getElementById('chart')!, { indicatorWorker: 'a
 chart.setData(history);
 const rsi = chart.addIndicator('rsi', { period: 14 })!;
 
-// Until the worker answers, the last values are drawn (none for a new indicator).
+// Until the worker answers, the previous values stay drawn: after a new symbol,
+// the previous series' lines; none for an indicator just added.
 // { drawn: true } reads those without waiting: for a legend under the pointer.
 const legend = document.getElementById('legend')!;
 chart.on('indicatorUpdate', () => {

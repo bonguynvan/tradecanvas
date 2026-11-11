@@ -10,7 +10,10 @@ import type { WorkerBars, WorkerComputation } from './workerJobs.js';
 export interface IndicatorWorkerOptions {
   /** The fewest bars a full recompute goes to the worker for. Default `INDICATOR_WORKER_MIN_BARS`. */
   minBars?: number;
-  /** Called when outputs computed in the worker have been put in place: draw again. */
+  /**
+   * Called when outputs from the worker have been put in place, or a read
+   * finished here what was still out: draw again, and fit the scales.
+   */
   onLand?: () => void;
 }
 
@@ -55,9 +58,22 @@ export class IndicatorWorkerBridge {
     this.worker = client ? { client, minBars: options.minBars ?? INDICATOR_WORKER_MIN_BARS, onLand: options.onLand ?? null } : null;
   }
 
-  /** Whether a full recompute of any indicator is still running in the worker. */
-  get busy(): boolean {
-    return this.jobs.size > 0;
+  /**
+   * Whether a full recompute runs in the worker: any, or (with an id) the
+   * instance's own, or that of an indicator whose line it reads.
+   */
+  computing(instanceId?: string): boolean {
+    if (instanceId === undefined) return this.jobs.size > 0;
+    if (this.jobs.has(instanceId)) return true;
+    const instance = this.host.instance(instanceId);
+    return !!instance && this.jobReadBy(instance, this.jobs) !== null;
+  }
+
+  /** Drop what runs in the worker without computing it, and send nothing more there: the engine is going. */
+  stop(): void {
+    this.worker?.client.cancel([...this.jobs.values()].map((job) => job.requestId));
+    this.jobs.clear();
+    this.worker = null;
   }
 
   /** The bars changed: a recompute sent from now on is sent them anew. */
@@ -108,6 +124,8 @@ export class IndicatorWorkerBridge {
       const job = jobs.get(instance.config.instanceId) ?? this.jobReadBy(instance, jobs);
       if (job) this.host.compute(instance, job.data, undefined, true);
     }
+    // The outputs changed outside a computation the chart asked for: it draws and fits them again.
+    this.worker?.onLand?.();
   }
 
   /** Start a full recompute in the worker, if it takes this one: a built-in, on bars or a price, over enough bars. */

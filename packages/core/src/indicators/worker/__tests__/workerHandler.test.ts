@@ -48,8 +48,9 @@ describe('the indicator worker', () => {
       const config = configOf(plugin);
       const expected = plugin.calculate(BARS, config);
       const got = viaWorker(id, config);
-      expect(got.series).toEqual(expected.series);
-      expect([...got.values]).toEqual([...expected.values]);
+      // Strictly: a key holding NaN, or undefined, is not a key left out.
+      expect(got.series).toStrictEqual(expected.series);
+      expect([...got.values]).toStrictEqual([...expected.values]);
       expect(got.meta).toEqual(expected.meta);
     },
   );

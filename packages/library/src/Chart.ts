@@ -213,6 +213,8 @@ export class Chart {
   private indicatorEngine: IndicatorEngine;
   /** The page's indicator worker, held while `indicatorWorker` is 'auto'. */
   private indicatorWorker: IndicatorWorkerLease | null = null;
+  /** True while outputs that changed outside a computation of the chart's wait to be drawn (a microtask away). */
+  private indicatorsLanding = false;
   private drawingManager: DrawingManager;
   private drawingRenderer: DrawingRenderer;
   private tradingManager: TradingManager;
@@ -2048,15 +2050,35 @@ export class Chart {
     this.indicatorWorker = indicatorWorkerPool.acquire();
     this.indicatorEngine.useWorker(this.indicatorWorker.client, {
       minBars: INDICATOR_WORKER_MIN_BARS,
-      onLand: () => this.indicatorsLanded(),
+      onLand: () => this.indicatorsLandedSoon(),
     });
   }
 
-  /** Outputs computed in the worker are in place: say so, and draw them. */
+  /**
+   * Outputs from the worker landed, or a read finished here what was still
+   * out: drawn once, after what runs now (a read may be part of an export).
+   */
+  private indicatorsLandedSoon(): void {
+    if (this.indicatorsLanding) return;
+    this.indicatorsLanding = true;
+    queueMicrotask(() => {
+      this.indicatorsLanding = false;
+      this.indicatorsLanded();
+    });
+  }
+
+  /**
+   * New outputs are in place outside a computation the chart asked for:
+   * say so, fit the scales to them and draw them, and give the alerts on
+   * their lines the values they waited for.
+   */
   private indicatorsLanded(): void {
     if (this.disposed) return;
     this.announceIndicatorUpdate(0);
     this.updateViewportAndRender();
+    const last = this.series.bars().at(-1);
+    const onLines = this.alertManager.getAlerts().some((alert) => alert.channel !== 'price' || alert.target !== undefined);
+    if (this.features.alerts && onLines && last && !this.replaySession) this.checkAlerts(last.close);
   }
 
   registerIndicator(plugin: IndicatorPlugin): void {
@@ -3153,10 +3175,15 @@ export class Chart {
    * all as of the same moment (a line crossing another compares like with
    * like). During a replay they keep watching the live market: the bars are
    * the live ones, and indicator lines — computed on the replayed bars — wait.
+   * So does a line still computing in the indicator worker: it is not
+   * finished here for a tick, and its alerts are checked when it lands.
    */
   private checkAlerts(price: number): void {
     const live = this.replaySession ? this.series.liveBars() : this.series.bars();
-    const lines = this.replaySession || this.series.length() === 0 ? null : (id: string) => this.indicatorEngine.getOutput(id)?.series;
+    const engine = this.indicatorEngine;
+    const lines = this.replaySession || this.series.length() === 0
+      ? null
+      : (id: string) => (engine.isComputingInWorker(id) ? undefined : engine.peekOutput(id)?.series);
     checkAlerts(this.alertManager, { price, barTime: live.length > 0 ? live[live.length - 1].time : null, lines });
   }
 
@@ -6057,6 +6084,8 @@ export class Chart {
 
   destroy(): void {
     this.disposed = true;
+    // Its recomputes in the worker go with it: none lands on a chart that is gone.
+    this.indicatorEngine.stopWorker();
     this.indicatorWorker?.release();
     this.indicatorWorker = null;
     this.stopWatchingVisibility?.();

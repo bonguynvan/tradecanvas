@@ -69,6 +69,11 @@ export interface OutputColumns {
   /** One column per key, in the order of `keys`. */
   columns: Float64Array[];
   /**
+   * Per key, 1 where a point holds NaN itself (not no value); null for a
+   * key that never does, which is nearly every one.
+   */
+  nans: (Uint8Array | null)[];
+  /**
    * The output's `values` when they are not simply the series by bar time;
    * null when they are, and they are rebuilt from it.
    */
@@ -114,29 +119,32 @@ function valuesFollowSeries(output: IndicatorOutput, series: readonly (Indicator
 export function outputToColumns(output: IndicatorOutput, time: Float64Array): OutputColumns {
   const meta = output.meta ? { meta: output.meta } : {};
   const series = output.series;
-  if (!series) return { present: null, keys: [], columns: [], values: new Map(output.values), ...meta };
+  if (!series) return { present: null, keys: [], columns: [], nans: [], values: new Map(output.values), ...meta };
   const keys = seriesKeys(series);
   const present = new Uint8Array(series.length);
   const columns = keys.map(() => new Float64Array(series.length).fill(NaN));
+  const nans: (Uint8Array | null)[] = keys.map(() => null);
   for (let i = 0; i < series.length; i++) {
     const point = series[i];
     if (!point) continue;
     present[i] = 1;
     for (let k = 0; k < keys.length; k++) {
       const value = point[keys[k]];
-      if (value !== undefined) columns[k][i] = value;
+      if (value === undefined) continue;
+      columns[k][i] = value;
+      if (Number.isNaN(value)) (nans[k] ??= new Uint8Array(series.length))[i] = 1;
     }
   }
   const values = valuesFollowSeries(output, series, time) ? null : new Map(output.values);
-  return { present, keys, columns, values, ...meta };
+  return { present, keys, columns, nans, values, ...meta };
 }
 
-/** The point at bar `i`: each key with a number there. */
+/** The point at bar `i`: each key with a value there, NaN included where the point held NaN. */
 function pointAt(columns: OutputColumns, i: number): IndicatorValue {
   const point: IndicatorValue = {};
   for (let k = 0; k < columns.keys.length; k++) {
     const value = columns.columns[k][i];
-    if (!Number.isNaN(value)) point[columns.keys[k]] = value;
+    if (!Number.isNaN(value) || columns.nans[k]?.[i] === 1) point[columns.keys[k]] = value;
   }
   return point;
 }
@@ -230,6 +238,7 @@ export function columnsToOutput(columns: OutputColumns, time: ArrayLike<number>)
 /** The buffers to transfer with the output's columns. */
 export function outputColumnBuffers(columns: OutputColumns): ArrayBuffer[] {
   const buffers = columns.columns.map((column) => column.buffer as ArrayBuffer);
+  for (const mask of columns.nans) if (mask) buffers.push(mask.buffer as ArrayBuffer);
   if (columns.present) buffers.push(columns.present.buffer as ArrayBuffer);
   return buffers;
 }

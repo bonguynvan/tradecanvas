@@ -95,6 +95,59 @@ describe('indicatorWorker', () => {
     expect(chart.getIndicatorOutput(bb)?.series).toEqual(expected?.series);
   });
 
+  it('draws and fits again what a read finished on the main thread', async () => {
+    inProcessPool();
+    const chart = makeChart({ indicatorWorker: 'auto' });
+    chart.setData(bars(MANY));
+    const updates = vi.fn();
+    chart.on('indicatorUpdate', updates);
+    const macd = chart.addIndicator('macd')!;
+    await Promise.resolve();
+    updates.mockClear();
+    const draw = vi.spyOn(chart as unknown as { updateViewportAndRender(): void }, 'updateViewportAndRender');
+    chart.getIndicatorOutput(macd);
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(draw).toHaveBeenCalled();
+    expect(updates).toHaveBeenCalledWith(expect.objectContaining({ payload: { from: 0 } }));
+  });
+
+  it('leaves an alert on a line still in the worker for when it lands, without finishing it on a tick', async () => {
+    inProcessPool();
+    const chart = makeChart({ indicatorWorker: 'auto' });
+    const data = bars(MANY);
+    chart.setData(data);
+    const rsi = chart.addIndicator('rsi', { period: 14 })!;
+    chart.addAlert(0, 'greaterThan', 'rsi up', `${rsi}:value`);
+    const fired = vi.fn();
+    chart.on('alertTriggered', fired);
+    const last = data[data.length - 1];
+    chart.updateLastBar({ ...last, close: last.close + 0.1 });
+    // Not computed on the tick: it is still the worker's.
+    expect(chart.getIndicatorOutput(rsi, { drawn: true })).toBeNull();
+    await drain(12);
+    expect(chart.getIndicatorOutput(rsi, { drawn: true })).not.toBeNull();
+    // Its value was taken when it landed: the next tick compares with it, as the next tick after the first does with 'off'.
+    chart.updateLastBar({ ...last, close: last.close + 0.2 });
+    expect(fired).toHaveBeenCalledTimes(1);
+  });
+
+  it('cancels its recomputes in the worker when destroyed, so none lands on it', async () => {
+    const { worker } = inProcessPool();
+    worker.hold();
+    const chart = makeChart({ indicatorWorker: 'auto' });
+    chart.setData(bars(MANY));
+    chart.addIndicator('ema');
+    await drain();
+    const draw = vi.spyOn(chart as unknown as { updateViewportAndRender(): void }, 'updateViewportAndRender');
+    chart.destroy();
+    charts.splice(charts.indexOf(chart), 1);
+    expect(worker.posted.at(-1)).toMatchObject({ type: 'cancel' });
+    worker.release();
+    await drain();
+    expect(draw).not.toHaveBeenCalled();
+  });
+
   it('keeps a short series on the main thread', () => {
     const { worker } = inProcessPool();
     const chart = makeChart({ indicatorWorker: 'auto' });

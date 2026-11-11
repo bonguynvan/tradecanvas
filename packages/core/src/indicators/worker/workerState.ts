@@ -54,14 +54,24 @@ function packNumbers(array: readonly (number | undefined)[], transfer: ArrayBuff
   return { tcPacked: 'numbers', values, missing };
 }
 
+/** Whether `value` is an object literal (or has no prototype): what packing walks into. */
+function isPlainObject(value: object): boolean {
+  const proto: unknown = Object.getPrototypeOf(value);
+  return proto === Object.prototype || proto === null;
+}
+
 /**
  * A plugin's state made ready to post: its long arrays of numbers as
- * buffers, added to `transfer`; everything else as it is.
+ * buffers, added to `transfer`; everything else as it is. Only arrays,
+ * plain objects and primitives: a Map, a typed array or a class instance
+ * would come back as something else, so it throws, and the worker answers
+ * with an error that has the main thread compute the indicator itself.
  */
 export function packWorkerState(state: unknown, transfer: ArrayBuffer[]): unknown {
   if (isNumberArray(state)) return packNumbers(state, transfer);
   if (Array.isArray(state)) return state.map((item) => packWorkerState(item, transfer));
   if (!state || typeof state !== 'object') return state;
+  if (!isPlainObject(state)) throw new Error('An indicator state to send from the worker must be plain arrays and objects');
   const out: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(state)) out[key] = packWorkerState(value, transfer);
   return out;

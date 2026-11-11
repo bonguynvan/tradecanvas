@@ -164,7 +164,7 @@ pnpm soak --minutes=30 --rate=50000 --renderer=canvas`}</code></pre>
 <pre><code>{`new Chart(el, { indicatorWorker: 'auto' })
 new ChartWidget(el, { chartOptions: { indicatorWorker: 'auto' } })`}</code></pre>
 <p>
-  在结果到达之前，图表绘制上一次的结果（刚添加的指标则不绘制）。通过 <code>getIndicatorOutput</code>、提醒或导出读取数值时，会先在主线程上算完仍在 worker 中的部分，因此读到的值永远不会过时；<code>getIndicatorOutput(id, {'{'} drawn: true {'}'})</code> 则不等待，直接返回当前绘制的内容。读取其他指标线或其他品种的指标，以及你自己的指标（<code>registerIndicator</code>），都在主线程上计算；在无法运行 worker 的环境中（服务器、jsdom，或拒绝 <code>blob:</code> worker 的内容安全策略）也是如此。
+  在结果到达之前，图表继续绘制上一次的结果：切换品种或周期后显示的是之前序列的线条，刚添加的指标则什么也不显示。通过 <code>getIndicatorOutput</code> 或导出读取数值时，会先在主线程上算完仍在 worker 中的部分，因此读到的值永远不会过时；针对仍在 worker 中计算的线条的提醒，会在结果返回时再检查；<code>getIndicatorOutput(id, {'{'} drawn: true {'}'})</code> 则不等待，直接返回当前绘制的内容。读取其他指标线或其他品种的指标，以及你自己的指标（<code>registerIndicator</code>），都在主线程上计算；在无法运行 worker 的环境中（服务器、jsdom，或拒绝 <code>blob:</code> worker 的内容安全策略）也是如此。
 </p>
 <table>
   <thead><tr><th>先 setData，再添加 EMA、RSI、MACD 和布林带</th><th>200,000 根，off</th><th>auto</th><th>1,000,000 根，off</th><th>auto</th></tr></thead>

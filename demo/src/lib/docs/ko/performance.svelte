@@ -165,7 +165,7 @@ pnpm soak --minutes=30 --rate=50000 --renderer=canvas`}</code></pre>
 <pre><code>{`new Chart(el, { indicatorWorker: 'auto' })
 new ChartWidget(el, { chartOptions: { indicatorWorker: 'auto' } })`}</code></pre>
 <p>
-  결과가 도착할 때까지 차트는 직전 결과를 그립니다(방금 추가한 지표는 아무것도 그리지 않습니다). <code>getIndicatorOutput</code>, 알림, 내보내기로 값을 읽으면 아직 워커에 있는 계산을 먼저 메인 스레드에서 끝내므로 읽은 값이 오래된 경우는 없습니다. <code>getIndicatorOutput(id, {'{'} drawn: true {'}'})</code>는 기다리지 않고 지금 그려진 값을 돌려줍니다. 다른 지표의 선이나 다른 종목을 읽는 지표, 그리고 직접 만든 지표(<code>registerIndicator</code>)는 메인 스레드에서 계산되며, 워커를 쓸 수 없는 환경(서버, jsdom, <code>blob:</code> 워커를 막는 Content Security Policy)에서는 모두 메인 스레드에서 계산됩니다.
+  결과가 도착할 때까지 차트는 직전 결과를 계속 그립니다. 종목이나 주기를 바꾼 뒤라면 이전 시리즈의 선을, 방금 추가한 지표라면 아무것도 그리지 않습니다. <code>getIndicatorOutput</code>이나 내보내기로 값을 읽으면 아직 워커에 있는 계산을 먼저 메인 스레드에서 끝내므로 읽은 값이 오래된 경우는 없습니다. 아직 워커에서 계산 중인 선에 걸린 알림은 결과가 도착할 때 확인합니다. <code>getIndicatorOutput(id, {'{'} drawn: true {'}'})</code>는 기다리지 않고 지금 그려진 값을 돌려줍니다. 다른 지표의 선이나 다른 종목을 읽는 지표, 그리고 직접 만든 지표(<code>registerIndicator</code>)는 메인 스레드에서 계산되며, 워커를 쓸 수 없는 환경(서버, jsdom, <code>blob:</code> 워커를 막는 Content Security Policy)에서는 모두 메인 스레드에서 계산됩니다.
 </p>
 <table>
   <thead><tr><th>setData 후 EMA, RSI, MACD, 볼린저 밴드</th><th>200,000봉, off</th><th>auto</th><th>1,000,000봉, off</th><th>auto</th></tr></thead>

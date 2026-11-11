@@ -441,9 +441,14 @@ export class IndicatorEngine {
     return this.instances.get(instanceId)?.output ?? null;
   }
 
-  /** Whether a full recompute of any indicator is still running in the worker. */
-  isComputingInWorker(): boolean {
-    return this.worker.busy;
+  /** Whether a full recompute runs in the worker: any, or `instanceId`'s or one whose line it reads. */
+  isComputingInWorker(instanceId?: string): boolean {
+    return this.worker.computing(instanceId);
+  }
+
+  /** Drop what runs in the worker without computing it, and stop using it (the chart is going). */
+  stopWorker(): void {
+    this.worker.stop();
   }
 
   /** Price-pane overlays; those on the left scale draw with `leftViewport` (its range). */
@@ -467,10 +472,7 @@ export class IndicatorEngine {
 
   /** Whether any visible overlay is drawn on the left scale. */
   hasLeftScaleOverlays(): boolean {
-    for (const instance of this.instances.values()) {
-      if (instance.config.scale === 'left' && isShown(instance)) return true;
-    }
-    return false;
+    return [...this.instances.values()].some((instance) => instance.config.scale === 'left' && isShown(instance));
   }
 
   /**
@@ -787,13 +789,9 @@ export class IndicatorEngine {
   }
 
   getPanelIndicators(): { instanceId: string; descriptor: IndicatorDescriptor }[] {
-    const result: { instanceId: string; descriptor: IndicatorDescriptor }[] = [];
-    for (const [id, instance] of this.instances) {
-      if (instance.plugin.descriptor.placement === 'panel') {
-        result.push({ instanceId: id, descriptor: instance.plugin.descriptor });
-      }
-    }
-    return result;
+    return [...this.instances.values()]
+      .filter((instance) => instance.plugin.descriptor.placement === 'panel')
+      .map((instance) => ({ instanceId: instance.config.instanceId, descriptor: instance.plugin.descriptor }));
   }
 }
 
