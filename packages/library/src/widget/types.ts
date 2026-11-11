@@ -740,7 +740,16 @@ export interface ChartSettingsState {
 
 export interface DrawingToolGroupDef {
   label: string;
-  tools: { label: string; value: DrawingToolType }[];
+  tools: {
+    label: string;
+    value: DrawingToolType;
+    /**
+     * A heading put over this tool and the ones after it in the group's menu,
+     * for a group that gathers several kinds (Lines: lines, horizontal and
+     * vertical, channels). A menu with headings shows no name over them all.
+     */
+    heading?: string;
+  }[];
   /**
    * Groups with the same section sit together in the sidebar, with a divider
    * between one section and the next. Groups without one get no divider.

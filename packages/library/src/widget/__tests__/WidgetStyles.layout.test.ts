@@ -290,6 +290,13 @@ describe('a watchlist row’s remove button', () => {
     expect(rule('.tcw-watchlist-row')).toMatch(/grid-template-columns:\s*subgrid/);
     // An empty list's message spans the grid; placed as a cell it fell into the 2px gutter.
     expect(rule('.tcw-watchlist-empty')).toMatch(/grid-column:\s*1 \/ -1/);
+  });
+
+  it('keeps its rows short, and drops the move first in a narrow panel', () => {
+    expect(rule('.tcw-watchlist-row')).not.toMatch(/padding:\s*\d+px \d/);
+    expect(css).toMatch(/\.tcw-watchlist-row \{[^}]*min-height:\s*24px/);
+    expect(rule('.tcw-watchlist')).toMatch(/container:\s*tcw-watchlist \/ inline-size/);
+    expect(css).toMatch(/@container tcw-watchlist \(width < 250px\) \{\s*\.tcw-watchlist-move,\s*\.tcw-watchlist-column-move \{\s*display:\s*none/);
     const button = rule('.tcw-watchlist-remove');
     expect(button).not.toMatch(/position:\s*absolute/);
     expect(button).toMatch(/width:\s*var\(--tcw-watchlist-remove\)/);

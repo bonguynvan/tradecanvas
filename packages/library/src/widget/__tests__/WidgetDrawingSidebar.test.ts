@@ -79,12 +79,38 @@ describe('drawing tool menu', () => {
   });
 
   it('switches straight to another group', () => {
-    const [lines, levels] = wraps();
+    const [lines, fibonacci] = wraps();
     enter(lines);
     leave(lines);
-    enter(levels);
+    enter(fibonacci);
     expect(host.querySelectorAll('.tcw-flyout')).toHaveLength(1);
-    expect(flyout()?.querySelector('.tcw-flyout-header')?.textContent).toBe('Horizontal/Vertical');
+    expect(flyout()?.getAttribute('aria-label')).toBe('Fibonacci');
+  });
+});
+
+describe('drawing tool buttons, a kind each', () => {
+  const headings = () => [...(flyout()?.querySelectorAll('.tcw-flyout-heading') ?? [])].map((h) => h.textContent);
+
+  // Few buttons, so the column needs no shrinking to hold them: big icons in a narrow column.
+  it('gathers the tools in six buttons, each for a kind', () => {
+    expect(wraps()).toHaveLength(6);
+    expect(DRAWING_TOOL_GROUPS.map((g) => g.label)).toEqual(['Lines', 'Fibonacci', 'Patterns', 'Forecasting', 'Shapes', 'Annotation']);
+  });
+
+  it('lists a button’s tools under the kinds it gathers, with no name over them all', () => {
+    enter(wraps()[0]);
+    expect(headings()).toEqual(['Lines', 'Horizontal/Vertical', 'Channels']);
+    expect(flyout()?.querySelector('.tcw-flyout-header')).toBeNull();
+    // Each heading sits right before the first of its tools, and is not a menu item.
+    const heading = flyout()!.querySelectorAll('.tcw-flyout-heading')[1];
+    expect((heading.nextElementSibling as HTMLElement).dataset.toolValue).toBe('horizontalLine');
+    expect(heading.getAttribute('role')).toBe('presentation');
+  });
+
+  it('keeps the name over a menu of one kind', () => {
+    enter(wraps()[5]);
+    expect(headings()).toEqual([]);
+    expect(flyout()?.querySelector('.tcw-flyout-header')?.textContent).toBe('Annotation');
   });
 });
 

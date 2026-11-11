@@ -38,11 +38,11 @@ export interface DockOptions {
 }
 
 /**
- * The panel's widths: 377 at most, a step of phi above 233; it opens at
- * 377 / sqrt(phi) = 296, as the indicator settings sit half a step under the
- * indicators dialog.
+ * The panel's widths: 377 at most, a step of phi above 233; it opens a
+ * quarter step over the narrowest, 233 x phi^(1/4) = 262, to leave the chart
+ * its room: a watchlist row's four figures still fit.
  */
-export const DOCK_WIDTH = { min: 233, default: 296, max: 377 } as const;
+export const DOCK_WIDTH = { min: 233, default: 262, max: 377 } as const;
 /** One arrow key's worth of resizing. */
 export const DOCK_WIDTH_STEP = 13;
 /** The most of its row the panel takes: the chart keeps 61.8%. */

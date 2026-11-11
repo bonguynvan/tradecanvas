@@ -68,12 +68,12 @@
   }
 }
 
-/* The panel: 296 wide to start (377 / sqrt(phi)), from 233 to 377. */
+/* The panel: 262 wide to start (233 x phi^(1/4)), from 233 to 377. */
 .tcw-dock-panel {
   position: relative;
   display: flex;
   flex-direction: column;
-  width: var(--tcw-dock-w, 296px);
+  width: var(--tcw-dock-w, 262px);
   min-height: 0;
   border-inline-start: var(--tcw-border-w) solid var(--tcw-border);
   background: var(--tcw-bg-surface);

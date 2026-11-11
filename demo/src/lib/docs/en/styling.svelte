@@ -90,7 +90,7 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
 <table>
   <thead><tr><th>What</th><th>Rule</th><th>Values (px)</th></tr></thead>
   <tbody>
-    <tr><td>Sizes</td><td>Half steps of φ: an icon, its small button, its button, the bar, the drawing tools' column; a menu row is as tall as a button. The drawing tools' icons are a half step over the others' (26 against 20), their buttons a little short of it, to keep 8 px either side in the column.</td><td>20 · 26 · 33 · 42 · 53</td></tr>
+    <tr><td>Sizes</td><td>Half steps of φ: an icon, its small button, its button, the bar, and the drawing tools' column on the bar's step; a menu row is as tall as a button. The drawing tools' icons are a half step over the others' (26 against 20), their buttons a little short of it, to keep 3 px either side in the column.</td><td>20 · 26 · 33 · 42</td></tr>
     <tr><td>Spacing</td><td>Fibonacci numbers, each the sum of the two before, so neighbours are near φ apart.</td><td>2 · 3 · 5 · 8 · 13 · 21 · 34</td></tr>
     <tr><td>Corners</td><td>
       Fibonacci numbers too. A nested corner is the one around it less the padding between, so the curves run
