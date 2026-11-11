@@ -1,5 +1,11 @@
 # @tradecanvas/core
 
+## 1.83.1
+
+### Patch Changes
+
+- @tradecanvas/commons@1.83.1
+
 ## 1.83.0
 
 ### Patch Changes
