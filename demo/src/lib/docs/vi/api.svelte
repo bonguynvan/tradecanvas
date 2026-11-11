@@ -1144,7 +1144,7 @@ new ChartWidget(host, {
 <pre><code>{`import { ChartWidgetGrid } from '@tradecanvas/chart/widget'
 
 const grid = new ChartWidgetGrid(host, {
-  layout: '2x2',                                   // '1x1' '1x2' '2x1' '2x2' '1x3' '3x1' '2x3' '3x2'
+  layout: '2x2',                                   // '1x2', '2x2', '3x3', '1+2', '1/3'… (xem danh sách ở ChartGrid)
   widget: { timeframe: '1h' },                    // cho mọi biểu đồ
   adapter: () => new BinanceAdapter(),            // mỗi biểu đồ một adapter: một adapter giữ một luồng
   // hoặc widget: { timeframe: '1h', feed }: một DataFeed phục vụ mọi biểu đồ
@@ -1184,4 +1184,15 @@ const grid = new ChartGrid(host, { layout: '2x2', theme: 'dark' })
 await grid.connectAll(() => new BinanceAdapter(), ['BTCUSDT','ETHUSDT','SOLUSDT','BNBUSDT'], '5m')
 grid.setLayout('1x2')`}</code></pre>
 
-<p>Bố cục: <code>'1x1'</code>, <code>'1x2'</code>, <code>'2x1'</code>, <code>'2x2'</code>, <code>'1x3'</code>, <code>'3x1'</code>, <code>'2x3'</code>, <code>'3x2'</code>.</p>
+<p>
+  Bố cục, dùng chung cho <code>ChartGrid</code> và <code>ChartWidgetGrid</code>.
+  Lưới thường đặt tên theo hàng × cột (<code>'1x2'</code> là một hàng hai biểu đồ): <code>'1x1'</code>, <code>'1x2'</code>, <code>'2x1'</code>, <code>'1x3'</code>, <code>'3x1'</code>, <code>'2x2'</code>, <code>'1x4'</code>, <code>'4x1'</code>, <code>'2x3'</code>, <code>'3x2'</code>, <code>'2x4'</code>, <code>'3x3'</code>.
+  Các bố cục còn lại có một biểu đồ lớn: <code>'1+2'</code> và <code>'1+3'</code> (lớn bên trái, hai hoặc ba biểu đồ
+  xếp chồng bên phải), <code>'2+1'</code> (hai biểu đồ xếp chồng bên trái, lớn bên phải),
+  <code>'1/2'</code> và <code>'1/3'</code> (lớn ở trên, hai hoặc ba biểu đồ bên dưới), <code>'2/1'</code> (hai ở trên, một biểu đồ rộng bên dưới).
+  Biểu đồ lớn là biểu đồ đầu tiên, trừ <code>'2+1'</code> và <code>'2/1'</code>, nơi nó là biểu đồ cuối cùng.
+  <code>GRID_SHAPES</code> cho biết <code>cols</code>, <code>rows</code> của từng bố cục và, với các bố cục có biểu đồ lớn,
+  vùng <code>areas</code> mỗi biểu đồ chiếm (<code>[col, row, colSpan, rowSpan]</code>, theo thứ tự biểu đồ).
+  Thanh của <code>ChartWidgetGrid</code> hiện bố cục đang dùng thành một nút, mở bảng chọn các bố cục,
+  mỗi hàng ứng với một số lượng biểu đồ; <code>layoutChoices</code> giới hạn những bố cục được đưa ra.
+</p>

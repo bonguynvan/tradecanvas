@@ -1182,7 +1182,7 @@ new ChartWidget(host, {
 <pre><code>{`import { ChartWidgetGrid } from '@tradecanvas/chart/widget'
 
 const grid = new ChartWidgetGrid(host, {
-  layout: '2x2',                                   // '1x1' '1x2' '2x1' '2x2' '1x3' '3x1' '2x3' '3x2'
+  layout: '2x2',                                   // '1x2', '2x2', '3x3', '1+2', '1/3'… (lista completa en ChartGrid)
   widget: { timeframe: '1h' },                    // todos los gráficos
   adapter: () => new BinanceAdapter(),            // uno por gráfico: un adaptador mantiene un único flujo
   // o widget: { timeframe: '1h', feed }: un DataFeed sirve a todos los gráficos
@@ -1222,4 +1222,15 @@ const grid = new ChartGrid(host, { layout: '2x2', theme: 'dark' })
 await grid.connectAll(() => new BinanceAdapter(), ['BTCUSDT','ETHUSDT','SOLUSDT','BNBUSDT'], '5m')
 grid.setLayout('1x2')`}</code></pre>
 
-<p>Disposiciones: <code>'1x1'</code>, <code>'1x2'</code>, <code>'2x1'</code>, <code>'2x2'</code>, <code>'1x3'</code>, <code>'3x1'</code>, <code>'2x3'</code>, <code>'3x2'</code>.</p>
+<p>
+  Disposiciones, las mismas para <code>ChartGrid</code> y <code>ChartWidgetGrid</code>.
+  Las cuadrículas simples se nombran filas × columnas (<code>'1x2'</code> es una fila de dos): <code>'1x1'</code>, <code>'1x2'</code>, <code>'2x1'</code>, <code>'1x3'</code>, <code>'3x1'</code>, <code>'2x2'</code>, <code>'1x4'</code>, <code>'4x1'</code>, <code>'2x3'</code>, <code>'3x2'</code>, <code>'2x4'</code>, <code>'3x3'</code>.
+  Las demás tienen un gráfico grande: <code>'1+2'</code> y <code>'1+3'</code> (grande a la izquierda, dos o tres
+  apilados a la derecha), <code>'2+1'</code> (dos apilados a la izquierda, grande a la derecha),
+  <code>'1/2'</code> y <code>'1/3'</code> (grande arriba, dos o tres debajo), <code>'2/1'</code> (dos arriba, uno ancho debajo).
+  El gráfico grande es el primero, salvo en <code>'2+1'</code> y <code>'2/1'</code>, donde es el último.
+  <code>GRID_SHAPES</code> da las <code>cols</code> y <code>rows</code> de cada disposición y, en las que tienen un gráfico grande,
+  las <code>areas</code> que ocupa cada gráfico (<code>[col, row, colSpan, rowSpan]</code>, en orden).
+  La barra de un <code>ChartWidgetGrid</code> muestra la disposición en uso como un solo botón que abre un selector,
+  una fila por cada número de gráficos; <code>layoutChoices</code> limita lo que ofrece.
+</p>

@@ -271,7 +271,7 @@ export { LayoutSession, cleanLayoutName, MAX_LAYOUT_NAME } from './state/LayoutS
 export type { LayoutSessionHost, LayoutSessionOptions } from './state/LayoutSession.js';
 export { localStorageLayouts, memoryLayouts } from './state/layoutStorage.js';
 export type { LayoutStorage, SavedLayout, SavedLayoutSummary } from './state/layoutStorage.js';
-export type { GridLayout, GridCellConfig, ChartGridOptions } from './grid/ChartGrid.js';
+export type { GridLayout, GridArea, GridShape, GridCellConfig, ChartGridOptions } from './grid/ChartGrid.js';
 
 // Finance charts
 export { SparklineChart, DepthChart, EquityCurveChart, HeatmapChart, WaterfallChart, GaugeChart, PerformanceDashboard, BarChart, DonutChart, ScatterChart, HistogramChart, CalendarChart, MatrixChart, CounterClockChart } from './finance/index.js';

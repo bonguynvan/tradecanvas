@@ -39,6 +39,7 @@ export { readWatchlists } from './WatchlistStore.js';
 export type { WatchlistList } from './WatchlistStore.js';
 export { ChartWidgetGrid, DEFAULT_GRID_SYNC, GRID_SHAPES, readGridLayout } from './ChartWidgetGrid.js';
 export type { ChartWidgetGridOptions, WidgetGridSync, WidgetGridLayoutContent } from './ChartWidgetGrid.js';
+export type { GridLayout, GridShape, GridArea } from '../grid/gridShapes.js';
 export { readWidgetLayout } from './widgetLayout.js';
 export type { WidgetLayoutContent } from './widgetLayout.js';
 export { LayoutSession, cleanLayoutName, MAX_LAYOUT_NAME } from '../state/LayoutSession.js';

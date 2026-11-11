@@ -1078,7 +1078,7 @@ new ChartWidget(host, {
 <pre><code>{`import { ChartWidgetGrid } from '@tradecanvas/chart/widget'
 
 const grid = new ChartWidgetGrid(host, {
-  layout: '2x2',                                   // '1x1' '1x2' '2x1' '2x2' '1x3' '3x1' '2x3' '3x2'
+  layout: '2x2',                                   // '1x2'、'2x2'、'3x3'、'1+2'、'1/3'…（一覧は ChartGrid の項）
   widget: { timeframe: '1h' },                    // すべてのチャートに適用
   adapter: () => new BinanceAdapter(),            // チャートごとに 1 つ：アダプターは 1 本のストリームを保持する
   // または widget: { timeframe: '1h', feed }：1 つの DataFeed ですべてのチャートに対応
@@ -1117,4 +1117,14 @@ const grid = new ChartGrid(host, { layout: '2x2', theme: 'dark' })
 await grid.connectAll(() => new BinanceAdapter(), ['BTCUSDT','ETHUSDT','SOLUSDT','BNBUSDT'], '5m')
 grid.setLayout('1x2')`}</code></pre>
 
-<p>レイアウト：<code>'1x1'</code>、<code>'1x2'</code>、<code>'2x1'</code>、<code>'2x2'</code>、<code>'1x3'</code>、<code>'3x1'</code>、<code>'2x3'</code>、<code>'3x2'</code>。</p>
+<p>
+  レイアウトは <code>ChartGrid</code> と <code>ChartWidgetGrid</code> で共通です。
+  通常のグリッドは「行 × 列」で名付けます（<code>'1x2'</code> は 1 行に 2 つ）：<code>'1x1'</code>、<code>'1x2'</code>、<code>'2x1'</code>、<code>'1x3'</code>、<code>'3x1'</code>、<code>'2x2'</code>、<code>'1x4'</code>、<code>'4x1'</code>、<code>'2x3'</code>、<code>'3x2'</code>、<code>'2x4'</code>、<code>'3x3'</code>。
+  そのほかは大きなチャートを 1 つ含みます：<code>'1+2'</code> と <code>'1+3'</code>（左に大きく、右に 2 つまたは 3 つを縦に並べる）、
+  <code>'2+1'</code>（左に 2 つを縦に並べ、右に大きく）、<code>'1/2'</code> と <code>'1/3'</code>（上に大きく、下に 2 つまたは 3 つ）、
+  <code>'2/1'</code>（上に 2 つ、下に横長の 1 つ）。大きなチャートは最初のチャートですが、<code>'2+1'</code> と <code>'2/1'</code> では最後のチャートです。
+  <code>GRID_SHAPES</code> は各レイアウトの <code>cols</code> と <code>rows</code>、大きなチャートを含むものでは各チャートが占める
+  <code>areas</code>（<code>[col, row, colSpan, rowSpan]</code>、チャート順）を返します。
+  <code>ChartWidgetGrid</code> のバーは使用中のレイアウトを 1 つのボタンで示し、押すとチャート数ごとの行に並んだ選択パネルが開きます。
+  <code>layoutChoices</code> で選べるレイアウトを絞れます。
+</p>

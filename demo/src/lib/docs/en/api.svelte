@@ -921,7 +921,7 @@ const dayStart = timeframeBucketStart(trade.time, '1d', { timeZone: 'Asia/Ho_Chi
       { id: 'majors', name: 'Majors', symbols: ['BTCUSDT', 'ETHUSDT'] },
       { id: 'alts', name: 'Alts', symbols: ['SOLUSDT', 'ADAUSDT'] },
     ],
-    persist: true,                             // kept in this browser
+    persist: true,                             // kept in this browser; a list added here later joins them
     onChange: (lists, active) => save(lists),  // or keep them yourself
   },
 })
@@ -1144,7 +1144,7 @@ new ChartWidget(host, {
 <pre><code>{`import { ChartWidgetGrid } from '@tradecanvas/chart/widget'
 
 const grid = new ChartWidgetGrid(host, {
-  layout: '2x2',                                   // '1x1' '1x2' '2x1' '2x2' '1x3' '3x1' '2x3' '3x2'
+  layout: '2x2',                                   // '1x2', '2x2', '3x3', '1+2', '1/3'… (all under ChartGrid)
   widget: { timeframe: '1h' },                    // every chart
   adapter: () => new BinanceAdapter(),            // one per chart: an adapter keeps one stream
   // or widget: { timeframe: '1h', feed }: one DataFeed serves every chart
@@ -1184,4 +1184,15 @@ const grid = new ChartGrid(host, { layout: '2x2', theme: 'dark' })
 await grid.connectAll(() => new BinanceAdapter(), ['BTCUSDT','ETHUSDT','SOLUSDT','BNBUSDT'], '5m')
 grid.setLayout('1x2')`}</code></pre>
 
-<p>Layouts: <code>'1x1'</code>, <code>'1x2'</code>, <code>'2x1'</code>, <code>'2x2'</code>, <code>'1x3'</code>, <code>'3x1'</code>, <code>'2x3'</code>, <code>'3x2'</code>.</p>
+<p>
+  Layouts, the same for <code>ChartGrid</code> and <code>ChartWidgetGrid</code>.
+  Plain grids are named rows × columns (<code>'1x2'</code> is one row of two): <code>'1x1'</code>, <code>'1x2'</code>, <code>'2x1'</code>, <code>'1x3'</code>, <code>'3x1'</code>, <code>'2x2'</code>, <code>'1x4'</code>, <code>'4x1'</code>, <code>'2x3'</code>, <code>'3x2'</code>, <code>'2x4'</code>, <code>'3x3'</code>.
+  The others have one large chart: <code>'1+2'</code> and <code>'1+3'</code> (large on the left, two or three
+  stacked on the right), <code>'2+1'</code> (two stacked on the left, large on the right),
+  <code>'1/2'</code> and <code>'1/3'</code> (large on top, two or three below), <code>'2/1'</code> (two on top, wide below).
+  The large chart is the first, except in <code>'2+1'</code> and <code>'2/1'</code>, where it is the last.
+  <code>GRID_SHAPES</code> gives each layout's <code>cols</code>, <code>rows</code> and, for the
+  others, the <code>areas</code> its charts take (<code>[col, row, colSpan, rowSpan]</code>, in chart order).
+  The bar of a <code>ChartWidgetGrid</code> shows the layout in use as one button that opens a picker
+  of them, a row for each chart count; <code>layoutChoices</code> narrows what it offers.
+</p>

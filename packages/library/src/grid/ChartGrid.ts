@@ -1,8 +1,9 @@
 import type { ChartOptions, Theme, TimeFrame, DataSeries, DataAdapter, DataFeed, StreamConfig } from '@tradecanvas/commons';
 import { isDataFeed } from '@tradecanvas/core';
 import { Chart } from '../Chart.js';
+import { GRID_LAYOUT_SHAPES, gridAreas, gridChartCount, isGridLayout, placeGridCell, type GridLayout } from './gridShapes.js';
 
-export type GridLayout = '1x1' | '1x2' | '2x1' | '2x2' | '1x3' | '3x1' | '2x3' | '3x2';
+export type { GridArea, GridLayout, GridShape } from './gridShapes.js';
 
 export interface GridCellConfig {
   symbol?: string;
@@ -27,17 +28,6 @@ interface GridCell {
   timeframe: TimeFrame;
 }
 
-const LAYOUT_MAP: Record<GridLayout, { cols: number; rows: number }> = {
-  '1x1': { cols: 1, rows: 1 },
-  '1x2': { cols: 2, rows: 1 },
-  '2x1': { cols: 1, rows: 2 },
-  '2x2': { cols: 2, rows: 2 },
-  '1x3': { cols: 3, rows: 1 },
-  '3x1': { cols: 1, rows: 3 },
-  '2x3': { cols: 3, rows: 2 },
-  '3x2': { cols: 2, rows: 3 },
-};
-
 export class ChartGrid {
   private root: HTMLDivElement;
   private cells: GridCell[] = [];
@@ -48,7 +38,7 @@ export class ChartGrid {
 
   constructor(container: HTMLElement, options: ChartGridOptions = {}) {
     this.options = options;
-    this.layout = options.layout ?? '2x2';
+    this.layout = isGridLayout(options.layout) ? options.layout : '2x2';
 
     this.root = document.createElement('div');
     this.root.style.cssText = 'display:grid;width:100%;height:100%;overflow:hidden;';
@@ -59,17 +49,24 @@ export class ChartGrid {
   }
 
   private applyLayout(): void {
-    const { cols, rows } = LAYOUT_MAP[this.layout];
+    const { cols, rows } = GRID_LAYOUT_SHAPES[this.layout];
     const gap = this.options.gap ?? 1;
-    this.root.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
-    this.root.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
+    this.root.style.gridTemplateColumns = `repeat(${cols}, minmax(0, 1fr))`;
+    this.root.style.gridTemplateRows = `repeat(${rows}, minmax(0, 1fr))`;
     this.root.style.gap = `${gap}px`;
+    this.placeCells();
+  }
+
+  /** Each chart in its place in the arrangement (a large one spans several cells). */
+  private placeCells(): void {
+    const areas = gridAreas(GRID_LAYOUT_SHAPES[this.layout]);
+    this.cells.forEach((cell, i) => placeGridCell(cell.container, areas[i]));
   }
 
   private createCells(): void {
-    const { cols, rows } = LAYOUT_MAP[this.layout];
-    const count = cols * rows;
+    const count = gridChartCount(GRID_LAYOUT_SHAPES[this.layout]);
     for (let i = 0; i < count; i++) this.cells.push(this.createCell(i));
+    this.placeCells();
   }
 
   private createCell(i: number): GridCell {
@@ -146,11 +143,14 @@ export class ChartGrid {
     return cell;
   }
 
+  /**
+   * Arrange the charts. Charts that no longer fit are destroyed; new ones get
+   * the grid's options and links.
+   */
   setLayout(layout: GridLayout): void {
-    if (layout === this.layout) return;
+    if (layout === this.layout || !isGridLayout(layout)) return;
     const oldCount = this.cells.length;
-    const { cols, rows } = LAYOUT_MAP[layout];
-    const newCount = cols * rows;
+    const newCount = gridChartCount(GRID_LAYOUT_SHAPES[layout]);
 
     if (newCount < oldCount) {
       for (let i = oldCount - 1; i >= newCount; i--) {
@@ -166,6 +166,11 @@ export class ChartGrid {
 
     // New cells get the same options and linking as the first ones.
     for (let i = oldCount; i < newCount; i++) this.cells.push(this.createCell(i));
+    this.placeCells();
+  }
+
+  getLayout(): GridLayout {
+    return this.layout;
   }
 
   getChart(index: number): Chart | null {

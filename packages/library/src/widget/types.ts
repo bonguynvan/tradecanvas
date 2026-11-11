@@ -23,7 +23,11 @@ export interface WatchlistOptions {
   lists?: WatchlistList[];
   /** The list shown first, by id. */
   activeList?: string;
-  /** Keep the lists in this browser (localStorage) between visits. Default `false`. */
+  /**
+   * Keep the lists in this browser (localStorage) between visits. Default
+   * `false`. The user's lists win over `lists`, but a list you add to
+   * `lists` later is added to theirs, and one they removed stays removed.
+   */
   persist?: boolean;
   /** The localStorage key when `persist` is on. Default `'tcw:watchlists'`. */
   storageKey?: string;
@@ -593,6 +597,8 @@ export interface ToolbarCallbacks {
   onToggleReplay?: () => void;
   onToggleAlerts?: () => void;
   onToggleObjects?: () => void;
+  /** Open or shut the watchlist: given when the widget has one. */
+  onToggleWatchlist?: () => void;
   onToggleAccount?: () => void;
   /** The layouts button was pressed: open its menu under it. */
   onLayouts?: (anchor: HTMLElement) => void;

@@ -57,7 +57,7 @@ class FakeChart {
 
 vi.mock('../../Chart.js', () => ({ Chart: FakeChart }));
 
-const { ChartWidgetGrid } = await import('../ChartWidgetGrid.js');
+const { ChartWidgetGrid, readGridLayout } = await import('../ChartWidgetGrid.js');
 
 let host: HTMLDivElement;
 let grid: InstanceType<typeof ChartWidgetGrid>;
@@ -75,6 +75,8 @@ const make = (options: ConstructorParameters<typeof ChartWidgetGrid>[1] = {}) =>
 const symbols = () => [...host.querySelectorAll('.tcw-grid-cell [data-role="symbol"]')].map((b) => b.textContent);
 const charts = () => grid.getWidgets().map((w) => w.getChart() as unknown as FakeChart);
 const syncButton = (label: string) => [...host.querySelectorAll<HTMLButtonElement>('.tcw-grid-sync')].find((b) => b.textContent === label)!;
+const layoutButton = () => host.querySelector<HTMLButtonElement>('.tcw-grid-layout-btn')!;
+const cellAreas = () => [...host.querySelectorAll<HTMLElement>('.tcw-grid-cell')].map((c) => c.style.gridArea);
 const nextFrame = () => new Promise((r) => requestAnimationFrame(() => r(undefined)));
 
 beforeEach(() => {
@@ -104,11 +106,15 @@ describe('ChartWidgetGrid', () => {
   it('grows and shrinks with the arrangement picked on its bar', () => {
     const changes: number[] = [];
     make({ onActiveChange: (i) => changes.push(i) });
-    host.querySelector<HTMLButtonElement>('[aria-label="4 charts, 2 across and 2 down"]')!.click();
+    const pick = (label: string) => {
+      layoutButton().click();
+      host.querySelector<HTMLButtonElement>(`.tcw-grid-picker [role="menuitemradio"][aria-label="${label}"]`)!.click();
+    };
+    pick('4 charts, 2 across and 2 down');
     expect(symbols()).toEqual(['AAA', 'BBB', 'CCC', 'DDD']);
     expect(grid.getLayout()).toBe('2x2');
     grid.setActive(3);
-    host.querySelector<HTMLButtonElement>('[aria-label="One chart"]')!.click();
+    pick('One chart');
     expect(symbols()).toEqual(['AAA']);
     expect(grid.getActiveIndex()).toBe(0);
     expect(changes).toEqual([3, 0]);
@@ -320,6 +326,79 @@ describe('ChartWidgetGrid', () => {
     document.dispatchEvent(event);
     expect(event.defaultPrevented).toBe(true);
     expect(host.querySelector('.tcw-name-prompt')!.closest('.tcw-modal-backdrop')!.hasAttribute('hidden')).toBe(false);
+  });
+});
+
+describe('ChartWidgetGrid arrangements', () => {
+  const eight = Array.from({ length: 9 }, (_, i) => ({ symbol: `S${i + 1}` }));
+
+  it('has one arrangement button on its bar, showing the one in use', () => {
+    make();
+    expect(host.querySelectorAll('.tcw-grid-bar .tcw-grid-layout-btn')).toHaveLength(1);
+    expect(layoutButton().getAttribute('aria-label')).toBe('Chart layout: 2 charts, 2 across and 1 down');
+    grid.setLayout('1+2');
+    expect(layoutButton().getAttribute('aria-label')).toBe('Chart layout: 3 charts, one large on the left');
+    expect(layoutButton().querySelectorAll('svg rect')).toHaveLength(3);
+  });
+
+  it('puts the arrangement before the charts’ tabs, which narrow would push it off the bar', () => {
+    make({ layout: '3x3' });
+    const bar = host.querySelector<HTMLElement>('.tcw-grid-bar')!;
+    const parts = [...bar.children];
+    const layout = parts.findIndex((el) => el.querySelector('.tcw-grid-layout-btn'));
+    const tabs = parts.findIndex((el) => el.classList.contains('tcw-grid-tabs'));
+    expect(layout).toBeGreaterThanOrEqual(0);
+    expect(layout).toBeLessThan(tabs);
+  });
+
+  it('opens a picker of the arrangements offered, the one in use checked', () => {
+    make({ layoutChoices: ['1x1', '1x2', '1+2', '3x3', 'nope' as never] });
+    layoutButton().click();
+    const items = [...host.querySelectorAll<HTMLButtonElement>('.tcw-grid-picker [role="menuitemradio"]')];
+    expect(items.map((b) => b.dataset.layout)).toEqual(['1x1', '1x2', '1+2', '3x3']);
+    expect(items.map((b) => b.getAttribute('aria-checked'))).toEqual(['false', 'true', 'false', 'false']);
+    items[2].click();
+    expect(grid.getLayout()).toBe('1+2');
+    expect(host.querySelector<HTMLElement>('.tcw-grid-picker')!.hidden).toBe(true);
+  });
+
+  it('puts each chart in its place, a large one over several cells', () => {
+    make({ layout: '1+2' });
+    expect(cellAreas()).toEqual(['1 / 1 / span 2 / span 1', '1 / 2 / span 1 / span 1', '2 / 2 / span 1 / span 1']);
+    grid.setLayout('2/1');
+    expect(cellAreas()).toEqual(['1 / 1 / span 1 / span 1', '1 / 2 / span 1 / span 1', '2 / 1 / span 1 / span 2']);
+    grid.setLayout('1/3');
+    expect(cellAreas()).toEqual(['1 / 1 / span 1 / span 3', '2 / 1 / span 1 / span 1', '2 / 2 / span 1 / span 1', '2 / 3 / span 1 / span 1']);
+    grid.setLayout('2x2');
+    expect(cellAreas()[3]).toBe('2 / 2 / span 1 / span 1');
+  });
+
+  it('grows to nine charts and back, keeping the ones it put away', async () => {
+    make({ layout: '3x3', cells: eight });
+    expect(symbols()).toHaveLength(9);
+    charts()[8].drawings = ['kept'];
+    grid.setLayout('2+1');
+    expect(symbols()).toEqual(['S1', 'S2', 'S3']);
+    expect(grid.captureLayout().cells).toHaveLength(9);
+    grid.setLayout('2x4');
+    expect(symbols()).toHaveLength(8);
+    grid.setLayout('3x3');
+    await nextFrame();
+    expect(symbols()[8]).toBe('S9');
+    expect(charts()[8].drawings).toEqual(['kept']);
+  });
+
+  it('saves and reads back the new arrangements', async () => {
+    make({ layout: '1/3' });
+    const content = grid.getLayoutContent();
+    expect(readGridLayout(JSON.parse(content))?.layout).toBe('1/3');
+    for (const layout of ['1x4', '4x1', '2x4', '3x3', '1+2', '2+1', '1/2', '2/1', '1+3']) {
+      expect(readGridLayout({ v: 1, kind: 'grid', layout, cells: [] })?.layout).toBe(layout);
+    }
+    expect(readGridLayout({ v: 1, kind: 'grid', layout: '4x4', cells: [] })).toBeNull();
+    grid.setLayout('1x1');
+    await expect(grid.applyLayoutContent(content)).resolves.toBe(true);
+    expect(grid.getLayout()).toBe('1/3');
   });
 });
 

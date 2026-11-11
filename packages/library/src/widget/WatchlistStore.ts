@@ -22,6 +22,8 @@ export interface WatchlistStoreOptions {
 }
 
 const MAX_LISTS = 50;
+/** The most host list ids kept as offered: a host's lists, many times over. */
+const MAX_OFFERED = 200;
 const MAX_SYMBOLS = 500;
 const MAX_NAME = 60;
 
@@ -68,29 +70,69 @@ export function readWatchlists(raw: unknown): { lists: WatchlistList[]; active: 
 
 const copy = (list: WatchlistList): WatchlistList => ({ ...list, symbols: [...list.symbols] });
 
+/** The lists as kept between visits, and the host's list ids the user has had (null: kept before that was noted). */
+interface SavedWatchlists {
+  lists: WatchlistList[];
+  active: string;
+  offered: string[] | null;
+}
+
+/** The host's list ids noted as had, from storage: the strings that can be list ids, or null when none were noted. */
+function readOffered(value: unknown): string[] | null {
+  const offered = (value as { offered?: unknown } | null)?.offered;
+  if (!Array.isArray(offered)) return null;
+  return offered.filter((id): id is string => typeof id === 'string' && id.length > 0 && id.length <= MAX_SYMBOL_LENGTH).slice(-MAX_OFFERED);
+}
+
 /**
  * The widget's watchlists: which one is shown, and their symbols. Every
  * change is kept in storage (when it has one) and told to its listeners;
  * readers get copies.
  */
 export class WatchlistStore {
-  private lists: WatchlistList[];
-  private active: string;
+  private lists!: WatchlistList[];
+  private active!: string;
   private readonly listeners = new Set<() => void>();
   private readonly storage: KeyValueStorage | null;
   private readonly storageKey: string;
+  /**
+   * The host's lists, by id, that the user has had: one they removed stays
+   * removed, and one the host adds later is added to the lists they kept.
+   */
+  private offered: Set<string>;
 
   constructor(options: WatchlistStoreOptions) {
     this.storage = options.storage ?? null;
     this.storageKey = options.storageKey ?? 'tcw:watchlists';
     const saved = this.load();
     const given = options.lists ? readWatchlists({ lists: options.lists, active: options.activeList }) : null;
-    const start = saved ?? given ?? {
+    const start = given ?? {
       lists: [{ id: 'default', name: cleanName(options.defaultName) ?? 'Watchlist', symbols: cleanSymbols(options.symbols ?? []) }],
       active: 'default',
     };
-    this.lists = start.lists;
-    this.active = start.active;
+    this.offered = new Set(given?.lists.map((l) => l.id));
+    if (!saved) {
+      this.lists = start.lists;
+      this.active = start.active;
+      return;
+    }
+    const fresh = this.keepWithHostLists(saved, given?.lists ?? []);
+    if (fresh) this.save();
+  }
+
+  /**
+   * The lists kept, as the user left them, and after them the host's lists
+   * the user has never had (lists kept before the store noted what it
+   * offered count their own as had). True when it added any.
+   */
+  private keepWithHostLists(saved: SavedWatchlists, host: readonly WatchlistList[]): boolean {
+    const had = new Set(saved.offered ?? saved.lists.map((l) => l.id));
+    const fresh = host.filter((l) => !had.has(l.id) && !saved.lists.some((k) => k.id === l.id));
+    this.lists = [...saved.lists, ...fresh].slice(0, MAX_LISTS);
+    this.active = saved.active;
+    // A list left out for want of room is not had: it comes once there is room.
+    this.offered = new Set([...had, ...this.lists.map((l) => l.id)]);
+    return fresh.length > 0;
   }
 
   getLists(): WatchlistList[] {
@@ -190,11 +232,14 @@ export class WatchlistStore {
     for (const listener of this.listeners) listener();
   }
 
-  private load(): { lists: WatchlistList[]; active: string } | null {
+  private load(): SavedWatchlists | null {
     if (!this.storage) return null;
     try {
       const raw = this.storage.getItem(this.storageKey);
-      return raw ? readWatchlists(JSON.parse(raw)) : null;
+      if (!raw) return null;
+      const parsed: unknown = JSON.parse(raw);
+      const read = readWatchlists(parsed);
+      return read ? { ...read, offered: readOffered(parsed) } : null;
     } catch {
       return null;
     }
@@ -203,7 +248,8 @@ export class WatchlistStore {
   private save(): void {
     if (!this.storage) return;
     try {
-      this.storage.setItem(this.storageKey, JSON.stringify({ lists: this.lists, active: this.active }));
+      const offered = [...this.offered].slice(-MAX_OFFERED);
+      this.storage.setItem(this.storageKey, JSON.stringify({ lists: this.lists, active: this.active, offered }));
     } catch { /* storage full or unavailable: the lists stay in memory */ }
   }
 }

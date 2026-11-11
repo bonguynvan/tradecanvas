@@ -638,6 +638,7 @@ export class ChartWidget {
         onToggleReplay: () => this.toggleReplay(),
         onToggleAlerts: () => this.alerting.toggleAlerts(),
         onToggleObjects: () => this.docking.toggleObjects(),
+        onToggleWatchlist: options.watchlist ? () => this.docking.toggleWatchlist() : undefined,
         onToggleAccount: options.trading !== false ? () => this.trading.toggleAccountPanel() : undefined,
         onLayouts: options.layouts !== false ? (anchor) => void this.layouts.layoutsUI?.openMenu(anchor) : undefined,
         onBracket: options.trading !== false ? (side) => this.trading.startBracket(side) : undefined,
@@ -1688,6 +1689,11 @@ export class ChartWidget {
   /** The symbols on offer, each with what came with it, for the search and compare dialogs. */
   private symbolEntries(): (string | SymbolInfo)[] {
     return this.symbols.map((symbol) => this.symbolCatalog.get(symbol) ?? symbol);
+  }
+
+  /** What `symbols` gave of one symbol (its names, kind, logo), or undefined. */
+  private symbolInfoOf(symbol: string): SymbolInfo | undefined {
+    return this.symbolCatalog.get(symbol);
   }
 
   /**
@@ -3506,6 +3512,7 @@ export class ChartWidget {
       get settingsState() { return w.chartSettings.settingsState; },
       get state() { return w.state; },
       symbolEntries: (...args) => w.symbolEntries(...args),
+      symbolInfoOf: (...args) => w.symbolInfoOf(...args),
       symbolSearchFn: (...args) => w.symbolSearchFn(...args),
       get symbols() { return w.symbols; },
       get t() { return w.t; },

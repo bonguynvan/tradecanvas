@@ -208,6 +208,36 @@ describe('WidgetWatchlist rows, one line of figures', () => {
     plain.destroy();
   });
 
+  it('puts a symbol’s logo before its ticker, and nothing for a symbol without one', () => {
+    const other = document.createElement('div');
+    const logos = new WidgetWatchlist(other, calls, LABELS, {
+      infoOf: (symbol) => (symbol === lists[0].symbols[0] ? { symbol, logo: 'https://example.com/a.svg' } : undefined),
+    });
+    logos.setLists(lists, 'a');
+    const rows = [...other.querySelectorAll<HTMLElement>('.tcw-watchlist-row')];
+    const logo = rows[0].querySelector<HTMLImageElement>('.tcw-watchlist-symbol img.tcw-watchlist-logo');
+    expect(logo?.src).toBe('https://example.com/a.svg');
+    expect(logo?.getAttribute('aria-hidden')).toBe('true');
+    expect(rows[0].querySelector('.tcw-watchlist-symbol')?.textContent).toBe('BTC/USDT');
+    expect(rows.slice(1).every((r) => !r.querySelector('.tcw-watchlist-logo'))).toBe(true);
+    // The tickers line up: with a logo in the list, the rows without one keep its room.
+    expect(other.querySelector('.tcw-watchlist-list, [role="list"]')?.classList.contains('tcw-watchlist-logos')).toBe(true);
+    expect(rows[0].querySelector('.tcw-watchlist-symbol')?.classList.contains('tcw-watchlist-symbol-logo')).toBe(true);
+    // A logo that fails to load keeps its room too, empty.
+    logo!.dispatchEvent(new Event('error'));
+    expect(logo!.parentElement).not.toBeNull();
+    expect(logo!.style.visibility).toBe('hidden');
+    logos.destroy();
+  });
+
+  it('keeps no room for logos in a list that has none', () => {
+    const other = document.createElement('div');
+    const plain = new WidgetWatchlist(other, calls, LABELS, { infoOf: () => undefined });
+    plain.setLists(lists, 'a');
+    expect(other.querySelector('.tcw-watchlist-logos')).toBeNull();
+    plain.destroy();
+  });
+
   it('draws sparklines when asked', () => {
     const other = document.createElement('div');
     const spark = new WidgetWatchlist(other, calls, LABELS, { sparkline: true });

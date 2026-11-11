@@ -1,6 +1,8 @@
 import type { WatchlistList } from './WatchlistStore.js';
 import { fill } from './i18n.js';
 import { createIcon } from './icons.js';
+import { logoSrc } from './symbolCatalog.js';
+import type { SymbolInfo } from '@tradecanvas/commons';
 
 /**
  * Watchlist sidebar: the shown list's symbols, a line each: the ticker (its
@@ -71,6 +73,8 @@ type WatchlistCell = 'symbol' | 'spark' | 'price' | 'move' | 'change' | 'remove'
 export interface WatchlistViewOptions {
   /** A small chart of recent prices in each row. Default `false`: the row's figures only. */
   sparkline?: boolean;
+  /** What the widget knows of a symbol: a row shows its `logo` before the ticker, when it has one. */
+  infoOf?: (symbol: string) => SymbolInfo | undefined;
 }
 
 export class WidgetWatchlist {
@@ -221,6 +225,8 @@ export class WidgetWatchlist {
     for (const sym of symbols) if (!this.rowMap.has(sym)) this.makeRow(sym);
     // In list order, under the head when there are rows to head; nodes already in place stay.
     const rows = symbols.map((sym) => this.rowMap.get(sym)!.row);
+    // With a logo in the list, the rows without one keep its room, so the tickers line up.
+    this.listEl.classList.toggle('tcw-watchlist-logos', rows.some((row) => row.querySelector('.tcw-watchlist-symbol-logo')));
     this.listEl.replaceChildren(...(this.headEl && rows.length ? [this.headEl] : []), ...rows);
     if (symbols.length === 0) {
       const empty = document.createElement('div');
@@ -282,6 +288,12 @@ export class WidgetWatchlist {
     label.textContent = formatSymbol(symbol);
     // The venue the name leaves out ('HYPERLIQUID:xyz:'), on hover.
     if (symbol.includes(':')) label.title = symbol;
+    // A logo only where the symbol has one: a row of initials would only repeat the tickers.
+    const logo = rowLogo(this.options.infoOf?.(symbol));
+    if (logo) {
+      label.prepend(logo);
+      label.classList.add('tcw-watchlist-symbol-logo');
+    }
     this.place(label, 'symbol');
     row.appendChild(label);
 
@@ -592,4 +604,26 @@ function drawSparkline(canvas: HTMLCanvasElement, samples: number[], ref: number
     if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
   }
   ctx.stroke();
+}
+
+/**
+ * A row's logo: decoration, as the ticker beside it says the same. One that
+ * fails to load (a blocked host, a page's image policy) shows nothing.
+ */
+function rowLogo(info: SymbolInfo | undefined): HTMLImageElement | null {
+  const src = logoSrc(info?.logo);
+  if (!src) return null;
+  const img = document.createElement('img');
+  img.className = 'tcw-watchlist-logo';
+  img.alt = '';
+  img.draggable = false;
+  img.setAttribute('aria-hidden', 'true');
+  img.setAttribute('loading', 'lazy');
+  img.setAttribute('decoding', 'async');
+  // The logo's host learns nothing of the page it is shown on.
+  img.setAttribute('referrerpolicy', 'no-referrer');
+  // Its room stays, empty, so its ticker still lines up with the others.
+  img.addEventListener('error', () => { img.style.visibility = 'hidden'; }, { once: true });
+  img.src = src;
+  return img;
 }

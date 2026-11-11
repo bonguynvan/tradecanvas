@@ -1084,7 +1084,7 @@ new ChartWidget(host, {
 <pre><code>{`import { ChartWidgetGrid } from '@tradecanvas/chart/widget'
 
 const grid = new ChartWidgetGrid(host, {
-  layout: '2x2',                                   // '1x1' '1x2' '2x1' '2x2' '1x3' '3x1' '2x3' '3x2'
+  layout: '2x2',                                   // '1x2', '2x2', '3x3', '1+2', '1/3'… (전체 목록은 ChartGrid 항목)
   widget: { timeframe: '1h' },                    // 모든 차트에 적용
   adapter: () => new BinanceAdapter(),            // 차트마다 하나: 어댑터 하나는 스트림 하나를 유지
   // 또는 widget: { timeframe: '1h', feed }: DataFeed 하나로 모든 차트에
@@ -1122,4 +1122,14 @@ const grid = new ChartGrid(host, { layout: '2x2', theme: 'dark' })
 await grid.connectAll(() => new BinanceAdapter(), ['BTCUSDT','ETHUSDT','SOLUSDT','BNBUSDT'], '5m')
 grid.setLayout('1x2')`}</code></pre>
 
-<p>레이아웃: <code>'1x1'</code>, <code>'1x2'</code>, <code>'2x1'</code>, <code>'2x2'</code>, <code>'1x3'</code>, <code>'3x1'</code>, <code>'2x3'</code>, <code>'3x2'</code>.</p>
+<p>
+  레이아웃은 <code>ChartGrid</code>와 <code>ChartWidgetGrid</code>에서 같습니다.
+  일반 그리드는 행 × 열로 이름 붙입니다(<code>'1x2'</code>는 한 행에 두 개): <code>'1x1'</code>, <code>'1x2'</code>, <code>'2x1'</code>, <code>'1x3'</code>, <code>'3x1'</code>, <code>'2x2'</code>, <code>'1x4'</code>, <code>'4x1'</code>, <code>'2x3'</code>, <code>'3x2'</code>, <code>'2x4'</code>, <code>'3x3'</code>.
+  나머지는 큰 차트가 하나 있습니다: <code>'1+2'</code>와 <code>'1+3'</code>(왼쪽에 크게, 오른쪽에 두 개 또는 세 개를 세로로),
+  <code>'2+1'</code>(왼쪽에 두 개를 세로로, 오른쪽에 크게), <code>'1/2'</code>와 <code>'1/3'</code>(위에 크게, 아래에 두 개 또는 세 개),
+  <code>'2/1'</code>(위에 두 개, 아래에 넓게 하나). 큰 차트는 첫 번째 차트이며, <code>'2+1'</code>와 <code>'2/1'</code>에서는 마지막 차트입니다.
+  <code>GRID_SHAPES</code>는 각 레이아웃의 <code>cols</code>, <code>rows</code>와, 큰 차트가 있는 레이아웃에서는 각 차트가 차지하는
+  <code>areas</code>(<code>[col, row, colSpan, rowSpan]</code>, 차트 순서)를 알려 줍니다.
+  <code>ChartWidgetGrid</code>의 바는 사용 중인 레이아웃을 버튼 하나로 보여 주고, 누르면 차트 수별로 한 줄씩 놓인 선택 창이 열립니다.
+  <code>layoutChoices</code>로 보여 줄 레이아웃을 줄일 수 있습니다.
+</p>

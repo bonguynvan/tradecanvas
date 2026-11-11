@@ -90,6 +90,59 @@ describe('WatchlistStore', () => {
   });
 });
 
+describe('WatchlistStore: lists kept, and lists the host adds later', () => {
+  const list = (id: string, symbols: string[] = ['A']) => ({ id, name: id.toUpperCase(), symbols });
+
+  it('adds a list the host gives that the kept ones do not have, after them', () => {
+    const storage = memory();
+    const first = new WatchlistStore({ lists: [list('crypto')], storage, storageKey: 'k' });
+    first.add('B');
+    const again = new WatchlistStore({ lists: [list('crypto'), list('dex', ['P'])], storage, storageKey: 'k' });
+    expect(again.getLists().map((l) => l.id)).toEqual(['crypto', 'dex']);
+    // The kept list stays as the user left it, not as the host gives it.
+    expect(again.getLists()[0].symbols).toEqual(['A', 'B']);
+    expect(again.getLists()[1].symbols).toEqual(['P']);
+  });
+
+  it('never brings back a host list the user removed', () => {
+    const storage = memory();
+    const first = new WatchlistStore({ lists: [list('crypto'), list('dex')], storage, storageKey: 'k' });
+    first.remove('dex');
+    const again = new WatchlistStore({ lists: [list('crypto'), list('dex')], storage, storageKey: 'k' });
+    expect(again.getLists().map((l) => l.id)).toEqual(['crypto']);
+  });
+
+  it('keeps the new list once offered, so a later removal sticks too', () => {
+    const storage = memory();
+    new WatchlistStore({ lists: [list('crypto')], storage, storageKey: 'k' }).add('B');
+    const second = new WatchlistStore({ lists: [list('crypto'), list('dex')], storage, storageKey: 'k' });
+    second.remove('dex');
+    const third = new WatchlistStore({ lists: [list('crypto'), list('dex')], storage, storageKey: 'k' });
+    expect(third.getLists().map((l) => l.id)).toEqual(['crypto']);
+  });
+
+  it('keeps the list shown the user left on', () => {
+    const storage = memory();
+    const first = new WatchlistStore({ lists: [list('crypto'), list('fx')], storage, storageKey: 'k' });
+    first.setActive('fx');
+    const again = new WatchlistStore({ lists: [list('crypto'), list('fx'), list('dex')], activeList: 'crypto', storage, storageKey: 'k' });
+    expect(again.getActive().id).toBe('fx');
+  });
+
+  it('reads lists kept before it noted what was offered, adding the host lists they lack', () => {
+    const storage = memory({ k: JSON.stringify({ lists: [list('crypto', ['Z'])], active: 'crypto' }) });
+    const store = new WatchlistStore({ lists: [list('crypto'), list('dex')], storage, storageKey: 'k' });
+    expect(store.getLists().map((l) => l.id)).toEqual(['crypto', 'dex']);
+    expect(store.getLists()[0].symbols).toEqual(['Z']);
+  });
+
+  it('leaves out what is not a list id among those noted', () => {
+    const storage = memory({ k: JSON.stringify({ lists: [list('crypto')], active: 'crypto', offered: [5, null, 'x'.repeat(500), 'dex'] }) });
+    const store = new WatchlistStore({ lists: [list('crypto'), list('dex'), list('fx')], storage, storageKey: 'k' });
+    expect(store.getLists().map((l) => l.id)).toEqual(['crypto', 'fx']);
+  });
+});
+
 describe('readWatchlists', () => {
   it('keeps what it can use and drops the rest', () => {
     expect(readWatchlists({

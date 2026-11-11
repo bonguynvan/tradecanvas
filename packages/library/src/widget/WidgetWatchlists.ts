@@ -18,6 +18,7 @@ export interface WatchlistsHost {
   readonly settingsState: ChartWidget['chartSettings']['settingsState'];
   readonly state: ChartWidget['state'];
   symbolEntries: ChartWidget['symbolEntries'];
+  symbolInfoOf: ChartWidget['symbolInfoOf'];
   symbolSearchFn: ChartWidget['symbolSearchFn'];
   readonly symbols: ChartWidget['symbols'];
   readonly t: ChartWidget['t'];
@@ -145,7 +146,11 @@ export class WidgetWatchlists {
         move: t('watchlist.columnMove'),
         change: t('watchlist.columnChange'),
       },
-    }, { sparkline: opts.sparkline === true });
+    }, {
+      sparkline: opts.sparkline === true,
+      // The logos given with the symbols (`symbols` as SymbolInfo), as the symbol search shows them.
+      infoOf: (sym) => this.host.symbolInfoOf(sym),
+    });
     this.watchlist.setActive(this.host.state.symbol);
     this.watchlist.setLocale(this.host.settingsState.numberLocale || undefined);
     const show = () => {

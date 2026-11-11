@@ -3,7 +3,8 @@ import { tickerOf } from '@tradecanvas/commons';
 import { ChartWidget } from './ChartWidget.js';
 import type { ChartWidgetOptions, WidgetLayoutsOptions } from './types.js';
 import { readWidgetFeatures, type WidgetFeatures } from './widgetFeatures.js';
-import type { GridLayout } from '../grid/ChartGrid.js';
+import { GRID_LAYOUT_SHAPES, GRID_LAYOUTS, gridAreas, gridChartCount, isGridLayout, placeGridCell, type GridLayout, type GridShape } from '../grid/gridShapes.js';
+import { GridLayoutPicker } from './GridLayoutPicker.js';
 import { injectWidgetStyles, removeWidgetStyles } from './WidgetStyles.js';
 import { createTranslator, fill, resolveMessages, type MessageKey, type Translator } from './i18n.js';
 import { createIcon } from './icons.js';
@@ -38,22 +39,13 @@ export const DEFAULT_GRID_SYNC: Readonly<WidgetGridSync> = { symbol: false, inte
 
 const SYNC_KEYS: readonly (keyof WidgetGridSync)[] = ['symbol', 'interval', 'crosshair', 'time', 'drawings', 'replay'];
 
-/** Columns and rows of each arrangement. */
-export const GRID_SHAPES: Readonly<Record<GridLayout, { cols: number; rows: number }>> = {
-  '1x1': { cols: 1, rows: 1 },
-  '1x2': { cols: 2, rows: 1 },
-  '2x1': { cols: 1, rows: 2 },
-  '2x2': { cols: 2, rows: 2 },
-  '1x3': { cols: 3, rows: 1 },
-  '3x1': { cols: 1, rows: 3 },
-  '2x3': { cols: 3, rows: 2 },
-  '3x2': { cols: 2, rows: 3 },
-};
+/** Columns and rows of each arrangement, and where each chart sits in those with a large one. */
+export const GRID_SHAPES: Readonly<Record<GridLayout, GridShape>> = GRID_LAYOUT_SHAPES;
 
 export interface ChartWidgetGridOptions {
   /** How the charts are arranged. Default `'1x2'` (two side by side). */
   layout?: GridLayout;
-  /** The arrangements the bar offers. Default all of them. */
+  /** The arrangements the bar's picker offers, listed by chart count. Default all of them. */
   layoutChoices?: readonly GridLayout[];
   /**
    * Options for every chart. Leave `adapter` out of these when there is more
@@ -92,28 +84,9 @@ interface Cell {
   widget: ChartWidget;
 }
 
-/** An arrangement the grid knows (own keys only: a stored `"constructor"` is not one). */
-export function isGridLayout(value: unknown): value is GridLayout {
-  return typeof value === 'string' && Object.prototype.hasOwnProperty.call(GRID_SHAPES, value);
-}
-
 /** A detached copy of plain data (drawings): charts must not share objects they change in place. */
 function copyOf<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T;
-}
-
-/** A small picture of an arrangement: `cols` × `rows` boxes. */
-function shapeIcon(cols: number, rows: number, size = 16): string {
-  const gap = 2;
-  const w = (20 - gap * (cols - 1)) / cols;
-  const h = (20 - gap * (rows - 1)) / rows;
-  let rects = '';
-  for (let r = 0; r < rows; r++) {
-    for (let c = 0; c < cols; c++) {
-      rects += `<rect x="${2 + c * (w + gap)}" y="${2 + r * (h + gap)}" width="${w}" height="${h}" rx="1"/>`;
-    }
-  }
-  return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true">${rects}</svg>`;
 }
 
 /** A grid's layout read back from storage, or `null` when it is not one. */
@@ -157,7 +130,8 @@ export class ChartWidgetGrid {
   private parked = new Map<number, WidgetLayoutContent>();
   private drawingFrame = 0;
   private drawingSource: Cell | null = null;
-  private layoutButtons = new Map<GridLayout, HTMLButtonElement>();
+  /** The bar's arrangement button and its menu. */
+  private layoutPicker: GridLayoutPicker | null = null;
   private syncButtons = new Map<keyof WidgetGridSync, HTMLButtonElement>();
   private layoutsButton: HTMLButtonElement | null = null;
   /** A tab per chart: a narrow grid (a phone) shows one chart at a time. */
@@ -411,6 +385,7 @@ export class ChartWidgetGrid {
     if (this.drawingFrame) cancelAnimationFrame(this.drawingFrame);
     this.session?.destroy();
     this.layoutsUI?.destroy();
+    this.layoutPicker?.destroy();
     for (const c of this.cells) this.destroyCell(c);
     this.cells = [];
     this.root.remove();
@@ -420,14 +395,16 @@ export class ChartWidgetGrid {
   // --- Cells ---
 
   private shapeCount(): number {
-    const { cols, rows } = GRID_SHAPES[this.layout];
-    return cols * rows;
+    return gridChartCount(GRID_LAYOUT_SHAPES[this.layout]);
   }
 
+  /** The arrangement's columns and rows, and each chart in its place (a large one over several). */
   private applyShape(): void {
-    const { cols, rows } = GRID_SHAPES[this.layout];
-    this.cellsEl.style.gridTemplateColumns = `repeat(${cols}, minmax(0, 1fr))`;
-    this.cellsEl.style.gridTemplateRows = `repeat(${rows}, minmax(0, 1fr))`;
+    const shape = GRID_LAYOUT_SHAPES[this.layout];
+    this.cellsEl.style.gridTemplateColumns = `repeat(${shape.cols}, minmax(0, 1fr))`;
+    this.cellsEl.style.gridTemplateRows = `repeat(${shape.rows}, minmax(0, 1fr))`;
+    const areas = gridAreas(shape);
+    this.cells.forEach((c, i) => placeGridCell(c.el, areas[i]));
   }
 
   private createCell(index: number): Cell {
@@ -435,6 +412,7 @@ export class ChartWidgetGrid {
     el.className = 'tcw-grid-cell';
     el.setAttribute('role', 'region');
     el.setAttribute('aria-label', fill(this.t('grid.chart'), { n: index + 1 }));
+    placeGridCell(el, gridAreas(GRID_LAYOUT_SHAPES[this.layout])[index]);
     this.cellsEl.appendChild(el);
 
     const shared = this.options.widget ?? {};
@@ -679,28 +657,25 @@ export class ChartWidgetGrid {
     this.root.classList.add('tcw-grid-has-tabs');
     this.tabsEl.setAttribute('role', 'group');
     this.tabsEl.setAttribute('aria-label', this.t('grid.charts'));
-    bar.appendChild(this.tabsEl);
 
     const shapes = document.createElement('div');
     shapes.className = 'tcw-grid-group';
     shapes.setAttribute('role', 'group');
     shapes.setAttribute('aria-label', this.t('grid.layout'));
-    const choices = this.options.layoutChoices?.filter(isGridLayout) ?? (Object.keys(GRID_SHAPES) as GridLayout[]);
-    for (const layout of choices) {
-      const { cols, rows } = GRID_SHAPES[layout];
-      const label = cols * rows === 1
-        ? this.t('grid.single')
-        : fill(this.t('grid.layoutOption'), { count: cols * rows, cols, rows });
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'tcw-btn-icon';
-      btn.title = label;
-      btn.setAttribute('aria-label', label);
-      btn.innerHTML = shapeIcon(cols, rows);
-      btn.addEventListener('click', () => this.setLayout(layout));
-      this.layoutButtons.set(layout, btn);
-      shapes.appendChild(btn);
+    const choices = this.options.layoutChoices?.filter(isGridLayout) ?? GRID_LAYOUTS;
+    if (choices.length > 0) {
+      this.layoutPicker = new GridLayoutPicker({
+        host: this.root,
+        t: this.t,
+        choices,
+        current: () => this.layout,
+        onPick: (layout) => this.setLayout(layout),
+      });
+      shapes.appendChild(this.layoutPicker.button);
     }
+    // The arrangement before the charts' tabs: narrow, nine tabs would push it off the bar's end.
+    bar.appendChild(shapes);
+    bar.appendChild(this.tabsEl);
 
     const sync = document.createElement('div');
     sync.className = 'tcw-grid-group';
@@ -723,7 +698,7 @@ export class ChartWidgetGrid {
 
     const spacer = document.createElement('span');
     spacer.className = 'tcw-toolbar-spacer';
-    bar.append(shapes, this.sep(), sync, spacer);
+    bar.append(this.sep(), sync, spacer);
 
     if (this.options.layouts !== false) {
       this.layoutsButton = document.createElement('button');
@@ -746,11 +721,7 @@ export class ChartWidgetGrid {
   }
 
   private renderBar(): void {
-    for (const [layout, btn] of this.layoutButtons) {
-      const on = layout === this.layout;
-      btn.classList.toggle('tcw-active', on);
-      btn.setAttribute('aria-pressed', String(on));
-    }
+    this.layoutPicker?.render();
     for (const [key, btn] of this.syncButtons) {
       btn.classList.toggle('tcw-active', this.sync[key]);
       btn.setAttribute('aria-pressed', String(this.sync[key]));
