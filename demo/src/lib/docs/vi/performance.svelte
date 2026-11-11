@@ -155,10 +155,27 @@ pnpm soak --minutes=30 --rate=50000 --renderer=canvas`}</code></pre>
 
 <h2 id="download">Trang tải về những gì</h2>
 <p>
-  <code>new ChartWidget()</code> tải 386 kB JavaScript đã gzip (1,46 MB khi chưa nén), gồm cả chuỗi tiếng Anh. Các hộp thoại trang chưa cần lúc mới tải (hộp chọn chỉ báo, bảng lệnh, tìm symbol, cài đặt chart, cài đặt của một chỉ báo và của một hình vẽ, Đi tới và bảng phím tắt) là thêm 34 kB. Chúng được tải lần đầu một hộp thoại mở, hoặc khi trang rảnh sau khi widget đã hiện, tùy việc nào đến trước. Bundler đặt chúng vào các file riêng; nếu phục vụ thẳng từ package, chúng nằm trong thư mục <code>dist</code> cạnh các entry, nên hãy chép cả thư mục. <code>pnpm size</code>, chạy sau <code>pnpm build</code>, in các con số này cho từng entry.
+  <code>new ChartWidget()</code> tải 386 kB JavaScript đã gzip (1,46 MB khi chưa nén), gồm cả chuỗi tiếng Anh. Các hộp thoại trang chưa cần lúc mới tải (hộp chọn chỉ báo, bảng lệnh, tìm symbol, cài đặt chart, cài đặt của một chỉ báo và của một hình vẽ, Đi tới và bảng phím tắt) là thêm 34 kB. Chúng được tải lần đầu một hộp thoại mở, hoặc khi trang rảnh sau khi widget đã hiện, tùy việc nào đến trước. Bundler đặt chúng vào các file riêng; nếu phục vụ thẳng từ package, chúng nằm trong thư mục <code>dist</code> cạnh các entry, nên hãy chép cả thư mục. <code>pnpm size</code>, chạy sau <code>pnpm build</code>, in các con số này cho từng entry. Worker chỉ báo (<code>indicatorWorker: 'auto'</code>) thêm 36 kB, tải vào lần đầu một biểu đồ gửi việc cho nó, không bao giờ với <code>'off'</code>.
 </p>
 
-<h2>Luồng chính</h2>
+<h2 id="worker">Luồng chính</h2>
 <p>
-  Biểu đồ tính chỉ báo trên luồng chính. <code>IndicatorWorkerHost</code> trong <code>@tradecanvas/core</code> có thể chạy <code>calculate()</code> trong một worker do bạn cung cấp, với API trả về Promise, thời gian chờ cho từng yêu cầu và phương án đồng bộ dự phòng cho SSR và test, nhưng biểu đồ chưa đưa chỉ báo của nó qua đây, và các gói chưa kèm script worker.
+  Mặc định, chỉ báo được tính trên luồng chính. Với <code>indicatorWorker: 'auto'</code>, việc tính lại toàn bộ (khi <code>setData</code>, đổi mã hoặc khung thời gian, thêm chỉ báo hay đổi tham số) trên chuỗi từ 50.000 nến trở lên được chuyển sang một Web Worker có sẵn trong gói. Mã của nó được nhúng trong một chunk chỉ tải vào lần đầu cần đến và khởi chạy từ một Blob URL, nên không có tệp nào phải phục vụ, và một worker dùng chung cho mọi biểu đồ trên trang. Dữ liệu nến được gửi sang dưới dạng các cột số và kết quả trả về cũng vậy, rồi được dựng lại thành điểm theo từng đoạn nến, nên trang vẫn vẽ và phản hồi thao tác. Tick trực tiếp vẫn được tính tăng dần trên luồng chính.
+</p>
+<pre><code>{`new Chart(el, { indicatorWorker: 'auto' })
+new ChartWidget(el, { chartOptions: { indicatorWorker: 'auto' } })`}</code></pre>
+<p>
+  Cho đến khi có kết quả, biểu đồ vẫn vẽ kết quả trước đó: sau khi đổi mã hoặc khung thời gian là các đường của chuỗi trước, còn chỉ báo vừa thêm thì chưa có gì. Đọc giá trị qua <code>getIndicatorOutput</code> hay một lần xuất dữ liệu sẽ tính ngay trên luồng chính phần còn nằm trong worker, nên giá trị đọc được không bao giờ cũ, còn cảnh báo trên một đường vẫn đang ở trong worker được kiểm tra khi kết quả về; <code>getIndicatorOutput(id, {'{'} drawn: true {'}'})</code> trả về đúng những gì đang vẽ mà không chờ. Chỉ báo đọc đường của chỉ báo khác hay một mã khác, và chỉ báo của bạn (<code>registerIndicator</code>), được tính trên luồng chính, cũng như mọi thứ ở nơi worker không chạy được: máy chủ, jsdom, hay một Content Security Policy chặn worker <code>blob:</code>.
+</p>
+<table>
+  <thead><tr><th>setData, rồi EMA, RSI, MACD và Bollinger Bands</th><th>200.000 nến, off</th><th>auto</th><th>1.000.000 nến, off</th><th>auto</th></tr></thead>
+  <tbody>
+    <tr><td>Thời gian luồng chính bị các lệnh gọi giữ</td><td>74 ms</td><td>21 ms</td><td>269 ms</td><td>43 ms</td></tr>
+    <tr><td>Tác vụ dài hơn 50 ms</td><td>1</td><td>0</td><td>1</td><td>0</td></tr>
+    <tr><td>Khoảng cách dài nhất giữa hai khung hình</td><td>50 ms</td><td>33 ms</td><td>250 ms</td><td>33 ms</td></tr>
+    <tr><td>Mọi đường được vẽ sau</td><td>74 ms</td><td>243 ms</td><td>269 ms</td><td>1.025 ms</td></tr>
+  </tbody>
+</table>
+<p>
+  Worker không bớt được việc: dựng lại kết quả thành điểm tốn của luồng chính khoảng bằng việc tính chúng. Nó chia việc đó thành những phần mà một khung hình gánh được, đổi lại các đường hiện ra muộn hơn, vì vậy nó chỉ bắt đầu từ 50.000 nến. Chrome headless trên máy để bàn, trung vị của ba lần chạy; <code>pnpm bench</code> đo cả hai nửa trong Node (<code>recompute.bench.ts</code>).
 </p>

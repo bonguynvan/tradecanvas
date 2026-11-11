@@ -122,7 +122,7 @@ function fakeIndicators(overlays: ((c: CanvasRenderingContext2D) => void)[], pan
     isVisible: () => true,
     isShown: () => true,
     getLevels: () => [30, 70],
-    getOutput: () => null,
+    peekOutput: () => null,
     renderPanel: (c: CanvasRenderingContext2D, id: string) => panes[id]?.(c),
   } as unknown as RenderContext['indicatorEngine'];
 }

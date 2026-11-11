@@ -924,7 +924,7 @@ export class RenderEngine {
       // The values at the cursor go in the header, unless the host shows them itself.
       if (!indicatorEngine || ctx.paneTitles === false || !indicatorEngine.isShown(panel.instanceId)) continue;
       const snappedIdx = Math.max(0, Math.min((data?.length ?? 1) - 1, Math.round(xToBarIndex(cursorPos.x, pv))));
-      const output = indicatorEngine.getOutput(panel.instanceId);
+      const output = indicatorEngine.peekOutput(panel.instanceId);
       const val = output?.series && snappedIdx < output.series.length ? output.series[snappedIdx] : null;
       if (!val) continue;
       const desc = descMap?.get(panel.instanceId);

@@ -287,12 +287,17 @@ new ChartWidget(host, { indicatorTemplates: true })  // the default`}</code></pr
 
 <h2>Tính toán bên ngoài biểu đồ</h2>
 <p>
-  <code>IndicatorWorkerHost</code> tính một chỉ báo từ dữ liệu nến bằng chính các thông điệp mà một Web Worker
-  sẽ dùng. Script worker chưa có trong các gói đã phát hành, nên hãy truyền <code>null</code> và đăng ký
-  các plugin để tính ngay tại chỗ (SSR, test, script):
+  <code>IndicatorWorkerHost</code> tính một chỉ báo từ dữ liệu nến trong worker có sẵn trong gói
+  (<code>createIndicatorWorker()</code>), chính worker mà biểu đồ dùng với <code>indicatorWorker: 'auto'</code>.
+  Truyền <code>null</code> thay vào đó và đăng ký các plugin để tính ngay tại chỗ (SSR, test, script):
 </p>
-<pre><code>{`import { IndicatorWorkerHost, RSIIndicator } from '@tradecanvas/core'
+<pre><code>{`import { IndicatorWorkerHost, RSIIndicator, createIndicatorWorker } from '@tradecanvas/core'
 
-const host = new IndicatorWorkerHost(null)
-host.registerFallbackPlugin(new RSIIndicator())
-const output = await host.calculate('rsi', { id: 'rsi', instanceId: 'rsi-1', params: { period: 14 } }, bars)`}</code></pre>
+const config = { id: 'rsi', instanceId: 'rsi-1', params: { period: 14 } }
+
+const inWorker = new IndicatorWorkerHost(await createIndicatorWorker())
+const output = await inWorker.calculate('rsi', config, bars)
+
+const inPlace = new IndicatorWorkerHost(null)
+inPlace.registerFallbackPlugin(new RSIIndicator())
+const same = await inPlace.calculate('rsi', config, bars)`}</code></pre>

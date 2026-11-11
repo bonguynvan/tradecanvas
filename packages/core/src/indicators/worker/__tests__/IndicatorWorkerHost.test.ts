@@ -3,6 +3,7 @@ import type { IndicatorOutput } from '@tradecanvas/commons';
 import { IndicatorWorkerHost } from '../IndicatorWorkerHost.js';
 import type { WorkerLike } from '../IndicatorWorkerHost.js';
 import type { IndicatorWorkerRequest, IndicatorWorkerResponse } from '../messages.js';
+import { outputToColumns } from '../columns.js';
 import { SMAIndicator } from '../../overlay/SMA.js';
 import { bars, indicatorConfig } from '../../__tests__/fixtures.js';
 
@@ -51,7 +52,7 @@ describe('IndicatorWorkerHost — worker path', () => {
     const expected: IndicatorOutput = { values: new Map([[0, { value: 42 }]]) };
     worker.responder = (req) =>
       req.type === 'calculate'
-        ? { type: 'result', requestId: req.requestId, output: expected }
+        ? { type: 'result', requestId: req.jobs[0].requestId, output: outputToColumns(expected, req.bars.time) }
         : null;
 
     const host = new IndicatorWorkerHost(worker);
@@ -61,13 +62,15 @@ describe('IndicatorWorkerHost — worker path', () => {
     expect(out).toEqual(expected);
     expect(worker.posted).toHaveLength(1);
     expect(worker.posted[0].type).toBe('calculate');
+    // The bars go as columns of numbers.
+    expect(worker.posted[0]).toMatchObject({ bars: { close: Float64Array.from([1, 2, 3, 4, 5]) } });
   });
 
   it('rejects when the worker returns an error response', async () => {
     const worker = new MockWorker();
     worker.responder = (req) => ({
       type: 'error',
-      requestId: req.requestId,
+      requestId: req.type === 'calculate' ? req.jobs[0].requestId : 0,
       message: 'boom',
     });
     const host = new IndicatorWorkerHost(worker);
@@ -94,7 +97,7 @@ describe('IndicatorWorkerHost — worker path', () => {
     const host = new IndicatorWorkerHost(worker);
     // Should be a no-op — no pending request.
     worker.dispatch('message', {
-      data: { type: 'result', requestId: 999, output: { values: new Map() } },
+      data: { type: 'result', requestId: 999, output: outputToColumns({ values: new Map() }, new Float64Array(0)) },
     } as MessageEvent);
     expect(worker.posted).toHaveLength(0);
   });

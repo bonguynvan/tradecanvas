@@ -53,7 +53,22 @@ export interface DockHost {
  * tree's list and the data window's values at the bar under the pointer.
  */
 export class WidgetDockArea {
+  /** The frame the data window is drawn again at, while one is asked for. */
+  private dataWindowFrame = 0;
+
   constructor(private readonly host: DockHost) {}
+
+  /**
+   * Draw the open data window again at the next frame: the indicators'
+   * values changed under the pointer (a tick, or outputs from the worker).
+   */
+  scheduleDataWindow(): void {
+    if (this.dataWindowFrame || !this.host.dataWindow?.isOpen()) return;
+    this.dataWindowFrame = requestAnimationFrame(() => {
+      this.dataWindowFrame = 0;
+      if (this.host.dataWindow?.isOpen()) this.host.dataWindow.render(this.buildDataWindowModel());
+    });
+  }
 
   /** The panels by the chart (watchlist, alerts, objects, data window, symbol info) and their rail. */
   dock: WidgetDock | null = null;
@@ -122,7 +137,8 @@ export class WidgetDockArea {
     const locale = this.host.settingsState.numberLocale || 'en-US';
 
     const indicators = this.host.chart.getActiveIndicators().map((ind) => {
-      const series = this.host.chart.getIndicatorOutput(ind.instanceId)?.series;
+      // The values drawn: a recompute in the indicator worker is not finished here on each move.
+      const series = this.host.chart.getIndicatorOutput(ind.instanceId, { drawn: true })?.series;
       const point = series?.[idx] ?? null;
       const inPriceUnits = !inOwnPane.has(ind.instanceId) && readsChartPrices(ind);
       // The drawn lines by their titles ("Signal"), else every field by its key.

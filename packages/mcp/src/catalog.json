@@ -7095,6 +7095,15 @@
         ]
       },
       {
+        "name": "indicatorWorker",
+        "type": "'off' | 'auto'",
+        "doc": "Where indicators are computed in full (on `setData`, a new symbol or interval, a new indicator or new parameters): `'off'` (the default) on the main thread; `'auto'` in a Web Worker the package ships when the series has 50,000 bars or more, so the page keeps drawing and answering input meanwhile: the results are taken back a slice of bars at a time, and the …",
+        "values": [
+          "off",
+          "auto"
+        ]
+      },
+      {
         "name": "extendedHours",
         "type": "boolean",
         "doc": "Show the bars outside the symbol's regular hours (`SymbolInfo.sessions`): pre- and post-market. Default true; bars a day or longer are never left out.",
@@ -7413,6 +7422,15 @@
         "values": [
           "canvas",
           "webgl",
+          "auto"
+        ]
+      },
+      {
+        "name": "indicatorWorker",
+        "type": "'off' | 'auto'",
+        "doc": "Where indicators are computed in full (on `setData`, a new symbol or interval, a new indicator or new parameters): `'off'` (the default) on the main thread; `'auto'` in a Web Worker the package ships when the series has 50,000 bars or more, so the page keeps drawing and answering input meanwhile: the results are taken back a slice of bars at a time, and the …",
+        "values": [
+          "off",
           "auto"
         ]
       },

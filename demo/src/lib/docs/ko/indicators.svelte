@@ -278,12 +278,17 @@ new ChartWidget(host, { indicatorTemplates: true })  // the default`}</code></pr
 
 <h2>차트 밖에서 계산하기</h2>
 <p>
-  <code>IndicatorWorkerHost</code>는 Web Worker가 사용하는 것과 같은 메시지로 봉 데이터에서
-  지표를 계산합니다. 워커 스크립트는 아직 배포 패키지에 포함되어 있지 않으므로, <code>null</code>을
-  넘기고 플러그인을 등록해 그 자리에서 계산하세요(SSR, 테스트, 스크립트).
+  <code>IndicatorWorkerHost</code>는 패키지에 포함된 워커(<code>createIndicatorWorker()</code>)에서 봉 데이터로
+  지표를 계산합니다. 차트가 <code>indicatorWorker: 'auto'</code>일 때 쓰는 바로 그 워커입니다. 대신 <code>null</code>을
+  넘기고 플러그인을 등록하면 그 자리에서 계산합니다(SSR, 테스트, 스크립트).
 </p>
-<pre><code>{`import { IndicatorWorkerHost, RSIIndicator } from '@tradecanvas/core'
+<pre><code>{`import { IndicatorWorkerHost, RSIIndicator, createIndicatorWorker } from '@tradecanvas/core'
 
-const host = new IndicatorWorkerHost(null)
-host.registerFallbackPlugin(new RSIIndicator())
-const output = await host.calculate('rsi', { id: 'rsi', instanceId: 'rsi-1', params: { period: 14 } }, bars)`}</code></pre>
+const config = { id: 'rsi', instanceId: 'rsi-1', params: { period: 14 } }
+
+const inWorker = new IndicatorWorkerHost(await createIndicatorWorker())
+const output = await inWorker.calculate('rsi', config, bars)
+
+const inPlace = new IndicatorWorkerHost(null)
+inPlace.registerFallbackPlugin(new RSIIndicator())
+const same = await inPlace.calculate('rsi', config, bars)`}</code></pre>

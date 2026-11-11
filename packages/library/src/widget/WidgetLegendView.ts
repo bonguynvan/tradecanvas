@@ -88,7 +88,8 @@ export class WidgetLegendView {
     const compares = compareLegendRows(compareValues, locale, aligned);
     const indicators: IndicatorLegendRow[] = this.host.chart.getActiveIndicators().map((ind) => {
       const pane = panes.get(ind.instanceId) ?? null;
-      const point = indicatorPointAt(this.host.chart.getIndicatorOutput(ind.instanceId)?.series, hover);
+      // The values drawn: a recompute in the indicator worker is not finished here on each move.
+      const point = indicatorPointAt(this.host.chart.getIndicatorOutput(ind.instanceId, { drawn: true })?.series, hover);
       const style = this.host.chart.getIndicatorStyle(ind.instanceId);
       // Not drawn on this chart type (another symbol read by time, on bricks) or interval: no values to read off it.
       const offChartType = ind.visible && ind.offChartType === true;

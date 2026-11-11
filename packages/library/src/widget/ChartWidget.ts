@@ -1063,6 +1063,8 @@ export class ChartWidget {
       this.lastHoverPrevClose = typeof p.prevClose === 'number' ? p.prevClose : null;
       if (this.dataWindow?.isOpen()) this.dataWindow.render(this.docking.buildDataWindowModel());
     });
+    // The indicators' values changed (a tick, or outputs from the indicator worker) under a still pointer.
+    this.chart.on('indicatorUpdate', () => this.docking.scheduleDataWindow());
     // The bar another chart of a grid points at here, or the latest again when it goes.
     this.chart.on('crosshairSync', (e) => {
       if (this.pointerOnChart) return;

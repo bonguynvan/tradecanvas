@@ -158,10 +158,27 @@ pnpm soak --minutes=30 --rate=50000 --renderer=canvas`}</code></pre>
 
 <h2 id="download">Lo que descarga una página</h2>
 <p>
-  <code>new ChartWidget()</code> trae 386 kB de JavaScript con gzip (1,46 MB sin comprimir), con sus textos en inglés. Los diálogos que la página no necesita al cargar (el diálogo de indicadores, la paleta de comandos, la búsqueda de símbolos, los ajustes del gráfico, los de un indicador y los de un dibujo, Ir a y la hoja de atajos) son 34 kB más. Se cargan la primera vez que se abre uno, o cuando la página queda libre después de mostrarse el widget, lo que llegue antes. Un bundler los pone en archivos propios; si se sirven directamente desde el paquete, están en su carpeta <code>dist</code> junto a los puntos de entrada, así que copia la carpeta entera. <code>pnpm size</code>, después de <code>pnpm build</code>, muestra estas cifras para cada punto de entrada.
+  <code>new ChartWidget()</code> trae 386 kB de JavaScript con gzip (1,46 MB sin comprimir), con sus textos en inglés. Los diálogos que la página no necesita al cargar (el diálogo de indicadores, la paleta de comandos, la búsqueda de símbolos, los ajustes del gráfico, los de un indicador y los de un dibujo, Ir a y la hoja de atajos) son 34 kB más. Se cargan la primera vez que se abre uno, o cuando la página queda libre después de mostrarse el widget, lo que llegue antes. Un bundler los pone en archivos propios; si se sirven directamente desde el paquete, están en su carpeta <code>dist</code> junto a los puntos de entrada, así que copia la carpeta entera. <code>pnpm size</code>, después de <code>pnpm build</code>, muestra estas cifras para cada punto de entrada. El worker de indicadores (<code>indicatorWorker: 'auto'</code>) son 36 kB más, que se cargan la primera vez que un gráfico le envía trabajo, nunca con <code>'off'</code>.
 </p>
 
-<h2>El hilo principal</h2>
+<h2 id="worker">El hilo principal</h2>
 <p>
-  El gráfico calcula los indicadores en el hilo principal. <code>IndicatorWorkerHost</code> de <code>@tradecanvas/core</code> puede ejecutar <code>calculate()</code> en un worker que tú proporciones, con una API basada en Promise, un tiempo de espera por solicitud y una alternativa síncrona para SSR y tests, pero el gráfico todavía no pasa sus indicadores por él y los paquetes no incluyen un script de worker.
+  Por defecto, los indicadores se calculan en el hilo principal. Con <code>indicatorWorker: 'auto'</code>, recalcularlos por completo (con <code>setData</code>, un cambio de símbolo o de intervalo, un indicador nuevo o parámetros nuevos) sobre 50.000 barras o más pasa a un Web Worker incluido en el paquete. Su código va integrado en un chunk que se carga la primera vez que hace falta y arranca desde una URL Blob, así que no hay nada que servir, y un solo worker atiende a todos los gráficos de la página. Las barras le llegan como columnas de números y los resultados vuelven igual, convertidos de nuevo en puntos por tramos de barras, de modo que la página sigue dibujando y respondiendo. Los ticks en vivo siguen siendo incrementales en el hilo principal.
+</p>
+<pre><code>{`new Chart(el, { indicatorWorker: 'auto' })
+new ChartWidget(el, { chartOptions: { indicatorWorker: 'auto' } })`}</code></pre>
+<p>
+  Hasta que llega un resultado, el gráfico sigue dibujando el anterior: tras cambiar de símbolo o de intervalo, las líneas de la serie anterior; para un indicador recién añadido, nada. Leer valores, con <code>getIndicatorOutput</code> o una exportación, calcula antes en el hilo principal lo que siga en el worker, así que una lectura nunca está desfasada, y una alerta sobre una línea que sigue en el worker se comprueba cuando llega; <code>getIndicatorOutput(id, {'{'} drawn: true {'}'})</code> devuelve lo dibujado sin esperar. Los indicadores que leen la línea de otro indicador u otro símbolo, y los tuyos (<code>registerIndicator</code>), se calculan en el hilo principal, como todo donde no pueden ejecutarse workers: un servidor, jsdom o una Content Security Policy que rechace los workers <code>blob:</code>.
+</p>
+<table>
+  <thead><tr><th>setData y luego EMA, RSI, MACD y Bandas de Bollinger</th><th>200.000 barras, off</th><th>auto</th><th>1.000.000 barras, off</th><th>auto</th></tr></thead>
+  <tbody>
+    <tr><td>Hilo principal ocupado por las llamadas</td><td>74 ms</td><td>21 ms</td><td>269 ms</td><td>43 ms</td></tr>
+    <tr><td>Tareas de más de 50 ms</td><td>1</td><td>0</td><td>1</td><td>0</td></tr>
+    <tr><td>Mayor intervalo entre fotogramas</td><td>50 ms</td><td>33 ms</td><td>250 ms</td><td>33 ms</td></tr>
+    <tr><td>Todas las líneas dibujadas a los</td><td>74 ms</td><td>243 ms</td><td>269 ms</td><td>1.025 ms</td></tr>
+  </tbody>
+</table>
+<p>
+  El worker no ahorra trabajo: convertir sus resultados de nuevo en puntos le cuesta al hilo principal más o menos lo mismo que calcularlos. Reparte ese trabajo en tramos que un fotograma puede asumir, a cambio de que las líneas aparezcan más tarde; por eso empieza a partir de 50.000 barras. Chrome headless en un equipo de escritorio, mediana de tres ejecuciones; <code>pnpm bench</code> mide ambas partes en Node (<code>recompute.bench.ts</code>).
 </p>

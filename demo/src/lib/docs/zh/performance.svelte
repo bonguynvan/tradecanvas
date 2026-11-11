@@ -154,10 +154,27 @@ pnpm soak --minutes=30 --rate=50000 --renderer=canvas`}</code></pre>
 
 <h2 id="download">页面要下载什么</h2>
 <p>
-  <code>new ChartWidget()</code> 加载 386 kB gzip 后的 JavaScript（压缩前 1.46 MB），其中包括英文字符串。页面加载时用不到的对话框（指标对话框、命令面板、品种搜索、图表设置、指标设置和绘图设置、跳转和快捷键表）另有 34 kB。它们在其中一个第一次打开时加载，或者在组件显示后页面空闲时加载，以先到者为准。打包工具会把它们放进单独的文件；直接从包里提供时，它们在包的 <code>dist</code> 文件夹里，和各个入口放在一起，所以要复制整个文件夹。在 <code>pnpm build</code> 之后运行 <code>pnpm size</code>，会列出每个入口的这些数字。
+  <code>new ChartWidget()</code> 加载 386 kB gzip 后的 JavaScript（压缩前 1.46 MB），其中包括英文字符串。页面加载时用不到的对话框（指标对话框、命令面板、品种搜索、图表设置、指标设置和绘图设置、跳转和快捷键表）另有 34 kB。它们在其中一个第一次打开时加载，或者在组件显示后页面空闲时加载，以先到者为准。打包工具会把它们放进单独的文件；直接从包里提供时，它们在包的 <code>dist</code> 文件夹里，和各个入口放在一起，所以要复制整个文件夹。在 <code>pnpm build</code> 之后运行 <code>pnpm size</code>，会列出每个入口的这些数字。指标 worker（<code>indicatorWorker: 'auto'</code>）另需 36 kB，在图表首次向它发送任务时加载，设为 <code>'off'</code> 时从不加载。
 </p>
 
-<h2>主线程</h2>
+<h2 id="worker">主线程</h2>
 <p>
-  图表在主线程上计算指标。<code>@tradecanvas/core</code> 中的 <code>IndicatorWorkerHost</code> 可以在你提供的 worker 中运行 <code>calculate()</code>，提供基于 Promise 的 API、按请求设置的超时，以及用于 SSR 和测试的同步回退，但图表目前还没有让其指标经由它计算，各个包也没有附带 worker 脚本。
+  默认情况下，指标在主线程上计算。设置 <code>indicatorWorker: 'auto'</code> 后，对 50,000 根及以上K线的完整重算（<code>setData</code>、切换品种或周期、添加指标或修改参数时）会交给包内自带的 Web Worker。它的代码内联在一个首次需要时才加载的 chunk 中，并通过 Blob URL 启动，因此无需额外部署文件，页面上的所有图表共用一个 worker。K线以数字列的形式发送给它，结果也以同样方式返回，并按K线分段还原为数据点，因此页面在此期间仍能绘制并响应操作。实时 tick 仍在主线程上增量计算。
+</p>
+<pre><code>{`new Chart(el, { indicatorWorker: 'auto' })
+new ChartWidget(el, { chartOptions: { indicatorWorker: 'auto' } })`}</code></pre>
+<p>
+  在结果到达之前，图表继续绘制上一次的结果：切换品种或周期后显示的是之前序列的线条，刚添加的指标则什么也不显示。通过 <code>getIndicatorOutput</code> 或导出读取数值时，会先在主线程上算完仍在 worker 中的部分，因此读到的值永远不会过时；针对仍在 worker 中计算的线条的提醒，会在结果返回时再检查；<code>getIndicatorOutput(id, {'{'} drawn: true {'}'})</code> 则不等待，直接返回当前绘制的内容。读取其他指标线或其他品种的指标，以及你自己的指标（<code>registerIndicator</code>），都在主线程上计算；在无法运行 worker 的环境中（服务器、jsdom，或拒绝 <code>blob:</code> worker 的内容安全策略）也是如此。
+</p>
+<table>
+  <thead><tr><th>先 setData，再添加 EMA、RSI、MACD 和布林带</th><th>200,000 根，off</th><th>auto</th><th>1,000,000 根，off</th><th>auto</th></tr></thead>
+  <tbody>
+    <tr><td>这些调用占用主线程的时间</td><td>74 ms</td><td>21 ms</td><td>269 ms</td><td>43 ms</td></tr>
+    <tr><td>超过 50 ms 的任务</td><td>1</td><td>0</td><td>1</td><td>0</td></tr>
+    <tr><td>两帧之间的最长间隔</td><td>50 ms</td><td>33 ms</td><td>250 ms</td><td>33 ms</td></tr>
+    <tr><td>所有线条绘制完成于</td><td>74 ms</td><td>243 ms</td><td>269 ms</td><td>1,025 ms</td></tr>
+  </tbody>
+</table>
+<p>
+  worker 并不减少工作量：把结果还原为数据点在主线程上的开销与计算它们大致相当。它把这些工作拆成一帧能承受的小段，代价是线条出现得更晚，因此只从 50,000 根K线开始启用。桌面电脑上的无头 Chrome，三次运行的中位数；<code>pnpm bench</code> 在 Node 中测量这两部分（<code>recompute.bench.ts</code>）。
 </p>

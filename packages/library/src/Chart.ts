@@ -48,6 +48,7 @@ import type { ResolvedLayout, ChartStyleKey, ChartStyleOverrides, ChartStyleOver
 import { readChartTypeOptions, tickBarCount, barTimeUnit, readChartStyleOverrides, readIndicatorPlotStyles, readPaneStyle } from '@tradecanvas/commons';
 import { PriceLines, type BidAsk, SymbolSeriesStore, CompareSymbolIndicator, CompareSymbolPaneIndicator, SpreadIndicator, CorrelationCoefficientIndicator, CorrelationLogIndicator, axisTimes, HiLoRenderer, PointAndFigureRenderer, isPriceLevelAlert, loadWebGL, gpuContextsLeft, whenGpuContextFree, idleCssCursor, isCrosshairCursor } from '@tradecanvas/core';
 import type { GpuRenderer, RendererMode } from '@tradecanvas/core';
+import { indicatorWorkerPool, INDICATOR_WORKER_MIN_BARS, type IndicatorWorkerLease } from '@tradecanvas/core';
 import { regularHoursFilter } from './regularHours.js';
 import { ChartA11y } from './chartA11y.js';
 import { barDateZone, barsAreDaily, zonedDateFormatter } from '@tradecanvas/commons';
@@ -210,6 +211,10 @@ export class Chart {
   private layoutManager: LayoutManager;
   private pluginManager: PluginManager;
   private indicatorEngine: IndicatorEngine;
+  /** The page's indicator worker, held while `indicatorWorker` is 'auto'. */
+  private indicatorWorker: IndicatorWorkerLease | null = null;
+  /** True while outputs that changed outside a computation of the chart's wait to be drawn (a microtask away). */
+  private indicatorsLanding = false;
   private drawingManager: DrawingManager;
   private drawingRenderer: DrawingRenderer;
   private tradingManager: TradingManager;
@@ -516,6 +521,7 @@ export class Chart {
     this.indicatorEngine.register(new SpreadIndicator(this.symbolSeries));
     this.indicatorEngine.register(new CorrelationCoefficientIndicator(this.symbolSeries));
     this.indicatorEngine.register(new CorrelationLogIndicator(this.symbolSeries));
+    if (options.indicatorWorker === 'auto') this.useIndicatorWorker();
 
     // Drawing tools
     this.drawingManager = new DrawingManager();
@@ -2024,13 +2030,55 @@ export class Chart {
    * it has none yet (before its period fills). `values` holds the same by
    * bar time.
    *
+   * With `indicatorWorker: 'auto'`, an indicator still being computed in the
+   * worker is computed here first, so the values are always the bars' own;
+   * `{ drawn: true }` returns the ones drawn now instead, without waiting (the
+   * last ones, or null for an indicator just added): what a legend or a
+   * data window that follows the pointer reads.
+   *
    * @example
    * const rsi = chart.addIndicator('rsi', { period: 14 })!;
    * const out = chart.getIndicatorOutput(rsi);
    * const latest = out?.series?.[chart.getData().length - 1]?.value;
    */
-  getIndicatorOutput(instanceId: string): IndicatorOutput | null {
-    return this.indicatorEngine.getOutput(instanceId);
+  getIndicatorOutput(instanceId: string, options: { drawn?: boolean } = {}): IndicatorOutput | null {
+    return options.drawn ? this.indicatorEngine.peekOutput(instanceId) : this.indicatorEngine.getOutput(instanceId);
+  }
+
+  /** Full recomputes over many bars in the page's indicator worker (`indicatorWorker: 'auto'`). */
+  private useIndicatorWorker(): void {
+    this.indicatorWorker = indicatorWorkerPool.acquire();
+    this.indicatorEngine.useWorker(this.indicatorWorker.client, {
+      minBars: INDICATOR_WORKER_MIN_BARS,
+      onLand: () => this.indicatorsLandedSoon(),
+    });
+  }
+
+  /**
+   * Outputs from the worker landed, or a read finished here what was still
+   * out: drawn once, after what runs now (a read may be part of an export).
+   */
+  private indicatorsLandedSoon(): void {
+    if (this.indicatorsLanding) return;
+    this.indicatorsLanding = true;
+    queueMicrotask(() => {
+      this.indicatorsLanding = false;
+      this.indicatorsLanded();
+    });
+  }
+
+  /**
+   * New outputs are in place outside a computation the chart asked for:
+   * say so, fit the scales to them and draw them, and give the alerts on
+   * their lines the values they waited for.
+   */
+  private indicatorsLanded(): void {
+    if (this.disposed) return;
+    this.announceIndicatorUpdate(0);
+    this.updateViewportAndRender();
+    const last = this.series.bars().at(-1);
+    const onLines = this.alertManager.getAlerts().some((alert) => alert.channel !== 'price' || alert.target !== undefined);
+    if (this.features.alerts && onLines && last && !this.replaySession) this.checkAlerts(last.close);
   }
 
   registerIndicator(plugin: IndicatorPlugin): void {
@@ -3127,10 +3175,15 @@ export class Chart {
    * all as of the same moment (a line crossing another compares like with
    * like). During a replay they keep watching the live market: the bars are
    * the live ones, and indicator lines — computed on the replayed bars — wait.
+   * So does a line still computing in the indicator worker: it is not
+   * finished here for a tick, and its alerts are checked when it lands.
    */
   private checkAlerts(price: number): void {
     const live = this.replaySession ? this.series.liveBars() : this.series.bars();
-    const lines = this.replaySession || this.series.length() === 0 ? null : (id: string) => this.indicatorEngine.getOutput(id)?.series;
+    const engine = this.indicatorEngine;
+    const lines = this.replaySession || this.series.length() === 0
+      ? null
+      : (id: string) => (engine.isComputingInWorker(id) ? undefined : engine.peekOutput(id)?.series);
     checkAlerts(this.alertManager, { price, barTime: live.length > 0 ? live[live.length - 1].time : null, lines });
   }
 
@@ -6031,6 +6084,10 @@ export class Chart {
 
   destroy(): void {
     this.disposed = true;
+    // Its recomputes in the worker go with it: none lands on a chart that is gone.
+    this.indicatorEngine.stopWorker();
+    this.indicatorWorker?.release();
+    this.indicatorWorker = null;
     this.stopWatchingVisibility?.();
     this.stopWatchingVisibility = null;
     this.waitForGpu(null);

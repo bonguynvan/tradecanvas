@@ -10,7 +10,7 @@ const DEFAULT_PANE_RANGE = { min: 0, max: 100 } as const;
 /** What the panes read of the indicators drawn in them. */
 export type PaneSources = Pick<
   IndicatorEngine,
-  'getPaneValueRange' | 'getPaneMembers' | 'getOutput' | 'getIndicatorDescriptor' | 'getActiveIndicators'
+  'getPaneValueRange' | 'getPaneMembers' | 'peekOutput' | 'getIndicatorDescriptor' | 'getActiveIndicators'
 >;
 
 /** Where the hovered bar is reported: from the top of the highest pane beside the price pane to the bottom of the lowest. */
@@ -146,7 +146,7 @@ export class PaneLayout {
 
   /** A pane's first value on screen (its own indicator's first line), the 0% of a percent scale. */
   private baseline(paneId: string, from: number, to: number): number | undefined {
-    const series = this.sources.getOutput(paneId)?.series;
+    const series = this.sources.peekOutput(paneId)?.series;
     const descriptor = this.sources.getIndicatorDescriptor(paneId);
     if (!series || !descriptor) return undefined;
     const key = descriptor.plots?.[0]?.key;
