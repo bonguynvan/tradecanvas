@@ -17,6 +17,8 @@
 
   Turn it off with `features.drawingAxisSpans: false` or `chart.setDrawingAxisSpansVisible(false)`.
 - **The eraser shows what it takes.** With the eraser on, the drawing a click would remove glows under the pointer, a selected one too.
+- **The drawing tools' menus keep up with the pointer and the keys.** A pointer heading down into an open menu may cross the buttons under its own; another button's menu now waits a moment before taking its place, so the item aimed at is the one picked. A menu opened from the keyboard gives the focus back to its button when it closes, and Escape on a button closes the menu the pointer opened.
+- **An indicator pane's price at the pointer is as big as the chart's own**, so it covers a drawing's label at the same price.
 - **A hidden crosshair is hidden in the indicator panes too.** With the crosshair hidden, the panes no longer draw its lines or its price on their axis.
 
 ## 1.81.0 (2026-11-11)

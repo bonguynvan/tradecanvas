@@ -10,3 +10,4 @@ Cursor kinds and a drawing's span on the axes.
 - While a drawing is selected, moved or being drawn, the axes are tinted over its span and its ends are labelled in its colour (`features.drawingAxisSpans: false` turns this off).
 - The eraser glows the drawing a click would remove.
 - A hidden crosshair no longer draws its lines and price in the indicator panes.
+- The drawing tools' menus wait a moment before one takes another's place, so a pointer crossing a button on its way into a menu keeps it; a menu opened from the keyboard gives the focus back to its button.

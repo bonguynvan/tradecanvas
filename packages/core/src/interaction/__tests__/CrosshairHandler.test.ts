@@ -300,13 +300,14 @@ describe('CrosshairHandler — a drawing’s span on the axes', () => {
     }) as unknown as CanvasRenderingContext2D;
     return { ctx, boxes, texts };
   }
-  const span = (prices: number[], times: number[]) => ({ prices, times, color: '#ff8800', viewport: { ...viewport, data: bars } as ViewportState });
+  const main = { ...viewport, data: bars } as ViewportState;
+  const span = (prices: number[], times: number[], on: ViewportState = main) => ({ prices, times, color: '#ff8800', viewport: on });
 
   it('tints the price axis between the two prices and labels each in the drawing’s colour', () => {
     const handler = new CrosshairHandler();
     handler.setData(bars);
     const { ctx, boxes, texts } = spanRecorder();
-    handler.renderSpan(ctx, span([95, 105], []), { ...viewport, data: bars } as ViewportState, theme, bars, 300);
+    handler.renderSpan(ctx, span([95, 105], []), main, theme, bars, 300);
     // 20 points over 300 px: 105 at y 75, 95 at y 225; the axis starts at x 500.
     expect(boxes.find((b) => b[0] === 500 && b[1] === 75 && b[3] === 150)?.[4]).toMatch(/rgba\(255, 136, 0, 0\.2\)/);
     expect(texts.map(([t]) => t)).toEqual(['95.00', '105.00']);
@@ -316,7 +317,7 @@ describe('CrosshairHandler — a drawing’s span on the axes', () => {
     const handler = new CrosshairHandler();
     handler.setData(bars);
     const { ctx, boxes, texts } = spanRecorder();
-    handler.renderSpan(ctx, span([], [bars[10].time, bars[20].time]), { ...viewport, data: bars } as ViewportState, theme, bars, 300);
+    handler.renderSpan(ctx, span([], [bars[10].time, bars[20].time]), main, theme, bars, 300);
     // Bar 10 centred at x 104, bar 20 at x 204; the time axis starts at y 300.
     expect(boxes.some((b) => b[0] === 104 && b[1] === 300 && b[2] === 100)).toBe(true);
     expect(texts).toHaveLength(2);
@@ -326,7 +327,39 @@ describe('CrosshairHandler — a drawing’s span on the axes', () => {
     const handler = new CrosshairHandler();
     handler.setData(bars);
     const { ctx, texts } = spanRecorder();
-    handler.renderSpan(ctx, span([95, 500], []), { ...viewport, data: bars } as ViewportState, theme, bars, 300);
+    handler.renderSpan(ctx, span([95, 500], []), main, theme, bars, 300);
     expect(texts.map(([t]) => t)).toEqual(['95.00']);
   });
+  it('writes a pane’s prices as the pane’s price at the pointer does', () => {
+    const handler = new CrosshairHandler();
+    handler.setData(bars);
+    const pane = { ...main, priceRange: { min: 0, max: 100 } } as ViewportState;
+    const { ctx, texts } = spanRecorder();
+    handler.renderSpan(ctx, span([30, 70], [], pane), main, theme, bars, 300);
+    expect(texts.map(([t]) => t)).toEqual(['30', '70']);
+  });
+
+  it('keeps a span’s tint under a time label the crosshair’s time clears', () => {
+    const handler = new CrosshairHandler();
+    handler.setData(bars);
+    handler.beginSpans();
+    handler.renderSpan(spanRecorder().ctx, span([], [bars[10].time, bars[30].time]), main, theme, bars, 300);
+    handler.onPointerMove({ x: 204, y: 150 });
+    const { ctx, boxes } = spanRecorder();
+    // A tick label at x 214–240, half under the crosshair's time pill at bar 20.
+    handler.renderAxisLabels(ctx, main, theme, bars, 300, [], [{ left: 214, right: 240 }]);
+    expect(boxes.some((b) => b[0] === 212 && /rgba\(255, 136, 0, 0\.2\)/.test(String(b[4])))).toBe(true);
+  });
+
+  it('forgets last frame’s tints once a frame starts with no span', () => {
+    const handler = new CrosshairHandler();
+    handler.setData(bars);
+    handler.renderSpan(spanRecorder().ctx, span([], [bars[10].time, bars[30].time]), main, theme, bars, 300);
+    handler.beginSpans();
+    handler.onPointerMove({ x: 204, y: 150 });
+    const { ctx, boxes } = spanRecorder();
+    handler.renderAxisLabels(ctx, main, theme, bars, 300, [], [{ left: 214, right: 240 }]);
+    expect(boxes.some((b) => /rgba\(255, 136, 0/.test(String(b[4])))).toBe(false);
+  });
 });
+

@@ -73,6 +73,8 @@ export class InteractionManager {
   private zoomArea = false;
   /** The CSS cursor over the chart where nothing else asks for one: the cursor kind's (see `idleCssCursor`). */
   private idleCss = 'crosshair';
+  /** The idle cursor is the one showing: kept here, as a browser writes a `url()` back its own way. */
+  private showingIdle = false;
   /** The host's menu for a right-click off any drawing; true when it took it. */
   private onChartContextMenu: ((area: ChartArea, pos: Point) => boolean) | null = null;
   /** The "+" by the price axis, and what a click on it does. */
@@ -156,9 +158,8 @@ export class InteractionManager {
 
   /** The CSS cursor over the chart where nothing else asks for one. Shown at once where it was showing. */
   setIdleCursor(css: string): void {
-    const was = this.idleCss;
     this.idleCss = css;
-    if (this.element.style.cursor === was) this.element.style.cursor = css;
+    if (this.showingIdle) this.element.style.cursor = css;
   }
 
   /**
@@ -402,6 +403,7 @@ export class InteractionManager {
 
     const setCursor = (cursor: string) => {
       if (this.element.style.cursor !== cursor) this.element.style.cursor = cursor;
+      this.showingIdle = cursor !== '' && cursor === this.idleCss;
     };
 
     // Cursors: crosshair over the chart, resize arrows on

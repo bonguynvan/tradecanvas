@@ -56,6 +56,20 @@ describe('InteractionManager — the cursor over the chart', () => {
     expect(el.style.cursor).toBe('crosshair');
   });
 
+  it('changes the cursor at once even when the browser wrote the last one back its own way', () => {
+    im.setIdleCursor('url("data:image/svg+xml,a") 4 4, crosshair');
+    hover();
+    // A browser keeps a url() in its own form: the cursor read back is not the string given.
+    el.style.cursor = 'url(data:image/svg+xml,a) 4 4, crosshair';
+    im.setIdleCursor('default');
+    expect(el.style.cursor).toBe('default');
+  });
+
+  it('leaves the element alone while the pointer has not been over the chart', () => {
+    im.setIdleCursor('default');
+    expect(el.style.cursor).toBe('');
+  });
+
   it('shows the cursor set for the chart, at once and on the next move', () => {
     hover();
     im.setIdleCursor('default');

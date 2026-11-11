@@ -10,6 +10,13 @@ const TOOL_ICON_PX = 16;
 
 /** How long a tool menu stays after the pointer leaves it. */
 const FLYOUT_CLOSE_DELAY_MS = 150;
+/**
+ * How long another button's menu waits to take the place of one open: a
+ * pointer heading down into a menu crosses the buttons under its own, and
+ * reaches the menu sooner. Shorter than the close delay, so a real switch
+ * never shows the column with no menu.
+ */
+const FLYOUT_SWITCH_DELAY_MS = 120;
 /** The cursor button's menu among the menus, which number the drawing groups from 0. */
 const CURSOR_MENU = -2;
 /** The cursor kinds in the menu's order, with their icons and names. */
@@ -62,6 +69,9 @@ export class WidgetDrawingSidebar {
   private flyoutEl: HTMLDivElement | null = null;
   private flyoutIdx = -1;
   private flyoutHideTimer: ReturnType<typeof setTimeout> | null = null;
+  private flyoutSwitchTimer: ReturnType<typeof setTimeout> | null = null;
+  /** The open menu was opened from the keyboard: closing it gives the focus back to its button. */
+  private flyoutByKey = false;
   /** Where hosts' own buttons go, after the drawing tools' switches. */
   private hostEl: HTMLDivElement | null = null;
   private favoritesEl: HTMLDivElement | null = null;
@@ -228,8 +238,12 @@ export class WidgetDrawingSidebar {
 
       // Flyout events via JS (not CSS hover). From the keyboard, the arrow
       // keys open a group's menu and go into it.
-      wrap.addEventListener('mouseenter', () => { if (!this.isNarrow()) this.showFlyout(idx); });
-      wrap.addEventListener('mouseleave', () => { if (!this.isNarrow()) this.scheduleHideFlyout(); });
+      wrap.addEventListener('mouseenter', () => { if (!this.isNarrow()) this.aimFlyout(idx, () => this.showFlyout(idx)); });
+      wrap.addEventListener('mouseleave', () => {
+        if (this.isNarrow()) return;
+        this.cancelFlyoutSwitch();
+        this.scheduleHideFlyout();
+      });
       if (group.tools.length > 1) {
         btn.setAttribute('aria-haspopup', 'menu');
         btn.setAttribute('aria-expanded', 'false');
@@ -237,6 +251,7 @@ export class WidgetDrawingSidebar {
           if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
             e.preventDefault();
             this.showFlyout(idx);
+            this.flyoutByKey = true;
             this.focusFlyoutItem(0);
           } else if (e.key === 'Escape' && this.flyoutEl) {
             e.stopPropagation();
@@ -408,6 +423,12 @@ export class WidgetDrawingSidebar {
     const btn = document.createElement('button');
     btn.className = 'tcw-sidebar-btn';
     btn.addEventListener('click', () => {
+      // Narrow there is no hover: a tap opens the menu, whose kinds go back to the cursor too.
+      if (this.isNarrow() && callbacks.onCrosshairCursor) {
+        if (this.flyoutEl && this.flyoutIdx === CURSOR_MENU) this.hideFlyout();
+        else this.showCursorFlyout();
+        return;
+      }
       callbacks.onCancelDrawing();
       this.closeForChart();
     });
@@ -420,13 +441,27 @@ export class WidgetDrawingSidebar {
       btn.setAttribute('aria-haspopup', 'menu');
       btn.setAttribute('aria-expanded', 'false');
       btn.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && this.flyoutEl) {
+          e.stopPropagation();
+          this.hideFlyout();
+          return;
+        }
         if (e.key !== 'ArrowRight' && e.key !== 'ArrowDown') return;
         e.preventDefault();
         this.showCursorFlyout();
+        this.flyoutByKey = true;
         this.focusFlyoutItem(0);
       });
-      wrap.addEventListener('mouseenter', () => { if (!this.isNarrow()) this.showCursorFlyout(); });
-      wrap.addEventListener('mouseleave', () => { if (!this.isNarrow()) this.scheduleHideFlyout(); });
+      wrap.addEventListener('mouseenter', () => { if (!this.isNarrow()) this.aimFlyout(CURSOR_MENU, () => this.showCursorFlyout()); });
+      wrap.addEventListener('mouseleave', () => {
+        if (this.isNarrow()) return;
+        this.cancelFlyoutSwitch();
+        this.scheduleHideFlyout();
+      });
+      wrap.addEventListener('focusout', (e) => {
+        const to = e.relatedTarget as Node | null;
+        if (!wrap.contains(to) && !this.flyoutEl?.contains(to)) this.scheduleHideFlyout();
+      });
     }
     this.el.appendChild(wrap);
   }
@@ -502,11 +537,37 @@ export class WidgetDrawingSidebar {
     return idx === CURSOR_MENU ? this.cursorWrap : this.groupWraps[idx] ?? null;
   }
 
+  /**
+   * Open a button's menu as the pointer comes over it: at once, unless
+   * another's is open, which it then takes the place of a moment later, so a
+   * pointer crossing this button on its way into that menu keeps it.
+   */
+  private aimFlyout(idx: number, open: () => void): void {
+    this.cancelFlyoutSwitch();
+    if (!this.flyoutEl || this.flyoutIdx === idx) {
+      open();
+      return;
+    }
+    this.flyoutSwitchTimer = setTimeout(() => {
+      this.flyoutSwitchTimer = null;
+      open();
+    }, FLYOUT_SWITCH_DELAY_MS);
+  }
+
+  private cancelFlyoutSwitch(): void {
+    if (this.flyoutSwitchTimer === null) return;
+    clearTimeout(this.flyoutSwitchTimer);
+    this.flyoutSwitchTimer = null;
+  }
+
   /** Puts a built menu beside its button, open, and closes it as the pointer or the focus leaves. */
   private openFlyout(flyout: HTMLDivElement, idx: number): void {
     // The menu sits beside the sidebar, not in it, so the sidebar can scroll
     // without cutting it off.
-    flyout.addEventListener('mouseenter', () => this.cancelHideFlyout());
+    flyout.addEventListener('mouseenter', () => {
+      this.cancelHideFlyout();
+      this.cancelFlyoutSwitch();
+    });
     flyout.addEventListener('mouseleave', () => this.scheduleHideFlyout());
     flyout.addEventListener('focusout', (e) => {
       const to = e.relatedTarget as Node | null;
@@ -514,6 +575,7 @@ export class WidgetDrawingSidebar {
     });
     this.flyoutEl = flyout;
     this.flyoutIdx = idx;
+    this.flyoutByKey = false;
     this.host.appendChild(flyout);
     const button = this.flyoutButton(idx);
     if (button) this.placeFlyout(flyout, button);
@@ -690,12 +752,18 @@ export class WidgetDrawingSidebar {
 
   private hideFlyout(): void {
     this.cancelHideFlyout();
+    this.cancelFlyoutSwitch();
+    const button = this.flyoutButton(this.flyoutIdx);
+    // Opened from the keyboard, the focus goes back to its button rather than to nowhere.
+    const refocus = this.flyoutByKey && this.flyoutEl?.contains(document.activeElement) === true;
     if (this.flyoutEl) {
       this.flyoutEl.remove();
       this.flyoutEl = null;
     }
-    this.flyoutButton(this.flyoutIdx)?.setAttribute('aria-expanded', 'false');
+    button?.setAttribute('aria-expanded', 'false');
     this.flyoutIdx = -1;
+    this.flyoutByKey = false;
+    if (refocus) button?.focus();
   }
 
   update(state: WidgetState): void {

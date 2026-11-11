@@ -78,13 +78,35 @@ describe('drawing tool menu', () => {
     expect(flyout()).toBeNull();
   });
 
-  it('switches straight to another group', () => {
+  it('switches to another group a moment after the pointer reaches it, never with no menu between', () => {
     const [lines, fibonacci] = wraps();
     enter(lines);
     leave(lines);
     enter(fibonacci);
     expect(host.querySelectorAll('.tcw-flyout')).toHaveLength(1);
+    vi.advanceTimersByTime(130);
+    expect(host.querySelectorAll('.tcw-flyout')).toHaveLength(1);
     expect(flyout()?.getAttribute('aria-label')).toBe('Fibonacci');
+  });
+
+  it('keeps the open menu when the pointer crosses another button on its way into it', () => {
+    const [lines, fibonacci] = wraps();
+    enter(lines);
+    const menu = flyout()!;
+    leave(lines);
+    enter(fibonacci); // a diagonal move down to the menu's lower items…
+    leave(fibonacci);
+    enter(menu); // …reaches the menu
+    vi.advanceTimersByTime(500);
+    expect(flyout()).toBe(menu);
+  });
+
+  it('gives the focus back to the button after a tool picked from a menu opened by the keys', () => {
+    const button = wraps()[0].querySelector<HTMLButtonElement>('.tcw-sidebar-btn')!;
+    button.focus();
+    button.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+    (document.activeElement as HTMLElement).click();
+    expect(document.activeElement).toBe(button);
   });
 });
 
@@ -347,6 +369,35 @@ describe('cursor menu', () => {
     enter(cursorWrap());
     expect(flyout()).toBeNull();
     expect(cursorButton().hasAttribute('aria-haspopup')).toBe(false);
+  });
+
+  it('narrow, a tap opens the menu and a second closes it; a kind picked goes back to the cursor', () => {
+    host.setAttribute('data-tcw-narrow', '');
+    cursorButton().click();
+    expect(items()).toHaveLength(3);
+    expect(cancelled).toBe(0);
+    cursorButton().click();
+    expect(flyout()).toBeNull();
+    cursorButton().click();
+    items()[1].click();
+    expect(kinds).toEqual(['dot']);
+    expect(cancelled).toBe(1);
+  });
+
+  it('closes a menu the pointer opened with Escape on its button', () => {
+    enter(cursorWrap());
+    cursorButton().focus();
+    cursorButton().dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    expect(flyout()).toBeNull();
+    expect(cursorButton().getAttribute('aria-expanded')).toBe('false');
+  });
+
+  it('gives the focus back to its button after a kind picked with the keys', () => {
+    cursorButton().focus();
+    cursorButton().dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+    items()[1].click();
+    expect(kinds).toEqual(['dot']);
+    expect(document.activeElement).toBe(cursorButton());
   });
 
   it('opens from the keyboard and goes back to its button with Escape', () => {

@@ -2,7 +2,7 @@ import { LayerType } from '@tradecanvas/commons';
 import type { Size, ViewportState, Theme, DataSeries, Rect, PaneStyle } from '@tradecanvas/commons';
 import { priceToY, yToPrice, xToBarIndex, barIndexToX } from '../viewport/ScaleMapping.js';
 import { DARK_PRICE_LIMITS, LIGHT_PRICE_LIMITS, PRICE_AXIS_WIDTH, autoPricePrecision, formatPrice, inkOn, lineDash, priceTagText, readableOn } from '@tradecanvas/commons';
-import { priceScaleText, roundStep, stepTicks } from '../axis/PriceAxis.js';
+import { panelPrecision, priceScaleText, roundStep, stepTicks } from '../axis/PriceAxis.js';
 import { LayerManager } from './LayerManager.js';
 import { AXIS_LABEL_HEIGHT, renderAxisValueLabels, layoutAxisValueLabels, drawAxisValueLabels, indicatorValuePrecision, type AxisValueLabel, type FixedAxisTag } from '../ui/axisValueLabels.js';
 import { RenderLoop } from './RenderLoop.js';
@@ -114,11 +114,13 @@ function recordAll(recorder: GpuRecorder | null, clip: Rect, steps: readonly Dra
   return steps.every((step) => region.step(step)) ? recorder : null;
 }
 
-/** Decimals for a pane's axis labels and header values, from its tick step. */
-function panelPrecision(step: number): number {
-  if (step < 1) return Math.ceil(-Math.log10(step)) + 1;
-  return step < 10 ? 1 : 0;
-}
+
+/**
+ * The pane's price at the pointer, as big as the price pill on the chart's axis (its notch and
+ * padding), so it covers a selected drawing's label at the same price rather than half of it.
+ */
+const PANE_BADGE_PAD = 20;
+const PANE_BADGE_HEIGHT = 20;
 
 export interface PanelRenderInfo {
   instanceId: string;
@@ -426,6 +428,7 @@ export class RenderEngine {
 
   /** The selected (or the drawn) drawing's span on the axes, over their labels and tags. */
   private renderDrawingSpans(c: CanvasRenderingContext2D, ctx: RenderContext): void {
+    ctx.crosshairHandler?.beginSpans?.();
     if (ctx.drawingAxisSpans === false || !ctx.drawingRenderer || !ctx.crosshairHandler) return;
     for (const span of ctx.drawingRenderer.axisSpans(ctx.viewport)) {
       ctx.crosshairHandler.renderSpan(c, span, ctx.viewport, ctx.theme, ctx.data, ctx.timeAxisY);
@@ -908,10 +911,10 @@ export class RenderEngine {
         const valText = priceScaleText(yToPrice(cursorPos.y, pv), pv, precision, locale);
         c.font = `bold ${theme.font.sizeSmall}px ${theme.font.family}`;
         const tw = c.measureText(valText).width;
-        const badgeW = Math.min(tw + 10, (viewport.priceAxisWidth ?? PRICE_AXIS_WIDTH) - 2);
+        const badgeW = Math.min(tw + PANE_BADGE_PAD, (viewport.priceAxisWidth ?? PRICE_AXIS_WIDTH) - 2);
         const looks = crosshairLooks(theme);
         c.fillStyle = looks.labelBackground;
-        fillTag(c, axisX + 1, cursorPos.y - 9, badgeW, 18, theme);
+        fillTag(c, axisX + 1, cursorPos.y - PANE_BADGE_HEIGHT / 2, badgeW, PANE_BADGE_HEIGHT, theme);
         c.fillStyle = looks.labelText;
         c.textBaseline = 'middle';
         c.textAlign = 'left';
