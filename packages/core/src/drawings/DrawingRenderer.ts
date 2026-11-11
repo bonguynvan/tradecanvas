@@ -1,6 +1,7 @@
 import type { Theme, ViewportState } from '@tradecanvas/commons';
 import { setDrawingKeepOut, setDrawingTheme, type LabelKeepOut } from './tools/labels.js';
 import type { DrawingManager } from './DrawingManager.js';
+import type { AxisSpan } from './axisSpan.js';
 
 export class DrawingRenderer {
   private keepOut: (() => readonly LabelKeepOut[]) | null = null;
@@ -31,6 +32,11 @@ export class DrawingRenderer {
     } finally {
       setDrawingTheme(null);
     }
+  }
+
+  /** What to mark on the axes: the selected (or the drawn) drawing's span (see `DrawingManager.axisSpans`). */
+  axisSpans(viewport: ViewportState): AxisSpan[] {
+    return this.manager.axisSpans(viewport);
   }
 
   render(ctx: CanvasRenderingContext2D, viewport: ViewportState, theme?: Theme): void {

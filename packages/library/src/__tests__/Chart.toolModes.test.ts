@@ -116,3 +116,22 @@ describe('Chart cursor kinds', () => {
     expect(chart.getCrosshairCursor()).toBe('cross');
   });
 });
+
+describe('Chart drawing spans on the axes', () => {
+  const context = () => (chart as unknown as { engine: { renderCtx: { drawingAxisSpans?: boolean } } }).engine.renderCtx;
+
+  it('are on by default, and the switch turns them off and on', () => {
+    expect(chart.isDrawingAxisSpansVisible()).toBe(true);
+    chart.setDrawingAxisSpansVisible(false);
+    expect(chart.isDrawingAxisSpansVisible()).toBe(false);
+    expect(context().drawingAxisSpans).toBe(false);
+    chart.setDrawingAxisSpansVisible(true);
+    expect(context().drawingAxisSpans).toBe(true);
+  });
+
+  it('follow features.drawingAxisSpans', () => {
+    chart.destroy();
+    chart = new Chart(host, { chartType: 'candlestick', features: { drawingAxisSpans: false } });
+    expect(chart.isDrawingAxisSpansVisible()).toBe(false);
+  });
+});

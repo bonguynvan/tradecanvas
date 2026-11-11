@@ -231,6 +231,15 @@ chart.setZoomAreaMode(true)        // lần kéo tiếp theo phóng to vào các
 chart.setDrawingMagnetMode('strong') // 'off' | 'weak' | 'strong'`}</code></pre>
 <p>Nam châm yếu hút một điểm vào giá mở cửa, cao, thấp hoặc đóng cửa của nến khi con trỏ ở gần một trong số đó; nam châm mạnh thì luôn làm vậy. Trong widget, nam châm tắt khi bắt đầu: hình vẽ nằm đúng chỗ được đặt cho đến khi bật nút nam châm.</p>
 
+<h2 id="cursors">Con trỏ, và dải của hình vẽ trên trục</h2>
+<pre><code>{`new Chart(el, { crosshair: { mode: 'magnet', cursor: 'dot' } })
+chart.setCrosshairCursor('arrow')        // 'cross' | 'dot' | 'arrow'
+chart.on('crosshairCursorChange', (e) => e.payload)  // { cursor }
+widget.setCrosshairCursor('dot')         // the widget's, a Chart Setting
+chart.setDrawingAxisSpansVisible(false)  // or features: { drawingAxisSpans: false }`}</code></pre>
+<p><strong>Cross</strong> vẽ hai đường crosshair, con trỏ chuột là dấu chữ thập. <strong>Dot</strong> vẽ hai đường đó, con trỏ là một chấm nhỏ theo màu crosshair. <strong>Arrow</strong> không vẽ đường nào và giữ con trỏ mũi tên, nhưng giá và thời gian vẫn chạy theo con trỏ trên hai trục. Trong widget, nút con trỏ ở đầu thanh công cụ vẽ mở menu ba kiểu này, và Chart Settings cũng có dòng chọn. Kiểu con trỏ là lựa chọn riêng của người xem: <code>persistSettings</code> giữ nó, còn bố cục hay link chia sẻ không bao giờ mang theo.</p>
+<p>Khi một hình vẽ đang được chọn, kéo hoặc đang vẽ, trục giá được tô từ giá thấp nhất tới giá cao nhất của nó, trục thời gian từ thời điểm đầu tới thời điểm cuối, và mỗi đầu có nhãn theo màu của hình. Đường ngang chỉ đánh dấu giá, đường dọc chỉ đánh dấu thời gian; hình gắn theo màn hình thì không đánh dấu gì. Eraser làm sáng hình vẽ mà cú bấm sẽ xoá.</p>
+
 <h2 id="editing">Sửa bằng chuột và bàn phím</h2>
 <ul>
   <li>Nam châm cũng tác dụng khi kéo một tay nắm hay di chuyển cả hình vẽ: điểm gần chỗ nắm nhất rơi vào một mức giá, các điểm còn lại giữ nguyên khoảng cách với nó. Nam châm yếu với tới 50 px.</li>

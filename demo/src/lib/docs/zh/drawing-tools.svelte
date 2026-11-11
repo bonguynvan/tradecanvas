@@ -225,6 +225,15 @@ chart.setZoomAreaMode(true)        // 下一次拖动会缩放到框内的K线
 chart.setDrawingMagnetMode('strong') // 'off' | 'weak' | 'strong'`}</code></pre>
 <p>弱磁吸会在指针靠近K线的开盘价、最高价、最低价或收盘价时，把点吸附到该价位；强磁吸则始终吸附。在组件中磁吸默认关闭：绘图放在哪里就在哪里，直到用磁吸按钮开启。</p>
 
+<h2 id="cursors">光标，以及画线在坐标轴上的范围</h2>
+<pre><code>{`new Chart(el, { crosshair: { mode: 'magnet', cursor: 'dot' } })
+chart.setCrosshairCursor('arrow')        // 'cross' | 'dot' | 'arrow'
+chart.on('crosshairCursorChange', (e) => e.payload)  // { cursor }
+widget.setCrosshairCursor('dot')         // the widget's, a Chart Setting
+chart.setDrawingAxisSpansVisible(false)  // or features: { drawingAxisSpans: false }`}</code></pre>
+<p><strong>Cross</strong> 画出十字线，光标为十字。<strong>Dot</strong> 画出同样的线，光标是十字线颜色的小圆点。<strong>Arrow</strong> 不画线，保持箭头光标，但价格和时间仍在坐标轴上跟随指针。在组件中，绘图工具顶部的光标按钮会打开这三种的菜单，图表设置里也有这一项。光标类型属于观看者本人：<code>persistSettings</code> 会保存它，布局和分享链接从不带上它。</p>
+<p>画线被选中、拖动或正在绘制时，价格轴从它的最低价到最高价着色，时间轴从第一个时间到最后一个时间着色，两端以画线的颜色标出。水平线只标价格，垂直线只标时间；固定在屏幕上的画线都不标。橡皮擦会高亮点击后将被删除的画线。</p>
+
 <h2 id="editing">用指针和键盘编辑</h2>
 <ul>
   <li>拖动控制点或移动整个绘图时磁铁同样起作用：离抓取处最近的点落在价格上，其余的点与它保持相对位置。弱磁铁的范围为 50 px。</li>

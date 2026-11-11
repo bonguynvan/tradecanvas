@@ -1013,3 +1013,30 @@ describe('RenderEngine — the crosshair in the panes', () => {
     expect(hidden.filter((t) => /^-?[\d.,]+$/.test(String(t)))).toEqual([]);
   });
 });
+
+describe('RenderEngine — a drawing’s span on the axes', () => {
+  function spans(on: boolean | undefined) {
+    const { ctx } = makeContext();
+    const span = { prices: [10, 20], times: [], color: '#ff8800', viewport: ctx.viewport };
+    const renderSpan = vi.fn();
+    ctx.drawingRenderer = { render: () => {}, renderHover: () => {}, axisSpans: () => [span] } as unknown as RenderContext['drawingRenderer'];
+    ctx.crosshairHandler = { render: () => {}, renderAxisLabels: () => {}, getPosition: () => null, renderSpan } as unknown as RenderContext['crosshairHandler'];
+    if (on !== undefined) ctx.drawingAxisSpans = on;
+    engine.setRenderContext(ctx);
+    engine.start();
+    runFrame();
+    return { renderSpan, span, ctx };
+  }
+
+  it('marks the span on the scene, after the axes', () => {
+    const { renderSpan, span, ctx } = spans(undefined);
+    const [canvas, given, main] = renderSpan.mock.calls[0];
+    expect(canvas).toBe(engine.layerManager.getLayer(LayerType.Main)!.ctx);
+    expect(given).toBe(span);
+    expect(main).toBe(ctx.viewport);
+  });
+
+  it('marks none when switched off', () => {
+    expect(spans(false).renderSpan).not.toHaveBeenCalled();
+  });
+});

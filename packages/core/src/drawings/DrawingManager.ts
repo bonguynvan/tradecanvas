@@ -39,6 +39,7 @@ import { DrawingDrag, shiftAnchors, type DragEdit } from './DrawingDrag.js';
 import { constrainedAnchor, keepsAngle } from './drawingEditing.js';
 import { clampScreenPoints, isScreenAnchored, offsetScreenPoints, pixelToScreenPoint, screenPointToPixel, shiftScreenPoints } from './screenAnchors.js';
 import { beginExtent, endExtent, setDrawingPlot, type ExtentRect } from './drawingLook.js';
+import { drawingAxisSpan, type AxisSpan } from './axisSpan.js';
 
 export type { DrawingOrderMove, DrawingPatch } from './drawingState.js';
 
@@ -1805,6 +1806,20 @@ export class DrawingManager {
     const plugin = this.registry.get(drawing.type);
     const on = this.viewportFor(drawing.paneId, viewport);
     if (plugin && on) renderIsolated(ctx, plugin, drawing, on, false, true);
+  }
+
+  /**
+   * What to mark on the axes: the span of the drawing being made, else of
+   * the selected one (moved or reshaped too), on the viewport it is drawn on.
+   */
+  axisSpans(main: ViewportState): AxisSpan[] {
+    const preview = this.creator.previewState();
+    const target = preview ?? (this.selection.primary ? this.drawings.find((d) => d.id === this.selection.primary) : undefined);
+    if (!target || (!preview && !this.shown(target))) return [];
+    const plugin = this.registry.get(target.type);
+    const viewport = this.viewportFor(target.paneId, main);
+    const extent = plugin && viewport ? drawingAxisSpan(target, plugin.descriptor) : null;
+    return extent && viewport ? [{ ...extent, color: target.style.color, viewport }] : [];
   }
 
   /** What the pointer is over: a handle of the selected drawing, or a drawing, and the cursor for it. */

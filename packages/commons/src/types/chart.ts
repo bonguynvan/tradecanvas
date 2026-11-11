@@ -135,6 +135,12 @@ export interface FeaturesConfig {
    * keeps each tag on its line.
    */
   alignAxisLabels?: boolean;
+  /**
+   * While a drawing is selected or being drawn, tint the price axis from its
+   * lowest to its highest price and the time axis from its first to its last
+   * time, and label each end in the drawing's colour. Default true.
+   */
+  drawingAxisSpans?: boolean;
   /** Show volume bars below candles */
   volume?: boolean;
   /** Show watermark text */

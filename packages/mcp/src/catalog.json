@@ -7599,6 +7599,12 @@
         "kind": "boolean"
       },
       {
+        "name": "drawingAxisSpans",
+        "type": "boolean",
+        "doc": "While a drawing is selected or being drawn, tint the price axis from its lowest to its highest price and the time axis from its first to its last time, and label each end in the drawing's colour. Default true.",
+        "kind": "boolean"
+      },
+      {
         "name": "volume",
         "type": "boolean",
         "doc": "Show volume bars below candles",

@@ -1,11 +1,16 @@
 import type { Point, ViewportState, Theme, DataSeries, TimeFormatter, TimeZoneSetting, ResolvedLineLook, CrosshairCursor } from '@tradecanvas/commons';
-import { PRICE_AXIS_WIDTH, autoPricePrecision, timeParts, isDateOnly, barDateParts, barsAreDaily, barTimeUnit, lineDash } from '@tradecanvas/commons';
+import { PRICE_AXIS_WIDTH, TIME_AXIS_HEIGHT, autoPricePrecision, timeParts, isDateOnly, barDateParts, barsAreDaily, barTimeUnit, lineDash, withAlpha } from '@tradecanvas/commons';
 import { crosshairLooks } from './crosshairLooks.js';
 import { crispX, crispY } from '../charts/pixelGrid.js';
 import { priceScaleText } from '../axis/PriceAxis.js';
 import { fillTag } from '../ui/shapes.js';
 import { axisTimes } from '../charts/transforms/axisTimes.js';
-import { xToBarIndex, yToPrice, barIndexToX, barIndexToTime } from '../viewport/ScaleMapping.js';
+import { xToBarIndex, yToPrice, barIndexToX, barIndexToTime, priceToY, timeToX } from '../viewport/ScaleMapping.js';
+import { readableText } from '../finance/colorScale.js';
+import type { AxisSpan } from '../drawings/axisSpan.js';
+
+/** How strongly a drawing's span tints the axes: enough to see, light enough to read the scale through. */
+const SPAN_TINT_ALPHA = 0.2;
 
 export type CrosshairCallback = (barIndex: number | null, point: Point | null) => void;
 
@@ -299,6 +304,74 @@ export class CrosshairHandler {
 
     // ── Time pill (bottom axis) ──
     this.drawTimePill(ctx, viewport, theme, data, slot, x, timeAxisY, timeColumns);
+  }
+
+  /**
+   * A drawing's span on the axes (selected, or being drawn): a tint from its
+   * lowest to its highest price on its price axis and from its first to its
+   * last time on the time axis, each end labelled in the drawing's colour.
+   * The price is the drawing's viewport's (a pane's own), the time the chart's.
+   */
+  renderSpan(
+    ctx: CanvasRenderingContext2D,
+    span: AxisSpan,
+    main: ViewportState,
+    theme: Theme,
+    data: DataSeries,
+    timeAxisY?: number,
+  ): void {
+    const font = `600 ${theme.font.sizeSmall}px ${theme.font.family}`;
+    const tint = withAlpha(span.color, SPAN_TINT_ALPHA);
+    const fg = readableText(span.color);
+    if (span.prices.length > 0) this.renderPriceSpan(ctx, span, theme, font, tint, fg, main);
+    if (span.times.length > 0) this.renderTimeSpan(ctx, span, main, theme, data, font, tint, fg, timeAxisY);
+  }
+
+  private renderPriceSpan(ctx: CanvasRenderingContext2D, span: AxisSpan, theme: Theme, font: string, tint: string, fg: string, main: ViewportState): void {
+    const vp = span.viewport;
+    const plot = vp.chartRect;
+    const axisX = plot.x + plot.width;
+    const axisWidth = vp.priceAxisWidth ?? PRICE_AXIS_WIDTH;
+    const ys = span.prices.map((price) => priceToY(price, vp));
+    // The chart's precision on its own scale; a pane's from its range.
+    const precision = (vp === main ? this.pricePrecision : null) ?? autoPricePrecision(vp.priceRange.min, vp.priceRange.max);
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(axisX, plot.y, axisWidth, plot.height);
+    ctx.clip();
+    if (ys.length > 1) {
+      ctx.fillStyle = tint;
+      ctx.fillRect(axisX, Math.min(...ys), axisWidth, Math.abs(ys[ys.length - 1] - ys[0]));
+    }
+    span.prices.forEach((price, i) => {
+      const y = ys[i];
+      if (y < plot.y || y > plot.y + plot.height) return;
+      drawAxisPill(ctx, { text: priceScaleText(price, vp, precision, this.locale), anchorX: axisX, anchorY: y, orientation: 'right', bg: span.color, fg, theme, font });
+    });
+    ctx.restore();
+  }
+
+  private renderTimeSpan(
+    ctx: CanvasRenderingContext2D, span: AxisSpan, main: ViewportState, theme: Theme, data: DataSeries,
+    font: string, tint: string, fg: string, timeAxisY?: number,
+  ): void {
+    const plot = main.chartRect;
+    const axisY = timeAxisY ?? plot.y + plot.height;
+    const xs = span.times.map((time) => timeToX(time, main));
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(plot.x, axisY, plot.width, TIME_AXIS_HEIGHT);
+    ctx.clip();
+    if (xs.length > 1) {
+      ctx.fillStyle = tint;
+      ctx.fillRect(Math.min(...xs), axisY, Math.abs(xs[xs.length - 1] - xs[0]), TIME_AXIS_HEIGHT);
+    }
+    span.times.forEach((time, i) => {
+      const x = xs[i];
+      if (x < plot.x || x > plot.x + plot.width) return;
+      drawAxisPill(ctx, { text: this.formatTime(time, data), anchorX: x, anchorY: axisY, orientation: 'bottom', bg: span.color, fg, theme, font });
+    });
+    ctx.restore();
   }
 
   /** The mirrored crosshair: only the time is shared, so only the vertical line. */

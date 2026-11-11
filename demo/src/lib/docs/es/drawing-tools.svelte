@@ -235,6 +235,15 @@ chart.setZoomAreaMode(true)        // el siguiente arrastre amplía las barras q
 chart.setDrawingMagnetMode('strong') // 'off' | 'weak' | 'strong'`}</code></pre>
 <p>El imán débil ajusta un punto a la apertura, el máximo, el mínimo o el cierre de la barra cuando el puntero está cerca de uno de ellos; el imán fuerte lo hace siempre. En el widget el imán empieza apagado: un dibujo queda donde se pone hasta que el botón del imán lo enciende.</p>
 
+<h2 id="cursors">Cursores, y el tramo de un dibujo en los ejes</h2>
+<pre><code>{`new Chart(el, { crosshair: { mode: 'magnet', cursor: 'dot' } })
+chart.setCrosshairCursor('arrow')        // 'cross' | 'dot' | 'arrow'
+chart.on('crosshairCursorChange', (e) => e.payload)  // { cursor }
+widget.setCrosshairCursor('dot')         // the widget's, a Chart Setting
+chart.setDrawingAxisSpansVisible(false)  // or features: { drawingAxisSpans: false }`}</code></pre>
+<p><strong>Cross</strong> dibuja las líneas de la cruz con un cursor en cruz. <strong>Dot</strong> dibuja las mismas líneas con un punto pequeño del color de la cruz como cursor. <strong>Arrow</strong> no dibuja líneas y deja el cursor de flecha, mientras el precio y la hora siguen al puntero en los ejes. En el widget, el botón del cursor arriba de las herramientas de dibujo abre un menú con los tres, y los ajustes del gráfico tienen la fila. El tipo es del espectador: <code>persistSettings</code> lo guarda, y un layout o un enlace compartido nunca lo lleva.</p>
+<p>Mientras un dibujo está seleccionado, se mueve o se está dibujando, el eje de precios se tiñe de su precio más bajo al más alto y el eje de tiempo de su primera a su última hora, con cada extremo rotulado en el color del dibujo. Una línea horizontal marca solo su precio y una vertical solo su hora; un dibujo fijado a la pantalla no marca ninguno. La goma resalta el dibujo que un clic borraría.</p>
+
 <h2 id="editing">Editar con el puntero y las teclas</h2>
 <ul>
   <li>El imán también actúa al arrastrar un control y al mover un dibujo: el punto más cercano a donde se agarró cae en un precio y el resto conserva su posición respecto a él. El imán débil alcanza 50 px.</li>

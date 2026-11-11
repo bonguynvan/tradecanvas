@@ -281,3 +281,52 @@ describe('CrosshairHandler cursor kinds', () => {
     expect(handler.drawsLines()).toBe(false);
   });
 });
+
+describe('CrosshairHandler — a drawing’s span on the axes', () => {
+  /** Records filled boxes as [x, y, w, h, colour] and the text with its colour. */
+  function spanRecorder() {
+    const boxes: (number | string)[][] = [];
+    const texts: [string, string][] = [];
+    const store: Record<string, unknown> = {};
+    const ctx = new Proxy(store, {
+      get: (target, prop) => {
+        if (prop === 'measureText') return (t: string) => ({ width: t.length * 6 });
+        if (prop === 'fillRect') return (x: number, y: number, w: number, h: number) => boxes.push([x, y, w, h, String(target.fillStyle)]);
+        if (prop === 'fillText') return (t: string) => texts.push([t, String(target.fillStyle)]);
+        if (prop in target) return target[prop as string];
+        return () => {};
+      },
+      set: (target, prop, value) => { target[prop as string] = value; return true; },
+    }) as unknown as CanvasRenderingContext2D;
+    return { ctx, boxes, texts };
+  }
+  const span = (prices: number[], times: number[]) => ({ prices, times, color: '#ff8800', viewport: { ...viewport, data: bars } as ViewportState });
+
+  it('tints the price axis between the two prices and labels each in the drawing’s colour', () => {
+    const handler = new CrosshairHandler();
+    handler.setData(bars);
+    const { ctx, boxes, texts } = spanRecorder();
+    handler.renderSpan(ctx, span([95, 105], []), { ...viewport, data: bars } as ViewportState, theme, bars, 300);
+    // 20 points over 300 px: 105 at y 75, 95 at y 225; the axis starts at x 500.
+    expect(boxes.find((b) => b[0] === 500 && b[1] === 75 && b[3] === 150)?.[4]).toMatch(/rgba\(255, 136, 0, 0\.2\)/);
+    expect(texts.map(([t]) => t)).toEqual(['95.00', '105.00']);
+  });
+
+  it('tints the time axis between the two times and labels each', () => {
+    const handler = new CrosshairHandler();
+    handler.setData(bars);
+    const { ctx, boxes, texts } = spanRecorder();
+    handler.renderSpan(ctx, span([], [bars[10].time, bars[20].time]), { ...viewport, data: bars } as ViewportState, theme, bars, 300);
+    // Bar 10 centred at x 104, bar 20 at x 204; the time axis starts at y 300.
+    expect(boxes.some((b) => b[0] === 104 && b[1] === 300 && b[2] === 100)).toBe(true);
+    expect(texts).toHaveLength(2);
+  });
+
+  it('labels a price off the plot nowhere', () => {
+    const handler = new CrosshairHandler();
+    handler.setData(bars);
+    const { ctx, texts } = spanRecorder();
+    handler.renderSpan(ctx, span([95, 500], []), { ...viewport, data: bars } as ViewportState, theme, bars, 300);
+    expect(texts.map(([t]) => t)).toEqual(['95.00']);
+  });
+});

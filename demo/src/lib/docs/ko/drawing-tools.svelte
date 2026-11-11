@@ -226,6 +226,15 @@ chart.setZoomAreaMode(true)        // 다음 드래그로 상자 안의 봉을 �
 chart.setDrawingMagnetMode('strong') // 'off' | 'weak' | 'strong'`}</code></pre>
 <p>약한 자석은 포인터가 봉의 시가, 고가, 저가, 종가 가까이에 있을 때 점을 그 값에 스냅하고, 강한 자석은 항상 스냅합니다. 위젯에서는 자석이 꺼진 채로 시작합니다. 자석 버튼으로 켜기 전까지 그리기는 놓은 자리에 그대로 있습니다.</p>
 
+<h2 id="cursors">커서, 그리고 축 위에 표시되는 그림의 범위</h2>
+<pre><code>{`new Chart(el, { crosshair: { mode: 'magnet', cursor: 'dot' } })
+chart.setCrosshairCursor('arrow')        // 'cross' | 'dot' | 'arrow'
+chart.on('crosshairCursorChange', (e) => e.payload)  // { cursor }
+widget.setCrosshairCursor('dot')         // the widget's, a Chart Setting
+chart.setDrawingAxisSpansVisible(false)  // or features: { drawingAxisSpans: false }`}</code></pre>
+<p><strong>Cross</strong>는 십자선을 그리고 커서는 십자 모양입니다. <strong>Dot</strong>은 같은 선을 그리고 커서는 십자선 색의 작은 점입니다. <strong>Arrow</strong>는 선을 그리지 않고 화살표 커서를 쓰지만, 가격과 시간은 여전히 축 위에서 포인터를 따라갑니다. 위젯에서는 그리기 도구 맨 위의 커서 버튼이 세 가지 메뉴를 열고, 차트 설정에도 항목이 있습니다. 커서 종류는 보는 사람의 설정입니다. <code>persistSettings</code>가 저장하며, 레이아웃이나 공유 링크에는 담기지 않습니다.</p>
+<p>그림을 선택하거나 옮기거나 그리는 동안, 가격 축은 그 최저가에서 최고가까지, 시간 축은 첫 시간에서 마지막 시간까지 색이 칠해지고 양 끝에 그림의 색으로 라벨이 붙습니다. 수평선은 가격만, 수직선은 시간만 표시하며, 화면에 고정된 그림은 아무것도 표시하지 않습니다. 지우개는 클릭하면 지워질 그림을 빛나게 합니다.</p>
+
 <h2 id="editing">포인터와 키로 편집하기</h2>
 <ul>
   <li>핸들을 끌거나 드로잉 전체를 옮길 때도 자석이 작동합니다. 잡은 곳에서 가장 가까운 점이 가격에 붙고, 나머지 점은 그 점과의 위치를 유지합니다. 약한 자석은 50 px까지 닿습니다.</li>

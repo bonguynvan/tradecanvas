@@ -180,6 +180,8 @@ export interface RenderContext {
   indicatorValueLabels?: boolean;
   /** Move the price axis's tags apart where they would cover one another, the last price's staying on its line (default on). */
   alignAxisLabels?: boolean;
+  /** Mark the selected (or the drawn) drawing's span on the axes (default on). */
+  drawingAxisSpans?: boolean;
   /** Price text as the price axis writes it (precision, locale). */
   formatPrice?: (price: number) => string;
   /** BCP 47 locale for number formatting. Defaults to 'en-US' when not set. */
@@ -419,6 +421,15 @@ export class RenderEngine {
     ctx.currentPriceLine?.renderTag(c, viewport, theme);
     ctx.timeAxis?.render(c, viewport, theme, data, ctx.timeAxisY);
     this.renderPanelAxes(c, ctx);
+    this.renderDrawingSpans(c, ctx);
+  }
+
+  /** The selected (or the drawn) drawing's span on the axes, over their labels and tags. */
+  private renderDrawingSpans(c: CanvasRenderingContext2D, ctx: RenderContext): void {
+    if (ctx.drawingAxisSpans === false || !ctx.drawingRenderer || !ctx.crosshairHandler) return;
+    for (const span of ctx.drawingRenderer.axisSpans(ctx.viewport)) {
+      ctx.crosshairHandler.renderSpan(c, span, ctx.viewport, ctx.theme, ctx.data, ctx.timeAxisY);
+    }
   }
 
   /**

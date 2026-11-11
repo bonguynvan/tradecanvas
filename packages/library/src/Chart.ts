@@ -454,6 +454,7 @@ export class Chart {
       legend: f.legend ?? true,
       indicatorValueLabels: f.indicatorValueLabels ?? false,
       alignAxisLabels: f.alignAxisLabels ?? true,
+      drawingAxisSpans: f.drawingAxisSpans ?? true,
       volume: f.volume ?? true,
       watermark: f.watermark ?? true,
       saveLoad: f.saveLoad ?? true,
@@ -2178,6 +2179,17 @@ export class Chart {
 
   isAxisLabelsAligned(): boolean {
     return this.features.alignAxisLabels;
+  }
+
+  /** Mark the selected (or the drawn) drawing's span on the axes, its ends labelled (on by default). */
+  setDrawingAxisSpansVisible(visible: boolean): void {
+    this.features.drawingAxisSpans = visible;
+    this.syncRenderContext();
+    this.engine.requestRender();
+  }
+
+  isDrawingAxisSpansVisible(): boolean {
+    return this.features.drawingAxisSpans;
   }
 
   /** Write each pane's indicator name and hovered values in its header (default); off when you label panes yourself. */
@@ -6456,6 +6468,7 @@ export class Chart {
       paneTitles: this.paneTitles,
       indicatorValueLabels: this.features.indicatorValueLabels,
       alignAxisLabels: this.features.alignAxisLabels,
+      drawingAxisSpans: this.features.drawingAxisSpans,
       formatPrice: (price) => this.formatPrice(price),
       renderOverlayPlugins: (c, layer) => this.drawOverlayPlugins(c, layer),
     });

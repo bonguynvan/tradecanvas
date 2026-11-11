@@ -227,6 +227,15 @@ chart.setZoomAreaMode(true)        // 次のドラッグで、枠内のバーに
 chart.setDrawingMagnetMode('strong') // 'off' | 'weak' | 'strong'`}</code></pre>
 <p>弱いマグネットは、ポインターがバーの始値・高値・安値・終値の近くにあるとき、点をその値に吸着させます。強いマグネットは常に吸着させます。ウィジェットではマグネットは最初オフです。マグネットボタンでオンにするまで、描画は置いた位置にとどまります。</p>
 
+<h2 id="cursors">カーソルと、描画の範囲を軸に</h2>
+<pre><code>{`new Chart(el, { crosshair: { mode: 'magnet', cursor: 'dot' } })
+chart.setCrosshairCursor('arrow')        // 'cross' | 'dot' | 'arrow'
+chart.on('crosshairCursorChange', (e) => e.payload)  // { cursor }
+widget.setCrosshairCursor('dot')         // the widget's, a Chart Setting
+chart.setDrawingAxisSpansVisible(false)  // or features: { drawingAxisSpans: false }`}</code></pre>
+<p><strong>Cross</strong> は十字線を描き、カーソルは十字です。<strong>Dot</strong> は同じ線を描き、カーソルは十字線の色の小さな点です。<strong>Arrow</strong> は線を描かず矢印カーソルのままで、価格と時刻は軸上でポインターに付いて動きます。ウィジェットでは描画ツールの一番上のカーソルボタンが三つのメニューを開き、チャート設定にも項目があります。カーソルの種類は閲覧者のものです。<code>persistSettings</code> が保存し、レイアウトや共有リンクには含まれません。</p>
+<p>描画を選択・移動・作成している間、価格軸はその最安値から最高値まで、時間軸は最初の時刻から最後の時刻まで色が付き、両端に描画の色でラベルが付きます。水平線は価格だけ、垂直線は時刻だけを示し、画面に固定された描画は何も示しません。消しゴムは、クリックで消える描画を光らせます。</p>
+
 <h2 id="editing">ポインターとキーで編集</h2>
 <ul>
   <li>ハンドルのドラッグや描画全体の移動にもマグネットが効きます。つかんだ位置に最も近い点が価格に吸着し、ほかの点はその点との位置関係を保ちます。弱いマグネットは 50 px まで届きます。</li>
