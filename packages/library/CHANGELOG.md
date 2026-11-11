@@ -1,5 +1,17 @@
 # @tradecanvas/chart
 
+## 1.84.0
+
+### Minor Changes
+
+- 9996a0f: `indicatorWorker: 'auto'` computes full indicator recomputes in a Web Worker when the series has 50,000 bars or more (default `'off'`); ticks stay on the main thread. Reads stay synchronous, and `getIndicatorOutput(id, { drawn: true })` reads what is drawn without waiting.
+
+### Patch Changes
+
+- Updated dependencies [9996a0f]
+  - @tradecanvas/core@1.84.0
+  - @tradecanvas/commons@1.84.0
+
 ## 1.83.1
 
 ### Patch Changes
