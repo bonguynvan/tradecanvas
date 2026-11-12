@@ -3,6 +3,7 @@ import { fill } from './i18n.js';
 import { createIcon } from './icons.js';
 import { logoSrc } from './symbolCatalog.js';
 import type { SymbolInfo } from '@tradecanvas/commons';
+import { MAX_PRICE_DECIMALS, smallValueDecimals } from '@tradecanvas/commons';
 
 /**
  * Watchlist sidebar: the shown list's symbols, a line each: the ticker (its
@@ -398,8 +399,11 @@ export class WidgetWatchlist {
     const entry = this.entries.get(symbol);
     if (!ref || !entry) return;
 
+    // The symbol's own decimals when it has them, as the chart's axis writes it: a stock in dong reads 49,550, not 49,550.00.
+    const own = this.options.infoOf?.(symbol)?.pricePrecision;
+    const decimals = own !== undefined && Number.isInteger(own) && own >= 0 ? Math.min(own, MAX_PRICE_DECIMALS) : undefined;
     if (entry.lastPrice !== undefined) {
-      ref.priceEl.textContent = formatPrice(entry.lastPrice, this.locale);
+      ref.priceEl.textContent = formatPrice(entry.lastPrice, this.locale, decimals);
     }
 
     if (entry.lastPrice !== undefined && entry.refPrice !== undefined && entry.refPrice !== 0) {
@@ -409,7 +413,7 @@ export class WidgetWatchlist {
       const tone = diff >= 0 ? 'tcw-up' : 'tcw-down';
       const pctText = Math.abs(pct).toLocaleString(this.locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
       if (ref.moveEl) {
-        ref.moveEl.textContent = `${sign}${formatMove(Math.abs(diff), entry.lastPrice, this.locale)}`;
+        ref.moveEl.textContent = `${sign}${formatMove(Math.abs(diff), entry.lastPrice, this.locale, decimals)}`;
         ref.moveEl.className = `tcw-watchlist-move ${tone}`;
       }
       ref.changeEl.textContent = `${sign}${pctText}%`;
@@ -550,25 +554,25 @@ function formatSymbol(symbol: string): string {
   return ticker;
 }
 
-function formatPrice(v: number, locale: string | undefined): string {
+/** A price at `decimals` (the symbol's own), or by its size without them: 2 from 1,000, 4 from 1, four figures under 1. */
+function formatPrice(v: number, locale: string | undefined, decimals?: number): string {
+  if (decimals !== undefined) return v.toLocaleString(locale, { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
   if (v === 0) return '0';
   const abs = Math.abs(v);
   if (abs >= 1000) return v.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   if (abs >= 1) return v.toLocaleString(locale, { minimumFractionDigits: 4, maximumFractionDigits: 4 });
-  // toPrecision(4) has no locale-aware equivalent via toLocaleString (it
-  // targets significant digits, not decimal places) — reformat its raw
-  // fixed-notation output through Number.toLocaleString for the separator.
-  const precise = Number(v.toPrecision(4));
-  return precise.toLocaleString(locale, { maximumFractionDigits: 10 });
+  // Four significant figures, in as many decimals as they take: a coin priced in billionths keeps them.
+  return v.toLocaleString(locale, { maximumFractionDigits: smallValueDecimals(v) });
 }
 
 /** A move in the price's own decimals: 956.12 beside 73,843.88, 0.0000003 beside 0.0000068. */
-function formatMove(move: number, price: number, locale: string | undefined): string {
+function formatMove(move: number, price: number, locale: string | undefined, own?: number): string {
+  if (own !== undefined) return move.toLocaleString(locale, { minimumFractionDigits: own, maximumFractionDigits: own });
   const abs = Math.abs(price);
   if (abs >= 1000) return move.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   if (abs >= 1) return move.toLocaleString(locale, { minimumFractionDigits: 4, maximumFractionDigits: 4 });
   // A price under 1 shows four significant figures: the move goes as far down.
-  const decimals = abs > 0 ? Math.min(10, Math.max(0, 3 - Math.floor(Math.log10(abs)))) : 4;
+  const decimals = abs > 0 ? smallValueDecimals(abs) : 4;
   return move.toLocaleString(locale, { maximumFractionDigits: decimals });
 }
 

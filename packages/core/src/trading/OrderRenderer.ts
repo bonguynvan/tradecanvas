@@ -3,7 +3,7 @@ import { priceToY } from '../viewport/ScaleMapping.js';
 import { UI_ICONS, priceTagText } from '@tradecanvas/commons';
 import type { LineButton } from './lineButtons.js';
 import { inPlot, levelLine } from './plot.js';
-import { amountAt, formatAmount } from './positionFormat.js';
+import { amountAt, amountDecimals, formatAmount } from './positionFormat.js';
 import { drawAxisBadge, drawTags, type AxisBadge, type TagCell, type TradingTag } from './tradingTags.js';
 
 export interface DragState {
@@ -92,7 +92,6 @@ export class OrderRenderer {
    */
   tags(orders: TradingOrder[], viewport: ViewportState, config: TradingConfig, dragState: DragState | null): TradingTag[] {
     const colors = colorsOf(config);
-    const precision = config.pricePrecision ?? 2;
     const tags: TradingTag[] = [];
     for (const order of orders) {
       const price = priceOf(order, dragState);
@@ -118,7 +117,7 @@ export class OrderRenderer {
           color: which === 'stopLoss' ? colors.loss : colors.profit,
           cells: [
             { kind: 'stamp', text: which === 'stopLoss' ? 'SL' : 'TP' },
-            { kind: 'text', text: formatAmount(amount, precision, viewport.numberLocale), color: amount >= 0 ? colors.profit : colors.loss },
+            { kind: 'text', text: formatAmount(amount, amountDecimals(amount, price, config.pricePrecision), viewport.numberLocale), color: amount >= 0 ? colors.profit : colors.loss },
           ],
         });
       }

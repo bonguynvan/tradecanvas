@@ -4,6 +4,7 @@ import { UI_ICONS, priceTagText } from '@tradecanvas/commons';
 import {
   amountAt,
   buildPositionLabelContext,
+  amountDecimals,
   formatAmount,
   pickPnLColor,
   resolvePositionLabel,
@@ -165,7 +166,7 @@ export class PositionRenderer {
         cells.push({ kind: 'text', text: resolvePositionLabel(config.positionLabel, labelCtx) });
       } else {
         const color = pickPnLColor(labelCtx.pnl, config.pnlThresholds, labelCtx.pnl >= 0 ? colors.profit : colors.loss);
-        cells.push({ kind: 'text', text: side }, { kind: 'text', text: formatAmount(labelCtx.pnl, precision, viewport.numberLocale), color });
+        cells.push({ kind: 'text', text: side }, { kind: 'text', text: formatAmount(labelCtx.pnl, amountDecimals(labelCtx.pnl, currentPrice, config.pricePrecision), viewport.numberLocale), color });
       }
     }
     const show = config.lineButtons ?? {};
@@ -185,7 +186,7 @@ export class PositionRenderer {
     const amount = amountAt(pos.side, pos.entryPrice, openQuantity(pos), price);
     const cells: TagCell[] = [
       { kind: 'stamp', text: which === 'stopLoss' ? 'SL' : 'TP' },
-      { kind: 'text', text: formatAmount(amount, config.pricePrecision ?? 2, viewport.numberLocale), color: amount >= 0 ? colors.profit : colors.loss },
+      { kind: 'text', text: formatAmount(amount, amountDecimals(amount, pos.entryPrice, config.pricePrecision), viewport.numberLocale), color: amount >= 0 ? colors.profit : colors.loss },
     ];
     const dragged = dragState?.orderId === pos.id && dragState.sourceType === which;
     if (config.lineButtons?.removeStops !== false && fitsPlot(y, viewport) && !dragged) {

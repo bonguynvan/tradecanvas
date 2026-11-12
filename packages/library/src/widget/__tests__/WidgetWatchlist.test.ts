@@ -145,6 +145,32 @@ describe('WidgetWatchlist', () => {
     expect(document.activeElement).toBe(rows()[1]);
   });
 
+  it('shows four figures of a price however small, where ten decimals cut it short', () => {
+    wl.setEntry('ETHUSDT', { lastPrice: 0.00000007123456, refPrice: 0.00000007 });
+    expect(rows()[1].querySelector('.tcw-watchlist-price')!.textContent).toBe('0.00000007123');
+    wl.setEntry('ETHUSDT', { lastPrice: 0.000000000456789, refPrice: 0.0000000004 });
+    expect(rows()[1].querySelector('.tcw-watchlist-price')!.textContent).toBe('0.0000000004568');
+  });
+
+  it('writes a price in its symbol’s own decimals when it has them, as the chart does', () => {
+    const other = document.createElement('div');
+    document.body.appendChild(other);
+    const own = new WidgetWatchlist(other, calls, LABELS, {
+      infoOf: (symbol) => (symbol === 'BTCUSDT' ? { symbol, pricePrecision: 0 } : symbol === 'ETHUSDT' ? { symbol, pricePrecision: 2 } : undefined),
+    });
+    own.setLists(lists, 'a');
+    own.setEntry('BTCUSDT', { lastPrice: 49550, refPrice: 49000 });
+    own.setEntry('ETHUSDT', { lastPrice: 256.62, refPrice: 250 });
+    own.setEntry('SOLUSDT', { lastPrice: 256.62, refPrice: 250 });
+    const price = (i: number) => other.querySelectorAll('.tcw-watchlist-row')[i].querySelector('.tcw-watchlist-price')!.textContent;
+    // A stock in dong, an index at two decimals, and one with no decimals of its own (by its size, as before).
+    expect(price(0)).toBe('49,550');
+    expect(price(1)).toBe('256.62');
+    expect(price(2)).toBe('256.6200');
+    own.destroy();
+    other.remove();
+  });
+
   it('shows prices and moves it is given, and keeps them across list switches', () => {
     wl.setEntry('ETHUSDT', { lastPrice: 2000, refPrice: 1900 });
     const eth = () => rows()[1];

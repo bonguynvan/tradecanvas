@@ -3,7 +3,7 @@ import type { Theme } from '@tradecanvas/commons';
 import { DARK_THEME, UI_ICONS } from '@tradecanvas/commons';
 import { TradingManager } from '../TradingManager.js';
 import { drawTags, layoutTags, type TagBox, type TradingTag } from '../tradingTags.js';
-import { amountAt, formatAmount } from '../positionFormat.js';
+import { amountAt, amountDecimals, formatAmount } from '../positionFormat.js';
 import { buttonAt, type LineButton } from '../lineButtons.js';
 import { tagPath } from '../../ui/shapes.js';
 import { recordingCtx, unitViewport } from '../../drawings/__tests__/fixtures.js';
@@ -148,6 +148,22 @@ describe('tags that cannot all fit', () => {
 });
 
 describe('formatAmount and amountAt', () => {
+  it('writes what a coin priced in millionths makes in that coin’s decimals, not as "0.00"', () => {
+    // Two units at 0.0000000785, up three ticks of its tenth decimal.
+    const price = 0.0000000785;
+    const made = amountAt('buy', price, 2, 0.0000000788);
+    expect(formatAmount(made, amountDecimals(made, price))).toBe('+0.00000000060');
+    // A billion of them make real money: two decimals, not eleven.
+    const lot = amountAt('buy', price, 1e12, 0.0000000835);
+    expect(formatAmount(lot, amountDecimals(lot, price))).toBe('+5,000.00');
+    // Nothing made is "0.00", and so is what is only rounding, far under the price's own decimals.
+    expect(formatAmount(0, amountDecimals(0, price))).toBe('0.00');
+    expect(amountDecimals(1e-20, price)).toBe(2);
+    // A price of 1 or more keeps two decimals whatever the amount, and a market's or a symbol's own decimals come first.
+    expect(amountDecimals(-0.001, 64200)).toBe(2);
+    expect(amountDecimals(made, price, 8)).toBe(8);
+  });
+
   it('write a short’s profit with its sign, and nothing as no sign', () => {
     expect(formatAmount(amountAt('sell', 100, 2, 90), 2)).toBe('+20.00');
     expect(formatAmount(amountAt('sell', 100, 2, 110), 2)).toBe('-20.00');
