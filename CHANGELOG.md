@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+### Finance charts
+
+- **The depth, equity and waterfall charts are laid out as the newer charts are** (`@tradecanvas/core`, `@tradecanvas/chart`). Their margins were fixed numbers (70 px for an equity curve's values, 60 px of nothing right of a depth chart); they are sized to the labels now, 12 px from the chart's edge. Value axes step by round numbers, a time axis by round times (whole hours, whole days), read by the step between them: a clock for hours, the day for days. Numbers read as on the other charts (1,234.5, and 12.3K past ten thousand) unless a format is given; a depth chart writes its prices with as many decimals as the book's own, so 0.00001234 is no longer 0.00. The charts look different from 1.x: check the room you gave them.
+- **One tooltip** (`@tradecanvas/core`, `@tradecanvas/chart`). The depth, equity, waterfall and heatmap charts show the rounded tooltip of the newer charts, with a swatch by each value, in place of a square box of `Value:` and `Price:` lines. A depth chart reads out the price of the level its volume is counted to. A waterfall step shows what it added and the total it leaves.
+- **A tap reads out** (`@tradecanvas/core`, `@tradecanvas/chart`). On a touch screen no finance chart showed a tooltip. A tap shows it, on every chart that has one, and it stays until a tap elsewhere; a drag still scrolls the page, and puts the tooltip away.
+- **Sharp at 125% and 150%** (`@tradecanvas/core`, `@tradecanvas/chart`). The finance charts' canvases are sized by the container's own count of device pixels, as the trading chart's are, and follow a change of the pixel ratio (a window moved to another screen, a page zoomed). Grid lines, axes and crosshairs fall on whole device pixels at any ratio. A resize no longer shows one cleared frame.
+- **A waterfall's labels have room** (`@tradecanvas/core`, `@tradecanvas/chart`). Labels too long for their slots are turned, in as much room under the plot as they need (up to 38% of the height), and cut with an ellipsis past that, where they ran off the canvas. A value that would run into the one before it is left out.
+- **An equity curve names its benchmark over the plot** (`@tradecanvas/core`, `@tradecanvas/chart`). The name sat by the line's end, cut off by the chart's edge; it is a legend entry now. The curve's points may come in any order of time.
+- **A heatmap follows the theme** (`@tradecanvas/core`, `@tradecanvas/chart`). Its default colours were fixed (a dark grey for zero, also on a light theme); they are the theme's down and up colours and a faint surface of it, as on the calendar and the matrix. `colorScale` overrides them as before, and the range stays five either side of zero unless `min` and `max` say otherwise. The pointed cell's outline is in the theme's text colour.
+- **For those drawing with the renderers** (`@tradecanvas/core`). `computeWaterfallLayout`, `hitWaterfallBar`, `computeEquityLayout` and `computeDepthLayout` give where each chart puts things, as the newer charts' layout functions do.
+
 ## 2.0.0-beta.3 (2026-11-12)
 
 ### Finance charts

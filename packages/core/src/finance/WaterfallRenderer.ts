@@ -1,37 +1,56 @@
 import type { Theme, WaterfallBar, WaterfallOptions } from '@tradecanvas/commons';
-import { computeTickStep } from '@tradecanvas/commons';
+import {
+  AXIS_GAP,
+  BOTTOM_LABELS,
+  CHART_PAD,
+  LABEL_GAP,
+  LABEL_SIZE,
+  axisFormat,
+  defaultFormat,
+  drawTooltip,
+  drawValueAxis,
+  fitText,
+  fontOf,
+  hairline,
+  niceScale,
+  scaleToPx,
+  strokeHairline,
+  type Measure,
+  type NiceScale,
+  type Rect,
+  type TooltipLine,
+} from './chartKit.js';
 
 type BarType = 'positive' | 'negative' | 'total' | 'subtotal';
 
-interface WaterfallLayoutBar {
+export interface WaterfallBarRect extends Rect {
   label: string;
   value: number;
+  type: BarType;
+  /** The running total before the bar and after it. */
   start: number;
   end: number;
-  type: BarType;
-  rectX: number;
-  rectY: number;
-  rectW: number;
-  rectH: number;
+  /** The bar's slot along the bottom: where its label goes, and what the pointer picks it by. */
   slotX: number;
-  slotW: number;
+  slotWidth: number;
 }
 
-interface WaterfallLayout {
-  left: number;
-  right: number;
-  top: number;
-  bottom: number;
-  plotWidth: number;
-  plotHeight: number;
+export interface WaterfallLayout {
+  plot: Rect;
+  scale: NiceScale;
+  bars: WaterfallBarRect[];
+  /** Labels too long for their slots are turned 45 degrees, in this much room under the plot. */
+  turned: boolean;
+  labelRoom: number;
 }
 
-const MARGIN_LEFT = 60;
-const MARGIN_RIGHT = 12;
-const MARGIN_TOP = 24;
-const MARGIN_BOTTOM = 40;
 const DEFAULT_BAR_WIDTH_RATIO = 0.7;
 const MIN_BAR_HEIGHT = 1;
+/** Turned labels take at most this share of the chart's height: the smaller part of a golden cut. */
+const MAX_TURNED_SHARE = 0.382;
+const TURN = Math.PI / 4;
+/** Room between a bar and its value. */
+const VALUE_GAP = 4;
 
 /** A bar with no type is a step: up, or down. One of zero is a step that changes nothing. */
 function resolveType(bar: WaterfallBar): BarType {
@@ -58,378 +77,133 @@ function runningBars(data: readonly WaterfallBar[]): RunningBar[] {
   });
 }
 
-function defaultValueFormat(v: number): string {
-  const abs = Math.abs(v);
-  if (abs >= 1_000_000) return (v / 1_000_000).toFixed(2) + 'M';
-  if (abs >= 1_000) return (v / 1_000).toFixed(1) + 'K';
-  return v.toFixed(2);
-}
-
-function computeLayout(width: number, height: number): WaterfallLayout {
-  return {
-    left: MARGIN_LEFT,
-    right: width - MARGIN_RIGHT,
-    top: MARGIN_TOP,
-    bottom: height - MARGIN_BOTTOM,
-    plotWidth: width - MARGIN_LEFT - MARGIN_RIGHT,
-    plotHeight: height - MARGIN_TOP - MARGIN_BOTTOM,
-  };
-}
-
-function buildLayoutBars(
-  data: readonly WaterfallBar[],
-  layout: WaterfallLayout,
-  barWidthRatio: number,
-  valMin: number,
-  valRange: number,
-): { bars: WaterfallLayoutBar[]; cumulatives: number[] } {
-  const bars: WaterfallLayoutBar[] = new Array(data.length);
-  const cumulatives: number[] = new Array(data.length);
-  const slotWidth = layout.plotWidth / data.length;
-  const barW = slotWidth * barWidthRatio;
-  const slotPadding = (slotWidth - barW) / 2;
-  const { left, bottom, plotHeight } = layout;
+/** Where the bars go, for a chart `width` by `height`. */
+export function computeWaterfallLayout(options: WaterfallOptions, width: number, height: number, measure: Measure): WaterfallLayout {
+  const data = options.data ?? [];
   const running = runningBars(data);
+  let lo = 0;
+  let hi = 0;
+  for (const { start, end } of running) {
+    lo = Math.min(lo, start, end);
+    hi = Math.max(hi, start, end);
+  }
+  // A tenth more at an end the bars reach, for the values written past them.
+  const reach = (hi - lo || 1) * 0.1;
+  const scale = niceScale(lo < 0 ? lo - reach : 0, hi > 0 ? hi + reach : 0, 5);
+  const format = options.valueFormat ?? axisFormat(scale);
+  const tickWidth = Math.max(0, ...scale.ticks.map((t) => measure(format(t), LABEL_SIZE)));
+  const left = CHART_PAD + tickWidth + AXIS_GAP;
+  const plotWidth = Math.max(1, width - left - CHART_PAD);
 
-  for (let i = 0; i < data.length; i++) {
-    const bar = data[i];
-    const { type, value, start, end } = running[i];
+  const count = Math.max(1, data.length);
+  const slotWidth = plotWidth / count;
+  const labelFormat = options.labelFormat ?? ((l: string) => l);
+  const widest = Math.max(0, ...data.map((b) => measure(labelFormat(b.label), LABEL_SIZE)));
+  const turned = widest > slotWidth - 4;
+  // A turned label reaches down by its length's sine, and by its own height's cosine.
+  const labelRoom = turned
+    ? Math.min(height * MAX_TURNED_SHARE, Math.ceil((widest + LABEL_SIZE) * Math.sin(TURN)) + LABEL_GAP)
+    : BOTTOM_LABELS;
+  const plot: Rect = { x: left, y: CHART_PAD, width: plotWidth, height: Math.max(1, height - CHART_PAD * 2 - labelRoom) };
 
-    const top = Math.min(start, end);
-    const bot = Math.max(start, end);
-    const topY = bottom - ((top - valMin) / valRange) * plotHeight;
-    const botY = bottom - ((bot - valMin) / valRange) * plotHeight;
-    const rectY = Math.min(topY, botY);
-    const rectH = Math.max(Math.abs(botY - topY), MIN_BAR_HEIGHT);
-    const slotX = left + i * slotWidth;
-    const rectX = slotX + slotPadding;
-
-    bars[i] = {
-      label: bar.label,
-      value,
-      start,
-      end,
-      type,
-      rectX,
-      rectY,
-      rectW: barW,
-      rectH,
+  const ratio = Math.min(1, Math.max(0.05, options.barWidth ?? DEFAULT_BAR_WIDTH_RATIO));
+  const barWidth = slotWidth * ratio;
+  const y = (v: number) => scaleToPx(scale, v, plot.y, plot.height, true);
+  const bars = running.map((r, i): WaterfallBarRect => {
+    const top = Math.min(y(r.start), y(r.end));
+    const slotX = plot.x + i * slotWidth;
+    return {
+      label: data[i].label,
+      value: r.value,
+      type: r.type,
+      start: r.start,
+      end: r.end,
+      x: slotX + (slotWidth - barWidth) / 2,
+      y: top,
+      width: barWidth,
+      height: Math.max(MIN_BAR_HEIGHT, Math.abs(y(r.end) - y(r.start))),
       slotX,
-      slotW: slotWidth,
+      slotWidth,
     };
-    cumulatives[i] = end;
-  }
-
-  return { bars, cumulatives };
+  });
+  return { plot, scale, bars, turned, labelRoom };
 }
 
-function computeValueRange(
-  data: readonly WaterfallBar[],
-): { valMin: number; valMax: number } {
-  if (data.length === 0) return { valMin: 0, valMax: 1 };
-
-  let min = 0;
-  let max = 0;
-
-  for (const { start, end } of runningBars(data)) {
-    if (start < min) min = start;
-    if (end < min) min = end;
-    if (start > max) max = start;
-    if (end > max) max = end;
-  }
-
-  const range = max - min || 1;
-  const padding = range * 0.1;
-  return { valMin: min - padding, valMax: max + padding };
+/** The bar whose slot holds x (inside the plot), or -1. */
+export function hitWaterfallBar(layout: WaterfallLayout, x: number): number {
+  const { plot, bars } = layout;
+  if (bars.length === 0 || x < plot.x || x > plot.x + plot.width) return -1;
+  return Math.min(bars.length - 1, Math.floor((x - plot.x) / bars[0].slotWidth));
 }
 
-function drawBackground(
-  ctx: CanvasRenderingContext2D,
-  width: number,
-  height: number,
-  bg: string,
-): void {
-  ctx.fillStyle = bg;
-  ctx.fillRect(0, 0, width, height);
-}
-
-function drawGrid(
-  ctx: CanvasRenderingContext2D,
-  layout: WaterfallLayout,
-  valMin: number,
-  valMax: number,
-  theme: Theme,
-  valueFormat: (v: number) => string,
-): void {
-  const { left, right, top, bottom, plotHeight } = layout;
-  const valRange = valMax - valMin || 1;
-
-  ctx.strokeStyle = theme.grid;
-  ctx.lineWidth = 0.5;
-  ctx.fillStyle = theme.axisLabel;
-  ctx.font = `${theme.font.sizeSmall}px ${theme.font.family}`;
-  ctx.textAlign = 'right';
-  ctx.textBaseline = 'middle';
-
-  const step = computeTickStep(valMin, valMax, 5);
-  const firstTick = Math.ceil(valMin / step) * step;
-
-  // Batch horizontal grid lines
-  ctx.beginPath();
-  for (let v = firstTick; v <= valMax; v += step) {
-    const y = Math.round(bottom - ((v - valMin) / valRange) * plotHeight) + 0.5;
-    if (y < top || y > bottom) continue;
-    ctx.moveTo(left, y);
-    ctx.lineTo(right, y);
-  }
-  ctx.stroke();
-
-  // Labels
-  for (let v = firstTick; v <= valMax; v += step) {
-    const y = bottom - ((v - valMin) / valRange) * plotHeight;
-    if (y < top - 1 || y > bottom + 1) continue;
-    ctx.fillText(valueFormat(v), left - 6, y);
-  }
-
-  // Zero baseline
-  if (valMin < 0 && valMax > 0) {
-    const zeroY = Math.round(bottom - ((0 - valMin) / valRange) * plotHeight) + 0.5;
-    ctx.strokeStyle = theme.axisLine;
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(left, zeroY);
-    ctx.lineTo(right, zeroY);
-    ctx.stroke();
-  }
-}
-
-function drawBars(
-  ctx: CanvasRenderingContext2D,
-  bars: readonly WaterfallLayoutBar[],
-  colors: Record<BarType, string>,
-): void {
-  // Group bars by color, draw each color group in a single fill() call.
-  // This minimizes fillStyle mutations and path starts.
-  const groupOrder: BarType[] = ['positive', 'negative', 'total', 'subtotal'];
-  for (let g = 0; g < groupOrder.length; g++) {
-    const type = groupOrder[g];
-    const color = colors[type];
-    let hasAny = false;
-    ctx.beginPath();
-    for (let i = 0; i < bars.length; i++) {
-      const b = bars[i];
-      if (b.type !== type) continue;
-      const x = Math.round(b.rectX);
-      const y = Math.round(b.rectY);
-      const w = Math.round(b.rectW);
-      const h = Math.round(b.rectH);
-      ctx.rect(x, y, w, h);
-      hasAny = true;
-    }
-    if (hasAny) {
-      ctx.fillStyle = color;
-      ctx.fill();
-    }
-  }
-}
-
-function drawConnectors(
-  ctx: CanvasRenderingContext2D,
-  bars: readonly WaterfallLayoutBar[],
-  layout: WaterfallLayout,
-  valMin: number,
-  valRange: number,
-  color: string,
-  style: 'dashed' | 'solid' | 'none',
-): void {
-  if (style === 'none' || bars.length < 2) return;
-
-  const { bottom, plotHeight } = layout;
-
+function drawConnectors(ctx: CanvasRenderingContext2D, layout: WaterfallLayout, color: string, style: 'dashed' | 'solid' | 'none'): void {
+  const { bars, scale, plot } = layout;
+  if (style === 'none') return;
+  ctx.save();
   ctx.strokeStyle = color;
-  ctx.lineWidth = 1;
-  if (style === 'dashed') {
-    ctx.setLineDash([4, 4]);
-  } else {
-    ctx.setLineDash([]);
-  }
-
-  // Batch all connectors into a single path
-  ctx.beginPath();
+  ctx.setLineDash(style === 'dashed' ? [4, 4] : []);
   for (let i = 0; i < bars.length - 1; i++) {
-    const current = bars[i];
-    const next = bars[i + 1];
-
-    // Connector sits at the "end" of current bar (running total).
-    // For total/subtotal bars, end is bar.value (absolute).
-    // For gain/loss, end is the post-bar cumulative.
-    const endValue = current.end;
-    const y = Math.round(bottom - ((endValue - valMin) / valRange) * plotHeight) + 0.5;
-
-    const x1 = Math.round(current.rectX + current.rectW);
-    const x2 = Math.round(next.rectX);
-    if (x2 <= x1) continue;
-
-    ctx.moveTo(x1, y);
-    ctx.lineTo(x2, y);
+    const from = bars[i].x + bars[i].width;
+    const to = bars[i + 1].x;
+    // Each joins a bar's end, the total it leaves, to the bar that starts from it.
+    const y = scaleToPx(scale, bars[i].end, plot.y, plot.height, true);
+    if (to > from) strokeHairline(ctx, from, y, to, y);
   }
-  ctx.stroke();
-  ctx.setLineDash([]);
+  ctx.restore();
 }
 
-function drawValueLabels(
-  ctx: CanvasRenderingContext2D,
-  bars: readonly WaterfallLayoutBar[],
-  cumulatives: readonly number[],
-  theme: Theme,
-  valueFormat: (v: number) => string,
-  showDelta: boolean,
-): void {
-  ctx.fillStyle = theme.text;
-  ctx.font = `${theme.font.sizeSmall}px ${theme.font.family}`;
+/** Each bar's value past its end: above a rise, under a fall. One that would run into the one before is left out. */
+function drawValues(ctx: CanvasRenderingContext2D, layout: WaterfallLayout, theme: Theme, format: (v: number) => string, showDelta: boolean): void {
+  ctx.save();
+  ctx.font = fontOf(theme, LABEL_SIZE - 1);
+  ctx.fillStyle = theme.textSecondary;
   ctx.textAlign = 'center';
-
-  for (let i = 0; i < bars.length; i++) {
-    const b = bars[i];
-    let text: string;
-    if (b.type === 'total' || b.type === 'subtotal') {
-      text = valueFormat(b.value);
-    } else if (showDelta) {
-      const sign = b.value >= 0 ? '+' : '';
-      text = `${sign}${valueFormat(b.value)}`;
-    } else {
-      text = valueFormat(cumulatives[i]);
-    }
-
-    const cx = b.rectX + b.rectW / 2;
-    // If bar goes down (negative gain/loss), put label below
-    const isDown = b.end < b.start;
-    if (isDown) {
-      ctx.textBaseline = 'top';
-      ctx.fillText(text, cx, b.rectY + b.rectH + 4);
-    } else {
-      ctx.textBaseline = 'bottom';
-      ctx.fillText(text, cx, b.rectY - 4);
-    }
+  const drawn: Rect[] = [];
+  for (const bar of layout.bars) {
+    const step = bar.type === 'positive' || bar.type === 'negative';
+    const text = !step ? format(bar.value) : showDelta ? `${bar.value >= 0 ? '+' : ''}${format(bar.value)}` : format(bar.end);
+    const width = ctx.measureText(text).width;
+    const down = bar.end < bar.start;
+    const cx = bar.x + bar.width / 2;
+    const box: Rect = { x: cx - width / 2, y: down ? bar.y + bar.height + VALUE_GAP : bar.y - VALUE_GAP - LABEL_SIZE, width, height: LABEL_SIZE };
+    const clash = drawn.some((d) => box.x < d.x + d.width + 2 && d.x < box.x + box.width + 2 && box.y < d.y + d.height && d.y < box.y + box.height);
+    if (clash) continue;
+    drawn.push(box);
+    ctx.textBaseline = down ? 'top' : 'bottom';
+    ctx.fillText(text, Math.round(cx), Math.round(down ? box.y : bar.y - VALUE_GAP));
   }
+  ctx.restore();
 }
 
-function drawCategoryLabels(
-  ctx: CanvasRenderingContext2D,
-  bars: readonly WaterfallLayoutBar[],
-  layout: WaterfallLayout,
-  theme: Theme,
-  labelFormat: (label: string) => string,
-): void {
+function drawLabels(ctx: CanvasRenderingContext2D, layout: WaterfallLayout, theme: Theme, labelFormat: (l: string) => string, measure: Measure): void {
+  const { plot, bars, turned, labelRoom } = layout;
+  ctx.save();
+  ctx.font = fontOf(theme, LABEL_SIZE);
   ctx.fillStyle = theme.axisLabel;
-  ctx.font = `${theme.font.sizeSmall}px ${theme.font.family}`;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'top';
-
-  const labelY = layout.bottom + 6;
-  const maxWidth = bars.length > 0 ? bars[0].slotW - 4 : 0;
-
-  // Rotate if any label would overflow its slot
-  let needsRotate = false;
-  for (let i = 0; i < bars.length; i++) {
-    const w = ctx.measureText(labelFormat(bars[i].label)).width;
-    if (w > maxWidth) { needsRotate = true; break; }
-  }
-
-  if (!needsRotate) {
-    for (let i = 0; i < bars.length; i++) {
-      const b = bars[i];
-      const cx = b.slotX + b.slotW / 2;
-      ctx.fillText(labelFormat(b.label), cx, labelY);
-    }
+  const y = plot.y + plot.height + LABEL_GAP;
+  if (!turned) {
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    for (const bar of bars) ctx.fillText(labelFormat(bar.label), Math.round(bar.slotX + bar.slotWidth / 2), y);
+    ctx.restore();
     return;
   }
-
-  // Each label turned about its own end, on top of the canvas's scale: setting
-  // the transform outright would drop the device pixel ratio.
+  // Each turned about its own end, on top of the canvas's scale, and cut to
+  // what the room under the plot and the chart's left edge leave it.
   ctx.textAlign = 'right';
   ctx.textBaseline = 'middle';
-  for (let i = 0; i < bars.length; i++) {
-    const b = bars[i];
-    const cx = b.slotX + b.slotW / 2;
+  for (const bar of bars) {
+    const cx = bar.slotX + bar.slotWidth / 2;
+    const reach = Math.min((labelRoom - LABEL_GAP) / Math.sin(TURN) - LABEL_SIZE, (cx - 2) / Math.cos(TURN));
+    const text = fitText(labelFormat(bar.label), reach, measure);
+    if (!text) continue;
     ctx.save();
-    ctx.translate(cx, labelY + 4);
-    ctx.rotate(-Math.PI / 4);
-    ctx.fillText(labelFormat(b.label), 0, 0);
+    ctx.translate(cx, y + 2);
+    ctx.rotate(-TURN);
+    ctx.fillText(text, 0, 0);
     ctx.restore();
   }
-}
-
-function findHitBar(
-  bars: readonly WaterfallLayoutBar[],
-  x: number,
-  layout: WaterfallLayout,
-): number | null {
-  if (x < layout.left || x > layout.right) return null;
-  // Slot-based hit test (covers gaps between bars too)
-  for (let i = 0; i < bars.length; i++) {
-    const b = bars[i];
-    if (x >= b.slotX && x <= b.slotX + b.slotW) return i;
-  }
-  return null;
-}
-
-function drawCrosshairTooltip(
-  ctx: CanvasRenderingContext2D,
-  bars: readonly WaterfallLayoutBar[],
-  cumulatives: readonly number[],
-  hitIndex: number,
-  crosshairPos: { x: number; y: number },
-  layout: WaterfallLayout,
-  theme: Theme,
-  valueFormat: (v: number) => string,
-): void {
-  const bar = bars[hitIndex];
-  const cumulative = cumulatives[hitIndex];
-
-  // Vertical guide line across the slot center
-  const cx = Math.round(bar.slotX + bar.slotW / 2) + 0.5;
-  ctx.strokeStyle = theme.crosshair;
-  ctx.lineWidth = 0.5;
-  ctx.setLineDash([4, 4]);
-  ctx.beginPath();
-  ctx.moveTo(cx, layout.top);
-  ctx.lineTo(cx, layout.bottom);
-  ctx.stroke();
-  ctx.setLineDash([]);
-
-  const lines = [
-    bar.label,
-    `Value: ${bar.value >= 0 && (bar.type === 'positive' || bar.type === 'negative') ? '+' : ''}${valueFormat(bar.value)}`,
-    `Total: ${valueFormat(cumulative)}`,
-  ];
-
-  ctx.font = `${theme.font.sizeSmall}px ${theme.font.family}`;
-  let maxTextWidth = 0;
-  for (let i = 0; i < lines.length; i++) {
-    const w = ctx.measureText(lines[i]).width;
-    if (w > maxTextWidth) maxTextWidth = w;
-  }
-  const tooltipW = maxTextWidth + 16;
-  const tooltipH = lines.length * (theme.font.sizeSmall + 4) + 12;
-
-  let tx = crosshairPos.x + 10;
-  let ty = crosshairPos.y - tooltipH / 2;
-  if (tx + tooltipW > layout.right) tx = crosshairPos.x - tooltipW - 10;
-  if (ty < layout.top) ty = layout.top;
-  if (ty + tooltipH > layout.bottom) ty = layout.bottom - tooltipH;
-
-  ctx.fillStyle = theme.axisLabelBackground;
-  ctx.globalAlpha = 0.9;
-  ctx.fillRect(tx, ty, tooltipW, tooltipH);
-  ctx.globalAlpha = 1;
-  ctx.fillStyle = theme.text;
-  ctx.textAlign = 'left';
-  ctx.textBaseline = 'top';
-  const lineH = theme.font.sizeSmall + 4;
-  for (let i = 0; i < lines.length; i++) {
-    ctx.fillText(lines[i], tx + 8, ty + 6 + i * lineH);
-  }
+  ctx.restore();
 }
 
 export function renderWaterfall(
@@ -439,56 +213,64 @@ export function renderWaterfall(
   options: WaterfallOptions,
   theme: Theme,
   crosshairPos: { x: number; y: number } | null,
+  measure?: Measure,
 ): { hitBar: number | null } {
-  const { data } = options;
   if (width <= 0 || height <= 0) return { hitBar: null };
-  if (!data || data.length === 0) {
-    drawBackground(ctx, width, height, theme.background);
-    return { hitBar: null };
-  }
+  ctx.fillStyle = theme.background;
+  ctx.fillRect(0, 0, width, height);
+  const data = options.data;
+  if (!data || data.length === 0) return { hitBar: null };
 
-  const positiveColor = options.positiveColor ?? theme.candleUp;
-  const negativeColor = options.negativeColor ?? theme.candleDown;
-  const totalColor = options.totalColor ?? theme.lineColor;
-  const subtotalColor = options.subtotalColor ?? theme.textSecondary;
-  const connectorColor = options.connectorColor ?? theme.textSecondary;
-  const connectorStyle = options.connectorStyle ?? 'dashed';
-  const barWidthRatio = options.barWidth ?? DEFAULT_BAR_WIDTH_RATIO;
-  const showValues = options.showValues !== false;
-  const showDelta = options.showDelta !== false;
-  const valueFormat = options.valueFormat ?? defaultValueFormat;
-  const labelFormat = options.labelFormat ?? ((l: string) => l);
-
-  const { valMin, valMax } = computeValueRange(data);
-  const valRange = valMax - valMin || 1;
-  const layout = computeLayout(width, height);
-  const { bars, cumulatives } = buildLayoutBars(data, layout, barWidthRatio, valMin, valRange);
-
-  drawBackground(ctx, width, height, theme.background);
-  drawGrid(ctx, layout, valMin, valMax, theme, valueFormat);
-
-  // Connectors first (behind bars)
-  drawConnectors(ctx, bars, layout, valMin, valRange, connectorColor, connectorStyle);
-
-  // Bars (batched by color)
-  drawBars(ctx, bars, {
-    positive: positiveColor,
-    negative: negativeColor,
-    total: totalColor,
-    subtotal: subtotalColor,
+  const measureText: Measure = measure ?? ((text, size = LABEL_SIZE) => {
+    ctx.font = fontOf(theme, size);
+    return ctx.measureText(text).width;
   });
+  const layout = computeWaterfallLayout(options, width, height, measureText);
+  const { plot, scale, bars } = layout;
+  const tickFormat = options.valueFormat ?? axisFormat(scale);
+  const format = options.valueFormat ?? defaultFormat;
+  const colors: Record<BarType, string> = {
+    positive: options.positiveColor ?? theme.candleUp,
+    negative: options.negativeColor ?? theme.candleDown,
+    total: options.totalColor ?? theme.lineColor,
+    subtotal: options.subtotalColor ?? theme.textSecondary,
+  };
 
-  if (showValues) {
-    drawValueLabels(ctx, bars, cumulatives, theme, valueFormat, showDelta);
+  drawValueAxis(ctx, plot, scale, 'vertical', theme, tickFormat);
+  drawConnectors(ctx, layout, options.connectorColor ?? theme.textSecondary, options.connectorStyle ?? 'dashed');
+
+  // Bars on whole device pixels across, so neighbours have edges alike.
+  const line = hairline(ctx);
+  for (const bar of bars) {
+    const x = line.x(bar.x) - line.width / 2;
+    const right = line.x(bar.x + bar.width) - line.width / 2;
+    ctx.fillStyle = colors[bar.type];
+    ctx.fillRect(x, bar.y, Math.max(line.width, right - x), bar.height);
   }
 
-  drawCategoryLabels(ctx, bars, layout, theme, labelFormat);
+  // The zero line over the bars' feet.
+  ctx.strokeStyle = theme.axisLine;
+  const zero = scaleToPx(scale, 0, plot.y, plot.height, true);
+  strokeHairline(ctx, plot.x, zero, plot.x + plot.width, zero);
 
-  // Crosshair / tooltip
-  const hitBar = crosshairPos ? findHitBar(bars, crosshairPos.x, layout) : null;
-  if (crosshairPos && hitBar !== null) {
-    drawCrosshairTooltip(ctx, bars, cumulatives, hitBar, crosshairPos, layout, theme, valueFormat);
+  if (options.showValues !== false) drawValues(ctx, layout, theme, format, options.showDelta !== false);
+  drawLabels(ctx, layout, theme, options.labelFormat ?? ((l: string) => l), measureText);
+
+  const hit = crosshairPos ? hitWaterfallBar(layout, crosshairPos.x) : -1;
+  if (crosshairPos && hit >= 0) {
+    const bar = bars[hit];
+    const cx = bar.slotX + bar.slotWidth / 2;
+    ctx.save();
+    ctx.strokeStyle = theme.crosshair;
+    ctx.setLineDash([4, 4]);
+    strokeHairline(ctx, cx, plot.y, cx, plot.y + plot.height);
+    ctx.restore();
+    const step = bar.type === 'positive' || bar.type === 'negative';
+    const lines: TooltipLine[] = [{ text: bar.label, bold: true }];
+    // A step shows what it added and the total it leaves; a total is its own value.
+    if (step) lines.push({ text: `${bar.value >= 0 ? '+' : ''}${format(bar.value)}`, color: colors[bar.type] });
+    lines.push({ text: step ? `= ${format(bar.end)}` : format(bar.end), color: step ? undefined : colors[bar.type] });
+    drawTooltip(ctx, lines, crosshairPos, { x: 0, y: 0, width, height }, theme);
   }
-
-  return { hitBar };
+  return { hitBar: hit >= 0 ? hit : null };
 }

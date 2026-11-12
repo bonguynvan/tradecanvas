@@ -1,8 +1,8 @@
 import type { HeatmapCell, HeatmapOptions, Theme } from '@tradecanvas/commons';
 import { lerpColor } from '@tradecanvas/commons';
 import type { GroupRect, LayoutRect } from './HeatmapLayout.js';
-import { fitText } from './chartKit.js';
-import { readableText } from './colorScale.js';
+import { drawTooltip, fitText, type TooltipLine } from './chartKit.js';
+import { readableText, resolveColorScale } from './colorScale.js';
 
 function defaultValueFormat(value: number): string {
   // A cell with no number shows its label alone.
@@ -127,51 +127,13 @@ function drawCellText(
   ctx.restore();
 }
 
-function drawTooltip(
-  ctx: CanvasRenderingContext2D,
-  cell: HeatmapCell,
-  crosshairPos: { x: number; y: number },
-  width: number,
-  height: number,
-  theme: Theme,
-  formatLabel: (c: HeatmapCell) => string,
-  formatValue: (v: number) => string,
-): void {
-  const lines = [
-    formatLabel(cell),
-    formatValue(cell.value),
-  ].filter((line) => line !== '');
-  if (cell.meta) {
-    for (const [key, val] of Object.entries(cell.meta)) {
-      lines.push(key + ': ' + String(val));
-    }
-  }
-
-  ctx.save();
-  ctx.font = theme.font.sizeSmall + 'px ' + theme.font.family;
-  const maxTextW = Math.max(...lines.map(l => ctx.measureText(l).width));
-  const tooltipW = maxTextW + 16;
-  const lineH = theme.font.sizeSmall + 4;
-  const tooltipH = lines.length * lineH + 12;
-
-  let tx = crosshairPos.x + 14;
-  let ty = crosshairPos.y - tooltipH / 2;
-  if (tx + tooltipW > width) tx = crosshairPos.x - tooltipW - 14;
-  if (ty < 0) ty = 0;
-  if (ty + tooltipH > height) ty = height - tooltipH;
-
-  ctx.fillStyle = theme.axisLabelBackground;
-  ctx.globalAlpha = 0.92;
-  roundRect(ctx, tx, ty, tooltipW, tooltipH, 4);
-  ctx.fill();
-  ctx.globalAlpha = 1;
-  ctx.fillStyle = theme.text;
-  ctx.textBaseline = 'top';
-  ctx.textAlign = 'left';
-  for (let i = 0; i < lines.length; i++) {
-    ctx.fillText(lines[i], tx + 8, ty + 6 + i * lineH);
-  }
-  ctx.restore();
+/** A cell's name, its value, and whatever else it carries, as the tooltip's lines. */
+function tooltipLines(cell: HeatmapCell, color: string | undefined, formatLabel: (c: HeatmapCell) => string, formatValue: (v: number) => string): TooltipLine[] {
+  const lines: TooltipLine[] = [{ text: formatLabel(cell), bold: true }];
+  const value = formatValue(cell.value);
+  if (value !== '') lines.push({ text: value, color });
+  for (const [key, val] of Object.entries(cell.meta ?? {})) lines.push({ text: key + ': ' + String(val) });
+  return lines;
 }
 
 export function renderHeatmap(
@@ -185,16 +147,17 @@ export function renderHeatmap(
   crosshairPos: { x: number; y: number } | null,
   groups: readonly GroupRect[] = [],
 ): HeatmapHitResult | null {
-  if (cells.length === 0 || layoutRects.length === 0 || width <= 0 || height <= 0) return null;
+  if (width <= 0 || height <= 0) return null;
+  ctx.fillStyle = theme.background;
+  ctx.fillRect(0, 0, width, height);
+  if (cells.length === 0 || layoutRects.length === 0) return null;
 
+  // The theme's own colours for a fall and a rise, and a faint surface of it
+  // for none, unless the options give others. The range stays the options':
+  // five either side of zero when they give none.
   const given = options.colorScale;
-  const colorScale = {
-    negative: given?.negative ?? '#e8505b',
-    zero: given?.zero ?? '#424242',
-    positive: given?.positive ?? '#1fa874',
-    min: given?.min,
-    max: given?.max,
-  };
+  const themed = resolveColorScale([], theme, given);
+  const colorScale = { negative: themed.negative, zero: themed.zero, positive: themed.positive, min: given?.min, max: given?.max };
   const cellRadius = options.cellRadius ?? 4;
   const showLabels = options.showLabels !== false;
   const showValues = options.showValues !== false;
@@ -226,9 +189,6 @@ export function renderHeatmap(
     }
   }
 
-  ctx.fillStyle = theme.background;
-  ctx.fillRect(0, 0, width, height);
-
   for (const lr of layoutRects) {
     const cell = cellMap.get(lr.id);
     if (!cell) continue;
@@ -245,7 +205,7 @@ export function renderHeatmap(
 
     if (lr.id === hoveredId) {
       roundRect(ctx, x, y, rw, rh, cellRadius);
-      ctx.strokeStyle = '#FFFFFF';
+      ctx.strokeStyle = theme.text;
       ctx.lineWidth = 1.5;
       ctx.stroke();
     }
@@ -255,9 +215,11 @@ export function renderHeatmap(
   drawGroupHeaders(ctx, groups, theme, formatValue, hoveredGroup);
 
   if (hitResult && crosshairPos) {
-    drawTooltip(ctx, hitResult.cell, crosshairPos, width, height, theme, formatLabel, formatValue);
+    const lines = tooltipLines(hitResult.cell, computeCellColor(hitResult.cell.value, colorScale), formatLabel, formatValue);
+    drawTooltip(ctx, lines, crosshairPos, { x: 0, y: 0, width, height }, theme);
   } else if (hoveredGroup && crosshairPos) {
-    drawTooltip(ctx, { id: '', label: hoveredGroup.name, value: hoveredGroup.value }, crosshairPos, width, height, theme, (c) => c.label, formatValue);
+    const lines = tooltipLines({ id: '', label: hoveredGroup.name, value: hoveredGroup.value }, undefined, (c) => c.label, formatValue);
+    drawTooltip(ctx, lines, crosshairPos, { x: 0, y: 0, width, height }, theme);
   }
 
   return hitResult;

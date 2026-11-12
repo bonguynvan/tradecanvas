@@ -1,48 +1,90 @@
 import type { DepthChartOptions, DepthLevel, Theme } from '@tradecanvas/commons';
-import { computeTickStep, withAlpha } from '@tradecanvas/commons';
-import { AREA_FILL_ALPHA } from './chartKit.js';
+import { withAlpha } from '@tradecanvas/commons';
+import {
+  AREA_FILL_ALPHA,
+  AXIS_GAP,
+  BOTTOM_LABELS,
+  CHART_PAD,
+  LABEL_GAP,
+  LABEL_SIZE,
+  axisFormat,
+  decimalsFor,
+  defaultFormat,
+  drawTooltip,
+  drawValueAxis,
+  fontOf,
+  niceScale,
+  scaleToPx,
+  strokeHairline,
+  type Measure,
+  type NiceScale,
+  type Rect,
+  type TooltipLine,
+} from './chartKit.js';
 
+/** A price and the volume resting from the best price out to it. */
 interface CumulativeLevel {
   price: number;
   cumulativeVolume: number;
 }
 
-interface DepthLayout {
-  left: number;
-  right: number;
-  top: number;
-  bottom: number;
-  plotWidth: number;
-  plotHeight: number;
+export interface DepthLayout {
+  plot: Rect;
+  /** Cumulative volume, up the left side. */
+  volume: NiceScale;
+  /** The prices at the plot's left and right edges: the middle price is half-way. */
+  priceMin: number;
+  priceMax: number;
+  /** Best price first, each with the volume from the best price to it. */
+  bids: readonly CumulativeLevel[];
+  asks: readonly CumulativeLevel[];
+  /** Half-way between the best bid and the best ask, and the gap between them; null for a book with one side. */
+  mid: number | null;
+  spread: number;
 }
 
-const MARGIN_LEFT = 50;
-const MARGIN_RIGHT = 60;
-const PADDING_TB = 20;
+/** How far past the furthest level the prices run, as a share of the range. */
 const PRICE_EXTEND_FACTOR = 0.2;
 /** The share of the price shown each side of a book that has one price only. */
 const ONE_PRICE_RANGE = 0.01;
+/** Room between two price labels along the axis, px. */
+const PRICE_LABEL_GAP = 24;
+/** Height of the line the spread is written on, over the plot. */
+const SPREAD_LINE = 16;
+const SPREAD_LABEL = 'Spread';
 
-function buildCumulativeBids(bids: readonly DepthLevel[]): readonly CumulativeLevel[] {
-  const sorted = [...bids].sort((a, b) => b.price - a.price);
-  const result: CumulativeLevel[] = [];
-  let cumVol = 0;
-  for (const level of sorted) {
-    cumVol += level.volume;
-    result.push({ price: level.price, cumulativeVolume: cumVol });
-  }
-  return result;
+/** Levels from the best price outwards, each with the volume up to it. */
+function cumulative(levels: readonly DepthLevel[], side: 'bid' | 'ask'): CumulativeLevel[] {
+  const sorted = levels
+    .filter((l) => Number.isFinite(l.price) && Number.isFinite(l.volume))
+    .sort((a, b) => (side === 'bid' ? b.price - a.price : a.price - b.price));
+  let total = 0;
+  return sorted.map((l) => ({ price: l.price, cumulativeVolume: (total += l.volume) }));
 }
 
-function buildCumulativeAsks(asks: readonly DepthLevel[]): readonly CumulativeLevel[] {
-  const sorted = [...asks].sort((a, b) => a.price - b.price);
-  const result: CumulativeLevel[] = [];
-  let cumVol = 0;
-  for (const level of sorted) {
-    cumVol += level.volume;
-    result.push({ price: level.price, cumulativeVolume: cumVol });
-  }
-  return result;
+/** Where the book goes, for a chart `width` by `height`. */
+export function computeDepthLayout(options: DepthChartOptions, width: number, height: number, measure: Measure): DepthLayout {
+  const bids = cumulative(options.data.bids, 'bid');
+  const asks = cumulative(options.data.asks, 'ask');
+  const bestBid = bids[0]?.price;
+  const bestAsk = asks[0]?.price;
+  const twoSided = bestBid !== undefined && bestAsk !== undefined;
+  const center = twoSided ? (bestBid + bestAsk) / 2 : bestBid ?? bestAsk ?? 0;
+  const lowestBid = bids.length > 0 ? bids[bids.length - 1].price : center;
+  const highestAsk = asks.length > 0 ? asks[asks.length - 1].price : center;
+  // One level on one side spans no prices: show a little about it instead.
+  const reach = (Math.max(center - lowestBid, highestAsk - center) || Math.abs(center) * ONE_PRICE_RANGE || 1) * (1 + PRICE_EXTEND_FACTOR);
+
+  // The highest the running volume gets: its last value, unless a volume below zero takes some back.
+  const top = Math.max(0, ...bids.map((l) => l.cumulativeVolume), ...asks.map((l) => l.cumulativeVolume));
+  const volume = niceScale(0, top || 1, 5);
+  const format = options.volumeFormat ?? axisFormat(volume);
+  const tickWidth = Math.max(0, ...volume.ticks.map((t) => measure(format(t), LABEL_SIZE)));
+  const left = CHART_PAD + tickWidth + AXIS_GAP;
+  const showSpread = twoSided && options.midPriceLine !== false && options.spreadLabel !== false;
+  const y = CHART_PAD + (showSpread ? SPREAD_LINE : 0);
+  const plot: Rect = { x: left, y, width: Math.max(1, width - left - CHART_PAD), height: Math.max(1, height - y - CHART_PAD - BOTTOM_LABELS) };
+  return { plot, volume, priceMin: center - reach, priceMax: center + reach, bids, asks, mid: twoSided ? center : null, spread: twoSided ? bestAsk - bestBid : 0 };
 }
 
 /**
@@ -53,294 +95,14 @@ function shelved(levels: readonly CumulativeLevel[], edge: number): readonly Cum
   return levels.length === 1 ? [levels[0], { price: edge, cumulativeVolume: levels[0].cumulativeVolume }] : levels;
 }
 
-function computeLayout(width: number, height: number): DepthLayout {
-  return {
-    left: MARGIN_LEFT,
-    right: width - MARGIN_RIGHT,
-    top: PADDING_TB,
-    bottom: height - PADDING_TB,
-    plotWidth: width - MARGIN_LEFT - MARGIN_RIGHT,
-    plotHeight: height - PADDING_TB * 2,
-  };
-}
-
-function drawBackground(
-  ctx: CanvasRenderingContext2D,
-  width: number,
-  height: number,
-  bg: string,
-): void {
-  ctx.fillStyle = bg;
-  ctx.fillRect(0, 0, width, height);
-}
-
-function drawGrid(
-  ctx: CanvasRenderingContext2D,
-  layout: DepthLayout,
-  priceMin: number,
-  priceMax: number,
-  volMax: number,
-  theme: Theme,
-  priceFormat: (p: number) => string,
-  volumeFormat: (v: number) => string,
-): void {
-  const { left, right, top, bottom, plotWidth, plotHeight } = layout;
-
-  ctx.save();
-  ctx.strokeStyle = theme.grid;
-  ctx.lineWidth = 0.5;
-  ctx.fillStyle = theme.axisLabel;
-  ctx.font = `${theme.font.sizeSmall}px ${theme.font.family}`;
-
-  // Horizontal grid (volume)
-  const volStep = computeTickStep(0, volMax, 5);
-  for (let v = 0; v <= volMax; v += volStep) {
-    const y = bottom - (v / volMax) * plotHeight;
-    ctx.beginPath();
-    ctx.moveTo(left, y);
-    ctx.lineTo(right, y);
-    ctx.stroke();
-    ctx.textAlign = 'right';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(volumeFormat(v), left - 4, y);
+/** The furthest level of a side that `price` reaches, with the volume from the best price to it; null when `price` is inside the best. */
+function levelAt(levels: readonly CumulativeLevel[], price: number, side: 'bid' | 'ask'): CumulativeLevel | null {
+  let reached: CumulativeLevel | null = null;
+  for (const level of levels) {
+    if (side === 'bid' ? level.price < price : level.price > price) break;
+    reached = level;
   }
-
-  // Vertical grid (price)
-  const priceRange = priceMax - priceMin;
-  const priceStep = computeTickStep(priceMin, priceMax, 6);
-  const firstTick = Math.ceil(priceMin / priceStep) * priceStep;
-  for (let p = firstTick; p <= priceMax; p += priceStep) {
-    const x = left + ((p - priceMin) / priceRange) * plotWidth;
-    ctx.beginPath();
-    ctx.moveTo(x, top);
-    ctx.lineTo(x, bottom);
-    ctx.stroke();
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'top';
-    ctx.fillText(priceFormat(p), x, bottom + 4);
-  }
-
-  ctx.restore();
-}
-
-function drawStepArea(
-  ctx: CanvasRenderingContext2D,
-  levels: readonly CumulativeLevel[],
-  layout: DepthLayout,
-  priceMin: number,
-  priceRange: number,
-  volMax: number,
-  fillColor: string,
-  lineColor: string,
-  direction: 'bid' | 'ask',
-): void {
-  if (levels.length === 0) return;
-
-  const { left, bottom, plotWidth, plotHeight } = layout;
-  const toX = (price: number): number => left + ((price - priceMin) / priceRange) * plotWidth;
-  const toY = (vol: number): number => bottom - (vol / volMax) * plotHeight;
-
-  // Build step path
-  ctx.beginPath();
-  if (direction === 'bid') {
-    // Bids go right-to-left (highest price first in the sorted array)
-    ctx.moveTo(toX(levels[0].price), bottom);
-    for (let i = 0; i < levels.length; i++) {
-      const x = toX(levels[i].price);
-      const y = toY(levels[i].cumulativeVolume);
-      ctx.lineTo(x, y);
-      if (i < levels.length - 1) {
-        ctx.lineTo(toX(levels[i + 1].price), y);
-      }
-    }
-    ctx.lineTo(toX(levels[levels.length - 1].price), bottom);
-  } else {
-    // Asks go left-to-right (lowest price first)
-    ctx.moveTo(toX(levels[0].price), bottom);
-    for (let i = 0; i < levels.length; i++) {
-      const x = toX(levels[i].price);
-      const y = toY(levels[i].cumulativeVolume);
-      ctx.lineTo(x, y);
-      if (i < levels.length - 1) {
-        ctx.lineTo(toX(levels[i + 1].price), y);
-      }
-    }
-    ctx.lineTo(toX(levels[levels.length - 1].price), bottom);
-  }
-  ctx.closePath();
-
-  // Fill
-  ctx.fillStyle = fillColor;
-  ctx.fill();
-
-  // Stroke the step line
-  ctx.beginPath();
-  if (direction === 'bid') {
-    ctx.moveTo(toX(levels[0].price), toY(levels[0].cumulativeVolume));
-    for (let i = 0; i < levels.length; i++) {
-      const x = toX(levels[i].price);
-      const y = toY(levels[i].cumulativeVolume);
-      if (i > 0) {
-        ctx.lineTo(x, toY(levels[i - 1].cumulativeVolume));
-      }
-      ctx.lineTo(x, y);
-    }
-  } else {
-    ctx.moveTo(toX(levels[0].price), toY(levels[0].cumulativeVolume));
-    for (let i = 1; i < levels.length; i++) {
-      const prevY = toY(levels[i - 1].cumulativeVolume);
-      const x = toX(levels[i].price);
-      const y = toY(levels[i].cumulativeVolume);
-      ctx.lineTo(x, prevY);
-      ctx.lineTo(x, y);
-    }
-  }
-  ctx.strokeStyle = lineColor;
-  ctx.lineWidth = 1.5;
-  ctx.stroke();
-}
-
-function drawMidPriceLine(
-  ctx: CanvasRenderingContext2D,
-  midPrice: number,
-  spread: number,
-  layout: DepthLayout,
-  priceMin: number,
-  priceRange: number,
-  theme: Theme,
-  showSpreadLabel: boolean,
-  priceFormat: (p: number) => string,
-): void {
-  const { left, top, bottom, plotWidth } = layout;
-  const x = left + ((midPrice - priceMin) / priceRange) * plotWidth;
-
-  ctx.save();
-  ctx.strokeStyle = theme.textSecondary;
-  ctx.lineWidth = 1;
-  ctx.setLineDash([4, 4]);
-  ctx.beginPath();
-  ctx.moveTo(x, top);
-  ctx.lineTo(x, bottom);
-  ctx.stroke();
-  ctx.restore();
-
-  if (showSpreadLabel) {
-    const label = `Spread: ${priceFormat(spread)}`;
-    ctx.save();
-    ctx.font = `${theme.font.sizeSmall}px ${theme.font.family}`;
-    ctx.fillStyle = theme.textSecondary;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'bottom';
-    ctx.fillText(label, x, top - 2);
-    ctx.restore();
-  }
-}
-
-function drawCrosshairTooltip(
-  ctx: CanvasRenderingContext2D,
-  crosshairPos: { x: number; y: number },
-  cumBids: readonly CumulativeLevel[],
-  cumAsks: readonly CumulativeLevel[],
-  layout: DepthLayout,
-  priceMin: number,
-  priceRange: number,
-  volMax: number,
-  theme: Theme,
-  priceFormat: (p: number) => string,
-  volumeFormat: (v: number) => string,
-): void {
-  const { left, top, bottom, plotWidth, plotHeight } = layout;
-  const mx = crosshairPos.x;
-
-  if (mx < left || mx > layout.right) return;
-
-  const price = priceMin + ((mx - left) / plotWidth) * priceRange;
-
-  // Find cumulative volume at this price
-  let cumVol = 0;
-  let side = '';
-  // Check bids (sorted descending by price)
-  if (cumBids.length > 0 && price <= cumBids[0].price) {
-    side = 'Bid';
-    for (const level of cumBids) {
-      if (price <= level.price) {
-        cumVol = level.cumulativeVolume;
-      } else {
-        break;
-      }
-    }
-  }
-  // Check asks (sorted ascending by price)
-  if (cumAsks.length > 0 && price >= cumAsks[0].price) {
-    side = 'Ask';
-    for (const level of cumAsks) {
-      if (price >= level.price) {
-        cumVol = level.cumulativeVolume;
-      } else {
-        break;
-      }
-    }
-  }
-
-  // Draw vertical crosshair line
-  ctx.save();
-  ctx.strokeStyle = theme.crosshair;
-  ctx.lineWidth = 0.5;
-  ctx.setLineDash([4, 4]);
-  ctx.beginPath();
-  ctx.moveTo(mx, top);
-  ctx.lineTo(mx, bottom);
-  ctx.stroke();
-
-  // Draw horizontal line at volume level
-  if (cumVol > 0) {
-    const vy = bottom - (cumVol / volMax) * plotHeight;
-    ctx.beginPath();
-    ctx.moveTo(left, vy);
-    ctx.lineTo(layout.right, vy);
-    ctx.stroke();
-  }
-  ctx.restore();
-
-  // Tooltip
-  const lines = [
-    `Price: ${priceFormat(price)}`,
-    side ? `${side} Vol: ${volumeFormat(cumVol)}` : '',
-  ].filter(Boolean);
-
-  ctx.save();
-  ctx.font = `${theme.font.sizeSmall}px ${theme.font.family}`;
-  const maxTextWidth = Math.max(...lines.map(l => ctx.measureText(l).width));
-  const tooltipW = maxTextWidth + 16;
-  const tooltipH = lines.length * (theme.font.sizeSmall + 4) + 12;
-
-  let tx = mx + 10;
-  let ty = crosshairPos.y - tooltipH / 2;
-  if (tx + tooltipW > layout.right) tx = mx - tooltipW - 10;
-  if (ty < top) ty = top;
-  if (ty + tooltipH > bottom) ty = bottom - tooltipH;
-
-  ctx.fillStyle = theme.axisLabelBackground;
-  ctx.globalAlpha = 0.9;
-  ctx.fillRect(tx, ty, tooltipW, tooltipH);
-  ctx.globalAlpha = 1;
-  ctx.fillStyle = theme.text;
-  ctx.textBaseline = 'top';
-  ctx.textAlign = 'left';
-  for (let i = 0; i < lines.length; i++) {
-    ctx.fillText(lines[i], tx + 8, ty + 6 + i * (theme.font.sizeSmall + 4));
-  }
-  ctx.restore();
-}
-
-function defaultPriceFormat(price: number): string {
-  return price.toFixed(2);
-}
-
-function defaultVolumeFormat(vol: number): string {
-  if (vol >= 1_000_000) return (vol / 1_000_000).toFixed(2) + 'M';
-  if (vol >= 1_000) return (vol / 1_000).toFixed(1) + 'K';
-  return vol.toFixed(0);
+  return reached;
 }
 
 export function renderDepthChart(
@@ -350,68 +112,113 @@ export function renderDepthChart(
   options: DepthChartOptions,
   theme: Theme,
   crosshairPos: { x: number; y: number } | null,
+  measure?: Measure,
 ): void {
-  const { data } = options;
   if (width <= 0 || height <= 0) return;
-  if (data.bids.length === 0 && data.asks.length === 0) {
-    drawBackground(ctx, width, height, theme.background);
-    return;
-  }
+  ctx.fillStyle = theme.background;
+  ctx.fillRect(0, 0, width, height);
+  const { data } = options;
+  if (data.bids.length === 0 && data.asks.length === 0) return;
 
+  const measureText: Measure = measure ?? ((text, size = LABEL_SIZE) => {
+    ctx.font = fontOf(theme, size);
+    return ctx.measureText(text).width;
+  });
+  const layout = computeDepthLayout(options, width, height, measureText);
+  const { plot, volume, priceMin, priceMax, bids, asks, mid, spread } = layout;
+  const bottom = plot.y + plot.height;
+  const toX = (price: number): number => plot.x + ((price - priceMin) / (priceMax - priceMin)) * plot.width;
+  const toY = (vol: number): number => scaleToPx(volume, vol, plot.y, plot.height, true);
+
+  // Prices in full: as many decimals as the book's own prices are written with.
+  const decimals = decimalsFor([...bids, ...asks].map((l) => l.price));
+  const fixed = new Intl.NumberFormat(undefined, { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+  const priceFormat = options.priceFormat ?? ((p: number) => fixed.format(p));
+  const volumeFormat = options.volumeFormat ?? defaultFormat;
+
+  drawValueAxis(ctx, plot, volume, 'vertical', theme, options.volumeFormat ?? axisFormat(volume));
+  ctx.save();
+  ctx.font = fontOf(theme, LABEL_SIZE);
+  ctx.fillStyle = theme.axisLabel;
+  ctx.strokeStyle = theme.grid;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  // As many price labels as fit side by side, each as wide as the book's prices are written.
+  const labelWidth = measureText(priceFormat(priceMax), LABEL_SIZE) + PRICE_LABEL_GAP;
+  const prices = niceScale(priceMin, priceMax, Math.max(2, Math.floor(plot.width / labelWidth)));
+  const tickFormat = options.priceFormat ?? axisFormat(prices);
+  ctx.font = fontOf(theme, LABEL_SIZE);
+  for (const p of prices.ticks) {
+    if (p < priceMin || p > priceMax) continue;
+    strokeHairline(ctx, toX(p), plot.y, toX(p), bottom);
+    ctx.fillText(tickFormat(p), Math.round(toX(p)), bottom + LABEL_GAP);
+  }
+  ctx.restore();
+
+  const side = (levels: readonly CumulativeLevel[], line: string, fill: string): void => {
+    if (levels.length === 0) return;
+    // Steps: each level's volume holds out to the next level's price.
+    const steps = (): void => {
+      for (let i = 1; i < levels.length; i++) {
+        ctx.lineTo(toX(levels[i].price), toY(levels[i - 1].cumulativeVolume));
+        ctx.lineTo(toX(levels[i].price), toY(levels[i].cumulativeVolume));
+      }
+    };
+    ctx.fillStyle = fill;
+    ctx.beginPath();
+    ctx.moveTo(toX(levels[0].price), bottom);
+    ctx.lineTo(toX(levels[0].price), toY(levels[0].cumulativeVolume));
+    steps();
+    ctx.lineTo(toX(levels[levels.length - 1].price), bottom);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = line;
+    ctx.lineWidth = 1.5;
+    ctx.lineJoin = 'miter';
+    ctx.beginPath();
+    ctx.moveTo(toX(levels[0].price), toY(levels[0].cumulativeVolume));
+    steps();
+    ctx.stroke();
+  };
   const bidColor = options.bidColor ?? theme.candleUp;
   const askColor = options.askColor ?? theme.candleDown;
-  const bidFillColor = options.bidFillColor ?? withAlpha(bidColor, AREA_FILL_ALPHA);
-  const askFillColor = options.askFillColor ?? withAlpha(askColor, AREA_FILL_ALPHA);
-  const midPriceLine = options.midPriceLine !== false;
-  const spreadLabel = options.spreadLabel !== false;
-  const priceFormat = options.priceFormat ?? defaultPriceFormat;
-  const volumeFormat = options.volumeFormat ?? defaultVolumeFormat;
-
-  const cumBids = buildCumulativeBids(data.bids);
-  const cumAsks = buildCumulativeAsks(data.asks);
-
-  // Compute ranges
-  const highestBid = cumBids.length > 0 ? cumBids[0].price : 0;
-  const lowestAsk = cumAsks.length > 0 ? cumAsks[0].price : 0;
-  const midPrice = cumBids.length > 0 && cumAsks.length > 0
-    ? (highestBid + lowestAsk) / 2
-    : highestBid || lowestAsk;
-  const spread = cumAsks.length > 0 && cumBids.length > 0
-    ? lowestAsk - highestBid
-    : 0;
-
-  const lowestBid = cumBids.length > 0 ? cumBids[cumBids.length - 1].price : midPrice;
-  const highestAsk = cumAsks.length > 0 ? cumAsks[cumAsks.length - 1].price : midPrice;
-  // One level on one side spans no prices: show a little about it instead.
-  const rawRange = Math.max(midPrice - lowestBid, highestAsk - midPrice) || Math.abs(midPrice) * ONE_PRICE_RANGE || 1;
-  const extendedRange = rawRange * (1 + PRICE_EXTEND_FACTOR);
-
-  const priceMin = midPrice - extendedRange;
-  const priceMax = midPrice + extendedRange;
-  const priceRange = priceMax - priceMin;
-
-  const maxBidVol = cumBids.length > 0 ? cumBids[cumBids.length - 1].cumulativeVolume : 0;
-  const maxAskVol = cumAsks.length > 0 ? cumAsks[cumAsks.length - 1].cumulativeVolume : 0;
-  const volMax = Math.max(maxBidVol, maxAskVol) || 1;
-
-  const layout = computeLayout(width, height);
-
-  drawBackground(ctx, width, height, theme.background);
-  drawGrid(ctx, layout, priceMin, priceMax, volMax, theme, priceFormat, volumeFormat);
-
-  drawStepArea(ctx, shelved(cumBids, priceMin), layout, priceMin, priceRange, volMax, bidFillColor, bidColor, 'bid');
-  drawStepArea(ctx, shelved(cumAsks, priceMax), layout, priceMin, priceRange, volMax, askFillColor, askColor, 'ask');
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(plot.x, plot.y, plot.width, plot.height);
+  ctx.clip();
+  side(shelved(bids, priceMin), bidColor, options.bidFillColor ?? withAlpha(bidColor, AREA_FILL_ALPHA));
+  side(shelved(asks, priceMax), askColor, options.askFillColor ?? withAlpha(askColor, AREA_FILL_ALPHA));
+  ctx.restore();
 
   // A book with one side has no middle and no spread to mark.
-  if (midPriceLine && cumBids.length > 0 && cumAsks.length > 0) {
-    drawMidPriceLine(ctx, midPrice, spread, layout, priceMin, priceRange, theme, spreadLabel, priceFormat);
+  if (mid !== null && options.midPriceLine !== false) {
+    ctx.save();
+    ctx.strokeStyle = theme.textSecondary;
+    ctx.setLineDash([4, 4]);
+    strokeHairline(ctx, toX(mid), plot.y, toX(mid), bottom);
+    ctx.setLineDash([]);
+    if (options.spreadLabel !== false) {
+      ctx.font = fontOf(theme, LABEL_SIZE);
+      ctx.fillStyle = theme.textSecondary;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(`${SPREAD_LABEL}: ${priceFormat(spread)}`, Math.round(toX(mid)), CHART_PAD + SPREAD_LINE / 2 - 2);
+    }
+    ctx.restore();
   }
 
-  if (crosshairPos) {
-    drawCrosshairTooltip(
-      ctx, crosshairPos, cumBids, cumAsks,
-      layout, priceMin, priceRange, volMax,
-      theme, priceFormat, volumeFormat,
-    );
-  }
+  if (!crosshairPos || crosshairPos.x < plot.x || crosshairPos.x > plot.x + plot.width) return;
+  const price = priceMin + ((crosshairPos.x - plot.x) / plot.width) * (priceMax - priceMin);
+  ctx.save();
+  ctx.strokeStyle = theme.crosshair;
+  ctx.setLineDash([4, 4]);
+  strokeHairline(ctx, crosshairPos.x, plot.y, crosshairPos.x, bottom);
+  ctx.restore();
+  // The price of the level the volume is counted to: the book's own price, not a point between two.
+  const bid = levelAt(bids, price, 'bid');
+  const ask = levelAt(asks, price, 'ask');
+  const lines: TooltipLine[] = [{ text: priceFormat((bid ?? ask)?.price ?? price), bold: true }];
+  if (bid) lines.push({ text: volumeFormat(bid.cumulativeVolume), color: bidColor });
+  if (ask) lines.push({ text: volumeFormat(ask.cumulativeVolume), color: askColor });
+  drawTooltip(ctx, lines, crosshairPos, { x: 0, y: 0, width, height }, theme);
 }

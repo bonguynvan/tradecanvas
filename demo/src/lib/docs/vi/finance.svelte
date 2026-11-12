@@ -44,6 +44,9 @@ chart.setOptions({ mode: 'stacked' })   // tuỳ chọn bất kỳ, được g�
 chart.setTheme('light')                 // 'dark' | 'light' | một Theme
 chart.destroy()                         // gỡ canvas và các listener của nó`}</code></pre>
 <p>
+  Trên màn hình cảm ứng, chạm một lần sẽ hiện tooltip và nó ở lại cho đến khi bạn chạm chỗ khác; kéo vẫn cuộn trang. Biểu đồ vẽ theo đúng điểm ảnh của màn hình nên đường kẻ sắc nét ở mọi mức thu phóng. Biểu đồ depth, equity và waterfall tự tính lề theo nhãn của chúng, giống các biểu đồ mới hơn.
+</p>
+<p>
   Mỗi biểu đồ lấp đầy phần tử của nó và vẽ lại khi phần tử đổi kích thước. Biểu đồ nào có tooltip khi
   rê chuột thì <code>crosshair: false</code> sẽ tắt tooltip. Biểu đồ cột, donut, scatter, histogram, lịch và ma trận cho
   trình đọc màn hình biết chúng đang hiển thị gì (canvas có role image và một nhãn); <code>ariaLabel</code>

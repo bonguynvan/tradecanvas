@@ -102,13 +102,15 @@ describe('the older finance charts take options after they are made', () => {
   it('the pointer’s readout switched on and off, on a depth chart', () => {
     const chart = new DepthChart(host, { data: book, crosshair: false });
     const canvas = host.querySelector('canvas')!;
-    point(canvas, 200, 150);
-    expect(frame().texts.some((t) => t.startsWith('Price:'))).toBe(false);
+    // The readout writes a price and a volume more than the chart alone does.
+    const alone = frame().texts.length;
+    point(canvas, 100, 150);
+    expect(frame().texts.length).toBe(0);
     chart.setOptions({ crosshair: true });
-    point(canvas, 200, 150);
-    expect(frame().texts.some((t) => t.startsWith('Price:'))).toBe(true);
+    point(canvas, 100, 150);
+    expect(frame().texts.length).toBe(alone + 2);
     chart.setOptions({ crosshair: false });
-    expect(frame().texts.some((t) => t.startsWith('Price:'))).toBe(false);
+    expect(frame().texts.length).toBe(alone);
     // Off, a move of the pointer draws no frame at all.
     point(canvas, 210, 150);
     expect(frame().fills).toEqual([]);
@@ -117,14 +119,15 @@ describe('the older finance charts take options after they are made', () => {
 
   it('the readout switched on, on an equity curve and a waterfall', () => {
     const equity = new EquityCurveChart(host, { data: curve, crosshair: false });
+    const curveAlone = frame().texts.length;
     equity.setOptions({ crosshair: true });
     point(host.querySelector('canvas')!, 200, 150);
-    expect(frame().texts.some((t) => t.startsWith('Value:'))).toBe(true);
+    expect(frame().texts.length).toBe(curveAlone + 2);
     equity.destroy();
     const waterfall = new WaterfallChart(host, { data: steps, crosshair: false });
     waterfall.setOptions({ crosshair: true });
-    point(host.querySelector('canvas')!, 200, 150);
-    expect(frame().texts.some((t) => t.startsWith('Total:'))).toBe(true);
+    point(host.querySelector('canvas')!, 300, 150);
+    expect(frame().texts).toContain('= 6');
     waterfall.destroy();
   });
 
@@ -148,5 +151,49 @@ describe('the older finance charts take options after they are made', () => {
     const gauge = new GaugeChart(host, { value: 40, ariaLabel: 'Fear and greed' });
     expect(host.querySelector('canvas')!.getAttribute('aria-label')).toBe('Fear and greed');
     gauge.destroy();
+  });
+});
+
+describe('every finance chart', () => {
+  const touch = (target: EventTarget, type: string, x: number, y: number) => {
+    const event = new MouseEvent(type, { clientX: x, clientY: y, bubbles: true });
+    Object.defineProperty(event, 'pointerType', { value: 'touch' });
+    target.dispatchEvent(event);
+  };
+
+  it('reads out what a finger taps, and keeps it until a touch elsewhere', () => {
+    const chart = new WaterfallChart(host, { data: steps });
+    const canvas = host.querySelector('canvas')!;
+    frame();
+    touch(canvas, 'pointerdown', 300, 150);
+    expect(frame().texts).toContain('= 6');
+    // The finger lifts: the readout stays, where a mouse leaving takes it along.
+    touch(canvas, 'pointerleave', 300, 150);
+    chart.setOptions({});
+    expect(frame().texts).toContain('= 6');
+    touch(document.body, 'pointerdown', 5, 5);
+    expect(frame().texts).not.toContain('= 6');
+    canvas.dispatchEvent(new MouseEvent('pointermove', { clientX: 300, clientY: 150, bubbles: true }));
+    expect(frame().texts).toContain('= 6');
+    canvas.dispatchEvent(new MouseEvent('pointerleave', { bubbles: true }));
+    expect(frame().texts).not.toContain('= 6');
+    // A touch the browser takes for a scroll of the page leaves nothing read out.
+    touch(canvas, 'pointerdown', 300, 150);
+    touch(canvas, 'pointercancel', 300, 150);
+    touch(canvas, 'pointerleave', 300, 150);
+    expect(frame().texts).not.toContain('= 6');
+    chart.destroy();
+    // Destroyed, it listens to the page no more.
+    expect(() => touch(document.body, 'pointerdown', 5, 5)).not.toThrow();
+  });
+
+  it('sizes its canvas in device pixels', () => {
+    vi.stubGlobal('devicePixelRatio', 1.5);
+    const chart = new SparklineChart(host, { data: [1, 2, 3] });
+    const canvas = host.querySelector('canvas')!;
+    expect([canvas.width, canvas.height]).toEqual([600, 450]);
+    // It fills its container whatever that becomes: no width of its own to hold the container open.
+    expect([canvas.style.width, canvas.style.height]).toEqual(['100%', '100%']);
+    chart.destroy();
   });
 });

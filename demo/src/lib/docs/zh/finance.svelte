@@ -43,6 +43,9 @@ chart.setOptions({ mode: 'stacked' })   // 任意选项，合并生效
 chart.setTheme('light')                 // 'dark' | 'light' | 一个 Theme
 chart.destroy()                         // 移除画布及其监听器`}</code></pre>
 <p>
+  在触摸屏上，轻点即可显示提示框，直到轻点别处才消失；拖动仍会滚动页面。图表按屏幕自身的像素绘制，因此在任何缩放比例下线条都保持清晰。深度图、权益曲线和瀑布图会根据标签自动留出边距，与较新的图表一致。
+</p>
+<p>
   每种图表都会填满其元素，并在元素尺寸变化时重绘。带悬停提示框的图表可用 <code>crosshair: false</code> 关闭提示框。
   柱状图、环形图、散点图、直方图、日历图和矩阵图会告诉屏幕阅读器它们显示的内容（画布带有 image 角色和一个标签）；
   <code>ariaLabel</code> 可以换成你自己的表述，例如用页面的语言。数字按 <code>valueFormat</code>（或

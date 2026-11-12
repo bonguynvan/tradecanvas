@@ -44,6 +44,9 @@ chart.setOptions({ mode: 'stacked' })   // any option, merged
 chart.setTheme('light')                 // 'dark' | 'light' | a Theme
 chart.destroy()                         // removes the canvas and its listeners`}</code></pre>
 <p>
+  On a touch screen a tap shows the tooltip, and it stays until a tap elsewhere; a drag still scrolls the page. The charts draw on the screen's own pixels, so lines stay sharp at any zoom or display scaling. The depth, equity and waterfall charts size their margins to their labels, as the newer charts do.
+</p>
+<p>
   Each chart fills its element and redraws when the element resizes. Where a chart has a hover
   tooltip, <code>crosshair: false</code> turns it off. Bar, donut, scatter, histogram, calendar and matrix charts tell screen readers
   what they show (the canvas has an image role and a label); <code>ariaLabel</code> puts it in
