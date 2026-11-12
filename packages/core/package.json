@@ -2,7 +2,7 @@
   "name": "@tradecanvas/core",
   "version": "2.0.3",
   "type": "module",
-  "description": "Canvas rendering engine for @tradecanvas/chart",
+  "description": "The rendering engine of @tradecanvas/chart, the open-source trading chart library: viewport, Canvas 2D and WebGL renderers, indicators, drawing tools.",
   "license": "MIT",
   "funding": {
     "type": "github",
@@ -21,8 +21,14 @@
     "trading",
     "chart",
     "canvas",
-    "types"
+    "types",
+    "trading-chart",
+    "candlestick-chart",
+    "technical-analysis",
+    "webgl",
+    "tradecanvas"
   ],
+  "homepage": "https://tradecanvas.dev/",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",

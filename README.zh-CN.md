@@ -26,7 +26,7 @@
   <a href="README.md">English</a> · <a href="README.vi.md">Tiếng Việt</a> · <b>简体中文</b> · <a href="README.ja.md">日本語</a> · <a href="README.ko.md">한국어</a> · <a href="README.es.md">Español</a>
 </p>
 
-**一套完整的 Web 交易图表。** 从K线到砖形图（Renko），134 个指标、73 种画线工具、交易所实时行情和图上下单，用 Canvas 2D 或 WebGL 绘制，不依赖任何第三方库。可以直接使用完整的 `ChartWidget`，也可以在无界面的 `Chart` 上构建自己的界面，支持 TypeScript、React、Vue 和 Svelte。
+**TradeCanvas 是一套开源的 Web 交易图表库**，采用 MIT 许可证。 从K线到砖形图（Renko），134 个指标、73 种画线工具、交易所实时行情和图上下单，用 Canvas 2D 或 WebGL 绘制，不依赖任何第三方库。可以直接使用完整的 `ChartWidget`，也可以在无界面的 `Chart` 上构建自己的界面，支持 TypeScript、React、Vue 和 Svelte。
 
 <p align="center">
   <a href="https://tradecanvas.dev/zh/chart/"><img src=".github/assets/clips/hero.webp" alt="实时行情上的 ChartWidget：EMA 21 和 55、RSI、十字光标，以及用鼠标画出的趋势线" width="100%"></a>
@@ -124,7 +124,8 @@ claude mcp add tradecanvas -- npx -y @tradecanvas/mcp
 - **包**：[`@tradecanvas/chart`](https://www.npmjs.com/package/@tradecanvas/chart)（图表与组件）、[`react`](https://www.npmjs.com/package/@tradecanvas/react) · [`vue`](https://www.npmjs.com/package/@tradecanvas/vue) · [`svelte`](https://www.npmjs.com/package/@tradecanvas/svelte)，用于回测的 [`analytics`](https://www.npmjs.com/package/@tradecanvas/analytics)，以及供编程 agent 使用的 [`mcp`](https://www.npmjs.com/package/@tradecanvas/mcp)。
 - **预览构建**：每个 pull request 和 `main` 上的每个提交都发布在 [pkg.pr.new](https://pkg.pr.new/~/bonguynvan/tradecanvas)，发布前即可安装。
 - **浏览器**：Chrome 80+、Edge 80+、Firefox 80+、Safari 14+。
-- **企业使用**：无需展示标志，无需申请；[企业使用](https://tradecanvas.dev/zh/business/)页面回答 IT 评审会问的问题。business@tradecanvas.dev
+- **许可证**：MIT，对所有人都是同一份许可证，无论个人项目还是公司产品：无需展示标志，无需申请。
+- **企业使用**：[企业使用](https://tradecanvas.dev/zh/business/)页面回答 IT 评审会问的问题。business@tradecanvas.dev
 - **相关项目**：[bo-grid](https://github.com/bonguynvan/bo-grid)，一个快速的 Svelte 数据表格，交易台的表格部分。
 - **参与贡献**：提问请到 [Discussions](https://github.com/bonguynvan/tradecanvas/discussions)，问题请提 issue，pull request 见 [CONTRIBUTING.md](./CONTRIBUTING.md)。安全问题：[SECURITY.md](./SECURITY.md)。
 - **赞助**：TradeCanvas 免费且公开开发；[GitHub Sponsors](https://github.com/sponsors/bonguynvan) 让它持续下去。

@@ -26,7 +26,7 @@
   <a href="README.md">English</a> · <a href="README.vi.md">Tiếng Việt</a> · <a href="README.zh-CN.md">简体中文</a> · <a href="README.ja.md">日本語</a> · <b>한국어</b> · <a href="README.es.md">Español</a>
 </p>
 
-**웹을 위한 완전한 트레이딩 차트.** 캔들스틱부터 렌코까지, 134개 지표, 73개 그리기 도구, 거래소 실시간 피드와 차트 위 주문을 서드파티 의존성 없이 Canvas 2D 또는 WebGL로 그립니다. 완전한 `ChartWidget`을 그대로 넣거나 헤드리스 `Chart` 위에 직접 UI를 만들 수 있으며, TypeScript, React, Vue, Svelte를 지원합니다.
+**TradeCanvas는 웹을 위한 오픈 소스 트레이딩 차트 라이브러리입니다**(MIT 라이선스). 캔들스틱부터 렌코까지, 134개 지표, 73개 그리기 도구, 거래소 실시간 피드와 차트 위 주문을 서드파티 의존성 없이 Canvas 2D 또는 WebGL로 그립니다. 완전한 `ChartWidget`을 그대로 넣거나 헤드리스 `Chart` 위에 직접 UI를 만들 수 있으며, TypeScript, React, Vue, Svelte를 지원합니다.
 
 <p align="center">
   <a href="https://tradecanvas.dev/ko/chart/"><img src=".github/assets/clips/hero.webp" alt="실시간 시장의 ChartWidget: EMA 21과 55, RSI, 십자선, 마우스로 그린 추세선" width="100%"></a>
@@ -124,7 +124,8 @@ WSL 밖의 Windows에서는: `claude mcp add tradecanvas -- cmd /c npx -y @trade
 - **패키지**: [`@tradecanvas/chart`](https://www.npmjs.com/package/@tradecanvas/chart)(차트와 위젯), [`react`](https://www.npmjs.com/package/@tradecanvas/react) · [`vue`](https://www.npmjs.com/package/@tradecanvas/vue) · [`svelte`](https://www.npmjs.com/package/@tradecanvas/svelte), 백테스트용 [`analytics`](https://www.npmjs.com/package/@tradecanvas/analytics), 코딩 에이전트용 [`mcp`](https://www.npmjs.com/package/@tradecanvas/mcp).
 - **미리 보기**: 모든 pull request와 `main`의 모든 커밋이 [pkg.pr.new](https://pkg.pr.new/~/bonguynvan/tradecanvas)에 올라가 릴리스 전에 설치할 수 있습니다.
 - **브라우저**: Chrome 80+, Edge 80+, Firefox 80+, Safari 14+.
-- **기업 고객**: 표시할 로고도, 신청할 것도 없습니다. [기업 고객](https://tradecanvas.dev/ko/business/) 페이지가 IT 검토의 질문에 답합니다. business@tradecanvas.dev
+- **라이선스**: MIT. 개인 프로젝트든 회사 제품이든 모두에게 같은 라이선스입니다. 표시할 로고도, 신청할 것도 없습니다.
+- **기업 고객**: [기업 고객](https://tradecanvas.dev/ko/business/) 페이지가 IT 검토의 질문에 답합니다. business@tradecanvas.dev
 - **관련 프로젝트**: [bo-grid](https://github.com/bonguynvan/bo-grid), 트레이딩 데스크의 표를 맡는 빠른 Svelte 데이터 그리드.
 - **기여하기**: 질문은 [Discussions](https://github.com/bonguynvan/tradecanvas/discussions), 버그는 issue로, pull request는 [CONTRIBUTING.md](./CONTRIBUTING.md)를 보세요. 보안 문제: [SECURITY.md](./SECURITY.md).
 - **후원**: TradeCanvas는 무료이며 공개적으로 개발됩니다. [GitHub Sponsors](https://github.com/sponsors/bonguynvan)가 개발을 이어 갑니다.

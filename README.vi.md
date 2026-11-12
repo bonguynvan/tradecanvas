@@ -26,7 +26,7 @@
   <a href="README.md">English</a> · <b>Tiếng Việt</b> · <a href="README.zh-CN.md">简体中文</a> · <a href="README.ja.md">日本語</a> · <a href="README.ko.md">한국어</a> · <a href="README.es.md">Español</a>
 </p>
 
-**Một biểu đồ giao dịch hoàn chỉnh cho web.** Từ nến Nhật đến Renko, 134 chỉ báo, 73 công cụ vẽ, dữ liệu sàn trực tiếp và lệnh ngay trên biểu đồ, vẽ bằng Canvas 2D hoặc WebGL, không phụ thuộc thư viện bên thứ ba nào. Dùng ngay `ChartWidget` đầy đủ, hoặc tự dựng giao diện trên `Chart` headless, bằng TypeScript, React, Vue hay Svelte.
+**TradeCanvas là thư viện biểu đồ giao dịch mã nguồn mở cho web**, giấy phép MIT. Từ nến Nhật đến Renko, 134 chỉ báo, 73 công cụ vẽ, dữ liệu sàn trực tiếp và lệnh ngay trên biểu đồ, vẽ bằng Canvas 2D hoặc WebGL, không phụ thuộc thư viện bên thứ ba nào. Dùng ngay `ChartWidget` đầy đủ, hoặc tự dựng giao diện trên `Chart` headless, bằng TypeScript, React, Vue hay Svelte.
 
 <p align="center">
   <a href="https://tradecanvas.dev/vi/chart/"><img src=".github/assets/clips/hero.webp" alt="ChartWidget trên thị trường trực tiếp: EMA 21 và 55, RSI, crosshair và một trend line vẽ bằng chuột" width="100%"></a>
@@ -124,7 +124,8 @@ Trên Windows (không qua WSL): `claude mcp add tradecanvas -- cmd /c npx -y @tr
 - **Các gói**: [`@tradecanvas/chart`](https://www.npmjs.com/package/@tradecanvas/chart) (biểu đồ và widget), [`react`](https://www.npmjs.com/package/@tradecanvas/react) · [`vue`](https://www.npmjs.com/package/@tradecanvas/vue) · [`svelte`](https://www.npmjs.com/package/@tradecanvas/svelte), và [`analytics`](https://www.npmjs.com/package/@tradecanvas/analytics) cho backtest, và [`mcp`](https://www.npmjs.com/package/@tradecanvas/mcp) cho coding agent.
 - **Bản xem trước**: mỗi pull request và mỗi commit trên `main` có trên [pkg.pr.new](https://pkg.pr.new/~/bonguynvan/tradecanvas), cài được trước khi phát hành.
 - **Trình duyệt**: Chrome 80+, Edge 80+, Firefox 80+, Safari 14+.
-- **Cho doanh nghiệp**: không có logo phải hiển thị, không cần xin phép; trang [Cho doanh nghiệp](https://tradecanvas.dev/vi/business/) trả lời những gì một buổi thẩm định IT hỏi. business@tradecanvas.dev
+- **Giấy phép**: MIT, một giấy phép cho tất cả, dự án cá nhân hay sản phẩm của công ty: không có logo phải hiển thị, không cần xin phép.
+- **Cho doanh nghiệp**: trang [Cho doanh nghiệp](https://tradecanvas.dev/vi/business/) trả lời những gì một buổi thẩm định IT hỏi. business@tradecanvas.dev
 - **Dự án liên quan**: [bo-grid](https://github.com/bonguynvan/bo-grid), một data grid Svelte nhanh cho nửa bảng của một bàn giao dịch.
 - **Đóng góp**: câu hỏi ở [Discussions](https://github.com/bonguynvan/tradecanvas/discussions), lỗi ở mục issues, và [CONTRIBUTING.md](./CONTRIBUTING.md) cho pull request. Lỗi bảo mật: [SECURITY.md](./SECURITY.md).
 - **Tài trợ**: TradeCanvas miễn phí và phát triển công khai; [GitHub Sponsors](https://github.com/sponsors/bonguynvan) giúp nó tiếp tục.

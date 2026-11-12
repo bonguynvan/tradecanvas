@@ -26,7 +26,7 @@
   <a href="README.md">English</a> · <a href="README.vi.md">Tiếng Việt</a> · <a href="README.zh-CN.md">简体中文</a> · <a href="README.ja.md">日本語</a> · <a href="README.ko.md">한국어</a> · <b>Español</b>
 </p>
 
-**Un gráfico de trading completo para la web.** De velas japonesas a Renko, 134 indicadores, 73 herramientas de dibujo, datos en vivo de exchanges y órdenes sobre el gráfico, dibujado con Canvas 2D o WebGL y sin dependencias de terceros. Usa el `ChartWidget` completo o construye tu propia interfaz sobre el `Chart` headless, en TypeScript, React, Vue o Svelte.
+**TradeCanvas es una librería de gráficos de trading de código abierto para la web**, con licencia MIT. De velas japonesas a Renko, 134 indicadores, 73 herramientas de dibujo, datos en vivo de exchanges y órdenes sobre el gráfico, dibujado con Canvas 2D o WebGL y sin dependencias de terceros. Usa el `ChartWidget` completo o construye tu propia interfaz sobre el `Chart` headless, en TypeScript, React, Vue o Svelte.
 
 <p align="center">
   <a href="https://tradecanvas.dev/es/chart/"><img src=".github/assets/clips/hero.webp" alt="ChartWidget sobre un mercado en vivo: EMA 21 y 55, RSI, la cruz y una línea de tendencia dibujada con el ratón" width="100%"></a>
@@ -124,7 +124,8 @@ En Windows fuera de WSL: `claude mcp add tradecanvas -- cmd /c npx -y @tradecanv
 - **Paquetes**: [`@tradecanvas/chart`](https://www.npmjs.com/package/@tradecanvas/chart) (el gráfico y el widget), [`react`](https://www.npmjs.com/package/@tradecanvas/react) · [`vue`](https://www.npmjs.com/package/@tradecanvas/vue) · [`svelte`](https://www.npmjs.com/package/@tradecanvas/svelte), y [`analytics`](https://www.npmjs.com/package/@tradecanvas/analytics) para backtests, y [`mcp`](https://www.npmjs.com/package/@tradecanvas/mcp) para agentes de programación.
 - **Versiones preliminares**: cada pull request y cada commit en `main` está en [pkg.pr.new](https://pkg.pr.new/~/bonguynvan/tradecanvas), instalable antes de publicarse.
 - **Navegadores**: Chrome 80+, Edge 80+, Firefox 80+, Safari 14+.
-- **Para empresas**: ningún logo que mostrar, nada que solicitar; la página [Para empresas](https://tradecanvas.dev/es/business/) responde lo que pregunta una revisión de TI. business@tradecanvas.dev
+- **Licencia**: MIT, una sola licencia para todos, sea un proyecto personal o el producto de una empresa: ningún logo que mostrar, nada que solicitar.
+- **Para empresas**: la página [Para empresas](https://tradecanvas.dev/es/business/) responde lo que pregunta una revisión de TI. business@tradecanvas.dev
 - **Proyectos relacionados**: [bo-grid](https://github.com/bonguynvan/bo-grid), una cuadrícula de datos rápida en Svelte para la mitad tabular de una mesa de trading.
 - **Contribuir**: preguntas en [Discussions](https://github.com/bonguynvan/tradecanvas/discussions), errores en los issues, y [CONTRIBUTING.md](./CONTRIBUTING.md) para pull requests. Problemas de seguridad: [SECURITY.md](./SECURITY.md).
 - **Patrocinio**: TradeCanvas es gratuito y se desarrolla en abierto; [GitHub Sponsors](https://github.com/sponsors/bonguynvan) lo mantiene en marcha.
