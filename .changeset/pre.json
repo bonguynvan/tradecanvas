@@ -12,5 +12,7 @@
     "@tradecanvas/svelte": "1.5.10",
     "@tradecanvas/vue": "1.4.22"
   },
-  "changesets": []
+  "changesets": [
+    "airy-defaults"
+  ]
 }
