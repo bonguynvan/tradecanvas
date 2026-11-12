@@ -1,6 +1,6 @@
 {
   "name": "@tradecanvas/vue",
-  "version": "2.0.4",
+  "version": "2.0.5",
   "type": "module",
   "description": "Vue 3 component for @tradecanvas/chart, the open-source trading chart library: candlestick charts, indicators and drawing tools with reactive props and a template ref.",
   "license": "MIT",
