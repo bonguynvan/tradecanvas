@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+### Live data
+
+- **A retry is told once** (`@tradecanvas/core`, `@tradecanvas/chart`). Each attempt to reconnect sent `connectionChange` with `state: 'reconnecting'` twice, the first time with the attempt before's number. It is one event an attempt now, with that attempt's number.
+- **Leaving while a feed's first bars load aborts the request** (`@tradecanvas/core`, `@tradecanvas/chart`). A `disconnect()`, or a switch to another symbol or timeframe, before the history had come left the feed's `getBars` running with its `signal` never aborted; only the requests of a series already streaming were. A switch that a newer switch overtook is aborted too.
+
 ## 2.0.0-beta.1 (2026-11-12)
 
 The first beta of 2.0, under the npm tag `beta`: `npm install @tradecanvas/chart@beta`. `latest` stays 1.84.1 until 2.0 is final. `2.0.0-beta.0`, published the same day, holds the same code.

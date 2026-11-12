@@ -76,7 +76,7 @@ class FeedSource implements StreamSource {
   }
 
   getBars(series: BarsSubscription, countBack: number): Promise<OHLCBar[]> {
-    return this.adapter.fetchHistory(series.symbol, series.timeframe, countBack);
+    return this.adapter.fetchStreamHistory(series, countBack);
   }
 
   subscribeBars(series: BarsSubscription): void {

@@ -333,7 +333,8 @@ export class StreamManager extends Emitter<StreamEvents> {
 
   private wireReconnector(): void {
     this.reconnector.on('attempt', ({ attempt, delay: _delay }) => {
-      this.setState('reconnecting');
+      // One event an attempt, with its number: the state is the same from the second on.
+      this.state = 'reconnecting';
       this.emit('connectionChange', {
         state: 'reconnecting',
         reconnectAttempt: attempt,

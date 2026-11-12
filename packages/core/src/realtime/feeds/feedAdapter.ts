@@ -106,6 +106,16 @@ export class FeedAdapter implements DataAdapter {
     return this.feed.getBars({ symbol, timeframe, countBack: limit, signal: this.signalFor(symbol, timeframe) });
   }
 
+  /**
+   * The newest bars of the series a stream is about to subscribe to. It is
+   * the stream's from here on, not only once subscribed: a `disconnect` while
+   * they load aborts the request, as it does the series' later ones.
+   */
+  fetchStreamHistory(series: BarsSubscription, limit: number): Promise<OHLCBar[]> {
+    this.streamed = seriesKey(series.symbol, series.timeframe);
+    return this.fetchHistory(series.symbol, series.timeframe, limit);
+  }
+
   connect(config: DataAdapterConfig): void {
     this.subscribe({ symbol: config.symbol, timeframe: config.timeframe });
   }

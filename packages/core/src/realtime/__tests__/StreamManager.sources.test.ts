@@ -297,7 +297,7 @@ describe.each(KINDS)('StreamManager on %s', (_kind, make) => {
     log.length = 0;
 
     source.connection(dropped);
-    expect(log).toEqual(['state reconnecting', 'state reconnecting']); // the state, then the attempt
+    expect(log).toEqual(['state reconnecting']); // once an attempt
     expect(sm.getConnectionInfo().reconnectAttempt).toBe(1);
     expect(source.loads).toHaveLength(1); // not before the backoff
     await vi.advanceTimersByTimeAsync(RETRY_WAIT);
@@ -309,7 +309,7 @@ describe.each(KINDS)('StreamManager on %s', (_kind, make) => {
 
     expect(source.subscribed).toEqual([{ symbol: 'AAA', timeframe: '1m' }, { symbol: 'AAA', timeframe: '1m' }]);
     expect(source.live()).toBe(true);
-    expect(log.slice(2)).toEqual(['state connecting', 'price 4 from 4', 'snapshot 1,2,3,4', 'state connected']);
+    expect(log.slice(1)).toEqual(['state connecting', 'price 4 from 4', 'snapshot 1,2,3,4', 'state connected']);
     expect(sm.getConnectionInfo().reconnectAttempt).toBe(0);
     sm.dispose();
   });
@@ -323,7 +323,7 @@ describe.each(KINDS)('StreamManager on %s', (_kind, make) => {
     const done = sm.connect({ ...source.config, symbol: 'AAA', timeframe: '1m', reconnect: RETRY });
     source.loads[0].reject(new Error('boom'));
     await done;
-    expect(log).toEqual(['state connecting', 'error boom [CONNECT_FAILED]', 'state error', 'state reconnecting', 'state reconnecting']);
+    expect(log).toEqual(['state connecting', 'error boom [CONNECT_FAILED]', 'state error', 'state reconnecting']);
     expect(source.subscribed).toEqual([]);
 
     await vi.advanceTimersByTimeAsync(RETRY_WAIT);
@@ -694,6 +694,30 @@ describe.each([
     expect(source.loads[1].signal?.aborted).toBe(false);
     sm.disconnect();
     expect(source.loads[1].signal?.aborted).toBe(true);
+  });
+
+  it('aborts the first load too when it disconnects before the history came', async () => {
+    const source = feedSource({}, asChart);
+    const sm = new StreamManager();
+    const done = sm.connect({ ...source.config, symbol: 'AAA', timeframe: '1m' });
+    expect(source.loads[0].signal?.aborted).toBe(false);
+    sm.disconnect();
+    expect(source.loads[0].signal?.aborted).toBe(true);
+    source.loads[0].resolve(HISTORY);
+    await done;
+  });
+
+  it('aborts the load of a switch that a newer switch overtook', async () => {
+    const source = feedSource({}, asChart);
+    const { sm } = await connected(source);
+    const first = sm.switchTo('BBB', '1m');
+    const second = sm.switchTo('CCC', '1m');
+    expect(source.loads[1].signal?.aborted).toBe(true);
+    expect(source.loads[2].signal?.aborted).toBe(false);
+    source.loads[1].resolve(HISTORY);
+    source.loads[2].resolve(HISTORY);
+    await Promise.all([first, second]);
+    sm.dispose();
   });
 
   it('drops what a subscription it stopped still sends', async () => {
