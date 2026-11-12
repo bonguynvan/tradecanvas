@@ -1047,7 +1047,7 @@ export class Chart {
     const paneResize = new PaneResizeHandler();
     paneResize.configure(
       () => this.getResolvedLayout(),
-      (panelId, size) => this.setPanelSize(panelId, size),
+      (panelId, size) => this.dragPanelTo(panelId, size),
     );
     this.interactionManager.setPaneResizeHandler(paneResize);
     // Alt-click pins the OHLC tooltip at the bar under the cursor. Hitting
@@ -2141,6 +2141,14 @@ export class Chart {
     this.layoutManager.setPanelSize(instanceId, size);
     this.updateViewportAndRender();
     this.eventBus.emit('paneResize', { instanceId, size });
+    this.markStateChanged();
+  }
+
+  /** A pane's divider dragged: the pane as tall on screen as it was dragged, the panes giving way or not. */
+  private dragPanelTo(instanceId: string, height: number): void {
+    this.layoutManager.setPanelHeightOnScreen(instanceId, height);
+    this.updateViewportAndRender();
+    this.eventBus.emit('paneResize', { instanceId, size: height });
     this.markStateChanged();
   }
 

@@ -1128,7 +1128,17 @@ img.tcw-ss-badge {
   height: 34px;
 }
 
+/* In a viewport too short for the month, the form scrolls: its parts keep their height, and
+   the buttons stay at its foot, over what scrolls under them. */
+.tcw-goto-form > * {
+  flex-shrink: 0;
+}
+
 .tcw-goto .tcw-modal-footer {
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+  margin-top: auto;
   justify-content: flex-end;
   gap: var(--tcw-space-4);
 }

@@ -1501,6 +1501,13 @@
   transition: background var(--tcw-dur-fast) var(--tcw-ease), color var(--tcw-dur-fast) var(--tcw-ease);
 }
 
+/* A whole, even box where the browser can round one: 34, not 33.98, so the cross is centred on whole pixels. */
+@supports (width: round(nearest, 1px, 2px)) {
+  .tcw-modal-close {
+    --tcw-close-box: round(nearest, calc(var(--tcw-font-size-display) * 1.618), 2px);
+  }
+}
+
 .tcw-modal-close:hover {
   background: var(--tcw-hover-bg);
   color: var(--tcw-text);
@@ -1737,6 +1744,9 @@
 }
 
 .tcw-settings-select {
+  /* As tall as the number field beside it (32); the classic densities keep their 30. */
+  box-sizing: border-box;
+  min-height: calc(32px - 2 * var(--tcw-odd));
   padding: 6px 10px;
   font-size: var(--tcw-font-size-sm);
   font-family: inherit;

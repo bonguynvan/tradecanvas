@@ -733,6 +733,7 @@ export class ChartWidget {
       focusAfterClose: (page) => this.docking.panelFocusTarget(page as WidgetPanel),
       room: () => body.clientWidth,
     });
+    this.docking.dock.setScale(this.uiScale);
     if (options.watchlist) this.watching.createWatchlist(body, options.watchlist === true ? {} : options.watchlist);
 
     this.root.appendChild(body);
@@ -1970,6 +1971,8 @@ export class ChartWidget {
    */
   private applyLookTokens(): void {
     const shown = scaledWidgetUI(this.ui, this.uiScale);
+    // The panel beside the chart is as wide as its type needs.
+    this.docking?.dock?.setScale(this.uiScale);
     for (const el of [this.root, this.portal]) {
       applyWidgetUI(el, shown, { variables: this.uiVariables });
       // With no look given the host's CSS keeps its tokens; a bigger scale sets only the sizes it grows.

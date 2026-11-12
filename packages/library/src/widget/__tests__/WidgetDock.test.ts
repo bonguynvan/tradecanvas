@@ -160,6 +160,22 @@ describe('WidgetDock', () => {
     expect(document.activeElement).toBe(fallback);
   });
 
+  it('grows with the look on a wide screen: the width, its limits, and the same width kept', () => {
+    make({ room: () => 3000 });
+    dock.setScale(1.25);
+    expect(width()).toBe(Math.round(262 * 1.25));
+    const h = handle();
+    expect([h.getAttribute('aria-valuemin'), h.getAttribute('aria-valuemax')]).toEqual([String(Math.round(233 * 1.25)), String(Math.round(377 * 1.25))]);
+    // A drag there is kept as the width it is at a scale of 1, so a smaller window shows it in step.
+    pointer(h, 'pointerdown', 500);
+    pointer(document, 'pointermove', 450);
+    pointer(document, 'pointerup', 450);
+    expect(width()).toBe(Math.round(262 * 1.25) + 50);
+    expect(saved.at(-1)).toBeCloseTo((Math.round(262 * 1.25) + 50) / 1.25, 5);
+    dock.setScale(1);
+    expect(width()).toBe(Math.round((Math.round(262 * 1.25) + 50) / 1.25));
+  });
+
   it('leaves the chart 61.8% of the room, whatever width was asked for', () => {
     let room = 700;
     make({ room: () => room, savedWidth: () => 377 });
