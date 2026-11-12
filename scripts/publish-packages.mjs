@@ -194,7 +194,7 @@ export function distTag(version) {
 /**
  * Why a release cannot go out as it stands, or null. In changesets' pre mode
  * every version is a prerelease and takes the mode's dist-tag; out of it none
- * is. Anything else is a version PR merged half way into or out of pre mode,
+ * is. Anything else is a version commit made half way into or out of pre mode,
  * and would put a prerelease on `latest` or a full release under `beta`.
  */
 export function preModeProblem(packages, pre) {

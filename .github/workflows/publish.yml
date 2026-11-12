@@ -5,9 +5,9 @@ on:
     paths:
       - 'packages/**'
       - '.changeset/**'
-  # By hand, to finish a release that stopped part way: it publishes every
-  # version not on npm, tags and releases every one without its tag or release,
-  # and opens the version PR for the changesets waiting.
+  # By hand, to finish a release that stopped part way: it versions the
+  # changesets waiting, publishes every version not on npm, and tags and
+  # releases every one without its tag or release.
   workflow_dispatch:
 
 # A release publishes package by package; a push in the middle waits for it
@@ -17,34 +17,37 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  # With changesets waiting, opens or updates the version PR. It cannot publish.
-  # It runs by hand too: a run whose push GitHub refused (a workflow file
-  # changed on main while it ran) leaves the changesets waiting for no push.
+  # With changesets waiting, sets their versions, dates the root changelog and
+  # commits that to main: merging a pull request with a changeset is the
+  # release, and there is no version pull request. It cannot publish. Its
+  # commit starts no run of its own (a push by this token never does): the
+  # jobs below go on from it, at the commit it gives them.
   version:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      pull-requests: write
+    outputs:
+      sha: ${{ steps.version.outputs.sha }}
     steps:
+      # Main as it is now, not as it was at this run's push: a run that waited
+      # behind another finds the versions that one set.
       - uses: actions/checkout@v4
+        with:
+          ref: main
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - uses: changesets/action@v1
-        with:
-          version: pnpm changeset:version
-          title: 'chore: version packages'
-          commit: 'chore: version packages'
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - id: version
+        run: node scripts/release-version.mjs
 
   # Builds and packs every version not on npm. Installing and building run the
   # dependencies' own code, so this job holds no right to publish or push.
   pack:
+    needs: version
     # A run by hand from another branch would publish, tag and release from it.
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
@@ -54,6 +57,8 @@ jobs:
       work: ${{ steps.check.outputs.work }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.version.outputs.sha }}
       # Most pushes release nothing: then the install, the build and the
       # publishing job are skipped. It needs only Node, npm, git and gh.
       - id: check
@@ -83,10 +88,10 @@ jobs:
   # Publishes the packed tarballs one at a time, each after the ones it pins
   # and once they are live, then tags and releases each version. It installs
   # nothing from the workspace. It runs after any push to main with work to
-  # do, not only the version PR's merge, so a release whose run was skipped
-  # goes out with the next one.
+  # do, not only one that brought a changeset, so a release whose run was
+  # skipped goes out with the next one.
   publish:
-    needs: pack
+    needs: [version, pack]
     if: needs.pack.outputs.work == 'true'
     runs-on: ubuntu-latest
     permissions:
@@ -99,6 +104,7 @@ jobs:
       # The whole history: a tag goes on the commit that set its version.
       - uses: actions/checkout@v4
         with:
+          ref: ${{ needs.version.outputs.sha }}
           fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
