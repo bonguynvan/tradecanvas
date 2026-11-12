@@ -914,6 +914,7 @@ const de: SiteMessages = {
       'getting-started': 'Erste Schritte',
       frameworks: 'Frameworks',
       embed: 'Einbettbares Widget',
+      migration: 'Umstieg auf 2.0',
       'how-it-works': 'So funktioniert es',
       api: 'API-Referenz',
       styling: 'Gestaltung',

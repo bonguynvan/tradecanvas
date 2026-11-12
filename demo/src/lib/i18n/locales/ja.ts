@@ -914,6 +914,7 @@ const ja: SiteMessages = {
       'getting-started': 'スタートガイド',
       frameworks: 'フレームワーク',
       embed: '埋め込みウィジェット',
+      migration: '2.0 への移行',
       'how-it-works': '仕組み',
       api: 'API リファレンス',
       styling: 'スタイル設定',

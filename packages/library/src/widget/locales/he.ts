@@ -29,7 +29,6 @@ export const HE_MESSAGES: WidgetMessages = {
   'replay.selectHint': 'יש ללחוץ על נר כדי להתחיל את השידור החוזר',
   'replay.random': 'נר אקראי',
   'replay.realtime': 'חזרה לזמן אמת',
-  'replay.barsPerSecond': 'נרות/שנ׳',
   'replay.play': 'הפעלה',
   'replay.pause': 'השהיה',
   'replay.stepBack': 'צעד אחורה (Shift+←)',

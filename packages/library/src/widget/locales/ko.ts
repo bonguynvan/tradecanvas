@@ -28,7 +28,6 @@ export const KO_MESSAGES: WidgetMessages = {
   'replay.selectHint': '봉을 클릭하면 리플레이가 시작됩니다',
   'replay.random': '무작위 봉',
   'replay.realtime': '실시간으로 돌아가기',
-  'replay.barsPerSecond': '봉/초',
   'replay.play': '재생',
   'replay.pause': '일시정지',
   'replay.stepBack': '한 봉 뒤로 (Shift+←)',

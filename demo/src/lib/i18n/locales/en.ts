@@ -922,6 +922,7 @@ const en = {
       'getting-started': 'Getting Started',
       frameworks: 'Frameworks',
       embed: 'Embeddable Widget',
+      migration: 'Moving to 2.0',
       'how-it-works': 'How It Works',
       api: 'API Reference',
       styling: 'Styling',

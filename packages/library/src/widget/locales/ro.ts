@@ -28,7 +28,6 @@ export const RO_MESSAGES: WidgetMessages = {
   'replay.selectHint': 'Faceți clic pe o bară pentru a porni reluarea',
   'replay.random': 'Bară aleatorie',
   'replay.realtime': 'Înapoi la timp real',
-  'replay.barsPerSecond': 'bare/s',
   'replay.play': 'Redare',
   'replay.pause': 'Pauză',
   'replay.stepBack': 'Un pas înapoi (Shift+←)',

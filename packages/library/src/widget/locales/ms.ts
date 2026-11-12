@@ -29,7 +29,6 @@ export const MS_MESSAGES: WidgetMessages = {
   'replay.selectHint': 'Klik satu bar untuk mula main semula',
   'replay.random': 'Bar rawak',
   'replay.realtime': 'Kembali ke masa nyata',
-  'replay.barsPerSecond': 'bar/saat',
   'replay.play': 'Main',
   'replay.pause': 'Jeda',
   'replay.stepBack': 'Undur selangkah (Shift+←)',

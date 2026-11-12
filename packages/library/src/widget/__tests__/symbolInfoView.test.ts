@@ -50,13 +50,12 @@ describe('the symbol info view', () => {
     expect(view.change).toEqual({ text: '+1.50 (+15.79%)', up: true });
   });
 
-  it('names the symbol’s zone, in either spelling', () => {
-    const zoneOf = (info: { symbol: string; timeZone?: string; timezone?: string }) => buildSymbolInfoView({
+  it('names the symbol’s zone', () => {
+    const zoneOf = (info: { symbol: string; timeZone?: string }) => buildSymbolInfoView({
       symbol: 'AAA', info, quote: undefined, bars, formatPrice: (p) => p.toFixed(2),
       t: EN_TRANSLATOR, textLocale: 'en', numberLocale: 'en-US', now: T0 + 8_000_000,
     }).stats.find((s) => s.label === 'Time zone')?.value;
     expect(zoneOf({ symbol: 'AAA', timeZone: 'America/New_York' })).toBe('America/New_York');
-    expect(zoneOf({ symbol: 'AAA', timezone: 'America/New_York' })).toBe('America/New_York');
   });
 
   it('takes the name, exchange and kind from `names` when it is given, the rest from `info`', () => {

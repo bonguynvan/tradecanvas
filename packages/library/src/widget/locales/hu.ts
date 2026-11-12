@@ -28,7 +28,6 @@ export const HU_MESSAGES: WidgetMessages = {
   'replay.selectHint': 'Kattintson egy gyertyára a visszajátszás indításához',
   'replay.random': 'Véletlen gyertya',
   'replay.realtime': 'Vissza a valós időhöz',
-  'replay.barsPerSecond': 'gyertya/s',
   'replay.play': 'Lejátszás',
   'replay.pause': 'Szünet',
   'replay.stepBack': 'Egy lépés vissza (Shift+←)',

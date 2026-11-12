@@ -914,6 +914,7 @@ const vi: SiteMessages = {
       'getting-started': 'Bắt đầu',
       frameworks: 'Framework',
       embed: 'Widget nhúng',
+      migration: 'Chuyển sang 2.0',
       'how-it-works': 'Cách hoạt động',
       api: 'Tham chiếu API',
       styling: 'Giao diện',

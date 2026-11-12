@@ -28,7 +28,6 @@ export const TH_MESSAGES: WidgetMessages = {
   'replay.selectHint': 'คลิกแท่งเทียนเพื่อเริ่มเล่นซ้ำ',
   'replay.random': 'แท่งเทียนแบบสุ่ม',
   'replay.realtime': 'กลับสู่เวลาจริง',
-  'replay.barsPerSecond': 'แท่ง/วินาที',
   'replay.play': 'เล่น',
   'replay.pause': 'หยุดชั่วคราว',
   'replay.stepBack': 'ถอยหนึ่งแท่ง (Shift+←)',

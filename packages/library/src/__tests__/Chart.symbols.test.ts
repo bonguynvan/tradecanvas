@@ -15,7 +15,7 @@ const nyse: SymbolInfo = {
   exchange: 'NASDAQ',
   type: 'stock',
   pricePrecision: 2,
-  timezone: 'America/New_York',
+  timeZone: 'America/New_York',
   sessions: [{ start: '09:30', end: '16:00' }],
 };
 
@@ -87,13 +87,13 @@ describe('Chart.setSymbolInfo', () => {
   });
 
   it('shows the exchange’s time zone when asked to', () => {
-    chart.setTimezone('exchange');
-    expect(chart.getTimezone()).toBe('exchange');
-    expect(chart.getEffectiveTimezone()).toBe('UTC');
+    chart.setTimeZone('exchange');
+    expect(chart.getTimeZone()).toBe('exchange');
+    expect(chart.getEffectiveTimeZone()).toBe('UTC');
     chart.setSymbolInfo(nyse);
-    expect(chart.getEffectiveTimezone()).toBe('America/New_York');
-    chart.setTimezone(null);
-    expect(chart.getEffectiveTimezone()).toBeNull();
+    expect(chart.getEffectiveTimeZone()).toBe('America/New_York');
+    chart.setTimeZone(null);
+    expect(chart.getEffectiveTimeZone()).toBeNull();
   });
 
   it('shades the symbol’s trading hours in its time zone', () => {
@@ -103,8 +103,8 @@ describe('Chart.setSymbolInfo', () => {
 
   it('drops the last symbol’s hours for a symbol without any', () => {
     const before = shading();
-    chart.setSymbolInfo({ ...nyse, timezone: 'Asia/Bangkok', sessions: [{ start: '10:00', end: '12:30' }, { start: '14:30', end: '16:30' }] });
-    chart.setSymbolInfo({ symbol: 'BTCUSDT', timezone: 'UTC' });
+    chart.setSymbolInfo({ ...nyse, timeZone: 'Asia/Bangkok', sessions: [{ start: '10:00', end: '12:30' }, { start: '14:30', end: '16:30' }] });
+    chart.setSymbolInfo({ symbol: 'BTCUSDT', timeZone: 'UTC' });
     expect(shading()).toEqual(before);
   });
 

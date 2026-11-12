@@ -7,6 +7,7 @@ Use `ChartWidget` (`@tradecanvas/chart/widget`) for a complete trading UI, or `C
 ## Docs
 
 - [Getting started](https://tradecanvas.dev/docs/getting-started): install, the widget, the headless chart
+- [Moving to 2.0](https://tradecanvas.dev/docs/migration): from 1.x: the new default look and the option that keeps the old one, each removed name and what to use, what changed without a name changing
 - [API reference](https://tradecanvas.dev/docs/api): Chart and ChartWidget methods, options and events
 - [Indicators](https://tradecanvas.dev/docs/indicators): every built-in indicator with its id, inputs and lines
 - [Styling](https://tradecanvas.dev/docs/styling): the widget's look as tokens: the Print (default, kept to the golden ratio), Studio, Terminal, Capsule and Desk presets, your own theme, CSS variables
@@ -105,7 +106,10 @@ also works on a widget.
    `MarketConfig.timeZone`. `setTimeZone('exchange')` shows the symbol's zone,
    else its market's. In a `ChartWidget`, set it as a Chart Setting,
    `widget.setSettings({ timezone: 'exchange' })` (spelt `timezone` there), so
-   the widget's clock, its settings dialog and what it keeps follow. The 2h–12h,
+   the widget's clock, its settings dialog and what it keeps follow. From 2.0
+   that is the only other spelling: `setTimezone`, `getTimezone`,
+   `EXCHANGE_TIMEZONE` and `SymbolInfo.timezone` are gone, and a symbol that
+   gives `timezone` has no zone. The 2h–12h,
    1D, 1W and 1M bars the library builds start at the exchange's midnight: from
    a feed's `supportedTimeframes`, at the zone its `resolveSymbol` names (not
    `setMarket`'s); from the widget's `setData`, at the symbol's zone, else the

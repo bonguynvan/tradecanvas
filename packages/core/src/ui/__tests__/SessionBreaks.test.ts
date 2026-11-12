@@ -66,18 +66,6 @@ describe('SessionBreaks — lines only, the dates are on the time axis', () => {
     expect(fillTextCalls).toEqual([]);
   });
 
-  it('keeps renderLabels, which draws nothing in any locale', () => {
-    const sb = new SessionBreaks();
-    sb.setVisible(true);
-    sb.setLocale('vi-VN');
-    const { ctx, fillTextCalls } = mockCtx();
-
-    sb.renderLabels(ctx, viewport(), DARK_THEME, hourlyBarsAcrossMonthBoundary());
-
-    expect(fillTextCalls).toEqual([]);
-    expect(ctx.save).not.toHaveBeenCalled();
-  });
-
   it('writes no row of dates over 4h bars zoomed out to the whole series', () => {
     // A downstream app's case: "All" on daily bars, then 4h, kept the zoom out
     // and printed every Monday and month along the top of the plot.

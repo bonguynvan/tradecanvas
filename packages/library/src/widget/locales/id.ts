@@ -28,7 +28,6 @@ export const ID_MESSAGES: WidgetMessages = {
   'replay.selectHint': 'Klik sebuah bar untuk mulai memutar ulang',
   'replay.random': 'Bar acak',
   'replay.realtime': 'Kembali ke waktu nyata',
-  'replay.barsPerSecond': 'bar/dtk',
   'replay.play': 'Putar',
   'replay.pause': 'Jeda',
   'replay.stepBack': 'Mundur satu bar (Shift+←)',

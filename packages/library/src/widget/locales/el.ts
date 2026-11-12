@@ -28,7 +28,6 @@ export const EL_MESSAGES: WidgetMessages = {
   'replay.selectHint': 'Κάντε κλικ σε ένα κερί για να ξεκινήσει η επανάληψη',
   'replay.random': 'Τυχαίο κερί',
   'replay.realtime': 'Επιστροφή σε πραγματικό χρόνο',
-  'replay.barsPerSecond': 'κεριά/δευτ.',
   'replay.play': 'Αναπαραγωγή',
   'replay.pause': 'Παύση',
   'replay.stepBack': 'Ένα βήμα πίσω (Shift+←)',

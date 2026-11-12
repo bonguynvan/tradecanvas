@@ -918,6 +918,7 @@ const es: SiteMessages = {
       'getting-started': 'Primeros pasos',
       frameworks: 'Frameworks',
       embed: 'Widget incrustable',
+      migration: 'Migrar a la 2.0',
       'how-it-works': 'Cómo funciona',
       api: 'Referencia de la API',
       styling: 'Estilos',

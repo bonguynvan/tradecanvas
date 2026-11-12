@@ -28,7 +28,6 @@ export const RU_MESSAGES: WidgetMessages = {
   'replay.selectHint': 'Нажмите на бар, чтобы начать воспроизведение',
   'replay.random': 'Случайный бар',
   'replay.realtime': 'Вернуться в реальное время',
-  'replay.barsPerSecond': 'баров/с',
   'replay.play': 'Воспроизвести',
   'replay.pause': 'Пауза',
   'replay.stepBack': 'На бар назад (Shift+←)',

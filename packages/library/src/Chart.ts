@@ -157,27 +157,12 @@ declare const __TC_VERSION__: string;
 
 /** `setTimeZone(EXCHANGE_TIME_ZONE)` shows the zone of the symbol's exchange, else of its market (`getExchangeTimeZone`). */
 export const EXCHANGE_TIME_ZONE = 'exchange';
-/** @deprecated Use `EXCHANGE_TIME_ZONE`. */
-export const EXCHANGE_TIMEZONE = EXCHANGE_TIME_ZONE;
 /** Throws a RangeError for a time zone the browser doesn't know or an offset that isn't a number. */
 function assertTimeZone(tz: TimeZoneSetting): void {
   if (typeof tz === 'string' && tz !== EXCHANGE_TIME_ZONE && !isValidTimeZone(tz)) {
     throw new RangeError(`Unknown time zone: ${tz}`);
   }
   if (typeof tz === 'number' && !Number.isFinite(tz)) throw new RangeError(`Invalid UTC offset: ${tz}`);
-}
-/**
- * A symbol's zone under both names: `timeZone`, and the older `timezone` that
- * code may still read. When the two disagree, the one that moved from `held`
- * (the zone the chart has for this symbol) is the new zone, so
- * `{ ...getSymbolInfo(), timezone: zone }` changes it as `timeZone: zone` does;
- * otherwise `timeZone` is.
- */
-function withBothZoneSpellings(info: SymbolInfo, held: string | undefined): SymbolInfo {
-  const { timeZone, timezone } = info;
-  const moved = timeZone !== undefined && timezone !== undefined && timeZone !== timezone && timeZone === held;
-  const zone = moved ? timezone : symbolTimeZone(info);
-  return zone === undefined ? info : { ...info, timeZone: zone, timezone: zone };
 }
 
 /** Room above and below the left scale's overlays, as a share of their range. */
@@ -4357,31 +4342,6 @@ export class Chart {
     return [symbolTimeZone(this.symbolInfo), this.marketConfig?.timeZone].find((zone) => zone && isValidTimeZone(zone)) ?? null;
   }
 
-  /** @deprecated Use `setTimeZone`, spelled as the `timeZone` option is. */
-  setTimezone(tz: TimeZoneSetting): void {
-    this.setTimeZone(tz);
-  }
-
-  /** @deprecated Use `getTimeZone`. */
-  getTimezone(): TimeZoneSetting {
-    return this.getTimeZone();
-  }
-
-  /** @deprecated Use `getEffectiveTimeZone`. */
-  getEffectiveTimezone(): TimeZoneSetting {
-    return this.getEffectiveTimeZone();
-  }
-
-  /** @deprecated Use `getExchangeTimeZone`. */
-  getExchangeTimezone(): string | null {
-    return this.getExchangeTimeZone();
-  }
-
-  /** @deprecated Use `setTimeZone`, which takes an offset in minutes east of UTC, or null for the browser's zone. */
-  setTimezoneOffset(minutes: number | null): void {
-    this.setTimeZone(minutes);
-  }
-
   /**
    * The exchange's zone where it counts beyond the zone shown: daily bars
    * built at its midnight are dated there, and so are days built from ticks.
@@ -4493,10 +4453,7 @@ export class Chart {
    * adapter (`resolveSymbol`), which a connected chart asks by itself. Its
    * price precision applies unless `setMarket` set one; its zone
    * (`timeZone`) backs `setTimeZone('exchange')` and dates daily bars; its
-   * hours feed the session shading. `getSymbolInfo()` gives the zone as `timeZone` and as the older
-   * `timezone`; given both with different zones, `timeZone` is the one, unless
-   * it is the zone the chart already has for the symbol and `timezone` is new
-   * (`{ ...chart.getSymbolInfo(), timezone: zone }` changes it).
+   * hours feed the session shading.
    */
   setSymbolInfo(info: SymbolInfo | null): void {
     // From the host or the feed: the indicators take the zone it brings, or none.
@@ -4507,8 +4464,7 @@ export class Chart {
 
   /** `setSymbolInfo`, leaving the indicators' zone held or not as it is. */
   private useSymbolInfo(info: SymbolInfo | null): void {
-    const held = info && this.symbolInfo?.symbol === info.symbol ? symbolTimeZone(this.symbolInfo) : undefined;
-    this.symbolInfo = info ? withBothZoneSpellings({ ...info, sessions: info.sessions?.map((session) => ({ ...session })) }, held) : null;
+    this.symbolInfo = info ? { ...info, sessions: info.sessions?.map((session) => ({ ...session })) } : null;
     this.chartLegend.setExchange(this.symbolInfo?.exchange ?? '');
     this.engine.requestRender(LayerType.Hover);
     this.priceAxis.setPriceTick(this.symbolInfo?.minTick ?? null);
@@ -4547,8 +4503,7 @@ export class Chart {
     const sameSymbol = (s: string | undefined) => !s || s.toUpperCase() === symbol.toUpperCase();
     if (!sameSymbol(info.symbol)) return;
     const known = this.symbolInfo && sameSymbol(this.symbolInfo.symbol) ? this.symbolInfo : null;
-    // A zone in either spelling moves it: the known one is in both.
-    const next: SymbolInfo = withBothZoneSpellings({ ...known, ...info, symbol: info.symbol || known?.symbol || symbol }, symbolTimeZone(known));
+    const next: SymbolInfo = { ...known, ...info, symbol: info.symbol || known?.symbol || symbol };
     if (known && JSON.stringify(next) === JSON.stringify(known)) return;
     // An answer to resolveSymbol still on its way is older than this.
     this.symbolInfoSeq++;

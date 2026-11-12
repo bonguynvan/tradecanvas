@@ -87,15 +87,6 @@ export class SessionBreaks {
     Object.assign(this.config, config);
   }
 
-  /**
-   * @deprecated The breaks no longer write dates, so the locale changes nothing;
-   * the time axis formats the dates. Removed in 2.0.
-   */
-  setLocale(locale: string): void {
-    // Kept for the published signature; marked read so the unused check passes.
-    void locale;
-  }
-
   /** Days start at midnight in this timezone (default: the browser's). */
   setTimezone(tz: TimeZoneSetting): void {
     if (tz === this.tz) return;
@@ -190,24 +181,6 @@ export class SessionBreaks {
       ctx.stroke();
     }
     ctx.restore();
-  }
-
-  /**
-   * @deprecated Draws nothing: the breaks are lines only, and their dates are
-   * on the time axis. Removed in 2.0.
-   */
-  renderLabels(
-    ctx: CanvasRenderingContext2D,
-    viewport: ViewportState,
-    theme: Theme,
-    data: DataSeries,
-  ): void {
-    // Kept for the published signature, with its names; marked read so the
-    // unused check passes.
-    void ctx;
-    void viewport;
-    void theme;
-    void data;
   }
 
   /** The break lines as filled rectangles for the GPU, dashed as the 2D lines are. */

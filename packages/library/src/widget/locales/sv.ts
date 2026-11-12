@@ -28,7 +28,6 @@ export const SV_MESSAGES: WidgetMessages = {
   'replay.selectHint': 'Klicka på en stapel för att starta uppspelningen',
   'replay.random': 'Slumpad stapel',
   'replay.realtime': 'Tillbaka till realtid',
-  'replay.barsPerSecond': 'staplar/s',
   'replay.play': 'Spela upp',
   'replay.pause': 'Pausa',
   'replay.stepBack': 'En stapel bakåt (Shift+←)',

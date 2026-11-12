@@ -9,7 +9,7 @@ const HALF_HOUR = 30 * MIN;
 const QUARTER = 15 * MIN;
 // Monday 5 January 2026, 00:00 in New York (UTC-5).
 const NY_MIDNIGHT = Date.UTC(2026, 0, 5, 5);
-const stock: SymbolInfo = { symbol: 'AAA', timezone: 'America/New_York', sessions: [{ start: '09:30', end: '16:00' }] };
+const stock: SymbolInfo = { symbol: 'AAA', timeZone: 'America/New_York', sessions: [{ start: '09:30', end: '16:00' }] };
 
 let host: HTMLDivElement;
 let chart: Chart;

@@ -116,11 +116,8 @@ chart.setTimeZone('exchange')          // 品种的时区，没有时用市场�
 chart.getTimeZone()                    // 'exchange'，即所设的值
 chart.getEffectiveTimeZone()           // 它代表的时区：在 HOSE 上为 'Asia/Ho_Chi_Minh'`}</code></pre>
 <p>
-  图表的方法和类型都写作 <code>timeZone</code>，与 <code>Intl.DateTimeFormat</code> 一致。旧名称仍然可用，
-  但已弃用：<code>setTimezone</code>、<code>getTimezone</code>、<code>getEffectiveTimezone</code>、
-  <code>getExchangeTimezone</code>、<code>setTimezoneOffset</code>、<code>EXCHANGE_TIMEZONE</code> 和
-  <code>SymbolInfo.timezone</code>（品种两者都给时以
-  <code>timeZone</code> 为准）。
+  图表的方法和类型都写作 <code>timeZone</code>，与 <code>Intl.DateTimeFormat</code> 一致。1.x 的写法
+  （<code>setTimezone</code> 等，以及 <code>SymbolInfo.timezone</code>）已在 2.0 中移除，参见 <a href={href('/docs/migration#removed')}>迁移到 2.0</a>。
 </p>
 
 <p>同样的效果也可以通过代码实现：</p>

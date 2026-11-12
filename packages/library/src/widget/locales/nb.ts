@@ -29,7 +29,6 @@ export const NB_MESSAGES: WidgetMessages = {
   'replay.selectHint': 'Klikk på et lys for å starte avspillingen',
   'replay.random': 'Tilfeldig lys',
   'replay.realtime': 'Tilbake til sanntid',
-  'replay.barsPerSecond': 'lys/s',
   'replay.play': 'Spill av',
   'replay.pause': 'Pause',
   'replay.stepBack': 'Ett lys tilbake (Shift+←)',

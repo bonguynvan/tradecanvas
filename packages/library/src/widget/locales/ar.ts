@@ -29,7 +29,6 @@ export const AR_MESSAGES: WidgetMessages = {
   'replay.selectHint': 'انقر على شمعة لبدء إعادة التشغيل',
   'replay.random': 'شمعة عشوائية',
   'replay.realtime': 'العودة إلى الوقت الفعلي',
-  'replay.barsPerSecond': 'شمعة/ث',
   'replay.play': 'تشغيل',
   'replay.pause': 'إيقاف مؤقت',
   'replay.stepBack': 'خطوة للخلف (Shift+←)',

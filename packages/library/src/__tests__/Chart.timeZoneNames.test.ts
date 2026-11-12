@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { MARKET_HOSE, type DataAdapter, type OHLCBar } from '@tradecanvas/commons';
-import { Chart, EXCHANGE_TIME_ZONE, EXCHANGE_TIMEZONE } from '../index.js';
+import * as library from '../index.js';
+import { Chart, EXCHANGE_TIME_ZONE } from '../index.js';
 import { installChartStubs, sizedHost } from './chartTestEnv.js';
 
 const HALF_HOUR = 30 * 60_000;
@@ -56,16 +57,12 @@ describe('the time zone, spelled as the timeZone option is', () => {
     expect(() => chart.setTimeZone('Not/AZone')).toThrow(RangeError);
   });
 
-  it('keeps the older spellings working, as the same calls', () => {
-    chart.setTimezone(330);
-    expect(chart.getTimeZone()).toBe(330);
-    expect(chart.getTimezone()).toBe(330);
-    expect(chart.getEffectiveTimezone()).toBe(330);
-    chart.setTimezoneOffset(null);
-    expect(chart.getTimeZone()).toBeNull();
-    chart.setMarket(MARKET_HOSE);
-    expect(chart.getExchangeTimezone()).toBe(chart.getExchangeTimeZone());
-    expect(EXCHANGE_TIMEZONE).toBe(EXCHANGE_TIME_ZONE);
+  it('has one spelling: the names of 1.x are gone', () => {
+    for (const name of ['setTimezone', 'getTimezone', 'getEffectiveTimezone', 'getExchangeTimezone', 'setTimezoneOffset']) {
+      expect(name in chart, name).toBe(false);
+    }
+    expect('EXCHANGE_TIMEZONE' in library).toBe(false);
+    expect(EXCHANGE_TIME_ZONE).toBe('exchange');
   });
 });
 
@@ -77,34 +74,28 @@ describe('a symbol’s zone, SymbolInfo.timeZone', () => {
     expect(chart.getEffectiveTimeZone()).toBe(NEW_YORK);
   });
 
-  it('reads back in both spellings, whichever was given', () => {
+  it('reads back as it was given, under the one name', () => {
     chart.setSymbolInfo({ symbol: 'AAPL', timeZone: NEW_YORK });
-    expect(chart.getSymbolInfo()).toMatchObject({ timeZone: NEW_YORK, timezone: NEW_YORK });
-    chart.setSymbolInfo({ symbol: 'AAPL', timezone: NEW_YORK });
-    expect(chart.getSymbolInfo()).toMatchObject({ timeZone: NEW_YORK, timezone: NEW_YORK });
+    expect(chart.getSymbolInfo()).toEqual({ symbol: 'AAPL', timeZone: NEW_YORK });
     expect(chart.getExchangeTimeZone()).toBe(NEW_YORK);
   });
 
-  it('comes before the older timezone when both are given', () => {
-    chart.setSymbolInfo({ symbol: 'AAPL', timeZone: NEW_YORK, timezone: 'Asia/Tokyo' });
-    expect(chart.getExchangeTimeZone()).toBe(NEW_YORK);
-    expect(chart.getSymbolInfo()).toMatchObject({ timeZone: NEW_YORK, timezone: NEW_YORK });
+  it('does not read the timezone of 1.x: a symbol that gives only that has no zone', () => {
+    chart.setSymbolInfo({ symbol: 'AAPL', timezone: 'Asia/Tokyo' } as never);
+    expect(chart.getExchangeTimeZone()).toBeNull();
   });
 
-  it('changes with either spelling over what getSymbolInfo gave', () => {
-    chart.setSymbolInfo({ symbol: 'AAPL', timezone: NEW_YORK });
-    chart.setSymbolInfo({ ...chart.getSymbolInfo()!, timezone: 'Asia/Tokyo' });
+  it('changes over what getSymbolInfo gave', () => {
+    chart.setSymbolInfo({ symbol: 'AAPL', timeZone: NEW_YORK });
+    chart.setSymbolInfo({ ...chart.getSymbolInfo()!, timeZone: 'Asia/Tokyo' });
     expect(chart.getExchangeTimeZone()).toBe('Asia/Tokyo');
-    chart.setSymbolInfo({ ...chart.getSymbolInfo()!, timeZone: NEW_YORK });
-    expect(chart.getExchangeTimeZone()).toBe(NEW_YORK);
-    expect(chart.getSymbolInfo()).toMatchObject({ timeZone: NEW_YORK, timezone: NEW_YORK });
   });
 
-  it('tells symbolInfoChange in both spellings', () => {
+  it('tells symbolInfoChange the zone', () => {
     const seen: unknown[] = [];
     chart.on('symbolInfoChange', (e) => seen.push((e.payload as { info: unknown }).info));
     chart.setSymbolInfo({ symbol: 'AAPL', timeZone: NEW_YORK });
-    expect(seen).toEqual([expect.objectContaining({ timeZone: NEW_YORK, timezone: NEW_YORK })]);
+    expect(seen).toEqual([expect.objectContaining({ timeZone: NEW_YORK })]);
   });
 
   it('places the regular hours that extended hours leave', () => {
@@ -114,7 +105,7 @@ describe('a symbol’s zone, SymbolInfo.timeZone', () => {
     expect(chart.getData()).toHaveLength(2 * REGULAR_PER_DAY);
   });
 
-  it('moves with a feed’s update in either spelling', async () => {
+  it('moves with a feed’s update', async () => {
     const handlers = new Map<string, (e: { data: unknown }) => void>();
     const adapter: DataAdapter = {
       name: 'feed',
@@ -128,18 +119,16 @@ describe('a symbol’s zone, SymbolInfo.timeZone', () => {
     };
     await chart.connect({ adapter, symbol: 'AAA', timeframe: '30m', historyLimit: 96 });
     chart.setSymbolInfo({ symbol: 'AAA', timeZone: NEW_YORK, pricePrecision: 2 });
-    handlers.get('symbolInfo')?.({ data: { symbol: 'AAA', timezone: 'Asia/Tokyo' } });
+    handlers.get('symbolInfo')?.({ data: { symbol: 'AAA', timeZone: 'Asia/Tokyo' } });
     expect(chart.getExchangeTimeZone()).toBe('Asia/Tokyo');
-    expect(chart.getSymbolInfo()).toMatchObject({ timeZone: 'Asia/Tokyo', timezone: 'Asia/Tokyo', pricePrecision: 2 });
+    expect(chart.getSymbolInfo()).toMatchObject({ timeZone: 'Asia/Tokyo', pricePrecision: 2 });
     handlers.get('symbolInfo')?.({ data: { symbol: 'AAA', timeZone: NEW_YORK } });
-    expect(chart.getSymbolInfo()).toMatchObject({ timeZone: NEW_YORK, timezone: NEW_YORK });
+    expect(chart.getSymbolInfo()).toMatchObject({ timeZone: NEW_YORK });
 
-    // The same zone again, in either spelling or both, is no change.
+    // The same zone again is no change.
     let changes = 0;
     chart.on('symbolInfoChange', () => changes++);
-    handlers.get('symbolInfo')?.({ data: { symbol: 'AAA', timezone: NEW_YORK } });
     handlers.get('symbolInfo')?.({ data: { symbol: 'AAA', timeZone: NEW_YORK } });
-    handlers.get('symbolInfo')?.({ data: { symbol: 'AAA', timeZone: NEW_YORK, timezone: NEW_YORK } });
     expect(changes).toBe(0);
   });
 });

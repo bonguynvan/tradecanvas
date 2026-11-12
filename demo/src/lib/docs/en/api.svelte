@@ -118,10 +118,8 @@ chart.getTimeZone()                    // 'exchange', as set
 chart.getEffectiveTimeZone()           // the zone it stands for: 'Asia/Ho_Chi_Minh' on HOSE`}</code></pre>
 <p>
   The chart's methods and types spell it <code>timeZone</code>, as <code>Intl.DateTimeFormat</code>
-  does. The older names still work, and are deprecated: <code>setTimezone</code>,
-  <code>getTimezone</code>, <code>getEffectiveTimezone</code>, <code>getExchangeTimezone</code>,
-  <code>setTimezoneOffset</code>, <code>EXCHANGE_TIMEZONE</code> and <code>SymbolInfo.timezone</code>
-  (a symbol that gives both is read by its <code>timeZone</code>).
+  does. The 1.x spellings (<code>setTimezone</code> and the rest, <code>SymbolInfo.timezone</code>) were removed
+  in 2.0: see <a href={href('/docs/migration#removed')}>Moving to 2.0</a>.
 </p>
 
 <p>The same effects are also available programmatically:</p>

@@ -28,7 +28,6 @@ export const FR_MESSAGES: WidgetMessages = {
   'replay.selectHint': 'Cliquez sur une barre pour lancer la relecture',
   'replay.random': 'Barre aléatoire',
   'replay.realtime': 'Revenir au temps réel',
-  'replay.barsPerSecond': 'barres/s',
   'replay.play': 'Lecture',
   'replay.pause': 'Pause',
   'replay.stepBack': 'Reculer d’une barre (Shift+←)',

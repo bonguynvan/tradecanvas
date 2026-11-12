@@ -11,7 +11,7 @@ const NY_MIDNIGHT = Date.UTC(2026, 0, 5, 5);
 const bars: OHLCBar[] = Array.from({ length: 96 }, (_, i) => ({
   time: NY_MIDNIGHT + i * HALF_HOUR, open: 100, high: 101, low: 99, close: 100 + i / 100, volume: 1,
 }));
-const stock: SymbolInfo = { symbol: 'AAA', timezone: 'America/New_York', sessions: [{ start: '09:30', end: '16:00' }] };
+const stock: SymbolInfo = { symbol: 'AAA', timeZone: 'America/New_York', sessions: [{ start: '09:30', end: '16:00' }] };
 /** Regular hours: 09:30 to 16:00, 13 half hours a day. */
 const REGULAR_PER_DAY = 13;
 

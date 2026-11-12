@@ -29,7 +29,6 @@ export const ET_MESSAGES: WidgetMessages = {
   'replay.selectHint': 'Taasesituse alustamiseks klõpsa küünlal',
   'replay.random': 'Juhuslik küünal',
   'replay.realtime': 'Tagasi reaalajasse',
-  'replay.barsPerSecond': 'küünalt/s',
   'replay.play': 'Esita',
   'replay.pause': 'Paus',
   'replay.stepBack': 'Üks küünal tagasi (Shift+←)',

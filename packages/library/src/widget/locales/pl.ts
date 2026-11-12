@@ -28,7 +28,6 @@ export const PL_MESSAGES: WidgetMessages = {
   'replay.selectHint': 'Kliknij świecę, aby rozpocząć odtwarzanie',
   'replay.random': 'Losowa świeca',
   'replay.realtime': 'Powrót do czasu rzeczywistego',
-  'replay.barsPerSecond': 'świec/s',
   'replay.play': 'Odtwórz',
   'replay.pause': 'Pauza',
   'replay.stepBack': 'O świecę wstecz (Shift+←)',
