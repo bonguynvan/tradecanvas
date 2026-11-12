@@ -7087,7 +7087,7 @@
       {
         "name": "font",
         "type": "Partial<FontConfig>",
-        "doc": "The face and sizes of the chart's own text (the axes, the tags, the crosshair's pills) over every theme: `{ family: SANS_FONT_FAMILY }` for proportional figures. The legend takes the face, at its own size (`chart.setLegend({ fontSize })`); in a widget its face and size come from the look (`ui.font`). Change it with `chart.setFont`."
+        "doc": "The face and sizes of the chart's own text (the axes, the tags, the crosshair's pills) over every theme: `{ family: MONO_FONT_FAMILY }` for monospaced figures, where the default is a sans face whose digits are one width (`FIGURES_FONT_FAMILY`)."
       },
       {
         "name": "a11y",
@@ -7428,7 +7428,7 @@
       {
         "name": "font",
         "type": "Partial<FontConfig>",
-        "doc": "The face and sizes of the chart's own text (the axes, the tags, the crosshair's pills) over every theme: `{ family: SANS_FONT_FAMILY }` for proportional figures. The legend takes the face, at its own size (`chart.setLegend({ fontSize })`); in a widget its face and size come from the look (`ui.font`). Change it with `chart.setFont`."
+        "doc": "The face and sizes of the chart's own text (the axes, the tags, the crosshair's pills) over every theme: `{ family: MONO_FONT_FAMILY }` for monospaced figures, where the default is a sans face whose digits are one width (`FIGURES_FONT_FAMILY`)."
       },
       {
         "name": "a11y",
@@ -7816,7 +7816,7 @@
         {
           "name": "font",
           "type": "Partial<FontConfig>",
-          "doc": "The face and sizes of the chart's text, over the theme's. Left out, the figures are in the system's sans face (`SANS_FONT_FAMILY`), as the widget's are; `{ family: DEFAULT_FONT_FAMILY }` gives the monospaced one. A theme of your own with a face of its own keeps that face."
+          "doc": "The face and sizes of the chart's text, over the theme's. Left out, the text is in the theme's face: a sans one whose digits are one width (`FIGURES_FONT_FAMILY`) in the dark and the light theme. `{ family: MONO_FONT_FAMILY }` gives a monospaced one."
         },
         {
           "name": "locale",
@@ -7895,7 +7895,7 @@
         {
           "name": "font",
           "type": "Partial<FontConfig>",
-          "doc": "The face and sizes of the chart's text, over the theme's. Left out, the figures are in the system's sans face (`SANS_FONT_FAMILY`), as the widget's are; `{ family: DEFAULT_FONT_FAMILY }` gives the monospaced one. A theme of your own with a face of its own keeps that face."
+          "doc": "The face and sizes of the chart's text, over the theme's. Left out, the text is in the theme's face: a sans one whose digits are one width (`FIGURES_FONT_FAMILY`) in the dark and the light theme. `{ family: MONO_FONT_FAMILY }` gives a monospaced one."
         },
         {
           "name": "locale",
@@ -7982,7 +7982,7 @@
         {
           "name": "font",
           "type": "Partial<FontConfig>",
-          "doc": "The face and sizes of the chart's text, over the theme's. Left out, the figures are in the system's sans face (`SANS_FONT_FAMILY`), as the widget's are; `{ family: DEFAULT_FONT_FAMILY }` gives the monospaced one. A theme of your own with a face of its own keeps that face."
+          "doc": "The face and sizes of the chart's text, over the theme's. Left out, the text is in the theme's face: a sans one whose digits are one width (`FIGURES_FONT_FAMILY`) in the dark and the light theme. `{ family: MONO_FONT_FAMILY }` gives a monospaced one."
         },
         {
           "name": "locale",
@@ -8053,7 +8053,7 @@
         {
           "name": "font",
           "type": "Partial<FontConfig>",
-          "doc": "The face and sizes of the chart's text, over the theme's. Left out, the figures are in the system's sans face (`SANS_FONT_FAMILY`), as the widget's are; `{ family: DEFAULT_FONT_FAMILY }` gives the monospaced one. A theme of your own with a face of its own keeps that face."
+          "doc": "The face and sizes of the chart's text, over the theme's. Left out, the text is in the theme's face: a sans one whose digits are one width (`FIGURES_FONT_FAMILY`) in the dark and the light theme. `{ family: MONO_FONT_FAMILY }` gives a monospaced one."
         },
         {
           "name": "locale",
@@ -8153,7 +8153,7 @@
         {
           "name": "font",
           "type": "Partial<FontConfig>",
-          "doc": "The face and sizes of the chart's text, over the theme's. Left out, the figures are in the system's sans face (`SANS_FONT_FAMILY`), as the widget's are; `{ family: DEFAULT_FONT_FAMILY }` gives the monospaced one. A theme of your own with a face of its own keeps that face."
+          "doc": "The face and sizes of the chart's text, over the theme's. Left out, the text is in the theme's face: a sans one whose digits are one width (`FIGURES_FONT_FAMILY`) in the dark and the light theme. `{ family: MONO_FONT_FAMILY }` gives a monospaced one."
         },
         {
           "name": "ariaLabel",
@@ -8234,7 +8234,7 @@
         {
           "name": "font",
           "type": "Partial<FontConfig>",
-          "doc": "The face and sizes of the chart's text, over the theme's. Left out, the figures are in the system's sans face (`SANS_FONT_FAMILY`), as the widget's are; `{ family: DEFAULT_FONT_FAMILY }` gives the monospaced one. A theme of your own with a face of its own keeps that face."
+          "doc": "The face and sizes of the chart's text, over the theme's. Left out, the text is in the theme's face: a sans one whose digits are one width (`FIGURES_FONT_FAMILY`) in the dark and the light theme. `{ family: MONO_FONT_FAMILY }` gives a monospaced one."
         },
         {
           "name": "locale",
@@ -8322,7 +8322,7 @@
         {
           "name": "font",
           "type": "Partial<FontConfig>",
-          "doc": "The face and sizes of the chart's text, over the theme's. Left out, the figures are in the system's sans face (`SANS_FONT_FAMILY`), as the widget's are; `{ family: DEFAULT_FONT_FAMILY }` gives the monospaced one. A theme of your own with a face of its own keeps that face."
+          "doc": "The face and sizes of the chart's text, over the theme's. Left out, the text is in the theme's face: a sans one whose digits are one width (`FIGURES_FONT_FAMILY`) in the dark and the light theme. `{ family: MONO_FONT_FAMILY }` gives a monospaced one."
         },
         {
           "name": "locale",
@@ -8410,7 +8410,7 @@
         {
           "name": "font",
           "type": "Partial<FontConfig>",
-          "doc": "The face and sizes of the chart's text, over the theme's. Left out, the figures are in the system's sans face (`SANS_FONT_FAMILY`), as the widget's are; `{ family: DEFAULT_FONT_FAMILY }` gives the monospaced one. A theme of your own with a face of its own keeps that face."
+          "doc": "The face and sizes of the chart's text, over the theme's. Left out, the text is in the theme's face: a sans one whose digits are one width (`FIGURES_FONT_FAMILY`) in the dark and the light theme. `{ family: MONO_FONT_FAMILY }` gives a monospaced one."
         },
         {
           "name": "locale",
@@ -8488,7 +8488,7 @@
         {
           "name": "font",
           "type": "Partial<FontConfig>",
-          "doc": "The face and sizes of the chart's text, over the theme's. Left out, the figures are in the system's sans face (`SANS_FONT_FAMILY`), as the widget's are; `{ family: DEFAULT_FONT_FAMILY }` gives the monospaced one. A theme of your own with a face of its own keeps that face."
+          "doc": "The face and sizes of the chart's text, over the theme's. Left out, the text is in the theme's face: a sans one whose digits are one width (`FIGURES_FONT_FAMILY`) in the dark and the light theme. `{ family: MONO_FONT_FAMILY }` gives a monospaced one."
         },
         {
           "name": "locale",
@@ -8575,7 +8575,7 @@
         {
           "name": "font",
           "type": "Partial<FontConfig>",
-          "doc": "The face and sizes of the chart's text, over the theme's. Left out, the figures are in the system's sans face (`SANS_FONT_FAMILY`), as the widget's are; `{ family: DEFAULT_FONT_FAMILY }` gives the monospaced one. A theme of your own with a face of its own keeps that face."
+          "doc": "The face and sizes of the chart's text, over the theme's. Left out, the text is in the theme's face: a sans one whose digits are one width (`FIGURES_FONT_FAMILY`) in the dark and the light theme. `{ family: MONO_FONT_FAMILY }` gives a monospaced one."
         },
         {
           "name": "locale",
@@ -8672,7 +8672,7 @@
         {
           "name": "font",
           "type": "Partial<FontConfig>",
-          "doc": "The face and sizes of the chart's text, over the theme's. Left out, the figures are in the system's sans face (`SANS_FONT_FAMILY`), as the widget's are; `{ family: DEFAULT_FONT_FAMILY }` gives the monospaced one. A theme of your own with a face of its own keeps that face."
+          "doc": "The face and sizes of the chart's text, over the theme's. Left out, the text is in the theme's face: a sans one whose digits are one width (`FIGURES_FONT_FAMILY`) in the dark and the light theme. `{ family: MONO_FONT_FAMILY }` gives a monospaced one."
         },
         {
           "name": "locale",
@@ -8789,7 +8789,7 @@
         {
           "name": "font",
           "type": "Partial<FontConfig>",
-          "doc": "The face and sizes of the chart's text, over the theme's. Left out, the figures are in the system's sans face (`SANS_FONT_FAMILY`), as the widget's are; `{ family: DEFAULT_FONT_FAMILY }` gives the monospaced one. A theme of your own with a face of its own keeps that face."
+          "doc": "The face and sizes of the chart's text, over the theme's. Left out, the text is in the theme's face: a sans one whose digits are one width (`FIGURES_FONT_FAMILY`) in the dark and the light theme. `{ family: MONO_FONT_FAMILY }` gives a monospaced one."
         },
         {
           "name": "locale",
@@ -8870,7 +8870,7 @@
         {
           "name": "font",
           "type": "Partial<FontConfig>",
-          "doc": "The face and sizes of the chart's text, over the theme's. Left out, the figures are in the system's sans face (`SANS_FONT_FAMILY`), as the widget's are; `{ family: DEFAULT_FONT_FAMILY }` gives the monospaced one. A theme of your own with a face of its own keeps that face."
+          "doc": "The face and sizes of the chart's text, over the theme's. Left out, the text is in the theme's face: a sans one whose digits are one width (`FIGURES_FONT_FAMILY`) in the dark and the light theme. `{ family: MONO_FONT_FAMILY }` gives a monospaced one."
         },
         {
           "name": "locale",

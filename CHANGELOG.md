@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+### The look
+
+- **A chart's figures are in a sans face by default** (`@tradecanvas/commons`, `@tradecanvas/core`, `@tradecanvas/chart`). The built-in themes named a monospaced face, so a `Chart` of your own drew its axes, tags, crosshair pills and legend in Cascadia Mono or SF Mono while the widget and, since beta.5, the finance charts drew theirs in the system's sans face. The dark and the light theme now name `FIGURES_FONT_FAMILY`, a new constant: Segoe UI, Roboto, Helvetica Neue and Arial, sans faces every system has whose digits are one width as they come, so prices down an axis still line up. It is the face the widget's default look has set its figures in; San Francisco is left out of it, since its digits are not one width and a canvas cannot ask for tabular figures. The finance charts take it too, where beta.5 gave them `SANS_FONT_FAMILY`: on Apple systems their figures move from San Francisco to Helvetica Neue. A bare `Chart` looks different from 1.x, and its price axis may be a few pixels narrower. `font: { family: MONO_FONT_FAMILY }`, or `chart.setFont` with the same, keeps the monospaced figures. The widget is not changed: it has set its chart's face from its look all along. Nor is a theme with a face of its own, `DARK_TERMINAL` among them.
+- **`DEFAULT_FONT_FAMILY` is renamed `MONO_FONT_FAMILY`** (`@tradecanvas/commons`, `@tradecanvas/chart`). It names the monospaced face, which is no longer the default one, and a constant called default that was not would mislead. The old name is removed, so TypeScript points at each use; the migration page lists it.
+
 ## 2.0.0-beta.6 (2026-11-12)
 
 ### Coding agents

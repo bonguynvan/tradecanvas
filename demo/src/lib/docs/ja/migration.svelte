@@ -50,6 +50,7 @@ new Chart(host, { density: 'compact' })`}</code></pre>
     <tr><td>価格の上下の空き</td><td>高さの 9%</td><td>高さの 11.5%</td></tr>
     <tr><td>単体の <code>Chart</code> のバー</td><td>classic</td><td>golden。実体は枠の 62% で、ウィジェットがこれまで描いていたものと同じです</td></tr>
     <tr><td>凡例の位置（描画領域の角から）</td><td>8 px 内側</td><td>12 px 内側</td></tr>
+    <tr><td>単体の <code>Chart</code> の数字（軸、タグ、凡例）</td><td>等幅書体</td><td>システムのサンセリフ体（ウィジェットやファイナンスチャートと同じ）。<code>font: {'{'} family: MONO_FONT_FAMILY {'}'}</code> で従来の書体のままにできます</td></tr>
     <tr><td>ウィジェットの余白 <code>--tcw-space-1</code> … <code>-7</code></td><td>2 · 3 · 5 · 8 · 13 · 21 · 34 px</td><td>2 · 4 · 6 · 8 · 12 · 20 · 32 px</td></tr>
     <tr><td>Print のボタン</td><td>33 px</td><td>34 px</td></tr>
     <tr><td>ボタンのラベルの両脇のパディング</td><td>8 px</td><td>12 px</td></tr>
@@ -90,6 +91,7 @@ new Chart(host, { density: 'compact' })`}</code></pre>
     <tr><td><code>chart.getExchangeTimezone()</code></td><td><code>chart.getExchangeTimeZone()</code></td></tr>
     <tr><td><code>chart.setTimezoneOffset(minutes)</code></td><td><code>chart.setTimeZone(minutes)</code>：UTC から東への分数。<code>null</code> でブラウザーのタイムゾーン</td></tr>
     <tr><td><code>EXCHANGE_TIMEZONE</code></td><td><code>EXCHANGE_TIME_ZONE</code></td></tr>
+    <tr><td><code>DEFAULT_FONT_FAMILY</code></td><td><code>MONO_FONT_FAMILY</code>：等幅書体。既定の書体ではなくなりました</td></tr>
     <tr><td><code>SymbolInfo.timezone</code></td><td><code>SymbolInfo.timeZone</code></td></tr>
     <tr><td><code>timeFormatter</code> での <code>TimeFormatContext.kind === 'date'</code></td><td>時間軸が渡すのは <code>'year'</code>、<code>'month'</code>、<code>'day'</code> です。<code>'date'</code> は 1.x の時点ですでに渡されておらず、型からもなくなりました。</td></tr>
     <tr><td><code>SessionBreaks.setLocale()</code> と <code>SessionBreaks.renderLabels()</code>（<code>@tradecanvas/core</code>）</td><td>呼び出しを削除します。どちらも何もしていませんでした。</td></tr>

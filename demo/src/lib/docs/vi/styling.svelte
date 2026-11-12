@@ -89,8 +89,8 @@ new ChartWidget(host, { ui: { density: 'classic' } })
 widget.setUI({ density: 'classic' })
 
 // A chart of your own as it was before 2.0
-import { Chart, CHART_SPACING, SANS_FONT_FAMILY } from '@tradecanvas/chart'
-const chart = new Chart(host, { density: 'compact' })
+import { Chart, CHART_SPACING, MONO_FONT_FAMILY } from '@tradecanvas/chart'
+const chart = new Chart(host, { density: 'compact', font: { family: MONO_FONT_FAMILY } })
 chart.setDensity('comfortable')  // and back
 chart.getDensity()               // 'comfortable'
 CHART_SPACING.comfortable        // the numbers each density sets
@@ -99,7 +99,7 @@ CHART_SPACING.comfortable        // the numbers each density sets
 new Chart(host, { barLayout: 'classic' })   // a 2 px gap between bars, the rest comfortable
 new Chart(host, { rightMargin: 5 })         // 5 slots past the newest bar
 chart.setBarLayout('golden')
-chart.setFont({ family: SANS_FONT_FAMILY, sizeSmall: 12 }) // the axes' and tags' face and size
+chart.setFont({ family: MONO_FONT_FAMILY, sizeSmall: 12 }) // the axes' and tags' face and size
 chart.setFont(null)                         // the theme's own font again`}</code></pre>
 <p>
   <code>barLayout</code> và <code>rightMargin</code> đặt khi tạo chart được giữ nguyên khi đổi density. Trong widget, <code>chartOptions.density</code>, <code>chartOptions.barLayout</code> và một <code>family</code> trong <code>chartOptions.font</code> được ưu tiên hơn của giao diện; nếu <code>chartOptions.font</code> chỉ đặt cỡ chữ thì font của giao diện vẫn được giữ. Khi đã có nến trên màn hình, đổi layout giữ nguyên mức zoom và chỉ chia lại từng ô.

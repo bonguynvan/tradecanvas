@@ -5,7 +5,7 @@
  * one look instead of each keeping numbers of its own.
  */
 import type { DrawingStyle, Theme } from '@tradecanvas/commons';
-import { DEFAULT_FONT_FAMILY, SANS_FONT_FAMILY, inkOn, ownFillColor, readableOn, withAlpha } from '@tradecanvas/commons';
+import { FIGURES_FONT_FAMILY, SANS_FONT_FAMILY, inkOn, ownFillColor, readableOn, withAlpha } from '@tradecanvas/commons';
 
 /** The type drawings set their words and figures in, px. */
 export interface DrawingTypeSizes {
@@ -67,7 +67,7 @@ function lookFor(theme: LookTheme | null): DrawingLook {
   const background = theme?.background ?? DARK_BACKGROUND;
   return {
     sizes: { mark: size('mark'), label: size('label'), letter: size('letter'), text: size('text') },
-    figures: font?.family || DEFAULT_FONT_FAMILY,
+    figures: font?.family || FIGURES_FONT_FAMILY,
     prose: font?.textFamily || SANS_FONT_FAMILY,
     background,
     ink: theme?.text ?? DARK_INK,

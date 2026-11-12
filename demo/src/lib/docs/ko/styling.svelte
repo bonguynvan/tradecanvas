@@ -88,8 +88,8 @@ new ChartWidget(host, { ui: { density: 'classic' } })
 widget.setUI({ density: 'classic' })
 
 // A chart of your own as it was before 2.0
-import { Chart, CHART_SPACING, SANS_FONT_FAMILY } from '@tradecanvas/chart'
-const chart = new Chart(host, { density: 'compact' })
+import { Chart, CHART_SPACING, MONO_FONT_FAMILY } from '@tradecanvas/chart'
+const chart = new Chart(host, { density: 'compact', font: { family: MONO_FONT_FAMILY } })
 chart.setDensity('comfortable')  // and back
 chart.getDensity()               // 'comfortable'
 CHART_SPACING.comfortable        // the numbers each density sets
@@ -98,7 +98,7 @@ CHART_SPACING.comfortable        // the numbers each density sets
 new Chart(host, { barLayout: 'classic' })   // a 2 px gap between bars, the rest comfortable
 new Chart(host, { rightMargin: 5 })         // 5 slots past the newest bar
 chart.setBarLayout('golden')
-chart.setFont({ family: SANS_FONT_FAMILY, sizeSmall: 12 }) // the axes' and tags' face and size
+chart.setFont({ family: MONO_FONT_FAMILY, sizeSmall: 12 }) // the axes' and tags' face and size
 chart.setFont(null)                         // the theme's own font again`}</code></pre>
 <p>
   차트를 만들 때 지정한 <code>barLayout</code>과 <code>rightMargin</code>은 밀도를 바꿔도 유지됩니다. 위젯에서는 <code>chartOptions.density</code>, <code>chartOptions.barLayout</code>, 그리고 <code>chartOptions.font</code>의 <code>family</code>가 외관의 설정보다 우선합니다. <code>chartOptions.font</code>가 크기만 정하면 글꼴은 외관의 것을 씁니다. 화면에 봉이 있을 때 레이아웃을 바꾸면 확대 수준은 그대로 두고 칸만 다시 나눕니다.

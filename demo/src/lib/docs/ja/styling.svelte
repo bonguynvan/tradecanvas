@@ -88,8 +88,8 @@ new ChartWidget(host, { ui: { density: 'classic' } })
 widget.setUI({ density: 'classic' })
 
 // A chart of your own as it was before 2.0
-import { Chart, CHART_SPACING, SANS_FONT_FAMILY } from '@tradecanvas/chart'
-const chart = new Chart(host, { density: 'compact' })
+import { Chart, CHART_SPACING, MONO_FONT_FAMILY } from '@tradecanvas/chart'
+const chart = new Chart(host, { density: 'compact', font: { family: MONO_FONT_FAMILY } })
 chart.setDensity('comfortable')  // and back
 chart.getDensity()               // 'comfortable'
 CHART_SPACING.comfortable        // the numbers each density sets
@@ -98,7 +98,7 @@ CHART_SPACING.comfortable        // the numbers each density sets
 new Chart(host, { barLayout: 'classic' })   // a 2 px gap between bars, the rest comfortable
 new Chart(host, { rightMargin: 5 })         // 5 slots past the newest bar
 chart.setBarLayout('golden')
-chart.setFont({ family: SANS_FONT_FAMILY, sizeSmall: 12 }) // the axes' and tags' face and size
+chart.setFont({ family: MONO_FONT_FAMILY, sizeSmall: 12 }) // the axes' and tags' face and size
 chart.setFont(null)                         // the theme's own font again`}</code></pre>
 <p>
   チャートの作成時に指定した <code>barLayout</code> と <code>rightMargin</code> は、密度を変えてもそのまま残ります。ウィジェットでは、<code>chartOptions.density</code>、<code>chartOptions.barLayout</code>、<code>chartOptions.font</code> の <code>family</code> が外観の設定より優先されます。<code>chartOptions.font</code> がサイズだけなら、書体は外観のものが使われます。バーが表示されている間にレイアウトを変えると、ズームはそのままで各枠の分け方だけが変わります。

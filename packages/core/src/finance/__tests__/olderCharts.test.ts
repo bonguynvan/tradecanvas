@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { DARK_THEME, DEFAULT_FONT_FAMILY, LIGHT_THEME, SANS_FONT_FAMILY } from '@tradecanvas/commons';
+import { DARK_TERMINAL, DARK_THEME, MONO_FONT_FAMILY, LIGHT_THEME, FIGURES_FONT_FAMILY } from '@tradecanvas/commons';
 import { financeTheme } from '../BaseFinanceChart.js';
 import { computeWaterfallLayout, hitWaterfallBar, renderWaterfall } from '../WaterfallRenderer.js';
 import { renderSparkline } from '../SparklineRenderer.js';
@@ -393,16 +393,20 @@ describe('numbers and dates in a language', () => {
 
 describe('the face of a finance chart’s text', () => {
   it('is the system’s sans face unless the theme or the options name one', () => {
-    expect(financeTheme('dark').font.family).toBe(SANS_FONT_FAMILY);
-    expect(financeTheme(LIGHT_THEME).font.family).toBe(SANS_FONT_FAMILY);
+    expect(financeTheme('dark').font.family).toBe(FIGURES_FONT_FAMILY);
+    expect(financeTheme(LIGHT_THEME).font.family).toBe(FIGURES_FONT_FAMILY);
     expect(financeTheme(LIGHT_THEME).background).toBe(LIGHT_THEME.background);
     // A theme with a face of its own keeps it; the option wins over both; the monospaced one comes back by name.
     const own = { ...DARK_THEME, font: { ...DARK_THEME.font, family: 'Georgia, serif' } };
     expect(financeTheme(own).font.family).toBe('Georgia, serif');
+    expect(financeTheme(DARK_TERMINAL).font.family).toBe(DARK_TERMINAL.font.family);
+    expect(DARK_TERMINAL.font.family).toMatch(/monospace$/);
+    // Every sans face it names has digits of one width as they come: San Francisco, which has not, is not among them.
+    expect(FIGURES_FONT_FAMILY).not.toMatch(/apple-system|BlinkMacSystemFont|system-ui/);
     expect(financeTheme(own, { family: 'Tahoma' }).font.family).toBe('Tahoma');
-    expect(financeTheme('dark', { family: DEFAULT_FONT_FAMILY }).font.family).toBe(DEFAULT_FONT_FAMILY);
-    expect(financeTheme('dark', { sizeSmall: 10 }).font).toMatchObject({ family: SANS_FONT_FAMILY, sizeSmall: 10 });
+    expect(financeTheme('dark', { family: MONO_FONT_FAMILY }).font.family).toBe(MONO_FONT_FAMILY);
+    expect(financeTheme('dark', { sizeSmall: 10 }).font).toMatchObject({ family: FIGURES_FONT_FAMILY, sizeSmall: 10 });
     // A size given as undefined leaves the theme's.
-    expect(financeTheme('dark', { sizeSmall: undefined, family: undefined }).font).toMatchObject({ family: SANS_FONT_FAMILY, sizeSmall: DARK_THEME.font.sizeSmall });
+    expect(financeTheme('dark', { sizeSmall: undefined, family: undefined }).font).toMatchObject({ family: FIGURES_FONT_FAMILY, sizeSmall: DARK_THEME.font.sizeSmall });
   });
 });

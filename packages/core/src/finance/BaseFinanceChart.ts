@@ -1,5 +1,5 @@
 import type { FontConfig, Theme, ThemeName } from '@tradecanvas/commons';
-import { DARK_THEME, DEFAULT_FONT_FAMILY, LIGHT_THEME, SANS_FONT_FAMILY } from '@tradecanvas/commons';
+import { DARK_THEME, LIGHT_THEME } from '@tradecanvas/commons';
 import { DPRManager, backingSize } from '../engine/DPRManager.js';
 import { isolateFontFeatures } from '../engine/CanvasLayer.js';
 
@@ -11,16 +11,14 @@ function namedTheme(theme?: ThemeName | Theme): Theme {
 
 /**
  * The theme a finance chart draws with: `theme`, its text in `font` where
- * that says. A theme that names no face of its own (it has the library's
- * monospaced default) is drawn in the system's sans face, as the widget's
- * figures are; a theme with a face of its own keeps it.
+ * that says, else in the theme's own face (a sans one with digits of one
+ * width in the dark and the light theme).
  */
 export function financeTheme(theme?: ThemeName | Theme, font?: Partial<FontConfig>): Theme {
   const base = namedTheme(theme);
   // A key given as undefined is a key not given: it must not blank the theme's own.
   const given = Object.fromEntries(Object.entries(font ?? {}).filter(([, value]) => value !== undefined)) as Partial<FontConfig>;
-  const family = given.family ?? (base.font.family === DEFAULT_FONT_FAMILY ? SANS_FONT_FAMILY : base.font.family);
-  return { ...base, font: { ...base.font, ...given, family } };
+  return { ...base, font: { ...base.font, ...given } };
 }
 
 export abstract class BaseFinanceChart {

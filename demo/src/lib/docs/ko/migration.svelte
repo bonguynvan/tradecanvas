@@ -49,6 +49,7 @@ new Chart(host, { density: 'compact' })`}</code></pre>
     <tr><td>가격 위아래의 여백</td><td>높이의 9%</td><td>높이의 11.5%</td></tr>
     <tr><td>단독으로 쓰는 <code>Chart</code>의 봉</td><td>classic</td><td>golden. 몸통이 칸의 62%이며, 위젯이 이미 그리던 방식입니다</td></tr>
     <tr><td>범례 위치(그리기 영역의 모서리에서)</td><td>8 px 안쪽</td><td>12 px 안쪽</td></tr>
+    <tr><td>단독 <code>Chart</code>의 숫자(축, 태그, 범례)</td><td>고정폭 글꼴</td><td>시스템 산세리프 글꼴(위젯, 금융 차트와 동일). <code>font: {'{'} family: MONO_FONT_FAMILY {'}'}</code>로 이전 글꼴을 유지할 수 있습니다</td></tr>
     <tr><td>위젯의 간격 <code>--tcw-space-1</code> … <code>-7</code></td><td>2 · 3 · 5 · 8 · 13 · 21 · 34 px</td><td>2 · 4 · 6 · 8 · 12 · 20 · 32 px</td></tr>
     <tr><td>Print의 버튼</td><td>33 px</td><td>34 px</td></tr>
     <tr><td>버튼 레이블 양옆의 여백</td><td>8 px</td><td>12 px</td></tr>
@@ -89,6 +90,7 @@ new Chart(host, { density: 'compact' })`}</code></pre>
     <tr><td><code>chart.getExchangeTimezone()</code></td><td><code>chart.getExchangeTimeZone()</code></td></tr>
     <tr><td><code>chart.setTimezoneOffset(minutes)</code></td><td><code>chart.setTimeZone(minutes)</code>: UTC에서 동쪽으로 몇 분인지, 또는 브라우저의 시간대를 쓰려면 <code>null</code></td></tr>
     <tr><td><code>EXCHANGE_TIMEZONE</code></td><td><code>EXCHANGE_TIME_ZONE</code></td></tr>
+    <tr><td><code>DEFAULT_FONT_FAMILY</code></td><td><code>MONO_FONT_FAMILY</code>: 고정폭 글꼴이며, 더 이상 기본 글꼴이 아닙니다</td></tr>
     <tr><td><code>SymbolInfo.timezone</code></td><td><code>SymbolInfo.timeZone</code></td></tr>
     <tr><td><code>timeFormatter</code>에서의 <code>TimeFormatContext.kind === 'date'</code></td><td>시간 축은 <code>'year'</code>, <code>'month'</code>, <code>'day'</code>를 줍니다. <code>'date'</code>는 1.x에서 이미 주지 않았고, 이제 타입에서도 빠졌습니다.</td></tr>
     <tr><td><code>SessionBreaks.setLocale()</code>과 <code>SessionBreaks.renderLabels()</code>(<code>@tradecanvas/core</code>)</td><td>호출을 지우세요. 둘 다 아무 일도 하지 않았습니다.</td></tr>

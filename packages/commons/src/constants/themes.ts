@@ -2,22 +2,34 @@ import type { PriceLimitColors, Theme } from '../types/theme.js';
 import { withAlpha } from '../utils/color.js';
 
 /**
- * The chart's own type: a monospaced face, so the figures on the axes, in the
- * legend and on the tags line up in columns, as in a printed price table.
+ * A monospaced face every system has, for figures set as in a printed price
+ * table: `font: { family: MONO_FONT_FAMILY }` on a chart. It was the chart's
+ * default through 1.x; the default is `FIGURES_FONT_FAMILY` now.
  */
-export const DEFAULT_FONT_FAMILY = "'Cascadia Mono', 'SF Mono', ui-monospace, Menlo, Consolas, monospace";
+export const MONO_FONT_FAMILY = "'Cascadia Mono', 'SF Mono', ui-monospace, Menlo, Consolas, monospace";
 
 /**
- * A proportional face every system has, for figures that read lighter: the
- * airy look's axes and legend (`chart.setFont({ family: SANS_FONT_FAMILY })`).
- * Each axis label stands alone, so proportional digits read well there; the
- * widget's columns of figures keep them one width with `tabular-nums`.
+ * The chart's own type, on the axes, in the legend and on the tags: sans
+ * faces every system has whose digits are one width as they come (Segoe UI,
+ * Roboto, Helvetica Neue, Arial), so prices down an axis line up. It is the
+ * face the widget's default look sets its figures in. San Francisco is left
+ * out on purpose: its digits are not one width, and a canvas cannot ask for
+ * tabular figures.
+ */
+export const FIGURES_FONT_FAMILY = "'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif";
+
+/**
+ * Each system's own sans face, San Francisco on Apple systems, for words and
+ * for figures that need not line up: the airy look's axes and legend
+ * (`chart.setFont({ family: SANS_FONT_FAMILY })`). Where San Francisco is the
+ * face, digits are of different widths unless the page sets
+ * `font-variant-numeric: tabular-nums` on the chart's element.
  */
 export const SANS_FONT_FAMILY = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif";
 
 /** Three sizes a third of φ apart (11, 13, 15), as the widget's type scale climbs. */
 const DEFAULT_FONT = {
-  family: DEFAULT_FONT_FAMILY,
+  family: FIGURES_FONT_FAMILY,
   sizeSmall: 11,
   sizeMedium: 13,
   sizeLarge: 15,

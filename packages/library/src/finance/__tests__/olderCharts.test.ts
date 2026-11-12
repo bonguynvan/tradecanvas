@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { DEFAULT_FONT_FAMILY, LIGHT_THEME, SANS_FONT_FAMILY } from '@tradecanvas/commons';
+import { MONO_FONT_FAMILY, LIGHT_THEME, FIGURES_FONT_FAMILY } from '@tradecanvas/commons';
 import { BarChart } from '../BarChart.js';
 import { PerformanceDashboard } from '../PerformanceDashboard.js';
 import { DepthChart } from '../DepthChart.js';
@@ -211,7 +211,7 @@ describe('what every finance chart takes', () => {
       new BarChart(host, { categories: ['A'], series: [{ name: 'S', values: [1] }] }),
     ];
     for (const chart of made) {
-      expect(themeOf(chart).font.family).toBe(SANS_FONT_FAMILY);
+      expect(themeOf(chart).font.family).toBe(FIGURES_FONT_FAMILY);
       chart.setOptions({ font: { family: 'Tahoma' } });
       expect(themeOf(chart).font.family).toBe('Tahoma');
       chart.setOptions({ theme: 'light' });
@@ -266,11 +266,11 @@ describe('what every finance chart takes', () => {
     dash.destroy();
 
     // A face given to the dashboard is its charts' too, the monospaced one included, and stays through a change of theme.
-    const mono = new PerformanceDashboard(host, { result: { equityCurve, metrics } as never, font: { family: DEFAULT_FONT_FAMILY }, labels: { drawdown: undefined } });
+    const mono = new PerformanceDashboard(host, { result: { equityCurve, metrics } as never, font: { family: MONO_FONT_FAMILY }, labels: { drawdown: undefined } });
     const charts = () => [(mono as unknown as { equityChart: unknown }).equityChart, (mono as unknown as { heatmap: unknown }).heatmap];
-    for (const chart of charts()) expect(themeOf(chart).font.family).toBe(DEFAULT_FONT_FAMILY);
+    for (const chart of charts()) expect(themeOf(chart).font.family).toBe(MONO_FONT_FAMILY);
     mono.setTheme('light');
-    for (const chart of charts()) expect(themeOf(chart).font.family).toBe(DEFAULT_FONT_FAMILY);
+    for (const chart of charts()) expect(themeOf(chart).font.family).toBe(MONO_FONT_FAMILY);
     // A word given as undefined is a word not given.
     expect(host.textContent).toContain('Drawdown');
     mono.destroy();

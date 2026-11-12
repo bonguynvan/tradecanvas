@@ -75,8 +75,8 @@ describe('TradeCanvas palette', () => {
     }
   });
 
-  it('sets its figures in a monospaced face, so columns of prices line up', () => {
-    for (const theme of [DARK_THEME, LIGHT_THEME]) expect(theme.font.family, theme.name).toMatch(/monospace$/);
+  it('sets its figures in the system’s sans face, as the widget and the finance charts are set', () => {
+    for (const theme of [DARK_THEME, LIGHT_THEME]) expect(theme.font.family, theme.name).toMatch(/sans-serif$/);
   });
 
   it('uses distinct colours for auto-coloured indicators', () => {

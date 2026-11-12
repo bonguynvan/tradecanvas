@@ -49,6 +49,7 @@ new Chart(host, { density: 'compact' })`}</code></pre>
     <tr><td>Free above and below the prices</td><td>9% of the height</td><td>11.5% of the height</td></tr>
     <tr><td>The bars of a bare <code>Chart</code></td><td>Classic</td><td>Golden, the body 62% of its slot, as the widget already drew them</td></tr>
     <tr><td>The legend, from the plot's corner</td><td>8 px in</td><td>12 px in</td></tr>
+    <tr><td>The figures of a bare <code>Chart</code> (axes, tags, legend)</td><td>A monospaced face</td><td>The system's sans face, as the widget and the finance charts draw them; <code>font: {'{'} family: MONO_FONT_FAMILY {'}'}</code> keeps the old one</td></tr>
     <tr><td>The widget's spacing, <code>--tcw-space-1</code> … <code>-7</code></td><td>2 · 3 · 5 · 8 · 13 · 21 · 34 px</td><td>2 · 4 · 6 · 8 · 12 · 20 · 32 px</td></tr>
     <tr><td>Print's button</td><td>33 px</td><td>34 px</td></tr>
     <tr><td>Padding beside a button's label</td><td>8 px</td><td>12 px</td></tr>
@@ -89,6 +90,7 @@ new Chart(host, { density: 'compact' })`}</code></pre>
     <tr><td><code>chart.getExchangeTimezone()</code></td><td><code>chart.getExchangeTimeZone()</code></td></tr>
     <tr><td><code>chart.setTimezoneOffset(minutes)</code></td><td><code>chart.setTimeZone(minutes)</code>: minutes east of UTC, or <code>null</code> for the browser's zone</td></tr>
     <tr><td><code>EXCHANGE_TIMEZONE</code></td><td><code>EXCHANGE_TIME_ZONE</code></td></tr>
+    <tr><td><code>DEFAULT_FONT_FAMILY</code></td><td><code>MONO_FONT_FAMILY</code>: the monospaced face, which is no longer the default one</td></tr>
     <tr><td><code>SymbolInfo.timezone</code></td><td><code>SymbolInfo.timeZone</code></td></tr>
     <tr><td><code>TimeFormatContext.kind === 'date'</code> in a <code>timeFormatter</code></td><td>The axis gives <code>'year'</code>, <code>'month'</code> or <code>'day'</code>. It has not given <code>'date'</code> since 1.x, and the type no longer has it.</td></tr>
     <tr><td><code>SessionBreaks.setLocale()</code> and <code>SessionBreaks.renderLabels()</code> (<code>@tradecanvas/core</code>)</td><td>Remove the calls: both did nothing.</td></tr>

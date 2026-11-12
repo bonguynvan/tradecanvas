@@ -83,8 +83,8 @@ new ChartWidget(host, { ui: { density: 'classic' } })
 widget.setUI({ density: 'classic' })
 
 // A chart of your own as it was before 2.0
-import { Chart, CHART_SPACING, SANS_FONT_FAMILY } from '@tradecanvas/chart'
-const chart = new Chart(host, { density: 'compact' })
+import { Chart, CHART_SPACING, MONO_FONT_FAMILY } from '@tradecanvas/chart'
+const chart = new Chart(host, { density: 'compact', font: { family: MONO_FONT_FAMILY } })
 chart.setDensity('comfortable')  // and back
 chart.getDensity()               // 'comfortable'
 CHART_SPACING.comfortable        // the numbers each density sets
@@ -93,7 +93,7 @@ CHART_SPACING.comfortable        // the numbers each density sets
 new Chart(host, { barLayout: 'classic' })   // a 2 px gap between bars, the rest comfortable
 new Chart(host, { rightMargin: 5 })         // 5 slots past the newest bar
 chart.setBarLayout('golden')
-chart.setFont({ family: SANS_FONT_FAMILY, sizeSmall: 12 }) // the axes' and tags' face and size
+chart.setFont({ family: MONO_FONT_FAMILY, sizeSmall: 12 }) // the axes' and tags' face and size
 chart.setFont(null)                         // the theme's own font again`}</code></pre>
 <p>
   创建图表时指定的 <code>barLayout</code> 和 <code>rightMargin</code> 在切换密度后保持不变。在组件中，<code>chartOptions.density</code>、<code>chartOptions.barLayout</code> 和 <code>chartOptions.font</code> 中的 <code>family</code> 优先于外观的设置；<code>chartOptions.font</code> 只设字号时，仍使用外观的字体。屏幕上已有 K 线时，换布局会保持缩放，只重新划分每个格子。
