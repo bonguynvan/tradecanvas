@@ -188,6 +188,7 @@ export const CS_MESSAGES: WidgetMessages = {
 
   'status.connecting': 'Připojování…',
   'status.live': 'Živě',
+  'status.delayed': 'Zpoždění {minutes} min',
   'status.connectionFailed': 'Připojení se nezdařilo',
   'status.loading': 'Načítání grafu…',
   'history.loading': 'Načítání historie…',

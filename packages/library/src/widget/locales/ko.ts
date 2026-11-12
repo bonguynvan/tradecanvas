@@ -188,6 +188,7 @@ export const KO_MESSAGES: WidgetMessages = {
 
   'status.connecting': '연결 중…',
   'status.live': '실시간',
+  'status.delayed': '{minutes}분 지연',
   'status.connectionFailed': '연결 실패',
   'status.loading': '차트를 불러오는 중…',
   'history.loading': '과거 데이터를 불러오는 중…',

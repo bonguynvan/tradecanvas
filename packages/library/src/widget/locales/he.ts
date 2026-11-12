@@ -192,6 +192,7 @@ export const HE_MESSAGES: WidgetMessages = {
   // Status bar / connection
   'status.connecting': 'מתחבר...',
   'status.live': 'בזמן אמת',
+  'status.delayed': 'בעיכוב של {minutes} דק׳',
   'status.connectionFailed': 'החיבור נכשל',
   'status.loading': 'הגרף נטען...',
   'history.loading': 'ההיסטוריה נטענת…',

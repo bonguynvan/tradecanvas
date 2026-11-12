@@ -188,6 +188,7 @@ export const PT_MESSAGES: WidgetMessages = {
 
   'status.connecting': 'Conectando…',
   'status.live': 'Ao vivo',
+  'status.delayed': 'Atraso de {minutes} min',
   'status.connectionFailed': 'Falha na conexão',
   'status.loading': 'Carregando gráfico…',
   'history.loading': 'Carregando histórico…',

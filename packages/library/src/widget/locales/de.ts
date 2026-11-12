@@ -188,6 +188,7 @@ export const DE_MESSAGES: WidgetMessages = {
 
   'status.connecting': 'Verbinde…',
   'status.live': 'Live',
+  'status.delayed': '{minutes} Min. verzögert',
   'status.connectionFailed': 'Verbindung fehlgeschlagen',
   'status.loading': 'Chart wird geladen…',
   'history.loading': 'Historie wird geladen…',

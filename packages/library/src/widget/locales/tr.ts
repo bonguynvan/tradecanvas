@@ -188,6 +188,7 @@ export const TR_MESSAGES: WidgetMessages = {
 
   'status.connecting': 'Bağlanıyor…',
   'status.live': 'Canlı',
+  'status.delayed': '{minutes} dk gecikmeli',
   'status.connectionFailed': 'Bağlantı başarısız',
   'status.loading': 'Grafik yükleniyor…',
   'history.loading': 'Geçmiş yükleniyor…',

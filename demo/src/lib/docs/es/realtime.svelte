@@ -121,7 +121,7 @@ feed.pushBar('AAPL', '1d', finalBar, true)    // cerrada`}</code></pre>
   lo que el feed sepa del resto: un nombre legible (<code>description</code>), el <code>exchange</code>, el
   <code>type</code> con las palabras del propio feed (<code>'stock'</code>, <code>'futures'</code>, <code>'Cổ phiếu'</code>…),
   un <code>logo</code> que muestra la búsqueda de símbolos del widget, <code>pricePrecision</code>, <code>minTick</code>,
-  <code>currency</code>, <code>timeZone</code> y <code>sessions</code>.
+  <code>currency</code>, <code>timeZone</code> y <code>sessions</code>. Un feed cuyos precios van por detrás del mercado dice cuánto en <code>delayMinutes</code> (15 en los datos gratuitos de la mayoría de las bolsas): la barra de estado del widget muestra entonces "Retraso de 15 min" en lugar de "En vivo", con un punto propio.
 </p>
 
 <h2 id="built-timeframes">Temporalidades que el feed no tiene</h2>

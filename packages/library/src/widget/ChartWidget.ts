@@ -84,6 +84,7 @@ import { DragDropImporter, resampleOHLCV, inferTimeframeMs } from '../io/index.j
 import type { CrosshairMovePayload, CrosshairSyncPayload, DataSeries } from '@tradecanvas/commons';
 import { formatVolumeLoc, timeframeToMs } from '@tradecanvas/commons';
 import { resolveMessages, createTranslator, fill, type MessageKey, type Translator } from './i18n.js';
+import { shownConnection } from './connectionStatus.js';
 import { localizeToolGroups } from './widgetLocales.js';
 import { WidgetLoadingOverlay } from './WidgetLoadingOverlay.js';
 import { WidgetHistoryPill } from './WidgetHistoryPill.js';
@@ -1808,6 +1809,8 @@ export class ChartWidget {
       this.t(open ? 'symbolInfo.open' : 'symbolInfo.closed'),
       this.t(open ? 'statusBar.marketOpen' : 'statusBar.marketClosed'),
     );
+    // The symbol's details may have just come in, its delay among them.
+    this.showConnection();
     this.refreshSymbolInfo();
   }
 
@@ -3430,9 +3433,16 @@ export class ChartWidget {
     this.legend.scheduleLegend();
     this.toolbar?.update(this.state);
     this.sidebar?.update(this.state);
+    this.showConnection();
+  }
+
+  /** The feed's state in the status bar: "Live", or how far behind a delayed symbol runs. */
+  private showConnection(): void {
+    const shown = shownConnection(this.state.connectionState, this.state.connectionMessage, this.chart.getSymbolInfo?.(), this.t);
     this.statusBar?.update({
       connectionState: this.state.connectionState,
-      message: this.state.connectionMessage,
+      message: shown.message,
+      delayed: shown.delayed,
       symbol: this.state.symbol,
       timeframe: this.state.timeframe,
     });

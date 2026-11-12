@@ -192,6 +192,7 @@ export const FA_MESSAGES: WidgetMessages = {
   // Status bar / connection
   'status.connecting': 'در حال اتصال…',
   'status.live': 'زنده',
+  'status.delayed': 'با {minutes} دقیقه تأخیر',
   'status.connectionFailed': 'اتصال ناموفق بود',
   'status.loading': 'در حال بارگذاری نمودار…',
   'history.loading': 'در حال بارگذاری تاریخچه…',

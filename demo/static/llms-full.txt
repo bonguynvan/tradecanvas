@@ -1429,7 +1429,7 @@ widget.setSymbols(more);
   number there doesn't erase your words either. In the search it gives only a
   name or a logo the list lacks: its kind and exchange (`'stock'` where your
   list says `'Cổ phiếu'`, a broker) add no tab and no exchange to pick.
-- `pricePrecision`, `minTick`, `sessions` given here never reach the chart:
+- `pricePrecision`, `minTick`, `sessions`, `delayMinutes` given here never reach the chart:
   give those through the adapter's `resolveSymbol` or `chart.setSymbolInfo`.
 - `logo` takes `https:`/`http:` addresses, paths on your site, `blob:` and
   `data:image/png|jpeg|gif|webp|avif|svg+xml`; it is loaded as an image only,

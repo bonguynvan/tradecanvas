@@ -192,6 +192,7 @@ export const NB_MESSAGES: WidgetMessages = {
   // Status bar / connection
   'status.connecting': 'Kobler til…',
   'status.live': 'Sanntid',
+  'status.delayed': 'Forsinket {minutes} min',
   'status.connectionFailed': 'Tilkoblingen mislyktes',
   'status.loading': 'Laster inn grafen…',
   'history.loading': 'Laster inn historikk…',

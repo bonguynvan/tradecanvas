@@ -188,6 +188,7 @@ export const JA_MESSAGES: WidgetMessages = {
 
   'status.connecting': '接続中…',
   'status.live': 'ライブ',
+  'status.delayed': '{minutes}分遅延',
   'status.connectionFailed': '接続に失敗しました',
   'status.loading': 'チャートを読み込み中…',
   'history.loading': '過去データを読み込み中…',

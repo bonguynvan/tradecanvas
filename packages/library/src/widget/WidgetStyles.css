@@ -1961,6 +1961,12 @@
   100% { opacity: 0; transform: scale(2.2); }
 }
 
+/* A feed that is connected but runs behind the market: a ring, not the live dot, and no pulse. Told from it by shape, on a phone where its words are folded away too. */
+.tcw-status-dot.tcw-delayed {
+  background: transparent;
+  box-shadow: inset 0 0 0 2px var(--tcw-text-dim);
+}
+
 .tcw-status-dot.tcw-error {
   background: var(--tcw-red);
   box-shadow: 0 0 0 3px rgba(232, 80, 91, 0.2);

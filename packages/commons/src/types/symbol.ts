@@ -37,6 +37,12 @@ export interface SymbolInfo {
   /** Currency prices are quoted in. */
   currency?: string;
   /**
+   * Minutes its prices run behind the market, for a delayed feed (15 for
+   * most exchanges' free data). The widget's status bar then says "Delayed
+   * 15 min" where it says "Live". None or 0: real time.
+   */
+  delayMinutes?: number;
+  /**
    * The symbol's logo, a square image the widget's symbol search shows at
    * the start of its row: an `https:` or `http:` address, a path on your
    * site, a `blob:` URL, or a `data:image/png|jpeg|gif|webp|avif|svg+xml`

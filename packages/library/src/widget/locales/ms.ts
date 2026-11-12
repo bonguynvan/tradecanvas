@@ -192,6 +192,7 @@ export const MS_MESSAGES: WidgetMessages = {
   // Status bar / connection
   'status.connecting': 'Menyambung…',
   'status.live': 'Langsung',
+  'status.delayed': 'Tertunda {minutes} min',
   'status.connectionFailed': 'Sambungan gagal',
   'status.loading': 'Memuatkan carta…',
   'history.loading': 'Memuatkan sejarah…',

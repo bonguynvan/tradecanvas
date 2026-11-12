@@ -188,6 +188,7 @@ export const SK_MESSAGES: WidgetMessages = {
 
   'status.connecting': 'Pripája sa…',
   'status.live': 'Naživo',
+  'status.delayed': 'Oneskorenie {minutes} min',
   'status.connectionFailed': 'Pripojenie zlyhalo',
   'status.loading': 'Načítava sa graf…',
   'history.loading': 'Načítava sa história…',

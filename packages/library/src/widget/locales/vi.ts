@@ -188,6 +188,7 @@ export const VI_MESSAGES: WidgetMessages = {
 
   'status.connecting': 'Đang kết nối...',
   'status.live': 'Trực tiếp',
+  'status.delayed': 'Trễ {minutes} phút',
   'status.connectionFailed': 'Kết nối thất bại',
   'status.loading': 'Đang tải biểu đồ...',
   'history.loading': 'Đang tải dữ liệu cũ…',

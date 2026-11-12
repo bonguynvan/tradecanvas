@@ -117,7 +117,7 @@ feed.pushBar('AAPL', '1d', finalBar, true)    // 마감`}</code></pre>
   아는 나머지 정보입니다. 읽기 쉬운 이름(<code>description</code>), <code>exchange</code>, 피드 자신의 말로 쓴
   <code>type</code>(<code>'stock'</code>, <code>'futures'</code>, <code>'Cổ phiếu'</code>…), 위젯의 종목 검색에 보이는
   <code>logo</code>, <code>pricePrecision</code>, <code>minTick</code>, <code>currency</code>, <code>timeZone</code>,
-  <code>sessions</code>.
+  <code>sessions</code>. 시세가 시장보다 늦는 피드는 얼마나 늦는지를 <code>delayMinutes</code> 로 알립니다(대부분 거래소의 무료 데이터는 15). 그러면 위젯의 상태 표시줄은 "실시간" 대신 "15분 지연"을 별도의 점과 함께 표시합니다.
 </p>
 
 <h2 id="built-timeframes">피드에 없는 시간 단위</h2>

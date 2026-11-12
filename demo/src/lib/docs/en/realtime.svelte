@@ -121,7 +121,7 @@ feed.pushBar('AAPL', '1d', finalBar, true)    // closed`}</code></pre>
   <code>symbol</code>, and what the feed knows of the rest: a readable name (<code>description</code>), the
   <code>exchange</code>, the <code>type</code> in the feed's own words (<code>'stock'</code>, <code>'futures'</code>,
   <code>'Cổ phiếu'</code>…), a <code>logo</code> the widget's symbol search shows, the <code>pricePrecision</code>,
-  <code>minTick</code>, <code>currency</code>, <code>timeZone</code> and <code>sessions</code>.
+  <code>minTick</code>, <code>currency</code>, <code>timeZone</code> and <code>sessions</code>. A feed whose prices run behind the market says by how much in <code>delayMinutes</code> (15 for most exchanges' free data): the widget's status bar then reads "Delayed 15 min" where it reads "Live", with a dot of its own.
 </p>
 
 <h2 id="built-timeframes">Timeframes the feed lacks</h2>
