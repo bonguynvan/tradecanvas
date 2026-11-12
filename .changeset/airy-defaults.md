@@ -2,9 +2,9 @@
 '@tradecanvas/chart': major
 '@tradecanvas/core': major
 '@tradecanvas/commons': major
-'@tradecanvas/react': minor
-'@tradecanvas/vue': minor
-'@tradecanvas/svelte': minor
+'@tradecanvas/react': major
+'@tradecanvas/vue': major
+'@tradecanvas/svelte': major
 ---
 
 The chart and the widget open with more room, on even pixels, and sharp at 125% and 150%. This changes how they look by default; one option gives the look of 1.x back.
