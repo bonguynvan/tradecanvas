@@ -1,5 +1,20 @@
 # @tradecanvas/mcp
 
+## 2.0.0
+
+### Minor Changes
+
+- 1e4f8f9: The MCP server knows the finance charts: `list_finance_charts` names the fourteen classes with what each is for, and `list_options` and `validate_options` take a class name (`BarChart`, `DepthChart`, `PerformanceDashboard`…) as `target`, checking option names, the values of choices and the data a chart needs. `width` and `height` are removed from the finance charts' options: they were never read, and a finance chart fills its element.
+
+### Patch Changes
+
+- Updated dependencies [6dd0f76]
+- Updated dependencies [1d4a78c]
+- Updated dependencies [1e4f8f9]
+- Updated dependencies [31f5c88]
+- Updated dependencies [90149cc]
+  - @tradecanvas/commons@2.0.0
+
 ## 2.0.0-beta.7
 
 ### Patch Changes

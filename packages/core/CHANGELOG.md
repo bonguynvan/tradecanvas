@@ -1,5 +1,63 @@
 # @tradecanvas/core
 
+## 2.0.0
+
+### Major Changes
+
+- 6dd0f76: The chart and the widget open with more room, on even pixels, and sharp at 125% and 150%. This changes how they look by default; one option gives the look of 1.x back.
+
+  **To keep the look of 1.x**: `new ChartWidget(host, { ui: { density: 'classic' } })` (or `widget.setUI({ density: 'classic' })`) is the widget as it was (at 100% the same pixels on the chart, but for the price axis's tick marks, which are sharper; in a button wider than its label, the arrow now keeps to the far edge, and on a wide screen Print's small headings grow with the rest of its type). For a `Chart` of your own, `new Chart(host, { density: 'compact' })`. `ui: { density: 'compact' }`, the smaller controls with classic bars, is unchanged.
+
+  What is new by default:
+
+  - **A chart leaves more room around its bars.** `density: 'comfortable'` is the default of `Chart`: golden bars (`barLayout: 'golden'`, the body 62% of its slot, which only the widget opened with before), 8 slots past the newest bar instead of 5, φ⁻⁴·⁵ (11.5%) of the height free above and below the prices instead of φ⁻⁵ (9%), a gap of φ⁻⁶ (5.6%) between the candles and the volume band instead of φ⁻⁷ (3.4%), and the legend 12 px in from the plot's corner instead of 8. `chart.setDensity()` / `getDensity()` change and read it; `CHART_SPACING` holds the numbers. `barLayout` and `rightMargin` still win when you set them.
+  - **The widget's sizes and spacing are even numbers of pixels**, so an icon sits a whole number of pixels from its button's edge and never on half of one. Print's button and menu row are 34 px (from 33); the drawing tools' column is 40 in Terminal, 48 in Capsule and 38 in Desk (from 39, 47 and 37); spacious sizes are even too. Spacing (`--tcw-space-1` to `-7`) is 2, 4, 6, 8, 12, 20, 32 (from 2, 3, 5, 8, 13, 21, 34), and on a wide screen each grown size goes to the even number nearest. A line of body text is 18 px at 13 px.
+  - **Controls have a step more padding**: 12 px beside a toolbar button's label, a menu row's text and the toolbar's first button, from 8. New tokens to set them: `--tcw-control-pad`, `--tcw-bar-pad`, `--tcw-menu-row-pad`; also `--tcw-line-height`, `--tcw-line-xs`, `--tcw-legend-line`, `--tcw-legend-line-pane` and `--tcw-text-w`.
+  - **Hairlines are sharp at 125% and 150%.** The chart's canvases take the browser's own count of device pixels, so they are no longer stretched or shifted by a fraction of a pixel, and the grid, the axes' lines and ticks, the last price's line, order, alert, limit and level lines, a pane's divider and the edges of price tags land on whole device pixels. A 1 px line is one device pixel wide at 125% and at 150%, as a 1 px border is; the crosshair was two at 150%. A line of a width between whole pixels now takes the whole pixels below it (1.5 px is one device pixel at 100%, where it was two).
+  - A price label the top or the bottom of its pane would cut is left out; its grid line stays.
+  - The React, Vue and Svelte components no longer set `rightMargin: 5` themselves: the room past the newest bar is the chart's (8 slots, or 5 with `options={{ density: 'compact' }}`).
+
+  For a look of your own: `evenPx(n)` from `@tradecanvas/commons` rounds a size to the even number nearest. `PRICE_SCALE_MARGIN` from `@tradecanvas/core` is now φ⁻⁴·⁵, the default density's margin; `DEFAULT_CHART_OPTIONS.rightMargin` and a `Viewport` made without one are 8.
+
+- 31f5c88: The names deprecated in 1.x are removed.
+
+  | Removed                                                             | Use                                                                |
+  | ------------------------------------------------------------------- | ------------------------------------------------------------------ |
+  | `chart.setTimezone(tz)`                                             | `chart.setTimeZone(tz)`                                            |
+  | `chart.getTimezone()`                                               | `chart.getTimeZone()`                                              |
+  | `chart.getEffectiveTimezone()`                                      | `chart.getEffectiveTimeZone()`                                     |
+  | `chart.getExchangeTimezone()`                                       | `chart.getExchangeTimeZone()`                                      |
+  | `chart.setTimezoneOffset(minutes)`                                  | `chart.setTimeZone(minutes)`                                       |
+  | `EXCHANGE_TIMEZONE`                                                 | `EXCHANGE_TIME_ZONE`                                               |
+  | `SymbolInfo.timezone`                                               | `SymbolInfo.timeZone`                                              |
+  | `TimeFormatContext.kind` `'date'`                                   | `'year'`, `'month'`, `'day'` (the axis gave no `'date'` since 1.x) |
+  | `SessionBreaks.setLocale()`, `renderLabels()` (`@tradecanvas/core`) | nothing: both did nothing                                          |
+  | the widget string `replay.barsPerSecond`                            | nothing: unused; the speed reads `replay.rate`                     |
+
+  **`SymbolInfo.timezone` is no longer read.** A symbol that gives only `timezone` (from `symbols`, `resolveSymbol`, a feed or an adapter) has no zone of its own now: `setTimeZone('exchange')` and the dates of daily bars fall back to the market's zone or UTC, its own `sessions` are not shaded, and its status reads as a market that trades around the clock. A `timezone` still passed is carried along in `getSymbolInfo()` and nothing reads it. Rename the field where you build symbols.
+
+  Not changed: the widget's setting is still `timezone` (`widget.setSettings({ timezone: 'exchange' })`), and so are the string keys `settings.timezone` and `menu.chart.timezone`.
+
+  The docs have a page for the move from 1.x: Moving to 2.0.
+
+- 90149cc: The dark and the light theme set the chart's text in `FIGURES_FONT_FAMILY`, a new constant (Segoe UI, Roboto, Helvetica Neue, Arial: sans faces whose digits are one width), where they named a monospaced one: a `Chart` of your own draws its axes, tags, crosshair pills and legend as the widget and the finance charts do. `font: { family: MONO_FONT_FAMILY }` keeps the monospaced figures. `DEFAULT_FONT_FAMILY` is renamed `MONO_FONT_FAMILY`, since the face it names is no longer the default. The finance charts take the same face, in place of `SANS_FONT_FAMILY`. The widget, which sets its chart's face from its look, is unchanged.
+
+### Minor Changes
+
+- 1d4a78c: The finance charts draw their text in the system's sans face, as the widget's figures are, where they used the theme's monospaced one. Every finance chart takes `font` (the face and sizes; `{ family: DEFAULT_FONT_FAMILY }` brings the monospaced face back, and a theme with a face of its own keeps it) and `locale` (a BCP 47 tag for how numbers, percentages and dates are written; the browser's language without one). A depth chart's `spreadLabel` takes a word of yours; `PerformanceDashboard` takes `font`, `locale` and `labels` for its titles and stat names. The depth, equity curve, waterfall, sparkline and gauge charts describe themselves to screen readers when no `ariaLabel` is given. `@tradecanvas/core` exports `numberFormat`, `percentFormat` and `financeTheme`, and `axisFormat` takes a locale; `@tradecanvas/chart` exports `DEFAULT_DASHBOARD_LABELS` and the `DashboardLabels` type.
+- 9777fb2: The depth, equity curve and waterfall charts are laid out as the newer finance charts are: margins sized to their labels and 12 px from the edge (they were fixed numbers), value axes in round steps, a time axis in round times, numbers as on the other charts, and the shared rounded tooltip (also on the heatmap). They look different from 1.x. On a touch screen a tap now shows the tooltip of every finance chart that has one and keeps it until a tap elsewhere. The canvases are sized in the container's own device pixels and follow a change of pixel ratio, and hairlines fall on whole device pixels, so the charts are sharp at 125% and 150%. A waterfall's long labels are turned in the room they need and cut with an ellipsis; an equity curve names its benchmark in a legend and takes points in any order of time; a depth chart writes small prices in full; a heatmap's default colours follow the theme. `@tradecanvas/core` exports `computeWaterfallLayout`, `hitWaterfallBar`, `computeEquityLayout` and `computeDepthLayout`.
+
+### Patch Changes
+
+- 2b05f68: Fixes in the older finance charts. A waterfall keeps its running total through a step of 0 (it was read as a subtotal) and through a value that is no number, and its turned labels are drawn in place on screens with a pixel ratio other than 1. `setOptions` now applies `theme` on `DepthChart`, `EquityCurveChart`, `WaterfallChart`, `SparklineChart`, `GaugeChart` and `HeatmapChart`, `crosshair` on the four with a readout and `onCellClick` on a heatmap made without one; `ariaLabel` labels all of them. Colours given as `#rgb`, with an alpha or as `rgb()` fade correctly under a sparkline, an equity curve and a depth chart. An equity curve reads its benchmark at the pointed time, draws flat data with its value labels, and keeps a longer benchmark inside the plot. A depth chart draws a book of one level, as a shelf out to the plot's edge, and marks no middle price or spread on a book with one side; a heatmap gives a `NaN` value the scale's `zero` colour and no value text, and a `NaN` weight no room. With no data, an equity curve, a depth chart and a waterfall draw their background.
+- 476a246: A retry of a dropped connection sends `connectionChange` with `state: 'reconnecting'` once an attempt, with that attempt's number (it was sent twice, the first with the number before). A `disconnect()` or a switch of symbol or timeframe while a feed's first bars are still loading now aborts that `getBars` request through its `signal`, as it did for a series already streaming.
+- Updated dependencies [6dd0f76]
+- Updated dependencies [1d4a78c]
+- Updated dependencies [1e4f8f9]
+- Updated dependencies [31f5c88]
+- Updated dependencies [90149cc]
+  - @tradecanvas/commons@2.0.0
+
 ## 2.0.0-beta.7
 
 ### Major Changes

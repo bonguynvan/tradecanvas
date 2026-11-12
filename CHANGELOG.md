@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 2.0.0 (2026-11-12)
 
 TradeCanvas 2.0. The seven betas below are this release, in the order they were made; nothing else changed between `2.0.0-beta.7` and it. `npm install @tradecanvas/chart` now gives 2.0; 1.x stays as `@tradecanvas/chart@1`. The [migration page](https://tradecanvas.dev/docs/migration/) says what a page on 1.x has to change, and for most that is nothing, or one option.
 
