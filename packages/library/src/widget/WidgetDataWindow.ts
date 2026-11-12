@@ -1,3 +1,4 @@
+import { smallValueDecimals } from '@tradecanvas/commons';
 import { createIcon } from './icons.js';
 import { EN_TRANSLATOR, type Translator } from './i18n.js';
 import { markPart } from './widgetFeatures.js';
@@ -157,7 +158,8 @@ function formatNumber(v: number): string {
   const abs = Math.abs(v);
   if (abs >= 1000) return v.toFixed(2);
   if (abs >= 1) return v.toFixed(4);
-  return v.toPrecision(4);
+  // Four figures in plain decimals: `toPrecision` writes a value under a millionth as "7.855e-8".
+  return v.toFixed(smallValueDecimals(v));
 }
 
 /** A volume shortened to K, M and B. */

@@ -1,5 +1,5 @@
 import type { DrawingState, Theme, ViewportState } from '@tradecanvas/commons';
-import { formatPrice, priceTagText, withAlpha } from '@tradecanvas/commons';
+import { MAX_PRICE_DECIMALS, formatPrice, priceTagText, withAlpha } from '@tradecanvas/commons';
 import { resolveBarIndex } from '../../viewport/ScaleMapping.js';
 import { drawingLook, extendExtent, keepOnPlot, labelInk, roleFont, setDrawingLook } from '../drawingLook.js';
 
@@ -268,7 +268,7 @@ function priceDecimals(ref: number): number {
   const abs = Math.abs(ref);
   if (abs >= 10 || abs === 0) return 2;
   if (abs >= 1) return 4;
-  return Math.min(10, Math.ceil(-Math.log10(abs)) + 3);
+  return Math.min(MAX_PRICE_DECIMALS, Math.ceil(-Math.log10(abs)) + 3);
 }
 
 /** Decimals a percentage in a label shows. */

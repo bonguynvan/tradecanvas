@@ -1,5 +1,5 @@
 import type { DataSeries, ViewportState, Theme } from '@tradecanvas/commons';
-import { priceTagText } from '@tradecanvas/commons';
+import { priceTagText, smallValueDecimals } from '@tradecanvas/commons';
 import { computeMarketProfile, computeSessionProfiles, assignSessionLetters, tpoLetter } from './marketProfile.js';
 import { barIndexToX, priceBucketRow, priceToYMapper } from '../viewport/ScaleMapping.js';
 
@@ -304,7 +304,8 @@ function statsDecimals(price: number): number {
   const abs = Math.abs(price);
   if (abs >= 1000) return 2;
   if (abs >= 1) return 4;
-  return 6;
+  // Six, as before, or as many as show four figures of a smaller price.
+  return Math.max(6, smallValueDecimals(abs));
 }
 
 function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number): void {

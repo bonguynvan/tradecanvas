@@ -1,5 +1,5 @@
 import type { Point, ViewportState, Theme, DataSeries } from '@tradecanvas/commons';
-import { barTimeUnit, formatPrice, priceTagText } from '@tradecanvas/commons';
+import { barTimeUnit, formatPrice, MAX_PRICE_DECIMALS, priceTagText } from '@tradecanvas/commons';
 import { xToBarIndex, yToPrice, barIndexToX, priceToY } from '../viewport/ScaleMapping.js';
 
 /** Decimals the move's percentage shows. */
@@ -7,7 +7,7 @@ const PERCENT_DECIMALS = 2;
 /** Significant digits a move below 1 shows without a market precision. */
 const SMALL_MOVE_DIGITS = 4;
 /** Most decimals a move below 1 shows. */
-const MAX_DECIMALS = 10;
+const MAX_DECIMALS = MAX_PRICE_DECIMALS;
 
 /**
  * Transient "measure" overlay (the shift-drag ruler).

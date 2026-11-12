@@ -1,4 +1,5 @@
 import { MAX_ALERT_BARS, MIN_ALERT_BARS, type AlertCondition, type AlertOptions } from '@tradecanvas/core';
+import { smallValueDecimals } from '@tradecanvas/commons';
 import { createIcon } from './icons.js';
 import { EN_TRANSLATOR, fill, type MessageKey, type Translator } from './i18n.js';
 import { escapeHtml } from './escapeHtml.js';
@@ -108,7 +109,8 @@ function roundForInput(v: number): number {
 
 function formatPlain(v: number): string {
   const abs = Math.abs(v);
-  return abs >= 1000 ? v.toFixed(2) : abs >= 1 ? v.toFixed(2) : v.toPrecision(4);
+  // Under 1, four figures in plain decimals: `toPrecision` writes a value under a millionth as "7.855e-8".
+  return abs >= 1 ? v.toFixed(2) : v.toFixed(smallValueDecimals(v));
 }
 
 /**

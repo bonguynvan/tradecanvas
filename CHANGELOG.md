@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+### Widget
+
+- **A coin priced in billionths keeps its figures away from the axis** (`@tradecanvas/chart`, `@tradecanvas/core`). The price scale, the legend and the tags already fit their decimals to a price however small; a few places stopped at a fixed count. The watchlist wrote ten decimals at most, so a price under a ten-millionth lost figures; the market profile's stats wrote six, so one read `0.000000`; the data window and the alerts list wrote a value under a millionth as `7.855e-8`; and what a position makes or loses, and the amounts on its stop and target, were at two decimals, so each read `0.00`. All of them now show four significant figures of a price under 1 (an amount that two decimals would write as nothing shows two figures of itself; nothing made is still `0.00`, and a large amount keeps two decimals), on a pending order's stop and target too, and a drawing's, a pivot's and the measure's labels go to sixteen decimals where they stopped at ten. A market's or a symbol's own decimals still come first.
+- **The watchlist writes a symbol in its own decimals** (`@tradecanvas/chart`). It wrote every price by its size, two decimals from 1,000 and four from 1, whatever the symbol's `pricePrecision`: a stock in dong read `49,550.00` beside a chart that read `49,550`, an index `256.6200`. A symbol whose entry in `symbols` gives a `pricePrecision` is written at it, its move too; one without keeps the rule by size.
+
 ## 2.0.4 (2026-11-12)
 
 ### Packages

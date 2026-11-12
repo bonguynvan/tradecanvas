@@ -3,7 +3,7 @@ import type {
   PositionLabelContext,
   TradingPosition,
 } from '@tradecanvas/commons';
-import { formatPrice as groupedNumber } from '@tradecanvas/commons';
+import { formatPrice as groupedNumber, smallValueDecimals } from '@tradecanvas/commons';
 
 /**
  * Compute live P&L context for a position. Pure — no canvas, no side effects.
@@ -80,6 +80,33 @@ export function formatAmount(value: number, precision: number, locale?: string):
   const scale = 10 ** precision;
   const rounded = Math.round(value * scale) / scale || 0;
   return `${rounded > 0 ? '+' : ''}${groupedNumber(rounded, precision, locale)}`;
+}
+
+/** Decimals an amount of money shows without a market's or a symbol's own. */
+const AMOUNT_DECIMALS = 2;
+
+/** Significant figures of an amount too small for two decimals. */
+const SMALL_AMOUNT_FIGURES = 2;
+/** How many decimals past its price's own a small amount may go: a quantity of one, a move of a hundredth of a tick. */
+const PAST_PRICE_DECIMALS = 2;
+
+/**
+ * Decimals for `amount`, what a position at `price` makes or loses: the
+ * market's or the symbol's (`pricePrecision`) when set, else two. An amount
+ * two decimals would write as nothing, on a price under 1 (a coin priced in
+ * millionths makes its money there too), takes as many as show two figures
+ * of it, where it read "0.00". Nothing, an amount two decimals show, and one
+ * too small to be more than rounding (far under its price's own decimals)
+ * keep two.
+ */
+export function amountDecimals(amount: number, price: number, pricePrecision?: number): number {
+  if (pricePrecision !== undefined) return pricePrecision;
+  const size = Math.abs(amount);
+  const at = Math.abs(price);
+  const showsAtTwo = Math.round(size * 10 ** AMOUNT_DECIMALS) > 0;
+  if (!(size > 0) || !Number.isFinite(size) || showsAtTwo || !(at > 0 && at < 1)) return AMOUNT_DECIMALS;
+  const decimals = smallValueDecimals(size, SMALL_AMOUNT_FIGURES);
+  return decimals <= smallValueDecimals(at) + PAST_PRICE_DECIMALS ? decimals : AMOUNT_DECIMALS;
 }
 
 /** What a position (or the order that opens it) makes when the price reaches `price`. */

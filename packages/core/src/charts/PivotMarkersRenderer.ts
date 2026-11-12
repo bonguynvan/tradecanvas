@@ -1,12 +1,12 @@
 import type { DataSeries, ViewportState, Theme } from '@tradecanvas/commons';
-import { priceTagText } from '@tradecanvas/commons';
+import { MAX_PRICE_DECIMALS, priceTagText } from '@tradecanvas/commons';
 import { barIndexToX, priceToY } from '../viewport/ScaleMapping.js';
 import { findPivots, classifyPivots } from './pivots.js';
 
 /** Significant digits a pivot below 1 shows without a market precision. */
 const SMALL_PRICE_DIGITS = 4;
 /** Most decimals a pivot below 1 shows. */
-const MAX_DECIMALS = 10;
+const MAX_DECIMALS = MAX_PRICE_DECIMALS;
 
 /** How the swing markers find and label pivots: `PivotMarkersRenderer.getConfig()`. */
 export interface PivotMarkersConfig {

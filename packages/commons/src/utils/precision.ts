@@ -39,6 +39,22 @@ export function priceTagText(
   return formatPrice(price, decimals, viewport.numberLocale ?? 'en-US');
 }
 
+/** Most decimals a price is written with: within what every `Intl.NumberFormat` takes (20). */
+export const MAX_PRICE_DECIMALS = 16;
+
+/**
+ * Decimals that show `figures` significant figures of a value under 1: 5 for
+ * 0.01234, 11 for 0.0000000712 (a coin priced in billionths), up to
+ * `MAX_PRICE_DECIMALS`. What writes a small price away from the axis reads
+ * it, so none stops at a fixed count of decimals and cuts the figures short.
+ * A value of nothing gives `figures - 1`.
+ */
+export function smallValueDecimals(value: number, figures = 4): number {
+  const abs = Math.abs(value);
+  if (!(abs > 0) || !Number.isFinite(abs)) return figures - 1;
+  return Math.min(MAX_PRICE_DECIMALS, Math.max(0, figures - 1 - Math.floor(Math.log10(abs))));
+}
+
 export function formatPrice(value: number, precision = 2, locale = 'en-US'): string {
   return numberFormat(locale, precision).format(value);
 }
