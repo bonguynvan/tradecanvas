@@ -34,7 +34,7 @@ chart.plugins.list()`}</code></pre>
 <table>
   <thead><tr><th>Loại</th><th>Interface</th><th>Vẽ ở</th></tr></thead>
   <tbody>
-    <tr><td><code>indicator</code></td><td><code>IndicatorPlugin</code> — <code>calculate()</code> + <code>render()</code></td><td>phủ lên biểu đồ hoặc bảng riêng</td></tr>
+    <tr><td><code>indicator</code></td><td><code>IndicatorPlugin</code> — <code>calculate()</code> + <code>render()</code></td><td>phủ lên biểu đồ hoặc pane riêng</td></tr>
     <tr><td><code>drawing</code></td><td><code>DrawingPlugin</code> — <code>render()</code> + <code>hitTest()</code></td><td>lớp overlay</td></tr>
     <tr><td><code>chartType</code></td><td><code>ChartTypePlugin</code> — <code>createRenderer()</code> + <code>transform()</code> tuỳ chọn</td><td>chuỗi chính</td></tr>
     <tr><td><code>overlay</code></td><td><code>OverlayPlugin</code> — <code>render(ctx, &#123; viewport, data, theme &#125;)</code></td><td><code>main</code> / <code>overlay</code> / <code>ui</code></td></tr>
@@ -154,7 +154,7 @@ registerPlugin({
   <code>chart.getPriceStep()</code>: bước giá nhỏ nhất của mã (<code>minTick</code>), đơn vị phân số, hoặc một
   đơn vị của số lẻ đang hiển thị. Renderer của chỉ báo và loại chart chỉ nhận viewport; cho chúng,
   <code>priceToY</code>, <code>barIndexToX</code>, <code>timeToX</code> và các hàm ngược được export sẵn. Các nến là
-  nến đang vẽ: trên chart Renko hay Kagi là các viên gạch của nó (<code>chart.isTimeAligned()</code> cho biết khi nào
+  nến đang vẽ: trên chart Renko hay Kagi là các brick của nó (<code>chart.isTimeAligned()</code> cho biết khi nào
   chúng trùng với nến của nguồn dữ liệu). Để viết giá như trục giá, viewport mang định dạng giá riêng của chart khi
   có (<code>formatPrice</code>), <code>numberLocale</code> của nó, và số lẻ của thị trường hoặc của mã khi một trong
   hai đặt (<code>pricePrecision</code>); các pane chỉ báo để trống định dạng và số lẻ.

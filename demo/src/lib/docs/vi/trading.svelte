@@ -43,9 +43,9 @@ new ChartWidget(host, { chartOptions: { features: { tradingContextMenu: true } }
 
 <p>
   Mỗi đường có một nhãn ở đầu bên phải, sát trục giá. Nhãn của giá vào lệnh ghi khối lượng, chiều và
-  lãi/lỗ đang mở, rồi đến <strong>⇅</strong> và <strong>×</strong>; nhãn của dừng lỗ và chốt lời ghi vị thế sẽ lãi
+  lãi/lỗ đang mở, rồi đến <strong>⇅</strong> và <strong>×</strong>; nhãn của cắt lỗ và chốt lời ghi vị thế sẽ lãi
   hay lỗ bao nhiêu nếu giá chạm tới đó. Mọi mức giá cũng hiện trên trục. Các nhãn có thể che nhau thì đứng cạnh nhau,
-  và nhãn trên trục tự giãn ra. Kéo dừng lỗ hay chốt lời bằng chính đường hoặc nhãn của nó.
+  và nhãn trên trục tự giãn ra. Kéo cắt lỗ hay chốt lời bằng chính đường hoặc nhãn của nó.
 </p>
 
 <h2>Lệnh</h2>
@@ -61,7 +61,7 @@ new ChartWidget(host, { chartOptions: { features: { tradingContextMenu: true } }
 
 <p>
   Nhãn của lệnh ghi khối lượng và loại lệnh (<code>0.25</code>, <code>Sell limit</code>), rồi đến
-  <strong>×</strong> để huỷ; nhãn trên trục giá mang giá, viết theo đúng cách trục viết giá. Lệnh mở kèm dừng lỗ
+  <strong>×</strong> để huỷ; nhãn trên trục giá mang giá, viết theo đúng cách trục viết giá. Lệnh mở kèm cắt lỗ
   và chốt lời hiện chúng bằng đường chấm, cùng số lãi/lỗ tại đó. Kéo đường hoặc nhãn để sửa lệnh; đăng ký nghe thay
   đổi qua <code>chart.on('orderModify', ...)</code>.
 </p>
@@ -93,7 +93,7 @@ chart.on('executionError', (e) => toast(e.payload.message))
 <p>
   Đường lệnh và đường vị thế có các nút nhỏ ở đầu bên phải: <strong>×</strong>
   huỷ lệnh hoặc đóng vị thế, <strong>⇅</strong> đảo chiều vị thế, còn dấu
-  × trên đường dừng lỗ hoặc chốt lời sẽ gỡ mức đó. Các nút này phát ra cùng những ý định như
+  × trên đường cắt lỗ hoặc chốt lời sẽ gỡ mức đó. Các nút này phát ra cùng những ý định như
   API (<code>orderCancel</code>, <code>positionClose</code>, <code>positionReverse</code>,
   <code>positionModify</code> với <code>null</code>), nên adapter đã kết nối sẽ xử lý chúng,
   còn ứng dụng không kết nối adapter thì nhận các sự kiện. Nút chỉ thực hiện khi bạn
@@ -117,7 +117,7 @@ chart.modifyPositionIntent({ positionId: 'pos-1', stopLoss: null }) // null remo
   <strong>Dành cho người viết adapter:</strong> trong <code>PositionModifyIntent</code>,
   <code>stopLoss: null</code> (hoặc <code>takeProfit: null</code>) nghĩa là gỡ mức đó, còn
   khi thiếu trường thì giữ nguyên. Code viết kiểu
-  <code>intent.stopLoss ?? position.stopLoss</code> sẽ giữ lại mức dừng lỗ mà người dùng đã gỡ.
+  <code>intent.stopLoss ?? position.stopLoss</code> sẽ giữ lại mức cắt lỗ mà người dùng đã gỡ.
 </p>
 
 <h2>Lệnh khớp trên biểu đồ</h2>
@@ -143,7 +143,7 @@ chart.setTradingConfig({ fillMarks: false })  // no marks`}</code></pre>
   Bấm chuột phải trên biểu đồ sẽ phát ra <code>chartContextMenu</code> kèm vùng được
   bấm (<code>'plot'</code>, <code>'pane'</code>, <code>'priceAxis'</code> hoặc
   <code>'timeAxis'</code>) cùng giá và thời gian tại đó. Với
-  <code>features.priceAxisAddButton</code>, một nút “+” chạy theo con trỏ chữ thập dọc trục
+  <code>features.priceAxisAddButton</code>, một nút “+” chạy theo crosshair dọc trục
   giá; bấm vào nó sẽ phát ra <code>priceAxisAdd</code> kèm mức giá đó. Khi nút hiện, nhãn của
   lệnh và vị thế lùi sang trái nó, nên nút không bao giờ che các nút của nhãn.
 </p>
@@ -157,7 +157,7 @@ chart.on('priceAxisAdd', (e) => openMyMenu(e.payload.x, e.payload.y, e.payload.p
 <p>
   ChartWidget dựng các menu của nó trên những sự kiện này. Bấm chuột phải vào vùng biểu đồ để
   đặt cảnh báo, mua và bán tại mức giá đó (lệnh giới hạn khi mức giá nằm ở phía lệnh phải chờ
-  so với giá thị trường, lệnh dừng khi nằm ở phía còn lại), mở phiếu đặt lệnh và vẽ đường ngang;
+  so với giá thị trường, lệnh stop khi nằm ở phía còn lại), mở order ticket và vẽ đường ngang;
   tiếp theo là đặt lại khung nhìn, dán các hình vẽ đã sao chép, ẩn hoặc xoá hình vẽ, xoá chỉ báo
   (phần so sánh với mã khác vẫn được giữ), xuất dữ liệu và mở bảng cài đặt.
 </p>
@@ -176,25 +176,25 @@ chart.on('priceAxisAdd', (e) => openMyMenu(e.payload.x, e.payload.y, e.payload.p
   mục của riêng bạn bằng <code>chartMenuItems</code> (xem <a href={href('/docs/api')}>Tham chiếu API</a>).
 </p>
 
-<h2>Phiếu đặt lệnh và bảng tài khoản (ChartWidget)</h2>
+<h2>Order ticket và bảng tài khoản (ChartWidget)</h2>
 <p>
   Mục <strong>Tài khoản</strong> trong menu <strong>Giao dịch</strong> của thanh công cụ mở bảng tài khoản bên dưới biểu đồ: các vị thế đang mở
   kèm lãi/lỗ, các lệnh đang chờ, và các lần khớp từ trước đến giờ kèm lãi/lỗ (P&amp;L)
   đã chốt. Mỗi dòng có thể đóng, đảo chiều hoặc huỷ. <strong>Lệnh mới</strong> mở
-  phiếu đặt lệnh: mua hoặc bán, lệnh thị trường, giới hạn hoặc dừng, khối lượng, giá, mức
-  dừng lỗ và chốt lời (tuỳ chọn), và hiệu lực của lệnh. Phiếu kiểm tra lệnh ngay khi bạn nhập
-  (mua giới hạn phải nằm dưới giá thị trường, dừng lỗ phải nằm ở phía lỗ so với điểm vào…)
+  order ticket: mua hoặc bán, lệnh thị trường, giới hạn hoặc stop, khối lượng, giá, mức
+  cắt lỗ và chốt lời (tuỳ chọn), và hiệu lực của lệnh. Order ticket kiểm tra lệnh ngay khi bạn nhập
+  (mua giới hạn phải nằm dưới giá thị trường, cắt lỗ phải nằm ở phía lỗ so với điểm vào…)
   và hiện tỷ lệ lời:lỗ. Đặt lệnh sẽ gửi đi một ý định <code>orderPlace</code>.
-  Khi đã đặt thị trường (<code>chart.setMarket</code>), phiếu còn giữ các mức giá theo bước giá
+  Khi đã đặt thị trường (<code>chart.setMarket</code>), order ticket còn giữ các mức giá theo bước giá
   của thị trường và giá đặt lệnh trong khoảng giá trần, giá sàn của ngày, bắt đầu với một lô, và trên một
   lô thì chỉ nhận lô chẵn (số cổ phiếu ít hơn là một lệnh lô lẻ riêng).
 </p>
 <p>
-  Phiếu ghi mã cạnh tiêu đề. Loại lệnh và hiệu lực là các lựa chọn trên một hàng (phím mũi tên chuyển
+  Order ticket ghi mã cạnh tiêu đề. Loại lệnh và hiệu lực là các lựa chọn trên một hàng (phím mũi tên chuyển
   giữa chúng); nút − và + đổi khối lượng theo lô và giá theo bước giá của thị trường, còn giá lấy từ biểu đồ được làm
-  tròn theo bước đó. Dừng lỗ hay chốt lời khi bật sẽ ghi cách điểm vào bao nhiêu phần trăm và lãi hay lỗ bao nhiêu;
+  tròn theo bước đó. Cắt lỗ hay chốt lời khi bật sẽ ghi cách điểm vào bao nhiêu phần trăm và lãi hay lỗ bao nhiêu;
   bên dưới, một tờ biên lai tóm tắt lệnh: giá trị, rủi ro, lợi nhuận và lời trên lỗ. Đổi giữa mua và bán vẫn giữ lệnh
-  chờ ở chỗ đã đặt (mua dừng trên giá thị trường thành bán giới hạn), và nút đặt lệnh mang màu của chiều mua hay bán.
+  chờ ở chỗ đã đặt (mua stop trên giá thị trường thành bán giới hạn), và nút đặt lệnh mang màu của chiều mua hay bán.
 </p>
 <p>
   Đầu bảng tài khoản luôn hiện lãi/lỗ đang mở và lãi/lỗ đã chốt ở mọi tab. Các con số được căn phải bằng chữ
@@ -225,7 +225,7 @@ chart.cancelOrderDraft()`}</code></pre>
 
 <h2>Lệnh bracket (kéo để đặt)</h2>
 <p>
-  Tạo một lệnh bracket kéo được — điểm vào lệnh cùng vùng dừng lỗ và chốt lời — rồi
+  Tạo một lệnh bracket kéo được — điểm vào lệnh cùng vùng cắt lỗ và chốt lời — rồi
   kéo ba đường để chỉnh điểm vào, mức rủi ro và lợi nhuận. Xác nhận bằng
   <kbd>Enter</kbd> (hoặc nút Đặt lệnh), huỷ bằng <kbd>Esc</kbd>. Trong
   widget, các mũi tên xanh/đỏ trên thanh công cụ tạo một bracket Long/Short. Biểu đồ
@@ -243,19 +243,19 @@ chart.on('bracketPlace', (e) => {
 chart.confirmBracket()  // same as Enter
 chart.cancelBracket()   // same as Esc`}</code></pre>
 
-<h2>Sổ lệnh (bấm để giao dịch)</h2>
+<h2>DOM ladder (bấm để giao dịch)</h2>
 <p>
-  Sổ lệnh dạng thang độ sâu thị trường (bật khi cần) hiển thị sổ lệnh thành các hàng giá với
+  DOM ladder (bật khi cần) hiển thị sổ lệnh thành các hàng giá với
   cột khối lượng bid/ask — bấm vào một ô ask để mua, một ô bid để bán tại mức
   giá đó. Bật bằng <code>depthLadder: true</code> và cấp dữ liệu sổ lệnh qua
   <code>widget.setDepth</code>; mỗi cú bấm phát ra ý định <code>orderPlace</code> cho
   OMS của bạn (biểu đồ không bao giờ tự giao dịch). Cùng dữ liệu đó cũng điều khiển
-  lớp phủ độ sâu trên biểu đồ.
+  lớp phủ order book depth trên biểu đồ.
 </p>
 <p>
-  Sổ lệnh là một trang của dock bên cạnh biểu đồ (trên điện thoại là một tấm trượt): mở từ menu Giao dịch, nút
+  DOM ladder là một trang của dock bên cạnh biểu đồ (trên điện thoại là một tấm trượt): mở từ menu Giao dịch, nút
   của nó trên dải bên phải hoặc <code>widget.openPanel('depthLadder')</code>, và bỏ nút đó bằng
-  <code>dock.depthLadder: false</code>. Giá bán nằm trên giá mua, chênh lệch ở giữa, mỗi khối lượng có một thanh mọc ra
+  <code>dock.depthLadder: false</code>. Giá bán nằm trên giá mua, spread ở giữa, mỗi khối lượng có một thanh mọc ra
   từ cột giá; hàng nào có lệnh đang chờ của bạn thì ghi khối lượng lệnh đó.
 </p>
 <pre><code>{`const widget = new ChartWidget(host, { depthLadder: true })
@@ -270,9 +270,9 @@ widget.getChart().on('orderPlace', (e) => {
   // { side, type: 'limit', price } — submit to your backend
 })`}</code></pre>
 
-<h2>Bản đồ nhiệt thanh khoản</h2>
+<h2>Liquidity heatmap</h2>
 <p>
-  Tích luỹ các ảnh chụp sổ lệnh thành một bản đồ nhiệt phía sau nến — mỗi
+  Tích luỹ các ảnh chụp sổ lệnh thành một heatmap phía sau nến — mỗi
   ảnh chụp là một dải dọc, trong đó khối lượng lệnh chờ sáng lên theo từng mức giá
   (bid màu xanh lá, ask màu đỏ). Những bức tường thanh khoản tồn tại lâu sẽ nổi bật.
   Bật từ bảng cài đặt (hoặc <code>chart.setDepthHeatmapVisible</code>);

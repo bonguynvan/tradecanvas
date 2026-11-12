@@ -543,7 +543,7 @@ const zhHant: SiteMessages = {
     eyebrow: '範例 · StackBlitz',
     title: '範例',
     subtitleHtml:
-      '一鍵即可 fork 的線上沙盒。每個範例都會在 StackBlitz 中開啟，並已接好最新的 1.x 套件。想免設定直接試用功能，請使用首頁的<a href="{lab}">功能實驗室</a>。',
+      '一鍵即可 fork 的線上沙盒。每個範例都會在 StackBlitz 中開啟，並已接好最新的 2.x 套件。想免設定直接試用功能，請使用首頁的<a href="{lab}">功能實驗室</a>。',
     open: '在 StackBlitz 中開啟 {title}',
     items: {
       vanilla: {

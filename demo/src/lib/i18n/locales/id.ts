@@ -543,7 +543,7 @@ const id: SiteMessages = {
     eyebrow: 'Contoh · StackBlitz',
     title: 'Contoh',
     subtitleHtml:
-      'Sandbox langsung yang bisa Anda fork dalam satu klik. Masing-masing terbuka di StackBlitz dengan paket 1.x terbaru yang sudah terpasang. Untuk mencoba fitur tanpa persiapan apa pun, gunakan <a href="{lab}">Lab Fitur</a> di beranda.',
+      'Sandbox langsung yang bisa Anda fork dalam satu klik. Masing-masing terbuka di StackBlitz dengan paket 2.x terbaru yang sudah terpasang. Untuk mencoba fitur tanpa persiapan apa pun, gunakan <a href="{lab}">Lab Fitur</a> di beranda.',
     open: 'Buka {title} di StackBlitz',
     items: {
       vanilla: {

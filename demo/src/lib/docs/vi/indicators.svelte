@@ -43,14 +43,14 @@ chart.removeIndicator(rsi)`}</code></pre>
   Các chỉ báo có đánh dấu <em>nguồn</em> bên dưới có thể chạy trên một giá khác giá đóng cửa
   (<code>open</code>, <code>high</code>, <code>low</code>, <code>hl2</code>, <code>hlc3</code>,
   <code>ohlc4</code>, <code>hlcc4</code>) hoặc trên đường của một chỉ báo khác. Đường trung bình động của RSI
-  được vẽ trong bảng của RSI, trên thang của RSI, và bị xoá cùng lúc với RSI.
+  được vẽ trong pane của RSI, trên thang của RSI, và bị xoá cùng lúc với RSI.
 </p>
 <pre><code>{`import { indicatorSource } from '@tradecanvas/chart'
 
 chart.updateIndicator(ema, { source: 'hlc3' })
 const smoothed = chart.addIndicator('sma', { period: 9, source: indicatorSource(rsi, 'value') })`}</code></pre>
 <p>
-  Các chỉ báo ở bảng riêng cũng có thể dùng chung một bảng:
+  Các chỉ báo ở pane riêng cũng có thể dùng chung một pane:
   <code>chart.addIndicator('stochastic', &#123;&#125;, 'bottom', &#123; pane: rsi &#125;)</code>.
 </p>
 
@@ -64,7 +64,7 @@ const latest = series[series.length - 1]?.value   // keyed by the line keys belo
 <p>
   Chú giải hiện giá trị mới nhất của mỗi đường. Để gắn thêm nhãn giá trị đó trên trục, bằng màu của đường, hãy bật
   <code>features.indicatorValueLabels: true</code> hoặc <code>setIndicatorValueLabelsVisible(true)</code> (mặc định tắt).
-  Các đường, mức, trục và con trỏ chữ thập trong cùng một bảng dùng chung một thang.
+  Các đường, mức, trục và crosshair trong cùng một pane dùng chung một thang.
 </p>
 
 <h2>Chỉ trên một số khung thời gian</h2>
@@ -107,7 +107,7 @@ chart.setIndicatorIntervals(ema, null)  // lại hiện trên mọi khung`}</cod
   giao diện này, trên trình duyệt này.
 </p>
 
-<h2>Trên bảng giá chính ({overlays.length})</h2>
+<h2>Trên pane giá ({overlays.length})</h2>
 <table>
   <thead><tr><th>id</th><th>Tên</th><th>Tham số mặc định</th><th>Đường</th></tr></thead>
   <tbody>
@@ -149,7 +149,7 @@ chart.addIndicator('vwap', { anchor: 'all' })   // mọi nến đã tải, như 
   <code>updateIndicatorStyle</code> để làm chỉ báo mờ thêm.
 </p>
 
-<h2>Trong bảng riêng ({panes.length})</h2>
+<h2>Trong pane riêng ({panes.length})</h2>
 <table>
   <thead><tr><th>id</th><th>Tên</th><th>Tham số mặc định</th><th>Đường</th><th>Mức</th></tr></thead>
   <tbody>
@@ -196,8 +196,8 @@ CANDLE_PATTERNS.length                                 // 64`}</code></pre>
 
 <h2>Chỉ báo của riêng bạn</h2>
 <p>
-  Kế thừa <code>IndicatorBase</code> và khai báo những gì nó vẽ (<code>plots</code>), thang của bảng,
-  các mức và thông số; biểu đồ sẽ tự vẽ nó, co giãn bảng của nó, gắn nhãn giá trị và liệt kê nó trong
+  Kế thừa <code>IndicatorBase</code> và khai báo những gì nó vẽ (<code>plots</code>), thang của pane,
+  các mức và thông số; biểu đồ sẽ tự vẽ nó, co giãn pane của nó, gắn nhãn giá trị và liệt kê nó trong
   chú thích và phần cài đặt của widget mà bạn không phải viết dòng code vẽ nào. Thuộc tính
   <code>category</code> của nó (<code>'oscillators'</code>, <code>'volume'</code>…) xếp nó vào nhóm đó
   trong hộp thoại Chỉ báo; nếu không có, nó nằm trong nhóm Khác. Xem
@@ -236,12 +236,12 @@ CANDLE_PATTERNS.length                                 // 64`}</code></pre>
 ],
 fills: [{ between: ['upper', 'lower'], color: 0, opacity: 0.1 }],`}</code></pre>
 
-<h2>Bảng: đổi kích thước, thu gọn, phóng to, sắp xếp lại</h2>
+<h2>Pane: đổi kích thước, thu gọn, phóng to, sắp xếp lại</h2>
 <p>
-  <strong>Kéo đường phân cách</strong> phía trên một bảng để đổi kích thước. Trong ChartWidget, mỗi bảng
-  có các nút ở góc phải trên: đưa bảng lên hoặc xuống, thu gọn chỉ còn dòng tiêu đề, phóng to
-  (các bảng khác thu gọn lại, còn bảng giá chính giữ một dải hẹp). Bố cục đã lưu giữ kích thước, thứ tự,
-  trạng thái thu gọn và phóng to của từng bảng. Làm điều tương tự bằng code:
+  <strong>Kéo đường phân cách</strong> phía trên một pane để đổi kích thước. Trong ChartWidget, mỗi pane
+  có các nút ở góc phải trên: đưa pane lên hoặc xuống, thu gọn chỉ còn dòng tiêu đề, phóng to
+  (các pane khác thu gọn lại, còn pane giá giữ một dải hẹp). Bố cục đã lưu giữ kích thước, thứ tự,
+  trạng thái thu gọn và phóng to của từng pane. Làm điều tương tự bằng code:
 </p>
 <pre><code>{`chart.setPanelSize(rsi, 180)        // px, clamped to a minimum
 chart.setPaneCollapsed(macd, true)  // fold to its header
@@ -251,16 +251,16 @@ chart.on('paneChange', (e) => e.payload.change)  // 'collapsed' | 'maximized' | 
 chart.setPaneScale(atr, { log: true, invert: false })  // log while its values are above 0
 chart.setPaneScale(atr, { percent: true })             // labels in percent of its first value on screen`}</code></pre>
 <p>
-  Bấm chuột phải vào một bảng trong ChartWidget để bật thang logarit, thang đảo ngược hoặc thang phần trăm riêng cho bảng đó.
+  Bấm chuột phải vào một pane trong ChartWidget để bật thang logarit, thang đảo ngược hoặc thang phần trăm riêng cho pane đó.
 </p>
 
-<h2>Chuyển một chỉ báo sang bảng khác</h2>
+<h2>Chuyển một chỉ báo sang pane khác</h2>
 <p>
-  Một chỉ báo có thể vào bảng của một chỉ báo khác (khi đó nó dùng chung thang của bảng đó),
-  có bảng riêng, hoặc quay về bảng giá chính. Khi nó rời một bảng mà nó làm chủ, các chỉ báo khác
-  trong bảng vẫn ở lại (chỉ báo kế tiếp trong bảng sẽ làm chủ bảng), và các chỉ báo đọc đường của nó
-  sẽ đi theo nó. Trong ChartWidget, nút <strong>⋯</strong> trên một dòng chú thích cho chọn bảng phía
-  trên, bảng phía dưới, một bảng mới và bảng giá chính.
+  Một chỉ báo có thể vào pane của một chỉ báo khác (khi đó nó dùng chung thang của pane đó),
+  có pane riêng, hoặc quay về pane giá. Khi nó rời một pane mà nó làm chủ, các chỉ báo khác
+  trong pane vẫn ở lại (chỉ báo kế tiếp trong pane sẽ làm chủ pane), và các chỉ báo đọc đường của nó
+  sẽ đi theo nó. Trong ChartWidget, nút <strong>⋯</strong> trên một dòng chú thích cho chọn pane phía
+  trên, pane phía dưới, một pane mới và pane giá.
 </p>
 <pre><code>{`chart.moveIndicatorToPane(cci, rsi)      // into RSI's pane
 chart.moveIndicatorToPane(cci, 'new')    // a pane of its own
@@ -277,7 +277,7 @@ chart.canMoveIndicatorToPane(cci, rsi)   // whether it would move`}</code></pre>
 <p>
   Có thể lấy ra và đặt lại toàn bộ chỉ báo cùng một lúc, và đó chính là việc mẫu chỉ báo của
   ChartWidget làm: <strong>Lưu các chỉ báo thành mẫu…</strong> ở tab Mẫu của hộp thoại Chỉ báo lưu chúng (thông số,
-  kiểu, mức, bảng) dưới một cái tên, còn chọn một mẫu sẽ đặt chúng vào thay cho các chỉ báo hiện có
+  kiểu, mức, pane) dưới một cái tên, còn chọn một mẫu sẽ đặt chúng vào thay cho các chỉ báo hiện có
   của biểu đồ, trong một bước hoàn tác.
 </p>
 <pre><code>{`const setup = chart.getIndicatorSetup()   // what a layout keeps of them

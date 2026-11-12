@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+### Widget
+
+- **A selected drawing's toolbar waits in one place** (`@tradecanvas/chart`). It was put over the drawing itself, so on a text, a note or a price label it covered what had just been drawn and had to be dragged off each time. It now waits near the top of the price pane, centred, whatever is selected and whichever pane it is on (at the foot of a chart too narrow to hold it beside the legend, as on a phone), and it no longer moves as the drawing or the price scale does. Dragging it by its grip still keeps it where you drop it; a double-click on the grip sends it back to its place.
+- **Vietnamese keeps the market's own words** (`@tradecanvas/chart`). The widget's Vietnamese strings translated terms that Vietnamese traders use in English: 31 of them now read as traders say them (Bar replay, Liquidity heatmap, Crosshair, Watchlist, Trend line, Fibonacci retracement, DOM ladder, Spread, Box size, "lệnh stop"). Words settled in Vietnamese stay (nến, khối lượng, chỉ báo, sổ lệnh, cắt lỗ, chốt lời). The Vietnamese docs pages and README follow the same list.
+
 ## 2.0.0 (2026-11-12)
 
 TradeCanvas 2.0. The seven betas below are this release, in the order they were made; nothing else changed between `2.0.0-beta.7` and it. `npm install @tradecanvas/chart` now gives 2.0; 1.x stays as `@tradecanvas/chart@1`. The [migration page](https://tradecanvas.dev/docs/migration/) says what a page on 1.x has to change, and for most that is nothing, or one option.

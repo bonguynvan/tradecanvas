@@ -543,7 +543,7 @@ const de: SiteMessages = {
     eyebrow: 'Beispiele · StackBlitz',
     title: 'Beispiele',
     subtitleHtml:
-      'Live-Sandboxes, die Sie mit einem Klick forken können. Jede öffnet sich in StackBlitz mit den neuesten 1.x-Paketen, fertig eingebunden. Um Funktionen ganz ohne Setup auszuprobieren, nutzen Sie das <a href="{lab}">Feature-Lab</a> auf der Startseite.',
+      'Live-Sandboxes, die Sie mit einem Klick forken können. Jede öffnet sich in StackBlitz mit den neuesten 2.x-Paketen, fertig eingebunden. Um Funktionen ganz ohne Setup auszuprobieren, nutzen Sie das <a href="{lab}">Feature-Lab</a> auf der Startseite.',
     open: '{title} in StackBlitz öffnen',
     items: {
       vanilla: {

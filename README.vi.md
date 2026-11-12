@@ -29,28 +29,28 @@
 **Một biểu đồ giao dịch hoàn chỉnh cho web.** Từ nến Nhật đến Renko, 134 chỉ báo, 73 công cụ vẽ, dữ liệu sàn trực tiếp và lệnh ngay trên biểu đồ, vẽ bằng Canvas 2D hoặc WebGL, không phụ thuộc thư viện bên thứ ba nào. Dùng ngay `ChartWidget` đầy đủ, hoặc tự dựng giao diện trên `Chart` headless, bằng TypeScript, React, Vue hay Svelte.
 
 <p align="center">
-  <a href="https://tradecanvas.dev/vi/chart/"><img src=".github/assets/clips/hero.webp" alt="ChartWidget trên thị trường trực tiếp: EMA 21 và 55, RSI, crosshair và một đường xu hướng vẽ bằng chuột" width="100%"></a>
+  <a href="https://tradecanvas.dev/vi/chart/"><img src=".github/assets/clips/hero.webp" alt="ChartWidget trên thị trường trực tiếp: EMA 21 và 55, RSI, crosshair và một trend line vẽ bằng chuột" width="100%"></a>
 </p>
 
 ## Điểm nổi bật
 
 - **18 loại biểu đồ, 134 chỉ báo, 73 công cụ vẽ**, chỉ báo trên chỉ báo, cảnh báo trên đường vẽ, hoàn tác và làm lại.
-- **Giao dịch trên biểu đồ**: vị thế với lãi lỗ trực tiếp, lệnh và điểm dừng kéo được, broker giấy hoặc broker của bạn.
+- **Giao dịch trên biểu đồ**: vị thế với lãi lỗ trực tiếp, lệnh và lệnh stop kéo được, paper broker hoặc broker của bạn.
 - **Dữ liệu trực tiếp** từ Binance, Bybit, Coinbase và Kraken, hoặc nguồn của bạn trong khoảng hai mươi dòng.
 - **Nhanh**: một triệu nến kéo mượt 60 fps với WebGL; một tick trực tiếp trong khoảng một micro giây; mười phút 30.000 lệnh khớp mỗi giây trên một triệu nến mà bộ nhớ không tăng ([bài đo](benchmarks/2026-11-03.md)).
-- **Không gian làm việc**: lưới nhiều biểu đồ, bố cục, tua lại nến, backtest.
-- **Thêm mười bốn loại biểu đồ** cho các trang quanh biểu đồ chính: độ sâu sổ lệnh, đường vốn, waterfall, heatmap và bản đồ ngành, cột, donut, scatter, histogram, lịch, ma trận tương quan, gauge, sparkline, và dashboard kết quả backtest.
+- **Không gian làm việc**: lưới nhiều biểu đồ, bố cục, bar replay, backtest.
+- **Thêm mười bốn loại biểu đồ** cho các trang quanh biểu đồ chính: depth chart, equity curve, waterfall, heatmap và sector map, cột, donut, scatter, histogram, lịch, correlation matrix, gauge, sparkline, và dashboard kết quả backtest.
 - **Tùy biến theo ý bạn**: theme, ba phong cách, 114 công tắc, plugin; 30 ngôn ngữ; điện thoại và ứng dụng.
 
 <table>
   <tr>
     <td width="50%" valign="top">
       <img src=".github/assets/clips/trading.webp" alt="Kéo take-profit và stop-loss của một vị thế mua; lãi lỗ cập nhật theo giá">
-      <br><b>Lệnh kéo được</b>: điểm dừng, mục tiêu và lệnh giới hạn di chuyển theo chuột.
+      <br><b>Lệnh kéo được</b>: lệnh stop, mục tiêu và lệnh giới hạn di chuyển theo chuột.
     </td>
     <td width="50%" valign="top">
-      <img src=".github/assets/clips/replay.webp" alt="Tua lại nến phát lại thị trường với Bollinger Bands">
-      <br><b>Tua lại nến</b>: phát lại thị trường, rồi giao dịch giấy trên đó.
+      <img src=".github/assets/clips/replay.webp" alt="Bar replay phát lại thị trường với Bollinger Bands">
+      <br><b>Bar replay</b>: phát lại thị trường, rồi paper trading trên đó.
     </td>
   </tr>
   <tr>
@@ -65,7 +65,7 @@
   </tr>
   <tr>
     <td width="50%" valign="top" align="center">
-      <img src=".github/assets/clips/phone.webp" alt="Widget trên điện thoại: ngón tay kéo biểu đồ và vẽ một đường xu hướng" width="46%">
+      <img src=".github/assets/clips/phone.webp" alt="Widget trên điện thoại: ngón tay kéo biểu đồ và vẽ một trend line" width="46%">
     </td>
     <td width="50%" valign="top">
       <br><b>Trên điện thoại</b>: ngón tay kéo, phóng to, vẽ và kéo lệnh, widget tự sắp xếp cho màn hình nhỏ. Nó cũng chạy trong WebView, React Native, Capacitor hoặc Tauri.

@@ -180,7 +180,7 @@ chart.setFont(null)                         // the theme's own font again`}</cod
     <tr><td><code>radius</code></td><td>Thang góc bo <code>xs</code>, <code>sm</code>, <code>md</code>, <code>lg</code>, <code>xl</code>, tính bằng px (0–999).</td></tr>
     <tr><td><code>components</code></td><td>
       Góc bo riêng của từng thành phần: <code>control</code> (nút), <code>input</code>, <code>menu</code>, <code>dialog</code>,
-      <code>panel</code> (cảnh báo, cửa sổ dữ liệu, phiếu đặt lệnh), <code>tooltip</code>, <code>tag</code>, <code>toast</code>,
+      <code>panel</code> (cảnh báo, cửa sổ dữ liệu, order ticket), <code>tooltip</code>, <code>tag</code>, <code>toast</code>,
       <code>toolbar</code> và <code>sidebar</code> (khung của chính chúng, thấy được khi chúng nổi). Mặc định, nút và ô
       nhập theo <code>md</code>, menu và bảng theo <code>lg</code>, hộp thoại theo <code>xl</code>, tooltip và nhãn theo <code>sm</code>.
     </td></tr>
@@ -261,7 +261,7 @@ chart.setFont(null)                         // the theme's own font again`}</cod
 
 <h2 id="controls">Ô nhập, danh sách và lịch</h2>
 <p>
-  Mọi ô nhập trong widget (cảnh báo, cài đặt, phiếu lệnh, đi tới ngày, tham số chỉ báo) có chung một kiểu: nền mờ và đường viền mảnh, viền rõ hơn khi rê chuột, và khi focus thì viền chuyển sang màu nhấn, không có vòng sáng bao quanh. Select mở danh sách riêng của widget, có dấu tích ở dòng đang chọn, nhóm hiện thành tiêu đề, dùng được phím mũi tên, Enter, Escape và gõ chữ cái đầu; ô ngày mở lịch riêng của widget, tuần bắt đầu theo ngôn ngữ, hôm nay có gạch chân, ngày ngoài <code>min</code> và <code>max</code> của ô bị mờ đi. Checkbox, radio, thanh trượt và công tắc theo cùng bộ token, thanh cuộn cũng vậy: mảnh, bo tròn, chỉ có thanh kéo, không có rãnh.
+  Mọi ô nhập trong widget (cảnh báo, cài đặt, order ticket, đi tới ngày, tham số chỉ báo) có chung một kiểu: nền mờ và đường viền mảnh, viền rõ hơn khi rê chuột, và khi focus thì viền chuyển sang màu nhấn, không có vòng sáng bao quanh. Select mở danh sách riêng của widget, có dấu tích ở dòng đang chọn, nhóm hiện thành tiêu đề, dùng được phím mũi tên, Enter, Escape và gõ chữ cái đầu; ô ngày mở lịch riêng của widget, tuần bắt đầu theo ngôn ngữ, hôm nay có gạch chân, ngày ngoài <code>min</code> và <code>max</code> của ô bị mờ đi. Checkbox, radio, thanh trượt và công tắc theo cùng bộ token, thanh cuộn cũng vậy: mảnh, bo tròn, chỉ có thanh kéo, không có rãnh.
 </p>
 <p>
   Các ô vẫn là <code>&lt;select&gt;</code> và <code>&lt;input&gt;</code> gốc của trình duyệt: giá trị, sự kiện và form chạy như cũ, và trên màn hình cảm ứng thì bánh xe chọn và lịch của điện thoại sẽ mở, hợp với ngón tay hơn.
@@ -343,7 +343,7 @@ chart.on('styleChange', (e) => e.payload.layer)         // 'host' | 'user'`}</co
   quay lại cùng theme tối — và được lưu bằng <code>saveState()</code>. Phần Settings của widget ghi vào lớp người dùng.
   Các tab dọc bên trái chỉnh mọi phần của chart theo các khoá này: <strong>Mã</strong> (loại chart đang xem, giá cuối,
   khối lượng), <strong>Dòng trạng thái</strong>, <strong>Thang đo</strong>, <strong>Giao diện</strong> (nền, lưới,
-  con trỏ chữ thập, ngắt phiên), <strong>Lớp</strong> và <strong>Giao dịch</strong> (lệnh, vị thế, điểm tín hiệu,
+  crosshair, ngắt phiên), <strong>Lớp</strong> và <strong>Giao dịch</strong> (lệnh, vị thế, điểm tín hiệu,
   vùng lệnh). Mọi thay đổi hiện ngay; <strong>Huỷ</strong> trả tất cả về như cũ, <strong>OK</strong> giữ lại thành một
   bước hoàn tác. Menu <strong>Mẫu</strong> lưu giao diện dưới một cái tên, áp dụng hoặc xoá mẫu đã lưu, và khôi phục
   màu của theme, theme nào cũng vậy. Màu để phần đó tự quyết hiện là Tự động, và nút Tự động đưa màu về như vậy.
@@ -377,7 +377,7 @@ chart.setPaneStyle(rsiId, { background: '#101418', separator: '#f5a623' })`}</co
 <p>
   Widget chuyển <code>tagRadius</code> cho biểu đồ của nó (hình dạng đặt trong <code>chartOptions.shapes</code> được
   giữ cho đến khi bạn gọi <code>setUI</code>). Với một <code>Chart</code> dùng riêng, hãy tự đặt hình dạng; thiết lập
-  này được giữ nguyên khi đổi chủ đề màu. Nhãn giá, nhãn trên trục và nhãn của con trỏ chữ thập, nhãn lệnh, vị thế và
+  này được giữ nguyên khi đổi chủ đề màu. Nhãn giá, nhãn trên trục và nhãn của crosshair, nhãn lệnh, vị thế và
   lệnh bracket, cùng nhãn mức của kỳ trước đều theo hình dạng này.
 </p>
 <pre><code>{`const chart = new Chart(host, { shapes: { tagRadius: 4 } })

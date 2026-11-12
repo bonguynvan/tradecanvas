@@ -28,10 +28,10 @@
   <thead><tr><th>Loại</th><th>Mô tả</th></tr></thead>
   <tbody>
     <tr><td><code>heikinAshi</code></td><td>Chuỗi nến được làm mượt bằng phép biến đổi Heikin-Ashi.</td></tr>
-    <tr><td><code>renko</code></td><td>Biểu đồ viên gạch với bước giá cố định; không phụ thuộc thời gian.</td></tr>
+    <tr><td><code>renko</code></td><td>Biểu đồ brick với bước giá cố định; không phụ thuộc thời gian.</td></tr>
     <tr><td><code>kagi</code></td><td>Đường đảo chiều dương/âm (yang/yin); mức đảo chiều theo phần trăm (mặc định 4) hoặc theo giá.</td></tr>
     <tr><td><code>lineBreak</code></td><td>Một đường mới khi giá đóng cửa phá vỡ các đường gần nhất (mặc định 3).</td></tr>
-    <tr><td><code>pointAndFigure</code></td><td>Các cột X/O; kích thước ô + số ô đảo chiều. Ô quá nhỏ để nhìn thấy được vẽ thành cột liền, và khi số cột ít hơn chỗ khung nhìn chứa thì chúng được giãn cho vừa khung.</td></tr>
+    <tr><td><code>pointAndFigure</code></td><td>Các cột X/O; box size + số ô đảo chiều. Ô quá nhỏ để nhìn thấy được vẽ thành cột liền, và khi số cột ít hơn chỗ khung nhìn chứa thì chúng được giãn cho vừa khung.</td></tr>
     <tr><td><code>rangeBars</code></td><td>Biên độ cao-thấp của mỗi nến bằng một khoảng cố định, và nến đóng cửa ở giá cao nhất hoặc thấp nhất của nó; nến cuối cùng là nến đang hình thành.</td></tr>
   </tbody>
 </table>
@@ -55,23 +55,23 @@
   bên trong — <code>chart.getData()</code> vẫn trả về chuỗi dữ liệu gốc đã truyền vào.
 </p>
 <p>
-  Trục thời gian và nhãn thời gian của crosshair ghi ngày cho một viên gạch, đường hay cột theo nến
+  Trục thời gian và nhãn thời gian của crosshair ghi ngày cho một brick, đường hay cột theo nến
   mà nó hoàn thành, nên trục của biểu đồ Renko, Kagi, Line Break, P&amp;F hay Range Bars đọc ra các năm,
-  tháng và ngày mà nó trải qua; các viên gạch hoàn thành trên cùng một nến dùng chung nhãn của nến đó.
+  tháng và ngày mà nó trải qua; các brick hoàn thành trên cùng một nến dùng chung nhãn của nến đó.
   Giá trị <code>time</code> riêng của chúng vẫn chỉ để đếm, cách nhau một. <code>axisTimes(series)</code> từ
   <code>@tradecanvas/chart</code> cho các ngày đó với chuỗi dựng bằng <code>toRenko</code> và các hàm tương tự.
 </p>
 <p>
-  Tooltip của crosshair và sự kiện <code>crosshairMove</code> ghi ngày cho một viên gạch theo cùng cách:
-  <code>time</code> trong payload là ngày của trục, còn <code>prevClose</code> là giá đóng cửa của viên gạch
-  trước. Trên các kiểu này, chỉ báo được tính trên các viên gạch, đường hay cột được vẽ chứ không phải các
-  nến bên dưới, nên một đường trung bình nằm trên các viên gạch và chú giải, Data Window của ChartWidget
-  và bản xuất đọc nó tại một viên gạch; bản xuất ghi các viên gạch, có ngày như trục ghi. Các chỉ báo đếm
+  Tooltip của crosshair và sự kiện <code>crosshairMove</code> ghi ngày cho một brick theo cùng cách:
+  <code>time</code> trong payload là ngày của trục, còn <code>prevClose</code> là giá đóng cửa của brick
+  trước. Trên các kiểu này, chỉ báo được tính trên các brick, đường hay cột được vẽ chứ không phải các
+  nến bên dưới, nên một đường trung bình nằm trên các brick và chú giải, Data Window của ChartWidget
+  và bản xuất đọc nó tại một brick; bản xuất ghi các brick, có ngày như trục ghi. Các chỉ báo đếm
   ngày (VWAP, Session VWAP, đường trung bình đa khung) và các chỉ báo đọc mã khác theo thời gian không được
   vẽ ở đó: <code>getActiveIndicators()</code> đánh dấu chúng <code>offChartType: true</code>.
 </p>
 <p>
-  Renko, Kagi, Line Break và Range Bars có ít viên gạch hay đường hơn số chỗ của khung nhìn sẽ được
+  Renko, Kagi, Line Break và Range Bars có ít brick hay đường hơn số chỗ của khung nhìn sẽ được
   giãn cho vừa khung như Point &amp; Figure, nên chúng không nằm dồn ở phần bên phải. Khối lượng của một
   cột P&amp;F là khối lượng của các nến tạo nên nó. Trên các kiểu này trục thời gian chỉ giữ hai loại nhãn
   thô nhất đang hiển thị (ví dụ năm và tháng), không có một ngày lẻ loi giữa chúng.
@@ -79,9 +79,8 @@
 
 <h2>Thông số của các loại nến dựng từ dữ liệu</h2>
 <p>
-  Kích thước ô của Renko, số đường mà Line Break phải phá vỡ, mức đảo chiều của Kagi, kích thước
-  ô và số ô đảo chiều của Point &amp; Figure, và biên độ của Range Bars. Thông số nào không đặt sẽ
-  được tính từ dữ liệu (ô Renko theo ATR, ô P&amp;F bằng một phần năm mươi biên độ giá, làm tròn về 1, 2 hoặc 5…). Các thông số
+  Box size của Renko, số đường mà Line Break phải phá vỡ, mức đảo chiều của Kagi, box size và số ô đảo chiều của Point &amp; Figure, và biên độ của Range Bars. Thông số nào không đặt sẽ
+  được tính từ dữ liệu (box Renko theo ATR, box P&amp;F bằng một phần năm mươi biên độ giá, làm tròn về 1, 2 hoặc 5…). Các thông số
   được giữ trong trạng thái đã lưu; trong ChartWidget, chúng nằm trong hộp thoại cài đặt, ở phần
   dành cho loại biểu đồ đang dùng.
 </p>
@@ -103,13 +102,13 @@
   theo cách nào.
 </p>
 <p>
-  Kích thước ô của Renko, mức đảo chiều của Kagi và kích thước ô của Point &amp; Figure cũng theo
+  Box size của Renko, mức đảo chiều của Kagi và box size của Point &amp; Figure cũng theo
   cùng giới hạn đó: một giá trị quá nhỏ so với giá, khiến các nến trước nến cuối tạo ra hơn 100.000
-  viên gạch, đường hay cột, hoặc riêng nến cuối tạo ra ngần ấy, sẽ được nâng lên 2, 5, 10, 20… lần
+  brick, đường hay cột, hoặc riêng nến cuối tạo ra ngần ấy, sẽ được nâng lên 2, 5, 10, 20… lần
   chính nó, lấy mức đầu tiên không vượt quá số đó, và biểu đồ được dựng theo mức đã nâng. Kagi và
   Point &amp; Figure tạo nhiều nhất một đường hay một cột cho mỗi nến, nên chỉ chuỗi hơn 100.000 nến
   mới chạm tới giới hạn này; Line Break, với thông số là số đường, cũng tạo nhiều nhất một đường cho
-  mỗi nến. Kích thước ô, mức đảo chiều hay biên độ nào không phải là số hữu hạn lớn hơn 0, trong trạng
+  mỗi nến. Box size, mức đảo chiều hay biên độ nào không phải là số hữu hạn lớn hơn 0, trong trạng
   thái đã lưu hay trong một link chia sẻ, sẽ bị bỏ qua (biểu đồ quay về giá trị mặc định: tự tính từ
   dữ liệu, hoặc 4% với Kagi), nên một link không thể làm biểu đồ treo. Hộp thoại cài đặt không nhận
   giá trị nhỏ hơn 0,00000001 và ghi rõ điều đó dưới ô nhập. Trên biểu đồ trực tiếp, kích thước đã nâng được giữ từ tick này sang
@@ -130,7 +129,7 @@
 chart.getChartTypeOptions()
 new Chart(host, { chartTypeOptions: { renko: { boxSize: 50 } } })`}</code></pre>
 
-<h2>Chuỗi giá chính và các đường trên bảng giá chính</h2>
+<h2>Chuỗi giá chính và các đường trên pane giá</h2>
 <p>
   Ẩn chuỗi giá chính để chỉ xem các chỉ báo hoặc các mã so sánh; đánh dấu giá cao nhất và thấp
   nhất trên màn hình; đánh dấu giá bid và ask. Nguồn dữ liệu nào có tick kèm <code>bid</code> và

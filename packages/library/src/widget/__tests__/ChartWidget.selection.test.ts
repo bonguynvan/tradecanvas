@@ -124,12 +124,12 @@ describe('ChartWidget OHLCV legend font', () => {
 });
 
 describe('ChartWidget selection toolbar', () => {
-  it('shows over a drawing as soon as it is selected, and goes when nothing is', () => {
+  it('shows as soon as a drawing is selected, and goes when nothing is', () => {
     widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false });
     expect(bar()?.hidden ?? true).toBe(true);
     FakeChart.last.select(['d1']);
     expect(bar()!.hidden).toBe(false);
-    // Above the drawing's box, centred on it.
+    // Near the top of the plot, not on the drawing.
     expect(parseFloat(bar()!.style.top)).toBeLessThan(160);
     FakeChart.last.select([]);
     expect(bar()!.hidden).toBe(true);
@@ -190,22 +190,21 @@ describe('ChartWidget selection toolbar', () => {
     expect(saved).toEqual([{ name: 'Blue line', style: { color: '#2962ff', lineWidth: 2, lineStyle: 'solid' }, type: 'trendLine', options: {} }]);
   });
 
-  it('follows the drawing when it moves or the price scale changes, once a frame', async () => {
+  it('stays where it is when the drawing moves or the price scale changes', async () => {
     widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false });
     FakeChart.last.select(['d1']);
-    const before = bar()!.style.left;
+    const before = { left: bar()!.style.left, top: bar()!.style.top };
     FakeChart.last.rect = { x: 400, y: 160, width: 120, height: 60 };
     FakeChart.last.emit('drawingUpdate', { id: 'd1' });
     await nextFrame();
-    expect(bar()!.style.left).not.toBe(before);
-    const top = bar()!.style.top;
     FakeChart.last.rect = { x: 400, y: 300, width: 120, height: 60 };
     FakeChart.last.emit('priceRangeChange', {});
     await nextFrame();
-    expect(bar()!.style.top).not.toBe(top);
+    expect({ left: bar()!.style.left, top: bar()!.style.top }).toEqual(before);
+    expect(bar()!.hidden).toBe(false);
   });
 
-  it('waits at the top of the plot while the selection is off screen, and goes when it is undone', async () => {
+  it('stays while the selection is off screen, and goes when it is undone', async () => {
     widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false });
     FakeChart.last.select(['d1']);
     FakeChart.last.rect = null;

@@ -37,7 +37,7 @@
 </p>
 
 <p id="corrections">
-  Nến mà nguồn dữ liệu của bạn sửa lại được đưa vào bằng <code>updateBar(bar)</code>: nó thay nến đã nạp có cùng <code>time</code>, dù nằm ở đâu trong chuỗi, và trả về <code>true</code>. Các chỉ báo được tính lại từ nến đó trở đi, Heikin-Ashi, Renko và các kiểu biểu đồ dựng từ nến cũng theo, còn khung nhìn giữ nguyên chỗ cũ; nhiều lần sửa trước khung hình kế tiếp chỉ được tính một lần, từ nến sớm nhất. Nó trả về <code>false</code> và không thay đổi gì khi không có nến đã nạp nào có thời gian đó (nến mới là việc của <code>appendBar</code>, nến cũ hơn là của <code>prependBars</code>) hoặc biểu đồ không nhận được nến đó. Đây không phải giá hiện tại: lệnh và cảnh báo không đi theo nó, không cảnh báo nào kích hoạt vì nó, và cảnh báo trên đường chỉ báo không được kiểm tra lại với giá trị đã sửa. Sửa nến cuối thì đường giá đi theo nó, như sau <code>setData</code>. Trong lúc phát lại, nó sửa chuỗi trực tiếp: nến phát lại đã đi qua hiện bản sửa ngay, nến sau đó hiện khi phát lại tới nó; một nến ngoài giờ giao dịch chính, khi giờ mở rộng đang ẩn, hiện ra khi chúng được bật. Gửi lại đúng nến đã nạp thì không đổi gì; thiếu khối lượng thì tính là 0, như với <code>setData</code>, nên hãy gửi đủ cả nến. Nó gửi <code>dataUpdate</code> với <code>{'{'} kind: 'correction', time, index {'}'}</code>. Trong ChartWidget, <code>widget.getChart().updateBar(bar)</code> sửa nến của nguồn dữ liệu đã kết nối; nến bạn đưa cho widget bằng <code>setData</code> là một bản sao mà widget dựng lại các khung thời gian từ đó, nên lần sửa trên chúng chỉ giữ tới lần đổi khung thời gian kế tiếp (phương thức của widget cho trường hợp này sẽ có sau).
+  Nến mà nguồn dữ liệu của bạn sửa lại được đưa vào bằng <code>updateBar(bar)</code>: nó thay nến đã nạp có cùng <code>time</code>, dù nằm ở đâu trong chuỗi, và trả về <code>true</code>. Các chỉ báo được tính lại từ nến đó trở đi, Heikin-Ashi, Renko và các kiểu biểu đồ dựng từ nến cũng theo, còn khung nhìn giữ nguyên chỗ cũ; nhiều lần sửa trước khung hình kế tiếp chỉ được tính một lần, từ nến sớm nhất. Nó trả về <code>false</code> và không thay đổi gì khi không có nến đã nạp nào có thời gian đó (nến mới là việc của <code>appendBar</code>, nến cũ hơn là của <code>prependBars</code>) hoặc biểu đồ không nhận được nến đó. Đây không phải giá hiện tại: lệnh và cảnh báo không đi theo nó, không cảnh báo nào kích hoạt vì nó, và cảnh báo trên đường chỉ báo không được kiểm tra lại với giá trị đã sửa. Sửa nến cuối thì đường giá đi theo nó, như sau <code>setData</code>. Trong lúc replay, nó sửa chuỗi trực tiếp: nến mà replay đã đi qua hiện bản sửa ngay, nến sau đó hiện khi replay tới nó; một nến ngoài giờ giao dịch chính, khi giờ mở rộng đang ẩn, hiện ra khi chúng được bật. Gửi lại đúng nến đã nạp thì không đổi gì; thiếu khối lượng thì tính là 0, như với <code>setData</code>, nên hãy gửi đủ cả nến. Nó gửi <code>dataUpdate</code> với <code>{'{'} kind: 'correction', time, index {'}'}</code>. Trong ChartWidget, <code>widget.getChart().updateBar(bar)</code> sửa nến của nguồn dữ liệu đã kết nối; nến bạn đưa cho widget bằng <code>setData</code> là một bản sao mà widget dựng lại các khung thời gian từ đó, nên lần sửa trên chúng chỉ giữ tới lần đổi khung thời gian kế tiếp (phương thức của widget cho trường hợp này sẽ có sau).
 </p>
 
 <p id="bar-times">
@@ -73,7 +73,7 @@
 <table>
   <thead><tr><th>Phương thức</th><th>Công dụng</th></tr></thead>
   <tbody>
-    <tr><td><code>addIndicator(id, params?, position?)</code></td><td>Thêm một chỉ báo phủ lên biểu đồ hoặc ở bảng riêng. Trả về id của instance.</td></tr>
+    <tr><td><code>addIndicator(id, params?, position?)</code></td><td>Thêm một chỉ báo phủ lên biểu đồ hoặc ở pane riêng. Trả về id của instance.</td></tr>
     <tr><td><code>updateIndicator(instanceId, params)</code></td><td>Sửa một chỉ báo đang chạy.</td></tr>
     <tr><td><code>removeIndicator(instanceId)</code></td><td>Xoá và dọn dẹp chỉ báo.</td></tr>
     <tr><td><code>removeIndicators(instanceIds)</code></td><td>Xoá nhiều chỉ báo, gộp thành một bước hoàn tác.</td></tr>
@@ -102,7 +102,7 @@
   </tbody>
 </table>
 <p>
-  <strong>Múi giờ.</strong> Trục thời gian, giờ của con trỏ chữ thập, tooltip, vạch ngăn ngày
+  <strong>Múi giờ.</strong> Trục thời gian, giờ của crosshair, tooltip, vạch ngăn ngày
   và các khoảng thời gian chọn sẵn mặc định theo múi giờ của trình duyệt. Có thể đặt một múi
   giờ IANA (tính cả giờ mùa hè), một độ lệch cố định tính bằng phút về phía đông UTC, hoặc
   <code>'exchange'</code> để theo múi giờ của mã (<code>SymbolInfo.timeZone</code>), không có thì
@@ -154,11 +154,11 @@ chart.getScaleMode()`}</code></pre>
 <p>
   Giá có thể hiển thị theo định dạng của riêng bạn, hoặc theo phân số của một điểm như cách yết
   giá trái phiếu và hợp đồng tương lai của chúng (<code>101'16</code> là 101 và 16/32). Định dạng
-  này áp dụng cho mọi chỗ in giá theo thang giá: trục, con trỏ chữ thập, nhãn giá cuối, chú thích,
+  này áp dụng cho mọi chỗ in giá theo thang giá: trục, crosshair, nhãn giá cuối, chú thích,
   tooltip, lệnh, cảnh báo và nhãn hình vẽ; trục đặt vạch đúng vào các phân số chẵn và
-  <code>roundPrice</code> làm tròn theo chúng. Các bảng chỉ báo giữ cách hiển thị số riêng. Khi bạn
+  <code>roundPrice</code> làm tròn theo chúng. Các pane chỉ báo giữ cách hiển thị số riêng. Khi bạn
   không đặt định dạng riêng, giá được nhóm chữ số theo cách viết số của ngôn ngữ đã chọn (<code>numberLocale</code>); nhãn vạch chia trên trục chỉ hiện số chữ số
-  thập phân mà bước của nó cần (73,500), còn giá cuối, con trỏ chữ thập và các nhãn cạnh trục hiện đủ mọi chữ số thập
+  thập phân mà bước của nó cần (73,500), còn giá cuối, crosshair và các nhãn cạnh trục hiện đủ mọi chữ số thập
   phân. Thời gian cũng hiển thị được theo cách của bạn; hàm định dạng được cho biết nhãn đang in là loại nào.
 </p>
 <pre><code>{`new Chart(host, { priceFormat: { denominator: 32 } })                    // 101'16
@@ -183,7 +183,7 @@ chart.setTimeFormatter((time, { kind, timeZone }) =>
   <code>setMarket</code> cho biểu đồ biết quy định của một sàn: màu nến, số chữ số thập
   phân, bước giá (có thể đổi theo vùng giá), giá trần và giá sàn trong ngày, và lô giao
   dịch. <code>roundPrice</code> và <code>getPriceStep</code> theo bước giá của vùng giá, nên
-  giá lấy từ menu của biểu đồ luôn là giá hợp lệ, và phiếu đặt lệnh của widget kiểm tra
+  giá lấy từ menu của biểu đồ luôn là giá hợp lệ, và order ticket của widget kiểm tra
   lệnh theo bước giá, biên độ trong ngày và lô chẵn. Preset còn mang các phiên và múi giờ
   của sàn, dùng cho <code>getCurrentSession</code> và code của bạn; vùng tô phiên và giờ mở
   rộng trên biểu đồ lấy từ <code>setSymbolInfo</code>. Có sẵn
@@ -255,7 +255,7 @@ formatVolumeLoc(345_000_000, 'ko')           // '3.45억'`}</code></pre>
 <h3 id="comparing-symbols">So sánh các mã</h3>
 <p>
   Phần trăm thay đổi của một mã khác trên thang giá (<code>addCompareSymbol</code>), hoặc giá của
-  nó trên thang riêng, trong bảng riêng, hoặc chênh lệch hay tỷ lệ giữa giá đóng cửa của biểu đồ
+  nó trên thang riêng, trong pane riêng, hoặc spread hay tỷ lệ giữa giá đóng cửa của biểu đồ
   và mã đó — mấy cách sau là chỉ báo (<code>compareSymbol</code>, <code>compareSymbolPane</code>, <code>spread</code>), có chú
   thích, nhãn giá trị, cảnh báo và được lưu trong bố cục như mọi chỉ báo khác. Nến của mã kia được
   khớp với nến của biểu đồ theo thời gian. Biểu đồ tự yêu cầu những nến nó cần; hãy cung cấp lại
@@ -290,11 +290,11 @@ chart.setPaneScale(spreadId, { percent: true })     // a pane in percent of its 
   tiếp từ nến đầu, không mang thời gian riêng, nên một đường ở đó sẽ đọc mã kia tại sai nến. Ở các
   kiểu này, đường so sánh không tính vào thang tự động, và <code>getCompareValues()</code> cho giá
   đóng cửa của từng mã tại nến dữ liệu mới nhất, dù hỏi nến nào, kèm <code>change: null</code>.
-  Các chỉ báo đọc một mã khác theo thời gian (một mã trên thang riêng hoặc trong khung riêng, chênh lệch,
+  Các chỉ báo đọc một mã khác theo thời gian (một mã trên thang riêng hoặc trong pane riêng, spread,
   tỷ lệ, tương quan) cũng không được vẽ ở đó và không tính vào thang nào: <code>getActiveIndicators()</code>
   cho chúng <code>shown: false</code> và <code>offChartType: true</code>, và ChartWidget làm mờ dòng của chúng như
   dòng của một mã so sánh. Quay lại nến thường thì chúng hiện lại.
-  Một khung không còn gì khác trong đó sẽ được bỏ đi ở đó, phần chỗ của nó dành cho vùng biểu đồ, và quay lại cùng chúng.
+  Một pane không còn gì khác trong đó sẽ được bỏ đi ở đó, phần chỗ của nó dành cho vùng biểu đồ, và quay lại cùng chúng.
 </p>
 <pre><code>{`chart.setScaleMode('percentage')       // each line reads its change on the axis
 chart.getCompareValues()               // [{ id: 'eth', label: 'ETHUSDT', color, visible, close: 2650.4, change: -1.82, stale: false }]
@@ -302,7 +302,7 @@ chart.getCompareValues(barIndex)       // at a bar: the one under the cursor
 chart.setCompareVisible('eth', false)  // hidden, and out of the auto scale`}</code></pre>
 <p>
   Trong ChartWidget, nút So sánh trên thanh công cụ (và nút + trong cây đối tượng) mở hộp thoại so sánh: tìm một
-  mã, chọn cách so sánh ở <strong>Thêm theo kiểu</strong> (thay đổi phần trăm, thang riêng, pane riêng, chênh lệch,
+  mã, chọn cách so sánh ở <strong>Thêm theo kiểu</strong> (thay đổi phần trăm, thang riêng, pane riêng, spread,
   tỷ lệ, hoặc tương quan theo giá hay theo lợi suất) và thêm bao nhiêu mã tuỳ ý. Các mã đang so sánh được liệt kê
   trước, mỗi mã kèm cách so sánh của nó và một nút để gỡ ra. Lần mở sau, hộp thoại chọn sẵn cách đã dùng lần trước.
 </p>
@@ -335,7 +335,7 @@ const { bars, columns } = chart.getExportData()          // columns: { name, val
 
 <h3>Hồ sơ khối lượng (Volume Profile)</h3>
 <p>
-  Biểu đồ tần suất nằm ngang của khối lượng giao dịch, gom theo mức giá trong khoảng
+  Histogram nằm ngang của khối lượng giao dịch, gom theo mức giá trong khoảng
   đang hiện. Mặc định tắt — bật bằng code hoặc qua bảng cài đặt
   của widget:
 </p>
@@ -403,7 +403,7 @@ const levels = computePeriodLevels(bars, 'day', 'Australia/Sydney')  // [{ id, l
 
 <h3>Hồ sơ thị trường (TPO)</h3>
 <p>
-  Biểu đồ tần suất thời gian tại mỗi mức giá: mỗi nến đóng góp một TPO vào mọi ô giá
+  Histogram thời gian tại mỗi mức giá: mỗi nến đóng góp một TPO vào mọi ô giá
   mà biên độ của nó chạm tới, làm lộ ra Point of Control (mức giá có nhiều TPO nhất) và
   vùng giá trị (≈70% số TPO). Khác với Hồ sơ khối lượng — nó tính theo thời gian,
   không theo khối lượng — và được ghim bên trái nên cả hai có thể hiện cùng lúc. Mặc định tắt;
@@ -433,7 +433,7 @@ const sessions = computeSessionProfiles(bars, priceMin, priceMax, {}, 'Australia
 <table>
   <thead><tr><th>Cử chỉ</th><th>Thao tác</th></tr></thead>
   <tbody>
-    <tr><td>Kéo 1 ngón (vùng biểu đồ)</td><td>Kéo biểu đồ + di chuyển con trỏ chữ thập</td></tr>
+    <tr><td>Kéo 1 ngón (vùng biểu đồ)</td><td>Kéo biểu đồ + di chuyển crosshair</td></tr>
     <tr><td>Chụm 2 ngón</td><td>Phóng to quanh điểm giữa</td></tr>
     <tr><td>Nhấn giữ (~500 ms)</td><td>Ghim chú thích OHLC tại nến (bản di động của Alt+bấm)</td></tr>
     <tr><td>Kéo 1 ngón trong dải trục giá / thời gian</td><td>Co giãn trục tương ứng</td></tr>
@@ -520,7 +520,7 @@ chart.recordUndo({ subject: 'panel-color', undo: () => (panel.color = before), r
 <p>
   Giá lấy từ con trỏ chuột có thể được làm tròn theo bước giá của thị trường bằng
   <code>chart.roundPrice(price)</code>: về bội số của <code>minTick</code> của mã, nếu không có thì theo
-  độ chính xác của mã. Các menu, phiếu đặt lệnh và tab Coordinates trong cài đặt hình vẽ của ChartWidget đều làm như vậy.
+  độ chính xác của mã. Các menu, order ticket và tab Coordinates trong cài đặt hình vẽ của ChartWidget đều làm như vậy.
   <code>chart.getPriceStep()</code> trả về chính bước giá đó.
 </p>
 
@@ -550,13 +550,13 @@ widget.destroy()`}</code></pre>
     <tr><td>Thanh công cụ</td><td>
       Mã và thông tin của mã; các khung thời gian (những khung đã ghim hiện thành nút, cùng một menu có đủ mọi khung
       theo đơn vị, từ phút đến tháng, mỗi khung có một ngôi sao để ghim); loại biểu đồ, hiện bằng icon của nó; Chỉ báo (một hộp thoại: xem <a href={href('/docs/indicators')}>Chỉ báo</a>)
-      và So sánh khi có bộ nạp dữ liệu (adapter); hoàn tác và làm lại. Bên phải: bố cục, phát lại nến, một menu Giao dịch
-      (lệnh mới, bracket Long và Short, sổ lệnh và bảng tài khoản), rồi chụp màn hình, cài đặt, giao diện và toàn màn
+      và So sánh khi có bộ nạp dữ liệu (adapter); hoàn tác và làm lại. Bên phải: bố cục, bar replay, một menu Giao dịch
+      (lệnh mới, bracket Long và Short, DOM ladder và bảng tài khoản), rồi chụp màn hình, cài đặt, giao diện và toàn màn
       hình; khi không có dải nút (trên điện thoại, hoặc với <code>{`features: { dock: false }`}</code>) thì có thêm
       cảnh báo và cây đối tượng. Phần nào không vừa thì gập vào “Thêm”.
     </td></tr>
     <tr><td>Công cụ vẽ</td><td>
-      Menu của mỗi nhóm ghi phím tắt của các công cụ trong nhóm (Alt+T là đường xu hướng) và có một ngôi sao trên mỗi
+      Menu của mỗi nhóm ghi phím tắt của các công cụ trong nhóm (Alt+T là trend line) và có một ngôi sao trên mỗi
       dòng để ghim công cụ đó lên đầu. Ở dưới cùng: kiểu vẽ, nam châm, cục tẩy, zoom vùng, giữ chế độ vẽ, khoá tất cả,
       ẩn tất cả, và nút thùng rác: menu của nó xoá các hình vẽ, các chỉ báo hoặc cả hai, kèm số lượng mỗi loại, trong một bước hoàn tác.
     </td></tr>
@@ -565,12 +565,13 @@ widget.destroy()`}</code></pre>
       (bấm vào thì mở danh sách múi giờ để chọn) và các công tắc <code>%</code> · <code>log</code> · <code>auto</code>
       của thang giá.
     </td></tr>
-    <tr><td>Trên hình vẽ đang chọn</td><td>
-      Màu, độ dày và kiểu nét, cài đặt, cảnh báo, khoá, menu thêm và xoá. Kéo thanh này bằng tay nắm của nó thì nó ở
-      yên chỗ đó cho hình vẽ tiếp theo; bấm đúp vào tay nắm để đưa nó về lại trên hình vẽ.
+    <tr><td>Cho hình vẽ đang chọn</td><td>
+      Màu, độ dày và kiểu nét, cài đặt, cảnh báo, khoá, menu thêm và xoá. Thanh này nằm gần mép trên của pane giá,
+      không che thứ bạn vừa vẽ (biểu đồ hẹp thì nằm ở chân pane), dù hình vẽ ở pane nào. Kéo nó bằng tay nắm thì nó ở
+      yên chỗ đó cho hình vẽ tiếp theo; bấm đúp vào tay nắm để đưa nó về chỗ cũ.
     </td></tr>
     <tr><td>Ngăn bên</td><td>
-      Một dải nút ở mép ngoài, mỗi bảng một nút: danh mục theo dõi, cảnh báo, cây đối tượng, cửa sổ dữ liệu và thông
+      Một dải nút ở mép ngoài, mỗi bảng một nút: watchlist, cảnh báo, cây đối tượng, cửa sổ dữ liệu và thông
       tin mã. Xem <a href="#dock">Ngăn bên</a>.
     </td></tr>
   </tbody>
@@ -660,25 +661,25 @@ new ChartWidget(host, { features: { 'dock.dataWindow': false } })  // no button 
     <tr><td><kbd>A</kbd>–<kbd>Z</kbd></td><td>Tìm một mã, bắt đầu bằng chữ cái vừa gõ (<code>{`features: { symbolTyping: false }`}</code> để tắt)</td></tr>
     <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>S</kbd></td><td>Lưu bố cục (lần đầu sẽ hỏi tên)</td></tr>
     <tr><td><kbd>0</kbd>–<kbd>9</kbd></td><td>Gõ một khung thời gian (<code>5</code>, <code>15m</code>, <code>1h</code>, <code>1D</code>) rồi nhấn Enter (<code>intervalTyping: false</code> để tắt)</td></tr>
-    <tr><td><kbd>Alt</kbd> + <kbd>T</kbd> / <kbd>H</kbd> / <kbd>J</kbd> / <kbd>V</kbd> / <kbd>C</kbd> / <kbd>F</kbd></td><td>Đường xu hướng, đường ngang, tia ngang, đường dọc, đường chữ thập, Fibonacci thoái lui</td></tr>
+    <tr><td><kbd>Alt</kbd> + <kbd>T</kbd> / <kbd>H</kbd> / <kbd>J</kbd> / <kbd>V</kbd> / <kbd>C</kbd> / <kbd>F</kbd></td><td>Trend line, đường ngang, tia ngang, đường dọc, đường chữ thập, Fibonacci retracement</td></tr>
     <tr><td><kbd>Alt</kbd> + <kbd>R</kbd></td><td>Đặt lại khung nhìn: hiện mọi nến, thang giá vừa với chúng</td></tr>
     <tr><td><kbd>Alt</kbd> + <kbd>I</kbd></td><td>Đảo ngược thang giá</td></tr>
     <tr><td><kbd>Alt</kbd> + <kbd>G</kbd></td><td>Đi tới một ngày</td></tr>
     <tr><td><kbd>?</kbd></td><td>Bảng phím tắt, tìm được theo việc phím làm hoặc theo phím</td></tr>
-    <tr><td><kbd>Alt</kbd> + bấm vào biểu đồ</td><td>Ghim chú thích OHLC tại nến đang rê chuột (kèm chênh lệch so với vị trí con trỏ chữ thập hiện tại)</td></tr>
+    <tr><td><kbd>Alt</kbd> + bấm vào biểu đồ</td><td>Ghim chú thích OHLC tại nến đang rê chuột (kèm chênh lệch so với vị trí crosshair hiện tại)</td></tr>
     <tr><td><kbd>Esc</kbd></td><td>Bỏ ghim chú thích / huỷ hình đang vẽ</td></tr>
-    <tr><td><kbd>Shift</kbd> + <kbd>←</kbd> / <kbd>→</kbd></td><td>Lùi / tiến phát lại một bước</td></tr>
-    <tr><td><kbd>Space</kbd></td><td>Phát hoặc tạm dừng phát lại (trên biểu đồ hoặc thanh trượt; ngoài phát lại nó vừa khung biểu đồ)</td></tr>
-    <tr><td><kbd>Esc</kbd></td><td>Thôi chọn nến bắt đầu phát lại</td></tr>
+    <tr><td><kbd>Shift</kbd> + <kbd>←</kbd> / <kbd>→</kbd></td><td>Lùi / tiến replay một bước</td></tr>
+    <tr><td><kbd>Space</kbd></td><td>Phát hoặc tạm dừng replay (trên biểu đồ hoặc thanh trượt; ngoài replay nó vừa khung biểu đồ)</td></tr>
+    <tr><td><kbd>Esc</kbd></td><td>Thôi chọn nến bắt đầu replay</td></tr>
     <tr><td>Bấm vào mã trên thanh công cụ</td><td>Mở hộp thoại tìm mã</td></tr>
-    <tr><td>Bấm nút phát trên thanh công cụ</td><td>Mở thanh điều khiển phát lại nến (phát/từng bước/tua/tốc độ)</td></tr>
+    <tr><td>Bấm nút phát trên thanh công cụ</td><td>Mở thanh điều khiển bar replay (phát/từng bước/tua/tốc độ)</td></tr>
   </tbody>
 </table>
 <p>
   Đổi các mã có thể tìm lúc chạy bằng <code>widget.setSymbols(['BTCUSDT', 'ETHUSDT', …])</code>, là mã hoặc
-  <code>SymbolInfo</code> như trong <code>symbols</code>. Danh mục theo dõi được tạo từ <code>symbols</code> (không có
+  <code>SymbolInfo</code> như trong <code>symbols</code>. Watchlist được tạo từ <code>symbols</code> (không có
   <code>lists</code>, không lưu lại) sẽ được thay bằng các mã này và hỏi giá của từng mã: với một danh sách dài từ máy
-  chủ của bạn, hãy cho danh mục theo dõi các danh sách riêng.
+  chủ của bạn, hãy cho watchlist các danh sách riêng.
 </p>
 <pre><code>{`const widget = new ChartWidget(el, {
   adapter: feed,
@@ -690,15 +691,15 @@ widget.setSymbols(await loadMarkets())   // SymbolInfo[] từ máy chủ của b
 <p>
   Một bảng nổi hiển thị chính xác O/H/L/C/V, mức thay đổi của nến và giá trị của mọi
   chỉ báo đang bật tại nến đang rê chuột — cập nhật trực tiếp khi bạn di chuyển
-  con trỏ chữ thập. Bật/tắt từ bảng lệnh (<kbd>Ctrl/⌘ K</kbd> →
+  crosshair. Bật/tắt từ bảng lệnh (<kbd>Ctrl/⌘ K</kbd> →
   "Bật/tắt cửa sổ dữ liệu"). Trên màn hình cảm ứng, chạm vào biểu đồ để đặt
-  con trỏ chữ thập lên một nến. Giá, mức thay đổi và giá trị của chỉ báo trên
-  khung giá được viết như biểu đồ viết giá; giá trị của chỉ báo ở khung riêng
+  crosshair lên một nến. Giá, mức thay đổi và giá trị của chỉ báo trên
+  pane giá được viết như biểu đồ viết giá; giá trị của chỉ báo ở pane riêng
   được viết như dòng chú giải của nó; tất cả theo định dạng số của biểu đồ.
   Một đường so sánh, spread hay tỉ lệ, và một đường trên thang riêng, được ghi theo số
   chữ số thập phân mà độ lớn của nó cần, không theo giá của biểu đồ. Trên Renko, Kagi và
-  các kiểu tương tự, cửa sổ dữ liệu hiển thị viên gạch dưới con trỏ và mức thay đổi so với
-  viên gạch trước.
+  các kiểu tương tự, cửa sổ dữ liệu hiển thị brick dưới con trỏ và mức thay đổi so với
+  brick trước.
 </p>
 
 <h3>Chia sẻ góc nhìn (deep link)</h3>
@@ -761,8 +762,7 @@ await widget.applyLayoutContent(json)`}</code></pre>
 <h3 id="chart-settings">Cài đặt biểu đồ</h3>
 <p>
   Các công tắc và lựa chọn trong hộp thoại cài đặt (hồ sơ khối lượng và Market
-  Profile, điểm swing, tô vùng phiên, mức của kỳ trước, lưới, chú giải, con trỏ chữ
-  thập, thang giá, múi giờ, định dạng số) là Cài đặt biểu đồ của widget. Đọc chúng
+  Profile, điểm swing, tô vùng phiên, mức của kỳ trước, lưới, chú giải, crosshair, thang giá, múi giờ, định dạng số) là Cài đặt biểu đồ của widget. Đọc chúng
   bằng <code>getSettings()</code> (một bản sao); đổi một phần bằng
   <code>setSettings(patch)</code>, hàm này bỏ những gì không đọc được, giữ các số
   trong khoảng của hộp thoại và không ghi bước hoàn tác; và nghe từng thay đổi bằng
@@ -799,7 +799,7 @@ stop()`}</code></pre>
   <li><strong>persistSettings</strong> giữ, theo từng trình duyệt, những gì người dùng
     đã đổi so với giá trị của bạn. Giá trị được giữ thắng <code>chartOptions</code>, và
     Đặt lại đưa về giá trị của bạn. Nó bỏ qua cờ thang log, cờ tự co giãn và cài đặt riêng
-    của từng loại biểu đồ (hộp Renko và những thứ tương tự), vốn là trạng thái của biểu đồ.
+    của từng loại biểu đồ (box Renko và những thứ tương tự), vốn là trạng thái của biểu đồ.
     Hãy cho mỗi widget trên trang một <code>key</code> riêng; lưới tự cho mỗi biểu đồ của
     nó một key. Nó không biết ai đã đổi: những gì bạn đặt bằng <code>setSettings</code>
     (chẳng hạn trong <code>onReady</code>), và những gì một bố cục được mở mang đến,
@@ -905,7 +905,7 @@ const dayStart = timeframeBucketStart(trade.time, '1d', { timeZone: 'Asia/Ho_Chi
   của nến chứa một thời điểm.
 </p>
 
-<h3>Danh mục theo dõi</h3>
+<h3>Watchlist</h3>
 <p>
   Một bảng trong ngăn bên, gồm các danh sách mã, mỗi mã một dòng gồm giá cuối, mức thay đổi và % thay đổi dưới tên các cột (sparkline thay cho mức thay đổi với <code>sparkline: true</code>; phần sàn đứng trước mã, như <code>HYPERLIQUID:xyz:</code>, hiện khi rê chuột). Chuyển, tạo,
   đổi tên và xoá danh sách từ menu của bảng; thêm mã từ ô tìm mã (+), bỏ mã, và sắp xếp lại bằng cách kéo
@@ -1020,7 +1020,7 @@ chart.removeIndicator(instanceId)`}</code></pre>
 </p>
 <p>
   Phần <strong>So sánh</strong> trong cây đối tượng liệt kê mọi mã đang so sánh, như hộp thoại
-  so sánh: mỗi mã kèm cách so sánh (thay đổi phần trăm, thang riêng, pane riêng, chênh lệch, tỷ lệ
+  so sánh: mỗi mã kèm cách so sánh (thay đổi phần trăm, thang riêng, pane riêng, spread, tỷ lệ
   hay tương quan) và một nút để bỏ nó đi. Khi có adapter dữ liệu trực tiếp, nút + của phần này mở
   hộp thoại so sánh. Dù so sánh theo cách nào, widget cũng tải nến của mã kia qua
   <code>adapter.fetchHistory</code> trước khi thêm, và không thêm gì nếu nến không về (tải lỗi,
@@ -1162,11 +1162,11 @@ new ChartWidgetGrid(host, {
   onChartAdd: (widget, index) => widget.getChart().addIndicator('ema', { period: 21 }),
 })`}</code></pre>
 <p>
-  Đồng bộ con trỏ chữ thập hiện thời điểm dưới con trỏ chuột trên mọi biểu đồ; đồng bộ
+  Đồng bộ crosshair hiện thời điểm dưới con trỏ chuột trên mọi biểu đồ; đồng bộ
   thời gian cuộn và phóng to/thu nhỏ các biểu đồ khác theo biểu đồ đang dùng; hình vẽ được
   sao chép sang các biểu đồ đang hiện cùng mã (bật mục này sẽ gộp hình vẽ của các biểu đồ
-  đó lại, không mất hình nào); đồng bộ phát lại cho các biểu đồ khác phát lại đến cùng thời điểm
-  với biểu đồ đang phát lại (biểu đồ có nến dài hơn các bước phát lại sẽ hiện trọn nến chứa thời điểm đó).
+  đó lại, không mất hình nào); đồng bộ replay cho các biểu đồ khác replay đến cùng thời điểm
+  với biểu đồ đang replay (biểu đồ có nến dài hơn các bước replay sẽ hiện trọn nến chứa thời điểm đó).
   Các biểu đồ bị bớt đi khi lưới thu nhỏ sẽ được cất đi, vẫn
   được giữ trong bố cục đã lưu, và trở lại nguyên như cũ khi lưới mở rộng lại; một biểu đồ
   hoàn toàn mới sẽ mở theo mã và khung thời gian của biểu đồ đang chọn nếu hai mục đó đang

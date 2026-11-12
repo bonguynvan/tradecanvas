@@ -577,9 +577,9 @@ widget.destroy()`}</code></pre>
       (abre las zonas para elegir) y los interruptores <code>%</code> · <code>log</code> · <code>auto</code> de la escala
       de precio.
     </td></tr>
-    <tr><td>Sobre un dibujo seleccionado</td><td>
+    <tr><td>Para un dibujo seleccionado</td><td>
       Su color, grosor y estilo de línea, ajustes, una alerta, bloqueo, más y borrar. Arrastra la barra por su asa y se
-      queda ahí para el siguiente dibujo; con doble clic en el asa vuelve sobre el dibujo.
+      queda ahí para el siguiente dibujo; con doble clic en el asa vuelve a su sitio. Espera cerca del borde superior del panel de precios, esté el dibujo en el panel que esté, sin tapar lo que acabas de dibujar (al pie, en un gráfico estrecho).
     </td></tr>
     <tr><td>Dock</td><td>
       Un riel en el borde exterior con un botón para cada panel: la lista de seguimiento, las alertas, el árbol de

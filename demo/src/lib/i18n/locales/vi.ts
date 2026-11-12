@@ -543,7 +543,7 @@ const vi: SiteMessages = {
     eyebrow: 'Ví dụ · StackBlitz',
     title: 'Ví dụ',
     subtitleHtml:
-      'Sandbox chạy trực tiếp, fork chỉ với một cú bấm. Mỗi ví dụ mở trong StackBlitz, đã cài sẵn các gói 1.x mới nhất. Muốn thử tính năng mà không cần cài đặt gì, hãy dùng <a href="{lab}">Feature Lab</a> trên trang chủ.',
+      'Sandbox chạy trực tiếp, fork chỉ với một cú bấm. Mỗi ví dụ mở trong StackBlitz, đã cài sẵn các gói 2.x mới nhất. Muốn thử tính năng mà không cần cài đặt gì, hãy dùng <a href="{lab}">Feature Lab</a> trên trang chủ.',
     open: 'Mở {title} trong StackBlitz',
     items: {
       vanilla: {

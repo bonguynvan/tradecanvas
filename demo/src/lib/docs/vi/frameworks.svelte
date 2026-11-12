@@ -102,7 +102,7 @@ const adapter = new BinanceAdapter()
     <tr><td><code>historyLimit</code></td><td><code>number</code></td><td>Số nến luồng nạp lúc đầu. Mặc định 500.</td></tr>
     <tr><td><code>indicators</code></td><td><code>IndicatorSpec[]</code></td><td><code>'rsi'</code>, hoặc <code>{'{ id, params, position }'}</code>; chỉ báo nào đổi tham số sẽ được đặt lại với tham số mới.</td></tr>
     <tr><td><code>features</code></td><td><code>FeaturesConfig</code></td><td>Người dùng được làm gì trên biểu đồ; đổi sau khi mount cũng có hiệu lực.</td></tr>
-    <tr><td><code>signalMarkers / tradeZones</code></td><td><code>mảng</code></td><td>Điểm mua, bán và lệnh giao dịch; phát lại sẽ hiện chúng khi chạy tới.</td></tr>
+    <tr><td><code>signalMarkers / tradeZones</code></td><td><code>mảng</code></td><td>Điểm mua, bán và lệnh giao dịch; replay sẽ hiện chúng khi chạy tới.</td></tr>
     <tr><td><code>signalMarkerStyle / tradeZoneStyle</code></td><td><code>style</code></td><td>Màu và nhãn của chúng.</td></tr>
     <tr><td><code>overrides</code></td><td><code>ChartStyleOverrides</code></td><td>Giao diện biểu đồ theo khoá (xem <a href={href('/docs/styling#overrides')}>Giao diện</a>).</td></tr>
     <tr><td><code>autoScale</code></td><td><code>boolean</code></td><td>Mặc định <code>true</code>.</td></tr>
@@ -115,7 +115,7 @@ const adapter = new BinanceAdapter()
 <blockquote>
   Cần nhiều hơn những gì props cung cấp? Truy cập <code>Chart</code> bên dưới qua
   <code>onReady</code>, một ref (React / Vue) hoặc <code>bind:chart</code> (Svelte)
-  để dùng toàn bộ API — hình vẽ, giao dịch, adapter khớp lệnh, plugin, bảng
+  để dùng toàn bộ API — hình vẽ, giao dịch, adapter khớp lệnh, plugin, pane
   đổi được kích thước và nhiều thứ khác.
 </blockquote>
 

@@ -561,9 +561,10 @@ widget.destroy()`}</code></pre>
       opens the zones to pick from) and the price scale's <code>%</code> · <code>log</code> · <code>auto</code>
       switches.
     </td></tr>
-    <tr><td>Over a selected drawing</td><td>
-      Its colour, width and line style, settings, an alert, lock, more and delete. Drag it by its grip and it stays
-      there for the next drawing; double-click the grip to put it back over the drawing.
+    <tr><td>For a selected drawing</td><td>
+      Its colour, width and line style, settings, an alert, lock, more and delete. It waits near the top of the
+      price pane, clear of what you drew (at its foot on a narrow chart), whichever pane the drawing is on. Drag it by its grip and it stays
+      there for the next drawing; double-click the grip to send it back.
     </td></tr>
     <tr><td>Dock</td><td>
       A rail at the outer edge with a button for each panel: the watchlist, alerts, the object tree, the data

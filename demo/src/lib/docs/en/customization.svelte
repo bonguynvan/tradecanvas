@@ -143,7 +143,7 @@ grid.setFeatures({ toasts: false })  // every chart of a ChartWidgetGrid`}</code
   <code>menu.chart.*</code> covers the "+" by the price axis as well as the right-click menu; <code>compare</code>
   takes the add button of the object tree, and comparisons already on stay listed; <code>toasts</code> silences the
   widget's own notices (its errors still show), while yours through <code>widget.toast()</code> show as well.
-  <code>selectionToolbar</code> off hides the toolbar over a selected drawing; the right-click menu stays.
+  <code>selectionToolbar</code> off hides the toolbar of a selected drawing; the right-click menu stays.
   <code>statusBar.rangeTimeframe</code> off keeps the timeframe when a range on the range bar is longer than its bars fit; on, it switches to weeks or months and back.
   The trading tools are one Trade menu on the toolbar: <code>toolbar.bracketOrders</code>, <code>toolbar.depthLadder</code>,
   <code>toolbar.accountPanel</code> and their capabilities take their entries out of it, and <code>toolbar.trade</code>
