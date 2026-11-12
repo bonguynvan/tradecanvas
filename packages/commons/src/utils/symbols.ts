@@ -63,9 +63,9 @@ export function stepDecimals(step: number | string): number {
   return 12;
 }
 
-/** The zone a symbol keeps its hours in: its `timeZone`, else the older `timezone`. */
-export function symbolTimeZone(info: Pick<SymbolInfo, 'timeZone' | 'timezone'> | null | undefined): string | undefined {
-  return info?.timeZone ?? info?.timezone;
+/** The zone a symbol keeps its hours in. */
+export function symbolTimeZone(info: Pick<SymbolInfo, 'timeZone'> | null | undefined): string | undefined {
+  return info?.timeZone;
 }
 
 /** `'09:30'` → 570 (`'24:00'`, a day's end, → 1440), or null for anything that isn't a time of day. */

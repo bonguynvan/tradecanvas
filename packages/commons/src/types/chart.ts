@@ -398,13 +398,9 @@ export interface TimeFormatContext {
   /**
    * Axis labels, by the calendar step their bar starts: `'year'` (a new
    * year), `'month'`, `'day'` (a new day), `'time'` (within a day).
-   * `'crosshair'`: the crosshair's label and the tooltip. `'date'` (a bar a
-   * day or longer) is no longer given by the axis, which says `'day'`,
-   * `'month'` or `'year'` instead.
+   * `'crosshair'`: the crosshair's label and the tooltip.
    */
-  kind: 'year' | 'month' | 'day' | 'time' | 'crosshair'
-    /** @deprecated No longer given: the axis says `'year'`, `'month'` or `'day'` where it said `'date'`. */
-    | 'date';
+  kind: 'year' | 'month' | 'day' | 'time' | 'crosshair';
   /** The chart's time zone: an IANA name, minutes east of UTC, or null for the browser's. */
   timeZone: string | number | null;
 }

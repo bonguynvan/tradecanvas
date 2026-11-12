@@ -32,12 +32,6 @@ export interface SymbolInfo {
    * midnight, and daily bars are dated by it.
    */
   timeZone?: string;
-  /**
-   * @deprecated Use `timeZone`, spelled as the chart's `timeZone` option is.
-   * Still read when `timeZone` is left out (`timeZone` comes first when both
-   * are given); the chart's `getSymbolInfo()` gives both.
-   */
-  timezone?: string;
   /** Regular trading hours in `timeZone`; none means around the clock. */
   sessions?: SymbolSession[];
   /** Currency prices are quoted in. */

@@ -28,7 +28,6 @@ export const DE_MESSAGES: WidgetMessages = {
   'replay.selectHint': 'Klicken Sie auf eine Kerze, um das Replay zu starten',
   'replay.random': 'Zufällige Kerze',
   'replay.realtime': 'Zurück zur Echtzeit',
-  'replay.barsPerSecond': 'Kerzen/s',
   'replay.play': 'Abspielen',
   'replay.pause': 'Pause',
   'replay.stepBack': 'Eine Kerze zurück (Shift+←)',

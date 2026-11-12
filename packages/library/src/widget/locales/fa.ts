@@ -29,7 +29,6 @@ export const FA_MESSAGES: WidgetMessages = {
   'replay.selectHint': 'برای شروع بازپخش روی یک کندل کلیک کنید',
   'replay.random': 'کندل تصادفی',
   'replay.realtime': 'بازگشت به زمان واقعی',
-  'replay.barsPerSecond': 'کندل/ث',
   'replay.play': 'پخش',
   'replay.pause': 'توقف',
   'replay.stepBack': 'یک گام به عقب (Shift+←)',

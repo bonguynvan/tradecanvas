@@ -66,7 +66,7 @@ const AAPL: SymbolInfo = {
   type: 'stock',
   currency: 'USD',
   minTick: 0.01,
-  timezone: 'America/New_York',
+  timeZone: 'America/New_York',
   sessions: [{ start: '09:30', end: '16:00', days: [1, 2, 3, 4, 5] }],
 };
 
@@ -126,7 +126,7 @@ describe('ChartWidget symbol info', () => {
     expect(host.querySelector('.tcw-status-market-text')!.textContent).toBe('Market closed');
     // The short word, for a status bar out of room.
     expect(host.querySelector('.tcw-status-market-short')!.textContent).toBe('Closed');
-    FakeChart.info = { symbol: 'BTCUSDT', timezone: 'UTC' };
+    FakeChart.info = { symbol: 'BTCUSDT', timeZone: 'UTC' };
     FakeChart.last.emit('symbolInfoChange', { info: FakeChart.info });
     widget.toggleSymbolInfo(true);
     expect(panel().querySelector('.tcw-syminfo-status')!.textContent).toBe('Trades around the clock');

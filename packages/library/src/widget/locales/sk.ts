@@ -28,7 +28,6 @@ export const SK_MESSAGES: WidgetMessages = {
   'replay.selectHint': 'Kliknutím na sviečku spustíte prehrávanie',
   'replay.random': 'Náhodná sviečka',
   'replay.realtime': 'Späť do reálneho času',
-  'replay.barsPerSecond': 'sviečok/s',
   'replay.play': 'Prehrať',
   'replay.pause': 'Pozastaviť',
   'replay.stepBack': 'O sviečku späť (Shift+←)',

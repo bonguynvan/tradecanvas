@@ -28,7 +28,6 @@ export const VI_MESSAGES: WidgetMessages = {
   'replay.selectHint': 'Bấm vào một nến để bắt đầu phát lại',
   'replay.random': 'Nến ngẫu nhiên',
   'replay.realtime': 'Về thời gian thực',
-  'replay.barsPerSecond': 'nến/giây',
   'replay.play': 'Phát',
   'replay.pause': 'Tạm dừng',
   'replay.stepBack': 'Lùi một nến (Shift+←)',

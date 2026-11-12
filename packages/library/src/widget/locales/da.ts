@@ -29,7 +29,6 @@ export const DA_MESSAGES: WidgetMessages = {
   'replay.selectHint': 'Klik på et lys for at starte genafspilningen',
   'replay.random': 'Tilfældigt lys',
   'replay.realtime': 'Tilbage til realtid',
-  'replay.barsPerSecond': 'lys/s',
   'replay.play': 'Afspil',
   'replay.pause': 'Pause',
   'replay.stepBack': 'Et lys tilbage (Shift+←)',

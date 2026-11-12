@@ -28,7 +28,6 @@ export const JA_MESSAGES: WidgetMessages = {
   'replay.selectHint': 'バーをクリックしてリプレイを開始',
   'replay.random': 'ランダムなバー',
   'replay.realtime': 'リアルタイムに戻る',
-  'replay.barsPerSecond': '本/秒',
   'replay.play': '再生',
   'replay.pause': '一時停止',
   'replay.stepBack': '1本戻る (Shift+←)',

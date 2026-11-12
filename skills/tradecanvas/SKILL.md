@@ -61,7 +61,10 @@ also works on a widget.
    `MarketConfig.timeZone`. `setTimeZone('exchange')` shows the symbol's zone,
    else its market's. In a `ChartWidget`, set it as a Chart Setting,
    `widget.setSettings({ timezone: 'exchange' })` (spelt `timezone` there), so
-   the widget's clock, its settings dialog and what it keeps follow. The 2h–12h,
+   the widget's clock, its settings dialog and what it keeps follow. From 2.0
+   that is the only other spelling: `setTimezone`, `getTimezone`,
+   `EXCHANGE_TIMEZONE` and `SymbolInfo.timezone` are gone, and a symbol that
+   gives `timezone` has no zone. The 2h–12h,
    1D, 1W and 1M bars the library builds start at the exchange's midnight: from
    a feed's `supportedTimeframes`, at the zone its `resolveSymbol` names (not
    `setMarket`'s); from the widget's `setData`, at the symbol's zone, else the

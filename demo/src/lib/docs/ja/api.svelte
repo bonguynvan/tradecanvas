@@ -118,10 +118,8 @@ chart.getTimeZone()                    // 'exchange'、設定したとおり
 chart.getEffectiveTimeZone()           // それが指すタイムゾーン：HOSE なら 'Asia/Ho_Chi_Minh'`}</code></pre>
 <p>
   チャートのメソッドと型では <code>Intl.DateTimeFormat</code> と同じく <code>timeZone</code> と綴ります。
-  従来の名前も動きますが、非推奨です：<code>setTimezone</code>、<code>getTimezone</code>、<code>getEffectiveTimezone</code>、
-  <code>getExchangeTimezone</code>、<code>setTimezoneOffset</code>、<code>EXCHANGE_TIMEZONE</code>、
-  <code>SymbolInfo.timezone</code>
-  （シンボルが両方を持つ場合は <code>timeZone</code> が使われます）。
+  1.x の綴り（<code>setTimezone</code> など、および <code>SymbolInfo.timezone</code>）は 2.0 で削除されました。
+  <a href={href('/docs/migration#removed')}>2.0 への移行</a>を参照してください。
 </p>
 
 <p>同じ操作はプログラムからも行えます：</p>

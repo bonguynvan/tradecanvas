@@ -70,7 +70,7 @@ describe('extended hours and ticks', () => {
     const half = 30 * 60_000;
     const nyMidnight = Date.UTC(2026, 0, 5, 5);
     const day: OHLCBar[] = Array.from({ length: 48 }, (_, i) => ({ time: nyMidnight + i * half, open: 100, high: 101, low: 99, close: 100, volume: 1 }));
-    const stock: SymbolInfo = { symbol: 'AAA', timezone: 'America/New_York', sessions: [{ start: '09:30', end: '16:00' }] };
+    const stock: SymbolInfo = { symbol: 'AAA', timeZone: 'America/New_York', sessions: [{ start: '09:30', end: '16:00' }] };
     chart.setSymbolInfo(stock);
     chart.setData(day.slice(0, 26)); // up to 12:30
     chart.setExtendedHours(false);
@@ -163,7 +163,7 @@ describe('second review', () => {
     const half = 30 * 60_000;
     const nyMidnight = Date.UTC(2026, 0, 6, 5);
     const at = (i: number): OHLCBar => ({ time: nyMidnight + i * half, open: 100, high: 101, low: 99, close: 100, volume: 1 });
-    chart.setSymbolInfo({ symbol: 'AAA', timezone: 'America/New_York', sessions: [{ start: '09:30', end: '16:00' }] });
+    chart.setSymbolInfo({ symbol: 'AAA', timeZone: 'America/New_York', sessions: [{ start: '09:30', end: '16:00' }] });
     chart.setData([]);
     chart.setExtendedHours(false);
     chart.appendBar(at(14)); // 07:00
@@ -178,7 +178,7 @@ describe('second review', () => {
     const half = 30 * 60_000;
     const nyMidnight = Date.UTC(2026, 0, 6, 5);
     const at = (i: number): OHLCBar => ({ time: nyMidnight + i * half, open: 100, high: 101, low: 99, close: 100, volume: 1 });
-    chart.setSymbolInfo({ symbol: 'AAA', timezone: 'America/New_York', sessions: [{ start: '09:30', end: '16:00' }] });
+    chart.setSymbolInfo({ symbol: 'AAA', timeZone: 'America/New_York', sessions: [{ start: '09:30', end: '16:00' }] });
     chart.setData([at(20), at(21), at(22)]);
     chart.setExtendedHours(false);
     chart.prependBars([at(19), at(15), at(19), at(18)]);
@@ -237,12 +237,12 @@ describe('the symbol’s precision on the price scale', () => {
   it('adds what the feed learns to what is known, any case, and ignores the same again', async () => {
     const handlers = new Map<string, (e: { data: unknown }) => void>();
     await chart.connect({ adapter: feed(handlers), symbol: 'VND1', timeframe: '1h', historyLimit: 60 });
-    chart.setSymbolInfo({ symbol: 'VND1', timezone: 'Asia/Ho_Chi_Minh', sessions: [{ start: '09:00', end: '15:00' }] });
+    chart.setSymbolInfo({ symbol: 'VND1', timeZone: 'Asia/Ho_Chi_Minh', sessions: [{ start: '09:00', end: '15:00' }] });
     const changes: unknown[] = [];
     chart.on('symbolInfoChange', (e) => changes.push(e.payload));
     handlers.get('symbolInfo')?.({ data: { symbol: 'vnd1', pricePrecision: 0 } });
     handlers.get('symbolInfo')?.({ data: { symbol: 'vnd1', pricePrecision: 0 } });
-    expect(chart.getSymbolInfo()).toMatchObject({ timezone: 'Asia/Ho_Chi_Minh', pricePrecision: 0 });
+    expect(chart.getSymbolInfo()).toMatchObject({ timeZone: 'Asia/Ho_Chi_Minh', pricePrecision: 0 });
     expect(changes).toHaveLength(1);
   });
 

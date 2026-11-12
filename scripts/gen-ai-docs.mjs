@@ -200,6 +200,7 @@ function llmsTxt() {
     '## Docs',
     '',
     `- [Getting started](${SITE}/docs/getting-started): install, the widget, the headless chart`,
+    `- [Moving to 2.0](${SITE}/docs/migration): from 1.x: the new default look and the option that keeps the old one, each removed name and what to use, what changed without a name changing`,
     `- [API reference](${SITE}/docs/api): Chart and ChartWidget methods, options and events`,
     `- [Indicators](${SITE}/docs/indicators): every built-in indicator with its id, inputs and lines`,
     `- [Styling](${SITE}/docs/styling): the widget's look as tokens: the Print (default, kept to the golden ratio), Studio, Terminal, Capsule and Desk presets, your own theme, CSS variables`,

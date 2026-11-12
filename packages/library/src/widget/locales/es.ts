@@ -28,7 +28,6 @@ export const ES_MESSAGES: WidgetMessages = {
   'replay.selectHint': 'Haz clic en una barra para iniciar la repetición',
   'replay.random': 'Barra aleatoria',
   'replay.realtime': 'Volver al tiempo real',
-  'replay.barsPerSecond': 'barras/s',
   'replay.play': 'Reproducir',
   'replay.pause': 'Pausa',
   'replay.stepBack': 'Retroceder una barra (Shift+←)',

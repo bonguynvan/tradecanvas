@@ -4,15 +4,15 @@ import { marketStatus, readNews, symbolTimeZone, type SymbolInfo } from '@tradec
 const utc = (iso: string) => Date.parse(iso);
 const NYSE: SymbolInfo = {
   symbol: 'AAPL',
-  timezone: 'America/New_York',
+  timeZone: 'America/New_York',
   sessions: [{ start: '09:30', end: '16:00', days: [1, 2, 3, 4, 5] }],
 };
 
 describe('marketStatus', () => {
   it('is open around the clock without hours or a zone it knows', () => {
     expect(marketStatus(null, Date.now())).toEqual({ state: 'always', next: null });
-    expect(marketStatus({ symbol: 'BTCUSDT', timezone: 'UTC' }, Date.now())).toEqual({ state: 'always', next: null });
-    expect(marketStatus({ ...NYSE, timezone: 'Mars/Olympus' }, Date.now()).state).toBe('always');
+    expect(marketStatus({ symbol: 'BTCUSDT', timeZone: 'UTC' }, Date.now())).toEqual({ state: 'always', next: null });
+    expect(marketStatus({ ...NYSE, timeZone: 'Mars/Olympus' }, Date.now()).state).toBe('always');
   });
 
   it('is open in a session, until it closes', () => {
@@ -35,31 +35,33 @@ describe('marketStatus', () => {
   });
 
   it('runs a session past midnight, and joins sessions that meet', () => {
-    const night: SymbolInfo = { symbol: 'X', timezone: 'UTC', sessions: [{ start: '22:00', end: '02:00' }] };
+    const night: SymbolInfo = { symbol: 'X', timeZone: 'UTC', sessions: [{ start: '22:00', end: '02:00' }] };
     expect(marketStatus(night, utc('2026-10-05T23:00:00Z'))).toEqual({ state: 'open', next: utc('2026-10-06T02:00:00Z') });
     expect(marketStatus(night, utc('2026-10-06T01:00:00Z'))).toEqual({ state: 'open', next: utc('2026-10-06T02:00:00Z') });
     expect(marketStatus(night, utc('2026-10-06T03:00:00Z'))).toEqual({ state: 'closed', next: utc('2026-10-06T22:00:00Z') });
 
-    const split: SymbolInfo = { symbol: 'Y', timezone: 'UTC', sessions: [{ start: '09:30', end: '12:00' }, { start: '12:00', end: '16:00' }] };
+    const split: SymbolInfo = { symbol: 'Y', timeZone: 'UTC', sessions: [{ start: '09:30', end: '12:00' }, { start: '12:00', end: '16:00' }] };
     expect(marketStatus(split, utc('2026-10-05T11:00:00Z')).next).toBe(utc('2026-10-05T16:00:00Z'));
   });
 
-  it('reads the zone as timeZone, and as the older timezone', () => {
+  it('reads the zone as timeZone, and not as the timezone of 1.x', () => {
     const named: SymbolInfo = { symbol: 'AAPL', timeZone: 'America/New_York', sessions: NYSE.sessions };
     expect(marketStatus(named, utc('2026-10-05T14:00:00Z'))).toEqual({ state: 'open', next: utc('2026-10-05T20:00:00Z') });
-    // Both given: timeZone is the one.
-    expect(marketStatus({ ...named, timezone: 'Asia/Tokyo' }, utc('2026-10-05T14:00:00Z')).state).toBe('open');
+    // Only the old name given: no zone, so the hours cannot be placed.
+    const old = { symbol: 'AAPL', timezone: 'America/New_York', sessions: NYSE.sessions } as never;
+    expect(marketStatus(old, utc('2026-10-05T14:00:00Z')).state).toBe('always');
   });
 
   it('reads a symbol’s zone through symbolTimeZone', () => {
     expect(symbolTimeZone(null)).toBeUndefined();
     expect(symbolTimeZone({})).toBeUndefined();
-    expect(symbolTimeZone({ timezone: 'UTC' })).toBe('UTC');
-    expect(symbolTimeZone({ timeZone: 'Asia/Tokyo', timezone: 'UTC' })).toBe('Asia/Tokyo');
+    expect(symbolTimeZone({ timeZone: 'UTC' })).toBe('UTC');
+    // The `timezone` of 1.x is not read.
+    expect(symbolTimeZone({ timezone: 'UTC' } as never)).toBeUndefined();
   });
 
   it('ignores sessions it can’t read', () => {
-    const broken: SymbolInfo = { symbol: 'Z', timezone: 'UTC', sessions: [{ start: '9am', end: '16:00' }] };
+    const broken: SymbolInfo = { symbol: 'Z', timeZone: 'UTC', sessions: [{ start: '9am', end: '16:00' }] };
     expect(marketStatus(broken, utc('2026-10-05T11:00:00Z')).state).toBe('always');
   });
 });
@@ -86,7 +88,7 @@ describe('readNews', () => {
 
 describe('marketStatus, after review', () => {
   it('takes a session that ends at 24:00', () => {
-    const evening: SymbolInfo = { symbol: 'E', timezone: 'UTC', sessions: [{ start: '18:00', end: '24:00' }] };
+    const evening: SymbolInfo = { symbol: 'E', timeZone: 'UTC', sessions: [{ start: '18:00', end: '24:00' }] };
     expect(marketStatus(evening, utc('2026-10-05T20:00:00Z'))).toEqual({ state: 'open', next: utc('2026-10-06T00:00:00Z') });
   });
 });

@@ -30,8 +30,6 @@ export const EN_MESSAGES = {
   'replay.selectHint': 'Click a bar to start the replay',
   'replay.random': 'Random bar',
   'replay.realtime': 'Back to realtime',
-  /** @deprecated Unused since the replay's speeds became multipliers ('replay.rate'); kept for typed overrides until 2.0. */
-  'replay.barsPerSecond': 'bars/s',
   'replay.play': 'Play',
   'replay.pause': 'Pause',
   'replay.stepBack': 'Step back (Shift+←)',

@@ -28,7 +28,6 @@ export const TR_MESSAGES: WidgetMessages = {
   'replay.selectHint': 'Tekrarı başlatmak için bir bara tıklayın',
   'replay.random': 'Rastgele bar',
   'replay.realtime': 'Gerçek zamana dön',
-  'replay.barsPerSecond': 'bar/sn',
   'replay.play': 'Oynat',
   'replay.pause': 'Duraklat',
   'replay.stepBack': 'Bir bar geri (Shift+←)',

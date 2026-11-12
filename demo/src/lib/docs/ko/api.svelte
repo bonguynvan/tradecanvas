@@ -116,11 +116,9 @@ chart.setTimeZone('exchange')          // 종목의 시간대, 없으면 시장�
 chart.getTimeZone()                    // 설정한 그대로 'exchange'
 chart.getEffectiveTimeZone()           // 가리키는 시간대: HOSE에서는 'Asia/Ho_Chi_Minh'`}</code></pre>
 <p>
-  차트의 메서드와 타입은 <code>Intl.DateTimeFormat</code>과 같이 <code>timeZone</code>으로 씁니다. 이전
-  이름도 동작하지만 더 이상 권장되지 않습니다(deprecated): <code>setTimezone</code>,
-  <code>getTimezone</code>, <code>getEffectiveTimezone</code>, <code>getExchangeTimezone</code>,
-  <code>setTimezoneOffset</code>, <code>EXCHANGE_TIMEZONE</code>, <code>SymbolInfo.timezone</code>
-  (종목이 둘 다 주면 <code>timeZone</code>을 읽습니다).
+  차트의 메서드와 타입은 <code>Intl.DateTimeFormat</code>과 같이 <code>timeZone</code>으로 씁니다. 1.x의
+  표기(<code>setTimezone</code> 등과 <code>SymbolInfo.timezone</code>)는 2.0에서 제거되었습니다.
+  <a href={href('/docs/migration#removed')}>2.0으로 마이그레이션</a>을 참고하세요.
 </p>
 
 <p>같은 효과를 코드로도 적용할 수 있습니다.</p>

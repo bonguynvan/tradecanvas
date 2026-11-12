@@ -914,6 +914,7 @@ const ru: SiteMessages = {
       'getting-started': 'Начало работы',
       frameworks: 'Фреймворки',
       embed: 'Встраиваемый виджет',
+      migration: 'Переход на 2.0',
       'how-it-works': 'Как это устроено',
       api: 'Справочник API',
       styling: 'Оформление',

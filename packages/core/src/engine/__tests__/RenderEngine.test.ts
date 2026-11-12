@@ -238,7 +238,6 @@ describe('RenderEngine — two canvases', () => {
     ctx.indicatorEngine = fakeIndicators([() => order.push('overlay')]);
     ctx.sessionBreaks = {
       renderLines: () => order.push('lines'),
-      renderLabels: () => order.push('labels'),
       isVisible: () => true,
     } as unknown as RenderContext['sessionBreaks'];
     engine.setRenderContext(ctx);

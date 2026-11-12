@@ -47,7 +47,6 @@ describe('BinanceAdapter symbol search', () => {
       pricePrecision: 2,
       minTick: 0.01,
       timeZone: 'UTC',
-      timezone: 'UTC',
       currency: 'USDT',
     }]);
   });

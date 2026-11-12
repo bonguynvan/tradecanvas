@@ -914,6 +914,7 @@ const id: SiteMessages = {
       'getting-started': 'Memulai',
       frameworks: 'Framework',
       embed: 'Widget Tertanam',
+      migration: 'Pindah ke 2.0',
       'how-it-works': 'Cara kerja',
       api: 'Referensi API',
       styling: 'Tampilan',

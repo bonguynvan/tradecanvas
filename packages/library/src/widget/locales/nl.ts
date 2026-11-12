@@ -28,7 +28,6 @@ export const NL_MESSAGES: WidgetMessages = {
   'replay.selectHint': 'Klik op een bar om de replay te starten',
   'replay.random': 'Willekeurige bar',
   'replay.realtime': 'Terug naar realtime',
-  'replay.barsPerSecond': 'bars/s',
   'replay.play': 'Afspelen',
   'replay.pause': 'Pauzeren',
   'replay.stepBack': 'Eén bar terug (Shift+←)',

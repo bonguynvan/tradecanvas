@@ -143,7 +143,7 @@ describe("a market's time zone", () => {
 
   it("gives way to the symbol's own zone", () => {
     chart.setMarket(MARKET_HOSE);
-    chart.setSymbolInfo({ symbol: 'AAPL', timezone: 'America/New_York' });
+    chart.setSymbolInfo({ symbol: 'AAPL', timeZone: 'America/New_York' });
     chart.setTimeZone('exchange');
     expect(chart.getEffectiveTimeZone()).toBe('America/New_York');
   });
@@ -275,9 +275,9 @@ describe('getExchangeTimeZone', () => {
     expect(chart.getExchangeTimeZone()).toBeNull();
     chart.setMarket(MARKET_HOSE);
     expect(chart.getExchangeTimeZone()).toBe('Asia/Ho_Chi_Minh');
-    chart.setSymbolInfo({ symbol: 'X', timezone: 'Not/AZone' });
+    chart.setSymbolInfo({ symbol: 'X', timeZone: 'Not/AZone' });
     expect(chart.getExchangeTimeZone()).toBe('Asia/Ho_Chi_Minh');
-    chart.setSymbolInfo({ symbol: 'AAPL', timezone: 'America/New_York' });
+    chart.setSymbolInfo({ symbol: 'AAPL', timeZone: 'America/New_York' });
     expect(chart.getExchangeTimeZone()).toBe('America/New_York');
   });
 });

@@ -119,10 +119,8 @@ chart.getTimeZone()                    // 'exchange', tal como se fijó
 chart.getEffectiveTimeZone()           // la zona que representa: 'Asia/Ho_Chi_Minh' en HOSE`}</code></pre>
 <p>
   Los métodos y tipos del gráfico la escriben <code>timeZone</code>, como
-  <code>Intl.DateTimeFormat</code>. Los nombres anteriores siguen funcionando y quedan obsoletos:
-  <code>setTimezone</code>, <code>getTimezone</code>, <code>getEffectiveTimezone</code>,
-  <code>getExchangeTimezone</code>, <code>setTimezoneOffset</code>, <code>EXCHANGE_TIMEZONE</code> y
-  <code>SymbolInfo.timezone</code> (un símbolo que da ambos se lee por su <code>timeZone</code>).
+  <code>Intl.DateTimeFormat</code>. Las grafías de la 1.x (<code>setTimezone</code> y las demás,
+  <code>SymbolInfo.timezone</code>) se eliminaron en la 2.0: consulta <a href={href('/docs/migration#removed')}>Migrar a la 2.0</a>.
 </p>
 
 <p>Los mismos efectos también están disponibles por código:</p>

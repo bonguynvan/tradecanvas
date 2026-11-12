@@ -22,6 +22,16 @@
 - For a look of your own, `evenPx(n)` rounds a size to the even number nearest (`@tradecanvas/commons`). `PRICE_SCALE_MARGIN` is now φ⁻⁴·⁵, the default density's margin, and `DEFAULT_CHART_OPTIONS.rightMargin` and a `Viewport` made without one are 8 (`@tradecanvas/core`, `@tradecanvas/commons`).
 - **A price label the top or the bottom of its pane would cut is left out** (`@tradecanvas/core`). A round price right at a pane's edge was written with half its digits outside; its grid line stays.
 
+### Breaking: the names deprecated in 1.x are removed
+
+- **One spelling for the time zone** (`@tradecanvas/chart`, `@tradecanvas/commons`). Removed: `chart.setTimezone`, `getTimezone`, `getEffectiveTimezone`, `getExchangeTimezone` and `setTimezoneOffset` (use `setTimeZone`, `getTimeZone`, `getEffectiveTimeZone`, `getExchangeTimeZone`; `setTimeZone` takes minutes east of UTC too), `EXCHANGE_TIMEZONE` (use `EXCHANGE_TIME_ZONE`) and `SymbolInfo.timezone` (use `timeZone`).
+  - `SymbolInfo.timezone` is no longer read: a symbol that gives only that has no zone of its own: `setTimeZone('exchange')` and the dates of daily bars fall back to the market's zone or UTC, its own `sessions` are not shaded, and its status reads as a market that trades around the clock. A `timezone` still passed is carried along in `getSymbolInfo()` and nothing reads it.
+  - The widget's setting is still `timezone` (`setSettings({ timezone: 'exchange' })`), and the string keys `settings.timezone` and `menu.chart.timezone` keep their names.
+- **`'date'` is gone from `TimeFormatContext.kind`** (`@tradecanvas/commons`). The axis has given `'year'`, `'month'` or `'day'` since 1.x.
+- **`SessionBreaks.setLocale()` and `renderLabels()` are removed** (`@tradecanvas/core`). Both did nothing.
+- **The widget string `replay.barsPerSecond` is removed** (`@tradecanvas/chart`). It was unused; the replay's speed reads `replay.rate`.
+- The docs have a page for the move from 1.x, **Moving to 2.0**, in six languages: what changed in the look and how to keep the look of 1.x, each removed name and what to use, and what changed without a name changing.
+
 ### Chart
 
 - **However many indicator panes are open, the price pane keeps its part of the chart** (`@tradecanvas/chart`). Each pane kept the height it was given whatever the room, so six of them on a laptop left the price pane no height and the chart blank. Now the price pane keeps at least 38.2% of the height and the open panes share the rest, each by the same part of its own; a folded pane keeps its header. On a taller chart each pane is the height it was given again.

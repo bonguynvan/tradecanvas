@@ -119,10 +119,8 @@ chart.getTimeZone()                    // 'exchange', như đã đặt
 chart.getEffectiveTimeZone()           // múi giờ nó trỏ tới: 'Asia/Ho_Chi_Minh' trên HOSE`}</code></pre>
 <p>
   Các phương thức và kiểu của biểu đồ viết múi giờ là <code>timeZone</code>, như
-  <code>Intl.DateTimeFormat</code>. Các tên cũ vẫn chạy, nhưng không nên dùng nữa (deprecated):
-  <code>setTimezone</code>, <code>getTimezone</code>, <code>getEffectiveTimezone</code>,
-  <code>getExchangeTimezone</code>, <code>setTimezoneOffset</code>, <code>EXCHANGE_TIMEZONE</code> và
-  <code>SymbolInfo.timezone</code> (mã nào ghi cả hai thì đọc theo <code>timeZone</code>).
+  <code>Intl.DateTimeFormat</code>. Các cách viết của 1.x (<code>setTimezone</code> và những tên
+  còn lại, <code>SymbolInfo.timezone</code>) đã bị gỡ ở 2.0: xem <a href={href('/docs/migration#removed')}>Chuyển sang 2.0</a>.
 </p>
 
 <p>Các tác dụng trên cũng có thể gọi bằng code:</p>

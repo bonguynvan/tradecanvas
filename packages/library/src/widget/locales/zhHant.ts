@@ -28,7 +28,6 @@ export const ZH_HANT_MESSAGES: WidgetMessages = {
   'replay.selectHint': '點擊一根K線開始回放',
   'replay.random': '隨機K線',
   'replay.realtime': '返回即時',
-  'replay.barsPerSecond': '根/秒',
   'replay.play': '播放',
   'replay.pause': '暫停',
   'replay.stepBack': '後退一根 (Shift+←)',

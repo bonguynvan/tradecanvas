@@ -28,7 +28,6 @@ export const ZH_MESSAGES: WidgetMessages = {
   'replay.selectHint': '点击一根K线开始回放',
   'replay.random': '随机K线',
   'replay.realtime': '返回实时',
-  'replay.barsPerSecond': '根/秒',
   'replay.play': '播放',
   'replay.pause': '暂停',
   'replay.stepBack': '后退一根 (Shift+←)',
