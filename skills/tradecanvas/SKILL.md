@@ -347,7 +347,7 @@ and call no `onSettingsChange` listener.
 
 `theme: 'dark' | 'light'` or a `Theme` object (`{ ...DARK_THEME, candleUp: '#1fa874' }`);
 `chart.setTheme(...)` at runtime. Numbers follow `numberLocale` (`'en-US'`, `'vi-VN'` …).
-The chart's own text (axes, tags, crosshair pills) over any theme: `font: { family: SANS_FONT_FAMILY, sizeSmall: 12 }`
+The chart's own text (axes, tags, crosshair pills) is in the system's sans face; over any theme: `font: { family: MONO_FONT_FAMILY, sizeSmall: 12 }` (a monospaced face)
 or `chart.setFont(...)` (`null`: the theme's), and words written on drawings in `font.textFamily` (the system sans when unset); the legend takes the face at its own size (`chart.setLegend({ fontSize })`),
 and in the widget its face and size come from `ui.font`. Room around the bars: `density: 'comfortable'` (the default:
 golden bars, 8 slots past the newest bar, wider price margins) or `'compact'` (the chart as before 2.0: classic bars, 5

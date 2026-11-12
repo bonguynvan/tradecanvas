@@ -93,8 +93,8 @@ new ChartWidget(host, { ui: { density: 'classic' } })
 widget.setUI({ density: 'classic' })
 
 // A chart of your own as it was before 2.0
-import { Chart, CHART_SPACING, SANS_FONT_FAMILY } from '@tradecanvas/chart'
-const chart = new Chart(host, { density: 'compact' })
+import { Chart, CHART_SPACING, MONO_FONT_FAMILY } from '@tradecanvas/chart'
+const chart = new Chart(host, { density: 'compact', font: { family: MONO_FONT_FAMILY } })
 chart.setDensity('comfortable')  // and back
 chart.getDensity()               // 'comfortable'
 CHART_SPACING.comfortable        // the numbers each density sets
@@ -103,7 +103,7 @@ CHART_SPACING.comfortable        // the numbers each density sets
 new Chart(host, { barLayout: 'classic' })   // a 2 px gap between bars, the rest comfortable
 new Chart(host, { rightMargin: 5 })         // 5 slots past the newest bar
 chart.setBarLayout('golden')
-chart.setFont({ family: SANS_FONT_FAMILY, sizeSmall: 12 }) // the axes' and tags' face and size
+chart.setFont({ family: MONO_FONT_FAMILY, sizeSmall: 12 }) // the axes' and tags' face and size
 chart.setFont(null)                         // the theme's own font again`}</code></pre>
 <p>
   El <code>barLayout</code> y el <code>rightMargin</code> con los que se crea un gráfico se mantienen al cambiar de densidad. En el widget, <code>chartOptions.density</code>, <code>chartOptions.barLayout</code> y un <code>family</code> en <code>chartOptions.font</code> mandan sobre los del aspecto; si <code>chartOptions.font</code> solo fija tamaños, se queda la fuente del aspecto. Con barras en pantalla, un nuevo reparto mantiene el zoom y solo vuelve a dividir cada hueco.

@@ -329,8 +329,10 @@ export interface ChartOptions {
   shapes?: import('./theme.js').ShapeConfig;
   /**
    * The face and sizes of the chart's own text (the axes, the tags, the
-   * crosshair's pills) over every theme: `{ family: SANS_FONT_FAMILY }` for
-   * proportional figures. The legend takes the face, at its own size
+   * crosshair's pills) over every theme: `{ family: MONO_FONT_FAMILY }` for
+   * monospaced figures, where the default is a sans face whose digits are
+   * one width (`FIGURES_FONT_FAMILY`). The
+   * legend takes the face, at its own size
    * (`chart.setLegend({ fontSize })`); in a widget its face and size come
    * from the look (`ui.font`). Change it with `chart.setFont`.
    */

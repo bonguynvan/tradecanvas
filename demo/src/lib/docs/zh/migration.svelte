@@ -48,6 +48,7 @@ new Chart(host, { density: 'compact' })`}</code></pre>
     <tr><td>价格上方和下方的留白</td><td>高度的 9%</td><td>高度的 11.5%</td></tr>
     <tr><td>单独使用的 <code>Chart</code> 的 K 线</td><td>classic</td><td>golden，实体占一格的 62%，与组件原本的画法相同</td></tr>
     <tr><td>图例与绘图区角的距离</td><td>向内 8 px</td><td>向内 12 px</td></tr>
+    <tr><td>独立 <code>Chart</code> 的数字（坐标轴、标签、图例）</td><td>等宽字体</td><td>系统无衬线字体，与组件和金融图表一致；<code>font: {'{'} family: MONO_FONT_FAMILY {'}'}</code> 可保留原字体</td></tr>
     <tr><td>组件的间距 <code>--tcw-space-1</code> … <code>-7</code></td><td>2 · 3 · 5 · 8 · 13 · 21 · 34 px</td><td>2 · 4 · 6 · 8 · 12 · 20 · 32 px</td></tr>
     <tr><td>Print 的按钮</td><td>33 px</td><td>34 px</td></tr>
     <tr><td>按钮文字两侧的内边距</td><td>8 px</td><td>12 px</td></tr>
@@ -87,6 +88,7 @@ new Chart(host, { density: 'compact' })`}</code></pre>
     <tr><td><code>chart.getExchangeTimezone()</code></td><td><code>chart.getExchangeTimeZone()</code></td></tr>
     <tr><td><code>chart.setTimezoneOffset(minutes)</code></td><td><code>chart.setTimeZone(minutes)</code>：UTC 以东的分钟数，传 <code>null</code> 则使用浏览器的时区</td></tr>
     <tr><td><code>EXCHANGE_TIMEZONE</code></td><td><code>EXCHANGE_TIME_ZONE</code></td></tr>
+    <tr><td><code>DEFAULT_FONT_FAMILY</code></td><td><code>MONO_FONT_FAMILY</code>：等宽字体，已不再是默认字体</td></tr>
     <tr><td><code>SymbolInfo.timezone</code></td><td><code>SymbolInfo.timeZone</code></td></tr>
     <tr><td><code>timeFormatter</code> 中的 <code>TimeFormatContext.kind === 'date'</code></td><td>时间轴给出的是 <code>'year'</code>、<code>'month'</code> 或 <code>'day'</code>。从 1.x 起它就不再给出 <code>'date'</code>，现在类型中也已去掉。</td></tr>
     <tr><td><code>SessionBreaks.setLocale()</code> 和 <code>SessionBreaks.renderLabels()</code>（<code>@tradecanvas/core</code>）</td><td>删除这些调用：两者原本就不做任何事。</td></tr>

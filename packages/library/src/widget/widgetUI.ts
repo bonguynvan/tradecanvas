@@ -3,7 +3,7 @@
  * its bars, as tokens. A preset gives all of them; a theme of yours changes
  * what it names. Colours stay with the widget's dark / light theme.
  */
-import { PHI, SANS_FONT_FAMILY, evenPx, phiStep } from '@tradecanvas/commons';
+import { FIGURES_FONT_FAMILY, PHI, SANS_FONT_FAMILY, evenPx, phiStep } from '@tradecanvas/commons';
 
 export type WidgetUIPreset = 'print' | 'studio' | 'terminal' | 'capsule' | 'desk';
 
@@ -260,12 +260,8 @@ const MONO = "'JetBrains Mono', 'SF Mono', 'Cascadia Code', 'Fira Code', 'Consol
  * medium weight; older Windows keeps Segoe UI.
  */
 const PRINT_SANS = SANS_FONT_FAMILY.replace("'Segoe UI'", "'Segoe UI Variable Text', 'Segoe UI'");
-/**
- * Print's figures, on the chart and in the panels: sans faces every system has
- * whose digits are one width as they come. San Francisco's are not, and the
- * chart's canvas can't ask for tabular figures, so it is left out.
- */
-const PRINT_FIGURES = "'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif";
+/** Print's figures, on the chart and in the panels: the face a chart of one's own draws its figures in too. */
+const PRINT_FIGURES = FIGURES_FONT_FAMILY;
 /**
  * The desktop trading platforms' small Windows face, and the nearest where
  * there is no Tahoma. Its digits are one width, so figures still line up.

@@ -1674,7 +1674,7 @@ export class Chart {
   /**
    * The face and sizes of the chart's own text (the axes, the tags, the
    * crosshair's pills), over every theme and on top of the font set before:
-   * `{ family: SANS_FONT_FAMILY }` for proportional figures. The legend takes
+   * `{ family: MONO_FONT_FAMILY }` for monospaced figures. The legend takes
    * the face, unless `setLegend` names one, at its own size (`setLegend`); in a
    * widget its face and size come from the look (`ui.font`). Null goes back to
    * each theme's own. A family that is empty or a size that isn't a number

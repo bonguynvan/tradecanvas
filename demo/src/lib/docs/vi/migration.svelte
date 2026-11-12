@@ -49,6 +49,7 @@ new Chart(host, { density: 'compact' })`}</code></pre>
     <tr><td>Khoảng trống phía trên và phía dưới giá</td><td>9% chiều cao</td><td>11,5% chiều cao</td></tr>
     <tr><td>Nến của một <code>Chart</code> dùng riêng</td><td>Classic</td><td>Golden, thân nến bằng 62% ô, như widget vốn đã vẽ</td></tr>
     <tr><td>Legend, tính từ góc vùng vẽ</td><td>lùi vào 8 px</td><td>lùi vào 12 px</td></tr>
+    <tr><td>Các con số của <code>Chart</code> trần (trục, nhãn, legend)</td><td>Font đơn cách</td><td>Font sans của hệ thống, như widget và các financial chart; <code>font: {'{'} family: MONO_FONT_FAMILY {'}'}</code> giữ font cũ</td></tr>
     <tr><td>Khoảng cách của widget, <code>--tcw-space-1</code> … <code>-7</code></td><td>2 · 3 · 5 · 8 · 13 · 21 · 34 px</td><td>2 · 4 · 6 · 8 · 12 · 20 · 32 px</td></tr>
     <tr><td>Nút của Print</td><td>33 px</td><td>34 px</td></tr>
     <tr><td>Đệm hai bên nhãn của nút</td><td>8 px</td><td>12 px</td></tr>
@@ -89,6 +90,7 @@ new Chart(host, { density: 'compact' })`}</code></pre>
     <tr><td><code>chart.getExchangeTimezone()</code></td><td><code>chart.getExchangeTimeZone()</code></td></tr>
     <tr><td><code>chart.setTimezoneOffset(minutes)</code></td><td><code>chart.setTimeZone(minutes)</code>: số phút về phía đông UTC, hoặc <code>null</code> để dùng múi giờ của trình duyệt</td></tr>
     <tr><td><code>EXCHANGE_TIMEZONE</code></td><td><code>EXCHANGE_TIME_ZONE</code></td></tr>
+    <tr><td><code>DEFAULT_FONT_FAMILY</code></td><td><code>MONO_FONT_FAMILY</code>: font đơn cách, nay không còn là mặc định</td></tr>
     <tr><td><code>SymbolInfo.timezone</code></td><td><code>SymbolInfo.timeZone</code></td></tr>
     <tr><td><code>TimeFormatContext.kind === 'date'</code> trong một <code>timeFormatter</code></td><td>Trục thời gian đưa <code>'year'</code>, <code>'month'</code> hoặc <code>'day'</code>. Từ 1.x nó đã không còn đưa <code>'date'</code>, và nay kiểu cũng không còn giá trị này.</td></tr>
     <tr><td><code>SessionBreaks.setLocale()</code> và <code>SessionBreaks.renderLabels()</code> (<code>@tradecanvas/core</code>)</td><td>Bỏ các lời gọi: cả hai vốn không làm gì.</td></tr>

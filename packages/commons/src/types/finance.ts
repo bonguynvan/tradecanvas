@@ -7,9 +7,9 @@ export interface BaseFinanceChartOptions {
   theme?: ThemeName | Theme;
   /**
    * The face and sizes of the chart's text, over the theme's. Left out, the
-   * figures are in the system's sans face (`SANS_FONT_FAMILY`), as the
-   * widget's are; `{ family: DEFAULT_FONT_FAMILY }` gives the monospaced one.
-   * A theme of your own with a face of its own keeps that face.
+   * text is in the theme's face: a sans one whose digits are one width
+   * (`FIGURES_FONT_FAMILY`) in the dark and the light theme.
+   * `{ family: MONO_FONT_FAMILY }` gives a monospaced one.
    */
   font?: Partial<FontConfig>;
   /**
