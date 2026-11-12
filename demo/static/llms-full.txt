@@ -1897,12 +1897,6 @@ new ChartWidget(document.getElementById('chart')!, {
 
 The headless `Chart` takes your own bars (`chart.setData(bars)`) and leaves the interface to you. A source of your own is a `DataFeed` of two methods (`getBars`, `subscribeBars`), given as `feed` wherever an adapter goes; one feed serves any number of charts. For React, Vue and Svelte, `@tradecanvas/react`, `/vue` and `/svelte` wrap it in a component with the same props.
 
-## Documentation
-
-[Getting started](https://tradecanvas.dev/docs/getting-started/) · [API](https://tradecanvas.dev/docs/api/) · [Indicators](https://tradecanvas.dev/docs/indicators/) · [Drawing tools](https://tradecanvas.dev/docs/drawing-tools/) · [Realtime](https://tradecanvas.dev/docs/realtime/) · [Trading](https://tradecanvas.dev/docs/trading/) · [Styling](https://tradecanvas.dev/docs/styling/) · [Frameworks](https://tradecanvas.dev/docs/frameworks/) · [Plugins](https://tradecanvas.dev/docs/plugins/) · [Phones and apps](https://tradecanvas.dev/docs/embed/#mobile-app) · [Performance](https://tradecanvas.dev/docs/performance/)
-
-The docs are in English, Tiếng Việt, 简体中文, 日本語, 한국어 and Español. Measurements, limits and how it is tested are on the [system audit](https://tradecanvas.dev/audit/).
-
 ## AI coding tools
 
 The agent skill in [`skills/tradecanvas`](https://github.com/bonguynvan/tradecanvas/blob/main/skills/tradecanvas/SKILL.md) teaches coding agents the API, with examples that CI type-checks. In Claude Code:
@@ -1927,6 +1921,14 @@ claude mcp add tradecanvas -- npx -y @tradecanvas/mcp
 ```
 
 On Windows outside WSL: `claude mcp add tradecanvas -- cmd /c npx -y @tradecanvas/mcp`. In Git Bash, which runs the `!` commands of Claude Code on Windows, write `//c`: Git Bash turns `/c` into a path.
+
+Measured, not claimed: on 24 tasks an agent finished every run with or without the skill, and with it took 10 turns against 16 and 137k tokens against 240k, and went reading the compiled code in 2 runs of 48 against 22 ([the run](https://github.com/bonguynvan/tradecanvas/blob/main/evals/baselines/2026-10-25-sonnet.md), on 1.48.0; the tasks and what they turned up are in [`evals`](https://github.com/bonguynvan/tradecanvas/blob/main/evals/README.md)).
+
+## Documentation
+
+[Getting started](https://tradecanvas.dev/docs/getting-started/) · [API](https://tradecanvas.dev/docs/api/) · [Indicators](https://tradecanvas.dev/docs/indicators/) · [Drawing tools](https://tradecanvas.dev/docs/drawing-tools/) · [Realtime](https://tradecanvas.dev/docs/realtime/) · [Trading](https://tradecanvas.dev/docs/trading/) · [Styling](https://tradecanvas.dev/docs/styling/) · [Frameworks](https://tradecanvas.dev/docs/frameworks/) · [Plugins](https://tradecanvas.dev/docs/plugins/) · [Phones and apps](https://tradecanvas.dev/docs/embed/#mobile-app) · [Performance](https://tradecanvas.dev/docs/performance/)
+
+The docs are in English, Tiếng Việt, 简体中文, 日本語, 한국어 and Español. Measurements, limits and how it is tested are on the [system audit](https://tradecanvas.dev/audit/).
 
 ## More
 

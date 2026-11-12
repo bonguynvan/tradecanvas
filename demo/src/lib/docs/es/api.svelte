@@ -160,7 +160,7 @@ chart.getScaleMode()`}</code></pre>
   <code>roundPrice</code> redondea a ellas. Los paneles de indicadores conservan sus propios números.
   Sin un formato propio, los precios se agrupan según la configuración regional de números; las etiquetas de las marcas
   del eje muestran solo los decimales que pide su paso (73,500), mientras que el último precio, la cruz y las etiquetas
-  junto al eje muestran todos los decimales. Las horas también pueden mostrarse a tu manera; al formateador se le indica qué tipo de etiqueta es.
+  junto al eje muestran todos los decimales. Si ni el símbolo ni el mercado fijan decimales, son uno más de los que pide el paso de la escala, y para un precio por debajo de 1 al menos cuatro cifras significativas del precio (0.000004349, donde el paso solo daba 0.00000435). Las horas también pueden mostrarse a tu manera; al formateador se le indica qué tipo de etiqueta es.
 </p>
 <pre><code>{`new Chart(host, { priceFormat: { denominator: 32 } })                    // 101'16
 chart.setPriceFormat({ denominator: 32, subDenominator: 2 })            // 101'165: 16½ 32nds

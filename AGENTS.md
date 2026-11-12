@@ -1,10 +1,25 @@
 # Working on TradeCanvas
 
 Notes for coding agents (and the people driving them) who change this repo.
-To *use* TradeCanvas in an app, read the skill in
-[`skills/tradecanvas`](skills/tradecanvas/SKILL.md) instead. People start with
-[CONTRIBUTING.md](CONTRIBUTING.md); this file holds the same rules plus the
-ones that only show up as a failing check.
+People start with [CONTRIBUTING.md](CONTRIBUTING.md); this file holds the same
+rules plus the ones that only show up as a failing check.
+
+**Using TradeCanvas in an app, not changing it? This is the wrong file.** What
+the library gives a coding agent is:
+
+- **The skill**, [`skills/tradecanvas`](skills/tradecanvas/SKILL.md): the API
+  with examples CI type-checks. `npx skills add bonguynvan/tradecanvas`, or in
+  Claude Code `/plugin marketplace add bonguynvan/tradecanvas`.
+- **The docs in one file**: [llms.txt](https://tradecanvas.dev/llms.txt) and
+  [llms-full.txt](https://tradecanvas.dev/llms-full.txt).
+- **The MCP server**, `@tradecanvas/mcp`: it looks up indicators, drawing
+  tools, options, feature switches and style keys in the library's own
+  catalog and checks an options object before it is used. It does not drive a
+  chart.
+- **The types**: every option, event and style key is typed and documented
+  in the published `.d.ts`.
+- **What was measured**: [`evals`](evals/README.md) runs agents on 24 tasks
+  with and without the skill; the runs are in `evals/baselines`.
 
 ## The repo
 

@@ -94,12 +94,6 @@ new ChartWidget(document.getElementById('chart')!, {
 
 헤드리스 `Chart`는 직접 준비한 봉 데이터(`chart.setData(bars)`)를 받고 화면은 여러분에게 맡깁니다. 직접 만든 데이터 소스는 두 메서드(`getBars`, `subscribeBars`)만 있는 `DataFeed`로 작성해, 어댑터를 넘기는 곳이면 어디든 `feed`로 넘기면 됩니다. 피드 하나로 차트를 몇 개든 채울 수 있습니다. React, Vue, Svelte에서는 `@tradecanvas/react`, `/vue`, `/svelte`가 같은 props의 컴포넌트로 감쌉니다.
 
-## 문서
-
-[시작하기](https://tradecanvas.dev/ko/docs/getting-started/) · [API](https://tradecanvas.dev/ko/docs/api/) · [지표](https://tradecanvas.dev/ko/docs/indicators/) · [드로잉 도구](https://tradecanvas.dev/ko/docs/drawing-tools/) · [실시간](https://tradecanvas.dev/ko/docs/realtime/) · [거래](https://tradecanvas.dev/ko/docs/trading/) · [스타일](https://tradecanvas.dev/ko/docs/styling/) · [프레임워크](https://tradecanvas.dev/ko/docs/frameworks/) · [플러그인](https://tradecanvas.dev/ko/docs/plugins/) · [휴대폰과 앱](https://tradecanvas.dev/ko/docs/embed/#mobile-app) · [성능](https://tradecanvas.dev/ko/docs/performance/)
-
-문서는 English, Tiếng Việt, 简体中文, 日本語, 한국어, Español으로 제공됩니다. 측정값, 한계, 테스트 방법은 [시스템 점검](https://tradecanvas.dev/ko/audit/)에 있습니다.
-
 ## AI 코딩 도구
 
 [`skills/tradecanvas`](skills/tradecanvas/SKILL.md)의 에이전트 스킬은 CI가 타입 검사하는 예제로 코딩 에이전트에게 API를 알려 줍니다. Claude Code에서는:
@@ -118,6 +112,14 @@ claude mcp add tradecanvas -- npx -y @tradecanvas/mcp
 ```
 
 WSL 밖의 Windows에서는: `claude mcp add tradecanvas -- cmd /c npx -y @tradecanvas/mcp`. Git Bash(Windows에서 Claude Code의 `!` 명령을 실행하는 셸)에서는 `//c`로 씁니다. Git Bash가 `/c`를 경로로 바꾸기 때문입니다.
+
+자칭이 아니라 측정한 결과입니다. 24개 과제에서 에이전트는 스킬이 있든 없든 모든 실행을 마쳤고, 스킬이 있으면 16턴 대신 10턴, 24만 토큰 대신 13.7만 토큰이 들었으며, 컴파일된 코드를 읽으러 간 것은 48회 중 22회 대신 2회였습니다([해당 실행](evals/baselines/2026-10-25-sonnet.md), 1.48.0 기준. 과제와 거기서 드러난 내용은 [`evals`](evals/README.md)에 있습니다).
+
+## 문서
+
+[시작하기](https://tradecanvas.dev/ko/docs/getting-started/) · [API](https://tradecanvas.dev/ko/docs/api/) · [지표](https://tradecanvas.dev/ko/docs/indicators/) · [드로잉 도구](https://tradecanvas.dev/ko/docs/drawing-tools/) · [실시간](https://tradecanvas.dev/ko/docs/realtime/) · [거래](https://tradecanvas.dev/ko/docs/trading/) · [스타일](https://tradecanvas.dev/ko/docs/styling/) · [프레임워크](https://tradecanvas.dev/ko/docs/frameworks/) · [플러그인](https://tradecanvas.dev/ko/docs/plugins/) · [휴대폰과 앱](https://tradecanvas.dev/ko/docs/embed/#mobile-app) · [성능](https://tradecanvas.dev/ko/docs/performance/)
+
+문서는 English, Tiếng Việt, 简体中文, 日本語, 한국어, Español으로 제공됩니다. 측정값, 한계, 테스트 방법은 [시스템 점검](https://tradecanvas.dev/ko/audit/)에 있습니다.
 
 ## 더 보기
 

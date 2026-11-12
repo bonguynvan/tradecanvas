@@ -94,12 +94,6 @@ new ChartWidget(document.getElementById('chart')!, {
 
 `Chart` không giao diện nhận dữ liệu nến của bạn (`chart.setData(bars)`) và để giao diện cho bạn tự làm. Nguồn dữ liệu của riêng bạn là một `DataFeed` gồm hai phương thức (`getBars`, `subscribeBars`), truyền vào `feed` ở mọi chỗ nhận adapter; một feed phục vụ được bao nhiêu chart cũng được. Với React, Vue và Svelte, `@tradecanvas/react`, `/vue` và `/svelte` bọc nó trong một component có cùng props.
 
-## Tài liệu
-
-[Bắt đầu](https://tradecanvas.dev/vi/docs/getting-started/) · [API](https://tradecanvas.dev/vi/docs/api/) · [Chỉ báo](https://tradecanvas.dev/vi/docs/indicators/) · [Công cụ vẽ](https://tradecanvas.dev/vi/docs/drawing-tools/) · [Thời gian thực](https://tradecanvas.dev/vi/docs/realtime/) · [Giao dịch](https://tradecanvas.dev/vi/docs/trading/) · [Giao diện](https://tradecanvas.dev/vi/docs/styling/) · [Framework](https://tradecanvas.dev/vi/docs/frameworks/) · [Plugin](https://tradecanvas.dev/vi/docs/plugins/) · [Điện thoại và ứng dụng](https://tradecanvas.dev/vi/docs/embed/#mobile-app) · [Hiệu năng](https://tradecanvas.dev/vi/docs/performance/)
-
-Tài liệu có bằng English, Tiếng Việt, 简体中文, 日本語, 한국어 và Español. Số đo, giới hạn và cách kiểm thử nằm ở [audit hệ thống](https://tradecanvas.dev/vi/audit/).
-
 ## Công cụ lập trình AI
 
 Agent skill trong [`skills/tradecanvas`](skills/tradecanvas/SKILL.md) dạy coding agent dùng API, với các ví dụ được CI kiểm kiểu. Trong Claude Code:
@@ -118,6 +112,14 @@ claude mcp add tradecanvas -- npx -y @tradecanvas/mcp
 ```
 
 Trên Windows (không qua WSL): `claude mcp add tradecanvas -- cmd /c npx -y @tradecanvas/mcp`. Trong Git Bash, nơi Claude Code chạy các lệnh `!` trên Windows, hãy viết `//c`: Git Bash đổi `/c` thành một đường dẫn.
+
+Đo được, không phải tự nhận: trên 24 task, agent hoàn thành mọi lượt chạy dù có hay không có skill; có skill thì mất 10 lượt thay vì 16, 137k token thay vì 240k, và chỉ phải đọc mã đã biên dịch ở 2 trên 48 lượt thay vì 22 ([lượt chạy](evals/baselines/2026-10-25-sonnet.md), trên bản 1.48.0; các task và những gì chúng phát hiện nằm trong [`evals`](evals/README.md)).
+
+## Tài liệu
+
+[Bắt đầu](https://tradecanvas.dev/vi/docs/getting-started/) · [API](https://tradecanvas.dev/vi/docs/api/) · [Chỉ báo](https://tradecanvas.dev/vi/docs/indicators/) · [Công cụ vẽ](https://tradecanvas.dev/vi/docs/drawing-tools/) · [Thời gian thực](https://tradecanvas.dev/vi/docs/realtime/) · [Giao dịch](https://tradecanvas.dev/vi/docs/trading/) · [Giao diện](https://tradecanvas.dev/vi/docs/styling/) · [Framework](https://tradecanvas.dev/vi/docs/frameworks/) · [Plugin](https://tradecanvas.dev/vi/docs/plugins/) · [Điện thoại và ứng dụng](https://tradecanvas.dev/vi/docs/embed/#mobile-app) · [Hiệu năng](https://tradecanvas.dev/vi/docs/performance/)
+
+Tài liệu có bằng English, Tiếng Việt, 简体中文, 日本語, 한국어 và Español. Số đo, giới hạn và cách kiểm thử nằm ở [audit hệ thống](https://tradecanvas.dev/vi/audit/).
 
 ## Thêm
 

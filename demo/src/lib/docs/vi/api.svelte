@@ -159,7 +159,7 @@ chart.getScaleMode()`}</code></pre>
   <code>roundPrice</code> làm tròn theo chúng. Các pane chỉ báo giữ cách hiển thị số riêng. Khi bạn
   không đặt định dạng riêng, giá được nhóm chữ số theo cách viết số của ngôn ngữ đã chọn (<code>numberLocale</code>); nhãn vạch chia trên trục chỉ hiện số chữ số
   thập phân mà bước của nó cần (73,500), còn giá cuối, crosshair và các nhãn cạnh trục hiện đủ mọi chữ số thập
-  phân. Thời gian cũng hiển thị được theo cách của bạn; hàm định dạng được cho biết nhãn đang in là loại nào.
+  phân. Khi mã và thị trường đều không đặt số lẻ, số lẻ đó nhiều hơn một so với mức bước của thang giá cần, và với giá dưới 1 thì ít nhất đủ bốn chữ số có nghĩa của giá (0.000004349, trong khi riêng bước của thang chỉ cho 0.00000435). Thời gian cũng hiển thị được theo cách của bạn; hàm định dạng được cho biết nhãn đang in là loại nào.
 </p>
 <pre><code>{`new Chart(host, { priceFormat: { denominator: 32 } })                    // 101'16
 chart.setPriceFormat({ denominator: 32, subDenominator: 2 })            // 101'165: 16½ 32nds

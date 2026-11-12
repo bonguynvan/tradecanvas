@@ -94,12 +94,6 @@ new ChartWidget(document.getElementById('chart')!, {
 
 无界面的 `Chart` 接收你自己的 K 线（`chart.setData(bars)`），界面由你决定。自有数据源可写成只有两个方法（`getBars`、`subscribeBars`）的 `DataFeed`，在任何接受 adapter 的地方以 `feed` 传入；一个 feed 可同时供任意多个图表使用。React、Vue 和 Svelte 用户可使用 `@tradecanvas/react`、`/vue` 和 `/svelte`，它们以相同的 props 封装成组件。
 
-## 文档
-
-[快速开始](https://tradecanvas.dev/zh/docs/getting-started/) · [API](https://tradecanvas.dev/zh/docs/api/) · [指标](https://tradecanvas.dev/zh/docs/indicators/) · [画线工具](https://tradecanvas.dev/zh/docs/drawing-tools/) · [实时数据](https://tradecanvas.dev/zh/docs/realtime/) · [交易](https://tradecanvas.dev/zh/docs/trading/) · [样式](https://tradecanvas.dev/zh/docs/styling/) · [框架](https://tradecanvas.dev/zh/docs/frameworks/) · [插件](https://tradecanvas.dev/zh/docs/plugins/) · [手机与应用](https://tradecanvas.dev/zh/docs/embed/#mobile-app) · [性能](https://tradecanvas.dev/zh/docs/performance/)
-
-文档提供 English、Tiếng Việt、简体中文、日本語、한국어 和 Español 版本。测量数据、限制和测试方式见[系统审计](https://tradecanvas.dev/zh/audit/)。
-
 ## AI 编程工具
 
 [`skills/tradecanvas`](skills/tradecanvas/SKILL.md) 中的 agent 技能通过经 CI 类型检查的示例，教编程 agent 使用 API。在 Claude Code 中：
@@ -118,6 +112,14 @@ claude mcp add tradecanvas -- npx -y @tradecanvas/mcp
 ```
 
 在 Windows 上（不经过 WSL）: `claude mcp add tradecanvas -- cmd /c npx -y @tradecanvas/mcp`. 在 Git Bash 中（Claude Code 在 Windows 上用它运行 `!` 命令）要写成 `//c`：Git Bash 会把 `/c` 改写成路径。
+
+这是实测结果，不是自述：在 24 个任务上，无论有没有技能，智能体每次运行都完成了任务；有技能时用 10 轮而不是 16 轮、13.7 万个 token 而不是 24 万个，并且 48 次运行中只有 2 次去读编译后的代码，而没有技能时是 22 次（[这次运行](evals/baselines/2026-10-25-sonnet.md)，基于 1.48.0；任务及其发现见 [`evals`](evals/README.md)）。
+
+## 文档
+
+[快速开始](https://tradecanvas.dev/zh/docs/getting-started/) · [API](https://tradecanvas.dev/zh/docs/api/) · [指标](https://tradecanvas.dev/zh/docs/indicators/) · [画线工具](https://tradecanvas.dev/zh/docs/drawing-tools/) · [实时数据](https://tradecanvas.dev/zh/docs/realtime/) · [交易](https://tradecanvas.dev/zh/docs/trading/) · [样式](https://tradecanvas.dev/zh/docs/styling/) · [框架](https://tradecanvas.dev/zh/docs/frameworks/) · [插件](https://tradecanvas.dev/zh/docs/plugins/) · [手机与应用](https://tradecanvas.dev/zh/docs/embed/#mobile-app) · [性能](https://tradecanvas.dev/zh/docs/performance/)
+
+文档提供 English、Tiếng Việt、简体中文、日本語、한국어 和 Español 版本。测量数据、限制和测试方式见[系统审计](https://tradecanvas.dev/zh/audit/)。
 
 ## 更多
 
