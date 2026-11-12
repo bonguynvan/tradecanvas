@@ -1,6 +1,6 @@
 {
   "name": "@tradecanvas/chart",
-  "version": "2.0.0-beta.5",
+  "version": "2.0.0-beta.6",
   "type": "module",
   "description": "High-performance canvas trading chart with built-in indicators, drawing tools, and real-time streaming. Zero external dependencies.",
   "license": "MIT",

@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 2.0.0-beta.6 (2026-11-12)
 
 ### Coding agents
 

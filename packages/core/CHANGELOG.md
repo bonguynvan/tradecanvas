@@ -1,5 +1,12 @@
 # @tradecanvas/core
 
+## 2.0.0-beta.6
+
+### Patch Changes
+
+- Updated dependencies [1e4f8f9]
+  - @tradecanvas/commons@2.0.0-beta.6
+
 ## 2.0.0-beta.5
 
 ### Minor Changes
