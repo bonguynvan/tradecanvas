@@ -188,6 +188,7 @@ export const ID_MESSAGES: WidgetMessages = {
 
   'status.connecting': 'Menghubungkan…',
   'status.live': 'Langsung',
+  'status.delayed': 'Tertunda {minutes} mnt',
   'status.connectionFailed': 'Koneksi gagal',
   'status.loading': 'Memuat grafik…',
   'history.loading': 'Memuat riwayat…',

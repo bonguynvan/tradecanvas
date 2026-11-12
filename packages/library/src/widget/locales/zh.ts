@@ -188,6 +188,7 @@ export const ZH_MESSAGES: WidgetMessages = {
 
   'status.connecting': '连接中…',
   'status.live': '实时',
+  'status.delayed': '延迟 {minutes} 分钟',
   'status.connectionFailed': '连接失败',
   'status.loading': '图表加载中…',
   'history.loading': '正在加载历史数据…',

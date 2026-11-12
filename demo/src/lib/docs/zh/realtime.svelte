@@ -112,7 +112,7 @@ feed.pushBar('AAPL', '1d', finalBar, true)    // 已收盘`}</code></pre>
   知道的其他信息：可读的名称（<code>description</code>）、<code>exchange</code>、用数据源自己的说法写的
   <code>type</code>（<code>'stock'</code>、<code>'futures'</code>、<code>'Cổ phiếu'</code>…）、小部件的搜索代码里显示的
   <code>logo</code>、<code>pricePrecision</code>、<code>minTick</code>、<code>currency</code>、<code>timeZone</code> 和
-  <code>sessions</code>。
+  <code>sessions</code>。 行情落后于市场的数据源用 <code>delayMinutes</code> 说明落后多少分钟（多数交易所的免费数据为 15）：组件的状态栏随即显示“延迟 15 分钟”而不是“实时”，并使用单独的圆点。
 </p>
 
 <h2 id="built-timeframes">数据源没有的周期</h2>

@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Widget
+
+- **A delayed feed says so** (`@tradecanvas/chart`). The widget's status bar read "Live", with the live dot, for any connected feed, one that polls prices fifteen minutes old among them. A symbol can now carry `delayMinutes` (from the feed's `resolveSymbol`, in a `symbolInfo` event, or with `chart.setSymbolInfo`): the status bar then reads "Delayed 15 min", in the 30 languages, with a ring in place of the live dot. A feed that failed or is connecting keeps its own words, and a symbol with no delay reads "Live" as before.
+
 ## 2.0.5 (2026-11-12)
 
 ### Widget

@@ -192,6 +192,7 @@ export const DA_MESSAGES: WidgetMessages = {
   // Status bar / connection
   'status.connecting': 'Opretter forbindelse…',
   'status.live': 'Live',
+  'status.delayed': 'Forsinket {minutes} min',
   'status.connectionFailed': 'Forbindelsen mislykkedes',
   'status.loading': 'Indlæser graf…',
   'history.loading': 'Indlæser historik…',

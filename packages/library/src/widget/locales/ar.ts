@@ -192,6 +192,7 @@ export const AR_MESSAGES: WidgetMessages = {
   // Status bar / connection
   'status.connecting': 'جارٍ الاتصال…',
   'status.live': 'مباشر',
+  'status.delayed': 'متأخر {minutes} د',
   'status.connectionFailed': 'فشل الاتصال',
   'status.loading': 'جارٍ تحميل الرسم البياني…',
   'history.loading': 'جارٍ تحميل السجل…',

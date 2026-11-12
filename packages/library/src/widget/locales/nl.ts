@@ -188,6 +188,7 @@ export const NL_MESSAGES: WidgetMessages = {
 
   'status.connecting': 'Verbinden…',
   'status.live': 'Live',
+  'status.delayed': '{minutes} min vertraagd',
   'status.connectionFailed': 'Verbinding mislukt',
   'status.loading': 'Grafiek laden…',
   'history.loading': 'Historie laden…',

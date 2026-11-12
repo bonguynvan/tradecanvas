@@ -188,6 +188,7 @@ export const RO_MESSAGES: WidgetMessages = {
 
   'status.connecting': 'Se conectează…',
   'status.live': 'În direct',
+  'status.delayed': 'Întârziere {minutes} min',
   'status.connectionFailed': 'Conectare eșuată',
   'status.loading': 'Se încarcă graficul…',
   'history.loading': 'Se încarcă istoricul…',

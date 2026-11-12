@@ -192,6 +192,7 @@ export const ET_MESSAGES: WidgetMessages = {
   // Status bar / connection
   'status.connecting': 'Ühendamine…',
   'status.live': 'Reaalajas',
+  'status.delayed': 'Viivitus {minutes} min',
   'status.connectionFailed': 'Ühendamine ebaõnnestus',
   'status.loading': 'Graafiku laadimine…',
   'history.loading': 'Ajaloo laadimine…',

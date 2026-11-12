@@ -117,7 +117,7 @@ feed.pushBar('AAPL', '1d', finalBar, true)    // 確定`}</code></pre>
   フィードが知っているその他の情報です。読みやすい名称（<code>description</code>）、<code>exchange</code>、フィード自身の
   言葉での <code>type</code>（<code>'stock'</code>、<code>'futures'</code>、<code>'Cổ phiếu'</code>…）、ウィジェットの
   シンボル検索に表示される <code>logo</code>、<code>pricePrecision</code>、<code>minTick</code>、<code>currency</code>、
-  <code>timeZone</code>、<code>sessions</code>。
+  <code>timeZone</code>、<code>sessions</code>。 価格が市場より遅れるフィードは、その分数を <code>delayMinutes</code> で伝えます（多くの取引所の無料データは 15）。ウィジェットのステータスバーは「ライブ」の代わりに「15分遅延」と表示し、専用のドットになります。
 </p>
 
 <h2 id="built-timeframes">フィードにない時間足</h2>

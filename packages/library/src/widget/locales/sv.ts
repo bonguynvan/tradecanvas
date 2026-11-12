@@ -188,6 +188,7 @@ export const SV_MESSAGES: WidgetMessages = {
 
   'status.connecting': 'Ansluter…',
   'status.live': 'Live',
+  'status.delayed': 'Fördröjd {minutes} min',
   'status.connectionFailed': 'Anslutningen misslyckades',
   'status.loading': 'Läser in diagram…',
   'history.loading': 'Läser in historik…',

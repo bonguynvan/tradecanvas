@@ -188,6 +188,7 @@ export const ZH_HANT_MESSAGES: WidgetMessages = {
 
   'status.connecting': '連線中…',
   'status.live': '即時',
+  'status.delayed': '延遲 {minutes} 分鐘',
   'status.connectionFailed': '連線失敗',
   'status.loading': '圖表載入中…',
   'history.loading': '正在載入歷史資料…',

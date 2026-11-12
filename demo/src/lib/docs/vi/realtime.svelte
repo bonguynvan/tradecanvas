@@ -120,7 +120,7 @@ feed.pushBar('AAPL', '1d', finalBar, true)    // đã đóng`}</code></pre>
   những gì nguồn dữ liệu biết về phần còn lại: tên dễ đọc (<code>description</code>), <code>exchange</code>,
   <code>type</code> theo cách nguồn dữ liệu gọi (<code>'stock'</code>, <code>'futures'</code>,
   <code>'Cổ phiếu'</code>…), một <code>logo</code> mà ô tìm mã của widget hiển thị, <code>pricePrecision</code>,
-  <code>minTick</code>, <code>currency</code>, <code>timeZone</code> và <code>sessions</code>.
+  <code>minTick</code>, <code>currency</code>, <code>timeZone</code> và <code>sessions</code>. Nguồn dữ liệu có giá chậm hơn thị trường thì báo chậm bao nhiêu trong <code>delayMinutes</code> (15 với dữ liệu miễn phí của đa số sàn): thanh trạng thái của widget khi đó ghi "Trễ 15 phút" thay cho "Trực tiếp", với một chấm màu riêng.
 </p>
 
 <h2 id="built-timeframes">Khung thời gian nguồn dữ liệu không có</h2>

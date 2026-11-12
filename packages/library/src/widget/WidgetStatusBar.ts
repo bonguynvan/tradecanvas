@@ -343,10 +343,11 @@ export class WidgetStatusBar {
     return (el.dataset.tcwPart ?? '').split(/\s+/).some((name) => off.includes(name));
   }
 
-  update(state: { connectionState: string; message: string; symbol: string; timeframe: string }): void {
+  update(state: { connectionState: string; message: string; symbol: string; timeframe: string; delayed?: boolean }): void {
     this.dotEl.className = 'tcw-status-dot';
     if (state.connectionState === 'connected') {
-      this.dotEl.classList.add('tcw-connected');
+      // A delayed feed is connected but not live: its own dot, still, where the live one pulses.
+      this.dotEl.classList.add(state.delayed ? 'tcw-delayed' : 'tcw-connected');
     } else if (state.connectionState === 'error') {
       this.dotEl.classList.add('tcw-error');
     }

@@ -188,6 +188,7 @@ export const TH_MESSAGES: WidgetMessages = {
 
   'status.connecting': 'กำลังเชื่อมต่อ…',
   'status.live': 'สด',
+  'status.delayed': 'ล่าช้า {minutes} นาที',
   'status.connectionFailed': 'เชื่อมต่อไม่สำเร็จ',
   'status.loading': 'กำลังโหลดกราฟ…',
   'history.loading': 'กำลังโหลดข้อมูลย้อนหลัง…',

@@ -188,6 +188,7 @@ export const HU_MESSAGES: WidgetMessages = {
 
   'status.connecting': 'Kapcsolódás…',
   'status.live': 'Élő',
+  'status.delayed': '{minutes} perc késés',
   'status.connectionFailed': 'A kapcsolódás sikertelen',
   'status.loading': 'Grafikon betöltése…',
   'history.loading': 'Előzmények betöltése…',

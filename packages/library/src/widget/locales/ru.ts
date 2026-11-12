@@ -188,6 +188,7 @@ export const RU_MESSAGES: WidgetMessages = {
 
   'status.connecting': 'Подключение…',
   'status.live': 'В реальном времени',
+  'status.delayed': 'Задержка {minutes} мин',
   'status.connectionFailed': 'Не удалось подключиться',
   'status.loading': 'Загрузка графика…',
   'history.loading': 'Загрузка истории…',

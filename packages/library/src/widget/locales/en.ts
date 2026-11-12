@@ -193,6 +193,7 @@ export const EN_MESSAGES = {
   // Status bar / connection
   'status.connecting': 'Connecting...',
   'status.live': 'Live',
+  'status.delayed': 'Delayed {minutes} min',
   'status.connectionFailed': 'Connection failed',
   'status.loading': 'Loading chart...',
   'history.loading': 'Loading history…',

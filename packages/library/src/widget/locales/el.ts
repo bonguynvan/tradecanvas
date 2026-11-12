@@ -188,6 +188,7 @@ export const EL_MESSAGES: WidgetMessages = {
 
   'status.connecting': 'Σύνδεση…',
   'status.live': 'Ζωντανά',
+  'status.delayed': 'Καθυστέρηση {minutes} λ.',
   'status.connectionFailed': 'Η σύνδεση απέτυχε',
   'status.loading': 'Φόρτωση γραφήματος…',
   'history.loading': 'Φόρτωση ιστορικού…',
