@@ -24,7 +24,7 @@ const { chromium } = await import(process.env.PLAYWRIGHT ? pathToFileURL(process
 
 const UI = process.env.UI ?? '';
 if (UI && !/^[a-z]+$/.test(UI)) throw new Error(`UI must be a look's name, not ${UI}`);
-const SCENES = ['orderAtPrice', 'linkedGrid', 'replay', 'compare', 'renko', 'priceLimits', 'indicators', 'ichimoku', 'krx', 'paneDrawings', 'selectedDrawing', 'selectedPaneDrawing'];
+const SCENES = ['orderAtPrice', 'linkedGrid', 'replay', 'compare', 'renko', 'priceLimits', 'indicators', 'ichimoku', 'krx', 'paneDrawings', 'selectedDrawing', 'selectedPaneDrawing', 'manyPanes'];
 const THEMES = ['dark', 'light'];
 const SIZES = {
   phone: { viewport: { width: 390, height: 760 }, isMobile: true, hasTouch: true },
@@ -42,6 +42,10 @@ function pageChecks() {
   const charts = window.stage.charts ?? (window.stage.chart ? [window.stage.chart] : []);
   charts.forEach((chart, n) => {
     const engine = chart.engine;
+    // However many panes are open, the price pane keeps a third of the chart at least.
+    const plot = chart.getPlotRect?.();
+    const panes = (chart.getIndicatorPanes?.() ?? []).reduce((sum, p) => sum + p.rect.height, 0);
+    if (plot && plot.height < (plot.height + panes) / 3) problems.push(`chart ${n}: the price pane is ${Math.round(plot.height)} px of ${Math.round(plot.height + panes)}`);
     if (!chart.isAxisLabelsAligned?.() || !engine?.renderCtx) return;
     // A selected drawing's span labels are left out: like the crosshair's price, they sit at
     // their exact price and may lie over a tag (scenes selectedDrawing, selectedPaneDrawing).

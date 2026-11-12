@@ -22,6 +22,22 @@
 - For a look of your own, `evenPx(n)` rounds a size to the even number nearest (`@tradecanvas/commons`). `PRICE_SCALE_MARGIN` is now φ⁻⁴·⁵, the default density's margin, and `DEFAULT_CHART_OPTIONS.rightMargin` and a `Viewport` made without one are 8 (`@tradecanvas/core`, `@tradecanvas/commons`).
 - **A price label the top or the bottom of its pane would cut is left out** (`@tradecanvas/core`). A round price right at a pane's edge was written with half its digits outside; its grid line stays.
 
+### Chart
+
+- **However many indicator panes are open, the price pane keeps its part of the chart** (`@tradecanvas/chart`). Each pane kept the height it was given whatever the room, so six of them on a laptop left the price pane no height and the chart blank. Now the price pane keeps at least 38.2% of the height and the open panes share the rest, each by the same part of its own; a folded pane keeps its header. On a taller chart each pane is the height it was given again.
+
+### Widget
+
+- **The panel beside the chart grows with the type on a wide screen** (`@tradecanvas/chart`). The look draws larger from 1920 px, but the panel stayed 262 px wide, so an alert's options wrapped to three lines and the object tree cut its names short. Its width and its limits (233 to 377) now grow by the same scale; a width you dragged is kept as it is at a scale of 1.
+- **Go to keeps its buttons in view in a short window** (`@tradecanvas/chart`). Under about 630 px of height (a phone on its side) the month pushed Cancel and Go to off the dialog; the form now scrolls under them.
+- A select in a settings dialog is as tall as the number field beside it (32 px; the classic densities keep 30), and a dialog's close box is 34 px where the browser can round it (it was 33.98).
+
+## 1.84.1 (2026-11-12)
+
+### Chart
+
+- **The "+" by the price axis takes the click over a drawing's body** (`@tradecanvas/chart`, `@tradecanvas/core`). A position's zone, or any filled drawing, that reached the price axis swallowed a click on the "+", though the "+" was drawn over it: no alert or order could be added at a price inside the zone. The "+" now comes first there, and the drawing under it no longer glows; only the selected drawing's handle still takes the press. Away from the "+" the drawing takes the click as before.
+
 ## 1.84.0 (2026-11-12)
 
 ### Performance
@@ -33,10 +49,6 @@
   - A read of an indicator's output (`getIndicatorOutput`, alerts, export) finishes a pending recompute first, so reads stay synchronous. `getIndicatorOutput(id, { drawn: true })` gives what is drawn without waiting; the legend and the data window use it.
   - While a recompute is out, the chart keeps drawing the previous output: after a symbol switch the previous lines stay until the new ones land, and a new indicator shows nothing yet. An alert on an indicator's line waits for the result instead of forcing the work onto the main thread.
 - **The core package no longer ships the indicator worker's 732 kB sourcemap.**
-
-### Chart
-
-- **The "+" by the price axis takes the click over a drawing's body** (`@tradecanvas/chart`, `@tradecanvas/core`). A position's zone, or any filled drawing, that reached the price axis swallowed a click on the "+", though the "+" was drawn over it: no alert or order could be added at a price inside the zone. The "+" now comes first there, and the drawing under it no longer glows; only the selected drawing's handle still takes the press. Away from the "+" the drawing takes the click as before.
 
 ## 1.83.1 (2026-11-11)
 

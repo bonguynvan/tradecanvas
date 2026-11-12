@@ -7,6 +7,12 @@ const MIN_PANEL_WIDTH = 80;
 export const COLLAPSED_PANE_HEIGHT = 20;
 /** The least the price pane keeps while a pane is maximised. */
 export const MIN_MAIN_HEIGHT_WITH_MAXIMIZED = 48;
+/**
+ * The least of the chart's height the price pane keeps, however many panes
+ * are open under and over it: the smaller golden part (38.2%). The panes
+ * share the rest.
+ */
+export const MIN_MAIN_SHARE = 0.382;
 
 const isHorizontal = (p: PanelConfig): boolean => p.position === 'top' || p.position === 'bottom';
 
@@ -161,6 +167,32 @@ export class LayoutManager {
     return panel.collapsed ? COLLAPSED_PANE_HEIGHT : panel.size;
   }
 
+  /**
+   * The heights the open top and bottom panes show at when together they ask
+   * for more than the price pane can give (`MIN_MAIN_SHARE`): each the same
+   * part of its own, never under its header. The size each was given stays
+   * its own, for a taller chart. Empty while they fit or one is maximised.
+   */
+  private squeezed(panes: readonly PanelConfig[]): Map<string, number> {
+    const shown = new Map<string, number>();
+    if (this.maximized) return shown;
+    const open = panes.filter((p) => !p.collapsed);
+    const asked = open.reduce((sum, p) => sum + p.size, 0);
+    const left = this.roomForOpen(panes.length - open.length);
+    if (open.length === 0 || asked <= left) return shown;
+    const share = Math.max(left, open.length * COLLAPSED_PANE_HEIGHT);
+    let used = 0;
+    for (const p of open) {
+      const height = Math.max(COLLAPSED_PANE_HEIGHT, Math.floor((p.size * share) / asked));
+      shown.set(p.id, height);
+      used += height;
+    }
+    // What the rounding left over goes to the last pane, so the panes end on the time axis.
+    const last = open[open.length - 1];
+    if (used < share) shown.set(last.id, shown.get(last.id)! + share - used);
+    return shown;
+  }
+
   setPanelPosition(instanceId: string, position: PanelPosition): void {
     const panel = this.panels.find((p) => p.id === instanceId);
     if (panel) {
@@ -193,6 +225,36 @@ export class LayoutManager {
       panel.collapsed = undefined;
       this.maximized = null;
     }
+  }
+
+  /** What the open top and bottom panes have between them, with `folded` more showing their headers. */
+  private roomForOpen(folded: number): number {
+    const room = this.containerHeight - TIME_AXIS_HEIGHT;
+    const kept = Math.max(MIN_MAIN_HEIGHT_WITH_MAXIMIZED, Math.ceil(room * MIN_MAIN_SHARE));
+    return room - kept - folded * COLLAPSED_PANE_HEIGHT;
+  }
+
+  /**
+   * A pane dragged to `height` on screen. While the panes fit, that is its
+   * size. While they are giving way to the price pane, its size becomes the
+   * one that shows at that height among the others, so its edge stays under
+   * the pointer; the others take what is left by their own sizes, which stay
+   * as given. Dragged back to where it was, it has the size it had.
+   */
+  setPanelHeightOnScreen(instanceId: string, height: number): void {
+    const panel = this.panels.find((p) => p.id === instanceId);
+    if (!panel || !isHorizontal(panel) || this.maximized) return this.setPanelSize(instanceId, height);
+    const stacked = this.panels.filter((p) => isHorizontal(p) && !this.aside.has(p.id) && p !== panel);
+    const others = stacked.filter((p) => !p.collapsed);
+    const asked = others.reduce((sum, p) => sum + p.size, 0);
+    const left = this.roomForOpen(stacked.length - others.length);
+    if (others.length === 0 || height + asked <= left) return this.setPanelSize(instanceId, height);
+    // Every other open pane keeps its header at least.
+    const most = left - others.length * COLLAPSED_PANE_HEIGHT;
+    const shown = Math.min(Math.max(height, COLLAPSED_PANE_HEIGHT), most);
+    if (shown >= left) return this.setPanelSize(instanceId, height);
+    panel.size = Math.max(panel.minSize, Math.round((shown * asked) / (left - shown)));
+    panel.collapsed = undefined;
   }
 
   /** Width reserved for the price axis right of the main chart. */
@@ -230,7 +292,8 @@ export class LayoutManager {
       maximizedPanel?.minSize ?? 0,
       this.containerHeight - TIME_AXIS_HEIGHT - MIN_MAIN_HEIGHT_WITH_MAXIMIZED - folded,
     );
-    const size = (p: PanelConfig) => this.shownSize(p, maximizedSize);
+    const squeezed = this.squeezed([...topPanels, ...bottomPanels]);
+    const size = (p: PanelConfig) => squeezed.get(p.id) ?? this.shownSize(p, maximizedSize);
 
     const leftWidth = leftPanels.reduce((s, p) => s + p.size, 0);
     const rightWidth = rightPanels.reduce((s, p) => s + p.size, 0);

@@ -192,6 +192,13 @@ const SCENES = {
     s.chart.setIndicatorValueLabelsVisible(true);
     return s;
   },
+
+  /** More panes than the chart has room for: the price pane keeps its part, the panes share the rest. */
+  async manyPanes() {
+    const s = await widget();
+    for (const id of ['rsi', 'macd', 'atr', 'cci', 'stochastic', 'obv', 'mfi', 'adx']) s.chart.addIndicator(id);
+    return s;
+  },
 };
 
 const stage = { scene, theme, ready: false, errors: [] };

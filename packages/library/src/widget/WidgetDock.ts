@@ -69,6 +69,7 @@ export class WidgetDock {
   private open_: string | null = null;
   /** The width asked for; the panel is narrower where its row has no room for it. */
   private width: number;
+  private scale = 1;
   private drag: { x: number; width: number; dir: 1 | -1; pointer: number | undefined } | null = null;
   private readonly observer: ResizeObserver | null = null;
 
@@ -116,7 +117,7 @@ export class WidgetDock {
     this.panel = panel;
     this.rail = rail;
     this.handle = handle;
-    this.width = this.clamp(options.savedWidth?.() ?? DOCK_WIDTH.default, DOCK_WIDTH.max);
+    this.width = Math.min(DOCK_WIDTH.max, Math.max(DOCK_WIDTH.min, options.savedWidth?.() ?? DOCK_WIDTH.default));
     this.applyWidth();
     // Its row narrowing (a window made smaller): the panel keeps to its share.
     if (options.room && typeof ResizeObserver !== 'undefined') {
@@ -232,24 +233,43 @@ export class WidgetDock {
 
   // --- Width ---
 
+  /**
+   * The look's scale (a wide screen draws it larger): the panel's width and
+   * its limits grow with the type in it. The width kept is the one at 1.
+   */
+  setScale(scale: number): void {
+    const next = Number.isFinite(scale) && scale > 0 ? scale : 1;
+    if (next === this.scale) return;
+    this.scale = next;
+    this.handle.setAttribute('aria-valuemin', String(this.min()));
+    this.applyWidth();
+  }
+
+  private min(): number {
+    return Math.round(DOCK_WIDTH.min * this.scale);
+  }
+
   /** The widest the panel may be now: 377, or 38.2% of its row where that is less (never under 233). */
   private maxNow(): number {
     const room = this.options.room?.() ?? 0;
-    if (room <= 0) return DOCK_WIDTH.max;
-    return Math.max(DOCK_WIDTH.min, Math.min(DOCK_WIDTH.max, Math.floor(room * DOCK_SHARE)));
+    const max = Math.round(DOCK_WIDTH.max * this.scale);
+    if (room <= 0) return max;
+    return Math.max(this.min(), Math.min(max, Math.floor(room * DOCK_SHARE)));
   }
 
+  /** A width on screen, within the limits there are now. */
   private clamp(width: number, max = this.maxNow()): number {
-    return Math.round(Math.min(max, Math.max(DOCK_WIDTH.min, width)));
+    return Math.round(Math.min(max, Math.max(this.min(), width)));
   }
 
-  /** The width shown: the one asked for, within the room there is. */
+  /** The width shown: the one asked for at the look's scale, within the room there is. */
   private shownWidth(): number {
-    return this.clamp(this.width);
+    return this.clamp(this.width * this.scale);
   }
 
+  /** Take a width on screen; what is kept is that width at a scale of 1. */
   private setWidth(width: number): void {
-    this.width = this.clamp(width);
+    this.width = Math.round((this.clamp(width) / this.scale) * 100) / 100;
     this.applyWidth();
   }
 
@@ -289,8 +309,8 @@ export class WidgetDock {
     const now = this.shownWidth();
     const next = e.key === wider ? now + DOCK_WIDTH_STEP
       : e.key === narrower ? now - DOCK_WIDTH_STEP
-      : e.key === 'Home' ? DOCK_WIDTH.min
-      : e.key === 'End' ? DOCK_WIDTH.max
+      : e.key === 'Home' ? this.min()
+      : e.key === 'End' ? this.maxNow()
       : null;
     if (next === null) return;
     e.preventDefault();

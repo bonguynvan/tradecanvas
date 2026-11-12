@@ -108,7 +108,9 @@ describe('pane fold, maximise and order', () => {
     expect(chart.getMaximizedPane()).toBe(byId('rsi'));
     chart.setMaximizedPane(null);
     expect(chart.isPaneCollapsed(byId('macd'))).toBe(true);
-    expect(heights()[byId('rsi')]).toBe(140);
+    // The size it was given is kept; in 400 px two open panes share what the price pane leaves.
+    expect(chart.saveState()).toContain('"paneSize":140');
+    expect(heights()[byId('rsi')]).toBeLessThan(140);
   });
 });
 
