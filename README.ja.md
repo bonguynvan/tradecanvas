@@ -94,12 +94,6 @@ new ChartWidget(document.getElementById('chart')!, {
 
 ヘッドレスの `Chart` は自前のバー（`chart.setData(bars)`）を受け取り、画面づくりはあなたに任せます。独自のデータ源は 2 つのメソッド（`getBars`、`subscribeBars`）だけの `DataFeed` として書け、アダプターを渡す場所ならどこでも `feed` として渡せます。1 つの feed で何枚のチャートにも配信できます。React、Vue、Svelte では `@tradecanvas/react`、`/vue`、`/svelte` が同じ props のコンポーネントとして包みます。
 
-## ドキュメント
-
-[はじめに](https://tradecanvas.dev/ja/docs/getting-started/) · [API](https://tradecanvas.dev/ja/docs/api/) · [インジケーター](https://tradecanvas.dev/ja/docs/indicators/) · [描画ツール](https://tradecanvas.dev/ja/docs/drawing-tools/) · [リアルタイム](https://tradecanvas.dev/ja/docs/realtime/) · [取引](https://tradecanvas.dev/ja/docs/trading/) · [スタイル](https://tradecanvas.dev/ja/docs/styling/) · [フレームワーク](https://tradecanvas.dev/ja/docs/frameworks/) · [プラグイン](https://tradecanvas.dev/ja/docs/plugins/) · [スマートフォンとアプリ](https://tradecanvas.dev/ja/docs/embed/#mobile-app) · [パフォーマンス](https://tradecanvas.dev/ja/docs/performance/)
-
-ドキュメントは English、Tiếng Việt、简体中文、日本語、한국어、Español で読めます。計測値、制限、テストの方法は[システム監査](https://tradecanvas.dev/ja/audit/)にあります。
-
 ## AI コーディングツール
 
 [`skills/tradecanvas`](skills/tradecanvas/SKILL.md) のエージェントスキルは、CI が型チェックするサンプルでコーディングエージェントに API を教えます。Claude Code では:
@@ -118,6 +112,14 @@ claude mcp add tradecanvas -- npx -y @tradecanvas/mcp
 ```
 
 WSL を使わない Windows では: `claude mcp add tradecanvas -- cmd /c npx -y @tradecanvas/mcp`. Git Bash（Windows で Claude Code の `!` コマンドを実行するシェル）では `//c` と書きます。`/c` がパスに書き換えられるためです。
+
+自称ではなく実測です。24 のタスクで、エージェントはスキルの有無にかかわらずすべての実行を完了しました。スキルがあると 16 ターンに対して 10 ターン、24 万トークンに対して 13.7 万トークンで済み、コンパイル済みコードを読みに行ったのは 48 回中 22 回に対して 2 回でした（[この実行](evals/baselines/2026-10-25-sonnet.md)、1.48.0 時点。タスクと判明したことは [`evals`](evals/README.md) にあります）。
+
+## ドキュメント
+
+[はじめに](https://tradecanvas.dev/ja/docs/getting-started/) · [API](https://tradecanvas.dev/ja/docs/api/) · [インジケーター](https://tradecanvas.dev/ja/docs/indicators/) · [描画ツール](https://tradecanvas.dev/ja/docs/drawing-tools/) · [リアルタイム](https://tradecanvas.dev/ja/docs/realtime/) · [取引](https://tradecanvas.dev/ja/docs/trading/) · [スタイル](https://tradecanvas.dev/ja/docs/styling/) · [フレームワーク](https://tradecanvas.dev/ja/docs/frameworks/) · [プラグイン](https://tradecanvas.dev/ja/docs/plugins/) · [スマートフォンとアプリ](https://tradecanvas.dev/ja/docs/embed/#mobile-app) · [パフォーマンス](https://tradecanvas.dev/ja/docs/performance/)
+
+ドキュメントは English、Tiếng Việt、简体中文、日本語、한국어、Español で読めます。計測値、制限、テストの方法は[システム監査](https://tradecanvas.dev/ja/audit/)にあります。
 
 ## その他
 

@@ -158,7 +158,7 @@ chart.getScaleMode()`}</code></pre>
   fractions and <code>roundPrice</code> rounds to them. Indicator panes keep their own
   numbers. Without a format of your own, prices are grouped in the number locale; the
   axis's tick labels show only the decimals their step needs (73,500), while the last
-  price, the crosshair and the tags beside the axis show every decimal. Times can read your way too; the formatter is told what a label is.
+  price, the crosshair and the tags beside the axis show every decimal. With no decimals set by the symbol or the market, those are one more than the scale's step needs, and for a price under 1 at least four significant figures of it (0.000004349, where the step alone gave 0.00000435). Times can read your way too; the formatter is told what a label is.
 </p>
 <pre><code>{`new Chart(host, { priceFormat: { denominator: 32 } })                    // 101'16
 chart.setPriceFormat({ denominator: 32, subDenominator: 2 })            // 101'165: 16½ 32nds

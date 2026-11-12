@@ -94,12 +94,6 @@ new ChartWidget(document.getElementById('chart')!, {
 
 El `Chart` sin interfaz recibe tus propias barras (`chart.setData(bars)`) y te deja la interfaz a ti. Una fuente propia es un `DataFeed` de dos métodos (`getBars`, `subscribeBars`), que se pasa como `feed` donde va un adaptador; un mismo feed sirve a cualquier número de gráficos. Para React, Vue y Svelte, `@tradecanvas/react`, `/vue` y `/svelte` lo envuelven en un componente con las mismas props.
 
-## Documentación
-
-[Primeros pasos](https://tradecanvas.dev/es/docs/getting-started/) · [API](https://tradecanvas.dev/es/docs/api/) · [Indicadores](https://tradecanvas.dev/es/docs/indicators/) · [Herramientas de dibujo](https://tradecanvas.dev/es/docs/drawing-tools/) · [Tiempo real](https://tradecanvas.dev/es/docs/realtime/) · [Trading](https://tradecanvas.dev/es/docs/trading/) · [Estilos](https://tradecanvas.dev/es/docs/styling/) · [Frameworks](https://tradecanvas.dev/es/docs/frameworks/) · [Plugins](https://tradecanvas.dev/es/docs/plugins/) · [Móviles y apps](https://tradecanvas.dev/es/docs/embed/#mobile-app) · [Rendimiento](https://tradecanvas.dev/es/docs/performance/)
-
-La documentación está en English, Tiếng Việt, 简体中文, 日本語, 한국어 y Español. Las mediciones, los límites y cómo se prueba están en la [auditoría del sistema](https://tradecanvas.dev/es/audit/).
-
 ## Herramientas de programación con IA
 
 La skill para agentes de [`skills/tradecanvas`](skills/tradecanvas/SKILL.md) enseña la API a los agentes de programación, con ejemplos cuyos tipos comprueba la CI. En Claude Code:
@@ -118,6 +112,14 @@ claude mcp add tradecanvas -- npx -y @tradecanvas/mcp
 ```
 
 En Windows fuera de WSL: `claude mcp add tradecanvas -- cmd /c npx -y @tradecanvas/mcp`. En Git Bash, que ejecuta los comandos `!` de Claude Code en Windows, escribe `//c`: Git Bash convierte `/c` en una ruta.
+
+Medido, no afirmado: en 24 tareas un agente terminó todas las ejecuciones con o sin la skill, y con ella necesitó 10 turnos frente a 16 y 137k tokens frente a 240k, y fue a leer el código compilado en 2 ejecuciones de 48 frente a 22 ([la ejecución](evals/baselines/2026-10-25-sonnet.md), sobre 1.48.0; las tareas y lo que revelaron están en [`evals`](evals/README.md)).
+
+## Documentación
+
+[Primeros pasos](https://tradecanvas.dev/es/docs/getting-started/) · [API](https://tradecanvas.dev/es/docs/api/) · [Indicadores](https://tradecanvas.dev/es/docs/indicators/) · [Herramientas de dibujo](https://tradecanvas.dev/es/docs/drawing-tools/) · [Tiempo real](https://tradecanvas.dev/es/docs/realtime/) · [Trading](https://tradecanvas.dev/es/docs/trading/) · [Estilos](https://tradecanvas.dev/es/docs/styling/) · [Frameworks](https://tradecanvas.dev/es/docs/frameworks/) · [Plugins](https://tradecanvas.dev/es/docs/plugins/) · [Móviles y apps](https://tradecanvas.dev/es/docs/embed/#mobile-app) · [Rendimiento](https://tradecanvas.dev/es/docs/performance/)
+
+La documentación está en English, Tiếng Việt, 简体中文, 日本語, 한국어 y Español. Las mediciones, los límites y cómo se prueba están en la [auditoría del sistema](https://tradecanvas.dev/es/audit/).
 
 ## Más
 

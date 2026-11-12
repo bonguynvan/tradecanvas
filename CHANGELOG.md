@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Engine
+
+- **A price under 1 shows at least four figures of itself** (`@tradecanvas/chart`, `@tradecanvas/core`, `@tradecanvas/commons`). With no decimals set by the symbol or the market, the legend, the crosshair, the last-price tag and the order tags took the price scale's decimals, its step's and one more. On a sub-cent coin over a wide range that is two or three figures of the price: 0.00000284 for 0.00000284393, and a candle's open, high, low and close read the same. They now show as many decimals as four significant figures of the largest price on view take, where the step's are fewer: 0.000004349 where it read 0.00000435, 0.7370 where it read 0.737. The scale's own tick labels keep the decimals their step needs, prices from 1 up are unchanged, and a symbol's or a market's decimals still come first. `chart.roundPrice` and `chart.getPriceStep` follow, so an order placed by hand on such a coin lands on the finer step. The price axis is a few pixels wider where its tags are longer.
+
 ## 2.1.0 (2026-11-12)
 
 ### Widget
