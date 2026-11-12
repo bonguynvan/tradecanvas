@@ -1,4 +1,5 @@
 import type { Size } from '@tradecanvas/commons';
+import { sizeCanvas } from './DPRManager.js';
 
 /**
  * Keep the page's OpenType features off the chart's text: a canvas, or the
@@ -33,17 +34,10 @@ export class CanvasLayer {
     container.appendChild(this.canvas);
   }
 
-  resize(size: Size, dpr: number): void {
+  /** `device`: the container in device pixels where the browser reports it (see `backingSize`). */
+  resize(size: Size, dpr: number, device: Size | null = null): void {
     this.dpr = dpr;
-    const w = Math.round(size.width * dpr);
-    const h = Math.round(size.height * dpr);
-    // Only resize if dimensions changed (avoids unnecessary canvas clear)
-    if (this.canvas.width !== w || this.canvas.height !== h) {
-      this.canvas.width = w;
-      this.canvas.height = h;
-    }
-    this.canvas.style.width = `${size.width}px`;
-    this.canvas.style.height = `${size.height}px`;
+    sizeCanvas(this.canvas, size, dpr, device);
     this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   }
 

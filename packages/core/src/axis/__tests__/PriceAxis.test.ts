@@ -108,8 +108,10 @@ describe('PriceAxis — the symbol’s precision and price step', () => {
     for (const t of texts) expect(Number.isInteger(Number(t) * 32)).toBe(true);
   });
 
-  it('keeps the top label a sum of steps would pass by a hair', () => {
-    expect(labelsOn(new PriceAxis(), { min: 0.1, max: 0.3 })).toContain('0.30');
+  it('keeps the top tick a sum of steps would pass by a hair', () => {
+    // Its grid line is drawn; its label, at the pane's very top, is not.
+    const ticks = new PriceAxis().ticks({ ...viewport, priceRange: { min: 0.1, max: 0.3 } });
+    expect(ticks[ticks.length - 1]).toBeCloseTo(0.3, 10);
   });
 
   it('writes a price as the scale does, for measuring it', () => {
@@ -145,5 +147,15 @@ describe('PriceAxis — the symbol’s precision and price step', () => {
     const texts = labelsOn(axis, { min: 100.1, max: 103.9 });
     expect(new Set(texts).size).toBe(texts.length);
     expect(texts).toEqual(['101', '102', '103']);
+  });
+});
+
+describe('PriceAxis — labels at the pane’s edges', () => {
+  it('leaves out a label the top or the bottom of the pane would cut', () => {
+    // 85,000 is at the very top and 83,000 at the very bottom: half of each would be outside.
+    const all = labels(new PriceAxis());
+    expect(all).not.toContain('85,000');
+    expect(all).not.toContain('83,000');
+    expect(all).toContain('84,000');
   });
 });

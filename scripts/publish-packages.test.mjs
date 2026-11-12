@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { gzipSync } from 'node:zlib';
-import { publishOrder, internalDeps, remoteTagNames, untagged, releasePlan, waitUntil, packedInOrder, eachSettled, hasWork, fileInTarball, releaseNotes, firstCommitOf, tagTarget } from './publish-packages.mjs';
+import { publishOrder, internalDeps, remoteTagNames, untagged, releasePlan, waitUntil, packedInOrder, eachSettled, hasWork, fileInTarball, releaseNotes, firstCommitOf, tagTarget, distTag } from './publish-packages.mjs';
 
 const pkg = (name, deps = []) => ({ name, version: '1.0.0', deps });
 
@@ -207,4 +207,13 @@ test('a version is tagged on main as it is now when its package has not changed 
 
 test('a version whose package changed since is tagged on its own commit, so the tag holds what was released', () => {
   assert.equal(tagTarget({ versionSha: 'bump', headSha: 'head', changedSince: true }), 'bump');
+});
+
+test('a prerelease goes out under its own dist-tag, so latest stays the last full release', () => {
+  assert.equal(distTag('2.0.0-beta.0'), 'beta');
+  assert.equal(distTag('2.0.0-beta.12'), 'beta');
+  assert.equal(distTag('2.0.0-rc.1'), 'rc');
+  assert.equal(distTag('2.0.0-0'), 'next');
+  assert.equal(distTag('2.0.0'), null);
+  assert.equal(distTag('1.84.1'), null);
 });

@@ -95,7 +95,7 @@ import { WidgetWatchlists, type WatchlistsHost } from './WidgetWatchlists.js';
 import { WidgetAlerts, type AlertsHost } from './WidgetAlerts.js';
 import { WidgetTrading, type TradingHost } from './WidgetTrading.js';
 import { WidgetMenus, type MenusHost } from './WidgetMenus.js';
-import { WidgetLegendView, type LegendHost, LEGEND_INSET, STACK_GAP } from './WidgetLegendView.js';
+import { WidgetLegendView, type LegendHost, legendRowInset, STACK_GAP } from './WidgetLegendView.js';
 import { WidgetCommands, type CommandsHost } from './WidgetCommands.js';
 import { WidgetLayouts, type LayoutsHost } from './WidgetLayouts.js';
 import { WidgetDockArea, type DockHost } from './WidgetDockArea.js';
@@ -118,10 +118,11 @@ import {
 const TEXT_PROMPT_FALLBACK_MS = 600;
 /** How far past a scale step (px) the widget must be before its look changes size: no flicker at the edge. */
 const SCALE_DEAD_BAND = 24;
-/** The tokens a bigger scale changes: bars, buttons, icons, menu rows and type. */
+/** The tokens a bigger scale changes: bars, buttons, icons, menu rows, type and the lines it sits on. */
 const SCALED_TOKENS = [
   '--tcw-toolbar-h', '--tcw-control-h', '--tcw-control-h-sm', '--tcw-icon', '--tcw-sidebar-w', '--tcw-tool-h', '--tcw-tool-icon', '--tcw-menu-item-h',
   '--tcw-font-size', '--tcw-font-size-sm', '--tcw-font-size-xs', '--tcw-font-size-lg', '--tcw-font-size-xl', '--tcw-font-size-display',
+  '--tcw-line-height', '--tcw-line-xs', '--tcw-label-size',
 ] as const;
 
 /**
@@ -991,7 +992,7 @@ export class ChartWidget {
       onMore: (iid, anchor) => this.legend.openLegendMenu(iid, anchor),
       onPaneAction: (iid, action) => this.legend.runPaneAction(iid, action),
       // From the plot's left edge and the legend's foot, as the stack is placed: the drawings' labels keep clear of it.
-      onStackResize: (size) => this.chart.setLegendStack?.(size ? { width: LEGEND_INSET + size.width, height: STACK_GAP + size.height } : null),
+      onStackResize: (size) => this.chart.setLegendStack?.(size ? { width: legendRowInset(this.chart) + size.width, height: STACK_GAP + size.height } : null),
     }, {
       show: this.t('legend.show'),
       hide: this.t('legend.hide'),
@@ -2014,13 +2015,16 @@ export class ChartWidget {
   }
 
   /**
-   * The look's chart: its figures (axes, tags) in the look's figures face, and
-   * golden bars, but the classic 2 px gap when compact. `chartOptions` that set the bars or a face win;
-   * sizes alone keep the look's face.
+   * The look's chart: its figures (axes, tags) in the look's figures face, and the
+   * room around its bars: comfortable, or as before 2.0 when the look is classic or
+   * compact (compact with the classic 2 px gap too). `chartOptions` that set the
+   * density, the bars or a face win; sizes alone keep the look's face.
    */
   private applyChartLook(): void {
     const given = this.options.chartOptions;
-    // More bars on screen with air between them (about 250 across 1920 px, from about 170); compact keeps the tight classic bars.
+    const tight = this.ui.density === 'compact' || this.ui.density === 'classic';
+    if (!given?.density) this.chart.setDensity(tight ? 'compact' : 'comfortable');
+    // Golden bars in every look but compact, which keeps the tight classic ones.
     if (!given?.barLayout) this.chart.setBarLayout(this.ui.density === 'compact' ? 'classic' : 'golden');
     // The chart's type grows with the look, from its sizes before any scaling; sizes `chartOptions.font` sets stay.
     const sizes = this.scaledChartSizes();

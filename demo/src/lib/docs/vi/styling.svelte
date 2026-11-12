@@ -60,26 +60,54 @@ const grid = new ChartWidgetGrid(host, { layout: '2x2', widget: { ui: 'terminal'
 grid.setUI('studio')
 grid.getUI()`}</code></pre>
 
-<h2>Giao diện thoáng</h2>
+<h2 id="density">Mật độ</h2>
 <p>
-  Widget mở chart với nhiều nến hơn trên màn hình và khoảng trống giữa chúng: thân nến là ô × φ⁻¹ (62%) ở mọi mức
-  zoom, và chart mở ở φ⁴ ≈ 6,85 px mỗi ô (<code>barLayout: 'golden'</code>), khoảng 250 nến trên màn hình rộng 1920 px.
-  <code>density: 'compact'</code> giữ nến kiểu cũ, khe 2 px trong ô 10 px. <code>density: 'airy'</code> thêm các nút
-  điều khiển rộng rãi, và các con số trên trục và trong legend dùng font sans của giao diện. Đây là giao diện mà 2.0
-  sẽ mở ra.
+  Chart và widget mở ra với khoảng thoáng quanh những gì chúng vẽ. Thân nến là ô × φ⁻¹ (62%) ở mọi mức zoom, phần còn lại là khe, và chart mở ở φ⁴ ≈ 6,85 px mỗi ô (<code>barLayout: 'golden'</code>), khoảng 250 nến trên màn hình rộng 1920 px. Nến mới nhất nằm cách trục giá 8 ô. Giá chừa trống φ⁻⁴·⁵ (11,5%) chiều cao vùng vẽ ở phía trên đỉnh cao nhất và phía dưới đáy thấp nhất; khi bật volume, dải volume nằm dưới nến, cách một khoảng φ⁻⁶ (5,6%), nên hai phần không bao giờ đè lên nhau. Legend nằm cách góc vùng vẽ 12 px. Trong widget, mọi kích thước và khoảng cách đều là số pixel chẵn; nút, thanh và dòng menu có 12 px ở hai bên chữ.
 </p>
-<pre><code>{`new ChartWidget(host, { ui: { density: 'airy' } })
-
-// The same on a chart of your own
-import { Chart, SANS_FONT_FAMILY } from '@tradecanvas/chart'
-const chart = new Chart(host, { barLayout: 'golden', font: { family: SANS_FONT_FAMILY } })
-chart.setBarLayout('classic')    // a 2 px gap, as before
-chart.setFont({ sizeSmall: 12 }) // the axes' and tags' size
-chart.setFont(null)              // the theme's own font again`}</code></pre>
 <p>
-  <code>chartOptions.barLayout</code> và một <code>family</code> trong <code>chartOptions.font</code> được ưu tiên hơn
-  của giao diện; nếu <code>chartOptions.font</code> chỉ đặt cỡ chữ thì font của giao diện vẫn được giữ. Khi đã có nến
-  trên màn hình, đổi layout giữ nguyên mức zoom và chỉ chia lại từng ô.
+  <code>density</code> đặt tất cả cùng lúc: với widget thì trong <code>ui</code>, với chart của riêng bạn thì trong options của nó:
+</p>
+<table>
+  <thead><tr><th><code>ui.density</code></th><th>Widget</th><th>Chart của nó</th></tr></thead>
+  <tbody>
+    <tr><td><code>'comfortable'</code></td><td>Mặc định: kích thước chẵn (nút 34 px, biểu tượng 20 px), khoảng cách 2 · 4 · 6 · 8 · 12 · 20 · 32, đệm 12 px trong một nút điều khiển.</td><td>Comfortable, nến golden.</td></tr>
+    <tr><td><code>'classic'</code></td><td>Như trước 2.0 (ở tỉ lệ màn hình 100% thì giống đến từng pixel, trừ các vạch chia của trục giá nay sắc nét hơn): nút 33 px, khoảng cách 2 · 3 · 5 · 8 · 13 · 21 · 34, đệm 8 px trong một nút điều khiển.</td><td>Compact, với nến golden mà widget vốn có.</td></tr>
+    <tr><td><code>'compact'</code></td><td>Nút điều khiển nhỏ hơn (nút 26 px, biểu tượng 16 px) trên khoảng cách classic. Không đổi so với 1.x.</td><td>Compact, nến classic.</td></tr>
+    <tr><td><code>'spacious'</code></td><td>Nút điều khiển lớn hơn (nút 42 px, biểu tượng 26 px).</td><td>Comfortable, nến golden.</td></tr>
+    <tr><td><code>'airy'</code></td><td>Như spacious, và các con số trên trục và trong legend dùng font sans của giao diện.</td><td>Comfortable, nến golden.</td></tr>
+  </tbody>
+</table>
+<table>
+  <thead><tr><th><code>density</code> của chart</th><th>Nến</th><th>Khoảng trống sau nến mới nhất</th><th>Trên và dưới giá</th><th>Phía trên dải volume</th><th>Legend cách góc</th></tr></thead>
+  <tbody>
+    <tr><td><code>'comfortable'</code> (mặc định)</td><td>golden</td><td>8 ô</td><td>φ⁻⁴·⁵ (11,5%)</td><td>φ⁻⁶ (5,6%)</td><td>vào 12 px, xuống 8 px</td></tr>
+    <tr><td><code>'compact'</code> (như trước 2.0)</td><td>classic: khe 2 px, mở ở 10 px mỗi ô</td><td>5 ô</td><td>φ⁻⁵ (9%)</td><td>φ⁻⁷ (3,4%)</td><td>vào 8 px, xuống 6 px</td></tr>
+  </tbody>
+</table>
+<pre><code>{`// The widget as it was before 2.0
+new ChartWidget(host, { ui: { density: 'classic' } })
+widget.setUI({ density: 'classic' })
+
+// A chart of your own as it was before 2.0
+import { Chart, CHART_SPACING, SANS_FONT_FAMILY } from '@tradecanvas/chart'
+const chart = new Chart(host, { density: 'compact' })
+chart.setDensity('comfortable')  // and back
+chart.getDensity()               // 'comfortable'
+CHART_SPACING.comfortable        // the numbers each density sets
+
+// One part of it
+new Chart(host, { barLayout: 'classic' })   // a 2 px gap between bars, the rest comfortable
+new Chart(host, { rightMargin: 5 })         // 5 slots past the newest bar
+chart.setBarLayout('golden')
+chart.setFont({ family: SANS_FONT_FAMILY, sizeSmall: 12 }) // the axes' and tags' face and size
+chart.setFont(null)                         // the theme's own font again`}</code></pre>
+<p>
+  <code>barLayout</code> và <code>rightMargin</code> đặt khi tạo chart được giữ nguyên khi đổi density. Trong widget, <code>chartOptions.density</code>, <code>chartOptions.barLayout</code> và một <code>family</code> trong <code>chartOptions.font</code> được ưu tiên hơn của giao diện; nếu <code>chartOptions.font</code> chỉ đặt cỡ chữ thì font của giao diện vẫn được giữ. Khi đã có nến trên màn hình, đổi layout giữ nguyên mức zoom và chỉ chia lại từng ô.
+</p>
+
+<h3 id="whole-pixels">Trên pixel nguyên</h3>
+<p>
+  Ở tỉ lệ màn hình 125% hoặc 150%, một pixel CSS bằng 1,25 hoặc 1,5 pixel thiết bị, và một đường rộng 1 px vẽ vào giữa hai pixel thiết bị sẽ bị nhoè. Chart đặt kích thước canvas theo đúng số pixel thiết bị mà trình duyệt đếm và đặt các nét mảnh của nó lên những pixel ấy: lưới, đường và vạch chia của các trục, crosshair, đường giá cuối, đường lệnh, cảnh báo và mức giá, râu nến, đường ngăn giữa các pane và viền của nhãn giá. Một đường 1 px rộng đúng một pixel thiết bị ở 125% lẫn 150%, như cách trình duyệt vẽ một viền 1 px. Trong widget, các kích thước là số chẵn để biểu tượng nằm cách mép nút một số nguyên pixel, và nút cách mép thanh cũng vậy; các nút chữ trên thanh công cụ rộng một số nguyên pixel ở những trình duyệt làm tròn được một hộp co theo nội dung (Chrome và Edge từ 129 trở lên), nên các biểu tượng đứng sau chúng cũng sắc nét.
 </p>
 
 <h2>Tỉ lệ vàng</h2>
@@ -90,11 +118,11 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
 <table>
   <thead><tr><th>Phần</th><th>Quy tắc</th><th>Giá trị (px)</th></tr></thead>
   <tbody>
-    <tr><td>Kích thước</td><td>Các nửa bậc φ: một biểu tượng, nút nhỏ của nó, nút của nó, thanh công cụ, cột công cụ vẽ; một dòng menu cao bằng một nút. Biểu tượng của công cụ vẽ lớn hơn các biểu tượng khác nửa bậc (26 so với 20), còn nút của chúng nhỏ hơn mức đó một chút, để chừa 3 px mỗi bên trong cột.</td><td>20 · 26 · 33 · 42</td></tr>
-    <tr><td>Khoảng cách</td><td>Các số Fibonacci, mỗi số là tổng của hai số trước, nên hai số kề nhau cách nhau gần φ lần.</td><td>2 · 3 · 5 · 8 · 13 · 21 · 34</td></tr>
+    <tr><td>Kích thước</td><td>Các nửa bậc φ, mỗi bậc lấy số chẵn gần nó nhất (20,4; 25,9; 32,9; 41,9): một biểu tượng, nút nhỏ của nó, nút của nó, thanh công cụ, cột công cụ vẽ; một dòng menu cao bằng một nút. Riêng nút đi lệch quy tắc: 32 gần bậc của nó hơn, nhưng nó là 34, đúng cỡ mà con số 33 của 1.x cho cảm giác khi nhìn, và để lại 7 px mỗi bên cho một biểu tượng 20 px. Biểu tượng của công cụ vẽ lớn hơn các biểu tượng khác nửa bậc (26 so với 20), còn nút của chúng nhỏ hơn mức đó một chút, để chừa 3 px mỗi bên trong cột.</td><td>20 · 26 · 34 · 42</td></tr>
+    <tr><td>Khoảng cách</td><td>Các số Fibonacci trên lưới 4 px (1, 2, 3, 5, 8 nhân 4), bên dưới có thêm 2 và 6, một nửa của 4 và 12. Từ 8 trở lên, hai số kề nhau hơn nhau 1,5; 1,67 và 1,6 lần, gần φ; các bậc nhỏ tăng từng 2 px, vì ở đó tỉ lệ φ không rơi vào số chẵn nào. Density <code>classic</code> và <code>compact</code> giữ các số Fibonacci nguyên bản, 2 · 3 · 5 · 8 · 13 · 21 · 34.</td><td>2 · 4 · 6 · 8 · 12 · 20 · 32</td></tr>
     <tr><td>Góc bo</td><td>
-      Cũng là các số Fibonacci. Góc lồng bên trong bằng góc bao quanh nó trừ đi phần đệm ở giữa, nên các đường cong
-      chạy song song: góc 5 của menu là góc 2 của các dòng cộng 3 phần đệm.
+      Các số Fibonacci. Góc lồng bên trong bằng góc bao quanh nó trừ đi phần đệm ở giữa, nên các đường cong
+      chạy song song: góc 5 của menu là góc 1 của các dòng cộng 4 phần đệm.
     </td><td>1 · 2 · 3 · 5 · 8</td></tr>
     <tr><td>Cỡ chữ</td><td>
       Các bậc căn bậc ba của φ, nên cứ ba bậc thì cỡ chữ lớn hơn φ lần: tiêu đề hộp thoại lớn gấp φ lần chữ trong nó.
@@ -103,16 +131,17 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
   </tbody>
 </table>
 <p>
-  Các bậc cỡ chữ đi theo cỡ chữ thân bạn đặt (<code>font.size</code>), và <code>density</code> dời các kích thước
-  xuống hoặc lên nửa bậc. <code>PHI</code>, <code>FIBONACCI</code> và <code>phiStep(base, steps, perPhi)</code> có
-  trong <code>@tradecanvas/commons</code> để bạn dựng giao diện của riêng mình.
+  Các bậc cỡ chữ đi theo cỡ chữ thân bạn đặt (<code>font.size</code>); một dòng chữ thân có chiều cao chẵn
+  (18 px ở cỡ 13 px). <code>density</code> dời các kích thước xuống hoặc lên nửa bậc. <code>PHI</code>,
+  <code>FIBONACCI</code>, <code>phiStep(base, steps, perPhi)</code> và <code>evenPx(n)</code> có trong
+  <code>@tradecanvas/commons</code> để bạn dựng giao diện của riêng mình.
 </p>
 
 <h3 id="wide-screens">Trên màn hình rộng</h3>
 <p>
   Widget vẽ thanh công cụ, nút, icon và chữ lớn hơn khi nó rộng ra, để màn hình 4K không toàn chữ nhỏ: giữ nguyên
   đến full HD, rồi lớn hơn một phần sáu của φ từ 1800 px, một phần ba từ 2560 (4K ở 150%) và một nửa từ 3400 (4K
-  ở 100%). Chữ trên trục của biểu đồ cũng lớn theo. <code>ui.scale</code> đặt một tỉ lệ riêng cho mọi bề rộng;
+  ở 100%), mỗi kích thước lấy số chẵn gần nhất. Chữ trên trục của biểu đồ cũng lớn theo. <code>ui.scale</code> đặt một tỉ lệ riêng cho mọi bề rộng;
   <code>1</code> giữ nguyên kích thước.
 </p>
 
@@ -125,7 +154,7 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
   preset: 'studio',
   radius: { xs: 3, sm: 5, md: 10, lg: 12, xl: 18 },  // the scale, px (999: pills)
   components: { dialog: 20, tag: 0 },                // a part's own corners
-  density: 'compact',                                // compact · comfortable · spacious · airy
+  density: 'compact',                                // compact · classic · comfortable · spacious · airy
   sizes: { toolbar: 40 },                            // px; wins over density
   scale: 'auto',                                     // or a number; 'auto' grows with the widget's width
   font: {
@@ -158,7 +187,8 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
     <tr><td><code>density</code> / <code>sizes</code></td><td>
       Chiều cao <code>toolbar</code>, chiều cao <code>control</code> và <code>controlSmall</code>, <code>icon</code>,
       độ rộng <code>sidebar</code> và chiều cao <code>menuItem</code>, tính bằng px. <code>compact</code> và
-      <code>spacious</code> là các kích thước của Print, dời xuống hoặc lên nửa bậc φ. Nút và biểu tượng của công cụ vẽ
+      <code>spacious</code> là các kích thước của Print, dời xuống hoặc lên nửa bậc φ, còn <code>classic</code> là widget như
+      trước 2.0 (xem <a href="#density">Mật độ</a>, nơi còn đặt cả khoảng cách và khoảng trống của chart). Nút và biểu tượng của công cụ vẽ
       lớn hơn <code>control</code> và <code>icon</code> nửa bậc φ (bằng nhau ở <code>compact</code>). Chúng chừa khoảng
       trống hai bên trong cột <code>sidebar</code>, và khi cột quá thấp để chứa hết thì chúng nhỏ lại, tới cỡ
       <code>icon</code> cộng 2 px mỗi bên, trước khi cột phải cuộn.
@@ -215,7 +245,10 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
     <tr><td><code>--tcw-border-w</code>, <code>--tcw-sep-w</code></td><td><code>borders</code></td></tr>
     <tr><td><code>--tcw-menu-shadow</code>, <code>--tcw-dialog-shadow</code>, <code>--tcw-tooltip-shadow</code></td><td><code>shadows</code></td></tr>
     <tr><td><code>--tcw-blur</code>, <code>--tcw-surface-opacity</code></td><td><code>blur</code></td></tr>
-    <tr><td><code>--tcw-space-1</code> … <code>--tcw-space-7</code></td><td>Stylesheet: khoảng cách Fibonacci, từ 2 đến 34 px</td></tr>
+    <tr><td><code>--tcw-space-1</code> … <code>--tcw-space-7</code></td><td><code>density</code>: khoảng cách, từ 2 đến 32 px (2 đến 34 ở <code>classic</code> và <code>compact</code>)</td></tr>
+    <tr><td><code>--tcw-control-pad</code>, <code>--tcw-bar-pad</code>, <code>--tcw-menu-row-pad</code></td><td><code>density</code>: khoảng trống bên cạnh nhãn của nút, nút đầu tiên của thanh và chữ của dòng menu</td></tr>
+    <tr><td><code>--tcw-line-height</code>, <code>--tcw-line-xs</code>, <code>--tcw-legend-line</code>, <code>--tcw-legend-line-pane</code></td><td><code>density</code>: chiều cao một dòng chữ thân, một dòng chữ nhỏ nhất, và một dòng của chỉ báo trên chart và trong pane</td></tr>
+    <tr><td><code>--tcw-text-w</code></td><td><code>density</code>: các nút chữ trên thanh rộng một số nguyên pixel (<code>auto</code>: rộng bằng chữ của chúng)</td></tr>
     <tr><td><code>--tcw-kind-1</code> … <code>--tcw-kind-5</code></td><td>Stylesheet: màu của từng loại mã trong hộp tìm mã (cổ phiếu, phái sinh, chỉ số, tiền mã hoá, ngoại hối), đặt cho cả giao diện tối và sáng. Bảng màu riêng của bạn cũng nên đặt chúng, nếu không các huy hiệu giữ những màu này.</td></tr>
     <tr><td><code>--tcw-font-features</code></td><td>Stylesheet: <code>normal</code>, các font hiển thị như vốn có. Tuỳ chọn <code>ui</code> không bao giờ đặt nó, nên một quy tắc của bạn trên <code>.tcw-root</code> bật các tính năng OpenType của font bạn dùng (chữ a một tầng và chữ số mở của Inter: <code>'cv11', 'ss01'</code>). Chúng áp dụng cho chữ của widget, cả các nút và ô nhập; còn chữ của biểu đồ (các canvas và tooltip của nó) thì không bao giờ nhận chúng.</td></tr>
   </tbody>

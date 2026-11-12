@@ -80,7 +80,9 @@ describe('<TradeCanvas> (vue)', () => {
   it('keeps its own defaults without options', () => {
     mount(TradeCanvas);
     const opts = (ChartCtor.mock.calls[0] as unknown[])[1] as Record<string, unknown>;
-    expect(opts).toMatchObject({ rightMargin: 5, crosshair: { mode: 'magnet' } });
+    expect(opts).toMatchObject({ crosshair: { mode: 'magnet' } });
+    // The room past the newest bar is the chart's own, by its density.
+    expect(opts.rightMargin).toBeUndefined();
   });
 
   it('constructs a Chart and connects with the symbol/timeframe', () => {

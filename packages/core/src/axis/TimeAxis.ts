@@ -3,6 +3,7 @@ import { barDateParts, barsAreDaily, timeParts, tzLabel, barTimeUnit } from '@tr
 import { barIndexToTime } from '../viewport/ScaleMapping.js';
 import { MARK_WEIGHT, TimeMarker, markKind, type MarkKind, type TimeMark } from './timeMarks.js';
 import { axisTimes } from '../charts/transforms/axisTimes.js';
+import { hLine } from '../charts/pixelGrid.js';
 
 const _pad2 = (n: number) => n < 10 ? '0' + n : '' + n;
 
@@ -130,8 +131,7 @@ export class TimeAxis {
     ctx.lineWidth = 1;
     ctx.globalAlpha = 0.65;
     ctx.beginPath();
-    ctx.moveTo(chartRect.x, axisY + 0.5);
-    ctx.lineTo(chartRect.x + chartRect.width, axisY + 0.5);
+    hLine(ctx, chartRect.x, chartRect.x + chartRect.width, axisY + 0.5);
     ctx.stroke();
     ctx.globalAlpha = 1;
 

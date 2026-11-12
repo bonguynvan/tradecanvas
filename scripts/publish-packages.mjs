@@ -180,6 +180,17 @@ export function releaseNotes(markdown, version) {
   return lines.slice(start + 1, end === -1 ? undefined : end).join('\n').trim();
 }
 
+/**
+ * The npm dist-tag a version is published under, or null for `latest`: a
+ * prerelease takes its own name (`2.0.0-beta.0` is `beta`), `next` when it
+ * has only a number, so `npm install` goes on giving the last full release.
+ */
+export function distTag(version) {
+  const pre = /^\d+\.\d+\.\d+-([0-9A-Za-z-]+)/.exec(version);
+  if (!pre) return null;
+  return /^[A-Za-z]/.test(pre[1]) ? pre[1].toLowerCase() : 'next';
+}
+
 /** Run a tool and return its output; on Windows pnpm and npm are .cmd files, which only a shell starts. */
 function run(command, args, cwd = ROOT) {
   const opts = { cwd, stdio: ['ignore', 'pipe', 'pipe'], encoding: 'utf8' };
@@ -312,7 +323,10 @@ function tagAndRelease(p) {
   try {
     const notesFile = join(notesDir, 'notes.md');
     writeFileSync(notesFile, notes || `${name}`);
-    run('gh', ['release', 'create', name, '--verify-tag', '--title', name, '--notes-file', notesFile]);
+    const args = ['release', 'create', name, '--verify-tag', '--title', name, '--notes-file', notesFile];
+    // A prerelease is marked as one, and is not the repository's latest release.
+    if (distTag(p.version)) args.push('--prerelease');
+    run('gh', args);
   } finally {
     rmSync(notesDir, { recursive: true, force: true });
   }
@@ -353,6 +367,8 @@ async function publishPacked(packed, dir, order, dryRun) {
     console.log(`publish: ${p.name}@${p.version}`);
     checkTarball(join(dir, t.file), p);
     const args = ['publish', join(dir, t.file), '--access', t.access];
+    const tag = distTag(p.version);
+    if (tag) args.push('--tag', tag);
     if (dryRun) args.push('--dry-run');
     process.stdout.write(run('npm', args));
     if (dryRun) continue;

@@ -2,6 +2,7 @@ import type { ViewportState, Theme } from '@tradecanvas/commons';
 import { priceToY } from '../viewport/ScaleMapping.js';
 import { PRICE_AXIS_WIDTH, autoPricePrecision, formatPrice, lineDash } from '@tradecanvas/commons';
 import { fillTag } from '../ui/shapes.js';
+import { hLine } from '../charts/pixelGrid.js';
 import { labelTextColor } from '../ui/axisValueLabels.js';
 
 /** Where the last-price tag went on the axis, and its colour: the countdown hangs under it. */
@@ -107,8 +108,7 @@ export class CurrentPriceLine {
     ctx.lineWidth = width;
     ctx.globalAlpha = isFlashing ? 1 : 0.7;
     ctx.beginPath();
-    ctx.moveTo(chartRect.x, Math.round(y) + 0.5);
-    ctx.lineTo(chartRect.x + chartRect.width, Math.round(y) + 0.5);
+    hLine(ctx, chartRect.x, chartRect.x + chartRect.width, Math.round(y) + 0.5, width);
     ctx.stroke();
     ctx.setLineDash([]);
     ctx.globalAlpha = 1;

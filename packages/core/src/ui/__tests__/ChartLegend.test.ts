@@ -97,9 +97,9 @@ describe('ChartLegend.getHeight', () => {
   it('covers the rows it draws, and nothing when hidden', () => {
     const legend = new ChartLegend();
     legend.setConfig({ showSymbol: false, showOHLC: true, showVolume: true, fontSize: 12 });
-    expect(legend.getHeight()).toBe(6 + 15 + 14);
+    expect(legend.getHeight()).toBe(8 + 16 + 14);
     legend.setConfig({ showVolume: false });
-    expect(legend.getHeight()).toBe(6 + 15);
+    expect(legend.getHeight()).toBe(8 + 16);
     legend.setConfig({ visible: false });
     expect(legend.getHeight()).toBe(0);
   });
@@ -111,7 +111,7 @@ describe('ChartLegend.getHeight', () => {
     const { ctx } = mockCtx();
     legend.render(ctx, viewport(0, 1), DARK_THEME, [bar(), bar()]);
     // O, H, L and C: a 10 px label and a 10 px value each, 10 px apart (measureText says 10), from 8 in.
-    expect(legend.getWidth()).toBe(8 + 4 * 20 + 3 * 10);
+    expect(legend.getWidth()).toBe(12 + 4 * 20 + 3 * 10);
     legend.setConfig({ visible: false });
     expect(legend.getWidth()).toBe(0);
   });
@@ -122,6 +122,28 @@ describe('ChartLegend.getHeight', () => {
     expect(legend.getHeight()).toBe(0);
     legend.render(mockCtx().ctx, viewport(0, 1), DARK_THEME, [bar(), bar()]);
     expect(legend.getWidth()).toBe(0);
+  });
+});
+
+describe('ChartLegend.setSpacing', () => {
+  it('stands 12 px in and 8 px down by default, and 8 and 6 on a compact chart', () => {
+    const legend = new ChartLegend();
+    legend.setConfig({ showSymbol: false, showOHLC: true, showChange: false, showVolume: true, fontSize: 12 });
+    expect(legend.getInset()).toBe(12);
+    expect(legend.getHeight()).toBe(8 + 16 + 14);
+    legend.setSpacing({ inset: 8, top: 6, lineGap: 3 });
+    expect(legend.getInset()).toBe(8);
+    expect(legend.getHeight()).toBe(6 + 15 + 14);
+  });
+
+  it('draws its first row at the inset and the top it was given', () => {
+    const legend = new ChartLegend();
+    legend.setSpacing({ inset: 8, top: 6, lineGap: 3 });
+    const { ctx } = mockCtx();
+    const vp = viewport(0.335, 0.342);
+    legend.render(ctx, vp, DARK_THEME, [bar()]);
+    const [, x, y] = vi.mocked(ctx.fillText).mock.calls[0];
+    expect([x, y]).toEqual([vp.chartRect.x + 8, vp.chartRect.y + 6]);
   });
 });
 

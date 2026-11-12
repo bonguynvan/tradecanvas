@@ -2,6 +2,7 @@ import type { DataSeries, Theme, ViewportState } from '@tradecanvas/commons';
 import { PRICE_AXIS_WIDTH, autoPricePrecision, formatPrice } from '@tradecanvas/commons';
 import { priceToY } from '../viewport/ScaleMapping.js';
 import { fillTag } from './shapes.js';
+import { hLine } from '../charts/pixelGrid.js';
 
 export type PriceLineKind = 'high' | 'low' | 'bid' | 'ask';
 
@@ -89,8 +90,7 @@ export class PriceLines {
       if (y < chartRect.y || y > chartRect.y + chartRect.height) continue;
       ctx.strokeStyle = colorOf(level.kind, theme);
       ctx.beginPath();
-      ctx.moveTo(chartRect.x, y);
-      ctx.lineTo(chartRect.x + chartRect.width, y);
+      hLine(ctx, chartRect.x, chartRect.x + chartRect.width, y);
       ctx.stroke();
     }
     ctx.restore();

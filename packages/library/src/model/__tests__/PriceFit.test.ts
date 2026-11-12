@@ -44,11 +44,23 @@ describe('PriceFit: what the scale is fitted to', () => {
     const up = target();
     const sources = { ...none, volumeRatio: () => 0.3 };
     new PriceFit(true).fit(up.t, data, state(0, 0), sources);
-    expect(up.calls.margins!.bottom).toBeCloseTo(0.3 + PHI ** -7);
-    expect(up.calls.margins!.top).toBeLessThan(0.3);
+    expect(up.calls.margins!.bottom).toBeCloseTo(0.3 + PHI ** -6);
+    expect(up.calls.margins!.top).toBeCloseTo(PHI ** -4.5);
     const down = target(true);
     new PriceFit(true).fit(down.t, data, state(0, 0), sources);
-    expect(down.calls.margins!.top).toBeCloseTo(0.3 + PHI ** -7);
+    expect(down.calls.margins!.top).toBeCloseTo(0.3 + PHI ** -6);
+  });
+
+  it('fits in the margins it is given: a compact chart’s φ⁻⁵, and φ⁻⁷ over the volume', () => {
+    const data: DataSeries = [bar(1, 10, 20, 100)];
+    const fit = new PriceFit(true);
+    fit.setSpacing({ priceMargin: PHI ** -5, volumeGap: PHI ** -7 });
+    const plain = target();
+    fit.fit(plain.t, data, state(0, 0), none);
+    expect(plain.calls.margins).toEqual({ top: PHI ** -5, bottom: PHI ** -5 });
+    const withVolume = target();
+    fit.fit(withVolume.t, data, state(0, 0), { ...none, volumeRatio: () => 0.3 });
+    expect(withVolume.calls.margins!.bottom).toBeCloseTo(0.3 + PHI ** -7);
   });
 
   it('does nothing on an empty series', () => {

@@ -54,23 +54,54 @@ const grid = new ChartWidgetGrid(host, { layout: '2x2', widget: { ui: 'terminal'
 grid.setUI('studio')
 grid.getUI()`}</code></pre>
 
-<h2>疏朗的外观</h2>
+<h2 id="density">密度</h2>
 <p>
-  组件打开图表时屏幕上的 K 线更多、彼此之间留有空隙：在任何缩放下，K 线实体都是所在格子的 φ⁻¹（62%），图表打开时每格
-  φ⁴ ≈ 6.85 px（<code>barLayout: 'golden'</code>），1920 px 宽的屏幕上约 250 根。<code>density: 'compact'</code>
-  保留经典 K 线，10 px 格子中留 2 px 间隙。<code>density: 'airy'</code> 再加上更宽松的控件，坐标轴和图例中的数字使用外观的无衬线字体。
-  这就是 2.0 默认打开的外观。
+  图表和组件打开时，所画内容的四周都留有余地。在任何缩放下，K 线实体都是所在格子的 φ⁻¹（62%），其余是间隙；图表打开时每格 φ⁴ ≈ 6.85 px（<code>barLayout: 'golden'</code>），1920 px 宽的屏幕上约 250 根。最新一根 K 线停在距价格轴 8 格处。价格在最高价之上、最低价之下各留出绘图区高度的 φ⁻⁴·⁵（11.5%）；显示成交量时，成交量带位于 K 线下方，中间隔开 φ⁻⁶（5.6%），两者绝不重叠。图例距绘图区的角 12 px。在组件中，所有尺寸和间距都是偶数像素，按钮、工具栏和菜单行的文字两侧各有 12 px。
 </p>
-<pre><code>{`new ChartWidget(host, { ui: { density: 'airy' } })
-
-// The same on a chart of your own
-import { Chart, SANS_FONT_FAMILY } from '@tradecanvas/chart'
-const chart = new Chart(host, { barLayout: 'golden', font: { family: SANS_FONT_FAMILY } })
-chart.setBarLayout('classic')    // a 2 px gap, as before
-chart.setFont({ sizeSmall: 12 }) // the axes' and tags' size
-chart.setFont(null)              // the theme's own font again`}</code></pre>
 <p>
-  <code>chartOptions.barLayout</code> 和 <code>chartOptions.font</code> 中的 <code>family</code> 优先于外观的设置；<code>chartOptions.font</code> 只设字号时，仍使用外观的字体。屏幕上已有 K 线时，换布局会保持缩放，只重新划分每个格子。
+  <code>density</code> 一次设好这一切：组件写在 <code>ui</code> 里，你自己的图表写在它的选项里：
+</p>
+<table>
+  <thead><tr><th><code>ui.density</code></th><th>组件</th><th>它的图表</th></tr></thead>
+  <tbody>
+    <tr><td><code>'comfortable'</code></td><td>默认值：偶数尺寸（按钮 34 px，图标 20 px），间距 2 · 4 · 6 · 8 · 12 · 20 · 32，控件内边距 12 px。</td><td>comfortable，golden K 线。</td></tr>
+    <tr><td><code>'classic'</code></td><td>与 2.0 之前相同（屏幕缩放为 100% 时像素完全一致，只有价格轴的刻度线更锐利）：按钮 33 px，间距 2 · 3 · 5 · 8 · 13 · 21 · 34，控件内边距 8 px。</td><td>compact，但保留组件原有的 golden K 线。</td></tr>
+    <tr><td><code>'compact'</code></td><td>更小的控件（按钮 26 px，图标 16 px），使用 classic 的间距。与 1.x 相同。</td><td>compact，classic K 线。</td></tr>
+    <tr><td><code>'spacious'</code></td><td>更大的控件（按钮 42 px，图标 26 px）。</td><td>comfortable，golden K 线。</td></tr>
+    <tr><td><code>'airy'</code></td><td>在 spacious 的基础上，坐标轴和图例中的数字使用外观的无衬线字体。</td><td>comfortable，golden K 线。</td></tr>
+  </tbody>
+</table>
+<table>
+  <thead><tr><th>图表的 <code>density</code></th><th>K 线</th><th>最新 K 线之后的留白</th><th>价格上下</th><th>成交量带上方</th><th>图例距角</th></tr></thead>
+  <tbody>
+    <tr><td><code>'comfortable'</code>（默认）</td><td>golden</td><td>8 格</td><td>φ⁻⁴·⁵（11.5%）</td><td>φ⁻⁶（5.6%）</td><td>向内 12 px，向下 8 px</td></tr>
+    <tr><td><code>'compact'</code>（与 2.0 之前相同）</td><td>classic：间隙 2 px，打开时每格 10 px</td><td>5 格</td><td>φ⁻⁵（9%）</td><td>φ⁻⁷（3.4%）</td><td>向内 8 px，向下 6 px</td></tr>
+  </tbody>
+</table>
+<pre><code>{`// The widget as it was before 2.0
+new ChartWidget(host, { ui: { density: 'classic' } })
+widget.setUI({ density: 'classic' })
+
+// A chart of your own as it was before 2.0
+import { Chart, CHART_SPACING, SANS_FONT_FAMILY } from '@tradecanvas/chart'
+const chart = new Chart(host, { density: 'compact' })
+chart.setDensity('comfortable')  // and back
+chart.getDensity()               // 'comfortable'
+CHART_SPACING.comfortable        // the numbers each density sets
+
+// One part of it
+new Chart(host, { barLayout: 'classic' })   // a 2 px gap between bars, the rest comfortable
+new Chart(host, { rightMargin: 5 })         // 5 slots past the newest bar
+chart.setBarLayout('golden')
+chart.setFont({ family: SANS_FONT_FAMILY, sizeSmall: 12 }) // the axes' and tags' face and size
+chart.setFont(null)                         // the theme's own font again`}</code></pre>
+<p>
+  创建图表时指定的 <code>barLayout</code> 和 <code>rightMargin</code> 在切换密度后保持不变。在组件中，<code>chartOptions.density</code>、<code>chartOptions.barLayout</code> 和 <code>chartOptions.font</code> 中的 <code>family</code> 优先于外观的设置；<code>chartOptions.font</code> 只设字号时，仍使用外观的字体。屏幕上已有 K 线时，换布局会保持缩放，只重新划分每个格子。
+</p>
+
+<h3 id="whole-pixels">落在整像素上</h3>
+<p>
+  屏幕缩放为 125% 或 150% 时，一个 CSS 像素等于 1.25 或 1.5 个设备像素，画在两个设备像素之间的 1 px 线条会发虚。图表按浏览器自己给出的设备像素数来确定画布尺寸，并把细线对齐到设备像素上：网格、坐标轴的轴线和刻度、十字光标、最新价线、订单线、提醒线和价位线、影线、窗格分隔线以及价格标签的边缘。1 px 的线在 125% 和 150% 下都正好一个设备像素宽，和浏览器画 1 px 边框一样。在组件中，尺寸取偶数，图标到按钮边缘、按钮到工具栏边缘的距离因此都是整数像素；在能对按内容定宽的盒子取整的浏览器（Chrome 和 Edge 129 及以上）中，工具栏文字按钮的宽度也是整数像素，排在它们后面的图标同样清晰。
 </p>
 
 <h2>黄金比例</h2>
@@ -80,11 +111,11 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
 <table>
   <thead><tr><th>对象</th><th>规则</th><th>取值（px）</th></tr></thead>
   <tbody>
-    <tr><td>尺寸</td><td>按 φ 的半步递增：图标、它的小按钮、它的按钮、工具栏、绘图工具栏；菜单行与按钮等高。绘图工具的图标比其他图标大半步（26 对 20），按钮则比这一步略小，以便在栏内两侧各留 3 px。</td><td>20 · 26 · 33 · 42</td></tr>
-    <tr><td>间距</td><td>斐波那契数，每个数是前两个数之和，因此相邻两个数之比接近 φ。</td><td>2 · 3 · 5 · 8 · 13 · 21 · 34</td></tr>
+    <tr><td>尺寸</td><td>按 φ 的半步递增，每一步取最接近的偶数（20.4、25.9、32.9、41.9）：图标、它的小按钮、它的按钮、工具栏、绘图工具栏；菜单行与按钮等高。按钮是个例外：32 离它那一步更近，但它取 34，也就是 1.x 的 33 看上去的大小，20 px 的图标两侧各留 7 px。绘图工具的图标比其他图标大半步（26 对 20），按钮则比这一步略小，以便在栏内两侧各留 3 px。</td><td>20 · 26 · 34 · 42</td></tr>
+    <tr><td>间距</td><td>4 px 网格上的斐波那契数（1、2、3、5、8 乘以 4），其下再加上 2 和 6，即 4 和 12 的一半。从 8 往上，相邻两数之比为 1.5、1.67 和 1.6，接近 φ；较小的几级每级加 2 px，因为按 φ 的比例在这里落不到偶数上。<code>classic</code> 和 <code>compact</code> 密度保留原本的斐波那契数：2 · 3 · 5 · 8 · 13 · 21 · 34。</td><td>2 · 4 · 6 · 8 · 12 · 20 · 32</td></tr>
     <tr><td>圆角</td><td>
-      同样是斐波那契数。内层圆角等于外层圆角减去两者之间的内边距，这样两条曲线彼此平行：菜单的 5 就是其中各行的 2
-      加上 3 的内边距。
+      斐波那契数。内层圆角等于外层圆角减去两者之间的内边距，这样两条曲线彼此平行：菜单的 5 就是其中各行的 1
+      加上 4 的内边距。
     </td><td>1 · 2 · 3 · 5 · 8</td></tr>
     <tr><td>字号</td><td>
       按 φ 的立方根逐级递增，因此每升三级，字号就大 φ 倍：对话框的标题是其正文的 φ 倍。最小不低于 10 px，再小的话，
@@ -93,15 +124,15 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
   </tbody>
 </table>
 <p>
-  各级字号跟随你设置的正文字号（<code>font.size</code>），<code>density</code> 会把各尺寸下调或上调半步。
-  <code>PHI</code>、<code>FIBONACCI</code> 和 <code>phiStep(base, steps, perPhi)</code> 由
+  各级字号跟随你设置的正文字号（<code>font.size</code>）；一行正文的高度是偶数（13 px 时为 18 px）。<code>density</code> 会把各尺寸下调或上调半步。
+  <code>PHI</code>、<code>FIBONACCI</code>、<code>phiStep(base, steps, perPhi)</code> 和 <code>evenPx(n)</code> 由
   <code>@tradecanvas/commons</code> 提供，可用来打造你自己的外观。
 </p>
 
 <h3 id="wide-screens">宽屏上</h3>
 <p>
   小组件变宽时，工具栏、按钮、图标和文字会画得更大，4K 屏幕上不再满是小字：全高清以内保持不变，从 1800 px 起放大
-  φ 的六分之一，从 2560（150% 的 4K）起放大三分之一，从 3400（100% 的 4K）起放大一半。图表坐标轴的文字也随之变大。
+  φ 的六分之一，从 2560（150% 的 4K）起放大三分之一，从 3400（100% 的 4K）起放大一半，每个尺寸取最接近的偶数。图表坐标轴的文字也随之变大。
   <code>ui.scale</code> 可为所有宽度设定自己的比例；<code>1</code> 保持原有尺寸。
 </p>
 
@@ -114,7 +145,7 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
   preset: 'studio',
   radius: { xs: 3, sm: 5, md: 10, lg: 12, xl: 18 },  // the scale, px (999: pills)
   components: { dialog: 20, tag: 0 },                // a part's own corners
-  density: 'compact',                                // compact · comfortable · spacious · airy
+  density: 'compact',                                // compact · classic · comfortable · spacious · airy
   sizes: { toolbar: 40 },                            // px; wins over density
   scale: 'auto',                                     // or a number; 'auto' grows with the widget's width
   font: {
@@ -147,7 +178,7 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
     <tr><td><code>density</code> / <code>sizes</code></td><td>
       <code>toolbar</code> 高度、<code>control</code> 与 <code>controlSmall</code> 高度、<code>icon</code>、
       <code>sidebar</code> 宽度以及 <code>menuItem</code> 高度，单位 px。<code>compact</code> 和
-      <code>spacious</code> 是把 Print 的尺寸下调或上调 φ 的半步。绘图工具的按钮和图标比
+      <code>spacious</code> 是把 Print 的尺寸下调或上调 φ 的半步，<code>classic</code> 则是 2.0 之前的组件（见<a href="#density">密度</a>，它还决定间距和图表的留白）。绘图工具的按钮和图标比
       <code>control</code> 和 <code>icon</code> 大 φ 的半步（<code>compact</code> 下相同）。它们在 <code>sidebar</code>
       栏内两侧留有空隙；栏太矮放不下全部工具时，它们会先缩小（最小到 <code>icon</code> 的尺寸，两侧各加 2 px），然后栏才滚动。
     </td></tr>
@@ -200,7 +231,10 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
     <tr><td><code>--tcw-border-w</code>、<code>--tcw-sep-w</code></td><td><code>borders</code></td></tr>
     <tr><td><code>--tcw-menu-shadow</code>、<code>--tcw-dialog-shadow</code>、<code>--tcw-tooltip-shadow</code></td><td><code>shadows</code></td></tr>
     <tr><td><code>--tcw-blur</code>、<code>--tcw-surface-opacity</code></td><td><code>blur</code></td></tr>
-    <tr><td><code>--tcw-space-1</code> … <code>--tcw-space-7</code></td><td>样式表：斐波那契间距，2 到 34 px</td></tr>
+    <tr><td><code>--tcw-space-1</code> … <code>--tcw-space-7</code></td><td><code>density</code>：间距，2 到 32 px（<code>classic</code> 和 <code>compact</code> 下为 2 到 34）</td></tr>
+    <tr><td><code>--tcw-control-pad</code>、<code>--tcw-bar-pad</code>、<code>--tcw-menu-row-pad</code></td><td><code>density</code>：按钮文字旁、工具栏第一个按钮旁以及菜单行文字旁的留白</td></tr>
+    <tr><td><code>--tcw-line-height</code>、<code>--tcw-line-xs</code>、<code>--tcw-legend-line</code>、<code>--tcw-legend-line-pane</code></td><td><code>density</code>：正文的行高、最小字号的行高，以及指标行在图表上和窗格里的行高</td></tr>
+    <tr><td><code>--tcw-text-w</code></td><td><code>density</code>：工具栏文字按钮的宽度取整数像素（<code>auto</code>：与文字等宽）</td></tr>
     <tr><td><code>--tcw-kind-1</code> … <code>--tcw-kind-5</code></td><td>样式表：搜索代码里各类品种的颜色（股票、期货、指数、加密货币、外汇），深色和浅色主题各有一套。自定义配色时也要设置它们，否则标记仍用这些颜色。</td></tr>
     <tr><td><code>--tcw-font-features</code></td><td>样式表：<code>normal</code>，字体按原样显示。<code>ui</code> 选项从不设置它，所以你写在 <code>.tcw-root</code> 上的规则可以打开你所用字体自己的 OpenType 特性（Inter 的单层 a 和开口数字：<code>'cv11', 'ss01'</code>）。它们作用于组件的文字，包括按钮和输入框；图表的文字（画布和提示框）则从不使用它们。</td></tr>
   </tbody>

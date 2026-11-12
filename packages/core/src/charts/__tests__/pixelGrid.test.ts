@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { OHLCBar, ViewportState } from '@tradecanvas/commons';
 import { DARK_THEME } from '@tradecanvas/commons';
-import { barColumns, crispX, crispY, inDevicePixels, PIXEL_ROUNDING } from '../pixelGrid.js';
+import { barColumns, crispBox, crispX, crispY, hLine, inDevicePixels, vLine, PIXEL_ROUNDING } from '../pixelGrid.js';
 import { CandlestickRenderer } from '../CandlestickRenderer.js';
 import { VolumeCandleRenderer } from '../VolumeCandleRenderer.js';
 import { CANDLE_BARS_VS } from '../../webgl/shaders.js';
@@ -163,6 +163,85 @@ describe('crispY / crispX', () => {
   it('never makes a line thinner than one device pixel', () => {
     expect(crispY(ctx(1), 10, 0.2).width).toBe(1);
     expect(crispY(ctx(2), 10, 0.2).width).toBe(0.5);
+  });
+
+  it('draws a 1 px line one device pixel wide at 125% and at 150%, on a pixel’s centre', () => {
+    for (const ratio of [1.25, 1.5, 1.75]) {
+      for (const at of [50.5, 51.5, 117.5, 300.5]) {
+        const row = crispY(ctx(ratio), at, 1);
+        expect(row.width * ratio).toBeCloseTo(1, 9);
+        // Its centre in device pixels is a half: the row it covers starts and ends on whole pixels.
+        expect((row.y * ratio) % 1).toBeCloseTo(0.5, 9);
+        expect(Math.abs(row.y - at) * ratio).toBeLessThanOrEqual(0.51);
+      }
+    }
+  });
+
+  it('keeps a wider line a whole number of device pixels wide: 2 px is 2 at 125%, 3 at 150%', () => {
+    expect(crispX(ctx(1.25), 10, 2).width * 1.25).toBeCloseTo(2, 9);
+    expect(crispX(ctx(1.5), 10, 2).width * 1.5).toBeCloseTo(3, 9);
+    expect(crispX(ctx(1.1), 10, 10).width * 1.1).toBeCloseTo(11, 9);
+  });
+
+  it('leaves the half-pixel idiom as it is at 100% and 200%', () => {
+    for (const ratio of [1, 2]) {
+      for (const y of [0.5, 10.5, 99.5]) expect(crispY(ctx(ratio), y, 1)).toEqual({ y, width: 1 });
+    }
+  });
+});
+
+describe('hLine / vLine', () => {
+  /** A context that records the path and the line width it was left with. */
+  function recording(ratio: number) {
+    const path: [string, number, number][] = [];
+    const target = {
+      lineWidth: 0,
+      getTransform: () => ({ a: ratio, b: 0, c: 0, d: ratio, e: 0, f: 0 }),
+      moveTo: (x: number, y: number) => { path.push(['moveTo', x, y]); },
+      lineTo: (x: number, y: number) => { path.push(['lineTo', x, y]); },
+    };
+    return { ctx: target as unknown as CanvasRenderingContext2D, path, target };
+  }
+
+  it('adds the line the half-pixel idiom drew at 100%, 1 px wide', () => {
+    const h = recording(1);
+    hLine(h.ctx, 10, 200, 50.5);
+    expect(h.path).toEqual([['moveTo', 10, 50.5], ['lineTo', 200, 50.5]]);
+    expect(h.target.lineWidth).toBe(1);
+    const v = recording(1);
+    vLine(v.ctx, 70.5, 0, 300);
+    expect(v.path).toEqual([['moveTo', 70.5, 0], ['lineTo', 70.5, 300]]);
+  });
+
+  it('puts the line on one row of device pixels at 125% and 150%', () => {
+    for (const ratio of [1.25, 1.5]) {
+      const h = recording(ratio);
+      hLine(h.ctx, 0, 100, 50.5);
+      expect(h.target.lineWidth * ratio).toBeCloseTo(1, 9);
+      expect((h.path[0][2] * ratio) % 1).toBeCloseTo(0.5, 9);
+      expect(h.path[1][2]).toBe(h.path[0][2]);
+      const v = recording(ratio);
+      vLine(v.ctx, 70.5, 0, 300);
+      expect((v.path[0][1] * ratio) % 1).toBeCloseTo(0.5, 9);
+    }
+  });
+});
+
+describe('crispBox', () => {
+  const ctx = (ratio: number) => ctxWithRatio(ratio);
+  it('leaves a box as given at a whole ratio', () => {
+    expect(crispBox(ctx(1), 10.3, 20.7, 50.5, 16)).toEqual({ x: 10.3, y: 20.7, w: 50.5, h: 16 });
+    expect(crispBox(ctx(2), 10.3, 20.7, 50.5, 16)).toEqual({ x: 10.3, y: 20.7, w: 50.5, h: 16 });
+  });
+
+  it('puts all four edges on whole device pixels at 125% and 150%', () => {
+    for (const ratio of [1.25, 1.5]) {
+      const box = crispBox(ctx(ratio), 1421, 318, 62, 21);
+      for (const edge of [box.x, box.y, box.x + box.w, box.y + box.h]) expect(Math.abs(edge * ratio - Math.round(edge * ratio))).toBeLessThan(1e-9);
+      // Within half a device pixel of where it was asked for.
+      expect(Math.abs(box.y - 318) * ratio).toBeLessThanOrEqual(0.51);
+      expect(Math.abs(box.h - 21) * ratio).toBeLessThanOrEqual(1.01);
+    }
   });
 });
 

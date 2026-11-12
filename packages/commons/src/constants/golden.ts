@@ -16,3 +16,13 @@ export const FIBONACCI = [1, 2, 3, 5, 8, 13, 21, 34, 55, 89] as const;
 export function phiStep(base: number, steps: number, perPhi = 1): number {
   return Math.round(base * PHI ** (steps / perPhi));
 }
+
+/**
+ * `n` as the nearest even number of pixels (a tie goes up, never under 2).
+ * Sizes that sit inside each other are all even, so what is centred (an icon
+ * in its button, a button in its bar) lands on whole pixels: an odd size
+ * around an even one leaves half a pixel a side and a soft edge.
+ */
+export function evenPx(n: number): number {
+  return Math.max(2, 2 * Math.round(n / 2));
+}

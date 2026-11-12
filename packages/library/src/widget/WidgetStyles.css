@@ -69,7 +69,7 @@
   font-family: var(--tcw-font);
   font-feature-settings: var(--tcw-font-features);
   font-size: var(--tcw-font-size);
-  line-height: 1.4;
+  line-height: var(--tcw-line-height);
   color: #e6e3dc;
   background: #131416;
   font-variant-numeric: tabular-nums;
@@ -132,14 +132,31 @@
   --tcw-dur-normal: 180ms;
   --tcw-dur-slow: 260ms;
 
-  /* Spacing: Fibonacci numbers, so each step is near φ times the one before. */
+  /* Spacing: Fibonacci numbers on a 4px grid (4, 8, 12, 20, 32), with 2 and 6 under them. Every
+   * step is even, so what a gap or a padding centres lands on a whole pixel. The classic and
+   * compact densities set the plain Fibonacci numbers (2, 3, 5, 8, 13, 21, 34) inline. */
   --tcw-space-1: 2px;
-  --tcw-space-2: 3px;
-  --tcw-space-3: 5px;
+  --tcw-space-2: 4px;
+  --tcw-space-3: 6px;
   --tcw-space-4: 8px;
-  --tcw-space-5: 13px;
-  --tcw-space-6: 21px;
-  --tcw-space-7: 34px;
+  --tcw-space-5: 12px;
+  --tcw-space-6: 20px;
+  --tcw-space-7: 32px;
+  /* The room inside a control beside its label, a bar beside its first button, a menu row beside its text. */
+  --tcw-control-pad: 12px;
+  --tcw-bar-pad: 12px;
+  --tcw-menu-row-pad: 12px;
+  /* What a gap of 8 gives back in the classic and compact densities, where it was 7: 1px there, nothing here. */
+  --tcw-odd: 0px;
+  /* A line of body text: 18px at 13px, an even height that centres on whole pixels. */
+  --tcw-line-height: 1.38462;
+  /* An on-chart indicator row's line, on the plot and in a pane. */
+  --tcw-legend-line: 20px;
+  --tcw-legend-line-pane: 16px;
+  /* A line of the smallest type, an even height too. */
+  --tcw-line-xs: 14px;
+  /* The bars' text buttons: as wide as their text, rounded up to a whole pixel. */
+  --tcw-text-w: calc-size(max-content, round(up, size, 1px));
 
   /* The look (UI system): Print's values. The `ui` option sets them inline. */
   --tcw-radius-xs: 1px;
@@ -158,13 +175,13 @@
   --tcw-toolbar-radius: 0px;
   --tcw-sidebar-radius: 0px;
   --tcw-toolbar-h: 42px;
-  --tcw-control-h: 33px;
+  --tcw-control-h: 34px;
   --tcw-control-h-sm: 26px;
   --tcw-icon: 20px;
   --tcw-sidebar-w: 42px;
   --tcw-tool-h: 36px;
   --tcw-tool-icon: 26px;
-  --tcw-menu-item-h: 33px;
+  --tcw-menu-item-h: 34px;
   --tcw-icon-stroke: 1px;
   --tcw-font: -apple-system, BlinkMacSystemFont, 'Segoe UI Variable Text', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   --tcw-font-size: 13px;
@@ -198,6 +215,17 @@
   /* The faces as drawn: a tag means something else in each face (in IBM Plex, ss01 is a one-storey a).
    * The `ui` option never sets it, so a rule of yours on .tcw-root turns on your face's own. */
   --tcw-font-features: normal;
+}
+
+/*
+ * A button that is as wide as its text is a fraction of a pixel wide, and every icon after it on
+ * the bar then sits on a fraction too, its lines soft. The bars' text buttons are a whole number
+ * of pixels wide (--tcw-text-w) where the browser can size a box from its content and round it;
+ * where it can't, the value is no width at all and they stay as wide as their text. No
+ * specificity, so any width a rule sets wins. The classic and compact densities set it to auto.
+ */
+:where(.tcw-toolbar-symbol, .tcw-toolbar .tcw-btn, .tcw-toolbar .tcw-dropdown-trigger, .tcw-range-btn, .tcw-status-clock, .tcw-status-scale-btn) {
+  width: var(--tcw-text-w, auto);
 }
 
 /* Print by day: ink on paper. */
@@ -256,7 +284,7 @@
   display: flex;
   align-items: center;
   gap: 0;
-  padding: 0 var(--tcw-space-4);
+  padding: 0 var(--tcw-bar-pad);
   height: var(--tcw-toolbar-h);
   border-bottom: var(--tcw-border-w) solid var(--tcw-border);
   background: var(--tcw-bg-surface);
@@ -272,7 +300,7 @@
   display: inline-flex;
   align-items: center;
   height: var(--tcw-control-h);
-  padding: 0 var(--tcw-space-4);
+  padding: 0 var(--tcw-control-pad);
   white-space: nowrap;
   letter-spacing: -0.015em;
   cursor: pointer;
@@ -334,7 +362,7 @@
   align-items: center;
   justify-content: center;
   height: var(--tcw-control-h);
-  padding: 0 var(--tcw-space-4);
+  padding: 0 var(--tcw-control-pad);
   font-size: var(--tcw-font-size);
   font-weight: var(--tcw-weight);
   font-family: inherit;
@@ -424,7 +452,7 @@
   align-items: center;
   gap: var(--tcw-space-3);
   height: var(--tcw-control-h);
-  padding: 0 var(--tcw-space-4);
+  padding: 0 var(--tcw-control-pad);
   font-size: var(--tcw-font-size);
   font-weight: var(--tcw-weight);
   font-family: inherit;
@@ -441,6 +469,11 @@
 .tcw-dropdown-trigger:hover {
   background: var(--tcw-hover-bg);
   color: var(--tcw-text);
+}
+
+/* The arrow after a label keeps to the button's far edge, on a whole pixel: a label is a fraction wide. */
+.tcw-dropdown-trigger > svg:last-child:not(:first-child) {
+  margin-inline-start: auto;
 }
 
 .tcw-dropdown {
@@ -472,7 +505,7 @@
   align-items: center;
   justify-content: space-between;
   min-height: var(--tcw-menu-item-h);
-  padding: var(--tcw-space-1) var(--tcw-space-4);
+  padding: var(--tcw-space-1) var(--tcw-menu-row-pad);
   font-size: var(--tcw-font-size);
   color: var(--tcw-text-dim);
   cursor: pointer;
@@ -515,7 +548,7 @@
 
 /* Timeframe menu: pick on the left, pin (star) on the right. */
 .tcw-tf-more {
-  padding: 0 5px;
+  padding: 0 var(--tcw-space-3);
 }
 
 .tcw-tf-more svg {
@@ -935,7 +968,7 @@
   /* The figures face at the size of the price legend above: one block, columns that line up. */
   font-family: var(--tcw-font-mono);
   font-size: var(--tcw-font-size-sm);
-  line-height: 19px;
+  line-height: var(--tcw-legend-line);
   white-space: nowrap;
   color: var(--tcw-text-dim);
   /* A see-through ground, as under the price legend's rows: lines across the plot run
@@ -952,7 +985,7 @@
 .tcw-ind-legend-row--pane {
   position: absolute;
   z-index: 3;
-  line-height: 15px;
+  line-height: var(--tcw-legend-line-pane);
 }
 
 .tcw-ind-legend-row:hover,
@@ -1085,9 +1118,9 @@
 .tcw-ind-legend-toggle {
   display: inline-flex;
   align-items: center;
-  gap: 3px;
+  gap: var(--tcw-space-2);
   margin-top: 1px;
-  padding: 1px 5px;
+  padding: 1px var(--tcw-space-3);
   border: none;
   border-radius: var(--tcw-control-radius);
   background: transparent;
@@ -1233,7 +1266,7 @@
   width: calc(var(--tcw-tool-size) * 0.618);
   height: max(1px, var(--tcw-sep-w));
   background: var(--tcw-divider);
-  margin: 5px 0;
+  margin: var(--tcw-space-3) 0;
   flex-shrink: 0;
 }
 
@@ -1309,7 +1342,7 @@
 
 .tcw-flyout-item {
   min-height: var(--tcw-menu-item-h);
-  padding: var(--tcw-space-1) var(--tcw-space-4);
+  padding: var(--tcw-space-1) var(--tcw-menu-row-pad);
   font-size: var(--tcw-font-size);
   color: var(--tcw-text-dim);
   cursor: pointer;
@@ -1789,10 +1822,11 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 7px 16px;
+  padding: calc(var(--tcw-space-4) - var(--tcw-odd)) 16px;
   border-top: 1px solid var(--tcw-border);
   background: var(--tcw-bg-surface);
   font-size: var(--tcw-font-size-xs);
+  line-height: var(--tcw-line-xs);
   color: var(--tcw-text-muted);
   flex-shrink: 0;
 }
@@ -1839,7 +1873,7 @@
 
 .tcw-range-btn {
   flex-shrink: 0;
-  padding: 4px 7px;
+  padding: 4px calc(var(--tcw-space-4) - var(--tcw-odd));
   font: inherit;
   font-weight: var(--tcw-weight-strong);
   letter-spacing: 0.02em;
@@ -1884,7 +1918,7 @@
 .tcw-status-indicator {
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: calc(var(--tcw-space-4) - var(--tcw-odd));
   font-weight: var(--tcw-weight);
 }
 
@@ -2940,7 +2974,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  padding: 3px 8px;
+  padding: var(--tcw-space-2) 8px;
   font-size: var(--tcw-font-size-sm);
 }
 .tcw-datawin-label { color: var(--tcw-text-muted); }
@@ -3640,7 +3674,7 @@
   gap: var(--tcw-space-4);
   width: 100%;
   min-height: var(--tcw-menu-item-h);
-  padding: var(--tcw-space-1) var(--tcw-space-4);
+  padding: var(--tcw-space-1) var(--tcw-menu-row-pad);
   border: 0;
   border-radius: var(--tcw-menu-item-radius);
   background: transparent;
@@ -3704,7 +3738,7 @@
   display: flex;
   align-items: center;
   gap: 2px;
-  padding: 3px;
+  padding: var(--tcw-space-2);
   background: var(--tcw-bg-elevated);
   border: var(--tcw-border-w) solid var(--tcw-divider);
   border-radius: var(--tcw-menu-radius);
@@ -3718,7 +3752,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 5px;
+  gap: var(--tcw-space-3);
   min-width: var(--tcw-control-h-sm);
   height: var(--tcw-control-h-sm);
   padding: 0 6px;
@@ -3761,7 +3795,7 @@
   border-radius: 1px;
   background: currentColor;
 }
-.tcw-sel-sep { flex: none; width: 1px; height: 18px; margin: 0 3px; background: var(--tcw-divider); }
+.tcw-sel-sep { flex: none; width: 1px; height: 18px; margin: 0 var(--tcw-space-2); background: var(--tcw-divider); }
 .tcw-sel-pop {
   position: absolute;
   z-index: 66;
@@ -4393,7 +4427,7 @@
 .tcw-syminfo-status {
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: calc(var(--tcw-space-4) - var(--tcw-odd));
   font-size: var(--tcw-font-size-sm);
   color: var(--tcw-text-dim);
 }
@@ -4874,6 +4908,11 @@
 .tcw-toolbar--icons.tcw-toolbar--tf-menu > .tcw-tf-group,
 .tcw-root[data-tcw-narrow] > .tcw-toolbar.tcw-toolbar--tf-menu > .tcw-tf-group {
   display: none;
+}
+/* A bar with no room for its labels has none to spare beside its icons either: the padding a step down. */
+.tcw-toolbar--icons {
+  --tcw-control-pad: var(--tcw-space-4);
+  --tcw-bar-pad: var(--tcw-space-4);
 }
 .tcw-toolbar--icons .tcw-tf-more,
 .tcw-root[data-tcw-narrow] > .tcw-toolbar .tcw-tf-more {

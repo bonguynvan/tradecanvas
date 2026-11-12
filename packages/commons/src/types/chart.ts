@@ -68,6 +68,32 @@ export type LineStyle = 'solid' | 'dashed' | 'dotted';
 export type BarLayout = 'golden' | 'classic';
 
 /**
+ * How much room the chart leaves around its bars. `'comfortable'` (the
+ * default): golden bars, 8 bars of room past the newest, φ⁻⁴·⁵ (11.5%) of the
+ * height above the highest high and below the lowest low, and the legend 12 px
+ * in from the plot's corner. `'compact'`, as before 2.0: classic bars, 5 bars
+ * of room, φ⁻⁵ (9%) above and below, the legend 8 px in.
+ */
+export type ChartDensity = 'comfortable' | 'compact';
+
+/** What a `ChartDensity` sets, each a step of φ or a number of its ladder. */
+export interface ChartSpacing {
+  barLayout: BarLayout;
+  /** Empty slots past the newest bar when the chart rests at its end. */
+  rightMargin: number;
+  /** Room above the highest high and below the lowest low, a share of the scale's height. */
+  priceMargin: number;
+  /** Between the volume band and the lowest low, a share of the scale's height. */
+  volumeGap: number;
+  /** The legend's distance from the plot's side, px. */
+  legendInset: number;
+  /** The legend's distance from the plot's top, px. */
+  legendTop: number;
+  /** Between the legend's lines, px. */
+  legendLineGap: number;
+}
+
+/**
  * Controls which features are available to the end user.
  * Developers can selectively enable/disable tools, UI elements, and interactions.
  * All features default to `true` (enabled) when not specified.
@@ -189,14 +215,22 @@ export interface ChartOptions {
    * and bars that come one by one into an empty chart until they fill it.
    */
   autoScale?: boolean;
+  /**
+   * How much room the chart leaves around its bars: `'comfortable'` (the
+   * default) or `'compact'`, the chart as it was before 2.0 (see
+   * `ChartDensity`). `barLayout` and `rightMargin` win over it. Change it
+   * with `chart.setDensity`. ChartWidget sets it from its `ui.density`.
+   */
+  density?: ChartDensity;
+  /** Empty slots past the newest bar when the chart rests at its end. Default 8 (5 when `density` is `'compact'`). */
   rightMargin?: number;
   minBarSpacing?: number;
   maxBarSpacing?: number;
   /**
-   * How a bar fills its slot: `'golden'`, the body φ⁻¹ of the slot at every
-   * zoom (more bars on screen, air between them), or `'classic'` (a
-   * `Chart`'s default), a 2 px gap. ChartWidget opens golden, but when its
-   * `ui.density` is `'compact'`. Change it with `chart.setBarLayout`.
+   * How a bar fills its slot: `'golden'` (the default), the body φ⁻¹ of the
+   * slot at every zoom (more bars on screen, air between them), or
+   * `'classic'`, a 2 px gap (the default when `density` is `'compact'`).
+   * Change it with `chart.setBarLayout`.
    */
   barLayout?: BarLayout;
   /** The grid's lines: shorthand for the `grid.*` overrides. */

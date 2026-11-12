@@ -59,25 +59,54 @@ const grid = new ChartWidgetGrid(host, { layout: '2x2', widget: { ui: 'terminal'
 grid.setUI('studio')
 grid.getUI()`}</code></pre>
 
-<h2>여유로운 외관</h2>
+<h2 id="density">밀도</h2>
 <p>
-  위젯은 화면에 더 많은 봉을 띄우고 그 사이에 여백을 두어 차트를 엽니다. 어떤 확대 수준에서도 캔들 몸통은 칸의
-  φ⁻¹(62%)이고, 차트는 칸당 φ⁴ ≈ 6.85 px로 열립니다(<code>barLayout: 'golden'</code>). 너비 1920 px 화면에서 약
-  250개입니다. <code>density: 'compact'</code>는 기존 봉(10 px 칸에 2 px 간격)을 유지합니다. <code>density: 'airy'</code>는
-  컨트롤을 넉넉하게 하고, 축과 범례의 숫자에 외관의 산세리프 글꼴을 씁니다. 2.0이 처음 열 외관입니다.
+  차트와 위젯은 그리는 것 주변에 여유를 두고 열립니다. 어떤 확대 수준에서도 캔들 몸통은 칸의 φ⁻¹(62%)이고 나머지는 간격이며, 차트는 칸당 φ⁴ ≈ 6.85 px로 열립니다(<code>barLayout: 'golden'</code>). 너비 1920 px 화면에서 약 250개입니다. 가장 최근 봉은 가격 축에서 8칸 떨어진 곳에 놓입니다. 가격은 최고가 위와 최저가 아래에 그리기 영역 높이의 φ⁻⁴·⁵(11.5%)씩을 비워 둡니다. 거래량을 켜면 거래량 띠가 캔들 아래에 놓이고 그 사이에 φ⁻⁶(5.6%)의 간격을 두므로 둘이 겹치지 않습니다. 범례는 그리기 영역의 모서리에서 12 px 안쪽에 놓입니다. 위젯에서는 모든 크기와 간격이 짝수 픽셀이고, 버튼과 바, 메뉴 행은 글자 양옆에 12 px를 둡니다.
 </p>
-<pre><code>{`new ChartWidget(host, { ui: { density: 'airy' } })
-
-// The same on a chart of your own
-import { Chart, SANS_FONT_FAMILY } from '@tradecanvas/chart'
-const chart = new Chart(host, { barLayout: 'golden', font: { family: SANS_FONT_FAMILY } })
-chart.setBarLayout('classic')    // a 2 px gap, as before
-chart.setFont({ sizeSmall: 12 }) // the axes' and tags' size
-chart.setFont(null)              // the theme's own font again`}</code></pre>
 <p>
-  <code>chartOptions.barLayout</code>와 <code>chartOptions.font</code>의 <code>family</code>가 외관의 설정보다 우선합니다.
-  <code>chartOptions.font</code>가 크기만 정하면 글꼴은 외관의 것을 씁니다. 화면에 봉이 있을 때
-  레이아웃을 바꾸면 확대 수준은 그대로 두고 칸만 다시 나눕니다.
+  <code>density</code>는 이 모두를 한 번에 정합니다. 위젯은 <code>ui</code>에서, 직접 만든 차트는 그 옵션에서 지정합니다.
+</p>
+<table>
+  <thead><tr><th><code>ui.density</code></th><th>위젯</th><th>그 차트</th></tr></thead>
+  <tbody>
+    <tr><td><code>'comfortable'</code></td><td>기본값: 짝수 크기(버튼 34 px, 아이콘 20 px), 간격 2 · 4 · 6 · 8 · 12 · 20 · 32, 컨트롤 안쪽 여백 12 px.</td><td>comfortable, golden 봉.</td></tr>
+    <tr><td><code>'classic'</code></td><td>2.0 이전 그대로(화면 배율 100%에서는 픽셀까지 같고, 가격 축의 눈금선만 더 선명합니다): 버튼 33 px, 간격 2 · 3 · 5 · 8 · 13 · 21 · 34, 컨트롤 안쪽 여백 8 px.</td><td>compact, 다만 위젯이 쓰던 golden 봉은 그대로.</td></tr>
+    <tr><td><code>'compact'</code></td><td>더 작은 컨트롤(버튼 26 px, 아이콘 16 px)에 classic 간격. 1.x와 같습니다.</td><td>compact, classic 봉.</td></tr>
+    <tr><td><code>'spacious'</code></td><td>더 큰 컨트롤(버튼 42 px, 아이콘 26 px).</td><td>comfortable, golden 봉.</td></tr>
+    <tr><td><code>'airy'</code></td><td>spacious에 더해, 축과 범례의 숫자에 외관의 산세리프 글꼴을 씁니다.</td><td>comfortable, golden 봉.</td></tr>
+  </tbody>
+</table>
+<table>
+  <thead><tr><th>차트의 <code>density</code></th><th>봉</th><th>최근 봉 뒤의 여백</th><th>가격 위아래</th><th>거래량 띠 위</th><th>모서리에서 범례까지</th></tr></thead>
+  <tbody>
+    <tr><td><code>'comfortable'</code>(기본값)</td><td>golden</td><td>8칸</td><td>φ⁻⁴·⁵(11.5%)</td><td>φ⁻⁶(5.6%)</td><td>안쪽으로 12 px, 아래로 8 px</td></tr>
+    <tr><td><code>'compact'</code>(2.0 이전과 같음)</td><td>classic: 간격 2 px, 열릴 때 칸당 10 px</td><td>5칸</td><td>φ⁻⁵(9%)</td><td>φ⁻⁷(3.4%)</td><td>안쪽으로 8 px, 아래로 6 px</td></tr>
+  </tbody>
+</table>
+<pre><code>{`// The widget as it was before 2.0
+new ChartWidget(host, { ui: { density: 'classic' } })
+widget.setUI({ density: 'classic' })
+
+// A chart of your own as it was before 2.0
+import { Chart, CHART_SPACING, SANS_FONT_FAMILY } from '@tradecanvas/chart'
+const chart = new Chart(host, { density: 'compact' })
+chart.setDensity('comfortable')  // and back
+chart.getDensity()               // 'comfortable'
+CHART_SPACING.comfortable        // the numbers each density sets
+
+// One part of it
+new Chart(host, { barLayout: 'classic' })   // a 2 px gap between bars, the rest comfortable
+new Chart(host, { rightMargin: 5 })         // 5 slots past the newest bar
+chart.setBarLayout('golden')
+chart.setFont({ family: SANS_FONT_FAMILY, sizeSmall: 12 }) // the axes' and tags' face and size
+chart.setFont(null)                         // the theme's own font again`}</code></pre>
+<p>
+  차트를 만들 때 지정한 <code>barLayout</code>과 <code>rightMargin</code>은 밀도를 바꿔도 유지됩니다. 위젯에서는 <code>chartOptions.density</code>, <code>chartOptions.barLayout</code>, 그리고 <code>chartOptions.font</code>의 <code>family</code>가 외관의 설정보다 우선합니다. <code>chartOptions.font</code>가 크기만 정하면 글꼴은 외관의 것을 씁니다. 화면에 봉이 있을 때 레이아웃을 바꾸면 확대 수준은 그대로 두고 칸만 다시 나눕니다.
+</p>
+
+<h3 id="whole-pixels">정수 픽셀에 맞추기</h3>
+<p>
+  화면 배율이 125%나 150%이면 CSS 픽셀 하나가 기기 픽셀 1.25개나 1.5개가 되고, 두 기기 픽셀 사이에 걸쳐 그린 1 px 선은 흐려집니다. 차트는 브라우저가 센 기기 픽셀 수에 맞춰 캔버스 크기를 정하고, 가는 선을 기기 픽셀 위에 놓습니다. 그리드, 축의 선과 눈금, 십자선, 현재가 선, 주문·알림·레벨 선, 꼬리, 패널 구분선, 가격 태그의 테두리가 그렇습니다. 1 px 선은 125%에서도 150%에서도 기기 픽셀 하나 너비이며, 브라우저가 1 px 테두리를 그리는 것과 같습니다. 위젯에서는 크기가 짝수라서 아이콘은 버튼 가장자리에서, 버튼은 바 가장자리에서 정수 픽셀만큼 떨어져 놓입니다. 또 내용에 맞춰 크기가 정해지는 상자를 브라우저가 반올림할 수 있는 경우(Chrome과 Edge 129 이상) 툴바의 글자 버튼 너비도 정수 픽셀이 되어, 그 뒤에 오는 아이콘도 선명하게 유지됩니다.
 </p>
 
 <h2>황금비</h2>
@@ -87,11 +116,11 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
 <table>
   <thead><tr><th>대상</th><th>규칙</th><th>값(px)</th></tr></thead>
   <tbody>
-    <tr><td>크기</td><td>φ의 반 단계씩: 아이콘, 그 작은 버튼, 그 버튼, 바, 그리기 도구 열. 메뉴 행은 버튼과 높이가 같습니다. 그리기 도구의 아이콘은 다른 아이콘보다 반 단계 크고(20 대비 26), 버튼은 그보다 조금 작게 해서 열의 양쪽에 3 px씩 남깁니다.</td><td>20 · 26 · 33 · 42</td></tr>
-    <tr><td>간격</td><td>피보나치 수. 각 수가 앞의 두 수의 합이라, 이웃한 두 수는 거의 φ배 차이가 납니다.</td><td>2 · 3 · 5 · 8 · 13 · 21 · 34</td></tr>
+    <tr><td>크기</td><td>φ의 반 단계씩이며, 각 단계에 가장 가까운 짝수(20.4, 25.9, 32.9, 41.9)를 씁니다: 아이콘, 그 작은 버튼, 그 버튼, 바, 그리기 도구 열. 메뉴 행은 버튼과 높이가 같습니다. 버튼만은 규칙에서 벗어납니다. 단계에 더 가까운 값은 32이지만, 1.x의 33이 눈에 보이던 크기인 34를 써서 20 px 아이콘 양쪽에 7 px씩 남깁니다. 그리기 도구의 아이콘은 다른 아이콘보다 반 단계 크고(20 대비 26), 버튼은 그보다 조금 작게 해서 열의 양쪽에 3 px씩 남깁니다.</td><td>20 · 26 · 34 · 42</td></tr>
+    <tr><td>간격</td><td>4 px 그리드 위의 피보나치 수(1, 2, 3, 5, 8에 4를 곱한 값)에, 4와 12의 절반인 2와 6을 그 아래에 더한 것. 8부터는 이웃한 수의 비가 1.5, 1.67, 1.6으로 φ에 가깝습니다. 작은 단계는 2 px씩 올라갑니다. 거기서는 φ 비율에 맞는 짝수가 없기 때문입니다. <code>classic</code>과 <code>compact</code> 밀도는 원래의 피보나치 수 2 · 3 · 5 · 8 · 13 · 21 · 34를 유지합니다.</td><td>2 · 4 · 6 · 8 · 12 · 20 · 32</td></tr>
     <tr><td>모서리</td><td>
-      역시 피보나치 수. 안쪽 모서리는 바깥 모서리에서 그 사이의 여백을 뺀 값이라 곡선이 나란히 이어집니다. 메뉴의 5는
-      그 행의 2에 여백 3을 더한 값입니다.
+      피보나치 수. 안쪽 모서리는 바깥 모서리에서 그 사이의 여백을 뺀 값이라 곡선이 나란히 이어집니다. 메뉴의 5는
+      그 행의 1에 여백 4를 더한 값입니다.
     </td><td>1 · 2 · 3 · 5 · 8</td></tr>
     <tr><td>글자</td><td>
       φ의 세제곱근 단계라, 세 단계마다 φ배 커집니다. 대화 상자의 제목은 본문의 φ배입니다. 10 px 밑으로는 내려가지
@@ -100,15 +129,15 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
   </tbody>
 </table>
 <p>
-  글자 단계는 설정한 본문 크기(<code>font.size</code>)를 따르고, <code>density</code>는 크기를 반 단계 내리거나
-  올립니다. 나만의 외관을 만들 때는 <code>@tradecanvas/commons</code>의 <code>PHI</code>, <code>FIBONACCI</code>,
-  <code>phiStep(base, steps, perPhi)</code>를 쓸 수 있습니다.
+  글자 단계는 설정한 본문 크기(<code>font.size</code>)를 따르고, 본문 한 줄의 높이는 짝수입니다(13 px일 때 18 px).
+  <code>density</code>는 크기를 반 단계 내리거나 올립니다. 나만의 외관을 만들 때는 <code>@tradecanvas/commons</code>의
+  <code>PHI</code>, <code>FIBONACCI</code>, <code>phiStep(base, steps, perPhi)</code>, <code>evenPx(n)</code>을 쓸 수 있습니다.
 </p>
 
 <h3 id="wide-screens">넓은 화면에서</h3>
 <p>
   위젯은 넓어질수록 툴바, 버튼, 아이콘, 글자를 더 크게 그려 4K 화면이 작은 글씨로만 채워지지 않게 합니다. 풀 HD까지는
-  설정한 그대로이고, 1800 px부터 φ의 6분의 1, 2560(150% 4K)부터 3분의 1, 3400(100% 4K)부터 절반만큼 커집니다.
+  설정한 그대로이고, 1800 px부터 φ의 6분의 1, 2560(150% 4K)부터 3분의 1, 3400(100% 4K)부터 절반만큼 커지며, 각 크기는 가장 가까운 짝수로 맞춥니다.
   차트 축의 글자도 함께 커집니다. <code>ui.scale</code>은 모든 너비에서 쓸 배율을 정하며, <code>1</code>이면 크기를
   그대로 둡니다.
 </p>
@@ -122,7 +151,7 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
   preset: 'studio',
   radius: { xs: 3, sm: 5, md: 10, lg: 12, xl: 18 },  // the scale, px (999: pills)
   components: { dialog: 20, tag: 0 },                // a part's own corners
-  density: 'compact',                                // compact · comfortable · spacious · airy
+  density: 'compact',                                // compact · classic · comfortable · spacious · airy
   sizes: { toolbar: 40 },                            // px; wins over density
   scale: 'auto',                                     // or a number; 'auto' grows with the widget's width
   font: {
@@ -155,7 +184,8 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
     <tr><td><code>density</code> / <code>sizes</code></td><td>
       <code>toolbar</code> 높이, <code>control</code>과 <code>controlSmall</code> 높이, <code>icon</code>,
       <code>sidebar</code> 너비, <code>menuItem</code> 높이, 단위 px. <code>compact</code>와 <code>spacious</code>는
-      Print의 크기를 φ의 반 단계 내리거나 올린 것입니다. 그리기 도구의 버튼과 아이콘은
+      Print의 크기를 φ의 반 단계 내리거나 올린 것입니다. <code>classic</code>은 2.0 이전의 위젯입니다
+      (<a href="#density">밀도</a> 참고. 간격과 차트의 여백도 거기서 정합니다). 그리기 도구의 버튼과 아이콘은
       <code>control</code>과 <code>icon</code>보다 φ의 반 단계 큽니다(<code>compact</code>에서는 같음).
       <code>sidebar</code> 열의 양쪽에 여백을 두며, 열이 낮아 모두 들어가지 않으면 스크롤하기 전에
       <code>icon</code> 크기에 양쪽 2 px를 더한 크기까지 작아집니다.
@@ -211,7 +241,10 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
     <tr><td><code>--tcw-border-w</code>, <code>--tcw-sep-w</code></td><td><code>borders</code></td></tr>
     <tr><td><code>--tcw-menu-shadow</code>, <code>--tcw-dialog-shadow</code>, <code>--tcw-tooltip-shadow</code></td><td><code>shadows</code></td></tr>
     <tr><td><code>--tcw-blur</code>, <code>--tcw-surface-opacity</code></td><td><code>blur</code></td></tr>
-    <tr><td><code>--tcw-space-1</code> … <code>--tcw-space-7</code></td><td>스타일시트: 피보나치 간격, 2에서 34 px까지</td></tr>
+    <tr><td><code>--tcw-space-1</code> … <code>--tcw-space-7</code></td><td><code>density</code>: 간격, 2에서 32 px까지(<code>classic</code>과 <code>compact</code>에서는 2에서 34까지)</td></tr>
+    <tr><td><code>--tcw-control-pad</code>, <code>--tcw-bar-pad</code>, <code>--tcw-menu-row-pad</code></td><td><code>density</code>: 버튼 라벨 옆, 바의 첫 버튼 옆, 메뉴 행의 글자 옆에 두는 여백</td></tr>
+    <tr><td><code>--tcw-line-height</code>, <code>--tcw-line-xs</code>, <code>--tcw-legend-line</code>, <code>--tcw-legend-line-pane</code></td><td><code>density</code>: 본문 한 줄, 가장 작은 글자 한 줄, 차트 위와 패널 안 지표 행의 높이</td></tr>
+    <tr><td><code>--tcw-text-w</code></td><td><code>density</code>: 바의 글자 버튼 너비를 정수 픽셀로(<code>auto</code>: 글자 너비 그대로)</td></tr>
     <tr><td><code>--tcw-kind-1</code> … <code>--tcw-kind-5</code></td><td>스타일시트: 종목 검색에서 종류마다 쓰는 색(주식, 선물, 지수, 암호화폐, 외환). 어두운 테마와 밝은 테마에 각각 설정되어 있습니다. 직접 만든 팔레트에서도 함께 설정하세요. 그러지 않으면 배지는 이 색을 그대로 씁니다.</td></tr>
     <tr><td><code>--tcw-font-features</code></td><td>스타일시트: <code>normal</code>, 글꼴의 기본 모양 그대로. <code>ui</code> 옵션은 이 값을 설정하지 않으므로, <code>.tcw-root</code>에 작성한 규칙으로 사용하는 글꼴 자체의 OpenType 기능을 켤 수 있습니다(Inter의 한 층 a와 열린 숫자: <code>'cv11', 'ss01'</code>). 위젯의 글자에 적용되며 버튼과 입력란에도 적용됩니다. 차트의 글자(캔버스와 툴팁)에는 적용되지 않습니다.</td></tr>
   </tbody>

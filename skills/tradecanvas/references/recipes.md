@@ -957,7 +957,7 @@ const widget = new ChartWidget(document.getElementById('chart')!, {
 widget.setUI({
   preset: 'studio',
   radius: { md: 10, lg: 14 },   // buttons and fields take md, menus and panels lg
-  density: 'compact',
+  density: 'compact',           // compact · classic (as before 2.0) · comfortable · spacious · airy
   font: { family: "'Manrope', system-ui, sans-serif", labelCase: 'uppercase' },
   toolbar: 'floating',
   active: 'solid',              // tint · solid · underline

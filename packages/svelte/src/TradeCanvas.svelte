@@ -115,7 +115,6 @@
 
   onMount(() => {
     instance = new Chart(container, {
-      rightMargin: 5,
       crosshair: { mode: 'magnet' },
       ...options,
       chartType,

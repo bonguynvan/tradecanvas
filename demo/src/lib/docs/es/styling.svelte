@@ -64,26 +64,54 @@ const grid = new ChartWidgetGrid(host, { layout: '2x2', widget: { ui: 'terminal'
 grid.setUI('studio')
 grid.getUI()`}</code></pre>
 
-<h2>Un aspecto con aire</h2>
+<h2 id="density">Densidad</h2>
 <p>
-  El widget abre el gráfico con más barras en pantalla y aire entre ellas: el cuerpo de una vela es el hueco × φ⁻¹
-  (62%) en cualquier zoom, y el gráfico se abre a φ⁴ ≈ 6,85 px por hueco (<code>barLayout: 'golden'</code>), unas 250
-  barras en una pantalla de 1920 px. <code>density: 'compact'</code> mantiene las barras clásicas, un hueco de 2 px en
-  10 px. <code>density: 'airy'</code> añade controles holgados, y las cifras de los ejes y de la leyenda usan la fuente
-  sans del aspecto. Es el aspecto con el que abrirá la 2.0.
+  El gráfico y el widget se abren con aire alrededor de lo que dibujan. El cuerpo de una vela es el hueco × φ⁻¹ (62%) en cualquier zoom, y el resto es separación; el gráfico se abre a φ⁴ ≈ 6,85 px por hueco (<code>barLayout: 'golden'</code>), unas 250 barras en una pantalla de 1920 px. La barra más reciente queda a 8 huecos del eje de precios. Los precios dejan libre un φ⁻⁴·⁵ (11,5%) de la altura del área de dibujo por encima del máximo más alto y por debajo del mínimo más bajo; con el volumen activado, la banda de volumen va debajo de las velas con una separación de φ⁻⁶ (5,6%), así que nunca se solapan. La leyenda se sitúa a 12 px de la esquina del área de dibujo. En el widget, todos los tamaños y espacios son un número par de píxeles, y los botones, las barras y las filas de menú tienen 12 px a cada lado de su texto.
 </p>
-<pre><code>{`new ChartWidget(host, { ui: { density: 'airy' } })
-
-// The same on a chart of your own
-import { Chart, SANS_FONT_FAMILY } from '@tradecanvas/chart'
-const chart = new Chart(host, { barLayout: 'golden', font: { family: SANS_FONT_FAMILY } })
-chart.setBarLayout('classic')    // a 2 px gap, as before
-chart.setFont({ sizeSmall: 12 }) // the axes' and tags' size
-chart.setFont(null)              // the theme's own font again`}</code></pre>
 <p>
-  <code>chartOptions.barLayout</code> y un <code>family</code> en <code>chartOptions.font</code> mandan sobre los del
-  aspecto; si <code>chartOptions.font</code> solo fija tamaños, se queda la fuente del aspecto. Con barras en
-  pantalla, un nuevo reparto mantiene el zoom y solo vuelve a dividir cada hueco.
+  <code>density</code> lo fija todo de una vez: para el widget, en <code>ui</code>; para un gráfico propio, en sus opciones:
+</p>
+<table>
+  <thead><tr><th><code>ui.density</code></th><th>El widget</th><th>Su gráfico</th></tr></thead>
+  <tbody>
+    <tr><td><code>'comfortable'</code></td><td>El valor por defecto: tamaños pares (un botón de 34 px, un icono de 20 px), espaciado 2 · 4 · 6 · 8 · 12 · 20 · 32, 12 px de relleno en un control.</td><td>Comfortable, barras golden.</td></tr>
+    <tr><td><code>'classic'</code></td><td>Como era antes de la 2.0 (con la pantalla al 100% de escala, los mismos píxeles, salvo las marcas del eje de precios, que son más nítidas): un botón de 33 px, espaciado 2 · 3 · 5 · 8 · 13 · 21 · 34, 8 px de relleno en un control.</td><td>Compact, con las barras golden que ya tenía el widget.</td></tr>
+    <tr><td><code>'compact'</code></td><td>Controles más pequeños (un botón de 26 px, un icono de 16 px) sobre el espaciado clásico. Sin cambios desde la 1.x.</td><td>Compact, barras classic.</td></tr>
+    <tr><td><code>'spacious'</code></td><td>Controles más grandes (un botón de 42 px, un icono de 26 px).</td><td>Comfortable, barras golden.</td></tr>
+    <tr><td><code>'airy'</code></td><td>Como spacious, y las cifras de los ejes y de la leyenda usan la fuente sans del aspecto.</td><td>Comfortable, barras golden.</td></tr>
+  </tbody>
+</table>
+<table>
+  <thead><tr><th><code>density</code> de un gráfico</th><th>Barras</th><th>Espacio tras la barra más reciente</th><th>Por encima y por debajo de los precios</th><th>Sobre la banda de volumen</th><th>Leyenda desde la esquina</th></tr></thead>
+  <tbody>
+    <tr><td><code>'comfortable'</code> (por defecto)</td><td>golden</td><td>8 huecos</td><td>φ⁻⁴·⁵ (11,5%)</td><td>φ⁻⁶ (5,6%)</td><td>12 px hacia dentro, 8 px hacia abajo</td></tr>
+    <tr><td><code>'compact'</code> (como antes de la 2.0)</td><td>classic: una separación de 2 px, 10 px por hueco al abrir</td><td>5 huecos</td><td>φ⁻⁵ (9%)</td><td>φ⁻⁷ (3,4%)</td><td>8 px hacia dentro, 6 px hacia abajo</td></tr>
+  </tbody>
+</table>
+<pre><code>{`// The widget as it was before 2.0
+new ChartWidget(host, { ui: { density: 'classic' } })
+widget.setUI({ density: 'classic' })
+
+// A chart of your own as it was before 2.0
+import { Chart, CHART_SPACING, SANS_FONT_FAMILY } from '@tradecanvas/chart'
+const chart = new Chart(host, { density: 'compact' })
+chart.setDensity('comfortable')  // and back
+chart.getDensity()               // 'comfortable'
+CHART_SPACING.comfortable        // the numbers each density sets
+
+// One part of it
+new Chart(host, { barLayout: 'classic' })   // a 2 px gap between bars, the rest comfortable
+new Chart(host, { rightMargin: 5 })         // 5 slots past the newest bar
+chart.setBarLayout('golden')
+chart.setFont({ family: SANS_FONT_FAMILY, sizeSmall: 12 }) // the axes' and tags' face and size
+chart.setFont(null)                         // the theme's own font again`}</code></pre>
+<p>
+  El <code>barLayout</code> y el <code>rightMargin</code> con los que se crea un gráfico se mantienen al cambiar de densidad. En el widget, <code>chartOptions.density</code>, <code>chartOptions.barLayout</code> y un <code>family</code> en <code>chartOptions.font</code> mandan sobre los del aspecto; si <code>chartOptions.font</code> solo fija tamaños, se queda la fuente del aspecto. Con barras en pantalla, un nuevo reparto mantiene el zoom y solo vuelve a dividir cada hueco.
+</p>
+
+<h3 id="whole-pixels">En píxeles enteros</h3>
+<p>
+  Con la pantalla al 125% o al 150% de escala, un píxel CSS son 1,25 o 1,5 píxeles de dispositivo, y una línea de 1 px dibujada entre dos de ellos sale borrosa. El gráfico dimensiona sus canvas según el recuento de píxeles de dispositivo que da el propio navegador y coloca sobre ellos sus líneas finas: la cuadrícula, las líneas y marcas de los ejes, la cruz, la línea del último precio, las líneas de órdenes, alertas y niveles, las mechas, el divisor de un panel y los bordes de las etiquetas de precio. Una línea de 1 px mide un píxel de dispositivo de ancho al 125% y al 150%, igual que el navegador dibuja un borde de 1 px. En el widget, los tamaños son pares para que un icono quede a un número entero de píxeles del borde de su botón, y un botón del de su barra; y los botones de texto de la barra de herramientas miden un número entero de píxeles de ancho allí donde el navegador puede redondear una caja dimensionada por su contenido (Chrome y Edge 129 y posteriores), de modo que los iconos que van detrás también se ven nítidos.
 </p>
 
 <h2>La proporción áurea</h2>
@@ -94,11 +122,11 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
 <table>
   <thead><tr><th>Qué</th><th>Regla</th><th>Valores (px)</th></tr></thead>
   <tbody>
-    <tr><td>Tamaños</td><td>Medios pasos de φ: un icono, su botón pequeño, su botón, la barra, la columna de herramientas de dibujo; una fila de menú mide lo mismo que un botón. Los iconos de las herramientas de dibujo van medio paso por encima de los demás (26 frente a 20), y sus botones algo por debajo de ese paso, para dejar 3 px a cada lado en la columna.</td><td>20 · 26 · 33 · 42</td></tr>
-    <tr><td>Espaciado</td><td>Números de Fibonacci, cada uno la suma de los dos anteriores, así que dos vecinos guardan una razón cercana a φ.</td><td>2 · 3 · 5 · 8 · 13 · 21 · 34</td></tr>
+    <tr><td>Tamaños</td><td>Medios pasos de φ, cada uno el número par más cercano a su paso (20,4; 25,9; 32,9; 41,9): un icono, su botón pequeño, su botón, la barra, la columna de herramientas de dibujo; una fila de menú mide lo mismo que un botón. El botón se aparta de la regla: 32 queda más cerca de su paso, pero mide 34, el tamaño que aparentaba el 33 de la 1.x, lo que deja a un icono de 20 px 7 px a cada lado. Los iconos de las herramientas de dibujo van medio paso por encima de los demás (26 frente a 20), y sus botones algo por debajo de ese paso, para dejar 3 px a cada lado en la columna.</td><td>20 · 26 · 34 · 42</td></tr>
+    <tr><td>Espaciado</td><td>Números de Fibonacci sobre una cuadrícula de 4 px (1, 2, 3, 5 y 8 por 4), con 2 y 6, las mitades de 4 y 12, por debajo. A partir de 8, los vecinos guardan razones de 1,5; 1,67 y 1,6, cercanas a φ; los pasos pequeños suben de 2 en 2 px, porque ahí una razón de φ no cae en números pares. Las densidades <code>classic</code> y <code>compact</code> conservan los números de Fibonacci tal cual, 2 · 3 · 5 · 8 · 13 · 21 · 34.</td><td>2 · 4 · 6 · 8 · 12 · 20 · 32</td></tr>
     <tr><td>Esquinas</td><td>
-      También números de Fibonacci. Una esquina anidada es la que la rodea menos el relleno que hay entre ambas, así las
-      curvas van paralelas: el 5 de un menú es el 2 de sus filas más sus 3 de relleno.
+      Números de Fibonacci. Una esquina anidada es la que la rodea menos el relleno que hay entre ambas, así las
+      curvas van paralelas: el 5 de un menú es el 1 de sus filas más sus 4 de relleno.
     </td><td>1 · 2 · 3 · 5 · 8</td></tr>
     <tr><td>Texto</td><td>
       Pasos de la raíz cúbica de φ, así que cada tercer tamaño es φ veces mayor: el título de un diálogo es φ veces su
@@ -107,16 +135,17 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
   </tbody>
 </table>
 <p>
-  Los pasos del texto siguen el tamaño base que fijes (<code>font.size</code>), y <code>density</code> mueve los
-  tamaños medio paso hacia abajo o hacia arriba. <code>PHI</code>, <code>FIBONACCI</code> y
-  <code>phiStep(base, steps, perPhi)</code> vienen de <code>@tradecanvas/commons</code> para un aspecto propio.
+  Los pasos del texto siguen el tamaño base que fijes (<code>font.size</code>); una línea de texto base tiene una
+  altura par (18 px a 13 px). <code>density</code> mueve los tamaños medio paso hacia abajo o hacia arriba.
+  <code>PHI</code>, <code>FIBONACCI</code>, <code>phiStep(base, steps, perPhi)</code> y <code>evenPx(n)</code> vienen de
+  <code>@tradecanvas/commons</code> para un aspecto propio.
 </p>
 
 <h3 id="wide-screens">En pantallas anchas</h3>
 <p>
   El widget dibuja sus barras, botones, iconos y textos más grandes a medida que se ensancha, para que una pantalla 4K
   no sea toda letra pequeña: como está hasta full HD, luego un sexto de φ más grande desde 1800 px, un tercio desde
-  2560 (4K al 150%) y la mitad desde 3400 (4K al 100%). El texto de los ejes del gráfico crece con él.
+  2560 (4K al 150%) y la mitad desde 3400 (4K al 100%), cada tamaño al número par más cercano. El texto de los ejes del gráfico crece con él.
   <code>ui.scale</code> fija una escala propia en todos los anchos; <code>1</code> mantiene los tamaños.
 </p>
 
@@ -129,7 +158,7 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
   preset: 'studio',
   radius: { xs: 3, sm: 5, md: 10, lg: 12, xl: 18 },  // the scale, px (999: pills)
   components: { dialog: 20, tag: 0 },                // a part's own corners
-  density: 'compact',                                // compact · comfortable · spacious · airy
+  density: 'compact',                                // compact · classic · comfortable · spacious · airy
   sizes: { toolbar: 40 },                            // px; wins over density
   scale: 'auto',                                     // or a number; 'auto' grows with the widget's width
   font: {
@@ -163,7 +192,8 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
     <tr><td><code>density</code> / <code>sizes</code></td><td>
       Alto de <code>toolbar</code>, alto de <code>control</code> y <code>controlSmall</code>, <code>icon</code>,
       ancho de <code>sidebar</code> y alto de <code>menuItem</code>, en px. <code>compact</code> y
-      <code>spacious</code> son los tamaños de Print medio paso de φ más abajo o más arriba. Los botones e iconos de las
+      <code>spacious</code> son los tamaños de Print medio paso de φ más abajo o más arriba, y <code>classic</code> es el
+      widget como era antes de la 2.0 (véase <a href="#density">Densidad</a>, que también fija el espaciado y el aire del gráfico). Los botones e iconos de las
       herramientas de dibujo van medio paso de φ por encima de <code>control</code> e <code>icon</code> (iguales en
       <code>compact</code>). Dejan espacio a cada lado en la columna <code>sidebar</code> y, si la columna es demasiado
       baja para todas, se encogen, hasta el tamaño de <code>icon</code> más 2 px a cada lado, antes de que la columna se desplace.
@@ -221,7 +251,10 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
     <tr><td><code>--tcw-border-w</code>, <code>--tcw-sep-w</code></td><td><code>borders</code></td></tr>
     <tr><td><code>--tcw-menu-shadow</code>, <code>--tcw-dialog-shadow</code>, <code>--tcw-tooltip-shadow</code></td><td><code>shadows</code></td></tr>
     <tr><td><code>--tcw-blur</code>, <code>--tcw-surface-opacity</code></td><td><code>blur</code></td></tr>
-    <tr><td><code>--tcw-space-1</code> … <code>--tcw-space-7</code></td><td>La hoja de estilos: espaciado Fibonacci, de 2 a 34 px</td></tr>
+    <tr><td><code>--tcw-space-1</code> … <code>--tcw-space-7</code></td><td><code>density</code>: espaciado, de 2 a 32 px (de 2 a 34 en <code>classic</code> y <code>compact</code>)</td></tr>
+    <tr><td><code>--tcw-control-pad</code>, <code>--tcw-bar-pad</code>, <code>--tcw-menu-row-pad</code></td><td><code>density</code>: el espacio junto al rótulo de un botón, junto al primer botón de una barra y junto al texto de una fila de menú</td></tr>
+    <tr><td><code>--tcw-line-height</code>, <code>--tcw-line-xs</code>, <code>--tcw-legend-line</code>, <code>--tcw-legend-line-pane</code></td><td><code>density</code>: la altura de una línea de texto base, de una del texto más pequeño y de la fila de un indicador en el gráfico y en un panel</td></tr>
+    <tr><td><code>--tcw-text-w</code></td><td><code>density</code>: los botones de texto de las barras con un número entero de píxeles de ancho (<code>auto</code>: tan anchos como su texto)</td></tr>
     <tr><td><code>--tcw-kind-1</code> … <code>--tcw-kind-5</code></td><td>La hoja de estilos: los colores de la búsqueda de símbolos para cada tipo de símbolo (acciones, futuros, índices, cripto, divisas), definidos para el tema oscuro y el claro. Una paleta propia también debe definirlos, o las insignias conservan estos tonos.</td></tr>
     <tr><td><code>--tcw-font-features</code></td><td>La hoja de estilos: <code>normal</code>, las fuentes tal como se dibujan. La opción <code>ui</code> nunca la fija, así que una regla tuya sobre <code>.tcw-root</code> activa las funciones OpenType de tu fuente (la a de un piso y los dígitos abiertos de Inter: <code>'cv11', 'ss01'</code>). Llegan al texto del widget, también a sus botones y campos, y nunca al texto del gráfico (sus lienzos y sus tooltips).</td></tr>
   </tbody>

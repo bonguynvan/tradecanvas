@@ -6929,8 +6929,18 @@
         "kind": "boolean"
       },
       {
+        "name": "density",
+        "type": "ChartDensity",
+        "doc": "How much room the chart leaves around its bars: `'comfortable'` (the default) or `'compact'`, the chart as it was before 2.0 (see `ChartDensity`). `barLayout` and `rightMargin` win over it. Change it with `chart.setDensity`. ChartWidget sets it from its `ui.density`.",
+        "values": [
+          "comfortable",
+          "compact"
+        ]
+      },
+      {
         "name": "rightMargin",
         "type": "number",
+        "doc": "Empty slots past the newest bar when the chart rests at its end. Default 8 (5 when `density` is `'compact'`).",
         "kind": "number"
       },
       {
@@ -6946,7 +6956,7 @@
       {
         "name": "barLayout",
         "type": "BarLayout",
-        "doc": "How a bar fills its slot: `'golden'`, the body φ⁻¹ of the slot at every zoom (more bars on screen, air between them), or `'classic'` (a `Chart`'s default), a 2 px gap. ChartWidget opens golden, but when its `ui.density` is `'compact'`. Change it with `chart.setBarLayout`.",
+        "doc": "How a bar fills its slot: `'golden'` (the default), the body φ⁻¹ of the slot at every zoom (more bars on screen, air between them), or `'classic'`, a 2 px gap (the default when `density` is `'compact'`). Change it with `chart.setBarLayout`.",
         "values": [
           "golden",
           "classic"
@@ -7260,8 +7270,18 @@
         "kind": "boolean"
       },
       {
+        "name": "density",
+        "type": "ChartDensity",
+        "doc": "How much room the chart leaves around its bars: `'comfortable'` (the default) or `'compact'`, the chart as it was before 2.0 (see `ChartDensity`). `barLayout` and `rightMargin` win over it. Change it with `chart.setDensity`. ChartWidget sets it from its `ui.density`.",
+        "values": [
+          "comfortable",
+          "compact"
+        ]
+      },
+      {
         "name": "rightMargin",
         "type": "number",
+        "doc": "Empty slots past the newest bar when the chart rests at its end. Default 8 (5 when `density` is `'compact'`).",
         "kind": "number"
       },
       {
@@ -7277,7 +7297,7 @@
       {
         "name": "barLayout",
         "type": "BarLayout",
-        "doc": "How a bar fills its slot: `'golden'`, the body φ⁻¹ of the slot at every zoom (more bars on screen, air between them), or `'classic'` (a `Chart`'s default), a 2 px gap. ChartWidget opens golden, but when its `ui.density` is `'compact'`. Change it with `chart.setBarLayout`.",
+        "doc": "How a bar fills its slot: `'golden'` (the default), the body φ⁻¹ of the slot at every zoom (more bars on screen, air between them), or `'classic'`, a 2 px gap (the default when `density` is `'compact'`). Change it with `chart.setBarLayout`.",
         "values": [
           "golden",
           "classic"

@@ -1,6 +1,7 @@
 import type { ViewportState, Theme, ResolvedLineLook } from '@tradecanvas/commons';
 import { lineDash } from '@tradecanvas/commons';
 import { gridLines, type GridMarks } from './gridLines.js';
+import { crispX, crispY } from '../charts/pixelGrid.js';
 
 /** The grid's dashes, as its lines are drawn when `dashed`. */
 const GRID_DASH = [4, 4];
@@ -23,12 +24,12 @@ export class GridRenderer {
     if (h.visible && v.visible && h.color === v.color && h.style === v.style && h.width === v.width) {
       stroke(ctx, h, () => {
         for (const y of horizontal) {
-          const at = onPixel(y, h.width);
+          const at = crispY(ctx, y, h.width).y;
           ctx.moveTo(chartRect.x, at);
           ctx.lineTo(chartRect.x + chartRect.width, at);
         }
         for (const x of vertical) {
-          const at = onPixel(x, v.width);
+          const at = crispX(ctx, x, v.width).x;
           ctx.moveTo(at, chartRect.y);
           ctx.lineTo(at, chartRect.y + chartRect.height);
         }
@@ -39,7 +40,7 @@ export class GridRenderer {
     if (looks.horizontal.visible && horizontal.length > 0) {
       stroke(ctx, looks.horizontal, () => {
         for (const y of horizontal) {
-          const at = onPixel(y, looks.horizontal.width);
+          const at = crispY(ctx, y, looks.horizontal.width).y;
           ctx.moveTo(chartRect.x, at);
           ctx.lineTo(chartRect.x + chartRect.width, at);
         }
@@ -48,7 +49,7 @@ export class GridRenderer {
     if (looks.vertical.visible && vertical.length > 0) {
       stroke(ctx, looks.vertical, () => {
         for (const x of vertical) {
-          const at = onPixel(x, looks.vertical.width);
+          const at = crispX(ctx, x, looks.vertical.width).x;
           ctx.moveTo(at, chartRect.y);
           ctx.lineTo(at, chartRect.y + chartRect.height);
         }
@@ -77,14 +78,11 @@ export function gridFitsGpu(theme: Theme): boolean {
 /** One path per way: a single stroke call for all its lines. */
 function stroke(ctx: CanvasRenderingContext2D, look: ResolvedLineLook, path: () => void): void {
   ctx.strokeStyle = look.color;
-  ctx.lineWidth = look.width;
+  // A whole number of device pixels wide, as its lines are placed on them.
+  ctx.lineWidth = crispY(ctx, 0, look.width).width;
   ctx.setLineDash(lineDash(look.style, GRID_DASH, look.width));
   ctx.beginPath();
   path();
   ctx.stroke();
 }
 
-/** Grid lines come on the half pixel (crisp at 1 px); an even width is crisp on the whole pixel. */
-function onPixel(at: number, width: number): number {
-  return width % 2 === 0 ? Math.round(at) : at;
-}

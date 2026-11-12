@@ -52,6 +52,7 @@ function onUnits(step: number, unit: number | undefined): number {
   return s;
 }
 import { priceToY, priceToYMapper } from '../viewport/ScaleMapping.js';
+import { hLine, vLine } from '../charts/pixelGrid.js';
 
 /** The spacing (px) price labels aim for: how many fit follows the scale's height. */
 export const PRICE_LABEL_SPACING_PX = 56;
@@ -261,8 +262,7 @@ export class PriceAxis {
     ctx.lineWidth = 1;
     ctx.globalAlpha = 0.65;
     ctx.beginPath();
-    ctx.moveTo(axisX + 0.5, chartRect.y);
-    ctx.lineTo(axisX + 0.5, chartRect.y + chartRect.height);
+    vLine(ctx, axisX + 0.5, chartRect.y, chartRect.y + chartRect.height);
     ctx.stroke();
     ctx.globalAlpha = 1;
 
@@ -278,8 +278,13 @@ export class PriceAxis {
     const labels: { y: number; text: string }[] = [];
     const reserved = left ? null : this.reservedPrice?.() ?? null;
     const reservedY = reserved === null ? null : priceToY(reserved, viewport);
+    // A label is as tall as its font: one nearer an edge of the pane than half that is cut by it.
+    const halfText = theme.font.sizeSmall / 2;
+    const top = chartRect.y + halfText;
+    const bottom = chartRect.y + chartRect.height - halfText;
     for (const price of ticks) {
       const y = toY(price);
+      if (y < top || y > bottom) continue;
       if (reservedY !== null && Math.abs(y - reservedY) < TAG_CLEARANCE_PX) continue;
       if (avoid.some((a) => Math.abs(y - a) < AVOID_CLEARANCE_PX)) continue;
       labels.push({ y, text: priceScaleText(price, viewport, decimals, this.locale) });
@@ -296,8 +301,7 @@ export class PriceAxis {
     ctx.beginPath();
     const tick = left ? -1 : 1;
     for (const { y } of labels) {
-      ctx.moveTo(axisX + tick, y + 0.5);
-      ctx.lineTo(axisX + 4 * tick, y + 0.5);
+      hLine(ctx, axisX + tick, axisX + 4 * tick, y + 0.5);
     }
     ctx.stroke();
     ctx.globalAlpha = 1;

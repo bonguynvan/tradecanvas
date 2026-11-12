@@ -345,9 +345,12 @@ and call no `onSettingsChange` listener.
 `chart.setTheme(...)` at runtime. Numbers follow `numberLocale` (`'en-US'`, `'vi-VN'` …).
 The chart's own text (axes, tags, crosshair pills) over any theme: `font: { family: SANS_FONT_FAMILY, sizeSmall: 12 }`
 or `chart.setFont(...)` (`null`: the theme's), and words written on drawings in `font.textFamily` (the system sans when unset); the legend takes the face at its own size (`chart.setLegend({ fontSize })`),
-and in the widget its face and size come from `ui.font`. Bars: `barLayout: 'golden'` (body φ⁻¹ of the slot, more bars on
-screen) or `'classic'` (a `Chart`'s default, a 2 px gap); `chart.setBarLayout`. The widget opens
-with golden bars, but `ui: { density: 'compact' }` keeps classic ones; `'airy'` adds sans figures and spacious controls.
+and in the widget its face and size come from `ui.font`. Room around the bars: `density: 'comfortable'` (the default:
+golden bars, 8 slots past the newest bar, wider price margins) or `'compact'` (the chart as before 2.0: classic bars, 5
+slots, tighter margins); `chart.setDensity`. One part alone: `barLayout: 'golden'` (body φ⁻¹ of the slot) or `'classic'`
+(a 2 px gap), `chart.setBarLayout`; `rightMargin`. In the widget `ui: { density }` sets its chart too: `'comfortable'`
+(default), `'classic'` (the widget as before 2.0, to the pixel), `'compact'` (smaller controls, classic bars),
+`'spacious'`, `'airy'` (spacious with sans figures).
 The legend's rows sit on a see-through ground (`setLegend({ ground: false })`
 leaves it out; the widget's indicator rows: the CSS variable `--tcw-legend-ground`).
 

@@ -36,7 +36,7 @@ describe('fitPriceRange', () => {
 });
 
 describe('the scale’s margins', () => {
-  it('keeps φ⁻⁵ of the height above the highest high and below the lowest low by default', () => {
+  it('keeps φ⁻⁴·⁵ of the height above the highest high and below the lowest low by default', () => {
     const vp = new Viewport(1000, 600, 2, 30, 5);
     vp.updateData(bars(60), true);
     const state = vp.getState();
@@ -44,8 +44,8 @@ describe('the scale’s margins', () => {
     const visible = bars(60).slice(state.visibleRange.from, state.visibleRange.to + 1);
     const high = Math.max(...visible.map((b) => b.high));
     const low = Math.min(...visible.map((b) => b.low));
-    expect(priceToY(high, state) - y).toBeCloseTo(height * PHI ** -5, 6);
-    expect(y + height - priceToY(low, state)).toBeCloseTo(height * PHI ** -5, 6);
+    expect(priceToY(high, state) - y).toBeCloseTo(height * PHI ** -4.5, 6);
+    expect(y + height - priceToY(low, state)).toBeCloseTo(height * PHI ** -4.5, 6);
   });
 
   it('takes margins of its own and fits prices into them', () => {
