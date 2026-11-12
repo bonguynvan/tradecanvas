@@ -6,7 +6,7 @@
 
 <svelte:head>
   <title>迁移到 2.0 — TradeCanvas 文档</title>
-  <meta name="description" content="从 TradeCanvas 1.x 到 2.0，你的代码需要关注的变化：安装 beta 版、默认外观以及保留 1.x 外观的一个选项、已移除的名称及其替代写法，还有发生变化的行为。" />
+  <meta name="description" content="从 TradeCanvas 1.x 到 2.0，你的代码需要关注的变化：安装方式、默认外观以及保留 1.x 外观的一个选项、已移除的名称及其替代写法，还有发生变化的行为。" />
 </svelte:head>
 
 <h1>迁移到 2.0</h1>
@@ -17,15 +17,14 @@
 
 <h2 id="install">安装</h2>
 <p>
-  2.0 目前处于 beta 阶段。所有包都以 <code>2.0.0-beta.N</code> 的版本发布在 <code>beta</code> 标签下；
-  在 2.0 正式发布之前，<code>latest</code> 仍是 1.x。
+  2.0 是当前的正式版本：所有包都以 <code>2.0.0</code> 发布在 npm 的 <code>latest</code> 标签下。1.x 仍然保留，可通过 <code>@tradecanvas/chart@1</code> 安装，供暂时不便升级的页面使用。
 </p>
-<pre><code>{`npm install @tradecanvas/chart@beta
+<pre><code>{`npm install @tradecanvas/chart
 
 # 使用框架组件时，同时安装对应的包
-npm install @tradecanvas/react@beta
-npm install @tradecanvas/vue@beta
-npm install @tradecanvas/svelte@beta`}</code></pre>
+npm install @tradecanvas/react
+npm install @tradecanvas/vue
+npm install @tradecanvas/svelte`}</code></pre>
 
 <h2 id="look">默认外观</h2>
 <p>

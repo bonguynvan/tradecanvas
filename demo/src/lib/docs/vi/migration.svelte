@@ -6,7 +6,7 @@
 
 <svelte:head>
   <title>Chuyển sang 2.0 — Tài liệu TradeCanvas</title>
-  <meta name="description" content="Những gì thay đổi với code của bạn giữa TradeCanvas 1.x và 2.0: cài bản beta, giao diện mặc định và một tuỳ chọn giữ giao diện của 1.x, các tên đã bị gỡ cùng tên thay thế, và những hành vi đã đổi." />
+  <meta name="description" content="Những gì thay đổi với code của bạn giữa TradeCanvas 1.x và 2.0: cách cài, giao diện mặc định và một tuỳ chọn giữ giao diện của 1.x, các tên đã bị gỡ cùng tên thay thế, và những hành vi đã đổi." />
 </svelte:head>
 
 <h1>Chuyển sang 2.0</h1>
@@ -18,15 +18,14 @@
 
 <h2 id="install">Cài đặt</h2>
 <p>
-  2.0 đang ở giai đoạn beta. Mọi gói đều phát hành dưới dạng <code>2.0.0-beta.N</code> với tag <code>beta</code>;
-  <code>latest</code> vẫn là 1.x cho tới khi 2.0 chính thức.
+  2.0 là bản phát hành hiện tại: mọi gói đều là <code>2.0.0</code> dưới tag <code>latest</code> của npm. Bản 1.x vẫn còn đó, cài bằng <code>@tradecanvas/chart@1</code>, cho trang chưa sẵn sàng chuyển.
 </p>
-<pre><code>{`npm install @tradecanvas/chart@beta
+<pre><code>{`npm install @tradecanvas/chart
 
 # nếu dùng component của framework thì cài thêm gói của nó
-npm install @tradecanvas/react@beta
-npm install @tradecanvas/vue@beta
-npm install @tradecanvas/svelte@beta`}</code></pre>
+npm install @tradecanvas/react
+npm install @tradecanvas/vue
+npm install @tradecanvas/svelte`}</code></pre>
 
 <h2 id="look">Giao diện mặc định</h2>
 <p>

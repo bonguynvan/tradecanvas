@@ -39,6 +39,7 @@
 - **Dữ liệu trực tiếp** từ Binance, Bybit, Coinbase và Kraken, hoặc nguồn của bạn trong khoảng hai mươi dòng.
 - **Nhanh**: một triệu nến kéo mượt 60 fps với WebGL; một tick trực tiếp trong khoảng một micro giây; mười phút 30.000 lệnh khớp mỗi giây trên một triệu nến mà bộ nhớ không tăng ([bài đo](benchmarks/2026-11-03.md)).
 - **Không gian làm việc**: lưới nhiều biểu đồ, bố cục, tua lại nến, backtest.
+- **Thêm mười bốn loại biểu đồ** cho các trang quanh biểu đồ chính: độ sâu sổ lệnh, đường vốn, waterfall, heatmap và bản đồ ngành, cột, donut, scatter, histogram, lịch, ma trận tương quan, gauge, sparkline, và dashboard kết quả backtest.
 - **Tùy biến theo ý bạn**: theme, ba phong cách, 114 công tắc, plugin; 30 ngôn ngữ; điện thoại và ứng dụng.
 
 <table>
