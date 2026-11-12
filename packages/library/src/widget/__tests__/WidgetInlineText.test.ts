@@ -40,6 +40,21 @@ afterEach(() => {
 });
 
 describe('WidgetInlineText', () => {
+  it('is as wide as the text on the chart and its own border, so a line that fits there does not wrap while typed', () => {
+    editor.open(target({ rect: () => ({ x: 100, y: 50, width: 180, height: 30 }) }));
+    const el = area()!;
+    // The text's box, the border each side, and room for the page's letters running a little wider.
+    expect(parseFloat(el.style.width)).toBeGreaterThanOrEqual(182);
+    // Its border sits outside the text's box: the words stay where the chart drew them.
+    expect(el.style.left).toBe('99px');
+    expect(el.style.top).toBe('49px');
+  });
+
+  it('shows the tool’s name greyed while it has no words', () => {
+    editor.open(target({ text: '', placeholder: 'Callout' }));
+    expect(area()!.placeholder).toBe('Callout');
+  });
+
   it('opens over the text, in its font and colour, its words selected to type over', () => {
     editor.open(target());
     const el = area()!;
@@ -47,8 +62,9 @@ describe('WidgetInlineText', () => {
     expect(document.activeElement).toBe(el);
     expect(el.selectionStart).toBe(0);
     expect(el.selectionEnd).toBe(8);
-    expect(el.style.left).toBe('100px');
-    expect(el.style.top).toBe('50px');
+    // Its border sits outside the text's box.
+    expect(el.style.left).toBe('99px');
+    expect(el.style.top).toBe('49px');
     expect(el.style.fontWeight).toBe('bold');
     expect(el.style.fontSize).toBe('14px');
     expect(el.getAttribute('aria-label')).toBe('Edit text');

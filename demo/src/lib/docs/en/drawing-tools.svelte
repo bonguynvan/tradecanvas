@@ -53,7 +53,7 @@ chart.addDrawing({
 
 <h2 id="text">Text</h2>
 <p>
-  The text tools (Text, Note, Callout, Price Label, Arrow Mark) share one text style: size, bold, italics and a colour of their own. A Text, a Note and a Callout also line their lines up left, centre or right, can have a background and a border, and wrap at a width. A Text keeps its own line breaks and runs on unless it is given one; a Note and a Callout wrap at 240 px.
+  The text tools (Text, Note, Callout, Price Label, Arrow Mark) share one text style: size, bold, italics and a colour of their own. A Text, a Note and a Callout also line their lines up left, centre or right, can have a background and a border, and wrap at a width. A Text keeps its own line breaks and runs on unless it is given one; a Note and a Callout wrap at 240 px. A Note, a Callout, a Signpost and a Balloon write in a bubble filled with their colour, in the ink that reads on it, so the bars under them do not show through the words; a <code>fillColor</code> or a <code>textColor</code> of their own is kept. A Callout's pointer is its bubble's tail: it leaves the side facing the point.
 </p>
 <p>
   Without a size of their own, words are set at 14 px and figures (a level's price, a ratio, a stats box) at 12 px, both a step or more over the axis type and growing with it (<code>chart.setFont</code>, and the widget on a wide screen). A size of 12 saved by an earlier version reads as none. Words people write are set in the system's sans face, figures in the chart's face; <code>font: {'{'} textFamily {'}'}</code> (or <code>chart.setFont({'{'} textFamily {'}'})</code>) gives the words a face of your own, and the widget gives them its look's.

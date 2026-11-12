@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+### Widget
+
+- **Notes, callouts, signposts and balloons read over the bars** (`@tradecanvas/chart`, `@tradecanvas/core`). Their text sat in a box with a 1 px border and a faint tint, so candles showed through the words and the four looked alike. Each now writes in a bubble filled with its colour, in the ink that reads on it, with rounder corners. A fill or a text colour set by hand is kept, and with the background turned off the text is drawn in its colour as before.
+- **A callout points with its bubble's tail** (`@tradecanvas/chart`, `@tradecanvas/core`). The hairline from the box to its point is now a tail in the bubble's own outline, 16 px wide where it leaves the side facing the point; it moves to another side as the bubble or the point is dragged, and is picked by a press anywhere on it. With neither background nor border a line is drawn, as before.
+- **Typing a text in place no longer rewraps it** (`@tradecanvas/chart`). The box opened over a text was a little narrower than the text on the chart, so a line that fit there broke in two while it was typed and jumped back afterwards. It is as wide as the text now, follows it as it grows, and an empty one shows the tool's name greyed.
+
 ## 2.0.1 (2026-11-12)
 
 ### Widget

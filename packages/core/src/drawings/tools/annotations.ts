@@ -1,7 +1,7 @@
 import type { DrawingDescriptor, DrawingState, Point, ViewportState } from '@tradecanvas/commons';
 import { DrawingBase } from '../DrawingBase.js';
 import { resolveAnnotationText } from './TextAnnotation.js';
-import { BoxCache, boundsOf, boxFont, drawTextBox, inRect, measureTextBox, strokeSelectionFrame, textLook, type Rect } from './textBox.js';
+import { BUBBLE_RADIUS, BoxCache, TAIL_HALF, boundsOf, boxFont, drawTextBox, inRect, inTriangle, measureTextBox, strokeSelectionFrame, tailFeet, tailedBox, textLook, type Rect } from './textBox.js';
 import { drawingLook, keepOnPlot, textSize } from '../drawingLook.js';
 
 /** Widest a note's or a callout's text runs before it wraps (px). */
@@ -10,9 +10,9 @@ function fontSize(state: DrawingState): number {
   return textSize(state.style);
 }
 
-/** A note's or a callout's text: in a box with a border unless its style says not, wrapped at `NOTE_WIDTH`. */
+/** A note's or a callout's text: in a bubble of its colour with a border unless its style says not, wrapped at `NOTE_WIDTH`. */
 function boxLook(state: DrawingState) {
-  return textLook(state.style, { box: true, border: true, width: NOTE_WIDTH, fill: true });
+  return { ...textLook(state.style, { box: true, border: true, width: NOTE_WIDTH, fill: true, solid: true }), radius: BUBBLE_RADIUS };
 }
 
 /** A box `text` would roughly take before it is drawn (for a hit test). */
@@ -84,7 +84,7 @@ export class NoteTool extends DrawingBase {
   }
 }
 
-/** Text in a box, with a line pointing at a bar and price: click the point, then where the box goes. */
+/** Text in a bubble whose tail points at a bar and price: click the point, then where the bubble goes. */
 export class CalloutTool extends DrawingBase {
   descriptor = { type: 'callout' as const, name: 'Callout', requiredAnchors: 2, text: true, fill: true };
 
@@ -93,18 +93,27 @@ export class CalloutTool extends DrawingBase {
   render(ctx: CanvasRenderingContext2D, state: DrawingState, viewport: ViewportState, selected: boolean): void {
     if (state.anchors.length < 1) return;
     const target = this.anchorToPixel(state.anchors[0], viewport);
-    ctx.fillStyle = state.style.color;
-    ctx.beginPath();
-    ctx.arc(target.x, target.y, 3, 0, Math.PI * 2);
-    ctx.fill();
-    if (state.anchors.length < 2) return;
+    if (state.anchors.length < 2) {
+      // Its point alone, while the bubble is still to be placed.
+      ctx.fillStyle = state.style.color;
+      ctx.beginPath();
+      ctx.arc(target.x, target.y, 3, 0, Math.PI * 2);
+      ctx.fill();
+      return;
+    }
     const at = this.anchorToPixel(state.anchors[1], viewport);
     const text = resolveAnnotationText(state, 'Callout');
     const look = boxLook(state);
     const landed = calloutBoxAt(at, measureTextBox(ctx, text, look), viewport);
-    const box = drawTextBox(ctx, text, landed.left, landed.top, look);
+    // The tail in the bubble's own outline, from the side facing the point: one shape, filled and outlined at once.
+    const box = drawTextBox(ctx, text, landed.left, landed.top, { ...look, traceBox: tailedBox(target, TAIL_HALF) });
+    if (!look.fill && !look.stroke) this.strokeBareTail(ctx, state, box, target);
     this.boxes.set(state.id, box);
-    // The pointer leaves the box from the middle of its nearest side.
+    if (selected) this.renderAnchorHandles(ctx, state, viewport);
+  }
+
+  /** With neither background nor border there is no bubble to carry a tail: a line to the point instead. */
+  private strokeBareTail(ctx: CanvasRenderingContext2D, state: DrawingState, box: Rect, target: Point): void {
     const from = nearestEdgePoint(box, target);
     this.applyLineStyle(ctx, state.style);
     ctx.beginPath();
@@ -112,7 +121,6 @@ export class CalloutTool extends DrawingBase {
     ctx.lineTo(target.x, target.y);
     ctx.stroke();
     this.resetLineStyle(ctx);
-    if (selected) this.renderAnchorHandles(ctx, state, viewport);
   }
 
   hitTest(point: Point, state: DrawingState, viewport: ViewportState, tolerance: number): boolean {
@@ -120,7 +128,10 @@ export class CalloutTool extends DrawingBase {
     const target = this.anchorToPixel(state.anchors[0], viewport);
     const at = this.anchorToPixel(state.anchors[1], viewport);
     const box = this.boxes.get(state.id) ?? estimateBox(state, resolveAnnotationText(state, 'Callout'), at.x, at.y);
-    return inRect(point, box, tolerance) || this.distanceToLine(point, nearestEdgePoint(box, target), target) <= tolerance;
+    if (inRect(point, box, tolerance)) return true;
+    // The tail as drawn: the same feet its outline goes through.
+    const feet = tailFeet(box, target, TAIL_HALF, BUBBLE_RADIUS);
+    return feet !== null && inTriangle(point, feet.first, target, feet.second, tolerance);
   }
 
   textBox(state: DrawingState): Rect | null {

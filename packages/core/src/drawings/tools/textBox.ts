@@ -1,5 +1,5 @@
 import type { DrawingStyle } from '@tradecanvas/commons';
-import { drawingFill, drawingLook, extendExtent, readableText, textSize } from '../drawingLook.js';
+import { drawingFill, drawingLook, extendExtent, hasOwnFill, labelInk, readableText, textSize } from '../drawingLook.js';
 import { fillTextWithHalo } from './labels.js';
 
 /** A box of wrapped text on the chart (a note, a callout), and its size. */
@@ -27,6 +27,8 @@ export interface TextBoxLook {
   align?: 'left' | 'center' | 'right';
   /** Most lines drawn (12 when left out): a note keeps short, a text says what it has to. */
   maxLines?: number;
+  /** The box's corners, px (3 when left out). */
+  radius?: number;
   /**
    * Traces the box's outline (on whole pixels) in place of a rounded box, for a
    * box with more to its shape (a balloon's tail): filled and outlined as one.
@@ -41,16 +43,18 @@ export interface TextBoxLook {
  */
 export function textLook(
   style: DrawingStyle,
-  defaults: { box: boolean; border: boolean; width: number; fill?: boolean },
+  defaults: { box: boolean; border: boolean; width: number; fill?: boolean; solid?: boolean },
 ): TextBoxLook {
   const box = style.textBackground ?? defaults.box;
   const border = style.textBorder ?? defaults.border;
+  // A bubble (`solid`) is filled with its colour itself: tinted, the bars under it show through its words.
+  const bubble = defaults.solid === true && box && !hasOwnFill(style);
   // A fill set by hand as kept, its alpha included; else the line's colour, tinted, where the tool fills.
-  const fill = !defaults.fill && !style.fillColor ? undefined : drawingFill(style);
+  const fill = !defaults.fill && !style.fillColor ? undefined : drawingFill(style, bubble ? BUBBLE_ALPHA : undefined);
   return {
     fontSize: textSize(style),
-    // Text in the line's colour, deepened where it would not read on the chart (a light background).
-    color: style.textColor ?? readableText(style.color),
+    // On a bubble, the ink that reads on its colour. Else the line's colour, deepened where it would not read on the chart (a light background).
+    color: style.textColor ?? (bubble ? labelInk(style.color) : readableText(style.color)),
     fill: box && fill ? fill : undefined,
     stroke: border ? style.borderColor ?? style.color : undefined,
     maxWidth: style.textWrap === undefined ? defaults.width : style.textWrap > 0 ? style.textWrap : Infinity,
@@ -60,6 +64,94 @@ export function textLook(
   };
 }
 
+
+/** How solid a bubble's fill is: its words read over candles, a hint of the chart still shows. */
+const BUBBLE_ALPHA = 0.9;
+/** A bubble's corners, px: rounder than a plain box's, so it reads as a speech bubble. */
+export const BUBBLE_RADIUS = 6;
+/** Half a bubble's tail where it leaves the bubble, px. */
+export const TAIL_HALF = 8;
+
+/** Where a bubble's tail leaves it: its two feet on one side, in the order a clockwise outline meets them. */
+export interface TailFeet {
+  side: 'top' | 'right' | 'bottom' | 'left';
+  first: { x: number; y: number };
+  second: { x: number; y: number };
+}
+
+/**
+ * The feet of the tail from `box` (corners `r` round) to `tip`: on the side
+ * facing `tip`, `half` px each way from a foot as near `tip` as the round
+ * corners allow. Null with `tip` inside the box: no tail. What is drawn and
+ * what a press hits both read it, so they agree.
+ */
+export function tailFeet(box: Rect, tip: { x: number; y: number }, half: number, r: number): TailFeet | null {
+  const right = box.x + box.width;
+  const bottom = box.y + box.height;
+  if (tip.x >= box.x && tip.x <= right && tip.y >= box.y && tip.y <= bottom) return null;
+  const dx = tip.x - (box.x + box.width / 2);
+  const dy = tip.y - (box.y + box.height / 2);
+  /** The tail's foot along a side from `from` to `to`, as near `at` as the corners allow. */
+  const foot = (from: number, to: number, at: number): number => {
+    const first = from + r + half;
+    const last = to - r - half;
+    return first <= last ? Math.max(first, Math.min(at, last)) : (from + to) / 2;
+  };
+  // The box's own proportions decide the side, so a wide bubble points sideways only at a point well to its side.
+  if (Math.abs(dx) * box.height > Math.abs(dy) * box.width) {
+    const mid = foot(box.y, bottom, tip.y);
+    return dx > 0
+      ? { side: 'right', first: { x: right, y: mid - half }, second: { x: right, y: mid + half } }
+      : { side: 'left', first: { x: box.x, y: mid + half }, second: { x: box.x, y: mid - half } };
+  }
+  const mid = foot(box.x, right, tip.x);
+  return dy > 0
+    ? { side: 'bottom', first: { x: mid + half, y: bottom }, second: { x: mid - half, y: bottom } }
+    : { side: 'top', first: { x: mid - half, y: box.y }, second: { x: mid + half, y: box.y } };
+}
+
+/**
+ * A bubble's outline with a tail to `tip` in it (`tailFeet`), one path round
+ * both, clockwise from the top-left corner: filled and outlined at once, no
+ * seam where the tail leaves.
+ */
+export function tailedBox(tip: { x: number; y: number }, half: number): NonNullable<TextBoxLook['traceBox']> {
+  return (ctx, x, y, w, h, r) => {
+    const right = x + w;
+    const bottom = y + h;
+    const feet = tailFeet({ x, y, width: w, height: h }, tip, half, r);
+    const tail = (side: TailFeet['side']) => {
+      if (feet?.side !== side) return;
+      ctx.lineTo(feet.first.x, feet.first.y);
+      ctx.lineTo(tip.x, tip.y);
+      ctx.lineTo(feet.second.x, feet.second.y);
+    };
+    ctx.moveTo(x + r, y);
+    tail('top');
+    ctx.arcTo(right, y, right, bottom, r);
+    tail('right');
+    ctx.arcTo(right, bottom, x, bottom, r);
+    tail('bottom');
+    ctx.arcTo(x, bottom, x, y, r);
+    tail('left');
+    ctx.arcTo(x, y, right, y, r);
+    ctx.closePath();
+  };
+}
+
+/** Whether `p` is in the triangle `a`, `b`, `c` (a tail), or within `tolerance` px of it. */
+export function inTriangle(p: { x: number; y: number }, a: { x: number; y: number }, b: { x: number; y: number }, c: { x: number; y: number }, tolerance = 0): boolean {
+  const cross = (o: { x: number; y: number }, q: { x: number; y: number }) => (q.x - o.x) * (p.y - o.y) - (q.y - o.y) * (p.x - o.x);
+  const d1 = cross(a, b);
+  const d2 = cross(b, c);
+  const d3 = cross(c, a);
+  if (!((d1 < 0 || d2 < 0 || d3 < 0) && (d1 > 0 || d2 > 0 || d3 > 0))) return true;
+  // Outside: still a hit close to the tail's middle line, where a thin tail is hard to press.
+  const mid = { x: (a.x + c.x) / 2, y: (a.y + c.y) / 2 };
+  const len = Math.hypot(b.x - mid.x, b.y - mid.y) || 1;
+  const t = Math.max(0, Math.min(1, ((p.x - mid.x) * (b.x - mid.x) + (p.y - mid.y) * (b.y - mid.y)) / (len * len)));
+  return Math.hypot(p.x - (mid.x + t * (b.x - mid.x)), p.y - (mid.y + t * (b.y - mid.y))) <= tolerance;
+}
 
 export const PAD_X = 8;
 export const PAD_Y = 6;
@@ -156,9 +248,10 @@ export function drawTextBox(ctx: CanvasRenderingContext2D, text: string, x: numb
     // On whole pixels: the box's edges sharp, a 1 px border one row.
     const bx = Math.round(rect.x) + 0.5;
     const by = Math.round(rect.y) + 0.5;
+    const radius = look.radius ?? BOX_RADIUS;
     ctx.beginPath();
-    if (look.traceBox) look.traceBox(ctx, bx, by, Math.round(rect.width) - 1, Math.round(rect.height) - 1, BOX_RADIUS);
-    else if (typeof ctx.roundRect === 'function') ctx.roundRect(bx, by, Math.round(rect.width) - 1, Math.round(rect.height) - 1, BOX_RADIUS);
+    if (look.traceBox) look.traceBox(ctx, bx, by, Math.round(rect.width) - 1, Math.round(rect.height) - 1, radius);
+    else if (typeof ctx.roundRect === 'function') ctx.roundRect(bx, by, Math.round(rect.width) - 1, Math.round(rect.height) - 1, radius);
     else ctx.rect(bx, by, Math.round(rect.width) - 1, Math.round(rect.height) - 1);
     if (look.fill) {
       ctx.fillStyle = look.fill;
