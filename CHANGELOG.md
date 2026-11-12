@@ -14,12 +14,13 @@
   - Padding: 12 px beside a toolbar button's label, a menu row's text and the toolbar's first button, from 8 (`--tcw-control-pad`, `--tcw-bar-pad`, `--tcw-menu-row-pad`).
   - A line of body text is 18 px at 13 px (`--tcw-line-height`), and an indicator's row on the chart 20 px (`--tcw-legend-line`).
   - The toolbar's and the bottom bar's text buttons are a whole number of pixels wide where the browser can round a box sized by its content (Chrome and Edge 129 and later), so the icons after them are sharp too (`--tcw-text-w`).
-- **`ui: { density: 'classic' }` is the widget as it was before 2.0** (`@tradecanvas/chart`). The sizes, spacing, padding and chart of 1.x: at 100% the same pixels, but for the price axis's tick marks, which are sharper. `ui: { density: 'compact' }`, the smaller controls with classic bars, is unchanged. `chartOptions.density` wins over the look's.
+- **`ui: { density: 'classic' }` is the widget as it was before 2.0** (`@tradecanvas/chart`). The sizes, spacing, padding and chart of 1.x: at 100% the same pixels on the chart, but for the price axis's tick marks, which are sharper; in a button wider than its label, the arrow keeps to the far edge. `ui: { density: 'compact' }`, the smaller controls with classic bars, is unchanged. `chartOptions.density` wins over the look's.
 - **Lines are sharp at a screen scale of 125% and 150%** (`@tradecanvas/core`, `@tradecanvas/chart`).
   - The canvases take the browser's own count of device pixels where it gives one, so they are no longer stretched or shifted by a fraction of a pixel. Rounding the CSS size was off by one pixel as often as not, which softened everything drawn.
   - The grid, the axes' lines and ticks, the last price's line, order, alert, limit and level lines, a pane's divider and the edges of price tags land on whole device pixels.
-  - A 1 px line is one device pixel wide at 125% and at 150%, as the browser draws a 1 px border. The crosshair was two pixels wide at 150%.
-- For a look of your own, `evenPx(n)` rounds a size to the even number nearest (`@tradecanvas/commons`). `PRICE_SCALE_MARGIN` is now φ⁻⁴·⁵, the default density's margin (`@tradecanvas/core`).
+  - A 1 px line is one device pixel wide at 125% and at 150%, as the browser draws a 1 px border. The crosshair was two pixels wide at 150%. A line of a width between whole pixels takes the whole pixels below it: 1.5 px is one device pixel at 100%, where it was two.
+- For a look of your own, `evenPx(n)` rounds a size to the even number nearest (`@tradecanvas/commons`). `PRICE_SCALE_MARGIN` is now φ⁻⁴·⁵, the default density's margin, and `DEFAULT_CHART_OPTIONS.rightMargin` and a `Viewport` made without one are 8 (`@tradecanvas/core`, `@tradecanvas/commons`).
+- **A price label the top or the bottom of its pane would cut is left out** (`@tradecanvas/core`). A round price right at a pane's edge was written with half its digits outside; its grid line stays.
 
 ### Performance
 

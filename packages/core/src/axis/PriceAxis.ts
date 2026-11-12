@@ -278,8 +278,13 @@ export class PriceAxis {
     const labels: { y: number; text: string }[] = [];
     const reserved = left ? null : this.reservedPrice?.() ?? null;
     const reservedY = reserved === null ? null : priceToY(reserved, viewport);
+    // A label is as tall as its font: one nearer an edge of the pane than half that is cut by it.
+    const halfText = theme.font.sizeSmall / 2;
+    const top = chartRect.y + halfText;
+    const bottom = chartRect.y + chartRect.height - halfText;
     for (const price of ticks) {
       const y = toY(price);
+      if (y < top || y > bottom) continue;
       if (reservedY !== null && Math.abs(y - reservedY) < TAG_CLEARANCE_PX) continue;
       if (avoid.some((a) => Math.abs(y - a) < AVOID_CLEARANCE_PX)) continue;
       labels.push({ y, text: priceScaleText(price, viewport, decimals, this.locale) });

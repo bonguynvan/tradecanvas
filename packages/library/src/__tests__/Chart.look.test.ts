@@ -84,7 +84,7 @@ describe('Chart: bar layout and figures font', () => {
   });
 
   describe('density', () => {
-    type Probe = { viewport: { getRightMargin(): number; getScaleMargins(): { top: number; bottom: number } } };
+    type Probe = { viewport: { getRightMargin(): number; getScaleMargins(): { top: number; bottom: number }; isAtEnd(): boolean } };
     const inside = (chart: Chart) => (chart as unknown as Probe).viewport;
     const flat = (n: number): OHLCBar[] => bars(n).map((b) => ({ ...b, volume: 0 }));
 
@@ -125,6 +125,31 @@ describe('Chart: bar layout and figures font', () => {
       expect(chart.getBarLayout()).toBe('classic');
       expect(inside(chart).getRightMargin()).toBe(5);
       expect(inside(chart).getScaleMargins().top).toBeCloseTo(PHI ** -5, 9);
+    });
+
+    it('keeps a chart at its newest bar there, either way: it goes on following new bars', () => {
+      const chart = make();
+      chart.setData(flat(300));
+      expect(inside(chart).isAtEnd()).toBe(true);
+      chart.setDensity('compact');
+      expect(inside(chart).isAtEnd()).toBe(true);
+      // Resting exactly: a second change, three slots the other way, is still within reach.
+      chart.setDensity('comfortable');
+      expect(inside(chart).isAtEnd()).toBe(true);
+    });
+
+    it('fits a compact chart in its own margins before any bars come', () => {
+      const chart = make({ density: 'compact' });
+      expect(inside(chart).getScaleMargins().top).toBeCloseTo(PHI ** -5, 9);
+    });
+
+    it('leaves a layout set with setBarLayout as set', () => {
+      const chart = make();
+      chart.setData(flat(300));
+      chart.setBarLayout('classic');
+      chart.setDensity('compact');
+      chart.setDensity('comfortable');
+      expect(chart.getBarLayout()).toBe('classic');
     });
 
     it('runs nothing for the density it has, and reads one it doesn’t know as comfortable', () => {

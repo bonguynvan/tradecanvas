@@ -59,25 +59,54 @@ const grid = new ChartWidgetGrid(host, { layout: '2x2', widget: { ui: 'terminal'
 grid.setUI('studio')
 grid.getUI()`}</code></pre>
 
-<h2>ゆとりのある外観</h2>
+<h2 id="density">密度</h2>
 <p>
-  ウィジェットは、画面に多くのバーを並べ、その間に余白を取ってチャートを開きます。どのズームでもローソク足の実体は枠の
-  φ⁻¹（62%）で、チャートは 1 枠 φ⁴ ≈ 6.85 px で開きます（<code>barLayout: 'golden'</code>）。幅 1920 px の画面で約 250 本です。
-  <code>density: 'compact'</code> は従来のバー（10 px の枠に 2 px の隙間）を保ちます。<code>density: 'airy'</code>
-  はさらにコントロールをゆったりさせ、軸と凡例の数字を外観のサンセリフ書体にします。2.0 が最初に開く外観です。
+  チャートとウィジェットは、描くものの周りにゆとりを取って開きます。どのズームでもローソク足の実体は枠の φ⁻¹（62%）で、残りが隙間です。チャートは 1 枠 φ⁴ ≈ 6.85 px で開きます（<code>barLayout: 'golden'</code>）。幅 1920 px の画面で約 250 本です。最新のバーは価格軸から 8 枠離れた位置に止まります。価格は、最高値の上と最安値の下に、描画領域の高さの φ⁻⁴·⁵（11.5%）ずつ空きを残します。出来高を表示しているときは、出来高の帯がローソク足の下に入り、間に φ⁻⁶（5.6%）の隙間を取るので、両者が重なることはありません。凡例は描画領域の角から 12 px 内側に置かれます。ウィジェットでは、サイズも余白もすべて偶数ピクセルで、ボタン、バー、メニューの行は文字の両脇に 12 px を取ります。
 </p>
-<pre><code>{`new ChartWidget(host, { ui: { density: 'airy' } })
-
-// The same on a chart of your own
-import { Chart, SANS_FONT_FAMILY } from '@tradecanvas/chart'
-const chart = new Chart(host, { barLayout: 'golden', font: { family: SANS_FONT_FAMILY } })
-chart.setBarLayout('classic')    // a 2 px gap, as before
-chart.setFont({ sizeSmall: 12 }) // the axes' and tags' size
-chart.setFont(null)              // the theme's own font again`}</code></pre>
 <p>
-  <code>chartOptions.barLayout</code> と <code>chartOptions.font</code> の <code>family</code> が外観の設定より優先されます。
-  <code>chartOptions.font</code> がサイズだけなら、書体は外観のものが使われます。バーが表示されている間に
-  レイアウトを変えると、ズームはそのままで各枠の分け方だけが変わります。
+  <code>density</code> はこれらをまとめて設定します。ウィジェットでは <code>ui</code> の中に、独自のチャートではそのオプションに指定します。
+</p>
+<table>
+  <thead><tr><th><code>ui.density</code></th><th>ウィジェット</th><th>そのチャート</th></tr></thead>
+  <tbody>
+    <tr><td><code>'comfortable'</code></td><td>既定値。偶数のサイズ（ボタン 34 px、アイコン 20 px）、余白は 2 · 4 · 6 · 8 · 12 · 20 · 32、コントロール内のパディングは 12 px。</td><td>comfortable、golden のバー。</td></tr>
+    <tr><td><code>'classic'</code></td><td>2.0 より前のまま（画面の拡大率が 100% ならピクセル単位で同じ。ただし価格軸の目盛り線はよりくっきりします）。ボタン 33 px、余白は 2 · 3 · 5 · 8 · 13 · 21 · 34、コントロール内のパディングは 8 px。</td><td>compact。バーはウィジェットがこれまで使っていた golden のまま。</td></tr>
+    <tr><td><code>'compact'</code></td><td>小さめのコントロール（ボタン 26 px、アイコン 16 px）と classic の余白。1.x から変更なし。</td><td>compact、classic のバー。</td></tr>
+    <tr><td><code>'spacious'</code></td><td>大きめのコントロール（ボタン 42 px、アイコン 26 px）。</td><td>comfortable、golden のバー。</td></tr>
+    <tr><td><code>'airy'</code></td><td>spacious に加えて、軸と凡例の数字を外観のサンセリフ書体にします。</td><td>comfortable、golden のバー。</td></tr>
+  </tbody>
+</table>
+<table>
+  <thead><tr><th>チャートの <code>density</code></th><th>バー</th><th>最新のバーの先の余白</th><th>価格の上下</th><th>出来高の帯の上</th><th>角から凡例まで</th></tr></thead>
+  <tbody>
+    <tr><td><code>'comfortable'</code>（既定）</td><td>golden</td><td>8 枠</td><td>φ⁻⁴·⁵（11.5%）</td><td>φ⁻⁶（5.6%）</td><td>内側へ 12 px、下へ 8 px</td></tr>
+    <tr><td><code>'compact'</code>（2.0 より前と同じ）</td><td>classic：隙間 2 px、開いたときは 1 枠 10 px</td><td>5 枠</td><td>φ⁻⁵（9%）</td><td>φ⁻⁷（3.4%）</td><td>内側へ 8 px、下へ 6 px</td></tr>
+  </tbody>
+</table>
+<pre><code>{`// The widget as it was before 2.0
+new ChartWidget(host, { ui: { density: 'classic' } })
+widget.setUI({ density: 'classic' })
+
+// A chart of your own as it was before 2.0
+import { Chart, CHART_SPACING, SANS_FONT_FAMILY } from '@tradecanvas/chart'
+const chart = new Chart(host, { density: 'compact' })
+chart.setDensity('comfortable')  // and back
+chart.getDensity()               // 'comfortable'
+CHART_SPACING.comfortable        // the numbers each density sets
+
+// One part of it
+new Chart(host, { barLayout: 'classic' })   // a 2 px gap between bars, the rest comfortable
+new Chart(host, { rightMargin: 5 })         // 5 slots past the newest bar
+chart.setBarLayout('golden')
+chart.setFont({ family: SANS_FONT_FAMILY, sizeSmall: 12 }) // the axes' and tags' face and size
+chart.setFont(null)                         // the theme's own font again`}</code></pre>
+<p>
+  チャートの作成時に指定した <code>barLayout</code> と <code>rightMargin</code> は、密度を変えてもそのまま残ります。ウィジェットでは、<code>chartOptions.density</code>、<code>chartOptions.barLayout</code>、<code>chartOptions.font</code> の <code>family</code> が外観の設定より優先されます。<code>chartOptions.font</code> がサイズだけなら、書体は外観のものが使われます。バーが表示されている間にレイアウトを変えると、ズームはそのままで各枠の分け方だけが変わります。
+</p>
+
+<h3 id="whole-pixels">整数ピクセルに合わせる</h3>
+<p>
+  画面の拡大率が 125% や 150% のとき、CSS の 1 ピクセルはデバイスピクセル 1.25 個分や 1.5 個分になり、その境目にかかった幅 1 px の線はぼやけます。チャートは、ブラウザーが数えたデバイスピクセル数に合わせてキャンバスの大きさを決め、細い線をデバイスピクセルの上に置きます。対象は、グリッド、軸の線と目盛り、クロスヘア、最新価格の線、注文・アラート・水準の線、ヒゲ、ペインの区切り線、価格タグの縁です。1 px の線は 125% でも 150% でもデバイスピクセル 1 個分の幅になり、ブラウザーが描く 1 px の枠線と同じです。ウィジェットではサイズを偶数にしているので、アイコンはボタンの端から、ボタンはバーの端から、整数ピクセルの位置に収まります。また、内容に合わせて幅が決まるボックスをブラウザーが丸められる場合（Chrome と Edge の 129 以降）は、ツールバーの文字ボタンの幅も整数ピクセルになるので、その後ろに並ぶアイコンもくっきり表示されます。
 </p>
 
 <h2>黄金比</h2>
@@ -87,11 +116,11 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
 <table>
   <thead><tr><th>対象</th><th>規則</th><th>値（px）</th></tr></thead>
   <tbody>
-    <tr><td>サイズ</td><td>φ の半段ずつ：アイコン、その小さいボタン、そのボタン、バー、描画ツールの列。メニューの行はボタンと同じ高さです。描画ツールのアイコンは他より半段大きく（20 に対して 26）、ボタンはそれより少し小さめにして、列の両側に 3 px ずつ空けます。</td><td>20 · 26 · 33 · 42</td></tr>
-    <tr><td>余白</td><td>フィボナッチ数。どれも前の 2 つの和なので、隣どうしはほぼ φ 倍の関係になります。</td><td>2 · 3 · 5 · 8 · 13 · 21 · 34</td></tr>
+    <tr><td>サイズ</td><td>φ の半段ずつで、各段に最も近い偶数（20.4、25.9、32.9、41.9）：アイコン、その小さいボタン、そのボタン、バー、描画ツールの列。メニューの行はボタンと同じ高さです。ボタンだけは規則から外れます。段に近いのは 32 ですが、1.x の 33 が見た目に与えていた大きさである 34 とし、20 px のアイコンの両側に 7 px ずつ残します。描画ツールのアイコンは他より半段大きく（20 に対して 26）、ボタンはそれより少し小さめにして、列の両側に 3 px ずつ空けます。</td><td>20 · 26 · 34 · 42</td></tr>
+    <tr><td>余白</td><td>4 px グリッド上のフィボナッチ数（1、2、3、5、8 の 4 倍）に、4 と 12 の半分である 2 と 6 を下に加えたもの。8 から上は隣どうしの比が 1.5、1.67、1.6 で、ほぼ φ です。小さい段は 2 px ずつ上がります。そこでは φ の比に合う偶数がないためです。<code>classic</code> と <code>compact</code> の密度は、もとのフィボナッチ数 2 · 3 · 5 · 8 · 13 · 21 · 34 のままです。</td><td>2 · 4 · 6 · 8 · 12 · 20 · 32</td></tr>
     <tr><td>角</td><td>
-      これもフィボナッチ数。内側の角は外側の角から間の余白を引いた値なので、曲線が平行に走ります。メニューの 5 は、
-      その行の 2 と 3 の余白を足したものです。
+      フィボナッチ数。内側の角は外側の角から間の余白を引いた値なので、曲線が平行に走ります。メニューの 5 は、
+      その行の 1 と 4 の余白を足したものです。
     </td><td>1 · 2 · 3 · 5 · 8</td></tr>
     <tr><td>文字</td><td>
       φ の立方根ずつの段なので、3 段ごとに φ 倍になります。ダイアログの見出しは本文の φ 倍です。10 px を下回ることは
@@ -100,16 +129,16 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
   </tbody>
 </table>
 <p>
-  文字の段は設定した本文のサイズ（<code>font.size</code>）に連動し、<code>density</code> はサイズを半段下げるか上げます。
-  独自の外観には、<code>@tradecanvas/commons</code> の <code>PHI</code>、<code>FIBONACCI</code>、
-  <code>phiStep(base, steps, perPhi)</code> を使えます。
+  文字の段は設定した本文のサイズ（<code>font.size</code>）に連動し、本文 1 行の高さは偶数になります（13 px なら 18 px）。
+  <code>density</code> はサイズを半段下げるか上げます。独自の外観には、<code>@tradecanvas/commons</code> の
+  <code>PHI</code>、<code>FIBONACCI</code>、<code>phiStep(base, steps, perPhi)</code>、<code>evenPx(n)</code> を使えます。
 </p>
 
 <h3 id="wide-screens">ワイド画面で</h3>
 <p>
   ウィジェットは幅が広がるにつれてバー、ボタン、アイコン、文字を大きく描くので、4K 画面が小さな文字ばかりになりません。
   フル HD までは設定どおり、1800 px からは φ の 6 分の 1、2560（150% の 4K）からは 3 分の 1、3400（100% の 4K）
-  からは半分大きくなります。チャートの軸の文字も一緒に大きくなります。<code>ui.scale</code> はすべての幅で使う倍率を
+  からは半分大きくなります。どのサイズも最も近い偶数に丸めます。チャートの軸の文字も一緒に大きくなります。<code>ui.scale</code> はすべての幅で使う倍率を
   決め、<code>1</code> ならサイズはそのままです。
 </p>
 
@@ -122,7 +151,7 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
   preset: 'studio',
   radius: { xs: 3, sm: 5, md: 10, lg: 12, xl: 18 },  // the scale, px (999: pills)
   components: { dialog: 20, tag: 0 },                // a part's own corners
-  density: 'compact',                                // compact · comfortable · spacious · airy
+  density: 'compact',                                // compact · classic · comfortable · spacious · airy
   sizes: { toolbar: 40 },                            // px; wins over density
   scale: 'auto',                                     // or a number; 'auto' grows with the widget's width
   font: {
@@ -155,7 +184,8 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
     <tr><td><code>density</code> / <code>sizes</code></td><td>
       <code>toolbar</code> の高さ、<code>control</code> と <code>controlSmall</code> の高さ、<code>icon</code>、
       <code>sidebar</code> の幅、<code>menuItem</code> の高さ（px）。<code>compact</code> と <code>spacious</code> は、
-      Print のサイズを φ の半段だけ下げたものと上げたものです。描画ツールのボタンとアイコンは
+      Print のサイズを φ の半段だけ下げたものと上げたものです。<code>classic</code> は 2.0 より前のウィジェットです
+      （<a href="#density">密度</a>を参照。余白とチャートのゆとりもそこで決まります）。描画ツールのボタンとアイコンは
       <code>control</code> と <code>icon</code> より φ の半段大きくなります（<code>compact</code> では同じ）。
       <code>sidebar</code> の列の両側に余白を残し、列が低くて全部入らないときは、スクロールする前に
       <code>icon</code> の大きさに左右 2 px を足した大きさまで小さくなります。
@@ -212,7 +242,10 @@ chart.setFont(null)              // the theme's own font again`}</code></pre>
     <tr><td><code>--tcw-border-w</code>、<code>--tcw-sep-w</code></td><td><code>borders</code></td></tr>
     <tr><td><code>--tcw-menu-shadow</code>、<code>--tcw-dialog-shadow</code>、<code>--tcw-tooltip-shadow</code></td><td><code>shadows</code></td></tr>
     <tr><td><code>--tcw-blur</code>、<code>--tcw-surface-opacity</code></td><td><code>blur</code></td></tr>
-    <tr><td><code>--tcw-space-1</code> … <code>--tcw-space-7</code></td><td>スタイルシート：フィボナッチの余白、2 から 34 px</td></tr>
+    <tr><td><code>--tcw-space-1</code> … <code>--tcw-space-7</code></td><td><code>density</code>：余白、2 から 32 px（<code>classic</code> と <code>compact</code> では 2 から 34）</td></tr>
+    <tr><td><code>--tcw-control-pad</code>、<code>--tcw-bar-pad</code>、<code>--tcw-menu-row-pad</code></td><td><code>density</code>：ボタンのラベル、バーの最初のボタン、メニュー行の文字の脇に取る余白</td></tr>
+    <tr><td><code>--tcw-line-height</code>、<code>--tcw-line-xs</code>、<code>--tcw-legend-line</code>、<code>--tcw-legend-line-pane</code></td><td><code>density</code>：本文 1 行、最小の文字 1 行、チャート上とペイン内のインジケーター行の高さ</td></tr>
+    <tr><td><code>--tcw-text-w</code></td><td><code>density</code>：バーの文字ボタンの幅を整数ピクセルにする（<code>auto</code>：文字どおりの幅）</td></tr>
     <tr><td><code>--tcw-kind-1</code> … <code>--tcw-kind-5</code></td><td>スタイルシート：シンボル検索で使う種類ごとの色（株式、先物、指数、暗号資産、FX）。ダークとライトのテーマそれぞれに設定されています。独自のパレットではこれらも設定してください。設定しないとバッジはこの色のままです。</td></tr>
     <tr><td><code>--tcw-font-features</code></td><td>スタイルシート：<code>normal</code>、書体そのままの字形。<code>ui</code> オプションはこれを設定しないので、<code>.tcw-root</code> に書いたあなたのルールで、使う書体自身の OpenType 機能をオンにできます（Inter の一階建ての a と開いた数字：<code>'cv11', 'ss01'</code>）。ウィジェットの文字に効き、ボタンや入力欄にも効きます。チャートの文字（キャンバスとツールチップ）には効きません。</td></tr>
   </tbody>

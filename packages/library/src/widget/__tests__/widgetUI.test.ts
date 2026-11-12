@@ -80,7 +80,7 @@ describe('resolveWidgetUI', () => {
     }
     const v = vars({});
     expect([1, 2, 3, 4, 5, 6, 7].map((n) => v[`--tcw-space-${n}`])).toEqual(['2px', '4px', '6px', '8px', '12px', '20px', '32px']);
-    expect(v).toMatchObject({ '--tcw-control-pad': '12px', '--tcw-bar-pad': '12px', '--tcw-menu-row-pad': '12px', '--tcw-legend-line': '20px', '--tcw-legend-line-pane': '16px', '--tcw-line-xs': '14px' });
+    expect(v).toMatchObject({ '--tcw-control-pad': '12px', '--tcw-bar-pad': '12px', '--tcw-menu-row-pad': '12px', '--tcw-odd': '0px', '--tcw-legend-line': '20px', '--tcw-legend-line-pane': '16px', '--tcw-line-xs': '14px' });
     // 18 px a line at 13 px.
     expect(parseFloat(v['--tcw-line-height']) * 13).toBeCloseTo(18, 3);
   });
@@ -98,7 +98,7 @@ describe('resolveWidgetUI', () => {
       const v = vars({ density });
       expect([1, 2, 3, 4, 5, 6, 7].map((n) => v[`--tcw-space-${n}`]), density).toEqual(['2px', '3px', '5px', '8px', '13px', '21px', '34px']);
       expect(v, density).toMatchObject({
-        '--tcw-control-pad': '8px', '--tcw-bar-pad': '8px', '--tcw-menu-row-pad': '8px',
+        '--tcw-control-pad': '8px', '--tcw-bar-pad': '8px', '--tcw-menu-row-pad': '8px', '--tcw-odd': '1px',
         '--tcw-line-height': '1.4', '--tcw-line-xs': '1.4', '--tcw-legend-line': '19px', '--tcw-legend-line-pane': '15px', '--tcw-text-w': 'auto',
       });
     }

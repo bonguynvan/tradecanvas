@@ -600,6 +600,8 @@ export class Chart {
       options.rightMargin ?? spacing.rightMargin,
     );
     this.viewport.setBarLayout(options.barLayout ?? spacing.barLayout);
+    // Until the first fit sets them, the scale's margins are the density's too.
+    this.viewport.setScaleMargins({ top: spacing.priceMargin, bottom: spacing.priceMargin });
     this.viewport.setPanLimits({
       freePan: options.freePan ?? true,
       minVisibleBars: options.panLimits?.minVisibleBars ?? 3,
@@ -1716,7 +1718,10 @@ export class Chart {
    */
   setBarLayout(layout: BarLayout): void {
     // The same layout again runs nothing: no pass, no events (a widget sets it on every look).
-    if ((layout !== 'golden' && layout !== 'classic') || layout === this.viewport.getBarLayout()) return;
+    if (layout !== 'golden' && layout !== 'classic') return;
+    // A layout set here is the chart's own from now on: a density doesn't change it.
+    this.options.barLayout = layout;
+    if (layout === this.viewport.getBarLayout()) return;
     this.viewport.setBarLayout(layout);
     this.updateViewportAndRender();
   }

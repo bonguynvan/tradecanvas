@@ -160,8 +160,14 @@ export class Viewport {
     this.invalidate();
   }
 
+  /** The room past the newest bar, in slots. A view resting at the newest bar goes on resting there. */
   setRightMargin(bars: number): void {
+    if (bars === this.rightMarginBars) return;
+    const atEnd = this.dataLength > 0 && this.isAtEnd();
     this.rightMarginBars = bars;
+    if (!atEnd) return;
+    this.state.offset = this.endOffset();
+    this.invalidate();
   }
 
   getRightMargin(): number {

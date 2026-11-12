@@ -222,12 +222,6 @@ export class ChartLegend {
     }));
   }
 
-  /**
-   * How far below the plot's top edge the title, price and volume rows reach
-   * (the indicator row excluded), so other content can stack under them: as
-   * last drawn, wrapped lines included. 0 when hidden or drawn in the
-   * top-right corner.
-   */
   /** The legend's distance from the plot's side and top, and the space under each of its lines, px. */
   setSpacing(spacing: { inset: number; top: number; lineGap: number }): void {
     if (spacing.inset === this.inset && spacing.top === this.top && spacing.lineGap === this.lineGap) return;
@@ -242,6 +236,12 @@ export class ChartLegend {
     return this.inset;
   }
 
+  /**
+   * How far below the plot's top edge the title, price and volume rows reach
+   * (the indicator row excluded), so other content can stack under them: as
+   * last drawn, wrapped lines included. 0 when hidden or drawn in the
+   * top-right corner.
+   */
   getHeight(): number {
     if (!this.config.visible || this.config.position !== 'top-left') return 0;
     if (this.drawnHeight !== null) return this.drawnHeight;

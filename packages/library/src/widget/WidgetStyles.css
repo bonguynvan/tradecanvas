@@ -146,6 +146,8 @@
   --tcw-control-pad: 12px;
   --tcw-bar-pad: 12px;
   --tcw-menu-row-pad: 12px;
+  /* What a gap of 8 gives back in the classic and compact densities, where it was 7: 1px there, nothing here. */
+  --tcw-odd: 0px;
   /* A line of body text: 18px at 13px, an even height that centres on whole pixels. */
   --tcw-line-height: 1.38462;
   /* An on-chart indicator row's line, on the plot and in a pane. */
@@ -546,7 +548,7 @@
 
 /* Timeframe menu: pick on the left, pin (star) on the right. */
 .tcw-tf-more {
-  padding: 0 5px;
+  padding: 0 var(--tcw-space-3);
 }
 
 .tcw-tf-more svg {
@@ -1116,9 +1118,9 @@
 .tcw-ind-legend-toggle {
   display: inline-flex;
   align-items: center;
-  gap: 3px;
+  gap: var(--tcw-space-2);
   margin-top: 1px;
-  padding: 1px 5px;
+  padding: 1px var(--tcw-space-3);
   border: none;
   border-radius: var(--tcw-control-radius);
   background: transparent;
@@ -1264,7 +1266,7 @@
   width: calc(var(--tcw-tool-size) * 0.618);
   height: max(1px, var(--tcw-sep-w));
   background: var(--tcw-divider);
-  margin: 5px 0;
+  margin: var(--tcw-space-3) 0;
   flex-shrink: 0;
 }
 
@@ -1820,7 +1822,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 7px 16px;
+  padding: calc(var(--tcw-space-4) - var(--tcw-odd)) 16px;
   border-top: 1px solid var(--tcw-border);
   background: var(--tcw-bg-surface);
   font-size: var(--tcw-font-size-xs);
@@ -1871,7 +1873,7 @@
 
 .tcw-range-btn {
   flex-shrink: 0;
-  padding: 4px 7px;
+  padding: 4px calc(var(--tcw-space-4) - var(--tcw-odd));
   font: inherit;
   font-weight: var(--tcw-weight-strong);
   letter-spacing: 0.02em;
@@ -1916,7 +1918,7 @@
 .tcw-status-indicator {
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: calc(var(--tcw-space-4) - var(--tcw-odd));
   font-weight: var(--tcw-weight);
 }
 
@@ -2972,7 +2974,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  padding: 3px 8px;
+  padding: var(--tcw-space-2) 8px;
   font-size: var(--tcw-font-size-sm);
 }
 .tcw-datawin-label { color: var(--tcw-text-muted); }
@@ -3736,7 +3738,7 @@
   display: flex;
   align-items: center;
   gap: 2px;
-  padding: 3px;
+  padding: var(--tcw-space-2);
   background: var(--tcw-bg-elevated);
   border: var(--tcw-border-w) solid var(--tcw-divider);
   border-radius: var(--tcw-menu-radius);
@@ -3750,7 +3752,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 5px;
+  gap: var(--tcw-space-3);
   min-width: var(--tcw-control-h-sm);
   height: var(--tcw-control-h-sm);
   padding: 0 6px;
@@ -3793,7 +3795,7 @@
   border-radius: 1px;
   background: currentColor;
 }
-.tcw-sel-sep { flex: none; width: 1px; height: 18px; margin: 0 3px; background: var(--tcw-divider); }
+.tcw-sel-sep { flex: none; width: 1px; height: 18px; margin: 0 var(--tcw-space-2); background: var(--tcw-divider); }
 .tcw-sel-pop {
   position: absolute;
   z-index: 66;
@@ -4425,7 +4427,7 @@
 .tcw-syminfo-status {
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: calc(var(--tcw-space-4) - var(--tcw-odd));
   font-size: var(--tcw-font-size-sm);
   color: var(--tcw-text-dim);
 }
@@ -4906,6 +4908,11 @@
 .tcw-toolbar--icons.tcw-toolbar--tf-menu > .tcw-tf-group,
 .tcw-root[data-tcw-narrow] > .tcw-toolbar.tcw-toolbar--tf-menu > .tcw-tf-group {
   display: none;
+}
+/* A bar with no room for its labels has none to spare beside its icons either: the padding a step down. */
+.tcw-toolbar--icons {
+  --tcw-control-pad: var(--tcw-space-4);
+  --tcw-bar-pad: var(--tcw-space-4);
 }
 .tcw-toolbar--icons .tcw-tf-more,
 .tcw-root[data-tcw-narrow] > .tcw-toolbar .tcw-tf-more {

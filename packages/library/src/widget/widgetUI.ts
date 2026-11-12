@@ -566,6 +566,8 @@ export function widgetUIVariables(ui: ResolvedWidgetUI): Record<string, string> 
     '--tcw-control-pad': pad,
     '--tcw-bar-pad': pad,
     '--tcw-menu-row-pad': pad,
+    // The 7 px gaps of 1.x are 8 on the even ladder: the classic densities take the pixel back.
+    '--tcw-odd': even ? '0px' : '1px',
     // A line of body text an even number of pixels tall, so one line centres on whole pixels;
     // unitless, so smaller and larger type keeps the ratio.
     '--tcw-line-height': even ? String(Math.round((evenPx(f.size * LINE_RATIO) / f.size) * 1e5) / 1e5) : String(LINE_RATIO),
