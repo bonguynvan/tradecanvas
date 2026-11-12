@@ -1,5 +1,13 @@
 # @tradecanvas/core
 
+## 2.1.1
+
+### Patch Changes
+
+- 289d839: With no decimals set by the symbol or the market, a price under 1 shows at least four significant figures of itself on the legend, the crosshair and the tags beside the axis (0.000004349 where it read 0.00000435): the price scale's step alone left a sub-cent coin two or three. `autoPricePrecision`, `chart.roundPrice` and `chart.getPriceStep` follow.
+- Updated dependencies [289d839]
+  - @tradecanvas/commons@2.1.1
+
 ## 2.1.0
 
 ### Patch Changes
