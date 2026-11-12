@@ -22,7 +22,8 @@ const INSTRUCTIONS = [
   'TradeCanvas (@tradecanvas/chart) draws trading charts: ChartWidget is the full trading UI, Chart the headless chart, ChartWidgetGrid several charts.',
   'Look names up instead of guessing them: list_indicators and get_indicator for indicator ids, params and line keys; list_drawing_tools for drawing types and their anchors;',
   'list_options for the options of each entry point; list_widget_features and list_style_keys for feature switches and style keys.',
-  'Before handing an options object to new ChartWidget, new Chart or new ChartWidgetGrid, run it through validate_options.',
+  'For a chart that is not a trading chart (bars, a donut, an order book\'s depth, an equity curve, a market map, a gauge), list_finance_charts names the classes, and list_options takes a class name.',
+  'Before handing an options object to new ChartWidget, new Chart, new ChartWidgetGrid or a finance chart, run it through validate_options.',
 ].join(' ');
 
 const isObject = (value: unknown): value is Record<string, unknown> =>

@@ -1,10 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { DARK_THEME } from '@tradecanvas/commons';
+import { DARK_THEME, DEFAULT_FONT_FAMILY, LIGHT_THEME, SANS_FONT_FAMILY } from '@tradecanvas/commons';
+import { financeTheme } from '../BaseFinanceChart.js';
 import { computeWaterfallLayout, hitWaterfallBar, renderWaterfall } from '../WaterfallRenderer.js';
 import { renderSparkline } from '../SparklineRenderer.js';
 import { computeEquityLayout, renderEquityCurve } from '../EquityCurveRenderer.js';
 import { computeDepthLayout, renderDepthChart } from '../DepthChartRenderer.js';
-import { decimalsFor, hairline, timeTicks } from '../chartKit.js';
+import { axisFormat, decimalsFor, hairline, niceScale, numberFormat, percentFormat, timeTicks } from '../chartKit.js';
 import { renderHeatmap } from '../HeatmapRenderer.js';
 import { layoutSquarifiedTreemap, layoutUniformGrid } from '../HeatmapLayout.js';
 
@@ -360,8 +361,7 @@ describe('the kit the charts share', () => {
 });
 
 describe('numbers and dates in a language', () => {
-  it('writes numbers as the locale does, and falls back for a tag it cannot read', async () => {
-    const { numberFormat, percentFormat, axisFormat, niceScale } = await import('../chartKit.js');
+  it('writes numbers as the locale does, and falls back for a tag it cannot read', () => {
     expect(numberFormat('de-DE')(1234.5)).toBe('1.234,5');
     expect(numberFormat('en-US')(1234.5)).toBe('1,234.5');
     expect(numberFormat('en-US')(12_300)).toBe('12.3K');
@@ -392,9 +392,7 @@ describe('numbers and dates in a language', () => {
 });
 
 describe('the face of a finance chart’s text', () => {
-  it('is the system’s sans face unless the theme or the options name one', async () => {
-    const { financeTheme } = await import('../BaseFinanceChart.js');
-    const { DEFAULT_FONT_FAMILY, SANS_FONT_FAMILY, LIGHT_THEME } = await import('@tradecanvas/commons');
+  it('is the system’s sans face unless the theme or the options name one', () => {
     expect(financeTheme('dark').font.family).toBe(SANS_FONT_FAMILY);
     expect(financeTheme(LIGHT_THEME).font.family).toBe(SANS_FONT_FAMILY);
     expect(financeTheme(LIGHT_THEME).background).toBe(LIGHT_THEME.background);

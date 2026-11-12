@@ -244,3 +244,36 @@ export function validateOptions(target: Target, options: unknown, catalog: Catal
   checkObject(ctx, catalog.options[target], options, '', target);
   return { valid: ctx.problems.length === 0, problems: ctx.problems, notes: ctx.notes };
 }
+
+function isLanguageTag(tag: string): boolean {
+  try {
+    return Intl.NumberFormat.supportedLocalesOf(tag).length >= 0 && tag.trim() !== '';
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Checks an options object for a finance chart (`new BarChart(el, options)`,
+ * `new DepthChart(el, options)`…), by the chart's name: unknown names (with
+ * the one likely meant), values outside a union, wrong plain kinds, a
+ * `locale` that is no language tag, and the data it needs. Returns null for
+ * a name that is no finance chart.
+ */
+export function validateFinanceOptions(chart: string, options: unknown, catalog: Catalog = CATALOG): Validation | null {
+  const entry = catalog.financeCharts.find((c) => c.name === chart);
+  if (!entry) return null;
+  const ctx: Context = { catalog, problems: [], notes: [] };
+  checkObject(ctx, entry.options, options, '', chart);
+  if (isObject(options)) {
+    // What the declaration marks as required: its data, by whatever name the chart takes it.
+    for (const { name } of entry.options.filter((o) => o.required)) {
+      if (options[name] === undefined || options[name] === null) problem(ctx, name, `${chart} needs '${name}'.`);
+    }
+    // Any language tag `Intl` reads; one it cannot is drawn in the browser's language, which is seldom what was meant.
+    if (typeof options.locale === 'string' && !isLanguageTag(options.locale)) {
+      problem(ctx, 'locale', `'${options.locale}' is not a language tag (BCP 47: 'vi', 'en-US', 'de-DE').`);
+    }
+  }
+  return { valid: ctx.problems.length === 0, problems: ctx.problems, notes: ctx.notes };
+}

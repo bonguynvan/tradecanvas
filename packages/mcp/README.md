@@ -41,7 +41,8 @@ All of them read only; none touches the network or your files.
 | `list_indicators` | The built-in indicators: id, name, and whether it draws over the price or in a pane. Search by words. |
 | `get_indicator` | One indicator in full: default params, inputs, the keys of its lines (RSI's is `value`, not `rsi`), levels, and code that adds it and reads it. |
 | `list_drawing_tools` | The drawing tools: the `type` that `addDrawing` and `setDrawingTool` take, the points each needs, its options. |
-| `list_options` | The options of `ChartWidget`, `Chart` or `ChartWidgetGrid`: name, TypeScript type, doc, allowed values. |
+| `list_finance_charts` | The charts that are not the trading chart (bars, donut, depth, equity curve, market map, gauge…): each class's name and what it is for. |
+| `list_options` | The options of `ChartWidget`, `Chart`, `ChartWidgetGrid` or a finance chart by its class name: name, TypeScript type, doc, allowed values. |
 | `list_widget_features` | The names `ChartWidget`'s `features` switch takes. |
 | `list_style_keys` | The chart's style keys and the value each takes, for `overrides` and `applyOverrides`. |
 | `validate_options` | Checks an options object before it is used: unknown names with the one likely meant, values outside the allowed ones, numbers given as strings, intervals, feature switches, style overrides, languages, and nested options. |

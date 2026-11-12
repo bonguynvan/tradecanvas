@@ -113,3 +113,55 @@ describe('tools', () => {
     expect(call('get_indicator', {}).isError).toBe(true);
   });
 });
+
+describe('the finance charts', () => {
+  it('list_finance_charts names every class @tradecanvas/chart has, and finds one by its purpose', () => {
+    const all = call('list_finance_charts').data as { count: number; charts: { name: string; what: string; options: string[] }[]; usage: string };
+    expect(all.count).toBe(14);
+    expect(all.charts.map((c) => c.name)).toEqual(expect.arrayContaining(['BarChart', 'DepthChart', 'EquityCurveChart', 'HeatmapChart', 'PerformanceDashboard']));
+    expect(all.charts.every((c) => c.what.length > 20 && c.options.length > 3)).toBe(true);
+    expect(all.usage).toContain("from '@tradecanvas/chart'");
+    const book = call('list_finance_charts', { query: 'order book' }).data as typeof all;
+    expect(book.charts.map((c) => c.name)).toEqual(['DepthChart']);
+  });
+
+  it('list_options takes a finance chart’s name', () => {
+    const depth = call('list_options', { target: 'DepthChart' }).data as { target: string; what: string; options: { name: string; type: string; doc?: string }[]; usage: string };
+    expect(depth.target).toBe('DepthChart');
+    expect(depth.options.map((o) => o.name)).toEqual(expect.arrayContaining(['data', 'spreadLabel', 'theme', 'font', 'locale', 'ariaLabel']));
+    // Options that were declared and never read are gone.
+    expect(depth.options.map((o) => o.name)).not.toContain('width');
+    expect(depth.usage).toContain('new DepthChart(element, options)');
+    const found = call('list_options', { target: 'BarChart', query: 'stacked' }).data as typeof depth;
+    expect(found.options.map((o) => o.name)).toContain('mode');
+  });
+
+  it('validate_options takes one too, and an unknown target is told the names', () => {
+    const bad = call('validate_options', { target: 'BarChart', options: { categories: [], series: [], orientaton: 'horizontal' } });
+    expect(bad.text).toContain("Did you mean 'orientation'?");
+    expect(call('validate_options', { target: 'GaugeChart', options: { value: 5 } }).text).toBe('No problems found.');
+    const none = call('validate_options', { target: 'PieChart', options: {} });
+    expect(none.isError).toBe(true);
+    expect(none.text).toContain('ChartWidget');
+    expect(none.text).toContain('DonutChart');
+    expect(call('list_options', { target: 'PieChart' }).isError).toBe(true);
+    // A target that is not a string is no target, in either tool.
+    expect(call('validate_options', { target: ['BarChart'], options: {} }).isError).toBe(true);
+    expect(call('list_options', { target: ['BarChart'] }).isError).toBe(true);
+  });
+
+  it('tells the dashboard apart: it is updated, not given options', () => {
+    const dash = call('list_options', { target: 'PerformanceDashboard' }).data as { usage: string; options: { name: string }[] };
+    expect(dash.usage).toContain('dashboard.update(result)');
+    expect(dash.usage).not.toContain('setOptions');
+    expect(dash.options.map((o) => o.name)).not.toContain('ariaLabel');
+    expect((call('list_options', { target: 'GaugeChart' }).data as typeof dash).usage).toContain('chart.setOptions');
+  });
+
+  it('offers the names in the schema of both tools', () => {
+    for (const name of ['list_options', 'validate_options']) {
+      const target = TOOLS.find((t) => t.name === name)!.inputSchema.properties.target as { enum: string[] };
+      expect(target.enum).toEqual(expect.arrayContaining(['ChartWidget', 'Chart', 'ChartWidgetGrid', 'SparklineChart', 'PerformanceDashboard']));
+    }
+  });
+});

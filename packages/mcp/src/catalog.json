@@ -7739,5 +7739,1193 @@
         "doc": "ChartWidget: timeframes on the quick-access bar until the user changes them."
       }
     ]
-  }
+  },
+  "financeCharts": [
+    {
+      "name": "BarChart",
+      "what": "Bars by category, grouped or stacked, upright or lying: net flows, volumes, sums by period.",
+      "options": [
+        {
+          "name": "categories",
+          "type": "string[]",
+          "required": true,
+          "doc": "One label per bar group, along the category axis."
+        },
+        {
+          "name": "series",
+          "type": "ChartSeries[]",
+          "required": true
+        },
+        {
+          "name": "mode",
+          "type": "'grouped' | 'stacked'",
+          "doc": "`'grouped'` (default): series side by side; `'stacked'`: positives up and negatives down from zero.",
+          "values": [
+            "grouped",
+            "stacked"
+          ]
+        },
+        {
+          "name": "orientation",
+          "type": "'vertical' | 'horizontal'",
+          "doc": "`'vertical'` (default) bars rise from the category axis; `'horizontal'` bars run to the right.",
+          "values": [
+            "vertical",
+            "horizontal"
+          ]
+        },
+        {
+          "name": "colorBySign",
+          "type": "boolean | { positive: string; negative: string }",
+          "doc": "Colour each bar by its sign (net flows): `true` takes the theme's up and down colours."
+        },
+        {
+          "name": "showValues",
+          "type": "boolean",
+          "doc": "Print each bar's value at its end.",
+          "kind": "boolean"
+        },
+        {
+          "name": "legend",
+          "type": "boolean",
+          "doc": "Show the series' names; default: when there is more than one.",
+          "kind": "boolean"
+        },
+        {
+          "name": "valueFormat",
+          "type": "(value: number) => string",
+          "doc": "How values read on the axis, the bars and the tooltip.",
+          "kind": "function"
+        },
+        {
+          "name": "crosshair",
+          "type": "boolean",
+          "doc": "Show the hovered bar's values. Default `true`.",
+          "kind": "boolean"
+        },
+        {
+          "name": "onBarClick",
+          "type": "(hit: BarHit) => void",
+          "kind": "function"
+        },
+        {
+          "name": "theme",
+          "type": "ThemeName | Theme",
+          "doc": "The chart's colours: `'dark'` (the default), `'light'`, or a theme of your own."
+        },
+        {
+          "name": "font",
+          "type": "Partial<FontConfig>",
+          "doc": "The face and sizes of the chart's text, over the theme's. Left out, the figures are in the system's sans face (`SANS_FONT_FAMILY`), as the widget's are; `{ family: DEFAULT_FONT_FAMILY }` gives the monospaced one. A theme of your own with a face of its own keeps that face."
+        },
+        {
+          "name": "locale",
+          "type": "string",
+          "doc": "The language numbers and dates are written in, as a BCP 47 tag (`'vi'`, `'de-DE'`): the grouping and decimal marks, the short forms past ten thousand, the names of months and days. The browser's own when left out. A format function of yours (`valueFormat`…) is used as it is.",
+          "kind": "string"
+        },
+        {
+          "name": "ariaLabel",
+          "type": "string",
+          "doc": "What the chart shows, for screen readers; every chart describes itself (in English) without one.",
+          "kind": "string"
+        }
+      ]
+    },
+    {
+      "name": "DonutChart",
+      "what": "Shares of a whole as a ring or a pie: an allocation, a breakdown.",
+      "options": [
+        {
+          "name": "data",
+          "type": "DonutSlice[]",
+          "required": true,
+          "doc": "Slices in order, clockwise from twelve o'clock; values of 0 or less are left out."
+        },
+        {
+          "name": "innerRadius",
+          "type": "number",
+          "doc": "The hole as a share of the radius: `0.6` (default), `0` for a pie.",
+          "kind": "number"
+        },
+        {
+          "name": "centerLabel",
+          "type": "string",
+          "doc": "Text in the hole: a caption and a figure (`'Total'`, `'1.2B'`).",
+          "kind": "string"
+        },
+        {
+          "name": "centerValue",
+          "type": "string",
+          "kind": "string"
+        },
+        {
+          "name": "showLabels",
+          "type": "boolean",
+          "doc": "Print each slice's share on it when it fits. Default `true`.",
+          "kind": "boolean"
+        },
+        {
+          "name": "legend",
+          "type": "boolean",
+          "doc": "The slices' names and shares beside the ring. Default `true`.",
+          "kind": "boolean"
+        },
+        {
+          "name": "valueFormat",
+          "type": "(value: number) => string",
+          "kind": "function"
+        },
+        {
+          "name": "crosshair",
+          "type": "boolean",
+          "doc": "Show the hovered slice's value and share. Default `true`.",
+          "kind": "boolean"
+        },
+        {
+          "name": "onSliceClick",
+          "type": "(slice: DonutSlice) => void",
+          "kind": "function"
+        },
+        {
+          "name": "theme",
+          "type": "ThemeName | Theme",
+          "doc": "The chart's colours: `'dark'` (the default), `'light'`, or a theme of your own."
+        },
+        {
+          "name": "font",
+          "type": "Partial<FontConfig>",
+          "doc": "The face and sizes of the chart's text, over the theme's. Left out, the figures are in the system's sans face (`SANS_FONT_FAMILY`), as the widget's are; `{ family: DEFAULT_FONT_FAMILY }` gives the monospaced one. A theme of your own with a face of its own keeps that face."
+        },
+        {
+          "name": "locale",
+          "type": "string",
+          "doc": "The language numbers and dates are written in, as a BCP 47 tag (`'vi'`, `'de-DE'`): the grouping and decimal marks, the short forms past ten thousand, the names of months and days. The browser's own when left out. A format function of yours (`valueFormat`…) is used as it is.",
+          "kind": "string"
+        },
+        {
+          "name": "ariaLabel",
+          "type": "string",
+          "doc": "What the chart shows, for screen readers; every chart describes itself (in English) without one.",
+          "kind": "string"
+        }
+      ]
+    },
+    {
+      "name": "ScatterChart",
+      "what": "Points on two value axes, bubbles when they have a size: risk against return.",
+      "options": [
+        {
+          "name": "series",
+          "type": "ScatterSeries[]",
+          "required": true
+        },
+        {
+          "name": "xLabel",
+          "type": "string",
+          "doc": "Axis titles.",
+          "kind": "string"
+        },
+        {
+          "name": "yLabel",
+          "type": "string",
+          "kind": "string"
+        },
+        {
+          "name": "xFormat",
+          "type": "(value: number) => string",
+          "kind": "function"
+        },
+        {
+          "name": "yFormat",
+          "type": "(value: number) => string",
+          "kind": "function"
+        },
+        {
+          "name": "maxRadius",
+          "type": "number",
+          "doc": "The largest bubble's radius, px. Default `24`.",
+          "kind": "number"
+        },
+        {
+          "name": "showLabels",
+          "type": "boolean",
+          "doc": "Print each point's label beside it.",
+          "kind": "boolean"
+        },
+        {
+          "name": "zeroLines",
+          "type": "boolean",
+          "doc": "Lines at x = 0 and y = 0 when the axes cross them. Default `true`.",
+          "kind": "boolean"
+        },
+        {
+          "name": "legend",
+          "type": "boolean",
+          "kind": "boolean"
+        },
+        {
+          "name": "crosshair",
+          "type": "boolean",
+          "kind": "boolean"
+        },
+        {
+          "name": "onPointClick",
+          "type": "(point: ScatterPoint, series: string) => void",
+          "kind": "function"
+        },
+        {
+          "name": "theme",
+          "type": "ThemeName | Theme",
+          "doc": "The chart's colours: `'dark'` (the default), `'light'`, or a theme of your own."
+        },
+        {
+          "name": "font",
+          "type": "Partial<FontConfig>",
+          "doc": "The face and sizes of the chart's text, over the theme's. Left out, the figures are in the system's sans face (`SANS_FONT_FAMILY`), as the widget's are; `{ family: DEFAULT_FONT_FAMILY }` gives the monospaced one. A theme of your own with a face of its own keeps that face."
+        },
+        {
+          "name": "locale",
+          "type": "string",
+          "doc": "The language numbers and dates are written in, as a BCP 47 tag (`'vi'`, `'de-DE'`): the grouping and decimal marks, the short forms past ten thousand, the names of months and days. The browser's own when left out. A format function of yours (`valueFormat`…) is used as it is.",
+          "kind": "string"
+        },
+        {
+          "name": "ariaLabel",
+          "type": "string",
+          "doc": "What the chart shows, for screen readers; every chart describes itself (in English) without one.",
+          "kind": "string"
+        }
+      ]
+    },
+    {
+      "name": "HistogramChart",
+      "what": "How often values fall in each range: a distribution of returns.",
+      "options": [
+        {
+          "name": "values",
+          "type": "number[]",
+          "required": true,
+          "doc": "The raw values: daily returns, trade P&Ls…"
+        },
+        {
+          "name": "bins",
+          "type": "number | 'auto'",
+          "doc": "A count of bins, or `'auto'` (default: Sturges' rule)."
+        },
+        {
+          "name": "binWidth",
+          "type": "number",
+          "doc": "A bin width instead, on a grid from 0 (bins at -0.01, 0, 0.01…).",
+          "kind": "number"
+        },
+        {
+          "name": "color",
+          "type": "string",
+          "kind": "string"
+        },
+        {
+          "name": "colorBySign",
+          "type": "boolean",
+          "doc": "Bins below zero in the theme's down colour, the rest in its up colour.",
+          "kind": "boolean"
+        },
+        {
+          "name": "markers",
+          "type": "HistogramMarker[]",
+          "doc": "Labelled lines at values: the mean, a VaR…"
+        },
+        {
+          "name": "valueFormat",
+          "type": "(value: number) => string",
+          "kind": "function"
+        },
+        {
+          "name": "crosshair",
+          "type": "boolean",
+          "kind": "boolean"
+        },
+        {
+          "name": "theme",
+          "type": "ThemeName | Theme",
+          "doc": "The chart's colours: `'dark'` (the default), `'light'`, or a theme of your own."
+        },
+        {
+          "name": "font",
+          "type": "Partial<FontConfig>",
+          "doc": "The face and sizes of the chart's text, over the theme's. Left out, the figures are in the system's sans face (`SANS_FONT_FAMILY`), as the widget's are; `{ family: DEFAULT_FONT_FAMILY }` gives the monospaced one. A theme of your own with a face of its own keeps that face."
+        },
+        {
+          "name": "locale",
+          "type": "string",
+          "doc": "The language numbers and dates are written in, as a BCP 47 tag (`'vi'`, `'de-DE'`): the grouping and decimal marks, the short forms past ten thousand, the names of months and days. The browser's own when left out. A format function of yours (`valueFormat`…) is used as it is.",
+          "kind": "string"
+        },
+        {
+          "name": "ariaLabel",
+          "type": "string",
+          "doc": "What the chart shows, for screen readers; every chart describes itself (in English) without one.",
+          "kind": "string"
+        }
+      ]
+    },
+    {
+      "name": "CalendarChart",
+      "what": "A value a day on a calendar, coloured by a scale: daily returns, sessions.",
+      "options": [
+        {
+          "name": "data",
+          "type": "CalendarDay[]",
+          "required": true
+        },
+        {
+          "name": "from",
+          "type": "string",
+          "doc": "The first and last days shown, `YYYY-MM-DD`; default: the data's.",
+          "kind": "string"
+        },
+        {
+          "name": "to",
+          "type": "string",
+          "kind": "string"
+        },
+        {
+          "name": "weekdays",
+          "type": "5 | 7",
+          "doc": "`7` (default) every day; `5` Monday to Friday, for trading days.",
+          "values": [
+            5,
+            7
+          ]
+        },
+        {
+          "name": "weekStart",
+          "type": "0 | 1",
+          "doc": "The day a week starts on with `weekdays: 7`: `1` Monday (default), `0` Sunday.",
+          "values": [
+            0,
+            1
+          ]
+        },
+        {
+          "name": "colorScale",
+          "type": "ColorScale",
+          "doc": "Default: the theme's down and up colours either side of zero, over the data's range."
+        },
+        {
+          "name": "locale",
+          "type": "string",
+          "doc": "Month and day names, `'vi-VN'`; default: the browser's.",
+          "kind": "string"
+        },
+        {
+          "name": "valueFormat",
+          "type": "(value: number) => string",
+          "kind": "function"
+        },
+        {
+          "name": "dateFormat",
+          "type": "(date: string) => string",
+          "doc": "How a day reads in the tooltip; default: the locale's long date.",
+          "kind": "function"
+        },
+        {
+          "name": "legend",
+          "type": "boolean",
+          "doc": "The colour scale's bar under the calendar. Default `true`.",
+          "kind": "boolean"
+        },
+        {
+          "name": "crosshair",
+          "type": "boolean",
+          "kind": "boolean"
+        },
+        {
+          "name": "onDayClick",
+          "type": "(day: CalendarDay) => void",
+          "kind": "function"
+        },
+        {
+          "name": "theme",
+          "type": "ThemeName | Theme",
+          "doc": "The chart's colours: `'dark'` (the default), `'light'`, or a theme of your own."
+        },
+        {
+          "name": "font",
+          "type": "Partial<FontConfig>",
+          "doc": "The face and sizes of the chart's text, over the theme's. Left out, the figures are in the system's sans face (`SANS_FONT_FAMILY`), as the widget's are; `{ family: DEFAULT_FONT_FAMILY }` gives the monospaced one. A theme of your own with a face of its own keeps that face."
+        },
+        {
+          "name": "ariaLabel",
+          "type": "string",
+          "doc": "What the chart shows, for screen readers; every chart describes itself (in English) without one.",
+          "kind": "string"
+        }
+      ]
+    },
+    {
+      "name": "MatrixChart",
+      "what": "A grid of values coloured by a scale: correlations between symbols.",
+      "options": [
+        {
+          "name": "rows",
+          "type": "string[]",
+          "required": true,
+          "doc": "The rows' names, top to bottom."
+        },
+        {
+          "name": "columns",
+          "type": "string[]",
+          "doc": "The columns' names, left to right; default: the rows' (a square matrix)."
+        },
+        {
+          "name": "values",
+          "type": "number[][]",
+          "required": true,
+          "doc": "`values[row][column]`; a missing or non-finite value leaves its cell empty."
+        },
+        {
+          "name": "colorScale",
+          "type": "ColorScale",
+          "doc": "Default: the theme's down and up colours either side of zero, over the values' range. For correlations give `{ min: -1, max: 1 }`."
+        },
+        {
+          "name": "triangle",
+          "type": "'lower' | 'upper'",
+          "doc": "Only half of a square matrix, the diagonal included: a correlation matrix needs no more.",
+          "values": [
+            "lower",
+            "upper"
+          ]
+        },
+        {
+          "name": "showValues",
+          "type": "boolean",
+          "doc": "Print each value in its cell when it fits. Default `true`.",
+          "kind": "boolean"
+        },
+        {
+          "name": "valueFormat",
+          "type": "(value: number) => string",
+          "doc": "Default: two decimals.",
+          "kind": "function"
+        },
+        {
+          "name": "legend",
+          "type": "boolean",
+          "doc": "The colour scale's bar under the matrix. Default `true`.",
+          "kind": "boolean"
+        },
+        {
+          "name": "crosshair",
+          "type": "boolean",
+          "kind": "boolean"
+        },
+        {
+          "name": "onCellClick",
+          "type": "(cell: MatrixCell) => void",
+          "kind": "function"
+        },
+        {
+          "name": "theme",
+          "type": "ThemeName | Theme",
+          "doc": "The chart's colours: `'dark'` (the default), `'light'`, or a theme of your own."
+        },
+        {
+          "name": "font",
+          "type": "Partial<FontConfig>",
+          "doc": "The face and sizes of the chart's text, over the theme's. Left out, the figures are in the system's sans face (`SANS_FONT_FAMILY`), as the widget's are; `{ family: DEFAULT_FONT_FAMILY }` gives the monospaced one. A theme of your own with a face of its own keeps that face."
+        },
+        {
+          "name": "locale",
+          "type": "string",
+          "doc": "The language numbers and dates are written in, as a BCP 47 tag (`'vi'`, `'de-DE'`): the grouping and decimal marks, the short forms past ten thousand, the names of months and days. The browser's own when left out. A format function of yours (`valueFormat`…) is used as it is.",
+          "kind": "string"
+        },
+        {
+          "name": "ariaLabel",
+          "type": "string",
+          "doc": "What the chart shows, for screen readers; every chart describes itself (in English) without one.",
+          "kind": "string"
+        }
+      ]
+    },
+    {
+      "name": "HeatmapChart",
+      "what": "Cells coloured by change, sized by weight and grouped by sector: a market map.",
+      "options": [
+        {
+          "name": "data",
+          "type": "HeatmapCell[]",
+          "required": true
+        },
+        {
+          "name": "colorScale",
+          "type": "ColorScale"
+        },
+        {
+          "name": "weighted",
+          "type": "boolean",
+          "kind": "boolean"
+        },
+        {
+          "name": "grouped",
+          "type": "boolean",
+          "doc": "Cells with the same `group` sit together under its name (a sector map): each group takes the room of its cells' weights, as `weighted` does.",
+          "kind": "boolean"
+        },
+        {
+          "name": "cellPadding",
+          "type": "number",
+          "kind": "number"
+        },
+        {
+          "name": "cellRadius",
+          "type": "number",
+          "kind": "number"
+        },
+        {
+          "name": "labelFormat",
+          "type": "(cell: HeatmapCell) => string",
+          "kind": "function"
+        },
+        {
+          "name": "valueFormat",
+          "type": "(value: number) => string",
+          "kind": "function"
+        },
+        {
+          "name": "showLabels",
+          "type": "boolean",
+          "kind": "boolean"
+        },
+        {
+          "name": "showValues",
+          "type": "boolean",
+          "kind": "boolean"
+        },
+        {
+          "name": "onCellClick",
+          "type": "(cell: HeatmapCell) => void",
+          "kind": "function"
+        },
+        {
+          "name": "crosshair",
+          "type": "boolean",
+          "kind": "boolean"
+        },
+        {
+          "name": "theme",
+          "type": "ThemeName | Theme",
+          "doc": "The chart's colours: `'dark'` (the default), `'light'`, or a theme of your own."
+        },
+        {
+          "name": "font",
+          "type": "Partial<FontConfig>",
+          "doc": "The face and sizes of the chart's text, over the theme's. Left out, the figures are in the system's sans face (`SANS_FONT_FAMILY`), as the widget's are; `{ family: DEFAULT_FONT_FAMILY }` gives the monospaced one. A theme of your own with a face of its own keeps that face."
+        },
+        {
+          "name": "locale",
+          "type": "string",
+          "doc": "The language numbers and dates are written in, as a BCP 47 tag (`'vi'`, `'de-DE'`): the grouping and decimal marks, the short forms past ten thousand, the names of months and days. The browser's own when left out. A format function of yours (`valueFormat`…) is used as it is.",
+          "kind": "string"
+        },
+        {
+          "name": "ariaLabel",
+          "type": "string",
+          "doc": "What the chart shows, for screen readers; every chart describes itself (in English) without one.",
+          "kind": "string"
+        }
+      ]
+    },
+    {
+      "name": "CounterClockChart",
+      "what": "Averaged price against averaged volume joined in time: the counter-clockwise cycle.",
+      "options": [
+        {
+          "name": "data",
+          "type": "OHLCBar[]",
+          "required": true,
+          "doc": "The bars, oldest first."
+        },
+        {
+          "name": "period",
+          "type": "number",
+          "doc": "Bars in each average. Default `25`.",
+          "kind": "number"
+        },
+        {
+          "name": "points",
+          "type": "number",
+          "doc": "The newest points drawn. Default `60`.",
+          "kind": "number"
+        },
+        {
+          "name": "xLabel",
+          "type": "string",
+          "doc": "Axis titles.",
+          "kind": "string"
+        },
+        {
+          "name": "yLabel",
+          "type": "string",
+          "kind": "string"
+        },
+        {
+          "name": "color",
+          "type": "string",
+          "doc": "The line's colour; default the palette's first.",
+          "kind": "string"
+        },
+        {
+          "name": "timeFormat",
+          "type": "(time: number) => string",
+          "kind": "function"
+        },
+        {
+          "name": "priceFormat",
+          "type": "(value: number) => string",
+          "kind": "function"
+        },
+        {
+          "name": "volumeFormat",
+          "type": "(value: number) => string",
+          "kind": "function"
+        },
+        {
+          "name": "crosshair",
+          "type": "boolean",
+          "kind": "boolean"
+        },
+        {
+          "name": "onPointClick",
+          "type": "(point: CounterClockPoint) => void",
+          "kind": "function"
+        },
+        {
+          "name": "theme",
+          "type": "ThemeName | Theme",
+          "doc": "The chart's colours: `'dark'` (the default), `'light'`, or a theme of your own."
+        },
+        {
+          "name": "font",
+          "type": "Partial<FontConfig>",
+          "doc": "The face and sizes of the chart's text, over the theme's. Left out, the figures are in the system's sans face (`SANS_FONT_FAMILY`), as the widget's are; `{ family: DEFAULT_FONT_FAMILY }` gives the monospaced one. A theme of your own with a face of its own keeps that face."
+        },
+        {
+          "name": "locale",
+          "type": "string",
+          "doc": "The language numbers and dates are written in, as a BCP 47 tag (`'vi'`, `'de-DE'`): the grouping and decimal marks, the short forms past ten thousand, the names of months and days. The browser's own when left out. A format function of yours (`valueFormat`…) is used as it is.",
+          "kind": "string"
+        },
+        {
+          "name": "ariaLabel",
+          "type": "string",
+          "doc": "What the chart shows, for screen readers; every chart describes itself (in English) without one.",
+          "kind": "string"
+        }
+      ]
+    },
+    {
+      "name": "DepthChart",
+      "what": "An order book's cumulative volume either side of the middle price.",
+      "options": [
+        {
+          "name": "data",
+          "type": "DepthData",
+          "required": true
+        },
+        {
+          "name": "bidColor",
+          "type": "string",
+          "kind": "string"
+        },
+        {
+          "name": "askColor",
+          "type": "string",
+          "kind": "string"
+        },
+        {
+          "name": "bidFillColor",
+          "type": "string",
+          "kind": "string"
+        },
+        {
+          "name": "askFillColor",
+          "type": "string",
+          "kind": "string"
+        },
+        {
+          "name": "midPriceLine",
+          "type": "boolean",
+          "kind": "boolean"
+        },
+        {
+          "name": "spreadLabel",
+          "type": "boolean | string",
+          "doc": "The spread written over the middle price: `false` for none, a word of your own in place of \"Spread\"."
+        },
+        {
+          "name": "crosshair",
+          "type": "boolean",
+          "kind": "boolean"
+        },
+        {
+          "name": "priceFormat",
+          "type": "(price: number) => string",
+          "kind": "function"
+        },
+        {
+          "name": "volumeFormat",
+          "type": "(vol: number) => string",
+          "kind": "function"
+        },
+        {
+          "name": "theme",
+          "type": "ThemeName | Theme",
+          "doc": "The chart's colours: `'dark'` (the default), `'light'`, or a theme of your own."
+        },
+        {
+          "name": "font",
+          "type": "Partial<FontConfig>",
+          "doc": "The face and sizes of the chart's text, over the theme's. Left out, the figures are in the system's sans face (`SANS_FONT_FAMILY`), as the widget's are; `{ family: DEFAULT_FONT_FAMILY }` gives the monospaced one. A theme of your own with a face of its own keeps that face."
+        },
+        {
+          "name": "locale",
+          "type": "string",
+          "doc": "The language numbers and dates are written in, as a BCP 47 tag (`'vi'`, `'de-DE'`): the grouping and decimal marks, the short forms past ten thousand, the names of months and days. The browser's own when left out. A format function of yours (`valueFormat`…) is used as it is.",
+          "kind": "string"
+        },
+        {
+          "name": "ariaLabel",
+          "type": "string",
+          "doc": "What the chart shows, for screen readers; every chart describes itself (in English) without one.",
+          "kind": "string"
+        }
+      ]
+    },
+    {
+      "name": "EquityCurveChart",
+      "what": "A value over time, its falls from a peak shaded, against a benchmark: an account's or a strategy's equity.",
+      "options": [
+        {
+          "name": "data",
+          "type": "EquityPoint[]",
+          "required": true
+        },
+        {
+          "name": "drawdown",
+          "type": "boolean",
+          "kind": "boolean"
+        },
+        {
+          "name": "drawdownColor",
+          "type": "string",
+          "kind": "string"
+        },
+        {
+          "name": "lineColor",
+          "type": "string",
+          "kind": "string"
+        },
+        {
+          "name": "lineWidth",
+          "type": "number",
+          "kind": "number"
+        },
+        {
+          "name": "benchmark",
+          "type": "EquityPoint[]"
+        },
+        {
+          "name": "benchmarkColor",
+          "type": "string",
+          "kind": "string"
+        },
+        {
+          "name": "benchmarkLabel",
+          "type": "string",
+          "kind": "string"
+        },
+        {
+          "name": "crosshair",
+          "type": "boolean",
+          "kind": "boolean"
+        },
+        {
+          "name": "timeFormat",
+          "type": "(ts: number) => string",
+          "kind": "function"
+        },
+        {
+          "name": "valueFormat",
+          "type": "(val: number) => string",
+          "kind": "function"
+        },
+        {
+          "name": "fillArea",
+          "type": "boolean",
+          "kind": "boolean"
+        },
+        {
+          "name": "theme",
+          "type": "ThemeName | Theme",
+          "doc": "The chart's colours: `'dark'` (the default), `'light'`, or a theme of your own."
+        },
+        {
+          "name": "font",
+          "type": "Partial<FontConfig>",
+          "doc": "The face and sizes of the chart's text, over the theme's. Left out, the figures are in the system's sans face (`SANS_FONT_FAMILY`), as the widget's are; `{ family: DEFAULT_FONT_FAMILY }` gives the monospaced one. A theme of your own with a face of its own keeps that face."
+        },
+        {
+          "name": "locale",
+          "type": "string",
+          "doc": "The language numbers and dates are written in, as a BCP 47 tag (`'vi'`, `'de-DE'`): the grouping and decimal marks, the short forms past ten thousand, the names of months and days. The browser's own when left out. A format function of yours (`valueFormat`…) is used as it is.",
+          "kind": "string"
+        },
+        {
+          "name": "ariaLabel",
+          "type": "string",
+          "doc": "What the chart shows, for screen readers; every chart describes itself (in English) without one.",
+          "kind": "string"
+        }
+      ]
+    },
+    {
+      "name": "WaterfallChart",
+      "what": "Steps up and down to a total: a P&L bridge.",
+      "options": [
+        {
+          "name": "data",
+          "type": "WaterfallBar[]",
+          "required": true
+        },
+        {
+          "name": "positiveColor",
+          "type": "string",
+          "kind": "string"
+        },
+        {
+          "name": "negativeColor",
+          "type": "string",
+          "kind": "string"
+        },
+        {
+          "name": "totalColor",
+          "type": "string",
+          "kind": "string"
+        },
+        {
+          "name": "subtotalColor",
+          "type": "string",
+          "kind": "string"
+        },
+        {
+          "name": "connectorColor",
+          "type": "string",
+          "kind": "string"
+        },
+        {
+          "name": "connectorStyle",
+          "type": "'dashed' | 'solid' | 'none'",
+          "values": [
+            "dashed",
+            "solid",
+            "none"
+          ]
+        },
+        {
+          "name": "barWidth",
+          "type": "number",
+          "kind": "number"
+        },
+        {
+          "name": "showValues",
+          "type": "boolean",
+          "kind": "boolean"
+        },
+        {
+          "name": "showDelta",
+          "type": "boolean",
+          "kind": "boolean"
+        },
+        {
+          "name": "valueFormat",
+          "type": "(v: number) => string",
+          "kind": "function"
+        },
+        {
+          "name": "labelFormat",
+          "type": "(label: string) => string",
+          "kind": "function"
+        },
+        {
+          "name": "crosshair",
+          "type": "boolean",
+          "kind": "boolean"
+        },
+        {
+          "name": "theme",
+          "type": "ThemeName | Theme",
+          "doc": "The chart's colours: `'dark'` (the default), `'light'`, or a theme of your own."
+        },
+        {
+          "name": "font",
+          "type": "Partial<FontConfig>",
+          "doc": "The face and sizes of the chart's text, over the theme's. Left out, the figures are in the system's sans face (`SANS_FONT_FAMILY`), as the widget's are; `{ family: DEFAULT_FONT_FAMILY }` gives the monospaced one. A theme of your own with a face of its own keeps that face."
+        },
+        {
+          "name": "locale",
+          "type": "string",
+          "doc": "The language numbers and dates are written in, as a BCP 47 tag (`'vi'`, `'de-DE'`): the grouping and decimal marks, the short forms past ten thousand, the names of months and days. The browser's own when left out. A format function of yours (`valueFormat`…) is used as it is.",
+          "kind": "string"
+        },
+        {
+          "name": "ariaLabel",
+          "type": "string",
+          "doc": "What the chart shows, for screen readers; every chart describes itself (in English) without one.",
+          "kind": "string"
+        }
+      ]
+    },
+    {
+      "name": "GaugeChart",
+      "what": "One value against coloured bands: sentiment, risk, margin use.",
+      "options": [
+        {
+          "name": "value",
+          "type": "number",
+          "required": true,
+          "kind": "number"
+        },
+        {
+          "name": "min",
+          "type": "number",
+          "kind": "number"
+        },
+        {
+          "name": "max",
+          "type": "number",
+          "kind": "number"
+        },
+        {
+          "name": "zones",
+          "type": "GaugeZone[]",
+          "doc": "Coloured bands; the part below the value is drawn bright, the rest dimmed."
+        },
+        {
+          "name": "thickness",
+          "type": "number",
+          "doc": "Ring width as a share of the radius. Default `0.14`.",
+          "kind": "number"
+        },
+        {
+          "name": "startAngle",
+          "type": "number",
+          "doc": "Arc start in degrees, clockwise from 3 o'clock. Default `150` (a 240° sweep open at the bottom).",
+          "kind": "number"
+        },
+        {
+          "name": "endAngle",
+          "type": "number",
+          "doc": "Arc end in degrees. Default `390`.",
+          "kind": "number"
+        },
+        {
+          "name": "showValue",
+          "type": "boolean",
+          "kind": "boolean"
+        },
+        {
+          "name": "showZoneLabels",
+          "type": "boolean",
+          "kind": "boolean"
+        },
+        {
+          "name": "label",
+          "type": "string",
+          "kind": "string"
+        },
+        {
+          "name": "valueFormat",
+          "type": "(v: number) => string",
+          "kind": "function"
+        },
+        {
+          "name": "pointer",
+          "type": "'marker' | 'needle'",
+          "doc": "How the value is pointed at: `'marker'` (default) rides a knob on the ring and keeps the centre free for the number; `'needle'` draws a classic needle from a hub, with the number moved below it.",
+          "values": [
+            "marker",
+            "needle"
+          ]
+        },
+        {
+          "name": "needleColor",
+          "type": "string",
+          "doc": "Needle colour (`pointer: 'needle'`); without zones, also the progress colour.",
+          "kind": "string"
+        },
+        {
+          "name": "trackColor",
+          "type": "string",
+          "kind": "string"
+        },
+        {
+          "name": "animate",
+          "type": "boolean",
+          "kind": "boolean"
+        },
+        {
+          "name": "animationDuration",
+          "type": "number",
+          "kind": "number"
+        },
+        {
+          "name": "theme",
+          "type": "ThemeName | Theme",
+          "doc": "The chart's colours: `'dark'` (the default), `'light'`, or a theme of your own."
+        },
+        {
+          "name": "font",
+          "type": "Partial<FontConfig>",
+          "doc": "The face and sizes of the chart's text, over the theme's. Left out, the figures are in the system's sans face (`SANS_FONT_FAMILY`), as the widget's are; `{ family: DEFAULT_FONT_FAMILY }` gives the monospaced one. A theme of your own with a face of its own keeps that face."
+        },
+        {
+          "name": "locale",
+          "type": "string",
+          "doc": "The language numbers and dates are written in, as a BCP 47 tag (`'vi'`, `'de-DE'`): the grouping and decimal marks, the short forms past ten thousand, the names of months and days. The browser's own when left out. A format function of yours (`valueFormat`…) is used as it is.",
+          "kind": "string"
+        },
+        {
+          "name": "ariaLabel",
+          "type": "string",
+          "doc": "What the chart shows, for screen readers; every chart describes itself (in English) without one.",
+          "kind": "string"
+        }
+      ]
+    },
+    {
+      "name": "SparklineChart",
+      "what": "A small line with no axes: a table cell's trend.",
+      "options": [
+        {
+          "name": "data",
+          "type": "number[]",
+          "required": true
+        },
+        {
+          "name": "mode",
+          "type": "'line' | 'area'",
+          "values": [
+            "line",
+            "area"
+          ]
+        },
+        {
+          "name": "color",
+          "type": "string",
+          "kind": "string"
+        },
+        {
+          "name": "fillColor",
+          "type": "string",
+          "kind": "string"
+        },
+        {
+          "name": "lineWidth",
+          "type": "number",
+          "kind": "number"
+        },
+        {
+          "name": "showLastPoint",
+          "type": "boolean",
+          "kind": "boolean"
+        },
+        {
+          "name": "showMinMax",
+          "type": "boolean",
+          "kind": "boolean"
+        },
+        {
+          "name": "lastPointColor",
+          "type": "string",
+          "kind": "string"
+        },
+        {
+          "name": "minPointColor",
+          "type": "string",
+          "kind": "string"
+        },
+        {
+          "name": "maxPointColor",
+          "type": "string",
+          "kind": "string"
+        },
+        {
+          "name": "theme",
+          "type": "ThemeName | Theme",
+          "doc": "The chart's colours: `'dark'` (the default), `'light'`, or a theme of your own."
+        },
+        {
+          "name": "font",
+          "type": "Partial<FontConfig>",
+          "doc": "The face and sizes of the chart's text, over the theme's. Left out, the figures are in the system's sans face (`SANS_FONT_FAMILY`), as the widget's are; `{ family: DEFAULT_FONT_FAMILY }` gives the monospaced one. A theme of your own with a face of its own keeps that face."
+        },
+        {
+          "name": "locale",
+          "type": "string",
+          "doc": "The language numbers and dates are written in, as a BCP 47 tag (`'vi'`, `'de-DE'`): the grouping and decimal marks, the short forms past ten thousand, the names of months and days. The browser's own when left out. A format function of yours (`valueFormat`…) is used as it is.",
+          "kind": "string"
+        },
+        {
+          "name": "ariaLabel",
+          "type": "string",
+          "doc": "What the chart shows, for screen readers; every chart describes itself (in English) without one.",
+          "kind": "string"
+        }
+      ]
+    },
+    {
+      "name": "PerformanceDashboard",
+      "what": "A backtest's result as a page: stats, the equity curve, drawdown and monthly returns.",
+      "options": [
+        {
+          "name": "result",
+          "type": "PerformanceResult",
+          "required": true
+        },
+        {
+          "name": "theme",
+          "type": "ThemeName | Theme"
+        },
+        {
+          "name": "title",
+          "type": "string",
+          "kind": "string"
+        },
+        {
+          "name": "subtitle",
+          "type": "string",
+          "kind": "string"
+        },
+        {
+          "name": "font",
+          "type": "Partial<FontConfig>",
+          "doc": "The face and sizes of the dashboard's text, as on the finance charts: the system's sans face when left out."
+        },
+        {
+          "name": "locale",
+          "type": "string",
+          "doc": "The language of the months' names and of the charts' numbers and dates (a BCP 47 tag); the browser's when left out.",
+          "kind": "string"
+        },
+        {
+          "name": "labels",
+          "type": "Partial<DashboardLabels>",
+          "doc": "The panels' titles and the stats' names in your words; those left out stay in English."
+        }
+      ]
+    }
+  ]
 }

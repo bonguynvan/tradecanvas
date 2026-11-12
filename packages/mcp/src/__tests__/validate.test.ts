@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { validateOptions } from '../validate.js';
+import { validateFinanceOptions, validateOptions } from '../validate.js';
 
 const problems = (target: 'ChartWidget' | 'Chart' | 'ChartWidgetGrid', options: unknown) =>
   validateOptions(target, options).problems;
@@ -153,5 +153,63 @@ describe('validateOptions', () => {
   it('turns away what is not an options object', () => {
     expect(problems('Chart', null)[0].path).toBe('');
     expect(problems('Chart', [1, 2])[0].message).toMatch(/object/);
+  });
+});
+
+describe('validateFinanceOptions', () => {
+  const check = async (chart: string, options: unknown) => validateFinanceOptions(chart, options);
+
+  it('passes options a finance chart takes', async () => {
+    expect(await check('BarChart', { categories: ['Mon'], series: [{ name: 'Net', values: [1] }], mode: 'stacked', theme: 'light', locale: 'vi', font: { family: 'Tahoma' } }))
+      .toEqual({ valid: true, problems: [], notes: [] });
+    expect(await check('DepthChart', { data: { bids: [], asks: [] }, spreadLabel: 'Spread', crosshair: false })).toMatchObject({ valid: true });
+    expect(await check('GaugeChart', { value: 62, pointer: 'needle' })).toMatchObject({ valid: true });
+  });
+
+  it('names an unknown option and the one that was meant, with no word of another entry point', async () => {
+    const result = (await check('EquityCurveChart', { data: [], benchmarkLable: 'Index', symbol: 'BTCUSDT' }))!;
+    expect(result.problems.map((p) => p.path)).toEqual(['benchmarkLable', 'symbol']);
+    expect(result.problems[0].suggestion).toBe('benchmarkLabel');
+    // `symbol` is ChartWidget's, which has nothing to do with a finance chart: no hint that sends it there.
+    expect(result.problems[1].message).toBe("Unknown option 'symbol' for EquityCurveChart.");
+  });
+
+  it('says which value a choice takes, and what a plain option is', async () => {
+    const result = (await check('BarChart', { categories: [], series: [], mode: 'stack', showValues: 'yes', theme: 'blue' }))!;
+    const byPath = Object.fromEntries(result.problems.map((p) => [p.path, p]));
+    expect(byPath.mode.suggestion).toBe('stacked');
+    expect(byPath.showValues.message).toContain('boolean');
+    expect(byPath.theme).toBeDefined();
+  });
+
+  it('says what a chart cannot be made without', async () => {
+    expect((await check('BarChart', { series: [] }))!.problems.map((p) => p.message)).toEqual(["BarChart needs 'categories'."]);
+    expect((await check('GaugeChart', {}))!.problems.map((p) => p.message)).toEqual(["GaugeChart needs 'value'."]);
+    expect((await check('WaterfallChart', {}))!.problems.map((p) => p.message)).toEqual(["WaterfallChart needs 'data'."]);
+    expect((await check('PerformanceDashboard', { title: 'Run' }))!.problems.map((p) => p.message)).toEqual(["PerformanceDashboard needs 'result'."]);
+    expect((await check('MatrixChart', { values: null }))!.problems.map((p) => p.message)).toEqual(["MatrixChart needs 'rows'.", "MatrixChart needs 'values'."]);
+    // Read from the declarations, for every chart: each needs something, and nothing optional is asked for.
+    const { CATALOG } = await import('../catalog.js');
+    for (const chart of CATALOG.financeCharts) {
+      const needed = chart.options.filter((o) => o.required).map((o) => o.name);
+      expect(needed.length, chart.name).toBeGreaterThan(0);
+      expect(needed, chart.name).not.toContain('theme');
+      expect((await check(chart.name, {}))!.problems.map((p) => p.path)).toEqual(needed);
+    }
+  });
+
+  it('says when a locale is no language tag', async () => {
+    const data = { categories: [], series: [] };
+    expect((await check('BarChart', { ...data, locale: 'xx_invalid' }))!.problems.map((p) => p.path)).toEqual(['locale']);
+    expect((await check('BarChart', { ...data, locale: '' }))!.valid).toBe(false);
+    expect((await check('BarChart', { ...data, locale: 'vi' }))!.valid).toBe(true);
+    expect((await check('CalendarChart', { data: [], locale: 'de-DE' }))!.valid).toBe(true);
+  });
+
+  it('knows no chart by another name, and leaves the three entry points as they were', async () => {
+    expect(await check('PieChart', {})).toBeNull();
+    // A finance chart's option on the widget is unknown there, and is not sent to a chart it has nothing to do with.
+    const [problem] = validateOptions('ChartWidget', { benchmarkLabel: 'Index' }).problems;
+    expect(problem.message).toBe("Unknown option 'benchmarkLabel' for ChartWidget.");
   });
 });

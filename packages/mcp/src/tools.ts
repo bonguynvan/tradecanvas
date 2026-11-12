@@ -1,6 +1,6 @@
 import { CATALOG, TARGETS, type Catalog, type IndicatorEntry, type OptionEntry, type Target } from './catalog.js';
 import { closest } from './similar.js';
-import { validateOptions } from './validate.js';
+import { validateFinanceOptions, validateOptions } from './validate.js';
 
 /** What a tool answers: data for clients that read structured content, and the same as text for the rest. */
 export interface ToolResult {
@@ -31,11 +31,29 @@ function matches(query: string | undefined, ...fields: string[]): boolean {
   return query.toLowerCase().split(/\s+/).every((word) => haystack.includes(word));
 }
 
-const TARGET_SCHEMA = { type: 'string', enum: [...TARGETS], description: 'The entry point: ChartWidget (the full trading UI), Chart (the headless chart) or ChartWidgetGrid (several charts).' };
+const FINANCE_NAMES = CATALOG.financeCharts.map((c) => c.name);
+const TARGET_SCHEMA = {
+  type: 'string',
+  enum: [...TARGETS, ...FINANCE_NAMES],
+  description: 'The entry point: ChartWidget (the full trading UI), Chart (the headless chart), ChartWidgetGrid (several charts), or a finance chart by its class name (list_finance_charts names them).',
+};
+
+/** The one finance class that is a page of charts, not a chart: it has no `setOptions` and takes no `ariaLabel`. */
+const DASHBOARD = 'PerformanceDashboard';
+
+/** How to make a finance chart, with its real class name and the methods it has. */
+const financeUsage = (name: string): string =>
+  name === DASHBOARD
+    ? `import { ${name} } from '@tradecanvas/chart';\nconst dashboard = new ${name}(element, options); // builds its panels in the element; dashboard.update(result), dashboard.setTheme('light'), dashboard.destroy()`
+    : `import { ${name} } from '@tradecanvas/chart';\nconst chart = new ${name}(element, options); // fills the element; chart.setOptions({...}), chart.setTheme('light'), chart.destroy()`;
 
 function targetOf(args: Record<string, unknown>): Target | null {
   return TARGETS.includes(args.target as Target) ? (args.target as Target) : null;
 }
+
+/** What to say of a target that is none of the names. */
+const noTarget = (catalog: Catalog): string =>
+  `'target' is one of ${TARGETS.join(', ')}, or a finance chart: ${catalog.financeCharts.map((c) => c.name).join(', ')}.`;
 
 /** The indicators a name means: its id exactly, else every one it is the id, short name or name of (case aside). */
 function findIndicators(catalog: Catalog, wanted: string): IndicatorEntry[] {
@@ -148,9 +166,28 @@ export const TOOLS: readonly ToolDefinition[] = [
     },
   },
   {
+    name: 'list_finance_charts',
+    title: 'List the finance charts',
+    description: 'Lists the charts of @tradecanvas/chart that are not the trading chart: bars, donut, scatter, histogram, calendar, correlation matrix, heatmap and sector map, depth, equity curve, waterfall, gauge, sparkline, and a backtest dashboard. Each with its class name and what it is for; list_options with that name gives its options. Search by words of the name or the purpose.',
+    inputSchema: {
+      type: 'object',
+      properties: { query: { type: 'string', description: 'Words to find in the name or the purpose, e.g. "order book" or "returns".' } },
+      additionalProperties: false,
+    },
+    run(args, catalog) {
+      const query = text(args, 'query');
+      const charts = catalog.financeCharts.filter((c) => matches(query, c.name, c.what)).map((c) => ({ name: c.name, what: c.what, options: c.options.map((o) => o.name) }));
+      return ok({
+        count: charts.length,
+        charts,
+        usage: "import { BarChart } from '@tradecanvas/chart';\nconst chart = new BarChart(element, { categories: ['Mon', 'Tue'], series: [{ name: 'Net', values: [120, -80] }] }); // fills the element\n// Every one takes theme, font and locale, and has setTheme and destroy. The charts also take ariaLabel and have setOptions; PerformanceDashboard has update(result) instead.",
+      });
+    },
+  },
+  {
     name: 'list_options',
     title: 'List the options of an entry point',
-    description: 'Lists the options that new ChartWidget(el, options), new Chart(el, options) or new ChartWidgetGrid(el, options) take: each name, its TypeScript type, its doc, and the values it allows where it allows only some. Search by words of the name or doc.',
+    description: 'Lists the options that new ChartWidget(el, options), new Chart(el, options), new ChartWidgetGrid(el, options) or a finance chart (new BarChart(el, options)…) take: each name, its TypeScript type, its doc, and the values it allows where it allows only some. Search by words of the name or doc.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -161,9 +198,14 @@ export const TOOLS: readonly ToolDefinition[] = [
       additionalProperties: false,
     },
     run(args, catalog) {
-      const target = targetOf(args);
-      if (!target) return fail(`'target' is one of ${TARGETS.join(', ')}.`);
+      const finance = catalog.financeCharts.find((c) => c.name === args.target);
       const query = text(args, 'query');
+      if (finance) {
+        const found = finance.options.filter((o) => matches(query, o.name, o.doc ?? ''));
+        return ok({ target: finance.name, what: finance.what, count: found.length, options: found, usage: financeUsage(finance.name) });
+      }
+      const target = targetOf(args);
+      if (!target) return fail(noTarget(catalog));
       const options = catalog.options[target]
         .filter((o) => matches(query, o.name, o.doc ?? ''))
         .map((o) => withKnownValues(catalog, o));
@@ -205,7 +247,7 @@ export const TOOLS: readonly ToolDefinition[] = [
   {
     name: 'validate_options',
     title: 'Check an options object',
-    description: 'Checks an options object before it goes to new ChartWidget, new Chart or new ChartWidgetGrid: unknown option names (with the one likely meant, and where an option of another entry point belongs), values outside the allowed ones, numbers given as strings, intervals, feature switch names, style override keys and values, and languages, nested options included. Write functions and adapters as strings; they pass.',
+    description: 'Checks an options object before it goes to new ChartWidget, new Chart, new ChartWidgetGrid or a finance chart (by its class name): unknown option names (with the one likely meant, and where an option of another entry point belongs), values outside the allowed ones, numbers given as strings, intervals, feature switch names, style override keys and values, and languages, nested options included. Write functions and adapters as strings; they pass.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -218,8 +260,8 @@ export const TOOLS: readonly ToolDefinition[] = [
     },
     run(args, catalog) {
       const target = targetOf(args);
-      if (!target) return fail(`'target' is one of ${TARGETS.join(', ')}.`);
-      const result = validateOptions(target, args.options, catalog);
+      const result = target ? validateOptions(target, args.options, catalog) : typeof args.target === 'string' ? validateFinanceOptions(args.target, args.options, catalog) : null;
+      if (!result) return fail(noTarget(catalog));
       const lines = result.valid ? ['No problems found.'] : result.problems.map((p) => `- ${p.path || '(options)'}: ${p.message}${p.suggestion ? ` Did you mean '${p.suggestion}'?` : ''}`);
       return { text: [...lines, ...result.notes.map((n) => `Note: ${n}`)].join('\n'), data: result };
     },

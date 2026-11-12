@@ -84,7 +84,7 @@ chart.addIndicator('sma', { period: 20 })`}</code></pre>
 <p>Los agentes de programación pueden aprender TradeCanvas en lugar de adivinarlo. La <strong>skill para agentes</strong> enseña la API con ejemplos cuyos tipos se comprueban; en Claude Code se instala con dos comandos:</p>
 <pre><code>{`/plugin marketplace add bonguynvan/tradecanvas
 /plugin install tradecanvas@tradecanvas`}</code></pre>
-<p>El <strong>servidor MCP</strong>, <code>@tradecanvas/mcp</code>, responde con el propio catálogo de la biblioteca: los ids de los indicadores, sus parámetros y las claves de sus líneas; las herramientas de dibujo y los puntos que pide cada una; las opciones de <code>ChartWidget</code>, <code>Chart</code> y <code>ChartWidgetGrid</code>; los interruptores de funciones y las claves de estilo. Su herramienta <code>validate_options</code> revisa un objeto de opciones antes de usarlo y nombra la opción que se quería escribir. En Claude Code:</p>
+<p>El <strong>servidor MCP</strong>, <code>@tradecanvas/mcp</code>, responde con el propio catálogo de la biblioteca: los ids de los indicadores, sus parámetros y las claves de sus líneas; las herramientas de dibujo y los puntos que pide cada una; las opciones de <code>ChartWidget</code>, <code>Chart</code> y <code>ChartWidgetGrid</code>, y de los gráficos financieros; los interruptores de funciones y las claves de estilo. Su herramienta <code>validate_options</code> revisa un objeto de opciones antes de usarlo y nombra la opción que se quería escribir. En Claude Code:</p>
 <pre><code>{`claude mcp add tradecanvas -- npx -y @tradecanvas/mcp`}</code></pre>
 <p>Cursor, Claude Desktop y la mayoría de los demás clientes aceptan el mismo comando en su configuración MCP:</p>
 <pre><code>{`{

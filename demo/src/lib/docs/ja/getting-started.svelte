@@ -80,7 +80,7 @@ chart.addIndicator('sma', { period: 20 })`}</code></pre>
 <p>コーディングエージェントは TradeCanvas を推測せずに学べます。<strong>エージェントスキル</strong>は型チェック済みのサンプルで API を教えます。Claude Code では 2 つのコマンドでインストールできます:</p>
 <pre><code>{`/plugin marketplace add bonguynvan/tradecanvas
 /plugin install tradecanvas@tradecanvas`}</code></pre>
-<p><strong>MCP サーバー</strong> <code>@tradecanvas/mcp</code> はライブラリ自身のカタログから答えます: インジケーターの id、パラメーター、各ラインのキー。描画ツールとそれぞれに必要な点の数。<code>ChartWidget</code>、<code>Chart</code>、<code>ChartWidgetGrid</code> のオプション。機能スイッチとスタイルキー。<code>validate_options</code> ツールは使う前にオプションのオブジェクトを確かめ、本来書くつもりだったオプションを示します。Claude Code では:</p>
+<p><strong>MCP サーバー</strong> <code>@tradecanvas/mcp</code> はライブラリ自身のカタログから答えます: インジケーターの id、パラメーター、各ラインのキー。描画ツールとそれぞれに必要な点の数。<code>ChartWidget</code>、<code>Chart</code>、<code>ChartWidgetGrid</code> と各ファイナンスチャートのオプション。機能スイッチとスタイルキー。<code>validate_options</code> ツールは使う前にオプションのオブジェクトを確かめ、本来書くつもりだったオプションを示します。Claude Code では:</p>
 <pre><code>{`claude mcp add tradecanvas -- npx -y @tradecanvas/mcp`}</code></pre>
 <p>Cursor、Claude Desktop など多くのクライアントは、MCP の設定に同じコマンドを書きます:</p>
 <pre><code>{`{

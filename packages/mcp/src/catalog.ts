@@ -48,6 +48,8 @@ export interface OptionEntry {
   name: string;
   /** The type as written in the declaration. */
   type: string;
+  /** Declared without a `?`: the entry point cannot be made without it. */
+  required?: boolean;
   doc?: string;
   /** The only values it takes, when its type is a union of strings or numbers. */
   values?: (string | number)[];
@@ -65,6 +67,15 @@ export interface OptionEntry {
 export type Target = 'ChartWidget' | 'Chart' | 'ChartWidgetGrid';
 export const TARGETS: readonly Target[] = ['ChartWidget', 'Chart', 'ChartWidgetGrid'];
 
+/** A finance chart of @tradecanvas/chart: `new <name>(element, options)`. */
+export interface FinanceChartEntry {
+  /** The class's name. */
+  name: string;
+  /** What it is for, in a line. */
+  what: string;
+  options: OptionEntry[];
+}
+
 export interface Catalog {
   indicators: IndicatorEntry[];
   drawingTools: DrawingToolEntry[];
@@ -79,6 +90,8 @@ export interface Catalog {
   options: Record<Target, OptionEntry[]>;
   /** Nested option objects, by `<entry>.<option>`: `Chart.features`. */
   nested: Record<string, OptionEntry[]>;
+  /** The finance charts (bars, donut, depth, equity curve…) and the dashboard, each with its options. */
+  financeCharts: FinanceChartEntry[];
 }
 
 /** Generated from the code by scripts/gen-ai-docs.mjs. */
