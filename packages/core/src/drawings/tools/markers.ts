@@ -2,7 +2,7 @@ import type { DrawingDescriptor, DrawingState, Point, ViewportState } from '@tra
 import { DrawingBase } from '../DrawingBase.js';
 import { resolveAnnotationText, TextAnnotationTool } from './TextAnnotation.js';
 import { NoteTool } from './annotations.js';
-import { BoxCache, drawTextBox, inRect, measureTextBox, textLook, type Rect, type TextBoxLook } from './textBox.js';
+import { BUBBLE_RADIUS, BoxCache, drawTextBox, inRect, measureTextBox, tailedBox, textLook, type Rect, type TextBoxLook } from './textBox.js';
 import { textSize } from '../drawingLook.js';
 
 /** Widest a signpost's or a balloon's text runs before it wraps (px). */
@@ -22,36 +22,9 @@ function tailFor(boxHeight: number): { length: number; half: number } {
   return { length, half: Math.round(length * TAIL_SPREAD) };
 }
 
-/**
- * A bubble's outline with its tail in it, one path round both, clockwise
- * from the top-left corner: filled and outlined at once, no seam where the
- * tail leaves the bubble. The tail's foot keeps clear of the round corners.
- */
-function balloonOutline(tip: Point, half: number, below: boolean) {
-  return (ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number): void => {
-    const right = x + w;
-    const bottom = y + h;
-    const first = x + r + half;
-    const last = right - r - half;
-    const mid = first <= last ? Math.max(first, Math.min(tip.x, last)) : (x + right) / 2;
-    const tail = (edge: number, from: number, to: number) => {
-      ctx.lineTo(mid + from, edge);
-      ctx.lineTo(tip.x, tip.y);
-      ctx.lineTo(mid + to, edge);
-    };
-    ctx.moveTo(x + r, y);
-    if (below) tail(y, -half, half);
-    ctx.arcTo(right, y, right, bottom, r);
-    ctx.arcTo(right, bottom, x, bottom, r);
-    if (!below) tail(bottom, half, -half);
-    ctx.arcTo(x, bottom, x, y, r);
-    ctx.arcTo(x, y, right, y, r);
-    ctx.closePath();
-  };
-}
-
+/** A signpost's or a balloon's text: in a bubble of its colour, wrapped at `MARKER_WIDTH`. */
 function markerLook(state: DrawingState): TextBoxLook {
-  return textLook(state.style, { box: true, border: true, width: MARKER_WIDTH, fill: true });
+  return { ...textLook(state.style, { box: true, border: true, width: MARKER_WIDTH, fill: true, solid: true }), radius: BUBBLE_RADIUS };
 }
 
 /**
@@ -130,7 +103,7 @@ export class BalloonTool extends DrawingBase {
     const tail = tailFor(size.height);
     const box = markerBox(p, size, tail.length, viewport);
     // The tail in the bubble's own outline, from its edge nearest the point (its foot, or its top when it hangs under).
-    const outlined = { ...look, traceBox: balloonOutline(p, tail.half, box.below) };
+    const outlined = { ...look, traceBox: tailedBox(p, tail.half) };
     this.boxes.set(state.id, drawTextBox(ctx, text, box.x, box.y, outlined));
     if (selected) this.renderAnchorHandles(ctx, state, viewport);
   }

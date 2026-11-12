@@ -19,6 +19,8 @@ export interface InlineTextTarget {
   color: string;
   /** What a screen reader hears the box called. */
   label: string;
+  /** What the empty box shows, greyed: the tool's name, as the chart writes it in a text with no words. */
+  placeholder?: string;
   /** Each change, to show on the chart as it is typed. */
   onInput: (text: string) => void;
   /** Enter, or the focus gone (a click elsewhere): the words as typed. */
@@ -36,6 +38,14 @@ const PAD_Y = 6;
 const LINE_GAP = 1.3;
 /** Narrowest the box gets, so a short word has room to grow. */
 const MIN_WIDTH = 120;
+/** The box's own border, px: it sits outside the text's box, so the words stay where the chart drew them. */
+const BORDER = 1;
+/**
+ * Room past the text's box, px: the page's letters run a little wider or
+ * narrower than the canvas's, and a line that just fits on the chart must not
+ * wrap while it is typed.
+ */
+const WIDTH_SLACK = 4;
 /** The key code a browser gives a key that ends an IME composition (Safari's Enter on a candidate). */
 const IME_KEY_CODE = 229;
 /**
@@ -99,6 +109,7 @@ export class WidgetInlineText {
     area.rows = 1;
     area.spellcheck = false;
     area.setAttribute('aria-label', target.label);
+    if (target.placeholder) area.placeholder = target.placeholder;
     const { size, bold, italic, family } = target.font;
     Object.assign(area.style, {
       fontSize: `${size}px`,
@@ -113,6 +124,10 @@ export class WidgetInlineText {
       this.fit();
       this.target?.onInput(area.value);
       const rect = this.target?.rect();
+      if (rect) this.place(rect);
+      // Its width follows the text's box, which just grew or shrank: as tall as its lines at that width,
+      // and placed again at that height, so a line more by the window's foot stays on it.
+      this.fit();
       if (rect) this.place(rect);
     });
     area.addEventListener('keydown', (e) => {
@@ -190,12 +205,13 @@ export class WidgetInlineText {
     const room = Math.max(MIN_WIDTH, window.innerWidth - EDGE * 2);
     area.style.maxWidth = `${room}px`;
     // As wide as the text's box, so the words wrap where the chart wraps them.
-    area.style.width = `${Math.min(room, Math.max(MIN_WIDTH, rect.width))}px`;
-    area.style.minHeight = `${rect.height}px`;
-    const width = area.offsetWidth || Math.max(MIN_WIDTH, rect.width);
-    const height = area.offsetHeight || rect.height;
-    area.style.left = `${Math.max(EDGE, Math.min(rect.x, window.innerWidth - EDGE - width))}px`;
-    area.style.top = `${Math.max(EDGE, Math.min(rect.y, window.innerHeight - EDGE - height))}px`;
+    const wanted = Math.max(MIN_WIDTH, rect.width + BORDER * 2 + WIDTH_SLACK);
+    area.style.width = `${Math.min(room, wanted)}px`;
+    area.style.minHeight = `${rect.height + BORDER * 2}px`;
+    const width = area.offsetWidth || wanted;
+    const height = area.offsetHeight || rect.height + BORDER * 2;
+    area.style.left = `${Math.max(EDGE, Math.min(rect.x - BORDER, window.innerWidth - EDGE - width))}px`;
+    area.style.top = `${Math.max(EDGE, Math.min(rect.y - BORDER, window.innerHeight - EDGE - height))}px`;
   }
 
   /** Whether a box is wholly off the window (scrolled away, another interval). */

@@ -127,7 +127,7 @@ describe('a callout by the plot’s edge', () => {
   const text = 'A rather long callout text';
   const width = text.length * 6;
 
-  it('keeps its box on the plot, its leader running to where the box went', () => {
+  it('keeps its box on the plot, its tail leaving the box where it went', () => {
     setDrawingPlot(unitViewport.chartRect);
     const tool = new CalloutTool();
     const state = drawing('callout', [{ time: 80, price: 20 }, { time: 95, price: 80 }], { style: { ...style, text } });
@@ -136,9 +136,13 @@ describe('a callout by the plot’s edge', () => {
     expect(inked[0].x + width).toBeLessThanOrEqual(1000);
     const box = tool.textBox(state)!;
     expect(box.x + box.width).toBeLessThanOrEqual(1000);
-    // The leader leaves the box's foot (the point is below it), where the box landed.
-    const from = calls.find((c) => c.name === 'moveTo' && Math.abs(Number(c.args[0]) - (box.x + box.width / 2)) < 0.01);
-    expect(from).toBeDefined();
+    // The tail leaves the box's foot (the point is below it), where the box landed.
+    const feet = calls.filter((c) => c.name === 'lineTo' && Math.abs(Number(c.args[1]) - (box.y + box.height)) < 1.5);
+    expect(feet).toHaveLength(2);
+    for (const foot of feet) {
+      expect(Number(foot.args[0])).toBeGreaterThan(box.x);
+      expect(Number(foot.args[0])).toBeLessThan(box.x + box.width);
+    }
     // Its handle sits on the box as drawn, so a drag from it does not jump.
     expect(tool.hitTestAnchor({ x: box.x, y: box.y }, state, unitViewport, 3)).toBe(1);
   });

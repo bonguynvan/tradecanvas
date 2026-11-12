@@ -168,6 +168,7 @@ export class WidgetDrawingEdit {
       },
       color: style.textColor ?? TEXT_COLORS[drawing.type] ?? style.color,
       label: this.host.t('drawingSettings.text'),
+      placeholder: this.host.drawingToolName(drawing.type),
       onInput: (text) => (justDrawn ? this.host.chart.amendNewDrawing(id, { style: { text } }) : this.host.chart.updateDrawing(id, { style: { text } })),
       // No words: a text just drawn goes, an old one keeps what it said. Blank lines at the end go.
       onCommit: (text) => {

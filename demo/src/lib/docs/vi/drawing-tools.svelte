@@ -53,7 +53,7 @@ chart.addDrawing({
 
 <h2 id="text">Chữ</h2>
 <p>
-  Các công cụ chữ (Text, Note, Callout, Price Label, Arrow Mark) dùng chung một kiểu chữ: cỡ chữ, chữ đậm, chữ nghiêng và màu chữ riêng. Text, Note và Callout còn căn các dòng sang trái, giữa hoặc phải, có thể có nền và viền, và xuống dòng ở một độ rộng. Text giữ nguyên các chỗ xuống dòng của nó và chạy dài nếu không được đặt độ rộng; Note và Callout xuống dòng ở 240 px.
+  Các công cụ chữ (Text, Note, Callout, Price Label, Arrow Mark) dùng chung một kiểu chữ: cỡ chữ, chữ đậm, chữ nghiêng và màu chữ riêng. Text, Note và Callout còn căn các dòng sang trái, giữa hoặc phải, có thể có nền và viền, và xuống dòng ở một độ rộng. Text giữ nguyên các chỗ xuống dòng của nó và chạy dài nếu không được đặt độ rộng; Note và Callout xuống dòng ở 240 px. Note, Callout, Signpost và Balloon viết chữ trong một bong bóng tô bằng chính màu của chúng, với màu mực đọc rõ trên nền đó, nên nến bên dưới không xuyên qua chữ; <code>fillColor</code> hoặc <code>textColor</code> đặt riêng vẫn được giữ. Phần chỉ của Callout là đuôi của bong bóng: nó đi ra từ cạnh hướng về điểm được chỉ.
 </p>
 <p>
   Khi không có cỡ riêng, chữ được đặt ở 14 px và số liệu (giá của một mức, một tỉ lệ, một hộp thống kê) ở 12 px, cả hai lớn hơn chữ trên trục ít nhất một bậc và lớn lên theo nó (<code>chart.setFont</code>, và widget trên màn hình rộng). Cỡ 12 được lưu từ phiên bản trước được đọc như không có cỡ. Chữ người dùng viết dùng font sans của hệ thống, số liệu dùng font của biểu đồ; <code>font: {'{'} textFamily {'}'}</code> (hoặc <code>chart.setFont({'{'} textFamily {'}'})</code>) đặt cho chữ một font của riêng bạn, còn widget đặt cho chúng font của preset đang dùng.
