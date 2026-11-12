@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.84.0 (2026-11-12)
+## Unreleased
 
 ### Breaking: the default look
 
@@ -21,6 +21,8 @@
   - A 1 px line is one device pixel wide at 125% and at 150%, as the browser draws a 1 px border. The crosshair was two pixels wide at 150%. A line of a width between whole pixels takes the whole pixels below it: 1.5 px is one device pixel at 100%, where it was two.
 - For a look of your own, `evenPx(n)` rounds a size to the even number nearest (`@tradecanvas/commons`). `PRICE_SCALE_MARGIN` is now φ⁻⁴·⁵, the default density's margin, and `DEFAULT_CHART_OPTIONS.rightMargin` and a `Viewport` made without one are 8 (`@tradecanvas/core`, `@tradecanvas/commons`).
 - **A price label the top or the bottom of its pane would cut is left out** (`@tradecanvas/core`). A round price right at a pane's edge was written with half its digits outside; its grid line stays.
+
+## 1.84.0 (2026-11-12)
 
 ### Performance
 
