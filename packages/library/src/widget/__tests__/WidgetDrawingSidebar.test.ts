@@ -89,6 +89,35 @@ describe('drawing tool menu', () => {
     expect(flyout()?.getAttribute('aria-label')).toBe('Fibonacci');
   });
 
+  // The pointer left a button for the gap between two, or the chart, then came on to another:
+  // the first menu's time to close ran out before the second's turn came, and took that turn with it.
+  it('opens the menu of a button reached a moment after another was left, however the two delays fall', () => {
+    const [lines, fibonacci] = wraps();
+    for (const gap of [20, 60, 100, 140]) {
+      enter(lines);
+      leave(lines);
+      vi.advanceTimersByTime(gap); // over a divider, or out on the chart
+      enter(fibonacci);
+      vi.advanceTimersByTime(500);
+      expect(flyout()?.getAttribute('aria-label'), `after ${gap} ms`).toBe('Fibonacci');
+      expect(host.querySelectorAll('.tcw-flyout')).toHaveLength(1);
+      leave(fibonacci);
+      vi.advanceTimersByTime(500);
+      expect(flyout()).toBeNull();
+    }
+  });
+
+  it('opens no menu for a button the pointer left again before its turn came', () => {
+    const [lines, fibonacci] = wraps();
+    enter(lines);
+    leave(lines);
+    vi.advanceTimersByTime(100);
+    enter(fibonacci);
+    leave(fibonacci);
+    vi.advanceTimersByTime(500);
+    expect(flyout()).toBeNull();
+  });
+
   it('keeps the open menu when the pointer crosses another button on its way into it', () => {
     const [lines, fibonacci] = wraps();
     enter(lines);
