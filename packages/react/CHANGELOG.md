@@ -1,5 +1,12 @@
 # @tradecanvas/react
 
+## 2.0.0-beta.2
+
+### Patch Changes
+
+- Updated dependencies [476a246]
+  - @tradecanvas/chart@2.0.0-beta.2
+
 ## 2.0.0-beta.1
 
 ### Patch Changes

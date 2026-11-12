@@ -1,5 +1,7 @@
 # @tradecanvas/commons
 
+## 2.0.0-beta.2
+
 ## 2.0.0-beta.1
 
 ### Major Changes

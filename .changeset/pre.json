@@ -14,6 +14,7 @@
   },
   "changesets": [
     "airy-defaults",
+    "one-retry-event",
     "one-spelling",
     "panes-share-the-room"
   ]

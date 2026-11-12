@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 2.0.0-beta.2 (2026-11-12)
 
 ### Live data
 
