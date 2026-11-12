@@ -1,37 +1,5 @@
 # @tradecanvas/chart
 
-## 2.0.0-beta.1
-
-### Major Changes
-
-- 31f5c88: The names deprecated in 1.x are removed.
-
-  | Removed                                                             | Use                                                                |
-  | ------------------------------------------------------------------- | ------------------------------------------------------------------ |
-  | `chart.setTimezone(tz)`                                             | `chart.setTimeZone(tz)`                                            |
-  | `chart.getTimezone()`                                               | `chart.getTimeZone()`                                              |
-  | `chart.getEffectiveTimezone()`                                      | `chart.getEffectiveTimeZone()`                                     |
-  | `chart.getExchangeTimezone()`                                       | `chart.getExchangeTimeZone()`                                      |
-  | `chart.setTimezoneOffset(minutes)`                                  | `chart.setTimeZone(minutes)`                                       |
-  | `EXCHANGE_TIMEZONE`                                                 | `EXCHANGE_TIME_ZONE`                                               |
-  | `SymbolInfo.timezone`                                               | `SymbolInfo.timeZone`                                              |
-  | `TimeFormatContext.kind` `'date'`                                   | `'year'`, `'month'`, `'day'` (the axis gave no `'date'` since 1.x) |
-  | `SessionBreaks.setLocale()`, `renderLabels()` (`@tradecanvas/core`) | nothing: both did nothing                                          |
-  | the widget string `replay.barsPerSecond`                            | nothing: unused; the speed reads `replay.rate`                     |
-
-  **`SymbolInfo.timezone` is no longer read.** A symbol that gives only `timezone` (from `symbols`, `resolveSymbol`, a feed or an adapter) has no zone of its own now: `setTimeZone('exchange')` and the dates of daily bars fall back to the market's zone or UTC, its own `sessions` are not shaded, and its status reads as a market that trades around the clock. A `timezone` still passed is carried along in `getSymbolInfo()` and nothing reads it. Rename the field where you build symbols.
-
-  Not changed: the widget's setting is still `timezone` (`widget.setSettings({ timezone: 'exchange' })`), and so are the string keys `settings.timezone` and `menu.chart.timezone`.
-
-  The docs have a page for the move from 1.x: Moving to 2.0.
-
-### Patch Changes
-
-- 5ff644f: However many indicator panes are open, the price pane keeps at least 38.2% of the chart's height: the open panes share the rest, each by the same part of the height it was given (six panes on a laptop used to leave the price pane no height and the chart blank). The panel beside the chart grows with the look's type on a wide screen, its limits with it. Go to keeps its buttons in view in a window under about 630 px high. A select in a settings dialog is as tall as the number field beside it.
-- Updated dependencies [31f5c88]
-  - @tradecanvas/core@2.0.0-beta.1
-  - @tradecanvas/commons@2.0.0-beta.1
-
 ## 2.0.0-beta.0
 
 ### Major Changes
