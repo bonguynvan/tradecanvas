@@ -1,4 +1,6 @@
 import type { SparklineOptions, Theme } from '@tradecanvas/commons';
+import { withAlpha } from '@tradecanvas/commons';
+import { AREA_FILL_ALPHA } from './chartKit.js';
 
 export function renderSparkline(
   ctx: CanvasRenderingContext2D,
@@ -33,7 +35,7 @@ export function renderSparkline(
   // Area fill
   if (mode === 'area') {
     const gradient = ctx.createLinearGradient(0, padding, 0, height - padding);
-    gradient.addColorStop(0, fillColor + (fillColor.startsWith('#') ? '40' : ''));
+    gradient.addColorStop(0, withAlpha(fillColor, AREA_FILL_ALPHA));
     gradient.addColorStop(1, 'transparent');
 
     ctx.beginPath();

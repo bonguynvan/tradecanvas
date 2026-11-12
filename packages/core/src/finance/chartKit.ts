@@ -18,6 +18,8 @@ export interface NiceScale {
   ticks: number[];
 }
 
+/** How strongly a line's colour fills the area under it. */
+export const AREA_FILL_ALPHA = 0.25;
 /** Room for a label's text around it, px. */
 export const LABEL_SIZE = 11;
 const LEGEND_SWATCH = 10;

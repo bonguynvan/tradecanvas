@@ -33,11 +33,29 @@ const MARGIN_BOTTOM = 40;
 const DEFAULT_BAR_WIDTH_RATIO = 0.7;
 const MIN_BAR_HEIGHT = 1;
 
+/** A bar with no type is a step: up, or down. One of zero is a step that changes nothing. */
 function resolveType(bar: WaterfallBar): BarType {
   if (bar.type) return bar.type;
-  if (bar.value > 0) return 'positive';
-  if (bar.value < 0) return 'negative';
-  return 'subtotal';
+  return bar.value < 0 ? 'negative' : 'positive';
+}
+
+interface RunningBar { type: BarType; value: number; start: number; end: number }
+
+/**
+ * Where each bar starts and ends: a step from the total so far, a total or a
+ * subtotal from zero, the total being its value from there on. A value that
+ * is no number counts as zero, so one bad step does not lose the rest.
+ */
+function runningBars(data: readonly WaterfallBar[]): RunningBar[] {
+  let cumulative = 0;
+  return data.map((bar) => {
+    const type = resolveType(bar);
+    const value = Number.isFinite(bar.value) ? bar.value : 0;
+    const start = type === 'total' || type === 'subtotal' ? 0 : cumulative;
+    const end = start + value;
+    cumulative = end;
+    return { type, value, start, end };
+  });
 }
 
 function defaultValueFormat(v: number): string {
@@ -71,23 +89,11 @@ function buildLayoutBars(
   const barW = slotWidth * barWidthRatio;
   const slotPadding = (slotWidth - barW) / 2;
   const { left, bottom, plotHeight } = layout;
+  const running = runningBars(data);
 
-  let cumulative = 0;
   for (let i = 0; i < data.length; i++) {
     const bar = data[i];
-    const type = resolveType(bar);
-    let start: number;
-    let end: number;
-
-    if (type === 'total' || type === 'subtotal') {
-      start = 0;
-      end = bar.value;
-      cumulative = bar.value;
-    } else {
-      start = cumulative;
-      end = cumulative + bar.value;
-      cumulative = end;
-    }
+    const { type, value, start, end } = running[i];
 
     const top = Math.min(start, end);
     const bot = Math.max(start, end);
@@ -100,7 +106,7 @@ function buildLayoutBars(
 
     bars[i] = {
       label: bar.label,
-      value: bar.value,
+      value,
       start,
       end,
       type,
@@ -111,7 +117,7 @@ function buildLayoutBars(
       slotX,
       slotW: slotWidth,
     };
-    cumulatives[i] = cumulative;
+    cumulatives[i] = end;
   }
 
   return { bars, cumulatives };
@@ -124,24 +130,8 @@ function computeValueRange(
 
   let min = 0;
   let max = 0;
-  let cumulative = 0;
 
-  for (let i = 0; i < data.length; i++) {
-    const bar = data[i];
-    const type = resolveType(bar);
-    let start: number;
-    let end: number;
-
-    if (type === 'total' || type === 'subtotal') {
-      start = 0;
-      end = bar.value;
-      cumulative = bar.value;
-    } else {
-      start = cumulative;
-      end = cumulative + bar.value;
-      cumulative = end;
-    }
-
+  for (const { start, end } of runningBars(data)) {
     if (start < min) min = start;
     if (end < min) min = end;
     if (start > max) max = start;
@@ -355,19 +345,19 @@ function drawCategoryLabels(
     return;
   }
 
-  // Rotated path: save/restore once, mutate transform per label
-  ctx.save();
+  // Each label turned about its own end, on top of the canvas's scale: setting
+  // the transform outright would drop the device pixel ratio.
   ctx.textAlign = 'right';
   ctx.textBaseline = 'middle';
   for (let i = 0; i < bars.length; i++) {
     const b = bars[i];
     const cx = b.slotX + b.slotW / 2;
-    ctx.setTransform(1, 0, 0, 1, cx, labelY + 4);
+    ctx.save();
+    ctx.translate(cx, labelY + 4);
     ctx.rotate(-Math.PI / 4);
     ctx.fillText(labelFormat(b.label), 0, 0);
+    ctx.restore();
   }
-  ctx.setTransform(1, 0, 0, 1, 0, 0);
-  ctx.restore();
 }
 
 function findHitBar(
@@ -451,7 +441,9 @@ export function renderWaterfall(
   crosshairPos: { x: number; y: number } | null,
 ): { hitBar: number | null } {
   const { data } = options;
-  if (!data || data.length === 0 || width <= 0 || height <= 0) {
+  if (width <= 0 || height <= 0) return { hitBar: null };
+  if (!data || data.length === 0) {
+    drawBackground(ctx, width, height, theme.background);
     return { hitBar: null };
   }
 

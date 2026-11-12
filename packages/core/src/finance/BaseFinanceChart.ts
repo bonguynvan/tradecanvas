@@ -77,6 +77,16 @@ export abstract class BaseFinanceChart {
     theme: Theme,
   ): void;
 
+  /**
+   * Takes what every finance chart's options may hold: a theme, when the
+   * options name one, and a label for screen readers. It asks for no frame;
+   * the chart that calls it does.
+   */
+  protected applyBaseOptions(options: { theme?: ThemeName | Theme; ariaLabel?: string }): void {
+    if ('theme' in options) this.theme = resolveTheme(options.theme);
+    if (options.ariaLabel !== undefined) this.setLabel(options.ariaLabel);
+  }
+
   /** What the chart shows, for screen readers (the canvas's aria-label). */
   setLabel(label: string): void {
     this.canvas.setAttribute('aria-label', label);

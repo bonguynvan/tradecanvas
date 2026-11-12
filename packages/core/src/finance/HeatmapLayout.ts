@@ -168,12 +168,14 @@ export function layoutSquarifiedTreemap(
 ): LayoutRect[] {
   if (cells.length === 0) return [];
 
-  const sorted = [...cells].sort((a, b) => b.weight - a.weight);
-  const totalWeight = sorted.reduce((s, c) => s + Math.max(0, c.weight), 0);
+  // A weight below zero, or one that is no number, takes no room.
+  const weightOf = (c: { weight: number }): number => (c.weight > 0 && Number.isFinite(c.weight) ? c.weight : 0);
+  const sorted = [...cells].sort((a, b) => weightOf(b) - weightOf(a));
+  const totalWeight = sorted.reduce((s, c) => s + weightOf(c), 0);
   if (totalWeight === 0) return [];
 
   const totalArea = bounds.width * bounds.height;
-  const areas = sorted.map(c => (Math.max(0, c.weight) / totalWeight) * totalArea);
+  const areas = sorted.map(c => (weightOf(c) / totalWeight) * totalArea);
   const ids = sorted.map(c => c.id);
 
   const results: LayoutRect[] = [];

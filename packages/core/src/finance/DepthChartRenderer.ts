@@ -1,5 +1,6 @@
 import type { DepthChartOptions, DepthLevel, Theme } from '@tradecanvas/commons';
-import { computeTickStep } from '@tradecanvas/commons';
+import { computeTickStep, withAlpha } from '@tradecanvas/commons';
+import { AREA_FILL_ALPHA } from './chartKit.js';
 
 interface CumulativeLevel {
   price: number;
@@ -19,6 +20,8 @@ const MARGIN_LEFT = 50;
 const MARGIN_RIGHT = 60;
 const PADDING_TB = 20;
 const PRICE_EXTEND_FACTOR = 0.2;
+/** The share of the price shown each side of a book that has one price only. */
+const ONE_PRICE_RANGE = 0.01;
 
 function buildCumulativeBids(bids: readonly DepthLevel[]): readonly CumulativeLevel[] {
   const sorted = [...bids].sort((a, b) => b.price - a.price);
@@ -40,6 +43,14 @@ function buildCumulativeAsks(asks: readonly DepthLevel[]): readonly CumulativeLe
     result.push({ price: level.price, cumulativeVolume: cumVol });
   }
   return result;
+}
+
+/**
+ * A side with one level spans no prices, so its step has no width to show:
+ * its volume is carried out to the plot's edge, as a shelf.
+ */
+function shelved(levels: readonly CumulativeLevel[], edge: number): readonly CumulativeLevel[] {
+  return levels.length === 1 ? [levels[0], { price: edge, cumulativeVolume: levels[0].cumulativeVolume }] : levels;
 }
 
 function computeLayout(width: number, height: number): DepthLayout {
@@ -341,13 +352,16 @@ export function renderDepthChart(
   crosshairPos: { x: number; y: number } | null,
 ): void {
   const { data } = options;
-  if (data.bids.length === 0 && data.asks.length === 0) return;
   if (width <= 0 || height <= 0) return;
+  if (data.bids.length === 0 && data.asks.length === 0) {
+    drawBackground(ctx, width, height, theme.background);
+    return;
+  }
 
   const bidColor = options.bidColor ?? theme.candleUp;
   const askColor = options.askColor ?? theme.candleDown;
-  const bidFillColor = options.bidFillColor ?? (bidColor + '40');
-  const askFillColor = options.askFillColor ?? (askColor + '40');
+  const bidFillColor = options.bidFillColor ?? withAlpha(bidColor, AREA_FILL_ALPHA);
+  const askFillColor = options.askFillColor ?? withAlpha(askColor, AREA_FILL_ALPHA);
   const midPriceLine = options.midPriceLine !== false;
   const spreadLabel = options.spreadLabel !== false;
   const priceFormat = options.priceFormat ?? defaultPriceFormat;
@@ -368,7 +382,8 @@ export function renderDepthChart(
 
   const lowestBid = cumBids.length > 0 ? cumBids[cumBids.length - 1].price : midPrice;
   const highestAsk = cumAsks.length > 0 ? cumAsks[cumAsks.length - 1].price : midPrice;
-  const rawRange = Math.max(midPrice - lowestBid, highestAsk - midPrice);
+  // One level on one side spans no prices: show a little about it instead.
+  const rawRange = Math.max(midPrice - lowestBid, highestAsk - midPrice) || Math.abs(midPrice) * ONE_PRICE_RANGE || 1;
   const extendedRange = rawRange * (1 + PRICE_EXTEND_FACTOR);
 
   const priceMin = midPrice - extendedRange;
@@ -384,10 +399,11 @@ export function renderDepthChart(
   drawBackground(ctx, width, height, theme.background);
   drawGrid(ctx, layout, priceMin, priceMax, volMax, theme, priceFormat, volumeFormat);
 
-  drawStepArea(ctx, cumBids, layout, priceMin, priceRange, volMax, bidFillColor, bidColor, 'bid');
-  drawStepArea(ctx, cumAsks, layout, priceMin, priceRange, volMax, askFillColor, askColor, 'ask');
+  drawStepArea(ctx, shelved(cumBids, priceMin), layout, priceMin, priceRange, volMax, bidFillColor, bidColor, 'bid');
+  drawStepArea(ctx, shelved(cumAsks, priceMax), layout, priceMin, priceRange, volMax, askFillColor, askColor, 'ask');
 
-  if (midPriceLine) {
+  // A book with one side has no middle and no spread to mark.
+  if (midPriceLine && cumBids.length > 0 && cumAsks.length > 0) {
     drawMidPriceLine(ctx, midPrice, spread, layout, priceMin, priceRange, theme, spreadLabel, priceFormat);
   }
 

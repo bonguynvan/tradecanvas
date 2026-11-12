@@ -7,6 +7,7 @@ export class SparklineChart extends BaseFinanceChart {
   constructor(container: HTMLElement, options: SparklineOptions) {
     super(container, options.theme);
     this.options = options;
+    this.applyBaseOptions({ ariaLabel: options.ariaLabel });
     this.requestRender();
   }
 
@@ -26,6 +27,7 @@ export class SparklineChart extends BaseFinanceChart {
 
   setOptions(opts: Partial<SparklineOptions>): void {
     this.options = { ...this.options, ...opts };
+    this.applyBaseOptions(opts);
     this.requestRender();
   }
 }
