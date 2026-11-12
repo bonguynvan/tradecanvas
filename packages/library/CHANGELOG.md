@@ -1,5 +1,13 @@
 # @tradecanvas/chart
 
+## 2.0.3
+
+### Patch Changes
+
+- 14aa5a1: A drawing tool's menu opens every time the pointer comes to its button: moving from one tool button to another by way of the gap between them, or the chart, sometimes left the pointer on a button with no menu.
+  - @tradecanvas/commons@2.0.3
+  - @tradecanvas/core@2.0.3
+
 ## 2.0.2
 
 ### Patch Changes
