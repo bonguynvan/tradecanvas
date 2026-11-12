@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { gzipSync } from 'node:zlib';
-import { publishOrder, internalDeps, remoteTagNames, untagged, releasePlan, waitUntil, packedInOrder, eachSettled, hasWork, fileInTarball, releaseNotes, firstCommitOf, tagTarget, distTag } from './publish-packages.mjs';
+import { publishOrder, internalDeps, remoteTagNames, untagged, releasePlan, waitUntil, packedInOrder, eachSettled, hasWork, fileInTarball, releaseNotes, firstCommitOf, tagTarget, distTag, preModeProblem } from './publish-packages.mjs';
 
 const pkg = (name, deps = []) => ({ name, version: '1.0.0', deps });
 
@@ -216,4 +216,18 @@ test('a prerelease goes out under its own dist-tag, so latest stays the last ful
   assert.equal(distTag('2.0.0-0'), 'next');
   assert.equal(distTag('2.0.0'), null);
   assert.equal(distTag('1.84.1'), null);
+});
+
+test('in pre mode a release of prereleases goes out; a full version among them stops it', () => {
+  const pre = { mode: 'pre', tag: 'beta' };
+  assert.equal(preModeProblem([{ name: 'a', version: '2.0.0-beta.0' }, { name: 'b', version: '2.0.0-beta.0' }], pre), null);
+  assert.match(preModeProblem([{ name: 'a', version: '2.0.0-beta.0' }, { name: 'b', version: '2.0.0' }], pre), /b@2\.0\.0 is not a beta prerelease/);
+  assert.match(preModeProblem([{ name: 'a', version: '2.0.0-rc.0' }], pre), /not a beta prerelease/);
+  assert.equal(preModeProblem([], pre), null);
+});
+
+test('out of pre mode a prerelease stops the release, and full versions go out', () => {
+  assert.equal(preModeProblem([{ name: 'a', version: '1.84.1' }], null), null);
+  assert.equal(preModeProblem([{ name: 'a', version: '2.0.0' }], { mode: 'exit', tag: 'beta' }), null);
+  assert.match(preModeProblem([{ name: 'a', version: '2.0.0-beta.3' }], null), /a@2\.0\.0-beta\.3 is a prerelease/);
 });
