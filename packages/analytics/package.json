@@ -26,9 +26,13 @@
     "portfolio",
     "sharpe",
     "sortino",
-    "tradecanvas"
+    "tradecanvas",
+    "trading-strategy",
+    "monte-carlo",
+    "drawdown",
+    "typescript"
   ],
-  "homepage": "https://github.com/bonguynvan/tradecanvas",
+  "homepage": "https://tradecanvas.dev/",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",

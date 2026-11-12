@@ -26,7 +26,7 @@
   <a href="README.md">English</a> · <a href="README.vi.md">Tiếng Việt</a> · <a href="README.zh-CN.md">简体中文</a> · <a href="README.ja.md">日本語</a> · <b>한국어</b> · <a href="README.es.md">Español</a>
 </p>
 
-**웹을 위한 완전한 트레이딩 차트.** 캔들스틱부터 렌코까지, 134개 지표, 73개 그리기 도구, 거래소 실시간 피드와 차트 위 주문을 서드파티 의존성 없이 Canvas 2D 또는 WebGL로 그립니다. 완전한 `ChartWidget`을 그대로 넣거나 헤드리스 `Chart` 위에 직접 UI를 만들 수 있으며, TypeScript, React, Vue, Svelte를 지원합니다.
+**TradeCanvas는 웹을 위한 오픈 소스 트레이딩 차트 라이브러리입니다**(MIT 라이선스). 캔들스틱부터 렌코까지, 134개 지표, 73개 그리기 도구, 거래소 실시간 피드와 차트 위 주문을 서드파티 의존성 없이 Canvas 2D 또는 WebGL로 그립니다. 완전한 `ChartWidget`을 그대로 넣거나 헤드리스 `Chart` 위에 직접 UI를 만들 수 있으며, TypeScript, React, Vue, Svelte를 지원합니다.
 
 <p align="center">
   <a href="https://tradecanvas.dev/ko/chart/"><img src=".github/assets/clips/hero.webp" alt="실시간 시장의 ChartWidget: EMA 21과 55, RSI, 십자선, 마우스로 그린 추세선" width="100%"></a>

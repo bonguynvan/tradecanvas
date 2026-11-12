@@ -2,7 +2,7 @@
   "name": "@tradecanvas/react",
   "version": "2.0.3",
   "type": "module",
-  "description": "React component for @tradecanvas/chart — reactive props, ref forwarding, zero boilerplate.",
+  "description": "React component for @tradecanvas/chart, the open-source trading chart library: candlestick charts, indicators and drawing tools with reactive props and ref forwarding.",
   "license": "MIT",
   "funding": {
     "type": "github",
@@ -20,8 +20,16 @@
     "react",
     "candlestick",
     "canvas",
-    "technical-analysis"
+    "technical-analysis",
+    "react-component",
+    "trading-chart",
+    "candlestick-chart",
+    "charting-library",
+    "stock-chart",
+    "typescript",
+    "tradecanvas"
   ],
+  "homepage": "https://tradecanvas.dev/",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",

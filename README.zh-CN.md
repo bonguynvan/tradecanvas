@@ -26,7 +26,7 @@
   <a href="README.md">English</a> · <a href="README.vi.md">Tiếng Việt</a> · <b>简体中文</b> · <a href="README.ja.md">日本語</a> · <a href="README.ko.md">한국어</a> · <a href="README.es.md">Español</a>
 </p>
 
-**一套完整的 Web 交易图表。** 从K线到砖形图（Renko），134 个指标、73 种画线工具、交易所实时行情和图上下单，用 Canvas 2D 或 WebGL 绘制，不依赖任何第三方库。可以直接使用完整的 `ChartWidget`，也可以在无界面的 `Chart` 上构建自己的界面，支持 TypeScript、React、Vue 和 Svelte。
+**TradeCanvas 是一套开源的 Web 交易图表库**，采用 MIT 许可证。 从K线到砖形图（Renko），134 个指标、73 种画线工具、交易所实时行情和图上下单，用 Canvas 2D 或 WebGL 绘制，不依赖任何第三方库。可以直接使用完整的 `ChartWidget`，也可以在无界面的 `Chart` 上构建自己的界面，支持 TypeScript、React、Vue 和 Svelte。
 
 <p align="center">
   <a href="https://tradecanvas.dev/zh/chart/"><img src=".github/assets/clips/hero.webp" alt="实时行情上的 ChartWidget：EMA 21 和 55、RSI、十字光标，以及用鼠标画出的趋势线" width="100%"></a>

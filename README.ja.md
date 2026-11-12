@@ -26,7 +26,7 @@
   <a href="README.md">English</a> · <a href="README.vi.md">Tiếng Việt</a> · <a href="README.zh-CN.md">简体中文</a> · <b>日本語</b> · <a href="README.ko.md">한국어</a> · <a href="README.es.md">Español</a>
 </p>
 
-**Web のための完全なトレーディングチャート。** ローソク足から練行足（Renko）まで、134 種類のインジケーター、73 種類の描画ツール、取引所のライブフィード、チャート上での注文を Canvas 2D または WebGL で描画し、サードパーティの依存関係はありません。完全な `ChartWidget` をそのまま組み込むことも、ヘッドレスな `Chart` の上に独自の UI を作ることもでき、TypeScript、React、Vue、Svelte に対応しています。
+**TradeCanvas は Web 向けのオープンソースのトレーディングチャートライブラリです**（MIT ライセンス）。 ローソク足から練行足（Renko）まで、134 種類のインジケーター、73 種類の描画ツール、取引所のライブフィード、チャート上での注文を Canvas 2D または WebGL で描画し、サードパーティの依存関係はありません。完全な `ChartWidget` をそのまま組み込むことも、ヘッドレスな `Chart` の上に独自の UI を作ることもでき、TypeScript、React、Vue、Svelte に対応しています。
 
 <p align="center">
   <a href="https://tradecanvas.dev/ja/chart/"><img src=".github/assets/clips/hero.webp" alt="ライブ相場上の ChartWidget：EMA 21 と 55、RSI、クロスヘア、マウスで描いたトレンドライン" width="100%"></a>

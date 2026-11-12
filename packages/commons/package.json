@@ -2,7 +2,7 @@
   "name": "@tradecanvas/commons",
   "version": "2.0.3",
   "type": "module",
-  "description": "Shared types and utilities for @tradecanvas/chart",
+  "description": "Shared types, themes and icons of @tradecanvas/chart, the open-source trading chart library.",
   "license": "MIT",
   "funding": {
     "type": "github",
@@ -21,8 +21,12 @@
     "trading",
     "chart",
     "canvas",
-    "types"
+    "types",
+    "trading-chart",
+    "typescript",
+    "tradecanvas"
   ],
+  "homepage": "https://tradecanvas.dev/",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",

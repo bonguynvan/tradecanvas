@@ -26,7 +26,7 @@
   <b>English</b> · <a href="https://github.com/bonguynvan/tradecanvas/blob/main/README.vi.md">Tiếng Việt</a> · <a href="https://github.com/bonguynvan/tradecanvas/blob/main/README.zh-CN.md">简体中文</a> · <a href="https://github.com/bonguynvan/tradecanvas/blob/main/README.ja.md">日本語</a> · <a href="https://github.com/bonguynvan/tradecanvas/blob/main/README.ko.md">한국어</a> · <a href="https://github.com/bonguynvan/tradecanvas/blob/main/README.es.md">Español</a>
 </p>
 
-**A complete trading chart for the web.** Candlesticks to Renko, 134 indicators, 73 drawing tools, live feeds and orders on the chart, on Canvas 2D or WebGL, with no third-party dependencies. Use the full `ChartWidget`, or build your own interface on the headless `Chart`, in TypeScript, React, Vue or Svelte.
+**TradeCanvas is an open-source trading chart library for the web**, under the MIT licence. Candlesticks to Renko, 134 indicators, 73 drawing tools, live feeds and orders on the chart, on Canvas 2D or WebGL, with no third-party dependencies. Use the full `ChartWidget`, or build your own interface on the headless `Chart`, in TypeScript, React, Vue or Svelte.
 
 <p align="center">
   <a href="https://tradecanvas.dev/chart/"><img src="https://raw.githubusercontent.com/bonguynvan/tradecanvas/main/.github/assets/clips/hero.webp" alt="ChartWidget on a live market: EMA 21 and 55 and RSI, the crosshair, and a trend line drawn with the mouse" width="100%"></a>
