@@ -3,8 +3,7 @@ import type { DepthData } from './trading.js';
 import type { OHLCBar } from './ohlc.js';
 
 export interface BaseFinanceChartOptions {
-  width?: number;
-  height?: number;
+  /** The chart's colours: `'dark'` (the default), `'light'`, or a theme of your own. */
   theme?: ThemeName | Theme;
   /**
    * The face and sizes of the chart's text, over the theme's. Left out, the

@@ -79,7 +79,7 @@ chart.addIndicator('sma', { period: 20 })`}</code></pre>
 <p>编程 agent 可以学会 TradeCanvas，而不必靠猜。<strong>agent 技能</strong>通过经过类型检查的示例讲解 API；在 Claude Code 中用两条命令安装：</p>
 <pre><code>{`/plugin marketplace add bonguynvan/tradecanvas
 /plugin install tradecanvas@tradecanvas`}</code></pre>
-<p><strong>MCP 服务器</strong> <code>@tradecanvas/mcp</code> 依据库自身的目录作答：指标 id、参数及各条线的 key；画线工具及每种需要的点数；<code>ChartWidget</code>、<code>Chart</code> 和 <code>ChartWidgetGrid</code> 的选项；功能开关和样式 key。其中 <code>validate_options</code> 工具会在使用前检查选项对象，并指出本意要写的选项。在 Claude Code 中：</p>
+<p><strong>MCP 服务器</strong> <code>@tradecanvas/mcp</code> 依据库自身的目录作答：指标 id、参数及各条线的 key；画线工具及每种需要的点数；<code>ChartWidget</code>、<code>Chart</code> 和 <code>ChartWidgetGrid</code> 以及各金融图表的选项；功能开关和样式 key。其中 <code>validate_options</code> 工具会在使用前检查选项对象，并指出本意要写的选项。在 Claude Code 中：</p>
 <pre><code>{`claude mcp add tradecanvas -- npx -y @tradecanvas/mcp`}</code></pre>
 <p>Cursor、Claude Desktop 和大多数其他客户端在 MCP 设置中使用同样的命令：</p>
 <pre><code>{`{

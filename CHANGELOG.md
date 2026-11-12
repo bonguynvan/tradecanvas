@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+### Coding agents
+
+- **The MCP server knows the finance charts** (`@tradecanvas/mcp`). A new tool, `list_finance_charts`, names the fourteen classes that are not the trading chart (bars, donut, scatter, histogram, calendar, matrix, heatmap, counter-clock, depth, equity curve, waterfall, gauge, sparkline, and the backtest dashboard) with what each is for. `list_options` and `validate_options` take one of those names as `target`: the options are read from the same declarations the package ships, and a check says which option was meant, which value a choice takes, when a `locale` is no language tag, and which options the chart cannot be made without (those its declaration marks as required). It does not look inside the data. For `ChartWidget`, `Chart` and `ChartWidgetGrid` nothing changes.
+- **`width` and `height` are gone from the finance charts' options** (`@tradecanvas/commons`). They were declared and never read: a finance chart has always filled its element. TypeScript now says so where one is passed; size the element instead.
+
 ## 2.0.0-beta.5 (2026-11-12)
 
 ### Finance charts

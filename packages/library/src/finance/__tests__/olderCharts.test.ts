@@ -1,6 +1,8 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { LIGHT_THEME } from '@tradecanvas/commons';
+import { DEFAULT_FONT_FAMILY, LIGHT_THEME, SANS_FONT_FAMILY } from '@tradecanvas/commons';
+import { BarChart } from '../BarChart.js';
+import { PerformanceDashboard } from '../PerformanceDashboard.js';
 import { DepthChart } from '../DepthChart.js';
 import { EquityCurveChart } from '../EquityCurveChart.js';
 import { WaterfallChart } from '../WaterfallChart.js';
@@ -201,9 +203,7 @@ describe('every finance chart', () => {
 describe('what every finance chart takes', () => {
   const themeOf = (chart: unknown) => (chart as { theme: { font: { family: string }; background: string } }).theme;
 
-  it('a face for its text, at the start or later, kept through a change of theme', async () => {
-    const { SANS_FONT_FAMILY } = await import('@tradecanvas/commons');
-    const { BarChart } = await import('../BarChart.js');
+  it('a face for its text, at the start or later, kept through a change of theme', () => {
     const made = [
       new DepthChart(host, { data: book }),
       new GaugeChart(host, { value: 4, animate: false }),
@@ -251,8 +251,7 @@ describe('what every finance chart takes', () => {
     gauge.destroy();
   });
 
-  it('a dashboard in your words and your language', async () => {
-    const { PerformanceDashboard } = await import('../PerformanceDashboard.js');
+  it('a dashboard in your words and your language', () => {
     const day = 86_400_000;
     const equityCurve = Array.from({ length: 70 }, (_, i) => ({ time: Date.UTC(2026, 0, 1) + i * day, equity: 100 + i }));
     const metrics = { totalReturnPct: 0.1, cagr: 0.2, sharpe: 1, sortino: 1, maxDrawdownPct: 0.05, winRate: 0.5, profitFactor: 1.5, trades: 12 };
@@ -267,7 +266,6 @@ describe('what every finance chart takes', () => {
     dash.destroy();
 
     // A face given to the dashboard is its charts' too, the monospaced one included, and stays through a change of theme.
-    const { DEFAULT_FONT_FAMILY } = await import('@tradecanvas/commons');
     const mono = new PerformanceDashboard(host, { result: { equityCurve, metrics } as never, font: { family: DEFAULT_FONT_FAMILY }, labels: { drawdown: undefined } });
     const charts = () => [(mono as unknown as { equityChart: unknown }).equityChart, (mono as unknown as { heatmap: unknown }).heatmap];
     for (const chart of charts()) expect(themeOf(chart).font.family).toBe(DEFAULT_FONT_FAMILY);

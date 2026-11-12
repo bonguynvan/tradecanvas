@@ -80,7 +80,7 @@ chart.addIndicator('sma', { period: 20 })`}</code></pre>
 <p>Coding agent có thể học TradeCanvas thay vì đoán. <strong>Agent skill</strong> dạy API qua các ví dụ được kiểm kiểu; trong Claude Code, cài bằng hai lệnh:</p>
 <pre><code>{`/plugin marketplace add bonguynvan/tradecanvas
 /plugin install tradecanvas@tradecanvas`}</code></pre>
-<p><strong>MCP server</strong> <code>@tradecanvas/mcp</code> trả lời từ chính catalog của thư viện: id của chỉ báo, tham số và key của từng đường; công cụ vẽ và số điểm mỗi công cụ cần; tùy chọn của <code>ChartWidget</code>, <code>Chart</code> và <code>ChartWidgetGrid</code>; công tắc tính năng và style key. Công cụ <code>validate_options</code> kiểm tra một object tùy chọn trước khi dùng và chỉ ra tùy chọn đúng. Trong Claude Code:</p>
+<p><strong>MCP server</strong> <code>@tradecanvas/mcp</code> trả lời từ chính catalog của thư viện: id của chỉ báo, tham số và key của từng đường; công cụ vẽ và số điểm mỗi công cụ cần; tùy chọn của <code>ChartWidget</code>, <code>Chart</code> và <code>ChartWidgetGrid</code>, cùng các financial chart; công tắc tính năng và style key. Công cụ <code>validate_options</code> kiểm tra một object tùy chọn trước khi dùng và chỉ ra tùy chọn đúng. Trong Claude Code:</p>
 <pre><code>{`claude mcp add tradecanvas -- npx -y @tradecanvas/mcp`}</code></pre>
 <p>Cursor, Claude Desktop và hầu hết các client khác nhận cùng lệnh đó trong phần cài đặt MCP:</p>
 <pre><code>{`{

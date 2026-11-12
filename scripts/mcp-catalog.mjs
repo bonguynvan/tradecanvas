@@ -15,6 +15,28 @@ const ENTRY_POINTS = [
   ['ChartWidgetGrid', 'packages/library/src/widget/ChartWidgetGrid.ts'],
 ];
 /**
+ * The finance charts: each class of @tradecanvas/chart, the interface its
+ * options are declared by, and what it is for in a line. A class that is not
+ * exported, or an interface that is not there, stops the build.
+ */
+const FINANCE_TYPES = 'packages/commons/src/types/finance.ts';
+const FINANCE_CHARTS = [
+  ['BarChart', 'BarChartOptions', FINANCE_TYPES, 'Bars by category, grouped or stacked, upright or lying: net flows, volumes, sums by period.'],
+  ['DonutChart', 'DonutChartOptions', FINANCE_TYPES, 'Shares of a whole as a ring or a pie: an allocation, a breakdown.'],
+  ['ScatterChart', 'ScatterChartOptions', FINANCE_TYPES, 'Points on two value axes, bubbles when they have a size: risk against return.'],
+  ['HistogramChart', 'HistogramOptions', FINANCE_TYPES, 'How often values fall in each range: a distribution of returns.'],
+  ['CalendarChart', 'CalendarChartOptions', FINANCE_TYPES, 'A value a day on a calendar, coloured by a scale: daily returns, sessions.'],
+  ['MatrixChart', 'MatrixChartOptions', FINANCE_TYPES, 'A grid of values coloured by a scale: correlations between symbols.'],
+  ['HeatmapChart', 'HeatmapOptions', FINANCE_TYPES, 'Cells coloured by change, sized by weight and grouped by sector: a market map.'],
+  ['CounterClockChart', 'CounterClockOptions', FINANCE_TYPES, 'Averaged price against averaged volume joined in time: the counter-clockwise cycle.'],
+  ['DepthChart', 'DepthChartOptions', FINANCE_TYPES, "An order book's cumulative volume either side of the middle price."],
+  ['EquityCurveChart', 'EquityCurveOptions', FINANCE_TYPES, "A value over time, its falls from a peak shaded, against a benchmark: an account's or a strategy's equity."],
+  ['WaterfallChart', 'WaterfallOptions', FINANCE_TYPES, 'Steps up and down to a total: a P&L bridge.'],
+  ['GaugeChart', 'GaugeOptions', FINANCE_TYPES, 'One value against coloured bands: sentiment, risk, margin use.'],
+  ['SparklineChart', 'SparklineOptions', FINANCE_TYPES, "A small line with no axes: a table cell's trend."],
+  ['PerformanceDashboard', 'PerformanceDashboardOptions', 'packages/library/src/finance/PerformanceDashboard.ts', "A backtest's result as a page: stats, the equity curve, drawdown and monthly returns."],
+];
+/**
  * Nested objects whose keys are worth checking too, by their own types:
  * `Chart.features`, and ChartWidget's `chartOptions`, a `Partial<ChartOptions>`
  * (so without the `plugins` that only Chart's constructor takes).
@@ -148,6 +170,8 @@ function describeProperty(checker, symbol, at) {
   const declaration = symbol.valueDeclaration ?? symbol.declarations?.[0];
   const types = setTypes(checker.getTypeOfSymbolAtLocation(symbol, at));
   const option = { name: symbol.name, type: typeText(checker, symbol, declaration, at) };
+  // Declared without a `?`: the entry point cannot be made without it.
+  if (!(symbol.flags & ts.SymbolFlags.Optional)) option.required = true;
   const doc = shortDoc(ts.displayPartsToString(symbol.getDocumentationComment(checker)));
   if (doc) option.doc = doc;
   const known = knownValues(types);
@@ -168,7 +192,7 @@ function describeProperty(checker, symbol, at) {
 
 function readOptions(root) {
   const ohlc = sourcePath(root, 'packages/commons/src/types/ohlc.ts');
-  const files = [...ENTRY_POINTS.map(([, file]) => sourcePath(root, file)), ohlc];
+  const files = [...ENTRY_POINTS.map(([, file]) => sourcePath(root, file)), ...new Set(FINANCE_CHARTS.map(([, , file]) => sourcePath(root, file))), ohlc];
   const program = ts.createProgram(files, {
     target: ts.ScriptTarget.ES2022,
     module: ts.ModuleKind.ESNext,
@@ -191,23 +215,32 @@ function readOptions(root) {
       nested[`${owner}.${key}`] = checker.getPropertiesOfType(inner).map((p) => describeProperty(checker, p, param));
     }
   }
+  const financeCharts = FINANCE_CHARTS.map(([name, optionsType, file, what]) => {
+    const declared = topLevel(program, sourcePath(root, file), (n) => ts.isInterfaceDeclaration(n) && n.name.text === optionsType, `interface ${optionsType}`);
+    const props = checker.getPropertiesOfType(checker.getTypeAtLocation(declared));
+    return { name, what, options: props.map((p) => describeProperty(checker, p, declared)) };
+  });
   const known = topLevel(program, ohlc, (n) => ts.isTypeAliasDeclaration(n) && n.name.text === 'KnownTimeFrame', 'KnownTimeFrame');
   const timeframes = writtenLiterals(checker, known.type) ?? [];
-  return { options, nested, timeframes };
+  return { options, nested, timeframes, financeCharts };
 }
 
 /** Everything the server answers from, as one JSON-ready object. */
 export async function buildMcpCatalog(root, indicators) {
   const load = (rel) => import(pathToFileURL(join(root, rel)).href);
-  const [core, commons, widget, locales] = await Promise.all([
+  const [core, commons, widget, locales, library] = await Promise.all([
     load('packages/core/dist/index.js'),
     load('packages/commons/dist/index.js'),
     load('packages/library/dist/widget/index.js'),
     load('packages/library/dist/widget/locales/index.js'),
+    load('packages/library/dist/index.js'),
   ]);
   const tools = [];
   core.registerBuiltInDrawingTools({ register: (tool) => tools.push(tool.descriptor) });
-  const { options, nested, timeframes } = readOptions(root);
+  const { options, nested, timeframes, financeCharts } = readOptions(root);
+  for (const { name } of financeCharts) {
+    if (typeof library[name] !== 'function') throw new Error(`mcp catalog: @tradecanvas/chart exports no ${name}`);
+  }
   return {
     indicators,
     drawingTools: tools.map((d) => ({
@@ -228,5 +261,6 @@ export async function buildMcpCatalog(root, indicators) {
     languages: locales.WIDGET_LANGUAGES.map((l) => ({ code: l.code, name: l.name, builtIn: widget.findWidgetLocale(l.code) !== undefined })),
     options,
     nested,
+    financeCharts,
   };
 }

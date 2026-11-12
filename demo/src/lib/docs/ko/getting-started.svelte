@@ -80,7 +80,7 @@ chart.addIndicator('sma', { period: 20 })`}</code></pre>
 <p>코딩 에이전트는 TradeCanvas를 추측하지 않고 배울 수 있습니다. <strong>에이전트 스킬</strong>은 타입 검사를 거친 예제로 API를 알려 주며, Claude Code에서는 명령 두 줄로 설치합니다:</p>
 <pre><code>{`/plugin marketplace add bonguynvan/tradecanvas
 /plugin install tradecanvas@tradecanvas`}</code></pre>
-<p><strong>MCP 서버</strong> <code>@tradecanvas/mcp</code>는 라이브러리 자체의 카탈로그로 답합니다: 지표 id와 매개변수, 각 선의 키; 드로잉 도구와 각각 필요한 점의 수; <code>ChartWidget</code>, <code>Chart</code>, <code>ChartWidgetGrid</code>의 옵션; 기능 스위치와 스타일 키. <code>validate_options</code> 도구는 옵션 객체를 쓰기 전에 검사하고 원래 의도한 옵션을 알려 줍니다. Claude Code에서는:</p>
+<p><strong>MCP 서버</strong> <code>@tradecanvas/mcp</code>는 라이브러리 자체의 카탈로그로 답합니다: 지표 id와 매개변수, 각 선의 키; 드로잉 도구와 각각 필요한 점의 수; <code>ChartWidget</code>, <code>Chart</code>, <code>ChartWidgetGrid</code>와 각 금융 차트의 옵션; 기능 스위치와 스타일 키. <code>validate_options</code> 도구는 옵션 객체를 쓰기 전에 검사하고 원래 의도한 옵션을 알려 줍니다. Claude Code에서는:</p>
 <pre><code>{`claude mcp add tradecanvas -- npx -y @tradecanvas/mcp`}</code></pre>
 <p>Cursor, Claude Desktop을 비롯한 대부분의 클라이언트는 MCP 설정에 같은 명령을 씁니다:</p>
 <pre><code>{`{
