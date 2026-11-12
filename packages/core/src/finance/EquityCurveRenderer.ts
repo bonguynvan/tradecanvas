@@ -1,5 +1,6 @@
 import type { EquityCurveOptions, EquityPoint, Theme } from '@tradecanvas/commons';
-import { computeTickStep } from '@tradecanvas/commons';
+import { computeTickStep, withAlpha } from '@tradecanvas/commons';
+import { AREA_FILL_ALPHA } from './chartKit.js';
 
 interface EquityLayout {
   left: number;
@@ -15,6 +16,8 @@ const MARGIN_BOTTOM = 30;
 const PADDING_RIGHT = 20;
 const PADDING_TOP = 20;
 const VALUE_PADDING_FACTOR = 0.05;
+/** How strongly the fall from a peak is shaded when no colour is given. */
+const DRAWDOWN_ALPHA = 0.19;
 
 function computeLayout(width: number, height: number): EquityLayout {
   return {
@@ -43,8 +46,24 @@ function computeValueRange(
       if (pt.value > max) max = pt.value;
     }
   }
-  const padding = (max - min) * VALUE_PADDING_FACTOR;
+  // Values all the same have no range to pad: open one about them, so the
+  // axis has steps and the line runs through the middle.
+  const padding = (max - min) * VALUE_PADDING_FACTOR || Math.abs(max) * VALUE_PADDING_FACTOR || 1;
   return { valMin: min - padding, valMax: max + padding };
+}
+
+/** The point of `points` nearest `time`, or -1 when there are none. */
+function nearestIndex(points: readonly EquityPoint[], time: number): number {
+  let nearest = -1;
+  let distance = Infinity;
+  for (let i = 0; i < points.length; i++) {
+    const d = Math.abs(points[i].time - time);
+    if (d < distance) {
+      distance = d;
+      nearest = i;
+    }
+  }
+  return nearest;
 }
 
 function buildPeakArray(data: readonly EquityPoint[]): readonly number[] {
@@ -192,7 +211,7 @@ function drawAreaFill(
   const toY = (v: number): number => bottom - ((v - valMin) / valRange) * plotHeight;
 
   const gradient = ctx.createLinearGradient(0, layout.top, 0, bottom);
-  gradient.addColorStop(0, color + '40');
+  gradient.addColorStop(0, withAlpha(color, AREA_FILL_ALPHA));
   gradient.addColorStop(1, 'transparent');
 
   ctx.save();
@@ -259,8 +278,11 @@ function drawBenchmarkLabel(
   if (benchmark.length === 0) return;
 
   const { left, bottom, plotWidth, plotHeight } = layout;
-  const last = benchmark[benchmark.length - 1];
-  const x = left + ((last.time - timeMin) / timeRange) * plotWidth;
+  // By the line's end as drawn: a benchmark that runs past the curve is cut at the plot's edge.
+  const timeMax = timeMin + timeRange;
+  const end = benchmark[benchmark.length - 1];
+  const last = end.time > timeMax ? benchmark[nearestIndex(benchmark, timeMax)] ?? end : end;
+  const x = Math.min(layout.right, Math.max(left, left + ((last.time - timeMin) / timeRange) * plotWidth));
   const y = bottom - ((last.value - valMin) / valRange) * plotHeight;
 
   ctx.save();
@@ -285,6 +307,7 @@ function drawCrosshairTooltip(
   theme: Theme,
   formatTime: (ts: number) => string,
   valueFormat: (v: number) => string,
+  lineColor: string,
 ): void {
   const { left, top, bottom, plotWidth, plotHeight } = layout;
   const mx = crosshairPos.x;
@@ -304,24 +327,18 @@ function drawCrosshairTooltip(
 
   // Find closest data point
   const timeAtMouse = timeMin + ((mx - left) / plotWidth) * timeRange;
-  let closestIdx = 0;
-  let closestDist = Infinity;
-  for (let i = 0; i < data.length; i++) {
-    const dist = Math.abs(data[i].time - timeAtMouse);
-    if (dist < closestDist) {
-      closestDist = dist;
-      closestIdx = i;
-    }
-  }
-
-  const pt = data[closestIdx];
+  // No point is nearest when the times are no numbers: nothing to read out.
+  const pt = data[nearestIndex(data, timeAtMouse)];
+  if (!pt) return;
   const lines = [
     formatTime(pt.time),
     `Value: ${valueFormat(pt.value)}`,
   ];
 
-  if (benchmark && benchmark.length > closestIdx) {
-    lines.push(`Benchmark: ${valueFormat(benchmark[closestIdx].value)}`);
+  // The benchmark has times of its own: read it at the pointed time, not at the curve's index.
+  const benchmarkAt = benchmark ? nearestIndex(benchmark, pt.time) : -1;
+  if (benchmark && benchmarkAt >= 0) {
+    lines.push(`Benchmark: ${valueFormat(benchmark[benchmarkAt].value)}`);
   }
 
   // Draw dot on equity line
@@ -329,7 +346,7 @@ function drawCrosshairTooltip(
   const dotY = bottom - ((pt.value - valMin) / valRange) * plotHeight;
   ctx.beginPath();
   ctx.arc(dotX, dotY, 3, 0, Math.PI * 2);
-  ctx.fillStyle = theme.lineColor;
+  ctx.fillStyle = lineColor;
   ctx.fill();
 
   // Tooltip box
@@ -367,12 +384,16 @@ export function renderEquityCurve(
   crosshairPos: { x: number; y: number } | null,
 ): void {
   const { data } = options;
-  if (data.length < 2 || width <= 0 || height <= 0) return;
+  if (width <= 0 || height <= 0) return;
+  if (data.length < 2) {
+    drawBackground(ctx, width, height, theme.background);
+    return;
+  }
 
   const lineColor = options.lineColor ?? theme.lineColor;
   const lineWidth = options.lineWidth ?? 1.5;
   const drawdownEnabled = options.drawdown === true;
-  const drawdownColor = options.drawdownColor ?? (theme.candleDown + '30');
+  const drawdownColor = options.drawdownColor ?? withAlpha(theme.candleDown, DRAWDOWN_ALPHA);
   const fillArea = options.fillArea === true;
   const benchmark = options.benchmark;
   const benchmarkColor = options.benchmarkColor ?? theme.textSecondary;
@@ -408,7 +429,13 @@ export function renderEquityCurve(
 
   // Benchmark line
   if (benchmark && benchmark.length >= 2) {
+    // It may run before or past the curve: only the part over the curve's time is shown.
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(layout.left, layout.top, layout.plotWidth, layout.plotHeight);
+    ctx.clip();
     drawLine(ctx, benchmark, layout, timeMin, timeRange, valMin, valRange, benchmarkColor, 1);
+    ctx.restore();
     drawBenchmarkLabel(ctx, benchmark, layout, timeMin, timeRange, valMin, valRange, benchmarkLabel, benchmarkColor, theme);
   }
 
@@ -417,7 +444,7 @@ export function renderEquityCurve(
     drawCrosshairTooltip(
       ctx, crosshairPos, data, benchmark,
       layout, timeMin, timeRange, valMin, valRange,
-      theme, formatTime, valueFormat,
+      theme, formatTime, valueFormat, lineColor,
     );
   }
 }

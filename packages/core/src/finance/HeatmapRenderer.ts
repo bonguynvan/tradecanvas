@@ -5,6 +5,8 @@ import { fitText } from './chartKit.js';
 import { readableText } from './colorScale.js';
 
 function defaultValueFormat(value: number): string {
+  // A cell with no number shows its label alone.
+  if (!Number.isFinite(value)) return '';
   const sign = value >= 0 ? '+' : '';
   return sign + value.toFixed(2) + '%';
 }
@@ -20,6 +22,8 @@ function computeCellColor(
   const min = colorScale.min ?? -5;
   const max = colorScale.max ?? 5;
 
+  // A value that is no number has no place on the scale: the colour of none.
+  if (!Number.isFinite(value)) return colorScale.zero;
   if (value <= min) return colorScale.negative;
   if (value >= max) return colorScale.positive;
 
@@ -136,7 +140,7 @@ function drawTooltip(
   const lines = [
     formatLabel(cell),
     formatValue(cell.value),
-  ];
+  ].filter((line) => line !== '');
   if (cell.meta) {
     for (const [key, val] of Object.entries(cell.meta)) {
       lines.push(key + ': ' + String(val));

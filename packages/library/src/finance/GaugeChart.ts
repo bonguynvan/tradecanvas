@@ -21,6 +21,7 @@ export class GaugeChart extends BaseFinanceChart {
     this.options = options;
     this.currentValue = options.value;
     this.targetValue = options.value;
+    this.applyBaseOptions({ ariaLabel: options.ariaLabel });
     this.requestRender();
   }
 
@@ -53,6 +54,7 @@ export class GaugeChart extends BaseFinanceChart {
 
   setOptions(opts: Partial<GaugeOptions>): void {
     const next = { ...this.options, ...opts };
+    this.applyBaseOptions(opts);
     // If `value` is part of the partial, route through animation path
     if (opts.value !== undefined && opts.value !== this.targetValue) {
       this.options = next;

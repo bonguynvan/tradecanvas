@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+### Finance charts
+
+- **A waterfall keeps its total through a step of zero** (`@tradecanvas/core`, `@tradecanvas/chart`). A bar with a value of 0 and no `type` was read as a subtotal, so the running total started again from zero and every bar after it was wrong. It is a step that changes nothing now. A value that is no number counts as zero instead of turning the rest into `NaN`.
+- **A waterfall's turned labels are where they belong on a dense screen** (`@tradecanvas/core`, `@tradecanvas/chart`). Labels too long for their slot are turned 45 degrees; on a screen with a pixel ratio other than 1 they were drawn at the wrong place and size.
+- **`setOptions` is heard by the older charts** (`@tradecanvas/chart`). On `DepthChart`, `EquityCurveChart`, `WaterfallChart`, `SparklineChart`, `GaugeChart` and `HeatmapChart`, `setOptions({ theme })` did nothing; nor did `crosshair` on the four that have a readout, or `onCellClick` on a heatmap made without one. `ariaLabel` now labels the first five as it labels the rest, at the start or later.
+- **Colours in any form fade as they should** (`@tradecanvas/core`, `@tradecanvas/chart`). The area under a sparkline or an equity curve, the shading of a drawdown and the sides of a depth chart were faded by adding two hex digits to the colour: a `#rgb` colour, one with its own alpha or an `rgb()` gave a colour the canvas refused, and under a sparkline or an equity curve that stopped the drawing.
+- **An equity curve reads its benchmark at the pointed time** (`@tradecanvas/core`, `@tradecanvas/chart`). The readout took the benchmark's point at the curve's index, so a benchmark with times of its own showed the wrong value, or none. The dot on the curve is in `lineColor`, as the curve is. A benchmark that runs before or past the curve is cut at the plot's edge, and its name stays by the line's end as drawn.
+- **Flat and thin data still draw** (`@tradecanvas/core`, `@tradecanvas/chart`). An equity curve whose values are all the same had no value labels and lay on the plot's floor; a depth chart with one level on one side drew nothing, and now shows that level's volume out to the plot's edge; a book with one side marks no middle price and no spread. With nothing to show, an equity curve, a depth chart and a waterfall draw their background instead of leaving the canvas clear.
+- **A heatmap cell with no number** (`@tradecanvas/core`, `@tradecanvas/chart`). A `value` of `NaN` took the colour of the cell drawn before it; it takes the scale's `zero` colour and shows its label alone, not `NaN%`. In a weighted heatmap, a `weight` of `NaN` left every cell without a place; that cell takes no room and the rest are laid out.
+
 ## 2.0.0-beta.2 (2026-11-12)
 
 ### Live data

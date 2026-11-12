@@ -12,32 +12,29 @@ import type { GroupRect, LayoutRect } from '@tradecanvas/core';
 
 export class HeatmapChart extends BaseFinanceChart {
   private options: HeatmapOptions;
-  private crosshair: FinanceCrosshair | null = null;
+  /** Always listening: `crosshair` in the options says whether its place is drawn, so it can be switched later. */
+  private readonly crosshair: FinanceCrosshair;
   private cachedRects: LayoutRect[] = [];
   private cachedGroups: GroupRect[] = [];
   private currentData: HeatmapCell[] = [];
   private lastLayoutWidth = 0;
   private lastLayoutHeight = 0;
-  private handleClick: ((e: MouseEvent) => void) | null = null;
+  /** Always listening: a callback given later through `setOptions` is called too. */
+  private readonly handleClick = (e: MouseEvent): void => {
+    const rect = this.canvas.getBoundingClientRect();
+    this.onCanvasClick(e.clientX - rect.left, e.clientY - rect.top);
+  };
 
   constructor(container: HTMLElement, options: HeatmapOptions) {
     super(container, options.theme);
     this.options = options;
     this.currentData = options.data ?? [];
 
-    if (options.crosshair !== false) {
-      this.crosshair = new FinanceCrosshair(this.canvas, () => this.requestRender());
-    }
-
-    if (options.onCellClick) {
-      this.handleClick = (e: MouseEvent) => {
-        const rect = this.canvas.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-        this.onCanvasClick(x, y);
-      };
-      this.canvas.addEventListener('click', this.handleClick);
-    }
+    this.crosshair = new FinanceCrosshair(this.canvas, () => {
+      // With the readout off a move changes nothing drawn: no frame for it.
+      if (this.options.crosshair !== false) this.requestRender();
+    });
+    this.canvas.addEventListener('click', this.handleClick);
 
     this.applyLabel();
     this.recomputeLayout();
@@ -108,7 +105,7 @@ export class HeatmapChart extends BaseFinanceChart {
       this.recomputeLayout();
     }
 
-    const pos = this.crosshair?.getPosition() ?? null;
+    const pos = this.options.crosshair === false ? null : this.crosshair.getPosition();
     renderHeatmap(ctx, width, height, this.currentData, this.cachedRects, this.options, theme, pos, this.cachedGroups);
   }
 
@@ -122,6 +119,8 @@ export class HeatmapChart extends BaseFinanceChart {
 
   setOptions(opts: Partial<HeatmapOptions>): void {
     this.options = { ...this.options, ...opts };
+    // The label is the heatmap's own to word (applyLabel): only the theme is taken here.
+    if ('theme' in opts) this.applyBaseOptions({ theme: opts.theme });
     if (opts.data) {
       this.currentData = opts.data;
     }
@@ -131,10 +130,8 @@ export class HeatmapChart extends BaseFinanceChart {
   }
 
   destroy(): void {
-    this.crosshair?.destroy();
-    if (this.handleClick) {
-      this.canvas.removeEventListener('click', this.handleClick);
-    }
+    this.crosshair.destroy();
+    this.canvas.removeEventListener('click', this.handleClick);
     super.destroy();
   }
 }

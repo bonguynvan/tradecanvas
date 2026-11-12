@@ -3,15 +3,18 @@ import { BaseFinanceChart, FinanceCrosshair, renderWaterfall } from '@tradecanva
 
 export class WaterfallChart extends BaseFinanceChart {
   private options: WaterfallOptions;
-  private crosshair: FinanceCrosshair | null = null;
+  /** Always listening: `crosshair` in the options says whether its place is drawn, so it can be switched later. */
+  private readonly crosshair: FinanceCrosshair;
 
   constructor(container: HTMLElement, options: WaterfallOptions) {
     super(container, options.theme);
     this.options = options;
 
-    if (options.crosshair !== false) {
-      this.crosshair = new FinanceCrosshair(this.canvas, () => this.requestRender());
-    }
+    this.crosshair = new FinanceCrosshair(this.canvas, () => {
+      // With the readout off a move changes nothing drawn: no frame for it.
+      if (this.options.crosshair !== false) this.requestRender();
+    });
+    this.applyBaseOptions({ ariaLabel: options.ariaLabel });
 
     this.requestRender();
   }
@@ -22,7 +25,7 @@ export class WaterfallChart extends BaseFinanceChart {
     height: number,
     theme: Theme,
   ): void {
-    const pos = this.crosshair?.getPosition() ?? null;
+    const pos = this.options.crosshair === false ? null : this.crosshair.getPosition();
     renderWaterfall(ctx, width, height, this.options, theme, pos);
   }
 
@@ -33,11 +36,12 @@ export class WaterfallChart extends BaseFinanceChart {
 
   setOptions(opts: Partial<WaterfallOptions>): void {
     this.options = { ...this.options, ...opts };
+    this.applyBaseOptions(opts);
     this.requestRender();
   }
 
   destroy(): void {
-    this.crosshair?.destroy();
+    this.crosshair.destroy();
     super.destroy();
   }
 }
