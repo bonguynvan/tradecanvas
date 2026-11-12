@@ -13,8 +13,6 @@
     "@tradecanvas/vue": "1.4.22"
   },
   "changesets": [
-    "airy-defaults",
-    "one-spelling",
-    "panes-share-the-room"
+    "airy-defaults"
   ]
 }
