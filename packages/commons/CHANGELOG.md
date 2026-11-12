@@ -1,5 +1,11 @@
 # @tradecanvas/commons
 
+## 2.1.0
+
+### Minor Changes
+
+- a77d4d1: `SymbolInfo.delayMinutes`: a symbol whose prices run behind the market says by how much, and the widget's status bar reads "Delayed 15 min", with a ring in place of the live dot, where it read "Live".
+
 ## 2.0.5
 
 ### Patch Changes

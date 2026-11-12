@@ -1,5 +1,12 @@
 # @tradecanvas/core
 
+## 2.1.0
+
+### Patch Changes
+
+- Updated dependencies [a77d4d1]
+  - @tradecanvas/commons@2.1.0
+
 ## 2.0.5
 
 ### Patch Changes
