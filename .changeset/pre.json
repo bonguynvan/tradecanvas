@@ -14,6 +14,7 @@
   },
   "changesets": [
     "airy-defaults",
+    "finance-face-locale",
     "finance-shared-frame",
     "older-charts-fixed",
     "one-retry-event",
