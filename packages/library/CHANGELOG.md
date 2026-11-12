@@ -1,5 +1,13 @@
 # @tradecanvas/chart
 
+## 2.0.4
+
+### Patch Changes
+
+- The packages' npm pages say what TradeCanvas is: descriptions that name it as an open-source trading chart library, the keywords people search by, and tradecanvas.dev as the homepage. No code changed.
+  - @tradecanvas/commons@2.0.4
+  - @tradecanvas/core@2.0.4
+
 ## 2.0.3
 
 ### Patch Changes

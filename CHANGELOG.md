@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.0.4 (2026-11-12)
+
+### Packages
+
+- **The packages' npm pages say what TradeCanvas is.** Each package's description names it as an open-source trading chart library, its keywords gain the ones people search by (`charting-library`, `trading-chart`, `candlestick-chart`, `stock-chart`, `webgl`, `javascript`…), and its homepage is [tradecanvas.dev](https://tradecanvas.dev/). The README on npm opens with the same words and states the licence in one line: MIT for everyone, no logo to show, nothing to apply for. No code changed.
+
 ## 2.0.3 (2026-11-12)
 
 ### Widget
