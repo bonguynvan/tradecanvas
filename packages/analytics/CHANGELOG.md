@@ -1,5 +1,11 @@
 # @tradecanvas/analytics
 
+## 1.84.1
+
+### Patch Changes
+
+- @tradecanvas/commons@1.84.1
+
 ## 1.84.0
 
 ### Patch Changes
