@@ -1,56 +1,48 @@
 import type { EquityCurveOptions, EquityPoint, Theme } from '@tradecanvas/commons';
-import { computeTickStep, withAlpha } from '@tradecanvas/commons';
-import { AREA_FILL_ALPHA } from './chartKit.js';
+import { withAlpha } from '@tradecanvas/commons';
+import {
+  AREA_FILL_ALPHA,
+  AXIS_GAP,
+  BOTTOM_LABELS,
+  CHART_PAD,
+  LABEL_GAP,
+  LABEL_SIZE,
+  axisFormat,
+  defaultFormat,
+  drawLegend,
+  drawTooltip,
+  drawValueAxis,
+  fontOf,
+  layoutLegend,
+  niceScale,
+  scaleToPx,
+  strokeHairline,
+  timeTicks,
+  type LegendLayout,
+  type Measure,
+  type NiceScale,
+  type Rect,
+  type TooltipLine,
+} from './chartKit.js';
 
-interface EquityLayout {
-  left: number;
-  right: number;
-  top: number;
-  bottom: number;
-  plotWidth: number;
-  plotHeight: number;
+export interface EquityLayout {
+  plot: Rect;
+  scale: NiceScale;
+  /** The curve's first and last time, ms: the benchmark is shown over the same stretch. */
+  timeMin: number;
+  timeMax: number;
+  /** The benchmark's name, over the plot. */
+  legend: LegendLayout | null;
 }
 
-const MARGIN_LEFT = 70;
-const MARGIN_BOTTOM = 30;
-const PADDING_RIGHT = 20;
-const PADDING_TOP = 20;
-const VALUE_PADDING_FACTOR = 0.05;
 /** How strongly the fall from a peak is shaded when no colour is given. */
 const DRAWDOWN_ALPHA = 0.19;
-
-function computeLayout(width: number, height: number): EquityLayout {
-  return {
-    left: MARGIN_LEFT,
-    right: width - PADDING_RIGHT,
-    top: PADDING_TOP,
-    bottom: height - MARGIN_BOTTOM,
-    plotWidth: width - MARGIN_LEFT - PADDING_RIGHT,
-    plotHeight: height - PADDING_TOP - MARGIN_BOTTOM,
-  };
-}
-
-function computeValueRange(
-  data: readonly EquityPoint[],
-  benchmark: readonly EquityPoint[] | undefined,
-): { valMin: number; valMax: number } {
-  let min = Infinity;
-  let max = -Infinity;
-  for (const pt of data) {
-    if (pt.value < min) min = pt.value;
-    if (pt.value > max) max = pt.value;
-  }
-  if (benchmark) {
-    for (const pt of benchmark) {
-      if (pt.value < min) min = pt.value;
-      if (pt.value > max) max = pt.value;
-    }
-  }
-  // Values all the same have no range to pad: open one about them, so the
-  // axis has steps and the line runs through the middle.
-  const padding = (max - min) * VALUE_PADDING_FACTOR || Math.abs(max) * VALUE_PADDING_FACTOR || 1;
-  return { valMin: min - padding, valMax: max + padding };
-}
+const DAY = 86_400_000;
+/** Room a time label wants along the axis, px. */
+const TIME_LABEL_ROOM = 80;
+const HOVER_DOT = 3;
+const FLAT_RANGE = 0.05;
+const DEFAULT_BENCHMARK_LABEL = 'Benchmark';
 
 /** The point of `points` nearest `time`, or -1 when there are none. */
 function nearestIndex(points: readonly EquityPoint[], time: number): number {
@@ -66,311 +58,94 @@ function nearestIndex(points: readonly EquityPoint[], time: number): number {
   return nearest;
 }
 
-function buildPeakArray(data: readonly EquityPoint[]): readonly number[] {
-  const peaks: number[] = [];
-  let peak = -Infinity;
+/**
+ * How the axis's times read, by the step between them: a clock for steps
+ * under a day (with the day when the curve runs past one), the day for steps
+ * of days, the month and year past a year of curve. Whole days are read in
+ * UTC, where the ticks are cut, so a day's tick is not the evening before.
+ */
+function axisTimeFormat(stepMs: number, rangeMs: number): (ts: number) => string {
+  const options: Intl.DateTimeFormatOptions = stepMs < DAY
+    ? { ...(rangeMs > DAY ? { month: 'short', day: 'numeric' } : {}), hour: '2-digit', minute: '2-digit' }
+    : rangeMs < 365 * DAY ? { month: 'short', day: 'numeric', timeZone: 'UTC' } : { month: 'short', year: 'numeric', timeZone: 'UTC' };
+  const format = new Intl.DateTimeFormat(undefined, options);
+  return (ts) => format.format(new Date(ts));
+}
+
+/** A point's time in full: its day, the year on a curve of a year or more, the clock on one of under a week. */
+function pointTimeFormat(rangeMs: number): (ts: number) => string {
+  const intraday = rangeMs < 7 * DAY;
+  const format = new Intl.DateTimeFormat(undefined, {
+    month: 'short',
+    day: 'numeric',
+    ...(rangeMs >= 365 * DAY ? { year: 'numeric' } : {}),
+    ...(intraday ? { hour: '2-digit', minute: '2-digit' } : { timeZone: 'UTC' }),
+  });
+  return (ts) => format.format(new Date(ts));
+}
+
+/** The points in order of time: as given when they are, else a sorted copy. */
+function byTime(points: readonly EquityPoint[]): readonly EquityPoint[] {
+  for (let i = 1; i < points.length; i++) {
+    if (points[i].time < points[i - 1].time) return [...points].sort((a, b) => a.time - b.time);
+  }
+  return points;
+}
+
+/** Where the curve goes, for a chart `width` by `height`. */
+export function computeEquityLayout(options: EquityCurveOptions, width: number, height: number, measure: Measure, benchmarkColor = ''): EquityLayout {
+  const { data, benchmark } = options;
+  let lo = Infinity;
+  let hi = -Infinity;
+  let timeMin = Infinity;
+  let timeMax = -Infinity;
   for (const pt of data) {
-    if (pt.value > peak) peak = pt.value;
-    peaks.push(peak);
+    if (Number.isFinite(pt.value)) {
+      lo = Math.min(lo, pt.value);
+      hi = Math.max(hi, pt.value);
+    }
+    // The curve need not come in order of time.
+    if (Number.isFinite(pt.time)) {
+      timeMin = Math.min(timeMin, pt.time);
+      timeMax = Math.max(timeMax, pt.time);
+    }
   }
-  return peaks;
-}
-
-function selectTimeFormat(
-  rangeMs: number,
-): (ts: number) => string {
-  const DAY = 86_400_000;
-  const YEAR = 365.25 * DAY;
-
-  if (rangeMs < 7 * DAY) {
-    // Show hours
-    const fmt = new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit' });
-    return (ts: number) => fmt.format(new Date(ts));
+  for (const pt of benchmark ?? []) {
+    if (!Number.isFinite(pt.value)) continue;
+    lo = Math.min(lo, pt.value);
+    hi = Math.max(hi, pt.value);
   }
-  if (rangeMs < YEAR) {
-    // Show month/day
-    const fmt = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' });
-    return (ts: number) => fmt.format(new Date(ts));
-  }
-  // Show month/year
-  const fmt = new Intl.DateTimeFormat(undefined, { month: 'short', year: 'numeric' });
-  return (ts: number) => fmt.format(new Date(ts));
+  // Values all the same have no range: a twentieth of the value either side, so the line runs through the middle.
+  const flat = lo === hi ? Math.abs(lo) * FLAT_RANGE || 1 : 0;
+  const scale = niceScale(lo - flat, hi + flat, 5);
+  const format = options.valueFormat ?? axisFormat(scale);
+  const tickWidth = Math.max(0, ...scale.ticks.map((t) => measure(format(t), LABEL_SIZE)));
+  const legend = benchmark && benchmark.length >= 2
+    ? layoutLegend([{ label: options.benchmarkLabel ?? DEFAULT_BENCHMARK_LABEL, color: benchmarkColor }], width - CHART_PAD * 2, measure)
+    : null;
+  const left = CHART_PAD + tickWidth + AXIS_GAP;
+  const top = CHART_PAD + (legend ? legend.height + LABEL_GAP : 0);
+  const plot: Rect = { x: left, y: top, width: Math.max(1, width - left - CHART_PAD), height: Math.max(1, height - top - CHART_PAD - BOTTOM_LABELS) };
+  return { plot, scale, timeMin, timeMax, legend };
 }
 
-function defaultValueFormat(val: number): string {
-  if (Math.abs(val) >= 1_000_000) return (val / 1_000_000).toFixed(2) + 'M';
-  if (Math.abs(val) >= 1_000) return (val / 1_000).toFixed(1) + 'K';
-  return val.toFixed(2);
-}
-
-function drawBackground(
-  ctx: CanvasRenderingContext2D,
-  width: number,
-  height: number,
-  bg: string,
-): void {
-  ctx.fillStyle = bg;
-  ctx.fillRect(0, 0, width, height);
-}
-
-function drawGrid(
-  ctx: CanvasRenderingContext2D,
-  layout: EquityLayout,
-  valMin: number,
-  valMax: number,
-  timeMin: number,
-  timeMax: number,
-  theme: Theme,
-  valueFormat: (v: number) => string,
-  formatTime: (ts: number) => string,
-): void {
-  const { left, right, top, bottom, plotWidth, plotHeight } = layout;
-
+function drawTimeAxis(ctx: CanvasRenderingContext2D, layout: EquityLayout, width: number, theme: Theme, given: ((ts: number) => string) | undefined): void {
+  const { plot, timeMin, timeMax } = layout;
+  const ticks = timeTicks(timeMin, timeMax, Math.max(1, Math.floor(plot.width / TIME_LABEL_ROOM)));
+  const format = given ?? axisTimeFormat(ticks.length > 1 ? ticks[1] - ticks[0] : timeMax - timeMin, timeMax - timeMin);
   ctx.save();
-  ctx.strokeStyle = theme.grid;
-  ctx.lineWidth = 0.5;
+  ctx.font = fontOf(theme, LABEL_SIZE);
   ctx.fillStyle = theme.axisLabel;
-  ctx.font = `${theme.font.sizeSmall}px ${theme.font.family}`;
-
-  // Value axis (left) - horizontal grid lines
-  const valStep = computeTickStep(valMin, valMax, 6);
-  const firstValTick = Math.ceil(valMin / valStep) * valStep;
-  for (let v = firstValTick; v <= valMax; v += valStep) {
-    const y = bottom - ((v - valMin) / (valMax - valMin)) * plotHeight;
-    ctx.beginPath();
-    ctx.moveTo(left, y);
-    ctx.lineTo(right, y);
-    ctx.stroke();
-    ctx.textAlign = 'right';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(valueFormat(v), left - 6, y);
-  }
-
-  // Time axis (bottom) - vertical grid lines
-  const timeRange = timeMax - timeMin;
-  const timeStep = computeTickStep(timeMin, timeMax, 6);
-  const firstTimeTick = Math.ceil(timeMin / timeStep) * timeStep;
-  for (let t = firstTimeTick; t <= timeMax; t += timeStep) {
-    const x = left + ((t - timeMin) / timeRange) * plotWidth;
-    ctx.beginPath();
-    ctx.moveTo(x, top);
-    ctx.lineTo(x, bottom);
-    ctx.stroke();
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'top';
-    ctx.fillText(formatTime(t), x, bottom + 4);
-  }
-
-  ctx.restore();
-}
-
-function drawLine(
-  ctx: CanvasRenderingContext2D,
-  data: readonly EquityPoint[],
-  layout: EquityLayout,
-  timeMin: number,
-  timeRange: number,
-  valMin: number,
-  valRange: number,
-  color: string,
-  lineWidth: number,
-): void {
-  if (data.length < 2) return;
-
-  const { left, bottom, plotWidth, plotHeight } = layout;
-  const toX = (ts: number): number => left + ((ts - timeMin) / timeRange) * plotWidth;
-  const toY = (v: number): number => bottom - ((v - valMin) / valRange) * plotHeight;
-
-  ctx.save();
-  ctx.beginPath();
-  ctx.moveTo(toX(data[0].time), toY(data[0].value));
-  for (let i = 1; i < data.length; i++) {
-    ctx.lineTo(toX(data[i].time), toY(data[i].value));
-  }
-  ctx.strokeStyle = color;
-  ctx.lineWidth = lineWidth;
-  ctx.lineJoin = 'round';
-  ctx.stroke();
-  ctx.restore();
-}
-
-function drawAreaFill(
-  ctx: CanvasRenderingContext2D,
-  data: readonly EquityPoint[],
-  layout: EquityLayout,
-  timeMin: number,
-  timeRange: number,
-  valMin: number,
-  valRange: number,
-  color: string,
-): void {
-  if (data.length < 2) return;
-
-  const { left, bottom, plotWidth, plotHeight } = layout;
-  const toX = (ts: number): number => left + ((ts - timeMin) / timeRange) * plotWidth;
-  const toY = (v: number): number => bottom - ((v - valMin) / valRange) * plotHeight;
-
-  const gradient = ctx.createLinearGradient(0, layout.top, 0, bottom);
-  gradient.addColorStop(0, withAlpha(color, AREA_FILL_ALPHA));
-  gradient.addColorStop(1, 'transparent');
-
-  ctx.save();
-  ctx.beginPath();
-  ctx.moveTo(toX(data[0].time), toY(data[0].value));
-  for (let i = 1; i < data.length; i++) {
-    ctx.lineTo(toX(data[i].time), toY(data[i].value));
-  }
-  ctx.lineTo(toX(data[data.length - 1].time), bottom);
-  ctx.lineTo(toX(data[0].time), bottom);
-  ctx.closePath();
-  ctx.fillStyle = gradient;
-  ctx.fill();
-  ctx.restore();
-}
-
-function drawDrawdown(
-  ctx: CanvasRenderingContext2D,
-  data: readonly EquityPoint[],
-  peaks: readonly number[],
-  layout: EquityLayout,
-  timeMin: number,
-  timeRange: number,
-  valMin: number,
-  valRange: number,
-  drawdownColor: string,
-): void {
-  if (data.length < 2) return;
-
-  const { left, bottom, plotWidth, plotHeight } = layout;
-  const toX = (ts: number): number => left + ((ts - timeMin) / timeRange) * plotWidth;
-  const toY = (v: number): number => bottom - ((v - valMin) / valRange) * plotHeight;
-
-  ctx.save();
-  ctx.fillStyle = drawdownColor;
-  ctx.beginPath();
-
-  // Draw peak line forward
-  ctx.moveTo(toX(data[0].time), toY(peaks[0]));
-  for (let i = 1; i < data.length; i++) {
-    ctx.lineTo(toX(data[i].time), toY(peaks[i]));
-  }
-  // Draw equity line backward
-  for (let i = data.length - 1; i >= 0; i--) {
-    ctx.lineTo(toX(data[i].time), toY(data[i].value));
-  }
-  ctx.closePath();
-  ctx.fill();
-  ctx.restore();
-}
-
-function drawBenchmarkLabel(
-  ctx: CanvasRenderingContext2D,
-  benchmark: readonly EquityPoint[],
-  layout: EquityLayout,
-  timeMin: number,
-  timeRange: number,
-  valMin: number,
-  valRange: number,
-  label: string,
-  color: string,
-  theme: Theme,
-): void {
-  if (benchmark.length === 0) return;
-
-  const { left, bottom, plotWidth, plotHeight } = layout;
-  // By the line's end as drawn: a benchmark that runs past the curve is cut at the plot's edge.
-  const timeMax = timeMin + timeRange;
-  const end = benchmark[benchmark.length - 1];
-  const last = end.time > timeMax ? benchmark[nearestIndex(benchmark, timeMax)] ?? end : end;
-  const x = Math.min(layout.right, Math.max(left, left + ((last.time - timeMin) / timeRange) * plotWidth));
-  const y = bottom - ((last.value - valMin) / valRange) * plotHeight;
-
-  ctx.save();
-  ctx.font = `${theme.font.sizeSmall}px ${theme.font.family}`;
-  ctx.fillStyle = color;
-  ctx.textAlign = 'left';
-  ctx.textBaseline = 'middle';
-  ctx.fillText(label, x + 4, y);
-  ctx.restore();
-}
-
-function drawCrosshairTooltip(
-  ctx: CanvasRenderingContext2D,
-  crosshairPos: { x: number; y: number },
-  data: readonly EquityPoint[],
-  benchmark: readonly EquityPoint[] | undefined,
-  layout: EquityLayout,
-  timeMin: number,
-  timeRange: number,
-  valMin: number,
-  valRange: number,
-  theme: Theme,
-  formatTime: (ts: number) => string,
-  valueFormat: (v: number) => string,
-  lineColor: string,
-): void {
-  const { left, top, bottom, plotWidth, plotHeight } = layout;
-  const mx = crosshairPos.x;
-
-  if (mx < left || mx > layout.right) return;
-
-  // Vertical crosshair line
-  ctx.save();
-  ctx.strokeStyle = theme.crosshair;
-  ctx.lineWidth = 0.5;
-  ctx.setLineDash([4, 4]);
-  ctx.beginPath();
-  ctx.moveTo(mx, top);
-  ctx.lineTo(mx, bottom);
-  ctx.stroke();
-  ctx.restore();
-
-  // Find closest data point
-  const timeAtMouse = timeMin + ((mx - left) / plotWidth) * timeRange;
-  // No point is nearest when the times are no numbers: nothing to read out.
-  const pt = data[nearestIndex(data, timeAtMouse)];
-  if (!pt) return;
-  const lines = [
-    formatTime(pt.time),
-    `Value: ${valueFormat(pt.value)}`,
-  ];
-
-  // The benchmark has times of its own: read it at the pointed time, not at the curve's index.
-  const benchmarkAt = benchmark ? nearestIndex(benchmark, pt.time) : -1;
-  if (benchmark && benchmarkAt >= 0) {
-    lines.push(`Benchmark: ${valueFormat(benchmark[benchmarkAt].value)}`);
-  }
-
-  // Draw dot on equity line
-  const dotX = left + ((pt.time - timeMin) / timeRange) * plotWidth;
-  const dotY = bottom - ((pt.value - valMin) / valRange) * plotHeight;
-  ctx.beginPath();
-  ctx.arc(dotX, dotY, 3, 0, Math.PI * 2);
-  ctx.fillStyle = lineColor;
-  ctx.fill();
-
-  // Tooltip box
-  ctx.save();
-  ctx.font = `${theme.font.sizeSmall}px ${theme.font.family}`;
-  const maxTextWidth = Math.max(...lines.map(l => ctx.measureText(l).width));
-  const tooltipW = maxTextWidth + 16;
-  const tooltipH = lines.length * (theme.font.sizeSmall + 4) + 12;
-
-  let tx = mx + 10;
-  let ty = crosshairPos.y - tooltipH / 2;
-  if (tx + tooltipW > layout.right) tx = mx - tooltipW - 10;
-  if (ty < top) ty = top;
-  if (ty + tooltipH > bottom) ty = bottom - tooltipH;
-
-  ctx.fillStyle = theme.axisLabelBackground;
-  ctx.globalAlpha = 0.9;
-  ctx.fillRect(tx, ty, tooltipW, tooltipH);
-  ctx.globalAlpha = 1;
-  ctx.fillStyle = theme.text;
+  ctx.strokeStyle = theme.grid;
+  ctx.textAlign = 'center';
   ctx.textBaseline = 'top';
-  ctx.textAlign = 'left';
-  for (let i = 0; i < lines.length; i++) {
-    ctx.fillText(lines[i], tx + 8, ty + 6 + i * (theme.font.sizeSmall + 4));
+  for (const t of ticks) {
+    const x = plot.x + ((t - timeMin) / (timeMax - timeMin)) * plot.width;
+    strokeHairline(ctx, x, plot.y, x, plot.y + plot.height);
+    const text = format(t);
+    const half = ctx.measureText(text).width / 2;
+    // A label that would run off the chart is left out; its line stays.
+    if (x - half >= 0 && x + half <= width) ctx.fillText(text, Math.round(x), plot.y + plot.height + LABEL_GAP);
   }
   ctx.restore();
 }
@@ -382,69 +157,107 @@ export function renderEquityCurve(
   options: EquityCurveOptions,
   theme: Theme,
   crosshairPos: { x: number; y: number } | null,
+  measure?: Measure,
 ): void {
-  const { data } = options;
   if (width <= 0 || height <= 0) return;
-  if (data.length < 2) {
-    drawBackground(ctx, width, height, theme.background);
-    return;
-  }
+  ctx.fillStyle = theme.background;
+  ctx.fillRect(0, 0, width, height);
+  if (options.data.length < 2) return;
+  const data = byTime(options.data);
+  const benchmark = options.benchmark && byTime(options.benchmark);
 
+  const measureText: Measure = measure ?? ((text, size = LABEL_SIZE) => {
+    ctx.font = fontOf(theme, size);
+    return ctx.measureText(text).width;
+  });
   const lineColor = options.lineColor ?? theme.lineColor;
-  const lineWidth = options.lineWidth ?? 1.5;
-  const drawdownEnabled = options.drawdown === true;
-  const drawdownColor = options.drawdownColor ?? withAlpha(theme.candleDown, DRAWDOWN_ALPHA);
-  const fillArea = options.fillArea === true;
-  const benchmark = options.benchmark;
   const benchmarkColor = options.benchmarkColor ?? theme.textSecondary;
-  const benchmarkLabel = options.benchmarkLabel ?? 'Benchmark';
-  const valueFormat = options.valueFormat ?? defaultValueFormat;
-
-  const { valMin, valMax } = computeValueRange(data, benchmark);
-  const valRange = valMax - valMin || 1;
-
-  const timeMin = data[0].time;
-  const timeMax = data[data.length - 1].time;
+  const layout = computeEquityLayout(options, width, height, measureText, benchmarkColor);
+  const { plot, scale, timeMin, timeMax, legend } = layout;
+  if (!(timeMax >= timeMin)) return;
   const timeRange = timeMax - timeMin || 1;
+  const toX = (ts: number): number => plot.x + ((ts - timeMin) / timeRange) * plot.width;
+  const toY = (v: number): number => scaleToPx(scale, v, plot.y, plot.height, true);
+  const bottom = plot.y + plot.height;
+  const formatTime = options.timeFormat ?? pointTimeFormat(timeRange);
 
-  const formatTime = options.timeFormat ?? selectTimeFormat(timeRange);
-  const layout = computeLayout(width, height);
+  drawValueAxis(ctx, plot, scale, 'vertical', theme, options.valueFormat ?? axisFormat(scale));
+  drawTimeAxis(ctx, layout, width, theme, options.timeFormat);
+  if (legend) drawLegend(ctx, legend, plot.x, CHART_PAD, theme);
 
-  drawBackground(ctx, width, height, theme.background);
-  drawGrid(ctx, layout, valMin, valMax, timeMin, timeMax, theme, valueFormat, formatTime);
+  const trace = (points: readonly EquityPoint[], value: (i: number) => number = (i) => points[i].value): void => {
+    ctx.moveTo(toX(points[0].time), toY(value(0)));
+    for (let i = 1; i < points.length; i++) ctx.lineTo(toX(points[i].time), toY(value(i)));
+  };
 
-  // Drawdown shading
-  if (drawdownEnabled) {
-    const peaks = buildPeakArray(data);
-    drawDrawdown(ctx, data, peaks, layout, timeMin, timeRange, valMin, valRange, drawdownColor);
-  }
+  ctx.save();
+  // Everything of the curves stays in the plot: a benchmark may run before or past the curve.
+  ctx.beginPath();
+  ctx.rect(plot.x, plot.y, plot.width, plot.height);
+  ctx.clip();
 
-  // Area fill under equity line
-  if (fillArea) {
-    drawAreaFill(ctx, data, layout, timeMin, timeRange, valMin, valRange, lineColor);
-  }
-
-  // Equity line
-  drawLine(ctx, data, layout, timeMin, timeRange, valMin, valRange, lineColor, lineWidth);
-
-  // Benchmark line
-  if (benchmark && benchmark.length >= 2) {
-    // It may run before or past the curve: only the part over the curve's time is shown.
-    ctx.save();
+  if (options.drawdown === true) {
+    // The gap between the highest value so far and the curve: forward along the peaks, back along the curve.
+    const peaks: number[] = [];
+    let peak = -Infinity;
+    // A value that is no number is no peak: it would make every peak after it none.
+    for (const pt of data) peaks.push((peak = Number.isFinite(pt.value) ? Math.max(peak, pt.value) : peak));
+    ctx.fillStyle = options.drawdownColor ?? withAlpha(theme.candleDown, DRAWDOWN_ALPHA);
     ctx.beginPath();
-    ctx.rect(layout.left, layout.top, layout.plotWidth, layout.plotHeight);
-    ctx.clip();
-    drawLine(ctx, benchmark, layout, timeMin, timeRange, valMin, valRange, benchmarkColor, 1);
-    ctx.restore();
-    drawBenchmarkLabel(ctx, benchmark, layout, timeMin, timeRange, valMin, valRange, benchmarkLabel, benchmarkColor, theme);
+    trace(data, (i) => peaks[i]);
+    for (let i = data.length - 1; i >= 0; i--) ctx.lineTo(toX(data[i].time), toY(data[i].value));
+    ctx.closePath();
+    ctx.fill();
   }
 
-  // Crosshair
-  if (crosshairPos) {
-    drawCrosshairTooltip(
-      ctx, crosshairPos, data, benchmark,
-      layout, timeMin, timeRange, valMin, valRange,
-      theme, formatTime, valueFormat, lineColor,
-    );
+  if (options.fillArea === true) {
+    const gradient = ctx.createLinearGradient(0, plot.y, 0, bottom);
+    gradient.addColorStop(0, withAlpha(lineColor, AREA_FILL_ALPHA));
+    gradient.addColorStop(1, 'transparent');
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    trace(data);
+    ctx.lineTo(toX(data[data.length - 1].time), bottom);
+    ctx.lineTo(toX(data[0].time), bottom);
+    ctx.closePath();
+    ctx.fill();
   }
+
+  ctx.lineJoin = 'round';
+  if (benchmark && benchmark.length >= 2) {
+    ctx.strokeStyle = benchmarkColor;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    trace(benchmark);
+    ctx.stroke();
+  }
+  ctx.strokeStyle = lineColor;
+  ctx.lineWidth = options.lineWidth ?? 1.5;
+  ctx.beginPath();
+  trace(data);
+  ctx.stroke();
+  ctx.restore();
+
+  if (!crosshairPos || crosshairPos.x < plot.x || crosshairPos.x > plot.x + plot.width) return;
+  // No point is nearest when the times are no numbers: nothing to read out.
+  const pt = data[nearestIndex(data, timeMin + ((crosshairPos.x - plot.x) / plot.width) * timeRange)];
+  if (!pt) return;
+  ctx.save();
+  ctx.strokeStyle = theme.crosshair;
+  ctx.setLineDash([4, 4]);
+  strokeHairline(ctx, toX(pt.time), plot.y, toX(pt.time), bottom);
+  ctx.restore();
+  ctx.fillStyle = lineColor;
+  ctx.beginPath();
+  ctx.arc(toX(pt.time), toY(pt.value), HOVER_DOT, 0, Math.PI * 2);
+  ctx.fill();
+
+  const format = options.valueFormat ?? defaultFormat;
+  const lines: TooltipLine[] = [{ text: formatTime(pt.time), bold: true }, { text: format(pt.value), color: lineColor }];
+  // The benchmark has times of its own: read at the pointed time, not at the curve's index.
+  const at = benchmark ? nearestIndex(benchmark, pt.time) : -1;
+  if (benchmark && at >= 0) {
+    lines.push({ text: `${options.benchmarkLabel ?? DEFAULT_BENCHMARK_LABEL}: ${format(benchmark[at].value)}`, color: benchmarkColor });
+  }
+  drawTooltip(ctx, lines, crosshairPos, { x: 0, y: 0, width, height }, theme);
 }

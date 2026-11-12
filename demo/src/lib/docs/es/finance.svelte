@@ -44,6 +44,9 @@ chart.setOptions({ mode: 'stacked' })   // cualquier opción, se combina
 chart.setTheme('light')                 // 'dark' | 'light' | un Theme
 chart.destroy()                         // quita el canvas y sus listeners`}</code></pre>
 <p>
+  En una pantalla táctil, un toque muestra el tooltip, que permanece hasta que tocas en otro lugar; arrastrar sigue desplazando la página. Los gráficos se dibujan sobre los píxeles propios de la pantalla, así que las líneas se ven nítidas con cualquier zoom. Los gráficos de profundidad, de equity y de cascada ajustan sus márgenes a sus etiquetas, como los gráficos más nuevos.
+</p>
+<p>
   Cada gráfico llena su elemento y se vuelve a dibujar cuando el elemento cambia de tamaño. En los que muestran un
   tooltip al pasar el puntero, <code>crosshair: false</code> lo desactiva. Los gráficos de barras, donut, dispersión,
   histograma, calendario y matriz indican a los lectores de pantalla lo que muestran (el canvas tiene el rol image y una etiqueta);

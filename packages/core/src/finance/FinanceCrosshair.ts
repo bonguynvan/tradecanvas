@@ -4,7 +4,9 @@ export class FinanceCrosshair {
   private onUpdate: () => void;
 
   private handleMove: (e: PointerEvent) => void;
-  private handleLeave: () => void;
+  private handleLeave: (e: PointerEvent) => void;
+  private handleOutside: (e: Event) => void;
+  private handleCancel: () => void;
 
   constructor(canvas: HTMLCanvasElement, onUpdate: () => void) {
     this.canvas = canvas;
@@ -15,13 +17,31 @@ export class FinanceCrosshair {
       this.pos = { x: e.clientX - rect.left, y: e.clientY - rect.top };
       this.onUpdate();
     };
-    this.handleLeave = () => {
-      this.pos = null;
-      this.onUpdate();
+    // A finger leaves when it lifts: what it pointed at stays read out, as a
+    // tap's does, until a touch somewhere else. A mouse takes it along.
+    this.handleLeave = (e: PointerEvent) => {
+      if (e.pointerType === 'touch') return;
+      this.clear();
     };
+    // By the path the event took: inside a shadow root its target reads as the root's host.
+    this.handleOutside = (e: Event) => {
+      if (!e.composedPath().includes(canvas)) this.clear();
+    };
+    // The browser took the touch for its own (a scroll of the page): what it began on is not being pointed at.
+    this.handleCancel = () => this.clear();
 
     canvas.addEventListener('pointermove', this.handleMove);
+    // A tap has no move before it.
+    canvas.addEventListener('pointerdown', this.handleMove);
     canvas.addEventListener('pointerleave', this.handleLeave);
+    canvas.addEventListener('pointercancel', this.handleCancel);
+    canvas.ownerDocument.addEventListener('pointerdown', this.handleOutside, true);
+  }
+
+  private clear(): void {
+    if (this.pos === null) return;
+    this.pos = null;
+    this.onUpdate();
   }
 
   getPosition(): { x: number; y: number } | null {
@@ -58,6 +78,9 @@ export class FinanceCrosshair {
 
   destroy(): void {
     this.canvas.removeEventListener('pointermove', this.handleMove);
+    this.canvas.removeEventListener('pointerdown', this.handleMove);
     this.canvas.removeEventListener('pointerleave', this.handleLeave);
+    this.canvas.removeEventListener('pointercancel', this.handleCancel);
+    this.canvas.ownerDocument.removeEventListener('pointerdown', this.handleOutside, true);
   }
 }

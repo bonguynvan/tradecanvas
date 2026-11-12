@@ -1,5 +1,6 @@
 import type { Theme } from '@tradecanvas/commons';
 import { TC_SERIES_COLORS, withAlpha } from '@tradecanvas/commons';
+import { toPixel } from '../charts/pixelGrid.js';
 
 /** How wide `text` is at a font size, px (the canvas's measureText, or a stand-in in tests). */
 export type Measure = (text: string, size?: number) => number;
@@ -20,6 +21,16 @@ export interface NiceScale {
 
 /** How strongly a line's colour fills the area under it. */
 export const AREA_FILL_ALPHA = 0.25;
+/**
+ * The room the finance charts leave, px, on the even ladder the widget is
+ * spaced by (4, 6, 8, 12): between the chart's edge and what it draws,
+ * between an axis and its labels, between a plot and the labels under it,
+ * and the height those labels take.
+ */
+export const CHART_PAD = 12;
+export const AXIS_GAP = 8;
+export const LABEL_GAP = 6;
+export const BOTTOM_LABELS = 20;
 /** Room for a label's text around it, px. */
 export const LABEL_SIZE = 11;
 const LEGEND_SWATCH = 10;
@@ -226,6 +237,85 @@ export function drawTooltip(
   ctx.restore();
 }
 
+/** Where a one-pixel line goes to fall on whole device pixels, in the canvas's own units. */
+export interface Hairline {
+  /** The x of a vertical line through `v`. */
+  x(v: number): number;
+  /** The y of a horizontal line through `v`. */
+  y(v: number): number;
+  /** The line's width: one CSS pixel, held to whole device pixels. */
+  width: number;
+}
+
+/**
+ * Hairlines for the canvas as it is scaled now. A line one pixel wide drawn
+ * at a fraction of a device pixel spreads over two at half strength; at a
+ * ratio like 1.25 or 1.5 that is every line placed by rounding CSS pixels.
+ * A canvas whose transform can't be read (a test stand-in) is taken as 1:1.
+ */
+export function hairline(ctx: CanvasRenderingContext2D): Hairline {
+  const m = typeof ctx.getTransform === 'function' ? ctx.getTransform() : undefined;
+  const a = m && Number.isFinite(m.a) && m.a > 0 ? m.a : 1;
+  const d = m && Number.isFinite(m.d) && m.d > 0 ? m.d : 1;
+  const e = m && Number.isFinite(m.e) ? m.e : 0;
+  const f = m && Number.isFinite(m.f) ? m.f : 0;
+  const px = Math.max(1, Math.floor(a));
+  return {
+    x: (v) => (toPixel(v * a + e - px / 2) + px / 2 - e) / a,
+    y: (v) => (toPixel(v * d + f - px / 2) + px / 2 - f) / d,
+    width: px / a,
+  };
+}
+
+/** A straight one-pixel line from (x1, y1) to (x2, y2), level or upright, on whole device pixels. */
+export function strokeHairline(ctx: CanvasRenderingContext2D, x1: number, y1: number, x2: number, y2: number): void {
+  const line = hairline(ctx);
+  ctx.lineWidth = line.width;
+  ctx.beginPath();
+  if (y1 === y2) {
+    const y = line.y(y1);
+    ctx.moveTo(x1, y);
+    ctx.lineTo(x2, y);
+  } else {
+    const x = line.x(x1);
+    ctx.moveTo(x, y1);
+    ctx.lineTo(x, y2);
+  }
+  ctx.stroke();
+}
+
+const MINUTE = 60_000;
+const HOUR = 60 * MINUTE;
+const DAY = 24 * HOUR;
+/** Steps a time axis may take: the round ones of a clock and a calendar. */
+const TIME_STEPS = [MINUTE, 5 * MINUTE, 15 * MINUTE, 30 * MINUTE, HOUR, 2 * HOUR, 4 * HOUR, 12 * HOUR, DAY, 2 * DAY, 7 * DAY, 14 * DAY, 30 * DAY, 91 * DAY, 182 * DAY, 365 * DAY];
+
+/**
+ * Up to `maxTicks` times between `min` and `max` (ms), a round step apart
+ * and on that step's own marks: whole hours, whole days (UTC), not multiples
+ * of whatever the range divides into.
+ */
+export function timeTicks(min: number, max: number, maxTicks: number): number[] {
+  if (!Number.isFinite(min) || !Number.isFinite(max) || max <= min) return [];
+  const want = (max - min) / Math.max(1, maxTicks);
+  let step = TIME_STEPS.find((s) => s >= want);
+  // Past a year a step: whole years, as many as it takes.
+  if (step === undefined) step = Math.ceil(want / (365 * DAY)) * 365 * DAY;
+  const ticks: number[] = [];
+  for (let t = Math.ceil(min / step) * step; t <= max; t += step) ticks.push(t);
+  return ticks;
+}
+
+/** The decimals it takes to write every one of `values` in full, up to `cap`. */
+export function decimalsFor(values: Iterable<number>, cap = 8): number {
+  let decimals = 0;
+  for (const v of values) {
+    if (!Number.isFinite(v)) continue;
+    while (decimals < cap && Math.abs(v * 10 ** decimals - Math.round(v * 10 ** decimals)) > 1e-9 * Math.max(1, Math.abs(v * 10 ** decimals))) decimals++;
+  }
+  return decimals;
+}
+
 /** Grid lines and labels of a value scale along one side of the plot. */
 export function drawValueAxis(
   ctx: CanvasRenderingContext2D,
@@ -239,26 +329,19 @@ export function drawValueAxis(
   ctx.font = fontOf(theme, LABEL_SIZE);
   ctx.fillStyle = theme.axisLabel;
   ctx.strokeStyle = theme.grid;
-  ctx.lineWidth = 1;
   for (const tick of scale.ticks) {
     if (orientation === 'vertical') {
-      const y = Math.round(scaleToPx(scale, tick, plot.y, plot.height, true)) + 0.5;
-      ctx.beginPath();
-      ctx.moveTo(plot.x, y);
-      ctx.lineTo(plot.x + plot.width, y);
-      ctx.stroke();
+      const y = scaleToPx(scale, tick, plot.y, plot.height, true);
+      strokeHairline(ctx, plot.x, y, plot.x + plot.width, y);
       ctx.textAlign = 'right';
       ctx.textBaseline = 'middle';
-      ctx.fillText(format(tick), plot.x - 6, y);
+      ctx.fillText(format(tick), plot.x - LABEL_GAP, Math.round(y));
     } else {
-      const x = Math.round(scaleToPx(scale, tick, plot.x, plot.width)) + 0.5;
-      ctx.beginPath();
-      ctx.moveTo(x, plot.y);
-      ctx.lineTo(x, plot.y + plot.height);
-      ctx.stroke();
+      const x = scaleToPx(scale, tick, plot.x, plot.width);
+      strokeHairline(ctx, x, plot.y, x, plot.y + plot.height);
       ctx.textAlign = 'center';
       ctx.textBaseline = 'top';
-      ctx.fillText(format(tick), x, plot.y + plot.height + 6);
+      ctx.fillText(format(tick), Math.round(x), plot.y + plot.height + LABEL_GAP);
     }
   }
   ctx.restore();
