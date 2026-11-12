@@ -70,6 +70,8 @@ export class WidgetDrawingSidebar {
   private flyoutIdx = -1;
   private flyoutHideTimer: ReturnType<typeof setTimeout> | null = null;
   private flyoutSwitchTimer: ReturnType<typeof setTimeout> | null = null;
+  /** What opens the menu waiting its turn (`flyoutSwitchTimer`), for the open one's close to hand the turn on. */
+  private flyoutSwitchOpen: (() => void) | null = null;
   /** The open menu was opened from the keyboard: closing it gives the focus back to its button. */
   private flyoutByKey = false;
   /** Where hosts' own buttons go, after the drawing tools' switches. */
@@ -548,8 +550,10 @@ export class WidgetDrawingSidebar {
       open();
       return;
     }
+    this.flyoutSwitchOpen = open;
     this.flyoutSwitchTimer = setTimeout(() => {
       this.flyoutSwitchTimer = null;
+      this.flyoutSwitchOpen = null;
       open();
     }, FLYOUT_SWITCH_DELAY_MS);
   }
@@ -558,6 +562,7 @@ export class WidgetDrawingSidebar {
     if (this.flyoutSwitchTimer === null) return;
     clearTimeout(this.flyoutSwitchTimer);
     this.flyoutSwitchTimer = null;
+    this.flyoutSwitchOpen = null;
   }
 
   /** Puts a built menu beside its button, open, and closes it as the pointer or the focus leaves. */
@@ -740,7 +745,12 @@ export class WidgetDrawingSidebar {
     this.cancelHideFlyout();
     this.flyoutHideTimer = setTimeout(() => {
       this.flyoutHideTimer = null;
+      // The pointer is on another button by now, waiting its turn (it left this menu's a moment
+      // before it came to that one, over a divider or the chart): the menu going is its turn.
+      // Closing alone would drop the turn and leave the pointer on a button with no menu.
+      const next = this.flyoutSwitchOpen;
       this.hideFlyout();
+      next?.();
     }, FLYOUT_CLOSE_DELAY_MS);
   }
 

@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Widget
+
+- **A drawing tool's menu opens every time the pointer comes to its button** (`@tradecanvas/chart`). Moving from one tool button to another by way of the gap between them, or the chart, sometimes left the pointer on a button with no menu: the first menu's time to close ran out just before the second's turn to open, and took that turn with it. The second now opens as the first closes.
+
 ## 2.0.2 (2026-11-12)
 
 ### Widget
