@@ -543,7 +543,7 @@ const tr: SiteMessages = {
     eyebrow: 'Örnekler · StackBlitz',
     title: 'Örnekler',
     subtitleHtml:
-      'Tek tıkla fork’layabileceğiniz canlı sanal alanlar. Her biri en son 1.x paketleri bağlanmış olarak StackBlitz’de açılır. Hiç kurulum yapmadan özellikleri denemek için ana sayfadaki <a href="{lab}">Özellik Laboratuvarı</a>’nı kullanın.',
+      'Tek tıkla fork’layabileceğiniz canlı sanal alanlar. Her biri en son 2.x paketleri bağlanmış olarak StackBlitz’de açılır. Hiç kurulum yapmadan özellikleri denemek için ana sayfadaki <a href="{lab}">Özellik Laboratuvarı</a>’nı kullanın.',
     open: '{title} örneğini StackBlitz’de aç',
     items: {
       vanilla: {

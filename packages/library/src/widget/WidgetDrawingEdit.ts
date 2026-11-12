@@ -102,10 +102,13 @@ export class WidgetDrawingEdit {
     }
     const offset = this.host.chartOffset();
     const primary = drawings[0];
-    // Kept within the pane the drawing is on: the price plot, or an indicator pane.
+    // The pane the drawing is on, for where the selection is: the price plot, or an indicator pane.
     const plot = (primary.paneId !== undefined
       ? this.host.chart.getIndicatorPanes().find((pane) => pane.instanceId === primary.paneId)?.rect
       : undefined) ?? this.host.chart.getPlotRect();
+    // The toolbar itself waits on the price plot whichever pane the drawing is on: an indicator
+    // pane is often lower than the toolbar and its drawing together.
+    const home = this.host.chart.getPlotRect();
     // Over all of them; at the top of the plot when none is on screen (an
     // extended line crossing it far from its anchors).
     // A text's box with it, so the toolbar never covers the words a double-click is for.
@@ -113,7 +116,7 @@ export class WidgetDrawingEdit {
       ?? { x: plot.x + plot.width / 2, y: plot.y, width: 0, height: 0 };
     toolbar.show({
       rect: { x: rect.x + offset.x, y: rect.y + offset.y, width: rect.width, height: rect.height },
-      bounds: { x: plot.x + offset.x, y: plot.y + offset.y, width: plot.width, height: plot.height },
+      bounds: { x: home.x + offset.x, y: home.y + offset.y, width: home.width, height: home.height },
       style: primary.style,
       locked: drawings.every((d) => d.locked),
       canDelete: drawings.some((d) => !d.locked),

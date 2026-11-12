@@ -543,7 +543,7 @@ const ja: SiteMessages = {
     eyebrow: 'サンプル · StackBlitz',
     title: 'サンプル',
     subtitleHtml:
-      'ワンクリックでフォークできるライブサンドボックスです。どれも最新の 1.x パッケージを組み込んだ状態で StackBlitz で開きます。セットアップなしで機能を試すなら、ホームページの <a href="{lab}">機能ラボ</a> をどうぞ。',
+      'ワンクリックでフォークできるライブサンドボックスです。どれも最新の 2.x パッケージを組み込んだ状態で StackBlitz で開きます。セットアップなしで機能を試すなら、ホームページの <a href="{lab}">機能ラボ</a> をどうぞ。',
     open: '{title} を StackBlitz で開く',
     items: {
       vanilla: {

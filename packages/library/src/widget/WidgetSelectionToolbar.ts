@@ -40,8 +40,16 @@ type Pop = 'color' | 'width' | 'lineStyle' | 'fill' | 'textColor';
 /** The style key each colour picker sets. */
 const COLOR_KEYS = { color: 'color', fill: 'fillColor', textColor: 'textColor' } as const;
 
-/** Gap between the toolbar and the selection, px. */
-const GAP = 10;
+/**
+ * How far under the top of the plot the toolbar waits, px: under the legend's
+ * first line, which sits in the same corner on a narrow chart.
+ */
+const HOME_TOP = 32;
+/**
+ * A toolbar this wide a share of the plot has no room beside the legend: it
+ * waits at the foot of the plot instead, over the volume and clear of both.
+ */
+const NARROW_SHARE = 0.618;
 /** Space kept between the toolbar and the edge of its bounds, px. */
 const EDGE = 4;
 /** Swatches per row in the colour picker (arrow up and down move by a row). */
@@ -118,7 +126,7 @@ export class WidgetSelectionToolbar {
     this.pop.addEventListener('keydown', (e) => this.onPopKey(e));
     // Clicks on the toolbar must not reach the chart under it (and deselect).
     for (const el of [this.el, this.pop]) el.addEventListener('pointerdown', (e) => e.stopPropagation());
-    // The grip drags the toolbar out of the way; a double-click sends it back over the drawing.
+    // The grip drags the toolbar to a place of the user's own; a double-click sends it back to where it waits.
     this.el.addEventListener('pointerdown', (e) => {
       if (!(e.target as Element).closest('.tcw-sel-grip')) return;
       e.preventDefault();
@@ -215,9 +223,15 @@ export class WidgetSelectionToolbar {
     if (focus) button?.focus();
   }
 
-  /** Over the selection, centred on it; under it when there is no room above; where the user dropped it, once dragged. */
+  /**
+   * At one place in its bounds (the price plot), whatever is selected and
+   * wherever it is: centred near the top, or at the foot of a plot too narrow
+   * for the toolbar beside the legend. It was put over the drawing itself, where it
+   * covered what had just been drawn (a text, a price label) and had to be
+   * dragged off every time. Where the user dropped it, once dragged.
+   */
   private place(target: SelectionToolbarTarget): void {
-    const { rect, bounds } = target;
+    const { bounds } = target;
     const { w, h } = this.size ?? { w: 0, h: 0 };
     if (this.pinned) {
       const left = Math.max(bounds.x + EDGE, Math.min(this.pinned.left, bounds.x + bounds.width - w - EDGE));
@@ -226,11 +240,10 @@ export class WidgetSelectionToolbar {
       this.el.style.top = `${Math.round(top)}px`;
       return;
     }
-    let left = rect.x + rect.width / 2 - w / 2;
-    left = Math.max(bounds.x + EDGE, Math.min(left, bounds.x + bounds.width - w - EDGE));
-    let top = rect.y - h - GAP;
-    if (top < bounds.y + EDGE) top = Math.min(rect.y + rect.height + GAP, bounds.y + bounds.height - h - EDGE);
-    top = Math.max(top, bounds.y + EDGE);
+    const left = Math.max(bounds.x + EDGE, bounds.x + (bounds.width - w) / 2);
+    const narrow = w > bounds.width * NARROW_SHARE;
+    const lowest = bounds.y + bounds.height - h - EDGE;
+    const top = Math.max(bounds.y + EDGE, narrow ? lowest : Math.min(bounds.y + HOME_TOP, lowest));
     this.el.style.left = `${Math.round(left)}px`;
     this.el.style.top = `${Math.round(top)}px`;
   }

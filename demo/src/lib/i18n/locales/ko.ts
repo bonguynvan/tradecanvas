@@ -543,7 +543,7 @@ const ko: SiteMessages = {
     eyebrow: '예제 · StackBlitz',
     title: '예제',
     subtitleHtml:
-      '클릭 한 번으로 포크할 수 있는 라이브 샌드박스입니다. 각 예제는 최신 1.x 패키지가 연결된 상태로 StackBlitz에서 열립니다. 설치 없이 기능을 체험하려면 홈페이지의 <a href="{lab}">기능 랩</a>을 이용하세요.',
+      '클릭 한 번으로 포크할 수 있는 라이브 샌드박스입니다. 각 예제는 최신 2.x 패키지가 연결된 상태로 StackBlitz에서 열립니다. 설치 없이 기능을 체험하려면 홈페이지의 <a href="{lab}">기능 랩</a>을 이용하세요.',
     open: 'StackBlitz에서 {title} 열기',
     items: {
       vanilla: {

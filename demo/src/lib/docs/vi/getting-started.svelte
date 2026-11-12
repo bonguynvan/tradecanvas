@@ -100,6 +100,6 @@ args = ["-y", "@tradecanvas/mcp"]`}</code></pre>
   <li><a href={href('/docs/api')}>Tham chiếu API</a> — toàn bộ API của <code>Chart</code> và <code>ChartWidget</code></li>
   <li><a href={href('/docs/chart-types')}>Loại biểu đồ</a> — 18 loại biểu đồ có sẵn</li>
   <li><a href={href('/docs/indicators')}>Chỉ báo</a> — danh mục 134 chỉ báo</li>
-  <li><a href={href('/docs/realtime')}>Thời gian thực &amp; phát lại</a> — adapter dữ liệu stream và chế độ phát lại</li>
+  <li><a href={href('/docs/realtime')}>Thời gian thực &amp; replay</a> — adapter dữ liệu stream và chế độ replay</li>
   <li><a href={href('/docs/analytics')}>Phân tích</a> — bộ backtest chiến lược và chỉ số rủi ro</li>
 </ul>

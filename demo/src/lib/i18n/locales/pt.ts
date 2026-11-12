@@ -543,7 +543,7 @@ const pt: SiteMessages = {
     eyebrow: 'Exemplos · StackBlitz',
     title: 'Exemplos',
     subtitleHtml:
-      'Sandboxes ao vivo para fazer fork com um clique. Cada um abre no StackBlitz com os pacotes 1.x mais recentes já configurados. Para testar os recursos sem configurar nada, use o <a href="{lab}">Laboratório de recursos</a> na página inicial.',
+      'Sandboxes ao vivo para fazer fork com um clique. Cada um abre no StackBlitz com os pacotes 2.x mais recentes já configurados. Para testar os recursos sem configurar nada, use o <a href="{lab}">Laboratório de recursos</a> na página inicial.',
     open: 'Abrir {title} no StackBlitz',
     items: {
       vanilla: {

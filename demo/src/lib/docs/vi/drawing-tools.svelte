@@ -21,7 +21,7 @@ chart.setDrawingTool(null)          // quay về con trỏ
 chart.setStayInDrawingMode(true)    // giữ công cụ sau mỗi hình vẽ`}</code></pre>
 <p>Một công cụ được vẽ theo một trong ba cách:</p>
 <ul>
-  <li><b>Bấm</b> — mỗi điểm một lần bấm (hai lần với đường xu hướng, năm lần với mô hình XABCD).</li>
+  <li><b>Bấm</b> — mỗi điểm một lần bấm (hai lần với trend line, năm lần với mô hình XABCD).</li>
   <li><b>Vẽ tay</b> — nhấn và kéo; <code>brush</code> và <code>highlighter</code>.</li>
   <li><b>Đường nhiều điểm</b> — mỗi điểm một lần bấm, rồi bấm đúp, nhấn <kbd>Enter</kbd> hoặc bấm vào điểm cuối để kết thúc; <code>path</code> và <code>polyline</code>.</li>
 </ul>
@@ -37,9 +37,9 @@ chart.setStayInDrawingMode(true)    // giữ công cụ sau mỗi hình vẽ`}</
 
 chart.autoFib()   // một Fibonacci thoái lui trên con sóng chính đang hiện, hoặc null`}</code></pre>
 
-<h2 id="panes">Trên panel chỉ báo</h2>
+<h2 id="panes">Trên pane chỉ báo</h2>
 <p>
-  Hình vẽ bắt đầu trên một panel chỉ báo (RSI, MACD…) thì nằm trên panel đó: giá của các điểm neo là giá trị của panel, nam châm bám vào các đường của panel, và hình vẽ đi theo thang của panel. Hình vẽ không ra ngoài panel của nó. Panel bên cạnh và panel đang thu gọn thì không vẽ được, và các công cụ đọc giá của nến (Anchored VWAP, Volume Profile, Long/Short Position) chỉ dùng trên panel giá. Hình vẽ trên panel không gắn được cảnh báo giá.
+  Hình vẽ bắt đầu trên một pane chỉ báo (RSI, MACD…) thì nằm trên pane đó: giá của các điểm neo là giá trị của pane, nam châm bám vào các đường của pane, và hình vẽ đi theo thang của pane. Hình vẽ không ra ngoài pane của nó. Pane bên cạnh và pane đang thu gọn thì không vẽ được, và các công cụ đọc giá của nến (Anchored VWAP, Volume Profile, Long/Short Position) chỉ dùng trên pane giá. Hình vẽ trên pane không gắn được cảnh báo giá.
 </p>
 <pre><code>{`const rsi = chart.addIndicator('rsi')
 chart.addDrawing({
@@ -48,7 +48,7 @@ chart.addDrawing({
   paneId: rsi,                          // id của panel, như getIndicatorPanes() liệt kê
 })`}</code></pre>
 <p>
-  Khi chỉ báo sở hữu panel bị xoá và một chỉ báo khác trong panel nhận lại panel, các hình vẽ đi theo panel. Khi panel mất, các hình vẽ của nó bị ẩn và quay lại cùng panel khi hoàn tác. Layout đã lưu đặt chúng lại đúng panel.
+  Khi chỉ báo sở hữu pane bị xoá và một chỉ báo khác trong pane nhận lại pane, các hình vẽ đi theo pane. Khi pane mất, các hình vẽ của nó bị ẩn và quay lại cùng pane khi hoàn tác. Layout đã lưu đặt chúng lại đúng pane.
 </p>
 
 <h2 id="text">Chữ</h2>
@@ -77,7 +77,7 @@ chart.addDrawing({
 
 <h3 id="line-text">Chữ trên đường và hình chữ nhật</h3>
 <p>
-  Đường xu hướng, tia, đường kéo dài, đường thông tin, đường góc, mũi tên, đường ngang, đường dọc và hình chữ nhật cũng nhận chữ, cùng kiểu chữ ấy. <code>textAlign</code> đặt chữ ở đầu trái, giữa hoặc đầu phải của đường, còn <code>textVAlign</code> đặt trên đường, trên chính đường hoặc dưới đường; trong hình chữ nhật, hai khóa này đặt chữ bên trong, ở trên, giữa hoặc dưới. Chữ nghiêng theo độ dốc của đường và luôn đọc từ trái sang phải, từ dưới lên trên với đường dọc. Trong widget, tab Chữ có hai hàng này.
+  Trend line, tia, đường kéo dài, đường thông tin, đường góc, mũi tên, đường ngang, đường dọc và hình chữ nhật cũng nhận chữ, cùng kiểu chữ ấy. <code>textAlign</code> đặt chữ ở đầu trái, giữa hoặc đầu phải của đường, còn <code>textVAlign</code> đặt trên đường, trên chính đường hoặc dưới đường; trong hình chữ nhật, hai khóa này đặt chữ bên trong, ở trên, giữa hoặc dưới. Chữ nghiêng theo độ dốc của đường và luôn đọc từ trái sang phải, từ dưới lên trên với đường dọc. Trong widget, tab Chữ có hai hàng này.
 </p>
 <pre><code>{`chart.addDrawing({
   type: 'trendLine',
@@ -88,7 +88,7 @@ chart.addDrawing({
 chart.addDrawing({ type: 'verticalLine', anchors: [{ time: t3, price: 0 }], options: { showTime: true } })
 chart.addDrawing({ type: 'fibRetracement', anchors: [a, b], options: { trendLine: false, oneColor: true } })`}</code></pre>
 <p>
-  Đường ngang và tia ngang ẩn giá bằng <code>showPrice: false</code>. Đường dọc hiện thời gian của nến bằng <code>showTime: true</code>, viết như crosshair viết. Hình chữ nhật có tám tay nắm: mỗi góc một cái và giữa mỗi cạnh một cái, kéo cạnh đó riêng. Fibonacci thoái lui và mở rộng vẽ một đường đứt nét qua các điểm của nó (<code>trendLine</code>, bật sẵn) và vẽ mọi mức bằng màu của hình vẽ với <code>oneColor</code>. Nhấp vào chữ cũng chọn được đường hoặc hình chữ nhật đó.
+  Đường ngang và tia ngang ẩn giá bằng <code>showPrice: false</code>. Đường dọc hiện thời gian của nến bằng <code>showTime: true</code>, viết như crosshair viết. Hình chữ nhật có tám tay nắm: mỗi góc một cái và giữa mỗi cạnh một cái, kéo cạnh đó riêng. Fibonacci retracement và Fibonacci mở rộng vẽ một đường đứt nét qua các điểm của nó (<code>trendLine</code>, bật sẵn) và vẽ mọi mức bằng màu của hình vẽ với <code>oneColor</code>. Nhấp vào chữ cũng chọn được đường hoặc hình chữ nhật đó.
 </p>
 
 <h2 id="look">Hình vẽ trông thế nào</h2>
@@ -102,7 +102,7 @@ chart.addDrawing({ type: 'fibRetracement', anchors: [a, b], options: { trendLine
   <li>Gạch và chấm lớn theo độ dày nét, chấm thì tròn, và hai đầu của nét liền được bo tròn. Đầu mũi tên cũng lớn theo nét.</li>
   <li>Màu nền là màu của nét, pha nhạt, trừ khi được đặt riêng: hình vẽ đổi sang đỏ thì tô đỏ. Nhãn trên thẻ có màu được viết bằng đen hoặc trắng, màu nào dễ đọc hơn; hộp thống kê dùng màu bề mặt và màu chữ của chính biểu đồ, ở cả theme sáng lẫn tối; chữ mang màu của hình vẽ được làm đậm hơn ở chỗ nó khó đọc trên nền sáng.</li>
   <li>Các đường chính của một công cụ theo kiểu nét của nó; lưới, đường dẫn và các góc phụ dày 1 px và nhạt hơn. Một mức, một góc hay một phần chia mà nhãn sẽ che nhãn khác thì được để trống nhãn, nhưng không bao giờ là mức 0 và 1. Phần trăm được viết số tròn khi tròn (50%, không phải 50.0%), và mỗi tỷ lệ Fibonacci vẽ cùng các tỷ lệ khác có màu riêng.</li>
-  <li>Tăng và giảm (một vùng giá, mục tiêu và điểm dừng lỗ của Vị thế Long/Short, kết quả của một dự báo) dùng màu lãi và màu lỗ của theme (các khóa kiểu <code>trading.profitColor</code> và <code>trading.lossColor</code>), không có chúng thì là xanh và đỏ.</li>
+  <li>Tăng và giảm (một vùng giá, mục tiêu và điểm cắt lỗ của Vị thế Long/Short, kết quả của một dự báo) dùng màu lãi và màu lỗ của theme (các khóa kiểu <code>trading.profitColor</code> và <code>trading.lossColor</code>), không có chúng thì là xanh và đỏ.</li>
   <li>Một chữ, một biểu tượng hay một dấu mũi tên không hiện tay nắm, vì tay nắm sẽ đè lên chữ hay hình của nó: khi được chọn, nó được đóng khung, và nhấn vào bất cứ đâu trên nó là di chuyển được.</li>
 </ul>
 
@@ -158,9 +158,9 @@ chart.addDrawing({ type: 'horizontalLine', anchors: [{ time: t, price: 100 }], i
 
 <h3 id="line-stats">Hai đầu, điểm giữa và thống kê của một đường</h3>
 <p>
-  Đường xu hướng, tia và đường kéo dài có thể hiện điểm giữa, và thống kê giữa hai điểm của chúng: mức thay đổi giá và
+  Trend line, tia và đường kéo dài có thể hiện điểm giữa, và thống kê giữa hai điểm của chúng: mức thay đổi giá và
   phần trăm của nó, số nến và khoảng thời gian giữa hai điểm, góc. Thống kê hiện khi đường đang được chọn, hoặc hiện
-  luôn, cạnh đầu phải, điểm giữa hoặc đầu trái của đường. Hai đầu của đường xu hướng có thể là mũi tên. Tất cả đều tắt
+  luôn, cạnh đầu phải, điểm giữa hoặc đầu trái của đường. Hai đầu của trend line có thể là mũi tên. Tất cả đều tắt
   cho đến khi được bật.
 </p>
 <pre><code>{`chart.setDrawingOptions(id, {
@@ -185,7 +185,7 @@ chart.on('drawingSelect', ({ payload }) => {
 
 <h2>Vị thế Long/Short</h2>
 <p>
-  <code>riskReward</code>: kéo từ điểm vào lệnh đến điểm dừng lỗ. Mục tiêu nằm cách
+  <code>riskReward</code>: kéo từ điểm vào lệnh đến điểm cắt lỗ. Mục tiêu nằm cách
   đó theo tỷ lệ lời:lỗ, và điểm kéo của nó dùng để đổi tỷ lệ này. Từ vốn tài
   khoản và mức rủi ro (một phần trăm của vốn, hoặc một số tiền), công cụ tính ra
   khối lượng, và hiện giá, khoảng cách cùng lãi hoặc lỗ của từng đường.
@@ -194,7 +194,7 @@ chart.on('drawingSelect', ({ payload }) => {
 
 <h2>Cảnh báo trên hình vẽ</h2>
 <p>
-  Một cảnh báo có thể bám theo đường xu hướng, tia, đường kéo dài hoặc đường
+  Một cảnh báo có thể bám theo trend line, tia, đường kéo dài hoặc đường
   ngang, hay các đường của kênh song song: nó kích hoạt khi giá cắt qua đường
   tại giá trị của đường ở nến mới nhất, đúng như được vẽ trên biểu đồ (thẳng
   qua các nến, và theo giá logarit trên thang logarit).

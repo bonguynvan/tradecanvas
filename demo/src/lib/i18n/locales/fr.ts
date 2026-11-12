@@ -543,7 +543,7 @@ const fr: SiteMessages = {
     eyebrow: 'Exemples · StackBlitz',
     title: 'Exemples',
     subtitleHtml:
-      'Des bacs à sable en direct, à forker en un clic. Chacun s’ouvre dans StackBlitz avec les derniers paquets 1.x déjà branchés. Pour essayer les fonctionnalités sans rien installer, utilisez le <a href="{lab}">Labo des fonctionnalités</a> de la page d’accueil.',
+      'Des bacs à sable en direct, à forker en un clic. Chacun s’ouvre dans StackBlitz avec les derniers paquets 2.x déjà branchés. Pour essayer les fonctionnalités sans rien installer, utilisez le <a href="{lab}">Labo des fonctionnalités</a> de la page d’accueil.',
     open: 'Ouvrir {title} dans StackBlitz',
     items: {
       vanilla: {

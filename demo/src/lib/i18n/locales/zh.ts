@@ -544,7 +544,7 @@ const zh: SiteMessages = {
     eyebrow: '示例 · StackBlitz',
     title: '示例',
     subtitleHtml:
-      '一键即可 fork 的在线沙盒。每个示例都在 StackBlitz 中打开，并已接好最新的 1.x 包。想免配置体验各项功能，请使用首页的<a href="{lab}">功能实验室</a>。',
+      '一键即可 fork 的在线沙盒。每个示例都在 StackBlitz 中打开，并已接好最新的 2.x 包。想免配置体验各项功能，请使用首页的<a href="{lab}">功能实验室</a>。',
     open: '在 StackBlitz 中打开 {title}',
     items: {
       vanilla: {

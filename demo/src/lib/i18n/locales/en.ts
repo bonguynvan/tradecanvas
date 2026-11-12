@@ -551,7 +551,7 @@ const en = {
     eyebrow: 'Examples · StackBlitz',
     title: 'Examples',
     subtitleHtml:
-      'Live sandboxes you can fork in one click. Each opens in StackBlitz with the latest 1.x packages wired up. To try features without any setup, use the <a href="{lab}">Feature Lab</a> on the home page.',
+      'Live sandboxes you can fork in one click. Each opens in StackBlitz with the latest 2.x packages wired up. To try features without any setup, use the <a href="{lab}">Feature Lab</a> on the home page.',
     open: 'Open {title} in StackBlitz',
     items: {
       vanilla: {

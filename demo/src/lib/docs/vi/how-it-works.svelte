@@ -17,7 +17,7 @@
 
   const widgetSteps = [
     { nodes: ['widget'], title: 'Một lớp công khai', text: 'ChartWidget giữ các phương thức công khai và phần khởi tạo. Hàm khởi tạo là một danh sách bước theo thứ tự các phần cần nhau: readOptions, buildRoot, buildToolbar, buildBody, buildChart … finishSetup.' },
-    { nodes: ['areas', 'hosts', 'widget'], title: 'Mỗi vùng qua một host', text: 'Replay, giao dịch, cảnh báo, so sánh, danh sách theo dõi, legend, menu, lệnh, bố cục, dock, Chart Settings, chỉnh sửa hình vẽ và khung thời gian đều là lớp riêng. Mỗi lớp nhận một host interface liệt kê đúng những gì nó dùng từ widget, và một phương thức công khai trên ChartWidget chuyển tiếp sang vùng của nó.' },
+    { nodes: ['areas', 'hosts', 'widget'], title: 'Mỗi vùng qua một host', text: 'Replay, giao dịch, cảnh báo, so sánh, watchlist, legend, menu, lệnh, bố cục, dock, Chart Settings, chỉnh sửa hình vẽ và khung thời gian đều là lớp riêng. Mỗi lớp nhận một host interface liệt kê đúng những gì nó dùng từ widget, và một phương thức công khai trên ChartWidget chuyển tiếp sang vùng của nó.' },
     { nodes: ['chart', 'areas'], title: 'Một biểu đồ', text: 'buildChart tạo ra Chart duy nhất mà widget bao lấy. Mọi vùng tới được nó qua host của mình; không vùng nào có biểu đồ riêng. Widget lắng nghe sự kiện của biểu đồ để giữ thanh công cụ và legend khớp theo.' },
     { nodes: ['signals', 'ui', 'widget'], title: 'Signal', text: 'Trạng thái mà nhiều phần cùng hiển thị là một signal: giao diện (look), những nút nào trên thanh công cụ đang mở (openRoles) và Chart Settings. Một effect cập nhật mọi chỗ hiển thị nó, nên nơi ghi không phải tự gọi từng lần cập nhật.' },
     { nodes: ['dialogs', 'overlay', 'widget'], title: 'Hộp thoại tải khi mở lần đầu', text: 'Các hộp thoại lớn, hộp thoại chỉ báo, bảng lệnh và ô tìm mã nằm trong DIALOGS và chỉ tải code ở lần mở đầu tiên. Chúng mở trong overlayHost, lớp này chuyển vào bên trong widget khi toàn màn hình.' },
@@ -27,7 +27,7 @@
     { nodes: ['ui'], title: 'Chọn một nến', text: 'Nút replay mở thanh replay; nhấp vào một nến, hoặc gọi replayFrom(), chọn chỗ bắt đầu.' },
     { nodes: ['chart', 'store', 'manager'], title: 'Bắt đầu', text: 'chart.replayStart() bảo SeriesStore cất các nến trực tiếp sang bên, rồi nạp các nến cần phát vào ReplayManager, nó chờ ở trạng thái tạm dừng tại điểm bắt đầu.' },
     { nodes: ['manager', 'chart', 'store'], title: 'Từng bước', text: 'Phát, tạm dừng, tiến hoặc lùi một bước và tốc độ đều đi tới ReplayManager. Mỗi bước gửi một sự kiện bar; biểu đồ hiển thị các nến tới đó (showReplayed, hoặc appendReplayed khi tiến tới).' },
-    { nodes: ['indicators', 'store', 'paper', 'chart'], title: 'Những gì đi theo replay', text: 'Chỉ báo tính lại từ cây nến thay đổi, đường giá hiển thị giá đóng cửa đang phát lại, và tài khoản giấy giao dịch ở giá phát lại. Lệnh và cảnh báo của tài khoản thật vẫn chạy theo giá trực tiếp.' },
+    { nodes: ['indicators', 'store', 'paper', 'chart'], title: 'Những gì đi theo replay', text: 'Chỉ báo tính lại từ cây nến thay đổi, đường giá hiển thị giá đóng cửa đang replay, và tài khoản paper trading giao dịch ở giá replay. Lệnh và cảnh báo của tài khoản thật vẫn chạy theo giá trực tiếp.' },
     { nodes: ['stop', 'store', 'ui'], title: 'Kết thúc', text: 'Tới nến cuối thì replay tạm dừng. Thoát ra sẽ gọi replayStop(): SeriesStore đặt chuỗi trực tiếp trở lại và biểu đồ chạy trực tiếp như trước.' },
   ];
 
@@ -55,7 +55,7 @@
   const replayWords: DiagramWords = {
     ui: { note: 'toggleReplay · nhấp nến' },
     store: { note: 'chuỗi trực tiếp cất riêng' },
-    paper: { title: 'tài khoản giấy' },
+    paper: { title: 'tài khoản paper' },
   };
 </script>
 
@@ -74,7 +74,7 @@
 <p>Một cây nến đi cùng một đường dù nó đến từ sàn hay từ code của bạn, và một kho duy nhất giữ nó.
   Mọi thứ được vẽ đều tính ra từ kho đó và khung nhìn.</p>
 <Diagram {...DATA_FLOW} label="Nến đi từ nguồn dữ liệu tới hai canvas, qua SeriesStore" steps={dataSteps} words={dataWords} />
-<p>Cách viết nguồn dữ liệu của riêng bạn ở <a href={href('/docs/realtime')}>Thời gian thực &amp; Phát lại</a>;
+<p>Cách viết nguồn dữ liệu của riêng bạn ở <a href={href('/docs/realtime')}>Thời gian thực &amp; Replay</a>;
   chi phí mỗi khung hình ở <a href={href('/docs/performance')}>Hiệu năng</a>.</p>
 
 <h2 id="widget">ChartWidget được ghép từ những gì</h2>
@@ -83,6 +83,6 @@
 <Diagram {...WIDGET_PARTS} label="ChartWidget, các vùng, signal và hộp thoại của nó, quanh một Chart" steps={widgetSteps} words={widgetWords} />
 
 <h2 id="replay">Một lần replay</h2>
-<p>Replay phát lại quá khứ từng nến một trên chính biểu đồ đó, còn nến trực tiếp được cất sang bên tới khi kết thúc.</p>
+<p>Replay chạy lại quá khứ từng nến một trên chính biểu đồ đó, còn nến trực tiếp được cất sang bên tới khi kết thúc.</p>
 <Diagram {...REPLAY} label="Một lần replay, từ cú nhấp đầu tiên tới khi biểu đồ trực tiếp trở lại" steps={replaySteps} words={replayWords} />
-<p>Tuỳ chọn và sự kiện ở <a href={href('/docs/realtime')}>Thời gian thực &amp; Phát lại</a>.</p>
+<p>Tuỳ chọn và sự kiện ở <a href={href('/docs/realtime')}>Thời gian thực &amp; Replay</a>.</p>

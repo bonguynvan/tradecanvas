@@ -5,12 +5,12 @@
 </script>
 
 <svelte:head>
-  <title>Thời gian thực &amp; phát lại — Tài liệu TradeCanvas</title>
-  <meta name="description" content="Adapter dữ liệu stream, gộp tick, cơ chế kết nối lại và ReplayController mới để phát lại dữ liệu lịch sử." />
+  <title>Thời gian thực &amp; replay — Tài liệu TradeCanvas</title>
+  <meta name="description" content="Adapter dữ liệu stream, gộp tick, cơ chế kết nối lại và ReplayController mới để replay dữ liệu lịch sử." />
 </svelte:head>
 
-<h1>Thời gian thực &amp; phát lại</h1>
-<p>Stream dữ liệu trực tiếp, gộp tick thành nến và phát lại dữ liệu lịch sử với tốc độ điều chỉnh được.</p>
+<h1>Thời gian thực &amp; replay</h1>
+<p>Stream dữ liệu trực tiếp, gộp tick thành nến và replay dữ liệu lịch sử với tốc độ điều chỉnh được.</p>
 
 <h2>Adapter có sẵn</h2>
 <p>Tất cả đều miễn phí, không cần API key — kết nối adapter nào cũng theo cùng một cách:</p>
@@ -142,7 +142,7 @@ feed.pushBar('AAPL', '1d', finalBar, true)    // đã đóng`}</code></pre>
 
 <h2 id="symbol-info">Thông tin mã mà nguồn dữ liệu biết sau</h2>
 <p>
-  Chart đã kết nối hỏi <code>resolveSymbol</code> một lần. Nguồn dữ liệu nào chỉ biết thông tin của mã về sau (chẳng hạn ở tin nhắn đầu tiên) thì gửi nó bằng sự kiện <code>symbolInfo</code>, và chart áp dụng ngay: số lẻ của mã (<code>pricePrecision</code>) trên trục giá, legend và nhãn giá, và cả trên nhãn của các hình vẽ, giá trần, sàn và tham chiếu trong ngày, nhãn đỉnh đáy, công cụ đo và market profile; trong widget, trên cửa sổ dữ liệu, danh sách cảnh báo, phiếu đặt lệnh và bảng tài khoản; vạch chia trục theo bước giá (<code>minTick</code>); giờ giao dịch của sàn. Số lẻ của thị trường (<code>setMarket</code>) đi tới đúng những chỗ đó và được ưu tiên hơn số lẻ của mã. Khi không có cả hai, nhãn của hình vẽ giữ số lẻ theo độ lớn của giá, nhóm hàng nghìn theo locale số như trục giá.
+  Chart đã kết nối hỏi <code>resolveSymbol</code> một lần. Nguồn dữ liệu nào chỉ biết thông tin của mã về sau (chẳng hạn ở tin nhắn đầu tiên) thì gửi nó bằng sự kiện <code>symbolInfo</code>, và chart áp dụng ngay: số lẻ của mã (<code>pricePrecision</code>) trên trục giá, legend và nhãn giá, và cả trên nhãn của các hình vẽ, giá trần, sàn và tham chiếu trong ngày, nhãn đỉnh đáy, công cụ đo và market profile; trong widget, trên cửa sổ dữ liệu, danh sách cảnh báo, order ticket và bảng tài khoản; vạch chia trục theo bước giá (<code>minTick</code>); giờ giao dịch của sàn. Số lẻ của thị trường (<code>setMarket</code>) đi tới đúng những chỗ đó và được ưu tiên hơn số lẻ của mã. Khi không có cả hai, nhãn của hình vẽ giữ số lẻ theo độ lớn của giá, nhóm hàng nghìn theo locale số như trục giá.
 </p>
 <pre><code>{`emit('symbolInfo', { symbol: 'VNM', pricePrecision: 0, minTick: 10, currency: 'VND' })   // như cách adapter gửi các sự kiện khác`}</code></pre>
 
@@ -193,7 +193,7 @@ const current = agg.getCurrentBar()         // forming bar`}</code></pre>
 <p>
   Nguồn dữ liệu có <code>subscribeQuotes</code> gửi giá (giá cuối, thay đổi trong ngày, cao nhất, thấp nhất,
   khối lượng, giá mua và giá bán) của nhiều mã cùng lúc cho đến khi bạn dừng. <code>BinanceAdapter</code> gửi
-  một ảnh chụp 24 giờ, rồi đến luồng mini-ticker; <code>MockAdapter</code> tự tạo giá giả. Danh mục theo dõi
+  một ảnh chụp 24 giờ, rồi đến luồng mini-ticker; <code>MockAdapter</code> tự tạo giá giả. Watchlist
   của widget lấy giá cho các dòng từ đây.
 </p>
 <pre><code>{`const stop = new BinanceAdapter().subscribeQuotes(['BTCUSDT', 'ETHUSDT'], (quotes) => {
@@ -243,10 +243,10 @@ rm.start()
 rm.schedule(() => connectWebsocket())   // call on disconnect; backs off automatically
 rm.onConnected()                        // call on a successful connect to reset`}</code></pre>
 
-<h2>Chế độ phát lại</h2>
+<h2>Chế độ replay</h2>
 <p>
   Đẩy một <code>DataSeries</code> lịch sử tiến lên với tốc độ điều chỉnh được.
-  Tách rời khỏi <code>Chart</code> nên có thể dùng cho cả phát lại trên giao diện lẫn backtest
+  Tách rời khỏi <code>Chart</code> nên có thể dùng cho cả replay trên giao diện lẫn backtest
   headless.
 </p>
 
@@ -270,7 +270,7 @@ replay.start()
 `}</code></pre>
 
 <p>
-  Trong chế độ phát lại của widget, <strong>bấm vào bất kỳ nến nào đã hiện để đưa con trỏ phát lại
+  Trong chế độ replay của widget, <strong>bấm vào bất kỳ nến nào đã hiện để đưa con trỏ replay
   tới đó</strong>. Rộng hơn, biểu đồ giờ phát ra các sự kiện <code>click</code>
   và <code>barClick</code> cho những cú bấm chuột trái thông thường (nhấn và nhả
   mà không kéo):
@@ -279,13 +279,13 @@ replay.start()
   const { bar, barIndex, point } = e.payload
 })`}</code></pre>
 
-<h3>Phát lại trên biểu đồ, theo bước nhỏ hơn</h3>
+<h3>Replay trên biểu đồ, theo bước nhỏ hơn</h3>
 <p>
-  <code>chart.replayStart()</code> phát lại chính chuỗi dữ liệu của biểu đồ. Truyền các nến nhỏ hơn
+  <code>chart.replayStart()</code> replay chính chuỗi dữ liệu của biểu đồ. Truyền các nến nhỏ hơn
   vào <code>steps</code> (nến 5 phút dưới một biểu đồ khung giờ) và mỗi bước sẽ làm nến đang hình thành
   lớn dần từ chúng, đúng như nó đã hình thành trên thị trường; các nến đã đóng hiện đúng như trong
   chuỗi. <code>startIndex</code> và <code>replaySeekToBar</code> đếm theo nến của biểu đồ.
-  Trong ChartWidget, menu <strong>Bước</strong> trên thanh phát lại đưa ra các khung thời gian nhỏ hơn
+  Trong ChartWidget, menu <strong>Bước</strong> trên thanh replay đưa ra các khung thời gian nhỏ hơn
   mà nguồn dữ liệu có (hoặc dựng được từ các nến bạn đã nạp).
 </p>
 <pre><code>{`chart.replayStart({ animate: true, step: 'auto', startIndex: 120, paused: true })
@@ -299,7 +299,7 @@ chart.on('replayComplete', (e) => e.payload) // { barIndex, time }
 chart.on('replayState', (e) => e.payload)   // { state: 'playing' | 'paused' | 'stopped' }
 chart.replayStop()             // back to the live series`}</code></pre>
 
-<h3>Nến hình thành khi tua lại</h3>
+<h3>Nến hình thành khi replay</h3>
 <p>
   Với <code>animate: true</code>, mỗi nến lớn dần theo thời gian của nó như một nến đang chạy:
   từ giá mở cửa đến cực trị mà hướng của nến cho biết đến trước (nến tăng chạm đáy trước),
@@ -310,21 +310,20 @@ chart.replayStop()             // back to the live series`}</code></pre>
   nến con cho một nến. Khung hình cuối luôn là nến đúng như trong chuỗi. <code>steps</code> bạn
   truyền vào được dùng theo cùng cách. Đồng hồ vẫn đếm nến của biểu đồ: <code>speed</code>,
   <code>duration</code> và các chỉ số là nến, và <code>getReplayBarIndex()</code> là nến đang hình
-  thành. Tạm dừng giữ nguyên nến đang vẽ dở; tua hoặc bước tới hiện nến trọn vẹn. Tài khoản giả
-  lập khớp lệnh khi giá được vẽ chạm tới lệnh. Nến ngắn hơn ba khung hình hiện trọn, và khi hệ
+  thành. Tạm dừng giữ nguyên nến đang vẽ dở; tua hoặc bước tới hiện nến trọn vẹn. Tài khoản paper trading khớp lệnh khi giá được vẽ chạm tới lệnh. Nến ngắn hơn ba khung hình hiện trọn, và khi hệ
   thống yêu cầu giảm chuyển động, nến nhảy từ mức giá này sang mức giá kế tiếp.
   <code>replayStepsLoad</code> báo <code>loading</code>, <code>loaded</code>, <code>end</code> hoặc
   <code>error</code>; nến không có nến con hình thành từ giá của chính nó. ChartWidget làm điều này
   mặc định: menu Bước bắt đầu ở <strong>Tự động</strong>; <code>replayStep</code>
   (<code>'auto'</code>, <code>'bar'</code> hoặc một khung) và <code>replayAnimate: false</code> thay đổi nó. Với nguồn không có
-  <code>fetchHistoryBefore</code>, widget tải các nến nhỏ hơn trong một lần gọi trước khi phát lại bắt đầu.
-  Với <code>replayAnimate: false</code>, Auto phát lại nến nguyên; một khung nhỏ hơn được chọn sẽ phát thành các bước riêng.
+  <code>fetchHistoryBefore</code>, widget tải các nến nhỏ hơn trong một lần gọi trước khi replay bắt đầu.
+  Với <code>replayAnimate: false</code>, Auto replay nến nguyên; một khung nhỏ hơn được chọn sẽ phát thành các bước riêng.
 </p>
 
-<h3>Thanh phát lại trong ChartWidget</h3>
+<h3>Thanh replay trong ChartWidget</h3>
 <p>
-  Nút <strong>Phát lại</strong> trên thanh công cụ mở một thanh gọn ở chân khung chính, giữa vùng
-  vẽ (các khung bên dưới vẫn đọc được). Trước hết chọn nến bắt đầu: bấm vào nó, hoặc bấm
+  Nút <strong>Bar replay</strong> trên thanh công cụ mở một thanh gọn ở chân pane chính, giữa vùng
+  vẽ (các pane bên dưới vẫn đọc được). Trước hết chọn nến bắt đầu: bấm vào nó, hoặc bấm
   <strong>Nến ngẫu nhiên</strong>; <strong>Huỷ</strong> (hoặc <kbd>Esc</kbd>) để thoát. Sau đó: lùi,
   <strong>Phát</strong>/<strong>Tạm dừng</strong> và tiến; ngày giờ của bước đang hiện, theo múi giờ
   hiển thị (chỉ ghi năm khi khác năm nay), và một thanh trượt tô phần đã phát; <strong>Tốc độ</strong>
@@ -333,7 +332,7 @@ chart.replayStop()             // back to the live series`}</code></pre>
   đang hiện mà không lộ các nến sau (<strong>Huỷ</strong> hoặc <kbd>Esc</kbd> quay lại đúng chỗ cũ);
   và <strong>Về thời gian thực</strong>. Trên điện thoại hoặc biểu đồ hẹp, thanh chia hai hàng, ngày
   và thanh trượt ở trên. Phím, cho widget dùng gần nhất: <kbd>Shift</kbd>+<kbd>←</kbd>/<kbd>→</kbd>
-  lùi/tiến, <kbd>Space</kbd> trên biểu đồ hoặc thanh trượt để phát/tạm dừng (ngoài phát lại nó vừa
+  lùi/tiến, <kbd>Space</kbd> trên biểu đồ hoặc thanh trượt để phát/tạm dừng (ngoài replay nó vừa
   khung biểu đồ), <kbd>Esc</kbd> thôi chọn nến. Phím tắt bạn thêm bằng <code>addHotkey</code> trên
   cùng phím được ưu tiên. Thanh dùng các token <code>--tcw-*</code> của giao diện và chủ đề; host có
   thể đặt thêm <code>--tcw-replay-btn</code>, <code>--tcw-replay-play</code> hoặc
@@ -341,16 +340,16 @@ chart.replayStop()             // back to the live series`}</code></pre>
   <code>stepTime</code> của <code>replayStep</code>, thời điểm của bước đang hiện.
 </p>
 
-<h3>Phát lại sống qua việc đổi nến</h3>
+<h3>Replay sống qua việc đổi nến</h3>
 <p>
-  Phát lại là một mốc thời gian trên chuỗi nến trực tiếp. Khi nến thay đổi — mã hoặc khung
+  Replay là một mốc thời gian trên chuỗi nến trực tiếp. Khi nến thay đổi — mã hoặc khung
   thời gian mới qua <code>connect</code> hay <code>switchStream</code>, <code>setData</code>,
   nến cũ hơn được tải thêm, giờ ngoài phiên, một nến được sửa — nó tiếp tục trên nến mới tại
   đúng thời điểm đã tới, và chỉ hiện những nến đã đóng trước đó. Trong lúc chuỗi mới đang tải,
-  phát lại chờ, vẫn đang chạy hay tạm dừng như trước. Các chỉ số (<code>barIndex</code>,
-  <code>total</code>, <code>replaySeekToBar</code>) là của chuỗi đang phát lại và đổi theo nó;
-  hãy giữ vị trí bằng thời gian. Phát lại mà tài khoản giấy giao dịch trên đó sẽ kết thúc khi
-  đổi mã. Trong ChartWidget, thanh phát lại vẫn mở, hiện <em>Đang tải biểu đồ</em> và chờ khi
+  replay chờ, vẫn đang chạy hay tạm dừng như trước. Các chỉ số (<code>barIndex</code>,
+  <code>total</code>, <code>replaySeekToBar</code>) là của chuỗi đang replay và đổi theo nó;
+  hãy giữ vị trí bằng thời gian. Replay mà tài khoản paper trading giao dịch trên đó sẽ kết thúc khi
+  đổi mã. Trong ChartWidget, thanh replay vẫn mở, hiện <em>Đang tải biểu đồ</em> và chờ khi
   nến đang tải, rồi theo tổng số nến và các bước của khung thời gian mới.
 </p>
 <pre><code>{`chart.replayStart({ startIndex: 300, paused: true })
@@ -362,9 +361,9 @@ chart.on('replayStep', (e) => {
 })
 chart.replayStop()                    // call it first to end the replay as before`}</code></pre>
 
-<h3>Phát lại trong ứng dụng của bạn</h3>
+<h3>Replay trong ứng dụng của bạn</h3>
 <p>
-  Điểm mua, bán và vùng lệnh hiện ra khi phần phát lại chạy tới: một điểm hiện khi nến của nó hiện, một lệnh hiện khi đã vào và được vẽ mở cho tới khi tới lúc thoát (<code>revealMarks: false</code>, ChartWidget: <code>replayRevealMarks: false</code> hiện tất cả). <code>startTime</code> bắt đầu từ một thời điểm thay vì một nến; <code>hideHistory</code> bỏ các nến trước điểm bắt đầu cho tới khi dừng phát lại; <code>duration</code> chạy tới cuối trong khoảng thời gian đó dù có bao nhiêu nến, nhiều nến mỗi khung hình, và một khung hình trễ sẽ làm chậm lại thay vì nhảy cóc.
+  Điểm mua, bán và vùng lệnh hiện ra khi replay chạy tới: một điểm hiện khi nến của nó hiện, một lệnh hiện khi đã vào và được vẽ mở cho tới khi tới lúc thoát (<code>revealMarks: false</code>, ChartWidget: <code>replayRevealMarks: false</code> hiện tất cả). <code>startTime</code> bắt đầu từ một thời điểm thay vì một nến; <code>hideHistory</code> bỏ các nến trước điểm bắt đầu cho tới khi dừng replay; <code>duration</code> chạy tới cuối trong khoảng thời gian đó dù có bao nhiêu nến, nhiều nến mỗi khung hình, và một khung hình trễ sẽ làm chậm lại thay vì nhảy cóc.
 </p>
 <pre><code>{`chart.setSignalMarkers(signals)          // cả backtest, giữ nguyên
 chart.setTradeZones(trades)
@@ -376,17 +375,17 @@ chart.replayStart({
 chart.on('replayComplete', () => chart.replayStop())   // rồi lại cả chuỗi dữ liệu
 chart.replayStart({ startIndex: 100, revealMarks: false })   // mọi điểm ngay từ đầu`}</code></pre>
 
-<h3>Giao dịch giấy trong lúc phát lại</h3>
+<h3>Paper trading trong lúc replay</h3>
 <p>
   Một adapter khớp lệnh có <code>setMarkPrice(price, time)</code> (như
-  <code>PaperExecutionAdapter</code>) sẽ giao dịch trên phiên phát lại: trong lúc phát lại, biểu đồ
-  chuyển cho nó từng mức giá và thời điểm được phát lại, nên lệnh và mức dừng lỗ khớp khi phát lại
-  đi qua chúng, và các lần khớp nằm trên các nến được phát lại. Giá thấp và giá cao của mỗi bước đều
+  <code>PaperExecutionAdapter</code>) sẽ giao dịch trên phiên replay: trong lúc replay, biểu đồ
+  chuyển cho nó từng mức giá và thời điểm được replay, nên lệnh và mức cắt lỗ khớp khi replay
+  đi qua chúng, và các lần khớp nằm trên các nến được replay. Giá thấp và giá cao của mỗi bước đều
   được tính, và một lần nhảy tới trước sẽ đi qua mọi bước trên đường. Nó chỉ đi tới: sau khi tua lùi,
-  nó chờ đến khi phát lại vượt qua điểm xa nhất nó đã thấy. Trong lúc đó giá trực tiếp không làm nó
-  thay đổi; khi phát lại kết thúc, nó quay về giá trực tiếp, và các lần khớp quay về theo giờ thực.
+  nó chờ đến khi replay vượt qua điểm xa nhất nó đã thấy. Trong lúc đó giá trực tiếp không làm nó
+  thay đổi; khi replay kết thúc, nó quay về giá trực tiếp, và các lần khớp quay về theo giờ thực.
   Cảnh báo giá vẫn theo dõi thị trường trực tiếp trong suốt thời gian đó; cảnh báo theo đường chỉ báo
-  chờ đến khi phát lại kết thúc.
+  chờ đến khi replay kết thúc.
 </p>
 <pre><code>{`chart.connectExecution(new PaperExecutionAdapter())
 chart.replayStart({ startIndex: 300, paused: true })
@@ -405,4 +404,4 @@ chart.replayStart({ startIndex: 300, paused: true })
   </tbody>
 </table>
 
-<p>Xem <a href={href('/docs/analytics')}>Phân tích</a> để dùng phát lại cùng bộ backtest.</p>
+<p>Xem <a href={href('/docs/analytics')}>Phân tích</a> để dùng replay cùng bộ backtest.</p>

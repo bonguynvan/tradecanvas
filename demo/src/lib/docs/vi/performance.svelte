@@ -19,7 +19,7 @@
 
 <h2>Khung hình: không đổi từ 500 đến 100,000 nến</h2>
 <ul>
-  <li><strong>Hai canvas</strong> — một canvas cảnh (lưới, chuỗi giá, chỉ báo, đối tượng trên biểu đồ, trục) và một canvas mỏng phía trên cho con trỏ chữ thập, chú thích và các phần hiển thị khác bám theo con trỏ. Khi rê chuột, chỉ canvas phía trên được vẽ lại (~0.2 ms), và trình duyệt chỉ ghép hai bề mặt chứ không phải bốn.</li>
+  <li><strong>Hai canvas</strong> — một canvas cảnh (lưới, chuỗi giá, chỉ báo, đối tượng trên biểu đồ, trục) và một canvas mỏng phía trên cho crosshair, chú thích và các phần hiển thị khác bám theo con trỏ. Khi rê chuột, chỉ canvas phía trên được vẽ lại (~0.2 ms), và trình duyệt chỉ ghép hai bề mặt chứ không phải bốn.</li>
   <li><strong>Render theo khoảng đang hiện</strong> — mọi bộ render, phần tự co giãn thang và khoảng giá của chỉ báo chỉ duyệt các nến đang nằm trong khung nhìn.</li>
   <li><strong>Không tạo rác mỗi khung hình</strong> — ảnh chụp trạng thái khung nhìn được cache giữa các lần thay đổi; bộ định dạng số và ngày được dùng lại thay vì tạo mới cho từng nhãn.</li>
   <li><strong>Trục giá tự đổi độ rộng</strong> — việc khớp trục theo nhãn dài nhất tốn ~0.05 ms và chỉ bố trí lại khi độ rộng thực sự thay đổi.</li>
@@ -75,7 +75,7 @@ const idx = lttbDownsample(series.length, 1600, (i) => series[i].close)`}</code>
 
 <h2>Bộ vẽ WebGL (bản xem trước)</h2>
 <p>
-  <code>renderer: 'webgl'</code> vẽ vùng biểu đồ và các pane chỉ báo bằng WebGL 2, trên một canvas nằm dưới cảnh 2D: lưới, phiên, nến và khối lượng được vẽ trực tiếp; phần vẽ Canvas 2D của chỉ báo, đường so sánh và phần lớn các loại biểu đồ được ghi lại thành nét, vùng tô và hình chữ nhật trên GPU, khử răng cưa ở mép như Canvas 2D. Heatmap độ sâu, volume profile và market profile cũng được ghi lại như vậy, nằm dưới các cây nến; market profile có hiện bảng thống kê hoặc chữ TPO thì vẫn vẽ bằng Canvas 2D. Chữ, hình vẽ, lệnh giao dịch, trục và crosshair vẫn ở Canvas 2D, cùng với những gì GPU không vẽ giống được (để Canvas 2D vẽ theo đúng thứ tự, nên thứ tự lớp không đổi); plugin chỉ báo tự viết chạy được mà không cần sửa. Nến nằm trên đúng các pixel thiết bị như khi vẽ bằng Canvas 2D; đường và vùng tô chỉ khác ở vài điểm ảnh mép khử răng cưa. Mã WebGL nằm trong một chunk riêng (khoảng 17 KB sau gzip), chỉ tải khi dùng lần đầu; nơi không có WebGL 2, hoặc khi mất context, biểu đồ tiếp tục vẽ bằng Canvas 2D. Khi context quay lại, biểu đồ cũng quay lại WebGL. Mỗi trang có tối đa 8 biểu đồ vẽ bằng WebGL cùng lúc (<code>setMaxWebGLCharts</code>), vì Chrome và Safari chỉ giữ khoảng 16 context WebGL mỗi trang và bỏ cái cũ nhất khi vượt quá; biểu đồ vượt giới hạn vẽ bằng Canvas 2D cho tới khi có context được trả lại. Đã kiểm trên Chrome, Firefox và WebKit.
+  <code>renderer: 'webgl'</code> vẽ vùng biểu đồ và các pane chỉ báo bằng WebGL 2, trên một canvas nằm dưới cảnh 2D: lưới, phiên, nến và khối lượng được vẽ trực tiếp; phần vẽ Canvas 2D của chỉ báo, đường so sánh và phần lớn các loại biểu đồ được ghi lại thành nét, vùng tô và hình chữ nhật trên GPU, khử răng cưa ở mép như Canvas 2D. Depth heatmap, volume profile và market profile cũng được ghi lại như vậy, nằm dưới các cây nến; market profile có hiện bảng thống kê hoặc chữ TPO thì vẫn vẽ bằng Canvas 2D. Chữ, hình vẽ, lệnh giao dịch, trục và crosshair vẫn ở Canvas 2D, cùng với những gì GPU không vẽ giống được (để Canvas 2D vẽ theo đúng thứ tự, nên thứ tự lớp không đổi); plugin chỉ báo tự viết chạy được mà không cần sửa. Nến nằm trên đúng các pixel thiết bị như khi vẽ bằng Canvas 2D; đường và vùng tô chỉ khác ở vài điểm ảnh mép khử răng cưa. Mã WebGL nằm trong một chunk riêng (khoảng 17 KB sau gzip), chỉ tải khi dùng lần đầu; nơi không có WebGL 2, hoặc khi mất context, biểu đồ tiếp tục vẽ bằng Canvas 2D. Khi context quay lại, biểu đồ cũng quay lại WebGL. Mỗi trang có tối đa 8 biểu đồ vẽ bằng WebGL cùng lúc (<code>setMaxWebGLCharts</code>), vì Chrome và Safari chỉ giữ khoảng 16 context WebGL mỗi trang và bỏ cái cũ nhất khi vượt quá; biểu đồ vượt giới hạn vẽ bằng Canvas 2D cho tới khi có context được trả lại. Đã kiểm trên Chrome, Firefox và WebKit.
 </p>
 <pre><code>{`const chart = new Chart(el, { renderer: 'webgl' })
 
@@ -92,7 +92,7 @@ setMaxWebGLCharts(4)   // from '@tradecanvas/chart': at most 4 charts on the pag
     <tr><td>1600×900, 500 nến + 4 chỉ báo</td><td>2</td><td>27.4 ms</td><td>19.6 ms</td></tr>
     <tr><td>1600×900, thu nhỏ trên 200,000 nến + 4 chỉ báo</td><td>2</td><td>34.5 ms</td><td>20.2 ms</td></tr>
     <tr><td>1600×900, thu nhỏ trên 1,000,000 nến + 4 chỉ báo</td><td>2</td><td>34.5 ms</td><td>16.7 ms</td></tr>
-    <tr><td>1600×900, heatmap độ sâu, 240 ảnh chụp × 80 mức giá</td><td>2</td><td>25.5 ms</td><td>16.8 ms</td></tr>
+    <tr><td>1600×900, depth heatmap, 240 ảnh chụp × 80 mức giá</td><td>2</td><td>25.5 ms</td><td>16.8 ms</td></tr>
     <tr><td>Sáu biểu đồ, mỗi cái 500 nến và hai chỉ báo</td><td>2</td><td>23.5 ms</td><td>17.2 ms</td></tr>
     <tr><td>2560×1400, 2,000 nến + 4 chỉ báo</td><td>1</td><td>41.6 ms</td><td>17.7 ms</td></tr>
     <tr><td>2560×1400, 2,000 nến + 4 chỉ báo</td><td>1.5</td><td>70.8 ms</td><td>17.6 ms</td></tr>
@@ -132,7 +132,7 @@ chart.resume()    // back: one frame draws what changed`}</code></pre>
 
 <h2 id="soak">Mười phút với một feed bận rộn</h2>
 <p>
-  Một bàn giao dịch để chạy liên tục: widget đầy đủ trên 1.000.000 nến một giây, vẽ bằng WebGL, bốn chỉ báo, một vị thế có dừng lỗ và chốt lời, các lệnh chờ được khớp, đặt lại và dời đi, giá mua và giá bán, heatmap độ sâu, và một feed 30.000 lệnh khớp mỗi giây từ một worker đóng vai socket. Mỗi lệnh khớp đến chart dưới dạng một tick. Cứ 30 giây bài soak dọn rác rồi đọc phần bộ nhớ còn giữ.
+  Một bàn giao dịch để chạy liên tục: widget đầy đủ trên 1.000.000 nến một giây, vẽ bằng WebGL, bốn chỉ báo, một vị thế có cắt lỗ và chốt lời, các lệnh chờ được khớp, đặt lại và dời đi, giá mua và giá bán, depth heatmap, và một feed 30.000 lệnh khớp mỗi giây từ một worker đóng vai socket. Mỗi lệnh khớp đến chart dưới dạng một tick. Cứ 30 giây bài soak dọn rác rồi đọc phần bộ nhớ còn giữ.
 </p>
 <table>
   <thead><tr><th>Số đo</th><th>Sau 1 phút</th><th>Sau 10 phút</th></tr></thead>

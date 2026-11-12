@@ -14,13 +14,13 @@
 <p>
   <code>@tradecanvas/analytics</code> cung cấp một bộ backtest chiến lược headless, chạy từng
   nến một, kèm theo dõi danh mục và bộ tính tổng hợp chỉ số rủi ro.
-  Kết hợp với <a href={href('/docs/realtime')}>chế độ phát lại</a> để hiển thị các giao dịch trên biểu đồ.
+  Kết hợp với <a href={href('/docs/realtime')}>chế độ replay</a> để hiển thị các giao dịch trên biểu đồ.
 </p>
 
 <BacktestPanel />
 <p style="font-size: 12.5px; color: var(--text-muted); margin-top: -16px; margin-bottom: 24px;">
   ↑ Backtest giao cắt SMA(10/30) chạy trực tiếp trên 365 ngày dữ liệu tổng hợp tất định.
-  Kéo thanh trượt hoặc bấm Phát để đi qua đường vốn từng nến một.
+  Kéo thanh trượt hoặc bấm Phát để đi qua equity curve từng nến một.
 </p>
 
 <h2>Backtester</h2>
@@ -76,7 +76,7 @@ console.log(result.metrics.sharpe, result.metrics.maxDrawdownPct)`}</code></pre>
 </ul>
 
 <h2>Portfolio</h2>
-<p>Theo dõi tiền mặt, một vị thế ròng, lãi/lỗ đã chốt (P&amp;L) và đường vốn.</p>
+<p>Theo dõi tiền mặt, một vị thế ròng, lãi/lỗ đã chốt (P&amp;L) và equity curve.</p>
 <pre><code>{`const portfolio = new Portfolio({ initialCash: 10_000 })
 portfolio.applyFill({ ... })
 portfolio.mark(time, price)         // record equity point
@@ -108,7 +108,7 @@ m.expectancy`}</code></pre>
 <p>
   Mọi tỉ lệ phần trăm ở đây đều là số thập phân: 0.12 là 12%. Hai mức drawdown được đo
   riêng, nên với một tài khoản đang lớn dần chúng có thể đến từ hai lần sụt giảm khác nhau.
-  Đường vốn 100, 50, 100, 400, 1000, 800, 1200 có lần sụt sâu nhất là 50% (từ 100 xuống 50,
+  Equity curve 100, 50, 100, 400, 1000, 800, 1200 có lần sụt sâu nhất là 50% (từ 100 xuống 50,
   nên <code>maxDrawdownPct</code> là 0.5) và lần sụt lớn nhất tính bằng tiền là 200 (từ 1000
   xuống 800, nên <code>maxDrawdown</code> là 200).
 </p>

@@ -6,7 +6,7 @@
 
 <svelte:head>
   <title>Biểu đồ tài chính — Tài liệu TradeCanvas</title>
-  <meta name="description" content="Biểu đồ cho dashboard tài chính, đặt cạnh biểu đồ nến: biểu đồ cột, donut, scatter và bong bóng, histogram, lịch, ma trận tương quan, sparkline, đồng hồ đo, bản đồ nhiệt và treemap, thác nước, độ sâu, đường vốn và báo cáo hiệu suất." />
+  <meta name="description" content="Biểu đồ cho dashboard tài chính, đặt cạnh biểu đồ nến: biểu đồ cột, donut, scatter và bong bóng, histogram, lịch, correlation matrix, sparkline, gauge, heatmap và treemap, waterfall, depth chart, equity curve và báo cáo hiệu suất." />
 </svelte:head>
 
 <h1>Biểu đồ tài chính</h1>
@@ -20,20 +20,20 @@
 <table>
   <thead><tr><th>Class</th><th>Dùng cho</th></tr></thead>
   <tbody>
-    <tr><td><code>BarChart</code></td><td>Giá trị theo hạng mục: dòng tiền ròng, khối lượng theo phiên, lợi nhuận theo tháng. Theo nhóm hoặc chồng lên nhau, đứng hoặc nằm ngang, đi lên và đi xuống từ 0.</td></tr>
+    <tr><td><code>BarChart</code></td><td>Giá trị theo hạng mục: net flows, khối lượng theo phiên, lợi nhuận theo tháng. Theo nhóm hoặc chồng lên nhau, đứng hoặc nằm ngang, đi lên và đi xuống từ 0.</td></tr>
     <tr><td><code>DonutChart</code></td><td>Các phần của một tổng thể: phân bổ tài sản, mức phơi nhiễm theo ngành. Thành biểu đồ tròn với <code>innerRadius: 0</code>.</td></tr>
     <tr><td><code>ScatterChart</code></td><td>Hai giá trị cho mỗi mục: rủi ro so với lợi nhuận, định giá so với tăng trưởng; thành bong bóng khi điểm có kích thước.</td></tr>
     <tr><td><code>HistogramChart</code></td><td>Giá trị phân bố ra sao: lợi nhuận theo ngày, kết quả các lệnh, có đường kẻ tại giá trị trung bình hoặc một mức VaR.</td></tr>
     <tr><td><code>CalendarChart</code></td><td>Mỗi ngày một giá trị trên lịch: lợi nhuận ngày, lãi lỗ, nhật ký giao dịch.</td></tr>
     <tr><td><code>MatrixChart</code></td><td>Một giá trị cho mỗi cặp hàng và cột: tương quan, khối lượng theo giờ và thứ.</td></tr>
     <tr><td><code>CounterClockChart</code></td><td>Giá trung bình theo khối lượng trung bình, từng nến: chu kỳ ngược chiều kim đồng hồ của một cổ phiếu.</td></tr>
-    <tr><td><code>SparklineChart</code></td><td>Một đường nhỏ trong hàng của danh mục theo dõi hoặc trong ô KPI.</td></tr>
+    <tr><td><code>SparklineChart</code></td><td>Một đường nhỏ trong hàng của watchlist hoặc trong ô KPI.</td></tr>
     <tr><td><code>GaugeChart</code></td><td>Một giá trị so với các dải: tâm lý thị trường, rủi ro, mức dùng ký quỹ.</td></tr>
-    <tr><td><code>HeatmapChart</code></td><td>Các ô tô màu theo mức thay đổi, xếp thành lưới hoặc thành treemap theo tỷ trọng (vốn hoá). Với <code>grouped</code>, thành bản đồ theo ngành.</td></tr>
+    <tr><td><code>HeatmapChart</code></td><td>Các ô tô màu theo mức thay đổi, xếp thành lưới hoặc thành treemap theo tỷ trọng (vốn hoá). Với <code>grouped</code>, thành sector map.</td></tr>
     <tr><td><code>WaterfallChart</code></td><td>Các bước từ điểm đầu đến điểm cuối: phân bổ lãi/lỗ (P&amp;L), dòng tiền.</td></tr>
     <tr><td><code>DepthChart</code></td><td>Bid và ask luỹ kế của sổ lệnh.</td></tr>
-    <tr><td><code>EquityCurveChart</code></td><td>Giá trị tài khoản theo thời gian, kèm các đợt sụt giảm (drawdown) và một chỉ số tham chiếu (benchmark).</td></tr>
-    <tr><td><code>PerformanceDashboard</code></td><td>Báo cáo chiến lược từ một backtest: các chỉ số, đường vốn, drawdown và lợi nhuận theo tháng.</td></tr>
+    <tr><td><code>EquityCurveChart</code></td><td>Giá trị tài khoản theo thời gian, kèm các đợt drawdown và một benchmark.</td></tr>
+    <tr><td><code>PerformanceDashboard</code></td><td>Báo cáo chiến lược từ một backtest: các chỉ số, equity curve, drawdown và lợi nhuận theo tháng.</td></tr>
   </tbody>
 </table>
 
@@ -44,10 +44,10 @@ chart.setOptions({ mode: 'stacked' })   // tuỳ chọn bất kỳ, được g�
 chart.setTheme('light')                 // 'dark' | 'light' | một Theme
 chart.destroy()                         // gỡ canvas và các listener của nó`}</code></pre>
 <p>
-  Trên màn hình cảm ứng, chạm một lần sẽ hiện tooltip và nó ở lại cho đến khi bạn chạm chỗ khác; kéo vẫn cuộn trang. Biểu đồ vẽ theo đúng điểm ảnh của màn hình nên đường kẻ sắc nét ở mọi mức thu phóng. Biểu đồ depth, equity và waterfall tự tính lề theo nhãn của chúng, giống các biểu đồ mới hơn.
+  Trên màn hình cảm ứng, chạm một lần sẽ hiện tooltip và nó ở lại cho đến khi bạn chạm chỗ khác; kéo vẫn cuộn trang. Biểu đồ vẽ theo đúng điểm ảnh của màn hình nên đường kẻ sắc nét ở mọi mức thu phóng. Depth chart, equity curve và waterfall chart tự tính lề theo nhãn của chúng, giống các biểu đồ mới hơn.
 </p>
 <p>
-  Chữ dùng font sans của hệ thống, giống các con số trong widget; <code>font</code> đặt font khác (<code>{'{'} family: MONO_FONT_FAMILY {'}'}</code> để lấy lại font đơn cách), còn theme có font riêng thì giữ font đó. <code>locale</code> (thẻ BCP 47 như <code>'vi'</code>) đặt ngôn ngữ viết số và ngày tháng; bỏ trống thì theo trình duyệt. Mỗi biểu đồ tự mô tả mình cho trình đọc màn hình bằng tiếng Anh, trừ khi <code>ariaLabel</code> nói bằng lời của bạn. <code>spreadLabel</code> của biểu đồ depth và <code>benchmarkLabel</code> của đường equity nhận chữ vẽ trên biểu đồ, còn <code>labels</code> của dashboard nhận tiêu đề và tên các chỉ số.
+  Chữ dùng font sans của hệ thống, giống các con số trong widget; <code>font</code> đặt font khác (<code>{'{'} family: MONO_FONT_FAMILY {'}'}</code> để lấy lại font đơn cách), còn theme có font riêng thì giữ font đó. <code>locale</code> (thẻ BCP 47 như <code>'vi'</code>) đặt ngôn ngữ viết số và ngày tháng; bỏ trống thì theo trình duyệt. Mỗi biểu đồ tự mô tả mình cho trình đọc màn hình bằng tiếng Anh, trừ khi <code>ariaLabel</code> nói bằng lời của bạn. <code>spreadLabel</code> của depth chart và <code>benchmarkLabel</code> của equity curve nhận chữ vẽ trên biểu đồ, còn <code>labels</code> của dashboard nhận tiêu đề và tên các chỉ số.
 </p>
 <p>
   Mỗi biểu đồ lấp đầy phần tử của nó và vẽ lại khi phần tử đổi kích thước. Biểu đồ nào có tooltip khi
@@ -160,7 +160,7 @@ new CalendarChart(el, {
   Tuần chạy từ trái sang phải, các thứ từ trên xuống dưới, mỗi năm dương lịch một dải, tối đa mười năm; khi biểu đồ không đủ cao cho tất cả, các năm cũ nhất bị bỏ trước. Ngày không có giá trị được vẽ trống, và thanh màu bên dưới cho biết thang màu (<code>legend: false</code> để ẩn).
 </p>
 
-<h2>Ma trận tương quan</h2>
+<h2>Correlation matrix</h2>
 <pre><code>{`import { MatrixChart, correlationMatrix } from '@tradecanvas/chart'
 
 // Lợi nhuận ngày, không phải giá: mỗi mã một mảng, cùng các ngày như nhau.
@@ -178,7 +178,7 @@ new MatrixChart(el, {
   Ô luôn vuông và in giá trị khi vừa chỗ (hai chữ số thập phân nếu không có <code>valueFormat</code>); tên cột không vừa bề ngang ô thì được xoay nghiêng. <code>correlationMatrix</code> ghép các ngày mà cả hai chuỗi đều có, và trả về NaN khi có ít hơn ba ngày, khi đó ô để trống. Ma trận cũng hợp với các bảng giá trị khác, như khối lượng theo giờ và thứ.
 </p>
 
-<h2>Bản đồ theo ngành</h2>
+<h2>Sector map</h2>
 <pre><code>{`import { HeatmapChart } from '@tradecanvas/chart'
 
 new HeatmapChart(el, {
@@ -194,7 +194,7 @@ new HeatmapChart(el, {
   Mỗi nhóm chiếm phần diện tích bằng tổng tỷ trọng các mã của nó, tên nhóm và biến động bình quân theo tỷ trọng nằm ở đầu ô khi vừa chỗ. Màu của heatmap chạy từ -5 đến 5, trừ khi <code>colorScale</code> cho <code>min</code> và <code>max</code>.
 </p>
 
-<h2>Đường ngược chiều kim đồng hồ</h2>
+<h2>Counter-clock chart</h2>
 <pre><code>{`import { CounterClockChart } from '@tradecanvas/chart'
 
 const clock = new CounterClockChart(el, {
@@ -210,7 +210,7 @@ clock.getPhase()                        // 1–8: hướng của bước cuối`
   Mỗi điểm là trung bình 25 nến của khối lượng (trục ngang) và giá đóng cửa (trục dọc), nối theo thứ tự thời gian, điểm càng cũ càng mờ. Một chu kỳ lành mạnh quay ngược chiều kim đồng hồ. <code>getPhase()</code> (và <code>counterClockPhase(points)</code>) cho biết bước cuối: 1 khối lượng tăng, 2 cả hai tăng, 3 giá tăng, 4 giá tăng khi khối lượng giảm, 5 khối lượng giảm, 6 cả hai giảm, 7 giá giảm, 8 giá giảm khi khối lượng tăng.
 </p>
 
-<h2>Sparkline, đồng hồ đo, bản đồ nhiệt, thác nước, độ sâu và đường vốn</h2>
+<h2>Sparkline, gauge, heatmap, waterfall, depth chart và equity curve</h2>
 <pre><code>{`import { SparklineChart, GaugeChart, HeatmapChart, WaterfallChart, DepthChart, EquityCurveChart } from '@tradecanvas/chart'
 
 new SparklineChart(el, { data: closes, mode: 'area', showLastPoint: true })
@@ -235,7 +235,7 @@ new EquityCurveChart(el, { data: equity, benchmark, drawdown: true })`}</code></
 <h2>Dashboard hiệu suất</h2>
 <p>
   <code>PerformanceDashboard</code> dựng một báo cáo chiến lược từ một backtest: dải chỉ số chính,
-  đường vốn, drawdown ngay bên dưới và lịch lợi nhuận theo tháng. Dùng cùng bộ backtest trong phần
+  equity curve, drawdown ngay bên dưới và lịch lợi nhuận theo tháng. Dùng cùng bộ backtest trong phần
   <a href={href('/docs/analytics')}>phân tích</a>.
 </p>
 <pre><code>{`import { Backtester } from '@tradecanvas/analytics'
@@ -255,7 +255,7 @@ const dash = new PerformanceDashboard(document.getElementById('report')!, {
   Các chỉ số bạn tự dựng dùng dạng phân số, như <code>@tradecanvas/analytics</code> trả về:
   <code>totalReturnPct</code> bằng <code>0.12</code> hiện là +12.00%, còn nếu đưa theo phần trăm
   (<code>12</code>) thì sẽ hiện lớn gấp 100 lần. <code>maxDrawdownPct</code> luôn được đọc là một mức
-  sụt giảm, dù được đưa với dấu nào.
+  drawdown, dù được đưa với dấu nào.
 </p>
 <p>
   Các hàm tính toán được export để bạn tự làm bố cục: <code>computeMonthlyReturns</code>,

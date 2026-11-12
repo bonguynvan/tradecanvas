@@ -546,7 +546,7 @@ const es: SiteMessages = {
     eyebrow: 'Ejemplos · StackBlitz',
     title: 'Ejemplos',
     subtitleHtml:
-      'Entornos en vivo que puedes bifurcar con un clic. Cada uno se abre en StackBlitz con los paquetes 1.x más recientes ya conectados. Para probar las funciones sin configurar nada, usa el <a href="{lab}">Laboratorio de funciones</a> de la página de inicio.',
+      'Entornos en vivo que puedes bifurcar con un clic. Cada uno se abre en StackBlitz con los paquetes 2.x más recientes ya conectados. Para probar las funciones sin configurar nada, usa el <a href="{lab}">Laboratorio de funciones</a> de la página de inicio.',
     open: 'Abrir {title} en StackBlitz',
     items: {
       vanilla: {
