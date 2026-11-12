@@ -22,6 +22,7 @@
     "bench:render": "node scripts/bench-render.mjs",
     "soak": "node scripts/soak.mjs",
     "audit:scenes": "node scripts/audit-scenes.mjs",
+    "audit:finance": "node scripts/audit-finance.mjs",
     "size": "node scripts/size-report.mjs",
     "changeset": "changeset",
     "changeset:version": "changeset version",

@@ -17,12 +17,17 @@ export class GaugeChart extends BaseFinanceChart {
   private animationFrameId: number | null = null;
 
   constructor(container: HTMLElement, options: GaugeOptions) {
-    super(container, options.theme);
+    super(container, options.theme, options.font);
     this.options = options;
     this.currentValue = options.value;
     this.targetValue = options.value;
-    this.applyBaseOptions({ ariaLabel: options.ariaLabel });
+    this.applyLabel();
     this.requestRender();
+  }
+
+  /** What screen readers hear: `ariaLabel`, else what the chart holds. */
+  private applyLabel(): void {
+    this.setLabel(this.options.ariaLabel ?? `Gauge at ${this.options.value}`);
   }
 
   protected renderChart(
@@ -41,6 +46,7 @@ export class GaugeChart extends BaseFinanceChart {
       this.currentValue = value;
       this.targetValue = value;
       this.options = { ...this.options, value };
+      this.applyLabel();
       this.requestRender();
       return;
     }
@@ -49,12 +55,13 @@ export class GaugeChart extends BaseFinanceChart {
     this.animationFrom = this.currentValue;
     this.animationStart = performance.now();
     this.options = { ...this.options, value };
+    this.applyLabel();
     this.startAnimationLoop();
   }
 
   setOptions(opts: Partial<GaugeOptions>): void {
     const next = { ...this.options, ...opts };
-    this.applyBaseOptions(opts);
+    this.applyBaseOptions({ ...opts, ariaLabel: undefined });
     // If `value` is part of the partial, route through animation path
     if (opts.value !== undefined && opts.value !== this.targetValue) {
       this.options = next;
@@ -62,6 +69,7 @@ export class GaugeChart extends BaseFinanceChart {
       return;
     }
     this.options = next;
+    this.applyLabel();
     this.requestRender();
   }
 

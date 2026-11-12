@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+### Finance charts
+
+- **The finance charts' text is in a sans face** (`@tradecanvas/core`, `@tradecanvas/chart`). The fourteen charts drew their labels in the theme's monospaced face while the widget's figures moved to the look's sans face; beside the widget they looked like another product. They are in the system's sans face now (`SANS_FONT_FAMILY`). A new `font` option on every finance chart (and `setOptions({ font })`) sets the face and sizes, as `Chart`'s does: `{ family: DEFAULT_FONT_FAMILY }` brings the monospaced one back. A theme of your own with a face of its own keeps it. `PerformanceDashboard` takes `font` too, for its own text and its charts'.
+- **`locale` on every finance chart** (`@tradecanvas/commons`, `@tradecanvas/core`, `@tradecanvas/chart`). A BCP 47 tag sets how numbers and dates are written: the grouping and decimal marks, the short forms past ten thousand, percentages, the names of months and days. Only the calendar took one before, and only for names. The browser's language is still the default, and a format function of yours is used as it is. A tag the browser cannot read falls back to its own language.
+- **Words you can change** (`@tradecanvas/commons`, `@tradecanvas/core`, `@tradecanvas/chart`). A depth chart's `spreadLabel` takes a word in place of "Spread" (it still takes `false` for none). `PerformanceDashboard` takes `labels` for its three panels' titles and its eight stats' names, and writes its months in `locale`; `selectKeyStats(metrics, labels)` and `computeMonthlyReturns(curve, locale)` take the same. `DEFAULT_DASHBOARD_LABELS` lists them.
+- **Every finance chart describes itself to screen readers** (`@tradecanvas/chart`). The depth, equity curve, waterfall, sparkline and gauge charts had no label unless `ariaLabel` gave one; they say what they hold ("Depth chart of 12 bids and 12 asks", "Gauge at 62") and follow their data, as the newer charts do. `ariaLabel` still says it in your words.
+- **For those drawing with the renderers** (`@tradecanvas/core`). `numberFormat(locale)` and `percentFormat(locale)` are the formats the charts use; `axisFormat(scale, locale)` takes a locale; `financeTheme(theme, font)` is the theme a finance chart draws with.
+
 ## 2.0.0-beta.4 (2026-11-12)
 
 ### Finance charts

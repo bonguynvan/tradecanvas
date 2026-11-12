@@ -1,5 +1,5 @@
-import type { Theme, ThemeName } from '@tradecanvas/commons';
-import { DARK_THEME, LIGHT_THEME } from '@tradecanvas/commons';
+import type { FontConfig, Theme, ThemeName } from '@tradecanvas/commons';
+import { financeTheme } from '@tradecanvas/core';
 import { EquityCurveChart } from './EquityCurveChart.js';
 import { HeatmapChart } from './HeatmapChart.js';
 import {
@@ -10,6 +10,8 @@ import {
   type EquitySample,
   type RiskMetricsLike,
   type DashboardStat,
+  type DashboardLabels,
+  dashboardLabels,
 } from './performanceData.js';
 
 /** Structurally satisfied by analytics' `BacktestResult`. */
@@ -23,12 +25,12 @@ export interface PerformanceDashboardOptions {
   theme?: ThemeName | Theme;
   title?: string;
   subtitle?: string;
-}
-
-function resolveTheme(theme?: ThemeName | Theme): Theme {
-  if (!theme || theme === 'dark') return DARK_THEME;
-  if (theme === 'light') return LIGHT_THEME;
-  return theme as Theme;
+  /** The face and sizes of the dashboard's text, as on the finance charts: the system's sans face when left out. */
+  font?: Partial<FontConfig>;
+  /** The language of the months' names and of the charts' numbers and dates (a BCP 47 tag); the browser's when left out. */
+  locale?: string;
+  /** The panels' titles and the stats' names in your words; those left out stay in English. */
+  labels?: Partial<DashboardLabels>;
 }
 
 /**
@@ -51,7 +53,7 @@ export class PerformanceDashboard {
 
   constructor(container: HTMLElement, options: PerformanceDashboardOptions) {
     this.options = options;
-    this.theme = resolveTheme(options.theme);
+    this.theme = financeTheme(options.theme, options.font);
     this.root = document.createElement('div');
     this.build();
     container.appendChild(this.root);
@@ -59,7 +61,10 @@ export class PerformanceDashboard {
 
   private build(): void {
     const t = this.theme;
-    const { result, title, subtitle } = this.options;
+    const { result, title, subtitle, locale } = this.options;
+    const labels = dashboardLabels(this.options.labels);
+    // The charts take the dashboard's face by name: its theme alone would read to them as one with no face of its own.
+    const font = t.font;
     const surface = this.panelBackground();
     const border = t.grid;
 
@@ -93,7 +98,7 @@ export class PerformanceDashboard {
     }
 
     // Stats strip
-    this.root.appendChild(this.buildStatsStrip(selectKeyStats(result.metrics), surface, border));
+    this.root.appendChild(this.buildStatsStrip(selectKeyStats(result.metrics, labels), surface, border));
 
     // Chart grid
     const grid = document.createElement('div');
@@ -105,34 +110,43 @@ export class PerformanceDashboard {
     ].join(';');
     this.root.appendChild(grid);
 
-    const equityPanel = this.buildPanel('Equity Curve', surface, border);
+    const equityPanel = this.buildPanel(labels.equityCurve, surface, border);
     equityPanel.wrap.style.gridColumn = '1 / -1';
     grid.appendChild(equityPanel.wrap);
     this.equityChart = new EquityCurveChart(equityPanel.body, {
       data: toEquityPoints(result.equityCurve),
       theme: t,
+      font,
+      locale,
+      ariaLabel: labels.equityCurve,
       lineColor: t.candleUp,
       fillArea: true,
       crosshair: true,
     });
 
-    const ddPanel = this.buildPanel('Drawdown', surface, border);
+    const ddPanel = this.buildPanel(labels.drawdown, surface, border);
     grid.appendChild(ddPanel.wrap);
     this.drawdownChart = new EquityCurveChart(ddPanel.body, {
       data: computeDrawdownCurve(result.equityCurve),
       theme: t,
+      font,
+      locale,
+      ariaLabel: labels.drawdown,
       lineColor: t.candleDown,
       fillArea: true,
       crosshair: true,
       valueFormat: (v) => `${v.toFixed(1)}%`,
     });
 
-    const monthlyCells = computeMonthlyReturns(result.equityCurve);
-    const heatPanel = this.buildPanel('Monthly Returns', surface, border);
+    const monthlyCells = computeMonthlyReturns(result.equityCurve, locale);
+    const heatPanel = this.buildPanel(labels.monthlyReturns, surface, border);
     grid.appendChild(heatPanel.wrap);
     this.heatmap = new HeatmapChart(heatPanel.body, {
       data: monthlyCells,
       theme: t,
+      font,
+      locale,
+      ariaLabel: labels.monthlyReturns,
       showValues: true,
       valueFormat: (v) => `${v >= 0 ? '+' : ''}${v.toFixed(1)}`,
       colorScale: { negative: t.candleDown, zero: surface, positive: t.candleUp },
@@ -222,7 +236,7 @@ export class PerformanceDashboard {
   }
 
   setTheme(theme: ThemeName | Theme): void {
-    this.theme = resolveTheme(theme);
+    this.theme = financeTheme(theme, this.options.font);
     this.options = { ...this.options, theme };
     this.destroyCharts();
     this.root.replaceChildren();

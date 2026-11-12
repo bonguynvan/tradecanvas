@@ -7,16 +7,21 @@ export class WaterfallChart extends BaseFinanceChart {
   private readonly crosshair: FinanceCrosshair;
 
   constructor(container: HTMLElement, options: WaterfallOptions) {
-    super(container, options.theme);
+    super(container, options.theme, options.font);
     this.options = options;
 
     this.crosshair = new FinanceCrosshair(this.canvas, () => {
       // With the readout off a move changes nothing drawn: no frame for it.
       if (this.options.crosshair !== false) this.requestRender();
     });
-    this.applyBaseOptions({ ariaLabel: options.ariaLabel });
+    this.applyLabel();
 
     this.requestRender();
+  }
+
+  /** What screen readers hear: `ariaLabel`, else what the chart holds. */
+  private applyLabel(): void {
+    this.setLabel(this.options.ariaLabel ?? `Waterfall chart of ${(this.options.data ?? []).length} steps`);
   }
 
   protected renderChart(
@@ -31,12 +36,14 @@ export class WaterfallChart extends BaseFinanceChart {
 
   update(data: WaterfallBar[]): void {
     this.options = { ...this.options, data };
+    this.applyLabel();
     this.requestRender();
   }
 
   setOptions(opts: Partial<WaterfallOptions>): void {
     this.options = { ...this.options, ...opts };
-    this.applyBaseOptions(opts);
+    this.applyBaseOptions({ ...opts, ariaLabel: undefined });
+    this.applyLabel();
     this.requestRender();
   }
 

@@ -4,7 +4,7 @@ import {
   LABEL_SIZE,
   axisFormat,
   canvasMeasure,
-  defaultFormat,
+  numberFormat,
   drawLegend,
   drawTooltip,
   drawValueAxis,
@@ -80,8 +80,8 @@ export function computeScatterLayout(options: ScatterChartOptions, width: number
   };
   const xScale = niceScale(...padded(xLo, xHi, width * 0.8), Math.max(2, Math.floor(width / 110)));
   const yScale = niceScale(...padded(yLo, yHi, height * 0.7), 5);
-  const xFormat = options.xFormat ?? axisFormat(xScale);
-  const yFormat = options.yFormat ?? axisFormat(yScale);
+  const xFormat = options.xFormat ?? axisFormat(xScale, options.locale);
+  const yFormat = options.yFormat ?? axisFormat(yScale, options.locale);
 
   const showLegend = options.legend ?? options.series.length > 1;
   const legend = showLegend
@@ -145,8 +145,8 @@ export function renderScatter(
   layout: ScatterLayout = computeScatterLayout(options, width, height, theme, canvasMeasure(ctx, theme)),
 ): ScatterLayout {
   const { plot, xScale, yScale } = layout;
-  const xFormat = options.xFormat ?? axisFormat(xScale);
-  const yFormat = options.yFormat ?? axisFormat(yScale);
+  const xFormat = options.xFormat ?? axisFormat(xScale, options.locale);
+  const yFormat = options.yFormat ?? axisFormat(yScale, options.locale);
 
   ctx.fillStyle = theme.background;
   ctx.fillRect(0, 0, width, height);
@@ -187,9 +187,9 @@ export function renderScatter(
   if (hovered && pointer) {
     const lines: TooltipLine[] = [{ text: hovered.label ?? hovered.series, bold: true, color: hovered.color }];
     if (hovered.label && options.series.length > 1) lines.push({ text: hovered.series });
-    lines.push({ text: `${options.xLabel ?? 'x'}: ${(options.xFormat ?? defaultFormat)(hovered.point.x)}` });
-    lines.push({ text: `${options.yLabel ?? 'y'}: ${(options.yFormat ?? defaultFormat)(hovered.point.y)}` });
-    if (hovered.point.size !== undefined) lines.push({ text: defaultFormat(hovered.point.size) });
+    lines.push({ text: `${options.xLabel ?? 'x'}: ${(options.xFormat ?? numberFormat(options.locale))(hovered.point.x)}` });
+    lines.push({ text: `${options.yLabel ?? 'y'}: ${(options.yFormat ?? numberFormat(options.locale))(hovered.point.y)}` });
+    if (hovered.point.size !== undefined) lines.push({ text: numberFormat(options.locale)(hovered.point.size) });
     drawTooltip(ctx, lines, pointer, { x: 0, y: 0, width, height }, theme);
   }
   return layout;

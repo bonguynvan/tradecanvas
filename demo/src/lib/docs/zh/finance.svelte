@@ -46,6 +46,9 @@ chart.destroy()                         // 移除画布及其监听器`}</code><
   在触摸屏上，轻点即可显示提示框，直到轻点别处才消失；拖动仍会滚动页面。图表按屏幕自身的像素绘制，因此在任何缩放比例下线条都保持清晰。深度图、权益曲线和瀑布图会根据标签自动留出边距，与较新的图表一致。
 </p>
 <p>
+  文字使用系统的无衬线字体，与组件中的数字一致；<code>font</code> 可换成别的字体（<code>{'{'} family: DEFAULT_FONT_FAMILY {'}'}</code> 可恢复等宽字体），自带字体的主题则保留其字体。<code>locale</code>（BCP 47 标签，如 <code>'vi'</code>）决定数字和日期的书写语言，不设置时跟随浏览器。每个图表默认用英文向屏幕阅读器描述自己，除非用 <code>ariaLabel</code> 换成你自己的表述。深度图的 <code>spreadLabel</code> 和权益曲线的 <code>benchmarkLabel</code> 用于设置画在图上的文字，仪表板的 <code>labels</code> 用于设置标题和各项指标的名称。
+</p>
+<p>
   每种图表都会填满其元素，并在元素尺寸变化时重绘。带悬停提示框的图表可用 <code>crosshair: false</code> 关闭提示框。
   柱状图、环形图、散点图、直方图、日历图和矩阵图会告诉屏幕阅读器它们显示的内容（画布带有 image 角色和一个标签）；
   <code>ariaLabel</code> 可以换成你自己的表述，例如用页面的语言。数字按 <code>valueFormat</code>（或

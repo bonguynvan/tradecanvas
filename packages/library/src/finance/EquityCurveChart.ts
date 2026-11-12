@@ -7,16 +7,21 @@ export class EquityCurveChart extends BaseFinanceChart {
   private readonly crosshair: FinanceCrosshair;
 
   constructor(container: HTMLElement, options: EquityCurveOptions) {
-    super(container, options.theme);
+    super(container, options.theme, options.font);
     this.options = options;
 
     this.crosshair = new FinanceCrosshair(this.canvas, () => {
       // With the readout off a move changes nothing drawn: no frame for it.
       if (this.options.crosshair !== false) this.requestRender();
     });
-    this.applyBaseOptions({ ariaLabel: options.ariaLabel });
+    this.applyLabel();
 
     this.requestRender();
+  }
+
+  /** What screen readers hear: `ariaLabel`, else what the chart holds. */
+  private applyLabel(): void {
+    this.setLabel(this.options.ariaLabel ?? `Equity curve of ${this.options.data.length} points`);
   }
 
   protected renderChart(
@@ -34,12 +39,14 @@ export class EquityCurveChart extends BaseFinanceChart {
     if (benchmark !== undefined) {
       this.options = { ...this.options, benchmark };
     }
+    this.applyLabel();
     this.requestRender();
   }
 
   setOptions(opts: Partial<EquityCurveOptions>): void {
     this.options = { ...this.options, ...opts };
-    this.applyBaseOptions(opts);
+    this.applyBaseOptions({ ...opts, ariaLabel: undefined });
+    this.applyLabel();
     this.requestRender();
   }
 

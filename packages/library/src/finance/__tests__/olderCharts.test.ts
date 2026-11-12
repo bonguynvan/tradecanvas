@@ -80,7 +80,7 @@ describe('the older finance charts take options after they are made', () => {
       chart.setOptions({ theme: 'light' });
       // The heatmap fills no background; its labels are in the theme's ink all the same.
       const drawn = frame();
-      if (name === 'heatmap') expect((chart as unknown as { theme: unknown }).theme).toBe(LIGHT_THEME);
+      if (name === 'heatmap') expect((chart as unknown as { theme: { background: string } }).theme.background).toBe(LIGHT_THEME.background);
       else expect(drawn.fills).toContain(LIGHT_THEME.background);
       chart.destroy();
     });
@@ -89,13 +89,13 @@ describe('the older finance charts take options after they are made', () => {
   it('a theme, on a sparkline and a gauge', () => {
     const spark = new SparklineChart(host, { data: [1, 2, 3] });
     spark.setOptions({ theme: 'light' });
-    expect((spark as unknown as { theme: unknown }).theme).toBe(LIGHT_THEME);
+    expect((spark as unknown as { theme: { background: string } }).theme.background).toBe(LIGHT_THEME.background);
     spark.destroy();
     const gauge = new GaugeChart(host, { value: 40, animate: false });
     gauge.setOptions({ theme: 'light' });
-    expect((gauge as unknown as { theme: unknown }).theme).toBe(LIGHT_THEME);
+    expect((gauge as unknown as { theme: { background: string } }).theme.background).toBe(LIGHT_THEME.background);
     gauge.setOptions({ theme: 'light', value: 60 });
-    expect((gauge as unknown as { theme: unknown }).theme).toBe(LIGHT_THEME);
+    expect((gauge as unknown as { theme: { background: string } }).theme.background).toBe(LIGHT_THEME.background);
     gauge.destroy();
   });
 
@@ -195,5 +195,86 @@ describe('every finance chart', () => {
     // It fills its container whatever that becomes: no width of its own to hold the container open.
     expect([canvas.style.width, canvas.style.height]).toEqual(['100%', '100%']);
     chart.destroy();
+  });
+});
+
+describe('what every finance chart takes', () => {
+  const themeOf = (chart: unknown) => (chart as { theme: { font: { family: string }; background: string } }).theme;
+
+  it('a face for its text, at the start or later, kept through a change of theme', async () => {
+    const { SANS_FONT_FAMILY } = await import('@tradecanvas/commons');
+    const { BarChart } = await import('../BarChart.js');
+    const made = [
+      new DepthChart(host, { data: book }),
+      new GaugeChart(host, { value: 4, animate: false }),
+      new HeatmapChart(host, { data: [{ id: 'a', label: 'A', value: 1 }] }),
+      new BarChart(host, { categories: ['A'], series: [{ name: 'S', values: [1] }] }),
+    ];
+    for (const chart of made) {
+      expect(themeOf(chart).font.family).toBe(SANS_FONT_FAMILY);
+      chart.setOptions({ font: { family: 'Tahoma' } });
+      expect(themeOf(chart).font.family).toBe('Tahoma');
+      chart.setOptions({ theme: 'light' });
+      expect(themeOf(chart).font.family).toBe('Tahoma');
+      expect(themeOf(chart).background).toBe(LIGHT_THEME.background);
+      chart.destroy();
+    }
+    const first = new WaterfallChart(host, { data: steps, font: { family: 'Georgia' } });
+    expect(themeOf(first).font.family).toBe('Georgia');
+    first.destroy();
+  });
+
+  it('a description for screen readers of its own, which follows the data', () => {
+    const label = () => host.querySelector('canvas')!.getAttribute('aria-label');
+    const depth = new DepthChart(host, { data: book });
+    expect(label()).toBe('Depth chart of 2 bids and 2 asks');
+    depth.update({ bids: [], asks: book.asks });
+    expect(label()).toBe('Depth chart of 0 bids and 2 asks');
+    depth.setOptions({ ariaLabel: 'Sổ lệnh' });
+    expect(label()).toBe('Sổ lệnh');
+    depth.destroy();
+    const equity = new EquityCurveChart(host, { data: curve });
+    expect(label()).toBe('Equity curve of 3 points');
+    equity.destroy();
+    const waterfall = new WaterfallChart(host, { data: steps });
+    expect(label()).toBe('Waterfall chart of 2 steps');
+    waterfall.destroy();
+    const spark = new SparklineChart(host, { data: [1, 2, 3, 4] });
+    expect(label()).toBe('Sparkline of 4 points');
+    spark.destroy();
+    const gauge = new GaugeChart(host, { value: 40, animate: false });
+    expect(label()).toBe('Gauge at 40');
+    gauge.setValue(55);
+    expect(label()).toBe('Gauge at 55');
+    gauge.setOptions({ value: 60 });
+    expect(label()).toBe('Gauge at 60');
+    gauge.destroy();
+  });
+
+  it('a dashboard in your words and your language', async () => {
+    const { PerformanceDashboard } = await import('../PerformanceDashboard.js');
+    const day = 86_400_000;
+    const equityCurve = Array.from({ length: 70 }, (_, i) => ({ time: Date.UTC(2026, 0, 1) + i * day, equity: 100 + i }));
+    const metrics = { totalReturnPct: 0.1, cagr: 0.2, sharpe: 1, sortino: 1, maxDrawdownPct: 0.05, winRate: 0.5, profitFactor: 1.5, trades: 12 };
+    const dash = new PerformanceDashboard(host, { result: { equityCurve, metrics } as never, locale: 'vi', labels: { equityCurve: 'Đường vốn', totalReturn: 'Tổng lợi nhuận' } });
+    const text = host.textContent ?? '';
+    expect(text).toContain('Đường vốn');
+    expect(text).toContain('Tổng lợi nhuận');
+    // What was not given stays in English.
+    expect(text).toContain('Drawdown');
+    expect((host.firstElementChild as HTMLElement).style.fontFamily).toContain('Segoe UI');
+    expect(host.querySelectorAll('canvas')[0].getAttribute('aria-label')).toBe('Đường vốn');
+    dash.destroy();
+
+    // A face given to the dashboard is its charts' too, the monospaced one included, and stays through a change of theme.
+    const { DEFAULT_FONT_FAMILY } = await import('@tradecanvas/commons');
+    const mono = new PerformanceDashboard(host, { result: { equityCurve, metrics } as never, font: { family: DEFAULT_FONT_FAMILY }, labels: { drawdown: undefined } });
+    const charts = () => [(mono as unknown as { equityChart: unknown }).equityChart, (mono as unknown as { heatmap: unknown }).heatmap];
+    for (const chart of charts()) expect(themeOf(chart).font.family).toBe(DEFAULT_FONT_FAMILY);
+    mono.setTheme('light');
+    for (const chart of charts()) expect(themeOf(chart).font.family).toBe(DEFAULT_FONT_FAMILY);
+    // A word given as undefined is a word not given.
+    expect(host.textContent).toContain('Drawdown');
+    mono.destroy();
   });
 });

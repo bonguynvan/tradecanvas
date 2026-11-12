@@ -2,7 +2,8 @@ import type { DonutChartOptions, DonutSlice, Theme } from '@tradecanvas/commons'
 import {
   LABEL_SIZE,
   canvasMeasure,
-  defaultFormat,
+  numberFormat,
+  percentFormat,
   drawLegend,
   drawTooltip,
   fitText,
@@ -47,13 +48,12 @@ const SIDE_LEGEND_RATIO = 1.4;
 /** A legend row's height (chartKit's), for whether a column of them fits. */
 const LEGEND_ROW_HEIGHT = 18;
 
-const percent = new Intl.NumberFormat(undefined, { style: 'percent', maximumFractionDigits: 1 });
 
 /** The ring and its slices, for a chart `width` × `height`. */
 export function computeDonutLayout(options: DonutChartOptions, width: number, height: number, _theme: Theme, measure: Measure): DonutLayout {
   const kept = options.data.filter((s) => Number.isFinite(s.value) && s.value > 0);
   const total = kept.reduce((sum, s) => sum + s.value, 0);
-  const items = kept.map((s, i) => ({ label: `${s.label} ${percent.format(s.value / total)}`, color: seriesColor(i, s.color) }));
+  const items = kept.map((s, i) => ({ label: `${s.label} ${percentFormat(options.locale)(s.value / total)}`, color: seriesColor(i, s.color) }));
   const showLegend = options.legend !== false && kept.length > 0;
   // Beside the ring when the chart is wide and the list fits its height; else under it.
   const side = showLegend && width >= height * SIDE_LEGEND_RATIO && kept.length * LEGEND_ROW_HEIGHT <= height - PAD * 2;
@@ -110,7 +110,7 @@ export function renderDonut(
   layout: DonutLayout = computeDonutLayout(options, width, height, theme, canvasMeasure(ctx, theme)),
 ): DonutLayout {
   const measure = canvasMeasure(ctx, theme);
-  const format = options.valueFormat ?? defaultFormat;
+  const format = options.valueFormat ?? numberFormat(options.locale);
   ctx.fillStyle = theme.background;
   ctx.fillRect(0, 0, width, height);
 
@@ -136,21 +136,21 @@ export function renderDonut(
     }
   }
 
-  if (options.showLabels !== false) drawShares(ctx, layout, theme);
+  if (options.showLabels !== false) drawShares(ctx, layout, theme, options.locale);
   drawCenter(ctx, layout, options, theme, measure);
   if (layout.legend) drawLegend(ctx, layout.legend, layout.legendX, layout.legendY, theme);
 
   if (hovered && pointer) {
     drawTooltip(ctx, [
       { text: hovered.label, bold: true, color: hovered.color },
-      { text: `${format(hovered.value)} · ${percent.format(hovered.share)}` },
+      { text: `${format(hovered.value)} · ${percentFormat(options.locale)(hovered.share)}` },
     ], pointer, { x: 0, y: 0, width, height }, theme);
   }
   return layout;
 }
 
 /** Each slice's share on it, where the arc has room. */
-function drawShares(ctx: CanvasRenderingContext2D, layout: DonutLayout, theme: Theme): void {
+function drawShares(ctx: CanvasRenderingContext2D, layout: DonutLayout, theme: Theme, locale: string | undefined): void {
   const { cx, cy, radius, inner } = layout;
   const at = inner > 0 ? (radius + inner) / 2 : radius * 0.62;
   ctx.save();
@@ -159,7 +159,7 @@ function drawShares(ctx: CanvasRenderingContext2D, layout: DonutLayout, theme: T
   ctx.textBaseline = 'middle';
   ctx.fillStyle = '#fff';
   for (const s of layout.slices) {
-    const text = percent.format(s.share);
+    const text = percentFormat(locale)(s.share);
     const arc = (s.end - s.start) * at;
     if (arc < ctx.measureText(text).width + 8 || (inner > 0 && radius - inner < LABEL_SIZE + 4)) continue;
     const mid = (s.start + s.end) / 2;

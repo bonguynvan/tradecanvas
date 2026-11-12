@@ -98,29 +98,84 @@ export function scaleToPx(scale: NiceScale, value: number, start: number, length
   return inverted ? start + length * (1 - t) : start + length * t;
 }
 
-const plain = new Intl.NumberFormat(undefined, { maximumFractionDigits: 2 });
-const compact = new Intl.NumberFormat(undefined, { notation: 'compact', maximumFractionDigits: 1 });
+/** An `Intl` format made once for a locale and its options: a chart asks for the same few every frame. */
+function cached<F>(make: (locale: string | undefined) => F): (locale?: string) => F {
+  const made = new Map<string, F>();
+  return (locale) => {
+    const key = locale ?? '';
+    let format = made.get(key);
+    if (!format) {
+      // A tag the browser can't read falls back to its own language instead of throwing in a frame.
+      try {
+        format = make(locale);
+      } catch {
+        format = make(undefined);
+      }
+      made.set(key, format);
+    }
+    return format;
+  };
+}
 
-/** Numbers as people read them: 1,234.5, and 12.3K past ten thousand. */
+const plainFor = cached((locale) => new Intl.NumberFormat(locale, { maximumFractionDigits: 2 }));
+const compactFor = cached((locale) => new Intl.NumberFormat(locale, { notation: 'compact', maximumFractionDigits: 1 }));
+const percentFor = cached((locale) => new Intl.NumberFormat(locale, { style: 'percent', maximumFractionDigits: 1 }));
+
+/** Numbers as people read them in `locale` (the browser's when none): 1,234.5, and 12.3K past ten thousand. */
+export function numberFormat(locale?: string): (value: number) => string {
+  const plain = plainFor(locale);
+  const compact = compactFor(locale);
+  return (value) => (Math.abs(value) >= 10_000 ? compact.format(value) : plain.format(value));
+}
+
+/** A share as a percentage in `locale`: 0.123 as 12.3%. */
+export function percentFormat(locale?: string): (share: number) => string {
+  const percent = percentFor(locale);
+  return (share) => percent.format(share);
+}
+
+/** A date or a time in `locale`, by `Intl.DateTimeFormat`'s options; a tag it can't read falls back to the browser's. */
+export function dateFormat(locale: string | undefined, options: Intl.DateTimeFormatOptions): (ts: number) => string {
+  let format: Intl.DateTimeFormat;
+  try {
+    format = new Intl.DateTimeFormat(locale, options);
+  } catch {
+    format = new Intl.DateTimeFormat(undefined, options);
+  }
+  return (ts) => format.format(new Date(ts));
+}
+
+/** A number with exactly `decimals` decimals in `locale`. */
+export function fixedFormat(locale: string | undefined, decimals: number): (value: number) => string {
+  let format: Intl.NumberFormat;
+  try {
+    format = new Intl.NumberFormat(locale, { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+  } catch {
+    format = new Intl.NumberFormat(undefined, { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+  }
+  return (value) => format.format(value);
+}
+
+/** Numbers as people read them, in the browser's language: 1,234.5, and 12.3K past ten thousand. */
 export function defaultFormat(value: number): string {
-  return Math.abs(value) >= 10_000 ? compact.format(value) : plain.format(value);
+  return numberFormat()(value);
 }
 
 /**
  * How a scale's ticks read: as many decimals as its step needs, and 20K or
  * 1.5M when that keeps every tick apart.
  */
-export function axisFormat(scale: NiceScale): (value: number) => string {
-  const decimals = stepDecimals(scale.step);
-  const fixed = new Intl.NumberFormat(undefined, { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+export function axisFormat(scale: NiceScale, locale?: string): (value: number) => string {
   const big = Math.max(Math.abs(scale.min), Math.abs(scale.max)) >= 10_000;
   if (big && scale.step % 1000 === 0) {
-    const short = new Intl.NumberFormat(undefined, { notation: 'compact', maximumFractionDigits: 2 });
+    const short = shortFor(locale);
     const labels = scale.ticks.map((t) => short.format(t));
     if (new Set(labels).size === labels.length) return (value) => short.format(value);
   }
-  return (value) => fixed.format(value);
+  return fixedFormat(locale, stepDecimals(scale.step));
 }
+
+const shortFor = cached((locale) => new Intl.NumberFormat(locale, { notation: 'compact', maximumFractionDigits: 2 }));
 
 /** A series' colour: its own, else the palette's in turn. */
 export function seriesColor(index: number, color?: string): string {
@@ -287,22 +342,37 @@ export function strokeHairline(ctx: CanvasRenderingContext2D, x1: number, y1: nu
 const MINUTE = 60_000;
 const HOUR = 60 * MINUTE;
 const DAY = 24 * HOUR;
-/** Steps a time axis may take: the round ones of a clock and a calendar. */
-const TIME_STEPS = [MINUTE, 5 * MINUTE, 15 * MINUTE, 30 * MINUTE, HOUR, 2 * HOUR, 4 * HOUR, 12 * HOUR, DAY, 2 * DAY, 7 * DAY, 14 * DAY, 30 * DAY, 91 * DAY, 182 * DAY, 365 * DAY];
+/** Steps a time axis may take up to a fortnight: the round ones of a clock and a week. */
+const TIME_STEPS = [MINUTE, 5 * MINUTE, 15 * MINUTE, 30 * MINUTE, HOUR, 2 * HOUR, 4 * HOUR, 12 * HOUR, DAY, 2 * DAY, 7 * DAY, 14 * DAY];
+/** Past a fortnight a step is whole months of the calendar: one, a quarter, a year, a decade. */
+const MONTH_STEPS = [1, 2, 3, 6, 12, 24, 60, 120];
+const MEAN_MONTH = 30.44 * DAY;
 
 /**
  * Up to `maxTicks` times between `min` and `max` (ms), a round step apart
- * and on that step's own marks: whole hours, whole days (UTC), not multiples
- * of whatever the range divides into.
+ * and on that step's own marks: whole hours, whole days, the first of a
+ * month (all UTC), not multiples of whatever the range divides into.
  */
 export function timeTicks(min: number, max: number, maxTicks: number): number[] {
   if (!Number.isFinite(min) || !Number.isFinite(max) || max <= min) return [];
   const want = (max - min) / Math.max(1, maxTicks);
-  let step = TIME_STEPS.find((s) => s >= want);
-  // Past a year a step: whole years, as many as it takes.
-  if (step === undefined) step = Math.ceil(want / (365 * DAY)) * 365 * DAY;
+  const step = TIME_STEPS.find((s) => s >= want);
   const ticks: number[] = [];
-  for (let t = Math.ceil(min / step) * step; t <= max; t += step) ticks.push(t);
+  if (step !== undefined) {
+    for (let at = Math.ceil(min / step) * step; at <= max; at += step) ticks.push(at);
+    return ticks;
+  }
+  // Months have no one length: counted on the calendar, from the year's start.
+  const months = MONTH_STEPS.find((m) => m * MEAN_MONTH >= want) ?? Math.ceil(want / (12 * MEAN_MONTH)) * 12;
+  const first = new Date(min);
+  let index = first.getUTCFullYear() * 12 + first.getUTCMonth();
+  index = Math.ceil(index / months) * months;
+  for (let guard = 0; guard <= maxTicks + 2; guard++, index += months) {
+    const at = Date.UTC(Math.floor(index / 12), index % 12, 1);
+    if (at < min) continue;
+    if (at > max) break;
+    ticks.push(at);
+  }
   return ticks;
 }
 

@@ -8,7 +8,8 @@ import {
   LABEL_GAP,
   LABEL_SIZE,
   axisFormat,
-  defaultFormat,
+  dateFormat,
+  numberFormat,
   drawLegend,
   drawTooltip,
   drawValueAxis,
@@ -61,27 +62,28 @@ function nearestIndex(points: readonly EquityPoint[], time: number): number {
 /**
  * How the axis's times read, by the step between them: a clock for steps
  * under a day (with the day when the curve runs past one), the day for steps
- * of days, the month and year past a year of curve. Whole days are read in
+ * of days, the month for steps of months. Whole days are read in
  * UTC, where the ticks are cut, so a day's tick is not the evening before.
  */
-function axisTimeFormat(stepMs: number, rangeMs: number): (ts: number) => string {
+function axisTimeFormat(stepMs: number, rangeMs: number, locale: string | undefined): (ts: number) => string {
   const options: Intl.DateTimeFormatOptions = stepMs < DAY
     ? { ...(rangeMs > DAY ? { month: 'short', day: 'numeric' } : {}), hour: '2-digit', minute: '2-digit' }
-    : rangeMs < 365 * DAY ? { month: 'short', day: 'numeric', timeZone: 'UTC' } : { month: 'short', year: 'numeric', timeZone: 'UTC' };
-  const format = new Intl.DateTimeFormat(undefined, options);
-  return (ts) => format.format(new Date(ts));
+    : stepMs >= 28 * DAY
+      // Steps of months stand on the first of each: the month says it all, with the year once the curve runs past one.
+      ? { month: 'short', ...(rangeMs >= 365 * DAY ? { year: 'numeric' } : {}), timeZone: 'UTC' }
+      : { month: 'short', day: 'numeric', timeZone: 'UTC' };
+  return dateFormat(locale, options);
 }
 
 /** A point's time in full: its day, the year on a curve of a year or more, the clock on one of under a week. */
-function pointTimeFormat(rangeMs: number): (ts: number) => string {
+function pointTimeFormat(rangeMs: number, locale: string | undefined): (ts: number) => string {
   const intraday = rangeMs < 7 * DAY;
-  const format = new Intl.DateTimeFormat(undefined, {
+  return dateFormat(locale, {
     month: 'short',
     day: 'numeric',
     ...(rangeMs >= 365 * DAY ? { year: 'numeric' } : {}),
     ...(intraday ? { hour: '2-digit', minute: '2-digit' } : { timeZone: 'UTC' }),
   });
-  return (ts) => format.format(new Date(ts));
 }
 
 /** The points in order of time: as given when they are, else a sorted copy. */
@@ -118,7 +120,7 @@ export function computeEquityLayout(options: EquityCurveOptions, width: number, 
   // Values all the same have no range: a twentieth of the value either side, so the line runs through the middle.
   const flat = lo === hi ? Math.abs(lo) * FLAT_RANGE || 1 : 0;
   const scale = niceScale(lo - flat, hi + flat, 5);
-  const format = options.valueFormat ?? axisFormat(scale);
+  const format = options.valueFormat ?? axisFormat(scale, options.locale);
   const tickWidth = Math.max(0, ...scale.ticks.map((t) => measure(format(t), LABEL_SIZE)));
   const legend = benchmark && benchmark.length >= 2
     ? layoutLegend([{ label: options.benchmarkLabel ?? DEFAULT_BENCHMARK_LABEL, color: benchmarkColor }], width - CHART_PAD * 2, measure)
@@ -129,10 +131,10 @@ export function computeEquityLayout(options: EquityCurveOptions, width: number, 
   return { plot, scale, timeMin, timeMax, legend };
 }
 
-function drawTimeAxis(ctx: CanvasRenderingContext2D, layout: EquityLayout, width: number, theme: Theme, given: ((ts: number) => string) | undefined): void {
+function drawTimeAxis(ctx: CanvasRenderingContext2D, layout: EquityLayout, width: number, theme: Theme, given: ((ts: number) => string) | undefined, locale: string | undefined): void {
   const { plot, timeMin, timeMax } = layout;
   const ticks = timeTicks(timeMin, timeMax, Math.max(1, Math.floor(plot.width / TIME_LABEL_ROOM)));
-  const format = given ?? axisTimeFormat(ticks.length > 1 ? ticks[1] - ticks[0] : timeMax - timeMin, timeMax - timeMin);
+  const format = given ?? axisTimeFormat(ticks.length > 1 ? ticks[1] - ticks[0] : timeMax - timeMin, timeMax - timeMin, locale);
   ctx.save();
   ctx.font = fontOf(theme, LABEL_SIZE);
   ctx.fillStyle = theme.axisLabel;
@@ -179,10 +181,10 @@ export function renderEquityCurve(
   const toX = (ts: number): number => plot.x + ((ts - timeMin) / timeRange) * plot.width;
   const toY = (v: number): number => scaleToPx(scale, v, plot.y, plot.height, true);
   const bottom = plot.y + plot.height;
-  const formatTime = options.timeFormat ?? pointTimeFormat(timeRange);
+  const formatTime = options.timeFormat ?? pointTimeFormat(timeRange, options.locale);
 
-  drawValueAxis(ctx, plot, scale, 'vertical', theme, options.valueFormat ?? axisFormat(scale));
-  drawTimeAxis(ctx, layout, width, theme, options.timeFormat);
+  drawValueAxis(ctx, plot, scale, 'vertical', theme, options.valueFormat ?? axisFormat(scale, options.locale));
+  drawTimeAxis(ctx, layout, width, theme, options.timeFormat, options.locale);
   if (legend) drawLegend(ctx, legend, plot.x, CHART_PAD, theme);
 
   const trace = (points: readonly EquityPoint[], value: (i: number) => number = (i) => points[i].value): void => {
@@ -252,7 +254,7 @@ export function renderEquityCurve(
   ctx.arc(toX(pt.time), toY(pt.value), HOVER_DOT, 0, Math.PI * 2);
   ctx.fill();
 
-  const format = options.valueFormat ?? defaultFormat;
+  const format = options.valueFormat ?? numberFormat(options.locale);
   const lines: TooltipLine[] = [{ text: formatTime(pt.time), bold: true }, { text: format(pt.value), color: lineColor }];
   // The benchmark has times of its own: read at the pointed time, not at the curve's index.
   const at = benchmark ? nearestIndex(benchmark, pt.time) : -1;

@@ -4,7 +4,8 @@ import {
   LABEL_SIZE,
   axisFormat,
   canvasMeasure,
-  defaultFormat,
+  numberFormat,
+  dateFormat,
   drawTooltip,
   drawValueAxis,
   fontOf,
@@ -115,8 +116,8 @@ export function computeCounterClockLayout(options: CounterClockOptions, width: n
   if (shown.length > 0 && !spans(pLo, pHi)) pHi = pLo;
   const xScale = niceScale(shown.length > 0 ? vLo : 0, shown.length > 0 ? vHi : 1, Math.max(2, Math.floor(width / 110)));
   const yScale = niceScale(shown.length > 0 ? pLo : 0, shown.length > 0 ? pHi : 1, Math.max(2, Math.floor(height / 60)));
-  const yFormat = options.priceFormat ?? axisFormat(yScale);
-  const xFormat = options.volumeFormat ?? axisFormat(xScale);
+  const yFormat = options.priceFormat ?? axisFormat(yScale, options.locale);
+  const xFormat = options.volumeFormat ?? axisFormat(xScale, options.locale);
   const tickWidth = Math.max(0, ...yScale.ticks.map((t) => measure(yFormat(t), LABEL_SIZE)));
   const left = PAD + tickWidth + 8 + (options.yLabel ? TITLE_ROOM : 0);
   const right = PAD + measure(xFormat(xScale.max), LABEL_SIZE) / 2;
@@ -154,7 +155,6 @@ export function nearestCounterClockPoint(layout: CounterClockLayout, x: number, 
   return best;
 }
 
-const dateFormat = new Intl.DateTimeFormat(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
 
 export function renderCounterClock(
   ctx: CanvasRenderingContext2D,
@@ -166,13 +166,13 @@ export function renderCounterClock(
   layout: CounterClockLayout = computeCounterClockLayout(options, width, height, theme, canvasMeasure(ctx, theme)),
 ): CounterClockLayout {
   const { plot, points, color } = layout;
-  const timeFormat = options.timeFormat ?? ((t: number) => dateFormat.format(new Date(t)));
-  const priceFormat = options.priceFormat ?? defaultFormat;
-  const volumeFormat = options.volumeFormat ?? defaultFormat;
+  const timeFormat = options.timeFormat ?? dateFormat(options.locale, { year: 'numeric', month: 'short', day: 'numeric' });
+  const priceFormat = options.priceFormat ?? numberFormat(options.locale);
+  const volumeFormat = options.volumeFormat ?? numberFormat(options.locale);
   ctx.fillStyle = theme.background;
   ctx.fillRect(0, 0, width, height);
-  drawValueAxis(ctx, plot, layout.yScale, 'vertical', theme, options.priceFormat ?? axisFormat(layout.yScale));
-  drawValueAxis(ctx, plot, layout.xScale, 'horizontal', theme, options.volumeFormat ?? axisFormat(layout.xScale));
+  drawValueAxis(ctx, plot, layout.yScale, 'vertical', theme, options.priceFormat ?? axisFormat(layout.yScale, options.locale));
+  drawValueAxis(ctx, plot, layout.xScale, 'horizontal', theme, options.volumeFormat ?? axisFormat(layout.xScale, options.locale));
   drawTitles(ctx, plot, options, theme);
 
   ctx.save();

@@ -1,4 +1,4 @@
-import type { Theme, ThemeName } from './theme.js';
+import type { FontConfig, Theme, ThemeName } from './theme.js';
 import type { DepthData } from './trading.js';
 import type { OHLCBar } from './ohlc.js';
 
@@ -6,7 +6,21 @@ export interface BaseFinanceChartOptions {
   width?: number;
   height?: number;
   theme?: ThemeName | Theme;
-  /** What the chart shows, for screen readers; the newer charts describe themselves without one. */
+  /**
+   * The face and sizes of the chart's text, over the theme's. Left out, the
+   * figures are in the system's sans face (`SANS_FONT_FAMILY`), as the
+   * widget's are; `{ family: DEFAULT_FONT_FAMILY }` gives the monospaced one.
+   * A theme of your own with a face of its own keeps that face.
+   */
+  font?: Partial<FontConfig>;
+  /**
+   * The language numbers and dates are written in, as a BCP 47 tag (`'vi'`,
+   * `'de-DE'`): the grouping and decimal marks, the short forms past ten
+   * thousand, the names of months and days. The browser's own when left out.
+   * A format function of yours (`valueFormat`…) is used as it is.
+   */
+  locale?: string;
+  /** What the chart shows, for screen readers; every chart describes itself (in English) without one. */
   ariaLabel?: string;
 }
 
@@ -30,7 +44,8 @@ export interface DepthChartOptions extends BaseFinanceChartOptions {
   bidFillColor?: string;
   askFillColor?: string;
   midPriceLine?: boolean;
-  spreadLabel?: boolean;
+  /** The spread written over the middle price: `false` for none, a word of your own in place of "Spread". */
+  spreadLabel?: boolean | string;
   crosshair?: boolean;
   priceFormat?: (price: number) => string;
   volumeFormat?: (vol: number) => string;

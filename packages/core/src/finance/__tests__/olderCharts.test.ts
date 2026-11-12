@@ -345,11 +345,66 @@ describe('the kit the charts share', () => {
     expect(ticks.every((t) => t % day === 0)).toBe(true);
     expect(timeTicks(5, 5, 4)).toEqual([]);
     expect(timeTicks(start, start + 40 * 365 * day, 4).length).toBeLessThanOrEqual(5);
+    // Past a fortnight: the first of a month, whatever the months' lengths.
+    const months = timeTicks(Date.UTC(2026, 0, 10), Date.UTC(2026, 6, 20), 4);
+    expect(months.map((m) => new Date(m).toISOString().slice(0, 10))).toEqual(['2026-03-01', '2026-05-01', '2026-07-01']);
+    const years = timeTicks(Date.UTC(2001, 5, 1), Date.UTC(2031, 5, 1), 4);
+    expect(years.every((y) => new Date(y).getUTCMonth() === 0 && new Date(y).getUTCDate() === 1)).toBe(true);
   });
 
   it('counts the decimals prices are written with', () => {
     expect(decimalsFor([100, 99.5, 101.25])).toBe(2);
     expect(decimalsFor([0.00001234])).toBe(8);
     expect(decimalsFor([NaN, 5])).toBe(0);
+  });
+});
+
+describe('numbers and dates in a language', () => {
+  it('writes numbers as the locale does, and falls back for a tag it cannot read', async () => {
+    const { numberFormat, percentFormat, axisFormat, niceScale } = await import('../chartKit.js');
+    expect(numberFormat('de-DE')(1234.5)).toBe('1.234,5');
+    expect(numberFormat('en-US')(1234.5)).toBe('1,234.5');
+    expect(numberFormat('en-US')(12_300)).toBe('12.3K');
+    expect(percentFormat('de-DE')(0.125).replace(/\s/g, '')).toBe('12,5%');
+    expect(axisFormat(niceScale(0, 1.5), 'de-DE')(0.5)).toBe('0,5');
+    expect(() => numberFormat('not a tag')(1)).not.toThrow();
+  });
+
+  it('reaches a chart’s axis and tooltip through `locale`', () => {
+    const { ctx, texts } = recorder();
+    renderWaterfall(ctx, 400, 300, { locale: 'de-DE', data: [{ label: 'A', value: 1234.5 }, { label: 'B', value: 0.5 }] }, DARK_THEME, { x: 100, y: 100 });
+    expect(texts).toContain('+1.234,5');
+    const depth = recorder();
+    renderDepthChart(depth.ctx, 400, 300, { locale: 'de-DE', data: { bids: [{ price: 99.5, volume: 1 }], asks: [{ price: 100.5, volume: 1 }] } }, DARK_THEME, null);
+    expect(depth.texts).toContain('Spread: 1,0');
+    const months = recorder();
+    const day = 86_400_000;
+    const data = Array.from({ length: 90 }, (_, i) => ({ time: Date.UTC(2026, 0, 1) + i * day, value: i }));
+    renderEquityCurve(months.ctx, 600, 300, { locale: 'vi', data }, DARK_THEME, null);
+    expect(months.texts.some((t) => /thg|tháng/i.test(t))).toBe(true);
+  });
+
+  it('writes a depth chart’s spread under a word of yours', () => {
+    const { ctx, texts } = recorder();
+    renderDepthChart(ctx, 400, 300, { spreadLabel: 'Chênh lệch', data: { bids: [{ price: 99, volume: 1 }], asks: [{ price: 101, volume: 1 }] } }, DARK_THEME, null);
+    expect(texts).toContain('Chênh lệch: 2');
+  });
+});
+
+describe('the face of a finance chart’s text', () => {
+  it('is the system’s sans face unless the theme or the options name one', async () => {
+    const { financeTheme } = await import('../BaseFinanceChart.js');
+    const { DEFAULT_FONT_FAMILY, SANS_FONT_FAMILY, LIGHT_THEME } = await import('@tradecanvas/commons');
+    expect(financeTheme('dark').font.family).toBe(SANS_FONT_FAMILY);
+    expect(financeTheme(LIGHT_THEME).font.family).toBe(SANS_FONT_FAMILY);
+    expect(financeTheme(LIGHT_THEME).background).toBe(LIGHT_THEME.background);
+    // A theme with a face of its own keeps it; the option wins over both; the monospaced one comes back by name.
+    const own = { ...DARK_THEME, font: { ...DARK_THEME.font, family: 'Georgia, serif' } };
+    expect(financeTheme(own).font.family).toBe('Georgia, serif');
+    expect(financeTheme(own, { family: 'Tahoma' }).font.family).toBe('Tahoma');
+    expect(financeTheme('dark', { family: DEFAULT_FONT_FAMILY }).font.family).toBe(DEFAULT_FONT_FAMILY);
+    expect(financeTheme('dark', { sizeSmall: 10 }).font).toMatchObject({ family: SANS_FONT_FAMILY, sizeSmall: 10 });
+    // A size given as undefined leaves the theme's.
+    expect(financeTheme('dark', { sizeSmall: undefined, family: undefined }).font).toMatchObject({ family: SANS_FONT_FAMILY, sizeSmall: DARK_THEME.font.sizeSmall });
   });
 });

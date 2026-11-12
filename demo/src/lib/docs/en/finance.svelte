@@ -47,6 +47,9 @@ chart.destroy()                         // removes the canvas and its listeners`
   On a touch screen a tap shows the tooltip, and it stays until a tap elsewhere; a drag still scrolls the page. The charts draw on the screen's own pixels, so lines stay sharp at any zoom or display scaling. The depth, equity and waterfall charts size their margins to their labels, as the newer charts do.
 </p>
 <p>
+  Text is in the system's sans face, as the widget's figures are; <code>font</code> sets another (<code>{'{'} family: DEFAULT_FONT_FAMILY {'}'}</code> for the monospaced one), and a theme with a face of its own keeps it. <code>locale</code> (a BCP 47 tag such as <code>'vi'</code>) sets the language numbers and dates are written in; the browser's own otherwise. Every chart describes itself to screen readers in English unless <code>ariaLabel</code> says it in your words. A depth chart's <code>spreadLabel</code> and an equity curve's <code>benchmarkLabel</code> take the words drawn on them, and a dashboard's <code>labels</code> its titles and the names of its stats.
+</p>
+<p>
   Each chart fills its element and redraws when the element resizes. Where a chart has a hover
   tooltip, <code>crosshair: false</code> turns it off. Bar, donut, scatter, histogram, calendar and matrix charts tell screen readers
   what they show (the canvas has an image role and a label); <code>ariaLabel</code> puts it in

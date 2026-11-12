@@ -18,5 +18,6 @@ export {
   computeDrawdownCurve,
   computeMonthlyReturns,
   selectKeyStats,
+  DEFAULT_DASHBOARD_LABELS,
 } from './performanceData.js';
-export type { EquitySample, RiskMetricsLike, DashboardStat } from './performanceData.js';
+export type { EquitySample, RiskMetricsLike, DashboardStat, DashboardLabels } from './performanceData.js';

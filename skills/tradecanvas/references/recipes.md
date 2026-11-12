@@ -508,6 +508,56 @@ const days = resampleBars(hours, '1d', { timeZone });
 const weeks = resampleBars(days, '1w', { timeZone });
 ```
 
+## Small charts around the chart: a book's depth, an equity curve, a gauge
+
+Every finance chart takes `theme`, `font`, `locale` (a BCP 47 tag for numbers and dates) and `ariaLabel`, and has `setOptions`, `setTheme` and `destroy`. Text is in the system's sans face unless `font` names another.
+
+```ts
+import { DepthChart, EquityCurveChart, WaterfallChart, GaugeChart, SparklineChart, ScatterChart, PerformanceDashboard } from '@tradecanvas/chart';
+
+const el = (id: string) => document.getElementById(id)!;
+
+// An order book's depth: cumulative volume either side of the middle price.
+const depth = new DepthChart(el('depth'), {
+  data: { bids: [{ price: 99.5, volume: 12 }, { price: 99, volume: 30 }], asks: [{ price: 100.5, volume: 9 }, { price: 101, volume: 24 }] },
+  spreadLabel: 'Spread',
+});
+depth.update({ bids: [{ price: 99.5, volume: 14 }], asks: [{ price: 100.5, volume: 7 }] });
+
+// An account's value over time, its falls from a peak shaded, against a benchmark with times of its own.
+new EquityCurveChart(el('equity'), {
+  data: [{ time: Date.UTC(2026, 0, 1), value: 100_000 }, { time: Date.UTC(2026, 1, 1), value: 104_500 }, { time: Date.UTC(2026, 2, 1), value: 102_300 }],
+  benchmark: [{ time: Date.UTC(2026, 0, 1), value: 100_000 }, { time: Date.UTC(2026, 2, 1), value: 101_000 }],
+  benchmarkLabel: 'VN-Index',
+  drawdown: true,
+  fillArea: true,
+  locale: 'vi',
+});
+
+// Steps to a total. A bar with no `type` is a step up or down; `total` and `subtotal` start from zero.
+new WaterfallChart(el('pnl'), {
+  data: [{ label: 'Revenue', value: 120 }, { label: 'Costs', value: -45 }, { label: 'Tax', value: -15 }, { label: 'Net', value: 60, type: 'total' }],
+});
+
+// One value against bands.
+const gauge = new GaugeChart(el('risk'), { value: 62, min: 0, max: 100, zones: [{ from: 0, to: 50, color: '#1fa874' }, { from: 50, to: 100, color: '#e8505b' }] });
+gauge.setValue(71);
+
+// A line with no axes, for a table's cell.
+new SparklineChart(el('spark'), { data: [3, 5, 4, 8, 6, 9, 7], mode: 'area', showLastPoint: true });
+
+// Risk against return, one bubble a holding.
+new ScatterChart(el('risk-return'), {
+  series: [{ name: 'Holdings', points: [{ x: 12, y: 8, size: 30, label: 'AAA' }, { x: 20, y: 15, size: 10, label: 'BBB' }] }],
+  xLabel: 'Volatility %',
+  yLabel: 'Return %',
+});
+
+// A backtest's result as a page: stats, equity, drawdown and monthly returns.
+declare const result: ConstructorParameters<typeof PerformanceDashboard>[1]['result'];
+new PerformanceDashboard(el('report'), { result, title: 'Strategy', labels: { equityCurve: 'Equity', monthlyReturns: 'By month' } });
+```
+
 ## A dashboard: net flows, allocation and returns
 
 The finance charts take an element and their options, and size themselves to it.

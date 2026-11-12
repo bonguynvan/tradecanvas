@@ -6,7 +6,7 @@ import {
   LABEL_GAP,
   LABEL_SIZE,
   axisFormat,
-  defaultFormat,
+  numberFormat,
   drawTooltip,
   drawValueAxis,
   fitText,
@@ -90,7 +90,7 @@ export function computeWaterfallLayout(options: WaterfallOptions, width: number,
   // A tenth more at an end the bars reach, for the values written past them.
   const reach = (hi - lo || 1) * 0.1;
   const scale = niceScale(lo < 0 ? lo - reach : 0, hi > 0 ? hi + reach : 0, 5);
-  const format = options.valueFormat ?? axisFormat(scale);
+  const format = options.valueFormat ?? axisFormat(scale, options.locale);
   const tickWidth = Math.max(0, ...scale.ticks.map((t) => measure(format(t), LABEL_SIZE)));
   const left = CHART_PAD + tickWidth + AXIS_GAP;
   const plotWidth = Math.max(1, width - left - CHART_PAD);
@@ -227,8 +227,8 @@ export function renderWaterfall(
   });
   const layout = computeWaterfallLayout(options, width, height, measureText);
   const { plot, scale, bars } = layout;
-  const tickFormat = options.valueFormat ?? axisFormat(scale);
-  const format = options.valueFormat ?? defaultFormat;
+  const tickFormat = options.valueFormat ?? axisFormat(scale, options.locale);
+  const format = options.valueFormat ?? numberFormat(options.locale);
   const colors: Record<BarType, string> = {
     positive: options.positiveColor ?? theme.candleUp,
     negative: options.negativeColor ?? theme.candleDown,

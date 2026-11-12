@@ -36,7 +36,45 @@ export interface DashboardStat {
   tone: 'positive' | 'negative' | 'neutral';
 }
 
-const MONTH_LABELS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+/** The words on the dashboard: the panels' titles and the stats' names. */
+export interface DashboardLabels {
+  equityCurve: string;
+  drawdown: string;
+  monthlyReturns: string;
+  totalReturn: string;
+  cagr: string;
+  sharpe: string;
+  sortino: string;
+  maxDrawdown: string;
+  winRate: string;
+  profitFactor: string;
+  trades: string;
+}
+
+export const DEFAULT_DASHBOARD_LABELS: Readonly<DashboardLabels> = Object.freeze({
+  equityCurve: 'Equity Curve',
+  drawdown: 'Drawdown',
+  monthlyReturns: 'Monthly Returns',
+  totalReturn: 'Total Return',
+  cagr: 'CAGR',
+  sharpe: 'Sharpe',
+  sortino: 'Sortino',
+  maxDrawdown: 'Max Drawdown',
+  winRate: 'Win Rate',
+  profitFactor: 'Profit Factor',
+  trades: 'Trades',
+});
+
+/** The twelve months' short names in `locale` (the browser's when none, or when it can't read the tag). */
+function monthNames(locale?: string): string[] {
+  let format: Intl.DateTimeFormat;
+  try {
+    format = new Intl.DateTimeFormat(locale, { month: 'short', timeZone: 'UTC' });
+  } catch {
+    format = new Intl.DateTimeFormat(undefined, { month: 'short', timeZone: 'UTC' });
+  }
+  return Array.from({ length: 12 }, (_, month) => format.format(new Date(Date.UTC(2024, month, 15))));
+}
 
 /** Map an analytics equity curve to the finance EquityCurveChart point shape. */
 export function toEquityPoints(curve: ReadonlyArray<EquitySample>): EquityPoint[] {
@@ -62,8 +100,9 @@ export function computeDrawdownCurve(curve: ReadonlyArray<EquitySample>): Equity
  * equity), so the series reads as sequential monthly performance. `group` is
  * the year and `value` is the return in percent.
  */
-export function computeMonthlyReturns(curve: ReadonlyArray<EquitySample>): HeatmapCell[] {
+export function computeMonthlyReturns(curve: ReadonlyArray<EquitySample>, locale?: string): HeatmapCell[] {
   if (curve.length === 0) return [];
+  const names = monthNames(locale);
 
   // Collapse the curve to one closing equity per calendar month, in order.
   const months: { key: number; close: number }[] = [];
@@ -88,7 +127,7 @@ export function computeMonthlyReturns(curve: ReadonlyArray<EquitySample>): Heatm
     const month = d.getUTCMonth();
     cells.push({
       id: `${year}-${String(month + 1).padStart(2, '0')}`,
-      label: MONTH_LABELS[month],
+      label: names[month],
       group: String(year),
       value: returnPct,
     });
@@ -115,15 +154,22 @@ function tone(value: number): DashboardStat['tone'] {
  * fall, so it reads with a minus sign whichever sign it arrives with, as the
  * Drawdown panel below plots it.
  */
-export function selectKeyStats(metrics: RiskMetricsLike): DashboardStat[] {
+/** The dashboard's words: the defaults, with those of `labels` that are given over them. */
+export function dashboardLabels(labels: Partial<DashboardLabels> = {}): DashboardLabels {
+  const given = Object.fromEntries(Object.entries(labels).filter(([, word]) => typeof word === 'string'));
+  return { ...DEFAULT_DASHBOARD_LABELS, ...given };
+}
+
+export function selectKeyStats(metrics: RiskMetricsLike, labels: Partial<DashboardLabels> = {}): DashboardStat[] {
+  const l = dashboardLabels(labels);
   return [
-    { label: 'Total Return', value: pct(metrics.totalReturnPct * PERCENT), tone: tone(metrics.totalReturnPct) },
-    { label: 'CAGR', value: pct(metrics.cagr * PERCENT), tone: tone(metrics.cagr) },
-    { label: 'Sharpe', value: metrics.sharpe.toFixed(2), tone: tone(metrics.sharpe) },
-    { label: 'Sortino', value: metrics.sortino.toFixed(2), tone: tone(metrics.sortino) },
-    { label: 'Max Drawdown', value: pct(-Math.abs(metrics.maxDrawdownPct) * PERCENT), tone: 'negative' },
-    { label: 'Win Rate', value: `${(metrics.winRate * PERCENT).toFixed(1)}%`, tone: 'neutral' },
-    { label: 'Profit Factor', value: Number.isFinite(metrics.profitFactor) ? metrics.profitFactor.toFixed(2) : '∞', tone: tone(metrics.profitFactor - 1) },
-    { label: 'Trades', value: String(metrics.trades), tone: 'neutral' },
+    { label: l.totalReturn, value: pct(metrics.totalReturnPct * PERCENT), tone: tone(metrics.totalReturnPct) },
+    { label: l.cagr, value: pct(metrics.cagr * PERCENT), tone: tone(metrics.cagr) },
+    { label: l.sharpe, value: metrics.sharpe.toFixed(2), tone: tone(metrics.sharpe) },
+    { label: l.sortino, value: metrics.sortino.toFixed(2), tone: tone(metrics.sortino) },
+    { label: l.maxDrawdown, value: pct(-Math.abs(metrics.maxDrawdownPct) * PERCENT), tone: 'negative' },
+    { label: l.winRate, value: `${(metrics.winRate * PERCENT).toFixed(1)}%`, tone: 'neutral' },
+    { label: l.profitFactor, value: Number.isFinite(metrics.profitFactor) ? metrics.profitFactor.toFixed(2) : '∞', tone: tone(metrics.profitFactor - 1) },
+    { label: l.trades, value: String(metrics.trades), tone: 'neutral' },
   ];
 }

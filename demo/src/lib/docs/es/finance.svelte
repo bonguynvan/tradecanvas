@@ -47,6 +47,9 @@ chart.destroy()                         // quita el canvas y sus listeners`}</co
   En una pantalla táctil, un toque muestra el tooltip, que permanece hasta que tocas en otro lugar; arrastrar sigue desplazando la página. Los gráficos se dibujan sobre los píxeles propios de la pantalla, así que las líneas se ven nítidas con cualquier zoom. Los gráficos de profundidad, de equity y de cascada ajustan sus márgenes a sus etiquetas, como los gráficos más nuevos.
 </p>
 <p>
+  El texto usa la tipografía sans del sistema, como las cifras del widget; <code>font</code> define otra (<code>{'{'} family: DEFAULT_FONT_FAMILY {'}'}</code> para la monoespaciada), y un tema con tipografía propia la conserva. <code>locale</code> (una etiqueta BCP 47 como <code>'vi'</code>) define el idioma en que se escriben números y fechas; si falta, el del navegador. Cada gráfico se describe a los lectores de pantalla en inglés, salvo que <code>ariaLabel</code> lo diga con tus palabras. <code>spreadLabel</code> del gráfico de profundidad y <code>benchmarkLabel</code> de la curva de equity reciben las palabras que se dibujan en ellos, y <code>labels</code> del panel sus títulos y los nombres de sus estadísticas.
+</p>
+<p>
   Cada gráfico llena su elemento y se vuelve a dibujar cuando el elemento cambia de tamaño. En los que muestran un
   tooltip al pasar el puntero, <code>crosshair: false</code> lo desactiva. Los gráficos de barras, donut, dispersión,
   histograma, calendario y matriz indican a los lectores de pantalla lo que muestran (el canvas tiene el rol image y una etiqueta);

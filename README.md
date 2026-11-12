@@ -39,6 +39,7 @@
 - **Live data** from Binance, Bybit, Coinbase, Kraken and Upbit, or your own feed in about twenty lines.
 - **Fast**: a million bars panned at 60 fps with WebGL; a live tick in about a microsecond; ten minutes of 30,000 trades a second on a million bars with no memory growth ([soak](benchmarks/2026-11-03.md)).
 - **A workspace**: grids of charts, layouts, bar replay, backtesting.
+- **Fourteen more charts** for the pages around the chart: depth, equity curve, waterfall, heatmap and sector map, bars, donut, scatter, histogram, calendar, correlation matrix, gauge, sparkline, and a backtest dashboard.
 - **Yours to shape**: themes, five looks, 133 switches, plugins; 30 languages; phones and apps.
 
 <table>

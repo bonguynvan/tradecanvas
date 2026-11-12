@@ -1,4 +1,4 @@
-export { BaseFinanceChart } from './BaseFinanceChart.js';
+export { BaseFinanceChart, financeTheme } from './BaseFinanceChart.js';
 export { FinanceCrosshair } from './FinanceCrosshair.js';
 export { renderSparkline } from './SparklineRenderer.js';
 export { renderDepthChart, computeDepthLayout } from './DepthChartRenderer.js';
@@ -12,7 +12,7 @@ export type { HeatmapHitResult } from './HeatmapRenderer.js';
 export { renderWaterfall, computeWaterfallLayout, hitWaterfallBar } from './WaterfallRenderer.js';
 export type { WaterfallLayout, WaterfallBarRect } from './WaterfallRenderer.js';
 export { renderGauge } from './GaugeRenderer.js';
-export { niceScale, layoutLegend, defaultFormat, axisFormat, canvasMeasure } from './chartKit.js';
+export { niceScale, layoutLegend, defaultFormat, numberFormat, percentFormat, axisFormat, canvasMeasure } from './chartKit.js';
 export type { NiceScale, LegendLayout, Measure } from './chartKit.js';
 export { renderBarChart, computeBarLayout, hitBar, hitCategory } from './BarChartRenderer.js';
 export type { BarLayout, BarRect } from './BarChartRenderer.js';
