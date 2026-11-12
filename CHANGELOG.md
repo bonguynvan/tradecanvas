@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.84.0 (2026-11-12)
 
 ### Performance
 
