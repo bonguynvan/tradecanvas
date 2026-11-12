@@ -19,7 +19,7 @@ describe('priceTagText', () => {
 
   it('fits the decimals to the range on view when none are given', () => {
     const tiny: ViewportState = { ...unitViewport, priceRange: { min: 0.0000041, max: 0.0000046 } };
-    expect(priceTagText(0.0000043491, tiny)).toBe('0.00000435');
+    expect(priceTagText(0.0000043491, tiny)).toBe('0.000004349');
   });
 
   it('takes the market’s or the symbol’s decimals from the viewport', () => {
@@ -59,7 +59,7 @@ describe('the trading tags', () => {
     const renderer = new OrderRenderer();
     const order = { id: 'o3', side: 'buy' as const, type: 'limit' as const, price: 0.0000043491, quantity: 1 };
     renderer.renderAxisBadges(ctx, [order], tiny, DARK_THEME, { ...DEFAULT_TRADING_CONFIG }, null);
-    expect(texts).toContain('0.00000435');
+    expect(texts).toContain('0.000004349');
   });
 
   it('group the P&L in the number locale', () => {

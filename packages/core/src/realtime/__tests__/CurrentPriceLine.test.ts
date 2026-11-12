@@ -36,7 +36,7 @@ describe('CurrentPriceLine', () => {
     line.setPrice(0.000004349);
     const { ctx, texts } = recordingCtx();
     line.render(ctx, viewport(0.0000042, 0.0000045), DARK_THEME);
-    expect(texts).toEqual(['0.00000435']); // the axis's 8 decimals
+    expect(texts).toEqual(['0.000004349']); // four figures of the price, where the step's 8 decimals left three
   });
 
   it('uses an explicit precision and the number locale', () => {
@@ -54,7 +54,7 @@ describe('CurrentPriceLine', () => {
     line.setPrice(0.000004349);
     const wide = recordingCtx();
     line.render(wide.ctx, viewport(0.0000042, 0.0000045, 120), DARK_THEME);
-    expect(wide.rects[0][2]).toBe(10 * 7 + 12); // "0.00000435" fits whole
+    expect(wide.rects[0][2]).toBe(11 * 7 + 12); // "0.000004349" fits whole
     const narrow = recordingCtx();
     line.render(narrow.ctx, viewport(0.0000042, 0.0000045), DARK_THEME);
     expect(narrow.rects[0][2]).toBe(PRICE_AXIS_WIDTH - 2);

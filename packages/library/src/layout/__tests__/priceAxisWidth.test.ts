@@ -10,7 +10,7 @@ describe('autoPricePrecision', () => {
   it('matches the axis: 2 for normal assets, more for sub-dollar and sub-cent ones', () => {
     expect(autoPricePrecision(82_000, 86_000)).toBe(2);
     expect(autoPricePrecision(0.335, 0.342)).toBe(4);
-    expect(autoPricePrecision(0.0000042, 0.0000045)).toBe(8);
+    expect(autoPricePrecision(0.0000042, 0.0000045)).toBe(9); // four figures of the price: its step alone needs 8
     expect(autoPricePrecision(5, 5)).toBe(2); // degenerate range
   });
 });
@@ -34,8 +34,8 @@ describe('requiredPriceAxisWidth', () => {
 
   it('widens for sub-cent labels so the price tag is not clipped', () => {
     const w = requiredPriceAxisWidth({ ...base, min: 0.0000042, max: 0.0000045, lastPrice: 0.000004349 });
-    // "0.00000435" = 10 chars → 60px + 22px crosshair-pill chrome = 82 → 84.
-    expect(w).toBe(84);
+    // "0.000004349" = 11 chars → 66px + 22px crosshair-pill chrome = 88.
+    expect(w).toBe(88);
   });
 
   it('accounts for a longer explicit market precision', () => {

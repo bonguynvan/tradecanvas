@@ -80,7 +80,7 @@ describe('ChartLegend — sub-cent assets', () => {
     const { ctx, fillTextCalls } = mockCtx();
     legend.render(ctx, viewport(0.0000042, 0.0000045), DARK_THEME, [pepe(0.000004343), pepe(0.000004349)]);
     expect(fillTextCalls).not.toContain('0.00');
-    expect(fillTextCalls).toContain('0.00000434'); // open, at the axis's 8 decimals
+    expect(fillTextCalls).toContain('0.000004343'); // open, four figures of it: the step's 8 decimals left three
   });
 
   it("uses a market's explicit precision and the number locale when set", () => {

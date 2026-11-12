@@ -61,15 +61,23 @@ export function formatPrice(value: number, precision = 2, locale = 'en-US'): str
 
 /**
  * Decimals the price axis uses for a visible price range: one more than its
- * tick step needs, 2 at minimum. Everything that prints a price next to the
+ * tick step needs, 2 at minimum, and under 1 as many as show four figures of
+ * the largest price on view. Everything that prints a price next to the
  * axis (legend, crosshair pill, last-price tag) shares it, so a sub-cent
  * asset reads "0.000004349" everywhere instead of "0.00" off the axis.
  */
 export function autoPricePrecision(min: number, max: number): number {
   if (!(max > min) || !Number.isFinite(min) || !Number.isFinite(max)) return 2;
   const step = computeTickStep(min, max, 8);
-  return step > 0 && step < 1 ? Math.ceil(-Math.log10(step)) + 1 : 2;
+  const forStep = step > 0 && step < 1 ? Math.ceil(-Math.log10(step)) + 1 : 2;
+  // Under 1, at least four figures of the price itself: a wide range on a sub-cent coin steps
+  // coarsely, and the step's decimals alone left the legend two or three figures of its price.
+  const largest = Math.max(Math.abs(min), Math.abs(max));
+  return largest < 1 ? Math.max(forStep, smallValueDecimals(largest, SMALL_PRICE_FIGURES)) : forStep;
 }
+
+/** Significant figures a price under 1 shows at least, next to the axis. */
+const SMALL_PRICE_FIGURES = 4;
 
 import type { PriceScaleMode, ViewportState } from '../types/rendering.js';
 import type { PriceFormatter, PriceFraction } from '../types/chart.js';
