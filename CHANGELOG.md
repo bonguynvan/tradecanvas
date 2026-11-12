@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased
+## 2.0.0-beta.1 (2026-11-12)
+
+The first beta of 2.0, under the npm tag `beta`: `npm install @tradecanvas/chart@beta`. `latest` stays 1.84.1 until 2.0 is final. `2.0.0-beta.0`, published the same day, holds the same code.
 
 ### Breaking: the default look
 
