@@ -39,6 +39,7 @@
 - **Datos en vivo** de Binance, Bybit, Coinbase y Kraken, o tu propio feed en unas veinte líneas.
 - **Rápido**: un millón de barras desplazadas a 60 fps con WebGL; un tick en vivo en un microsegundo, más o menos; diez minutos de 30.000 operaciones por segundo sobre un millón de barras sin que crezca la memoria ([prueba](benchmarks/2026-11-03.md)).
 - **Un espacio de trabajo**: cuadrículas de gráficos, diseños, repetición de barras, backtesting.
+- **Catorce gráficos más** para las páginas que rodean al gráfico: profundidad, curva de equity, cascada, mapa de calor y mapa de sectores, barras, donut, dispersión, histograma, calendario, matriz de correlación, indicador de aguja, sparkline y un panel de resultados de backtest.
 - **A tu medida**: temas, tres aspectos, 114 interruptores, plugins; 30 idiomas; móviles y apps.
 
 <table>

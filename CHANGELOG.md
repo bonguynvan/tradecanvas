@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased
+
+TradeCanvas 2.0. The seven betas below are this release, in the order they were made; nothing else changed between `2.0.0-beta.7` and it. `npm install @tradecanvas/chart` now gives 2.0; 1.x stays as `@tradecanvas/chart@1`. The [migration page](https://tradecanvas.dev/docs/migration/) says what a page on 1.x has to change, and for most that is nothing, or one option.
+
+### What 2.0 is
+
+- **A new default look.** The chart and the widget open with more room around what they draw, on an even ladder of pixels, and sharp at 125% and 150% display scaling. `ui: { density: 'classic' }` on the widget and `density: 'compact'` on a chart keep the look of 1.x.
+- **One face for figures.** A chart of your own, the widget's default look and the finance charts set their figures in the same sans faces, whose digits are one width. `font: { family: MONO_FONT_FAMILY }` keeps the monospaced figures of 1.x.
+- **One spelling.** The names deprecated through 1.x are removed (`setTimezone` and its kin, `EXCHANGE_TIMEZONE`, `SymbolInfo.timezone`, `DEFAULT_FONT_FAMILY`); TypeScript points at each use, and the migration page lists what to write instead.
+- **The finance charts caught up.** The fourteen charts beside the trading chart share one frame, one tooltip and one number format; read out a tap on a touch screen; take `font`, `locale` and `labels`; describe themselves to screen readers; and have a browser audit of their own (`pnpm audit:finance`).
+- **Panes that share the room.** A stack of indicator panes no longer squeezes the price pane under 38% of the height.
+- **Live data that says what it does.** One `connectionChange` an attempt to reconnect; leaving while a feed's first bars load aborts the request.
+- **Coding agents.** The MCP server knows the finance charts (`list_finance_charts`, and `list_options` / `validate_options` by class name).
+
 ## 2.0.0-beta.7 (2026-11-12)
 
 ### The look

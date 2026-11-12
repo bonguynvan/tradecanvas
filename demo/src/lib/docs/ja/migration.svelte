@@ -18,15 +18,14 @@
 
 <h2 id="install">インストール</h2>
 <p>
-  2.0 はベータ版です。すべてのパッケージは <code>2.0.0-beta.N</code> として <code>beta</code> タグで公開されています。
-  2.0 が正式版になるまで、<code>latest</code> は 1.x のままです。
+  2.0 は現在の正式版です。すべてのパッケージが npm の <code>latest</code> タグで <code>2.0.0</code> として公開されています。まだ移行できないページのために、1.x は <code>@tradecanvas/chart@1</code> としてそのまま残っています。
 </p>
-<pre><code>{`npm install @tradecanvas/chart@beta
+<pre><code>{`npm install @tradecanvas/chart
 
 # フレームワークのコンポーネントを使う場合は、そのパッケージも
-npm install @tradecanvas/react@beta
-npm install @tradecanvas/vue@beta
-npm install @tradecanvas/svelte@beta`}</code></pre>
+npm install @tradecanvas/react
+npm install @tradecanvas/vue
+npm install @tradecanvas/svelte`}</code></pre>
 
 <h2 id="look">既定の外観</h2>
 <p>

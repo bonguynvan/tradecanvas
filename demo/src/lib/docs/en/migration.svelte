@@ -6,7 +6,7 @@
 
 <svelte:head>
   <title>Moving to 2.0 — TradeCanvas docs</title>
-  <meta name="description" content="What changes for your code between TradeCanvas 1.x and 2.0: installing the beta, the default look and the one option that keeps the look of 1.x, the names that were removed and what to use instead, and the behaviour that changed." />
+  <meta name="description" content="What changes for your code between TradeCanvas 1.x and 2.0: installing it, the default look and the one option that keeps the look of 1.x, the names that were removed and what to use instead, and the behaviour that changed." />
 </svelte:head>
 
 <h1>Moving to 2.0</h1>
@@ -18,15 +18,14 @@
 
 <h2 id="install">Install</h2>
 <p>
-  2.0 is in beta. Every package is published as <code>2.0.0-beta.N</code> under the <code>beta</code> tag;
-  <code>latest</code> stays 1.x until 2.0 is final.
+  2.0 is the current release: every package is <code>2.0.0</code> under npm's <code>latest</code> tag. 1.x stays where it was, as <code>@tradecanvas/chart@1</code>, for a page that is not ready to move.
 </p>
-<pre><code>{`npm install @tradecanvas/chart@beta
+<pre><code>{`npm install @tradecanvas/chart
 
 # with a framework component, its package too
-npm install @tradecanvas/react@beta
-npm install @tradecanvas/vue@beta
-npm install @tradecanvas/svelte@beta`}</code></pre>
+npm install @tradecanvas/react
+npm install @tradecanvas/vue
+npm install @tradecanvas/svelte`}</code></pre>
 
 <h2 id="look">The default look</h2>
 <p>
