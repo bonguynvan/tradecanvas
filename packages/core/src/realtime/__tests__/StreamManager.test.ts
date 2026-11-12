@@ -781,8 +781,8 @@ describe('StreamManager — after a disconnect', () => {
     pending[0].resolve([]);
     await done;
     // Private: nothing else shows a reference kept to the last connection's adapter.
-    const kept = () => (sm as unknown as { resampler: unknown }).resampler;
-    expect(kept()).not.toBeNull();
+    const kept = () => (sm as unknown as { source: { resampler: unknown } | null }).source;
+    expect(kept()?.resampler).not.toBeNull();
     sm.disconnect();
     expect(kept()).toBeNull();
   });
