@@ -4,7 +4,7 @@ import {
   LABEL_SIZE,
   axisFormat,
   canvasMeasure,
-  defaultFormat,
+  numberFormat,
   drawLegend,
   drawTooltip,
   drawValueAxis,
@@ -97,7 +97,7 @@ export function computeBarLayout(options: BarChartOptions, width: number, height
   const top = PAD + (legend ? legend.height + 6 : 0);
   const [lo, hi] = valueRange(options);
   const scale = niceScale(lo, hi, horizontal ? Math.max(2, Math.floor(width / 110)) : 5);
-  const format = options.valueFormat ?? axisFormat(scale);
+  const format = options.valueFormat ?? axisFormat(scale, options.locale);
   const tickWidth = Math.max(0, ...scale.ticks.map((t) => measure(format(t), LABEL_SIZE)));
 
   let plot: Rect;
@@ -176,14 +176,14 @@ export function renderBarChart(
   layout: BarLayout = computeBarLayout(options, width, height, theme, canvasMeasure(ctx, theme)),
 ): BarLayout {
   const measure = canvasMeasure(ctx, theme);
-  const format = options.valueFormat ?? defaultFormat;
+  const format = options.valueFormat ?? numberFormat(options.locale);
   const { plot, orientation } = layout;
   const horizontal = orientation === 'horizontal';
 
   ctx.fillStyle = theme.background;
   ctx.fillRect(0, 0, width, height);
   if (layout.legend) drawLegend(ctx, layout.legend, PAD, layout.legendY, theme);
-  drawValueAxis(ctx, plot, layout.scale, horizontal ? 'horizontal' : 'vertical', theme, options.valueFormat ?? axisFormat(layout.scale));
+  drawValueAxis(ctx, plot, layout.scale, horizontal ? 'horizontal' : 'vertical', theme, options.valueFormat ?? axisFormat(layout.scale, options.locale));
 
   const hovered = pointer && options.crosshair !== false ? hitCategory(layout, pointer.x, pointer.y, options.categories.length) : -1;
   if (hovered >= 0) {

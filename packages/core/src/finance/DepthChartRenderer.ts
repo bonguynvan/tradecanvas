@@ -9,7 +9,8 @@ import {
   LABEL_SIZE,
   axisFormat,
   decimalsFor,
-  defaultFormat,
+  fixedFormat,
+  numberFormat,
   drawTooltip,
   drawValueAxis,
   fontOf,
@@ -51,7 +52,7 @@ const ONE_PRICE_RANGE = 0.01;
 const PRICE_LABEL_GAP = 24;
 /** Height of the line the spread is written on, over the plot. */
 const SPREAD_LINE = 16;
-const SPREAD_LABEL = 'Spread';
+const DEFAULT_SPREAD_LABEL = 'Spread';
 
 /** Levels from the best price outwards, each with the volume up to it. */
 function cumulative(levels: readonly DepthLevel[], side: 'bid' | 'ask'): CumulativeLevel[] {
@@ -78,7 +79,7 @@ export function computeDepthLayout(options: DepthChartOptions, width: number, he
   // The highest the running volume gets: its last value, unless a volume below zero takes some back.
   const top = Math.max(0, ...bids.map((l) => l.cumulativeVolume), ...asks.map((l) => l.cumulativeVolume));
   const volume = niceScale(0, top || 1, 5);
-  const format = options.volumeFormat ?? axisFormat(volume);
+  const format = options.volumeFormat ?? axisFormat(volume, options.locale);
   const tickWidth = Math.max(0, ...volume.ticks.map((t) => measure(format(t), LABEL_SIZE)));
   const left = CHART_PAD + tickWidth + AXIS_GAP;
   const showSpread = twoSided && options.midPriceLine !== false && options.spreadLabel !== false;
@@ -132,11 +133,10 @@ export function renderDepthChart(
 
   // Prices in full: as many decimals as the book's own prices are written with.
   const decimals = decimalsFor([...bids, ...asks].map((l) => l.price));
-  const fixed = new Intl.NumberFormat(undefined, { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
-  const priceFormat = options.priceFormat ?? ((p: number) => fixed.format(p));
-  const volumeFormat = options.volumeFormat ?? defaultFormat;
+  const priceFormat = options.priceFormat ?? fixedFormat(options.locale, decimals);
+  const volumeFormat = options.volumeFormat ?? numberFormat(options.locale);
 
-  drawValueAxis(ctx, plot, volume, 'vertical', theme, options.volumeFormat ?? axisFormat(volume));
+  drawValueAxis(ctx, plot, volume, 'vertical', theme, options.volumeFormat ?? axisFormat(volume, options.locale));
   ctx.save();
   ctx.font = fontOf(theme, LABEL_SIZE);
   ctx.fillStyle = theme.axisLabel;
@@ -146,7 +146,7 @@ export function renderDepthChart(
   // As many price labels as fit side by side, each as wide as the book's prices are written.
   const labelWidth = measureText(priceFormat(priceMax), LABEL_SIZE) + PRICE_LABEL_GAP;
   const prices = niceScale(priceMin, priceMax, Math.max(2, Math.floor(plot.width / labelWidth)));
-  const tickFormat = options.priceFormat ?? axisFormat(prices);
+  const tickFormat = options.priceFormat ?? axisFormat(prices, options.locale);
   ctx.font = fontOf(theme, LABEL_SIZE);
   for (const p of prices.ticks) {
     if (p < priceMin || p > priceMax) continue;
@@ -202,7 +202,7 @@ export function renderDepthChart(
       ctx.fillStyle = theme.textSecondary;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(`${SPREAD_LABEL}: ${priceFormat(spread)}`, Math.round(toX(mid)), CHART_PAD + SPREAD_LINE / 2 - 2);
+      ctx.fillText(`${typeof options.spreadLabel === 'string' ? options.spreadLabel : DEFAULT_SPREAD_LABEL}: ${priceFormat(spread)}`, Math.round(toX(mid)), CHART_PAD + SPREAD_LINE / 2 - 2);
     }
     ctx.restore();
   }

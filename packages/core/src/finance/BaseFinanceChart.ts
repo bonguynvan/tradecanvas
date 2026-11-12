@@ -1,12 +1,26 @@
-import type { Theme, ThemeName } from '@tradecanvas/commons';
-import { DARK_THEME, LIGHT_THEME } from '@tradecanvas/commons';
+import type { FontConfig, Theme, ThemeName } from '@tradecanvas/commons';
+import { DARK_THEME, DEFAULT_FONT_FAMILY, LIGHT_THEME, SANS_FONT_FAMILY } from '@tradecanvas/commons';
 import { DPRManager, backingSize } from '../engine/DPRManager.js';
 import { isolateFontFeatures } from '../engine/CanvasLayer.js';
 
-function resolveTheme(theme?: ThemeName | Theme): Theme {
+function namedTheme(theme?: ThemeName | Theme): Theme {
   if (!theme || theme === 'dark') return DARK_THEME;
   if (theme === 'light') return LIGHT_THEME;
   return theme as Theme;
+}
+
+/**
+ * The theme a finance chart draws with: `theme`, its text in `font` where
+ * that says. A theme that names no face of its own (it has the library's
+ * monospaced default) is drawn in the system's sans face, as the widget's
+ * figures are; a theme with a face of its own keeps it.
+ */
+export function financeTheme(theme?: ThemeName | Theme, font?: Partial<FontConfig>): Theme {
+  const base = namedTheme(theme);
+  // A key given as undefined is a key not given: it must not blank the theme's own.
+  const given = Object.fromEntries(Object.entries(font ?? {}).filter(([, value]) => value !== undefined)) as Partial<FontConfig>;
+  const family = given.family ?? (base.font.family === DEFAULT_FONT_FAMILY ? SANS_FONT_FAMILY : base.font.family);
+  return { ...base, font: { ...base.font, ...given, family } };
 }
 
 export abstract class BaseFinanceChart {
@@ -21,9 +35,15 @@ export abstract class BaseFinanceChart {
   /** The container's size, in CSS and in device pixels, and the screen's pixel ratio as they change. */
   private readonly sizer: DPRManager;
 
-  constructor(container: HTMLElement, theme?: ThemeName | Theme) {
+  /** The theme and the font as the options gave them: either may change alone. */
+  private themeGiven: ThemeName | Theme | undefined;
+  private fontGiven: Partial<FontConfig> | undefined;
+
+  constructor(container: HTMLElement, theme?: ThemeName | Theme, font?: Partial<FontConfig>) {
     this.container = container;
-    this.theme = resolveTheme(theme);
+    this.themeGiven = theme;
+    this.fontGiven = font;
+    this.theme = financeTheme(theme, font);
 
     this.canvas = document.createElement('canvas');
     // Always the container's size, never a size of its own in pixels: the
@@ -96,8 +116,10 @@ export abstract class BaseFinanceChart {
    * options name one, and a label for screen readers. It asks for no frame;
    * the chart that calls it does.
    */
-  protected applyBaseOptions(options: { theme?: ThemeName | Theme; ariaLabel?: string }): void {
-    if ('theme' in options) this.theme = resolveTheme(options.theme);
+  protected applyBaseOptions(options: { theme?: ThemeName | Theme; font?: Partial<FontConfig>; ariaLabel?: string }): void {
+    if ('theme' in options) this.themeGiven = options.theme;
+    if ('font' in options) this.fontGiven = options.font;
+    if ('theme' in options || 'font' in options) this.theme = financeTheme(this.themeGiven, this.fontGiven);
     if (options.ariaLabel !== undefined) this.setLabel(options.ariaLabel);
   }
 
@@ -107,7 +129,8 @@ export abstract class BaseFinanceChart {
   }
 
   setTheme(theme: ThemeName | Theme): void {
-    this.theme = resolveTheme(theme);
+    this.themeGiven = theme;
+    this.theme = financeTheme(theme, this.fontGiven);
     this.requestRender();
   }
 

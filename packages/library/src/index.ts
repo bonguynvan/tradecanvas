@@ -283,6 +283,7 @@ export {
   computeDrawdownCurve,
   computeMonthlyReturns,
   selectKeyStats,
+  DEFAULT_DASHBOARD_LABELS,
 } from './finance/index.js';
 export type {
   PerformanceDashboardOptions,
@@ -290,6 +291,7 @@ export type {
   EquitySample,
   RiskMetricsLike,
   DashboardStat,
+  DashboardLabels,
 } from './finance/index.js';
 export type {
   BaseFinanceChartOptions,

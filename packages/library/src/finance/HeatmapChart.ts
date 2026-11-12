@@ -26,7 +26,7 @@ export class HeatmapChart extends BaseFinanceChart {
   };
 
   constructor(container: HTMLElement, options: HeatmapOptions) {
-    super(container, options.theme);
+    super(container, options.theme, options.font);
     this.options = options;
     this.currentData = options.data ?? [];
 
@@ -120,7 +120,7 @@ export class HeatmapChart extends BaseFinanceChart {
   setOptions(opts: Partial<HeatmapOptions>): void {
     this.options = { ...this.options, ...opts };
     // The label is the heatmap's own to word (applyLabel): only the theme is taken here.
-    if ('theme' in opts) this.applyBaseOptions({ theme: opts.theme });
+    this.applyBaseOptions({ ...('theme' in opts ? { theme: opts.theme } : {}), ...('font' in opts ? { font: opts.font } : {}) });
     if (opts.data) {
       this.currentData = opts.data;
     }

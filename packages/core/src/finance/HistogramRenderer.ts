@@ -4,7 +4,8 @@ import {
   LABEL_SIZE,
   axisFormat,
   canvasMeasure,
-  defaultFormat,
+  numberFormat,
+  percentFormat,
   drawTooltip,
   drawValueAxis,
   fontOf,
@@ -109,8 +110,8 @@ export function computeHistogramLayout(options: HistogramOptions, width: number,
   for (const b of bins) if (b.count > most) most = b.count;
   // Counts in whole steps: at least 4 on the axis.
   const yScale = niceScale(0, Math.max(4, most), 4);
-  const format = options.valueFormat ?? axisFormat(xScale);
-  const tickWidth = Math.max(0, ...yScale.ticks.map((t) => measure(axisFormat(yScale)(t), LABEL_SIZE)));
+  const format = options.valueFormat ?? axisFormat(xScale, options.locale);
+  const tickWidth = Math.max(0, ...yScale.ticks.map((t) => measure(axisFormat(yScale, options.locale)(t), LABEL_SIZE)));
   const top = PAD + (markerValues.length > 0 ? MARKER_ROOM : 0);
   const left = PAD + tickWidth + 8;
   const right = PAD + measure(format(xScale.max), LABEL_SIZE) / 2;
@@ -133,7 +134,6 @@ export function hitHistogramBar(layout: HistogramLayout, x: number, y: number): 
   return layout.bars.find((b) => x >= b.x && x < b.x + b.width) ?? null;
 }
 
-const share = new Intl.NumberFormat(undefined, { style: 'percent', maximumFractionDigits: 1 });
 
 export function renderHistogram(
   ctx: CanvasRenderingContext2D,
@@ -144,13 +144,13 @@ export function renderHistogram(
   pointer: { x: number; y: number } | null,
   layout: HistogramLayout = computeHistogramLayout(options, width, height, theme, canvasMeasure(ctx, theme)),
 ): HistogramLayout {
-  const format = options.valueFormat ?? defaultFormat;
+  const format = options.valueFormat ?? numberFormat(options.locale);
   const { plot } = layout;
 
   ctx.fillStyle = theme.background;
   ctx.fillRect(0, 0, width, height);
-  drawValueAxis(ctx, plot, layout.yScale, 'vertical', theme, axisFormat(layout.yScale));
-  drawValueAxis(ctx, plot, layout.xScale, 'horizontal', theme, options.valueFormat ?? axisFormat(layout.xScale));
+  drawValueAxis(ctx, plot, layout.yScale, 'vertical', theme, axisFormat(layout.yScale, options.locale));
+  drawValueAxis(ctx, plot, layout.xScale, 'horizontal', theme, options.valueFormat ?? axisFormat(layout.xScale, options.locale));
 
   const hovered = pointer && options.crosshair !== false ? hitHistogramBar(layout, pointer.x, pointer.y) : null;
   for (const bar of layout.bars) {
@@ -165,7 +165,7 @@ export function renderHistogram(
     const { bin } = hovered;
     drawTooltip(ctx, [
       { text: bin.to > bin.from ? `${format(bin.from)} – ${format(bin.to)}` : format(bin.from), bold: true, color: hovered.color },
-      { text: `${defaultFormat(bin.count)} · ${share.format(layout.total > 0 ? bin.count / layout.total : 0)}` },
+      { text: `${numberFormat(options.locale)(bin.count)} · ${percentFormat(options.locale)(layout.total > 0 ? bin.count / layout.total : 0)}` },
     ], pointer, { x: 0, y: 0, width, height }, theme);
   }
   return layout;

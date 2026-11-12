@@ -1,6 +1,6 @@
 import type { CalendarChartOptions, CalendarDay, Theme } from '@tradecanvas/commons';
 import { withAlpha } from '@tradecanvas/commons';
-import { LABEL_SIZE, canvasMeasure, defaultFormat, drawTooltip, fontOf, type Measure, type Rect, type TooltipLine } from './chartKit.js';
+import { LABEL_SIZE, canvasMeasure, numberFormat, drawTooltip, fontOf, type Measure, type Rect, type TooltipLine } from './chartKit.js';
 import { COLOR_BAR_ROOM, drawColorBar, resolveColorScale, scaleColor, type ResolvedScale } from './colorScale.js';
 
 const DAY_MS = 86_400_000;
@@ -231,7 +231,7 @@ export function renderCalendar(
   pointer: { x: number; y: number } | null,
   layout: CalendarLayout = computeCalendarLayout(options, width, height, theme, canvasMeasure(ctx, theme)),
 ): CalendarLayout {
-  const format = options.valueFormat ?? defaultFormat;
+  const format = options.valueFormat ?? numberFormat(options.locale);
   ctx.fillStyle = theme.background;
   ctx.fillRect(0, 0, width, height);
 

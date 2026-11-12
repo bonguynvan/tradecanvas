@@ -24,7 +24,7 @@ export abstract class InteractiveChart<O extends HoverOptions, L> extends BaseFi
   };
 
   constructor(container: HTMLElement, options: O) {
-    super(container, options.theme);
+    super(container, options.theme, options.font);
     this.options = options;
     this.crosshair = new FinanceCrosshair(this.canvas, () => this.requestRender());
     this.canvas.addEventListener('click', this.onClick);
@@ -59,7 +59,7 @@ export abstract class InteractiveChart<O extends HoverOptions, L> extends BaseFi
 
   setOptions(options: Partial<O>): void {
     this.options = { ...this.options, ...options };
-    if ('theme' in options) this.setTheme(options.theme ?? 'dark');
+    this.applyBaseOptions({ ...('theme' in options ? { theme: options.theme } : {}), ...('font' in options ? { font: options.font } : {}) });
     this.applyLabel();
     this.requestRender();
   }
