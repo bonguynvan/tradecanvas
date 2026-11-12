@@ -124,7 +124,8 @@ WSL を使わない Windows では: `claude mcp add tradecanvas -- cmd /c npx -y
 - **パッケージ**：[`@tradecanvas/chart`](https://www.npmjs.com/package/@tradecanvas/chart)（チャートとウィジェット）、[`react`](https://www.npmjs.com/package/@tradecanvas/react) · [`vue`](https://www.npmjs.com/package/@tradecanvas/vue) · [`svelte`](https://www.npmjs.com/package/@tradecanvas/svelte)、バックテスト用の [`analytics`](https://www.npmjs.com/package/@tradecanvas/analytics)、コーディングエージェント用の [`mcp`](https://www.npmjs.com/package/@tradecanvas/mcp)。
 - **プレビュー**：すべての pull request と `main` のコミットが [pkg.pr.new](https://pkg.pr.new/~/bonguynvan/tradecanvas) に公開され、リリース前にインストールできます。
 - **ブラウザー**：Chrome 80 以降、Edge 80 以降、Firefox 80 以降、Safari 14 以降。
-- **法人の方へ**：表示すべきロゴも申請もありません。[法人の方へ](https://tradecanvas.dev/ja/business/)のページが IT 審査の質問に答えます。business@tradecanvas.dev
+- **ライセンス**：MIT。個人のプロジェクトでも企業の製品でも、すべての人に同じライセンスです。表示すべきロゴも申請もありません。
+- **法人の方へ**：[法人の方へ](https://tradecanvas.dev/ja/business/)のページが IT 審査の質問に答えます。business@tradecanvas.dev
 - **関連プロジェクト**：[bo-grid](https://github.com/bonguynvan/bo-grid)、トレーディングデスクの表を担う高速な Svelte データグリッド。
 - **コントリビュート**：質問は [Discussions](https://github.com/bonguynvan/tradecanvas/discussions)、バグは issue へ。pull request は [CONTRIBUTING.md](./CONTRIBUTING.md) を参照。セキュリティの問題は [SECURITY.md](./SECURITY.md)。
 - **スポンサー**：TradeCanvas は無料で、オープンに開発しています。[GitHub Sponsors](https://github.com/sponsors/bonguynvan) が開発を支えます。

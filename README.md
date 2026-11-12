@@ -130,7 +130,8 @@ On Windows outside WSL: `claude mcp add tradecanvas -- cmd /c npx -y @tradecanva
 - **Packages**: [`@tradecanvas/chart`](https://www.npmjs.com/package/@tradecanvas/chart) (the chart and the widget), [`react`](https://www.npmjs.com/package/@tradecanvas/react) · [`vue`](https://www.npmjs.com/package/@tradecanvas/vue) · [`svelte`](https://www.npmjs.com/package/@tradecanvas/svelte), and [`analytics`](https://www.npmjs.com/package/@tradecanvas/analytics) for backtests, and [`mcp`](https://www.npmjs.com/package/@tradecanvas/mcp) for coding agents.
 - **Previews**: every pull request and commit on `main` is on [pkg.pr.new](https://pkg.pr.new/~/bonguynvan/tradecanvas), installable before a release.
 - **Browsers**: Chrome 80+, Edge 80+, Firefox 80+, Safari 14+.
-- **For businesses**: no logo to show, nothing to apply for; the [For businesses](https://tradecanvas.dev/business/) page answers an IT review. business@tradecanvas.dev
+- **Licence**: MIT, one licence for everyone, a personal project or a company's product: no logo to show, nothing to apply for.
+- **For businesses**: the [For businesses](https://tradecanvas.dev/business/) page answers an IT review. business@tradecanvas.dev
 - **Related**: [bo-grid](https://github.com/bonguynvan/bo-grid), a fast Svelte data grid for the table half of a trading desk.
 - **Contributing**: questions in [Discussions](https://github.com/bonguynvan/tradecanvas/discussions), bugs in the issues, and [CONTRIBUTING.md](./CONTRIBUTING.md) for pull requests. Security issues: [SECURITY.md](./SECURITY.md).
 - **Sponsor**: TradeCanvas is free and built in the open; [GitHub Sponsors](https://github.com/sponsors/bonguynvan) keeps it going.
