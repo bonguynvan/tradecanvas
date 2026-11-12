@@ -191,6 +191,22 @@ export function distTag(version) {
   return /^[A-Za-z]/.test(pre[1]) ? pre[1].toLowerCase() : 'next';
 }
 
+/**
+ * Why a release cannot go out as it stands, or null. In changesets' pre mode
+ * every version is a prerelease and takes the mode's dist-tag; out of it none
+ * is. Anything else is a version PR merged half way into or out of pre mode,
+ * and would put a prerelease on `latest` or a full release under `beta`.
+ */
+export function preModeProblem(packages, pre) {
+  const inPre = pre?.mode === 'pre';
+  for (const p of packages) {
+    const tag = distTag(p.version);
+    if (inPre && tag !== pre.tag) return `${p.name}@${p.version} is not a ${pre.tag} prerelease, and .changeset/pre.json is in pre mode`;
+    if (!inPre && tag) return `${p.name}@${p.version} is a prerelease, and .changeset/pre.json is not in pre mode`;
+  }
+  return null;
+}
+
 /** Run a tool and return its output; on Windows pnpm and npm are .cmd files, which only a shell starts. */
 function run(command, args, cwd = ROOT) {
   const opts = { cwd, stdio: ['ignore', 'pipe', 'pipe'], encoding: 'utf8' };
@@ -400,15 +416,15 @@ function argAfter(flag) {
 
 async function main() {
   const dryRun = process.argv.includes('--dry-run');
-  // Pre mode publishes under its own dist-tag, which this script does not set.
-  if (existsSync(join(ROOT, '.changeset', 'pre.json'))) {
-    throw new Error('publish: .changeset/pre.json found; prereleases would go out as latest');
-  }
   const order = publishOrder(readWorkspace());
   const remoteTags = remoteTagNames(run('git', ['ls-remote', '--tags', 'origin']));
   const isReleased = (p) => !untagged([p], remoteTags).length && hasRelease(`${p.name}@${p.version}`);
 
   const plan = releasePlan(order, onRegistry, isReleased);
+  // A prerelease goes out under its own dist-tag (`distTag`): what is waiting must agree with the mode.
+  const preFile = join(ROOT, '.changeset', 'pre.json');
+  const problem = preModeProblem(plan.publish, existsSync(preFile) ? JSON.parse(readFileSync(preFile, 'utf8')) : null);
+  if (problem) throw new Error(`publish: ${problem}`);
   // In CI, before the install: whether this push has anything to do.
   if (process.argv.includes('--check')) {
     const work = hasWork(plan);
