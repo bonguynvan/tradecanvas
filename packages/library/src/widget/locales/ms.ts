@@ -442,7 +442,7 @@ export const MS_MESSAGES: WidgetMessages = {
   'drawingOption.extendRight': 'Lanjutkan ke kanan',
   'drawingOption.middleLine': 'Garisan tengah',
   'drawingOption.levels': 'Paras',
-  'drawingOption.reverse': 'Terbalikkan',
+  'drawingOption.reversed': 'Terbalikkan',
   'drawingOption.showLevels': 'Tunjukkan paras',
   'drawingOption.showPrices': 'Tunjukkan harga',
   'drawingOption.labelPosition': 'Label',

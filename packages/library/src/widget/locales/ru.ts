@@ -436,7 +436,7 @@ export const RU_MESSAGES: WidgetMessages = {
   'drawingOption.extendRight': 'Продлить вправо',
   'drawingOption.middleLine': 'Средняя линия',
   'drawingOption.levels': 'Уровни',
-  'drawingOption.reverse': 'Обратный порядок',
+  'drawingOption.reversed': 'Обратный порядок',
   'drawingOption.showLevels': 'Показывать уровни',
   'drawingOption.showPrices': 'Показывать цены',
   'drawingOption.labelPosition': 'Метки',

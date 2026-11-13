@@ -436,7 +436,7 @@ export const RO_MESSAGES: WidgetMessages = {
   'drawingOption.extendRight': 'Prelungire la dreapta',
   'drawingOption.middleLine': 'Linie mediană',
   'drawingOption.levels': 'Niveluri',
-  'drawingOption.reverse': 'Inversare',
+  'drawingOption.reversed': 'Inversare',
   'drawingOption.showLevels': 'Afișare niveluri',
   'drawingOption.showPrices': 'Afișare prețuri',
   'drawingOption.labelPosition': 'Etichete',

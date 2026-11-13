@@ -16,7 +16,8 @@ export class ParallelChannelTool extends DrawingBase {
     fill: true,
     options: {
       ...extendOptions(),
-      middleLine: { kind: 'boolean' as const, label: 'Middle line', default: false },
+      // On for a new channel: the line halfway is the one read most. A saved one stays without.
+      middleLine: { kind: 'boolean' as const, label: 'Middle line', default: true, savedDefault: false },
     },
   };
 

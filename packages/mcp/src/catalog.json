@@ -4917,7 +4917,7 @@
         "middleLine": {
           "kind": "boolean",
           "label": "Middle line",
-          "default": false
+          "default": true
         }
       }
     },
@@ -5005,14 +5005,14 @@
         "extendLeft": {
           "kind": "boolean",
           "label": "Extend left",
-          "default": true
+          "default": false
         },
         "extendRight": {
           "kind": "boolean",
           "label": "Extend right",
-          "default": true
+          "default": false
         },
-        "reverse": {
+        "reversed": {
           "kind": "boolean",
           "label": "Reverse",
           "default": false
@@ -5128,12 +5128,12 @@
         "extendLeft": {
           "kind": "boolean",
           "label": "Extend left",
-          "default": true
+          "default": false
         },
         "extendRight": {
           "kind": "boolean",
           "label": "Extend right",
-          "default": true
+          "default": false
         },
         "showLevels": {
           "kind": "boolean",

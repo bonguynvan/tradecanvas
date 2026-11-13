@@ -32,7 +32,7 @@ chart.setStayInDrawingMode(true)    // 描画のたびにツールを維持す�
   type: 'fibRetracement',
   anchors: [{ time: t1, price: 101.2 }, { time: t2, price: 96.4 }],
   style: { color: '#f2a93b' },
-  options: { reverse: true, extendRight: true },
+  options: { reversed: true, extendRight: true },
 })
 
 chart.autoFib()   // 表示範囲の主要なスイングに引くリトレースメント。なければ null`}</code></pre>
@@ -88,7 +88,7 @@ chart.addDrawing({
 chart.addDrawing({ type: 'verticalLine', anchors: [{ time: t3, price: 0 }], options: { showTime: true } })
 chart.addDrawing({ type: 'fibRetracement', anchors: [a, b], options: { trendLine: false, oneColor: true } })`}</code></pre>
 <p>
-  水平線と水平レイは <code>showPrice: false</code> で価格を隠します。垂直線は <code>showTime: true</code> でそのバーの時刻を、クロスヘアと同じ書き方で表示します。四角形には 8 つのハンドルがあります。各角に 1 つ、各辺の中央に 1 つで、辺のハンドルはその辺だけを動かします。フィボナッチ・リトレースメントとエクステンションは、点を通る破線（<code>trendLine</code>、既定でオン）を描き、<code>oneColor</code> ですべてのレベルを描画の色で描きます。文字をクリックしても、その線やボックスを選択できます。
+  水平線と水平レイは <code>showPrice: false</code> で価格を隠します。垂直線は <code>showTime: true</code> でそのバーの時刻を、クロスヘアと同じ書き方で表示します。四角形には 8 つのハンドルがあります。各角に 1 つ、各辺の中央に 1 つで、辺のハンドルはその辺だけを動かします。フィボナッチ・リトレースメントとエクステンションは、点を通る破線（<code>trendLine</code>、既定でオン）を描き、<code>oneColor</code> ですべてのレベルを描画の色で描きます。文字をクリックしても、その線やボックスを選択できます。リトレースメントは値動きの終点である 2 番目の点を 0 とするため、38.2% はその値動きの 38.2% を戻した価格です。<code>reversed: true</code> で 1 番目の点から測ります。リトレースメントとエクステンションのレベルは、<code>extendLeft</code> または <code>extendRight</code> を設定しない限り点の間に収まり、各ラベルは線の端の横に置かれます。平行チャネルには <code>middleLine: false</code> としない限り中央線があります。水平線の価格と垂直線の時刻は、選択の有無にかかわらず軸上にタグで示されます。これらが既定になる前に保存された描画は、描いたときのまま読み込まれます。
 </p>
 
 <h2 id="look">描画の見た目</h2>

@@ -442,7 +442,7 @@ export const ET_MESSAGES: WidgetMessages = {
   'drawingOption.extendRight': 'Pikenda paremale',
   'drawingOption.middleLine': 'Keskjoon',
   'drawingOption.levels': 'Tasemed',
-  'drawingOption.reverse': 'Pööra ümber',
+  'drawingOption.reversed': 'Pööra ümber',
   'drawingOption.showLevels': 'Näita tasemeid',
   'drawingOption.showPrices': 'Näita hindu',
   'drawingOption.labelPosition': 'Sildid',

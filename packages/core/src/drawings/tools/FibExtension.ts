@@ -1,6 +1,6 @@
 import type { DrawingState, Point, ViewportState } from '@tradecanvas/commons';
 import { DrawingBase } from '../DrawingBase.js';
-import { FIB_EXTRA_OPTIONS, LEVEL_LABEL_OPTIONS, extendOptions, fibLevelList } from './options.js';
+import { FIB_EXTRA_OPTIONS, LEVEL_LABEL_OPTIONS, LEVEL_EXTEND_OPTIONS, fibLevelList } from './options.js';
 import { hitPriceLevels, inOneColor, renderPriceLevels, strokeTrendLine, type PriceLevel } from './priceLevels.js';
 
 export const EXTENSION_LEVELS = fibLevelList([0, 0.618, 1, 1.618, 2, 2.618, 3.618, 4.236], [0.382, 0.5, 0.786, 1.272, 1.414]);
@@ -17,7 +17,7 @@ export class FibExtensionTool extends DrawingBase {
     fill: true,
     options: {
       levels: { kind: 'levels' as const, label: 'Levels', default: EXTENSION_LEVELS },
-      ...extendOptions(true, true),
+      ...LEVEL_EXTEND_OPTIONS,
       ...LEVEL_LABEL_OPTIONS,
       ...FIB_EXTRA_OPTIONS,
       background: { kind: 'boolean' as const, label: 'Background', default: false },
@@ -64,6 +64,7 @@ export class FibExtensionTool extends DrawingBase {
       showLevels: this.option(state, 'showLevels'),
       showPrices: this.option(state, 'showPrices'),
       labelPosition: this.option(state, 'labelPosition'),
+      labelsOutside: !this.option<boolean>(state, this.option<string>(state, 'labelPosition') === 'right' ? 'extendRight' : 'extendLeft'),
       background: this.option(state, 'background'),
     }, (color) => this.applyLineStyle(ctx, { ...state.style, color }));
     this.resetLineStyle(ctx);

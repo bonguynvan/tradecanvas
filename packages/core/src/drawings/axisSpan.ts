@@ -23,6 +23,11 @@ function ends(values: readonly number[]): number[] {
   return low === high ? [low] : [low, high];
 }
 
+/** A line at one price or one time (a horizontal line, a vertical line): placed with one point, spanning one axis. */
+export function isLevelLine(descriptor: DrawingDescriptor): boolean {
+  return descriptor.requiredAnchors === 1 && (descriptor.axisSpan === 'price' || descriptor.axisSpan === 'time') && descriptor.anchoring !== 'screen';
+}
+
 /**
  * Where `state` lies on the axes, as its tool says it spans them
  * (`descriptor.axisSpan`), or null for a drawing kept to a place on the

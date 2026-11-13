@@ -436,7 +436,7 @@ export const CS_MESSAGES: WidgetMessages = {
   'drawingOption.extendRight': 'Prodloužit doprava',
   'drawingOption.middleLine': 'Střední linie',
   'drawingOption.levels': 'Úrovně',
-  'drawingOption.reverse': 'Obrátit',
+  'drawingOption.reversed': 'Obrátit',
   'drawingOption.showLevels': 'Zobrazit úrovně',
   'drawingOption.showPrices': 'Zobrazit ceny',
   'drawingOption.labelPosition': 'Popisky',

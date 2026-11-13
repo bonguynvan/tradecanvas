@@ -436,7 +436,7 @@ export const ZH_MESSAGES: WidgetMessages = {
   'drawingOption.extendRight': '向右延伸',
   'drawingOption.middleLine': '中线',
   'drawingOption.levels': '级别',
-  'drawingOption.reverse': '反转',
+  'drawingOption.reversed': '反转',
   'drawingOption.showLevels': '显示级别',
   'drawingOption.showPrices': '显示价格',
   'drawingOption.labelPosition': '标签位置',

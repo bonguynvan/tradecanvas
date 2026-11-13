@@ -436,7 +436,7 @@ export const ZH_HANT_MESSAGES: WidgetMessages = {
   'drawingOption.extendRight': '向右延伸',
   'drawingOption.middleLine': '中線',
   'drawingOption.levels': '級別',
-  'drawingOption.reverse': '反轉',
+  'drawingOption.reversed': '反轉',
   'drawingOption.showLevels': '顯示級別',
   'drawingOption.showPrices': '顯示價格',
   'drawingOption.labelPosition': '標籤位置',

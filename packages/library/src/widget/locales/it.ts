@@ -436,7 +436,7 @@ export const IT_MESSAGES: WidgetMessages = {
   'drawingOption.extendRight': 'Estendi a destra',
   'drawingOption.middleLine': 'Linea mediana',
   'drawingOption.levels': 'Livelli',
-  'drawingOption.reverse': 'Inverti',
+  'drawingOption.reversed': 'Inverti',
   'drawingOption.showLevels': 'Mostra livelli',
   'drawingOption.showPrices': 'Mostra prezzi',
   'drawingOption.labelPosition': 'Etichette',

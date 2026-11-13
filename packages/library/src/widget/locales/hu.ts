@@ -436,7 +436,7 @@ export const HU_MESSAGES: WidgetMessages = {
   'drawingOption.extendRight': 'Meghosszabbítás jobbra',
   'drawingOption.middleLine': 'Középvonal',
   'drawingOption.levels': 'Szintek',
-  'drawingOption.reverse': 'Megfordítás',
+  'drawingOption.reversed': 'Megfordítás',
   'drawingOption.showLevels': 'Szintek megjelenítése',
   'drawingOption.showPrices': 'Árak megjelenítése',
   'drawingOption.labelPosition': 'Címkék',

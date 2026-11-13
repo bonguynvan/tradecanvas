@@ -443,7 +443,7 @@ export const EN_MESSAGES = {
   'drawingOption.extendRight': 'Extend right',
   'drawingOption.middleLine': 'Middle line',
   'drawingOption.levels': 'Levels',
-  'drawingOption.reverse': 'Reverse',
+  'drawingOption.reversed': 'Reverse',
   'drawingOption.showLevels': 'Show levels',
   'drawingOption.showPrices': 'Show prices',
   'drawingOption.labelPosition': 'Labels',

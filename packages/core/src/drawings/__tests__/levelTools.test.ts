@@ -145,7 +145,7 @@ describe('channels', () => {
   it('a parallel channel is the base line moved straight up or down to its third point, as its alerts read it', () => {
     const tool = new ParallelChannelTool();
     // Base from bar 0 at 10 to bar 10 at 30; the third point at bar 5, 20 above the base's 20.
-    const state = drawing('parallelChannel', [{ time: 0, price: 10 }, { time: 10, price: 30 }, { time: 5, price: 40 }]);
+    const state = drawing('parallelChannel', [{ time: 0, price: 10 }, { time: 10, price: 30 }, { time: 5, price: 40 }], { options: { middleLine: false } });
     const { ctx, calls } = recordingCtx();
     tool.render(ctx, state, tall, false);
     const moves = calls.filter((c) => c.name === 'moveTo').map((c) => c.args as number[]);

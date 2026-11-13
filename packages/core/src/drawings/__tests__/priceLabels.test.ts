@@ -10,7 +10,7 @@ const FIB_ANCHORS = [{ time: 0, price: 98_753.9 }, { time: 50, price: 100_327.1 
 
 const fibTexts = (viewport: ViewportState) => {
   const { ctx, texts } = recordingCtx();
-  new FibRetracementTool().render(ctx, drawing('fibRetracement', FIB_ANCHORS), viewport, false);
+  new FibRetracementTool().render(ctx, drawing('fibRetracement', FIB_ANCHORS, { options: { reversed: true } }), viewport, false);
   return texts;
 };
 

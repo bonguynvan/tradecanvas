@@ -436,7 +436,7 @@ export const SV_MESSAGES: WidgetMessages = {
   'drawingOption.extendRight': 'Förläng åt höger',
   'drawingOption.middleLine': 'Mittlinje',
   'drawingOption.levels': 'Nivåer',
-  'drawingOption.reverse': 'Vänd',
+  'drawingOption.reversed': 'Vänd',
   'drawingOption.showLevels': 'Visa nivåer',
   'drawingOption.showPrices': 'Visa priser',
   'drawingOption.labelPosition': 'Etiketter',

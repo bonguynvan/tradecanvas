@@ -32,7 +32,7 @@ chart.setStayInDrawingMode(true)    // 每次绘制完成后保留当前工具`}
   type: 'fibRetracement',
   anchors: [{ time: t1, price: 101.2 }, { time: t2, price: 96.4 }],
   style: { color: '#f2a93b' },
-  options: { reverse: true, extendRight: true },
+  options: { reversed: true, extendRight: true },
 })
 
 chart.autoFib()   // 在当前可见范围内的主要波段上绘制回撤，没有则返回 null`}</code></pre>
@@ -88,7 +88,7 @@ chart.addDrawing({
 chart.addDrawing({ type: 'verticalLine', anchors: [{ time: t3, price: 0 }], options: { showTime: true } })
 chart.addDrawing({ type: 'fibRetracement', anchors: [a, b], options: { trendLine: false, oneColor: true } })`}</code></pre>
 <p>
-  水平线和水平射线用 <code>showPrice: false</code> 隐藏价格。垂直线用 <code>showTime: true</code> 显示其 K 线的时间，写法与十字光标相同。矩形有八个控制点：每个角一个，每条边的中点一个，拖动后只移动那条边。斐波那契回撤和扩展会画一条穿过其各点的虚线（<code>trendLine</code>，默认开启），并可用 <code>oneColor</code> 让所有水平都用绘图的颜色。点击文字也能选中该线或矩形。
+  水平线和水平射线用 <code>showPrice: false</code> 隐藏价格。垂直线用 <code>showTime: true</code> 显示其 K 线的时间，写法与十字光标相同。矩形有八个控制点：每个角一个，每条边的中点一个，拖动后只移动那条边。斐波那契回撤和扩展会画一条穿过其各点的虚线（<code>trendLine</code>，默认开启），并可用 <code>oneColor</code> 让所有水平都用绘图的颜色。点击文字也能选中该线或矩形。回撤把 0 放在行情结束处，也就是第二个点，因此 38.2% 就是回吐该段行情 38.2% 的价位；<code>reversed: true</code> 则从第一个点量起。回撤和扩展的各条水平线停留在各自的点之间，除非设置了 <code>extendLeft</code> 或 <code>extendRight</code>，每个标签位于其线段端点旁。平行通道带有中线，除非设置 <code>middleLine: false</code>。水平线的价格和垂直线的时间无论是否选中，都会在坐标轴上显示标签。在这些默认值生效之前保存的绘图，会按当初绘制的样子加载。
 </p>
 
 <h2 id="look">画线的外观</h2>

@@ -32,7 +32,7 @@ chart.setStayInDrawingMode(true)    // giữ công cụ sau mỗi hình vẽ`}</
   type: 'fibRetracement',
   anchors: [{ time: t1, price: 101.2 }, { time: t2, price: 96.4 }],
   style: { color: '#f2a93b' },
-  options: { reverse: true, extendRight: true },
+  options: { reversed: true, extendRight: true },
 })
 
 chart.autoFib()   // một Fibonacci thoái lui trên con sóng chính đang hiện, hoặc null`}</code></pre>
@@ -88,7 +88,7 @@ chart.addDrawing({
 chart.addDrawing({ type: 'verticalLine', anchors: [{ time: t3, price: 0 }], options: { showTime: true } })
 chart.addDrawing({ type: 'fibRetracement', anchors: [a, b], options: { trendLine: false, oneColor: true } })`}</code></pre>
 <p>
-  Đường ngang và tia ngang ẩn giá bằng <code>showPrice: false</code>. Đường dọc hiện thời gian của nến bằng <code>showTime: true</code>, viết như crosshair viết. Hình chữ nhật có tám tay nắm: mỗi góc một cái và giữa mỗi cạnh một cái, kéo cạnh đó riêng. Fibonacci retracement và Fibonacci mở rộng vẽ một đường đứt nét qua các điểm của nó (<code>trendLine</code>, bật sẵn) và vẽ mọi mức bằng màu của hình vẽ với <code>oneColor</code>. Nhấp vào chữ cũng chọn được đường hoặc hình chữ nhật đó.
+  Đường ngang và tia ngang ẩn giá bằng <code>showPrice: false</code>. Đường dọc hiện thời gian của nến bằng <code>showTime: true</code>, viết như crosshair viết. Hình chữ nhật có tám tay nắm: mỗi góc một cái và giữa mỗi cạnh một cái, kéo cạnh đó riêng. Fibonacci retracement và Fibonacci mở rộng vẽ một đường đứt nét qua các điểm của nó (<code>trendLine</code>, bật sẵn) và vẽ mọi mức bằng màu của hình vẽ với <code>oneColor</code>. Nhấp vào chữ cũng chọn được đường hoặc hình chữ nhật đó. Fibonacci retracement đặt mức 0 ở nơi nhịp giá kết thúc, tức điểm thứ hai, nên 38.2% là mức giá trả lại 38.2% của nhịp đó; <code>reversed: true</code> đo từ điểm thứ nhất. Các mức của retracement và extension nằm giữa các điểm của chúng, trừ khi đặt <code>extendLeft</code> hoặc <code>extendRight</code>, và mỗi nhãn nằm cạnh đầu đường của nó. Parallel channel có đường giữa, trừ khi đặt <code>middleLine: false</code>. Giá của horizontal line và thời gian của vertical line được gắn tag trên hai trục, dù có đang được chọn hay không. Drawing đã lưu trước khi các mặc định này thay đổi được nạp lại đúng như lúc vẽ.
 </p>
 
 <h2 id="look">Hình vẽ trông thế nào</h2>

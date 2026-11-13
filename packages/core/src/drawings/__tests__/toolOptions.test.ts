@@ -33,9 +33,10 @@ describe('ParallelChannelTool options', () => {
   const anchors = [{ time: 10, price: 60 }, { time: 20, price: 60 }, { time: 15, price: 40 }]; // lines at y 40 and 60
 
   it('draws a middle line when asked', () => {
-    const state = drawing('parallelChannel', anchors, { options: { middleLine: true } });
-    expect(tool.hitTest({ x: 150, y: 50 }, state, unitViewport, 2)).toBe(true);
-    expect(tool.hitTest({ x: 150, y: 50 }, drawing('parallelChannel', anchors), unitViewport, 2)).toBe(false);
+    // A new channel has it; one turned off, or saved before it was the default, has not.
+    expect(tool.hitTest({ x: 150, y: 50 }, drawing('parallelChannel', anchors), unitViewport, 2)).toBe(true);
+    const without = drawing('parallelChannel', anchors, { options: { middleLine: false } });
+    expect(tool.hitTest({ x: 150, y: 50 }, without, unitViewport, 2)).toBe(false);
   });
 
   it('extends both lines', () => {
@@ -60,13 +61,14 @@ describe('FibRetracementTool options', () => {
   it('labels the classic levels with percent and price by default', () => {
     expect(texts()).toEqual([
       // The 0 and 100% labels first, which the others are read against.
-      '0% (80.00)', '100% (20.00)', '23.6% (65.84)', '38.2% (57.08)', '50% (50.00)', '61.8% (42.92)', '78.6% (32.84)',
+      // 0 where the move ends (the second anchor): 38.2% is the price that gives back 38.2% of it.
+      '0% (20.00)', '100% (80.00)', '23.6% (34.16)', '38.2% (42.92)', '50% (50.00)', '61.8% (57.08)', '78.6% (67.16)',
     ]);
   });
 
   it('draws only the levels left visible, including added ones', () => {
     const levels = [{ value: 0.5, visible: true }, { value: 0.618, visible: false }, { value: 1.618, visible: true }];
-    expect(texts({ levels })).toEqual(['50% (50.00)', '161.8% (-17.08)']);
+    expect(texts({ levels })).toEqual(['50% (50.00)', '161.8% (117.08)']);
   });
 
   it('shows levels, prices, both or neither', () => {
@@ -76,15 +78,17 @@ describe('FibRetracementTool options', () => {
     expect(texts({ levels, showLevels: false, showPrices: false })).toEqual([]);
   });
 
-  it('measures from the second anchor when reversed', () => {
-    expect(texts({ levels: [{ value: 0, visible: true }], reverse: true })).toEqual(['0% (20.00)']);
+  it('measures from the first anchor when reversed', () => {
+    expect(texts({ levels: [{ value: 0, visible: true }] })).toEqual(['0% (20.00)']);
+    expect(texts({ levels: [{ value: 0, visible: true }], reversed: true })).toEqual(['0% (80.00)']);
   });
 
   it('spans only its anchors unless extended', () => {
     const inside = drawing('fibRetracement', anchors, { options: { extendLeft: false, extendRight: false } });
     expect(tool.hitTest({ x: 200, y: 50 }, inside, unitViewport, 2)).toBe(true);
     expect(tool.hitTest({ x: 600, y: 50 }, inside, unitViewport, 2)).toBe(false);
-    expect(tool.hitTest({ x: 600, y: 50 }, drawing('fibRetracement', anchors), unitViewport, 2)).toBe(true);
+    expect(tool.hitTest({ x: 600, y: 50 }, drawing('fibRetracement', anchors), unitViewport, 2)).toBe(false);
+    expect(tool.hitTest({ x: 600, y: 50 }, drawing('fibRetracement', anchors, { options: { extendRight: true } }), unitViewport, 2)).toBe(true);
   });
 
   it('draws a level in its own colour', () => {

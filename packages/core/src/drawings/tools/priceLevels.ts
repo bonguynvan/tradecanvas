@@ -11,6 +11,8 @@ const LEVEL_PERCENT_DECIMALS = 1;
 const BAND_ALPHA = 0.06;
 /** How far above its line a level's label sits, px. */
 const LABEL_LIFT = 3;
+/** Between a line's end and a label beside it. */
+const LABEL_BESIDE_GAP = 6;
 /** How strongly the levels between 0 and 1 show. */
 const INNER_ALPHA = 0.8;
 
@@ -27,6 +29,12 @@ export interface PriceLevelLook {
   showLevels: boolean;
   showPrices: boolean;
   labelPosition: 'left' | 'right';
+  /**
+   * The lines stop at `x0` or `x1` on the labels' side (not extended there):
+   * a label goes beside its line's end, outside the bands, where there is
+   * room on the plot, and over the line as before where there is not.
+   */
+  labelsOutside?: boolean;
   /** Shade the band between each level and the next. */
   background: boolean;
 }
@@ -110,6 +118,23 @@ export function renderPriceLevels(
     // Above its line, or under it where the legend or a label drawn before covers that; a level
     // with neither clear is left unlabelled, but never 0 or 1, which go above their line anyway.
     const width = ctx.measureText(text).width;
+    ctx.fillStyle = readableText(level.color ?? state.style.color);
+    ctx.textBaseline = 'top';
+    if (look.labelsOutside) {
+      // Beside the line's end, level with it: clear of the candles between the anchors.
+      const onRight = look.labelPosition === 'right';
+      const besideLeft = onRight ? look.x1 + LABEL_BESIDE_GAP : look.x0 - LABEL_BESIDE_GAP - width;
+      const plot = viewport.chartRect;
+      if (besideLeft >= plot.x && besideLeft + width <= plot.x + plot.width) {
+        const beside = { left: besideLeft, right: besideLeft + width, top: y - labelHeight / 2, bottom: y + labelHeight / 2 };
+        if (!clearSpot([beside], placed) && !isKey(level.value)) continue;
+        placed.push(beside);
+        ctx.textAlign = 'left';
+        fillTextWithHalo(ctx, text, beside.left, beside.top);
+        continue;
+      }
+      ctx.textAlign = onRight ? 'right' : 'left';
+    }
     const left = look.labelPosition === 'right' ? labelX - width : labelX;
     const above = { left, right: left + width, top: y - LABEL_LIFT - labelHeight, bottom: y - LABEL_LIFT };
     const under = { left, right: left + width, top: y + LABEL_LIFT, bottom: y + LABEL_LIFT + labelHeight };
@@ -119,8 +144,6 @@ export function renderPriceLevels(
     const spot = clearSpot([above, under, pushed], placed) ?? (isKey(level.value) ? pushed : null);
     if (!spot) continue;
     placed.push(spot);
-    ctx.fillStyle = readableText(level.color ?? state.style.color);
-    ctx.textBaseline = 'top';
     fillTextWithHalo(ctx, text, labelX, spot.top);
   }
   ctx.globalAlpha = 1;

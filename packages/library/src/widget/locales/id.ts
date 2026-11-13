@@ -436,7 +436,7 @@ export const ID_MESSAGES: WidgetMessages = {
   'drawingOption.extendRight': 'Perpanjang ke kanan',
   'drawingOption.middleLine': 'Garis tengah',
   'drawingOption.levels': 'Level',
-  'drawingOption.reverse': 'Balik',
+  'drawingOption.reversed': 'Balik',
   'drawingOption.showLevels': 'Tampilkan level',
   'drawingOption.showPrices': 'Tampilkan harga',
   'drawingOption.labelPosition': 'Label',

@@ -436,7 +436,7 @@ export const SK_MESSAGES: WidgetMessages = {
   'drawingOption.extendRight': 'Predĺžiť doprava',
   'drawingOption.middleLine': 'Stredná čiara',
   'drawingOption.levels': 'Úrovne',
-  'drawingOption.reverse': 'Obrátiť',
+  'drawingOption.reversed': 'Obrátiť',
   'drawingOption.showLevels': 'Zobraziť úrovne',
   'drawingOption.showPrices': 'Zobraziť ceny',
   'drawingOption.labelPosition': 'Popisy',

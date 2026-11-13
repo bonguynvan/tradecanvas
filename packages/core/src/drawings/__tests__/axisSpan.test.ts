@@ -62,10 +62,12 @@ describe('DrawingManager.axisSpans', () => {
       drawing('horizontalLine', [{ time: 10, price: 30 }], { id: 'h' }),
       drawing('verticalLine', [{ time: 40, price: 30 }], { id: 'v' }),
     ]);
+    // The selected one last, over the other level line's tag.
     manager.select('h');
-    expect(manager.axisSpans(unitViewport)[0]).toMatchObject({ prices: [30], times: [] });
+    expect(manager.axisSpans(unitViewport).at(-1)).toMatchObject({ prices: [30], times: [] });
     manager.select('v');
-    expect(manager.axisSpans(unitViewport)[0]).toMatchObject({ prices: [], times: [40] });
+    expect(manager.axisSpans(unitViewport).at(-1)).toMatchObject({ prices: [], times: [40] });
+    expect(manager.axisSpans(unitViewport)).toHaveLength(2);
   });
 
   it('spans no hidden drawing', () => {

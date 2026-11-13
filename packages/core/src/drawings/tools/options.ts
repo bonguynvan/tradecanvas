@@ -49,6 +49,16 @@ export function extendOptions(left = false, right = false): DrawingOptionDefs {
   };
 }
 
+/**
+ * The extends of a tool whose levels ran across the whole chart by default
+ * and now stay between its points: one level set tinted the chart from edge
+ * to edge. A drawing saved before keeps running across.
+ */
+export const LEVEL_EXTEND_OPTIONS: DrawingOptionDefs = {
+  extendLeft: { kind: 'boolean', label: 'Extend left', default: false, savedDefault: true },
+  extendRight: { kind: 'boolean', label: 'Extend right', default: false, savedDefault: true },
+};
+
 /** A level line's price on the plot, shown unless turned off. */
 export const SHOW_PRICE_OPTION: DrawingOptionDefs = {
   showPrice: { kind: 'boolean', label: 'Show price', default: true },

@@ -442,7 +442,7 @@ export const HE_MESSAGES: WidgetMessages = {
   'drawingOption.extendRight': 'הארכה ימינה',
   'drawingOption.middleLine': 'קו אמצע',
   'drawingOption.levels': 'רמות',
-  'drawingOption.reverse': 'היפוך',
+  'drawingOption.reversed': 'היפוך',
   'drawingOption.showLevels': 'הצגת רמות',
   'drawingOption.showPrices': 'הצגת מחירים',
   'drawingOption.labelPosition': 'תוויות',

@@ -436,7 +436,7 @@ export const TR_MESSAGES: WidgetMessages = {
   'drawingOption.extendRight': 'Sağa uzat',
   'drawingOption.middleLine': 'Orta çizgi',
   'drawingOption.levels': 'Seviyeler',
-  'drawingOption.reverse': 'Ters çevir',
+  'drawingOption.reversed': 'Ters çevir',
   'drawingOption.showLevels': 'Seviyeleri göster',
   'drawingOption.showPrices': 'Fiyatları göster',
   'drawingOption.labelPosition': 'Etiketler',
