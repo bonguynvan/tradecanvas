@@ -120,6 +120,8 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
       takeProfit: intent.takeProfit,
       timeInForce: intent.timeInForce,
     };
+    // A trail is a distance: anything else asked for is not taken.
+    if (intent.trailingStop !== undefined && Number.isFinite(intent.trailingStop) && intent.trailingStop > 0) order.trailingStop = intent.trailingStop;
 
     if (intent.type === 'market') {
       this.fill(order, this.markPrice || intent.price);
@@ -210,6 +212,7 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
       stopLoss: order.stopLoss,
       takeProfit: order.takeProfit,
     };
+    if (order.trailingStop !== undefined) position.trailingStop = order.trailingStop;
     this.positions = [...this.positions, position];
 
     const fill: FillEvent = {

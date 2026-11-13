@@ -9,6 +9,8 @@ export interface OrderTicketDraft {
   price: number;
   stopLoss: number | null;
   takeProfit: number | null;
+  /** The stop-loss is to trail the price, at its distance from the entry. */
+  trailing?: boolean;
   timeInForce: TimeInForce;
 }
 
@@ -106,7 +108,28 @@ export function orderTicketIntent(draft: OrderTicketDraft, lastPrice: number | n
   if (draft.type !== 'market') intent.timeInForce = draft.timeInForce;
   if (draft.stopLoss !== null) intent.stopLoss = draft.stopLoss;
   if (draft.takeProfit !== null) intent.takeProfit = draft.takeProfit;
+  if (draft.trailing && draft.stopLoss !== null) {
+    const distance = priceDistance(intent.price, draft.stopLoss);
+    if (distance > 0) intent.trailingStop = distance;
+  }
   return intent;
+}
+
+/** Most decimals a distance is written to. */
+const MAX_DISTANCE_DECIMALS = 12;
+
+/** The decimals a price is written with (0.05 has two); a figure in exponent form has as many as are kept. */
+function decimalsOf(price: number): number {
+  const text = String(price);
+  const dot = text.indexOf('.');
+  return text.includes('e') ? MAX_DISTANCE_DECIMALS : dot === -1 ? 0 : Math.min(MAX_DISTANCE_DECIMALS, text.length - dot - 1);
+}
+
+/** How far apart two prices are, to their own decimals: 0.3 and 0.1 are 0.2 apart, not 0.19999999999999998. */
+function priceDistance(a: number, b: number): number {
+  const distance = Math.abs(a - b);
+  if (!Number.isFinite(distance)) return NaN;
+  return Number(distance.toFixed(Math.max(decimalsOf(a), decimalsOf(b))));
 }
 
 /** Reward over risk for a draft with both a stop-loss and a take-profit, or null. */

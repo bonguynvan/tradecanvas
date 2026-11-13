@@ -535,6 +535,7 @@ export const KO_MESSAGES: WidgetMessages = {
   'ticket.price': '가격',
   'ticket.stopLoss': '손절',
   'ticket.takeProfit': '익절',
+  'ticket.trailing': '트레일링 스톱',
   'ticket.timeInForce': '주문 유효 기간',
   'ticket.tif.gtc': '취소 시까지 유효',
   'ticket.tif.day': '당일',

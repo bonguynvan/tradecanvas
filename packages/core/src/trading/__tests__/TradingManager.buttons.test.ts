@@ -179,3 +179,24 @@ describe('TradingManager: the trail button on a stop-loss', () => {
     expect(count()).toBe(0);
   });
 });
+
+describe('TradingManager: a trail that shows it is on', () => {
+  const cells = () => (manager as unknown as { positionRenderer: { tags(...a: unknown[]): { cells: { kind: string; action?: { type: string }; active?: boolean }[] }[] } })
+    .positionRenderer.tags((manager as unknown as { positions: unknown[] }).positions, 70, unitViewport, (manager as unknown as { config: unknown }).config)
+    .flatMap((tag) => tag.cells).filter((cell) => cell.action?.type === 'trailStop');
+
+  it('marks the trail button of a trailing stop, and not of one that is not', () => {
+    expect(cells().map((c) => c.active)).toEqual([false]);
+    manager.setPositions([{ id: 'p1', side: 'buy', entryPrice: 60, quantity: 2, stopLoss: 50, trailingStop: 20 }]);
+    expect(cells().map((c) => c.active)).toEqual([true]);
+  });
+
+  it('stamps a waiting order\u2019s trailing stop TSL', () => {
+    manager.setPositions([]);
+    manager.setOrders([{ id: 'o1', side: 'buy', type: 'limit', price: 60, quantity: 1, stopLoss: 50, trailingStop: 10 }]);
+    const { ctx, texts } = recordingCtx();
+    manager.render(ctx, unitViewport, theme);
+    expect(texts).toContain('TSL');
+    expect(texts).not.toContain('SL');
+  });
+});

@@ -541,6 +541,7 @@ export const FA_MESSAGES: WidgetMessages = {
   'ticket.price': 'قیمت',
   'ticket.stopLoss': 'حد ضرر',
   'ticket.takeProfit': 'حد سود',
+  'ticket.trailing': 'حد ضرر متحرک',
   'ticket.timeInForce': 'اعتبار سفارش',
   'ticket.tif.gtc': 'معتبر تا لغو',
   'ticket.tif.day': 'روزانه',

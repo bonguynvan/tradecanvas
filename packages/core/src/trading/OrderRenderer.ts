@@ -116,7 +116,8 @@ export class OrderRenderer {
           y: stopY,
           color: which === 'stopLoss' ? colors.loss : colors.profit,
           cells: [
-            { kind: 'stamp', text: which === 'stopLoss' ? 'SL' : 'TP' },
+            // A stop that will follow the price once the order fills says so: TSL.
+            { kind: 'stamp', text: which === 'takeProfit' ? 'TP' : typeof order.trailingStop === 'number' && order.trailingStop > 0 ? 'TSL' : 'SL' },
             { kind: 'text', text: formatAmount(amount, amountDecimals(amount, price, config.pricePrecision), viewport.numberLocale), color: amount >= 0 ? colors.profit : colors.loss },
           ],
         });

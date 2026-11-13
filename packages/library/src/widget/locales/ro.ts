@@ -535,6 +535,7 @@ export const RO_MESSAGES: WidgetMessages = {
   'ticket.price': 'Preț',
   'ticket.stopLoss': 'Stop-loss',
   'ticket.takeProfit': 'Take-profit',
+  'ticket.trailing': 'Stop mobil',
   'ticket.timeInForce': 'Valabilitate',
   'ticket.tif.gtc': 'Valabil până la anulare',
   'ticket.tif.day': 'Ziua curentă',

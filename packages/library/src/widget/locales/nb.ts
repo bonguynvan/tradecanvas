@@ -541,6 +541,7 @@ export const NB_MESSAGES: WidgetMessages = {
   'ticket.price': 'Kurs',
   'ticket.stopLoss': 'Stop-loss',
   'ticket.takeProfit': 'Take-profit',
+  'ticket.trailing': 'Glidende stopp',
   'ticket.timeInForce': 'Gyldighet',
   'ticket.tif.gtc': 'Gyldig til kansellert',
   'ticket.tif.day': 'Kun i dag',

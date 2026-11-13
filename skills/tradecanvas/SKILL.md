@@ -198,7 +198,7 @@ chart.addAlert(65_000, 'crossingUp', 'BTC above 65k'); // checked on each live p
 chart.on('alertTriggered', (e) => console.log(e.payload.message));
 chart.setPositions([{ id: 'p1', side: 'buy', entryPrice: 62_500, quantity: 0.5, stopLoss: 61_000, takeProfit: 66_000 }]);
 chart.on('positionModify', (e) => console.log('stop or target dragged', e.payload));
-chart.modifyPositionIntent({ positionId: 'p1', trailingStop: 400 }); // the stop trails the price by 400 (tag: TSL); null ends it. The paper account moves it
+chart.modifyPositionIntent({ positionId: 'p1', trailingStop: 400 }); // the stop trails the price by 400 (tag: TSL); null ends it. The paper account moves it; an order takes trailingStop too
 ```
 
 73 drawing tools; each keeps its own settings (`setDrawingOptions`, `updateDrawing`),

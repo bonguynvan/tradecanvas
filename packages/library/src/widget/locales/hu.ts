@@ -535,6 +535,7 @@ export const HU_MESSAGES: WidgetMessages = {
   'ticket.price': 'Ár',
   'ticket.stopLoss': 'Stop-loss',
   'ticket.takeProfit': 'Take-profit',
+  'ticket.trailing': 'Követő stop',
   'ticket.timeInForce': 'Érvényesség',
   'ticket.tif.gtc': 'Visszavonásig érvényes',
   'ticket.tif.day': 'Napi',

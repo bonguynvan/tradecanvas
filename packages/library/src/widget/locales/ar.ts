@@ -541,6 +541,7 @@ export const AR_MESSAGES: WidgetMessages = {
   'ticket.price': 'السعر',
   'ticket.stopLoss': 'وقف الخسارة',
   'ticket.takeProfit': 'جني الأرباح',
+  'ticket.trailing': 'وقف متحرك',
   'ticket.timeInForce': 'مدة صلاحية الأمر',
   'ticket.tif.gtc': 'ساري حتى الإلغاء',
   'ticket.tif.day': 'يومي',
