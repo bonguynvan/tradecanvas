@@ -136,3 +136,54 @@ describe('describeAlert', () => {
   });
 });
 
+describe('alerts panel: the list first', () => {
+  const ONE = [{ id: 'a', price: 105, condition: 'greaterThan' as const, triggered: false, channel: 'price' }];
+  const form = () => $<HTMLFormElement>('form');
+  const toggle = () => $<HTMLButtonElement>('.tcw-alerts-new');
+
+  it('opens on the form while there is no alert: that is the next thing to do', () => {
+    expect(form().hidden).toBe(false);
+    expect(toggle().getAttribute('aria-expanded')).toBe('true');
+  });
+
+  it('folds the form away once there are alerts, so they are what the panel shows', () => {
+    panel.setAlerts(ONE);
+    expect(form().hidden).toBe(true);
+    expect(toggle().getAttribute('aria-expanded')).toBe('false');
+    expect(host.querySelectorAll('.tcw-alerts-row')).toHaveLength(1);
+  });
+
+  it('brings the form back from the header\u2019s button, at the price now, and folds it again', () => {
+    panel.setAlerts(ONE);
+    toggle().click();
+    expect(form().hidden).toBe(false);
+    expect($<HTMLInputElement>('.tcw-alerts-price').value).toBe('100');
+    expect(document.activeElement).toBe($('.tcw-alerts-price'));
+    toggle().click();
+    expect(form().hidden).toBe(true);
+  });
+
+  it('folds the form after an alert is added, and keeps it for one turned down', () => {
+    panel.setAlerts(ONE);
+    toggle().click();
+    $<HTMLInputElement>('.tcw-alerts-price').value = '110';
+    submit();
+    expect(added).toHaveLength(1);
+    expect(form().hidden).toBe(true);
+    // The keyboard stays in the panel, on the button that brings the form back.
+    expect(document.activeElement).toBe(toggle());
+  });
+
+  it('keeps the form a reader opened when the list changes under it', () => {
+    panel.setAlerts(ONE);
+    toggle().click();
+    panel.setAlerts([...ONE, { ...ONE[0], id: 'b' }]);
+    expect(form().hidden).toBe(false);
+  });
+
+  it('shows the form again when the last alert goes', () => {
+    panel.setAlerts(ONE);
+    panel.setAlerts([]);
+    expect(form().hidden).toBe(false);
+  });
+});

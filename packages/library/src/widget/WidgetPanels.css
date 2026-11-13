@@ -164,7 +164,7 @@
   white-space: nowrap;
 }
 
-.tcw-dock-page :is(.tcw-watchlist-add, .tcw-watchlist-close, .tcw-alerts-close, .tcw-tree-close, .tcw-datawin-close, .tcw-syminfo-close, .tcw-ladder-close) {
+.tcw-dock-page :is(.tcw-watchlist-add, .tcw-watchlist-close, .tcw-alerts-new, .tcw-alerts-close, .tcw-tree-close, .tcw-datawin-close, .tcw-syminfo-close, .tcw-ladder-close) {
   display: inline-grid;
   place-items: center;
   flex: none;
@@ -178,12 +178,12 @@
   cursor: pointer;
 }
 
-.tcw-dock-page :is(.tcw-watchlist-add, .tcw-watchlist-close, .tcw-alerts-close, .tcw-tree-close, .tcw-datawin-close, .tcw-syminfo-close, .tcw-ladder-close):hover {
+.tcw-dock-page :is(.tcw-watchlist-add, .tcw-watchlist-close, .tcw-alerts-new, .tcw-alerts-close, .tcw-tree-close, .tcw-datawin-close, .tcw-syminfo-close, .tcw-ladder-close):hover {
   background: var(--tcw-hover-bg);
   color: var(--tcw-text);
 }
 
-.tcw-dock-page :is(.tcw-watchlist-add, .tcw-watchlist-close, .tcw-alerts-close, .tcw-tree-close, .tcw-datawin-close, .tcw-syminfo-close, .tcw-ladder-close):focus-visible {
+.tcw-dock-page :is(.tcw-watchlist-add, .tcw-watchlist-close, .tcw-alerts-new, .tcw-alerts-close, .tcw-tree-close, .tcw-datawin-close, .tcw-syminfo-close, .tcw-ladder-close):focus-visible {
   outline: none;
   box-shadow: var(--tcw-ring);
 }
