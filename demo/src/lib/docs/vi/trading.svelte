@@ -105,7 +105,8 @@ chart.on('executionError', (e) => toast(e.payload.message))
 chart.cancelOrderIntent('ord-1')
 chart.closePositionIntent('pos-1')
 chart.reversePositionIntent('pos-1')                 // close, then the same size the other way
-chart.modifyPositionIntent({ positionId: 'pos-1', stopLoss: null }) // null removes the stop`}</code></pre>
+chart.modifyPositionIntent({ positionId: 'pos-1', stopLoss: null }) // null removes the stop
+chart.modifyPositionIntent({ positionId: 'pos-1', trailingStop: 150 }) // the stop trails the price by 150; null ends the trail`}</code></pre>
 <p>
   Adapter nào đảo chiều được trong một bước thì cài đặt <code>reversePosition</code>;
   nếu không có, biểu đồ sẽ đóng vị thế rồi gửi một lệnh thị trường theo chiều ngược lại.
@@ -118,6 +119,9 @@ chart.modifyPositionIntent({ positionId: 'pos-1', stopLoss: null }) // null remo
   <code>stopLoss: null</code> (hoặc <code>takeProfit: null</code>) nghĩa là gỡ mức đó, còn
   khi thiếu trường thì giữ nguyên. Code viết kiểu
   <code>intent.stopLoss ?? position.stopLoss</code> sẽ giữ lại mức cắt lỗ mà người dùng đã gỡ.
+</p>
+<p>
+  <strong>Trailing stop</strong> là một stop-loss bám theo giá: <code>trailingStop</code> của một position là khoảng cách, tính bằng giá, mà stop giữ phía sau mức giá tốt nhất, đi lên với lệnh long và đi xuống với lệnh short, và không bao giờ lùi lại. Trên chart, tag của nó ghi TSL. Một nút trên tag của stop bắt đầu trail ở đúng khoảng cách hiện tại từ stop đến giá, hoặc kết thúc trail; <code>lineButtons: {'{'} trailStop: false {'}'}</code> ẩn nút đó. Tài khoản paper tự dời stop. Adapter của một broker chuyển tiếp <code>trailingStop</code> từ <code>modifyPosition</code> (một số bắt đầu trail, <code>null</code> kết thúc trail và để stop nguyên chỗ) và báo lại <code>stopLoss</code> của position khi broker dời nó.
 </p>
 
 <h2>Lệnh khớp trên biểu đồ</h2>

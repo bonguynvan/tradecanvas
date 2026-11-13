@@ -102,7 +102,8 @@ chart.on('executionError', (e) => toast(e.payload.message))
 chart.cancelOrderIntent('ord-1')
 chart.closePositionIntent('pos-1')
 chart.reversePositionIntent('pos-1')                 // close, then the same size the other way
-chart.modifyPositionIntent({ positionId: 'pos-1', stopLoss: null }) // null removes the stop`}</code></pre>
+chart.modifyPositionIntent({ positionId: 'pos-1', stopLoss: null }) // null removes the stop
+chart.modifyPositionIntent({ positionId: 'pos-1', trailingStop: 150 }) // the stop trails the price by 150; null ends the trail`}</code></pre>
 <p>
   1 回の操作でドテンできるアダプターは <code>reversePosition</code> を実装します。
   実装がなければ、チャートはポジションを決済してから、反対方向に成行注文を出します。
@@ -114,6 +115,9 @@ chart.modifyPositionIntent({ positionId: 'pos-1', stopLoss: null }) // null remo
   <code>stopLoss: null</code>（または <code>takeProfit: null</code>）は削除を意味し、
   フィールドがない場合はそのまま維持することを意味します。
   <code>intent.stopLoss ?? position.stopLoss</code> のように書いたコードでは、ユーザーが削除した損切りが残ってしまいます。
+</p>
+<p>
+  <strong>トレーリングストップ</strong>は価格に追随するストップロスです。ポジションの <code>trailingStop</code> は、ストップが最良価格の後ろに保つ距離（価格単位）で、ロングでは上へ、ショートでは下へ追随し、決して戻りません。チャート上ではタグが TSL と表示されます。ストップのタグにあるボタンで、現在の価格からストップまでの距離でトレールを開始、または終了できます。<code>lineButtons: {'{'} trailStop: false {'}'}</code> でボタンを隠せます。ペーパー口座はストップを自ら動かします。ブローカー向けアダプターは <code>modifyPosition</code> で受け取った <code>trailingStop</code> を渡し（数値で開始、<code>null</code> で終了し、ストップはその位置に残ります）、ブローカーが動かしたポジションの <code>stopLoss</code> を報告します。
 </p>
 
 <h2>チャート上の約定</h2>

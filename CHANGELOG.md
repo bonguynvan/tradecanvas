@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Trading
+
+- **A trailing stop** (`@tradecanvas/commons`, `@tradecanvas/core`, `@tradecanvas/chart`). A position's `trailingStop` is the distance, in price, its stop-loss keeps behind the best price: up for a long, down for a short, never back. On the chart the stop's tag reads TSL, and a button on it starts a trail at the stop's distance from the price now, or ends one (`lineButtons.trailStop: false` hides it). From code, `chart.modifyPositionIntent({ positionId, trailingStop: 150 })` starts one and `trailingStop: null` ends it, the stop staying where it is; `PositionModifyIntent` and the `positionModify` event carry the field to an adapter's `modifyPosition`.
+- **The paper account trails** (`@tradecanvas/core`). `PaperExecutionAdapter` moves a trailing stop on each price it is given, tightening only: a stop already nearer than the distance stays until the price has run far enough, one moved by hand is followed from where it was put, and removing the stop ends the trail. A price that falls through a stop fills it where it was before any stop follows.
 ## 2.2.2 (2026-11-13)
 
 ### Engine

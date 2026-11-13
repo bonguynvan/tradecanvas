@@ -174,6 +174,8 @@ export interface PositionModifyPayload {
   positionId: string;
   stopLoss?: number;
   takeProfit?: number;
+  /** The distance the stop-loss is to trail the price by; null ends the trail. */
+  trailingStop?: number | null;
 }
 
 export interface PositionClosePayload {

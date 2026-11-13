@@ -141,7 +141,7 @@ export class PositionRenderer {
       const entry = this.entryTag(pos, currentPrice, viewport, config);
       if (entry) tags.push(entry);
       for (const which of STOPS) {
-        const stop = this.stopTag(pos, which, viewport, config, dragState);
+        const stop = this.stopTag(pos, which, viewport, config, dragState, currentPrice);
         if (stop) tags.push(stop);
       }
     }
@@ -178,17 +178,30 @@ export class PositionRenderer {
   }
 
   /** A stop's or a target's tag, where it is (or is being dragged to) on the plot: a handle for its line. */
-  private stopTag(pos: TradingPosition, which: Stop, viewport: ViewportState, config: TradingConfig, dragState: DragState | null): TradingTag | null {
+  private stopTag(pos: TradingPosition, which: Stop, viewport: ViewportState, config: TradingConfig, dragState: DragState | null, currentPrice: number | null = null): TradingTag | null {
     const price = stopPrice(pos, which, dragState);
     const y = price === undefined ? NaN : priceToY(price, viewport);
     if (price === undefined || !inPlot(y, viewport)) return null;
     const colors = colorsOf(config);
     const amount = amountAt(pos.side, pos.entryPrice, openQuantity(pos), price);
+    // A distance, not the 0 or null a broker's own record may hold for "none".
+    const trailing = typeof pos.trailingStop === 'number' && pos.trailingStop > 0;
     const cells: TagCell[] = [
-      { kind: 'stamp', text: which === 'stopLoss' ? 'SL' : 'TP' },
+      // A stop that follows the price says so: TSL.
+      { kind: 'stamp', text: which === 'takeProfit' ? 'TP' : trailing ? 'TSL' : 'SL' },
       { kind: 'text', text: formatAmount(amount, amountDecimals(amount, pos.entryPrice, config.pricePrecision), viewport.numberLocale), color: amount >= 0 ? colors.profit : colors.loss },
     ];
     const dragged = dragState?.orderId === pos.id && dragState.sourceType === which;
+    if (which === 'stopLoss' && config.lineButtons?.trailStop !== false && fitsPlot(y, viewport) && !dragged) {
+      // Trailing: the button ends it. Not: it starts one at the stop's distance from the price now,
+      // which a stop the price is already past does not have.
+      const long = pos.side === 'buy';
+      const distance = currentPrice === null ? NaN : long ? currentPrice - price : price - currentPrice;
+      const action = trailing ? null : distance > 0 ? distance : undefined;
+      if (action !== undefined) {
+        cells.push({ kind: 'button', icon: long ? UI_ICONS.trendingUp : UI_ICONS.trendingDown, action: { type: 'trailStop', positionId: pos.id, distance: action } });
+      }
+    }
     if (config.lineButtons?.removeStops !== false && fitsPlot(y, viewport) && !dragged) {
       cells.push({ kind: 'button', icon: UI_ICONS.x, action: { type: 'removeStop', positionId: pos.id, which } });
     }

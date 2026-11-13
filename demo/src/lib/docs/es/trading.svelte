@@ -110,7 +110,8 @@ chart.on('executionError', (e) => toast(e.payload.message))
 chart.cancelOrderIntent('ord-1')
 chart.closePositionIntent('pos-1')
 chart.reversePositionIntent('pos-1')                 // close, then the same size the other way
-chart.modifyPositionIntent({ positionId: 'pos-1', stopLoss: null }) // null removes the stop`}</code></pre>
+chart.modifyPositionIntent({ positionId: 'pos-1', stopLoss: null }) // null removes the stop
+chart.modifyPositionIntent({ positionId: 'pos-1', trailingStop: 150 }) // the stop trails the price by 150; null ends the trail`}</code></pre>
 <p>
   Un adaptador que pueda invertir en un solo paso implementa
   <code>reversePosition</code>; si no lo hace, el gráfico cierra la posición y envía
@@ -124,6 +125,9 @@ chart.modifyPositionIntent({ positionId: 'pos-1', stopLoss: null }) // null remo
   mientras que un campo ausente significa dejarlo como está. Un código escrito como
   <code>intent.stopLoss ?? position.stopLoss</code> mantendría un stop que el usuario
   ha quitado.
+</p>
+<p>
+  Un <strong>trailing stop</strong> es un stop-loss que sigue al precio: el <code>trailingStop</code> de una posición es la distancia, en precio, que su stop mantiene detrás del mejor precio, hacia arriba en un largo y hacia abajo en un corto, y nunca retrocede. En el gráfico su etiqueta dice TSL. Un botón en la etiqueta del stop inicia el seguimiento a la distancia actual entre el stop y el precio, o lo termina; <code>lineButtons: {'{'} trailStop: false {'}'}</code> lo oculta. La cuenta de simulación mueve el stop por sí misma. Un adaptador para un bróker pasa <code>trailingStop</code> desde <code>modifyPosition</code> (un número inicia el seguimiento, <code>null</code> lo termina y deja el stop donde está) e informa del <code>stopLoss</code> de la posición a medida que el bróker lo mueve.
 </p>
 
 <h2>Ejecuciones en el gráfico</h2>
