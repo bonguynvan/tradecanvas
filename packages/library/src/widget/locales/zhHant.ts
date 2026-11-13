@@ -535,6 +535,7 @@ export const ZH_HANT_MESSAGES: WidgetMessages = {
   'ticket.price': '價格',
   'ticket.stopLoss': '停損',
   'ticket.takeProfit': '停利',
+  'ticket.trailing': '追蹤停損',
   'ticket.timeInForce': '有效期限',
   'ticket.tif.gtc': '取消前有效',
   'ticket.tif.day': '當日有效',

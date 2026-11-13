@@ -199,7 +199,7 @@ export class PositionRenderer {
       const distance = currentPrice === null ? NaN : long ? currentPrice - price : price - currentPrice;
       const action = trailing ? null : distance > 0 ? distance : undefined;
       if (action !== undefined) {
-        cells.push({ kind: 'button', icon: long ? UI_ICONS.trendingUp : UI_ICONS.trendingDown, action: { type: 'trailStop', positionId: pos.id, distance: action } });
+        cells.push({ kind: 'button', icon: long ? UI_ICONS.trendingUp : UI_ICONS.trendingDown, action: { type: 'trailStop', positionId: pos.id, distance: action }, active: trailing });
       }
     }
     if (config.lineButtons?.removeStops !== false && fitsPlot(y, viewport) && !dragged) {

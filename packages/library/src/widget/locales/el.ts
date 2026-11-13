@@ -535,6 +535,7 @@ export const EL_MESSAGES: WidgetMessages = {
   'ticket.price': 'Τιμή',
   'ticket.stopLoss': 'Stop-loss',
   'ticket.takeProfit': 'Take-profit',
+  'ticket.trailing': 'Κινητό stop',
   'ticket.timeInForce': 'Διάρκεια ισχύος',
   'ticket.tif.gtc': 'Έως την ακύρωση',
   'ticket.tif.day': 'Ημερήσια',

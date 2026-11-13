@@ -535,6 +535,7 @@ export const VI_MESSAGES: WidgetMessages = {
   'ticket.price': 'Giá',
   'ticket.stopLoss': 'Cắt lỗ',
   'ticket.takeProfit': 'Chốt lời',
+  'ticket.trailing': 'Trailing stop',
   'ticket.timeInForce': 'Hiệu lực',
   'ticket.tif.gtc': 'Đến khi huỷ',
   'ticket.tif.day': 'Trong ngày',

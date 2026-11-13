@@ -535,6 +535,7 @@ export const IT_MESSAGES: WidgetMessages = {
   'ticket.price': 'Prezzo',
   'ticket.stopLoss': 'Stop loss',
   'ticket.takeProfit': 'Take profit',
+  'ticket.trailing': 'Trailing stop',
   'ticket.timeInForce': 'Validità',
   'ticket.tif.gtc': 'Valido fino a revoca',
   'ticket.tif.day': 'Giornaliero',

@@ -188,6 +188,13 @@ export interface OrderPlacePayload {
   price: number;
   stopPrice?: number;
   quantity?: number;
+  /** Stop-loss and take-profit for the position the order opens. */
+  stopLoss?: number;
+  takeProfit?: number;
+  /** The distance, in price, the position's stop-loss is to trail the price by. */
+  trailingStop?: number;
+  /** How long the order works. */
+  timeInForce?: 'gtc' | 'day';
 }
 
 export interface ExecutionErrorPayload {

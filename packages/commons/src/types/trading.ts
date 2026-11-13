@@ -18,6 +18,8 @@ export interface TradingOrder {
   /** Stop-loss and take-profit the position gets when the order fills. */
   stopLoss?: number;
   takeProfit?: number;
+  /** The distance the position's stop-loss trails the price by once the order fills (see `TradingPosition.trailingStop`). */
+  trailingStop?: number;
   timeInForce?: TimeInForce;
   meta?: Record<string, unknown>;
 }
@@ -123,6 +125,8 @@ export interface OrderPlaceIntent {
   /** Stop-loss and take-profit for the position the order opens. */
   stopLoss?: number;
   takeProfit?: number;
+  /** The distance, in price, the position's stop-loss is to trail the price by. */
+  trailingStop?: number;
   timeInForce?: TimeInForce;
 }
 

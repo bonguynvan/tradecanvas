@@ -229,3 +229,62 @@ describe('WidgetOrderTicket focus', () => {
     button.remove();
   });
 });
+
+describe('order ticket: a trailing stop', () => {
+  it('asks for the stop to trail at its distance from the entry', () => {
+    expect(orderTicketIntent(draft({ price: 95, stopLoss: 92, trailing: true }), 100)).toMatchObject({ stopLoss: 92, trailingStop: 3 });
+    // A market order's entry is the market's price.
+    expect(orderTicketIntent(draft({ type: 'market', side: 'sell', stopLoss: 104, trailing: true }), 100)).toMatchObject({ stopLoss: 104, trailingStop: 4 });
+  });
+
+  it('asks for none without a stop, without the switch, or with no distance between them', () => {
+    expect(orderTicketIntent(draft({ price: 95, trailing: true }), 100)).not.toHaveProperty('trailingStop');
+    expect(orderTicketIntent(draft({ price: 95, stopLoss: 92 }), 100)).not.toHaveProperty('trailingStop');
+    expect(orderTicketIntent(draft({ price: 95, stopLoss: 95, trailing: true }), 100)).not.toHaveProperty('trailingStop');
+  });
+
+  it('writes the distance to the price\u2019s own decimals, not a float\u2019s tail', () => {
+    expect(orderTicketIntent(draft({ price: 0.3, stopLoss: 0.1, trailing: true }), 1).trailingStop).toBe(0.2);
+  });
+});
+
+describe('WidgetOrderTicket: the trailing switch', () => {
+  let host: HTMLDivElement;
+  let ticket: WidgetOrderTicket;
+  let sent: OrderPlaceIntent[];
+  beforeEach(() => {
+    host = document.createElement('div');
+    document.body.appendChild(host);
+    sent = [];
+    ticket = new WidgetOrderTicket(host, { onSubmit: (i) => sent.push(i), formatPrice: (p) => p.toFixed(2) });
+  });
+  afterEach(() => {
+    ticket.destroy();
+    host.remove();
+  });
+  const stopSwitch = () => host.querySelectorAll<HTMLButtonElement>('.tcw-ticket-optional .tcw-toggle')[0];
+  const trailSwitch = () => host.querySelector<HTMLButtonElement>('.tcw-ticket-trail .tcw-toggle');
+
+  it('is offered only with a stop-loss, and places an order whose stop trails', () => {
+    ticket.open({ price: 95, lastPrice: 100 });
+    expect(trailSwitch()).toBeNull();
+    stopSwitch().click(); // the stop 1% under the entry: 94.05
+    expect(trailSwitch()).not.toBeNull();
+    trailSwitch()!.click();
+    expect(trailSwitch()!.getAttribute('aria-checked')).toBe('true');
+    host.querySelector<HTMLButtonElement>('.tcw-ticket-place')!.click();
+    expect(sent).toHaveLength(1);
+    expect(sent[0].stopLoss).toBeCloseTo(94.05);
+    expect(sent[0].trailingStop).toBeCloseTo(0.95);
+  });
+
+  it('goes with the stop-loss when that is switched off, and starts off the next time', () => {
+    ticket.open({ price: 95, lastPrice: 100 });
+    stopSwitch().click();
+    trailSwitch()!.click();
+    stopSwitch().click();
+    expect(trailSwitch()).toBeNull();
+    stopSwitch().click();
+    expect(trailSwitch()!.getAttribute('aria-checked')).toBe('false');
+  });
+});

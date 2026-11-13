@@ -243,3 +243,34 @@ describe('PaperExecutionAdapter: a trailing stop', () => {
     expect(told).toBe(1);
   });
 });
+
+describe('PaperExecutionAdapter: an order that opens a trailing position', () => {
+  let adapter: PaperExecutionAdapter;
+  beforeEach(() => {
+    adapter = new PaperExecutionAdapter({ markPrice: 100 });
+    adapter.connect({});
+  });
+
+  it('gives a market order\u2019s position its trail at once', async () => {
+    await adapter.placeOrder({ side: 'buy', type: 'market', price: 100, quantity: 1, stopLoss: 96, trailingStop: 4 });
+    expect(adapter.getPositions()[0]).toMatchObject({ stopLoss: 96, trailingStop: 4 });
+    adapter.setMarkPrice(108);
+    expect(adapter.getPositions()[0].stopLoss).toBe(104);
+  });
+
+  it('keeps the trail on a waiting order and hands it to the position it opens', async () => {
+    await adapter.placeOrder({ side: 'sell', type: 'limit', price: 110, quantity: 1, stopLoss: 113, trailingStop: 3 });
+    expect(adapter.getOrders()[0]).toMatchObject({ stopLoss: 113, trailingStop: 3 });
+    adapter.setMarkPrice(110);
+    expect(adapter.getPositions()[0]).toMatchObject({ side: 'sell', stopLoss: 113, trailingStop: 3 });
+    adapter.setMarkPrice(100);
+    expect(adapter.getPositions()[0].stopLoss).toBe(103);
+  });
+
+  it('takes no trail that is not a distance', async () => {
+    for (const trailingStop of [0, -1, Number.NaN]) {
+      const order = await adapter.placeOrder({ side: 'buy', type: 'limit', price: 90, quantity: 1, stopLoss: 85, trailingStop });
+      expect(order.trailingStop).toBeUndefined();
+    }
+  });
+});

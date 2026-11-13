@@ -541,6 +541,7 @@ export const MS_MESSAGES: WidgetMessages = {
   'ticket.price': 'Harga',
   'ticket.stopLoss': 'Stop loss',
   'ticket.takeProfit': 'Take profit',
+  'ticket.trailing': 'Trailing stop',
   'ticket.timeInForce': 'Tempoh sah',
   'ticket.tif.gtc': 'Sah sehingga dibatalkan',
   'ticket.tif.day': 'Harian',

@@ -25,7 +25,8 @@ const ROW = TAG_HEIGHT + 1;
 export type TagCell =
   | { kind: 'stamp'; text: string }
   | { kind: 'text'; text: string; color?: string }
-  | { kind: 'button'; icon: IconDef; action: LineButtonAction };
+  /** `active`: what the button switches is on (a stop that is trailing); it is drawn filled. */
+  | { kind: 'button'; icon: IconDef; action: LineButtonAction; active?: boolean };
 
 /** The line a press on a tag takes, by what it is: tags of lines near each other sit side by side. */
 export type TagGrab =
@@ -188,7 +189,9 @@ function drawTag(
     if (cell.kind === 'stamp') ctx.fillRect(at, top, w, TAG_HEIGHT);
     else if (i > 0) ctx.fillRect(at, top, 1, TAG_HEIGHT);
     if (cell.kind === 'button') {
-      drawIcon(ctx, cell.icon, at + (w - ICON_SIZE) / 2, top + (TAG_HEIGHT - ICON_SIZE) / 2, ICON_SIZE, theme.text);
+      // On: the cell in the tag's colour, its icon in the ink that reads on it, as a stamp is.
+      if (cell.active) ctx.fillRect(at, top, w, TAG_HEIGHT);
+      drawIcon(ctx, cell.icon, at + (w - ICON_SIZE) / 2, top + (TAG_HEIGHT - ICON_SIZE) / 2, ICON_SIZE, cell.active ? labelTextColor(tag.color) : theme.text);
       buttons.push({ x: at, y: top, size: TAG_HEIGHT, action: cell.action });
     } else {
       ctx.font = cellFont(cell, theme);

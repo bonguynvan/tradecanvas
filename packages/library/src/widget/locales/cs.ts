@@ -535,6 +535,7 @@ export const CS_MESSAGES: WidgetMessages = {
   'ticket.price': 'Cena',
   'ticket.stopLoss': 'Stop-loss',
   'ticket.takeProfit': 'Take-profit',
+  'ticket.trailing': 'Posuvný stop',
   'ticket.timeInForce': 'Platnost',
   'ticket.tif.gtc': 'Do zrušení',
   'ticket.tif.day': 'Do konce dne',

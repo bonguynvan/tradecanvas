@@ -117,7 +117,7 @@ chart.modifyPositionIntent({ positionId: 'pos-1', trailingStop: 150 }) // the st
   <code>intent.stopLoss ?? position.stopLoss</code> のように書いたコードでは、ユーザーが削除した損切りが残ってしまいます。
 </p>
 <p>
-  <strong>トレーリングストップ</strong>は価格に追随するストップロスです。ポジションの <code>trailingStop</code> は、ストップが最良価格の後ろに保つ距離（価格単位）で、ロングでは上へ、ショートでは下へ追随し、決して戻りません。チャート上ではタグが TSL と表示されます。ストップのタグにあるボタンで、現在の価格からストップまでの距離でトレールを開始、または終了できます。<code>lineButtons: {'{'} trailStop: false {'}'}</code> でボタンを隠せます。ペーパー口座はストップを自ら動かします。ブローカー向けアダプターは <code>modifyPosition</code> で受け取った <code>trailingStop</code> を渡し（数値で開始、<code>null</code> で終了し、ストップはその位置に残ります）、ブローカーが動かしたポジションの <code>stopLoss</code> を報告します。
+  <strong>トレーリングストップ</strong>は価格に追随するストップロスです。ポジションの <code>trailingStop</code> は、ストップが最良価格の後ろに保つ距離（価格単位）で、ロングでは上へ、ショートでは下へ追随し、決して戻りません。チャート上ではタグが TSL と表示されます。ストップのタグにあるボタンで、現在の価格からストップまでの距離でトレールを開始、または終了できます。<code>lineButtons: {'{'} trailStop: false {'}'}</code> でボタンを隠せます。ペーパー口座はストップを自ら動かします。ブローカー向けアダプターは <code>modifyPosition</code> で受け取った <code>trailingStop</code> を渡し（数値で開始、<code>null</code> で終了し、ストップはその位置に残ります）、ブローカーが動かしたポジションの <code>stopLoss</code> を報告します。注文にも持たせられます。注文の <code>trailingStop</code> は、その注文が開くポジションを最初からトレールさせ、待機中の注文のストップは TSL と表示されます。注文チケットでは、ストップロスの下にあるトレーリングストップのスイッチがそれで、エントリーからストップまでの距離でトレールします。ストップがトレール中のあいだ、タグのトレールボタンは塗りつぶされます。
 </p>
 
 <h2>チャート上の約定</h2>

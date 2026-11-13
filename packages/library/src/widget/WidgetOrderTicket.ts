@@ -254,7 +254,10 @@ export class WidgetOrderTicket {
         this.row('ticket.timeInForce', this.choices('timeInForce', ['gtc', 'day'] as const, draft.timeInForce, 'ticket.timeInForce', (timeInForce: TimeInForce) => this.set({ timeInForce }))),
       );
     }
-    this.body.append(this.optionalPrice('stopLoss', draft.stopLoss), this.optionalPrice('takeProfit', draft.takeProfit));
+    this.body.append(this.optionalPrice('stopLoss', draft.stopLoss));
+    // With a stop-loss, whether it is to follow the price.
+    if (draft.stopLoss !== null) this.body.append(this.trailRow(draft.trailing === true));
+    this.body.append(this.optionalPrice('takeProfit', draft.takeProfit));
     if (restore) this.body.querySelector<HTMLElement>(restore)?.focus();
     this.check();
   }
@@ -382,7 +385,8 @@ export class WidgetOrderTicket {
     row.className = 'tcw-settings-row tcw-ticket-optional';
     const toggle = toggleSwitch(value !== null, (on) => {
       this.typed.delete(which);
-      this.set({ [which]: on ? this.startOf(which) : null }, true);
+      // The stop-loss switched off takes its trail with it: the next one starts plain.
+      this.set({ [which]: on ? this.startOf(which) : null, ...(which === 'stopLoss' && !on ? { trailing: false } : {}) }, true);
     });
     toggle.setAttribute('aria-label', this.t(key));
     toggle.dataset.ticketField = `${which}-switch`;
@@ -402,6 +406,20 @@ export class WidgetOrderTicket {
       name.appendChild(away);
       row.appendChild(this.priceField(which, value, (n) => this.set({ [which]: Number.isFinite(n) ? n : NaN })));
     }
+    return row;
+  }
+
+  /** The stop-loss's own switch: it trails the price, at its distance from the entry. */
+  private trailRow(on: boolean): HTMLElement {
+    const row = document.createElement('div');
+    row.className = 'tcw-settings-row tcw-ticket-trail';
+    const toggle = toggleSwitch(on, (trailing) => this.set({ trailing }, true));
+    toggle.setAttribute('aria-label', this.t('ticket.trailing'));
+    toggle.dataset.ticketField = 'trailing-switch';
+    const label = document.createElement('span');
+    label.className = 'tcw-settings-label';
+    label.textContent = this.t('ticket.trailing');
+    row.append(toggle, label);
     return row;
   }
 

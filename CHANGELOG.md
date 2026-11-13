@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+### Trading
+
+- **An order can open a position that already trails** (`@tradecanvas/commons`, `@tradecanvas/core`). `OrderPlaceIntent.trailingStop` and `TradingOrder.trailingStop` are the distance the position's stop-loss is to trail by once the order fills. The paper account keeps it on a waiting order and hands it to the position; a waiting order's stop reads TSL.
+- **The order ticket has a Trailing stop switch** (`@tradecanvas/chart`), under the stop-loss when one is set: on, the order asks for a stop that trails at its distance from the entry. In the 30 languages. Switching the stop-loss off takes it away.
+- **The `orderPlace` event's payload is typed with what it carries** (`@tradecanvas/commons`): `stopLoss`, `takeProfit`, `trailingStop` and `timeInForce` were sent but not in `OrderPlacePayload`, so a handler written in TypeScript could not read them.
+- **The trail button shows that it is on** (`@tradecanvas/core`): filled in the stop's colour while its stop is trailing, where it looked the same on and off.
+
 ## 2.3.0 (2026-11-13)
 
 ### Trading

@@ -1674,6 +1674,14 @@ img.tcw-ss-badge {
   gap: var(--tcw-space-1);
   min-width: 0;
 }
+/* The stop-loss's trail: its switch under the stop's, in the same column, its name beside it. */
+.tcw-ticket-trail {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  gap: var(--tcw-space-4);
+}
+
 .tcw-ticket-away {
   color: var(--tcw-text-muted);
   font-family: var(--tcw-font-mono);

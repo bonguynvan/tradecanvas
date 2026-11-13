@@ -535,6 +535,7 @@ export const ID_MESSAGES: WidgetMessages = {
   'ticket.price': 'Harga',
   'ticket.stopLoss': 'Stop loss',
   'ticket.takeProfit': 'Take profit',
+  'ticket.trailing': 'Trailing stop',
   'ticket.timeInForce': 'Masa berlaku',
   'ticket.tif.gtc': 'Berlaku hingga dibatalkan',
   'ticket.tif.day': 'Harian',

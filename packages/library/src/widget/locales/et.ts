@@ -541,6 +541,7 @@ export const ET_MESSAGES: WidgetMessages = {
   'ticket.price': 'Hind',
   'ticket.stopLoss': 'Stop-loss',
   'ticket.takeProfit': 'Take-profit',
+  'ticket.trailing': 'Järgnev stopp',
   'ticket.timeInForce': 'Kehtivus',
   'ticket.tif.gtc': 'Kehtib tühistamiseni',
   'ticket.tif.day': 'Päeva lõpuni',
