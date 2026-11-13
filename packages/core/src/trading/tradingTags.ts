@@ -1,7 +1,7 @@
 import type { IconDef, Theme, ViewportState } from '@tradecanvas/commons';
 import { PRICE_AXIS_WIDTH } from '@tradecanvas/commons';
 import { drawIcon } from '../ui/drawIcon.js';
-import { fillTag, tagPath } from '../ui/shapes.js';
+import { AXIS_TAG_TEXT_INSET, fillTag, tagPath } from '../ui/shapes.js';
 import { AXIS_LABEL_HEIGHT, labelTextColor, spreadLabels } from '../ui/axisValueLabels.js';
 import type { LineButton, LineButtonAction } from './lineButtons.js';
 import type { BracketHandle } from './BracketTool.js';
@@ -238,5 +238,5 @@ export function drawAxisBadge(ctx: CanvasRenderingContext2D, y: number, text: st
   ctx.font = `${theme.font.sizeSmall}px ${theme.font.family}`;
   ctx.textAlign = 'left';
   ctx.textBaseline = 'middle';
-  ctx.fillText(text, x + 5, Math.round(y));
+  ctx.fillText(text, x + AXIS_TAG_TEXT_INSET, Math.round(y));
 }

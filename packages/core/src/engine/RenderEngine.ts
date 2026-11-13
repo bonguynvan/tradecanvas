@@ -32,7 +32,7 @@ import type { CompareRenderer } from '../charts/CompareRenderer.js';
 import type { AlertManager } from '../features/AlertManager.js';
 import type { SignalMarkerManager } from '../features/SignalMarkerManager.js';
 import type { TradeZoneManager } from '../features/TradeZoneManager.js';
-import { fillTag } from '../ui/shapes.js';
+import { AXIS_TAG_TEXT_INSET, fillTag } from '../ui/shapes.js';
 import { alignAxisTags, type AxisTagBox } from '../axis/alignAxisTags.js';
 import type { PriceLineKind } from '../ui/PriceLines.js';
 
@@ -121,7 +121,6 @@ function recordAll(recorder: GpuRecorder | null, clip: Rect, steps: readonly Dra
  * The pane's price at the pointer, as big as the price pill on the chart's axis (its notch and
  * padding), so it covers a selected drawing's label at the same price rather than half of it.
  */
-const PANE_BADGE_PAD = 20;
 const PANE_BADGE_HEIGHT = 20;
 
 export interface PanelRenderInfo {
@@ -911,15 +910,14 @@ export class RenderEngine {
       if (badge && cursorPos.x >= pr.x && cursorPos.x <= pr.x + pr.width && cursorPos.y >= pr.y && cursorPos.y <= pr.y + pr.height) {
         const valText = priceScaleText(yToPrice(cursorPos.y, pv), pv, precision, locale);
         c.font = `bold ${theme.font.sizeSmall}px ${theme.font.family}`;
-        const tw = c.measureText(valText).width;
-        const badgeW = Math.min(tw + PANE_BADGE_PAD, (viewport.priceAxisWidth ?? PRICE_AXIS_WIDTH) - 2);
+        const badgeW = (viewport.priceAxisWidth ?? PRICE_AXIS_WIDTH) - 2;
         const looks = crosshairLooks(theme);
         c.fillStyle = looks.labelBackground;
         fillTag(c, axisX + 1, cursorPos.y - PANE_BADGE_HEIGHT / 2, badgeW, PANE_BADGE_HEIGHT, theme);
         c.fillStyle = looks.labelText;
         c.textBaseline = 'middle';
         c.textAlign = 'left';
-        c.fillText(valText, axisX + 5, cursorPos.y);
+        c.fillText(valText, axisX + 1 + AXIS_TAG_TEXT_INSET, cursorPos.y);
       }
 
       // The values at the cursor go in the header, unless the host shows them itself.
@@ -1008,7 +1006,7 @@ export class RenderEngine {
       ctx.font = normalFont;
       ctx.textBaseline = 'middle';
       ctx.textAlign = 'left';
-      ctx.fillText(text(price), axisX + 4, tagY);
+      ctx.fillText(text(price), axisX + AXIS_TAG_TEXT_INSET, tagY);
     });
   }
 

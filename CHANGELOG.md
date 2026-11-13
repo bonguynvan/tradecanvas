@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+### Engine
+
+- **Every tag on the price axis is one shape** (`@tradecanvas/core`). An order's and an alert's were the axis's width with their price six pixels in; the last price's was as wide as its text, bold, with an arrow reaching into the plot; the crosshair's and a selected drawing's started five pixels further right behind a notch; an indicator's value was as wide as its text. Side by side they read as four parts. Each is now the axis's width from a pixel past its line, with no arrow or notch, and its price starts where the scale's own labels start, so every price down the axis is in one column. The last price keeps its bold figures and the bar's countdown under it; the time axis's tags keep their notch.
 ## 2.2.1 (2026-11-13)
 
 ### Widget

@@ -49,12 +49,24 @@ describe('CurrentPriceLine', () => {
     expect(texts).toEqual(['0,000004349']);
   });
 
+  it('is as wide as the axis, as every tag on it is, and has no arrow into the plot', () => {
+    const line = new CurrentPriceLine();
+    line.setPrice(100);
+    const { ctx, rects } = recordingCtx();
+    const view = viewport(0, 200, 96);
+    line.render(ctx, view, DARK_THEME);
+    // One box: a short price does not make a short tag beside an order's full one.
+    expect(rects).toHaveLength(1);
+    expect(rects[0][2]).toBe(96 - 2);
+    expect(rects[0][0]).toBe(view.chartRect.x + view.chartRect.width + 1);
+  });
+
   it('sizes the tag to the actual axis width, not the default', () => {
     const line = new CurrentPriceLine();
     line.setPrice(0.000004349);
     const wide = recordingCtx();
     line.render(wide.ctx, viewport(0.0000042, 0.0000045, 120), DARK_THEME);
-    expect(wide.rects[0][2]).toBe(11 * 7 + 12); // "0.000004349" fits whole
+    expect(wide.rects[0][2]).toBe(120 - 2); // "0.000004349" fits whole
     const narrow = recordingCtx();
     line.render(narrow.ctx, viewport(0.0000042, 0.0000045), DARK_THEME);
     expect(narrow.rects[0][2]).toBe(PRICE_AXIS_WIDTH - 2);

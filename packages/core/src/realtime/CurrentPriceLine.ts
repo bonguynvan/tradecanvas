@@ -1,7 +1,7 @@
 import type { ViewportState, Theme } from '@tradecanvas/commons';
 import { priceToY } from '../viewport/ScaleMapping.js';
 import { PRICE_AXIS_WIDTH, autoPricePrecision, formatPrice, lineDash } from '@tradecanvas/commons';
-import { fillTag } from '../ui/shapes.js';
+import { AXIS_TAG_TEXT_INSET, fillTag } from '../ui/shapes.js';
 import { hLine } from '../charts/pixelGrid.js';
 import { labelTextColor } from '../ui/axisValueLabels.js';
 
@@ -126,27 +126,17 @@ export class CurrentPriceLine {
     const axisX = chartRect.x + chartRect.width + 1;
     const precision = this.pricePrecision ?? autoPricePrecision(viewport.priceRange.min, viewport.priceRange.max);
     const text = viewport.formatPrice ? viewport.formatPrice(this.price) : formatPrice(this.price, precision, this.locale);
-    ctx.font = `bold 11px ${theme.font.family}`;
-    const textWidth = ctx.measureText(text).width;
-    const axisWidth = viewport.priceAxisWidth ?? PRICE_AXIS_WIDTH;
-    const badgeWidth = Math.min(textWidth + 12, axisWidth - 2);
+    ctx.font = `bold ${theme.font.sizeSmall}px ${theme.font.family}`;
+    // The axis's width, as every tag on it is: an order's, an alert's and this one line up edge to edge.
+    const badgeWidth = (viewport.priceAxisWidth ?? PRICE_AXIS_WIDTH) - 2;
 
     ctx.fillStyle = color;
     fillTag(ctx, axisX, y - TAG_HEIGHT / 2, badgeWidth, TAG_HEIGHT, theme);
     this.tag = { x: axisX, y: y - TAG_HEIGHT / 2, width: badgeWidth, height: TAG_HEIGHT, color };
 
-    // Arrow indicator
-    const arrowX = axisX - 5;
-    ctx.beginPath();
-    ctx.moveTo(arrowX, y);
-    ctx.lineTo(arrowX + 5, y - 5);
-    ctx.lineTo(arrowX + 5, y + 5);
-    ctx.closePath();
-    ctx.fill();
-
     ctx.fillStyle = labelTextColor(color);
     ctx.textBaseline = 'middle';
     ctx.textAlign = 'left';
-    ctx.fillText(text, axisX + 5, y);
+    ctx.fillText(text, axisX + AXIS_TAG_TEXT_INSET, y);
   }
 }

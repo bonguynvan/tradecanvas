@@ -1,6 +1,6 @@
 import type { ViewportState, Theme, DataSeries } from '@tradecanvas/commons';
 import { barTimeUnit } from '@tradecanvas/commons';
-import { fillTag } from './shapes.js';
+import { AXIS_TAG_TEXT_INSET, fillTag } from './shapes.js';
 import { labelTextColor } from './axisValueLabels.js';
 import type { LastPriceTag } from '../realtime/CurrentPriceLine.js';
 
@@ -37,7 +37,7 @@ export class BarCountdown {
     ctx.textBaseline = 'middle';
     ctx.textAlign = 'left';
     ctx.fillStyle = labelTextColor(tag.color);
-    ctx.fillText(this.formatRemaining(remainingMs), tag.x + 5, top + COUNTDOWN_HEIGHT / 2);
+    ctx.fillText(this.formatRemaining(remainingMs), tag.x + AXIS_TAG_TEXT_INSET, top + COUNTDOWN_HEIGHT / 2);
   }
 
   /** Milliseconds left in the last bar; 0 for tick bars (they close on a count) and closed bars. */

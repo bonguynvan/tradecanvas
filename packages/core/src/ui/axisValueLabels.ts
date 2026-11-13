@@ -1,5 +1,5 @@
 import type { Theme } from '@tradecanvas/commons';
-import { fillTag } from './shapes.js';
+import { AXIS_TAG_TEXT_INSET, fillTag } from './shapes.js';
 
 /** A coloured tag on a value axis: an indicator line's latest value. */
 export interface AxisValueLabel {
@@ -120,11 +120,11 @@ export function drawAxisValueLabels(
   ctx.textAlign = 'left';
   const half = AXIS_LABEL_HEIGHT / 2;
   for (const label of labels) {
-    const width = Math.min(ctx.measureText(label.text).width + 10, axisWidth - 2);
     ctx.fillStyle = label.color;
-    fillTag(ctx, axisX + 1, Math.round(label.y - half), width, AXIS_LABEL_HEIGHT, theme);
+    // The axis's width, as an order's tag and the last price's are.
+    fillTag(ctx, axisX + 1, Math.round(label.y - half), axisWidth - 2, AXIS_LABEL_HEIGHT, theme);
     ctx.fillStyle = labelTextColor(label.color);
-    ctx.fillText(label.text, axisX + 5, Math.round(label.y));
+    ctx.fillText(label.text, axisX + 1 + AXIS_TAG_TEXT_INSET, Math.round(label.y));
   }
   ctx.restore();
 }

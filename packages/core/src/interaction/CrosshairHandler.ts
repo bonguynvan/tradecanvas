@@ -3,7 +3,7 @@ import { PRICE_AXIS_WIDTH, TIME_AXIS_HEIGHT, autoPricePrecision, timeParts, isDa
 import { crosshairLooks } from './crosshairLooks.js';
 import { crispX, crispY } from '../charts/pixelGrid.js';
 import { panelPrecision, priceScaleText, roundStep } from '../axis/PriceAxis.js';
-import { fillTag } from '../ui/shapes.js';
+import { AXIS_TAG_TEXT_INSET, fillTag } from '../ui/shapes.js';
 import { axisTimes } from '../charts/transforms/axisTimes.js';
 import { xToBarIndex, yToPrice, barIndexToX, barIndexToTime, priceToY, timeToX } from '../viewport/ScaleMapping.js';
 import { readableText } from '../finance/colorScale.js';
@@ -307,6 +307,7 @@ export class CrosshairHandler {
       anchorX: priceAxisX,
       anchorY: y,
       orientation: 'right',
+      axisWidth: viewport.priceAxisWidth ?? PRICE_AXIS_WIDTH,
       bg: crosshairLooks(theme).labelBackground,
       fg: crosshairLooks(theme).labelText,
       theme,
@@ -365,7 +366,7 @@ export class CrosshairHandler {
     span.prices.forEach((price, i) => {
       const y = ys[i];
       if (y < plot.y || y > plot.y + plot.height) return;
-      drawAxisPill(ctx, { text: priceScaleText(price, vp, precision, this.locale), anchorX: axisX, anchorY: y, orientation: 'right', bg: span.color, fg, theme, font });
+      drawAxisPill(ctx, { text: priceScaleText(price, vp, precision, this.locale), anchorX: axisX, anchorY: y, orientation: 'right', axisWidth, bg: span.color, fg, theme, font });
     });
     ctx.restore();
   }
@@ -515,6 +516,8 @@ interface AxisPillOptions {
   anchorX: number;
   anchorY: number;
   orientation: 'right' | 'bottom';
+  /** A tag on the price axis (`'right'`) is this wide: the axis's width. */
+  axisWidth?: number;
   bg: string;
   fg: string;
   font: string;
@@ -523,9 +526,10 @@ interface AxisPillOptions {
 }
 
 /**
- * Axis hover pill. A rectangle with a small triangular
- * notch pointing toward the crosshair line, painted in inverted theme
- * colors so it always pops against the axis strip.
+ * A tag on an axis. On the price axis it is as every tag there is: the
+ * axis's width from a pixel past its line, its words under the scale's own
+ * labels. On the time axis it is as wide as its words, with a small notch
+ * pointing at the line it names.
  */
 /** Height (px) of the crosshair's axis pills, and the room each side of their text. */
 const PILL_HEIGHT = 20;
@@ -600,20 +604,12 @@ function drawAxisPill(ctx: CanvasRenderingContext2D, opts: AxisPillOptions): voi
   ctx.fillStyle = opts.bg;
   ctx.textBaseline = 'middle';
   if (opts.orientation === 'right') {
-    const x = opts.anchorX + notch;
+    const x = opts.anchorX + 1;
     const y = opts.anchorY - h / 2;
-    fillTag(ctx, x, y, w, h, opts.theme);
-    // The notch pointing at the crosshair line.
-    ctx.beginPath();
-    ctx.moveTo(opts.anchorX, opts.anchorY);
-    // Its base inside the body, clear of a rounded corner.
-    ctx.lineTo(x + 2, opts.anchorY - notch);
-    ctx.lineTo(x + 2, opts.anchorY + notch);
-    ctx.closePath();
-    ctx.fill();
+    fillTag(ctx, x, y, opts.axisWidth === undefined ? w : opts.axisWidth - 2, h, opts.theme);
     ctx.fillStyle = opts.fg;
     ctx.textAlign = 'left';
-    ctx.fillText(opts.text, x + padX, opts.anchorY);
+    ctx.fillText(opts.text, x + AXIS_TAG_TEXT_INSET, opts.anchorY);
   } else {
     const x = opts.anchorX - w / 2;
     const y = opts.anchorY + notch;

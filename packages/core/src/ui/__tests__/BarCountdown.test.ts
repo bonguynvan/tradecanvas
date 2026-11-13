@@ -2,6 +2,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import type { OHLCBar, ViewportState } from '@tradecanvas/commons';
 import { LIGHT_THEME } from '@tradecanvas/commons';
 import { BarCountdown, COUNTDOWN_HEIGHT } from '../BarCountdown.js';
+import { AXIS_TAG_TEXT_INSET } from '../shapes.js';
 import { CurrentPriceLine } from '../../realtime/CurrentPriceLine.js';
 
 const viewport: ViewportState = {
@@ -54,7 +55,7 @@ describe('the bar countdown', () => {
     expect(countdown.isShown(data)).toBe(true);
     const { ctx, texts, fills } = recorder();
     countdown.render(ctx, viewport, LIGHT_THEME, data, tag);
-    expect(texts).toEqual([{ text: '0:50', x: tag.x + 5, y: tag.y + tag.height + COUNTDOWN_HEIGHT / 2 }]);
+    expect(texts).toEqual([{ text: '0:50', x: tag.x + AXIS_TAG_TEXT_INSET, y: tag.y + tag.height + COUNTDOWN_HEIGHT / 2 }]);
     expect(fills).toContain(tag.color);
   });
 
