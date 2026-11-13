@@ -102,6 +102,39 @@ describe('the news loader', () => {
   });
 });
 
+describe('the headlines, shared by the panel and the chart\u2019s marks', () => {
+  const many = Array.from({ length: 30 }, (_, i) => ({ id: String(i), title: `Headline ${i}`, time: Date.now() - i * 60_000 }));
+
+  it('asks the source once for the two of them, and again only when the answer is old', async () => {
+    const news = new SymbolNews();
+    const source = vi.fn(async () => many);
+    const [a, b] = await Promise.all([news.headlines('AAA', source), news.headlines('AAA', source)]);
+    expect(source).toHaveBeenCalledTimes(1);
+    expect(a).toHaveLength(30);
+    expect(b).toBe(a);
+    await news.headlines('AAA', source);
+    expect(source).toHaveBeenCalledTimes(1);
+    await news.headlines('BBB', source);
+    expect(source).toHaveBeenCalledTimes(2);
+  });
+
+  it('shows the panel the newest ten of them', async () => {
+    const news = new SymbolNews();
+    const shown: SymbolInfoNews[] = [];
+    news.load('AAA', async () => many, (n) => shown.push(n), 'en', () => false);
+    await vi.waitFor(() => expect(shown.at(-1)?.kind).toBe('items'));
+    const last = shown.at(-1)!;
+    expect(last.kind === 'items' && last.items.map((i) => i.title)).toEqual(many.slice(0, 10).map((i) => i.title));
+  });
+
+  it('asks again after a source that failed', async () => {
+    const news = new SymbolNews();
+    const source = vi.fn().mockRejectedValueOnce(new Error('down')).mockResolvedValueOnce(many);
+    await expect(news.headlines('AAA', source)).rejects.toThrow('down');
+    await expect(news.headlines('AAA', source)).resolves.toHaveLength(30);
+  });
+});
+
 describe('the symbol info view’s volume', () => {
   it('is in 만, 억 and 조 when the numbers are Korean', () => {
     const view = buildSymbolInfoView({

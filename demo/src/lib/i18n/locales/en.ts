@@ -302,6 +302,18 @@ const en = {
         'The buy and sell marks and the trade appear only as the replay reaches them',
       ],
     },
+    marks: {
+      title: 'News and events on the chart',
+      stat: 'marks',
+      blurb:
+        'Headlines, earnings dates, dividends and splits as small badges at the foot of the price pane, each on the bar that holds its time. The widget puts the symbol’s headlines there from its news source; marks of your own go through chart.setMarks.',
+      tryThis: [
+        'Point at a badge to read what it marks',
+        'Click a badge with a number: the headlines it gathers, newest first',
+        'Zoom out: badges that would overlap gather into one',
+        'Open the symbol info panel (ⓘ by the symbol): the same headlines, as a list',
+      ],
+    },
     compare: {
       title: 'Compare, spread, ratio',
       stat: 'symbols',

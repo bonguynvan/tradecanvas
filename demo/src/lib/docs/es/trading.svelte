@@ -330,6 +330,47 @@ chart.on('signalMarkerClick', (e) => openSignal(e.payload.marker))`}</code></pre
   su origen, el lado, el precio, la confianza y la hora.
 </p>
 
+<h2>Marcas</h2>
+<p>
+  Lo que ocurrió en un momento (un titular, una fecha de resultados, un dividendo, un split) como
+  un pequeño distintivo al pie del panel de precios, sobre la barra que contiene ese momento. El
+  puntero sobre un distintivo lee su título y su texto; los distintivos que se solaparían se reúnen
+  en uno con un contador. Un replay muestra cada marca cuando llega a ella. Renko, Kagi, line break,
+  punto y figura y las barras de rango no dibujan ninguna: sus barras no son tiempos.
+</p>
+<pre><code>{`chart.setMarks([
+  { id: 'q3', time: reportedAt, kind: 'earnings', title: 'Q3 earnings', text: 'EPS 1.42 vs 1.31 expected' },
+  { id: 'div', time: exDate, kind: 'dividend', title: 'Dividend 0.24 a share' },
+  { id: 'n1', time: publishedAt, kind: 'news', title: headline, text: source, url: 'https://example.com/story' },
+])
+const id = chart.addMark({ time: Date.now(), title: 'Trading halted', label: 'H', color: '#e5484d' })
+chart.removeMark('div')
+chart.getMarks()      // earliest first
+chart.clearMarks()
+
+chart.on('markClick', (e) => openStory(e.payload.marks))   // one mark, or the several a badge gathers
+// a click on a badge is a markClick, not a click or a barClick
+chart.on('markHover', (e) => e.payload.marks)              // null: the pointer left the badge
+chart.on('marksChange', (e) => e.payload.count)
+
+new Chart(host, { features: { marks: false } })            // or chart.setFeatures({ marks: false })`}</code></pre>
+<p>
+  <code>kind</code> elige la letra y el color: <code>news</code> N, <code>earnings</code> E,
+  <code>dividend</code> D, <code>split</code> S, y <code>event</code> (o ninguno) i.
+  <code>label</code> (uno o dos caracteres) y <code>color</code> los sustituyen. Una marca necesita
+  <code>title</code> y <code>time</code>; solo se conservan enlaces http(s); un gráfico guarda hasta
+  2.000. Las marcas son del feed, no del usuario: <code>saveState</code> no las guarda, así que
+  vuelve a ponerlas tras cargar un estado.
+</p>
+<p>
+  ChartWidget pone los titulares del símbolo en el gráfico desde su fuente de noticias
+  (<code>news</code>, o <code>fetchNews</code> del adaptador); <code>newsMarks: false</code> los
+  deja solo en el panel de información del símbolo. Un clic en una marca abre su enlace en una
+  pestaña nueva; en un distintivo con varias, una lista, la más reciente primero. El interruptor de
+  función <code>marks</code> del widget oculta todas las marcas. Tus propios <code>setMarks</code> y
+  <code>clearMarks</code> dejan los titulares del widget en el gráfico.
+</p>
+
 <h2>Zonas de operación</h2>
 <p>Visualiza rectángulos de entrada → salida coloreados según el P&amp;L y con distintivos de dirección.</p>
 <pre><code>{`chart.addTradeZone({

@@ -23,6 +23,7 @@ import { type WatchlistEntry } from './WidgetWatchlist.js';
 import { type WatchlistList } from './WatchlistStore.js';
 import { WidgetSymbolInfo, type SymbolInfoView } from './WidgetSymbolInfo.js';
 import { SymbolNews, buildSymbolInfoView } from './symbolInfoView.js';
+import { WidgetMarks, type MarksHost } from './WidgetMarks.js';
 import { chartInfoFor, cleanSymbolInfo, mergeSymbolInfo, readSymbolCatalog, splitVenue, symbolTitle } from './symbolCatalog.js';
 import { TOOL_HOTKEYS, toolShortcuts } from './drawingHotkeys.js';
 import { WidgetChartNav } from './WidgetChartNav.js';
@@ -230,6 +231,8 @@ export class ChartWidget {
   private readonly trading = new WidgetTrading(this.tradingHost());
   /** Price alerts: their panel, what they are checked against, and the notices when one fires. */
   private readonly alerting = new WidgetAlerts(this.alertingHost());
+  /** Marks on the chart: the symbol's headlines, and what a click on a mark opens. */
+  private readonly marking = new WidgetMarks(this.markingHost());
   /** The watchlists by the chart: their symbols, lists and quotes. */
   private readonly watching = new WidgetWatchlists(this.watchingHost());
   /** Other symbols compared with the chart's: their bars, the compare dialog, the scale they hold. */
@@ -411,6 +414,8 @@ export class ChartWidget {
   private hostLayer: HTMLDivElement | null = null;
   /** Whether the chart shows the "+" by the price axis while its switch is on. */
   private priceAxisAddDefault = false;
+  /** The host's chart features leave the marks on: the widget's switch decides. */
+  private marksDefault = true;
 
   constructor(container: HTMLElement, givenOptions: ChartWidgetOptions = {}) {
     const options = withFeedAdapter(givenOptions);
@@ -509,7 +514,10 @@ export class ChartWidget {
     const chartFeatures: FeaturesConfig = {
       ...features,
       priceAxisAddButton: this.priceAxisAddDefault && this.featureState['menu.priceAxisAdd'],
+      // The widget's switch for the marks, unless the host's chart features turned them off themselves.
+      marks: features.marks !== false && this.featureState.marks,
     };
+    this.marksDefault = features.marks !== false;
 
     this.canExport = features.dataExport !== false;
     this.chartSettings.settingsLocked = new Set(FEATURE_SWITCHES.filter(([, feature]) => features[feature] === false).map(([key]) => key));
@@ -1603,6 +1611,8 @@ export class ChartWidget {
 
   /** The kept settings, the stream, the watchlist's ticks, the first update and onReady. */
   private finishSetup(options: ChartWidgetOptions): void {
+    // The first symbol's headlines as marks on the chart, and clicks on marks.
+    this.marking.start();
     // The settings the user kept in this browser, over the host's starting values (Reset goes back to those).
     this.chartSettings.restoreKeptSettings();
 
@@ -1872,6 +1882,7 @@ export class ChartWidget {
     this.watching.watchlist?.setActive(symbol);
     this.refreshMarket();
     this.loadNews();
+    this.marking.load();
     this.layouts.layoutSession?.changed();
     if (this.adapter) {
       await this.connectStream();
@@ -2244,6 +2255,11 @@ export class ChartWidget {
     }
     if (changed('menu.priceAxisAdd')) {
       this.chart.setFeatures({ priceAxisAddButton: this.priceAxisAddDefault && this.featureState['menu.priceAxisAdd'] });
+    }
+    if (changed('marks')) {
+      this.chart.setFeatures({ marks: this.marksDefault && this.featureState.marks });
+      // Switched on: the symbol's headlines come; off: they go.
+      this.marking.load();
     }
     if (changed('dragDropImport')) {
       if (this.featureState.dragDropImport) this.dragDrop?.attach();
@@ -3540,6 +3556,28 @@ export class ChartWidget {
   }
 
   /** What WidgetAlerts reads of the widget and asks of it. */
+  private markingHost(): MarksHost {
+    // Getters, so the host reads the widget as it is when asked, not as it was now.
+    const w = this;
+    return {
+      get chart() { return w.chart; },
+      get options() { return w.options; },
+      get marksOn() { return w.marksDefault && w.featureState.marks; },
+      get symbol() { return w.state.symbol; },
+      get destroyed() { return w.destroyed; },
+      get news() { return w.news; },
+      openMenu: (entries, x, y, onPick) => {
+        const chartRect = w.chartContainer.getBoundingClientRect();
+        const rootRect = w.root.getBoundingClientRect();
+        w.menus.chartMenu?.open(entries, chartRect.left - rootRect.left + x, chartRect.top - rootRect.top + y, onPick);
+      },
+      // A page of somebody else's: it gets no handle on this one.
+      openLink: (url) => { window.open(url, '_blank', 'noopener,noreferrer'); },
+      liftNavigation: (px) => w.chartNav?.setLift(px),
+      hideNavigation: (hidden) => w.chartNav?.setSuppressed(hidden),
+    };
+  }
+
   private alertingHost(): AlertsHost {
     // Getters, so the host reads the widget as it is when asked, not as it was now.
     const w = this;

@@ -299,6 +299,46 @@ chart.on('signalMarkerClick', (e) => openSignal(e.payload.marker))`}</code></pre
   価格、信頼度、時刻です。
 </p>
 
+<h2>マーク</h2>
+<p>
+  ある時刻に起きたこと（ニュース、決算日、配当、株式分割）を、その時刻を含むバーの位置で、
+  価格ペインの下端に小さなバッジとして表示します。ポインターをバッジに重ねるとタイトルと本文が
+  読めます。重なるバッジは件数付きの 1 つにまとまります。リプレイでは到達した時点で各マークが現れます。
+  Renko、カギ足、新値足、ポイント＆フィギュア、レンジバーではマークを描きません（バーが時刻を表さないため）。
+</p>
+<pre><code>{`chart.setMarks([
+  { id: 'q3', time: reportedAt, kind: 'earnings', title: 'Q3 earnings', text: 'EPS 1.42 vs 1.31 expected' },
+  { id: 'div', time: exDate, kind: 'dividend', title: 'Dividend 0.24 a share' },
+  { id: 'n1', time: publishedAt, kind: 'news', title: headline, text: source, url: 'https://example.com/story' },
+])
+const id = chart.addMark({ time: Date.now(), title: 'Trading halted', label: 'H', color: '#e5484d' })
+chart.removeMark('div')
+chart.getMarks()      // earliest first
+chart.clearMarks()
+
+chart.on('markClick', (e) => openStory(e.payload.marks))   // one mark, or the several a badge gathers
+// a click on a badge is a markClick, not a click or a barClick
+chart.on('markHover', (e) => e.payload.marks)              // null: the pointer left the badge
+chart.on('marksChange', (e) => e.payload.count)
+
+new Chart(host, { features: { marks: false } })            // or chart.setFeatures({ marks: false })`}</code></pre>
+<p>
+  <code>kind</code> が文字と色を決めます：<code>news</code> は N、<code>earnings</code> は E、
+  <code>dividend</code> は D、<code>split</code> は S、<code>event</code>（または未指定）は i。
+  <code>label</code>（1〜2 文字）と <code>color</code> で置き換えられます。マークには
+  <code>title</code> と <code>time</code> が必要で、http(s) のリンクだけが保持され、チャートは最大
+  2,000 件まで保持します。マークはフィードのものであり、ユーザーのものではありません：
+  <code>saveState</code> には含まれないので、読み込み後に設定し直してください。
+</p>
+<p>
+  ChartWidget はシンボルのニュース見出しをニュースソース（<code>news</code>、またはアダプターの
+  <code>fetchNews</code>）からチャートに表示します。<code>newsMarks: false</code>
+  でシンボル情報パネルだけに留めます。マークをクリックするとリンクが新しいタブで開き、
+  複数をまとめたバッジでは新しい順の一覧が開きます。ウィジェットの機能スイッチ
+  <code>marks</code> はすべてのマークを隠します。独自の <code>setMarks</code> や
+  <code>clearMarks</code> を呼んでも、ウィジェットの見出しはチャートに残ります。
+</p>
+
 <h2>トレードゾーン</h2>
 <p>エントリー → エグジットを、損益で色分けした長方形と方向のバッジで可視化します。</p>
 <pre><code>{`chart.addTradeZone({

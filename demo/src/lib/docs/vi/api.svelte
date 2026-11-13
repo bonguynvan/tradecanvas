@@ -946,6 +946,10 @@ widget.getQuote('AAPL')`}</code></pre>
   news: (symbol, limit) => api.headlines(symbol, limit),   // or the adapter's fetchNews
 })
 widget.toggleSymbolInfo(true)`}</code></pre>
+<p>
+  Các tin cũng hiện trên chart dưới dạng marks, trên bar mà tin được đăng
+  (<code>newsMarks: false</code> để bỏ); xem <em>Marks</em> trong trang Trading.
+</p>
 
 <h3>Điều hướng, hoàn tác và hướng chữ</h3>
 <p>

@@ -891,6 +891,10 @@ widget.getQuote('AAPL')`}</code></pre>
   news: (symbol, limit) => api.headlines(symbol, limit),   // or the adapter's fetchNews
 })
 widget.toggleSymbolInfo(true)`}</code></pre>
+<p>
+  見出しは、公開された時刻のバーにマークとしてチャート上にも表示されます
+  （<code>newsMarks: false</code> で無効）。トレーディングのページの<em>マーク</em>を参照してください。
+</p>
 
 <h3>ナビゲーション、元に戻す、表示方向</h3>
 <p>

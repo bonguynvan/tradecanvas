@@ -6120,6 +6120,7 @@
     "indicatorLegend",
     "navigation",
     "customTimeframes",
+    "marks",
     "intervalTyping",
     "symbolTyping",
     "dragDropImport",
@@ -6747,6 +6748,12 @@
         "type": "(symbol: string, limit: number) => Promise<NewsItem[]>",
         "doc": "Headlines for the symbol info panel, newest first; default the adapter's `fetchNews` when it has one. Links that aren't web pages are dropped.",
         "kind": "function"
+      },
+      {
+        "name": "newsMarks",
+        "type": "boolean",
+        "doc": "Put the symbol's headlines on the chart as marks: a badge at the foot of the price pane on the bar each was published in, read with the pointer and opened with a click. Default `true`, when there is a news source (`news`, or the adapter's `fetchNews`); `false` keeps the headlines to the symbol info panel. Marks of your own go through `chart.setMarks`.",
+        "kind": "boolean"
       },
       {
         "name": "dragDropImport",
@@ -7702,6 +7709,12 @@
         "name": "sessionBreaks",
         "type": "boolean",
         "doc": "Show session break lines (day separators)",
+        "kind": "boolean"
+      },
+      {
+        "name": "marks",
+        "type": "boolean",
+        "doc": "Draw the marks given with `setMarks` (headlines, earnings dates) as badges at the foot of the price pane, and let the pointer read them. Default `true`; `false` hides them and keeps them.",
         "kind": "boolean"
       },
       {

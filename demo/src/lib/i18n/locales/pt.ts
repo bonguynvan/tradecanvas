@@ -295,6 +295,18 @@ const pt: SiteMessages = {
         'As marcas de compra e venda e a operação só aparecem quando o replay chega a elas',
       ],
     },
+    marks: {
+      title: 'Notícias e eventos no gráfico',
+      stat: 'marcas',
+      blurb:
+        'Manchetes, datas de resultados, dividendos e desdobramentos como pequenos selos na base do painel de preços, cada um sobre a barra que contém o seu momento. O widget coloca ali as manchetes do símbolo a partir da fonte de notícias; as suas próprias marcas passam por chart.setMarks.',
+      tryThis: [
+        'Aponte para um selo para ler o que ele marca',
+        'Clique num selo com número: as manchetes que ele reúne, a mais recente primeiro',
+        'Afaste o zoom: os selos que se sobreporiam juntam-se num só',
+        'Abra o painel de informações do símbolo (ⓘ junto ao símbolo): as mesmas manchetes, em lista',
+      ],
+    },
     compare: {
       title: 'Comparar, spread, razão',
       stat: 'ativos',

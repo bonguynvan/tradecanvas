@@ -35,8 +35,12 @@ export class WidgetChartNav {
   private pressed = false;
   /** A button has the keyboard's focus: the bar stays up wherever the pointer is. */
   private keyboardFocus = false;
+  /** How far above the plot's bottom it stands: over what else sits there (the chart's marks). */
+  private lift = 0;
+  /** Told to step aside (the pointer reads something its place would cover). */
+  private suppressed = false;
   private readonly onMove = (e: PointerEvent) => {
-    if (e.pointerType === 'touch') return;
+    if (e.pointerType === 'touch' || this.suppressed) return;
     // A held scroll button keeps going wherever the pointer drifts.
     if (this.holdTimer || this.repeatTimer) return;
     if (!this.nearBottom(e) && !this.keyboardFocus) {
@@ -130,6 +134,23 @@ export class WidgetChartNav {
     host.addEventListener('pointerleave', this.onLeave);
   }
 
+  /** Stand `px` above the plot's bottom, clear of what sits along it; 0 puts it back. */
+  setLift(px: number): void {
+    const lift = Math.max(0, Math.round(px));
+    if (lift === this.lift) return;
+    this.lift = lift;
+    if (this.el.classList.contains('tcw-nav-shown')) this.place();
+  }
+
+  /** Step aside while `on`: hidden wherever the pointer is, a keyboard's focus on it apart. */
+  setSuppressed(on: boolean): void {
+    this.suppressed = on;
+    if (on && !this.keyboardFocus) {
+      this.el.classList.remove('tcw-nav-shown');
+      this.stopHold();
+    }
+  }
+
   destroy(): void {
     this.stopHold();
     this.host.removeEventListener('pointermove', this.onMove);
@@ -150,7 +171,7 @@ export class WidgetChartNav {
   private place(): void {
     const r = this.actions.plotRect();
     this.el.style.left = `${Math.round(r.x + r.width / 2)}px`;
-    this.el.style.top = `${Math.round(r.y + r.height)}px`;
+    this.el.style.top = `${Math.round(r.y + r.height) - this.lift}px`;
   }
 
   private startHold(direction: 1 | -1): void {

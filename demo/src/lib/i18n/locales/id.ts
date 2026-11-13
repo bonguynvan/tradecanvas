@@ -295,6 +295,18 @@ const id: SiteMessages = {
         'Tanda beli, jual, dan transaksinya baru muncul saat replay mencapainya',
       ],
     },
+    marks: {
+      title: 'Berita dan peristiwa di chart',
+      stat: 'tanda',
+      blurb:
+        'Judul berita, tanggal laporan keuangan, dividen, dan pemecahan saham sebagai lencana kecil di kaki panel harga, masing-masing pada bar yang memuat waktunya. Widget menaruh judul berita simbol di sana dari sumber beritanya; tanda milik Anda sendiri lewat chart.setMarks.',
+      tryThis: [
+        'Arahkan pointer ke lencana untuk membaca isinya',
+        'Klik lencana bernomor: judul-judul yang dikumpulkannya, terbaru lebih dulu',
+        'Perkecil tampilan: lencana yang akan bertumpuk digabung menjadi satu',
+        'Buka panel info simbol (ⓘ di samping simbol): judul yang sama, dalam daftar',
+      ],
+    },
     compare: {
       title: 'Bandingkan, selisih, rasio',
       stat: 'simbol',

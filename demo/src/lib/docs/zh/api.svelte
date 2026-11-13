@@ -849,6 +849,9 @@ widget.getQuote('AAPL')`}</code></pre>
   news: (symbol, limit) => api.headlines(symbol, limit),   // or the adapter's fetchNews
 })
 widget.toggleSymbolInfo(true)`}</code></pre>
+<p>
+  新闻标题也会作为标记显示在图表上发布时所在的 K 线处（<code>newsMarks: false</code> 可关闭）；参见交易页的<em>标记</em>。
+</p>
 
 <h3>导航、撤销与文字方向</h3>
 <p>

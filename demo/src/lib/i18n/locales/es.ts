@@ -297,6 +297,18 @@ const es: SiteMessages = {
         'Las marcas de compra y venta y la operación solo aparecen cuando la reproducción llega a ellas',
       ],
     },
+    marks: {
+      title: 'Noticias y eventos en el gráfico',
+      stat: 'marcas',
+      blurb:
+        'Titulares, fechas de resultados, dividendos y splits como pequeños distintivos al pie del panel de precios, cada uno sobre la barra que contiene su momento. El widget pone ahí los titulares del símbolo desde su fuente de noticias; tus propias marcas van por chart.setMarks.',
+      tryThis: [
+        'Apunta a un distintivo para leer lo que marca',
+        'Haz clic en un distintivo con número: los titulares que reúne, el más reciente primero',
+        'Aleja el zoom: los distintivos que se solaparían se reúnen en uno',
+        'Abre el panel de información del símbolo (ⓘ junto al símbolo): los mismos titulares, en lista',
+      ],
+    },
     compare: {
       title: 'Comparar, diferencial, ratio',
       stat: 'símbolos',

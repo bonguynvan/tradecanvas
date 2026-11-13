@@ -151,7 +151,8 @@ describe('ChartWidget symbol info', () => {
     expect(panel().querySelector('.tcw-syminfo-news-meta')!.textContent).toBe('Wire · 3 hours ago');
     await widget.setSymbol('MSFT');
     await vi.waitFor(() => expect(panel().querySelector('.tcw-syminfo-news a')?.textContent).toBe('MSFT headline'));
-    expect(news).toHaveBeenCalledWith('MSFT', 10);
+    // Fifty asked for: the panel shows the newest ten, the chart marks them all.
+    expect(news).toHaveBeenCalledWith('MSFT', 50);
   });
 
   it('shows no news part without a news source, and a failure as one', async () => {

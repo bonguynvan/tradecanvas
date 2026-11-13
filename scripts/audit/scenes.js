@@ -193,6 +193,31 @@ const SCENES = {
     return s;
   },
 
+  /** Marks along the foot of the price pane: the host's own, and the widget's headlines, some sharing a badge. */
+  async marks() {
+    // The headlines are asked for before the bars are in: they wait for them.
+    let barsIn;
+    const bars = new Promise((resolve) => { barsIn = resolve; });
+    const s = await widget({
+      news: async () => {
+        const data = await bars;
+        return [0, 0, 1, 14, 15, 40].map((back, i) => ({ id: `h${i}`, title: `Headline ${i + 1} about the price of this thing`, time: data[data.length - 1 - back].time + i * 1000, source: 'Wire', url: `https://example.com/${i}` }));
+      },
+    });
+    const data = s.chart.getData();
+    const at = (back) => data[data.length - 1 - back].time;
+    barsIn(data);
+    // The headlines are on the chart before the scene is shot.
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    s.chart.setMarks([
+      { id: 'e', time: at(60), kind: 'earnings', title: 'Q3 earnings', text: 'EPS 1.42 vs 1.31 expected' },
+      { id: 'd', time: at(30), kind: 'dividend', title: 'Dividend 0.24 a share' },
+      { id: 'x', time: at(8), title: 'Trading halted', label: 'H', color: '#e5484d' },
+    ]);
+    s.chart.addIndicator('rsi');
+    return s;
+  },
+
   /** More panes than the chart has room for: the price pane keeps its part, the panes share the rest. */
   async manyPanes() {
     const s = await widget();

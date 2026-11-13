@@ -69,6 +69,12 @@ export type ChartEventType =
   | 'signalMarkerHover'
   /** A signal marker was clicked. */
   | 'signalMarkerClick'
+  /** The pointer went onto a mark's badge, or off it (`marks: null`). */
+  | 'markHover'
+  /** A mark's badge was clicked: every mark it holds. */
+  | 'markClick'
+  /** The marks on the chart changed (`setMarks`, `addMark`, `removeMark`, `clearMarks`). */
+  | 'marksChange'
   | 'tradeZoneAdd'
   | 'tradeZoneRemove'
   | 'alertAdd'
@@ -455,6 +461,9 @@ export interface ChartEventMap {
   signalMarkerRemove: SignalMarkerRemovePayload;
   signalMarkerHover: { marker: import('./signal.js').SignalMarker | null; x: number; y: number };
   signalMarkerClick: { marker: import('./signal.js').SignalMarker; x: number; y: number };
+  markHover: { marks: import('./mark.js').ChartMark[] | null; x: number; y: number };
+  markClick: { marks: import('./mark.js').ChartMark[]; x: number; y: number };
+  marksChange: { count: number };
   tradeZoneAdd: TradeZoneAddPayload;
   tradeZoneRemove: TradeZoneRemovePayload;
   alertAdd: AlertPayload;

@@ -94,6 +94,8 @@ import {
   PivotMarkersRenderer,
   AlertManager,
   SignalMarkerManager,
+  ChartMarkManager,
+  type MarkBadge,
   TradeZoneManager,
   MeasureOverlay,
   SelectionBoxOverlay,
@@ -296,6 +298,13 @@ export class Chart {
   private pivotMarkers: PivotMarkersRenderer;
   private alertManager: AlertManager;
   private signalMarkerManager: SignalMarkerManager;
+  /** A signal marker is under the pointer: its listeners are told when it leaves. */
+  private signalMarkerHovered = false;
+  /** Where the pointer last was over a badge or a marker, for a hover that ends with the pointer still. */
+  private lastHoverPos = { x: 0, y: 0 };
+  private chartMarkManager: ChartMarkManager;
+  /** The badge under the pointer, the same object while it stays on it: a move within it is not a new hover. */
+  private hoveredBadge: MarkBadge | null = null;
   private tradeZoneManager: TradeZoneManager;
   private measureOverlay: MeasureOverlay;
   private selectionBoxOverlay = new SelectionBoxOverlay();
@@ -458,6 +467,7 @@ export class Chart {
       alerts: f.alerts ?? true,
       replay: f.replay ?? true,
       sessionBreaks: f.sessionBreaks ?? true,
+      marks: f.marks ?? true,
       barCountdown: f.barCountdown ?? true,
       compareSymbols: f.compareSymbols ?? true,
       dataExport: f.dataExport ?? true,
@@ -880,6 +890,13 @@ export class Chart {
       this.eventBus.emit('signalMarkerRemove' as ChartEventType, { id });
     });
 
+    // Marks: what happened at a time, as badges at the foot of the price pane,
+    // on the bars as they are drawn (Heikin-Ashi's, a replay's bars so far).
+    this.chartMarkManager = new ChartMarkManager();
+    this.chartMarkManager.setRequestRender(() => this.engine.requestRender(LayerType.Overlay));
+    // No bars for them where the bars are not times (bricks, boxes): they wait for a chart type that has them.
+    this.chartMarkManager.setDataGetter(() => (this.isTimeAligned() ? this.getDisplayData() : []));
+
     // Trade zones
     this.tradeZoneManager = new TradeZoneManager();
     this.tradeZoneManager.setRequestRender(() => this.engine.requestRender(LayerType.Overlay));
@@ -1058,17 +1075,42 @@ export class Chart {
       this.engine.requestRender(LayerType.Overlay);
     });
 
-    // Signal markers react to the pointer, when someone listens.
+    // A mark's badge reacts to the pointer always (it shows what it marks);
+    // a signal marker when someone listens. A badge is over a marker under it.
     this.interactionManager.setSignalMarkerHitTest(
-      (pos) => (this.eventBus.hasListeners('signalMarkerHover') || this.eventBus.hasListeners('signalMarkerClick')
-        ? this.signalMarkerManager.markerAt(pos, this.viewport.getState())
-        : null),
-      (marker, pos) => this.eventBus.emit('signalMarkerHover', { marker: marker as import('@tradecanvas/commons').SignalMarker | null, x: pos.x, y: pos.y }),
-      // A hand only where a click does something.
-      () => this.eventBus.hasListeners('signalMarkerClick'),
+      (pos) => this.markBadgeAt(pos)
+        ?? (this.eventBus.hasListeners('signalMarkerHover') || this.eventBus.hasListeners('signalMarkerClick')
+          ? this.signalMarkerManager.markerAt(pos, this.viewport.getState())
+          : null),
+      (hit, pos) => {
+        const badge = hit !== null && hit === this.hoveredBadge ? this.hoveredBadge : null;
+        // Off a badge (onto nothing, or onto a signal marker): its words go, and its listeners hear.
+        if (!badge && this.chartMarkManager.setHovered(null)) this.eventBus.emit('markHover', { marks: null, x: pos.x, y: pos.y });
+        this.lastHoverPos = pos;
+        if (badge) {
+          // Onto a badge from a signal marker: the marker's listeners hear it left.
+          if (this.signalMarkerHovered) {
+            this.signalMarkerHovered = false;
+            this.eventBus.emit('signalMarkerHover', { marker: null, x: pos.x, y: pos.y });
+          }
+          this.chartMarkManager.setHovered(badge);
+          this.eventBus.emit('markHover', { marks: badge.marks.map((m) => ({ ...m })), x: pos.x, y: pos.y });
+          return;
+        }
+        if (hit === null && !this.signalMarkerHovered) return;
+        this.signalMarkerHovered = hit !== null;
+        this.eventBus.emit('signalMarkerHover', { marker: hit as import('@tradecanvas/commons').SignalMarker | null, x: pos.x, y: pos.y });
+      },
+      // A hand only where a click does something: on a badge always, on a marker when someone listens.
+      () => this.chartMarkManager.isHovering() || this.eventBus.hasListeners('signalMarkerClick'),
     );
     this.interactionManager.setClickHandler((pos) => {
       const data = this.getDisplayData();
+      const badge = this.features.marks ? this.chartMarkManager.badgeAt(pos, this.viewport.getState()) : null;
+      if (badge) {
+        this.eventBus.emit('markClick', { marks: badge.marks.map((m) => ({ ...m })), x: pos.x, y: pos.y });
+        return;
+      }
       const marker = this.eventBus.hasListeners('signalMarkerClick') ? this.signalMarkerManager.markerAt(pos, this.viewport.getState()) : null;
       if (marker) {
         this.eventBus.emit('signalMarkerClick', { marker, x: pos.x, y: pos.y });
@@ -1566,6 +1608,8 @@ export class Chart {
     this.updateViewportAndRender(true);
     this.fitFewColumns();
     this.markStateChanged();
+    // Bricks and boxes draw no marks: a badge under the pointer goes with the bars it stood on.
+    if (!this.isTimeAligned()) this.dropMarkHover();
     if (type !== previous) this.eventBus.emit('chartTypeChange', { type, previous });
   }
 
@@ -4940,6 +4984,72 @@ export class Chart {
     this.signalMarkerManager.setStyle(style);
   }
 
+  // --- Marks: what happened at a time ---
+
+  /**
+   * Replace the marks on the chart: headlines, earnings dates, dividends,
+   * each a small badge at the foot of the price pane on the bar that holds
+   * its time. The pointer over one reads its title; a click emits
+   * `markClick`. What is given is read as untrusted input: a mark needs a
+   * title and a time, and only http(s) links are kept. They are the feed's,
+   * not the user's: a saved state does not hold them. Renko, Kagi, line
+   * break, point & figure and range bars draw none (`isTimeAligned()` false):
+   * their bars are not times.
+   */
+  setMarks(marks: readonly import('@tradecanvas/commons').ChartMark[]): void {
+    this.marksChanged(() => this.chartMarkManager.setMarks(marks), true);
+  }
+
+  /**
+   * Add one mark (one with the same id is replaced); its id, or null for one
+   * with no title or time, or one more than the 2,000 a chart keeps.
+   */
+  addMark(mark: Omit<import('@tradecanvas/commons').ChartMark, 'id'> & { id?: string }): string | null {
+    return this.marksChanged(() => this.chartMarkManager.addMark(mark), (id) => id !== null);
+  }
+
+  removeMark(id: string): void {
+    this.marksChanged(() => this.chartMarkManager.removeMark(id), false);
+  }
+
+  /** Change the marks with `change`, and say so (`marksChange`) when their number changed, or `always` (told the result). */
+  private marksChanged<T>(change: () => T, always: boolean | ((result: T) => boolean)): T {
+    const before = this.chartMarkManager.count();
+    const result = change();
+    const count = this.chartMarkManager.count();
+    const said = typeof always === 'function' ? always(result) : always;
+    if (said || count !== before) {
+      // The badge under the pointer may be another now, or gone: the next move reads what is there.
+      this.dropMarkHover();
+      this.eventBus.emit('marksChange', { count });
+    }
+    return result;
+  }
+
+  /** No badge is under the pointer any more (the marks changed, or went): its words go, and its listeners hear once. */
+  private dropMarkHover(): void {
+    this.hoveredBadge = null;
+    if (!this.chartMarkManager.setHovered(null)) return;
+    this.eventBus.emit('markHover', { marks: null, x: this.lastHoverPos.x, y: this.lastHoverPos.y });
+  }
+
+  /** The marks on the chart, earliest first. */
+  getMarks(): import('@tradecanvas/commons').ChartMark[] {
+    return this.chartMarkManager.getMarks();
+  }
+
+  clearMarks(): void {
+    this.marksChanged(() => this.chartMarkManager.clearMarks(), false);
+  }
+
+  /** The badge under `pos`, the same object while the pointer stays on it; null off one or with the feature off. */
+  private markBadgeAt(pos: { x: number; y: number }): MarkBadge | null {
+    const found = this.features.marks ? this.chartMarkManager.badgeAt(pos, this.viewport.getState()) : null;
+    const same = found !== null && this.hoveredBadge !== null && found.marks[0].id === this.hoveredBadge.marks[0].id && found.marks.length === this.hoveredBadge.marks.length;
+    if (!same) this.hoveredBadge = found;
+    return this.hoveredBadge;
+  }
+
   // --- Trade Zones ---
 
   addTradeZone(zone: Omit<import('@tradecanvas/commons').TradeZone, 'id'> & { id?: string }): string {
@@ -5397,6 +5507,7 @@ export class Chart {
   private revealReplayMarks(until: number | null): void {
     const from = until !== null && this.replayOffset > 0 ? this.replayCoarse?.[0]?.time ?? -Infinity : -Infinity;
     this.signalMarkerManager.setRevealUntil(until, from);
+    this.chartMarkManager.setRevealUntil(until, from);
     this.tradeZoneManager.setRevealUntil(until, from);
   }
 
@@ -6049,6 +6160,11 @@ export class Chart {
     if (patch.grid !== undefined) {
       this.engine.requestRender(LayerType.Background);
     }
+    if (patch.marks !== undefined) {
+      // Switched off under the pointer: its words go with it.
+      if (!patch.marks) this.dropMarkHover();
+      this.engine.requestRender(LayerType.Overlay);
+    }
     if (patch.volume !== undefined) {
       this.volumeRenderer.setVisible(patch.volume);
       this.updateViewportAndRender();
@@ -6513,6 +6629,7 @@ export class Chart {
       selectionBoxOverlay: this.selectionBoxOverlay,
       priceAxisAddButton: this.priceAxisAddButton,
       signalMarkerManager: this.signalMarkerManager,
+      chartMarkManager: this.features.marks ? this.chartMarkManager : null,
       tradeZoneManager: this.tradeZoneManager,
       panels,
       priceLimits: this.buildPriceLimits(),

@@ -281,6 +281,14 @@ export interface ChartWidgetOptions {
    * `fetchNews` when it has one. Links that aren't web pages are dropped.
    */
   news?: (symbol: string, limit: number) => Promise<NewsItem[]>;
+  /**
+   * Put the symbol's headlines on the chart as marks: a badge at the foot of
+   * the price pane on the bar each was published in, read with the pointer
+   * and opened with a click. Default `true`, when there is a news source
+   * (`news`, or the adapter's `fetchNews`); `false` keeps the headlines to
+   * the symbol info panel. Marks of your own go through `chart.setMarks`.
+   */
+  newsMarks?: boolean;
 
   /**
    * Drag-and-drop CSV / JSON file import onto the chart. Default `true`.
