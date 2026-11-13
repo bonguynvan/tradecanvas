@@ -436,7 +436,7 @@ export const KO_MESSAGES: WidgetMessages = {
   'drawingOption.extendRight': '오른쪽으로 연장',
   'drawingOption.middleLine': '중간선',
   'drawingOption.levels': '레벨',
-  'drawingOption.reverse': '반전',
+  'drawingOption.reversed': '반전',
   'drawingOption.showLevels': '레벨 표시',
   'drawingOption.showPrices': '가격 표시',
   'drawingOption.labelPosition': '라벨 위치',

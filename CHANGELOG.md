@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+### Drawings
+
+- **A Fibonacci retracement reads the way traders read one** (`@tradecanvas/core`). Level 0 was at its first point, so a retracement drawn from a low to a high wrote 61.8% where the price had given back 38.2%. It is now at the second point, where the move ends. The option is `reversed` (off: 0 at the end); `reverse`, which meant the opposite, is still read from a saved drawing and from `addDrawing`.
+- **Fibonacci levels stay between their points** (`@tradecanvas/core`). A retracement and an extension ran across the whole chart by default and tinted it from edge to edge. They stop at their points unless `extendLeft` or `extendRight` is set, and each label sits beside its line's end, clear of the candles between, where the plot has room.
+- **A parallel channel has its middle line** (`@tradecanvas/core`), dashed; `middleLine: false` takes it away.
+- **A horizontal line's price and a vertical line's time are on the axes** (`@tradecanvas/core`, `@tradecanvas/chart`): tagged in the line's colour whether it is selected or not, where it was only the selected one. A horizontal line with `showPrice: false` stays off the axis until it is selected, and `drawingAxisSpans: false` hides them all with the rest.
+- **Drawings saved before keep their look** (`@tradecanvas/commons`, `@tradecanvas/core`). A drawing loaded with `setDrawings` or a saved layout, with no value of its own for one of these options, takes the default it was drawn with: a retracement saved last week still has 0 at its first point and runs across the chart. A new drawing writes these options out, which is how the two are told apart. A tool says so in its option's `savedDefault`, and names an earlier key that meant the opposite in `invertedAlias` (`DrawingOptionDef`).
 ## 2.1.2 (2026-11-13)
 
 ### Engine

@@ -2468,6 +2468,13 @@ export class Chart {
     return this.drawingManager.getDrawings();
   }
 
+  /**
+   * Replace the drawings with saved ones (what `getDrawings()` gave). A state
+   * with no value for an option whose default has changed since (a
+   * retracement's `reversed` and extends, a channel's `middleLine`) is read as
+   * one saved before the change and keeps the look it was drawn with; a state
+   * written by hand says these options itself, or goes through `addDrawing`.
+   */
   setDrawings(drawings: DrawingState[]): void {
     this.drawingManager.setDrawings(drawings);
     this.dropOrphanDrawingAlerts();

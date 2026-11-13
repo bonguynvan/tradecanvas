@@ -39,7 +39,7 @@ describe('the price of a drawing’s lines at a time', () => {
   it('a channel gives both lines, and the middle one when it is drawn', () => {
     const anchors = [...LINE, { time: 150, price: 25 }]; // 10 above the base line at time 150
     const tool = new ParallelChannelTool();
-    expect(tool.priceAt(drawing('parallelChannel', anchors), 150)).toEqual([15, 25]);
-    expect(tool.priceAt(drawing('parallelChannel', anchors, { options: { middleLine: true } }), 150)).toEqual([15, 25, 20]);
+    expect(tool.priceAt(drawing('parallelChannel', anchors, { options: { middleLine: false } }), 150)).toEqual([15, 25]);
+    expect(tool.priceAt(drawing('parallelChannel', anchors), 150)).toEqual([15, 25, 20]);
   });
 });

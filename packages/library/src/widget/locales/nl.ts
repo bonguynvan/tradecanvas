@@ -436,7 +436,7 @@ export const NL_MESSAGES: WidgetMessages = {
   'drawingOption.extendRight': 'Naar rechts verlengen',
   'drawingOption.middleLine': 'Middenlijn',
   'drawingOption.levels': 'Niveaus',
-  'drawingOption.reverse': 'Omkeren',
+  'drawingOption.reversed': 'Omkeren',
   'drawingOption.showLevels': 'Niveaus tonen',
   'drawingOption.showPrices': 'Koersen tonen',
   'drawingOption.labelPosition': 'Labels',

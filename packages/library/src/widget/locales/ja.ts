@@ -436,7 +436,7 @@ export const JA_MESSAGES: WidgetMessages = {
   'drawingOption.extendRight': '右に延長',
   'drawingOption.middleLine': '中央線',
   'drawingOption.levels': 'レベル',
-  'drawingOption.reverse': '反転',
+  'drawingOption.reversed': '反転',
   'drawingOption.showLevels': 'レベルを表示',
   'drawingOption.showPrices': '価格を表示',
   'drawingOption.labelPosition': 'ラベルの位置',

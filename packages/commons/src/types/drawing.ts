@@ -114,13 +114,27 @@ export type DrawingOptionValue = boolean | number | string | DrawingLevel[];
 /** A drawing's settings beyond the shared style, by key. Missing keys take the tool's defaults. */
 export type DrawingOptions = Record<string, DrawingOptionValue>;
 
+/** What an option whose default changed remembers, so drawings saved before it stay as they were drawn. */
+export interface DrawingOptionHistory {
+  /**
+   * What a saved drawing with no value of its own takes: the default it was
+   * drawn with. A new drawing keeps such an option written out, which is how
+   * the two are told apart when drawings are loaded (`setDrawings`).
+   */
+  savedDefault?: boolean | number | string;
+  /** A boolean's earlier key, which meant the opposite: a value given under it comes in turned round. */
+  invertedAlias?: string;
+}
+
 /** A setting a drawing tool offers beyond the shared style, with its default. */
-export type DrawingOptionDef =
+export type DrawingOptionDef = (
   | { kind: 'boolean'; label: string; default: boolean }
   | { kind: 'number'; label: string; default: number; min?: number; max?: number; step?: number }
   | { kind: 'choice'; label: string; default: string; choices: readonly { value: string; label: string }[] }
   | { kind: 'levels'; label: string; default: readonly DrawingLevel[] }
-  | { kind: 'text'; label: string; default: string };
+  | { kind: 'text'; label: string; default: string }
+) &
+  DrawingOptionHistory;
 
 export type DrawingOptionDefs = Readonly<Record<string, DrawingOptionDef>>;
 

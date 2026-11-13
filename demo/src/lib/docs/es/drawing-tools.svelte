@@ -33,7 +33,7 @@ chart.setStayInDrawingMode(true)    // mantiene la herramienta tras cada dibujo`
   type: 'fibRetracement',
   anchors: [{ time: t1, price: 101.2 }, { time: t2, price: 96.4 }],
   style: { color: '#f2a93b' },
-  options: { reverse: true, extendRight: true },
+  options: { reversed: true, extendRight: true },
 })
 
 chart.autoFib()   // un retroceso sobre el swing dominante a la vista, o null`}</code></pre>
@@ -89,7 +89,7 @@ chart.addDrawing({
 chart.addDrawing({ type: 'verticalLine', anchors: [{ time: t3, price: 0 }], options: { showTime: true } })
 chart.addDrawing({ type: 'fibRetracement', anchors: [a, b], options: { trendLine: false, oneColor: true } })`}</code></pre>
 <p>
-  Una línea horizontal y un rayo horizontal ocultan su precio con <code>showPrice: false</code>. Una línea vertical muestra la hora de su barra con <code>showTime: true</code>, escrita como la escribe la cruz. Un rectángulo tiene ocho controles: uno en cada esquina y uno en el centro de cada lado, que mueve solo ese lado. Un retroceso y una extensión de Fibonacci dibujan una línea discontinua por sus puntos (<code>trendLine</code>, activada por defecto) y dibujan todos sus niveles en el color del dibujo con <code>oneColor</code>. Un clic en las palabras también selecciona la línea o el rectángulo.
+  Una línea horizontal y un rayo horizontal ocultan su precio con <code>showPrice: false</code>. Una línea vertical muestra la hora de su barra con <code>showTime: true</code>, escrita como la escribe la cruz. Un rectángulo tiene ocho controles: uno en cada esquina y uno en el centro de cada lado, que mueve solo ese lado. Un retroceso y una extensión de Fibonacci dibujan una línea discontinua por sus puntos (<code>trendLine</code>, activada por defecto) y dibujan todos sus niveles en el color del dibujo con <code>oneColor</code>. Un clic en las palabras también selecciona la línea o el rectángulo. Un retroceso pone el 0 donde termina el movimiento, en su segundo punto, de modo que 38.2% es el precio que devuelve el 38.2% de él; <code>reversed: true</code> mide desde el primer punto. Sus niveles y los de una extensión quedan entre sus puntos salvo que se indique <code>extendLeft</code> o <code>extendRight</code>, con cada etiqueta junto al extremo de su línea. Un canal paralelo tiene su línea media salvo con <code>middleLine: false</code>. El precio de una línea horizontal y la hora de una vertical llevan su etiqueta en los ejes, estén seleccionadas o no. Un dibujo guardado antes de que estos fueran los valores por defecto se carga tal como se dibujó.
 </p>
 
 <h2 id="look">Cómo se ven los dibujos</h2>

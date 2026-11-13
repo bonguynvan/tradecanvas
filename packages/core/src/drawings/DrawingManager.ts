@@ -11,7 +11,7 @@ import type {
   OHLCBar,
   AnchorPoint,
 } from '@tradecanvas/commons';
-import { resolveDrawingOptions, sanitizeDrawingOptions } from '@tradecanvas/commons';
+import { resolveDrawingOptions, newDrawingOptions, savedDrawingOptions, sanitizeDrawingOptions } from '@tradecanvas/commons';
 import { priceToY, timeToX, xToTime, yToPrice } from '../viewport/ScaleMapping.js';
 import type { UndoRedoManager, UndoableAction } from '../features/UndoRedoManager.js';
 import {
@@ -39,7 +39,7 @@ import { DrawingDrag, shiftAnchors, type DragEdit } from './DrawingDrag.js';
 import { constrainedAnchor, keepsAngle } from './drawingEditing.js';
 import { clampScreenPoints, isScreenAnchored, offsetScreenPoints, pixelToScreenPoint, screenPointToPixel, shiftScreenPoints } from './screenAnchors.js';
 import { beginExtent, endExtent, setDrawingPlot, type ExtentRect } from './drawingLook.js';
-import { drawingAxisSpan, type AxisSpan } from './axisSpan.js';
+import { drawingAxisSpan, isLevelLine, type AxisSpan } from './axisSpan.js';
 
 export type { DrawingOrderMove, DrawingPatch } from './drawingState.js';
 
@@ -1104,8 +1104,11 @@ export class DrawingManager {
       // A name is kept as `updateDrawing` keeps one: trimmed, cut to length, none when blank.
       const named = given.name === undefined || given.name === cleanDrawingName(given.name) ? given : withName(given, cleanDrawingName(given.name));
       const d = this.onScreen(named.type) ? { ...named, anchors: clampScreenPoints(named.anchors) } : named;
-      if (!d.options && d.intervals === undefined) return d;
-      const options = sanitizeDrawingOptions(this.optionDefs(d.type), d.options);
+      const defs = this.optionDefs(d.type);
+      const remembers = defs !== undefined && Object.values(defs).some((def) => def.savedDefault !== undefined);
+      if (!d.options && d.intervals === undefined && !remembers) return d;
+      // A drawing saved before a default changed keeps the one it was drawn with.
+      const options = savedDrawingOptions(defs, d.options);
       return {
         ...d,
         options: Object.keys(options).length > 0 ? options : undefined,
@@ -1269,10 +1272,10 @@ export class DrawingManager {
   /** A new drawing's options: the tool's defaults, then `explicit`; undefined when none. */
   private initialOptions(type: DrawingToolType, explicit?: DrawingOptions): DrawingOptions | undefined {
     const defs = this.optionDefs(type);
-    const options = {
+    const options = newDrawingOptions(defs, {
       ...cloneOptions(this.toolDefaults.get(type) ?? {}),
       ...sanitizeDrawingOptions(defs, explicit),
-    };
+    });
     return Object.keys(options).length > 0 ? options : undefined;
   }
 
@@ -1809,17 +1812,37 @@ export class DrawingManager {
   }
 
   /**
-   * What to mark on the axes: the span of the drawing being made, else of
-   * the selected one (moved or reshaped too), on the viewport it is drawn on.
+   * What to mark on the axes, each on the viewport it is drawn on: every
+   * level line (a horizontal line's price, a vertical line's time), which a
+   * reader looks for on the axis and not along the line; then, over them,
+   * the span of the drawing being made, else of the selected one (moved or
+   * reshaped too).
    */
   axisSpans(main: ViewportState): AxisSpan[] {
     const preview = this.creator.previewState();
     const target = preview ?? (this.selection.primary ? this.drawings.find((d) => d.id === this.selection.primary) : undefined);
-    if (!target || (!preview && !this.shown(target))) return [];
-    const plugin = this.registry.get(target.type);
-    const viewport = this.viewportFor(target.paneId, main);
-    const extent = plugin && viewport ? drawingAxisSpan(target, plugin.descriptor) : null;
-    return extent && viewport ? [{ ...extent, color: target.style.color, viewport }] : [];
+    const spans: AxisSpan[] = [];
+    for (const drawing of this.drawings) {
+      if (drawing === target || !this.shown(drawing)) continue;
+      const descriptor = this.registry.get(drawing.type)?.descriptor;
+      if (!descriptor || !isLevelLine(descriptor)) continue;
+      // A line whose price was turned off says it nowhere, the axis included.
+      if (drawing.options?.showPrice === false) continue;
+      const span = this.axisSpanOf(drawing, main);
+      if (span) spans.push(span);
+    }
+    if (target && (preview || this.shown(target))) {
+      const span = this.axisSpanOf(target, main);
+      if (span) spans.push(span);
+    }
+    return spans;
+  }
+
+  private axisSpanOf(drawing: DrawingState, main: ViewportState): AxisSpan | null {
+    const plugin = this.registry.get(drawing.type);
+    const viewport = this.viewportFor(drawing.paneId, main);
+    const extent = plugin && viewport ? drawingAxisSpan(drawing, plugin.descriptor) : null;
+    return extent && viewport ? { ...extent, color: drawing.style.color, viewport } : null;
   }
 
   /** What the pointer is over: a handle of the selected drawing, or a drawing, and the cursor for it. */

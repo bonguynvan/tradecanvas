@@ -436,7 +436,7 @@ export const TH_MESSAGES: WidgetMessages = {
   'drawingOption.extendRight': 'ต่อเส้นไปทางขวา',
   'drawingOption.middleLine': 'เส้นกลาง',
   'drawingOption.levels': 'ระดับ',
-  'drawingOption.reverse': 'กลับด้าน',
+  'drawingOption.reversed': 'กลับด้าน',
   'drawingOption.showLevels': 'แสดงระดับ',
   'drawingOption.showPrices': 'แสดงราคา',
   'drawingOption.labelPosition': 'ตำแหน่งป้าย',

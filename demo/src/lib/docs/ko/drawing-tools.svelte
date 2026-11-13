@@ -32,7 +32,7 @@ chart.setStayInDrawingMode(true)    // 그림을 하나 그린 뒤에도 도구�
   type: 'fibRetracement',
   anchors: [{ time: t1, price: 101.2 }, { time: t2, price: 96.4 }],
   style: { color: '#f2a93b' },
-  options: { reverse: true, extendRight: true },
+  options: { reversed: true, extendRight: true },
 })
 
 chart.autoFib()   // 보이는 범위의 주요 스윙에 그린 되돌림, 없으면 null`}</code></pre>
@@ -88,7 +88,7 @@ chart.addDrawing({
 chart.addDrawing({ type: 'verticalLine', anchors: [{ time: t3, price: 0 }], options: { showTime: true } })
 chart.addDrawing({ type: 'fibRetracement', anchors: [a, b], options: { trendLine: false, oneColor: true } })`}</code></pre>
 <p>
-  수평선과 수평 레이는 <code>showPrice: false</code>로 가격을 숨깁니다. 수직선은 <code>showTime: true</code>로 그 봉의 시간을 크로스헤어와 같은 방식으로 표시합니다. 사각형에는 핸들이 여덟 개 있습니다. 모서리마다 하나, 각 변의 가운데에 하나씩이며, 변의 핸들은 그 변만 옮깁니다. 피보나치 되돌림과 확장은 점들을 지나는 점선(<code>trendLine</code>, 기본으로 켜짐)을 그리고, <code>oneColor</code>로 모든 레벨을 드로잉 색으로 그립니다. 글자를 클릭해도 그 선이나 상자가 선택됩니다.
+  수평선과 수평 레이는 <code>showPrice: false</code>로 가격을 숨깁니다. 수직선은 <code>showTime: true</code>로 그 봉의 시간을 크로스헤어와 같은 방식으로 표시합니다. 사각형에는 핸들이 여덟 개 있습니다. 모서리마다 하나, 각 변의 가운데에 하나씩이며, 변의 핸들은 그 변만 옮깁니다. 피보나치 되돌림과 확장은 점들을 지나는 점선(<code>trendLine</code>, 기본으로 켜짐)을 그리고, <code>oneColor</code>로 모든 레벨을 드로잉 색으로 그립니다. 글자를 클릭해도 그 선이나 상자가 선택됩니다. 되돌림은 움직임이 끝나는 두 번째 점을 0으로 두므로, 38.2%는 그 움직임의 38.2%를 되돌린 가격입니다. <code>reversed: true</code> 는 첫 번째 점에서부터 잽니다. 되돌림과 확장의 레벨은 <code>extendLeft</code> 나 <code>extendRight</code> 를 설정하지 않으면 점들 사이에 머물고, 각 레이블은 선 끝 옆에 놓입니다. 평행 채널은 <code>middleLine: false</code> 로 끄지 않으면 가운데 선이 있습니다. 수평선의 가격과 수직선의 시간은 선택 여부와 관계없이 축에 태그로 표시됩니다. 이 기본값이 적용되기 전에 저장한 드로잉은 그렸던 그대로 불러옵니다.
 </p>
 
 <h2 id="look">그림이 보이는 방식</h2>

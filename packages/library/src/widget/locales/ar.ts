@@ -442,7 +442,7 @@ export const AR_MESSAGES: WidgetMessages = {
   'drawingOption.extendRight': 'تمديد لليمين',
   'drawingOption.middleLine': 'الخط الأوسط',
   'drawingOption.levels': 'المستويات',
-  'drawingOption.reverse': 'عكس',
+  'drawingOption.reversed': 'عكس',
   'drawingOption.showLevels': 'إظهار المستويات',
   'drawingOption.showPrices': 'إظهار الأسعار',
   'drawingOption.labelPosition': 'التسميات',

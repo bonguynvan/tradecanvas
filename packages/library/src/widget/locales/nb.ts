@@ -442,7 +442,7 @@ export const NB_MESSAGES: WidgetMessages = {
   'drawingOption.extendRight': 'Forleng til høyre',
   'drawingOption.middleLine': 'Midtlinje',
   'drawingOption.levels': 'Nivåer',
-  'drawingOption.reverse': 'Snu',
+  'drawingOption.reversed': 'Snu',
   'drawingOption.showLevels': 'Vis nivåer',
   'drawingOption.showPrices': 'Vis kurser',
   'drawingOption.labelPosition': 'Etiketter',

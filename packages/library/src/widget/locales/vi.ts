@@ -436,7 +436,7 @@ export const VI_MESSAGES: WidgetMessages = {
   'drawingOption.extendRight': 'Kéo dài sang phải',
   'drawingOption.middleLine': 'Đường giữa',
   'drawingOption.levels': 'Các mức',
-  'drawingOption.reverse': 'Đảo chiều',
+  'drawingOption.reversed': 'Đảo chiều',
   'drawingOption.showLevels': 'Hiện mức',
   'drawingOption.showPrices': 'Hiện giá',
   'drawingOption.labelPosition': 'Vị trí nhãn',

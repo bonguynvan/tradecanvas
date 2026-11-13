@@ -32,7 +32,7 @@ chart.setStayInDrawingMode(true)    // keep the tool after each drawing`}</code>
   type: 'fibRetracement',
   anchors: [{ time: t1, price: 101.2 }, { time: t2, price: 96.4 }],
   style: { color: '#f2a93b' },
-  options: { reverse: true, extendRight: true },
+  options: { reversed: true, extendRight: true },
 })
 
 chart.autoFib()   // a retracement over the dominant swing in view, or null`}</code></pre>
@@ -88,7 +88,7 @@ chart.addDrawing({
 chart.addDrawing({ type: 'verticalLine', anchors: [{ time: t3, price: 0 }], options: { showTime: true } })
 chart.addDrawing({ type: 'fibRetracement', anchors: [a, b], options: { trendLine: false, oneColor: true } })`}</code></pre>
 <p>
-  A horizontal line and a horizontal ray hide their price with <code>showPrice: false</code>. A vertical line shows its bar's time with <code>showTime: true</code>, written as the crosshair writes it. A rectangle has eight handles: one at each corner and one in the middle of each side, which moves that side alone. A Fibonacci retracement and extension draw a dashed line through their points (<code>trendLine</code>, on by default) and draw all their levels in the drawing's colour with <code>oneColor</code>. A click on the words picks the line or the box too.
+  A horizontal line and a horizontal ray hide their price with <code>showPrice: false</code>. A vertical line shows its bar's time with <code>showTime: true</code>, written as the crosshair writes it. A rectangle has eight handles: one at each corner and one in the middle of each side, which moves that side alone. A Fibonacci retracement and extension draw a dashed line through their points (<code>trendLine</code>, on by default) and draw all their levels in the drawing's colour with <code>oneColor</code>. A click on the words picks the line or the box too. A retracement puts 0 where the move ends, at its second point, so 38.2% is the price that gives back 38.2% of it; <code>reversed: true</code> measures from the first point. Its levels and an extension's stay between their points unless <code>extendLeft</code> or <code>extendRight</code> is set, each label beside its line's end. A parallel channel has its middle line unless <code>middleLine: false</code>. A horizontal line's price and a vertical line's time are tagged on the axes, selected or not. A drawing saved before these were the defaults is loaded as it was drawn.
 </p>
 
 <h2 id="look">How drawings look</h2>
@@ -287,7 +287,7 @@ chart.on('toolModeChange', (e) => e.payload)      // { eraser } or { zoomArea }`
 
 <h3>Fibonacci</h3>
 <ul>
-  <li><code>fibRetracement</code>, <code>fibExtension</code> — editable levels, prices and percentages, labels left or right, background, reverse.</li>
+  <li><code>fibRetracement</code>, <code>fibExtension</code> — editable levels, prices and percentages, labels left or right, background, reversed.</li>
   <li><code>fibChannel</code>, <code>fibSpeedResistanceFan</code> — the fan's rays in their levels' colours, the time rays dashed, both labelled.</li>
   <li><code>fibTimeZones</code> — from the zone's start (0) on; its handles, and those of <code>cyclicLines</code>, sit on their lines halfway up the plot.</li>
   <li><code>fibArcs</code> — arcs around the start of a move, half or full circles.</li>

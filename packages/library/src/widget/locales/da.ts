@@ -442,7 +442,7 @@ export const DA_MESSAGES: WidgetMessages = {
   'drawingOption.extendRight': 'Forlæng til højre',
   'drawingOption.middleLine': 'Midterlinje',
   'drawingOption.levels': 'Niveauer',
-  'drawingOption.reverse': 'Vend om',
+  'drawingOption.reversed': 'Vend om',
   'drawingOption.showLevels': 'Vis niveauer',
   'drawingOption.showPrices': 'Vis kurser',
   'drawingOption.labelPosition': 'Etiketter',

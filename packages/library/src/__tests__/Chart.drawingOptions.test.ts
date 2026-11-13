@@ -31,7 +31,7 @@ const fib = () => chart.addDrawing({ type: 'fibRetracement', anchors: [{ time: T
 describe('Chart drawing options', () => {
   it('lists what a tool offers', () => {
     const defs = chart.getDrawingOptionDefs('fibRetracement');
-    expect(Object.keys(defs)).toEqual(expect.arrayContaining(['levels', 'extendLeft', 'extendRight', 'reverse', 'showPrices']));
+    expect(Object.keys(defs)).toEqual(expect.arrayContaining(['levels', 'extendLeft', 'extendRight', 'reversed', 'showPrices']));
     expect(chart.getDrawingOptionDefs('rectangle')).toEqual({});
   });
 
@@ -39,9 +39,9 @@ describe('Chart drawing options', () => {
     const id = fib();
     const updates: unknown[] = [];
     chart.on('drawingUpdate', (e) => updates.push(e.payload));
-    expect(chart.getDrawingOptions(id).reverse).toBe(false);
-    expect(chart.setDrawingOptions(id, { reverse: true })).toBe(true);
-    expect(chart.getDrawingOptions(id).reverse).toBe(true);
+    expect(chart.getDrawingOptions(id).reversed).toBe(false);
+    expect(chart.setDrawingOptions(id, { reversed: true })).toBe(true);
+    expect(chart.getDrawingOptions(id).reversed).toBe(true);
     expect(updates).toEqual([{ id }]);
   });
 
@@ -56,10 +56,10 @@ describe('Chart drawing options', () => {
   it('edits in a session that is one undo step, or cancelled', () => {
     const id = fib();
     chart.beginDrawingEdit(id);
-    chart.updateDrawing(id, { options: { reverse: true }, style: { color: '#ff0000' } });
+    chart.updateDrawing(id, { options: { reversed: true }, style: { color: '#ff0000' } });
     chart.endDrawingEdit(id);
     chart.undo();
-    expect(chart.getDrawingOptions(id).reverse).toBe(false);
+    expect(chart.getDrawingOptions(id).reversed).toBe(false);
 
     chart.beginDrawingEdit(id);
     chart.updateDrawing(id, { anchors: [{ time: T0, price: 1 }, { time: T0 + HOUR, price: 2 }] });
@@ -69,12 +69,12 @@ describe('Chart drawing options', () => {
 
   it('keeps options in a saved layout', () => {
     const id = fib();
-    chart.setDrawingOptions(id, { reverse: true, levels: [{ value: 0.5, visible: true }] });
+    chart.setDrawingOptions(id, { reversed: true, levels: [{ value: 0.5, visible: true }] });
     const saved = chart.saveState()!;
     chart.clearDrawings();
     chart.loadState(saved);
     const [restored] = chart.getDrawings();
-    expect(chart.getDrawingOptions(restored.id)).toMatchObject({ reverse: true, levels: [{ value: 0.5, visible: true }] });
+    expect(chart.getDrawingOptions(restored.id)).toMatchObject({ reversed: true, levels: [{ value: 0.5, visible: true }] });
   });
 });
 

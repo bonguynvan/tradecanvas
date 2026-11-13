@@ -436,7 +436,7 @@ export const EL_MESSAGES: WidgetMessages = {
   'drawingOption.extendRight': 'Επέκταση δεξιά',
   'drawingOption.middleLine': 'Μεσαία γραμμή',
   'drawingOption.levels': 'Επίπεδα',
-  'drawingOption.reverse': 'Αντιστροφή',
+  'drawingOption.reversed': 'Αντιστροφή',
   'drawingOption.showLevels': 'Εμφάνιση επιπέδων',
   'drawingOption.showPrices': 'Εμφάνιση τιμών',
   'drawingOption.labelPosition': 'Ετικέτες',

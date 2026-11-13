@@ -50,6 +50,38 @@ export function sanitizeDrawingOptions(defs: DrawingOptionDefs | undefined, raw:
     const clean = sanitizeValue(def, value);
     if (clean !== undefined) out[key] = clean;
   }
+  // A value under an option's earlier key, which meant the opposite; its own key wins.
+  const given = raw as Record<string, unknown>;
+  for (const [key, def] of Object.entries(defs)) {
+    const earlier = def.invertedAlias === undefined ? undefined : given[def.invertedAlias];
+    if (typeof earlier === 'boolean' && !(key in out)) out[key] = !earlier;
+  }
+  return out;
+}
+
+/**
+ * A saved drawing's options: cleaned, and an option whose default changed
+ * since (`savedDefault`) given the one the drawing was drawn with, where it
+ * has no value of its own.
+ */
+export function savedDrawingOptions(defs: DrawingOptionDefs | undefined, raw: unknown): DrawingOptions {
+  const out = sanitizeDrawingOptions(defs, raw);
+  for (const [key, def] of Object.entries(defs ?? {})) {
+    if (def.savedDefault !== undefined && !(key in out)) out[key] = def.savedDefault;
+  }
+  return out;
+}
+
+/**
+ * A new drawing's options: an option whose default changed (`savedDefault`)
+ * written out at today's default, so loading the drawing back is not taken
+ * for one from before the change.
+ */
+export function newDrawingOptions(defs: DrawingOptionDefs | undefined, options: DrawingOptions): DrawingOptions {
+  const out = { ...options };
+  for (const [key, def] of Object.entries(defs ?? {})) {
+    if (def.savedDefault !== undefined && !(key in out)) out[key] = copyValue(def.default);
+  }
   return out;
 }
 

@@ -442,7 +442,7 @@ export const FA_MESSAGES: WidgetMessages = {
   'drawingOption.extendRight': 'امتداد به راست',
   'drawingOption.middleLine': 'خط میانی',
   'drawingOption.levels': 'سطوح',
-  'drawingOption.reverse': 'معکوس',
+  'drawingOption.reversed': 'معکوس',
   'drawingOption.showLevels': 'نمایش سطوح',
   'drawingOption.showPrices': 'نمایش قیمت‌ها',
   'drawingOption.labelPosition': 'برچسب‌ها',
