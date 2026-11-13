@@ -1,7 +1,7 @@
 import type { DataSeries, Theme, ViewportState } from '@tradecanvas/commons';
 import { PRICE_AXIS_WIDTH, autoPricePrecision, formatPrice } from '@tradecanvas/commons';
 import { priceToY } from '../viewport/ScaleMapping.js';
-import { fillTag } from './shapes.js';
+import { AXIS_TAG_TEXT_INSET, fillTag } from './shapes.js';
 import { hLine } from '../charts/pixelGrid.js';
 
 export type PriceLineKind = 'high' | 'low' | 'bid' | 'ask';
@@ -119,7 +119,7 @@ export class PriceLines {
       fillTag(ctx, axisX, tagY - TAG_HEIGHT / 2, width, TAG_HEIGHT, theme);
       ctx.fillStyle = theme.background;
       const text = viewport.formatPrice?.(level.price) ?? this.priceText?.(level.price) ?? formatPrice(level.price, precision);
-      ctx.fillText(text, axisX + 5, tagY);
+      ctx.fillText(text, axisX + AXIS_TAG_TEXT_INSET, tagY);
     }
     ctx.restore();
   }

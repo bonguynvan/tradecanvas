@@ -33,6 +33,13 @@ export function tagPath(ctx: CanvasRenderingContext2D, x: number, y: number, w: 
 }
 
 /**
+ * Where the words of a tag on the price axis start, from the tag's left edge
+ * (a pixel in from the axis line): under the scale's own labels, so every
+ * price down the axis is in one column, whatever wrote it.
+ */
+export const AXIS_TAG_TEXT_INSET = 7;
+
+/**
  * Fill a tag's box in the theme's corner shape, with the context's current
  * fill, its edges on whole device pixels (see `crispBox`).
  */
