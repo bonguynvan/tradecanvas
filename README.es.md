@@ -113,7 +113,7 @@ claude mcp add tradecanvas -- npx -y @tradecanvas/mcp
 
 En Windows fuera de WSL: `claude mcp add tradecanvas -- cmd /c npx -y @tradecanvas/mcp`. En Git Bash, que ejecuta los comandos `!` de Claude Code en Windows, escribe `//c`: Git Bash convierte `/c` en una ruta.
 
-Medido, no afirmado: en 24 tareas un agente terminó todas las ejecuciones con o sin la skill, y con ella necesitó 10 turnos frente a 16 y 137k tokens frente a 240k, y fue a leer el código compilado en 2 ejecuciones de 48 frente a 22 ([la ejecución](evals/baselines/2026-10-25-sonnet.md), sobre 1.48.0; las tareas y lo que revelaron están en [`evals`](evals/README.md)).
+Medido, no afirmado: en 24 tareas un agente con la skill terminó todas las ejecuciones (48 de 48, y 47 de 48 sin ella), en 10 turnos frente a 15 y 169k tokens frente a 221k, y fue a leer el código compilado en 1 ejecución de 48 frente a 6 ([la ejecución](evals/baselines/2026-11-13-sonnet.md), sobre 2.1.1; las tareas y lo que revelaron están en [`evals`](evals/README.md)).
 
 ## Documentación
 

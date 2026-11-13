@@ -113,7 +113,7 @@ claude mcp add tradecanvas -- npx -y @tradecanvas/mcp
 
 WSL 밖의 Windows에서는: `claude mcp add tradecanvas -- cmd /c npx -y @tradecanvas/mcp`. Git Bash(Windows에서 Claude Code의 `!` 명령을 실행하는 셸)에서는 `//c`로 씁니다. Git Bash가 `/c`를 경로로 바꾸기 때문입니다.
 
-자칭이 아니라 측정한 결과입니다. 24개 과제에서 에이전트는 스킬이 있든 없든 모든 실행을 마쳤고, 스킬이 있으면 16턴 대신 10턴, 24만 토큰 대신 13.7만 토큰이 들었으며, 컴파일된 코드를 읽으러 간 것은 48회 중 22회 대신 2회였습니다([해당 실행](evals/baselines/2026-10-25-sonnet.md), 1.48.0 기준. 과제와 거기서 드러난 내용은 [`evals`](evals/README.md)에 있습니다).
+자칭이 아니라 측정한 결과입니다. 24개 과제에서 스킬이 있는 에이전트는 모든 실행을 마쳤고(48회 중 48회, 스킬이 없으면 48회 중 47회), 15턴 대신 10턴, 22.1만 토큰 대신 16.9만 토큰이 들었으며, 컴파일된 코드를 읽으러 간 것은 48회 중 6회 대신 1회였습니다([해당 실행](evals/baselines/2026-11-13-sonnet.md), 2.1.1 기준. 과제와 거기서 드러난 내용은 [`evals`](evals/README.md)에 있습니다).
 
 ## 문서
 

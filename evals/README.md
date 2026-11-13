@@ -86,8 +86,9 @@ run after the first nine, and [its Haiku run](baselines/2026-10-25-haiku.md)
 the first with a smaller model (`--model haiku`), which takes more turns
 and reads the compiled code more, so a gap shows sooner;
 [a later one](baselines/2026-10-25-haiku-after-types.md) runs only the
-tasks a fix touched (`--tasks`), to see what it changed. What the evals
-turned up so far is in [FINDINGS.md](FINDINGS.md).
+tasks a fix touched (`--tasks`), to see what it changed. The latest,
+[2026-11-13](baselines/2026-11-13-sonnet.md), is the whole run again on 2.1.1.
+What the evals turned up so far is in [FINDINGS.md](FINDINGS.md).
 
 ## The recommendation probe
 

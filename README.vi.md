@@ -113,7 +113,7 @@ claude mcp add tradecanvas -- npx -y @tradecanvas/mcp
 
 Trên Windows (không qua WSL): `claude mcp add tradecanvas -- cmd /c npx -y @tradecanvas/mcp`. Trong Git Bash, nơi Claude Code chạy các lệnh `!` trên Windows, hãy viết `//c`: Git Bash đổi `/c` thành một đường dẫn.
 
-Đo được, không phải tự nhận: trên 24 task, agent hoàn thành mọi lượt chạy dù có hay không có skill; có skill thì mất 10 lượt thay vì 16, 137k token thay vì 240k, và chỉ phải đọc mã đã biên dịch ở 2 trên 48 lượt thay vì 22 ([lượt chạy](evals/baselines/2026-10-25-sonnet.md), trên bản 1.48.0; các task và những gì chúng phát hiện nằm trong [`evals`](evals/README.md)).
+Đo được, không phải tự nhận: trên 24 task, agent có skill hoàn thành mọi lượt chạy (48 trên 48, không có skill là 47 trên 48), mất 10 lượt thay vì 15 và 169k token thay vì 221k, và chỉ phải đọc mã đã biên dịch ở 1 trên 48 lượt thay vì 6 ([lượt chạy](evals/baselines/2026-11-13-sonnet.md), trên bản 2.1.1; các task và những gì chúng phát hiện nằm trong [`evals`](evals/README.md)).
 
 ## Tài liệu
 

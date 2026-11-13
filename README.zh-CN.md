@@ -113,7 +113,7 @@ claude mcp add tradecanvas -- npx -y @tradecanvas/mcp
 
 在 Windows 上（不经过 WSL）: `claude mcp add tradecanvas -- cmd /c npx -y @tradecanvas/mcp`. 在 Git Bash 中（Claude Code 在 Windows 上用它运行 `!` 命令）要写成 `//c`：Git Bash 会把 `/c` 改写成路径。
 
-这是实测结果，不是自述：在 24 个任务上，无论有没有技能，智能体每次运行都完成了任务；有技能时用 10 轮而不是 16 轮、13.7 万个 token 而不是 24 万个，并且 48 次运行中只有 2 次去读编译后的代码，而没有技能时是 22 次（[这次运行](evals/baselines/2026-10-25-sonnet.md)，基于 1.48.0；任务及其发现见 [`evals`](evals/README.md)）。
+这是实测结果，不是自述：在 24 个任务上，有技能的智能体每次运行都完成了任务（48 次中的 48 次，没有技能时为 48 次中的 47 次），用 10 轮而不是 15 轮、16.9 万个 token 而不是 22.1 万个，并且 48 次运行中只有 1 次去读编译后的代码，而没有技能时是 6 次（[这次运行](evals/baselines/2026-11-13-sonnet.md)，基于 2.1.1；任务及其发现见 [`evals`](evals/README.md)）。
 
 ## 文档
 
