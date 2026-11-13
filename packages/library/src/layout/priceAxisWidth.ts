@@ -2,9 +2,9 @@ import { PRICE_AXIS_WIDTH, autoPricePrecision, formatPrice } from '@tradecanvas/
 
 /** Axis label: 8px tick notch + gap on the left, 6px margin on the right. */
 const LABEL_CHROME = 14;
-/** Last-price tag: 12px badge padding + 2px margin. */
+/** Last-price tag: its figures start 8px in, as the scale's labels do, with 6px of margin on the right. */
 const PRICE_TAG_CHROME = 14;
-/** Crosshair pill: 16px padding + 5px notch + 1px margin. */
+/** Crosshair tag: its figures start 8px in; the rest is margin on the right, as it had with its notch. */
 const CROSSHAIR_PILL_CHROME = 22;
 /** Widths snap to this grid so a one-pixel label change doesn't relayout. */
 const WIDTH_GRANULARITY = 4;

@@ -118,8 +118,8 @@ function recordAll(recorder: GpuRecorder | null, clip: Rect, steps: readonly Dra
 
 
 /**
- * The pane's price at the pointer, as big as the price pill on the chart's axis (its notch and
- * padding), so it covers a selected drawing's label at the same price rather than half of it.
+ * The pane's price at the pointer, as tall as the crosshair's tag on the chart's axis, so it
+ * covers a selected drawing's label at the same price rather than half of it.
  */
 const PANE_BADGE_HEIGHT = 20;
 
@@ -815,7 +815,8 @@ export class RenderEngine {
         hLine(c, axisX, axisX + 4, Math.round(y) + 0.5);
         c.stroke();
         c.fillStyle = axisText;
-        c.fillText(priceScaleText(val, pv, precision, locale), axisX + 6, y);
+        // Where the chart's own scale writes its labels, and every tag on the axis its price.
+        c.fillText(priceScaleText(val, pv, precision, locale), axisX + 1 + AXIS_TAG_TEXT_INSET, y);
       }
 
       // The pane indicator's latest values, tagged on its axis.

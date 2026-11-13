@@ -126,7 +126,8 @@ export class CurrentPriceLine {
     const axisX = chartRect.x + chartRect.width + 1;
     const precision = this.pricePrecision ?? autoPricePrecision(viewport.priceRange.min, viewport.priceRange.max);
     const text = viewport.formatPrice ? viewport.formatPrice(this.price) : formatPrice(this.price, precision, this.locale);
-    ctx.font = `bold ${theme.font.sizeSmall}px ${theme.font.family}`;
+    // The size the axis's width is measured with (`requiredPriceAxisWidth`).
+    ctx.font = `bold 11px ${theme.font.family}`;
     // The axis's width, as every tag on it is: an order's, an alert's and this one line up edge to edge.
     const badgeWidth = (viewport.priceAxisWidth ?? PRICE_AXIS_WIDTH) - 2;
 
