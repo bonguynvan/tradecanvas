@@ -202,6 +202,20 @@ describe('WidgetWatchlist keys, after review', () => {
 describe('WidgetWatchlist rows, one line of figures', () => {
   const cell = (row: Element, name: string) => row.querySelector(`.tcw-watchlist-${name}`)?.textContent;
 
+  it('writes no move as neither up nor down: no sign, no colour', () => {
+    wl.setEntry('ETHUSDT', { lastPrice: 2000, refPrice: 2000 });
+    const eth = rows()[1];
+    expect(cell(eth, 'change')).toBe('0.00%');
+    expect(cell(eth, 'move')).toBe('0.00');
+    for (const name of ['move', 'change']) {
+      const el = eth.querySelector(`.tcw-watchlist-${name}`)!;
+      expect(el.classList.contains('tcw-up') || el.classList.contains('tcw-down'), name).toBe(false);
+    }
+    // And takes its colour again when the price moves.
+    wl.setEntry('ETHUSDT', { lastPrice: 1990, refPrice: 2000 });
+    expect(rows()[1].querySelector('.tcw-watchlist-change')!.classList.contains('tcw-down')).toBe(true);
+  });
+
   it('draws no sparkline unless asked, and gives each row its price, move and change on one line', () => {
     expect(host.querySelector('canvas')).toBeNull();
     wl.setEntry('ETHUSDT', { lastPrice: 2000, refPrice: 1900, sparkline: [1900, 1950, 2000] });

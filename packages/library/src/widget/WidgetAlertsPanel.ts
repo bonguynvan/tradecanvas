@@ -138,6 +138,10 @@ export class WidgetAlertsPanel {
   private open = false;
   private alerts: AlertListItem[] = [];
   private sources: AlertSource[];
+  private formEl!: HTMLFormElement;
+  private newBtn!: HTMLButtonElement;
+  /** The form shown (true) or folded (false) by hand; null: by whether there are alerts. */
+  private formChoice: boolean | null = null;
 
   constructor(host: HTMLElement, callbacks: AlertsPanelCallbacks, private readonly t: Translator = EN_TRANSLATOR) {
     this.callbacks = callbacks;
@@ -159,12 +163,22 @@ export class WidgetAlertsPanel {
     closeBtn.setAttribute('aria-label', this.t('alerts.close'));
     closeBtn.innerHTML = createIcon('x', 14);
     closeBtn.addEventListener('click', () => (this.callbacks.onClose ? this.callbacks.onClose() : this.close()));
+    // The form's button: the list is what the panel shows, the form comes when asked for.
+    this.newBtn = document.createElement('button');
+    this.newBtn.className = 'tcw-alerts-new';
+    this.newBtn.type = 'button';
+    this.newBtn.setAttribute('aria-label', this.t('alerts.add'));
+    this.newBtn.title = this.t('alerts.add');
+    this.newBtn.innerHTML = createIcon('plus', 14);
+    this.newBtn.addEventListener('click', () => this.showForm(this.formEl.hidden));
     header.appendChild(title);
+    header.appendChild(this.newBtn);
     header.appendChild(closeBtn);
     this.el.appendChild(header);
 
     // Add form
     const form = document.createElement('form');
+    this.formEl = form;
     form.className = 'tcw-alerts-form';
     // The panel checks the fields itself (and marks the one that's wrong).
     form.noValidate = true;
@@ -261,7 +275,27 @@ export class WidgetAlertsPanel {
 
     this.renderSources();
     this.showFields();
+    this.placeForm();
     host.appendChild(this.el);
+  }
+
+  /**
+   * The form shown or folded away: as the reader last chose, else shown only
+   * while there is no alert, when adding one is the next thing to do.
+   */
+  private placeForm(): void {
+    const shown = this.formChoice ?? this.alerts.length === 0;
+    this.formEl.hidden = !shown;
+    this.newBtn.setAttribute('aria-expanded', String(shown));
+  }
+
+  /** Show or fold the form by hand; shown, it starts at the price now with the pointer in it. */
+  private showForm(shown: boolean): void {
+    this.formChoice = shown;
+    this.placeForm();
+    if (!shown) return;
+    this.prefillPrice();
+    this.priceInput.focus();
   }
 
   private numberField(className: string, label: string, value: string, step: string): HTMLInputElement {
@@ -357,7 +391,10 @@ export class WidgetAlertsPanel {
   /** Replace the displayed alert list. */
   setAlerts(alerts: AlertListItem[]): void {
     this.alerts = alerts;
+    // With none left, the form is the way on again, whatever was chosen before.
+    if (alerts.length === 0) this.formChoice = null;
     this.renderList();
+    this.placeForm();
   }
 
   destroy(): void {
@@ -394,6 +431,12 @@ export class WidgetAlertsPanel {
     if (this.callbacks.onAdd({ price, condition, message, channel, label, options }) === false) return;
     this.messageInput.value = '';
     this.prefillPrice();
+    // Added: the list, with the new alert on top, is what to look at now. The keyboard stays
+    // in the panel, on the button that brings the form back, where it would fall to the page.
+    const hadFocus = this.formEl.contains(document.activeElement);
+    this.formChoice = false;
+    this.placeForm();
+    if (hadFocus) this.newBtn.focus();
   }
 
   private markInvalid(input: HTMLInputElement): void {

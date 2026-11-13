@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+### Widget
+
+- **The alerts panel shows the alerts first** (`@tradecanvas/chart`). Its form, five fields and a button, stood over the list at all times and pushed the alerts down the panel. With alerts set, the panel now opens on the list; the form comes from a `+` in the panel's header, at the price now, and folds away again when an alert is added. With no alert yet the form is open, as before: it is the next thing to do.
+- **A price that has not moved is neither up nor down in the watchlist** (`@tradecanvas/chart`): `0.00%` in the text's colour, where it read `+0.00%` in green.
+
 ## 2.2.0 (2026-11-13)
 
 ### Drawings

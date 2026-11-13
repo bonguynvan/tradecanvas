@@ -409,15 +409,16 @@ export class WidgetWatchlist {
     if (entry.lastPrice !== undefined && entry.refPrice !== undefined && entry.refPrice !== 0) {
       const diff = entry.lastPrice - entry.refPrice;
       const pct = (diff / entry.refPrice) * 100;
-      const sign = diff >= 0 ? '+' : '-';
-      const tone = diff >= 0 ? 'tcw-up' : 'tcw-down';
+      // No move is neither up nor down: no sign and the text's own colour, where +0.00% in green read as a gain.
+      const sign = diff > 0 ? '+' : diff < 0 ? '-' : '';
+      const tone = diff > 0 ? ' tcw-up' : diff < 0 ? ' tcw-down' : '';
       const pctText = Math.abs(pct).toLocaleString(this.locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
       if (ref.moveEl) {
         ref.moveEl.textContent = `${sign}${formatMove(Math.abs(diff), entry.lastPrice, this.locale, decimals)}`;
-        ref.moveEl.className = `tcw-watchlist-move ${tone}`;
+        ref.moveEl.className = `tcw-watchlist-move${tone}`;
       }
       ref.changeEl.textContent = `${sign}${pctText}%`;
-      ref.changeEl.className = `tcw-watchlist-change ${tone}`;
+      ref.changeEl.className = `tcw-watchlist-change${tone}`;
     } else {
       if (ref.moveEl) ref.moveEl.textContent = '';
       ref.changeEl.textContent = '';

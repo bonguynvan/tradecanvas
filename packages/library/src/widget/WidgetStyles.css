@@ -2780,6 +2780,7 @@
   border-bottom: 1px solid var(--tcw-border);
 }
 
+.tcw-alerts-new,
 .tcw-alerts-close {
   display: inline-flex;
   align-items: center;
@@ -2792,9 +2793,19 @@
   border-radius: var(--tcw-control-radius);
   cursor: pointer;
 }
+.tcw-alerts-new:hover,
 .tcw-alerts-close:hover {
   background: var(--tcw-bg-surface);
   color: var(--tcw-text);
+}
+/* The form open: its button reads as on. */
+/* Over the dock's rule for its header buttons, which is as specific. */
+.tcw-alerts-header .tcw-alerts-new[aria-expanded='true'] {
+  color: var(--tcw-accent);
+}
+/* Folded away: the grid's own display would show it. */
+.tcw-alerts-form[hidden] {
+  display: none;
 }
 
 .tcw-alerts-form {
