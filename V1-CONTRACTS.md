@@ -1,5 +1,7 @@
 # v1 Frozen Contracts (Phase 0)
 
+> **A record from 1.0 (July 2026), kept as written.** The two adapter interfaces below read in 2.x as they do here, with members added since (`DataAdapter.supportedTimeframes` and `ExecutionAdapter.reversePosition` among them). The published types and the [docs](https://tradecanvas.dev/docs/getting-started/) are what to code against: where this page and the types differ, the types are right.
+
 > These are the interfaces TradeCanvas commits to at `1.0.0` and will not break under 1.x. Everything else (new chart types, indicators, adapters, plugins) is additive and can ship any time. Get **these** right once.
 
 Principle: **broaden additively, freeze the contracts.** Each contract below either (a) already exists and is good enough to freeze as-is, or (b) is net-new but slots into an existing seam so it's backward-compatible.

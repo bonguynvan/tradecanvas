@@ -6,9 +6,9 @@ Fixes go into the latest release of each `@tradecanvas/*` package. Please check 
 
 | Packages | Supported |
 |---|---|
-| The latest 1.x release of `chart`, `core`, `commons` and `analytics` | Yes |
-| The latest 1.x release of `react`, `vue` and `svelte` | Yes |
-| Earlier releases | No, please upgrade |
+| The latest 2.x release of `chart`, `core`, `commons`, `analytics` and `mcp` | Yes |
+| The latest 2.x release of `react`, `vue` and `svelte` | Yes |
+| Earlier releases, 1.x among them | No, please upgrade |
 
 ## Reporting a vulnerability
 
@@ -26,5 +26,6 @@ TradeCanvas runs in the browser and draws data it's given. Reports we're most in
 - script injection through data, symbol names, drawing text, news items or any other string the library renders;
 - data adapters sending requests or credentials somewhere they shouldn't;
 - layouts or saved state that run code when loaded.
+- the MCP server (`@tradecanvas/mcp`) reading or writing anything beyond its own catalog.
 
 The demo site and its sample data feeds are in scope only where they show a flaw in the packages themselves.
