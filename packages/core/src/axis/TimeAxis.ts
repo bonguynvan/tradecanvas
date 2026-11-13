@@ -167,8 +167,8 @@ export class TimeAxis {
       if (markX < chartRect.x) continue;
       const kind = markKind(mark.weight);
       const label = this.label(mark, kind, daily);
-      // A new year stands out from the months and days around it.
-      ctx.font = kind === 'year' ? bold : plain;
+      // A new year, month or day stands out from the times around it: where one day ends is read at a glance.
+      ctx.font = kind === 'time' ? plain : bold;
       const half = ctx.measureText(label).width / 2;
       // A label of a bar by the plot's left edge would be cut there: it starts at the edge instead.
       const x = Math.max(markX, chartRect.x + half);

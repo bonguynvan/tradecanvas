@@ -12,8 +12,32 @@ import {
   type StyleValueKind,
 } from '../types/style.js';
 import { resolveVolumeColors } from '../constants/themes.js';
+import { lerpColor } from './color.js';
 
 const LINE_STYLES: readonly LineStyle[] = ['solid', 'dashed', 'dotted'];
+
+/** How much of the ink a crosshair tag's ground takes. */
+const CROSSHAIR_TAG_INK = 0.28;
+
+/** The colours of the crosshair's tags on the axes. */
+export interface CrosshairTagLook {
+  background: string;
+  text: string;
+}
+
+/**
+ * The crosshair's tags on the axes: `text` faded into `background` as their
+ * ground, their words in `text`. A theme whose colours can't be mixed (a
+ * name, hsl(), one of them missing) keeps the plain pair, the text colour as
+ * the ground and the background for the words: mixed wrong, the words would
+ * be written in their own ground.
+ */
+export function crosshairTagLook(background: string, text: string): CrosshairTagLook {
+  const plain = { background: text, text: background };
+  if (typeof background !== 'string' || typeof text !== 'string') return plain;
+  const ground = lerpColor(background, text, CROSSHAIR_TAG_INK);
+  return ground === background || ground === text ? plain : { background: ground, text };
+}
 /** Widths past this are a mistake, not a look. */
 const MAX_WIDTH = 20;
 /** Long enough for any colour CSS writes, short enough to keep anything else out. */
@@ -161,12 +185,14 @@ export function resolveChartTheme(base: Theme, chartType: ChartType, overrides: 
       horizontal: lineLook(o, 'grid.horizontal', { visible: true, color: plain.grid, style: 'solid', width: 1 }),
       vertical: lineLook(o, 'grid.vertical', { visible: true, color: plain.grid, style: 'solid', width: 1 }),
     },
-    // Hairlines, solid: a dash pattern is noise the eye has to read past.
+    // Hairlines, solid: a dash pattern is noise the eye has to read past. Its
+    // tags are the ink faded into the ground: read when looked for, quieter
+    // than the last price's beside them.
     crosshair: {
       horizontal: lineLook(o, 'crosshair.horizontal', { visible: true, color: plain.crosshair, style: 'solid', width: 1 }),
       vertical: lineLook(o, 'crosshair.vertical', { visible: true, color: plain.crosshair, style: 'solid', width: 1 }),
-      labelBackground: str('crosshair.labelBackground', plain.text),
-      labelText: str('crosshair.labelTextColor', background),
+      labelBackground: str('crosshair.labelBackground', crosshairTagLook(background, plain.text).background),
+      labelText: str('crosshair.labelTextColor', crosshairTagLook(background, plain.text).text),
     },
     axis: {
       price: { line: str('axis.price.lineColor', plain.axisLine), text: str('axis.price.textColor', plain.axisLabel) },
@@ -178,7 +204,8 @@ export function resolveChartTheme(base: Theme, chartType: ChartType, overrides: 
       visible: (o('lastPrice.visible') as boolean | undefined) ?? true,
       up: str('lastPrice.upColor', series.up),
       down: str('lastPrice.downColor', series.down),
-      style: (o('lastPrice.style') as LineStyle | undefined) ?? 'solid',
+      // Dotted: a solid line across the chart reads as one somebody drew.
+      style: (o('lastPrice.style') as LineStyle | undefined) ?? 'dotted',
       width: (o('lastPrice.width') as number | undefined) ?? 1,
     },
     sessionBreaks: {

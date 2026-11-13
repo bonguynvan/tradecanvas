@@ -89,12 +89,21 @@ export function panelPrecision(step: number): number {
   return step < 10 ? 1 : 0;
 }
 
-/** A round step for `min`..`max` on a scale `height` px tall, its labels at least `MIN_PRICE_LABEL_GAP_PX` apart. */
+/**
+ * A round step for `min`..`max` on a scale `height` px tall: the largest
+ * whose labels sit no farther apart than `PRICE_LABEL_SPACING_PX`, and never
+ * closer than `MIN_PRICE_LABEL_GAP_PX`. Rounding the range up first, then the
+ * step, left a laptop's scale six labels where sixteen fit.
+ */
 export function roundStep(min: number, max: number, height: number): number {
-  let step = computeTickStep(min, max, tickTarget(height));
-  if (!(step > 0) || !(height > 0)) return step;
   const range = max - min;
-  for (let i = 0; i < 8 && (step / range) * height < MIN_PRICE_LABEL_GAP_PX; i++) step = nextRoundStep(step);
+  if (!(range > 0) || !(height > 0)) return computeTickStep(min, max, tickTarget(height));
+  // A pane shorter than two spacings aims for a label at its middle, not a step past its range.
+  const spacing = Math.min(PRICE_LABEL_SPACING_PX, height / 2);
+  let step = niceFloor((range * spacing) / height);
+  if (!(step > 0)) return computeTickStep(min, max, tickTarget(height));
+  const tooClose = (s: number) => (s / range) * height < MIN_PRICE_LABEL_GAP_PX || range / s > MAX_PRICE_TICKS;
+  for (let i = 0; i < 8 && tooClose(step); i++) step = nextRoundStep(step);
   return step;
 }
 

@@ -8,6 +8,7 @@ import { axisTimes } from '../charts/transforms/axisTimes.js';
 import { xToBarIndex, yToPrice, barIndexToX, barIndexToTime, priceToY, timeToX } from '../viewport/ScaleMapping.js';
 import { readableText } from '../finance/colorScale.js';
 import type { AxisSpan } from '../drawings/axisSpan.js';
+import { writtenDate } from '../axis/writtenDate.js';
 
 /** How strongly a drawing's span tints the axes: enough to see, light enough to read the scale through. */
 const SPAN_TINT_ALPHA = 0.2;
@@ -429,7 +430,7 @@ export class CrosshairHandler {
   private timeText(time: number, times: ReturnType<typeof axisTimes>): string {
     return this.timeFormatter
       ? this.timeFormatter(time * barTimeUnit(times), { kind: 'crosshair', timeZone: this.tz })
-      : formatBarTime(time * barTimeUnit(times), this.tz, barsAreDaily(times), this.exchangeZone);
+      : formatBarTime(time * barTimeUnit(times), this.tz, barsAreDaily(times), this.exchangeZone, this.locale);
   }
 
   private drawTimePill(
@@ -453,10 +454,13 @@ export class CrosshairHandler {
     const axisY = timeAxisY ?? (viewport.chartRect.y + viewport.chartRect.height);
     ctx.font = font;
     const half = Math.ceil(ctx.measureText(timeText).width) / 2 + PILL_PAD_X;
-    clearCoveredColumns(ctx, timeColumns, x - half, x + half, axisY, theme, this.spanTints);
+    // The tag stays on the plot: by either edge it stops there, where it would be cut.
+    const { chartRect } = viewport;
+    const at = Math.max(chartRect.x + half, Math.min(chartRect.x + chartRect.width - half, x));
+    clearCoveredColumns(ctx, timeColumns, at - half, at + half, axisY, theme, this.spanTints);
     drawAxisPill(ctx, {
       text: timeText,
-      anchorX: x,
+      anchorX: at,
       anchorY: axisY,
       orientation: 'bottom',
       bg: crosshairLooks(theme).labelBackground,
@@ -628,16 +632,16 @@ function drawAxisPill(ctx: CanvasRenderingContext2D, opts: AxisPillOptions): voi
 }
 
 /** `ms` is in milliseconds: the caller knows its series' unit. */
-function formatBarTime(ms: number, tz: TimeZoneSetting, daily?: boolean, exchangeZone?: string | null): string {
+function formatBarTime(ms: number, tz: TimeZoneSetting, daily?: boolean, exchangeZone?: string | null, locale = 'en-US'): string {
   // Same rule as TimeAxis's own label: a daily-or-larger bar has no time-of-day to show, so the
-  // year takes that space instead — `${m}/${day}` alone is ambiguous once bars span years apart.
+  // year takes that space instead: a day and a month alone are ambiguous once bars span years apart.
   // Its date is the one it stands for, in any zone shown.
   if (daily) {
     const date = barDateParts(ms, tz, exchangeZone);
-    return `${date.month}/${date.day}/${date.year}`;
+    return writtenDate(locale, date.year, date.month, date.day, true);
   }
   const parts = timeParts(ms, tz);
   const { year, month: m, day, hours: h, minutes: mm } = parts;
-  if (daily === undefined && isDateOnly(parts)) return `${m}/${day}/${year}`;
-  return `${m}/${day} ${h < 10 ? '0' + h : h}:${mm < 10 ? '0' + mm : mm}`;
+  if (daily === undefined && isDateOnly(parts)) return writtenDate(locale, year, m, day, true);
+  return `${writtenDate(locale, year, m, day, false)} ${h < 10 ? '0' + h : h}:${mm < 10 ? '0' + mm : mm}`;
 }
