@@ -101,7 +101,8 @@ chart.on('executionError', (e) => toast(e.payload.message))
 chart.cancelOrderIntent('ord-1')
 chart.closePositionIntent('pos-1')
 chart.reversePositionIntent('pos-1')                 // close, then the same size the other way
-chart.modifyPositionIntent({ positionId: 'pos-1', stopLoss: null }) // null removes the stop`}</code></pre>
+chart.modifyPositionIntent({ positionId: 'pos-1', stopLoss: null }) // null removes the stop
+chart.modifyPositionIntent({ positionId: 'pos-1', trailingStop: 150 }) // the stop trails the price by 150; null ends the trail`}</code></pre>
 <p>
   能一步完成反手的适配器可实现 <code>reversePosition</code>；
   若未实现，图表会先平仓，再按相反方向发送一笔市价单。
@@ -114,6 +115,9 @@ chart.modifyPositionIntent({ positionId: 'pos-1', stopLoss: null }) // null remo
   <code>stopLoss: null</code>（或 <code>takeProfit: null</code>）表示移除，
   而缺少该字段表示保持不变。写成 <code>intent.stopLoss ?? position.stopLoss</code>
   的代码会保留用户已经移除的止损。
+</p>
+<p>
+  <strong>追踪止损</strong>是跟随价格的止损：持仓的 <code>trailingStop</code> 是止损与最优价格之间保持的距离（以价格计），多头向上跟随，空头向下跟随，并且绝不回退。在图表上，它的标签显示为 TSL。止损标签上的按钮会按止损到当前价格的距离开始追踪，或者结束追踪；<code>lineButtons: {'{'} trailStop: false {'}'}</code> 可将其隐藏。模拟账户会自行移动止损。对接经纪商的适配器在 <code>modifyPosition</code> 中转交 <code>trailingStop</code>（数字表示开始追踪，<code>null</code> 表示结束追踪并让止损留在原处），并在经纪商移动止损时上报持仓的 <code>stopLoss</code>。
 </p>
 
 <h2>图表上的成交</h2>

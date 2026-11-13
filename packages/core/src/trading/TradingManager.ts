@@ -171,6 +171,9 @@ export class TradingManager {
       case 'removeStop':
         this.eventCallback?.('positionModify', { positionId: action.positionId, [action.which]: null });
         break;
+      case 'trailStop':
+        this.eventCallback?.('positionModify', { positionId: action.positionId, trailingStop: action.distance });
+        break;
     }
   }
 

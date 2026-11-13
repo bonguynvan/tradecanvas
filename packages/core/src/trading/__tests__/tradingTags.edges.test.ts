@@ -44,9 +44,10 @@ describe('a press on a tag', () => {
     // The stop at 31 (y 69) and an order at 30 (y 70): the stop's tag keeps the axis end.
     manager.setPositions([{ id: 'p1', side: 'buy', entryPrice: 60, quantity: 2, stopLoss: 31 }]);
     manager.setOrders([{ id: 'o1', side: 'buy', type: 'limit', price: 30, quantity: 1 }]);
-    const remove = draw().buttons.find((b) => b.action.type === 'removeStop')!;
+    // The first of the stop's buttons (its trail, then its ×): the press is on the tag's words before them.
+    const first = draw().buttons.find((b) => b.action.type === 'trailStop')!;
     // On the stop's tag, 5 px over its line; the line lands on y 40.
-    drag({ x: remove.x - 10, y: 64 }, { x: remove.x - 10, y: 35 });
+    drag({ x: first.x - 10, y: 64 }, { x: first.x - 10, y: 35 });
     expect(events).toEqual([{ event: 'positionModify', data: { positionId: 'p1', stopLoss: 60 } }]);
   });
 

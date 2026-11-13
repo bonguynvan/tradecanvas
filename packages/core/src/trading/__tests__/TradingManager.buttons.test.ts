@@ -74,7 +74,7 @@ describe('TradingManager buttons on the lines', () => {
   });
 
   it('draws no buttons that are switched off', () => {
-    manager.setConfig({ lineButtons: { cancel: false, close: false, reverse: false, removeStops: false } });
+    manager.setConfig({ lineButtons: { cancel: false, close: false, reverse: false, removeStops: false, trailStop: false } });
     manager.render(recordingCtx().ctx, unitViewport, theme);
     expect(manager.isOverButton({ x: 40, y: 70 })).toBe(false);
     expect((manager as unknown as { buttons: unknown[] }).buttons).toEqual([]);
@@ -137,5 +137,45 @@ describe('TradingManager — a press called off (the browser took the touch back
 
   it('is false with nothing pressed', () => {
     expect(manager.cancelPointer()).toBe(false);
+  });
+});
+
+describe('TradingManager: the trail button on a stop-loss', () => {
+  it('asks for the stop to trail at its distance from the price now', () => {
+    // Price 70, stop 50.
+    click(buttonCentre('trailStop'));
+    expect(events).toEqual([{ event: 'positionModify', data: { positionId: 'p1', trailingStop: 20 } }]);
+  });
+
+  it('asks for the trail to end on a stop that is trailing, and stamps it TSL', () => {
+    manager.setPositions([{ id: 'p1', side: 'buy', entryPrice: 60, quantity: 2, stopLoss: 50, takeProfit: 80, trailingStop: 20 }]);
+    const { ctx, texts } = recordingCtx();
+    manager.render(ctx, unitViewport, theme);
+    expect(texts).toContain('TSL');
+    expect(texts).not.toContain('SL');
+    click(buttonCentre('trailStop'));
+    expect(events).toEqual([{ event: 'positionModify', data: { positionId: 'p1', trailingStop: null } }]);
+  });
+
+  it('reads a broker’s 0 for "no trail" as none: SL, and a button that starts one', () => {
+    manager.setPositions([{ id: 'p1', side: 'buy', entryPrice: 60, quantity: 2, stopLoss: 50, trailingStop: 0 }]);
+    const { ctx, texts } = recordingCtx();
+    manager.render(ctx, unitViewport, theme);
+    expect(texts).toContain('SL');
+    click(buttonCentre('trailStop'));
+    expect(events).toEqual([{ event: 'positionModify', data: { positionId: 'p1', trailingStop: 20 } }]);
+  });
+
+  it('is not on a take-profit, on a stop the price is past, or when switched off', () => {
+    const count = () => (manager as unknown as { buttons: { action: { type: string } }[] }).buttons.filter((b) => b.action.type === 'trailStop').length;
+    expect(count()).toBe(1);
+    // The price under a long's stop: no distance to trail at.
+    manager.setCurrentPrice(45);
+    manager.render(recordingCtx().ctx, unitViewport, theme);
+    expect(count()).toBe(0);
+    manager.setCurrentPrice(70);
+    manager.setConfig({ lineButtons: { trailStop: false } });
+    manager.render(recordingCtx().ctx, unitViewport, theme);
+    expect(count()).toBe(0);
   });
 });

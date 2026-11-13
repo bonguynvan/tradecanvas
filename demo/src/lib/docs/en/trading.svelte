@@ -105,7 +105,8 @@ chart.on('executionError', (e) => toast(e.payload.message))
 chart.cancelOrderIntent('ord-1')
 chart.closePositionIntent('pos-1')
 chart.reversePositionIntent('pos-1')                 // close, then the same size the other way
-chart.modifyPositionIntent({ positionId: 'pos-1', stopLoss: null }) // null removes the stop`}</code></pre>
+chart.modifyPositionIntent({ positionId: 'pos-1', stopLoss: null }) // null removes the stop
+chart.modifyPositionIntent({ positionId: 'pos-1', trailingStop: 150 }) // the stop trails the price by 150; null ends the trail`}</code></pre>
 <p>
   An adapter that can reverse in one step implements <code>reversePosition</code>;
   without it the chart closes the position and sends a market order the other way.
@@ -118,6 +119,9 @@ chart.modifyPositionIntent({ positionId: 'pos-1', stopLoss: null }) // null remo
   <code>stopLoss: null</code> (or <code>takeProfit: null</code>) means remove it, while a
   missing field means leave it as it is. Code written as
   <code>intent.stopLoss ?? position.stopLoss</code> would keep a stop the user removed.
+</p>
+<p>
+  A <strong>trailing stop</strong> is a stop-loss that follows the price: a position's <code>trailingStop</code> is the distance, in price, its stop keeps behind the best price, up for a long and down for a short, and it never moves back. On the chart its tag reads TSL. A button on the stop's tag starts a trail at the stop's distance from the price now, or ends one; <code>lineButtons: {'{'} trailStop: false {'}'}</code> hides it. The paper account moves the stop itself. An adapter for a broker passes <code>trailingStop</code> on from <code>modifyPosition</code> (a number starts the trail, <code>null</code> ends it and leaves the stop where it is) and reports the position's <code>stopLoss</code> as the broker moves it.
 </p>
 
 <h2>Fills on the chart</h2>

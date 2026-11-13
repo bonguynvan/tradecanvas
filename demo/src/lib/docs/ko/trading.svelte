@@ -105,7 +105,8 @@ chart.on('executionError', (e) => toast(e.payload.message))
 chart.cancelOrderIntent('ord-1')
 chart.closePositionIntent('pos-1')
 chart.reversePositionIntent('pos-1')                 // close, then the same size the other way
-chart.modifyPositionIntent({ positionId: 'pos-1', stopLoss: null }) // null removes the stop`}</code></pre>
+chart.modifyPositionIntent({ positionId: 'pos-1', stopLoss: null }) // null removes the stop
+chart.modifyPositionIntent({ positionId: 'pos-1', trailingStop: 150 }) // the stop trails the price by 150; null ends the trail`}</code></pre>
 <p>
   한 번에 반전할 수 있는 어댑터는 <code>reversePosition</code>을 구현합니다.
   구현하지 않으면 차트가 포지션을 청산한 뒤 반대 방향으로 시장가 주문을 보냅니다.
@@ -118,6 +119,9 @@ chart.modifyPositionIntent({ positionId: 'pos-1', stopLoss: null }) // null remo
   <code>stopLoss: null</code>(또는 <code>takeProfit: null</code>)은 제거를 뜻하고,
   필드가 없으면 그대로 둔다는 뜻입니다. <code>intent.stopLoss ?? position.stopLoss</code>처럼
   작성한 코드는 사용자가 제거한 손절을 그대로 남겨 둡니다.
+</p>
+<p>
+  <strong>트레일링 스톱</strong>은 가격을 따라가는 손절입니다. 포지션의 <code>trailingStop</code> 은 손절이 가장 유리한 가격 뒤에 유지하는 거리(가격 단위)이며, 롱은 위로, 숏은 아래로 따라가고 결코 되돌아가지 않습니다. 차트에서는 태그가 TSL 로 표시됩니다. 손절 태그의 버튼은 현재 가격에서 손절까지의 거리로 트레일을 시작하거나 끝냅니다. <code>lineButtons: {'{'} trailStop: false {'}'}</code> 로 버튼을 숨길 수 있습니다. 모의 계좌는 손절을 직접 옮깁니다. 브로커용 어댑터는 <code>modifyPosition</code> 에서 받은 <code>trailingStop</code> 을 전달하고(숫자는 트레일 시작, <code>null</code> 은 트레일을 끝내고 손절은 그 자리에 둡니다) 브로커가 옮긴 포지션의 <code>stopLoss</code> 를 보고합니다.
 </p>
 
 <h2>차트 위의 체결</h2>

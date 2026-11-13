@@ -5,7 +5,9 @@ export type LineButtonAction =
   | { type: 'cancelOrder'; orderId: string }
   | { type: 'closePosition'; positionId: string }
   | { type: 'reversePosition'; positionId: string }
-  | { type: 'removeStop'; positionId: string; which: 'stopLoss' | 'takeProfit' };
+  | { type: 'removeStop'; positionId: string; which: 'stopLoss' | 'takeProfit' }
+  /** Trail the stop-loss at `distance` from the price, or end its trail (null). */
+  | { type: 'trailStop'; positionId: string; distance: number | null };
 
 /** A button drawn on a line, where it was drawn. */
 export interface LineButton {

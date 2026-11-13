@@ -24,6 +24,22 @@ export interface PaperExecutionOptions {
 }
 
 /**
+ * `position` with its trailing stop brought to its distance behind `price`
+ * (above it, for a short) when that is nearer than where the stop is: a stop
+ * only ever tightens. The same position when it does not trail, the price is
+ * not known, or the stop stays.
+ */
+function trailed(position: TradingPosition, price: number): TradingPosition {
+  const distance = position.trailingStop;
+  if (distance === undefined || !(distance > 0) || !Number.isFinite(price) || !(price > 0)) return position;
+  const long = position.side === 'buy';
+  const at = long ? price - distance : price + distance;
+  const current = position.stopLoss;
+  if (current !== undefined && (long ? at <= current : at >= current)) return position;
+  return { ...position, stopLoss: at };
+}
+
+/**
  * Reference in-memory `ExecutionAdapter`: virtual fills, hedging-style
  * positions (one position per filled order), and pending limit/stop orders
  * triggered via `setMarkPrice()`. SL/TP auto-close when the mark crosses them.
@@ -130,11 +146,17 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
     // Left out keeps a stop, null removes it.
     const pick = (next: number | null | undefined, current: number | undefined) =>
       next === undefined ? current : next ?? undefined;
-    this.positions = this.positions.map((p) =>
-      p.id === intent.positionId
-        ? { ...p, stopLoss: pick(intent.stopLoss, p.stopLoss), takeProfit: pick(intent.takeProfit, p.takeProfit) }
-        : p,
-    );
+    this.positions = this.positions.map((p) => {
+      if (p.id !== intent.positionId) return p;
+      const next: TradingPosition = { ...p, stopLoss: pick(intent.stopLoss, p.stopLoss), takeProfit: pick(intent.takeProfit, p.takeProfit) };
+      // A distance starts the trail, null ends it; anything that is not a distance is not taken.
+      if (intent.trailingStop === null) delete next.trailingStop;
+      else if (intent.trailingStop !== undefined && Number.isFinite(intent.trailingStop) && intent.trailingStop > 0) next.trailingStop = intent.trailingStop;
+      // The stop taken away: nothing left to trail.
+      if (intent.stopLoss === null) delete next.trailingStop;
+      // A stop put somewhere by hand stays there, looser than its distance too: it follows on from it.
+      return typeof intent.stopLoss === 'number' ? next : trailed(next, this.markPrice);
+    });
     this.emit('positions', this.positions);
   }
 
@@ -239,7 +261,20 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
     return false;
   }
 
+  /** Each trailing stop brought up behind the price (down, for a short). True when one moved. */
+  private trailStops(): boolean {
+    let moved = false;
+    this.positions = this.positions.map((p) => {
+      const next = trailed(p, this.markPrice);
+      if (next !== p) moved = true;
+      return next;
+    });
+    return moved;
+  }
+
   private checkStops(): void {
+    // The stops that were there are checked first: a price that falls through one fills it
+    // where it was, and only then do the others follow the price.
     let changed = false;
     for (const p of [...this.positions]) {
       const hitSL =
@@ -253,6 +288,7 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
       this.close(p, hitSL ? p.stopLoss! : p.takeProfit!, hitSL ? 'stopLoss' : 'takeProfit');
       changed = true;
     }
+    if (this.trailStops()) changed = true;
     if (changed) this.emit('positions', this.positions);
   }
 

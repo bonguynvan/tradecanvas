@@ -137,3 +137,109 @@ describe('PaperExecutionAdapter fill times', () => {
     expect(times[1]).toBeGreaterThanOrEqual(before);
   });
 });
+
+describe('PaperExecutionAdapter: a trailing stop', () => {
+  let adapter: PaperExecutionAdapter;
+  const stop = () => adapter.getPositions()[0]?.stopLoss;
+  const open = async (side: 'buy' | 'sell', stopLoss?: number): Promise<string> => {
+    await adapter.placeOrder({ side, type: 'market', price: 100, quantity: 1, stopLoss });
+    return adapter.getPositions()[0].id;
+  };
+
+  beforeEach(() => {
+    adapter = new PaperExecutionAdapter({ markPrice: 100 });
+    adapter.connect({});
+  });
+
+  it('follows a long up at its distance, never back down, and closes it there', async () => {
+    const id = await open('buy', 95);
+    await adapter.modifyPosition({ positionId: id, trailingStop: 5 });
+    expect(adapter.getPositions()[0]).toMatchObject({ stopLoss: 95, trailingStop: 5 });
+    adapter.setMarkPrice(110);
+    expect(stop()).toBe(105);
+    adapter.setMarkPrice(107);
+    expect(stop()).toBe(105);
+    const fills: FillEvent[] = [];
+    adapter.on<FillEvent>('fill', (e) => fills.push(e.data));
+    adapter.setMarkPrice(105);
+    expect(adapter.getPositions()).toHaveLength(0);
+    expect(fills[0]).toMatchObject({ price: 105, reason: 'stopLoss' });
+  });
+
+  it('follows a short down, and never back up', async () => {
+    const id = await open('sell', 106);
+    await adapter.modifyPosition({ positionId: id, trailingStop: 4 });
+    adapter.setMarkPrice(90);
+    expect(stop()).toBe(94);
+    adapter.setMarkPrice(93);
+    expect(stop()).toBe(94);
+  });
+
+  it('gives a position with no stop one at its distance from the price now', async () => {
+    const id = await open('buy');
+    await adapter.modifyPosition({ positionId: id, trailingStop: 3 });
+    expect(stop()).toBe(97);
+  });
+
+  it('never loosens a stop that is already nearer than the distance', async () => {
+    const id = await open('buy', 98);
+    await adapter.modifyPosition({ positionId: id, trailingStop: 5 });
+    expect(stop()).toBe(98);
+    adapter.setMarkPrice(102);
+    expect(stop()).toBe(98);
+    adapter.setMarkPrice(104);
+    expect(stop()).toBe(99);
+  });
+
+  it('stops following when the trail is taken away, the stop staying where it is', async () => {
+    const id = await open('buy', 95);
+    await adapter.modifyPosition({ positionId: id, trailingStop: 5 });
+    adapter.setMarkPrice(110);
+    await adapter.modifyPosition({ positionId: id, trailingStop: null });
+    expect(adapter.getPositions()[0].trailingStop).toBeUndefined();
+    adapter.setMarkPrice(120);
+    expect(stop()).toBe(105);
+  });
+
+  it('follows from a stop moved by hand, and ends with the stop removed', async () => {
+    const id = await open('buy', 95);
+    await adapter.modifyPosition({ positionId: id, trailingStop: 5 });
+    await adapter.modifyPosition({ positionId: id, stopLoss: 99 });
+    expect(adapter.getPositions()[0]).toMatchObject({ stopLoss: 99, trailingStop: 5 });
+    adapter.setMarkPrice(106);
+    expect(stop()).toBe(101);
+    // No stop, nothing to trail.
+    await adapter.modifyPosition({ positionId: id, stopLoss: null });
+    expect(adapter.getPositions()[0].trailingStop).toBeUndefined();
+    adapter.setMarkPrice(130);
+    expect(stop()).toBeUndefined();
+  });
+
+  it('leaves a stop moved back by hand where it was put, and follows on from there', async () => {
+    const id = await open('buy', 95);
+    await adapter.modifyPosition({ positionId: id, trailingStop: 5 });
+    // Looser than its distance: it does not spring back.
+    await adapter.modifyPosition({ positionId: id, stopLoss: 90 });
+    expect(stop()).toBe(90);
+    adapter.setMarkPrice(100.5);
+    expect(stop()).toBe(95.5);
+  });
+
+  it('takes no distance that is not a positive number', async () => {
+    const id = await open('buy', 95);
+    for (const trailingStop of [0, -2, Number.NaN, Number.POSITIVE_INFINITY]) {
+      await adapter.modifyPosition({ positionId: id, trailingStop });
+      expect(adapter.getPositions()[0].trailingStop).toBeUndefined();
+    }
+  });
+
+  it('says so each time the stop moves, and not when it does not', async () => {
+    const id = await open('buy', 95);
+    await adapter.modifyPosition({ positionId: id, trailingStop: 5 });
+    let told = 0;
+    adapter.on<TradingPosition[]>('positions', () => told++);
+    adapter.setMarkPrice(101);
+    adapter.setMarkPrice(100.5);
+    expect(told).toBe(1);
+  });
+});

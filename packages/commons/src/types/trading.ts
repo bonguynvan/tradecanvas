@@ -31,6 +31,13 @@ export interface TradingPosition {
   closedQuantity?: number;
   stopLoss?: number;
   takeProfit?: number;
+  /**
+   * The distance (in price) its stop-loss trails the best price by: the stop
+   * follows the price up for a long and down for a short, and never moves
+   * back. `stopLoss` is where the stop is now; its tag reads TSL. The account
+   * moves it (the paper account does; a broker's adapter reports its own).
+   */
+  trailingStop?: number;
   meta?: Record<string, unknown>;
 }
 
@@ -95,10 +102,11 @@ export interface TradingConfig {
   contextMenu?: { enabled?: boolean };
   /**
    * Buttons on the lines: × on an order cancels it, × on a position closes it
-   * and ⇅ reverses it, × on a stop-loss or take-profit removes it. All on by
-   * default.
+   * and ⇅ reverses it, × on a stop-loss or take-profit removes it, and the
+   * trail button on a stop-loss starts or ends its trailing (`trailStop`). All
+   * on by default.
    */
-  lineButtons?: { cancel?: boolean; close?: boolean; reverse?: boolean; removeStops?: boolean };
+  lineButtons?: { cancel?: boolean; close?: boolean; reverse?: boolean; removeStops?: boolean; trailStop?: boolean };
   /** Marks where orders filled (from the execution adapter's fills). On by default. */
   fillMarks?: boolean;
   /** Decimals of the prices on the trading tags; unset, the price axis's (the market's or the range's). */
@@ -136,6 +144,11 @@ export interface PositionModifyIntent {
   stopLoss?: number | null;
   /** A new take-profit; null removes it, left out keeps it. */
   takeProfit?: number | null;
+  /**
+   * The distance (in price) the stop-loss is to trail the price by; null ends
+   * the trail and leaves the stop where it is, left out keeps it.
+   */
+  trailingStop?: number | null;
 }
 
 export interface PositionCloseIntent {
@@ -153,7 +166,7 @@ export const DEFAULT_TRADING_CONFIG: TradingConfig = {
   positionColors: { profit: '#1fa874', loss: '#e8505b', entry: '#4c8dff' },
   depthOverlay: { enabled: false, bidColor: 'rgba(31, 168, 116,0.15)', askColor: 'rgba(232, 80, 91,0.15)', maxWidth: 100 },
   contextMenu: { enabled: true },
-  lineButtons: { cancel: true, close: true, reverse: true, removeStops: true },
+  lineButtons: { cancel: true, close: true, reverse: true, removeStops: true, trailStop: true },
   fillMarks: true,
   dragThreshold: 3,
 };
