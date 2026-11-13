@@ -1,5 +1,12 @@
 # @tradecanvas/core
 
+## 2.2.2
+
+### Patch Changes
+
+- dc94f17: Every tag on the price axis is one shape: the axis's width, no arrow or notch, its price in one column with the scale's own labels. The last price's, the crosshair's, an order's, an alert's, a drawing's and an indicator value's no longer differ in width and inset.
+  - @tradecanvas/commons@2.2.2
+
 ## 2.2.1
 
 ### Patch Changes

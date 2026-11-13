@@ -1,6 +1,6 @@
 {
   "name": "@tradecanvas/react",
-  "version": "2.0.10",
+  "version": "2.0.11",
   "type": "module",
   "description": "React component for @tradecanvas/chart, the open-source trading chart library: candlestick charts, indicators and drawing tools with reactive props and ref forwarding.",
   "license": "MIT",
