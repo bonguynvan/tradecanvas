@@ -2,6 +2,7 @@ import type { OHLCBar, Theme, TimeZoneSetting, ViewportState } from '@tradecanva
 import { UI_ICONS, barDateParts, formatPrice, iconSvg, normalizeBarTime, timeParts, type BarTimeUnit } from '@tradecanvas/commons';
 import { barIndexToX, priceToY } from '../viewport/ScaleMapping.js';
 import { isolateFontFeatures } from '../engine/CanvasLayer.js';
+import { writtenDate } from '../axis/writtenDate.js';
 
 /** Decimals prices show when neither the chart nor the market sets them. */
 const DEFAULT_DECIMALS = 2;
@@ -137,7 +138,9 @@ export class PinnedTooltip {
 
     const ms = normalizeBarTime(bar.time, unit);
     const d = daily ? barDateParts(ms, this.tz, this.exchangeZone) : timeParts(ms, this.tz);
-    this.timeEl.textContent = daily ? `${d.month}/${d.day}/${d.year}` : `${d.month}/${d.day} ${pad(d.hours)}:${pad(d.minutes)}`;
+    // The month by name, as the crosshair's tag writes it: 11/12 is two different days to two readers.
+    const date = writtenDate(this.locale, d.year, d.month, d.day, daily);
+    this.timeEl.textContent = daily ? date : `${date} ${pad(d.hours)}:${pad(d.minutes)}`;
     this.timeEl.style.color = theme.textSecondary;
 
     // Built as nodes: the colours are set as style values, never parsed as markup.

@@ -136,7 +136,7 @@ describe('Chart.setMarket', () => {
       const inside = chart as unknown as Inside;
       const vp = inside.viewport.getState();
       inside.interactionManager.onAltClick({ x: 3 * (vp.barWidth + vp.barSpacing) - vp.offset, y: 10 });
-      expect(host.textContent).toContain('10/23/2026');
+      expect(host.textContent).toContain('Oct 23, 2026');
     });
 
     it('to a screen reader', () => {

@@ -167,12 +167,12 @@ describe('CrosshairHandler on daily bars', () => {
   it('dates a day built at the exchange’s midnight by the exchange’s date, in UTC and in New York', () => {
     // Ho Chi Minh City's 21 to 23 October, stamped at 17:00 UTC the day before.
     const vn = days(Date.UTC(2026, 9, 20, 17));
-    expect(pill(vn, 'UTC', 'Asia/Ho_Chi_Minh')).toBe('10/23/2026');
-    expect(pill(vn, 'America/New_York', 'Asia/Ho_Chi_Minh')).toBe('10/23/2026');
+    expect(pill(vn, 'UTC', 'Asia/Ho_Chi_Minh')).toBe('Oct 23, 2026');
+    expect(pill(vn, 'America/New_York', 'Asia/Ho_Chi_Minh')).toBe('Oct 23, 2026');
   });
 
   it('dates a day stamped at 00:00 UTC by the date it names, in New York too', () => {
-    expect(pill(days(Date.UTC(2026, 9, 21)), 'America/New_York', null)).toBe('10/23/2026');
+    expect(pill(days(Date.UTC(2026, 9, 21)), 'America/New_York', null)).toBe('Oct 23, 2026');
   });
 });
 

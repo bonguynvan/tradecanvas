@@ -101,9 +101,9 @@ export class CurrentPriceLine {
     const look = theme.style?.lastPrice;
     const isFlashing = Date.now() < this.flashUntil;
 
-    // A solid hairline (unless its style says otherwise)
+    // A dotted hairline (unless its style says otherwise): solid, it reads as a line somebody drew.
     const width = look?.width ?? 1;
-    ctx.setLineDash(lineDash(look?.style ?? 'solid', [4, 3], width));
+    ctx.setLineDash(lineDash(look?.style ?? 'dotted', [4, 3], width));
     ctx.strokeStyle = color;
     ctx.lineWidth = width;
     ctx.globalAlpha = isFlashing ? 1 : 0.7;

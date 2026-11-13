@@ -121,7 +121,7 @@ export const DARK_THEME: Theme = {
   background: NIGHT,
   text: NIGHT_INK,
   textSecondary: '#8d8b86',
-  grid: '#1d1e21',
+  grid: '#232429',
   crosshair: NIGHT_CROSSHAIR,
   candleUp: DARK_UP,
   candleDown: DARK_DOWN,

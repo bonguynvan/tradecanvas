@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+### Engine
+
+- **The price scale has as many labels as fit** (`@tradecanvas/core`, `@tradecanvas/chart`). Its step was a round number of a range already rounded up, which on a laptop left six labels 100 px apart where sixteen fit, and the grid's lines with them. The step is now the largest round one whose labels sit no farther apart than 56 px, never closer than 30: 200 where it was 500 on a Bitcoin chart 640 px tall. Indicator panes and the compare scale follow. `chart.getPriceStep()` returns the finer step.
+- **The last price's line is dotted** (`@tradecanvas/commons`). Solid, it read as a horizontal line somebody drew. `lastPrice.style: 'solid'` brings the old one back.
+- **The crosshair's tags are quieter than the last price's** (`@tradecanvas/commons`, `@tradecanvas/core`). They were the text colour, the brightest thing on the axis; they are now that colour faded into the background, with the text colour for their words. `crosshair.labelBackground` and `crosshair.labelTextColor` still set them.
+- **A date on a tag names its month** (`@tradecanvas/core`). The crosshair's time tag, a drawing's and the pinned tooltip wrote `11/12 23:05`, the 12th of November to one reader and the 11th of December to another. They now write the date as the chart's language does, the month by name: `Nov 12 23:05`, `12 thg 11 23:05`, and `Nov 12, 2026` on daily bars. A `timeFormatter` still writes its own.
+- **The crosshair's time tag stays on the plot** (`@tradecanvas/core`). By the left or right edge it ran off the plot and was cut; it now stops at the edge.
+- **A new day stands out on the time axis** (`@tradecanvas/core`): days and months are in the heavier weight the year had, so where one session ends is read at a glance.
+- **The dark theme's grid is a step lighter** (`@tradecanvas/commons`): `#232429` where it was `#1d1e21`, enough to follow a line across to the scale.
+
 ## 2.1.1 (2026-11-12)
 
 ### Engine
