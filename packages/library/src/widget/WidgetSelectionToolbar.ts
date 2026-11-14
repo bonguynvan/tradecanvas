@@ -23,11 +23,15 @@ export interface SelectionToolbarTarget {
   canFill?: boolean;
   /** The drawing writes text (a text colour button). */
   canText?: boolean;
+  /** Its words can be typed in place, over it (a button that opens the box). */
+  canType?: boolean;
 }
 
 export interface SelectionToolbarCallbacks {
   onStyle: (patch: Partial<Pick<DrawingStyle, 'color' | 'lineWidth' | 'lineStyle' | 'fillColor' | 'textColor'>>) => void;
   onSettings: () => void;
+  /** Type the drawing's words in place. */
+  onText: () => void;
   onAlert: () => void;
   onLock: (locked: boolean) => void;
   /** The full drawing menu, opened under the given point (root px). */
@@ -155,7 +159,7 @@ export class WidgetSelectionToolbar {
     const s = target.style;
     const key = [safeColor(s.color), safeWidth(s.lineWidth), safeLineStyle(s.lineStyle),
       target.locked, target.canDelete, target.canSettings, target.canAlert,
-      target.canFill === true, target.canText === true, s.fillColor, s.textColor].join('|');
+      target.canFill === true, target.canText === true, target.canType === true, s.fillColor, s.textColor].join('|');
     if (key !== this.built) {
       this.built = key;
       this.render(target);
@@ -198,6 +202,7 @@ export class WidgetSelectionToolbar {
       pop('lineStyle', t('drawingSettings.lineStyle'), lineGlyph(lineStyle)),
       target.canFill ? pop('fill', t('drawingSettings.fill'), `<span class="tcw-sel-color tcw-sel-fill" style="background:${escapeHtml(safeColor(ownFillColor(target.style) ?? color))}"></span>`) : '',
       target.canText ? pop('textColor', t('drawingSettings.textColor'), `<span class="tcw-sel-text" style="--c:${escapeHtml(safeColor(target.style.textColor ?? color))}">T</span>`) : '',
+      target.canType ? btn('text', t('drawingSettings.text'), createIcon('textEdit', 15)) : '',
       '<span class="tcw-sel-sep" aria-hidden="true"></span>',
       target.canSettings ? btn('settings', t('legend.settings'), createIcon('settings', 15)) : '',
       target.canAlert ? btn('alert', t('drawingSettings.addAlert'), createIcon('bell', 15)) : '',
@@ -260,6 +265,7 @@ export class WidgetSelectionToolbar {
     }
     this.closePop();
     if (action === 'settings') this.callbacks.onSettings();
+    else if (action === 'text') this.callbacks.onText();
     else if (action === 'alert') this.callbacks.onAlert();
     else if (action === 'lock') this.callbacks.onLock(!this.target?.locked);
     else if (action === 'delete') this.callbacks.onDelete();

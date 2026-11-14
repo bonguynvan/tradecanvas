@@ -32,6 +32,7 @@ export const UI_ICONS: Readonly<Record<string, IconDef>> = {
   gitBranch: { d: 'M6 3V15M18 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM6 21a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM18 9a9 9 0 0 1-9 9' }, // Branch
   ruler: { d: 'M3.5 16.5L16.5 3.5L20.5 7.5L7.5 20.5zM6.5 13.5L8 15M9.5 10.5L11.5 12.5M12.5 7.5L14 9' }, // Measure
   type: { d: 'M6 6V4.5H18V6M12 4.5V19.5M9.5 19.5H14.5' }, // Text
+  textEdit: { d: 'M3.5 7.5V6H13.5V7.5M8.5 6V18M6.5 18H10.5M18 5V19M16 5H20M16 19H20' }, // Type text in place: a letter and the caret after it
   magnet: { d: 'M6 4V11a6 6 0 0 0 12 0V4M6 4h3.5v7a2.5 2.5 0 0 0 5 0V4H18M6 8h3.5M14.5 8H18' }, // Magnet
   magnetStrong: { d: 'M6 4V11a6 6 0 0 0 12 0V4M6 4h3.5v7a2.5 2.5 0 0 0 5 0V4H18', fills: ['M6 4h3.5v4H6z', 'M14.5 4H18v4h-3.5z'] }, // Strong magnet
   eraser: { d: 'M8.5 19.5L3.9 14.9a1.5 1.5 0 0 1 0-2.1l8.5-8.5a1.5 1.5 0 0 1 2.1 0l5.2 5.2a1.5 1.5 0 0 1 0 2.1L12 19.5zM8 9l7 7M12 19.5H20' }, // Eraser

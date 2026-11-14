@@ -9,6 +9,19 @@ import type { ChartWidget } from './ChartWidget.js';
 
 /** A text drawing's size when neither it nor its tool sets one. */
 const DEFAULT_TEXT_SIZE = 13;
+/** The room a text box keeps round its words (`textBox.ts`), which the typing box keeps too. */
+const TEXT_PAD_X = 8;
+const TEXT_PAD_Y = 6;
+/** A line of words' height, as a multiple of their size. */
+const TEXT_LINE_GAP = 1.3;
+/** How wide the typing box of a line with no words yet is (px). */
+const EMPTY_TEXT_WIDTH = 120;
+/** How much taller than its lines a box round words is before they are taken as turned (px). */
+const TURNED_SLACK = 2;
+/** How far off a line's words a double-click still counts as on them (px). */
+const TEXT_REACH = 8;
+/** Most lines a line's or a box's words show (`lineText.ts`). */
+const MAX_TEXT_LINES = 20;
 
 /** The box around all the given boxes (nulls skipped); null when there are none. */
 function unionRects(rects: (Box | null)[]): Box | null {
@@ -124,7 +137,62 @@ export class WidgetDrawingEdit {
       canAlert: this.host.featureState.alerts && drawings.length === 1 && this.host.chart.canAddDrawingAlert(primary.id),
       canFill: this.host.chart.getDrawingToolDescriptor(primary.type)?.fill === true,
       canText: this.host.chart.getDrawingToolDescriptor(primary.type)?.text === true,
+      canType: drawings.length === 1 && this.canTypeText(primary.id),
     });
+  }
+
+  /** Whether a drawing's words can be typed in place: a text's, or those a line or a box writes; not a locked one's. */
+  canTypeText(id: string): boolean {
+    const drawing = this.host.chart.getDrawings().find((d) => d.id === id);
+    return drawing !== undefined && !drawing.locked && (TEXT_LAYOUTS[drawing.type] !== undefined || TEXT_PLACES.has(drawing.type));
+  }
+
+  /** Whether a point of the chart (px) is on a drawing's words, or a few pixels off them. */
+  isOnDrawingText(id: string, x: number, y: number): boolean {
+    const box = this.host.chart.getDrawingTextRect(id);
+    return box !== null && box !== undefined
+      && x >= box.x - TEXT_REACH && x <= box.x + box.width + TEXT_REACH
+      && y >= box.y - TEXT_REACH && y <= box.y + box.height + TEXT_REACH;
+  }
+
+  /** Type a drawing's words in place (the toolbar's button, its menu); in its settings when its box is not on the chart. */
+  editDrawingText(id: string): void {
+    if (!this.canTypeText(id)) return;
+    if (!this.editTextInPlace(id, false)) this.openDrawingSettings(id, { tab: 'text' });
+  }
+
+  /**
+   * Where the typing box of a line's or a shape's words goes, in the chart's
+   * pixels: over the words as drawn, with the room a text box keeps round
+   * its words; with no words yet, where the first would be read (the middle
+   * of a line, the head of a box). Null for a drawing off the chart.
+   */
+  private placedTextRect(id: string, type: string, lineHeight: number): { x: number; y: number; width: number; height: number } | null {
+    const words = this.host.chart.getDrawingTextRect(id);
+    if (words) {
+      // As the chart counts them: without the blank ones at either end, and no more than it draws.
+      const text = (this.host.chart.getDrawings().find((d) => d.id === id)?.style.text ?? '').trim();
+      const lines = Math.min(MAX_TEXT_LINES, text.split('\n').length);
+      const upright = lines * lineHeight;
+      // Along a sloping line the words are turned, and the box round them is taller than they are:
+      // the typing box is level, as long as the words and as tall as their lines, about their middle.
+      const turned = words.height > upright + TURNED_SLACK;
+      const width = turned ? Math.hypot(words.width, words.height) : words.width;
+      const height = turned ? upright : words.height;
+      return {
+        x: words.x + (words.width - width) / 2 - TEXT_PAD_X,
+        y: words.y + (words.height - height) / 2 - TEXT_PAD_Y,
+        width: width + TEXT_PAD_X * 2,
+        height: height + TEXT_PAD_Y * 2,
+      };
+    }
+    const shape = this.host.chart.getDrawingRect(id);
+    if (!shape) return null;
+    const height = lineHeight + TEXT_PAD_Y * 2;
+    const x = shape.x + (shape.width - EMPTY_TEXT_WIDTH) / 2;
+    // A box writes at its head, inside it; a line over its middle.
+    const y = type === 'rectangle' ? shape.y : shape.y + shape.height / 2 - height;
+    return { x, y, width: EMPTY_TEXT_WIDTH, height };
   }
 
   /**
@@ -138,10 +206,15 @@ export class WidgetDrawingEdit {
     if (id === this.inlineTextId && this.inlineText?.isOpen()) return true;
     const drawing = this.host.chart.getDrawings().find((d) => d.id === id);
     const editor = this.inlineText;
+    const layout = drawing ? TEXT_LAYOUTS[drawing.type] : undefined;
+    // A line's or a shape's words: written along it or in it, and it is whole without them.
+    const placed = drawing !== undefined && !layout && TEXT_PLACES.has(drawing.type);
+    if (!drawing || !editor || drawing.locked || (!layout && !placed)) return false;
     // A text just drawn takes its words into the step that made it; an old one's edit is a step of its own.
-    if (!drawing || !editor || drawing.locked || (!justDrawn && !this.host.chart.beginDrawingEdit(id))) return false;
-    const layout = TEXT_LAYOUTS[drawing.type];
+    if (!justDrawn && !this.host.chart.beginDrawingEdit(id)) return false;
     const style = drawing.style;
+    // A line's words at the size the chart writes them (the look's, without one of their own), so they don't jump as the box opens.
+    const size = (placed ? this.host.chart.getDrawingTextSize(id) : null) || style.fontSize || layout?.fontSize || DEFAULT_TEXT_SIZE;
     const before = style.text ?? '';
     const end = (keep: boolean) => {
       this.inlineTextId = null;
@@ -154,25 +227,36 @@ export class WidgetDrawingEdit {
     };
     const opened = editor.open({
       rect: () => {
-        const box = this.host.chart.getDrawingTextRect(id);
+        const box = placed ? this.placedTextRect(id, drawing.type, size * TEXT_LINE_GAP) : this.host.chart.getDrawingTextRect(id);
         if (!box) return null;
         const at = this.host.chartContainer.getBoundingClientRect();
         return { x: at.left + box.x, y: at.top + box.y, width: box.width, height: box.height };
       },
       text: before,
       font: {
-        size: style.fontSize || layout?.fontSize || DEFAULT_TEXT_SIZE,
+        size,
         bold: style.bold === true,
         italic: style.italic === true,
         family: this.host.chart.getFont?.()?.family ?? this.host.ui.font.family,
       },
       color: style.textColor ?? TEXT_COLORS[drawing.type] ?? style.color,
       label: this.host.t('drawingSettings.text'),
-      placeholder: this.host.drawingToolName(drawing.type),
+      placeholder: placed ? this.host.t('drawingSettings.text') : this.host.drawingToolName(drawing.type),
       onInput: (text) => (justDrawn ? this.host.chart.amendNewDrawing(id, { style: { text } }) : this.host.chart.updateDrawing(id, { style: { text } })),
       // No words: a text just drawn goes, an old one keeps what it said. Blank lines at the end go.
       onCommit: (text) => {
         const kept = text.replace(/\s+$/, '');
+        if (placed) {
+          // The words it had (none, and only spaces typed): nothing to record.
+          if (kept === before) {
+            end(false);
+            return;
+          }
+          // No words is what a line had before it was given any.
+          if (kept !== text) this.host.chart.updateDrawing(id, { style: { text: kept } });
+          end(true);
+          return;
+        }
         if (kept && kept !== text) {
           if (justDrawn) this.host.chart.amendNewDrawing(id, { style: { text: kept } });
           else this.host.chart.updateDrawing(id, { style: { text: kept } });

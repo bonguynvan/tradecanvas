@@ -126,6 +126,8 @@ export const CHART_MENU_FEATURES: Readonly<Record<ChartMenuAction, readonly Widg
 /** The switches each entry of a drawing's menu needs on. */
 export const DRAWING_MENU_FEATURES: Readonly<Record<DrawingMenuAction, readonly WidgetFeature[]>> = {
   settings: ['drawingSettings', 'menu.drawing.settings'],
+  // Its words are part of what its settings set: one switch for both.
+  text: ['menu.drawing.settings'],
   alert: ['alerts', 'menu.drawing.alert'],
   front: ['menu.drawing.order'],
   forward: ['menu.drawing.order'],

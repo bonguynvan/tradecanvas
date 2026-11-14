@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+### Drawings
+
+- **A line's and a rectangle's words are typed in place** (`@tradecanvas/chart`). The ten tools that write a text along a line or in a box (trend line, ray, extended, info and angle lines, arrow, horizontal line and ray, vertical line, rectangle) open the box a text tool has, over their words: from a Text button on the toolbar over the selected drawing, from Text in the drawing's menu, or by a double-click on the words (a double-click on the line itself still opens its settings). Enter or a click away keeps the words, Shift+Enter starts a line, Escape puts them back, and one undo takes them off. A line left with no words is a line again. The button is there for a text, a note and a callout too, where a double tap is hard on a phone.
+- **`drawingDoubleClick` says where it was** (`@tradecanvas/commons`, `@tradecanvas/core`): its payload is `{ id, x, y }`, in the chart's pixels.
+- **`chart.getDrawingTextSize(id)`** (`@tradecanvas/chart`): the size a line's or a rectangle's words are written at, to go with `getDrawingTextRect` for an editor of your own.
+
 ## 2.5.0 (2026-11-14)
 
 ### Marks on the chart

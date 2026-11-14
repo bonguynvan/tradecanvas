@@ -77,7 +77,7 @@ chart.addDrawing({
 
 <h3 id="line-text">線とボックスのテキスト</h3>
 <p>
-  トレンドライン、レイ、延長線、情報線、角度線、矢印、水平線、垂直線、四角形も、同じスタイルでテキストを持てます。<code>textAlign</code> で線の左端・中央・右端に、<code>textVAlign</code> で線の上・線上・下に置きます。四角形では、内側の上・中央・下に置きます。テキストは線の傾きに沿い、常に左から右へ、垂直線では下から上へ読めます。ウィジェットではテキストタブにこの 2 行があります。
+  トレンドライン、レイ、延長線、情報線、角度線、矢印、水平線、垂直線、四角形も、同じスタイルでテキストを持てます。<code>textAlign</code> で線の左端・中央・右端に、<code>textVAlign</code> で線の上・線上・下に置きます。四角形では、内側の上・中央・下に置きます。テキストは線の傾きに沿い、常に左から右へ、垂直線では下から上へ読めます。ウィジェットではテキストタブにこの 2 行があります。 これらの文字もその場で入力できます。選択中の描画のツールバーにあるテキストボタン、メニューのテキスト、または文字のダブルクリックで入力ボックスが開きます（線そのもののダブルクリックは設定を開きます）。Enter または外側のクリックで確定、Escape で元に戻し、文字を空にすると線は文字なしに戻ります。
 </p>
 <pre><code>{`chart.addDrawing({
   type: 'trendLine',
@@ -259,7 +259,7 @@ chart.setDrawingAxisSpansVisible(false)  // or features: { drawingAxisSpans: fal
 <pre><code>{`chart.on('drawingCreate', (e) => e.payload)       // { id, type, drawing }
 chart.on('drawingUpdate', (e) => e.payload)       // { id }
 chart.on('drawingRemove', (e) => e.payload)       // { id }
-chart.on('drawingDoubleClick', (e) => e.payload)  // { id }
+chart.on('drawingDoubleClick', (e) => e.payload)  // { id, x, y }: where on the chart it was
 chart.on('drawingContextMenu', (e) => e.payload)  // { id, x, y }
 chart.on('toolModeChange', (e) => e.payload)      // { eraser } または { zoomArea }`}</code></pre>
 <p>元に戻す / やり直すは、復活させた描画、取り除いた描画、変更した描画について、それぞれ <code>drawingCreate</code>、<code>drawingRemove</code>、<code>drawingUpdate</code> を送ります。</p>

@@ -77,7 +77,7 @@ chart.addDrawing({
 
 <h3 id="line-text">Text on lines and boxes</h3>
 <p>
-  A trend line, a ray, an extended, info or angle line, an arrow, a horizontal or vertical line and a rectangle take a text too, in the same style. <code>textAlign</code> puts it at the line's left end, its middle or its right end, and <code>textVAlign</code> above the line, on it or under it; in a rectangle they place it inside, at its top, middle or bottom. The text follows the line's slope and always reads left to right, and bottom to top along a vertical line. In the widget the Text tab has the two rows.
+  A trend line, a ray, an extended, info or angle line, an arrow, a horizontal or vertical line and a rectangle take a text too, in the same style. <code>textAlign</code> puts it at the line's left end, its middle or its right end, and <code>textVAlign</code> above the line, on it or under it; in a rectangle they place it inside, at its top, middle or bottom. The text follows the line's slope and always reads left to right, and bottom to top along a vertical line. In the widget the Text tab has the two rows. Its words are typed in place too: the Text button on the toolbar over the selected drawing, Text in its menu, or a double-click on the words opens the box (a double-click on the line itself opens its settings). Enter or a click away keeps them, Escape puts them back, and a line left with no words is a line again.
 </p>
 <pre><code>{`chart.addDrawing({
   type: 'trendLine',
@@ -263,7 +263,7 @@ chart.setDrawingAxisSpansVisible(false)  // or features: { drawingAxisSpans: fal
 <pre><code>{`chart.on('drawingCreate', (e) => e.payload)       // { id, type, drawing }
 chart.on('drawingUpdate', (e) => e.payload)       // { id }
 chart.on('drawingRemove', (e) => e.payload)       // { id }
-chart.on('drawingDoubleClick', (e) => e.payload)  // { id }
+chart.on('drawingDoubleClick', (e) => e.payload)  // { id, x, y }: where on the chart it was
 chart.on('drawingContextMenu', (e) => e.payload)  // { id, x, y }
 chart.on('toolModeChange', (e) => e.payload)      // { eraser } or { zoomArea }`}</code></pre>
 <p>Undo and redo send <code>drawingCreate</code>, <code>drawingRemove</code> and <code>drawingUpdate</code> for the drawings they bring back, take away or change.</p>
