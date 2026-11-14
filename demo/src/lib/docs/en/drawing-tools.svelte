@@ -6,12 +6,12 @@
 
 <svelte:head>
   <title>Drawing tools — TradeCanvas docs</title>
-  <meta name="description" content="73 built-in drawing tools with their own settings: Fibonacci and Gann tools, Elliott waves, harmonic patterns, notes, brushes, Long/Short Position with sizing, alerts on drawings, groups and layers." />
+  <meta name="description" content="76 built-in drawing tools with their own settings: Fibonacci and Gann tools, Elliott waves, harmonic patterns, notes, brushes, Long/Short Position with sizing, alerts on drawings, groups and layers." />
 </svelte:head>
 
 <h1>Drawing tools</h1>
 <p>
-  73 built-in drawing tools. Each one snaps to the bars with the magnet, takes
+  76 built-in drawing tools. Each one snaps to the bars with the magnet, takes
   undo and redo, keeps its own settings, and is saved with the layout.
 </p>
 
@@ -283,6 +283,8 @@ chart.on('toolModeChange', (e) => e.payload)      // { eraser } or { zoomArea }`
 <ul>
   <li><code>parallelChannel</code> — the line through its first two points moved straight up or down to its third (as its alerts read it), with an optional middle line, extending either way.</li>
   <li><code>regressionChannel</code> — the least-squares line through the closes between its two points, with bands two standard deviations either side; its points set the bars, and its handles sit on the line.</li>
+  <li><code>disjointChannel</code> — two lines over the same bars that lean opposite ways: the first through its two points, the second through the third point's price halfway along. A wedge that narrows or widens; it extends either way and gives both prices to alerts.</li>
+  <li><code>flatTopBottom</code> — a sloping line through two points and a level one at the third point's price, over the same bars: a flat top over rising lows, or a flat bottom under falling highs.</li>
 </ul>
 
 <h3>Fibonacci</h3>
@@ -306,6 +308,7 @@ chart.on('toolModeChange', (e) => e.payload)      // { eraser } or { zoomArea }`
 <h3>Shapes</h3>
 <ul>
   <li><code>rectangle</code>, <code>circle</code>, <code>ellipse</code>, <code>triangle</code> — an ellipse's handles sit on its curve, each moving one side.</li>
+  <li><code>rotatedRectangle</code> — a rectangle at any angle: one side through its first two points, as deep as the third point is far from that side. It is square on the screen, so its far side follows the scale as the chart is zoomed.</li>
   <li><code>polyline</code> — a closed shape, a point per click.</li>
   <li><code>curve</code> — bent through a third point; <code>arc</code> — a circle arc through three points.</li>
 </ul>

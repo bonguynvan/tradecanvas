@@ -6,9 +6,9 @@ import type { IndicatorIntervals } from './indicator.js';
 export type BuiltInDrawingToolType =
   | 'trendLine' | 'horizontalLine' | 'horizontalRay' | 'verticalLine' | 'ray' | 'extendedLine'
   | 'crossLine' | 'trendAngle' | 'infoLine'
-  | 'parallelChannel' | 'regressionChannel'
+  | 'parallelChannel' | 'regressionChannel' | 'disjointChannel' | 'flatTopBottom'
   | 'fibRetracement' | 'fibExtension' | 'fibTimeZones' | 'fibChannel' | 'fibSpeedResistanceFan'
-  | 'rectangle' | 'ellipse' | 'triangle' | 'circle'
+  | 'rectangle' | 'rotatedRectangle' | 'ellipse' | 'triangle' | 'circle'
   | 'pitchfork' | 'schiffPitchfork' | 'modifiedSchiffPitchfork' | 'elliottWave'
   | 'xabcdPattern' | 'abcdPattern' | 'headAndShoulders'
   | 'priceRange' | 'dateRange' | 'dateAndPriceRange' | 'measure'

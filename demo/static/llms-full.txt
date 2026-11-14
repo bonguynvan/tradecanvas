@@ -246,7 +246,7 @@ chart.on('positionModify', (e) => console.log('stop or target dragged', e.payloa
 chart.modifyPositionIntent({ positionId: 'p1', trailingStop: 400 }); // the stop trails the price by 400 (tag: TSL); null ends it. The paper account moves it; an order takes trailingStop too
 ```
 
-73 drawing tools; each keeps its own settings (`setDrawingOptions`, `updateDrawing`),
+76 drawing tools; each keeps its own settings (`setDrawingOptions`, `updateDrawing`),
 and drawings can be named (`updateDrawing(id, { name })`, what the object tree lists),
 grouped (`groupDrawings`), reordered (`moveDrawing` with a step or a place, 0 the bottom), erased
 (`setEraserMode`), and copied to another chart of the page (`copyDrawings`, then
@@ -1843,7 +1843,7 @@ packages/library/README.md
   <b>English</b> · <a href="https://github.com/bonguynvan/tradecanvas/blob/main/README.vi.md">Tiếng Việt</a> · <a href="https://github.com/bonguynvan/tradecanvas/blob/main/README.zh-CN.md">简体中文</a> · <a href="https://github.com/bonguynvan/tradecanvas/blob/main/README.ja.md">日本語</a> · <a href="https://github.com/bonguynvan/tradecanvas/blob/main/README.ko.md">한국어</a> · <a href="https://github.com/bonguynvan/tradecanvas/blob/main/README.es.md">Español</a>
 </p>
 
-**TradeCanvas is an open-source trading chart library for the web**, under the MIT licence. Candlesticks to Renko, 134 indicators, 73 drawing tools, live feeds and orders on the chart, on Canvas 2D or WebGL, with no third-party dependencies. Use the full `ChartWidget`, or build your own interface on the headless `Chart`, in TypeScript, React, Vue or Svelte.
+**TradeCanvas is an open-source trading chart library for the web**, under the MIT licence. Candlesticks to Renko, 134 indicators, 76 drawing tools, live feeds and orders on the chart, on Canvas 2D or WebGL, with no third-party dependencies. Use the full `ChartWidget`, or build your own interface on the headless `Chart`, in TypeScript, React, Vue or Svelte.
 
 <p align="center">
   <a href="https://tradecanvas.dev/chart/"><img src="https://raw.githubusercontent.com/bonguynvan/tradecanvas/main/.github/assets/clips/hero.webp" alt="ChartWidget on a live market: EMA 21 and 55 and RSI, the crosshair, and a trend line drawn with the mouse" width="100%"></a>
@@ -1851,7 +1851,7 @@ packages/library/README.md
 
 ## Highlights
 
-- **18 chart types, 134 indicators, 73 drawing tools**, indicators on indicators, alerts on lines, undo and redo.
+- **18 chart types, 134 indicators, 76 drawing tools**, indicators on indicators, alerts on lines, undo and redo.
 - **Trading on the chart**: positions with live P&L, orders and stops you drag, a paper broker or your own.
 - **Live data** from Binance, Bybit, Coinbase, Kraken and Upbit, or your own feed in about twenty lines.
 - **Fast**: a million bars panned at 60 fps with WebGL; a live tick in about a microsecond; ten minutes of 30,000 trades a second on a million bars with no memory growth ([soak](https://github.com/bonguynvan/tradecanvas/blob/main/benchmarks/2026-11-03.md)).

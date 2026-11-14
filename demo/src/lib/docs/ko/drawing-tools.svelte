@@ -6,12 +6,12 @@
 
 <svelte:head>
   <title>그리기 도구 — TradeCanvas 문서</title>
-  <meta name="description" content="도구마다 고유한 설정을 가진 내장 그리기 도구 73종: 피보나치와 갠 도구, 엘리엇 파동, 하모닉 패턴, 노트, 브러시, 수량 계산을 지원하는 롱/숏 포지션, 그림에 거는 알림, 그룹과 레이어." />
+  <meta name="description" content="도구마다 고유한 설정을 가진 내장 그리기 도구 76종: 피보나치와 갠 도구, 엘리엇 파동, 하모닉 패턴, 노트, 브러시, 수량 계산을 지원하는 롱/숏 포지션, 그림에 거는 알림, 그룹과 레이어." />
 </svelte:head>
 
 <h1>그리기 도구</h1>
 <p>
-  내장 그리기 도구 73종을 제공합니다. 모든 도구는 자석으로 봉에 스냅되고,
+  내장 그리기 도구 76종을 제공합니다. 모든 도구는 자석으로 봉에 스냅되고,
   실행 취소와 다시 실행을 지원하며, 각자의 설정을 유지하고, 레이아웃과 함께 저장됩니다.
 </p>
 
@@ -278,6 +278,8 @@ chart.on('toolModeChange', (e) => e.payload)      // { eraser } 또는 { zoomAre
 <ul>
   <li><code>parallelChannel</code> — 처음 두 점을 지나는 선을 세 번째 점까지 수직으로 위나 아래로 옮긴 것이며(알림도 이렇게 읽습니다), 선택 사항인 중간선이 있고, 양쪽 어느 방향으로든 연장할 수 있습니다.</li>
   <li><code>regressionChannel</code> — 두 점 사이 종가의 최소제곱 직선과, 양쪽으로 표준편차의 두 배만큼 떨어진 밴드. 두 점이 계산할 봉을 정하고, 핸들은 직선 위에 있습니다.</li>
+  <li><code>disjointChannel</code> — 같은 봉 구간 위에서 서로 반대로 기울어진 두 선. 첫 번째 선은 처음 두 점을 지나고, 두 번째 선은 중간 지점에서 세 번째 점의 가격을 지납니다. 좁아지거나 넓어지는 쐐기이며, 양쪽으로 연장할 수 있고 두 가격 모두 알림에 쓰입니다.</li>
+  <li><code>flatTopBottom</code> — 두 점을 지나는 기울어진 선과 세 번째 점의 가격에 놓인 수평선을 같은 봉 구간에 그립니다. 높아지는 저점 위의 플랫 탑, 또는 낮아지는 고점 아래의 플랫 바텀입니다.</li>
 </ul>
 
 <h3>피보나치</h3>
@@ -301,6 +303,7 @@ chart.on('toolModeChange', (e) => e.payload)      // { eraser } 또는 { zoomAre
 <h3>도형</h3>
 <ul>
   <li><code>rectangle</code>, <code>circle</code>, <code>ellipse</code>, <code>triangle</code> — 타원의 핸들은 곡선 위에 있으며 각각 한 변을 움직입니다.</li>
+  <li><code>rotatedRectangle</code> — 임의 각도의 사각형. 한 변은 처음 두 점을 지나고, 깊이는 세 번째 점이 그 변에서 떨어진 거리입니다. 화면에서 직각을 유지하므로 차트를 확대·축소하면 맞은편 변이 스케일을 따릅니다.</li>
   <li><code>polyline</code> — 닫힌 도형, 클릭마다 점 하나.</li>
   <li><code>curve</code> — 세 번째 점을 지나며 휘어지는 곡선, <code>arc</code> — 세 점을 지나는 원호.</li>
 </ul>

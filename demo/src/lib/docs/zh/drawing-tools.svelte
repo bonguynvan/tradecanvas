@@ -6,12 +6,12 @@
 
 <svelte:head>
   <title>画线工具 — TradeCanvas 文档</title>
-  <meta name="description" content="73 种内置画线工具，各有独立设置：斐波那契与江恩工具、艾略特波浪、谐波形态、笔记、画笔、支持仓位计算的多/空仓位、画线提醒、分组与图层。" />
+  <meta name="description" content="76 种内置画线工具，各有独立设置：斐波那契与江恩工具、艾略特波浪、谐波形态、笔记、画笔、支持仓位计算的多/空仓位、画线提醒、分组与图层。" />
 </svelte:head>
 
 <h1>画线工具</h1>
 <p>
-  73 种内置画线工具。每种工具都能通过磁吸对齐到K线，支持撤销和重做，
+  76 种内置画线工具。每种工具都能通过磁吸对齐到K线，支持撤销和重做，
   保留各自的设置，并随布局一起保存。
 </p>
 
@@ -277,6 +277,8 @@ chart.on('toolModeChange', (e) => e.payload)      // { eraser } 或 { zoomArea }
 <ul>
   <li><code>parallelChannel</code> — 将穿过前两个点的直线竖直上移或下移到第三个点（其警报也按此读取），可选中线，可向任一方向延伸。</li>
   <li><code>regressionChannel</code> — 两点之间收盘价的最小二乘直线，两侧各有相距两个标准差的通道带；两点决定参与计算的 K 线，控制点位于直线上。</li>
+  <li><code>disjointChannel</code> — 位于同一段 K 线上、倾斜方向相反的两条线：第一条穿过前两个点，第二条在中点处穿过第三个点的价格。形成收窄或张开的楔形；可向两侧延伸，两条线的价格都可用于警报。</li>
+  <li><code>flatTopBottom</code> — 穿过两点的斜线，加上位于第三个点价格处的水平线，覆盖同一段 K 线：低点抬高之上的平顶，或高点降低之下的平底。</li>
 </ul>
 
 <h3>斐波那契</h3>
@@ -300,6 +302,7 @@ chart.on('toolModeChange', (e) => e.payload)      // { eraser } 或 { zoomArea }
 <h3>形状</h3>
 <ul>
   <li><code>rectangle</code>、<code>circle</code>、<code>ellipse</code>、<code>triangle</code> — 椭圆的控制点位于曲线上，每个移动一条边。</li>
+  <li><code>rotatedRectangle</code> — 任意角度的矩形：一条边穿过前两个点，深度等于第三个点到这条边的距离。它在屏幕上保持直角，因此缩放图表时对边会随刻度变化。</li>
   <li><code>polyline</code> — 封闭图形，每次点击一个点。</li>
   <li><code>curve</code> — 经过第三个点弯曲；<code>arc</code> — 经过三个点的圆弧。</li>
 </ul>

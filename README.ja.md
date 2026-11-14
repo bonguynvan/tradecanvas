@@ -26,7 +26,7 @@
   <a href="README.md">English</a> · <a href="README.vi.md">Tiếng Việt</a> · <a href="README.zh-CN.md">简体中文</a> · <b>日本語</b> · <a href="README.ko.md">한국어</a> · <a href="README.es.md">Español</a>
 </p>
 
-**TradeCanvas は Web 向けのオープンソースのトレーディングチャートライブラリです**（MIT ライセンス）。 ローソク足から練行足（Renko）まで、134 種類のインジケーター、73 種類の描画ツール、取引所のライブフィード、チャート上での注文を Canvas 2D または WebGL で描画し、サードパーティの依存関係はありません。完全な `ChartWidget` をそのまま組み込むことも、ヘッドレスな `Chart` の上に独自の UI を作ることもでき、TypeScript、React、Vue、Svelte に対応しています。
+**TradeCanvas は Web 向けのオープンソースのトレーディングチャートライブラリです**（MIT ライセンス）。 ローソク足から練行足（Renko）まで、134 種類のインジケーター、76 種類の描画ツール、取引所のライブフィード、チャート上での注文を Canvas 2D または WebGL で描画し、サードパーティの依存関係はありません。完全な `ChartWidget` をそのまま組み込むことも、ヘッドレスな `Chart` の上に独自の UI を作ることもでき、TypeScript、React、Vue、Svelte に対応しています。
 
 <p align="center">
   <a href="https://tradecanvas.dev/ja/chart/"><img src=".github/assets/clips/hero.webp" alt="ライブ相場上の ChartWidget：EMA 21 と 55、RSI、クロスヘア、マウスで描いたトレンドライン" width="100%"></a>
@@ -34,7 +34,7 @@
 
 ## 特長
 
-- **18 種類のチャート、134 のインジケーター、73 の描画ツール**。インジケーターの重ね掛け、ラインへのアラート、元に戻す・やり直し。
+- **18 種類のチャート、134 のインジケーター、76 の描画ツール**。インジケーターの重ね掛け、ラインへのアラート、元に戻す・やり直し。
 - **チャート上で取引**：損益がリアルタイムに動くポジション、ドラッグできる注文と損切り、ペーパーブローカーまたは自前の接続。
 - **ライブデータ**：Binance、Bybit、Coinbase、Kraken を内蔵。独自のフィードも約 20 行で。
 - **速い**：WebGL で 100 万本のバーを 60 fps でパン。ライブのティックは約 1 マイクロ秒。100 万本の足で毎秒 30,000 件の約定を 10 分間受けてもメモリは増えません（[計測](benchmarks/2026-11-03.md)）。

@@ -5,7 +5,7 @@ const zh: SiteMessages = {
   meta: {
     title: 'TradeCanvas · 面向 Web 的 Canvas 交易图表',
     description:
-      'TradeCanvas 是一个面向 Web 的交易图表库，可用 Canvas 2D 或 WebGL 绘制：18 种图表类型、134 个指标、73 种画线工具、交易所实时行情、图表上直接下单、回放与回测，支持 30 种语言。零依赖，MIT 许可。',
+      'TradeCanvas 是一个面向 Web 的交易图表库，可用 Canvas 2D 或 WebGL 绘制：18 种图表类型、134 个指标、76 种画线工具、交易所实时行情、图表上直接下单、回放与回测，支持 30 种语言。零依赖，MIT 许可。',
   },
 
   nav: {
@@ -48,7 +48,7 @@ const zh: SiteMessages = {
     release: 'WebGL 渲染器，30 种语言',
     title: '为交易应用打造的图表引擎。',
     ledeHtml:
-      '从蜡烛图到 Renko，134 个指标、73 种画线工具、交易所实时行情，还能直接在图表上下单。用 Canvas 2D 或 WebGL 绘制，零依赖。可以直接放入完整的 <code>ChartWidget</code>，也可以在无界面的 <code>Chart</code> 之上构建自己的界面。',
+      '从蜡烛图到 Renko，134 个指标、76 种画线工具、交易所实时行情，还能直接在图表上下单。用 Canvas 2D 或 WebGL 绘制，零依赖。可以直接放入完整的 <code>ChartWidget</code>，也可以在无界面的 <code>Chart</code> 之上构建自己的界面。',
     getStarted: '开始使用',
     browseExamples: '浏览示例',
     specsLabel: '关键数据',
@@ -73,7 +73,7 @@ const zh: SiteMessages = {
           text: 'K线上叠加通道、均线和振荡指标，再在上面画斐波那契和趋势线，每一项都有自己的设置和提醒。',
           points: [
             '134 个指标，可以互相叠加，比如 RSI 的均线',
-            '73 种画线工具，带磁吸、分组和撤销',
+            '76 种画线工具，带磁吸、分组和撤销',
             '价格、画线和指标交叉都能提醒',
           ],
         },
@@ -208,7 +208,7 @@ const zh: SiteMessages = {
   scenes: {
     drawings: {
       title: '画线工具',
-      stat: '73 种工具',
+      stat: '76 种工具',
       blurb:
         '斐波那契与江恩工具可自定义水平，另有艾略特波浪、谐波形态、路标与画笔。线条和方框可带文字，笔记与路标可就地编辑；笔记可固定在屏幕上，画线也可放在指标窗格上。警报跟随趋势线，多/空仓位工具会算出仓位大小。',
       tryThis: [
@@ -565,7 +565,7 @@ const zh: SiteMessages = {
       },
       widget: {
         title: 'ChartWidget',
-        blurb: '一次调用即得完整交易界面：工具栏、73 种画线工具、自选列表、交易、K线回放，支持 30 种语言。',
+        blurb: '一次调用即得完整交易界面：工具栏、76 种画线工具、自选列表、交易、K线回放，支持 30 种语言。',
       },
       react: {
         title: 'React',
@@ -720,7 +720,7 @@ const zh: SiteMessages = {
         { name: '实时 tick 的增量更新', detail: 'update() 只重新计算正在形成的K线' },
       ],
       drawings: [
-        { name: '73 种画线工具', detail: '直线、通道、斐波那契、江恩、叉形线、艾略特波浪、形态、周期、投影' },
+        { name: '76 种画线工具', detail: '直线、通道、斐波那契、江恩、叉形线、艾略特波浪、形态、周期、投影' },
         { name: '每种工具各自的设置', detail: '样式、属性，以及落在市场价格网格上的坐标' },
         { name: '多头与空头仓位', detail: '风险回报比，按风险百分比或金额计算数量' },
         { name: '画线上的提醒', detail: '价格穿越所画的趋势线或通道时触发，对数坐标同样适用' },

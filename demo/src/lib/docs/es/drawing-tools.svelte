@@ -6,12 +6,12 @@
 
 <svelte:head>
   <title>Herramientas de dibujo — Documentación de TradeCanvas</title>
-  <meta name="description" content="73 herramientas de dibujo integradas, cada una con su propia configuración: herramientas de Fibonacci y Gann, ondas de Elliott, patrones armónicos, notas, pinceles, posición larga/corta con cálculo del tamaño, alertas en dibujos, grupos y capas." />
+  <meta name="description" content="76 herramientas de dibujo integradas, cada una con su propia configuración: herramientas de Fibonacci y Gann, ondas de Elliott, patrones armónicos, notas, pinceles, posición larga/corta con cálculo del tamaño, alertas en dibujos, grupos y capas." />
 </svelte:head>
 
 <h1>Herramientas de dibujo</h1>
 <p>
-  73 herramientas de dibujo integradas. Todas se ajustan a las barras con el imán,
+  76 herramientas de dibujo integradas. Todas se ajustan a las barras con el imán,
   admiten deshacer y rehacer, guardan su propia configuración y se guardan con el
   diseño.
 </p>
@@ -287,6 +287,8 @@ chart.on('toolModeChange', (e) => e.payload)      // { eraser } o { zoomArea }`}
 <ul>
   <li><code>parallelChannel</code> — la línea que pasa por sus dos primeros puntos, desplazada en vertical hasta el tercero (así la leen sus alertas), con una línea central opcional, que se extiende en cualquiera de los dos sentidos.</li>
   <li><code>regressionChannel</code> — la recta de mínimos cuadrados de los cierres entre sus dos puntos, con bandas a dos desviaciones estándar a cada lado; sus puntos fijan las barras, y sus controles quedan sobre la recta.</li>
+  <li><code>disjointChannel</code> — dos líneas sobre las mismas barras que se inclinan en sentidos opuestos: la primera pasa por sus dos puntos y la segunda pasa por el precio del tercer punto a mitad de camino. Una cuña que se estrecha o se abre; se extiende hacia ambos lados y da los dos precios a las alertas.</li>
+  <li><code>flatTopBottom</code> — una línea inclinada por dos puntos y otra horizontal en el precio del tercero, sobre las mismas barras: un techo plano sobre mínimos crecientes, o un suelo plano bajo máximos decrecientes.</li>
 </ul>
 
 <h3>Fibonacci</h3>
@@ -310,6 +312,7 @@ chart.on('toolModeChange', (e) => e.payload)      // { eraser } o { zoomArea }`}
 <h3>Formas</h3>
 <ul>
   <li><code>rectangle</code>, <code>circle</code>, <code>ellipse</code>, <code>triangle</code> — los controles de una elipse están sobre su curva y cada uno mueve un lado.</li>
+  <li><code>rotatedRectangle</code> — un rectángulo en cualquier ángulo: un lado pasa por sus dos primeros puntos y su fondo es la distancia del tercer punto a ese lado. Es recto en pantalla, así que su lado opuesto sigue la escala al hacer zoom.</li>
   <li><code>polyline</code> — una forma cerrada, un punto por clic.</li>
   <li><code>curve</code> — curvada a través de un tercer punto; <code>arc</code> — un arco de circunferencia por tres puntos.</li>
 </ul>

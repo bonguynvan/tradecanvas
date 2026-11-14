@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+### Drawings
+
+- **Three more drawing tools** (`@tradecanvas/commons`, `@tradecanvas/core`, `@tradecanvas/chart`), 76 in all, each of three points and with a fill:
+  - `disjointChannel`: two lines over the same bars that lean opposite ways, the second through the third point's price halfway along. A wedge that narrows or widens; it extends either way and its two prices can carry alerts.
+  - `flatTopBottom`: a sloping line and a level one at the third point's price, over the same bars. It extends either way and gives both prices to alerts.
+  - `rotatedRectangle`: a rectangle at any angle, one side through its first two points and as deep as the third point is far from it; picked on its edges, and inside when filled.
+- They are in the widget's drawing tools (Channels, Shapes), named in its 30 languages, with an icon each.
+
 ## 2.6.0 (2026-11-14)
 
 ### Drawings

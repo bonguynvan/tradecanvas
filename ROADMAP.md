@@ -11,7 +11,7 @@ Last reviewed for 2.3 (November 2026).
 The road to 1.0 that this file used to hold is finished, and 2.0 has shipped.
 What the library has today:
 
-- **The chart**: 18 chart types, 134 indicators, 73 drawing tools, on Canvas
+- **The chart**: 18 chart types, 134 indicators, 76 drawing tools, on Canvas
   2D or WebGL, with no third-party dependencies.
 - **Trading on the chart**: positions, orders and stops that are dragged, a
   paper account or a broker of your own through `ExecutionAdapter`, bracket

@@ -26,7 +26,7 @@
   <a href="README.md">English</a> · <a href="README.vi.md">Tiếng Việt</a> · <a href="README.zh-CN.md">简体中文</a> · <a href="README.ja.md">日本語</a> · <b>한국어</b> · <a href="README.es.md">Español</a>
 </p>
 
-**TradeCanvas는 웹을 위한 오픈 소스 트레이딩 차트 라이브러리입니다**(MIT 라이선스). 캔들스틱부터 렌코까지, 134개 지표, 73개 그리기 도구, 거래소 실시간 피드와 차트 위 주문을 서드파티 의존성 없이 Canvas 2D 또는 WebGL로 그립니다. 완전한 `ChartWidget`을 그대로 넣거나 헤드리스 `Chart` 위에 직접 UI를 만들 수 있으며, TypeScript, React, Vue, Svelte를 지원합니다.
+**TradeCanvas는 웹을 위한 오픈 소스 트레이딩 차트 라이브러리입니다**(MIT 라이선스). 캔들스틱부터 렌코까지, 134개 지표, 76개 그리기 도구, 거래소 실시간 피드와 차트 위 주문을 서드파티 의존성 없이 Canvas 2D 또는 WebGL로 그립니다. 완전한 `ChartWidget`을 그대로 넣거나 헤드리스 `Chart` 위에 직접 UI를 만들 수 있으며, TypeScript, React, Vue, Svelte를 지원합니다.
 
 <p align="center">
   <a href="https://tradecanvas.dev/ko/chart/"><img src=".github/assets/clips/hero.webp" alt="실시간 시장의 ChartWidget: EMA 21과 55, RSI, 십자선, 마우스로 그린 추세선" width="100%"></a>
@@ -34,7 +34,7 @@
 
 ## 주요 특징
 
-- **18가지 차트, 134개 지표, 73가지 드로잉 도구**, 지표 위의 지표, 선에 거는 알림, 실행 취소와 다시 실행.
+- **18가지 차트, 134개 지표, 76가지 드로잉 도구**, 지표 위의 지표, 선에 거는 알림, 실행 취소와 다시 실행.
 - **차트 위 거래**: 손익이 실시간으로 바뀌는 포지션, 끌어서 옮기는 주문과 손절, 모의 브로커 또는 직접 연결.
 - **실시간 데이터**: Binance, Bybit, Coinbase, Kraken 내장, 직접 만든 피드는 스무 줄 남짓.
 - **빠름**: WebGL로 봉 100만 개를 60 fps로 이동, 실시간 틱 하나에 약 1마이크로초, 봉 100만 개 위에서 초당 30,000건 체결을 10분 동안 받아도 메모리가 늘지 않음([측정](benchmarks/2026-11-03.md)).

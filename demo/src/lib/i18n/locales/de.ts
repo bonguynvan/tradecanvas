@@ -4,7 +4,7 @@ const de: SiteMessages = {
   meta: {
     title: 'TradeCanvas · Canvas-Trading-Charts fürs Web',
     description:
-      'TradeCanvas ist eine Trading-Chart-Bibliothek für das Web, gezeichnet mit Canvas 2D oder WebGL: 18 Charttypen, 134 Indikatoren, 69 Zeichenwerkzeuge, Live-Daten von Börsen, Orders im Chart, Replay und Backtesting, in 30 Sprachen. Keine Abhängigkeiten, MIT.',
+      'TradeCanvas ist eine Trading-Chart-Bibliothek für das Web, gezeichnet mit Canvas 2D oder WebGL: 18 Charttypen, 134 Indikatoren, 76 Zeichenwerkzeuge, Live-Daten von Börsen, Orders im Chart, Replay und Backtesting, in 30 Sprachen. Keine Abhängigkeiten, MIT.',
   },
 
   nav: {
@@ -47,7 +47,7 @@ const de: SiteMessages = {
     release: 'WebGL-Renderer, 30 Sprachen',
     title: 'Die Chart-Engine für Trading-Apps.',
     ledeHtml:
-      'Von Kerzen bis Renko, 134 Indikatoren, 69 Zeichenwerkzeuge, Live-Daten von Börsen und Orders direkt im Chart. Gezeichnet mit Canvas 2D oder WebGL, ohne Abhängigkeiten. Binden Sie das komplette <code>ChartWidget</code> ein oder bauen Sie Ihre eigene Oberfläche auf dem Headless-<code>Chart</code>.',
+      'Von Kerzen bis Renko, 134 Indikatoren, 76 Zeichenwerkzeuge, Live-Daten von Börsen und Orders direkt im Chart. Gezeichnet mit Canvas 2D oder WebGL, ohne Abhängigkeiten. Binden Sie das komplette <code>ChartWidget</code> ein oder bauen Sie Ihre eigene Oberfläche auf dem Headless-<code>Chart</code>.',
     getStarted: 'Loslegen',
     browseExamples: 'Beispiele ansehen',
     specsLabel: 'Kennzahlen',
@@ -72,7 +72,7 @@ const de: SiteMessages = {
           text: 'Bänder, Durchschnitte und Oszillatoren über den Kerzen, Fibonacci-Niveaus und Trendlinien darüber, jedes mit eigenen Einstellungen und Alarmen.',
           points: [
             '134 Indikatoren, jeder auf jedem anderen, etwa ein Durchschnitt des RSI',
-            '69 Zeichenwerkzeuge mit Magnet, Gruppen und Rückgängig',
+            '76 Zeichenwerkzeuge mit Magnet, Gruppen und Rückgängig',
             'Alarme auf Kurse, Linien und Indikator-Kreuzungen',
           ],
         },
@@ -207,7 +207,7 @@ const de: SiteMessages = {
   scenes: {
     drawings: {
       title: 'Zeichenwerkzeuge',
-      stat: '73 Werkzeuge',
+      stat: '76 Werkzeuge',
       blurb:
         'Fibonacci- und Gann-Werkzeuge mit eigenen Levels, Elliott-Wellen, harmonische Muster, Wegweiser und Pinsel. Linien und Rechtecke tragen Text, Notizen und Wegweiser überschreibt man direkt an Ort und Stelle; eine Notiz kann fest auf dem Bildschirm stehen, und eine Zeichnung kann im Bereich eines Indikators liegen. Alarme folgen Trendlinien, und Long/Short berechnet die Positionsgröße.',
       tryThis: [
@@ -564,7 +564,7 @@ const de: SiteMessages = {
       },
       widget: {
         title: 'ChartWidget',
-        blurb: 'Die komplette Trading-Oberfläche mit einem Aufruf: Symbolleiste, 69 Zeichenwerkzeuge, Beobachtungsliste, Trading, Replay, in 30 Sprachen.',
+        blurb: 'Die komplette Trading-Oberfläche mit einem Aufruf: Symbolleiste, 76 Zeichenwerkzeuge, Beobachtungsliste, Trading, Replay, in 30 Sprachen.',
       },
       react: {
         title: 'React',
@@ -719,7 +719,7 @@ const de: SiteMessages = {
         { name: 'Inkrementelle Updates bei Live-Ticks', detail: 'update() berechnet nur die entstehende Kerze neu' },
       ],
       drawings: [
-        { name: '69 Zeichenwerkzeuge', detail: 'Linien, Kanäle, Fibonacci, Gann, Pitchforks, Elliott-Wellen, Muster, Zyklen, Projektionen' },
+        { name: '76 Zeichenwerkzeuge', detail: 'Linien, Kanäle, Fibonacci, Gann, Pitchforks, Elliott-Wellen, Muster, Zyklen, Projektionen' },
         { name: 'Eigene Einstellungen je Werkzeug', detail: 'Stil, Eigenschaften und Koordinaten auf dem Preisraster des Marktes' },
         { name: 'Long- und Short-Positionen', detail: 'Chance-Risiko-Verhältnis, Menge aus dem Risiko in Prozent oder Geld' },
         { name: 'Alarme an einer Zeichnung', detail: 'Wenn der Kurs eine Trendlinie oder einen Kanal so kreuzt, wie gezeichnet, auch bei logarithmischer Skala' },

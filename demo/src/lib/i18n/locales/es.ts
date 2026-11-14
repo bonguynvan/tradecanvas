@@ -4,7 +4,7 @@ const es: SiteMessages = {
   meta: {
     title: 'TradeCanvas · Gráficos de trading en Canvas para la web',
     description:
-      'TradeCanvas es una biblioteca de gráficos de trading para la web, dibujada con Canvas 2D o WebGL: 18 tipos de gráfico, 134 indicadores, 73 herramientas de dibujo, datos en vivo de exchanges, órdenes en el gráfico, replay y backtesting, en 30 idiomas. Sin dependencias, MIT.',
+      'TradeCanvas es una biblioteca de gráficos de trading para la web, dibujada con Canvas 2D o WebGL: 18 tipos de gráfico, 134 indicadores, 76 herramientas de dibujo, datos en vivo de exchanges, órdenes en el gráfico, replay y backtesting, en 30 idiomas. Sin dependencias, MIT.',
   },
 
   nav: {
@@ -47,7 +47,7 @@ const es: SiteMessages = {
     release: 'renderizador WebGL, 30 idiomas',
     title: 'El motor de gráficos para apps de trading.',
     ledeHtml:
-      'De velas a Renko, 134 indicadores, 73 herramientas de dibujo, datos en vivo de exchanges y órdenes en el gráfico. Dibujado con Canvas 2D o WebGL, sin dependencias. Integra el <code>ChartWidget</code> completo o crea tu propia interfaz sobre el <code>Chart</code> headless.',
+      'De velas a Renko, 134 indicadores, 76 herramientas de dibujo, datos en vivo de exchanges y órdenes en el gráfico. Dibujado con Canvas 2D o WebGL, sin dependencias. Integra el <code>ChartWidget</code> completo o crea tu propia interfaz sobre el <code>Chart</code> headless.',
     getStarted: 'Empezar',
     browseExamples: 'Ver ejemplos',
     specsLabel: 'Cifras clave',
@@ -72,7 +72,7 @@ const es: SiteMessages = {
           text: 'Bandas, medias y osciladores sobre las velas, niveles de Fibonacci y líneas de tendencia encima, cada uno con sus ajustes y alertas.',
           points: [
             '134 indicadores, cualquiera sobre otro, como una media del RSI',
-            '73 herramientas de dibujo con imán, grupos y deshacer',
+            '76 herramientas de dibujo con imán, grupos y deshacer',
             'Alertas sobre precios, líneas y cruces de indicadores',
           ],
         },
@@ -209,7 +209,7 @@ const es: SiteMessages = {
   scenes: {
     drawings: {
       title: 'Herramientas de dibujo',
-      stat: '73 herramientas',
+      stat: '76 herramientas',
       blurb:
         'Herramientas de Fibonacci y Gann con tus propios niveles, ondas de Elliott, patrones armónicos, señales y pinceles. Las líneas y los cuadros llevan texto, las notas y las señales se editan en su sitio, una nota puede quedarse fija en la pantalla y un dibujo puede ir en el panel de un indicador. Las alertas siguen las líneas de tendencia, y Largo/Corto calcula el tamaño de la posición.',
       tryThis: [
@@ -568,7 +568,7 @@ const es: SiteMessages = {
       widget: {
         title: 'ChartWidget',
         blurb:
-          'Toda la interfaz de trading en una llamada: barra de herramientas, 73 herramientas de dibujo, lista de seguimiento, trading y repetición, en 30 idiomas.',
+          'Toda la interfaz de trading en una llamada: barra de herramientas, 76 herramientas de dibujo, lista de seguimiento, trading y repetición, en 30 idiomas.',
       },
       react: {
         title: 'React',
@@ -723,7 +723,7 @@ const es: SiteMessages = {
         { name: 'Actualizaciones incrementales con ticks en vivo', detail: 'update() solo recalcula la barra en formación' },
       ],
       drawings: [
-        { name: '73 herramientas de dibujo', detail: 'Líneas, canales, Fibonacci, Gann, horquillas, ondas de Elliott, patrones, ciclos, proyecciones' },
+        { name: '76 herramientas de dibujo', detail: 'Líneas, canales, Fibonacci, Gann, horquillas, ondas de Elliott, patrones, ciclos, proyecciones' },
         { name: 'Ajustes propios de cada herramienta', detail: 'Estilo, propiedades y coordenadas sobre la cuadrícula de precios del mercado' },
         { name: 'Posiciones largas y cortas', detail: 'Riesgo:beneficio, cantidad a partir del riesgo en porcentaje o en dinero' },
         { name: 'Alertas sobre un dibujo', detail: 'Cuando el precio cruza una línea de tendencia o un canal tal como está dibujado, también en escala logarítmica' },

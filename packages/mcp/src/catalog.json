@@ -4927,6 +4927,40 @@
       "anchors": 2
     },
     {
+      "type": "disjointChannel",
+      "name": "Disjoint Channel",
+      "anchors": 3,
+      "options": {
+        "extendLeft": {
+          "kind": "boolean",
+          "label": "Extend left",
+          "default": false
+        },
+        "extendRight": {
+          "kind": "boolean",
+          "label": "Extend right",
+          "default": false
+        }
+      }
+    },
+    {
+      "type": "flatTopBottom",
+      "name": "Flat Top/Bottom",
+      "anchors": 3,
+      "options": {
+        "extendLeft": {
+          "kind": "boolean",
+          "label": "Extend left",
+          "default": false
+        },
+        "extendRight": {
+          "kind": "boolean",
+          "label": "Extend right",
+          "default": false
+        }
+      }
+    },
+    {
       "type": "fibRetracement",
       "name": "Fibonacci Retracement",
       "anchors": 2,
@@ -5171,6 +5205,11 @@
       "type": "rectangle",
       "name": "Rectangle",
       "anchors": 2
+    },
+    {
+      "type": "rotatedRectangle",
+      "name": "Rotated Rectangle",
+      "anchors": 3
     },
     {
       "type": "ellipse",
@@ -6798,12 +6837,15 @@
           "infoLine",
           "parallelChannel",
           "regressionChannel",
+          "disjointChannel",
+          "flatTopBottom",
           "fibRetracement",
           "fibExtension",
           "fibTimeZones",
           "fibChannel",
           "fibSpeedResistanceFan",
           "rectangle",
+          "rotatedRectangle",
           "ellipse",
           "triangle",
           "circle",
@@ -7491,12 +7533,15 @@
           "infoLine",
           "parallelChannel",
           "regressionChannel",
+          "disjointChannel",
+          "flatTopBottom",
           "fibRetracement",
           "fibExtension",
           "fibTimeZones",
           "fibChannel",
           "fibSpeedResistanceFan",
           "rectangle",
+          "rotatedRectangle",
           "ellipse",
           "triangle",
           "circle",

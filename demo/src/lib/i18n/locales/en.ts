@@ -10,7 +10,7 @@ const en = {
   meta: {
     title: 'TradeCanvas · Canvas trading charts for the web',
     description:
-      'TradeCanvas is a trading chart library for the web, drawn with Canvas 2D or WebGL: 18 chart types, 134 indicators, 73 drawing tools, live exchange feeds, orders on the chart, replay and backtesting, in 30 languages. Zero dependencies, MIT.',
+      'TradeCanvas is a trading chart library for the web, drawn with Canvas 2D or WebGL: 18 chart types, 134 indicators, 76 drawing tools, live exchange feeds, orders on the chart, replay and backtesting, in 30 languages. Zero dependencies, MIT.',
   },
 
   nav: {
@@ -53,7 +53,7 @@ const en = {
     release: 'WebGL renderer, 30 languages',
     title: 'The chart engine for trading apps.',
     ledeHtml:
-      'Candlesticks to Renko, 134 indicators, 73 drawing tools, live exchange feeds and orders on the chart. Drawn with Canvas 2D or WebGL, with zero dependencies. Drop in the full <code>ChartWidget</code> or build your own UI on the headless <code>Chart</code>.',
+      'Candlesticks to Renko, 134 indicators, 76 drawing tools, live exchange feeds and orders on the chart. Drawn with Canvas 2D or WebGL, with zero dependencies. Drop in the full <code>ChartWidget</code> or build your own UI on the headless <code>Chart</code>.',
     getStarted: 'Get started',
     browseExamples: 'Browse examples',
     specsLabel: 'Key numbers',
@@ -78,7 +78,7 @@ const en = {
           text: 'Bands, averages and oscillators over the bars, Fibonacci levels and trend lines on top, each with its own settings and alerts.',
           points: [
             '134 indicators, any one on another, such as an average of the RSI',
-            '73 drawing tools with magnet, groups and undo',
+            '76 drawing tools with magnet, groups and undo',
             'Alerts on prices, lines and indicator crossings',
           ],
         },
@@ -214,7 +214,7 @@ const en = {
   scenes: {
     drawings: {
       title: 'Drawing tools',
-      stat: '73 tools',
+      stat: '76 tools',
       blurb:
         'Fibonacci and Gann tools with your own levels, Elliott waves, harmonic patterns, signposts and brushes. Lines and boxes carry words, notes and signposts are typed over in place, a note can stay put on the screen, and a drawing can sit on an indicator pane. Alerts follow trend lines, and Long/Short works out the position size.',
       tryThis: [
@@ -572,7 +572,7 @@ const en = {
       },
       widget: {
         title: 'ChartWidget',
-        blurb: 'The full trading UI in one call: toolbar, 73 drawing tools, watchlist, trading, replay, in 30 languages.',
+        blurb: 'The full trading UI in one call: toolbar, 76 drawing tools, watchlist, trading, replay, in 30 languages.',
       },
       react: {
         title: 'React',
@@ -727,7 +727,7 @@ const en = {
         { name: 'Incremental updates on live ticks', detail: 'update() recomputes only the forming bar' },
       ],
       drawings: [
-        { name: '73 drawing tools', detail: 'Lines, channels, Fibonacci, Gann, pitchforks, Elliott waves, patterns, cycles, projections' },
+        { name: '76 drawing tools', detail: 'Lines, channels, Fibonacci, Gann, pitchforks, Elliott waves, patterns, cycles, projections' },
         { name: 'Each tool’s own settings', detail: 'Style, properties and coordinates on the market’s price grid' },
         { name: 'Long and short positions', detail: 'Risk:reward, quantity from risk in percent or money' },
         { name: 'Alerts on a drawing', detail: 'When price crosses a trend line or channel as drawn, log scale included' },
