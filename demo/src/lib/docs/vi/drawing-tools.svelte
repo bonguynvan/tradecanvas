@@ -6,12 +6,12 @@
 
 <svelte:head>
   <title>Công cụ vẽ — Tài liệu TradeCanvas</title>
-  <meta name="description" content="73 công cụ vẽ có sẵn, mỗi công cụ có cài đặt riêng: công cụ Fibonacci và Gann, sóng Elliott, mô hình harmonic, ghi chú, bút vẽ, Vị thế Long/Short kèm tính khối lượng, cảnh báo trên hình vẽ, nhóm và thứ tự lớp." />
+  <meta name="description" content="76 công cụ vẽ có sẵn, mỗi công cụ có cài đặt riêng: công cụ Fibonacci và Gann, sóng Elliott, mô hình harmonic, ghi chú, bút vẽ, Vị thế Long/Short kèm tính khối lượng, cảnh báo trên hình vẽ, nhóm và thứ tự lớp." />
 </svelte:head>
 
 <h1>Công cụ vẽ</h1>
 <p>
-  73 công cụ vẽ có sẵn. Mỗi công cụ đều hút vào các nến nhờ nam châm, hỗ trợ
+  76 công cụ vẽ có sẵn. Mỗi công cụ đều hút vào các nến nhờ nam châm, hỗ trợ
   hoàn tác và làm lại, có cài đặt riêng, và được lưu cùng bố cục.
 </p>
 
@@ -283,6 +283,8 @@ chart.on('toolModeChange', (e) => e.payload)      // { eraser } hoặc { zoomAre
 <ul>
   <li><code>parallelChannel</code> — đường qua hai điểm đầu được dời thẳng lên hoặc xuống tới điểm thứ ba (đúng như cảnh báo của nó đọc), kèm đường giữa tuỳ chọn, kéo dài được về cả hai phía.</li>
   <li><code>regressionChannel</code> — đường bình phương tối thiểu qua giá đóng cửa giữa hai điểm của nó, với dải cách hai độ lệch chuẩn ở mỗi bên; các điểm quyết định những nến được tính, và tay nắm nằm trên đường.</li>
+  <li><code>disjointChannel</code> — hai đường trên cùng các bar, nghiêng ngược chiều nhau: đường thứ nhất qua hai điểm đầu, đường thứ hai đi qua giá của điểm thứ ba ở chính giữa. Một cái nêm hẹp dần hoặc mở rộng; kéo dài được về hai phía và trả cả hai giá cho cảnh báo.</li>
+  <li><code>flatTopBottom</code> — một đường dốc qua hai điểm và một đường nằm ngang tại giá của điểm thứ ba, trên cùng các bar: đỉnh phẳng trên các đáy tăng dần, hoặc đáy phẳng dưới các đỉnh giảm dần.</li>
 </ul>
 
 <h3>Fibonacci</h3>
@@ -306,6 +308,7 @@ chart.on('toolModeChange', (e) => e.payload)      // { eraser } hoặc { zoomAre
 <h3>Hình</h3>
 <ul>
   <li><code>rectangle</code>, <code>circle</code>, <code>ellipse</code>, <code>triangle</code> — tay nắm của hình elip nằm trên chính đường cong, mỗi tay nắm kéo một cạnh.</li>
+  <li><code>rotatedRectangle</code> — hình chữ nhật ở góc bất kỳ: một cạnh qua hai điểm đầu, bề sâu bằng khoảng cách từ điểm thứ ba tới cạnh đó. Nó vuông góc trên màn hình, nên cạnh đối diện đi theo thang đo khi chart được zoom.</li>
   <li><code>polyline</code> — một hình khép kín, mỗi lần bấm một điểm.</li>
   <li><code>curve</code> — uốn cong qua điểm thứ ba; <code>arc</code> — một cung tròn đi qua ba điểm.</li>
 </ul>

@@ -4,7 +4,7 @@ const pt: SiteMessages = {
   meta: {
     title: 'TradeCanvas · Gráficos de trading em Canvas para a web',
     description:
-      'TradeCanvas é uma biblioteca de gráficos de trading para a web, desenhada com Canvas 2D ou WebGL: 18 tipos de gráfico, 134 indicadores, 69 ferramentas de desenho, dados ao vivo de exchanges, ordens no gráfico, replay e backtesting, em 30 idiomas. Sem dependências, MIT.',
+      'TradeCanvas é uma biblioteca de gráficos de trading para a web, desenhada com Canvas 2D ou WebGL: 18 tipos de gráfico, 134 indicadores, 76 ferramentas de desenho, dados ao vivo de exchanges, ordens no gráfico, replay e backtesting, em 30 idiomas. Sem dependências, MIT.',
   },
 
   nav: {
@@ -47,7 +47,7 @@ const pt: SiteMessages = {
     release: 'renderizador WebGL, 30 idiomas',
     title: 'O motor de gráficos para apps de trading.',
     ledeHtml:
-      'De candles a Renko, 134 indicadores, 69 ferramentas de desenho, dados ao vivo de exchanges e ordens no gráfico. Desenhado com Canvas 2D ou WebGL, sem nenhuma dependência. Use o <code>ChartWidget</code> completo ou construa sua própria interface sobre o <code>Chart</code> headless.',
+      'De candles a Renko, 134 indicadores, 76 ferramentas de desenho, dados ao vivo de exchanges e ordens no gráfico. Desenhado com Canvas 2D ou WebGL, sem nenhuma dependência. Use o <code>ChartWidget</code> completo ou construa sua própria interface sobre o <code>Chart</code> headless.',
     getStarted: 'Começar',
     browseExamples: 'Ver exemplos',
     specsLabel: 'Números principais',
@@ -72,7 +72,7 @@ const pt: SiteMessages = {
           text: 'Bandas, médias e osciladores sobre os candles, níveis de Fibonacci e linhas de tendência por cima, cada um com suas configurações e alertas.',
           points: [
             '134 indicadores, um sobre o outro, como uma média do RSI',
-            '69 ferramentas de desenho com ímã, grupos e desfazer',
+            '76 ferramentas de desenho com ímã, grupos e desfazer',
             'Alertas de preço, de linhas e de cruzamentos de indicadores',
           ],
         },
@@ -207,7 +207,7 @@ const pt: SiteMessages = {
   scenes: {
     drawings: {
       title: 'Ferramentas de desenho',
-      stat: '73 ferramentas',
+      stat: '76 ferramentas',
       blurb:
         'Ferramentas de Fibonacci e Gann com seus próprios níveis, ondas de Elliott, padrões harmônicos, placas e pincéis. Linhas e caixas levam texto, notas e placas são editadas no próprio lugar, uma nota pode ficar fixa na tela e um desenho pode ficar no painel de um indicador. Os alertas seguem linhas de tendência, e Comprado/Vendido calcula o tamanho da posição.',
       tryThis: [
@@ -564,7 +564,7 @@ const pt: SiteMessages = {
       },
       widget: {
         title: 'ChartWidget',
-        blurb: 'A interface de trading completa em uma chamada: barra de ferramentas, 69 ferramentas de desenho, lista de observação, trading, replay, em 30 idiomas.',
+        blurb: 'A interface de trading completa em uma chamada: barra de ferramentas, 76 ferramentas de desenho, lista de observação, trading, replay, em 30 idiomas.',
       },
       react: {
         title: 'React',
@@ -719,7 +719,7 @@ const pt: SiteMessages = {
         { name: 'Atualizações incrementais com ticks ao vivo', detail: 'update() recalcula só a barra em formação' },
       ],
       drawings: [
-        { name: '69 ferramentas de desenho', detail: 'Linhas, canais, Fibonacci, Gann, pitchforks, ondas de Elliott, padrões, ciclos, projeções' },
+        { name: '76 ferramentas de desenho', detail: 'Linhas, canais, Fibonacci, Gann, pitchforks, ondas de Elliott, padrões, ciclos, projeções' },
         { name: 'Configurações próprias de cada ferramenta', detail: 'Estilo, propriedades e coordenadas na grade de preços do mercado' },
         { name: 'Posições compradas e vendidas', detail: 'Risco:retorno, quantidade a partir do risco em porcentagem ou em dinheiro' },
         { name: 'Alertas em um desenho', detail: 'Quando o preço cruza uma linha de tendência ou um canal como foi desenhado, inclusive em escala logarítmica' },

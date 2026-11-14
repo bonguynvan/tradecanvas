@@ -4,7 +4,7 @@ const zhHant: SiteMessages = {
   meta: {
     title: 'TradeCanvas · 網頁用的 Canvas 交易圖表',
     description:
-      'TradeCanvas 是一套網頁用的交易圖表函式庫，可用 Canvas 2D 或 WebGL 繪製：18 種圖表類型、134 個指標、69 種繪圖工具、交易所即時行情、直接在圖上下單、回放與回測，支援 30 種語言。零相依套件，MIT 授權。',
+      'TradeCanvas 是一套網頁用的交易圖表函式庫，可用 Canvas 2D 或 WebGL 繪製：18 種圖表類型、134 個指標、76 種繪圖工具、交易所即時行情、直接在圖上下單、回放與回測，支援 30 種語言。零相依套件，MIT 授權。',
   },
 
   nav: {
@@ -47,7 +47,7 @@ const zhHant: SiteMessages = {
     release: 'WebGL 渲染器，30 種語言',
     title: '為交易應用打造的圖表引擎。',
     ledeHtml:
-      '從蠟燭圖到 Renko，134 個指標、69 種繪圖工具、交易所即時行情，還能直接在圖上下單。以 Canvas 2D 或 WebGL 繪製，零相依套件。可直接放入完整的 <code>ChartWidget</code>，或在 headless 的 <code>Chart</code> 上打造自己的介面。',
+      '從蠟燭圖到 Renko，134 個指標、76 種繪圖工具、交易所即時行情，還能直接在圖上下單。以 Canvas 2D 或 WebGL 繪製，零相依套件。可直接放入完整的 <code>ChartWidget</code>，或在 headless 的 <code>Chart</code> 上打造自己的介面。',
     getStarted: '開始使用',
     browseExamples: '瀏覽範例',
     specsLabel: '關鍵數字',
@@ -72,7 +72,7 @@ const zhHant: SiteMessages = {
           text: 'K線上疊加通道、均線與震盪指標，再在上面畫斐波那契與趨勢線，每一項都有自己的設定與警示。',
           points: [
             '134 個指標，可以互相疊加，例如 RSI 的均線',
-            '69 種繪圖工具，具備磁吸、群組與復原',
+            '76 種繪圖工具，具備磁吸、群組與復原',
             '價格、線條與指標交叉都能警示',
           ],
         },
@@ -207,7 +207,7 @@ const zhHant: SiteMessages = {
   scenes: {
     drawings: {
       title: '繪圖工具',
-      stat: '73 種工具',
+      stat: '76 種工具',
       blurb:
         '斐波那契與江恩工具可自訂級別，另有艾略特波浪、諧波型態、路標與筆刷。線條和方框可帶文字，筆記與路標可就地編輯；筆記可固定在螢幕上，繪圖也可放在指標窗格上。警示會跟隨趨勢線，多/空部位工具會算出部位大小。',
       tryThis: [
@@ -564,7 +564,7 @@ const zhHant: SiteMessages = {
       },
       widget: {
         title: 'ChartWidget',
-        blurb: '一次呼叫就有完整的交易介面：工具列、69 種繪圖工具、自選清單、交易、K線回放，支援 30 種語言。',
+        blurb: '一次呼叫就有完整的交易介面：工具列、76 種繪圖工具、自選清單、交易、K線回放，支援 30 種語言。',
       },
       react: {
         title: 'React',
@@ -719,7 +719,7 @@ const zhHant: SiteMessages = {
         { name: '即時 tick 的增量更新', detail: 'update() 只重新計算正在形成的K線' },
       ],
       drawings: [
-        { name: '69 種繪圖工具', detail: '直線、通道、費波那契、江恩、叉形線、艾略特波浪、型態、週期、投影' },
+        { name: '76 種繪圖工具', detail: '直線、通道、費波那契、江恩、叉形線、艾略特波浪、型態、週期、投影' },
         { name: '每種工具各自的設定', detail: '樣式、屬性，以及落在市場價格網格上的座標' },
         { name: '多方與空方部位', detail: '風險報酬比，依風險百分比或金額計算數量' },
         { name: '繪圖上的警示', detail: '價格穿越所畫的趨勢線或通道時觸發，對數座標同樣適用' },

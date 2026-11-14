@@ -201,7 +201,7 @@ chart.on('positionModify', (e) => console.log('stop or target dragged', e.payloa
 chart.modifyPositionIntent({ positionId: 'p1', trailingStop: 400 }); // the stop trails the price by 400 (tag: TSL); null ends it. The paper account moves it; an order takes trailingStop too
 ```
 
-73 drawing tools; each keeps its own settings (`setDrawingOptions`, `updateDrawing`),
+76 drawing tools; each keeps its own settings (`setDrawingOptions`, `updateDrawing`),
 and drawings can be named (`updateDrawing(id, { name })`, what the object tree lists),
 grouped (`groupDrawings`), reordered (`moveDrawing` with a step or a place, 0 the bottom), erased
 (`setEraserMode`), and copied to another chart of the page (`copyDrawings`, then

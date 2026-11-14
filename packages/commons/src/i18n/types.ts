@@ -54,6 +54,9 @@ export interface LocaleStrings {
   extendedLine: string;
   parallelChannel: string;
   regressionChannel: string;
+  disjointChannel: string;
+  flatTopBottom: string;
+  rotatedRectangle: string;
   fibRetracement: string;
   fibExtension: string;
   rectangle: string;

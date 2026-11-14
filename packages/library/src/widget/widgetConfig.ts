@@ -44,6 +44,8 @@ export const DRAWING_TOOL_GROUPS: DrawingToolGroupDef[] = [
       { label: 'Cross Line', value: 'crossLine' as DrawingToolType },
       { label: 'Parallel Channel', value: 'parallelChannel' as DrawingToolType, heading: 'Channels' },
       { label: 'Regression Channel', value: 'regressionChannel' as DrawingToolType },
+      { label: 'Disjoint Channel', value: 'disjointChannel' as DrawingToolType },
+      { label: 'Flat Top/Bottom', value: 'flatTopBottom' as DrawingToolType },
     ],
   },
   {
@@ -109,6 +111,7 @@ export const DRAWING_TOOL_GROUPS: DrawingToolGroupDef[] = [
     section: 'annotation',
     tools: [
       { label: 'Rectangle', value: 'rectangle' as DrawingToolType, heading: 'Shapes' },
+      { label: 'Rotated Rectangle', value: 'rotatedRectangle' as DrawingToolType },
       { label: 'Circle', value: 'circle' as DrawingToolType },
       { label: 'Ellipse', value: 'ellipse' as DrawingToolType },
       { label: 'Triangle', value: 'triangle' as DrawingToolType },

@@ -103,6 +103,9 @@ export const DRAWING_TOOL_ICONS: Readonly<Record<string, IconDef>> = {
   crossLine: { d: 'M3 12H21M12 3V21', dots: [[12, 12]] }, // Cross Line
   parallelChannel: { d: 'M3 15L15 5M9 19L21 9', dots: [[3, 15], [15, 5], [9, 19]] }, // Parallel Channel
   regressionChannel: { d: 'M3 12L21 4M3 20L21 12', dash: 'M3 16L21 8', dots: [[3, 16], [21, 8]] }, // Regression Channel
+  disjointChannel: { d: 'M3 17L21 13M3 7L21 11', dots: [[3, 17], [21, 13], [21, 11]] }, // Disjoint Channel
+  flatTopBottom: { d: 'M3 6H21M3 19L21 11', dots: [[3, 19], [21, 11], [12, 6]] }, // Flat Top/Bottom
+  rotatedRectangle: { d: 'M4 13L13 4L20 11L11 20z', dots: [[4, 13], [13, 4], [15.5, 15.5]] }, // Rotated Rectangle
   fibRetracement: { d: 'M3 4H21M3 9H21M3 13H21M3 20H21', dots: [[5, 20], [19, 4]] }, // Fib Retracement
   fibExtension: { d: 'M3 20L8 10L12 16M14 4H21M14 8H21M14 12H21', dots: [[3, 20], [8, 10], [12, 16]] }, // Fib Extension
   fibChannel: { d: 'M3 9L21 3M3 13L21 7M3 16L21 10M3 21L21 15', dots: [[3, 21], [21, 15], [3, 9]] }, // Fib Channel

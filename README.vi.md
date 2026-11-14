@@ -26,7 +26,7 @@
   <a href="README.md">English</a> · <b>Tiếng Việt</b> · <a href="README.zh-CN.md">简体中文</a> · <a href="README.ja.md">日本語</a> · <a href="README.ko.md">한국어</a> · <a href="README.es.md">Español</a>
 </p>
 
-**TradeCanvas là thư viện biểu đồ giao dịch mã nguồn mở cho web**, giấy phép MIT. Từ nến Nhật đến Renko, 134 chỉ báo, 73 công cụ vẽ, dữ liệu sàn trực tiếp và lệnh ngay trên biểu đồ, vẽ bằng Canvas 2D hoặc WebGL, không phụ thuộc thư viện bên thứ ba nào. Dùng ngay `ChartWidget` đầy đủ, hoặc tự dựng giao diện trên `Chart` headless, bằng TypeScript, React, Vue hay Svelte.
+**TradeCanvas là thư viện biểu đồ giao dịch mã nguồn mở cho web**, giấy phép MIT. Từ nến Nhật đến Renko, 134 chỉ báo, 76 công cụ vẽ, dữ liệu sàn trực tiếp và lệnh ngay trên biểu đồ, vẽ bằng Canvas 2D hoặc WebGL, không phụ thuộc thư viện bên thứ ba nào. Dùng ngay `ChartWidget` đầy đủ, hoặc tự dựng giao diện trên `Chart` headless, bằng TypeScript, React, Vue hay Svelte.
 
 <p align="center">
   <a href="https://tradecanvas.dev/vi/chart/"><img src=".github/assets/clips/hero.webp" alt="ChartWidget trên thị trường trực tiếp: EMA 21 và 55, RSI, crosshair và một trend line vẽ bằng chuột" width="100%"></a>
@@ -34,7 +34,7 @@
 
 ## Điểm nổi bật
 
-- **18 loại biểu đồ, 134 chỉ báo, 73 công cụ vẽ**, chỉ báo trên chỉ báo, cảnh báo trên đường vẽ, hoàn tác và làm lại.
+- **18 loại biểu đồ, 134 chỉ báo, 76 công cụ vẽ**, chỉ báo trên chỉ báo, cảnh báo trên đường vẽ, hoàn tác và làm lại.
 - **Giao dịch trên biểu đồ**: vị thế với lãi lỗ trực tiếp, lệnh và lệnh stop kéo được, paper broker hoặc broker của bạn.
 - **Dữ liệu trực tiếp** từ Binance, Bybit, Coinbase và Kraken, hoặc nguồn của bạn trong khoảng hai mươi dòng.
 - **Nhanh**: một triệu nến kéo mượt 60 fps với WebGL; một tick trực tiếp trong khoảng một micro giây; mười phút 30.000 lệnh khớp mỗi giây trên một triệu nến mà bộ nhớ không tăng ([bài đo](benchmarks/2026-11-03.md)).
