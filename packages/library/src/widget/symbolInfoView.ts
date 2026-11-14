@@ -5,6 +5,8 @@ import type { SymbolInfoNews, SymbolInfoView } from './WidgetSymbolInfo.js';
 
 /** Headlines asked for at once, and how long a symbol's stay fresh. */
 const NEWS_LIMIT = 10;
+/** Headlines asked of the source: the panel shows the newest `NEWS_LIMIT`, the chart marks them all. */
+const NEWS_FETCH = 50;
 const NEWS_TTL_MS = 5 * 60_000;
 const DAY_MS = 86_400_000;
 /** Decimals the change's percentage shows. */
@@ -94,6 +96,30 @@ type NewsSource = (symbol: string, limit: number) => unknown;
 export class SymbolNews {
   private request = 0;
   private cache = new Map<string, { at: number; items: NewsItem[] }>();
+  /** A symbol's request on its way: a second asker waits for the same one. */
+  private pending = new Map<string, Promise<NewsItem[]>>();
+
+  /**
+   * `symbol`'s headlines from `source`, newest first: from the cache while
+   * it is fresh, else asked for once however many ask. Rejects when the
+   * source fails.
+   */
+  headlines(symbol: string, source: NewsSource): Promise<NewsItem[]> {
+    const cached = this.cache.get(symbol);
+    if (cached && Date.now() - cached.at < NEWS_TTL_MS) return Promise.resolve(cached.items);
+    const running = this.pending.get(symbol);
+    if (running) return running;
+    const request = Promise.resolve()
+      .then(() => source(symbol, NEWS_FETCH))
+      .then((raw) => {
+        const items = readNews(raw, NEWS_FETCH);
+        this.cache.set(symbol, { at: Date.now(), items });
+        return items;
+      })
+      .finally(() => this.pending.delete(symbol));
+    this.pending.set(symbol, request);
+    return request;
+  }
 
   /**
    * Load `symbol`'s headlines from `source` (null: none to show) into
@@ -110,7 +136,7 @@ export class SymbolNews {
       const now = Date.now();
       render({
         kind: 'items',
-        items: items.map((item) => ({
+        items: items.slice(0, NEWS_LIMIT).map((item) => ({
           title: item.title,
           url: item.url,
           meta: [item.source, relativeTime(item.time - now, locale)].filter(Boolean).join(' · '),
@@ -123,12 +149,9 @@ export class SymbolNews {
       return;
     }
     render({ kind: 'loading' });
-    Promise.resolve()
-      .then(() => source(symbol, NEWS_LIMIT))
-      .then((raw) => {
+    this.headlines(symbol, source)
+      .then((items) => {
         if (request !== this.request || stale()) return;
-        const items = readNews(raw, NEWS_LIMIT);
-        this.cache.set(symbol, { at: Date.now(), items });
         show(items);
       })
       .catch(() => {

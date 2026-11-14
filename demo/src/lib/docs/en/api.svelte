@@ -946,6 +946,10 @@ widget.getQuote('AAPL')`}</code></pre>
   news: (symbol, limit) => api.headlines(symbol, limit),   // or the adapter's fetchNews
 })
 widget.toggleSymbolInfo(true)`}</code></pre>
+<p>
+  The headlines also stand on the chart as marks, on the bars they were published in
+  (<code>newsMarks: false</code> leaves them out); see <em>Marks</em> under Trading.
+</p>
 
 <h3>Navigation, undo and direction</h3>
 <p>

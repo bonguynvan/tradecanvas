@@ -31,6 +31,7 @@ import type { VolumeRenderer } from '../charts/VolumeRenderer.js';
 import type { CompareRenderer } from '../charts/CompareRenderer.js';
 import type { AlertManager } from '../features/AlertManager.js';
 import type { SignalMarkerManager } from '../features/SignalMarkerManager.js';
+import type { ChartMarkManager } from '../features/ChartMarkManager.js';
 import type { TradeZoneManager } from '../features/TradeZoneManager.js';
 import { AXIS_TAG_TEXT_INSET, fillTag } from '../ui/shapes.js';
 import { alignAxisTags, type AxisTagBox } from '../axis/alignAxisTags.js';
@@ -166,6 +167,8 @@ export interface RenderContext {
   priceLines?: import('../ui/PriceLines.js').PriceLines | null;
   alertManager: AlertManager | null;
   signalMarkerManager: SignalMarkerManager | null;
+  /** Marks on the chart (headlines, earnings dates); null with the feature off. */
+  chartMarkManager?: ChartMarkManager | null;
   measureOverlay: import('../features/MeasureOverlay.js').MeasureOverlay | null;
   selectionBoxOverlay?: import('../features/SelectionBoxOverlay.js').SelectionBoxOverlay | null;
   /** The "+" by the price axis, level with the crosshair. */
@@ -405,6 +408,8 @@ export class RenderEngine {
     ctx.tradingRenderer?.render(c, viewport, theme);
     ctx.signalMarkerManager?.render(c, viewport, theme);
     ctx.alertManager?.render(c, viewport, theme);
+    // The marks last on the plot: a hovered one's words go over what is drawn there.
+    ctx.chartMarkManager?.render(c, viewport, theme);
 
     // --- Axes and price tags ---
     // Tags are placed first: value tags step around the fixed ones (last

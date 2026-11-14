@@ -1,6 +1,6 @@
 // What the types say about chart events' payloads: compiled with the skill's
 // examples (`pnpm docs:check`). A `@ts-expect-error` line must fail to compile.
-import { Chart } from '@tradecanvas/chart';
+import { Chart, readChartMarks, MAX_CHART_MARKS, type ChartMark, type ChartMarkKind } from '@tradecanvas/chart';
 
 declare const chart: Chart;
 
@@ -11,6 +11,16 @@ chart.on('legendResize', (e) => {
   const top: number = e.payload.top;
   return [bottom, top];
 });
+
+// Marks: their types are the chart package's to give, and their events carry them.
+const kind: ChartMarkKind = 'earnings';
+const marks: ChartMark[] = readChartMarks([{ time: 0, title: 'Q3 earnings', kind }], MAX_CHART_MARKS);
+chart.setMarks(marks);
+chart.on('markClick', (e) => e.payload.marks.map((m) => m.title));
+chart.on('markHover', (e) => e.payload.marks?.length ?? 0);
+chart.on('marksChange', (e) => e.payload.count + 1);
+// @ts-expect-error A mark's kind is one of the five.
+chart.addMark({ time: 0, title: 'x', kind: 'rumour' });
 
 // Trading, menus and tool events carry typed payloads too.
 chart.on('executionFill', (e) => e.payload.price);

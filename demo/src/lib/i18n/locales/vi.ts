@@ -295,6 +295,18 @@ const vi: SiteMessages = {
         'Điểm mua, bán và lệnh giao dịch chỉ hiện khi phần phát lại chạy tới',
       ],
     },
+    marks: {
+      title: 'Tin tức và sự kiện trên chart',
+      stat: 'marks',
+      blurb:
+        'Tin tức, ngày công bố kết quả kinh doanh, cổ tức và chia tách hiện thành các badge nhỏ ở chân pane giá, mỗi badge trên bar chứa thời điểm của nó. Widget tự đưa tin của mã lên từ nguồn tin; marks của riêng bạn đi qua chart.setMarks.',
+      tryThis: [
+        'Trỏ vào một badge để đọc nội dung',
+        'Nhấp vào badge có số: danh sách các tin nó gộp, mới nhất ở trên',
+        'Zoom out: các badge sẽ chồng nhau được gộp thành một',
+        'Mở panel thông tin mã (ⓘ cạnh mã): cùng các tin đó, dạng danh sách',
+      ],
+    },
     compare: {
       title: 'So sánh, chênh lệch, tỷ lệ',
       stat: 'nhiều mã',

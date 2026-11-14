@@ -17,7 +17,7 @@ export const WIDGET_FEATURES = [
   'alerts', 'objectTree', 'symbolInfo', 'symbolSearch', 'settings', 'indicatorSettings', 'drawingSettings',
   'dataWindow', 'commandPalette', 'hotkeySheet', 'goToDate', 'replay', 'screenshot', 'copyImage', 'shareView',
   'autoFib', 'themeToggle', 'fullscreen', 'accountPanel', 'orderTicket', 'bracketOrders', 'depthLadder',
-  'layouts', 'indicatorTemplates', 'compare', 'indicatorLegend', 'navigation', 'customTimeframes',
+  'layouts', 'indicatorTemplates', 'compare', 'indicatorLegend', 'navigation', 'customTimeframes', 'marks',
   'intervalTyping', 'symbolTyping', 'dragDropImport', 'hotkeys', 'toasts',
   // The toolbar's buttons.
   'toolbar.symbol', 'toolbar.symbolInfo', 'toolbar.timeframes', 'toolbar.timeframeMenu', 'toolbar.chartType',

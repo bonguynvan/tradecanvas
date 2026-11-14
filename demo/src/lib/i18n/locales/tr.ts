@@ -295,6 +295,18 @@ const tr: SiteMessages = {
         'Alım ve satım işaretleri ile işlem, yeniden oynatma onlara ulaştığında görünür',
       ],
     },
+    marks: {
+      title: 'Grafikte haberler ve olaylar',
+      stat: 'işaretler',
+      blurb:
+        'Haber başlıkları, bilanço tarihleri, temettüler ve bölünmeler, fiyat bölmesinin alt kenarında, her biri zamanını içeren çubuğun üzerinde küçük rozetler olarak görünür. Widget, sembolün başlıklarını haber kaynağından oraya koyar; kendi işaretleriniz chart.setMarks ile verilir.',
+      tryThis: [
+        'Neyi işaretlediğini okumak için bir rozetin üzerine gelin',
+        'Sayılı bir rozete tıklayın: topladığı başlıklar, en yenisi önce',
+        'Uzaklaştırın: üst üste binecek rozetler tek rozette toplanır',
+        'Sembol bilgisi panelini açın (sembolün yanındaki ⓘ): aynı başlıklar, liste halinde',
+      ],
+    },
     compare: {
       title: 'Karşılaştırma, fark, oran',
       stat: 'semboller',

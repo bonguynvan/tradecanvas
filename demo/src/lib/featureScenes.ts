@@ -73,6 +73,28 @@ export function swing(data: OHLCBar[], from: number, to: number, kind: 'high' | 
 }
 
 /** Alternating swing anchors over `count` equal segments ending `endOffset` bars from the end. */
+/** Headlines for a symbol with no feed: some alone, some close enough to share a badge. */
+function sampleHeadlines(symbol: string) {
+  const now = Math.floor(Date.now() / HOUR) * HOUR;
+  const stories: [hoursBack: number, title: string, source: string][] = [
+    [3, 'shares slip as the sector cools', 'Wire'],
+    [4, 'analysts lift their price target', 'Desk'],
+    [4, 'names a new finance chief', 'Wire'],
+    [31, 'opens a second plant', 'Daily'],
+    [74, 'wins a five-year supply contract', 'Wire'],
+    [75, 'guides revenue above forecasts', 'Desk'],
+    [120, 'to buy back 2% of its shares', 'Daily'],
+    [176, 'recalls a product line', 'Wire'],
+  ];
+  return stories.map(([hoursBack, title, source], i) => ({
+    id: `${symbol}-${i}`,
+    title: `${symbol} ${title}`,
+    time: now - hoursBack * HOUR + i * MINUTE,
+    source,
+    url: `https://example.com/news/${symbol.toLowerCase()}-${i}`,
+  }));
+}
+
 function swings(data: OHLCBar[], span: number, endOffset: number, count: number, first: 'high' | 'low') {
   const end = data.length - endOffset;
   const start = end - span;
@@ -416,6 +438,39 @@ chart.on('replayComplete', () => chart.replayStop())   // back to the live serie
         pnl: exit.price - entry.price,
       }]);
       widget.replayFrom(Math.floor(data.length * 0.55));
+    },
+  },
+  {
+    id: 'marks',
+    code: `// The widget marks the symbol's headlines from its news source
+new ChartWidget(host, {
+  news: (symbol, limit) => api.headlines(symbol, limit),   // or the adapter's fetchNews
+  // newsMarks: false keeps them to the symbol info panel
+})
+
+// Marks of your own: earnings, dividends, anything with a time
+chart.setMarks([
+  { id: 'q3', time: reportedAt, kind: 'earnings', title: 'Q3 earnings', text: 'EPS 1.42 vs 1.31 expected' },
+  { id: 'div', time: exDate, kind: 'dividend', title: 'Dividend 0.24 a share' },
+])
+chart.addMark({ time: haltedAt, title: 'Trading halted', label: 'H', color: '#e5484d' })
+chart.on('markClick', (e) => openStory(e.payload.marks))`,
+    options: () => ({
+      symbol: 'DEMO',
+      symbols: ['DEMO', 'ALPHA'],
+      timeframe: '1h',
+      news: async (symbol) => sampleHeadlines(symbol),
+    }),
+    data: (symbol) => generateBars(1200, symbol, HOUR, 120),
+    setup: (_widget, chart) => {
+      const data = chart.getData();
+      const at = (back: number) => data[data.length - 1 - back].time;
+      chart.setMarks([
+        { id: 'q3', time: at(150), kind: 'earnings', title: 'Q3 earnings', text: 'EPS 1.42 vs 1.31 expected' },
+        { id: 'div', time: at(96), kind: 'dividend', title: 'Dividend 0.24 a share', text: 'Ex-dividend date' },
+        { id: 'split', time: at(58), kind: 'split', title: '4-for-1 split' },
+        { id: 'halt', time: at(20), title: 'Trading halted for 15 minutes', label: 'H', color: '#e5484d' },
+      ]);
     },
   },
   {

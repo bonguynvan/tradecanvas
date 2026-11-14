@@ -295,6 +295,18 @@ const fr: SiteMessages = {
         'Les marques d’achat et de vente et la transaction n’apparaissent qu’une fois atteintes par le replay',
       ],
     },
+    marks: {
+      title: 'Actualités et événements sur le graphique',
+      stat: 'repères',
+      blurb:
+        'Titres, dates de résultats, dividendes et divisions d’actions sous forme de petits badges au pied du volet des prix, chacun sur la barre qui contient son instant. Le widget y place les titres du symbole depuis sa source d’actualités ; vos propres repères passent par chart.setMarks.',
+      tryThis: [
+        'Pointez un badge pour lire ce qu’il marque',
+        'Cliquez sur un badge avec un nombre : les titres qu’il regroupe, le plus récent en premier',
+        'Dézoomez : les badges qui se chevaucheraient se regroupent en un seul',
+        'Ouvrez le panneau d’informations du symbole (ⓘ près du symbole) : les mêmes titres, en liste',
+      ],
+    },
     compare: {
       title: 'Comparaison, écart, ratio',
       stat: 'symboles',

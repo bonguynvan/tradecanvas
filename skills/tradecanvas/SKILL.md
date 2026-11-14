@@ -255,11 +255,22 @@ declare const t1: number, t2: number; // bar times
 chart.setSignalMarkers([{ id: 's1', time: t1, price: 62_000, direction: 'long', confidence: 0.8, source: 'my-strategy' }]);
 chart.setTradeZones([{ id: 'z1', direction: 'long', entryTime: t1, entryPrice: 62_000, exitTime: t2, exitPrice: 63_500 }]);
 
+// Marks: what happened at a time (news, earnings, a dividend), a badge at the foot of the price pane.
+chart.setMarks([{ id: 'q3', time: t1, kind: 'earnings', title: 'Q3 earnings', text: 'EPS 1.42 vs 1.31 expected' }]);
+chart.addMark({ time: t2, kind: 'news', title: 'A headline', url: 'https://example.com/story' });
+chart.on('markClick', (e) => console.info(e.payload.marks.map((m) => m.title)));
+
 // Replay from a time, only the replayed bars on the chart, the whole run in about 3.5 s.
 // Markers and zones appear as the replay reaches them.
 chart.replayStart({ startTime: t1, hideHistory: true, duration: 3500 });
 chart.on('replayComplete', () => chart.replayStop());   // every bar and mark back
 ```
+
+Marks (`setMarks`, `addMark`, `removeMark`, `getMarks`, `clearMarks`; `kind` is `news`,
+`earnings`, `dividend`, `split` or `event`) are the feed's, never in `saveState`: set them
+again after a load. ChartWidget marks the symbol's headlines by itself when it has a news
+source (`news`, or the adapter's `fetchNews`; `newsMarks: false` stops it) and opens a
+mark's link on a click; `features: { marks: false }` hides every mark.
 
 `replayPause`, `replayResume`, `replaySeekToTime` and `replaySeekToBar` steer it;
 `revealMarks: false` shows every mark from the start. `animate: true` grows each

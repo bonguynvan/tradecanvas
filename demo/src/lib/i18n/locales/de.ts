@@ -295,6 +295,18 @@ const de: SiteMessages = {
         'Kauf- und Verkaufsmarken und der Trade erscheinen erst, wenn das Replay sie erreicht',
       ],
     },
+    marks: {
+      title: 'Nachrichten und Ereignisse im Chart',
+      stat: 'Marken',
+      blurb:
+        'Schlagzeilen, Quartalszahlen, Dividenden und Splits als kleine Marken am Fuß des Preisbereichs, jede auf der Kerze, die ihren Zeitpunkt enthält. Das Widget setzt die Schlagzeilen des Symbols aus seiner Nachrichtenquelle dorthin; eigene Marken gehen über chart.setMarks.',
+      tryThis: [
+        'Auf eine Marke zeigen, um zu lesen, was sie markiert',
+        'Auf eine Marke mit Zahl klicken: die gesammelten Schlagzeilen, die neueste zuerst',
+        'Herauszoomen: Marken, die sich überlappen würden, werden zu einer',
+        'Das Symbol-Info-Panel öffnen (ⓘ neben dem Symbol): dieselben Schlagzeilen als Liste',
+      ],
+    },
     compare: {
       title: 'Vergleich, Spread, Verhältnis',
       stat: 'Symbole',

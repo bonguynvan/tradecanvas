@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+### Marks on the chart
+
+- **A chart marks what happened at a time** (`@tradecanvas/commons`, `@tradecanvas/core`, `@tradecanvas/chart`): a headline, an earnings date, a dividend, a split, as a small badge at the foot of the price pane on the bar that holds its time. `chart.setMarks`, `addMark`, `removeMark`, `getMarks` and `clearMarks` take `ChartMark`s (`time`, `title`, and optionally `kind`, `label`, `text`, `url`, `color`). The pointer over a badge reads its title and text; badges that would overlap gather into one with a count. A replay shows each as it reaches it; Renko, Kagi, line break, point & figure and range bars, whose bars are not times, draw none. Marks are read as untrusted input (only http(s) links are kept, at most 2,000) and are not part of `saveState`.
+- **Events `markHover`, `markClick` and `marksChange`**, and the feature switch `marks` (default on) on the chart and the widget. A click on a badge is a `markClick`, not a `click`. `ChartMark`, `ChartMarkKind`, `readChartMarks` and `MAX_CHART_MARKS` are exported from `@tradecanvas/chart`.
+- **ChartWidget puts the symbol's headlines on the chart** from its news source (`news`, or the adapter's `fetchNews`), one request shared with the symbol info panel; `newsMarks: false` keeps them to the panel. A click on a mark opens its link in a new tab; on a badge of several, a list of them, newest first. A host's own `setMarks` and `clearMarks` leave the widget's headlines on the chart. The navigation buttons stand above the badges, and step aside while the pointer reads one.
+- The symbol info panel asks its news source for 50 headlines (it asked for 10) and shows the newest 10; the chart marks them all.
+
 ## 2.4.0 (2026-11-13)
 
 ### Trading

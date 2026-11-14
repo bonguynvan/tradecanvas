@@ -292,6 +292,43 @@ chart.on('signalMarkerClick', (e) => openSignal(e.payload.marker))`}</code></pre
   ChartWidget 会在指针下方的标记旁显示一条说明：它的标签和来源、方向、价格、置信度和时间。
 </p>
 
+<h2>标记（Marks）</h2>
+<p>
+  某个时间发生的事（一条新闻、财报日、分红、拆股）以小徽标显示在价格窗格底部，位于包含该时间的 K 线上。
+  指针移到徽标上可读到标题和说明；会重叠的徽标合并为一个并显示数量。回放到达时才显示相应标记。
+  Renko、Kagi、新价线、点数图和范围 K 线不绘制标记：它们的 K 线不对应时间。
+</p>
+<pre><code>{`chart.setMarks([
+  { id: 'q3', time: reportedAt, kind: 'earnings', title: 'Q3 earnings', text: 'EPS 1.42 vs 1.31 expected' },
+  { id: 'div', time: exDate, kind: 'dividend', title: 'Dividend 0.24 a share' },
+  { id: 'n1', time: publishedAt, kind: 'news', title: headline, text: source, url: 'https://example.com/story' },
+])
+const id = chart.addMark({ time: Date.now(), title: 'Trading halted', label: 'H', color: '#e5484d' })
+chart.removeMark('div')
+chart.getMarks()      // earliest first
+chart.clearMarks()
+
+chart.on('markClick', (e) => openStory(e.payload.marks))   // one mark, or the several a badge gathers
+// a click on a badge is a markClick, not a click or a barClick
+chart.on('markHover', (e) => e.payload.marks)              // null: the pointer left the badge
+chart.on('marksChange', (e) => e.payload.count)
+
+new Chart(host, { features: { marks: false } })            // or chart.setFeatures({ marks: false })`}</code></pre>
+<p>
+  <code>kind</code> 决定字母和颜色：<code>news</code> 为 N，<code>earnings</code> 为 E，
+  <code>dividend</code> 为 D，<code>split</code> 为 S，<code>event</code>（或不填）为 i。
+  <code>label</code>（一到两个字符）和 <code>color</code> 可替换它们。标记必须有 <code>title</code>
+  和 <code>time</code>；只保留 http(s) 链接；一个图表最多保留 2,000 个。标记属于数据源而不是用户：
+  <code>saveState</code> 不保存它们，加载状态后请重新设置。
+</p>
+<p>
+  ChartWidget 会把当前品种的新闻标题从新闻来源（<code>news</code>，或适配器的
+  <code>fetchNews</code>）放到图表上；<code>newsMarks: false</code> 只在品种信息面板中显示。
+  点击一个标记会在新标签页打开其链接；点击合并了多个标记的徽标会打开列表，最新的在前。
+  组件的 <code>marks</code> 功能开关可隐藏所有标记。你自己调用 <code>setMarks</code> 和
+  <code>clearMarks</code> 不会移除组件放上的新闻标记。
+</p>
+
 <h2>交易区域</h2>
 <p>以矩形展示入场 → 出场区间，按盈亏着色并带有方向标记。</p>
 <pre><code>{`chart.addTradeZone({

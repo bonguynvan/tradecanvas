@@ -183,6 +183,12 @@ export interface FeaturesConfig {
   replay?: boolean;
   /** Show session break lines (day separators) */
   sessionBreaks?: boolean;
+  /**
+   * Draw the marks given with `setMarks` (headlines, earnings dates) as badges
+   * at the foot of the price pane, and let the pointer read them. Default
+   * `true`; `false` hides them and keeps them.
+   */
+  marks?: boolean;
   /** Show bar countdown timer (time until current candle closes). When false it stays hidden. */
   barCountdown?: boolean;
   /** Enable compare/overlay symbols. When false, `addCompareSymbol` does nothing. */

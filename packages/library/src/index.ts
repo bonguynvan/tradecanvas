@@ -197,6 +197,9 @@ export type { ShapeConfig, PriceLimitColors } from '@tradecanvas/commons';
 export { contrastRatio, readableOn, inkOn } from '@tradecanvas/commons';
 export { readQuote, readNews, marketStatus, symbolTimeZone, tickBarCount } from '@tradecanvas/commons';
 export type { Quote, QuoteSource, NewsItem, Trade, MarketStatus, ChartA11yLabels } from '@tradecanvas/commons';
+// Marks: what happened at a time (chart.setMarks), and a feed's list read as untrusted input.
+export { readChartMarks, MAX_CHART_MARKS } from '@tradecanvas/commons';
+export type { ChartMark, ChartMarkKind } from '@tradecanvas/commons';
 export { EXCHANGE_TIME_ZONE } from './Chart.js';
 
 // Indicator sources: a price, or another indicator's line (`ind:<instanceId>:<key>`)

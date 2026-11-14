@@ -894,6 +894,10 @@ widget.getQuote('AAPL')`}</code></pre>
   news: (symbol, limit) => api.headlines(symbol, limit),   // or the adapter's fetchNews
 })
 widget.toggleSymbolInfo(true)`}</code></pre>
+<p>
+  뉴스 제목은 게시된 시각의 봉에 마크로 차트에도 표시됩니다
+  (<code>newsMarks: false</code>로 끔). 트레이딩 페이지의 <em>마크</em>를 참고하세요.
+</p>
 
 <h3>탐색, 실행 취소, 방향</h3>
 <p>

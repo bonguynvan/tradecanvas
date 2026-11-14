@@ -310,6 +310,46 @@ chart.on('signalMarkerClick', (e) => openSignal(e.payload.marker))`}</code></pre
   giá, độ tin cậy và thời gian của nó.
 </p>
 
+<h2>Marks (dấu sự kiện)</h2>
+<p>
+  Điều đã xảy ra tại một thời điểm (một tin tức, ngày công bố kết quả kinh doanh, cổ tức, chia tách)
+  hiện thành một badge nhỏ ở chân pane giá, trên bar chứa thời điểm đó. Đưa con trỏ lên badge để đọc
+  tiêu đề và dòng mô tả; các badge sẽ chồng lên nhau được gộp thành một badge kèm số đếm. Replay hiện
+  từng mark khi chạy tới nó. Renko, Kagi, line break, point &amp; figure và range bars không vẽ mark:
+  các bar của chúng không phải là thời gian.
+</p>
+<pre><code>{`chart.setMarks([
+  { id: 'q3', time: reportedAt, kind: 'earnings', title: 'Q3 earnings', text: 'EPS 1.42 vs 1.31 expected' },
+  { id: 'div', time: exDate, kind: 'dividend', title: 'Dividend 0.24 a share' },
+  { id: 'n1', time: publishedAt, kind: 'news', title: headline, text: source, url: 'https://example.com/story' },
+])
+const id = chart.addMark({ time: Date.now(), title: 'Trading halted', label: 'H', color: '#e5484d' })
+chart.removeMark('div')
+chart.getMarks()      // earliest first
+chart.clearMarks()
+
+chart.on('markClick', (e) => openStory(e.payload.marks))   // one mark, or the several a badge gathers
+// a click on a badge is a markClick, not a click or a barClick
+chart.on('markHover', (e) => e.payload.marks)              // null: the pointer left the badge
+chart.on('marksChange', (e) => e.payload.count)
+
+new Chart(host, { features: { marks: false } })            // or chart.setFeatures({ marks: false })`}</code></pre>
+<p>
+  <code>kind</code> chọn chữ cái và màu: <code>news</code> N, <code>earnings</code> E,
+  <code>dividend</code> D, <code>split</code> S, còn <code>event</code> (hoặc bỏ trống) là i.
+  <code>label</code> (một hoặc hai ký tự) và <code>color</code> thay cho chúng. Một mark cần có
+  <code>title</code> và <code>time</code>; chỉ giữ liên kết http(s); chart giữ tối đa 2.000 mark.
+  Marks thuộc về nguồn dữ liệu, không phải của người dùng: <code>saveState</code> không lưu chúng,
+  nên hãy đặt lại sau khi tải trạng thái.
+</p>
+<p>
+  ChartWidget đưa các tin của mã lên chart từ nguồn tin (<code>news</code>, hoặc
+  <code>fetchNews</code> của adapter); <code>newsMarks: false</code> chỉ để tin trong panel thông tin
+  mã. Nhấp vào một mark sẽ mở liên kết của nó ở tab mới; nhấp vào badge gộp nhiều mark sẽ mở danh
+  sách, mới nhất ở trên. Công tắc tính năng <code>marks</code> của widget ẩn mọi mark. <code>setMarks</code> và
+  <code>clearMarks</code> của bạn không xoá các tin của widget trên chart.
+</p>
+
 <h2>Vùng giao dịch</h2>
 <p>Hiển thị hình chữ nhật từ điểm vào → điểm ra, tô màu theo lãi/lỗ (P&amp;L) và có huy hiệu hướng lệnh.</p>
 <pre><code>{`chart.addTradeZone({

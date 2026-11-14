@@ -975,6 +975,10 @@ widget.getQuote('AAPL')`}</code></pre>
   news: (symbol, limit) => api.headlines(symbol, limit),   // or the adapter's fetchNews
 })
 widget.toggleSymbolInfo(true)`}</code></pre>
+<p>
+  Los titulares también aparecen en el gráfico como marcas, sobre las barras en que se publicaron
+  (<code>newsMarks: false</code> los quita); véase <em>Marcas</em> en Trading.
+</p>
 
 <h3>Navegación, deshacer y dirección</h3>
 <p>

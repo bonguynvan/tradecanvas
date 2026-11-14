@@ -306,6 +306,45 @@ chart.on('signalMarkerClick', (e) => openSignal(e.payload.marker))`}</code></pre
   신뢰도, 시각이 나옵니다.
 </p>
 
+<h2>마크</h2>
+<p>
+  어떤 시각에 일어난 일(뉴스, 실적 발표일, 배당, 액면분할)을 그 시각을 포함하는 봉 위치에,
+  가격 창 아래쪽의 작은 배지로 표시합니다. 포인터를 배지에 올리면 제목과 설명을 읽을 수 있고,
+  겹치게 될 배지는 개수가 적힌 하나로 묶입니다. 리플레이에서는 도달한 시점에 각 마크가 나타납니다.
+  Renko, Kagi, 삼선전환도, P&amp;F, 레인지 바에는 마크를 그리지 않습니다: 이들의 봉은 시각이 아닙니다.
+</p>
+<pre><code>{`chart.setMarks([
+  { id: 'q3', time: reportedAt, kind: 'earnings', title: 'Q3 earnings', text: 'EPS 1.42 vs 1.31 expected' },
+  { id: 'div', time: exDate, kind: 'dividend', title: 'Dividend 0.24 a share' },
+  { id: 'n1', time: publishedAt, kind: 'news', title: headline, text: source, url: 'https://example.com/story' },
+])
+const id = chart.addMark({ time: Date.now(), title: 'Trading halted', label: 'H', color: '#e5484d' })
+chart.removeMark('div')
+chart.getMarks()      // earliest first
+chart.clearMarks()
+
+chart.on('markClick', (e) => openStory(e.payload.marks))   // one mark, or the several a badge gathers
+// a click on a badge is a markClick, not a click or a barClick
+chart.on('markHover', (e) => e.payload.marks)              // null: the pointer left the badge
+chart.on('marksChange', (e) => e.payload.count)
+
+new Chart(host, { features: { marks: false } })            // or chart.setFeatures({ marks: false })`}</code></pre>
+<p>
+  <code>kind</code>가 글자와 색을 정합니다: <code>news</code>는 N, <code>earnings</code>는 E,
+  <code>dividend</code>는 D, <code>split</code>은 S, <code>event</code>(또는 생략)는 i.
+  <code>label</code>(한두 글자)과 <code>color</code>로 바꿀 수 있습니다. 마크에는
+  <code>title</code>과 <code>time</code>이 있어야 하며, http(s) 링크만 유지되고, 차트는 최대
+  2,000개를 유지합니다. 마크는 피드의 것이지 사용자의 것이 아닙니다: <code>saveState</code>에
+  담기지 않으므로 불러온 뒤 다시 설정하세요.
+</p>
+<p>
+  ChartWidget은 종목의 뉴스 제목을 뉴스 소스(<code>news</code> 또는 어댑터의
+  <code>fetchNews</code>)에서 가져와 차트에 표시합니다. <code>newsMarks: false</code>이면 종목 정보
+  패널에만 남습니다. 마크를 클릭하면 링크가 새 탭에서 열리고, 여러 개를 묶은 배지에서는 최신순
+  목록이 열립니다. 위젯의 <code>marks</code> 기능 스위치는 모든 마크를 숨깁니다. 직접 호출한
+  <code>setMarks</code>와 <code>clearMarks</code>는 위젯의 뉴스 마크를 지우지 않습니다.
+</p>
+
 <h2>거래 구간</h2>
 <p>진입 → 청산 사각형을 손익 색상과 방향 배지로 시각화합니다.</p>
 <pre><code>{`chart.addTradeZone({

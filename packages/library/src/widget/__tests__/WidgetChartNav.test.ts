@@ -43,6 +43,26 @@ describe('WidgetChartNav', () => {
     expect(el().classList.contains('tcw-nav-shown')).toBe(false);
   });
 
+  it('stands higher by what it is told to clear, and comes back down', () => {
+    nav.setLift(26);
+    host.dispatchEvent(pointer('pointermove'));
+    expect(el().style.top).toBe('274px');
+    // Told while it is up: it moves at once.
+    nav.setLift(0);
+    expect(el().style.top).toBe('300px');
+  });
+
+  it('steps aside while told to, wherever the pointer goes, and shows again after', () => {
+    host.dispatchEvent(pointer('pointermove'));
+    nav.setSuppressed(true);
+    expect(el().classList.contains('tcw-nav-shown')).toBe(false);
+    host.dispatchEvent(pointer('pointermove'));
+    expect(el().classList.contains('tcw-nav-shown')).toBe(false);
+    nav.setSuppressed(false);
+    host.dispatchEvent(pointer('pointermove'));
+    expect(el().classList.contains('tcw-nav-shown')).toBe(true);
+  });
+
   it('shows only while the pointer is near the plot’s bottom, out of the way of the data', () => {
     host.dispatchEvent(pointer('pointermove', 'mouse', true, 100));
     expect(el().classList.contains('tcw-nav-shown')).toBe(false);
