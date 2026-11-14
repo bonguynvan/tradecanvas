@@ -77,7 +77,7 @@ chart.addDrawing({
 
 <h3 id="line-text">Chữ trên đường và hình chữ nhật</h3>
 <p>
-  Trend line, tia, đường kéo dài, đường thông tin, đường góc, mũi tên, đường ngang, đường dọc và hình chữ nhật cũng nhận chữ, cùng kiểu chữ ấy. <code>textAlign</code> đặt chữ ở đầu trái, giữa hoặc đầu phải của đường, còn <code>textVAlign</code> đặt trên đường, trên chính đường hoặc dưới đường; trong hình chữ nhật, hai khóa này đặt chữ bên trong, ở trên, giữa hoặc dưới. Chữ nghiêng theo độ dốc của đường và luôn đọc từ trái sang phải, từ dưới lên trên với đường dọc. Trong widget, tab Chữ có hai hàng này.
+  Trend line, tia, đường kéo dài, đường thông tin, đường góc, mũi tên, đường ngang, đường dọc và hình chữ nhật cũng nhận chữ, cùng kiểu chữ ấy. <code>textAlign</code> đặt chữ ở đầu trái, giữa hoặc đầu phải của đường, còn <code>textVAlign</code> đặt trên đường, trên chính đường hoặc dưới đường; trong hình chữ nhật, hai khóa này đặt chữ bên trong, ở trên, giữa hoặc dưới. Chữ nghiêng theo độ dốc của đường và luôn đọc từ trái sang phải, từ dưới lên trên với đường dọc. Trong widget, tab Chữ có hai hàng này. Chữ của chúng cũng được gõ ngay tại chỗ: nút Text trên thanh công cụ của drawing đang chọn, mục Text trong menu của nó, hoặc double-click vào chữ sẽ mở ô gõ (double-click vào chính đường vẽ thì mở phần cài đặt). Enter hoặc nhấp ra ngoài để giữ, Escape để trả lại như cũ; xoá hết chữ thì đường vẽ trở lại không có chữ.
 </p>
 <pre><code>{`chart.addDrawing({
   type: 'trendLine',
@@ -263,7 +263,7 @@ chart.setDrawingAxisSpansVisible(false)  // or features: { drawingAxisSpans: fal
 <pre><code>{`chart.on('drawingCreate', (e) => e.payload)       // { id, type, drawing }
 chart.on('drawingUpdate', (e) => e.payload)       // { id }
 chart.on('drawingRemove', (e) => e.payload)       // { id }
-chart.on('drawingDoubleClick', (e) => e.payload)  // { id }
+chart.on('drawingDoubleClick', (e) => e.payload)  // { id, x, y }: where on the chart it was
 chart.on('drawingContextMenu', (e) => e.payload)  // { id, x, y }
 chart.on('toolModeChange', (e) => e.payload)      // { eraser } hoặc { zoomArea }`}</code></pre>
 <p>Hoàn tác và làm lại phát ra <code>drawingCreate</code>, <code>drawingRemove</code> và <code>drawingUpdate</code> cho các hình vẽ mà chúng khôi phục, xoá đi hoặc thay đổi.</p>

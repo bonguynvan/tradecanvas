@@ -60,7 +60,12 @@ class FakeChart {
   takenBack: string[] = [];
   takeBackDrawing(id: string): void { this.takenBack.push(id); }
   edits: [string, unknown][] = [];
-  beginDrawingEdit(id: string): void { this.edits.push(['begin', id]); }
+  beginDrawingEdit(id: string): boolean { this.edits.push(['begin', id]); return true; }
+  /** Where each drawing's words were drawn; none for one without words. */
+  textRects: Record<string, Box> = {};
+  getDrawingTextRect(id: string): Box | null { return this.textRects[id] ?? null; }
+  /** The size the chart writes a line's words at: the look's, not the style's. */
+  getDrawingTextSize(): number { return 15; }
   endDrawingEdit(id: string, how: { cancel: boolean }): void { this.edits.push(['end', [id, how.cancel]]); }
   getDrawingOptions() { return {}; }
   canAddDrawingAlert(): boolean { return true; }
@@ -296,6 +301,92 @@ describe('ChartWidget selection toolbar', () => {
     widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false, features: { selectionToolbar: false } });
     FakeChart.last.select(['d1']);
     expect(bar()?.hidden ?? true).toBe(true);
+  });
+});
+
+describe('ChartWidget and the words of a line or a shape', () => {
+  const editor = () => document.querySelector<HTMLTextAreaElement>('.tcw-inline-text-input');
+  const type = (words: string) => {
+    editor()!.value = words;
+    editor()!.dispatchEvent(new Event('input', { bubbles: true }));
+  };
+  const dialogTab = () => host.querySelector<HTMLElement>('.tcw-modal-tab[aria-selected="true"]')?.dataset.tab;
+  const line = (over: Partial<DrawingState> = {}): DrawingState => ({ ...FakeChart.last.drawings[0], ...over });
+
+  it('are typed in place from a button on the toolbar over the line', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false });
+    FakeChart.last.select(['d1']);
+    button('text').click();
+    expect(editor()).not.toBeNull();
+    expect(document.activeElement).toBe(editor());
+    type('Breakout');
+    expect(FakeChart.last.updated.at(-1)).toEqual(['d1', { style: { text: 'Breakout' } }]);
+    key(editor()!, 'Enter');
+    expect(editor()).toBeNull();
+    // One step: begun when the box opened, kept when it shut.
+    expect(FakeChart.last.edits).toEqual([['begin', 'd1'], ['end', ['d1', false]]]);
+  });
+
+  it('are typed at the size the chart draws them, and spaces typed on a line with none leave no step', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false });
+    FakeChart.last.select(['d1']);
+    button('text').click();
+    expect(editor()!.style.fontSize).toBe('15px');
+    type('   ');
+    key(editor()!, 'Enter');
+    // Nothing to keep: the edit is put back, not recorded.
+    expect(FakeChart.last.edits.at(-1)).toEqual(['end', ['d1', true]]);
+  });
+
+  it('start from the words the line has, and go back to them on Escape', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false });
+    FakeChart.last.drawings = [line({ style: { ...line().style, text: 'Support' } })];
+    FakeChart.last.select(['d1']);
+    button('text').click();
+    expect(editor()!.value).toBe('Support');
+    type('Supp');
+    key(editor()!, 'Escape');
+    expect(FakeChart.last.edits.at(-1)).toEqual(['end', ['d1', true]]);
+  });
+
+  it('can be taken off: a line with no words is still a line', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false });
+    FakeChart.last.drawings = [line({ style: { ...line().style, text: 'Support' } })];
+    FakeChart.last.select(['d1']);
+    button('text').click();
+    type('  ');
+    key(editor()!, 'Enter');
+    expect(FakeChart.last.updated.at(-1)).toEqual(['d1', { style: { text: '' } }]);
+    expect(FakeChart.last.edits.at(-1)).toEqual(['end', ['d1', false]]);
+  });
+
+  it('are typed where a double-click on them was; a double-click on the line itself opens its settings', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false });
+    FakeChart.last.drawings = [line({ style: { ...line().style, text: 'Support' } })];
+    FakeChart.last.textRects = { d1: { x: 300, y: 100, width: 60, height: 18 } };
+    FakeChart.last.emit('drawingDoubleClick', { id: 'd1', x: 320, y: 110 });
+    expect(editor()).not.toBeNull();
+    expect(dialogTab()).toBeUndefined();
+    key(editor()!, 'Escape');
+    FakeChart.last.emit('drawingDoubleClick', { id: 'd1', x: 500, y: 300 });
+    expect(editor()).toBeNull();
+    expect(dialogTab()).toBe('style');
+  });
+
+  it('have no button over a tool that writes none, a locked line or several drawings', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false });
+    FakeChart.last.drawings = [line({ type: 'fibRetracement' })];
+    FakeChart.last.select(['d1']);
+    expect(bar()!.querySelector('[data-action="text"]')).toBeNull();
+    FakeChart.last.drawings = [line({ locked: true })];
+    FakeChart.last.select(['d1']);
+    expect(bar()!.querySelector('[data-action="text"]')).toBeNull();
+    FakeChart.last.drawings = [line({ locked: false }), line({ id: 'd2', locked: false })];
+    FakeChart.last.select(['d1', 'd2']);
+    expect(bar()!.querySelector('[data-action="text"]')).toBeNull();
+    FakeChart.last.drawings = [line({ type: 'rectangle', locked: false })];
+    FakeChart.last.select(['d1']);
+    expect(bar()!.querySelector('[data-action="text"]')).not.toBeNull();
   });
 });
 

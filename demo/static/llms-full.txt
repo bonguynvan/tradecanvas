@@ -271,8 +271,9 @@ Lines and boxes (`trendLine`, `ray`, `extendedLine`, `infoLine`, `trendAngle`, `
 `showTime: true` shows a vertical line's time, and Fibonacci tools take `trendLine` and `oneColor`.
 `signpost` and `balloon` mark a bar with a text; `anchoredText` and `anchoredNote` stay at a place on the
 screen (anchors are shares of the plot, `{ time: 0.5, price: 0.25 }` halfway across, a quarter down).
-In the widget a text tool's words are typed in place (drawn, or double-clicked); `chart.getDrawingTextRect(id)`
-says where a text's box is for an editor of your own. The widget grows on wide screens (`ui.scale: 'auto'`).
+In the widget a text tool's words are typed in place (drawn, or double-clicked), and so are a line's or a
+rectangle's (the Text button over the selection, or a double-click on the words); `chart.getDrawingTextRect(id)`
+says where a drawing's words are, and `getDrawingTextSize(id)` their size, for an editor of your own. The widget grows on wide screens (`ui.scale: 'auto'`).
 The widget's magnet starts off; `setDrawingMagnetMode('weak' | 'strong')` turns it on.
 Editing is built in, so don't wire it yourself: the magnet also pulls dragged handles and moved
 drawings, Ctrl/⌘ held turns it over, Shift keeps lines at 45° steps, the arrow keys move the
@@ -388,7 +389,8 @@ and call no `onSettingsChange` listener.
 | `indicatorChange` | `{ instanceId, change }`: `'visible' \| 'style' \| 'levels' \| 'params' \| 'pane'` |
 | `indicatorUpdate` | `{ from }`: values recomputed from that bar on (once per update) |
 | `drawingCreate` | `{ id, type, drawing }` (also when an undo brings a drawing back) |
-| `drawingUpdate`, `drawingRemove`, `drawingDoubleClick` | `{ id }` |
+| `drawingUpdate`, `drawingRemove` | `{ id }` |
+| `drawingDoubleClick` | `{ id, x, y }` |
 | `drawingContextMenu` | `{ id, x, y }`: a drawing was right-clicked |
 | `toolModeChange` | `{ eraser }` or `{ zoomArea }` |
 | `orderModify`, `positionModify` | the object |

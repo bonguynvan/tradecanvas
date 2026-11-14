@@ -46,7 +46,7 @@ import { WidgetSelectionToolbar } from './WidgetSelectionToolbar.js';
 import { DrawingDefaultsStore, DrawingTemplateStore } from './DrawingTemplateStore.js';
 import type { WidgetDrawingSettings } from './WidgetDrawingSettings.js';
 import { WidgetContextMenu } from './WidgetContextMenu.js';
-import { TEXT_LAYOUTS } from './drawingText.js';
+import { TEXT_LAYOUTS, TEXT_PLACES } from './drawingText.js';
 import { WidgetInlineText } from './WidgetInlineText.js';
 import { chartMenuEntries, priceEntries } from './chartMenu.js';
 import { WidgetAccountPanel } from './WidgetAccountPanel.js';
@@ -1126,10 +1126,12 @@ export class ChartWidget {
     }, this.t));
     this.drawingEdit.inlineText = new WidgetInlineText(this.overlayHost);
     this.chart.on('drawingDoubleClick', (e) => {
-      const id = (e.payload as { id: string }).id;
+      const { id, x, y } = e.payload;
       // A text's words are what a double-click on it is for: typed in place over it.
       const type = this.chart.getDrawings().find((d) => d.id === id)?.type;
       if (type && TEXT_LAYOUTS[type] && this.drawingEdit.editTextInPlace(id, false)) return;
+      // So is a double-click on the words of a line or a shape; one on the line itself is for its settings.
+      if (type && TEXT_PLACES.has(type) && this.drawingEdit.isOnDrawingText(id, x, y) && this.drawingEdit.editTextInPlace(id, false)) return;
       this.drawingEdit.openDrawingSettings(id, type && TEXT_LAYOUTS[type] ? { tab: 'text' } : {});
     });
     // A text's drawing gone (undo, the trash, another chart's sync) takes its typing with it.
@@ -1205,6 +1207,10 @@ export class ChartWidget {
       onSettings: () => {
         const id = this.chart.getSelectedDrawingIds()[0];
         if (id) this.drawingEdit.openDrawingSettings(id);
+      },
+      onText: () => {
+        const id = this.chart.getSelectedDrawingIds()[0];
+        if (id) this.drawingEdit.editDrawingText(id);
       },
       onAlert: () => {
         const id = this.chart.getSelectedDrawingIds()[0];
@@ -3626,6 +3632,8 @@ export class ChartWidget {
       formatAlertPrice: (...args) => w.formatAlertPrice(...args),
       get objectTree() { return w.objectTree; },
       openDrawingSettings: (...args) => w.drawingEdit.openDrawingSettings(...args),
+      editDrawingText: (...args) => w.drawingEdit.editDrawingText(...args),
+      canTypeDrawingText: (...args) => w.drawingEdit.canTypeText(...args),
       openSettings: (...args) => w.chartSettings.openSettings(...args),
       get options() { return w.options; },
       refreshDrawingsState: (...args) => w.refreshDrawingsState(...args),

@@ -38,7 +38,7 @@ import { LINE_TINT_FILL, withAlpha } from '@tradecanvas/commons';
 import { DrawingDrag, shiftAnchors, type DragEdit } from './DrawingDrag.js';
 import { constrainedAnchor, keepsAngle } from './drawingEditing.js';
 import { clampScreenPoints, isScreenAnchored, offsetScreenPoints, pixelToScreenPoint, screenPointToPixel, shiftScreenPoints } from './screenAnchors.js';
-import { beginExtent, endExtent, setDrawingPlot, type ExtentRect } from './drawingLook.js';
+import { textSize, beginExtent, endExtent, setDrawingPlot, type ExtentRect } from './drawingLook.js';
 import { drawingAxisSpan, isLevelLine, type AxisSpan } from './axisSpan.js';
 
 export type { DrawingOrderMove, DrawingPatch } from './drawingState.js';
@@ -1242,6 +1242,12 @@ export class DrawingManager {
   /** The tool registered for `type`, or null. */
   getPlugin(type: DrawingToolType): DrawingPlugin | null {
     return this.registry.get(type) ?? null;
+  }
+
+  /** The size a line's or a box's words are written at (px): the drawing's own, or the look's; null for no such drawing. */
+  textSizeOf(id: string): number | null {
+    const drawing = this.drawings.find((d) => d.id === id);
+    return drawing ? textSize(drawing.style) : null;
   }
 
   /**

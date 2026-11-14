@@ -23,6 +23,8 @@ export interface MenusHost {
   formatAlertPrice: ChartWidget['formatAlertPrice'];
   readonly objectTree: ChartWidget['objectTree'];
   openDrawingSettings: ChartWidget['drawingEdit']['openDrawingSettings'];
+  editDrawingText: ChartWidget['drawingEdit']['editDrawingText'];
+  canTypeDrawingText: ChartWidget['drawingEdit']['canTypeText'];
   openSettings: ChartWidget['chartSettings']['openSettings'];
   readonly options: ChartWidget['options'];
   refreshDrawingsState: ChartWidget['refreshDrawingsState'];
@@ -68,6 +70,7 @@ export class WidgetMenus {
       selected,
       canConfigure: true,
       canAlert: this.host.chart.canAddDrawingAlert(id),
+      canText: this.host.canTypeDrawingText(id),
     }, this.host.t), DRAWING_MENU_FEATURES, this.host.featureState);
     const ids = selected.map((d) => d.id);
     const drawing = drawings.get(id);
@@ -85,6 +88,9 @@ export class WidgetMenus {
     switch (action) {
       case 'settings':
         this.host.openDrawingSettings(id);
+        return;
+      case 'text':
+        this.host.editDrawingText(id);
         return;
       case 'alert':
         this.host.alerting.addDrawingAlert(id);

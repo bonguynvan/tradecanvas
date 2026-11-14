@@ -67,7 +67,7 @@ export class InteractionManager {
   private alertDragHandler: AlertDragHandler | null = null;
   private axisViewportGetter: (() => ViewportState) | null = null;
   private onAxisDoubleClick: ((axis: 'price' | 'time') => void) | null = null;
-  private onDrawingDoubleClick: ((id: string) => void) | null = null;
+  private onDrawingDoubleClick: ((id: string, pos: Point) => void) | null = null;
   private onDrawingContextMenu: ((id: string, pos: Point) => void) | null = null;
   /** The zoom-area tool: a drag draws the box to zoom into. */
   private zoomArea = false;
@@ -284,7 +284,7 @@ export class InteractionManager {
   }
 
   /** Called with a drawing's id when it is double-clicked (to open its settings, say). */
-  setDrawingDoubleClick(cb: (id: string) => void): void {
+  setDrawingDoubleClick(cb: (id: string, pos: Point) => void): void {
     this.onDrawingDoubleClick = cb;
   }
 
@@ -766,7 +766,7 @@ export class InteractionManager {
       // The double-click that finished a drawing (a path) doesn't open it.
       if (!vp || this.drawingManager?.justFinished()) return;
       const id = this.drawingManager?.drawingAt(pos, vp, reach);
-      if (id) this.onDrawingDoubleClick?.(id);
+      if (id) this.onDrawingDoubleClick?.(id, pos);
     };
 
     const onMouseUp = (e: MouseEvent) => {

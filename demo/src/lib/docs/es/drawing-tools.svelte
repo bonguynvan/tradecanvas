@@ -78,7 +78,7 @@ chart.addDrawing({
 
 <h3 id="line-text">Texto en líneas y rectángulos</h3>
 <p>
-  Una línea de tendencia, un rayo, una línea extendida, de información o de ángulo, una flecha, una línea horizontal o vertical y un rectángulo también llevan texto, con el mismo estilo. <code>textAlign</code> lo pone en el extremo izquierdo, el centro o el extremo derecho de la línea, y <code>textVAlign</code> encima de la línea, sobre ella o debajo; en un rectángulo lo colocan dentro, arriba, en el medio o abajo. El texto sigue la pendiente de la línea y siempre se lee de izquierda a derecha, y de abajo arriba en una línea vertical. En el widget, la pestaña Texto tiene esas dos filas.
+  Una línea de tendencia, un rayo, una línea extendida, de información o de ángulo, una flecha, una línea horizontal o vertical y un rectángulo también llevan texto, con el mismo estilo. <code>textAlign</code> lo pone en el extremo izquierdo, el centro o el extremo derecho de la línea, y <code>textVAlign</code> encima de la línea, sobre ella o debajo; en un rectángulo lo colocan dentro, arriba, en el medio o abajo. El texto sigue la pendiente de la línea y siempre se lee de izquierda a derecha, y de abajo arriba en una línea vertical. En el widget, la pestaña Texto tiene esas dos filas. Su texto también se escribe en el sitio: el botón Texto de la barra sobre el dibujo seleccionado, Texto en su menú o un doble clic sobre las palabras abre el cuadro (un doble clic sobre la línea abre sus ajustes). Enter o un clic fuera lo conserva, Escape lo deja como estaba, y una línea sin palabras vuelve a ser solo una línea.
 </p>
 <pre><code>{`chart.addDrawing({
   type: 'trendLine',
@@ -267,7 +267,7 @@ chart.setDrawingAxisSpansVisible(false)  // or features: { drawingAxisSpans: fal
 <pre><code>{`chart.on('drawingCreate', (e) => e.payload)       // { id, type, drawing }
 chart.on('drawingUpdate', (e) => e.payload)       // { id }
 chart.on('drawingRemove', (e) => e.payload)       // { id }
-chart.on('drawingDoubleClick', (e) => e.payload)  // { id }
+chart.on('drawingDoubleClick', (e) => e.payload)  // { id, x, y }: where on the chart it was
 chart.on('drawingContextMenu', (e) => e.payload)  // { id, x, y }
 chart.on('toolModeChange', (e) => e.payload)      // { eraser } o { zoomArea }`}</code></pre>
 <p>Deshacer y rehacer envían <code>drawingCreate</code>, <code>drawingRemove</code> y <code>drawingUpdate</code> para los dibujos que recuperan, quitan o modifican.</p>

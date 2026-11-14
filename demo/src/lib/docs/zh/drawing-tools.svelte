@@ -77,7 +77,7 @@ chart.addDrawing({
 
 <h3 id="line-text">线和矩形上的文字</h3>
 <p>
-  趋势线、射线、延长线、信息线、角度线、箭头、水平线、垂直线和矩形也可以带文字，样式相同。<code>textAlign</code> 把文字放在线的左端、中间或右端，<code>textVAlign</code> 放在线的上方、线上或下方；在矩形中，它们把文字放在框内的顶部、中间或底部。文字随线的斜率倾斜，始终从左往右读，垂直线上则从下往上读。在小组件中，文字选项卡有这两行。
+  趋势线、射线、延长线、信息线、角度线、箭头、水平线、垂直线和矩形也可以带文字，样式相同。<code>textAlign</code> 把文字放在线的左端、中间或右端，<code>textVAlign</code> 放在线的上方、线上或下方；在矩形中，它们把文字放在框内的顶部、中间或底部。文字随线的斜率倾斜，始终从左往右读，垂直线上则从下往上读。在小组件中，文字选项卡有这两行。 它们的文字同样可以就地输入：选中绘图后工具栏上的“文字”按钮、其菜单中的“文字”，或双击文字本身都会打开输入框（双击线条本身则打开设置）。按 Enter 或点击别处保留，按 Escape 恢复原样；文字清空后，线条恢复为不带文字。
 </p>
 <pre><code>{`chart.addDrawing({
   type: 'trendLine',
@@ -257,7 +257,7 @@ chart.setDrawingAxisSpansVisible(false)  // or features: { drawingAxisSpans: fal
 <pre><code>{`chart.on('drawingCreate', (e) => e.payload)       // { id, type, drawing }
 chart.on('drawingUpdate', (e) => e.payload)       // { id }
 chart.on('drawingRemove', (e) => e.payload)       // { id }
-chart.on('drawingDoubleClick', (e) => e.payload)  // { id }
+chart.on('drawingDoubleClick', (e) => e.payload)  // { id, x, y }: where on the chart it was
 chart.on('drawingContextMenu', (e) => e.payload)  // { id, x, y }
 chart.on('toolModeChange', (e) => e.payload)      // { eraser } 或 { zoomArea }`}</code></pre>
 <p>撤销和重做会针对它们恢复、移除或修改的画线，分别触发 <code>drawingCreate</code>、<code>drawingRemove</code> 和 <code>drawingUpdate</code>。</p>

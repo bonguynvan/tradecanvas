@@ -447,8 +447,12 @@ export interface ChartEventMap {
   drawingRemove: DrawingRemovePayload;
   /** A drawing changed: moved, restyled, given new text or anchors. */
   drawingUpdate: { id: string };
-  /** A drawing was double-clicked (the widget opens its settings). */
-  drawingDoubleClick: { id: string };
+  /**
+   * A double-click or a double tap on a drawing, and where on the chart it
+   * was (px). The widget opens the words it was on to be typed in place, or
+   * the drawing's settings.
+   */
+  drawingDoubleClick: { id: string; x: number; y: number };
   /** A drawing was right-clicked, at `x`, `y` in the chart's pixels; it is selected. */
   drawingContextMenu: { id: string; x: number; y: number };
   /** The eraser or the zoom-area tool turned on or off: the one that changed. */

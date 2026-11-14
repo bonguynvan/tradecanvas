@@ -3,7 +3,7 @@ import type { Translator } from './i18n.js';
 
 /** What a right-clicked drawing's menu can do. */
 export type DrawingMenuAction =
-  | 'settings' | 'alert'
+  | 'settings' | 'text' | 'alert'
   | 'front' | 'forward' | 'backward' | 'back'
   | 'group' | 'ungroup'
   | 'lock' | 'unlock' | 'hide' | 'duplicate' | 'delete';
@@ -14,6 +14,8 @@ export interface DrawingMenuTarget {
   selected: readonly { id: string; locked: boolean; groupId: string | null }[];
   canConfigure: boolean;
   canAlert: boolean;
+  /** The drawing writes words along its line or in its box, typed in place. */
+  canText?: boolean;
 }
 
 /**
@@ -27,6 +29,7 @@ export function drawingMenuEntries(target: DrawingMenuTarget, t: Translator): Co
   const oneGroup = groups.size === 1 && !groups.has(null);
   const entries: ContextMenuEntry[] = [];
   if (target.canConfigure && single) entries.push({ id: 'settings', label: t('drawingMenu.settings'), icon: 'settings' });
+  if (target.canText && single) entries.push({ id: 'text', label: t('drawingSettings.text'), icon: 'textEdit' });
   if (target.canAlert && single) entries.push({ id: 'alert', label: t('drawingSettings.addAlert'), icon: 'bell' });
   if (entries.length > 0) entries.push('separator');
   if (single) {

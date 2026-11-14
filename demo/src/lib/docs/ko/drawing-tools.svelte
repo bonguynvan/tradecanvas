@@ -77,7 +77,7 @@ chart.addDrawing({
 
 <h3 id="line-text">선과 상자의 텍스트</h3>
 <p>
-  추세선, 레이, 연장선, 정보선, 각도선, 화살표, 수평선, 수직선, 사각형도 같은 스타일로 텍스트를 가질 수 있습니다. <code>textAlign</code>은 선의 왼쪽 끝, 가운데, 오른쪽 끝에, <code>textVAlign</code>은 선 위, 선 위에 겹쳐, 선 아래에 둡니다. 사각형에서는 안쪽의 위, 가운데, 아래에 둡니다. 텍스트는 선의 기울기를 따르고 항상 왼쪽에서 오른쪽으로, 수직선에서는 아래에서 위로 읽힙니다. 위젯의 텍스트 탭에 이 두 줄이 있습니다.
+  추세선, 레이, 연장선, 정보선, 각도선, 화살표, 수평선, 수직선, 사각형도 같은 스타일로 텍스트를 가질 수 있습니다. <code>textAlign</code>은 선의 왼쪽 끝, 가운데, 오른쪽 끝에, <code>textVAlign</code>은 선 위, 선 위에 겹쳐, 선 아래에 둡니다. 사각형에서는 안쪽의 위, 가운데, 아래에 둡니다. 텍스트는 선의 기울기를 따르고 항상 왼쪽에서 오른쪽으로, 수직선에서는 아래에서 위로 읽힙니다. 위젯의 텍스트 탭에 이 두 줄이 있습니다. 이들의 글자도 그 자리에서 입력합니다. 선택한 드로잉 위 도구 모음의 텍스트 버튼, 메뉴의 텍스트, 또는 글자를 더블 클릭하면 입력 상자가 열립니다(선 자체를 더블 클릭하면 설정이 열립니다). Enter나 바깥 클릭으로 유지하고 Escape로 되돌리며, 글자를 모두 지우면 글자 없는 선으로 돌아갑니다.
 </p>
 <pre><code>{`chart.addDrawing({
   type: 'trendLine',
@@ -258,7 +258,7 @@ chart.setDrawingAxisSpansVisible(false)  // or features: { drawingAxisSpans: fal
 <pre><code>{`chart.on('drawingCreate', (e) => e.payload)       // { id, type, drawing }
 chart.on('drawingUpdate', (e) => e.payload)       // { id }
 chart.on('drawingRemove', (e) => e.payload)       // { id }
-chart.on('drawingDoubleClick', (e) => e.payload)  // { id }
+chart.on('drawingDoubleClick', (e) => e.payload)  // { id, x, y }: where on the chart it was
 chart.on('drawingContextMenu', (e) => e.payload)  // { id, x, y }
 chart.on('toolModeChange', (e) => e.payload)      // { eraser } 또는 { zoomArea }`}</code></pre>
 <p>실행 취소와 다시 실행은 되살리거나, 없애거나, 바꾼 그림에 대해 <code>drawingCreate</code>, <code>drawingRemove</code>, <code>drawingUpdate</code>를 보냅니다.</p>

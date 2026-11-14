@@ -1018,7 +1018,7 @@ export class Chart {
         hasPane: (id) => this.layoutManager.getPanels().some((panel) => panel.id === id),
         valuesAt: (id, barIndex) => this.indicatorEngine.getPaneValuesAt(id, barIndex),
       });
-      this.interactionManager.setDrawingDoubleClick((id) => this.eventBus.emit('drawingDoubleClick', { id }));
+      this.interactionManager.setDrawingDoubleClick((id, pos) => this.eventBus.emit('drawingDoubleClick', { id, x: pos.x, y: pos.y }));
       this.interactionManager.setDrawingContextMenu((id, pos) => {
         if (this.drawingManager.select(id)) this.eventBus.emit('drawingContextMenu', { id, x: pos.x, y: pos.y });
       });
@@ -2582,6 +2582,15 @@ export class Chart {
     const times = e.shiftKey ? NUDGE_SHIFT_STEPS : 1;
     const viewport = { ...this.viewport.getState(), data: this.getDisplayData() };
     return this.drawingManager.nudge(step[0] * times, step[1] * times, viewport);
+  }
+
+  /**
+   * The size the words of a line or a rectangle are written at (px): the
+   * drawing's own `fontSize`, or the chart's for drawings' text. Null for
+   * no such drawing. With `getDrawingTextRect`, for an editor of your own.
+   */
+  getDrawingTextSize(id: string): number | null {
+    return this.drawingManager.textSizeOf(id);
   }
 
   /**
