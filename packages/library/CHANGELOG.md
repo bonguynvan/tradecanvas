@@ -1,5 +1,17 @@
 # @tradecanvas/chart
 
+## 2.5.0
+
+### Minor Changes
+
+- 67d58ce: Marks on the chart: `chart.setMarks`, `addMark`, `removeMark`, `getMarks` and `clearMarks` put headlines, earnings dates, dividends and splits on the bars they happened in, as badges at the foot of the price pane that the pointer reads and a click opens (`markHover`, `markClick`, `marksChange`; feature switch `marks`). ChartWidget marks the symbol's headlines from its news source by itself (`newsMarks: false` stops it).
+
+### Patch Changes
+
+- Updated dependencies [67d58ce]
+  - @tradecanvas/commons@2.5.0
+  - @tradecanvas/core@2.5.0
+
 ## 2.4.0
 
 ### Minor Changes
