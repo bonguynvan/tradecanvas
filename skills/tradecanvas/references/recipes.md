@@ -510,7 +510,7 @@ const weeks = resampleBars(days, '1w', { timeZone });
 
 ## The order book on the price chart, display only
 
-`features.depth` draws the book on the plot from the right edge; it needs no orders and works with `trading: false`. `mode: 'level'` shows each price's own size (a wall is one long bar), `'cumulative'` (default) adds the levels away from the market; `markBest` lines the best bid and ask. `rowSize` (in price) adds the levels up into rows that far apart, for a dense book under a coarse scale or a book with gaps. `rightMargin` leaves empty slots for the bars.
+`features.depth` draws the book on the plot from the right edge; it needs no orders and works with `trading: false`. `mode: 'level'` shows each price's own size (a wall is one long bar), `'cumulative'` (default) adds the levels away from the market; `markBest` lines the best bid and ask. `rowSize` (in price) adds the levels up into rows that far apart, for a dense book under a coarse scale or a book with gaps; `rowOrigin` sets where those rows start (`-tick / 2` lines them up with a footprint whose cells start at multiples of the row size), else each row is centred on a multiple of `rowSize`. `rightMargin` leaves empty slots for the bars.
 
 ```ts
 import { Chart } from '@tradecanvas/chart';

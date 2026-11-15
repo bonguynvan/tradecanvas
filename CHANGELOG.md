@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Order book
+
+- **Where the depth overlay's rows start** (`@tradecanvas/commons`, `@tradecanvas/core`, `@tradecanvas/chart`): `depthOverlay.rowOrigin` (in price), with `rowSize`, makes row k run from `rowOrigin + k × rowSize` to the next row's start, a level on a row's start in that row, and draws each bar over exactly that span. A footprint whose cells start at multiples of its row size, each tick centred on its price, lines up with `rowOrigin: -tick / 2`, so the book no longer straddles two of its cells. Without it the rows stay centred on multiples of `rowSize`. `depthBars` takes the origin as a fourth argument.
+
 ## 2.10.0 (2026-11-15)
 
 ### Moving from another charting library

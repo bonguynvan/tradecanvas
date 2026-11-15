@@ -223,8 +223,8 @@ const SCENES = {
     const s = await widget({ chartOptions: { features: { trading: false, depth: true }, depthOverlay: { mode: 'level', markBest: true, maxWidth: 140 }, rightMargin: 14 } });
     const last = lastClose(s.chart);
     const step = last * 0.0004;
-    // Rows two levels tall: the book added up the way a footprint's rows are.
-    s.chart.setDepthOverlay({ rowSize: step * 2 });
+    // Rows two levels tall, starting half a level below a multiple: the way a footprint's cells are.
+    s.chart.setDepthOverlay({ rowSize: step * 2, rowOrigin: -step / 2 });
     const level = (i, side) => ({ price: last + side * (i + 1) * step, volume: 1 + ((i * 7) % 5) + (i === 6 ? 14 : 0) });
     const levels = Array.from({ length: 24 }, (_, i) => i);
     s.chart.setDepthData({ bids: levels.map((i) => level(i, -1)), asks: levels.map((i) => level(i, 1)) });

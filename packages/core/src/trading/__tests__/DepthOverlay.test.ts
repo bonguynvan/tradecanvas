@@ -150,3 +150,50 @@ describe('rows of a set price size (rowSize)', () => {
     expect(lines.map((r) => r[1] + 0.5).slice(-2)).toEqual([50, 49]);
   });
 });
+
+describe('rows from an origin (rowOrigin)', () => {
+  // A footprint of 4 ticks of 0.25 a row: its rows start at multiples of 1, each tick centred on its price.
+  const ticks: DepthData = {
+    bids: [{ price: 50, volume: 1 }, { price: 49.75, volume: 2 }, { price: 49, volume: 3 }],
+    asks: [{ price: 50.25, volume: 4 }, { price: 50.75, volume: 1 }, { price: 51, volume: 5 }],
+  };
+  const round = (bars: { price: number; value: number }[]) => bars.map((b) => ({ price: Math.round(b.price * 1e9) / 1e9, value: b.value }));
+
+  it('adds the levels up into rows that start at origin + k · rowSize, each bar at its row middle', () => {
+    const { bids, asks } = depthBars(ticks, 'level', 1, -0.125);
+    expect(round(bids)).toEqual([{ price: 50.375, value: 1 }, { price: 49.375, value: 5 }]);
+    expect(round(asks)).toEqual([{ price: 50.375, value: 5 }, { price: 51.375, value: 5 }]);
+  });
+
+  it('puts a level on a row start in that row, through the division error', () => {
+    const edge: DepthData = { bids: [{ price: 0.3, volume: 1 }], asks: [{ price: 0.3, volume: 1 }] };
+    // (0.3 - 0) / 0.1 is 2.9999999999999996 in floating point.
+    const { bids, asks } = depthBars(edge, 'level', 0.1, 0);
+    expect(bids[0].price).toBeCloseTo(0.35);
+    expect(asks[0].price).toBeCloseTo(0.35);
+  });
+
+  it('draws each row over exactly its span', () => {
+    const one: DepthData = { bids: [{ price: 50, volume: 1 }], asks: [] };
+    const { ctx, calls } = recordingCtx();
+    new DepthOverlay().render(ctx, one, unitViewport, { enabled: true, maxWidth: 100, rowSize: 2, rowOrigin: 0 });
+    // The row [50, 52): one price unit is one pixel, so from y 48 down 2 px.
+    expect(rects(calls).map((r) => [r[1], r[3]].map((v) => Math.round(v * 1e6) / 1e6))).toEqual([[48, 2]]);
+  });
+
+  it('leaves rows centred when the origin is no finite number, and does nothing without a rowSize', () => {
+    for (const origin of [Number.NaN, Number.POSITIVE_INFINITY]) {
+      expect(depthBars(ticks, 'level', 1, origin)).toEqual(depthBars(ticks, 'level', 1));
+    }
+    expect(depthBars(ticks, 'level', undefined, -0.125)).toEqual(depthBars(ticks, 'level'));
+  });
+
+  it('draws anew when only the origin changes', () => {
+    const overlay = new DepthOverlay();
+    const first = recordingCtx();
+    overlay.render(first.ctx, ticks, unitViewport, { enabled: true, maxWidth: 100, rowSize: 1 });
+    const second = recordingCtx();
+    overlay.render(second.ctx, ticks, unitViewport, { enabled: true, maxWidth: 100, rowSize: 1, rowOrigin: -0.125 });
+    expect(rects(second.calls)).not.toEqual(rects(first.calls));
+  });
+});
