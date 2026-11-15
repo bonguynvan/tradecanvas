@@ -172,6 +172,9 @@ new MatrixChart(el, {
 <p>
   单元格保持正方形，放得下时显示数值（未设 <code>valueFormat</code> 时保留两位小数）；列名放不下时会倾斜显示。<code>correlationMatrix</code> 只配对两个序列都有的日期，少于三天时返回 NaN，该单元格留空。矩阵也适用于其他数值表，例如按小时和星期的成交量。
 </p>
+<p>
+  列数较少的表格（例如按期间排列的财务报表各行）可用 <code>cellWidth: 'fill'</code>：各列平分行名旁边的宽度，行高保持不变，矩阵会占满图表，而不是小小地停在中间。给一个数字则按像素设定每列宽度，最多不超过可用空间。
+</p>
 
 <h2>板块地图</h2>
 <pre><code>{`import { HeatmapChart } from '@tradecanvas/chart'

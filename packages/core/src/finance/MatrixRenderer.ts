@@ -66,6 +66,10 @@ function pearson(a: readonly number[], b: readonly number[], same: boolean): num
 export interface MatrixCellRect {
   x: number;
   y: number;
+  /** The cell's width and height: equal unless `cellWidth` widens the columns. */
+  width: number;
+  height: number;
+  /** The shorter of the two: the side of a square cell. */
   size: number;
   cell: MatrixCell;
   color: string;
@@ -80,6 +84,10 @@ export interface MatrixLayout {
   columnLabels: { text: string; index: number; x: number; y: number; rotated: boolean }[];
   /** The whole grid, every row and column, empty cells included. */
   grid: Rect;
+  /** A column's and a row's step, gap included. */
+  pitchX: number;
+  pitchY: number;
+  /** The shorter step: the square cells' one. */
   pitch: number;
   scale: ResolvedScale;
   bar: Rect | null;
@@ -107,7 +115,7 @@ export function computeMatrixLayout(options: MatrixChartOptions, width: number, 
     }
   }
   const scale = resolveColorScale(finite, theme, options.colorScale);
-  const layout: MatrixLayout = { cells: [], rowLabels: [], columnLabels: [], grid: { x: 0, y: 0, width: 0, height: 0 }, pitch: 0, scale, bar: null, at: [] };
+  const layout: MatrixLayout = { cells: [], rowLabels: [], columnLabels: [], grid: { x: 0, y: 0, width: 0, height: 0 }, pitchX: 0, pitchY: 0, pitch: 0, scale, bar: null, at: [] };
   if (rows.length === 0 || columns.length === 0 || width <= 0 || height <= 0) return layout;
 
   const rowRoom = Math.min(width * 0.3, Math.max(...rows.map((t) => measure(t, LABEL_SIZE))));
@@ -115,30 +123,40 @@ export function computeMatrixLayout(options: MatrixChartOptions, width: number, 
   const legendRoom = options.legend === false ? 0 : COLOR_BAR_ROOM;
   const left = PAD + rowRoom + LABEL_GAP;
   const across = width - left - PAD;
-  const fitPitch = (top: number) => Math.min(MAX_PITCH, across / columns.length, (height - top - PAD - legendRoom) / rows.length);
+  const fillAcross = across / columns.length;
+  const fixedWidth = typeof options.cellWidth === 'number' && Number.isFinite(options.cellWidth) && options.cellWidth > 0 ? options.cellWidth : null;
+  const wide = options.cellWidth === 'fill' || fixedWidth !== null;
+  /** A row's step under names taking `top`: square cells must also fit across, wider columns leave it to the height. */
+  const fitPitchY = (top: number) => Math.min(MAX_PITCH, wide ? Infinity : fillAcross, (height - top - PAD - legendRoom) / rows.length);
+  /** A column's step for that row step: the same for square cells, else the room, or the width asked for within it. */
+  const fitPitchX = (pitchY: number) => (!wide ? pitchY : fixedWidth !== null ? Math.min(fixedWidth, fillAcross) : fillAcross);
 
   let top = PAD + LABEL_SIZE + LABEL_GAP;
-  let pitch = fitPitch(top);
-  const rotated = colWidest > pitch - 4;
+  let pitchY = fitPitchY(top);
+  let pitchX = fitPitchX(pitchY);
+  const rotated = colWidest > pitchX - 4;
   let colRoom = colWidest;
   if (rotated) {
     // Turned names need height: up to a third of the chart's, cut to fit it.
     colRoom = Math.min(colWidest, (height * 0.33) / SIN_TURN);
     top = PAD + colRoom * SIN_TURN + LABEL_SIZE;
-    pitch = fitPitch(top);
+    pitchY = fitPitchY(top);
+    pitchX = fitPitchX(pitchY);
   }
-  if (!(pitch > 0)) return layout;
-  const gap = pitch >= 8 ? 1 : 0;
-  const size = pitch - gap;
-  const gridX = left + Math.max(0, (across - columns.length * pitch) / 2);
+  if (!(pitchX > 0) || !(pitchY > 0)) return layout;
+  const cellWidth = pitchX - (pitchX >= 8 ? 1 : 0);
+  const cellHeight = pitchY - (pitchY >= 8 ? 1 : 0);
+  const gridX = left + Math.max(0, (across - columns.length * pitchX) / 2);
   // Turned names lean left over the row names: no further than the chart's edge.
-  if (rotated) colRoom = Math.max(0, Math.min(colRoom, (gridX + size / 2 - 2 - (LABEL_SIZE * SIN_TURN) / 2) / SIN_TURN));
-  layout.grid = { x: gridX, y: top, width: columns.length * pitch, height: rows.length * pitch };
-  layout.pitch = pitch;
+  if (rotated) colRoom = Math.max(0, Math.min(colRoom, (gridX + cellWidth / 2 - 2 - (LABEL_SIZE * SIN_TURN) / 2) / SIN_TURN));
+  layout.grid = { x: gridX, y: top, width: columns.length * pitchX, height: rows.length * pitchY };
+  layout.pitchX = pitchX;
+  layout.pitchY = pitchY;
+  layout.pitch = Math.min(pitchX, pitchY);
 
   const format = options.valueFormat ?? twoDecimals;
   const showValues = options.showValues !== false;
-  const valueSize = Math.max(8, Math.min(LABEL_SIZE, pitch / 3));
+  const valueSize = Math.max(8, Math.min(LABEL_SIZE, pitchY / 3));
   for (let r = 0; r < rows.length; r++) {
     layout.at.push([]);
     for (let c = 0; c < columns.length; c++) {
@@ -146,11 +164,13 @@ export function computeMatrixLayout(options: MatrixChartOptions, width: number, 
       if (!Number.isFinite(value) || !keeps(options.triangle, square, r, c)) continue;
       const color = scaleColor(value, scale);
       const text = showValues ? format(value) : '';
-      const fits = showValues && pitch >= 18 && measure(text, valueSize) <= pitch - 4;
+      const fits = showValues && pitchY >= 18 && measure(text, valueSize) <= pitchX - 4;
       const placed: MatrixCellRect = {
-        x: gridX + c * pitch,
-        y: top + r * pitch,
-        size,
+        x: gridX + c * pitchX,
+        y: top + r * pitchY,
+        width: cellWidth,
+        height: cellHeight,
+        size: Math.min(cellWidth, cellHeight),
         cell: { row: rows[r], column: columns[c], value, rowIndex: r, columnIndex: c },
         color,
         text: fits ? text : null,
@@ -162,27 +182,27 @@ export function computeMatrixLayout(options: MatrixChartOptions, width: number, 
   }
 
   // Names a line apart at least; turned ones sit closer across their slant.
-  const rowEvery = Math.max(1, Math.ceil(LABEL_SIZE / pitch));
-  const colEvery = Math.max(1, Math.ceil(LABEL_SIZE / (rotated ? pitch * SIN_TURN : pitch)));
+  const rowEvery = Math.max(1, Math.ceil(LABEL_SIZE / pitchY));
+  const colEvery = Math.max(1, Math.ceil(LABEL_SIZE / (rotated ? pitchX * SIN_TURN : pitchX)));
   for (let r = 0; r < rows.length; r += rowEvery) {
-    layout.rowLabels.push({ text: fitText(rows[r], rowRoom, measure), index: r, x: gridX - LABEL_GAP, y: top + r * pitch + size / 2 });
+    layout.rowLabels.push({ text: fitText(rows[r], rowRoom, measure), index: r, x: gridX - LABEL_GAP, y: top + r * pitchY + cellHeight / 2 });
   }
   for (let c = 0; c < columns.length; c += colEvery) {
-    layout.columnLabels.push({ text: fitText(columns[c], colRoom, measure), index: c, x: gridX + c * pitch + size / 2, y: top - LABEL_GAP, rotated });
+    layout.columnLabels.push({ text: fitText(columns[c], colRoom, measure), index: c, x: gridX + c * pitchX + cellWidth / 2, y: top - LABEL_GAP, rotated });
   }
   if (legendRoom > 0) {
     // As wide as the matrix, or as its labels need where the matrix is narrower (a column or two).
     const labels = colorBarLabelWidth(scale, format, (t) => measure(t, BAR_LABEL_SIZE));
-    layout.bar = { x: gridX, y: top + rows.length * pitch + 8, width: Math.min(Math.max(layout.grid.width, labels), width - gridX - PAD), height: legendRoom - 8 };
+    layout.bar = { x: gridX, y: top + rows.length * pitchY + 8, width: Math.min(Math.max(layout.grid.width, labels), width - gridX - PAD), height: legendRoom - 8 };
   }
   return layout;
 }
 
 /** The cell under the pointer, if one is drawn there. */
 export function hitMatrixCell(layout: MatrixLayout, x: number, y: number): MatrixCellRect | null {
-  const { grid, pitch } = layout;
-  if (pitch <= 0 || x < grid.x || y < grid.y || x >= grid.x + grid.width || y >= grid.y + grid.height) return null;
-  return layout.at[Math.floor((y - grid.y) / pitch)]?.[Math.floor((x - grid.x) / pitch)] ?? null;
+  const { grid, pitchX, pitchY } = layout;
+  if (pitchX <= 0 || pitchY <= 0 || x < grid.x || y < grid.y || x >= grid.x + grid.width || y >= grid.y + grid.height) return null;
+  return layout.at[Math.floor((y - grid.y) / pitchY)]?.[Math.floor((x - grid.x) / pitchX)] ?? null;
 }
 
 export function renderMatrix(
@@ -200,22 +220,22 @@ export function renderMatrix(
   const hovered = pointer && options.crosshair !== false ? hitMatrixCell(layout, pointer.x, pointer.y) : null;
 
   ctx.save();
-  const valueSize = Math.max(8, Math.min(LABEL_SIZE, layout.pitch / 3));
+  const valueSize = Math.max(8, Math.min(LABEL_SIZE, layout.pitchY / 3));
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.font = fontOf(theme, valueSize);
   for (const c of layout.cells) {
     ctx.fillStyle = c.color;
-    ctx.fillRect(c.x, c.y, c.size, c.size);
+    ctx.fillRect(c.x, c.y, c.width, c.height);
     if (c.text) {
       ctx.fillStyle = c.textColor;
-      ctx.fillText(c.text, c.x + c.size / 2, c.y + c.size / 2);
+      ctx.fillText(c.text, c.x + c.width / 2, c.y + c.height / 2);
     }
   }
   if (hovered) {
     ctx.strokeStyle = theme.text;
     ctx.lineWidth = 1.5;
-    ctx.strokeRect(hovered.x + 0.75, hovered.y + 0.75, hovered.size - 1.5, hovered.size - 1.5);
+    ctx.strokeRect(hovered.x + 0.75, hovered.y + 0.75, hovered.width - 1.5, hovered.height - 1.5);
   }
 
   ctx.font = fontOf(theme, LABEL_SIZE);

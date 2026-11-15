@@ -177,6 +177,9 @@ new MatrixChart(el, {
 <p>
   Cells stay square and print their value where it fits (two decimals unless <code>valueFormat</code>); column names that don't fit across their cells are turned. <code>correlationMatrix</code> pairs the days both series have and gives NaN for fewer than three, which leaves the cell empty. A matrix suits other tables of values too, such as volume by hour and weekday.
 </p>
+<p>
+  A table of a few columns, such as a statement's lines by period, takes <code>cellWidth: 'fill'</code>: the columns share the width beside the row names and the rows keep their height, so the matrix uses the chart instead of sitting small in its middle. A number sets each column's width in pixels, no wider than the room.
+</p>
 
 <h2>Sector map</h2>
 <pre><code>{`import { HeatmapChart } from '@tradecanvas/chart'

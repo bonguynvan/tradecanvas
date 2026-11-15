@@ -177,6 +177,9 @@ new MatrixChart(el, {
 <p>
   Ô luôn vuông và in giá trị khi vừa chỗ (hai chữ số thập phân nếu không có <code>valueFormat</code>); tên cột không vừa bề ngang ô thì được xoay nghiêng. <code>correlationMatrix</code> ghép các ngày mà cả hai chuỗi đều có, và trả về NaN khi có ít hơn ba ngày, khi đó ô để trống. Ma trận cũng hợp với các bảng giá trị khác, như khối lượng theo giờ và thứ.
 </p>
+<p>
+  Một bảng ít cột, như các dòng của báo cáo tài chính theo từng kỳ, dùng <code>cellWidth: 'fill'</code>: các cột chia nhau bề ngang bên cạnh tên hàng, còn hàng giữ nguyên chiều cao, nên ma trận dùng hết chart thay vì nằm nhỏ ở giữa. Một con số đặt độ rộng mỗi cột theo pixel, không vượt quá chỗ có sẵn.
+</p>
 
 <h2>Sector map</h2>
 <pre><code>{`import { HeatmapChart } from '@tradecanvas/chart'

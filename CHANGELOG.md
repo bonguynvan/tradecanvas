@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+### Finance charts
+
+- **A matrix of a few columns can use the width** (`@tradecanvas/commons`, `@tradecanvas/core`, `@tradecanvas/chart`): `MatrixChart`'s `cellWidth` is `'square'` (the default, square cells centred in a wider chart), `'fill'` (the columns share the width beside the row names) or a number of pixels a column, no wider than the room. Rows keep their height. A statement's lines by period, three columns in a wide panel, now fill it instead of sitting small in the middle. The layout's cells carry `width` and `height` beside `size`, and the layout `pitchX` and `pitchY` beside `pitch`.
 ### Fixes
 
 - **A narrow matrix's colour bar keeps its labels apart** (`@tradecanvas/core`, `@tradecanvas/chart`): under `MatrixChart` and `CalendarChart` the bar is as wide as the chart, or as its labels need where the chart is narrower (a matrix of one or two columns), up to the chart's edge. The labels are measured: the middle one (zero) is left out when it would touch an end, and the ends too when even they cannot stand apart, instead of printing over each other.

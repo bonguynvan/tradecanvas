@@ -177,6 +177,9 @@ new MatrixChart(el, {
 <p>
   Las celdas son siempre cuadradas y muestran su valor cuando cabe (dos decimales salvo <code>valueFormat</code>); los nombres de columna que no caben a lo ancho de su celda se giran. <code>correlationMatrix</code> empareja los días que tienen ambas series y da NaN con menos de tres, y la celda queda vacía. Una matriz sirve también para otras tablas de valores, como el volumen por hora y día de la semana.
 </p>
+<p>
+  Una tabla de pocas columnas, como las líneas de un estado financiero por periodo, usa <code>cellWidth: 'fill'</code>: las columnas se reparten el ancho junto a los nombres de las filas y las filas mantienen su altura, así que la matriz ocupa el gráfico en lugar de quedar pequeña en el centro. Un número fija el ancho de cada columna en píxeles, sin pasar del espacio disponible.
+</p>
 
 <h2>Mapa por sectores</h2>
 <pre><code>{`import { HeatmapChart } from '@tradecanvas/chart'

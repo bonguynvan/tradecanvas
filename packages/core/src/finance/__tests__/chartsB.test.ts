@@ -230,6 +230,63 @@ describe('matrix layout', () => {
     const fits = fakeCtx();
     drawColorBar(fits.ctx, { x: 0, y: 0, width: colorBarLabelWidth(scale, short, (t) => t.length * 6.6), height: 20 }, scale, short, DARK_THEME);
     expect(fits.texts).toEqual(['-10.0%', '+10.0%', '0.0%']);
+  describe('cell width', () => {
+    const pct = (v: number) => `${v > 0 ? '+' : ''}${v.toFixed(1)}%`;
+    const statement: MatrixChartOptions = {
+      rows: ['Total assets', 'Current assets', 'Non-current assets'],
+      columns: ['2026Q1', '2026Q2', '2026Q3'],
+      values: [[1.1, -0.4, 2.3], [4, 6.5, 10], [-2, -5.5, -7.9]],
+      valueFormat: pct,
+    };
+
+    it('keeps square cells by default, centred in a wide chart', () => {
+      const layout = computeMatrixLayout(statement, 1240, 340, DARK_THEME, measure);
+      expect(layout.pitchX).toBe(layout.pitchY);
+      expect(layout.grid.width).toBeLessThan(600);
+      expect(layout.cells[0].width).toBe(layout.cells[0].height);
+    });
+
+    it("'fill' spreads the columns over the width beside the row names, rows as tall as before", () => {
+      const square = computeMatrixLayout(statement, 1240, 340, DARK_THEME, measure);
+      const fill = computeMatrixLayout({ ...statement, cellWidth: 'fill' }, 1240, 340, DARK_THEME, measure);
+      expect(fill.pitchY).toBeCloseTo(square.pitchY);
+      expect(fill.grid.x + fill.grid.width).toBeCloseTo(1240 - 12);
+      expect(fill.pitchX).toBeGreaterThan(fill.pitchY * 3);
+      const [a, b] = fill.cells;
+      expect(b.x - a.x).toBeCloseTo(fill.pitchX);
+      expect(a.width).toBeGreaterThan(a.height);
+      // Every value prints: the cells are wide enough.
+      expect(fill.cells.every((c) => c.text !== null)).toBe(true);
+    });
+
+    it('takes a width in pixels, no wider than the room, and finds the cell under the pointer', () => {
+      const fixed = computeMatrixLayout({ ...statement, cellWidth: 160 }, 1240, 340, DARK_THEME, measure);
+      expect(fixed.pitchX).toBe(160);
+      expect(fixed.grid.width).toBe(480);
+      const cell = fixed.at[1][2]!;
+      expect(hitMatrixCell(fixed, cell.x + 150, cell.y + 2)).toBe(cell);
+      const tight = computeMatrixLayout({ ...statement, cellWidth: 900 }, 1240, 340, DARK_THEME, measure);
+      expect(tight.grid.x + tight.grid.width).toBeLessThanOrEqual(1240 - 12 + 0.001);
+    });
+
+    it('falls back to square cells for a width that is not a positive number', () => {
+      const square = computeMatrixLayout(statement, 1240, 340, DARK_THEME, measure);
+      for (const cellWidth of [0, -5, Number.NaN]) {
+        expect(computeMatrixLayout({ ...statement, cellWidth }, 1240, 340, DARK_THEME, measure).pitchX).toBe(square.pitchX);
+      }
+    });
+
+    it('draws each cell its own width and height', () => {
+      const rects: number[][] = [];
+      const { ctx } = fakeCtx();
+      const recording = new Proxy(ctx as unknown as Record<string, unknown>, {
+        get: (t, p) => (p === 'fillRect' ? (...a: number[]) => rects.push(a) : (t as Record<string | symbol, unknown>)[p]),
+      }) as unknown as CanvasRenderingContext2D;
+      const layout = computeMatrixLayout({ ...statement, cellWidth: 'fill' }, 1240, 340, DARK_THEME, measure);
+      renderMatrix(recording, 1240, 340, { ...statement, cellWidth: 'fill' }, DARK_THEME, null, layout);
+      const first = layout.cells[0];
+      expect(rects).toContainEqual([first.x, first.y, first.width, first.height]);
+    });
   });
 
   it('turns long column names, leaves empty values out, and finds the cell under the pointer', () => {
