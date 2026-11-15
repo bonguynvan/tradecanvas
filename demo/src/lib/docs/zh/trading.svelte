@@ -258,6 +258,29 @@ widget.getChart().on('orderPlace', (e) => {
   // { side, type: 'limit', price } — submit to your backend
 })`}</code></pre>
 
+<h2>图表上的订单簿</h2>
+<p>
+  <code>features.depth</code> 从右边缘把订单簿画在绘图区上，供只显示价格的图表使用：不需要订单，也不需要交易界面，
+  可与 <code>trading: false</code> 一起使用。用 <code>chart.setDepthData</code> 提供数据（<code>widget.setDepth</code> 也会这样做）；
+  开启 <code>features.depth</code> 即开启覆盖层，<code>setDepthOverlay</code> 用来改变外观。
+</p>
+<ul>
+  <li><code>mode</code>：<code>'cumulative'</code>（默认）把每一档与更靠近市价的各档相加，因此越远离市价条越长；<code>'level'</code> 只画每个价位自己的数量，大单墙会显示为一根长条。</li>
+  <li><code>markBest</code>：在最优买价和最优卖价处各画一条线（<code>bestBidColor</code>、<code>bestAskColor</code>）。</li>
+  <li><code>maxWidth</code>：条的最大长度（像素，不超过绘图区），<code>bidColor</code>、<code>askColor</code>。</li>
+</ul>
+<p>
+  这些条位于最新的 K 线之上。要留出空间，请调大 <code>rightMargin</code>，并把 <code>maxWidth</code> 设为大约等于这些根数的宽度。
+  开启交易时，<code>{`setTradingConfig({ depthOverlay: { enabled: true } })`}</code> 仍像以前一样打开它。
+</p>
+<pre><code>{`const chart = new Chart(host, {
+  features: { trading: false, depth: true },       // display only: no orders, no trading UI
+  depthOverlay: { mode: 'level', markBest: true, maxWidth: 140 },
+  rightMargin: 14,                                  // empty slots past the newest bar, room for the bars
+})
+chart.setDepthData(orderBook)                       // { bids, asks }; null clears it
+chart.setDepthOverlay({ mode: 'cumulative' })       // change the look later`}</code></pre>
+
 <h2>流动性热力图</h2>
 <p>
   把订单簿快照累积成蜡烛背后的热力图——每个快照是一条垂直色带，

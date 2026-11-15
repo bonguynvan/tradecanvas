@@ -508,6 +508,25 @@ const days = resampleBars(hours, '1d', { timeZone });
 const weeks = resampleBars(days, '1w', { timeZone });
 ```
 
+## The order book on the price chart, display only
+
+`features.depth` draws the book on the plot from the right edge; it needs no orders and works with `trading: false`. `mode: 'level'` shows each price's own size (a wall is one long bar), `'cumulative'` (default) adds the levels away from the market; `markBest` lines the best bid and ask. `rightMargin` leaves empty slots for the bars.
+
+```ts
+import { Chart } from '@tradecanvas/chart';
+
+declare const host: HTMLElement;
+declare const orderBook: { bids: { price: number; volume: number }[]; asks: { price: number; volume: number }[] };
+
+const chart = new Chart(host, {
+  features: { trading: false, depth: true },
+  depthOverlay: { mode: 'level', markBest: true, maxWidth: 140 },
+  rightMargin: 14,
+});
+chart.setDepthData(orderBook); // on every book update; null clears it
+chart.setDepthOverlay({ mode: 'cumulative' });
+```
+
 ## Small charts around the chart: a book's depth, an equity curve, a gauge
 
 Every finance chart takes `theme`, `font`, `locale` (a BCP 47 tag for numbers and dates) and `ariaLabel`, and has `setOptions`, `setTheme` and `destroy`. Text is in the system's sans face unless `font` names another.

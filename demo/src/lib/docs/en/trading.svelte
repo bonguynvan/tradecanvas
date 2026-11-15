@@ -276,6 +276,30 @@ widget.getChart().on('orderPlace', (e) => {
   // { side, type: 'limit', price } — submit to your backend
 })`}</code></pre>
 
+<h2>Order book on the plot</h2>
+<p>
+  <code>features.depth</code> draws the order book on the plot, from the right edge, for a chart that only shows
+  prices: it needs no orders and no trading UI, and works with <code>trading: false</code>. Feed it with
+  <code>chart.setDepthData</code> (<code>widget.setDepth</code> does that too); the overlay is on once
+  <code>features.depth</code> is, and <code>setDepthOverlay</code> changes how it looks.
+</p>
+<ul>
+  <li><code>mode</code>: <code>'cumulative'</code> (default) adds each level to the ones nearer the market, so the bars grow away from it; <code>'level'</code> draws the size at each price alone, so a wall shows as one long bar.</li>
+  <li><code>markBest</code>: a line at the best bid and the best ask (<code>bestBidColor</code>, <code>bestAskColor</code>).</li>
+  <li><code>maxWidth</code>: the longest bar in pixels (never more than the plot), <code>bidColor</code>, <code>askColor</code>.</li>
+</ul>
+<p>
+  The bars sit over the newest candles. To make room, raise <code>rightMargin</code> and set <code>maxWidth</code>
+  to about that many bars. With trading on, <code>{`setTradingConfig({ depthOverlay: { enabled: true } })`}</code> still turns it on as before.
+</p>
+<pre><code>{`const chart = new Chart(host, {
+  features: { trading: false, depth: true },       // display only: no orders, no trading UI
+  depthOverlay: { mode: 'level', markBest: true, maxWidth: 140 },
+  rightMargin: 14,                                  // empty slots past the newest bar, room for the bars
+})
+chart.setDepthData(orderBook)                       // { bids, asks }; null clears it
+chart.setDepthOverlay({ mode: 'cumulative' })       // change the look later`}</code></pre>
+
 <h2>Liquidity heatmap</h2>
 <p>
   Accumulate order-book snapshots into a heatmap behind the candles — each

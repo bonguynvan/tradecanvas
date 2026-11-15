@@ -1,0 +1,102 @@
+import { describe, it, expect } from 'vitest';
+import type { DepthData } from '@tradecanvas/commons';
+import { DepthOverlay, depthBars } from '../DepthOverlay.js';
+import { recordingCtx, unitViewport } from '../../drawings/__tests__/fixtures.js';
+
+// The unit viewport: price p is at y = 100 - p, the plot is 1000 px wide.
+const book: DepthData = {
+  bids: [{ price: 50, volume: 2 }, { price: 48, volume: 6 }, { price: 46, volume: 2 }],
+  asks: [{ price: 52, volume: 1 }, { price: 54, volume: 3 }, { price: 56, volume: 6 }],
+};
+
+const rects = (calls: { name: string; args: unknown[] }[]) =>
+  calls.filter((c) => c.name === 'fillRect').map((c) => c.args as number[]);
+
+describe('depthBars', () => {
+  it('adds up the levels away from the best price in cumulative mode', () => {
+    const { bids, asks, max } = depthBars(book, 'cumulative');
+    expect(bids.map((b) => b.value)).toEqual([2, 8, 10]);
+    expect(asks.map((b) => b.value)).toEqual([1, 4, 10]);
+    expect(max).toBe(10);
+  });
+
+  it('gives each level its own size in level mode', () => {
+    const { bids, asks, max } = depthBars(book, 'level');
+    expect(bids.map((b) => b.value)).toEqual([2, 6, 2]);
+    expect(asks.map((b) => b.value)).toEqual([1, 3, 6]);
+    expect(max).toBe(6);
+  });
+
+  it('does not trust the order a feed lists the levels in', () => {
+    const shuffled: DepthData = { bids: [book.bids[2], book.bids[0], book.bids[1]], asks: [book.asks[2], book.asks[0], book.asks[1]] };
+    expect(depthBars(shuffled, 'cumulative')).toEqual(depthBars(book, 'cumulative'));
+  });
+
+  it('leaves out levels that are not numbers or have no size', () => {
+    const odd: DepthData = {
+      bids: [{ price: 50, volume: 2 }, { price: NaN, volume: 4 }, { price: 49, volume: 0 }, { price: 48, volume: -1 }],
+      asks: [{ price: 52, volume: Infinity }],
+    };
+    const { bids, asks, max } = depthBars(odd, 'level');
+    expect(bids).toHaveLength(1);
+    expect(asks).toHaveLength(0);
+    expect(max).toBe(2);
+  });
+});
+
+describe('DepthOverlay', () => {
+  const on = { enabled: true, maxWidth: 100 };
+
+  it('draws nothing while it is off or the book is empty', () => {
+    const a = recordingCtx();
+    new DepthOverlay().render(a.ctx, book, unitViewport, { maxWidth: 100 });
+    expect(rects(a.calls)).toEqual([]);
+    const b = recordingCtx();
+    new DepthOverlay().render(b.ctx, { bids: [], asks: [] }, unitViewport, on);
+    expect(rects(b.calls)).toEqual([]);
+  });
+
+  it('draws cumulative bars from the right edge, the biggest as wide as maxWidth', () => {
+    const { ctx, calls } = recordingCtx();
+    new DepthOverlay().render(ctx, book, unitViewport, on);
+    const widths = rects(calls).map((r) => r[2]);
+    expect(widths).toEqual([20, 80, 100, 10, 40, 100]);
+    for (const r of rects(calls)) expect(r[0] + r[2]).toBe(1000);
+  });
+
+  it('draws the sizes of the levels in level mode, with a gap between the bars', () => {
+    const { ctx, calls } = recordingCtx();
+    new DepthOverlay().render(ctx, book, unitViewport, { ...on, mode: 'level' });
+    const r = rects(calls);
+    r.map((x) => x[2]).forEach((w, i) => expect(w).toBeCloseTo([100 * 2 / 6, 100, 100 * 2 / 6, 100 / 6, 50, 100][i]));
+    // Levels are 2 px apart: bars 1 px high leave a gap, and sit centred on their price.
+    expect(r[0][3]).toBe(1);
+    expect(r[0][1]).toBeCloseTo(50 - 0.5);
+  });
+
+  it('keeps to the plot when maxWidth is wider than it', () => {
+    const { ctx, calls } = recordingCtx();
+    new DepthOverlay().render(ctx, book, { ...unitViewport, chartRect: { ...unitViewport.chartRect, width: 60 } }, { ...on, maxWidth: 500 });
+    expect(Math.max(...rects(calls).map((r) => r[2]))).toBe(60);
+  });
+
+  it('skips levels off the plot', () => {
+    const { ctx, calls } = recordingCtx();
+    new DepthOverlay().render(ctx, book, { ...unitViewport, priceRange: { min: 49, max: 100 } }, on);
+    // Only the best bid (50) and the asks are inside 49..100.
+    expect(rects(calls)).toHaveLength(4);
+  });
+
+  it('marks the best bid and the best ask when asked to', () => {
+    const plain = recordingCtx();
+    new DepthOverlay().render(plain.ctx, book, unitViewport, on);
+    const marked = recordingCtx();
+    new DepthOverlay().render(marked.ctx, book, unitViewport, { ...on, markBest: true });
+    const extra = rects(marked.calls).slice(rects(plain.calls).length);
+    expect(extra).toHaveLength(2);
+    // Each a 1 px line the width of the overlay, at the level's price.
+    expect(extra.map((r) => [r[0], r[2], r[3]])).toEqual([[900, 100, 1], [900, 100, 1]]);
+    expect(extra[0][1] + 0.5).toBe(50);
+    expect(extra[1][1] + 0.5).toBe(48);
+  });
+});

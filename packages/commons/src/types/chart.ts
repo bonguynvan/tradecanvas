@@ -2,6 +2,7 @@ import type { Theme, ThemeName } from './theme.js';
 import type { ChartStyleOverridesPatch } from './style.js';
 import type { DrawingToolType } from './drawing.js';
 import type { TimeFrame } from './ohlc.js';
+import type { DepthOverlayConfig } from './trading.js';
 
 export type ChartType =
   | 'candlestick' | 'line' | 'area' | 'bar'
@@ -114,6 +115,12 @@ export interface FeaturesConfig {
   trading?: boolean;
   /** Right-click menu for placing orders. Default `false` — opt in explicitly. */
   tradingContextMenu?: boolean;
+  /**
+   * The order book drawn on the plot (`setDepthData`, `setDepthOverlay`), for a
+   * chart that only shows prices: it needs no orders and no trading UI, so it
+   * works with `trading: false`. Default `false`; `true` also turns the overlay on.
+   */
+  depth?: boolean;
   /**
    * A "+" by the price axis, level with the crosshair; a click on it emits
    * `priceAxisAdd` with the price. Default `false` (ChartWidget turns it on).
@@ -254,6 +261,8 @@ export interface ChartOptions {
   priceAxis?: PriceAxisOptions;
   timeAxis?: TimeAxisOptions;
   watermark?: WatermarkConfig;
+  /** How the order book is drawn once `features.depth` is on and `setDepthData` has fed it (`setDepthOverlay`). */
+  depthOverlay?: DepthOverlayConfig;
   /** Start with logarithmic price scale */
   logScale?: boolean;
   /** Session break line configuration */

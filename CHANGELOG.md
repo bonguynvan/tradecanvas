@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Order book
+
+- **The order book on a price-only chart** (`@tradecanvas/commons`, `@tradecanvas/core`, `@tradecanvas/chart`): `features: { depth: true }` draws the book from the right edge of the plot with no orders and no trading UI, so it works with `trading: false`. `chart.setDepthOverlay` and the `depthOverlay` option take `mode` (`'cumulative'`, the default, or `'level'`, each price's own size, so a wall is one long bar), `markBest` (a line at the best bid and the best ask, `bestBidColor`, `bestAskColor`), `maxWidth` and the colours. A book is read in any order, and levels that are not numbers or rest no size are ignored. `setTradingConfig({ depthOverlay })` still turns the overlay on as before.
+
 ## 2.7.0 (2026-11-14)
 
 ### Drawings

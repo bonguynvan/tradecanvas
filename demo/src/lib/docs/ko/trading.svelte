@@ -270,6 +270,29 @@ widget.getChart().on('orderPlace', (e) => {
   // { side, type: 'limit', price } — submit to your backend
 })`}</code></pre>
 
+<h2>차트 위의 호가창</h2>
+<p>
+  <code>features.depth</code> 는 가격만 보여 주는 차트를 위해 호가창을 오른쪽 가장자리에서부터 플롯에 그립니다. 주문도 트레이딩 UI도
+  필요 없고 <code>trading: false</code> 에서도 동작합니다. 데이터는 <code>chart.setDepthData</code> 로 넣습니다
+  (<code>widget.setDepth</code> 도 같은 일을 합니다). <code>features.depth</code> 를 켜면 오버레이도 켜지며, 모양은 <code>setDepthOverlay</code> 로 바꿉니다.
+</p>
+<ul>
+  <li><code>mode</code>: <code>'cumulative'</code>(기본)는 각 호가를 시장에 더 가까운 호가와 합하므로 시장에서 멀수록 막대가 길어집니다. <code>'level'</code> 은 호가마다 자기 수량만 그리므로 큰 벽이 긴 막대 하나로 보입니다.</li>
+  <li><code>markBest</code>: 최우선 매수호가와 최우선 매도호가에 선을 긋습니다(<code>bestBidColor</code>, <code>bestAskColor</code>).</li>
+  <li><code>maxWidth</code>: 막대의 최대 길이(픽셀, 플롯 너비까지), <code>bidColor</code>, <code>askColor</code>.</li>
+</ul>
+<p>
+  막대는 가장 최근 캔들 위에 놓입니다. 공간을 만들려면 <code>rightMargin</code> 을 늘리고 <code>maxWidth</code> 를 그만큼의 봉 너비쯤으로 두세요.
+  트레이딩이 켜져 있으면 이전처럼 <code>{`setTradingConfig({ depthOverlay: { enabled: true } })`}</code> 로 켤 수 있습니다.
+</p>
+<pre><code>{`const chart = new Chart(host, {
+  features: { trading: false, depth: true },       // display only: no orders, no trading UI
+  depthOverlay: { mode: 'level', markBest: true, maxWidth: 140 },
+  rightMargin: 14,                                  // empty slots past the newest bar, room for the bars
+})
+chart.setDepthData(orderBook)                       // { bids, asks }; null clears it
+chart.setDepthOverlay({ mode: 'cumulative' })       // change the look later`}</code></pre>
+
 <h2>유동성 히트맵</h2>
 <p>
   호가 스냅샷을 캔들 뒤의 히트맵으로 누적합니다. 각 스냅샷은

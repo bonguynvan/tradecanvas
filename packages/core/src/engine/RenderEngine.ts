@@ -150,6 +150,8 @@ export interface RenderContext {
   indicatorEngine: IndicatorEngine | null;
   drawingRenderer: DrawingRenderer | null;
   tradingRenderer: TradingRenderer | null;
+  /** The order book on the plot, under the orders; it needs no trading layer. */
+  depthOverlay?: import('../trading/DepthOverlay.js').DepthOverlayLayer | null;
   currentPriceLine: CurrentPriceLine | null;
   chartLegend: ChartLegend | null;
   volumeRenderer: VolumeRenderer | null;
@@ -405,6 +407,7 @@ export class RenderEngine {
     // whose labels sit on them when the price is near.
     ctx.priceLines?.render(c, viewport, theme, data);
     ctx.currentPriceLine?.renderLine(c, viewport, theme);
+    ctx.depthOverlay?.render(c, viewport, theme);
     ctx.tradingRenderer?.render(c, viewport, theme);
     ctx.signalMarkerManager?.render(c, viewport, theme);
     ctx.alertManager?.render(c, viewport, theme);

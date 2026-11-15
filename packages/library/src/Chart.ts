@@ -81,6 +81,7 @@ import {
   registerBuiltInDrawingTools,
   TradingManager,
   TradingRenderer,
+  DepthOverlayLayer,
   StreamManager,
   ChartLegend,
   Screenshot,
@@ -206,6 +207,8 @@ export class Chart {
   private drawingManager: DrawingManager;
   private drawingRenderer: DrawingRenderer;
   private tradingManager: TradingManager;
+  /** The order book on the plot: it draws with or without the trading layer. */
+  private depthLayer = new DepthOverlayLayer();
   private tradingRenderer: TradingRenderer;
   private eventBus: EventBus;
   private streamManager: StreamManager | null = null;
@@ -445,6 +448,7 @@ export class Chart {
       // Off by default: right-click is the browser's, and a stray right-click
       // shouldn't be one step from an order. Opt in with features.tradingContextMenu.
       tradingContextMenu: f.tradingContextMenu ?? false,
+      depth: f.depth ?? false,
       priceAxisAddButton: f.priceAxisAddButton ?? false,
       indicators: f.indicators ?? true,
       indicatorIds: f.indicatorIds ?? [],
@@ -578,6 +582,7 @@ export class Chart {
       contextMenu: { enabled: this.features.tradingContextMenu },
     });
     this.tradingRenderer = new TradingRenderer(this.tradingManager);
+    this.depthLayer.setConfig({ enabled: this.features.depth, ...options.depthOverlay });
     this.tradingManager.setContainer(container);
     this.tradingManager.setRequestRender(() => this.engine.requestRender(LayerType.Overlay));
     this.tradingManager.setEventCallback((event, data) => {
@@ -3209,9 +3214,26 @@ export class Chart {
     if (this.features.trading) this.eventBus.emit('positionModify', intent);
   }
 
+  /**
+   * Feed the order book to the overlay on the plot (`features.depth`, or
+   * `features.trading`, whose default is on). Null clears it. The overlay
+   * draws once it is enabled: `features.depth` does that, else
+   * `setDepthOverlay({ enabled: true })`.
+   */
   setDepthData(depth: DepthData | null): void {
-    if (!this.features.trading) return;
-    this.tradingManager.setDepthData(depth);
+    if (!this.features.trading && !this.features.depth) return;
+    this.depthLayer.setData(depth);
+    this.engine.requestRender(LayerType.Overlay);
+  }
+
+  /** Change how the order book is drawn (`DepthOverlayConfig`): keys left out keep their value. */
+  setDepthOverlay(config: import('@tradecanvas/commons').DepthOverlayConfig): void {
+    this.depthLayer.setConfig(config);
+    this.engine.requestRender(LayerType.Overlay);
+  }
+
+  getDepthOverlay(): import('@tradecanvas/commons').DepthOverlayConfig {
+    return this.depthLayer.getConfig();
   }
 
   setCurrentPrice(price: number, _pulseColor?: string): void {
@@ -3276,6 +3298,7 @@ export class Chart {
   setTradingConfig(config: Partial<TradingConfig>): void {
     if (!this.features.trading) return;
     this.tradingManager.setConfig(config);
+    if (config.depthOverlay) this.setDepthOverlay(config.depthOverlay);
   }
 
   // --- Real-time Streaming ---
@@ -6153,6 +6176,8 @@ export class Chart {
   setFeatures(patch: Partial<FeaturesConfig>): void {
     const legendBottom = this.getLegendBottom();
     Object.assign(this.features, patch);
+    // The book turns on and off with the switch, as it does at the start.
+    if (patch.depth !== undefined) this.setDepthOverlay({ enabled: patch.depth });
     // The legend switched off or on: what is stacked under it moves, as when it is drawn another height.
     if (patch.legend !== undefined && this.getLegendBottom() !== legendBottom) {
       this.eventBus.emit('legendResize', { bottom: this.getLegendBottom() });
@@ -6620,6 +6645,7 @@ export class Chart {
       indicatorEngine: this.features.indicators ? this.indicatorEngine : null,
       drawingRenderer: this.features.drawings ? this.drawingRenderer : null,
       tradingRenderer: this.features.trading ? this.tradingRenderer : null,
+      depthOverlay: this.features.trading || this.features.depth ? this.depthLayer : null,
       currentPriceLine: this.currentPriceLine,
       chartLegend: this.features.legend ? this.chartLegend : null,
       volumeRenderer: this.features.volume ? this.volumeRenderer : null,
