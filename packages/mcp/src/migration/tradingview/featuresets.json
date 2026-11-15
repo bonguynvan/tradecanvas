@@ -1,0 +1,1473 @@
+{
+  "source": "tradingview",
+  "docs": "https://www.tradingview.com/charting-library-docs/latest/customization/Featuresets/, https://www.tradingview.com/charting-library-docs/latest/customization/Featuresets.md; read 2026-11",
+  "entries": [
+    {
+      "kind": "featureset",
+      "name": "context_menus",
+      "to": [
+        {
+          "feature": "menu.chart"
+        },
+        {
+          "feature": "menu.drawing"
+        },
+        {
+          "feature": "indicatorLegend.more"
+        }
+      ],
+      "note": "Covers the chart menu, the drawing menu and the indicator row's 'more' menu."
+    },
+    {
+      "kind": "featureset",
+      "name": "legend_context_menu",
+      "to": [
+        {
+          "feature": "indicatorLegend.more"
+        }
+      ],
+      "note": "Near: no right-click menu on the legend; the indicator row's 'more' menu is the closest."
+    },
+    {
+      "kind": "featureset",
+      "name": "pane_context_menu",
+      "to": [
+        {
+          "feature": "menu.chart"
+        }
+      ]
+    },
+    {
+      "kind": "featureset",
+      "name": "scales_context_menu",
+      "to": [
+        {
+          "feature": "menu.chart.scale"
+        }
+      ],
+      "note": "Near: scale entries are in the chart menu's scale submenu, not a menu on the axis."
+    },
+    {
+      "kind": "featureset",
+      "name": "edit_buttons_in_legend",
+      "to": [
+        {
+          "feature": "indicatorLegend.visibility"
+        },
+        {
+          "feature": "indicatorLegend.settings"
+        },
+        {
+          "feature": "indicatorLegend.remove"
+        },
+        {
+          "feature": "indicatorLegend.more"
+        }
+      ]
+    },
+    {
+      "kind": "featureset",
+      "name": "legend_inplace_edit",
+      "to": [],
+      "note": "No in-place editing in the legend; inputs change in the indicator settings. Nothing to do."
+    },
+    {
+      "kind": "featureset",
+      "name": "delete_button_in_legend",
+      "to": [
+        {
+          "feature": "indicatorLegend.remove"
+        }
+      ]
+    },
+    {
+      "kind": "featureset",
+      "name": "format_button_in_legend",
+      "to": [
+        {
+          "feature": "indicatorLegend.settings"
+        }
+      ]
+    },
+    {
+      "kind": "featureset",
+      "name": "show_hide_button_in_legend",
+      "to": [
+        {
+          "feature": "indicatorLegend.visibility"
+        }
+      ]
+    },
+    {
+      "kind": "featureset",
+      "name": "header_widget",
+      "to": [
+        {
+          "feature": "toolbar"
+        }
+      ]
+    },
+    {
+      "kind": "featureset",
+      "name": "header_chart_type",
+      "to": [
+        {
+          "feature": "toolbar.chartType"
+        }
+      ]
+    },
+    {
+      "kind": "featureset",
+      "name": "header_compare",
+      "to": [
+        {
+          "feature": "toolbar.compare"
+        }
+      ],
+      "note": "The compare switch turns off comparing everywhere, not just the button."
+    },
+    {
+      "kind": "featureset",
+      "name": "header_fullscreen_button",
+      "to": [
+        {
+          "feature": "toolbar.fullscreen"
+        }
+      ]
+    },
+    {
+      "kind": "featureset",
+      "name": "header_indicators",
+      "to": [
+        {
+          "feature": "toolbar.indicators"
+        }
+      ]
+    },
+    {
+      "kind": "featureset",
+      "name": "header_resolutions",
+      "to": [
+        {
+          "feature": "toolbar.timeframes"
+        },
+        {
+          "feature": "toolbar.timeframeMenu"
+        }
+      ]
+    },
+    {
+      "kind": "featureset",
+      "name": "show_interval_dialog_on_key_press",
+      "to": [
+        {
+          "feature": "intervalTyping"
+        }
+      ]
+    },
+    {
+      "kind": "featureset",
+      "name": "header_screenshot",
+      "to": [
+        {
+          "feature": "toolbar.screenshot"
+        }
+      ]
+    },
+    {
+      "kind": "featureset",
+      "name": "header_settings",
+      "to": [
+        {
+          "feature": "toolbar.settings"
+        }
+      ]
+    },
+    {
+      "kind": "featureset",
+      "name": "header_symbol_search",
+      "to": [
+        {
+          "feature": "toolbar.symbol"
+        }
+      ],
+      "note": "The toolbar symbol button opens the search. The symbolSearch switch turns search off everywhere."
+    },
+    {
+      "kind": "featureset",
+      "name": "header_undo_redo",
+      "to": [
+        {
+          "feature": "toolbar.undo"
+        },
+        {
+          "feature": "toolbar.redo"
+        }
+      ]
+    },
+    {
+      "kind": "featureset",
+      "name": "header_quick_search",
+      "to": [
+        {
+          "feature": "commandPalette"
+        }
+      ],
+      "note": "Near: the command palette searches actions and tools."
+    },
+    {
+      "kind": "featureset",
+      "name": "symbol_search_hot_key",
+      "to": [
+        {
+          "feature": "symbolTyping"
+        }
+      ]
+    },
+    {
+      "kind": "featureset",
+      "name": "use_localstorage_for_settings",
+      "to": [
+        {
+          "option": "ChartWidget.persistSettings",
+          "on": true,
+          "off": false
+        }
+      ],
+      "note": "Default differs: TradeCanvas keeps Chart Settings only with persistSettings: true (default false). Layouts use localStorage unless layouts.storage is given."
+    },
+    {
+      "kind": "featureset",
+      "name": "save_chart_properties_to_local_storage",
+      "to": [
+        {
+          "option": "ChartWidget.persistSettings",
+          "on": true,
+          "off": false
+        }
+      ],
+      "note": "Default differs: persistSettings is false unless you set it."
+    },
+    {
+      "kind": "featureset",
+      "name": "adaptive_logo",
+      "to": [],
+      "note": "TradeCanvas never shows this. Nothing to do."
+    },
+    {
+      "kind": "featureset",
+      "name": "always_show_legend_values_on_mobile",
+      "to": [],
+      "note": "No switch; the OHLCV legend shows values on every screen size."
+    },
+    {
+      "kind": "featureset",
+      "name": "border_around_the_chart",
+      "to": [],
+      "note": "No border option. Style the container with CSS."
+    },
+    {
+      "kind": "featureset",
+      "name": "chart_style_hilo",
+      "to": [
+        {
+          "option": "ChartWidget.chartTypes"
+        }
+      ],
+      "note": "hiLo is a chart type TradeCanvas offers by default. To leave it out, give chartTypes without 'hiLo'."
+    },
+    {
+      "kind": "featureset",
+      "name": "chart_style_hilo_last_price",
+      "to": [],
+      "note": "No equivalent switch."
+    },
+    {
+      "kind": "featureset",
+      "name": "chart_property_page_right_margin_editor",
+      "to": [],
+      "note": "The settings dialog has no right margin field; set chartOptions.rightMargin in code. Nothing to turn off."
+    },
+    {
+      "kind": "featureset",
+      "name": "chart_property_page_scales",
+      "to": [],
+      "note": "No equivalent switch."
+    },
+    {
+      "kind": "featureset",
+      "name": "clear_price_scale_on_error_or_empty_bars",
+      "to": [],
+      "note": "Not configurable. Nothing to do."
+    },
+    {
+      "kind": "featureset",
+      "name": "compare_symbol_search_spread_operators",
+      "to": [],
+      "note": "Symbol search has no spread expressions. Nothing to do."
+    },
+    {
+      "kind": "featureset",
+      "name": "control_bar",
+      "to": [
+        {
+          "feature": "navigation"
+        }
+      ],
+      "note": "The navigation buttons float over the chart while the pointer is on it."
+    },
+    {
+      "kind": "featureset",
+      "name": "countdown",
+      "to": [
+        {
+          "option": "ChartWidget.chartOptions.features.barCountdown",
+          "on": true,
+          "off": false
+        }
+      ],
+      "note": "Off removes the countdown and its settings toggle."
+    },
+    {
+      "kind": "featureset",
+      "name": "display_data_mode",
+      "to": [],
+      "note": "No delayed-data badge. Show your own with widget.addStatusBarItem()."
+    },
+    {
+      "kind": "featureset",
+      "name": "display_legend_on_all_charts",
+      "to": [],
+      "note": "Each chart in a ChartWidgetGrid has its own legend. Nothing to do."
+    },
+    {
+      "kind": "featureset",
+      "name": "display_market_status",
+      "to": [
+        {
+          "feature": "statusBar.market"
+        }
+      ],
+      "note": "Shown on the status bar, not in the legend."
+    },
+    {
+      "kind": "featureset",
+      "name": "dont_show_boolean_study_arguments",
+      "to": [],
+      "note": "No equivalent switch."
+    },
+    {
+      "kind": "featureset",
+      "name": "go_to_date",
+      "to": [
+        {
+          "feature": "goToDate"
+        }
+      ]
+    },
+    {
+      "kind": "featureset",
+      "name": "header_saveload",
+      "to": [
+        {
+          "feature": "toolbar.layouts"
+        }
+      ],
+      "note": "The layouts switch turns saving off everywhere, Ctrl+S too."
+    },
+    {
+      "kind": "featureset",
+      "name": "hide_image_invalid_symbol",
+      "to": [],
+      "note": "TradeCanvas never shows this. Nothing to do."
+    },
+    {
+      "kind": "featureset",
+      "name": "hide_last_na_study_output",
+      "to": [],
+      "note": "No equivalent switch."
+    },
+    {
+      "kind": "featureset",
+      "name": "hide_left_toolbar_by_default",
+      "to": [],
+      "note": "No start-collapsed state. The sidebar switch (false) removes the drawing sidebar entirely."
+    },
+    {
+      "kind": "featureset",
+      "name": "hide_main_series_symbol_from_indicator_legend",
+      "to": [],
+      "note": "TradeCanvas never shows this. Nothing to do."
+    },
+    {
+      "kind": "featureset",
+      "name": "hide_price_scale_global_last_bar_value",
+      "to": [],
+      "note": "No equivalent switch."
+    },
+    {
+      "kind": "featureset",
+      "name": "hide_exponentiation_spread_operator",
+      "to": [],
+      "note": "Symbol search has no spread expressions. Nothing to do."
+    },
+    {
+      "kind": "featureset",
+      "name": "hide_reciprocal_spread_operator",
+      "to": [],
+      "note": "Symbol search has no spread expressions. Nothing to do."
+    },
+    {
+      "kind": "featureset",
+      "name": "hide_object_tree_and_price_scale_exchange_label",
+      "to": [],
+      "note": "No equivalent switch."
+    },
+    {
+      "kind": "featureset",
+      "name": "hide_resolution_in_legend",
+      "to": [],
+      "note": "No equivalent switch."
+    },
+    {
+      "kind": "featureset",
+      "name": "hide_unresolved_symbols_in_legend",
+      "to": [],
+      "note": "No equivalent switch."
+    },
+    {
+      "kind": "featureset",
+      "name": "items_favoriting",
+      "to": [
+        {
+          "feature": "sidebar.favorites"
+        }
+      ],
+      "note": "Near: only drawing tools can be pinned. Timeframe favorites have no switch."
+    },
+    {
+      "kind": "featureset",
+      "name": "left_toolbar",
+      "to": [
+        {
+          "feature": "sidebar"
+        }
+      ]
+    },
+    {
+      "kind": "featureset",
+      "name": "legend_widget",
+      "to": [
+        {
+          "option": "ChartWidget.chartOptions.features.legend",
+          "on": true,
+          "off": false
+        },
+        {
+          "feature": "indicatorLegend"
+        }
+      ],
+      "note": "The OHLCV legend and the indicator rows are separate: turn both off to match."
+    },
+    {
+      "kind": "featureset",
+      "name": "main_series_scale_menu",
+      "to": [
+        {
+          "feature": "statusBar.scale"
+        }
+      ],
+      "note": "Near: the scale buttons (auto, log, %) sit on the status bar."
+    },
+    {
+      "kind": "featureset",
+      "name": "object_tree_legend_mode",
+      "to": [],
+      "note": "TradeCanvas never shows this. Nothing to do."
+    },
+    {
+      "kind": "featureset",
+      "name": "pricescale_currency",
+      "to": [],
+      "note": "No equivalent switch."
+    },
+    {
+      "kind": "featureset",
+      "name": "pricescale_unit",
+      "to": [],
+      "note": "No equivalent switch."
+    },
+    {
+      "kind": "featureset",
+      "name": "pre_post_market_sessions",
+      "to": [
+        {
+          "option": "ChartWidget.chartOptions.extendedHours",
+          "on": true,
+          "off": false
+        }
+      ],
+      "note": "Default differs: TradeCanvas shows extended hours by default, from SymbolInfo.sessions."
+    },
+    {
+      "kind": "featureset",
+      "name": "property_pages",
+      "to": [
+        {
+          "feature": "settings"
+        },
+        {
+          "feature": "indicatorSettings"
+        },
+        {
+          "feature": "drawingSettings"
+        }
+      ]
+    },
+    {
+      "kind": "featureset",
+      "name": "popup_hints",
+      "to": [],
+      "note": "No equivalent switch."
+    },
+    {
+      "kind": "featureset",
+      "name": "remove_library_container_border",
+      "to": [],
+      "note": "TradeCanvas never shows this. Nothing to do."
+    },
+    {
+      "kind": "featureset",
+      "name": "scales_date_format",
+      "to": [],
+      "note": "No equivalent switch."
+    },
+    {
+      "kind": "featureset",
+      "name": "scales_time_hours_format",
+      "to": [],
+      "note": "No equivalent switch."
+    },
+    {
+      "kind": "featureset",
+      "name": "show_chart_property_page",
+      "to": [
+        {
+          "feature": "settings"
+        }
+      ]
+    },
+    {
+      "kind": "featureset",
+      "name": "show_average_close_price_line_and_label",
+      "to": [],
+      "note": "No equivalent switch."
+    },
+    {
+      "kind": "featureset",
+      "name": "show_exchange_logos",
+      "to": [],
+      "note": "No switch: symbol logos show wherever SymbolInfo.logo is given."
+    },
+    {
+      "kind": "featureset",
+      "name": "show_right_widgets_panel_by_default",
+      "to": [
+        {
+          "api": "widget.openPanel(panel)"
+        }
+      ],
+      "note": "Dock panels start closed. Open one in onReady: openPanel('watchlist')."
+    },
+    {
+      "kind": "featureset",
+      "name": "show_symbol_logos",
+      "to": [],
+      "note": "No switch: symbol logos show wherever SymbolInfo.logo is given."
+    },
+    {
+      "kind": "featureset",
+      "name": "show_symbol_logo_for_compare_studies",
+      "to": [],
+      "note": "No switch: symbol logos show wherever SymbolInfo.logo is given."
+    },
+    {
+      "kind": "featureset",
+      "name": "show_symbol_logo_in_legend",
+      "to": [],
+      "note": "No switch: symbol logos show wherever SymbolInfo.logo is given."
+    },
+    {
+      "kind": "featureset",
+      "name": "show_object_tree",
+      "to": [
+        {
+          "feature": "objectTree"
+        }
+      ]
+    },
+    {
+      "kind": "featureset",
+      "name": "show_percent_option_for_right_margin",
+      "to": [],
+      "note": "No equivalent switch."
+    },
+    {
+      "kind": "featureset",
+      "name": "show_spread_operators",
+      "to": [],
+      "note": "Symbol search has no spread expressions. Nothing to do."
+    },
+    {
+      "kind": "featureset",
+      "name": "show_zoom_and_move_buttons_on_touch",
+      "to": [
+        {
+          "feature": "navigation"
+        }
+      ],
+      "note": "Default differs: navigation is on for every pointer, touch included."
+    },
+    {
+      "kind": "featureset",
+      "name": "snapshot_trading_drawings",
+      "to": [],
+      "note": "No equivalent switch."
+    },
+    {
+      "kind": "featureset",
+      "name": "source_selection_markers",
+      "to": [],
+      "note": "No equivalent switch."
+    },
+    {
+      "kind": "featureset",
+      "name": "studies_symbol_search_spread_operators",
+      "to": [],
+      "note": "Symbol search has no spread expressions. Nothing to do."
+    },
+    {
+      "kind": "featureset",
+      "name": "symbol_info",
+      "to": [
+        {
+          "feature": "symbolInfo"
+        }
+      ],
+      "note": "The symbol info is a dock panel with a toolbar button, not a legend entry."
+    },
+    {
+      "kind": "featureset",
+      "name": "symbol_info_long_description",
+      "to": [],
+      "note": "No equivalent switch."
+    },
+    {
+      "kind": "featureset",
+      "name": "symbol_info_price_source",
+      "to": [],
+      "note": "No equivalent switch."
+    },
+    {
+      "kind": "featureset",
+      "name": "timeframes_toolbar",
+      "to": [
+        {
+          "feature": "statusBar.range"
+        }
+      ],
+      "note": "The range presets are fixed (1D to All); rangeBar: false hides them with go to date."
+    },
+    {
+      "kind": "featureset",
+      "name": "timezone_menu",
+      "to": [
+        {
+          "feature": "statusBar.clock"
+        },
+        {
+          "feature": "menu.chart.timezone"
+        }
+      ],
+      "note": "The zone menu opens from the status bar clock and from the chart menu."
+    },
+    {
+      "kind": "featureset",
+      "name": "use_na_string_for_not_available_values",
+      "to": [],
+      "note": "No equivalent switch."
+    },
+    {
+      "kind": "featureset",
+      "name": "use_symbol_name_for_header_toolbar",
+      "to": [],
+      "note": "No equivalent switch."
+    },
+    {
+      "kind": "featureset",
+      "name": "always_show_study_symbol_input_values_in_legend",
+      "to": [],
+      "note": "No equivalent switch."
+    },
+    {
+      "kind": "featureset",
+      "name": "move_logo_to_main_pane",
+      "to": [],
+      "note": "TradeCanvas never shows this. Nothing to do."
+    },
+    {
+      "kind": "featureset",
+      "name": "accessible_keyboard_shortcuts",
+      "to": [],
+      "note": "No switch. The chart has its own keyboard and screen-reader support (chartOptions.a11y)."
+    },
+    {
+      "kind": "featureset",
+      "name": "allow_arbitrary_symbol_search_input",
+      "to": [],
+      "note": "No equivalent switch."
+    },
+    {
+      "kind": "featureset",
+      "name": "aria_crosshair_price_description",
+      "to": [],
+      "note": "No separate switch. The chart reads to screen readers by default (chartOptions.a11y)."
+    },
+    {
+      "kind": "featureset",
+      "name": "aria_detailed_chart_descriptions",
+      "to": [],
+      "note": "No separate switch. The chart reads to screen readers by default (chartOptions.a11y)."
+    },
+    {
+      "kind": "featureset",
+      "name": "auto_enable_symbol_labels",
+      "to": [],
+      "note": "No equivalent switch."
+    },
+    {
+      "kind": "featureset",
+      "name": "axis_pressed_mouse_move_scale",
+      "to": [],
+      "note": "No equivalent switch."
+    },
+    {
+      "kind": "featureset",
+      "name": "chart_drag_export",
+      "to": [],
+      "note": "No equivalent switch."
+    },
+    {
+      "kind": "featureset",
+      "name": "chart_scroll",
+      "to": [
+        {
+          "option": "ChartWidget.chartOptions.features.panning",
+          "on": true,
+          "off": false
+        }
+      ],
+      "note": "Covers mouse and touch panning together."
+    },
+    {
+      "kind": "featureset",
+      "name": "chart_zoom",
+      "to": [
+        {
+          "option": "ChartWidget.chartOptions.features.zooming",
+          "on": true,
+          "off": false
+        }
+      ],
+      "note": "Covers wheel and pinch zoom together."
+    },
+    {
+      "kind": "featureset",
+      "name": "charting_library_debug_mode",
+      "to": [],
+      "note": "No debug logging switch. Nothing to do."
+    },
+    {
+      "kind": "featureset",
+      "name": "confirm_overwrite_if_chart_layout_with_name_exists",
+      "to": [],
+      "note": "No equivalent switch."
+    },
+    {
+      "kind": "featureset",
+      "name": "create_volume_indicator_by_default",
+      "to": [
+        {
+          "option": "ChartWidget.chartOptions.features.volume",
+          "on": true,
+          "off": false
+        }
+      ],
+      "note": "Volume is built in, not an indicator. Off removes it; to start hidden but keep the toggle, call widget.setSettings({ volumeVisible: false })."
+    },
+    {
+      "kind": "featureset",
+      "name": "create_volume_indicator_by_default_once",
+      "to": [],
+      "note": "Volume is built in and never re-added. Nothing to do."
+    },
+    {
+      "kind": "featureset",
+      "name": "constraint_dialogs_movement",
+      "to": [],
+      "note": "Dialogs stay inside the widget. Nothing to do."
+    },
+    {
+      "kind": "featureset",
+      "name": "cropped_tick_marks",
+      "to": [],
+      "note": "No equivalent switch."
+    },
+    {
+      "kind": "featureset",
+      "name": "custom_resolutions",
+      "to": [
+        {
+          "feature": "customTimeframes"
+        }
+      ],
+      "note": "Default differs: on in TradeCanvas. Set it to false to match the Charting Library default."
+    },
+    {
+      "kind": "featureset",
+      "name": "datasource_copypaste",
+      "to": [],
+      "note": "No switch of its own. menu.chart.drawings hides the paste entry, with the other drawing entries."
+    },
+    {
+      "kind": "featureset",
+      "name": "determine_first_data_request_size_using_visible_range",
+      "to": [],
+      "note": "No equivalent switch."
+    },
+    {
+      "kind": "featureset",
+      "name": "disable_legend_inplace_resolution_change",
+      "to": [],
+      "note": "The legend never changes the interval. Nothing to do."
+    },
+    {
+      "kind": "featureset",
+      "name": "disable_legend_inplace_symbol_change",
+      "to": [],
+      "note": "The legend never changes the symbol. Nothing to do."
+    },
+    {
+      "kind": "featureset",
+      "name": "disable_pulse_animation",
+      "to": [],
+      "note": "TradeCanvas never shows this. Nothing to do."
+    },
+    {
+      "kind": "featureset",
+      "name": "disable_resolution_rebuild",
+      "to": [],
+      "note": "No equivalent switch."
+    },
+    {
+      "kind": "featureset",
+      "name": "end_of_period_timescale_marks",
+      "to": [],
+      "note": "No equivalent switch."
+    },
+    {
+      "kind": "featureset",
+      "name": "fix_left_edge",
+      "to": [],
+      "note": "No exact switch. chartOptions.panLimits.minVisibleBars limits how far the chart pans past the data."
+    },
+    {
+      "kind": "featureset",
+      "name": "header_in_fullscreen_mode",
+      "to": [],
+      "note": "Fullscreen takes the whole widget, toolbar included. Nothing to do."
+    },
+    {
+      "kind": "featureset",
+      "name": "hide_price_scale_if_all_sources_hidden",
+      "to": [],
+      "note": "No equivalent switch."
+    },
+    {
+      "kind": "featureset",
+      "name": "horz_touch_drag_scroll",
+      "to": [],
+      "note": "No switch: a horizontal touch drag always pans the chart."
+    },
+    {
+      "kind": "featureset",
+      "name": "inactivity_gaps",
+      "to": [],
+      "note": "No equivalent switch."
+    },
+    {
+      "kind": "featureset",
+      "name": "iframe_loading_compatibility_mode",
+      "to": [],
+      "note": "TradeCanvas renders in your page, with no iframe. Nothing to do."
+    },
+    {
+      "kind": "featureset",
+      "name": "iframe_loading_same_origin",
+      "to": [],
+      "note": "TradeCanvas renders in your page, with no iframe. Nothing to do."
+    },
+    {
+      "kind": "featureset",
+      "name": "insert_indicator_dialog_shortcut",
+      "to": [],
+      "note": "No equivalent switch."
+    },
+    {
+      "kind": "featureset",
+      "name": "keep_selected_group_on_tool_creation",
+      "to": [],
+      "note": "No equivalent switch."
+    },
+    {
+      "kind": "featureset",
+      "name": "legend_bar_change_colors_based_on_value",
+      "to": [],
+      "note": "No equivalent switch."
+    },
+    {
+      "kind": "featureset",
+      "name": "library_custom_color_themes",
+      "to": [],
+      "note": "No switch. Custom colours are a Theme object given to theme."
+    },
+    {
+      "kind": "featureset",
+      "name": "lock_visible_time_range_on_resize",
+      "to": [],
+      "note": "No equivalent switch."
+    },
+    {
+      "kind": "featureset",
+      "name": "lock_visible_time_range_when_adjusting_percentage_right_margin",
+      "to": [],
+      "note": "No equivalent switch."
+    },
+    {
+      "kind": "featureset",
+      "name": "long_press_floating_tooltip",
+      "to": [
+        {
+          "option": "ChartWidget.chartOptions.features.crosshairTooltip",
+          "on": true,
+          "off": false
+        }
+      ],
+      "note": "Near: a floating OHLCV tooltip for mouse and touch alike. Off by default in the widget."
+    },
+    {
+      "kind": "featureset",
+      "name": "low_density_bars",
+      "to": [
+        {
+          "option": "ChartWidget.chartOptions.maxBarSpacing"
+        }
+      ],
+      "note": "Near: raise maxBarSpacing to let bars grow wider when zoomed in."
+    },
+    {
+      "kind": "featureset",
+      "name": "mouse_wheel_scale",
+      "to": [
+        {
+          "option": "ChartWidget.chartOptions.features.zooming",
+          "on": true,
+          "off": false
+        }
+      ],
+      "note": "Near: zooming covers wheel and pinch together."
+    },
+    {
+      "kind": "featureset",
+      "name": "mouse_wheel_scroll",
+      "to": [],
+      "note": "No equivalent switch."
+    },
+    {
+      "kind": "featureset",
+      "name": "no_min_chart_width",
+      "to": [],
+      "note": "No equivalent switch."
+    },
+    {
+      "kind": "featureset",
+      "name": "pin_bar_mark_tooltips_on_click",
+      "to": [],
+      "note": "No equivalent switch."
+    },
+    {
+      "kind": "featureset",
+      "name": "pinch_scale",
+      "to": [
+        {
+          "option": "ChartWidget.chartOptions.features.zooming",
+          "on": true,
+          "off": false
+        }
+      ],
+      "note": "Near: zooming covers wheel and pinch together."
+    },
+    {
+      "kind": "featureset",
+      "name": "pressed_mouse_move_scroll",
+      "to": [
+        {
+          "option": "ChartWidget.chartOptions.features.panning",
+          "on": true,
+          "off": false
+        }
+      ],
+      "note": "Near: panning covers mouse and touch together."
+    },
+    {
+      "kind": "featureset",
+      "name": "pre_post_market_price_line",
+      "to": [],
+      "note": "No equivalent switch."
+    },
+    {
+      "kind": "featureset",
+      "name": "request_only_visible_range_on_reset",
+      "to": [],
+      "note": "No equivalent switch."
+    },
+    {
+      "kind": "featureset",
+      "name": "right_bar_stays_on_scroll",
+      "to": [],
+      "note": "No equivalent switch."
+    },
+    {
+      "kind": "featureset",
+      "name": "save_shortcut",
+      "to": [
+        {
+          "feature": "hotkeys.save"
+        }
+      ]
+    },
+    {
+      "kind": "featureset",
+      "name": "saveload_separate_drawings_storage",
+      "to": [],
+      "note": "No separate drawings storage: drawings are part of a saved layout."
+    },
+    {
+      "kind": "featureset",
+      "name": "seconds_resolution",
+      "to": [
+        {
+          "option": "ChartWidget.timeframes"
+        }
+      ],
+      "note": "Second intervals (1s, 5s, 15s, 30s) are built in: list them in timeframes and serve them from your feed."
+    },
+    {
+      "kind": "featureset",
+      "name": "secondary_series_extend_time_scale",
+      "to": [],
+      "note": "No equivalent switch."
+    },
+    {
+      "kind": "featureset",
+      "name": "shift_visible_range_on_new_bar",
+      "to": [
+        {
+          "api": "chart.setAutoScroll(enabled)"
+        }
+      ],
+      "note": "Call setAutoScroll(false) to keep the view still when a new bar comes."
+    },
+    {
+      "kind": "featureset",
+      "name": "side_toolbar_in_fullscreen_mode",
+      "to": [],
+      "note": "The drawing sidebar stays in fullscreen. Nothing to do."
+    },
+    {
+      "kind": "featureset",
+      "name": "studies_extend_time_scale",
+      "to": [],
+      "note": "No equivalent switch."
+    },
+    {
+      "kind": "featureset",
+      "name": "study_templates",
+      "to": [
+        {
+          "feature": "indicatorTemplates"
+        }
+      ],
+      "note": "Default differs: on in TradeCanvas, in the Templates tab of the Indicators dialog."
+    },
+    {
+      "kind": "featureset",
+      "name": "study_symbol_ticker_description",
+      "to": [],
+      "note": "No equivalent switch."
+    },
+    {
+      "kind": "featureset",
+      "name": "study_overlay_compare_legend_option",
+      "to": [],
+      "note": "No equivalent switch."
+    },
+    {
+      "kind": "featureset",
+      "name": "tick_resolution",
+      "to": [],
+      "note": "No switch. Tick bars come from wrapping the adapter with withTickBars()."
+    },
+    {
+      "kind": "featureset",
+      "name": "two_character_bar_marks_labels",
+      "to": [],
+      "note": "No equivalent switch."
+    },
+    {
+      "kind": "featureset",
+      "name": "uppercase_instrument_names",
+      "to": [],
+      "note": "No equivalent switch."
+    },
+    {
+      "kind": "featureset",
+      "name": "use_last_visible_bar_value_in_legend",
+      "to": [],
+      "note": "No equivalent switch."
+    },
+    {
+      "kind": "featureset",
+      "name": "vert_touch_drag_scroll",
+      "to": [
+        {
+          "option": "ChartWidget.chartOptions.pageScroll",
+          "on": false,
+          "off": true
+        }
+      ],
+      "note": "Near: pageScroll: true lets a one-finger vertical swipe and the wheel scroll the page."
+    },
+    {
+      "kind": "featureset",
+      "name": "volume_force_overlay",
+      "to": [],
+      "note": "Volume draws at the foot of the price pane; there is no setting to give it a pane of its own."
+    },
+    {
+      "kind": "featureset",
+      "name": "add_to_watchlist",
+      "to": [
+        {
+          "api": "widget.addToWatchlist(symbol)"
+        }
+      ],
+      "note": "No menu entry to switch. Add symbols in code; the watchlist panel has its own add button."
+    },
+    {
+      "kind": "featureset",
+      "name": "always_pass_called_order_to_modify",
+      "to": [],
+      "note": "Broker API detail; see the broker table. Nothing to switch."
+    },
+    {
+      "kind": "featureset",
+      "name": "always_require_order_confirmation",
+      "to": [],
+      "note": "No equivalent switch."
+    },
+    {
+      "kind": "featureset",
+      "name": "buy_sell_buttons",
+      "to": [
+        {
+          "feature": "toolbar.trade"
+        }
+      ],
+      "note": "Near: trading starts from the Trade toolbar menu, not buttons in the legend."
+    },
+    {
+      "kind": "featureset",
+      "name": "broker_button",
+      "to": [
+        {
+          "feature": "toolbar.trade"
+        }
+      ],
+      "note": "Near: the Trade toolbar menu."
+    },
+    {
+      "kind": "featureset",
+      "name": "chart_crosshair_menu",
+      "to": [
+        {
+          "feature": "menu.priceAxisAdd"
+        }
+      ],
+      "note": "The \"+\" by the price axis, level with the crosshair."
+    },
+    {
+      "kind": "featureset",
+      "name": "chart_hide_close_position_button",
+      "to": [],
+      "note": "No equivalent switch."
+    },
+    {
+      "kind": "featureset",
+      "name": "chart_hide_close_order_button",
+      "to": [],
+      "note": "No equivalent switch."
+    },
+    {
+      "kind": "featureset",
+      "name": "chart_property_page_trading",
+      "to": [],
+      "note": "No equivalent switch."
+    },
+    {
+      "kind": "featureset",
+      "name": "chart_template_storage",
+      "to": [],
+      "note": "No chart templates. Layouts (layouts.storage) and indicator templates cover most of it."
+    },
+    {
+      "kind": "featureset",
+      "name": "drawing_templates",
+      "to": [],
+      "note": "Drawing style templates are built in with no switch of their own."
+    },
+    {
+      "kind": "featureset",
+      "name": "dom_widget",
+      "to": [
+        {
+          "option": "ChartWidget.depthLadder",
+          "on": true,
+          "off": false
+        }
+      ],
+      "note": "Feed it with widget.setDepth(). Needs trading on."
+    },
+    {
+      "kind": "featureset",
+      "name": "dom_raw_volume_values",
+      "to": [],
+      "note": "No equivalent switch."
+    },
+    {
+      "kind": "featureset",
+      "name": "static_dom",
+      "to": [],
+      "note": "No equivalent switch."
+    },
+    {
+      "kind": "featureset",
+      "name": "header_layouttoggle",
+      "to": [],
+      "note": "No multi-chart layouts in one widget. Use ChartWidgetGrid for several charts."
+    },
+    {
+      "kind": "featureset",
+      "name": "hide_right_toolbar",
+      "to": [],
+      "note": "No start-hidden option. The dock switch (false) removes the dock entirely."
+    },
+    {
+      "kind": "featureset",
+      "name": "hide_right_toolbar_tabs",
+      "to": [],
+      "note": "No switch for the rail as a whole; dock.* switches hide its buttons one by one."
+    },
+    {
+      "kind": "featureset",
+      "name": "keep_object_tree_widget_in_right_toolbar",
+      "to": [],
+      "note": "The object tree is a dock panel already (dock.objectTree). Nothing to do."
+    },
+    {
+      "kind": "featureset",
+      "name": "legend_last_day_change",
+      "to": [],
+      "note": "No equivalent switch."
+    },
+    {
+      "kind": "featureset",
+      "name": "multiple_watchlists",
+      "to": [],
+      "note": "No switch: the watchlist always allows several lists."
+    },
+    {
+      "kind": "featureset",
+      "name": "open_account_manager",
+      "to": [
+        {
+          "api": "widget.toggleAccountPanel(open)"
+        }
+      ],
+      "note": "No start-open option. Open the account panel in onReady with toggleAccountPanel(true)."
+    },
+    {
+      "kind": "featureset",
+      "name": "order_info",
+      "to": [],
+      "note": "No equivalent switch."
+    },
+    {
+      "kind": "featureset",
+      "name": "order_panel",
+      "to": [
+        {
+          "feature": "orderTicket"
+        }
+      ]
+    },
+    {
+      "kind": "featureset",
+      "name": "order_panel_close_button",
+      "to": [],
+      "note": "No equivalent switch."
+    },
+    {
+      "kind": "featureset",
+      "name": "order_panel_undock",
+      "to": [],
+      "note": "TradeCanvas never shows this. Nothing to do."
+    },
+    {
+      "kind": "featureset",
+      "name": "prefer_symbol_name_over_fullname",
+      "to": [],
+      "note": "No equivalent switch."
+    },
+    {
+      "kind": "featureset",
+      "name": "right_toolbar",
+      "to": [
+        {
+          "feature": "dock"
+        }
+      ]
+    },
+    {
+      "kind": "featureset",
+      "name": "show_buy_sell_buttons_on_unsupported_resolution",
+      "to": [],
+      "note": "No equivalent switch."
+    },
+    {
+      "kind": "featureset",
+      "name": "show_dom_first_time",
+      "to": [
+        {
+          "api": "widget.openPanel(panel)"
+        }
+      ],
+      "note": "Needs depthLadder: true. Open it in onReady with openPanel('depthLadder')."
+    },
+    {
+      "kind": "featureset",
+      "name": "show_last_price_and_change_only_in_series_legend",
+      "to": [
+        {
+          "api": "chart.setLegend(config)"
+        }
+      ],
+      "note": "Call setLegend({ showOHLC: false, showVolume: false }) to keep the symbol and change."
+    },
+    {
+      "kind": "featureset",
+      "name": "show_order_panel_on_start",
+      "to": [],
+      "note": "No start-open option for the order ticket."
+    },
+    {
+      "kind": "featureset",
+      "name": "show_symbol_logo_in_account_manager",
+      "to": [],
+      "note": "No switch: symbol logos show wherever SymbolInfo.logo is given."
+    },
+    {
+      "kind": "featureset",
+      "name": "show_symbol_logo_in_close_position_dialog",
+      "to": [],
+      "note": "No switch: symbol logos show wherever SymbolInfo.logo is given."
+    },
+    {
+      "kind": "featureset",
+      "name": "show_symbol_logo_in_cancel_order_dialog",
+      "to": [],
+      "note": "No switch: symbol logos show wherever SymbolInfo.logo is given."
+    },
+    {
+      "kind": "featureset",
+      "name": "show_trading_notifications_history",
+      "to": [],
+      "note": "No equivalent switch."
+    },
+    {
+      "kind": "featureset",
+      "name": "support_multicharts",
+      "to": [],
+      "note": "No multi-chart layouts in one widget. Use ChartWidgetGrid for several charts."
+    },
+    {
+      "kind": "featureset",
+      "name": "trading_account_manager",
+      "to": [
+        {
+          "feature": "accountPanel"
+        }
+      ]
+    },
+    {
+      "kind": "featureset",
+      "name": "trading_notifications",
+      "to": [
+        {
+          "feature": "toasts"
+        }
+      ],
+      "note": "Near: the toasts switch hides all of the widget toasts, not just trading ones."
+    },
+    {
+      "kind": "featureset",
+      "name": "watchlist_context_menu",
+      "to": [],
+      "note": "No equivalent switch."
+    },
+    {
+      "kind": "featureset",
+      "name": "watchlist_import_export",
+      "to": [],
+      "note": "No equivalent switch."
+    },
+    {
+      "kind": "featureset",
+      "name": "watchlist_sections",
+      "to": [],
+      "note": "No equivalent switch."
+    },
+    {
+      "kind": "featureset",
+      "name": "prefer_quote_short_name",
+      "to": [],
+      "note": "No equivalent switch."
+    },
+    {
+      "kind": "featureset",
+      "name": "watchlist_cross_tab_sync",
+      "to": [],
+      "note": "No equivalent switch."
+    }
+  ]
+}

@@ -1,6 +1,7 @@
 import { CATALOG, TARGETS, type Catalog, type IndicatorEntry, type OptionEntry, type Target } from './catalog.js';
 import { closest } from './similar.js';
 import { validateFinanceOptions, validateOptions } from './validate.js';
+import { MIGRATION_TOOLS } from './migration/tools.js';
 
 /** What a tool answers: data for clients that read structured content, and the same as text for the rest. */
 export interface ToolResult {
@@ -266,6 +267,8 @@ export const TOOLS: readonly ToolDefinition[] = [
       return { text: [...lines, ...result.notes.map((n) => `Note: ${n}`)].join('\n'), data: result };
     },
   },
+  // Moving an app from another chart library: a plan, its names looked up, its options converted.
+  ...MIGRATION_TOOLS,
 ];
 
 /** Runs a tool by name. Bad arguments come back as a tool error the agent can read and fix. */

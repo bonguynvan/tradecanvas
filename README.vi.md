@@ -113,11 +113,13 @@ claude mcp add tradecanvas -- npx -y @tradecanvas/mcp
 
 Trên Windows (không qua WSL): `claude mcp add tradecanvas -- cmd /c npx -y @tradecanvas/mcp`. Trong Git Bash, nơi Claude Code chạy các lệnh `!` trên Windows, hãy viết `//c`: Git Bash đổi `/c` thành một đường dẫn.
 
+Đang chuyển một app từ charting library của TradingView hoặc Lightweight Charts? Cũng server đó đối chiếu option, featureset, override, study, drawing và method của chúng (`migration_plan`, `migration_lookup`, `convert_widget_options`), còn `feedFromJsApi` giữ nguyên datafeed ([Chuyển từ TradingView](https://tradecanvas.dev/vi/docs/from-tradingview/)).
+
 Đo được, không phải tự nhận: trên 24 task, agent có skill hoàn thành mọi lượt chạy (48 trên 48, không có skill là 47 trên 48), mất 10 lượt thay vì 15 và 169k token thay vì 221k, và chỉ phải đọc mã đã biên dịch ở 1 trên 48 lượt thay vì 6 ([lượt chạy](evals/baselines/2026-11-13-sonnet.md), trên bản 2.1.1; các task và những gì chúng phát hiện nằm trong [`evals`](evals/README.md)).
 
 ## Tài liệu
 
-[Bắt đầu](https://tradecanvas.dev/vi/docs/getting-started/) · [API](https://tradecanvas.dev/vi/docs/api/) · [Chỉ báo](https://tradecanvas.dev/vi/docs/indicators/) · [Công cụ vẽ](https://tradecanvas.dev/vi/docs/drawing-tools/) · [Thời gian thực](https://tradecanvas.dev/vi/docs/realtime/) · [Giao dịch](https://tradecanvas.dev/vi/docs/trading/) · [Giao diện](https://tradecanvas.dev/vi/docs/styling/) · [Framework](https://tradecanvas.dev/vi/docs/frameworks/) · [Plugin](https://tradecanvas.dev/vi/docs/plugins/) · [Điện thoại và ứng dụng](https://tradecanvas.dev/vi/docs/embed/#mobile-app) · [Hiệu năng](https://tradecanvas.dev/vi/docs/performance/)
+[Bắt đầu](https://tradecanvas.dev/vi/docs/getting-started/) · [Chuyển từ TradingView](https://tradecanvas.dev/vi/docs/from-tradingview/) · [API](https://tradecanvas.dev/vi/docs/api/) · [Chỉ báo](https://tradecanvas.dev/vi/docs/indicators/) · [Công cụ vẽ](https://tradecanvas.dev/vi/docs/drawing-tools/) · [Thời gian thực](https://tradecanvas.dev/vi/docs/realtime/) · [Giao dịch](https://tradecanvas.dev/vi/docs/trading/) · [Giao diện](https://tradecanvas.dev/vi/docs/styling/) · [Framework](https://tradecanvas.dev/vi/docs/frameworks/) · [Plugin](https://tradecanvas.dev/vi/docs/plugins/) · [Điện thoại và ứng dụng](https://tradecanvas.dev/vi/docs/embed/#mobile-app) · [Hiệu năng](https://tradecanvas.dev/vi/docs/performance/)
 
 Tài liệu có bằng English, Tiếng Việt, 简体中文, 日本語, 한국어 và Español. Số đo, giới hạn và cách kiểm thử nằm ở [audit hệ thống](https://tradecanvas.dev/vi/audit/).
 

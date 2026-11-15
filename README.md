@@ -119,11 +119,13 @@ claude mcp add tradecanvas -- npx -y @tradecanvas/mcp
 
 On Windows outside WSL: `claude mcp add tradecanvas -- cmd /c npx -y @tradecanvas/mcp`. In Git Bash, which runs the `!` commands of Claude Code on Windows, write `//c`: Git Bash turns `/c` into a path.
 
+Moving an app from TradingView's charting library or Lightweight Charts? The same server maps their options, featuresets, overrides, studies, drawings and methods (`migration_plan`, `migration_lookup`, `convert_widget_options`), and `feedFromJsApi` keeps the datafeed as it is ([Moving from TradingView](https://tradecanvas.dev/docs/from-tradingview/)).
+
 Measured, not claimed: on 24 tasks an agent with the skill finished every run (48 of 48, and 47 of 48 without it), in 10 turns against 15 and 169k tokens against 221k, and went reading the compiled code in 1 run of 48 against 6 ([the run](evals/baselines/2026-11-13-sonnet.md), on 2.1.1; the tasks and what they turned up are in [`evals`](evals/README.md)).
 
 ## Documentation
 
-[Getting started](https://tradecanvas.dev/docs/getting-started/) · [API](https://tradecanvas.dev/docs/api/) · [Indicators](https://tradecanvas.dev/docs/indicators/) · [Drawing tools](https://tradecanvas.dev/docs/drawing-tools/) · [Realtime](https://tradecanvas.dev/docs/realtime/) · [Trading](https://tradecanvas.dev/docs/trading/) · [Styling](https://tradecanvas.dev/docs/styling/) · [Frameworks](https://tradecanvas.dev/docs/frameworks/) · [Plugins](https://tradecanvas.dev/docs/plugins/) · [Phones and apps](https://tradecanvas.dev/docs/embed/#mobile-app) · [Performance](https://tradecanvas.dev/docs/performance/)
+[Getting started](https://tradecanvas.dev/docs/getting-started/) · [From TradingView](https://tradecanvas.dev/docs/from-tradingview/) · [API](https://tradecanvas.dev/docs/api/) · [Indicators](https://tradecanvas.dev/docs/indicators/) · [Drawing tools](https://tradecanvas.dev/docs/drawing-tools/) · [Realtime](https://tradecanvas.dev/docs/realtime/) · [Trading](https://tradecanvas.dev/docs/trading/) · [Styling](https://tradecanvas.dev/docs/styling/) · [Frameworks](https://tradecanvas.dev/docs/frameworks/) · [Plugins](https://tradecanvas.dev/docs/plugins/) · [Phones and apps](https://tradecanvas.dev/docs/embed/#mobile-app) · [Performance](https://tradecanvas.dev/docs/performance/)
 
 The docs are in English, Tiếng Việt, 简体中文, 日本語, 한국어 and Español. Measurements, limits and how it is tested are on the [system audit](https://tradecanvas.dev/audit/).
 

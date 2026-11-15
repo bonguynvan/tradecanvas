@@ -1,0 +1,1391 @@
+{
+  "source": "tradingview",
+  "docs": "https://www.tradingview.com/charting-library-docs/latest/ui_elements/indicators/Indicators-List, https://www.tradingview.com/charting-library-docs/latest/ui_elements/indicators/, https://www.tradingview.com/charting-library-docs/latest/api/interfaces/Charting_Library.StudyOverrides (input names and defaults), https://www.tradingview.com/charting-library-docs/latest/customization/overrides/indicator-overrides, https://www.tradingview.com/charting-library-docs/latest/api/interfaces/Charting_Library.IChartWidgetApi; read 2026-11",
+  "entries": [
+    {
+      "kind": "study",
+      "name": "52 Week High/Low",
+      "to": [],
+      "note": "No built-in; write an IndicatorPlugin (Chart.plugins). chart.setHighLowLines(true) marks only the high and low on screen."
+    },
+    {
+      "kind": "study",
+      "name": "Accelerator Oscillator",
+      "to": [
+        {
+          "indicator": "ac"
+        }
+      ]
+    },
+    {
+      "kind": "study",
+      "name": "Accumulation/Distribution",
+      "to": [
+        {
+          "indicator": "ad"
+        }
+      ]
+    },
+    {
+      "kind": "study",
+      "name": "Accumulative Swing Index",
+      "to": [
+        {
+          "indicator": "asi",
+          "params": {
+            "limit move value": "limit"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "study",
+      "name": "Advance/Decline",
+      "to": [
+        {
+          "indicator": "advdecline",
+          "params": {
+            "length": "length"
+          }
+        }
+      ],
+      "note": "Counts, over the last length bars, those closing above their open against those closing below."
+    },
+    {
+      "kind": "study",
+      "name": "Arnaud Legoux Moving Average",
+      "to": [
+        {
+          "indicator": "alma",
+          "params": {
+            "window size": "period",
+            "offset": "offset",
+            "sigma": "sigma"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "study",
+      "name": "Aroon",
+      "to": [
+        {
+          "indicator": "aroon",
+          "params": {
+            "length": "period"
+          }
+        }
+      ],
+      "note": "Default period 25 (TV 14)."
+    },
+    {
+      "kind": "study",
+      "name": "Average Directional Index",
+      "to": [
+        {
+          "indicator": "adx",
+          "params": {
+            "di length": "period"
+          }
+        }
+      ],
+      "note": "One period serves the DI length and the ADX smoothing. Also draws +DI and −DI; hide them in the indicator style."
+    },
+    {
+      "kind": "study",
+      "name": "Average Price",
+      "to": [
+        {
+          "indicator": "avgprice"
+        }
+      ],
+      "note": "No other-symbol input."
+    },
+    {
+      "kind": "study",
+      "name": "Average True Range",
+      "to": [
+        {
+          "indicator": "atr",
+          "params": {
+            "length": "period"
+          }
+        }
+      ],
+      "note": "Wilder's smoothing."
+    },
+    {
+      "kind": "study",
+      "name": "Awesome Oscillator",
+      "to": [
+        {
+          "indicator": "ao"
+        }
+      ]
+    },
+    {
+      "kind": "study",
+      "name": "Balance of Power",
+      "to": [
+        {
+          "indicator": "bop"
+        }
+      ],
+      "note": "TradeCanvas smooths it with an SMA (smooth: 14); set smooth: 1 for the raw value."
+    },
+    {
+      "kind": "study",
+      "name": "Bollinger Bands",
+      "to": [
+        {
+          "indicator": "bb",
+          "params": {
+            "length": "period",
+            "mult": "stdDev"
+          }
+        }
+      ],
+      "note": "TV's basis line is the plot 'middle'."
+    },
+    {
+      "kind": "study",
+      "name": "Bollinger Bands %B",
+      "to": [
+        {
+          "indicator": "bbpb",
+          "params": {
+            "length": "period",
+            "mult": "stdDev"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "study",
+      "name": "Bollinger Bands Width",
+      "to": [
+        {
+          "indicator": "bbw",
+          "params": {
+            "length": "period",
+            "mult": "stdDev"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "study",
+      "name": "Chaikin Money Flow",
+      "to": [
+        {
+          "indicator": "cmf",
+          "params": {
+            "length": "period"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "study",
+      "name": "Chaikin Oscillator",
+      "to": [
+        {
+          "indicator": "chaikinOsc",
+          "params": {
+            "short": "fast",
+            "long": "slow"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "study",
+      "name": "Chaikin Volatility",
+      "to": [
+        {
+          "indicator": "chaikinvol",
+          "params": {
+            "periods": "ema",
+            "rate of change lookback": "roc"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "study",
+      "name": "Chande Kroll Stop",
+      "to": [
+        {
+          "indicator": "cks",
+          "params": {
+            "p": "p",
+            "x": "x",
+            "q": "q"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "study",
+      "name": "Chande Momentum Oscillator",
+      "to": [
+        {
+          "indicator": "cmo",
+          "params": {
+            "length": "period"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "study",
+      "name": "Chop Zone",
+      "to": [
+        {
+          "indicator": "chopzone"
+        }
+      ],
+      "note": "Fixed 34-bar EMA slope scaled by the 30-bar range; no inputs."
+    },
+    {
+      "kind": "study",
+      "name": "Choppiness Index",
+      "to": [
+        {
+          "indicator": "chop",
+          "params": {
+            "length": "period"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "study",
+      "name": "Commodity Channel Index",
+      "to": [
+        {
+          "indicator": "cci",
+          "params": {
+            "length": "period"
+          }
+        }
+      ],
+      "note": "No smoothing line."
+    },
+    {
+      "kind": "study",
+      "name": "Connors RSI",
+      "to": [
+        {
+          "indicator": "crsi",
+          "params": {
+            "rsi length": "rsiPeriod",
+            "updown length": "streakPeriod",
+            "roc length": "rankPeriod"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "study",
+      "name": "Coppock Curve",
+      "to": [
+        {
+          "indicator": "coppock",
+          "params": {
+            "long roc length": "longRoc",
+            "short roc length": "shortRoc",
+            "wma length": "wma"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "study",
+      "name": "Correlation Coefficient",
+      "to": [
+        {
+          "api": "widget.addCompareSymbol(symbol, 'correlation')"
+        }
+      ],
+      "note": "A compare of the widget, not an indicator id; the other symbol is the first argument."
+    },
+    {
+      "kind": "study",
+      "name": "Correlation - Log",
+      "to": [
+        {
+          "api": "widget.addCompareSymbol(symbol, 'correlationLog')"
+        }
+      ],
+      "note": "A compare of the widget, not an indicator id; the other symbol is the first argument."
+    },
+    {
+      "kind": "study",
+      "name": "Detrended Price Oscillator",
+      "to": [
+        {
+          "indicator": "dpo",
+          "params": {
+            "period": "period"
+          }
+        }
+      ],
+      "note": "Default period 20 (TV 21); no centred mode."
+    },
+    {
+      "kind": "study",
+      "name": "Directional Movement",
+      "to": [
+        {
+          "indicator": "adx",
+          "params": {
+            "di length": "period"
+          }
+        }
+      ],
+      "note": "The adx indicator draws ADX, +DI and −DI; one period serves the DI length and the ADX smoothing."
+    },
+    {
+      "kind": "study",
+      "name": "Donchian Channels",
+      "to": [
+        {
+          "indicator": "donchian",
+          "params": {
+            "length": "period"
+          }
+        }
+      ],
+      "note": "No offset input."
+    },
+    {
+      "kind": "study",
+      "name": "Double EMA",
+      "to": [
+        {
+          "indicator": "dema",
+          "params": {
+            "length": "period"
+          }
+        }
+      ],
+      "note": "Default period 20 (TV 9)."
+    },
+    {
+      "kind": "study",
+      "name": "Ease of Movement",
+      "to": [
+        {
+          "indicator": "emv",
+          "params": {
+            "length": "period"
+          }
+        }
+      ],
+      "note": "No divisor: values are not divided by 10000 as in TV, so the scale differs."
+    },
+    {
+      "kind": "study",
+      "name": "Elder's Force Index",
+      "to": [
+        {
+          "indicator": "fi",
+          "params": {
+            "length": "period"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "study",
+      "name": "EMA Cross",
+      "to": [
+        {
+          "indicator": "macross",
+          "params": {
+            "short": "fast",
+            "long": "slow"
+          }
+        }
+      ],
+      "note": "Pass type: 'ema'. Default slow 21 (TV 26). TV spells the override keys short:input / long:input."
+    },
+    {
+      "kind": "study",
+      "name": "Envelopes",
+      "to": [
+        {
+          "indicator": "envelope",
+          "params": {
+            "length": "period",
+            "source": "source"
+          }
+        }
+      ],
+      "note": "One percent for both bands (default 2.5; TV 10 each) around an SMA; no EMA/WMA method."
+    },
+    {
+      "kind": "study",
+      "name": "Fisher Transform",
+      "to": [
+        {
+          "indicator": "fisher",
+          "params": {
+            "length": "period"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "study",
+      "name": "Guppy Multiple Moving Average",
+      "to": [
+        {
+          "indicator": "gmma"
+        }
+      ],
+      "note": "Fixed EMA lengths 3–15 and 30–60, the TV defaults; they cannot be changed."
+    },
+    {
+      "kind": "study",
+      "name": "Historical Volatility",
+      "to": [
+        {
+          "indicator": "hv",
+          "params": {
+            "length": "period"
+          }
+        }
+      ],
+      "note": "Annualised by √annual, bars per year (default 365); set 252 for stock dailies."
+    },
+    {
+      "kind": "study",
+      "name": "Hull Moving Average",
+      "to": [
+        {
+          "indicator": "hma",
+          "params": {
+            "length": "period"
+          }
+        }
+      ],
+      "note": "Default period 21 (TV 9)."
+    },
+    {
+      "kind": "study",
+      "name": "Ichimoku Cloud",
+      "to": [
+        {
+          "indicator": "ichimoku",
+          "params": {
+            "conversion line periods": "tenkan",
+            "base line periods": "kijun",
+            "leading span periods": "senkou",
+            "leading shift periods": "displacement"
+          }
+        }
+      ],
+      "note": "One displacement shifts both the leading spans and the lagging span."
+    },
+    {
+      "kind": "study",
+      "name": "Keltner Channels",
+      "to": [
+        {
+          "indicator": "keltner",
+          "params": {
+            "length": "emaPeriod",
+            "mult": "multiplier"
+          }
+        }
+      ],
+      "note": "EMA basis with a separate atrPeriod (10) and multiplier 1.5; TV uses length for both, mult 1. Set atrPeriod to length."
+    },
+    {
+      "kind": "study",
+      "name": "Klinger Oscillator",
+      "to": [
+        {
+          "indicator": "kvo"
+        }
+      ]
+    },
+    {
+      "kind": "study",
+      "name": "Know Sure Thing",
+      "to": [
+        {
+          "indicator": "kst",
+          "params": {
+            "roclen1": "roc1",
+            "roclen2": "roc2",
+            "roclen3": "roc3",
+            "roclen4": "roc4",
+            "smalen1": "sma1",
+            "smalen2": "sma2",
+            "smalen3": "sma3",
+            "smalen4": "sma4",
+            "siglen": "signal"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "study",
+      "name": "Least Squares Moving Average",
+      "to": [
+        {
+          "indicator": "lsma",
+          "params": {
+            "length": "period",
+            "offset": "offset"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "study",
+      "name": "Linear Regression Curve",
+      "to": [
+        {
+          "indicator": "lsma",
+          "params": {
+            "length": "period"
+          }
+        }
+      ],
+      "note": "The least squares moving average is the regression curve; default period 25 (TV 9)."
+    },
+    {
+      "kind": "study",
+      "name": "Linear Regression Slope",
+      "to": [
+        {
+          "indicator": "lrslope",
+          "params": {
+            "periods": "period"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "study",
+      "name": "MA Cross",
+      "to": [
+        {
+          "indicator": "macross",
+          "params": {
+            "short": "fast",
+            "long": "slow"
+          }
+        }
+      ],
+      "note": "Default slow 21 (TV 26). TV spells the override keys short:input / long:input."
+    },
+    {
+      "kind": "study",
+      "name": "MA with EMA Cross",
+      "to": [
+        {
+          "indicator": "macross",
+          "params": {
+            "length ma": "fast",
+            "length ema": "slow"
+          }
+        }
+      ],
+      "note": "Pass type: 'sma-ema' (fast is the SMA, slow the EMA). Defaults 9/21 (TV 10/10)."
+    },
+    {
+      "kind": "study",
+      "name": "Mass Index",
+      "to": [
+        {
+          "indicator": "massindex",
+          "params": {
+            "length": "sum"
+          }
+        }
+      ],
+      "note": "Sum length default 25 (TV 10)."
+    },
+    {
+      "kind": "study",
+      "name": "McGinley Dynamic",
+      "to": [
+        {
+          "indicator": "mcginley",
+          "params": {
+            "length": "period"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "study",
+      "name": "Median Price",
+      "to": [
+        {
+          "indicator": "medprice"
+        }
+      ]
+    },
+    {
+      "kind": "study",
+      "name": "Momentum",
+      "to": [
+        {
+          "indicator": "mom",
+          "params": {
+            "length": "period",
+            "source": "source"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "study",
+      "name": "Money Flow Index",
+      "to": [
+        {
+          "indicator": "mfi",
+          "params": {
+            "length": "period"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "study",
+      "name": "Moving Average",
+      "to": [
+        {
+          "indicator": "sma",
+          "params": {
+            "length": "period",
+            "source": "source"
+          }
+        }
+      ],
+      "note": "Default period 20 (TV 9). No offset or smoothing line."
+    },
+    {
+      "kind": "study",
+      "name": "Moving Average Channel",
+      "to": [
+        {
+          "indicator": "machannel",
+          "params": {
+            "upper length": "upperLength",
+            "lower length": "lowerLength",
+            "upper offset": "upperOffset",
+            "lower offset": "lowerOffset"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "study",
+      "name": "MACD",
+      "to": [
+        {
+          "indicator": "macd",
+          "params": {
+            "fast length": "fast",
+            "slow length": "slow",
+            "signal length": "signal",
+            "source": "source",
+            "in_0": "fast",
+            "in_1": "slow",
+            "in_2": "signal",
+            "in_3": "source"
+          }
+        }
+      ],
+      "note": "EMA oscillator and signal only (no SMA type). Plots histogram, macd, signal. in_0…in_3 as in the TV docs example."
+    },
+    {
+      "kind": "study",
+      "name": "Moving Average Exponential",
+      "to": [
+        {
+          "indicator": "ema",
+          "params": {
+            "length": "period",
+            "source": "source"
+          }
+        }
+      ],
+      "note": "Default period 20 (TV 9). No offset or smoothing line."
+    },
+    {
+      "kind": "study",
+      "name": "Moving Average Weighted",
+      "to": [
+        {
+          "indicator": "wma",
+          "params": {
+            "length": "period",
+            "source": "source"
+          }
+        }
+      ],
+      "note": "Default period 20 (TV 9). No offset."
+    },
+    {
+      "kind": "study",
+      "name": "Moving Average Double",
+      "to": [
+        {
+          "indicator": "madouble",
+          "params": {
+            "1st period": "first",
+            "2nd period": "second"
+          }
+        }
+      ],
+      "note": "TV method Simple/Exponential/Weighted → type 'sma'/'ema'/'wma'. Defaults 20/50 (TV 14/21)."
+    },
+    {
+      "kind": "study",
+      "name": "Moving Average Triple",
+      "to": [
+        {
+          "indicator": "matriple",
+          "params": {
+            "1st period": "first",
+            "2nd period": "second",
+            "3rd period": "third"
+          }
+        }
+      ],
+      "note": "TV method Simple/Exponential/Weighted → type 'sma'/'ema'/'wma'. Defaults 10/20/50 (TV 14/21/35)."
+    },
+    {
+      "kind": "study",
+      "name": "Moving Average Adaptive",
+      "to": [
+        {
+          "indicator": "kama",
+          "params": {
+            "period": "period"
+          }
+        }
+      ],
+      "note": "Kaufman's adaptive average; fast 2 and slow 30 are inputs of their own."
+    },
+    {
+      "kind": "study",
+      "name": "Moving Average Hamming",
+      "to": [
+        {
+          "indicator": "hamming",
+          "params": {
+            "period": "period"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "study",
+      "name": "Moving Average Multiple",
+      "to": [
+        {
+          "indicator": "maribbon",
+          "params": {
+            "1st period": "ma1",
+            "2nd period": "ma2",
+            "3rd period": "ma3",
+            "4th period": "ma4"
+          }
+        }
+      ],
+      "note": "Four lines, not six (add an sma for the rest, or use rainbow). exponential: 1 for EMAs. Defaults 20/50/100/200."
+    },
+    {
+      "kind": "study",
+      "name": "Majority Rule",
+      "to": [
+        {
+          "indicator": "majority",
+          "params": {
+            "rolling period": "period"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "study",
+      "name": "Net Volume",
+      "to": [
+        {
+          "indicator": "netvolume"
+        }
+      ]
+    },
+    {
+      "kind": "study",
+      "name": "On Balance Volume",
+      "to": [
+        {
+          "indicator": "obv"
+        }
+      ],
+      "note": "No smoothing line."
+    },
+    {
+      "kind": "study",
+      "name": "Parabolic SAR",
+      "to": [
+        {
+          "indicator": "psar",
+          "params": {
+            "increment": "step",
+            "maximum": "max"
+          }
+        }
+      ],
+      "note": "The step is also the starting factor; there is no separate start."
+    },
+    {
+      "kind": "study",
+      "name": "Pivot Points Standard",
+      "to": [
+        {
+          "indicator": "pivots",
+          "params": {
+            "type": "type"
+          }
+        }
+      ],
+      "note": "Types are lower case ('traditional'…; DeMark is 'dm', no Floor). Pivots come from the last lookback bars, not a pivot timeframe."
+    },
+    {
+      "kind": "study",
+      "name": "Price Channel",
+      "to": [
+        {
+          "indicator": "donchian",
+          "params": {
+            "length": "period",
+            "in_0": "period"
+          }
+        }
+      ],
+      "note": "Highest high / lowest low channel; no offset. in_0 as in the TV docs example."
+    },
+    {
+      "kind": "study",
+      "name": "Price Oscillator",
+      "to": [
+        {
+          "indicator": "po",
+          "params": {
+            "shortlen": "short",
+            "longlen": "long"
+          }
+        }
+      ],
+      "note": "In price units (short SMA minus long SMA); for a percentage line use ppo."
+    },
+    {
+      "kind": "study",
+      "name": "Price Volume Trend",
+      "to": [
+        {
+          "indicator": "pvt"
+        }
+      ]
+    },
+    {
+      "kind": "study",
+      "name": "Rank Correlation Index",
+      "to": [],
+      "note": "No built-in; write an IndicatorPlugin (Chart.plugins)."
+    },
+    {
+      "kind": "study",
+      "name": "Rate Of Change",
+      "to": [
+        {
+          "indicator": "roc",
+          "params": {
+            "length": "period"
+          }
+        }
+      ],
+      "note": "Default period 12 (TV 9)."
+    },
+    {
+      "kind": "study",
+      "name": "Ratio",
+      "to": [
+        {
+          "api": "widget.addCompareSymbol(symbol, 'ratio')"
+        }
+      ],
+      "note": "A compare of the widget, not an indicator id; the other symbol is the first argument."
+    },
+    {
+      "kind": "study",
+      "name": "Relative Strength Index",
+      "to": [
+        {
+          "indicator": "rsi",
+          "params": {
+            "length": "period"
+          }
+        }
+      ],
+      "note": "Wilder's smoothing. No smoothing line."
+    },
+    {
+      "kind": "study",
+      "name": "Relative Vigor Index",
+      "to": [
+        {
+          "indicator": "rvi",
+          "params": {
+            "length": "period"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "study",
+      "name": "Relative Volatility Index",
+      "to": [
+        {
+          "indicator": "rvix",
+          "params": {
+            "length": "period"
+          }
+        }
+      ],
+      "note": "Its smoothing (smooth: 14) is an input of its own."
+    },
+    {
+      "kind": "study",
+      "name": "Standard Error",
+      "to": [
+        {
+          "indicator": "stderror",
+          "params": {
+            "length": "period"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "study",
+      "name": "Standard Error Bands",
+      "to": [
+        {
+          "indicator": "seb",
+          "params": {
+            "periods": "period",
+            "standard errors": "mult",
+            "averaging periods": "smooth"
+          }
+        }
+      ],
+      "note": "No method choice."
+    },
+    {
+      "kind": "study",
+      "name": "SMI Ergodic Indicator/Oscillator",
+      "to": [
+        {
+          "indicator": "smiergodic",
+          "params": {
+            "shortlen": "short",
+            "longlen": "long",
+            "siglen": "signal"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "study",
+      "name": "Smoothed Moving Average",
+      "to": [
+        {
+          "indicator": "smma",
+          "params": {
+            "length": "period",
+            "source": "source"
+          }
+        }
+      ],
+      "note": "Default period 14 (TV 7)."
+    },
+    {
+      "kind": "study",
+      "name": "Standard Deviation",
+      "to": [
+        {
+          "indicator": "stddev",
+          "params": {
+            "periods": "period"
+          }
+        }
+      ],
+      "note": "Default period 20 (TV 5). No deviations multiplier: scale the value yourself."
+    },
+    {
+      "kind": "study",
+      "name": "Stochastic",
+      "to": [
+        {
+          "indicator": "stochastic",
+          "params": {
+            "%k length": "kPeriod",
+            "%k smoothing": "smooth",
+            "%d smoothing": "dPeriod",
+            "in_0": "kPeriod"
+          }
+        }
+      ],
+      "note": "%K smoothing default 3 (TV 1): set smooth: 1 for the TV look. Plots k, d. in_0 as in the TV docs example."
+    },
+    {
+      "kind": "study",
+      "name": "Stochastic RSI",
+      "to": [
+        {
+          "indicator": "stochrsi",
+          "params": {
+            "lengthrsi": "rsiPeriod",
+            "lengthstoch": "stochPeriod",
+            "smoothk": "k",
+            "smoothd": "d"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "study",
+      "name": "Session Volume Profile",
+      "to": [],
+      "note": "No per-session volume profile. chart.setMarketProfileConfig({ splitBySession: true }) gives a TPO profile per session instead."
+    },
+    {
+      "kind": "study",
+      "name": "SuperTrend",
+      "to": [
+        {
+          "indicator": "supertrend",
+          "params": {
+            "length": "period",
+            "factor": "multiplier"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "study",
+      "name": "Spread",
+      "to": [
+        {
+          "api": "widget.addCompareSymbol(symbol, 'spread')"
+        }
+      ],
+      "note": "A compare of the widget, not an indicator id; the other symbol is the first argument."
+    },
+    {
+      "kind": "study",
+      "name": "TRIX",
+      "to": [
+        {
+          "indicator": "trix",
+          "params": {
+            "length": "period"
+          }
+        }
+      ],
+      "note": "Default period 15 (TV 18); adds a signal line (signal: 9)."
+    },
+    {
+      "kind": "study",
+      "name": "Triple EMA",
+      "to": [
+        {
+          "indicator": "tema",
+          "params": {
+            "length": "period"
+          }
+        }
+      ],
+      "note": "Default period 20 (TV 9)."
+    },
+    {
+      "kind": "study",
+      "name": "True Strength Indicator",
+      "to": [
+        {
+          "indicator": "tsi",
+          "params": {
+            "long": "longPeriod",
+            "short": "shortPeriod",
+            "siglen": "signalPeriod"
+          }
+        }
+      ],
+      "note": "Signal period default 7 (TV 13)."
+    },
+    {
+      "kind": "study",
+      "name": "Trend Strength Index",
+      "to": [
+        {
+          "indicator": "trendstrength",
+          "params": {
+            "periods": "period"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "study",
+      "name": "Typical Price",
+      "to": [
+        {
+          "indicator": "typprice"
+        }
+      ]
+    },
+    {
+      "kind": "study",
+      "name": "Ultimate Oscillator",
+      "to": [
+        {
+          "indicator": "uo",
+          "params": {
+            "length7": "fast",
+            "length14": "mid",
+            "length28": "slow"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "study",
+      "name": "Volatility Close-to-Close",
+      "to": [
+        {
+          "indicator": "hv",
+          "params": {
+            "periods": "period",
+            "days per year": "annual"
+          }
+        }
+      ],
+      "note": "Historical volatility of closes; annual is bars per year (default 365)."
+    },
+    {
+      "kind": "study",
+      "name": "Volatility Zero Trend Close-to-Close",
+      "to": [
+        {
+          "indicator": "volzt",
+          "params": {
+            "periods": "period",
+            "days per year": "annual"
+          }
+        }
+      ],
+      "note": "annual is bars per year (default 365)."
+    },
+    {
+      "kind": "study",
+      "name": "Volatility O-H-L-C",
+      "to": [
+        {
+          "indicator": "volohlc",
+          "params": {
+            "periods": "period",
+            "days per year": "annual"
+          }
+        }
+      ],
+      "note": "annual default 365 (TV 252). No market-closed percentage."
+    },
+    {
+      "kind": "study",
+      "name": "Volatility Index",
+      "to": [
+        {
+          "indicator": "volindex",
+          "params": {
+            "periods": "period",
+            "atr mult": "mult"
+          }
+        }
+      ],
+      "note": "Wilder's smoothing only (no method). Default period 7 (TV 10)."
+    },
+    {
+      "kind": "study",
+      "name": "VWAP",
+      "to": [
+        {
+          "indicator": "vwap",
+          "params": {
+            "anchor period": "anchor"
+          }
+        }
+      ],
+      "note": "Anchors are lower case: 'session', 'week', 'month', or 'all'; no quarter, year or earnings anchors, no bands."
+    },
+    {
+      "kind": "study",
+      "name": "VWMA",
+      "to": [
+        {
+          "indicator": "vwma",
+          "params": {
+            "len": "period"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "study",
+      "name": "Volume Oscillator",
+      "to": [
+        {
+          "indicator": "vo",
+          "params": {
+            "shortlen": "short",
+            "longlen": "long"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "study",
+      "name": "Volume Profile Fixed Range",
+      "to": [
+        {
+          "drawing": "volumeProfileRange"
+        }
+      ],
+      "note": "A drawing tool between two times, not an indicator."
+    },
+    {
+      "kind": "study",
+      "name": "Volume Profile Visible Range",
+      "to": [
+        {
+          "indicator": "volumeProfile",
+          "params": {
+            "row size": "rows"
+          }
+        }
+      ],
+      "note": "Profiles the bars loaded, in rows; chart.setVolumeProfileVisible(true) is the chart-level profile."
+    },
+    {
+      "kind": "study",
+      "name": "Vortex Indicator",
+      "to": [
+        {
+          "indicator": "vortex",
+          "params": {
+            "period": "period"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "study",
+      "name": "Volume",
+      "to": [
+        {
+          "option": "Chart.features.volume"
+        },
+        {
+          "api": "chart.setVolumeVisible(true)"
+        }
+      ],
+      "note": "Bars in a band of the price pane, not an indicator. Colours: volume.upColor / volume.downColor; no volume MA. Other indicators take colours via their style."
+    },
+    {
+      "kind": "study",
+      "name": "Williams %R",
+      "to": [
+        {
+          "indicator": "williamsR",
+          "params": {
+            "length": "period"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "study",
+      "name": "Williams Alligator",
+      "to": [
+        {
+          "indicator": "alligator",
+          "params": {
+            "jaw length": "jaw",
+            "teeth length": "teeth",
+            "lips length": "lips",
+            "jaw offset": "jawShift",
+            "teeth offset": "teethShift",
+            "lips offset": "lipsShift"
+          }
+        }
+      ],
+      "note": "Lengths default 13/8/5 (TV 21/13/8); shifts 8/5/3 match."
+    },
+    {
+      "kind": "study",
+      "name": "Williams Fractal",
+      "to": [
+        {
+          "indicator": "fractals",
+          "params": {
+            "periods": "period"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "study",
+      "name": "Zig Zag",
+      "to": [
+        {
+          "indicator": "zigzag",
+          "params": {
+            "deviation": "deviation"
+          }
+        }
+      ],
+      "note": "No depth input: pivots come from the deviation alone."
+    },
+    {
+      "kind": "study",
+      "name": "Compare",
+      "to": [
+        {
+          "api": "widget.addCompareSymbol(symbol, 'percent')"
+        }
+      ],
+      "note": "Not in the indicators list but createStudy takes it. TV's source input has no equivalent: closes are compared."
+    },
+    {
+      "kind": "study",
+      "name": "Overlay",
+      "to": [
+        {
+          "api": "widget.addCompareSymbol(symbol, 'scale')"
+        }
+      ],
+      "note": "Not in the indicators list but createStudy takes it: the other symbol on a scale of its own."
+    }
+  ]
+}

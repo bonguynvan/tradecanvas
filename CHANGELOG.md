@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+### Moving from another charting library
+
+- **A datafeed written for the callback-style JS API works as it is** (`@tradecanvas/core`, `@tradecanvas/chart`): `feedFromJsApi(datafeed)` makes it a `DataFeed`, for `chart.connect({ feed })` or a widget's `feed` option. It resolves each symbol once and hands its symbol info back to `getBars` and `subscribeBars`; turns timeframes into resolutions (`'1h'` → `'60'`) and the chart's `countBack` and `before` into `from`, `to` and `countBack` in seconds; asks once more from `nextTime` when a range had no bars; unsubscribes with the guid it subscribed with; loads the series again when the datafeed calls `onResetCacheNeeded`; and reads a symbol's `pricescale` and `minmov` as its price step, its `session` as its trading hours and the timeframes it serves from `supported_resolutions`. Search and quotes come through when the datafeed has them. `await feed.ready()` before the chart connects: the chart reads the timeframes a feed serves then, and builds the others from them. `sessionsFromJsApi` and `symbolInfoFromJsApi` do the reading on their own.
+- **A UDF server needs no code** (`@tradecanvas/core`, `@tradecanvas/chart`): `udfFeed({ url })` reads `/config`, `/symbols`, `/search`, `/history` and `/quotes`, and asks again every `updateFrequency` ms (10 s by default) for live bars and quotes. `headers` go with every request.
+- **Resolutions and timeframes** (`@tradecanvas/commons`, `@tradecanvas/chart`): `resolutionToTimeframe('240')` is `'4h'`, `timeframeToResolution('1w')` is `'1W'`.
+- **Three MCP tools for the move** (`@tradecanvas/mcp`): `migration_plan` gives the steps and what to search an app's code for; `migration_lookup` says what one of the old library's names becomes (a widget option, featureset, override key, study, drawing, method, datafeed or broker member, or a resolution), and what to do where there is nothing like it; `convert_widget_options` turns the old widget's whole options object into `ChartWidget` options, or a lighter library's chart options into `Chart` options, with the calls to make afterwards and what has no place. Every TradeCanvas name in their tables is checked against the code on each build.
+
 ## 2.9.0 (2026-11-15)
 
 ### Order book

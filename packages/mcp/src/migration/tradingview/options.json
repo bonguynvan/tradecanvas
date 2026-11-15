@@ -1,0 +1,634 @@
+{
+  "source": "tradingview",
+  "docs": "https://www.tradingview.com/charting-library-docs/latest/core_concepts/Widget-Constructor/, https://www.tradingview.com/charting-library-docs/latest/api/interfaces/Charting_Library.TradingTerminalWidgetOptions; read 2026-11",
+  "entries": [
+    {
+      "kind": "option",
+      "name": "container",
+      "to": [
+        {
+          "api": "new ChartWidget(container, options)"
+        }
+      ],
+      "note": "Pass the element as the first constructor argument. An id string must be looked up with document.getElementById first."
+    },
+    {
+      "kind": "option",
+      "name": "library_path",
+      "to": [],
+      "note": "Nothing to host: TradeCanvas is an npm package bundled with your app. Drop it."
+    },
+    {
+      "kind": "option",
+      "name": "debug",
+      "to": [],
+      "note": "No debug logging switch. Drop it."
+    },
+    {
+      "kind": "option",
+      "name": "symbol",
+      "to": [
+        {
+          "option": "ChartWidget.symbol"
+        }
+      ],
+      "note": "Symbol names are whatever your feed understands; no exchange prefix is needed."
+    },
+    {
+      "kind": "option",
+      "name": "interval",
+      "to": [
+        {
+          "option": "ChartWidget.timeframe",
+          "transform": "resolution"
+        }
+      ]
+    },
+    {
+      "kind": "option",
+      "name": "timeframe",
+      "to": [
+        {
+          "api": "chart.setVisibleRangePreset(preset)"
+        },
+        {
+          "api": "chart.setVisibleRange(fromTimestamp, toTimestamp)"
+        }
+      ],
+      "note": "No option: call one in onReady. Presets are 1D, 5D, 1M, 3M, 6M, YTD, 1Y, 5Y, All. A { from, to } range is in seconds; setVisibleRange takes ms."
+    },
+    {
+      "kind": "option",
+      "name": "time_frames",
+      "to": [
+        {
+          "option": "ChartWidget.rangeBar"
+        }
+      ],
+      "note": "Near: the range bar has fixed presets (1D to All) and picks the interval itself. Your own list and resolutions cannot be set; rangeBar: false hides it."
+    },
+    {
+      "kind": "option",
+      "name": "timezone",
+      "to": [
+        {
+          "option": "ChartWidget.chartOptions.timeZone"
+        }
+      ],
+      "note": "IANA names and 'exchange' carry over as they are. Omit it for the browser's zone."
+    },
+    {
+      "kind": "option",
+      "name": "locale",
+      "to": [
+        {
+          "option": "ChartWidget.locale"
+        }
+      ],
+      "note": "Codes like zh_TW become 'zh-Hant'. Only 'en' and 'vi' are built in; call registerWidgetLocales() for the other 28."
+    },
+    {
+      "kind": "option",
+      "name": "favorites",
+      "to": [
+        {
+          "option": "ChartWidget.drawingFavorites"
+        },
+        {
+          "option": "ChartWidget.chartOptions.features.defaultTimeframeFavorites",
+          "transform": "resolutions"
+        }
+      ],
+      "note": "drawingTools go to drawingFavorites (tool names differ: see the drawing table), intervals to defaultTimeframeFavorites. Chart type and indicator favorites have no equivalent."
+    },
+    {
+      "kind": "option",
+      "name": "datafeed",
+      "to": [
+        {
+          "option": "ChartWidget.feed"
+        }
+      ],
+      "note": "Rewrite it as a DataFeed (getBars, subscribeBars, resolveSymbol); see the datafeed table. Symbol search goes to the searchSymbols option."
+    },
+    {
+      "kind": "option",
+      "name": "additional_symbol_info_fields",
+      "to": [],
+      "note": "The symbol info panel shows fixed fields from SymbolInfo; extra fields cannot be added."
+    },
+    {
+      "kind": "option",
+      "name": "snapshot_url",
+      "to": [
+        {
+          "api": "chart.screenshotBlob()"
+        }
+      ],
+      "note": "No upload endpoint. Take the image with screenshotBlob() and post it to your server yourself."
+    },
+    {
+      "kind": "option",
+      "name": "width",
+      "to": [],
+      "note": "The widget fills its container: give the container element a width in CSS."
+    },
+    {
+      "kind": "option",
+      "name": "height",
+      "to": [],
+      "note": "The widget fills its container: give the container element a height in CSS."
+    },
+    {
+      "kind": "option",
+      "name": "fullscreen",
+      "to": [],
+      "note": "No start-in-fullscreen option: size the container to the window with CSS. widget.toggleFullscreen() uses the browser fullscreen."
+    },
+    {
+      "kind": "option",
+      "name": "autosize",
+      "to": [],
+      "note": "Always on: the widget follows its container size. Drop it."
+    },
+    {
+      "kind": "option",
+      "name": "toolbar_bg",
+      "to": [
+        {
+          "option": "ChartWidget.theme"
+        }
+      ],
+      "note": "Toolbar colours come from the theme and the --tcw-* tokens; set them in a Theme object, not a single colour."
+    },
+    {
+      "kind": "option",
+      "name": "theme",
+      "to": [
+        {
+          "option": "ChartWidget.theme",
+          "transform": "lowercase"
+        }
+      ]
+    },
+    {
+      "kind": "option",
+      "name": "custom_themes",
+      "to": [
+        {
+          "option": "ChartWidget.theme"
+        }
+      ],
+      "note": "Give a Theme object to theme. Colour ramps do not carry over: map the colours you used by hand."
+    },
+    {
+      "kind": "option",
+      "name": "custom_css_url",
+      "to": [],
+      "note": "No CSS URL: load your stylesheet in the page. Widget parts use tcw- classes and --tcw-* tokens."
+    },
+    {
+      "kind": "option",
+      "name": "custom_font_family",
+      "to": [
+        {
+          "option": "ChartWidget.chartOptions.font"
+        }
+      ],
+      "note": "Give { family } for the chart's text. The widget's own type follows ui."
+    },
+    {
+      "kind": "option",
+      "name": "custom_formatters",
+      "to": [
+        {
+          "option": "ChartWidget.chartOptions.priceFormat"
+        },
+        {
+          "option": "ChartWidget.chartOptions.timeFormatter"
+        }
+      ],
+      "note": "Price formatters go to priceFormat (a function), time and date formatters to timeFormatter. The signatures differ: rewrite the functions."
+    },
+    {
+      "kind": "option",
+      "name": "custom_translate_function",
+      "to": [
+        {
+          "option": "ChartWidget.messages"
+        }
+      ],
+      "note": "Give the strings by key (EN_MESSAGES lists them) instead of a function."
+    },
+    {
+      "kind": "option",
+      "name": "numeric_formatting",
+      "to": [
+        {
+          "option": "ChartWidget.chartOptions.numberLocale"
+        }
+      ],
+      "note": "Pick a locale tag (de-DE) whose decimal and grouping marks match; the marks cannot be set one by one."
+    },
+    {
+      "kind": "option",
+      "name": "overrides",
+      "to": [
+        {
+          "option": "ChartWidget.chartOptions.overrides"
+        }
+      ],
+      "note": "Keys differ: map each with the override table. Colours and widths carry over."
+    },
+    {
+      "kind": "option",
+      "name": "settings_overrides",
+      "to": [
+        {
+          "api": "widget.setSettings(patch)"
+        }
+      ],
+      "note": "No option. Set the Chart Settings in onReady with setSettings(); persistSettings keeps what users change."
+    },
+    {
+      "kind": "option",
+      "name": "loading_screen",
+      "to": [],
+      "note": "No loading screen options. Style the container background if needed."
+    },
+    {
+      "kind": "option",
+      "name": "context_menu",
+      "to": [
+        {
+          "option": "ChartWidget.chartMenuItems"
+        },
+        {
+          "option": "ChartWidget.drawingMenuItems"
+        },
+        {
+          "option": "ChartWidget.indicatorMenuItems"
+        }
+      ],
+      "note": "These add your entries at the end of menus. Built-in entries are hidden with menu.* feature switches, not by a function."
+    },
+    {
+      "kind": "option",
+      "name": "time_scale",
+      "to": [
+        {
+          "option": "ChartWidget.chartOptions.minBarUnit"
+        }
+      ],
+      "note": "min_bar_spacing maps to minBarUnit (px per bar slot, default 0.25); rightMargin sets the empty slots at the end."
+    },
+    {
+      "kind": "option",
+      "name": "header_widget_buttons_mode",
+      "to": [
+        {
+          "option": "ChartWidget.ui"
+        }
+      ],
+      "note": "No compact or full mode: the toolbar folds its buttons itself when narrow. ui presets change sizes."
+    },
+    {
+      "kind": "option",
+      "name": "enabled_features",
+      "to": [
+        {
+          "option": "ChartWidget.features"
+        }
+      ],
+      "note": "Map each name with the featureset table. Switches are on by default, so most enabled_features need nothing."
+    },
+    {
+      "kind": "option",
+      "name": "disabled_features",
+      "to": [
+        {
+          "option": "ChartWidget.features"
+        }
+      ],
+      "note": "Map each name with the featureset table and set its switch to false."
+    },
+    {
+      "kind": "option",
+      "name": "study_count_limit",
+      "to": [],
+      "note": "No limit on indicators. Enforce one in your own code if you need it."
+    },
+    {
+      "kind": "option",
+      "name": "studies_access",
+      "to": [
+        {
+          "option": "ChartWidget.chartOptions.features.indicatorIds"
+        }
+      ],
+      "note": "A whitelist of indicator ids. A black list must be turned into the allowed ids; names differ, see the study table."
+    },
+    {
+      "kind": "option",
+      "name": "studies_overrides",
+      "to": [
+        {
+          "api": "chart.setIndicatorDefaults(id, style)"
+        }
+      ],
+      "note": "Sets an indicator's default style by id; default inputs go in addIndicator's params. Keys differ: see the study table."
+    },
+    {
+      "kind": "option",
+      "name": "custom_indicators_getter",
+      "to": [
+        {
+          "api": "chart.registerIndicator(plugin)"
+        }
+      ],
+      "note": "Register each one as an IndicatorPlugin. The custom study constructors must be rewritten."
+    },
+    {
+      "kind": "option",
+      "name": "drawings_access",
+      "to": [
+        {
+          "option": "ChartWidget.chartOptions.features.drawingTools"
+        }
+      ],
+      "note": "A whitelist of drawing types. A black list must be turned into the allowed types; names differ, see the drawing table."
+    },
+    {
+      "kind": "option",
+      "name": "symbol_search_request_delay",
+      "to": [
+        {
+          "option": "ChartWidget.searchSymbols"
+        }
+      ],
+      "note": "No delay option. searchSymbols gets an AbortSignal for stale queries; debounce inside it if you need to."
+    },
+    {
+      "kind": "option",
+      "name": "symbol_search_complete",
+      "to": [],
+      "note": "No hook. Resolve the picked symbol in your feed (resolveSymbol)."
+    },
+    {
+      "kind": "option",
+      "name": "compare_symbols",
+      "to": [
+        {
+          "api": "widget.addCompareSymbol(symbol, way)"
+        }
+      ],
+      "note": "No preset list in the compare dialog; it searches symbols. Add compares in code with addCompareSymbol()."
+    },
+    {
+      "kind": "option",
+      "name": "charts_storage_url",
+      "to": [
+        {
+          "option": "ChartWidget.layouts"
+        }
+      ],
+      "note": "No REST storage. Give layouts: { storage } with a LayoutStorage (list, load, save, remove) that calls your server."
+    },
+    {
+      "kind": "option",
+      "name": "charts_storage_api_version",
+      "to": [],
+      "note": "No REST storage, so no version. Drop it."
+    },
+    {
+      "kind": "option",
+      "name": "client_id",
+      "to": [
+        {
+          "option": "ChartWidget.layouts"
+        }
+      ],
+      "note": "Send it from your own LayoutStorage in layouts: { storage }."
+    },
+    {
+      "kind": "option",
+      "name": "user_id",
+      "to": [
+        {
+          "option": "ChartWidget.layouts"
+        }
+      ],
+      "note": "Send it from your own LayoutStorage in layouts: { storage }."
+    },
+    {
+      "kind": "option",
+      "name": "save_load_adapter",
+      "to": [
+        {
+          "option": "ChartWidget.layouts"
+        }
+      ],
+      "note": "Give layouts: { storage }, a LayoutStorage with list, load, save and remove. Saved layouts from the Charting Library cannot be read."
+    },
+    {
+      "kind": "option",
+      "name": "load_last_chart",
+      "to": [
+        {
+          "option": "ChartWidget.layouts"
+        }
+      ],
+      "note": "Set layouts: { openLast: true }."
+    },
+    {
+      "kind": "option",
+      "name": "auto_save_delay",
+      "to": [
+        {
+          "option": "ChartWidget.layouts"
+        }
+      ],
+      "note": "Set layouts: { debounceMs } in ms (seconds times 1000). Auto-save is on by default."
+    },
+    {
+      "kind": "option",
+      "name": "saved_data",
+      "to": [
+        {
+          "api": "widget.restoreLayout(content)"
+        }
+      ],
+      "note": "The Charting Library layout JSON cannot be read. Save layouts again in TradeCanvas (captureLayout) and give them back with restoreLayout()."
+    },
+    {
+      "kind": "option",
+      "name": "saved_data_meta_info",
+      "to": [],
+      "note": "No equivalent. A saved layout keeps its own name and time."
+    },
+    {
+      "kind": "option",
+      "name": "settings_adapter",
+      "to": [
+        {
+          "option": "ChartWidget.persistSettings"
+        },
+        {
+          "api": "widget.onSettingsChange(listener)"
+        }
+      ],
+      "note": "persistSettings keeps settings in localStorage. For a server, save getSettings() on onSettingsChange and give them back with setSettings()."
+    },
+    {
+      "kind": "option",
+      "name": "custom_chart_description_function",
+      "to": [
+        {
+          "option": "ChartWidget.chartOptions.a11y"
+        }
+      ],
+      "note": "Screen-reader text is built in. Its labels can be translated in a11y.labels but not replaced by a function."
+    },
+    {
+      "kind": "option",
+      "name": "custom_js_urls",
+      "to": [],
+      "note": "No script URLs: import your code in your app."
+    },
+    {
+      "kind": "option",
+      "name": "custom_timezones",
+      "to": [
+        {
+          "option": "ChartWidget.chartOptions.timeZone"
+        }
+      ],
+      "note": "timeZone takes any IANA zone or a fixed offset in minutes; there is no list of extra zones to give."
+    },
+    {
+      "kind": "option",
+      "name": "image_storage_adapter",
+      "to": [
+        {
+          "api": "chart.screenshotBlob()"
+        }
+      ],
+      "note": "No image storage. Take the image with screenshotBlob() and store it yourself."
+    },
+    {
+      "kind": "option",
+      "name": "nonce",
+      "to": [],
+      "note": "No iframe or injected scripts. The widget injects a <style> element, so a strict CSP must allow it."
+    },
+    {
+      "kind": "option",
+      "name": "volume_profile",
+      "to": [
+        {
+          "api": "chart.setVolumeProfileConfig(config)"
+        }
+      ],
+      "note": "Volume profile is built in; turn it on with chart.setVolumeProfileVisible(true). Options differ: buckets, widthRatio, opacity, highlightPoC."
+    },
+    {
+      "kind": "option",
+      "name": "workers",
+      "to": [],
+      "note": "No equivalent. Related: chartOptions.indicatorWorker moves indicator maths off the main thread."
+    },
+    {
+      "kind": "option",
+      "name": "preset",
+      "to": [],
+      "note": "Not in the current interface (older versions had 'mobile'). The widget fits phone widths itself; drop it."
+    },
+    {
+      "kind": "option",
+      "name": "broker_config",
+      "to": [
+        {
+          "option": "ChartWidget.trading"
+        }
+      ],
+      "note": "No broker flags. Trading UI is on with trading (default true); orders and positions come from your execution adapter."
+    },
+    {
+      "kind": "option",
+      "name": "brokerConfig",
+      "to": [
+        {
+          "option": "ChartWidget.trading"
+        }
+      ],
+      "note": "Deprecated name of broker_config. No broker flags; trading UI is on with trading (default true)."
+    },
+    {
+      "kind": "option",
+      "name": "broker_factory",
+      "to": [
+        {
+          "api": "chart.connectExecution(adapter, config)"
+        }
+      ],
+      "note": "Write an ExecutionAdapter instead of a broker class; see the broker table."
+    },
+    {
+      "kind": "option",
+      "name": "debug_broker",
+      "to": [],
+      "note": "No broker logging switch. Drop it."
+    },
+    {
+      "kind": "option",
+      "name": "restConfig",
+      "to": [],
+      "note": "No REST broker. Write an ExecutionAdapter that calls your API."
+    },
+    {
+      "kind": "option",
+      "name": "widgetbar",
+      "to": [
+        {
+          "option": "ChartWidget.watchlist"
+        },
+        {
+          "option": "ChartWidget.symbolInfo"
+        }
+      ],
+      "note": "The dock holds a watchlist (watchlist: true), symbol info, data window, object tree and alerts. There is no details or news widget of its own."
+    },
+    {
+      "kind": "option",
+      "name": "rss_news_feed",
+      "to": [
+        {
+          "option": "ChartWidget.news"
+        }
+      ],
+      "note": "No RSS reader: fetch and parse the feed yourself and return NewsItem[] from news(symbol, limit)."
+    },
+    {
+      "kind": "option",
+      "name": "rss_news_title",
+      "to": [],
+      "note": "No title setting for news. Drop it."
+    },
+    {
+      "kind": "option",
+      "name": "news_provider",
+      "to": [
+        {
+          "option": "ChartWidget.news"
+        }
+      ],
+      "note": "Return NewsItem[] newest first. Headlines show in the symbol info panel, and on the chart with newsMarks."
+    },
+    {
+      "kind": "option",
+      "name": "trading_customization",
+      "to": [],
+      "note": "No equivalent override for order and position lines."
+    }
+  ]
+}

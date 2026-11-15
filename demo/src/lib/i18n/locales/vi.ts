@@ -927,6 +927,7 @@ const vi: SiteMessages = {
       frameworks: 'Framework',
       embed: 'Widget nhúng',
       migration: 'Chuyển sang 2.0',
+      'from-tradingview': 'Chuyển từ TradingView',
       'how-it-works': 'Cách hoạt động',
       api: 'Tham chiếu API',
       styling: 'Giao diện',

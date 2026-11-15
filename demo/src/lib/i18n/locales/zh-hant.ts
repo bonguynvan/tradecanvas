@@ -927,6 +927,7 @@ const zhHant: SiteMessages = {
       frameworks: '框架整合',
       embed: '可嵌入的元件',
       migration: '遷移至 2.0',
+      'from-tradingview': '從 TradingView 遷移',
       'how-it-works': '運作原理',
       api: 'API 參考',
       styling: '樣式',

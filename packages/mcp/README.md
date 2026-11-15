@@ -54,6 +54,11 @@ All of them read only; none touches the network or your files.
 | `list_widget_features` | The names `ChartWidget`'s `features` switch takes. |
 | `list_style_keys` | The chart's style keys and the value each takes, for `overrides` and `applyOverrides`. |
 | `validate_options` | Checks an options object before it is used: unknown names with the one likely meant, values outside the allowed ones, numbers given as strings, intervals, feature switches, style overrides, languages, and nested options. |
+| `migration_plan` | Moving an app from TradingView's charting library (Advanced Charts, Trading Platform) or Lightweight Charts: the steps, what to search the code for, and which tool maps what each search finds. |
+| `migration_lookup` | What one of their names becomes: a widget option, featureset, override key, study, drawing shape, method, datafeed or broker member, or a resolution; and, where there is nothing like it, what to do instead. |
+| `convert_widget_options` | Their widget's (or `createChart`'s) whole options object, featuresets and overrides included, as `ChartWidget` (or `Chart`) options, with the calls to make afterwards and what has no place. |
+
+The migration tables are written from TradingView's public docs and checked against TradeCanvas's own names on every build. The datafeed stays as it is: `feedFromJsApi(datafeed)` from `@tradecanvas/chart`, or `udfFeed({ url })` for a UDF server.
 
 A check, for instance:
 

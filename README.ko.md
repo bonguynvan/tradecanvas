@@ -113,11 +113,13 @@ claude mcp add tradecanvas -- npx -y @tradecanvas/mcp
 
 WSL 밖의 Windows에서는: `claude mcp add tradecanvas -- cmd /c npx -y @tradecanvas/mcp`. Git Bash(Windows에서 Claude Code의 `!` 명령을 실행하는 셸)에서는 `//c`로 씁니다. Git Bash가 `/c`를 경로로 바꾸기 때문입니다.
 
+TradingView의 charting library나 Lightweight Charts에서 앱을 옮겨 오나요? 같은 서버가 그 옵션, featureset, override, study, 드로잉, 메서드를 대응시켜 주고 (`migration_plan`, `migration_lookup`, `convert_widget_options`), `feedFromJsApi`는 데이터피드를 그대로 씁니다 ([TradingView에서 옮겨오기](https://tradecanvas.dev/ko/docs/from-tradingview/)).
+
 자칭이 아니라 측정한 결과입니다. 24개 과제에서 스킬이 있는 에이전트는 모든 실행을 마쳤고(48회 중 48회, 스킬이 없으면 48회 중 47회), 15턴 대신 10턴, 22.1만 토큰 대신 16.9만 토큰이 들었으며, 컴파일된 코드를 읽으러 간 것은 48회 중 6회 대신 1회였습니다([해당 실행](evals/baselines/2026-11-13-sonnet.md), 2.1.1 기준. 과제와 거기서 드러난 내용은 [`evals`](evals/README.md)에 있습니다).
 
 ## 문서
 
-[시작하기](https://tradecanvas.dev/ko/docs/getting-started/) · [API](https://tradecanvas.dev/ko/docs/api/) · [지표](https://tradecanvas.dev/ko/docs/indicators/) · [드로잉 도구](https://tradecanvas.dev/ko/docs/drawing-tools/) · [실시간](https://tradecanvas.dev/ko/docs/realtime/) · [거래](https://tradecanvas.dev/ko/docs/trading/) · [스타일](https://tradecanvas.dev/ko/docs/styling/) · [프레임워크](https://tradecanvas.dev/ko/docs/frameworks/) · [플러그인](https://tradecanvas.dev/ko/docs/plugins/) · [휴대폰과 앱](https://tradecanvas.dev/ko/docs/embed/#mobile-app) · [성능](https://tradecanvas.dev/ko/docs/performance/)
+[시작하기](https://tradecanvas.dev/ko/docs/getting-started/) · [TradingView에서 옮겨오기](https://tradecanvas.dev/ko/docs/from-tradingview/) · [API](https://tradecanvas.dev/ko/docs/api/) · [지표](https://tradecanvas.dev/ko/docs/indicators/) · [드로잉 도구](https://tradecanvas.dev/ko/docs/drawing-tools/) · [실시간](https://tradecanvas.dev/ko/docs/realtime/) · [거래](https://tradecanvas.dev/ko/docs/trading/) · [스타일](https://tradecanvas.dev/ko/docs/styling/) · [프레임워크](https://tradecanvas.dev/ko/docs/frameworks/) · [플러그인](https://tradecanvas.dev/ko/docs/plugins/) · [휴대폰과 앱](https://tradecanvas.dev/ko/docs/embed/#mobile-app) · [성능](https://tradecanvas.dev/ko/docs/performance/)
 
 문서는 English, Tiếng Việt, 简体中文, 日本語, 한국어, Español으로 제공됩니다. 측정값, 한계, 테스트 방법은 [시스템 점검](https://tradecanvas.dev/ko/audit/)에 있습니다.
 
