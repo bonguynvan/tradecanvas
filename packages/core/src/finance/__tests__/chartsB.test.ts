@@ -230,6 +230,8 @@ describe('matrix layout', () => {
     const fits = fakeCtx();
     drawColorBar(fits.ctx, { x: 0, y: 0, width: colorBarLabelWidth(scale, short, (t) => t.length * 6.6), height: 20 }, scale, short, DARK_THEME);
     expect(fits.texts).toEqual(['-10.0%', '+10.0%', '0.0%']);
+  });
+
   describe('cell width', () => {
     const pct = (v: number) => `${v > 0 ? '+' : ''}${v.toFixed(1)}%`;
     const statement: MatrixChartOptions = {
