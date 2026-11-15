@@ -106,7 +106,9 @@ export interface DepthOverlayConfig {
    * start is in that row. A footprint whose cells start at multiples of its
    * row size, each tick centred on its price, lines up with `-tick / 2`.
    * A bid and an ask may then share the row by the market, as they share a
-   * footprint's cell. Without it each row is centred on a multiple of `rowSize`.
+   * footprint's cell: the longer bar is drawn first, and `markBest` lines the
+   * bid on the row's lower edge and the ask on its upper. `0` starts rows at
+   * multiples of `rowSize`; without it each row is centred on one.
    */
   rowOrigin?: number;
   /** Draw a line at the best bid and at the best ask, as wide as the overlay. Default `false`. */

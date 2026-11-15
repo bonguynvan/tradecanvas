@@ -188,6 +188,36 @@ describe('rows from an origin (rowOrigin)', () => {
     expect(depthBars(ticks, 'level', undefined, -0.125)).toEqual(depthBars(ticks, 'level'));
   });
 
+  it('draws the longer bar first in a row a bid and an ask share, so the shorter shows over it', () => {
+    const near: DepthData = { bids: [{ price: 50, volume: 1 }], asks: [{ price: 50.25, volume: 4 }] };
+    const { ctx, calls } = recordingCtx();
+    new DepthOverlay().render(ctx, near, unitViewport, { enabled: true, maxWidth: 100, rowSize: 1, rowOrigin: -0.125, mode: 'level' });
+    // Both in the row [49.875, 50.875): the ask's 100 px bar, then the bid's 25 px one over it.
+    expect(rects(calls).map((r) => Math.round(r[2]))).toEqual([100, 25]);
+  });
+
+  it('marks a best bid and ask that share a row on its lower and upper edges', () => {
+    const near: DepthData = { bids: [{ price: 50, volume: 1 }], asks: [{ price: 50.25, volume: 4 }] };
+    const { ctx, calls } = recordingCtx();
+    new DepthOverlay().render(ctx, near, unitViewport, { enabled: true, maxWidth: 100, rowSize: 1, rowOrigin: -0.125, markBest: true });
+    const lines = rects(calls).filter((r) => r[3] === 1 && r[2] === 100 && r[0] === 900);
+    // The last two: the ask's bar is one pixel tall and 100 wide too.
+    expect(lines.slice(-2).map((r) => Math.round((r[1] + 0.5) * 1e6) / 1e6)).toEqual([100 - 49.875, 100 - 50.875]);
+  });
+
+  it('puts a bid on a row start in that row, where centred rows would send it down', () => {
+    const edge: DepthData = { bids: [{ price: 2, volume: 1 }], asks: [] };
+    expect(depthBars(edge, 'level', 1, 0).bids[0].price).toBe(2.5);
+    expect(depthBars(edge, 'level', 2).bids[0].price).toBe(2);
+  });
+
+  it('reads negative prices and origins', () => {
+    const spread: DepthData = { bids: [{ price: -0.3, volume: 1 }, { price: -0.05, volume: 2 }], asks: [{ price: 0.05, volume: 3 }] };
+    const { bids, asks } = depthBars(spread, 'level', 0.1, -0.05);
+    expect(round(bids)).toEqual([{ price: 0, value: 2 }, { price: -0.3, value: 1 }]);
+    expect(round(asks)).toEqual([{ price: 0.1, value: 3 }]);
+  });
+
   it('draws anew when only the origin changes', () => {
     const overlay = new DepthOverlay();
     const first = recordingCtx();

@@ -140,6 +140,8 @@ export class DepthOverlay {
       return { y, h };
     };
 
+    const bidColor = config.bidColor ?? DEFAULT_BID;
+    const askColor = config.askColor ?? DEFAULT_ASK;
     const draw = (bars: DepthBar[], color: string): void => {
       ctx.fillStyle = color;
       for (const { price, value } of bars) {
@@ -149,19 +151,38 @@ export class DepthOverlay {
         ctx.fillRect(rightEdge - w, at.y, w, at.h);
       }
     };
-    draw(bids, config.bidColor ?? DEFAULT_BID);
-    draw(asks, config.askColor ?? DEFAULT_ASK);
+    // Rows from an origin can hold a bid and an ask: the longer bar first, so the shorter shows over it.
+    const askAt = new Map(asks.map((a) => [a.price, a]));
+    const pairs = bids.flatMap((bid) => {
+      const ask = askAt.get(bid.price);
+      return ask ? [{ bid, ask }] : [];
+    });
+    const shared = new Set(pairs.map((p) => p.bid.price));
+    const own = (bars: DepthBar[]) => (shared.size ? bars.filter((b) => !shared.has(b.price)) : bars);
+    draw(own(bids), bidColor);
+    draw(own(asks), askColor);
+    for (const { bid, ask } of pairs) {
+      const bidFirst = bid.value >= ask.value;
+      draw([bidFirst ? bid : ask], bidFirst ? bidColor : askColor);
+      draw([bidFirst ? ask : bid], bidFirst ? askColor : bidColor);
+    }
 
     if (config.markBest) {
-      const mark = (bar: DepthBar | undefined, color: string): void => {
-        if (!bar) return;
-        const y = priceToY(bar.price, viewport);
+      const mark = (y: number, color: string): void => {
         if (y < chartRect.y || y > chartRect.y + chartRect.height) return;
         ctx.fillStyle = color;
         ctx.fillRect(rightEdge - width, y - 0.5, width, 1);
       };
-      mark(bids[0], config.bestBidColor ?? DEFAULT_BEST_BID);
-      mark(asks[0], config.bestAskColor ?? DEFAULT_BEST_ASK);
+      const bestBid = bids[0];
+      const bestAsk = asks[0];
+      if (bestBid && bestAsk && rowSize !== null && bestBid.price === bestAsk.price) {
+        // One row holds both: the bid on its lower edge, the ask on its upper, so neither hides the other.
+        mark(priceToY(bestBid.price - rowSize / 2, viewport), config.bestBidColor ?? DEFAULT_BEST_BID);
+        mark(priceToY(bestAsk.price + rowSize / 2, viewport), config.bestAskColor ?? DEFAULT_BEST_ASK);
+      } else {
+        if (bestBid) mark(priceToY(bestBid.price, viewport), config.bestBidColor ?? DEFAULT_BEST_BID);
+        if (bestAsk) mark(priceToY(bestAsk.price, viewport), config.bestAskColor ?? DEFAULT_BEST_ASK);
+      }
     }
   }
 }
