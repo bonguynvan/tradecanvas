@@ -8273,6 +8273,11 @@
           ]
         },
         {
+          "name": "cellWidth",
+          "type": "'square' | 'fill' | number",
+          "doc": "How wide a column is. `'square'` (default): square cells, the matrix centred in a wider chart. `'fill'`: the columns share the width beside the row names, so a matrix of a few columns (a statement's periods) uses the chart. A number: that many pixels a column, no wider than the room. Rows keep their height either way."
+        },
+        {
           "name": "showValues",
           "type": "boolean",
           "doc": "Print each value in its cell when it fits. Default `true`.",

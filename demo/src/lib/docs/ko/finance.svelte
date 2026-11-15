@@ -173,6 +173,9 @@ new MatrixChart(el, {
 <p>
   셀은 정사각형을 유지하고 들어갈 때 값을 표시합니다(<code>valueFormat</code>이 없으면 소수 둘째 자리). 셀 너비에 맞지 않는 열 이름은 기울입니다. <code>correlationMatrix</code>는 두 시계열 모두 값이 있는 날만 짝지으며, 3일 미만이면 NaN을 돌려주고 그 셀은 비워 둡니다. 시간대와 요일별 거래량 같은 다른 수치 표에도 맞습니다.
 </p>
+<p>
+  열이 적은 표(기간별 재무제표 항목 등)에는 <code>cellWidth: 'fill'</code>을 씁니다. 열이 행 이름 옆의 너비를 나눠 갖고 행 높이는 그대로라서, 매트릭스가 가운데에 작게 놓이지 않고 차트를 채웁니다. 숫자를 주면 각 열의 너비를 픽셀로 정하며, 남은 공간보다 넓어지지는 않습니다.
+</p>
 
 <h2>섹터 맵</h2>
 <pre><code>{`import { HeatmapChart } from '@tradecanvas/chart'

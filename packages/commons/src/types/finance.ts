@@ -345,6 +345,14 @@ export interface MatrixChartOptions extends BaseFinanceChartOptions {
   colorScale?: ColorScale;
   /** Only half of a square matrix, the diagonal included: a correlation matrix needs no more. */
   triangle?: 'lower' | 'upper';
+  /**
+   * How wide a column is. `'square'` (default): square cells, the matrix
+   * centred in a wider chart. `'fill'`: the columns share the width beside
+   * the row names, so a matrix of a few columns (a statement's periods) uses
+   * the chart. A number: that many pixels a column, no wider than the room.
+   * Rows keep their height either way.
+   */
+  cellWidth?: 'square' | 'fill' | number;
   /** Print each value in its cell when it fits. Default `true`. */
   showValues?: boolean;
   /** Default: two decimals. */
