@@ -4130,7 +4130,16 @@
   text-transform: var(--tcw-label-case);
   color: var(--tcw-text-muted);
 }
-.tcw-grid-sync[aria-pressed="true"] { color: var(--tcw-accent); }
+/* The links are switches, as the scale's %, log and auto are: ink blue while on, not the
+   chosen-button fill (a light pill in the dark Print look, under which blue text washed out). */
+.tcw-btn.tcw-grid-sync.tcw-active,
+.tcw-grid-sync[aria-pressed='true'] {
+  background: transparent;
+  box-shadow: none;
+  color: var(--tcw-accent);
+  font-weight: var(--tcw-weight-strong);
+}
+.tcw-btn.tcw-grid-sync.tcw-active:hover { background: var(--tcw-hover-bg); }
 .tcw-grid-cells {
   flex: 1;
   min-height: 0;
