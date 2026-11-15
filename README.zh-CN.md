@@ -26,6 +26,8 @@
   <a href="README.md">English</a> · <a href="README.vi.md">Tiếng Việt</a> · <b>简体中文</b> · <a href="README.ja.md">日本語</a> · <a href="README.ko.md">한국어</a> · <a href="README.es.md">Español</a>
 </p>
 
+**你的交易图表，你的规则。** TradeCanvas 是一套由你掌控的图表引擎：MIT 许可证，从 npm 安装、随你的应用一起部署，用你自己的数据，打上你自己的品牌。图表上没有别人的标志，不需要申请授权，你和用户之间也没有任何平台。正在使用 TradingView 的 charting library 或 Lightweight Charts？datafeed 可以原样保留：[从 TradingView 迁移](https://tradecanvas.dev/zh/docs/from-tradingview/)。
+
 **TradeCanvas 是一套开源的 Web 交易图表库**，采用 MIT 许可证。 从K线到砖形图（Renko），134 个指标、76 种画线工具、交易所实时行情和图上下单，用 Canvas 2D 或 WebGL 绘制，不依赖任何第三方库。可以直接使用完整的 `ChartWidget`，也可以在无界面的 `Chart` 上构建自己的界面，支持 TypeScript、React、Vue 和 Svelte。
 
 <p align="center">
@@ -116,6 +118,14 @@ claude mcp add tradecanvas -- npx -y @tradecanvas/mcp
 要把应用从 TradingView 的 charting library 或 Lightweight Charts 迁移过来？同一个服务器会对照它们的选项、featureset、override、study、画线和方法 (`migration_plan`、`migration_lookup`、`convert_widget_options`)，`feedFromJsApi` 则让 datafeed 保持原样 ([从 TradingView 迁移](https://tradecanvas.dev/zh/docs/from-tradingview/))。
 
 这是实测结果，不是自述：在 24 个任务上，有技能的智能体每次运行都完成了任务（48 次中的 48 次，没有技能时为 48 次中的 47 次），用 10 轮而不是 15 轮、16.9 万个 token 而不是 22.1 万个，并且 48 次运行中只有 1 次去读编译后的代码，而没有技能时是 6 次（[这次运行](evals/baselines/2026-11-13-sonnet.md)，基于 2.1.1；任务及其发现见 [`evals`](evals/README.md)）。
+
+## 从模板开始
+
+三个小型 Vite + TypeScript 项目，克隆后一分钟就能运行，每个都是带在线页面的 GitHub 模板：
+
+- **加密货币终端**：接入 Binance 实时数据的组件，带自选列表。[在线](https://bonguynvan.github.io/tradecanvas-starter-crypto/) · [模板](https://github.com/bonguynvan/tradecanvas-starter-crypto)
+- **股票图表**：NYSE 交易时段，日线来自 CSV，或通过 `udfFeed` 接入你自己的服务器。[在线](https://bonguynvan.github.io/tradecanvas-starter-stocks/) · [模板](https://github.com/bonguynvan/tradecanvas-starter-stocks)
+- **工作区**：2×2 网格中的四个图表，十字线、周期和时间联动，布局会保存。[在线](https://bonguynvan.github.io/tradecanvas-starter-workspace/) · [模板](https://github.com/bonguynvan/tradecanvas-starter-workspace)
 
 ## 文档
 

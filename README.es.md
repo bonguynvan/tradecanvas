@@ -26,6 +26,8 @@
   <a href="README.md">English</a> · <a href="README.vi.md">Tiếng Việt</a> · <a href="README.zh-CN.md">简体中文</a> · <a href="README.ja.md">日本語</a> · <a href="README.ko.md">한국어</a> · <b>Español</b>
 </p>
 
+**Tu gráfico de trading. Tus reglas.** TradeCanvas es un motor de gráficos que es tuyo: licencia MIT, se instala desde npm y se sirve con tu app, con tus propios datos y bajo tu propia marca. Sin logo en el gráfico, sin nada que solicitar, sin una plataforma entre tú y tus usuarios. ¿Vienes de la charting library de TradingView o de Lightweight Charts? Conserva tu datafeed: [pasar desde TradingView](https://tradecanvas.dev/es/docs/from-tradingview/).
+
 **TradeCanvas es una librería de gráficos de trading de código abierto para la web**, con licencia MIT. De velas japonesas a Renko, 134 indicadores, 76 herramientas de dibujo, datos en vivo de exchanges y órdenes sobre el gráfico, dibujado con Canvas 2D o WebGL y sin dependencias de terceros. Usa el `ChartWidget` completo o construye tu propia interfaz sobre el `Chart` headless, en TypeScript, React, Vue o Svelte.
 
 <p align="center">
@@ -116,6 +118,14 @@ En Windows fuera de WSL: `claude mcp add tradecanvas -- cmd /c npx -y @tradecanv
 ¿Pasas una app desde la charting library de TradingView o Lightweight Charts? El mismo servidor relaciona sus opciones, featuresets, overrides, studies, dibujos y métodos (`migration_plan`, `migration_lookup`, `convert_widget_options`), y `feedFromJsApi` deja el datafeed como está ([Pasar desde TradingView](https://tradecanvas.dev/es/docs/from-tradingview/)).
 
 Medido, no afirmado: en 24 tareas un agente con la skill terminó todas las ejecuciones (48 de 48, y 47 de 48 sin ella), en 10 turnos frente a 15 y 169k tokens frente a 221k, y fue a leer el código compilado en 1 ejecución de 48 frente a 6 ([la ejecución](evals/baselines/2026-11-13-sonnet.md), sobre 2.1.1; las tareas y lo que revelaron están en [`evals`](evals/README.md)).
+
+## Empieza con una plantilla
+
+Tres proyectos pequeños de Vite + TypeScript para clonar y ejecutar en un minuto, cada uno una plantilla de GitHub con su página en vivo:
+
+- **Terminal cripto**: el widget con datos en vivo de Binance y una lista de seguimiento. [En vivo](https://bonguynvan.github.io/tradecanvas-starter-crypto/) · [plantilla](https://github.com/bonguynvan/tradecanvas-starter-crypto)
+- **Gráfico de acciones**: horario de NYSE, barras diarias de un CSV, o tu propio servidor con `udfFeed`. [En vivo](https://bonguynvan.github.io/tradecanvas-starter-stocks/) · [plantilla](https://github.com/bonguynvan/tradecanvas-starter-stocks)
+- **Workspace**: cuatro gráficos en una cuadrícula 2×2, con cruz, temporalidad y tiempo enlazados y el diseño guardado. [En vivo](https://bonguynvan.github.io/tradecanvas-starter-workspace/) · [plantilla](https://github.com/bonguynvan/tradecanvas-starter-workspace)
 
 ## Documentación
 

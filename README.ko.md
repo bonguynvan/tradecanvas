@@ -26,6 +26,8 @@
   <a href="README.md">English</a> · <a href="README.vi.md">Tiếng Việt</a> · <a href="README.zh-CN.md">简体中文</a> · <a href="README.ja.md">日本語</a> · <b>한국어</b> · <a href="README.es.md">Español</a>
 </p>
 
+**당신의 트레이딩 차트, 당신의 규칙.** TradeCanvas는 직접 소유하는 차트 엔진입니다. MIT 라이선스로, npm에서 설치해 앱과 함께 배포하고, 자신의 데이터를 넣고, 자신의 브랜드로 보여 줍니다. 차트에 다른 회사의 로고가 없고, 신청할 것도 없으며, 당신과 사용자 사이에 플랫폼이 끼지 않습니다. TradingView의 charting library나 Lightweight Charts를 쓰고 있나요? 데이터피드는 그대로 둡니다: [TradingView에서 옮겨오기](https://tradecanvas.dev/ko/docs/from-tradingview/).
+
 **TradeCanvas는 웹을 위한 오픈 소스 트레이딩 차트 라이브러리입니다**(MIT 라이선스). 캔들스틱부터 렌코까지, 134개 지표, 76개 그리기 도구, 거래소 실시간 피드와 차트 위 주문을 서드파티 의존성 없이 Canvas 2D 또는 WebGL로 그립니다. 완전한 `ChartWidget`을 그대로 넣거나 헤드리스 `Chart` 위에 직접 UI를 만들 수 있으며, TypeScript, React, Vue, Svelte를 지원합니다.
 
 <p align="center">
@@ -116,6 +118,14 @@ WSL 밖의 Windows에서는: `claude mcp add tradecanvas -- cmd /c npx -y @trade
 TradingView의 charting library나 Lightweight Charts에서 앱을 옮겨 오나요? 같은 서버가 그 옵션, featureset, override, study, 드로잉, 메서드를 대응시켜 주고 (`migration_plan`, `migration_lookup`, `convert_widget_options`), `feedFromJsApi`는 데이터피드를 그대로 씁니다 ([TradingView에서 옮겨오기](https://tradecanvas.dev/ko/docs/from-tradingview/)).
 
 자칭이 아니라 측정한 결과입니다. 24개 과제에서 스킬이 있는 에이전트는 모든 실행을 마쳤고(48회 중 48회, 스킬이 없으면 48회 중 47회), 15턴 대신 10턴, 22.1만 토큰 대신 16.9만 토큰이 들었으며, 컴파일된 코드를 읽으러 간 것은 48회 중 6회 대신 1회였습니다([해당 실행](evals/baselines/2026-11-13-sonnet.md), 2.1.1 기준. 과제와 거기서 드러난 내용은 [`evals`](evals/README.md)에 있습니다).
+
+## 템플릿으로 시작하기
+
+클론해서 1분 안에 실행할 수 있는 작은 Vite + TypeScript 프로젝트 세 개입니다. 모두 라이브 페이지가 있는 GitHub 템플릿입니다:
+
+- **암호화폐 터미널**: Binance 실시간 데이터 위의 위젯과 관심 종목 목록. [라이브](https://bonguynvan.github.io/tradecanvas-starter-crypto/) · [템플릿](https://github.com/bonguynvan/tradecanvas-starter-crypto)
+- **주식 차트**: NYSE 거래 시간, CSV의 일봉, 또는 `udfFeed`로 연결한 자체 서버. [라이브](https://bonguynvan.github.io/tradecanvas-starter-stocks/) · [템플릿](https://github.com/bonguynvan/tradecanvas-starter-stocks)
+- **워크스페이스**: 2×2 그리드의 차트 네 개, 십자선·시간 단위·시간 연동, 레이아웃 저장. [라이브](https://bonguynvan.github.io/tradecanvas-starter-workspace/) · [템플릿](https://github.com/bonguynvan/tradecanvas-starter-workspace)
 
 ## 문서
 

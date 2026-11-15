@@ -1864,6 +1864,8 @@ packages/library/README.md
   <b>English</b> · <a href="https://github.com/bonguynvan/tradecanvas/blob/main/README.vi.md">Tiếng Việt</a> · <a href="https://github.com/bonguynvan/tradecanvas/blob/main/README.zh-CN.md">简体中文</a> · <a href="https://github.com/bonguynvan/tradecanvas/blob/main/README.ja.md">日本語</a> · <a href="https://github.com/bonguynvan/tradecanvas/blob/main/README.ko.md">한국어</a> · <a href="https://github.com/bonguynvan/tradecanvas/blob/main/README.es.md">Español</a>
 </p>
 
+**Your trading chart. Your rules.** TradeCanvas is a charting engine you own: MIT-licensed, installed from npm and served with your app, fed by your own data, shown under your own brand. No logo on the chart, nothing to apply for, no platform between you and your users. Coming from TradingView's charting library or Lightweight Charts? Keep your datafeed: [moving from TradingView](https://tradecanvas.dev/docs/from-tradingview/).
+
 **TradeCanvas is an open-source trading chart library for the web**, under the MIT licence. Candlesticks to Renko, 134 indicators, 76 drawing tools, live feeds and orders on the chart, on Canvas 2D or WebGL, with no third-party dependencies. Use the full `ChartWidget`, or build your own interface on the headless `Chart`, in TypeScript, React, Vue or Svelte.
 
 <p align="center">
@@ -1960,6 +1962,14 @@ On Windows outside WSL: `claude mcp add tradecanvas -- cmd /c npx -y @tradecanva
 Moving an app from TradingView's charting library or Lightweight Charts? The same server maps their options, featuresets, overrides, studies, drawings and methods (`migration_plan`, `migration_lookup`, `convert_widget_options`), and `feedFromJsApi` keeps the datafeed as it is ([Moving from TradingView](https://tradecanvas.dev/docs/from-tradingview/)).
 
 Measured, not claimed: on 24 tasks an agent with the skill finished every run (48 of 48, and 47 of 48 without it), in 10 turns against 15 and 169k tokens against 221k, and went reading the compiled code in 1 run of 48 against 6 ([the run](https://github.com/bonguynvan/tradecanvas/blob/main/evals/baselines/2026-11-13-sonnet.md), on 2.1.1; the tasks and what they turned up are in [`evals`](https://github.com/bonguynvan/tradecanvas/blob/main/evals/README.md)).
+
+## Start from a template
+
+Three small Vite + TypeScript projects to clone and run in a minute, each a GitHub template with a live page:
+
+- **Crypto terminal**: the widget on live Binance data, with a watchlist. [Live](https://bonguynvan.github.io/tradecanvas-starter-crypto/) · [template](https://github.com/bonguynvan/tradecanvas-starter-crypto)
+- **Stock chart**: NYSE hours, daily bars from a CSV, or your own server through `udfFeed`. [Live](https://bonguynvan.github.io/tradecanvas-starter-stocks/) · [template](https://github.com/bonguynvan/tradecanvas-starter-stocks)
+- **Workspace**: four charts in a 2×2 grid, the crosshair, interval and time linked, the layout saved. [Live](https://bonguynvan.github.io/tradecanvas-starter-workspace/) · [template](https://github.com/bonguynvan/tradecanvas-starter-workspace)
 
 ## Documentation
 

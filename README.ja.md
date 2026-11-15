@@ -26,6 +26,8 @@
   <a href="README.md">English</a> · <a href="README.vi.md">Tiếng Việt</a> · <a href="README.zh-CN.md">简体中文</a> · <b>日本語</b> · <a href="README.ko.md">한국어</a> · <a href="README.es.md">Español</a>
 </p>
 
+**あなたのトレーディングチャート、あなたのルール。** TradeCanvas は自分で所有できるチャートエンジンです。MIT ライセンスで、npm からインストールしてアプリと一緒に配信し、自分のデータを流し、自分のブランドで見せられます。チャートに他社のロゴはなく、申請も不要で、あなたとユーザーの間にプラットフォームは入りません。TradingView の charting library や Lightweight Charts をお使いですか？データフィードはそのまま使えます：[TradingView からの移行](https://tradecanvas.dev/ja/docs/from-tradingview/)。
+
 **TradeCanvas は Web 向けのオープンソースのトレーディングチャートライブラリです**（MIT ライセンス）。 ローソク足から練行足（Renko）まで、134 種類のインジケーター、76 種類の描画ツール、取引所のライブフィード、チャート上での注文を Canvas 2D または WebGL で描画し、サードパーティの依存関係はありません。完全な `ChartWidget` をそのまま組み込むことも、ヘッドレスな `Chart` の上に独自の UI を作ることもでき、TypeScript、React、Vue、Svelte に対応しています。
 
 <p align="center">
@@ -116,6 +118,14 @@ WSL を使わない Windows では: `claude mcp add tradecanvas -- cmd /c npx -y
 TradingView の charting library や Lightweight Charts からアプリを移しますか？同じサーバーが、それらのオプション、featureset、override、study、描画、メソッドを対応づけ (`migration_plan`、`migration_lookup`、`convert_widget_options`)、`feedFromJsApi` がデータフィードをそのまま使えるようにします ([TradingView からの移行](https://tradecanvas.dev/ja/docs/from-tradingview/))。
 
 自称ではなく実測です。24 のタスクで、スキルのあるエージェントはすべての実行を完了しました（48 回中 48 回。スキルなしでは 48 回中 47 回）。15 ターンに対して 10 ターン、22.1 万トークンに対して 16.9 万トークンで済み、コンパイル済みコードを読みに行ったのは 48 回中 6 回に対して 1 回でした（[この実行](evals/baselines/2026-11-13-sonnet.md)、2.1.1 時点。タスクと判明したことは [`evals`](evals/README.md) にあります）。
+
+## テンプレートから始める
+
+クローンして 1 分で動く小さな Vite + TypeScript プロジェクトが三つあります。どれもライブページ付きの GitHub テンプレートです：
+
+- **暗号資産ターミナル**：Binance のライブデータで動くウィジェットとウォッチリスト。[ライブ](https://bonguynvan.github.io/tradecanvas-starter-crypto/) · [テンプレート](https://github.com/bonguynvan/tradecanvas-starter-crypto)
+- **株価チャート**：NYSE の取引時間、CSV の日足、または `udfFeed` で自前のサーバー。[ライブ](https://bonguynvan.github.io/tradecanvas-starter-stocks/) · [テンプレート](https://github.com/bonguynvan/tradecanvas-starter-stocks)
+- **ワークスペース**：2×2 グリッドの 4 つのチャート。クロスヘア、時間足、時刻を連動させ、レイアウトを保存。[ライブ](https://bonguynvan.github.io/tradecanvas-starter-workspace/) · [テンプレート](https://github.com/bonguynvan/tradecanvas-starter-workspace)
 
 ## ドキュメント
 
