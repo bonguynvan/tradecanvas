@@ -4,7 +4,7 @@
 
 ### Fixes
 
-- **A widget fed its own bars names its symbol on the legend** (`@tradecanvas/chart`): with no adapter or feed, the legend's title line started with the interval and left the symbol out; it now names the widget's `symbol`, and the one `setSymbol` sets.
+- **A widget fed its own bars names its symbol on the legend** (`@tradecanvas/chart`): with no adapter or feed, the legend's title line started with the interval and left the symbol out; it now names the `symbol` option when one is given, and the one `setSymbol` sets. A display name of your own given with `chart.setSymbolName` stands until the symbol changes, as it does with a stream: set it again after `setSymbol`.
 - **A grid's link switches read as switches** (`@tradecanvas/chart`): Symbol, Interval, Crosshair and Time show on as blue text, as the scale's %, log and auto do, instead of the chosen-button fill, under which the blue text washed out in the dark Print look.
 
 ## 2.11.0 (2026-11-15)

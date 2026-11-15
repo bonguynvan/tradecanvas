@@ -1629,7 +1629,8 @@ export class ChartWidget {
     } else {
       // No stream to say the interval or the symbol: the legend and the indicators kept to some take them from here.
       this.chart.setDataTimeframe(this.state.timeframe);
-      if (this.state.symbol) this.chart.setSymbolName(this.state.symbol);
+      // Only a symbol the host named: the fallback one (the first listed, or BTCUSDT) may not be its bars'.
+      if (options.symbol) this.chart.setSymbolName(options.symbol);
     }
 
     // Watchlist live-update loop. 1s cadence keeps DOM churn low while still

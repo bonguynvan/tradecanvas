@@ -83,6 +83,11 @@ describe('the legend of a widget fed its own bars', () => {
     expect(FakeChart.last.legendNames.at(-1)).toBe('DEMO');
   });
 
+  it('names no symbol the host did not give: the fallback may not be its bars', () => {
+    widget = new ChartWidget(host, { timeframe: '1d', watchlist: false });
+    expect(FakeChart.last.legendNames).toEqual([]);
+  });
+
   it('names a symbol set later', async () => {
     widget = new ChartWidget(host, { symbol: 'DEMO', timeframe: '1d', watchlist: false });
     await widget.setSymbol('ACME');
