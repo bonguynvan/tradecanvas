@@ -1,5 +1,17 @@
 # @tradecanvas/chart
 
+## 2.9.0
+
+### Minor Changes
+
+- 819f3f7: The depth overlay takes a `rowSize` in price: the book's levels are added up into rows that far apart, each drawn from half a row below its price to half a row above, so a dense book under a coarse price scale, or a book with empty levels, draws even bars.
+
+### Patch Changes
+
+- Updated dependencies [819f3f7]
+  - @tradecanvas/commons@2.9.0
+  - @tradecanvas/core@2.9.0
+
 ## 2.8.1
 
 ### Patch Changes
