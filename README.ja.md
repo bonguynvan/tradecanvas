@@ -123,9 +123,9 @@ TradingView の charting library や Lightweight Charts からアプリを移し
 
 クローンして 1 分で動く小さな Vite + TypeScript プロジェクトが三つあります。どれもライブページ付きの GitHub テンプレートです：
 
-- **暗号資産ターミナル**：Binance のライブデータで動くウィジェットとウォッチリスト。[ライブ](https://bonguynvan.github.io/tradecanvas-starter-crypto/) · [テンプレート](https://github.com/bonguynvan/tradecanvas-starter-crypto)
-- **株価チャート**：NYSE の取引時間、CSV の日足、または `udfFeed` で自前のサーバー。[ライブ](https://bonguynvan.github.io/tradecanvas-starter-stocks/) · [テンプレート](https://github.com/bonguynvan/tradecanvas-starter-stocks)
-- **ワークスペース**：2×2 グリッドの 4 つのチャート。クロスヘア、時間足、時刻を連動させ、レイアウトを保存。[ライブ](https://bonguynvan.github.io/tradecanvas-starter-workspace/) · [テンプレート](https://github.com/bonguynvan/tradecanvas-starter-workspace)
+- **暗号資産ターミナル**：Binance のライブデータで動くウィジェットとウォッチリスト。[ライブ](https://tradecanvas.dev/starters/crypto/) · [テンプレート](https://github.com/bonguynvan/tradecanvas-starter-crypto)
+- **株価チャート**：NYSE の取引時間、CSV の日足、または `udfFeed` で自前のサーバー。[ライブ](https://tradecanvas.dev/starters/stocks/) · [テンプレート](https://github.com/bonguynvan/tradecanvas-starter-stocks)
+- **ワークスペース**：2×2 グリッドの 4 つのチャート。クロスヘア、時間足、時刻を連動させ、レイアウトを保存。[ライブ](https://tradecanvas.dev/starters/workspace/) · [テンプレート](https://github.com/bonguynvan/tradecanvas-starter-workspace)
 
 ## ドキュメント
 

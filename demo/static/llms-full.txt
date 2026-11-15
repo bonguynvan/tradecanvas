@@ -1967,9 +1967,9 @@ Measured, not claimed: on 24 tasks an agent with the skill finished every run (4
 
 Three small Vite + TypeScript projects to clone and run in a minute, each a GitHub template with a live page:
 
-- **Crypto terminal**: the widget on live Binance data, with a watchlist. [Live](https://bonguynvan.github.io/tradecanvas-starter-crypto/) · [template](https://github.com/bonguynvan/tradecanvas-starter-crypto)
-- **Stock chart**: NYSE hours, daily bars from a CSV, or your own server through `udfFeed`. [Live](https://bonguynvan.github.io/tradecanvas-starter-stocks/) · [template](https://github.com/bonguynvan/tradecanvas-starter-stocks)
-- **Workspace**: four charts in a 2×2 grid, the crosshair, interval and time linked, the layout saved. [Live](https://bonguynvan.github.io/tradecanvas-starter-workspace/) · [template](https://github.com/bonguynvan/tradecanvas-starter-workspace)
+- **Crypto terminal**: the widget on live Binance data, with a watchlist. [Live](https://tradecanvas.dev/starters/crypto/) · [template](https://github.com/bonguynvan/tradecanvas-starter-crypto)
+- **Stock chart**: NYSE hours, daily bars from a CSV, or your own server through `udfFeed`. [Live](https://tradecanvas.dev/starters/stocks/) · [template](https://github.com/bonguynvan/tradecanvas-starter-stocks)
+- **Workspace**: four charts in a 2×2 grid, the crosshair, interval and time linked, the layout saved. [Live](https://tradecanvas.dev/starters/workspace/) · [template](https://github.com/bonguynvan/tradecanvas-starter-workspace)
 
 ## Documentation
 

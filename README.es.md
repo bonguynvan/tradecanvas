@@ -123,9 +123,9 @@ Medido, no afirmado: en 24 tareas un agente con la skill terminó todas las ejec
 
 Tres proyectos pequeños de Vite + TypeScript para clonar y ejecutar en un minuto, cada uno una plantilla de GitHub con su página en vivo:
 
-- **Terminal cripto**: el widget con datos en vivo de Binance y una lista de seguimiento. [En vivo](https://bonguynvan.github.io/tradecanvas-starter-crypto/) · [plantilla](https://github.com/bonguynvan/tradecanvas-starter-crypto)
-- **Gráfico de acciones**: horario de NYSE, barras diarias de un CSV, o tu propio servidor con `udfFeed`. [En vivo](https://bonguynvan.github.io/tradecanvas-starter-stocks/) · [plantilla](https://github.com/bonguynvan/tradecanvas-starter-stocks)
-- **Workspace**: cuatro gráficos en una cuadrícula 2×2, con cruz, temporalidad y tiempo enlazados y el diseño guardado. [En vivo](https://bonguynvan.github.io/tradecanvas-starter-workspace/) · [plantilla](https://github.com/bonguynvan/tradecanvas-starter-workspace)
+- **Terminal cripto**: el widget con datos en vivo de Binance y una lista de seguimiento. [En vivo](https://tradecanvas.dev/starters/crypto/) · [plantilla](https://github.com/bonguynvan/tradecanvas-starter-crypto)
+- **Gráfico de acciones**: horario de NYSE, barras diarias de un CSV, o tu propio servidor con `udfFeed`. [En vivo](https://tradecanvas.dev/starters/stocks/) · [plantilla](https://github.com/bonguynvan/tradecanvas-starter-stocks)
+- **Workspace**: cuatro gráficos en una cuadrícula 2×2, con cruz, temporalidad y tiempo enlazados y el diseño guardado. [En vivo](https://tradecanvas.dev/starters/workspace/) · [plantilla](https://github.com/bonguynvan/tradecanvas-starter-workspace)
 
 ## Documentación
 
