@@ -218,6 +218,17 @@ const SCENES = {
     return s;
   },
 
+  /** The order book on the plot with trading off: per-level bars and the best bid and ask marked. */
+  async depth() {
+    const s = await widget({ chartOptions: { features: { trading: false, depth: true }, depthOverlay: { mode: 'level', markBest: true, maxWidth: 140 }, rightMargin: 14 } });
+    const last = lastClose(s.chart);
+    const step = last * 0.0004;
+    const level = (i, side) => ({ price: last + side * (i + 1) * step, volume: 1 + ((i * 7) % 5) + (i === 6 ? 14 : 0) });
+    const levels = Array.from({ length: 24 }, (_, i) => i);
+    s.chart.setDepthData({ bids: levels.map((i) => level(i, -1)), asks: levels.map((i) => level(i, 1)) });
+    return s;
+  },
+
   /** More panes than the chart has room for: the price pane keeps its part, the panes share the rest. */
   async manyPanes() {
     const s = await widget();

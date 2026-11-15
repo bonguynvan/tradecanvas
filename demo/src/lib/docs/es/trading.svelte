@@ -292,6 +292,30 @@ widget.getChart().on('orderPlace', (e) => {
   // { side, type: 'limit', price } — submit to your backend
 })`}</code></pre>
 
+<h2>El libro de órdenes en el gráfico</h2>
+<p>
+  <code>features.depth</code> dibuja el libro de órdenes en el área del gráfico, desde el borde derecho, para un gráfico que solo muestra
+  precios: no necesita órdenes ni interfaz de trading y funciona con <code>trading: false</code>. Aliméntalo con
+  <code>chart.setDepthData</code> (<code>widget.setDepth</code> también lo hace); la superposición se activa con
+  <code>features.depth</code> y <code>setDepthOverlay</code> cambia su aspecto.
+</p>
+<ul>
+  <li><code>mode</code>: <code>'cumulative'</code> (por defecto) suma cada nivel a los más cercanos al mercado, así que las barras crecen al alejarse; <code>'level'</code> dibuja solo el tamaño de cada precio, así que un muro se ve como una barra larga.</li>
+  <li><code>markBest</code>: una línea en el mejor bid y en el mejor ask (<code>bestBidColor</code>, <code>bestAskColor</code>).</li>
+  <li><code>maxWidth</code>: la barra más larga en píxeles (nunca más que el área del gráfico), <code>bidColor</code>, <code>askColor</code>.</li>
+</ul>
+<p>
+  Las barras quedan sobre las velas más recientes. Para dejar sitio, sube <code>rightMargin</code> y pon <code>maxWidth</code>
+  en torno a ese número de barras. Con el trading activado, <code>{`setTradingConfig({ depthOverlay: { enabled: true } })`}</code> sigue activándola como antes.
+</p>
+<pre><code>{`const chart = new Chart(host, {
+  features: { trading: false, depth: true },       // display only: no orders, no trading UI
+  depthOverlay: { mode: 'level', markBest: true, maxWidth: 140 },
+  rightMargin: 14,                                  // empty slots past the newest bar, room for the bars
+})
+chart.setDepthData(orderBook)                       // { bids, asks }; null clears it
+chart.setDepthOverlay({ mode: 'cumulative' })       // change the look later`}</code></pre>
+
 <h2>Mapa de calor de liquidez</h2>
 <p>
   Acumula instantáneas del libro de órdenes en un mapa de calor detrás de las

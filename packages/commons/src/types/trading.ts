@@ -77,6 +77,28 @@ export interface DepthData {
   asks: DepthLevel[];
 }
 
+/** How the depth overlay draws the order book (`Chart.setDepthOverlay`, `TradingConfig.depthOverlay`). */
+export interface DepthOverlayConfig {
+  /** Draw the overlay. Default `true` with `features.depth`, else `false`. */
+  enabled?: boolean;
+  /**
+   * `'cumulative'` (the default) draws the size resting at a price and nearer
+   * the market, so the bars grow away from it; `'level'` draws the size at each
+   * price alone, so a wall shows as one long bar.
+   */
+  mode?: 'cumulative' | 'level';
+  bidColor?: string;
+  askColor?: string;
+  /** The longest a bar can be, in pixels (never more than the plot is wide). Default 100. */
+  maxWidth?: number;
+  /** Draw a line at the best bid and at the best ask, as wide as the overlay. Default `false`. */
+  markBest?: boolean;
+  /** The colour of the best bid's line. Default green. */
+  bestBidColor?: string;
+  /** The colour of the best ask's line. Default red. */
+  bestAskColor?: string;
+}
+
 export interface TradingConfig {
   enabled: boolean;
   orderColors?: { buy?: string; sell?: string };
@@ -95,12 +117,7 @@ export interface TradingConfig {
    * profit in the profit or loss colour.
    */
   positionLabel?: string | ((ctx: PositionLabelContext) => string);
-  depthOverlay?: {
-    enabled?: boolean;
-    bidColor?: string;
-    askColor?: string;
-    maxWidth?: number;
-  };
+  depthOverlay?: DepthOverlayConfig;
   contextMenu?: { enabled?: boolean };
   /**
    * Buttons on the lines: × on an order cancels it, × on a position closes it

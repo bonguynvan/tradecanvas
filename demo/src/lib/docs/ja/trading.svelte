@@ -263,6 +263,29 @@ widget.getChart().on('orderPlace', (e) => {
   // { side, type: 'limit', price } — submit to your backend
 })`}</code></pre>
 
+<h2>チャート上の板情報</h2>
+<p>
+  <code>features.depth</code> は、価格だけを表示するチャート向けに、板情報を右端からプロット上に描きます。注文も取引 UI も要らず、
+  <code>trading: false</code> でも動きます。データは <code>chart.setDepthData</code> で渡します（<code>widget.setDepth</code> も同じことをします）。
+  <code>features.depth</code> を有効にするとオーバーレイも有効になり、見た目は <code>setDepthOverlay</code> で変えます。
+</p>
+<ul>
+  <li><code>mode</code>：<code>'cumulative'</code>（既定）は各価格を市場に近い価格と合算するので、市場から離れるほどバーが伸びます。<code>'level'</code> は各価格の数量だけを描くので、大きな板は 1 本の長いバーになります。</li>
+  <li><code>markBest</code>：最良買気配と最良売気配に線を引きます（<code>bestBidColor</code>、<code>bestAskColor</code>）。</li>
+  <li><code>maxWidth</code>：バーの最大長（ピクセル、プロットの幅まで）、<code>bidColor</code>、<code>askColor</code>。</li>
+</ul>
+<p>
+  バーは最新のローソク足の上に重なります。余白を作るには <code>rightMargin</code> を増やし、<code>maxWidth</code> をその本数分ほどにします。
+  取引が有効なときは、これまでどおり <code>{`setTradingConfig({ depthOverlay: { enabled: true } })`}</code> でオンにできます。
+</p>
+<pre><code>{`const chart = new Chart(host, {
+  features: { trading: false, depth: true },       // display only: no orders, no trading UI
+  depthOverlay: { mode: 'level', markBest: true, maxWidth: 140 },
+  rightMargin: 14,                                  // empty slots past the newest bar, room for the bars
+})
+chart.setDepthData(orderBook)                       // { bids, asks }; null clears it
+chart.setDepthOverlay({ mode: 'cumulative' })       // change the look later`}</code></pre>
+
 <h2>流動性ヒートマップ</h2>
 <p>
   オーダーブックのスナップショットを蓄積し、ローソク足の背後にヒートマップとして表示します。

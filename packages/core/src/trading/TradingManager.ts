@@ -2,7 +2,6 @@ import type { PointerReach } from '../interaction/pointerReach.js';
 import type {
   TradingOrder,
   TradingPosition,
-  DepthData,
   TradingConfig,
   ViewportState,
   Theme,
@@ -14,7 +13,6 @@ import { inPlot } from './plot.js';
 import { priceToY, yToPrice } from '../viewport/ScaleMapping.js';
 import { OrderRenderer } from './OrderRenderer.js';
 import { PositionRenderer } from './PositionRenderer.js';
-import { DepthOverlay } from './DepthOverlay.js';
 import { TradingDragHandler } from './TradingDragHandler.js';
 import { TradingContextMenu } from './TradingContextMenu.js';
 import { BracketTool, bracketRiskReward } from './BracketTool.js';
@@ -33,13 +31,11 @@ import { tradingConfigFor } from '../style/overlayColors.js';
 export class TradingManager {
   private orders: TradingOrder[] = [];
   private positions: TradingPosition[] = [];
-  private depthData: DepthData | null = null;
   private currentPrice: number | null = null;
   private config: TradingConfig;
 
   private orderRenderer = new OrderRenderer();
   private positionRenderer = new PositionRenderer();
-  private depthOverlay = new DepthOverlay();
   private dragHandler: TradingDragHandler;
   private contextMenu = new TradingContextMenu();
   private bracket = new BracketTool();
@@ -105,11 +101,6 @@ export class TradingManager {
   /** The latest price (`setCurrentPrice`), or null before the first. */
   getCurrentPrice(): number | null {
     return this.currentPrice;
-  }
-
-  setDepthData(depth: DepthData | null): void {
-    this.depthData = depth;
-    this.requestRender?.();
   }
 
   setCurrentPrice(price: number): void {
@@ -439,11 +430,6 @@ export class TradingManager {
   private renderInPlot(ctx: CanvasRenderingContext2D, viewport: ViewportState, theme: Theme): void {
     // The config's colours, with the chart's style keys over them.
     const config = tradingConfigFor(this.config, theme);
-    // Depth overlay (back)
-    if (this.depthData) {
-      this.depthOverlay.render(ctx, this.depthData, viewport, config);
-    }
-
     if (config.fillMarks !== false) renderFillMarks(ctx, this.fills, viewport, config);
 
     // Every line first, then every tag over them, laid out together so none

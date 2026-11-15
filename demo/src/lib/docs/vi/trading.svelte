@@ -274,6 +274,30 @@ widget.getChart().on('orderPlace', (e) => {
   // { side, type: 'limit', price } — submit to your backend
 })`}</code></pre>
 
+<h2>Order book trên plot</h2>
+<p>
+  <code>features.depth</code> vẽ order book lên plot, từ mép phải, cho chart chỉ hiển thị giá: không cần order, không cần
+  trading UI, chạy được với <code>trading: false</code>. Nạp dữ liệu bằng <code>chart.setDepthData</code>
+  (<code>widget.setDepth</code> cũng làm việc này); overlay bật cùng <code>features.depth</code>, và
+  <code>setDepthOverlay</code> đổi cách hiển thị.
+</p>
+<ul>
+  <li><code>mode</code>: <code>'cumulative'</code> (mặc định) cộng dồn từng mức với các mức gần giá hơn nên thanh dài ra khi xa giá; <code>'level'</code> vẽ khối lượng riêng của từng mức nên một wall hiện thành một thanh dài.</li>
+  <li><code>markBest</code>: một đường ở best bid và best ask (<code>bestBidColor</code>, <code>bestAskColor</code>).</li>
+  <li><code>maxWidth</code>: độ dài tối đa của thanh theo pixel (không quá bề rộng plot), <code>bidColor</code>, <code>askColor</code>.</li>
+</ul>
+<p>
+  Các thanh nằm đè lên những cây nến mới nhất. Muốn chừa chỗ, tăng <code>rightMargin</code> và đặt <code>maxWidth</code>
+  vào cỡ đó. Khi trading bật, <code>{`setTradingConfig({ depthOverlay: { enabled: true } })`}</code> vẫn bật overlay như trước.
+</p>
+<pre><code>{`const chart = new Chart(host, {
+  features: { trading: false, depth: true },       // display only: no orders, no trading UI
+  depthOverlay: { mode: 'level', markBest: true, maxWidth: 140 },
+  rightMargin: 14,                                  // empty slots past the newest bar, room for the bars
+})
+chart.setDepthData(orderBook)                       // { bids, asks }; null clears it
+chart.setDepthOverlay({ mode: 'cumulative' })       // change the look later`}</code></pre>
+
 <h2>Liquidity heatmap</h2>
 <p>
   Tích luỹ các ảnh chụp sổ lệnh thành một heatmap phía sau nến — mỗi

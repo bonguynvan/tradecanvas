@@ -7039,6 +7039,11 @@
         "type": "WatermarkConfig"
       },
       {
+        "name": "depthOverlay",
+        "type": "DepthOverlayConfig",
+        "doc": "How the order book is drawn once `features.depth` is on and `setDepthData` has fed it (`setDepthOverlay`)."
+      },
+      {
         "name": "logScale",
         "type": "boolean",
         "doc": "Start with logarithmic price scale",
@@ -7380,6 +7385,11 @@
         "type": "WatermarkConfig"
       },
       {
+        "name": "depthOverlay",
+        "type": "DepthOverlayConfig",
+        "doc": "How the order book is drawn once `features.depth` is on and `setDepthData` has fed it (`setDepthOverlay`)."
+      },
+      {
         "name": "logScale",
         "type": "boolean",
         "doc": "Start with logarithmic price scale",
@@ -7623,6 +7633,12 @@
         "name": "tradingContextMenu",
         "type": "boolean",
         "doc": "Right-click menu for placing orders. Default `false` — opt in explicitly.",
+        "kind": "boolean"
+      },
+      {
+        "name": "depth",
+        "type": "boolean",
+        "doc": "The order book drawn on the plot (`setDepthData`, `setDepthOverlay`), for a chart that only shows prices: it needs no orders and no trading UI, so it works with `trading: false`. Default `false`; `true` also turns the overlay on.",
         "kind": "boolean"
       },
       {
