@@ -1627,8 +1627,10 @@ export class ChartWidget {
       this.adapter = options.adapter;
       this.connectStream();
     } else {
-      // No stream to say the interval: the legend and the indicators kept to some take it from here.
+      // No stream to say the interval or the symbol: the legend and the indicators kept to some take them from here.
       this.chart.setDataTimeframe(this.state.timeframe);
+      // Only a symbol the host named: the fallback one (the first listed, or BTCUSDT) may not be its bars'.
+      if (options.symbol) this.chart.setSymbolName(options.symbol);
     }
 
     // Watchlist live-update loop. 1s cadence keeps DOM churn low while still
@@ -1892,6 +1894,9 @@ export class ChartWidget {
     this.layouts.layoutSession?.changed();
     if (this.adapter) {
       await this.connectStream();
+    } else {
+      // The bars are the host's: no stream names the symbol on the legend.
+      this.chart.setSymbolName(symbol);
     }
   }
 
