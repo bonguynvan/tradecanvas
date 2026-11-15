@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Order book
+
+- **Rows of a set price size in the depth overlay** (`@tradecanvas/commons`, `@tradecanvas/core`, `@tradecanvas/chart`): `depthOverlay.rowSize` (in price) adds the book's levels up into rows that far apart, each centred on a multiple of it and drawn from half a row below to half a row above. A dense book under a coarse price scale no longer draws as one sliver, and an empty level by the market no longer makes every bar two levels tall. A level halfway between two rows goes to the one away from the market, so a bid's row never reaches past an ask's. `markBest` then lines the middle of the best bid's and ask's rows. `depthBars` takes the row size as a third argument.
+
 ## 2.8.1 (2026-11-15)
 
 ### Fixes

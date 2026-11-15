@@ -91,6 +91,15 @@ export interface DepthOverlayConfig {
   askColor?: string;
   /** The longest a bar can be, in pixels (never more than the plot is wide). Default 100. */
   maxWidth?: number;
+  /**
+   * The height of a bar in price, for a book whose levels are closer than the
+   * chart can show or have gaps: the levels are added up into rows this far
+   * apart, each row centred on a multiple of it and drawn from half a row below
+   * to half a row above. Unset: one bar a level, as tall as the gap between the
+   * two levels nearest the market. With a row size, `markBest` lines the
+   * middle of the best rows.
+   */
+  rowSize?: number;
   /** Draw a line at the best bid and at the best ask, as wide as the overlay. Default `false`. */
   markBest?: boolean;
   /** The colour of the best bid's line. Default green. */

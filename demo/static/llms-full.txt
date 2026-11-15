@@ -980,7 +980,7 @@ const weeks = resampleBars(days, '1w', { timeZone });
 
 ## The order book on the price chart, display only
 
-`features.depth` draws the book on the plot from the right edge; it needs no orders and works with `trading: false`. `mode: 'level'` shows each price's own size (a wall is one long bar), `'cumulative'` (default) adds the levels away from the market; `markBest` lines the best bid and ask. `rightMargin` leaves empty slots for the bars.
+`features.depth` draws the book on the plot from the right edge; it needs no orders and works with `trading: false`. `mode: 'level'` shows each price's own size (a wall is one long bar), `'cumulative'` (default) adds the levels away from the market; `markBest` lines the best bid and ask. `rowSize` (in price) adds the levels up into rows that far apart, for a dense book under a coarse scale or a book with gaps. `rightMargin` leaves empty slots for the bars.
 
 ```ts
 import { Chart } from '@tradecanvas/chart';
@@ -994,7 +994,7 @@ const chart = new Chart(host, {
   rightMargin: 14,
 });
 chart.setDepthData(orderBook); // on every book update; null clears it
-chart.setDepthOverlay({ mode: 'cumulative' });
+chart.setDepthOverlay({ mode: 'cumulative', rowSize: 0.5 }); // rows of 0.5 in price
 ```
 
 ## Small charts around the chart: a book's depth, an equity curve, a gauge

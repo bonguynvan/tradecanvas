@@ -283,6 +283,7 @@ widget.getChart().on('orderPlace', (e) => {
 </p>
 <ul>
   <li><code>mode</code>: <code>'cumulative'</code> (mặc định) cộng dồn từng mức với các mức gần giá hơn nên thanh dài ra khi xa giá; <code>'level'</code> vẽ khối lượng riêng của từng mức nên một wall hiện thành một thanh dài.</li>
+  <li><code>rowSize</code>: chiều cao thanh tính theo giá. Các mức được cộng gộp thành từng hàng cách nhau đúng khoảng đó, nên book dày trên thang giá thô hoặc book có mức trống vẫn vẽ thanh đều nhau (đặt bằng hàng của footprint). Khi đó <code>markBest</code> kẻ ở giữa hàng best.</li>
   <li><code>markBest</code>: một đường ở best bid và best ask (<code>bestBidColor</code>, <code>bestAskColor</code>).</li>
   <li><code>maxWidth</code>: độ dài tối đa của thanh theo pixel (không quá bề rộng plot), <code>bidColor</code>, <code>askColor</code>.</li>
 </ul>

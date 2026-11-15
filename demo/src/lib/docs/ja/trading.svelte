@@ -271,6 +271,7 @@ widget.getChart().on('orderPlace', (e) => {
 </p>
 <ul>
   <li><code>mode</code>：<code>'cumulative'</code>（既定）は各価格を市場に近い価格と合算するので、市場から離れるほどバーが伸びます。<code>'level'</code> は各価格の数量だけを描くので、大きな板は 1 本の長いバーになります。</li>
+  <li><code>rowSize</code>：バーの高さを価格で指定します。各価格はこの間隔の行にまとめられるので、粗い価格目盛りの上の密な板や、空いた価格がある板でも、均一なバーで描かれます（フットプリントの行に合わせられます）。このとき <code>markBest</code> は最良の行の中央に線を引きます。</li>
   <li><code>markBest</code>：最良買気配と最良売気配に線を引きます（<code>bestBidColor</code>、<code>bestAskColor</code>）。</li>
   <li><code>maxWidth</code>：バーの最大長（ピクセル、プロットの幅まで）、<code>bidColor</code>、<code>askColor</code>。</li>
 </ul>

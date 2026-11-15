@@ -100,3 +100,53 @@ describe('DepthOverlay', () => {
     expect(extra[1][1] + 0.5).toBe(48);
   });
 });
+
+describe('rows of a set price size (rowSize)', () => {
+  const fine: DepthData = {
+    bids: [{ price: 50, volume: 2 }, { price: 49.6, volume: 1 }, { price: 49.4, volume: 3 }, { price: 47, volume: 6 }],
+    asks: [{ price: 50.6, volume: 1 }, { price: 51.2, volume: 2 }],
+  };
+
+  it('adds up the levels that fall in each row, the row centred on a multiple of rowSize', () => {
+    const { bids, asks, max } = depthBars(fine, 'level', 1);
+    expect(bids).toEqual([{ price: 50, value: 3 }, { price: 49, value: 3 }, { price: 47, value: 6 }]);
+    expect(asks).toEqual([{ price: 51, value: 3 }]);
+    expect(max).toBe(6);
+    expect(depthBars(fine, 'cumulative', 1).bids.map((b) => b.value)).toEqual([3, 6, 12]);
+  });
+
+  it('puts a level on a row edge by the rule, though the division misses the half', () => {
+    // 0.15 / 0.1 is 1.4999999999999998 in floating point.
+    const edge: DepthData = { bids: [{ price: 0.15, volume: 1 }], asks: [{ price: 0.15, volume: 1 }] };
+    const { bids, asks } = depthBars(edge, 'level', 0.1);
+    expect(bids[0].price).toBeCloseTo(0.1);
+    expect(asks[0].price).toBeCloseTo(0.2);
+  });
+
+  it('ignores a rowSize that is not a positive number', () => {
+    for (const rowSize of [0, -1, Number.NaN, Number.POSITIVE_INFINITY]) {
+      expect(depthBars(fine, 'level', rowSize)).toEqual(depthBars(fine, 'level'));
+    }
+  });
+
+  it('draws each row as tall as its price size, whatever the gaps between levels', () => {
+    const gappy: DepthData = { bids: [{ price: 50, volume: 1 }, { price: 46, volume: 1 }], asks: [] };
+    const { ctx, calls } = recordingCtx();
+    new DepthOverlay().render(ctx, gappy, unitViewport, { enabled: true, maxWidth: 100, rowSize: 2 });
+    // One price unit is one pixel: a row of 2 is 2 px, from 51 down to 49.
+    expect(rects(calls).map((r) => [r[1], r[3]].map((v) => Math.round(v * 1e6) / 1e6))).toEqual([[49, 2], [53, 2]]);
+  });
+
+  it('leaves a hairline between rows of single levels when they are tall enough', () => {
+    const { ctx, calls } = recordingCtx();
+    new DepthOverlay().render(ctx, book, unitViewport, { enabled: true, maxWidth: 100, rowSize: 4, mode: 'level' });
+    for (const r of rects(calls)) expect(r[3]).toBeCloseTo(3);
+  });
+
+  it('marks the best bid and ask at their rows', () => {
+    const { ctx, calls } = recordingCtx();
+    new DepthOverlay().render(ctx, fine, unitViewport, { enabled: true, maxWidth: 100, rowSize: 1, markBest: true });
+    const lines = rects(calls).filter((r) => r[3] === 1 && r[2] === 100 && r[0] === 900);
+    expect(lines.map((r) => r[1] + 0.5).slice(-2)).toEqual([50, 49]);
+  });
+});
