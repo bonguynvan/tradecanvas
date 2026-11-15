@@ -26,6 +26,8 @@
   <a href="README.md">English</a> · <b>Tiếng Việt</b> · <a href="README.zh-CN.md">简体中文</a> · <a href="README.ja.md">日本語</a> · <a href="README.ko.md">한국어</a> · <a href="README.es.md">Español</a>
 </p>
 
+**Chart giao dịch của bạn, luật của bạn.** TradeCanvas là chart engine bạn làm chủ: giấy phép MIT, cài từ npm và chạy cùng app của bạn, lấy dữ liệu của chính bạn, mang thương hiệu của bạn. Không logo trên chart, không phải xin phép, không nền tảng nào đứng giữa bạn và người dùng. Đang dùng charting library của TradingView hoặc Lightweight Charts? Giữ nguyên datafeed: [chuyển từ TradingView](https://tradecanvas.dev/vi/docs/from-tradingview/).
+
 **TradeCanvas là thư viện biểu đồ giao dịch mã nguồn mở cho web**, giấy phép MIT. Từ nến Nhật đến Renko, 134 chỉ báo, 76 công cụ vẽ, dữ liệu sàn trực tiếp và lệnh ngay trên biểu đồ, vẽ bằng Canvas 2D hoặc WebGL, không phụ thuộc thư viện bên thứ ba nào. Dùng ngay `ChartWidget` đầy đủ, hoặc tự dựng giao diện trên `Chart` headless, bằng TypeScript, React, Vue hay Svelte.
 
 <p align="center">
