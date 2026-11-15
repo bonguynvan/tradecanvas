@@ -8,6 +8,7 @@ Use `ChartWidget` (`@tradecanvas/chart/widget`) for a complete trading UI, or `C
 
 - [Getting started](https://tradecanvas.dev/docs/getting-started): install, the widget, the headless chart
 - [Moving to 2.0](https://tradecanvas.dev/docs/migration): from 1.x: the new default look and the option that keeps the old one, each removed name and what to use, what changed without a name changing
+- [Moving from TradingView](https://tradecanvas.dev/docs/from-tradingview): an app on TradingView's charting library or Lightweight Charts: its datafeed kept as it is (feedFromJsApi, udfFeed for a UDF server), the MCP tools that map its options, featuresets, overrides, studies, drawings and methods, what changes and what does not carry over
 - [API reference](https://tradecanvas.dev/docs/api): Chart and ChartWidget methods, options and events
 - [Indicators](https://tradecanvas.dev/docs/indicators): every built-in indicator with its id, inputs and lines
 - [Styling](https://tradecanvas.dev/docs/styling): the widget's look as tokens: the Print (default, kept to the golden ratio), Studio, Terminal, Capsule and Desk presets, your own theme, CSS variables
@@ -461,6 +462,7 @@ own CSS through `--tcw-*` variables and `[data-tcw-part~="name"]` (stable throug
 
 - [references/indicators.md](references/indicators.md) — every built-in indicator: id, default params, lines, levels, source support (generated from the code).
 - [references/style-keys.md](references/style-keys.md) — every style key for `applyOverrides` and its kind (generated from the code).
+- [references/migrate-from-tradingview.md](references/migrate-from-tradingview.md) — moving an app from TradingView's charting library or Lightweight Charts: the MCP tools that map its names and options, its datafeed kept as it is (`feedFromJsApi`, `udfFeed`), and what differs.
 - [references/recipes.md](references/recipes.md) — worked examples: custom data feeds, frameworks, indicators on indicators, a custom indicator, indicators on a long history computed in a worker (`indicatorWorker`), multi-chart layouts.
 - Docs site: https://tradecanvas.dev/ · API: https://tradecanvas.dev/docs/api
 
@@ -1955,11 +1957,13 @@ claude mcp add tradecanvas -- npx -y @tradecanvas/mcp
 
 On Windows outside WSL: `claude mcp add tradecanvas -- cmd /c npx -y @tradecanvas/mcp`. In Git Bash, which runs the `!` commands of Claude Code on Windows, write `//c`: Git Bash turns `/c` into a path.
 
+Moving an app from TradingView's charting library or Lightweight Charts? The same server maps their options, featuresets, overrides, studies, drawings and methods (`migration_plan`, `migration_lookup`, `convert_widget_options`), and `feedFromJsApi` keeps the datafeed as it is ([Moving from TradingView](https://tradecanvas.dev/docs/from-tradingview/)).
+
 Measured, not claimed: on 24 tasks an agent with the skill finished every run (48 of 48, and 47 of 48 without it), in 10 turns against 15 and 169k tokens against 221k, and went reading the compiled code in 1 run of 48 against 6 ([the run](https://github.com/bonguynvan/tradecanvas/blob/main/evals/baselines/2026-11-13-sonnet.md), on 2.1.1; the tasks and what they turned up are in [`evals`](https://github.com/bonguynvan/tradecanvas/blob/main/evals/README.md)).
 
 ## Documentation
 
-[Getting started](https://tradecanvas.dev/docs/getting-started/) · [API](https://tradecanvas.dev/docs/api/) · [Indicators](https://tradecanvas.dev/docs/indicators/) · [Drawing tools](https://tradecanvas.dev/docs/drawing-tools/) · [Realtime](https://tradecanvas.dev/docs/realtime/) · [Trading](https://tradecanvas.dev/docs/trading/) · [Styling](https://tradecanvas.dev/docs/styling/) · [Frameworks](https://tradecanvas.dev/docs/frameworks/) · [Plugins](https://tradecanvas.dev/docs/plugins/) · [Phones and apps](https://tradecanvas.dev/docs/embed/#mobile-app) · [Performance](https://tradecanvas.dev/docs/performance/)
+[Getting started](https://tradecanvas.dev/docs/getting-started/) · [From TradingView](https://tradecanvas.dev/docs/from-tradingview/) · [API](https://tradecanvas.dev/docs/api/) · [Indicators](https://tradecanvas.dev/docs/indicators/) · [Drawing tools](https://tradecanvas.dev/docs/drawing-tools/) · [Realtime](https://tradecanvas.dev/docs/realtime/) · [Trading](https://tradecanvas.dev/docs/trading/) · [Styling](https://tradecanvas.dev/docs/styling/) · [Frameworks](https://tradecanvas.dev/docs/frameworks/) · [Plugins](https://tradecanvas.dev/docs/plugins/) · [Phones and apps](https://tradecanvas.dev/docs/embed/#mobile-app) · [Performance](https://tradecanvas.dev/docs/performance/)
 
 The docs are in English, Tiếng Việt, 简体中文, 日本語, 한국어 and Español. Measurements, limits and how it is tested are on the [system audit](https://tradecanvas.dev/audit/).
 

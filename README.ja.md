@@ -113,11 +113,13 @@ claude mcp add tradecanvas -- npx -y @tradecanvas/mcp
 
 WSL を使わない Windows では: `claude mcp add tradecanvas -- cmd /c npx -y @tradecanvas/mcp`. Git Bash（Windows で Claude Code の `!` コマンドを実行するシェル）では `//c` と書きます。`/c` がパスに書き換えられるためです。
 
+TradingView の charting library や Lightweight Charts からアプリを移しますか？同じサーバーが、それらのオプション、featureset、override、study、描画、メソッドを対応づけ (`migration_plan`、`migration_lookup`、`convert_widget_options`)、`feedFromJsApi` がデータフィードをそのまま使えるようにします ([TradingView からの移行](https://tradecanvas.dev/ja/docs/from-tradingview/))。
+
 自称ではなく実測です。24 のタスクで、スキルのあるエージェントはすべての実行を完了しました（48 回中 48 回。スキルなしでは 48 回中 47 回）。15 ターンに対して 10 ターン、22.1 万トークンに対して 16.9 万トークンで済み、コンパイル済みコードを読みに行ったのは 48 回中 6 回に対して 1 回でした（[この実行](evals/baselines/2026-11-13-sonnet.md)、2.1.1 時点。タスクと判明したことは [`evals`](evals/README.md) にあります）。
 
 ## ドキュメント
 
-[はじめに](https://tradecanvas.dev/ja/docs/getting-started/) · [API](https://tradecanvas.dev/ja/docs/api/) · [インジケーター](https://tradecanvas.dev/ja/docs/indicators/) · [描画ツール](https://tradecanvas.dev/ja/docs/drawing-tools/) · [リアルタイム](https://tradecanvas.dev/ja/docs/realtime/) · [取引](https://tradecanvas.dev/ja/docs/trading/) · [スタイル](https://tradecanvas.dev/ja/docs/styling/) · [フレームワーク](https://tradecanvas.dev/ja/docs/frameworks/) · [プラグイン](https://tradecanvas.dev/ja/docs/plugins/) · [スマートフォンとアプリ](https://tradecanvas.dev/ja/docs/embed/#mobile-app) · [パフォーマンス](https://tradecanvas.dev/ja/docs/performance/)
+[はじめに](https://tradecanvas.dev/ja/docs/getting-started/) · [TradingView からの移行](https://tradecanvas.dev/ja/docs/from-tradingview/) · [API](https://tradecanvas.dev/ja/docs/api/) · [インジケーター](https://tradecanvas.dev/ja/docs/indicators/) · [描画ツール](https://tradecanvas.dev/ja/docs/drawing-tools/) · [リアルタイム](https://tradecanvas.dev/ja/docs/realtime/) · [取引](https://tradecanvas.dev/ja/docs/trading/) · [スタイル](https://tradecanvas.dev/ja/docs/styling/) · [フレームワーク](https://tradecanvas.dev/ja/docs/frameworks/) · [プラグイン](https://tradecanvas.dev/ja/docs/plugins/) · [スマートフォンとアプリ](https://tradecanvas.dev/ja/docs/embed/#mobile-app) · [パフォーマンス](https://tradecanvas.dev/ja/docs/performance/)
 
 ドキュメントは English、Tiếng Việt、简体中文、日本語、한국어、Español で読めます。計測値、制限、テストの方法は[システム監査](https://tradecanvas.dev/ja/audit/)にあります。
 

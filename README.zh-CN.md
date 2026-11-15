@@ -113,11 +113,13 @@ claude mcp add tradecanvas -- npx -y @tradecanvas/mcp
 
 在 Windows 上（不经过 WSL）: `claude mcp add tradecanvas -- cmd /c npx -y @tradecanvas/mcp`. 在 Git Bash 中（Claude Code 在 Windows 上用它运行 `!` 命令）要写成 `//c`：Git Bash 会把 `/c` 改写成路径。
 
+要把应用从 TradingView 的 charting library 或 Lightweight Charts 迁移过来？同一个服务器会对照它们的选项、featureset、override、study、画线和方法 (`migration_plan`、`migration_lookup`、`convert_widget_options`)，`feedFromJsApi` 则让 datafeed 保持原样 ([从 TradingView 迁移](https://tradecanvas.dev/zh/docs/from-tradingview/))。
+
 这是实测结果，不是自述：在 24 个任务上，有技能的智能体每次运行都完成了任务（48 次中的 48 次，没有技能时为 48 次中的 47 次），用 10 轮而不是 15 轮、16.9 万个 token 而不是 22.1 万个，并且 48 次运行中只有 1 次去读编译后的代码，而没有技能时是 6 次（[这次运行](evals/baselines/2026-11-13-sonnet.md)，基于 2.1.1；任务及其发现见 [`evals`](evals/README.md)）。
 
 ## 文档
 
-[快速开始](https://tradecanvas.dev/zh/docs/getting-started/) · [API](https://tradecanvas.dev/zh/docs/api/) · [指标](https://tradecanvas.dev/zh/docs/indicators/) · [画线工具](https://tradecanvas.dev/zh/docs/drawing-tools/) · [实时数据](https://tradecanvas.dev/zh/docs/realtime/) · [交易](https://tradecanvas.dev/zh/docs/trading/) · [样式](https://tradecanvas.dev/zh/docs/styling/) · [框架](https://tradecanvas.dev/zh/docs/frameworks/) · [插件](https://tradecanvas.dev/zh/docs/plugins/) · [手机与应用](https://tradecanvas.dev/zh/docs/embed/#mobile-app) · [性能](https://tradecanvas.dev/zh/docs/performance/)
+[快速开始](https://tradecanvas.dev/zh/docs/getting-started/) · [从 TradingView 迁移](https://tradecanvas.dev/zh/docs/from-tradingview/) · [API](https://tradecanvas.dev/zh/docs/api/) · [指标](https://tradecanvas.dev/zh/docs/indicators/) · [画线工具](https://tradecanvas.dev/zh/docs/drawing-tools/) · [实时数据](https://tradecanvas.dev/zh/docs/realtime/) · [交易](https://tradecanvas.dev/zh/docs/trading/) · [样式](https://tradecanvas.dev/zh/docs/styling/) · [框架](https://tradecanvas.dev/zh/docs/frameworks/) · [插件](https://tradecanvas.dev/zh/docs/plugins/) · [手机与应用](https://tradecanvas.dev/zh/docs/embed/#mobile-app) · [性能](https://tradecanvas.dev/zh/docs/performance/)
 
 文档提供 English、Tiếng Việt、简体中文、日本語、한국어 和 Español 版本。测量数据、限制和测试方式见[系统审计](https://tradecanvas.dev/zh/audit/)。
 

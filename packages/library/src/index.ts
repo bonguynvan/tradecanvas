@@ -240,6 +240,22 @@ export { StreamManager, ReconnectManager, ReplayController, BinanceAdapter, Mock
 export type { ReplayBarEvent, ReplayEventMap, ReplayOptions, ReplayStateChangeEvent, ReplayStatus } from '@tradecanvas/core';
 export type { PaperExecutionOptions, WebSocketAdapterOptions, WsParseResult, PollingAdapterOptions, CoinbaseAdapterOptions, BybitAdapterOptions, KrakenAdapterOptions, UpbitAdapterOptions } from '@tradecanvas/core';
 export { DEFAULT_RECONNECT, DEFAULT_STREAM_CONFIG } from '@tradecanvas/commons';
+// Datafeeds written for the callback-style JS API, and UDF servers, as a DataFeed
+export { feedFromJsApi, udfFeed, sessionsFromJsApi, symbolInfoFromJsApi } from '@tradecanvas/core';
+export type {
+  JsApiFeed,
+  JsApiFeedOptions,
+  UdfFeedOptions,
+  JsApiDatafeed,
+  JsApiConfiguration,
+  JsApiSymbolInfo,
+  JsApiSearchResult,
+  JsApiBar,
+  JsApiPeriodParams,
+  JsApiHistoryMetadata,
+  JsApiQuoteData,
+} from '@tradecanvas/core';
+export { resolutionToTimeframe, timeframeToResolution } from '@tradecanvas/commons';
 
 // Re-export UI
 export { ChartLegend, Screenshot, Watermark, BarCountdown, SessionBreaks, SessionShading, DEFAULT_LEGEND_CONFIG, DEFAULT_SESSION_HOURS } from '@tradecanvas/core';

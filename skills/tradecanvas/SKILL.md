@@ -416,5 +416,6 @@ own CSS through `--tcw-*` variables and `[data-tcw-part~="name"]` (stable throug
 
 - [references/indicators.md](references/indicators.md) — every built-in indicator: id, default params, lines, levels, source support (generated from the code).
 - [references/style-keys.md](references/style-keys.md) — every style key for `applyOverrides` and its kind (generated from the code).
+- [references/migrate-from-tradingview.md](references/migrate-from-tradingview.md) — moving an app from TradingView's charting library or Lightweight Charts: the MCP tools that map its names and options, its datafeed kept as it is (`feedFromJsApi`, `udfFeed`), and what differs.
 - [references/recipes.md](references/recipes.md) — worked examples: custom data feeds, frameworks, indicators on indicators, a custom indicator, indicators on a long history computed in a worker (`indicatorWorker`), multi-chart layouts.
 - Docs site: https://tradecanvas.dev/ · API: https://tradecanvas.dev/docs/api

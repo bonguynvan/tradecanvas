@@ -16,3 +16,7 @@ export type {
 export * from './adapters/index.js';
 export { adapterFromFeed, feedFromAdapter, isDataFeed, streamAdapterOf } from './feeds/feedAdapter.js';
 export { ManualFeed } from './feeds/ManualFeed.js';
+export { feedFromJsApi, type JsApiFeed, type JsApiFeedOptions } from './feeds/jsApiFeed.js';
+export { udfFeed, type UdfFeedOptions } from './feeds/udfFeed.js';
+export { sessionsFromJsApi, symbolInfoFromJsApi } from './feeds/jsApiSymbols.js';
+export type * from './feeds/jsApiTypes.js';

@@ -927,6 +927,7 @@ const ja: SiteMessages = {
       frameworks: 'フレームワーク',
       embed: '埋め込みウィジェット',
       migration: '2.0 への移行',
+      'from-tradingview': 'TradingView からの移行',
       'how-it-works': '仕組み',
       api: 'API リファレンス',
       styling: 'スタイル設定',

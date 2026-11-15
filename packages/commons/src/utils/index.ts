@@ -2,6 +2,7 @@ export * from './math.js';
 export * from './data.js';
 export * from './color.js';
 export * from './time.js';
+export * from './resolution.js';
 export * from './precision.js';
 export * from './priceSource.js';
 export * from './resample.js';

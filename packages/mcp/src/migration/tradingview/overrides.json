@@ -1,0 +1,2073 @@
+{
+  "source": "tradingview",
+  "docs": "https://www.tradingview.com/charting-library-docs/latest/customization/overrides/chart-overrides, https://www.tradingview.com/charting-library-docs/latest/api/interfaces/Charting_Library.ChartPropertiesOverrides, https://www.tradingview.com/charting-library-docs/latest/api/enums/Charting_Library.LineStyle, https://www.tradingview.com/charting-library-docs/latest/api/enums/Charting_Library.ChartStyle, https://www.tradingview.com/charting-library-docs/latest/ui_elements/watermarks; read 2026-11",
+  "entries": [
+    {
+      "kind": "override",
+      "name": "backgrounds.nightMarket.color",
+      "to": [],
+      "note": "No colour key: out-of-session bars are dimmed by the theme (chart.setSessionShadingVisible)."
+    },
+    {
+      "kind": "override",
+      "name": "backgrounds.nightMarket.transparency",
+      "to": [],
+      "note": "No separate transparency: put the alpha in the colour (rgba)."
+    },
+    {
+      "kind": "override",
+      "name": "backgrounds.nightMarket.visible",
+      "to": [],
+      "note": "No night-session shading of its own."
+    },
+    {
+      "kind": "override",
+      "name": "backgrounds.preMarket.color",
+      "to": [],
+      "note": "No colour key: out-of-session bars are dimmed by the theme (chart.setSessionShadingVisible)."
+    },
+    {
+      "kind": "override",
+      "name": "backgrounds.preMarket.transparency",
+      "to": [],
+      "note": "No separate transparency: put the alpha in the colour (rgba)."
+    },
+    {
+      "kind": "override",
+      "name": "backgrounds.preMarket.visible",
+      "to": [
+        {
+          "api": "chart.setSessionShadingVisible(true)"
+        }
+      ],
+      "note": "One switch dims pre- and post-market together, from SymbolInfo.sessions or setSessionShadingConfig."
+    },
+    {
+      "kind": "override",
+      "name": "backgrounds.postMarket.color",
+      "to": [],
+      "note": "No colour key: out-of-session bars are dimmed by the theme (chart.setSessionShadingVisible)."
+    },
+    {
+      "kind": "override",
+      "name": "backgrounds.postMarket.transparency",
+      "to": [],
+      "note": "No separate transparency: put the alpha in the colour (rgba)."
+    },
+    {
+      "kind": "override",
+      "name": "backgrounds.postMarket.visible",
+      "to": [
+        {
+          "api": "chart.setSessionShadingVisible(true)"
+        }
+      ],
+      "note": "One switch dims pre- and post-market together, from SymbolInfo.sessions or setSessionShadingConfig."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.style",
+      "to": [
+        {
+          "option": "Chart.chartType"
+        },
+        {
+          "api": "chart.setChartType('candlestick')"
+        }
+      ],
+      "note": "0 bar, 1 candlestick, 2 line, 3 area, 4 renko, 5 kagi, 6 pointAndFigure, 7 lineBreak, 8 heikinAshi, 9 hollowCandle, 10 baseline, 12 hiLo, 14 lineWithMarkers, 15 stepLine, 16 hlcArea, 19 volumeCandles; 13/20/21 none."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.areaStyle.color1",
+      "to": [
+        {
+          "styleKey": "series.area.topColor"
+        }
+      ],
+      "note": "Fill colour at the top of the area gradient."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.areaStyle.color2",
+      "to": [
+        {
+          "styleKey": "series.area.bottomColor"
+        }
+      ],
+      "note": "Fill colour at the bottom of the area gradient."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.areaStyle.linecolor",
+      "to": [
+        {
+          "styleKey": "series.area.lineColor"
+        }
+      ]
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.areaStyle.linestyle",
+      "to": [],
+      "note": "The area line is always solid."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.areaStyle.linewidth",
+      "to": [
+        {
+          "styleKey": "series.area.lineWidth"
+        }
+      ]
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.areaStyle.priceSource",
+      "to": [],
+      "note": "Line-type series always draw the close."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.areaStyle.transparency",
+      "to": [],
+      "note": "No separate transparency: put the alpha in the colour (rgba)."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.barStyle.barColorsOnPrevClose",
+      "to": [],
+      "note": "Colouring by the previous close is not supported: up/down follows close against open."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.barStyle.dontDrawOpen",
+      "to": [],
+      "note": "Bars always draw the open tick."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.barStyle.downColor",
+      "to": [
+        {
+          "styleKey": "series.bar.downColor"
+        }
+      ]
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.barStyle.thinBars",
+      "to": [],
+      "note": "No thin-bar switch; bar thickness follows the zoom."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.barStyle.upColor",
+      "to": [
+        {
+          "styleKey": "series.bar.upColor"
+        }
+      ]
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.baselineStyle.baseLevelPercentage",
+      "to": [],
+      "note": "The base level cannot be set by a style key."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.baselineStyle.baselineColor",
+      "to": [],
+      "note": "No style key for the base line itself; it follows the theme."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.baselineStyle.bottomFillColor1",
+      "to": [],
+      "note": "Fills are derived from series.baseline.downColor."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.baselineStyle.bottomFillColor2",
+      "to": [],
+      "note": "Fills are derived from series.baseline.downColor."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.baselineStyle.bottomLineColor",
+      "to": [
+        {
+          "styleKey": "series.baseline.downColor"
+        }
+      ]
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.baselineStyle.bottomLineWidth",
+      "to": [
+        {
+          "styleKey": "series.baseline.lineWidth"
+        }
+      ],
+      "note": "One width for both halves of the line."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.baselineStyle.priceSource",
+      "to": [],
+      "note": "Line-type series always draw the close."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.baselineStyle.topFillColor1",
+      "to": [],
+      "note": "Fills are derived from series.baseline.upColor."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.baselineStyle.topFillColor2",
+      "to": [],
+      "note": "Fills are derived from series.baseline.upColor."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.baselineStyle.topLineColor",
+      "to": [
+        {
+          "styleKey": "series.baseline.upColor"
+        }
+      ]
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.baselineStyle.topLineWidth",
+      "to": [
+        {
+          "styleKey": "series.baseline.lineWidth"
+        }
+      ],
+      "note": "One width for both halves of the line."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.baselineStyle.transparency",
+      "to": [],
+      "note": "No separate transparency: put the alpha in the colour (rgba)."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.bidAsk.askLineColor",
+      "to": [],
+      "note": "Bid/ask lines take the theme colours; no style key."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.bidAsk.bidLineColor",
+      "to": [],
+      "note": "Bid/ask lines take the theme colours; no style key."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.bidAsk.lineStyle",
+      "to": [],
+      "note": "No style key for the bid/ask lines."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.bidAsk.lineWidth",
+      "to": [],
+      "note": "No style key for the bid/ask lines."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.bidAsk.visible",
+      "to": [
+        {
+          "api": "chart.setBidAsk(quote)"
+        }
+      ],
+      "note": "Pass { bid, ask } to show the lines and tags, null to hide; a feed whose ticks carry bid/ask keeps them current."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.candleStyle.barColorsOnPrevClose",
+      "to": [],
+      "note": "Colouring by the previous close is not supported: up/down follows close against open."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.candleStyle.borderColor",
+      "to": [],
+      "note": "No separate border colour: the body colour outlines the bar."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.candleStyle.borderDownColor",
+      "to": [],
+      "note": "No separate border colour: the body colour outlines the bar."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.candleStyle.borderUpColor",
+      "to": [],
+      "note": "No separate border colour: the body colour outlines the bar."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.candleStyle.downColor",
+      "to": [
+        {
+          "styleKey": "series.candlestick.downColor"
+        }
+      ]
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.candleStyle.drawBody",
+      "to": [],
+      "note": "Bodies, borders and wicks are always drawn."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.candleStyle.drawBorder",
+      "to": [],
+      "note": "Bodies, borders and wicks are always drawn."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.candleStyle.drawWick",
+      "to": [],
+      "note": "Bodies, borders and wicks are always drawn."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.candleStyle.upColor",
+      "to": [
+        {
+          "styleKey": "series.candlestick.upColor"
+        }
+      ]
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.candleStyle.wickColor",
+      "to": [
+        {
+          "styleKey": "series.candlestick.wickUpColor"
+        },
+        {
+          "styleKey": "series.candlestick.wickDownColor"
+        }
+      ],
+      "note": "Set both wick keys to the one colour."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.candleStyle.wickDownColor",
+      "to": [
+        {
+          "styleKey": "series.candlestick.wickDownColor"
+        }
+      ]
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.candleStyle.wickUpColor",
+      "to": [
+        {
+          "styleKey": "series.candlestick.wickUpColor"
+        }
+      ]
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.haStyle.barColorsOnPrevClose",
+      "to": [],
+      "note": "Colouring by the previous close is not supported: up/down follows close against open."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.haStyle.borderColor",
+      "to": [],
+      "note": "No separate border colour: the body colour outlines the bar."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.haStyle.borderDownColor",
+      "to": [],
+      "note": "No separate border colour: the body colour outlines the bar."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.haStyle.borderUpColor",
+      "to": [],
+      "note": "No separate border colour: the body colour outlines the bar."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.haStyle.downColor",
+      "to": [
+        {
+          "styleKey": "series.heikinAshi.downColor"
+        }
+      ]
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.haStyle.drawBody",
+      "to": [],
+      "note": "Bodies, borders and wicks are always drawn."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.haStyle.drawBorder",
+      "to": [],
+      "note": "Bodies, borders and wicks are always drawn."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.haStyle.drawWick",
+      "to": [],
+      "note": "Bodies, borders and wicks are always drawn."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.haStyle.upColor",
+      "to": [
+        {
+          "styleKey": "series.heikinAshi.upColor"
+        }
+      ]
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.haStyle.wickColor",
+      "to": [
+        {
+          "styleKey": "series.heikinAshi.wickUpColor"
+        },
+        {
+          "styleKey": "series.heikinAshi.wickDownColor"
+        }
+      ],
+      "note": "Set both wick keys to the one colour."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.haStyle.wickDownColor",
+      "to": [
+        {
+          "styleKey": "series.heikinAshi.wickDownColor"
+        }
+      ]
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.haStyle.wickUpColor",
+      "to": [
+        {
+          "styleKey": "series.heikinAshi.wickUpColor"
+        }
+      ]
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.hollowCandleStyle.borderColor",
+      "to": [],
+      "note": "No separate border colour: the body colour outlines the bar."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.hollowCandleStyle.borderDownColor",
+      "to": [],
+      "note": "No separate border colour: the body colour outlines the bar."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.hollowCandleStyle.borderUpColor",
+      "to": [],
+      "note": "No separate border colour: the body colour outlines the bar."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.hollowCandleStyle.downColor",
+      "to": [
+        {
+          "styleKey": "series.hollowCandle.downColor"
+        }
+      ]
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.hollowCandleStyle.drawBody",
+      "to": [],
+      "note": "Bodies, borders and wicks are always drawn."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.hollowCandleStyle.drawBorder",
+      "to": [],
+      "note": "Bodies, borders and wicks are always drawn."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.hollowCandleStyle.drawWick",
+      "to": [],
+      "note": "Bodies, borders and wicks are always drawn."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.hollowCandleStyle.upColor",
+      "to": [
+        {
+          "styleKey": "series.hollowCandle.upColor"
+        }
+      ]
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.hollowCandleStyle.wickColor",
+      "to": [],
+      "note": "Hollow candle wicks take the body colour; no wick key."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.hollowCandleStyle.wickDownColor",
+      "to": [],
+      "note": "Hollow candle wicks take the body colour; no wick key."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.hollowCandleStyle.wickUpColor",
+      "to": [],
+      "note": "Hollow candle wicks take the body colour; no wick key."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.volCandlesStyle.barColorsOnPrevClose",
+      "to": [],
+      "note": "Colouring by the previous close is not supported: up/down follows close against open."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.volCandlesStyle.borderColor",
+      "to": [],
+      "note": "No separate border colour: the body colour outlines the bar."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.volCandlesStyle.borderDownColor",
+      "to": [],
+      "note": "No separate border colour: the body colour outlines the bar."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.volCandlesStyle.borderUpColor",
+      "to": [],
+      "note": "No separate border colour: the body colour outlines the bar."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.volCandlesStyle.downColor",
+      "to": [
+        {
+          "styleKey": "series.volumeCandles.downColor"
+        }
+      ]
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.volCandlesStyle.drawBody",
+      "to": [],
+      "note": "Bodies, borders and wicks are always drawn."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.volCandlesStyle.drawBorder",
+      "to": [],
+      "note": "Bodies, borders and wicks are always drawn."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.volCandlesStyle.drawWick",
+      "to": [],
+      "note": "Bodies, borders and wicks are always drawn."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.volCandlesStyle.upColor",
+      "to": [
+        {
+          "styleKey": "series.volumeCandles.upColor"
+        }
+      ]
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.volCandlesStyle.wickColor",
+      "to": [
+        {
+          "styleKey": "series.volumeCandles.wickUpColor"
+        },
+        {
+          "styleKey": "series.volumeCandles.wickDownColor"
+        }
+      ],
+      "note": "Set both wick keys to the one colour."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.volCandlesStyle.wickDownColor",
+      "to": [
+        {
+          "styleKey": "series.volumeCandles.wickDownColor"
+        }
+      ]
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.volCandlesStyle.wickUpColor",
+      "to": [
+        {
+          "styleKey": "series.volumeCandles.wickUpColor"
+        }
+      ]
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.columnStyle.barColorsOnPrevClose",
+      "to": [],
+      "note": "No column chart type."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.columnStyle.downColor",
+      "to": [],
+      "note": "No column chart type; use volume.downColor if the columns stood for volume."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.columnStyle.priceSource",
+      "to": [],
+      "note": "No column chart type."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.columnStyle.upColor",
+      "to": [],
+      "note": "No column chart type; use volume.upColor if the columns stood for volume."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.highLowAvgPrice.averageClosePriceLabelVisible",
+      "to": [],
+      "note": "No average close line."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.highLowAvgPrice.averageClosePriceLineVisible",
+      "to": [],
+      "note": "No average close line."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.highLowAvgPrice.averagePriceLineColor",
+      "to": [],
+      "note": "No average close line."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.highLowAvgPrice.averagePriceLineWidth",
+      "to": [],
+      "note": "No average close line."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.highLowAvgPrice.highLowPriceLabelsVisible",
+      "to": [
+        {
+          "option": "Chart.highLowLines"
+        },
+        {
+          "api": "chart.setHighLowLines(true)"
+        }
+      ],
+      "note": "Lines and price tags of the visible high and low come and go together."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.highLowAvgPrice.highLowPriceLinesColor",
+      "to": [
+        {
+          "styleKey": "highLow.color"
+        }
+      ]
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.highLowAvgPrice.highLowPriceLinesVisible",
+      "to": [
+        {
+          "option": "Chart.highLowLines"
+        },
+        {
+          "api": "chart.setHighLowLines(true)"
+        }
+      ],
+      "note": "Lines and price tags of the visible high and low come and go together."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.highLowAvgPrice.highLowPriceLinesWidth",
+      "to": [],
+      "note": "No width key for the high/low lines."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.hiloStyle.borderColor",
+      "to": [],
+      "note": "No border on hi-lo bars."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.hiloStyle.color",
+      "to": [
+        {
+          "styleKey": "series.hiLo.upColor"
+        },
+        {
+          "styleKey": "series.hiLo.downColor"
+        }
+      ],
+      "note": "TradeCanvas colours hi-lo bars up and down; set both to one colour to match."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.hiloStyle.labelColor",
+      "to": [],
+      "note": "Hi-lo bars carry no labels."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.hiloStyle.showBorders",
+      "to": [],
+      "note": "No border on hi-lo bars."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.hiloStyle.showLabels",
+      "to": [],
+      "note": "Hi-lo bars carry no labels."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.hlcAreaStyle.closeLineColor",
+      "to": [
+        {
+          "styleKey": "series.hlcArea.lineColor"
+        }
+      ]
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.hlcAreaStyle.closeLineStyle",
+      "to": [],
+      "note": "The close line is always solid."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.hlcAreaStyle.closeLineWidth",
+      "to": [
+        {
+          "styleKey": "series.hlcArea.lineWidth"
+        }
+      ]
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.hlcAreaStyle.closeLowFillColor",
+      "to": [
+        {
+          "styleKey": "series.hlcArea.bottomColor"
+        }
+      ],
+      "note": "One gradient from high to low, not two fills split at the close: this is its low end."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.hlcAreaStyle.highCloseFillColor",
+      "to": [
+        {
+          "styleKey": "series.hlcArea.topColor"
+        }
+      ],
+      "note": "One gradient from high to low, not two fills split at the close: this is its high end."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.hlcAreaStyle.highLineColor",
+      "to": [],
+      "note": "No separate high/low edge lines."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.hlcAreaStyle.highLineStyle",
+      "to": [],
+      "note": "No separate high/low edge lines."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.hlcAreaStyle.highLineWidth",
+      "to": [],
+      "note": "No separate high/low edge lines."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.hlcAreaStyle.lowLineColor",
+      "to": [],
+      "note": "No separate high/low edge lines."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.hlcAreaStyle.lowLineStyle",
+      "to": [],
+      "note": "No separate high/low edge lines."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.hlcAreaStyle.lowLineWidth",
+      "to": [],
+      "note": "No separate high/low edge lines."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.kagiStyle.downColor",
+      "to": [
+        {
+          "styleKey": "series.kagi.downColor"
+        }
+      ]
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.kagiStyle.downColorProjection",
+      "to": [],
+      "note": "No projection colours: the brick still forming is drawn in the up/down colour."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.kagiStyle.upColor",
+      "to": [
+        {
+          "styleKey": "series.kagi.upColor"
+        }
+      ]
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.kagiStyle.upColorProjection",
+      "to": [],
+      "note": "No projection colours: the brick still forming is drawn in the up/down colour."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.lineStyle.color",
+      "to": [
+        {
+          "styleKey": "series.line.color"
+        }
+      ]
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.lineStyle.linestyle",
+      "to": [],
+      "note": "The series line is always solid."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.lineStyle.linewidth",
+      "to": [
+        {
+          "styleKey": "series.line.lineWidth"
+        }
+      ]
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.lineStyle.priceSource",
+      "to": [],
+      "note": "Line-type series always draw the close."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.lineWithMarkersStyle.color",
+      "to": [
+        {
+          "styleKey": "series.lineWithMarkers.color"
+        }
+      ]
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.lineWithMarkersStyle.linestyle",
+      "to": [],
+      "note": "The series line is always solid."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.lineWithMarkersStyle.linewidth",
+      "to": [
+        {
+          "styleKey": "series.lineWithMarkers.lineWidth"
+        }
+      ]
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.lineWithMarkersStyle.priceSource",
+      "to": [],
+      "note": "Line-type series always draw the close."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.steplineStyle.color",
+      "to": [
+        {
+          "styleKey": "series.stepLine.color"
+        }
+      ]
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.steplineStyle.linestyle",
+      "to": [],
+      "note": "The series line is always solid."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.steplineStyle.linewidth",
+      "to": [
+        {
+          "styleKey": "series.stepLine.lineWidth"
+        }
+      ]
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.steplineStyle.priceSource",
+      "to": [],
+      "note": "Line-type series always draw the close."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.minTick",
+      "to": [
+        {
+          "option": "Chart.priceFormat"
+        },
+        {
+          "api": "chart.setPriceFormat(format)"
+        }
+      ],
+      "note": "Give a formatter or a fraction; the symbol's precision usually comes from SymbolInfo."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.pbStyle.borderDownColor",
+      "to": [],
+      "note": "No separate border colour: the body colour outlines the bar."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.pbStyle.borderDownColorProjection",
+      "to": [],
+      "note": "No projection colours: the brick still forming is drawn in the up/down colour."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.pbStyle.borderUpColor",
+      "to": [],
+      "note": "No separate border colour: the body colour outlines the bar."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.pbStyle.borderUpColorProjection",
+      "to": [],
+      "note": "No projection colours: the brick still forming is drawn in the up/down colour."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.pbStyle.downColor",
+      "to": [
+        {
+          "styleKey": "series.lineBreak.downColor"
+        }
+      ]
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.pbStyle.downColorProjection",
+      "to": [],
+      "note": "No projection colours: the brick still forming is drawn in the up/down colour."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.pbStyle.upColor",
+      "to": [
+        {
+          "styleKey": "series.lineBreak.upColor"
+        }
+      ]
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.pbStyle.upColorProjection",
+      "to": [],
+      "note": "No projection colours: the brick still forming is drawn in the up/down colour."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.pnfStyle.downColor",
+      "to": [
+        {
+          "styleKey": "series.pointAndFigure.downColor"
+        }
+      ]
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.pnfStyle.downColorProjection",
+      "to": [],
+      "note": "No projection colours: the brick still forming is drawn in the up/down colour."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.pnfStyle.upColor",
+      "to": [
+        {
+          "styleKey": "series.pointAndFigure.upColor"
+        }
+      ]
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.pnfStyle.upColorProjection",
+      "to": [],
+      "note": "No projection colours: the brick still forming is drawn in the up/down colour."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.prevClosePriceLineColor",
+      "to": [],
+      "note": "No previous-close line."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.prevClosePriceLineWidth",
+      "to": [],
+      "note": "No previous-close line."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.priceAxisProperties.alignLabels",
+      "to": [
+        {
+          "option": "Chart.features.alignAxisLabels"
+        }
+      ]
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.priceAxisProperties.indexedTo100",
+      "to": [
+        {
+          "api": "chart.setScaleMode('indexedTo100')"
+        }
+      ]
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.priceAxisProperties.isInverted",
+      "to": [
+        {
+          "api": "chart.setInvertScale(true)"
+        }
+      ]
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.priceAxisProperties.log",
+      "to": [
+        {
+          "option": "Chart.logScale"
+        },
+        {
+          "api": "chart.setScaleMode('logarithmic')"
+        }
+      ]
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.priceAxisProperties.percentage",
+      "to": [
+        {
+          "api": "chart.setScaleMode('percentage')"
+        }
+      ]
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.priceLineColor",
+      "to": [
+        {
+          "styleKey": "lastPrice.upColor"
+        },
+        {
+          "styleKey": "lastPrice.downColor"
+        }
+      ],
+      "note": "TradeCanvas colours the last-price line by the bar's direction; set both to one colour to match. TV's empty value means \"bar colour\"."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.priceLineWidth",
+      "to": [
+        {
+          "styleKey": "lastPrice.width"
+        }
+      ]
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.renkoStyle.borderDownColor",
+      "to": [],
+      "note": "No separate border colour: the body colour outlines the bar."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.renkoStyle.borderDownColorProjection",
+      "to": [],
+      "note": "No projection colours: the brick still forming is drawn in the up/down colour."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.renkoStyle.borderUpColor",
+      "to": [],
+      "note": "No separate border colour: the body colour outlines the bar."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.renkoStyle.borderUpColorProjection",
+      "to": [],
+      "note": "No projection colours: the brick still forming is drawn in the up/down colour."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.renkoStyle.downColor",
+      "to": [
+        {
+          "styleKey": "series.renko.downColor"
+        }
+      ]
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.renkoStyle.downColorProjection",
+      "to": [],
+      "note": "No projection colours: the brick still forming is drawn in the up/down colour."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.renkoStyle.upColor",
+      "to": [
+        {
+          "styleKey": "series.renko.upColor"
+        }
+      ]
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.renkoStyle.upColorProjection",
+      "to": [],
+      "note": "No projection colours: the brick still forming is drawn in the up/down colour."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.renkoStyle.wickDownColor",
+      "to": [],
+      "note": "Renko bricks have no wicks."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.renkoStyle.wickUpColor",
+      "to": [],
+      "note": "Renko bricks have no wicks."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.sessionId",
+      "to": [
+        {
+          "option": "Chart.extendedHours"
+        }
+      ],
+      "note": "'extended' → true, 'regular' → false; there is no '24h' session."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.showCountdown",
+      "to": [
+        {
+          "option": "Chart.features.barCountdown"
+        },
+        {
+          "api": "chart.setBarCountdownVisible(true)"
+        }
+      ]
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.showPrevClosePriceLine",
+      "to": [],
+      "note": "No previous-close line."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.showPriceLine",
+      "to": [
+        {
+          "styleKey": "lastPrice.visible"
+        }
+      ],
+      "note": "Shows or hides the last-price line with its tag."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.statusViewStyle.showExchange",
+      "to": [],
+      "note": "The legend has no exchange field; chart.setLegend({ showSymbol }) toggles the symbol."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.statusViewStyle.showInterval",
+      "to": [],
+      "note": "The legend has no separate interval switch."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.statusViewStyle.symbolTextSource",
+      "to": [],
+      "note": "The legend shows the symbol name given to the chart."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.svpStyle.developingPoc.color",
+      "to": [],
+      "note": "The session volume profile chart style has no equivalent."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.svpStyle.developingPoc.linestyle",
+      "to": [],
+      "note": "The session volume profile chart style has no equivalent."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.svpStyle.developingPoc.linewidth",
+      "to": [],
+      "note": "The session volume profile chart style has no equivalent."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.svpStyle.developingPoc.visible",
+      "to": [],
+      "note": "The session volume profile chart style has no equivalent."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.svpStyle.developingVA.color",
+      "to": [],
+      "note": "The session volume profile chart style has no equivalent."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.svpStyle.developingVA.linestyle",
+      "to": [],
+      "note": "The session volume profile chart style has no equivalent."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.svpStyle.developingVA.linewidth",
+      "to": [],
+      "note": "The session volume profile chart style has no equivalent."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.svpStyle.developingVA.visible",
+      "to": [],
+      "note": "The session volume profile chart style has no equivalent."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.svpStyle.inputs.customSession",
+      "to": [],
+      "note": "The session volume profile chart style has no equivalent."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.svpStyle.inputs.extendPocRight",
+      "to": [],
+      "note": "The session volume profile chart style has no equivalent."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.svpStyle.inputs.extendVAHRight",
+      "to": [],
+      "note": "The session volume profile chart style has no equivalent."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.svpStyle.inputs.extendVALRight",
+      "to": [],
+      "note": "The session volume profile chart style has no equivalent."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.svpStyle.inputs.profilesSessions",
+      "to": [],
+      "note": "The session volume profile chart style has no equivalent."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.svpStyle.inputs.rows",
+      "to": [],
+      "note": "The session volume profile chart style has no equivalent."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.svpStyle.inputs.rowsLayout",
+      "to": [],
+      "note": "The session volume profile chart style has no equivalent."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.svpStyle.inputs.vaVolume",
+      "to": [],
+      "note": "The session volume profile chart style has no equivalent."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.svpStyle.inputs.volume",
+      "to": [],
+      "note": "The session volume profile chart style has no equivalent."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.svpStyle.poc.color",
+      "to": [],
+      "note": "The session volume profile chart style has no equivalent."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.svpStyle.poc.linestyle",
+      "to": [],
+      "note": "The session volume profile chart style has no equivalent."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.svpStyle.poc.linewidth",
+      "to": [],
+      "note": "The session volume profile chart style has no equivalent."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.svpStyle.poc.visible",
+      "to": [],
+      "note": "The session volume profile chart style has no equivalent."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.svpStyle.vah.color",
+      "to": [],
+      "note": "The session volume profile chart style has no equivalent."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.svpStyle.vah.linestyle",
+      "to": [],
+      "note": "The session volume profile chart style has no equivalent."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.svpStyle.vah.linewidth",
+      "to": [],
+      "note": "The session volume profile chart style has no equivalent."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.svpStyle.vah.visible",
+      "to": [],
+      "note": "The session volume profile chart style has no equivalent."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.svpStyle.val.color",
+      "to": [],
+      "note": "The session volume profile chart style has no equivalent."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.svpStyle.val.linestyle",
+      "to": [],
+      "note": "The session volume profile chart style has no equivalent."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.svpStyle.val.linewidth",
+      "to": [],
+      "note": "The session volume profile chart style has no equivalent."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.svpStyle.val.visible",
+      "to": [],
+      "note": "The session volume profile chart style has no equivalent."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.svpStyle.volumeProfile.histogramBoxColor",
+      "to": [],
+      "note": "The session volume profile chart style has no equivalent."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.svpStyle.volumeProfile.percentWidth",
+      "to": [],
+      "note": "The session volume profile chart style has no equivalent."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.svpStyle.volumeProfile.placement",
+      "to": [],
+      "note": "The session volume profile chart style has no equivalent."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.svpStyle.volumeProfile.showValues",
+      "to": [],
+      "note": "The session volume profile chart style has no equivalent."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.svpStyle.volumeProfile.valueAreaColorDown",
+      "to": [],
+      "note": "The session volume profile chart style has no equivalent."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.svpStyle.volumeProfile.valueAreaColorUp",
+      "to": [],
+      "note": "The session volume profile chart style has no equivalent."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.svpStyle.volumeProfile.valuesColor",
+      "to": [],
+      "note": "The session volume profile chart style has no equivalent."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.svpStyle.volumeProfile.visible",
+      "to": [],
+      "note": "The session volume profile chart style has no equivalent."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.svpStyle.volumeProfile.volumeColorDown",
+      "to": [],
+      "note": "The session volume profile chart style has no equivalent."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.svpStyle.volumeProfile.volumeColorUp",
+      "to": [],
+      "note": "The session volume profile chart style has no equivalent."
+    },
+    {
+      "kind": "override",
+      "name": "mainSeriesProperties.visible",
+      "to": [],
+      "note": "The main series cannot be hidden by a key."
+    },
+    {
+      "kind": "override",
+      "name": "paneProperties.background",
+      "to": [
+        {
+          "styleKey": "background.color"
+        }
+      ]
+    },
+    {
+      "kind": "override",
+      "name": "paneProperties.backgroundGradientEndColor",
+      "to": [],
+      "note": "No gradient background: pick one colour for background.color."
+    },
+    {
+      "kind": "override",
+      "name": "paneProperties.backgroundGradientStartColor",
+      "to": [
+        {
+          "styleKey": "background.color"
+        }
+      ],
+      "note": "No gradient background: the start colour becomes the plain background."
+    },
+    {
+      "kind": "override",
+      "name": "paneProperties.backgroundType",
+      "to": [],
+      "note": "Only a solid background; 'gradient' has no equivalent."
+    },
+    {
+      "kind": "override",
+      "name": "paneProperties.bottomMargin",
+      "to": [],
+      "note": "No price-scale margin setting."
+    },
+    {
+      "kind": "override",
+      "name": "paneProperties.crossHairProperties.color",
+      "to": [
+        {
+          "styleKey": "crosshair.horizontal.color"
+        },
+        {
+          "styleKey": "crosshair.vertical.color"
+        }
+      ]
+    },
+    {
+      "kind": "override",
+      "name": "paneProperties.crossHairProperties.style",
+      "to": [
+        {
+          "styleKey": "crosshair.horizontal.style"
+        },
+        {
+          "styleKey": "crosshair.vertical.style"
+        }
+      ],
+      "note": "TV line style is a number: 0 solid, 1 dotted, 2 dashed; give 'solid' | 'dotted' | 'dashed'."
+    },
+    {
+      "kind": "override",
+      "name": "paneProperties.crossHairProperties.transparency",
+      "to": [],
+      "note": "No separate transparency: put the alpha in the colour (rgba)."
+    },
+    {
+      "kind": "override",
+      "name": "paneProperties.crossHairProperties.width",
+      "to": [
+        {
+          "styleKey": "crosshair.horizontal.width"
+        },
+        {
+          "styleKey": "crosshair.vertical.width"
+        }
+      ]
+    },
+    {
+      "kind": "override",
+      "name": "paneProperties.horzGridProperties.color",
+      "to": [
+        {
+          "styleKey": "grid.horizontal.color"
+        }
+      ]
+    },
+    {
+      "kind": "override",
+      "name": "paneProperties.horzGridProperties.style",
+      "to": [
+        {
+          "styleKey": "grid.horizontal.style"
+        }
+      ],
+      "note": "TV line style is a number: 0 solid, 1 dotted, 2 dashed; give 'solid' | 'dotted' | 'dashed'."
+    },
+    {
+      "kind": "override",
+      "name": "paneProperties.horzGridProperties.visible",
+      "to": [
+        {
+          "styleKey": "grid.horizontal.visible"
+        }
+      ]
+    },
+    {
+      "kind": "override",
+      "name": "paneProperties.legendProperties.backgroundTransparency",
+      "to": [],
+      "note": "The legend ground is see-through by design; only on or off."
+    },
+    {
+      "kind": "override",
+      "name": "paneProperties.legendProperties.showBackground",
+      "to": [
+        {
+          "api": "chart.setLegend({ ground: true })"
+        }
+      ]
+    },
+    {
+      "kind": "override",
+      "name": "paneProperties.legendProperties.showBarChange",
+      "to": [
+        {
+          "api": "chart.setLegend({ showChange: true })"
+        }
+      ]
+    },
+    {
+      "kind": "override",
+      "name": "paneProperties.legendProperties.showLastDayChange",
+      "to": [],
+      "note": "No last-day change in the legend."
+    },
+    {
+      "kind": "override",
+      "name": "paneProperties.legendProperties.showSeriesLegendCloseOnMobile",
+      "to": [],
+      "note": "No mobile-only legend switch."
+    },
+    {
+      "kind": "override",
+      "name": "paneProperties.legendProperties.showSeriesOHLC",
+      "to": [
+        {
+          "api": "chart.setLegend({ showOHLC: true })"
+        }
+      ]
+    },
+    {
+      "kind": "override",
+      "name": "paneProperties.legendProperties.showSeriesTitle",
+      "to": [
+        {
+          "api": "chart.setLegend({ showSymbol: true })"
+        }
+      ]
+    },
+    {
+      "kind": "override",
+      "name": "paneProperties.legendProperties.showStudyArguments",
+      "to": [],
+      "note": "Indicator rows always show their inputs."
+    },
+    {
+      "kind": "override",
+      "name": "paneProperties.legendProperties.showStudyTitles",
+      "to": [
+        {
+          "option": "ChartWidget.indicatorLegend"
+        }
+      ],
+      "note": "Widget only: false hides the indicator rows (titles and values together)."
+    },
+    {
+      "kind": "override",
+      "name": "paneProperties.legendProperties.showStudyValues",
+      "to": [
+        {
+          "option": "ChartWidget.indicatorLegend"
+        }
+      ],
+      "note": "Widget only: false hides the indicator rows (titles and values together)."
+    },
+    {
+      "kind": "override",
+      "name": "paneProperties.legendProperties.showVolume",
+      "to": [
+        {
+          "api": "chart.setLegend({ showVolume: true })"
+        }
+      ]
+    },
+    {
+      "kind": "override",
+      "name": "paneProperties.separatorColor",
+      "to": [
+        {
+          "styleKey": "panes.separatorColor"
+        }
+      ]
+    },
+    {
+      "kind": "override",
+      "name": "paneProperties.topMargin",
+      "to": [],
+      "note": "No price-scale margin setting."
+    },
+    {
+      "kind": "override",
+      "name": "paneProperties.vertGridProperties.color",
+      "to": [
+        {
+          "styleKey": "grid.vertical.color"
+        }
+      ]
+    },
+    {
+      "kind": "override",
+      "name": "paneProperties.vertGridProperties.style",
+      "to": [
+        {
+          "styleKey": "grid.vertical.style"
+        }
+      ],
+      "note": "TV line style is a number: 0 solid, 1 dotted, 2 dashed; give 'solid' | 'dotted' | 'dashed'."
+    },
+    {
+      "kind": "override",
+      "name": "paneProperties.vertGridProperties.visible",
+      "to": [
+        {
+          "styleKey": "grid.vertical.visible"
+        }
+      ]
+    },
+    {
+      "kind": "override",
+      "name": "priceScaleSelectionStrategyName",
+      "to": [],
+      "note": "No strategy setting; Chart.leftPriceScale adds a left scale and addIndicator(…, { scale: 'left' }) puts an overlay on it."
+    },
+    {
+      "kind": "override",
+      "name": "scalesProperties.axisHighlightColor",
+      "to": [],
+      "note": "The axis tint of a selected drawing follows the theme; Chart.features.drawingAxisSpans turns it off."
+    },
+    {
+      "kind": "override",
+      "name": "scalesProperties.axisHoverHighlightColor",
+      "to": [],
+      "note": "No hover tint on the axes."
+    },
+    {
+      "kind": "override",
+      "name": "scalesProperties.axisLineToolLabelBackgroundColorActive",
+      "to": [],
+      "note": "Drawing tags on the axes follow the drawing's colour."
+    },
+    {
+      "kind": "override",
+      "name": "scalesProperties.axisLineToolLabelBackgroundColorCommon",
+      "to": [],
+      "note": "Drawing tags on the axes follow the drawing's colour."
+    },
+    {
+      "kind": "override",
+      "name": "scalesProperties.crosshairLabelBgColorDark",
+      "to": [
+        {
+          "styleKey": "crosshair.labelBackground"
+        }
+      ],
+      "note": "One key for both themes; set it per theme you use."
+    },
+    {
+      "kind": "override",
+      "name": "scalesProperties.crosshairLabelBgColorLight",
+      "to": [
+        {
+          "styleKey": "crosshair.labelBackground"
+        }
+      ],
+      "note": "One key for both themes; set it per theme you use."
+    },
+    {
+      "kind": "override",
+      "name": "scalesProperties.fontSize",
+      "to": [
+        {
+          "option": "Chart.font"
+        },
+        {
+          "api": "chart.setFont(font)"
+        }
+      ],
+      "note": "Text sizes are Chart.font (sizeSmall, sizeMedium, sizeLarge) for all the chart text, not one axis key."
+    },
+    {
+      "kind": "override",
+      "name": "scalesProperties.lineColor",
+      "to": [
+        {
+          "styleKey": "axis.price.lineColor"
+        },
+        {
+          "styleKey": "axis.time.lineColor"
+        }
+      ]
+    },
+    {
+      "kind": "override",
+      "name": "scalesProperties.scaleSeriesOnly",
+      "to": [],
+      "note": "Overlays always count in the price fit."
+    },
+    {
+      "kind": "override",
+      "name": "scalesProperties.seriesLastValueMode",
+      "to": [],
+      "note": "The last-price tag always shows the price."
+    },
+    {
+      "kind": "override",
+      "name": "scalesProperties.showBidAskLabels",
+      "to": [
+        {
+          "api": "chart.setBidAsk(quote)"
+        }
+      ],
+      "note": "Bid/ask tags come with their lines."
+    },
+    {
+      "kind": "override",
+      "name": "scalesProperties.showPrePostMarketPriceLabel",
+      "to": [],
+      "note": "No separate pre/post-market price tag."
+    },
+    {
+      "kind": "override",
+      "name": "scalesProperties.showPriceScaleCrosshairLabel",
+      "to": [],
+      "note": "The crosshair tags follow the crosshair; Chart.features.crosshair turns it off."
+    },
+    {
+      "kind": "override",
+      "name": "scalesProperties.showSeriesLastValue",
+      "to": [
+        {
+          "styleKey": "lastPrice.visible"
+        }
+      ],
+      "note": "Hides the tag with its line."
+    },
+    {
+      "kind": "override",
+      "name": "scalesProperties.showStudyLastValue",
+      "to": [
+        {
+          "option": "Chart.features.indicatorValueLabels"
+        }
+      ],
+      "note": "Default false in TradeCanvas (the legend shows the values)."
+    },
+    {
+      "kind": "override",
+      "name": "scalesProperties.showStudyPlotLabels",
+      "to": [],
+      "note": "No indicator name tags on the axis."
+    },
+    {
+      "kind": "override",
+      "name": "scalesProperties.showSymbolLabels",
+      "to": [],
+      "note": "No symbol name tags on the axis."
+    },
+    {
+      "kind": "override",
+      "name": "scalesProperties.showTimeScaleCrosshairLabel",
+      "to": [],
+      "note": "The crosshair tags follow the crosshair; Chart.features.crosshair turns it off."
+    },
+    {
+      "kind": "override",
+      "name": "scalesProperties.textColor",
+      "to": [
+        {
+          "styleKey": "axis.price.textColor"
+        },
+        {
+          "styleKey": "axis.time.textColor"
+        }
+      ]
+    },
+    {
+      "kind": "override",
+      "name": "timezone",
+      "to": [
+        {
+          "option": "Chart.timeZone"
+        },
+        {
+          "api": "chart.setTimeZone(tz)"
+        }
+      ],
+      "note": "Takes an IANA zone, a UTC offset in minutes, or null; TV's 'exchange' is null (the symbol's zone)."
+    },
+    {
+      "kind": "override",
+      "name": "tradingProperties.bracketsPL.display",
+      "to": [],
+      "note": "Trading lines take the trading.* colours; no switch or layout key for this."
+    },
+    {
+      "kind": "override",
+      "name": "tradingProperties.bracketsPL.visibility",
+      "to": [],
+      "note": "Trading lines take the trading.* colours; no switch or layout key for this."
+    },
+    {
+      "kind": "override",
+      "name": "tradingProperties.extendLeft",
+      "to": [],
+      "note": "Trading lines take the trading.* colours; no switch or layout key for this."
+    },
+    {
+      "kind": "override",
+      "name": "tradingProperties.horizontalAlignment",
+      "to": [],
+      "note": "Trading lines take the trading.* colours; no switch or layout key for this."
+    },
+    {
+      "kind": "override",
+      "name": "tradingProperties.lineLength",
+      "to": [],
+      "note": "Trading lines take the trading.* colours; no switch or layout key for this."
+    },
+    {
+      "kind": "override",
+      "name": "tradingProperties.lineWidth",
+      "to": [],
+      "note": "Trading lines take the trading.* colours; no switch or layout key for this."
+    },
+    {
+      "kind": "override",
+      "name": "tradingProperties.positionAndBracketsPL",
+      "to": [],
+      "note": "Trading lines take the trading.* colours; no switch or layout key for this."
+    },
+    {
+      "kind": "override",
+      "name": "tradingProperties.positionPL.display",
+      "to": [],
+      "note": "Trading lines take the trading.* colours; no switch or layout key for this."
+    },
+    {
+      "kind": "override",
+      "name": "tradingProperties.positionPL.visibility",
+      "to": [],
+      "note": "Trading lines take the trading.* colours; no switch or layout key for this."
+    },
+    {
+      "kind": "override",
+      "name": "tradingProperties.showExecutions",
+      "to": [],
+      "note": "Trading lines take the trading.* colours; no switch or layout key for this."
+    },
+    {
+      "kind": "override",
+      "name": "tradingProperties.showExecutionsLabels",
+      "to": [],
+      "note": "Trading lines take the trading.* colours; no switch or layout key for this."
+    },
+    {
+      "kind": "override",
+      "name": "tradingProperties.showOrders",
+      "to": [],
+      "note": "Trading lines take the trading.* colours; no switch or layout key for this."
+    },
+    {
+      "kind": "override",
+      "name": "tradingProperties.showPositions",
+      "to": [],
+      "note": "Trading lines take the trading.* colours; no switch or layout key for this."
+    },
+    {
+      "kind": "override",
+      "name": "tradingProperties.showReverse",
+      "to": [],
+      "note": "Trading lines take the trading.* colours; no switch or layout key for this."
+    },
+    {
+      "kind": "override",
+      "name": "vertlines.sessBreaks.color",
+      "to": [
+        {
+          "styleKey": "sessionBreaks.color"
+        }
+      ]
+    },
+    {
+      "kind": "override",
+      "name": "vertlines.sessBreaks.style",
+      "to": [
+        {
+          "styleKey": "sessionBreaks.style"
+        }
+      ],
+      "note": "TV line style is a number: 0 solid, 1 dotted, 2 dashed; give 'solid' | 'dotted' | 'dashed'."
+    },
+    {
+      "kind": "override",
+      "name": "vertlines.sessBreaks.visible",
+      "to": [
+        {
+          "option": "Chart.features.sessionBreaks"
+        },
+        {
+          "api": "chart.setSessionBreaksVisible(true)"
+        }
+      ]
+    },
+    {
+      "kind": "override",
+      "name": "vertlines.sessBreaks.width",
+      "to": [
+        {
+          "styleKey": "sessionBreaks.width"
+        }
+      ]
+    },
+    {
+      "kind": "override",
+      "name": "volumePaneSize",
+      "to": [],
+      "note": "Volume is drawn as a band at the foot of the price pane; its height is not set by a key. Colours: volume.upColor / volume.downColor."
+    },
+    {
+      "kind": "override",
+      "name": "symbolWatermarkProperties.color",
+      "to": [
+        {
+          "styleKey": "watermark.color"
+        }
+      ],
+      "note": "Removed in TV 24.004 (now the watermark API). The text is set with chart.setWatermark(text)."
+    },
+    {
+      "kind": "override",
+      "name": "symbolWatermarkProperties.transparency",
+      "to": [],
+      "note": "Removed in TV 24.004. No separate transparency: put the alpha in the colour (rgba)."
+    },
+    {
+      "kind": "override",
+      "name": "symbolWatermarkProperties.visibility",
+      "to": [
+        {
+          "option": "Chart.features.watermark"
+        }
+      ],
+      "note": "Removed in TV 24.004. Also needs a text: Chart.watermark or chart.setWatermark(text)."
+    }
+  ]
+}
