@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import type { CalendarChartOptions, MatrixChartOptions } from '@tradecanvas/commons';
 import { DARK_THEME, LIGHT_THEME, lerpColor } from '@tradecanvas/commons';
-import { resolveColorScale, scaleColor, readableText, drawColorBar } from '../colorScale.js';
+import { resolveColorScale, scaleColor, readableText, drawColorBar, colorBarLabelWidth } from '../colorScale.js';
 import { parseDay, dayToIso, computeCalendarLayout, hitDay, renderCalendar, MAX_CALENDAR_YEARS } from '../CalendarRenderer.js';
 import { correlationMatrix, computeMatrixLayout, hitMatrixCell, renderMatrix } from '../MatrixRenderer.js';
 import { layoutGroupedTreemap } from '../HeatmapLayout.js';
@@ -203,6 +203,33 @@ describe('matrix layout', () => {
     const tiny = fakeCtx();
     drawColorBar(tiny.ctx, { x: 0, y: 0, width: 60, height: 20 }, scale, pct, DARK_THEME);
     expect(tiny.texts).toEqual([]);
+  });
+
+  it('reserves room for zero only while that keeps the bar to its own length', () => {
+    const at = (t: string) => t.length * 6.6;
+    const fmt = (v: number) => v.toFixed(1);
+    // Zero near an end would need a bar across the chart: only the ends are kept apart.
+    // A colour scale of its own range: the default one is centred on zero.
+    const skewed = { ...resolveColorScale([-1, 100], DARK_THEME), min: -1, max: 100 };
+    expect(colorBarLabelWidth(skewed, fmt, at)).toBeCloseTo(at('-1.0') + at('100.0') + 8);
+    // A scale that does not cross zero has no middle label.
+    const positive = { ...skewed, min: 2, max: 9 };
+    expect(colorBarLabelWidth(positive, fmt, at)).toBeCloseTo(at('2.0') + at('9.0') + 8);
+    expect(colorBarLabelWidth({ ...skewed, min: 5, max: 5 }, fmt, at)).toBe(0);
+  });
+
+  it('draws what the layout made room for, at exactly that width', () => {
+    const long = (v: number) => `${v.toFixed(1)} percentage points`;
+    const scale = resolveColorScale([-10, 10], DARK_THEME);
+    const width = colorBarLabelWidth(scale, long, (t) => t.length * 6.6);
+    expect(width).toBeGreaterThan(180);
+    const { ctx, texts } = fakeCtx();
+    drawColorBar(ctx, { x: 0, y: 0, width, height: 20 }, scale, long, DARK_THEME);
+    expect(texts).toEqual([long(-10), long(10)]);
+    const short = (v: number) => `${v > 0 ? '+' : ''}${v.toFixed(1)}%`;
+    const fits = fakeCtx();
+    drawColorBar(fits.ctx, { x: 0, y: 0, width: colorBarLabelWidth(scale, short, (t) => t.length * 6.6), height: 20 }, scale, short, DARK_THEME);
+    expect(fits.texts).toEqual(['-10.0%', '+10.0%', '0.0%']);
   });
 
   it('turns long column names, leaves empty values out, and finds the cell under the pointer', () => {

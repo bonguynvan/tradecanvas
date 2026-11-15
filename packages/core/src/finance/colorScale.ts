@@ -22,6 +22,8 @@ const BAR_MIN_WIDTH = 40;
 export const BAR_LABEL_SIZE = LABEL_SIZE - 1;
 /** Space kept between two of the bar's labels, px. */
 const BAR_LABEL_GAP = 8;
+/** What the layout adds over the labels' exact need, so the drawing's own sums never fall a hair short. */
+const BAR_FIT_SLACK = 0.5;
 
 type Rgb = [number, number, number];
 
@@ -166,10 +168,13 @@ export function colorBarLabelWidth(scale: ResolvedScale, format: (v: number) => 
   if (!(scale.max > scale.min)) return 0;
   const ends = measure(format(scale.min)) + measure(format(scale.max));
   if (!(scale.min < 0 && scale.max > 0)) return ends + BAR_LABEL_GAP;
-  // Zero sits where it falls on the bar: the bar is long enough that its label clears both ends there.
+  // Zero sits where it falls on the bar: room for its label to clear both ends there, as long
+  // as that keeps the bar to its own length. Near an end zero would need a bar across the
+  // chart, and the drawing leaves that label out anyway.
   const zero = measure(format(0));
   const share = -scale.min / (scale.max - scale.min);
   const left = (measure(format(scale.min)) + BAR_LABEL_GAP + zero / 2) / share;
   const right = (measure(format(scale.max)) + BAR_LABEL_GAP + zero / 2) / (1 - share);
-  return Math.max(ends + BAR_LABEL_GAP, left, right);
+  const withZero = Math.max(left, right);
+  return withZero <= BAR_MAX_WIDTH ? Math.max(ends, withZero) + BAR_FIT_SLACK : ends + BAR_LABEL_GAP;
 }
