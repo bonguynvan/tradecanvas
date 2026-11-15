@@ -1,5 +1,13 @@
 # @tradecanvas/chart
 
+## 2.8.1
+
+### Patch Changes
+
+- cd17ae2: `DepthOverlayConfig` is exported from `@tradecanvas/chart`, the type `setDepthOverlay`, `getDepthOverlay` and the `depthOverlay` option take.
+  - @tradecanvas/commons@2.8.1
+  - @tradecanvas/core@2.8.1
+
 ## 2.8.0
 
 ### Minor Changes
