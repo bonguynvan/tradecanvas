@@ -119,6 +119,14 @@ TradingView の charting library や Lightweight Charts からアプリを移し
 
 自称ではなく実測です。24 のタスクで、スキルのあるエージェントはすべての実行を完了しました（48 回中 48 回。スキルなしでは 48 回中 47 回）。15 ターンに対して 10 ターン、22.1 万トークンに対して 16.9 万トークンで済み、コンパイル済みコードを読みに行ったのは 48 回中 6 回に対して 1 回でした（[この実行](evals/baselines/2026-11-13-sonnet.md)、2.1.1 時点。タスクと判明したことは [`evals`](evals/README.md) にあります）。
 
+## テンプレートから始める
+
+クローンして 1 分で動く小さな Vite + TypeScript プロジェクトが三つあります。どれもライブページ付きの GitHub テンプレートです：
+
+- **暗号資産ターミナル**：Binance のライブデータで動くウィジェットとウォッチリスト。[ライブ](https://bonguynvan.github.io/tradecanvas-starter-crypto/) · [テンプレート](https://github.com/bonguynvan/tradecanvas-starter-crypto)
+- **株価チャート**：NYSE の取引時間、CSV の日足、または `udfFeed` で自前のサーバー。[ライブ](https://bonguynvan.github.io/tradecanvas-starter-stocks/) · [テンプレート](https://github.com/bonguynvan/tradecanvas-starter-stocks)
+- **ワークスペース**：2×2 グリッドの 4 つのチャート。クロスヘア、時間足、時刻を連動させ、レイアウトを保存。[ライブ](https://bonguynvan.github.io/tradecanvas-starter-workspace/) · [テンプレート](https://github.com/bonguynvan/tradecanvas-starter-workspace)
+
 ## ドキュメント
 
 [はじめに](https://tradecanvas.dev/ja/docs/getting-started/) · [TradingView からの移行](https://tradecanvas.dev/ja/docs/from-tradingview/) · [API](https://tradecanvas.dev/ja/docs/api/) · [インジケーター](https://tradecanvas.dev/ja/docs/indicators/) · [描画ツール](https://tradecanvas.dev/ja/docs/drawing-tools/) · [リアルタイム](https://tradecanvas.dev/ja/docs/realtime/) · [取引](https://tradecanvas.dev/ja/docs/trading/) · [スタイル](https://tradecanvas.dev/ja/docs/styling/) · [フレームワーク](https://tradecanvas.dev/ja/docs/frameworks/) · [プラグイン](https://tradecanvas.dev/ja/docs/plugins/) · [スマートフォンとアプリ](https://tradecanvas.dev/ja/docs/embed/#mobile-app) · [パフォーマンス](https://tradecanvas.dev/ja/docs/performance/)

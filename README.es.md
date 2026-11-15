@@ -119,6 +119,14 @@ En Windows fuera de WSL: `claude mcp add tradecanvas -- cmd /c npx -y @tradecanv
 
 Medido, no afirmado: en 24 tareas un agente con la skill terminó todas las ejecuciones (48 de 48, y 47 de 48 sin ella), en 10 turnos frente a 15 y 169k tokens frente a 221k, y fue a leer el código compilado en 1 ejecución de 48 frente a 6 ([la ejecución](evals/baselines/2026-11-13-sonnet.md), sobre 2.1.1; las tareas y lo que revelaron están en [`evals`](evals/README.md)).
 
+## Empieza con una plantilla
+
+Tres proyectos pequeños de Vite + TypeScript para clonar y ejecutar en un minuto, cada uno una plantilla de GitHub con su página en vivo:
+
+- **Terminal cripto**: el widget con datos en vivo de Binance y una lista de seguimiento. [En vivo](https://bonguynvan.github.io/tradecanvas-starter-crypto/) · [plantilla](https://github.com/bonguynvan/tradecanvas-starter-crypto)
+- **Gráfico de acciones**: horario de NYSE, barras diarias de un CSV, o tu propio servidor con `udfFeed`. [En vivo](https://bonguynvan.github.io/tradecanvas-starter-stocks/) · [plantilla](https://github.com/bonguynvan/tradecanvas-starter-stocks)
+- **Workspace**: cuatro gráficos en una cuadrícula 2×2, con cruz, temporalidad y tiempo enlazados y el diseño guardado. [En vivo](https://bonguynvan.github.io/tradecanvas-starter-workspace/) · [plantilla](https://github.com/bonguynvan/tradecanvas-starter-workspace)
+
 ## Documentación
 
 [Primeros pasos](https://tradecanvas.dev/es/docs/getting-started/) · [Desde TradingView](https://tradecanvas.dev/es/docs/from-tradingview/) · [API](https://tradecanvas.dev/es/docs/api/) · [Indicadores](https://tradecanvas.dev/es/docs/indicators/) · [Herramientas de dibujo](https://tradecanvas.dev/es/docs/drawing-tools/) · [Tiempo real](https://tradecanvas.dev/es/docs/realtime/) · [Trading](https://tradecanvas.dev/es/docs/trading/) · [Estilos](https://tradecanvas.dev/es/docs/styling/) · [Frameworks](https://tradecanvas.dev/es/docs/frameworks/) · [Plugins](https://tradecanvas.dev/es/docs/plugins/) · [Móviles y apps](https://tradecanvas.dev/es/docs/embed/#mobile-app) · [Rendimiento](https://tradecanvas.dev/es/docs/performance/)

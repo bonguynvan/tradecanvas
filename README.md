@@ -125,6 +125,14 @@ Moving an app from TradingView's charting library or Lightweight Charts? The sam
 
 Measured, not claimed: on 24 tasks an agent with the skill finished every run (48 of 48, and 47 of 48 without it), in 10 turns against 15 and 169k tokens against 221k, and went reading the compiled code in 1 run of 48 against 6 ([the run](evals/baselines/2026-11-13-sonnet.md), on 2.1.1; the tasks and what they turned up are in [`evals`](evals/README.md)).
 
+## Start from a template
+
+Three small Vite + TypeScript projects to clone and run in a minute, each a GitHub template with a live page:
+
+- **Crypto terminal**: the widget on live Binance data, with a watchlist. [Live](https://bonguynvan.github.io/tradecanvas-starter-crypto/) · [template](https://github.com/bonguynvan/tradecanvas-starter-crypto)
+- **Stock chart**: NYSE hours, daily bars from a CSV, or your own server through `udfFeed`. [Live](https://bonguynvan.github.io/tradecanvas-starter-stocks/) · [template](https://github.com/bonguynvan/tradecanvas-starter-stocks)
+- **Workspace**: four charts in a 2×2 grid, the crosshair, interval and time linked, the layout saved. [Live](https://bonguynvan.github.io/tradecanvas-starter-workspace/) · [template](https://github.com/bonguynvan/tradecanvas-starter-workspace)
+
 ## Documentation
 
 [Getting started](https://tradecanvas.dev/docs/getting-started/) · [From TradingView](https://tradecanvas.dev/docs/from-tradingview/) · [API](https://tradecanvas.dev/docs/api/) · [Indicators](https://tradecanvas.dev/docs/indicators/) · [Drawing tools](https://tradecanvas.dev/docs/drawing-tools/) · [Realtime](https://tradecanvas.dev/docs/realtime/) · [Trading](https://tradecanvas.dev/docs/trading/) · [Styling](https://tradecanvas.dev/docs/styling/) · [Frameworks](https://tradecanvas.dev/docs/frameworks/) · [Plugins](https://tradecanvas.dev/docs/plugins/) · [Phones and apps](https://tradecanvas.dev/docs/embed/#mobile-app) · [Performance](https://tradecanvas.dev/docs/performance/)

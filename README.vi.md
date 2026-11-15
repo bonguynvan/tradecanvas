@@ -119,6 +119,14 @@ Trên Windows (không qua WSL): `claude mcp add tradecanvas -- cmd /c npx -y @tr
 
 Đo được, không phải tự nhận: trên 24 task, agent có skill hoàn thành mọi lượt chạy (48 trên 48, không có skill là 47 trên 48), mất 10 lượt thay vì 15 và 169k token thay vì 221k, và chỉ phải đọc mã đã biên dịch ở 1 trên 48 lượt thay vì 6 ([lượt chạy](evals/baselines/2026-11-13-sonnet.md), trên bản 2.1.1; các task và những gì chúng phát hiện nằm trong [`evals`](evals/README.md)).
 
+## Bắt đầu từ template
+
+Ba project Vite + TypeScript nhỏ để clone về chạy trong một phút, mỗi cái là một GitHub template có trang chạy thử:
+
+- **Crypto terminal**: widget trên dữ liệu Binance trực tiếp, có watchlist. [Chạy thử](https://bonguynvan.github.io/tradecanvas-starter-crypto/) · [template](https://github.com/bonguynvan/tradecanvas-starter-crypto)
+- **Chart chứng khoán**: giờ giao dịch NYSE, nến ngày từ file CSV, hoặc server của bạn qua `udfFeed`. [Chạy thử](https://bonguynvan.github.io/tradecanvas-starter-stocks/) · [template](https://github.com/bonguynvan/tradecanvas-starter-stocks)
+- **Workspace**: bốn chart lưới 2×2, liên kết crosshair, khung thời gian và thời gian, lưu layout. [Chạy thử](https://bonguynvan.github.io/tradecanvas-starter-workspace/) · [template](https://github.com/bonguynvan/tradecanvas-starter-workspace)
+
 ## Tài liệu
 
 [Bắt đầu](https://tradecanvas.dev/vi/docs/getting-started/) · [Chuyển từ TradingView](https://tradecanvas.dev/vi/docs/from-tradingview/) · [API](https://tradecanvas.dev/vi/docs/api/) · [Chỉ báo](https://tradecanvas.dev/vi/docs/indicators/) · [Công cụ vẽ](https://tradecanvas.dev/vi/docs/drawing-tools/) · [Thời gian thực](https://tradecanvas.dev/vi/docs/realtime/) · [Giao dịch](https://tradecanvas.dev/vi/docs/trading/) · [Giao diện](https://tradecanvas.dev/vi/docs/styling/) · [Framework](https://tradecanvas.dev/vi/docs/frameworks/) · [Plugin](https://tradecanvas.dev/vi/docs/plugins/) · [Điện thoại và ứng dụng](https://tradecanvas.dev/vi/docs/embed/#mobile-app) · [Hiệu năng](https://tradecanvas.dev/vi/docs/performance/)

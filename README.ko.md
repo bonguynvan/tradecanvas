@@ -119,6 +119,14 @@ TradingView의 charting library나 Lightweight Charts에서 앱을 옮겨 오나
 
 자칭이 아니라 측정한 결과입니다. 24개 과제에서 스킬이 있는 에이전트는 모든 실행을 마쳤고(48회 중 48회, 스킬이 없으면 48회 중 47회), 15턴 대신 10턴, 22.1만 토큰 대신 16.9만 토큰이 들었으며, 컴파일된 코드를 읽으러 간 것은 48회 중 6회 대신 1회였습니다([해당 실행](evals/baselines/2026-11-13-sonnet.md), 2.1.1 기준. 과제와 거기서 드러난 내용은 [`evals`](evals/README.md)에 있습니다).
 
+## 템플릿으로 시작하기
+
+클론해서 1분 안에 실행할 수 있는 작은 Vite + TypeScript 프로젝트 세 개입니다. 모두 라이브 페이지가 있는 GitHub 템플릿입니다:
+
+- **암호화폐 터미널**: Binance 실시간 데이터 위의 위젯과 관심 종목 목록. [라이브](https://bonguynvan.github.io/tradecanvas-starter-crypto/) · [템플릿](https://github.com/bonguynvan/tradecanvas-starter-crypto)
+- **주식 차트**: NYSE 거래 시간, CSV의 일봉, 또는 `udfFeed`로 연결한 자체 서버. [라이브](https://bonguynvan.github.io/tradecanvas-starter-stocks/) · [템플릿](https://github.com/bonguynvan/tradecanvas-starter-stocks)
+- **워크스페이스**: 2×2 그리드의 차트 네 개, 십자선·시간 단위·시간 연동, 레이아웃 저장. [라이브](https://bonguynvan.github.io/tradecanvas-starter-workspace/) · [템플릿](https://github.com/bonguynvan/tradecanvas-starter-workspace)
+
 ## 문서
 
 [시작하기](https://tradecanvas.dev/ko/docs/getting-started/) · [TradingView에서 옮겨오기](https://tradecanvas.dev/ko/docs/from-tradingview/) · [API](https://tradecanvas.dev/ko/docs/api/) · [지표](https://tradecanvas.dev/ko/docs/indicators/) · [드로잉 도구](https://tradecanvas.dev/ko/docs/drawing-tools/) · [실시간](https://tradecanvas.dev/ko/docs/realtime/) · [거래](https://tradecanvas.dev/ko/docs/trading/) · [스타일](https://tradecanvas.dev/ko/docs/styling/) · [프레임워크](https://tradecanvas.dev/ko/docs/frameworks/) · [플러그인](https://tradecanvas.dev/ko/docs/plugins/) · [휴대폰과 앱](https://tradecanvas.dev/ko/docs/embed/#mobile-app) · [성능](https://tradecanvas.dev/ko/docs/performance/)

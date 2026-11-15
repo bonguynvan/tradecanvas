@@ -119,6 +119,14 @@ claude mcp add tradecanvas -- npx -y @tradecanvas/mcp
 
 这是实测结果，不是自述：在 24 个任务上，有技能的智能体每次运行都完成了任务（48 次中的 48 次，没有技能时为 48 次中的 47 次），用 10 轮而不是 15 轮、16.9 万个 token 而不是 22.1 万个，并且 48 次运行中只有 1 次去读编译后的代码，而没有技能时是 6 次（[这次运行](evals/baselines/2026-11-13-sonnet.md)，基于 2.1.1；任务及其发现见 [`evals`](evals/README.md)）。
 
+## 从模板开始
+
+三个小型 Vite + TypeScript 项目，克隆后一分钟就能运行，每个都是带在线页面的 GitHub 模板：
+
+- **加密货币终端**：接入 Binance 实时数据的组件，带自选列表。[在线](https://bonguynvan.github.io/tradecanvas-starter-crypto/) · [模板](https://github.com/bonguynvan/tradecanvas-starter-crypto)
+- **股票图表**：NYSE 交易时段，日线来自 CSV，或通过 `udfFeed` 接入你自己的服务器。[在线](https://bonguynvan.github.io/tradecanvas-starter-stocks/) · [模板](https://github.com/bonguynvan/tradecanvas-starter-stocks)
+- **工作区**：2×2 网格中的四个图表，十字线、周期和时间联动，布局会保存。[在线](https://bonguynvan.github.io/tradecanvas-starter-workspace/) · [模板](https://github.com/bonguynvan/tradecanvas-starter-workspace)
+
 ## 文档
 
 [快速开始](https://tradecanvas.dev/zh/docs/getting-started/) · [从 TradingView 迁移](https://tradecanvas.dev/zh/docs/from-tradingview/) · [API](https://tradecanvas.dev/zh/docs/api/) · [指标](https://tradecanvas.dev/zh/docs/indicators/) · [画线工具](https://tradecanvas.dev/zh/docs/drawing-tools/) · [实时数据](https://tradecanvas.dev/zh/docs/realtime/) · [交易](https://tradecanvas.dev/zh/docs/trading/) · [样式](https://tradecanvas.dev/zh/docs/styling/) · [框架](https://tradecanvas.dev/zh/docs/frameworks/) · [插件](https://tradecanvas.dev/zh/docs/plugins/) · [手机与应用](https://tradecanvas.dev/zh/docs/embed/#mobile-app) · [性能](https://tradecanvas.dev/zh/docs/performance/)
