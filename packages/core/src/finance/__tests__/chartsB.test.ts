@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import type { CalendarChartOptions, MatrixChartOptions } from '@tradecanvas/commons';
 import { DARK_THEME, LIGHT_THEME, lerpColor } from '@tradecanvas/commons';
-import { resolveColorScale, scaleColor, readableText } from '../colorScale.js';
+import { resolveColorScale, scaleColor, readableText, drawColorBar } from '../colorScale.js';
 import { parseDay, dayToIso, computeCalendarLayout, hitDay, renderCalendar, MAX_CALENDAR_YEARS } from '../CalendarRenderer.js';
 import { correlationMatrix, computeMatrixLayout, hitMatrixCell, renderMatrix } from '../MatrixRenderer.js';
 import { layoutGroupedTreemap } from '../HeatmapLayout.js';
@@ -172,6 +172,37 @@ describe('matrix layout', () => {
     expect(lower.cells.every((c) => c.cell.columnIndex <= c.cell.rowIndex)).toBe(true);
     const upper = computeMatrixLayout({ ...options, triangle: 'upper' }, 500, 400, DARK_THEME, measure);
     expect(upper.cells.every((c) => c.cell.columnIndex >= c.cell.rowIndex)).toBe(true);
+  });
+
+  it('gives the colour bar room for its labels when the matrix is narrower', () => {
+    const pct = (v: number) => `${v > 0 ? '+' : ''}${v.toFixed(1)}%`;
+    const statement: MatrixChartOptions = {
+      rows: ['Total assets', 'Current assets', 'Non-current assets'],
+      columns: ['2026Q3'],
+      values: [[2.3], [10], [-7.9]],
+      valueFormat: pct,
+    };
+    const layout = computeMatrixLayout(statement, 1240, 340, DARK_THEME, measure);
+    const labels = [pct(layout.scale.min), pct(0), pct(layout.scale.max)].map((t) => measure(t, 10));
+    expect(layout.grid.width).toBeLessThan(labels.reduce((a, b) => a + b, 0));
+    expect(layout.bar!.width).toBeGreaterThanOrEqual(labels.reduce((a, b) => a + b, 0) + 16);
+    expect(layout.bar!.x + layout.bar!.width).toBeLessThanOrEqual(1240);
+  });
+
+  it('draws the colour bar’s labels apart, leaving out the middle one when it has no room', () => {
+    const scale = resolveColorScale([-10, 10], DARK_THEME);
+    const pct = (v: number) => `${v > 0 ? '+' : ''}${v.toFixed(1)}%`;
+    const wide = fakeCtx();
+    drawColorBar(wide.ctx, { x: 0, y: 0, width: 180, height: 20 }, scale, pct, DARK_THEME);
+    expect(wide.texts).toEqual(['-10.0%', '+10.0%', '0.0%']);
+    // 6.6 px a character: the ends take 79 px of 90, the middle no longer fits between them.
+    const narrow = fakeCtx();
+    drawColorBar(narrow.ctx, { x: 0, y: 0, width: 90, height: 20 }, scale, pct, DARK_THEME);
+    expect(narrow.texts).toEqual(['-10.0%', '+10.0%']);
+    // Not even the ends fit: no labels rather than labels over each other.
+    const tiny = fakeCtx();
+    drawColorBar(tiny.ctx, { x: 0, y: 0, width: 60, height: 20 }, scale, pct, DARK_THEME);
+    expect(tiny.texts).toEqual([]);
   });
 
   it('turns long column names, leaves empty values out, and finds the cell under the pointer', () => {

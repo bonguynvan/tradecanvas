@@ -1,7 +1,7 @@
 import type { CalendarChartOptions, CalendarDay, Theme } from '@tradecanvas/commons';
 import { withAlpha } from '@tradecanvas/commons';
 import { LABEL_SIZE, canvasMeasure, numberFormat, drawTooltip, fontOf, type Measure, type Rect, type TooltipLine } from './chartKit.js';
-import { COLOR_BAR_ROOM, drawColorBar, resolveColorScale, scaleColor, type ResolvedScale } from './colorScale.js';
+import { BAR_LABEL_SIZE, COLOR_BAR_ROOM, colorBarLabelWidth, drawColorBar, resolveColorScale, scaleColor, type ResolvedScale } from './colorScale.js';
 
 const DAY_MS = 86_400_000;
 /** Calendar years shown at most: a longer range keeps its last ones. */
@@ -209,7 +209,9 @@ export function computeCalendarLayout(options: CalendarChartOptions, width: numb
     top = gridTop + rows * pitch + YEAR_GAP;
   }
   if (legendRoom > 0) {
-    layout.bar = { x: x0, y: top - YEAR_GAP + 8, width: Math.min(gridWidth, width - x0 - PAD), height: legendRoom - 8 };
+    const format = options.valueFormat ?? numberFormat(options.locale);
+    const labels = colorBarLabelWidth(scale, format, (t) => measure(t, BAR_LABEL_SIZE));
+    layout.bar = { x: x0, y: top - YEAR_GAP + 8, width: Math.min(Math.max(gridWidth, labels), width - x0 - PAD), height: legendRoom - 8 };
   }
   return layout;
 }

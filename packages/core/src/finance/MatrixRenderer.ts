@@ -1,6 +1,6 @@
 import type { MatrixCell, MatrixChartOptions, Theme } from '@tradecanvas/commons';
 import { LABEL_SIZE, canvasMeasure, drawTooltip, fitText, fontOf, type Measure, type Rect } from './chartKit.js';
-import { COLOR_BAR_ROOM, drawColorBar, readableText, resolveColorScale, scaleColor, type ResolvedScale } from './colorScale.js';
+import { BAR_LABEL_SIZE, COLOR_BAR_ROOM, colorBarLabelWidth, drawColorBar, readableText, resolveColorScale, scaleColor, type ResolvedScale } from './colorScale.js';
 
 /** Rows and columns past this many are left out: their cells would be under a pixel. */
 export const MAX_MATRIX_SIZE = 200;
@@ -170,7 +170,11 @@ export function computeMatrixLayout(options: MatrixChartOptions, width: number, 
   for (let c = 0; c < columns.length; c += colEvery) {
     layout.columnLabels.push({ text: fitText(columns[c], colRoom, measure), index: c, x: gridX + c * pitch + size / 2, y: top - LABEL_GAP, rotated });
   }
-  if (legendRoom > 0) layout.bar = { x: gridX, y: top + rows.length * pitch + 8, width: Math.min(layout.grid.width, width - gridX - PAD), height: legendRoom - 8 };
+  if (legendRoom > 0) {
+    // As wide as the matrix, or as its labels need where the matrix is narrower (a column or two).
+    const labels = colorBarLabelWidth(scale, format, (t) => measure(t, BAR_LABEL_SIZE));
+    layout.bar = { x: gridX, y: top + rows.length * pitch + 8, width: Math.min(Math.max(layout.grid.width, labels), width - gridX - PAD), height: legendRoom - 8 };
+  }
   return layout;
 }
 
