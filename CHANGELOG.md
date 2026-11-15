@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- **A narrow matrix's colour bar keeps its labels apart** (`@tradecanvas/core`, `@tradecanvas/chart`): under `MatrixChart` and `CalendarChart` the bar is as wide as the chart, or as its labels need where the chart is narrower (a matrix of one or two columns), up to the chart's edge. The labels are measured: the middle one (zero) is left out when it would touch an end, and the ends too when even they cannot stand apart, instead of printing over each other.
+
 ## 2.11.1 (2026-11-15)
 
 ### Fixes
