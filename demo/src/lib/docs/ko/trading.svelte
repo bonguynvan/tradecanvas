@@ -279,6 +279,7 @@ widget.getChart().on('orderPlace', (e) => {
 <ul>
   <li><code>mode</code>: <code>'cumulative'</code>(기본)는 각 호가를 시장에 더 가까운 호가와 합하므로 시장에서 멀수록 막대가 길어집니다. <code>'level'</code> 은 호가마다 자기 수량만 그리므로 큰 벽이 긴 막대 하나로 보입니다.</li>
   <li><code>rowSize</code>: 막대의 높이를 가격 단위로 정합니다. 호가가 이 간격의 행으로 합쳐지므로, 거친 가격 눈금 위의 촘촘한 호가창이나 빈 호가가 있는 호가창도 고른 막대로 그려집니다(풋프린트의 행에 맞출 수 있습니다). 이때 <code>markBest</code> 는 최우선 행의 가운데에 선을 긋습니다.</li>
+  <li><code>rowOrigin</code>: 행이 시작하는 가격입니다. 이때 k번째 행은 <code>rowOrigin + k × rowSize</code> 에서 다음 행의 시작까지이고, 행의 시작에 정확히 놓인 호가는 그 행에 들어갑니다. 행 크기의 배수에서 칸이 시작하고 각 틱이 그 가격을 가운데로 하는 풋프린트는 <code>rowOrigin: -tick / 2</code> 로 맞춰집니다. 지정하지 않으면 각 행은 <code>rowSize</code> 의 배수를 가운데로 합니다.</li>
   <li><code>markBest</code>: 최우선 매수호가와 최우선 매도호가에 선을 긋습니다(<code>bestBidColor</code>, <code>bestAskColor</code>).</li>
   <li><code>maxWidth</code>: 막대의 최대 길이(픽셀, 플롯 너비까지), <code>bidColor</code>, <code>askColor</code>.</li>
 </ul>

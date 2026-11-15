@@ -100,6 +100,17 @@ export interface DepthOverlayConfig {
    * middle of the best rows.
    */
   rowSize?: number;
+  /**
+   * Where the rows start, in price, with `rowSize`: row k runs from
+   * `rowOrigin + k · rowSize` up to the next one, and a level on a row's
+   * start is in that row. A footprint whose cells start at multiples of its
+   * row size, each tick centred on its price, lines up with `-tick / 2`.
+   * A bid and an ask may then share the row by the market, as they share a
+   * footprint's cell: the longer bar is drawn first, and `markBest` lines the
+   * bid on the row's lower edge and the ask on its upper. `0` starts rows at
+   * multiples of `rowSize`; without it each row is centred on one.
+   */
+  rowOrigin?: number;
   /** Draw a line at the best bid and at the best ask, as wide as the overlay. Default `false`. */
   markBest?: boolean;
   /** The colour of the best bid's line. Default green. */

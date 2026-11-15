@@ -90,6 +90,17 @@ describe('the order book on the plot', () => {
     expect(render.mock.calls[render.mock.calls.length - 1][3].rowSize).toBe(0.5);
   });
 
+  it('hands a row origin to the drawing, set later as well', () => {
+    chart = new Chart(host, { features: { trading: false, depth: true }, depthOverlay: { rowSize: 1.25, rowOrigin: -0.125 } });
+    const render = drawn(chart);
+    expect(render.mock.calls[render.mock.calls.length - 1][3]).toMatchObject({ rowSize: 1.25, rowOrigin: -0.125 });
+    chart.setDepthOverlay({ rowOrigin: 0 });
+    expect(chart.getDepthOverlay()).toMatchObject({ rowSize: 1.25, rowOrigin: 0 });
+    // Unset again: the rows are centred on multiples of the size once more.
+    chart.setDepthOverlay({ rowOrigin: undefined });
+    expect(chart.getDepthOverlay().rowOrigin).toBeUndefined();
+  });
+
   it('is cleared with null', () => {
     chart = new Chart(host, { features: { depth: true } });
     const render = drawn(chart);

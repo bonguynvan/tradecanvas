@@ -18,20 +18,30 @@ function validRowSize(rowSize: number | undefined): number | null {
   return typeof rowSize === 'number' && Number.isFinite(rowSize) && rowSize > 0 ? rowSize : null;
 }
 
+/** A row origin to use, or null: only a finite number is one. */
+function validRowOrigin(rowOrigin: number | undefined): number | null {
+  return typeof rowOrigin === 'number' && Number.isFinite(rowOrigin) ? rowOrigin : null;
+}
+
 /**
- * The levels added up into rows `rowSize` apart, each row centred on a multiple
- * of it. A level halfway between two rows goes to the one away from the market
- * (a bid down, an ask up), so a bid's row never reaches past an ask's.
+ * The levels added up into rows `rowSize` apart. With no `origin`, each row
+ * is centred on a multiple of the size, and a level halfway between two rows
+ * goes to the one away from the market (a bid down, an ask up), so a bid's
+ * row never reaches past an ask's. With an `origin`, row k runs from
+ * `origin + k · rowSize` up to the next one's start, and a level on a row's
+ * start is in that row, as a footprint's cells are; each row's price is its
+ * middle, so a bar is drawn over the row's span.
  */
-function bucket(levels: readonly DepthData['bids'][number][], rowSize: number, isBid: boolean): DepthData['bids'] {
+function bucket(levels: readonly DepthData['bids'][number][], rowSize: number, isBid: boolean, origin: number | null): DepthData['bids'] {
   const rows = new Map<number, number>();
   for (const l of levels) {
     // To 12 digits: 0.15 / 0.1 is 1.4999999999999998, and a price on a row's edge must go by the rule.
-    const at = Number((l.price / rowSize).toPrecision(12));
-    const key = isBid ? Math.ceil(at - 0.5) : Math.floor(at + 0.5);
+    const at = Number(((l.price - (origin ?? 0)) / rowSize).toPrecision(12));
+    const key = origin !== null ? Math.floor(at) : isBid ? Math.ceil(at - 0.5) : Math.floor(at + 0.5);
     rows.set(key, (rows.get(key) ?? 0) + l.volume);
   }
-  return [...rows].map(([key, volume]) => ({ price: key * rowSize, volume }));
+  const priceOf = origin !== null ? (key: number) => origin + (key + 0.5) * rowSize : (key: number) => key * rowSize;
+  return [...rows].map(([key, volume]) => ({ price: priceOf(key), volume }));
 }
 
 /**
@@ -39,17 +49,20 @@ function bucket(levels: readonly DepthData['bids'][number][], rowSize: number, i
  * (`'level'`) or its size plus every level nearer the market (`'cumulative'`).
  * Levels that are not numbers or rest no size are left out; the order a feed
  * lists them in does not matter. With a `rowSize` (in price), the levels are
- * added up into rows that far apart first. `max` is the longest bar, 0 with none.
+ * added up into rows that far apart first, starting from `rowOrigin` when it
+ * is given. `max` is the longest bar, 0 with none.
  */
 export function depthBars(
   depth: DepthData,
   mode: 'cumulative' | 'level' = 'cumulative',
   rowSize?: number,
+  rowOrigin?: number,
 ): { bids: DepthBar[]; asks: DepthBar[]; max: number } {
   const size = validRowSize(rowSize);
+  const origin = validRowOrigin(rowOrigin);
   const side = (levels: DepthData['bids'], isBid: boolean): DepthBar[] => {
     const valid = levels.filter((l) => Number.isFinite(l.price) && Number.isFinite(l.volume) && l.volume > 0);
-    const rows = size === null ? valid : bucket(valid, size, isBid);
+    const rows = size === null ? valid : bucket(valid, size, isBid, origin);
     rows.sort((a, b) => (isBid ? b.price - a.price : a.price - b.price));
     let running = 0;
     return rows.map((l) => {
@@ -79,7 +92,7 @@ function nearGap(bars: readonly DepthBar[], viewport: ViewportState): number {
  */
 export class DepthOverlay {
   /** The bars of the last book and mode: a repaint with the book unchanged (the crosshair moving) sorts nothing. */
-  private cache: { depth: DepthData; mode: string; rowSize: number | null; bars: ReturnType<typeof depthBars> } | null = null;
+  private cache: { depth: DepthData; mode: string; rowSize: number | null; rowOrigin: number | null; bars: ReturnType<typeof depthBars> } | null = null;
 
   /** Forget the bars: the book was given again (it may be the same object, changed). */
   invalidate(): void {
@@ -90,10 +103,14 @@ export class DepthOverlay {
     if (!config.enabled) return;
     const mode = config.mode === 'level' ? 'level' : 'cumulative';
     const rowSize = validRowSize(config.rowSize);
-    if (!this.cache || this.cache.depth !== depth || this.cache.mode !== mode || this.cache.rowSize !== rowSize) {
-      this.cache = { depth, mode, rowSize, bars: depthBars(depth, mode, rowSize ?? undefined) };
-    }
-    const { bids, asks, max } = this.cache.bars;
+    const rowOrigin = validRowOrigin(config.rowOrigin);
+    const cached = this.cache;
+    const current =
+      cached && cached.depth === depth && cached.mode === mode && cached.rowSize === rowSize && cached.rowOrigin === rowOrigin
+        ? cached
+        : { depth, mode, rowSize, rowOrigin, bars: depthBars(depth, mode, rowSize ?? undefined, rowOrigin ?? undefined) };
+    this.cache = current;
+    const { bids, asks, max } = current.bars;
     if (max === 0) return;
 
     const { chartRect } = viewport;
@@ -123,6 +140,8 @@ export class DepthOverlay {
       return { y, h };
     };
 
+    const bidColor = config.bidColor ?? DEFAULT_BID;
+    const askColor = config.askColor ?? DEFAULT_ASK;
     const draw = (bars: DepthBar[], color: string): void => {
       ctx.fillStyle = color;
       for (const { price, value } of bars) {
@@ -132,19 +151,38 @@ export class DepthOverlay {
         ctx.fillRect(rightEdge - w, at.y, w, at.h);
       }
     };
-    draw(bids, config.bidColor ?? DEFAULT_BID);
-    draw(asks, config.askColor ?? DEFAULT_ASK);
+    // Rows from an origin can hold a bid and an ask: the longer bar first, so the shorter shows over it.
+    const askAt = new Map(asks.map((a) => [a.price, a]));
+    const pairs = bids.flatMap((bid) => {
+      const ask = askAt.get(bid.price);
+      return ask ? [{ bid, ask }] : [];
+    });
+    const shared = new Set(pairs.map((p) => p.bid.price));
+    const own = (bars: DepthBar[]) => (shared.size ? bars.filter((b) => !shared.has(b.price)) : bars);
+    draw(own(bids), bidColor);
+    draw(own(asks), askColor);
+    for (const { bid, ask } of pairs) {
+      const bidFirst = bid.value >= ask.value;
+      draw([bidFirst ? bid : ask], bidFirst ? bidColor : askColor);
+      draw([bidFirst ? ask : bid], bidFirst ? askColor : bidColor);
+    }
 
     if (config.markBest) {
-      const mark = (bar: DepthBar | undefined, color: string): void => {
-        if (!bar) return;
-        const y = priceToY(bar.price, viewport);
+      const mark = (y: number, color: string): void => {
         if (y < chartRect.y || y > chartRect.y + chartRect.height) return;
         ctx.fillStyle = color;
         ctx.fillRect(rightEdge - width, y - 0.5, width, 1);
       };
-      mark(bids[0], config.bestBidColor ?? DEFAULT_BEST_BID);
-      mark(asks[0], config.bestAskColor ?? DEFAULT_BEST_ASK);
+      const bestBid = bids[0];
+      const bestAsk = asks[0];
+      if (bestBid && bestAsk && rowSize !== null && bestBid.price === bestAsk.price) {
+        // One row holds both: the bid on its lower edge, the ask on its upper, so neither hides the other.
+        mark(priceToY(bestBid.price - rowSize / 2, viewport), config.bestBidColor ?? DEFAULT_BEST_BID);
+        mark(priceToY(bestAsk.price + rowSize / 2, viewport), config.bestAskColor ?? DEFAULT_BEST_ASK);
+      } else {
+        if (bestBid) mark(priceToY(bestBid.price, viewport), config.bestBidColor ?? DEFAULT_BEST_BID);
+        if (bestAsk) mark(priceToY(bestAsk.price, viewport), config.bestAskColor ?? DEFAULT_BEST_ASK);
+      }
     }
   }
 }
