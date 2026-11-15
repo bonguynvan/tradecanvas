@@ -123,9 +123,9 @@ TradingView의 charting library나 Lightweight Charts에서 앱을 옮겨 오나
 
 클론해서 1분 안에 실행할 수 있는 작은 Vite + TypeScript 프로젝트 세 개입니다. 모두 라이브 페이지가 있는 GitHub 템플릿입니다:
 
-- **암호화폐 터미널**: Binance 실시간 데이터 위의 위젯과 관심 종목 목록. [라이브](https://bonguynvan.github.io/tradecanvas-starter-crypto/) · [템플릿](https://github.com/bonguynvan/tradecanvas-starter-crypto)
-- **주식 차트**: NYSE 거래 시간, CSV의 일봉, 또는 `udfFeed`로 연결한 자체 서버. [라이브](https://bonguynvan.github.io/tradecanvas-starter-stocks/) · [템플릿](https://github.com/bonguynvan/tradecanvas-starter-stocks)
-- **워크스페이스**: 2×2 그리드의 차트 네 개, 십자선·시간 단위·시간 연동, 레이아웃 저장. [라이브](https://bonguynvan.github.io/tradecanvas-starter-workspace/) · [템플릿](https://github.com/bonguynvan/tradecanvas-starter-workspace)
+- **암호화폐 터미널**: Binance 실시간 데이터 위의 위젯과 관심 종목 목록. [라이브](https://tradecanvas.dev/starters/crypto/) · [템플릿](https://github.com/bonguynvan/tradecanvas-starter-crypto)
+- **주식 차트**: NYSE 거래 시간, CSV의 일봉, 또는 `udfFeed`로 연결한 자체 서버. [라이브](https://tradecanvas.dev/starters/stocks/) · [템플릿](https://github.com/bonguynvan/tradecanvas-starter-stocks)
+- **워크스페이스**: 2×2 그리드의 차트 네 개, 십자선·시간 단위·시간 연동, 레이아웃 저장. [라이브](https://tradecanvas.dev/starters/workspace/) · [템플릿](https://github.com/bonguynvan/tradecanvas-starter-workspace)
 
 ## 문서
 

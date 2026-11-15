@@ -123,9 +123,9 @@ Trên Windows (không qua WSL): `claude mcp add tradecanvas -- cmd /c npx -y @tr
 
 Ba project Vite + TypeScript nhỏ để clone về chạy trong một phút, mỗi cái là một GitHub template có trang chạy thử:
 
-- **Crypto terminal**: widget trên dữ liệu Binance trực tiếp, có watchlist. [Chạy thử](https://bonguynvan.github.io/tradecanvas-starter-crypto/) · [template](https://github.com/bonguynvan/tradecanvas-starter-crypto)
-- **Chart chứng khoán**: giờ giao dịch NYSE, nến ngày từ file CSV, hoặc server của bạn qua `udfFeed`. [Chạy thử](https://bonguynvan.github.io/tradecanvas-starter-stocks/) · [template](https://github.com/bonguynvan/tradecanvas-starter-stocks)
-- **Workspace**: bốn chart lưới 2×2, liên kết crosshair, khung thời gian và thời gian, lưu layout. [Chạy thử](https://bonguynvan.github.io/tradecanvas-starter-workspace/) · [template](https://github.com/bonguynvan/tradecanvas-starter-workspace)
+- **Crypto terminal**: widget trên dữ liệu Binance trực tiếp, có watchlist. [Chạy thử](https://tradecanvas.dev/starters/crypto/) · [template](https://github.com/bonguynvan/tradecanvas-starter-crypto)
+- **Chart chứng khoán**: giờ giao dịch NYSE, nến ngày từ file CSV, hoặc server của bạn qua `udfFeed`. [Chạy thử](https://tradecanvas.dev/starters/stocks/) · [template](https://github.com/bonguynvan/tradecanvas-starter-stocks)
+- **Workspace**: bốn chart lưới 2×2, liên kết crosshair, khung thời gian và thời gian, lưu layout. [Chạy thử](https://tradecanvas.dev/starters/workspace/) · [template](https://github.com/bonguynvan/tradecanvas-starter-workspace)
 
 ## Tài liệu
 

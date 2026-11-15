@@ -123,9 +123,9 @@ claude mcp add tradecanvas -- npx -y @tradecanvas/mcp
 
 三个小型 Vite + TypeScript 项目，克隆后一分钟就能运行，每个都是带在线页面的 GitHub 模板：
 
-- **加密货币终端**：接入 Binance 实时数据的组件，带自选列表。[在线](https://bonguynvan.github.io/tradecanvas-starter-crypto/) · [模板](https://github.com/bonguynvan/tradecanvas-starter-crypto)
-- **股票图表**：NYSE 交易时段，日线来自 CSV，或通过 `udfFeed` 接入你自己的服务器。[在线](https://bonguynvan.github.io/tradecanvas-starter-stocks/) · [模板](https://github.com/bonguynvan/tradecanvas-starter-stocks)
-- **工作区**：2×2 网格中的四个图表，十字线、周期和时间联动，布局会保存。[在线](https://bonguynvan.github.io/tradecanvas-starter-workspace/) · [模板](https://github.com/bonguynvan/tradecanvas-starter-workspace)
+- **加密货币终端**：接入 Binance 实时数据的组件，带自选列表。[在线](https://tradecanvas.dev/starters/crypto/) · [模板](https://github.com/bonguynvan/tradecanvas-starter-crypto)
+- **股票图表**：NYSE 交易时段，日线来自 CSV，或通过 `udfFeed` 接入你自己的服务器。[在线](https://tradecanvas.dev/starters/stocks/) · [模板](https://github.com/bonguynvan/tradecanvas-starter-stocks)
+- **工作区**：2×2 网格中的四个图表，十字线、周期和时间联动，布局会保存。[在线](https://tradecanvas.dev/starters/workspace/) · [模板](https://github.com/bonguynvan/tradecanvas-starter-workspace)
 
 ## 文档
 
