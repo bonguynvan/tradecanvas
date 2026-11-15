@@ -626,6 +626,15 @@ new MatrixChart(document.getElementById('correlation')!, {
   colorScale: { min: -1, max: 1 },
 });
 
+// A few columns in a wide panel: 'fill' spreads them over the width (a number sets px a column).
+new MatrixChart(document.getElementById('statement')!, {
+  rows: ['Total assets', 'Current assets'],
+  columns: ['2026Q1', '2026Q2', '2026Q3'],
+  values: [[1.1, -0.4, 2.3], [4, 6.5, 10]],
+  valueFormat: (v) => `${v.toFixed(1)}%`,
+  cellWidth: 'fill',
+});
+
 new HeatmapChart(document.getElementById('sectors')!, {
   data: [
     { id: 'vcb', label: 'VCB', value: 0.8, weight: 480, group: 'Banks' },

@@ -269,6 +269,45 @@ describe('matrix layout', () => {
       expect(tight.grid.x + tight.grid.width).toBeLessThanOrEqual(1240 - 12 + 0.001);
     });
 
+    it('keeps the rows as tall as square cells would have them, in a narrow chart too', () => {
+      const many = { ...statement, rows: Array.from({ length: 10 }, (_, i) => `Line ${i}`), values: Array.from({ length: 10 }, () => [1, 2, 3]) };
+      const square = computeMatrixLayout(many, 300, 600, DARK_THEME, measure);
+      const fill = computeMatrixLayout({ ...many, cellWidth: 'fill' }, 300, 600, DARK_THEME, measure);
+      expect(fill.pitchY).toBeCloseTo(square.pitchY);
+    });
+
+    it('lays square cells out as before', () => {
+      // The numbers square cells had before cellWidth: a 4×4 matrix in 500 × 400.
+      const names = ['VCB', 'BID', 'CTG', 'TCB'];
+      const layout = computeMatrixLayout({ rows: names, values: correlationMatrix([[1, 2, 3, 5], [1, 3, 2, 5], [2, 1, 3, 4], [5, 3, 2, 1]]) }, 500, 400, DARK_THEME, measure);
+      expect({ grid: layout.grid, pitch: layout.pitch, first: { x: layout.cells[0].x, y: layout.cells[0].y, size: layout.cells[0].size } }).toMatchInlineSnapshot(`
+        {
+          "first": {
+            "size": 71,
+            "x": 118.89999999999999,
+            "y": 29,
+          },
+          "grid": {
+            "height": 288,
+            "width": 288,
+            "x": 118.89999999999999,
+            "y": 29,
+          },
+          "pitch": 72,
+        }
+      `);
+    });
+
+    it('turns long column names by the width of a filled column, and finds cells in a grid of oblong cells', () => {
+      const long = { ...statement, columns: ['First quarter of 2026', 'Second quarter of 2026', 'Third quarter of 2026'] };
+      expect(computeMatrixLayout(long, 400, 340, DARK_THEME, measure).columnLabels[0].rotated).toBe(true);
+      const fill = computeMatrixLayout({ ...long, cellWidth: 'fill' }, 1240, 340, DARK_THEME, measure);
+      expect(fill.columnLabels[0].rotated).toBe(false);
+      const cell = fill.at[2][1]!;
+      expect(hitMatrixCell(fill, cell.x + cell.width - 1, cell.y + cell.height - 1)).toBe(cell);
+      expect(hitMatrixCell(fill, cell.x + cell.width + 1.5, cell.y + 1)).toBe(fill.at[2][2]);
+    });
+
     it('falls back to square cells for a width that is not a positive number', () => {
       const square = computeMatrixLayout(statement, 1240, 340, DARK_THEME, measure);
       for (const cellWidth of [0, -5, Number.NaN]) {
