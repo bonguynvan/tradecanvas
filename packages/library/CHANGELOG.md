@@ -1,5 +1,13 @@
 # @tradecanvas/chart
 
+## 2.11.1
+
+### Patch Changes
+
+- 63fd898: A widget fed its own bars (`setData`, no adapter or feed) names its symbol on the legend, at the start and after `setSymbol`. A grid's link switches (Symbol, Interval, Crosshair, Time) show on as blue text, as the scale's switches do, instead of the chosen-button fill, under which the blue washed out in the dark Print look.
+  - @tradecanvas/commons@2.11.1
+  - @tradecanvas/core@2.11.1
+
 ## 2.11.0
 
 ### Minor Changes

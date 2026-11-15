@@ -1,5 +1,12 @@
 # @tradecanvas/svelte
 
+## 2.0.22
+
+### Patch Changes
+
+- Updated dependencies [63fd898]
+  - @tradecanvas/chart@2.11.1
+
 ## 2.0.21
 
 ### Patch Changes
