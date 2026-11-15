@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- **`DepthOverlayConfig` is exported from `@tradecanvas/chart`**, the type `setDepthOverlay`, `getDepthOverlay` and the `depthOverlay` option take, as `DepthData` and `DepthLevel` are.
+
 ## 2.8.0 (2026-11-15)
 
 ### Order book

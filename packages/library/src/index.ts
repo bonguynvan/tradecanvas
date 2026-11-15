@@ -95,6 +95,7 @@ export type {
   TradingPosition,
   DepthData,
   DepthLevel,
+  DepthOverlayConfig,
   TradingConfig,
   OrderSide,
   OrderType,
