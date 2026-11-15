@@ -14,6 +14,14 @@ claude mcp add tradecanvas -- cmd /c npx -y @tradecanvas/mcp
 
 In Git Bash, which runs the `!` commands of Claude Code on Windows, write `cmd //c npx -y @tradecanvas/mcp`: Git Bash turns `/c` into a path.
 
+Or with nothing to install: tradecanvas.dev runs the same server at `https://tradecanvas.dev/mcp`, at the library's latest version (the package answers for the version you installed):
+
+```bash
+claude mcp add --transport http tradecanvas https://tradecanvas.dev/mcp
+```
+
+Clients that connect by URL take it as it is: a custom connector in claude.ai, or `"url": "https://tradecanvas.dev/mcp"` in place of `"command"` in Cursor's settings.
+
 Cursor, Claude Desktop and most other clients take the same command in their MCP settings (on Windows, `"command": "cmd", "args": ["/c", "npx", "-y", "@tradecanvas/mcp"]`):
 
 ```json

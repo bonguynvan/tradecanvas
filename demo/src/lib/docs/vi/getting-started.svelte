@@ -93,6 +93,9 @@ chart.addIndicator('sma', { period: 20 })`}</code></pre>
 command = "npx"
 args = ["-y", "@tradecanvas/mcp"]`}</code></pre>
 <p>Trên Windows (không qua WSL), npx chạy qua <code>cmd</code>: <code>claude mcp add tradecanvas -- cmd /c npx -y @tradecanvas/mcp</code>, hoặc trong phần cài đặt <code>"command": "cmd", "args": ["/c", "npx", "-y", "@tradecanvas/mcp"]</code>. Trong Git Bash, nơi Claude Code chạy các lệnh <code>!</code> trên Windows, hãy viết <code>//c</code>: Git Bash đổi <code>/c</code> thành một đường dẫn.</p>
+<p>Hoặc không cần cài gì: tradecanvas.dev chạy cùng server đó tại <code>https://tradecanvas.dev/mcp</code>, theo bản mới nhất của thư viện. Trong Claude Code:</p>
+<pre><code>{`claude mcp add --transport http tradecanvas https://tradecanvas.dev/mcp`}</code></pre>
+<p>Các client kết nối bằng URL dùng thẳng địa chỉ này: custom connector trong claude.ai, hoặc <code>"url": "https://tradecanvas.dev/mcp"</code> thay cho <code>"command"</code> trong settings của Cursor. Gói ở trên trả lời theo bản bạn đã cài; URL trả lời theo bản mới nhất.</p>
 <p>Không dùng cả hai thì <a href="https://tradecanvas.dev/llms.txt">llms.txt</a> và <a href="https://tradecanvas.dev/llms-full.txt">llms-full.txt</a> gom tài liệu vào một file cho trợ lý AI.</p>
 
 <h2>Bước tiếp theo</h2>

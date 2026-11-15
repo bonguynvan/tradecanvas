@@ -97,6 +97,9 @@ chart.addIndicator('sma', { period: 20 })`}</code></pre>
 command = "npx"
 args = ["-y", "@tradecanvas/mcp"]`}</code></pre>
 <p>En Windows fuera de WSL, npx se inicia a través de <code>cmd</code>: <code>claude mcp add tradecanvas -- cmd /c npx -y @tradecanvas/mcp</code>, o en la configuración <code>"command": "cmd", "args": ["/c", "npx", "-y", "@tradecanvas/mcp"]</code>. En Git Bash, que ejecuta los comandos <code>!</code> de Claude Code en Windows, escribe <code>//c</code>: Git Bash convierte <code>/c</code> en una ruta.</p>
+<p>O sin instalar nada: tradecanvas.dev ejecuta el mismo servidor en <code>https://tradecanvas.dev/mcp</code>, con la última versión de la biblioteca. En Claude Code:</p>
+<pre><code>{`claude mcp add --transport http tradecanvas https://tradecanvas.dev/mcp`}</code></pre>
+<p>Los clientes que se conectan por URL la usan tal cual: un conector personalizado en claude.ai, o <code>"url": "https://tradecanvas.dev/mcp"</code> en lugar de <code>"command"</code> en los ajustes de Cursor. El paquete de arriba responde por la versión que instalaste; la URL, por la última.</p>
 <p>Sin ninguno de los dos, <a href="https://tradecanvas.dev/llms.txt">llms.txt</a> y <a href="https://tradecanvas.dev/llms-full.txt">llms-full.txt</a> dan a un asistente la documentación en un solo archivo.</p>
 
 <h2>Siguientes pasos</h2>

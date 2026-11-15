@@ -20,6 +20,10 @@ describe('the MCP Registry entry', () => {
     ]);
   });
 
+  it('names the server tradecanvas.dev runs, reached by URL', () => {
+    expect(serverJson(pkg).remotes).toEqual([{ type: 'streamable-http', url: 'https://tradecanvas.dev/mcp' }]);
+  });
+
   it('keeps the description within the registry limit of 100 characters', () => {
     expect(serverJson(pkg).description.length).toBeLessThanOrEqual(100);
   });

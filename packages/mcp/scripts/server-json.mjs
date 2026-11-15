@@ -11,6 +11,8 @@ import { fileURLToPath } from 'node:url';
 const SCHEMA = 'https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json';
 /** The registry takes at most 100 characters here. */
 const DESCRIPTION = 'Look up TradeCanvas chart indicators, options and drawing tools, and check options before use.';
+/** The same server, run by tradecanvas.dev for clients that connect by URL. */
+const REMOTE_URL = 'https://tradecanvas.dev/mcp';
 
 export function serverJson(pkg) {
   return {
@@ -24,6 +26,7 @@ export function serverJson(pkg) {
     packages: [
       { registryType: 'npm', identifier: pkg.name, version: pkg.version, transport: { type: 'stdio' } },
     ],
+    remotes: [{ type: 'streamable-http', url: REMOTE_URL }],
   };
 }
 
