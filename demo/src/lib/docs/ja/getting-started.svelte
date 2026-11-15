@@ -93,6 +93,9 @@ chart.addIndicator('sma', { period: 20 })`}</code></pre>
 command = "npx"
 args = ["-y", "@tradecanvas/mcp"]`}</code></pre>
 <p>WSL を使わない Windows では、npx を <code>cmd</code> 経由で起動します: <code>claude mcp add tradecanvas -- cmd /c npx -y @tradecanvas/mcp</code>。設定では <code>"command": "cmd", "args": ["/c", "npx", "-y", "@tradecanvas/mcp"]</code> と書きます。 Git Bash（Windows で Claude Code の <code>!</code> コマンドを実行するシェル）では <code>//c</code> と書きます。<code>/c</code> がパスに書き換えられるためです。</p>
+<p>何もインストールせずに使うこともできます。tradecanvas.dev が同じサーバーを <code>https://tradecanvas.dev/mcp</code> で、ライブラリの最新版として動かしています。Claude Code では：</p>
+<pre><code>{`claude mcp add --transport http tradecanvas https://tradecanvas.dev/mcp`}</code></pre>
+<p>URL で接続するクライアントはそのまま使えます。claude.ai ではカスタムコネクタとして、Cursor では設定の <code>"command"</code> の代わりに <code>"url": "https://tradecanvas.dev/mcp"</code> を書きます。上のパッケージはインストールした版について、この URL は最新版について答えます。</p>
 <p>どちらも使わない場合は、<a href="https://tradecanvas.dev/llms.txt">llms.txt</a> と <a href="https://tradecanvas.dev/llms-full.txt">llms-full.txt</a> がドキュメントを 1 ファイルでアシスタントに渡します。</p>
 
 <h2>次のステップ</h2>

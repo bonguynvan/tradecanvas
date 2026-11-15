@@ -93,6 +93,9 @@ chart.addIndicator('sma', { period: 20 })`}</code></pre>
 command = "npx"
 args = ["-y", "@tradecanvas/mcp"]`}</code></pre>
 <p>On Windows outside WSL, npx starts through <code>cmd</code>: <code>claude mcp add tradecanvas -- cmd /c npx -y @tradecanvas/mcp</code>, or in the settings <code>"command": "cmd", "args": ["/c", "npx", "-y", "@tradecanvas/mcp"]</code>. In Git Bash, which runs the <code>!</code> commands of Claude Code on Windows, write <code>//c</code>: Git Bash turns <code>/c</code> into a path.</p>
+<p>Or with nothing to install: tradecanvas.dev runs the same server at <code>https://tradecanvas.dev/mcp</code>, at the library's latest version. In Claude Code:</p>
+<pre><code>{`claude mcp add --transport http tradecanvas https://tradecanvas.dev/mcp`}</code></pre>
+<p>Clients that connect by URL take it as it is: a custom connector in claude.ai, or <code>"url": "https://tradecanvas.dev/mcp"</code> in place of <code>"command"</code> in Cursor's settings. The package above answers for the version you installed; the URL, for the latest.</p>
 <p>Without either, <a href="https://tradecanvas.dev/llms.txt">llms.txt</a> and <a href="https://tradecanvas.dev/llms-full.txt">llms-full.txt</a> hand an assistant the docs in one file.</p>
 
 <h2>Next steps</h2>

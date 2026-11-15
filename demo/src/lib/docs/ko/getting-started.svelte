@@ -93,6 +93,9 @@ chart.addIndicator('sma', { period: 20 })`}</code></pre>
 command = "npx"
 args = ["-y", "@tradecanvas/mcp"]`}</code></pre>
 <p>WSL 밖의 Windows에서는 npx를 <code>cmd</code>로 실행합니다: <code>claude mcp add tradecanvas -- cmd /c npx -y @tradecanvas/mcp</code>, 설정에서는 <code>"command": "cmd", "args": ["/c", "npx", "-y", "@tradecanvas/mcp"]</code>. Git Bash(Windows에서 Claude Code의 <code>!</code> 명령을 실행하는 셸)에서는 <code>//c</code>로 씁니다. Git Bash가 <code>/c</code>를 경로로 바꾸기 때문입니다.</p>
+<p>아무것도 설치하지 않고 쓸 수도 있습니다. tradecanvas.dev 가 같은 서버를 <code>https://tradecanvas.dev/mcp</code> 에서 라이브러리 최신 버전으로 실행합니다. Claude Code 에서는:</p>
+<pre><code>{`claude mcp add --transport http tradecanvas https://tradecanvas.dev/mcp`}</code></pre>
+<p>URL 로 연결하는 클라이언트는 이 주소를 그대로 씁니다. claude.ai 에서는 사용자 지정 커넥터로, Cursor 에서는 설정의 <code>"command"</code> 대신 <code>"url": "https://tradecanvas.dev/mcp"</code> 로 넣습니다. 위 패키지는 설치한 버전 기준으로, 이 URL 은 최신 버전 기준으로 답합니다.</p>
 <p>둘 다 쓰지 않을 때는 <a href="https://tradecanvas.dev/llms.txt">llms.txt</a>와 <a href="https://tradecanvas.dev/llms-full.txt">llms-full.txt</a>가 문서를 한 파일로 어시스턴트에게 제공합니다.</p>
 
 <h2>다음 단계</h2>
