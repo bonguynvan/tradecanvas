@@ -266,6 +266,7 @@ widget.getChart().on('orderPlace', (e) => {
 </p>
 <ul>
   <li><code>mode</code>：<code>'cumulative'</code>（默认）把每一档与更靠近市价的各档相加，因此越远离市价条越长；<code>'level'</code> 只画每个价位自己的数量，大单墙会显示为一根长条。</li>
+  <li><code>rowSize</code>：条的高度（以价格计）。各档按这个间距合并成行，因此价格刻度较粗时的密集订单簿、或有空档的订单簿，仍然画成均匀的条（可设为与足迹图的行一致）。此时 <code>markBest</code> 画在最优行的中间。</li>
   <li><code>markBest</code>：在最优买价和最优卖价处各画一条线（<code>bestBidColor</code>、<code>bestAskColor</code>）。</li>
   <li><code>maxWidth</code>：条的最大长度（像素，不超过绘图区），<code>bidColor</code>、<code>askColor</code>。</li>
 </ul>

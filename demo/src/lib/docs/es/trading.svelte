@@ -301,6 +301,7 @@ widget.getChart().on('orderPlace', (e) => {
 </p>
 <ul>
   <li><code>mode</code>: <code>'cumulative'</code> (por defecto) suma cada nivel a los más cercanos al mercado, así que las barras crecen al alejarse; <code>'level'</code> dibuja solo el tamaño de cada precio, así que un muro se ve como una barra larga.</li>
+  <li><code>rowSize</code>: la altura de una barra en precio. Los niveles se suman en filas separadas por esa distancia, así que un libro denso en una escala gruesa, o uno con niveles vacíos, se dibuja con barras iguales (ajústalo a las filas de tu footprint). Entonces <code>markBest</code> marca el centro de las mejores filas.</li>
   <li><code>markBest</code>: una línea en el mejor bid y en el mejor ask (<code>bestBidColor</code>, <code>bestAskColor</code>).</li>
   <li><code>maxWidth</code>: la barra más larga en píxeles (nunca más que el área del gráfico), <code>bidColor</code>, <code>askColor</code>.</li>
 </ul>

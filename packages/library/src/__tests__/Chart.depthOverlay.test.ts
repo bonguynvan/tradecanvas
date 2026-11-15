@@ -84,6 +84,12 @@ describe('the order book on the plot', () => {
     expect(chart.getDepthOverlay().enabled).toBe(false);
   });
 
+  it('hands a row size to the drawing', () => {
+    chart = new Chart(host, { features: { trading: false, depth: true }, depthOverlay: { rowSize: 0.5 } });
+    const render = drawn(chart);
+    expect(render.mock.calls[render.mock.calls.length - 1][3].rowSize).toBe(0.5);
+  });
+
   it('is cleared with null', () => {
     chart = new Chart(host, { features: { depth: true } });
     const render = drawn(chart);

@@ -285,6 +285,7 @@ widget.getChart().on('orderPlace', (e) => {
 </p>
 <ul>
   <li><code>mode</code>: <code>'cumulative'</code> (default) adds each level to the ones nearer the market, so the bars grow away from it; <code>'level'</code> draws the size at each price alone, so a wall shows as one long bar.</li>
+  <li><code>rowSize</code>: a bar's height in price. The levels are added up into rows that far apart, so a dense book under a coarse scale, or one with empty levels, still draws even bars (match it to your footprint's rows). <code>markBest</code> then lines the middle of the best rows.</li>
   <li><code>markBest</code>: a line at the best bid and the best ask (<code>bestBidColor</code>, <code>bestAskColor</code>).</li>
   <li><code>maxWidth</code>: the longest bar in pixels (never more than the plot), <code>bidColor</code>, <code>askColor</code>.</li>
 </ul>
