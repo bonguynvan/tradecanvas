@@ -43,8 +43,10 @@ export const HOSE_SESSIONS: TradingSession[] = [
   { name: 'ATC', startTime: '14:30', endTime: '14:45', type: 'preClose' },
 ];
 
+// HNX and UPCoM have no opening auction: continuous matching starts at 9:00.
+// UPCoM has no closing auction either and matches until 15:00.
 export const HNX_SESSIONS: TradingSession[] = [
-  { name: 'Phiên 1', startTime: '09:15', endTime: '11:30', type: 'continuous' },
+  { name: 'Phiên 1', startTime: '09:00', endTime: '11:30', type: 'continuous' },
   { name: 'Nghỉ trưa', startTime: '11:30', endTime: '13:00', type: 'closed' },
   { name: 'Phiên 2', startTime: '13:00', endTime: '14:30', type: 'continuous' },
   { name: 'ATC', startTime: '14:30', endTime: '14:45', type: 'preClose' },
@@ -52,9 +54,9 @@ export const HNX_SESSIONS: TradingSession[] = [
 ];
 
 export const UPCOM_SESSIONS: TradingSession[] = [
-  { name: 'Phiên 1', startTime: '09:15', endTime: '11:30', type: 'continuous' },
+  { name: 'Phiên 1', startTime: '09:00', endTime: '11:30', type: 'continuous' },
   { name: 'Nghỉ trưa', startTime: '11:30', endTime: '13:00', type: 'closed' },
-  { name: 'Phiên 2', startTime: '13:00', endTime: '14:30', type: 'continuous' },
+  { name: 'Phiên 2', startTime: '13:00', endTime: '15:00', type: 'continuous' },
 ];
 
 export const VN30F_SESSIONS: TradingSession[] = [

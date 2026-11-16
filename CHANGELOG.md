@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- **HNX and UPCoM open at 9:00** (`@tradecanvas/commons`, `@tradecanvas/chart`): `HNX_SESSIONS` and `UPCOM_SESSIONS`, and so `MARKET_HNX` and `MARKET_UPCOM`, started continuous matching at 9:15, but neither exchange has an opening auction: both match from 9:00. UPCoM now matches until 15:00, not 14:30, as it has no closing auction. HNX's afternoon, closing auction and post-close session are unchanged.
+
 ## 2.12.0 (2026-11-15)
 
 ### Finance charts
