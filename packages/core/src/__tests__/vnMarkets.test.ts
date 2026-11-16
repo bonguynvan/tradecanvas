@@ -104,13 +104,21 @@ describe('Vietnamese sessions', () => {
     expect(at('2026-10-21T12:00:00', MARKET_HOSE)).toBe('closed');
     expect(at('2026-10-21T14:40:00', MARKET_HOSE)).toBe('preClose');
     expect(at('2026-10-21T14:50:00', MARKET_HOSE)).toBeNull();
-    // HNX: no opening auction, a closing auction and a post-close session.
-    expect(at('2026-10-21T09:05:00', MARKET_HNX)).toBeNull();
-    expect(at('2026-10-21T09:20:00', MARKET_HNX)).toBe('continuous');
+    // HNX: no opening auction, so continuous matching from 9:00; a closing
+    // auction and a post-close session.
+    expect(at('2026-10-21T08:55:00', MARKET_HNX)).toBeNull();
+    expect(at('2026-10-21T09:00:00', MARKET_HNX)).toBe('continuous');
+    expect(at('2026-10-21T09:05:00', MARKET_HNX)).toBe('continuous');
+    expect(at('2026-10-21T14:40:00', MARKET_HNX)).toBe('preClose');
     expect(at('2026-10-21T14:50:00', MARKET_HNX)).toBe('postClose');
-    // UPCoM: continuous trading only, to 14:30.
-    expect(at('2026-10-21T14:20:00', MARKET_UPCOM)).toBe('continuous');
-    expect(at('2026-10-21T14:35:00', MARKET_UPCOM)).toBeNull();
+    // UPCoM: continuous matching only, 9:00 to 11:30 and 13:00 to 15:00.
+    expect(at('2026-10-21T09:05:00', MARKET_UPCOM)).toBe('continuous');
+    expect(at('2026-10-21T11:30:00', MARKET_UPCOM)).toBe('closed');
+    expect(at('2026-10-21T12:00:00', MARKET_UPCOM)).toBe('closed');
+    expect(at('2026-10-21T13:00:00', MARKET_UPCOM)).toBe('continuous');
+    expect(at('2026-10-21T14:35:00', MARKET_UPCOM)).toBe('continuous');
+    expect(at('2026-10-21T14:59:00', MARKET_UPCOM)).toBe('continuous');
+    expect(at('2026-10-21T15:00:00', MARKET_UPCOM)).toBeNull();
     // VN30F opens at 8:45.
     expect(at('2026-10-21T08:50:00', MARKET_VN30F)).toBe('preOpen');
     expect(at('2026-10-21T09:00:00', MARKET_VN30F)).toBe('continuous');
