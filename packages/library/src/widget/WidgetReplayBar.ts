@@ -2,8 +2,8 @@ import { escapeHtml } from './escapeHtml.js';
 import { markPart } from './widgetFeatures.js';
 import { createIcon } from './icons.js';
 /**
- * Replay control bar. Surfaces the chart's replay engine as a floating
- * transport over the foot of the main pane and reports user intent through
+ * Replay control bar. Surfaces the chart's replay engine as a transport,
+ * a strip under the chart, and reports user intent through
  * callbacks (no chart coupling — the host calls chart.replayStart() /
  * replayPause() / …).
  *
@@ -290,7 +290,7 @@ export class WidgetReplayBar {
   }
 
   /**
-   * The room the bar has (the main pane's width, less its margins): it takes
+   * The room the bar has (the widget's width, less its margins): it takes
    * the widest tier that fits, measured once per mode and steps.
    */
   setRoom(room: number): void {

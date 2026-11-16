@@ -19,7 +19,7 @@ const REPLAY_BAR_MS = 1000;
 const REPLAY_POLL_MS = 150;
 /** The most finer bars fetched for one replay. */
 const MAX_REPLAY_STEPS = 5000;
-/** The replay bar's margin over the main pane, each side (the --tcw-space-4 step). */
+/** The replay bar's padding at each end of its strip (the --tcw-space-4 step). */
 const REPLAY_BAR_MARGIN = 8;
 
 /**
@@ -255,7 +255,7 @@ export class WidgetReplay {
       },
     );
     const steps = this.replayStepMenu();
-    this.replayBar.mount(this.chartContainer, {
+    this.replayBar.mount(this.root, {
       total: this.replayTotal(),
       rate: this.replaySpeed,
       mode: 'select',
@@ -264,11 +264,24 @@ export class WidgetReplay {
       dir: this.root.dir === 'rtl' ? 'rtl' : 'ltr',
       formatRate: (rate) => fill(t('replay.rate'), { rate: rate.toLocaleString(this.host.intlLocale()) }),
     });
+    this.dockReplayBar();
     this.watchReplayBar();
     this.host.markActive(true);
     this.root.setAttribute('data-tcw-replay', '');
     this.showReplayShade();
     this.layoutReplayBar();
+  }
+
+  /**
+   * The bar is a row of the widget under the chart's, above what docks under
+   * it (the account panel, the status bar): the chart is made the shorter
+   * for it at once, so it covers nothing on the plot.
+   */
+  private dockReplayBar(): void {
+    const el = this.replayBar?.element();
+    const body = this.host.bodyEl();
+    if (el && body) body.after(el);
+    this.chart.resize();
   }
 
   /** While picking the start bar: the shade over the bars a pick would hide. */
@@ -317,40 +330,24 @@ export class WidgetReplay {
     this.layoutReplayBar();
   }
 
-  /**
-   * Where the bar sits: on the main pane's foot (bottom panes stay
-   * readable), centred on its plot, in the tier its width allows; and how
-   * high it reaches, for the toasts and the drawing button to clear it.
-   */
+  /** The tier the widget's width allows the bar, and how high it reaches, for the toasts to clear it. */
   private layoutReplayBar(): void {
-    const el = this.replayBar?.element();
-    if (!el || !this.replayBar) return;
-    const plot = this.chart.getPlotRect();
-    const box = this.chartContainer;
-    const px = (n: number) => `${Math.max(0, Math.round(n))}px`;
-    el.style.setProperty('--tcw-replay-foot', px(box.clientHeight - (plot.y + plot.height)));
-    el.style.setProperty('--tcw-replay-plot-start', px(plot.x));
-    el.style.setProperty('--tcw-replay-plot-end', px(box.clientWidth - (plot.x + plot.width)));
-    this.replayBar.setRoom(plot.width - 2 * REPLAY_BAR_MARGIN);
+    if (!this.replayBar?.element()) return;
+    this.replayBar.setRoom(this.root.clientWidth - 2 * REPLAY_BAR_MARGIN);
     this.liftOverReplayBar();
   }
 
   /**
-   * How high the bar reaches over the widget's foot and its body's, for the
-   * toasts and the drawing button to clear it. Also run as the panel follows
-   * the chart: the bar's height changes with its rows and its words.
+   * How high the bar reaches over the widget's foot, for the toasts to
+   * clear it. Also run as the panel follows the chart: the bar's height
+   * changes with its rows and its words.
    */
   private liftOverReplayBar(): void {
     const el = this.replayBar?.element();
     if (!el) return;
     const top = el.getBoundingClientRect().top;
-    const set = (host: HTMLElement | null) => {
-      if (!host) return;
-      const lift = `${Math.max(0, Math.round(host.getBoundingClientRect().bottom - top))}px`;
-      if (host.style.getPropertyValue('--tcw-replay-lift') !== lift) host.style.setProperty('--tcw-replay-lift', lift);
-    };
-    set(this.root);
-    set(this.host.bodyEl());
+    const lift = `${Math.max(0, Math.round(this.root.getBoundingClientRect().bottom - top))}px`;
+    if (this.root.style.getPropertyValue('--tcw-replay-lift') !== lift) this.root.style.setProperty('--tcw-replay-lift', lift);
   }
 
   /**
@@ -677,10 +674,10 @@ export class WidgetReplay {
     return false;
   }
 
-  /** Focus on the chart itself (its container or the canvas in it), not on a control over it. */
+  /** Focus on the chart itself (its container or the canvas in it), not on a control over it. The replay bar is outside it. */
   private onChartSurface(active: HTMLElement | null): boolean {
     if (!active || !this.chartContainer.contains(active)) return false;
-    return active === this.chartContainer || active.closest('button, [role="button"], a, .tcw-replay-bar') === null;
+    return active === this.chartContainer || active.closest('button, [role="button"], a') === null;
   }
 
   private toggleReplayPlay(): void {
@@ -730,14 +727,16 @@ export class WidgetReplay {
     }
     this.removeReplayShade();
     const hadFocus = !!this.replayBar?.element()?.contains(document.activeElement);
+    const docked = this.replayBar?.isMounted() ?? false;
     this.replayBar?.unmount();
     this.replayBar = null;
+    // The chart has its row's height back.
+    if (docked && !this.host.isDestroyed()) this.chart.resize();
     this.replayBarsTotal = null;
     this.replayStepTime = null;
     this.host.markActive(false);
     this.root.removeAttribute('data-tcw-replay');
     this.root.style.removeProperty('--tcw-replay-lift');
-    this.host.bodyEl()?.style.removeProperty('--tcw-replay-lift');
     if (hadFocus) this.focusAfterReplay();
   }
 

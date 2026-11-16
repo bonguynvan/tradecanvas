@@ -2336,12 +2336,13 @@
 }
 
 /* === Replay bar ===
- * A transport over the foot of the main pane: step back / play / step
+ * A strip under the chart, across the widget: step back / play / step
  * forward, where the replay is (its date and a track with the played part
  * filled), its pace (speed, step), and the ways out (pick another bar, back
- * to now). Only --tcw-* tokens; its sizes come from the look's own ladder.
- * The widget sets where it sits (--tcw-replay-foot, --tcw-replay-plot-*)
- * from the main pane, and the tier (data-fit) from the room it has.
+ * to now). The chart makes room for it, so nothing on the plot is covered:
+ * the volume, the bottom panes, the time axis. Only --tcw-* tokens; its
+ * sizes come from the look's own ladder. The widget sets the tier
+ * (data-fit) from the room it has.
  */
 
 /* Picking the replay start: the bars right of the pointer would be hidden. */
@@ -2362,32 +2363,26 @@
   --tcw-replay-rail: var(--tcw-space-2);
   --tcw-replay-head-w: var(--tcw-space-2);
   --tcw-replay-head-h: var(--tcw-space-5);
-  position: absolute;
-  /* On the main pane's foot (over the volume, clear of the bottom panes), above the time axis without them. */
-  bottom: calc(var(--tcw-replay-foot, 30px) + var(--tcw-space-4));
-  inset-inline: var(--tcw-replay-plot-start, 0px) var(--tcw-replay-plot-end, 0px);
-  /* Centred on the plot by its margins: an entrance on `transform` would undo a translate. */
-  margin-inline: auto;
+  /* A row of the widget, between the chart and the status bar: the chart is the shorter for it. */
+  position: relative;
+  /* Over the sidebar's buttons that overflow a short chart, as the status bar is; menus (z 30+) stay on top. */
+  z-index: 1;
+  flex: none;
   box-sizing: border-box;
-  width: max-content;
-  max-width: calc(100% - var(--tcw-replay-plot-start, 0px) - var(--tcw-replay-plot-end, 0px) - 2 * var(--tcw-space-4));
-  z-index: 25;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: var(--tcw-space-4);
-  padding: var(--tcw-space-3);
-  background: var(--tcw-bg-elevated);
-  background: color-mix(in srgb, var(--tcw-bg-elevated) var(--tcw-surface-opacity, 100%), transparent);
-  backdrop-filter: blur(var(--tcw-blur));
-  -webkit-backdrop-filter: blur(var(--tcw-blur));
-  /* The look's menu shadow carries its hairline (Print, Terminal, Capsule): no border of its own on top. */
-  border-radius: var(--tcw-panel-radius);
-  box-shadow: var(--tcw-menu-shadow);
+  padding: var(--tcw-space-3) var(--tcw-space-4);
+  border-top: 1px solid var(--tcw-border);
+  background: var(--tcw-bg-surface);
   color: var(--tcw-text);
   font-size: var(--tcw-font-size-sm);
   line-height: 1.2;
-  animation: tcw-sel-in var(--tcw-dur-normal) var(--tcw-ease-out);
 }
+/* The controls keep their own width in the middle of the strip: the track does not run the widget's width. */
+.tcw-replay-bar:not([data-fit='stack']) .tcw-replay-timeline { flex: 0 1 auto; }
+.tcw-replay-bar:not([data-fit='stack']) input[type='range'].tcw-replay-scrubber { flex: 0 1 var(--tcw-replay-track-w); }
 
 .tcw-replay-group,
 .tcw-replay-slot {
@@ -2485,7 +2480,8 @@
   cursor: pointer;
 }
 /* Measured at its least: the bar's width with no slack in the track. */
-.tcw-replay-bar[data-measure] { max-width: none; animation: none; }
+/* Measured at its content's width, the strip's tiers are compared with the room. */
+.tcw-replay-bar[data-measure] { width: max-content; align-self: flex-start; }
 .tcw-replay-bar[data-measure] input[type='range'].tcw-replay-scrubber { inline-size: var(--tcw-replay-track-min); flex: none; }
 .tcw-root input[type='range'].tcw-replay-scrubber:hover { --tcw-replay-rest: var(--tcw-text-muted); }
 .tcw-root input[type='range'].tcw-replay-scrubber:focus-visible { outline: none; box-shadow: var(--tcw-ring); }
@@ -2593,15 +2589,11 @@
   white-space: nowrap;
 }
 
-/* --- A phone, or a narrow chart: two rows across the plot, where the replay is on top --- */
+/* --- A phone, or a narrow chart: two rows, where the replay is on top --- */
 .tcw-replay-bar[data-fit='stack'] {
   /* Touch targets: 40 px (44 for Play) at least, as the toolbar's on a phone. */
   --tcw-replay-btn: max(40px, var(--tcw-control-h));
   --tcw-replay-play: max(44px, calc(var(--tcw-control-h) + 2 * var(--tcw-space-2)));
-  inset-inline: var(--tcw-space-4);
-  width: auto;
-  max-width: none;
-  margin-inline: 0;
   flex-wrap: wrap;
   gap: var(--tcw-space-2);
 }
@@ -2623,23 +2615,19 @@
 .tcw-replay-bar[data-fit='stack'] .tcw-replay-hint { white-space: normal; flex: 1 0 100%; padding-block: var(--tcw-space-2); }
 .tcw-replay-bar[data-fit='stack'] .tcw-replay-picking { display: contents; }
 
-/* While the bar holds the plot's foot, what lives there makes room: the toasts and the phone's drawing button. */
+/* While the bar is open, the toasts at the widget's foot clear it. */
 .tcw-root[data-tcw-replay] > .tcw-toast:not(.tcw-toast-over) {
-  bottom: calc(var(--tcw-replay-lift, 0px) + var(--tcw-space-4));
-}
-.tcw-root[data-tcw-narrow][data-tcw-replay] > .tcw-body > .tcw-sidebar-fab {
   bottom: calc(var(--tcw-replay-lift, 0px) + var(--tcw-space-4));
 }
 
 @media (forced-colors: active) {
-  .tcw-replay-bar { border: 1px solid CanvasText; }
+  .tcw-replay-bar { border-top: 1px solid CanvasText; }
   .tcw-replay-btn.tcw-replay-play { border: 1px solid ButtonText; }
   .tcw-root input[type='range'].tcw-replay-scrubber::-webkit-slider-runnable-track { background: GrayText; }
   .tcw-root input[type='range'].tcw-replay-scrubber::-webkit-slider-thumb { background: Highlight; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .tcw-replay-bar { animation: none; }
   .tcw-replay-btn,
   .tcw-replay-text-btn,
   .tcw-root input[type='range'].tcw-replay-scrubber::-webkit-slider-thumb { transition: none; }
