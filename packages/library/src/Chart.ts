@@ -1452,6 +1452,7 @@ export class Chart {
     this.currentPriceLine.setPrice(bar.close, data[data.length - 2]?.close);
     this.updateViewportAndRender(follow);
     if (data.length !== before) this.emitBars(data.length);
+    else this.lastBarMoved();
     // Last: an alert's listener sees the chart with its new bar.
     this.followLivePrice(bar.close);
   }
@@ -1480,6 +1481,7 @@ export class Chart {
     this.currentPriceLine.setPrice(price, data[data.length - 2]?.close);
     this.updateViewportAndRender(follow);
     if (data.length !== before) this.emitBars(data.length);
+    else this.lastBarMoved();
     this.followLivePrice(price);
   }
 
@@ -1504,6 +1506,7 @@ export class Chart {
     this.recalcIndicatorsFrom(data, data.length - 1);
     // After the indicators: an alert on a line compares with its value at this bar.
     this.followLivePrice(bar.close);
+    this.lastBarMoved();
     this.scheduleRender();
   }
 
@@ -1522,6 +1525,7 @@ export class Chart {
     const data = this.series.bars();
     this.recalcIndicatorsFrom(data, data.length - 1);
     this.followLivePrice(tick.price);
+    this.lastBarMoved();
     this.scheduleRender();
   }
 
@@ -3272,6 +3276,15 @@ export class Chart {
     if (synced !== null) this.showSyncedBar(synced);
   }
 
+  /**
+   * The last bar shown has new values with no `dataUpdate` (the series did
+   * not grow, or a replay moved): the screen readers' summary says its last
+   * price, at most once a second while a feed streams or a replay plays.
+   */
+  private lastBarMoved(): void {
+    this.a11y?.refresh();
+  }
+
   /** The orders and the alerts follow a live price (a paper account in a replay follows the replay). */
   private followLivePrice(price: number): void {
     if (!this.replayTrades()) this.tradingManager.setCurrentPrice(price);
@@ -3370,6 +3383,7 @@ export class Chart {
       this.recalcIndicatorsFrom(data, data.length - 2);
       this.updateViewportAndRender(follow);
       if (data.length !== before) this.emitBars(data.length);
+      else this.lastBarMoved();
       this.followLivePrice(bar.close);
     });
 
@@ -3400,6 +3414,7 @@ export class Chart {
       this.announceIndicatorUpdate(data.length - 1);
       // A new bar comes forming first (most feeds): the series grew. The price follows from priceChange.
       if (data.length !== before) this.emitBars(data.length);
+      else this.lastBarMoved();
       this.scheduleRender();
     });
 
@@ -5295,6 +5310,7 @@ export class Chart {
       else this.feedReplaySteps(series, index);
       const cause = this.replayCause !== null ? 'series' : stepForward ? 'play' : 'seek';
       this.eventBus.emit('replayStep', { barIndex, time: coarse[barIndex].time, stepTime: series[index].time, until, total: coarse.length, cause });
+      this.lastBarMoved();
     });
     if (!animate) return;
     this.replayPhaseUnsub = this.replayManager.on('phase', ({ index, fraction }) => {
@@ -5324,6 +5340,7 @@ export class Chart {
    */
   private drawFormingBar(bar: OHLCBar, previousClose: number | undefined, appended: boolean, follow: boolean): void {
     this.currentPriceLine.setPrice(bar.close, previousClose);
+    this.lastBarMoved();
     const data = this.series.bars();
     this.recalcIndicatorsFrom(data, data.length - 1);
     if (!appended) {

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import type { OHLCBar } from '@tradecanvas/commons';
+import type { DataAdapter, OHLCBar } from '@tradecanvas/commons';
 import { Chart } from '../Chart.js';
 import { installChartStubs, sizedHost } from './chartTestEnv.js';
 
@@ -92,5 +92,64 @@ describe('chart accessibility', () => {
     chart = new Chart(host, { a11y: false });
     expect(host.getAttribute('role')).toBeNull();
     expect(host.querySelector('.tc-sr-live')).toBeNull();
+  });
+
+  it('follows the forming bar’s price, at most once a second', () => {
+    chart = new Chart(host, { chartType: 'candlestick' });
+    chart.setData(bars);
+    const last = bars[bars.length - 1];
+    chart.updateLastBar({ ...last, high: 171, close: 170 });
+    chart.updateLastBarFromTick({ price: 171, volume: 1, time: last.time });
+    expect(host.getAttribute('aria-label')).toBe('candlestick. Last price 160.00.');
+    vi.advanceTimersByTime(1_000);
+    expect(host.getAttribute('aria-label')).toBe('candlestick. Last price 171.00.');
+  });
+
+  it('follows a bar appended again at the last bar’s time', () => {
+    chart = new Chart(host, { chartType: 'candlestick' });
+    chart.setData(bars);
+    const last = bars[bars.length - 1];
+    chart.appendBar({ ...last, high: 175, close: 174 });
+    vi.advanceTimersByTime(1_000);
+    expect(host.getAttribute('aria-label')).toBe('candlestick. Last price 174.00.');
+    chart.appendBars([{ ...last, high: 177, close: 176 }]);
+    vi.advanceTimersByTime(1_000);
+    expect(host.getAttribute('aria-label')).toBe('candlestick. Last price 176.00.');
+  });
+
+  it('follows a replay’s bars, not the price it started on', () => {
+    chart = new Chart(host, { chartType: 'candlestick' });
+    chart.setData(bars);
+    chart.replayStart({ startIndex: 10, paused: true });
+    vi.advanceTimersByTime(1_000);
+    expect(host.getAttribute('aria-label')).toBe('candlestick. Last price 111.00.');
+    chart.replaySeekToBar(20);
+    vi.advanceTimersByTime(1_000);
+    expect(host.getAttribute('aria-label')).toBe('candlestick. Last price 121.00.');
+  });
+
+  it('follows a feed’s forming bar, which sends no dataUpdate', async () => {
+    const handlers = new Map<string, (e: { data: unknown }) => void>();
+    const adapter: DataAdapter = {
+      name: 'fake',
+      connect: () => {},
+      disconnect: () => {},
+      getConnectionState: () => 'connected',
+      fetchHistory: async () => bars,
+      on: ((type: string, cb: (e: { data: unknown }) => void) => { handlers.set(type, cb); }) as DataAdapter['on'],
+      off: () => {},
+      dispose: () => {},
+    };
+    chart = new Chart(host, { chartType: 'candlestick' });
+    await chart.connect({ adapter, symbol: 'AAA', timeframe: '1h', historyLimit: 60 });
+    expect(host.getAttribute('aria-label')).toBe('AAA, candlestick, 1h. Last price 160.00.');
+    const last = bars[bars.length - 1];
+    for (const close of [165, 167]) handlers.get('bar')?.({ data: { bar: { ...last, high: 168, close }, closed: false } });
+    vi.advanceTimersByTime(1_000);
+    expect(host.getAttribute('aria-label')).toBe('AAA, candlestick, 1h. Last price 167.00.');
+    // The same bar closed, at a last price of its own.
+    handlers.get('bar')?.({ data: { bar: { ...last, high: 168, close: 166 }, closed: true } });
+    vi.advanceTimersByTime(1_000);
+    expect(host.getAttribute('aria-label')).toBe('AAA, candlestick, 1h. Last price 166.00.');
   });
 });
