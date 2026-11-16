@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- **The screen-reader summary follows the live price** (`@tradecanvas/chart`): the chart's `aria-label` ("… Last price 50,100.00.") was set again only when the series grew, so a forming bar's new closes, from a feed's `bar` updates, `updateLastBar` or `updateLastBarFromTick`, left it on the price it had when the bar began, and a replay left it on the live price. It now follows the last bar shown, the replay's included, at most once a second while a feed streams or a replay plays.
+
 ## 2.12.1 (2026-11-16)
 
 ### Fixes
