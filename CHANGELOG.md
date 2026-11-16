@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Imports
+
+- **The candle patterns on their own** (`@tradecanvas/core`): `@tradecanvas/core/patterns` exports `detectCandlePatterns` and `CANDLE_PATTERNS`, the same two the main entry exports, and reaches none of the engine. A page that finds patterns and draws no chart, such as a scanner or a screener, loads about 4 kB gzipped in a chunk of its own instead of the chart's, even when other pages of the app draw charts. The app lists `@tradecanvas/core` in its dependencies to import it. `@tradecanvas/core` is now built from two entries; what it exports is unchanged.
+
 ### Fixes
 
 - **The replay bar sits under the chart** (`@tradecanvas/chart`): `ChartWidget`'s replay bar floated over the foot of the main pane and covered the volume there. It is now a row of the widget under the chart, across its width and above the account panel and the status bar, and the chart is made shorter for it while it is open. Its tiers follow the widget's width; on a phone it still takes two rows. A host's CSS that placed it through `--tcw-replay-foot` or `--tcw-replay-plot-start` and `--tcw-replay-plot-end` no longer needs them: the widget no longer sets them. CSS that gave the bar's part (`replay`) a position or an offset of its own should drop it.

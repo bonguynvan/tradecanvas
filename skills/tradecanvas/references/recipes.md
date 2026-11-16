@@ -676,6 +676,22 @@ for (const m of detectCandlePatterns(bars, { patterns: ['bullishEngulfing', 'ham
 }
 ```
 
+On a page that draws no chart (a scanner, a screener), import the detector from
+`@tradecanvas/core/patterns`: a few kB in a chunk of its own, without the chart's
+engine, even when other pages of the app draw charts. Add `@tradecanvas/core` to
+the app's dependencies first (`@tradecanvas/chart` brings it, but a strict
+installer such as pnpm only lets the app import what it lists).
+
+```ts
+import { detectCandlePatterns, CANDLE_PATTERNS } from '@tradecanvas/core/patterns';
+import type { OHLCBar } from '@tradecanvas/chart';
+
+declare const bars: OHLCBar[];
+
+const bullish = detectCandlePatterns(bars).filter((m) => m.pattern.direction === 'bullish');
+console.log(bullish.length, 'of', CANDLE_PATTERNS.length, 'patterns known');
+```
+
 ## A custom indicator
 
 Extend `IndicatorBase` and declare what it draws (`plots`), its pane scale and

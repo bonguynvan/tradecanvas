@@ -19,15 +19,18 @@ import { build } from 'vite';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const LIBRARY = join(ROOT, 'packages/library');
+const CORE = join(ROOT, 'packages/core');
 const JSON_OUT = process.argv.includes('--json');
 
 if (!existsSync(join(LIBRARY, 'dist/index.js'))) throw new Error('packages/library/dist is missing: run pnpm build first');
 
-/** The package's entry points, from its export map: `@tradecanvas/chart/widget` → dist/widget/index.js. */
+/** The packages' entry points, from their export maps: `@tradecanvas/chart/widget` → dist/widget/index.js. */
 function aliases() {
-  const { name, exports } = JSON.parse(readFileSync(join(LIBRARY, 'package.json'), 'utf8'));
-  return Object.entries(exports)
-    .map(([sub, targets]) => ({ specifier: sub === '.' ? name : `${name}${sub.slice(1)}`, file: join(LIBRARY, targets.import) }))
+  return [LIBRARY, CORE]
+    .flatMap((dir) => {
+      const { name, exports } = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8'));
+      return Object.entries(exports).map(([sub, targets]) => ({ specifier: sub === '.' ? name : `${name}${sub.slice(1)}`, file: join(dir, targets.import) }));
+    })
     // The longest first, so `…/widget/locales` isn't taken for `…/widget`.
     .sort((a, b) => b.specifier.length - a.specifier.length)
     .map(({ specifier, file }) => ({ find: new RegExp(`^${specifier.replace(/[/.]/g, '\\$&')}$`), replacement: file }));
@@ -46,6 +49,14 @@ const ENTRIES = [
     id: 'widget-all-languages',
     label: 'new ChartWidget(), every language',
     code: `import { ChartWidget } from '@tradecanvas/chart/widget';\nimport { registerWidgetLocales } from '@tradecanvas/chart/widget/locales';\nregisterWidgetLocales();\nexport const make = (el) => new ChartWidget(el, {});\n`,
+  },
+  {
+    id: 'patterns',
+    label: 'detectCandlePatterns(), no chart',
+    code: `import { detectCandlePatterns, CANDLE_PATTERNS } from '@tradecanvas/core/patterns';
+export const find = (bars) => detectCandlePatterns(bars);
+export const list = CANDLE_PATTERNS;
+`,
   },
   {
     id: 'all',
