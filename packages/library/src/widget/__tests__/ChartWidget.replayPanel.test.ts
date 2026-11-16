@@ -253,17 +253,32 @@ describe('the toolbar button, focus and what the panel leaves', async () => {
     expect(btn.getAttribute('aria-pressed')).toBe('false');
   });
 
-  it('sits on the main pane\'s foot, centred on its plot', async () => {
+  it('is a row under the chart, not over its plot: the chart makes room for it, and has it back after', async () => {
     const a = await make();
-    a.chart.getPlotRect = () => ({ x: 0, y: 0, width: 600, height: 300 });
-    const cont = container(a.host);
-    Object.defineProperty(cont, 'clientHeight', { value: 500, configurable: true });
-    Object.defineProperty(cont, 'clientWidth', { value: 680, configurable: true });
+    const resize = vi.fn();
+    (a.chart as unknown as { resize: () => void }).resize = resize;
+    const root = a.host.querySelector<HTMLElement>('.tcw-root')!;
     a.widget.replayFrom(10);
     const bar = a.host.querySelector<HTMLElement>('.tcw-replay-bar')!;
-    // 500 − 300 below the main plot (the bottom panes and the time axis): it sits above them.
-    expect(bar.style.getPropertyValue('--tcw-replay-foot')).toBe('200px');
-    expect(bar.style.getPropertyValue('--tcw-replay-plot-end')).toBe('80px');
+    expect(container(a.host).contains(bar)).toBe(false);
+    expect(bar.parentElement).toBe(root);
+    // Between the chart's row and what docks under it (the account panel, the status bar).
+    expect(bar.previousElementSibling?.classList.contains('tcw-body')).toBe(true);
+    expect(resize).toHaveBeenCalled();
+    resize.mockClear();
+    act(a.host, 'realtime').click();
+    expect(a.host.querySelector('.tcw-replay-bar')).toBeNull();
+    expect(resize).toHaveBeenCalled();
+  });
+
+  it('sizes no chart again when the widget goes with its replay open', async () => {
+    const a = await make();
+    a.widget.replayFrom(10);
+    const resize = vi.fn();
+    (a.chart as unknown as { resize: () => void }).resize = resize;
+    a.widget.destroy();
+    expect(resize).not.toHaveBeenCalled();
+    expect(a.host.querySelector('.tcw-replay-bar')).toBeNull();
   });
 });
 

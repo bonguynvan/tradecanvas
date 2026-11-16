@@ -18,6 +18,8 @@ function fakeChart(bars: number) {
     getReplayProgress: () => ({ current: 0, total: bars, time: 0 }),
     getReplayState: () => 'stopped',
     replayStop: () => { calls.push('replayStop'); },
+    // The bar docks under the chart: the chart is sized again for it.
+    resize: () => { calls.push('resize'); },
   };
   return chart;
 }

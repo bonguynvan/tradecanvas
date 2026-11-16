@@ -57,12 +57,14 @@ afterEach(() => {
 });
 
 describe('ChartWidget replay bar after the chart container changes size', () => {
-  it('fits itself to the new plot when a window resize narrows the chart, without a call to resize()', async () => {
+  it('fits itself to the widget when a window resize narrows it, without a call to resize()', async () => {
     const box = { width: WIDE };
     const room = vi.spyOn(WidgetReplayBar.prototype, 'setRoom');
     widget = new ChartWidget(host, { adapter, symbol: 'BTCUSDT', timeframe: '1h', watchlist: false });
     const container = host.querySelector<HTMLElement>('.tcw-chart-container')!;
-    Object.defineProperty(container, 'clientWidth', { get: () => box.width, configurable: true });
+    const root = host.querySelector<HTMLElement>('.tcw-root')!;
+    // The bar runs the widget's width, under the chart: the room it has is the widget's.
+    for (const el of [container, root]) Object.defineProperty(el, 'clientWidth', { get: () => box.width, configurable: true });
     Object.defineProperty(container, 'clientHeight', { get: () => 600, configurable: true });
     await vi.advanceTimersByTimeAsync(LOAD_MS);
     widget.toggleReplay();

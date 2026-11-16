@@ -323,8 +323,9 @@ chart.replayStop()             // back to the live series`}</code></pre>
 
 <h3>The replay bar in ChartWidget</h3>
 <p>
-  The toolbar's <strong>Bar replay</strong> button opens a compact bar on the foot of the main
-  pane, centred on its plot (bottom panes stay readable). First pick the bar to start from: click
+  The toolbar's <strong>Bar replay</strong> button opens a bar under the chart, across the widget,
+  above the status bar: the chart makes room for it, so the volume, the bottom panes and the time
+  axis stay in view. First pick the bar to start from: click
   it, or press <strong>Random bar</strong>; <strong>Cancel</strong> (or <kbd>Esc</kbd>) leaves.
   Then: step back, <strong>Play</strong>/<strong>Pause</strong> and step forward; the date and time of
   the step shown, in the display timezone (the year only when it isn't this one), and a track with
