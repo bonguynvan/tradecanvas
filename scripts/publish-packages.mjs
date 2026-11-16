@@ -1,5 +1,5 @@
-// The release's publish step, run by the Publish workflow on every push to
-// main (and by hand to finish a release that stopped).
+// The release's publish step, run by the Publish workflow once a week (and by
+// hand for a fix that cannot wait, or to finish a release that stopped).
 //
 // Each workspace package not on npm at its version is published, one at a
 // time, each after the packages it depends on, and the next waits until the
@@ -8,10 +8,13 @@
 // (@tradecanvas/mcp before @tradecanvas/commons on 1.59.3), and
 // `npx @tradecanvas/mcp@latest` failed with ETARGET in between.
 //
-// Each version once live gets its git tag and a GitHub release with its
-// changelog section. A version on npm without its tag or its release (a run
-// that stopped part way) is finished after the new ones go out, so running it
-// again finishes a release, and one that cannot be tagged holds back nothing.
+// Each version once live gets its git tag. The versions one version commit set
+// share one GitHub release, named for the chart's version (`v2.12.1`), with the
+// root changelog's section and the packages it holds; a version set by another
+// commit gets one of its own. A version on npm without its tag or its release
+// (a run that stopped part way) is finished after the new ones go out, so
+// running it again finishes a release, and one that cannot be tagged holds back
+// nothing.
 //
 // In CI the packing and the publishing are two jobs: installing and building
 // run the dependencies' own code, so the job that does it may not publish,
@@ -44,6 +47,8 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const LIVE_TIMEOUT_MS = 600_000;
 const LIVE_POLL_MS = 5_000;
 const TARBALL_NAME = /^[\w.-]+\.tgz$/;
+/** The package whose version names a shared GitHub release and heads the root changelog's sections. */
+const HEADLINE_PACKAGE = '@tradecanvas/chart';
 const ACCESS = new Set(['public', 'restricted']);
 
 /** The workspace packages a manifest needs at install time: its dependencies and peers. */
@@ -92,7 +97,7 @@ export const untagged = (onNpm, remoteTags) => onNpm.filter((p) => !remoteTags.h
  * What a release does, in publishing order: publish the versions not on npm,
  * and finish the ones on npm without their tag on origin or their GitHub
  * release. Every version not on npm goes out, so once a release is done a
- * later push publishes nothing, and a push after a release that was missed
+ * later run publishes nothing, and the run after a release that was missed
  * publishes it.
  */
 export function releasePlan(order, isLive, isReleased) {
@@ -171,13 +176,48 @@ export async function waitUntil(check, { timeoutMs, pollMs, what, now = Date.now
   }
 }
 
-/** A version's section of a changesets CHANGELOG.md, without its heading; empty when it has none. */
+/**
+ * A version's section of a changelog, without its heading; empty when it has
+ * none. A package's (changesets) heads it `## 1.2.3`, the root one
+ * `## 1.2.3 (2026-01-31)`.
+ */
 export function releaseNotes(markdown, version) {
   const lines = markdown.replace(/\r\n/g, '\n').split('\n');
-  const start = lines.indexOf(`## ${version}`);
+  const start = lines.findIndex((line) => line === `## ${version}` || line.startsWith(`## ${version} (`));
   if (start === -1) return '';
   const end = lines.findIndex((line, i) => i > start && line.startsWith('## '));
   return lines.slice(start + 1, end === -1 ? undefined : end).join('\n').trim();
+}
+
+/**
+ * The GitHub releases for these versions, in their order: the ones the
+ * headline package's version commit set share `v<its version>`, so a release
+ * of eight packages is one entry on the Releases page, not eight, and it
+ * lists every package of `workspace` that commit set, not only the ones given;
+ * any other version gets one of its own, `name@version`. `commitOf` gives the
+ * commit that set a version, or null when it is not known.
+ */
+export function releaseGroups(pkgs, headline, commitOf, workspace = pkgs) {
+  const headCommit = headline ? commitOf(headline) : null;
+  const shares = (p) => headCommit !== null && commitOf(p) === headCommit;
+  const groups = [];
+  for (const p of pkgs) {
+    if (!shares(p)) {
+      groups.push({ name: `${p.name}@${p.version}`, version: p.version, shared: false, members: [p] });
+      continue;
+    }
+    const name = `v${headline.version}`;
+    if (!groups.some((g) => g.name === name)) {
+      groups.push({ name, version: headline.version, shared: true, members: workspace.filter(shares) });
+    }
+  }
+  return groups;
+}
+
+/** A shared release's notes: the changelog's section, then each package and version it holds, linked to npm. */
+export function releaseBody(notes, members) {
+  const list = members.map((p) => `- [\`${p.name}\` ${p.version}](https://www.npmjs.com/package/${p.name}/v/${p.version})`).join('\n');
+  return [notes.trim(), `### Packages\n\n${list}`].filter(Boolean).join('\n\n');
 }
 
 /**
@@ -312,14 +352,8 @@ function hasRelease(name) {
   }
 }
 
-/** The tag (see `tagTarget`), pushed, and its GitHub release with the changelog section, each unless it is there. */
-function tagAndRelease(p) {
-  const name = `${p.name}@${p.version}`;
-  if (!run('git', ['tag', '--list', name]).trim()) {
-    const versionSha = versionCommit(p);
-    const headSha = run('git', ['rev-parse', 'HEAD']).trim();
-    run('git', ['tag', name, tagTarget({ versionSha, headSha, changedSince: packageChangedSince(p, versionSha) })]);
-  }
+/** Pushes a tag, or explains why Actions may not. */
+function pushTag(name) {
   try {
     run('git', ['push', 'origin', `refs/tags/${name}`]);
   } catch (err) {
@@ -329,24 +363,91 @@ function tagAndRelease(p) {
     }
     throw err;
   }
-  if (hasRelease(name)) {
-    console.log(`publish: tagged ${name}; its GitHub release was there`);
+}
+
+/** The commit a version's tag goes on (see `tagTarget`): where it is when the tag is here, else worked out. */
+function tagCommit(p) {
+  const name = `${p.name}@${p.version}`;
+  if (run('git', ['tag', '--list', name]).trim()) return run('git', ['rev-parse', `refs/tags/${name}^{commit}`]).trim();
+  const versionSha = versionCommit(p);
+  const headSha = run('git', ['rev-parse', 'HEAD']).trim();
+  return tagTarget({ versionSha, headSha, changedSince: packageChangedSince(p, versionSha) });
+}
+
+/** The commit that set a version, remembered, or null when none can be found (a throw would stop the whole run). */
+const commits = new Map();
+function commitOf(p) {
+  const key = `${p.name}@${p.version}`;
+  if (!commits.has(key)) {
+    try {
+      commits.set(key, versionCommit(p));
+    } catch {
+      commits.set(key, null);
+    }
+  }
+  return commits.get(key);
+}
+
+/** The version's tag, made unless it is there, pushed, and added to `tagged`. */
+function tagVersion(p, tagged) {
+  const name = `${p.name}@${p.version}`;
+  if (!run('git', ['tag', '--list', name]).trim()) run('git', ['tag', name, tagCommit(p)]);
+  pushTag(name);
+  tagged.add(name);
+  console.log(`publish: tagged ${name}`);
+}
+
+/** The notes of a release: the root changelog's section for a shared one, else the package's own. */
+function notesFor(group, headline) {
+  const fromFile = (file, version) => (existsSync(file) ? releaseNotes(readFileSync(file, 'utf8'), version) : '');
+  if (!group.shared) return fromFile(join(group.members[0].dir, 'CHANGELOG.md'), group.version);
+  const notes = fromFile(join(ROOT, 'CHANGELOG.md'), group.version) || fromFile(join(headline.dir, 'CHANGELOG.md'), group.version);
+  return releaseBody(notes, group.members);
+}
+
+/**
+ * A group's GitHub release (see `releaseGroups`), unless it is there. A shared
+ * one waits until every package it lists is tagged (so on npm), as nothing
+ * adds a package to a release once it is made; it gets its own tag, `v1.2.3`,
+ * on the commit the headline's tag goes on.
+ */
+function release(group, headline, tagged) {
+  if (hasRelease(group.name)) {
+    console.log(`publish: the GitHub release ${group.name} was there`);
     return;
   }
-  const changelog = join(p.dir, 'CHANGELOG.md');
-  const notes = existsSync(changelog) ? releaseNotes(readFileSync(changelog, 'utf8'), p.version) : '';
+  if (group.shared) {
+    const waiting = untagged(group.members, tagged);
+    if (waiting.length > 0) {
+      console.log(`publish: ${group.name} waits for ${waiting.map((p) => `${p.name}@${p.version}`).join(', ')} to be on npm and tagged; a later run makes it`);
+      return;
+    }
+    if (!run('git', ['tag', '--list', group.name]).trim()) run('git', ['tag', group.name, tagCommit(headline)]);
+    pushTag(group.name);
+  }
   const notesDir = mkdtempSync(join(tmpdir(), 'tc-notes-'));
   try {
     const notesFile = join(notesDir, 'notes.md');
-    writeFileSync(notesFile, notes || `${name}`);
-    const args = ['release', 'create', name, '--verify-tag', '--title', name, '--notes-file', notesFile];
-    // A prerelease is marked as one, and is not the repository's latest release.
-    if (distTag(p.version)) args.push('--prerelease');
+    writeFileSync(notesFile, notesFor(group, headline) || group.name);
+    const args = ['release', 'create', group.name, '--verify-tag', '--title', group.name, '--notes-file', notesFile];
+    // A prerelease is marked as one, and is not the repository's latest release;
+    // nor is a wrapper's release of its own, beside the chart's.
+    if (distTag(group.version)) args.push('--prerelease');
+    else if (!group.shared) args.push('--latest=false');
     run('gh', args);
   } finally {
     rmSync(notesDir, { recursive: true, force: true });
   }
-  console.log(`publish: tagged and released ${name}`);
+  console.log(`publish: released ${group.name} (${group.members.map((p) => `${p.name}@${p.version}`).join(', ')})`);
+}
+
+/** The GitHub releases of these versions, each tagged already; one that fails does not stop the rest. */
+async function releaseAll(pkgs, order, tagged) {
+  const headline = order.find((p) => p.name === HEADLINE_PACKAGE) ?? null;
+  const failures = await eachSettled(releaseGroups(pkgs, headline, commitOf, order), (group) => release(group, headline, tagged));
+  if (failures.length > 0) {
+    throw new Error(failures.map(({ item, error }) => `${item.name}: ${error.stderr || error.message}`).join('\n'));
+  }
 }
 
 const PACKED_LIST = 'packed.json';
@@ -372,8 +473,9 @@ function checkTarball(file, p) {
   }
 }
 
-/** Publishes each tarball in turn and, once it is live, tags and releases its version. */
-async function publishPacked(packed, dir, order, dryRun) {
+/** Publishes each tarball in turn and, once it is live, tags its version. Gives back the ones it published. */
+async function publishPacked(packed, dir, order, dryRun, tagged) {
+  const published = [];
   for (const t of packedInOrder(packed, order)) {
     const p = order.find((o) => o.name === t.name);
     if (!dryRun && onRegistry(p)) {
@@ -390,19 +492,30 @@ async function publishPacked(packed, dir, order, dryRun) {
     if (dryRun) continue;
     await waitUntil(() => onRegistry(p), { timeoutMs: LIVE_TIMEOUT_MS, pollMs: LIVE_POLL_MS, what: `${p.name}@${p.version}` });
     // If tagging fails, the version is on npm without its tag: the next run tags it.
-    tagAndRelease(p);
+    tagVersion(p, tagged);
+    published.push(p);
   }
+  return published;
 }
 
-/** Tags and releases the versions on npm a release never finished; one that fails does not stop the rest. */
-async function finish(pkgs) {
+/**
+ * Tags the versions on npm a release never finished, then makes the GitHub
+ * releases of those and of the ones `published` this run, all at once so a
+ * shared release lists them together. One that fails does not stop the rest.
+ */
+async function finish(pkgs, order, tagged, published = []) {
   const failures = await eachSettled(pkgs, (p) => {
     console.log(`publish: ${p.name}@${p.version} is on npm without its tag or GitHub release`);
-    tagAndRelease(p);
+    tagVersion(p, tagged);
   });
-  if (failures.length > 0) {
-    throw new Error(failures.map(({ item, error }) => `${item.name}@${item.version}: ${error.stderr || error.message}`).join('\n'));
+  const messages = failures.map(({ item, error }) => `${item.name}@${item.version}: ${error.stderr || error.message}`);
+  const done = [...published, ...pkgs.filter((p) => !failures.some((f) => f.item === p))];
+  try {
+    if (done.length > 0) await releaseAll(done, order, tagged);
+  } catch (err) {
+    messages.push(err.message);
   }
+  if (messages.length > 0) throw new Error(messages.join('\n'));
 }
 
 function argAfter(flag) {
@@ -418,14 +531,21 @@ async function main() {
   const dryRun = process.argv.includes('--dry-run');
   const order = publishOrder(readWorkspace());
   const remoteTags = remoteTagNames(run('git', ['ls-remote', '--tags', 'origin']));
-  const isReleased = (p) => !untagged([p], remoteTags).length && hasRelease(`${p.name}@${p.version}`);
+  // Released: tagged, and in a GitHub release, one of its own (as every
+  // version was before releases were shared) or the one it shares.
+  const headline = order.find((p) => p.name === HEADLINE_PACKAGE) ?? null;
+  const isReleased = (p) =>
+    !untagged([p], remoteTags).length &&
+    (hasRelease(`${p.name}@${p.version}`) || hasRelease(releaseGroups([p], headline, commitOf)[0].name));
+  // The tags on origin, and the ones this run pushes.
+  const tagged = new Set(remoteTags);
 
   const plan = releasePlan(order, onRegistry, isReleased);
   // A prerelease goes out under its own dist-tag (`distTag`): what is waiting must agree with the mode.
   const preFile = join(ROOT, '.changeset', 'pre.json');
   const problem = preModeProblem(plan.publish, existsSync(preFile) ? JSON.parse(readFileSync(preFile, 'utf8')) : null);
   if (problem) throw new Error(`publish: ${problem}`);
-  // In CI, before the install: whether this push has anything to do.
+  // In CI, before the install: whether this run has anything to do.
   if (process.argv.includes('--check')) {
     const work = hasWork(plan);
     console.log(work ? `publish: ${plan.publish.length} to publish, ${plan.tag.length} to tag or release` : 'publish: nothing to publish, tag or release');
@@ -443,17 +563,18 @@ async function main() {
 
   if (process.argv.includes('--tag-only')) {
     for (const p of plan.publish) console.log(`publish: ${p.name}@${p.version} is not on npm; left for a release`);
-    await finish(plan.tag);
+    await finish(plan.tag, order, tagged);
     return;
   }
 
   // From the tarballs a packing job made, or packed here when run by hand.
   const from = argAfter('--publish-from');
   const dir = from ?? mkdtempSync(join(tmpdir(), 'tc-publish-'));
+  let published = [];
   try {
     const packed = from ? JSON.parse(readFileSync(join(dir, PACKED_LIST), 'utf8')) : packAll(plan.publish, dir);
     if (packed.length === 0) console.log('publish: every version is on npm already');
-    await publishPacked(packed, dir, order, dryRun);
+    published = await publishPacked(packed, dir, order, dryRun, tagged);
   } finally {
     if (!from) rmSync(dir, { recursive: true, force: true });
   }
@@ -463,7 +584,7 @@ async function main() {
     for (const p of plan.tag) console.log(`publish: ${p.name}@${p.version} would be tagged and released`);
     return;
   }
-  await finish(plan.tag);
+  await finish(plan.tag, order, tagged, published);
 }
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
