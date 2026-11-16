@@ -13,6 +13,7 @@
       "@tradecanvas/chart": ["packages/library/dist/index.d.ts"],
       "@tradecanvas/chart/widget": ["packages/library/dist/widget/index.d.ts"],
       "@tradecanvas/core": ["packages/core/dist/index.d.ts"],
+      "@tradecanvas/core/patterns": ["packages/core/dist/patterns/index.d.ts"],
       "@tradecanvas/commons": ["packages/commons/dist/index.d.ts"],
       "@tradecanvas/analytics": ["packages/analytics/dist/index.d.ts"]
     }

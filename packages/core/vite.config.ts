@@ -32,10 +32,13 @@ export default defineConfig({
   ],
   build: {
     lib: {
-      entry: resolve(__dirname, 'src/index.ts'),
-      name: 'ChartLibCore',
+      entry: {
+        index: resolve(__dirname, 'src/index.ts'),
+        // The candle patterns alone: a page with no chart takes them without the engine.
+        'patterns/index': resolve(__dirname, 'src/patterns/index.ts'),
+      },
       formats: ['es', 'cjs'],
-      fileName: (format) => `index.${format === 'es' ? 'js' : 'cjs'}`,
+      fileName: (format, entryName) => `${entryName}.${format === 'es' ? 'js' : 'cjs'}`,
     },
     rollupOptions: {
       external: ['@tradecanvas/commons'],

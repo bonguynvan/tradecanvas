@@ -37,6 +37,11 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
+    },
+    "./patterns": {
+      "types": "./dist/patterns/index.d.ts",
+      "import": "./dist/patterns/index.js",
+      "require": "./dist/patterns/index.cjs"
     }
   },
   "files": [
