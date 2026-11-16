@@ -1,26 +1,25 @@
 name: Publish
+# Releases go out once a week, with every changeset merged since the last one,
+# so the packages' users get one update a week instead of one a merge. Run by
+# hand for a fix that cannot wait, or to finish a release that stopped part
+# way: either way it versions the changesets waiting, publishes every version
+# not on npm, and tags and releases every one without its tag or release.
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'packages/**'
-      - '.changeset/**'
-  # By hand, to finish a release that stopped part way: it versions the
-  # changesets waiting, publishes every version not on npm, and tags and
-  # releases every one without its tag or release.
+  schedule:
+    # Mondays at 01:00 UTC (08:00 in Vietnam).
+    - cron: '0 1 * * 1'
   workflow_dispatch:
 
-# A release publishes package by package; a push in the middle waits for it
-# instead of stopping it with half the packages out.
+# A release publishes package by package; a run started in the middle waits
+# for it instead of stopping it with half the packages out.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
   # With changesets waiting, sets their versions, dates the root changelog and
-  # commits that to main: merging a pull request with a changeset is the
-  # release, and there is no version pull request. It cannot publish. Its
-  # commit starts no run of its own (a push by this token never does): the
+  # commits that to main; there is no version pull request. It cannot publish.
+  # Its commit starts no run of its own (a push by this token never does): the
   # jobs below go on from it, at the commit it gives them.
   version:
     if: github.ref == 'refs/heads/main'
@@ -30,8 +29,8 @@ jobs:
     outputs:
       sha: ${{ steps.version.outputs.sha }}
     steps:
-      # Main as it is now, not as it was at this run's push: a run that waited
-      # behind another finds the versions that one set.
+      # Main as it is now, not as it was when this run started: a run that
+      # waited behind another finds the versions that one set.
       - uses: actions/checkout@v4
         with:
           ref: main
@@ -56,11 +55,14 @@ jobs:
     outputs:
       work: ${{ steps.check.outputs.work }}
     steps:
+      # The whole history: which GitHub release a version is in depends on
+      # the commit that set it.
       - uses: actions/checkout@v4
         with:
           ref: ${{ needs.version.outputs.sha }}
-      # Most pushes release nothing: then the install, the build and the
-      # publishing job are skipped. It needs only Node, npm, git and gh.
+          fetch-depth: 0
+      # A week with no changeset releases nothing: then the install, the build
+      # and the publishing job are skipped. It needs only Node, npm, git and gh.
       - id: check
         run: node scripts/publish-packages.mjs --check
         env:
@@ -86,10 +88,10 @@ jobs:
           retention-days: 1
 
   # Publishes the packed tarballs one at a time, each after the ones it pins
-  # and once they are live, then tags and releases each version. It installs
-  # nothing from the workspace. It runs after any push to main with work to
-  # do, not only one that brought a changeset, so a release whose run was
-  # skipped goes out with the next one.
+  # and once they are live, then tags each version and makes their GitHub
+  # release. It installs nothing from the workspace. It runs whenever there is
+  # work to do, not only after new changesets, so a release that stopped goes
+  # out with the next run.
   publish:
     needs: [version, pack]
     if: needs.pack.outputs.work == 'true'

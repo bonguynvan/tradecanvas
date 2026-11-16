@@ -1,7 +1,8 @@
 // The release's version step (CI only): with changesets waiting on main, sets
 // the versions they ask for, dates the root changelog, commits that to main and
 // tells the workflow which commit to pack and publish. There is no version pull
-// request: merging a pull request with a changeset is the release.
+// request: the Publish workflow releases the changesets merged since the last
+// run, once a week or when run by hand.
 //
 //   node scripts/release-version.mjs            version, commit, push; writes `sha` to $GITHUB_OUTPUT
 //   node scripts/release-version.mjs --dry-run  says what it would version; changes nothing

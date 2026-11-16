@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { gzipSync } from 'node:zlib';
-import { publishOrder, internalDeps, remoteTagNames, untagged, releasePlan, waitUntil, packedInOrder, eachSettled, hasWork, fileInTarball, releaseNotes, firstCommitOf, tagTarget, distTag, preModeProblem } from './publish-packages.mjs';
+import { publishOrder, internalDeps, remoteTagNames, untagged, releasePlan, waitUntil, packedInOrder, eachSettled, hasWork, fileInTarball, releaseNotes, firstCommitOf, tagTarget, distTag, preModeProblem, releaseGroups, releaseBody } from './publish-packages.mjs';
 
 const pkg = (name, deps = []) => ({ name, version: '1.0.0', deps });
 
@@ -230,4 +230,49 @@ test('out of pre mode a prerelease stops the release, and full versions go out',
   assert.equal(preModeProblem([{ name: 'a', version: '1.84.1' }], null), null);
   assert.equal(preModeProblem([{ name: 'a', version: '2.0.0' }], { mode: 'exit', tag: 'beta' }), null);
   assert.match(preModeProblem([{ name: 'a', version: '2.0.0-beta.3' }], null), /a@2\.0\.0-beta\.3 is a prerelease/);
+});
+
+test("the root changelog's section is found under its dated heading, and not under a longer version's", () => {
+  const md = '# Changelog\n\n## 2.12.10 (2026-12-01)\n\n- Later.\n\n## 2.12.1 (2026-11-16)\n\n### Fixes\n\n- **HNX opens at 9:00**.\n\n## 2.12.0 (2026-11-15)\n\n- Earlier.\n';
+  assert.equal(releaseNotes(md, '2.12.1'), '### Fixes\n\n- **HNX opens at 9:00**.');
+  assert.equal(releaseNotes(md, '2.12.10'), '- Later.');
+  assert.equal(releaseNotes(md, '2.12'), '');
+});
+
+const ver = (name, version) => ({ name, version, deps: [] });
+
+test('the versions one version commit set share one GitHub release, named for the chart version', () => {
+  // 2.12.1: the fixed group and the wrappers, all set by one version commit.
+  const chart = ver('@tradecanvas/chart', '2.12.1');
+  const pkgs = [ver('@tradecanvas/commons', '2.12.1'), ver('@tradecanvas/core', '2.12.1'), chart, ver('@tradecanvas/react', '2.0.26')];
+  const groups = releaseGroups(pkgs, chart, () => 'bump');
+  assert.deepEqual(groups.map((g) => [g.name, g.version, g.shared, g.members.map((p) => p.name)]), [
+    ['v2.12.1', '2.12.1', true, ['@tradecanvas/commons', '@tradecanvas/core', '@tradecanvas/chart', '@tradecanvas/react']],
+  ]);
+});
+
+test('a version set by another commit than the chart version keeps a release of its own', () => {
+  const chart = ver('@tradecanvas/chart', '2.12.1');
+  const react = ver('@tradecanvas/react', '2.0.27');
+  const commitOf = (p) => (p.name === '@tradecanvas/react' ? 'later' : 'bump');
+  assert.deepEqual(
+    releaseGroups([react], chart, commitOf).map((g) => [g.name, g.version, g.shared]),
+    [['@tradecanvas/react@2.0.27', '2.0.27', false]],
+  );
+  // Without a chart package, each version is released on its own.
+  assert.deepEqual(releaseGroups([react], null, commitOf).map((g) => g.name), ['@tradecanvas/react@2.0.27']);
+});
+
+test("a shared release's notes end with each package and version, linked to npm", () => {
+  const members = [ver('@tradecanvas/core', '2.12.1'), ver('@tradecanvas/react', '2.0.26')];
+  assert.equal(
+    releaseBody('### Fixes\n\n- A fix.', members),
+    '### Fixes\n\n- A fix.\n\n### Packages\n\n' +
+      '- [`@tradecanvas/core` 2.12.1](https://www.npmjs.com/package/@tradecanvas/core/v/2.12.1)\n' +
+      '- [`@tradecanvas/react` 2.0.26](https://www.npmjs.com/package/@tradecanvas/react/v/2.0.26)',
+  );
+  assert.equal(
+    releaseBody('', members.slice(0, 1)),
+    '### Packages\n\n- [`@tradecanvas/core` 2.12.1](https://www.npmjs.com/package/@tradecanvas/core/v/2.12.1)',
+  );
 });
