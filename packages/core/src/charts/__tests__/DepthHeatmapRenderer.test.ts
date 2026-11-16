@@ -37,6 +37,28 @@ function counted(from: number, dir: number, count: number): { levels: DepthLevel
 }
 
 describe('DepthHeatmapRenderer', () => {
+  it('draws only the books stamped before the time shown until, and all again with null', () => {
+    const heat = new DepthHeatmapRenderer();
+    heat.setVisible(true);
+    const book = { bids: [{ price: 99.5, volume: 5 }], asks: [{ price: 100.5, volume: 3 }] };
+    heat.push(5, book);
+    heat.push(10, book);
+    const strips = () => {
+      const { ctx: c, rects } = ctx();
+      heat.render(c, viewport(), DARK_THEME);
+      return new Set(rects.map((r) => r[0])).size;
+    };
+    expect(strips()).toBe(2);
+    heat.setShownUntil(10);
+    expect(strips()).toBe(1);
+    // A time that is not a number cuts nothing.
+    heat.setShownUntil(Number.NaN);
+    expect(strips()).toBe(2);
+    heat.setShownUntil(6);
+    heat.setShownUntil(null);
+    expect(strips()).toBe(2);
+  });
+
   it('draws a cell per level, as tall as the levels are apart', () => {
     const heat = new DepthHeatmapRenderer();
     heat.setVisible(true);

@@ -48,3 +48,53 @@ describe('depth heatmap snapshots', () => {
     expect(push).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('depth heatmap during a replay', () => {
+  // Frames run on fake timers: a chart made before them would wait on a real one.
+  beforeEach(() => {
+    chart.destroy();
+    host.remove();
+    vi.useFakeTimers();
+    installChartStubs();
+    host = sizedHost();
+    chart = new Chart(host, {});
+  });
+  afterEach(() => vi.useRealTimers());
+
+  /** Where the snapshots drawn in the next frame are (one strip each). */
+  function drawnStrips(): number[] {
+    const draw = vi.spyOn(DepthHeatmapRenderer.prototype as never as { drawSide: (...a: unknown[]) => void }, 'drawSide');
+    chart.setDepthHeatmapVisible(true);
+    vi.advanceTimersByTime(100);
+    const strips = new Set(draw.mock.calls.map((call) => call[4] as number));
+    draw.mockRestore();
+    return [...strips];
+  }
+
+  it('stamps a live book at the live series’ last bar, not the bar the replay is on', () => {
+    chart.setData(bars);
+    chart.replayStart({ startIndex: 10, paused: true });
+    const push = vi.spyOn(DepthHeatmapRenderer.prototype, 'push');
+    chart.pushDepthSnapshot(book);
+    expect(push.mock.calls.map(([time]) => time)).toEqual([T0 + 59 * HOUR]);
+  });
+
+  it('draws only the books of the bars the replay has shown, and all of them again after it', () => {
+    chart.setData(bars);
+    chart.pushDepthSnapshot(book, T0 + 5 * HOUR);
+    chart.pushDepthSnapshot(book, T0 + 30 * HOUR);
+    chart.pushDepthSnapshot(book);
+    expect(drawnStrips()).toHaveLength(3);
+    // The view reaches past the replay's last bar, where the later books would be.
+    const wide = () => chart.setVisibleRange(T0, T0 + 70 * HOUR);
+    chart.replayStart({ startIndex: 10, paused: true });
+    wide();
+    expect(drawnStrips()).toHaveLength(1);
+    chart.replaySeekToBar(40);
+    wide();
+    expect(drawnStrips()).toHaveLength(2);
+    chart.replayStop();
+    vi.advanceTimersByTime(100);
+    expect(drawnStrips()).toHaveLength(3);
+  });
+});

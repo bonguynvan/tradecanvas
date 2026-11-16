@@ -93,6 +93,33 @@ const SCENES = {
   },
 
   /**
+   * A replay over a chart with a live order book and its heatmap: books
+   * recorded for the last bars, and a live book coming in while the replay
+   * steps. The replayed bars carry none of today's book, and the book at the
+   * plot's edge waits for the replay to end.
+   */
+  async replayDepth() {
+    const s = await widget({ features: { depth: true } });
+    const bars = s.chart.getData();
+    const bookAt = (mid) => ({
+      bids: Array.from({ length: 30 }, (_, i) => ({ price: mid - (i + 1) * mid * 0.0004, volume: 2 + ((i * 7) % 11) })),
+      asks: Array.from({ length: 30 }, (_, i) => ({ price: mid + (i + 1) * mid * 0.0004, volume: 2 + ((i * 5) % 13) })),
+    });
+    s.chart.setDepthHeatmapVisible(true);
+    s.chart.setDepthOverlay({ markBest: true });
+    for (const b of bars.slice(-40)) s.chart.pushDepthSnapshot(bookAt(b.close), b.time);
+    const length = bars.length;
+    s.widget.replayFrom(length - 120, false);
+    s.chart.replaySeekToBar(length - 100);
+    s.chart.replayPause();
+    for (let i = 0; i < 20; i++) {
+      s.chart.replaySeekToBar(length - 100 + i);
+      s.widget.setDepth(bookAt(bars.at(-1).close));
+    }
+    return s;
+  },
+
+  /**
    * A symbol compared in percent on the price pane, and one in a pane of its own.
    * The made-up feed prices every symbol near the chart's own, so the pane's
    * values are BTC-like: the layout is what is looked at, not the prices.
