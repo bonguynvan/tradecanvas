@@ -276,3 +276,32 @@ test("a shared release's notes end with each package and version, linked to npm"
     '### Packages\n\n- [`@tradecanvas/core` 2.12.1](https://www.npmjs.com/package/@tradecanvas/core/v/2.12.1)',
   );
 });
+
+test('a shared release lists every package its version commit set, even when only one of them is being finished', () => {
+  // A rerun finishing react alone: the release it makes must still list all of 2.12.1.
+  const chart = ver('@tradecanvas/chart', '2.12.1');
+  const workspace = [ver('@tradecanvas/commons', '2.12.1'), chart, ver('@tradecanvas/react', '2.0.26')];
+  const groups = releaseGroups([workspace[2]], chart, () => 'bump', workspace);
+  assert.deepEqual(groups.map((g) => [g.name, g.members.map((p) => p.name)]), [
+    ['v2.12.1', ['@tradecanvas/commons', '@tradecanvas/chart', '@tradecanvas/react']],
+  ]);
+});
+
+test('shared and separate releases come in the order of the versions given, the shared one once', () => {
+  const chart = ver('@tradecanvas/chart', '2.13.0');
+  const pkgs = [ver('@tradecanvas/vue', '2.0.30'), ver('@tradecanvas/core', '2.13.0'), chart, ver('@tradecanvas/svelte', '2.0.31')];
+  const commitOf = (p) => (p.name === '@tradecanvas/vue' ? 'hotfix' : p.name === '@tradecanvas/svelte' ? null : 'bump');
+  // svelte's commit could not be found: it is released on its own rather than guessed into the shared one.
+  assert.deepEqual(releaseGroups(pkgs, chart, commitOf).map((g) => g.name), ['@tradecanvas/vue@2.0.30', 'v2.13.0', '@tradecanvas/svelte@2.0.31']);
+});
+
+test("with the chart's version commit unknown, nothing is shared", () => {
+  const chart = ver('@tradecanvas/chart', '2.13.0');
+  const groups = releaseGroups([ver('@tradecanvas/core', '2.13.0'), chart], chart, () => null);
+  assert.deepEqual(groups.map((g) => g.name), ['@tradecanvas/core@2.13.0', '@tradecanvas/chart@2.13.0']);
+});
+
+test("a prerelease's section is found under its dated heading", () => {
+  const md = '# Changelog\n\n## 2.13.0-beta.0 (2026-11-23)\n\n- A beta.\n\n## 2.12.1 (2026-11-16)\n';
+  assert.equal(releaseNotes(md, '2.13.0-beta.0'), '- A beta.');
+});
