@@ -15,6 +15,8 @@ export class DepthHeatmapRenderer {
   private buffer = new DepthHeatmapBuffer(240);
   private visible = false;
   private opacity = 0.7;
+  /** Books from this time on are not drawn (a replay has not reached them); null draws all. */
+  private shownUntil: number | null = null;
 
   setVisible(v: boolean): void {
     this.visible = v;
@@ -31,6 +33,14 @@ export class DepthHeatmapRenderer {
   /** Its opacity and how many snapshots it keeps, as the setters left them. */
   getConfig(): { opacity: number; capacity: number } {
     return { opacity: this.opacity, capacity: this.buffer.getCapacity() };
+  }
+
+  /**
+   * Draw only the books stamped before `time`, as a replay that has shown
+   * the bars up to it would; null draws them all again. The books are kept.
+   */
+  setShownUntil(time: number | null): void {
+    this.shownUntil = time !== null && Number.isFinite(time) ? time : null;
   }
 
   push(time: number, depth: DepthData): void {
@@ -58,7 +68,9 @@ export class DepthHeatmapRenderer {
     const bottom = chartRect.y + chartRect.height;
 
     ctx.save();
+    const until = this.shownUntil;
     for (const snap of snapshots) {
+      if (until !== null && snap.time >= until) continue;
       const cx = timeToX(snap.time, viewport);
       if (cx < left - stripWidth || cx > right + stripWidth) continue;
       const x = cx - stripWidth / 2;

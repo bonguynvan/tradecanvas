@@ -309,6 +309,9 @@ chart.setDepthOverlay({ mode: 'cumulative' })       // change the look later`}</
   (bids green, asks red). Liquidity walls that persist over time stand out.
   Toggle from the settings sheet (or <code>chart.setDepthHeatmapVisible</code>);
   <code>widget.setDepth</code> records a snapshot on every book update.
+  During a replay, a book recorded with no time belongs to the live series' last bar, the heatmap
+  shows only the books of the bars the replay has shown, and the order book at the plot's edge,
+  the live market's, is hidden until the replay ends.
 </p>
 <pre><code>{`chart.setDepthHeatmapVisible(true)
 chart.setDepthHeatmapConfig({ opacity: 0.7, capacity: 240 })

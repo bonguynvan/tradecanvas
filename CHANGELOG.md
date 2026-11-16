@@ -4,6 +4,7 @@
 
 ### Fixes
 
+- **The order book stays out of a replay** (`@tradecanvas/core`, `@tradecanvas/chart`): a live book recorded during a replay (`pushDepthSnapshot`, or `widget.setDepth`, with no time) was stamped at the bar the replay was on, so as the replay moved, the liquidity heatmap filled the replayed bars with today's book. It is now stamped at the live series' last bar. The heatmap draws only the books of the bars the replay has shown, and all of them again when it ends. The depth overlay at the plot's right edge, the live market's book, is not drawn beside the replay's price either, and comes back when the replay ends. `DepthHeatmapRenderer.setShownUntil(time)` draws only the books stamped before `time`.
 - **The screen-reader summary follows the live price** (`@tradecanvas/chart`): the chart's `aria-label` ("… Last price 50,100.00.") was set again only when the series grew, so a forming bar's new closes, from a feed's `bar` updates, `updateLastBar` or `updateLastBarFromTick`, left it on the price it had when the bar began, and a replay left it on the live price. It now follows the last bar shown, the replay's included, at most once a second while a feed streams or a replay plays.
 
 ## 2.12.1 (2026-11-16)

@@ -4366,10 +4366,11 @@ export class Chart {
    * Record an order-book snapshot for the liquidity heatmap, stamped at
    * `time`, or else at the latest bar's time. Call alongside `setDepthData`
    * on each book update; pass `time` to fill in books recorded for older
-   * bars, oldest first.
+   * bars, oldest first. During a replay the latest bar is the live one:
+   * a live book belongs to now, and shows once the replay ends.
    */
   pushDepthSnapshot(depth: import('@tradecanvas/commons').DepthData, time?: number): void {
-    const data = this.series.bars();
+    const data = this.replaySession ? this.series.liveBars() : this.series.bars();
     const at = time ?? data[data.length - 1]?.time;
     if (at === undefined || !Number.isFinite(at)) return;
     this.depthHeatmap.push(at, depth);
@@ -5301,6 +5302,8 @@ export class Chart {
       const next = series[index + 1]?.time;
       const until = next ?? series[index].time + (index > 0 ? series[index].time - series[index - 1].time : 1);
       if (this.replaySession) this.replaySession.until = until;
+      // The books of the bars the replay has shown, not those of the bars still to come.
+      this.depthHeatmap.setShownUntil(until);
       // Markers and trades as far as the replay has shown, in the same frame as its bars.
       if (this.replayRevealMarks) this.revealReplayMarks(until);
       // The replay's bars are a series of their own: what was kept is of no use.
@@ -5711,6 +5714,7 @@ export class Chart {
     this.returnMarkToLive();
     const live = this.series.endReplay();
     this.replaySession = null;
+    this.depthHeatmap.setShownUntil(null);
     this.replayStepsSeries = null;
     this.replayCoarse = null;
     this.replayBarUnsub?.();
@@ -6662,7 +6666,8 @@ export class Chart {
       indicatorEngine: this.features.indicators ? this.indicatorEngine : null,
       drawingRenderer: this.features.drawings ? this.drawingRenderer : null,
       tradingRenderer: this.features.trading ? this.tradingRenderer : null,
-      depthOverlay: this.features.trading || this.features.depth ? this.depthLayer : null,
+      // The live market's book: beside a replay's price it would be read as the replay's.
+      depthOverlay: (this.features.trading || this.features.depth) && !this.replaySession ? this.depthLayer : null,
       currentPriceLine: this.currentPriceLine,
       chartLegend: this.features.legend ? this.chartLegend : null,
       volumeRenderer: this.features.volume ? this.volumeRenderer : null,

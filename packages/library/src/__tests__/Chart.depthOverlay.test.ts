@@ -49,6 +49,20 @@ describe('the order book on the plot', () => {
     expect(config.enabled).toBe(true);
   });
 
+  it('is the live market’s book: not drawn beside a replay’s price, drawn again after it', () => {
+    chart = new Chart(host, { features: { trading: false, depth: true } });
+    const render = drawn(chart);
+    chart.replayStart({ startIndex: 10, paused: true });
+    vi.advanceTimersByTime(100);
+    render.mockClear();
+    chart.setDepthData(book);
+    vi.advanceTimersByTime(100);
+    expect(render).not.toHaveBeenCalled();
+    chart.replayStop();
+    vi.advanceTimersByTime(100);
+    expect(render).toHaveBeenCalled();
+  });
+
   it('draws nothing with trading off and depth off', () => {
     chart = new Chart(host, { features: { trading: false } });
     chart.setDepthOverlay({ enabled: true });
