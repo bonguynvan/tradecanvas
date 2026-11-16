@@ -1,5 +1,16 @@
 # @tradecanvas/core
 
+## 2.13.0
+
+### Minor Changes
+
+- b27aa3f: `@tradecanvas/core/patterns` exports `detectCandlePatterns` and `CANDLE_PATTERNS` on their own, without the engine: a page that finds patterns and draws no chart loads a few kB in a chunk of its own instead of the chart's. The main entry exports them as before.
+
+### Patch Changes
+
+- 196e02e: The order book during a replay: `pushDepthSnapshot` without a time stamps a live book at the live series' last bar, not at the bar the replay is on; the liquidity heatmap draws only the books of the bars the replay has shown, and all of them again after it; the depth overlay, the live market's book, is not drawn beside a replay's price and comes back when it ends. `DepthHeatmapRenderer.setShownUntil(time)` draws only the books stamped before `time` (null draws them all).
+  - @tradecanvas/commons@2.13.0
+
 ## 2.12.1
 
 ### Patch Changes

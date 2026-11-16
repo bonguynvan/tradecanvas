@@ -1,5 +1,17 @@
 # @tradecanvas/chart
 
+## 2.13.0
+
+### Patch Changes
+
+- 8850740: The chart's screen-reader summary follows the last bar: its "Last price" is said again, at most once a second, when a feed's `bar` updates (forming or closed), `updateLastBar`, `updateLastBarFromTick`, or a replay's steps and forming bar change the last bar's close, not only when the series grows.
+- 196e02e: The order book during a replay: `pushDepthSnapshot` without a time stamps a live book at the live series' last bar, not at the bar the replay is on; the liquidity heatmap draws only the books of the bars the replay has shown, and all of them again after it; the depth overlay, the live market's book, is not drawn beside a replay's price and comes back when it ends. `DepthHeatmapRenderer.setShownUntil(time)` draws only the books stamped before `time` (null draws them all).
+- 77aa135: `ChartWidget`'s replay bar is a row under the chart, across the widget, instead of a bar floating over the main pane's foot: the chart is made shorter for it while it is open, so the volume and the bottom panes are no longer covered. The widget no longer sets `--tcw-replay-foot` or `--tcw-replay-plot-*` on it.
+- Updated dependencies [b27aa3f]
+- Updated dependencies [196e02e]
+  - @tradecanvas/core@2.13.0
+  - @tradecanvas/commons@2.13.0
+
 ## 2.12.1
 
 ### Patch Changes
