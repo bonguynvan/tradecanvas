@@ -126,7 +126,7 @@ const adapter = new BinanceAdapter()
 
 <PoweredBy size={14} />`}</code></pre>
 
-<pre><code>{`import { createPoweredBy } from '@tradecanvas/chart'
+<pre><code>{`import { createPoweredBy } from '@tradecanvas/chart/brand'
 
 statusBar.append(createPoweredBy({ height: 14 }))`}</code></pre>
 <p><code>size</code>（Svelte）或 <code>height</code> 是标志的高度（像素），最小 12：状态栏用 14–16，页脚用 24。文字使用页面自己的字体，且不会小于 10 px。<code>href</code> 和 <code>target</code>（默认 <code>_blank</code>）作用于链接；<code>poweredByHtml()</code> 返回其标记，<code>TRADECANVAS_MARK_SVG</code> 和 <code>TRADECANVAS_WORDMARK_SVG</code> 是单独的图形。</p>

@@ -180,10 +180,11 @@ sized element and call `destroy()` in the unmount hook.
 An app that wants to credit TradeCanvas places the badge: the words, the mark
 and the wordmark as one link, in the text colour around it (so it follows the
 app's theme). `size` / `height` is the mark's height in px, from 12; 14–16
-fits a status strip.
+fits a status strip. Import it from `@tradecanvas/chart/brand`, which reaches
+none of the chart, so a page with the badge and no chart stays small.
 
 ```ts
-import { createPoweredBy } from '@tradecanvas/chart';
+import { createPoweredBy } from '@tradecanvas/chart/brand';
 
 document.querySelector('#status-bar')?.append(createPoweredBy({ height: 14 }));
 ```

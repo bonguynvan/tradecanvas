@@ -57,6 +57,11 @@
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
     },
+    "./brand": {
+      "types": "./dist/brand/index.d.ts",
+      "import": "./dist/brand/index.js",
+      "require": "./dist/brand/index.cjs"
+    },
     "./widget": {
       "types": "./dist/widget/index.d.ts",
       "import": "./dist/widget/index.js",

@@ -127,7 +127,7 @@ const adapter = new BinanceAdapter()
 
 <PoweredBy size={14} />`}</code></pre>
 
-<pre><code>{`import { createPoweredBy } from '@tradecanvas/chart'
+<pre><code>{`import { createPoweredBy } from '@tradecanvas/chart/brand'
 
 statusBar.append(createPoweredBy({ height: 14 }))`}</code></pre>
 <p><code>size</code> (Svelte) o <code>height</code> es la altura de la marca en píxeles, desde 12: 14–16 para una barra de estado, 24 para un pie de página. El texto usa la fuente de tu página y nunca baja de 10 px. <code>href</code> y <code>target</code> (por defecto <code>_blank</code>) van al enlace; <code>poweredByHtml()</code> da el marcado, y <code>TRADECANVAS_MARK_SVG</code> y <code>TRADECANVAS_WORDMARK_SVG</code> solo el dibujo.</p>

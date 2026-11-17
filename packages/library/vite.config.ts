@@ -21,6 +21,7 @@ export default defineConfig({
     lib: {
       entry: {
         index: resolve(__dirname, 'src/index.ts'),
+        'brand/index': resolve(__dirname, 'src/brand/index.ts'),
         'widget/index': resolve(__dirname, 'src/widget/index.ts'),
         'widget/locales/index': resolve(__dirname, 'src/widget/locales/index.ts'),
       },

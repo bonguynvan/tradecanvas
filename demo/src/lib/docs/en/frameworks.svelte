@@ -127,7 +127,8 @@ const adapter = new BinanceAdapter()
 
 <PoweredBy size={14} />`}</code></pre>
 
-<pre><code>{`import { createPoweredBy } from '@tradecanvas/chart'
+<pre><code>{`import { createPoweredBy } from '@tradecanvas/chart/brand'
 
 statusBar.append(createPoweredBy({ height: 14 }))`}</code></pre>
 <p><code>size</code> (Svelte) or <code>height</code> is the mark's height in pixels, from 12: 14–16 fits a status strip, 24 a footer. The words are set in your page's face and never fall under 10 px. <code>href</code> and <code>target</code> (default <code>_blank</code>) go to the link; <code>poweredByHtml()</code> gives the markup, and <code>TRADECANVAS_MARK_SVG</code> and <code>TRADECANVAS_WORDMARK_SVG</code> the art alone.</p>
+<p>The badge has an entry of its own, <code>@tradecanvas/chart/brand</code>, which reaches none of the chart, so a page that shows the badge and no chart, such as a landing page's footer, stays a few kilobytes. The main entry exports the same names. The Svelte <code>PoweredBy</code> imports from it.</p>
