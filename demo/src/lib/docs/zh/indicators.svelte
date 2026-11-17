@@ -203,7 +203,12 @@ CANDLE_PATTERNS.length                                 // 64`}</code></pre>
   period: { kind: 'int', min: 2, max: 500 },
   mult: { kind: 'number', min: 0.1, step: 0.1 },
   source: { source: true },
+  type: { kind: 'choice', options: [{ value: 'ema', label: 'Exponential' }, { value: 'sma', label: 'Simple' }] },
 }`}</code></pre>
+<p>
+  选项的 <code>options</code> 可以是纯值，也可以是带有设置中所显示标签的值
+  （<code>{'{ value, label }'}</code>），标签使用你的应用的语言；指标接收到的是值。
+</p>
 <p>
   描述符也说明各条线的外观，图表照此绘制：<code>fills</code> 在两条线都有值的地方为其间着色，位于线条之下；
   线条的 <code>width</code> 使其保持该粗细，不随指标的粗细变化（例如较细的中线）；<code>lineStyle</code>
@@ -217,6 +222,16 @@ CANDLE_PATTERNS.length                                 // 64`}</code></pre>
   { key: 'lower', title: 'Lower', color: 0 },
 ],
 fills: [{ between: ['upper', 'lower'], color: 0, opacity: 0.1 }],`}</code></pre>
+<p>
+  <code>kind: 'markers'</code> 的线条会在其字段有值的K线上（转向、信号）用一个 <code>shape</code> 做标记：
+  <code>'dot'</code>、<code>'triangleUp'</code> 或 <code>'triangleDown'</code>，位于该值处，或在主图上位于K线最高价之上或最低价之下
+  （<code>position: 'aboveBar'</code>、<code>'belowBar'</code>）。它不是供读取的数值：在图例中没有数值，在坐标轴上没有标签，
+  导出中也没有对应的列，并且不会作为其他指标可读取的线提供。在副图窗格中，标记位于其数值处。没有标记的K线，不要设置该字段。
+</p>
+<pre><code>{`plots: [
+  { key: 'value', title: 'MACD', color: 0 },
+  { key: 'turn', title: 'Turn', color: 1, kind: 'markers', shape: 'triangleUp', position: 'belowBar' },
+],`}</code></pre>
 
 <h2>窗格：调整大小、收起、最大化、重新排序</h2>
 <p>

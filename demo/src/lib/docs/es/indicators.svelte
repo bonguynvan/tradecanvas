@@ -229,7 +229,12 @@ CANDLE_PATTERNS.length                                 // 64`}</code></pre>
   period: { kind: 'int', min: 2, max: 500 },
   mult: { kind: 'number', min: 0.1, step: 0.1 },
   source: { source: true },
+  type: { kind: 'choice', options: [{ value: 'ema', label: 'Exponential' }, { value: 'sma', label: 'Simple' }] },
 }`}</code></pre>
+<p>
+  Las <code>options</code> de una opción a elegir son valores, o valores con la etiqueta que los ajustes muestran
+  para ellos (<code>{'{ value, label }'}</code>), en el idioma de tu app; el indicador recibe el valor.
+</p>
 <p>
   El descriptor también dice cómo se ven sus plots, y el gráfico los dibuja así: <code>fills</code> sombrea entre
   dos plots donde ambos tienen valor, bajo las líneas; el <code>width</code> de un plot lo mantiene en ese grosor
@@ -244,6 +249,18 @@ CANDLE_PATTERNS.length                                 // 64`}</code></pre>
   { key: 'lower', title: 'Lower', color: 0 },
 ],
 fills: [{ between: ['upper', 'lower'], color: 0, opacity: 0.1 }],`}</code></pre>
+<p>
+  Un plot de <code>kind: 'markers'</code> marca las barras donde su campo tiene valor (un giro, una señal) con una
+  <code>shape</code>, <code>'dot'</code>, <code>'triangleUp'</code> o <code>'triangleDown'</code>, en el valor o, en el
+  panel de precio, sobre el máximo de la barra o bajo su mínimo (<code>position: 'aboveBar'</code>, <code>'belowBar'</code>).
+  No es un valor que leer: no tiene valor en la leyenda, ni etiqueta en el eje, ni columna en una exportación, y no se
+  ofrece como línea que otro indicador pueda leer. En un panel, sus marcas están en sus valores. Deja el campo sin
+  fijar en las barras sin marca.
+</p>
+<pre><code>{`plots: [
+  { key: 'value', title: 'MACD', color: 0 },
+  { key: 'turn', title: 'Turn', color: 1, kind: 'markers', shape: 'triangleUp', position: 'belowBar' },
+],`}</code></pre>
 
 <h2>Paneles: redimensionar, contraer, maximizar, reordenar</h2>
 <p>

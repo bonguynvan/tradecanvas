@@ -29,12 +29,24 @@ const chart = new Chart(el, { plugins: [{ kind: 'overlay', plugin: myHeatmap }] 
 chart.plugins.register({ kind: 'chartType', plugin: myCandles })
 chart.plugins.unregister('chartType:my-candles')
 chart.plugins.list()`}</code></pre>
+<p>
+  <code>ChartWidget</code>은 플러그인을 <code>plugins</code>로 받습니다(타입이 지정되며, <code>chartOptions.plugins</code>와 함께 쓸 수 있습니다).
+  위젯이 무엇이든 복원하기 전에 차트에 등록되므로, 직접 만든 지표를 담은 저장된 레이아웃
+  (<code>persistLayouts</code>), 템플릿, 공유된 보기도 그 지표를 다시 불러옵니다.
+  같은 id라면 위젯의 <code>plugins</code>가 <code>chartOptions.plugins</code>보다 우선하고, 그리드 셀 자체의
+  <code>plugins</code>는 그리드가 공유하는 플러그인을 대체합니다. 레이아웃이 복원된 뒤 <code>widget.getChart()</code>에
+  등록한 지표는 너무 늦습니다. 레이아웃이 이미 그 지표를 빼 버렸기 때문입니다.
+</p>
+<pre><code>{`new ChartWidget(host, {
+  symbol: 'BTCUSDT', adapter, persistLayouts: true,
+  plugins: [{ kind: 'indicator', plugin: new DoubleSMA() }],
+})`}</code></pre>
 
 <h2>플러그인 종류</h2>
 <table>
   <thead><tr><th>종류</th><th>계약</th><th>렌더링 위치</th></tr></thead>
   <tbody>
-    <tr><td><code>indicator</code></td><td><code>IndicatorPlugin</code> — <code>calculate()</code> + <code>render()</code></td><td>오버레이 또는 패널</td></tr>
+    <tr><td><code>indicator</code></td><td><code>IndicatorPlugin</code> — <code>calculate()</code> + <code>render(ctx, output, viewport, style, &#123; theme &#125;)</code></td><td>오버레이 또는 패널</td></tr>
     <tr><td><code>drawing</code></td><td><code>DrawingPlugin</code> — <code>render()</code> + <code>hitTest()</code></td><td>오버레이 레이어</td></tr>
     <tr><td><code>chartType</code></td><td><code>ChartTypePlugin</code> — <code>createRenderer()</code> + 선택적 <code>transform()</code></td><td>메인 시리즈</td></tr>
     <tr><td><code>overlay</code></td><td><code>OverlayPlugin</code> — <code>render(ctx, &#123; viewport, data, theme &#125;)</code></td><td><code>main</code> / <code>overlay</code> / <code>ui</code></td></tr>
@@ -42,40 +54,172 @@ chart.plugins.list()`}</code></pre>
 </table>
 
 <h2>사용자 지정 지표</h2>
-<p>그리기 헬퍼를 쓰려면 <code>IndicatorBase</code>를 상속한 다음, 내장 지표처럼 등록하고 추가합니다.</p>
-<pre><code>{`import { IndicatorBase, IndicatorValueMap, registerPlugin } from '@tradecanvas/chart'
+<p>
+  지표는 <code>IndicatorPlugin</code>입니다. 지표가 무엇이고 어떻게 보이는지 밝히는 <code>descriptor</code>와,
+  봉마다 값을 내는 <code>calculate()</code>로 이루어집니다. <code>IndicatorBase</code>를 상속하면 나머지는 차트가
+  디스크립터를 보고 처리합니다. 플롯을 그리고, 패널 눈금을 맞추고, 축에 값을 태그로 표시하고, 범례, 설정,
+  지표 대화상자에 지표를 나열합니다. 다음은 선이 방향을 바꾸는 곳을 표시하는 MACD 전체입니다.
+</p>
+<pre><code>{`import { IndicatorBase, IndicatorValueMap } from '@tradecanvas/chart'
 
-class DoubleSMA extends IndicatorBase {
+const ema = (prev, value, period) => (prev === undefined ? value : prev + (2 / (period + 1)) * (value - prev))
+
+class TurningMacd extends IndicatorBase {
   descriptor = {
-    id: 'double-sma', name: 'Double SMA',
-    placement: 'overlay' as const, defaultConfig: { fast: 10, slow: 30 },
+    id: 'turning-macd', name: 'Turning MACD', shortName: 'TMACD',
+    placement: 'panel',               // a pane of its own; 'overlay' draws on the price pane
+    category: 'oscillators',          // its group in the Indicators dialog
+    defaultConfig: { fast: 12, slow: 26, source: 'close' },
+    inputs: {
+      fast: { kind: 'int', min: 2, label: 'Fast' },
+      slow: { kind: 'int', min: 3, label: 'Slow' },
+      source: { kind: 'choice', label: 'Price', options: [{ value: 'close', label: 'Close' }, { value: 'hl2', label: 'Median' }] },
+    },
+    plots: [
+      { key: 'value', title: 'MACD', color: 0 },
+      { key: 'turn', title: 'Turn', color: 1, kind: 'markers', tone: { field: 'up' }, downColor: 2 },
+    ],
+    scale: { zero: true },
+    levels: [0],
+    defaultStyle: (theme) => ({ colors: theme.name === 'light' ? ['#1f4e8c', '#0a7d3b', '#b3261e'] : ['#8ab4f8', '#4cc38a', '#f28b82'] }),
   }
-  calculate(data, config) { /* values = new IndicatorValueMap(); return { values, series } */ }
-  render(ctx, output, viewport, style) { /* draw lines */ }
+
+  calculate(data, config) {
+    const { fast, slow, source } = config.params
+    const values = new IndicatorValueMap()
+    const series = new Array(data.length).fill(null)
+    let f, s
+    for (let i = 0; i < data.length; i++) {
+      const bar = data[i]
+      const price = source === 'hl2' ? (bar.high + bar.low) / 2 : bar.close
+      f = ema(f, price, fast)
+      s = ema(s, price, slow)
+      if (i < slow) continue
+      const point = { value: f - s }
+      const a = series[i - 2]?.value, b = series[i - 1]?.value
+      // The bar before this one is a turn when the line changed direction there.
+      if (a !== undefined && b !== undefined && (b - a) * (point.value - b) < 0) {
+        series[i - 1] = { ...series[i - 1], turn: b, up: point.value > b ? 1 : 0 }
+        values.set(data[i - 1].time, series[i - 1])
+      }
+      series[i] = point
+      values.set(bar.time, point)
+    }
+    return { values, series }
+  }
+}`}</code></pre>
+<p>
+  <code>calculate(data, config)</code>는 봉과 인스턴스의 입력값(<code>config.params</code>)을 받아 값을 두 번
+  반환합니다. 봉 인덱스 기준(<code>series</code>, 첫 값 이전은 <code>null</code>)과 봉 시간 기준(<code>values</code>)입니다.
+  <code>values</code>에는 <code>new IndicatorValueMap()</code>을 사용하세요. 시간 순서대로 채울 때 몇 배 더 저렴한
+  <code>Map</code>이며, 종목이나 시간 단위를 전환할 때마다 바로 이 작업을 합니다. 어떤 플롯도 가리키지 않는 필드
+  (위의 <code>up</code>)는 그려지지도, 눈금에 반영되지도, 표시되지도 않습니다. 플롯의 <code>tone</code>을 위해 있는 것입니다.
+</p>
+
+<h3>디스크립터</h3>
+<ul>
+  <li><strong>플롯</strong>은 각각 필드 하나를 그립니다. <code>'line'</code>(기본값), <code>'step'</code>,
+    <code>'histogram'</code>, <code>'dots'</code>(점으로 그린 선), 또는 <code>'markers'</code>로, 필드에 값이 있는 봉에
+    모양(<code>shape</code>: <code>'dot'</code>, <code>'triangleUp'</code>, <code>'triangleDown'</code>)을 그 값의 위치나,
+    가격 패널에서는 봉의 위나 아래(<code>position</code>)에 그립니다. <code>color</code>는 스타일 색상의
+    인덱스입니다. <code>tone</code>과 <code>downColor</code>는 플롯을 두 가지 색으로 그립니다.
+    <code>width</code>, <code>lineStyle</code>, <code>opacity</code>, <code>breakOn</code>은 선의 모양을 정합니다.
+    <code>fills</code>는 두 플롯 사이를 칠합니다.</li>
+  <li><strong>입력</strong>은 <code>defaultConfig</code>의 각 입력을 편집하는 방식을 정합니다. <code>kind</code>,
+    <code>label</code>, <code>min</code>, <code>max</code>, <code>step</code>, 그리고 선택 입력의 <code>options</code>로,
+    값만 적거나 각각 레이블을 붙입니다(<code>{'{ value, label }'}</code>). <code>{'{ source: true }'}</code>는 다른
+    가격이나 다른 지표의 선을 바탕으로 계산하게 합니다.</li>
+  <li><strong>패널</strong>: <code>scale</code>은 범위를 고정하거나 0이 보이게 유지하고, <code>levels</code>는 사용자가
+    편집할 수 있는 기준선을 그립니다.</li>
+  <li><strong>모양</strong>: <code>defaultStyle</code>, 스타일 하나 또는 테마별 스타일(아래 참고).</li>
+</ul>
+
+<h3>실시간 틱: update와 revisesBefore</h3>
+<p>
+  틱마다 바뀌는 것은 가장 최신 봉뿐입니다. <code>update()</code>가 없으면 차트는 전체 과거 데이터에 대해
+  <code>calculate()</code>를 다시 실행합니다. 있으면 차트가 마지막 출력(<code>prev</code>)과 처음으로 바뀐 봉
+  (<code>from</code>)을 넘겨 주고, 지표는 거기서부터 다시 계산합니다. <code>null</code>을 반환하면 대신
+  <code>calculate()</code>가 실행됩니다. 값은 <code>calculate()</code>가 낼 값과 같아야 합니다. <code>canResume</code>과
+  <code>writePoint</code>는 <code>IndicatorBase</code>에 들어 있습니다.
+</p>
+<p>
+  다음 지표의 각 봉은 TurningMacd의 평균처럼 누적되는 상태가 아니라 주변 봉으로부터 계산됩니다(누적 상태를 쓰는
+  지표라면 자체 상태를 유지하거나 <code>update</code>를 생략합니다).
+</p>
+<pre><code>{`// A swing high: the bar is higher than the n bars either side of it.
+pointAt(data, i, n) {
+  if (i < n || i + n >= data.length) return null
+  for (let k = 1; k <= n; k++) if (data[i - k].high >= data[i].high || data[i + k].high > data[i].high) return null
+  return { high: data[i].high }
 }
 
-registerPlugin({ kind: 'indicator', plugin: new DoubleSMA() })
-chart.addIndicator('double-sma', { fast: 10, slow: 30 })`}</code></pre>
+update(data, config, prev, from) {
+  if (!this.canResume(data, prev, from)) return null
+  const n = config.params.strength
+  // A new bar decides the bar n back: rewrite from there.
+  for (let i = Math.max(0, from - n); i < data.length; i++) this.writePoint(prev, data, i, this.pointAt(data, i, n))
+  return prev
+}
+
+revisesBefore(config) { return config.params.strength }`}</code></pre>
 <p>
-  <code>values</code>에는 <code>new Map()</code> 대신 <code>new IndicatorValueMap()</code>을 사용하세요.
-  <code>Map</code>을 그대로 대체할 수 있으면서, 시간 순서대로 한 봉씩 채울 때 몇 배 더 저렴합니다.
-  종목이나 시간 단위를 전환할 때마다 전체 과거 데이터에 대해 바로 이 작업을 합니다.
+  <code>from</code>은 언제나 처음으로 바뀐 봉입니다. 새 봉이 그 앞의 봉을 바꿀 수 있을 때(스윙 포인트, 전환점,
+  프랙탈은 그 뒤의 봉으로 결정됩니다) <code>update</code>가 그 봉들을 직접 다시 쓰고,
+  <code>revisesBefore(config)</code>는 그 개수를 알려 주어, 이 지표의 선을 읽는 지표들도 그 지점부터 다시 계산되게
+  합니다. <code>from</code> 이후의 봉만 바뀐다면 생략하세요.
 </p>
 
-<h3>빠른 실시간 업데이트 (선택 사항)</h3>
+<h3>그리기</h3>
 <p>
-  실시간 틱마다 바뀌는 것은 형성 중인 봉뿐입니다. 전체 과거 데이터 대신 <code>from</code> 이후의
-  봉만 다시 계산하도록 <code>update()</code>를 구현하세요. 차트는 틱과 새 봉이 들어올 때 이 메서드를 사용하며,
-  메서드가 없거나 <code>null</code>을 반환하면 <code>calculate()</code>를 대신 사용합니다.
-  결과는 <code>calculate()</code>가 만들 값과 같아야 합니다.
+  <code>IndicatorBase</code>의 <code>render()</code>가 <code>plots</code>와 <code>fills</code>를 패널 눈금에 맞춰
+  그리므로, 대부분의 지표에는 그리기 코드가 없습니다. 더 그리려면 이 메서드를 재정의하고 먼저 호출하세요. 다섯 번째
+  인수에는 차트가 그릴 때 쓰는 테마가 들어 있어, 스타일이 주지 않는 색과 글꼴에 쓸 수 있습니다:
+  <code>theme.candleUp</code>, <code>theme.candleDown</code>, <code>theme.text</code>, <code>theme.font</code>.
 </p>
-<pre><code>{`update(data, config, prev, from) {
-  if (!this.canResume(data, prev, from)) return null   // IndicatorBase helper
-  for (let i = from; i < data.length; i++) {
-    this.writePoint(prev, data, i, { value: /* recompute bar i */ 0 })
-  }
-  return prev
+<pre><code>{`render(ctx, output, viewport, style, context) {
+  super.render(ctx, output, viewport, style, context)
+  ctx.fillStyle = context.theme.text
+  // barIndexToX(i, viewport) and priceToY(value, viewport) place it where the chart draws
 }`}</code></pre>
+
+<h3>테마를 따르는 색</h3>
+<p>
+  디스크립터의 <code>defaultStyle</code>은 지표가 처음 갖는 모양입니다. 스타일 하나이거나, 테마를 받아 테마마다
+  스타일을 내는 함수입니다. 이 모양을 쓰는 인스턴스는 <code>chart.setTheme()</code>을 따르고, 사용자가 고른 색은
+  그대로 남습니다. 이 모양은 사용자가 저장한 기본값(<code>chart.setIndicatorDefaults()</code>, 위젯의
+  <em>Save as default</em>) 아래에 있으므로, 앱의 색이 사용자의 색을 대신하는 일은 없습니다. 저장된 레이아웃은
+  테마가 정하는 것을 빼고 저장하며, 다른 테마에서 열면 그 테마의 색을 씁니다.
+</p>
+
+<h3>레이아웃을 읽기 전에 등록하기</h3>
+<p>
+  저장된 레이아웃은 지표를 id로 가리키며, 레이아웃을 읽을 때 등록되지 않은 지표는 빠집니다.
+  <code>ChartWidget</code>에는 지표를 <code>plugins</code>로 넘기세요. 위젯이 레이아웃(<code>persistLayouts</code>),
+  템플릿, 공유된 보기를 복원하기 전에 등록됩니다. <code>Chart</code>에서는 생성자에 <code>plugins</code>를 넘기거나,
+  <code>loadState()</code> 전에 등록하세요.
+</p>
+<pre><code>{`new ChartWidget(host, { symbol, adapter, persistLayouts: true, plugins: [{ kind: 'indicator', plugin: new TurningMacd() }] })
+
+const chart = new Chart(host, { plugins: [{ kind: 'indicator', plugin: new TurningMacd() }] })
+chart.addIndicator('turning-macd', { fast: 8 })`}</code></pre>
+
+<h3>차트가 지표에서 읽는 것</h3>
+<ul>
+  <li><strong>범례</strong>는 <code>shortName</code>과 <code>defaultConfig</code>와 다른 입력값(선택 입력은 레이블)으로
+    지표를 표시하고, markers를 뺀 각 플롯의 값을 그 색으로 보여 줍니다.</li>
+  <li><strong>가격 축</strong>은 그 플롯들의 최신 값을 태그로 표시합니다.</li>
+  <li><strong>CSV 내보내기</strong>에는 그 플롯마다 열이 있으며, 이름은 범례의 이름이고, 플롯이 둘 이상이면
+    플롯의 <code>title</code>이 붙습니다.</li>
+  <li><strong>설정 대화상자</strong>는 입력값을 편집하고, 각 플롯을 색, 표시 여부, 선이나 계단 플롯이면 선 종류와 함께
+    나열하며, 레벨을 편집합니다.</li>
+  <li><strong>지표 대화상자</strong>는 <code>category</code> 아래에 <code>name</code>으로 지표를 나열합니다.</li>
+  <li><strong>다른 지표</strong>는 이 지표의 선(같은 플롯들)을 소스로 읽을 수 있습니다.</li>
+</ul>
+<p>
+  코딩 에이전트도 같은 가이드를, 게시된 패키지에 대해 타입 검사를 거친 코드와 함께, MCP 서버의
+  <code>custom_indicator</code> 도구와 스킬의
+  <a href="https://github.com/bonguynvan/tradecanvas/blob/main/skills/tradecanvas/references/recipes.md#a-custom-indicator">사용자 지정 지표 레시피</a>에서 받습니다.
+</p>
 
 <h2>사용자 지정 그리기 도구</h2>
 <p>
@@ -149,7 +293,7 @@ registerPlugin({
   (봉 사이와 최신 봉 이후는 비례), <code>indexToX</code> / <code>xToIndex</code>, <code>priceToY</code> / <code>yToPrice</code>
   (로그·반전 스케일 포함), <code>barWidth</code>, 그리고 화면에 보이는 봉 범위 <code>visible</code>. 가격 격자로 행을 나누려면
   <code>chart.getPriceStep()</code>을 쓰세요: 종목의 최소 호가 단위(<code>minTick</code>), 분수 단위, 또는 표시 중인 소수 자릿수의 한 단위입니다.
-  지표와 차트 타입 렌더러는 viewport만 받으므로 <code>priceToY</code>, <code>barIndexToX</code>, <code>timeToX</code>와 그 역함수도 export됩니다.
+  차트 타입 렌더러는 viewport만, 지표는 viewport와 테마를 받으므로 <code>priceToY</code>, <code>barIndexToX</code>, <code>timeToX</code>와 그 역함수도 export됩니다.
   봉은 화면에 그려진 시리즈의 봉입니다: Renko나 Kagi 차트에서는 그 벽돌입니다(<code>chart.isTimeAligned()</code>로 데이터 봉과 같은지 알 수 있습니다).
   가격 축처럼 가격을 쓰도록 viewport에는 차트 고유의 가격 형식(있을 때 <code>formatPrice</code>), <code>numberLocale</code>,
   시장이나 종목이 정한 소수 자릿수(<code>pricePrecision</code>)가 들어 있습니다. 지표 패널에서는 형식과 소수 자릿수가 비어 있습니다.
