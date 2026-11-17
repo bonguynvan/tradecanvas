@@ -225,7 +225,12 @@ CANDLE_PATTERNS.length                                 // 64`}</code></pre>
   period: { kind: 'int', min: 2, max: 500 },
   mult: { kind: 'number', min: 0.1, step: 0.1 },
   source: { source: true },
+  type: { kind: 'choice', options: [{ value: 'ema', label: 'Exponential' }, { value: 'sma', label: 'Simple' }] },
 }`}</code></pre>
+<p>
+  A choice's <code>options</code> are values, or values with the label the settings show for them
+  (<code>{'{ value, label }'}</code>), in your app's language; the indicator is given the value.
+</p>
 <p>
   The descriptor also says how its plots look, and the chart draws them so: <code>fills</code> shade between two
   plots where both have a value, under the lines; a plot's <code>width</code> keeps it at that width whatever the

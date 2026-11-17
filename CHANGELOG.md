@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Indicators
+
+- **Labels for a choice's values** (`@tradecanvas/chart`): a choice input's `options` take `{ value, label }` as well as plain values, and the indicator settings dialog shows the label while the indicator is given the value. The legend names a choice off its default by the same label. An indicator of your own can name its choices in your app's language; before, the dialog showed the raw values (`ema`, `sma`). `describeInputs()` gives the labels as `optionLabels`.
+
 ### Imports
 
 - **The Powered by badge without the chart** (`@tradecanvas/chart`, `@tradecanvas/svelte`): `@tradecanvas/chart/brand` exports the badge, `createPoweredBy`, `poweredByHtml`, `poweredByLayout`, the mark and the wordmark, and reaches none of the chart. The Svelte `<PoweredBy>` imported them from the main entry, and a bundler could not leave the chart behind, so a page that showed the badge in its footer and drew no chart loaded the chart's engine with it: an app that only mounted the badge took 30 kB gzipped at the start and 82 kB in all. `<PoweredBy>` now imports from the new entry, and the same app takes 20 kB, Svelte's included. The main entry still exports the same names.

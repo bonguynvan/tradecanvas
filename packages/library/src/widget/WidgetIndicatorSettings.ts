@@ -402,7 +402,7 @@ export class WidgetIndicatorSettings {
     let control: HTMLElement;
     switch (input.kind) {
       case 'source': control = this.sourceControl(key, String(value ?? 'close')); break;
-      case 'choice': control = this.choiceControl(key, input.options ?? [], value); break;
+      case 'choice': control = this.choiceControl(key, input.options ?? [], value, input.optionLabels); break;
       case 'boolean': control = toggleSwitch(Boolean(value), (v) => this.setValue(key, v)); break;
       case 'int':
       case 'number':
@@ -434,10 +434,11 @@ export class WidgetIndicatorSettings {
     return select;
   }
 
-  private choiceControl(key: string, options: readonly (string | number)[], value: IndicatorParamValue): HTMLSelectElement {
+  /** A choice's values, each named by the indicator's own label, else the widget's name for it, else itself. */
+  private choiceControl(key: string, options: readonly (string | number)[], value: IndicatorParamValue, labels?: Readonly<Record<string, string>>): HTMLSelectElement {
     const select = document.createElement('select');
     select.className = 'tcw-indi-input tcw-indi-select';
-    for (const opt of options) select.appendChild(this.option(String(opt), choiceLabel(key, opt, this.t) ?? String(opt)));
+    for (const opt of options) select.appendChild(this.option(String(opt), labels?.[String(opt)] ?? choiceLabel(key, opt, this.t) ?? String(opt)));
     select.value = String(value);
     select.addEventListener('change', () => {
       const picked = options.find((o) => String(o) === select.value);

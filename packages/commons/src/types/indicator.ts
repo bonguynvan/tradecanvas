@@ -101,6 +101,12 @@ export interface IndicatorScale {
  */
 export type IndicatorInputKind = 'int' | 'number' | 'boolean' | 'choice' | 'source' | 'color' | 'text';
 
+/** One of a choice input's values, with the label shown for it. */
+export interface IndicatorInputOption {
+  value: string | number;
+  label: string;
+}
+
 /** How a parameter is edited. Types not described here are inferred from the default value. */
 export interface IndicatorInputSpec {
   /**
@@ -115,8 +121,13 @@ export interface IndicatorInputSpec {
   min?: number;
   max?: number;
   step?: number;
-  /** A choice among these values. */
-  options?: readonly (string | number)[];
+  /**
+   * A choice among these values: each a value, or a value with the label
+   * the settings dialog shows for it (`{ value: 'ema', label: 'EMA' }`), in
+   * your app's language. A plain value shows as the widget names it, else
+   * as it is.
+   */
+  options?: readonly (string | number | IndicatorInputOption)[];
   /**
    * A price source: `'close'`, `'hl2'`… or another indicator's line
    * (`'ind:<instanceId>:<key>'`). The indicator then reads it as `close`.

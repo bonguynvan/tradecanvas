@@ -752,6 +752,19 @@ so declare the lowest value your `calculate` really uses (a period your code
 raises to 2 is `min: 2`). `describeInputs(descriptor)` lists the inputs as the
 dialog reads them.
 
+A choice lists its values in `options`; give each a label in your app's
+language as `{ value, label }` (a plain value shows as it is), and the dialog
+shows the label and hands your `calculate` the value:
+
+```ts
+import type { IndicatorInputSpec } from '@tradecanvas/chart';
+
+const type: IndicatorInputSpec = {
+  kind: 'choice',
+  options: [{ value: 'ema', label: 'Exponential' }, { value: 'sma', label: 'Simple' }],
+};
+```
+
 A band or channel needs no `render` of yours either: declare its shading and
 each line's look, and the chart draws them, the settings dialog shows and
 restores a declared dash, and zoomed far out the fill goes a pixel column at a
