@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Imports
+
+- **The Powered by badge without the chart** (`@tradecanvas/chart`, `@tradecanvas/svelte`): `@tradecanvas/chart/brand` exports the badge, `createPoweredBy`, `poweredByHtml`, `poweredByLayout`, the mark and the wordmark, and reaches none of the chart. The Svelte `<PoweredBy>` imported them from the main entry, and a bundler could not leave the chart behind, so a page that showed the badge in its footer and drew no chart loaded the chart's engine with it: an app that only mounted the badge took 30 kB gzipped at the start and 82 kB in all. `<PoweredBy>` now imports from the new entry, and the same app takes 20 kB, Svelte's included. The main entry still exports the same names.
+
 ## 2.13.1 (2026-11-17)
 
 ### Fixes

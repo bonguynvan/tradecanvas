@@ -11,6 +11,7 @@
     "baseUrl": "..",
     "paths": {
       "@tradecanvas/chart": ["packages/library/dist/index.d.ts"],
+      "@tradecanvas/chart/brand": ["packages/library/dist/brand/index.d.ts"],
       "@tradecanvas/chart/widget": ["packages/library/dist/widget/index.d.ts"],
       "@tradecanvas/core": ["packages/core/dist/index.d.ts"],
       "@tradecanvas/core/patterns": ["packages/core/dist/patterns/index.d.ts"],

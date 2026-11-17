@@ -9,7 +9,7 @@
     POWERED_BY_LABEL,
     TRADECANVAS_MARK_SVG,
     TRADECANVAS_WORDMARK_SVG,
-  } from '@tradecanvas/chart';
+  } from '@tradecanvas/chart/brand';
 
   interface Props {
     /** The mark's height in CSS pixels; the words and the wordmark follow it. Default 16, at least 12. */

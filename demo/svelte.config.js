@@ -27,6 +27,7 @@ export default {
       '$widget-locales': '../packages/library/src/widget/locales',
       '@tradecanvas/chart/widget/locales': '../packages/library/src/widget/locales/index.ts',
       '@tradecanvas/chart/widget': '../packages/library/src/widget/index.ts',
+      '@tradecanvas/chart/brand': '../packages/library/src/brand/index.ts',
       '@tradecanvas/chart': '../packages/library/src/index.ts',
       '@tradecanvas/core': '../packages/core/src/index.ts',
       '@tradecanvas/commons': '../packages/commons/src/index.ts',

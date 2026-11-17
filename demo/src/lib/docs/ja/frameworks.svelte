@@ -127,7 +127,7 @@ const adapter = new BinanceAdapter()
 
 <PoweredBy size={14} />`}</code></pre>
 
-<pre><code>{`import { createPoweredBy } from '@tradecanvas/chart'
+<pre><code>{`import { createPoweredBy } from '@tradecanvas/chart/brand'
 
 statusBar.append(createPoweredBy({ height: 14 }))`}</code></pre>
 <p><code>size</code>（Svelte）または <code>height</code> はマークの高さ（ピクセル、12 以上）です。ステータスバーには 14–16、フッターには 24 が合います。文字はページのフォントで組まれ、10 px より小さくなりません。<code>href</code> と <code>target</code>（既定は <code>_blank</code>）はリンクに渡されます。<code>poweredByHtml()</code> はマークアップを、<code>TRADECANVAS_MARK_SVG</code> と <code>TRADECANVAS_WORDMARK_SVG</code> は図形だけを返します。</p>

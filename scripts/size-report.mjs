@@ -59,6 +59,13 @@ export const list = CANDLE_PATTERNS;
 `,
   },
   {
+    id: 'badge',
+    label: 'createPoweredBy(), no chart',
+    code: `import { createPoweredBy } from '@tradecanvas/chart/brand';
+export const badge = () => createPoweredBy({ height: 14 });
+`,
+  },
+  {
     id: 'all',
     label: 'the whole package',
     code: `export * from '@tradecanvas/chart';\nexport * from '@tradecanvas/chart/widget';\nexport * from '@tradecanvas/chart/widget/locales';\n`,
