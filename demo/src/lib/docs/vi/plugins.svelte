@@ -189,7 +189,7 @@ revisesBefore(config) { return config.params.strength }`}</code></pre>
   <code>defaultStyle</code> trên descriptor là dáng vẻ ban đầu của chỉ báo: một style, hoặc một hàm của theme cho ra
   một style cho mỗi theme. Một instance dùng nó sẽ theo <code>chart.setTheme()</code>; màu mà ai đó chọn cho nó thì
   được giữ nguyên. Nó nằm dưới mặc định mà người xem đã lưu (<code>chart.setIndicatorDefaults()</code>, mục
-  <em>Save as default</em> của widget), nên màu của ứng dụng bạn không bao giờ chiếm chỗ của người xem. Bố cục đã lưu
+  <em>Lưu làm mặc định</em> của widget), nên màu của ứng dụng bạn không bao giờ chiếm chỗ của người xem. Bố cục đã lưu
   bỏ ra những gì theme cho, và khi mở trong một theme khác thì nó lấy màu của theme đó.
 </p>
 

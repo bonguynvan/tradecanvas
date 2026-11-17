@@ -187,7 +187,7 @@ revisesBefore(config) { return config.params.strength }`}</code></pre>
   디스크립터의 <code>defaultStyle</code>은 지표가 처음 갖는 모양입니다. 스타일 하나이거나, 테마를 받아 테마마다
   스타일을 내는 함수입니다. 이 모양을 쓰는 인스턴스는 <code>chart.setTheme()</code>을 따르고, 사용자가 고른 색은
   그대로 남습니다. 이 모양은 사용자가 저장한 기본값(<code>chart.setIndicatorDefaults()</code>, 위젯의
-  <em>Save as default</em>) 아래에 있으므로, 앱의 색이 사용자의 색을 대신하는 일은 없습니다. 저장된 레이아웃은
+  <em>기본값으로 저장</em>) 아래에 있으므로, 앱의 색이 사용자의 색을 대신하는 일은 없습니다. 저장된 레이아웃은
   테마가 정하는 것을 빼고 저장하며, 다른 테마에서 열면 그 테마의 색을 씁니다.
 </p>
 
