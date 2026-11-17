@@ -988,8 +988,17 @@
   line-height: var(--tcw-legend-line-pane);
 }
 
-.tcw-ind-legend-row:hover,
-.tcw-ind-legend-row:focus-within {
+/* A touch screen keeps :hover on what was tapped last: only where a pointer can hover (a mouse on a
+   tablet too: any-hover, not hover, which asks of the main pointer alone) does hover mark a row so. */
+@media (any-hover: hover) {
+  .tcw-ind-legend-row:hover,
+  .tcw-ind-legend-row:focus-within {
+    background: color-mix(in srgb, var(--tcw-bg-elevated) 90%, transparent);
+    box-shadow: 0 0 0 1px var(--tcw-border);
+  }
+}
+
+.tcw-ind-legend-row--open {
   background: color-mix(in srgb, var(--tcw-bg-elevated) 90%, transparent);
   box-shadow: 0 0 0 1px var(--tcw-border);
 }
@@ -1052,9 +1061,10 @@
   opacity: 0.45;
 }
 
-/* Show / settings / remove: on hover or keyboard focus (always on touch). Out of sight, not out of the
-   page, so Tab reaches them in a row with nothing else to focus (a compare's) and a screen reader finds
-   them; a button focused shows them all. */
+/* Show / settings / remove: on hover or keyboard focus, and on touch in the row a tap opened
+   (`--open`), so on a phone they don't cover the candles. Out of sight, not out of the page, so Tab
+   reaches them in a row with nothing else to focus (a compare's) and a screen reader finds them; a
+   button focused shows them all. */
 .tcw-ind-legend-actions {
   display: inline-flex;
   position: absolute;
@@ -1067,8 +1077,28 @@
   margin-left: -2px;
 }
 
-.tcw-ind-legend-row:hover .tcw-ind-legend-actions,
-.tcw-ind-legend-row:focus-within .tcw-ind-legend-actions {
+@media (any-hover: hover) {
+  .tcw-ind-legend-row:hover .tcw-ind-legend-actions,
+  .tcw-ind-legend-row:focus-within .tcw-ind-legend-actions {
+    position: static;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip-path: none;
+  }
+}
+
+/* A tap focuses the name on some phones: there, only the keyboard's focus shows the buttons. */
+.tcw-ind-legend-row--open .tcw-ind-legend-actions {
+  position: static;
+  width: auto;
+  height: auto;
+  overflow: visible;
+  clip-path: none;
+}
+
+/* A rule of its own: a browser without :has() drops only this one. */
+.tcw-ind-legend-row:has(:focus-visible) .tcw-ind-legend-actions {
   position: static;
   width: auto;
   height: auto;
@@ -1077,19 +1107,15 @@
 }
 
 @media (hover: none) {
+  /* Finger-sized targets, apart enough that a thumb on one doesn't take the next. */
   .tcw-ind-legend-actions {
-    position: static;
-    width: auto;
-    height: auto;
-    overflow: visible;
-    clip-path: none;
+    gap: var(--tcw-space-4);
   }
 
-  /* Finger-sized targets. */
   .tcw-ind-legend-act,
   .tcw-ind-legend-toggle {
-    min-width: 28px;
-    min-height: 24px;
+    min-width: 32px;
+    min-height: 28px;
   }
 }
 
@@ -4227,6 +4253,8 @@
 }
 .tcw-pane-controls:hover,
 .tcw-pane-controls:focus-within { opacity: 1; }
+/* Its width, the gap and the padding above are what a pane's first legend row keeps clear of
+   (PANE_BUTTON… in WidgetLegendView.ts): change both together. */
 .tcw-pane-btn {
   display: inline-grid;
   place-items: center;

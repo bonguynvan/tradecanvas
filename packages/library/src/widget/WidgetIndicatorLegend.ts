@@ -96,6 +96,8 @@ const COLLAPSE_FROM = 2;
 const VALUES_LEAST_EM = 1.5;
 /** On a row's values while their box has less than `VALUES_LEAST_EM`: they hide, keeping their room. */
 const NO_ROOM_CLASS = 'tcw-ind-legend-values--no-room';
+/** On the row a finger opened: its buttons show, as on hover. */
+const OPEN_CLASS = 'tcw-ind-legend-row--open';
 
 /** Numbers the rows' notes, so each id is the page's only one, with several legends on it. */
 let noteSeq = 0;
@@ -107,6 +109,8 @@ interface RowEls {
   /** The mark in the line's colour (`swatch`), on a compare's row. */
   swatch: HTMLSpanElement | null;
   values: HTMLSpanElement;
+  /** The row's buttons, which a finger's tap opens the row to show. */
+  actions: HTMLSpanElement;
   eye: HTMLButtonElement;
   settings: HTMLButtonElement | null;
   more: HTMLButtonElement | null;
@@ -142,6 +146,17 @@ export class WidgetIndicatorLegend {
   private readonly valuesObserver: ResizeObserver | null;
   /** Tells of the stack resized, for the chart's drawing labels to keep clear of it. */
   private readonly stackObserver: ResizeObserver | null;
+  /** The row a finger opened to show its buttons, which a mouse sees on hover; null with none. */
+  private openRow: RowEls | null = null;
+  /**
+   * The row a finger or a pen last pressed, for a browser whose click doesn't name its pointer
+   * (Safari before 17); null after any other press, or one that ended with no click.
+   */
+  private touchedRow: RowEls | null = null;
+  /** A press outside the open row closes it. Its path, not its target: from a shadow root the target is the shadow's host. */
+  private readonly onPressOutside = (e: Event): void => {
+    if (this.openRow && !e.composedPath().includes(this.openRow.el)) this.setOpenRow(null);
+  };
 
   constructor(
     private readonly host: HTMLElement,
@@ -160,6 +175,7 @@ export class WidgetIndicatorLegend {
     });
     this.stack.appendChild(this.toggle);
     host.appendChild(this.stack);
+    host.ownerDocument.addEventListener('pointerdown', this.onPressOutside, true);
     this.stackObserver = typeof ResizeObserver === 'undefined' || !callbacks.onStackResize
       ? null
       : new ResizeObserver(() => this.reportStackSize());
@@ -185,6 +201,7 @@ export class WidgetIndicatorLegend {
     for (const [id, els] of this.rows) {
       if (seen.has(id)) continue;
       this.valuesObserver?.unobserve(els.values);
+      if (this.openRow === els) this.openRow = null;
       els.el.remove();
       this.rows.delete(id);
     }
@@ -210,6 +227,7 @@ export class WidgetIndicatorLegend {
   }
 
   destroy(): void {
+    this.host.ownerDocument.removeEventListener('pointerdown', this.onPressOutside, true);
     this.valuesObserver?.disconnect();
     this.stackObserver?.disconnect();
     for (const els of this.rows.values()) els.el.remove();
@@ -343,10 +361,48 @@ export class WidgetIndicatorLegend {
     }
     el.append(name, values, actions, note);
     const els: RowEls = {
-      el, name, swatch, values, eye, settings, more, remove, note, visible: true, valuesKey: '', state: '', placeKey: '',
+      el, name, swatch, values, actions, eye, settings, more, remove, note, visible: true, valuesKey: '', state: '', placeKey: '',
     };
+    el.addEventListener('pointerdown', (e) => {
+      this.touchedRow = isTouch((e as PointerEvent).pointerType) ? els : null;
+    });
+    // A finger that scrolled: no click follows, and the next one may be the keyboard's.
+    el.addEventListener('pointercancel', () => { this.touchedRow = null; });
+    // Before the name or a button hears it.
+    el.addEventListener('click', (e) => this.onRowClick(els, e), true);
     this.rows.set(instanceId, els);
     return els;
+  }
+
+  /**
+   * A finger has no hover to show a row's buttons, which kept them on at all times and covered
+   * the candles: a tap opens the row to show them, a tap of its name then opens the settings,
+   * and a tap of the row again closes it. A mouse and the keyboard go on as before.
+   */
+  private onRowClick(els: RowEls, e: Event): void {
+    // The click names its pointer in most browsers ('' from the keyboard); else the press before it.
+    const pointer = (e as PointerEvent).pointerType;
+    const touch = typeof pointer === 'string' ? isTouch(pointer) : this.touchedRow === els;
+    this.touchedRow = null;
+    if (!touch) return;
+    const target = e.target as Element;
+    if (target.closest('.tcw-ind-legend-act')) return;
+    // Every button switched off (`features`): nothing to open the row for, the name works at once.
+    if (!hasButtonShown(els.actions)) return;
+    if (this.openRow !== els) {
+      this.setOpenRow(els);
+      e.stopPropagation();
+      e.preventDefault();
+      return;
+    }
+    if (target.closest('button.tcw-ind-legend-name')) return;
+    this.setOpenRow(null);
+  }
+
+  private setOpenRow(els: RowEls | null): void {
+    this.openRow?.el.classList.remove(OPEN_CLASS);
+    this.openRow = els;
+    els?.el.classList.add(OPEN_CLASS);
   }
 
   private fill(els: RowEls, row: IndicatorLegendRow): void {
@@ -411,6 +467,8 @@ export class WidgetIndicatorLegend {
   }
 
   private setCollapsed(collapsed: boolean): void {
+    // Folded away, a row is not left open to come back so.
+    if (collapsed && this.openRow?.el.parentElement === this.stack) this.setOpenRow(null);
     this.collapsed = collapsed;
     this.stack.classList.toggle('tcw-ind-legend--collapsed', collapsed);
   }
@@ -434,6 +492,17 @@ export class WidgetIndicatorLegend {
     const icon = createIcon(this.collapsed ? 'chevronDown' : 'chevronUp', 12);
     this.toggle.innerHTML = this.collapsed ? `${icon}<span>${count}</span>` : icon;
   }
+}
+
+/** A finger's or a pen's pointer, which has no hover to show a row's buttons. */
+function isTouch(pointerType: string | undefined): boolean {
+  return pointerType === 'touch' || pointerType === 'pen';
+}
+
+/** Whether a row's buttons have one a switch left on (`features` hides each, and their holder with all four). */
+function hasButtonShown(actions: HTMLElement): boolean {
+  if (getComputedStyle(actions).display === 'none') return false;
+  return [...actions.children].some((b) => getComputedStyle(b).display !== 'none');
 }
 
 /**

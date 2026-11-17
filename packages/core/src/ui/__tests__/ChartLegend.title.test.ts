@@ -108,3 +108,36 @@ describe('the legend’s title line', () => {
     expect(open.y).toBeLessThan(40 + 12);
   });
 });
+
+// A phone took three lines for the prices and the volume: O H L C, the change, then Vol on a line of its own.
+describe('the legend’s volume on a narrow chart', () => {
+  function drawn(width: number) {
+    const legend = new ChartLegend();
+    const { ctx, texts } = recorder();
+    legend.render(ctx, viewport(width), LIGHT_THEME, data);
+    const change = texts.find((t) => t.text.includes('%'))!;
+    const vol = texts.find((t) => t.text.startsWith('Vol'))!;
+    const open = texts.find((t) => t.text === 'O')!;
+    return { legend, texts, change, vol, open };
+  }
+
+  it('goes on the prices’ last line when they wrapped and it fits there', () => {
+    const { change, vol, open, texts } = drawn(360);
+    expect(change.y).toBeGreaterThan(open.y);
+    expect(vol.y).toBe(change.y);
+    expect(vol.x).toBeGreaterThan(change.x);
+    for (const t of texts) expect(t.x + t.text.length * CHAR, t.text).toBeLessThanOrEqual(360);
+  });
+
+  it('reports the height without the volume’s own line', () => {
+    const { legend, change, open } = drawn(360);
+    // Two price lines and nothing under them: the line step past the last one's top.
+    expect(legend.getHeight()).toBe(change.y - 40 + (change.y - open.y));
+  });
+
+  it('keeps a line of its own under prices that fit on one', () => {
+    const { change, vol, open } = drawn(1200);
+    expect(change.y).toBe(open.y);
+    expect(vol.y).toBeGreaterThan(open.y);
+  });
+});

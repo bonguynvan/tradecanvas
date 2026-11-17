@@ -139,7 +139,9 @@ grid.setFeatures({ toasts: false })  // every chart of a ChartWidgetGrid`}</code
   </tbody>
 </table>
 <p>
-  A few that say more than their name: <code>indicatorLegend</code> off gives the panes their titles back;
+  A few that say more than their name: <code>indicatorLegend</code> off gives the panes their titles back,
+  and on, each indicator's row shows its buttons on hover or keyboard focus, and on a touch screen once a tap
+  opens the row (a tap of its name then opens the settings), so on a phone they don't cover the candles;
   <code>menu.chart.*</code> covers the "+" by the price axis as well as the right-click menu; <code>compare</code>
   takes the add button of the object tree, and comparisons already on stay listed; <code>toasts</code> silences the
   widget's own notices (its errors still show), while yours through <code>widget.toast()</code> show as well.
