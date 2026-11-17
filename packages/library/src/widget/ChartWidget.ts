@@ -2898,7 +2898,8 @@ export class ChartWidget {
     if (!ind) return;
     const style = this.chart.getIndicatorStyle(instanceId);
     const pane = ind.descriptor.placement === 'panel' || !!ind.pane;
-    const ownLevels = (this.chart.getIndicatorSetup() ?? []).find((s) => s.instanceId === instanceId)?.levels !== undefined;
+    const setup = (this.chart.getIndicatorSetup() ?? []).find((s) => s.instanceId === instanceId);
+    const ownLevels = setup?.levels !== undefined;
     this.chart.beginIndicatorEdit(instanceId);
     dialog.open({
       instanceId,
@@ -2910,6 +2911,8 @@ export class ChartWidget {
       lineSources: lineSourcesFor(instanceId, active, this.t),
       plots: ind.descriptor.plots,
       colors: style?.colors,
+      // A layout leaves out the colours the theme gives: they are the theme's, not the viewer's.
+      colorsFromTheme: setup !== undefined && setup.style?.colors === undefined,
       lineWidth: style?.lineWidths[0],
       plotStyles: style?.plots,
       intervals: this.chart.getIndicatorIntervals(instanceId) ?? null,

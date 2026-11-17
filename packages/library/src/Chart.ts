@@ -49,7 +49,7 @@ import type { ResolvedLayout, ChartStyleKey, ChartStyleOverrides, ChartStyleOver
 import { readChartTypeOptions, tickBarCount, barTimeUnit, readChartStyleOverrides, readIndicatorPlotStyles, readPaneStyle } from '@tradecanvas/commons';
 import { PriceLines, type BidAsk, SymbolSeriesStore, CompareSymbolIndicator, CompareSymbolPaneIndicator, SpreadIndicator, CorrelationCoefficientIndicator, CorrelationLogIndicator, axisTimes, HiLoRenderer, PointAndFigureRenderer, isPriceLevelAlert, loadWebGL, gpuContextsLeft, whenGpuContextFree, idleCssCursor, isCrosshairCursor } from '@tradecanvas/core';
 import type { GpuRenderer, RendererMode } from '@tradecanvas/core';
-import { indicatorWorkerPool, INDICATOR_WORKER_MIN_BARS, type IndicatorWorkerLease } from '@tradecanvas/core';
+import { indicatorWorkerPool, INDICATOR_WORKER_MIN_BARS, THEME_LOOK_KEYS, type IndicatorWorkerLease } from '@tradecanvas/core';
 import { regularHoursFilter } from './regularHours.js';
 import { ChartA11y } from './chartA11y.js';
 import { barDateZone, barsAreDaily, zonedDateFormatter } from '@tradecanvas/commons';
@@ -509,6 +509,8 @@ export class Chart {
     }
     this.layoutManager = new LayoutManager();
     this.indicatorEngine = new IndicatorEngine();
+    // The chart's theme from the start: indicators added before the first frame take its look too.
+    this.indicatorEngine.setTheme(this.themeManager.getTheme());
     this.panes = new PaneLayout(this.layoutManager, this.indicatorEngine, (bounds) => this.crosshairHandler.setReportBounds(bounds));
     this.indicatorPanes = new IndicatorPanes(this.indicatorEngine, this.layoutManager, {
       passStyle: (from, heir) => this.panes.passStyle(from, heir),
@@ -5868,6 +5870,10 @@ export class Chart {
     const { plots: wantPlots, ...want } = ind.style ?? {};
     if (ind.style && JSON.stringify({ ...have, ...want }) !== JSON.stringify(have)) this.updateIndicatorStyle(instanceId, want);
     // Plot styles are merged by updateIndicatorStyle: here they are put back whole.
+    // A part the setup leaves out is the theme's (its descriptor's look): back to it.
+    if (ind.style && this.indicatorEngine.followThemeLook(instanceId, THEME_LOOK_KEYS.filter((key) => ind.style![key] === undefined))) {
+      this.engine.requestRender();
+    }
     if (JSON.stringify(wantPlots ?? {}) !== JSON.stringify(havePlots ?? {})) {
       this.indicatorEngine.setPlotStyles(instanceId, wantPlots ?? null);
       this.engine.requestRender();
@@ -6648,6 +6654,8 @@ export class Chart {
       );
     }
 
+    // Indicators draw in the theme drawn, and those on their descriptor's look for it follow it.
+    this.indicatorEngine.setTheme(this.themeManager.getTheme());
     const panels = this.features.indicators ? this.buildPanelRenderInfos() : [];
     const timeAxisY = this.panes.timeAxisTop();
 

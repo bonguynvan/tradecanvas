@@ -34,7 +34,7 @@ chart.plugins.list()`}</code></pre>
 <table>
   <thead><tr><th>Kind</th><th>Contract</th><th>Renders</th></tr></thead>
   <tbody>
-    <tr><td><code>indicator</code></td><td><code>IndicatorPlugin</code> — <code>calculate()</code> + <code>render()</code></td><td>overlay or panel</td></tr>
+    <tr><td><code>indicator</code></td><td><code>IndicatorPlugin</code> — <code>calculate()</code> + <code>render(ctx, output, viewport, style, &#123; theme &#125;)</code></td><td>overlay or panel</td></tr>
     <tr><td><code>drawing</code></td><td><code>DrawingPlugin</code> — <code>render()</code> + <code>hitTest()</code></td><td>overlay layer</td></tr>
     <tr><td><code>chartType</code></td><td><code>ChartTypePlugin</code> — <code>createRenderer()</code> + optional <code>transform()</code></td><td>main series</td></tr>
     <tr><td><code>overlay</code></td><td><code>OverlayPlugin</code> — <code>render(ctx, &#123; viewport, data, theme &#125;)</code></td><td><code>main</code> / <code>overlay</code> / <code>ui</code></td></tr>
@@ -51,7 +51,7 @@ class DoubleSMA extends IndicatorBase {
     placement: 'overlay' as const, defaultConfig: { fast: 10, slow: 30 },
   }
   calculate(data, config) { /* values = new IndicatorValueMap(); return { values, series } */ }
-  render(ctx, output, viewport, style) { /* draw lines */ }
+  render(ctx, output, viewport, style, { theme }) { /* draw lines */ }
 }
 
 registerPlugin({ kind: 'indicator', plugin: new DoubleSMA() })
@@ -60,6 +60,27 @@ chart.addIndicator('double-sma', { fast: 10, slow: 30 })`}</code></pre>
   For <code>values</code>, use <code>new IndicatorValueMap()</code> instead of <code>new Map()</code>: it's a drop-in
   <code>Map</code> that is several times cheaper to fill one bar at a time in time order, which is what every
   symbol or timeframe switch does over the whole history.
+</p>
+
+<h3>Colours that follow the theme</h3>
+<p>
+  <code>defaultStyle</code> on the descriptor is the look an indicator starts with: a style, or a function of the
+  theme that gives one for each. An instance on it follows <code>chart.setTheme()</code>; a colour someone picks for
+  it stays. It sits under the viewer's saved default (<code>chart.setIndicatorDefaults()</code>, the widget's
+  <em>Save as default</em>), so your app's colours never take the viewer's place. A saved layout leaves out what
+  the theme gives, and opened in another theme it takes that theme's colours.
+</p>
+<pre><code>{`descriptor = {
+  id: 'turns', name: 'Turns', placement: 'overlay' as const, defaultConfig: {},
+  plots: [{ key: 'value', title: 'Value', color: 0 }],
+  defaultStyle: (theme) => ({
+    colors: theme.name === 'light' ? ['#1f4e8c'] : ['#8ab4f8'],
+  }),
+}`}</code></pre>
+<p>
+  <code>render</code> is given the theme the chart draws with as its fifth argument, for what the style doesn't
+  give: <code>theme.candleUp</code> and <code>theme.candleDown</code> for a mark where a line turns,
+  <code>theme.text</code> and <code>theme.font</code> for a label.
 </p>
 
 <h3>Fast live updates (optional)</h3>
@@ -152,7 +173,7 @@ registerPlugin({
   <code>priceToY</code> / <code>yToPrice</code> (on a log or inverted scale too), <code>barWidth</code>, and
   <code>visible</code>, the bars on screen. For rows on the price grid, <code>chart.getPriceStep()</code> is the
   symbol's smallest step (<code>minTick</code>), a fraction's unit, or one unit of the decimals prices show.
-  Indicator and chart-type renderers get the viewport alone: <code>priceToY</code>, <code>barIndexToX</code>,
+  Chart-type renderers get the viewport alone, and indicators the viewport and the theme: <code>priceToY</code>, <code>barIndexToX</code>,
   <code>timeToX</code> and their inverses are exported for them. The bars are those on screen: on a Renko or
   Kagi chart, its bricks (<code>chart.isTimeAligned()</code> says when they are the feed's bars).
   To write a price as the axis does, the viewport carries the chart's own price format when it has one

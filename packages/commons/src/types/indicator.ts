@@ -2,6 +2,7 @@ import type { DataSeries } from './ohlc.js';
 import type { ViewportState } from './rendering.js';
 import type { LineStyle } from './chart.js';
 import type { BuiltInIndicators } from './builtInIndicators.js';
+import type { Theme } from './theme.js';
 
 export type IndicatorPlacement = 'overlay' | 'panel';
 
@@ -150,6 +151,18 @@ export interface IndicatorDescriptor {
    * of your own is taken to, and a built-in that doesn't say so is not.
    */
   readsExchangeTimeZone?: boolean;
+  /**
+   * The look it starts with: a style, or one for each theme the chart draws
+   * with (`(theme) => style`, the theme with the chart's style overrides on
+   * it), which an instance follows when the theme changes. Under the
+   * viewer's saved default (`chart.setIndicatorDefaults`) and an instance's
+   * own; a part it doesn't give comes from the chart (the series palette, a
+   * 1.5 px line). Its colours, line widths and opacity are read; a part of
+   * an instance still equal to what the theme gave counts as the theme's.
+   * What the theme gives is left out of a saved layout, so a layout opened
+   * in another theme takes that theme's look.
+   */
+  defaultStyle?: IndicatorStyleConfig | ((theme: Theme) => IndicatorStyleConfig);
 }
 
 /** The groups of the widget's indicator picker. */
@@ -272,10 +285,21 @@ export interface IndicatorPlugin {
    * Indicators read from this one recompute from that far back.
    */
   revisesBefore?(config: IndicatorConfig): number;
+  /**
+   * Draws the instance. `context.theme` is the theme the chart draws with:
+   * colours and a font for what the style doesn't give (a mark where a line
+   * turns, a label).
+   */
   render(
     ctx: CanvasRenderingContext2D,
     output: IndicatorOutput,
     viewport: ViewportState,
     style: ResolvedIndicatorStyle,
+    context: IndicatorRenderContext,
   ): void;
+}
+
+/** What an indicator's `render` is given besides its values: the chart's theme. */
+export interface IndicatorRenderContext {
+  theme: Theme;
 }

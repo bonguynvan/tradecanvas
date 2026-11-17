@@ -27,6 +27,8 @@ export interface IndicatorSettingsTarget {
   /** What it draws; with `colors`, the lines of the Style tab. */
   plots?: readonly IndicatorPlot[];
   colors?: readonly string[];
+  /** Whether `colors` are the ones its descriptor gives for the theme (`defaultStyle`), which "Save as default" leaves to the theme. */
+  colorsFromTheme?: boolean;
   lineWidth?: number;
   /** Each line's own dash and visibility, by its key. */
   plotStyles?: Readonly<Record<string, IndicatorPlotStyle>>;
@@ -554,7 +556,8 @@ export class WidgetIndicatorSettings {
    * Keep what was chosen for the next ones of the kind: the inputs that differ
    * from the indicator's own (not a line of another indicator, which the next
    * one won't have), and of the look only what someone picked. Colours the
-   * chart gave stay its to give, so a second one still gets a colour of its own.
+   * chart gave stay its to give, so a second one still gets a colour of its own,
+   * and colours the theme gave the theme's, so they still change with it.
    */
   private saveDefault(): void {
     const target = this.target;
@@ -562,7 +565,8 @@ export class WidgetIndicatorSettings {
     const params = Object.fromEntries(Object.entries(this.currentParams()).filter(([key, value]) =>
       !same(value, target.defaults[key]) && !(typeof value === 'string' && parseIndicatorSource(value)))) as Record<string, IndicatorParamValue>;
     const style: IndicatorStyleConfig = {};
-    if (!isSeriesPalette(this.look.colors)) style.colors = [...this.look.colors];
+    const themeColors = target.colorsFromTheme && same(this.look.colors, target.colors ?? []);
+    if (!isSeriesPalette(this.look.colors) && !themeColors) style.colors = [...this.look.colors];
     if (this.look.lineWidth !== DEFAULT_LINE_WIDTH) style.lineWidths = [this.look.lineWidth];
     if (Object.keys(this.look.plots).length > 0) style.plots = copy(this.look.plots);
     this.callbacks.onSaveDefault?.(target.indicatorId, { params, style });
