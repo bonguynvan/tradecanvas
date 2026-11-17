@@ -49,7 +49,7 @@ export abstract class IndicatorBase implements IndicatorPlugin {
     viewport: ViewportState,
     style: ResolvedIndicatorStyle,
   ): void {
-    if (this.descriptor.plots) renderPlots(ctx, output, viewport, style, this.descriptor.plots, this.descriptor.fills);
+    if (this.descriptor.plots) renderPlots(ctx, output, viewport, style, this.descriptor.plots, this.descriptor.fills, this.descriptor.placement === 'overlay');
   }
 
   protected drawLine(

@@ -1,6 +1,6 @@
 import type { IndicatorDescriptor, IndicatorValue, OverlayScale } from '@tradecanvas/commons';
 import { TC_SERIES_COLORS } from '@tradecanvas/commons';
-import { drawnKeys, hasHistogram, paneLogRange, paneValueRange, plotColor, plotShown } from './plots.js';
+import { drawnKeys, hasHistogram, paneLogRange, paneValueRange, plotColor, plotShown, valuePlots } from './plots.js';
 import type { IndicatorInstance } from './indicatorInstance.js';
 
 // What the engine reads off its instances for drawing: whether one shows,
@@ -15,9 +15,9 @@ export function isShown(instance: IndicatorInstance): boolean {
   return instance.config.visible !== false && !instance.offInterval && !instance.offChartType;
 }
 
-/** The fields an instance draws and shows: a hidden plot stretches no scale. */
-export function shownKeys(instance: IndicatorInstance): readonly string[] | null {
-  const keys = drawnKeys(instance.plugin.descriptor);
+/** The fields an instance draws and shows on its scale (the price pane's, or a pane's): a hidden plot stretches no scale. */
+export function shownKeys(instance: IndicatorInstance, pricePane: boolean): readonly string[] | null {
+  const keys = drawnKeys(instance.plugin.descriptor, pricePane);
   const plots = instance.style.plots;
   return keys && plots ? keys.filter((key) => plots[key]?.visible !== false) : keys;
 }
@@ -36,7 +36,8 @@ export function latestValues(instance: IndicatorInstance): AxisValue[] {
   const point = series[series.length - 1];
   if (!point) return [];
   const out: AxisValue[] = [];
-  for (const plot of plots) {
+  // Marks are on some bars only: no tag on the axis.
+  for (const plot of valuePlots(plots)) {
     if (!plotShown(plot, instance.style)) continue;
     const v = point[plot.key];
     if (v !== undefined && Number.isFinite(v)) out.push({ value: v, color: plotColor(plot, instance.style, point) });
@@ -60,7 +61,7 @@ export function paneRange(members: readonly IndicatorInstance[], from: number, t
     if (!isShown(instance)) continue;
     const descriptor = instance.plugin.descriptor;
     const options = {
-      keys: shownKeys(instance),
+      keys: shownKeys(instance, false),
       scale: descriptor.scale,
       levels: instance.config.levels ?? descriptor.levels,
       zero: hasHistogram(descriptor.plots),
@@ -79,7 +80,7 @@ export function paneValuesAt(members: readonly IndicatorInstance[], barIndex: nu
     if (!isShown(instance)) continue;
     const point = instance.output?.series?.[barIndex];
     if (!point) continue;
-    const keys = shownKeys(instance) ?? Object.keys(point);
+    const keys = shownKeys(instance, false) ?? Object.keys(point);
     for (const key of keys) {
       const value = point[key];
       if (typeof value === 'number' && Number.isFinite(value)) values.push(value);
@@ -115,7 +116,7 @@ function widenByOverlay(range: ValueRange, instance: IndicatorInstance, from: nu
   if (!series) return; // no array form published — nothing to scan safely in range
   // Only what is drawn: a trend flag (±1) or a session key must not
   // stretch the price scale.
-  const keys = shownKeys(instance);
+  const keys = shownKeys(instance, true);
   const end = Math.min(to, series.length - 1);
   // Values drawn past the latest bar (Ichimoku's cloud ahead, `meta.ahead`)
   // count while that bar is in range: they sit just right of it.

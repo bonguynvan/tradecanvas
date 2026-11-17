@@ -27,8 +27,23 @@ export type IndicatorParamsFor<Id extends string> = Id extends BuiltInIndicatorI
   ? BuiltInIndicators[Id]['params']
   : IndicatorParamValues;
 
-/** How a plot is drawn. */
-export type IndicatorPlotKind = 'line' | 'histogram' | 'dots' | 'step';
+/**
+ * How a plot is drawn. `'markers'` marks the bars that have a value (a turn,
+ * a signal): a shape at the value, or above or below the bar (`position`).
+ * It is not a line: it gets no value in the legend, no tag on the axis and
+ * no column in an export.
+ */
+export type IndicatorPlotKind = 'line' | 'histogram' | 'dots' | 'step' | 'markers';
+
+/** The shape of a markers plot's marks. */
+export type IndicatorMarkerShape = 'dot' | 'triangleUp' | 'triangleDown';
+
+/**
+ * Where a markers plot puts its mark on a bar: at its value, above the
+ * bar's high or below its low. Above and below are read on the price pane;
+ * in a pane of its own a mark is at its value.
+ */
+export type IndicatorMarkerPosition = 'value' | 'aboveBar' | 'belowBar';
 
 /**
  * One series an indicator draws from a field of its output: a line, a
@@ -44,6 +59,10 @@ export interface IndicatorPlot {
   color: number;
   /** Default `'line'`. */
   kind?: IndicatorPlotKind;
+  /** For `kind: 'markers'`: the shape of its marks; default `'dot'`. */
+  shape?: IndicatorMarkerShape;
+  /** For `kind: 'markers'`: where a mark goes on its bar; default `'value'`. */
+  position?: IndicatorMarkerPosition;
   /**
    * Two-tone: drawn bar by bar in `color` or `downColor`, by the value's
    * sign (`'sign'`, zero counts as up) or by another output field that is

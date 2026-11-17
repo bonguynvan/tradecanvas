@@ -1260,6 +1260,21 @@ const channelLook: Pick<IndicatorDescriptor, 'plots' | 'fills'> = {
 A plot's `opacity` sets it back (bands around a line), and `breakOn: 'session'`
 breaks its line where that output field changes, as VWAP does each session.
 
+To mark some bars (where a line turns, a signal), give them a field and a
+plot of `kind: 'markers'`; leave the field unset on the bars without a mark.
+It is drawn as a shape, at the value or above or below the bar on the price
+pane, and is not a value: no legend value, no axis tag, no export column.
+Not `'dots'`, which is a line and gets all of those.
+
+```ts
+import type { IndicatorPlot } from '@tradecanvas/chart';
+
+const turnPlots: IndicatorPlot[] = [
+  { key: 'value', title: 'MACD', color: 0 },
+  { key: 'turn', title: 'Turn', color: 1, kind: 'markers', shape: 'triangleUp', position: 'belowBar' },
+];
+```
+
 An indicator that starts again each day, week or month reads the exchange's
 IANA zone as `config.exchangeTimeZone`: the chart sets it from the symbol's
 `timeZone`, else the market's (`setSymbolInfo`, `setMarket`), and leaves it

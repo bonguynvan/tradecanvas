@@ -75,7 +75,7 @@ import { type CompareWay } from './widgetCompare.js';
 import { WidgetTooltip } from './WidgetTooltip.js';
 import { WidgetIndicatorLegend } from './WidgetIndicatorLegend.js';
 import { formatIndicatorValue } from './legendValues.js';
-import { RANGE_PRESETS, SYMBOL_INDICATOR_IDS, adapterFromFeed, indicatorCategory, isCrosshairCursor, sourceParam } from '@tradecanvas/core';
+import { RANGE_PRESETS, SYMBOL_INDICATOR_IDS, adapterFromFeed, indicatorCategory, isCrosshairCursor, sourceParam, valuePlots } from '@tradecanvas/core';
 import { WidgetBracketBar } from './WidgetBracketBar.js';
 import { AlertNotifier } from './AlertNotifier.js';
 import { WidgetDepthLadder } from './WidgetDepthLadder.js';
@@ -3892,7 +3892,7 @@ export function lineSourcesFor(instanceId: string, active: readonly ActiveIndica
   for (const ind of active) {
     if (downstream.has(ind.instanceId)) continue;
     const name = widgetIndicatorLabel(ind, t);
-    for (const plot of ind.descriptor.plots ?? []) {
+    for (const plot of valuePlots(ind.descriptor.plots ?? [])) {
       out.push({ value: indicatorSource(ind.instanceId, plot.key), label: `${name}: ${plot.title}` });
     }
   }

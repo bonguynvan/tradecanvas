@@ -1,5 +1,6 @@
 import type { OHLCBar } from '@tradecanvas/commons';
 import { tickerOf } from '@tradecanvas/commons';
+import { valuePlots } from '@tradecanvas/core';
 import type { WidgetPanel } from './types.js';
 import { widgetIndicatorLabel } from './indicatorInputWords.js';
 import { drawingTypeLabel } from './WidgetObjectTree.js';
@@ -142,7 +143,7 @@ export class WidgetDockArea {
       const point = series?.[idx] ?? null;
       const inPriceUnits = !inOwnPane.has(ind.instanceId) && readsChartPrices(ind);
       // The drawn lines by their titles ("Signal"), else every field by its key.
-      const fields = ind.descriptor.plots?.map((p) => [p.key, p.title] as const)
+      const fields = (ind.descriptor.plots ? valuePlots(ind.descriptor.plots) : undefined)?.map((p) => [p.key, p.title] as const)
         ?? Object.keys(point ?? {}).map((k) => [k, k] as const);
       const values = point
         ? fields

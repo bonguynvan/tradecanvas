@@ -1,5 +1,6 @@
 import type { PaneStyle, ResolvedLayout, ViewportState } from '@tradecanvas/commons';
 import type { IndicatorEngine, PanelRenderInfo } from '@tradecanvas/core';
+import { valuePlots } from '@tradecanvas/core';
 import type { LayoutManager } from '../layout/LayoutManager.js';
 
 /** The pane's title and the line under it, above its plot. */
@@ -149,7 +150,8 @@ export class PaneLayout {
     const series = this.sources.peekOutput(paneId)?.series;
     const descriptor = this.sources.getIndicatorDescriptor(paneId);
     if (!series || !descriptor) return undefined;
-    const key = descriptor.plots?.[0]?.key;
+    // Its first line: marks on some bars are no baseline.
+    const key = descriptor.plots ? valuePlots(descriptor.plots)[0]?.key : undefined;
     for (let i = Math.max(0, from); i <= to && i < series.length; i++) {
       const point = series[i];
       if (!point) continue;
