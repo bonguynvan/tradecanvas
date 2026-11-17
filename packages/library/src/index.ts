@@ -201,6 +201,7 @@ export type {
   IndicatorFill,
   IndicatorScale,
   IndicatorInputSpec,
+  IndicatorInputOption,
   IndicatorInputKind,
   IndicatorSettingsChangePayload,
 } from '@tradecanvas/commons';

@@ -24,6 +24,8 @@ export interface IndicatorInputInfo {
   step?: number;
   /** For `'choice'`: the values to choose from. */
   options?: readonly (string | number)[];
+  /** For `'choice'`: the labels the spec gives its values, by the value as text; values without one are left out. */
+  optionLabels?: Readonly<Record<string, string>>;
 }
 
 function kindOf(value: unknown, spec: IndicatorInputSpec | undefined): IndicatorInputKind {
@@ -53,7 +55,13 @@ export function describeInputs(descriptor: Pick<IndicatorDescriptor, 'defaultCon
     if (spec?.max !== undefined) info.max = spec.max;
     if (kind === 'int') info.step = spec?.step ?? INT_STEP;
     if (kind === 'number') info.step = spec?.step ?? (Number.isInteger(value) ? INT_STEP : FRACTION_STEP);
-    if (kind === 'choice' && spec?.options) info.options = spec.options;
+    if (kind === 'choice' && spec?.options) {
+      // A null is not an option a type allows, but a script may pass one: it is left out, not read.
+      const given = spec.options.filter((option) => option !== null && option !== undefined);
+      info.options = given.map((option) => (typeof option === 'object' ? option.value : option));
+      const labelled = given.filter((option) => typeof option === 'object');
+      if (labelled.length > 0) info.optionLabels = Object.fromEntries(labelled.map((option) => [String(option.value), option.label]));
+    }
     return info;
   });
 }

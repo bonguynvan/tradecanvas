@@ -6,6 +6,7 @@
 
 - **A custom indicator's colours follow the theme** (`@tradecanvas/chart`): an indicator's descriptor takes `defaultStyle`, a style or a function of the theme that gives one (`(theme) => ({ colors: … })`). An instance on it changes with `chart.setTheme()`, and a colour someone picks for it stays. It sits under the viewer's saved default, so an app no longer has to call `chart.setIndicatorDefaults()` on each change of theme and overwrite what the viewer saved there. A saved layout leaves out what the theme gives, and the widget's *Save as default* does not keep those colours either.
 - **An indicator's `render` is given the theme** (`@tradecanvas/chart`): a fifth argument, `{ theme }`, the theme the chart draws with, as overlays get it. A plugin draws what its style doesn't give (a mark where a line turns, a label) in the chart's colours and font, without the app handing them over on each change.
+- **Labels for a choice's values** (`@tradecanvas/chart`): a choice input's `options` take `{ value, label }` as well as plain values, and the indicator settings dialog shows the label while the indicator is given the value. The legend names a choice off its default by the same label. An indicator of your own can name its choices in your app's language; before, the dialog showed the raw values (`ema`, `sma`). `describeInputs()` gives the labels as `optionLabels`.
 
 ### Widget
 
