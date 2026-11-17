@@ -136,7 +136,8 @@ grid.setFeatures({ toasts: false })  // ChartWidgetGrid 中的每个图表`}</co
   </tbody>
 </table>
 <p>
-  有几个开关的作用比名字多：关闭 <code>indicatorLegend</code> 后，窗格会显示回自己的标题；<code>menu.chart.*</code>
+  有几个开关的作用比名字多：关闭 <code>indicatorLegend</code> 后，窗格会显示回自己的标题；开启时，每个指标的行只在悬停或键盘聚焦时显示按钮，
+  在触摸屏上则在轻点展开该行后显示（再点它的名称会打开设置），因此在手机上按钮不会遮住K线；<code>menu.chart.*</code>
   同时作用于价格轴旁的 "+" 和右键菜单；<code>compare</code> 去掉对象树里的添加按钮，已有的对比仍保留在列表中；
   <code>toasts</code> 关闭组件自身的提示（错误提示仍会显示），你通过 <code>widget.toast()</code> 发出的提示也照常显示。
   关闭 <code>selectionToolbar</code> 会隐藏选中画线上方的工具栏；右键菜单仍然保留。

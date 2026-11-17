@@ -307,6 +307,9 @@ chart.setDepthOverlay({ mode: 'cumulative' })       // change the look later`}</
   (bid màu xanh lá, ask màu đỏ). Những bức tường thanh khoản tồn tại lâu sẽ nổi bật.
   Bật từ bảng cài đặt (hoặc <code>chart.setDepthHeatmapVisible</code>);
   <code>widget.setDepth</code> ghi lại một ảnh chụp mỗi khi sổ lệnh cập nhật.
+  Trong lúc replay, một sổ lệnh ghi lại không kèm thời gian thuộc về nến cuối của chuỗi live, heatmap
+  chỉ hiện sổ lệnh của những nến mà replay đã hiện, và order book ở mép vùng vẽ (của thị trường live)
+  bị ẩn cho tới khi replay kết thúc.
 </p>
 <pre><code>{`chart.setDepthHeatmapVisible(true)
 chart.setDepthHeatmapConfig({ opacity: 0.7, capacity: 240 })

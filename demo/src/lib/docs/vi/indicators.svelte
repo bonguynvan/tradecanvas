@@ -193,6 +193,13 @@ import { detectCandlePatterns, CANDLE_PATTERNS } from '@tradecanvas/chart'
 const found = detectCandlePatterns(bars, { patterns: ['bullishEngulfing', 'hammer'] })
 // [{ index, time, pattern: { id, name, short, direction, kind, bars } }]
 CANDLE_PATTERNS.length                                 // 64`}</code></pre>
+<p>
+  Trang chỉ tìm mẫu nến mà không vẽ chart (scanner, screener) import hai thứ này từ
+  <code>@tradecanvas/core/patterns</code>: chỉ riêng bộ dò, khoảng 4 kB gzip, trong một chunk riêng,
+  nên trang không tải engine của chart kể cả khi các trang khác của app có dùng. Thêm
+  <code>@tradecanvas/core</code> vào dependencies của app để import được.
+</p>
+<pre><code>{`import { detectCandlePatterns, CANDLE_PATTERNS } from '@tradecanvas/core/patterns'`}</code></pre>
 
 <h2>Chỉ báo của riêng bạn</h2>
 <p>

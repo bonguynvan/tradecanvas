@@ -131,3 +131,4 @@ const adapter = new BinanceAdapter()
 
 statusBar.append(createPoweredBy({ height: 14 }))`}</code></pre>
 <p><code>size</code>(Svelte) 또는 <code>height</code>는 마크의 높이(픽셀, 12 이상)입니다. 상태 표시줄에는 14–16, 푸터에는 24가 어울립니다. 문구는 페이지의 글꼴로 표시되며 10 px보다 작아지지 않습니다. <code>href</code>와 <code>target</code>(기본값 <code>_blank</code>)은 링크에 적용됩니다. <code>poweredByHtml()</code>은 마크업을, <code>TRADECANVAS_MARK_SVG</code>와 <code>TRADECANVAS_WORDMARK_SVG</code>는 그림만 제공합니다.</p>
+<p>배지에는 전용 엔트리 <code>@tradecanvas/chart/brand</code>가 있으며 차트의 어떤 부분도 불러오지 않습니다. 그래서 차트 없이 배지만 보여 주는 페이지(랜딩 페이지의 푸터 등)는 몇 kB에 그칩니다. 메인 엔트리도 같은 이름을 export합니다. Svelte의 <code>PoweredBy</code>는 이 엔트리에서 import합니다.</p>

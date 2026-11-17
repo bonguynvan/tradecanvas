@@ -139,7 +139,9 @@ grid.setFeatures({ toasts: false })  // cada gráfico de un ChartWidgetGrid`}</c
   </tbody>
 </table>
 <p>
-  Algunos hacen más de lo que dice su nombre: con <code>indicatorLegend</code> apagado, los paneles recuperan su título;
+  Algunos hacen más de lo que dice su nombre: con <code>indicatorLegend</code> apagado, los paneles recuperan su título, y encendido, la fila de cada indicador
+  muestra sus botones al pasar el puntero o con el foco del teclado, y en una pantalla táctil cuando un toque abre la fila
+  (un toque en su nombre abre entonces los ajustes), así que en un teléfono no tapan las velas;
   <code>menu.chart.*</code> vale tanto para el menú del clic derecho como para el "+" junto al eje de precios;
   <code>compare</code> quita el botón de añadir del árbol de objetos, y las comparaciones ya puestas siguen en la lista;
   <code>toasts</code> calla los avisos del propio widget (sus errores se siguen mostrando), y los tuyos con

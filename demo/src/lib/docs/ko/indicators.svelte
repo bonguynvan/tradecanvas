@@ -187,6 +187,12 @@ import { detectCandlePatterns, CANDLE_PATTERNS } from '@tradecanvas/chart'
 const found = detectCandlePatterns(bars, { patterns: ['bullishEngulfing', 'hammer'] })
 // [{ index, time, pattern: { id, name, short, direction, kind, bars } }]
 CANDLE_PATTERNS.length                                 // 64`}</code></pre>
+<p>
+  패턴만 찾고 차트는 그리지 않는 페이지(스캐너, 스크리너)는 두 가지를 <code>@tradecanvas/core/patterns</code>에서
+  import합니다. 검출기만 담긴 gzip 약 4 kB의 별도 청크라서, 앱의 다른 페이지가 차트를 쓰더라도 이 페이지는 차트 엔진을
+  불러오지 않습니다. import하려면 앱의 의존성에 <code>@tradecanvas/core</code>를 추가하세요.
+</p>
+<pre><code>{`import { detectCandlePatterns, CANDLE_PATTERNS } from '@tradecanvas/core/patterns'`}</code></pre>
 
 <h2>나만의 지표</h2>
 <p>

@@ -202,6 +202,13 @@ import { detectCandlePatterns, CANDLE_PATTERNS } from '@tradecanvas/chart'
 const found = detectCandlePatterns(bars, { patterns: ['bullishEngulfing', 'hammer'] })
 // [{ index, time, pattern: { id, name, short, direction, kind, bars } }]
 CANDLE_PATTERNS.length                                 // 64`}</code></pre>
+<p>
+  Una página que busca patrones y no dibuja gráfico (un escáner, un screener) importa los dos desde
+  <code>@tradecanvas/core/patterns</code>: solo el detector, unos 4 kB con gzip, en un chunk propio, así que
+  la página no carga el motor del gráfico aunque otras páginas de la app sí lo hagan. Añade
+  <code>@tradecanvas/core</code> a las dependencias de la app para importarlo.
+</p>
+<pre><code>{`import { detectCandlePatterns, CANDLE_PATTERNS } from '@tradecanvas/core/patterns'`}</code></pre>
 
 <h2>Tu propio indicador</h2>
 <p>

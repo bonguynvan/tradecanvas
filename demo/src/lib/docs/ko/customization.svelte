@@ -139,7 +139,9 @@ grid.setFeatures({ toasts: false })  // ChartWidgetGrid의 모든 차트`}</code
   </tbody>
 </table>
 <p>
-  이름보다 많은 일을 하는 스위치도 있습니다: <code>indicatorLegend</code>를 끄면 패인에 자기 제목이 돌아옵니다.
+  이름보다 많은 일을 하는 스위치도 있습니다: <code>indicatorLegend</code>를 끄면 패인에 자기 제목이 돌아옵니다. 켜 두면 각 지표의 줄은 마우스를 올리거나
+  키보드 포커스를 받을 때 버튼을 보여 주고, 터치 화면에서는 한 번 탭해 줄을 연 뒤에 보여 줍니다(이어서 이름을 탭하면
+  설정이 열립니다). 그래서 휴대폰에서 버튼이 캔들을 가리지 않습니다.
   <code>menu.chart.*</code>는 오른쪽 클릭 메뉴와 가격 축 옆의 "+" 모두에 적용됩니다. <code>compare</code>는 객체 트리의
   추가 버튼을 없애고, 이미 켜진 비교는 목록에 남습니다. <code>toasts</code>는 위젯 자체의 알림을 끄고(오류는 계속 보입니다),
   <code>widget.toast()</code>로 띄운 알림은 그대로 보입니다.

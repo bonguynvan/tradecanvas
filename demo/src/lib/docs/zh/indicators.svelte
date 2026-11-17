@@ -181,6 +181,12 @@ import { detectCandlePatterns, CANDLE_PATTERNS } from '@tradecanvas/chart'
 const found = detectCandlePatterns(bars, { patterns: ['bullishEngulfing', 'hammer'] })
 // [{ index, time, pattern: { id, name, short, direction, kind, bars } }]
 CANDLE_PATTERNS.length                                 // 64`}</code></pre>
+<p>
+  只查找形态、不绘制图表的页面（扫描器、筛选器）可从 <code>@tradecanvas/core/patterns</code> 导入这两个：
+  只有检测器，gzip 后约 4 kB，单独成块，因此即使应用的其他页面用到图表，这个页面也不会加载图表引擎。
+  要导入它，请把 <code>@tradecanvas/core</code> 列入应用的依赖。
+</p>
+<pre><code>{`import { detectCandlePatterns, CANDLE_PATTERNS } from '@tradecanvas/core/patterns'`}</code></pre>
 
 <h2>自定义指标</h2>
 <p>
