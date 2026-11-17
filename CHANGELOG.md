@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Indicators
+
+- **A custom indicator's colours follow the theme** (`@tradecanvas/chart`): an indicator's descriptor takes `defaultStyle`, a style or a function of the theme that gives one (`(theme) => ({ colors: … })`). An instance on it changes with `chart.setTheme()`, and a colour someone picks for it stays. It sits under the viewer's saved default, so an app no longer has to call `chart.setIndicatorDefaults()` on each change of theme and overwrite what the viewer saved there. A saved layout leaves out what the theme gives, and the widget's *Save as default* does not keep those colours either.
+- **An indicator's `render` is given the theme** (`@tradecanvas/chart`): a fifth argument, `{ theme }`, the theme the chart draws with, as overlays get it. A plugin draws what its style doesn't give (a mark where a line turns, a label) in the chart's colours and font, without the app handing them over on each change.
+
 ### Imports
 
 - **The Powered by badge without the chart** (`@tradecanvas/chart`, `@tradecanvas/svelte`): `@tradecanvas/chart/brand` exports the badge, `createPoweredBy`, `poweredByHtml`, `poweredByLayout`, the mark and the wordmark, and reaches none of the chart. The Svelte `<PoweredBy>` imported them from the main entry, and a bundler could not leave the chart behind, so a page that showed the badge in its footer and drew no chart loaded the chart's engine with it: an app that only mounted the badge took 30 kB gzipped at the start and 82 kB in all. `<PoweredBy>` now imports from the new entry, and the same app takes 20 kB, Svelte's included. The main entry still exports the same names.

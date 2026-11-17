@@ -314,6 +314,18 @@ describe('WidgetIndicatorSettings Cancel, Ok and the defaults', () => {
     expect(saved.style.lineWidths).toEqual([2]);
   });
 
+  it('leaves the colours the theme gave to the theme, but keeps ones picked over them', () => {
+    dialog.open({ ...rsiTarget(), colors: ['#111111'], colorsFromTheme: true, lineWidth: 2 });
+    footer('defaults').click();
+    menuItem('Save as default').click();
+    expect(onSaveDefault.mock.calls[0][1].style).toEqual({ lineWidths: [2] });
+
+    dialog.open({ ...rsiTarget(), colors: ['#222222'], colorsFromTheme: false });
+    footer('defaults').click();
+    menuItem('Save as default').click();
+    expect(onSaveDefault.mock.calls[1][1].style.colors).toEqual(['#222222']);
+  });
+
   it('puts the levels back on the indicator’s own defaults when it had no levels of its own', () => {
     dialog.open(rsiTarget());
     tab('style');

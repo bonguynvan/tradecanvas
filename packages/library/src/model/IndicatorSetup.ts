@@ -3,7 +3,7 @@ import type { IndicatorEngine, SnapshotIndicator } from '@tradecanvas/core';
 import type { LayoutManager } from '../layout/LayoutManager.js';
 
 /** What a layout keeps of the indicators. */
-export type SetupSources = Pick<IndicatorEngine, 'getActiveIndicators' | 'getIndicatorConfig' | 'getIndicatorStyle' | 'getIntervals'>;
+export type SetupSources = Pick<IndicatorEngine, 'getActiveIndicators' | 'getIndicatorConfig' | 'getOwnIndicatorStyle' | 'getIntervals'>;
 
 /** What a layout keeps of the panes. */
 export type SetupPanes = Pick<LayoutManager, 'getPanels' | 'getMaximizedPanel'>;
@@ -31,7 +31,8 @@ export function captureIndicatorSetup(
       instanceId: ind.instanceId,
       params: { ...ind.params },
       position: panel?.position,
-      style: engine.getIndicatorStyle(ind.instanceId) ?? undefined,
+      // The parts its descriptor's look gives for the theme are the theme's: opened in another, it takes that one's.
+      style: engine.getOwnIndicatorStyle(ind.instanceId) ?? undefined,
       visible: ind.visible,
       levels: config?.levels?.slice(),
       pane: ind.pane,

@@ -10,13 +10,15 @@ import type {
   DataSeries,
   ViewportState,
   OverlayScale,
+  Theme,
 } from '@tradecanvas/commons';
-import { isUtcTimeZone, isValidTimeZone } from '@tradecanvas/commons';
+import { DARK_THEME, isUtcTimeZone, isValidTimeZone } from '@tradecanvas/commons';
 import { colorsInPane, freeColor, isShown, latestValues, overlayLatestValues, overlayPriceRange, paneRange, paneValuesAt } from './instanceReads.js';
 import { alignOutput, emptyOutput, inputSource, lineSourceBars, priceSourceBars, sourceParam } from './sources.js';
 import { cleanIntervals, shownOnInterval } from './intervals.js';
 import { copyIntervals, copyPlots, isSeriesPalette, paletteFrom } from './palette.js';
 import { BUILT_IN_PLUGINS } from './builtIns.js';
+import { applyThemeLook, descriptorLook, followLook, ownStyle, type ThemeLook, type ThemeLookKey } from './themeStyle.js';
 import { SYMBOL_INDICATOR_IDS } from './symbols/symbolIndicators.js';
 import type { IndicatorWorkerClient } from './worker/IndicatorWorkerPool.js';
 import { IndicatorWorkerBridge } from './worker/IndicatorWorkerBridge.js';
@@ -48,6 +50,8 @@ export class IndicatorEngine {
   private instances = new Map<string, IndicatorInstance>();
   /** The style each kind of indicator starts with, by id (`setStyleDefaults`). */
   private styleDefaults = new Map<string, IndicatorStyleConfig>();
+  /** The theme the chart draws with: what `render` is given, and what a descriptor's `defaultStyle` is read for. */
+  private theme: Theme = DARK_THEME;
   /** Instances in computing order (each after the indicators it reads); null = recompute. */
   private order: IndicatorInstance[] | null = null;
   /** A recalculation waiting for the next read (`deferRecalculateFrom`, a change of zone). */
@@ -110,18 +114,26 @@ export class IndicatorEngine {
     if (options.scale === 'left' && plugin.descriptor.placement === 'overlay' && !config.pane) config.scale = 'left';
     if (this.exchangeTimeZone) config.exchangeTimeZone = this.exchangeTimeZone;
 
-    // The kind's defaults (setStyleDefaults) under what the config sets.
+    // What the config sets, over the kind's defaults (setStyleDefaults), over the descriptor's look for the theme.
     const defaults = this.styleDefaults.get(id);
+    const look = descriptorLook(plugin.descriptor, this.theme);
+    const taken: ThemeLook = {};
+    const fromLook = <K extends keyof ThemeLook>(key: K): ThemeLook[K] => {
+      if (config.style?.[key] !== undefined || defaults?.[key] !== undefined) return undefined;
+      taken[key] = look[key];
+      return look[key];
+    };
     const plots = { ...defaults?.plots, ...config.style?.plots };
     const style: ResolvedIndicatorStyle = {
-      colors: config.style?.colors ?? defaults?.colors?.slice() ?? paletteFrom(freeColor([...this.instances.values()], id, plugin.descriptor.placement, config.pane ?? null)),
-      lineWidths: config.style?.lineWidths ?? defaults?.lineWidths?.slice() ?? [1.5],
-      opacity: config.style?.opacity ?? defaults?.opacity ?? 1,
+      colors: config.style?.colors ?? defaults?.colors?.slice() ?? fromLook('colors')?.slice() ?? paletteFrom(freeColor([...this.instances.values()], id, plugin.descriptor.placement, config.pane ?? null)),
+      lineWidths: config.style?.lineWidths ?? defaults?.lineWidths?.slice() ?? fromLook('lineWidths')?.slice() ?? [1.5],
+      opacity: config.style?.opacity ?? defaults?.opacity ?? fromLook('opacity') ?? 1,
       ...(Object.keys(plots).length > 0 ? { plots: copyPlots(plots) } : {}),
     };
+    const themed = Object.values(taken).some((value) => value !== undefined);
 
     this.runPending();
-    const instance: IndicatorInstance = { plugin, config, output: null, style, changedFrom: 0, offInterval: false, offChartType: false };
+    const instance: IndicatorInstance = { plugin, config, output: null, style, changedFrom: 0, offInterval: false, offChartType: false, ...(themed ? { themeLook: taken } : {}) };
     this.placeOnChartType(instance);
     this.instances.set(instanceId, instance);
     this.order = null;
@@ -465,7 +477,7 @@ export class IndicatorEngine {
       if (!output || !isShown(instance)) continue;
       if (instance.plugin.descriptor.placement !== 'overlay' || instance.config.pane) continue;
       const vp = instance.config.scale === 'left' ? leftViewport ?? viewport : viewport;
-      draws.push((ctx) => instance.plugin.render(ctx, output, vp, instance.style));
+      draws.push((ctx) => instance.plugin.render(ctx, output, vp, instance.style, { theme: this.theme }));
     }
     return draws;
   }
@@ -495,7 +507,7 @@ export class IndicatorEngine {
     this.runPending();
     const instance = this.instances.get(instanceId);
     if (!instance?.output || !isShown(instance)) return;
-    instance.plugin.render(ctx, instance.output, viewport, instance.style);
+    instance.plugin.render(ctx, instance.output, viewport, instance.style, { theme: this.theme });
   }
 
   /**
@@ -764,6 +776,45 @@ export class IndicatorEngine {
     if (!instance) return;
     if (plots && Object.keys(plots).length > 0) instance.style.plots = copyPlots(plots);
     else delete instance.style.plots;
+  }
+
+  /**
+   * The theme the chart draws with. Instances still on their descriptor's
+   * look (`defaultStyle`) take the one for this theme; parts someone changed
+   * stay as they are.
+   */
+  setTheme(theme: Theme): void {
+    if (theme === this.theme) return;
+    this.theme = theme;
+    for (const instance of this.instances.values()) {
+      if (!instance.themeLook) continue;
+      const now = applyThemeLook(instance.style, instance.themeLook, descriptorLook(instance.plugin.descriptor, theme));
+      if (now) instance.themeLook = now;
+      else delete instance.themeLook;
+    }
+  }
+
+  /**
+   * Put the parts `keys` of an instance's style back on its descriptor's
+   * look for the theme (`defaultStyle`), which it follows from then on: what
+   * an undo or a layout that leaves them out means. Parts the descriptor
+   * gives no look for stay as they are. True when anything changed.
+   */
+  followThemeLook(instanceId: string, keys: readonly ThemeLookKey[]): boolean {
+    const instance = this.instances.get(instanceId);
+    if (!instance || keys.length === 0) return false;
+    const { taken, changed } = followLook(instance.style, instance.themeLook, descriptorLook(instance.plugin.descriptor, this.theme), keys);
+    if (taken) instance.themeLook = taken;
+    return changed;
+  }
+
+  /**
+   * An instance's style without the parts its descriptor's look for the
+   * theme gives (a copy), or null: what a saved layout keeps.
+   */
+  getOwnIndicatorStyle(instanceId: string): IndicatorStyleConfig | null {
+    const instance = this.instances.get(instanceId);
+    return instance ? ownStyle(instance.style, instance.themeLook) : null;
   }
 
   /**

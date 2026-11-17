@@ -1,3 +1,4 @@
+import type { ThemeLook } from './themeStyle.js';
 import type {
   IndicatorConfig,
   IndicatorDescriptor,
@@ -28,6 +29,8 @@ export interface IndicatorInstance {
   offInterval: boolean;
   /** Not shown on the chart's type: it reads another symbol by time, and the bars drawn carry none. */
   offChartType: boolean;
+  /** The parts of `style` taken from the descriptor's look for the theme (`defaultStyle`), as taken. */
+  themeLook?: ThemeLook;
 }
 
 export interface LineInput {

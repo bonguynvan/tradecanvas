@@ -6,6 +6,8 @@ export { registerBuiltInIndicators } from './registry.js';
 export { INDICATOR_CATEGORIES, indicatorCategory } from './categories.js';
 export { INTERVAL_UNITS, INTERVAL_LIMITS, shownOnInterval, cleanIntervals } from './intervals.js';
 export { isSeriesPalette } from './palette.js';
+export { THEME_LOOK_KEYS } from './themeStyle.js';
+export type { ThemeLookKey } from './themeStyle.js';
 export { renderPlots, paneValueRange, paneLogRange, drawnKeys, plotColor, plotShown, plotLook, isUpTone, hasHistogram } from './plots.js';
 export type { PaneRangeOptions } from './plots.js';
 export { inputSource, sourceParam, priceSourceBars, lineSourceBars, alignOutput } from './sources.js';
