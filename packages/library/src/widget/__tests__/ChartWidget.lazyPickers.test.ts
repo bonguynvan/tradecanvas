@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeAll, beforeEach, afterEach, vi } from 'vitest';
 import { DARK_THEME, type ChartOptions, type Theme } from '@tradecanvas/commons';
 
 /** Stand-in for the canvas-backed Chart: what the widget reads as it starts, the rest a no-op. */
@@ -60,6 +60,17 @@ async function loaded(): Promise<void> {
   await preload();
   await new Promise((resolve) => setTimeout(resolve, 0));
 }
+
+/**
+ * Turning the widget's modules into code takes seconds on a busy machine; `vi.resetModules()`
+ * keeps that work, so it is done once here rather than inside the first test's time limit.
+ */
+const WARM_UP_TIMEOUT_MS = 60_000;
+
+beforeAll(async () => {
+  await import('../ChartWidget.js');
+  await import('../widgetDialogs.js').then((dialogs) => dialogs.preloadDialogs());
+}, WARM_UP_TIMEOUT_MS);
 
 const root = () => host.querySelector<HTMLElement>('.tcw-root')!;
 const press = () => root().dispatchEvent(new Event('pointerdown'));
