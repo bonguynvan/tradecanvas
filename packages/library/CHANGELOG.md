@@ -1,5 +1,26 @@
 # @tradecanvas/chart
 
+## 2.14.0
+
+### Minor Changes
+
+- 94a5466: A choice input's `options` take `{ value, label }` as well as plain values: the indicator settings dialog and the legend show the label, and the indicator is given the value. `describeInputs()` gives the labels as `optionLabels`.
+- fe4a897: A custom indicator's colours can follow the theme: its descriptor takes `defaultStyle`, a style or a function of the theme (`(theme) => ({ colors: … })`). An instance on it changes with `chart.setTheme()`, a colour someone picks for it stays, and it sits under the viewer's saved default (`chart.setIndicatorDefaults()`). A saved layout and the widget's _Save as default_ leave out what the theme gives. An indicator's `render` is also given `{ theme }`, the theme the chart draws with, as its fifth argument.
+- 433f450: A plot of `kind: 'markers'` marks the bars where its field has a value: a `shape` (`'dot'`, `'triangleUp'`, `'triangleDown'`) at the value, or above the bar's high or below its low on the price pane (`position: 'aboveBar' | 'belowBar'`). It gets no value in the legend, no tag on the price axis, no column in the CSV export and no place in the data window, and is not offered as a line another indicator can read.
+- d01856c: `ChartWidget` takes `plugins` (your indicators, drawing tools, chart types and overlays), typed, and `chartOptions.plugins` is typed too. They are registered with the widget's chart before it restores a saved layout, a template or a shared view, so a layout that names an indicator of your own gets it back.
+
+### Patch Changes
+
+- c511392: The Powered by badge without the chart: `@tradecanvas/chart/brand` exports the badge (`createPoweredBy`, `poweredByHtml`, `poweredByLayout`, the mark and the wordmark) and reaches none of the chart, so a page that shows the badge and draws no chart no longer loads the chart's engine with it. The Svelte `<PoweredBy>` imports from it. The main entry still exports the same names.
+- 465101e: The MCP server's `custom_indicator` tool gives the guide to writing an indicator of your own: the descriptor, `calculate`, the incremental `update` and `revisesBefore`, drawing with the theme, colours by theme, registering it before a saved layout is read, and what the chart reads off the descriptor, with code type-checked against the packages. `IndicatorBase.render` takes the render context, so an override can pass it on, and `IndicatorRenderContext` is exported from `@tradecanvas/chart`.
+- 779b49f: Larger targets for a finger: on a touch screen, a pane's fold and maximise buttons take about 30 by 32 px, the range presets, Go to date and "more" at least 32 by 32 px, and the clock is 32 px tall. On a desk, a legend row's Hide, Settings, More and Remove are 24 px wide each.
+- Updated dependencies [94a5466]
+- Updated dependencies [465101e]
+- Updated dependencies [fe4a897]
+- Updated dependencies [433f450]
+  - @tradecanvas/commons@2.14.0
+  - @tradecanvas/core@2.14.0
+
 ## 2.13.1
 
 ### Patch Changes

@@ -1,5 +1,21 @@
 # @tradecanvas/core
 
+## 2.14.0
+
+### Minor Changes
+
+- 94a5466: A choice input's `options` take `{ value, label }` as well as plain values: the indicator settings dialog and the legend show the label, and the indicator is given the value. `describeInputs()` gives the labels as `optionLabels`.
+- fe4a897: A custom indicator's colours can follow the theme: its descriptor takes `defaultStyle`, a style or a function of the theme (`(theme) => ({ colors: … })`). An instance on it changes with `chart.setTheme()`, a colour someone picks for it stays, and it sits under the viewer's saved default (`chart.setIndicatorDefaults()`). A saved layout and the widget's _Save as default_ leave out what the theme gives. An indicator's `render` is also given `{ theme }`, the theme the chart draws with, as its fifth argument.
+- 433f450: A plot of `kind: 'markers'` marks the bars where its field has a value: a `shape` (`'dot'`, `'triangleUp'`, `'triangleDown'`) at the value, or above the bar's high or below its low on the price pane (`position: 'aboveBar' | 'belowBar'`). It gets no value in the legend, no tag on the price axis, no column in the CSV export and no place in the data window, and is not offered as a line another indicator can read.
+
+### Patch Changes
+
+- 465101e: The MCP server's `custom_indicator` tool gives the guide to writing an indicator of your own: the descriptor, `calculate`, the incremental `update` and `revisesBefore`, drawing with the theme, colours by theme, registering it before a saved layout is read, and what the chart reads off the descriptor, with code type-checked against the packages. `IndicatorBase.render` takes the render context, so an override can pass it on, and `IndicatorRenderContext` is exported from `@tradecanvas/chart`.
+- Updated dependencies [94a5466]
+- Updated dependencies [fe4a897]
+- Updated dependencies [433f450]
+  - @tradecanvas/commons@2.14.0
+
 ## 2.13.1
 
 ### Patch Changes

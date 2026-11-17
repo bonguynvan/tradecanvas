@@ -1,5 +1,19 @@
 # @tradecanvas/svelte
 
+## 2.0.28
+
+### Patch Changes
+
+- c511392: The Powered by badge without the chart: `@tradecanvas/chart/brand` exports the badge (`createPoweredBy`, `poweredByHtml`, `poweredByLayout`, the mark and the wordmark) and reaches none of the chart, so a page that shows the badge and draws no chart no longer loads the chart's engine with it. The Svelte `<PoweredBy>` imports from it. The main entry still exports the same names.
+- Updated dependencies [c511392]
+- Updated dependencies [94a5466]
+- Updated dependencies [465101e]
+- Updated dependencies [779b49f]
+- Updated dependencies [fe4a897]
+- Updated dependencies [433f450]
+- Updated dependencies [d01856c]
+  - @tradecanvas/chart@2.14.0
+
 ## 2.0.27
 
 ### Patch Changes

@@ -1,5 +1,18 @@
 # @tradecanvas/mcp
 
+## 2.14.0
+
+### Minor Changes
+
+- 465101e: The MCP server's `custom_indicator` tool gives the guide to writing an indicator of your own: the descriptor, `calculate`, the incremental `update` and `revisesBefore`, drawing with the theme, colours by theme, registering it before a saved layout is read, and what the chart reads off the descriptor, with code type-checked against the packages. `IndicatorBase.render` takes the render context, so an override can pass it on, and `IndicatorRenderContext` is exported from `@tradecanvas/chart`.
+
+### Patch Changes
+
+- Updated dependencies [94a5466]
+- Updated dependencies [fe4a897]
+- Updated dependencies [433f450]
+  - @tradecanvas/commons@2.14.0
+
 ## 2.13.1
 
 ### Patch Changes
