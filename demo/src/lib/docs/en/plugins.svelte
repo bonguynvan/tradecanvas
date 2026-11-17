@@ -54,25 +54,122 @@ chart.plugins.list()`}</code></pre>
 </table>
 
 <h2>Custom indicator</h2>
-<p>Extend <code>IndicatorBase</code> for the drawing helpers, then register and add it like any built-in:</p>
-<pre><code>{`import { IndicatorBase, IndicatorValueMap, registerPlugin } from '@tradecanvas/chart'
+<p>
+  An indicator is an <code>IndicatorPlugin</code>: a <code>descriptor</code> that says what it is and how it
+  looks, and a <code>calculate()</code> that gives a value per bar. Extend <code>IndicatorBase</code> and the chart
+  does the rest from the descriptor: it draws the plots, scales the pane, tags the values on the axis, and lists the
+  indicator in the legend, the settings and the Indicators dialog. Here is a whole one, a MACD that marks where its
+  line turns:
+</p>
+<pre><code>{`import { IndicatorBase, IndicatorValueMap } from '@tradecanvas/chart'
 
-class DoubleSMA extends IndicatorBase {
+const ema = (prev, value, period) => (prev === undefined ? value : prev + (2 / (period + 1)) * (value - prev))
+
+class TurningMacd extends IndicatorBase {
   descriptor = {
-    id: 'double-sma', name: 'Double SMA',
-    placement: 'overlay' as const, defaultConfig: { fast: 10, slow: 30 },
+    id: 'turning-macd', name: 'Turning MACD', shortName: 'TMACD',
+    placement: 'panel',               // a pane of its own; 'overlay' draws on the price pane
+    category: 'oscillators',          // its group in the Indicators dialog
+    defaultConfig: { fast: 12, slow: 26, source: 'close' },
+    inputs: {
+      fast: { kind: 'int', min: 2, label: 'Fast' },
+      slow: { kind: 'int', min: 3, label: 'Slow' },
+      source: { kind: 'choice', label: 'Price', options: [{ value: 'close', label: 'Close' }, { value: 'hl2', label: 'Median' }] },
+    },
+    plots: [
+      { key: 'value', title: 'MACD', color: 0 },
+      { key: 'turn', title: 'Turn', color: 1, kind: 'markers', tone: { field: 'up' }, downColor: 2 },
+    ],
+    scale: { zero: true },
+    levels: [0],
+    defaultStyle: (theme) => ({ colors: theme.name === 'light' ? ['#1f4e8c', '#0a7d3b', '#b3261e'] : ['#8ab4f8', '#4cc38a', '#f28b82'] }),
   }
-  calculate(data, config) { /* values = new IndicatorValueMap(); return { values, series } */ }
-  render(ctx, output, viewport, style, { theme }) { /* draw lines */ }
+
+  calculate(data, config) {
+    const { fast, slow, source } = config.params
+    const values = new IndicatorValueMap()
+    const series = new Array(data.length).fill(null)
+    let f, s
+    for (let i = 0; i < data.length; i++) {
+      const bar = data[i]
+      const price = source === 'hl2' ? (bar.high + bar.low) / 2 : bar.close
+      f = ema(f, price, fast)
+      s = ema(s, price, slow)
+      if (i < slow) continue
+      const point = { value: f - s }
+      const a = series[i - 2]?.value, b = series[i - 1]?.value
+      // The bar before this one is a turn when the line changed direction there.
+      if (a !== undefined && b !== undefined && (b - a) * (point.value - b) < 0) {
+        series[i - 1] = { ...series[i - 1], turn: b, up: point.value > b ? 1 : 0 }
+        values.set(data[i - 1].time, series[i - 1])
+      }
+      series[i] = point
+      values.set(bar.time, point)
+    }
+    return { values, series }
+  }
+}`}</code></pre>
+<p>
+  <code>calculate(data, config)</code> gets the bars and the instance's inputs (<code>config.params</code>) and
+  returns its values twice: by bar index (<code>series</code>, <code>null</code> before the first value) and by bar
+  time (<code>values</code>). Use <code>new IndicatorValueMap()</code> for <code>values</code>: a <code>Map</code> that
+  is several times cheaper to fill in time order, which every symbol or interval switch does. A field no plot names
+  (<code>up</code> above) is not drawn, scaled or shown; it is there for a plot's <code>tone</code>.
+</p>
+
+<h3>The descriptor</h3>
+<ul>
+  <li><strong>Plots</strong> draw a field each: <code>'line'</code> (the default), <code>'step'</code>,
+    <code>'histogram'</code>, <code>'dots'</code> (a line drawn as dots), or <code>'markers'</code>, a shape
+    (<code>shape</code>: <code>'dot'</code>, <code>'triangleUp'</code>, <code>'triangleDown'</code>) on the bars where the field
+    has a value, at it or, on the price pane, above or below the bar (<code>position</code>). <code>color</code> is an
+    index into the style's colours; <code>tone</code> and <code>downColor</code> draw a plot in two colours;
+    <code>width</code>, <code>lineStyle</code>, <code>opacity</code> and <code>breakOn</code> set a line's look.
+    <code>fills</code> shade between two plots.</li>
+  <li><strong>Inputs</strong> say how each input in <code>defaultConfig</code> is edited: <code>kind</code>,
+    <code>label</code>, <code>min</code>, <code>max</code>, <code>step</code>, and a choice's <code>options</code>, plain or
+    with a label for each (<code>{'{ value, label }'}</code>). <code>{'{ source: true }'}</code> lets it run on another
+    price or another indicator's line.</li>
+  <li><strong>The pane</strong>: <code>scale</code> fixes its bounds or keeps zero in view, <code>levels</code> draws
+    reference lines the viewer can edit.</li>
+  <li><strong>Its look</strong>: <code>defaultStyle</code>, a style or one for each theme (below).</li>
+</ul>
+
+<h3>Live ticks: update and revisesBefore</h3>
+<p>
+  On each tick only the newest bar changes. Without <code>update()</code> the chart runs <code>calculate()</code> over
+  the whole history again; with it, the chart hands back your last output (<code>prev</code>) and the first bar that
+  changed (<code>from</code>), and you recompute from there. Return <code>null</code> to have <code>calculate()</code> run
+  instead; the values must be the ones it would give. <code>canResume</code> and <code>writePoint</code> come with
+  <code>IndicatorBase</code>.
+</p>
+<pre><code>{`update(data, config, prev, from) {
+  if (!this.canResume(data, prev, from)) return null
+  for (let i = from; i < data.length; i++) this.writePoint(prev, data, i, this.pointAt(data, i, config))
+  return prev
 }
 
-registerPlugin({ kind: 'indicator', plugin: new DoubleSMA() })
-chart.addIndicator('double-sma', { fast: 10, slow: 30 })`}</code></pre>
+// A turn is known one bar later: a new bar can change the one before it.
+revisesBefore(config) { return 1 }`}</code></pre>
 <p>
-  For <code>values</code>, use <code>new IndicatorValueMap()</code> instead of <code>new Map()</code>: it's a drop-in
-  <code>Map</code> that is several times cheaper to fill one bar at a time in time order, which is what every
-  symbol or timeframe switch does over the whole history.
+  <code>revisesBefore(config)</code> says how many bars before <code>from</code> an update may rewrite (a swing point,
+  a turn, a fractal is decided by the bars after it). The chart then passes <code>from</code> that far back, and
+  indicators that read this one's line are recomputed from there too. Leave it out when only bars from
+  <code>from</code> on change.
 </p>
+
+<h3>Drawing it</h3>
+<p>
+  <code>IndicatorBase</code>'s <code>render()</code> draws the <code>plots</code> and <code>fills</code> on the pane's
+  scale, so most indicators have no drawing code. To draw more, override it and call it first. The fifth argument
+  holds the theme the chart draws with, for colours and a font the style doesn't give: <code>theme.candleUp</code>,
+  <code>theme.candleDown</code>, <code>theme.text</code>, <code>theme.font</code>.
+</p>
+<pre><code>{`render(ctx, output, viewport, style, context) {
+  super.render(ctx, output, viewport, style, context)
+  ctx.fillStyle = context.theme.text
+  // barIndexToX(i, viewport) and priceToY(value, viewport) place it where the chart draws
+}`}</code></pre>
 
 <h3>Colours that follow the theme</h3>
 <p>
@@ -82,33 +179,36 @@ chart.addIndicator('double-sma', { fast: 10, slow: 30 })`}</code></pre>
   <em>Save as default</em>), so your app's colours never take the viewer's place. A saved layout leaves out what
   the theme gives, and opened in another theme it takes that theme's colours.
 </p>
-<pre><code>{`descriptor = {
-  id: 'turns', name: 'Turns', placement: 'overlay' as const, defaultConfig: {},
-  plots: [{ key: 'value', title: 'Value', color: 0 }],
-  defaultStyle: (theme) => ({
-    colors: theme.name === 'light' ? ['#1f4e8c'] : ['#8ab4f8'],
-  }),
-}`}</code></pre>
-<p>
-  <code>render</code> is given the theme the chart draws with as its fifth argument, for what the style doesn't
-  give: <code>theme.candleUp</code> and <code>theme.candleDown</code> for a mark where a line turns,
-  <code>theme.text</code> and <code>theme.font</code> for a label.
-</p>
 
-<h3>Fast live updates (optional)</h3>
+<h3>Registering it before a layout is read</h3>
 <p>
-  On every live tick only the forming bar changes. Implement <code>update()</code> to recompute just
-  the bars from <code>from</code> onward instead of the whole history — the chart uses it on ticks and
-  new bars, and falls back to <code>calculate()</code> when it's missing or returns <code>null</code>.
-  It must produce the same values <code>calculate()</code> would.
+  A saved layout names indicators by id, and one that isn't registered when the layout is read is left out. Give a
+  <code>ChartWidget</code> your indicators in <code>plugins</code>: they are registered before it restores a layout
+  (<code>persistLayouts</code>), a template or a shared view. On a <code>Chart</code>, pass <code>plugins</code> to the
+  constructor, or register before <code>loadState()</code>.
 </p>
-<pre><code>{`update(data, config, prev, from) {
-  if (!this.canResume(data, prev, from)) return null   // IndicatorBase helper
-  for (let i = from; i < data.length; i++) {
-    this.writePoint(prev, data, i, { value: /* recompute bar i */ 0 })
-  }
-  return prev
-}`}</code></pre>
+<pre><code>{`new ChartWidget(host, { symbol, adapter, persistLayouts: true, plugins: [{ kind: 'indicator', plugin: new TurningMacd() }] })
+
+const chart = new Chart(host, { plugins: [{ kind: 'indicator', plugin: new TurningMacd() }] })
+chart.addIndicator('turning-macd', { fast: 8 })`}</code></pre>
+
+<h3>What the chart reads off it</h3>
+<ul>
+  <li><strong>The legend</strong> names it by <code>shortName</code> and the inputs that differ from
+    <code>defaultConfig</code> (a choice by its label), and shows the value of each plot but markers, in its colour.</li>
+  <li><strong>The price axis</strong> tags the latest value of those plots.</li>
+  <li><strong>The CSV export</strong> has a column for each of them, named by the legend's name and, when there is
+    more than one, the plot's <code>title</code>.</li>
+  <li><strong>The settings dialog</strong> edits the inputs, lists each plot with its colour, whether it shows, and a
+    dash for a line or a step, and edits the levels.</li>
+  <li><strong>The Indicators dialog</strong> lists it by <code>name</code> under its <code>category</code>.</li>
+  <li><strong>Another indicator</strong> can read its lines (the same plots) as its source.</li>
+</ul>
+<p>
+  Coding agents get the same guide, with code type-checked against the published packages, from the MCP server's
+  <code>custom_indicator</code> tool and the skill's
+  <a href="https://github.com/bonguynvan/tradecanvas/blob/main/skills/tradecanvas/references/recipes.md#a-custom-indicator">custom indicator recipe</a>.
+</p>
 
 <h2>Custom drawing tool</h2>
 <p>

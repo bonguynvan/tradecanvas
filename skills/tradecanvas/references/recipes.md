@@ -811,6 +811,147 @@ values stay the same whatever `setTimeZone` displays. A new zone computes again
 only the indicators that read it and those that read their lines; one of yours
 that reads no zone can say `readsExchangeTimeZone: false` in its descriptor.
 
+### Live ticks: `update` and `revisesBefore`
+
+On each tick only the newest bar changes. Without `update`, the chart runs
+`calculate` over the whole history again; with it, the chart hands back your
+last output (`prev`) and the first bar that changed (`from`), and you
+recompute from there. Return `null` to have `calculate` run instead. The
+values must be the ones `calculate` would give. `canResume` and `writePoint`
+(from `IndicatorBase`) check that `prev` still fits the bars and write a bar
+into both `series` and `values`.
+
+`revisesBefore` says how far back an `update` may rewrite: a swing high is
+known only once `n` bars after it are in, so a new bar can change the one `n`
+back. Indicators that read this one's line are then recomputed from there.
+
+```ts
+import { IndicatorBase, IndicatorValueMap } from '@tradecanvas/chart';
+import type { DataSeries, IndicatorConfig, IndicatorDescriptor, IndicatorOutput, IndicatorValue } from '@tradecanvas/chart';
+
+/** A swing high: the bar `strength` bars back is higher than the `strength` bars either side of it. */
+class SwingHighs extends IndicatorBase {
+  descriptor: IndicatorDescriptor = {
+    id: 'swingHighs',
+    name: 'Swing Highs',
+    placement: 'overlay',
+    defaultConfig: { strength: 2 },
+    inputs: { strength: { kind: 'int', min: 1, max: 20 } },
+    plots: [{ key: 'high', title: 'Swing high', color: 0, kind: 'markers', shape: 'triangleDown', position: 'aboveBar' }],
+  };
+
+  private point(data: DataSeries, i: number, n: number): IndicatorValue | null {
+    if (i < n || i + n >= data.length) return null;
+    for (let k = 1; k <= n; k++) {
+      if (data[i - k].high >= data[i].high || data[i + k].high > data[i].high) return null;
+    }
+    return { high: data[i].high };
+  }
+
+  calculate(data: DataSeries, config: IndicatorConfig): IndicatorOutput {
+    const n = Number(config.params.strength) || 2;
+    const out: IndicatorOutput = { values: new IndicatorValueMap(), series: new Array(data.length).fill(null) };
+    for (let i = 0; i < data.length; i++) this.writePoint(out, data, i, this.point(data, i, n));
+    return out;
+  }
+
+  // A new bar decides the bar `strength` back: the chart passes `from` that far back.
+  revisesBefore(config: IndicatorConfig): number {
+    return Number(config.params.strength) || 2;
+  }
+
+  update(data: DataSeries, config: IndicatorConfig, prev: IndicatorOutput, from: number): IndicatorOutput | null {
+    if (!this.canResume(data, prev, from)) return null;
+    const n = Number(config.params.strength) || 2;
+    for (let i = from; i < data.length; i++) this.writePoint(prev, data, i, this.point(data, i, n));
+    return prev;
+  }
+}
+
+export const swingHighs = new SwingHighs();
+```
+
+### Drawing more than its plots
+
+`IndicatorBase.render` draws the descriptor's `plots` and `fills`. Override
+it to draw more, and call it first. The fifth argument holds the theme the
+chart draws with, for colours and a font the style doesn't give. A mark on
+some bars needs no `render` of yours: a `markers` plot draws it.
+
+```ts
+import { IndicatorBase, barIndexToX, priceToY } from '@tradecanvas/chart';
+import type { IndicatorOutput, IndicatorRenderContext, ResolvedIndicatorStyle, ViewportState } from '@tradecanvas/chart';
+
+/** Its last value written beside it, in the theme's text colour and font. */
+export abstract class LabelledLast extends IndicatorBase {
+  render(ctx: CanvasRenderingContext2D, output: IndicatorOutput, viewport: ViewportState, style: ResolvedIndicatorStyle, context: IndicatorRenderContext): void {
+    super.render(ctx, output, viewport, style, context);
+    const series = output.series ?? [];
+    const last = series.length - 1;
+    const value = series[last]?.value;
+    if (value === undefined || last > viewport.visibleRange.to) return;
+    ctx.fillStyle = context.theme.text;
+    ctx.font = `${context.theme.font.sizeSmall}px ${context.theme.font.family}`;
+    ctx.fillText(value.toFixed(2), barIndexToX(last, viewport) + 6, priceToY(value, viewport));
+  }
+}
+
+```
+
+### Its colours in each theme
+
+`defaultStyle` is the look an indicator starts with: a style, or a function of
+the theme. An instance on it follows `chart.setTheme()`, a colour someone picks
+stays, and the viewer's own saved default (`chart.setIndicatorDefaults`, the
+widget's *Save as default*) comes first. A saved layout leaves the theme's
+colours out, so it opens in the colours of the theme it is shown in.
+
+```ts
+import type { IndicatorDescriptor, Theme } from '@tradecanvas/chart';
+
+const themedLook: Pick<IndicatorDescriptor, 'defaultStyle'> = {
+  defaultStyle: (theme: Theme) => ({ colors: theme.name === 'light' ? ['#1f4e8c'] : ['#8ab4f8'], lineWidths: [2] }),
+};
+```
+
+### Registered before a saved layout is read
+
+A saved layout names indicators by id: one that isn't registered when the
+layout is read is left out. Give a `ChartWidget` your indicators in `plugins`,
+and they are registered before it restores a layout (`persistLayouts`), a
+template or a shared view. On a `Chart`, pass `plugins` to the constructor, or
+call `chart.registerIndicator()` before `loadState`.
+
+```ts
+import { MockAdapter } from '@tradecanvas/chart';
+import type { IndicatorPlugin } from '@tradecanvas/chart';
+import { ChartWidget } from '@tradecanvas/chart/widget';
+
+declare const myIndicator: IndicatorPlugin;
+
+new ChartWidget(document.getElementById('chart')!, {
+  symbol: 'BTCUSDT',
+  adapter: new MockAdapter({ basePrice: 64_000 }),
+  persistLayouts: true,
+  plugins: [{ kind: 'indicator', plugin: myIndicator }],
+});
+```
+
+### What the chart reads off the descriptor
+
+- **The legend** names it by `shortName` and the inputs that differ from
+  `defaultConfig`, and shows the value of each plot that is not `markers`, in
+  its colour.
+- **The price axis** tags the latest value of those same plots.
+- **The CSV export** (`chart.getExportData`) has a column for each of them,
+  named by the legend's name and, when there is more than one, the plot's
+  `title`.
+- **The settings dialog** edits `inputs` (by `kind`, with `label`, limits and
+  labelled `options`), and lists each plot in the Style tab with its colour and
+  whether it shows, and a dash for a `line` or `step`. It edits `levels` too.
+- **The Indicators dialog** lists it under `category`, by `name`.
+- **Another indicator** can read its lines, the same plots, as a source.
+
 ## An overlay of your own, on the price grid
 
 An overlay plugin draws on a layer each frame. `overlayScale(context)` places

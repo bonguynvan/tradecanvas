@@ -5,6 +5,7 @@
 // option's name, doc, and the values it allows. scripts/gen-ai-docs.mjs
 // writes the result to packages/mcp/src/catalog.json.
 import ts from 'typescript';
+import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
@@ -225,6 +226,19 @@ function readOptions(root) {
   return { options, nested, timeframes, financeCharts };
 }
 
+/** Where the guide to writing an indicator is: the skill's recipe, whose code CI type-checks. */
+const CUSTOM_INDICATOR_SOURCE = 'skills/tradecanvas/references/recipes.md';
+const CUSTOM_INDICATOR_HEADING = '## A custom indicator';
+
+/** The recipe's "A custom indicator" section, up to the next section of its level. */
+function readCustomIndicatorGuide(root) {
+  const text = readFileSync(join(root, CUSTOM_INDICATOR_SOURCE), 'utf8').replace(/\r\n/g, '\n');
+  const start = text.indexOf(`${CUSTOM_INDICATOR_HEADING}\n`);
+  if (start < 0) throw new Error(`mcp catalog: no "${CUSTOM_INDICATOR_HEADING}" in ${CUSTOM_INDICATOR_SOURCE}`);
+  const next = text.indexOf('\n## ', start + CUSTOM_INDICATOR_HEADING.length);
+  return { source: CUSTOM_INDICATOR_SOURCE, guide: text.slice(start, next < 0 ? undefined : next).trim() };
+}
+
 /** Everything the server answers from, as one JSON-ready object. */
 export async function buildMcpCatalog(root, indicators) {
   const load = (rel) => import(pathToFileURL(join(root, rel)).href);
@@ -262,5 +276,6 @@ export async function buildMcpCatalog(root, indicators) {
     options,
     nested,
     financeCharts,
+    customIndicator: readCustomIndicatorGuide(root),
   };
 }

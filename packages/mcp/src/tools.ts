@@ -144,7 +144,16 @@ export const TOOLS: readonly ToolDefinition[] = [
       }
       const ids = catalog.indicators.map((i) => i.id);
       const suggestions = [...new Set([...closest(wanted, ids), ...catalog.indicators.filter((i) => matches(wanted, i.id, i.shortName, i.name)).map((i) => i.id)])].slice(0, 5);
-      return fail(`No indicator '${wanted}'.${suggestions.length ? ` Did you mean ${suggestions.map((s) => `'${s}'`).join(', ')}?` : ''} list_indicators lists them.`, { suggestions });
+      return fail(`No indicator '${wanted}'.${suggestions.length ? ` Did you mean ${suggestions.map((s) => `'${s}'`).join(', ')}?` : ''} list_indicators lists them; for one of your own, custom_indicator says how to write and register it.`, { suggestions });
+    },
+  },
+  {
+    name: 'custom_indicator',
+    title: 'Write an indicator of your own',
+    description: 'How to write and register an indicator of your own (an IndicatorPlugin, usually a class extending IndicatorBase): the descriptor (plots and their kinds, markers among them; inputs and labelled choices; scale, levels, category, defaultStyle by theme), calculate, the incremental update and when revisesBefore is needed, render, registering it before a saved layout is read (ChartWidget plugins), and what the legend, the axis, the CSV export and the settings take from the descriptor. Markdown with TypeScript that is type-checked against the published packages.',
+    inputSchema: { type: 'object', properties: {}, additionalProperties: false },
+    run(_args, catalog) {
+      return ok(catalog.customIndicator);
     },
   },
   {
