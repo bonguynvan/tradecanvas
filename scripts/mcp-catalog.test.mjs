@@ -16,10 +16,11 @@ test('reads what each constructor takes, beyond its options interface: Chart\'s 
   assert.ok(option('ChartWidgetGrid', 'cells'));
 });
 
-test('reads ChartWidget\'s chartOptions by its own type, which has no plugins', () => {
+test("reads ChartWidget's chartOptions by its own type, the chart's options and its plugins", () => {
   const names = catalog.nested['ChartWidget.chartOptions'].map((o) => o.name);
   assert.ok(names.includes('renderer'));
-  assert.ok(!names.includes('plugins'));
+  assert.match(catalog.nested['ChartWidget.chartOptions'].find((o) => o.name === 'plugins').doc, /plugins/i);
+  assert.ok(option('ChartWidget', 'plugins'));
 });
 
 test('keeps a union in the order it is written', () => {

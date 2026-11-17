@@ -35,15 +35,17 @@ export interface NamedIndicator {
 
 /**
  * The indicator's name in the legend, the chips and the Objects panel: its
- * chip label ('EMA 21'), then the word for each choice off its default, so
- * two read apart ('VWAP', 'VWAP Week'). The CSV column keeps the chip label.
+ * chip label ('EMA 21'), then the word for each choice off its default (the
+ * indicator's own label for it, else the widget's), so two read apart
+ * ('VWAP', 'VWAP Week'). The CSV column keeps the chip label.
  */
 export function widgetIndicatorLabel(ind: NamedIndicator, t: Translator): string {
   const { defaultConfig, shortName, inputs } = ind.descriptor;
   const words = Object.entries(inputs ?? {}).flatMap(([name, spec]) => {
     const value = ind.params[name];
     if (!spec.options || (typeof value !== 'string' && typeof value !== 'number') || value === defaultConfig[name]) return [];
-    return choiceLabel(name, value, t) ?? [];
+    const own = spec.options.find((option) => option !== null && typeof option === 'object' && String(option.value) === String(value));
+    return (typeof own === 'object' ? own.label : undefined) ?? choiceLabel(name, value, t) ?? [];
   });
   return [indicatorChipLabel(ind.id, ind.params, defaultConfig, shortName), ...words].join(' ');
 }

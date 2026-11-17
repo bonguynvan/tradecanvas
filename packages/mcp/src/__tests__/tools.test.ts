@@ -13,6 +13,19 @@ describe('tools', () => {
     }
   });
 
+  it('custom_indicator gives the guide to writing one, with code that is type-checked', () => {
+    const guide = call('custom_indicator').data as { guide: string; source: string };
+    expect(guide.source).toContain('recipes.md');
+    for (const part of ['IndicatorBase', 'calculate', 'update', 'revisesBefore', 'render', 'defaultStyle', "kind: 'markers'", 'plugins:', 'The CSV export']) {
+      expect(guide.guide, part).toContain(part);
+    }
+    expect(guide.guide).not.toContain('## An overlay of your own');
+  });
+
+  it('get_indicator points to custom_indicator for an id that is not built in', () => {
+    expect(call('get_indicator', { id: 'tdk-turns' }).text).toContain('custom_indicator');
+  });
+
   it('list_indicators finds by id, name or short name, and filters by placement', () => {
     const all = call('list_indicators').data as { count: number; indicators: { id: string; placement: string }[] };
     expect(all.count).toBe(all.indicators.length);

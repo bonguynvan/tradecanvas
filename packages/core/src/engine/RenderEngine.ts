@@ -20,6 +20,7 @@ import type { PriceAxis } from '../axis/PriceAxis.js';
 import type { TimeAxis } from '../axis/TimeAxis.js';
 import type { CrosshairHandler } from '../interaction/CrosshairHandler.js';
 import type { IndicatorEngine } from '../indicators/IndicatorEngine.js';
+import { valuePlots } from '../indicators/plots.js';
 import type { DrawingRenderer } from '../drawings/DrawingRenderer.js';
 import type { TradingRenderer } from '../trading/TradingRenderer.js';
 import type { CurrentPriceLine } from '../realtime/CurrentPriceLine.js';
@@ -939,7 +940,7 @@ export class RenderEngine {
       const plots = desc?.descriptor.plots;
       const parts: string[] = [];
       if (plots) {
-        for (const plot of plots) {
+        for (const plot of valuePlots(plots)) {
           const v = val[plot.key];
           if (v !== undefined && Number.isFinite(v)) parts.push(`${plot.title} ${priceScaleText(v, pv, precision, locale)}`);
         }

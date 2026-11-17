@@ -7,6 +7,11 @@ const COLORS = ['#first', '#second', '#third', '#fourth'];
 const plots = (...list: IndicatorPlot[]) => ({ plots: list });
 
 describe('legendValues', () => {
+  it('leaves out a markers plot: it marks bars, it is not a value', () => {
+    const turns = plots({ key: 'value', title: 'MACD', color: 0 }, { key: 'turn', title: 'Turn', color: 1, kind: 'markers' });
+    expect(legendValues(turns, { value: 1.5, turn: 1.5 }, COLORS)).toEqual([{ value: 1.5, color: '#first' }]);
+  });
+
   it('lists the drawn plots in order, each in its own colour', () => {
     const bb = plots(
       { key: 'upper', title: 'Upper', color: 0 },

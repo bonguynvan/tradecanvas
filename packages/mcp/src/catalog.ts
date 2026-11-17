@@ -92,6 +92,8 @@ export interface Catalog {
   nested: Record<string, OptionEntry[]>;
   /** The finance charts (bars, donut, depth, equity curve…) and the dashboard, each with its options. */
   financeCharts: FinanceChartEntry[];
+  /** How to write an indicator of your own: the skill's recipe (Markdown, its code type-checked) and the file it is in. */
+  customIndicator: { guide: string; source: string };
 }
 
 /** Generated from the code by scripts/gen-ai-docs.mjs. */

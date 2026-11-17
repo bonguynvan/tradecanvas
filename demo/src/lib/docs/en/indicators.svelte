@@ -225,7 +225,12 @@ CANDLE_PATTERNS.length                                 // 64`}</code></pre>
   period: { kind: 'int', min: 2, max: 500 },
   mult: { kind: 'number', min: 0.1, step: 0.1 },
   source: { source: true },
+  type: { kind: 'choice', options: [{ value: 'ema', label: 'Exponential' }, { value: 'sma', label: 'Simple' }] },
 }`}</code></pre>
+<p>
+  A choice's <code>options</code> are values, or values with the label the settings show for them
+  (<code>{'{ value, label }'}</code>), in your app's language; the indicator is given the value.
+</p>
 <p>
   The descriptor also says how its plots look, and the chart draws them so: <code>fills</code> shade between two
   plots where both have a value, under the lines; a plot's <code>width</code> keeps it at that width whatever the
@@ -240,6 +245,17 @@ CANDLE_PATTERNS.length                                 // 64`}</code></pre>
   { key: 'lower', title: 'Lower', color: 0 },
 ],
 fills: [{ between: ['upper', 'lower'], color: 0, opacity: 0.1 }],`}</code></pre>
+<p>
+  A plot of <code>kind: 'markers'</code> marks the bars where its field has a value (a turn, a signal) with a
+  <code>shape</code>, <code>'dot'</code>, <code>'triangleUp'</code> or <code>'triangleDown'</code>, at the value or, on the
+  price pane, above the bar's high or below its low (<code>position: 'aboveBar'</code>, <code>'belowBar'</code>). It is
+  not a value to read: it gets none in the legend, no tag on the axis and no column in an export, and is not offered
+  as a line another indicator can read. In a pane, its marks are at their values. Leave the field unset on the bars without a mark.
+</p>
+<pre><code>{`plots: [
+  { key: 'value', title: 'MACD', color: 0 },
+  { key: 'turn', title: 'Turn', color: 1, kind: 'markers', shape: 'triangleUp', position: 'belowBar' },
+],`}</code></pre>
 
 <h2>Panes: resize, fold, maximise, reorder</h2>
 <p>

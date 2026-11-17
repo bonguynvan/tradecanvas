@@ -48,6 +48,7 @@ All of them read only; none touches the network or your files.
 |---|---|
 | `list_indicators` | The built-in indicators: id, name, and whether it draws over the price or in a pane. Search by words. |
 | `get_indicator` | One indicator in full: default params, inputs, the keys of its lines (RSI's is `value`, not `rsi`), levels, and code that adds it and reads it. |
+| `custom_indicator` | How to write and register an indicator of your own: the descriptor (plots, markers, inputs, colours by theme), `calculate`, the incremental `update` and `revisesBefore`, `render`, registering it before a saved layout is read, and what the legend, the axis and the export take from it. Type-checked code. |
 | `list_drawing_tools` | The drawing tools: the `type` that `addDrawing` and `setDrawingTool` take, the points each needs, its options. |
 | `list_finance_charts` | The charts that are not the trading chart (bars, donut, depth, equity curve, market map, gauge…): each class's name and what it is for. |
 | `list_options` | The options of `ChartWidget`, `Chart`, `ChartWidgetGrid` or a finance chart by its class name: name, TypeScript type, doc, allowed values. |

@@ -31,6 +31,25 @@ describe('describeInputs', () => {
     expect(inputs[1].options).toEqual(['sma', 'ema']);
   });
 
+  it("takes a choice's options as values with labels, or plain values, and lists the values", () => {
+    const [input] = describeInputs(descriptor({ type: 'ema' }, {
+      type: { options: [{ value: 'ema', label: 'Đường EMA' }, 'sma', { value: 3, label: 'Three' }] },
+    }));
+    expect(input.kind).toBe('choice');
+    expect(input.options).toEqual(['ema', 'sma', 3]);
+    expect(input.optionLabels).toEqual({ ema: 'Đường EMA', 3: 'Three' });
+  });
+
+  it('leaves out a null a script passed as an option', () => {
+    const [input] = describeInputs(descriptor({ type: 'a' }, { type: { options: [null as never, 'a'] } }));
+    expect(input.options).toEqual(['a']);
+  });
+
+  it('gives no labels for plain values', () => {
+    const [input] = describeInputs(descriptor({ type: 'sma' }, { type: { options: ['sma', 'ema'] } }));
+    expect(input.optionLabels).toBeUndefined();
+  });
+
   it('takes a declared kind over the default, and keeps the label and limits', () => {
     const [input] = describeInputs(descriptor({ period: 20 }, { period: { kind: 'int', label: 'Length', min: 2, max: 500 } }));
     expect(input).toEqual({ name: 'period', kind: 'int', default: 20, label: 'Length', min: 2, max: 500, step: 1 });

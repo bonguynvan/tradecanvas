@@ -131,6 +131,23 @@ describe('WidgetIndicatorSettings', () => {
     expect(choices()).toEqual(['session', 'week', 'month', 'all'].map((a) => JA_MESSAGES[`indicatorInput.anchor.${a}` as MessageKey]));
     expect(choices()).not.toContain('session');
   });
+
+  it("shows a choice's own labels, and gives back its value", () => {
+    dialog.open({
+      instanceId: 't1', indicatorId: 'tdk-ma', name: 'TDK MA',
+      defaults: { type: 'ema', anchor: 'week' }, params: { type: 'ema', anchor: 'week' },
+      inputs: {
+        type: { options: [{ value: 'ema', label: 'Trung bình mũ' }, { value: 'sma', label: 'Trung bình đơn' }, 'wma'] },
+        // A label of the app's own over the widget's name for a value it knows.
+        anchor: { options: [{ value: 'week', label: 'Tuần' }, 'month'] },
+      },
+    });
+    const selects = [...host.querySelectorAll<HTMLSelectElement>('.tcw-modal-body select')];
+    expect([...selects[0].options].map((o) => [o.value, o.textContent])).toEqual([['ema', 'Trung bình mũ'], ['sma', 'Trung bình đơn'], ['wma', 'wma']]);
+    expect([...selects[1].options].map((o) => o.textContent)).toEqual(['Tuần', 'Month']);
+    change(selects[0], 'sma');
+    expect(onApply).toHaveBeenLastCalledWith('t1', { type: 'sma' });
+  });
 });
 
 describe('WidgetIndicatorSettings style', () => {

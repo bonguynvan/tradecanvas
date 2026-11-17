@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import type { OHLCBar } from '@tradecanvas/commons';
+import type { IndicatorValue, OHLCBar } from '@tradecanvas/commons';
 import { Chart } from '../Chart.js';
 import { installChartStubs, sizedHost } from './chartTestEnv.js';
 
@@ -39,6 +39,30 @@ describe('exporting the chart’s data', () => {
     expect(header).toBe('Time,Open,High,Low,Close,Volume,SMA 20,MACD 12 26 9 Histogram,MACD 12 26 9 MACD,MACD 12 26 9 Signal');
     expect(first.endsWith(',,,,')).toBe(true); // no average yet on the first bar
     expect(last.split(',').every((cell) => cell !== '')).toBe(true);
+  });
+
+  it('gives a markers plot no column, and names the one line left by the indicator alone', () => {
+    chart.plugins.register({
+      kind: 'indicator',
+      plugin: {
+        descriptor: {
+          id: 'turns', name: 'Turns', shortName: 'TURNS', placement: 'panel', defaultConfig: {},
+          plots: [{ key: 'value', title: 'Value', color: 0 }, { key: 'turn', title: 'Turn', color: 1, kind: 'markers' }],
+        },
+        calculate(data) {
+          const values = new Map<number, IndicatorValue>();
+          const series = data.map((bar, i) => {
+            const v = { value: bar.close, ...(i % 7 === 0 ? { turn: bar.close } : {}) };
+            values.set(bar.time, v);
+            return v;
+          });
+          return { values, series };
+        },
+        render() {},
+      },
+    });
+    chart.addIndicator('turns');
+    expect(chart.getExportData().columns.map((c) => c.name)).toEqual(['TURNS']);
   });
 
   it('names Stochastic RSI’s columns after all four of its lengths', () => {

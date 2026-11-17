@@ -24,4 +24,10 @@ describe('an indicator’s label in the widget', () => {
   it('keeps the chip label of an indicator whose choices it has no words for', () => {
     expect(widgetIndicatorLabel({ id: 'ema', params: { period: 21 }, descriptor: descriptor('ema') }, EN_TRANSLATOR)).toBe('EMA 21');
   });
+
+  it("names a choice off its default by the indicator's own label for it", () => {
+    const own = { defaultConfig: { type: 'ema' }, shortName: 'TDK', inputs: { type: { options: [{ value: 'ema', label: 'Mũ' }, { value: 'sma', label: 'Đơn' }, 'wma'] } } };
+    expect(widgetIndicatorLabel({ id: 'tdk', params: { type: 'sma' }, descriptor: own }, EN_TRANSLATOR)).toBe('TDK Đơn');
+    expect(widgetIndicatorLabel({ id: 'tdk', params: { type: 'ema' }, descriptor: own }, EN_TRANSLATOR)).toBe('TDK');
+  });
 });
