@@ -17,6 +17,36 @@ const PANE_ROW_STEP = 17;
 /** Where a pane's buttons (move, fold, maximise) sit below its top edge. */
 const PANE_CONTROLS_TOP = 3;
 
+/**
+ * A pane's button, the gap between two and the padding around them (px), as `.tcw-pane-btn` and
+ * `.tcw-pane-controls` in WidgetStyles.css draw them: change both together.
+ */
+const PANE_BUTTON = 18;
+const PANE_BUTTON_GAP = 1;
+const PANE_CONTROLS_PAD = 1;
+/** Between a pane's first row and its buttons (px). */
+const PANE_ROW_CONTROLS_GAP = 4;
+
+/**
+ * How many buttons a pane shows at its top right: as `WidgetIndicatorLegend` hides them, and
+ * each only with its switch on (`features`: `pane.move`, `pane.collapse`, `pane.maximize`).
+ */
+function paneButtonCount(
+  pane: { canMoveUp: boolean; canMoveDown: boolean; maximized: boolean },
+  on: { move: boolean; collapse: boolean; maximize: boolean },
+): number {
+  const maximize = on.maximize ? 1 : 0;
+  if (pane.maximized) return maximize;
+  const move = on.move ? (pane.canMoveUp ? 1 : 0) + (pane.canMoveDown ? 1 : 0) : 0;
+  return move + (on.collapse ? 1 : 0) + maximize;
+}
+
+/** The room a pane's buttons take across its top, with the gap a row keeps from them (px); none without any. */
+function paneControlsRoom(buttons: number): number {
+  if (buttons === 0) return 0;
+  return buttons * PANE_BUTTON + (buttons - 1) * PANE_BUTTON_GAP + 2 * PANE_CONTROLS_PAD + PANE_ROW_CONTROLS_GAP;
+}
+
 /** A row's own padding either side of its text, px: what it stands nearer the edge than the chart's legend. */
 const ROW_PAD = 4;
 
@@ -87,10 +117,25 @@ export class WidgetLegendView {
     const hover = this.host.legendHoverIndex;
     const inset = legendRowInset(this.host.chart);
     const idx = hover === null ? last : Math.min(Math.max(hover, 0), last);
-    // Each pane's indicators, its own first, stacked down from its top.
-    const panes = new Map<string, { x: number; y: number; width: number; height: number; row: number }>();
-    for (const pane of this.host.chart.getIndicatorPanes()) {
-      (pane.instanceIds ?? [pane.instanceId]).forEach((id, row) => panes.set(id, { ...pane.rect, row }));
+    const maximized = this.host.chart.getMaximizedPane();
+    // As the panes show: one maximised folds the others.
+    const paneStates = this.host.chart.getIndicatorPanes().map((pane) => ({
+      pane,
+      collapsed: this.host.chart.isPaneCollapsed(pane.instanceId),
+      maximized: maximized === pane.instanceId,
+      canMoveUp: this.host.chart.canMovePane(pane.instanceId, -1),
+      canMoveDown: this.host.chart.canMovePane(pane.instanceId, 1),
+    }));
+    // Each pane's indicators, its own first, stacked down from its top; the first on the line of
+    // the pane's buttons, short of them (on a phone they covered its values).
+    const panes = new Map<string, { x: number; y: number; width: number; height: number; row: number; room: number }>();
+    const features = this.host.featureState;
+    const on = { move: features['pane.move'], collapse: features['pane.collapse'], maximize: features['pane.maximize'] };
+    for (const state of paneStates) {
+      const { pane } = state;
+      (pane.instanceIds ?? [pane.instanceId]).forEach((id, row) => panes.set(id, {
+        ...pane.rect, row, room: row === 0 ? paneControlsRoom(paneButtonCount(state, on)) : 0,
+      }));
     }
     const locale = this.host.settingsState.numberLocale || 'en-US';
     // The symbols compared in percent first: the lines on the price scale itself. With nothing
@@ -121,25 +166,20 @@ export class WidgetLegendView {
             x: pane.x + inset,
             // A short pane with many indicators: the last rows overlap rather than spill out.
             y: pane.y + Math.min(PANE_ROW_TOP + pane.row * PANE_ROW_STEP, Math.max(PANE_ROW_TOP, pane.height - PANE_ROW_STEP)),
-            width: pane.width - 2 * inset,
+            width: pane.width - 2 * inset - pane.room,
           }
           : null,
       };
     });
     const rows = [...compares, ...indicators];
     const plot = this.host.chart.getPlotRect();
-    const maximized = this.host.chart.getMaximizedPane();
     const labelOf = (id: string) => rows.find((r) => r.instanceId === id)?.label ?? '';
-    // As the panes show: one maximised folds the others.
-    const paneControls: IndicatorLegendPane[] = this.host.chart.getIndicatorPanes().map((pane) => ({
+    const paneControls: IndicatorLegendPane[] = paneStates.map(({ pane, ...state }) => ({
       instanceId: pane.instanceId,
       x: pane.rect.x + pane.rect.width - inset,
       y: pane.rect.y + PANE_CONTROLS_TOP,
       label: labelOf(pane.instanceId),
-      collapsed: this.host.chart.isPaneCollapsed(pane.instanceId),
-      maximized: maximized === pane.instanceId,
-      canMoveUp: this.host.chart.canMovePane(pane.instanceId, -1),
-      canMoveDown: this.host.chart.canMovePane(pane.instanceId, 1),
+      ...state,
     }));
     this.host.indicatorLegend.update(rows, { left: plot.x + inset, top: this.host.chart.getLegendBottom() + STACK_GAP }, paneControls);
   }

@@ -292,10 +292,18 @@ export class ChartLegend {
     // one line that wraps where the plot is too narrow for it.
     const cells = this.titleCells(ctx, fs, family, text, label);
     if (this.config.showOHLC) cells.push(...this.priceCells(ctx, viewport, theme, bar, prevBar, fs, family, text));
+    // K, M and B in the locale's decimal mark; 만, 억 and 조 when it is Korean.
+    const vol = formatVolumeLoc(bar.volume, this.locale);
+    let volumeDrawn = !this.config.showVolume;
     if (cells.length > 0) {
       ctx.font = `${fs}px ${family}`;
       const gap = ctx.measureText('  ').width;
-      for (const line of wrapCells(cells, gap, chartRect.width - 2 * this.inset)) {
+      const room = chartRect.width - 2 * this.inset;
+      const lines = wrapCells(cells, gap, room);
+      // Lines that wrapped are a narrow chart's: the volume ends the last one where it fits
+      // there, rather than taking a line of its own under them.
+      if (!volumeDrawn && lines.length > 1) volumeDrawn = joinLast(lines, volumeCell(ctx, vol, fs, family, label), gap, room);
+      for (const line of lines) {
         const total = line.reduce((sum, c) => sum + c.labelWidth + c.width + gap, -gap);
         widest = Math.max(widest, total);
         let cx = isLeft ? x : x - total;
@@ -317,12 +325,10 @@ export class ChartLegend {
       ctx.textAlign = isLeft ? 'left' : 'right';
     }
 
-    // Volume
-    if (this.config.showVolume) {
+    // Volume, on a line of its own unless it ended the prices' last
+    if (!volumeDrawn) {
       ctx.font = `${fs}px ${family}`;
       ctx.fillStyle = label;
-      // K, M and B in the locale's decimal mark; 만, 억 and 조 when it is Korean.
-      const vol = formatVolumeLoc(bar.volume, this.locale);
       const volWidth = ctx.measureText(`Vol ${vol}`).width;
       this.drawGround(ctx, theme, isLeft ? x : x - volWidth, y, volWidth, fs);
       ctx.fillStyle = label;
@@ -399,6 +405,22 @@ function wrapCells(cells: readonly LegendCell[], gap: number, width: number): Le
   }
   if (line.length > 0) lines.push(line);
   return lines;
+}
+
+/** The volume as a cell of the wrapping lines: "Vol" and its figure, both in the label colour. */
+function volumeCell(ctx: CanvasRenderingContext2D, vol: string, fs: number, family: string, color: string): LegendCell {
+  const font = `${fs}px ${family}`;
+  ctx.font = font;
+  return { label: 'Vol', labelWidth: ctx.measureText('Vol ').width, value: vol, width: valueSlot(ctx, vol), color, font };
+}
+
+/** Put `cell` at the end of the last of `lines` when it fits in `width` there; whether it did. */
+function joinLast(lines: LegendCell[][], cell: LegendCell, gap: number, width: number): boolean {
+  const last = lines[lines.length - 1];
+  const used = last.reduce((sum, c) => sum + c.labelWidth + c.width + gap, -gap);
+  if (used + gap + cell.labelWidth + cell.width > width) return false;
+  last.push(cell);
+  return true;
 }
 
 /**

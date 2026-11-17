@@ -291,8 +291,26 @@ describe('on-chart indicator legend', () => {
     const [rsi] = rows();
     expect(rsi.classList.contains('tcw-ind-legend-row--pane')).toBe(true);
     expect([rsi.style.left, rsi.style.top]).toEqual(['8px', '307px']); // below the divider's grab zone
-    expect(rsi.style.maxWidth).toBe('584px'); // stays inside its pane
+    // Inside its pane and clear of the pane's two buttons beside it (fold, maximise: 39 px and a 4 px gap),
+    // which on a phone covered its values.
+    expect(rsi.style.maxWidth).toBe('541px');
     expect(values(rsi).map((v) => v.textContent)).toEqual(['54.32']);
+  });
+
+  it('keeps no room for a pane’s buttons switched off', async () => {
+    widget.destroy();
+    host.replaceChildren();
+    widget = new ChartWidget(host, { adapter, symbol: 'AAA', timeframe: '5m', watchlist: false, features: { 'pane.collapse': false } });
+    FakeChart.last.addIndicator('rsi');
+    await frame();
+    // Maximise alone: 20 px and the gap.
+    expect(rows()[0].style.maxWidth).toBe('560px');
+    widget.destroy();
+    host.replaceChildren();
+    widget = new ChartWidget(host, { adapter, symbol: 'AAA', timeframe: '5m', watchlist: false, features: { 'pane.collapse': false, 'pane.maximize': false } });
+    FakeChart.last.addIndicator('rsi');
+    await frame();
+    expect(rows()[0].style.maxWidth).toBe('584px');
   });
 
   it('reads the values at the hovered bar, and the latest bar off the chart', async () => {

@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- **The legend takes less of a phone's chart** (`@tradecanvas/core`, `@tradecanvas/chart`): on a touch screen each indicator's row in `ChartWidget`'s legend showed its four buttons (show, settings, more, remove) at all times, so two rows covered a block of candles at the top left and a pane's row a third of a small pane. A row now shows only its name and values; a tap opens it to show the buttons, as a hover does with a mouse, a tap of its name then opens the settings, and a tap of the row again, of another row or outside the legend closes it. The buttons are bigger and further apart for a thumb. A mouse and the keyboard work as before. A pane's first row now stops short of the pane's buttons at its top right, which covered the end of its values on a narrow chart. On a chart too narrow for the legend's prices on one line, the volume now ends their last line when it fits there instead of taking a line of its own, so a phone's legend is a line shorter.
+
 ## 2.13.0 (2026-11-16)
 
 ### Imports
