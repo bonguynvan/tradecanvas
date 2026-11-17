@@ -14,6 +14,7 @@ import type {
   SymbolInfo,
 } from '@tradecanvas/commons';
 import type { Chart } from '../Chart.js';
+import type { ChartPlugin } from '../plugins/contracts.js';
 import type { ChartWidget } from './ChartWidget.js';
 import type { WatchlistList } from './WatchlistStore.js';
 
@@ -244,7 +245,20 @@ export interface ChartWidgetOptions {
    * `numberLocale`, `features` (`priceAxisAddButton`, `replay`…), `chartType`,
    * `overrides`, `priceFormat` and the rest.
    */
-  chartOptions?: Partial<ChartOptions>;
+  chartOptions?: Partial<ChartOptions> & {
+    /** Plugins to install with the chart, as `new Chart` takes them; with the widget's own `plugins`, which win for the same id. */
+    plugins?: ChartPlugin[];
+  };
+
+  /**
+   * Your own indicators, drawing tools, chart types and overlays
+   * (`{ kind: 'indicator', plugin }`…), registered with the chart before the
+   * widget restores anything: a saved layout (`persistLayouts`), a template
+   * or a shared view that names one of your indicators gets it back. With
+   * any `chartOptions.plugins`; for the same id, these win. A grid cell's
+   * own `plugins` replace the grid's shared ones, as its other options do.
+   */
+  plugins?: ChartPlugin[];
 
   /**
    * A watchlist, a panel of the dock beside the chart: lists of symbols, a

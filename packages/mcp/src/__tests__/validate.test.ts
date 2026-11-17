@@ -118,8 +118,8 @@ describe('validateOptions', () => {
     expect(problems('Chart', { plugins: [] })).toEqual([]);
   });
 
-  it('reads chartOptions as its type says: ChartOptions, without the constructor\'s plugins', () => {
-    expect(problems('ChartWidget', { chartOptions: { plugins: [] } })[0].path).toBe('chartOptions.plugins');
+  it('knows the plugins a widget takes, on it and in its chartOptions', () => {
+    expect(problems('ChartWidget', { plugins: [], chartOptions: { plugins: [] } })).toEqual([]);
   });
 
   it('lets a grid cell use the messages of the grid\'s widget options', () => {

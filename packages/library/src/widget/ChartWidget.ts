@@ -778,6 +778,8 @@ export class ChartWidget {
         },
       },
       ...options.chartOptions,
+      // The app's plugins go in with the chart, before any layout is read.
+      plugins: [...(options.chartOptions?.plugins ?? []), ...(options.plugins ?? [])],
       // `features` is merged explicitly (host overrides win per-key) rather
       // than inherited wholesale from the `...options.chartOptions` spread
       // above — otherwise passing e.g. `chartOptions: { features: { x } }`

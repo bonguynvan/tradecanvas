@@ -6752,8 +6752,13 @@
       },
       {
         "name": "chartOptions",
-        "type": "Partial<ChartOptions>",
+        "type": "Partial<ChartOptions> & { plugins?: ChartPlugin[]; }",
         "doc": "Options for the chart inside the widget, as `new Chart` takes them: `numberLocale`, `features` (`priceAxisAddButton`, `replay`…), `chartType`, `overrides`, `priceFormat` and the rest."
+      },
+      {
+        "name": "plugins",
+        "type": "ChartPlugin[]",
+        "doc": "Your own indicators, drawing tools, chart types and overlays (`{ kind: 'indicator', plugin }`…), registered with the chart before the widget restores anything: a saved layout (`persistLayouts`), a template or a shared view that names one of your indicators gets it back. With any `chartOptions.plugins`; for the same id, these win."
       },
       {
         "name": "watchlist",
@@ -7518,6 +7523,11 @@
         "type": "boolean",
         "doc": "Show the bars outside the symbol's regular hours (`SymbolInfo.sessions`): pre- and post-market. Default true; bars a day or longer are never left out.",
         "kind": "boolean"
+      },
+      {
+        "name": "plugins",
+        "type": "ChartPlugin[]",
+        "doc": "Plugins to install with the chart, as `new Chart` takes them; with the widget's own `plugins`, which win for the same id."
       }
     ],
     "Chart.features": [
