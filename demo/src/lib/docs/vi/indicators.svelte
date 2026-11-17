@@ -220,7 +220,12 @@ CANDLE_PATTERNS.length                                 // 64`}</code></pre>
   period: { kind: 'int', min: 2, max: 500 },
   mult: { kind: 'number', min: 0.1, step: 0.1 },
   source: { source: true },
+  type: { kind: 'choice', options: [{ value: 'ema', label: 'Exponential' }, { value: 'sma', label: 'Simple' }] },
 }`}</code></pre>
+<p>
+  <code>options</code> của một lựa chọn là các giá trị, hoặc giá trị kèm nhãn mà phần cài đặt hiện cho nó
+  (<code>{'{ value, label }'}</code>), bằng ngôn ngữ của ứng dụng bạn; chỉ báo nhận giá trị.
+</p>
 <p>
   Descriptor cũng ghi các đường trông thế nào, và chart vẽ đúng như vậy: <code>fills</code> tô vùng giữa hai
   đường ở những nến cả hai đều có giá trị, nằm dưới các đường; <code>width</code> của một đường giữ nó ở độ
@@ -235,6 +240,18 @@ CANDLE_PATTERNS.length                                 // 64`}</code></pre>
   { key: 'lower', title: 'Lower', color: 0 },
 ],
 fills: [{ between: ['upper', 'lower'], color: 0, opacity: 0.1 }],`}</code></pre>
+<p>
+  Một đường có <code>kind: 'markers'</code> đánh dấu các nến mà trường của nó có giá trị (một điểm đảo chiều, một
+  tín hiệu) bằng một <code>shape</code>, <code>'dot'</code>, <code>'triangleUp'</code> hoặc <code>'triangleDown'</code>, tại
+  giá trị đó hoặc, trên pane giá, phía trên đỉnh hay phía dưới đáy của nến (<code>position: 'aboveBar'</code>,
+  <code>'belowBar'</code>). Nó không phải một giá trị để đọc: nó không có giá trị trong legend, không có nhãn trên trục
+  và không có cột khi xuất dữ liệu, và không được đưa ra như một đường mà chỉ báo khác đọc được. Trong một pane, các
+  dấu nằm tại giá trị của chúng. Để trống trường đó ở những nến không có dấu.
+</p>
+<pre><code>{`plots: [
+  { key: 'value', title: 'MACD', color: 0 },
+  { key: 'turn', title: 'Turn', color: 1, kind: 'markers', shape: 'triangleUp', position: 'belowBar' },
+],`}</code></pre>
 
 <h2>Pane: đổi kích thước, thu gọn, phóng to, sắp xếp lại</h2>
 <p>

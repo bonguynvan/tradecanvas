@@ -29,12 +29,24 @@ const chart = new Chart(el, { plugins: [{ kind: 'overlay', plugin: myHeatmap }] 
 chart.plugins.register({ kind: 'chartType', plugin: myCandles })
 chart.plugins.unregister('chartType:my-candles')
 chart.plugins.list()`}</code></pre>
+<p>
+  <code>ChartWidget</code> はプラグインを <code>plugins</code> で受け取ります（型付きで、<code>chartOptions.plugins</code> があればそれと合わせて）。
+  これらは何かを復元する前にウィジェットのチャートに登録されるため、保存したレイアウト
+  （<code>persistLayouts</code>）、テンプレート、共有ビューが独自のインジケーターを含んでいれば、それも戻ります。
+  同じ id については、ウィジェットの <code>plugins</code> が <code>chartOptions.plugins</code> より優先され、グリッドのセルが自分の
+  <code>plugins</code> を持つと、グリッドで共有されるものに置き換わります。レイアウトが復元された後に
+  <code>widget.getChart()</code> に登録したインジケーターは間に合いません。レイアウトはすでにそれを除外しています。
+</p>
+<pre><code>{`new ChartWidget(host, {
+  symbol: 'BTCUSDT', adapter, persistLayouts: true,
+  plugins: [{ kind: 'indicator', plugin: new DoubleSMA() }],
+})`}</code></pre>
 
 <h2>プラグインの種類</h2>
 <table>
   <thead><tr><th>種類</th><th>インターフェース</th><th>描画先</th></tr></thead>
   <tbody>
-    <tr><td><code>indicator</code></td><td><code>IndicatorPlugin</code> — <code>calculate()</code> + <code>render()</code></td><td>オーバーレイまたはパネル</td></tr>
+    <tr><td><code>indicator</code></td><td><code>IndicatorPlugin</code> — <code>calculate()</code> + <code>render(ctx, output, viewport, style, &#123; theme &#125;)</code></td><td>オーバーレイまたはパネル</td></tr>
     <tr><td><code>drawing</code></td><td><code>DrawingPlugin</code> — <code>render()</code> + <code>hitTest()</code></td><td>オーバーレイレイヤー</td></tr>
     <tr><td><code>chartType</code></td><td><code>ChartTypePlugin</code> — <code>createRenderer()</code> + 任意の <code>transform()</code></td><td>メイン系列</td></tr>
     <tr><td><code>overlay</code></td><td><code>OverlayPlugin</code> — <code>render(ctx, &#123; viewport, data, theme &#125;)</code></td><td><code>main</code> / <code>overlay</code> / <code>ui</code></td></tr>
@@ -42,40 +54,174 @@ chart.plugins.list()`}</code></pre>
 </table>
 
 <h2>カスタムインジケーター</h2>
-<p>描画用のヘルパーを使うために <code>IndicatorBase</code> を継承し、登録したら組み込みのインジケーターと同じように追加します：</p>
-<pre><code>{`import { IndicatorBase, IndicatorValueMap, registerPlugin } from '@tradecanvas/chart'
+<p>
+  インジケーターは <code>IndicatorPlugin</code> です。それが何で、どう見えるかを示す <code>descriptor</code> と、
+  バーごとに値を返す <code>calculate()</code> からなります。<code>IndicatorBase</code> を継承すれば、残りはチャートが
+  ディスクリプターをもとに行います。プロットを描き、ペインのスケールを調整し、値を軸にタグ表示し、
+  インジケーターを凡例、設定、インジケーターダイアログに表示します。次は完全な 1 本で、線が向きを変える所に
+  印を付ける MACD です：
+</p>
+<pre><code>{`import { IndicatorBase, IndicatorValueMap } from '@tradecanvas/chart'
 
-class DoubleSMA extends IndicatorBase {
+const ema = (prev, value, period) => (prev === undefined ? value : prev + (2 / (period + 1)) * (value - prev))
+
+class TurningMacd extends IndicatorBase {
   descriptor = {
-    id: 'double-sma', name: 'Double SMA',
-    placement: 'overlay' as const, defaultConfig: { fast: 10, slow: 30 },
+    id: 'turning-macd', name: 'Turning MACD', shortName: 'TMACD',
+    placement: 'panel',               // a pane of its own; 'overlay' draws on the price pane
+    category: 'oscillators',          // its group in the Indicators dialog
+    defaultConfig: { fast: 12, slow: 26, source: 'close' },
+    inputs: {
+      fast: { kind: 'int', min: 2, label: 'Fast' },
+      slow: { kind: 'int', min: 3, label: 'Slow' },
+      source: { kind: 'choice', label: 'Price', options: [{ value: 'close', label: 'Close' }, { value: 'hl2', label: 'Median' }] },
+    },
+    plots: [
+      { key: 'value', title: 'MACD', color: 0 },
+      { key: 'turn', title: 'Turn', color: 1, kind: 'markers', tone: { field: 'up' }, downColor: 2 },
+    ],
+    scale: { zero: true },
+    levels: [0],
+    defaultStyle: (theme) => ({ colors: theme.name === 'light' ? ['#1f4e8c', '#0a7d3b', '#b3261e'] : ['#8ab4f8', '#4cc38a', '#f28b82'] }),
   }
-  calculate(data, config) { /* values = new IndicatorValueMap(); return { values, series } */ }
-  render(ctx, output, viewport, style) { /* draw lines */ }
+
+  calculate(data, config) {
+    const { fast, slow, source } = config.params
+    const values = new IndicatorValueMap()
+    const series = new Array(data.length).fill(null)
+    let f, s
+    for (let i = 0; i < data.length; i++) {
+      const bar = data[i]
+      const price = source === 'hl2' ? (bar.high + bar.low) / 2 : bar.close
+      f = ema(f, price, fast)
+      s = ema(s, price, slow)
+      if (i < slow) continue
+      const point = { value: f - s }
+      const a = series[i - 2]?.value, b = series[i - 1]?.value
+      // The bar before this one is a turn when the line changed direction there.
+      if (a !== undefined && b !== undefined && (b - a) * (point.value - b) < 0) {
+        series[i - 1] = { ...series[i - 1], turn: b, up: point.value > b ? 1 : 0 }
+        values.set(data[i - 1].time, series[i - 1])
+      }
+      series[i] = point
+      values.set(bar.time, point)
+    }
+    return { values, series }
+  }
+}`}</code></pre>
+<p>
+  <code>calculate(data, config)</code> はバーとインスタンスの入力（<code>config.params</code>）を受け取り、値を
+  2 通りで返します。バーのインデックスごと（<code>series</code>。最初の値より前は <code>null</code>）と、バーの
+  時刻ごと（<code>values</code>）です。<code>values</code> には <code>new IndicatorValueMap()</code> を使ってください。
+  時間順に値を入れるコストが数分の 1 で済む <code>Map</code> で、シンボルや時間足を切り替えるたびにこの処理が
+  行われます。どのプロットも指していないフィールド（上の <code>up</code>）は、描画もスケール調整も表示もされません。
+  プロットの <code>tone</code> のためにあります。
+</p>
+
+<h3>ディスクリプター</h3>
+<ul>
+  <li><strong>プロット</strong>はそれぞれ 1 つのフィールドを描きます：<code>'line'</code>（既定）、<code>'step'</code>、
+    <code>'histogram'</code>、<code>'dots'</code>（点で描く線）、または <code>'markers'</code>。markers はフィールドに
+    値があるバーに図形（<code>shape</code>：<code>'dot'</code>、<code>'triangleUp'</code>、<code>'triangleDown'</code>）を描き、
+    その値の位置か、価格ペインではバーの上または下（<code>position</code>）に置きます。<code>color</code> は
+    スタイルの色のインデックスです。<code>tone</code> と <code>downColor</code> はプロットを 2 色で描きます。
+    <code>width</code>、<code>lineStyle</code>、<code>opacity</code>、<code>breakOn</code> は線の見た目を決めます。
+    <code>fills</code> は 2 本のプロットの間を塗ります。</li>
+  <li><strong>入力</strong>は <code>defaultConfig</code> の各入力をどう編集するかを示します：<code>kind</code>、
+    <code>label</code>、<code>min</code>、<code>max</code>、<code>step</code>、そして選択肢の <code>options</code>
+    （値だけ、またはそれぞれにラベルを付けたもの：<code>{'{ value, label }'}</code>）。<code>{'{ source: true }'}</code>
+    を付けると、別の価格や別のインジケーターの線をもとに計算できます。</li>
+  <li><strong>ペイン</strong>：<code>scale</code> は範囲を固定するか 0 を表示範囲に保ち、<code>levels</code> は
+    閲覧者が編集できる参照線を描きます。</li>
+  <li><strong>見た目</strong>：<code>defaultStyle</code>。スタイル 1 つか、テーマごとに 1 つです（後述）。</li>
+</ul>
+
+<h3>ライブのティック：update と revisesBefore</h3>
+<p>
+  ティックごとに変わるのは最新のバーだけです。<code>update()</code> がなければ、チャートは履歴全体に対して
+  <code>calculate()</code> をもう一度実行します。あれば、チャートは前回の出力（<code>prev</code>）と、変わった最初の
+  バー（<code>from</code>）を渡し、そこから再計算してもらいます。<code>null</code> を返すと、代わりに
+  <code>calculate()</code> が実行されます。値は <code>calculate()</code> が返すものと同じでなければなりません。
+  <code>canResume</code> と <code>writePoint</code> は <code>IndicatorBase</code> に含まれています。
+</p>
+<p>
+  次のようなインジケーターでは、各バーの値は TurningMacd の平均のような積み上げた状態からではなく、その前後の
+  バーから求めます（TurningMacd のようなものは自分で状態を保持するか、<code>update</code> を省きます）：
+</p>
+<pre><code>{`// A swing high: the bar is higher than the n bars either side of it.
+pointAt(data, i, n) {
+  if (i < n || i + n >= data.length) return null
+  for (let k = 1; k <= n; k++) if (data[i - k].high >= data[i].high || data[i + k].high > data[i].high) return null
+  return { high: data[i].high }
 }
 
-registerPlugin({ kind: 'indicator', plugin: new DoubleSMA() })
-chart.addIndicator('double-sma', { fast: 10, slow: 30 })`}</code></pre>
+update(data, config, prev, from) {
+  if (!this.canResume(data, prev, from)) return null
+  const n = config.params.strength
+  // A new bar decides the bar n back: rewrite from there.
+  for (let i = Math.max(0, from - n); i < data.length; i++) this.writePoint(prev, data, i, this.pointAt(data, i, n))
+  return prev
+}
+
+revisesBefore(config) { return config.params.strength }`}</code></pre>
 <p>
-  <code>values</code> には <code>new Map()</code> の代わりに <code>new IndicatorValueMap()</code> を使ってください。
-  そのまま置き換えられる <code>Map</code> で、時間順に 1 本ずつ値を入れていく場合のコストが数分の 1 で済みます。
-  シンボルや時間足を切り替えるたびに、履歴全体に対してまさにこの処理が行われます。
+  <code>from</code> は常に、変わった最初のバーです。新しいバーがそれより前のバーを変えうる場合（スイングポイント、
+  転換点、フラクタルは、その後のバーで決まります）、<code>update</code> がそれらのバーを自分で書き直し、
+  <code>revisesBefore(config)</code> がその本数を示します。これにより、このインジケーターの線を読むインジケーターも
+  そこから再計算されます。<code>from</code> 以降のバーしか変わらない場合は省略します。
 </p>
 
-<h3>高速なライブ更新（任意）</h3>
+<h3>描画</h3>
 <p>
-  ライブのティックごとに変わるのは形成中のバーだけです。<code>update()</code> を実装すると、履歴全体ではなく
-  <code>from</code> 以降のバーだけを再計算できます。チャートはティックと新しいバーでこれを使い、
-  未実装の場合や <code>null</code> を返した場合は <code>calculate()</code> にフォールバックします。
-  <code>calculate()</code> と同じ値を返す必要があります。
+  <code>IndicatorBase</code> の <code>render()</code> は <code>plots</code> と <code>fills</code> をペインのスケールで
+  描くので、ほとんどのインジケーターには描画のコードが要りません。さらに描くには、これをオーバーライドして最初に
+  呼び出します。5 番目の引数には、チャートが描画に使うテーマが入っており、スタイルにない色やフォントに使えます：
+  <code>theme.candleUp</code>、<code>theme.candleDown</code>、<code>theme.text</code>、<code>theme.font</code>。
 </p>
-<pre><code>{`update(data, config, prev, from) {
-  if (!this.canResume(data, prev, from)) return null   // IndicatorBase helper
-  for (let i = from; i < data.length; i++) {
-    this.writePoint(prev, data, i, { value: /* recompute bar i */ 0 })
-  }
-  return prev
+<pre><code>{`render(ctx, output, viewport, style, context) {
+  super.render(ctx, output, viewport, style, context)
+  ctx.fillStyle = context.theme.text
+  // barIndexToX(i, viewport) and priceToY(value, viewport) place it where the chart draws
 }`}</code></pre>
+
+<h3>テーマに従う色</h3>
+<p>
+  ディスクリプターの <code>defaultStyle</code> は、インジケーターの最初の見た目です。スタイル 1 つか、テーマを
+  受け取ってテーマごとのスタイルを返す関数です。これを使うインスタンスは <code>chart.setTheme()</code> に従い、
+  誰かが選んだ色はそのまま残ります。これは閲覧者が保存した初期設定（<code>chart.setIndicatorDefaults()</code>、
+  ウィジェットの<em>初期設定として保存</em>）より下に位置するため、アプリの色が閲覧者の設定に取って代わることは
+  ありません。保存したレイアウトはテーマが与える部分を含まず、別のテーマで開くとそのテーマの色になります。
+</p>
+
+<h3>レイアウトを読む前に登録する</h3>
+<p>
+  保存したレイアウトはインジケーターを id で指定し、レイアウトを読む時点で登録されていないものは除外されます。
+  <code>ChartWidget</code> には独自のインジケーターを <code>plugins</code> で渡してください。レイアウト
+  （<code>persistLayouts</code>）、テンプレート、共有ビューを復元する前に登録されます。<code>Chart</code> では、
+  コンストラクターに <code>plugins</code> を渡すか、<code>loadState()</code> の前に登録します。
+</p>
+<pre><code>{`new ChartWidget(host, { symbol, adapter, persistLayouts: true, plugins: [{ kind: 'indicator', plugin: new TurningMacd() }] })
+
+const chart = new Chart(host, { plugins: [{ kind: 'indicator', plugin: new TurningMacd() }] })
+chart.addIndicator('turning-macd', { fast: 8 })`}</code></pre>
+
+<h3>チャートがそこから読み取るもの</h3>
+<ul>
+  <li><strong>凡例</strong>は <code>shortName</code> と、<code>defaultConfig</code> と異なる入力（選択肢はそのラベル）で
+    名前を表示し、markers 以外の各プロットの値をその色で表示します。</li>
+  <li><strong>価格軸</strong>は、それらのプロットの最新値をタグ表示します。</li>
+  <li><strong>CSV エクスポート</strong>にはそれぞれの列があり、凡例の名前と、プロットが複数あるときはプロットの
+    <code>title</code> で名前が付きます。</li>
+  <li><strong>設定ダイアログ</strong>は入力を編集し、各プロットをその色、表示するかどうか、線やステップなら線種と
+    ともに一覧にし、レベルを編集します。</li>
+  <li><strong>インジケーターダイアログ</strong>は <code>category</code> の下に <code>name</code> で表示します。</li>
+  <li><strong>別のインジケーター</strong>は、その線（同じプロット）をソースとして読めます。</li>
+</ul>
+<p>
+  コーディングエージェントは同じガイドを、公開パッケージに対して型チェックしたコードとともに、MCP サーバーの
+  <code>custom_indicator</code> ツールとスキルの
+  <a href="https://github.com/bonguynvan/tradecanvas/blob/main/skills/tradecanvas/references/recipes.md#a-custom-indicator">カスタムインジケーターのレシピ</a>から得られます。
+</p>
 
 <h2>カスタム描画ツール</h2>
 <p>
@@ -150,7 +296,7 @@ registerPlugin({
   （バーの間や最新バーの先は比例で）、<code>indexToX</code> / <code>xToIndex</code>、<code>priceToY</code> / <code>yToPrice</code>
   （対数・反転スケールにも対応）、<code>barWidth</code>、画面に見えているバーの範囲 <code>visible</code>。価格グリッドで行を分けるには
   <code>chart.getPriceStep()</code> を使います：銘柄の最小刻み（<code>minTick</code>）、分数の単位、または表示中の小数桁の 1 単位です。
-  インジケーターとチャートタイプのレンダラーは viewport だけを受け取るため、<code>priceToY</code>、<code>barIndexToX</code>、
+  チャートタイプのレンダラーは viewport だけを、インジケーターは viewport とテーマを受け取るため、<code>priceToY</code>、<code>barIndexToX</code>、
   <code>timeToX</code> とその逆関数もエクスポートしています。バーは画面に描かれている系列のもので、練行足や
   Kagi ではそのブロックです（<code>chart.isTimeAligned()</code> でデータのバーと一致するかが分かります）。
   価格軸と同じように価格を書くために、viewport にはチャート独自の価格フォーマット（ある場合は <code>formatPrice</code>）、

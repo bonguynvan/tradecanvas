@@ -29,12 +29,24 @@ const chart = new Chart(el, { plugins: [{ kind: 'overlay', plugin: myHeatmap }] 
 chart.plugins.register({ kind: 'chartType', plugin: myCandles })
 chart.plugins.unregister('chartType:my-candles')
 chart.plugins.list()`}</code></pre>
+<p>
+  <code>ChartWidget</code> 通过 <code>plugins</code> 接收插件（带类型，并与 <code>chartOptions.plugins</code> 中的一并接收）：
+  它们会在组件恢复任何内容之前注册到它的图表上，因此保存的布局
+  （<code>persistLayouts</code>）、模板或共享视图中用到了你的某个指标时，都能把它恢复回来。
+  同一个 id 时，组件的 <code>plugins</code> 优先于 <code>chartOptions.plugins</code>；网格单元自己的
+  <code>plugins</code> 会替换网格共用的插件。如果在布局恢复之后才通过 <code>widget.getChart()</code>
+  注册，指标就来得太晚了：布局已经把它略去了。
+</p>
+<pre><code>{`new ChartWidget(host, {
+  symbol: 'BTCUSDT', adapter, persistLayouts: true,
+  plugins: [{ kind: 'indicator', plugin: new DoubleSMA() }],
+})`}</code></pre>
 
 <h2>插件种类</h2>
 <table>
   <thead><tr><th>种类</th><th>契约</th><th>渲染位置</th></tr></thead>
   <tbody>
-    <tr><td><code>indicator</code></td><td><code>IndicatorPlugin</code> — <code>calculate()</code> + <code>render()</code></td><td>主图叠加或副图</td></tr>
+    <tr><td><code>indicator</code></td><td><code>IndicatorPlugin</code> — <code>calculate()</code> + <code>render(ctx, output, viewport, style, &#123; theme &#125;)</code></td><td>主图叠加或副图</td></tr>
     <tr><td><code>drawing</code></td><td><code>DrawingPlugin</code> — <code>render()</code> + <code>hitTest()</code></td><td>叠加图层</td></tr>
     <tr><td><code>chartType</code></td><td><code>ChartTypePlugin</code> — <code>createRenderer()</code> + 可选的 <code>transform()</code></td><td>主序列</td></tr>
     <tr><td><code>overlay</code></td><td><code>OverlayPlugin</code> — <code>render(ctx, &#123; viewport, data, theme &#125;)</code></td><td><code>main</code> / <code>overlay</code> / <code>ui</code></td></tr>
@@ -42,40 +54,161 @@ chart.plugins.list()`}</code></pre>
 </table>
 
 <h2>自定义指标</h2>
-<p>继承 <code>IndicatorBase</code> 以获得绘图辅助方法，然后像内置指标一样注册并添加：</p>
-<pre><code>{`import { IndicatorBase, IndicatorValueMap, registerPlugin } from '@tradecanvas/chart'
+<p>
+  指标是一个 <code>IndicatorPlugin</code>：一个说明它是什么、外观如何的 <code>descriptor</code>，以及一个为每根K线给出数值的
+  <code>calculate()</code>。继承 <code>IndicatorBase</code>，其余的由图表根据描述符完成：绘制各条线、为窗格定坐标、
+  在坐标轴上标出数值，并在图例、设置对话框和“指标”对话框中列出该指标。下面是一个完整的例子，一个在线条转向处做标记的 MACD：
+</p>
+<pre><code>{`import { IndicatorBase, IndicatorValueMap } from '@tradecanvas/chart'
 
-class DoubleSMA extends IndicatorBase {
+const ema = (prev, value, period) => (prev === undefined ? value : prev + (2 / (period + 1)) * (value - prev))
+
+class TurningMacd extends IndicatorBase {
   descriptor = {
-    id: 'double-sma', name: 'Double SMA',
-    placement: 'overlay' as const, defaultConfig: { fast: 10, slow: 30 },
+    id: 'turning-macd', name: 'Turning MACD', shortName: 'TMACD',
+    placement: 'panel',               // a pane of its own; 'overlay' draws on the price pane
+    category: 'oscillators',          // its group in the Indicators dialog
+    defaultConfig: { fast: 12, slow: 26, source: 'close' },
+    inputs: {
+      fast: { kind: 'int', min: 2, label: 'Fast' },
+      slow: { kind: 'int', min: 3, label: 'Slow' },
+      source: { kind: 'choice', label: 'Price', options: [{ value: 'close', label: 'Close' }, { value: 'hl2', label: 'Median' }] },
+    },
+    plots: [
+      { key: 'value', title: 'MACD', color: 0 },
+      { key: 'turn', title: 'Turn', color: 1, kind: 'markers', tone: { field: 'up' }, downColor: 2 },
+    ],
+    scale: { zero: true },
+    levels: [0],
+    defaultStyle: (theme) => ({ colors: theme.name === 'light' ? ['#1f4e8c', '#0a7d3b', '#b3261e'] : ['#8ab4f8', '#4cc38a', '#f28b82'] }),
   }
-  calculate(data, config) { /* values = new IndicatorValueMap(); return { values, series } */ }
-  render(ctx, output, viewport, style) { /* draw lines */ }
+
+  calculate(data, config) {
+    const { fast, slow, source } = config.params
+    const values = new IndicatorValueMap()
+    const series = new Array(data.length).fill(null)
+    let f, s
+    for (let i = 0; i < data.length; i++) {
+      const bar = data[i]
+      const price = source === 'hl2' ? (bar.high + bar.low) / 2 : bar.close
+      f = ema(f, price, fast)
+      s = ema(s, price, slow)
+      if (i < slow) continue
+      const point = { value: f - s }
+      const a = series[i - 2]?.value, b = series[i - 1]?.value
+      // The bar before this one is a turn when the line changed direction there.
+      if (a !== undefined && b !== undefined && (b - a) * (point.value - b) < 0) {
+        series[i - 1] = { ...series[i - 1], turn: b, up: point.value > b ? 1 : 0 }
+        values.set(data[i - 1].time, series[i - 1])
+      }
+      series[i] = point
+      values.set(bar.time, point)
+    }
+    return { values, series }
+  }
+}`}</code></pre>
+<p>
+  <code>calculate(data, config)</code> 接收K线和该实例的输入（<code>config.params</code>），并把数值返回两次：
+  按K线索引（<code>series</code>，第一个值之前为 <code>null</code>）和按K线时间（<code>values</code>）。
+  <code>values</code> 请使用 <code>new IndicatorValueMap()</code>：这是一个按时间顺序写入时开销要低好几倍的
+  <code>Map</code>，而每次切换品种或周期都会这样写入。没有任何线条引用的字段（上例中的 <code>up</code>）
+  不会被绘制、不参与坐标计算，也不会显示；它是供线条的 <code>tone</code> 使用的。
+</p>
+
+<h3>描述符</h3>
+<ul>
+  <li><strong>线条（plots）</strong>各绘制一个字段：<code>'line'</code>（默认）、<code>'step'</code>、
+    <code>'histogram'</code>、<code>'dots'</code>（以点绘制的线），或 <code>'markers'</code>：在该字段有值的K线上画一个形状
+    （<code>shape</code>：<code>'dot'</code>、<code>'triangleUp'</code>、<code>'triangleDown'</code>），位于该值处，或在主图上位于K线上方或下方
+    （<code>position</code>）。<code>color</code> 是样式颜色列表中的索引；<code>tone</code> 和 <code>downColor</code> 让线条以两种颜色绘制；
+    <code>width</code>、<code>lineStyle</code>、<code>opacity</code> 和 <code>breakOn</code> 设定线的外观。
+    <code>fills</code> 为两条线之间着色。</li>
+  <li><strong>输入（inputs）</strong>说明 <code>defaultConfig</code> 中每个输入如何编辑：<code>kind</code>、
+    <code>label</code>、<code>min</code>、<code>max</code>、<code>step</code>，以及选项的 <code>options</code>，可以是纯值，
+    也可以为每项带上标签（<code>{'{ value, label }'}</code>）。<code>{'{ source: true }'}</code> 让它可以基于另一种价格或另一个指标的线计算。</li>
+  <li><strong>窗格</strong>：<code>scale</code> 固定其上下界或让零保持在视野中，<code>levels</code> 绘制查看者可以编辑的参考水平线。</li>
+  <li><strong>外观</strong>：<code>defaultStyle</code>，一个样式，或为每个主题各给一个（见下文）。</li>
+</ul>
+
+<h3>实时 tick：update 与 revisesBefore</h3>
+<p>
+  每个 tick 只有最新的K线会变化。没有 <code>update()</code> 时，图表会对整段历史重新运行 <code>calculate()</code>；
+  有了它，图表会把你上一次的输出（<code>prev</code>）和第一根发生变化的K线（<code>from</code>）交给你，由你从那里重新计算。
+  返回 <code>null</code> 则改为运行 <code>calculate()</code>；得出的数值必须与它给出的一致。<code>canResume</code> 和
+  <code>writePoint</code> 由 <code>IndicatorBase</code> 提供。
+</p>
+<p>
+  下面这类指标的每根K线都由其周围的K线算出，而不是像 TurningMacd 的均线那样依赖一个持续累积的状态
+  （那样的指标需要自己保存状态，或者不实现 <code>update</code>）：
+</p>
+<pre><code>{`// A swing high: the bar is higher than the n bars either side of it.
+pointAt(data, i, n) {
+  if (i < n || i + n >= data.length) return null
+  for (let k = 1; k <= n; k++) if (data[i - k].high >= data[i].high || data[i + k].high > data[i].high) return null
+  return { high: data[i].high }
 }
 
-registerPlugin({ kind: 'indicator', plugin: new DoubleSMA() })
-chart.addIndicator('double-sma', { fast: 10, slow: 30 })`}</code></pre>
+update(data, config, prev, from) {
+  if (!this.canResume(data, prev, from)) return null
+  const n = config.params.strength
+  // A new bar decides the bar n back: rewrite from there.
+  for (let i = Math.max(0, from - n); i < data.length; i++) this.writePoint(prev, data, i, this.pointAt(data, i, n))
+  return prev
+}
+
+revisesBefore(config) { return config.params.strength }`}</code></pre>
 <p>
-  <code>values</code> 请使用 <code>new IndicatorValueMap()</code> 而不是 <code>new Map()</code>：它可以直接替代
-  <code>Map</code>，在按时间顺序逐根K线写入时开销要低好几倍——而每次切换品种或周期时，
-  都会对整段历史数据执行这样的写入。
+  <code>from</code> 始终是第一根发生变化的K线。当一根新K线可能改变它之前的K线时（波段点、转向点、分形都由其后的K线决定），
+  <code>update</code> 会自己改写这些K线，而 <code>revisesBefore(config)</code> 说明改写了多少根，以便读取该指标线的那些指标
+  也从那里重新计算。如果只有从 <code>from</code> 开始的K线会变化，就不要实现它。
 </p>
 
-<h3>快速实时更新（可选）</h3>
+<h3>绘制</h3>
 <p>
-  每次实时 tick 只有正在形成的K线会变化。实现 <code>update()</code>，只重新计算从
-  <code>from</code> 开始的K线，而不是整段历史——图表会在收到 tick 和新K线时使用它；
-  如果未实现或返回 <code>null</code>，则回退到 <code>calculate()</code>。
-  它产生的数值必须与 <code>calculate()</code> 完全一致。
+  <code>IndicatorBase</code> 的 <code>render()</code> 按窗格的坐标绘制 <code>plots</code> 和 <code>fills</code>，
+  因此大多数指标不需要绘图代码。要多画一些内容，就重写它并先调用它。第五个参数带有图表绘制所用的主题，
+  可用于样式没有提供的颜色和字体：<code>theme.candleUp</code>、<code>theme.candleDown</code>、<code>theme.text</code>、<code>theme.font</code>。
 </p>
-<pre><code>{`update(data, config, prev, from) {
-  if (!this.canResume(data, prev, from)) return null   // IndicatorBase helper
-  for (let i = from; i < data.length; i++) {
-    this.writePoint(prev, data, i, { value: /* recompute bar i */ 0 })
-  }
-  return prev
+<pre><code>{`render(ctx, output, viewport, style, context) {
+  super.render(ctx, output, viewport, style, context)
+  ctx.fillStyle = context.theme.text
+  // barIndexToX(i, viewport) and priceToY(value, viewport) place it where the chart draws
 }`}</code></pre>
+
+<h3>随主题变化的颜色</h3>
+<p>
+  描述符上的 <code>defaultStyle</code> 是指标初始的外观：一个样式，或一个以主题为参数、为每个主题各给出一个样式的函数。
+  使用它的实例会跟随 <code>chart.setTheme()</code> 变化；有人为它选定的颜色则保持不变。它的优先级低于查看者保存的默认样式
+  （<code>chart.setIndicatorDefaults()</code>，组件中的<em>保存为默认</em>），因此你的应用的颜色永远不会取代查看者的选择。
+  保存的布局不记录由主题给出的部分，在另一个主题中打开时会采用该主题的颜色。
+</p>
+
+<h3>在读取布局之前注册</h3>
+<p>
+  保存的布局按 id 指明指标，读取布局时尚未注册的指标会被略去。请把你的指标通过 <code>plugins</code> 交给
+  <code>ChartWidget</code>：它们会在组件恢复布局（<code>persistLayouts</code>）、模板或共享视图之前注册。
+  对于 <code>Chart</code>，把 <code>plugins</code> 传给构造函数，或在 <code>loadState()</code> 之前注册。
+</p>
+<pre><code>{`new ChartWidget(host, { symbol, adapter, persistLayouts: true, plugins: [{ kind: 'indicator', plugin: new TurningMacd() }] })
+
+const chart = new Chart(host, { plugins: [{ kind: 'indicator', plugin: new TurningMacd() }] })
+chart.addIndicator('turning-macd', { fast: 8 })`}</code></pre>
+
+<h3>图表从中读取什么</h3>
+<ul>
+  <li><strong>图例</strong>用 <code>shortName</code> 以及与 <code>defaultConfig</code> 不同的输入来命名它
+    （选项显示其标签），并以各自的颜色显示除标记以外每条线的数值。</li>
+  <li><strong>价格轴</strong>标出这些线的最新数值。</li>
+  <li><strong>CSV 导出</strong>为其中每条线各设一列，以图例中的名称命名；线条不止一条时，再加上该线的 <code>title</code>。</li>
+  <li><strong>设置对话框</strong>编辑各项输入，列出每条线及其颜色、是否显示，线和阶梯线还有线型，并可编辑水平线。</li>
+  <li><strong>“指标”对话框</strong>在其 <code>category</code> 下以 <code>name</code> 列出它。</li>
+  <li><strong>其他指标</strong>可以把它的线（即这些线条）作为数据源读取。</li>
+</ul>
+<p>
+  编程 agent 可以从 MCP 服务器的 <code>custom_indicator</code> 工具和 agent 技能中的
+  <a href="https://github.com/bonguynvan/tradecanvas/blob/main/skills/tradecanvas/references/recipes.md#a-custom-indicator">自定义指标示例</a>
+  获得同样的指南，其中的代码已针对已发布的包做过类型检查。
+</p>
 
 <h2>自定义画线工具</h2>
 <p>
@@ -146,7 +279,7 @@ registerPlugin({
   <code>overlayScale(context)</code> 按图表自身的方式定位：<code>timeToX</code> / <code>xToTime</code> 按 K 线时间（两根 K 线之间及最新 K 线之后按比例），
   <code>indexToX</code> / <code>xToIndex</code>，<code>priceToY</code> / <code>yToPrice</code>（对数坐标与反转坐标同样适用），
   <code>barWidth</code>，以及屏幕上可见的 K 线范围 <code>visible</code>。要按价格网格划分行，用 <code>chart.getPriceStep()</code>：
-  品种的最小变动价位（<code>minTick</code>）、分数单位，或当前显示小数位的一个单位。指标和图表类型的渲染器只拿到 viewport，
+  品种的最小变动价位（<code>minTick</code>）、分数单位，或当前显示小数位的一个单位。图表类型的渲染器只拿到 viewport，指标则拿到 viewport 和主题，
   为此导出了 <code>priceToY</code>、<code>barIndexToX</code>、<code>timeToX</code> 及其反函数。这里的 K 线是屏幕上绘制的序列：
   在 Renko 或 Kagi 图上就是它的砖块（<code>chart.isTimeAligned()</code> 表示它们是否就是数据源的 K 线）。
   要像价格轴那样书写价格，viewport 提供图表自己的价格格式（若有，<code>formatPrice</code>）、<code>numberLocale</code>，
