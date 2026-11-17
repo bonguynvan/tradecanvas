@@ -302,8 +302,8 @@ describe('on-chart indicator legend', () => {
     try {
       FakeChart.last.addIndicator('rsi');
       await frame();
-      // Fold and maximise 18 px each, 12 px apart (each reaches 6 px of it for a finger), the padding and the gap.
-      expect(rows()[0].style.maxWidth).toBe('530px');
+      // Fold and maximise 18 px each, 12 px apart, the padding, the gap, and the 12 px the first reaches left for a finger.
+      expect(rows()[0].style.maxWidth).toBe('518px');
     } finally {
       vi.unstubAllGlobals();
     }

@@ -4280,13 +4280,13 @@
 }
 .tcw-pane-btn:hover { color: var(--tcw-text); background: var(--tcw-hover-bg); }
 .tcw-pane-btn:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--tcw-accent-soft); }
-/* A finger: each button takes about 30 by 32 px, its drawing as it is. Apart by the gap it
-   reaches half of to each side (PANE_BUTTON_GAP_COARSE in WidgetLegendView.ts), and down into
-   the pane, never up onto the divider above, which drags. */
+/* A finger: each button takes 30 by 32 px, its drawing as it is. It reaches left over the gap
+   before it and down into the pane (PANE_BUTTON_GAP_COARSE and PANE_HIT_REACH_COARSE in
+   WidgetLegendView.ts), never right onto the price axis nor up onto the divider, which drags. */
 @media (pointer: coarse) {
   .tcw-pane-controls { gap: 12px; }
   .tcw-pane-btn { position: relative; }
-  .tcw-pane-btn::after { content: ''; position: absolute; inset: -1px -6px -15px; }
+  .tcw-pane-btn::after { content: ''; position: absolute; inset: 0 0 -16px -12px; }
 }
 
 /* --- Typed interval --- */

@@ -143,19 +143,31 @@ class TurningMacd extends IndicatorBase {
   instead; the values must be the ones it would give. <code>canResume</code> and <code>writePoint</code> come with
   <code>IndicatorBase</code>.
 </p>
-<pre><code>{`update(data, config, prev, from) {
+<p>
+  Each bar of an indicator like this one is worked out from the bars around it, not from a running state like
+  TurningMacd's averages (which would keep its own state, or leave <code>update</code> out):
+</p>
+<pre><code>{`// A swing high: the bar is higher than the n bars either side of it.
+pointAt(data, i, n) {
+  if (i < n || i + n >= data.length) return null
+  for (let k = 1; k <= n; k++) if (data[i - k].high >= data[i].high || data[i + k].high > data[i].high) return null
+  return { high: data[i].high }
+}
+
+update(data, config, prev, from) {
   if (!this.canResume(data, prev, from)) return null
-  for (let i = from; i < data.length; i++) this.writePoint(prev, data, i, this.pointAt(data, i, config))
+  const n = config.params.strength
+  // A new bar decides the bar n back: rewrite from there.
+  for (let i = Math.max(0, from - n); i < data.length; i++) this.writePoint(prev, data, i, this.pointAt(data, i, n))
   return prev
 }
 
-// A turn is known one bar later: a new bar can change the one before it.
-revisesBefore(config) { return 1 }`}</code></pre>
+revisesBefore(config) { return config.params.strength }`}</code></pre>
 <p>
-  <code>revisesBefore(config)</code> says how many bars before <code>from</code> an update may rewrite (a swing point,
-  a turn, a fractal is decided by the bars after it). The chart then passes <code>from</code> that far back, and
-  indicators that read this one's line are recomputed from there too. Leave it out when only bars from
-  <code>from</code> on change.
+  <code>from</code> is always the first bar that changed. When a new bar can change bars before it (a swing point,
+  a turn, a fractal is decided by the bars after it), <code>update</code> rewrites them itself, and
+  <code>revisesBefore(config)</code> says how many, so the indicators that read this one's line are recomputed from
+  there too. Leave it out when only bars from <code>from</code> on change.
 </p>
 
 <h3>Drawing it</h3>

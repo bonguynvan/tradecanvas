@@ -821,9 +821,10 @@ values must be the ones `calculate` would give. `canResume` and `writePoint`
 (from `IndicatorBase`) check that `prev` still fits the bars and write a bar
 into both `series` and `values`.
 
-`revisesBefore` says how far back an `update` may rewrite: a swing high is
-known only once `n` bars after it are in, so a new bar can change the one `n`
-back. Indicators that read this one's line are then recomputed from there.
+`from` is always the first bar that changed. When a new bar can change a bar
+before it (a swing high is known only once `n` bars after it are in), your
+`update` rewrites back from `from - n` itself, and `revisesBefore` returns that
+`n`, so the indicators that read this one's line are recomputed from there too.
 
 ```ts
 import { IndicatorBase, IndicatorValueMap } from '@tradecanvas/chart';
@@ -855,7 +856,7 @@ class SwingHighs extends IndicatorBase {
     return out;
   }
 
-  // A new bar decides the bar `strength` back: the chart passes `from` that far back.
+  // A new bar decides the bar `strength` back: update rewrites that far, and says so here.
   revisesBefore(config: IndicatorConfig): number {
     return Number(config.params.strength) || 2;
   }
@@ -863,7 +864,7 @@ class SwingHighs extends IndicatorBase {
   update(data: DataSeries, config: IndicatorConfig, prev: IndicatorOutput, from: number): IndicatorOutput | null {
     if (!this.canResume(data, prev, from)) return null;
     const n = Number(config.params.strength) || 2;
-    for (let i = from; i < data.length; i++) this.writePoint(prev, data, i, this.point(data, i, n));
+    for (let i = Math.max(0, from - n); i < data.length; i++) this.writePoint(prev, data, i, this.point(data, i, n));
     return prev;
   }
 }

@@ -26,6 +26,8 @@ const PANE_BUTTON = 18;
 const PANE_BUTTON_GAP = 1;
 /** The gap between two on a coarse pointer, where each reaches half of it to the side for a finger. */
 const PANE_BUTTON_GAP_COARSE = 12;
+/** How far left of a pane's buttons the first one's reach goes on a coarse pointer: a row keeps clear of it too. */
+const PANE_HIT_REACH_COARSE = 12;
 const PANE_CONTROLS_PAD = 1;
 /** Between a pane's first row and its buttons (px). */
 const PANE_ROW_CONTROLS_GAP = 4;
@@ -48,7 +50,8 @@ function paneButtonCount(
 function paneControlsRoom(buttons: number, coarse = coarsePointer()): number {
   if (buttons === 0) return 0;
   const gap = coarse ? PANE_BUTTON_GAP_COARSE : PANE_BUTTON_GAP;
-  return buttons * PANE_BUTTON + (buttons - 1) * gap + 2 * PANE_CONTROLS_PAD + PANE_ROW_CONTROLS_GAP;
+  const reach = coarse ? PANE_HIT_REACH_COARSE : 0;
+  return buttons * PANE_BUTTON + (buttons - 1) * gap + 2 * PANE_CONTROLS_PAD + PANE_ROW_CONTROLS_GAP + reach;
 }
 
 /** A row's own padding either side of its text, px: what it stands nearer the edge than the chart's legend. */
