@@ -29,6 +29,18 @@ const chart = new Chart(el, { plugins: [{ kind: 'overlay', plugin: myHeatmap }] 
 chart.plugins.register({ kind: 'chartType', plugin: myCandles })
 chart.plugins.unregister('chartType:my-candles')
 chart.plugins.list()`}</code></pre>
+<p>
+  A <code>ChartWidget</code> takes them as <code>plugins</code> (typed, and with any <code>chartOptions.plugins</code>):
+  they are registered with its chart before it restores anything, so a saved layout
+  (<code>persistLayouts</code>), a template or a shared view that names one of your indicators gets it back.
+  For the same id, the widget's <code>plugins</code> win over <code>chartOptions.plugins</code>, and a grid cell's own
+  <code>plugins</code> replace the grid's shared ones. Registered on <code>widget.getChart()</code> after a layout was
+  restored, an indicator comes too late: the layout has already left it out.
+</p>
+<pre><code>{`new ChartWidget(host, {
+  symbol: 'BTCUSDT', adapter, persistLayouts: true,
+  plugins: [{ kind: 'indicator', plugin: new DoubleSMA() }],
+})`}</code></pre>
 
 <h2>Plugin kinds</h2>
 <table>
