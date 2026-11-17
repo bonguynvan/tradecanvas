@@ -297,6 +297,18 @@ describe('on-chart indicator legend', () => {
     expect(values(rsi).map((v) => v.textContent)).toEqual(['54.32']);
   });
 
+  it('keeps a pane’s buttons the wider room they take for a finger on a coarse pointer', async () => {
+    vi.stubGlobal('matchMedia', (query: string) => ({ matches: query === '(pointer: coarse)', media: query, addEventListener() {}, removeEventListener() {} }));
+    try {
+      FakeChart.last.addIndicator('rsi');
+      await frame();
+      // Fold and maximise 18 px each, 12 px apart (each reaches 6 px of it for a finger), the padding and the gap.
+      expect(rows()[0].style.maxWidth).toBe('530px');
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   it('keeps no room for a pane’s buttons switched off', async () => {
     widget.destroy();
     host.replaceChildren();

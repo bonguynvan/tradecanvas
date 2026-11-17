@@ -11,6 +11,8 @@
 
 ### Widget
 
+- **Larger targets for a finger** (`@tradecanvas/chart`): on a touch screen, a pane's fold and maximise buttons take about 30 by 32 px (they were 18 by 16), set further apart, their drawing the same size; the range presets, Go to date and "more" under the chart take at least 32 by 32 px (about 24 by 22 before), and the clock that opens the time zones is 32 px tall. The status bar grows by a few pixels to hold them, so a phone shows a preset or two fewer before "more".
+- **A legend row's buttons wider on a desk** (`@tradecanvas/chart`): Hide, Settings, More and Remove are 24 px wide each, from 20, as tall as before.
 - **Plugins given to the widget** (`@tradecanvas/chart`): `ChartWidget` takes `plugins`, typed, and `chartOptions.plugins` is typed too. They are registered with the widget's chart before it restores a saved layout, a template or a shared view, so a layout that names an indicator of your own gets it back. Before, an app had to register them on `widget.getChart()` after construction, too late for `persistLayouts`, and then load the layout itself.
 
 ### Imports

@@ -3,6 +3,7 @@ import { WidgetContextMenu, type ContextMenuEntry } from './WidgetContextMenu.js
 import { type IndicatorLegendPane, type IndicatorLegendRow, type PaneAction } from './WidgetIndicatorLegend.js';
 import { indicatorPointAt, legendValues } from './legendValues.js';
 import { compareLegendRows } from './compareLegend.js';
+import { coarsePointer } from './formControls.js';
 import { pickHostItem, withHostItems } from './hostMenus.js';
 import { CHART_SPACING, type ChartDensity } from '@tradecanvas/commons';
 import { SYMBOL_INDICATOR_IDS } from '@tradecanvas/core';
@@ -23,6 +24,8 @@ const PANE_CONTROLS_TOP = 3;
  */
 const PANE_BUTTON = 18;
 const PANE_BUTTON_GAP = 1;
+/** The gap between two on a coarse pointer, where each reaches half of it to the side for a finger. */
+const PANE_BUTTON_GAP_COARSE = 12;
 const PANE_CONTROLS_PAD = 1;
 /** Between a pane's first row and its buttons (px). */
 const PANE_ROW_CONTROLS_GAP = 4;
@@ -42,9 +45,10 @@ function paneButtonCount(
 }
 
 /** The room a pane's buttons take across its top, with the gap a row keeps from them (px); none without any. */
-function paneControlsRoom(buttons: number): number {
+function paneControlsRoom(buttons: number, coarse = coarsePointer()): number {
   if (buttons === 0) return 0;
-  return buttons * PANE_BUTTON + (buttons - 1) * PANE_BUTTON_GAP + 2 * PANE_CONTROLS_PAD + PANE_ROW_CONTROLS_GAP;
+  const gap = coarse ? PANE_BUTTON_GAP_COARSE : PANE_BUTTON_GAP;
+  return buttons * PANE_BUTTON + (buttons - 1) * gap + 2 * PANE_CONTROLS_PAD + PANE_ROW_CONTROLS_GAP;
 }
 
 /** A row's own padding either side of its text, px: what it stands nearer the edge than the chart's legend. */

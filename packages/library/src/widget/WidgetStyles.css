@@ -1119,10 +1119,11 @@
   }
 }
 
+/* Wider than tall: four side by side, each easy to hit with a pointer; no taller than a row. */
 .tcw-ind-legend-act {
   display: inline-grid;
   place-items: center;
-  width: 20px;
+  width: 24px;
   height: 18px;
   padding: 0;
   border: none;
@@ -1944,6 +1945,16 @@
 
 .tcw-range-goto {
   margin-inline-start: 6px;
+}
+
+/* A finger: the presets, Go to date and "more" at least 32 px each way; the status bar grows to hold them. */
+@media (pointer: coarse) {
+  .tcw-range-btn,
+  .tcw-range-goto,
+  .tcw-range-more {
+    min-width: 32px;
+    min-height: 32px;
+  }
 }
 
 .tcw-range-goto svg,
@@ -4269,6 +4280,14 @@
 }
 .tcw-pane-btn:hover { color: var(--tcw-text); background: var(--tcw-hover-bg); }
 .tcw-pane-btn:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--tcw-accent-soft); }
+/* A finger: each button takes about 30 by 32 px, its drawing as it is. Apart by the gap it
+   reaches half of to each side (PANE_BUTTON_GAP_COARSE in WidgetLegendView.ts), and down into
+   the pane, never up onto the divider above, which drags. */
+@media (pointer: coarse) {
+  .tcw-pane-controls { gap: 12px; }
+  .tcw-pane-btn { position: relative; }
+  .tcw-pane-btn::after { content: ''; position: absolute; inset: -1px -6px -15px; }
+}
 
 /* --- Typed interval --- */
 .tcw-interval-input {
@@ -4866,6 +4885,10 @@
 .tcw-status-clock {
   font-family: var(--tcw-font-mono);
   font-variant-numeric: tabular-nums;
+}
+/* A finger: the clock, which opens the zones, as tall as the presets beside it. */
+@media (pointer: coarse) {
+  .tcw-status-clock { min-height: 32px; }
 }
 .tcw-status-clock:hover,
 .tcw-status-scale-btn:hover {
