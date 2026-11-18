@@ -203,8 +203,7 @@ chart.on('priceAxisAdd', (e) => openMyMenu(e.payload.x, e.payload.y, e.payload.p
   stop over the market becomes a sell limit), and Place takes the side's colour.
 </p>
 <p>
-  In the widget, a selected Long/Short Position drawing offers <b>Create limit
-  order</b> in its toolbar while trading is on. It opens this ticket filled from
+  In the widget, a selected Long/Short Position drawing offers <b>Create order</b> in its toolbar while trading is on. It opens this ticket filled from
   the drawing: its side, entry as the price, stop-loss and take-profit, and the
   quantity its risk buys, taken down to the decimals the drawing writes. The
   order type follows the entry against the market, and nothing is sent until

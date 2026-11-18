@@ -221,7 +221,7 @@ chart.setDrawingOptions(id, { showOutcome: false })   // the zones and their tag
   risk set (no quantity), and for prices that are not finite numbers.
 </p>
 <p>
-  In the widget, a selected Long/Short Position shows <b>Create limit order</b>
+  In the widget, a selected Long/Short Position shows <b>Create order</b>
   in its toolbar while trading is on: it opens the order ticket filled with these
   levels (side, entry as the price, stop-loss, take-profit and the quantity its
   risk buys), which you adjust and place. An order is never one click away.

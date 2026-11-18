@@ -899,7 +899,7 @@ export const EN_MESSAGES = {
   'bracket.hint': 'drag lines to adjust',
   'bracket.longPlaced': 'Long bracket placed · {rr}R',
   'bracket.shortPlaced': 'Short bracket placed · {rr}R',
-  'bracket.fromDrawing': 'Create limit order',
+  'bracket.fromDrawing': 'Create order',
   'order.buyLimit': 'Buy limit @ {price}',
   'order.sellLimit': 'Sell limit @ {price}',
   'order.buyStop': 'Buy stop @ {price}',
