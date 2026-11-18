@@ -1,7 +1,8 @@
 import type { OHLCBar } from '@tradecanvas/commons';
 import { tickerOf } from '@tradecanvas/commons';
 import { valuePlots } from '@tradecanvas/core';
-import type { WidgetPanel } from './types.js';
+import type { DockPageHandle, DockPageSpec, DockPanelId, WidgetPanel } from './types.js';
+import { createIcon } from './icons.js';
 import { widgetIndicatorLabel } from './indicatorInputWords.js';
 import { drawingTypeLabel } from './WidgetObjectTree.js';
 import { NARROW_WIDGET_PX } from './narrowMode.js';
@@ -19,6 +20,9 @@ const PANEL_FEATURES = {
   symbolInfo: 'symbolInfo',
   depthLadder: 'depthLadder',
 } as const satisfies Record<Exclude<WidgetPanel, 'watchlist'>, WidgetFeature>;
+
+/** The built-in panels' ids, which a page of the host's can't take. */
+const BUILT_IN_PANELS: ReadonlySet<string> = new Set<WidgetPanel>(['watchlist', ...Object.keys(PANEL_FEATURES) as WidgetPanel[]]);
 
 /** The toolbar's button for a panel, where it has one. */
 const PANEL_TOOLBAR_ROLES: Partial<Record<WidgetPanel, string>> = { watchlist: 'watchlist', alerts: 'alerts', objectTree: 'objects', symbolInfo: 'symbolInfo', depthLadder: 'trade' };
@@ -80,22 +84,32 @@ export class WidgetDockArea {
   /** Follows the widget's width for the dock. */
   dockObserver: ResizeObserver | null = null;
 
+  /** The pages the host added, by id. */
+  private readonly hostPages = new Set<string>();
+
   /**
    * Open a panel of the dock beside the chart (in a sheet on a phone), in
    * place of the one open. False when the widget hasn't it: no watchlist, no
-   * depth ladder (the `depthLadder` option), or its switch off.
+   * depth ladder (the `depthLadder` option), its switch off, or no page of
+   * the host's by that id.
    */
-  openPanel(panel: WidgetPanel): boolean {
+  openPanel(panel: DockPanelId): boolean {
     if (!this.hasPanel(panel) || !this.dock) return false;
     this.dock.open(panel);
     return this.dock.current() === panel;
   }
 
-  /** Whether the widget has `panel`: the watchlist and the ladder only when made with them, every one with its switch on. */
-  private hasPanel(panel: WidgetPanel): boolean {
+  /**
+   * Whether the widget has `panel`: the host's pages while they are there,
+   * the watchlist and the ladder only when made with them, every built-in one
+   * with its switch on.
+   */
+  private hasPanel(panel: DockPanelId): boolean {
+    if (this.hostPages.has(panel)) return true;
+    if (!BUILT_IN_PANELS.has(panel)) return false;
     if (panel === 'watchlist') return this.host.watching.watchlist !== null;
     if (panel === 'depthLadder' && this.host.trading.depthLadder === null) return false;
-    return this.host.featureState[PANEL_FEATURES[panel]];
+    return this.host.featureState[PANEL_FEATURES[panel as Exclude<WidgetPanel, 'watchlist'>]];
   }
 
   /** Shut the dock. */
@@ -104,8 +118,56 @@ export class WidgetDockArea {
   }
 
   /** The panel open in the dock, or null. */
-  getOpenPanel(): WidgetPanel | null {
-    return (this.dock?.current() as WidgetPanel | null | undefined) ?? null;
+  getOpenPanel(): DockPanelId | null {
+    return this.dock?.current() ?? null;
+  }
+
+  /**
+   * A page of the host's in the dock: its button on the rail after the
+   * built-in ones, and under the dock's header (its label and a close) its
+   * element. Null for an id a built-in panel or another page has.
+   */
+  addHostPage(spec: DockPageSpec): DockPageHandle | null {
+    const dock = this.dock;
+    if (!dock || BUILT_IN_PANELS.has(spec.id) || dock.has(spec.id)) return null;
+    const page = document.createElement('div');
+    page.className = 'tcw-dock-host-page';
+    page.dataset.page = spec.id;
+    page.setAttribute('role', 'region');
+    page.setAttribute('aria-label', spec.label);
+    const header = document.createElement('div');
+    header.className = 'tcw-dock-host-header';
+    const title = document.createElement('span');
+    title.textContent = spec.label;
+    const close = document.createElement('button');
+    close.type = 'button';
+    close.className = 'tcw-dock-host-close';
+    close.setAttribute('aria-label', this.host.t('common.close'));
+    close.title = this.host.t('common.close');
+    close.innerHTML = createIcon('x', 14);
+    close.addEventListener('click', () => dock.closePage(spec.id));
+    header.append(title, close);
+    const body = document.createElement('div');
+    body.className = 'tcw-dock-host-body';
+    body.appendChild(spec.element);
+    page.append(header, body);
+    dock.addPage({ id: spec.id, label: spec.label, icon: spec.icon, element: page, onShow: spec.onShow, onHide: spec.onHide });
+    this.hostPages.add(spec.id);
+    this.syncRail();
+    let removed = false;
+    return {
+      remove: () => {
+        if (removed) return;
+        removed = true;
+        this.hostPages.delete(spec.id);
+        // The element is the host's again, out of the dock's page.
+        spec.element.remove();
+        // The widget destroyed: nothing left to shut or tidy.
+        if (!dock.has(spec.id)) return;
+        dock.removePage(spec.id);
+        this.syncRail();
+      },
+    };
   }
 
   /**
@@ -301,8 +363,8 @@ export class WidgetDockArea {
   }
 
   /** Where the keyboard goes when a panel shuts and the rail can't take it: its toolbar button, or "more" on a phone. */
-  panelFocusTarget(page: WidgetPanel): HTMLElement | null {
-    const role = PANEL_TOOLBAR_ROLES[page];
+  panelFocusTarget(page: DockPanelId): HTMLElement | null {
+    const role = PANEL_TOOLBAR_ROLES[page as WidgetPanel];
     const own = role ? this.host.root.querySelector<HTMLElement>(`.tcw-toolbar [data-role="${role}"]`) : null;
     const narrow = this.host.root.hasAttribute('data-tcw-narrow');
     if (own && !own.hidden && !(narrow && own.classList.contains('tcw-toolbar-overflow'))) return own;

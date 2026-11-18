@@ -137,7 +137,7 @@
 }
 
 /* One header for every page: its title, its own buttons, and the close at the end. */
-.tcw-dock-page > :is(.tcw-watchlist-header, .tcw-alerts-header, .tcw-tree-header, .tcw-datawin-header, .tcw-syminfo-header, .tcw-ladder-header) {
+.tcw-dock-page > :is(.tcw-watchlist-header, .tcw-alerts-header, .tcw-tree-header, .tcw-datawin-header, .tcw-syminfo-header, .tcw-ladder-header, .tcw-dock-host-header) {
   position: sticky;
   top: 0;
   z-index: 2;
@@ -156,7 +156,7 @@
   font-weight: var(--tcw-weight-strong);
 }
 
-.tcw-dock-page > :is(.tcw-alerts-header, .tcw-tree-header, .tcw-datawin-header, .tcw-syminfo-header) > span:first-child {
+.tcw-dock-page > :is(.tcw-alerts-header, .tcw-tree-header, .tcw-datawin-header, .tcw-syminfo-header, .tcw-dock-host-header) > span:first-child {
   flex: 1;
   min-width: 0;
   overflow: hidden;
@@ -164,7 +164,7 @@
   white-space: nowrap;
 }
 
-.tcw-dock-page :is(.tcw-watchlist-add, .tcw-watchlist-close, .tcw-alerts-new, .tcw-alerts-close, .tcw-tree-close, .tcw-datawin-close, .tcw-syminfo-close, .tcw-ladder-close) {
+.tcw-dock-page :is(.tcw-watchlist-add, .tcw-watchlist-close, .tcw-alerts-new, .tcw-alerts-close, .tcw-tree-close, .tcw-datawin-close, .tcw-syminfo-close, .tcw-ladder-close, .tcw-dock-host-close) {
   display: inline-grid;
   place-items: center;
   flex: none;
@@ -178,12 +178,12 @@
   cursor: pointer;
 }
 
-.tcw-dock-page :is(.tcw-watchlist-add, .tcw-watchlist-close, .tcw-alerts-new, .tcw-alerts-close, .tcw-tree-close, .tcw-datawin-close, .tcw-syminfo-close, .tcw-ladder-close):hover {
+.tcw-dock-page :is(.tcw-watchlist-add, .tcw-watchlist-close, .tcw-alerts-new, .tcw-alerts-close, .tcw-tree-close, .tcw-datawin-close, .tcw-syminfo-close, .tcw-ladder-close, .tcw-dock-host-close):hover {
   background: var(--tcw-hover-bg);
   color: var(--tcw-text);
 }
 
-.tcw-dock-page :is(.tcw-watchlist-add, .tcw-watchlist-close, .tcw-alerts-new, .tcw-alerts-close, .tcw-tree-close, .tcw-datawin-close, .tcw-syminfo-close, .tcw-ladder-close):focus-visible {
+.tcw-dock-page :is(.tcw-watchlist-add, .tcw-watchlist-close, .tcw-alerts-new, .tcw-alerts-close, .tcw-tree-close, .tcw-datawin-close, .tcw-syminfo-close, .tcw-ladder-close, .tcw-dock-host-close):focus-visible {
   outline: none;
   box-shadow: var(--tcw-ring);
 }
@@ -196,6 +196,14 @@
 
 .tcw-dock-page .tcw-watchlist-list {
   flex: 1;
+}
+
+/* A page of the host's: its element under the header, in the panel's text, scrolling with the page. */
+.tcw-dock-host-body {
+  flex: 1;
+  min-width: 0;
+  color: var(--tcw-text);
+  font-size: var(--tcw-font-size-sm);
 }
 
 /* The watchlist was a bar of its own: its width and shadow are the panel's now. It scrolls as a page
@@ -238,7 +246,7 @@
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
-.tcw-root[data-tcw-narrow] .tcw-dock-page > :is(.tcw-watchlist-header, .tcw-alerts-header, .tcw-tree-header, .tcw-datawin-header, .tcw-syminfo-header, .tcw-ladder-header) {
+.tcw-root[data-tcw-narrow] .tcw-dock-page > :is(.tcw-watchlist-header, .tcw-alerts-header, .tcw-tree-header, .tcw-datawin-header, .tcw-syminfo-header, .tcw-ladder-header, .tcw-dock-host-header) {
   background: var(--tcw-bg-elevated);
 }
 

@@ -401,7 +401,8 @@ To stop drawing, trading or zoom on the chart, use `chartOptions.features`. The 
 `setSymbols`) take tickers or `SymbolInfo` (`description`, `type`, `exchange`, `logo`): the symbol search then
 opens named, with kind tabs and an exchange filter (recipe in [references/recipes.md](references/recipes.md)). The dock's panels
 (watchlist, alerts, depth ladder…) start shut: `widget.openPanel('watchlist')`. Your own parts: `addToolbarButton`,
-`addToolbarDropdown`, `addSidebarButton`, `addStatusBarItem`, `getSlot('chart')`, `addHotkey`, and
+`addToolbarDropdown`, `addSidebarButton`, `addStatusBarItem`, `getSlot('chart')`, `addHotkey`, a page in the
+dock with `addDockPage({ id, label, icon, element })` (the `onPanelChange` option says which panel is open), and
 the `chartMenuItems` / `drawingMenuItems` / `indicatorMenuItems` options. Style the widget with your
 own CSS through `--tcw-*` variables and `[data-tcw-part~="name"]` (stable through 1.x).
 

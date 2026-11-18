@@ -6935,6 +6935,12 @@
         "kind": "function"
       },
       {
+        "name": "onPanelChange",
+        "type": "(panel: DockPanelId | null) => void",
+        "doc": "The dock's open panel changed: a built-in one's id or a page's of your own (`addDockPage`), or `null` when the dock shut. Called however it changed: the rail, a panel's close button, `openPanel`, a narrow widget shutting it. One panel opening in place of another is one call, with no `null` between.",
+        "kind": "function"
+      },
+      {
         "name": "onReady",
         "type": "(chart: Chart, widget: ChartWidget) => void",
         "doc": "The widget is built: called once, with its chart and the widget itself, in a microtask after `new ChartWidget()` returns, so the name you give the widget is set by then. The statements right after the constructor run first (a `setData` there comes before it), and a view shared in the URL (`shareUrl`) is put back after it.",

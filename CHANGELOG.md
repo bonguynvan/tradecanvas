@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Widget
+
+- **A page of your own in the dock** (`@tradecanvas/chart`): `widget.addDockPage({ id, label, icon, element, onShow, onHide })` puts its button on the rail after the built-in panels and your element under the dock's header (its label and a close button); `openPanel(id)` opens it, `getOpenPanel()` reports it, and `remove()` takes it away. The `onPanelChange` option is told the open panel, or `null`, however it changed. `openPanel` and `getOpenPanel` take and give `DockPanelId` (a built-in panel or a page's id).
+
 ### Drawings
 
 - **The Long/Short Position plays its trade out** (`@tradecanvas/chart`): over the bars in its span, the trade is entered on the first bar at or after the entry and closed where the price first reaches the stop or the target (the stop when one bar reaches both, since which came first is not in the bar; a bar's open when it gaps past a level), at the right edge, or still open at the last bar. The part it went through is tinted in the colour of what it made, with a dashed line from the entry to the close and a tag there (`Target hit`, `Stop hit`, `Closed`, `Open`) with the profit or loss. It is on for positions already drawn; `showOutcome: false` turns it off. Played on the series' own prices, and left out for a box drawn back from its entry and on Renko and the like.
