@@ -79,7 +79,8 @@ new ChartWidget(host, { chartOptions: { features: { tradingContextMenu: true } }
 
 chart.connectExecution(new PaperExecutionAdapter({ markPrice: 64_000 }))
 
-chart.on('executionError', (e) => toast(e.payload.message))
+chart.on('executionError', (e) => toast(e.payload.message))   // e.payload.command: the intent that failed
+// chart.connectExecution(adapter, { brackets: 'place' })   // a confirmed bracket goes to it too: see Bracket orders
 // chart.disconnectExecution()`}</code></pre>
 <p>
   Implement <code>ExecutionAdapter</code> (it mirrors <code>DataAdapter</code>) to wire a
@@ -242,8 +243,22 @@ chart.cancelOrderDraft()`}</code></pre>
   drag the three lines to tune entry, risk, and reward. Confirm with
   <kbd>Enter</kbd> (or the Place button), cancel with <kbd>Esc</kbd>. In the
   widget, the green/red toolbar arrows start a long/short bracket. The chart
-  emits a single <code>bracketPlace</code> event for your backend to act on —
-  it never places orders itself.
+  emits a single <code>bracketPlace</code> event for your backend to act on.
+</p>
+<p>
+  With an execution adapter connected with <code>brackets: 'place'</code>, the chart also sends it to the
+  adapter as one order: the entry, a limit when the price has to come back to it and a stop when it has to
+  run on to it, its quantity, and its stop-loss and take-profit on it. Once the adapter took it, the chart
+  sends <code>bracketOrder</code> with the order. If the adapter refuses it, it sends
+  <code>executionError</code> with <code>command: 'bracketPlace'</code>. The widget says "placed" only then,
+  and says why when it was refused. A bracket with no quantity is not sent, since no one saw a size to
+  place; nor is one confirmed before the chart has a price to tell a limit entry from a stop.
+  <code>executionError</code> gives the <code>reason</code> (<code>'noQuantity'</code>, <code>'noPrice'</code>).
+  The brackets the toolbar's arrows and <code>startBracket</code> start have no quantity yet, so with
+  <code>'place'</code> they are not sent, and the widget says so. Without it, a confirmed bracket stays an event, and
+  the widget says it was confirmed. An adapter connected without saying (no <code>brackets</code>) keeps the
+  event and warns once in the console. <code>'place'</code> becomes the default in the next major version,
+  so an app that places the event's bracket itself passes <code>brackets: 'event'</code>.
 </p>
 <pre><code>{`chart.startBracket('buy')          // entry defaults to the latest close
 chart.startBracket('sell', 64_800) // or pin the entry price
@@ -252,6 +267,11 @@ chart.on('bracketPlace', (e) => {
   const { side, entry, stopLoss, takeProfit, riskReward } = e.payload
   // submit to your OMS, then reflect fills back via chart.setOrders/setPositions
 })
+
+// Or let the connected adapter place it
+chart.connectExecution(broker, { brackets: 'place' })
+chart.placesBrackets()   // true
+chart.on('bracketOrder', (e) => console.log(e.payload.order.id))
 
 chart.confirmBracket()  // same as Enter
 chart.cancelBracket()   // same as Esc`}</code></pre>

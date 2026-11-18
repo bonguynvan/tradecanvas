@@ -213,6 +213,12 @@ export class Chart {
   private eventBus: EventBus;
   private streamManager: StreamManager | null = null;
   private executionAdapter: ExecutionAdapter | null = null;
+  /** What a confirmed bracket does with the adapter: `null` when `connectExecution` was not told. */
+  private executionBrackets: 'event' | 'place' | null = null;
+  /** The console was told once that a bracket did not reach the adapter. */
+  private bracketsWarned = false;
+  /** Waits for the first bracket confirmed with an adapter connected without `brackets`, to say so. */
+  private bracketWarner: (() => void) | null = null;
   private execTeardown: (() => void) | null = null;
   private autoScrollOnNewBar = true;
   /** The drawn series (Renko bricks…) the indicators were last worked out on; null: the data bars. */
@@ -3609,6 +3615,7 @@ export class Chart {
     }
     this.disconnectExecution();
     this.executionAdapter = adapter;
+    this.executionBrackets = config.brackets ?? null;
     this.execTeardown = wireExecution(adapter, {
       onIntent: (type, handler) => {
         const wrapped = (e: ChartEvent) => handler(e.payload);
@@ -3623,15 +3630,50 @@ export class Chart {
         this.eventBus.emit('executionFill', fill);
       },
       getPositions: () => this.tradingManager.getPositions(),
-    });
+      marketPrice: () => this.series.bars().at(-1)?.close ?? null,
+      onBracketOrder: (order, bracket) => this.eventBus.emit('bracketOrder', { order, bracket }),
+    }, { brackets: config.brackets });
+    if (config.brackets === undefined) this.warnOfUnsentBrackets();
     Promise.resolve(adapter.connect(config)).catch((cause) =>
       this.eventBus.emit('executionError', { message: 'Execution connect failed', cause }),
     );
   }
 
+  /**
+   * Whether a confirmed bracket goes to the connected adapter as an order
+   * (`connectExecution(adapter, { brackets: 'place' })`), not only as the
+   * `bracketPlace` event.
+   */
+  placesBrackets(): boolean {
+    return this.executionAdapter !== null && this.executionBrackets === 'place';
+  }
+
+  /**
+   * An adapter connected without saying what a bracket does: the first one
+   * confirmed is said in the console not to have reached it, once a chart.
+   */
+  private warnOfUnsentBrackets(): void {
+    if (this.bracketsWarned || this.bracketWarner) return;
+    const warnOnce = () => {
+      this.stopBracketWarner();
+      this.bracketsWarned = true;
+      console.warn("[Chart] A bracket was confirmed with an execution adapter connected, and was not sent to it: only the bracketPlace event went out. connectExecution(adapter, { brackets: 'place' }) sends it as an order; { brackets: 'event' } keeps the event and says nothing. 'place' becomes the default in the next major version.");
+    };
+    this.bracketWarner = warnOnce;
+    this.eventBus.on('bracketPlace', warnOnce);
+  }
+
+  private stopBracketWarner(): void {
+    if (!this.bracketWarner) return;
+    this.eventBus.off('bracketPlace', this.bracketWarner);
+    this.bracketWarner = null;
+  }
+
   /** Tear down the active execution adapter (if any) and stop routing intents. */
   disconnectExecution(): void {
     this.returnMarkToLive();
+    this.executionBrackets = null;
+    this.stopBracketWarner();
     if (this.execTeardown) {
       this.execTeardown();
       this.execTeardown = null;

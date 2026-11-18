@@ -142,3 +142,94 @@ describe('wireExecution: reverse and fills', () => {
     expect(h.errors).toHaveLength(1);
   });
 });
+
+describe('wireExecution and a confirmed bracket', () => {
+  const bracket = { side: 'buy', entry: 95, stopLoss: 90, takeProfit: 105, quantity: 2, riskReward: 2 };
+
+  /** A host at a market price of 100 that records the brackets the adapter took. */
+  const wired = (options?: Parameters<typeof wireExecution>[2], adapter = new PaperExecutionAdapter({ markPrice: 100 })) => {
+    const h = makeHost();
+    const taken: unknown[][] = [];
+    h.host.marketPrice = () => 100;
+    h.host.onBracketOrder = (order, placed) => taken.push([order, placed]);
+    wireExecution(adapter, h.host, options);
+    adapter.connect({});
+    return { h, taken, adapter, emit: (payload: unknown) => h.emit('bracketPlace' as ExecutionIntentType, payload) };
+  };
+
+  it('sends it to the adapter as one order, its stop-loss and take-profit on it, when asked to', async () => {
+    const { h, taken, emit } = wired({ brackets: 'place' });
+    emit(bracket);
+    await flush();
+    expect(h.orders).toEqual([expect.objectContaining({ side: 'buy', type: 'limit', price: 95, quantity: 2, stopLoss: 90, takeProfit: 105 })]);
+    expect(taken).toEqual([[expect.objectContaining({ price: 95 }), bracket]]);
+  });
+
+  it('makes the entry a stop order past the price, as a broker would take it', async () => {
+    const { h, emit } = wired({ brackets: 'place' });
+    emit({ ...bracket, entry: 102, stopLoss: 98, takeProfit: 110 });
+    emit({ side: 'sell', entry: 97, stopLoss: 99, takeProfit: 93, quantity: 1, riskReward: 2 });
+    await flush();
+    expect(h.orders.map((o) => [o.side, o.type])).toEqual([['buy', 'stop'], ['sell', 'stop']]);
+  });
+
+  it('sends no bracket without a quantity: a size no one saw is not placed', async () => {
+    const adapter = new PaperExecutionAdapter({ markPrice: 100 });
+    const asked: unknown[] = [];
+    adapter.placeOrder = (intent) => { asked.push(intent); return Promise.reject(new Error('not asked')); };
+    const { h, emit } = wired({ brackets: 'place' }, adapter);
+    const { quantity: _, ...noQuantity } = bracket;
+    emit(noQuantity);
+    emit({ ...bracket, quantity: 0 });
+    await flush();
+    expect(asked).toEqual([]);
+    expect(h.errors).toEqual([
+      expect.objectContaining({ command: 'bracketPlace', reason: 'noQuantity' }),
+      expect.objectContaining({ command: 'bracketPlace', reason: 'noQuantity' }),
+    ]);
+  });
+
+  it('sends no bracket with no price to tell a limit entry from a stop', async () => {
+    const { h, taken, emit } = wired({ brackets: 'place' });
+    h.host.marketPrice = () => null;
+    emit(bracket);
+    await flush();
+    expect(h.orders).toEqual([]);
+    expect(taken).toEqual([]);
+    expect(h.errors).toEqual([expect.objectContaining({ command: 'bracketPlace', reason: 'noPrice' })]);
+  });
+
+  it('tells nothing of a bracket the adapter took after it was disconnected', async () => {
+    const h = makeHost();
+    const taken: unknown[] = [];
+    h.host.marketPrice = () => 100;
+    h.host.onBracketOrder = (order) => taken.push(order);
+    const adapter = new PaperExecutionAdapter({ markPrice: 100 });
+    const teardown = wireExecution(adapter, h.host, { brackets: 'place' });
+    adapter.connect({});
+    h.emit('bracketPlace' as ExecutionIntentType, bracket);
+    teardown();
+    await flush();
+    expect(taken).toEqual([]);
+  });
+
+  it('only emits it, as before, without being asked to send it', async () => {
+    for (const options of [undefined, { brackets: 'event' as const }]) {
+      const { h, taken, emit } = wired(options);
+      emit(bracket);
+      await flush();
+      expect(h.orders).toEqual([]);
+      expect(taken).toEqual([]);
+    }
+  });
+
+  it('reports a bracket the adapter refuses', async () => {
+    const adapter = new PaperExecutionAdapter({ markPrice: 100 });
+    adapter.placeOrder = () => Promise.reject(new Error('margin'));
+    const { h, taken, emit } = wired({ brackets: 'place' }, adapter);
+    emit(bracket);
+    await flush();
+    expect(taken).toEqual([]);
+    expect(h.errors).toEqual([expect.objectContaining({ message: 'Execution command failed: bracketPlace' })]);
+  });
+});
