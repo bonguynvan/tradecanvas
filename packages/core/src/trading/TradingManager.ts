@@ -15,7 +15,7 @@ import { OrderRenderer } from './OrderRenderer.js';
 import { PositionRenderer } from './PositionRenderer.js';
 import { TradingDragHandler } from './TradingDragHandler.js';
 import { TradingContextMenu } from './TradingContextMenu.js';
-import { BracketTool, bracketRiskReward, type BracketLevels } from './BracketTool.js';
+import { BracketTool, bracketRiskReward } from './BracketTool.js';
 import { OrderDraftTool } from './OrderDraftTool.js';
 import { buttonAt, sameLineAction, type LineButton, type LineButtonAction } from './lineButtons.js';
 import { renderFillMarks } from './fillMarks.js';
@@ -170,9 +170,9 @@ export class TradingManager {
 
   // --- Bracket placement ---
 
-  /** Begin placing a bracket (entry + SL + TP) at `entry` for `side`, at `levels` when given. */
-  startBracket(side: OrderSide, entry: number, levels?: BracketLevels): void {
-    this.bracket.start(side, entry, levels);
+  /** Begin placing a bracket (entry + SL + TP) at `entry` for `side`. */
+  startBracket(side: OrderSide, entry: number): void {
+    this.bracket.start(side, entry);
     this.requestRender?.();
   }
 
@@ -191,7 +191,6 @@ export class TradingManager {
       entry: draft.entry,
       stopLoss: draft.stopLoss,
       takeProfit: draft.takeProfit,
-      ...(draft.quantity !== undefined ? { quantity: draft.quantity } : {}),
       riskReward: bracketRiskReward(draft),
     });
     this.bracket.cancel();

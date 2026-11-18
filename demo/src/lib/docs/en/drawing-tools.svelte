@@ -222,8 +222,9 @@ chart.setDrawingOptions(id, { showOutcome: false })   // the zones and their tag
 </p>
 <p>
   In the widget, a selected Long/Short Position shows <b>Create limit order</b>
-  in its toolbar while trading is on: it opens a bracket draft filled with these
-  levels, which you adjust and confirm. An order is never one click away.
+  in its toolbar while trading is on: it opens the order ticket filled with these
+  levels (side, entry as the price, stop-loss, take-profit and the quantity its
+  risk buys), which you adjust and place. An order is never one click away.
 </p>
 <p>
   Round the quantity down to what your broker takes, so the order risks no

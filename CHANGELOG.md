@@ -14,7 +14,7 @@
 
 ### Trading
 
-- **An order placed from a Long/Short Position** (`@tradecanvas/chart`): with trading on, selecting the drawing shows **Create limit order** in its toolbar. It opens the bracket draft filled from the drawing: its side, entry, stop-loss, take-profit and the quantity its risk works out. The draft is dragged and confirmed as any bracket is, so no order is one click away. `chart.startBracket(side, entry, { stopLoss, takeProfit, quantity })` starts one from code, and `bracketPlace` carries the `quantity` when there is one; the drawing and its levels are the ones `positionLevels` gives.
+- **An order placed from a Long/Short Position** (`@tradecanvas/chart`): with trading on, selecting the drawing shows **Create limit order** in its toolbar. It opens the order ticket filled from the drawing: its side, entry as the price, stop-loss, take-profit and the quantity its risk buys, taken down to the decimals the drawing writes. The order type follows the entry against the market (a buy limit below it, a stop above, the market at it), and nothing is sent until Place; the drawing's levels are the ones `positionLevels` gives.
 
 ### Fixes
 

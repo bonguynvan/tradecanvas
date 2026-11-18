@@ -1,11 +1,11 @@
 import { WidgetAccountPanel } from './WidgetAccountPanel.js';
-import { WidgetOrderTicket } from './WidgetOrderTicket.js';
+import { WidgetOrderTicket, type OrderTicketStart } from './WidgetOrderTicket.js';
 import type { OrderTicketRules } from './orderTicket.js';
 import { WidgetBracketBar } from './WidgetBracketBar.js';
 import { WidgetDepthLadder } from './WidgetDepthLadder.js';
 import type { DepthData } from '@tradecanvas/commons';
 import { fill, type MessageKey } from './i18n.js';
-import { positionLevels, type BracketLevels } from '@tradecanvas/core';
+import { positionLevels } from '@tradecanvas/core';
 import type { ChartWidget } from './ChartWidget.js';
 
 /** What trading reads of the widget around it, and asks of it. */
@@ -46,12 +46,13 @@ export class WidgetTrading {
     panel.toggle();
   }
 
-  /** The order ticket, at a price from the chart (or the market). */
-  openOrderTicket(price?: number): void {
+  /** The order ticket, at a price from the chart (or the market), and with the fields a caller fills. */
+  openOrderTicket(price?: number, start: Partial<OrderTicketStart> = {}): void {
     if (!this.host.featureState.orderTicket) return;
     const data = this.host.chart.getData();
     this.orderTicket?.open({
-      price,
+      ...start,
+      price: price ?? start.price,
       lastPrice: data.length > 0 ? data[data.length - 1].close : null,
       rules: this.orderRules(),
       symbol: this.host.state.symbol,
@@ -119,16 +120,24 @@ export class WidgetTrading {
   }
 
   /** Begin a draggable bracket order at the latest price and show the action bar. */
-  startBracket(side: 'buy' | 'sell', entry?: number, levels?: BracketLevels): void {
-    if (this.host.chart.startBracket(side, entry, levels)) {
+  startBracket(side: 'buy' | 'sell'): void {
+    if (this.host.chart.startBracket(side)) {
       this.bracketBar?.show(side);
     }
   }
 
-  /** Begin a bracket draft filled from a Long/Short Position drawing, if it has levels to place. */
-  startBracketFromDrawing(id: string): void {
+  /** Open the order ticket from a Long/Short Position drawing, filled with its levels. */
+  openOrderTicketFromDrawing(id: string): void {
     const levels = positionLevels(this.host.chart.getDrawings().find((d) => d.id === id));
     if (!levels) return;
-    this.startBracket(levels.side, levels.entry, { stopLoss: levels.stopLoss, takeProfit: levels.takeProfit, quantity: levels.quantity });
+    // The size the drawing writes: its risk unrounded, taken down to the decimals it shows.
+    const decimals = Math.max(0, Math.min(8, Math.round(levels.quantityDecimals)));
+    const step = 10 ** decimals;
+    this.openOrderTicket(levels.entry, {
+      side: levels.side,
+      stopLoss: levels.stopLoss,
+      takeProfit: levels.takeProfit,
+      quantity: Math.floor(levels.quantity * step) / step,
+    });
   }
 }

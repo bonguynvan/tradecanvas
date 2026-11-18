@@ -203,6 +203,14 @@ chart.on('priceAxisAdd', (e) => openMyMenu(e.payload.x, e.payload.y, e.payload.p
   stop over the market becomes a sell limit), and Place takes the side's colour.
 </p>
 <p>
+  In the widget, a selected Long/Short Position drawing offers <b>Create limit
+  order</b> in its toolbar while trading is on. It opens this ticket filled from
+  the drawing: its side, entry as the price, stop-loss and take-profit, and the
+  quantity its risk buys, taken down to the decimals the drawing writes. The
+  order type follows the entry against the market, and nothing is sent until
+  Place.
+</p>
+<p>
   The account panel's head keeps the open P&amp;L and the P&amp;L realised in sight on every tab. Its figures are
   set right in the mono type, money to the price step's decimals in the number locale; on a phone each row is a card
   of named figures.
@@ -238,19 +246,11 @@ chart.cancelOrderDraft()`}</code></pre>
   emits a single <code>bracketPlace</code> event for your backend to act on —
   it never places orders itself.
 </p>
-<p>
-  In the widget, selecting a Long/Short Position drawing shows <b>Create limit
-  order</b> in its toolbar while trading is on. It opens the same bracket draft,
-  filled from the drawing: its side, entry, stop-loss, take-profit and the
-  quantity its risk works out. The draft is the order you confirm, never one
-  click.
-</p>
 <pre><code>{`chart.startBracket('buy')          // entry defaults to the latest close
 chart.startBracket('sell', 64_800) // or pin the entry price
-chart.startBracket('buy', 64_800, { stopLoss: 63_800, takeProfit: 66_800, quantity: 1.5 })
 
 chart.on('bracketPlace', (e) => {
-  const { side, entry, stopLoss, takeProfit, quantity, riskReward } = e.payload
+  const { side, entry, stopLoss, takeProfit, riskReward } = e.payload
   // submit to your OMS, then reflect fills back via chart.setOrders/setPositions
 })
 

@@ -221,9 +221,9 @@ the bars in its span (`showOutcome: false` turns that off); `positionLevels(draw
 unrounded `quantity` above zero with its `quantityDecimals`, `riskAmount`, `rewardAmount`,
 `riskReward`), or `null` (another drawing, no risk set, a stop on the entry): work an order out
 from that, not from its anchors, and round the quantity down to the broker's lot. In the widget the
-selected drawing offers **Create limit order**, which opens the bracket draft at those levels,
-confirmable as any bracket; `chart.startBracket(side, entry, { stopLoss, takeProfit, quantity })`
-starts the same draft from code.
+selected drawing offers **Create limit order**, which opens the order ticket filled with those levels
+(side, entry as the price, stop-loss, take-profit and the quantity taken to the drawing's decimals);
+nothing is sent until Place.
 Text tools (`text`, `note`, `callout`, `priceLabel`, `arrowMark`) take a text style:
 `style: { text: 'line one\nline two', fontSize, bold, italic, textColor }`, and a text, a note
 or a callout also `textAlign` ('left' | 'center' | 'right'), `textBackground` (in `fillColor`),

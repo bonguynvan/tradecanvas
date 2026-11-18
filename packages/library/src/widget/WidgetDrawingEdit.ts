@@ -47,6 +47,8 @@ export interface DrawingEditHost {
   readonly drawingSettingsPart: ChartWidget['drawingSettingsPart'];
   drawingToolName: ChartWidget['drawingToolName'];
   readonly featureState: ChartWidget['featureState'];
+  /** The order ticket is there to fill (trading was on when the widget was built). */
+  readonly orderTicketReady: boolean;
   readonly root: ChartWidget['root'];
   say: ChartWidget['say'];
   readonly t: ChartWidget['t'];
@@ -117,7 +119,11 @@ export class WidgetDrawingEdit {
     const offset = this.host.chartOffset();
     const primary = drawings[0];
     // A Long/Short Position with levels to place offers an order here, while trading is on.
-    const canOrder = drawings.length === 1 && this.host.chart.getFeatures().trading && positionLevels(primary) !== null;
+    const canOrder = drawings.length === 1
+      && this.host.featureState.orderTicket
+      && this.host.orderTicketReady
+      && this.host.chart.getFeatures().trading
+      && positionLevels(primary) !== null;
     // The pane the drawing is on, for where the selection is: the price plot, or an indicator pane.
     const plot = (primary.paneId !== undefined
       ? this.host.chart.getIndicatorPanes().find((pane) => pane.instanceId === primary.paneId)?.rect

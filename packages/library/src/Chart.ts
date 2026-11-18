@@ -3098,17 +3098,16 @@ export class Chart {
 
   /**
    * Begin placing a draggable bracket order (entry + stop-loss + take-profit).
-   * Defaults the entry to the latest close when `entry` is omitted, and the
-   * stop and target to 1% and 2R when `levels` is. Drag the three lines to
-   * adjust; confirm with Enter (emits `bracketPlace`) or cancel with Esc.
-   * Returns false if trading is disabled or no price is available.
+   * Defaults the entry to the latest close when `entry` is omitted. Drag the
+   * three lines to adjust; confirm with Enter (emits `bracketPlace`) or cancel
+   * with Esc. Returns false if trading is disabled or no price is available.
    */
-  startBracket(side: import('@tradecanvas/commons').OrderSide, entry?: number, levels?: import('@tradecanvas/core').BracketLevels): boolean {
+  startBracket(side: import('@tradecanvas/commons').OrderSide, entry?: number): boolean {
     if (!this.features.trading) return false;
     const data = this.series.bars();
     const price = entry ?? (data.length > 0 ? data[data.length - 1].close : null);
     if (price === null) return false;
-    this.tradingManager.startBracket(side, price, levels);
+    this.tradingManager.startBracket(side, price);
     return true;
   }
 
