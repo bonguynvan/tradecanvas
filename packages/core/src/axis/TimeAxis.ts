@@ -4,6 +4,7 @@ import { barIndexToTime } from '../viewport/ScaleMapping.js';
 import { MARK_WEIGHT, TimeMarker, markKind, type MarkKind, type TimeMark } from './timeMarks.js';
 import { axisTimes } from '../charts/transforms/axisTimes.js';
 import { hLine } from '../charts/pixelGrid.js';
+import { writtenDate, writtenMonth } from './writtenDate.js';
 
 const _pad2 = (n: number) => n < 10 ? '0' + n : '' + n;
 
@@ -14,6 +15,8 @@ export const TZ_LABEL_GAP_PX = 8;
 export const MIN_LABEL_SPACING_PX = 80;
 /** Space kept between two time labels, px. */
 const LABEL_GAP_PX = 8;
+/** Space between the plot's left edge and the date tag, as the timezone tag keeps at the right. */
+const DATE_TAG_INSET_PX = 4;
 
 const monthNames = new Map<string, string[]>();
 
@@ -115,6 +118,48 @@ export class TimeAxis {
     return mark.weight === MARK_WEIGHT.within ? `${clock}:${_pad2(new Date(mark.time).getUTCSeconds())}` : clock;
   }
 
+  /** A date as far as its `finest` part: "2023", "Mar 2023" or "Mar 15, 2023", in the locale. */
+  private writtenTo(finest: number, time: number, daily: boolean): string {
+    const parts = daily ? barDateParts(time, this.tz, this.exchangeZone) : timeParts(time, this.tz);
+    if (finest >= KIND_RANK.year) return String(parts.year);
+    if (finest === KIND_RANK.month) return writtenMonth(this.locale, parts.year, parts.month);
+    return writtenDate(this.locale, parts.year, parts.month, parts.day, true);
+  }
+
+  /**
+   * The tag at the left end with what the labels leave unsaid: the year where
+   * they are months, the month and year where they are days, the whole date
+   * where they are times. Panned back into history, the axis otherwise reads
+   * "Mar … Apr" with no year until a January comes on view. None where a year
+   * is labelled, or the labels are your formatter's, or there is no room.
+   *
+   * Labels it would cover are left out, and it says what they said: over a
+   * "Mar" it reads "Mar 2023" and is dated by that label, so a "15" after it
+   * is still read as March's. A time it covers is left out.
+   */
+  private dateTag(ctx: CanvasRenderingContext2D, labels: readonly AxisLabel[], firstTime: number | null, daily: boolean, left: number, limit: number): DateTag | null {
+    if (this.timeFormatter) return null;
+    const coarsest = labels.reduce((rank, l) => Math.max(rank, KIND_RANK[l.kind]), NO_LABEL_RANK);
+    if (coarsest >= KIND_RANK.year) return null;
+    let finest = Math.max(KIND_RANK.day, coarsest + 1);
+    let time = firstTime;
+    let covered: readonly AxisLabel[] = [];
+    // Each label taken in may widen the tag over the next one: a few rounds settle it.
+    for (let round = 0; round < TAG_ROUNDS; round++) {
+      if (time === null) return null;
+      const text = this.writtenTo(finest, time, daily);
+      const right = left + ctx.measureText(text).width;
+      if (right + TZ_LABEL_GAP_PX > limit) return null;
+      const under = labels.filter((l) => l.left < right + LABEL_GAP_PX);
+      if (under.length === covered.length) return { text, left, right, covered: under };
+      covered = under;
+      // A day or a month it covers it must name; a time it covers adds nothing to the date.
+      finest = covered.reduce((f, l) => (KIND_RANK[l.kind] >= KIND_RANK.day ? Math.min(f, KIND_RANK[l.kind]) : f), finest);
+      time = covered.reduce((last, l) => (l.left > last.left ? l : last)).time;
+    }
+    return null;
+  }
+
   /** The spans (px) of the labels written on the last draw: the crosshair's time pill clears those it covers. */
   labelColumns(): readonly { left: number; right: number }[] {
     return this.columns;
@@ -155,43 +200,85 @@ export class TimeAxis {
     ctx.textAlign = 'center';
     ctx.fillStyle = theme.style?.axis.time.text ?? theme.axisLabel;
 
+    const order = this.marks(viewport, series).sort((a, b) => b.weight - a.weight || a.index - b.index);
+    const daily = barsAreDaily(times) === true;
+
     // Heaviest first, each label where it clears those already placed: a
     // wide one (a long month name, a formatter's own text) can't run into
     // its neighbours, and a year beats the day beside it.
-    const placed: { left: number; right: number }[] = [];
-    const order = this.marks(viewport, series).sort((a, b) => b.weight - a.weight || a.index - b.index);
-    const daily = barsAreDaily(times) === true;
+    const labels: AxisLabel[] = [];
     for (const mark of order) {
       const markX = mark.index * barUnit + offsetX;
       // A bar off the plot has no label on it.
       if (markX < chartRect.x) continue;
       const kind = markKind(mark.weight);
-      const label = this.label(mark, kind, daily);
+      const text = this.label(mark, kind, daily);
       // A new year, month or day stands out from the times around it: where one day ends is read at a glance.
-      ctx.font = kind === 'time' ? plain : bold;
-      const half = ctx.measureText(label).width / 2;
+      const font = kind === 'time' ? plain : bold;
+      ctx.font = font;
+      const half = ctx.measureText(text).width / 2;
       // A label of a bar by the plot's left edge would be cut there: it starts at the edge instead.
       const x = Math.max(markX, chartRect.x + half);
       if (x + half > tzLeft) continue;
-      if (placed.some((p) => x - half < p.right + LABEL_GAP_PX && x + half + LABEL_GAP_PX > p.left)) continue;
-      placed.push({ left: x - half, right: x + half });
-      ctx.fillText(label, x, axisY + 7);
+      if (labels.some((p) => x - half < p.right + LABEL_GAP_PX && x + half + LABEL_GAP_PX > p.left)) continue;
+      labels.push({ left: x - half, right: x + half, x, text, font, kind, time: mark.time });
     }
-    this.columns = placed;
 
-    // ─── Timezone indicator (bottom-right) ───
+    // The date the labels leave unsaid, as of the first bar on view (past the
+    // last bar, the time its slot is given), in the timezone tag's style.
+    const firstOnView = Math.max(0, Math.ceil((chartRect.x - offsetX) / barUnit));
+    const firstIndex = this.timesPastData ? firstOnView : Math.min(firstOnView, times.length - 1);
+    const firstTime = times.length > 0 ? barIndexToTime(firstIndex, times) * unit : null;
     ctx.font = tzFont;
-    ctx.textAlign = 'right';
+    const tag = this.dateTag(ctx, labels, firstTime, daily, chartRect.x + DATE_TAG_INSET_PX, tzLeft);
+    const shown = tag ? labels.filter((l) => !tag.covered.includes(l)) : labels;
+    for (const l of shown) {
+      ctx.font = l.font;
+      ctx.fillText(l.text, l.x, axisY + 7);
+    }
+    this.columns = [...(tag ? [{ left: tag.left, right: tag.right }] : []), ...shown.map((l) => ({ left: l.left, right: l.right }))];
+
+    // ─── Timezone indicator (bottom-right), and the date tag (bottom-left) in its style ───
+    ctx.font = tzFont;
     ctx.textBaseline = 'top';
     ctx.globalAlpha = 0.75;
     ctx.fillStyle = theme.textSecondary;
+    ctx.textAlign = 'right';
     ctx.fillText(tzText, tzRight, axisY + 7);
+    if (tag) {
+      ctx.textAlign = 'left';
+      ctx.fillText(tag.text, tag.left, axisY + 7);
+    }
     ctx.globalAlpha = 1;
   }
 }
 
 /** How coarse a mark's label is: a year's, a month's, a day's, a time's. */
 const KIND_RANK: Record<MarkKind, number> = { year: 3, month: 2, day: 1, time: 0 };
+/** Below every kind: no label on view. */
+const NO_LABEL_RANK = -1;
+/** Most times the date tag widens to take in a label it covers. */
+const TAG_ROUNDS = 4;
+
+/** A tick label as placed: its span, its text and font, what it marks. */
+interface AxisLabel {
+  left: number;
+  right: number;
+  x: number;
+  text: string;
+  font: string;
+  kind: MarkKind;
+  /** The marked bar's time, ms. */
+  time: number;
+}
+
+/** The date tag at the left end, and the labels it stands in for. */
+interface DateTag {
+  text: string;
+  left: number;
+  right: number;
+  covered: readonly AxisLabel[];
+}
 /** The kinds of label a built series' axis keeps: a step and the one above it. */
 const KINDS_KEPT = 2;
 

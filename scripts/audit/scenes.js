@@ -258,6 +258,22 @@ const SCENES = {
     return s;
   },
 
+  /** Daily bars panned back to a spring three years ago: months on view and no January, so the year is the date tag's. */
+  async historyDaily() {
+    const s = await widget({ timeframe: '1d', adapter: new MockAdapter({ basePrice: 100, volatility: 0.9, tickInterval: 86_400_000, historySize: 1500 }), historyLimit: 1500 });
+    const year = new Date(s.chart.getData().at(-1).time).getUTCFullYear() - 3;
+    s.chart.setVisibleRange(Date.UTC(year, 2, 1), Date.UTC(year, 6, 1));
+    return s;
+  },
+
+  /** Hourly bars panned back a few days into an earlier month: days on view and no month, so the tag gives month and year. */
+  async historyHourly() {
+    const s = await widget({ timeframe: '1h', adapter: new MockAdapter({ basePrice: 100, volatility: 0.9, tickInterval: 3_600_000, historySize: 1500 }), historyLimit: 1500 });
+    const data = s.chart.getData();
+    s.chart.setVisibleRange(data[200].time, data[300].time);
+    return s;
+  },
+
   /** More panes than the chart has room for: the price pane keeps its part, the panes share the rest. */
   async manyPanes() {
     const s = await widget();

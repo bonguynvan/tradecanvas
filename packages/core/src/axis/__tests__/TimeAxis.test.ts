@@ -57,7 +57,9 @@ describe('TimeAxis', () => {
   it('still labels the rest of the axis', () => {
     const { ctx, drawn } = recordingCtx();
     new TimeAxis().render(ctx, viewport(600), DARK_THEME, data);
-    expect(drawn.filter((d) => d.align === 'center').length).toBeGreaterThanOrEqual(3);
+    // Two ticks, and at the left end the date tag in place of the one there.
+    expect(drawn.filter((d) => d.align === 'center').length).toBeGreaterThanOrEqual(2);
+    expect(drawn.filter((d) => d.align === 'left').map((d) => d.text)).toEqual(['Oct 2026']);
   });
 });
 
@@ -159,8 +161,8 @@ describe('TimeAxis date labels', () => {
     new TimeAxis().render(ctx, { ...viewport(0), visibleRange: { from: 0, to: 39 } } as ViewportState, DARK_THEME, daily);
     const labels = drawn.filter((d) => d.align === 'center').map((d) => d.text);
     expect(labels.length).toBeGreaterThan(0);
-    // No year 32,000: months of 2000, and days between.
-    expect(labels).toContain('Aug');
+    // No year 32,000: August 2000 at the left end (the tag stands in for the "Aug" there), days after it.
+    expect(drawn.filter((d) => d.align === 'left').map((d) => d.text)).toEqual(['Aug 2000']);
     for (const label of labels) expect(label, label).toMatch(/^([A-Z][a-z]{2}|\d{1,2}|2000|2001)$/);
   });
 
@@ -220,9 +222,114 @@ describe('TimeAxis date labels', () => {
     const { ctx, drawn } = recordingCtx();
     const axis = new TimeAxis();
     axis.setTimezoneOffset(0);
-    const secs = Array.from({ length: 100 }, (_, i) => ({ time: Date.UTC(2026, 0, 5, 9, 30) + i * 5_000, open: 1, high: 1, low: 1, close: 1, volume: 1 }));
+    // Bars a second apart, so seconds are labelled between the minutes: five seconds apart, the only
+    // room for them is left of the first minute, where the date tag goes.
+    const secs = Array.from({ length: 100 }, (_, i) => ({ time: Date.UTC(2026, 0, 5, 9, 30) + i * 1_000, open: 1, high: 1, low: 1, close: 1, volume: 1 }));
     axis.render(ctx, viewport(0), DARK_THEME, secs);
     expect(drawn.some((d) => /^\d\d:\d\d:\d\d$/.test(d.text))).toBe(true);
+  });
+});
+
+describe('TimeAxis on a stretch of history with no new year on view', () => {
+  const DAY = 24 * HOUR;
+  const bars = (first: number, step: number, n = 100) => Array.from({ length: n }, (_, i) => ({
+    time: first + i * step, open: 1, high: 1, low: 1, close: 1, volume: 1,
+  }));
+  const render = (series: ReturnType<typeof bars>, setup: (axis: TimeAxis) => void = () => {}, vp: ViewportState = viewport(0)) => {
+    const { ctx, drawn } = recordingCtx();
+    const axis = new TimeAxis();
+    axis.setTimezoneOffset(0);
+    setup(axis);
+    axis.render(ctx, vp, DARK_THEME, series);
+    return { drawn, axis, tag: drawn.filter((d) => d.align === 'left').map((d) => d.text) };
+  };
+
+  it('writes the year at the left end when the months on view do not reach a new year', () => {
+    // Daily bars from 1 March 2023: April starts on view, January never does.
+    expect(render(bars(Date.UTC(2023, 2, 1), DAY)).tag).toEqual(['2023']);
+  });
+
+  it('writes the month and the year when the labels on view are days', () => {
+    // Hourly bars from 10 March 2023: days start on view, no month does.
+    expect(render(bars(Date.UTC(2023, 2, 10), HOUR)).tag).toEqual(['Mar 2023']);
+  });
+
+  it('writes the whole date when the labels on view are times of one day', () => {
+    expect(render(bars(Date.UTC(2023, 2, 15, 9), 60_000)).tag).toEqual(['Mar 15, 2023']);
+  });
+
+  it('dates the tag by the first bar on view, not the first bar loaded', () => {
+    // Daily bars from 1 December 2022, panned to start on 2 March 2023 (bar 91).
+    expect(render(bars(Date.UTC(2022, 11, 1), DAY, 200), () => {}, viewport(910)).tag).toEqual(['2023']);
+  });
+
+  it('stands in for a label it would cover, and says what that label said', () => {
+    // Panned so 1 March 2023 (bar 90) is the first bar on view: its "Mar" is under the tag.
+    const { drawn, tag } = render(bars(Date.UTC(2022, 11, 1), DAY, 200), () => {}, viewport(900));
+    expect(tag).toEqual(['Mar 2023']);
+    const ticks = drawn.filter((d) => d.align === 'center').map((d) => d.text);
+    expect(ticks).not.toContain('Mar');
+    expect(ticks).toContain('Apr');
+  });
+
+  it('is dated by the label it stands in for, so the days after it read as that month’s', () => {
+    // From 27 February 2023: the tag covers the "Mar" a few bars in, and a "15" after it is 15 March.
+    const { drawn, tag } = render(bars(Date.UTC(2023, 1, 27), DAY));
+    expect(tag).toEqual(['Mar 2023']);
+    expect(drawn.filter((d) => d.align === 'center').map((d) => d.text)).toContain('15');
+  });
+
+  it('dates the slots past the last bar by the times they are given', () => {
+    // A hundred days from 1 March 2023, panned 500 slots on: July 2024, the "15" at the left end under the tag.
+    expect(render(bars(Date.UTC(2023, 2, 1), DAY), () => {}, viewport(5000)).tag).toEqual(['Jul 15, 2024']);
+  });
+
+  it('leaves the labels as they were where it has no room', () => {
+    const narrow = { ...viewport(0), chartRect: { x: 0, y: 0, width: 70, height: 300 } } as ViewportState;
+    const series = bars(Date.UTC(2023, 2, 15, 9), 60_000);
+    const { drawn, tag } = render(series, () => {}, narrow);
+    expect(tag).toEqual([]);
+    const { ctx, drawn: plain } = recordingCtx();
+    const formatted = new TimeAxis();
+    formatted.setTimezoneOffset(0);
+    // Your formatter's labels never get a tag: the same ticks, as the axis places them without one.
+    formatted.setTimeFormatter((t) => new Date(t).toISOString().slice(11, 16));
+    formatted.render(ctx, narrow, DARK_THEME, series);
+    expect(drawn.filter((d) => d.align === 'center')).toEqual(plain.filter((d) => d.align === 'center'));
+  });
+
+  it('writes the exchange’s date on its daily bars', () => {
+    // Ho Chi Minh City's days from 1 March 2023, stamped at 17:00 UTC the day before: the first is 28 February in UTC.
+    const vn = bars(Date.UTC(2023, 1, 28, 17), DAY, 40);
+    const wide = { ...viewport(0), chartRect: { x: 0, y: 0, width: 1100, height: 300 }, barWidth: 90, barSpacing: 10 } as ViewportState;
+    const { tag } = render(vn, (axis) => axis.setExchangeTimeZone('Asia/Ho_Chi_Minh'), wide);
+    expect(tag).toEqual(['Mar 2023']);
+  });
+
+  it('writes no tag when a new year is labelled on view', () => {
+    expect(render(bars(Date.UTC(2025, 11, 1), DAY)).tag).toEqual([]);
+  });
+
+  it('writes the tag in its locale', () => {
+    const { tag } = render(bars(Date.UTC(2023, 2, 10), HOUR), (axis) => axis.setLocale('vi-VN'));
+    const march = new Intl.DateTimeFormat('vi-VN', { month: 'short', year: 'numeric', timeZone: 'UTC' }).format(Date.UTC(2023, 2, 15));
+    expect(tag).toEqual([march]);
+  });
+
+  it('leaves the labels to your own formatter when one is set', () => {
+    expect(render(bars(Date.UTC(2023, 2, 1), DAY), (axis) => axis.setTimeFormatter(() => 'x')).tag).toEqual([]);
+  });
+
+  it('keeps the other labels clear of the tag, and lists its span for the crosshair', () => {
+    for (let offset = 0; offset < 60; offset += 3) {
+      const { drawn, axis } = render(bars(Date.UTC(2023, 2, 10), HOUR), () => {}, viewport(offset));
+      const tag = drawn.find((d) => d.align === 'left')!;
+      const tagRight = tag.x + tag.text.length * 6;
+      for (const tick of drawn.filter((d) => d.align === 'center')) {
+        expect(tick.x - (tick.text.length * 6) / 2, `offset ${offset}: "${tick.text}"`).toBeGreaterThanOrEqual(tagRight);
+      }
+      expect(axis.labelColumns()).toContainEqual({ left: tag.x, right: tagRight });
+    }
   });
 });
 
