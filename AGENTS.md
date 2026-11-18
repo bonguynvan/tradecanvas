@@ -98,7 +98,9 @@ These fail CI, often far from the line that caused them.
   (`packages/library/src/widget/locales/en.ts`) and in each of the other 29
   language files beside it, with the same `{placeholders}`.
   `locales.test.ts` checks each one. Read text through `this.t('key')`, never
-  a literal in the UI.
+  a literal in the UI. From outside the project, adding the key to `en.ts`
+  alone is enough: say so in the pull request. The check then fails until a
+  maintainer adds the other languages to the branch, and that is expected.
 - **No emoji or symbol characters as icons.** Icons come from the icon set;
   `noEmoji.test.ts` scans `commons`, `core` and `library` for pictographs,
   dingbats, stars, checks, kebabs and their HTML or JS escapes. Key names
@@ -163,7 +165,9 @@ These fail CI, often far from the line that caused them.
   the settings changed: a look, the chart type, a compare's hold.
 - A visible change needs a look in a real browser at a phone width, a laptop
   width and a wide one, in both themes and the three looks, before the pull
-  request. Put a screenshot or a short clip in it.
+  request. Put a screenshot or a short clip in it. Without Playwright on the
+  machine, say so: the `audit` workflow shoots the scenes on the pull request
+  and keeps them as its run's artifact, and a maintainer looks at them.
 - A change to the widget or the engine also runs `pnpm audit:scenes` (after
   `pnpm build`): the chart in the states dialogs never show (the price at an
   order with a quote on, a linked grid under the pointer, a replay, compares,
