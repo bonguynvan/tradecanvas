@@ -702,6 +702,7 @@ export const RO_MESSAGES: WidgetMessages = {
   'drawingOption.riskMode.amount': 'Sumă',
   'drawingOption.risk': 'Risc',
   'drawingOption.qtyDecimals': 'Zecimale cantitate',
+  'drawingOption.showOutcome': 'Afișare tranzacție pe lumânări',
   'drawingOption.showLabels': 'Afișare etichete',
   'drawingOption.showText': 'Afișare text',
   'drawingOption.direction': 'Direcție',

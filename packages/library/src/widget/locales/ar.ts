@@ -708,6 +708,7 @@ export const AR_MESSAGES: WidgetMessages = {
   'drawingOption.riskMode.amount': 'مبلغ',
   'drawingOption.risk': 'المخاطرة',
   'drawingOption.qtyDecimals': 'المنازل العشرية للكمية',
+  'drawingOption.showOutcome': 'إظهار الصفقة على الشموع',
   'drawingOption.showLabels': 'إظهار التسميات',
   'drawingOption.showText': 'إظهار النص',
   'drawingOption.direction': 'الاتجاه',
