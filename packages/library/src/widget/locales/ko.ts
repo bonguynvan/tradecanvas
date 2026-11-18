@@ -702,6 +702,7 @@ export const KO_MESSAGES: WidgetMessages = {
   'drawingOption.riskMode.amount': '금액',
   'drawingOption.risk': '리스크',
   'drawingOption.qtyDecimals': '수량 소수 자릿수',
+  'drawingOption.showOutcome': '캔들 위에 거래 표시',
   'drawingOption.showLabels': '라벨 표시',
   'drawingOption.showText': '텍스트 표시',
   'drawingOption.direction': '방향',

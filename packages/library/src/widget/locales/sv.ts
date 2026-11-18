@@ -702,6 +702,7 @@ export const SV_MESSAGES: WidgetMessages = {
   'drawingOption.riskMode.amount': 'Belopp',
   'drawingOption.risk': 'Risk',
   'drawingOption.qtyDecimals': 'Decimaler för antal',
+  'drawingOption.showOutcome': 'Visa affären över staplarna',
   'drawingOption.showLabels': 'Visa etiketter',
   'drawingOption.showText': 'Visa text',
   'drawingOption.direction': 'Riktning',

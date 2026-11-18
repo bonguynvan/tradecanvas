@@ -4,6 +4,8 @@
 
 ### Drawings
 
+- **The Long/Short Position plays its trade out** (`@tradecanvas/chart`): over the bars in its span, the trade is entered on the first bar at or after the entry and closed where the price first reaches the stop or the target (the stop when one bar reaches both, since which came first is not in the bar; a bar's open when it gaps past a level), at the right edge, or still open at the last bar. The part it went through is tinted in the colour of what it made, with a dashed line from the entry to the close and a tag there (`Target hit`, `Stop hit`, `Closed`, `Open`) with the profit or loss. It is on for positions already drawn; `showOutcome: false` turns it off. Played on the series' own prices, and left out for a box drawn back from its entry and on Renko and the like.
+- **A fourth handle on the Long/Short Position** (`@tradecanvas/chart`): its right edge, on the entry line, sets how long the trade runs; before, the width followed the stop's handle. The entry, the stop and the target now sit on the entry's edge, and the stop's handle changes only its price. Saved drawings keep their place.
 - **A Long/Short Position read as a trade** (`@tradecanvas/chart`): `positionLevels(drawing)` gives the side (`'buy'` for a long), entry, stop-loss, take-profit and the quantity the risk buys (unrounded, with the decimals the drawing writes it in), the money at risk and to gain, and the R:R: the numbers its tags show. `null` for any other drawing, a position whose stop is still on its entry, one with no risk set, or prices that are not finite. An app that places an order from the drawing no longer works them out from its anchors and options again.
 
 ### Fixes

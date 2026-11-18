@@ -105,19 +105,27 @@ describe('RiskRewardTool', () => {
     expect(texts(LONG, { showLabels: false })).toEqual([]);
   });
 
-  it('offers a handle on the target, beside the stop', () => {
+  it('offers four handles: the entry, the stop and the target at its left edge, its right edge on the entry', () => {
     const state = drawing('riskReward', LONG);
-    // stop at x 105, target 70 at y 30
-    expect(tool.hitTestAnchor({ x: 105, y: 30 }, state, unitViewport, 4)).toBe(2);
-    expect(tool.hitTestAnchor({ x: 105, y: 60 }, state, unitViewport, 4)).toBe(1);
+    // Entry 50 at x 5, stop 40 at y 60, target 70 at y 30; the right edge at x 105.
     expect(tool.hitTestAnchor({ x: 5, y: 50 }, state, unitViewport, 4)).toBe(0);
+    expect(tool.hitTestAnchor({ x: 5, y: 60 }, state, unitViewport, 4)).toBe(1);
+    expect(tool.hitTestAnchor({ x: 5, y: 30 }, state, unitViewport, 4)).toBe(2);
+    expect(tool.hitTestAnchor({ x: 105, y: 50 }, state, unitViewport, 4)).toBe(3);
+    expect(tool.hitTestAnchor({ x: 105, y: 60 }, state, unitViewport, 4)).toBe(-1);
+  });
+
+  it('moves the stop’s price alone, and the right edge’s time alone', () => {
+    const state = drawing('riskReward', LONG);
+    expect(tool.moveHandle(state, 1, { time: 3, price: 45 }).anchors).toEqual([LONG[0], { time: 10, price: 45 }]);
+    expect(tool.moveHandle(state, 3, { time: 30, price: 58 }).anchors).toEqual([LONG[0], { time: 30, price: 40 }]);
+    expect(tool.moveHandle(state, 0, { time: 2, price: 52 }).anchors).toEqual([{ time: 2, price: 52 }, LONG[1]]);
   });
 
   it('turns a drag of the target into an R:R, never past the entry', () => {
     const state = drawing('riskReward', LONG);
-    expect(tool.moveHandle(state, 2, { time: 10, price: 65 }).options).toEqual({ rewardRatio: 1.5 });
-    expect(tool.moveHandle(state, 2, { time: 10, price: 45 }).options).toEqual({ rewardRatio: 0.1 });
-    expect(tool.moveHandle(state, 1, { time: 12, price: 45 }).anchors).toEqual([LONG[0], { time: 12, price: 45 }]);
+    expect(tool.moveHandle(state, 2, { time: 0, price: 65 }).options).toEqual({ rewardRatio: 1.5 });
+    expect(tool.moveHandle(state, 2, { time: 0, price: 45 }).options).toEqual({ rewardRatio: 0.1 });
   });
 
   it('hits inside the zones and misses outside', () => {
@@ -126,6 +134,63 @@ describe('RiskRewardTool', () => {
     expect(tool.hitTest({ x: 55, y: 35 }, state, unitViewport, 2)).toBe(true); // reward zone
     expect(tool.hitTest({ x: 500, y: 5 }, state, unitViewport, 2)).toBe(false);
     expect(tool.hitTest({ x: 5, y: 50 }, drawing('riskReward', [LONG[0]]), unitViewport, 2)).toBe(false);
+  });
+});
+
+describe('the trade over the bars', () => {
+  /** Bars at times 0, 1, 2… (the unit viewport's bar indexes), each [open, high, low, close]. */
+  const bars = (...ohlc: [number, number, number, number][]) =>
+    ohlc.map(([open, high, low, close], time) => ({ time, open, high, low, close, volume: 1 }));
+  const QUIET: [number, number, number, number] = [50, 52, 48, 51];
+  const played = (series: ReturnType<typeof bars>, options?: DrawingOptions, viewport = unitViewport) => {
+    const withBars = new RiskRewardTool();
+    withBars.setDataGetter(() => series);
+    const { ctx, texts: out, calls } = recordingCtx();
+    withBars.render(ctx, drawing('riskReward', LONG, { options }), viewport, false);
+    return { texts: out, calls };
+  };
+
+  it('says where the trade closed and what it made: at the target', () => {
+    expect(played(bars(QUIET, QUIET, [55, 71, 54, 69])).texts).toContain('Target hit · +20.00');
+  });
+
+  it('at the stop', () => {
+    expect(played(bars(QUIET, [48, 49, 39, 41])).texts).toContain('Stop hit · −10.00');
+  });
+
+  it('still open at the last bar, with what it makes there', () => {
+    expect(played(bars(QUIET, QUIET, [51, 58, 50, 57])).texts).toContain('Open · +7.00');
+  });
+
+  it('closed at its right edge when neither level was reached', () => {
+    const series = bars(...Array.from({ length: 12 }, () => QUIET));
+    expect(played(series).texts).toContain('Closed · +1.00');
+  });
+
+  it('draws the move from the entry to the close, dashed', () => {
+    const { calls } = played(bars(QUIET, QUIET, [55, 71, 54, 69]));
+    // From the entry (x 5, y 50) to the close at the target on bar 2 (x 25, y 30).
+    const dashes = calls.filter((c) => c.name === 'setLineDash' && (c.args[0] as number[]).length > 0);
+    expect(dashes.length).toBeGreaterThan(0);
+    const at = (name: string, x: number, y: number) =>
+      calls.some((c) => c.name === name && Math.abs((c.args[0] as number) - x) < 1e-9 && Math.abs((c.args[1] as number) - y) < 1e-9);
+    expect(at('moveTo', 5, 50)).toBe(true);
+    expect(at('lineTo', 25, 30)).toBe(true);
+  });
+
+  it('shows none of it on a chart whose bars are not the series’ (Renko and the like), and plays Heikin Ashi on the real prices', () => {
+    const series = bars(QUIET, QUIET, [55, 71, 54, 69]);
+    const bricks = { ...unitViewport, data: series.slice(0, 2) };
+    expect(played(series, undefined, bricks).texts.some((t) => t.startsWith('Target hit'))).toBe(false);
+    // Heikin Ashi: a bar for each bar, at its time, at other prices.
+    const heikinAshi = { ...unitViewport, data: series.map((b) => ({ ...b, high: 60, low: 45 })) };
+    expect(played(series, undefined, heikinAshi).texts).toContain('Target hit · +20.00');
+  });
+
+  it('shows none of it when turned off, or without bars after the entry', () => {
+    const series = bars(QUIET, QUIET, [55, 71, 54, 69]);
+    expect(played(series, { showOutcome: false }).texts.some((t) => t.startsWith('Target hit'))).toBe(false);
+    expect(played(bars(QUIET)).texts).toHaveLength(3);
   });
 });
 
@@ -191,8 +256,8 @@ describe('dragging a handle a tool moves itself', () => {
     const id = manager.addDrawing({ type: 'riskReward', anchors: LONG });
     manager.onPointerDown({ x: 55, y: 45 }, unitViewport); // select
     manager.onPointerUp();
-    manager.onPointerDown({ x: 105, y: 30 }, unitViewport); // the target handle
-    manager.onPointerMove({ x: 105, y: 20 }, unitViewport); // price 80 → 3R
+    manager.onPointerDown({ x: 5, y: 30 }, unitViewport); // the target handle
+    manager.onPointerMove({ x: 5, y: 20 }, unitViewport); // price 80 → 3R
     manager.onPointerUp();
     expect(manager.getDrawingOptions(id).rewardRatio).toBe(3);
     expect(manager.getDrawings()[0].anchors).toEqual(LONG);

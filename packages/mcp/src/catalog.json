@@ -5374,6 +5374,11 @@
           "label": "Quantity decimals",
           "default": 2
         },
+        "showOutcome": {
+          "kind": "boolean",
+          "label": "Show the trade over the bars",
+          "default": true
+        },
         "showLabels": {
           "kind": "boolean",
           "label": "Show labels",
