@@ -886,6 +886,7 @@ export const JA_MESSAGES: WidgetMessages = {
   'bracket.hint': 'ラインをドラッグして調整',
   'bracket.longPlaced': 'ロングのブラケット注文を発注しました · {rr}R',
   'bracket.shortPlaced': 'ショートのブラケット注文を発注しました · {rr}R',
+  'bracket.fromDrawing': '注文を作成',
   'bracket.longConfirmed': 'ロングのブラケット注文を確定しました · {rr}R',
   'bracket.shortConfirmed': 'ショートのブラケット注文を確定しました · {rr}R',
   'bracket.refused': 'ブローカーがブラケット注文を拒否しました: {reason}',

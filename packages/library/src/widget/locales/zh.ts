@@ -886,6 +886,7 @@ export const ZH_MESSAGES: WidgetMessages = {
   'bracket.hint': '拖动线条进行调整',
   'bracket.longPlaced': '已下做多括号单 · {rr}R',
   'bracket.shortPlaced': '已下做空括号单 · {rr}R',
+  'bracket.fromDrawing': '创建订单',
   'bracket.longConfirmed': '已确认做多括号单 · {rr}R',
   'bracket.shortConfirmed': '已确认做空括号单 · {rr}R',
   'bracket.refused': '经纪商拒绝了括号单：{reason}',

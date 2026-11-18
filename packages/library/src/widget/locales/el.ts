@@ -886,6 +886,7 @@ export const EL_MESSAGES: WidgetMessages = {
   'bracket.hint': 'σύρετε τις γραμμές για προσαρμογή',
   'bracket.longPlaced': 'Υποβλήθηκε εντολή bracket long · {rr}R',
   'bracket.shortPlaced': 'Υποβλήθηκε εντολή bracket short · {rr}R',
+  'bracket.fromDrawing': 'Δημιουργία εντολής',
   'bracket.longConfirmed': 'Επιβεβαιώθηκε εντολή bracket long · {rr}R',
   'bracket.shortConfirmed': 'Επιβεβαιώθηκε εντολή bracket short · {rr}R',
   'bracket.refused': 'Ο broker απέρριψε την εντολή bracket: {reason}',

@@ -898,6 +898,7 @@ export const MS_MESSAGES: WidgetMessages = {
   'bracket.hint': 'seret garisan untuk melaraskan',
   'bracket.longPlaced': 'Pesanan bracket long dihantar · {rr}R',
   'bracket.shortPlaced': 'Pesanan bracket short dihantar · {rr}R',
+  'bracket.fromDrawing': 'Cipta pesanan',
   'bracket.longConfirmed': 'Pesanan bracket long disahkan · {rr}R',
   'bracket.shortConfirmed': 'Pesanan bracket short disahkan · {rr}R',
   'bracket.refused': 'Broker menolak pesanan bracket: {reason}',

@@ -204,6 +204,13 @@ chart.on('priceAxisAdd', (e) => openMyMenu(e.payload.x, e.payload.y, e.payload.p
   stop over the market becomes a sell limit), and Place takes the side's colour.
 </p>
 <p>
+  In the widget, a selected Long/Short Position drawing offers <b>Create order</b> in its toolbar while trading is on. It opens this ticket filled from
+  the drawing: its side, entry as the price, stop-loss and take-profit, and the
+  quantity its risk buys, taken down to the decimals the drawing writes. The
+  order type follows the entry against the market, and nothing is sent until
+  Place.
+</p>
+<p>
   The account panel's head keeps the open P&amp;L and the P&amp;L realised in sight on every tab. Its figures are
   set right in the mono type, money to the price step's decimals in the number locale; on a phone each row is a card
   of named figures.

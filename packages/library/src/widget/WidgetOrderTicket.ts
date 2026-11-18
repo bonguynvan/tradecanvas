@@ -29,6 +29,11 @@ export interface OrderTicketStart {
   side?: OrderSide;
   price?: number;
   lastPrice: number | null;
+  /** A stop-loss and a take-profit to start with (a position's levels), rounded as the chart rounds. */
+  stopLoss?: number | null;
+  takeProfit?: number | null;
+  /** The quantity to start with, instead of the market's lot. */
+  quantity?: number;
   /** The market's price step, the day's limits, its lot and a contract's multiplier; a lot is the first quantity. */
   rules?: OrderTicketRules;
   /** The symbol the order is for, named beside the title. */
@@ -163,7 +168,15 @@ export class WidgetOrderTicket {
     if (start.price !== undefined && start.lastPrice !== null && price !== start.lastPrice) {
       type = (price < start.lastPrice) === (side === 'buy') ? 'limit' : 'stop';
     }
-    this.draft = { side, type, quantity: this.lot(), price, stopLoss: null, takeProfit: null, timeInForce: 'gtc' };
+    // A level the chart cannot take as a price starts off; a quantity not above zero is the market's lot.
+    const level = (p: number | null | undefined) => (p !== null && p !== undefined && Number.isFinite(p) ? this.round(p) : null);
+    const quantity = start.quantity !== undefined && Number.isFinite(start.quantity) && start.quantity > 0 ? start.quantity : this.lot();
+    this.draft = {
+      side, type, quantity, price,
+      stopLoss: level(start.stopLoss),
+      takeProfit: level(start.takeProfit),
+      timeInForce: 'gtc',
+    };
     this.problemsEl.replaceChildren();
     this.render();
     this.backdrop.hidden = false;
