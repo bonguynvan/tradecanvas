@@ -310,7 +310,7 @@ chart.replayStop()             // back to the live series`}</code></pre>
 
 <h3>ChartWidget의 리플레이 바</h3>
 <p>
-  툴바의 <strong>바 리플레이</strong> 버튼은 메인 패널 아래쪽, 플롯 가운데에 작은 바를 엽니다(아래 패널은 그대로 읽힙니다).
+  툴바의 <strong>바 리플레이</strong> 버튼은 차트 아래, 상태 표시줄 위에 위젯 너비만큼의 바를 엽니다. 차트가 그만큼 자리를 비켜 주므로 거래량, 아래 패널, 시간 축이 계속 보입니다.
   먼저 시작 봉을 고릅니다. 봉을 클릭하거나 <strong>무작위 봉</strong>을 누르고, <strong>취소</strong>(또는 <kbd>Esc</kbd>)로 나갑니다.
   그다음: 뒤로, <strong>재생</strong>/<strong>일시정지</strong>, 앞으로; 표시 중인 단계의 날짜와 시간(표시 시간대, 올해가 아닐 때만 연도);
   재생한 부분이 채워진 트랙; <strong>속도</strong>는 0.1×~50× 배수(1×는 단계와 상관없이 차트 봉 하나를 1초에, 기본 1×);

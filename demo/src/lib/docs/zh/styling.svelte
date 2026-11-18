@@ -367,7 +367,7 @@ chart.getShapes()`}</code></pre>
 
 <h2 id="legend">OHLCV 图例</h2>
 <p>
-  图表顶部的图例以一行标题开头：品种、周期和交易所，同一行接着是指针下的 K 线（否则为最后一根）：开、高、低、收和涨跌。成交量单独占一行。绘图区太窄、放不下标题行时（例如在手机上），它会换行。图表从数据流得到品种和周期，从品种详情得到交易所；<code>setSymbolName('Bitcoin')</code> 可自行命名，直到品种改变为止，<code>showSymbol: false</code> 则不显示标题。每个数值在数字变化时保持位置，实时跳动时不会抖动。可以整个关闭，也可以只保留需要的行。在组件中它使用外观的数字字体，与其下方列出的指标行同样大小；<code>setUI</code> 会在你自己的 <code>setLegend</code> 之后再次设置它。
+  图表顶部的图例以一行标题开头：品种、周期和交易所，同一行接着是指针下的 K 线（否则为最后一根）：开、高、低、收和涨跌。成交量单独占一行。绘图区太窄、放不下标题行时（例如在手机上），它会换行，最后一行放得下时，成交量就接在该行末尾。图表从数据流得到品种和周期，从品种详情得到交易所；<code>setSymbolName('Bitcoin')</code> 可自行命名，直到品种改变为止，<code>showSymbol: false</code> 则不显示标题。每个数值在数字变化时保持位置，实时跳动时不会抖动。可以整个关闭，也可以只保留需要的行。在组件中它使用外观的数字字体，与其下方列出的指标行同样大小；<code>setUI</code> 会在你自己的 <code>setLegend</code> 之后再次设置它。
 </p>
 <pre><code>{`new Chart(host, { features: { legend: false } })   // no legend at all
 chart.setLegend({ visible: false })                  // or at any time

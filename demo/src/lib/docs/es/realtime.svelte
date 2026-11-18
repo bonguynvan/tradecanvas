@@ -330,8 +330,9 @@ chart.replayStop()             // back to the live series`}</code></pre>
 
 <h3>La barra de repetición en ChartWidget</h3>
 <p>
-  El botón <strong>Repetición de barras</strong> de la barra de herramientas abre una barra compacta al pie del panel principal,
-  centrada en su gráfico (los paneles de abajo siguen legibles). Primero elige la vela de inicio: haz clic en ella o pulsa
+  El botón <strong>Repetición de barras</strong> de la barra de herramientas abre una barra bajo el gráfico,
+  a todo el ancho del widget y encima de la barra de estado: el gráfico le hace sitio, así que el volumen,
+  los paneles de abajo y el eje de tiempo siguen a la vista. Primero elige la vela de inicio: haz clic en ella o pulsa
   <strong>Barra aleatoria</strong>; <strong>Cancelar</strong> (o <kbd>Esc</kbd>) sale. Después: retroceder,
   <strong>Reproducir</strong>/<strong>Pausa</strong> y avanzar; la fecha y la hora del paso mostrado, en la zona horaria de la
   pantalla (el año solo cuando no es el actual), y una pista con la parte reproducida rellena; <strong>Velocidad</strong> en

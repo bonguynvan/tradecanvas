@@ -188,6 +188,13 @@ import { detectCandlePatterns, CANDLE_PATTERNS } from '@tradecanvas/chart'
 const found = detectCandlePatterns(bars, { patterns: ['bullishEngulfing', 'hammer'] })
 // [{ index, time, pattern: { id, name, short, direction, kind, bars } }]
 CANDLE_PATTERNS.length                                 // 64`}</code></pre>
+<p>
+  パターンを探すだけでチャートを描かないページ（スキャナー、スクリーナー）は、この 2 つを
+  <code>@tradecanvas/core/patterns</code> から import します。検出器だけで gzip 約 4 kB、独立したチャンクになるので、
+  アプリの他のページがチャートを使っていても、このページはチャートのエンジンを読み込みません。
+  import するにはアプリの依存関係に <code>@tradecanvas/core</code> を加えます。
+</p>
+<pre><code>{`import { detectCandlePatterns, CANDLE_PATTERNS } from '@tradecanvas/core/patterns'`}</code></pre>
 
 <h2>独自のインジケーター</h2>
 <p>

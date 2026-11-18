@@ -302,6 +302,8 @@ chart.setDepthOverlay({ mode: 'cumulative' })       // change the look later`}</
   (매수는 초록, 매도는 빨강). 오랫동안 유지되는 유동성 벽이 두드러져 보입니다.
   설정 창(또는 <code>chart.setDepthHeatmapVisible</code>)에서 켜고 끄며,
   <code>widget.setDepth</code>는 호가가 갱신될 때마다 스냅샷을 기록합니다.
+  리플레이 중에는 시간 없이 기록된 호가는 실시간 시리즈의 마지막 봉에 속하고, 히트맵은 리플레이가 보여 준 봉의 호가만
+  표시하며, 플롯 가장자리의 호가창(실시간 시장의 것)은 리플레이가 끝날 때까지 숨겨집니다.
 </p>
 <pre><code>{`chart.setDepthHeatmapVisible(true)
 chart.setDepthHeatmapConfig({ opacity: 0.7, capacity: 240 })

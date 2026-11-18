@@ -139,7 +139,9 @@ grid.setFeatures({ toasts: false })  // mọi biểu đồ của một ChartWidg
   </tbody>
 </table>
 <p>
-  Vài công tắc làm nhiều hơn tên gọi: tắt <code>indicatorLegend</code> thì các pane lấy lại tiêu đề của mình;
+  Vài công tắc làm nhiều hơn tên gọi: tắt <code>indicatorLegend</code> thì các pane lấy lại tiêu đề của mình, còn khi bật, dòng của mỗi indicator
+  chỉ hiện các nút khi rê chuột hoặc focus bằng bàn phím, và trên màn hình cảm ứng khi một lần chạm mở dòng đó
+  (chạm tiếp vào tên thì mở cài đặt), nên trên điện thoại các nút không che nến;
   <code>menu.chart.*</code> áp cho cả nút "+" cạnh trục giá lẫn menu chuột phải; <code>compare</code> bỏ nút thêm
   trong cây đối tượng, còn các so sánh đang có vẫn nằm trong danh sách; <code>toasts</code> tắt thông báo của chính
   widget (thông báo lỗi vẫn hiện), còn thông báo của bạn qua <code>widget.toast()</code> vẫn hiện.

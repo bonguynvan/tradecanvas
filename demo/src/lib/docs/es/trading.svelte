@@ -327,6 +327,9 @@ chart.setDepthOverlay({ mode: 'cumulative' })       // change the look later`}</
   configuración (o con <code>chart.setDepthHeatmapVisible</code>);
   <code>widget.setDepth</code> registra una instantánea en cada actualización del
   libro.
+  Durante una repetición, un libro registrado sin hora pertenece a la última vela de la serie en vivo, el
+  mapa de calor muestra solo los libros de las velas que la repetición ya mostró, y el libro de órdenes del
+  borde del gráfico, el del mercado en vivo, se oculta hasta que termina la repetición.
 </p>
 <pre><code>{`chart.setDepthHeatmapVisible(true)
 chart.setDepthHeatmapConfig({ opacity: 0.7, capacity: 240 })

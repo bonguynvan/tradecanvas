@@ -322,8 +322,9 @@ chart.replayStop()             // back to the live series`}</code></pre>
 
 <h3>Thanh replay trong ChartWidget</h3>
 <p>
-  Nút <strong>Bar replay</strong> trên thanh công cụ mở một thanh gọn ở chân pane chính, giữa vùng
-  vẽ (các pane bên dưới vẫn đọc được). Trước hết chọn nến bắt đầu: bấm vào nó, hoặc bấm
+  Nút <strong>Bar replay</strong> trên thanh công cụ mở một thanh nằm dưới chart, chạy ngang widget,
+  phía trên thanh trạng thái: chart chừa chỗ cho nó, nên volume, các pane bên dưới và trục thời gian
+  vẫn hiện. Trước hết chọn nến bắt đầu: bấm vào nó, hoặc bấm
   <strong>Nến ngẫu nhiên</strong>; <strong>Huỷ</strong> (hoặc <kbd>Esc</kbd>) để thoát. Sau đó: lùi,
   <strong>Phát</strong>/<strong>Tạm dừng</strong> và tiến; ngày giờ của bước đang hiện, theo múi giờ
   hiển thị (chỉ ghi năm khi khác năm nay), và một thanh trượt tô phần đã phát; <strong>Tốc độ</strong>

@@ -130,3 +130,4 @@ const adapter = new BinanceAdapter()
 
 statusBar.append(createPoweredBy({ height: 14 }))`}</code></pre>
 <p><code>size</code>（Svelte）或 <code>height</code> 是标志的高度（像素），最小 12：状态栏用 14–16，页脚用 24。文字使用页面自己的字体，且不会小于 10 px。<code>href</code> 和 <code>target</code>（默认 <code>_blank</code>）作用于链接；<code>poweredByHtml()</code> 返回其标记，<code>TRADECANVAS_MARK_SVG</code> 和 <code>TRADECANVAS_WORDMARK_SVG</code> 是单独的图形。</p>
+<p>徽标有自己的入口 <code>@tradecanvas/chart/brand</code>，它不引入图表的任何部分，因此只显示徽标、不绘制图表的页面（例如落地页的页脚）只有几 KB。主入口导出同样的名称。Svelte 的 <code>PoweredBy</code> 从这个入口导入。</p>

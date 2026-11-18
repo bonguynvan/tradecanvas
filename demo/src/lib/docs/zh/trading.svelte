@@ -289,6 +289,8 @@ chart.setDepthOverlay({ mode: 'cumulative' })       // change the look later`}</
   各价位上的挂单量会被点亮（买单为绿色，卖单为红色）。长时间存在的流动性墙会格外醒目。
   可在设置面板中切换（或调用 <code>chart.setDepthHeatmapVisible</code>）；
   每次订单簿更新时，<code>widget.setDepth</code> 都会记录一个快照。
+  回放期间，未带时间记录的订单簿归属于实时序列的最后一根K线；热力图只显示回放已经展示过的K线的订单簿，
+  而绘图区边缘的订单簿（属于实时行情）会隐藏，直到回放结束。
 </p>
 <pre><code>{`chart.setDepthHeatmapVisible(true)
 chart.setDepthHeatmapConfig({ opacity: 0.7, capacity: 240 })

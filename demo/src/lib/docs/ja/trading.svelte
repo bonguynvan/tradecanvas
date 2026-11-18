@@ -295,6 +295,8 @@ chart.setDepthOverlay({ mode: 'cumulative' })       // change the look later`}</
   時間がたっても残り続ける流動性の壁が浮かび上がります。設定シート（または
   <code>chart.setDepthHeatmapVisible</code>）で切り替えます。<code>widget.setDepth</code> は
   板が更新されるたびにスナップショットを記録します。
+  リプレイ中は、時刻なしで記録された板はライブ系列の最後の足に属し、ヒートマップはリプレイで表示済みの足の板だけを表示します。
+  プロット端の板（ライブ市場のもの）はリプレイが終わるまで隠れます。
 </p>
 <pre><code>{`chart.setDepthHeatmapVisible(true)
 chart.setDepthHeatmapConfig({ opacity: 0.7, capacity: 240 })

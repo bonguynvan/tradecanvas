@@ -131,3 +131,4 @@ const adapter = new BinanceAdapter()
 
 statusBar.append(createPoweredBy({ height: 14 }))`}</code></pre>
 <p><code>size</code> (Svelte) o <code>height</code> es la altura de la marca en píxeles, desde 12: 14–16 para una barra de estado, 24 para un pie de página. El texto usa la fuente de tu página y nunca baja de 10 px. <code>href</code> y <code>target</code> (por defecto <code>_blank</code>) van al enlace; <code>poweredByHtml()</code> da el marcado, y <code>TRADECANVAS_MARK_SVG</code> y <code>TRADECANVAS_WORDMARK_SVG</code> solo el dibujo.</p>
+<p>La insignia tiene una entrada propia, <code>@tradecanvas/chart/brand</code>, que no alcanza nada del gráfico, así que una página que muestra la insignia y ningún gráfico, como el pie de una landing page, se queda en unos pocos kilobytes. La entrada principal exporta los mismos nombres. El <code>PoweredBy</code> de Svelte importa de ella.</p>

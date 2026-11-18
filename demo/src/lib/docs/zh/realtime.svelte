@@ -297,7 +297,7 @@ chart.replayStop()             // back to the live series`}</code></pre>
 
 <h3>ChartWidget 中的回放栏</h3>
 <p>
-  工具栏的<strong>K线回放</strong>按钮会在主窗格底部、绘图区居中处打开一个紧凑的回放栏（下方窗格保持可读）。
+  工具栏的<strong>K线回放</strong>按钮会在图表下方、状态栏上方打开一条横跨整个组件的回放栏：图表会为它让出空间，成交量、下方窗格和时间轴都保持可见。
   先选择起点K线：点击它，或点<strong>随机K线</strong>；<strong>取消</strong>（或 <kbd>Esc</kbd>）退出。
   之后：后退、<strong>播放</strong>/<strong>暂停</strong>、前进；当前步的日期和时间，按显示时区（只在不是今年时显示年份），
   以及已播放部分填色的进度条；<strong>速度</strong>为 0.1× 到 50× 的倍数（1× 每秒播放图表的一根K线，与步长无关；默认 1×）；
