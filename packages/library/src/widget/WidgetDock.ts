@@ -5,7 +5,8 @@ import { markPart, type WidgetFeature } from './widgetFeatures.js';
 export interface DockPage {
   id: string;
   label: string;
-  icon: string;
+  /** A built-in icon's name, or an element of the host's own. */
+  icon: string | Element;
   element: HTMLElement;
   /** The switches its rail button goes with. */
   parts?: readonly WidgetFeature[];
@@ -135,7 +136,8 @@ export class WidgetDock {
     button.setAttribute('aria-label', page.label);
     button.setAttribute('aria-pressed', 'false');
     button.tabIndex = -1;
-    button.innerHTML = createIcon(page.icon, 18);
+    if (typeof page.icon === 'string') button.innerHTML = createIcon(page.icon, 18);
+    else button.appendChild(page.icon);
     if (page.parts?.length) markPart(button, ...page.parts);
     button.addEventListener('click', () => {
       this.toggle(page.id);
@@ -147,6 +149,30 @@ export class WidgetDock {
     this.panel.appendChild(page.element);
     this.pages.set(page.id, { page, button });
     this.syncRail();
+  }
+
+  /**
+   * Take `id`'s page away, its button and its element, shutting the dock
+   * first if it is the one open.
+   */
+  removePage(id: string): void {
+    const entry = this.pages.get(id);
+    if (!entry) return;
+    // The keyboard on the page or its rail button goes where it would as the dock shuts by hand.
+    const active = document.activeElement;
+    const hadFocus = active === entry.button || (this.open_ === id && this.panel.contains(active));
+    // Gone first, so the keyboard doesn't land on it as the dock shuts.
+    entry.button.remove();
+    this.closePage(id);
+    if (hadFocus && !this.element.contains(document.activeElement)) this.options.focusAfterClose?.(id)?.focus();
+    entry.page.element.remove();
+    entry.page.element.classList.remove('tcw-dock-page');
+    this.pages.delete(id);
+    this.syncRail();
+  }
+
+  has(id: string): boolean {
+    return this.pages.has(id);
   }
 
   /** Open `id`'s page, in place of the one open. */
@@ -175,7 +201,7 @@ export class WidgetDock {
     this.panel.hidden = true;
     if (hadFocus) {
       const button = this.pages.get(id)?.button;
-      const usable = button && (this.options.railShown?.() ?? true) && shown(button);
+      const usable = button?.isConnected && (this.options.railShown?.() ?? true) && shown(button);
       (usable ? button : this.options.focusAfterClose?.(id))?.focus();
     }
     this.options.onChange?.(null);
@@ -215,10 +241,13 @@ export class WidgetDock {
     this.applyWidth();
   }
 
+  /** Gone with the widget: nothing opens, shuts or is told after it, a page's `remove()` included. */
   destroy(): void {
     this.drag = null;
     this.stopDrag();
     this.observer?.disconnect();
+    this.pages.clear();
+    this.open_ = null;
     this.element.remove();
   }
 

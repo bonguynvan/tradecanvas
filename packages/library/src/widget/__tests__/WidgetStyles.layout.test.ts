@@ -85,7 +85,7 @@ describe('the dock', () => {
     const page = panelRule('.tcw-dock-page');
     expect(page).toMatch(/--tcw-dock-head-h:\s*max\(calc\(var\(--tcw-space-6\) \+ var\(--tcw-space-5\)\), var\(--tcw-control-h\)\);/);
     expect(page).toMatch(/--tcw-dock-head-rule:\s*1px;/);
-    const header = panelRule('.tcw-dock-page > :is(.tcw-watchlist-header, .tcw-alerts-header, .tcw-tree-header, .tcw-datawin-header, .tcw-syminfo-header, .tcw-ladder-header)');
+    const header = panelRule('.tcw-dock-page > :is(.tcw-watchlist-header, .tcw-alerts-header, .tcw-tree-header, .tcw-datawin-header, .tcw-syminfo-header, .tcw-ladder-header, .tcw-dock-host-header)');
     expect(header).toMatch(/min-height:\s*var\(--tcw-dock-head-h\);/);
     expect(header).toMatch(/padding-block:\s*0;/);
     expect(header).toMatch(/border-bottom:\s*var\(--tcw-dock-head-rule\) solid var\(--tcw-divider\);/);

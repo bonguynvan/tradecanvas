@@ -274,6 +274,25 @@ const SCENES = {
     return s;
   },
 
+  /** A page of the host's own open in the dock, after the built-in ones: the dock's header over the host's element. */
+  async dockPage() {
+    const s = await widget({ watchlist: true, symbols: ['BTCUSDT', 'ETHUSDT', 'SOLUSDT'] });
+    const figures = document.createElement('dl');
+    figures.style.cssText = 'display:grid;grid-template-columns:1fr auto;gap:8px 16px;margin:0;padding:12px 16px;font-variant-numeric:tabular-nums';
+    for (const [label, value] of [['P/E', '12.4'], ['EPS', '5,180'], ['ROE', '18.2%'], ['Dividend yield', '2.1%'], ['Market cap', '1.2T']]) {
+      const dt = document.createElement('dt');
+      dt.textContent = label;
+      dt.style.color = 'var(--tcw-text-muted)';
+      const dd = document.createElement('dd');
+      dd.textContent = value;
+      dd.style.margin = '0';
+      figures.append(dt, dd);
+    }
+    s.widget.addDockPage({ id: 'figures', label: 'Key figures', icon: 'table', element: figures });
+    s.widget.openPanel('figures');
+    return s;
+  },
+
   /** More panes than the chart has room for: the price pane keeps its part, the panes share the rest. */
   async manyPanes() {
     const s = await widget();

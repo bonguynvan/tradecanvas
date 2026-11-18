@@ -587,9 +587,30 @@ widget.destroy()`}</code></pre>
   <strong>ⓘ</strong> by the symbol, and any panel from your own code. The charts of a
   <code>ChartWidgetGrid</code> have no rail each, unless its <code>widget.features</code> turn <code>dock</code> on.
 </p>
-<pre><code>{`widget.openPanel('watchlist')   // 'watchlist' | 'alerts' | 'objectTree' | 'dataWindow' | 'symbolInfo' | 'depthLadder'; false if not there
+<p>
+  A page of your own goes in the same dock with <code>addDockPage</code>: its button on the rail after the
+  built-in ones, and your element under the dock's header (its label and a close button), in the widget's
+  <code>--tcw-*</code> tokens. <code>openPanel(id)</code> opens it, <code>getOpenPanel()</code> reports it, and
+  <code>onShow</code> is called each time it opens, once it has its size. <code>remove()</code> takes it away,
+  shutting it first if it is open. On a phone there is no rail, as for the built-in panels: open it from a control
+  of yours. An id a built-in panel or another page has gives <code>null</code>. The <code>onPanelChange</code>
+  option is told the open panel's id, or <code>null</code>, however it changed: the rail, a close button, your code,
+  a widget turning narrow.
+</p>
+<pre><code>{`widget.openPanel('watchlist')   // 'watchlist' | 'alerts' | 'objectTree' | 'dataWindow' | 'symbolInfo' | 'depthLadder', or a page's id; false if not there
 widget.getOpenPanel()           // the panel open, or null
 widget.closePanel()
+
+const figures = document.createElement('div')
+const page = widget.addDockPage({
+  id: 'figures', label: 'Key figures', icon: 'info', element: figures,   // icon: a built-in name or an <svg> of yours
+  onShow: () => drawFigures(figures, widget.getSymbol()),
+  onHide: () => {},
+})
+widget.openPanel('figures')
+page.remove()
+
+new ChartWidget(host, { onPanelChange: (panel) => keepOpenPanel(panel) })   // 'figures', 'watchlist'… or null
 
 new ChartWidget(host, { features: { dock: false } })              // no rail: the toolbar opens the panels
 new ChartWidget(host, { features: { 'dock.dataWindow': false } })  // no button for the data window`}</code></pre>

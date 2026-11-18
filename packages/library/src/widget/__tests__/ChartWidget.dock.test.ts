@@ -352,3 +352,117 @@ describe('ChartWidget dock', () => {
     expect(host.querySelector<HTMLElement>('.tcw-dock')!.style.getPropertyValue('--tcw-dock-w')).toBe('377px');
   });
 });
+
+describe('ChartWidget dock, pages of the host’s own', () => {
+  const page = (id = 'fundamentals') => {
+    const element = document.createElement('div');
+    element.className = 'host-figures';
+    element.textContent = 'P/E 12.4';
+    const shown: string[] = [];
+    return { spec: { id, label: 'Key figures', icon: 'info', element, onShow: () => shown.push('show'), onHide: () => shown.push('hide') }, element, shown };
+  };
+
+  it('puts its button on the rail after the built-in ones, and opens it from there and from code', () => {
+    make({ watchlist: true });
+    const { spec, element, shown } = page();
+    const handle = widget.addDockPage(spec);
+    expect(handle).not.toBeNull();
+    expect(railPages()).toEqual(['watchlist', 'alerts', 'objectTree', 'dataWindow', 'symbolInfo', 'fundamentals']);
+    expect(railButton('fundamentals').getAttribute('aria-label')).toBe('Key figures');
+    expect(railButton('fundamentals').querySelector('svg')).not.toBeNull();
+    const shownPage = () => visible(element.closest('.tcw-dock-page')) && !panel().hidden;
+    expect(shownPage()).toBe(false);
+
+    railButton('fundamentals').click();
+    expect(widget.getOpenPanel()).toBe('fundamentals');
+    expect(shownPage()).toBe(true);
+    expect(railButton('fundamentals').getAttribute('aria-pressed')).toBe('true');
+    expect(shown).toEqual(['show']);
+
+    expect(widget.openPanel('watchlist')).toBe(true);
+    expect(shown).toEqual(['show', 'hide']);
+    expect(widget.openPanel('fundamentals')).toBe(true);
+    expect(widget.getOpenPanel()).toBe('fundamentals');
+  });
+
+  it('gives it the dock’s header: its label, and a close that shuts the dock', () => {
+    make();
+    const { spec, element } = page();
+    widget.addDockPage(spec);
+    widget.openPanel('fundamentals');
+    const header = inPanel('.tcw-dock-host-header')!;
+    expect(header.textContent).toContain('Key figures');
+    expect(header.closest('.tcw-dock-page')!.contains(element)).toBe(true);
+    header.querySelector<HTMLButtonElement>('.tcw-dock-host-close')!.click();
+    expect(widget.getOpenPanel()).toBeNull();
+    expect(panel().hidden).toBe(true);
+  });
+
+  it('takes an icon of the host’s own', () => {
+    make();
+    const icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    icon.setAttribute('data-own', '');
+    widget.addDockPage({ ...page().spec, icon });
+    expect(railButton('fundamentals').querySelector('svg[data-own]')).toBe(icon);
+  });
+
+  it('refuses an id a built-in panel or another page has', () => {
+    make();
+    expect(widget.addDockPage(page('watchlist').spec)).toBeNull();
+    expect(widget.addDockPage(page('alerts').spec)).toBeNull();
+    expect(widget.addDockPage(page('mine').spec)).not.toBeNull();
+    expect(widget.addDockPage(page('mine').spec)).toBeNull();
+    expect(railPages().filter((p) => p === 'mine')).toHaveLength(1);
+  });
+
+  it('takes the page away with remove(), shutting it first if it is open', () => {
+    make();
+    const { spec, element, shown } = page();
+    const handle = widget.addDockPage(spec)!;
+    widget.openPanel('fundamentals');
+    handle.remove();
+    expect(shown).toEqual(['show', 'hide']);
+    expect(widget.getOpenPanel()).toBeNull();
+    expect(panel().hidden).toBe(true);
+    expect(railPages()).not.toContain('fundamentals');
+    expect(host.contains(element)).toBe(false);
+    expect(widget.openPanel('fundamentals')).toBe(false);
+    handle.remove();
+    // Its id is free again.
+    expect(widget.addDockPage(page().spec)).not.toBeNull();
+  });
+
+  it('keeps the keyboard in the widget when the page it was on goes', () => {
+    make();
+    const handle = widget.addDockPage(page().spec)!;
+    railButton('fundamentals').focus();
+    railButton('fundamentals').click();
+    handle.remove();
+    expect(document.activeElement).not.toBe(document.body);
+    expect(host.contains(document.activeElement)).toBe(true);
+  });
+
+  it('is told nothing by a remove() after the widget is gone', () => {
+    const changes: (string | null)[] = [];
+    make({ onPanelChange: (panel) => changes.push(panel) });
+    const { spec, shown } = page();
+    const handle = widget.addDockPage(spec)!;
+    widget.openPanel('fundamentals');
+    widget.destroy();
+    handle.remove();
+    expect(shown).toEqual(['show']);
+    expect(changes).toEqual(['fundamentals']);
+  });
+
+  it('tells onPanelChange which panel is open, whoever opened or shut it', () => {
+    const changes: (string | null)[] = [];
+    make({ watchlist: true, onPanelChange: (panel) => changes.push(panel) });
+    widget.addDockPage(page().spec);
+    railButton('fundamentals').click();
+    widget.openPanel('watchlist');
+    railButton('watchlist').click();
+    widget.openPanel('fundamentals');
+    widget.closePanel();
+    expect(changes).toEqual(['fundamentals', 'watchlist', null, 'fundamentals', null]);
+  });
+});

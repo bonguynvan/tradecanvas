@@ -369,6 +369,14 @@ export interface ChartWidgetOptions {
   onSymbolChange?: (symbol: string) => void;
   onTimeframeChange?: (tf: TimeFrame) => void;
   /**
+   * The dock's open panel changed: a built-in one's id or a page's of your
+   * own (`addDockPage`), or `null` when the dock shut. Called however it
+   * changed: the rail, a panel's close button, `openPanel`, a narrow widget
+   * shutting it. One panel opening in place of another is one call, with no
+   * `null` between.
+   */
+  onPanelChange?: (panel: DockPanelId | null) => void;
+  /**
    * The widget is built: called once, with its chart and the widget itself,
    * in a microtask after `new ChartWidget()` returns, so the name you give
    * the widget is set by then. The statements right after the constructor
@@ -791,3 +799,34 @@ export interface DrawingToolGroupDef {
 
 /** A panel of the widget's dock, beside the chart (in a sheet on a phone). */
 export type WidgetPanel = 'watchlist' | 'alerts' | 'objectTree' | 'dataWindow' | 'symbolInfo' | 'depthLadder';
+
+/** A panel of the dock: a built-in one, or the id of a page you added with `addDockPage`. */
+export type DockPanelId = WidgetPanel | (string & {});
+
+/** A page of your own in the widget's dock; see `ChartWidget.addDockPage`. */
+export interface DockPageSpec {
+  /**
+   * Tells it apart: `openPanel(id)` opens it, `getOpenPanel()` and
+   * `onPanelChange` report it. Not a built-in panel's id, nor another page's.
+   */
+  id: string;
+  /** Its rail button's accessible name and tooltip, and its header's title. */
+  label: string;
+  /** Its rail button's icon: a built-in icon's name, or an element of your own (an `<svg>`, say). */
+  icon: string | Element;
+  /**
+   * What the page shows, under the dock's header. It is moved into the dock,
+   * hidden until the page opens, and taken out again by `remove()`. The
+   * widget's `--tcw-*` tokens (colours, type, spacing) apply inside it.
+   */
+  element: HTMLElement;
+  /** Called each time the page opens, once it has its size: draw what needs it then. */
+  onShow?: () => void;
+  /** Called each time it shuts, or another panel opens in its place. */
+  onHide?: () => void;
+}
+
+export interface DockPageHandle {
+  /** Take the page away, shutting it first if it is open. Its id is free again. */
+  remove(): void;
+}

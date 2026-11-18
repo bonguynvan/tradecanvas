@@ -1,0 +1,18 @@
+// A page of the host's own in the widget's dock: compiled with the skill's examples
+// (`pnpm docs:check`). A `@ts-expect-error` line must fail to compile.
+import { ChartWidget, type DockPageHandle, type DockPanelId } from '@tradecanvas/chart/widget';
+
+declare const widget: ChartWidget;
+declare const figures: HTMLElement;
+
+const page: DockPageHandle | null = widget.addDockPage({ id: 'figures', label: 'Key figures', icon: 'info', element: figures });
+const own = widget.addDockPage({ id: 'own', label: 'Own icon', icon: document.createElementNS('http://www.w3.org/2000/svg', 'svg'), element: figures });
+widget.openPanel('figures');
+widget.openPanel('watchlist');
+const open: DockPanelId | null = widget.getOpenPanel();
+page?.remove();
+own?.remove();
+// @ts-expect-error A page has something to show.
+widget.addDockPage({ id: 'empty', label: 'Empty', icon: 'info' });
+new ChartWidget(document.body, { onPanelChange: (panel: DockPanelId | null) => void panel });
+export { open };

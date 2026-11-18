@@ -31,6 +31,9 @@ export type {
   IndicatorMenuItemsContext,
   WatchlistOptions,
   WidgetPanel,
+  DockPanelId,
+  DockPageSpec,
+  DockPageHandle,
   ChartSettingsState,
 } from './types.js';
 export { WIDGET_FEATURES } from './widgetFeatures.js';

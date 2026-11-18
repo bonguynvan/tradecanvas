@@ -4,7 +4,7 @@ import { settingToTimezone, timezoneOptions, timezoneToSetting } from './widgetT
 import { installFormControls } from './formControls.js';
 import { Chart } from '../Chart.js';
 import { DARK_THEME, LIGHT_THEME, indicatorSource, parseIndicatorSource } from '@tradecanvas/commons';
-import type { ActiveIndicatorInfo, ChartWidgetOptions, WidgetState, ChartSettingsState, WidgetPanel } from './types.js';
+import type { ActiveIndicatorInfo, ChartWidgetOptions, WidgetState, ChartSettingsState, DockPageHandle, DockPageSpec, DockPanelId } from './types.js';
 import { CHART_TYPES, DRAWING_TOOL_GROUPS, DEFAULT_SYMBOLS, DEFAULT_SETTINGS } from './widgetConfig.js';
 import { SETTINGS_LOOK_KEYS } from './widgetSettingsLook.js';
 import { injectWidgetStyles, removeWidgetStyles } from './WidgetStyles.js';
@@ -739,7 +739,8 @@ export class ChartWidget {
       savedWidth: () => readDockWidth(),
       saveWidth: (width) => writeDockWidth(width),
       railShown: () => this.docking.railShown(),
-      focusAfterClose: (page) => this.docking.panelFocusTarget(page as WidgetPanel),
+      focusAfterClose: (page) => this.docking.panelFocusTarget(page),
+      onChange: (page) => this.options.onPanelChange?.(page),
       room: () => body.clientWidth,
     });
     this.docking.dock.setScale(this.uiScale);
@@ -1791,10 +1792,11 @@ export class ChartWidget {
 
   /**
    * Open a panel of the dock beside the chart (in a sheet on a phone), in
-   * place of the one open. False when the widget hasn't it: no watchlist, no
-   * depth ladder (the `depthLadder` option), or its switch off.
+   * place of the one open: a built-in one, or a page of yours by its id
+   * (`addDockPage`). False when the widget hasn't it: no watchlist, no depth
+   * ladder (the `depthLadder` option), its switch off, or no page by that id.
    */
-  openPanel(panel: WidgetPanel): boolean {
+  openPanel(panel: DockPanelId): boolean {
     return this.docking.openPanel(panel);
   }
 
@@ -1803,9 +1805,30 @@ export class ChartWidget {
     return this.docking.closePanel();
   }
 
-  /** The panel open in the dock, or null. */
-  getOpenPanel(): WidgetPanel | null {
+  /** The panel open in the dock, a page of yours by its id, or null. `onPanelChange` says when it changes. */
+  getOpenPanel(): DockPanelId | null {
     return this.docking.getOpenPanel();
+  }
+
+  /**
+   * A page of your own in the dock, beside the built-in panels: its button
+   * on the rail after theirs, and under the dock's header (its label and a
+   * close button) your element. `openPanel(id)` opens it, `getOpenPanel()`
+   * and `onPanelChange` report it. The rail is off on a phone, as for the
+   * built-in panels: open the page from a control of yours there. `null` for
+   * an id a built-in panel or another page has.
+   *
+   * @example
+   * const figures = document.createElement('div');
+   * const page = widget.addDockPage({
+   *   id: 'figures', label: 'Key figures', icon: 'info', element: figures,
+   *   onShow: () => drawFigures(figures, widget.getSymbol()),
+   * });
+   * widget.openPanel('figures');
+   * page?.remove();
+   */
+  addDockPage(spec: DockPageSpec): DockPageHandle | null {
+    return this.docking.addHostPage(spec);
   }
 
   /** Open or close the symbol info panel (toggle when `open` is left out). */

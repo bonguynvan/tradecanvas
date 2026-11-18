@@ -1379,6 +1379,12 @@ const widget = new ChartWidget(document.getElementById('chart')!, {
 widget.addToWatchlist('BNBUSDT', 'alts');
 widget.openPanel('symbolInfo');        // price, market status, the day, hours, news
 widget.openPanel('watchlist');         // the panels share the dock beside the chart, all shut to start with
+
+// A page of your own in the dock: its button after the built-in ones, your element under the dock's header
+const figures = document.createElement('div');
+const figuresPage = widget.addDockPage({ id: 'figures', label: 'Key figures', icon: 'info', element: figures });
+widget.openPanel('figures');
+figuresPage?.remove();
 await widget.setTimeframe('100T');     // a bar per 100 trades, from Binance's trades
 
 // Your own feed's quotes instead
@@ -1395,3 +1401,5 @@ Quotes come from a feed's `subscribeQuotes` (or `watchlist.quotes`, or
 info and (with `depthLadder: true`) the depth ladder are panels of one dock
 beside the chart, all shut to start with, opened from a rail at its edge or
 with `widget.openPanel(...)`; `features: { dock: false }` drops the rail.
+`addDockPage` puts a page of yours there too, and the `onPanelChange` option is
+told which panel is open (or `null`) whenever that changes.
