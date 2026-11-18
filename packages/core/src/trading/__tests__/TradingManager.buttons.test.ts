@@ -200,3 +200,108 @@ describe('TradingManager: a trail that shows it is on', () => {
     expect(texts).not.toContain('SL');
   });
 });
+
+describe('TradingManager: adding a stop-loss or a take-profit to a position without one', () => {
+  beforeEach(() => {
+    manager.setOrders([]);
+    manager.setPositions([{ id: 'p1', side: 'buy', entryPrice: 60, quantity: 2 }]);
+    manager.setCurrentPrice(60);
+    manager.render(recordingCtx().ctx, unitViewport, theme);
+  });
+
+  const addButtons = () => (manager as unknown as { buttons: { action: { type: string; which?: string } }[] }).buttons
+    .filter((b) => b.action.type === 'addStop').map((b) => b.action.which);
+
+  it('puts an SL and a TP button on the entry’s tag, only for what is missing', () => {
+    expect(addButtons()).toEqual(['stopLoss', 'takeProfit']);
+    manager.setPositions([{ id: 'p1', side: 'buy', entryPrice: 60, quantity: 2, stopLoss: 50 }]);
+    manager.render(recordingCtx().ctx, unitViewport, theme);
+    expect(addButtons()).toEqual(['takeProfit']);
+  });
+
+  it('sets one at its starting distance on a click', () => {
+    click(buttonCentre('addStop', { which: 'stopLoss' }));
+    expect(events).toHaveLength(1);
+    expect(events[0].event).toBe('positionModify');
+    expect((events[0].data as { stopLoss: number }).stopLoss).toBeCloseTo(59.4);
+  });
+
+  it('sets one where it is dragged to, the line keeping its distance from the pointer', () => {
+    const at = buttonCentre('addStop', { which: 'takeProfit' });
+    expect(manager.onPointerDown(at, unitViewport)).toBe(true);
+    // The target starts at 61.2 (2R of 1%); 10 px up on this chart is 10 higher.
+    expect(manager.onPointerMove({ x: at.x, y: at.y - 10 }, unitViewport)).toBe(true);
+    expect(manager.onPointerUp({ x: at.x, y: at.y - 10 })).toBe(true);
+    expect(events).toHaveLength(1);
+    expect((events[0].data as { positionId: string; takeProfit: number })).toEqual({ positionId: 'p1', takeProfit: expect.closeTo(71.2, 5) });
+  });
+
+  it('draws the line being set while it is dragged, with the stop’s tag, and no SL button meanwhile', () => {
+    const at = buttonCentre('addStop', { which: 'stopLoss' });
+    manager.onPointerDown(at, unitViewport);
+    manager.onPointerMove({ x: at.x, y: at.y + 10 }, unitViewport);
+    const { ctx, texts } = recordingCtx();
+    manager.render(ctx, unitViewport, theme);
+    expect(texts).toContain('SL');
+    expect(addButtons()).toEqual(['takeProfit']);
+  });
+
+  it('sets nothing when the press is called off', () => {
+    manager.onPointerDown(buttonCentre('addStop', { which: 'stopLoss' }), unitViewport);
+    expect(manager.cancelPointer()).toBe(true);
+    expect(events).toEqual([]);
+  });
+
+  it('has no such buttons when they are switched off', () => {
+    manager.setConfig({ lineButtons: { addStops: false } });
+    manager.render(recordingCtx().ctx, unitViewport, theme);
+    expect(addButtons()).toEqual([]);
+  });
+});
+
+describe('TradingManager: a stop added on the chart, after review', () => {
+  // 50 px a unit: a 1% stop is far more than a tag's height.
+  const zoomed = { ...unitViewport, priceRange: { min: 99, max: 101 } };
+  const addButton = (which: string) => (manager as unknown as { buttons: { x: number; y: number; size: number; action: { type: string; which?: string; price?: number } }[] }).buttons
+    .find((b) => b.action.type === 'addStop' && b.action.which === which);
+
+  beforeEach(() => {
+    manager.setOrders([]);
+    manager.setPositions([{ id: 'p1', side: 'buy', entryPrice: 99.6, quantity: 1 }]);
+    manager.setCurrentPrice(99.6);
+    manager.render(recordingCtx().ctx, zoomed, theme);
+  });
+
+  it('starts one that would be off the plot at the plot’s edge, where it can be seen and dragged', () => {
+    const stop = addButton('stopLoss')!;
+    // Bottom edge, half a tag in: y 89.5 is 99.21 here; its 1% start, 98.6, is below the plot.
+    expect(stop.action.price).toBeCloseTo(99.21, 2);
+    const at = { x: stop.x + 2, y: stop.y + 2 };
+    manager.onPointerDown(at, zoomed);
+    manager.onPointerUp(at);
+    expect((events[0].data as { stopLoss: number }).stopLoss).toBeCloseTo(99.21, 2);
+  });
+
+  it('offers none where even the plot’s edge is not beyond the price', () => {
+    manager.setCurrentPrice(99.1);
+    manager.render(recordingCtx().ctx, zoomed, theme);
+    expect(addButton('stopLoss')).toBeUndefined();
+    expect(addButton('takeProfit')).toBeDefined();
+  });
+
+  it('sends nothing for a position gone, or given that stop, while it was dragged', () => {
+    const press = () => {
+      const b = addButton('stopLoss')!;
+      manager.onPointerDown({ x: b.x + 2, y: b.y + 2 }, zoomed);
+    };
+    press();
+    manager.setPositions([]);
+    manager.onPointerUp({ x: 0, y: 0 });
+    manager.setPositions([{ id: 'p1', side: 'buy', entryPrice: 99.6, quantity: 1 }]);
+    manager.render(recordingCtx().ctx, zoomed, theme);
+    press();
+    manager.setPositions([{ id: 'p1', side: 'buy', entryPrice: 99.6, quantity: 1, stopLoss: 99.3 }]);
+    manager.onPointerUp({ x: 0, y: 0 });
+    expect(events).toEqual([]);
+  });
+});

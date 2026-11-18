@@ -20,13 +20,15 @@ const ROW = TAG_HEIGHT + 1;
 /**
  * One cell of a tag on a trading line: a stamp in the line's colour (the
  * quantity, SL, TP), words or a figure on the tag's ground, or a button
- * (an icon) that acts on the line.
+ * (an icon, or a word in a colour) that acts on the line.
  */
 export type TagCell =
   | { kind: 'stamp'; text: string }
   | { kind: 'text'; text: string; color?: string }
   /** `active`: what the button switches is on (a stop that is trailing); it is drawn filled. */
-  | { kind: 'button'; icon: IconDef; action: LineButtonAction; active?: boolean };
+  | { kind: 'button'; icon: IconDef; action: LineButtonAction; active?: boolean }
+  /** A button of words (SL, TP), in their colour: as wide as they are. */
+  | { kind: 'button'; text: string; color: string; action: LineButtonAction; icon?: undefined; active?: undefined };
 
 /** The line a press on a tag takes, by what it is: tags of lines near each other sit side by side. */
 export type TagGrab =
@@ -72,14 +74,16 @@ export function tagAt(boxes: readonly TagBox[], x: number, y: number): TagBox | 
 }
 
 function cellFont(cell: TagCell, theme: Theme): string {
-  return `${cell.kind === 'stamp' ? '600 ' : ''}${theme.font.sizeSmall}px ${theme.font.family}`;
+  return `${cell.kind === 'text' ? '' : '600 '}${theme.font.sizeSmall}px ${theme.font.family}`;
 }
 
-/** A cell's width: its text and the room around it, or a square as high as the tag. */
+/** A cell's width: its text and the room around it, or a square as high as the tag for an icon. */
 function cellWidth(ctx: CanvasRenderingContext2D, cell: TagCell, theme: Theme): number {
-  if (cell.kind === 'button') return TAG_HEIGHT;
+  if (cell.kind === 'button' && cell.icon) return TAG_HEIGHT;
   ctx.font = cellFont(cell, theme);
-  return Math.ceil(ctx.measureText(cell.text).width) + CELL_PAD * 2;
+  const width = Math.ceil(ctx.measureText(cell.text).width) + CELL_PAD * 2;
+  // A button of words is never narrower than an icon's: a finger has to find it.
+  return cell.kind === 'button' ? Math.max(TAG_HEIGHT, width) : width;
 }
 
 /** A tag's width: its cells side by side. */
@@ -188,11 +192,18 @@ function drawTag(
     ctx.fillStyle = tag.color;
     if (cell.kind === 'stamp') ctx.fillRect(at, top, w, TAG_HEIGHT);
     else if (i > 0) ctx.fillRect(at, top, 1, TAG_HEIGHT);
-    if (cell.kind === 'button') {
+    if (cell.kind === 'button' && cell.icon) {
       // On: the cell in the tag's colour, its icon in the ink that reads on it, as a stamp is.
       if (cell.active) ctx.fillRect(at, top, w, TAG_HEIGHT);
       drawIcon(ctx, cell.icon, at + (w - ICON_SIZE) / 2, top + (TAG_HEIGHT - ICON_SIZE) / 2, ICON_SIZE, cell.active ? labelTextColor(tag.color) : theme.text);
       buttons.push({ x: at, y: top, size: TAG_HEIGHT, action: cell.action });
+    } else if (cell.kind === 'button') {
+      ctx.font = cellFont(cell, theme);
+      ctx.fillStyle = cell.color;
+      ctx.textAlign = 'center';
+      ctx.fillText(cell.text, at + w / 2, middle);
+      ctx.textAlign = 'left';
+      buttons.push({ x: at, y: top, size: TAG_HEIGHT, width: w, action: cell.action });
     } else {
       ctx.font = cellFont(cell, theme);
       ctx.fillStyle = cell.kind === 'stamp' ? labelTextColor(tag.color) : cell.color ?? theme.text;

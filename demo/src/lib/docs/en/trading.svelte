@@ -47,6 +47,14 @@ new ChartWidget(host, { chartOptions: { features: { tradingContextMenu: true } }
   what the position would make or lose there. Every price is on the axis too. Tags that would cover each other
   stand side by side, and the badges on the axis move apart. Drag a stop or a target by its line or by its tag.
 </p>
+<p>
+  A position with no stop-loss or no take-profit has an <strong>SL</strong> or a <strong>TP</strong> button on its
+  entry's tag. Press it and drag the new line where you want it, or just click to set it where it starts. A stop
+  starts 1% of the entry away and a target at twice the stop's distance, as a bracket does, and both start at
+  least 1% beyond the price now, so neither is hit the moment it is set. Letting go sends
+  <code>positionModify</code>, as dragging a stop does, so a connected execution adapter applies it.
+  <code>lineButtons: {'{'} addStops: false {'}'}</code> leaves the buttons out.
+</p>
 
 <h2>Orders</h2>
 <pre><code>{`chart.setOrders([{

@@ -324,6 +324,17 @@ const SCENES = {
     return s;
   },
 
+  /** A position with no stop-loss or take-profit, and one with only a stop: SL and TP buttons on the entries' tags. */
+  async positionAddStops() {
+    const s = await widget({ trading: true });
+    const last = lastClose(s.chart);
+    const broker = new PaperExecutionAdapter({ markPrice: last });
+    s.chart.connectExecution(broker, { brackets: 'event' });
+    await broker.placeOrder({ side: 'buy', type: 'market', price: last, quantity: 1 });
+    await broker.placeOrder({ side: 'sell', type: 'market', price: last, quantity: 2, stopLoss: last * 1.004 });
+    return s;
+  },
+
   /** More panes than the chart has room for: the price pane keeps its part, the panes share the rest. */
   async manyPanes() {
     const s = await widget();
