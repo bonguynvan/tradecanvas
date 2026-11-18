@@ -348,7 +348,6 @@ export class ChartWidget {
   private customTimeframes = new DrawingFavoritesStore('tcw:tf-custom');
   /** Timeframes on offer, shortest first. */
   private timeframes: TimeFrame[] = [];
-  private sessionRefPrice: number | null = null;
   private symbolInfoPanel: WidgetSymbolInfo | null = null;
   /** Headlines per symbol, kept a few minutes; a late answer for an earlier symbol is dropped. */
   private news = new SymbolNews();
@@ -1908,7 +1907,6 @@ export class ChartWidget {
       this.chartInfoAtSwitch = this.chart.getSymbolInfo();
     }
     this.state = { ...this.state, symbol };
-    this.sessionRefPrice = null;
     this.options.onSymbolChange?.(symbol);
     this.updateUI();
     this.refreshSymbolTitle();
@@ -1930,9 +1928,9 @@ export class ChartWidget {
    * Call with the symbols you care about; the active symbol is updated
    * automatically from the chart's live data.
    *
-   * A host-supplied `refPrice` takes precedence over the widget's own
-   * session-open guess for that symbol — including the active one, so the
-   * auto-tick loop stops clobbering it (see `tickWatchlist`).
+   * A host-supplied `refPrice` takes precedence over the day's move the
+   * widget reads from the chart's bars for that symbol, the active one
+   * included: the close before the last day in the bars.
    */
   setWatchlistEntry(symbol: string, entry: Partial<WatchlistEntry>): void {
     return this.watching.setWatchlistEntry(symbol, entry);
@@ -3580,8 +3578,6 @@ export class ChartWidget {
       get destroyed() { return w.destroyed; },
       get options() { return w.options; },
       refreshSymbolInfo: (...args) => w.refreshSymbolInfo(...args),
-      get sessionRefPrice() { return w.sessionRefPrice; },
-      set sessionRefPrice(value) { w.sessionRefPrice = value; },
       setSymbol: (...args) => w.setSymbol(...args),
       get settingsState() { return w.chartSettings.settingsState; },
       get state() { return w.state; },

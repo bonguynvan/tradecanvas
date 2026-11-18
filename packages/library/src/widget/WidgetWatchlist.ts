@@ -18,7 +18,7 @@ import { MAX_PRICE_DECIMALS, smallValueDecimals } from '@tradecanvas/commons';
 export interface WatchlistEntry {
   symbol: string;
   lastPrice?: number;
-  /** Reference price for % calc (usually session open or 24h-ago close). */
+  /** The price the move and its % are read against: the close before the day, or 24 h ago. */
   refPrice?: number;
   /** Recent close samples for the sparkline — last point is the live price. */
   sparkline?: number[];

@@ -309,6 +309,21 @@ const SCENES = {
     return s;
   },
 
+  /** The watchlist open on daily bars with no quotes: the chart's own row shows the day's move, not the move since its first bar. */
+  async watchlistOwnRow() {
+    const s = await widget({
+      timeframe: '1d',
+      adapter: new MockAdapter({ basePrice: 100, volatility: 0.9, tickInterval: 86_400_000, historySize: 150 }),
+      historyLimit: 150,
+      symbols: ['BTCUSDT', 'ETHUSDT', 'SOLUSDT'],
+      watchlist: { quotes: false },
+    });
+    s.widget.openPanel('watchlist');
+    // The row is filled on the watchlist's tick, once a second.
+    await new Promise((resolve) => setTimeout(resolve, 1200));
+    return s;
+  },
+
   /** More panes than the chart has room for: the price pane keeps its part, the panes share the rest. */
   async manyPanes() {
     const s = await widget();
