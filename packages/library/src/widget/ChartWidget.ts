@@ -58,6 +58,7 @@ import { IME_KEY_CODE, inOverlay, isKeyTarget, isTyping, registerKeyRoot } from 
 import { type WidgetLayoutContent } from './widgetLayout.js';
 import { LayoutSession } from '../state/LayoutSession.js';
 import { DrawingFavoritesStore } from './DrawingFavoritesStore.js';
+import { WidgetFavoritesBar } from './WidgetFavoritesBar.js';
 import { createIcon } from './icons.js';
 import { watchKeyboardInset } from './keyboardInset.js';
 import { watchNarrow } from './narrowMode.js';
@@ -245,6 +246,8 @@ export class ChartWidget {
   /** What is open, by its toolbar button's role (`'alerts'`, `'account'`, `'indicators'`…): one effect shows it on the toolbar. */
   private readonly openRoles = signal<ReadonlySet<string>>(new Set());
   private sidebar: WidgetDrawingSidebar | null = null;
+  /** The pinned drawing tools, floating over the chart when shown. */
+  private favoritesBar: WidgetFavoritesBar | null = null;
   private settingsPart: Lazy<WidgetSettings> | null = null;
   private get settings(): WidgetSettings | null {
     return this.settingsPart?.get() ?? null;
@@ -700,6 +703,7 @@ export class ChartWidget {
         onClear: (anchor) => this.menus.openClearMenu(anchor),
         onToggleStyle: () => this.drawingStyle?.toggle(),
         onToggleStayInDrawing: () => this.handleToggleStayInDrawing(),
+        onToggleFavoritesBar: () => this.toggleFavoritesBar(),
         onLockAll: (locked) => {
           this.chart.setDrawingsLocked(this.chart.getDrawings().map((d) => d.id), locked);
           this.refreshDrawingsState();
@@ -723,6 +727,7 @@ export class ChartWidget {
     this.chartContainer.className = 'tcw-chart-container';
     this.chartContainer.dir = 'ltr';
     body.appendChild(this.chartContainer);
+    this.buildFavoritesBar();
 
     // Loading state: covers the empty chart until the first
     // bars land, then veils the previous chart during slow switches.
@@ -2211,6 +2216,7 @@ export class ChartWidget {
     this.watching.watchlist?.destroy();
     this.toolbar?.destroy();
     this.sidebar?.destroy();
+    this.favoritesBar?.destroy();
     this.settingsPart?.destroy();
     this.statusBar?.destroy();
     this.goToDatePart?.destroy();
@@ -2317,6 +2323,7 @@ export class ChartWidget {
       // Switched on: the symbol's headlines come; off: they go.
       this.marking.load();
     }
+    if (changed('favoritesBar')) this.syncFavoritesBar();
     if (changed('dragDropImport')) {
       if (this.featureState.dragDropImport) this.dragDrop?.attach();
       else this.dragDrop?.detach();
@@ -2878,9 +2885,53 @@ export class ChartWidget {
     this.updateUI();
   }
 
+  /**
+   * The pinned tools floating over the chart, with the sidebar: shown as it
+   * was left in this browser, its strip on the sidebar stepping aside then.
+   */
+  private buildFavoritesBar(): void {
+    if (!this.sidebar) return;
+    const groups = localizeToolGroups(DRAWING_TOOL_GROUPS, this.t);
+    const toolName = (tool: string) => groups.flatMap((g) => g.tools).find((t) => t.value === tool)?.label ?? tool;
+    this.favoritesBar = new WidgetFavoritesBar(this.chartContainer, {
+      bar: this.t('favoritesBar.toggle'),
+      grip: this.t('favoritesBar.grip'),
+      tool: toolName,
+      toolHint: (tool) => fill(this.t('sidebar.unpinHint'), { tool: toolName(tool) }),
+    }, {
+      onPick: (tool) => this.handleDrawingTool(tool as DrawingToolType),
+      onUnpin: (tool) => this.handleToggleFavorite(tool as DrawingToolType),
+    });
+    this.favoritesBar.setTools(this.favoritesStore.list());
+    this.syncFavoritesBar();
+  }
+
+  /**
+   * The bar shows only with its switch on: off, the pins stay on the
+   * sidebar's strip, whatever this browser kept. The star says whether the
+   * bar is asked for.
+   */
+  private syncFavoritesBar(): void {
+    const bar = this.favoritesBar;
+    if (!bar) return;
+    bar.setAllowed(this.featureState.favoritesBar);
+    this.sidebar?.setFavoritesBarShown(bar.isShown() && this.featureState.favoritesBar);
+  }
+
+  /** The sidebar's favorites button: the bar over the chart shown or hidden, kept so. */
+  private toggleFavoritesBar(): void {
+    const bar = this.favoritesBar;
+    if (!bar) return;
+    bar.setShown(!bar.isShown());
+    this.syncFavoritesBar();
+    // Shown with nothing pinned: nothing to see yet, so say how to fill it.
+    if (bar.isShown() && this.favoritesStore.list().length === 0) this.say(this.t('favoritesBar.empty'));
+  }
+
   private handleToggleFavorite(tool: DrawingToolType): void {
     const pinned = this.favoritesStore.toggle(tool);
     this.sidebar?.setFavorites(this.favoritesStore.list());
+    this.favoritesBar?.setTools(this.favoritesStore.list());
     this.say(pinned ? this.t('toast.pinned') : this.t('toast.unpinned'));
   }
 
@@ -3508,6 +3559,7 @@ export class ChartWidget {
     this.legend.scheduleLegend();
     this.toolbar?.update(this.state);
     this.sidebar?.update(this.state);
+    this.favoritesBar?.setActive(this.state.activeTool);
     this.showConnection();
   }
 

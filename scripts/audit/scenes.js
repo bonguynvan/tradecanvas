@@ -335,6 +335,16 @@ const SCENES = {
     return s;
   },
 
+  /** The favorites toolbar shown over the chart, with four pinned tools and one of them in use. */
+  async favoritesBar() {
+    localStorage.removeItem('tcw:favoritesBar');
+    const s = await widget({ drawingFavorites: ['trendLine', 'horizontalLine', 'fibRetracement', 'rectangle'] });
+    document.querySelector('[data-role="favoritesBar"]')?.click();
+    document.querySelector('.tcw-favorites-bar [data-tool-value="fibRetracement"]')?.click();
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    return s;
+  },
+
   /** More panes than the chart has room for: the price pane keeps its part, the panes share the rest. */
   async manyPanes() {
     const s = await widget();

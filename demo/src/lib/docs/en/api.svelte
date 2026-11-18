@@ -992,6 +992,13 @@ widget.toggleSymbolInfo(true)`}</code></pre>
 <pre><code>{`new ChartWidget(host, {
   drawingFavorites: ['trendLine', 'horizontalLine', 'fibRetracement', 'rectangle'],
 })`}</code></pre>
+<p>
+  The star button on the sidebar shows the pinned tools as a <strong>favorites toolbar</strong> floating over the
+  chart instead: drag its grip to put it anywhere on the chart, press a tool to pick it, right-click one to
+  unpin it. Whether it shows and where it was left are kept in this browser, one setting for the widgets of a page, and
+  the sidebar's strip steps aside while it shows; with its switch off the pins stay on the strip. It first appears centred at the chart's top. <code>{`features: { favoritesBar: false }`}</code>
+  leaves out the bar and its button.
+</p>
 
 <h3>Drawing style &amp; templates</h3>
 <p>

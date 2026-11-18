@@ -9,6 +9,7 @@
 
 ### Widget
 
+- **A favorites toolbar** (`@tradecanvas/chart`): the star button on the drawing sidebar shows the pinned drawing tools as a bar floating over the chart. Drag its grip to put it anywhere on the chart, press a tool to pick it, right-click one to unpin it. Whether it shows and where it was left are kept in this browser; the sidebar's strip of pins steps aside while it shows. `features: { favoritesBar: false }` leaves it out.
 - **A page of your own in the dock** (`@tradecanvas/chart`): `widget.addDockPage({ id, label, icon, element, onShow, onHide })` puts its button on the rail after the built-in panels and your element under the dock's header (its label and a close button); `openPanel(id)` opens it, `getOpenPanel()` reports it, and `remove()` takes it away. The `onPanelChange` option is told the open panel, or `null`, however it changed. `openPanel` and `getOpenPanel` take and give `DockPanelId` (a built-in panel or a page's id).
 
 ### Drawings
