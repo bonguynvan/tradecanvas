@@ -702,6 +702,7 @@ export const TR_MESSAGES: WidgetMessages = {
   'drawingOption.riskMode.amount': 'Tutar',
   'drawingOption.risk': 'Risk',
   'drawingOption.qtyDecimals': 'Miktar ondalık basamakları',
+  'drawingOption.showOutcome': 'İşlemi mumların üzerinde göster',
   'drawingOption.showLabels': 'Etiketleri göster',
   'drawingOption.showText': 'Metni göster',
   'drawingOption.direction': 'Yön',

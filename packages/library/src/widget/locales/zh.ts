@@ -702,6 +702,7 @@ export const ZH_MESSAGES: WidgetMessages = {
   'drawingOption.riskMode.amount': '金额',
   'drawingOption.risk': '风险',
   'drawingOption.qtyDecimals': '数量小数位数',
+  'drawingOption.showOutcome': '在K线上显示交易',
   'drawingOption.showLabels': '显示标签',
   'drawingOption.showText': '显示文本',
   'drawingOption.direction': '方向',

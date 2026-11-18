@@ -1,0 +1,57 @@
+name: audit
+
+# The chart's states in a browser (scripts/audit-scenes.mjs): each scene in both
+# themes at a phone, a laptop and a wide screen, with its checks (no price axis
+# tags overlap, no errors). The screenshots are kept as the run's artifact, so a
+# pull request needs no Playwright on its author's machine to be looked at.
+on:
+  pull_request:
+    paths:
+      - 'packages/**'
+      - 'scripts/audit/**'
+      - 'scripts/audit-scenes.mjs'
+      - '.github/workflows/audit.yml'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  # Kept out of the workspace's lockfile: only this job needs a browser.
+  PLAYWRIGHT_VERSION: 1.61.1
+
+jobs:
+  scenes:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+
+      - name: Install Playwright and Chromium
+        run: |
+          npm install --no-save --prefix "$RUNNER_TEMP/pw" "playwright@$PLAYWRIGHT_VERSION"
+          npx --prefix "$RUNNER_TEMP/pw" playwright install --with-deps chromium
+
+      - name: Shoot the scenes
+        run: PLAYWRIGHT="$RUNNER_TEMP/pw/node_modules/playwright/index.mjs" pnpm audit:scenes
+
+      - name: Keep the screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: audit-scenes
+          path: .tmp/audit/*.png
+          retention-days: 14
+          if-no-files-found: ignore

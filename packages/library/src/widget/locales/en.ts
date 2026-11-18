@@ -709,6 +709,7 @@ export const EN_MESSAGES = {
   'drawingOption.riskMode.amount': 'Amount',
   'drawingOption.risk': 'Risk',
   'drawingOption.qtyDecimals': 'Quantity decimals',
+  'drawingOption.showOutcome': 'Show the trade over the bars',
   'drawingOption.showLabels': 'Show labels',
   'drawingOption.showText': 'Show text',
   'drawingOption.direction': 'Direction',

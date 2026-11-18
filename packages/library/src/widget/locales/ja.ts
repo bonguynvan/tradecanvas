@@ -702,6 +702,7 @@ export const JA_MESSAGES: WidgetMessages = {
   'drawingOption.riskMode.amount': '金額',
   'drawingOption.risk': 'リスク',
   'drawingOption.qtyDecimals': '数量の小数桁数',
+  'drawingOption.showOutcome': 'ローソク足上に取引を表示',
   'drawingOption.showLabels': 'ラベルを表示',
   'drawingOption.showText': 'テキストを表示',
   'drawingOption.direction': '方向',

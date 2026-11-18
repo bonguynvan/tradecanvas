@@ -702,6 +702,7 @@ export const HU_MESSAGES: WidgetMessages = {
   'drawingOption.riskMode.amount': 'Összegként',
   'drawingOption.risk': 'Kockázat',
   'drawingOption.qtyDecimals': 'Mennyiség tizedesjegyei',
+  'drawingOption.showOutcome': 'Az ügylet megjelenítése a gyertyákon',
   'drawingOption.showLabels': 'Címkék megjelenítése',
   'drawingOption.showText': 'Szöveg megjelenítése',
   'drawingOption.direction': 'Irány',

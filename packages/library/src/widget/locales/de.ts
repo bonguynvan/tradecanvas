@@ -702,6 +702,7 @@ export const DE_MESSAGES: WidgetMessages = {
   'drawingOption.riskMode.amount': 'Betrag',
   'drawingOption.risk': 'Risiko',
   'drawingOption.qtyDecimals': 'Nachkommastellen der Menge',
+  'drawingOption.showOutcome': 'Trade über den Kerzen zeigen',
   'drawingOption.showLabels': 'Beschriftungen anzeigen',
   'drawingOption.showText': 'Text anzeigen',
   'drawingOption.direction': 'Richtung',

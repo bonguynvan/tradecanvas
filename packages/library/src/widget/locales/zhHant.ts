@@ -702,6 +702,7 @@ export const ZH_HANT_MESSAGES: WidgetMessages = {
   'drawingOption.riskMode.amount': '金額',
   'drawingOption.risk': '風險',
   'drawingOption.qtyDecimals': '數量小數位數',
+  'drawingOption.showOutcome': '在K線上顯示交易',
   'drawingOption.showLabels': '顯示標籤',
   'drawingOption.showText': '顯示文字',
   'drawingOption.direction': '方向',

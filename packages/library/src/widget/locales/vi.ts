@@ -702,6 +702,7 @@ export const VI_MESSAGES: WidgetMessages = {
   'drawingOption.riskMode.amount': 'Số tiền',
   'drawingOption.risk': 'Rủi ro',
   'drawingOption.qtyDecimals': 'Số lẻ của khối lượng',
+  'drawingOption.showOutcome': 'Hiện diễn biến lệnh trên nến',
   'drawingOption.showLabels': 'Hiện nhãn',
   'drawingOption.showText': 'Hiện chữ',
   'drawingOption.direction': 'Hướng',

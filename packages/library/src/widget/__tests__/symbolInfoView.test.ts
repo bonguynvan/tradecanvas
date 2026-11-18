@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { buildSymbolInfoView, sessionDay, SymbolNews } from '../symbolInfoView.js';
+import { buildSymbolInfoView, priorDayClose, sessionDay, SymbolNews } from '../symbolInfoView.js';
 import { EN_TRANSLATOR } from '../i18n.js';
 import type { SymbolInfoNews } from '../WidgetSymbolInfo.js';
 
@@ -80,6 +80,30 @@ describe('the symbol info view', () => {
   it('finds the latest day in the exchange’s zone', () => {
     expect(sessionDay(bars, 'UTC')).toMatchObject({ open: 9.5, high: 12, low: 9, close: 11, volume: 500, prevClose: 9.5 });
     expect(sessionDay([], 'UTC')).toBeNull();
+  });
+});
+
+describe('the close before the last day', () => {
+  // A day of minute bars and the start of the next, in seconds; each bar closes at its index.
+  const MINUTE = 60;
+  const bars = Array.from({ length: 1440 + 90 }, (_, i) => ({ time: i * MINUTE, open: i, high: i, low: i, close: i }));
+
+  it('is the last bar of the day before, found among many bars', () => {
+    expect(priorDayClose(bars, 'UTC')).toBe(1439);
+    expect(sessionDay(bars, 'UTC')).toMatchObject({ open: 1440, prevClose: 1439 });
+  });
+
+  it('reads the day in the exchange’s zone', () => {
+    // New York in January is five hours behind: the last bar, 01:29 UTC on the 6th, is
+    // still the 5th there, a day that started at 05:00 UTC, the 300th bar. In UTC it is the 6th.
+    const jan = bars.map((b) => ({ ...b, time: b.time + Date.UTC(2026, 0, 5) / 1000 }));
+    expect(priorDayClose(jan, 'America/New_York')).toBe(299);
+    expect(priorDayClose(jan, 'UTC')).toBe(1439);
+  });
+
+  it('is undefined when the bars hold only one day', () => {
+    expect(priorDayClose(bars.slice(0, 100), 'UTC')).toBeUndefined();
+    expect(priorDayClose(bars.slice(0, 1), 'UTC')).toBeUndefined();
   });
 });
 

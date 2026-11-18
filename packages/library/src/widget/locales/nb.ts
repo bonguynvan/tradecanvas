@@ -708,6 +708,7 @@ export const NB_MESSAGES: WidgetMessages = {
   'drawingOption.riskMode.amount': 'Beløp',
   'drawingOption.risk': 'Risiko',
   'drawingOption.qtyDecimals': 'Desimaler for antall',
+  'drawingOption.showOutcome': 'Vis handelen over stolpene',
   'drawingOption.showLabels': 'Vis etiketter',
   'drawingOption.showText': 'Vis tekst',
   'drawingOption.direction': 'Retning',

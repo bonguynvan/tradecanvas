@@ -702,6 +702,7 @@ export const TH_MESSAGES: WidgetMessages = {
   'drawingOption.riskMode.amount': 'จำนวนเงิน',
   'drawingOption.risk': 'ความเสี่ยง',
   'drawingOption.qtyDecimals': 'ทศนิยมของปริมาณ',
+  'drawingOption.showOutcome': 'แสดงการเทรดบนแท่งเทียน',
   'drawingOption.showLabels': 'แสดงป้าย',
   'drawingOption.showText': 'แสดงข้อความ',
   'drawingOption.direction': 'ทิศทาง',

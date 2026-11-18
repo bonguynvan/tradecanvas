@@ -702,6 +702,7 @@ export const ID_MESSAGES: WidgetMessages = {
   'drawingOption.riskMode.amount': 'Nominal',
   'drawingOption.risk': 'Risiko',
   'drawingOption.qtyDecimals': 'Desimal kuantitas',
+  'drawingOption.showOutcome': 'Tampilkan transaksi di atas candle',
   'drawingOption.showLabels': 'Tampilkan label',
   'drawingOption.showText': 'Tampilkan teks',
   'drawingOption.direction': 'Arah',

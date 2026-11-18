@@ -198,6 +198,22 @@ const SCENES = {
     return s;
   },
 
+  /** Long/Short Positions played over the bars: a long selected (its four handles), a short, one running past the last bar. */
+  async positions() {
+    const s = await widget();
+    const bars = s.chart.getData();
+    const back = (n) => bars[bars.length - n];
+    const position = (from, to, stopBy) => s.chart.addDrawing({
+      type: 'riskReward',
+      anchors: [{ time: back(from).time, price: back(from).close }, { time: to > 0 ? back(to).time : back(1).time + -to * 60_000, price: back(from).close * stopBy }],
+    });
+    const long = position(150, 90, 0.997);
+    position(80, 30, 1.003);
+    position(20, -15, 0.998);
+    s.chart.selectDrawing(long);
+    return s;
+  },
+
   /** A trend line selected in the RSI pane: its span on the pane's own axis. */
   async selectedPaneDrawing() {
     const s = await widget();
@@ -271,6 +287,40 @@ const SCENES = {
     const s = await widget({ timeframe: '1h', adapter: new MockAdapter({ basePrice: 100, volatility: 0.9, tickInterval: 3_600_000, historySize: 1500 }), historyLimit: 1500 });
     const data = s.chart.getData();
     s.chart.setVisibleRange(data[200].time, data[300].time);
+    return s;
+  },
+
+  /** A page of the host's own open in the dock, after the built-in ones: the dock's header over the host's element. */
+  async dockPage() {
+    const s = await widget({ watchlist: true, symbols: ['BTCUSDT', 'ETHUSDT', 'SOLUSDT'] });
+    const figures = document.createElement('dl');
+    figures.style.cssText = 'display:grid;grid-template-columns:1fr auto;gap:8px 16px;margin:0;padding:12px 16px;font-variant-numeric:tabular-nums';
+    for (const [label, value] of [['P/E', '12.4'], ['EPS', '5,180'], ['ROE', '18.2%'], ['Dividend yield', '2.1%'], ['Market cap', '1.2T']]) {
+      const dt = document.createElement('dt');
+      dt.textContent = label;
+      dt.style.color = 'var(--tcw-text-muted)';
+      const dd = document.createElement('dd');
+      dd.textContent = value;
+      dd.style.margin = '0';
+      figures.append(dt, dd);
+    }
+    s.widget.addDockPage({ id: 'figures', label: 'Key figures', icon: 'table', element: figures });
+    s.widget.openPanel('figures');
+    return s;
+  },
+
+  /** The watchlist open on daily bars with no quotes: the chart's own row shows the day's move, not the move since its first bar. */
+  async watchlistOwnRow() {
+    const s = await widget({
+      timeframe: '1d',
+      adapter: new MockAdapter({ basePrice: 100, volatility: 0.9, tickInterval: 86_400_000, historySize: 150 }),
+      historyLimit: 150,
+      symbols: ['BTCUSDT', 'ETHUSDT', 'SOLUSDT'],
+      watchlist: { quotes: false },
+    });
+    s.widget.openPanel('watchlist');
+    // The row is filled on the watchlist's tick, once a second.
+    await new Promise((resolve) => setTimeout(resolve, 1200));
     return s;
   },
 

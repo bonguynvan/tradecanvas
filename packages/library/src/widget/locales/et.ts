@@ -708,6 +708,7 @@ export const ET_MESSAGES: WidgetMessages = {
   'drawingOption.riskMode.amount': 'Summa',
   'drawingOption.risk': 'Risk',
   'drawingOption.qtyDecimals': 'Koguse kümnendkohad',
+  'drawingOption.showOutcome': 'Näita tehingut küünalde peal',
   'drawingOption.showLabels': 'Näita silte',
   'drawingOption.showText': 'Näita teksti',
   'drawingOption.direction': 'Suund',

@@ -708,6 +708,7 @@ export const FA_MESSAGES: WidgetMessages = {
   'drawingOption.riskMode.amount': 'مبلغ',
   'drawingOption.risk': 'ریسک',
   'drawingOption.qtyDecimals': 'اعشار مقدار',
+  'drawingOption.showOutcome': 'نمایش معامله روی کندل‌ها',
   'drawingOption.showLabels': 'نمایش برچسب‌ها',
   'drawingOption.showText': 'نمایش متن',
   'drawingOption.direction': 'جهت',

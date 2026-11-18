@@ -215,7 +215,8 @@ A drawing kept to some intervals (`intervals`, the rules of `IndicatorIntervals`
 with `updateDrawing(id, { intervals })`, null for all) shows only there: `isDrawingShown(id)`.
 Trend lines, rays and extended lines take a middle point and stats (`showPriceRange`,
 `showBarsRange`, `showDateRange`, `showAngle`, `alwaysShowStats`, `statsPosition`).
-`riskReward` is a Long/Short position sized from `accountSize` and `risk`; `positionLevels(drawing)`
+`riskReward` is a Long/Short position sized from `accountSize` and `risk`, which plays the trade out over
+the bars in its span (`showOutcome: false` turns that off); `positionLevels(drawing)`
 (from `@tradecanvas/chart`) reads it as a trade (`side`, `entry`, `stopLoss`, `takeProfit`, an
 unrounded `quantity` above zero with its `quantityDecimals`, `riskAmount`, `rewardAmount`,
 `riskReward`), or `null` (another drawing, no risk set, a stop on the entry): work an order out
@@ -403,7 +404,8 @@ To stop drawing, trading or zoom on the chart, use `chartOptions.features`. The 
 `setSymbols`) take tickers or `SymbolInfo` (`description`, `type`, `exchange`, `logo`): the symbol search then
 opens named, with kind tabs and an exchange filter (recipe in [references/recipes.md](references/recipes.md)). The dock's panels
 (watchlist, alerts, depth ladder…) start shut: `widget.openPanel('watchlist')`. Your own parts: `addToolbarButton`,
-`addToolbarDropdown`, `addSidebarButton`, `addStatusBarItem`, `getSlot('chart')`, `addHotkey`, and
+`addToolbarDropdown`, `addSidebarButton`, `addStatusBarItem`, `getSlot('chart')`, `addHotkey`, a page in the
+dock with `addDockPage({ id, label, icon, element })` (the `onPanelChange` option says which panel is open), and
 the `chartMenuItems` / `drawingMenuItems` / `indicatorMenuItems` options. Style the widget with your
 own CSS through `--tcw-*` variables and `[data-tcw-part~="name"]` (stable through 1.x).
 

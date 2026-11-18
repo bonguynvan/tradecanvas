@@ -2,8 +2,14 @@
 
 ## Unreleased
 
+### Widget
+
+- **A page of your own in the dock** (`@tradecanvas/chart`): `widget.addDockPage({ id, label, icon, element, onShow, onHide })` puts its button on the rail after the built-in panels and your element under the dock's header (its label and a close button); `openPanel(id)` opens it, `getOpenPanel()` reports it, and `remove()` takes it away. The `onPanelChange` option is told the open panel, or `null`, however it changed. `openPanel` and `getOpenPanel` take and give `DockPanelId` (a built-in panel or a page's id).
+
 ### Drawings
 
+- **The Long/Short Position plays its trade out** (`@tradecanvas/chart`): over the bars in its span, the trade is entered on the first bar at or after the entry and closed where the price first reaches the stop or the target (the stop when one bar reaches both, since which came first is not in the bar; a bar's open when it gaps past a level), at the right edge, or still open at the last bar. The part it went through is tinted in the colour of what it made, with a dashed line from the entry to the close and a tag there (`Target hit`, `Stop hit`, `Closed`, `Open`) with the profit or loss. It is on for positions already drawn; `showOutcome: false` turns it off. Played on the series' own prices, and left out for a box drawn back from its entry and on Renko and the like.
+- **A fourth handle on the Long/Short Position** (`@tradecanvas/chart`): its right edge, on the entry line, sets how long the trade runs; before, the width followed the stop's handle. The entry, the stop and the target now sit on the entry's edge, and the stop's handle changes only its price. Saved drawings keep their place.
 - **A Long/Short Position read as a trade** (`@tradecanvas/chart`): `positionLevels(drawing)` gives the side (`'buy'` for a long), entry, stop-loss, take-profit and the quantity the risk buys (unrounded, with the decimals the drawing writes it in), the money at risk and to gain, and the R:R: the numbers its tags show. `null` for any other drawing, a position whose stop is still on its entry, one with no risk set, or prices that are not finite. An app that places an order from the drawing no longer works them out from its anchors and options again.
 
 ### Trading
@@ -12,6 +18,7 @@
 
 ### Fixes
 
+- **The day's move on the watchlist's own row** (`@tradecanvas/chart`): with no quote for the chart's symbol, its row read the move against the first bar loaded, so a daily chart showed the move over its whole history (+37% where the day was +0.09%). It is the day's move now, against the close before the last day in the bars, in the exchange's zone, as the symbol info panel reads it; no move when the bars hold no day before the last. A `refPrice` given with `setWatchlistEntry` still wins.
 - **The year on the time axis in history** (`@tradecanvas/chart`): panned back to an earlier year, the axis read "Mar … Apr", or days and times, with no year until a January came on view. A tag at its left end, in the style of the timezone tag at the right, now writes what the labels on view leave out, as of the first bar on view: the year among months, the month and year among days (`Mar 2023`), the whole date among the times of one day, in the chart's locale. It is left out where a new year is labelled, and when the labels come from your own `timeFormatter`. Over a label at the left end it stands in for it and says what it said: over "Mar" it reads "Mar 2023".
 
 ## 2.14.0 (2026-11-17)

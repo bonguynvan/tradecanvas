@@ -708,6 +708,7 @@ export const MS_MESSAGES: WidgetMessages = {
   'drawingOption.riskMode.amount': 'Amaun',
   'drawingOption.risk': 'Risiko',
   'drawingOption.qtyDecimals': 'Tempat perpuluhan kuantiti',
+  'drawingOption.showOutcome': 'Tunjukkan dagangan pada lilin',
   'drawingOption.showLabels': 'Tunjukkan label',
   'drawingOption.showText': 'Tunjukkan teks',
   'drawingOption.direction': 'Arah',

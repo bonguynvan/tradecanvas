@@ -169,16 +169,8 @@ export function sessionDay(
   zone: string | undefined,
 ): { open: number; high: number; low: number; close: number; volume: number; prevClose?: number } | null {
   if (bars.length === 0) return null;
-  const tz = zone && isValidTimeZone(zone) ? zone : null;
-  const unit = barTimeUnit(bars);
-  const dayOf = (t: number) => {
-    const ms = t * unit;
-    return Math.floor((ms + (tz ? zoneOffsetMinutes(tz, ms) * 60_000 : 0)) / DAY_MS);
-  };
   const last = bars[bars.length - 1];
-  const today = dayOf(last.time);
-  let first = bars.length - 1;
-  while (first > 0 && dayOf(bars[first - 1].time) === today) first--;
+  const first = lastDayStart(bars, zone);
   let high = -Infinity;
   let low = Infinity;
   let volume = 0;
@@ -188,6 +180,37 @@ export function sessionDay(
     volume += bars[i].volume ?? 0;
   }
   return { open: bars[first].open, high, low, close: last.close, volume, prevClose: first > 0 ? bars[first - 1].close : undefined };
+}
+
+/** The close before the latest day in the bars, in the exchange's zone: what the day's move is read against. */
+export function priorDayClose(bars: readonly DayBar[], zone: string | undefined): number | undefined {
+  const first = lastDayStart(bars, zone);
+  return first > 0 ? bars[first - 1].close : undefined;
+}
+
+/**
+ * Where the latest day in the bars starts. The bars are in time order, so it
+ * is found by halving: a day of second bars is 86,400 of them, and the
+ * watchlist asks every second. This takes the exchange's day never to step
+ * back, which only a zone whose clocks go back across midnight breaks, by a
+ * bar or so on that one night.
+ */
+function lastDayStart(bars: readonly DayBar[], zone: string | undefined): number {
+  const tz = zone && isValidTimeZone(zone) ? zone : null;
+  const unit = barTimeUnit(bars);
+  const dayOf = (t: number) => {
+    const ms = t * unit;
+    return Math.floor((ms + (tz ? zoneOffsetMinutes(tz, ms) * 60_000 : 0)) / DAY_MS);
+  };
+  const today = dayOf(bars[bars.length - 1].time);
+  let lo = 0;
+  let hi = bars.length - 1;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if (dayOf(bars[mid].time) < today) lo = mid + 1;
+    else hi = mid;
+  }
+  return lo;
 }
 
 /** "in 3 hours", "5 minutes ago": the nearest whole minutes, hours or days. */

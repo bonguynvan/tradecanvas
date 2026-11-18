@@ -708,6 +708,7 @@ export const HE_MESSAGES: WidgetMessages = {
   'drawingOption.riskMode.amount': 'סכום',
   'drawingOption.risk': 'סיכון',
   'drawingOption.qtyDecimals': 'ספרות עשרוניות בכמות',
+  'drawingOption.showOutcome': 'הצגת העסקה על הנרות',
   'drawingOption.showLabels': 'הצגת תוויות',
   'drawingOption.showText': 'הצגת טקסט',
   'drawingOption.direction': 'כיוון',

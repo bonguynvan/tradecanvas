@@ -702,6 +702,7 @@ export const NL_MESSAGES: WidgetMessages = {
   'drawingOption.riskMode.amount': 'Bedrag',
   'drawingOption.risk': 'Risico',
   'drawingOption.qtyDecimals': 'Decimalen van aantal',
+  'drawingOption.showOutcome': 'Trade over de candles tonen',
   'drawingOption.showLabels': 'Labels tonen',
   'drawingOption.showText': 'Tekst tonen',
   'drawingOption.direction': 'Richting',

@@ -194,7 +194,9 @@ const current = agg.getCurrentBar()         // forming bar`}</code></pre>
   A feed with <code>subscribeQuotes</code> sends quotes (last price, the day's change, high, low,
   volume, bid and ask) for many symbols at once until you stop it. <code>BinanceAdapter</code> sends
   a 24 h snapshot, then its mini-ticker stream; <code>MockAdapter</code> makes quotes up. A widget's
-  watchlist fills its rows from it.
+  watchlist fills its rows from it. Without a quote, the row of the chart's own symbol reads its
+  price and the day's move from the chart's bars, as the symbol info panel does: against the close
+  before the last day, in the exchange's zone, and no move when the bars hold no day before it.
 </p>
 <pre><code>{`const stop = new BinanceAdapter().subscribeQuotes(['BTCUSDT', 'ETHUSDT'], (quotes) => {
   for (const q of quotes) console.log(q.symbol, q.last, q.changePercent)

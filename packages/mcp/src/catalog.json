@@ -5374,6 +5374,11 @@
           "label": "Quantity decimals",
           "default": 2
         },
+        "showOutcome": {
+          "kind": "boolean",
+          "label": "Show the trade over the bars",
+          "default": true
+        },
         "showLabels": {
           "kind": "boolean",
           "label": "Show labels",
@@ -6927,6 +6932,12 @@
       {
         "name": "onTimeframeChange",
         "type": "(tf: TimeFrame) => void",
+        "kind": "function"
+      },
+      {
+        "name": "onPanelChange",
+        "type": "(panel: DockPanelId | null) => void",
+        "doc": "The dock's open panel changed: a built-in one's id or a page's of your own (`addDockPage`), or `null` when the dock shut. Called however it changed: the rail, a panel's close button, `openPanel`, a narrow widget shutting it. One panel opening in place of another is one call, with no `null` between.",
         "kind": "function"
       },
       {

@@ -702,6 +702,7 @@ export const CS_MESSAGES: WidgetMessages = {
   'drawingOption.riskMode.amount': 'Částka',
   'drawingOption.risk': 'Riziko',
   'drawingOption.qtyDecimals': 'Desetinná místa množství',
+  'drawingOption.showOutcome': 'Zobrazit obchod na svíčkách',
   'drawingOption.showLabels': 'Zobrazit popisky',
   'drawingOption.showText': 'Zobrazit text',
   'drawingOption.direction': 'Směr',

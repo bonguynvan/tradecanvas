@@ -702,6 +702,7 @@ export const PT_MESSAGES: WidgetMessages = {
   'drawingOption.riskMode.amount': 'Valor',
   'drawingOption.risk': 'Risco',
   'drawingOption.qtyDecimals': 'Casas decimais da quantidade',
+  'drawingOption.showOutcome': 'Mostrar a operação sobre as velas',
   'drawingOption.showLabels': 'Mostrar rótulos',
   'drawingOption.showText': 'Mostrar texto',
   'drawingOption.direction': 'Direção',

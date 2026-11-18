@@ -702,6 +702,7 @@ export const EL_MESSAGES: WidgetMessages = {
   'drawingOption.riskMode.amount': 'Ποσό',
   'drawingOption.risk': 'Κίνδυνος',
   'drawingOption.qtyDecimals': 'Δεκαδικά ποσότητας',
+  'drawingOption.showOutcome': 'Εμφάνιση της συναλλαγής στα κεριά',
   'drawingOption.showLabels': 'Εμφάνιση ετικετών',
   'drawingOption.showText': 'Εμφάνιση κειμένου',
   'drawingOption.direction': 'Κατεύθυνση',
