@@ -1,5 +1,5 @@
 import { belowKeepOut, drawPill, formatPercent, labelBlocked, pillWidth, pillHeight, rightOfKeepOut, takeLabelBox } from './labels.js';
-import type { AnchorPoint, DrawingState, Point, ViewportState } from '@tradecanvas/commons';
+import type { AnchorPoint, DrawingState, OrderSide, Point, ViewportState } from '@tradecanvas/commons';
 import { autoPricePrecision, formatPrice, priceTagText, withAlpha } from '@tradecanvas/commons';
 import { DrawingBase } from '../DrawingBase.js';
 import { drawingLook, handleRadius, roleFont } from '../drawingLook.js';
@@ -26,6 +26,35 @@ const RATIO_DECIMALS = 2;
 const TAG_SLIDE_GAP = 4;
 /** Gap between the entry's handle and its tag (px), past what the handle grows to under the pointer. */
 const HANDLE_TAG_GAP = 6;
+
+/**
+ * What a Long/Short Position drawing stands for as a trade: the order an app
+ * would place from it. The numbers its tags show, unrounded; every one finite,
+ * and the quantity above zero.
+ */
+export interface PositionLevels {
+  /** `'buy'` for a long (the stop below the entry), `'sell'` for a short. */
+  side: OrderSide;
+  /** The entry's price. */
+  entry: number;
+  /** The stop's price: below the entry for a long, above it for a short. */
+  stopLoss: number;
+  /** The target's price: the reward:risk ratio away from the entry, on the other side of it. */
+  takeProfit: number;
+  /**
+   * Units the risk buys at the stop's distance, unrounded: the drawing writes
+   * it at `quantityDecimals`, and a broker takes it at its own lot size.
+   */
+  quantity: number;
+  /** The decimals the drawing writes the quantity in (its `qtyDecimals`). */
+  quantityDecimals: number;
+  /** What the stop loses, in the account's money: the risk set on the drawing. */
+  riskAmount: number;
+  /** What the target makes, in the account's money: the quantity times the target's distance. */
+  rewardAmount: number;
+  /** Reward over risk: the drawing's `rewardRatio`. */
+  riskReward: number;
+}
 
 /** A tag of a position: its text, the row it belongs on and its colour. */
 interface PositionTag {
@@ -77,6 +106,28 @@ export class RiskRewardTool extends DrawingBase {
       : (this.option<number>(state, 'accountSize') * risk) / 100;
     const qty = riskPerUnit > 0 ? riskAmount / riskPerUnit : 0;
     return { entry, stop, target, ratio, isLong, qty, riskAmount, rewardAmount: qty * riskPerUnit * ratio };
+  }
+
+  /** The trade the drawing stands for (`positionLevels`), worked out as its tags are. */
+  levels(state: DrawingState): PositionLevels | null {
+    if (state.type !== 'riskReward' || state.anchors.length < 2) return null;
+    const g = this.geometry(state);
+    // A stop on the entry (while the position is being placed) or no risk set
+    // (an account of 0) buys nothing, and a price that is not a number can't
+    // be ordered at: no trade, rather than one a broker would be sent wrong.
+    const numbers = [g.entry, g.stop, g.target, g.qty, g.riskAmount, g.rewardAmount];
+    if (g.entry === g.stop || !numbers.every(Number.isFinite) || !(g.qty > 0)) return null;
+    return {
+      side: g.isLong ? 'buy' : 'sell',
+      entry: g.entry,
+      stopLoss: g.stop,
+      takeProfit: g.target,
+      quantity: g.qty,
+      quantityDecimals: this.option<number>(state, 'qtyDecimals'),
+      riskAmount: g.riskAmount,
+      rewardAmount: g.rewardAmount,
+      riskReward: g.ratio,
+    };
   }
 
   /** The zones' left edge and width: from the entry to the stop's time, never too thin. */
@@ -217,4 +268,21 @@ export class RiskRewardTool extends DrawingBase {
     return point.x >= x - tolerance && point.x <= x + width + tolerance
       && point.y >= Math.min(...ys) - tolerance && point.y <= Math.max(...ys) + tolerance;
   }
+}
+
+/** Made when first asked for: importing `positionLevels` builds no tool. */
+let positionTool: RiskRewardTool | null = null;
+
+/**
+ * The trade a Long/Short Position drawing stands for: its side, entry,
+ * stop-loss, take-profit and the quantity its risk buys, as its tags show
+ * them. `null` for any other drawing, for a position whose stop is still on
+ * its entry, for one with no risk set (so no quantity), and for prices that
+ * are not finite. For an app that places an order from the drawing:
+ * `positionLevels(chart.getDrawings().find((d) => d.id === id))`.
+ */
+export function positionLevels(drawing: DrawingState | null | undefined): PositionLevels | null {
+  if (!drawing) return null;
+  positionTool ??= new RiskRewardTool();
+  return positionTool.levels(drawing);
 }

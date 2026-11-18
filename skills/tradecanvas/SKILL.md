@@ -215,7 +215,11 @@ A drawing kept to some intervals (`intervals`, the rules of `IndicatorIntervals`
 with `updateDrawing(id, { intervals })`, null for all) shows only there: `isDrawingShown(id)`.
 Trend lines, rays and extended lines take a middle point and stats (`showPriceRange`,
 `showBarsRange`, `showDateRange`, `showAngle`, `alwaysShowStats`, `statsPosition`).
-`riskReward` is a Long/Short position sized from `accountSize` and `risk`.
+`riskReward` is a Long/Short position sized from `accountSize` and `risk`; `positionLevels(drawing)`
+(from `@tradecanvas/chart`) reads it as a trade (`side`, `entry`, `stopLoss`, `takeProfit`, an
+unrounded `quantity` above zero with its `quantityDecimals`, `riskAmount`, `rewardAmount`,
+`riskReward`), or `null` (another drawing, no risk set, a stop on the entry): work an order out
+from that, not from its anchors, and round the quantity down to the broker's lot.
 Text tools (`text`, `note`, `callout`, `priceLabel`, `arrowMark`) take a text style:
 `style: { text: 'line one\nline two', fontSize, bold, italic, textColor }`, and a text, a note
 or a callout also `textAlign` ('left' | 'center' | 'right'), `textBackground` (in `fillColor`),

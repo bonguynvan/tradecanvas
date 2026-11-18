@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import type { DrawingOptions } from '@tradecanvas/commons';
-import { RiskRewardTool } from '../tools/RiskReward.js';
+import { RiskRewardTool, positionLevels } from '../tools/RiskReward.js';
 import { DrawingManager } from '../DrawingManager.js';
 import { UndoRedoManager } from '../../features/UndoRedoManager.js';
 import { drawing, recordingCtx, unitViewport } from './fixtures.js';
@@ -126,6 +126,59 @@ describe('RiskRewardTool', () => {
     expect(tool.hitTest({ x: 55, y: 35 }, state, unitViewport, 2)).toBe(true); // reward zone
     expect(tool.hitTest({ x: 500, y: 5 }, state, unitViewport, 2)).toBe(false);
     expect(tool.hitTest({ x: 5, y: 50 }, drawing('riskReward', [LONG[0]]), unitViewport, 2)).toBe(false);
+  });
+});
+
+describe('positionLevels', () => {
+  it('gives a long position’s side, prices and quantity, as its tags say them', () => {
+    // 1% of 1,000 = 10 at risk, 10 per unit → 1 unit; target 2R above → 70.
+    expect(positionLevels(drawing('riskReward', LONG))).toEqual({
+      side: 'buy', entry: 50, stopLoss: 40, takeProfit: 70,
+      quantity: 1, quantityDecimals: 2, riskAmount: 10, rewardAmount: 20, riskReward: 2,
+    });
+  });
+
+  it('sells for a short, its target below the entry', () => {
+    expect(positionLevels(drawing('riskReward', SHORT))).toMatchObject({ side: 'sell', entry: 50, stopLoss: 60, takeProfit: 30 });
+  });
+
+  it('follows the R:R, the risk as a sum and the quantity decimals set on it', () => {
+    const levels = positionLevels(drawing('riskReward', LONG, { options: { rewardRatio: 3, riskMode: 'amount', risk: 55, qtyDecimals: 1 } }));
+    expect(levels).toMatchObject({ takeProfit: 80, quantity: 5.5, quantityDecimals: 1, riskAmount: 55, rewardAmount: 165, riskReward: 3 });
+  });
+
+  it('gives the quantity unrounded: the drawing only writes it at its decimals', () => {
+    // 1% of 1,000 = 10 at risk, 3 per unit.
+    const levels = positionLevels(drawing('riskReward', [{ time: 0, price: 50 }, { time: 10, price: 47 }]));
+    expect(levels?.quantity).toBeCloseTo(10 / 3, 12);
+  });
+
+  it('gives no levels for a position still being placed, with its stop on the entry', () => {
+    expect(positionLevels(drawing('riskReward', [{ time: 0, price: 50 }, { time: 10, price: 50 }]))).toBeNull();
+    expect(positionLevels(drawing('riskReward', [{ time: 0, price: 50 }]))).toBeNull();
+  });
+
+  it('gives none for a drawing that is not a position', () => {
+    expect(positionLevels(drawing('trendLine', LONG))).toBeNull();
+  });
+
+  it('gives none where no risk is set, so nothing would be bought', () => {
+    expect(positionLevels(drawing('riskReward', LONG, { options: { accountSize: 0 } }))).toBeNull();
+    expect(positionLevels(drawing('riskReward', LONG, { options: { risk: 0 } }))).toBeNull();
+    expect(positionLevels(drawing('riskReward', LONG, { options: { riskMode: 'amount', risk: 0 } }))).toBeNull();
+  });
+
+  it('gives none for a price that is not a finite number', () => {
+    for (const bad of [Number.NaN, Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY]) {
+      expect(positionLevels(drawing('riskReward', [{ time: 0, price: bad }, { time: 10, price: 40 }])), `entry ${bad}`).toBeNull();
+      expect(positionLevels(drawing('riskReward', [{ time: 0, price: 50 }, { time: 10, price: bad }])), `stop ${bad}`).toBeNull();
+    }
+  });
+
+  it('reads an option of the wrong kind as its default, as the tags do', () => {
+    const bad = { accountSize: 'lots', risk: Number.NaN, rewardRatio: 'two' } as unknown as DrawingOptions;
+    expect(positionLevels(drawing('riskReward', LONG, { options: bad }))).toEqual(positionLevels(drawing('riskReward', LONG)));
+    expect(texts(LONG, bad)[0]).toBe('Long · Qty 1.00 · R:R 2');
   });
 });
 

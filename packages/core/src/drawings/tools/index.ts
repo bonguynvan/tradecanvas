@@ -26,7 +26,7 @@ export { GannBoxTool } from './GannBox.js';
 export { AnchoredVWAPTool } from './AnchoredVWAP.js';
 export { VolumeProfileRangeTool } from './VolumeProfileRange.js';
 export { FibTimeZonesTool } from './FibTimeZones.js';
-export { RiskRewardTool } from './RiskReward.js';
+export { RiskRewardTool, positionLevels, type PositionLevels } from './RiskReward.js';
 export { CrossLineTool } from './CrossLine.js';
 export { TrendAngleTool } from './TrendAngle.js';
 export { InfoLineTool } from './InfoLine.js';
