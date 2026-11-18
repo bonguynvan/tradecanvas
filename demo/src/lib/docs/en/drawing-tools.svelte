@@ -191,6 +191,35 @@ chart.on('drawingSelect', ({ payload }) => {
   quantity, and shows each line's price, distance and profit or loss.
 </p>
 <pre><code>{`chart.setDrawingOptions(id, { accountSize: 25_000, riskMode: 'percent', risk: 1, rewardRatio: 3 })`}</code></pre>
+<p>
+  <code>positionLevels(drawing)</code> reads one as a trade, for an app that
+  places an order from it: its side (<code>'buy'</code> for a long), entry,
+  stop-loss, take-profit and the quantity its risk buys, unrounded, with the
+  decimals the drawing writes it in. It gives <code>null</code> for any other
+  drawing, for a position whose stop is still on its entry, for one with no
+  risk set (no quantity), and for prices that are not finite numbers.
+</p>
+<p>
+  Round the quantity down to what your broker takes, so the order risks no
+  more than the drawing says. Whether the entry is a limit or a stop order
+  depends on where it is against the price now. <code>placeOrderIntent</code>
+  needs the <code>trading</code> feature on: it emits <code>orderPlace</code>,
+  which a connected execution adapter places (see Trading).
+</p>
+<pre><code>{`import { positionLevels } from '@tradecanvas/chart'
+
+const levels = positionLevels(chart.getDrawings().find((d) => d.id === id))
+if (levels) {
+  const { side, entry, stopLoss, takeProfit, quantity, quantityDecimals } = levels
+  const step = 10 ** quantityDecimals
+  const last = chart.getData().at(-1)?.close ?? entry
+  // A buy below the price now waits as a limit, one above it as a stop; a sell the other way round.
+  const type = (side === 'buy') === (entry <= last) ? 'limit' : 'stop'
+  chart.placeOrderIntent({
+    side, type, price: entry, stopPrice: type === 'stop' ? entry : undefined,
+    quantity: Math.floor(quantity * step) / step, stopLoss, takeProfit,
+  })
+}`}</code></pre>
 
 <h2>Alerts on drawings</h2>
 <p>
