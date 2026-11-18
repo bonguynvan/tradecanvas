@@ -897,6 +897,7 @@ export const AR_MESSAGES: WidgetMessages = {
   'bracket.hint': 'اسحب الخطوط للتعديل',
   'bracket.longPlaced': 'تم وضع أمر شراء بوقف وهدف · {rr}R',
   'bracket.shortPlaced': 'تم وضع أمر بيع بوقف وهدف · {rr}R',
+  'bracket.fromDrawing': 'إنشاء أمر محدد',
   'order.buyLimit': 'شراء محدد @ {price}',
   'order.sellLimit': 'بيع محدد @ {price}',
   'order.buyStop': 'شراء وقف @ {price}',

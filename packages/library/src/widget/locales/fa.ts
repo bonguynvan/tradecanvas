@@ -897,6 +897,7 @@ export const FA_MESSAGES: WidgetMessages = {
   'bracket.hint': 'برای تنظیم، خطوط را بکشید',
   'bracket.longPlaced': 'سفارش لانگ با حد سود و ضرر ثبت شد · {rr}R',
   'bracket.shortPlaced': 'سفارش شورت با حد سود و ضرر ثبت شد · {rr}R',
+  'bracket.fromDrawing': 'ایجاد سفارش محدود',
   'order.buyLimit': 'خرید لیمیت @ {price}',
   'order.sellLimit': 'فروش لیمیت @ {price}',
   'order.buyStop': 'خرید استاپ @ {price}',

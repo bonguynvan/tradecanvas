@@ -885,6 +885,7 @@ export const RO_MESSAGES: WidgetMessages = {
   'bracket.hint': 'trageți liniile pentru ajustare',
   'bracket.longPlaced': 'Ordin bracket long plasat · {rr}R',
   'bracket.shortPlaced': 'Ordin bracket short plasat · {rr}R',
+  'bracket.fromDrawing': 'Creează ordin limită',
   'order.buyLimit': 'Cumpărare limită @ {price}',
   'order.sellLimit': 'Vânzare limită @ {price}',
   'order.buyStop': 'Cumpărare stop @ {price}',

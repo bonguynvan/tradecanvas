@@ -81,6 +81,12 @@ class FakeChart {
   updated: [string, Record<string, unknown>][] = [];
   updateDrawing(id: string, patch: Record<string, unknown>): boolean { this.updated.push([id, patch]); return true; }
   getData(): unknown[] { return []; }
+  getFeatures(): Record<string, boolean> { return { trading: this.options.features?.trading !== false }; }
+  brackets: [string, number, Record<string, unknown>][] = [];
+  startBracket(side: string, entry: number, levels: Record<string, unknown>): boolean {
+    this.brackets.push([side, entry, levels]);
+    return true;
+  }
   getActiveIndicators(): unknown[] { return []; }
   getIndicatorPanes(): unknown[] { return []; }
   getLegendBottom(): number { return 0; }
@@ -301,6 +307,43 @@ describe('ChartWidget selection toolbar', () => {
     widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false, features: { selectionToolbar: false } });
     FakeChart.last.select(['d1']);
     expect(bar()?.hidden ?? true).toBe(true);
+  });
+
+  it('offers a limit order over a Long/Short Position, opening the bracket draft filled from it', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false });
+    const fake = FakeChart.last;
+    fake.drawings = [{
+      ...fake.drawings[0],
+      type: 'riskReward',
+      anchors: [{ time: 1, price: 100 }, { time: 2, price: 90 }],
+    }];
+    fake.select(['d1']);
+    button('order').click();
+    // 1% of 1,000 at 10 a unit: 1 unit, the stop where the drawing's is and the target 2R over.
+    expect(fake.brackets).toEqual([['buy', 100, { stopLoss: 90, takeProfit: 120, quantity: 1 }]]);
+    expect(host.querySelector<HTMLElement>('.tcw-bracket-bar')!.hidden).toBe(false);
+  });
+
+  it('offers no order over another drawing, a position with no levels, or with trading off', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false });
+    FakeChart.last.select(['d1']);
+    expect(bar()!.querySelector('[data-action="order"]')).toBeNull();
+    FakeChart.last.drawings = [{
+      ...FakeChart.last.drawings[0],
+      type: 'riskReward',
+      anchors: [{ time: 1, price: 100 }, { time: 2, price: 100 }],
+    }];
+    FakeChart.last.select(['d1']);
+    expect(bar()!.querySelector('[data-action="order"]')).toBeNull();
+    widget.destroy();
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false, trading: false });
+    FakeChart.last.drawings = [{
+      ...FakeChart.last.drawings[0],
+      type: 'riskReward',
+      anchors: [{ time: 1, price: 100 }, { time: 2, price: 90 }],
+    }];
+    FakeChart.last.select(['d1']);
+    expect(bar()!.querySelector('[data-action="order"]')).toBeNull();
   });
 });
 

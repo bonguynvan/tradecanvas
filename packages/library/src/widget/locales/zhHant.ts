@@ -885,6 +885,7 @@ export const ZH_HANT_MESSAGES: WidgetMessages = {
   'bracket.hint': '拖曳線條進行調整',
   'bracket.longPlaced': '已下做多括號單 · {rr}R',
   'bracket.shortPlaced': '已下做空括號單 · {rr}R',
+  'bracket.fromDrawing': '建立限價單',
   'order.buyLimit': '限價買進 @ {price}',
   'order.sellLimit': '限價賣出 @ {price}',
   'order.buyStop': '停損買進 @ {price}',

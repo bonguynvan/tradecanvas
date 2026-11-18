@@ -897,6 +897,7 @@ export const NB_MESSAGES: WidgetMessages = {
   'bracket.hint': 'dra i linjene for å justere',
   'bracket.longPlaced': 'Long-bracketordre lagt inn · {rr}R',
   'bracket.shortPlaced': 'Short-bracketordre lagt inn · {rr}R',
+  'bracket.fromDrawing': 'Opprett limitordre',
   'order.buyLimit': 'Kjøp limit @ {price}',
   'order.sellLimit': 'Selg limit @ {price}',
   'order.buyStop': 'Kjøp stopp @ {price}',

@@ -885,6 +885,7 @@ export const RU_MESSAGES: WidgetMessages = {
   'bracket.hint': 'перетащите линии для настройки',
   'bracket.longPlaced': 'Брекет-ордер на покупку размещён · {rr}R',
   'bracket.shortPlaced': 'Брекет-ордер на продажу размещён · {rr}R',
+  'bracket.fromDrawing': 'Создать лимитный ордер',
   'order.buyLimit': 'Лимитная покупка @ {price}',
   'order.sellLimit': 'Лимитная продажа @ {price}',
   'order.buyStop': 'Стоп-покупка @ {price}',

@@ -885,6 +885,7 @@ export const KO_MESSAGES: WidgetMessages = {
   'bracket.hint': '선을 드래그해 조정',
   'bracket.longPlaced': '롱 브래킷 주문 완료 · {rr}R',
   'bracket.shortPlaced': '숏 브래킷 주문 완료 · {rr}R',
+  'bracket.fromDrawing': '지정가 주문 만들기',
   'order.buyLimit': '지정가 매수 @ {price}',
   'order.sellLimit': '지정가 매도 @ {price}',
   'order.buyStop': '스톱 매수 @ {price}',

@@ -885,6 +885,7 @@ export const SV_MESSAGES: WidgetMessages = {
   'bracket.hint': 'dra linjerna för att justera',
   'bracket.longPlaced': 'Lång bracketorder lagd · {rr}R',
   'bracket.shortPlaced': 'Kort bracketorder lagd · {rr}R',
+  'bracket.fromDrawing': 'Skapa limitorder',
   'order.buyLimit': 'Köplimit @ {price}',
   'order.sellLimit': 'Säljlimit @ {price}',
   'order.buyStop': 'Köpstopp @ {price}',

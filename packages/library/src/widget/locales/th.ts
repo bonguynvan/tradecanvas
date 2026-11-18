@@ -885,6 +885,7 @@ export const TH_MESSAGES: WidgetMessages = {
   'bracket.hint': 'ลากเส้นเพื่อปรับ',
   'bracket.longPlaced': 'ส่งคำสั่งแบร็กเก็ตฝั่งซื้อแล้ว · {rr}R',
   'bracket.shortPlaced': 'ส่งคำสั่งแบร็กเก็ตฝั่งขายแล้ว · {rr}R',
+  'bracket.fromDrawing': 'สร้างคำสั่งแบบจำกัดราคา',
   'order.buyLimit': 'ซื้อแบบลิมิต @ {price}',
   'order.sellLimit': 'ขายแบบลิมิต @ {price}',
   'order.buyStop': 'ซื้อแบบสต็อป @ {price}',

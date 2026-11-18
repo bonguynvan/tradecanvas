@@ -897,6 +897,7 @@ export const ET_MESSAGES: WidgetMessages = {
   'bracket.hint': 'kohandamiseks lohista jooni',
   'bracket.longPlaced': 'Long-order SL/TP-ga esitatud · {rr}R',
   'bracket.shortPlaced': 'Short-order SL/TP-ga esitatud · {rr}R',
+  'bracket.fromDrawing': 'Loo limiitorder',
   'order.buyLimit': 'Ostulimiit @ {price}',
   'order.sellLimit': 'Müügilimiit @ {price}',
   'order.buyStop': 'Ostustopp @ {price}',

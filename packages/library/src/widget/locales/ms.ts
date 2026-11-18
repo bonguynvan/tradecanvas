@@ -897,6 +897,7 @@ export const MS_MESSAGES: WidgetMessages = {
   'bracket.hint': 'seret garisan untuk melaraskan',
   'bracket.longPlaced': 'Pesanan bracket long dihantar · {rr}R',
   'bracket.shortPlaced': 'Pesanan bracket short dihantar · {rr}R',
+  'bracket.fromDrawing': 'Buat pesanan had',
   'order.buyLimit': 'Beli limit @ {price}',
   'order.sellLimit': 'Jual limit @ {price}',
   'order.buyStop': 'Beli stop @ {price}',

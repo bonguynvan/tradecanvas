@@ -885,6 +885,7 @@ export const EL_MESSAGES: WidgetMessages = {
   'bracket.hint': 'σύρετε τις γραμμές για προσαρμογή',
   'bracket.longPlaced': 'Υποβλήθηκε εντολή bracket long · {rr}R',
   'bracket.shortPlaced': 'Υποβλήθηκε εντολή bracket short · {rr}R',
+  'bracket.fromDrawing': 'Δημιουργία εντολής ορίου',
   'order.buyLimit': 'Αγορά με όριο @ {price}',
   'order.sellLimit': 'Πώληση με όριο @ {price}',
   'order.buyStop': 'Αγορά stop @ {price}',

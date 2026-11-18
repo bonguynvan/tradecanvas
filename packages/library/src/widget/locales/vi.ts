@@ -885,6 +885,7 @@ export const VI_MESSAGES: WidgetMessages = {
   'bracket.hint': 'kéo các đường để chỉnh',
   'bracket.longPlaced': 'Đã đặt lệnh Long kèm SL/TP · {rr}R',
   'bracket.shortPlaced': 'Đã đặt lệnh Short kèm SL/TP · {rr}R',
+  'bracket.fromDrawing': 'Tạo lệnh giới hạn',
   'order.buyLimit': 'Mua giới hạn @ {price}',
   'order.sellLimit': 'Bán giới hạn @ {price}',
   'order.buyStop': 'Mua stop @ {price}',

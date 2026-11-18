@@ -238,11 +238,19 @@ chart.cancelOrderDraft()`}</code></pre>
   emits a single <code>bracketPlace</code> event for your backend to act on —
   it never places orders itself.
 </p>
+<p>
+  In the widget, selecting a Long/Short Position drawing shows <b>Create limit
+  order</b> in its toolbar while trading is on. It opens the same bracket draft,
+  filled from the drawing: its side, entry, stop-loss, take-profit and the
+  quantity its risk works out. The draft is the order you confirm, never one
+  click.
+</p>
 <pre><code>{`chart.startBracket('buy')          // entry defaults to the latest close
 chart.startBracket('sell', 64_800) // or pin the entry price
+chart.startBracket('buy', 64_800, { stopLoss: 63_800, takeProfit: 66_800, quantity: 1.5 })
 
 chart.on('bracketPlace', (e) => {
-  const { side, entry, stopLoss, takeProfit, riskReward } = e.payload
+  const { side, entry, stopLoss, takeProfit, quantity, riskReward } = e.payload
   // submit to your OMS, then reflect fills back via chart.setOrders/setPositions
 })
 

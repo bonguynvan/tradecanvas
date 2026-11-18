@@ -89,6 +89,28 @@ describe('BracketTool', () => {
   });
 });
 
+describe('BracketTool — started from a drawing’s levels', () => {
+  it('puts the stop, the target and the quantity where it was given them', () => {
+    const t = new BracketTool();
+    t.start('buy', 50, { stopLoss: 40, takeProfit: 70, quantity: 1.5 });
+    expect(t.getDraft()).toEqual({ side: 'buy', entry: 50, stopLoss: 40, takeProfit: 70, quantity: 1.5 });
+  });
+
+  it('keeps the default stop and target for levels on the wrong side of the entry', () => {
+    const t = new BracketTool();
+    t.start('sell', 50, { stopLoss: 40, takeProfit: 70 });
+    expect(t.getDraft()).toEqual({ side: 'sell', entry: 50, stopLoss: 50.5, takeProfit: 49 });
+  });
+
+  it('keeps the quantity as the entry line moves', () => {
+    const t = new BracketTool();
+    t.start('buy', 50, { stopLoss: 40, takeProfit: 70, quantity: 2 });
+    t.beginDragOn('entry');
+    t.drag({ x: 10, y: 40 }, viewport()); // y 40 → price 60
+    expect(t.getDraft()).toMatchObject({ entry: 60, stopLoss: 50, takeProfit: 80, quantity: 2 });
+  });
+});
+
 describe('BracketTool — a finger’s reach', () => {
   it('grabs a handle farther off when given a wider reach', () => {
     const t = new BracketTool({ riskFraction: 0.1, riskReward: 1 });

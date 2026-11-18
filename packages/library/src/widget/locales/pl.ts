@@ -885,6 +885,7 @@ export const PL_MESSAGES: WidgetMessages = {
   'bracket.hint': 'przeciągnij linie, aby dostosować',
   'bracket.longPlaced': 'Złożono zlecenie bracket na kupno · {rr}R',
   'bracket.shortPlaced': 'Złożono zlecenie bracket na sprzedaż · {rr}R',
+  'bracket.fromDrawing': 'Utwórz zlecenie z limitem',
   'order.buyLimit': 'Kupno z limitem @ {price}',
   'order.sellLimit': 'Sprzedaż z limitem @ {price}',
   'order.buyStop': 'Kupno stop @ {price}',

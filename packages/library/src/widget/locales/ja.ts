@@ -885,6 +885,7 @@ export const JA_MESSAGES: WidgetMessages = {
   'bracket.hint': 'ラインをドラッグして調整',
   'bracket.longPlaced': 'ロングのブラケット注文を発注しました · {rr}R',
   'bracket.shortPlaced': 'ショートのブラケット注文を発注しました · {rr}R',
+  'bracket.fromDrawing': '指値注文を作成',
   'order.buyLimit': '指値買い @ {price}',
   'order.sellLimit': '指値売り @ {price}',
   'order.buyStop': '逆指値買い @ {price}',

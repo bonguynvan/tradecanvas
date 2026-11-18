@@ -897,6 +897,7 @@ export const HE_MESSAGES: WidgetMessages = {
   'bracket.hint': 'יש לגרור את הקווים כדי לכוונן',
   'bracket.longPlaced': 'ברקט לונג נשלח · {rr}R',
   'bracket.shortPlaced': 'ברקט שורט נשלח · {rr}R',
+  'bracket.fromDrawing': 'צור פקודת לימיט',
   'order.buyLimit': 'לימיט קנייה @ {price}',
   'order.sellLimit': 'לימיט מכירה @ {price}',
   'order.buyStop': 'סטופ קנייה @ {price}',

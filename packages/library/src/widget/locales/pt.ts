@@ -885,6 +885,7 @@ export const PT_MESSAGES: WidgetMessages = {
   'bracket.hint': 'arraste as linhas para ajustar',
   'bracket.longPlaced': 'Ordem bracket comprada enviada · {rr}R',
   'bracket.shortPlaced': 'Ordem bracket vendida enviada · {rr}R',
+  'bracket.fromDrawing': 'Criar ordem limitada',
   'order.buyLimit': 'Compra limitada @ {price}',
   'order.sellLimit': 'Venda limitada @ {price}',
   'order.buyStop': 'Compra stop @ {price}',

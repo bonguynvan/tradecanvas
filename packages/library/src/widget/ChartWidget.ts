@@ -75,7 +75,7 @@ import { type CompareWay } from './widgetCompare.js';
 import { WidgetTooltip } from './WidgetTooltip.js';
 import { WidgetIndicatorLegend } from './WidgetIndicatorLegend.js';
 import { formatIndicatorValue } from './legendValues.js';
-import { RANGE_PRESETS, SYMBOL_INDICATOR_IDS, adapterFromFeed, indicatorCategory, isCrosshairCursor, sourceParam, valuePlots } from '@tradecanvas/core';
+import { RANGE_PRESETS, SYMBOL_INDICATOR_IDS, adapterFromFeed, indicatorCategory, isCrosshairCursor, sourceParam, valuePlots, type BracketLevels } from '@tradecanvas/core';
 import { WidgetBracketBar } from './WidgetBracketBar.js';
 import { AlertNotifier } from './AlertNotifier.js';
 import { WidgetDepthLadder } from './WidgetDepthLadder.js';
@@ -1217,6 +1217,10 @@ export class ChartWidget {
       onAlert: () => {
         const id = this.chart.getSelectedDrawingIds()[0];
         if (id) this.alerting.addDrawingAlert(id);
+      },
+      onOrder: () => {
+        const id = this.chart.getSelectedDrawingIds()[0];
+        if (id) this.trading.startBracketFromDrawing(id);
       },
       onLock: (locked) => {
         this.chart.setDrawingsLocked(this.chart.getSelectedDrawingIds(), locked);
@@ -2884,9 +2888,9 @@ export class ChartWidget {
     return this.trading.setDepth(depth);
   }
 
-  /** Begin a draggable bracket order at the latest price and show the action bar. */
-  startBracket(side: 'buy' | 'sell'): void {
-    return this.trading.startBracket(side);
+  /** Begin a draggable bracket order at the latest price (or `entry`), and show the action bar. */
+  startBracket(side: 'buy' | 'sell', entry?: number, levels?: BracketLevels): void {
+    return this.trading.startBracket(side, entry, levels);
   }
 
   private openIndicatorSettings(instanceId: string): void {

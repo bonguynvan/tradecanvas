@@ -885,6 +885,7 @@ export const NL_MESSAGES: WidgetMessages = {
   'bracket.hint': 'sleep de lijnen om aan te passen',
   'bracket.longPlaced': 'Long-bracketorder geplaatst · {rr}R',
   'bracket.shortPlaced': 'Short-bracketorder geplaatst · {rr}R',
+  'bracket.fromDrawing': 'Limietorder aanmaken',
   'order.buyLimit': 'Kooplimiet @ {price}',
   'order.sellLimit': 'Verkooplimiet @ {price}',
   'order.buyStop': 'Koopstop @ {price}',

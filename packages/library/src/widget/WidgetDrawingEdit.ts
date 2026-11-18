@@ -5,6 +5,7 @@ import { TEXT_COLORS, TEXT_LAYOUTS, TEXT_PLACES } from './drawingText.js';
 import { WidgetInlineText } from './WidgetInlineText.js';
 import { WidgetNamePrompt } from './WidgetNamePrompt.js';
 import { fill } from './i18n.js';
+import { positionLevels } from '@tradecanvas/core';
 import type { ChartWidget } from './ChartWidget.js';
 
 /** A text drawing's size when neither it nor its tool sets one. */
@@ -115,6 +116,8 @@ export class WidgetDrawingEdit {
     }
     const offset = this.host.chartOffset();
     const primary = drawings[0];
+    // A Long/Short Position with levels to place offers an order here, while trading is on.
+    const canOrder = drawings.length === 1 && this.host.chart.getFeatures().trading && positionLevels(primary) !== null;
     // The pane the drawing is on, for where the selection is: the price plot, or an indicator pane.
     const plot = (primary.paneId !== undefined
       ? this.host.chart.getIndicatorPanes().find((pane) => pane.instanceId === primary.paneId)?.rect
@@ -135,6 +138,7 @@ export class WidgetDrawingEdit {
       canDelete: drawings.some((d) => !d.locked),
       canSettings: this.host.featureState.drawingSettings && drawings.length === 1,
       canAlert: this.host.featureState.alerts && drawings.length === 1 && this.host.chart.canAddDrawingAlert(primary.id),
+      canOrder,
       canFill: this.host.chart.getDrawingToolDescriptor(primary.type)?.fill === true,
       canText: this.host.chart.getDrawingToolDescriptor(primary.type)?.text === true,
       canType: drawings.length === 1 && this.canTypeText(primary.id),

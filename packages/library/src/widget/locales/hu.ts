@@ -885,6 +885,7 @@ export const HU_MESSAGES: WidgetMessages = {
   'bracket.hint': 'a vonalak húzásával módosíthat',
   'bracket.longPlaced': 'Long bracket megbízás leadva · {rr}R',
   'bracket.shortPlaced': 'Short bracket megbízás leadva · {rr}R',
+  'bracket.fromDrawing': 'Limitáras megbízás létrehozása',
   'order.buyLimit': 'Vételi limit @ {price}',
   'order.sellLimit': 'Eladási limit @ {price}',
   'order.buyStop': 'Vételi stop @ {price}',

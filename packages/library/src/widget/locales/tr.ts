@@ -885,6 +885,7 @@ export const TR_MESSAGES: WidgetMessages = {
   'bracket.hint': 'ayarlamak için çizgileri sürükleyin',
   'bracket.longPlaced': 'Uzun braket emri gönderildi · {rr}R',
   'bracket.shortPlaced': 'Kısa braket emri gönderildi · {rr}R',
+  'bracket.fromDrawing': 'Limit emri oluştur',
   'order.buyLimit': 'Limit alış @ {price}',
   'order.sellLimit': 'Limit satış @ {price}',
   'order.buyStop': 'Stop alış @ {price}',

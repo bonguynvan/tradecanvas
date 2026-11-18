@@ -897,6 +897,7 @@ export const DA_MESSAGES: WidgetMessages = {
   'bracket.hint': 'træk i linjerne for at justere',
   'bracket.longPlaced': 'Long-bracketordre afgivet · {rr}R',
   'bracket.shortPlaced': 'Short-bracketordre afgivet · {rr}R',
+  'bracket.fromDrawing': 'Opret limitordre',
   'order.buyLimit': 'Køb limit @ {price}',
   'order.sellLimit': 'Sælg limit @ {price}',
   'order.buyStop': 'Køb stop @ {price}',

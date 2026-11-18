@@ -11,6 +11,18 @@ export interface BracketDraft {
   entry: number;
   stopLoss: number;
   takeProfit: number;
+  /** Units to place, when the draft was started from levels that work one out. */
+  quantity?: number;
+}
+
+/** The lines to start a bracket at, instead of the default 1% stop and 2R target. */
+export interface BracketLevels {
+  /** Below the entry for a buy, above it for a sell; one on the other side is ignored. */
+  stopLoss: number;
+  /** The other way round from the stop; one on the wrong side is ignored. */
+  takeProfit: number;
+  /** Units to place, carried to the `bracketPlace` payload. Left out when not above zero. */
+  quantity?: number;
 }
 
 export interface BracketDefaultsOptions {
@@ -69,8 +81,20 @@ export class BracketTool {
     this.defaults = defaults;
   }
 
-  start(side: OrderSide, entry: number): void {
-    this.draft = computeBracketDefaults(side, entry, this.defaults);
+  start(side: OrderSide, entry: number, levels?: BracketLevels): void {
+    const draft = computeBracketDefaults(side, entry, this.defaults);
+    const isLong = side === 'buy';
+    // A level on the wrong side of the entry (a broker would reject it) keeps the default.
+    if (levels && Number.isFinite(levels.stopLoss) && (isLong ? levels.stopLoss < entry : levels.stopLoss > entry)) {
+      draft.stopLoss = levels.stopLoss;
+    }
+    if (levels && Number.isFinite(levels.takeProfit) && (isLong ? levels.takeProfit > entry : levels.takeProfit < entry)) {
+      draft.takeProfit = levels.takeProfit;
+    }
+    if (levels?.quantity !== undefined && Number.isFinite(levels.quantity) && levels.quantity > 0) {
+      draft.quantity = levels.quantity;
+    }
+    this.draft = draft;
     this.dragging = null;
   }
 
@@ -237,7 +261,7 @@ function applyHandlePrice(draft: BracketDraft, handle: BracketHandle, price: num
     // Translate the whole bracket so SL/TP offsets are preserved.
     const delta = price - draft.entry;
     return {
-      side: draft.side,
+      ...draft,
       entry: price,
       stopLoss: draft.stopLoss + delta,
       takeProfit: draft.takeProfit + delta,

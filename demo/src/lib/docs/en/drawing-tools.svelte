@@ -200,6 +200,11 @@ chart.on('drawingSelect', ({ payload }) => {
   risk set (no quantity), and for prices that are not finite numbers.
 </p>
 <p>
+  In the widget, a selected Long/Short Position shows <b>Create limit order</b>
+  in its toolbar while trading is on: it opens a bracket draft filled with these
+  levels, which you adjust and confirm. An order is never one click away.
+</p>
+<p>
   Round the quantity down to what your broker takes, so the order risks no
   more than the drawing says. Whether the entry is a limit or a stop order
   depends on where it is against the price now. <code>placeOrderIntent</code>

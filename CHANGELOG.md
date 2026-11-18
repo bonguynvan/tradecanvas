@@ -6,6 +6,10 @@
 
 - **A Long/Short Position read as a trade** (`@tradecanvas/chart`): `positionLevels(drawing)` gives the side (`'buy'` for a long), entry, stop-loss, take-profit and the quantity the risk buys (unrounded, with the decimals the drawing writes it in), the money at risk and to gain, and the R:R: the numbers its tags show. `null` for any other drawing, a position whose stop is still on its entry, one with no risk set, or prices that are not finite. An app that places an order from the drawing no longer works them out from its anchors and options again.
 
+### Trading
+
+- **An order placed from a Long/Short Position** (`@tradecanvas/chart`): with trading on, selecting the drawing shows **Create limit order** in its toolbar. It opens the bracket draft filled from the drawing: its side, entry, stop-loss, take-profit and the quantity its risk works out. The draft is dragged and confirmed as any bracket is, so no order is one click away. `chart.startBracket(side, entry, { stopLoss, takeProfit, quantity })` starts one from code, and `bracketPlace` carries the `quantity` when there is one; the drawing and its levels are the ones `positionLevels` gives.
+
 ### Fixes
 
 - **The year on the time axis in history** (`@tradecanvas/chart`): panned back to an earlier year, the axis read "Mar … Apr", or days and times, with no year until a January came on view. A tag at its left end, in the style of the timezone tag at the right, now writes what the labels on view leave out, as of the first bar on view: the year among months, the month and year among days (`Mar 2023`), the whole date among the times of one day, in the chart's locale. It is left out where a new year is labelled, and when the labels come from your own `timeFormatter`. Over a label at the left end it stands in for it and says what it said: over "Mar" it reads "Mar 2023".

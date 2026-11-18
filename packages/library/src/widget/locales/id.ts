@@ -885,6 +885,7 @@ export const ID_MESSAGES: WidgetMessages = {
   'bracket.hint': 'seret garis untuk menyesuaikan',
   'bracket.longPlaced': 'Order bracket long terkirim · {rr}R',
   'bracket.shortPlaced': 'Order bracket short terkirim · {rr}R',
+  'bracket.fromDrawing': 'Buat order limit',
   'order.buyLimit': 'Beli limit @ {price}',
   'order.sellLimit': 'Jual limit @ {price}',
   'order.buyStop': 'Beli stop @ {price}',

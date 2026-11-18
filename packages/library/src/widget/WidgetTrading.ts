@@ -5,6 +5,7 @@ import { WidgetBracketBar } from './WidgetBracketBar.js';
 import { WidgetDepthLadder } from './WidgetDepthLadder.js';
 import type { DepthData } from '@tradecanvas/commons';
 import { fill, type MessageKey } from './i18n.js';
+import { positionLevels, type BracketLevels } from '@tradecanvas/core';
 import type { ChartWidget } from './ChartWidget.js';
 
 /** What trading reads of the widget around it, and asks of it. */
@@ -118,9 +119,16 @@ export class WidgetTrading {
   }
 
   /** Begin a draggable bracket order at the latest price and show the action bar. */
-  startBracket(side: 'buy' | 'sell'): void {
-    if (this.host.chart.startBracket(side)) {
+  startBracket(side: 'buy' | 'sell', entry?: number, levels?: BracketLevels): void {
+    if (this.host.chart.startBracket(side, entry, levels)) {
       this.bracketBar?.show(side);
     }
+  }
+
+  /** Begin a bracket draft filled from a Long/Short Position drawing, if it has levels to place. */
+  startBracketFromDrawing(id: string): void {
+    const levels = positionLevels(this.host.chart.getDrawings().find((d) => d.id === id));
+    if (!levels) return;
+    this.startBracket(levels.side, levels.entry, { stopLoss: levels.stopLoss, takeProfit: levels.takeProfit, quantity: levels.quantity });
   }
 }

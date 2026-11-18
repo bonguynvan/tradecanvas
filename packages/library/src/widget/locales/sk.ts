@@ -885,6 +885,7 @@ export const SK_MESSAGES: WidgetMessages = {
   'bracket.hint': 'čiary upravíte ťahaním',
   'bracket.longPlaced': 'Bracket pokyn na nákup zadaný · {rr}R',
   'bracket.shortPlaced': 'Bracket pokyn na predaj zadaný · {rr}R',
+  'bracket.fromDrawing': 'Vytvoriť limitný príkaz',
   'order.buyLimit': 'Limitný nákup @ {price}',
   'order.sellLimit': 'Limitný predaj @ {price}',
   'order.buyStop': 'Stop nákup @ {price}',
