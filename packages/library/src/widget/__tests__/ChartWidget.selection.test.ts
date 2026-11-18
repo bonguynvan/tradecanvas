@@ -81,6 +81,11 @@ class FakeChart {
   updated: [string, Record<string, unknown>][] = [];
   updateDrawing(id: string, patch: Record<string, unknown>): boolean { this.updated.push([id, patch]); return true; }
   getData(): unknown[] { return []; }
+  getFeatures(): Record<string, boolean> { return { trading: this.options.features?.trading !== false }; }
+  roundPrice(p: number): number { return Math.round(p); }
+  getPriceStep(): number { return 1; }
+  placed: unknown[] = [];
+  placeOrderIntent(intent: unknown): void { this.placed.push(intent); }
   getActiveIndicators(): unknown[] { return []; }
   getIndicatorPanes(): unknown[] { return []; }
   getLegendBottom(): number { return 0; }
@@ -301,6 +306,66 @@ describe('ChartWidget selection toolbar', () => {
     widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false, features: { selectionToolbar: false } });
     FakeChart.last.select(['d1']);
     expect(bar()?.hidden ?? true).toBe(true);
+  });
+
+  it('offers a limit order over a Long/Short Position, opening the order ticket filled from it', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false });
+    const fake = FakeChart.last;
+    fake.drawings = [{
+      ...fake.drawings[0],
+      type: 'riskReward',
+      anchors: [{ time: 1, price: 100 }, { time: 2, price: 97 }],
+    }];
+    // The entry is under the market: the ticket starts as the limit that waits there.
+    fake.getData = () => [{ time: 0, close: 105 }];
+    fake.select(['d1']);
+    button('order').click();
+    const field = (name: string) => host.querySelector<HTMLInputElement>(`.tcw-order-ticket [data-ticket-field="${name}"]`)!;
+    const option = (name: string) => host.querySelector<HTMLElement>(`.tcw-order-ticket [data-ticket-field="${name}"]`)!;
+    expect(host.querySelector<HTMLElement>('.tcw-modal-backdrop:not([hidden]) .tcw-order-ticket')).not.toBeNull();
+    expect(option('side-buy').getAttribute('aria-pressed')).toBe('true');
+    expect(option('type-limit').getAttribute('aria-checked')).toBe('true');
+    expect(field('price').value).toBe('100');
+    // 1% of 1,000 at 3 a unit: 3.333…, taken down to the drawing's two decimals.
+    expect(field('quantity').value).toBe('3.33');
+    expect(field('stopLoss').value).toBe('97');
+    expect(field('takeProfit').value).toBe('106');
+    expect(host.querySelector<HTMLElement>('.tcw-bracket-bar')!.hidden).toBe(true);
+    host.querySelector<HTMLButtonElement>('.tcw-ticket-place')!.click();
+    expect(fake.placed).toEqual([{
+      side: 'buy', type: 'limit', price: 100, quantity: 3.33, timeInForce: 'gtc', stopLoss: 97, takeProfit: 106,
+    }]);
+  });
+
+  it('offers no order over another drawing, a position with no levels, or with trading off', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false });
+    FakeChart.last.select(['d1']);
+    expect(bar()!.querySelector('[data-action="order"]')).toBeNull();
+    FakeChart.last.drawings = [{
+      ...FakeChart.last.drawings[0],
+      type: 'riskReward',
+      anchors: [{ time: 1, price: 100 }, { time: 2, price: 100 }],
+    }];
+    FakeChart.last.select(['d1']);
+    expect(bar()!.querySelector('[data-action="order"]')).toBeNull();
+    widget.destroy();
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false, trading: false });
+    FakeChart.last.drawings = [{
+      ...FakeChart.last.drawings[0],
+      type: 'riskReward',
+      anchors: [{ time: 1, price: 100 }, { time: 2, price: 90 }],
+    }];
+    FakeChart.last.select(['d1']);
+    expect(bar()!.querySelector('[data-action="order"]')).toBeNull();
+    widget.destroy();
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false, features: { orderTicket: false } });
+    FakeChart.last.drawings = [{
+      ...FakeChart.last.drawings[0],
+      type: 'riskReward',
+      anchors: [{ time: 1, price: 100 }, { time: 2, price: 90 }],
+    }];
+    FakeChart.last.select(['d1']);
+    expect(bar()!.querySelector('[data-action="order"]')).toBeNull();
   });
 });
 

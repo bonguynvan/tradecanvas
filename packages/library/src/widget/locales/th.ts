@@ -886,6 +886,7 @@ export const TH_MESSAGES: WidgetMessages = {
   'bracket.hint': 'ลากเส้นเพื่อปรับ',
   'bracket.longPlaced': 'ส่งคำสั่งแบร็กเก็ตฝั่งซื้อแล้ว · {rr}R',
   'bracket.shortPlaced': 'ส่งคำสั่งแบร็กเก็ตฝั่งขายแล้ว · {rr}R',
+  'bracket.fromDrawing': 'สร้างคำสั่ง',
   'bracket.longConfirmed': 'ยืนยันคำสั่งแบร็กเก็ตฝั่งซื้อแล้ว · {rr}R',
   'bracket.shortConfirmed': 'ยืนยันคำสั่งแบร็กเก็ตฝั่งขายแล้ว · {rr}R',
   'bracket.refused': 'โบรกเกอร์ปฏิเสธคำสั่งแบร็กเก็ต: {reason}',

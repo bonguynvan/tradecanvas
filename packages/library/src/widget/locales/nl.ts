@@ -886,6 +886,7 @@ export const NL_MESSAGES: WidgetMessages = {
   'bracket.hint': 'sleep de lijnen om aan te passen',
   'bracket.longPlaced': 'Long-bracketorder geplaatst · {rr}R',
   'bracket.shortPlaced': 'Short-bracketorder geplaatst · {rr}R',
+  'bracket.fromDrawing': 'Order aanmaken',
   'bracket.longConfirmed': 'Long-bracketorder bevestigd · {rr}R',
   'bracket.shortConfirmed': 'Short-bracketorder bevestigd · {rr}R',
   'bracket.refused': 'De broker heeft de bracketorder geweigerd: {reason}',

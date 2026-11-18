@@ -1218,6 +1218,10 @@ export class ChartWidget {
         const id = this.chart.getSelectedDrawingIds()[0];
         if (id) this.alerting.addDrawingAlert(id);
       },
+      onOrder: () => {
+        const id = this.chart.getSelectedDrawingIds()[0];
+        if (id) this.trading.openOrderTicketFromDrawing(id);
+      },
       onLock: (locked) => {
         this.chart.setDrawingsLocked(this.chart.getSelectedDrawingIds(), locked);
         this.docking.refreshObjects();
@@ -3860,6 +3864,7 @@ export class ChartWidget {
       get drawingSettingsPart() { return w.drawingSettingsPart; },
       drawingToolName: (...args) => w.drawingToolName(...args),
       get featureState() { return w.featureState; },
+      get orderTicketReady() { return w.trading.orderTicket !== null; },
       get root() { return w.root; },
       say: (...args) => w.say(...args),
       get t() { return w.t; },

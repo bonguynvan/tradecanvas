@@ -886,6 +886,7 @@ export const VI_MESSAGES: WidgetMessages = {
   'bracket.hint': 'kéo các đường để chỉnh',
   'bracket.longPlaced': 'Đã đặt lệnh Long kèm SL/TP · {rr}R',
   'bracket.shortPlaced': 'Đã đặt lệnh Short kèm SL/TP · {rr}R',
+  'bracket.fromDrawing': 'Tạo lệnh',
   'bracket.longConfirmed': 'Đã xác nhận lệnh Long kèm SL/TP · {rr}R',
   'bracket.shortConfirmed': 'Đã xác nhận lệnh Short kèm SL/TP · {rr}R',
   'bracket.refused': 'Broker từ chối lệnh kèm SL/TP: {reason}',

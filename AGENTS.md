@@ -182,9 +182,6 @@ These fail CI, often far from the line that caused them.
 
 ## Before you commit
 
-- `pnpm build` rewrites the tracked files in `packages/svelte/.svelte-kit`.
-  Unless you changed the Svelte wrapper, undo that:
-  `git checkout -- packages/svelte/.svelte-kit`.
 - One topic per pull request, from a branch off the latest `main`.
 - [Conventional Commits](https://www.conventionalcommits.org/): `feat:`,
   `fix:`, `docs:`, `test:`, `refactor:`, `perf:`, `chore:`.

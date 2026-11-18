@@ -899,6 +899,7 @@ export const EN_MESSAGES = {
   'bracket.hint': 'drag lines to adjust',
   'bracket.longPlaced': 'Long bracket placed · {rr}R',
   'bracket.shortPlaced': 'Short bracket placed · {rr}R',
+  'bracket.fromDrawing': 'Create order',
   'bracket.longConfirmed': 'Long bracket confirmed · {rr}R',
   'bracket.shortConfirmed': 'Short bracket confirmed · {rr}R',
   'bracket.refused': 'The broker refused the bracket: {reason}',

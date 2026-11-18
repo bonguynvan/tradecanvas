@@ -898,6 +898,7 @@ export const HE_MESSAGES: WidgetMessages = {
   'bracket.hint': 'יש לגרור את הקווים כדי לכוונן',
   'bracket.longPlaced': 'ברקט לונג נשלח · {rr}R',
   'bracket.shortPlaced': 'ברקט שורט נשלח · {rr}R',
+  'bracket.fromDrawing': 'יצירת פקודה',
   'bracket.longConfirmed': 'ברקט לונג אושר · {rr}R',
   'bracket.shortConfirmed': 'ברקט שורט אושר · {rr}R',
   'bracket.refused': 'הברוקר דחה את הברקט: {reason}',

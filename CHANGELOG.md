@@ -17,6 +17,10 @@
 - **A fourth handle on the Long/Short Position** (`@tradecanvas/chart`): its right edge, on the entry line, sets how long the trade runs; before, the width followed the stop's handle. The entry, the stop and the target now sit on the entry's edge, and the stop's handle changes only its price. Saved drawings keep their place.
 - **A Long/Short Position read as a trade** (`@tradecanvas/chart`): `positionLevels(drawing)` gives the side (`'buy'` for a long), entry, stop-loss, take-profit and the quantity the risk buys (unrounded, with the decimals the drawing writes it in), the money at risk and to gain, and the R:R: the numbers its tags show. `null` for any other drawing, a position whose stop is still on its entry, one with no risk set, or prices that are not finite. An app that places an order from the drawing no longer works them out from its anchors and options again.
 
+### Trading
+
+- **An order placed from a Long/Short Position** (`@tradecanvas/chart`): with trading on, selecting the drawing shows **Create order** in its toolbar. It opens the order ticket filled from the drawing: its side, entry as the price, stop-loss, take-profit and the quantity its risk buys, taken down to the decimals the drawing writes. The order type follows the entry against the market (a buy limit below it, a stop above, the market at it), and nothing is sent until Place; the drawing's levels are the ones `positionLevels` gives.
+
 ### Fixes
 
 - **The day's move on the watchlist's own row** (`@tradecanvas/chart`): with no quote for the chart's symbol, its row read the move against the first bar loaded, so a daily chart showed the move over its whole history (+37% where the day was +0.09%). It is the day's move now, against the close before the last day in the bars, in the exchange's zone, as the symbol info panel reads it; no move when the bars hold no day before the last. A `refPrice` given with `setWatchlistEntry` still wins.

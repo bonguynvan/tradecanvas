@@ -886,6 +886,7 @@ export const SV_MESSAGES: WidgetMessages = {
   'bracket.hint': 'dra linjerna för att justera',
   'bracket.longPlaced': 'Lång bracketorder lagd · {rr}R',
   'bracket.shortPlaced': 'Kort bracketorder lagd · {rr}R',
+  'bracket.fromDrawing': 'Skapa order',
   'bracket.longConfirmed': 'Lång bracketorder bekräftad · {rr}R',
   'bracket.shortConfirmed': 'Kort bracketorder bekräftad · {rr}R',
   'bracket.refused': 'Mäklaren avvisade bracketordern: {reason}',

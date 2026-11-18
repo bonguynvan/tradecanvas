@@ -20,7 +20,7 @@ beforeEach(() => {
   host = document.createElement('div');
   document.body.appendChild(host);
   bar = new WidgetSelectionToolbar(host, {
-    onStyle: () => {}, onSettings: () => {}, onAlert: () => {}, onLock: () => {}, onMore: () => {}, onDelete: () => {},
+    onStyle: () => {}, onSettings: () => {}, onAlert: () => {}, onOrder: () => {}, onLock: () => {}, onMore: () => {}, onDelete: () => {},
   }, EN_TRANSLATOR);
 });
 

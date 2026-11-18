@@ -886,6 +886,7 @@ export const HU_MESSAGES: WidgetMessages = {
   'bracket.hint': 'a vonalak húzásával módosíthat',
   'bracket.longPlaced': 'Long bracket megbízás leadva · {rr}R',
   'bracket.shortPlaced': 'Short bracket megbízás leadva · {rr}R',
+  'bracket.fromDrawing': 'Megbízás létrehozása',
   'bracket.longConfirmed': 'Long bracket megbízás megerősítve · {rr}R',
   'bracket.shortConfirmed': 'Short bracket megbízás megerősítve · {rr}R',
   'bracket.refused': 'A bróker elutasította a bracket megbízást: {reason}',

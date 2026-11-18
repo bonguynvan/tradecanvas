@@ -886,6 +886,7 @@ export const RU_MESSAGES: WidgetMessages = {
   'bracket.hint': 'перетащите линии для настройки',
   'bracket.longPlaced': 'Брекет-ордер на покупку размещён · {rr}R',
   'bracket.shortPlaced': 'Брекет-ордер на продажу размещён · {rr}R',
+  'bracket.fromDrawing': 'Создать ордер',
   'bracket.longConfirmed': 'Брекет-ордер на покупку подтверждён · {rr}R',
   'bracket.shortConfirmed': 'Брекет-ордер на продажу подтверждён · {rr}R',
   'bracket.refused': 'Брокер отклонил брекет-ордер: {reason}',

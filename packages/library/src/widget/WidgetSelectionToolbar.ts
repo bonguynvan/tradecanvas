@@ -19,6 +19,8 @@ export interface SelectionToolbarTarget {
   canDelete: boolean;
   canSettings: boolean;
   canAlert: boolean;
+  /** The drawing is a Long/Short Position with levels an order can be placed from. */
+  canOrder?: boolean;
   /** The drawing fills an area (a fill colour button). */
   canFill?: boolean;
   /** The drawing writes text (a text colour button). */
@@ -33,6 +35,8 @@ export interface SelectionToolbarCallbacks {
   /** Type the drawing's words in place. */
   onText: () => void;
   onAlert: () => void;
+  /** Begin an order draft filled from the drawing. */
+  onOrder: () => void;
   onLock: (locked: boolean) => void;
   /** The full drawing menu, opened under the given point (root px). */
   onMore: (x: number, y: number) => void;
@@ -159,7 +163,7 @@ export class WidgetSelectionToolbar {
     const s = target.style;
     const key = [safeColor(s.color), safeWidth(s.lineWidth), safeLineStyle(s.lineStyle),
       target.locked, target.canDelete, target.canSettings, target.canAlert,
-      target.canFill === true, target.canText === true, target.canType === true, s.fillColor, s.textColor].join('|');
+      target.canFill === true, target.canText === true, target.canType === true, target.canOrder === true, s.fillColor, s.textColor].join('|');
     if (key !== this.built) {
       this.built = key;
       this.render(target);
@@ -206,6 +210,7 @@ export class WidgetSelectionToolbar {
       '<span class="tcw-sel-sep" aria-hidden="true"></span>',
       target.canSettings ? btn('settings', t('legend.settings'), createIcon('settings', 15)) : '',
       target.canAlert ? btn('alert', t('drawingSettings.addAlert'), createIcon('bell', 15)) : '',
+      target.canOrder ? btn('order', t('bracket.fromDrawing'), createIcon('receipt', 15)) : '',
       btn('lock', locked ? t('common.unlock') : t('common.lock'), createIcon(locked ? 'lock' : 'unlock', 15), locked ? ' tcw-sel-on' : '')
         .replace('<button ', `<button aria-pressed="${locked}" `),
       btn('more', t('legend.more'), createIcon('more', 15)),
@@ -267,6 +272,7 @@ export class WidgetSelectionToolbar {
     if (action === 'settings') this.callbacks.onSettings();
     else if (action === 'text') this.callbacks.onText();
     else if (action === 'alert') this.callbacks.onAlert();
+    else if (action === 'order') this.callbacks.onOrder();
     else if (action === 'lock') this.callbacks.onLock(!this.target?.locked);
     else if (action === 'delete') this.callbacks.onDelete();
     else if (action === 'more') {
