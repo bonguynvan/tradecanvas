@@ -335,6 +335,19 @@ const SCENES = {
     return s;
   },
 
+  /** The hide button's menu open on the drawing sidebar, an indicator hidden from it, a position on the chart. */
+  async sidebarMenus() {
+    const s = await widget({ trading: true });
+    const last = lastClose(s.chart);
+    const broker = new PaperExecutionAdapter({ markPrice: last });
+    s.chart.connectExecution(broker, { brackets: 'event' });
+    await broker.placeOrder({ side: 'buy', type: 'market', price: last, quantity: 1, stopLoss: last * 0.996 });
+    s.chart.addIndicator('ema', { period: 20 });
+    document.querySelector('[data-menu-for="hideAll"]')?.click();
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    return s;
+  },
+
   /** More panes than the chart has room for: the price pane keeps its part, the panes share the rest. */
   async manyPanes() {
     const s = await widget();

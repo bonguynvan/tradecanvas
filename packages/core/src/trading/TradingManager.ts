@@ -91,6 +91,55 @@ export class TradingManager {
     this.requestRender?.();
   }
 
+  // --- Shown, and movable by hand ---
+
+  /** The positions, orders and fills are left off the chart: none is drawn, none takes a press. */
+  private hidden = false;
+  /** Their lines and tags don't move by hand; the buttons on them still act. */
+  private locked = false;
+
+  /**
+   * Hide or show the positions, the orders and the fill marks. Hidden, none
+   * is drawn and none can be pressed; a bracket or an order being placed
+   * still shows. They are still kept, and still change as the adapter says.
+   */
+  setHidden(hidden: boolean): void {
+    if (hidden === this.hidden) return;
+    this.hidden = hidden;
+    if (hidden) this.dragHandler.cancel();
+    this.requestRender?.();
+  }
+
+  isHidden(): boolean {
+    return this.hidden;
+  }
+
+  /**
+   * Lock or unlock the positions' and orders' lines: locked, neither a line
+   * nor its tag is dragged (a stop, a target, an order's price), and a
+   * position offers no SL or TP to drag out. Their buttons still act.
+   */
+  setLocked(locked: boolean): void {
+    if (locked === this.locked) return;
+    this.locked = locked;
+    if (locked) this.dragHandler.cancel();
+    this.requestRender?.();
+  }
+
+  isLocked(): boolean {
+    return this.locked;
+  }
+
+  /** The positions as drawn: none while hidden. */
+  private shownPositions(): TradingPosition[] {
+    return this.hidden ? [] : this.positions;
+  }
+
+  /** The orders as drawn: none while hidden. */
+  private shownOrders(): TradingOrder[] {
+    return this.hidden ? [] : this.orders;
+  }
+
   /**
    * A stop or target being dragged whose position is gone, or one being added
    * that the position now has (the broker set it meanwhile): the drag is
@@ -248,16 +297,19 @@ export class TradingManager {
   /** Whether `pos` is over an order line or a position's SL/TP that can be dragged. */
   isOverDraggableLine(pos: Point, viewport: ViewportState, tolerance = 8): boolean {
     if (!this.config.enabled) return false;
-    if (tagAt(this.tagBoxes, pos.x, pos.y) && !buttonAt(this.buttons, pos)) return true;
+    const tag = tagAt(this.tagBoxes, pos.x, pos.y);
+    // Locked, an order's or a position's tag takes no drag; a bracket or an order being placed still does.
+    if (tag && !buttonAt(this.buttons, pos)) return !this.locked || tag.grab.kind === 'bracket' || tag.grab.kind === 'draft';
     const near = (price: number | undefined) => {
       if (price === undefined) return false;
       const y = priceToY(price, viewport);
       return inPlot(y, viewport) && Math.abs(pos.y - y) <= tolerance;
     };
-    for (const o of this.orders) {
+    if (this.locked) return false;
+    for (const o of this.shownOrders()) {
       if (o.draggable !== false && near(o.price)) return true;
     }
-    for (const p of this.positions) {
+    for (const p of this.shownPositions()) {
       if (near(p.stopLoss) || near(p.takeProfit)) return true;
     }
     return false;
@@ -294,7 +346,8 @@ export class TradingManager {
       this.armed = button.action;
       return true;
     }
-    return this.dragHandler.onPointerDown(pos, this.orders, this.positions, viewport, reach?.order ?? 8);
+    if (this.locked) return false;
+    return this.dragHandler.onPointerDown(pos, this.shownOrders(), this.shownPositions(), viewport, reach?.order ?? 8);
   }
 
   /**
@@ -321,10 +374,12 @@ export class TradingManager {
       case 'draft':
         return this.orderDraft.beginDragOn();
       case 'order': {
+        if (this.locked) return false;
         const order = this.orders.find((o) => o.id === grab.orderId);
         return order !== undefined && this.dragHandler.beginOrder(order, tag.lineY);
       }
       case 'stop': {
+        if (this.locked) return false;
         const position = this.positions.find((p) => p.id === grab.positionId);
         return position !== undefined && this.dragHandler.beginStop(position, grab.which, tag.lineY);
       }
@@ -417,7 +472,8 @@ export class TradingManager {
   }
 
   onContextMenu(pos: Point, viewport: ViewportState): boolean {
-    if (!this.config.enabled || !this.config.contextMenu?.enabled || !this.container) return false;
+    // Hidden, the orders would be placed out of sight: no menu to place them.
+    if (!this.config.enabled || !this.config.contextMenu?.enabled || !this.container || this.hidden) return false;
     const price = yToPrice(pos.y, viewport);
     this.contextMenu.show(pos, price, this.container, this.config, (p) => priceTagText(p, viewport, this.config.pricePrecision));
     return true;
@@ -460,21 +516,25 @@ export class TradingManager {
   private renderInPlot(ctx: CanvasRenderingContext2D, viewport: ViewportState, theme: Theme): void {
     // The config's colours, with the chart's style keys over them.
     const config = tradingConfigFor(this.config, theme);
-    if (config.fillMarks !== false) renderFillMarks(ctx, this.fills, viewport, config);
+    if (config.fillMarks !== false && !this.hidden) renderFillMarks(ctx, this.fills, viewport, config);
 
     // Every line first, then every tag over them, laid out together so none
     // covers another. The tags laid out first keep the axis end: what is
     // being placed, then positions, then orders.
     const drag = this.dragHandler.getDragState();
-    this.positionRenderer.renderLines(ctx, this.positions, this.currentPrice, viewport, config, drag);
-    this.orderRenderer.renderLines(ctx, this.orders, viewport, config, drag);
+    const positions = this.shownPositions();
+    const orders = this.shownOrders();
+    // Locked, a position offers no stop or target to drag out.
+    const positionConfig = this.locked ? { ...config, lineButtons: { ...config.lineButtons, addStops: false } } : config;
+    this.positionRenderer.renderLines(ctx, positions, this.currentPrice, viewport, config, drag);
+    this.orderRenderer.renderLines(ctx, orders, viewport, config, drag);
     this.bracket.renderLines(ctx, viewport, theme);
     this.orderDraft.renderLines(ctx, viewport, theme);
     const tags = [
       ...this.bracket.tags(viewport, theme),
       ...this.orderDraft.tags(viewport, theme, this.currentPrice),
-      ...this.positionRenderer.tags(this.positions, this.currentPrice, viewport, config, drag),
-      ...this.orderRenderer.tags(this.orders, viewport, config, drag),
+      ...this.positionRenderer.tags(positions, this.currentPrice, viewport, positionConfig, drag),
+      ...this.orderRenderer.tags(orders, viewport, config, drag),
     ];
     drawTags(ctx, tags, viewport, theme, this.buttons, this.tagBoxes, this.tagInset, this.drawnTags);
   }
@@ -518,8 +578,8 @@ export class TradingManager {
   private axisBadges(viewport: ViewportState, theme: Theme): AxisBadge[] {
     const config = tradingConfigFor(this.config, theme);
     return [
-      ...this.positionRenderer.axisBadges(this.positions, viewport, config, this.dragHandler.getDragState()),
-      ...this.orderRenderer.axisBadges(this.orders, viewport, config, this.dragHandler.getDragState()),
+      ...this.positionRenderer.axisBadges(this.shownPositions(), viewport, config, this.dragHandler.getDragState()),
+      ...this.orderRenderer.axisBadges(this.shownOrders(), viewport, config, this.dragHandler.getDragState()),
       ...this.bracket.axisBadges(viewport, theme, this.config.pricePrecision),
       ...this.orderDraft.axisBadges(viewport, theme, this.config.pricePrecision),
     ];

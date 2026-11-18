@@ -3039,6 +3039,14 @@ export class Chart {
     this.indicatorHistory.record(instanceId, () => this.setIndicatorVisibleNow(instanceId, visible));
   }
 
+  /** Show or hide several indicators at once, as one undo step. */
+  setIndicatorsVisible(instanceIds: readonly string[], visible: boolean): void {
+    if (instanceIds.length === 0) return;
+    this.undoRedoManager.group(() => {
+      for (const id of instanceIds) this.setIndicatorVisible(id, visible);
+    });
+  }
+
   private setIndicatorVisibleNow(instanceId: string, visible: boolean): void {
     if (this.indicatorEngine.setVisible(instanceId, visible) !== null) {
       this.updateViewportAndRender();
@@ -3682,6 +3690,34 @@ export class Chart {
       this.executionAdapter.disconnect();
       this.executionAdapter = null;
     }
+  }
+
+  /**
+   * Hide or show the positions, the orders and their fill marks. Hidden, none
+   * is drawn and none can be pressed or dragged; they are still kept, and
+   * still follow the execution adapter. A bracket or an order being placed
+   * still shows.
+   */
+  setTradingVisible(visible: boolean): void {
+    this.tradingManager.setHidden(!visible);
+  }
+
+  isTradingVisible(): boolean {
+    return !this.tradingManager.isHidden();
+  }
+
+  /**
+   * Lock or unlock the positions' and orders' lines: locked, no line or tag
+   * of theirs can be dragged (an order's price, a stop, a target), and a
+   * position offers no SL or TP to drag out. Their buttons (close, cancel,
+   * reverse, trail, remove a stop) still act.
+   */
+  setTradingLocked(locked: boolean): void {
+    this.tradingManager.setLocked(locked);
+  }
+
+  isTradingLocked(): boolean {
+    return this.tradingManager.isLocked();
   }
 
   /** The connected execution adapter, or null (e.g. for adapter-specific calls). */

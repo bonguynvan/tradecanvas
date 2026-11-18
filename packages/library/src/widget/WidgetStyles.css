@@ -1287,6 +1287,60 @@
   clip-path: polygon(0 0, 100% 100%, 0 100%);
 }
 
+/* A button with a menu (hide, lock, magnet): the button acts, its corner opens the menu. */
+.tcw-sidebar-split {
+  position: relative;
+  align-self: center;
+  display: inline-flex;
+}
+
+.tcw-sidebar-menu-btn {
+  position: absolute;
+  inset-block-end: 1px;
+  inset-inline-end: 0;
+  width: 13px;
+  height: 13px;
+  padding: 0;
+  border: none;
+  border-radius: 2px;
+  background: transparent;
+  cursor: pointer;
+}
+
+/* The corner a tool group's has, larger under the pointer. */
+.tcw-sidebar-menu-btn::after {
+  content: '';
+  position: absolute;
+  inset-block-end: 1px;
+  inset-inline-end: 1px;
+  width: 5px;
+  height: 5px;
+  clip-path: polygon(100% 0, 100% 100%, 0 100%);
+  background: var(--tcw-text-muted);
+  opacity: 0.8;
+}
+
+[dir='rtl'] .tcw-sidebar-menu-btn::after {
+  clip-path: polygon(0 0, 100% 100%, 0 100%);
+}
+
+.tcw-sidebar-menu-btn:hover {
+  background: var(--tcw-hover-bg);
+}
+
+/* On a phone a finger has to find it: a larger corner to press, the mark where it was. */
+.tcw-root[data-tcw-narrow] .tcw-sidebar-menu-btn {
+  width: 21px;
+  height: 21px;
+}
+
+.tcw-sidebar-menu-btn:hover::after {
+  width: 7px;
+  height: 7px;
+  background: var(--tcw-text);
+  opacity: 1;
+}
+
 /* The drawing tools' sections: always a hairline (it groups the tools), even in
    looks that drop the rules between toolbar groups. */
 .tcw-sidebar-divider {

@@ -38,7 +38,13 @@ export interface MenusHost {
   toggleGoToDate: ChartWidget['toggleGoToDate'];
   readonly trading: ChartWidget['trading'];
   updateUI: ChartWidget['updateUI'];
+  setMagnetStrength: ChartWidget['setMagnetStrength'];
 }
+
+/** What the hide button acts on, as its menu last chose. */
+export type HideScope = 'drawings' | 'indicators' | 'trading' | 'all';
+/** What the lock button acts on, as its menu last chose. */
+export type LockScope = 'drawings' | 'trading' | 'all';
 
 /**
  * The widget's context menus: the chart's (what was under the pointer, its price, its pane),
@@ -51,6 +57,18 @@ export class WidgetMenus {
 
   /** The trash button's menu, made the first time it opens. */
   clearMenu: WidgetContextMenu | null = null;
+
+  /** The hide, lock and magnet buttons' menus, each made the first time it opens. */
+  private hideMenu: WidgetContextMenu | null = null;
+  private lockMenu: WidgetContextMenu | null = null;
+  private magnetMenu: WidgetContextMenu | null = null;
+
+  /** What the hide and lock buttons act on: the drawings until their menus choose otherwise. */
+  hideScope: HideScope = 'drawings';
+  lockScope: LockScope = 'drawings';
+
+  /** The indicators hiding them all hid, to show again: not the ones hidden before. */
+  private hiddenIndicators: string[] = [];
 
   chartMenu: WidgetContextMenu | null = null;
 
@@ -131,7 +149,7 @@ export class WidgetMenus {
 
   /** What the chart's menus can offer here, and how the chart is set now. */
   chartMenuContext(price: number | undefined): ChartMenuContext {
-    const drawings = this.host.chart.getDrawings();
+    const drawings = this.host.chart.getDrawings() ?? [];
     const data = this.host.chart.getData();
     const s = this.host.settingsState;
     const features = this.host.chart.getFeatures();
@@ -323,6 +341,139 @@ export class WidgetMenus {
     if (entries.length === 0) return;
     this.clearMenu ??= new WidgetContextMenu(this.host.root, this.host.t('drawing.clearAll'));
     this.clearMenu.openBeside(entries, anchor, (id) => this.removeAll(id as 'drawings' | 'indicators' | 'all'));
+  }
+
+  // --- Hide, lock and the magnet ---
+
+  /** Whether the chart has positions and orders to hide or lock. */
+  private hasTrading(): boolean {
+    return this.host.options.trading !== false;
+  }
+
+  /** Whether `scope` is hidden: every drawing, every indicator, the positions and orders, or all there are of them. */
+  isHidden(scope: HideScope): boolean {
+    const chart = this.host.chart;
+    if (scope === 'drawings') {
+      const drawings = chart.getDrawings() ?? [];
+      return drawings.length > 0 && drawings.every((d) => !d.visible);
+    }
+    if (scope === 'indicators') {
+      const indicators = chart.getActiveIndicators() ?? [];
+      return indicators.length > 0 && indicators.every((i) => i.visible === false);
+    }
+    if (scope === 'trading') return this.hasTrading() && chart.isTradingVisible() === false;
+    const parts = this.hideParts();
+    return parts.length > 0 && parts.every((part) => this.isHidden(part));
+  }
+
+  /** What Hide all covers: the drawings and the indicators there are, and the positions and orders. */
+  private hideParts(): Exclude<HideScope, 'all'>[] {
+    const parts: Exclude<HideScope, 'all'>[] = [];
+    if ((this.host.chart.getDrawings() ?? []).length > 0) parts.push('drawings');
+    if ((this.host.chart.getActiveIndicators() ?? []).length > 0) parts.push('indicators');
+    if (this.hasTrading()) parts.push('trading');
+    return parts;
+  }
+
+  /** Hide or show `scope`; the indicators shown again are the ones hiding them hid. */
+  setHidden(scope: HideScope, hidden: boolean): void {
+    const chart = this.host.chart;
+    if (scope === 'all') {
+      for (const part of this.hideParts()) this.setHidden(part, hidden);
+      return;
+    }
+    if (scope === 'drawings') chart.setDrawingsVisible(chart.getDrawings().map((d) => d.id), !hidden);
+    if (scope === 'trading' && this.hasTrading()) chart.setTradingVisible(!hidden);
+    if (scope === 'indicators') {
+      const indicators = chart.getActiveIndicators() ?? [];
+      const ids = new Set(indicators.map((i) => i.instanceId));
+      if (hidden) {
+        // Added to those hidden before (and still there): one added meanwhile, hidden on its own, comes back with them.
+        const showing = indicators.filter((i) => i.visible !== false).map((i) => i.instanceId);
+        this.hiddenIndicators = [...new Set([...this.hiddenIndicators.filter((id) => ids.has(id)), ...showing])];
+        chart.setIndicatorsVisible(showing, false);
+      } else {
+        const kept = indicators.map((i) => i.instanceId).filter((id) => this.hiddenIndicators.includes(id));
+        chart.setIndicatorsVisible(kept.length > 0 ? kept : indicators.map((i) => i.instanceId), true);
+        this.hiddenIndicators = [];
+      }
+    }
+  }
+
+  /** The hide button: hide or show what its menu last chose. */
+  toggleHidden(): void {
+    this.setHidden(this.hideScope, !this.isHidden(this.hideScope));
+    this.afterHideOrLock();
+  }
+
+  /** The hide button's menu: each of what it can hide, ticked when hidden; the one picked is the button's from then on. */
+  openHideMenu(anchor: HTMLElement): void {
+    if (WidgetContextMenu.closeAnchoredTo(anchor)) return;
+    const t = this.host.t;
+    const scopes: HideScope[] = this.hasTrading() ? ['drawings', 'indicators', 'trading', 'all'] : ['drawings', 'indicators', 'all'];
+    const entries: ContextMenuEntry[] = scopes.map((id) => ({ id, label: t(`hide.${id}`), checked: this.isHidden(id) }));
+    this.hideMenu ??= new WidgetContextMenu(this.host.root, t('drawing.hideAll'));
+    this.hideMenu.openBeside(entries, anchor, (id) => {
+      this.hideScope = id as HideScope;
+      this.toggleHidden();
+    });
+  }
+
+  /** Whether `scope` is locked: every drawing, the positions and orders, or both. */
+  isLocked(scope: LockScope): boolean {
+    const chart = this.host.chart;
+    const drawings = chart.getDrawings() ?? [];
+    const drawingsLocked = drawings.length > 0 && drawings.every((d) => d.locked);
+    const tradingLocked = this.hasTrading() && chart.isTradingLocked() === true;
+    if (scope === 'drawings') return drawingsLocked;
+    if (scope === 'trading') return tradingLocked;
+    const parts = [...(drawings.length > 0 ? [drawingsLocked] : []), ...(this.hasTrading() ? [tradingLocked] : [])];
+    return parts.length > 0 && parts.every(Boolean);
+  }
+
+  setLocked(scope: LockScope, locked: boolean): void {
+    const chart = this.host.chart;
+    if (scope !== 'trading') chart.setDrawingsLocked(chart.getDrawings().map((d) => d.id), locked);
+    if (scope !== 'drawings' && this.hasTrading()) chart.setTradingLocked(locked);
+  }
+
+  /** The lock button: lock or unlock what its menu last chose. */
+  toggleLocked(): void {
+    this.setLocked(this.lockScope, !this.isLocked(this.lockScope));
+    this.afterHideOrLock();
+  }
+
+  /** The lock button's menu: the drawings, the positions and orders, or all, ticked when locked. */
+  openLockMenu(anchor: HTMLElement): void {
+    if (WidgetContextMenu.closeAnchoredTo(anchor)) return;
+    const t = this.host.t;
+    const scopes: LockScope[] = this.hasTrading() ? ['drawings', 'trading', 'all'] : ['drawings'];
+    const entries: ContextMenuEntry[] = scopes.map((id) => ({ id, label: t(`lock.${id}`), checked: this.isLocked(id) }));
+    this.lockMenu ??= new WidgetContextMenu(this.host.root, t('drawing.lockAll'));
+    this.lockMenu.openBeside(entries, anchor, (id) => {
+      this.lockScope = id as LockScope;
+      this.toggleLocked();
+    });
+  }
+
+  /** The magnet button's menu: weak or strong; picking one turns the magnet on at it. */
+  openMagnetMenu(anchor: HTMLElement): void {
+    if (WidgetContextMenu.closeAnchoredTo(anchor)) return;
+    const t = this.host.t;
+    const state = this.host.state;
+    const strong = state.magnetStrong;
+    const entries: ContextMenuEntry[] = [
+      { id: 'weak', label: t('magnet.weak'), radio: true, checked: state.magnetEnabled && !strong },
+      { id: 'strong', label: t('magnet.strong'), radio: true, checked: state.magnetEnabled && strong },
+    ];
+    this.magnetMenu ??= new WidgetContextMenu(this.host.root, t('drawing.magnet'));
+    this.magnetMenu.openBeside(entries, anchor, (id) => this.host.setMagnetStrength(id as 'weak' | 'strong'));
+  }
+
+  /** The buttons say what they act on now, and the objects list shows it. */
+  private afterHideOrLock(): void {
+    this.host.refreshDrawingsState();
+    this.host.refreshObjects();
   }
 
   /** Remove the drawings, the indicators or both, as one undo step, and leave any drawing tool. */
