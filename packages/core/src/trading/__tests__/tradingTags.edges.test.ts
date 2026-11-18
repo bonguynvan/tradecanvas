@@ -109,7 +109,8 @@ describe('a position’s tag', () => {
   it('says only its side while there is no price', () => {
     manager = new TradingManager();
     manager.setPositions([{ id: 'p1', side: 'buy', entryPrice: 60, quantity: 2 }]);
-    expect(draw().texts).toEqual(['2', 'Long']);
+    // No profit or loss; then the SL and TP buttons for the stop and target it has not got.
+    expect(draw().texts).toEqual(['2', 'Long', 'SL', 'TP']);
   });
 
   it('has no buttons where the tag would run off the plot', () => {

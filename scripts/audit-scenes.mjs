@@ -24,7 +24,7 @@ const { chromium } = await import(process.env.PLAYWRIGHT ? pathToFileURL(process
 
 const UI = process.env.UI ?? '';
 if (UI && !/^[a-z]+$/.test(UI)) throw new Error(`UI must be a look's name, not ${UI}`);
-const SCENES = ['orderAtPrice', 'linkedGrid', 'replay', 'replayDepth', 'compare', 'renko', 'priceLimits', 'indicators', 'ichimoku', 'krx', 'paneDrawings', 'selectedDrawing', 'selectedPaneDrawing', 'manyPanes', 'marks', 'historyDaily', 'historyHourly', 'positions', 'watchlistOwnRow', 'dockPage'];
+const SCENES = ['orderAtPrice', 'linkedGrid', 'replay', 'replayDepth', 'compare', 'renko', 'priceLimits', 'indicators', 'ichimoku', 'krx', 'paneDrawings', 'selectedDrawing', 'selectedPaneDrawing', 'manyPanes', 'marks', 'historyDaily', 'historyHourly', 'positions', 'watchlistOwnRow', 'dockPage', 'positionAddStops'];
 const THEMES = ['dark', 'light'];
 const SIZES = {
   phone: { viewport: { width: 390, height: 760 }, isMobile: true, hasTouch: true },

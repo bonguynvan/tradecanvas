@@ -141,11 +141,12 @@ export interface TradingConfig {
   contextMenu?: { enabled?: boolean };
   /**
    * Buttons on the lines: × on an order cancels it, × on a position closes it
-   * and ⇅ reverses it, × on a stop-loss or take-profit removes it, and the
-   * trail button on a stop-loss starts or ends its trailing (`trailStop`). All
-   * on by default.
+   * and ⇅ reverses it, × on a stop-loss or take-profit removes it, the
+   * trail button on a stop-loss starts or ends its trailing (`trailStop`), and
+   * SL and TP on a position's tag add the stop-loss or take-profit it has not
+   * got (`addStops`). All on by default.
    */
-  lineButtons?: { cancel?: boolean; close?: boolean; reverse?: boolean; removeStops?: boolean; trailStop?: boolean };
+  lineButtons?: { cancel?: boolean; close?: boolean; reverse?: boolean; removeStops?: boolean; trailStop?: boolean; addStops?: boolean };
   /** Marks where orders filled (from the execution adapter's fills). On by default. */
   fillMarks?: boolean;
   /** Decimals of the prices on the trading tags; unset, the price axis's (the market's or the range's). */
@@ -207,7 +208,7 @@ export const DEFAULT_TRADING_CONFIG: TradingConfig = {
   positionColors: { profit: '#1fa874', loss: '#e8505b', entry: '#4c8dff' },
   depthOverlay: { enabled: false, bidColor: 'rgba(31, 168, 116,0.15)', askColor: 'rgba(232, 80, 91,0.15)', maxWidth: 100 },
   contextMenu: { enabled: true },
-  lineButtons: { cancel: true, close: true, reverse: true, removeStops: true, trailStop: true },
+  lineButtons: { cancel: true, close: true, reverse: true, removeStops: true, trailStop: true, addStops: true },
   fillMarks: true,
   dragThreshold: 3,
 };

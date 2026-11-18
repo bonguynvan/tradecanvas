@@ -7,13 +7,18 @@ export type LineButtonAction =
   | { type: 'reversePosition'; positionId: string }
   | { type: 'removeStop'; positionId: string; which: 'stopLoss' | 'takeProfit' }
   /** Trail the stop-loss at `distance` from the price, or end its trail (null). */
-  | { type: 'trailStop'; positionId: string; distance: number | null };
+  | { type: 'trailStop'; positionId: string; distance: number | null }
+  /** Give the position the stop-loss or take-profit it has not got: pressed, it is dragged from `price`. */
+  | { type: 'addStop'; positionId: string; which: 'stopLoss' | 'takeProfit'; price: number };
 
 /** A button drawn on a line, where it was drawn. */
 export interface LineButton {
   x: number;
   y: number;
+  /** Its height, and its width unless `width` says otherwise. */
   size: number;
+  /** A button of words is as wide as they are. */
+  width?: number;
   action: LineButtonAction;
 }
 
@@ -24,7 +29,7 @@ const SLOP = 2;
 export function sameLineAction(a: LineButtonAction, b: LineButtonAction): boolean {
   if (a.type !== b.type) return false;
   if (a.type === 'cancelOrder') return a.orderId === (b as typeof a).orderId;
-  if (a.type === 'removeStop') return a.positionId === (b as typeof a).positionId && a.which === (b as typeof a).which;
+  if (a.type === 'removeStop' || a.type === 'addStop') return a.positionId === (b as typeof a).positionId && a.which === (b as typeof a).which;
   return a.positionId === (b as typeof a).positionId;
 }
 
@@ -35,14 +40,14 @@ export function sameLineAction(a: LineButtonAction, b: LineButtonAction): boolea
  */
 export function buttonAt(buttons: readonly LineButton[], pos: Point, slop = SLOP): LineButton | null {
   const on = (b: LineButton, room: number) =>
-    pos.x >= b.x - room && pos.x <= b.x + b.size + room && pos.y >= b.y - room && pos.y <= b.y + b.size + room;
+    pos.x >= b.x - room && pos.x <= b.x + (b.width ?? b.size) + room && pos.y >= b.y - room && pos.y <= b.y + b.size + room;
   // The last drawn is on top.
   for (let i = buttons.length - 1; i >= 0; i--) if (on(buttons[i], 0)) return buttons[i];
   let nearest: LineButton | null = null;
   let best = Infinity;
   for (const b of buttons) {
     if (!on(b, slop)) continue;
-    const d = Math.hypot(pos.x - (b.x + b.size / 2), pos.y - (b.y + b.size / 2));
+    const d = Math.hypot(pos.x - (b.x + (b.width ?? b.size) / 2), pos.y - (b.y + b.size / 2));
     if (d < best) {
       best = d;
       nearest = b;

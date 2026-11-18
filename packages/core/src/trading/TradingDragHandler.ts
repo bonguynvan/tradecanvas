@@ -56,6 +56,15 @@ export class TradingDragHandler {
     return this.start({ orderId: position.id, sourceType: which, startPrice: price, currentPrice: price }, y);
   }
 
+  /**
+   * Drag out a stop or a target `position` has not got, from `price`, pressed
+   * at `y`. Let go where it was pressed, it is set at `price`.
+   */
+  beginNewStop(position: TradingPosition, which: 'stopLoss' | 'takeProfit', price: number, y: number): boolean {
+    if (position[which] !== undefined || !Number.isFinite(price)) return false;
+    return this.start({ orderId: position.id, sourceType: which, startPrice: price, currentPrice: price, created: true }, y);
+  }
+
   private start(state: DragState, y: number): boolean {
     this.dragState = state;
     this.startY = y;
@@ -80,7 +89,8 @@ export class TradingDragHandler {
     const state = this.dragState;
     this.dragState = null;
 
-    if (!this.dragging) return null;
+    // A press that never moved changes nothing, but a stop being added is set where it started.
+    if (!this.dragging && !state.created) return null;
     this.dragging = false;
 
     return {

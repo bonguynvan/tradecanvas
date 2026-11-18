@@ -87,7 +87,22 @@ export class TradingManager {
 
   setPositions(positions: TradingPosition[]): void {
     this.positions = positions;
+    this.dropStaleStopDrag();
     this.requestRender?.();
+  }
+
+  /**
+   * A stop or target being dragged whose position is gone, or one being added
+   * that the position now has (the broker set it meanwhile): the drag is
+   * called off, so letting go sends nothing for it.
+   */
+  private dropStaleStopDrag(): void {
+    const drag = this.dragHandler.getDragState();
+    if (!drag || drag.sourceType === 'order') return;
+    const position = this.positions.find((p) => p.id === drag.orderId);
+    if (position && !(drag.created && position[drag.sourceType] !== undefined)) return;
+    this.dragHandler.cancel();
+    this.grabOffset = 0;
   }
 
   getOrders(): TradingOrder[] {
@@ -274,11 +289,26 @@ export class TradingManager {
       return true;
     }
     // A button on a line before the line itself (an SL line is draggable too).
+    if (button?.action.type === 'addStop') return this.dragOutStop(button.action, pos, viewport);
     if (button) {
       this.armed = button.action;
       return true;
     }
     return this.dragHandler.onPointerDown(pos, this.orders, this.positions, viewport, reach?.order ?? 8);
+  }
+
+  /**
+   * Start dragging out the stop or target an SL or TP button adds, from where
+   * it starts: the line keeps its distance from the pointer, as a tag's does.
+   */
+  private dragOutStop(action: Extract<LineButtonAction, { type: 'addStop' }>, pos: Point, viewport: ViewportState): boolean {
+    const position = this.positions.find((p) => p.id === action.positionId);
+    // The drag is measured on the line, as a tag's is: the pointer only moves it.
+    const lineY = priceToY(action.price, viewport);
+    if (!position || !this.dragHandler.beginNewStop(position, action.which, action.price, lineY)) return false;
+    this.grabOffset = lineY - pos.y;
+    this.requestRender?.();
+    return true;
   }
 
   /** Start dragging the line `tag` is on, the line keeping its distance from the pointer at `pos`. */

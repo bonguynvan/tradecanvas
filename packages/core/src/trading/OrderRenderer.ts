@@ -11,6 +11,8 @@ export interface DragState {
   sourceType: 'order' | 'stopLoss' | 'takeProfit';
   startPrice: number;
   currentPrice: number;
+  /** A stop or a target the position had not got, being added. */
+  created?: boolean;
 }
 
 /** A working order's line: long dashes. Its stop's and target's: dots, as prices it only brings. */
