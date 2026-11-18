@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Trading
+
+- **A confirmed bracket can go to the execution adapter** (`@tradecanvas/chart`): `connectExecution(adapter, { brackets: 'place' })` sends it with `placeOrder` as one order: the entry (a limit or a stop against the price), its quantity, and its stop-loss and take-profit. The chart then sends `bracketOrder` once the adapter took it, or `executionError` with the new `command: 'bracketPlace'`. A bracket with no quantity (the toolbar's and `startBracket`'s, for now) or with no price yet to tell a limit entry from a stop is not sent; the error's new `reason` says which; `placesBrackets()` says whether it does. Without `brackets` a bracket stays the `bracketPlace` event, and the chart warns once in the console when one is confirmed with an adapter connected. `'place'` becomes the default in the next major version: an app that places the event's bracket itself passes `brackets: 'event'`. The widget says a bracket is placed only once the adapter took it, confirmed when it only went out as the event, and why when it was not placed.
+
 ### Widget
 
 - **A page of your own in the dock** (`@tradecanvas/chart`): `widget.addDockPage({ id, label, icon, element, onShow, onHide })` puts its button on the rail after the built-in panels and your element under the dock's header (its label and a close button); `openPanel(id)` opens it, `getOpenPanel()` reports it, and `remove()` takes it away. The `onPanelChange` option is told the open panel, or `null`, however it changed. `openPanel` and `getOpenPanel` take and give `DockPanelId` (a built-in panel or a page's id).
