@@ -198,6 +198,22 @@ const SCENES = {
     return s;
   },
 
+  /** Long/Short Positions played over the bars: a long selected (its four handles), a short, one running past the last bar. */
+  async positions() {
+    const s = await widget();
+    const bars = s.chart.getData();
+    const back = (n) => bars[bars.length - n];
+    const position = (from, to, stopBy) => s.chart.addDrawing({
+      type: 'riskReward',
+      anchors: [{ time: back(from).time, price: back(from).close }, { time: to > 0 ? back(to).time : back(1).time + -to * 60_000, price: back(from).close * stopBy }],
+    });
+    const long = position(150, 90, 0.997);
+    position(80, 30, 1.003);
+    position(20, -15, 0.998);
+    s.chart.selectDrawing(long);
+    return s;
+  },
+
   /** A trend line selected in the RSI pane: its span on the pane's own axis. */
   async selectedPaneDrawing() {
     const s = await widget();

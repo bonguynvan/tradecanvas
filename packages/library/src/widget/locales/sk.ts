@@ -702,6 +702,7 @@ export const SK_MESSAGES: WidgetMessages = {
   'drawingOption.riskMode.amount': 'Suma',
   'drawingOption.risk': 'Riziko',
   'drawingOption.qtyDecimals': 'Desatinné miesta množstva',
+  'drawingOption.showOutcome': 'Zobraziť obchod na sviečkach',
   'drawingOption.showLabels': 'Zobraziť popisy',
   'drawingOption.showText': 'Zobraziť text',
   'drawingOption.direction': 'Smer',
