@@ -886,7 +886,7 @@ export const RO_MESSAGES: WidgetMessages = {
   'bracket.hint': 'trageți liniile pentru ajustare',
   'bracket.longPlaced': 'Ordin bracket long plasat · {rr}R',
   'bracket.shortPlaced': 'Ordin bracket short plasat · {rr}R',
-  'bracket.fromDrawing': 'Creează ordin limită',
+  'bracket.fromDrawing': 'Creează ordin',
   'bracket.longConfirmed': 'Ordin bracket long confirmat · {rr}R',
   'bracket.shortConfirmed': 'Ordin bracket short confirmat · {rr}R',
   'bracket.refused': 'Brokerul a respins ordinul bracket: {reason}',

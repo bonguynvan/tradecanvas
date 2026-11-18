@@ -886,7 +886,7 @@ export const ZH_HANT_MESSAGES: WidgetMessages = {
   'bracket.hint': '拖曳線條進行調整',
   'bracket.longPlaced': '已下做多括號單 · {rr}R',
   'bracket.shortPlaced': '已下做空括號單 · {rr}R',
-  'bracket.fromDrawing': '建立限價單',
+  'bracket.fromDrawing': '建立訂單',
   'bracket.longConfirmed': '已確認做多括號單 · {rr}R',
   'bracket.shortConfirmed': '已確認做空括號單 · {rr}R',
   'bracket.refused': '經紀商拒絕了括號單：{reason}',

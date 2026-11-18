@@ -886,7 +886,7 @@ export const ID_MESSAGES: WidgetMessages = {
   'bracket.hint': 'seret garis untuk menyesuaikan',
   'bracket.longPlaced': 'Order bracket long terkirim · {rr}R',
   'bracket.shortPlaced': 'Order bracket short terkirim · {rr}R',
-  'bracket.fromDrawing': 'Buat order limit',
+  'bracket.fromDrawing': 'Buat order',
   'bracket.longConfirmed': 'Order bracket long dikonfirmasi · {rr}R',
   'bracket.shortConfirmed': 'Order bracket short dikonfirmasi · {rr}R',
   'bracket.refused': 'Broker menolak order bracket: {reason}',

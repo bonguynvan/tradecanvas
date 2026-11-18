@@ -886,7 +886,7 @@ export const CS_MESSAGES: WidgetMessages = {
   'bracket.hint': 'linie upravíte tažením',
   'bracket.longPlaced': 'Bracket pokyn na nákup zadán · {rr}R',
   'bracket.shortPlaced': 'Bracket pokyn na prodej zadán · {rr}R',
-  'bracket.fromDrawing': 'Vytvořit limitní příkaz',
+  'bracket.fromDrawing': 'Vytvořit pokyn',
   'bracket.longConfirmed': 'Bracket pokyn na nákup potvrzen · {rr}R',
   'bracket.shortConfirmed': 'Bracket pokyn na prodej potvrzen · {rr}R',
   'bracket.refused': 'Broker bracket pokyn odmítl: {reason}',

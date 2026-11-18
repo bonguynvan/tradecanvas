@@ -886,7 +886,7 @@ export const PL_MESSAGES: WidgetMessages = {
   'bracket.hint': 'przeciągnij linie, aby dostosować',
   'bracket.longPlaced': 'Złożono zlecenie bracket na kupno · {rr}R',
   'bracket.shortPlaced': 'Złożono zlecenie bracket na sprzedaż · {rr}R',
-  'bracket.fromDrawing': 'Utwórz zlecenie z limitem',
+  'bracket.fromDrawing': 'Utwórz zlecenie',
   'bracket.longConfirmed': 'Potwierdzono zlecenie bracket na kupno · {rr}R',
   'bracket.shortConfirmed': 'Potwierdzono zlecenie bracket na sprzedaż · {rr}R',
   'bracket.refused': 'Broker odrzucił zlecenie bracket: {reason}',

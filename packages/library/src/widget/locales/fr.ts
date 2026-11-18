@@ -886,7 +886,7 @@ export const FR_MESSAGES: WidgetMessages = {
   'bracket.hint': 'faites glisser les lignes pour ajuster',
   'bracket.longPlaced': 'Ordre bracket à l’achat envoyé · {rr}R',
   'bracket.shortPlaced': 'Ordre bracket à la vente envoyé · {rr}R',
-  'bracket.fromDrawing': 'Créer un ordre limite',
+  'bracket.fromDrawing': 'Créer un ordre',
   'bracket.longConfirmed': 'Ordre bracket à l’achat confirmé · {rr}R',
   'bracket.shortConfirmed': 'Ordre bracket à la vente confirmé · {rr}R',
   'bracket.refused': 'Le courtier a refusé l’ordre bracket : {reason}',

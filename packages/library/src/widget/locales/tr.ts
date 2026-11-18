@@ -886,7 +886,7 @@ export const TR_MESSAGES: WidgetMessages = {
   'bracket.hint': 'ayarlamak için çizgileri sürükleyin',
   'bracket.longPlaced': 'Uzun braket emri gönderildi · {rr}R',
   'bracket.shortPlaced': 'Kısa braket emri gönderildi · {rr}R',
-  'bracket.fromDrawing': 'Limit emri oluştur',
+  'bracket.fromDrawing': 'Emir oluştur',
   'bracket.longConfirmed': 'Uzun braket emri onaylandı · {rr}R',
   'bracket.shortConfirmed': 'Kısa braket emri onaylandı · {rr}R',
   'bracket.refused': 'Aracı kurum braket emrini reddetti: {reason}',

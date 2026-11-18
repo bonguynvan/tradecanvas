@@ -898,7 +898,7 @@ export const ET_MESSAGES: WidgetMessages = {
   'bracket.hint': 'kohandamiseks lohista jooni',
   'bracket.longPlaced': 'Long-order SL/TP-ga esitatud · {rr}R',
   'bracket.shortPlaced': 'Short-order SL/TP-ga esitatud · {rr}R',
-  'bracket.fromDrawing': 'Loo limiitorder',
+  'bracket.fromDrawing': 'Loo order',
   'bracket.longConfirmed': 'Long-order SL/TP-ga kinnitatud · {rr}R',
   'bracket.shortConfirmed': 'Short-order SL/TP-ga kinnitatud · {rr}R',
   'bracket.refused': 'Maakler lükkas SL/TP-ga orderi tagasi: {reason}',

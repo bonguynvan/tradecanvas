@@ -898,7 +898,7 @@ export const NB_MESSAGES: WidgetMessages = {
   'bracket.hint': 'dra i linjene for å justere',
   'bracket.longPlaced': 'Long-bracketordre lagt inn · {rr}R',
   'bracket.shortPlaced': 'Short-bracketordre lagt inn · {rr}R',
-  'bracket.fromDrawing': 'Opprett limitordre',
+  'bracket.fromDrawing': 'Opprett ordre',
   'bracket.longConfirmed': 'Long-bracketordre bekreftet · {rr}R',
   'bracket.shortConfirmed': 'Short-bracketordre bekreftet · {rr}R',
   'bracket.refused': 'Megleren avviste bracketordren: {reason}',

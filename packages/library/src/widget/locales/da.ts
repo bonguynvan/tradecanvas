@@ -898,7 +898,7 @@ export const DA_MESSAGES: WidgetMessages = {
   'bracket.hint': 'træk i linjerne for at justere',
   'bracket.longPlaced': 'Long-bracketordre afgivet · {rr}R',
   'bracket.shortPlaced': 'Short-bracketordre afgivet · {rr}R',
-  'bracket.fromDrawing': 'Opret limitordre',
+  'bracket.fromDrawing': 'Opret ordre',
   'bracket.longConfirmed': 'Long-bracketordre bekræftet · {rr}R',
   'bracket.shortConfirmed': 'Short-bracketordre bekræftet · {rr}R',
   'bracket.refused': 'Mægleren afviste bracketordren: {reason}',

@@ -886,7 +886,7 @@ export const KO_MESSAGES: WidgetMessages = {
   'bracket.hint': '선을 드래그해 조정',
   'bracket.longPlaced': '롱 브래킷 주문 완료 · {rr}R',
   'bracket.shortPlaced': '숏 브래킷 주문 완료 · {rr}R',
-  'bracket.fromDrawing': '지정가 주문 만들기',
+  'bracket.fromDrawing': '주문 생성',
   'bracket.longConfirmed': '롱 브래킷 주문 확인 · {rr}R',
   'bracket.shortConfirmed': '숏 브래킷 주문 확인 · {rr}R',
   'bracket.refused': '브로커가 브래킷 주문을 거부했습니다: {reason}',
