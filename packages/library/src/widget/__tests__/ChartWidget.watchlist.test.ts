@@ -5,6 +5,8 @@ import type { ChartOptions, DataAdapter, Quote } from '@tradecanvas/commons';
 /** Stand-in for the canvas-backed Chart: anything not written here is a no-op. */
 class FakeChart {
   static last: FakeChart;
+  /** The bars the chart holds; one bar when a test gives none. */
+  static bars: { close: number; open: number; time: number }[] | null = null;
   private listeners = new Map<string, ((e: { payload: unknown }) => void)[]>();
   constructor(_host: HTMLElement, public options: ChartOptions) {
     FakeChart.last = this;
@@ -15,7 +17,7 @@ class FakeChart {
   on(event: string, cb: (e: { payload: unknown }) => void): void {
     this.listeners.set(event, [...(this.listeners.get(event) ?? []), cb]);
   }
-  getData(): { close: number; open: number; time: number }[] { return [{ open: 90, close: 100, time: 0 }]; }
+  getData(): { close: number; open: number; time: number }[] { return FakeChart.bars ?? [{ open: 90, close: 100, time: 0 }]; }
   getDrawings(): unknown[] { return []; }
   getIndicatorPanes(): unknown[] { return []; }
   getActiveIndicators(): unknown[] { return []; }
@@ -50,6 +52,7 @@ afterEach(() => {
   widget?.destroy();
   host.remove();
   vi.useRealTimers();
+  FakeChart.bars = null;
 });
 
 const rows = () => [...host.querySelectorAll<HTMLElement>('.tcw-watchlist-row')].map((r) => r.dataset.symbol);
@@ -153,6 +156,71 @@ describe('ChartWidget watchlists', () => {
     expect(price('BBB')).toBe('50.0000');
     expect(widget.getQuote('BBB')).toMatchObject({ last: 50, change: 10 });
     expect(widget.getQuote('ZZZ')).toBeNull();
+  });
+});
+
+describe('ChartWidget watchlist, the chart’s own row without a quote', () => {
+  const DAY = 86_400;
+  const change = (symbol: string) => host.querySelector(`.tcw-watchlist-row[data-symbol="${symbol}"] .tcw-watchlist-change`)?.textContent;
+  const tick = () => (widget as unknown as { watching: { tickWatchlist(): void } }).watching.tickWatchlist();
+
+  it('shows the day’s move, against the close before the last day, not the first bar loaded', () => {
+    FakeChart.bars = [
+      { time: 0, open: 80, close: 90 },
+      { time: DAY, open: 90, close: 100 },
+      { time: 2 * DAY, open: 100, close: 101 },
+    ];
+    widget = new ChartWidget(host, { symbol: 'AAA', symbols: ['AAA', 'BBB'], watchlist: { quotes: false } });
+    tick();
+    expect(change('AAA')).toBe('+1.00%');
+  });
+
+  it('reads the day on intraday bars: the last bar of the day before is the reference', () => {
+    FakeChart.bars = [
+      { time: DAY - 3600, open: 50, close: 60 },
+      { time: DAY, open: 60, close: 59 },
+      { time: DAY + 3600, open: 59, close: 57 },
+    ];
+    widget = new ChartWidget(host, { symbol: 'AAA', symbols: ['AAA'], watchlist: { quotes: false } });
+    tick();
+    expect(change('AAA')).toBe('-5.00%');
+  });
+
+  it('shows no move when the bars hold no day before the last', () => {
+    FakeChart.bars = [
+      { time: DAY, open: 50, close: 60 },
+      { time: DAY + 3600, open: 60, close: 66 },
+    ];
+    widget = new ChartWidget(host, { symbol: 'AAA', symbols: ['AAA'], watchlist: { quotes: false } });
+    tick();
+    expect(change('AAA')).toBe('');
+  });
+
+  it('still takes a reference price the host gave', () => {
+    FakeChart.bars = [
+      { time: 0, open: 80, close: 90 },
+      { time: DAY, open: 90, close: 100 },
+    ];
+    widget = new ChartWidget(host, { symbol: 'AAA', symbols: ['AAA'], watchlist: { quotes: false } });
+    widget.setWatchlistEntry('AAA', { refPrice: 80 });
+    tick();
+    expect(change('AAA')).toBe('+25.00%');
+    // Taken back, the move is the day's again.
+    widget.setWatchlistEntry('AAA', { refPrice: undefined });
+    tick();
+    expect(change('AAA')).toBe('+11.11%');
+  });
+
+  it('reads bars stamped in milliseconds the same way', () => {
+    const start = Date.UTC(2026, 10, 16);
+    FakeChart.bars = [
+      { time: start, open: 80, close: 90 },
+      { time: start + DAY * 1000, open: 90, close: 100 },
+      { time: start + DAY * 1000 + 3_600_000, open: 100, close: 99 },
+    ];
+    widget = new ChartWidget(host, { symbol: 'AAA', symbols: ['AAA'], watchlist: { quotes: false } });
+    tick();
+    expect(change('AAA')).toBe('+10.00%');
   });
 });
 
