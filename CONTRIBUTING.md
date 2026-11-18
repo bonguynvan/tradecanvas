@@ -56,12 +56,20 @@ While you work on a package, `pnpm --filter @tradecanvas/core dev` (or `chart`, 
    The root `CHANGELOG.md` follows the same rule: it records changes to the packages and their docs. Changes to the website, funding or the project's own news stay out of it.
 5. **Docs**: a new option or method belongs in the README and the docs pages. Write the English; translations into the other languages can follow in a later pull request.
 
+### What you can leave to us
+
+Some parts of a change take tools or languages you may not have. Say in the pull request which you left, and a maintainer does them:
+
+- **The widget's strings in the other 29 languages.** Add a new string to `packages/library/src/widget/locales/en.ts` only. The check that every language has every string (`locales.test.ts`) then fails, and that is expected. A maintainer adds the other languages to your branch before merging, so leave "Allow edits by maintainers" on.
+- **The docs in the other five languages** (`vi`, `zh`, `ja`, `ko`, `es`): they follow in a later pull request.
+- **Screenshots.** The `audit` workflow shows the chart's states in a browser on every pull request that touches the packages. It runs both themes at a phone, a laptop and a wide width, and keeps the screenshots as the run's artifact (*Summary → Artifacts → audit-scenes*). To look on your own machine, `pnpm audit:scenes` needs [Playwright](https://playwright.dev/) installed. A screenshot or a short clip of your own is still welcome for a state no scene shows.
+
 ## Pull requests
 
 - One topic per pull request, from a branch off the latest `main`.
 - Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/): `fix: …`, `feat: …`, `docs: …`, `test: …`, `refactor: …`, `perf: …`, `chore: …`.
 - Describe what changed and how you checked it. A screenshot or a short clip helps for anything visual.
-- CI must pass before a review.
+- CI must pass before a review. The one exception is the language check, when you added a string in English only (see above).
 - Each pull request is published to [pkg.pr.new](https://pkg.pr.new); a bot comments the install commands, so reviewers and users can try the change in their own app (`npm install https://pkg.pr.new/@tradecanvas/chart@<pull request number>`).
 
 By contributing you agree that your work is released under the [MIT License](./LICENSE), and to follow the [Code of Conduct](./CODE_OF_CONDUCT.md).

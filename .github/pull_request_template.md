@@ -4,7 +4,7 @@
 
 ## How it was checked
 
-<!-- Tests added or changed; for anything visual, a screenshot or a short clip. -->
+<!-- Tests added or changed. Screenshots are optional: the audit workflow keeps the chart's states as its run's artifact. Say what you left to the maintainers (the other languages, docs translations). -->
 
 ## Checklist
 
