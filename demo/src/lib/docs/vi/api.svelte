@@ -172,7 +172,7 @@ chart.setTimeFormatter((time, { kind, timeZone }) =>
 
 <h3 id="axis-labels">Cách các trục chọn nhãn</h3>
 <p>
-  Trục thời gian gắn nhãn cho những nến mở đầu bước lịch lớn nhất: một năm (chữ đậm), một tháng, một ngày, một giờ tròn, cách nhau ít nhất 80 px. Vì vậy ở 5Y trục đọc <code>2022 · Jul · 2023</code>, ở một tháng <code>Oct · 8 · 15</code>, trong ngày <code>12:00 · 18:00</code>. Nhãn thuộc về nến chứ không thuộc về màn hình: kéo biểu đồ thì nhãn đi theo nến, nạp thêm lịch sử phía trước thì nhãn vẫn ở chỗ cũ. Bên trái nến cũ nhất không có nhãn. Tên tháng theo <code>setNumberLocale</code>, và các đường lưới nằm đúng chỗ nhãn.
+  Trục thời gian gắn nhãn cho những nến mở đầu bước lịch lớn nhất: một năm (chữ đậm), một tháng, một ngày, một giờ tròn, cách nhau ít nhất 80 px. Vì vậy ở 5Y trục đọc <code>2022 · Jul · 2023</code>, ở một tháng <code>Oct · 8 · 15</code>, trong ngày <code>12:00 · 18:00</code>. Nhãn thuộc về nến chứ không thuộc về màn hình: kéo biểu đồ thì nhãn đi theo nến, nạp thêm lịch sử phía trước thì nhãn vẫn ở chỗ cũ. Bên trái nến cũ nhất không có nhãn. Khi không có năm mới nào được gắn nhãn, một tag ở đầu bên trái, cùng kiểu với tag múi giờ ở bên phải, ghi phần mà các nhãn bỏ qua, tính theo nến đầu tiên đang hiện: năm giữa các tháng, <code>Mar 2023</code> giữa các ngày, cả ngày tháng giữa các giờ của một ngày. Đè lên một nhãn ở đầu bên trái, tag thay chỗ nhãn đó và ghi luôn điều nhãn ghi (<code>Mar 2023</code> đè lên <code>Mar</code>). Khi kéo lùi về lịch sử, năm luôn có trên trục. Tên tháng theo <code>setNumberLocale</code>, và các đường lưới nằm đúng chỗ nhãn.
 </p>
 <p>
   Thang giá đặt số nhãn vừa với chiều cao của nó, cách nhau ít nhất 30 px, theo bước giá của thị trường. Ở thang log bước tăng theo giá, nên phần dưới cũng có nhãn như phần trên; ở thang phần trăm hay chỉ số, nhãn là phần trăm hoặc điểm chỉ số tròn tính từ mốc. Các pane chỉ báo cũng đếm nhãn theo chiều cao của chúng.
@@ -591,9 +591,30 @@ widget.destroy()`}</code></pre>
   cạnh mã, và bảng nào cũng mở được từ code của bạn. Các biểu đồ của một <code>ChartWidgetGrid</code> không có dải
   nút riêng, trừ khi <code>widget.features</code> của nó bật <code>dock</code>.
 </p>
-<pre><code>{`widget.openPanel('watchlist')   // 'watchlist' | 'alerts' | 'objectTree' | 'dataWindow' | 'symbolInfo' | 'depthLadder'; false if not there
+<p>
+  Một trang của riêng bạn được đặt vào cùng ngăn bên đó bằng <code>addDockPage</code>: nút của nó nằm trên dải nút
+  sau các nút có sẵn, và element của bạn nằm dưới phần đầu của ngăn (nhãn và một nút đóng), theo các token
+  <code>--tcw-*</code> của widget. <code>openPanel(id)</code> mở trang, <code>getOpenPanel()</code> báo trang đang mở,
+  và <code>onShow</code> được gọi mỗi lần trang mở, khi trang đã có kích thước. <code>remove()</code> gỡ trang đi,
+  đóng nó trước nếu nó đang mở. Trên điện thoại không có dải nút, như với các bảng có sẵn: hãy mở trang từ một control
+  của bạn. Một id đã thuộc về bảng có sẵn hoặc trang khác thì trả về <code>null</code>. Tuỳ chọn <code>onPanelChange</code>
+  nhận id của bảng đang mở, hoặc <code>null</code>, bất kể nó đổi bằng cách nào: dải nút, một nút đóng, code của bạn,
+  hay widget hẹp lại.
+</p>
+<pre><code>{`widget.openPanel('watchlist')   // 'watchlist' | 'alerts' | 'objectTree' | 'dataWindow' | 'symbolInfo' | 'depthLadder', or a page's id; false if not there
 widget.getOpenPanel()           // the panel open, or null
 widget.closePanel()
+
+const figures = document.createElement('div')
+const page = widget.addDockPage({
+  id: 'figures', label: 'Key figures', icon: 'info', element: figures,   // icon: a built-in name or an <svg> of yours
+  onShow: () => drawFigures(figures, widget.getSymbol()),
+  onHide: () => {},
+})
+widget.openPanel('figures')
+page.remove()
+
+new ChartWidget(host, { onPanelChange: (panel) => keepOpenPanel(panel) })   // 'figures', 'watchlist'… or null
 
 new ChartWidget(host, { features: { dock: false } })              // no rail: the toolbar opens the panels
 new ChartWidget(host, { features: { 'dock.dataWindow': false } })  // no button for the data window`}</code></pre>

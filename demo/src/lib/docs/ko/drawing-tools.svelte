@@ -183,10 +183,58 @@ chart.on('drawingSelect', ({ payload }) => {
 <h2>롱/숏 포지션</h2>
 <p>
   <code>riskReward</code>: 진입가에서 손절가까지 드래그합니다. 목표가는 손익비만큼 떨어진
-  곳에 놓이며, 목표가의 핸들로 손익비를 바꿉니다. 계좌 자금과 리스크(계좌의 퍼센트 또는
+  곳에 놓입니다. 계좌 자금과 리스크(계좌의 퍼센트 또는
   금액)로 수량을 계산하고, 각 선의 가격, 거리, 손익을 보여 줍니다.
 </p>
-<pre><code>{`chart.setDrawingOptions(id, { accountSize: 25_000, riskMode: 'percent', risk: 1, rewardRatio: 3 })`}</code></pre>
+<p>
+  선택하면 핸들이 네 개 생깁니다: 진입가 쪽 가장자리의 진입가, 손절가, 목표가, 그리고 진입선 위의
+  반대쪽 가장자리입니다. 진입가는 시간과 가격으로 움직이고, 손절가는 그 가격을, 목표가는 손익비를,
+  반대쪽 가장자리는 거래가 이어지는 기간을 바꿉니다.
+</p>
+<p>
+  그 기간의 봉들 위에서 거래를 재현합니다. 거래는 진입 시점이나 그 뒤의 첫 봉에서 시작합니다. 그다음
+  봉마다 손절가와 목표가에 닿았는지 확인합니다. 둘 다 닿은 봉은 손절로 봅니다. 어느 쪽이 먼저였는지는
+  봉에 없기 때문입니다. 시가가 한 레벨을 넘어서 열린 봉은 그 시가에서 거래를 끝냅니다. 거래가 지나간
+  부분은 그 결과의 색으로 칠해지고, 진입가에서 거래가 끝난 곳까지 점선이 그어지며 그곳에 태그가 붙습니다:
+  <code>Target hit</code>, <code>Stop hit</code>, 오른쪽 가장자리의 <code>Closed</code>, 또는 마지막 봉의
+  <code>Open</code>이며 손익이 함께 표시됩니다. 재현은 시리즈 자신의 가격으로 하며(하이킨아시에서도),
+  진입 시점에서 과거 쪽으로 그린 상자와, 봉이 시리즈의 봉이 아닌 차트 유형(렌코, 카기, 라인 브레이크,
+  포인트 앤 피겨)에서는 하지 않습니다. <code>showOutcome: false</code>로 끕니다.
+</p>
+<pre><code>{`chart.setDrawingOptions(id, { accountSize: 25_000, riskMode: 'percent', risk: 1, rewardRatio: 3 })
+chart.setDrawingOptions(id, { showOutcome: false })   // 구간과 그 태그만`}</code></pre>
+<p>
+  <code>positionLevels(drawing)</code>은 롱/숏 포지션을 하나의 거래로 읽어, 그것으로 주문을 내는 앱에
+  넘겨 줍니다: 방향(롱은 <code>'buy'</code>), 진입가, 손절가, 익절가, 그리고 리스크로 살 수 있는 수량이며,
+  수량은 반올림하지 않고 그림이 쓰는 소수 자릿수와 함께 줍니다. 다른 그림, 손절가가 아직 진입가에 있는
+  포지션, 리스크를 정하지 않은(수량이 없는) 포지션, 유한한 숫자가 아닌 가격에는 <code>null</code>을
+  돌려줍니다.
+</p>
+<p>
+  위젯에서는 거래가 켜져 있을 때 선택한 롱/숏 포지션의 도구 모음에 <b>주문 생성</b>이 나타납니다:
+  이 레벨들(방향, 가격으로 쓰는 진입가, 손절가, 익절가, 리스크로 살 수 있는 수량)로 채운 주문 티켓을 열며,
+  이를 조정한 뒤 주문합니다. 클릭 한 번으로 주문이 나가는 일은 없습니다.
+</p>
+<p>
+  주문이 그림이 말하는 것보다 더 많은 위험을 지지 않도록, 수량은 브로커가 받는 단위로 내림하세요. 진입이
+  지정가 주문인지 스톱 주문인지는 진입가가 현재 가격에 대해 어디 있는지에 달려 있습니다.
+  <code>placeOrderIntent</code>에는 <code>trading</code> 기능이 켜져 있어야 합니다: 이 메서드는
+  <code>orderPlace</code>를 발생시키고, 연결된 실행 어댑터가 주문을 넣습니다(거래 문서 참고).
+</p>
+<pre><code>{`import { positionLevels } from '@tradecanvas/chart'
+
+const levels = positionLevels(chart.getDrawings().find((d) => d.id === id))
+if (levels) {
+  const { side, entry, stopLoss, takeProfit, quantity, quantityDecimals } = levels
+  const step = 10 ** quantityDecimals
+  const last = chart.getData().at(-1)?.close ?? entry
+  // 현재 가격보다 아래의 매수는 지정가로, 위의 매수는 스톱으로 기다림. 매도는 그 반대.
+  const type = (side === 'buy') === (entry <= last) ? 'limit' : 'stop'
+  chart.placeOrderIntent({
+    side, type, price: entry, stopPrice: type === 'stop' ? entry : undefined,
+    quantity: Math.floor(quantity * step) / step, stopLoss, takeProfit,
+  })
+}`}</code></pre>
 
 <h2>그림에 거는 알림</h2>
 <p>

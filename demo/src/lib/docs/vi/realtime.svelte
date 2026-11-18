@@ -194,7 +194,9 @@ const current = agg.getCurrentBar()         // forming bar`}</code></pre>
   Nguồn dữ liệu có <code>subscribeQuotes</code> gửi giá (giá cuối, thay đổi trong ngày, cao nhất, thấp nhất,
   khối lượng, giá mua và giá bán) của nhiều mã cùng lúc cho đến khi bạn dừng. <code>BinanceAdapter</code> gửi
   một ảnh chụp 24 giờ, rồi đến luồng mini-ticker; <code>MockAdapter</code> tự tạo giá giả. Watchlist
-  của widget lấy giá cho các dòng từ đây.
+  của widget lấy giá cho các dòng từ đây. Khi không có giá gửi tới, dòng của chính mã đang hiện trên biểu đồ đọc
+  giá và mức thay đổi trong ngày từ các nến của biểu đồ, như bảng thông tin mã: so với giá đóng cửa trước ngày cuối
+  cùng, theo múi giờ của sàn, và không có mức thay đổi khi các nến không có ngày nào trước đó.
 </p>
 <pre><code>{`const stop = new BinanceAdapter().subscribeQuotes(['BTCUSDT', 'ETHUSDT'], (quotes) => {
   for (const q of quotes) console.log(q.symbol, q.last, q.changePercent)

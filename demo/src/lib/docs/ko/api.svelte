@@ -168,7 +168,7 @@ chart.setTimeFormatter((time, { kind, timeZone }) =>
 
 <h3 id="axis-labels">축이 라벨을 고르는 방식</h3>
 <p>
-  시간축은 가장 큰 달력 단위를 시작하는 봉에 라벨을 붙입니다: 연도(굵게), 월, 일, 정시이며 서로 최소 80 px 떨어집니다. 그래서 5Y에서는 <code>2022 · Jul · 2023</code>, 한 달에서는 <code>Oct · 8 · 15</code>, 하루 안에서는 <code>12:00 · 18:00</code>으로 읽힙니다. 라벨은 화면이 아니라 봉에 속합니다: 이동하면 봉과 함께 움직이고, 앞쪽에 기록을 더 불러와도 제자리에 있습니다. 가장 오래된 봉의 왼쪽에는 없습니다. 월 이름은 <code>setNumberLocale</code>을 따르며, 격자선은 라벨 위치에 그어집니다.
+  시간축은 가장 큰 달력 단위를 시작하는 봉에 라벨을 붙입니다: 연도(굵게), 월, 일, 정시이며 서로 최소 80 px 떨어집니다. 그래서 5Y에서는 <code>2022 · Jul · 2023</code>, 한 달에서는 <code>Oct · 8 · 15</code>, 하루 안에서는 <code>12:00 · 18:00</code>으로 읽힙니다. 라벨은 화면이 아니라 봉에 속합니다: 이동하면 봉과 함께 움직이고, 앞쪽에 기록을 더 불러와도 제자리에 있습니다. 가장 오래된 봉의 왼쪽에는 없습니다. 새 연도가 라벨로 붙지 않은 곳에서는 왼쪽 끝에, 오른쪽의 시간대 태그와 같은 모양의 태그가 보이는 첫 봉을 기준으로 라벨이 빠뜨린 것을 적습니다: 월들 사이에서는 연도, 일들 사이에서는 <code>Mar 2023</code>, 하루의 시각들 사이에서는 날짜 전체입니다. 왼쪽 끝의 라벨 위에 놓이면 그 라벨을 대신하며, 라벨이 쓰던 내용도 함께 씁니다(<code>Mar</code> 위의 <code>Mar 2023</code>). 과거 기록 쪽으로 이동해 있을 때는 연도가 항상 축에 있습니다. 월 이름은 <code>setNumberLocale</code>을 따르며, 격자선은 라벨 위치에 그어집니다.
 </p>
 <p>
   가격축은 높이에 맞는 만큼의 라벨을 최소 30 px 간격으로, 시장의 호가 단위에 놓습니다. 로그 축에서는 간격이 가격과 함께 커지므로 위쪽처럼 아래쪽에도 라벨이 붙고, 퍼센트나 지수 축에서는 기준에서 센 반듯한 퍼센트나 지수 포인트가 됩니다. 지표 창도 자기 높이로 라벨 수를 정합니다.
@@ -562,9 +562,29 @@ widget.destroy()`}</code></pre>
   코드에서 열 수 있습니다. <code>ChartWidgetGrid</code>의 차트에는 각자의 레일이 없습니다. 단, 그
   <code>widget.features</code>에서 <code>dock</code>을 켜면 생깁니다.
 </p>
-<pre><code>{`widget.openPanel('watchlist')   // 'watchlist' | 'alerts' | 'objectTree' | 'dataWindow' | 'symbolInfo' | 'depthLadder'; false if not there
+<p>
+  직접 만든 페이지는 <code>addDockPage</code>로 같은 도크에 넣습니다: 그 버튼은 레일에서 내장 버튼들 뒤에 놓이고,
+  여러분의 요소는 도크의 머리(라벨과 닫기 버튼) 아래에 위젯의 <code>--tcw-*</code> 토큰으로 놓입니다.
+  <code>openPanel(id)</code>로 열고, <code>getOpenPanel()</code>이 그것을 알려 주며, <code>onShow</code>는 열릴 때마다
+  크기가 정해진 뒤에 호출됩니다. <code>remove()</code>는 페이지를 없애며, 열려 있으면 먼저 닫습니다. 휴대폰에는 내장
+  패널과 마찬가지로 레일이 없으므로 직접 만든 컨트롤에서 여세요. 내장 패널이나 다른 페이지가 이미 쓰는 id를 주면
+  <code>null</code>이 돌아옵니다. <code>onPanelChange</code> 옵션은 어떻게 바뀌었든(레일, 닫기 버튼, 여러분의 코드,
+  위젯이 좁아짐) 열린 패널의 id 또는 <code>null</code>을 받습니다.
+</p>
+<pre><code>{`widget.openPanel('watchlist')   // 'watchlist' | 'alerts' | 'objectTree' | 'dataWindow' | 'symbolInfo' | 'depthLadder', or a page's id; false if not there
 widget.getOpenPanel()           // the panel open, or null
 widget.closePanel()
+
+const figures = document.createElement('div')
+const page = widget.addDockPage({
+  id: 'figures', label: 'Key figures', icon: 'info', element: figures,   // icon: a built-in name or an <svg> of yours
+  onShow: () => drawFigures(figures, widget.getSymbol()),
+  onHide: () => {},
+})
+widget.openPanel('figures')
+page.remove()
+
+new ChartWidget(host, { onPanelChange: (panel) => keepOpenPanel(panel) })   // 'figures', 'watchlist'… or null
 
 new ChartWidget(host, { features: { dock: false } })              // no rail: the toolbar opens the panels
 new ChartWidget(host, { features: { 'dock.dataWindow': false } })  // no button for the data window`}</code></pre>

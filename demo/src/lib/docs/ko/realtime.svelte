@@ -187,7 +187,8 @@ const current = agg.getCurrentBar()         // forming bar`}</code></pre>
   <code>subscribeQuotes</code>가 있는 피드는 중지할 때까지 여러 종목의 시세(현재가, 당일 변동, 고가, 저가,
   거래량, 매수호가와 매도호가)를 한꺼번에 보냅니다. <code>BinanceAdapter</code>는 24시간 스냅샷을 보낸 뒤
   미니 티커 스트림을 이어 보내고, <code>MockAdapter</code>는 시세를 만들어 냅니다. 위젯의 관심 종목은 이것으로
-  각 행을 채웁니다.
+  각 행을 채웁니다. 시세가 없으면 차트 자신의 종목 행은 종목 정보 패널과 마찬가지로 차트의 봉에서 가격과 당일 변동을
+  읽습니다: 마지막 날 직전의 종가를 기준으로 거래소 시간대에서 계산하며, 봉에 그 전날이 없으면 변동을 표시하지 않습니다.
 </p>
 <pre><code>{`const stop = new BinanceAdapter().subscribeQuotes(['BTCUSDT', 'ETHUSDT'], (quotes) => {
   for (const q of quotes) console.log(q.symbol, q.last, q.changePercent)

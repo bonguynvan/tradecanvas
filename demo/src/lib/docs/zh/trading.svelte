@@ -46,6 +46,12 @@ new ChartWidget(host, { chartOptions: { features: { tradingContextMenu: true } }
   <strong>×</strong>；止损和止盈的标签显示价格到达那里时持仓的盈亏。每个价格也都标在价格轴上。会互相遮挡的标签并排显示，
   轴上的价格标签也会自动错开。拖动止损或止盈的线或其标签即可修改。
 </p>
+<p>
+  没有止损或没有止盈的持仓，其开仓价标签上有 <strong>SL</strong> 或 <strong>TP</strong> 按钮。按下它并把新线拖到想要的位置，
+  或者只是点击，让它留在起始位置。与括号单一样，止损从距开仓价 1% 处开始，止盈位于止损距离的两倍处，并且两者都至少在当前价格
+  之外 1% 开始，因此设置的那一刻都不会被触发。松开时会发出 <code>positionModify</code>，与拖动止损相同，由已连接的执行适配器应用。
+  <code>lineButtons: {'{'} addStops: false {'}'}</code> 可去掉这些按钮。
+</p>
 
 <h2>订单</h2>
 <pre><code>{`chart.setOrders([{
@@ -76,7 +82,8 @@ new ChartWidget(host, { chartOptions: { features: { tradingContextMenu: true } }
 
 chart.connectExecution(new PaperExecutionAdapter({ markPrice: 64_000 }))
 
-chart.on('executionError', (e) => toast(e.payload.message))
+chart.on('executionError', (e) => toast(e.payload.message))   // e.payload.command: the intent that failed
+// chart.connectExecution(adapter, { brackets: 'place' })   // a confirmed bracket goes to it too: see Bracket orders
 // chart.disconnectExecution()`}</code></pre>
 <p>
   实现 <code>ExecutionAdapter</code>（其结构与 <code>DataAdapter</code> 相对应），即可接入
@@ -190,6 +197,11 @@ chart.on('priceAxisAdd', (e) => openMyMenu(e.payload.x, e.payload.y, e.payload.p
   （高于市价的买入止损单会变为卖出限价单），下单按钮使用该方向的颜色。
 </p>
 <p>
+  在组件中，交易开启时，选中的多/空仓位画线会在其工具栏中提供 <b>创建订单</b>。它打开这个下单窗口，并按画线填好：
+  方向、以入场作为价格、止损和止盈，以及按其风险可买的数量（向下取到画线书写的小数位数）。订单类型由入场相对于市价的位置决定，
+  在按下“下单”之前不会发出任何东西。
+</p>
+<p>
   账户面板的顶部在每个标签页都显示浮动盈亏和已实现盈亏。数字以等宽字体右对齐，金额按最小价位的小数位数和数字区域格式书写；
   在手机上每一行是一张标明各项数字的卡片。
 </p>
@@ -219,8 +231,18 @@ chart.cancelOrderDraft()`}</code></pre>
   创建一个可拖动的括号单——入场价加上止损区和止盈区——然后
   拖动这三条线来调整入场、风险和收益。按 <kbd>Enter</kbd>（或“下单”按钮）确认，
   按 <kbd>Esc</kbd> 取消。在组件中，工具栏上的绿色 / 红色箭头分别创建做多 / 做空括号单。
-  图表只会发出一个 <code>bracketPlace</code> 事件，由你的后端处理——
-  它自己从不下单。
+  图表会发出一个 <code>bracketPlace</code> 事件，由你的后端处理。
+</p>
+<p>
+  若执行适配器以 <code>brackets: 'place'</code> 连接，图表还会把括号单作为一个订单发给适配器：入场（价格需要回到入场价时为限价单，
+  需要继续走到入场价时为止损单）、数量，以及挂在其上的止损和止盈。适配器接受后，图表发出带有该订单的 <code>bracketOrder</code>。
+  若适配器拒绝，则发出 <code>command: 'bracketPlace'</code> 的 <code>executionError</code>。组件只有在这之后才提示“已下单”，
+  被拒绝时则说明原因。没有数量的括号单不会发送，因为没有人看到要下的数量；在图表还没有价格、无法区分限价入场和止损入场之前确认的括号单
+  也不会发送。<code>executionError</code> 会给出 <code>reason</code>（<code>'noQuantity'</code>、<code>'noPrice'</code>）。
+  工具栏箭头和 <code>startBracket</code> 创建的括号单还没有数量，因此在 <code>'place'</code> 下不会发送，组件会提示这一点。
+  不使用它时，确认的括号单仍只是一个事件，组件提示它已确认。连接时未指定（没有 <code>brackets</code>）的适配器保留事件方式，
+  并在控制台警告一次。<code>'place'</code> 将在下一个大版本中成为默认值，因此自行处理事件中括号单的应用应传入
+  <code>brackets: 'event'</code>。
 </p>
 <pre><code>{`chart.startBracket('buy')          // entry defaults to the latest close
 chart.startBracket('sell', 64_800) // or pin the entry price
@@ -229,6 +251,11 @@ chart.on('bracketPlace', (e) => {
   const { side, entry, stopLoss, takeProfit, riskReward } = e.payload
   // submit to your OMS, then reflect fills back via chart.setOrders/setPositions
 })
+
+// Or let the connected adapter place it
+chart.connectExecution(broker, { brackets: 'place' })
+chart.placesBrackets()   // true
+chart.on('bracketOrder', (e) => console.log(e.payload.order.id))
 
 chart.confirmBracket()  // same as Enter
 chart.cancelBracket()   // same as Esc`}</code></pre>

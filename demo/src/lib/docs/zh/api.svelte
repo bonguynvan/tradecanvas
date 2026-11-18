@@ -165,7 +165,7 @@ chart.setTimeFormatter((time, { kind, timeZone }) =>
 
 <h3 id="axis-labels">坐标轴如何选择标签</h3>
 <p>
-  时间轴为开启最大日历步长的 K 线标注：一年（粗体）、一个月、一天、一个整点，彼此至少相隔 80 px。因此在 5Y 时显示 <code>2022 · Jul · 2023</code>，一个月时 <code>Oct · 8 · 15</code>，一天之内 <code>12:00 · 18:00</code>。标签属于 K 线而非屏幕：平移时随 K 线移动，前面加载更多历史时保持原位。最早一根 K 线左侧没有标签。月份名称遵循 <code>setNumberLocale</code>，网格线与标签位置一致。
+  时间轴为开启最大日历步长的 K 线标注：一年（粗体）、一个月、一天、一个整点，彼此至少相隔 80 px。因此在 5Y 时显示 <code>2022 · Jul · 2023</code>，一个月时 <code>Oct · 8 · 15</code>，一天之内 <code>12:00 · 18:00</code>。标签属于 K 线而非屏幕：平移时随 K 线移动，前面加载更多历史时保持原位。最早一根 K 线左侧没有标签。当没有标出新的一年时，左端会有一个标签（样式与右端的时区标签相同），以视图中第一根 K 线为准，写出各标签省略的部分：月份之间写年份，日期之间写 <code>Mar 2023</code>，同一天的各个时间之间写完整日期。若它压在左端的某个标签上，就代替那个标签，并写出原来的内容（压在 <code>Mar</code> 上时写 <code>Mar 2023</code>）。平移回历史中时，年份总会出现在坐标轴上。月份名称遵循 <code>setNumberLocale</code>，网格线与标签位置一致。
 </p>
 <p>
   价格轴按其高度放置尽可能多的标签，彼此至少相隔 30 px，并落在市场的最小变动价位上。对数坐标下步长随价格增大，因此底部与顶部一样有标签；百分比或指数坐标下，标签是从基准起算的整百分比或整指数点。指标窗格也按自身高度确定标签数量。
@@ -542,9 +542,28 @@ widget.destroy()`}</code></pre>
   品种信息从品种旁的 <strong>ⓘ</strong> 打开，任何面板也都可以由你自己的代码打开。<code>ChartWidgetGrid</code> 中的图表各自没有按钮栏，
   除非它的 <code>widget.features</code> 打开了 <code>dock</code>。
 </p>
-<pre><code>{`widget.openPanel('watchlist')   // 'watchlist' | 'alerts' | 'objectTree' | 'dataWindow' | 'symbolInfo' | 'depthLadder'; false if not there
+<p>
+  用 <code>addDockPage</code> 可以把你自己的页面放进同一个停靠区：它的按钮排在按钮栏上内置按钮之后，你的元素位于停靠区的标题
+  （页面名称和关闭按钮）下方，使用组件的 <code>--tcw-*</code> 令牌。<code>openPanel(id)</code> 打开它，<code>getOpenPanel()</code>
+  报告它，每次打开、获得尺寸之后都会调用 <code>onShow</code>。<code>remove()</code> 移除它，如果它正打开着则先关闭。
+  与内置面板一样，手机上没有按钮栏：请从你自己的控件打开它。若 id 已被内置面板或另一个页面占用，则返回 <code>null</code>。
+  无论打开的面板如何变化（按钮栏、关闭按钮、你的代码、组件变窄），<code>onPanelChange</code> 选项都会收到打开的面板的 id，
+  或 <code>null</code>。
+</p>
+<pre><code>{`widget.openPanel('watchlist')   // 'watchlist' | 'alerts' | 'objectTree' | 'dataWindow' | 'symbolInfo' | 'depthLadder', or a page's id; false if not there
 widget.getOpenPanel()           // the panel open, or null
 widget.closePanel()
+
+const figures = document.createElement('div')
+const page = widget.addDockPage({
+  id: 'figures', label: 'Key figures', icon: 'info', element: figures,   // icon: a built-in name or an <svg> of yours
+  onShow: () => drawFigures(figures, widget.getSymbol()),
+  onHide: () => {},
+})
+widget.openPanel('figures')
+page.remove()
+
+new ChartWidget(host, { onPanelChange: (panel) => keepOpenPanel(panel) })   // 'figures', 'watchlist'… or null
 
 new ChartWidget(host, { features: { dock: false } })              // no rail: the toolbar opens the panels
 new ChartWidget(host, { features: { 'dock.dataWindow': false } })  // no button for the data window`}</code></pre>

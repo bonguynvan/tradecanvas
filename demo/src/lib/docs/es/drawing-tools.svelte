@@ -188,12 +188,68 @@ chart.on('drawingSelect', ({ payload }) => {
 <h2>Posición larga/corta</h2>
 <p>
   <code>riskReward</code>: arrastra desde la entrada hasta el stop. El objetivo se
-  coloca a la distancia que marca la proporción beneficio:riesgo, y su punto de
-  control cambia esa proporción. A partir del tamaño de la cuenta y del riesgo (un
-  porcentaje de la cuenta o un importe) calcula la cantidad y muestra el precio, la
-  distancia y la ganancia o pérdida de cada línea.
+  coloca a la distancia que marca la proporción beneficio:riesgo. A partir del
+  tamaño de la cuenta y del riesgo (un porcentaje de la cuenta o un importe) calcula
+  la cantidad y muestra el precio, la distancia y la ganancia o pérdida de cada línea.
 </p>
-<pre><code>{`chart.setDrawingOptions(id, { accountSize: 25_000, riskMode: 'percent', risk: 1, rewardRatio: 3 })`}</code></pre>
+<p>
+  Seleccionada, tiene cuatro puntos de control: la entrada, el stop y el objetivo en
+  el borde de la entrada, y su otro borde sobre la línea de entrada. La entrada se
+  mueve en tiempo y precio, el stop cambia su precio, el objetivo la proporción
+  beneficio:riesgo, y el otro borde cuánto dura la operación.
+</p>
+<p>
+  Sobre las barras de ese tramo reproduce la operación. Se entra en la primera barra
+  en la entrada o después de ella. Cada barra siguiente se comprueba contra el stop y
+  el objetivo; una que alcanza los dos se toma como stop, ya que la barra no dice cuál
+  llegó primero, y una que abre más allá de un nivel cierra la operación en su
+  apertura. La parte que recorrió la operación se tiñe del color de lo que obtuvo, con
+  una línea discontinua desde la entrada hasta donde cerró y una etiqueta allí:
+  <code>Target hit</code>, <code>Stop hit</code>, <code>Closed</code> en el borde
+  derecho, u <code>Open</code> en la última barra, con la ganancia o pérdida. Se
+  reproduce sobre los precios de la propia serie (también con Heikin Ashi), y se omite
+  en un cuadro dibujado hacia atrás desde su entrada y en los tipos de gráfico cuyas
+  barras no son las de la serie (Renko, Kagi, line break, point &amp; figure).
+  <code>showOutcome: false</code> lo desactiva.
+</p>
+<pre><code>{`chart.setDrawingOptions(id, { accountSize: 25_000, riskMode: 'percent', risk: 1, rewardRatio: 3 })
+chart.setDrawingOptions(id, { showOutcome: false })   // the zones and their tags only`}</code></pre>
+<p>
+  <code>positionLevels(drawing)</code> lee una como una operación, para una app que
+  envía una orden a partir de ella: su lado (<code>'buy'</code> para una larga),
+  entrada, stop-loss, take-profit y la cantidad que compra su riesgo, sin redondear,
+  con los decimales con que la escribe el dibujo. Da <code>null</code> para cualquier
+  otro dibujo, para una posición cuyo stop sigue en su entrada, para una sin riesgo
+  fijado (sin cantidad) y para precios que no son números finitos.
+</p>
+<p>
+  En el widget, una Posición larga/corta seleccionada muestra <b>Crear orden</b>
+  en su barra de herramientas mientras el trading está activado: abre el ticket de
+  orden relleno con estos niveles (lado, la entrada como precio, stop-loss,
+  take-profit y la cantidad que compra su riesgo), que ajustas y envías. Una orden
+  nunca está a un solo clic.
+</p>
+<p>
+  Redondea la cantidad hacia abajo a lo que acepta tu bróker, para que la orden no
+  arriesgue más de lo que dice el dibujo. Que la entrada sea una orden limit o stop
+  depende de dónde está respecto al precio actual. <code>placeOrderIntent</code>
+  necesita la feature <code>trading</code> activada: emite <code>orderPlace</code>,
+  que envía un adaptador de ejecución conectado (ver Trading).
+</p>
+<pre><code>{`import { positionLevels } from '@tradecanvas/chart'
+
+const levels = positionLevels(chart.getDrawings().find((d) => d.id === id))
+if (levels) {
+  const { side, entry, stopLoss, takeProfit, quantity, quantityDecimals } = levels
+  const step = 10 ** quantityDecimals
+  const last = chart.getData().at(-1)?.close ?? entry
+  // A buy below the price now waits as a limit, one above it as a stop; a sell the other way round.
+  const type = (side === 'buy') === (entry <= last) ? 'limit' : 'stop'
+  chart.placeOrderIntent({
+    side, type, price: entry, stopPrice: type === 'stop' ? entry : undefined,
+    quantity: Math.floor(quantity * step) / step, stopLoss, takeProfit,
+  })
+}`}</code></pre>
 
 <h2>Alertas en dibujos</h2>
 <p>

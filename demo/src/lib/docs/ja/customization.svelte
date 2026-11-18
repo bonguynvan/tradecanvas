@@ -25,7 +25,7 @@
     <tr><td>インジケーターの線、ペインの背景</td><td><code>updateIndicatorStyle(id, {'{ plots }'})</code>、<code>setPaneStyle</code></td></tr>
     <tr><td>ウィジェットのどの部品を表示するか</td><td><code>features</code> / <code>setFeatures</code> — <a href="#switches">下記</a></td></tr>
     <tr><td>チャート上でユーザーができること：描画、取引、ズーム</td><td>チャート自体の features：<code>chartOptions: {'{ features: { drawings: false } }'}</code></td></tr>
-    <tr><td>独自のボタン、メニュー、ステータス項目</td><td><code>addToolbarButton</code>、<code>addToolbarDropdown</code>、<code>addSidebarButton</code>、<code>addStatusBarItem</code>、<code>getSlot</code>、メニューのフック — <a href="#parts">下記</a></td></tr>
+    <tr><td>独自のボタン、メニュー、ステータス項目</td><td><code>addToolbarButton</code>、<code>addToolbarDropdown</code>、<code>addSidebarButton</code>、<code>addStatusBarItem</code>、<code>getSlot</code>、メニューのフック — <a href="#parts">下記</a>。ドックのページは <code>addDockPage</code> — <a href={href('/docs/api#dock')}>API</a></td></tr>
     <tr><td>独自のキーボードショートカット</td><td><code>addHotkey</code> — <a href="#parts">下記</a></td></tr>
     <tr><td>独自の CSS</td><td>安定したフック：<code>--tcw-*</code>、<code>data-tcw-part</code> — <a href="#css">下記</a></td></tr>
     <tr><td>ウィジェットの文言</td><td><code>locale</code>、<code>messages</code> — <a href="#words">下記</a></td></tr>

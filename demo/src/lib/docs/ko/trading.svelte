@@ -47,6 +47,13 @@ new ChartWidget(host, { chartOptions: { features: { tradingContextMenu: true } }
   모든 가격은 축에도 표시됩니다. 서로 겹칠 태그는 나란히 놓이고, 축의 태그는 서로 비켜 섭니다. 손절이나 익절은 선이나
   태그를 끌어 옮깁니다.
 </p>
+<p>
+  손절이나 익절이 없는 포지션은 진입가 태그에 <strong>SL</strong> 또는 <strong>TP</strong> 버튼이 있습니다. 누른 채
+  새 선을 원하는 곳으로 끌거나, 그냥 클릭해 시작 위치에 둡니다. 손절은 진입가에서 1% 떨어진 곳에서, 익절은 손절 거리의
+  두 배에서 시작하며(브래킷과 같습니다), 둘 다 현재 가격에서 최소 1% 너머에서 시작하므로 정하자마자 닿는 일은 없습니다.
+  놓으면 손절을 끌 때처럼 <code>positionModify</code>가 전송되므로 연결된 실행 어댑터가 이를 적용합니다.
+  <code>lineButtons: {'{'} addStops: false {'}'}</code>로 버튼을 숨길 수 있습니다.
+</p>
 
 <h2>주문</h2>
 <pre><code>{`chart.setOrders([{
@@ -79,7 +86,8 @@ new ChartWidget(host, { chartOptions: { features: { tradingContextMenu: true } }
 
 chart.connectExecution(new PaperExecutionAdapter({ markPrice: 64_000 }))
 
-chart.on('executionError', (e) => toast(e.payload.message))
+chart.on('executionError', (e) => toast(e.payload.message))   // e.payload.command: the intent that failed
+// chart.connectExecution(adapter, { brackets: 'place' })   // a confirmed bracket goes to it too: see Bracket orders
 // chart.disconnectExecution()`}</code></pre>
 <p>
   실제 브로커 / OMS를 연결하려면 <code>ExecutionAdapter</code>(<code>DataAdapter</code>와 같은 구조)를
@@ -198,6 +206,12 @@ chart.on('priceAxisAdd', (e) => openMyMenu(e.payload.x, e.payload.y, e.payload.p
   (시장가보다 위의 매수 스톱은 매도 지정가가 됩니다), 주문 버튼은 매수·매도의 색을 띱니다.
 </p>
 <p>
+  위젯에서는 거래가 켜져 있을 때 선택한 롱/숏 포지션 그림의 도구 모음에 <b>주문 생성</b>이 나타납니다. 이것은 그림의
+  값으로 채운 이 티켓을 엽니다: 방향, 가격으로 쓰는 진입가, 손절과 익절, 그리고 리스크로 살 수 있는 수량이며, 수량은
+  그림이 쓰는 소수 자릿수로 내림합니다. 주문 종류는 시장가 대비 진입가의 위치를 따르며, 주문 버튼을 누르기 전에는
+  아무것도 전송되지 않습니다.
+</p>
+<p>
   계좌 패널 머리에는 어느 탭에서나 평가 손익과 실현 손익이 표시됩니다. 숫자는 고정폭 글꼴로 오른쪽 정렬되고,
   금액은 호가 단위의 소수 자리와 숫자 로캘로 표기되며, 휴대폰에서는 각 행이 항목 이름이 붙은 카드가 됩니다.
 </p>
@@ -229,8 +243,21 @@ chart.cancelOrderDraft()`}</code></pre>
   세 개의 선을 드래그해 진입가, 리스크, 보상을 조정합니다. <kbd>Enter</kbd>
   (또는 주문 버튼)로 확정하고 <kbd>Esc</kbd>로 취소합니다. 위젯에서는
   도구 모음의 초록/빨강 화살표로 롱/숏 브래킷을 시작합니다. 차트는
-  백엔드가 처리할 <code>bracketPlace</code> 이벤트 하나만 발생시키며,
-  직접 주문을 내지는 않습니다.
+  백엔드가 처리할 <code>bracketPlace</code> 이벤트 하나를 발생시킵니다.
+</p>
+<p>
+  실행 어댑터를 <code>brackets: 'place'</code>로 연결하면 차트는 브래킷을 어댑터에도 하나의 주문으로 보냅니다: 진입가
+  (가격이 되돌아와야 닿으면 지정가, 계속 나아가야 닿으면 스톱), 수량, 그리고 그 주문에 단 손절과 익절입니다. 어댑터가
+  받아들이면 차트는 그 주문과 함께 <code>bracketOrder</code>를 보냅니다. 어댑터가 거부하면
+  <code>command: 'bracketPlace'</code>가 담긴 <code>executionError</code>를 보냅니다. 위젯은 그때에야 "주문됨"이라고
+  알리고, 거부되었을 때는 그 이유를 알립니다. 수량이 없는 브래킷은 보내지 않습니다. 아무도 주문할 크기를 보지 못했기
+  때문입니다. 차트가 지정가 진입과 스톱 진입을 가를 가격을 갖기 전에 확정된 브래킷도 보내지 않습니다.
+  <code>executionError</code>가 <code>reason</code>(<code>'noQuantity'</code>, <code>'noPrice'</code>)을 알려 줍니다.
+  도구 모음의 화살표와 <code>startBracket</code>이 시작하는 브래킷에는 아직 수량이 없으므로 <code>'place'</code>에서는
+  보내지 않으며, 위젯이 그렇게 알립니다. <code>'place'</code>가 없으면 확정된 브래킷은 이벤트로만 남고, 위젯은 확정되었다고
+  알립니다. 따로 지정하지 않고(<code>brackets</code> 없이) 연결한 어댑터는 이벤트를 유지하며 콘솔에 한 번 경고합니다.
+  다음 메이저 버전에서는 <code>'place'</code>가 기본값이 되므로, 이벤트의 브래킷을 직접 주문하는 앱은
+  <code>brackets: 'event'</code>를 넘기세요.
 </p>
 <pre><code>{`chart.startBracket('buy')          // entry defaults to the latest close
 chart.startBracket('sell', 64_800) // or pin the entry price
@@ -239,6 +266,11 @@ chart.on('bracketPlace', (e) => {
   const { side, entry, stopLoss, takeProfit, riskReward } = e.payload
   // submit to your OMS, then reflect fills back via chart.setOrders/setPositions
 })
+
+// Or let the connected adapter place it
+chart.connectExecution(broker, { brackets: 'place' })
+chart.placesBrackets()   // true
+chart.on('bracketOrder', (e) => console.log(e.payload.order.id))
 
 chart.confirmBracket()  // same as Enter
 chart.cancelBracket()   // same as Esc`}</code></pre>

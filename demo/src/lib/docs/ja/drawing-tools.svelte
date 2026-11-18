@@ -184,10 +184,57 @@ chart.on('drawingSelect', ({ payload }) => {
 <h2>ロング/ショートポジション</h2>
 <p>
   <code>riskReward</code>：エントリーからストップまでドラッグします。ターゲットはリスクリワード比に
-  応じた距離に置かれ、そのハンドルで比率を変えられます。口座資金とリスク（口座資金の
+  応じた距離に置かれます。口座資金とリスク（口座資金の
   パーセントまたは金額）から数量を計算し、各ラインの価格、距離、損益を表示します。
 </p>
-<pre><code>{`chart.setDrawingOptions(id, { accountSize: 25_000, riskMode: 'percent', risk: 1, rewardRatio: 3 })`}</code></pre>
+<p>
+  選択すると 4 つのハンドルが付きます：エントリー側の端にあるエントリー、ストップ、ターゲットと、
+  エントリーライン上のもう一方の端です。エントリーは時間と価格の両方に動き、ストップはその価格を、
+  ターゲットはリスクリワード比を、もう一方の端はトレードの期間を変えます。
+</p>
+<p>
+  その期間のバーでトレードを再生します。トレードはエントリー時点かそれ以降の最初のバーで建ちます。
+  その後の各バーでストップとターゲットを確かめます。両方に届いたバーはストップとして扱います（どちらが先かは
+  バーからはわからないためです）。レベルを越えて始まったバーでは、その始値でトレードを閉じます。トレードが
+  通った部分は結果に応じた色で塗られ、エントリーから決済した位置まで破線が引かれ、そこにタグが付きます：
+  <code>Target hit</code>、<code>Stop hit</code>、右端での <code>Closed</code>、または最後のバーでの
+  <code>Open</code> に損益が添えられます。再生はシリーズ自体の価格で行われ（平均足でも同様）、
+  エントリーから過去に向かって描いたボックスや、バーがシリーズのものでないチャートタイプ（練行足、カギ足、
+  新値足、ポイント・アンド・フィギュア）では行われません。<code>showOutcome: false</code> でオフにします。
+</p>
+<pre><code>{`chart.setDrawingOptions(id, { accountSize: 25_000, riskMode: 'percent', risk: 1, rewardRatio: 3 })
+chart.setDrawingOptions(id, { showOutcome: false })   // ゾーンとそのタグだけ`}</code></pre>
+<p>
+  <code>positionLevels(drawing)</code> は、そこから注文を出すアプリ向けに、描画をトレードとして読み取ります：
+  売買の向き（ロングなら <code>'buy'</code>）、エントリー、損切り、利確と、リスクに見合う数量（丸めなし）、
+  そして描画がそれを書く小数桁数です。ほかの描画、ストップがまだエントリー上にあるポジション、
+  リスクが設定されていない（数量のない）ポジション、有限の数値でない価格では <code>null</code> を返します。
+</p>
+<p>
+  ウィジェットでは、トレーディングがオンの間、選択したロング/ショートポジションのツールバーに
+  <b>注文を作成</b>が表示されます：これらのレベル（売買の向き、価格としてのエントリー、損切り、利確、
+  リスクに見合う数量）を入れた注文チケットが開き、調整してから発注します。ワンクリックで注文が出ることはありません。
+</p>
+<p>
+  注文がこの描画の示す以上のリスクを負わないよう、数量はブローカーが受け付ける単位に切り捨ててください。
+  エントリーを指値と逆指値のどちらにするかは、現在価格に対する位置で決まります。<code>placeOrderIntent</code>
+  には <code>trading</code> 機能が必要です：<code>orderPlace</code> を発行し、接続した執行アダプターが
+  それを発注します（トレーディングを参照）。
+</p>
+<pre><code>{`import { positionLevels } from '@tradecanvas/chart'
+
+const levels = positionLevels(chart.getDrawings().find((d) => d.id === id))
+if (levels) {
+  const { side, entry, stopLoss, takeProfit, quantity, quantityDecimals } = levels
+  const step = 10 ** quantityDecimals
+  const last = chart.getData().at(-1)?.close ?? entry
+  // 現在価格より下の買いは指値で待ち、上の買いは逆指値。売りはその逆。
+  const type = (side === 'buy') === (entry <= last) ? 'limit' : 'stop'
+  chart.placeOrderIntent({
+    side, type, price: entry, stopPrice: type === 'stop' ? entry : undefined,
+    quantity: Math.floor(quantity * step) / step, stopLoss, takeProfit,
+  })
+}`}</code></pre>
 
 <h2>描画へのアラート</h2>
 <p>
