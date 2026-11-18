@@ -181,11 +181,53 @@ chart.on('drawingSelect', ({ payload }) => {
 
 <h2>多/空仓位</h2>
 <p>
-  <code>riskReward</code>：从入场价拖动到止损价。目标位按盈亏比放在相应的距离处，
-  拖动它的控制点即可改变该比例。它根据账户资金和风险（账户的百分比或一个金额）
-  算出数量，并显示每条线的价格、距离以及盈亏。
+  <code>riskReward</code>：从入场价拖动到止损价。目标位按盈亏比放在相应的距离处。
+  它根据账户资金和风险（账户的百分比或一个金额）算出数量，并显示每条线的价格、
+  距离以及盈亏。
 </p>
-<pre><code>{`chart.setDrawingOptions(id, { accountSize: 25_000, riskMode: 'percent', risk: 1, rewardRatio: 3 })`}</code></pre>
+<p>
+  选中后它有四个控制点：位于入场一侧边缘的入场、止损和目标，以及入场线上的另一侧边缘。
+  入场可在时间和价格上移动，止损改变其价格，目标改变盈亏比，另一侧边缘改变这笔交易持续的时长。
+</p>
+<p>
+  它会在这段时间内的 K 线上模拟这笔交易。交易在入场时间当根或之后的第一根 K 线上入场。
+  之后的每根 K 线都会检查止损和目标；同时触及两者的 K 线按止损处理，因为 K 线里看不出哪个先到，
+  开盘就越过某个价位的 K 线则以开盘价平仓。交易经过的部分按其结果的颜色着色，
+  从入场到平仓处画一条虚线，并在那里加一个标签：<code>Target hit</code>、<code>Stop hit</code>、
+  右边缘处的 <code>Closed</code>，或最后一根 K 线处的 <code>Open</code>，并附上盈亏。
+  它按数据序列自身的价格模拟（在 Heikin Ashi 下也是如此）；从入场向回画的框，以及 K 线不是序列本身的图表类型
+  （Renko、Kagi、新价线、点数图）不做模拟。<code>showOutcome: false</code> 可关闭它。
+</p>
+<pre><code>{`chart.setDrawingOptions(id, { accountSize: 25_000, riskMode: 'percent', risk: 1, rewardRatio: 3 })
+chart.setDrawingOptions(id, { showOutcome: false })   // the zones and their tags only`}</code></pre>
+<p>
+  <code>positionLevels(drawing)</code> 把它读作一笔交易，供需要据此下单的应用使用：方向（做多为 <code>'buy'</code>）、
+  入场、止损、止盈，以及按其风险可买的数量（未取整），并附上画线书写数量时用的小数位数。
+  对其他画线、止损仍在入场价上的仓位、未设置风险（没有数量）的仓位，以及价格不是有限数字的情况，它返回 <code>null</code>。
+</p>
+<p>
+  在组件中，交易开启时，选中的多/空仓位会在其工具栏中显示 <b>创建订单</b>：它打开填好这些价位的下单窗口
+  （方向、以入场作为价格、止损、止盈，以及按其风险可买的数量），由你调整后下单。订单永远不会一键发出。
+</p>
+<p>
+  把数量向下取整到经纪商接受的单位，这样订单的风险就不会超过画线所示。入场是限价单还是止损单，
+  取决于它相对于当前价格的位置。<code>placeOrderIntent</code> 需要开启 <code>trading</code> 功能：
+  它发出 <code>orderPlace</code>，由已连接的执行适配器下单（参见“交易”）。
+</p>
+<pre><code>{`import { positionLevels } from '@tradecanvas/chart'
+
+const levels = positionLevels(chart.getDrawings().find((d) => d.id === id))
+if (levels) {
+  const { side, entry, stopLoss, takeProfit, quantity, quantityDecimals } = levels
+  const step = 10 ** quantityDecimals
+  const last = chart.getData().at(-1)?.close ?? entry
+  // A buy below the price now waits as a limit, one above it as a stop; a sell the other way round.
+  const type = (side === 'buy') === (entry <= last) ? 'limit' : 'stop'
+  chart.placeOrderIntent({
+    side, type, price: entry, stopPrice: type === 'stop' ? entry : undefined,
+    quantity: Math.floor(quantity * step) / step, stopLoss, takeProfit,
+  })
+}`}</code></pre>
 
 <h2>画线提醒</h2>
 <p>

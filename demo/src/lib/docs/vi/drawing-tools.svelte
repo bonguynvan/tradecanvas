@@ -186,11 +186,68 @@ chart.on('drawingSelect', ({ payload }) => {
 <h2>Vị thế Long/Short</h2>
 <p>
   <code>riskReward</code>: kéo từ điểm vào lệnh đến điểm cắt lỗ. Mục tiêu nằm cách
-  đó theo tỷ lệ lời:lỗ, và điểm kéo của nó dùng để đổi tỷ lệ này. Từ vốn tài
-  khoản và mức rủi ro (một phần trăm của vốn, hoặc một số tiền), công cụ tính ra
-  khối lượng, và hiện giá, khoảng cách cùng lãi hoặc lỗ của từng đường.
+  đó theo tỷ lệ lời:lỗ. Từ vốn tài khoản và mức rủi ro (một phần trăm của vốn,
+  hoặc một số tiền), công cụ tính ra khối lượng, và hiện giá, khoảng cách cùng
+  lãi hoặc lỗ của từng đường.
 </p>
-<pre><code>{`chart.setDrawingOptions(id, { accountSize: 25_000, riskMode: 'percent', risk: 1, rewardRatio: 3 })`}</code></pre>
+<p>
+  Khi được chọn, nó có bốn handle: điểm vào lệnh, stop và mục tiêu nằm ở mép
+  phía điểm vào, và mép còn lại nằm trên đường vào lệnh. Điểm vào di chuyển theo
+  thời gian và giá, stop đổi giá của nó, mục tiêu đổi tỷ lệ lời:lỗ, còn mép kia
+  đổi độ dài thời gian của lệnh.
+</p>
+<p>
+  Trên các nến trong khoảng đó, nó diễn lại lệnh. Lệnh được vào ở nến đầu tiên
+  tại hoặc sau điểm vào. Mỗi nến sau đó được kiểm tra xem có chạm stop hay mục
+  tiêu; nến chạm cả hai được tính là chạm stop, vì nến không cho biết cái nào
+  đến trước, và nến mở cửa vượt qua một mức thì đóng lệnh tại giá mở cửa của nó.
+  Đoạn lệnh đã đi qua được tô theo màu của kết quả, với một đường nét đứt từ điểm
+  vào đến chỗ lệnh đóng và một tag tại đó: <code>Target hit</code>,
+  <code>Stop hit</code>, <code>Closed</code> ở mép phải, hoặc <code>Open</code>
+  ở nến cuối, kèm lãi hoặc lỗ. Lệnh được diễn trên giá của chính chuỗi dữ liệu
+  (kể cả khi dùng Heikin Ashi), và bị bỏ qua với hộp vẽ ngược về trước điểm vào
+  và với các loại biểu đồ có nến không phải của chuỗi dữ liệu (Renko, Kagi, line
+  break, point &amp; figure). <code>showOutcome: false</code> tắt tính năng này.
+</p>
+<pre><code>{`chart.setDrawingOptions(id, { accountSize: 25_000, riskMode: 'percent', risk: 1, rewardRatio: 3 })
+chart.setDrawingOptions(id, { showOutcome: false })   // the zones and their tags only`}</code></pre>
+<p>
+  <code>positionLevels(drawing)</code> đọc nó như một lệnh, cho ứng dụng đặt
+  lệnh từ hình vẽ: chiều lệnh (<code>'buy'</code> với long), điểm vào,
+  stop-loss, take-profit và khối lượng mà mức rủi ro của nó mua được, chưa làm
+  tròn, cùng số chữ số thập phân mà hình vẽ dùng để ghi. Nó trả về
+  <code>null</code> với mọi hình vẽ khác, với vị thế có stop vẫn nằm trên điểm
+  vào, với vị thế chưa đặt mức rủi ro (không có khối lượng), và với các giá
+  không phải số hữu hạn.
+</p>
+<p>
+  Trong widget, một Vị thế Long/Short đang được chọn hiện nút <b>Tạo lệnh</b>
+  trên thanh công cụ của nó khi giao dịch đang bật: nút này mở order ticket đã
+  điền sẵn các mức này (chiều lệnh, điểm vào làm giá, stop-loss, take-profit và
+  khối lượng mà mức rủi ro mua được), để bạn chỉnh rồi đặt lệnh. Không lệnh nào
+  được đặt chỉ bằng một cú bấm.
+</p>
+<p>
+  Hãy làm tròn xuống khối lượng theo mức broker của bạn nhận, để lệnh không rủi
+  ro nhiều hơn những gì hình vẽ ghi. Điểm vào là lệnh limit hay stop tuỳ vào vị
+  trí của nó so với giá hiện tại. <code>placeOrderIntent</code> cần bật tính năng
+  <code>trading</code>: nó phát ra <code>orderPlace</code>, và một execution
+  adapter đã kết nối sẽ đặt lệnh đó (xem Giao dịch).
+</p>
+<pre><code>{`import { positionLevels } from '@tradecanvas/chart'
+
+const levels = positionLevels(chart.getDrawings().find((d) => d.id === id))
+if (levels) {
+  const { side, entry, stopLoss, takeProfit, quantity, quantityDecimals } = levels
+  const step = 10 ** quantityDecimals
+  const last = chart.getData().at(-1)?.close ?? entry
+  // A buy below the price now waits as a limit, one above it as a stop; a sell the other way round.
+  const type = (side === 'buy') === (entry <= last) ? 'limit' : 'stop'
+  chart.placeOrderIntent({
+    side, type, price: entry, stopPrice: type === 'stop' ? entry : undefined,
+    quantity: Math.floor(quantity * step) / step, stopLoss, takeProfit,
+  })
+}`}</code></pre>
 
 <h2>Cảnh báo trên hình vẽ</h2>
 <p>

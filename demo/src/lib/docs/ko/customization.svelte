@@ -25,7 +25,7 @@
     <tr><td>지표의 선, 패인의 배경</td><td><code>updateIndicatorStyle(id, {'{ plots }'})</code>, <code>setPaneStyle</code></td></tr>
     <tr><td>위젯의 어떤 부품을 보일지</td><td><code>features</code> / <code>setFeatures</code> — <a href="#switches">아래</a></td></tr>
     <tr><td>사용자가 차트에서 할 수 있는 일: 그리기, 거래, 확대·축소</td><td>차트 자체의 features: <code>chartOptions: {'{ features: { drawings: false } }'}</code></td></tr>
-    <tr><td>직접 만든 버튼, 메뉴, 상태 항목</td><td><code>addToolbarButton</code>, <code>addToolbarDropdown</code>, <code>addSidebarButton</code>, <code>addStatusBarItem</code>, <code>getSlot</code>, 메뉴 훅 — <a href="#parts">아래</a></td></tr>
+    <tr><td>직접 만든 버튼, 메뉴, 상태 항목</td><td><code>addToolbarButton</code>, <code>addToolbarDropdown</code>, <code>addSidebarButton</code>, <code>addStatusBarItem</code>, <code>getSlot</code>, 메뉴 훅 — <a href="#parts">아래</a>; 도크의 페이지는 <code>addDockPage</code> — <a href={href('/docs/api#dock')}>API</a></td></tr>
     <tr><td>직접 만든 키보드 단축키</td><td><code>addHotkey</code> — <a href="#parts">아래</a></td></tr>
     <tr><td>직접 쓰는 CSS</td><td>안정된 훅: <code>--tcw-*</code>, <code>data-tcw-part</code> — <a href="#css">아래</a></td></tr>
     <tr><td>위젯의 문구</td><td><code>locale</code>, <code>messages</code> — <a href="#words">아래</a></td></tr>

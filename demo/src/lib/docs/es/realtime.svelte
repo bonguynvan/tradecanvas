@@ -199,7 +199,10 @@ const current = agg.getCurrentBar()         // forming bar`}</code></pre>
   Una fuente con <code>subscribeQuotes</code> envía cotizaciones (último precio, variación del día, máximo, mínimo,
   volumen, compra y venta) de muchos símbolos a la vez hasta que la detienes. <code>BinanceAdapter</code> envía
   una instantánea de 24 h y luego su flujo mini-ticker; <code>MockAdapter</code> se inventa las cotizaciones. La
-  lista de seguimiento de un widget llena sus filas con ellas.
+  lista de seguimiento de un widget llena sus filas con ellas. Sin cotización, la fila del propio símbolo del
+  gráfico lee su precio y la variación del día de las barras del gráfico, como hace el panel de información del
+  símbolo: frente al cierre anterior al último día, en la zona horaria de la bolsa, y sin variación cuando las barras
+  no tienen ningún día antes de ese.
 </p>
 <pre><code>{`const stop = new BinanceAdapter().subscribeQuotes(['BTCUSDT', 'ETHUSDT'], (quotes) => {
   for (const q of quotes) console.log(q.symbol, q.last, q.changePercent)

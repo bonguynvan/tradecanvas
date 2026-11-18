@@ -25,7 +25,7 @@
     <tr><td>Las líneas de un indicador, el fondo de un panel</td><td><code>updateIndicatorStyle(id, {'{ plots }'})</code>, <code>setPaneStyle</code></td></tr>
     <tr><td>Qué partes del widget se ven</td><td><code>features</code> / <code>setFeatures</code> — <a href="#switches">más abajo</a></td></tr>
     <tr><td>Lo que el usuario puede hacer en el gráfico: dibujar, operar, hacer zoom</td><td>Las features del propio gráfico: <code>chartOptions: {'{ features: { drawings: false } }'}</code></td></tr>
-    <tr><td>Botones, menús y elementos de estado propios</td><td><code>addToolbarButton</code>, <code>addToolbarDropdown</code>, <code>addSidebarButton</code>, <code>addStatusBarItem</code>, <code>getSlot</code>, los ganchos de menú — <a href="#parts">más abajo</a></td></tr>
+    <tr><td>Botones, menús y elementos de estado propios</td><td><code>addToolbarButton</code>, <code>addToolbarDropdown</code>, <code>addSidebarButton</code>, <code>addStatusBarItem</code>, <code>getSlot</code>, los ganchos de menú — <a href="#parts">más abajo</a>; una página en el dock, <code>addDockPage</code> — <a href={href('/docs/api#dock')}>API</a></td></tr>
     <tr><td>Atajos de teclado propios</td><td><code>addHotkey</code> — <a href="#parts">más abajo</a></td></tr>
     <tr><td>Tu propio CSS</td><td>Los ganchos estables: <code>--tcw-*</code>, <code>data-tcw-part</code> — <a href="#css">más abajo</a></td></tr>
     <tr><td>Los textos del widget</td><td><code>locale</code>, <code>messages</code> — <a href="#words">más abajo</a></td></tr>

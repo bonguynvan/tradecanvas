@@ -47,6 +47,14 @@ new ChartWidget(host, { chartOptions: { features: { tradingContextMenu: true } }
   hay lỗ bao nhiêu nếu giá chạm tới đó. Mọi mức giá cũng hiện trên trục. Các nhãn có thể che nhau thì đứng cạnh nhau,
   và nhãn trên trục tự giãn ra. Kéo cắt lỗ hay chốt lời bằng chính đường hoặc nhãn của nó.
 </p>
+<p>
+  Một position chưa có stop-loss hoặc take-profit có nút <strong>SL</strong> hoặc <strong>TP</strong> trên tag của
+  điểm vào lệnh. Nhấn nút rồi kéo đường mới tới chỗ bạn muốn, hoặc chỉ bấm để đặt nó tại chỗ nó bắt đầu. Stop bắt
+  đầu cách điểm vào 1%, còn mục tiêu cách gấp đôi khoảng cách của stop, như một bracket, và cả hai bắt đầu ít nhất
+  1% bên ngoài giá hiện tại, để không cái nào bị chạm ngay khi vừa đặt. Thả ra sẽ gửi
+  <code>positionModify</code>, như khi kéo một stop, nên một execution adapter đã kết nối sẽ áp dụng nó.
+  <code>lineButtons: {'{'} addStops: false {'}'}</code> ẩn các nút này.
+</p>
 
 <h2>Lệnh</h2>
 <pre><code>{`chart.setOrders([{
@@ -79,7 +87,8 @@ new ChartWidget(host, { chartOptions: { features: { tradingContextMenu: true } }
 
 chart.connectExecution(new PaperExecutionAdapter({ markPrice: 64_000 }))
 
-chart.on('executionError', (e) => toast(e.payload.message))
+chart.on('executionError', (e) => toast(e.payload.message))   // e.payload.command: the intent that failed
+// chart.connectExecution(adapter, { brackets: 'place' })   // a confirmed bracket goes to it too: see Bracket orders
 // chart.disconnectExecution()`}</code></pre>
 <p>
   Cài đặt <code>ExecutionAdapter</code> (nó tương tự <code>DataAdapter</code>) để nối với một
@@ -201,6 +210,12 @@ chart.on('priceAxisAdd', (e) => openMyMenu(e.payload.x, e.payload.y, e.payload.p
   chờ ở chỗ đã đặt (mua stop trên giá thị trường thành bán giới hạn), và nút đặt lệnh mang màu của chiều mua hay bán.
 </p>
 <p>
+  Trong widget, một hình vẽ Vị thế Long/Short đang được chọn có nút <b>Tạo lệnh</b> trên thanh công cụ của nó khi giao dịch đang bật. Nút này mở
+  order ticket này, điền sẵn từ hình vẽ: chiều lệnh, điểm vào làm giá, stop-loss và take-profit, và khối lượng
+  mà mức rủi ro của nó mua được, làm tròn xuống theo số chữ số thập phân hình vẽ ghi. Loại lệnh theo vị trí của
+  điểm vào so với giá thị trường, và không có gì được gửi đi cho tới khi bấm Đặt lệnh.
+</p>
+<p>
   Đầu bảng tài khoản luôn hiện lãi/lỗ đang mở và lãi/lỗ đã chốt ở mọi tab. Các con số được căn phải bằng chữ
   đơn cách, tiền theo số lẻ của bước giá và định dạng số của ngôn ngữ; trên điện thoại mỗi dòng là một thẻ ghi tên từng
   con số.
@@ -233,8 +248,22 @@ chart.cancelOrderDraft()`}</code></pre>
   kéo ba đường để chỉnh điểm vào, mức rủi ro và lợi nhuận. Xác nhận bằng
   <kbd>Enter</kbd> (hoặc nút Đặt lệnh), huỷ bằng <kbd>Esc</kbd>. Trong
   widget, các mũi tên xanh/đỏ trên thanh công cụ tạo một bracket Long/Short. Biểu đồ
-  phát ra một sự kiện <code>bracketPlace</code> duy nhất để backend của bạn xử lý —
-  nó không bao giờ tự đặt lệnh.
+  phát ra một sự kiện <code>bracketPlace</code> duy nhất để backend của bạn xử lý.
+</p>
+<p>
+  Khi một execution adapter được kết nối với <code>brackets: 'place'</code>, biểu đồ còn gửi bracket tới adapter
+  thành một lệnh: điểm vào, là lệnh limit khi giá phải quay lại đó và lệnh stop khi giá phải chạy tiếp tới đó,
+  khối lượng của nó, cùng stop-loss và take-profit gắn trên lệnh. Khi adapter đã nhận lệnh, biểu đồ gửi
+  <code>bracketOrder</code> kèm lệnh đó. Nếu adapter từ chối, biểu đồ gửi <code>executionError</code> với
+  <code>command: 'bracketPlace'</code>. Widget chỉ báo "đã đặt" khi đó, và nói lý do khi lệnh bị từ chối. Một
+  bracket không có khối lượng thì không được gửi, vì chưa ai thấy khối lượng nào để đặt; bracket được xác nhận trước
+  khi biểu đồ có giá để phân biệt điểm vào limit với stop cũng vậy. <code>executionError</code> cho biết
+  <code>reason</code> (<code>'noQuantity'</code>, <code>'noPrice'</code>). Các bracket do mũi tên trên thanh công cụ
+  và <code>startBracket</code> tạo ra chưa có khối lượng, nên với <code>'place'</code> chúng không được gửi, và widget
+  nói rõ điều đó. Không có tuỳ chọn này, một bracket đã xác nhận vẫn chỉ là một sự kiện, và widget báo rằng nó đã
+  được xác nhận. Một adapter được kết nối mà không nói gì (không có <code>brackets</code>) giữ sự kiện và cảnh báo
+  một lần trong console. <code>'place'</code> sẽ thành mặc định ở phiên bản major tiếp theo, nên ứng dụng tự đặt
+  bracket của sự kiện thì truyền <code>brackets: 'event'</code>.
 </p>
 <pre><code>{`chart.startBracket('buy')          // entry defaults to the latest close
 chart.startBracket('sell', 64_800) // or pin the entry price
@@ -243,6 +272,11 @@ chart.on('bracketPlace', (e) => {
   const { side, entry, stopLoss, takeProfit, riskReward } = e.payload
   // submit to your OMS, then reflect fills back via chart.setOrders/setPositions
 })
+
+// Or let the connected adapter place it
+chart.connectExecution(broker, { brackets: 'place' })
+chart.placesBrackets()   // true
+chart.on('bracketOrder', (e) => console.log(e.payload.order.id))
 
 chart.confirmBracket()  // same as Enter
 chart.cancelBracket()   // same as Esc`}</code></pre>

@@ -49,6 +49,14 @@ new ChartWidget(host, { chartOptions: { features: { tradingContextMenu: true } }
   que se taparían se ponen una al lado de otra, y las del eje se separan. Arrastra un stop o un objetivo por su línea
   o por su etiqueta.
 </p>
+<p>
+  Una posición sin stop-loss o sin take-profit tiene un botón <strong>SL</strong> o <strong>TP</strong> en la etiqueta
+  de su entrada. Púlsalo y arrastra la nueva línea adonde la quieras, o haz clic sin más para dejarla donde empieza. Un
+  stop empieza a un 1% de la entrada y un objetivo al doble de la distancia del stop, como hace un bracket, y ambos
+  empiezan al menos un 1% más allá del precio actual, para que ninguno se active nada más ponerlo. Al soltar se envía
+  <code>positionModify</code>, como al arrastrar un stop, de modo que un adaptador de ejecución conectado lo aplica.
+  <code>lineButtons: {'{'} addStops: false {'}'}</code> deja fuera los botones.
+</p>
 
 <h2>Órdenes</h2>
 <pre><code>{`chart.setOrders([{
@@ -81,7 +89,8 @@ new ChartWidget(host, { chartOptions: { features: { tradingContextMenu: true } }
 
 chart.connectExecution(new PaperExecutionAdapter({ markPrice: 64_000 }))
 
-chart.on('executionError', (e) => toast(e.payload.message))
+chart.on('executionError', (e) => toast(e.payload.message))   // e.payload.command: the intent that failed
+// chart.connectExecution(adapter, { brackets: 'place' })   // a confirmed bracket goes to it too: see Bracket orders
 // chart.disconnectExecution()`}</code></pre>
 <p>
   Implementa <code>ExecutionAdapter</code> (es el equivalente de
@@ -216,6 +225,12 @@ chart.on('priceAxisAdd', (e) => openMyMenu(e.payload.x, e.payload.y, e.payload.p
   compra stop sobre el mercado pasa a venta límite), y el botón de enviar toma el color del lado.
 </p>
 <p>
+  En el widget, un dibujo de Posición larga/corta seleccionado ofrece <b>Crear orden</b> en su barra de herramientas
+  mientras el trading está activado. Abre este ticket relleno a partir del dibujo: su lado, la entrada como precio, el
+  stop-loss y el take-profit, y la cantidad que compra su riesgo, recortada a los decimales con que la escribe el
+  dibujo. El tipo de orden sigue la posición de la entrada respecto al mercado, y no se envía nada hasta pulsar Enviar.
+</p>
+<p>
   La cabecera del panel de cuenta muestra en todas las pestañas el P&amp;L abierto y el realizado. Sus cifras van
   alineadas a la derecha en tipo monoespaciado, el dinero con los decimales del paso de precio y en el formato numérico
   del idioma; en el móvil cada fila es una tarjeta con sus cifras rotuladas.
@@ -250,8 +265,22 @@ chart.cancelOrderDraft()`}</code></pre>
   Confirma con <kbd>Enter</kbd> (o con el botón Enviar) y cancela con
   <kbd>Esc</kbd>. En el widget, las flechas verde/roja de la barra de
   herramientas inician un bracket largo/corto. El gráfico emite un único evento
-  <code>bracketPlace</code> para que tu backend actúe; nunca envía órdenes por sí
-  mismo.
+  <code>bracketPlace</code> para que tu backend actúe.
+</p>
+<p>
+  Con un adaptador de ejecución conectado con <code>brackets: 'place'</code>, el gráfico también se lo envía al
+  adaptador como una sola orden: la entrada, una límite cuando el precio tiene que volver a ella y una stop cuando tiene
+  que seguir hasta ella, su cantidad, y su stop-loss y su take-profit sobre ella. Una vez que el adaptador la aceptó, el
+  gráfico envía <code>bracketOrder</code> con la orden. Si el adaptador la rechaza, envía
+  <code>executionError</code> con <code>command: 'bracketPlace'</code>. El widget dice "enviada" solo entonces, y dice
+  por qué cuando fue rechazada. Un bracket sin cantidad no se envía, ya que nadie vio un tamaño que enviar; tampoco uno
+  confirmado antes de que el gráfico tenga un precio para distinguir una entrada límite de una stop.
+  <code>executionError</code> da el <code>reason</code> (<code>'noQuantity'</code>, <code>'noPrice'</code>).
+  Los brackets que inician las flechas de la barra de herramientas y <code>startBracket</code> aún no tienen cantidad,
+  así que con <code>'place'</code> no se envían, y el widget lo dice. Sin él, un bracket confirmado se queda en un
+  evento, y el widget dice que se confirmó. Un adaptador conectado sin indicarlo (sin <code>brackets</code>) mantiene el
+  evento y avisa una vez en la consola. <code>'place'</code> pasa a ser el valor por defecto en la próxima versión
+  mayor, así que una app que envía ella misma el bracket del evento pasa <code>brackets: 'event'</code>.
 </p>
 <pre><code>{`chart.startBracket('buy')          // entry defaults to the latest close
 chart.startBracket('sell', 64_800) // or pin the entry price
@@ -260,6 +289,11 @@ chart.on('bracketPlace', (e) => {
   const { side, entry, stopLoss, takeProfit, riskReward } = e.payload
   // submit to your OMS, then reflect fills back via chart.setOrders/setPositions
 })
+
+// Or let the connected adapter place it
+chart.connectExecution(broker, { brackets: 'place' })
+chart.placesBrackets()   // true
+chart.on('bracketOrder', (e) => console.log(e.payload.order.id))
 
 chart.confirmBracket()  // same as Enter
 chart.cancelBracket()   // same as Esc`}</code></pre>

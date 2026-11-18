@@ -25,7 +25,7 @@
     <tr><td>Các đường của một chỉ báo, nền của một pane</td><td><code>updateIndicatorStyle(id, {'{ plots }'})</code>, <code>setPaneStyle</code></td></tr>
     <tr><td>Phần nào của widget được hiện</td><td><code>features</code> / <code>setFeatures</code> — <a href="#switches">bên dưới</a></td></tr>
     <tr><td>Người dùng được làm gì trên biểu đồ: vẽ, giao dịch, zoom</td><td>Features riêng của biểu đồ: <code>chartOptions: {'{ features: { drawings: false } }'}</code></td></tr>
-    <tr><td>Nút, menu và mục trạng thái của riêng bạn</td><td><code>addToolbarButton</code>, <code>addToolbarDropdown</code>, <code>addSidebarButton</code>, <code>addStatusBarItem</code>, <code>getSlot</code>, các hook menu — <a href="#parts">bên dưới</a></td></tr>
+    <tr><td>Nút, menu và mục trạng thái của riêng bạn</td><td><code>addToolbarButton</code>, <code>addToolbarDropdown</code>, <code>addSidebarButton</code>, <code>addStatusBarItem</code>, <code>getSlot</code>, các hook menu — <a href="#parts">bên dưới</a>; một trang trong ngăn bên, <code>addDockPage</code> — <a href={href('/docs/api#dock')}>API</a></td></tr>
     <tr><td>Phím tắt của riêng bạn</td><td><code>addHotkey</code> — <a href="#parts">bên dưới</a></td></tr>
     <tr><td>CSS của riêng bạn</td><td>Các móc ổn định: <code>--tcw-*</code>, <code>data-tcw-part</code> — <a href="#css">bên dưới</a></td></tr>
     <tr><td>Chữ của widget</td><td><code>locale</code>, <code>messages</code> — <a href="#words">bên dưới</a></td></tr>

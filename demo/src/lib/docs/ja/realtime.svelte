@@ -187,7 +187,9 @@ const current = agg.getCurrentBar()         // forming bar`}</code></pre>
   <code>subscribeQuotes</code> を持つフィードは、止めるまで複数のシンボルのクオート（最新価格、当日の変化、高値、安値、
   出来高、買気配と売気配）をまとめて送ります。<code>BinanceAdapter</code> は 24 時間のスナップショットを送ったあと、
   ミニティッカーのストリームを流します。<code>MockAdapter</code> はクオートを生成します。ウィジェットのウォッチリストは、
-  これで各行を埋めます。
+  これで各行を埋めます。クオートがないとき、チャート自身のシンボルの行は、シンボル情報パネルと同じく
+  チャートのバーから価格と当日の値動きを読みます：最後の日の前の終値を基準に、取引所のタイムゾーンで計算し、
+  バーにその前の日がなければ値動きは表示しません。
 </p>
 <pre><code>{`const stop = new BinanceAdapter().subscribeQuotes(['BTCUSDT', 'ETHUSDT'], (quotes) => {
   for (const q of quotes) console.log(q.symbol, q.last, q.changePercent)

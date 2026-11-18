@@ -168,7 +168,7 @@ chart.setTimeFormatter((time, { kind, timeZone }) =>
 
 <h3 id="axis-labels">軸がラベルを選ぶ仕組み</h3>
 <p>
-  時間軸は最も大きな暦の区切りを始めるバーにラベルを付けます：年（太字）、月、日、きりのよい時刻で、互いに少なくとも 80 px 離れます。そのため 5Y では <code>2022 · Jul · 2023</code>、1 か月では <code>Oct · 8 · 15</code>、1 日の中では <code>12:00 · 18:00</code> と読めます。ラベルは画面ではなくバーに属します：パンするとバーと一緒に動き、前に履歴を読み込んでも位置は変わりません。最も古いバーの左にはありません。月名は <code>setNumberLocale</code> に従い、グリッド線はラベルの位置に引かれます。
+  時間軸は最も大きな暦の区切りを始めるバーにラベルを付けます：年（太字）、月、日、きりのよい時刻で、互いに少なくとも 80 px 離れます。そのため 5Y では <code>2022 · Jul · 2023</code>、1 か月では <code>Oct · 8 · 15</code>、1 日の中では <code>12:00 · 18:00</code> と読めます。ラベルは画面ではなくバーに属します：パンするとバーと一緒に動き、前に履歴を読み込んでも位置は変わりません。最も古いバーの左にはありません。新しい年のラベルがないときは、右端のタイムゾーンのタグと同じスタイルのタグが左端に付き、表示中の最初のバーの時点で、ラベルが省いたものを書きます：月が並ぶときは年、日が並ぶときは <code>Mar 2023</code>、1 日の時刻が並ぶときは日付全体です。左端のラベルに重なるときはそのラベルの代わりになり、その内容も書きます（<code>Mar</code> の上なら <code>Mar 2023</code>）。履歴をさかのぼってパンしても、年は常に軸に表示されます。月名は <code>setNumberLocale</code> に従い、グリッド線はラベルの位置に引かれます。
 </p>
 <p>
   価格軸は高さに収まるだけのラベルを、少なくとも 30 px 離して、市場の呼値の単位に置きます。対数軸では刻みが価格とともに大きくなるので、上と同じように下にもラベルが付きます。パーセントや指数の軸では、基準からのきりのよいパーセントや指数ポイントになります。インジケーターのペインも自分の高さでラベル数を決めます。
@@ -561,9 +561,29 @@ widget.destroy()`}</code></pre>
   <strong>ⓘ</strong> から開き、どのパネルも自分のコードから開けます。<code>ChartWidgetGrid</code> のチャートには
   それぞれのレールはありません。ただし、その <code>widget.features</code> で <code>dock</code> をオンにすれば表示されます。
 </p>
-<pre><code>{`widget.openPanel('watchlist')   // 'watchlist' | 'alerts' | 'objectTree' | 'dataWindow' | 'symbolInfo' | 'depthLadder'; false if not there
+<p>
+  <code>addDockPage</code> を使うと、独自のページを同じドックに置けます：そのボタンはレール上で組み込みのボタンの後に並び、
+  要素はドックのヘッダー（ラベルと閉じるボタン）の下に、ウィジェットの <code>--tcw-*</code> トークンで表示されます。
+  <code>openPanel(id)</code> で開き、<code>getOpenPanel()</code> がそれを返し、<code>onShow</code> は開くたびに、
+  サイズが決まった後で呼ばれます。<code>remove()</code> はページを取り除き、開いていれば先に閉じます。スマートフォンでは
+  組み込みのパネルと同じくレールがないので、独自のコントロールから開いてください。組み込みのパネルや別のページと同じ id では
+  <code>null</code> が返ります。<code>onPanelChange</code> オプションには、どのように変わったか（レール、閉じるボタン、
+  自分のコード、ウィジェットが狭くなったこと）にかかわらず、開いているパネルの id か <code>null</code> が渡されます。
+</p>
+<pre><code>{`widget.openPanel('watchlist')   // 'watchlist' | 'alerts' | 'objectTree' | 'dataWindow' | 'symbolInfo' | 'depthLadder', or a page's id; false if not there
 widget.getOpenPanel()           // the panel open, or null
 widget.closePanel()
+
+const figures = document.createElement('div')
+const page = widget.addDockPage({
+  id: 'figures', label: 'Key figures', icon: 'info', element: figures,   // icon: a built-in name or an <svg> of yours
+  onShow: () => drawFigures(figures, widget.getSymbol()),
+  onHide: () => {},
+})
+widget.openPanel('figures')
+page.remove()
+
+new ChartWidget(host, { onPanelChange: (panel) => keepOpenPanel(panel) })   // 'figures', 'watchlist'… or null
 
 new ChartWidget(host, { features: { dock: false } })              // no rail: the toolbar opens the panels
 new ChartWidget(host, { features: { 'dock.dataWindow': false } })  // no button for the data window`}</code></pre>

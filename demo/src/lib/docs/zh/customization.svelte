@@ -25,7 +25,7 @@
     <tr><td>指标的线条、窗格的背景</td><td><code>updateIndicatorStyle(id, {'{ plots }'})</code>、<code>setPaneStyle</code></td></tr>
     <tr><td>组件显示哪些部分</td><td><code>features</code> / <code>setFeatures</code> — <a href="#switches">见下文</a></td></tr>
     <tr><td>用户能在图表上做什么：绘图、交易、缩放</td><td>图表自身的 features：<code>chartOptions: {'{ features: { drawings: false } }'}</code></td></tr>
-    <tr><td>你自己的按钮、菜单和状态项</td><td><code>addToolbarButton</code>、<code>addToolbarDropdown</code>、<code>addSidebarButton</code>、<code>addStatusBarItem</code>、<code>getSlot</code>、菜单钩子 — <a href="#parts">见下文</a></td></tr>
+    <tr><td>你自己的按钮、菜单和状态项</td><td><code>addToolbarButton</code>、<code>addToolbarDropdown</code>、<code>addSidebarButton</code>、<code>addStatusBarItem</code>、<code>getSlot</code>、菜单钩子 — <a href="#parts">见下文</a>；停靠区中的页面用 <code>addDockPage</code> — <a href={href('/docs/api#dock')}>API</a></td></tr>
     <tr><td>你自己的快捷键</td><td><code>addHotkey</code> — <a href="#parts">见下文</a></td></tr>
     <tr><td>你自己的 CSS</td><td>稳定的挂钩：<code>--tcw-*</code>、<code>data-tcw-part</code> — <a href="#css">见下文</a></td></tr>
     <tr><td>组件的文字</td><td><code>locale</code>、<code>messages</code> — <a href="#words">见下文</a></td></tr>
