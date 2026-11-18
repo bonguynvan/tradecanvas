@@ -25,6 +25,19 @@ export interface ExecutionConfig {
   /** Hint that this is a paper/sandbox session. */
   paper?: boolean;
   meta?: Record<string, unknown>;
+  /**
+   * What a confirmed bracket (`bracketPlace`) does. `'place'`: it goes to the
+   * adapter as one order (`placeOrder`): a limit or a stop entry against the
+   * price, its quantity, its stop-loss and take-profit. The chart then sends
+   * `bracketOrder` once the adapter took it, or `executionError`
+   * (`command: 'bracketPlace'`). A bracket with no quantity is not sent (no
+   * one saw a size to place), nor one with no price yet to tell a limit entry
+   * from a stop: `executionError` says so (`reason`). `'event'`: only the
+   * `bracketPlace` event, for your own code to place. Left out, it is
+   * `'event'`, and the chart warns once that a bracket was not sent, since the
+   * default will become `'place'` in the next major version.
+   */
+  brackets?: 'event' | 'place';
 }
 
 export type ExecutionEventType =
@@ -59,6 +72,14 @@ export interface FillEvent {
 export interface ExecutionError {
   message: string;
   cause?: unknown;
+  /** The chart's intent whose command failed (`'orderPlace'`, `'bracketPlace'`…), when it was one. */
+  command?: string;
+  /**
+   * Why the chart sent it no further, when that was the chart's call and not
+   * the adapter's: a bracket with no quantity (`'noQuantity'`), or no price yet
+   * to tell a limit entry from a stop (`'noPrice'`).
+   */
+  reason?: 'noQuantity' | 'noPrice';
 }
 
 export interface ExecutionEvent<T = unknown> {

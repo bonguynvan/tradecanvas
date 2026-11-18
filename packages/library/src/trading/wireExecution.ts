@@ -6,12 +6,14 @@ import type {
   TradingPosition,
   OrderPlaceIntent,
   OrderModifyIntent,
+  BracketPlacePayload,
   OrderCancelIntent,
   PositionModifyIntent,
   PositionCloseIntent,
   PositionReverseIntent,
   FillEvent,
 } from '@tradecanvas/commons';
+import { inferOrderType } from '@tradecanvas/core';
 
 /** The order/position intents the chart emits and an adapter consumes. */
 export type ExecutionIntentType =
@@ -22,6 +24,15 @@ export type ExecutionIntentType =
   | 'positionClose'
   | 'positionReverse';
 
+/** The intents a host is asked for: the adapter's commands, and a confirmed bracket. */
+export type HostIntentType = ExecutionIntentType | 'bracketPlace';
+
+/** How the wiring treats what is not a plain command. */
+export interface WireExecutionOptions {
+  /** `'place'`: a confirmed bracket goes to the adapter as an order. Otherwise it stays an event. */
+  brackets?: 'event' | 'place';
+}
+
 /**
  * Surface the host (the Chart) provides so execution can be bridged without
  * the helper knowing anything about chart internals — which keeps it pure and
@@ -29,7 +40,7 @@ export type ExecutionIntentType =
  */
 export interface ExecutionHost {
   /** Subscribe to an emitted intent; returns an unsubscribe function. */
-  onIntent(type: ExecutionIntentType, handler: (payload: unknown) => void): () => void;
+  onIntent(type: HostIntentType, handler: (payload: unknown) => void): () => void;
   /** Render the adapter's authoritative pending orders. */
   setOrders(orders: TradingOrder[]): void;
   /** Render the adapter's authoritative open positions. */
@@ -40,6 +51,10 @@ export interface ExecutionHost {
   onFill?(fill: FillEvent): void;
   /** The positions on the chart, until the adapter reports its own. */
   getPositions?(): readonly TradingPosition[];
+  /** The price now, which a bracket's entry is a limit or a stop against. */
+  marketPrice?(): number | null;
+  /** A confirmed bracket the adapter took, as the order it placed. */
+  onBracketOrder?(order: TradingOrder, bracket: BracketPlacePayload): void;
 }
 
 /** What a command can read: the latest positions, and the reverses under way. */
@@ -95,12 +110,40 @@ async function reverse(adapter: ExecutionAdapter, intent: PositionReverseIntent,
 }
 
 /**
+ * A bracket as the one order a broker takes for it: the entry, a limit where
+ * the price must come back to it and a stop where it must run on to it, its
+ * quantity, and the stop-loss and take-profit on it.
+ */
+export function bracketOrderIntent(bracket: BracketPlacePayload & { quantity: number }, marketPrice: number): OrderPlaceIntent {
+  return {
+    side: bracket.side,
+    type: inferOrderType(bracket.side, bracket.entry, marketPrice),
+    price: bracket.entry,
+    quantity: bracket.quantity,
+    stopLoss: bracket.stopLoss,
+    takeProfit: bracket.takeProfit,
+  };
+}
+
+/** Why the chart does not send a bracket: no size anyone saw, or no price to tell its entry's kind by. */
+function unsendable(bracket: BracketPlacePayload, marketPrice: number | null): ExecutionError | null {
+  const quantity = bracket.quantity;
+  if (quantity === undefined || !Number.isFinite(quantity) || quantity <= 0) {
+    return { message: 'A bracket with no quantity is not sent to the adapter', command: 'bracketPlace', reason: 'noQuantity' };
+  }
+  if (marketPrice === null || !Number.isFinite(marketPrice)) {
+    return { message: 'A bracket is not sent with no price to tell a limit entry from a stop', command: 'bracketPlace', reason: 'noPrice' };
+  }
+  return null;
+}
+
+/**
  * Bridge an `ExecutionAdapter` to a host: render the adapter's authoritative
  * orders/positions, and route the host's emitted intents into adapter
  * commands. The adapter is the single source of truth. Returns a teardown that
  * removes every subscription.
  */
-export function wireExecution(adapter: ExecutionAdapter, host: ExecutionHost): () => void {
+export function wireExecution(adapter: ExecutionAdapter, host: ExecutionHost, options: WireExecutionOptions = {}): () => void {
   const teardowns: Array<() => void> = [];
 
   // Adapter → host: authoritative state + errors. The positions are kept to
@@ -136,10 +179,38 @@ export function wireExecution(adapter: ExecutionAdapter, host: ExecutionHost): (
     const command = COMMANDS[type];
     const unsub = host.onIntent(type, (payload) => {
       Promise.resolve(command(adapter, payload, context)).catch((cause) =>
-        host.onError({ message: `Execution command failed: ${type}`, cause }),
+        host.onError({ message: `Execution command failed: ${type}`, cause, command: type }),
       );
     });
     teardowns.push(unsub);
+  }
+
+  // A confirmed bracket, as one order with its stop-loss and take-profit, when asked for.
+  // An answer that comes after the teardown is for an adapter no longer connected: it is dropped.
+  let connected = true;
+  teardowns.push(() => {
+    connected = false;
+  });
+  if (options.brackets === 'place') {
+    teardowns.push(host.onIntent('bracketPlace', (payload) => {
+      const bracket = payload as BracketPlacePayload;
+      const marketPrice = host.marketPrice?.() ?? null;
+      const refused = unsendable(bracket, marketPrice);
+      if (refused) {
+        host.onError(refused);
+        return;
+      }
+      const intent = bracketOrderIntent(bracket as BracketPlacePayload & { quantity: number }, marketPrice as number);
+      // An adapter that throws at once is reported as one that refuses.
+      Promise.resolve()
+        .then(() => adapter.placeOrder(intent))
+        .then((order) => {
+          if (connected) host.onBracketOrder?.(order, bracket);
+        })
+        .catch((cause) => {
+          if (connected) host.onError({ message: 'Execution command failed: bracketPlace', cause, command: 'bracketPlace' });
+        });
+    }));
   }
 
   return () => {

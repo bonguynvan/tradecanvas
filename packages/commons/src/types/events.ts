@@ -53,6 +53,8 @@ export type ChartEventType =
   | 'positionsChange'
   | 'executionError'
   | 'bracketPlace'
+  /** A confirmed bracket the execution adapter took, as the order it placed. */
+  | 'bracketOrder'
   | 'drawingCreate'
   | 'drawingUpdate'
   | 'drawingDoubleClick'
@@ -206,6 +208,14 @@ export interface OrderPlacePayload {
 export interface ExecutionErrorPayload {
   message: string;
   cause?: unknown;
+  /** The chart's intent whose command failed (`'orderPlace'`, `'bracketPlace'`…), when it was one. */
+  command?: string;
+  /**
+   * Why the chart sent it no further, when that was the chart's call and not
+   * the adapter's: a bracket with no quantity (`'noQuantity'`), or no price yet
+   * to tell a limit entry from a stop (`'noPrice'`).
+   */
+  reason?: 'noQuantity' | 'noPrice';
 }
 
 export interface BracketPlacePayload {
@@ -426,6 +436,8 @@ export interface ChartEventMap {
   resize: ResizePayload;
   orderPlace: OrderPlacePayload;
   bracketPlace: BracketPlacePayload;
+  /** A confirmed bracket the execution adapter took, as the order it placed (`connectExecution(adapter, { brackets: 'place' })`). */
+  bracketOrder: { order: TradingOrder; bracket: BracketPlacePayload };
   orderModify: OrderModifyPayload;
   orderCancel: OrderCancelPayload;
   positionClose: PositionClosePayload;

@@ -1343,10 +1343,28 @@ export class ChartWidget {
           this.trading.bracketBar?.hide();
         },
       }, this.t);
+      // Placed only once the broker took it; a bracket that goes no further than the event is confirmed.
       this.chart.on('bracketPlace', (e) => {
         const b = e.payload;
         this.trading.bracketBar?.hide();
+        if (this.chart.placesBrackets()) return;
+        this.say(fill(this.t(b.side === 'buy' ? 'bracket.longConfirmed' : 'bracket.shortConfirmed'), { rr: b.riskReward.toFixed(2) }));
+      });
+      this.chart.on('bracketOrder', (e) => {
+        const b = e.payload.bracket;
         this.say(fill(this.t(b.side === 'buy' ? 'bracket.longPlaced' : 'bracket.shortPlaced'), { rr: b.riskReward.toFixed(2) }));
+      });
+      this.chart.on('executionError', (e) => {
+        if (e.payload.command !== 'bracketPlace') return;
+        if (e.payload.reason === 'noQuantity') {
+          this.say(this.t('bracket.noQuantity'), 'error');
+          return;
+        }
+        // No price yet: only code can confirm a bracket then, and the event tells it.
+        if (e.payload.reason === 'noPrice') return;
+        const cause = e.payload.cause;
+        const reason = cause instanceof Error ? cause.message : typeof cause === 'string' ? cause : e.payload.message;
+        this.say(fill(this.t('bracket.refused'), { reason }), 'error');
       });
 
       // Depth-of-market ladder (opt-in; fed via widget.setDepth)
