@@ -708,6 +708,7 @@ export const DA_MESSAGES: WidgetMessages = {
   'drawingOption.riskMode.amount': 'Beløb',
   'drawingOption.risk': 'Risiko',
   'drawingOption.qtyDecimals': 'Decimaler for antal',
+  'drawingOption.showOutcome': 'Vis handlen over søjlerne',
   'drawingOption.showLabels': 'Vis etiketter',
   'drawingOption.showText': 'Vis tekst',
   'drawingOption.direction': 'Retning',

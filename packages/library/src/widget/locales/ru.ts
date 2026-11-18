@@ -702,6 +702,7 @@ export const RU_MESSAGES: WidgetMessages = {
   'drawingOption.riskMode.amount': 'Сумма',
   'drawingOption.risk': 'Риск',
   'drawingOption.qtyDecimals': 'Знаков после запятой в количестве',
+  'drawingOption.showOutcome': 'Показывать сделку на свечах',
   'drawingOption.showLabels': 'Показывать метки',
   'drawingOption.showText': 'Показывать текст',
   'drawingOption.direction': 'Направление',
