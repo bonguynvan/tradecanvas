@@ -1,6 +1,7 @@
 import type { Quote, QuoteSource } from '@tradecanvas/commons';
-import { readQuote } from '@tradecanvas/commons';
+import { readQuote, symbolTimeZone } from '@tradecanvas/commons';
 import { browserStorage, pageHidden } from './pageEnv.js';
+import { priorDayClose } from './symbolInfoView.js';
 import { WidgetWatchlist, type WatchlistEntry } from './WidgetWatchlist.js';
 import { WatchlistStore, type WatchlistList } from './WatchlistStore.js';
 import type { ChartWidget } from './ChartWidget.js';
@@ -13,7 +14,6 @@ export interface WatchlistsHost {
   readonly destroyed: ChartWidget['destroyed'];
   readonly options: ChartWidget['options'];
   refreshSymbolInfo: ChartWidget['refreshSymbolInfo'];
-  sessionRefPrice: ChartWidget['sessionRefPrice'];
   setSymbol: ChartWidget['setSymbol'];
   readonly settingsState: ChartWidget['chartSettings']['settingsState'];
   readonly state: ChartWidget['state'];
@@ -36,7 +36,7 @@ export class WidgetWatchlists {
 
   private watchlistSparkBuffer = new Map<string, number[]>();
 
-  /** Per-symbol refPrice explicitly pushed by the host via `setWatchlistEntry` — takes precedence over `sessionRefPrice`. */
+  /** Per-symbol refPrice explicitly pushed by the host via `setWatchlistEntry`: it wins over the move read from the bars. */
   private hostWatchlistRefPrice = new Map<string, number>();
 
   watchlistInterval: ReturnType<typeof setInterval> | null = null;
@@ -211,13 +211,16 @@ export class WidgetWatchlists {
    * Call with the symbols you care about; the active symbol is updated
    * automatically from the chart's live data.
    *
-   * A host-supplied `refPrice` takes precedence over the widget's own
-   * session-open guess for that symbol — including the active one, so the
-   * auto-tick loop stops clobbering it (see `tickWatchlist`).
+   * A host-supplied `refPrice` takes precedence over the day's move the
+   * widget reads from the bars for that symbol, the active one included,
+   * so the auto-tick loop stops clobbering it (see `tickWatchlist`).
    */
   setWatchlistEntry(symbol: string, entry: Partial<WatchlistEntry>): void {
     if (entry.refPrice !== undefined) {
       this.hostWatchlistRefPrice.set(symbol, entry.refPrice);
+    } else if ('refPrice' in entry) {
+      // Taken back: the move is read from the bars again.
+      this.hostWatchlistRefPrice.delete(symbol);
     }
     this.watchlist?.setEntry(symbol, entry);
   }
@@ -230,14 +233,12 @@ export class WidgetWatchlists {
     const data = this.host.chart.getData();
     if (data.length === 0) return;
     const last = data[data.length - 1];
-    const hostRef = this.hostWatchlistRefPrice.get(this.host.state.symbol);
-    // Reference price: first bar of the loaded slice — that's the closest
-    // approximation of "session open" without timezone bookkeeping. Only
-    // used as a fallback; a refPrice the host already pushed via
-    // `setWatchlistEntry` (even for the active symbol) always wins.
-    if (hostRef === undefined && this.host.sessionRefPrice === null) {
-      this.host.sessionRefPrice = data[0].open;
-    }
+    // The day's move, as the symbol info panel reads it: against the close
+    // before the last day in the bars, in the exchange's zone. With no day
+    // before it in the bars there is no move to show. A refPrice the host
+    // pushed via `setWatchlistEntry` wins.
+    const refPrice = this.hostWatchlistRefPrice.get(this.host.state.symbol)
+      ?? priorDayClose(data, symbolTimeZone(this.host.chart.getSymbolInfo()));
 
     const buf = this.watchlistSparkBuffer.get(this.host.state.symbol) ?? [];
     buf.push(last.close);
@@ -246,7 +247,7 @@ export class WidgetWatchlists {
 
     this.watchlist.setEntry(this.host.state.symbol, {
       lastPrice: last.close,
-      refPrice: hostRef ?? this.host.sessionRefPrice ?? data[0].open,
+      refPrice,
       sparkline: buf.slice(),
     });
   }

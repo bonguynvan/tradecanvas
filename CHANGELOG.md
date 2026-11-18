@@ -8,6 +8,7 @@
 
 ### Fixes
 
+- **The day's move on the watchlist's own row** (`@tradecanvas/chart`): with no quote for the chart's symbol, its row read the move against the first bar loaded, so a daily chart showed the move over its whole history (+37% where the day was +0.09%). It is the day's move now, against the close before the last day in the bars, in the exchange's zone, as the symbol info panel reads it; no move when the bars hold no day before the last. A `refPrice` given with `setWatchlistEntry` still wins.
 - **The year on the time axis in history** (`@tradecanvas/chart`): panned back to an earlier year, the axis read "Mar … Apr", or days and times, with no year until a January came on view. A tag at its left end, in the style of the timezone tag at the right, now writes what the labels on view leave out, as of the first bar on view: the year among months, the month and year among days (`Mar 2023`), the whole date among the times of one day, in the chart's locale. It is left out where a new year is labelled, and when the labels come from your own `timeFormatter`. Over a label at the left end it stands in for it and says what it said: over "Mar" it reads "Mar 2023".
 
 ## 2.14.0 (2026-11-17)
