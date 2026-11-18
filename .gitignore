@@ -7,7 +7,6 @@ dist/
 *.tsbuildinfo
 .tmp/
 .svelte-kit/
-packages/svelte/.svelte-kit/
 demo/build/
 /docs/
 
