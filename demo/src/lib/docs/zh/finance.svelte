@@ -229,6 +229,23 @@ new HeatmapChart(el, {
 new WaterfallChart(el, { data: [{ label: 'Start', value: 10000, type: 'total' }, { label: 'Fees', value: -85 }, { label: 'End', value: 9915, type: 'total' }] })
 new DepthChart(el, { data: { bids, asks }, midPriceLine: true, spreadLabel: true })
 new EquityCurveChart(el, { data: equity, benchmark, drawdown: true })`}</code></pre>
+<p>
+  净值曲线还接受 <strong>levels</strong>，即在固定数值处横贯绘图区的线，每个数值写在轴上的标签里；以及
+  <strong>bands</strong>，即曲线下方着色的数值区间。level 可设 <code>label</code>（写在线的右端）、<code>color</code>
+  和 <code>dash</code>（<code>[]</code> 为实线）；band 可设 <code>label</code>（在其左上角）和按原样使用的
+  <code>color</code>，所以请传入带透明度的颜色。未给颜色时两者都使用主题的颜色。level 的数值完整写出，若给了
+  <code>valueFormat</code> 则按它写。数值刻度会扩展以显示全部；<code>fitLevels: false</code> 让刻度只按曲线，刻度外的
+  level 不画，band 只画与刻度重叠的部分。<code>setOptions</code> 可在原图表上修改它们。
+</p>
+<pre><code>{`const chart = new EquityCurveChart(el, {
+  data: closes,
+  levels: [{ value: 41_250, label: 'BOS', color: '#e0a030' }, { value: 38_900, label: 'Equilibrium' }],
+  bands: [
+    { from: 38_900, to: 44_100, label: 'Premium', color: 'rgba(232, 80, 91, 0.10)' },
+    { from: 33_700, to: 38_900, label: 'Discount', color: 'rgba(31, 168, 116, 0.10)' },
+  ],
+})
+chart.setOptions({ levels: [{ value: 42_000, label: 'CHoCH' }] })`}</code></pre>
 
 <h2>绩效仪表盘</h2>
 <p>

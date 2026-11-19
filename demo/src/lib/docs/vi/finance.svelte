@@ -234,6 +234,24 @@ new HeatmapChart(el, {
 new WaterfallChart(el, { data: [{ label: 'Start', value: 10000, type: 'total' }, { label: 'Fees', value: -85 }, { label: 'End', value: 9915, type: 'total' }] })
 new DepthChart(el, { data: { bids, asks }, midPriceLine: true, spreadLabel: true })
 new EquityCurveChart(el, { data: equity, benchmark, drawdown: true })`}</code></pre>
+<p>
+  Equity curve còn nhận <strong>levels</strong>, các đường ngang qua vùng vẽ tại những giá trị cố định, mỗi giá trị nằm
+  trong một tag ở trục, và <strong>bands</strong>, các khoảng giá trị được tô màu dưới đường cong. Một level có
+  <code>label</code> ghi ở đầu phải, <code>color</code> và <code>dash</code> (<code>[]</code> là nét liền); một band có
+  <code>label</code> ở góc và <code>color</code> được dùng đúng như truyền vào, nên hãy truyền màu có độ trong suốt. Cả hai
+  lấy màu của theme khi không có màu. Giá trị của level được ghi đủ số, hoặc theo <code>valueFormat</code> nếu có. Thang
+  giá giãn ra để thấy hết; <code>fitLevels: false</code> giữ thang theo đường cong, bỏ level nằm ngoài và chỉ vẽ phần band
+  nằm trong thang. <code>setOptions</code> đổi chúng ngay trên chart.
+</p>
+<pre><code>{`const chart = new EquityCurveChart(el, {
+  data: closes,
+  levels: [{ value: 41_250, label: 'BOS', color: '#e0a030' }, { value: 38_900, label: 'Equilibrium' }],
+  bands: [
+    { from: 38_900, to: 44_100, label: 'Premium', color: 'rgba(232, 80, 91, 0.10)' },
+    { from: 33_700, to: 38_900, label: 'Discount', color: 'rgba(31, 168, 116, 0.10)' },
+  ],
+})
+chart.setOptions({ levels: [{ value: 42_000, label: 'CHoCH' }] })`}</code></pre>
 
 <h2>Dashboard hiệu suất</h2>
 <p>
