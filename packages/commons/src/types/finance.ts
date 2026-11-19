@@ -59,8 +59,10 @@ export interface EquityPoint {
 export interface EquityLevel {
   /** Where the line is, on the curve's value scale. */
   value: number;
-  /** Its name, written in the plot at the line's right end. The value itself is written in a tag at the value axis, in full (not shortened as the axis's ticks are) unless `valueFormat` says how; a value too long for a quarter of the chart's width is written as the ticks are. Levels closer than a tag's height draw their tags over each other, the later on top. */
+  /** Its name, written in the plot at one end of the line (`labelAt`), over it, or under it where another name is over it. The value itself is written in a tag at the value axis, in full (not shortened as the axis's ticks are) unless `valueFormat` says how; a value too long for a quarter of the chart's width is written as the ticks are. Tags of levels too close for both move apart, each as little as it can; when there is no room for them all, the lowest levels' are left out. */
   label?: string;
+  /** Which end of the line its name is written at: `'end'` (the default), the right, or `'start'`, the left, away from the curve's latest point. */
+  labelAt?: 'start' | 'end';
   /** The line's and its tag's colour; the theme's secondary text colour when left out. The tag's text is dark or light, whichever reads on it. */
   color?: string;
   /** The line's dash, in px as `setLineDash` takes it; `[]` draws it solid. Dashed when left out. */

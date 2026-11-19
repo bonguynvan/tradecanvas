@@ -1042,7 +1042,7 @@ new EquityCurveChart(el('equity'), {
 // The value scale widens to show them unless `fitLevels: false`; setOptions changes them in place.
 const priced = new EquityCurveChart(el('structure'), {
   data: [{ time: Date.UTC(2026, 0, 1), value: 36_000 }, { time: Date.UTC(2026, 5, 1), value: 42_300 }],
-  levels: [{ value: 41_250, label: 'BOS', color: '#e0a030' }, { value: 38_900, label: 'Equilibrium', dash: [] }],
+  levels: [{ value: 41_250, label: 'BOS', color: '#e0a030', labelAt: 'start' }, { value: 38_900, label: 'Equilibrium', dash: [] }],
   bands: [{ from: 38_900, to: 44_100, label: 'Premium', color: 'rgba(232, 80, 91, 0.10)' }],
 });
 priced.setOptions({ levels: [{ value: 42_000, label: 'CHoCH' }] });

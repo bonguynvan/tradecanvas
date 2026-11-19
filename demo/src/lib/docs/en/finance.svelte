@@ -237,10 +237,11 @@ new EquityCurveChart(el, { data: equity, benchmark, drawdown: true })`}</code></
 <p>
   An equity curve also takes <strong>levels</strong>, lines across the plot at fixed values with each value in a
   tag at the axis, and <strong>bands</strong>, tinted stretches of values under the curve. A level has a
-  <code>label</code> written at its right end, a <code>color</code> and a <code>dash</code> (<code>[]</code> for a
-  solid line); a band has a <code>label</code> in its corner and a <code>color</code> used as given, so give one with
+  <code>label</code> written at its right end (<code>labelAt: 'start'</code> for its left, away from the curve's
+  latest point), a <code>color</code> and a <code>dash</code> (<code>[]</code> for a solid line); a band has a <code>label</code> in its corner and a <code>color</code> used as given, so give one with
   transparency. Both take the theme's colours when none is given. A level's value is written in full, or by
-  <code>valueFormat</code> when given. The value scale widens to show them all; <code>fitLevels: false</code> keeps it
+  <code>valueFormat</code> when given. Tags of levels too close for both move apart (when there is no room for
+  them all, the lowest levels' are left out), and the names in the plot keep clear of each other. The value scale widens to show them all; <code>fitLevels: false</code> keeps it
   to the curve, leaving out a level outside it and drawing a band only where it overlaps it.
   <code>setOptions</code> changes them on the chart as it is.
 </p>
