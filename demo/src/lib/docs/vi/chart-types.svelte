@@ -1,6 +1,6 @@
 <svelte:head>
   <title>Loại biểu đồ — Tài liệu TradeCanvas</title>
-  <meta name="description" content="18 loại biểu đồ có sẵn: nến, OHLC, Cao-Thấp, Heikin-Ashi, Renko, Kagi, Point & Figure, Equivolume và nhiều loại khác." />
+  <meta name="description" content="18 loại biểu đồ có sẵn: candlestick, OHLC, High-Low, Heikin-Ashi, Renko, Kagi, Point & Figure, Equivolume và các loại khác." />
 </svelte:head>
 
 <h1>Loại biểu đồ</h1>
@@ -10,29 +10,29 @@
 <table>
   <thead><tr><th>Loại</th><th>Mô tả</th></tr></thead>
   <tbody>
-    <tr><td><code>candlestick</code></td><td>Nến OHLC kinh điển.</td></tr>
-    <tr><td><code>bar</code></td><td>Thanh OHLC (kiểu phương Tây).</td></tr>
+    <tr><td><code>candlestick</code></td><td>Nến OHLC truyền thống.</td></tr>
+    <tr><td><code>bar</code></td><td>Nến OHLC dạng thanh (kiểu phương Tây).</td></tr>
     <tr><td><code>line</code></td><td>Biểu đồ đường theo giá đóng cửa.</td></tr>
-    <tr><td><code>area</code></td><td>Vùng tô màu bên dưới đường giá đóng cửa.</td></tr>
+    <tr><td><code>area</code></td><td>Tô vùng bên dưới đường giá đóng cửa.</td></tr>
     <tr><td><code>baseline</code></td><td>Trên / dưới một mức giá cơ sở, tô hai màu.</td></tr>
-    <tr><td><code>stepLine</code></td><td>Đường bậc thang — làm nổi bật từng giá đóng cửa rời rạc của nến.</td></tr>
+    <tr><td><code>stepLine</code></td><td>Đường bậc thang, làm rõ giá đóng cửa rời rạc của từng nến.</td></tr>
     <tr><td><code>lineWithMarkers</code></td><td>Đường kèm một chấm tại mỗi điểm dữ liệu.</td></tr>
-    <tr><td><code>hollowCandle</code></td><td>Thân nến rỗng khi giá đóng cửa &gt; giá đóng cửa trước đó.</td></tr>
-    <tr><td><code>hlcArea</code></td><td>Dải cao-thấp kèm đường giá đóng cửa.</td></tr>
-    <tr><td><code>hiLo</code></td><td>Một thanh nối giá thấp với giá cao của mỗi nến, tô màu theo chiều tăng / giảm; thanh đủ rộng sẽ ghi kèm giá cao và giá thấp.</td></tr>
+    <tr><td><code>hollowCandle</code></td><td>Thân rỗng khi giá đóng cửa &gt; giá đóng cửa trước đó.</td></tr>
+    <tr><td><code>hlcArea</code></td><td>Dải high-low kèm đường giá đóng cửa.</td></tr>
+    <tr><td><code>hiLo</code></td><td>Một thanh từ low đến high của mỗi nến, tô màu theo hướng; thanh đủ rộng ghi giá high và low.</td></tr>
   </tbody>
 </table>
 
-<h2>Biến đổi</h2>
+<h2>Dẫn xuất</h2>
 <table>
   <thead><tr><th>Loại</th><th>Mô tả</th></tr></thead>
   <tbody>
     <tr><td><code>heikinAshi</code></td><td>Chuỗi nến được làm mượt bằng phép biến đổi Heikin-Ashi.</td></tr>
     <tr><td><code>renko</code></td><td>Biểu đồ brick với bước giá cố định; không phụ thuộc thời gian.</td></tr>
-    <tr><td><code>kagi</code></td><td>Đường đảo chiều dương/âm (yang/yin); mức đảo chiều theo phần trăm (mặc định 4) hoặc theo giá.</td></tr>
-    <tr><td><code>lineBreak</code></td><td>Một đường mới khi giá đóng cửa phá vỡ các đường gần nhất (mặc định 3).</td></tr>
-    <tr><td><code>pointAndFigure</code></td><td>Các cột X/O; box size + số ô đảo chiều. Ô quá nhỏ để nhìn thấy được vẽ thành cột liền, và khi số cột ít hơn chỗ khung nhìn chứa thì chúng được giãn cho vừa khung.</td></tr>
-    <tr><td><code>rangeBars</code></td><td>Biên độ cao-thấp của mỗi nến bằng một khoảng cố định, và nến đóng cửa ở giá cao nhất hoặc thấp nhất của nó; nến cuối cùng là nến đang hình thành.</td></tr>
+    <tr><td><code>kagi</code></td><td>Đường đảo chiều yang/yin; mức đảo chiều là phần trăm (4) hoặc một khoảng giá.</td></tr>
+    <tr><td><code>lineBreak</code></td><td>Vẽ một đường mới khi giá đóng cửa phá các đường gần nhất (mặc định 3).</td></tr>
+    <tr><td><code>pointAndFigure</code></td><td>Các cột X/O; box size + số box đảo chiều. Box quá nhỏ để nhìn thấy được vẽ thành cột liền, và khi số cột ít hơn sức chứa của khung nhìn thì các cột được giãn cho vừa khung.</td></tr>
+    <tr><td><code>rangeBars</code></td><td>Khoảng high-low của mỗi nến bằng một range cố định, và nến đóng ở high hoặc low của nó; nến cuối là nến đang hình thành.</td></tr>
   </tbody>
 </table>
 
@@ -40,9 +40,9 @@
 <table>
   <thead><tr><th>Loại</th><th>Mô tả</th></tr></thead>
   <tbody>
-    <tr><td><code>volumeCandles</code></td><td>Độ rộng nến tỉ lệ với khối lượng.</td></tr>
+    <tr><td><code>volumeCandles</code></td><td>Độ rộng nến tỷ lệ với khối lượng.</td></tr>
     <tr><td><code>equivolume</code></td><td>
-      Hộp phủ trọn biên độ, độ rộng tỉ lệ với tỉ trọng khối lượng; màu theo giá đóng cửa so với giá đóng cửa trước (kiểu Richard Arms).
+      Hộp phủ toàn bộ khoảng giá, độ rộng tỷ lệ với tỷ trọng khối lượng; màu theo giá đóng cửa so với giá đóng cửa trước (kiểu Richard Arms).
     </td></tr>
   </tbody>
 </table>
@@ -52,72 +52,72 @@
 
 <p>
   Các phép biến đổi (Heikin-Ashi, Renko, Kagi, Line Break, P&amp;F, Range Bars) được xử lý
-  bên trong — <code>chart.getData()</code> vẫn trả về chuỗi dữ liệu gốc đã truyền vào.
+  bên trong; <code>chart.getData()</code> vẫn trả về chuỗi dữ liệu đầu vào gốc.
 </p>
 <p>
-  Trục thời gian và nhãn thời gian của crosshair ghi ngày cho một brick, đường hay cột theo nến
-  mà nó hoàn thành, nên trục của biểu đồ Renko, Kagi, Line Break, P&amp;F hay Range Bars đọc ra các năm,
-  tháng và ngày mà nó trải qua; các brick hoàn thành trên cùng một nến dùng chung nhãn của nến đó.
-  Giá trị <code>time</code> riêng của chúng vẫn chỉ để đếm, cách nhau một. <code>axisTimes(series)</code> từ
-  <code>@tradecanvas/chart</code> cho các ngày đó với chuỗi dựng bằng <code>toRenko</code> và các hàm tương tự.
+  Trục thời gian và nhãn thời gian của crosshair ghi ngày của một brick, đường hoặc cột theo nến
+  mà nó hoàn thành, nên trục của biểu đồ Renko, Kagi, Line Break, P&amp;F hoặc Range Bars hiển thị
+  các năm, tháng và ngày mà nó trải qua; các brick hoàn thành trên cùng một nến dùng chung nhãn của nến đó.
+  Giá trị <code>time</code> của chính chúng vẫn chỉ là số đếm, cách nhau 1. <code>axisTimes(series)</code> từ
+  <code>@tradecanvas/chart</code> trả về các ngày đó cho một chuỗi được dựng bằng <code>toRenko</code> và các hàm tương tự.
 </p>
 <p>
-  Tooltip của crosshair và sự kiện <code>crosshairMove</code> ghi ngày cho một brick theo cùng cách:
-  <code>time</code> trong payload là ngày của trục, còn <code>prevClose</code> là giá đóng cửa của brick
-  trước. Trên các kiểu này, chỉ báo được tính trên các brick, đường hay cột được vẽ chứ không phải các
-  nến bên dưới, nên một đường trung bình nằm trên các brick và chú giải, Data Window của ChartWidget
-  và bản xuất đọc nó tại một brick; bản xuất ghi các brick, có ngày như trục ghi. Các chỉ báo đếm
-  ngày (VWAP, Session VWAP, đường trung bình đa khung) và các chỉ báo đọc mã khác theo thời gian không được
-  vẽ ở đó: <code>getActiveIndicators()</code> đánh dấu chúng <code>offChartType: true</code>.
+  Tooltip của crosshair và event <code>crosshairMove</code> ghi ngày của brick theo cùng cách: <code>time</code>
+  của payload là ngày trên trục, và <code>prevClose</code> là giá đóng cửa của brick trước đó. Với các loại
+  này, chỉ báo được tính trên brick, đường hoặc cột được vẽ, không phải trên các nến bên dưới, nên
+  đường trung bình động nằm trên các brick, và legend, cửa sổ dữ liệu của ChartWidget và file export đọc giá trị
+  tại một brick; file export ghi các brick, với ngày như trên trục. Các chỉ báo tính theo ngày
+  (VWAP, Session VWAP, đường trung bình động đa khung thời gian) và các chỉ báo đọc mã khác theo thời gian
+  không được vẽ ở đây: <code>getActiveIndicators()</code> đánh dấu chúng <code>offChartType: true</code>.
 </p>
 <p>
-  Renko, Kagi, Line Break và Range Bars có ít brick hay đường hơn số chỗ của khung nhìn sẽ được
-  giãn cho vừa khung như Point &amp; Figure, nên chúng không nằm dồn ở phần bên phải. Khối lượng của một
-  cột P&amp;F là khối lượng của các nến tạo nên nó. Trên các kiểu này trục thời gian chỉ giữ hai loại nhãn
-  thô nhất đang hiển thị (ví dụ năm và tháng), không có một ngày lẻ loi giữa chúng.
+  Renko, Kagi, Line Break và Range Bars có ít brick hoặc đường hơn sức chứa của khung nhìn thì được
+  giãn cho vừa khung như Point &amp; Figure, nên chúng không bị dồn về phần bên phải của vùng vẽ. Khối lượng
+  của một cột P&amp;F là khối lượng của các nến tạo nên nó. Với các loại này, trục thời gian giữ
+  hai loại nhãn thô nhất trong khung nhìn (ví dụ năm và tháng), không hiện một ngày lẻ giữa chúng.
 </p>
 
-<h2>Thông số của các loại nến dựng từ dữ liệu</h2>
+<h2>Thiết lập của các loại nến dựng lại</h2>
 <p>
-  Box size của Renko, số đường mà Line Break phải phá vỡ, mức đảo chiều của Kagi, box size và số ô đảo chiều của Point &amp; Figure, và biên độ của Range Bars. Thông số nào không đặt sẽ
-  được tính từ dữ liệu (box Renko theo ATR, box P&amp;F bằng một phần năm mươi biên độ giá, làm tròn về 1, 2 hoặc 5…). Các thông số
-  được giữ trong trạng thái đã lưu; trong ChartWidget, chúng nằm trong hộp thoại cài đặt, ở phần
-  dành cho loại biểu đồ đang dùng.
+  Box của Renko, số đường mà Line Break phải phá, mức đảo chiều của Kagi, box và
+  số box đảo chiều của Point &amp; Figure, và range của range bar. Giá trị nào không được đặt thì được tính từ
+  dữ liệu (box theo ATR cho Renko, một phần năm mươi khoảng giá, làm tròn về 1, 2 hoặc 5, cho box P&amp;F…). Các thiết lập
+  được lưu trong state đã lưu; trong ChartWidget, chúng nằm trong dialog cài đặt của
+  loại biểu đồ.
 </p>
 <p>
-  Biên độ tự động của Range Bars là true range trung bình của 100 nến đã đóng gần nhất, làm tròn
-  về 1, 2 hoặc 5 (… 1, 2, 5, 10, 20 …) và về một số nguyên lần bước giá của mã (với thị trường có
-  bước giá thay đổi theo mức giá, đó là bước giá lớn nhất mà các nến này đã giao dịch): nến nhỏ trên
-  biểu đồ một giây, lớn hơn trên biểu đồ ngày. Nến đang hình thành không được tính vào, nên một tick
-  chỉ thay đổi các range bar dựng từ nến đó; các range bar trước nó giữ nguyên. Khi một nến đóng cửa
-  làm giá trị trung bình chuyển sang số 1-2-5 kế tiếp, hoặc đưa các nến này sang một bước giá khác,
-  mọi range bar được dựng lại theo biên độ mới. Khi đi lên, nến đóng cửa ở giá thấp nhất cộng
-  biên độ; khi đi xuống, ở giá cao nhất trừ biên độ: giá đóng cửa là giá nến đã chạm tới, và râu nến
-  cho thấy hướng giá đi trước. Một cú nhảy qua nhiều biên độ, kể cả khoảng trống giữa hai nến, tạo
-  một nến cho mỗi biên độ; các nến lấp khoảng trống nằm ở những mức giá mà khoảng trống đã bỏ qua,
-  chưa từng được giao dịch. Một biên độ, đặt tay hay tự động, sẽ được nâng lên 2, 5, 10, 20… lần chính
-  nó, lấy mức đầu tiên không vượt quá số đó, khi các nến đã đóng tạo ra hơn 100.000 range bar, hoặc
-  riêng nến đang hình thành tạo ra hơn 100.000; khi đó mọi range bar được dựng lại theo biên độ đã nâng.
-  Một biên độ nhỏ hơn nửa chữ số có nghĩa thứ 15 của giá lớn nhất không đóng nến nào, dù giá được ghi
-  theo cách nào.
+  Range tự động của range bar là true range trung bình của 100 nến đã đóng gần nhất,
+  làm tròn về 1, 2 hoặc 5 (… 1, 2, 5, 10, 20 …) và về một bội số nguyên của bước giá
+  của mã (với thị trường có bước giá phụ thuộc vào giá, lấy bước giá lớn nhất mà các nến đó
+  đã giao dịch): nến nhỏ trên biểu đồ một giây, nến lớn hơn trên biểu đồ ngày. Nến
+  đang hình thành không được tính vào, nên một tick chỉ thay đổi các range bar dựng từ nến
+  đó; các range bar trước vẫn giữ nguyên. Khi một nến đóng và làm giá trị trung bình chuyển sang
+  mức 1-2-5 tiếp theo, hoặc làm các nến đó chuyển sang bước giá khác, mọi range bar được dựng lại theo
+  range mới. Một range bar đóng tại low cộng range khi đi lên, hoặc tại high trừ
+  range khi đi xuống: giá đóng cửa là một mức giá đã đạt tới, và bóng nến cho thấy hướng
+  đi trước. Một bước nhảy nhiều range, kể cả một gap giữa hai nến, tạo một range bar cho mỗi range;
+  các range bar lấp gap nằm ở những mức giá mà gap bỏ qua, chưa từng được giao dịch. Một range, đặt tay
+  hay tự động, được nâng lên 2, 5, 10, 20… lần chính nó, lấy mức đầu tiên không vượt giới hạn, khi
+  các nến đã đóng sẽ tạo ra hơn 100,000 range bar, hoặc riêng nến đang hình thành tạo ra hơn
+  100,000; khi đó mọi range bar được dựng lại theo range đã nâng. Range nhỏ hơn một nửa chữ số
+  có nghĩa thứ 15 của mức giá lớn nhất thì không đóng range bar nào, bất kể giá được viết thế nào.
 </p>
 <p>
-  Box size của Renko, mức đảo chiều của Kagi và box size của Point &amp; Figure cũng theo
-  cùng giới hạn đó: một giá trị quá nhỏ so với giá, khiến các nến trước nến cuối tạo ra hơn 100.000
-  brick, đường hay cột, hoặc riêng nến cuối tạo ra ngần ấy, sẽ được nâng lên 2, 5, 10, 20… lần
-  chính nó, lấy mức đầu tiên không vượt quá số đó, và biểu đồ được dựng theo mức đã nâng. Kagi và
-  Point &amp; Figure tạo nhiều nhất một đường hay một cột cho mỗi nến, nên chỉ chuỗi hơn 100.000 nến
-  mới chạm tới giới hạn này; Line Break, với thông số là số đường, cũng tạo nhiều nhất một đường cho
-  mỗi nến. Box size, mức đảo chiều hay biên độ nào không phải là số hữu hạn lớn hơn 0, trong trạng
-  thái đã lưu hay trong một link chia sẻ, sẽ bị bỏ qua (biểu đồ quay về giá trị mặc định: tự tính từ
-  dữ liệu, hoặc 4% với Kagi), nên một link không thể làm biểu đồ treo. Hộp thoại cài đặt không nhận
-  giá trị nhỏ hơn 0,00000001 và ghi rõ điều đó dưới ô nhập. Trên biểu đồ trực tiếp, kích thước đã nâng được giữ từ tick này sang
-  tick khác, nên mỗi tick chỉ dựng nến một lần, và được tính lại cho một chuỗi mới;
-  <code>toRenko</code>, <code>toKagi</code>, <code>toPointAndFigure</code> và <code>toRangeBars</code>
-  cũng làm vậy khi được truyền một <code>ReshapeMemo</code> làm tham số cuối. Mỗi chuỗi dùng một memo,
-  truyền nó ở mọi lần dựng, và gọi <code>memo.clear()</code> (hoặc tạo memo mới) khi chuỗi được thay bằng
-  chuỗi khác, như khi đổi mã hay khung thời gian: memo tự nó không nhận ra chuỗi mới, nên sẽ vẽ chuỗi đó
-  theo kích thước đã nâng của chuỗi trước.
+  Box của Renko, mức đảo chiều của Kagi và box của Point &amp; Figure tuân theo cùng giới hạn: một giá trị quá nhỏ
+  so với mức giá, khiến các nến trước nến cuối tạo ra hơn 100,000 brick, đường hoặc
+  cột, hoặc riêng nến cuối tạo ra số lượng đó, được nâng lên 2, 5, 10, 20… lần chính nó, lấy
+  mức đầu tiên không vượt giới hạn, và biểu đồ được dựng theo giá trị đó. Kagi và Point &amp; Figure tạo tối đa một
+  đường hoặc cột cho mỗi nến, nên chỉ chuỗi hơn 100,000 nến mới chạm tới giới hạn;
+  Line Break, với thiết lập là số đường, cũng tạo tối đa một đường cho mỗi nến. Box, mức đảo chiều
+  hoặc range không phải số hữu hạn lớn hơn 0, trong state đã lưu hoặc trong link chia sẻ, sẽ bị bỏ qua (biểu
+  đồ quay về giá trị mặc định: tính từ dữ liệu, hoặc 4% với Kagi), nên một link không thể làm treo
+  biểu đồ. Dialog cài đặt không nhận giá trị nhỏ hơn 0.00000001 và báo lỗi dưới ô nhập. Trên biểu đồ live, kích thước
+  đã nâng được giữ qua các tick, nên mỗi tick chỉ dựng nến một lần, và được tính lại cho chuỗi
+  mới; <code>toRenko</code>, <code>toKagi</code>, <code>toPointAndFigure</code> và
+  <code>toRangeBars</code> cũng làm như vậy khi nhận một <code>ReshapeMemo</code> làm tham số cuối.
+  Giữ một memo cho mỗi chuỗi, truyền nó vào mỗi lần chạy, và gọi <code>memo.clear()</code> (hoặc tạo
+  memo mới) khi chuỗi bị thay thế, cho mã hoặc khung thời gian mới: memo không tự nhận ra chuỗi mới,
+  và sẽ vẽ chuỗi mới theo kích thước đã nâng của chuỗi cũ.
 </p>
 <pre><code>{`chart.setChartTypeOptions({
   renko: { boxSize: 50 },                         // or 'atr' with atrPeriod
@@ -129,20 +129,21 @@
 chart.getChartTypeOptions()
 new Chart(host, { chartTypeOptions: { renko: { boxSize: 50 } } })`}</code></pre>
 
-<h2>Chuỗi giá chính và các đường trên pane giá</h2>
+<h2>Chuỗi chính và các đường trên pane giá</h2>
 <p>
-  Ẩn chuỗi giá chính để chỉ xem các chỉ báo hoặc các mã so sánh; đánh dấu giá cao nhất và thấp
-  nhất trên màn hình; đánh dấu giá bid và ask. Nguồn dữ liệu nào có tick kèm <code>bid</code> và
-  <code>ask</code> sẽ tự cập nhật các đường này.
+  Ẩn chuỗi chính để chỉ xem chỉ báo hoặc các mã so sánh; đánh dấu
+  high cao nhất và low thấp nhất trên màn hình; đánh dấu bid và ask. Feed có tick mang
+  <code>bid</code> và <code>ask</code> tự cập nhật các giá trị này.
 </p>
 <pre><code>{`chart.setMainSeriesVisible(false)
 chart.setHighLowLines(true)          // or new Chart(host, { highLowLines: true })
 chart.setBidAsk({ bid: 64210.5, ask: 64211 })
 chart.setBidAsk(null)`}</code></pre>
 <p>
-  Các tag trên trục giá đè lên nhau (giá cuối, bid và ask, high và low, giá trần sàn, lệnh và
-  vị thế) được dàn ra: tag giá cuối đứng yên trên đường của nó, các tag phía trên đẩy lên,
-  phía dưới đẩy xuống, mỗi tag chỉ dời vừa đủ. Trong menu trục giá và Settings của ChartWidget,
-  mục này tên là "Nhãn không chồng nhau". Tắt đi để mỗi tag nằm đúng trên đường của nó:
+  Các nhãn trên trục giá có thể che nhau (giá cuối, bid và ask,
+  high và low, biên độ trong ngày, order và position) được tách ra: nhãn giá cuối
+  giữ trên đường của nó, các nhãn phía trên được đẩy lên và các nhãn phía dưới được đẩy xuống, mỗi nhãn chỉ dịch
+  vừa đủ. Menu thang giá và Cài đặt biểu đồ của ChartWidget gọi tính năng này là "Nhãn không chồng nhau". Tắt nó
+  để giữ mọi nhãn trên đường của nó:
 </p>
-<pre><code>{`chart.setAxisLabelsAligned(false)   // hoặc new Chart(host, { features: { alignAxisLabels: false } })`}</code></pre>
+<pre><code>{`chart.setAxisLabelsAligned(false)   // or new Chart(host, { features: { alignAxisLabels: false } })`}</code></pre>
