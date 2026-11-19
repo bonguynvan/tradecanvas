@@ -305,3 +305,52 @@ describe('TradingManager: a stop added on the chart, after review', () => {
     expect(events).toEqual([]);
   });
 });
+
+describe('TradingManager: positions and orders hidden or locked', () => {
+  const buttonsNow = () => (manager as unknown as { buttons: { action: { type: string } }[] }).buttons.map((b) => b.action.type);
+
+  it('draws none of them while hidden, and they take no press; a bracket being placed still shows', () => {
+    manager.setHidden(true);
+    expect(manager.isHidden()).toBe(true);
+    const { ctx, texts } = recordingCtx();
+    manager.render(ctx, unitViewport, theme);
+    expect(buttonsNow()).toEqual([]);
+    expect(texts).toEqual([]);
+    expect(manager.axisBadgeLines(unitViewport)).toEqual([]);
+    // A bracket being placed: its entry, stop and target, and nothing of the position or the order.
+    manager.startBracket('buy', 40);
+    expect(manager.axisBadgeLines(unitViewport)).toHaveLength(3);
+    manager.cancelBracket();
+    // The order line at 30 (y 70) is not there to drag.
+    expect(manager.onPointerDown({ x: 400, y: 70 }, unitViewport)).toBe(false);
+    expect(manager.isOverDraggableLine({ x: 400, y: 70 }, unitViewport)).toBe(false);
+    manager.setHidden(false);
+    manager.render(recordingCtx().ctx, unitViewport, theme);
+    expect(buttonsNow()).toContain('cancelOrder');
+  });
+
+  it('lets none of their lines or tags be dragged while locked, but keeps their buttons', () => {
+    manager.setLocked(true);
+    expect(manager.isLocked()).toBe(true);
+    manager.render(recordingCtx().ctx, unitViewport, theme);
+    expect(manager.onPointerDown({ x: 400, y: 70 }, unitViewport)).toBe(false);
+    expect(manager.isOverDraggableLine({ x: 400, y: 70 }, unitViewport)).toBe(false);
+    click(buttonCentre('cancelOrder'));
+    expect(events).toEqual([{ event: 'orderCancel', data: { orderId: 'o1' } }]);
+  });
+
+  it('says a locked line’s tag cannot be dragged, as its line cannot', () => {
+    manager.setLocked(true);
+    manager.render(recordingCtx().ctx, unitViewport, theme);
+    const tag = (manager as unknown as { tagBoxes: { x: number; y: number; width: number; height: number }[] }).tagBoxes[0];
+    expect(tag).toBeDefined();
+    expect(manager.isOverDraggableLine({ x: tag.x + 2, y: tag.y + tag.height / 2 }, unitViewport)).toBe(false);
+  });
+
+  it('offers no SL or TP to drag out while locked', () => {
+    manager.setPositions([{ id: 'p1', side: 'buy', entryPrice: 60, quantity: 2 }]);
+    manager.setLocked(true);
+    manager.render(recordingCtx().ctx, unitViewport, theme);
+    expect(buttonsNow()).not.toContain('addStop');
+  });
+});

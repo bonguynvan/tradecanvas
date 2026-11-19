@@ -694,22 +694,18 @@ export class ChartWidget {
         onCancelDrawing: () => this.handleCancelDrawing(),
         onCrosshairCursor: (kind) => this.setCrosshairCursor(kind),
         onToggleMagnet: features.drawingMagnet !== false ? () => this.handleToggleMagnet() : undefined,
+        onMagnetMenu: features.drawingMagnet !== false ? (anchor) => this.menus.openMagnetMenu(anchor) : undefined,
         onToggleEraser: () => this.chart.setEraserMode(!this.chart.isEraserMode()),
         onToggleZoomArea: () => this.chart.setZoomAreaMode(!this.chart.isZoomAreaMode()),
         onToggleFavorite: (tool) => this.handleToggleFavorite(tool),
         onClear: (anchor) => this.menus.openClearMenu(anchor),
         onToggleStyle: () => this.drawingStyle?.toggle(),
         onToggleStayInDrawing: () => this.handleToggleStayInDrawing(),
-        onLockAll: (locked) => {
-          this.chart.setDrawingsLocked(this.chart.getDrawings().map((d) => d.id), locked);
-          this.refreshDrawingsState();
-          this.docking.refreshObjects();
-        },
-        onHideAll: (hidden) => {
-          this.chart.setDrawingsVisible(this.chart.getDrawings().map((d) => d.id), !hidden);
-          this.refreshDrawingsState();
-          this.docking.refreshObjects();
-        },
+        // Each acts on what its menu last chose: the drawings until then.
+        onLockAll: () => this.menus.toggleLocked(),
+        onLockMenu: (anchor) => this.menus.openLockMenu(anchor),
+        onHideAll: () => this.menus.toggleHidden(),
+        onHideMenu: (anchor) => this.menus.openHideMenu(anchor),
       },
     this.t,
     );
@@ -1240,8 +1236,8 @@ export class ChartWidget {
         this.drawingEdit.updateSelectionToolbar();
       },
     }, this.t);
-    // Lock all and hide all show whether every drawing is.
-    for (const event of ['drawingCreate', 'drawingUpdate', 'drawingRemove'] as const) {
+    // The lock and hide buttons show whether what they act on is: the drawings, the indicators, or all.
+    for (const event of ['drawingCreate', 'drawingUpdate', 'drawingRemove', 'indicatorAdd', 'indicatorRemove', 'indicatorChange', 'historyChange'] as const) {
       this.chart.on(event, () => this.refreshDrawingsState());
     }
     // Undo and redo on the toolbar, each off while there is nothing for it.
@@ -2603,13 +2599,15 @@ export class ChartWidget {
     return { time: `${time}:${pad(new Date(now).getUTCSeconds())}`, zone: tzLabel(offsetAt(tz, now)) };
   }
 
-  /** Whether every drawing is locked, and every one hidden: the sidebar's lock all and hide all say so. */
+  /** The lock and hide buttons: whether what they act on now is locked and hidden, and its name. */
   private refreshDrawingsState(): void {
-    const drawings = this.chart.getDrawings() ?? [];
-    const all = drawings.length > 0;
-    this.sidebar?.setDrawingsState({
-      locked: all && drawings.every((d) => d.locked),
-      hidden: all && drawings.every((d) => !d.visible),
+    if (!this.sidebar) return;
+    const { hideScope, lockScope } = this.menus;
+    this.sidebar.setDrawingsState({
+      locked: this.menus.isLocked(lockScope),
+      hidden: this.menus.isHidden(hideScope),
+      lockLabel: lockScope === 'drawings' ? undefined : this.t(`lock.${lockScope}`),
+      hideLabel: hideScope === 'drawings' ? undefined : this.t(`hide.${hideScope}`),
     });
   }
 
@@ -3123,9 +3121,21 @@ export class ChartWidget {
     this.updateUI();
   }
 
-  /** The magnet button goes off → weak → strong → off. */
+  /** The magnet's strength its menu last chose: the button turns it on at it. */
+  private magnetStrength: 'weak' | 'strong' = 'weak';
+
+  /** The magnet button: on at the strength last chosen, or off. */
   private handleToggleMagnet(): void {
-    const mode = !this.state.magnetEnabled ? 'weak' : this.state.magnetStrong ? 'off' : 'strong';
+    this.applyMagnet(this.state.magnetEnabled ? 'off' : this.magnetStrength);
+  }
+
+  /** The magnet's menu: on at `strength`, the button's from then on. */
+  private setMagnetStrength(strength: 'weak' | 'strong'): void {
+    this.magnetStrength = strength;
+    this.applyMagnet(strength);
+  }
+
+  private applyMagnet(mode: 'off' | 'weak' | 'strong'): void {
     this.state = { ...this.state, magnetEnabled: mode !== 'off', magnetStrong: mode === 'strong' };
     this.chart.setDrawingMagnetMode(mode);
     this.updateUI();
@@ -3689,6 +3699,7 @@ export class ChartWidget {
       get options() { return w.options; },
       refreshDrawingsState: (...args) => w.refreshDrawingsState(...args),
       refreshObjects: (...args) => w.docking.refreshObjects(...args),
+      setMagnetStrength: (...args) => w.setMagnetStrength(...args),
       resetView: (...args) => w.resetView(...args),
       get root() { return w.root; },
       say: (...args) => w.say(...args),

@@ -43,7 +43,19 @@ class FakeChart {
     this.drawings = this.drawings.map((d) => (ids.includes(d.id) ? { ...d, visible } : d));
   }
   clearDrawings(): void { this.drawings = []; }
-  activeIndicators: { instanceId: string }[] = [];
+  activeIndicators: { instanceId: string; visible?: boolean; [key: string]: unknown }[] = [];
+  setIndicatorsVisible(ids: string[], visible: boolean): void {
+    this.activeIndicators = this.activeIndicators.map((i) => (ids.includes(i.instanceId) ? { ...i, visible } : i));
+  }
+  tradingVisible = true;
+  tradingLocked = false;
+  setTradingVisible(on: boolean): void { this.tradingVisible = on; }
+  isTradingVisible(): boolean { return this.tradingVisible; }
+  setTradingLocked(on: boolean): void { this.tradingLocked = on; }
+  isTradingLocked(): boolean { return this.tradingLocked; }
+  getFeatures(): Record<string, boolean> { return { trading: this.options.features?.trading !== false }; }
+  magnetModes: string[] = [];
+  setDrawingMagnetMode(mode: string): void { this.magnetModes.push(mode); }
   removed: string[] = [];
   removeAll(what: string): { drawings: number; indicators: number } {
     this.removed.push(what);
@@ -64,7 +76,7 @@ class FakeChart {
   isAutoScale(): boolean { return this.auto; }
   setAutoScale(on: boolean): void { this.auto = on; }
   getData(): unknown[] { return []; }
-  getActiveIndicators(): { instanceId: string }[] { return this.activeIndicators; }
+  getActiveIndicators(): { instanceId: string; visible?: boolean; [key: string]: unknown }[] { return this.activeIndicators; }
   getIndicatorPanes(): unknown[] { return []; }
   getLegendBottom(): number { return 0; }
   isTimeAligned(): boolean { return true; }
@@ -203,5 +215,105 @@ describe('the interval of static data', () => {
     expect(FakeChart.last.dataTimeframes).toEqual(['1h']);
     await widget.setTimeframe('1d');
     expect(FakeChart.last.dataTimeframes).toEqual(['1h', '1d']);
+  });
+});
+
+describe('the hide, lock and magnet buttons’ menus', () => {
+  /** An indicator as the objects list reads it. */
+  const indicator = (instanceId: string, visible: boolean) => ({ instanceId, visible, id: 'sma', params: {}, descriptor: { name: 'SMA' } });
+  const shown = (fake: FakeChart) => fake.activeIndicators.map((i) => i.visible);
+  const menuOf = (name: string) => host.querySelector<HTMLButtonElement>(`[data-role="${name}"] ~ .tcw-sidebar-menu-btn, [data-menu-for="${name}"]`)!;
+  const label = (name: string) => role(name)!.getAttribute('aria-label') ?? role(name)!.title;
+
+  it('hides the indicators, or the positions and orders, from the hide menu, and the button then toggles that', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false, trading: true });
+    const fake = FakeChart.last;
+    fake.activeIndicators = [indicator('i1', true), indicator('i2', false)];
+    menuOf('hideAll').click();
+    expect(openItems().map((i) => i.dataset.id)).toEqual(['drawings', 'indicators', 'trading', 'all']);
+    menuItem('indicators')!.click();
+    // Only the one that showed is hidden, and only it comes back.
+    expect(shown(fake)).toEqual([false, false]);
+    expect(pressed('hideAll')).toBe('true');
+    expect(label('hideAll')).toBe('Hide indicators');
+    role('hideAll')!.click();
+    expect(shown(fake)).toEqual([true, false]);
+    expect(pressed('hideAll')).toBe('false');
+    menuOf('hideAll').click();
+    menuItem('trading')!.click();
+    expect(fake.tradingVisible).toBe(false);
+    expect(fake.drawings.every((d) => d.visible)).toBe(true);
+  });
+
+  it('remembers every indicator it hid, through one added meanwhile, and shows them all again', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false, trading: true });
+    const fake = FakeChart.last;
+    fake.activeIndicators = [indicator('i1', true), indicator('i2', true)];
+    menuOf('hideAll').click();
+    menuItem('indicators')!.click();
+    fake.activeIndicators = [...fake.activeIndicators, indicator('i3', true)];
+    role('hideAll')!.click();
+    expect(shown(fake)).toEqual([false, false, false]);
+    role('hideAll')!.click();
+    expect(shown(fake)).toEqual([true, true, true]);
+  });
+
+  it('follows an indicator shown again from elsewhere', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false, trading: true });
+    const fake = FakeChart.last;
+    fake.activeIndicators = [indicator('i1', true)];
+    menuOf('hideAll').click();
+    menuItem('indicators')!.click();
+    expect(pressed('hideAll')).toBe('true');
+    fake.activeIndicators = [indicator('i1', true)];
+    fake.emit('indicatorChange', { instanceId: 'i1', change: 'visible' });
+    expect(pressed('hideAll')).toBe('false');
+  });
+
+  it('hides everything with Hide all, and ticks what is hidden', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false, trading: true });
+    const fake = FakeChart.last;
+    fake.activeIndicators = [indicator('i1', true)];
+    menuOf('hideAll').click();
+    menuItem('all')!.click();
+    expect(fake.drawings.every((d) => !d.visible)).toBe(true);
+    expect(fake.activeIndicators[0].visible).toBe(false);
+    expect(fake.tradingVisible).toBe(false);
+    menuOf('hideAll').click();
+    expect(openItems().map((i) => i.getAttribute('aria-checked'))).toEqual(['true', 'true', 'true', 'true']);
+  });
+
+  it('locks the positions and orders from the lock menu', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false, trading: true });
+    const fake = FakeChart.last;
+    menuOf('lockAll').click();
+    expect(openItems().map((i) => i.dataset.id)).toEqual(['drawings', 'trading', 'all']);
+    menuItem('trading')!.click();
+    expect(fake.tradingLocked).toBe(true);
+    expect(fake.drawings.some((d) => d.locked)).toBe(false);
+    expect(pressed('lockAll')).toBe('true');
+    role('lockAll')!.click();
+    expect(fake.tradingLocked).toBe(false);
+  });
+
+  it('offers no positions and orders without trading', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false, trading: false });
+    menuOf('hideAll').click();
+    expect(openItems().map((i) => i.dataset.id)).toEqual(['drawings', 'indicators', 'all']);
+  });
+
+  it('turns the magnet on and off with a click, in the strength the menu chose', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false });
+    const fake = FakeChart.last;
+    // What the widget set as it started.
+    const from = fake.magnetModes.length;
+    role('magnet')!.click();
+    role('magnet')!.click();
+    menuOf('magnet').click();
+    expect(openItems().map((i) => i.dataset.id)).toEqual(['weak', 'strong']);
+    menuItem('strong')!.click();
+    role('magnet')!.click();
+    role('magnet')!.click();
+    expect(fake.magnetModes.slice(from)).toEqual(['weak', 'off', 'strong', 'off', 'strong']);
   });
 });

@@ -9,6 +9,7 @@
 
 ### Widget
 
+- **Menus on the drawing sidebar's magnet, lock and hide buttons** (`@tradecanvas/chart`): opened from their corner, a right click or an arrow key. Hide: the drawings, the indicators, the positions and orders, or all. Lock: the drawings, the positions and orders, or all. Magnet: weak or strong; its button now turns the magnet on at the strength last chosen and off, where it cycled through off, weak and strong. What a menu picks is what its button does from then on. New on `Chart`: `setTradingVisible` / `isTradingVisible` (positions, orders and fills hidden: not drawn, not pressable, still following the adapter), `setTradingLocked` / `isTradingLocked` (their lines and tags not dragged; their buttons still act) and `setIndicatorsVisible(ids, visible)` (one undo step).
 - **A page of your own in the dock** (`@tradecanvas/chart`): `widget.addDockPage({ id, label, icon, element, onShow, onHide })` puts its button on the rail after the built-in panels and your element under the dock's header (its label and a close button); `openPanel(id)` opens it, `getOpenPanel()` reports it, and `remove()` takes it away. The `onPanelChange` option is told the open panel, or `null`, however it changed. `openPanel` and `getOpenPanel` take and give `DockPanelId` (a built-in panel or a page's id).
 
 ### Drawings
