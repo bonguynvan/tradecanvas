@@ -557,8 +557,12 @@ widget.destroy()`}</code></pre>
     </td></tr>
     <tr><td>Công cụ vẽ</td><td>
       Menu của mỗi nhóm ghi phím tắt của các công cụ trong nhóm (Alt+T là trend line) và có một ngôi sao trên mỗi
-      dòng để ghim công cụ đó lên đầu. Ở dưới cùng: kiểu vẽ, nam châm, cục tẩy, zoom vùng, giữ chế độ vẽ, khoá tất cả,
-      ẩn tất cả, và nút thùng rác: menu của nó xoá các hình vẽ, các chỉ báo hoặc cả hai, kèm số lượng mỗi loại, trong một bước hoàn tác.
+      dòng để ghim công cụ đó lên đầu. Ở dưới cùng: kiểu vẽ, nam châm, cục tẩy, zoom vùng, giữ chế độ vẽ, khoá,
+      ẩn, và nút thùng rác: menu của nó xoá các hình vẽ, các chỉ báo hoặc cả hai, kèm số lượng mỗi loại, trong một bước hoàn tác.
+      Nút nam châm, khoá và ẩn mỗi nút có một menu ở góc (hoặc chuột phải, hoặc phím mũi tên): menu nam châm chọn yếu
+      hay mạnh, và nút bật nam châm ở mức đó hoặc tắt; menu khoá khoá các hình vẽ, các position và order, hoặc tất cả;
+      menu ẩn ẩn các hình vẽ, các chỉ báo, các position và order, hoặc tất cả, có dấu tick ở mục đang ẩn. Mục menu chọn
+      là việc nút làm từ đó. Ẩn các chỉ báo chỉ ẩn những cái đang hiện, và hiện lại thì chỉ đưa những cái đó trở lại.
     </td></tr>
     <tr><td>Thanh trạng thái</td><td>
       Các khoảng thời gian dựng sẵn và đi tới ngày; trạng thái thị trường, kết nối, một đồng hồ theo múi giờ hiển thị
@@ -992,6 +996,13 @@ widget.toggleSymbolInfo(true)`}</code></pre>
 <pre><code>{`new ChartWidget(host, {
   drawingFavorites: ['trendLine', 'horizontalLine', 'fibRetracement', 'rectangle'],
 })`}</code></pre>
+<p>
+  Nút ngôi sao trên thanh bên hiện các công cụ đã ghim thành một <strong>thanh công cụ yêu thích</strong> nổi trên
+  chart: kéo tay nắm để đặt nó ở đâu trên chart cũng được, bấm một công cụ để chọn, chuột phải để bỏ ghim. Thanh có
+  hiện hay không và vị trí của nó được lưu trong trình duyệt này, một thiết lập chung cho các widget của một trang, và
+  dải công cụ ghim trên thanh bên tự ẩn khi thanh nổi đang hiện; khi switch của nó tắt, các công cụ ghim vẫn ở trên dải.
+  Lần đầu, thanh nằm giữa mép trên của chart. <code>{`features: { favoritesBar: false }`}</code> bỏ thanh và nút của nó.
+</p>
 
 <h3>Kiểu vẽ &amp; mẫu</h3>
 <p>
@@ -1032,8 +1043,8 @@ chart.removeIndicator(instanceId)`}</code></pre>
   thời gian mà nó hiện trên đó), cùng menu Mẫu, Huỷ và OK ở cuối hộp thoại.
   Bấm chuột phải vào một
   hình vẽ để mở menu: cài đặt, cảnh báo trên đường của nó, thứ tự, nhóm, khoá,
-  ẩn, nhân bản và xoá. Thanh bên còn có tẩy, công cụ phóng to và nam châm với
-  các mức tắt, yếu và mạnh. Xem
+  ẩn, nhân bản và xoá. Thanh bên còn có tẩy, công cụ phóng to và nam châm,
+  yếu hay mạnh chọn từ menu của nó. Xem
   <a href={href('/docs/drawing-tools')}>Công cụ vẽ</a> để biết API bên dưới.
 </p>
 

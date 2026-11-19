@@ -570,7 +570,12 @@ widget.destroy()`}</code></pre>
     <tr><td>Herramientas de dibujo</td><td>
       El menú de cada grupo indica los atajos de sus herramientas (Alt+T una línea de tendencia) y tiene una estrella en
       cada fila para fijar la herramienta arriba. Abajo: el estilo de dibujo, el imán, la goma, el zoom de área, mantener
-      el modo de dibujo, bloquear todo, ocultar todo y la papelera: su menú quita los dibujos, los indicadores o ambos, con cuántos hay de cada uno, en un solo paso de deshacer.
+      el modo de dibujo, bloquear, ocultar y la papelera: su menú quita los dibujos, los indicadores o ambos, con cuántos hay de cada uno, en un solo paso de deshacer.
+      Los botones del imán, bloquear y ocultar tienen cada uno un menú en su esquina (o con clic derecho, o una tecla de
+      flecha): el del imán elige débil o fuerte, y el botón enciende el imán con esa fuerza y lo apaga; el de bloquear
+      bloquea los dibujos, las posiciones y órdenes, o todo; el de ocultar oculta los dibujos, los indicadores, las
+      posiciones y órdenes, o todo, marcando lo que está oculto. Lo que elige un menú es lo que su botón hace desde
+      entonces. Ocultar los indicadores oculta los que se veían, y mostrarlos de nuevo devuelve solo esos.
     </td></tr>
     <tr><td>Barra de estado</td><td>
       Los rangos predefinidos e ir a fecha; el estado del mercado, la conexión, un reloj en la zona horaria de la vista
@@ -1022,6 +1027,14 @@ widget.toggleSymbolInfo(true)`}</code></pre>
 <pre><code>{`new ChartWidget(host, {
   drawingFavorites: ['trendLine', 'horizontalLine', 'fibRetracement', 'rectangle'],
 })`}</code></pre>
+<p>
+  El botón de la estrella de la barra lateral muestra las herramientas fijadas como una <strong>barra de favoritos</strong>
+  flotando sobre el gráfico: arrastra su asa para ponerla en cualquier lugar del gráfico, pulsa una herramienta para
+  elegirla y haz clic derecho en una para quitarla. Si se muestra y dónde se dejó se guardan en este navegador, como un
+  ajuste común a los widgets de una página, y la tira de la barra lateral se aparta mientras se muestra; con su
+  interruptor apagado, las herramientas fijadas siguen en la tira. Aparece primero centrada en el borde superior del
+  gráfico. <code>{`features: { favoritesBar: false }`}</code> deja fuera la barra y su botón.
+</p>
 
 <h3>Estilo de dibujo y plantillas</h3>
 <p>
@@ -1064,8 +1077,8 @@ chart.removeIndicator(instanceId)`}</code></pre>
   temporalidades en las que se muestra), con un menú Plantilla, Cancelar y Aceptar
   al pie. Haz clic derecho en un dibujo para ver su menú: configuración, una
   alerta en su línea, orden, agrupar, bloquear, ocultar, duplicar y eliminar. La
-  barra lateral también tiene un borrador, una herramienta de zoom y un imán que
-  puede estar desactivado, débil o fuerte. Consulta
+  barra lateral también tiene un borrador, una herramienta de zoom y un imán, débil
+  o fuerte desde su menú. Consulta
   <a href={href('/docs/drawing-tools')}>Herramientas de dibujo</a> para ver la API que hay debajo.
 </p>
 

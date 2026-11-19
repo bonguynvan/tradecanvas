@@ -54,6 +54,15 @@ new ChartWidget(host, { chartOptions: { features: { tradingContextMenu: true } }
   設定した瞬間に達することはありません。離すと損切りのドラッグと同じく <code>positionModify</code> が送られ、
   接続した執行アダプターがそれを反映します。<code>lineButtons: {'{'} addStops: false {'}'}</code> でボタンを表示しません。
 </p>
+<p>
+  ポジション、注文、その約定は非表示にでき、その線はロックできます。非表示のときはどれも描画されず、押すこともできません。
+  それでも保持され、執行アダプターに従い続け、発注中のブラケットや注文は表示されます。ロックのときは、線もタグもドラッグできず、
+  ポジションから SL や TP を引き出すこともできません。ボタン（決済、取消、反転、トレール、ストップの削除）は使えます。
+  ウィジェットでは、描画サイドバーの非表示ボタンとロックボタンのメニューで行います。
+</p>
+<pre><code>{`chart.setTradingVisible(false)   // isTradingVisible()
+chart.setTradingLocked(true)     // isTradingLocked()
+chart.setIndicatorsVisible(ids, false)   // 複数のインジケーターをまとめて、1 回の元に戻す単位で`}</code></pre>
 
 <h2>注文</h2>
 <pre><code>{`chart.setOrders([{

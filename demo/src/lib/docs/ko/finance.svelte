@@ -230,6 +230,24 @@ new HeatmapChart(el, {
 new WaterfallChart(el, { data: [{ label: 'Start', value: 10000, type: 'total' }, { label: 'Fees', value: -85 }, { label: 'End', value: 9915, type: 'total' }] })
 new DepthChart(el, { data: { bids, asks }, midPriceLine: true, spreadLabel: true })
 new EquityCurveChart(el, { data: equity, benchmark, drawdown: true })`}</code></pre>
+<p>
+  자산 곡선은 <strong>levels</strong>(고정된 값에서 플롯을 가로지르는 선으로, 값은 축의 태그에 적힘)와
+  <strong>bands</strong>(곡선 아래에 색을 칠한 값의 구간)도 받습니다. level에는 오른쪽 끝에 적히는 <code>label</code>,
+  <code>color</code>, <code>dash</code>(<code>[]</code>는 실선)가 있고, band에는 모서리에 적히는 <code>label</code>과 그대로
+  쓰이는 <code>color</code>가 있으니 투명도가 있는 색을 주세요. 색이 없으면 둘 다 테마의 색을 씁니다. level의 값은
+  줄이지 않고 적히며, <code>valueFormat</code>이 있으면 그것을 따릅니다. 값 눈금은 모두 보이도록 넓어집니다.
+  <code>fitLevels: false</code>는 눈금을 곡선에 맞추어, 바깥의 level은 빼고 band는 겹치는 부분만 그립니다.
+  <code>setOptions</code>로 차트를 다시 만들지 않고 바꿀 수 있습니다.
+</p>
+<pre><code>{`const chart = new EquityCurveChart(el, {
+  data: closes,
+  levels: [{ value: 41_250, label: 'BOS', color: '#e0a030' }, { value: 38_900, label: 'Equilibrium' }],
+  bands: [
+    { from: 38_900, to: 44_100, label: 'Premium', color: 'rgba(232, 80, 91, 0.10)' },
+    { from: 33_700, to: 38_900, label: 'Discount', color: 'rgba(31, 168, 116, 0.10)' },
+  ],
+})
+chart.setOptions({ levels: [{ value: 42_000, label: 'CHoCH' }] })`}</code></pre>
 
 <h2>성과 대시보드</h2>
 <p>

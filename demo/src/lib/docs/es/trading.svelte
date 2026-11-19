@@ -57,6 +57,16 @@ new ChartWidget(host, { chartOptions: { features: { tradingContextMenu: true } }
   <code>positionModify</code>, como al arrastrar un stop, de modo que un adaptador de ejecución conectado lo aplica.
   <code>lineButtons: {'{'} addStops: false {'}'}</code> deja fuera los botones.
 </p>
+<p>
+  Las posiciones, las órdenes y sus ejecuciones se pueden ocultar, y sus líneas bloquear. Ocultas, ninguna se dibuja ni
+  se puede pulsar; se siguen guardando y siguen al adaptador de ejecución, y un bracket o una orden que se está colocando
+  se sigue viendo. Bloqueadas, no se puede arrastrar ninguna de sus líneas ni etiquetas, y una posición no ofrece SL ni TP
+  que sacar; sus botones (cerrar, cancelar, invertir, trailing, quitar un stop) siguen funcionando. En el widget lo hacen
+  los menús de los botones de ocultar y bloquear de la barra lateral de dibujo.
+</p>
+<pre><code>{`chart.setTradingVisible(false)   // isTradingVisible()
+chart.setTradingLocked(true)     // isTradingLocked()
+chart.setIndicatorsVisible(ids, false)   // varios indicadores a la vez, un paso de deshacer`}</code></pre>
 
 <h2>Órdenes</h2>
 <pre><code>{`chart.setOrders([{

@@ -230,6 +230,24 @@ new HeatmapChart(el, {
 new WaterfallChart(el, { data: [{ label: 'Start', value: 10000, type: 'total' }, { label: 'Fees', value: -85 }, { label: 'End', value: 9915, type: 'total' }] })
 new DepthChart(el, { data: { bids, asks }, midPriceLine: true, spreadLabel: true })
 new EquityCurveChart(el, { data: equity, benchmark, drawdown: true })`}</code></pre>
+<p>
+  資産曲線は <strong>levels</strong>（固定値でプロットを横切る線。値は軸のタグに書かれます）と
+  <strong>bands</strong>（曲線の下に色を付けた値の範囲）も受け取ります。level には右端に書く <code>label</code>、
+  <code>color</code>、<code>dash</code>（<code>[]</code> で実線）があり、band には角に書く <code>label</code> と、そのまま
+  使われる <code>color</code> があるので、透明度のある色を渡してください。色がなければどちらもテーマの色になります。
+  level の値は省略せずに書かれ、<code>valueFormat</code> があればそれに従います。値の目盛りはすべてが見えるように
+  広がります。<code>fitLevels: false</code> では目盛りを曲線に合わせ、外れた level は描かず、band は重なる部分だけ描きます。
+  <code>setOptions</code> でチャートをそのままにして変えられます。
+</p>
+<pre><code>{`const chart = new EquityCurveChart(el, {
+  data: closes,
+  levels: [{ value: 41_250, label: 'BOS', color: '#e0a030' }, { value: 38_900, label: 'Equilibrium' }],
+  bands: [
+    { from: 38_900, to: 44_100, label: 'Premium', color: 'rgba(232, 80, 91, 0.10)' },
+    { from: 33_700, to: 38_900, label: 'Discount', color: 'rgba(31, 168, 116, 0.10)' },
+  ],
+})
+chart.setOptions({ levels: [{ value: 42_000, label: 'CHoCH' }] })`}</code></pre>
 
 <h2>パフォーマンスダッシュボード</h2>
 <p>
