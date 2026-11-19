@@ -52,6 +52,14 @@ new ChartWidget(host, { chartOptions: { features: { tradingContextMenu: true } }
   之外 1% 开始，因此设置的那一刻都不会被触发。松开时会发出 <code>positionModify</code>，与拖动止损相同，由已连接的执行适配器应用。
   <code>lineButtons: {'{'} addStops: false {'}'}</code> 可去掉这些按钮。
 </p>
+<p>
+  持仓、订单及其成交可以隐藏，它们的线也可以锁定。隐藏时，它们都不绘制、也无法点按；但仍会保留并继续跟随执行适配器，
+  正在下的括号单或订单仍会显示。锁定时，它们的线和标签都无法拖动，持仓也不再提供可拖出的 SL 或 TP；
+  它们的按钮（平仓、撤单、反手、跟踪、移除止损）仍然可用。在组件中，由画线侧边栏上隐藏和锁定按钮的菜单完成这些操作。
+</p>
+<pre><code>{`chart.setTradingVisible(false)   // isTradingVisible()
+chart.setTradingLocked(true)     // isTradingLocked()
+chart.setIndicatorsVisible(ids, false)   // 一次处理多个指标，一步撤销`}</code></pre>
 
 <h2>订单</h2>
 <pre><code>{`chart.setOrders([{

@@ -55,6 +55,16 @@ new ChartWidget(host, { chartOptions: { features: { tradingContextMenu: true } }
   <code>positionModify</code>, như khi kéo một stop, nên một execution adapter đã kết nối sẽ áp dụng nó.
   <code>lineButtons: {'{'} addStops: false {'}'}</code> ẩn các nút này.
 </p>
+<p>
+  Các position, order và fill của chúng có thể được ẩn, và các đường của chúng có thể được khoá. Khi ẩn, không cái
+  nào được vẽ hay bấm được; chúng vẫn được giữ và vẫn theo execution adapter, và một bracket hay một order đang đặt
+  vẫn hiện. Khi khoá, không đường hay nhãn nào của chúng kéo được, và position không cho kéo ra SL hay TP; các nút
+  của chúng (đóng, huỷ, đảo, trail, bỏ stop) vẫn hoạt động. Trong widget, menu của nút ẩn và nút khoá trên thanh vẽ
+  làm việc này.
+</p>
+<pre><code>{`chart.setTradingVisible(false)   // isTradingVisible()
+chart.setTradingLocked(true)     // isTradingLocked()
+chart.setIndicatorsVisible(ids, false)   // nhiều chỉ báo một lúc, một bước hoàn tác`}</code></pre>
 
 <h2>Lệnh</h2>
 <pre><code>{`chart.setOrders([{

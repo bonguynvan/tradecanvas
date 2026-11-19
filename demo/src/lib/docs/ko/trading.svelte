@@ -54,6 +54,15 @@ new ChartWidget(host, { chartOptions: { features: { tradingContextMenu: true } }
   놓으면 손절을 끌 때처럼 <code>positionModify</code>가 전송되므로 연결된 실행 어댑터가 이를 적용합니다.
   <code>lineButtons: {'{'} addStops: false {'}'}</code>로 버튼을 숨길 수 있습니다.
 </p>
+<p>
+  포지션, 주문과 그 체결은 숨길 수 있고, 그 선은 잠글 수 있습니다. 숨기면 어느 것도 그려지지 않고 누를 수도 없지만, 그대로
+  보관되고 실행 어댑터를 계속 따르며, 내고 있는 브래킷이나 주문은 여전히 보입니다. 잠그면 선이나 태그를 끌 수 없고 포지션에서
+  SL이나 TP를 끌어낼 수도 없지만, 버튼(청산, 취소, 반전, 트레일, 스톱 제거)은 그대로 동작합니다. 위젯에서는 그리기
+  사이드바의 숨기기와 잠금 버튼 메뉴로 합니다.
+</p>
+<pre><code>{`chart.setTradingVisible(false)   // isTradingVisible()
+chart.setTradingLocked(true)     // isTradingLocked()
+chart.setIndicatorsVisible(ids, false)   // 여러 지표를 한 번에, 실행 취소 한 단계로`}</code></pre>
 
 <h2>주문</h2>
 <pre><code>{`chart.setOrders([{
