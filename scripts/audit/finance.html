@@ -107,6 +107,7 @@ cell('gauge', (el) => new lib.GaugeChart(el, { ...base, value: 62, animate: fals
 cell('sparkline', (el) => new lib.SparklineChart(el, { ...base, data: [3, 5, 4, 8, 6, 9, 7], showLastPoint: true }), true);
 
 cell('waterfall-zero-long-labels', (el) => new lib.WaterfallChart(el, { ...base, data: [{ label: 'Revenue from operations', value: 120 }, { label: 'Nothing this quarter', value: 0 }, { label: 'Costs of the period', value: -45 }, { label: 'Not a number', value: NaN }, { label: 'Tax', value: -15 }, { label: 'Net', value: 60, type: 'total' }] }));
+cell('equity-levels', (el) => new lib.EquityCurveChart(el, { ...base, data: curve, fillArea: true, levels: [{ value: 140_000, label: 'BOS', color: '#e0a030' }, { value: 120_000, label: 'Equilibrium', dash: [] }, { value: 92_000 }], bands: [{ from: 120_000, to: 148_000, label: 'Premium', color: 'rgba(232, 80, 91, 0.10)' }, { from: 92_000, to: 120_000, label: 'Discount', color: 'rgba(31, 168, 116, 0.10)' }] }));
 cell('equity-flat', (el) => new lib.EquityCurveChart(el, { ...base, data: [{ time: start, value: 50 }, { time: start + 30 * DAY, value: 50 }] }));
 cell('depth-one-level', (el) => new lib.DepthChart(el, { ...base, data: { bids: [{ price: 100, volume: 5 }], asks: [] } }));
 cell('depth-small-prices', (el) => new lib.DepthChart(el, { ...base, bidColor: 'rgb(31, 168, 116)', askColor: '#e55', data: { bids: [{ price: 0.00001234, volume: 5e6 }, { price: 0.00001232, volume: 9e6 }], asks: [{ price: 0.00001236, volume: 4e6 }, { price: 0.00001239, volume: 7e6 }] } }));

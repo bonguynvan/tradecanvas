@@ -119,6 +119,18 @@ describe('the older finance charts take options after they are made', () => {
     chart.destroy();
   });
 
+  it('levels and bands given to an equity curve, and taken away, without it being made again', () => {
+    const equity = new EquityCurveChart(host, { data: curve });
+    frame();
+    equity.setOptions({ levels: [{ value: 5, label: 'BOS' }], bands: [{ from: 0, to: 1, label: 'Discount' }] });
+    const drawn = frame().texts;
+    expect(drawn).toContain('BOS');
+    expect(drawn).toContain('Discount');
+    equity.setOptions({ levels: [], bands: [] });
+    expect(frame().texts).not.toContain('BOS');
+    equity.destroy();
+  });
+
   it('the readout switched on, on an equity curve and a waterfall', () => {
     const equity = new EquityCurveChart(host, { data: curve, crosshair: false });
     const curveAlone = frame().texts.length;

@@ -315,6 +315,8 @@ export type {
   DepthChartOptions,
   EquityPoint,
   EquityCurveOptions,
+  EquityLevel,
+  EquityBand,
   HeatmapCell,
   HeatmapOptions,
   WaterfallBar,

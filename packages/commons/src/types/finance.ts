@@ -55,6 +55,30 @@ export interface EquityPoint {
   value: number;
 }
 
+/** A line across an equity curve's plot at a value: a level price is measured against. */
+export interface EquityLevel {
+  /** Where the line is, on the curve's value scale. */
+  value: number;
+  /** Its name, written in the plot at the line's right end. The value itself is written in a tag at the value axis, in full (not shortened as the axis's ticks are) unless `valueFormat` says how; a value too long for a quarter of the chart's width is written as the ticks are. Levels closer than a tag's height draw their tags over each other, the later on top. */
+  label?: string;
+  /** The line's and its tag's colour; the theme's secondary text colour when left out. The tag's text is dark or light, whichever reads on it. */
+  color?: string;
+  /** The line's dash, in px as `setLineDash` takes it; `[]` draws it solid. Dashed when left out. */
+  dash?: number[];
+}
+
+/** A tinted stretch of an equity curve's values, drawn under the curve: a range, a zone. */
+export interface EquityBand {
+  /** One edge's value; `from` and `to` may come either way round. */
+  from: number;
+  /** The other edge's value. */
+  to: number;
+  /** The tint, used as given, so give one with transparency; the theme's secondary text colour, faint, when left out. */
+  color?: string;
+  /** Its name, written in the plot at its top left corner when the band is tall enough for it. */
+  label?: string;
+}
+
 export interface EquityCurveOptions extends BaseFinanceChartOptions {
   data: EquityPoint[];
   drawdown?: boolean;
@@ -68,6 +92,12 @@ export interface EquityCurveOptions extends BaseFinanceChartOptions {
   timeFormat?: (ts: number) => string;
   valueFormat?: (val: number) => string;
   fillArea?: boolean;
+  /** Lines across the plot at fixed values (a break's level, a range's middle), with their values at the axis. */
+  levels?: EquityLevel[];
+  /** Tinted stretches of values under the curve (a range's upper and lower half). */
+  bands?: EquityBand[];
+  /** Whether the value scale widens to show every level and band: on unless `false`. Off, the scale is the curve's: a level outside it is left out, and a band is drawn only where it overlaps it. */
+  fitLevels?: boolean;
 }
 
 export interface HeatmapCell {
