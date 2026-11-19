@@ -234,6 +234,25 @@ new HeatmapChart(el, {
 new WaterfallChart(el, { data: [{ label: 'Start', value: 10000, type: 'total' }, { label: 'Fees', value: -85 }, { label: 'End', value: 9915, type: 'total' }] })
 new DepthChart(el, { data: { bids, asks }, midPriceLine: true, spreadLabel: true })
 new EquityCurveChart(el, { data: equity, benchmark, drawdown: true })`}</code></pre>
+<p>
+  An equity curve also takes <strong>levels</strong>, lines across the plot at fixed values with each value in a
+  tag at the axis, and <strong>bands</strong>, tinted stretches of values under the curve. A level has a
+  <code>label</code> written at its right end, a <code>color</code> and a <code>dash</code> (<code>[]</code> for a
+  solid line); a band has a <code>label</code> in its corner and a <code>color</code> used as given, so give one with
+  transparency. Both take the theme's colours when none is given. A level's value is written in full, or by
+  <code>valueFormat</code> when given. The value scale widens to show them all; <code>fitLevels: false</code> keeps it
+  to the curve, leaving out a level outside it and drawing a band only where it overlaps it.
+  <code>setOptions</code> changes them on the chart as it is.
+</p>
+<pre><code>{`const chart = new EquityCurveChart(el, {
+  data: closes,
+  levels: [{ value: 41_250, label: 'BOS', color: '#e0a030' }, { value: 38_900, label: 'Equilibrium' }],
+  bands: [
+    { from: 38_900, to: 44_100, label: 'Premium', color: 'rgba(232, 80, 91, 0.10)' },
+    { from: 33_700, to: 38_900, label: 'Discount', color: 'rgba(31, 168, 116, 0.10)' },
+  ],
+})
+chart.setOptions({ levels: [{ value: 42_000, label: 'CHoCH' }] })`}</code></pre>
 
 <h2>Performance dashboard</h2>
 <p>

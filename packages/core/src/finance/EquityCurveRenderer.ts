@@ -1,4 +1,4 @@
-import type { EquityCurveOptions, EquityPoint, Theme } from '@tradecanvas/commons';
+import type { EquityBand, EquityCurveOptions, EquityLevel, EquityPoint, Theme } from '@tradecanvas/commons';
 import { withAlpha } from '@tradecanvas/commons';
 import {
   AREA_FILL_ALPHA,
@@ -9,10 +9,13 @@ import {
   LABEL_SIZE,
   axisFormat,
   dateFormat,
+  decimalsFor,
+  fixedFormat,
   numberFormat,
   drawLegend,
   drawTooltip,
   drawValueAxis,
+  fitText,
   fontOf,
   layoutLegend,
   niceScale,
@@ -25,6 +28,7 @@ import {
   type Rect,
   type TooltipLine,
 } from './chartKit.js';
+import { readableText } from './colorScale.js';
 
 export interface EquityLayout {
   plot: Rect;
@@ -34,6 +38,14 @@ export interface EquityLayout {
   timeMax: number;
   /** The benchmark's name, over the plot. */
   legend: LegendLayout | null;
+  /** The levels the scale shows, each with its value as its tag at the axis writes it. */
+  tags: LevelTag[];
+}
+
+/** A level in view and its value as its tag writes it. */
+export interface LevelTag {
+  level: EquityLevel;
+  text: string;
 }
 
 /** How strongly the fall from a peak is shaded when no colour is given. */
@@ -44,6 +56,80 @@ const TIME_LABEL_ROOM = 80;
 const HOVER_DOT = 3;
 const FLAT_RANGE = 0.05;
 const DEFAULT_BENCHMARK_LABEL = 'Benchmark';
+/** How strongly a band is tinted when no colour is given. */
+const BAND_ALPHA = 0.12;
+/** A level's dash when none is given, px. */
+const LEVEL_DASH = [6, 4];
+/** Room around a level's value in its tag at the axis, px. */
+const TAG_PAD_X = 4;
+const TAG_PAD_Y = 2;
+/** Room between a level or band and its name, px. */
+const NAME_GAP = 3;
+/** The rim of background around a name, so it reads where the curve crosses it, px. */
+const NAME_HALO = 3;
+/** The most of the chart's width a level's tag may take, so a long value cannot squeeze the plot away. */
+const MAX_TAG_SHARE = 0.25;
+
+/** Number formats by language and decimals: made once, not on every frame. */
+const fixedFormats = new Map<string, (value: number) => string>();
+
+/** `value` with as many decimals as it has, in `locale`. */
+function fullFormat(value: number, locale: string | undefined): string {
+  const decimals = decimalsFor([value]);
+  const key = `${locale ?? ''}|${decimals}`;
+  let format = fixedFormats.get(key);
+  if (!format) {
+    format = fixedFormat(locale, decimals);
+    fixedFormats.set(key, format);
+  }
+  return format(value);
+}
+
+/**
+ * A level's value as its tag writes it: in full (a price to read off), unless
+ * `valueFormat` says how; written as the axis's ticks are when that is too
+ * wide for `room`, and cut to fit it all the same.
+ */
+function tagText(value: number, options: EquityCurveOptions, axis: (value: number) => string, room: number, measure: Measure): string {
+  const whole = options.valueFormat ? options.valueFormat(value) : fullFormat(value, options.locale);
+  const text = measure(whole, LABEL_SIZE) <= room ? whole : axis(value);
+  return fitText(text, room, measure);
+}
+
+/** `color` as the canvas reads it (a name or hsl() as hex), so the ink on it can be worked out. */
+function resolvedColor(ctx: CanvasRenderingContext2D, color: string): string {
+  ctx.save();
+  ctx.fillStyle = color;
+  const resolved = String(ctx.fillStyle);
+  ctx.restore();
+  return resolved;
+}
+
+/** `text` at (`x`, `y`) on a rim of the background, so a line under it does not cut it. */
+function fillName(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, theme: Theme): void {
+  ctx.save();
+  ctx.strokeStyle = theme.background;
+  ctx.lineWidth = NAME_HALO;
+  ctx.lineJoin = 'round';
+  ctx.strokeText(text, x, y);
+  ctx.restore();
+  ctx.fillText(text, x, y);
+}
+
+/** The levels whose values are numbers. */
+function finiteLevels(options: EquityCurveOptions): EquityLevel[] {
+  return (options.levels ?? []).filter((level) => Number.isFinite(level.value));
+}
+
+/** The bands whose edges are both numbers. */
+function finiteBands(options: EquityCurveOptions): EquityBand[] {
+  return (options.bands ?? []).filter((band) => Number.isFinite(band.from) && Number.isFinite(band.to));
+}
+
+/** The levels the scale shows: all of them when it was widened for them, else those within it. */
+function levelsInView(options: EquityCurveOptions, scale: NiceScale): EquityLevel[] {
+  return finiteLevels(options).filter((level) => level.value >= scale.min && level.value <= scale.max);
+}
 
 /** The point of `points` nearest `time`, or -1 when there are none. */
 function nearestIndex(points: readonly EquityPoint[], time: number): number {
@@ -117,18 +203,32 @@ export function computeEquityLayout(options: EquityCurveOptions, width: number, 
     lo = Math.min(lo, pt.value);
     hi = Math.max(hi, pt.value);
   }
+  if (options.fitLevels !== false) {
+    // Levels and bands in view: the scale reaches them, wherever the curve is.
+    for (const level of finiteLevels(options)) {
+      lo = Math.min(lo, level.value);
+      hi = Math.max(hi, level.value);
+    }
+    for (const band of finiteBands(options)) {
+      lo = Math.min(lo, band.from, band.to);
+      hi = Math.max(hi, band.from, band.to);
+    }
+  }
   // Values all the same have no range: a twentieth of the value either side, so the line runs through the middle.
   const flat = lo === hi ? Math.abs(lo) * FLAT_RANGE || 1 : 0;
   const scale = niceScale(lo - flat, hi + flat, 5);
   const format = options.valueFormat ?? axisFormat(scale, options.locale);
-  const tickWidth = Math.max(0, ...scale.ticks.map((t) => measure(format(t), LABEL_SIZE)));
+  // A level's value is written in its tag, which wants its room at the axis too.
+  const room = Math.max(0, width * MAX_TAG_SHARE - TAG_PAD_X);
+  const tags = levelsInView(options, scale).map((level) => ({ level, text: tagText(level.value, options, format, room, measure) }));
+  const tickWidth = Math.max(0, ...scale.ticks.map((t) => measure(format(t), LABEL_SIZE)), ...tags.map((tag) => measure(tag.text, LABEL_SIZE) + TAG_PAD_X));
   const legend = benchmark && benchmark.length >= 2
     ? layoutLegend([{ label: options.benchmarkLabel ?? DEFAULT_BENCHMARK_LABEL, color: benchmarkColor }], width - CHART_PAD * 2, measure)
     : null;
   const left = CHART_PAD + tickWidth + AXIS_GAP;
   const top = CHART_PAD + (legend ? legend.height + LABEL_GAP : 0);
   const plot: Rect = { x: left, y: top, width: Math.max(1, width - left - CHART_PAD), height: Math.max(1, height - top - CHART_PAD - BOTTOM_LABELS) };
-  return { plot, scale, timeMin, timeMax, legend };
+  return { plot, scale, timeMin, timeMax, legend, tags };
 }
 
 function drawTimeAxis(ctx: CanvasRenderingContext2D, layout: EquityLayout, width: number, theme: Theme, given: ((ts: number) => string) | undefined, locale: string | undefined): void {
@@ -148,6 +248,86 @@ function drawTimeAxis(ctx: CanvasRenderingContext2D, layout: EquityLayout, width
     const half = ctx.measureText(text).width / 2;
     // A label that would run off the chart is left out; its line stays.
     if (x - half >= 0 && x + half <= width) ctx.fillText(text, Math.round(x), plot.y + plot.height + LABEL_GAP);
+  }
+  ctx.restore();
+}
+
+/** The bands, tinted across the plot: under everything of the curve. */
+function drawBands(ctx: CanvasRenderingContext2D, bands: readonly EquityBand[], plot: Rect, toY: (v: number) => number, theme: Theme): void {
+  for (const band of bands) {
+    const top = toY(Math.max(band.from, band.to));
+    const bottom = toY(Math.min(band.from, band.to));
+    ctx.fillStyle = band.color ?? withAlpha(theme.textSecondary, BAND_ALPHA);
+    ctx.fillRect(plot.x, top, plot.width, bottom - top);
+  }
+}
+
+/** The bands' names, each in its top left corner when the band, as it shows in the plot, is tall enough. */
+function drawBandNames(ctx: CanvasRenderingContext2D, bands: readonly EquityBand[], plot: Rect, toY: (v: number) => number, theme: Theme, measure: Measure): void {
+  ctx.save();
+  ctx.font = fontOf(theme, LABEL_SIZE);
+  ctx.fillStyle = theme.axisLabel;
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  for (const band of bands) {
+    if (!band.label) continue;
+    const top = Math.max(plot.y, toY(Math.max(band.from, band.to)));
+    const bottom = Math.min(plot.y + plot.height, toY(Math.min(band.from, band.to)));
+    if (bottom - top < LABEL_SIZE + NAME_GAP * 2) continue;
+    fillName(ctx, fitText(band.label, plot.width - LABEL_GAP * 2, measure), plot.x + LABEL_GAP, Math.round(top + NAME_GAP), theme);
+  }
+  ctx.restore();
+}
+
+/** The levels' lines across the plot: one on its top or bottom edge is drawn just inside it. */
+function drawLevelLines(ctx: CanvasRenderingContext2D, levels: readonly EquityLevel[], plot: Rect, toY: (v: number) => number, theme: Theme): void {
+  ctx.save();
+  ctx.lineWidth = 1;
+  for (const level of levels) {
+    const y = Math.min(plot.y + plot.height - 0.5, Math.max(plot.y + 0.5, Math.round(toY(level.value)) + 0.5));
+    ctx.strokeStyle = level.color ?? theme.textSecondary;
+    ctx.setLineDash(level.dash ?? LEVEL_DASH);
+    ctx.beginPath();
+    ctx.moveTo(plot.x, y);
+    ctx.lineTo(plot.x + plot.width, y);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+/**
+ * Each level's name in the plot at its line's right end, over the line (under
+ * it at the plot's top), and its value in a tag of its colour at the axis,
+ * over the axis's own labels.
+ */
+function drawLevelMarks(
+  ctx: CanvasRenderingContext2D,
+  tags: readonly LevelTag[],
+  plot: Rect,
+  toY: (v: number) => number,
+  theme: Theme,
+  measure: Measure,
+): void {
+  ctx.save();
+  ctx.font = fontOf(theme, LABEL_SIZE);
+  const tagHeight = LABEL_SIZE + TAG_PAD_Y * 2;
+  for (const { level, text: value } of tags) {
+    const y = Math.round(toY(level.value));
+    const color = level.color ?? theme.textSecondary;
+    if (level.label) {
+      const above = y - plot.y >= LABEL_SIZE + NAME_GAP;
+      ctx.fillStyle = color;
+      ctx.textAlign = 'right';
+      ctx.textBaseline = above ? 'bottom' : 'top';
+      fillName(ctx, fitText(level.label, plot.width - LABEL_GAP * 2, measure), plot.x + plot.width - LABEL_GAP, above ? y - NAME_GAP : y + NAME_GAP, theme);
+    }
+    const tagWidth = ctx.measureText(value).width + LABEL_GAP + TAG_PAD_X;
+    ctx.fillStyle = color;
+    ctx.fillRect(plot.x - tagWidth, y - tagHeight / 2, tagWidth, tagHeight);
+    ctx.fillStyle = readableText(resolvedColor(ctx, color));
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(value, plot.x - LABEL_GAP, y);
   }
   ctx.restore();
 }
@@ -198,6 +378,10 @@ export function renderEquityCurve(
   ctx.rect(plot.x, plot.y, plot.width, plot.height);
   ctx.clip();
 
+  const bands = finiteBands(options);
+  const levels = layout.tags.map((tag) => tag.level);
+  drawBands(ctx, bands, plot, toY, theme);
+
   if (options.drawdown === true) {
     // The gap between the highest value so far and the curve: forward along the peaks, back along the curve.
     const peaks: number[] = [];
@@ -225,6 +409,9 @@ export function renderEquityCurve(
     ctx.fill();
   }
 
+  // Under the curves, so the curve reads where it crosses one.
+  drawLevelLines(ctx, levels, plot, toY, theme);
+
   ctx.lineJoin = 'round';
   if (benchmark && benchmark.length >= 2) {
     ctx.strokeStyle = benchmarkColor;
@@ -239,6 +426,9 @@ export function renderEquityCurve(
   trace(data);
   ctx.stroke();
   ctx.restore();
+
+  drawBandNames(ctx, bands, plot, toY, theme, measureText);
+  drawLevelMarks(ctx, layout.tags, plot, toY, theme, measureText);
 
   if (!crosshairPos || crosshairPos.x < plot.x || crosshairPos.x > plot.x + plot.width) return;
   // No point is nearest when the times are no numbers: nothing to read out.

@@ -8669,6 +8669,22 @@
           "kind": "boolean"
         },
         {
+          "name": "levels",
+          "type": "EquityLevel[]",
+          "doc": "Lines across the plot at fixed values (a break's level, a range's middle), with their values at the axis."
+        },
+        {
+          "name": "bands",
+          "type": "EquityBand[]",
+          "doc": "Tinted stretches of values under the curve (a range's upper and lower half)."
+        },
+        {
+          "name": "fitLevels",
+          "type": "boolean",
+          "doc": "Whether the value scale widens to show every level and band: on unless `false`. Off, the scale is the curve's: a level outside it is left out, and a band is drawn only where it overlaps it.",
+          "kind": "boolean"
+        },
+        {
           "name": "theme",
           "type": "ThemeName | Theme",
           "doc": "The chart's colours: `'dark'` (the default), `'light'`, or a theme of your own."

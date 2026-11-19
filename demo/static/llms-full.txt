@@ -1038,6 +1038,15 @@ new EquityCurveChart(el('equity'), {
   locale: 'vi',
 });
 
+// Fixed values on an equity curve: lines with their values at the axis, and tinted bands under the curve.
+// The value scale widens to show them unless `fitLevels: false`; setOptions changes them in place.
+const priced = new EquityCurveChart(el('structure'), {
+  data: [{ time: Date.UTC(2026, 0, 1), value: 36_000 }, { time: Date.UTC(2026, 5, 1), value: 42_300 }],
+  levels: [{ value: 41_250, label: 'BOS', color: '#e0a030' }, { value: 38_900, label: 'Equilibrium', dash: [] }],
+  bands: [{ from: 38_900, to: 44_100, label: 'Premium', color: 'rgba(232, 80, 91, 0.10)' }],
+});
+priced.setOptions({ levels: [{ value: 42_000, label: 'CHoCH' }] });
+
 // Steps to a total. A bar with no `type` is a step up or down; `total` and `subtotal` start from zero.
 new WaterfallChart(el('pnl'), {
   data: [{ label: 'Revenue', value: 120 }, { label: 'Costs', value: -45 }, { label: 'Tax', value: -15 }, { label: 'Net', value: 60, type: 'total' }],
