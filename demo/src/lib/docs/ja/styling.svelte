@@ -6,7 +6,7 @@
 
 <svelte:head>
   <title>スタイル設定 — TradeCanvas ドキュメント</title>
-  <meta name="description" content="ウィジェットの外観をトークンで指定：角の丸み、サイズ、文字、枠線、影、バー。5 つのプリセット（Print、Studio、Terminal、Capsule、Desk）と、その上に重ねる独自のテーマ。" />
+  <meta name="description" content="ウィジェットの外観をトークンで指定：角の丸み、サイズ、文字、枠線、影、バー。6 つのプリセット（Modern、Print、Studio、Terminal、Capsule、Desk）と、その上に重ねる独自のテーマ。" />
 </svelte:head>
 
 <h1>ウィジェットのスタイル設定</h1>
@@ -14,15 +14,29 @@
   ウィジェットの外観はトークンの集まりです。パーツの種類ごとの角の丸み、コントロールとバーのサイズ、文字、枠線、影、
   選択中のボタンの見せ方、そしてツールバーと描画ツールを端に沿わせるか浮かせるか。プリセットから始めて、好きなところを
   変えられます。色はテーマ（<code>dark</code> / <code>light</code>。<a href={href('/docs/api')}>API リファレンス</a>を参照）が
-  受け持ち、どの外観もどちらのテーマとも組み合わせられます。
+  受け持ち、どの外観もどちらのテーマとも組み合わせられます。既定の Modern は独自の dark と light を持ち、
+  ほかの外観は Modern より前にウィジェットが使っていた色を共有します。
 </p>
 
 <h2>プリセット</h2>
 <table>
   <thead><tr><th>プリセット</th><th>外観</th></tr></thead>
   <tbody>
-    <tr><td><code>print</code>（既定）</td><td>
-      紙とインク。白に近い地か黒に近い地に、ふつうのものはすべてグレー、色は意味のある所だけ。細い線、3 px のコントロール、
+    <tr><td><code>modern</code>（既定）</td><td>
+      コードエディターのウィンドウを、その Dark Modern と Light Modern の色で。チャートはエディターの地
+      （<code>#1f1f1f</code> / <code>#ffffff</code>）の上にあり、周りのバーは地から一段ずらした色で、間は細い線です。
+      38 px のツールバーに 28 px のボタンと 16 px のアイコン、4 px のコントロール、6 px のメニュー、8 px のダイアログ。ロゴの琥珀色
+      （<code>#e8961e</code>）は操作できるものと選んだものだけに使い、その上の文字は暗い色です。リンクとフォーカスには
+      濃いめか淡いめの琥珀色を使います。ローソク足はティール
+      （<code>#089981</code>）と赤（<code>#f23645</code>）で、文字になる所では濃く、または淡くして、騰落率が 5:1 以上の
+      コントラストで読めるようにしています。書体はページが Geist を読み込んでいれば Geist、なければシステム自身の書体で、
+      数字は Print と同じです。チャートでは、独自のテーマオブジェクトを渡さなければ色は
+      <code>MODERN_DARK_THEME</code> と <code>MODERN_LIGHT_THEME</code> になり、独自のチャートでもこれらを使えます。
+      選択中のボタンとツールはアクセントの塗り（<code>--tcw-accent-fill</code>）とその文字色なので、アクセントのトークンを
+      設定するページではこれらも変わります。
+    </td></tr>
+    <tr><td><code>print</code></td><td>
+      Modern より前の既定で、色もそのままです。紙とインク。白に近い地か黒に近い地に、ふつうのものはすべてグレー、色は意味のある所だけ。細い線、3 px のコントロール、
       5 px のメニュー、8 px のダイアログ、細い線で描いた大きめのアイコン、
       書いたままのラベルと強調用の中くらいの太さ、システム自身の書体（Windows 11 では Segoe UI Variable）。数字はチャート上も含めてすべて数字の幅がそろったサンセリフ体（Windows では Segoe UI、Apple のシステムでは Helvetica Neue、Android では Roboto）で、価格が列にそろいます。選択中のボタンは
       インクの塗りつぶし、選択中のツールはインクブルーです。
@@ -69,10 +83,10 @@ grid.getUI()`}</code></pre>
 <table>
   <thead><tr><th><code>ui.density</code></th><th>ウィジェット</th><th>そのチャート</th></tr></thead>
   <tbody>
-    <tr><td><code>'comfortable'</code></td><td>既定値。偶数のサイズ（ボタン 34 px、アイコン 20 px）、余白は 2 · 4 · 6 · 8 · 12 · 20 · 32、コントロール内のパディングは 12 px。</td><td>comfortable、golden のバー。</td></tr>
-    <tr><td><code>'classic'</code></td><td>2.0 より前のまま（画面の拡大率が 100% ならピクセル単位で同じ。ただし価格軸の目盛り線はよりくっきりします）。ボタン 33 px、余白は 2 · 3 · 5 · 8 · 13 · 21 · 34、コントロール内のパディングは 8 px。</td><td>compact。バーはウィジェットがこれまで使っていた golden のまま。</td></tr>
-    <tr><td><code>'compact'</code></td><td>小さめのコントロール（ボタン 26 px、アイコン 16 px）と classic の余白。1.x から変更なし。</td><td>compact、classic のバー。</td></tr>
-    <tr><td><code>'spacious'</code></td><td>大きめのコントロール（ボタン 42 px、アイコン 26 px）。</td><td>comfortable、golden のバー。</td></tr>
+    <tr><td><code>'comfortable'</code></td><td>既定値。偶数のサイズ（Modern ではボタン 28 px とアイコン 16 px、Print では 34 と 20）、余白は 2 · 4 · 6 · 8 · 12 · 20 · 32、コントロール内のパディングは 12 px。</td><td>comfortable、golden のバー。</td></tr>
+    <tr><td><code>'classic'</code></td><td>外観のサイズを 2.0 より前の余白で：2 · 3 · 5 · 8 · 13 · 21 · 34、コントロール内のパディングは 8 px。Print と組み合わせると（<code>{'{'} preset: 'print', density: 'classic' {'}'}</code>）2.0 より前のウィジェットそのもの（画面の拡大率が 100% ならピクセル単位で同じ。ただし価格軸の目盛り線はよりくっきりします）で、ボタンは 33 px。</td><td>compact。バーはウィジェットがこれまで使っていた golden のまま。</td></tr>
+    <tr><td><code>'compact'</code></td><td>小さめのコントロール（Modern ではボタン 24 px、Print では 26 px、アイコン 16 px）と classic の余白。</td><td>compact、classic のバー。</td></tr>
+    <tr><td><code>'spacious'</code></td><td>大きめのコントロール（Modern ではボタン 34 px とアイコン 20 px、Print では 42 と 26）。</td><td>comfortable、golden のバー。</td></tr>
     <tr><td><code>'airy'</code></td><td>spacious に加えて、軸と凡例の数字を外観のサンセリフ書体にします。</td><td>comfortable、golden のバー。</td></tr>
   </tbody>
 </table>
@@ -84,8 +98,8 @@ grid.getUI()`}</code></pre>
   </tbody>
 </table>
 <pre><code>{`// The widget as it was before 2.0
-new ChartWidget(host, { ui: { density: 'classic' } })
-widget.setUI({ density: 'classic' })
+new ChartWidget(host, { ui: { preset: 'print', density: 'classic' } })
+widget.setUI({ preset: 'print', density: 'classic' })
 
 // A chart of your own as it was before 2.0
 import { Chart, CHART_SPACING, MONO_FONT_FAMILY } from '@tradecanvas/chart'
@@ -144,7 +158,7 @@ chart.setFont(null)                         // the theme's own font again`}</cod
 
 <h2>独自の外観</h2>
 <p>
-  テーマはプリセット（指定しなければ Print）から始まり、指定した項目だけを変更します。スケールで設定した角の丸みは、
+  テーマはプリセット（指定しなければ Modern）から始まり、指定した項目だけを変更します。スケールで設定した角の丸みは、
   そのスケールに従うすべてのパーツに反映されます。パーツ個別の値を設定した場合は、そちらが使われます。
 </p>
 <pre><code>{`widget.setUI({
@@ -184,7 +198,7 @@ chart.setFont(null)                         // the theme's own font again`}</cod
     <tr><td><code>density</code> / <code>sizes</code></td><td>
       <code>toolbar</code> の高さ、<code>control</code> と <code>controlSmall</code> の高さ、<code>icon</code>、
       <code>sidebar</code> の幅、<code>menuItem</code> の高さ（px）。<code>compact</code> と <code>spacious</code> は、
-      Print のサイズを φ の半段だけ下げたものと上げたものです。<code>classic</code> は 2.0 より前のウィジェットです
+      外観ごとの小さめと大きめのサイズです（Print では φ の半段だけ下げたものと上げたもの）。<code>classic</code> は外観のサイズを 2.0 より前の余白で使います
       （<a href="#density">密度</a>を参照。余白とチャートのゆとりもそこで決まります）。描画ツールのボタンとアイコンは
       <code>control</code> と <code>icon</code> より φ の半段大きくなります（<code>compact</code> では同じ）。
       <code>sidebar</code> の列の両側に余白を残し、列が低くて全部入らないときは、スクロールする前に
@@ -203,7 +217,7 @@ chart.setFont(null)                         // the theme's own font again`}</cod
     <tr><td><code>tagRadius</code></td><td>チャートが描く価格ラベル、軸のピル、注文バッジの角の丸み。</td></tr>
     <tr><td><code>iconStroke</code></td><td>
       アイコンの線の太さ（CSS px、0.5–3）で、アイコンの大きさによらず同じ太さです（14 px 未満のアイコンは最大 1 px）。<code>0</code> ではアイコンセットの
-      とおりに描き、アイコンが大きいほど線も太くなります。Print は 1、ほかの外観はそのまま描きます。
+      とおりに描き、アイコンが大きいほど線も太くなります。Modern は 1.5、Print は 1、ほかの外観はそのまま描きます。
     </td></tr>
   </tbody>
 </table>
@@ -212,7 +226,7 @@ chart.setFont(null)                         // the theme's own font again`}</cod
 <h2>フォント</h2>
 <p>
   ウィジェットはフォントを読み込みません。名前を指定するだけで、ブラウザーがリストの順にフォールバックします。
-  Print はどのシステムにもある書体を指定しています。ラベルには Segoe UI、San Francisco、Roboto、数字には数字の幅が揃った
+  Modern は Geist、次に Print の書体を指定しているので、これも何も読み込む必要がありません。Print はどのシステムにもある書体を指定しています。ラベルには Segoe UI、San Francisco、Roboto、数字には数字の幅が揃った
   Segoe UI、Roboto、Helvetica Neue、Arial を使うので、何も読み込む必要がありません。Desk は Tahoma、次に Verdana で、
   これもシステムに入っています。Studio は Manrope、次に Inter、Terminal は IBM Plex Sans Condensed と IBM Plex Mono、
   Capsule は Sora を指定しています。使いたいフォントは自分で読み込んでください。
@@ -222,7 +236,7 @@ chart.setFont(null)                         // the theme's own font again`}</cod
 <h2>CSS 変数</h2>
 <p>
   トークンは、ウィジェットのルート要素（とそのダイアログ）に設定された CSS 変数です。<code>ui</code> オプションがなければ
-  値はスタイルシートのもの（つまり Print の値）のままなので、独自の CSS で設定できます。ウィジェットは自身の
+  値はスタイルシートのもの（つまり Modern の値）のままなので、独自の CSS で設定できます。ウィジェットは自身の
   スタイルシートをページの先頭に置くため、<code>.tcw-root</code> に書いたあなたのルールが優先されます。<code>ui</code>
   を指定すると、ウィジェットが要素に直接値を書き込み、そちらが優先されます。
 </p>

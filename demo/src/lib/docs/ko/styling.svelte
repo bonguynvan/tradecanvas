@@ -6,7 +6,7 @@
 
 <svelte:head>
   <title>스타일링 — TradeCanvas 문서</title>
-  <meta name="description" content="토큰으로 정하는 위젯의 외관: 모서리, 크기, 글꼴, 테두리, 그림자, 바. 다섯 가지 프리셋(Print, Studio, Terminal, Capsule, Desk)과 그 위에 얹는 나만의 테마." />
+  <meta name="description" content="토큰으로 정하는 위젯의 외관: 모서리, 크기, 글꼴, 테두리, 그림자, 바. 여섯 가지 프리셋(Modern, Print, Studio, Terminal, Capsule, Desk)과 그 위에 얹는 나만의 테마." />
 </svelte:head>
 
 <h1>위젯 스타일링</h1>
@@ -14,15 +14,29 @@
   위젯의 외관은 토큰의 묶음입니다. 부품 종류별 모서리, 컨트롤과 바의 크기, 글꼴, 테두리, 그림자, 선택된 버튼의 표시
   방식, 그리고 도구 모음과 그리기 도구를 가장자리에 붙일지 띄울지까지 정합니다. 프리셋에서 시작해 원하는 부분만
   바꾸세요. 색상은 테마(<code>dark</code> / <code>light</code>, <a href={href('/docs/api')}>API 레퍼런스</a> 참고)가
-  맡으며, 어떤 외관이든 두 테마 모두와 함께 쓸 수 있습니다.
+  맡으며, 어떤 외관이든 두 테마 모두와 함께 쓸 수 있습니다. 기본값인 Modern은 자체 dark와 light를 가지며, 다른
+  외관은 Modern 이전에 위젯이 쓰던 색을 함께 씁니다.
 </p>
 
 <h2>프리셋</h2>
 <table>
   <thead><tr><th>프리셋</th><th>외관</th></tr></thead>
   <tbody>
-    <tr><td><code>print</code> (기본값)</td><td>
-      종이와 잉크. 흰색에 가까운 바탕이나 검정에 가까운 바탕에, 평범한 것은 모두 회색이고 색은 뜻이 있는 곳에만 씁니다.
+    <tr><td><code>modern</code> (기본값)</td><td>
+      코드 편집기의 창을, 그 Dark Modern과 Light Modern 색으로. 차트는 편집기의 바탕
+      (<code>#1f1f1f</code> / <code>#ffffff</code>) 위에 있고, 주위의 바는 바탕에서 한 단계 벗어난 색이며 사이는 가는 선입니다.
+      38 px 도구 모음에 28 px 버튼과 16 px 아이콘, 4 px 컨트롤, 6 px 메뉴, 8 px 대화 상자. 로고의 호박색
+      (<code>#e8961e</code>)은 조작할 수 있는 것과 고른 것에만 쓰고 그 위의 글자는 어두운 색이며, 링크와 포커스에는
+      더 짙거나 옅은 호박색을 씁니다. 캔들은 청록
+      (<code>#089981</code>)과 빨강(<code>#f23645</code>)이고, 글자로 쓰이는 곳에서는 더 짙거나 옅게 해서 등락률이 5:1
+      이상의 대비로 읽힙니다. 글꼴은 페이지가 Geist를 불러왔으면 Geist, 아니면 시스템 자체 글꼴이고, 숫자는 Print와
+      같습니다. 차트에서는 직접 만든 테마 객체가 없으면 색이 <code>MODERN_DARK_THEME</code>과
+      <code>MODERN_LIGHT_THEME</code>이며, 직접 만든 차트에서도 이 둘을 쓸 수 있습니다.
+      선택된 버튼과 도구는 강조색의 채우기(<code>--tcw-accent-fill</code>)와 그 글자색이므로, 강조색 토큰을 설정하는
+      페이지에서는 이것들도 함께 바뀝니다.
+    </td></tr>
+    <tr><td><code>print</code></td><td>
+      Modern 이전의 기본값으로, 색도 그대로입니다. 종이와 잉크. 흰색에 가까운 바탕이나 검정에 가까운 바탕에, 평범한 것은 모두 회색이고 색은 뜻이 있는 곳에만 씁니다.
       가는 선, 3 px 컨트롤, 5 px 메뉴, 8 px 대화 상자, 가는 선으로 그린 큰 아이콘,
       쓴 그대로의 라벨과 강조용 중간 굵기, 시스템 자체 글꼴(Windows 11에서는 Segoe UI Variable). 차트의 숫자를 포함해 모든 숫자는 숫자 폭이
       같은 산세리프 글꼴(Windows에서는 Segoe UI, Apple 시스템에서는 Helvetica Neue, Android에서는 Roboto)이라 가격이 열에 맞춰 정렬됩니다. 선택된 버튼은 잉크색으로 꽉 채워지고, 선택된 도구는 잉크 파랑입니다.
@@ -69,10 +83,10 @@ grid.getUI()`}</code></pre>
 <table>
   <thead><tr><th><code>ui.density</code></th><th>위젯</th><th>그 차트</th></tr></thead>
   <tbody>
-    <tr><td><code>'comfortable'</code></td><td>기본값: 짝수 크기(버튼 34 px, 아이콘 20 px), 간격 2 · 4 · 6 · 8 · 12 · 20 · 32, 컨트롤 안쪽 여백 12 px.</td><td>comfortable, golden 봉.</td></tr>
-    <tr><td><code>'classic'</code></td><td>2.0 이전 그대로(화면 배율 100%에서는 픽셀까지 같고, 가격 축의 눈금선만 더 선명합니다): 버튼 33 px, 간격 2 · 3 · 5 · 8 · 13 · 21 · 34, 컨트롤 안쪽 여백 8 px.</td><td>compact, 다만 위젯이 쓰던 golden 봉은 그대로.</td></tr>
-    <tr><td><code>'compact'</code></td><td>더 작은 컨트롤(버튼 26 px, 아이콘 16 px)에 classic 간격. 1.x와 같습니다.</td><td>compact, classic 봉.</td></tr>
-    <tr><td><code>'spacious'</code></td><td>더 큰 컨트롤(버튼 42 px, 아이콘 26 px).</td><td>comfortable, golden 봉.</td></tr>
+    <tr><td><code>'comfortable'</code></td><td>기본값: 짝수 크기(Modern에서는 버튼 28 px과 아이콘 16 px, Print에서는 34와 20), 간격 2 · 4 · 6 · 8 · 12 · 20 · 32, 컨트롤 안쪽 여백 12 px.</td><td>comfortable, golden 봉.</td></tr>
+    <tr><td><code>'classic'</code></td><td>외관의 크기를 2.0 이전의 간격으로: 2 · 3 · 5 · 8 · 13 · 21 · 34, 컨트롤 안쪽 여백 8 px. Print와 함께 쓰면(<code>{'{'} preset: 'print', density: 'classic' {'}'}</code>) 2.0 이전의 위젯 그대로(화면 배율 100%에서는 픽셀까지 같고, 가격 축의 눈금선만 더 선명합니다), 버튼 33 px.</td><td>compact, 다만 위젯이 쓰던 golden 봉은 그대로.</td></tr>
+    <tr><td><code>'compact'</code></td><td>더 작은 컨트롤(Modern에서는 버튼 24 px, Print에서는 26 px, 아이콘 16 px)에 classic 간격.</td><td>compact, classic 봉.</td></tr>
+    <tr><td><code>'spacious'</code></td><td>더 큰 컨트롤(Modern에서는 버튼 34 px과 아이콘 20 px, Print에서는 42와 26).</td><td>comfortable, golden 봉.</td></tr>
     <tr><td><code>'airy'</code></td><td>spacious에 더해, 축과 범례의 숫자에 외관의 산세리프 글꼴을 씁니다.</td><td>comfortable, golden 봉.</td></tr>
   </tbody>
 </table>
@@ -84,8 +98,8 @@ grid.getUI()`}</code></pre>
   </tbody>
 </table>
 <pre><code>{`// The widget as it was before 2.0
-new ChartWidget(host, { ui: { density: 'classic' } })
-widget.setUI({ density: 'classic' })
+new ChartWidget(host, { ui: { preset: 'print', density: 'classic' } })
+widget.setUI({ preset: 'print', density: 'classic' })
 
 // A chart of your own as it was before 2.0
 import { Chart, CHART_SPACING, MONO_FONT_FAMILY } from '@tradecanvas/chart'
@@ -144,7 +158,7 @@ chart.setFont(null)                         // the theme's own font again`}</cod
 
 <h2>나만의 외관</h2>
 <p>
-  테마는 프리셋(지정하지 않으면 Print)에서 출발해 명시한 항목만 바꿉니다. 스케일에 설정한 모서리는 그 스케일을 따르는
+  테마는 프리셋(지정하지 않으면 Modern)에서 출발해 명시한 항목만 바꿉니다. 스케일에 설정한 모서리는 그 스케일을 따르는
   모든 부품에 적용되며, 부품별로 따로 설정한 값이 있으면 그 값이 쓰입니다.
 </p>
 <pre><code>{`widget.setUI({
@@ -184,7 +198,7 @@ chart.setFont(null)                         // the theme's own font again`}</cod
     <tr><td><code>density</code> / <code>sizes</code></td><td>
       <code>toolbar</code> 높이, <code>control</code>과 <code>controlSmall</code> 높이, <code>icon</code>,
       <code>sidebar</code> 너비, <code>menuItem</code> 높이, 단위 px. <code>compact</code>와 <code>spacious</code>는
-      Print의 크기를 φ의 반 단계 내리거나 올린 것입니다. <code>classic</code>은 2.0 이전의 위젯입니다
+      외관마다의 더 작은 크기와 더 큰 크기입니다(Print는 φ의 반 단계 내리거나 올린 것). <code>classic</code>은 외관의 크기를 2.0 이전의 간격으로 씁니다
       (<a href="#density">밀도</a> 참고. 간격과 차트의 여백도 거기서 정합니다). 그리기 도구의 버튼과 아이콘은
       <code>control</code>과 <code>icon</code>보다 φ의 반 단계 큽니다(<code>compact</code>에서는 같음).
       <code>sidebar</code> 열의 양쪽에 여백을 두며, 열이 낮아 모두 들어가지 않으면 스크롤하기 전에
@@ -203,7 +217,7 @@ chart.setFont(null)                         // the theme's own font again`}</cod
     <tr><td><code>tagRadius</code></td><td>차트가 그리는 가격 라벨, 축 알약, 주문 배지의 모서리.</td></tr>
     <tr><td><code>iconStroke</code></td><td>
       아이콘 선의 굵기, 단위 CSS px(0.5–3)이며 아이콘 크기와 상관없이 같은 굵기입니다(14 px 미만 아이콘은 최대 1 px). <code>0</code>이면 아이콘 세트
-      그대로 그려서 아이콘이 클수록 선도 굵어집니다. Print는 1이고, 다른 외관은 그대로 그립니다.
+      그대로 그려서 아이콘이 클수록 선도 굵어집니다. Modern은 1.5, Print는 1이고, 다른 외관은 그대로 그립니다.
     </td></tr>
   </tbody>
 </table>
@@ -211,7 +225,8 @@ chart.setFont(null)                         // the theme's own font again`}</cod
 
 <h2>글꼴</h2>
 <p>
-  위젯은 글꼴을 불러오지 않습니다. 이름만 지정하고, 브라우저가 목록 순서대로 대체 글꼴을 찾습니다. Print는 어느
+  위젯은 글꼴을 불러오지 않습니다. 이름만 지정하고, 브라우저가 목록 순서대로 대체 글꼴을 찾습니다. Modern은
+  Geist 다음 Print의 글꼴을 지정하므로 역시 불러올 것이 없습니다. Print는 어느
   시스템에나 있는 글꼴을 지정합니다. 레이블에는 Segoe UI, San Francisco 또는 Roboto, 숫자에는 숫자 폭이 모두 같은
   Segoe UI, Roboto, Helvetica Neue 또는 Arial을 쓰므로 따로 불러올 것이 없습니다. Desk는 Tahoma 다음 Verdana로, 역시
   시스템에 들어 있습니다. Studio는 Manrope 다음 Inter, Terminal은 IBM Plex Sans Condensed와 IBM Plex Mono, Capsule은
@@ -221,7 +236,7 @@ chart.setFont(null)                         // the theme's own font again`}</cod
 
 <h2>CSS 변수</h2>
 <p>
-  토큰은 위젯 루트(와 그 대화 상자)에 있는 CSS 변수입니다. <code>ui</code> 옵션이 없으면 스타일시트의 값, 즉 Print의
+  토큰은 위젯 루트(와 그 대화 상자)에 있는 CSS 변수입니다. <code>ui</code> 옵션이 없으면 스타일시트의 값, 즉 Modern의
   값이 그대로 남으므로 직접 작성한 CSS로 설정할 수 있습니다. 위젯은 자신의 스타일시트를 페이지 맨 앞에 두므로,
   <code>.tcw-root</code>에 작성한 규칙이 우선합니다. <code>ui</code>를 주면 위젯이 요소에 직접 값을 쓰고, 그 값이 우선합니다.
 </p>

@@ -598,7 +598,8 @@ new ChartWidget(host, { features: { 'dock.dataWindow': false } })  // no button 
   またはチャート上での文字の入力で開き、入力した文字から検索が始まります。何も入力していないうちは <code>symbols</code> の一覧を表示し、
   入力すると、入力が止まるたびにフィードの検索（<code>searchSymbols</code>、またはアダプターの検索）に問い合わせます。各行の先頭には
   バッジ（シンボルのロゴ、なければティッカーの頭文字を種類の色で）があり、続いてシンボル、名称、種類、取引所が列に並び、
-  チャートのシンボルには印が付きます。タブで 1 つの種類（株式、暗号資産）に絞り込め、入力中もタブは動きません。行が 2 つ以上の
+  チャートのシンボルには印が付きます。スマートフォンでは取引所がティッカーの下に入るので、長い名前（SIMULATED、ALL VENUES）も
+  切れずに読め、2 つの取引所の行を見分けられます。タブで 1 つの種類（株式、暗号資産）に絞り込め、入力中もタブは動きません。行が 2 つ以上の
   取引所にまたがると、横のリストで 1 つの取引所に絞り込めます。どちらも手元の行を絞り込むだけで、検索し直しはしません。検索が返すのは
   結果の 1 ページ分（アダプターの検索には 50 件を求めます）なので、<code>V</code> と入力して HNX を選ぶと、その中の HNX の銘柄が
   表示され、V を含むすべての HNX 銘柄ではありません。一覧に出るのは上位 200 行までで、その下の 1 行が、入力で絞り込める残りの件数を示します。
@@ -618,6 +619,18 @@ new ChartWidget(host, { features: { 'dock.dataWindow': false } })  // no button 
     'FPT',   // 従来どおりティッカーだけ
   ],
 })`}</code></pre>
+<p>
+  シンボルに <code>last</code> の価格とその日の <code>changePercent</code> があれば（<code>symbols</code> で渡しても、
+  検索結果に含めても）、行の末尾にそれぞれの列で表示されます（スマートフォンでは騰落率が価格の下）。騰落率は上昇か下落の色です。
+  並んだ行のどれにもどちらもなければ、これらの列は省かれます。数値はシンボルの <code>pricePrecision</code> の桁数、
+  なければ値の大きさに応じた桁数で、ウィジェットの数値ロケールで書かれます。文字列はそのまま書かれます。ウィジェットは
+  これらをどれも取得しません。アプリが手元にあるものを渡します。検索の数値は、その結果が表示されている間だけ表示され、
+  次に検索を開いたときには残りません。
+</p>
+<pre><code>{`widget.setSymbols([
+  { symbol: 'BTCUSDT', exchange: 'Binance', last: 61668.46, changePercent: 0.37 },
+  { symbol: 'VCB', exchange: 'HOSE', last: 61.2, pricePrecision: 2, changePercent: -0.65 },
+])`}</code></pre>
 <p>
   <code>logo</code> には <code>https:</code> か <code>http:</code> のアドレス、サイト上のパス、<code>blob:</code> URL、
   または <code>data:</code> で書いた画像（PNG、JPEG、GIF、WebP、AVIF、SVG）を指定します。それ以外は無視されます。

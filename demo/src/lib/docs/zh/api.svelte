@@ -577,7 +577,7 @@ new ChartWidget(host, { features: { 'dock.dataWindow': false } })  // no button 
   也可以直接在图表上输入一个字母打开，并以该字母开始搜索。还没有输入时，它列出你的 <code>symbols</code>；
   输入后，每当停顿下来，它就调用数据源的搜索（<code>searchSymbols</code>，或适配器的搜索）。每一行开头是一个标记
   （品种的 logo，没有时是代码的首字母，用该类别的颜色），然后品种、名称、类别和交易所分列显示，图表当前的品种会被标出。
-  标签可以只看一种类别（股票、加密货币），输入时它们保持不动；结果来自两个或更多交易所时，旁边的列表可以只看其中一个。
+  在手机上，交易所显示在代码下方，因此较长的名称（SIMULATED、ALL VENUES）能完整显示，也能区分两个交易所的行。标签可以只看一种类别（股票、加密货币），输入时它们保持不动；结果来自两个或更多交易所时，旁边的列表可以只看其中一个。
   两者都只筛选手头已有的结果，不会重新搜索：一次搜索返回一页结果（适配器的搜索会请求 50 个），所以输入 <code>V</code>
   后选 HNX，显示的是其中的 HNX 品种，而不是所有带 V 的 HNX 品种。列表最多显示最匹配的 200 行，下方一行会说明还有多少个可以继续输入来缩小。没有搜索时，输入会按代码和名称查找你的品种，带不带越南语声调都可以
   （<code>ngan hang</code> 能找到“Ngân hàng”）。<code>{`features: { symbolTyping: false }`}</code> 让在图表上输入的字母不再打开搜索。
@@ -594,6 +594,16 @@ new ChartWidget(host, { features: { 'dock.dataWindow': false } })  // no button 
     'FPT',   // 只给代码，和以前一样
   ],
 })`}</code></pre>
+<p>
+  品种上的 <code>last</code> 价格和当日 <code>changePercent</code>，无论随 <code>symbols</code> 提供还是在搜索结果中给出，
+  都显示在该行末尾各自的两列中（在手机上，涨跌幅位于价格下方），涨跌幅使用上涨或下跌的颜色；列出的行都没有这两项时，
+  这两列不显示。数字按品种的 <code>pricePrecision</code> 位小数书写，没有时按数值大小，并使用组件的数字区域设置；文本按原样书写。
+  组件不会获取其中任何一项：由你的应用提供它已有的数据。搜索给出的数值随其结果一起显示，不会保留到下次打开搜索。
+</p>
+<pre><code>{`widget.setSymbols([
+  { symbol: 'BTCUSDT', exchange: 'Binance', last: 61668.46, changePercent: 0.37 },
+  { symbol: 'VCB', exchange: 'HOSE', last: 61.2, pricePrecision: 2, changePercent: -0.65 },
+])`}</code></pre>
 <p>
   <code>logo</code> 可以是 <code>https:</code> 或 <code>http:</code> 地址、你网站上的路径、<code>blob:</code> URL，
   或写在 <code>data:</code> 里的图片（PNG、JPEG、GIF、WebP、AVIF 或 SVG）；其他一律忽略。它只会作为图片加载，

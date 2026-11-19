@@ -6,7 +6,7 @@
 
 <svelte:head>
   <title>Styling — Tài liệu TradeCanvas</title>
-  <meta name="description" content="Look của widget dưới dạng token, với năm preset — Print, Studio, Terminal, Capsule, Desk — theo tỷ lệ vàng, và look của biểu đồ theo từng key: lưới, crosshair, trục, pane, legend, giá cuối, khối lượng và từng loại biểu đồ, đường vẽ và pane của chỉ báo." />
+  <meta name="description" content="Look của widget dưới dạng token, với sáu preset — Modern, Print, Studio, Terminal, Capsule, Desk — trên pixel chẵn, và look của biểu đồ theo từng key: lưới, crosshair, trục, pane, legend, giá cuối, khối lượng và từng loại biểu đồ, đường vẽ và pane của chỉ báo." />
 </svelte:head>
 
 <h1>Styling cho widget</h1>
@@ -14,15 +14,29 @@
   Look của widget là một tập token: góc bo của từng loại thành phần, kích thước control và thanh, kiểu chữ, viền,
   bóng đổ, cách hiển thị nút đang chọn, và toolbar cùng công cụ vẽ nằm sát cạnh hay nổi.
   Bắt đầu từ một preset rồi đổi phần cần đổi. Màu sắc thuộc về theme (<code>dark</code> / <code>light</code>,
-  xem <a href={href('/docs/api')}>API</a>); một look dùng được với cả hai.
+  xem <a href={href('/docs/api')}>API</a>); một look dùng được với cả hai. Modern, preset mặc định, có dark và
+  light riêng; các look khác dùng chung bộ màu mà widget dùng trước khi có Modern.
 </p>
 
 <h2>Preset</h2>
 <table>
   <thead><tr><th>Preset</th><th>Look</th></tr></thead>
   <tbody>
-    <tr><td><code>print</code> (mặc định)</td><td>
-      Giấy và mực. Nền trắng ngà hoặc đen ngả xám, màu xám cho mọi thứ bình thường và chỉ dùng màu ở chỗ có ý nghĩa;
+    <tr><td><code>modern</code> (mặc định)</td><td>
+      Giống cửa sổ một trình soạn code, dùng bộ màu Dark Modern và Light Modern. Chart nằm trên nền của vùng soạn
+      (<code>#1f1f1f</code> / <code>#ffffff</code>), toolbar và các thanh quanh chart đậm hoặc nhạt hơn nền một chút, ngăn cách bằng đường mảnh;
+      icon 16 px trong nút 28 px trên toolbar 38 px; control bo 4 px, menu 6 px và dialog 8 px. Màu amber của logo
+      (<code>#e8961e</code>) chỉ dùng cho nút bấm và thứ đang chọn, chữ trên nền amber màu tối; link và focus dùng một màu amber đậm hơn
+      hoặc nhạt hơn. Nến màu teal
+      (<code>#089981</code>) và đỏ (<code>#f23645</code>), đậm hơn hoặc nhạt hơn khi dùng làm chữ, để mức thay đổi giá
+      có độ tương phản từ 5:1 trở lên. Font là Geist nếu trang của bạn đã tải font này, nếu không thì dùng font của hệ thống; chữ số
+      dùng font của Print. Trên biểu đồ, khi không truyền object theme riêng, màu là
+      <code>MODERN_DARK_THEME</code> và <code>MODERN_LIGHT_THEME</code>; một <code>Chart</code> tự tạo cũng dùng được hai theme này.
+      Nút và công cụ đang chọn tô bằng màu nhấn dạng nền (<code>--tcw-accent-fill</code>) với màu chữ đi kèm, nên trang
+      nào đặt các token màu nhấn thì cũng đặt luôn những màu này.
+    </td></tr>
+    <tr><td><code>print</code></td><td>
+      Look mặc định trước khi có Modern, gồm cả bộ màu. Giấy và mực. Nền trắng ngà hoặc đen ngả xám, màu xám cho mọi thứ bình thường và chỉ dùng màu ở chỗ có ý nghĩa;
       đường mảnh, control bo 3 px, menu 5 px và dialog 8 px; icon lớn vẽ bằng nét mảnh;
       nhãn giữ nguyên cách viết, nhấn mạnh bằng độ đậm medium; font của hệ thống (Segoe UI Variable trên Windows 11);
       mọi chữ số, kể cả trên biểu đồ, dùng một font sans có chữ số cùng độ rộng (Segoe UI trên Windows, Helvetica Neue trên
@@ -77,10 +91,10 @@ grid.getUI()`}</code></pre>
 <table>
   <thead><tr><th><code>ui.density</code></th><th>Widget</th><th>Biểu đồ của nó</th></tr></thead>
   <tbody>
-    <tr><td><code>'comfortable'</code></td><td>Mặc định: kích thước chẵn (nút 34 px, icon 20 px), khoảng cách 2 · 4 · 6 · 8 · 12 · 20 · 32, padding 12 px trong control.</td><td>Comfortable, nến golden.</td></tr>
-    <tr><td><code>'classic'</code></td><td>Như trước 2.0 (ở tỷ lệ màn hình 100%, pixel giống hệt, trừ vạch chia của trục giá, nay sắc nét hơn): nút 33 px, khoảng cách 2 · 3 · 5 · 8 · 13 · 21 · 34, padding 8 px trong control.</td><td>Compact, với nến golden như widget từng có.</td></tr>
-    <tr><td><code>'compact'</code></td><td>Control nhỏ hơn (nút 26 px, icon 16 px) trên khoảng cách classic. Không đổi so với 1.x.</td><td>Compact, nến classic.</td></tr>
-    <tr><td><code>'spacious'</code></td><td>Control lớn hơn (nút 42 px, icon 26 px).</td><td>Comfortable, nến golden.</td></tr>
+    <tr><td><code>'comfortable'</code></td><td>Mặc định: kích thước chẵn (trong Modern nút 28 px và icon 16 px, trong Print 34 và 20), khoảng cách 2 · 4 · 6 · 8 · 12 · 20 · 32, padding 12 px trong control.</td><td>Comfortable, nến golden.</td></tr>
+    <tr><td><code>'classic'</code></td><td>Kích thước của look trên khoảng cách trước 2.0: 2 · 3 · 5 · 8 · 13 · 21 · 34, padding 8 px trong control. Với Print (<code>{'{'} preset: 'print', density: 'classic' {'}'}</code>) là widget như trước 2.0 (ở tỷ lệ màn hình 100%, pixel giống hệt, trừ vạch chia của trục giá, nay sắc nét hơn), nút 33 px.</td><td>Compact, với nến golden như widget từng có.</td></tr>
+    <tr><td><code>'compact'</code></td><td>Control nhỏ hơn (trong Modern nút 24 px, trong Print 26, icon 16 px) trên khoảng cách classic.</td><td>Compact, nến classic.</td></tr>
+    <tr><td><code>'spacious'</code></td><td>Control lớn hơn (trong Modern nút 34 px và icon 20 px, trong Print 42 và 26).</td><td>Comfortable, nến golden.</td></tr>
     <tr><td><code>'airy'</code></td><td>Như spacious, với chữ số trên trục và trong legend dùng font sans của look.</td><td>Comfortable, nến golden.</td></tr>
   </tbody>
 </table>
@@ -92,8 +106,8 @@ grid.getUI()`}</code></pre>
   </tbody>
 </table>
 <pre><code>{`// The widget as it was before 2.0
-new ChartWidget(host, { ui: { density: 'classic' } })
-widget.setUI({ density: 'classic' })
+new ChartWidget(host, { ui: { preset: 'print', density: 'classic' } })
+widget.setUI({ preset: 'print', density: 'classic' })
 
 // A chart of your own as it was before 2.0
 import { Chart, CHART_SPACING, MONO_FONT_FAMILY } from '@tradecanvas/chart'
@@ -164,7 +178,7 @@ chart.setFont(null)                         // the theme's own font again`}</cod
 
 <h2>Look riêng</h2>
 <p>
-  Một look bắt đầu từ một preset (Print nếu không chỉ định) và đổi những gì nó nêu. Góc bo đặt trên thang
+  Một look bắt đầu từ một preset (Modern nếu không chỉ định) và đổi những gì nó nêu. Góc bo đặt trên thang
   áp dụng cho mọi thành phần dùng thang đó, trừ khi đặt góc riêng cho thành phần ấy.
 </p>
 <pre><code>{`widget.setUI({
@@ -204,8 +218,8 @@ chart.setFont(null)                         // the theme's own font again`}</cod
     <tr><td><code>density</code> / <code>sizes</code></td><td>
       Chiều cao <code>toolbar</code>, chiều cao <code>control</code> và <code>controlSmall</code>, <code>icon</code>,
       độ rộng <code>sidebar</code> và chiều cao <code>menuItem</code>, px. <code>compact</code> và
-      <code>spacious</code> là kích thước của Print dời xuống hoặc lên nửa bậc φ, còn <code>classic</code> là widget như
-      trước 2.0 (xem <a href="#density">Mật độ</a>, phần này cũng đặt khoảng cách và khoảng trống của biểu đồ). Nút và icon công cụ vẽ
+      <code>spacious</code> là kích thước nhỏ hơn và lớn hơn của một look (của Print là dời xuống hoặc lên nửa bậc φ), còn
+      <code>classic</code> là kích thước của look trên khoảng cách trước 2.0 (xem <a href="#density">Mật độ</a>, phần này cũng đặt khoảng cách và khoảng trống của biểu đồ). Nút và icon công cụ vẽ
       lớn hơn <code>control</code> và <code>icon</code> nửa bậc φ (bằng nhau trong <code>compact</code>). Chúng giữ
       khoảng trống hai bên trong cột <code>sidebar</code>, và khi cột không đủ cao cho tất cả thì chúng thu nhỏ,
       xuống đến cỡ <code>icon</code> và 2 px mỗi bên, trước khi cột cuộn.
@@ -223,7 +237,7 @@ chart.setFont(null)                         // the theme's own font again`}</cod
     <tr><td><code>tagRadius</code></td><td>Góc bo của tag giá, pill trên trục và badge order mà biểu đồ vẽ.</td></tr>
     <tr><td><code>iconStroke</code></td><td>
       Nét của icon, px CSS từ 0.5 đến 3, cùng độ dày ở mọi cỡ icon (tối đa 1 px với icon dưới 14 px). <code>0</code> vẽ như
-      bộ icon gốc, nét dày lên khi icon lớn. Print dùng 1; các look khác vẽ như bộ icon gốc.
+      bộ icon gốc, nét dày lên khi icon lớn. Modern dùng 1.5 và Print dùng 1; các look khác vẽ như bộ icon gốc.
     </td></tr>
   </tbody>
 </table>
@@ -231,7 +245,8 @@ chart.setFont(null)                         // the theme's own font again`}</cod
 
 <h2>Font</h2>
 <p>
-  Widget không tải font nào: nó chỉ nêu tên, và trình duyệt lần lượt thử theo từng danh sách. Print nêu các font mà mọi
+  Widget không tải font nào: nó chỉ nêu tên, và trình duyệt lần lượt thử theo từng danh sách. Modern nêu Geist, rồi các
+  font của Print, nên cũng không cần tải gì. Print nêu các font mà mọi
   hệ thống đều có: Segoe UI, San Francisco hoặc Roboto cho nhãn, và cho chữ số là Segoe UI, Roboto, Helvetica Neue hoặc Arial,
   có các chữ số cùng độ rộng, nên không cần tải gì; Desk nêu Tahoma, rồi Verdana, cũng có sẵn trong
   hệ thống. Studio nêu Manrope, rồi Inter; Terminal là IBM Plex Sans Condensed và IBM Plex Mono; Capsule là Sora.
@@ -242,7 +257,7 @@ chart.setFont(null)                         // the theme's own font again`}</cod
 <h2>Biến CSS</h2>
 <p>
   Các token là biến CSS trên phần tử gốc của widget (và trên các dialog của nó). Khi không có tuỳ chọn <code>ui</code>, chúng
-  giữ giá trị của stylesheet — của Print — nên CSS riêng có thể đặt chúng: widget đặt stylesheet của nó đầu tiên trong
+  giữ giá trị của stylesheet — của Modern — nên CSS riêng có thể đặt chúng: widget đặt stylesheet của nó đầu tiên trong
   trang, nên một rule riêng trên <code>.tcw-root</code> được ưu tiên. Khi có <code>ui</code>, widget ghi chúng trên
   phần tử, và chúng được ưu tiên.
 </p>

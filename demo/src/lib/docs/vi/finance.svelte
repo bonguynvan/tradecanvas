@@ -237,10 +237,12 @@ new EquityCurveChart(el, { data: equity, benchmark, drawdown: true })`}</code></
 <p>
   Equity curve còn nhận <strong>levels</strong>, các đường ngang qua vùng vẽ tại giá trị cố định, mỗi giá trị ghi trong một
   nhãn ở trục, và <strong>bands</strong>, các khoảng giá trị được tô màu dưới đường cong. Một level có
-  <code>label</code> ghi ở đầu bên phải, <code>color</code> và <code>dash</code> (<code>[]</code> cho
+  <code>label</code> ghi ở đầu bên phải (<code>labelAt: 'start'</code> để ghi ở đầu bên trái, xa điểm mới nhất của
+  đường cong), <code>color</code> và <code>dash</code> (<code>[]</code> cho
   đường liền); một band có <code>label</code> ở góc và <code>color</code> được dùng nguyên như truyền vào, nên hãy truyền màu có
   độ trong suốt. Cả hai dùng màu của theme khi không truyền màu. Giá trị của level được ghi đầy đủ, hoặc theo
-  <code>valueFormat</code> khi có. Thang giá trị được nới rộng để hiện tất cả; <code>fitLevels: false</code> giữ thang
+  <code>valueFormat</code> khi có. Nhãn của các level quá gần nhau sẽ được dời ra xa nhau (khi không đủ chỗ cho tất
+  cả, nhãn của các level thấp nhất bị bỏ), và tên trong vùng vẽ không đè lên nhau. Thang giá trị được nới rộng để hiện tất cả; <code>fitLevels: false</code> giữ thang
   theo đường cong, bỏ các level nằm ngoài và chỉ vẽ band ở phần chồng lên thang.
   <code>setOptions</code> thay đổi chúng trên biểu đồ đang hiển thị.
 </p>

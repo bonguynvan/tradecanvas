@@ -231,10 +231,11 @@ new DepthChart(el, { data: { bids, asks }, midPriceLine: true, spreadLabel: true
 new EquityCurveChart(el, { data: equity, benchmark, drawdown: true })`}</code></pre>
 <p>
   净值曲线还接受 <strong>levels</strong>，即在固定数值处横贯绘图区的线，每个数值写在轴上的标签里；以及
-  <strong>bands</strong>，即曲线下方着色的数值区间。level 可设 <code>label</code>（写在线的右端）、<code>color</code>
+  <strong>bands</strong>，即曲线下方着色的数值区间。level 可设 <code>label</code>（写在线的右端；<code>labelAt: 'start'</code> 则写在左端，远离曲线的最新一点）、<code>color</code>
   和 <code>dash</code>（<code>[]</code> 为实线）；band 可设 <code>label</code>（在其左上角）和按原样使用的
   <code>color</code>，所以请传入带透明度的颜色。未给颜色时两者都使用主题的颜色。level 的数值完整写出，若给了
-  <code>valueFormat</code> 则按它写。数值刻度会扩展以显示全部；<code>fitLevels: false</code> 让刻度只按曲线，刻度外的
+  <code>valueFormat</code> 则按它写。level 靠得太近、标签放不下时会彼此错开（空间不够全部显示时，舍去最低几个 level 的标签），
+  绘图区内的名称也不会互相重叠。数值刻度会扩展以显示全部；<code>fitLevels: false</code> 让刻度只按曲线，刻度外的
   level 不画，band 只画与刻度重叠的部分。<code>setOptions</code> 可在原图表上修改它们。
 </p>
 <pre><code>{`const chart = new EquityCurveChart(el, {

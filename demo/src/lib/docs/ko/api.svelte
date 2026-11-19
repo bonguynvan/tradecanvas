@@ -599,7 +599,8 @@ new ChartWidget(host, { features: { 'dock.dataWindow': false } })  // no button 
   또는 차트 위에서 입력한 글자로 열리며, 그 글자로 검색을 시작합니다. 아무것도 입력하기 전에는 <code>symbols</code> 목록을
   보여 주고, 입력하면 입력이 멈출 때마다 피드의 검색(<code>searchSymbols</code> 또는 어댑터의 검색)에 묻습니다. 각 행의 앞에는
   배지(종목의 로고, 없으면 티커의 첫 글자를 종류의 색으로)가 있고, 이어서 종목, 이름, 종류, 거래소가 열로 나뉘어 표시되며,
-  차트의 종목에는 표시가 붙습니다. 탭으로 한 종류(주식, 암호화폐)만 볼 수 있고, 입력하는 동안에도 탭은 그대로입니다. 행이 두 곳
+  차트의 종목에는 표시가 붙습니다. 휴대폰에서는 거래소가 티커 아래에 놓이므로, 긴 이름(SIMULATED, ALL VENUES)도
+  잘리지 않고 두 거래소의 행을 구별할 수 있습니다. 탭으로 한 종류(주식, 암호화폐)만 볼 수 있고, 입력하는 동안에도 탭은 그대로입니다. 행이 두 곳
   이상의 거래소에서 오면 옆의 목록으로 한 거래소만 볼 수 있습니다. 둘 다 이미 받은 행만 걸러 내며 다시 검색하지 않습니다. 검색은
   결과 한 페이지를 돌려주므로(어댑터의 검색에는 50개를 요청합니다), <code>V</code>를 입력한 뒤 HNX를 고르면 그중 HNX 종목이
   보이며, V가 들어간 모든 HNX 종목이 아닙니다. 목록은 가장 잘 맞는 200개 행까지 보여 주고, 그 아래 한 줄이 입력해서 좁힐 수 있는
@@ -620,6 +621,17 @@ new ChartWidget(host, { features: { 'dock.dataWindow': false } })  // no button 
     'FPT',   // 이전처럼 티커만
   ],
 })`}</code></pre>
+<p>
+  종목의 <code>last</code> 가격과 그날의 <code>changePercent</code>는 <code>symbols</code>로 주든 검색 결과에 담든
+  행 끝의 각자 열에 표시되고(휴대폰에서는 등락률이 가격 아래), 등락률은 상승 또는 하락 색입니다. 나열된 행 중 어느
+  것에도 둘 다 없으면 이 열들은 빠집니다. 숫자는 종목의 <code>pricePrecision</code> 자릿수로, 없으면 크기에 따라,
+  위젯의 숫자 로캘로 씁니다. 문자열은 그대로 씁니다. 위젯은 이 값들을 하나도 가져오지 않습니다. 앱이 가진 것을
+  넘겨 줍니다. 검색이 준 수치는 그 결과가 보이는 동안 표시되며, 다음에 검색을 열 때까지 남지 않습니다.
+</p>
+<pre><code>{`widget.setSymbols([
+  { symbol: 'BTCUSDT', exchange: 'Binance', last: 61668.46, changePercent: 0.37 },
+  { symbol: 'VCB', exchange: 'HOSE', last: 61.2, pricePrecision: 2, changePercent: -0.65 },
+])`}</code></pre>
 <p>
   <code>logo</code>는 <code>https:</code> 또는 <code>http:</code> 주소, 사이트의 경로, <code>blob:</code> URL, 또는
   <code>data:</code>로 쓴 이미지(PNG, JPEG, GIF, WebP, AVIF, SVG)입니다. 그 밖의 값은 무시합니다. 이미지로만, 리퍼러 없이

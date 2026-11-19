@@ -6,22 +6,34 @@
 
 <svelte:head>
   <title>样式 — TradeCanvas 文档</title>
-  <meta name="description" content="用 token 描述组件的外观：圆角、尺寸、字体、边框、阴影和工具栏。五套预设——Print、Studio、Terminal、Capsule、Desk——以及在其基础上定制的你自己的主题。" />
+  <meta name="description" content="用 token 描述组件的外观：圆角、尺寸、字体、边框、阴影和工具栏。六套预设——Modern、Print、Studio、Terminal、Capsule、Desk——以及在其基础上定制的你自己的主题。" />
 </svelte:head>
 
 <h1>组件样式</h1>
 <p>
   组件的外观由一组 token 构成：各类部件的圆角、控件与工具栏的尺寸、字体、边框、阴影、选中按钮的样式，
   以及工具栏和画线工具是沿边停靠还是悬浮。从一套预设出发，想改哪里就改哪里。颜色仍由主题决定
-  （<code>dark</code> / <code>light</code>，参见 <a href={href('/docs/api')}>API 参考</a>）；任何外观都能与这两种主题搭配。
+  （<code>dark</code> / <code>light</code>，参见 <a href={href('/docs/api')}>API 参考</a>）；任何外观都能与这两种主题搭配。默认的 Modern
+  自带一套深色和一套浅色；其他外观共用它出现之前组件所用的配色。
 </p>
 
 <h2>预设</h2>
 <table>
   <thead><tr><th>预设</th><th>外观</th></tr></thead>
   <tbody>
-    <tr><td><code>print</code>（默认）</td><td>
-      纸与墨。近白或近黑的底色，常规内容一律用灰色，只在有含义的地方用颜色；细线、3 px 控件、5 px 菜单和 8 px 对话框；
+    <tr><td><code>modern</code>（默认）</td><td>
+      代码编辑器的窗口，采用其 Dark Modern 和 Light Modern 配色。图表铺在编辑器的底色上
+      （<code>#1f1f1f</code> / <code>#ffffff</code>），四周的栏比底色略深或略浅一级，中间以细线分隔；
+      38 px 的工具栏上是 28 px 的按钮和 16 px 的图标；控件圆角 4 px，菜单 6 px，对话框 8 px。Logo 的琥珀色
+      （<code>#e8961e</code>）只用于可操作的元素和已选中的内容，上面配深色文字；链接和焦点则用更深或更浅的琥珀色。
+      K 线为青绿色（<code>#089981</code>）和红色（<code>#f23645</code>），作为文字时颜色加深或调浅，使涨跌幅的对比度达到
+      5:1 或以上。字体在页面加载了 Geist 时用 Geist，否则用系统自带字体；数字字体与 Print 相同。在图表上，若你没有传入自己的
+      主题对象，配色为 <code>MODERN_DARK_THEME</code> 和 <code>MODERN_LIGHT_THEME</code>，你自己的图表也可以使用它们。
+      选中的按钮和工具使用强调色的填充色（<code>--tcw-accent-fill</code>）及其文字颜色，因此页面设置了强调色 token，
+      这两者也会随之改变。
+    </td></tr>
+    <tr><td><code>print</code></td><td>
+      Modern 之前的默认外观，配色也一并保留。纸与墨。近白或近黑的底色，常规内容一律用灰色，只在有含义的地方用颜色；细线、3 px 控件、5 px 菜单和 8 px 对话框；
       大图标、细线条；标签保持原样书写，强调处用中等字重；使用系统自带字体（Windows 11 上为 Segoe UI Variable）；所有数字（图表上的也一样）使用数字等宽的无衬线字体（Windows 上为 Segoe UI，Apple 系统上为 Helvetica Neue，Android 上为 Roboto），价格仍按列对齐。选中的按钮是实心墨色，选中的工具是墨蓝色。
     </td></tr>
     <tr><td><code>studio</code></td><td>
@@ -64,10 +76,10 @@ grid.getUI()`}</code></pre>
 <table>
   <thead><tr><th><code>ui.density</code></th><th>组件</th><th>它的图表</th></tr></thead>
   <tbody>
-    <tr><td><code>'comfortable'</code></td><td>默认值：偶数尺寸（按钮 34 px，图标 20 px），间距 2 · 4 · 6 · 8 · 12 · 20 · 32，控件内边距 12 px。</td><td>comfortable，golden K 线。</td></tr>
-    <tr><td><code>'classic'</code></td><td>与 2.0 之前相同（屏幕缩放为 100% 时像素完全一致，只有价格轴的刻度线更锐利）：按钮 33 px，间距 2 · 3 · 5 · 8 · 13 · 21 · 34，控件内边距 8 px。</td><td>compact，但保留组件原有的 golden K 线。</td></tr>
-    <tr><td><code>'compact'</code></td><td>更小的控件（按钮 26 px，图标 16 px），使用 classic 的间距。与 1.x 相同。</td><td>compact，classic K 线。</td></tr>
-    <tr><td><code>'spacious'</code></td><td>更大的控件（按钮 42 px，图标 26 px）。</td><td>comfortable，golden K 线。</td></tr>
+    <tr><td><code>'comfortable'</code></td><td>默认值：偶数尺寸（Modern 中按钮 28 px、图标 16 px，Print 中为 34 和 20），间距 2 · 4 · 6 · 8 · 12 · 20 · 32，控件内边距 12 px。</td><td>comfortable，golden K 线。</td></tr>
+    <tr><td><code>'classic'</code></td><td>外观自身的尺寸，配 2.0 之前的间距：2 · 3 · 5 · 8 · 13 · 21 · 34，控件内边距 8 px。与 Print 搭配（<code>{'{'} preset: 'print', density: 'classic' {'}'}</code>）即是 2.0 之前的组件（屏幕缩放为 100% 时像素完全一致，只有价格轴的刻度线更锐利），按钮 33 px。</td><td>compact，但保留组件原有的 golden K 线。</td></tr>
+    <tr><td><code>'compact'</code></td><td>更小的控件（Modern 中按钮 24 px，Print 中 26 px，图标 16 px），使用 classic 的间距。</td><td>compact，classic K 线。</td></tr>
+    <tr><td><code>'spacious'</code></td><td>更大的控件（Modern 中按钮 34 px、图标 20 px，Print 中为 42 和 26）。</td><td>comfortable，golden K 线。</td></tr>
     <tr><td><code>'airy'</code></td><td>在 spacious 的基础上，坐标轴和图例中的数字使用外观的无衬线字体。</td><td>comfortable，golden K 线。</td></tr>
   </tbody>
 </table>
@@ -79,8 +91,8 @@ grid.getUI()`}</code></pre>
   </tbody>
 </table>
 <pre><code>{`// The widget as it was before 2.0
-new ChartWidget(host, { ui: { density: 'classic' } })
-widget.setUI({ density: 'classic' })
+new ChartWidget(host, { ui: { preset: 'print', density: 'classic' } })
+widget.setUI({ preset: 'print', density: 'classic' })
 
 // A chart of your own as it was before 2.0
 import { Chart, CHART_SPACING, MONO_FONT_FAMILY } from '@tradecanvas/chart'
@@ -138,7 +150,7 @@ chart.setFont(null)                         // the theme's own font again`}</cod
 
 <h2>自定义外观</h2>
 <p>
-  自定义主题从一套预设开始（未指定时为 Print），只修改其中写明的部分。在圆角刻度上设置的值会作用于所有跟随该刻度的部件，
+  自定义主题从一套预设开始（未指定时为 Modern），只修改其中写明的部分。在圆角刻度上设置的值会作用于所有跟随该刻度的部件，
   除非你单独设置了该部件自己的圆角。
 </p>
 <pre><code>{`widget.setUI({
@@ -178,7 +190,7 @@ chart.setFont(null)                         // the theme's own font again`}</cod
     <tr><td><code>density</code> / <code>sizes</code></td><td>
       <code>toolbar</code> 高度、<code>control</code> 与 <code>controlSmall</code> 高度、<code>icon</code>、
       <code>sidebar</code> 宽度以及 <code>menuItem</code> 高度，单位 px。<code>compact</code> 和
-      <code>spacious</code> 是把 Print 的尺寸下调或上调 φ 的半步，<code>classic</code> 则是 2.0 之前的组件（见<a href="#density">密度</a>，它还决定间距和图表的留白）。绘图工具的按钮和图标比
+      <code>spacious</code> 是外观自身较小和较大的尺寸（Print 的是下调或上调 φ 的半步），<code>classic</code> 则是外观自身的尺寸配 2.0 之前的间距（见<a href="#density">密度</a>，它还决定间距和图表的留白）。绘图工具的按钮和图标比
       <code>control</code> 和 <code>icon</code> 大 φ 的半步（<code>compact</code> 下相同）。它们在 <code>sidebar</code>
       栏内两侧留有空隙；栏太矮放不下全部工具时，它们会先缩小（最小到 <code>icon</code> 的尺寸，两侧各加 2 px），然后栏才滚动。
     </td></tr>
@@ -194,7 +206,7 @@ chart.setFont(null)                         // the theme's own font again`}</cod
     <tr><td><code>tagRadius</code></td><td>图表绘制的价格标签、坐标轴胶囊标签和订单徽标的圆角。</td></tr>
     <tr><td><code>iconStroke</code></td><td>
       图标的线宽，单位 CSS px，范围 0.5 到 3，在任何图标尺寸下都一样粗（小于 14 px 的图标最多 1 px）。<code>0</code> 按图标集原样绘制，图标越大线条越粗。
-      Print 为 1；其他外观按原样绘制。
+      Modern 为 1.5，Print 为 1；其他外观按原样绘制。
     </td></tr>
   </tbody>
 </table>
@@ -202,7 +214,8 @@ chart.setFont(null)                         // the theme's own font again`}</cod
 
 <h2>字体</h2>
 <p>
-  组件不会加载任何字体：它只写出字体名称，由浏览器按列表依次回退。Print 指定每个系统都有的字体：文字用 Segoe UI、
+  组件不会加载任何字体：它只写出字体名称，由浏览器按列表依次回退。Modern 先指定 Geist，
+  其次是 Print 的字体，因此同样无需加载任何字体。Print 指定每个系统都有的字体：文字用 Segoe UI、
   San Francisco 或 Roboto，数字用 Segoe UI、Roboto、Helvetica Neue 或 Arial（各数字等宽），因此无需加载任何字体；
   Desk 指定 Tahoma，其次是 Verdana，同样是系统自带字体。Studio 指定 Manrope，其次是 Inter；
   Terminal 指定 IBM Plex Sans Condensed 和 IBM Plex Mono；Capsule 指定 Sora。请自行加载需要的字体：
@@ -211,7 +224,7 @@ chart.setFont(null)                         // the theme's own font again`}</cod
 
 <h2>CSS 变量</h2>
 <p>
-  这些 token 是组件根元素（以及其对话框）上的 CSS 变量。不设置 <code>ui</code> 选项时，它们沿用样式表中的值（即 Print 的值），
+  这些 token 是组件根元素（以及其对话框）上的 CSS 变量。不设置 <code>ui</code> 选项时，它们沿用样式表中的值（即 Modern 的值），
   因此你自己的 CSS 可以设置它们：组件会把自己的样式表放在页面最前面，所以你写在 <code>.tcw-root</code> 上的规则会生效。
   设置 <code>ui</code> 后，组件会把它们直接写到元素上，并以这些值为准。
 </p>

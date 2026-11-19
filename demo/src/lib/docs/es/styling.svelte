@@ -6,7 +6,7 @@
 
 <svelte:head>
   <title>Estilos — Documentación de TradeCanvas</title>
-  <meta name="description" content="El aspecto del widget como tokens: esquinas, tamaños, tipografía, bordes, sombras y barras. Cinco preajustes (Print, Studio, Terminal, Capsule, Desk), y tu propio tema sobre ellos." />
+  <meta name="description" content="El aspecto del widget como tokens: esquinas, tamaños, tipografía, bordes, sombras y barras. Seis preajustes (Modern, Print, Studio, Terminal, Capsule, Desk), y tu propio tema sobre ellos." />
 </svelte:head>
 
 <h1>Estilos del widget</h1>
@@ -15,15 +15,29 @@
   barras, la tipografía, los bordes, las sombras, cómo se ve un botón elegido y si la barra de herramientas y las
   herramientas de dibujo van pegadas a los bordes o flotan. Parte de un preajuste y cambia lo que quieras. Los colores
   siguen dependiendo del tema (<code>dark</code> / <code>light</code>; consulta la
-  <a href={href('/docs/api')}>referencia de la API</a>); cualquier aspecto funciona con ambos.
+  <a href={href('/docs/api')}>referencia de la API</a>); cualquier aspecto funciona con ambos. Modern, el predeterminado, trae un
+  oscuro y un claro propios; los demás aspectos comparten los colores que tenía el widget antes de él.
 </p>
 
 <h2>Preajustes</h2>
 <table>
   <thead><tr><th>Preajuste</th><th>Aspecto</th></tr></thead>
   <tbody>
-    <tr><td><code>print</code> (predeterminado)</td><td>
-      Papel y tinta. Un fondo casi blanco o casi negro, gris para todo lo normal y color solo donde significa algo;
+    <tr><td><code>modern</code> (predeterminado)</td><td>
+      La ventana de un editor de código, con sus colores Dark Modern y Light Modern. El gráfico sobre el fondo del editor
+      (<code>#1f1f1f</code> / <code>#ffffff</code>), las barras de alrededor un tono por encima o por debajo y líneas finas
+      entre ellas; iconos de 16 px en botones de 28 px sobre una barra de herramientas de 38 px; controles de 4 px, menús de
+      6 px y diálogos de 8 px. El ámbar del logo (<code>#e8961e</code>) solo para lo que se pulsa y lo elegido, con tinta
+      oscura encima, y un ámbar más intenso o más claro para los enlaces y el foco. Velas en verde azulado
+      (<code>#089981</code>) y rojo (<code>#f23645</code>), más intensos o más claros donde son texto, para que una
+      variación se lea con un contraste de 5:1 o más. Su fuente es Geist si tu página la carga, y la del sistema si no; sus
+      cifras son las de Print. En el gráfico, sin un objeto de tema tuyo, sus colores son
+      <code>MODERN_DARK_THEME</code> y <code>MODERN_LIGHT_THEME</code>, que también puede usar un gráfico propio.
+      Un botón y una herramienta elegidos llevan el relleno del acento (<code>--tcw-accent-fill</code>) con su tinta, así
+      que una página que fija los tokens del acento fija también estos.
+    </td></tr>
+    <tr><td><code>print</code></td><td>
+      El predeterminado antes de Modern, colores incluidos. Papel y tinta. Un fondo casi blanco o casi negro, gris para todo lo normal y color solo donde significa algo;
       líneas finas, controles de 3 px, menús de 5 px y diálogos de 8 px; iconos grandes de trazo fino;
       etiquetas tal como se escriben y un peso medio para destacar; la fuente del propio sistema (Segoe UI Variable en
       Windows 11); todas las cifras, también las del
@@ -74,10 +88,10 @@ grid.getUI()`}</code></pre>
 <table>
   <thead><tr><th><code>ui.density</code></th><th>El widget</th><th>Su gráfico</th></tr></thead>
   <tbody>
-    <tr><td><code>'comfortable'</code></td><td>El valor por defecto: tamaños pares (un botón de 34 px, un icono de 20 px), espaciado 2 · 4 · 6 · 8 · 12 · 20 · 32, 12 px de relleno en un control.</td><td>Comfortable, barras golden.</td></tr>
-    <tr><td><code>'classic'</code></td><td>Como era antes de la 2.0 (con la pantalla al 100% de escala, los mismos píxeles, salvo las marcas del eje de precios, que son más nítidas): un botón de 33 px, espaciado 2 · 3 · 5 · 8 · 13 · 21 · 34, 8 px de relleno en un control.</td><td>Compact, con las barras golden que ya tenía el widget.</td></tr>
-    <tr><td><code>'compact'</code></td><td>Controles más pequeños (un botón de 26 px, un icono de 16 px) sobre el espaciado clásico. Sin cambios desde la 1.x.</td><td>Compact, barras classic.</td></tr>
-    <tr><td><code>'spacious'</code></td><td>Controles más grandes (un botón de 42 px, un icono de 26 px).</td><td>Comfortable, barras golden.</td></tr>
+    <tr><td><code>'comfortable'</code></td><td>El valor por defecto: tamaños pares (en Modern un botón de 28 px y un icono de 16 px, en Print 34 y 20), espaciado 2 · 4 · 6 · 8 · 12 · 20 · 32, 12 px de relleno en un control.</td><td>Comfortable, barras golden.</td></tr>
+    <tr><td><code>'classic'</code></td><td>Los tamaños del aspecto sobre el espaciado de antes de la 2.0: 2 · 3 · 5 · 8 · 13 · 21 · 34, 8 px de relleno en un control. Con Print (<code>{'{'} preset: 'print', density: 'classic' {'}'}</code>), el widget como era antes de la 2.0 (con la pantalla al 100% de escala, los mismos píxeles, salvo las marcas del eje de precios, que son más nítidas), con un botón de 33 px.</td><td>Compact, con las barras golden que ya tenía el widget.</td></tr>
+    <tr><td><code>'compact'</code></td><td>Controles más pequeños (en Modern un botón de 24 px, en Print de 26, un icono de 16 px) sobre el espaciado clásico.</td><td>Compact, barras classic.</td></tr>
+    <tr><td><code>'spacious'</code></td><td>Controles más grandes (en Modern un botón de 34 px y un icono de 20 px, en Print 42 y 26).</td><td>Comfortable, barras golden.</td></tr>
     <tr><td><code>'airy'</code></td><td>Como spacious, y las cifras de los ejes y de la leyenda usan la fuente sans del aspecto.</td><td>Comfortable, barras golden.</td></tr>
   </tbody>
 </table>
@@ -89,8 +103,8 @@ grid.getUI()`}</code></pre>
   </tbody>
 </table>
 <pre><code>{`// The widget as it was before 2.0
-new ChartWidget(host, { ui: { density: 'classic' } })
-widget.setUI({ density: 'classic' })
+new ChartWidget(host, { ui: { preset: 'print', density: 'classic' } })
+widget.setUI({ preset: 'print', density: 'classic' })
 
 // A chart of your own as it was before 2.0
 import { Chart, CHART_SPACING, MONO_FONT_FAMILY } from '@tradecanvas/chart'
@@ -151,7 +165,7 @@ chart.setFont(null)                         // the theme's own font again`}</cod
 
 <h2>Tu propio aspecto</h2>
 <p>
-  Un tema parte de un preajuste (Print si no indicas ninguno) y cambia solo lo que nombra. Las esquinas fijadas en la
+  Un tema parte de un preajuste (Modern si no indicas ninguno) y cambia solo lo que nombra. Las esquinas fijadas en la
   escala llegan a todas las piezas que la siguen, salvo que fijes las de esa pieza en concreto.
 </p>
 <pre><code>{`widget.setUI({
@@ -192,8 +206,8 @@ chart.setFont(null)                         // the theme's own font again`}</cod
     <tr><td><code>density</code> / <code>sizes</code></td><td>
       Alto de <code>toolbar</code>, alto de <code>control</code> y <code>controlSmall</code>, <code>icon</code>,
       ancho de <code>sidebar</code> y alto de <code>menuItem</code>, en px. <code>compact</code> y
-      <code>spacious</code> son los tamaños de Print medio paso de φ más abajo o más arriba, y <code>classic</code> es el
-      widget como era antes de la 2.0 (véase <a href="#density">Densidad</a>, que también fija el espaciado y el aire del gráfico). Los botones e iconos de las
+      <code>spacious</code> son los tamaños más pequeños y más grandes de un aspecto (los de Print, medio paso de φ más abajo
+      o más arriba), y <code>classic</code> sus tamaños sobre el espaciado de antes de la 2.0 (véase <a href="#density">Densidad</a>, que también fija el espaciado y el aire del gráfico). Los botones e iconos de las
       herramientas de dibujo van medio paso de φ por encima de <code>control</code> e <code>icon</code> (iguales en
       <code>compact</code>). Dejan espacio a cada lado en la columna <code>sidebar</code> y, si la columna es demasiado
       baja para todas, se encogen, hasta el tamaño de <code>icon</code> más 2 px a cada lado, antes de que la columna se desplace.
@@ -211,7 +225,7 @@ chart.setFont(null)                         // the theme's own font again`}</cod
     <tr><td><code>tagRadius</code></td><td>Esquinas de las etiquetas de precio, las píldoras del eje y las insignias de órdenes que dibuja el gráfico.</td></tr>
     <tr><td><code>iconStroke</code></td><td>
       Las líneas de los iconos, en px CSS de 0.5 a 3, del mismo grosor en cualquier tamaño de icono (como mucho 1 px en iconos de menos de 14 px). <code>0</code> los
-      dibuja como el juego de iconos, más gruesos cuanto mayor es el icono. Los de Print son de 1; los demás aspectos
+      dibuja como el juego de iconos, más gruesos cuanto mayor es el icono. Los de Modern son de 1.5 y los de Print de 1; los demás aspectos
       los dibujan tal cual.
     </td></tr>
   </tbody>
@@ -220,8 +234,8 @@ chart.setFont(null)                         // the theme's own font again`}</cod
 
 <h2>Fuentes</h2>
 <p>
-  El widget no carga ninguna fuente: las nombra, y el navegador recorre cada lista hasta dar con una disponible. Print
-  nombra las fuentes que trae cualquier sistema: Segoe UI, San Francisco o Roboto para los textos y, para las cifras,
+  El widget no carga ninguna fuente: las nombra, y el navegador recorre cada lista hasta dar con una disponible. Modern
+  nombra Geist y luego las fuentes de Print, así que tampoco necesita cargar nada. Print nombra las fuentes que trae cualquier sistema: Segoe UI, San Francisco o Roboto para los textos y, para las cifras,
   Segoe UI, Roboto, Helvetica Neue o Arial, cuyos dígitos tienen todos el mismo ancho, así que no necesita cargar nada;
   Desk nombra Tahoma y después Verdana, que también vienen con el sistema. Studio nombra Manrope y después Inter;
   Terminal, IBM Plex Sans Condensed e IBM Plex Mono; Capsule, Sora. Carga las que quieras:
@@ -231,7 +245,7 @@ chart.setFont(null)                         // the theme's own font again`}</cod
 <h2>Variables CSS</h2>
 <p>
   Los tokens son variables CSS en la raíz del widget (y en sus diálogos). Sin la opción <code>ui</code> siguen siendo las
-  de la hoja de estilos (las de Print), así que tu propio CSS puede fijarlas: el widget coloca su hoja de estilos
+  de la hoja de estilos (las de Modern), así que tu propio CSS puede fijarlas: el widget coloca su hoja de estilos
   al principio de la página, de modo que una regla tuya sobre <code>.tcw-root</code> prevalece. Con <code>ui</code>,
   el widget las escribe en el elemento y son ellas las que prevalecen.
 </p>
