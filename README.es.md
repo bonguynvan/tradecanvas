@@ -26,9 +26,9 @@
   <a href="README.md">English</a> · <a href="README.vi.md">Tiếng Việt</a> · <a href="README.zh-CN.md">简体中文</a> · <a href="README.ja.md">日本語</a> · <a href="README.ko.md">한국어</a> · <b>Español</b>
 </p>
 
-**Tu gráfico de trading. Tus reglas.** TradeCanvas es un motor de gráficos que es tuyo: licencia MIT, se instala desde npm y se sirve con tu app, con tus propios datos y bajo tu propia marca. Sin logo en el gráfico, sin nada que solicitar, sin una plataforma entre tú y tus usuarios. ¿Vienes de la charting library de TradingView o de Lightweight Charts? Conserva tu datafeed: [pasar desde TradingView](https://tradecanvas.dev/es/docs/from-tradingview/).
-
 **TradeCanvas es una librería de gráficos de trading de código abierto para la web**, con licencia MIT. De velas japonesas a Renko, 134 indicadores, 76 herramientas de dibujo, datos en vivo de exchanges y órdenes sobre el gráfico, dibujado con Canvas 2D o WebGL y sin dependencias de terceros. Usa el `ChartWidget` completo o construye tu propia interfaz sobre el `Chart` headless, en TypeScript, React, Vue o Svelte.
+
+Es un motor de gráficos que es tuyo: licencia MIT, se instala desde npm y se sirve con tu app, con tus propios datos y bajo tu propia marca. Sin logo en el gráfico, sin nada que solicitar, sin una plataforma entre tú y tus usuarios. ¿Vienes de la charting library de TradingView o de Lightweight Charts? Conserva tu datafeed: [pasar desde TradingView](https://tradecanvas.dev/es/docs/from-tradingview/).
 
 <p align="center">
   <a href="https://tradecanvas.dev/es/chart/"><img src=".github/assets/clips/hero.webp" alt="ChartWidget sobre un mercado en vivo: EMA 21 y 55, RSI, la cruz y una línea de tendencia dibujada con el ratón" width="100%"></a>

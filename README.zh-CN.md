@@ -26,9 +26,9 @@
   <a href="README.md">English</a> · <a href="README.vi.md">Tiếng Việt</a> · <b>简体中文</b> · <a href="README.ja.md">日本語</a> · <a href="README.ko.md">한국어</a> · <a href="README.es.md">Español</a>
 </p>
 
-**你的交易图表，你的规则。** TradeCanvas 是一套由你掌控的图表引擎：MIT 许可证，从 npm 安装、随你的应用一起部署，用你自己的数据，打上你自己的品牌。图表上没有别人的标志，不需要申请授权，你和用户之间也没有任何平台。正在使用 TradingView 的 charting library 或 Lightweight Charts？datafeed 可以原样保留：[从 TradingView 迁移](https://tradecanvas.dev/zh/docs/from-tradingview/)。
+**TradeCanvas 是一套开源的 Web 交易图表库**，采用 MIT 许可证。从K线到砖形图（Renko），134 个指标、76 种画线工具、交易所实时行情和图上下单，用 Canvas 2D 或 WebGL 绘制，不依赖任何第三方库。可以直接使用完整的 `ChartWidget`，也可以在无界面的 `Chart` 上构建自己的界面，支持 TypeScript、React、Vue 和 Svelte。
 
-**TradeCanvas 是一套开源的 Web 交易图表库**，采用 MIT 许可证。 从K线到砖形图（Renko），134 个指标、76 种画线工具、交易所实时行情和图上下单，用 Canvas 2D 或 WebGL 绘制，不依赖任何第三方库。可以直接使用完整的 `ChartWidget`，也可以在无界面的 `Chart` 上构建自己的界面，支持 TypeScript、React、Vue 和 Svelte。
+它是一套由你掌控的图表引擎：MIT 许可证，从 npm 安装、随你的应用一起部署，用你自己的数据，打上你自己的品牌。图表上没有别人的标志，不需要申请授权，你和用户之间也没有任何平台。正在使用 TradingView 的 charting library 或 Lightweight Charts？datafeed 可以原样保留：[从 TradingView 迁移](https://tradecanvas.dev/zh/docs/from-tradingview/)。
 
 <p align="center">
   <a href="https://tradecanvas.dev/zh/chart/"><img src=".github/assets/clips/hero.webp" alt="实时行情上的 ChartWidget：EMA 21 和 55、RSI、十字光标，以及用鼠标画出的趋势线" width="100%"></a>

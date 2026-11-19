@@ -26,9 +26,9 @@
   <a href="README.md">English</a> · <a href="README.vi.md">Tiếng Việt</a> · <a href="README.zh-CN.md">简体中文</a> · <a href="README.ja.md">日本語</a> · <b>한국어</b> · <a href="README.es.md">Español</a>
 </p>
 
-**당신의 트레이딩 차트, 당신의 규칙.** TradeCanvas는 직접 소유하는 차트 엔진입니다. MIT 라이선스로, npm에서 설치해 앱과 함께 배포하고, 자신의 데이터를 넣고, 자신의 브랜드로 보여 줍니다. 차트에 다른 회사의 로고가 없고, 신청할 것도 없으며, 당신과 사용자 사이에 플랫폼이 끼지 않습니다. TradingView의 charting library나 Lightweight Charts를 쓰고 있나요? 데이터피드는 그대로 둡니다: [TradingView에서 옮겨오기](https://tradecanvas.dev/ko/docs/from-tradingview/).
-
 **TradeCanvas는 웹을 위한 오픈 소스 트레이딩 차트 라이브러리입니다**(MIT 라이선스). 캔들스틱부터 렌코까지, 134개 지표, 76개 그리기 도구, 거래소 실시간 피드와 차트 위 주문을 서드파티 의존성 없이 Canvas 2D 또는 WebGL로 그립니다. 완전한 `ChartWidget`을 그대로 넣거나 헤드리스 `Chart` 위에 직접 UI를 만들 수 있으며, TypeScript, React, Vue, Svelte를 지원합니다.
+
+직접 소유하는 차트 엔진입니다. MIT 라이선스로, npm에서 설치해 앱과 함께 배포하고, 자신의 데이터를 넣고, 자신의 브랜드로 보여 줍니다. 차트에 다른 회사의 로고가 없고, 신청할 것도 없으며, 당신과 사용자 사이에 플랫폼이 끼지 않습니다. TradingView의 charting library나 Lightweight Charts를 쓰고 있나요? 데이터피드는 그대로 둡니다: [TradingView에서 옮겨오기](https://tradecanvas.dev/ko/docs/from-tradingview/).
 
 <p align="center">
   <a href="https://tradecanvas.dev/ko/chart/"><img src=".github/assets/clips/hero.webp" alt="실시간 시장의 ChartWidget: EMA 21과 55, RSI, 십자선, 마우스로 그린 추세선" width="100%"></a>
