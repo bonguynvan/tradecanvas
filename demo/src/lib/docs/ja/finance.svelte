@@ -232,10 +232,12 @@ new DepthChart(el, { data: { bids, asks }, midPriceLine: true, spreadLabel: true
 new EquityCurveChart(el, { data: equity, benchmark, drawdown: true })`}</code></pre>
 <p>
   資産曲線は <strong>levels</strong>（固定値でプロットを横切る線。値は軸のタグに書かれます）と
-  <strong>bands</strong>（曲線の下に色を付けた値の範囲）も受け取ります。level には右端に書く <code>label</code>、
+  <strong>bands</strong>（曲線の下に色を付けた値の範囲）も受け取ります。level には右端に書く <code>label</code>（<code>labelAt: 'start'</code> なら曲線の最新の点から離れた左端）、
   <code>color</code>、<code>dash</code>（<code>[]</code> で実線）があり、band には角に書く <code>label</code> と、そのまま
   使われる <code>color</code> があるので、透明度のある色を渡してください。色がなければどちらもテーマの色になります。
-  level の値は省略せずに書かれ、<code>valueFormat</code> があればそれに従います。値の目盛りはすべてが見えるように
+  level の値は省略せずに書かれ、<code>valueFormat</code> があればそれに従います。
+  近すぎて両方は収まらない level のタグは互いに離れ（全部を置く余地がなければ、いちばん低い level のタグが省かれます）、
+  プロット内の名前も重なりません。値の目盛りはすべてが見えるように
   広がります。<code>fitLevels: false</code> では目盛りを曲線に合わせ、外れた level は描かず、band は重なる部分だけ描きます。
   <code>setOptions</code> でチャートをそのままにして変えられます。
 </p>

@@ -237,10 +237,13 @@ new EquityCurveChart(el, { data: equity, benchmark, drawdown: true })`}</code></
 <p>
   Una curva de capital también acepta <strong>levels</strong>, líneas a lo ancho del gráfico en valores fijos con cada
   valor en una etiqueta del eje, y <strong>bands</strong>, tramos de valores teñidos bajo la curva. Un level tiene un
-  <code>label</code> escrito en su extremo derecho, un <code>color</code> y un <code>dash</code> (<code>[]</code> para una
+  <code>label</code> escrito en su extremo derecho (<code>labelAt: 'start'</code> para el izquierdo, lejos del último
+  punto de la curva), un <code>color</code> y un <code>dash</code> (<code>[]</code> para una
   línea continua); una band tiene un <code>label</code> en su esquina y un <code>color</code> que se usa tal cual, así que
   da uno con transparencia. Ambos toman los colores del tema si no se da ninguno. El valor de un level se escribe
-  completo, o con <code>valueFormat</code> si se da. La escala de valores se amplía para mostrarlos todos;
+  completo, o con <code>valueFormat</code> si se da. Las etiquetas de levels demasiado cercanos para que quepan ambas se
+  apartan (cuando no hay sitio para todas, se omiten las de los levels más bajos), y los nombres dentro del gráfico no se
+  pisan entre sí. La escala de valores se amplía para mostrarlos todos;
   <code>fitLevels: false</code> la ajusta a la curva, deja fuera un level que quede fuera y dibuja una band solo donde se
   solapa con ella. <code>setOptions</code> los cambia en el gráfico tal como está.
 </p>

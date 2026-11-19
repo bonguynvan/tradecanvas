@@ -642,8 +642,9 @@ new ChartWidget(host, { features: { 'dock.dataWindow': false } })  // no button 
   o al escribir una letra sobre el gráfico, con la que empieza la búsqueda. Lista tus <code>symbols</code> hasta que se
   escribe algo, y luego consulta la búsqueda de tu feed (<code>searchSymbols</code>, o la del adaptador) cuando dejas de
   escribir. Cada fila empieza con una insignia (el logo del símbolo o, si no lo hay, la primera letra de su ticker en el
-  color de su tipo), y siguen el símbolo, su nombre, su tipo y su bolsa en columnas, con el del gráfico marcado. Las
-  pestañas reducen la lista a un tipo (acciones, cripto) y no se mueven mientras escribes; cuando las filas vienen de dos
+  color de su tipo), y siguen el símbolo, su nombre, su tipo y su bolsa en columnas, con el del gráfico marcado. En un móvil
+  la bolsa va bajo el ticker, así que una larga (SIMULATED, ALL VENUES) se lee entera y distingue las filas de dos
+  bolsas. Las pestañas reducen la lista a un tipo (acciones, cripto) y no se mueven mientras escribes; cuando las filas vienen de dos
   bolsas o más, una lista al lado la reduce a una. Ambas filtran las filas que ya hay y no buscan de nuevo: una búsqueda
   devuelve una página de resultados (a la del adaptador se le piden 50), así que HNX elegida tras escribir <code>V</code>
   muestra los de HNX entre ellos, no todos los símbolos de HNX con una V. La lista muestra las 200 mejores filas, y una
@@ -663,6 +664,19 @@ new ChartWidget(host, { features: { 'dock.dataWindow': false } })  // no button 
     'FPT',   // solo el ticker, como antes
   ],
 })`}</code></pre>
+<p>
+  Un precio <code>last</code> y un <code>changePercent</code> del día en un símbolo, dados con tus
+  <code>symbols</code> o en los resultados de una búsqueda, se muestran en dos columnas propias al final de su fila (en
+  un móvil, la variación bajo el precio), la variación en el color de subida o de bajada; cuando ninguna fila de la lista
+  tiene ninguno de los dos, las columnas se omiten. Un número se escribe con los decimales de <code>pricePrecision</code>
+  del símbolo o, si no, según su tamaño, en la configuración regional de números del widget; un texto se escribe tal cual.
+  El widget no obtiene ninguno: tu app da lo que tiene. Las cifras de una búsqueda se muestran mientras se muestran sus
+  resultados y no se guardan para la próxima vez que se abra la búsqueda.
+</p>
+<pre><code>{`widget.setSymbols([
+  { symbol: 'BTCUSDT', exchange: 'Binance', last: 61668.46, changePercent: 0.37 },
+  { symbol: 'VCB', exchange: 'HOSE', last: 61.2, pricePrecision: 2, changePercent: -0.65 },
+])`}</code></pre>
 <p>
   Un <code>logo</code> es una dirección <code>https:</code> o <code>http:</code>, una ruta de tu sitio, una URL
   <code>blob:</code> o una imagen escrita en <code>data:</code> (PNG, JPEG, GIF, WebP, AVIF o SVG); cualquier otra cosa

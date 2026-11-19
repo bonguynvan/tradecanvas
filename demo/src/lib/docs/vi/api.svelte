@@ -626,7 +626,8 @@ new ChartWidget(host, { features: { 'dock.dataWindow': false } })  // no button 
   hoặc khi gõ một chữ cái trên chart, chữ đó thành ký tự đầu của ô tìm. Dialog liệt kê <code>symbols</code> của bạn cho đến khi
   có nội dung được gõ, sau đó gọi hàm tìm của feed (<code>searchSymbols</code>, hoặc của adapter) khi ngừng gõ. Mỗi dòng bắt đầu
   bằng một badge (logo của mã, nếu không có thì chữ cái đầu của ticker theo màu của loại mã), tiếp theo là mã, tên,
-  loại và sàn theo cột, mã đang hiển thị trên chart được đánh dấu. Các tab lọc danh sách theo một loại (cổ phiếu, crypto)
+  loại và sàn theo cột, mã đang hiển thị trên chart được đánh dấu. Trên điện thoại, sàn nằm dưới
+  ticker, nên tên sàn dài (SIMULATED, ALL VENUES) hiện đầy đủ và phân biệt được dòng của hai sàn. Các tab lọc danh sách theo một loại (cổ phiếu, crypto)
   và giữ nguyên khi gõ; khi các dòng đến từ hai sàn trở lên, một danh sách bên cạnh lọc theo một sàn. Cả hai
   chỉ lọc các dòng đang có, không tìm lại: một lần tìm trả về một trang kết quả (adapter được yêu cầu
   50 kết quả), nên chọn HNX sau khi gõ <code>V</code> sẽ hiển thị các mã HNX trong số đó, không phải mọi mã HNX có chữ V.
@@ -646,6 +647,18 @@ new ChartWidget(host, { features: { 'dock.dataWindow': false } })  // no button 
     'FPT',   // a ticker alone, as before
   ],
 })`}</code></pre>
+<p>
+  Giá <code>last</code> và <code>changePercent</code> trong ngày của một mã, truyền cùng
+  <code>symbols</code> hoặc trong kết quả tìm, hiện ở hai cột riêng cuối dòng (trên điện thoại, mức thay đổi nằm
+  dưới giá), mức thay đổi theo màu tăng hoặc màu giảm; khi không dòng nào có một trong hai giá trị, hai cột này bị
+  bỏ. Số được ghi với số chữ số thập phân theo <code>pricePrecision</code> của mã, nếu không có thì theo độ lớn của số,
+  theo locale số của widget; chuỗi được ghi nguyên văn. Widget không tự lấy các giá trị này: app của bạn truyền
+  những gì nó có. Số liệu của một lần tìm hiện cùng kết quả của lần tìm đó và không được giữ cho lần mở tìm kiếm sau.
+</p>
+<pre><code>{`widget.setSymbols([
+  { symbol: 'BTCUSDT', exchange: 'Binance', last: 61668.46, changePercent: 0.37 },
+  { symbol: 'VCB', exchange: 'HOSE', last: 61.2, pricePrecision: 2, changePercent: -0.65 },
+])`}</code></pre>
 <p>
   <code>logo</code> là một địa chỉ <code>https:</code> hoặc <code>http:</code>, một đường dẫn trên site của bạn, một
   URL <code>blob:</code> hoặc ảnh viết bằng <code>data:</code> (PNG, JPEG, GIF, WebP, AVIF hoặc SVG); giá trị
