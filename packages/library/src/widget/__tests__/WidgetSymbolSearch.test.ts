@@ -1005,3 +1005,82 @@ describe('WidgetSymbolSearch comparing', () => {
     expect(added).toEqual([['BTCEUR', 'percent']]);
   });
 });
+
+describe('WidgetSymbolSearch quotes', () => {
+  const quoted: SymbolInfo[] = [
+    { symbol: 'BTCUSDT', exchange: 'Binance', last: 65432.1, changePercent: 1.234 },
+    { symbol: 'BTCEUR', exchange: 'Kraken', last: 60123.5, changePercent: -0.5 },
+    { symbol: 'BTCGBP', exchange: 'Kraken' },
+  ];
+  const cells = (cls: string) => rows().map((r) => r.querySelector(`.${cls}`)?.textContent ?? null);
+  const heads = () => [...host.querySelectorAll('.tcw-ss-head')].map((h) => h.textContent);
+  const results_ = () => host.querySelector<HTMLElement>('.tcw-ss-results')!;
+
+  it('shows each result’s last price and day’s change when any carries them, a blank where one has none', async () => {
+    search.open({ symbols: [], current: '', search: async () => quoted });
+    type('btc');
+    await vi.advanceTimersByTimeAsync(SYMBOL_SEARCH_DEBOUNCE_MS);
+    expect(results_().classList.contains('tcw-ss--quoted')).toBe(true);
+    expect(heads().slice(-2)).toEqual(['Last', 'Chg%']);
+    expect(cells('tcw-ss-last')).toEqual(['65,432.10', '60,123.50', '']);
+    expect(cells('tcw-ss-chg')).toEqual(['+1.23%', '-0.50%', '']);
+    // In the up and down colours, by the sign it shows.
+    expect(rows().map((r) => r.querySelector<HTMLElement>('.tcw-ss-chg')?.dataset.tone ?? null)).toEqual(['up', 'down', null]);
+  });
+
+  it('leaves the columns out when no row carries a quote', () => {
+    search.open({ symbols: ['ETHUSDT', { symbol: 'SOLUSDT', exchange: 'Binance' }], current: '' });
+    expect(results_().classList.contains('tcw-ss--quoted')).toBe(false);
+    expect(host.querySelector('.tcw-ss-last, .tcw-ss-chg')).toBeNull();
+    expect(heads()).toHaveLength(5);
+  });
+
+  it('writes a price in the symbol’s decimals, text as it is, and leaves out what is no number', () => {
+    search.open({
+      symbols: [
+        { symbol: 'VCB', last: 61.2, pricePrecision: 2, changePercent: 0 },
+        { symbol: 'XAU', last: '2,410.5 USD' },
+        { symbol: 'BAD', last: Number.NaN, changePercent: '5' as unknown as number },
+      ],
+      current: '',
+    });
+    expect(cells('tcw-ss-last')).toEqual(['61.20', '2,410.5 USD', '']);
+    // Nothing moved: no sign, no colour.
+    expect(cells('tcw-ss-chg')).toEqual(['0.00%', '', '']);
+    expect(rows()[0].querySelector<HTMLElement>('.tcw-ss-chg')!.dataset.tone).toBeUndefined();
+  });
+
+  it('keeps a price given where a search’s result has none it can show, and takes the search’s where it has one', async () => {
+    search.open({
+      symbols: [{ symbol: 'BTCUSDT', last: 65000, changePercent: 1 }, { symbol: 'BTCEUR', last: 60000 }],
+      current: '',
+      search: async () => [
+        { symbol: 'BTCUSDT', last: Number.NaN, changePercent: null as unknown as number },
+        { symbol: 'BTCEUR', last: 60123.5, changePercent: -0.5 },
+      ],
+    });
+    type('btc');
+    await vi.advanceTimersByTimeAsync(SYMBOL_SEARCH_DEBOUNCE_MS);
+    expect(cells('tcw-ss-last')).toEqual(['65,000.00', '60,123.50']);
+    expect(cells('tcw-ss-chg')).toEqual(['+1.00%', '-0.50%']);
+  });
+
+  it('writes the figures in the widget’s number locale', () => {
+    search.destroy();
+    search = new WidgetSymbolSearch({ onPick: () => {}, onClose: () => {}, numberLocale: () => 'de-DE' }, () => host);
+    search.open({ symbols: [{ symbol: 'BTCUSDT', last: 65432.1, changePercent: 1.5 }], current: '' });
+    expect(cells('tcw-ss-last')).toEqual(['65.432,10']);
+    expect(cells('tcw-ss-chg')).toEqual(['+1,50%']);
+  });
+
+  it('keeps a quote to the search that gave it: opened again, the symbols given show theirs, not an old one', async () => {
+    search.open({ symbols: [], current: '', search: async () => quoted });
+    type('btc');
+    await vi.advanceTimersByTimeAsync(SYMBOL_SEARCH_DEBOUNCE_MS);
+    search.close();
+    search.open({ symbols: ['BTCUSDT'], current: '', search: async () => quoted });
+    // Its exchange, a word the feed told of, stays; its price of then does not.
+    expect(cells('tcw-ss-exchange')).toEqual(['Binance']);
+    expect(host.querySelector('.tcw-ss-last')).toBeNull();
+  });
+});

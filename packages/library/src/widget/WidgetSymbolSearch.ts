@@ -1,4 +1,6 @@
-import type { SymbolInfo } from '@tradecanvas/commons';
+import { formatPrice, type SymbolInfo } from '@tradecanvas/commons';
+import { formatChangePercent, formatComparePrice } from './compareLegend.js';
+import { toneOf } from './signedFigure.js';
 import { EN_TRANSLATOR, fill, type Translator } from './i18n.js';
 import { createIcon } from './icons.js';
 import { keepTabInside } from './focusTrap.js';
@@ -12,6 +14,8 @@ import { SymbolSearchFilters } from './symbolSearchFilters.js';
 export interface SymbolSearchCallbacks {
   onPick: (symbol: string) => void;
   onClose: () => void;
+  /** The BCP 47 tag prices and changes are written in; `'en-US'` without it. */
+  numberLocale?: () => string;
 }
 
 /** Symbols matching a query, best first; aborted when a newer query replaces it. */
@@ -83,6 +87,50 @@ interface Row {
 type Mode = { kind: 'search'; start: SymbolSearchStart } | { kind: 'compare'; start: CompareStart };
 
 let nextSearchId = 1;
+
+/** The decimals a symbol's own `pricePrecision` may ask for. */
+const MAX_PRICE_DECIMALS = 12;
+/** The longest price given as text that is shown; a longer one says nothing a row has room for. */
+const MAX_QUOTE_TEXT = 32;
+
+/** A row's last price and day's change as it writes them, each blank where it has none. */
+interface QuoteText {
+  last: string;
+  change: string;
+}
+
+/** Whether `info` carries a last price or a day's change worth a column. */
+function hasQuote(info: SymbolInfo | undefined): boolean {
+  if (!info) return false;
+  return quoteLast(info.last) !== null || Number.isFinite(info.changePercent);
+}
+
+/** A last price given: a finite number, or text short enough to read; null for anything else. */
+function quoteLast(last: unknown): number | string | null {
+  if (typeof last === 'number') return Number.isFinite(last) ? last : null;
+  if (typeof last === 'string') {
+    const text = last.trim();
+    return text && text.length <= MAX_QUOTE_TEXT ? text : null;
+  }
+  return null;
+}
+
+/** The figures of `info` that can be shown, the rest left out: a result's blank or NaN never hides a price given. */
+function quoteOf(info: SymbolInfo): SymbolInfo {
+  const last = quoteLast(info.last);
+  const change = info.changePercent;
+  return {
+    symbol: info.symbol,
+    ...(last !== null ? { last } : {}),
+    ...(typeof change === 'number' && Number.isFinite(change) ? { changePercent: change } : {}),
+  };
+}
+
+/** `info` without its last price and day's change: the figures of a moment, not words to keep. */
+function withoutQuote(info: SymbolInfo): SymbolInfo {
+  const { last: _last, changePercent: _change, ...rest } = info;
+  return rest;
+}
 
 /** A row's exchange: the one its feed names, else the venue before its ticker ("BINANCE:" is BINANCE). */
 function exchangeOf(row: Row): string {
@@ -324,9 +372,15 @@ export class WidgetSymbolSearch {
     const columns = document.createElement('div');
     columns.className = 'tcw-ss-columns';
     columns.setAttribute('aria-hidden', 'true');
-    const heads = ['', this.t('symbolSearch.symbol'), this.t('symbolSearch.description'), this.t('symbolSearch.type'), this.t('symbolSearch.exchange')];
-    columns.append(...heads.map((text) => this.tag('tcw-ss-head', text)));
+    this.fillColumns(columns, false);
     return columns;
+  }
+
+  /** The heads, and with `quoted` the last price's and the day's change's at the end. */
+  private fillColumns(columns: HTMLElement, quoted: boolean): void {
+    const heads = ['', this.t('symbolSearch.symbol'), this.t('symbolSearch.description'), this.t('symbolSearch.type'), this.t('symbolSearch.exchange')];
+    if (quoted) heads.push(this.t('watchlist.columnPrice'), this.t('watchlist.columnChange'));
+    columns.replaceChildren(...heads.map((text) => this.tag('tcw-ss-head', text)));
   }
 
   private buildHeader(mode: Mode): HTMLDivElement {
@@ -462,9 +516,14 @@ export class WidgetSymbolSearch {
       const found = await search(query, controller.signal);
       if (controller.signal.aborted) return;
       const results = readSymbolResults(found);
-      // What a later search leaves out, an earlier one may have told of.
-      for (const info of results) this.heard.set(info.symbol, mergeSymbolInfo(this.heard.get(info.symbol), info)!);
-      this.rows = results.map((info) => ({ symbol: info.symbol, score: 0, info: this.infoOf(info.symbol) }));
+      // What a later search leaves out, an earlier one may have told of. Its figures are this
+      // search's own: kept, a price of then would show beside the symbols given next time.
+      for (const info of results) this.heard.set(info.symbol, mergeSymbolInfo(this.heard.get(info.symbol), withoutQuote(info))!);
+      this.rows = results.map((info) => ({
+        symbol: info.symbol,
+        score: 0,
+        info: mergeSymbolInfo(this.infoOf(info.symbol), quoteOf(info)),
+      }));
       this.status = 'idle';
     } catch {
       if (controller.signal.aborted) return;
@@ -554,7 +613,11 @@ export class WidgetSymbolSearch {
     const query = typed.toUpperCase();
     const onChart = new Set(this.compared.map((c) => c.symbol));
     const listed = this.shown.slice(0, MAX_LISTED_ROWS);
-    list.replaceChildren(...listed.map((row, i) => this.row(row, i, query, comparing && onChart.has(row.symbol))));
+    // A price and a change in two columns of their own, when a row listed has either.
+    const quoted = listed.some((row) => hasQuote(row.info));
+    results.classList.toggle('tcw-ss--quoted', quoted);
+    if (this.columns) this.fillColumns(this.columns, quoted);
+    list.replaceChildren(...listed.map((row, i) => this.row(row, i, query, comparing && onChart.has(row.symbol), quoted)));
     const note = this.shown.length === 0 ? this.emptyNote(typed, comparing) : this.moreNote(this.shown.length - listed.length);
     results.replaceChildren(...(this.columns ? [this.columns] : []), ...before, list, ...(note ? [note] : []));
     if (this.live) this.live.textContent = this.shown.length === 0 ? note?.textContent ?? '' : '';
@@ -592,7 +655,7 @@ export class WidgetSymbolSearch {
     return el;
   }
 
-  private row(row: Row, index: number, query: string, onChart: boolean): HTMLDivElement {
+  private row(row: Row, index: number, query: string, onChart: boolean, quoted: boolean): HTMLDivElement {
     const el = document.createElement('div');
     el.className = 'tcw-ss-row';
     el.id = `tcw-ss-opt-${this.uid}-${index}`;
@@ -609,6 +672,7 @@ export class WidgetSymbolSearch {
     const exchange = this.tag('tcw-ss-exchange', exchangeOf(row));
     kind.dir = exchange.dir = 'auto';
     el.append(createSymbolBadge(row.symbol, row.info), createSymbolCell(row.symbol, query), this.descriptionCell(row), kind, exchange);
+    if (quoted) el.append(...this.quoteCells(row.info));
     if (isCurrent || onChart) {
       const check = document.createElement('span');
       check.className = 'tcw-ss-check';
@@ -624,6 +688,32 @@ export class WidgetSymbolSearch {
       this.markSelection();
     });
     return el;
+  }
+
+  /** A row's last price and day's change, each a cell, blank where it has none; the change in its tone. */
+  private quoteCells(info: SymbolInfo | undefined): HTMLSpanElement[] {
+    const { last, change } = this.quoteText(info);
+    const lastCell = this.tag('tcw-ss-last', last);
+    // A price given as text reads in its own direction ("٦١٫٢ ر.س" in a left-to-right widget).
+    lastCell.dir = 'auto';
+    const changeCell = this.tag('tcw-ss-chg', change);
+    const tone = toneOf(change);
+    if (tone) changeCell.dataset.tone = tone;
+    return [lastCell, changeCell];
+  }
+
+  /** How a row writes its figures: a price in its symbol's decimals or by its size, text as given, a change signed. */
+  private quoteText(info: SymbolInfo | undefined): QuoteText {
+    const locale = this.callbacks.numberLocale?.() || 'en-US';
+    const given = quoteLast(info?.last);
+    const precision = info?.pricePrecision;
+    const ownDecimals = Number.isInteger(precision) && precision! >= 0 && precision! <= MAX_PRICE_DECIMALS;
+    let last = '';
+    if (typeof given === 'string') last = given;
+    else if (given !== null) last = ownDecimals ? formatPrice(given, precision!, locale) : formatComparePrice(given, locale);
+    const changePercent = info?.changePercent;
+    const change = typeof changePercent === 'number' && Number.isFinite(changePercent) ? formatChangePercent(changePercent, locale) : '';
+    return { last, change };
   }
 
   private descriptionCell(row: Row): HTMLSpanElement {
