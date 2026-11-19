@@ -626,7 +626,8 @@ new ChartWidget(host, { features: { 'dock.dataWindow': false } })  // no button 
   or a letter typed on the chart, which it starts with. It lists your <code>symbols</code> until something is
   typed, then asks your feed's search (<code>searchSymbols</code>, or the adapter's) once typing pauses. A row starts
   with a badge (the symbol's logo, else the first letter of its ticker in its kind's colour), then the symbol, its
-  name, its kind and its exchange in columns, the chart's own marked. Tabs keep the list to one kind (stocks, crypto)
+  name, its kind and its exchange in columns, the chart's own marked. On a phone the exchange goes under the
+  ticker, so a long one (SIMULATED, ALL VENUES) reads whole and tells two venues' rows apart. Tabs keep the list to one kind (stocks, crypto)
   and stay put as you type; when the rows come from two or more exchanges, a list beside them keeps it to one. Both
   narrow the rows on hand and do not search again: a search returns a page of results (the adapter's is asked for
   50), so HNX picked after typing <code>V</code> shows the HNX ones among them, not every HNX symbol with a V. The
@@ -646,6 +647,18 @@ new ChartWidget(host, { features: { 'dock.dataWindow': false } })  // no button 
     'FPT',   // a ticker alone, as before
   ],
 })`}</code></pre>
+<p>
+  A <code>last</code> price and a day's <code>changePercent</code> on a symbol, given with your
+  <code>symbols</code> or in a search's results, show in two columns of their own at the end of its row (on a phone,
+  the change under the price), the change in the up or down colour; when no row listed has either, the columns are
+  left out. A number is written in the symbol's <code>pricePrecision</code> decimals, else by its size, in the
+  widget's number locale; text is written as it is. The widget fetches none of them: your app gives what it has. A
+  search's figures show while its results do and are not kept for the next time the search opens.
+</p>
+<pre><code>{`widget.setSymbols([
+  { symbol: 'BTCUSDT', exchange: 'Binance', last: 61668.46, changePercent: 0.37 },
+  { symbol: 'VCB', exchange: 'HOSE', last: 61.2, pricePrecision: 2, changePercent: -0.65 },
+])`}</code></pre>
 <p>
   A <code>logo</code> is an <code>https:</code> or <code>http:</code> address, a path on your site, a
   <code>blob:</code> URL or an image written in <code>data:</code> (PNG, JPEG, GIF, WebP, AVIF or SVG); anything

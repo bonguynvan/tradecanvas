@@ -371,6 +371,26 @@ const SCENES = {
     return s;
   },
 
+  /**
+   * The symbol search open on symbols with their last price and day's change, two venues listing the
+   * same ticker and exchanges of ten letters: on a phone the exchange was cut ("SIMULA…").
+   */
+  async symbolSearch() {
+    const s = await widget({
+      symbols: [
+        { symbol: 'BINANCE:BTCUSDT', description: 'Bitcoin / Tether', exchange: 'Binance', type: 'crypto', last: 61668.46, changePercent: 0.37 },
+        { symbol: 'SIM:BTCUSDT', description: 'Bitcoin / Tether', exchange: 'SIMULATED', type: 'crypto', last: 61670.1, changePercent: 0.4 },
+        { symbol: 'SIM:ETHUSDT', description: 'Ether / Tether', exchange: 'ALL VENUES', type: 'crypto', last: 3021.55, changePercent: -1.84 },
+        { symbol: 'SOLUSDT', description: 'Solana / Tether', exchange: 'Binance', type: 'crypto', last: 142.318, changePercent: 0 },
+        { symbol: 'VCB', description: 'Ngân hàng TMCP Ngoại thương Việt Nam', exchange: 'HOSE', type: 'stock', last: 61.2, pricePrecision: 2, changePercent: -0.65 },
+        { symbol: 'XAUUSD', description: 'Gold spot', exchange: 'OANDA', type: 'forex' },
+      ],
+    });
+    document.querySelector('.tcw-toolbar-symbol')?.click();
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    return s;
+  },
+
   /** More panes than the chart has room for: the price pane keeps its part, the panes share the rest. */
   async manyPanes() {
     const s = await widget();

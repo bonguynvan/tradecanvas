@@ -1199,6 +1199,11 @@ widget.setSymbols(more);
   list says `'Cổ phiếu'`, a broker) add no tab and no exchange to pick.
 - `pricePrecision`, `minTick`, `sessions`, `delayMinutes` given here never reach the chart:
   give those through the adapter's `resolveSymbol` or `chart.setSymbolInfo`.
+- `last` (a number, or text written as it is) and `changePercent` (1.5 is
+  +1.50%) show as two columns at the end of a row, the change in the up or
+  down colour, when any row listed has one. The widget fetches none: fill them
+  from your own quotes, here or in `searchSymbols`' results. A search's
+  figures are not kept for the next opening.
 - `logo` takes `https:`/`http:` addresses, paths on your site, `blob:` and
   `data:image/png|jpeg|gif|webp|avif|svg+xml`; it is loaded as an image only,
   with no referrer (allow its host in your CSP's `img-src`). Anything else, or
