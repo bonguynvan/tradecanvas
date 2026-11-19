@@ -147,7 +147,7 @@ grid.setFeatures({ toasts: false })  // every chart of a ChartWidgetGrid`}</code
   thông báo của widget (lỗi vẫn hiện), còn thông báo của bạn qua <code>widget.toast()</code> vẫn hiện.
   Tắt <code>selectionToolbar</code> thì ẩn toolbar của hình vẽ đang chọn; menu chuột phải vẫn còn.
   Tắt <code>statusBar.rangeTimeframe</code> thì giữ nguyên khung thời gian khi một khoảng trên range bar dài hơn số nến có thể chứa; bật thì chuyển sang tuần hoặc tháng rồi chuyển lại.
-  Các công cụ giao dịch gom vào một menu Trade trên toolbar: <code>toolbar.bracketOrders</code>, <code>toolbar.depthLadder</code>,
+  Các công cụ giao dịch gom vào một menu Giao dịch trên toolbar: <code>toolbar.bracketOrders</code>, <code>toolbar.depthLadder</code>,
   <code>toolbar.accountPanel</code> và các tính năng tương ứng bỏ mục của chúng khỏi menu, còn <code>toolbar.trade</code>
   bỏ cả menu; menu cũng mất khi không còn mục nào. Undo và redo đã chuyển từ công cụ vẽ sang
   toolbar; <code>sidebar.undo</code> và <code>sidebar.redo</code> vẫn tắt được chúng. <code>statusBar.symbol</code>
@@ -164,10 +164,10 @@ widget.toast('Feed lost', 'error', 'info')`}</code></pre>
 <p>
   Nút, menu và mục của bạn nằm trong các thanh của widget, hiển thị giống các phần có sẵn và theo theme và look của widget. Mỗi
   hàm trả về một handle để sửa hoặc xoá phần đó, và phần đó hiện khi thanh chứa nó hiện.
-  Khi toolbar hết chỗ, nút và menu của bạn được gom vào menu “more” cùng các nút có sẵn của widget, các phần
-  bên trái gom sau cùng; khi rộng dưới 641 px thì tất cả đều vào đó. Menu của bạn chọn từ “more” mở ngay bên dưới nó.
-  Bấm “more” lần nữa để đóng. <code>onClick</code> của bạn khi được chọn từ “more” nhận nút đã bị gom, không có kích thước
-  (<code>getClientRects()</code> rỗng): khi đó hãy đặt popover theo nút “more” (<code>.tcw-toolbar-more</code>).
+  Khi toolbar hết chỗ, nút và menu của bạn được gom vào menu “Thêm” cùng các nút có sẵn của widget, các phần
+  bên trái gom sau cùng; khi rộng dưới 641 px thì tất cả đều vào đó. Menu của bạn chọn từ “Thêm” mở ngay bên dưới nó.
+  Bấm “Thêm” lần nữa để đóng. <code>onClick</code> của bạn khi được chọn từ “Thêm” nhận nút đã bị gom, không có kích thước
+  (<code>getClientRects()</code> rỗng): khi đó hãy đặt popover theo nút “Thêm” (<code>.tcw-toolbar-more</code>).
 </p>
 <pre><code>{`widget.addToolbarButton({ id: 'news', label: 'News', icon: 'bell', toggle: true, onClick })
 

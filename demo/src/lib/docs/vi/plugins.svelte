@@ -58,7 +58,7 @@ chart.plugins.list()`}</code></pre>
   Một chỉ báo là một <code>IndicatorPlugin</code>: một <code>descriptor</code> mô tả chỉ báo là gì và hiển thị
   ra sao, và một hàm <code>calculate()</code> trả về giá trị cho từng nến. Kế thừa <code>IndicatorBase</code> thì biểu đồ
   làm phần còn lại dựa trên descriptor: vẽ các plot, co giãn pane, gắn nhãn giá trị trên trục, và liệt kê
-  chỉ báo trong legend, phần cài đặt và dialog Indicators. Dưới đây là một chỉ báo đầy đủ, một MACD đánh dấu chỗ
+  chỉ báo trong legend, phần cài đặt và dialog Chỉ báo. Dưới đây là một chỉ báo đầy đủ, một MACD đánh dấu chỗ
   đường đổi hướng:
 </p>
 <pre><code>{`import { IndicatorBase, IndicatorValueMap } from '@tradecanvas/chart'
@@ -213,7 +213,7 @@ chart.addIndicator('turning-macd', { fast: 8 })`}</code></pre>
     nhiều hơn một plot, theo <code>title</code> của plot.</li>
   <li><strong>Dialog cài đặt</strong> sửa các tham số, liệt kê từng plot với màu, trạng thái hiện/ẩn, và kiểu
     nét đứt cho line hoặc step, và sửa các mức.</li>
-  <li><strong>Dialog Indicators</strong> liệt kê chỉ báo theo <code>name</code> trong nhóm <code>category</code> của nó.</li>
+  <li><strong>Dialog Chỉ báo</strong> liệt kê chỉ báo theo <code>name</code> trong nhóm <code>category</code> của nó.</li>
   <li><strong>Chỉ báo khác</strong> có thể đọc các đường của nó (chính các plot đó) làm nguồn dữ liệu.</li>
 </ul>
 <p>

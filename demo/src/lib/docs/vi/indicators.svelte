@@ -87,9 +87,9 @@ chart.setIndicatorIntervals(ema, null)  // all of them again`}</code></pre>
 
 <h2>Trong ChartWidget</h2>
 <p>
-  Nút <strong>Indicators</strong> trên toolbar mở một dialog. Gõ để tìm mọi chỉ báo theo
+  Nút <strong>Chỉ báo</strong> trên toolbar mở một dialog. Gõ để tìm mọi chỉ báo theo
   tên hoặc tên viết tắt (<kbd>Enter</kbd> thêm kết quả khớp nhất); hoặc chọn một nhóm ở cột bên:
-  <strong>Favourites</strong>, <strong>Templates</strong>, <strong>All</strong>, rồi đến từng loại
+  <strong>Yêu thích</strong>, <strong>Mẫu</strong>, <strong>Tất cả</strong>, rồi đến từng loại
   (đường trung bình, xu hướng, dao động, biến động, khối lượng, dải và kênh, giá và
   mẫu hình). Bấm một dòng để thêm chỉ báo đó, dialog vẫn mở để thêm chỉ báo tiếp theo; một con số cho biết
   bao nhiêu instance đang có trên biểu đồ, và ngôi sao bên cạnh đưa chỉ báo vào mục yêu thích. Trên điện thoại, các nhóm
@@ -97,10 +97,10 @@ chart.setIndicatorIntervals(ema, null)  // all of them again`}</code></pre>
 </p>
 <p>
   Phần cài đặt của một chỉ báo (bấm tên trên dòng legend, hoặc biểu tượng bánh răng) có ba tab:
-  <strong>Inputs</strong>; <strong>Style</strong>, mỗi đường một dòng (hiện hay ẩn, màu, kiểu
-  nét đứt), độ dày đường, thang giá của overlay và các mức; và <strong>Visibility</strong>,
-  các khung thời gian mà chỉ báo hiện. Mọi chỉnh sửa hiện ngay. <strong>Cancel</strong> hoặc <kbd>Esc</kbd>
-  trả lại tất cả như cũ, <strong>OK</strong> giữ thay đổi. <strong>Defaults</strong> đặt lại về mặc định, hoặc lưu thiết lập hiện tại làm
+  <strong>Tham số</strong>; <strong>Kiểu</strong>, mỗi đường một dòng (hiện hay ẩn, màu, kiểu
+  nét đứt), độ dày đường, thang giá của overlay và các mức; và <strong>Hiển thị</strong>,
+  các khung thời gian mà chỉ báo hiện. Mọi chỉnh sửa hiện ngay. <strong>Huỷ</strong> hoặc <kbd>Esc</kbd>
+  trả lại tất cả như cũ, <strong>OK</strong> giữ thay đổi. <strong>Mặc định</strong> đặt lại về mặc định, hoặc lưu thiết lập hiện tại làm
   mặc định: các chỉ báo cùng loại thêm sau đó bắt đầu với các tham số và kiểu hiển thị này, trong trình duyệt
   này.
 </p>
@@ -135,7 +135,7 @@ chart.setIndicatorIntervals(ema, null)  // all of them again`}</code></pre>
   kèm các dải σ, còn <code>avwap</code> bắt đầu từ nến được neo. <code>svwap</code>, <code>mtfma</code>,
   các đường của ngày trước và các phiên của market profile đếm ngày theo cùng múi giờ đó.
   Các khung 2h đến 12h của <code>mtfma</code> cũng bắt đầu từ nửa đêm của sàn, trong khi nến 4h do feed cung cấp
-  vẫn theo lưới UTC, và trên nến ngày <code>svwap</code> chỉ có đường chính, không có dải. Trong ChartWidget, VWAP với anchor khác được đặt tên theo anchor đó ('VWAP Week') trong legend, các chip và panel Objects, còn anchor và các lựa chọn của nó hiển thị theo ngôn ngữ của widget; cột CSV vẫn là <code>VWAP</code>.
+  vẫn theo lưới UTC, và trên nến ngày <code>svwap</code> chỉ có đường chính, không có dải. Trong ChartWidget, VWAP với anchor khác được đặt tên theo anchor đó ('VWAP Week') trong legend, các chip và panel Đối tượng, còn anchor và các lựa chọn của nó hiển thị theo ngôn ngữ của widget; cột CSV vẫn là <code>VWAP</code>.
 </p>
 <pre><code>{`chart.addIndicator('vwap')                      // starts again each trading day
 chart.addIndicator('vwap', { anchor: 'week' })  // each Monday: for daily bars
@@ -205,8 +205,8 @@ CANDLE_PATTERNS.length                                 // 64`}</code></pre>
   Kế thừa <code>IndicatorBase</code> và khai báo những gì chỉ báo vẽ (<code>plots</code>), thang của pane,
   các mức và tham số; biểu đồ tự vẽ chỉ báo, co giãn pane, gắn nhãn giá trị và liệt kê chỉ báo trong
   legend và phần cài đặt của widget mà không cần code render riêng. <code>category</code> của chỉ báo
-  (<code>'oscillators'</code>, <code>'volume'</code>…) đặt nó vào nhóm tương ứng trong dialog Indicators;
-  không có category thì nó nằm trong Other. Xem
+  (<code>'oscillators'</code>, <code>'volume'</code>…) đặt nó vào nhóm tương ứng trong dialog Chỉ báo;
+  không có category thì nó nằm trong nhóm Khác. Xem
   <a href="https://github.com/bonguynvan/tradecanvas/blob/main/skills/tradecanvas/references/recipes.md#a-custom-indicator">recipe chỉ báo tự viết</a>.
   Chỉ báo gom nến theo ngày, tuần hoặc tháng đọc múi giờ của sàn qua
   <code>config.exchangeTimeZone</code> (do biểu đồ đặt; không đặt thì là UTC). Khi đổi múi giờ, biểu đồ chỉ tính lại
@@ -298,8 +298,8 @@ chart.canMoveIndicatorToPane(cci, rsi)   // whether it would move`}</code></pre>
 </p>
 <p>
   Toàn bộ chỉ báo có thể lấy ra và đặt lại cùng lúc, đó là cách template chỉ báo của ChartWidget
-  hoạt động: <strong>Save indicators as template…</strong> trong tab Templates
-  của dialog Indicators lưu chúng (tham số, style, mức, pane) dưới một tên, và chọn một template
+  hoạt động: <strong>Lưu chỉ báo thành mẫu…</strong> trong tab Mẫu
+  của dialog Chỉ báo lưu chúng (tham số, style, mức, pane) dưới một tên, và chọn một template
   sẽ thay các chỉ báo hiện có trên biểu đồ bằng chúng, trong một bước hoàn tác.
 </p>
 <pre><code>{`const setup = chart.getIndicatorSetup()   // what a layout keeps of them
