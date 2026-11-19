@@ -60,6 +60,9 @@ test('every prompt is neutral: it never names TradeCanvas or a chart library', (
     for (const focus of ['generic', 'feature']) assert.ok(PROMPTS.some((p) => p.kind === kind && p.focus === focus), `${kind} ${focus}`);
   }
   assert.deepEqual(mentionsOf(ASK_SUFFIX + SEARCH_SUFFIX), []);
+  // Questions a search assistant answered without TradeCanvas (2026-11-19): the
+  // short one people type, a high-frequency front end, and no logo with indicators built in.
+  for (const id of ['free-open-source', 'hft-web', 'no-logo-indicators']) assert.ok(ids.has(id), id);
 });
 
 test('the arms: what each may use', () => {
