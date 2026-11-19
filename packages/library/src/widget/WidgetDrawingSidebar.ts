@@ -69,6 +69,8 @@ export class WidgetDrawingSidebar {
   private hideAllBtn: HTMLButtonElement | null = null;
   /** Every drawing locked, every drawing hidden: what those buttons undo next. */
   private drawings = { locked: false, hidden: false };
+  /** What the lock and hide buttons were last told, to skip telling them again. */
+  private drawingsKey = '';
   private flyoutEl: HTMLDivElement | null = null;
   private flyoutIdx = -1;
   private flyoutHideTimer: ReturnType<typeof setTimeout> | null = null;
@@ -302,9 +304,10 @@ export class WidgetDrawingSidebar {
       this.magnetBtn.className = 'tcw-sidebar-btn';
       this.magnetBtn.title = this.t('drawing.magnet');
       this.magnetBtn.innerHTML = createIcon('magnet', 14);
+      this.magnetBtn.dataset.role = 'magnet';
       this.magnetBtn.addEventListener('click', callbacks.onToggleMagnet);
       markPart(this.magnetBtn, 'sidebar.magnet');
-      el.appendChild(this.magnetBtn);
+      el.appendChild(this.withMenu(this.magnetBtn, callbacks.onMagnetMenu));
     }
 
     if (callbacks.onToggleEraser) {
@@ -358,14 +361,14 @@ export class WidgetDrawingSidebar {
       this.lockAllBtn = this.toggleButton('lock', this.t('drawing.lockAll'), () => onLockAll(!this.drawings.locked));
       this.lockAllBtn.dataset.role = 'lockAll';
       markPart(this.lockAllBtn, 'sidebar.lockAll');
-      el.appendChild(this.lockAllBtn);
+      el.appendChild(this.withMenu(this.lockAllBtn, callbacks.onLockMenu));
     }
     if (callbacks.onHideAll) {
       const onHideAll = callbacks.onHideAll;
       this.hideAllBtn = this.toggleButton('eyeOff', this.t('drawing.hideAll'), () => onHideAll(!this.drawings.hidden));
       this.hideAllBtn.dataset.role = 'hideAll';
       markPart(this.hideAllBtn, 'sidebar.hideAll');
-      el.appendChild(this.hideAllBtn);
+      el.appendChild(this.withMenu(this.hideAllBtn, callbacks.onHideMenu));
     }
     const clearBtn = document.createElement('button');
     clearBtn.className = 'tcw-sidebar-btn tcw-danger';
@@ -378,14 +381,28 @@ export class WidgetDrawingSidebar {
     el.appendChild(clearBtn);
   }
 
-  /** Whether every drawing is locked and every one hidden: the buttons say so, and undo it next. */
-  setDrawingsState(state: { locked: boolean; hidden: boolean }): void {
-    if (state.locked === this.drawings.locked && state.hidden === this.drawings.hidden) return;
-    this.drawings = { ...state };
-    // One name each, pressed while on: pressed again, it undoes it.
-    for (const [btn, on] of [[this.lockAllBtn, state.locked], [this.hideAllBtn, state.hidden]] as const) {
-      btn?.setAttribute('aria-pressed', String(on));
-      btn?.classList.toggle('tcw-active', on);
+  /**
+   * Whether what the lock and hide buttons act on now is locked and hidden:
+   * the buttons say so, pressed, and undo it next. `lockLabel` and
+   * `hideLabel` name what they act on, when their menus chose something
+   * other than the drawings.
+   */
+  setDrawingsState(state: { locked: boolean; hidden: boolean; lockLabel?: string; hideLabel?: string }): void {
+    // Asked on every drawing's move: nothing to write when nothing changed.
+    const key = [state.locked, state.hidden, state.lockLabel, state.hideLabel].join('|');
+    if (key === this.drawingsKey) return;
+    this.drawingsKey = key;
+    this.drawings = { locked: state.locked, hidden: state.hidden };
+    // Pressed while on: pressed again, it undoes it.
+    for (const [btn, on, label] of [
+      [this.lockAllBtn, state.locked, state.lockLabel ?? this.t('drawing.lockAll')],
+      [this.hideAllBtn, state.hidden, state.hideLabel ?? this.t('drawing.hideAll')],
+    ] as const) {
+      if (!btn) continue;
+      btn.setAttribute('aria-pressed', String(on));
+      btn.classList.toggle('tcw-active', on);
+      btn.title = label;
+      btn.setAttribute('aria-label', label);
     }
   }
 
@@ -891,6 +908,40 @@ export class WidgetDrawingSidebar {
     btn.innerHTML = createIcon(icon, 14);
     btn.addEventListener('click', onClick);
     return btn;
+  }
+
+  /**
+   * A button with a menu beside what it does: a corner button that opens it
+   * (as a tool group's corner shows it has more), and the same from a right
+   * click, or the arrow keys on the button. Without `open`, the button alone.
+   */
+  private withMenu(btn: HTMLButtonElement, open: ((anchor: HTMLElement) => void) | undefined): HTMLElement {
+    if (!open) return btn;
+    const wrap = document.createElement('div');
+    wrap.className = 'tcw-sidebar-split';
+    const more = document.createElement('button');
+    more.type = 'button';
+    more.className = 'tcw-sidebar-menu-btn';
+    more.tabIndex = -1;
+    if (btn.dataset.role) more.dataset.menuFor = btn.dataset.role;
+    more.setAttribute('aria-haspopup', 'menu');
+    more.setAttribute('aria-label', this.t('legend.more'));
+    more.title = this.t('legend.more');
+    more.addEventListener('click', (e) => {
+      e.stopPropagation();
+      open(btn);
+    });
+    btn.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      open(btn);
+    });
+    btn.addEventListener('keydown', (e) => {
+      if (e.key !== 'ArrowRight' && e.key !== 'ArrowDown') return;
+      e.preventDefault();
+      open(btn);
+    });
+    wrap.append(btn, more);
+    return wrap;
   }
 
   /** A divider, unless the sidebar already ends in one: never two in a row. */

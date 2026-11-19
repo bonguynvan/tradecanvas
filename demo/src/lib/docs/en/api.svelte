@@ -553,8 +553,13 @@ widget.destroy()`}</code></pre>
     </td></tr>
     <tr><td>Drawing tools</td><td>
       Each group's menu names its tools' shortcuts (Alt+T a trend line) and has a star on each row to pin it to the
-      top. At the bottom: the drawing style, the magnet, the eraser, the zoom area, staying in drawing mode, lock
-      all, hide all, and the trash button: its menu removes the drawings, the indicators or both, each with how many, in one undo step.
+      top. At the bottom: the drawing style, the magnet, the eraser, the zoom area, staying in drawing mode, lock,
+      hide, and the trash button: its menu removes the drawings, the indicators or both, each with how many, in one undo step.
+      The magnet, lock and hide buttons each have a menu in their corner (or a right click, or an arrow key): the
+      magnet's picks weak or strong, and the button turns the magnet on at it and off; the lock's locks the drawings,
+      the positions and orders, or all; the hide's hides the drawings, the indicators, the positions and orders, or
+      all, ticking what is hidden. What a menu picks is what its button does from then on. Hiding the indicators
+      hides the ones that showed, and showing them again brings back those only.
     </td></tr>
     <tr><td>Status bar</td><td>
       Range presets and go to date; the market's status, the connection, a clock in the display time zone (it
@@ -1040,7 +1045,7 @@ chart.removeIndicator(instanceId)`}</code></pre>
   Right-click a drawing for
   its menu: settings, an alert on its line, order, group, lock, hide,
   duplicate and delete. The sidebar also has an eraser, a zoom tool and a
-  magnet that goes off, weak and strong. See
+  magnet, weak or strong from its menu. See
   <a href={href('/docs/drawing-tools')}>Drawing tools</a> for the API underneath.
 </p>
 

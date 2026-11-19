@@ -656,8 +656,10 @@ export interface SidebarConfig {
 export interface SidebarCallbacks {
   onDrawingTool: (tool: DrawingToolType) => void;
   onCancelDrawing: () => void;
-  /** Omitted when the magnet is switched off (`features.drawingMagnet: false`). Cycles off, weak, strong. */
+  /** Omitted when the magnet is switched off (`features.drawingMagnet: false`). On and off, at the strength last chosen. */
   onToggleMagnet?: () => void;
+  /** The magnet's menu (weak, strong), under its button. */
+  onMagnetMenu?: (anchor: HTMLElement) => void;
   onToggleEraser?: () => void;
   onToggleZoomArea?: () => void;
   onToggleFavorite?: (tool: DrawingToolType) => void;
@@ -667,8 +669,12 @@ export interface SidebarCallbacks {
   onClear: (anchor: HTMLElement) => void;
   /** Lock (true) or unlock every drawing: the button shows when given. */
   onLockAll?: (locked: boolean) => void;
+  /** The lock button's menu (drawings, positions and orders, all), under it. */
+  onLockMenu?: (anchor: HTMLElement) => void;
   /** Hide (true) or show every drawing: the button shows when given. */
   onHideAll?: (hidden: boolean) => void;
+  /** The hide button's menu (drawings, indicators, positions and orders, all), under it. */
+  onHideMenu?: (anchor: HTMLElement) => void;
   onToggleStyle?: () => void;
   onToggleStayInDrawing?: () => void;
   /** Show or hide the favorites bar floating over the chart. */

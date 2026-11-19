@@ -55,6 +55,16 @@ new ChartWidget(host, { chartOptions: { features: { tradingContextMenu: true } }
   <code>positionModify</code>, as dragging a stop does, so a connected execution adapter applies it.
   <code>lineButtons: {'{'} addStops: false {'}'}</code> leaves the buttons out.
 </p>
+<p>
+  The positions, the orders and their fills can be hidden, and their lines locked. Hidden, none is drawn and none
+  can be pressed; they are still kept and still follow the execution adapter, and a bracket or an order being
+  placed still shows. Locked, no line or tag of theirs can be dragged, and a position offers no SL or TP to drag
+  out; their buttons (close, cancel, reverse, trail, remove a stop) still act. In the widget, the hide and lock
+  buttons' menus on the drawing sidebar do it.
+</p>
+<pre><code>{`chart.setTradingVisible(false)   // isTradingVisible()
+chart.setTradingLocked(true)     // isTradingLocked()
+chart.setIndicatorsVisible(ids, false)   // several indicators at once, one undo step`}</code></pre>
 
 <h2>Orders</h2>
 <pre><code>{`chart.setOrders([{
