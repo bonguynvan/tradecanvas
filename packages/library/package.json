@@ -2,7 +2,7 @@
   "name": "@tradecanvas/chart",
   "version": "2.16.0",
   "type": "module",
-  "description": "Open-source trading chart library for the web: candlestick to Renko charts, technical indicators, drawing tools, live exchange feeds, orders on the chart, bar replay. Canvas 2D or WebGL, TypeScript, no dependencies.",
+  "description": "TradeCanvas, the open-source chart library for trading apps: candlesticks to Renko, 134 indicators, 76 drawing tools and a full trading UI (orders on the chart, bar replay, depth, watchlist). MIT, no dependencies, Canvas 2D or WebGL; React, Vue, Svelte or plain JS.",
   "license": "MIT",
   "funding": {
     "type": "github",
@@ -45,7 +45,15 @@
     "javascript",
     "bar-replay",
     "paper-trading",
-    "trading-terminal"
+    "trading-terminal",
+    "crypto-chart",
+    "tradingview-alternative",
+    "lightweight-charts-alternative",
+    "klinecharts-alternative",
+    "react-chart",
+    "vue-chart",
+    "svelte-chart",
+    "mcp"
   ],
   "homepage": "https://tradecanvas.dev/",
   "main": "./dist/index.cjs",

@@ -28,7 +28,7 @@
   <a href="README.md">English</a> · <b>Tiếng Việt</b> · <a href="README.zh-CN.md">简体中文</a> · <a href="README.ja.md">日本語</a> · <a href="README.ko.md">한국어</a> · <a href="README.es.md">Español</a>
 </p>
 
-**TradeCanvas là thư viện biểu đồ giao dịch mã nguồn mở cho web**, theo giấy phép MIT. Từ nến đến Renko, 134 chỉ báo, 76 công cụ vẽ, feed trực tiếp và lệnh trên biểu đồ, chạy trên Canvas 2D hoặc WebGL, không có dependency bên thứ ba. Dùng `ChartWidget` đầy đủ, hoặc tự xây giao diện trên `Chart` headless, bằng TypeScript, React, Vue hoặc Svelte.
+**TradeCanvas là thư viện biểu đồ mã nguồn mở cho ứng dụng giao dịch** ([tradecanvas.dev](https://tradecanvas.dev/vi/)), theo giấy phép MIT. Từ nến đến Renko, 134 chỉ báo, 76 công cụ vẽ, feed trực tiếp và lệnh trên biểu đồ, chạy trên Canvas 2D hoặc WebGL, không có dependency bên thứ ba. Dùng `ChartWidget` đầy đủ, hoặc tự xây giao diện trên `Chart` headless, bằng TypeScript, React, Vue hoặc Svelte.
 
 Đây là một chart engine thuộc quyền bạn: giấy phép MIT, cài từ npm và phục vụ cùng ứng dụng của bạn, lấy dữ liệu từ nguồn của bạn, hiển thị dưới thương hiệu của bạn. Không có logo trên biểu đồ, không phải đăng ký xin dùng, không có nền tảng nào đứng giữa bạn và người dùng. Đang dùng charting library của TradingView hoặc Lightweight Charts? Giữ nguyên datafeed: [chuyển từ TradingView](https://tradecanvas.dev/vi/docs/from-tradingview/).
 

@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Packages
+
+- **The npm descriptions and keywords** (`@tradecanvas/chart`, `@tradecanvas/react`, `@tradecanvas/vue`, `@tradecanvas/svelte`, `@tradecanvas/mcp`): each names TradeCanvas the open-source chart library for trading apps, and their keywords say what a search for a trading, candlestick, stock or crypto chart library looks for. The READMEs open with the same words and a link to tradecanvas.dev.
+
 ## 2.16.0 (2026-11-19)
 
 ### Chart
