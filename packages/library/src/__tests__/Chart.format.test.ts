@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { OHLCBar, ViewportState } from '@tradecanvas/commons';
-import { TimeAxis } from '@tradecanvas/core';
-import { MARKET_HOSE } from '@tradecanvas/commons';
+import { TimeAxis, panelTagText } from '@tradecanvas/core';
+import { MARKET_HOSE, PRICE_AXIS_WIDTH } from '@tradecanvas/commons';
 import { Chart } from '../Chart.js';
 import { installChartStubs, sizedHost } from './chartTestEnv.js';
 
@@ -140,6 +140,61 @@ describe('a chart’s price format', () => {
     chart.setPriceFormat((p) => `${p.toFixed(2)} long units label`);
     chart.resize();
     expect((chart as unknown as Probe).viewport.getState().priceAxisWidth ?? 0).toBeGreaterThan(before);
+  });
+
+  // A pane of millions (CVD at -1,766,028.9) shares the axis sized to prices of 110: its tag was cut,
+  // and the tick under it hidden behind it.
+  it('widens the price axis for an indicator pane’s labels and tags too', () => {
+    const big = bars.map((b, i) => ({ ...b, volume: 123_456_789 + i * 9_876 }));
+    chart = new Chart(host, {});
+    chart.setData(big);
+    // Unset until the axis is first widened: the default width.
+    const width = () => (chart as unknown as Probe).viewport.getState().priceAxisWidth ?? PRICE_AXIS_WIDTH;
+    const alone = width();
+    chart.addIndicator('obv');
+    chart.resize();
+    const withPane = width();
+    expect(withPane).toBeGreaterThan(alone);
+    // Wide enough for the pane's latest value as its tag writes it, at the test's 6 px a character.
+    const pane = (chart as unknown as Probe).buildPanelRenderInfos()[0] as { instanceId: string; viewport: ViewportState };
+    const latest = (chart as unknown as { indicatorEngine: { getLatestValues(id: string): { value: number }[] } }).indicatorEngine.getLatestValues(pane.instanceId)[0].value;
+    const tag = panelTagText(latest, pane.viewport, 'en-US');
+    expect(withPane).toBeGreaterThanOrEqual(tag.length * 6 + 14);
+    // The pane gone, the axis fits the prices again.
+    chart.removeIndicator(chart.getActiveIndicators()[0].instanceId);
+    chart.resize();
+    expect(width()).toBe(alone);
+  });
+
+  it('makes no room for a pane folded to its header, which writes nothing on the axis', () => {
+    const big = bars.map((b, i) => ({ ...b, volume: 123_456_789 + i * 9_876 }));
+    chart = new Chart(host, {});
+    chart.setData(big);
+    const width = () => (chart as unknown as Probe).viewport.getState().priceAxisWidth ?? PRICE_AXIS_WIDTH;
+    const alone = width();
+    const id = chart.addIndicator('obv')!;
+    chart.setIndicatorValueLabelsVisible(true);
+    chart.resize();
+    expect(width()).toBeGreaterThan(alone);
+    chart.setPaneCollapsed(id, true);
+    chart.resize();
+    expect(width()).toBe(alone);
+  });
+
+  it('widens the price axis for a pane’s tags as soon as they are turned on', () => {
+    // A/D's values carry a decimal its tag writes and its scale's round ticks don't: "3,292,839,123.3".
+    const big = bars.map((b, i) => ({ ...b, volume: 123_456_789 + i * 9_876 }));
+    chart = new Chart(host, {});
+    chart.setData(big);
+    chart.addIndicator('ad');
+    chart.resize();
+    const probe = chart as unknown as Probe & { indicatorEngine: { getLatestValues(id: string): { value: number }[] } };
+    const pane = probe.buildPanelRenderInfos()[0] as { instanceId: string; viewport: ViewportState };
+    const tag = panelTagText(probe.indicatorEngine.getLatestValues(pane.instanceId)[0].value, pane.viewport, 'en-US');
+    const width = () => probe.viewport.getState().priceAxisWidth ?? PRICE_AXIS_WIDTH;
+    expect(width()).toBeLessThan(tag.length * 6 + 14);
+    chart.setIndicatorValueLabelsVisible(true);
+    expect(width()).toBeGreaterThanOrEqual(tag.length * 6 + 14);
   });
 });
 

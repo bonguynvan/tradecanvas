@@ -13,3 +13,4 @@ export * from './ui/index.js';
 export * from './features/index.js';
 export * from './animation/index.js';
 export * from './finance/index.js';
+export { panelScale, panelScaleTexts, panelTagText } from './axis/panelAxisTexts.js';

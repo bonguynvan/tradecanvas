@@ -49,7 +49,7 @@ import type { ResolvedLayout, ChartStyleKey, ChartStyleOverrides, ChartStyleOver
 import { readChartTypeOptions, tickBarCount, barTimeUnit, readChartStyleOverrides, readIndicatorPlotStyles, readPaneStyle } from '@tradecanvas/commons';
 import { PriceLines, type BidAsk, SymbolSeriesStore, CompareSymbolIndicator, CompareSymbolPaneIndicator, SpreadIndicator, CorrelationCoefficientIndicator, CorrelationLogIndicator, axisTimes, HiLoRenderer, PointAndFigureRenderer, isPriceLevelAlert, loadWebGL, gpuContextsLeft, whenGpuContextFree, idleCssCursor, isCrosshairCursor } from '@tradecanvas/core';
 import type { GpuRenderer, RendererMode } from '@tradecanvas/core';
-import { indicatorWorkerPool, INDICATOR_WORKER_MIN_BARS, THEME_LOOK_KEYS, valuePlots, type IndicatorWorkerLease } from '@tradecanvas/core';
+import { indicatorWorkerPool, INDICATOR_WORKER_MIN_BARS, THEME_LOOK_KEYS, valuePlots, panelScale, panelScaleTexts, panelTagText, type IndicatorWorkerLease } from '@tradecanvas/core';
 import { regularHoursFilter } from './regularHours.js';
 import { ChartA11y } from './chartA11y.js';
 import { barDateZone, barsAreDaily, zonedDateFormatter } from '@tradecanvas/commons';
@@ -2297,8 +2297,8 @@ export class Chart {
   /** Tag each indicator line's latest value on its value axis (off by default). */
   setIndicatorValueLabelsVisible(visible: boolean): void {
     this.features.indicatorValueLabels = visible;
-    this.syncRenderContext();
-    this.engine.requestRender();
+    // The panes' tags share the price axis: it widens for them, or narrows again.
+    this.updateViewportAndRender();
   }
 
   isIndicatorValueLabelsVisible(): boolean {
@@ -6582,6 +6582,25 @@ export class Chart {
     this.priceFit.settle(this.viewport.getState(), shown.length);
   }
 
+  /**
+   * What the indicator panes write on the price axis: their scales' labels,
+   * and their latest values' tags where those are shown. The panes share the
+   * price pane's axis strip, so it must be as wide as the widest of them.
+   */
+  private paneAxisTexts(): { paneLabels: string[]; paneTags: string[] } {
+    if (!this.features.indicators) return { paneLabels: [], paneTags: [] };
+    const locale = this.numberLocale;
+    // A pane folded to its header, or flat, writes no scale and no tags: nothing to make room for.
+    const panes = this.buildPanelRenderInfos().filter((p) => p.rect.height > 0 && panelScale(p.viewport) !== null);
+    const paneLabels = panes.flatMap((p) => panelScaleTexts(p.viewport, locale));
+    const paneTags = this.features.indicatorValueLabels
+      ? panes.flatMap((p) => [p.instanceId, ...(p.members ?? [])]
+        .flatMap((id) => this.indicatorEngine.getLatestValues(id))
+        .map((v) => panelTagText(v.value, p.viewport, locale)))
+      : [];
+    return { paneLabels, paneTags };
+  }
+
   /** Size the left scale to its widest label; true when the layout changed. */
   private fitLeftAxisWidth(): boolean {
     const left = this.leftViewport;
@@ -6624,6 +6643,7 @@ export class Chart {
       locale: this.numberLocale,
       format: this.priceFormatter,
       scaleLabel: (price) => this.priceAxis.labelText(price, this.viewport.getState()),
+      ...this.paneAxisTexts(),
       fontFamily: theme.font.family,
       fontSizeSmall: theme.font.sizeSmall,
       measure: (text, font) => this.measureText(text, font),

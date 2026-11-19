@@ -360,6 +360,17 @@ const SCENES = {
     return s;
   },
 
+  /**
+   * Panes of millions under prices of tens of thousands (A/D and OBV, as a CVD pane): their tags share
+   * the price axis, which was sized to the prices alone and cut them ("-1,766,028.").
+   */
+  async paneMillions() {
+    const s = await widget();
+    for (const id of ['ad', 'obv']) s.chart.addIndicator(id);
+    s.chart.setIndicatorValueLabelsVisible(true);
+    return s;
+  },
+
   /** More panes than the chart has room for: the price pane keeps its part, the panes share the rest. */
   async manyPanes() {
     const s = await widget();

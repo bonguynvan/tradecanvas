@@ -28,6 +28,14 @@ describe('requiredPriceAxisWidth', () => {
     expect(w).toBeGreaterThanOrEqual(74);
   });
 
+  it('makes room for what the indicator panes write on the same axis', () => {
+    // Prices of 110 fit the default; a CVD pane's tag "-1,766,028.9" is 12 chars → 72px + 14px tag chrome = 86 → 88.
+    expect(requiredPriceAxisWidth({ ...base, min: 100, max: 120, paneTags: ['-1,766,028.9'] })).toBe(88);
+    // Its scale's "-1,750,000" is 10 chars → 60px + 14px label chrome = 74 → 76.
+    expect(requiredPriceAxisWidth({ ...base, min: 100, max: 120, paneLabels: ['-1,750,000'] })).toBe(76);
+    expect(requiredPriceAxisWidth({ ...base, min: 100, max: 120, paneLabels: [], paneTags: [] })).toBe(PRICE_AXIS_WIDTH);
+  });
+
   it('keeps the default width when labels are short', () => {
     expect(requiredPriceAxisWidth({ ...base, min: 10, max: 20 })).toBe(PRICE_AXIS_WIDTH);
   });
