@@ -2,7 +2,7 @@
   "name": "@tradecanvas/commons",
   "version": "2.15.0",
   "type": "module",
-  "description": "Shared types, themes and icons of @tradecanvas/chart, the open-source trading chart library.",
+  "description": "Shared types, themes and icons of TradeCanvas (@tradecanvas/chart), the open-source chart library for trading apps.",
   "license": "MIT",
   "funding": {
     "type": "github",

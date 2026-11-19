@@ -2,7 +2,7 @@
   "name": "@tradecanvas/vue",
   "version": "2.0.29",
   "type": "module",
-  "description": "Vue 3 component for @tradecanvas/chart, the open-source trading chart library: candlestick charts, indicators and drawing tools with reactive props and a template ref.",
+  "description": "Vue 3 component for TradeCanvas, the open-source chart library for trading apps: candlestick charts, indicators, drawing tools and a full trading UI, with reactive props and a template ref.",
   "license": "MIT",
   "funding": {
     "type": "github",
@@ -28,7 +28,15 @@
     "charting-library",
     "stock-chart",
     "typescript",
-    "tradecanvas"
+    "tradecanvas",
+    "financial-chart",
+    "crypto-chart",
+    "indicators",
+    "drawing-tools",
+    "tradingview-alternative",
+    "lightweight-charts-alternative",
+    "klinecharts-alternative",
+    "vue-chart"
   ],
   "homepage": "https://tradecanvas.dev/",
   "main": "./dist/index.cjs",
