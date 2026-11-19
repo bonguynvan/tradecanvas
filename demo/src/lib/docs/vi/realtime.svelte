@@ -6,14 +6,14 @@
 
 <svelte:head>
   <title>Thời gian thực &amp; replay — Tài liệu TradeCanvas</title>
-  <meta name="description" content="Adapter dữ liệu stream, gộp tick, cơ chế kết nối lại và ReplayController mới để replay dữ liệu lịch sử." />
+  <meta name="description" content="Adapter dữ liệu stream, gộp tick, logic kết nối lại và ReplayController mới để replay dữ liệu lịch sử." />
 </svelte:head>
 
 <h1>Thời gian thực &amp; replay</h1>
 <p>Stream dữ liệu trực tiếp, gộp tick thành nến và replay dữ liệu lịch sử với tốc độ điều chỉnh được.</p>
 
 <h2>Adapter có sẵn</h2>
-<p>Tất cả đều miễn phí, không cần API key — kết nối adapter nào cũng theo cùng một cách:</p>
+<p>Tất cả đều miễn phí, không cần API key. Mọi adapter kết nối theo cùng một cách:</p>
 <pre><code>{`import { BinanceAdapter, CoinbaseAdapter, BybitAdapter, KrakenAdapter, UpbitAdapter } from '@tradecanvas/chart'
 
 chart.connect({ adapter: new BinanceAdapter(),  symbol: 'BTCUSDT', timeframe: '1m' })
@@ -22,28 +22,28 @@ chart.connect({ adapter: new KrakenAdapter(),   symbol: 'BTC/USD', timeframe: '5
 chart.connect({ adapter: new CoinbaseAdapter(), symbol: 'BTC-USD', timeframe: '15m' })
 chart.connect({ adapter: new UpbitAdapter(),   symbol: 'KRW-BTC', timeframe: '1m' })`}</code></pre>
 <p>
-  <code>UpbitAdapter</code> nhận các mã của Upbit (<code>KRW-BTC</code>, <code>BTC-ETH</code>):
-  nến được stream đến khung 4 giờ, nến ngày lấy từ ticker, các khung dài hơn được dựng từ
-  nến ngày. REST API của Upbit trả 200 nến mỗi lần gọi và chỉ cho trình duyệt gọi một lần
-  mỗi 10 giây, nên trang web cần truyền <code>restBase</code> trỏ tới proxy của chính mình.
-  Dữ liệu thuộc về Upbit, theo điều khoản Open API của họ. <code>MARKET_UPBIT_KRW</code> cho
-  bước giá và màu của chợ KRW.
+  <code>UpbitAdapter</code> nhận các market của Upbit (<code>KRW-BTC</code>, <code>BTC-ETH</code>):
+  nến được stream tới khung 4 giờ, nến ngày lấy từ ticker, và các nến dài hơn được dựng
+  từ nến ngày. REST API của Upbit trả 200 nến mỗi lần gọi và chỉ cho trình duyệt gọi một lần
+  trong mười giây, nên một trang web truyền <code>restBase</code> trỏ tới proxy riêng của mình.
+  Dữ liệu thuộc về Upbit, theo điều khoản Open API của Upbit. <code>MARKET_UPBIT_KRW</code> cung cấp
+  bước giá và màu của thị trường KRW.
 </p>
 
-<h2 id="data-feed">Nguồn dữ liệu để biểu đồ tự lấy</h2>
+<h2 id="data-feed">Feed mà biểu đồ chủ động lấy dữ liệu</h2>
 <p>
-  <code>DataFeed</code> là cách ngắn hơn để cắm dữ liệu của bạn vào: hai phương thức, dùng Promise.
-  Biểu đồ xin nến (<code>getBars</code>) và đăng ký nhận nến trực tiếp (<code>subscribeBars</code>);
-  nó tự tải ngược về quá khứ, kết nối lại, dựng các khung thời gian nguồn dữ liệu không có và đăng ký
-  lại khi chuyển mã hay khung, nên nguồn dữ liệu chỉ việc trả lời. Truyền nó cho <code>connect</code>
-  hoặc tùy chọn <code>feed</code> của widget, ở chỗ lẽ ra là adapter.
+  <code>DataFeed</code> là cách ngắn hơn để nối dữ liệu của bạn vào: hai phương thức, dùng Promise.
+  Biểu đồ yêu cầu nến (<code>getBars</code>) và subscribe nến trực tiếp
+  (<code>subscribeBars</code>); biểu đồ tự tải trang cũ hơn, kết nối lại, dựng các khung thời gian
+  mà feed không có và subscribe lại sau mỗi lần chuyển, nên feed chỉ cần trả lời. Truyền feed cho
+  <code>connect</code> hoặc tuỳ chọn <code>feed</code> của widget, ở chỗ vốn dành cho adapter.
 </p>
 <pre><code>{`import type { DataFeed } from '@tradecanvas/chart'
 
 const feed: DataFeed = {
   name: 'my-api',
-  // countBack nến mới nhất, hoặc các nến trước \`before\` khi biểu đồ tải ngược về trước.
-  // Mảng rỗng: hết dữ liệu.
+  // The newest countBack bars, or the ones before \`before\` when the chart pages back.
+  // An empty array: no more.
   getBars: ({ symbol, timeframe, countBack, before, signal }) =>
     fetch(\`/candles?s=\${symbol}&tf=\${timeframe}&n=\${countBack}&before=\${before ?? ''}\`, { signal })
       .then((r) => r.json()),
@@ -51,9 +51,9 @@ const feed: DataFeed = {
     const ws = new WebSocket(\`wss://example.com/\${symbol}/\${timeframe}\`)
     ws.onmessage = (m) => {
       const k = JSON.parse(m.data)
-      on.bar(k.bar, k.closed)   // lại nến đang hình thành, một nến mới, hoặc giá trị cuối của nó
+      on.bar(k.bar, k.closed)   // the forming bar again, a new one, or its final values
     }
-    ws.onclose = () => on.connection('disconnected')   // biểu đồ tải lại và đăng ký lại
+    ws.onclose = () => on.connection('disconnected')   // the chart loads and subscribes again
     return () => ws.close()
   },
 }
@@ -61,29 +61,31 @@ const feed: DataFeed = {
 chart.connect({ feed, symbol: 'AAPL', timeframe: '1d' })
 new ChartWidget(el, { feed, symbol: 'AAPL' })`}</code></pre>
 <p>
-  Đối tượng nhận còn có <code>tick</code> (giao dịch và báo giá), <code>connection</code>
-  (nguồn dữ liệu không bao giờ gọi nó được coi là đã kết nối khi <code>subscribeBars</code> trả về),
-  <code>symbolInfo</code> và <code>error</code>. <code>signal</code> bị hủy khi biểu đồ không cần câu
-  trả lời nữa: khi chuyển mã hoặc ngắt kết nối. Những gì một lượt đăng ký gửi sau khi đã hủy đăng ký
-  đều bị bỏ, nên một socket đóng muộn không thể đặt nến của mã cũ lên mã mới. Các phương thức tùy chọn
-  là của adapter: <code>supportedTimeframes</code>, <code>resolveSymbol</code>, <code>searchSymbols</code>,
-  <code>subscribeQuotes</code>, <code>fetchNews</code>, <code>fetchTrades</code> và <code>subscribeTrades</code>. Feed chỉ có các nến mới nhất thì đặt <code>pagesBack: false</code>, biểu đồ sẽ không hỏi nến cũ hơn. Biểu đồ không coi một feed im lặng là đã chết (biểu đồ ngày, thị trường đóng cửa): feed nào có socket có thể rớt mà không báo thì tự báo qua <code>connection</code>.
+  Subscriber còn nhận <code>tick</code> (giao dịch và quote), <code>connection</code>
+  (feed không bao giờ gọi nó được coi là đã kết nối khi <code>subscribeBars</code> trả về),
+  <code>symbolInfo</code> và <code>error</code>. <code>signal</code> bị abort khi biểu đồ
+  không còn cần câu trả lời: khi chuyển mã hoặc ngắt kết nối. Dữ liệu một subscription gửi
+  sau khi đã unsubscribe bị bỏ, nên một socket đóng muộn không thể đưa nến của mã cũ
+  lên mã mới. Các phương thức tuỳ chọn là của adapter: <code>supportedTimeframes</code>,
+  <code>resolveSymbol</code>, <code>searchSymbols</code>, <code>subscribeQuotes</code>,
+  <code>fetchNews</code>, <code>fetchTrades</code> và <code>subscribeTrades</code>. Feed chỉ có các nến mới nhất đặt <code>pagesBack: false</code>, để biểu đồ không bao giờ yêu cầu nến cũ hơn. Biểu đồ không coi một feed im lặng là feed đã chết (biểu đồ ngày, thị trường đã đóng cửa): feed có socket có thể rớt mà không báo thì phải báo qua <code>connection</code>.
 </p>
 <p>
-  Một nguồn dữ liệu phục vụ bao nhiêu biểu đồ cũng được: mỗi biểu đồ tự đăng ký riêng, nên một lưới
-  chỉ cần một nguồn dữ liệu cho mọi biểu đồ (<code>widget: {'{'} feed {'}'}</code> trong <code>ChartWidgetGrid</code>,
-  <code>grid.connectAll(feed, symbols, '1h')</code>), còn với adapter thì mỗi biểu đồ cần một cái.
-  Adapter vẫn dùng được ở mọi nơi, và hai loại đổi qua lại được: <code>feedFromAdapter(new BinanceAdapter())</code>
-  là một nguồn dữ liệu, <code>adapterFromFeed(feed)</code> là một adapter. Gọi <code>connect</code> với cả adapter lẫn nguồn dữ liệu sẽ báo lỗi.
+  Một feed phục vụ được nhiều biểu đồ: mỗi biểu đồ subscribe riêng, nên một grid dùng một feed
+  cho mọi biểu đồ (<code>widget: {'{'} feed {'}'}</code> trong <code>ChartWidgetGrid</code>,
+  <code>grid.connectAll(feed, symbols, '1h')</code>), trong khi với adapter thì mỗi biểu đồ cần một adapter.
+  Adapter vẫn dùng được ở mọi nơi, và hai loại chuyển đổi qua lại được: <code>feedFromAdapter(new BinanceAdapter())</code>
+  là một feed, <code>adapterFromFeed(feed)</code> là một adapter. Gọi connect với cả adapter lẫn feed sẽ ném lỗi.
 </p>
 
-<h3 id="manual-feed">Nến bạn tự đẩy vào: ManualFeed</h3>
+<h3 id="manual-feed">Nến do bạn đẩy vào: ManualFeed</h3>
 <p>
-  Với nến mà ứng dụng của bạn đã có sẵn, <code>ManualFeed</code> giữ lịch sử của từng mã và khung
-  thời gian, và gửi các nến bạn đẩy vào tới những biểu đồ đang đăng ký chuỗi đó. Các lần tải sau (kết
-  nối lại, chuyển về) đều có chúng, nên nến chỉ có một nơi ghi là nguồn dữ liệu, thay vì các lệnh gọi
-  <code>setData</code> và <code>appendBar</code> nằm cạnh một luồng dữ liệu. Nến đẩy vào mà cũ hơn nến
-  mới nhất là giá trị cuối của nến ở thời điểm đó; nến mà chuỗi không có nến nào cùng thời điểm thì báo lỗi.
+  Với các nến mà app đã có, <code>ManualFeed</code> giữ dữ liệu lịch sử của từng mã và
+  khung thời gian, và gửi các nến bạn push tới các biểu đồ đang subscribe series đó. Các lần
+  tải sau (kết nối lại, chuyển về) đều có các nến này, nên nến chỉ có một nơi ghi là feed, thay vì
+  các lời gọi <code>setData</code> và <code>appendBar</code> chạy song song với một stream. Nến được
+  push mà cũ hơn nến mới nhất là giá trị cuối cùng của nến tại thời điểm đó; nếu series không có nến
+  nào tại thời điểm đó thì ném lỗi.
 </p>
 <pre><code>{`import { ManualFeed } from '@tradecanvas/chart'
 
@@ -91,8 +93,8 @@ const feed = new ManualFeed()
 feed.setBars('AAPL', '1d', history)
 chart.connect({ feed, symbol: 'AAPL', timeframe: '1d' })
 
-feed.pushBar('AAPL', '1d', formingBar)        // lặp lại mỗi khi nến thay đổi
-feed.pushBar('AAPL', '1d', finalBar, true)    // đã đóng`}</code></pre>
+feed.pushBar('AAPL', '1d', formingBar)        // again and again as it forms
+feed.pushBar('AAPL', '1d', finalBar, true)    // closed`}</code></pre>
 
 <h2>Interface DataAdapter</h2>
 <pre><code>{`interface DataAdapter {
@@ -116,54 +118,53 @@ feed.pushBar('AAPL', '1d', finalBar, true)    // đã đóng`}</code></pre>
   subscribeTrades?(symbol, onTrades): () => void        // subscribeTrades
 }`}</code></pre>
 <p>
-  <code>searchSymbols</code> và <code>resolveSymbol</code> trả về <code>SymbolInfo</code>: <code>symbol</code>, và
-  những gì nguồn dữ liệu biết về phần còn lại: tên dễ đọc (<code>description</code>), <code>exchange</code>,
-  <code>type</code> theo cách nguồn dữ liệu gọi (<code>'stock'</code>, <code>'futures'</code>,
-  <code>'Cổ phiếu'</code>…), một <code>logo</code> mà ô tìm mã của widget hiển thị, <code>pricePrecision</code>,
-  <code>minTick</code>, <code>currency</code>, <code>timeZone</code> và <code>sessions</code>. Nguồn dữ liệu có giá chậm hơn thị trường thì báo chậm bao nhiêu trong <code>delayMinutes</code> (15 với dữ liệu miễn phí của đa số sàn): thanh trạng thái của widget khi đó ghi "Trễ 15 phút" thay cho "Trực tiếp", với một chấm màu riêng.
+  <code>searchSymbols</code> và <code>resolveSymbol</code> trả về <code>SymbolInfo</code>:
+  <code>symbol</code>, và những gì feed biết về phần còn lại: tên dễ đọc (<code>description</code>),
+  <code>exchange</code>, <code>type</code> theo cách gọi riêng của feed (<code>'stock'</code>, <code>'futures'</code>,
+  <code>'Cổ phiếu'</code>…), <code>logo</code> hiển thị trong ô tìm mã của widget, <code>pricePrecision</code>,
+  <code>minTick</code>, <code>currency</code>, <code>timeZone</code> và <code>sessions</code>. Feed có giá chậm hơn thị trường ghi độ trễ trong <code>delayMinutes</code> (15 với dữ liệu miễn phí của hầu hết các sàn): khi đó thanh trạng thái của widget hiển thị "Trễ 15 phút" thay cho "Live", kèm một chấm riêng.
 </p>
 
-<h2 id="built-timeframes">Khung thời gian nguồn dữ liệu không có</h2>
+<h2 id="built-timeframes">Khung thời gian mà feed không có</h2>
 <p>
-  Nguồn dữ liệu khai báo <code>supportedTimeframes</code> được dựng mọi khung khác từ khung thô nhất
-  trong số đó chia hết khung cần dựng: 7m từ 1m, 4h và 1D từ 1h. Ngày, tuần, tháng và các khung giờ
-  chia hết một ngày (2h, 3h, 4h, 6h, 8h, 12h) bắt đầu lúc nửa đêm của sàn giao dịch, theo
-  <code>timeZone</code> mà <code>resolveSymbol</code> trả về. Biểu đồ hỏi một lần cho mỗi mã, trong
-  lúc tải lịch sử đầu tiên của khung như vậy, dựng lịch sử đó khi có câu trả lời, rồi giữ múi giờ đó;
-  khung 1h trở xuống không chờ. Múi giờ mà ngày của nó cần một khung nhỏ hơn khung của ngày UTC (ngày
-  của TP.HCM với nguồn chỉ có nến 4h) thì lịch sử đó được tải lại theo khung ấy. Nguồn
-  dữ liệu không có <code>resolveSymbol</code>, không nêu múi giờ hoặc nêu UTC, hay có các khung không
-  khớp được với nửa đêm đó (chỉ có nến 4h cho múi giờ lệch UTC 7 tiếng) thì dùng ngày theo UTC như
-  trước. Nguồn dữ liệu trả lời lỗi hoặc chậm quá 5 giây cũng vậy, và từ đó ngày của mã giữ theo
-  UTC cho tới khi biểu đồ tải lại mã từ đầu (kết nối tới nó, hoặc chuyển sang nó từ mã hay khung thời gian khác), nên các trang cũ hơn và lịch sử sau khi kết nối lại không bao giờ có một ngày hai lần; lần tải mới dựng ngày theo múi giờ mà nguồn dữ liệu đã nêu từ đó, hoặc hỏi lại nguồn. Múi giờ
-  của thị trường (<code>setMarket</code>) không dời những nến này. Nến ngày đóng dấu 00:00 UTC được đọc là đúng ngày chúng ghi. Múi giờ mà nguồn dữ liệu gửi sau
-  qua sự kiện <code>symbolInfo</code> đổi giờ hiển thị, không đổi lúc bắt đầu của những ngày đã dựng.
+  Feed liệt kê <code>supportedTimeframes</code> sẽ có mọi khung thời gian khác được dựng từ khung
+  thô nhất trong số đó mà chia hết cho nó: 7m từ 1m, 4h và 1D từ 1h. Ngày, tuần, tháng và các khung giờ
+  chia hết một ngày (2h, 3h, 4h, 6h, 8h, 12h) bắt đầu lúc nửa đêm theo giờ sàn của mã,
+  theo <code>timeZone</code> mà <code>resolveSymbol</code> trả về. Biểu đồ hỏi một lần cho mỗi mã,
+  khi tải dữ liệu lịch sử đầu tiên của khung như vậy, dựng dữ liệu lịch sử đó khi có câu trả lời, và
+  giữ lại múi giờ; khung 1h và ngắn hơn không chờ câu trả lời. Một múi giờ mà ngày của nó cần khung thời gian
+  mịn hơn của UTC (giờ TP. Hồ Chí Minh trên feed nến 4h) thì dữ liệu lịch sử đó được tải lại ở khung mịn hơn. Feed không có <code>resolveSymbol</code>, feed không nêu múi giờ hoặc nêu UTC, hay feed có
+  khung thời gian không khớp với mốc nửa đêm đó (chỉ có nến 4h với một múi giờ lệch UTC 7 tiếng) sẽ nhận
+  ngày theo UTC, như trước. Feed không trả lời được hoặc trả lời quá 5 giây cũng vậy, và khi đó ngày của mã
+  giữ theo UTC cho đến khi biểu đồ tải lại mã từ đầu (connect tới mã, hoặc chuyển tới từ một mã hay khung thời gian khác), để các trang cũ hơn và dữ liệu lịch sử sau khi kết nối lại không bao giờ chứa một ngày hai lần; lần tải mới dựng ngày theo múi giờ mà feed đã nêu từ đó, hoặc hỏi lại feed.
+  Múi giờ của thị trường (<code>setMarket</code>) không dịch chuyển các nến này. Nến ngày có mốc 00:00 UTC được hiểu là đúng ngày mà mốc đó ghi. Múi giờ mà feed
+  gửi sau trong event <code>symbolInfo</code> thay đổi thời gian hiển thị, không thay đổi điểm bắt đầu của các ngày được dựng.
 </p>
 
-<h2 id="symbol-info">Thông tin mã mà nguồn dữ liệu biết sau</h2>
+<h2 id="symbol-info">Thông tin mã mà feed biết sau</h2>
 <p>
-  Chart đã kết nối hỏi <code>resolveSymbol</code> một lần. Nguồn dữ liệu nào chỉ biết thông tin của mã về sau (chẳng hạn ở tin nhắn đầu tiên) thì gửi nó bằng sự kiện <code>symbolInfo</code>, và chart áp dụng ngay: số lẻ của mã (<code>pricePrecision</code>) trên trục giá, legend và nhãn giá, và cả trên nhãn của các hình vẽ, giá trần, sàn và tham chiếu trong ngày, nhãn đỉnh đáy, công cụ đo và market profile; trong widget, trên cửa sổ dữ liệu, danh sách cảnh báo, order ticket và bảng tài khoản; vạch chia trục theo bước giá (<code>minTick</code>); giờ giao dịch của sàn. Số lẻ của thị trường (<code>setMarket</code>) đi tới đúng những chỗ đó và được ưu tiên hơn số lẻ của mã. Khi không có cả hai, nhãn của hình vẽ giữ số lẻ theo độ lớn của giá, nhóm hàng nghìn theo locale số như trục giá. Watchlist của widget viết mỗi mã theo <code>pricePrecision</code> mà mục của mã đó trong <code>symbols</code> đưa ra; khi không có thì theo độ lớn của giá: hai số lẻ từ 1.000, bốn từ 1, và bốn chữ số có nghĩa dưới 1, giá nhỏ đến đâu cũng vậy.
+  Biểu đồ đã kết nối hỏi <code>resolveSymbol</code> một lần. Feed chỉ biết thông tin của mã về sau (chẳng hạn ở message đầu tiên) gửi thông tin đó bằng event <code>symbolInfo</code>, và biểu đồ áp dụng: số chữ số thập phân của mã (<code>pricePrecision</code>) trên thang giá, legend và các tag, trên nhãn của hình vẽ, biên độ giá trong ngày, nhãn pivot, công cụ đo và market profile; trong widget là data window, danh sách cảnh báo, order ticket và panel tài khoản; vạch chia của thang theo bước giá (<code>minTick</code>); giờ giao dịch của sàn. Số thập phân của thị trường (<code>setMarket</code>) áp dụng vào cùng những chỗ đó và được ưu tiên hơn của mã. Khi không có cả hai, nhãn của hình vẽ giữ số thập phân theo độ lớn của giá, nhóm chữ số theo number locale như trục. Watchlist của widget ghi mỗi mã theo <code>pricePrecision</code> mà mục của mã đó trong <code>symbols</code> đưa ra, và nếu không có thì theo độ lớn của giá: hai chữ số thập phân từ 1,000, bốn chữ số thập phân từ 1, bốn chữ số có nghĩa dưới 1, dù nhỏ đến đâu.
 </p>
-<pre><code>{`emit('symbolInfo', { symbol: 'VNM', pricePrecision: 0, minTick: 10, currency: 'VND' })   // như cách adapter gửi các sự kiện khác`}</code></pre>
+<pre><code>{`emit('symbolInfo', { symbol: 'VNM', pricePrecision: 0, minTick: 10, currency: 'VND' })   // as your adapter sends its other events`}</code></pre>
 
-<h2 id="corrections">Nến mà nguồn dữ liệu sửa lại</h2>
+<h2 id="corrections">Nến được feed sửa lại</h2>
 <p>
-  Nguồn dữ liệu sửa một nến bằng cách gửi lại nó, đã đóng, với đúng thời gian của nó: <code>{'{'} bar, closed: true {'}'}</code> từ <code>parseMessage</code>, hoặc một sự kiện <code>bar</code>. Một nến đã đóng cũ hơn nến mới nhất mà luồng dữ liệu đã thấy là lời cuối của nguồn về nến đó, chẳng hạn giá chốt của sàn đến sau khung đầu tiên của nến kế tiếp, hoặc một lần điều chỉnh: biểu đồ thay nến có thời gian đó dù nằm ở đâu (<code>updateBar</code>), tính lại chỉ báo từ nến đó và giữ nguyên khung nhìn. Đây không phải giá hiện tại: đường giá, lệnh và cảnh báo vẫn đi theo thị trường. Một khung đang hình thành cũ hơn nến mới nhất là dữ liệu cũ và bị bỏ qua; nó không làm thay đổi gì. Các adapter có sẵn (<code>WebSocketAdapter</code>, <code>PollingAdapter</code>, các nguồn dựng trên chúng và <code>BinanceAdapter</code>) chỉ tạo tick từ giá đóng cửa của nến mới nhất, tính cả nến cuối của lịch sử mà chúng đã trả về, nên nến đã đóng cuối cùng mà nguồn dữ liệu gửi lại khi đăng ký không tạo tick nào; adapter của riêng bạn nếu tạo tick từ các nến cũng nên bỏ qua nến cũ hơn. Không có adapter thì gọi <code>chart.updateBar(bar)</code>.
+  Feed sửa một nến bằng cách gửi lại nến đó, ở trạng thái đã đóng, với đúng thời gian của nó: <code>{'{'} bar, closed: true {'}'}</code> từ <code>parseMessage</code>, hoặc một event <code>bar</code>. Nến đã đóng mà cũ hơn nến mới nhất stream đã thấy là giá trị chốt của feed cho nến đó: giá trị cuối của sàn đến sau frame đầu tiên của nến kế tiếp, hoặc một bản sửa. Biểu đồ thay nến có thời gian đó ở bất kỳ vị trí nào (<code>updateBar</code>), tính lại chỉ báo từ nến đó và giữ nguyên khung nhìn. Đây không phải giá trực tiếp: đường giá, các order và cảnh báo vẫn theo thị trường. Frame đang hình thành mà cũ hơn nến mới nhất là dữ liệu cũ và bị bỏ qua; nó không thay đổi gì. Các adapter có sẵn (<code>WebSocketAdapter</code>, <code>PollingAdapter</code>, các feed dựng trên chúng và <code>BinanceAdapter</code>) chỉ tạo tick từ giá đóng cửa của nến mới nhất, tính cả nến cuối của dữ liệu lịch sử chúng đã trả về, nên nến đã đóng cuối cùng mà feed gửi lại khi subscribe không tạo tick nào; adapter tự viết có tạo tick từ nến cũng nên bỏ qua các nến cũ hơn. Khi không dùng adapter, gọi <code>chart.updateBar(bar)</code>.
 </p>
 <p>
-  Với <code>aggregateTicks</code>, nến cuối của lịch sử là nến mà các giao dịch tiếp tục dựng: giao dịch đầu tiên sau khi kết nối giữ nguyên giá mở cửa, cao, thấp và khối lượng của nó. Một giao dịch thuộc về nến đã qua mà đến muộn bị bỏ qua, còn một nến đã đóng của nến đó thì sửa nó, nến đang hình thành vẫn giữ các giao dịch của mình. Một giao dịch diễn ra sau khi nến mới nhất bắt đầu sẽ vào nến đó, kể cả khi cách chia nến cho nó bắt đầu sớm hơn (nến ngày đóng dấu ở một giờ khác nửa đêm, hoặc múi giờ của mã đến sau giao dịch đầu tiên), nên giá theo kịp mọi giao dịch. Với khung thời gian dựng từ một khung nhỏ hơn, nến gốc được sửa sẽ dựng lại nến của nó, cho hai nến đã dựng gần nhất trước nến đang hình thành; lần sửa xa hơn bị bỏ qua.
+  Với <code>aggregateTicks</code>, nến cuối của dữ liệu lịch sử là nến mà các giao dịch dựng tiếp lên: giao dịch đầu tiên sau khi kết nối giữ nguyên open, high, low và khối lượng của nến đó. Giao dịch thuộc một nến đã qua mà đến muộn thì bị bỏ qua, còn một nến đã đóng gửi cho nến đó thì sửa nó, nến đang hình thành vẫn giữ các giao dịch của mình. Giao dịch xảy ra sau thời điểm bắt đầu của nến mới nhất được đưa vào nến đó kể cả khi cách chia bucket lẽ ra bắt đầu nến sớm hơn (nến ngày có mốc ở giờ khác nửa đêm, hoặc mã có múi giờ đến sau giao dịch đầu tiên), để giá theo sát mọi giao dịch. Trên khung thời gian dựng từ khung mịn hơn, một nến gốc được sửa sẽ dựng lại nến của nó, áp dụng cho hai nến dựng cuối cùng trước nến đang hình thành; bản sửa xa hơn về trước bị bỏ qua.
 </p>
-<pre><code>{`// trong adapter: giá chốt của sàn cho một nến đã có trên biểu đồ
+<pre><code>{`// in an adapter: the venue's final for a bar already on the chart
 parseMessage: (raw) => ({ bar: toBar(raw), closed: true })
 
-// nến của riêng bạn, không có adapter
-const corrected = chart.updateBar(bar)   // false: không có nến đã nạp nào có bar.time`}</code></pre>
+// your own bars, without an adapter
+const corrected = chart.updateBar(bar)   // false: no loaded bar has bar.time`}</code></pre>
 
-<h2>Nguồn dữ liệu bất kỳ trong ~20 dòng</h2>
+<h2>Feed bất kỳ trong khoảng 20 dòng</h2>
 <p>
-  Kế thừa <code>WebSocketAdapter</code> (dữ liệu trực tiếp + lịch sử qua REST) hoặc <code>PollingAdapter</code>
-  (nguồn chỉ có REST). Lớp cơ sở lo vòng đời kết nối, kết nối lại, giải mã và
-  phát sự kiện — bạn chỉ cần cung cấp một URL và một hàm phân tích dữ liệu.
+  Kế thừa <code>WebSocketAdapter</code> (trực tiếp + dữ liệu lịch sử qua REST) hoặc <code>PollingAdapter</code>
+  (feed chỉ có REST). Lớp cơ sở lo vòng đời kết nối, kết nối lại, giải mã và
+  phát event; bạn cung cấp một URL và một hàm parse.
 </p>
 <pre><code>{`import { WebSocketAdapter } from '@tradecanvas/chart'
 
@@ -186,17 +187,17 @@ agg.on('correction', (bar) => console.log(bar)) // a closed bar older than the n
 agg.processTick({ time, price, volume })
 
 const current = agg.getCurrentBar()         // forming bar`}</code></pre>
-<p>Tuần bắt đầu từ thứ Hai và tháng từ ngày 1. Với <code>setTimeZone</code>, ngày, tuần, tháng và các khung giờ chia hết một ngày bắt đầu lúc nửa đêm của sàn; biểu đồ tự đặt nó cho tick của luồng dữ liệu (<code>aggregateTicks</code>) theo múi giờ của mã, nếu không có thì của thị trường, và cho nến dựng từ tick khớp với nến lịch sử: ngày được đóng dấu lúc 00:00 UTC khi lịch sử cũng đóng dấu như vậy, còn nến 2h đến 12h chỉ bắt đầu lúc nửa đêm của sàn khi nến lịch sử bắt đầu ở đó, nên nến 4h của chính nguồn dữ liệu (00:00, 04:00… UTC) giữ nguyên thời điểm. Với khung thời gian dựng từ một khung nhỏ hơn của nguồn dữ liệu, chúng bắt đầu ở nơi nến đã dựng bắt đầu. Dựng từ nến giờ, chúng bắt đầu lúc nửa đêm của múi giờ mà <code>resolveSymbol</code> của nguồn nêu, nếu không có thì của UTC, dù biểu đồ đang dùng múi giờ nào; dựng từ nến ngày của nguồn đóng dấu lúc 00:00 UTC, tuần và tháng giữ ngày của nguồn, và một giao dịch được tính ngày theo múi giờ nguồn nêu, nếu không có thì theo múi giờ của biểu đồ, như trên nến ngày của chính nguồn.</p>
-<p>Nến cũ hơn nến mới nhất đã thấy là nến đã qua: <code>processBar</code> gửi nến đã đóng dưới dạng <code>correction</code> và bỏ qua khung đang hình thành, còn <code>processTick</code> bỏ qua giao dịch thuộc về nến đó, nên một khung hay giao dịch đến muộn không thể đóng sớm nến đang hình thành hay làm giá thay đổi. <code>seed(time)</code> bắt đầu từ nến cuối của lịch sử và không lùi lại (trừ khi các giao dịch đã dựng nến mới hơn theo các khoảng mà chúng không còn bắt đầu theo nữa, vì múi giờ của sàn đến sau: nến đó bị bỏ đi, nếu không các giao dịch tiếp theo sẽ bị bỏ qua cho đến khoảng kế tiếp), còn <code>resume(bar)</code> biến nến đó, vẫn đang hình thành, thành nến mà các giao dịch tiếp theo dựng tiếp, trừ khi giao dịch đã sang một nến mới hơn; luồng dữ liệu của biểu đồ làm cả hai mỗi lần kết nối, nên khi kết nối lại mà lịch sử chỉ đến nến trước đó thì các giao dịch của nến đang hình thành vẫn được giữ. Khi đó <code>StreamManager</code> đặt nến đang hình thành, dù dựng từ giao dịch hay từ các khung của nguồn dữ liệu, lên trên lịch sử mà nó gửi dưới dạng <code>snapshot</code>, và không gửi <code>priceChange</code> cho giá đóng cửa của nến cuối trong lịch sử, vốn là một mức giá cũ hơn. Nó gửi một lần sửa dưới dạng <code>barCorrection</code>.</p>
+<p>Tuần bắt đầu vào thứ Hai và tháng vào ngày 1. Với <code>setTimeZone</code>, ngày, tuần, tháng và các khung giờ chia hết một ngày bắt đầu lúc nửa đêm theo giờ sàn; biểu đồ đặt múi giờ này cho tick trong stream của nó (<code>aggregateTicks</code>) từ múi giờ của mã, nếu không có thì của thị trường, và đặt nến của chúng khớp với nến của dữ liệu lịch sử: ngày có mốc 00:00 UTC khi ngày của dữ liệu lịch sử như vậy, và nến 2h đến 12h chỉ bắt đầu lúc nửa đêm theo giờ sàn khi nến của dữ liệu lịch sử cũng vậy, nên nến 4h của chính feed (00:00, 04:00… UTC) giữ nguyên thời gian. Trên khung thời gian dựng từ một khung ngắn hơn của feed, nến bắt đầu ở chỗ các nến dựng bắt đầu. Khi dựng từ nến giờ, nến bắt đầu lúc nửa đêm của múi giờ mà <code>resolveSymbol</code> đã nêu, nếu không có thì của UTC, bất kể biểu đồ dùng múi giờ nào; khi dựng từ nến ngày của feed có mốc 00:00 UTC, tuần và tháng giữ ngày của feed, và một giao dịch được tính ngày theo múi giờ đã nêu, nếu không có thì theo múi giờ của biểu đồ, như trên nến ngày của chính feed.</p>
+<p>Nến cũ hơn nến mới nhất đã thấy là nến đã qua: <code>processBar</code> gửi nến đã đóng dưới dạng <code>correction</code> và bỏ qua nến đang hình thành, còn <code>processTick</code> bỏ qua giao dịch thuộc nến đó, nên một frame hay giao dịch đến muộn không thể đóng sớm nến đang hình thành hay làm giá dịch chuyển. <code>seed(time)</code> bắt đầu từ nến cuối của dữ liệu lịch sử và không lùi lại (trừ khi các giao dịch đã dựng nến mới hơn trên các bucket mà chúng không còn dùng nữa, do múi giờ của sàn đến sau chúng: nến đó bị bỏ, nếu không các giao dịch tiếp theo sẽ bị bỏ qua cho đến bucket kế tiếp), và <code>resume(bar)</code> biến nến đó, vẫn đang hình thành, thành nến mà các giao dịch tiếp theo dựng lên, trừ khi các giao dịch đã sang một nến mới hơn; stream của biểu đồ làm cả hai việc này mỗi lần connect, nên một lần kết nối lại có dữ liệu lịch sử kết thúc ở nến trước vẫn giữ các giao dịch của nến đang hình thành. Sau đó <code>StreamManager</code> đặt nến đang hình thành, dựng từ giao dịch hoặc từ frame của feed, lên trên dữ liệu lịch sử mà nó gửi dưới dạng <code>snapshot</code>, và không gửi <code>priceChange</code> cho giá đóng cửa cuối của dữ liệu lịch sử, vốn là một giá cũ hơn. Bản sửa được gửi dưới dạng <code>barCorrection</code>.</p>
 
-<h2>Giá của nhiều mã</h2>
+<h2>Quote cho nhiều mã</h2>
 <p>
-  Nguồn dữ liệu có <code>subscribeQuotes</code> gửi giá (giá cuối, thay đổi trong ngày, cao nhất, thấp nhất,
-  khối lượng, giá mua và giá bán) của nhiều mã cùng lúc cho đến khi bạn dừng. <code>BinanceAdapter</code> gửi
-  một ảnh chụp 24 giờ, rồi đến luồng mini-ticker; <code>MockAdapter</code> tự tạo giá giả. Watchlist
-  của widget lấy giá cho các dòng từ đây. Khi không có giá gửi tới, dòng của chính mã đang hiện trên biểu đồ đọc
-  giá và mức thay đổi trong ngày từ các nến của biểu đồ, như bảng thông tin mã: so với giá đóng cửa trước ngày cuối
-  cùng, theo múi giờ của sàn, và không có mức thay đổi khi các nến không có ngày nào trước đó.
+  Feed có <code>subscribeQuotes</code> gửi quote (giá cuối, thay đổi trong ngày, cao, thấp,
+  khối lượng, bid và ask) cho nhiều mã cùng lúc cho đến khi bạn dừng. <code>BinanceAdapter</code> gửi
+  một snapshot 24 h, rồi đến stream mini-ticker; <code>MockAdapter</code> tạo quote giả. Watchlist của
+  widget điền các dòng từ đây. Khi không có quote, dòng của chính mã đang xem lấy giá và
+  mức thay đổi trong ngày từ các nến của biểu đồ, giống panel thông tin mã: so với giá đóng cửa
+  trước ngày cuối cùng, theo múi giờ của sàn, và không có mức thay đổi khi các nến không chứa ngày nào trước đó.
 </p>
 <pre><code>{`const stop = new BinanceAdapter().subscribeQuotes(['BTCUSDT', 'ETHUSDT'], (quotes) => {
   for (const q of quotes) console.log(q.symbol, q.last, q.changePercent)
@@ -207,12 +208,12 @@ readQuote({ symbol: 'AAPL', last: 190, prevClose: 188 })   // → change 2, chan
 
 <h2>Biểu đồ tick</h2>
 <p>
-  Khung thời gian tick — <code>'100T'</code> — vẽ mỗi nến từ 100 giao dịch. Nó được dựng từ các giao dịch
-  của nguồn dữ liệu: các giao dịch gần đây cho phần lịch sử (<code>fetchTrades</code>), rồi các giao dịch trực tiếp
-  (<code>subscribeTrades</code>). <code>BinanceAdapter</code> stream các giao dịch gộp (aggregate trades). Biểu đồ tick
-  không có đồng hồ đếm ngược và không tải thêm lịch sử cũ hơn; nguồn không có giao dịch sẽ từ chối khung thời gian tick.
-  Nến tick không cách đều nhau theo thời gian, nên trục thời gian và crosshair chỉ ghi giờ cho các nến, không ghi
-  vào khoảng trống bên cạnh.
+  Khung thời gian tick, <code>'100T'</code>, vẽ một nến cho mỗi 100 giao dịch. Nến được dựng từ giao dịch
+  của feed: các giao dịch gần đây cho dữ liệu lịch sử (<code>fetchTrades</code>), sau đó là giao dịch trực tiếp
+  (<code>subscribeTrades</code>). <code>BinanceAdapter</code> stream aggregate trade. Biểu đồ tick
+  không có đồng hồ đếm ngược và không tải thêm dữ liệu lịch sử cũ hơn; feed không có giao dịch sẽ từ chối khung thời gian tick.
+  Nến tick không cách đều nhau theo thời gian, nên trục thời gian và crosshair chỉ hiển thị thời gian cho
+  nến, không cho khoảng trống bên cạnh.
 </p>
 <pre><code>{`chart.connect({ adapter: new BinanceAdapter(), symbol: 'BTCUSDT', timeframe: '100T' })
 await chart.setTimeframe('500T')
@@ -223,10 +224,10 @@ builder.push([{ time, price, volume }])   // → [{ bar, closed }]`}</code></pre
 
 <h2>Trạng thái thị trường và tin tức</h2>
 <p>
-  <code>marketStatus(info, now)</code> cho biết thị trường của một mã có mở tại một thời điểm hay không, dựa trên
-  giờ giao dịch theo múi giờ của sàn (tính cả lúc đổi giờ), và khi nào điều đó thay đổi. Mỗi phiên có thể ghi rõ
-  những ngày trong tuần mà nó mở. <code>fetchNews</code> của nguồn dữ liệu cung cấp tiêu đề tin cho bảng thông tin mã
-  của widget; <code>readNews</code> chỉ giữ các tin có tiêu đề và thời gian, và chỉ giữ liên kết tới trang web.
+  <code>marketStatus(info, now)</code> cho biết thị trường của một mã có mở cửa tại một thời điểm hay không, dựa trên
+  giờ giao dịch theo múi giờ của sàn (tính cả chuyển đổi giờ mùa hè), và khi nào trạng thái đó thay đổi. Phiên có thể ghi rõ các
+  ngày trong tuần mà phiên mở cửa. <code>fetchNews</code> của feed cung cấp tiêu đề tin cho panel thông tin mã
+  của widget; <code>readNews</code> chỉ giữ các mục có tiêu đề và thời gian, và chỉ giữ liên kết tới trang web.
 </p>
 <pre><code>{`const info = {
   symbol: 'AAPL',
@@ -236,7 +237,7 @@ builder.push([{ time, price, volume }])   // → [{ bar, closed }]`}</code></pre
 marketStatus(info, Date.now())   // { state: 'closed', next: <next open, ms> } · 'open' · 'always' (24/7)`}</code></pre>
 
 <h2>Kết nối lại</h2>
-<p><code>ReconnectManager</code> giãn cách các lần thử lại theo cấp số nhân (exponential backoff), có mức trần và dừng hẳn sau lần thử cuối.</p>
+<p><code>ReconnectManager</code> xử lý exponential backoff có giới hạn trên và dừng hẳn sau lần thử cuối.</p>
 <pre><code>{`import { ReconnectManager } from '@tradecanvas/chart'
 
 const rm = new ReconnectManager({ maxRetries: 6, baseDelay: 500, maxDelay: 30_000 })
@@ -247,8 +248,8 @@ rm.onConnected()                        // call on a successful connect to reset
 
 <h2>Chế độ replay</h2>
 <p>
-  Đẩy một <code>DataSeries</code> lịch sử tiến lên với tốc độ điều chỉnh được.
-  Tách rời khỏi <code>Chart</code> nên có thể dùng cho cả replay trên giao diện lẫn backtest
+  Chạy một <code>DataSeries</code> lịch sử tiến về phía trước với tốc độ điều chỉnh được.
+  Tách khỏi <code>Chart</code> để dùng được cho cả replay trên UI lẫn backtest
   headless.
 </p>
 
@@ -272,26 +273,26 @@ replay.start()
 `}</code></pre>
 
 <p>
-  Trong chế độ replay của widget, <strong>bấm vào bất kỳ nến nào đã hiện để đưa con trỏ replay
-  tới đó</strong>. Rộng hơn, biểu đồ giờ phát ra các sự kiện <code>click</code>
-  và <code>barClick</code> cho những cú bấm chuột trái thông thường (nhấn và nhả
+  Trong chế độ replay của widget, <strong>click vào nến bất kỳ đã hiện để đưa con trỏ
+  replay tới đó</strong>. Tổng quát hơn, biểu đồ phát event <code>click</code>
+  và <code>barClick</code> cho các lần click chuột trái thông thường (nhấn và thả
   mà không kéo):
 </p>
 <pre><code>{`chart.on('barClick', (e) => {
   const { bar, barIndex, point } = e.payload
 })`}</code></pre>
 
-<h3>Replay trên biểu đồ, theo bước nhỏ hơn</h3>
+<h3>Replay trên biểu đồ, theo bước mịn hơn</h3>
 <p>
-  <code>chart.replayStart()</code> replay chính chuỗi dữ liệu của biểu đồ. Truyền các nến nhỏ hơn
-  vào <code>steps</code> (nến 5 phút dưới một biểu đồ khung giờ) và mỗi bước sẽ làm nến đang hình thành
-  lớn dần từ chúng, đúng như nó đã hình thành trên thị trường; các nến đã đóng hiện đúng như trong
-  chuỗi. <code>startIndex</code> và <code>replaySeekToBar</code> đếm theo nến của biểu đồ.
-  Trong ChartWidget, menu <strong>Bước</strong> trên thanh replay đưa ra các khung thời gian nhỏ hơn
-  mà nguồn dữ liệu có (hoặc dựng được từ các nến bạn đã nạp).
+  <code>chart.replayStart()</code> replay chính series của biểu đồ. Truyền nến mịn hơn vào
+  <code>steps</code> (nến 5 phút dưới biểu đồ giờ) thì mỗi bước làm nến đang hình thành
+  lớn dần từ các nến đó, như nó đã hình thành trên thị trường; nến đã đóng hiển thị đúng như trong
+  series. <code>startIndex</code> và <code>replaySeekToBar</code> đếm theo nến của biểu đồ.
+  Trong ChartWidget, menu <strong>Bước</strong> của thanh replay đưa ra các khung mịn hơn mà
+  feed có (hoặc mà các nến bạn đã tải dựng được).
 </p>
 <pre><code>{`chart.replayStart({ animate: true, step: 'auto', startIndex: 120, paused: true })
-// hoặc các nến nhỏ hơn bạn đã có cho những nến được tua lại: { steps, startIndex: 120 }
+// or finer bars you hold for the bars replayed: { steps, startIndex: 120 }
 chart.replayResume()
 chart.getReplayBarIndex()      // the chart bar forming now
 chart.replaySeekToBar(150)     // to the end of bar 150
@@ -301,59 +302,61 @@ chart.on('replayComplete', (e) => e.payload) // { barIndex, time }
 chart.on('replayState', (e) => e.payload)   // { state: 'playing' | 'paused' | 'stopped' }
 chart.replayStop()             // back to the live series`}</code></pre>
 
-<h3>Nến hình thành khi replay</h3>
+<h3>Nến hình thành khi phát</h3>
 <p>
-  Với <code>animate: true</code>, mỗi nến lớn dần theo thời gian của nó như một nến đang chạy:
-  từ giá mở cửa đến cực trị mà hướng của nến cho biết đến trước (nến tăng chạm đáy trước),
-  rồi cực trị còn lại, rồi giá đóng cửa. Với <code>step</code> (<code>'auto'</code> hoặc một khung như
-  <code>'1m'</code>), biểu đồ tải các nến nhỏ hơn của những nến sắp tua qua
-  <code>fetchHistoryBefore</code> của nguồn dữ liệu đang kết nối, từng trang và chỉ khi đang chạy,
-  và mỗi nến hình thành theo chúng; <code>'auto'</code> là khung nhỏ nhất nguồn có với tối đa 60
-  nến con cho một nến. Khung hình cuối luôn là nến đúng như trong chuỗi. <code>steps</code> bạn
-  truyền vào được dùng theo cùng cách. Đồng hồ vẫn đếm nến của biểu đồ: <code>speed</code>,
-  <code>duration</code> và các chỉ số là nến, và <code>getReplayBarIndex()</code> là nến đang hình
-  thành. Tạm dừng giữ nguyên nến đang vẽ dở; tua hoặc bước tới hiện nến trọn vẹn. Tài khoản paper trading khớp lệnh khi giá được vẽ chạm tới lệnh. Nến ngắn hơn ba khung hình hiện trọn, và khi hệ
-  thống yêu cầu giảm chuyển động, nến nhảy từ mức giá này sang mức giá kế tiếp.
-  <code>replayStepsLoad</code> báo <code>loading</code>, <code>loaded</code>, <code>end</code> hoặc
-  <code>error</code>; nến không có nến con hình thành từ giá của chính nó. ChartWidget làm điều này
-  mặc định: menu Bước bắt đầu ở <strong>Tự động</strong>; <code>replayStep</code>
-  (<code>'auto'</code>, <code>'bar'</code> hoặc một khung) và <code>replayAnimate: false</code> thay đổi nó. Với nguồn không có
-  <code>fetchHistoryBefore</code>, widget tải các nến nhỏ hơn trong một lần gọi trước khi replay bắt đầu.
-  Với <code>replayAnimate: false</code>, Auto replay nến nguyên; một khung nhỏ hơn được chọn sẽ phát thành các bước riêng.
+  Với <code>animate: true</code>, mỗi nến lớn dần theo thời gian của nó, như nến trực tiếp: từ
+  giá mở cửa tới cực trị mà chiều của nến cho thấy đến trước (nến tăng giảm xuống trước), rồi cực trị còn lại, rồi
+  giá đóng cửa. Với <code>step</code> (<code>'auto'</code>, hoặc một khung như <code>'1m'</code>),
+  biểu đồ tải nến mịn hơn của những nến sắp phát qua <code>fetchHistoryBefore</code> của feed đang kết nối,
+  mỗi lần một trang và chỉ khi đang phát, và mỗi nến hình thành
+  theo các nến đó; <code>'auto'</code> là khung mịn nhất mà feed phục vụ với tối đa 60 nến cho một nến. Frame
+  cuối luôn là nến đúng như trong series. <code>steps</code> bạn truyền vào được dùng theo cùng
+  cách. Đồng hồ vẫn đếm theo nến của biểu đồ: <code>speed</code>, <code>duration</code> và
+  các index tính theo nến, và <code>getReplayBarIndex()</code> là nến đang hình thành. Khi tạm dừng, nến
+  đang vẽ dở được giữ nguyên; seek hoặc step hiển thị nến trọn vẹn. Tài khoản paper trading khớp order khi giá đang vẽ
+  chạm tới order đó. Nến ngắn hơn ba frame hiện ra trọn vẹn, và khi bật reduced motion, nến
+  nhảy từ giá này sang giá kế tiếp. <code>replayStepsLoad</code> báo
+  <code>loading</code>, <code>loaded</code>, <code>end</code> hoặc <code>error</code>; nến không có nến
+  mịn hơn thì hình thành từ chính các giá của nó. ChartWidget làm việc này mặc định: menu Bước bắt đầu ở
+  <strong>Tự động</strong>; <code>replayStep</code> (<code>'auto'</code>, <code>'bar'</code> hoặc một
+  khung) và <code>replayAnimate: false</code> thay đổi điều đó. Trên feed không có
+  <code>fetchHistoryBefore</code>, widget tải nến mịn hơn trong một request trước khi replay bắt đầu.
+  Với <code>replayAnimate: false</code>, chế độ Tự động replay nến trọn vẹn; nếu chọn một khung mịn hơn thì phát theo từng bước của khung đó.
 </p>
 
 <h3>Thanh replay trong ChartWidget</h3>
 <p>
-  Nút <strong>Bar replay</strong> trên thanh công cụ mở một thanh nằm dưới chart, chạy ngang widget,
-  phía trên thanh trạng thái: chart chừa chỗ cho nó, nên volume, các pane bên dưới và trục thời gian
-  vẫn hiện. Trước hết chọn nến bắt đầu: bấm vào nó, hoặc bấm
-  <strong>Nến ngẫu nhiên</strong>; <strong>Huỷ</strong> (hoặc <kbd>Esc</kbd>) để thoát. Sau đó: lùi,
-  <strong>Phát</strong>/<strong>Tạm dừng</strong> và tiến; ngày giờ của bước đang hiện, theo múi giờ
-  hiển thị (chỉ ghi năm khi khác năm nay), và một thanh trượt tô phần đã phát; <strong>Tốc độ</strong>
-  là bội số từ 0.1× đến 50× (1× phát một nến của biểu đồ mỗi giây, bước nào cũng vậy; mặc định 1×);
-  <strong>Bước</strong>; <strong>Chọn nến</strong>, tạm dừng và chọn nến bắt đầu khác trong các nến
-  đang hiện mà không lộ các nến sau (<strong>Huỷ</strong> hoặc <kbd>Esc</kbd> quay lại đúng chỗ cũ);
-  và <strong>Về thời gian thực</strong>. Trên điện thoại hoặc biểu đồ hẹp, thanh chia hai hàng, ngày
-  và thanh trượt ở trên. Phím, cho widget dùng gần nhất: <kbd>Shift</kbd>+<kbd>←</kbd>/<kbd>→</kbd>
-  lùi/tiến, <kbd>Space</kbd> trên biểu đồ hoặc thanh trượt để phát/tạm dừng (ngoài replay nó vừa
-  khung biểu đồ), <kbd>Esc</kbd> thôi chọn nến. Phím tắt bạn thêm bằng <code>addHotkey</code> trên
-  cùng phím được ưu tiên. Thanh dùng các token <code>--tcw-*</code> của giao diện và chủ đề; host có
-  thể đặt thêm <code>--tcw-replay-btn</code>, <code>--tcw-replay-play</code> hoặc
-  <code>--tcw-replay-track-w</code> trên <code>.tcw-replay-bar</code>. Ngày giờ lấy từ
-  <code>stepTime</code> của <code>replayStep</code>, thời điểm của bước đang hiện.
+  Nút <strong>Bar replay</strong> trên toolbar mở một thanh bên dưới biểu đồ, trải ngang widget,
+  phía trên thanh trạng thái: biểu đồ chừa chỗ cho thanh này, nên khối lượng, các pane bên dưới và trục
+  thời gian vẫn hiện. Trước tiên chọn nến bắt đầu: click
+  vào nến đó, hoặc nhấn <strong>Nến ngẫu nhiên</strong>; <strong>Huỷ</strong> (hoặc <kbd>Esc</kbd>) để thoát.
+  Sau đó: lùi một bước, <strong>Phát</strong>/<strong>Tạm dừng</strong> và tiến một bước; ngày giờ của
+  bước đang hiển thị, theo múi giờ hiển thị (chỉ ghi năm khi không phải năm nay), và một thanh tiến trình
+  tô phần đã phát; <strong>Tốc độ</strong> dưới dạng hệ số từ 0.1× tới 50× (1× phát một nến
+  của biểu đồ mỗi giây, bất kể bước; mặc định là 1×); <strong>Bước</strong>;
+  <strong>Chọn nến</strong>, tạm dừng và chọn điểm bắt đầu khác trong các nến đang hiển thị, không
+  để lộ các nến phía sau (<strong>Huỷ</strong> hoặc <kbd>Esc</kbd> quay về đúng chỗ cũ); và
+  <strong>Về thời gian thực</strong>. Trên điện thoại hoặc biểu đồ hẹp, thanh này chiếm hai hàng, ngày giờ và
+  thanh tiến trình ở trên. Phím tắt, áp dụng cho widget dùng gần nhất: <kbd>Shift</kbd>+<kbd>←</kbd>/<kbd>→</kbd> để step,
+  <kbd>Space</kbd> trên biểu đồ hoặc thanh tiến trình để phát hoặc tạm dừng (ngoài replay thì phím này fit biểu đồ), và
+  <kbd>Esc</kbd> để dừng chọn nến. Phím tắt bạn thêm bằng <code>addHotkey</code> trên cùng phím được ưu
+  tiên. Thanh replay đọc các token <code>--tcw-*</code> của look và theme; host cũng có thể đặt
+  <code>--tcw-replay-btn</code>, <code>--tcw-replay-play</code> hoặc <code>--tcw-replay-track-w</code> trên
+  <code>.tcw-replay-bar</code>. Phần hiển thị thời gian lấy từ <code>stepTime</code> của
+  <code>replayStep</code>, thời gian của bước đang hiển thị.
 </p>
 
-<h3>Replay sống qua việc đổi nến</h3>
+<h3>Replay vẫn tiếp tục khi nến thay đổi</h3>
 <p>
-  Replay là một mốc thời gian trên chuỗi nến trực tiếp. Khi nến thay đổi — mã hoặc khung
-  thời gian mới qua <code>connect</code> hay <code>switchStream</code>, <code>setData</code>,
-  nến cũ hơn được tải thêm, giờ ngoài phiên, một nến được sửa — nó tiếp tục trên nến mới tại
-  đúng thời điểm đã tới, và chỉ hiện những nến đã đóng trước đó. Trong lúc chuỗi mới đang tải,
-  replay chờ, vẫn đang chạy hay tạm dừng như trước. Các chỉ số (<code>barIndex</code>,
-  <code>total</code>, <code>replaySeekToBar</code>) là của chuỗi đang replay và đổi theo nó;
-  hãy giữ vị trí bằng thời gian. Replay mà tài khoản paper trading giao dịch trên đó sẽ kết thúc khi
-  đổi mã. Trong ChartWidget, thanh replay vẫn mở, hiện <em>Đang tải biểu đồ</em> và chờ khi
-  nến đang tải, rồi theo tổng số nến và các bước của khung thời gian mới.
+  Replay là một mốc thời gian trên series trực tiếp. Khi nến thay đổi (mã hoặc
+  khung thời gian mới qua <code>connect</code> hoặc <code>switchStream</code>, <code>setData</code>,
+  nến cũ hơn được tải thêm, phiên mở rộng, một nến được sửa), replay tiếp tục trên các nến mới tại
+  thời điểm nó đã đến, và chỉ hiển thị các nến đã đóng trước thời điểm đó. Trong khi series mới
+  đang tải, replay chờ, giữ nguyên trạng thái đang phát hay tạm dừng. Các index (<code>barIndex</code>,
+  <code>total</code>, <code>replaySeekToBar</code>) là của các nến đang được replay và thay đổi
+  theo các nến đó; hãy giữ vị trí theo thời gian. Replay mà tài khoản paper trading đang giao dịch sẽ kết thúc khi đổi
+  mã. Trong ChartWidget, thanh replay vẫn mở, hiện <em>Đang tải biểu đồ</em> và chờ
+  trong khi nến tải, sau đó theo tổng số nến và các bước của khung thời gian mới.
 </p>
 <pre><code>{`chart.replayStart({ startIndex: 300, paused: true })
 await chart.setTimeframe('1h')        // the replay waits, then goes on at the same time
@@ -364,31 +367,31 @@ chart.on('replayStep', (e) => {
 })
 chart.replayStop()                    // call it first to end the replay as before`}</code></pre>
 
-<h3>Replay trong ứng dụng của bạn</h3>
+<h3>Replay trong app của bạn</h3>
 <p>
-  Điểm mua, bán và vùng lệnh hiện ra khi replay chạy tới: một điểm hiện khi nến của nó hiện, một lệnh hiện khi đã vào và được vẽ mở cho tới khi tới lúc thoát (<code>revealMarks: false</code>, ChartWidget: <code>replayRevealMarks: false</code> hiện tất cả). <code>startTime</code> bắt đầu từ một thời điểm thay vì một nến; <code>hideHistory</code> bỏ các nến trước điểm bắt đầu cho tới khi dừng replay; <code>duration</code> chạy tới cuối trong khoảng thời gian đó dù có bao nhiêu nến, nhiều nến mỗi khung hình, và một khung hình trễ sẽ làm chậm lại thay vì nhảy cóc.
+  Dấu mua/bán và vùng giao dịch hiện ra khi replay tới chúng: một dấu hiện khi nến của nó được hiển thị, một giao dịch hiện khi đã vào lệnh, được vẽ ở trạng thái mở cho đến khi tới điểm thoát (<code>revealMarks: false</code>, ChartWidget: <code>replayRevealMarks: false</code> hiển thị tất cả). <code>startTime</code> bắt đầu tại một thời điểm thay vì một nến; <code>hideHistory</code> ẩn các nến trước điểm bắt đầu cho đến khi replay dừng; <code>duration</code> phát tới cuối trong khoảng thời gian đó bất kể có bao nhiêu nến, nhiều nến mỗi frame, và một frame trễ làm replay chậm lại chứ không nhảy cóc.
 </p>
-<pre><code>{`chart.setSignalMarkers(signals)          // cả backtest, giữ nguyên
+<pre><code>{`chart.setSignalMarkers(signals)          // the whole backtest, kept
 chart.setTradeZones(trades)
 chart.replayStart({
-  startTime: Date.now() - 30 * 86_400_000,   // 30 ngày gần nhất
-  hideHistory: true,                          // chỉ chúng trên biểu đồ
-  duration: 3500,                             // trong khoảng 3,5 giây
+  startTime: Date.now() - 30 * 86_400_000,   // the last 30 days
+  hideHistory: true,                          // only them on the chart
+  duration: 3500,                             // in about 3.5 s
 })
-chart.on('replayComplete', () => chart.replayStop())   // rồi lại cả chuỗi dữ liệu
-chart.replayStart({ startIndex: 100, revealMarks: false })   // mọi điểm ngay từ đầu`}</code></pre>
+chart.on('replayComplete', () => chart.replayStop())   // then the whole series again
+chart.replayStart({ startIndex: 100, revealMarks: false })   // every mark from the start`}</code></pre>
 
-<h3>Paper trading trong lúc replay</h3>
+<h3>Paper trading trong replay</h3>
 <p>
-  Một adapter khớp lệnh có <code>setMarkPrice(price, time)</code> (như
-  <code>PaperExecutionAdapter</code>) sẽ giao dịch trên phiên replay: trong lúc replay, biểu đồ
-  chuyển cho nó từng mức giá và thời điểm được replay, nên lệnh và mức cắt lỗ khớp khi replay
-  đi qua chúng, và các lần khớp nằm trên các nến được replay. Giá thấp và giá cao của mỗi bước đều
-  được tính, và một lần nhảy tới trước sẽ đi qua mọi bước trên đường. Nó chỉ đi tới: sau khi tua lùi,
-  nó chờ đến khi replay vượt qua điểm xa nhất nó đã thấy. Trong lúc đó giá trực tiếp không làm nó
-  thay đổi; khi replay kết thúc, nó quay về giá trực tiếp, và các lần khớp quay về theo giờ thực.
-  Cảnh báo giá vẫn theo dõi thị trường trực tiếp trong suốt thời gian đó; cảnh báo theo đường chỉ báo
-  chờ đến khi replay kết thúc.
+  Execution adapter có <code>setMarkPrice(price, time)</code> (như
+  <code>PaperExecutionAdapter</code>) giao dịch theo replay: trong khi replay, biểu đồ
+  chuyển cho adapter từng giá và thời gian được replay, nên order và stop được khớp khi replay đi qua
+  chúng và các fill nằm trên nến được replay. Giá thấp và giá cao của mỗi bước đều được tính, và một lần nhảy
+  tới đi qua mọi bước trên đường. Adapter chỉ đi tới: sau khi seek lùi, nó chờ
+  cho đến khi replay vượt qua điểm xa nhất nó đã thấy. Trong lúc đó giá trực tiếp không làm
+  nó thay đổi; khi replay kết thúc, nó quay lại giá trực tiếp, và các fill lại theo
+  đồng hồ thực. Cảnh báo giá vẫn theo dõi thị trường trực tiếp trong suốt quá trình; cảnh báo trên đường chỉ báo
+  chờ replay kết thúc.
 </p>
 <pre><code>{`chart.connectExecution(new PaperExecutionAdapter())
 chart.replayStart({ startIndex: 300, paused: true })
@@ -396,14 +399,14 @@ chart.replayStart({ startIndex: 300, paused: true })
 
 <h3>API</h3>
 <table>
-  <thead><tr><th>Phương thức</th><th>Công dụng</th></tr></thead>
+  <thead><tr><th>Phương thức</th><th>Mục đích</th></tr></thead>
   <tbody>
-    <tr><td><code>start()</code></td><td>Bắt đầu phát từ vị trí hiện tại.</td></tr>
-    <tr><td><code>pause()</code> / <code>resume()</code></td><td>Tạm dừng/tiếp tục bộ hẹn giờ.</td></tr>
-    <tr><td><code>step(n)</code></td><td>Phát N nến một cách đồng bộ, không qua bộ hẹn giờ.</td></tr>
-    <tr><td><code>seek(index)</code></td><td>Nhảy tới vị trí mới mà không phát các nến ở giữa.</td></tr>
-    <tr><td><code>setSpeed(bps)</code></td><td>Số nến mỗi giây (giới hạn ở mức &gt;= 0.01).</td></tr>
-    <tr><td><code>destroy()</code></td><td>Xoá bộ hẹn giờ + các listener.</td></tr>
+    <tr><td><code>start()</code></td><td>Bắt đầu phát từ index hiện tại.</td></tr>
+    <tr><td><code>pause()</code> / <code>resume()</code></td><td>Tạm dừng/tiếp tục timer.</td></tr>
+    <tr><td><code>step(n)</code></td><td>Phát N nến đồng bộ, không qua timer.</td></tr>
+    <tr><td><code>seek(index)</code></td><td>Nhảy tới index mà không phát các nến ở giữa.</td></tr>
+    <tr><td><code>setSpeed(bps)</code></td><td>Số nến mỗi giây (giới hạn &gt;= 0.01).</td></tr>
+    <tr><td><code>destroy()</code></td><td>Xoá timer và listener.</td></tr>
   </tbody>
 </table>
 
