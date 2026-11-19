@@ -98,8 +98,11 @@
   --tcw-text-dim: #a9a6a0;
   --tcw-text-muted: #918f8a;
 
-  /* Ink blue: links, focus and what you picked. --tcw-accent-ink is the text colour on an accent fill. */
+  /* Ink blue: links, focus and what you picked. --tcw-accent-ink is the text colour on an accent fill,
+   * and --tcw-accent-fill the accent as a fill (a button, a check), which a look may set apart from
+   * the accent as text. */
   --tcw-accent: #7d9bff;
+  --tcw-accent-fill: var(--tcw-accent);
   --tcw-accent-hover: #98b0ff;
   --tcw-accent-ink: #131416;
   --tcw-accent-soft: rgba(125, 155, 255, 0.14);
@@ -158,32 +161,32 @@
   /* The bars' text buttons: as wide as their text, rounded up to a whole pixel. */
   --tcw-text-w: calc-size(max-content, round(up, size, 1px));
 
-  /* The look (UI system): Print's values. The `ui` option sets them inline. */
-  --tcw-radius-xs: 1px;
-  --tcw-radius-sm: 2px;
-  --tcw-radius: 3px;
-  --tcw-radius-lg: 5px;
+  /* The look (UI system): Modern's values, the default look's. The `ui` option sets them inline. */
+  --tcw-radius-xs: 2px;
+  --tcw-radius-sm: 3px;
+  --tcw-radius: 4px;
+  --tcw-radius-lg: 6px;
   --tcw-radius-xl: 8px;
   --tcw-control-radius: var(--tcw-radius);
   --tcw-input-radius: var(--tcw-radius);
   --tcw-menu-radius: var(--tcw-radius-lg);
   --tcw-dialog-radius: var(--tcw-radius-xl);
   --tcw-panel-radius: var(--tcw-radius-lg);
-  --tcw-tooltip-radius: var(--tcw-radius-sm);
-  --tcw-tag-radius: var(--tcw-radius-sm);
+  --tcw-tooltip-radius: 4px;
+  --tcw-tag-radius: 2px;
   --tcw-toast-radius: var(--tcw-radius-lg);
   --tcw-toolbar-radius: 0px;
   --tcw-sidebar-radius: 0px;
-  --tcw-toolbar-h: 42px;
-  --tcw-control-h: 34px;
-  --tcw-control-h-sm: 26px;
-  --tcw-icon: 20px;
-  --tcw-sidebar-w: 42px;
+  --tcw-toolbar-h: 38px;
+  --tcw-control-h: 28px;
+  --tcw-control-h-sm: 22px;
+  --tcw-icon: 16px;
+  --tcw-sidebar-w: 44px;
   --tcw-tool-h: 36px;
-  --tcw-tool-icon: 26px;
-  --tcw-menu-item-h: 34px;
-  --tcw-icon-stroke: 1px;
-  --tcw-font: -apple-system, BlinkMacSystemFont, 'Segoe UI Variable Text', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --tcw-tool-icon: 20px;
+  --tcw-menu-item-h: 26px;
+  --tcw-icon-stroke: 1.5px;
+  --tcw-font: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI Variable Text', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   --tcw-font-size: 13px;
   --tcw-font-size-sm: 11px;
   --tcw-font-size-xs: 10px;
@@ -191,14 +194,14 @@
   --tcw-font-size-xl: 18px;
   --tcw-font-size-display: 21px;
   --tcw-weight: 400;
-  --tcw-weight-strong: 500;
+  --tcw-weight-strong: 600;
   --tcw-label-case: none;
   --tcw-label-tracking: 0em;
   --tcw-label-size: 11px;
   --tcw-border-w: 1px;
   --tcw-sep-w: 1px;
-  --tcw-menu-shadow: 0 0 0 1px var(--tcw-divider), var(--tcw-shadow-lg);
-  --tcw-dialog-shadow: 0 0 0 1px var(--tcw-divider), var(--tcw-shadow-lg);
+  --tcw-menu-shadow: 0 0 0 1px var(--tcw-border-strong), var(--tcw-shadow-md);
+  --tcw-dialog-shadow: 0 0 0 1px var(--tcw-border), var(--tcw-shadow-lg);
   --tcw-tooltip-shadow: var(--tcw-shadow-sm);
   --tcw-blur: 0px;
   --tcw-surface-opacity: 100%;
@@ -276,6 +279,104 @@
   --tcw-shadow-md: 0 4px 12px rgba(40, 34, 22, 0.08), 0 1px 3px rgba(40, 34, 22, 0.05);
   --tcw-shadow-lg: 0 12px 36px rgba(40, 34, 22, 0.13), 0 4px 12px rgba(40, 34, 22, 0.07);
   --tcw-shadow-xl: 0 24px 64px rgba(40, 34, 22, 0.17), 0 12px 24px rgba(40, 34, 22, 0.09);
+}
+
+/*
+ * Modern, the default look, at night: a code editor's Dark Modern. The chart on the editor's
+ * ground with the chrome around it a shade darker and hairlines between; the logo's amber for
+ * links, focus and what you act on or pick, the market's teal and red for up and down. The other looks keep the
+ * colours above. `:where()` keeps these rules as weak as the ones they change, so a page's own
+ * rule on .tcw-root still wins a tie.
+ */
+.tcw-root:where([data-tcw-ui='modern']) {
+  color: #cccccc;
+  background: #181818;
+
+  --tcw-bg: #1f1f1f;
+  --tcw-bg-surface: #181818;
+  --tcw-bg-elevated: #252526;
+  --tcw-bg-overlay: rgba(31, 31, 31, 0.6);
+  --tcw-border: #2b2b2b;
+  --tcw-border-strong: #454545;
+  --tcw-tooltip-bg: #e7e7e7;
+  --tcw-tooltip-fg: #1f1f1f;
+  /* 11:1, 7.5:1 and 5.7:1 on a menu, the darkest of them on the lightest ground. */
+  --tcw-text: #cccccc;
+  --tcw-text-dim: #b5b5b5;
+  --tcw-text-muted: #9d9d9d;
+
+  /* The logo's amber: a fill with dark ink on it (6.9:1), and a lighter amber as text (7.6:1 on a menu). */
+  --tcw-accent: #f0a940;
+  --tcw-accent-fill: #e8961e;
+  --tcw-accent-hover: #f0a940;
+  --tcw-accent-ink: #1f1f1f;
+  --tcw-accent-soft: rgba(232, 150, 30, 0.12);
+  --tcw-accent-glow: rgba(232, 150, 30, 0.22);
+  --tcw-accent-line: rgba(240, 169, 64, 0.55);
+  --tcw-ring: 0 0 0 2px var(--tcw-accent);
+
+  /* Up and down as text: the candles' teal and red shaded to read at 5:1 or more on every ground
+   * (the red 5.3:1 on a menu, the teal 6.5:1). */
+  --tcw-red: #fa686a;
+  --tcw-red-soft: rgba(250, 104, 106, 0.12);
+  --tcw-green: #3fbd9c;
+  --tcw-green-soft: rgba(63, 189, 156, 0.12);
+
+  /* The kinds of symbol keep the hues above, but for the second: its amber would be taken for the
+   * accent here, so it is a blue, as far from the cyan beside it. */
+  --tcw-kind-2: #7aa2ff;
+
+  --tcw-hover-bg: rgba(90, 93, 94, 0.31);
+  --tcw-active-bg: rgba(90, 93, 94, 0.5);
+  --tcw-divider: #2b2b2b;
+}
+
+/* Modern by day: the editor's Light Modern. */
+.tcw-root[data-tcw-theme='light']:where([data-tcw-ui='modern']) {
+  color: #3b3b3b;
+  background: #f8f8f8;
+
+  --tcw-bg: #ffffff;
+  --tcw-bg-surface: #f8f8f8;
+  --tcw-bg-elevated: #ffffff;
+  --tcw-bg-overlay: rgba(255, 255, 255, 0.8);
+  --tcw-border: #e5e5e5;
+  --tcw-border-strong: #cecece;
+  --tcw-tooltip-bg: #1f1f1f;
+  --tcw-tooltip-fg: #ffffff;
+  /* 11:1, 8:1 and 5.8:1 on the chrome. */
+  --tcw-text: #3b3b3b;
+  --tcw-text-dim: #4f4f4f;
+  --tcw-text-muted: #616161;
+
+  /* The same amber as a fill, dark ink on it; as text it is too light on white (2.4:1), so text and
+   * focus take a deeper amber (5.6:1 on the chrome). */
+  --tcw-accent: #8a5a10;
+  --tcw-accent-fill: #e8961e;
+  --tcw-accent-hover: #d9861a;
+  --tcw-accent-ink: #1f1f1f;
+  --tcw-accent-soft: rgba(232, 150, 30, 0.13);
+  --tcw-accent-glow: rgba(232, 150, 30, 0.2);
+  --tcw-accent-line: rgba(138, 90, 16, 0.45);
+  --tcw-ring: 0 0 0 2px var(--tcw-accent);
+
+  /* 5.3:1 or more on the chrome. */
+  --tcw-red: #be222a;
+  --tcw-red-soft: rgba(190, 34, 42, 0.1);
+  --tcw-green: #00755d;
+  --tcw-green-soft: rgba(0, 117, 93, 0.1);
+
+  --tcw-kind-2: #2f5fbf;
+
+  --tcw-hover-bg: rgba(184, 184, 184, 0.31);
+  --tcw-active-bg: rgba(184, 184, 184, 0.5);
+  --tcw-divider: #e5e5e5;
+
+  /* Grey shadows, as the editor casts. */
+  --tcw-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.08);
+  --tcw-shadow-md: 0 0 8px 2px rgba(0, 0, 0, 0.16);
+  --tcw-shadow-lg: 0 0 8px 2px rgba(0, 0, 0, 0.16), 0 8px 24px rgba(0, 0, 0, 0.1);
+  --tcw-shadow-xl: 0 0 8px 2px rgba(0, 0, 0, 0.16), 0 16px 48px rgba(0, 0, 0, 0.14);
 }
 
 /* === Toolbar === */
@@ -1474,7 +1575,7 @@
   width: 4px;
   height: 4px;
   border-radius: 50%;
-  background: var(--tcw-accent);
+  background: var(--tcw-accent-fill);
   opacity: 0.7;
 }
 
@@ -1799,7 +1900,7 @@
 }
 
 .tcw-toggle.tcw-on {
-  background: var(--tcw-accent);
+  background: var(--tcw-accent-fill);
   box-shadow: 0 0 0 2px var(--tcw-accent-glow);
 }
 
@@ -1817,7 +1918,7 @@
 }
 
 .tcw-root[data-tcw-theme='light'] .tcw-toggle.tcw-on {
-  background: var(--tcw-accent);
+  background: var(--tcw-accent-fill);
 }
 
 .tcw-root[data-tcw-theme='light'] .tcw-toggle.tcw-on::after {
@@ -1881,7 +1982,7 @@
   padding: var(--tcw-space-4) var(--tcw-space-6);
   font-size: var(--tcw-font-size);
   font-weight: var(--tcw-weight-strong);
-  background: var(--tcw-accent);
+  background: var(--tcw-accent-fill);
   color: var(--tcw-accent-ink);
   border: none;
   border-radius: var(--tcw-control-radius);
@@ -2303,7 +2404,7 @@
 
 .tcw-watchlist-row:focus-visible::before,
 .tcw-watchlist-row.tcw-watchlist-active::before {
-  background: var(--tcw-accent);
+  background: var(--tcw-accent-fill);
 }
 
 .tcw-watchlist-symbol {
@@ -2524,7 +2625,7 @@
 .tcw-replay-btn.tcw-replay-play {
   inline-size: var(--tcw-replay-play);
   block-size: var(--tcw-replay-play);
-  background: var(--tcw-accent);
+  background: var(--tcw-accent-fill);
   color: var(--tcw-accent-ink);
 }
 .tcw-replay-btn.tcw-replay-play:hover { background: var(--tcw-accent-hover); color: var(--tcw-accent-ink); }
@@ -2583,7 +2684,7 @@
   background: linear-gradient(to right, var(--tcw-accent) 0 var(--tcw-replay-done, 0%), var(--tcw-replay-rest) var(--tcw-replay-done, 0%) 100%);
 }
 .tcw-root input[type='range'].tcw-replay-scrubber::-moz-range-track { block-size: var(--tcw-replay-rail); border-radius: var(--tcw-radius-xs); background: var(--tcw-replay-rest); }
-.tcw-root input[type='range'].tcw-replay-scrubber::-moz-range-progress { block-size: var(--tcw-replay-rail); border-radius: var(--tcw-radius-xs); background: var(--tcw-accent); }
+.tcw-root input[type='range'].tcw-replay-scrubber::-moz-range-progress { block-size: var(--tcw-replay-rail); border-radius: var(--tcw-radius-xs); background: var(--tcw-accent-fill); }
 /* A playhead, as the chart marks the replay's cut: a short upright in ink, rounded as the look rounds. */
 .tcw-root input[type='range'].tcw-replay-scrubber::-webkit-slider-thumb {
   -webkit-appearance: none;
@@ -2657,7 +2758,7 @@
 /* The close glyph is the phone's: on wider bars the words say it. */
 .tcw-replay-close-icon { display: none; }
 /* At the last bar, the way back to now is the next thing to do. */
-.tcw-replay-bar--ended .tcw-replay-realtime { background: var(--tcw-accent); color: var(--tcw-accent-ink); }
+.tcw-replay-bar--ended .tcw-replay-realtime { background: var(--tcw-accent-fill); color: var(--tcw-accent-ink); }
 .tcw-replay-bar--ended .tcw-replay-realtime:hover { background: var(--tcw-accent-hover); color: var(--tcw-accent-ink); }
 
 .tcw-replay-hint {
@@ -2929,7 +3030,7 @@
   font-size: var(--tcw-font-size-sm);
   font-weight: var(--tcw-weight-strong);
   color: var(--tcw-accent-ink);
-  background: var(--tcw-accent);
+  background: var(--tcw-accent-fill);
   border: none;
   border-radius: var(--tcw-control-radius);
   cursor: pointer;
@@ -3322,7 +3423,7 @@
   font-size: var(--tcw-font-size-sm);
   font-weight: var(--tcw-weight-strong);
   color: var(--tcw-accent-ink);
-  background: var(--tcw-accent);
+  background: var(--tcw-accent-fill);
   border: none;
   border-radius: var(--tcw-control-radius);
   cursor: pointer;
@@ -4248,7 +4349,7 @@
   height: 6px;
   flex: none;
   border-radius: 50%;
-  background: var(--tcw-accent);
+  background: var(--tcw-accent-fill);
 }
 .tcw-name-field { display: flex; flex-direction: column; gap: 6px; font-size: var(--tcw-font-size-sm); color: var(--tcw-text-dim); }
 .tcw-name-field .tcw-indi-input { width: 100%; height: 34px; font-size: var(--tcw-font-size); }
@@ -4785,6 +4886,14 @@
   --tcw-panel-top: calc(var(--tcw-toolbar-h) + var(--tcw-space-3));
   --tcw-panel-left: calc(var(--tcw-sidebar-w) + var(--tcw-space-5));
 }
+/* Modern picks a tool, an interval or a tab in the amber fill, dark ink on it, in both themes.
+ * Before the switches below, so a look of yours that asks for a solid or an underlined pick gets it. */
+.tcw-root:where([data-tcw-ui='modern']) {
+  --tcw-on-bg: var(--tcw-accent-fill);
+  --tcw-on-fg: var(--tcw-accent-ink);
+  --tcw-on-icon-bg: var(--tcw-accent-fill);
+  --tcw-on-icon-fg: var(--tcw-accent-ink);
+}
 .tcw-root[data-tcw-active='solid'] {
   --tcw-on-bg: var(--tcw-text);
   --tcw-on-fg: var(--tcw-bg);
@@ -5179,7 +5288,7 @@
   transition: background var(--tcw-dur-fast), color var(--tcw-dur-fast), border-color var(--tcw-dur-fast);
 }
 .tcw-root[data-tcw-narrow] > .tcw-body > .tcw-sidebar-fab.tcw-active {
-  background: var(--tcw-accent);
+  background: var(--tcw-accent-fill);
   border-color: var(--tcw-accent);
   color: var(--tcw-accent-ink);
 }

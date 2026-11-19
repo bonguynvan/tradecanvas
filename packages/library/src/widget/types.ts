@@ -54,8 +54,11 @@ export interface ChartWidgetOptions {
   theme?: ThemeName | Theme;
   /**
    * The widget's look: its corners, sizes, type, lines, shadows and bars.
-   * A preset (`'print'`, the default; `'studio'`; `'terminal'`; `'capsule'`; `'desk'`) or your
-   * theme over one. Colours stay with `theme`.
+   * A preset (`'modern'`, the default; `'print'`; `'studio'`; `'terminal'`; `'capsule'`; `'desk'`)
+   * or your theme over one; a theme object without `preset` starts from Modern (`preset: 'print'`
+   * for the look before it). Colours stay with `theme`, but for Modern's: a code editor's dark and
+   * light (`MODERN_DARK_THEME` / `MODERN_LIGHT_THEME` on the chart), in each mode `theme` gave no
+   * object for.
    */
   ui?: import('./widgetUI.js').WidgetUIPreset | import('./widgetUI.js').WidgetUITheme;
 

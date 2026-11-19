@@ -7,7 +7,7 @@
 //
 //   pnpm build
 //   pnpm audit:scenes [scene…]          (all scenes when none is named)
-//   UI=desk pnpm audit:scenes …         (the widgets in that look; Print without it)
+//   UI=desk pnpm audit:scenes …         (the widgets in that look; Modern without it)
 //
 // Writes .tmp/audit/<scene>-<theme>-<size>.png and .tmp/audit/<scene>.png (the
 // sheet), named <scene>-<ui> in place of <scene> with UI; exits 1 when a check

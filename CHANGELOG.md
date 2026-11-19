@@ -8,6 +8,8 @@
 
 ### Widget
 
+- **A new default look, Modern** (`@tradecanvas/chart`, `@tradecanvas/commons`): the widget opens as a code editor's window, in its Dark Modern and Light Modern colours: the chart on the editor's ground (`#1f1f1f` / `#ffffff`) with the bars around it a shade off it, 16 px icons in 28 px buttons on a 38 px toolbar, corners of 4, 6 and 8 px, the logo's amber for buttons, links, focus and a chosen tool, and candles in teal (`#089981`) and red (`#f23645`). Without a theme object the chart takes `MODERN_DARK_THEME` / `MODERN_LIGHT_THEME`, which a chart of your own can use too. To keep the widget as it was, pass `ui: 'print'`, or `preset: 'print'` in a `ui` object (one without a preset now starts from Modern): the look, the colours and the candles come back, and the other looks keep those colours as well. A chart without the widget is unchanged.
+
 - **The widget's Vietnamese strings, reworded** (`@tradecanvas/chart`): the `vi` table is translated again from the English as plain technical Vietnamese, keeping the trading and chart terms Vietnamese traders use in English (position, order, bracket, crosshair, pane and the like). Every key and placeholder is the same; a label your page overrides with `messages` is not changed.
 
 ## 2.15.0 (2026-11-19)

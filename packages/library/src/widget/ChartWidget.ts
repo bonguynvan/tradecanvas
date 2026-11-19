@@ -3,7 +3,7 @@ import { barTimeUnit, marketStatus, offsetAt, stepDecimals, timeframeFollowsDays
 import { settingToTimezone, timezoneOptions, timezoneToSetting } from './widgetTimezones.js';
 import { installFormControls } from './formControls.js';
 import { Chart } from '../Chart.js';
-import { DARK_THEME, LIGHT_THEME, indicatorSource, parseIndicatorSource } from '@tradecanvas/commons';
+import { DARK_THEME, LIGHT_THEME, MODERN_DARK_THEME, MODERN_LIGHT_THEME, indicatorSource, parseIndicatorSource } from '@tradecanvas/commons';
 import type { ActiveIndicatorInfo, ChartWidgetOptions, WidgetState, ChartSettingsState, DockPageHandle, DockPageSpec, DockPanelId } from './types.js';
 import { CHART_TYPES, DRAWING_TOOL_GROUPS, DEFAULT_SYMBOLS, DEFAULT_SETTINGS } from './widgetConfig.js';
 import { SETTINGS_LOOK_KEYS } from './widgetSettingsLook.js';
@@ -240,8 +240,11 @@ export class ChartWidget {
   private readonly comparing = new WidgetCompares(this.comparingHost());
   private chart!: Chart;
   private state!: WidgetState;
-  /** The theme for each mode: the host's own where it gave one, so the toggle brings it back. */
-  private themeOf: { dark: Theme; light: Theme } = { dark: DARK_THEME, light: LIGHT_THEME };
+  /**
+   * The host's own theme for each mode, where it gave one, so the toggle brings
+   * it back; `null`, the look's own (Modern's colours, or the built-in ones).
+   */
+  private themeOf: { dark: Theme | null; light: Theme | null } = { dark: null, light: null };
   private toolbar: WidgetToolbar | null = null;
   /** What is open, by its toolbar button's role (`'alerts'`, `'account'`, `'indicators'`…): one effect shows it on the toolbar. */
   private readonly openRoles = signal<ReadonlySet<string>>(new Set());
@@ -479,10 +482,11 @@ export class ChartWidget {
     const settingsKey = settingsStoreKey(options.persistSettings);
     if (settingsKey) this.chartSettings.settingsStore = new ChartSettingsStore(settingsKey);
 
-    // Resolve theme
+    // The look first: the chart's colours are its own unless the host gives a theme.
+    this.ui = resolveWidgetUI(options.ui);
     const isDark = this.resolveIsDark(options.theme);
-    const resolvedTheme = this.resolveTheme(options.theme);
-    this.themeOf = { ...this.themeOf, [isDark ? 'dark' : 'light']: resolvedTheme };
+    this.themeOf = { ...this.themeOf, [isDark ? 'dark' : 'light']: this.hostTheme(options.theme) };
+    const resolvedTheme = this.themeFor(isDark);
 
     // The chart's feature flags; controls for switched-off features are left out.
     // Host overrides win per key (see the Chart below).
@@ -604,9 +608,8 @@ export class ChartWidget {
       this.docking.syncRail();
     });
     // The look: tokens and layout switches on the root and the modal portal
-    // alike. Without `ui` the tokens stay the stylesheet's (Print's), so a
+    // alike. Without `ui` the tokens stay the stylesheet's (Modern's), so a
     // host's CSS can still set them.
-    this.ui = resolveWidgetUI(options.ui);
     this.uiVariables = options.ui !== undefined;
     this.uiScale = this.scaleNow();
     this.applyLookTokens();
@@ -1999,8 +2002,8 @@ export class ChartWidget {
 
   setTheme(theme: import('@tradecanvas/commons').ThemeName | Theme): void {
     const isDark = this.resolveIsDark(theme);
-    const resolved = this.resolveTheme(theme);
-    this.themeOf = { ...this.themeOf, [isDark ? 'dark' : 'light']: resolved };
+    this.themeOf = { ...this.themeOf, [isDark ? 'dark' : 'light']: this.hostTheme(theme) };
+    const resolved = this.themeFor(isDark);
     this.state = { ...this.state, isDark };
     this.look.set({ dark: isDark, theme: resolved });
     this.updateUI();
@@ -2011,10 +2014,11 @@ export class ChartWidget {
   }
 
   /**
-   * Change the widget's look: a preset (`'print'`, `'studio'`,
+   * Change the widget's look: a preset (`'modern'`, `'print'`, `'studio'`,
    * `'terminal'`, `'capsule'`, `'desk'`) or your theme over one. Colours stay with
-   * `setTheme`. The look sets the chart's bar layout and face too (its figures
-   * face, which is the system's sans in Print; golden bars, except when compact),
+   * `setTheme`, but for Modern's own dark and light, which the chart takes
+   * unless `setTheme` or the `theme` option gave it a theme object. The look sets the chart's bar layout and face too (its figures
+   * face, which is the system's sans in Modern and Print; golden bars, except when compact),
    * over any set on the chart itself, unless `chartOptions` set the bar
    * layout or a `font.family`; the sizes of `chartOptions.font` stay.
    */
@@ -2023,6 +2027,10 @@ export class ChartWidget {
     this.uiVariables = true;
     this.uiScale = this.scaleNow();
     this.applyLookTokens();
+    // The chart's colours follow the look, where they are the look's own.
+    const { dark, theme: drawn } = this.look.get();
+    const next = this.themeFor(dark);
+    if (next !== drawn) this.look.set({ dark, theme: next });
     this.applyChartShapes();
     this.applyLegendFont();
     this.applyChartLook();
@@ -3196,8 +3204,8 @@ export class ChartWidget {
     if (!this.featureState.themeToggle) return;
     const isDark = !this.state.isDark;
     this.state = { ...this.state, isDark };
-    // The mode's theme: the host's own, or the built-in one. The user's colours stay with each.
-    this.look.set({ dark: isDark, theme: isDark ? this.themeOf.dark : this.themeOf.light });
+    // The mode's theme: the host's own, or the look's. The user's colours stay with each.
+    this.look.set({ dark: isDark, theme: this.themeFor(isDark) });
     this.updateUI();
   }
 
@@ -3605,11 +3613,17 @@ export class ChartWidget {
     return true;
   }
 
-  private resolveTheme(theme?: import('@tradecanvas/commons').ThemeName | Theme): Theme {
-    if (theme === undefined || theme === 'dark') return DARK_THEME;
-    if (theme === 'light') return LIGHT_THEME;
-    if (typeof theme === 'object') return theme as Theme;
-    return DARK_THEME;
+  /** The host's own theme, when it gave an object; `null` for a mode by name (the look's own). */
+  private hostTheme(theme?: import('@tradecanvas/commons').ThemeName | Theme): Theme | null {
+    return theme !== null && typeof theme === 'object' ? (theme as Theme) : null;
+  }
+
+  /** The chart's theme in a mode: the host's own, or the look's (Modern's colours, or the built-in ones). */
+  private themeFor(dark: boolean): Theme {
+    const own = dark ? this.themeOf.dark : this.themeOf.light;
+    if (own) return own;
+    if (this.ui.preset === 'modern') return dark ? MODERN_DARK_THEME : MODERN_LIGHT_THEME;
+    return dark ? DARK_THEME : LIGHT_THEME;
   }
 
   private isColorDark(color: string): boolean {

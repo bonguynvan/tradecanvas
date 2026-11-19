@@ -31,12 +31,57 @@ function ruleBody(selector: string): string {
 describe('the stylesheet’s look', () => {
   const root = declared('.tcw-root {');
 
-  it('defaults to Print: every token the `ui` option sets, at Print’s value', () => {
-    const print = widgetUIVariables(resolveWidgetUI('print'));
-    for (const [name, value] of Object.entries(print)) {
+  it('defaults to Modern: every token the `ui` option sets, at Modern’s value', () => {
+    const modern = widgetUIVariables(resolveWidgetUI('modern'));
+    for (const [name, value] of Object.entries(modern)) {
       expect(root[name], name).toBeDefined();
       expect(resolved(root, root[name]), name).toBe(resolved(root, value));
     }
+  });
+
+  it('colours Modern as the editor it is drawn from, dark and light, at the specificity of the colours before it', () => {
+    // `:where()` keeps the selectors as weak as `.tcw-root` and its light rule, so a page's own rule still wins a tie.
+    const dark = declared(".tcw-root:where([data-tcw-ui='modern']) {");
+    expect(dark).toMatchObject({
+      '--tcw-bg': '#1f1f1f',
+      '--tcw-bg-surface': '#181818',
+      '--tcw-bg-elevated': '#252526',
+      '--tcw-border': '#2b2b2b',
+      '--tcw-text': '#cccccc',
+      '--tcw-text-muted': '#9d9d9d',
+      // The logo's amber for what you act on and pick, dark ink on it; a lighter amber as text.
+      '--tcw-accent': '#f0a940',
+      '--tcw-accent-fill': '#e8961e',
+      '--tcw-accent-ink': '#1f1f1f',
+    });
+    const light = declared(".tcw-root[data-tcw-theme='light']:where([data-tcw-ui='modern']) {");
+    expect(light).toMatchObject({
+      '--tcw-bg': '#ffffff',
+      '--tcw-bg-surface': '#f8f8f8',
+      '--tcw-border': '#e5e5e5',
+      '--tcw-text': '#3b3b3b',
+      '--tcw-text-muted': '#616161',
+      // Amber is too light as text on white: a deeper one there, the fill amber still.
+      '--tcw-accent': '#8a5a10',
+      '--tcw-accent-fill': '#e8961e',
+      '--tcw-accent-ink': '#1f1f1f',
+    });
+    // A fill reads the fill token, so a look can tell text from fill; the others' fill is their accent.
+    expect(css).not.toMatch(/background(?:-color)?: var\(--tcw-accent\)/);
+    expect(root['--tcw-accent-fill']).toBe('var(--tcw-accent)');
+    // After the colours it changes, so it wins over them.
+    expect(css.indexOf(".tcw-root:where([data-tcw-ui='modern']) {")).toBeGreaterThan(css.indexOf(".tcw-root[data-tcw-theme='light'] {"));
+    // Every colour the look before it sets, so none of them is left mixed in, but the kinds of symbol it shares.
+    const colours = (tokens: Record<string, string>) => Object.keys(tokens).filter((name) => !/^--tcw-(kind-[13-5]|shadow-)/.test(name));
+    const base = declared('.tcw-root {');
+    const baseColours = colours(base).filter((name) => /^--tcw-(bg|border|tooltip|text|accent|red|green|hover|active|divider|kind)/.test(name) && !/-(w|radius|shadow)$/.test(name));
+    expect(baseColours.filter((name) => !(name in dark))).toEqual([]);
+    expect(colours(declared(".tcw-root[data-tcw-theme='light'] {")).filter((name) => !(name in light))).toEqual([]);
+    // Its pick in the accent's fill, before the solid and underline switches, so a look of yours that asks for one gets it.
+    const pick = css.indexOf(".tcw-root:where([data-tcw-ui='modern']) {\n  --tcw-on-bg: var(--tcw-accent-fill);");
+    expect(pick).toBeGreaterThan(-1);
+    expect(pick).toBeLessThan(css.indexOf(".tcw-root[data-tcw-active='solid'] {"));
+    expect(pick).toBeLessThan(css.indexOf(".tcw-root[data-tcw-active='underline'] {"));
   });
 
   it('styles each layout switch the `ui` option sets', () => {

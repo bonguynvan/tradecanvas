@@ -6372,6 +6372,7 @@
     "series.hlcArea.bottomColor": "color"
   },
   "looks": [
+    "modern",
     "print",
     "studio",
     "terminal",
@@ -6548,7 +6549,7 @@
       {
         "name": "ui",
         "type": "WidgetUIPreset | WidgetUITheme",
-        "doc": "The widget's look: its corners, sizes, type, lines, shadows and bars. A preset (`'print'`, the default; `'studio'`; `'terminal'`; `'capsule'`; `'desk'`) or your theme over one. Colours stay with `theme`."
+        "doc": "The widget's look: its corners, sizes, type, lines, shadows and bars. A preset (`'modern'`, the default; `'print'`; `'studio'`; `'terminal'`; `'capsule'`; `'desk'`) or your theme over one; a theme object without `preset` starts from Modern (`preset: 'print'` for the look before it)."
       },
       {
         "name": "locale",

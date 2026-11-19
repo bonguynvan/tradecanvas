@@ -6,7 +6,7 @@
 
 <svelte:head>
   <title>Styling — TradeCanvas docs</title>
-  <meta name="description" content="The widget's look as tokens, with five presets — Print, Studio, Terminal, Capsule, Desk — kept to the golden ratio, and the chart's look by key: the grid, crosshair, axes, panes, legend, last price, volume and each chart type, indicator plots and panes." />
+  <meta name="description" content="The widget's look as tokens, with six presets — Modern, Print, Studio, Terminal, Capsule, Desk — on even pixels, and the chart's look by key: the grid, crosshair, axes, panes, legend, last price, volume and each chart type, indicator plots and panes." />
 </svelte:head>
 
 <h1>Styling the widget</h1>
@@ -14,15 +14,29 @@
   The widget's look is a set of tokens: the corners of each kind of part, control and bar sizes, type, borders,
   shadows, how a chosen button shows, and whether the toolbar and drawing tools sit along the edges or float.
   Start from a preset and change what you like. Colours stay with the theme (<code>dark</code> / <code>light</code>,
-  see <a href={href('/docs/api')}>the API</a>); a look works with either.
+  see <a href={href('/docs/api')}>the API</a>); a look works with either. Modern, the default, brings a dark and a
+  light of its own; the other looks share the colours that were the widget's before it.
 </p>
 
 <h2>Presets</h2>
 <table>
   <thead><tr><th>Preset</th><th>Look</th></tr></thead>
   <tbody>
-    <tr><td><code>print</code> (default)</td><td>
-      Paper and ink. An off-white and an off-black ground, grey for everything that is normal and colour only where
+    <tr><td><code>modern</code> (default)</td><td>
+      A code editor's window, in its Dark Modern and Light Modern colours. The chart on the editor's ground
+      (<code>#1f1f1f</code> / <code>#ffffff</code>) with the bars around it a shade off it and hairlines between;
+      16 px icons in 28 px buttons on a 38 px toolbar; 4 px controls, 6 px menus and 8 px dialogs. The logo's amber
+      (<code>#e8961e</code>) only for what you act on and what you picked, with dark ink on it, and a deeper or
+      lighter amber for links and focus. Candles in teal
+      (<code>#089981</code>) and red (<code>#f23645</code>), shaded deeper or lighter where they are text, so a
+      change reads at 5:1 or more. Its face is Geist where your page loads it, the system's own otherwise; its
+      figures are Print's. On the chart, without a theme object of yours, its colours are
+      <code>MODERN_DARK_THEME</code> and <code>MODERN_LIGHT_THEME</code>, which a chart of your own can take too.
+      A chosen button and tool are the accent's fill (<code>--tcw-accent-fill</code>) with its ink, so a page that sets
+      the accent tokens sets those too.
+    </td></tr>
+    <tr><td><code>print</code></td><td>
+      The default before Modern, colours and all. Paper and ink. An off-white and an off-black ground, grey for everything that is normal and colour only where
       it means something; hairlines, 3 px controls, 5 px menus and 8 px dialogs; large icons drawn in fine lines;
       labels as written and a medium weight for emphasis; the system's own face (Segoe UI Variable on Windows 11);
       every figure, on the chart too, in a sans face whose digits are one width (Segoe UI on Windows, Helvetica Neue on
@@ -77,10 +91,10 @@ grid.getUI()`}</code></pre>
 <table>
   <thead><tr><th><code>ui.density</code></th><th>The widget</th><th>Its chart</th></tr></thead>
   <tbody>
-    <tr><td><code>'comfortable'</code></td><td>The default: even sizes (a 34 px button, a 20 px icon), spacing 2 · 4 · 6 · 8 · 12 · 20 · 32, 12 px of padding in a control.</td><td>Comfortable, golden bars.</td></tr>
-    <tr><td><code>'classic'</code></td><td>As it was before 2.0 (at a screen scale of 100% the same pixels, but for the price axis's tick marks, which are sharper): a 33 px button, spacing 2 · 3 · 5 · 8 · 13 · 21 · 34, 8 px of padding in a control.</td><td>Compact, with the golden bars the widget had.</td></tr>
-    <tr><td><code>'compact'</code></td><td>Smaller controls (a 26 px button, a 16 px icon) on the classic spacing. Unchanged from 1.x.</td><td>Compact, classic bars.</td></tr>
-    <tr><td><code>'spacious'</code></td><td>Bigger controls (a 42 px button, a 26 px icon).</td><td>Comfortable, golden bars.</td></tr>
+    <tr><td><code>'comfortable'</code></td><td>The default: even sizes (in Modern a 28 px button and a 16 px icon, in Print 34 and 20), spacing 2 · 4 · 6 · 8 · 12 · 20 · 32, 12 px of padding in a control.</td><td>Comfortable, golden bars.</td></tr>
+    <tr><td><code>'classic'</code></td><td>The look's sizes on the spacing before 2.0: 2 · 3 · 5 · 8 · 13 · 21 · 34, 8 px of padding in a control. With Print (<code>{'{'} preset: 'print', density: 'classic' {'}'}</code>) the widget as it was before 2.0 (at a screen scale of 100% the same pixels, but for the price axis's tick marks, which are sharper), a 33 px button.</td><td>Compact, with the golden bars the widget had.</td></tr>
+    <tr><td><code>'compact'</code></td><td>Smaller controls (in Modern a 24 px button, in Print 26, a 16 px icon) on the classic spacing.</td><td>Compact, classic bars.</td></tr>
+    <tr><td><code>'spacious'</code></td><td>Bigger controls (in Modern a 34 px button and a 20 px icon, in Print 42 and 26).</td><td>Comfortable, golden bars.</td></tr>
     <tr><td><code>'airy'</code></td><td>Spacious, with the figures on the axes and in the legend in the look's sans face.</td><td>Comfortable, golden bars.</td></tr>
   </tbody>
 </table>
@@ -92,8 +106,8 @@ grid.getUI()`}</code></pre>
   </tbody>
 </table>
 <pre><code>{`// The widget as it was before 2.0
-new ChartWidget(host, { ui: { density: 'classic' } })
-widget.setUI({ density: 'classic' })
+new ChartWidget(host, { ui: { preset: 'print', density: 'classic' } })
+widget.setUI({ preset: 'print', density: 'classic' })
 
 // A chart of your own as it was before 2.0
 import { Chart, CHART_SPACING, MONO_FONT_FAMILY } from '@tradecanvas/chart'
@@ -164,7 +178,7 @@ chart.setFont(null)                         // the theme's own font again`}</cod
 
 <h2>Your own look</h2>
 <p>
-  A theme starts from a preset (Print when you name none) and changes what it names. Corners set on the scale
+  A theme starts from a preset (Modern when you name none) and changes what it names. Corners set on the scale
   reach every part that follows it, unless you set that part's own.
 </p>
 <pre><code>{`widget.setUI({
@@ -204,8 +218,8 @@ chart.setFont(null)                         // the theme's own font again`}</cod
     <tr><td><code>density</code> / <code>sizes</code></td><td>
       <code>toolbar</code> height, <code>control</code> and <code>controlSmall</code> heights, <code>icon</code>,
       <code>sidebar</code> width and <code>menuItem</code> height, px. <code>compact</code> and
-      <code>spacious</code> are Print's sizes a half step of φ down or up, and <code>classic</code> is the widget as
-      it was before 2.0 (see <a href="#density">Density</a>, which also sets the spacing and the chart's room). The drawing tools' buttons and icons are a
+      <code>spacious</code> are a look's smaller and bigger sizes (Print's a half step of φ down or up), and
+      <code>classic</code> its sizes on the spacing before 2.0 (see <a href="#density">Density</a>, which also sets the spacing and the chart's room). The drawing tools' buttons and icons are a
       half step of φ over <code>control</code> and <code>icon</code> (the same size in <code>compact</code>). They keep
       room either side in the <code>sidebar</code> column, and where the column is too short for them all they shrink,
       down to the <code>icon</code> size and 2 px a side, before it scrolls.
@@ -223,7 +237,7 @@ chart.setFont(null)                         // the theme's own font again`}</cod
     <tr><td><code>tagRadius</code></td><td>Corners of the price tags, axis pills and order badges the chart draws.</td></tr>
     <tr><td><code>iconStroke</code></td><td>
       The icons' lines, CSS px from 0.5 to 3, the same width at every icon size (at most 1 px on icons under 14 px). <code>0</code> draws them as the
-      icon set does, thicker as the icon grows. Print's are 1; the other looks draw them as they are.
+      icon set does, thicker as the icon grows. Modern's are 1.5 and Print's 1; the other looks draw them as they are.
     </td></tr>
   </tbody>
 </table>
@@ -231,7 +245,8 @@ chart.setFont(null)                         // the theme's own font again`}</cod
 
 <h2>Fonts</h2>
 <p>
-  The widget loads no fonts: it names them, and the browser falls back along each list. Print names the faces every
+  The widget loads no fonts: it names them, and the browser falls back along each list. Modern names Geist, then
+  Print's faces, so it needs nothing loaded either. Print names the faces every
   system has: Segoe UI, San Francisco or Roboto for labels, and for figures Segoe UI, Roboto, Helvetica Neue or Arial,
   whose digits are all one width, so it needs nothing loaded; Desk names Tahoma, then Verdana, which also come with
   the system. Studio names Manrope, then Inter; Terminal IBM Plex Sans Condensed and IBM Plex Mono; Capsule Sora.
@@ -242,7 +257,7 @@ chart.setFont(null)                         // the theme's own font again`}</cod
 <h2>CSS variables</h2>
 <p>
   The tokens are CSS variables on the widget's root (and on its dialogs). Without the <code>ui</code> option they
-  stay the stylesheet's — Print's — so your own CSS can set them: the widget puts its stylesheet first in the
+  stay the stylesheet's — Modern's — so your own CSS can set them: the widget puts its stylesheet first in the
   page, so a rule of yours on <code>.tcw-root</code> wins. With <code>ui</code>, the widget writes them on the
   element, and they win.
 </p>
