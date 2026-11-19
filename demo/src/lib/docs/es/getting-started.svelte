@@ -6,11 +6,15 @@
 
 <svelte:head>
   <title>Primeros pasos — Documentación de TradeCanvas</title>
-  <meta name="description" content="Instala TradeCanvas y muestra tu primer gráfico de trading en canvas en menos de un minuto." />
+  <meta name="description" content="Instala TradeCanvas, el gráfico de trading MIT con 134 indicadores, 76 herramientas de dibujo y sin logo, y muestra un gráfico en un minuto." />
 </svelte:head>
 
 <h1>Primeros pasos</h1>
 <p>Instala TradeCanvas y muestra un gráfico en menos de un minuto.</p>
+<p>
+  TradeCanvas tiene licencia MIT y no dibuja ningún logo en el gráfico. Trae
+  18 tipos de gráfico, 134 indicadores y 76 herramientas de dibujo integrados.
+</p>
 
 <h2>Instalación</h2>
 <p>Usa el gestor de paquetes que prefieras:</p>

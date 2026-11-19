@@ -6,11 +6,15 @@
 
 <svelte:head>
   <title>Getting Started — TradeCanvas docs</title>
-  <meta name="description" content="Install TradeCanvas and render your first canvas trading chart in under a minute." />
+  <meta name="description" content="Install TradeCanvas, the MIT trading chart with 134 indicators, 76 drawing tools and no logo on the chart, and render a chart in a minute." />
 </svelte:head>
 
 <h1>Getting started</h1>
 <p>Install TradeCanvas and render a chart in under a minute.</p>
+<p>
+  TradeCanvas is MIT licensed and draws no logo on the chart. It has
+  18 chart types, 134 indicators and 76 drawing tools built in.
+</p>
 
 <h2>Installation</h2>
 <p>Use whichever package manager you prefer:</p>

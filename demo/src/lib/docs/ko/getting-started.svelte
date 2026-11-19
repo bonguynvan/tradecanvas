@@ -6,11 +6,15 @@
 
 <svelte:head>
   <title>시작하기 — TradeCanvas 문서</title>
-  <meta name="description" content="TradeCanvas를 설치하고 1분 안에 첫 캔버스 트레이딩 차트를 렌더링합니다." />
+  <meta name="description" content="134개 지표와 76가지 드로잉 도구를 갖추고 차트에 로고가 없는 MIT 라이선스 트레이딩 차트 TradeCanvas를 설치하고 1분 안에 첫 차트를 렌더링합니다." />
 </svelte:head>
 
 <h1>시작하기</h1>
 <p>TradeCanvas를 설치하고 1분 안에 차트를 렌더링합니다.</p>
+<p>
+  TradeCanvas는 MIT 라이선스이며 차트에 로고를 표시하지 않습니다. 18가지 차트,
+  134개 지표, 76가지 드로잉 도구가 기본으로 들어 있습니다.
+</p>
 
 <h2>설치</h2>
 <p>원하는 패키지 매니저를 사용하면 됩니다.</p>

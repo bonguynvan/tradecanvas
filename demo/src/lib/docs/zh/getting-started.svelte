@@ -6,11 +6,15 @@
 
 <svelte:head>
   <title>快速开始 — TradeCanvas 文档</title>
-  <meta name="description" content="安装 TradeCanvas，一分钟内渲染出你的第一个 Canvas 交易图表。" />
+  <meta name="description" content="安装 TradeCanvas（MIT 许可的交易图表库，内置 134 个指标、76 种画线工具，图表上没有标志），一分钟内渲染出你的第一个交易图表。" />
 </svelte:head>
 
 <h1>快速开始</h1>
 <p>安装 TradeCanvas，一分钟内即可渲染出图表。</p>
+<p>
+  TradeCanvas 采用 MIT 许可证，图表上不显示任何标志。内置 18 种图表、134 个指标和
+  76 种画线工具。
+</p>
 
 <h2>安装</h2>
 <p>使用你习惯的包管理器：</p>

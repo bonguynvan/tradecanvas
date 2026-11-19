@@ -1,6 +1,7 @@
-// The counts the READMEs give (indicators, drawing tools, chart types) are the
-// ones the code has. The banner carries no counts, as an image never follows a
-// release; the text does, and this keeps it current in every language.
+// The counts the READMEs and the Getting started pages give (indicators,
+// drawing tools, chart types) are the ones the code has. The banner carries
+// no counts, as an image never follows a release; the text does, and this
+// keeps it current in every language.
 // Needs `pnpm build` first, as CI runs it.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -29,9 +30,9 @@ const WORDS = {
   'README.es.md': { indicators: 'indicadores', drawingTools: 'herramientas de dibujo', chartTypes: 'tipos de gráfico' },
 };
 
-/** Every number a README gives for `what`, in the order it gives them. */
+/** Every number a file gives for `what`, in the order it gives them, across a line break too. */
 function countsIn(text, words) {
-  return [...text.matchAll(new RegExp(`(\\d+) ?${words}`, 'g'))].map((m) => Number(m[1]));
+  return [...text.matchAll(new RegExp(`(\\d+)\\s*${words}`, 'g'))].map((m) => Number(m[1]));
 }
 
 test('reads a count in each language\'s wording', () => {
@@ -40,13 +41,20 @@ test('reads a count in each language\'s wording', () => {
   assert.deepEqual(countsIn('18 種類のチャート、134 のインジケーター', WORDS['README.ja.md'].indicators), [134]);
 });
 
-for (const [file, words] of Object.entries(WORDS)) {
+// The docs' Getting started page in each language: the first page a search
+// lands on, so it says what the library has as its README does.
+const DOCS = { en: 'README.md', vi: 'README.vi.md', zh: 'README.zh-CN.md', ja: 'README.ja.md', ko: 'README.ko.md', es: 'README.es.md' };
+const PAGES = Object.fromEntries(
+  Object.entries(DOCS).map(([lang, readme]) => [`demo/src/lib/docs/${lang}/getting-started.svelte`, WORDS[readme]]),
+);
+
+for (const [file, words] of Object.entries({ ...WORDS, ...PAGES })) {
   test(`${file} gives the counts the code has`, () => {
     const text = readFileSync(join(ROOT, file), 'utf8');
     for (const [what, count] of Object.entries(COUNTS)) {
       const found = countsIn(text, words[what]);
       assert.ok(found.length > 0, `${file} gives no count of ${what}`);
-      assert.deepEqual(found, found.map(() => count), `${file}: ${what} is ${count}, the README says ${found.join(', ')}`);
+      assert.deepEqual(found, found.map(() => count), `${file}: ${what} is ${count}, the file says ${found.join(', ')}`);
     }
   });
 }
