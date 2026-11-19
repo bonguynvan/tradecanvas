@@ -112,7 +112,8 @@ pnpm eval:probe --models sonnet,opus,haiku --arms memory,search --prompts svelte
 
 A prompt is `generic` (what anyone building a trading chart asks) or
 `feature` (it asks for what TradeCanvas does well: replay, a full widget,
-self-hosting without attribution, Vietnamese price limits); the summary
+self-hosting without attribution, indicators built in with no logo, live
+updates many times a second, Vietnamese price limits); the summary
 reports them apart, since a pick on a feature prompt says little about the
 generic question. `--prompts` matches part of an id (`react` is both
 `react-crypto` and `build-react`).
