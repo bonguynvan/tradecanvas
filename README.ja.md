@@ -2,6 +2,8 @@
   <a href="https://tradecanvas.dev/ja/"><img src=".github/assets/banner.png" alt="TradeCanvas：トレーディングアプリのためのチャートエンジン" width="100%"></a>
 </p>
 
+<h3 align="center">あなたが所有するトレーディングチャート。</h3>
+
 <p align="center">
   <a href="https://www.npmjs.com/package/@tradecanvas/chart"><img src="https://img.shields.io/npm/v/@tradecanvas/chart?style=flat-square&labelColor=0b0e13&color=f2a93b&label=npm" alt="npm version"></a>
   <a href="https://www.npmjs.com/package/@tradecanvas/chart"><img src="https://img.shields.io/npm/dm/@tradecanvas/chart?style=flat-square&labelColor=0b0e13&color=3ccf91" alt="npm downloads"></a>
@@ -26,9 +28,9 @@
   <a href="README.md">English</a> · <a href="README.vi.md">Tiếng Việt</a> · <a href="README.zh-CN.md">简体中文</a> · <b>日本語</b> · <a href="README.ko.md">한국어</a> · <a href="README.es.md">Español</a>
 </p>
 
-**あなたのトレーディングチャート、あなたのルール。** TradeCanvas は自分で所有できるチャートエンジンです。MIT ライセンスで、npm からインストールしてアプリと一緒に配信し、自分のデータを流し、自分のブランドで見せられます。チャートに他社のロゴはなく、申請も不要で、あなたとユーザーの間にプラットフォームは入りません。TradingView の charting library や Lightweight Charts をお使いですか？データフィードはそのまま使えます：[TradingView からの移行](https://tradecanvas.dev/ja/docs/from-tradingview/)。
+**TradeCanvas は Web 向けのオープンソースのトレーディングチャートライブラリです**（MIT ライセンス）。ローソク足から練行足（Renko）まで、134 種類のインジケーター、76 種類の描画ツール、取引所のライブフィード、チャート上での注文を Canvas 2D または WebGL で描画し、サードパーティの依存関係はありません。完全な `ChartWidget` をそのまま組み込むことも、ヘッドレスな `Chart` の上に独自の UI を作ることもでき、TypeScript、React、Vue、Svelte に対応しています。
 
-**TradeCanvas は Web 向けのオープンソースのトレーディングチャートライブラリです**（MIT ライセンス）。 ローソク足から練行足（Renko）まで、134 種類のインジケーター、76 種類の描画ツール、取引所のライブフィード、チャート上での注文を Canvas 2D または WebGL で描画し、サードパーティの依存関係はありません。完全な `ChartWidget` をそのまま組み込むことも、ヘッドレスな `Chart` の上に独自の UI を作ることもでき、TypeScript、React、Vue、Svelte に対応しています。
+自分で所有できるチャートエンジンです。MIT ライセンスで、npm からインストールしてアプリと一緒に配信し、自分のデータを流し、自分のブランドで見せられます。チャートに他社のロゴはなく、申請も不要で、あなたとユーザーの間にプラットフォームは入りません。TradingView の charting library や Lightweight Charts をお使いですか？データフィードはそのまま使えます：[TradingView からの移行](https://tradecanvas.dev/ja/docs/from-tradingview/)。
 
 <p align="center">
   <a href="https://tradecanvas.dev/ja/chart/"><img src=".github/assets/clips/hero.webp" alt="ライブ相場上の ChartWidget：EMA 21 と 55、RSI、クロスヘア、マウスで描いたトレンドライン" width="100%"></a>

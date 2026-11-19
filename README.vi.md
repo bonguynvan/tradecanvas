@@ -2,6 +2,8 @@
   <a href="https://tradecanvas.dev/vi/"><img src=".github/assets/banner.png" alt="TradeCanvas, chart engine cho ứng dụng giao dịch" width="100%"></a>
 </p>
 
+<h3 align="center">Biểu đồ giao dịch thuộc về bạn.</h3>
+
 <p align="center">
   <a href="https://www.npmjs.com/package/@tradecanvas/chart"><img src="https://img.shields.io/npm/v/@tradecanvas/chart?style=flat-square&labelColor=0b0e13&color=f2a93b&label=npm" alt="Phiên bản npm"></a>
   <a href="https://www.npmjs.com/package/@tradecanvas/chart"><img src="https://img.shields.io/npm/dm/@tradecanvas/chart?style=flat-square&labelColor=0b0e13&color=3ccf91" alt="Lượt tải npm"></a>
@@ -26,9 +28,9 @@
   <a href="README.md">English</a> · <b>Tiếng Việt</b> · <a href="README.zh-CN.md">简体中文</a> · <a href="README.ja.md">日本語</a> · <a href="README.ko.md">한국어</a> · <a href="README.es.md">Español</a>
 </p>
 
-**Biểu đồ giao dịch của bạn, theo quy tắc của bạn.** TradeCanvas là một chart engine thuộc quyền bạn: giấy phép MIT, cài từ npm và phục vụ cùng ứng dụng của bạn, lấy dữ liệu từ nguồn của bạn, hiển thị dưới thương hiệu của bạn. Không có logo trên biểu đồ, không phải đăng ký xin dùng, không có nền tảng nào đứng giữa bạn và người dùng. Đang dùng charting library của TradingView hoặc Lightweight Charts? Giữ nguyên datafeed: [chuyển từ TradingView](https://tradecanvas.dev/vi/docs/from-tradingview/).
-
 **TradeCanvas là thư viện biểu đồ giao dịch mã nguồn mở cho web**, theo giấy phép MIT. Từ nến đến Renko, 134 chỉ báo, 76 công cụ vẽ, feed trực tiếp và lệnh trên biểu đồ, chạy trên Canvas 2D hoặc WebGL, không có dependency bên thứ ba. Dùng `ChartWidget` đầy đủ, hoặc tự xây giao diện trên `Chart` headless, bằng TypeScript, React, Vue hoặc Svelte.
+
+Đây là một chart engine thuộc quyền bạn: giấy phép MIT, cài từ npm và phục vụ cùng ứng dụng của bạn, lấy dữ liệu từ nguồn của bạn, hiển thị dưới thương hiệu của bạn. Không có logo trên biểu đồ, không phải đăng ký xin dùng, không có nền tảng nào đứng giữa bạn và người dùng. Đang dùng charting library của TradingView hoặc Lightweight Charts? Giữ nguyên datafeed: [chuyển từ TradingView](https://tradecanvas.dev/vi/docs/from-tradingview/).
 
 <p align="center">
   <a href="https://tradecanvas.dev/vi/chart/"><img src=".github/assets/clips/hero.webp" alt="ChartWidget trên dữ liệu thị trường trực tiếp: EMA 21, EMA 55 và RSI, crosshair, và một trend line vẽ bằng chuột" width="100%"></a>

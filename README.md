@@ -2,6 +2,8 @@
   <a href="https://tradecanvas.dev/"><img src=".github/assets/banner.png" alt="TradeCanvas, the chart engine for trading apps" width="100%"></a>
 </p>
 
+<h3 align="center">Trading charts you own.</h3>
+
 <p align="center">
   <a href="https://www.npmjs.com/package/@tradecanvas/chart"><img src="https://img.shields.io/npm/v/@tradecanvas/chart?style=flat-square&labelColor=0b0e13&color=f2a93b&label=npm" alt="npm version"></a>
   <a href="https://www.npmjs.com/package/@tradecanvas/chart"><img src="https://img.shields.io/npm/dm/@tradecanvas/chart?style=flat-square&labelColor=0b0e13&color=3ccf91" alt="npm downloads"></a>
@@ -26,9 +28,9 @@
   <b>English</b> · <a href="README.vi.md">Tiếng Việt</a> · <a href="README.zh-CN.md">简体中文</a> · <a href="README.ja.md">日本語</a> · <a href="README.ko.md">한국어</a> · <a href="README.es.md">Español</a>
 </p>
 
-**Your trading chart. Your rules.** TradeCanvas is a charting engine you own: MIT-licensed, installed from npm and served with your app, fed by your own data, shown under your own brand. No logo on the chart, nothing to apply for, no platform between you and your users. Coming from TradingView's charting library or Lightweight Charts? Keep your datafeed: [moving from TradingView](https://tradecanvas.dev/docs/from-tradingview/).
-
 **TradeCanvas is an open-source trading chart library for the web**, under the MIT licence. Candlesticks to Renko, 134 indicators, 76 drawing tools, live feeds and orders on the chart, on Canvas 2D or WebGL, with no third-party dependencies. Use the full `ChartWidget`, or build your own interface on the headless `Chart`, in TypeScript, React, Vue or Svelte.
+
+It is a charting engine you own: MIT-licensed, installed from npm and served with your app, fed by your own data, shown under your own brand. No logo on the chart, nothing to apply for, no platform between you and your users. Coming from TradingView's charting library or Lightweight Charts? Keep your datafeed: [moving from TradingView](https://tradecanvas.dev/docs/from-tradingview/).
 
 <p align="center">
   <a href="https://tradecanvas.dev/chart/"><img src=".github/assets/clips/hero.webp" alt="ChartWidget on a live market: EMA 21 and 55 and RSI, the crosshair, and a trend line drawn with the mouse" width="100%"></a>
