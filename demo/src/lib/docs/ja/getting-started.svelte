@@ -6,11 +6,15 @@
 
 <svelte:head>
   <title>はじめに — TradeCanvas ドキュメント</title>
-  <meta name="description" content="TradeCanvas をインストールして、最初の Canvas トレーディングチャートを 1 分以内に表示します。" />
+  <meta name="description" content="134 種類のインジケーターと 76 種類の描画ツールを備え、チャートにロゴを表示しない MIT ライセンスのトレーディングチャート TradeCanvas をインストールして、最初のチャートを 1 分以内に表示します。" />
 </svelte:head>
 
 <h1>はじめに</h1>
 <p>TradeCanvas をインストールして、1 分以内にチャートを表示しましょう。</p>
+<p>
+  TradeCanvas は MIT ライセンスで、チャートにロゴを表示しません。18 種類のチャート、
+  134 種類のインジケーター、76 種類の描画ツールを標準で備えています。
+</p>
 
 <h2>インストール</h2>
 <p>お好みのパッケージマネージャーを使ってください：</p>

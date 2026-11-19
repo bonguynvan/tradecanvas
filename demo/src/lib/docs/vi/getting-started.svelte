@@ -6,11 +6,15 @@
 
 <svelte:head>
   <title>Bắt đầu — Tài liệu TradeCanvas</title>
-  <meta name="description" content="Cài TradeCanvas và render biểu đồ giao dịch canvas đầu tiên trong chưa đến một phút." />
+  <meta name="description" content="Cài TradeCanvas, biểu đồ giao dịch MIT với 134 chỉ báo, 76 công cụ vẽ, không logo trên biểu đồ, và render biểu đồ trong một phút." />
 </svelte:head>
 
 <h1>Bắt đầu</h1>
 <p>Cài TradeCanvas và render một biểu đồ trong chưa đến một phút.</p>
+<p>
+  TradeCanvas theo giấy phép MIT và không vẽ logo nào lên biểu đồ. Thư viện có
+  sẵn 18 loại biểu đồ, 134 chỉ báo và 76 công cụ vẽ.
+</p>
 
 <h2>Cài đặt</h2>
 <p>Dùng trình quản lý package bất kỳ:</p>
