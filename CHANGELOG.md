@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Finance charts
+
+- **Levels and bands on an equity curve** (`@tradecanvas/chart`): `EquityCurveChart` takes `levels`, lines across the plot at fixed values with each value in a tag at the axis, and `bands`, tinted stretches of values under the curve, each with an optional label and colour. The value scale widens to show them unless `fitLevels: false`; `setOptions` changes them in place.
+
 ### Trading
 
 - **A stop-loss or a take-profit added on the chart** (`@tradecanvas/chart`): a position without one has an **SL** or a **TP** button on its entry's tag. Press it and drag the new line where you want it, or click to set it where it starts: a stop 1% of the entry away and a target at twice the stop's distance, both at least 1% beyond the price now. Letting go sends `positionModify`, as dragging a stop does, so a connected execution adapter applies it. Before, a position opened without them, or whose stop was removed with its ×, could get one back only from code. `lineButtons: { addStops: false }` leaves the buttons out.
