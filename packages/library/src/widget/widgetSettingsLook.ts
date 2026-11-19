@@ -62,8 +62,16 @@ export const LEGEND_ROWS: readonly LookRow[] = [
   row('settings.legendText', 'legend.textColor'),
   row('settings.legendLabels', 'legend.labelColor'),
 ];
-/** The Status line tab's colours: the legend's text and the panes' titles, which are drawn without it. */
-export const STATUS_LINE_ROWS: readonly LookRow[] = [...LEGEND_ROWS, row('settings.paneTitles', 'panes.titleColor')];
+/** A rise and a fall where a bar's values are read: the legend, the tooltips, the measure tool. */
+export const READOUT_ROWS: readonly LookRow[] = [
+  row('settings.up', 'legend.upColor'),
+  row('settings.down', 'legend.downColor'),
+];
+/**
+ * The Status line tab's colours: the legend's text, a rise and a fall (which the tooltips read
+ * too) and the panes' titles, the last two shown without the legend.
+ */
+export const STATUS_LINE_ROWS: readonly LookRow[] = [...LEGEND_ROWS, ...READOUT_ROWS, row('settings.paneTitles', 'panes.titleColor')];
 
 /** The Scales tab's colours: the axes' text and lines. */
 export const SCALE_ROWS: readonly LookRow[] = [

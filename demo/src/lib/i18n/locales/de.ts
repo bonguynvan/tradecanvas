@@ -381,7 +381,7 @@ const de: SiteMessages = {
     },
     overrides: {
       title: 'Style-Overrides',
-      stat: '101 Schlüssel',
+      stat: '103 Schlüssel',
       blurb:
         'Jeder Teil des Chart-Aussehens per Schlüssel, unabhängig vom Theme: das Raster je Richtung, das Fadenkreuz, die Achsen, die Panes, die Legende, der letzte Kurs, das Volumen und die Farben jedes Charttyps. Hier ist das vertikale Raster aus, das horizontale gepunktet, das Fadenkreuz durchgezogen und die Signallinie des MACD gestrichelt in einem Pane mit eigenem Trenner.',
       tryThis: [
@@ -775,7 +775,7 @@ const de: SiteMessages = {
       ],
       customization: [
         { name: 'Drei Erscheinungsbilder für das Widget', detail: 'Studio, Terminal, Capsule; ui und setUI; CSS-Variablen --tcw-*' },
-        { name: 'Das Aussehen des Charts per Schlüssel', detail: 'applyOverrides über 101 typisierte Schlüssel, auf einer Host- und einer Nutzerebene' },
+        { name: 'Das Aussehen des Charts per Schlüssel', detail: 'applyOverrides über 103 typisierte Schlüssel, auf einer Host- und einer Nutzerebene' },
         { name: 'Einstellungen, die jeden Schlüssel erreichen', detail: 'Ein Stil-Tab für den gezeigten Charttyp, ein Trading-Tab' },
         { name: '114 Feature-Schalter', detail: 'features, setFeatures, isFeatureOn; im laufenden Betrieb änderbar' },
         { name: 'Eigene Teile im Widget', detail: 'Buttons und Dropdowns in der Werkzeugleiste, Buttons in der Seitenleiste, Statuseinträge, Slots, Menüeinträge' },

@@ -6,6 +6,7 @@ import {
   LIGHT_THEME,
   chartStyleValue,
   lineDash,
+  priceReadoutColors,
   readChartStyleOverrides,
   resolveChartTheme,
   type ChartStyleKey,
@@ -31,7 +32,7 @@ describe('resolveChartTheme', () => {
     expect(crosshairTagLook('#131416', 'ivory')).toEqual({ background: 'ivory', text: '#131416' });
     expect(s.panes).toEqual({ background: DARK_THEME.background, separator: DARK_THEME.axisLine, title: DARK_THEME.textSecondary });
     expect(s.axis).toEqual({ price: { line: DARK_THEME.axisLine, text: DARK_THEME.axisLabel }, time: { line: DARK_THEME.axisLine, text: DARK_THEME.axisLabel } });
-    expect(s.legend).toEqual({ text: DARK_THEME.text, label: DARK_THEME.textSecondary });
+    expect(s.legend).toEqual({ text: DARK_THEME.text, label: DARK_THEME.textSecondary, up: DARK_THEME.candleUp, down: DARK_THEME.candleDown });
     expect(s.lastPrice).toEqual({ visible: true, up: DARK_THEME.candleUp, down: DARK_THEME.candleDown, style: 'dotted', width: 1 });
     expect(s.watermark.color).toBeNull();
     expect(s.sessionBreaks).toEqual({ color: null, style: null, width: null });
@@ -55,6 +56,22 @@ describe('resolveChartTheme', () => {
     expect(s.markers.long).toBe('#11ee11');
     expect(s.tradeZones.active).toBe('#999999');
     expect(s.drawings.handle).toBe('#222222');
+  });
+
+  it('colours the readouts’ up and down apart from the candles', () => {
+    const hidden = 'rgba(0, 0, 0, 0)';
+    const candlesHidden = { 'series.candlestick.upColor': hidden, 'series.candlestick.downColor': hidden };
+    // Unset, they follow the candles as drawn.
+    expect(resolveChartTheme(DARK_THEME, 'candlestick', { 'series.candlestick.upColor': '#0f0' }).style!.legend.up).toBe('#0f0');
+    // Set, the candles can go without taking the readouts with them.
+    const set = { ...candlesHidden, 'legend.upColor': '#00ff00', 'legend.downColor': '#ff0000' } as const;
+    const t = resolveChartTheme(DARK_THEME, 'candlestick', set);
+    expect(t.candleUp).toBe(hidden);
+    expect(t.style!.legend).toMatchObject({ up: '#00ff00', down: '#ff0000' });
+    expect(chartStyleValue(DARK_THEME, set, 'legend.upColor')).toBe('#00ff00');
+    expect(priceReadoutColors(t)).toEqual({ up: '#00ff00', down: '#ff0000' });
+    // A theme without resolved looks (a plugin's own) reads the candles.
+    expect(priceReadoutColors(DARK_THEME)).toEqual({ up: DARK_THEME.candleUp, down: DARK_THEME.candleDown });
   });
 
   it('leaves the theme it was given as it was', () => {

@@ -391,6 +391,22 @@ const SCENES = {
     return s;
   },
 
+  /**
+   * The candles hidden (transparent) under an overlay that draws its own, the legend's up and down set
+   * apart: the legend's close and change went with the candles before `legend.upColor`/`downColor`.
+   */
+  async hiddenCandles() {
+    const s = await widget();
+    const hidden = 'rgba(0, 0, 0, 0)';
+    s.chart.applyOverrides({
+      'series.candlestick.upColor': hidden,
+      'series.candlestick.downColor': hidden,
+      'legend.upColor': '#3fbd9c',
+      'legend.downColor': '#fa686a',
+    });
+    return s;
+  },
+
   /** More panes than the chart has room for: the price pane keeps its part, the panes share the rest. */
   async manyPanes() {
     const s = await widget();

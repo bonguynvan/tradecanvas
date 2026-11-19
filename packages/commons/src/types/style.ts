@@ -14,6 +14,10 @@ export type StyleValueKind = 'color' | 'lineStyle' | 'width' | 'boolean';
  *   then to the theme.
  * - The rest style one part of the chart each, falling back to the theme's
  *   tokens: with no overrides the chart looks as its theme makes it.
+ * - `legend.upColor` and `legend.downColor` colour what reads a bar's rise
+ *   or fall: the legend's close and change, the crosshair and pinned
+ *   tooltips and the measure tool. Unset, they take the main series' up and
+ *   down; set, the candles can be hidden (transparent) without them.
  */
 export const CHART_STYLE_KEYS = {
   'background.color': 'color',
@@ -49,6 +53,8 @@ export const CHART_STYLE_KEYS = {
 
   'legend.textColor': 'color',
   'legend.labelColor': 'color',
+  'legend.upColor': 'color',
+  'legend.downColor': 'color',
 
   'watermark.color': 'color',
 
@@ -191,7 +197,8 @@ export interface ResolvedChartStyle {
     labelText: string;
   };
   axis: { price: { line: string; text: string }; time: { line: string; text: string } };
-  legend: { text: string; label: string };
+  /** `up` and `down`: a rise and a fall in the legend, the tooltips and the measure tool. */
+  legend: { text: string; label: string; up: string; down: string };
   /** Null: the watermark's own colour, or the theme's. */
   watermark: { color: string | null };
   lastPrice: { visible: boolean; up: string; down: string; style: LineStyle; width: number };

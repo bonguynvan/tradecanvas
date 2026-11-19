@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import type { ViewportState, OHLCBar, DataSeries } from '@tradecanvas/commons';
-import { DARK_THEME } from '@tradecanvas/commons';
+import { DARK_THEME, resolveChartTheme } from '@tradecanvas/commons';
 import { ChartLegend } from '../ChartLegend.js';
 
 function viewport(min: number, max: number): ViewportState {
@@ -194,5 +194,30 @@ describe('ChartLegend — volume in Korean units', () => {
     const { ctx, fillTextCalls } = mockCtx();
     legend.render(ctx, viewport(0.335, 0.342), DARK_THEME, [bar({ volume: 24_580 })]);
     expect(fillTextCalls).toContain('Vol 24,58K');
+  });
+});
+
+describe('ChartLegend — up and down colours', () => {
+  it('colours the close and the change by the legend’s keys, not the candles’', () => {
+    const hidden = 'rgba(0, 0, 0, 0)';
+    const theme = resolveChartTheme(DARK_THEME, 'candlestick', {
+      'series.candlestick.upColor': hidden,
+      'series.candlestick.downColor': hidden,
+      'legend.upColor': '#00ff00',
+      'legend.downColor': '#ff0000',
+    });
+    const drawn: { text: string; fill: string }[] = [];
+    let fill = '';
+    const { ctx } = mockCtx();
+    Object.defineProperty(ctx, 'fillStyle', { set: (v: string) => { fill = v; }, get: () => fill });
+    (ctx.fillText as unknown as ReturnType<typeof vi.fn>).mockImplementation((text: string) => drawn.push({ text, fill }));
+    const legend = new ChartLegend();
+    const data: DataSeries = [bar({ open: 0.336, close: 0.336 }), bar({ open: 0.336, close: 0.3381 })];
+    legend.render(ctx, viewport(0.335, 0.342), theme, data);
+    const close = drawn.find((d) => d.text.startsWith('0.3381'));
+    const change = drawn.find((d) => d.text.startsWith('+'));
+    expect(close?.fill).toBe('#00ff00');
+    expect(change?.fill).toBe('#00ff00');
+    expect(drawn.some((d) => d.fill === hidden)).toBe(false);
   });
 });

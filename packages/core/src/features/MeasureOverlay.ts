@@ -1,5 +1,5 @@
 import type { Point, ViewportState, Theme, DataSeries } from '@tradecanvas/commons';
-import { barTimeUnit, formatPrice, MAX_PRICE_DECIMALS, priceTagText } from '@tradecanvas/commons';
+import { barTimeUnit, priceReadoutColors, formatPrice, MAX_PRICE_DECIMALS, priceTagText } from '@tradecanvas/commons';
 import { xToBarIndex, yToPrice, barIndexToX, priceToY } from '../viewport/ScaleMapping.js';
 
 /** Decimals the move's percentage shows. */
@@ -73,7 +73,8 @@ export class MeasureOverlay {
     const h = bottom - top;
 
     const goingUp = this.endPrice >= this.startPrice;
-    const color = goingUp ? theme.candleUp : theme.candleDown;
+    const readout = priceReadoutColors(theme);
+    const color = goingUp ? readout.up : readout.down;
     const fill = withAlpha(color, 0.14);
 
     ctx.save();
