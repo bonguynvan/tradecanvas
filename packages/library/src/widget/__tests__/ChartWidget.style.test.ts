@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, beforeAll, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { preloadDialogs } from '../widgetDialogs.js';
-import { DARK_THEME, LIGHT_THEME, type ChartOptions, type Theme } from '@tradecanvas/commons';
+import { DARK_THEME, LIGHT_THEME, MODERN_DARK_THEME, MODERN_LIGHT_THEME, type ChartOptions, type Theme } from '@tradecanvas/commons';
 
 type Step = { undo: () => void; redo: () => void; subject?: string };
 
@@ -99,6 +99,58 @@ afterEach(() => {
 
 // The dialogs load their code when first opened; here it is in up front, so each opens at once.
 beforeAll(preloadDialogs);
+
+describe('ChartWidget colours of its look', () => {
+  it('draws the chart in Modern’s colours by default, dark and light', () => {
+    make();
+    expect(FakeChart.last.options.theme).toEqual(MODERN_DARK_THEME);
+    inner().handleToggleTheme();
+    expect(FakeChart.last.themes.at(-1)).toEqual(MODERN_LIGHT_THEME);
+    widget.destroy();
+    make({ theme: 'light' });
+    expect(FakeChart.last.options.theme).toEqual(MODERN_LIGHT_THEME);
+  });
+
+  it('keeps the colours before it with another look', () => {
+    make({ ui: 'print' });
+    expect(FakeChart.last.options.theme).toEqual(DARK_THEME);
+    inner().handleToggleTheme();
+    expect(FakeChart.last.themes.at(-1)).toEqual(LIGHT_THEME);
+  });
+
+  it('takes the chart to the colours of a look set later, but leaves a theme of the host’s', () => {
+    make();
+    widget.setUI('print');
+    expect(FakeChart.last.themes.at(-1)).toEqual(DARK_THEME);
+    widget.setUI({ preset: 'modern', density: 'compact' });
+    expect(FakeChart.last.themes.at(-1)).toEqual(MODERN_DARK_THEME);
+    const brand: Theme = { ...DARK_THEME, name: 'brand', background: '#101820' };
+    widget.setTheme(brand);
+    const calls = FakeChart.last.themes.length;
+    widget.setUI('print');
+    expect(FakeChart.last.themes.length).toBe(calls);
+  });
+
+  it('takes a light chart to the colours of a look set later, and a mode named after a host theme to the look’s', () => {
+    make({ theme: 'light' });
+    widget.setUI('print');
+    expect(FakeChart.last.themes.at(-1)).toEqual(LIGHT_THEME);
+    widget.setUI('modern');
+    expect(FakeChart.last.themes.at(-1)).toEqual(MODERN_LIGHT_THEME);
+    widget.setTheme({ ...LIGHT_THEME, name: 'brand' });
+    widget.setTheme('light');
+    expect(FakeChart.last.themes.at(-1)).toEqual(MODERN_LIGHT_THEME);
+  });
+
+  it('draws candles in the market colours and the ground of the editor', () => {
+    expect([MODERN_DARK_THEME.candleUp, MODERN_DARK_THEME.candleDown]).toEqual(['#089981', '#f23645']);
+    expect([MODERN_LIGHT_THEME.candleUp, MODERN_LIGHT_THEME.candleDown]).toEqual(['#089981', '#f23645']);
+    expect([MODERN_DARK_THEME.background, MODERN_DARK_THEME.grid]).toEqual(['#1f1f1f', '#262626']);
+    expect([MODERN_LIGHT_THEME.background, MODERN_LIGHT_THEME.grid]).toEqual(['#ffffff', '#f0f0f0']);
+    // The dark and light of their look: the user's colours are kept by these names.
+    expect([MODERN_DARK_THEME.name, MODERN_LIGHT_THEME.name]).toEqual(['dark', 'light']);
+  });
+});
 
 describe('ChartWidget colours in the settings', () => {
   it("puts the look picked in the settings among the user's overrides, not into the theme", () => {
@@ -207,7 +259,7 @@ describe('ChartWidget colours in the settings', () => {
     const brand: Theme = { ...LIGHT_THEME, name: 'brand', background: '#fdfaf3' };
     make({ theme: brand });
     inner().handleToggleTheme();
-    expect(FakeChart.last.themes.at(-1)).toEqual(DARK_THEME);
+    expect(FakeChart.last.themes.at(-1)).toEqual(MODERN_DARK_THEME);
     inner().handleToggleTheme();
     expect(FakeChart.last.themes.at(-1)).toEqual(brand);
   });
@@ -227,7 +279,7 @@ describe('ChartWidget colours in the settings', () => {
     const night: Theme = { ...DARK_THEME, name: 'night', background: '#000000' };
     widget.setTheme(night);
     inner().handleToggleTheme();
-    expect(FakeChart.last.themes.at(-1)).toEqual(LIGHT_THEME);
+    expect(FakeChart.last.themes.at(-1)).toEqual(MODERN_LIGHT_THEME);
     inner().handleToggleTheme();
     expect(FakeChart.last.themes.at(-1)).toEqual(night);
   });

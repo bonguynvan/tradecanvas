@@ -162,6 +162,69 @@ export const LIGHT_THEME: Theme = {
   priceLimits: LIGHT_PRICE_LIMITS,
 };
 
+/**
+ * The widget's Modern look in colour: a code editor's grounds (Dark Modern
+ * and Light Modern), its greys for the axes and the grid, and candles in the
+ * market's teal and red, the same in both. Volume is the ink at low strength,
+ * as in the themes above. Named `'dark'` and `'light'`: they are the dark and
+ * light of their look, and the colours a user changes are kept by those names.
+ */
+const EDITOR_NIGHT = '#1f1f1f';
+const EDITOR_NIGHT_INK = '#cccccc';
+const EDITOR_DAY = '#ffffff';
+const EDITOR_DAY_INK = '#3b3b3b';
+/** The market's colours: candles, not text (as text they are shaded to read). */
+const MARKET_UP = '#089981';
+const MARKET_DOWN = '#f23645';
+
+export const MODERN_DARK_THEME: Theme = {
+  name: 'dark',
+  background: EDITOR_NIGHT,
+  text: EDITOR_NIGHT_INK,
+  textSecondary: '#9d9d9d',
+  grid: '#262626',
+  // 3.2:1 on the ground, quiet beside the data.
+  crosshair: '#6e6e6e',
+  candleUp: MARKET_UP,
+  candleDown: MARKET_DOWN,
+  candleUpWick: MARKET_UP,
+  candleDownWick: MARKET_DOWN,
+  lineColor: EDITOR_NIGHT_INK,
+  areaTopColor: withAlpha(EDITOR_NIGHT_INK, 0.14),
+  areaBottomColor: withAlpha(EDITOR_NIGHT_INK, 0),
+  volumeUp: withAlpha(EDITOR_NIGHT_INK, 0.14),
+  volumeDown: withAlpha(EDITOR_NIGHT_INK, 0.08),
+  axisLine: '#2b2b2b',
+  axisLabel: '#9d9d9d',
+  axisLabelBackground: '#2b2b2b',
+  font: DEFAULT_FONT,
+  priceLimits: DARK_PRICE_LIMITS,
+};
+
+export const MODERN_LIGHT_THEME: Theme = {
+  name: 'light',
+  background: EDITOR_DAY,
+  text: EDITOR_DAY_INK,
+  textSecondary: '#616161',
+  grid: '#f0f0f0',
+  // 3.4:1 on the ground.
+  crosshair: '#8a8a8a',
+  candleUp: MARKET_UP,
+  candleDown: MARKET_DOWN,
+  candleUpWick: MARKET_UP,
+  candleDownWick: MARKET_DOWN,
+  lineColor: EDITOR_DAY_INK,
+  areaTopColor: withAlpha(EDITOR_DAY_INK, 0.12),
+  areaBottomColor: withAlpha(EDITOR_DAY_INK, 0),
+  volumeUp: withAlpha(EDITOR_DAY_INK, 0.13),
+  volumeDown: withAlpha(EDITOR_DAY_INK, 0.08),
+  axisLine: '#e5e5e5',
+  axisLabel: '#616161',
+  axisLabelBackground: '#f2f2f2',
+  font: DEFAULT_FONT,
+  priceLimits: LIGHT_PRICE_LIMITS,
+};
+
 export const DARK_TERMINAL: Theme = {
   name: 'terminal',
   background: '#0E0E0E',

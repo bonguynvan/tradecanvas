@@ -27,13 +27,14 @@
   let languageCode = $state(i18n.lang === 'en' ? 'vi' : i18n.lang);
   /** The look for scenes with a look picker. */
   const LOOKS: readonly { id: WidgetUIPreset; name: string }[] = [
+    { id: 'modern', name: 'Modern' },
     { id: 'print', name: 'Print' },
     { id: 'studio', name: 'Studio' },
     { id: 'terminal', name: 'Terminal' },
     { id: 'capsule', name: 'Capsule' },
     { id: 'desk', name: 'Desk' },
   ];
-  let look = $state<WidgetUIPreset>('print');
+  let look = $state<WidgetUIPreset>('modern');
   /** The airy density on top of the look: sans figures and spacious controls (the bars are golden either way). */
   let airy = $state(false);
   /** The renderer for scenes with a renderer picker. */
@@ -51,7 +52,7 @@
   const PAN_FRAMES = 50;
   /** The fonts the looks name: the widget loads none, so the page does. */
   const LOOK_FONTS =
-    'https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=IBM+Plex+Sans+Condensed:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Sora:wght@400;500;600&display=swap';
+    'https://fonts.googleapis.com/css2?family=Geist:wght@400;600&family=Manrope:wght@400;500;600;700&family=IBM+Plex+Sans+Condensed:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Sora:wght@400;500;600&display=swap';
 
   let widget: ChartWidget | ChartWidgetGrid | null = null;
   /** The single widget's chart, for the renderer picker. */

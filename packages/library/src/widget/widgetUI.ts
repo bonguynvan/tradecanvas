@@ -1,13 +1,15 @@
 /**
  * The widget's look: corners, sizes, type, lines, shadows and the shape of
  * its bars, as tokens. A preset gives all of them; a theme of yours changes
- * what it names. Colours stay with the widget's dark / light theme.
+ * what it names. Colours stay with the widget's dark / light theme, but for
+ * Modern's: it brings a dark and a light of its own (see `WidgetStyles.css`
+ * and `MODERN_DARK_THEME`).
  */
 import { FIGURES_FONT_FAMILY, PHI, SANS_FONT_FAMILY, evenPx, phiStep } from '@tradecanvas/commons';
 
-export type WidgetUIPreset = 'print' | 'studio' | 'terminal' | 'capsule' | 'desk';
+export type WidgetUIPreset = 'modern' | 'print' | 'studio' | 'terminal' | 'capsule' | 'desk';
 
-const DEFAULT_PRESET: WidgetUIPreset = 'print';
+const DEFAULT_PRESET: WidgetUIPreset = 'modern';
 
 /** Type climbs by the cube root of φ: every third size is φ larger (11, 13, 15, 18, 21). */
 const TYPE_STEPS_PER_PHI = 3;
@@ -219,7 +221,7 @@ export interface ResolvedWidgetUI {
   scale?: number | 'auto';
 }
 
-/** Your look: a preset to start from (Print by default) and what to change. */
+/** Your look: a preset to start from (Modern by default) and what to change. */
 export interface WidgetUITheme {
   preset?: WidgetUIPreset;
   radius?: Partial<WidgetUIRadius>;
@@ -267,6 +269,11 @@ const PRINT_FIGURES = FIGURES_FONT_FAMILY;
  * there is no Tahoma. Its digits are one width, so figures still line up.
  */
 const DESK_SANS = "Tahoma, Verdana, 'Segoe UI', 'DejaVu Sans', sans-serif";
+/**
+ * Modern's face: Geist where the page loads it (the widget loads no fonts),
+ * and each system's own where it doesn't, as Print's.
+ */
+const MODERN_SANS = `'Geist', ${PRINT_SANS}`;
 
 type Density = 'compact' | 'spacious';
 type PresetBase = Omit<ResolvedWidgetUI, 'components' | 'preset' | 'density'> & {
@@ -279,7 +286,38 @@ type PresetBase = Omit<ResolvedWidgetUI, 'components' | 'preset' | 'density'> & 
 
 const PRESETS: Record<WidgetUIPreset, PresetBase> = {
   /*
-   * Print, the default: paper and ink, hairlines, figures that line up. It
+   * Modern, the default: a code editor's window. Chrome a shade off the chart
+   * around it, hairlines between, 16 px icons in 28 px buttons on a 38 px bar,
+   * corners of 4 on controls, 6 on menus and floating panels and 8 on dialogs.
+   * A chosen tool shows the editor's toggled ground; its own dark and light
+   * colours are in the stylesheet, scoped to it.
+   */
+  modern: {
+    radius: { xs: 2, sm: 3, md: 4, lg: 6, xl: 8 },
+    components: { tag: 2, tooltip: 4, toolbar: 0, sidebar: 0 },
+    sizes: { toolbar: 38, control: 28, controlSmall: 22, icon: 16, sidebar: 44, menuItem: 26 },
+    density: {
+      compact: { toolbar: 32, control: 24, controlSmall: 20, icon: 16, sidebar: 32, menuItem: 24 },
+      spacious: { toolbar: 46, control: 34, controlSmall: 28, icon: 20, sidebar: 52, menuItem: 32 },
+    },
+    font: { family: MODERN_SANS, mono: PRINT_FIGURES, size: 13, weight: 400, strongWeight: 600, labelCase: 'none', labelTracking: 0 },
+    borders: { width: 1, separators: true },
+    // A line round each floating surface, and the editor's soft shadow.
+    shadows: {
+      menu: '0 0 0 1px var(--tcw-border-strong), var(--tcw-shadow-md)',
+      dialog: '0 0 0 1px var(--tcw-border), var(--tcw-shadow-lg)',
+      tooltip: 'var(--tcw-shadow-sm)',
+    },
+    blur: 0,
+    active: 'tint',
+    toolbar: 'docked',
+    sidebar: 'docked',
+    intervals: 'plain',
+    tagRadius: 2,
+    iconStroke: 1.5,
+  },
+  /*
+   * Print, the default before Modern: paper and ink, hairlines, figures that line up. It
    * keeps to the golden ratio. Sizes climb in half steps of φ from the icon
    * (20, 26, 34, 42), each the even number nearest its step so an icon centres
    * on whole pixels in its button and a button in its bar. The one that departs
@@ -514,9 +552,9 @@ export function resolveWidgetUI(theme?: WidgetUIPreset | WidgetUITheme): Resolve
     if (key === 'labelCase') return v === 'none' || v === 'uppercase';
     return px(v, 0, 0.5);
   });
-  // Airy figures read in the look's own sans face, unless its figures face is set; Print's in
-  // plain Segoe UI, as Segoe UI Variable's digits are not one width and the chart's canvas can't ask.
-  const figures = picked.family === PRINT_SANS ? SANS_FONT_FAMILY : picked.family;
+  // Airy figures read in the look's own sans face, unless its figures face is set; Print's and Modern's
+  // in plain Segoe UI, as Segoe UI Variable's and Geist's digits are not one width and the chart's canvas can't ask.
+  const figures = picked.family === PRINT_SANS || picked.family === MODERN_SANS ? SANS_FONT_FAMILY : picked.family;
   const font = density === 'airy' && t.font?.mono === undefined ? { ...picked, mono: figures } : picked;
   // Corners the theme sets on the scale reach the parts that follow it.
   const components = pick(componentsFrom(radius, base.components), t.components, (_, v) => px(v, 0, 999));
@@ -627,7 +665,7 @@ export function widgetUIVariables(ui: ResolvedWidgetUI): Record<string, string> 
  * Put the look on an element of the widget (its root, its modal portal):
  * its tokens inline and its layout switches as data attributes. With
  * `variables: false` only the switches; the tokens are left to the
- * stylesheet (whose defaults are Print's), and any set inline before are
+ * stylesheet (whose defaults are Modern's), and any set inline before are
  * cleared.
  */
 export function applyWidgetUI(el: HTMLElement, ui: ResolvedWidgetUI, options: { variables?: boolean } = {}): void {

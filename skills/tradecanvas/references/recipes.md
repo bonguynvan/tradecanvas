@@ -1241,12 +1241,15 @@ widget.setUI({
 console.log(widget.getUI().sizes.control, WIDGET_UI_PRESETS.capsule.components.control);
 ```
 
-The look changes shapes and sizes only; colours stay with `theme`. Print
+The look changes shapes and sizes only; colours stay with `theme`, but for
+Modern's, the default: it brings a code editor's dark and light, on the chart
+too (`MODERN_DARK_THEME`, `MODERN_LIGHT_THEME`) unless `theme` is an object.
+`ui: 'print'` gives back the look and colours the widget had before. Print
 keeps to the golden ratio: sizes in half steps of φ (20, 26, 33, 42, 53),
 Fibonacci spacing and corners, type a third of φ apart (11, 13, 15, 18, 21);
 `PHI`, `FIBONACCI` and `phiStep` from `@tradecanvas/commons` do the same for
 yours. The widget loads no fonts, so load the families a look names (Print
-names system faces only). Without `ui` the
+names system faces only; Modern names Geist, then the system's). Without `ui` the
 look's CSS variables (`--tcw-radius`, `--tcw-control-h`, …) stay the
 stylesheet's and your CSS can set them; with it the widget writes them inline.
 The widget draws its faces without OpenType features; to turn on your face's

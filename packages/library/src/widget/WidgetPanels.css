@@ -103,7 +103,7 @@
 .tcw-dock-resize:hover::after,
 .tcw-dock-resize:active::after,
 .tcw-dock-resize:focus-visible::after {
-  background: var(--tcw-accent);
+  background: var(--tcw-accent-fill);
 }
 
 /* A page's header: 34 tall (21 + 13), or a control's height where that is more, and the rule under

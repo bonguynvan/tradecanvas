@@ -5,12 +5,26 @@ import { applyWidgetUI, resolveWidgetUI, scaledWidgetUI, typeSize, widgetScaleFo
 import { injectWidgetStyles, removeWidgetStyles } from '../WidgetStyles.js';
 
 describe('resolveWidgetUI', () => {
-  it('is the Print look by default', () => {
+  it('is the Modern look by default', () => {
     const ui = resolveWidgetUI();
-    expect(ui.preset).toBe('print');
-    expect(ui).toMatchObject({ toolbar: 'docked', sidebar: 'docked', intervals: 'plain', active: 'solid', borders: { separators: true }, font: { labelCase: 'none', strongWeight: 500 }, iconStroke: 1 });
-    expect(ui.components.menu).toBe(ui.radius.lg);
-    expect(ui).toEqual(resolveWidgetUI('print'));
+    expect(ui.preset).toBe('modern');
+    expect(ui).toMatchObject({ toolbar: 'docked', sidebar: 'docked', intervals: 'plain', active: 'tint', borders: { separators: true }, font: { labelCase: 'none', size: 13 }, iconStroke: 1.5 });
+    expect(ui).toEqual(resolveWidgetUI('modern'));
+  });
+
+  it('sizes Modern as a code editor: a 38 px bar, 28 px buttons, 16 px icons, corners of 4, 6 and 8', () => {
+    const { sizes, components } = resolveWidgetUI('modern');
+    expect(sizes).toEqual({ toolbar: 38, control: 28, controlSmall: 22, icon: 16, sidebar: 44, menuItem: 26 });
+    // Controls 4, menus and floating panels 6, dialogs 8.
+    expect([components.control, components.input, components.menu, components.panel, components.dialog]).toEqual([4, 4, 6, 6, 8]);
+    // What is centred sits on whole pixels: an icon in a button, a button in the bar.
+    expect((sizes.control - sizes.icon) / 2).toBe(6);
+    expect((sizes.toolbar - sizes.control) / 2).toBe(5);
+  });
+
+  it('keeps the looks before it by name: Print is the 1.x and 2.x default as it was', () => {
+    const print = resolveWidgetUI('print');
+    expect(print).toMatchObject({ preset: 'print', active: 'solid', iconStroke: 1, sizes: { toolbar: 42, control: 34, icon: 20 } });
   });
 
   it('keeps Print to the golden ratio: sizes in half steps of φ, corners Fibonacci numbers', () => {
@@ -40,12 +54,14 @@ describe('resolveWidgetUI', () => {
     const vars = (theme: WidgetUITheme) => widgetUIVariables(resolveWidgetUI(theme));
     // Print: a 34 button and a 20 icon elsewhere; a 26 icon in a 42 column, its button
     // short of the half step (44) to keep 3 px either side: big icons, a narrow column.
-    expect(vars({})).toMatchObject({ '--tcw-tool-h': '36px', '--tcw-tool-icon': '26px', '--tcw-sidebar-w': '42px' });
-    expect(vars({ density: 'spacious' })).toMatchObject({ '--tcw-tool-h': '54px', '--tcw-tool-icon': '34px', '--tcw-sidebar-w': '60px' });
-    expect(vars({ density: 'compact' })).toMatchObject({ '--tcw-tool-h': '26px', '--tcw-tool-icon': '16px', '--tcw-sidebar-w': '32px' });
+    expect(vars({ preset: 'print' })).toMatchObject({ '--tcw-tool-h': '36px', '--tcw-tool-icon': '26px', '--tcw-sidebar-w': '42px' });
+    expect(vars({ preset: 'print', density: 'spacious' })).toMatchObject({ '--tcw-tool-h': '54px', '--tcw-tool-icon': '34px', '--tcw-sidebar-w': '60px' });
+    expect(vars({ preset: 'print', density: 'compact' })).toMatchObject({ '--tcw-tool-h': '26px', '--tcw-tool-icon': '16px', '--tcw-sidebar-w': '32px' });
+    // Modern: a 20 px icon on a 36 px tool in a 44 px column, over the 16 px icons elsewhere.
+    expect(vars({})).toMatchObject({ '--tcw-tool-h': '36px', '--tcw-tool-icon': '20px', '--tcw-sidebar-w': '44px' });
     // Each look's column holds its tool with a little room either side, tool and icon even sizes:
     // the icon is centred on whole pixels in its button, and the button in its column.
-    for (const preset of ['print', 'studio', 'terminal', 'capsule', 'desk'] as const) {
+    for (const preset of ['modern', 'print', 'studio', 'terminal', 'capsule', 'desk'] as const) {
       for (const density of ['comfortable', 'spacious'] as const) {
         const v = vars({ preset, density });
         const tool = parseInt(v['--tcw-tool-h']);
@@ -61,7 +77,7 @@ describe('resolveWidgetUI', () => {
 
   it('sets every look on even pixels: sizes, spacing, and what is centred in what', () => {
     const vars = (theme: WidgetUITheme) => widgetUIVariables(resolveWidgetUI(theme));
-    for (const preset of ['print', 'studio', 'terminal', 'capsule', 'desk'] as const) {
+    for (const preset of ['modern', 'print', 'studio', 'terminal', 'capsule', 'desk'] as const) {
       for (const density of ['comfortable', 'spacious', 'airy'] as const) {
         const ui = resolveWidgetUI({ preset, density });
         for (const [name, size] of Object.entries(ui.sizes)) expect(size % 2, `${preset} ${density} ${name}`).toBe(0);
@@ -103,7 +119,7 @@ describe('resolveWidgetUI', () => {
       });
     }
     // The tools as they were: a half step over a 33 button is 42, held to 36 by the 42 column.
-    expect(vars({ density: 'classic' })).toMatchObject({ '--tcw-tool-h': '36px', '--tcw-tool-icon': '26px', '--tcw-control-h': '33px' });
+    expect(vars({ preset: 'print', density: 'classic' })).toMatchObject({ '--tcw-tool-h': '36px', '--tcw-tool-icon': '26px', '--tcw-control-h': '33px' });
     expect(vars({ preset: 'terminal', density: 'classic' })).toMatchObject({ '--tcw-tool-h': '33px', '--tcw-tool-icon': '20px', '--tcw-sidebar-w': '39px' });
     // And on a wide screen its sizes round as they did, odd ones and all.
     expect(scaledWidgetUI(classic('print'), widgetScaleFor(2560)).sizes).toEqual({ toolbar: 49, control: 39, controlSmall: 31, icon: 23, sidebar: 49, menuItem: 39 });
@@ -118,8 +134,10 @@ describe('resolveWidgetUI', () => {
     expect(resolveWidgetUI({ preset: 'studio', iconStroke: 1 }).iconStroke).toBe(1);
     expect(resolveWidgetUI({ iconStroke: 0 }).iconStroke).toBe(0);
     for (const bad of [0.2, 4, -1, Number.NaN, '1px']) {
-      expect(resolveWidgetUI({ iconStroke: bad as never }).iconStroke, String(bad)).toBe(1);
+      expect(resolveWidgetUI({ preset: 'print', iconStroke: bad as never }).iconStroke, String(bad)).toBe(1);
     }
+    // Modern's at 1.5 px, the editor's icon line at 16 px.
+    expect(widgetUIVariables(resolveWidgetUI())['--tcw-icon-stroke']).toBe('1.5px');
     // The line width is a switch on the root: a look that draws them as they are leaves them be.
     const el = document.createElement('div');
     applyWidgetUI(el, resolveWidgetUI('print'));
@@ -168,9 +186,9 @@ describe('resolveWidgetUI', () => {
   });
 
   it('moves Print’s sizes a half step of φ by density, and keeps the other looks’ density sizes', () => {
-    expect(resolveWidgetUI({ density: 'compact' }).sizes).toEqual({ toolbar: 33, control: 26, controlSmall: 20, icon: 16, sidebar: 32, menuItem: 26 });
+    expect(resolveWidgetUI({ preset: 'print', density: 'compact' }).sizes).toEqual({ toolbar: 33, control: 26, controlSmall: 20, icon: 16, sidebar: 32, menuItem: 26 });
     // Spacious on even pixels: the steps 53.3 and 59 are 54 and 60, the 33 button 34.
-    expect(resolveWidgetUI({ density: 'spacious' }).sizes).toEqual({ toolbar: 54, control: 42, controlSmall: 34, icon: 26, sidebar: 60, menuItem: 42 });
+    expect(resolveWidgetUI({ preset: 'print', density: 'spacious' }).sizes).toEqual({ toolbar: 54, control: 42, controlSmall: 34, icon: 26, sidebar: 60, menuItem: 42 });
     for (const preset of ['studio', 'terminal', 'capsule'] as const) {
       expect(resolveWidgetUI({ preset, density: 'compact' }).sizes, preset).toEqual({ toolbar: 38, control: 26, controlSmall: 20, icon: 16, sidebar: 32, menuItem: 26 });
       expect(resolveWidgetUI({ preset, density: 'spacious' }).sizes, preset).toEqual({ toolbar: 52, control: 34, controlSmall: 28, icon: 20, sidebar: 50, menuItem: 34 });
@@ -225,14 +243,14 @@ describe('resolveWidgetUI', () => {
       active: 'glow' as never,
     });
     const base = resolveWidgetUI();
-    expect(ui.preset).toBe('print');
+    expect(ui.preset).toBe('modern');
     expect(ui.radius).toEqual(base.radius);
     expect(ui.sizes.control).toBe(base.sizes.control);
     expect(ui.sizes.toolbar).toBe(base.sizes.toolbar);
     expect(ui.font.family).toBe(base.font.family);
     expect(ui.font.size).toBe(base.font.size);
     expect(ui.shadows.menu).toBe(base.shadows.menu);
-    expect(ui.active).toBe('solid');
+    expect(ui.active).toBe('tint');
   });
 
   it('leaves out every kind of value it can’t use', () => {
@@ -256,14 +274,14 @@ describe('resolveWidgetUI', () => {
     expect(resolveWidgetUI({ font: { family: "'Inter', var(--brand-font), sans-serif" } }).font.family).toBe("'Inter', var(--brand-font), sans-serif");
   });
 
-  it('is Print for anything that isn’t a look', () => {
+  it('is Modern for anything that isn’t a look', () => {
     for (const theme of [null, 5, [], 'nope']) {
-      expect(resolveWidgetUI(theme as never), String(theme)).toEqual(resolveWidgetUI('print'));
+      expect(resolveWidgetUI(theme as never), String(theme)).toEqual(resolveWidgetUI('modern'));
     }
   });
 
   it('takes a resolved look back unchanged', () => {
-    for (const name of ['print', 'studio', 'terminal', 'capsule'] as const) {
+    for (const name of ['modern', 'print', 'studio', 'terminal', 'capsule'] as const) {
       const ui = resolveWidgetUI({ preset: name, density: 'spacious', radius: { md: 3 } });
       expect(resolveWidgetUI(ui)).toEqual(ui);
     }
@@ -313,7 +331,7 @@ describe('the look on the page', () => {
   });
 
   it('emits a value for every token, in every preset and density', () => {
-    for (const preset of ['print', 'studio', 'terminal', 'capsule'] as const) {
+    for (const preset of ['modern', 'print', 'studio', 'terminal', 'capsule'] as const) {
       for (const density of ['compact', 'classic', 'comfortable', 'spacious', 'airy'] as const) {
         for (const [name, value] of Object.entries(widgetUIVariables(resolveWidgetUI({ preset, density })))) {
           expect(value, `${preset} ${density} ${name}`).not.toMatch(/NaN|undefined|^$/);
@@ -340,7 +358,7 @@ describe('the look on the page', () => {
   });
 
   it('draws shadows from the theme’s tokens, so they suit dark and light', () => {
-    for (const name of ['print', 'studio', 'terminal', 'capsule'] as const) {
+    for (const name of ['modern', 'print', 'studio', 'terminal', 'capsule'] as const) {
       const { menu, dialog } = WIDGET_UI_PRESETS[name].shadows;
       expect(menu, name).toMatch(/var\(--tcw-/);
       expect(dialog, name).toMatch(/var\(--tcw-/);
