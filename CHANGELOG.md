@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Chart
+
+- **The price axis as wide as the indicator panes need** (`@tradecanvas/chart`, `@tradecanvas/core`): the panes share the price pane's axis, which was sized to the prices alone, so a pane of millions (a CVD at -1,766,028.9) had its last value's tag cut and the tick under it hidden. The axis now fits the panes' scale labels and, when they are shown, their tags, and refits when the tags are turned on or off.
+
 ### Finance charts
 
 - **An equity curve's level tags and names kept clear** (`@tradecanvas/chart`): the tags of levels too close for both at the axis move apart instead of one covering the other (the lowest levels' are left out when there is no room for them all), a level's `labelAt: 'start'` writes its name at the line's left end, away from the curve's latest point, and names in the plot keep clear of each other.

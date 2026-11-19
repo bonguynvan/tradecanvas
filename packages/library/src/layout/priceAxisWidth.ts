@@ -22,6 +22,13 @@ export interface PriceAxisWidthInput {
   format?: ((price: number) => string) | null;
   /** The scale's label for a price as the axis writes it (its decimals, percent, a fraction), when known. */
   scaleLabel?: ((price: number) => string) | null;
+  /**
+   * Labels and tags the indicator panes write on the same axis (their scales,
+   * their latest values): it is one strip down the chart, as wide as the
+   * widest of any pane's.
+   */
+  paneLabels?: readonly string[];
+  paneTags?: readonly string[];
   fontFamily: string;
   fontSizeSmall: number;
   measure: (text: string, font: string) => number;
@@ -49,6 +56,12 @@ export function requiredPriceAxisWidth(input: PriceAxisWidthInput): number {
       measure(tag, `bold 11px ${fontFamily}`) + PRICE_TAG_CHROME,
       measure(tag, `600 ${fontSizeSmall}px ${fontFamily}`) + CROSSHAIR_PILL_CHROME,
     );
+  }
+  const labelFont = `500 ${fontSizeSmall}px ${fontFamily}`;
+  for (const label of input.paneLabels ?? []) need = Math.max(need, measure(label, labelFont) + LABEL_CHROME);
+  // A pane's tag is drawn in the theme's small size, bold: as wide as the last price's, measured at the wider of the two.
+  for (const tag of input.paneTags ?? []) {
+    need = Math.max(need, measure(tag, `bold ${Math.max(fontSizeSmall, 11)}px ${fontFamily}`) + PRICE_TAG_CHROME);
   }
   // The default stays exact; only widened axes snap to the grid.
   return need <= PRICE_AXIS_WIDTH ? PRICE_AXIS_WIDTH : Math.ceil(need / WIDTH_GRANULARITY) * WIDTH_GRANULARITY;
