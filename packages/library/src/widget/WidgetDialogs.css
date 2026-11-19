@@ -761,7 +761,9 @@
 /* What scrolls is one grid, and the heads, the list and each row are its subgrids, so a column is
    as wide in every row: the badge, the symbol up to a quarter of the list (144 at 610, 233 in a wide
    dialog, the next Fibonacci number), the name the rest, the kind up to 89, the exchange up to 144
-   ('XYZ · HYPERLIQUID' whole), the check. An empty cell keeps its column. */
+   ('XYZ · HYPERLIQUID' whole), with quotes the last price up to 144 and the day's change up to 89
+   (a feed's huge figure is cut, not let to push the name out), then the check. An empty cell keeps
+   its column. */
 .tcw-ss-results {
   display: grid;
   grid-template-columns: max-content fit-content(clamp(144px, 25%, 233px)) minmax(0, 1fr) fit-content(89px) fit-content(144px) auto;
@@ -774,6 +776,10 @@
   /* A row the arrows reach scrolls in below the heads, not under them. */
   scroll-padding-block-start: calc(var(--tcw-ss-head-h) + var(--tcw-space-2));
   padding: 0 var(--tcw-space-4) var(--tcw-space-5);
+}
+
+.tcw-ss-results.tcw-ss--quoted {
+  grid-template-columns: max-content fit-content(clamp(144px, 25%, 233px)) minmax(0, 1fr) fit-content(89px) fit-content(144px) fit-content(144px) fit-content(89px) auto;
 }
 
 /* Comparing, under a heading of its own as well. */
@@ -797,6 +803,11 @@
   grid-template-columns: subgrid;
   align-items: center;
   column-gap: inherit;
+}
+
+.tcw-ss--quoted :is(.tcw-ss-columns, .tcw-ss-list, .tcw-ss-added, .tcw-ss-row, .tcw-ss-added-row) {
+  grid-template-columns: var(--tcw-control-h-sm) 89px minmax(0, 1fr) auto auto auto auto auto;
+  grid-template-columns: subgrid;
 }
 
 /* The heads stay at the top while the rows scroll under them. */
@@ -828,6 +839,8 @@
 .tcw-ss-head:nth-child(3) { grid-column: 3; }
 .tcw-ss-head:nth-child(4) { grid-column: 4; justify-self: end; }
 .tcw-ss-head:nth-child(5) { grid-column: 5; justify-self: end; }
+.tcw-ss-head:nth-child(6) { grid-column: 6; justify-self: end; }
+.tcw-ss-head:nth-child(7) { grid-column: 7; justify-self: end; }
 
 .tcw-ss-row {
   min-height: var(--tcw-menu-item-h);
@@ -946,9 +959,36 @@ img.tcw-ss-badge {
   letter-spacing: var(--tcw-label-tracking);
 }
 
+/* The last price and the day's change, figures in the mono face at the end of their columns; the
+   change in the up or down colour by its sign. */
+.tcw-ss-last,
+.tcw-ss-chg {
+  justify-self: end;
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  font-family: var(--tcw-font-mono);
+  font-size: var(--tcw-font-size-sm);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tcw-ss-last {
+  grid-column: 6;
+  color: var(--tcw-text);
+}
+
+.tcw-ss-chg {
+  grid-column: 7;
+  color: var(--tcw-text-muted);
+}
+
+.tcw-ss-chg[data-tone='up'] { color: var(--tcw-green); }
+.tcw-ss-chg[data-tone='down'] { color: var(--tcw-red); }
+
 /* The chart's symbol, or one on it already: a check in the last column. */
 .tcw-ss-check {
-  grid-column: 6;
+  grid-column: -2;
   display: inline-grid;
   place-items: center;
   color: var(--tcw-accent);
@@ -984,7 +1024,7 @@ img.tcw-ss-badge {
 
 /* How it is compared, across the name, kind and exchange; the line's colour, where it has one of its own, where the badges are. */
 .tcw-ss-way-cell {
-  grid-column: 3 / 6;
+  grid-column: 3 / -2;
   display: flex;
   align-items: center;
   gap: var(--tcw-space-4);
@@ -1009,7 +1049,7 @@ img.tcw-ss-badge {
 }
 
 .tcw-ss-remove {
-  grid-column: 6;
+  grid-column: -2;
   display: inline-grid;
   place-items: center;
   width: var(--tcw-control-h);
@@ -1154,8 +1194,8 @@ img.tcw-ss-badge {
 }
 
 /* A phone: both are the widget's sheet; the search as tall as a sheet goes, its symbols up to 89
-   wide. The kind's column goes (the badge's colour still tells it), the tabs scroll in one line, and
-   a row is a finger's height. */
+   wide. The kind's column goes (the badge's colour still tells it), the exchange goes under the
+   ticker, the change under the price, the tabs scroll in one line, and a row is a finger's height. */
 @media (max-width: 640px) {
   .tcw-modal.tcw-ss {
     /* Above the on-screen keyboard: the sheet's top stays on the screen. */
@@ -1184,15 +1224,15 @@ img.tcw-ss-badge {
     max-width: 110px;
   }
 
-  /* The ticker is the row's key: its column as wide as the widest ticker, up to 144 or 38.2% of the
-     row, and the name gives way first. The exchange's up to 55, each cut in its own row. */
+  /* The ticker is the row's key: its column as wide as the widest ticker or exchange under it, up
+     to 144 or 38.2% of the row, and the name gives way first; with quotes, a column as wide as the
+     widest price. */
   .tcw-ss-results {
-    grid-template-columns: max-content fit-content(min(144px, 38.2%)) minmax(0, 1fr) fit-content(55px) auto;
+    grid-template-columns: max-content fit-content(min(144px, 38.2%)) minmax(0, 1fr) auto;
   }
 
-  /* The head over the exchanges reads whole, over the gap before it if it must. */
-  .tcw-ss-head:nth-child(5) {
-    overflow: visible;
+  .tcw-ss-results.tcw-ss--quoted {
+    grid-template-columns: max-content fit-content(min(144px, 38.2%)) minmax(0, 1fr) fit-content(89px) auto;
   }
 
   .tcw-ss-columns,
@@ -1200,27 +1240,59 @@ img.tcw-ss-badge {
   .tcw-ss-added,
   .tcw-ss-row,
   .tcw-ss-added-row {
+    grid-template-columns: var(--tcw-control-h-sm) 89px minmax(0, 1fr) auto;
+    grid-template-columns: subgrid;
+  }
+
+  .tcw-ss--quoted :is(.tcw-ss-columns, .tcw-ss-list, .tcw-ss-added, .tcw-ss-row, .tcw-ss-added-row) {
     grid-template-columns: var(--tcw-control-h-sm) 89px minmax(0, 1fr) auto auto;
     grid-template-columns: subgrid;
   }
 
+  /* The kind, and the heads of what goes under another cell. */
   .tcw-ss-kind,
-  .tcw-ss-head:nth-child(4) {
+  .tcw-ss-head:nth-child(4),
+  .tcw-ss-head:nth-child(5),
+  .tcw-ss-head:nth-child(7) {
     display: none;
   }
 
-  .tcw-ss-exchange,
-  .tcw-ss-head:nth-child(5) {
+  .tcw-ss-head:nth-child(6) {
     grid-column: 4;
   }
 
-  .tcw-ss-check,
-  .tcw-ss-remove {
-    grid-column: 5;
+  /* Two lines a row: the ticker over its exchange, the price over its change, the rest across both.
+     Two venues may list the same ticker, so the exchange is what tells their rows apart: it has the
+     ticker's column to itself, not a narrow one of its own. */
+  .tcw-ss-row {
+    align-content: center;
   }
 
-  .tcw-ss-way-cell {
-    grid-column: 3 / 5;
+  .tcw-ss-badge,
+  .tcw-ss-desc-cell,
+  .tcw-ss-check {
+    grid-row: 1 / span 2;
+  }
+
+  .tcw-ss-symbol,
+  .tcw-ss-last {
+    grid-row: 1;
+  }
+
+  .tcw-ss-exchange {
+    grid-column: 2;
+    grid-row: 2;
+    justify-self: start;
+  }
+
+  .tcw-ss-last,
+  .tcw-ss-chg {
+    grid-column: 4;
+  }
+
+  .tcw-ss-chg {
+    grid-row: 2;
+    font-size: var(--tcw-font-size-xs);
   }
 
   .tcw-ss-row,

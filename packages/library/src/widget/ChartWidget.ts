@@ -953,6 +953,7 @@ export class ChartWidget {
     this.symbolSearchPart = this.lazyPart(DIALOGS.symbolSearch, ({ WidgetSymbolSearch }) => new WidgetSymbolSearch({
       onPick: (sym) => { void this.setSymbol(sym); },
       onClose: () => {},
+      numberLocale: () => this.intlLocale(),
     }, this.overlayHost, this.t));
     this.hotkeySheetPart = this.lazyPart(DIALOGS.hotkeySheet, ({ WidgetHotkeySheet }) => new WidgetHotkeySheet({ onClose: () => {} }, this.t, this.overlayHost));
     this.scope.run(() => this.chartSettings.followSettings());

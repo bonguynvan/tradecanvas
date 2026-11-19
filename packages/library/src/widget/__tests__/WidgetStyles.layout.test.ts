@@ -162,9 +162,15 @@ describe('the symbol search', () => {
 
   // On a phone "OKX:BTC-USDT-SWAP" showed "BTC-USDT-S…" beside a name with room, and one long exchange
   // held the exchange column at 89 on every row.
+  // A feed's figure of 1e21 wrote every digit in a column as wide as it, and pushed the name out.
+  it('keeps the price and change columns to a width, a huge figure cut in its own', () => {
+    expect(blocks(dialogs, '.tcw-ss-results.tcw-ss--quoted')[0]).toContain('fit-content(144px) fit-content(144px) fit-content(89px) auto;');
+    expect(phone(dialogs)).toMatch(/\.tcw-ss-results\.tcw-ss--quoted\s*\{\s*grid-template-columns:[^;]*minmax\(0, 1fr\) fit-content\(89px\) auto;/);
+  });
+
   it('keeps a ticker whole on a phone before its name', () => {
     const rules = phone(dialogs);
-    expect(rules).toMatch(/\.tcw-ss-results\s*\{\s*grid-template-columns:\s*max-content fit-content\(min\(144px, 38\.2%\)\) minmax\(0, 1fr\) fit-content\(55px\) auto;/);
+    expect(rules).toMatch(/\.tcw-ss-results\s*\{\s*grid-template-columns:\s*max-content fit-content\(min\(144px, 38\.2%\)\) minmax\(0, 1fr\) auto;/);
   });
 
   // At 1920 the search stayed a 610 box, and "HYPERLIQUID:xyz:SP500" lost its venue to the ellipsis

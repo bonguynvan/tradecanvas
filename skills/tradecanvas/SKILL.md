@@ -403,7 +403,7 @@ everywhere, dotted = one place; a part shows while all of its switches are on, s
 and never add a part: the depth ladder and the watchlist come from their options
 (`depthLadder: true`, `watchlist: true`), and `features: { depthLadder: true }` alone makes no ladder.
 To stop drawing, trading or zoom on the chart, use `chartOptions.features`. The widget's `symbols` (and
-`setSymbols`) take tickers or `SymbolInfo` (`description`, `type`, `exchange`, `logo`): the symbol search then
+`setSymbols`) take tickers or `SymbolInfo` (`description`, `type`, `exchange`, `logo`, `last`, `changePercent`): the symbol search then
 opens named, with kind tabs and an exchange filter (recipe in [references/recipes.md](references/recipes.md)). The dock's panels
 (watchlist, alerts, depth ladder…) start shut: `widget.openPanel('watchlist')`. Your own parts: `addToolbarButton`,
 `addToolbarDropdown`, `addSidebarButton`, `addStatusBarItem`, `getSlot('chart')`, `addHotkey`, a page in the

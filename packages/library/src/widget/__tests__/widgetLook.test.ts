@@ -264,3 +264,16 @@ describe('the stylesheet’s look', () => {
     expect(ruleBody('.tcw-sidebar-btn.tcw-active')).toContain('background: var(--tcw-on-icon-bg)');
   });
 });
+
+describe('the symbol search on a phone', () => {
+  it('writes the exchange whole under the ticker, as the row’s second line, not cut in a narrow column', () => {
+    const css = readFileSync(fileURLToPath(new URL('../WidgetDialogs.css', import.meta.url)), 'utf8').replace(/\r\n/g, '\n');
+    const phone = css.slice(css.indexOf('/* A phone: both are the widget'));
+    const escaped = (selector: string) => selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const rule = (selector: string) => phone.match(new RegExp(`\n  ${escaped(selector)} \\{([^{}]*)\\}`))?.[1] ?? '';
+    expect(rule('.tcw-ss-exchange')).toContain('grid-column: 2');
+    expect(rule('.tcw-ss-exchange')).toContain('grid-row: 2');
+    expect(rule('.tcw-ss-exchange')).not.toContain('text-overflow');
+    expect(phone).not.toContain('fit-content(55px)');
+  });
+});
