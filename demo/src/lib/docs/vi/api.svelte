@@ -6,124 +6,123 @@
 
 <svelte:head>
   <title>Tham chiếu API — Tài liệu TradeCanvas</title>
-  <meta name="description" content="Tham chiếu API cho Chart, ChartWidget, ChartGrid và phần lõi của TradeCanvas." />
+  <meta name="description" content="Tham chiếu API cho Chart, ChartWidget, ChartGrid và các API chính của TradeCanvas." />
 </svelte:head>
 
 <h1>Tham chiếu API</h1>
-<p>API công khai của các lớp cấp cao nhất: <code>Chart</code>, <code>ChartWidget</code>, <code>ChartWidgetGrid</code> và <code>ChartGrid</code>.</p>
+<p>API public của các class cấp cao nhất: <code>Chart</code>, <code>ChartWidget</code>, <code>ChartWidgetGrid</code> và <code>ChartGrid</code>.</p>
 
 <h2>Chart</h2>
-<p>Bộ render headless. Bạn tự làm giao diện, đăng ký nghe sự kiện và thay đổi trạng thái bằng các lời gọi trực tiếp.</p>
+<p>Renderer headless. Bạn tự làm UI, đăng ký event và thay đổi state bằng lời gọi trực tiếp.</p>
 
 <h3>Khởi tạo</h3>
 <pre><code>{`new Chart(host: HTMLElement, options?: ChartOptions)`}</code></pre>
 
 <h3>Dữ liệu</h3>
 <table>
-  <thead><tr><th>Phương thức</th><th>Công dụng</th></tr></thead>
+  <thead><tr><th>Phương thức</th><th>Mục đích</th></tr></thead>
   <tbody>
     <tr><td><code>setData(data)</code></td><td>Thay toàn bộ chuỗi dữ liệu.</td></tr>
     <tr><td><code>appendBar(bar)</code></td><td>Thêm một nến mới; tự cuộn nếu được bật.</td></tr>
-    <tr><td><code>appendBars(bars)</code></td><td>Thêm hàng loạt; chỉ tính lại chỉ báo một lần.</td></tr>
-    <tr><td><code>updateLastBar(bar)</code></td><td>Sửa nến đang hình thành.</td></tr>
+    <tr><td><code>appendBars(bars)</code></td><td>Thêm theo lô; tính lại chỉ báo một lần.</td></tr>
+    <tr><td><code>updateLastBar(bar)</code></td><td>Cập nhật nến đang hình thành.</td></tr>
     <tr><td><code>updateLastBarFromTick(tick)</code></td><td>Gộp một tick vào nến cuối.</td></tr>
-    <tr><td><code>updateBar(bar)</code></td><td>Sửa một nến đã nạp: nến có cùng thời gian, ở bất kỳ đâu trong chuỗi. Khung nhìn giữ nguyên; trả về false khi không có nến đã nạp nào có thời gian đó.</td></tr>
+    <tr><td><code>updateBar(bar)</code></td><td>Sửa một nến đã nạp: nến có cùng time, ở bất kỳ vị trí nào trong chuỗi. View giữ nguyên; trả về false khi không có nến đã nạp nào có time đó.</td></tr>
     <tr><td><code>getData()</code></td><td>Đọc chuỗi OHLC gốc.</td></tr>
   </tbody>
 </table>
 
 <p id="live-price">
-  Nến từ <code>appendBar</code>, <code>appendBars</code> hay <code>updateLastBar</code>, và một tick, là giá hiện tại: đường giá, cảnh báo và lãi/lỗ của lệnh đi theo nó, như đi theo một luồng dữ liệu đã kết nối và <code>setCurrentPrice</code>. Nến mới gửi <code>dataUpdate</code>; tick trên nến đang hình thành thì không.
+  Nến từ <code>appendBar</code>, <code>appendBars</code> hoặc <code>updateLastBar</code>, và tick, là giá hiện tại: đường giá, cảnh báo và P&amp;L của các order đi theo nó, giống như khi đi theo một stream đã kết nối và <code>setCurrentPrice</code>. Một nến mới gửi <code>dataUpdate</code>; tick trên nến đang hình thành thì không gửi.
 </p>
 
 <p id="corrections">
-  Nến mà nguồn dữ liệu của bạn sửa lại được đưa vào bằng <code>updateBar(bar)</code>: nó thay nến đã nạp có cùng <code>time</code>, dù nằm ở đâu trong chuỗi, và trả về <code>true</code>. Các chỉ báo được tính lại từ nến đó trở đi, Heikin-Ashi, Renko và các kiểu biểu đồ dựng từ nến cũng theo, còn khung nhìn giữ nguyên chỗ cũ; nhiều lần sửa trước khung hình kế tiếp chỉ được tính một lần, từ nến sớm nhất. Nó trả về <code>false</code> và không thay đổi gì khi không có nến đã nạp nào có thời gian đó (nến mới là việc của <code>appendBar</code>, nến cũ hơn là của <code>prependBars</code>) hoặc biểu đồ không nhận được nến đó. Đây không phải giá hiện tại: lệnh và cảnh báo không đi theo nó, không cảnh báo nào kích hoạt vì nó, và cảnh báo trên đường chỉ báo không được kiểm tra lại với giá trị đã sửa. Sửa nến cuối thì đường giá đi theo nó, như sau <code>setData</code>. Trong lúc replay, nó sửa chuỗi trực tiếp: nến mà replay đã đi qua hiện bản sửa ngay, nến sau đó hiện khi replay tới nó; một nến ngoài giờ giao dịch chính, khi giờ mở rộng đang ẩn, hiện ra khi chúng được bật. Gửi lại đúng nến đã nạp thì không đổi gì; thiếu khối lượng thì tính là 0, như với <code>setData</code>, nên hãy gửi đủ cả nến. Nó gửi <code>dataUpdate</code> với <code>{'{'} kind: 'correction', time, index {'}'}</code>. Trong ChartWidget, <code>widget.getChart().updateBar(bar)</code> sửa nến của nguồn dữ liệu đã kết nối; nến bạn đưa cho widget bằng <code>setData</code> là một bản sao mà widget dựng lại các khung thời gian từ đó, nên lần sửa trên chúng chỉ giữ tới lần đổi khung thời gian kế tiếp (phương thức của widget cho trường hợp này sẽ có sau).
+  Nến mà feed sửa lại được đưa vào bằng <code>updateBar(bar)</code>: nó thay nến đã nạp có cùng <code>time</code>, ở bất kỳ đâu trong chuỗi, và trả về <code>true</code>. Chỉ báo được tính lại từ nến đó trở đi, Heikin-Ashi, Renko và các kiểu khác dựng từ nến cũng cập nhật theo, view giữ nguyên vị trí; các lần sửa trước frame kế tiếp được tính một lần, từ nến sớm nhất. Hàm trả về <code>false</code> và không thay đổi gì khi không có nến đã nạp nào có time đó (nến mới thuộc về <code>appendBar</code>, nến cũ hơn thuộc về <code>prependBars</code>) hoặc khi chart không nhận được nến đó. Đây không phải giá hiện tại: order và cảnh báo không đi theo nó, không cảnh báo nào kích hoạt từ nó, và cảnh báo trên đường chỉ báo không được kiểm tra lại với giá trị đã sửa. Sửa nến cuối thì đường giá di chuyển, như sau <code>setData</code>. Trong replay, hàm sửa chuỗi dữ liệu thực: nến mà replay đã đi qua hiển thị bản sửa ngay, nến phía sau hiển thị khi replay đến đó; nến trong giờ mở rộng, khi giờ mở rộng đang ẩn, hiển thị khi giờ mở rộng được bật lại. Gửi lại đúng nến đã nạp thì không thay đổi gì; volume thiếu được tính là 0, như với <code>setData</code>, nên hãy gửi đủ nến. Hàm gửi <code>dataUpdate</code> với <code>{'{'} kind: 'correction', time, index {'}'}</code>. Trong ChartWidget, <code>widget.getChart().updateBar(bar)</code> sửa nến của feed đã kết nối; nến đưa cho widget bằng <code>setData</code> là bản sao mà widget dùng để dựng lại các timeframe, nên bản sửa trên chúng chỉ có hiệu lực đến lần đổi timeframe tiếp theo (phương thức widget cho trường hợp này sẽ có sau).
 </p>
 
 <p id="bar-times">
-  Thời gian của nến là epoch mili-giây hoặc giây, một đơn vị cho cả chuỗi. Biểu đồ đọc đơn vị một lần, từ nến mới nhất: <code>barTimeUnit(data)</code> trả về 1 (mili-giây, từ 1e11 trở lên) hoặc 1000 (giây). Vì vậy một chuỗi mili-giây giữ đúng ngày cả trước năm 2001, dù các giá trị đó nhỏ hơn 1e12. Hãy giữ một chuỗi ở một đơn vị; thời gian biểu đồ trả lại (sự kiện, <code>getData()</code>) dùng đơn vị đó.
+  Thời gian của nến là epoch tính bằng mili giây hoặc giây, một đơn vị cho cả chuỗi. Chart đọc đơn vị một lần, từ nến mới nhất: <code>barTimeUnit(data)</code> trả về 1 (mili giây, từ 1e11 trở lên) hoặc 1000 (giây). Vì vậy chuỗi tính bằng mili giây vẫn giữ đúng các ngày trước 2001, dù chúng nhỏ hơn 1e12. Hãy giữ chuỗi trong một đơn vị; các thời gian mà chart trả lại (event, <code>getData()</code>) dùng đơn vị đó.
 </p>
 
-<h3>Loại biểu đồ &amp; giao diện</h3>
+<h3>Loại biểu đồ &amp; theme</h3>
 <table>
-  <thead><tr><th>Phương thức</th><th>Công dụng</th></tr></thead>
+  <thead><tr><th>Phương thức</th><th>Mục đích</th></tr></thead>
   <tbody>
     <tr><td><code>setChartType(type)</code></td><td>Một trong 18 loại — xem <a href={href('/docs/chart-types')}>Loại biểu đồ</a>.</td></tr>
-    <tr><td><code>getChartType()</code></td><td>Loại biểu đồ đang vẽ (mặc định <code>'candlestick'</code>).</td></tr>
-    <tr><td><code>setTheme(name | theme)</code></td><td>Chuyển giữa các giao diện có sẵn, hoặc đặt theme của bạn. <code>getTheme()</code> trả lại đúng như đã đặt.</td></tr>
-    <tr><td><code>applyOverrides(patch, {'{ layer }'})</code></td><td>Đặt style bất kỳ phần nào của biểu đồ theo khoá (<code>'grid.vertical.visible'</code>, <code>'series.candlestick.upColor'</code>…); <code>null</code> bỏ một khoá. Xem <a href={href('/docs/styling#overrides')}>Styling</a>.</td></tr>
-    <tr><td><code>setOverrides(overrides, {'{ layer }'})</code> · <code>resetOverrides(keys?, {'{ layer }'})</code></td><td>Cả một lớp một lúc; bỏ các khoá (hoặc tất cả).</td></tr>
-    <tr><td><code>getOverrides({'{ layer }'})</code> · <code>getStyle()</code> · <code>getStyleValue(key)</code></td><td>Override của một lớp; giao diện đã phân giải; giá trị một khoá ra.</td></tr>
-    <tr><td><code>setTimeframe(tf)</code></td><td>Đổi khung thời gian đang dùng; nối lại luồng dữ liệu trực tiếp.</td></tr>
+    <tr><td><code>getChartType()</code></td><td>Loại mà chart đang vẽ (mặc định <code>'candlestick'</code>).</td></tr>
+    <tr><td><code>setTheme(name | theme)</code></td><td>Đổi giữa các theme có sẵn, hoặc đặt theme riêng. <code>getTheme()</code> trả lại theme như đã đặt.</td></tr>
+    <tr><td><code>applyOverrides(patch, {'{ layer }'})</code></td><td>Đặt style cho bất kỳ phần nào của chart theo key (<code>'grid.vertical.visible'</code>, <code>'series.candlestick.upColor'</code>…); <code>null</code> bỏ một key. Xem <a href={href('/docs/styling#overrides')}>Styling</a>.</td></tr>
+    <tr><td><code>setOverrides(overrides, {'{ layer }'})</code> · <code>resetOverrides(keys?, {'{ layer }'})</code></td><td>Đặt toàn bộ một layer cùng lúc; bỏ các key (hoặc tất cả).</td></tr>
+    <tr><td><code>getOverrides({'{ layer }'})</code> · <code>getStyle()</code> · <code>getStyleValue(key)</code></td><td>Override của một layer; style sau khi resolve; giá trị resolve của một key.</td></tr>
+    <tr><td><code>setTimeframe(tf)</code></td><td>Đổi timeframe đang dùng; kết nối lại stream.</td></tr>
   </tbody>
 </table>
 
-<h3>Bộ vẽ</h3>
+<h3>Renderer</h3>
 <table>
-  <thead><tr><th>Phương thức</th><th>Công dụng</th></tr></thead>
+  <thead><tr><th>Phương thức</th><th>Mục đích</th></tr></thead>
   <tbody>
-    <tr><td>Tuỳ chọn <code>renderer</code></td><td><code>'canvas'</code> (mặc định), <code>'webgl'</code>, hoặc <code>'auto'</code> (chỉ dùng WebGL khi có GPU phần cứng).</td></tr>
-    <tr><td><code>setRenderer(mode)</code></td><td>Đổi khi đang chạy. Trả về bộ đang vẽ: <code>'canvas'</code> nếu không có WebGL 2.</td></tr>
+    <tr><td>Tuỳ chọn <code>renderer</code></td><td><code>'canvas'</code> (mặc định), <code>'webgl'</code>, hoặc <code>'auto'</code> (chỉ dùng WebGL trên GPU phần cứng).</td></tr>
+    <tr><td><code>setRenderer(mode)</code></td><td>Đổi khi đang chạy. Trả về renderer đang vẽ: <code>'canvas'</code> khi không có WebGL 2.</td></tr>
     <tr><td><code>getRenderer()</code></td><td><code>'canvas'</code> hoặc <code>'webgl'</code>.</td></tr>
   </tbody>
 </table>
-<p>GPU vẽ những gì, và số đo: <a href={href('/docs/performance')}>Hiệu năng → Bộ vẽ WebGL</a>.</p>
+<p>GPU vẽ những gì, và số liệu đo: <a href={href('/docs/performance')}>Hiệu năng → WebGL renderer</a>.</p>
 
 <h3>Chỉ báo</h3>
 <table>
-  <thead><tr><th>Phương thức</th><th>Công dụng</th></tr></thead>
+  <thead><tr><th>Phương thức</th><th>Mục đích</th></tr></thead>
   <tbody>
-    <tr><td><code>addIndicator(id, params?, position?)</code></td><td>Thêm một chỉ báo phủ lên biểu đồ hoặc ở pane riêng. Trả về id của instance.</td></tr>
-    <tr><td><code>updateIndicator(instanceId, params)</code></td><td>Sửa một chỉ báo đang chạy.</td></tr>
-    <tr><td><code>removeIndicator(instanceId)</code></td><td>Xoá và dọn dẹp chỉ báo.</td></tr>
-    <tr><td><code>removeIndicators(instanceIds)</code></td><td>Xoá nhiều chỉ báo, gộp thành một bước hoàn tác.</td></tr>
-    <tr><td><code>removeAll(what?)</code></td><td>Xoá mọi hình vẽ (<code>'drawings'</code>), mọi chỉ báo (<code>'indicators'</code>) hoặc cả hai (<code>'all'</code>), gộp thành một bước hoàn tác; hình vẽ đã khoá thì giữ lại. Trả về số lượng mỗi loại đã xoá.</td></tr>
-    <tr><td><code>takeBackDrawing(id)</code></td><td>Bỏ một hình vẽ vừa tạo, như nút Huỷ ngay sau khi vẽ: bỏ luôn bước đã tạo ra nó nếu đó là bước cuối, nên không còn gì để hoàn tác hay làm lại. Sự kiện <code>drawingCreate</code> có <code>drawn: true</code> cho hình vẽ vừa được vẽ bằng con trỏ.</td></tr>
-    <tr><td><code>updateIndicatorStyle(instanceId, style)</code></td><td>Màu, độ dày, độ mờ, và kiểu nét, ẩn/hiện của từng đường (<code>plots: {`{ signal: { lineStyle: 'dashed' } }`}</code>).</td></tr>
-    <tr><td><code>setIndicatorDefaults(id, style | null)</code></td><td>Style mà các chỉ báo cùng loại bắt đầu với, từ nay.</td></tr>
-    <tr><td><code>setIndicatorIntervals(instanceId, intervals | null)</code> · <code>getIndicatorIntervals(instanceId)</code></td><td>Các khung thời gian mà chỉ báo hiện trên đó (<code>{`{ minutes: false, hours: [1, 4] }`}</code>); <code>null</code>: mọi khung. Lưu cùng bố cục.</td></tr>
-    <tr><td><code>setDataTimeframe(timeframe | null)</code></td><td>Khung thời gian của nến nạp bằng <code>setData</code>: dòng tiêu đề chú thích ghi nó, và các chỉ báo chỉ hiện trên một số khung đi theo nó.</td></tr>
-    <tr><td><code>setPaneStyle(instanceId, {'{ background, separator }'} | null)</code> · <code>getPaneStyle(instanceId)</code></td><td>Giao diện riêng của một pane, lưu cùng chỉ báo của nó.</td></tr>
+    <tr><td><code>addIndicator(id, params?, position?)</code></td><td>Thêm chỉ báo overlay hoặc chỉ báo ở pane riêng. Trả về instance id.</td></tr>
+    <tr><td><code>updateIndicator(instanceId, params)</code></td><td>Thay đổi một chỉ báo đang chạy.</td></tr>
+    <tr><td><code>removeIndicator(instanceId)</code></td><td>Xoá và giải phóng.</td></tr>
+    <tr><td><code>removeIndicators(instanceIds)</code></td><td>Xoá nhiều chỉ báo, gộp thành một bước undo.</td></tr>
+    <tr><td><code>removeAll(what?)</code></td><td>Mọi hình vẽ (<code>'drawings'</code>), mọi chỉ báo (<code>'indicators'</code>) hoặc cả hai (<code>'all'</code>), gộp thành một bước undo; hình vẽ đã khoá được giữ lại. Trả về số lượng đã xoá của mỗi loại.</td></tr>
+    <tr><td><code>takeBackDrawing(id)</code></td><td>Huỷ một hình vẽ vừa tạo, như bấm Cancel ngay sau khi vẽ: bỏ luôn bước đã tạo nó nếu đó là bước cuối, nên không còn gì để undo hay redo. Event <code>drawingCreate</code> có <code>drawn: true</code> với hình vẽ vừa được vẽ bằng con trỏ.</td></tr>
+    <tr><td><code>updateIndicatorStyle(instanceId, style)</code></td><td>Màu, độ dày đường, độ mờ, và kiểu nét đứt cùng trạng thái hiển thị của từng plot (<code>plots: {`{ signal: { lineStyle: 'dashed' } }`}</code>).</td></tr>
+    <tr><td><code>setIndicatorDefaults(id, style | null)</code></td><td>Style ban đầu cho các chỉ báo cùng loại được thêm từ đây về sau.</td></tr>
+    <tr><td><code>setIndicatorIntervals(instanceId, intervals | null)</code> · <code>getIndicatorIntervals(instanceId)</code></td><td>Các khung thời gian mà chỉ báo hiển thị (<code>{`{ minutes: false, hours: [1, 4] }`}</code>); <code>null</code>: tất cả. Được lưu cùng layout.</td></tr>
+    <tr><td><code>setDataTimeframe(timeframe | null)</code></td><td>Khung thời gian của các nến đặt bằng <code>setData</code>: legend ghi tên nó, và các chỉ báo giới hạn theo khung thời gian đi theo nó.</td></tr>
+    <tr><td><code>setPaneStyle(instanceId, {'{ background, separator }'} | null)</code> · <code>getPaneStyle(instanceId)</code></td><td>Style riêng của một pane, được lưu cùng chỉ báo của pane đó.</td></tr>
   </tbody>
 </table>
 
 <h3>Trục &amp; thang</h3>
 <p>
-  Trục giá (dải bên phải) và trục thời gian (dải bên dưới) nhận thao tác chuột
-  trực tiếp, với các cử chỉ mà trader đã quen:
+  Trục giá (dải bên phải) và trục thời gian (dải bên dưới) nhận thao tác
+  trực tiếp bằng con trỏ, với các thao tác quen thuộc với trader:
 </p>
 <table>
-  <thead><tr><th>Cử chỉ</th><th>Tác dụng</th></tr></thead>
+  <thead><tr><th>Thao tác</th><th>Tác dụng</th></tr></thead>
   <tbody>
-    <tr><td>Kéo trục giá lên / xuống</td><td>Thu hẹp / mở rộng khoảng giá theo chiều dọc (tắt tự co giãn thang).</td></tr>
-    <tr><td>Kéo trục thời gian sang trái / phải</td><td>Phóng to / thu nhỏ trục thời gian.</td></tr>
-    <tr><td>Bấm đúp vào trục giá</td><td>Bật lại tự co giãn thang.</td></tr>
-    <tr><td>Bấm đúp vào trục thời gian</td><td>Vừa khít toàn bộ dữ liệu vào khung nhìn.</td></tr>
+    <tr><td>Kéo trục giá lên / xuống</td><td>Thu hẹp / mở rộng khoảng giá theo chiều dọc (tắt auto-scale).</td></tr>
+    <tr><td>Kéo trục thời gian sang trái / phải</td><td>Zoom vào / ra trên trục thời gian.</td></tr>
+    <tr><td>Double-click trục giá</td><td>Bật lại auto-scale.</td></tr>
+    <tr><td>Double-click trục thời gian</td><td>Hiển thị toàn bộ dữ liệu trong viewport.</td></tr>
   </tbody>
 </table>
 <p>
-  <strong>Múi giờ.</strong> Trục thời gian, giờ của crosshair, tooltip, vạch ngăn ngày
-  và các khoảng thời gian chọn sẵn mặc định theo múi giờ của trình duyệt. Có thể đặt một múi
-  giờ IANA (tính cả giờ mùa hè), một độ lệch cố định tính bằng phút về phía đông UTC, hoặc
-  <code>'exchange'</code> để theo múi giờ của mã (<code>SymbolInfo.timeZone</code>), không có thì
-  theo múi giờ của thị trường: bằng tùy chọn <code>timeZone</code>, từ phần cài đặt của widget,
-  hoặc gọi trực tiếp:
+  <strong>Múi giờ.</strong> Trục thời gian, thời gian của crosshair, tooltip, các mốc
+  ngày và các preset khoảng thời gian mặc định theo múi giờ của trình duyệt. Có thể đặt cho chart một
+  múi giờ IANA (có tính giờ mùa hè), một độ lệch cố định tính bằng phút về phía đông UTC, hoặc
+  <code>'exchange'</code> để dùng múi giờ của mã (<code>SymbolInfo.timeZone</code>), nếu không có thì dùng
+  múi giờ của thị trường: qua tuỳ chọn <code>timeZone</code>, trong phần cài đặt của widget, hoặc gọi trực tiếp:
 </p>
-<pre><code>{`new Chart(host, { timeZone: 'America/New_York' }) // ngay từ đầu
+<pre><code>{`new Chart(host, { timeZone: 'America/New_York' }) // from the start
 
-chart.setTimeZone('America/New_York')  // giờ New York, tính cả giờ mùa hè
-chart.setTimeZone(330)                 // UTC+5:30, tính bằng phút
-chart.setTimeZone(null)                // múi giờ của trình duyệt
-chart.setTimeZone('exchange')          // múi giờ của mã, không có thì của thị trường
-chart.getTimeZone()                    // 'exchange', như đã đặt
-chart.getEffectiveTimeZone()           // múi giờ nó trỏ tới: 'Asia/Ho_Chi_Minh' trên HOSE`}</code></pre>
+chart.setTimeZone('America/New_York')  // New York's time, daylight saving included
+chart.setTimeZone(330)                 // UTC+5:30, in minutes
+chart.setTimeZone(null)                // the browser's
+chart.setTimeZone('exchange')          // the symbol's zone, else its market's
+chart.getTimeZone()                    // 'exchange', as set
+chart.getEffectiveTimeZone()           // the zone it stands for: 'Asia/Ho_Chi_Minh' on HOSE`}</code></pre>
 <p>
-  Các phương thức và kiểu của biểu đồ viết múi giờ là <code>timeZone</code>, như
-  <code>Intl.DateTimeFormat</code>. Các cách viết của 1.x (<code>setTimezone</code> và những tên
-  còn lại, <code>SymbolInfo.timezone</code>) đã bị gỡ ở 2.0: xem <a href={href('/docs/migration#removed')}>Chuyển sang 2.0</a>.
+  Các phương thức và kiểu của chart viết là <code>timeZone</code>, giống <code>Intl.DateTimeFormat</code>.
+  Cách viết của 1.x (<code>setTimezone</code> và các hàm cùng nhóm, <code>SymbolInfo.timezone</code>) đã bị xoá
+  ở 2.0: xem <a href={href('/docs/migration#removed')}>Chuyển sang 2.0</a>.
 </p>
 
-<p>Các tác dụng trên cũng có thể gọi bằng code:</p>
+<p>Các tác dụng trên cũng gọi được bằng code:</p>
 <pre><code>{`chart.setAutoScale(false)  // hold the price range on screen (a new series is fitted once)
 chart.setLogScale(true)    // switch to logarithmic price scale
 chart.setInvertScale(true) // upside down (Alt+I in the widget)
@@ -135,15 +134,15 @@ chart.goToTime(Date.UTC(2025, 0, 1))    // centre that bar (Alt+G in the widget)
 chart.setVisibleRange(from, to)         // the bars between two times, edge to edge (Go to's Custom range)
 chart.getVisibleTimeRange()             // { from, to }: the first and last bars on screen, or null`}</code></pre>
 <p id="long-ranges">
-  <strong>Khoảng dài.</strong> Mỗi nến không hẹp hơn 0,25 px, nên một khoảng dài hơn mức đó (26 năm nến ngày trên laptop) chỉ hiện phần mới nhất. Trong widget, một khoảng dài trên thanh khoảng thời gian sẽ chuyển sang khung có số nến vừa màn hình, từ 2 px mỗi nến: 5Y nến ngày sang nến tuần, All sang nến tháng; khoảng ngắn thì trở về khung bạn đã chọn, không bao giờ mịn hơn. Nó chỉ chuyển sang khung mà nguồn dữ liệu của bạn có (hoặc nến hiện có gộp lên được). <code>{`features: { 'statusBar.rangeTimeframe': false }`}</code> giữ nguyên khung. Với <code>Chart</code> dùng trực tiếp, <code>minBarUnit</code> (tuỳ chọn, hoặc <code>setMinBarUnit</code>) cho nến hẹp đến 0,02 px, vẽ theo từng cột pixel.
+  <strong>Khoảng thời gian dài.</strong> Mỗi ô nến không bao giờ hẹp hơn 0.25 px, nên khoảng thời gian dài hơn mức đó cho phép (26 năm nến ngày trên laptop) chỉ hiển thị phần mới nhất. Trong widget, chọn khoảng dài trên thanh khoảng thời gian sẽ chuyển sang timeframe có số nến vừa màn hình, mỗi nến từ 2 px trở lên: 5Y nến ngày chuyển sang tuần, All chuyển sang tháng; khoảng ngắn quay về timeframe đã chọn, không bao giờ nhỏ hơn. Widget chỉ chuyển sang các timeframe mà feed cung cấp (hoặc các nến hiện có resample được). <code>{`features: { 'statusBar.rangeTimeframe': false }`}</code> giữ nguyên timeframe. Trên <code>Chart</code> thuần, <code>minBarUnit</code> (tuỳ chọn, hoặc <code>setMinBarUnit</code>) cho phép ô nến nhỏ đến 0.02 px, vẽ theo từng cột pixel.
 </p>
 
 <p>
-  <strong>Chế độ thang giá.</strong> Ngoài thang thường và logarit, trục giá
-  có thể tính lại nhãn so với nến đầu tiên đang hiện — <code>percentage</code>
-  hiện % thay đổi, <code>indexedTo100</code> quy mốc về 100. Thang thường,
-  phần trăm và quy về 100 dùng chung một hình học tuyến tính; chỉ có nhãn
-  là khác. Đặt từ bảng cài đặt biểu đồ hoặc gọi trực tiếp:
+  <strong>Chế độ thang giá.</strong> Ngoài thang thường và thang log, trục
+  có thể tính lại nhãn so với nến đầu tiên đang hiển thị — <code>percentage</code>
+  hiển thị % thay đổi, <code>indexedTo100</code> đặt mốc cơ sở bằng 100. Thang thường,
+  phần trăm và indexed dùng chung hình học tuyến tính; chỉ nhãn là khác nhau.
+  Đặt được từ panel cài đặt chart hoặc gọi trực tiếp:
 </p>
 <pre><code>{`chart.setScaleMode('percentage')   // axis labels: +12.34% from first visible bar
 chart.setScaleMode('indexedTo100') // first visible bar reads as 100
@@ -152,14 +151,14 @@ chart.getScaleMode()`}</code></pre>
 
 <h3>Định dạng giá và thời gian</h3>
 <p>
-  Giá có thể hiển thị theo định dạng của riêng bạn, hoặc theo phân số của một điểm như cách yết
-  giá trái phiếu và hợp đồng tương lai của chúng (<code>101'16</code> là 101 và 16/32). Định dạng
-  này áp dụng cho mọi chỗ in giá theo thang giá: trục, crosshair, nhãn giá cuối, chú thích,
-  tooltip, lệnh, cảnh báo và nhãn hình vẽ; trục đặt vạch đúng vào các phân số chẵn và
-  <code>roundPrice</code> làm tròn theo chúng. Các pane chỉ báo giữ cách hiển thị số riêng. Khi bạn
-  không đặt định dạng riêng, giá được nhóm chữ số theo cách viết số của ngôn ngữ đã chọn (<code>numberLocale</code>); nhãn vạch chia trên trục chỉ hiện số chữ số
-  thập phân mà bước của nó cần (73,500), còn giá cuối, crosshair và các nhãn cạnh trục hiện đủ mọi chữ số thập
-  phân. Khi mã và thị trường đều không đặt số lẻ, số lẻ đó nhiều hơn một so với mức bước của thang giá cần, và với giá dưới 1 thì ít nhất đủ bốn chữ số có nghĩa của giá (0.000004349, trong khi riêng bước của thang chỉ cho 0.00000435). Thời gian cũng hiển thị được theo cách của bạn; hàm định dạng được cho biết nhãn đang in là loại nào.
+  Giá có thể hiển thị theo định dạng riêng, hoặc dạng phân số của một điểm như cách yết giá trái phiếu và
+  hợp đồng tương lai trái phiếu (<code>101'16</code> là 101 và 16/32). Định dạng áp dụng cho
+  mọi chỗ in giá theo thang giá: trục, crosshair, tag giá cuối,
+  legend, tooltip, order, cảnh báo và nhãn hình vẽ; trục đặt các vạch chia ở các phân số
+  tròn và <code>roundPrice</code> làm tròn theo chúng. Pane chỉ báo giữ cách hiển thị số
+  riêng. Khi không có định dạng riêng, giá được nhóm theo number locale; nhãn vạch chia
+  của trục chỉ hiển thị số chữ số thập phân mà bước chia cần (73,500), còn giá cuối,
+  crosshair và các tag cạnh trục hiển thị đủ mọi chữ số thập phân. Khi mã hoặc thị trường không đặt số chữ số thập phân, số đó bằng số mà bước chia của thang cần cộng thêm một, và với giá dưới 1 thì có ít nhất bốn chữ số có nghĩa (0.000004349, trong khi chỉ theo bước chia thì là 0.00000435). Thời gian cũng định dạng riêng được; hàm định dạng được cho biết nhãn đó là loại gì.
 </p>
 <pre><code>{`new Chart(host, { priceFormat: { denominator: 32 } })                    // 101'16
 chart.setPriceFormat({ denominator: 32, subDenominator: 2 })            // 101'165: 16½ 32nds
@@ -172,60 +171,59 @@ chart.setTimeFormatter((time, { kind, timeZone }) =>
 
 <h3 id="axis-labels">Cách các trục chọn nhãn</h3>
 <p>
-  Trục thời gian gắn nhãn cho những nến mở đầu bước lịch lớn nhất: một năm (chữ đậm), một tháng, một ngày, một giờ tròn, cách nhau ít nhất 80 px. Vì vậy ở 5Y trục đọc <code>2022 · Jul · 2023</code>, ở một tháng <code>Oct · 8 · 15</code>, trong ngày <code>12:00 · 18:00</code>. Nhãn thuộc về nến chứ không thuộc về màn hình: kéo biểu đồ thì nhãn đi theo nến, nạp thêm lịch sử phía trước thì nhãn vẫn ở chỗ cũ. Bên trái nến cũ nhất không có nhãn. Khi không có năm mới nào được gắn nhãn, một tag ở đầu bên trái, cùng kiểu với tag múi giờ ở bên phải, ghi phần mà các nhãn bỏ qua, tính theo nến đầu tiên đang hiện: năm giữa các tháng, <code>Mar 2023</code> giữa các ngày, cả ngày tháng giữa các giờ của một ngày. Đè lên một nhãn ở đầu bên trái, tag thay chỗ nhãn đó và ghi luôn điều nhãn ghi (<code>Mar 2023</code> đè lên <code>Mar</code>). Khi kéo lùi về lịch sử, năm luôn có trên trục. Tên tháng theo <code>setNumberLocale</code>, và các đường lưới nằm đúng chỗ nhãn.
+  Trục thời gian gắn nhãn cho các nến mở đầu bước lịch lớn nhất: năm (in đậm), tháng, ngày, giờ chẵn, cách nhau ít nhất 80 px. Vì vậy ở 5Y trục hiển thị <code>2022 · Jul · 2023</code>, ở một tháng là <code>Oct · 8 · 15</code>, trong một ngày là <code>12:00 · 18:00</code>. Nhãn gắn với nến, không gắn với màn hình: khi pan, nhãn di chuyển cùng nến, và dữ liệu lịch sử nạp thêm phía trước không làm nhãn đổi chỗ. Bên trái nến cũ nhất không có nhãn. Khi không có nhãn năm mới nào, một tag ở đầu trái, cùng kiểu với tag múi giờ ở bên phải, ghi phần mà các nhãn bỏ qua, tính theo nến đầu tiên đang hiển thị: năm khi nhãn là tháng, <code>Mar 2023</code> khi nhãn là ngày, ngày đầy đủ khi nhãn là giờ trong một ngày. Nếu đè lên một nhãn ở đầu trái thì tag thay cho nhãn đó và ghi cả nội dung của nó (<code>Mar 2023</code> thay cho <code>Mar</code>). Khi pan về quá khứ, năm luôn có trên trục. Tên tháng theo <code>setNumberLocale</code>, và các đường lưới nằm ở vị trí của nhãn.
 </p>
 <p>
-  Thang giá đặt số nhãn vừa với chiều cao của nó, cách nhau ít nhất 30 px, theo bước giá của thị trường. Ở thang log bước tăng theo giá, nên phần dưới cũng có nhãn như phần trên; ở thang phần trăm hay chỉ số, nhãn là phần trăm hoặc điểm chỉ số tròn tính từ mốc. Các pane chỉ báo cũng đếm nhãn theo chiều cao của chúng.
+  Thang giá đặt số nhãn vừa với chiều cao của nó, cách nhau ít nhất 30 px, theo bước giá của thị trường. Trên thang log, bước chia tăng theo giá, nên phần dưới cũng có nhãn như phần trên; trên thang phần trăm hoặc indexed, nhãn là các mức phần trăm hoặc điểm chỉ số tròn tính từ mốc cơ sở. Pane chỉ báo cũng tính số nhãn theo chiều cao của pane.
 </p>
 
-<h3>Thị trường: bước giá, biên độ và phiên giao dịch</h3>
+<h3>Thị trường: bước giá, biên độ và phiên</h3>
 <p>
-  <code>setMarket</code> cho biểu đồ biết quy định của một sàn: màu nến, số chữ số thập
-  phân, bước giá (có thể đổi theo vùng giá), giá trần và giá sàn trong ngày, và lô giao
-  dịch. <code>roundPrice</code> và <code>getPriceStep</code> theo bước giá của vùng giá, nên
-  giá lấy từ menu của biểu đồ luôn là giá hợp lệ, và order ticket của widget kiểm tra
-  lệnh theo bước giá, biên độ trong ngày và lô chẵn. Preset còn mang các phiên và múi giờ
-  của sàn, dùng cho <code>getCurrentSession</code> và code của bạn; vùng tô phiên và giờ mở
-  rộng trên biểu đồ lấy từ <code>setSymbolInfo</code>. Có sẵn
-  preset cho các sàn Việt Nam theo quy định tháng 5/2025: HOSE (bước 10, 50 hoặc 100 đồng
-  theo vùng giá, ±7%), chứng chỉ quỹ ETF và chứng quyền trên HOSE (10 đồng), HNX (±10%, có
-  phiên sau giờ), UPCoM (±15%) và hợp đồng tương lai VN30 (bước 0,1 điểm, ±7%, mở cửa
-  8:45); cổ phiếu giao dịch theo lô 100, xanh tăng, đỏ giảm, tím trần, xanh lam sàn, vàng
-  tham chiếu. Giá trong các preset tính bằng nghìn đồng như trên bảng giá;
-  <code>scaleMarketPrices(preset, 1000)</code> dùng cho giá tính bằng đồng.
+  <code>setMarket</code> đặt cho chart quy tắc của một sàn: màu nến, số chữ số thập phân,
+  bước giá (có thể phụ thuộc vào giá), giá trần và giá sàn trong ngày, và lô.
+  <code>roundPrice</code> và <code>getPriceStep</code> theo bước giá của vùng giá tương ứng, nên
+  giá từ các menu của chart rơi đúng vào giá hợp lệ, và order ticket của widget kiểm tra
+  lệnh theo bước giá, biên độ trong ngày và số lô chẵn. Preset cũng chứa các phiên
+  và múi giờ của sàn, dùng cho <code>getCurrentSession</code> và code của bạn; phần
+  tô màu phiên và giờ mở rộng của chart lấy từ <code>setSymbolInfo</code>. Có preset cho các sàn Việt Nam theo quy định tháng 5/2025: HOSE (10, 50 hoặc
+  100 đồng mỗi bước tuỳ giá, ±7%), ETF và chứng quyền có bảo đảm của HOSE (10 đồng), HNX (±10%, có
+  phiên sau giờ đóng cửa), UPCoM (±15%) và hợp đồng tương lai chỉ số VN30 (0.1 điểm mỗi bước, ±7%, từ 8:45);
+  cổ phiếu và lô 100, xanh khi tăng và đỏ khi giảm, tím cho giá trần, xanh lơ cho giá sàn và vàng cho
+  giá tham chiếu. Giá tính bằng nghìn đồng, như trên bảng giá;
+  <code>scaleMarketPrices(preset, 1000)</code> đọc giá theo đồng.
 </p>
 <pre><code>{`import {
   MARKET_HOSE, scaleMarketPrices, priceStepAt, roundToPriceStep, getCurrentSession,
   vn30fContracts, vn30fLastTradingDay,
 } from '@tradecanvas/chart'
 
-chart.setMarket(MARKET_HOSE)                 // hoặc scaleMarketPrices(MARKET_HOSE, 1000) cho giá 25350
-chart.setTimeZone('exchange')                // trục thời gian theo múi giờ của sàn: Asia/Ho_Chi_Minh
-chart.setPriceLimits(25.35)                  // giá tham chiếu: giá đóng cửa hôm trước
+chart.setMarket(MARKET_HOSE)                 // or scaleMarketPrices(MARKET_HOSE, 1000) for 25350
+chart.setTimeZone('exchange')                // the axis in the market's zone: Asia/Ho_Chi_Minh
+chart.setPriceLimits(25.35)                  // the reference: yesterday's close
 chart.getPriceLimits()                       // { ceiling: 27.1, floor: 23.6, reference: 25.35 }
-chart.roundPrice(25.37)                      // 25.35, bước 50 đồng
-chart.getPriceStep(9.5)                      // 0.01 dưới 10.000 đồng
+chart.roundPrice(25.37)                      // 25.35, a 50-dong step
+chart.getPriceStep(9.5)                      // 0.01 below 10,000 dong
 
-// Dùng riêng các quy tắc
+// The rules on their own
 priceStepAt(25.35, MARKET_HOSE)              // 0.05
 roundToPriceStep(10.486, MARKET_HOSE, 'down') // 10.45
-getCurrentSession(MARKET_HOSE.sessions, Date.now(), MARKET_HOSE.timeZone) // { name: 'ATC', type: 'preClose', … }, chỉ theo giờ
+getCurrentSession(MARKET_HOSE.sessions, Date.now(), MARKET_HOSE.timeZone) // { name: 'ATC', type: 'preClose', … }, by the clock only
 
-// Hợp đồng tương lai VN30: bốn hợp đồng đang niêm yết và ngày giao dịch cuối cùng
+// VN30 futures: the four listed contracts and their last trading days
 vn30fContracts(Date.now())                   // [{ symbol: 'VN30F2611', lastTradingDay: '2026-11-19', … }, …]
-vn30fLastTradingDay(2026, 12, (day) => holidays.has(day)) // thứ Năm thứ ba, lùi lại nếu là ngày nghỉ`}</code></pre>
+vn30fLastTradingDay(2026, 12, (day) => holidays.has(day)) // the third Thursday, earlier on a holiday`}</code></pre>
 <p>
-  Hàn Quốc, theo quy định tháng 9/2026: <code>MARKET_KRX</code> cho cổ phiếu KOSPI và KOSDAQ
-  tính bằng won (bước giá từ 1 đến 1.000 won theo vùng giá; ±30%, khoảng biên độ được làm
-  tròn xuống theo bước giá của giá tham chiếu trước, đúng cách KRX làm; phiên khớp lệnh
-  định kỳ mở cửa và đóng cửa, phiên liên tục và After-Market đến 20:00),
-  <code>MARKET_NXT</code> cho sàn Nextrade (bước giá và biên độ như KRX, phiên riêng từ 8:00
-  đến 20:00) và <code>MARKET_UPBIT_KRW</code> cho chợ KRW của Upbit (bước giá từ 1.000 won
-  xuống một phần trăm triệu won, không có biên độ). Giá tăng màu đỏ, giảm màu xanh dương
-  (<code>KR_COLORS</code>); <code>createMarketTheme(theme, KR_COLORS)</code> cho theme bất
-  kỳ màu nến đó, và <code>formatVolumeLoc(value, 'ko')</code> rút gọn khối lượng theo 만, 억
-  và 조. Với <code>numberLocale: 'ko-KR'</code>, chart cũng ghi khối lượng như vậy: ở legend,
-  tooltip theo crosshair, Data Window của ChartWidget và hộp Date and Price Range.
+  Hàn Quốc, theo quy định tháng 9/2026: <code>MARKET_KRX</code> cho cổ phiếu KOSPI và KOSDAQ tính bằng won
+  (1 đến 1,000 won mỗi bước tuỳ giá; ±30%, mức biến động được làm tròn xuống theo bước giá của giá tham chiếu
+  trước, như cách KRX làm tròn; phiên khớp lệnh mở cửa và đóng cửa, phiên liên tục và
+  phiên After-Market đến 20:00), <code>MARKET_NXT</code> cho Nextrade (bước giá và biên độ của KRX,
+  phiên riêng từ 8:00 đến 20:00) và <code>MARKET_UPBIT_KRW</code> cho thị trường KRW của Upbit
+  (bước giá từ 1,000 won xuống đến một phần trăm triệu won, không có biên độ). Các preset này vẽ
+  giá tăng màu đỏ và giá giảm màu xanh dương (<code>KR_COLORS</code>);
+  <code>createMarketTheme(theme, KR_COLORS)</code> áp màu nến đó cho bất kỳ theme nào, và
+  <code>formatVolumeLoc(value, 'ko')</code> rút gọn khối lượng theo 만, 억 và 조.
+  Với <code>numberLocale: 'ko-KR'</code> chart cũng hiển thị khối lượng như vậy: ở legend,
+  tooltip của crosshair, data window của ChartWidget và hộp Date and Price Range.
 </p>
 <pre><code>{`import { MARKET_KRX, KR_COLORS, createMarketTheme, LIGHT_THEME, formatVolumeLoc } from '@tradecanvas/chart'
 
@@ -236,31 +234,31 @@ chart.roundPrice(72340)                      // 72300, a 100-won step
 createMarketTheme(LIGHT_THEME, KR_COLORS)    // a theme with Korea's candles
 formatVolumeLoc(345_000_000, 'ko')           // '3.45억'`}</code></pre>
 <p>
-  Thị trường của riêng bạn là một <code>MarketConfig</code>: <code>priceStep</code>, hoặc
+  Thị trường riêng là một <code>MarketConfig</code>: <code>priceStep</code>, hoặc
   <code>priceSteps: [{'{'} from, step {'}'}]</code> cho các vùng giá, <code>priceLimits</code>,
   <code>volumeUnit</code> (lô), <code>sessions</code>, <code>timeZone</code> và
-  <code>colorScheme</code>. <code>minTick</code> của mã đi trước bước giá của thị trường.
-  Các sàn thỉnh thoảng đổi quy định; hãy đối chiếu preset với quy định hiện hành của sàn
-  trước khi dựa vào nó.
+  <code>colorScheme</code>. <code>minTick</code> riêng của mã được ưu tiên hơn bước giá
+  của thị trường. Các sàn thỉnh thoảng thay đổi quy định; hãy đối chiếu preset với quy định
+  hiện hành của sàn trước khi dùng.
 </p>
 
 <p>
-  Các giới hạn được vẽ bằng đường nét đứt có tên CE, FL và REF, kèm nhãn trên trục, theo màu
-  <code>colorScheme</code> của thị trường, nếu không có thì theo <code>priceLimits</code> của theme.
-  Màu nào không đạt độ tương phản 4.5:1 trên nền của theme sẽ được làm đậm đến khi đạt, nên màu
-  tím, xanh lơ và vàng sáng của bảng giá vẫn giữ sắc màu trên theme sáng.
-  Một theme tự tạo không có <code>priceLimits</code> sẽ dùng màu của theme sáng trên nền sáng, của theme tối trên nền tối.
+  Biên độ được vẽ bằng các đường nét đứt có tên CE, FL và REF, kèm tag trên trục, theo màu
+  <code>colorScheme</code> của thị trường, nếu không có thì theo <code>priceLimits</code> của theme. Màu
+  nào không đạt độ tương phản 4.5:1 trên nền của theme sẽ được đẩy về phía màu chữ cho đến khi đạt, nên
+  màu hồng, xanh lơ và vàng sáng của bảng giá vẫn giữ sắc độ trên theme sáng.
+  Theme riêng không có <code>priceLimits</code> dùng màu của theme sáng trên nền sáng, của theme tối trên nền tối.
 </p>
 
-<h3 id="comparing-symbols">So sánh các mã</h3>
+<h3 id="comparing-symbols">So sánh mã</h3>
 <p>
-  Phần trăm thay đổi của một mã khác trên thang giá (<code>addCompareSymbol</code>), hoặc giá của
-  nó trên thang riêng, trong pane riêng, hoặc spread hay tỷ lệ giữa giá đóng cửa của biểu đồ
-  và mã đó — mấy cách sau là chỉ báo (<code>compareSymbol</code>, <code>compareSymbolPane</code>, <code>spread</code>), có chú
-  thích, nhãn giá trị, cảnh báo và được lưu trong bố cục như mọi chỉ báo khác. Nến của mã kia được
-  khớp với nến của biểu đồ theo thời gian. Biểu đồ tự yêu cầu những nến nó cần; hãy cung cấp lại
-  sau khi đổi khung thời gian. <code>correlation</code> (theo giá đóng cửa) và <code>correlationlog</code>
-  (theo lợi suất từng nến) đọc mã kia theo cùng cách, cho giá trị từ −1 đến 1.
+  Phần trăm thay đổi của một mã khác trên thang giá (<code>addCompareSymbol</code>), hoặc
+  giá của mã đó trên thang riêng, trong pane riêng, hoặc spread hay tỷ lệ giữa giá đóng cửa của
+  chart với mã đó — các trường hợp sau là chỉ báo (<code>compareSymbol</code>, <code>compareSymbolPane</code>,
+  <code>spread</code>), có legend, tag giá trị, cảnh báo và được lưu trong layout như mọi
+  chỉ báo khác. Nến của mã kia được khớp với nến của chart theo thời gian. Chart yêu cầu
+  các nến nó cần; hãy cung cấp lại sau khi đổi timeframe. <code>correlation</code> (theo giá đóng cửa)
+  và <code>correlationlog</code> (theo lợi nhuận giữa các nến) đọc mã kia theo cùng cách, từ −1 đến 1.
 </p>
 <pre><code>{`chart.addCompareSymbol('eth', 'ETHUSDT', ethBars, '#7c4dff')   // percent change, on this scale
 chart.addIndicator('compareSymbol', { symbol: 'ETHUSDT' }, 'bottom', { scale: 'left' })  // own scale
@@ -273,70 +271,68 @@ chart.on('symbolSeriesRequest', async ({ payload }) =>
 chart.getRequiredSymbols()                           // what to fetch again on a new interval
 chart.setPaneScale(spreadId, { percent: true })     // a pane in percent of its first value`}</code></pre>
 <p>
-  Một đường so sánh phần trăm bắt đầu ở giá đóng cửa của nến đầu tiên trên màn hình, mức giá mà
-  thang phần trăm đọc là 0%, tính từ nến đầu tiên trên màn hình của chính mã kia; một mã có nến
-  bắt đầu muộn hơn cũng bắt đầu ở 0%. Khi thang giá ở chế độ phần trăm
-  (<code>chart.setScaleMode('percentage')</code>), mỗi đường đọc đúng mức thay đổi của riêng nó
-  kể từ nến đầu tiên trên màn hình, và mức này đổi khi bạn kéo biểu đồ. Nhãn của đường nằm ở cuối
-  đường. <code>chart.getCompareValues(barIndex?)</code> cho giá trị của từng đường tại một nến
-  (mặc định là nến cuối), để bạn tự làm chú thích: <code>{'{'} id, label, color, visible, close, change, stale {'}'}</code>, trong đó <code>close</code> là giá
-  đóng cửa của mã kia tại hoặc trước nến đó và <code>change</code> là mức thay đổi tính bằng phần
-  trăm, đúng như đường của nó đọc. Sau nến cuối của mã kia (nến bạn chỉ tải một lần, trong khi
-  biểu đồ vẫn chạy tiếp), nó cho giá đóng cửa cuối cùng kèm <code>stale: true</code>.
-  <code>chart.setCompareVisible(id, false)</code> ẩn một đường và bỏ nó khỏi thang tự động.
+  Đường phần trăm bắt đầu tại giá đóng cửa của chính chart ở nến đầu tiên trên màn hình, là mức giá mà
+  thang phần trăm đọc là 0%, tính từ nến đầu tiên của mã kia tại đó; mã có nến bắt đầu muộn hơn
+  cũng bắt đầu từ 0%. Khi thang giá ở chế độ phần trăm (<code>chart.setScaleMode('percentage')</code>)
+  mỗi đường hiển thị mức thay đổi của riêng nó kể từ nến đầu tiên trên màn hình, mốc này dịch chuyển khi pan.
+  Nhãn nằm ở cuối đường. <code>chart.getCompareValues(barIndex?)</code> trả về giá trị của từng đường tại một
+  nến (mặc định là nến cuối), để làm legend riêng: <code>{'{'} id, label, color, visible, close, change, stale {'}'}</code>, trong đó <code>close</code> là
+  giá đóng cửa của mã kia tại nến đó hoặc trước đó và <code>change</code> là mức thay đổi tính bằng phần trăm, đúng như
+  đường hiển thị. Sau nến cuối của mã kia (nến chỉ tải một lần, còn chart vẫn tiếp tục
+  stream) hàm trả về giá đóng cửa cuối, với <code>stale: true</code>. <code>chart.setCompareVisible(id, false)</code>
+  ẩn một đường và loại nó khỏi auto scale.
 </p>
 <p>
-  Renko, Kagi, Line Break, P&amp;F và Range Bars không vẽ đường so sánh: nến của chúng chỉ được đếm
-  tiếp từ nến đầu, không mang thời gian riêng, nên một đường ở đó sẽ đọc mã kia tại sai nến. Ở các
-  kiểu này, đường so sánh không tính vào thang tự động, và <code>getCompareValues()</code> cho giá
-  đóng cửa của từng mã tại nến dữ liệu mới nhất, dù hỏi nến nào, kèm <code>change: null</code>.
-  Các chỉ báo đọc một mã khác theo thời gian (một mã trên thang riêng hoặc trong pane riêng, spread,
-  tỷ lệ, tương quan) cũng không được vẽ ở đó và không tính vào thang nào: <code>getActiveIndicators()</code>
-  cho chúng <code>shown: false</code> và <code>offChartType: true</code>, và ChartWidget làm mờ dòng của chúng như
-  dòng của một mã so sánh. Quay lại nến thường thì chúng hiện lại.
-  Một pane không còn gì khác trong đó sẽ được bỏ đi ở đó, phần chỗ của nó dành cho vùng biểu đồ, và quay lại cùng chúng.
+  Renko, Kagi, Line Break, P&amp;F và Range Bars không vẽ đường so sánh: nến của các loại này chỉ đếm tiếp từ
+  nến đầu, không có thời gian riêng, nên đường so sánh sẽ đọc mã kia ở sai
+  nến. Trên các loại này các đường không tham gia auto scale, và <code>getCompareValues()</code>
+  trả về giá đóng cửa của từng mã tại nến dữ liệu mới nhất, bất kể yêu cầu nến nào, với <code>change: null</code>.
+  Các chỉ báo đọc mã khác theo thời gian (mã trên thang riêng hoặc pane riêng, spread,
+  tỷ lệ, correlation) cũng không được vẽ ở đó, và không tham gia fit thang: <code>getActiveIndicators()</code> trả về
+  chúng với <code>shown: false</code> và <code>offChartType: true</code>, và ChartWidget làm mờ dòng của chúng như với
+  mã so sánh. Quay lại nến thì chúng hiện lại.
+  Pane không còn gì khác bên trong bị bỏ đi ở các loại đó, phần chỗ trống dành cho vùng vẽ, và hiện lại cùng chúng.
 </p>
 <pre><code>{`chart.setScaleMode('percentage')       // each line reads its change on the axis
 chart.getCompareValues()               // [{ id: 'eth', label: 'ETHUSDT', color, visible, close: 2650.4, change: -1.82, stale: false }]
 chart.getCompareValues(barIndex)       // at a bar: the one under the cursor
 chart.setCompareVisible('eth', false)  // hidden, and out of the auto scale`}</code></pre>
 <p>
-  Trong ChartWidget, nút So sánh trên thanh công cụ (và nút + trong cây đối tượng) mở hộp thoại so sánh: tìm một
-  mã, chọn cách so sánh ở <strong>Thêm theo kiểu</strong> (thay đổi phần trăm, thang riêng, pane riêng, spread,
-  tỷ lệ, hoặc tương quan theo giá hay theo lợi suất) và thêm bao nhiêu mã tuỳ ý. Các mã đang so sánh được liệt kê
-  trước, mỗi mã kèm cách so sánh của nó và một nút để gỡ ra. Lần mở sau, hộp thoại chọn sẵn cách đã dùng lần trước.
+  Trong ChartWidget, nút So sánh trên toolbar (và dấu + trong cây đối tượng) mở dialog so sánh: tìm một
+  mã, chọn cách thêm trong <strong>Thêm dạng</strong> (phần trăm thay đổi, thang riêng, pane riêng, spread, tỷ lệ, hoặc
+  correlation của giá hay của lợi nhuận) và thêm bao nhiêu mã tuỳ ý. Các mã đang so sánh được liệt kê trước,
+  mỗi mã kèm cách thêm và một nút để bỏ. Lần mở sau, dialog dùng cách thêm đã chọn lần trước.
 </p>
 <p>
-  ChartWidget đặt thang giá ở chế độ phần trăm khi có mã được so sánh theo phần trăm, và trả về
-  thang bạn đang dùng khi mã cuối cùng được gỡ ra. Thang logarit, phần trăm hay chỉ số 100 được
-  giữ nguyên, và thang bạn chọn trong lúc so sánh (nút % hay log ở thanh trạng thái, menu của biểu
-  đồ, phần cài đặt) được giữ lại, kể cả sau khi mã so sánh cuối cùng được gỡ. Thang phần trăm này
-  không bao giờ được lưu: bố cục và liên kết chia sẻ giữ thang của bạn. Chú thích liệt kê mỗi mã so
-  sánh theo phần trăm phía trên các chỉ báo, được đánh dấu bằng màu đường của nó, kèm giá và mức thay đổi tại nến dưới con trỏ (nếu
-  không thì tại nến cuối), một nút mắt để ẩn và một nút để gỡ ra. Nến của mã đó được tải sâu bằng
-  nến của biểu đồ, và khi biểu đồ tải thêm nến cũ thì chỉ tải thêm đoạn nến cũ hơn đó (với nguồn
-  dữ liệu không có <code>fetchHistoryBefore</code> thì tải lại từng mã sâu bằng biểu đồ, chừng nào nguồn còn nến cũ hơn), nên đường của nó bắt đầu
-  cùng chỗ với biểu đồ. Ở một kiểu biểu đồ không vẽ đường so sánh, ChartWidget giữ nguyên thang của bạn và làm
-  mờ dòng của từng mã so sánh, cho biết lý do trong chú giải khi rê chuột và cho trình đọc màn hình; khi quay lại một kiểu có vẽ đường, thang
-  phần trăm trở lại.
+  ChartWidget chuyển thang giá sang phần trăm khi có mã so sánh theo phần trăm, và trả về
+  thang cũ khi mã cuối cùng bị bỏ. Thang log, phần trăm hoặc indexed-to-100 được
+  giữ nguyên, và thang bạn chọn trong lúc so sánh (% hoặc log trên thanh trạng thái, menu của
+  chart, phần cài đặt) cũng được giữ, kể cả sau khi bỏ mã so sánh cuối cùng. Thang phần trăm không bao giờ được lưu:
+  layout và link chia sẻ giữ thang của bạn. Legend liệt kê từng mã so sánh theo phần trăm
+  phía trên các chỉ báo, đánh dấu bằng màu đường của mã, kèm giá và mức thay đổi tại nến dưới
+  con trỏ (nếu không thì tại nến cuối), một biểu tượng mắt để ẩn và một nút để bỏ. Nến của mã được tải sâu bằng
+  nến của chart và, khi chart tải thêm nến cũ hơn, cả đoạn nến thêm đó (với feed không có <code>fetchHistoryBefore</code>,
+  mỗi lần tải lại toàn bộ, sâu bằng chart, khi feed còn nến cũ hơn), nên đường của mã bắt đầu cùng chỗ với chart.
+  Trên loại biểu đồ không vẽ đường so sánh, widget giữ nguyên thang của bạn và làm mờ dòng của từng mã
+  so sánh, giải thích lý do trong tooltip và cho trình đọc màn hình; khi quay lại loại có vẽ, thang phần trăm được bật lại.
 </p>
 
 <h3>Xuất dữ liệu</h3>
 <p>
-  Xuất các nến dưới dạng CSV hoặc JSON, mỗi đường chỉ báo nằm trong một cột riêng, đặt tên theo
-  tên trên chú thích. ChartWidget có mục <strong>Xuất dữ liệu (CSV)</strong> trong menu chuột phải
-  của biểu đồ. Số có phần thập phân được ghi với 15 chữ số có nghĩa, nên khối lượng cộng từ các
-  nến nhỏ hơn được ghi là <code>40.37</code> chứ không phải <code>40.370000000000005</code>.
+  Xuất nến dạng CSV hoặc JSON, mỗi đường chỉ báo một cột riêng, đặt tên như
+  tên trong legend. ChartWidget có mục <strong>Xuất dữ liệu (CSV)</strong> trong menu chuột phải
+  của chart. Số có phần thập phân được ghi với 15 chữ số có nghĩa, nên
+  khối lượng cộng từ các nến nhỏ hơn hiển thị 40.37 thay vì 40.370000000000005.
 </p>
 <pre><code>{`chart.exportAllData('csv', 'btc-1h.csv')                 // every bar loaded
 chart.exportVisibleData('json', undefined, { indicators: false })
 const text = chart.getExportText('csv', { range: 'visible' })
 const { bars, columns } = chart.getExportData()          // columns: { name, values }[]`}</code></pre>
 
-<h3>Hồ sơ khối lượng (Volume Profile)</h3>
+<h3>Volume Profile</h3>
 <p>
-  Histogram nằm ngang của khối lượng giao dịch, gom theo mức giá trong khoảng
-  đang hiện. Mặc định tắt — bật bằng code hoặc qua bảng cài đặt
+  Histogram ngang của khối lượng giao dịch, chia theo vùng giá trong khoảng đang
+  hiển thị. Mặc định tắt — bật bằng code hoặc trong phần cài đặt
   của widget:
 </p>
 <pre><code>{`chart.setVolumeProfileVisible(true)
@@ -347,11 +343,11 @@ chart.setVolumeProfileConfig({
   highlightPoC: true, // mark the highest-volume bucket
 })`}</code></pre>
 
-<h3>Điểm đảo chiều (pivot)</h3>
+<h3>Đánh dấu swing (pivot)</h3>
 <p>
-  Đánh dấu các đỉnh/đáy sóng kiểu fractal bằng tam giác nhỏ (▼ phía trên một đỉnh pivot
-  đã xác nhận, ▲ phía dưới một đáy pivot). Độ mạnh quy định phải có bao nhiêu nến thấp hơn
-  ở mỗi bên. Bật từ bảng cài đặt, hoặc:
+  Đánh dấu đỉnh/đáy swing dạng fractal bằng tam giác nhỏ (▼ phía trên pivot high
+  đã xác nhận, ▲ phía dưới pivot low). Độ mạnh (strength) quy định số nến thấp hơn
+  cần có ở mỗi bên. Bật/tắt trong phần cài đặt, hoặc:
 </p>
 <pre><code>{`chart.setPivotMarkersVisible(true)
 chart.setPivotMarkersConfig({ left: 5, right: 5, showLabels: true })
@@ -364,13 +360,13 @@ import { findPivots, classifyPivots } from '@tradecanvas/core'
 const pivots = findPivots(bars, 5, 5)        // [{ index, price, type }]
 const structure = classifyPivots(pivots)     // adds label: 'HH'|'LH'|'HL'|'LL'`}</code></pre>
 
-<h3>Tô màu phiên (giờ giao dịch chính thức)</h3>
+<h3>Tô màu phiên (giờ giao dịch chính)</h3>
 <p>
-  Làm mờ các nến nằm ngoài phiên chính (trước/sau giờ giao dịch hoặc khoảng nghỉ qua đêm)
-  để phiên chính nổi bật. Mặc định là giờ giao dịch chính thức (RTH) của cổ phiếu Mỹ (09:30–16:00 giờ New
-  York, đã tính giờ mùa hè); cấu hình khung giờ theo số phút trong ngày
-  cùng múi giờ của thị trường. Mã nào có nguồn dữ liệu báo kèm phiên giao dịch sẽ
-  tự đặt phiên.
+  Làm mờ các nến ngoài phiên chính (pre/post-market hoặc thời gian nghỉ qua đêm)
+  để phiên chính nổi bật. Mặc định là giờ giao dịch chính của cổ phiếu Mỹ (09:30–16:00 giờ New
+  York, có tính giờ mùa hè); cấu hình khung giờ bằng số phút trong ngày
+  cùng múi giờ của thị trường. Mã có feed báo các phiên của nó thì tự đặt
+  các phiên đó.
 </p>
 <pre><code>{`chart.setSessionShadingVisible(true)
 chart.setSessionShadingConfig({
@@ -379,10 +375,10 @@ chart.setSessionShadingConfig({
   timeZone: 'America/New_York', // or tzOffsetMinutes: -300 for a fixed offset
 })`}</code></pre>
 <p>
-  <strong>Giờ giao dịch mở rộng.</strong> Khi tắt, các nến nằm ngoài giờ giao dịch chính của mã
-  (<code>SymbolInfo.sessions</code> theo <code>timeZone</code> của mã) rời khỏi biểu đồ; chúng được
-  cất riêng, cả nến trực tiếp lẫn các trang lịch sử, và trở lại khi bật lên. Nến từ một ngày trở
-  lên được giữ nguyên.
+  <strong>Giờ mở rộng.</strong> Khi tắt, các nến ngoài giờ giao dịch chính của mã
+  (<code>SymbolInfo.sessions</code> theo <code>timeZone</code> của mã) bị bỏ khỏi
+  chart; chúng được giữ riêng, kể cả nến realtime và các trang dữ liệu lịch sử, và hiện lại khi
+  bật. Nến từ một ngày trở lên được giữ nguyên.
 </p>
 <pre><code>{`chart.setSymbolInfo({ symbol: 'AAPL', timeZone: 'America/New_York', sessions: [{ start: '09:30', end: '16:00' }] })
 chart.setExtendedHours(false)     // or new Chart(host, { extendedHours: false })
@@ -390,9 +386,9 @@ chart.isExtendedHoursVisible()`}</code></pre>
 
 <h3>Mức của kỳ trước (PDH / PDL / PDC)</h3>
 <p>
-  Vẽ giá cao, thấp và đóng cửa của ngày (hoặc tuần) trước, cùng giá mở cửa của kỳ
-  hiện tại, thành các đường ngang có nhãn — những mức hỗ trợ/kháng cự
-  mà trader trong ngày theo dõi. Bật từ bảng cài đặt, hoặc gọi trực tiếp:
+  Vẽ giá cao nhất, thấp nhất và giá đóng cửa của ngày (hoặc tuần) trước cùng giá mở cửa
+  của kỳ hiện tại thành các đường ngang có nhãn — các mức hỗ trợ/kháng cự
+  mà trader trong ngày theo dõi. Bật/tắt trong phần cài đặt, hoặc gọi trực tiếp:
 </p>
 <pre><code>{`chart.setPeriodLevelsVisible(true)
 chart.setPeriodLevelsPeriod('week')   // 'day' (PDH/PDL/PDC) | 'week' (PWH/PWL/PWC)
@@ -401,13 +397,13 @@ chart.setPeriodLevelsPeriod('week')   // 'day' (PDH/PDL/PDC) | 'week' (PWH/PWL/P
 import { computePeriodLevels } from '@tradecanvas/core'
 const levels = computePeriodLevels(bars, 'day', 'Australia/Sydney')  // [{ id, label, price }]`}</code></pre>
 
-<h3>Hồ sơ thị trường (TPO)</h3>
+<h3>Market Profile (TPO)</h3>
 <p>
-  Histogram thời gian tại mỗi mức giá: mỗi nến đóng góp một TPO vào mọi ô giá
-  mà biên độ của nó chạm tới, làm lộ ra Point of Control (mức giá có nhiều TPO nhất) và
-  vùng giá trị (≈70% số TPO). Khác với Hồ sơ khối lượng — nó tính theo thời gian,
-  không theo khối lượng — và được ghim bên trái nên cả hai có thể hiện cùng lúc. Mặc định tắt;
-  bật từ bảng cài đặt hoặc gọi trực tiếp:
+  Histogram thời gian tại mức giá: mỗi nến đóng góp một TPO cho mỗi vùng giá
+  mà biên độ của nến chạm tới, từ đó cho ra Point of Control (mức giá giao dịch nhiều nhất) và
+  value area (≈70% số TPO). Khác với Volume Profile — tính trọng số theo thời gian,
+  không theo khối lượng — và được ghim bên trái để hiển thị được cùng lúc với Volume Profile. Mặc định tắt;
+  bật/tắt trong phần cài đặt hoặc gọi trực tiếp:
 </p>
 <pre><code>{`chart.setMarketProfileVisible(true)
 chart.setMarketProfileConfig({
@@ -431,53 +427,53 @@ const sessions = computeSessionProfiles(bars, priceMin, priceMax, {}, 'Australia
 
 <h3>Cảm ứng &amp; di động</h3>
 <table>
-  <thead><tr><th>Cử chỉ</th><th>Thao tác</th></tr></thead>
+  <thead><tr><th>Thao tác</th><th>Hành động</th></tr></thead>
   <tbody>
-    <tr><td>Kéo 1 ngón (vùng biểu đồ)</td><td>Kéo biểu đồ + di chuyển crosshair</td></tr>
-    <tr><td>Chụm 2 ngón</td><td>Phóng to quanh điểm giữa</td></tr>
-    <tr><td>Nhấn giữ (~500 ms)</td><td>Ghim chú thích OHLC tại nến (bản di động của Alt+bấm)</td></tr>
-    <tr><td>Kéo 1 ngón trong dải trục giá / thời gian</td><td>Co giãn trục tương ứng</td></tr>
-    <tr><td>Chạm</td><td>Bấm: <code>click</code>, <code>barClick</code>, một signal marker; chạm lên hình vẽ thì chọn nó</td></tr>
-    <tr><td>Chạm đúp</td><td>Bấm đúp: trên trục thì đặt lại trục; trên hình vẽ thì mở cài đặt của nó</td></tr>
-    <tr><td>Kéo 1 ngón trên hình vẽ</td><td>Di chuyển nó, hoặc đổi dạng bằng một tay nắm của hình đang chọn</td></tr>
-    <tr><td>Khi đang chọn công cụ vẽ: chạm, chạm — hoặc nhấn, kéo, nhấc</td><td>Đặt các điểm; nhấn, kéo rồi nhấc ngón vẽ xong đường hai điểm trong một lần</td></tr>
-    <tr><td>Nhấn giữ trên hình vẽ</td><td>Menu của nó (như bấm chuột phải)</td></tr>
-    <tr><td>Kéo 1 ngón trên đường cảnh báo, lệnh, bracket hoặc đường chia pane</td><td>Kéo nó</td></tr>
+    <tr><td>Kéo một ngón (vùng chart)</td><td>Pan + di chuyển crosshair</td></tr>
+    <tr><td>Chụm hai ngón</td><td>Zoom quanh điểm giữa</td></tr>
+    <tr><td>Nhấn giữ (~500 ms)</td><td>Ghim tooltip OHLC tại nến (tương đương Alt-click trên di động)</td></tr>
+    <tr><td>Kéo một ngón trong dải trục giá / trục thời gian</td><td>Co giãn trục tương ứng</td></tr>
+    <tr><td>Chạm</td><td>Click: <code>click</code>, <code>barClick</code>, một signal marker; trên hình vẽ thì chọn hình vẽ đó</td></tr>
+    <tr><td>Chạm hai lần</td><td>Double-click: trên trục thì đặt lại trục; trên hình vẽ thì mở phần cài đặt của nó</td></tr>
+    <tr><td>Kéo một ngón trên hình vẽ</td><td>Di chuyển hình vẽ, hoặc đổi hình dạng bằng một handle của hình vẽ đang chọn</td></tr>
+    <tr><td>Với công cụ vẽ: chạm, chạm — hoặc nhấn, kéo, nhấc</td><td>Đặt các điểm; nhấn, kéo và nhấc vẽ một đường hai điểm trong một lần</td></tr>
+    <tr><td>Nhấn giữ trên hình vẽ</td><td>Menu của hình vẽ (như chuột phải)</td></tr>
+    <tr><td>Kéo một ngón trên đường cảnh báo, order hoặc bracket, hoặc đường chia pane</td><td>Kéo đối tượng đó</td></tr>
   </tbody>
 </table>
 <p>
-  Ngón tay với xa hơn chuột: khoảng 16 px tới một đường và 22 px tới một tay nắm, so với 8. Trên trang có cuộn, <code>pageScroll: true</code> để vuốt dọc và con lăn chuột thường cho trang: biểu đồ kéo theo vuốt ngang và phóng to bằng hai ngón hoặc Ctrl + con lăn (chụm trên touchpad), còn nhấn lên hình vẽ, các đường và trục vẫn thuộc về biểu đồ. <code>chart.setPageScroll(on)</code> bật tắt khi đang chạy.
+  Ngón tay có vùng chạm rộng hơn chuột: khoảng 16 px tới một đường và 22 px tới một handle, so với 8. Trên trang có cuộn, <code>pageScroll: true</code> để thao tác vuốt dọc và cuộn chuột thường cho trang: chart pan bằng vuốt ngang và zoom bằng hai ngón hoặc Ctrl + cuộn chuột (pinch trên trackpad), còn thao tác nhấn trên hình vẽ, đường và trục vẫn thuộc về chart. <code>chart.setPageScroll(on)</code> bật/tắt khi đang chạy.
 </p>
 <p>
-  Các hộp thoại (cài đặt, bảng phím tắt, bảng lệnh, tìm mã) tự động
-  chuyển sang dạng bảng trượt từ dưới lên, có tay nắm để kéo và phần đệm tính đến vùng an toàn
-  của màn hình khi khung nhìn hẹp hơn 640 px.
+  Các modal (cài đặt, bảng phím tắt, command palette, tìm mã) tự động
+  chuyển sang dạng bottom sheet có tay nắm kéo và padding theo safe area
+  khi viewport dưới 640 px.
 </p>
 
 <h3>Công cụ đo</h3>
 <p>
-  Giữ <kbd>Shift</kbd> và kéo trên biểu đồ để đo số nến × giá giữa
-  hai điểm — lớp phủ hiện chênh lệch giá Δ (tuyệt đối + %), số nến và khoảng
-  thời gian. Lớp phủ biến mất ngay khi nhả chuột; nó không được
-  lưu vào trạng thái.
+  Giữ <kbd>Shift</kbd> và kéo trên chart để đo số nến × giá giữa
+  hai điểm — overlay hiển thị Δ giá (tuyệt đối + %), số nến và khoảng
+  thời gian. Overlay biến mất ngay khi nhả chuột; nó không
+  được lưu vào state.
 </p>
 
-<h3>Sự kiện</h3>
-<p>Mọi sự kiện đều có kiểu qua <code>ChartEventMap</code>:</p>
+<h3>Event</h3>
+<p>Mọi event đều có kiểu qua <code>ChartEventMap</code>:</p>
 <pre><code>{`chart.on('orderPlace', e => /* OrderPlacePayload */)
 chart.on('orderModify', e => /* OrderModifyPayload */)
 chart.on('signalMarkerAdd', e => /* { marker } */)
 chart.on('tradeZoneAdd', e => /* { zone } */)
-chart.on('dataUpdate', e => /* { kind: 'bars', length } khi setData và khi có nến mới; { kind: 'correction', time, index } khi một nến được sửa; hoặc kind 'alert' | 'bracket' | 'connection' | 'error' */)
+chart.on('dataUpdate', e => /* { kind: 'bars', length } on setData and new bars; { kind: 'correction', time, index } on a corrected bar; or kind 'alert' | 'bracket' | 'connection' | 'error' */)
 chart.on('ordersChange', e => /* { orders } */)
 chart.on('positionsChange', e => /* { positions } */)
 chart.on('executionFill', e => /* { side, price, quantity, reason, pnl } */)
 chart.on('chartContextMenu', e => /* { area, x, y, price, time } */)
-chart.on('stateChange', () => /* hình vẽ, chỉ báo, cảnh báo, loại biểu đồ hoặc giao diện có thể đã thay đổi */)
+chart.on('stateChange', () => /* drawings, indicators, alerts, chart type or theme may have changed */)
 chart.on('paneChange', e => /* { instanceId, change: 'collapsed' | 'maximized' | 'order' } */)
-chart.on('crosshairMove', e => /* { point, bar, barIndex, time, prevClose }: time là thời điểm của nến như trục ghi (trên Renko, nến mà viên gạch hoàn thành); prevClose là giá đóng cửa của nến vẽ trước nó */)
-chart.on('crosshairSync', e => /* { barIndex, bar, time, prevClose }: crosshair của chart liên kết (setCrosshairTime, grid) đang ở nến này; barIndex null khi nó rời đi. Không bao giờ phát thành crosshairMove */)
-chart.on('legendResize', e => /* { bottom }: chú giải được vẽ cao hơn hoặc thấp hơn, bị ẩn hoặc hiện lại; nội dung xếp dưới nó dời xuống getLegendBottom() */)
+chart.on('crosshairMove', e => /* { point, bar, barIndex, time, prevClose }: time is when the bar stands as the axis dates it (on Renko, the bar a brick was finished on); prevClose the close of the bar drawn before */)
+chart.on('crosshairSync', e => /* { barIndex, bar, time, prevClose }: a linked chart's crosshair (setCrosshairTime, a grid) is on this bar here; barIndex null when it goes. Never fires as crosshairMove */)
+chart.on('legendResize', e => /* { bottom }: the legend drawn taller or shorter, hidden or shown; content stacked under it moves to getLegendBottom() */)
 chart.on('chartTypeChange', e => /* { type, previous } */)
 chart.on('symbolChange', e => /* { symbol, previous } */)
 chart.on('marketChange', e => /* { market }: setMarket */)
@@ -487,21 +483,22 @@ chart.on('historyChange', e => /* { canUndo, canRedo } */)
 chart.on('drawingSelect', e => /* { ids, primary } */)
 chart.on('rendererChange', e => /* { renderer: 'canvas' | 'webgl', reason?: 'unsupported' | 'contextLost' | 'contextRestored' | 'limit' } */)`}</code></pre>
 <p>
-  Nhãn riêng của bạn đặt dưới chú giải bắt đầu từ <code>getLegendBottom()</code> và dời theo
-  <code>legendResize</code>. Báo cho biểu đồ kích thước của chúng bằng
-  <code>setLegendStack({'{'} width, height {'}'})</code>, đo từ mép trái vùng vẽ và từ đáy đó
-  (<code>null</code> khi không có): nhãn của hình vẽ, như giá của đường ngang hay mục tiêu của
-  một vị thế, tránh chúng như tránh chú giải. ChartWidget làm việc này cho các dòng chỉ báo của nó.
-  Nhãn bị chúng che sẽ trượt sang bên cạnh trên chính hàng của nó, xuống dưới chúng khi chỗ đó gần
-  đường của nó, nếu không thì nằm trên đường, cạnh trục giá khi chỗ đó trống; các nhãn được dời không chồng lên nhau, và
-  các thẻ của một vị thế giữ thứ tự theo giá.
+  Nhãn riêng đặt dưới legend bắt đầu tại <code>getLegendBottom()</code> và di chuyển
+  theo <code>legendResize</code>. Báo kích thước của chúng cho chart bằng
+  <code>setLegendStack({'{'} width, height {'}'})</code>, đo từ mép trái vùng vẽ và
+  mép dưới đó (<code>null</code> khi không có nhãn nào): nhãn hình vẽ, như giá của đường
+  ngang hay mục tiêu của một position, tránh chúng như tránh legend.
+  ChartWidget làm việc này cho các dòng chỉ báo.
+  Nhãn bị che sẽ trượt sang cạnh chúng trên một dòng riêng, nằm dưới chúng nếu chỗ đó
+  gần đường của nhãn, nếu không thì nằm trên đường của nó cạnh trục giá ở chỗ trống; các nhãn đã dời tránh
+  nhau, và các tag của một position giữ đúng thứ tự giá.
 </p>
 
-<h3>Hoàn tác cho thay đổi của riêng bạn</h3>
+<h3>Undo cho thay đổi của riêng bạn</h3>
 <p>
-  <code>recordUndo</code> đưa một thay đổi của bạn vào lịch sử hoàn tác của biểu đồ, cùng với hình vẽ và
-  chỉ báo: Ctrl/Cmd+Z gọi <code>undo</code>, làm lại thì gọi <code>redo</code>. Các thay đổi về cùng một
-  <code>subject</code> diễn ra sát nhau được tính là một bước. ChartWidget ghi lại cài đặt và loại biểu đồ của nó theo cách này.
+  <code>recordUndo</code> đưa một thay đổi của bạn vào lịch sử undo của chart, cùng với hình vẽ và
+  chỉ báo: Ctrl/Cmd+Z gọi <code>undo</code>, redo gọi <code>redo</code>. Các thay đổi cùng
+  <code>subject</code> diễn ra sát nhau được gộp thành một bước. ChartWidget ghi phần cài đặt và loại biểu đồ theo cách này.
 </p>
 <pre><code>{`const before = panel.color
 panel.color = 'red'
@@ -509,23 +506,23 @@ chart.recordUndo({ subject: 'panel-color', undo: () => (panel.color = before), r
 
 <h3>Bàn phím và trình đọc màn hình</h3>
 <p>
-  Khi đang có focus, biểu đồ cuộn bằng các phím mũi tên (giữ Shift để cuộn mười nến), phóng to thu nhỏ bằng ↑/↓
-  hoặc +/−, và về đầu, về cuối bằng Home và End. Với trình đọc màn hình, biểu đồ là một ứng dụng có phần tóm tắt
-  (mã, loại biểu đồ, khung thời gian, giá cuối); sau khi các phím di chuyển khung nhìn, nó đọc những gì đang hiện trên
-  màn hình, và dấu phẩy, dấu chấm đọc từng nến một. <code>a11y.labels</code> chuyển các câu đó sang ngôn ngữ của bạn;
-  <code>a11y: false</code> bỏ hẳn phần này. <code>scrollBars(n)</code> và <code>selectDrawing(id)</code>
-  làm bằng code những gì các phím và một cú bấm chuột làm.
+  Khi chart đang được focus, các phím mũi tên cuộn chart (Shift để cuộn mười nến), ↑/↓ hoặc +/− để zoom, Home và End để
+  về đầu và cuối. Với trình đọc màn hình, chart là một application có phần tóm tắt
+  (mã, loại, timeframe, giá cuối); sau khi các phím di chuyển view, nó đọc những gì đang trên màn hình, và
+  dấu phẩy và dấu chấm đọc từng nến. <code>a11y.labels</code> đặt nội dung này theo ngôn ngữ của bạn;
+  <code>a11y: false</code> tắt nó. <code>scrollBars(n)</code> và <code>selectDrawing(id)</code>
+  làm từ code những việc mà phím và click làm.
 </p>
 <pre><code>{`new Chart(host, { a11y: { labels: { role: 'gráfico', summary: '{what}. Último precio {close}.' } } })`}</code></pre>
 <p>
-  Giá lấy từ con trỏ chuột có thể được làm tròn theo bước giá của thị trường bằng
-  <code>chart.roundPrice(price)</code>: về bội số của <code>minTick</code> của mã, nếu không có thì theo
-  độ chính xác của mã. Các menu, order ticket và tab Coordinates trong cài đặt hình vẽ của ChartWidget đều làm như vậy.
-  <code>chart.getPriceStep()</code> trả về chính bước giá đó.
+  Giá lấy từ con trỏ có thể đưa về lưới giá của thị trường bằng
+  <code>chart.roundPrice(price)</code>: bội số của <code>minTick</code> của mã, nếu không có thì theo
+  độ chính xác (precision) của mã. Menu, order ticket và tab Toạ độ trong cài đặt hình vẽ của ChartWidget làm việc này.
+  <code>chart.getPriceStep()</code> trả về chính bước đó.
 </p>
 
 <h2>ChartWidget</h2>
-<p>Bọc <code>Chart</code> trong một giao diện hoàn chỉnh. <code>widget.getChart()</code> trả về chính instance đó.</p>
+<p>Bọc <code>Chart</code> trong một UI đầy đủ. <code>widget.getChart()</code> trả về chính instance đó.</p>
 
 <pre><code>{`import { ChartWidget } from '@tradecanvas/chart/widget'
 
@@ -533,10 +530,10 @@ const widget = new ChartWidget(host, {
   symbol: 'BTCUSDT',
   timeframe: '5m',
   theme: 'dark',
-  adapter: new BinanceAdapter(),   // hoặc feed: một DataFeed mà nó tự lấy dữ liệu (xem Thời gian thực)
+  adapter: new BinanceAdapter(),   // or feed: a DataFeed it pulls from (see Realtime)
   historyLimit: 500,
   trading: true,
-  features: { 'toolbar.replay': false },   // công tắc của widget: xem Tùy biến
+  features: { 'toolbar.replay': false },   // the widget's switches: see Customization
   onReady: (chart, widget) => { /* once built, just after new ChartWidget() returns */ },
 })
 
@@ -545,65 +542,65 @@ widget.destroy()`}</code></pre>
 
 <h3 id="bars">Các thanh</h3>
 <table>
-  <thead><tr><th>Thanh</th><th>Có gì trên đó</th></tr></thead>
+  <thead><tr><th>Thanh</th><th>Nội dung</th></tr></thead>
   <tbody>
-    <tr><td>Thanh công cụ</td><td>
-      Mã và thông tin của mã; các khung thời gian (những khung đã ghim hiện thành nút, cùng một menu có đủ mọi khung
-      theo đơn vị, từ phút đến tháng, mỗi khung có một ngôi sao để ghim); loại biểu đồ, hiện bằng icon của nó; Chỉ báo (một hộp thoại: xem <a href={href('/docs/indicators')}>Chỉ báo</a>)
-      và So sánh khi có bộ nạp dữ liệu (adapter); hoàn tác và làm lại. Bên phải: bố cục, bar replay, một menu Giao dịch
-      (lệnh mới, bracket Long và Short, DOM ladder và bảng tài khoản), rồi chụp màn hình, cài đặt, giao diện và toàn màn
-      hình; khi không có dải nút (trên điện thoại, hoặc với <code>{`features: { dock: false }`}</code>) thì có thêm
-      cảnh báo và cây đối tượng. Phần nào không vừa thì gập vào “Thêm”.
+    <tr><td>Toolbar</td><td>
+      Mã và thông tin của mã; các khung thời gian (những khung đã ghim hiển thị thành nút, cùng một menu chứa tất cả theo đơn vị, từ phút đến
+      tháng, mỗi mục có ngôi sao để ghim); loại biểu đồ hiển thị bằng icon; Chỉ báo (một dialog: xem <a href={href('/docs/indicators')}>Chỉ báo</a>), và So sánh khi có adapter dữ liệu; undo và redo. Bên
+      phải: layout, bar replay, menu Giao dịch (lệnh mới, bracket long và short, depth ladder và
+      panel tài khoản), sau đó là chụp màn hình, cài đặt, theme và toàn màn hình; cả cảnh báo và cây đối tượng nếu
+      không có rail (trên điện thoại, hoặc <code>{`features: { dock: false }`}</code>). Phần không đủ chỗ được gộp vào “Thêm”.
     </td></tr>
     <tr><td>Công cụ vẽ</td><td>
-      Menu của mỗi nhóm ghi phím tắt của các công cụ trong nhóm (Alt+T là trend line) và có một ngôi sao trên mỗi
-      dòng để ghim công cụ đó lên đầu. Ở dưới cùng: kiểu vẽ, nam châm, cục tẩy, zoom vùng, giữ chế độ vẽ, khoá,
-      ẩn, và nút thùng rác: menu của nó xoá các hình vẽ, các chỉ báo hoặc cả hai, kèm số lượng mỗi loại, trong một bước hoàn tác.
-      Nút nam châm, khoá và ẩn mỗi nút có một menu ở góc (hoặc chuột phải, hoặc phím mũi tên): menu nam châm chọn yếu
-      hay mạnh, và nút bật nam châm ở mức đó hoặc tắt; menu khoá khoá các hình vẽ, các position và order, hoặc tất cả;
-      menu ẩn ẩn các hình vẽ, các chỉ báo, các position và order, hoặc tất cả, có dấu tick ở mục đang ẩn. Mục menu chọn
-      là việc nút làm từ đó. Ẩn các chỉ báo chỉ ẩn những cái đang hiện, và hiện lại thì chỉ đưa những cái đó trở lại.
+      Menu của mỗi nhóm ghi phím tắt của từng công cụ (Alt+T cho trend line) và có ngôi sao trên mỗi dòng để ghim lên
+      đầu. Ở dưới cùng: style hình vẽ, magnet, tẩy, zoom vùng, giữ chế độ vẽ, khoá,
+      ẩn, và nút thùng rác: menu của nút này xoá hình vẽ, chỉ báo hoặc cả hai, kèm số lượng mỗi loại, trong một bước undo.
+      Các nút magnet, khoá và ẩn mỗi nút có một menu ở góc (hoặc chuột phải, hoặc phím mũi tên): menu
+      magnet chọn mức yếu hoặc mạnh, và nút bật magnet ở mức đó hoặc tắt; menu khoá khoá hình vẽ,
+      position và order, hoặc tất cả; menu ẩn ẩn hình vẽ, chỉ báo, position và order, hoặc
+      tất cả, đánh dấu những gì đang ẩn. Mục được chọn trong menu là việc mà nút làm từ đó về sau. Ẩn chỉ báo
+      chỉ ẩn các chỉ báo đang hiển thị, và hiện lại thì chỉ hiện lại đúng các chỉ báo đó.
     </td></tr>
     <tr><td>Thanh trạng thái</td><td>
-      Các khoảng thời gian dựng sẵn và đi tới ngày; trạng thái thị trường, kết nối, một đồng hồ theo múi giờ hiển thị
-      (bấm vào thì mở danh sách múi giờ để chọn) và các công tắc <code>%</code> · <code>log</code> · <code>auto</code>
-      của thang giá.
+      Preset khoảng thời gian và chuyển đến ngày; trạng thái thị trường, kết nối, đồng hồ theo múi giờ hiển thị (bấm vào
+      để chọn múi giờ) và các nút <code>%</code> · <code>log</code> · <code>auto</code> của
+      thang giá.
     </td></tr>
     <tr><td>Cho hình vẽ đang chọn</td><td>
-      Màu, độ dày và kiểu nét, cài đặt, cảnh báo, khoá, menu thêm và xoá. Thanh này nằm gần mép trên của pane giá,
-      không che thứ bạn vừa vẽ (biểu đồ hẹp thì nằm ở chân pane), dù hình vẽ ở pane nào. Kéo nó bằng tay nắm thì nó ở
-      yên chỗ đó cho hình vẽ tiếp theo; bấm đúp vào tay nắm để đưa nó về chỗ cũ.
+      Màu, độ dày và kiểu đường, cài đặt, cảnh báo, khoá, thêm và xoá. Thanh này nằm gần mép trên của
+      pane giá, tránh các hình đã vẽ (ở mép dưới khi chart hẹp), bất kể hình vẽ nằm ở pane nào. Kéo thanh bằng tay nắm thì nó giữ
+      vị trí đó cho hình vẽ tiếp theo; double-click tay nắm để đưa về chỗ cũ.
     </td></tr>
-    <tr><td>Ngăn bên</td><td>
-      Một dải nút ở mép ngoài, mỗi bảng một nút: watchlist, cảnh báo, cây đối tượng, cửa sổ dữ liệu và thông
-      tin mã. Xem <a href="#dock">Ngăn bên</a>.
+    <tr><td>Dock</td><td>
+      Một rail ở mép ngoài với mỗi nút cho một panel: watchlist, cảnh báo, cây đối tượng, data
+      window và thông tin mã. Xem <a href="#dock">Dock</a>.
     </td></tr>
   </tbody>
 </table>
 
-<h3 id="dock">Ngăn bên</h3>
+<h3 id="dock">Dock</h3>
 <p>
-  Các bảng của widget nằm cạnh biểu đồ, mỗi lúc một bảng, và mở từ dải nút ở mép ngoài (bên trái khi widget đảo
-  chiều từ phải sang trái). Bấm một nút trên dải thì bảng của nó mở ra, hoặc đóng lại nếu đó là bảng đang mở; nút
-  đóng trên mỗi bảng cũng đóng bảng đó. Không bảng nào tự mở: biểu đồ giữ toàn bộ chỗ cho tới khi có bảng được gọi
-  (<code>widget.openPanel('watchlist')</code> mở một bảng từ code của bạn). Kéo mép bảng, hoặc dùng các phím mũi tên trên mép đó, để đặt độ rộng từ 233 đến 377 px (ban đầu
-  262), được giữ lại trên trình duyệt này; bảng không bao giờ chiếm quá 38,2% hàng, phần còn lại dành cho biểu đồ.
+  Các panel của widget nằm cạnh chart, mỗi lần một panel, mở từ rail ở mép ngoài (bên trái trong
+  widget viết từ phải sang trái). Nút trên rail mở panel của nó, hoặc đóng lại nếu panel đó đang mở; nút đóng của mỗi
+  panel cũng vậy. Không panel nào tự mở: chart chiếm toàn bộ chỗ cho đến khi có yêu cầu mở panel
+  (<code>widget.openPanel('watchlist')</code> mở panel từ code). Kéo mép panel, hoặc dùng phím mũi tên trên đó, để đặt độ rộng từ 233 đến 377 px (ban đầu 262),
+  được lưu trong trình duyệt này; panel không bao giờ chiếm quá 38.2% chiều ngang của hàng, phần còn lại dành cho chart.
 </p>
 <p>
-  Trên điện thoại, hoặc khi widget hẹp hơn 641 px, không có dải nút: bảng trượt từ dưới lên, phủ lên biểu đồ, lúc
-  đầu đóng và đóng khi nhấn Escape; bảng đang mở khi widget hẹp lại (xoay máy tính bảng) sẽ đóng. Khi đó cảnh báo và cây đối tượng mở từ thanh công cụ, thông tin mã mở từ nút <strong>ⓘ</strong>
-  cạnh mã, và bảng nào cũng mở được từ code của bạn. Các biểu đồ của một <code>ChartWidgetGrid</code> không có dải
-  nút riêng, trừ khi <code>widget.features</code> của nó bật <code>dock</code>.
+  Trên điện thoại, hoặc trong widget hẹp hơn 641 px, không có rail: panel trượt lên từ dưới, che chart,
+  ban đầu đóng và đóng khi nhấn Escape; panel đang mở khi widget chuyển sang hẹp (xoay tablet) sẽ đóng lại. Khi đó cảnh báo và cây đối tượng mở từ toolbar, thông tin mã mở từ
+  <strong>ⓘ</strong> cạnh mã, và mọi panel đều mở được từ code. Mỗi chart trong
+  <code>ChartWidgetGrid</code> không có rail riêng, trừ khi <code>widget.features</code> của grid bật <code>dock</code>.
 </p>
 <p>
-  Một trang của riêng bạn được đặt vào cùng ngăn bên đó bằng <code>addDockPage</code>: nút của nó nằm trên dải nút
-  sau các nút có sẵn, và element của bạn nằm dưới phần đầu của ngăn (nhãn và một nút đóng), theo các token
-  <code>--tcw-*</code> của widget. <code>openPanel(id)</code> mở trang, <code>getOpenPanel()</code> báo trang đang mở,
-  và <code>onShow</code> được gọi mỗi lần trang mở, khi trang đã có kích thước. <code>remove()</code> gỡ trang đi,
-  đóng nó trước nếu nó đang mở. Trên điện thoại không có dải nút, như với các bảng có sẵn: hãy mở trang từ một control
-  của bạn. Một id đã thuộc về bảng có sẵn hoặc trang khác thì trả về <code>null</code>. Tuỳ chọn <code>onPanelChange</code>
-  nhận id của bảng đang mở, hoặc <code>null</code>, bất kể nó đổi bằng cách nào: dải nút, một nút đóng, code của bạn,
-  hay widget hẹp lại.
+  Trang riêng được đưa vào cùng dock bằng <code>addDockPage</code>: nút của trang nằm trên rail sau các nút
+  có sẵn, và element của bạn nằm dưới header của dock (nhãn và nút đóng), dùng các token
+  <code>--tcw-*</code> của widget. <code>openPanel(id)</code> mở trang, <code>getOpenPanel()</code> trả về trang đang mở, và
+  <code>onShow</code> được gọi mỗi lần trang mở, sau khi đã có kích thước. <code>remove()</code> bỏ trang,
+  đóng trước nếu đang mở. Trên điện thoại không có rail, giống các panel có sẵn: mở trang từ một control
+  của bạn. Id trùng với panel có sẵn hoặc trang khác thì trả về <code>null</code>. Tuỳ chọn <code>onPanelChange</code>
+  nhận id của panel đang mở, hoặc <code>null</code>, dù thay đổi đến từ đâu: rail, nút đóng, code của bạn,
+  hay widget chuyển sang hẹp.
 </p>
 <pre><code>{`widget.openPanel('watchlist')   // 'watchlist' | 'alerts' | 'objectTree' | 'dataWindow' | 'symbolInfo' | 'depthLadder', or a page's id; false if not there
 widget.getOpenPanel()           // the panel open, or null
@@ -625,116 +622,116 @@ new ChartWidget(host, { features: { 'dock.dataWindow': false } })  // no button 
 
 <h3 id="search-dialogs">Tìm mã, So sánh và Đi tới</h3>
 <p>
-  <strong>Tìm mã</strong> mở từ mã trên thanh công cụ, <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>P</kbd>,
-  hoặc khi gõ một chữ cái trên biểu đồ, và bắt đầu tìm bằng chữ cái đó. Khi chưa gõ gì, hộp thoại liệt kê các mã
-  trong <code>symbols</code> của bạn; khi đã gõ, mỗi lần bạn ngừng gõ nó hỏi chức năng tìm kiếm của nguồn dữ liệu
-  (<code>searchSymbols</code>, hoặc của adapter). Mỗi dòng mở đầu bằng một huy hiệu (logo của mã, nếu không có thì
-  chữ cái đầu của mã trong màu của loại mã), rồi đến mã, tên, loại và sàn xếp thành cột, mã của biểu đồ được đánh
-  dấu. Các thẻ lọc danh sách theo một loại (cổ phiếu, tiền mã hoá) và đứng yên khi bạn gõ; khi các dòng đến từ hai
-  sàn trở lên, một danh sách bên cạnh lọc theo một sàn. Cả hai chỉ lọc những dòng đang có, không tìm lại: một lần tìm
-  trả về một trang kết quả (chức năng tìm của adapter được yêu cầu 50 kết quả), nên chọn HNX sau khi gõ <code>V</code>
-  chỉ hiện các mã HNX trong số đó, không phải mọi mã HNX có chữ V. Danh sách hiện 200 dòng khớp nhất, và một dòng bên
-  dưới cho biết còn bao nhiêu mã nữa để gõ thêm mà thu hẹp. Khi không có chức năng tìm, chữ gõ vào sẽ tìm mã của bạn theo mã và theo tên, có
-  dấu hay không dấu (<code>ngan hang</code> tìm ra “Ngân hàng”).
-  <code>{`features: { symbolTyping: false }`}</code> để các chữ cái gõ trên biểu đồ không mở hộp thoại này.
+  <strong>Tìm mã</strong> mở từ mã trên toolbar, <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>P</kbd>,
+  hoặc khi gõ một chữ cái trên chart, chữ đó thành ký tự đầu của ô tìm. Dialog liệt kê <code>symbols</code> của bạn cho đến khi
+  có nội dung được gõ, sau đó gọi hàm tìm của feed (<code>searchSymbols</code>, hoặc của adapter) khi ngừng gõ. Mỗi dòng bắt đầu
+  bằng một badge (logo của mã, nếu không có thì chữ cái đầu của ticker theo màu của loại mã), tiếp theo là mã, tên,
+  loại và sàn theo cột, mã đang hiển thị trên chart được đánh dấu. Các tab lọc danh sách theo một loại (cổ phiếu, crypto)
+  và giữ nguyên khi gõ; khi các dòng đến từ hai sàn trở lên, một danh sách bên cạnh lọc theo một sàn. Cả hai
+  chỉ lọc các dòng đang có, không tìm lại: một lần tìm trả về một trang kết quả (adapter được yêu cầu
+  50 kết quả), nên chọn HNX sau khi gõ <code>V</code> sẽ hiển thị các mã HNX trong số đó, không phải mọi mã HNX có chữ V.
+  Danh sách hiển thị 200 dòng khớp nhất, và một dòng bên dưới cho biết còn bao nhiêu dòng nữa có thể lọc bằng cách gõ thêm. Khi không có hàm tìm, gõ sẽ tìm trong các mã của bạn theo ticker và theo
+  tên, có dấu hoặc không dấu tiếng Việt (<code>ngan hang</code> tìm ra “Ngân hàng”).
+  <code>{`features: { symbolTyping: false }`}</code> bỏ qua chữ cái gõ trên chart.
 </p>
 <p>
-  Truyền <code>symbols</code> dưới dạng <code>SymbolInfo</code> thì danh sách mở ra đã có tên, loại, sàn và logo;
-  mã trên thanh công cụ và bảng thông tin mã lấy tên và sàn từ đó khi biểu đồ chưa biết. Kết quả tìm của nguồn dữ
-  liệu được ưu tiên hơn những thông tin này nhưng vẫn giữ logo của bạn; những gì biểu đồ biết về mã của nó chỉ điền tên hoặc logo còn thiếu vào hộp tìm, vì nó có thể gọi loại và sàn bằng từ khác với danh sách của bạn (stock thay cho Cổ phiếu, tên công ty chứng khoán thay cho sàn). Bước giá và giờ giao dịch truyền ở đây không áp dụng cho biểu đồ: chúng đến từ
+  Truyền <code>symbols</code> dạng <code>SymbolInfo</code> thì danh sách mở ra với tên, loại, sàn và logo;
+  mã trên toolbar và panel thông tin mã lấy tên và sàn từ đó khi chart không có thông tin này.
+  Kết quả tìm của feed được ưu tiên hơn các thông tin này và giữ logo của bạn; thông tin chart biết về mã của nó chỉ bổ sung cho kết quả tìm tên hoặc logo còn thiếu, vì nó có thể ghi loại và sàn bằng từ khác với danh sách của bạn (stock thay cho Cổ phiếu, tên công ty chứng khoán thay cho sàn). Bước giá và giờ giao dịch đặt ở đây không áp dụng cho chart: chúng đến từ
   <code>resolveSymbol</code> của adapter hoặc <code>chart.setSymbolInfo</code>.
 </p>
 <pre><code>{`new ChartWidget(el, {
   symbols: [
-    { symbol: 'VNM', description: 'Vinamilk', type: 'Cổ phiếu', exchange: 'HOSE', logo: '/logos/vnm.svg' },
-    'FPT',   // chỉ mã, như trước
+    { symbol: 'VNM', description: 'Vinamilk', type: 'stock', exchange: 'HOSE', logo: '/logos/vnm.svg' },
+    'FPT',   // a ticker alone, as before
   ],
 })`}</code></pre>
 <p>
-  <code>logo</code> là một địa chỉ <code>https:</code> hoặc <code>http:</code>, một đường dẫn trên trang của bạn, một
-  URL <code>blob:</code> hoặc một ảnh viết trong <code>data:</code> (PNG, JPEG, GIF, WebP, AVIF hoặc SVG); mọi thứ khác
-  bị bỏ qua. Nó chỉ được tải như một ảnh, không kèm referrer, nên chính sách <code>img-src</code> của trang phải cho
-  phép máy chủ của nó; logo không tải được sẽ hiện chữ cái. Màu của chữ cái lấy từ <code>--tcw-kind-1</code> … <code>--tcw-kind-5</code> (cổ phiếu, phái sinh, chỉ số, tiền mã hoá và hợp đồng vĩnh cửu, ngoại hối, viết bằng tiếng Anh, Việt, Nhật, Trung hay Hàn; chứng quyền lấy màu của phái sinh, chứng chỉ quỹ và ETF lấy màu của chỉ số, trái phiếu lấy màu của ngoại hối; loại khác nhận một màu theo tên của nó), đặt cho cả giao diện tối và sáng.
+  <code>logo</code> là một địa chỉ <code>https:</code> hoặc <code>http:</code>, một đường dẫn trên site của bạn, một
+  URL <code>blob:</code> hoặc ảnh viết bằng <code>data:</code> (PNG, JPEG, GIF, WebP, AVIF hoặc SVG); giá trị
+  khác bị bỏ qua. Logo chỉ được tải dưới dạng ảnh, không gửi referrer, nên policy <code>img-src</code> của trang
+  phải cho phép host của nó; logo tải lỗi thì hiển thị chữ cái. Các chữ cái lấy màu từ <code>--tcw-kind-1</code> … <code>--tcw-kind-5</code> (cổ phiếu, hợp đồng tương lai, chỉ số, crypto và perpetual, forex, theo từ tiếng Anh, tiếng Việt, tiếng Nhật, tiếng Trung hoặc tiếng Hàn; chứng quyền lấy màu của hợp đồng tương lai, quỹ hoặc ETF lấy màu của chỉ số, trái phiếu lấy màu của forex; loại khác được gán một màu theo từ của nó), đặt cho theme tối và theme sáng.
 </p>
 <p>
-  Khi một lần tìm đã cho biết về một mã, tên của nguồn dữ liệu cũng hiện trên danh sách lúc hộp thoại mở ra, không
-  chỉ trong kết quả tìm. Tên, loại, sàn hay logo không phải là chữ (<code>null</code> của một nguồn JSON, mã sàn dạng số), trong kết quả của nguồn dữ liệu hay trong thông tin biểu đồ biết, được coi như không có: nó không hiện ra và không xoá thông tin của bạn. Mã hiện ở dạng ticker,
-  bỏ phần sàn trước dấu hai chấm (<code>BINANCE:BTCUSDT</code> là BTCUSDT; <code>HYPERLIQUID:xyz:NVDA</code> là NVDA) trên thanh công cụ, trong legend, các dòng và bảng thông tin: phần sàn sang cột sàn khi nguồn dữ liệu không nêu tên sàn, và mã đầy đủ hiện khi rê chuột; trên điện thoại, các thẻ loại mã cuộn
-  trên một dòng và mờ dần ở đầu còn thẻ bị khuất. Thông tin biểu đồ biết về mã của nó đặt tên cho mã trên thanh công
-  cụ và trong bảng thông tin khi nó nói về đúng mã đó (không phân biệt chữ hoa chữ thường, có hay không có tên sàn
-  trước dấu hai chấm) hoặc được đặt sau khi đổi mã, nên cách viết riêng của nguồn dữ liệu (<code>BTC-USD</code> cho
-  <code>BTCUSD</code>) vẫn được tính.
+  Khi một lần tìm đã trả về thông tin của một mã, thông tin của feed cũng đặt tên cho mã đó trong danh sách lúc mở tìm, không chỉ
+  trong kết quả. Tên, loại, sàn hoặc logo không phải dạng text (<code>null</code> của feed JSON, mã sàn
+  dạng số), trong kết quả của feed hoặc trong thông tin chart biết, được coi như không có: không hiển thị và không xoá thông tin của bạn. Mã hiển thị theo ticker,
+  bỏ phần nơi giao dịch trước dấu hai chấm (<code>BINANCE:BTCUSDT</code> hiển thị BTCUSDT; <code>HYPERLIQUID:xyz:NVDA</code> hiển thị NVDA) trên toolbar, trong legend, các dòng và panel thông tin: phần nơi giao dịch đưa vào cột sàn khi feed không ghi sàn, và toàn bộ mã hiển thị khi hover; trên điện thoại các tab loại
+  cuộn trên một dòng và mờ dần ở đầu còn nội dung phía sau. Thông tin chart biết về mã của nó dùng để đặt tên mã trên
+  toolbar và trong panel thông tin khi đó là cùng mã (không phân biệt hoa thường, có hoặc không có phần nơi giao dịch trước dấu hai chấm)
+  hoặc được đặt sau khi đổi mã, nên cách viết riêng của feed (<code>BTC-USD</code> cho <code>BTCUSD</code>)
+  vẫn được tính.
 </p>
 <p>
-  <strong>So sánh</strong> là chính hộp thoại đó, có thêm <strong>Thêm theo kiểu</strong> dưới ô tìm kiếm và các mã
-  đang so sánh được liệt kê trước (xem <a href="#comparing-symbols">So sánh các mã</a>).
+  <strong>So sánh</strong> là cùng dialog đó, có <strong>Thêm dạng</strong> dưới ô tìm và các mã đang so sánh
+  được liệt kê trước (xem <a href="#comparing-symbols">So sánh mã</a>).
 </p>
 <p>
-  <strong>Đi tới</strong> (biểu tượng lịch trên thanh trạng thái, <kbd>Alt</kbd>+<kbd>G</kbd>, hoặc menu của biểu đồ)
-  có hai tab. <strong>Ngày</strong> đưa nến của một ngày và giờ vào giữa; <strong>Khoảng tự chọn</strong> hiện các
-  nến giữa hai mốc như vậy, vừa khít từ mép này sang mép kia, ban đầu là khoảng đang hiện trên màn hình. Lịch tháng
-  dưới các ô nhập điền vào ô ngày đang nhập, và sau khi chọn đầu khoảng thì chuyển sang cuối khoảng. Với nến ngày
-  trở lên thì không cần nhập giờ, và không chọn được các ngày sau hôm nay. Ngày và giờ được hiểu theo múi giờ hiển thị.
+  <strong>Đi tới</strong> (biểu tượng lịch trên thanh trạng thái, <kbd>Alt</kbd>+<kbd>G</kbd>, hoặc menu của chart) có hai
+  tab. <strong>Ngày</strong> đưa nến của một ngày và giờ vào giữa; <strong>Khoảng tuỳ chọn</strong> hiển thị các nến
+  giữa hai mốc thời gian vừa khít màn hình, giá trị ban đầu lấy theo các nến đang hiển thị. Lịch tháng dưới các ô nhập điền vào ô ngày
+  đang nhập, và sau khi chọn mốc đầu của khoảng thì chuyển sang mốc cuối. Với nến ngày trở lên thì không có giờ để
+  nhập, và không chọn được ngày sau hôm nay. Ngày giờ đọc theo múi giờ hiển thị.
 </p>
 
 <h3>Phím tắt của widget</h3>
 <table>
-  <thead><tr><th>Phím tắt</th><th>Thao tác</th></tr></thead>
+  <thead><tr><th>Phím tắt</th><th>Hành động</th></tr></thead>
   <tbody>
-    <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>K</kbd></td><td>Bảng lệnh: các lệnh của widget kèm phím tắt (đi tới, đặt lại khung nhìn, lưu layout, các bảng…), công cụ vẽ, loại biểu đồ, khung thời gian và chỉ báo; lệnh dùng gần đây đứng đầu</td></tr>
-    <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>P</kbd></td><td>Tìm mã: các mã của bạn, hoặc tìm qua nguồn dữ liệu khi bạn gõ</td></tr>
-    <tr><td><kbd>A</kbd>–<kbd>Z</kbd></td><td>Tìm một mã, bắt đầu bằng chữ cái vừa gõ (<code>{`features: { symbolTyping: false }`}</code> để tắt)</td></tr>
-    <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>S</kbd></td><td>Lưu bố cục (lần đầu sẽ hỏi tên)</td></tr>
-    <tr><td><kbd>0</kbd>–<kbd>9</kbd></td><td>Gõ một khung thời gian (<code>5</code>, <code>15m</code>, <code>1h</code>, <code>1D</code>) rồi nhấn Enter (<code>intervalTyping: false</code> để tắt)</td></tr>
+    <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>K</kbd></td><td>Command palette: các lệnh của widget kèm phím tắt (go to, đặt lại view, lưu layout, các panel…), công cụ vẽ, loại biểu đồ, khung thời gian và chỉ báo; các mục dùng gần nhất đứng đầu</td></tr>
+    <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>P</kbd></td><td>Tìm mã: các mã của bạn, hoặc hàm tìm của feed khi gõ</td></tr>
+    <tr><td><kbd>A</kbd>–<kbd>Z</kbd></td><td>Tìm mã, bắt đầu bằng chữ cái vừa gõ (<code>{`features: { symbolTyping: false }`}</code> tắt tính năng này)</td></tr>
+    <tr><td><kbd>Ctrl</kbd> / <kbd>⌘</kbd> + <kbd>S</kbd></td><td>Lưu layout (hỏi tên ở lần đầu)</td></tr>
+    <tr><td><kbd>0</kbd>–<kbd>9</kbd></td><td>Gõ khung thời gian (<code>5</code>, <code>15m</code>, <code>1h</code>, <code>1D</code>) và nhấn Enter (<code>intervalTyping: false</code> tắt tính năng này)</td></tr>
     <tr><td><kbd>Alt</kbd> + <kbd>T</kbd> / <kbd>H</kbd> / <kbd>J</kbd> / <kbd>V</kbd> / <kbd>C</kbd> / <kbd>F</kbd></td><td>Trend line, đường ngang, tia ngang, đường dọc, đường chữ thập, Fibonacci retracement</td></tr>
-    <tr><td><kbd>Alt</kbd> + <kbd>R</kbd></td><td>Đặt lại khung nhìn: hiện mọi nến, thang giá vừa với chúng</td></tr>
+    <tr><td><kbd>Alt</kbd> + <kbd>R</kbd></td><td>Đặt lại view: mọi nến trong tầm nhìn, thang giá fit theo chúng</td></tr>
     <tr><td><kbd>Alt</kbd> + <kbd>I</kbd></td><td>Đảo ngược thang giá</td></tr>
-    <tr><td><kbd>Alt</kbd> + <kbd>G</kbd></td><td>Đi tới một ngày</td></tr>
-    <tr><td><kbd>?</kbd></td><td>Bảng phím tắt, tìm được theo việc phím làm hoặc theo phím</td></tr>
-    <tr><td><kbd>Alt</kbd> + bấm vào biểu đồ</td><td>Ghim chú thích OHLC tại nến đang rê chuột (kèm chênh lệch so với vị trí crosshair hiện tại)</td></tr>
-    <tr><td><kbd>Esc</kbd></td><td>Bỏ ghim chú thích / huỷ hình đang vẽ</td></tr>
+    <tr><td><kbd>Alt</kbd> + <kbd>G</kbd></td><td>Chuyển đến một ngày</td></tr>
+    <tr><td><kbd>?</kbd></td><td>Bảng phím tắt, tìm được theo chức năng của phím hoặc theo phím</td></tr>
+    <tr><td><kbd>Alt</kbd> + click chart</td><td>Ghim tooltip OHLC tại nến đang hover (hiển thị chênh lệch so với crosshair hiện tại)</td></tr>
+    <tr><td><kbd>Esc</kbd></td><td>Bỏ ghim tooltip / huỷ vẽ</td></tr>
     <tr><td><kbd>Shift</kbd> + <kbd>←</kbd> / <kbd>→</kbd></td><td>Lùi / tiến replay một bước</td></tr>
-    <tr><td><kbd>Space</kbd></td><td>Phát hoặc tạm dừng replay (trên biểu đồ hoặc thanh trượt; ngoài replay nó vừa khung biểu đồ)</td></tr>
+    <tr><td><kbd>Space</kbd></td><td>Chạy hoặc tạm dừng replay (trên chart hoặc thanh tiến trình của replay; ngoài replay thì fit chart)</td></tr>
     <tr><td><kbd>Esc</kbd></td><td>Thôi chọn nến bắt đầu replay</td></tr>
-    <tr><td>Bấm vào mã trên thanh công cụ</td><td>Mở hộp thoại tìm mã</td></tr>
-    <tr><td>Bấm nút phát trên thanh công cụ</td><td>Mở thanh điều khiển bar replay (phát/từng bước/tua/tốc độ)</td></tr>
+    <tr><td>Click mã trên toolbar</td><td>Mở modal tìm mã</td></tr>
+    <tr><td>Click nút play trên toolbar</td><td>Mở thanh điều khiển bar replay (play/step/seek/speed)</td></tr>
   </tbody>
 </table>
 <p>
-  Đổi các mã có thể tìm lúc chạy bằng <code>widget.setSymbols(['BTCUSDT', 'ETHUSDT', …])</code>, là mã hoặc
-  <code>SymbolInfo</code> như trong <code>symbols</code>. Watchlist được tạo từ <code>symbols</code> (không có
-  <code>lists</code>, không lưu lại) sẽ được thay bằng các mã này và hỏi giá của từng mã: với một danh sách dài từ máy
-  chủ của bạn, hãy cho watchlist các danh sách riêng.
+  Đổi danh sách mã khi đang chạy bằng <code>widget.setSymbols(['BTCUSDT', 'ETHUSDT', …])</code>, ticker hoặc
+  <code>SymbolInfo</code> như trong <code>symbols</code>. Watchlist tạo từ <code>symbols</code> (không có <code>lists</code>,
+  không có gì được lưu) được thay bằng danh sách mới, và lấy quote cho từng mã: với danh sách dài từ server, hãy cho
+  watchlist danh sách riêng.
 </p>
 <pre><code>{`const widget = new ChartWidget(el, {
   adapter: feed,
-  watchlist: { lists: [{ id: 'main', name: 'Chính', symbols: ['VNM', 'FPT'] }] },
+  watchlist: { lists: [{ id: 'main', name: 'Main', symbols: ['VNM', 'FPT'] }] },
 })
-widget.setSymbols(await loadMarkets())   // SymbolInfo[] từ máy chủ của bạn: ô tìm mở ra với chúng, danh mục theo dõi giữ nguyên`}</code></pre>
+widget.setSymbols(await loadMarkets())   // your server's SymbolInfo[]: the search opens with them, the watchlist stays`}</code></pre>
 
-<h3>Cửa sổ dữ liệu</h3>
+<h3>Data Window</h3>
 <p>
-  Một bảng nổi hiển thị chính xác O/H/L/C/V, mức thay đổi của nến và giá trị của mọi
-  chỉ báo đang bật tại nến đang rê chuột — cập nhật trực tiếp khi bạn di chuyển
-  crosshair. Bật/tắt từ bảng lệnh (<kbd>Ctrl/⌘ K</kbd> →
-  "Bật/tắt cửa sổ dữ liệu"). Trên màn hình cảm ứng, chạm vào biểu đồ để đặt
+  Bảng nổi hiển thị chính xác O/H/L/C/V, mức thay đổi của nến, và giá trị của mọi
+  chỉ báo đang bật tại nến đang hover — cập nhật liên tục khi di chuyển
+  crosshair. Bật/tắt từ command palette (<kbd>Ctrl/⌘ K</kbd> →
+  "Bật/tắt cửa sổ dữ liệu"). Trên màn hình cảm ứng, chạm vào chart để đặt
   crosshair lên một nến. Giá, mức thay đổi và giá trị của chỉ báo trên
-  pane giá được viết như biểu đồ viết giá; giá trị của chỉ báo ở pane riêng
-  được viết như dòng chú giải của nó; tất cả theo định dạng số của biểu đồ.
-  Một đường so sánh, spread hay tỉ lệ, và một đường trên thang riêng, được ghi theo số
-  chữ số thập phân mà độ lớn của nó cần, không theo giá của biểu đồ. Trên Renko, Kagi và
-  các kiểu tương tự, cửa sổ dữ liệu hiển thị brick dưới con trỏ và mức thay đổi so với
+  pane giá hiển thị theo cách chart ghi giá; giá trị của chỉ báo ở pane
+  riêng hiển thị như dòng legend của chúng; tất cả theo number locale của chart.
+  Mã so sánh, spread hoặc tỷ lệ, và đường trên thang riêng, hiển thị số chữ số
+  thập phân theo độ lớn của chúng, không theo giá của chart. Trên Renko, Kagi và các loại
+  tương tự, data window hiển thị brick dưới con trỏ và mức thay đổi so với
   brick trước.
 </p>
 
-<h3>Chia sẻ góc nhìn (deep link)</h3>
+<h3>View chia sẻ được (deep link)</h3>
 <p>
-  Mã hoá toàn bộ góc nhìn — mã, khung thời gian, loại biểu đồ, thang giá,
-  chỉ báo (kèm tham số), hình vẽ và những Cài đặt biểu đồ đã đổi khác mặc định
-  (trừ múi giờ và định dạng số) — thành một chuỗi gọn, an toàn cho URL để
-  tạo liên kết sâu. Với <code>shareUrl: true</code>, widget khôi phục hash
-  <code>#tcw=…</code> khi tải trang, và thao tác "Chia sẻ góc nhìn" trong bảng lệnh
-  sao chép một liên kết vào clipboard.
+  Mã hoá toàn bộ view — mã, timeframe, loại biểu đồ, thang giá,
+  chỉ báo (kèm tham số), hình vẽ, và các mục Cài đặt biểu đồ đã thay đổi so với
+  mặc định (không gồm múi giờ và định dạng số) — thành một chuỗi ngắn, an toàn cho URL,
+  dùng cho deep link. Với <code>shareUrl: true</code> widget khôi phục
+  hash <code>#tcw=…</code> khi tải, và lệnh "Chia sẻ khung nhìn" trong command palette
+  copy link vào clipboard.
 </p>
 <pre><code>{`const widget = new ChartWidget(host, { shareUrl: true })
 
@@ -742,125 +739,126 @@ const token = widget.exportState()      // portable string
 await widget.importState(token)         // restore a view
 await widget.copyShareLink()            // copy "<url>#tcw=<token>"`}</code></pre>
 
-<h3>Bố cục có tên</h3>
+<h3>Layout có tên</h3>
 <p>
-  Nút bố cục trên thanh công cụ lưu biểu đồ dưới một cái tên: mã, khung thời gian,
-  thang giá, loại biểu đồ, chỉ báo, hình vẽ, cảnh báo và
-  <a href="#chart-settings">Cài đặt biểu đồ</a> (không gồm giao diện, múi giờ và định
-  dạng số, vì đó là lựa chọn của người xem). Mở, đổi tên và xoá bố cục từ menu của nút này; bố cục
-  đang mở tự lưu mỗi khi thay đổi, và <kbd>Ctrl/⌘ S</kbd> sẽ lưu nó. Bố cục được lưu
-  trong <code>localStorage</code> của trình duyệt này, trừ khi bạn truyền vào một
-  <code>storage</code>: bốn hàm, hàm nào cũng có thể trả về một promise.
+  Nút layout trên toolbar lưu chart dưới một tên: mã,
+  khung thời gian, thang giá, loại biểu đồ, chỉ báo, hình vẽ, cảnh báo và
+  <a href="#chart-settings">Cài đặt biểu đồ</a> (không gồm theme, múi giờ và
+  định dạng số, các mục này giữ theo người xem). Mở, đổi tên và xoá layout từ
+  menu của nút; layout đang mở tự lưu khi thay đổi, và <kbd>Ctrl/⌘ S</kbd> lưu
+  layout. Layout được lưu trong <code>localStorage</code> của trình duyệt này, trừ khi bạn truyền
+  <code>storage</code>: bốn hàm, mỗi hàm có thể trả về promise.
 </p>
 <pre><code>{`import { ChartWidget, type LayoutStorage } from '@tradecanvas/chart/widget'
 
 const server: LayoutStorage = {
   list: () => api.get('/layouts'),              // [{ id, name, symbol, timeframe, updatedAt }]
-  load: (id) => api.get(\`/layouts/\${id}\`),     // { ...summary, content } hoặc null
+  load: (id) => api.get(\`/layouts/\${id}\`),     // { ...summary, content } or null
   save: (layout) => api.put(\`/layouts/\${layout.id}\`, layout),
   remove: (id) => api.delete(\`/layouts/\${id}\`),
 }
 
 const widget = new ChartWidget(host, {
-  layouts: { storage: server, autoSave: true, openLast: true },  // hoặc false để tắt
+  layouts: { storage: server, autoSave: true, openLast: true },  // or false for none
 })
 
 const layouts = widget.getLayoutSession()!
 await layouts.saveAs('Swing BTC')
 await layouts.open(id)
-layouts.current()          // { id, name, … } hoặc null
+layouts.current()          // { id, name, … } or null
 layouts.setAutoSave(false)
 
-// Chỉ lấy phần nội dung, để cất ở đâu tuỳ bạn
+// The content alone, to keep wherever you like
 const json = widget.getLayoutContent()
 await widget.applyLayoutContent(json)`}</code></pre>
 <p>
-  <code>localStorageLayouts(prefix)</code> và <code>memoryLayouts()</code> là hai kiểu
-  lưu trữ có sẵn. Nội dung đã lưu được đọc một cách thận trọng: bố cục nào không phân
-  tích được sẽ bị từ chối, chứ không bị áp dụng nửa chừng. Mỗi bố cục ghi lại
-  <code>kind</code> của nó (<code>'chart'</code> hoặc <code>'grid'</code>), nên một widget
-  và một lưới có thể dùng chung một nơi lưu trữ mà mỗi bên chỉ liệt kê bố cục của riêng
-  mình. Việc lưu, mở và tự động lưu chạy lần lượt từng việc một, nên một lần lưu không bao
-  giờ ghi vào bố cục được mở sau nó.
+  <code>localStorageLayouts(prefix)</code> và <code>memoryLayouts()</code> là
+  hai storage có sẵn. Nội dung đã lưu được đọc một cách thận trọng: layout không
+  parse được sẽ bị từ chối, không áp dụng một nửa. Mỗi layout ghi
+  <code>kind</code> của nó (<code>'chart'</code> hoặc <code>'grid'</code>), nên widget và
+  grid có thể dùng chung một storage và mỗi bên chỉ liệt kê layout của mình. Lưu, mở và
+  tự lưu chạy lần lượt từng việc, nên một lần lưu không bao giờ ghi vào layout được mở sau nó.
 </p>
 
 <h3 id="chart-settings">Cài đặt biểu đồ</h3>
 <p>
-  Các công tắc và lựa chọn trong hộp thoại cài đặt (hồ sơ khối lượng và Market
-  Profile, điểm swing, tô vùng phiên, mức của kỳ trước, lưới, chú giải, crosshair, thang giá, múi giờ, định dạng số) là Cài đặt biểu đồ của widget. Đọc chúng
-  bằng <code>getSettings()</code> (một bản sao); đổi một phần bằng
-  <code>setSettings(patch)</code>, hàm này bỏ những gì không đọc được, giữ các số
-  trong khoảng của hộp thoại và không ghi bước hoàn tác; và nghe từng thay đổi bằng
-  <code>onSettingsChange(listener)</code>, hàm này trả về hàm để ngừng nghe. Nó được
-  gọi một lần khi hộp thoại đóng bằng OK, không bao giờ cho Huỷ hay cho một thay đổi
-  không đổi gì. Khi biểu đồ chưa có nến, <code>setSettings</code> để tự co giãn thang
-  bật, vì tắt nó là giữ nguyên khoảng giá đang hiện, mà lúc đó chưa có khoảng nào:
-  cài đặt mà <code>onSettingsChange</code> đưa ra, có tự co giãn thang bị tắt sau khi
-  kéo trục giá, vẫn đưa lại được ngay sau hàm khởi tạo mà không sao. Với <code>persistSettings: true</code>, widget giữ chúng trong trình
-  duyệt này và đặt lại ở lần ghé sau.
+  Các công tắc và lựa chọn trong dialog cài đặt (volume profile và market profile,
+  đánh dấu swing, tô màu phiên, mức của kỳ trước, lưới, legend, crosshair,
+  thang, múi giờ, định dạng số) là Cài đặt biểu đồ (Chart Settings) của widget. Đọc chúng
+  bằng <code>getSettings()</code>, trả về một bản sao; đổi một số mục bằng
+  <code>setSettings(patch)</code>, hàm này bỏ qua giá trị không đọc được, giữ số
+  trong khoảng giá trị của dialog và không ghi bước undo; và nhận thông báo mỗi lần thay đổi bằng
+  <code>onSettingsChange(listener)</code>, hàm này trả về hàm để huỷ đăng ký.
+  Listener được gọi một lần khi dialog đóng bằng OK, không bao giờ được gọi khi Cancel hoặc khi
+  thay đổi không làm gì khác đi. Khi chart chưa có nến, <code>setSettings</code>
+  giữ auto-scale bật, vì tắt auto-scale nghĩa là giữ khoảng giá trên màn hình mà lúc đó chưa có
+  khoảng giá nào: các cài đặt mà <code>onSettingsChange</code> trả về, kể cả auto-scale tắt sau khi kéo
+  trục giá, có thể truyền lại ngay sau constructor. Với <code>persistSettings: true</code>
+  widget lưu chúng trong trình duyệt này và khôi phục ở lần truy cập sau.
 </p>
 <pre><code>{`const widget = new ChartWidget(host, {
   chartOptions: { timeZone: 'UTC' },
-  persistSettings: true,            // hoặc { key: 'myapp:settings' }
+  persistSettings: true,            // or { key: 'myapp:settings' }
 })
 
 widget.setSettings({ volumeProfileVisible: true, timezone: 'exchange' })
 widget.getSettings().timezone       // 'exchange'
 
 const stop = widget.onSettingsChange((settings) => {
-  api.put('/me/chart-settings', settings)   // máy chủ của bạn, chẳng hạn
+  api.put('/me/chart-settings', settings)   // your server, say
 })
 stop()`}</code></pre>
 <p>
   <code>getSettings()</code> cũng đọc lại những gì đã đặt trên <code>getChart()</code>,
-  nên bố cục hay liên kết lưu đúng như vậy. Biểu đồ cho biết các cài đặt này qua
+  nên layout hoặc link lưu đúng trạng thái hiện tại. Chart trả về các cài đặt này qua
   <code>isVolumeVisible()</code>, <code>isLegendVisible()</code>,
   <code>isBarCountdownVisible()</code>, <code>isIndicatorValueLabelsVisible()</code>,
   <code>isLeftPriceScaleVisible()</code>, <code>getMarketProfileConfig()</code>,
   <code>getDepthHeatmapConfig()</code>, <code>getPivotMarkersConfig()</code> và
-  <code>getPeriodLevelsPeriod()</code>, cùng với <code>is…Visible()</code> của từng lớp phủ.
+  <code>getPeriodLevelsPeriod()</code>, cùng với <code>is…Visible()</code> của từng overlay.
 </p>
 <ul>
-  <li><strong>persistSettings</strong> giữ, theo từng trình duyệt, những gì người dùng
-    đã đổi so với giá trị của bạn. Giá trị được giữ thắng <code>chartOptions</code>, và
-    Đặt lại đưa về giá trị của bạn. Nó bỏ qua cờ thang log, cờ tự co giãn và cài đặt riêng
-    của từng loại biểu đồ (box Renko và những thứ tương tự), vốn là trạng thái của biểu đồ.
-    Hãy cho mỗi widget trên trang một <code>key</code> riêng; lưới tự cho mỗi biểu đồ của
-    nó một key. Nó không biết ai đã đổi: những gì bạn đặt bằng <code>setSettings</code>
-    (chẳng hạn trong <code>onReady</code>), và những gì một bố cục được mở mang đến,
-    cũng được giữ như lựa chọn của người dùng, và thắng
-    <code>chartOptions</code> ở lần ghé sau, kể cả khi mã của bạn đã thôi đặt chúng. Đặt một
-    cài đặt về lại giá trị trong <code>chartOptions</code> của bạn thì nó không còn được giữ.
-    Những gì một liên kết chia sẻ được mở mang đến là lựa chọn của người khác: chúng chỉ
-    hiện trong lần ghé đó, không được giữ và không gọi listener nào của
-    <code>onSettingsChange</code> (thay đổi kế tiếp sẽ báo tất cả).</li>
-  <li><strong>Bố cục có tên</strong> giữ tất cả, trừ múi giờ và định dạng số, vốn là của
-    người xem, và chế độ tự co giãn, thứ một lần kéo trục giá sẽ tắt. Trong JSON của bố cục,
-    chúng nằm dưới <code>settings</code>, trừ thang giá và việc lật thang, vốn có trường
-    riêng, và cài đặt riêng của từng loại biểu đồ, vốn nằm trong trạng thái của biểu đồ.
-    Bố cục lưu trước khi có tính năng này không có chúng, và mở nó thì cài đặt giữ nguyên.
-    Một phiên bản thư viện cũ hơn mở bố cục mới mà không có chúng, và lần tự lưu của nó
-    ghi lại bố cục mà không có chúng.</li>
-  <li><strong>Liên kết chia sẻ</strong> mang những cài đặt người gửi đã đổi khác mặc định,
-    trừ múi giờ, định dạng số và chế độ tự co giãn. Cài đặt riêng của loại biểu đồ trong một
-    liên kết chỉ đặt những loại mà người gửi đã đặt và loại đang hiển thị (theo mặc định nếu
-    người gửi để nguyên); cài đặt của người xem cho các loại khác
-    giữ nguyên. Với các công tắc mà <code>features</code>
-    của bạn đặt (chú giải, khối lượng, thời gian còn lại của nến, nhãn giá trị của chỉ báo),
-    mặc định là chỗ <code>features</code> đặt chúng, nên một công tắc mà ứng dụng của người
-    gửi đã tắt không được gửi đi như một thay đổi.</li>
-  <li><strong>Tính năng đã tắt</strong>: khi <code>features</code> của bạn tắt chú giải,
-    khối lượng, thời gian còn lại của nến hay thang log, không gì được giữ, chia sẻ, mở,
-    đặt hay áp dụng từ một mẫu biểu đồ có thể bật chúng lên, và hộp thoại cài đặt không có
-    công tắc và màu của chú giải hay của khối lượng.</li>
-  <li><strong>Bố cục theo từng mã</strong> (<code>persistLayouts</code>) và
-    <code>chart.saveState()</code> giữ cài đặt riêng của từng loại biểu đồ, vốn là một phần
-    trạng thái của biểu đồ, và không giữ cài đặt nào khác trong số này.</li>
+  <li><strong>persistSettings</strong> lưu, theo từng trình duyệt, những gì người dùng đã đổi
+    so với giá trị của bạn. Giá trị đã lưu được ưu tiên hơn <code>chartOptions</code>, và Về mặc định
+    trả về giá trị của bạn. Tuỳ chọn này không lưu cờ log và auto-scale cũng như cài đặt riêng
+    của loại biểu đồ (box của Renko và các cài đặt tương tự), vì đó là state của chart.
+    Hãy cho mỗi widget trên trang một <code>key</code> riêng; grid tự cho mỗi
+    chart của nó một key. Tuỳ chọn này không phân biệt ai thực hiện thay đổi: những gì bạn đặt bằng
+    <code>setSettings</code> (ví dụ trong <code>onReady</code>), và những gì một
+    layout được mở mang theo, cũng được lưu như của người dùng, và được ưu tiên hơn
+    <code>chartOptions</code> ở lần truy cập sau kể cả khi code của bạn đã thôi đặt
+    chúng. Đặt một mục về đúng giá trị <code>chartOptions</code> của bạn thì mục đó bị bỏ khỏi
+    phần đã lưu. Những gì một share link mang theo là lựa chọn của người khác: chỉ
+    hiển thị trong lần truy cập đó, không được lưu, và không gọi listener
+    <code>onSettingsChange</code> nào (lần thay đổi kế tiếp sẽ báo toàn bộ).</li>
+  <li><strong>Layout có tên</strong> lưu tất cả trừ múi giờ và
+    định dạng số, vốn giữ theo người xem, và auto-scale, vốn bị tắt khi kéo
+    trục giá. Trong JSON của layout chúng nằm dưới
+    <code>settings</code>, trừ thang giá và trạng thái đảo ngược, vốn có trường
+    riêng, và cài đặt riêng của loại biểu đồ, vốn nằm trong state của chart.
+    Layout lưu từ trước khi có tính năng này không chứa cài đặt nào, và mở nó thì
+    cài đặt giữ nguyên. Phiên bản cũ hơn của thư viện mở layout mới hơn
+    mà không có các cài đặt này, và tự lưu của nó ghi lại layout mà không có chúng.</li>
+  <li><strong>Share link</strong> mang theo các mục người gửi đã đổi so với
+    mặc định, trừ múi giờ, định dạng số và auto-scale. Cài đặt riêng của loại
+    biểu đồ trong link chỉ đặt cho các loại người gửi đã đặt và
+    loại đang hiển thị (về giá trị mặc định nếu người gửi để mặc định); cài đặt của người xem
+    cho các loại khác được giữ nguyên. Với các
+    công tắc mà <code>features</code> của bạn đặt (legend, volume, đếm ngược
+    nến, nhãn giá trị của chỉ báo), giá trị mặc định là giá trị do chính các công tắc đó đặt,
+    nên công tắc mà ứng dụng của người gửi đã tắt không bị gửi đi như một thay đổi.</li>
+  <li><strong>Tính năng đã tắt</strong>: khi <code>features</code> của bạn
+    tắt legend, volume, đếm ngược nến hoặc thang log, không có gì
+    được lưu, chia sẻ, mở, đặt hoặc áp dụng từ chart template có thể bật lại chúng,
+    và dialog cài đặt không hiển thị công tắc và màu của legend hay volume.</li>
+  <li><strong>Layout theo mã</strong> (<code>persistLayouts</code>) và
+    <code>chart.saveState()</code> chứa cài đặt riêng của loại biểu đồ, vốn là
+    một phần state của chart, và không chứa các cài đặt khác.</li>
 </ul>
 
-<h3>Bố cục theo từng mã</h3>
+<h3>Layout theo mã</h3>
 <p>
-  Ngoài ra, có thể tự động lưu bộ chỉ báo, hình vẽ, cảnh báo và loại biểu đồ theo từng mã
+  Ngoài ra, có thể tự động lưu danh sách chỉ báo, hình vẽ, cảnh báo và loại biểu đồ theo từng mã
   vào <code>localStorage</code>:
 </p>
 <pre><code>{`new ChartWidget(host, {
@@ -873,17 +871,17 @@ stop()`}</code></pre>
 // Reset a single symbol's layout
 widget.clearSavedLayout('BTCUSDT')`}</code></pre>
 <p>
-  Bố cục được ghi lại khi đổi mã và khi huỷ widget, nên không mất gì
-  khi người dùng rời trang. Trong Cài đặt biểu đồ, chúng chỉ
-  giữ cài đặt riêng của từng loại biểu đồ; <code>persistSettings</code> giữ phần còn lại.
+  Layout được ghi khi đổi mã và khi huỷ widget, nên không mất dữ liệu
+  khi người dùng rời trang. Trong Cài đặt biểu đồ, layout theo mã chỉ chứa
+  cài đặt riêng của loại biểu đồ; <code>persistSettings</code> lưu các cài đặt còn lại.
 </p>
 
-<h3>Kéo thả để nhập dữ liệu</h3>
+<h3>Nhập dữ liệu bằng kéo thả</h3>
 <p>
-  Thả một tệp CSV hoặc JSON lên biểu đồ để nạp ngay. Bật sẵn theo
-  mặc định — tắt bằng <code>dragDropImport: false</code>. Bộ phân tích
-  xử lý được các bố cục cột thông dụng (<code>time, open, high, low, close, volume</code>),
-  dấu thời gian ISO 8601 và thời gian unix tính bằng giây/ms.
+  Thả file CSV hoặc JSON vào chart để nạp ngay. Mặc định bật —
+  tắt bằng <code>dragDropImport: false</code>. Parser
+  xử lý các cách sắp cột thông dụng (<code>time, open, high, low, close, volume</code>),
+  timestamp ISO 8601, và unix giây/ms.
 </p>
 <pre><code>{`// Programmatic use
 import { parseOHLCV } from '@tradecanvas/chart'
@@ -891,13 +889,13 @@ import { parseOHLCV } from '@tradecanvas/chart'
 const { data, rowCount, skipped } = parseOHLCV(csvText)
 chart.setData(data)`}</code></pre>
 
-<h3>Lấy mẫu lại khung thời gian</h3>
+<h3>Resample timeframe</h3>
 <p>
-  Đưa cho widget chuỗi dữ liệu có độ phân giải mịn nhất qua <code>widget.setData()</code>
-  và các nút khung thời gian trên thanh công cụ sẽ gộp nó ngay trên client — một bộ dữ liệu
-  cho mọi độ phân giải, không cần tải lại. Hoạt động khi không gắn adapter dữ liệu trực tiếp
-  nào; tắt bằng <code>resampleTimeframes: false</code>. Nhóm theo tuần
-  mặc định bắt đầu từ thứ Hai (<code>weekStartsOn: 0</code> để bắt đầu từ Chủ nhật).
+  Truyền cho widget chuỗi dữ liệu có độ phân giải nhỏ nhất bằng <code>widget.setData()</code>
+  và các nút timeframe trên toolbar gộp nến ở phía client — một bộ dữ liệu
+  cho mọi độ phân giải, không cần tải lại. Có hiệu lực khi không gắn adapter
+  realtime nào; tắt bằng <code>resampleTimeframes: false</code>. Nến tuần
+  mặc định bắt đầu từ thứ Hai (<code>weekStartsOn: 0</code> cho Chủ nhật).
 </p>
 <pre><code>{`const widget = new ChartWidget(host, {
   symbol: 'BTCUSDT',
@@ -913,29 +911,31 @@ const hourly = resampleBars(oneMinuteBars, '1h')   // OHLC merged, volume summed
 const days = resampleBars(oneMinuteBars, '1d', { timeZone: 'Asia/Ho_Chi_Minh' })   // from 00:00 there
 const dayStart = timeframeBucketStart(trade.time, '1d', { timeZone: 'Asia/Ho_Chi_Minh' })`}</code></pre>
 <p>
-  Gom nhóm theo lịch: phút và giờ (1h trở xuống) làm tròn xuống bội số của khung tính từ
-  epoch Unix. Ngày, tuần (từ ngày đầu tuần đã cấu hình), tháng, quý và năm bắt đầu lúc nửa
-  đêm của sàn, các khung giờ chia hết một ngày (2h, 3h, 4h, 6h, 8h, 12h) cũng vậy. Với nến đưa vào
-  <code>widget.setData</code>, đó là nửa đêm theo <code>timeZone</code> của mã (<code>setSymbolInfo</code>),
-  nếu không có thì của thị trường (<code>setMarket</code>), nếu không nữa thì của UTC. Các khung
-  mà nguồn dữ liệu không có bắt đầu lúc nửa đêm của múi giờ mà <code>resolveSymbol</code> của nó
-  nêu, nếu không có thì của UTC: múi giờ của thị trường không dời chúng. Ngày đổi giờ dài 23 hoặc 25 tiếng. Nến ngày đóng dấu 00:00 UTC được đọc là đúng ngày
-  chúng ghi, nên ở phía tây UTC thứ Hai vẫn nằm trong tuần của nó và nến tuần giữ dấu 00:00
-  UTC. Nến đầu vào không bao giờ bị sửa đổi.
+  Gộp nến theo lịch: phút và giờ (1h trở xuống) làm tròn xuống bội số của
+  khung kể từ Unix epoch. Ngày, tuần (từ ngày đầu tuần đã cấu hình), tháng,
+  quý và năm bắt đầu lúc nửa đêm theo giờ của sàn, các khung giờ chia hết
+  một ngày (2h, 3h, 4h, 6h, 8h, 12h) cũng vậy. Với nến truyền vào <code>widget.setData</code>,
+  đó là nửa đêm theo <code>timeZone</code> của mã (<code>setSymbolInfo</code>), nếu không có thì
+  theo múi giờ của thị trường (<code>setMarket</code>), nếu không có nữa thì theo UTC. Các timeframe mà feed không có bắt đầu lúc
+  nửa đêm theo múi giờ mà <code>resolveSymbol</code> của feed trả về, nếu không có thì theo UTC: múi giờ của thị trường
+  không làm chúng dịch chuyển. Ngày đổi giờ dài 23 hoặc 25
+  giờ. Nến ngày có timestamp 00:00 UTC được đọc theo đúng ngày ghi trên đó, nên thứ Hai vẫn
+  ở đúng tuần của nó tại các múi giờ phía tây UTC và nến tuần giữ timestamp 00:00 UTC. Nến đầu vào không bao giờ
+  bị thay đổi.
 </p>
 <p>
-  Nến ngày hiện đúng ngày mà nó đại diện, dù biểu đồ đang hiển thị múi giờ nào: nến đóng dấu
-  00:00 UTC hiện ngày UTC của nó, nến dựng từ nửa đêm của sàn hiện ngày của sàn (trên trục
-  thời gian, crosshair và thẻ của nó, chú giải ghim bằng Alt-click, và thời điểm của nến mà trình đọc màn hình đọc). Khi bạn tự dựng nến, <code>timeframeBucketStart(time, timeframe, {'{'} timeZone {'}'})</code> cho biết lúc bắt đầu
-  của nến chứa một thời điểm.
+  Nến ngày hiển thị đúng ngày mà nó đại diện, bất kể chart hiển thị theo múi giờ nào: nến có timestamp
+  00:00 UTC hiển thị ngày theo UTC, nến dựng lúc nửa đêm theo giờ sàn hiển thị ngày theo sàn (trên
+  trục thời gian, crosshair và thẻ của nó, tooltip được ghim bằng Alt-click, và thời gian nến mà trình đọc màn hình đọc). Với nến tự dựng, <code>timeframeBucketStart(time, timeframe, {'{'} timeZone {'}'})</code> trả về
+  thời điểm bắt đầu của nến chứa một thời điểm.
 </p>
 
 <h3>Watchlist</h3>
 <p>
-  Một bảng trong ngăn bên, gồm các danh sách mã, mỗi mã một dòng gồm giá cuối, mức thay đổi và % thay đổi dưới tên các cột (sparkline thay cho mức thay đổi với <code>sparkline: true</code>; phần sàn đứng trước mã, như <code>HYPERLIQUID:xyz:</code>, hiện khi rê chuột). Chuyển, tạo,
-  đổi tên và xoá danh sách từ menu của bảng; thêm mã từ ô tìm mã (+), bỏ mã, và sắp xếp lại bằng cách kéo
-  hoặc Alt+↑/↓. Các dòng lấy giá từ <code>subscribeQuotes</code> của adapter, từ một nguồn giá của riêng bạn,
-  hoặc từ những gì bạn đẩy vào.
+  Một panel của dock: các danh sách mã, mỗi mã một dòng gồm giá cuối, mức thay đổi và % thay đổi dưới tên cột (sparkline thay cho mức thay đổi với <code>sparkline: true</code>; phần nơi giao dịch trước ticker, như trong <code>HYPERLIQUID:xyz:NVDA</code>, hiển thị khi hover). Chuyển,
+  tạo, đổi tên và xoá danh sách từ menu của panel; thêm mã từ tìm mã
+  (+), xoá, và sắp xếp lại bằng kéo thả hoặc Alt+↑/↓. Các dòng lấy quote từ
+  <code>subscribeQuotes</code> của adapter, một nguồn quote của bạn, hoặc dữ liệu bạn đẩy vào.
 </p>
 <pre><code>{`const widget = new ChartWidget(host, {
   symbol: 'BTCUSDT',
@@ -945,7 +945,7 @@ const dayStart = timeframeBucketStart(trade.time, '1d', { timeZone: 'Asia/Ho_Chi
       { id: 'majors', name: 'Majors', symbols: ['BTCUSDT', 'ETHUSDT'] },
       { id: 'alts', name: 'Alts', symbols: ['SOLUSDT', 'ADAUSDT'] },
     ],
-    persist: true,                             // kept in this browser
+    persist: true,                             // kept in this browser; a list added here later joins them
     onChange: (lists, active) => save(lists),  // or keep them yourself
   },
 })
@@ -955,15 +955,15 @@ widget.setActiveWatchlist('alts')
 widget.setQuotes([{ symbol: 'AAPL', last: 190.2, prevClose: 188.1 }])   // from your own feed
 widget.getQuote('AAPL')`}</code></pre>
 <p>
-  <code>watchlist: true</code> vẫn hiện một danh sách gồm các <code>symbols</code> như trước; <code>setWatchlistEntry</code>
-  vẫn đẩy giá, mức thay đổi và sparkline của một dòng.
+  <code>watchlist: true</code> hiển thị một danh sách gồm <code>symbols</code>, như trước; <code>setWatchlistEntry</code>
+  vẫn đẩy giá, mức thay đổi và sparkline cho một dòng.
 </p>
 
 <h3>Thông tin mã</h3>
 <p>
-  Một bảng trong ngăn bên, mở từ nút ⓘ cạnh mã, từ dải nút hoặc từ bảng lệnh: tên của mã, giá cuối và mức thay đổi, trạng thái
-  thị trường kèm đếm ngược tới lần mở hoặc đóng cửa kế tiếp, giá mở cửa, biên độ và khối lượng trong ngày, giá đóng cửa
-  phiên trước, giá mua và giá bán, bước giá, tiền tệ, múi giờ và giờ giao dịch, cùng tin tức. Thanh trạng thái báo
+  Một panel của dock, mở từ ⓘ cạnh mã, từ rail hoặc command palette: tên mã, giá cuối và
+  mức thay đổi, trạng thái thị trường kèm đếm ngược đến lần mở cửa hoặc đóng cửa tiếp theo, giá mở cửa trong ngày, biên độ dao động, khối lượng,
+  giá đóng cửa trước, bid và ask, bước giá, đơn vị tiền tệ, múi giờ và giờ giao dịch, và tin tức. Thanh trạng thái hiển thị
   khi thị trường đóng cửa.
 </p>
 <pre><code>{`new ChartWidget(host, {
@@ -972,24 +972,24 @@ widget.getQuote('AAPL')`}</code></pre>
 })
 widget.toggleSymbolInfo(true)`}</code></pre>
 <p>
-  Các tin cũng hiện trên chart dưới dạng marks, trên bar mà tin được đăng
-  (<code>newsMarks: false</code> để bỏ); xem <em>Marks</em> trong trang Trading.
+  Các tiêu đề tin cũng hiển thị trên chart dưới dạng mark, tại nến mà tin được đăng
+  (<code>newsMarks: false</code> tắt chúng); xem <em>Marks</em> trong phần Trading.
 </p>
 
-<h3>Điều hướng, hoàn tác và hướng chữ</h3>
+<h3>Điều hướng, undo và hướng hiển thị</h3>
 <p>
-  Các nút trên biểu đồ — thu nhỏ và phóng to, cuộn về trước và về sau (giữ nút thì cuộn tiếp), đặt lại —
-  hiện ra khi chuột ở gần mép dưới vùng vẽ, tránh che dữ liệu, hoặc khi một nút đang có focus
-  (<code>navigation: false</code> để bỏ chúng). Thay đổi cài đặt và đổi loại
-  biểu đồ được hoàn tác bằng Ctrl/Cmd+Z, cùng với hình vẽ và chỉ báo. Với tiếng Ả Rập, tiếng Do Thái, tiếng Ba Tư
-  hoặc tiếng Urdu, widget đảo chiều (<code>dir: 'auto'</code>; hoặc <code>'rtl'</code> / <code>'ltr'</code>);
-  biểu đồ vẫn giữ thời gian chạy từ trái sang phải.
+  Các nút trên chart — zoom ra và vào, cuộn về trước và về sau (giữ nút thì cuộn liên tục), đặt lại —
+  hiển thị khi chuột ở gần mép dưới vùng vẽ, không che dữ liệu, hoặc khi một nút đang được focus
+  (<code>navigation: false</code> tắt chúng). Thay đổi cài đặt và
+  đổi loại biểu đồ được undo bằng Ctrl/Cmd+Z, cùng với hình vẽ và chỉ báo. Với tiếng Ả Rập, Do Thái,
+  Ba Tư hoặc Urdu, widget đảo chiều giao diện (<code>dir: 'auto'</code>; hoặc <code>'rtl'</code> / <code>'ltr'</code>);
+  chart vẫn giữ thời gian chạy từ trái sang phải.
 </p>
 
 <h3>Công cụ vẽ yêu thích</h3>
 <p>
-  Ghim các công cụ vẽ hay dùng vào một dải ở đầu thanh bên.
-  Bấm chuột phải vào công cụ bất kỳ (trong menu của nhóm hoặc ngay trên dải) để ghim hoặc bỏ ghim;
+  Ghim các công cụ vẽ hay dùng vào một dải ở đầu sidebar.
+  Chuột phải vào bất kỳ công cụ nào (trong flyout của nhóm hoặc trên chính dải đó) để ghim hoặc bỏ ghim;
   danh sách được lưu vào localStorage. Đặt các công cụ ghim ban đầu bằng
   <code>drawingFavorites</code>:
 </p>
@@ -997,19 +997,19 @@ widget.toggleSymbolInfo(true)`}</code></pre>
   drawingFavorites: ['trendLine', 'horizontalLine', 'fibRetracement', 'rectangle'],
 })`}</code></pre>
 <p>
-  Nút ngôi sao trên thanh bên hiện các công cụ đã ghim thành một <strong>thanh công cụ yêu thích</strong> nổi trên
-  chart: kéo tay nắm để đặt nó ở đâu trên chart cũng được, bấm một công cụ để chọn, chuột phải để bỏ ghim. Thanh có
-  hiện hay không và vị trí của nó được lưu trong trình duyệt này, một thiết lập chung cho các widget của một trang, và
-  dải công cụ ghim trên thanh bên tự ẩn khi thanh nổi đang hiện; khi switch của nó tắt, các công cụ ghim vẫn ở trên dải.
-  Lần đầu, thanh nằm giữa mép trên của chart. <code>{`features: { favoritesBar: false }`}</code> bỏ thanh và nút của nó.
+  Nút ngôi sao trên sidebar hiển thị các công cụ đã ghim thành một <strong>Toolbar yêu thích</strong> nổi trên
+  chart thay vì trên dải: kéo tay nắm để đặt nó ở bất kỳ đâu trên chart, nhấn một công cụ để chọn, chuột phải vào một công cụ để
+  bỏ ghim. Trạng thái hiển thị và vị trí của toolbar được lưu trong trình duyệt này, một cài đặt chung cho các widget trên một trang, và
+  dải trên sidebar ẩn đi khi toolbar hiển thị; khi tắt toolbar, các công cụ ghim vẫn nằm trên dải. Lần đầu toolbar hiện ở giữa mép trên của chart. <code>{`features: { favoritesBar: false }`}</code>
+  bỏ toolbar này và nút của nó.
 </p>
 
-<h3>Kiểu vẽ &amp; mẫu</h3>
+<h3>Style &amp; template hình vẽ</h3>
 <p>
-  Nút bảng màu trên thanh bên công cụ vẽ mở một popover kiểu vẽ — chọn màu,
-  độ dày nét và kiểu nét cho hình vẽ tiếp theo (và hình đang chọn), rồi
-  lưu thành các <strong>mẫu</strong> có tên trong localStorage để dùng lại chỉ với
-  một cú bấm. Các lệnh tương đương trong code:
+  Nút bảng màu trên sidebar công cụ vẽ mở popover style — chọn màu,
+  độ dày và kiểu đường cho hình vẽ tiếp theo (và hình vẽ đang chọn), và
+  lưu các <strong>template</strong> có tên vào localStorage để dùng lại bằng một
+  click. Các lời gọi tương đương bằng code:
 </p>
 <pre><code>{`chart.setDrawingStyle({ color: '#e8505b', lineWidth: 2, lineStyle: 'dashed' })
 chart.getDrawingStyle()
@@ -1017,52 +1017,53 @@ chart.setSelectedDrawingStyle({ color: '#1fa874' })  // restyle the selected dra
 
 <h3>Cây đối tượng</h3>
 <p>
-  Nút lớp (layers) trên dải nút (trên thanh công cụ, khi không có dải nút) mở cây đối tượng
-  trong ngăn bên, liệt kê mọi chỉ báo đang có, gọi theo tên trên nhãn của nó (EMA 20, Compare ETHUSDT),
-  và mọi hình vẽ. Chỉ báo có thể xoá; mỗi hình vẽ có nút
-  hiện / ẩn, khoá / mở khoá, cài đặt và xoá, còn các nhóm được liệt kê cùng
-  các hình vẽ của chúng bên dưới. Bật sẵn theo mặc định — tắt bằng
-  <code>objectTree: false</code>. Các nút cho hình vẽ tương ứng với:
+  Nút layer trên rail (trên toolbar, nếu không có rail) mở
+  cây đối tượng trong dock, liệt kê mọi chỉ báo đang bật, đặt tên như trên chip của nó (EMA 20, Compare ETHUSDT),
+  và mọi hình vẽ. Chỉ báo có thể xoá; mỗi hình vẽ có
+  hiện / ẩn, khoá / mở khoá, cài đặt và xoá, và các nhóm được liệt kê với
+  hình vẽ bên dưới. Mặc định bật — tắt bằng
+  <code>objectTree: false</code>. Các điều khiển hình vẽ tương ứng với:
 </p>
 <pre><code>{`chart.getDrawings()                 // DrawingState[] (id, type, visible, locked, intervals)
 chart.setDrawingVisible(id, false)  // hide a single drawing
-chart.isDrawingShown(id)            // không bị ẩn, và hiện trên khung thời gian này
+chart.isDrawingShown(id)            // not hidden, and on this interval
 chart.setDrawingLocked(id, true)    // lock it from edits
 chart.removeDrawing(id)
-chart.groupDrawings(ids, 'Weekly levels')  // ẩn, khoá và chọn cùng nhau
+chart.groupDrawings(ids, 'Weekly levels')  // hidden, locked and selected together
 chart.renameDrawingGroup(groupId, 'Old highs')
 chart.getActiveIndicators()         // active indicator instances
 chart.updateIndicator(instanceId, { period: 50 })  // re-tune params live
 chart.removeIndicator(instanceId)`}</code></pre>
-<h3>Cài đặt hình vẽ và menu</h3>
+<h3>Cài đặt và menu của hình vẽ</h3>
 <p>
-  Bấm đúp vào một hình vẽ, hoặc dùng nút bánh răng của nó trong cây đối tượng, để mở
-  cài đặt theo từng tab: Kiểu (đường, hai đầu đường, màu nền, các cài đặt riêng
-  của công cụ như mức Fibonacci, phần kéo dài và nhãn), Chữ cho các công cụ có
-  chữ, Toạ độ (các điểm của nó theo múi giờ của biểu đồ) và Hiển thị (các khung
-  thời gian mà nó hiện trên đó), cùng menu Mẫu, Huỷ và OK ở cuối hộp thoại.
-  Bấm chuột phải vào một
-  hình vẽ để mở menu: cài đặt, cảnh báo trên đường của nó, thứ tự, nhóm, khoá,
-  ẩn, nhân bản và xoá. Thanh bên còn có tẩy, công cụ phóng to và nam châm,
-  yếu hay mạnh chọn từ menu của nó. Xem
+  Double-click một hình vẽ, hoặc dùng biểu tượng bánh răng của nó trong cây đối tượng, để mở
+  phần cài đặt theo tab: Kiểu (đường, hai đầu đường, phần tô, cài đặt riêng của công cụ
+  như các mức Fibonacci, phần mở rộng và nhãn), Chữ cho các công cụ
+  có chữ, Toạ độ (các điểm theo múi giờ của chart) và Hiển thị
+  (các khung thời gian mà hình vẽ hiển thị), với menu Mẫu, Huỷ và OK ở dưới cùng.
+  Chuột phải vào hình vẽ để mở
+  menu của nó: cài đặt, cảnh báo trên đường của hình vẽ, thứ tự, nhóm, khoá, ẩn,
+  nhân bản và xoá. Sidebar cũng có tẩy, công cụ zoom và
+  magnet, mức yếu hoặc mạnh chọn từ menu. Xem
   <a href={href('/docs/drawing-tools')}>Công cụ vẽ</a> để biết API bên dưới.
 </p>
 
 <p>
-  Nút bánh răng trên mỗi dòng chỉ báo mở <strong>hộp thoại cài đặt</strong>,
-  tự đọc các tham số của chỉ báo (số, công tắc, màu) và
+  Nút bánh răng trên mỗi dòng chỉ báo mở <strong>dialog cài đặt</strong>
+  đọc các tham số của chỉ báo (số, công tắc, màu) và
   áp dụng thay đổi ngay qua <code>updateIndicator</code> — không cần xoá rồi
-  thêm lại để đổi chu kỳ hay màu.
+  thêm lại để đổi period hoặc màu.
 </p>
 <p>
-  Phần <strong>So sánh</strong> trong cây đối tượng liệt kê mọi mã đang so sánh, như hộp thoại
-  so sánh: mỗi mã kèm cách so sánh (thay đổi phần trăm, thang riêng, pane riêng, spread, tỷ lệ
-  hay tương quan) và một nút để bỏ nó đi. Khi có adapter dữ liệu trực tiếp, nút + của phần này mở
-  hộp thoại so sánh. Dù so sánh theo cách nào, widget cũng tải nến của mã kia qua
-  <code>adapter.fetchHistory</code> trước khi thêm, và không thêm gì nếu nến không về (tải lỗi,
-  hoặc không có nến ở khung thời gian này); một thông báo nói lý do. Một mã so sánh do trạng thái
-  đã lưu mang lại vẫn ở trên biểu đồ khi nến của nó không tải được, và có dữ liệu ở khung thời
-  gian có nến. Các mã so sánh tự tải lại khi đổi khung thời gian. Các lệnh tương đương trong code:
+  Mục <strong>So sánh</strong> của cây đối tượng liệt kê mọi mã so sánh, giống dialog
+  so sánh: mỗi mã kèm cách thêm (phần trăm thay đổi, thang riêng, pane riêng, spread, tỷ lệ
+  hoặc correlation) và một nút để bỏ. Khi có adapter realtime, nút + của mục mở
+  dialog so sánh. Với mọi cách thêm, widget tải nến của mã kia qua
+  <code>adapter.fetchHistory</code> trước khi thêm, và không thêm gì nếu nến
+  không về (tải lỗi, hoặc không có nến ở khung thời gian này); một toast cho biết lý do.
+  Mã so sánh được khôi phục từ state đã lưu vẫn ở trên chart khi nến của nó tải lỗi, và
+  được điền dữ liệu ở khung thời gian có nến. Mã so sánh tự tải lại khi đổi
+  timeframe. Các lời gọi tương đương bằng code:
 </p>
 <pre><code>{`widget.addCompareSymbol('ETHUSDT')   // fetches + overlays (needs an adapter)
 await widget.addCompareSymbol('ETHUSDT', 'scale')  // its bars first; nothing added if they don't come
@@ -1075,13 +1076,12 @@ chart.removeCompareSymbol('ETHUSDT')`}</code></pre>
 
 <h3>Cảnh báo giá</h3>
 <p>
-  Ngoài một mức giá, cảnh báo còn có thể so một đường với một đường khác (giá cắt một đường
-  trung bình động, MACD cắt đường tín hiệu của nó), kích hoạt khi giá biến động một số phần trăm
-  trong một số nến (từ 2 đến 500), chỉ xét các nến đã đóng (không kích hoạt bởi một râu nến đâm
-  qua rồi quay lại), và hết hạn. Bảng cảnh báo của widget có tất cả những tuỳ chọn này; trong code
-  chúng là tham số cuối cùng của <code>addAlert</code>. Cảnh báo được kiểm tra ở mỗi lần có giá,
-  dù từ <code>setCurrentPrice</code> hay từ một nguồn dữ liệu đã kết nối, cùng lúc với các đường
-  mà chúng theo dõi:
+  Ngoài một mức giá, cảnh báo có thể so sánh một đường với một đường khác (giá cắt
+  đường trung bình động, MACD cắt đường signal), kích hoạt khi giá biến động một số phần trăm trong một số
+  nến (2 đến 500), chỉ xét nến đã đóng (không kích hoạt bởi bóng nến rồi giá quay lại), và
+  hết hạn. Panel cảnh báo của widget có tất cả các tuỳ chọn này; trong code chúng là tham số cuối
+  của <code>addAlert</code>. Cảnh báo được kiểm tra với mọi giá, từ
+  <code>setCurrentPrice</code> hoặc feed đã kết nối, cùng với các đường mà cảnh báo theo dõi:
 </p>
 <pre><code>{`const ema = chart.addIndicator('ema', { period: 50 })
 const rsi = chart.addIndicator('rsi')
@@ -1093,12 +1093,12 @@ chart.addAlert(64_000, 'crossing', 'today only', 'price', undefined, { expiresAt
 chart.on('alertExpired', (e) => e.payload)   // it reached its time without firing
 chart.on('alertTriggered', (e) => e.payload)  // { id, condition, channel, target?, percent?, bars?, … }`}</code></pre>
 <p>
-  Biểu tượng chuông trên thanh công cụ mở một bảng nổi để thêm, xem và xoá cảnh báo
-  giá; một thông báo toast hiện lên khi cảnh báo kích hoạt. Đường cảnh báo cũng
-  <strong>kéo được</strong> — nắm một đường trên biểu đồ và trượt để đổi giá
-  (di chuyển cảnh báo sẽ đặt nó về trạng thái chờ kích hoạt lại). Bật sẵn theo mặc định — tắt bằng
-  <code>alerts: false</code>. Điều khiển bằng code qua API của
-  <code>Chart</code> và các sự kiện cảnh báo có kiểu:
+  Biểu tượng chuông trên toolbar mở một panel nổi để thêm, liệt kê và xoá cảnh báo
+  giá; một toast hiện lên khi cảnh báo kích hoạt. Đường cảnh báo cũng
+  <strong>kéo được</strong> — nắm một đường trên chart và kéo để đổi giá
+  (di chuyển cảnh báo sẽ kích hoạt lại nó). Mặc định bật — tắt bằng
+  <code>alerts: false</code>. Điều khiển bằng code qua API
+  <code>Chart</code> và các event cảnh báo có kiểu:
 </p>
 <pre><code>{`// Add from code (condition: 'crossing' | 'crossingUp' | 'crossingDown'
 //                          | 'greaterThan' | 'lessThan')
@@ -1119,9 +1119,9 @@ chart.on('alertTriggered', (e) => {
 const ema = chart.addIndicator('rsi')
 chart.addAlert(70, 'crossingUp', 'RSI overbought', \`\${ema}:rsi\`, 'RSI')`}</code></pre>
 <p>
-  Có thể bật âm thanh và/hoặc thông báo trên màn hình máy tính khi cảnh báo kích hoạt (cả hai mặc định
-  tắt). <code>sound: true</code> phát tiếng bíp có sẵn; truyền một URL để dùng
-  âm thanh riêng. <code>desktop: true</code> dùng Notification API và hỏi
+  Có thể bật âm thanh và/hoặc thông báo desktop khi cảnh báo kích hoạt (cả hai mặc định
+  tắt). <code>sound: true</code> phát tiếng beep có sẵn; truyền URL để dùng âm
+  riêng. <code>desktop: true</code> dùng Notification API và xin
   quyền ở lần dùng đầu tiên.
 </p>
 <pre><code>{`new ChartWidget(host, {
@@ -1129,23 +1129,23 @@ chart.addAlert(70, 'crossingUp', 'RSI overbought', \`\${ema}:rsi\`, 'RSI')`}</co
 })`}</code></pre>
 
 <h3>Công tắc tính năng</h3>
-<p>132 công tắc, cái nào cũng bật cho tới khi tắt: tên không có dấu chấm là cả một tính năng, tắt ở mọi nơi nó xuất hiện; tên có dấu chấm là một chỗ. Công tắc đổi được khi widget đang chạy. Danh sách đầy đủ và các option cũ tương ứng nằm ở <a href={href('/docs/customization')}>Tùy biến</a>.</p>
-<pre><code>{`new ChartWidget(host, { features: { 'toolbar.replay': false, 'sidebar.patterns': false, hotkeys: false } })   // một nút, một nhóm công cụ vẽ, mọi phím tắt
+<p>132 công tắc, tất cả đều bật cho đến khi bị tắt: tên không có dấu chấm là cả một tính năng, tắt ở mọi chỗ nó xuất hiện; tên có dấu chấm là một vị trí cụ thể. Công tắc thay đổi được khi widget đang chạy. Danh sách đầy đủ, cùng các tuỳ chọn cũ mà chúng thay thế, có trong <a href={href('/docs/customization')}>Tuỳ biến</a>.</p>
+<pre><code>{`new ChartWidget(host, { features: { 'toolbar.replay': false, 'sidebar.patterns': false, hotkeys: false } })   // one button, a section of drawing tools, every key
 
 widget.setFeatures({ sidebar: false, statusBar: false })
 widget.isFeatureOn('sidebar')    // false
-widget.getFeatures()             // mọi công tắc, bật hay tắt`}</code></pre>
+widget.getFeatures()             // every switch, on or off`}</code></pre>
 
-<h3>Nút và mục menu của riêng bạn</h3>
+<h3>Nút và mục menu riêng</h3>
 <p>
-  Thêm nút vào thanh công cụ (một biểu tượng có sẵn hoặc phần tử của bạn, chữ, một công
-  tắc) và thêm mục vào các menu chuột phải của biểu đồ, xếp sau các mục của widget.
+  Thêm nút vào toolbar (icon có sẵn hoặc element của bạn, text, hoặc
+  công tắc) và mục vào các menu chuột phải của chart, sau các mục của widget.
 </p>
 <pre><code>{`const news = widget.addToolbarButton({
   id: 'news',
   label: 'News',
-  icon: 'bell',            // hoặc một phần tử <svg>; hoặc text: 'News'
-  side: 'right',           // 'left' nằm cùng các nút điều khiển biểu đồ
+  icon: 'bell',            // or an <svg> element; or text: 'News'
+  side: 'right',           // 'left' sits with the chart controls
   toggle: true,
   onClick: () => news?.setActive(togglePanel()),
 })
@@ -1157,12 +1157,12 @@ new ChartWidget(host, {
     ? [{ label: \`Copy \${price.toFixed(2)}\`, icon: 'check', onSelect: () => copy(price) }]
     : [],
 })`}</code></pre>
-<p>Ngoài ra còn nút menu trên toolbar, nút trên thanh công cụ vẽ, mục trên thanh trạng thái, chỗ riêng cho bạn trong từng thanh và trên biểu đồ, và mục ở cuối menu của một hình vẽ hay một chỉ báo (xem <a href={href('/docs/customization#parts')}>Tùy biến</a>):</p>
-<pre><code>{`widget.addToolbarDropdown({ id: 'scans', label: 'Scans', icon: 'layers', items: () => [...] })   // được hỏi lại mỗi lần mở
+<p>Ngoài ra còn có nút menu trên toolbar, nút trên sidebar công cụ vẽ, mục trên thanh trạng thái, vị trí riêng trong mỗi thanh và trên chart, và mục ở cuối menu của hình vẽ hoặc chỉ báo (xem <a href={href('/docs/customization#parts')}>Tuỳ biến</a>):</p>
+<pre><code>{`widget.addToolbarDropdown({ id: 'scans', label: 'Scans', icon: 'layers', items: () => [...] })   // asked for each time it opens
 widget.addSidebarButton({ id: 'ruler', label: 'Ruler', icon: 'ruler', toggle: true, onClick })
 widget.addStatusBarItem({ id: 'latency', text: '12 ms', label: 'Latency' })
-widget.getSlot('chart')          // một lớp trên biểu đồ
-widget.addHotkey({ keys: 'Alt+N', label: 'New note', onPress })   // phím tắt của riêng bạn, thay phím tắt của widget nếu trùng phím
+widget.getSlot('chart')          // a layer over the chart
+widget.addHotkey({ keys: 'Alt+N', label: 'New note', onPress })   // a shortcut of yours; it replaces a widget shortcut on the same keys
 
 new ChartWidget(host, {
   drawingMenuItems: ({ id, type }) => [{ label: 'Share', onSelect: () => share(id) }],
@@ -1171,62 +1171,63 @@ new ChartWidget(host, {
 
 <h2>ChartWidgetGrid</h2>
 <p>
-  Nhiều widget biểu đồ đặt cạnh nhau, mỗi biểu đồ có mã, khung thời gian, chỉ báo và
-  hình vẽ riêng. Một thanh phía trên chọn cách sắp xếp, liên kết các biểu đồ và lưu cả
-  lưới thành một bố cục có tên. Biểu đồ được bấm gần nhất là biểu đồ đang chọn (có viền).
+  Nhiều chart widget đặt cạnh nhau, mỗi chart có mã, khung thời gian,
+  chỉ báo và hình vẽ riêng. Một thanh phía trên chọn cách sắp xếp, liên kết các
+  chart và lưu cả grid thành một layout có tên. Chart được nhấn gần nhất là
+  chart đang active (có viền).
 </p>
 <pre><code>{`import { ChartWidgetGrid } from '@tradecanvas/chart/widget'
 
 const grid = new ChartWidgetGrid(host, {
-  layout: '2x2',                                   // '1x2', '2x2', '3x3', '1+2', '1/3'… (xem danh sách ở ChartGrid)
-  widget: { timeframe: '1h' },                    // cho mọi biểu đồ
-  adapter: () => new BinanceAdapter(),            // mỗi biểu đồ một adapter: một adapter giữ một luồng
-  // hoặc widget: { timeframe: '1h', feed }: một DataFeed phục vụ mọi biểu đồ
+  layout: '2x2',                                   // '1x2', '2x2', '3x3', '1+2', '1/3'… (all under ChartGrid)
+  widget: { timeframe: '1h' },                    // every chart
+  adapter: () => new BinanceAdapter(),            // one per chart: an adapter keeps one stream
+  // or widget: { timeframe: '1h', feed }: one DataFeed serves every chart
   cells: [{ symbol: 'BTCUSDT' }, { symbol: 'ETHUSDT' }, { symbol: 'SOLUSDT' }, { symbol: 'BNBUSDT' }],
   sync: { crosshair: true, time: false, symbol: false, interval: false, drawings: false, replay: false },
 })
 
 grid.setLayout('1x2')
-grid.setSync({ interval: true })   // đưa các biểu đồ khác về cùng khung với biểu đồ đang chọn
-grid.applyOverrides({ 'grid.vertical.visible': false })   // giao diện của mọi biểu đồ, kể cả biểu đồ thêm sau
-grid.setFeatures({ 'toolbar.replay': false })               // công tắc của mọi biểu đồ, kể cả biểu đồ thêm sau
+grid.setSync({ interval: true })   // lines the others up with the active chart
+grid.applyOverrides({ 'grid.vertical.visible': false })   // every chart's look, and the charts it adds
+grid.setFeatures({ 'toolbar.replay': false })               // every chart's switches, and the charts it adds
 grid.getActiveWidget().getChart()
 grid.getLayoutSession()?.saveAs('Majors')
 
-// Từng biểu đồ ngay khi được tạo (lúc đầu và khi lưới thêm ô)
+// Each chart as it is made (at the start, and when the grid grows)
 new ChartWidgetGrid(host, {
   onChartAdd: (widget, index) => widget.getChart().addIndicator('ema', { period: 21 }),
 })`}</code></pre>
 <p>
-  Đồng bộ crosshair hiện thời điểm dưới con trỏ chuột trên mọi biểu đồ; đồng bộ
-  thời gian cuộn và phóng to/thu nhỏ các biểu đồ khác theo biểu đồ đang dùng; hình vẽ được
-  sao chép sang các biểu đồ đang hiện cùng mã (bật mục này sẽ gộp hình vẽ của các biểu đồ
-  đó lại, không mất hình nào); đồng bộ replay cho các biểu đồ khác replay đến cùng thời điểm
-  với biểu đồ đang replay (biểu đồ có nến dài hơn các bước replay sẽ hiện trọn nến chứa thời điểm đó).
-  Các biểu đồ bị bớt đi khi lưới thu nhỏ sẽ được cất đi, vẫn
-  được giữ trong bố cục đã lưu, và trở lại nguyên như cũ khi lưới mở rộng lại; một biểu đồ
-  hoàn toàn mới sẽ mở theo mã và khung thời gian của biểu đồ đang chọn nếu hai mục đó đang
-  được đồng bộ.
+  Đồng bộ crosshair hiển thị thời gian dưới con trỏ trên mọi chart; đồng bộ thời gian
+  cuộn và zoom các chart khác theo chart đang thao tác; hình vẽ được copy
+  sang các chart đang hiển thị cùng mã (bật đồng bộ này sẽ gộp hình vẽ của các chart đó,
+  không mất hình vẽ nào); đồng bộ replay đưa các chart khác về cùng thời điểm với chart
+  đang replay (chart có nến dài hơn bước replay hiển thị toàn bộ
+  nến chứa thời điểm đó).
+  Các chart bị bớt đi khi grid thu nhỏ được cất đi, giữ trong
+  layout đã lưu, và quay lại như cũ khi grid mở rộng lại; chart hoàn toàn mới
+  mở với mã và khung thời gian của chart đang active khi hai mục đó được đồng bộ.
 </p>
 
 <h2>ChartGrid</h2>
-<p>Bố cục nhiều biểu đồ headless (không có thanh công cụ) đồng bộ với nhau; xem <code>ChartWidgetGrid</code> nếu cần giao diện đầy đủ.</p>
+<p>Layout nhiều chart headless được đồng bộ (không có toolbar); xem <code>ChartWidgetGrid</code> để có UI đầy đủ.</p>
 <pre><code>{`import { ChartGrid } from '@tradecanvas/chart'
 
 const grid = new ChartGrid(host, { layout: '2x2', theme: 'dark' })
-// Mỗi biểu đồ một adapter: một adapter giữ một luồng
+// One adapter per chart: an adapter keeps one stream
 await grid.connectAll(() => new BinanceAdapter(), ['BTCUSDT','ETHUSDT','SOLUSDT','BNBUSDT'], '5m')
 grid.setLayout('1x2')`}</code></pre>
 
 <p>
-  Bố cục, dùng chung cho <code>ChartGrid</code> và <code>ChartWidgetGrid</code>.
-  Lưới thường đặt tên theo hàng × cột (<code>'1x2'</code> là một hàng hai biểu đồ): <code>'1x1'</code>, <code>'1x2'</code>, <code>'2x1'</code>, <code>'1x3'</code>, <code>'3x1'</code>, <code>'2x2'</code>, <code>'1x4'</code>, <code>'4x1'</code>, <code>'2x3'</code>, <code>'3x2'</code>, <code>'2x4'</code>, <code>'3x3'</code>.
-  Các bố cục còn lại có một biểu đồ lớn: <code>'1+2'</code> và <code>'1+3'</code> (lớn bên trái, hai hoặc ba biểu đồ
-  xếp chồng bên phải), <code>'2+1'</code> (hai biểu đồ xếp chồng bên trái, lớn bên phải),
-  <code>'1/2'</code> và <code>'1/3'</code> (lớn ở trên, hai hoặc ba biểu đồ bên dưới), <code>'2/1'</code> (hai ở trên, một biểu đồ rộng bên dưới).
-  Biểu đồ lớn là biểu đồ đầu tiên, trừ <code>'2+1'</code> và <code>'2/1'</code>, nơi nó là biểu đồ cuối cùng.
-  <code>GRID_SHAPES</code> cho biết <code>cols</code>, <code>rows</code> của từng bố cục và, với các bố cục có biểu đồ lớn,
-  vùng <code>areas</code> mỗi biểu đồ chiếm (<code>[col, row, colSpan, rowSpan]</code>, theo thứ tự biểu đồ).
-  Thanh của <code>ChartWidgetGrid</code> hiện bố cục đang dùng thành một nút, mở bảng chọn các bố cục,
-  mỗi hàng ứng với một số lượng biểu đồ; <code>layoutChoices</code> giới hạn những bố cục được đưa ra.
+  Các layout, giống nhau cho <code>ChartGrid</code> và <code>ChartWidgetGrid</code>.
+  Grid đơn giản được đặt tên theo hàng × cột (<code>'1x2'</code> là một hàng hai chart): <code>'1x1'</code>, <code>'1x2'</code>, <code>'2x1'</code>, <code>'1x3'</code>, <code>'3x1'</code>, <code>'2x2'</code>, <code>'1x4'</code>, <code>'4x1'</code>, <code>'2x3'</code>, <code>'3x2'</code>, <code>'2x4'</code>, <code>'3x3'</code>.
+  Các layout còn lại có một chart lớn: <code>'1+2'</code> và <code>'1+3'</code> (chart lớn bên trái, hai hoặc ba chart
+  xếp chồng bên phải), <code>'2+1'</code> (hai chart xếp chồng bên trái, chart lớn bên phải),
+  <code>'1/2'</code> và <code>'1/3'</code> (chart lớn ở trên, hai hoặc ba chart bên dưới), <code>'2/1'</code> (hai chart ở trên, một chart rộng bên dưới).
+  Chart lớn là chart đầu tiên, trừ <code>'2+1'</code> và <code>'2/1'</code>, nơi nó là chart cuối.
+  <code>GRID_SHAPES</code> cho biết <code>cols</code>, <code>rows</code> của mỗi layout và, với các
+  layout còn lại, các <code>areas</code> mà chart chiếm (<code>[col, row, colSpan, rowSpan]</code>, theo thứ tự chart).
+  Thanh của <code>ChartWidgetGrid</code> hiển thị layout đang dùng thành một nút mở bảng chọn
+  layout, mỗi hàng ứng với một số lượng chart; <code>layoutChoices</code> giới hạn các lựa chọn.
 </p>

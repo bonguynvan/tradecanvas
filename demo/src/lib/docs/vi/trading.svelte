@@ -5,19 +5,19 @@
 </script>
 
 <svelte:head>
-  <title>Lớp phủ giao dịch — Tài liệu TradeCanvas</title>
-  <meta name="description" content="Hiển thị vị thế, lệnh, điểm đánh dấu tín hiệu và vùng giao dịch ngay trên biểu đồ với lớp phủ giao dịch của TradeCanvas." />
+  <title>Overlay giao dịch — Tài liệu TradeCanvas</title>
+  <meta name="description" content="Vẽ position, order, signal marker và vùng giao dịch ngay trên biểu đồ bằng overlay giao dịch của TradeCanvas." />
 </svelte:head>
 
-<h1>Lớp phủ giao dịch</h1>
+<h1>Overlay giao dịch</h1>
 <p>
-  Hiển thị vị thế, lệnh, điểm đánh dấu tín hiệu và vùng giao dịch ngay trên biểu đồ.
+  Vẽ position, order, signal marker và vùng giao dịch ngay trên biểu đồ.
   Được thiết kế để tích hợp với cả quy trình giao dịch thủ công lẫn giao dịch thuật toán.
 </p>
 
 <h2>Tắt giao dịch</h2>
 <p>
-  Lớp phủ giao dịch bật sẵn theo mặc định; menu đặt lệnh khi bấm chuột phải thì không (kể từ 1.3).
+  Overlay giao dịch bật mặc định; menu đặt order bằng chuột phải thì không (từ bản 1.3).
 </p>
 <pre><code>{`// Drop the entire trading subsystem (no orders, no positions, no overlay)
 new Chart(host, { features: { trading: false } })
@@ -27,10 +27,10 @@ new Chart(host, { features: { tradingContextMenu: true } })
 new ChartWidget(host, { chartOptions: { features: { tradingContextMenu: true } } })`}</code></pre>
 
 <p>
-  Khi không bật menu này, thao tác bấm chuột phải mặc định của trình duyệt vẫn hoạt động bình thường trên biểu đồ.
+  Khi không có menu này, chuột phải mặc định của trình duyệt hoạt động trên biểu đồ như bình thường.
 </p>
 
-<h2>Vị thế</h2>
+<h2>Position</h2>
 <pre><code>{`chart.setPositions([{
   id: 'pos-1',
   side: 'buy',
@@ -42,31 +42,31 @@ new ChartWidget(host, { chartOptions: { features: { tradingContextMenu: true } }
 }])`}</code></pre>
 
 <p>
-  Mỗi đường có một nhãn ở đầu bên phải, sát trục giá. Nhãn của giá vào lệnh ghi khối lượng, chiều và
-  lãi/lỗ đang mở, rồi đến <strong>⇅</strong> và <strong>×</strong>; nhãn của cắt lỗ và chốt lời ghi vị thế sẽ lãi
-  hay lỗ bao nhiêu nếu giá chạm tới đó. Mọi mức giá cũng hiện trên trục. Các nhãn có thể che nhau thì đứng cạnh nhau,
-  và nhãn trên trục tự giãn ra. Kéo cắt lỗ hay chốt lời bằng chính đường hoặc nhãn của nó.
+  Mỗi đường có một tag ở đầu bên phải, cạnh trục giá. Tag của entry ghi khối lượng, chiều
+  và lãi/lỗ đang mở, rồi đến <strong>⇅</strong> và <strong>×</strong>; tag của stop và của target ghi
+  position sẽ lãi hay lỗ bao nhiêu tại đó. Mọi mức giá cũng có trên trục. Các tag sẽ che nhau
+  thì nằm cạnh nhau, và các nhãn trên trục tách ra. Kéo stop hoặc target bằng đường hoặc bằng tag của nó.
 </p>
 <p>
-  Một position chưa có stop-loss hoặc take-profit có nút <strong>SL</strong> hoặc <strong>TP</strong> trên tag của
-  điểm vào lệnh. Nhấn nút rồi kéo đường mới tới chỗ bạn muốn, hoặc chỉ bấm để đặt nó tại chỗ nó bắt đầu. Stop bắt
-  đầu cách điểm vào 1%, còn mục tiêu cách gấp đôi khoảng cách của stop, như một bracket, và cả hai bắt đầu ít nhất
-  1% bên ngoài giá hiện tại, để không cái nào bị chạm ngay khi vừa đặt. Thả ra sẽ gửi
-  <code>positionModify</code>, như khi kéo một stop, nên một execution adapter đã kết nối sẽ áp dụng nó.
-  <code>lineButtons: {'{'} addStops: false {'}'}</code> ẩn các nút này.
+  Position chưa có cắt lỗ hoặc chốt lời có nút <strong>SL</strong> hoặc <strong>TP</strong> trên tag
+  của entry. Nhấn nút rồi kéo đường mới tới vị trí cần đặt, hoặc chỉ click để đặt tại vị trí ban đầu. Stop
+  bắt đầu cách entry 1% và target ở khoảng cách gấp đôi stop, như bracket, và cả hai bắt đầu
+  cách giá hiện tại ít nhất 1%, nên không mức nào bị chạm ngay khi vừa đặt. Thả chuột sẽ gửi
+  <code>positionModify</code>, giống như khi kéo stop, nên execution adapter đang kết nối sẽ áp dụng nó.
+  <code>lineButtons: {'{'} addStops: false {'}'}</code> bỏ các nút này.
 </p>
 <p>
-  Các position, order và fill của chúng có thể được ẩn, và các đường của chúng có thể được khoá. Khi ẩn, không cái
-  nào được vẽ hay bấm được; chúng vẫn được giữ và vẫn theo execution adapter, và một bracket hay một order đang đặt
-  vẫn hiện. Khi khoá, không đường hay nhãn nào của chúng kéo được, và position không cho kéo ra SL hay TP; các nút
-  của chúng (đóng, huỷ, đảo, trail, bỏ stop) vẫn hoạt động. Trong widget, menu của nút ẩn và nút khoá trên thanh vẽ
-  làm việc này.
+  Position, order và các fill của chúng có thể được ẩn, và các đường có thể được khoá. Khi ẩn, không có gì được vẽ và
+  không nhấn được gì; chúng vẫn được giữ và vẫn theo execution adapter, và bracket hay order đang
+  được đặt vẫn hiển thị. Khi khoá, không kéo được đường hay tag nào của chúng, và position không có SL hay TP để kéo
+  ra; các nút của chúng (đóng, huỷ, đảo, trailing, bỏ stop) vẫn hoạt động. Trong widget, việc này nằm trong menu của nút ẩn và
+  nút khoá trên sidebar công cụ vẽ.
 </p>
 <pre><code>{`chart.setTradingVisible(false)   // isTradingVisible()
 chart.setTradingLocked(true)     // isTradingLocked()
-chart.setIndicatorsVisible(ids, false)   // nhiều chỉ báo một lúc, một bước hoàn tác`}</code></pre>
+chart.setIndicatorsVisible(ids, false)   // several indicators at once, one undo step`}</code></pre>
 
-<h2>Lệnh</h2>
+<h2>Order</h2>
 <pre><code>{`chart.setOrders([{
   id: 'ord-1',
   side: 'sell',
@@ -78,20 +78,20 @@ chart.setIndicatorsVisible(ids, false)   // nhiều chỉ báo một lúc, một
 }])`}</code></pre>
 
 <p>
-  Nhãn của lệnh ghi khối lượng và loại lệnh (<code>0.25</code>, <code>Sell limit</code>), rồi đến
-  <strong>×</strong> để huỷ; nhãn trên trục giá mang giá, viết theo đúng cách trục viết giá. Lệnh mở kèm cắt lỗ
-  và chốt lời hiện chúng bằng đường chấm, cùng số lãi/lỗ tại đó. Kéo đường hoặc nhãn để sửa lệnh; đăng ký nghe thay
-  đổi qua <code>chart.on('orderModify', ...)</code>.
+  Tag của order ghi khối lượng và loại order (<code>0.25</code>, <code>Sell limit</code>), rồi
+  <strong>×</strong> để huỷ; tag của order trên trục giá ghi giá, theo cách trục ghi giá.
+  Order mở kèm stop và target hiển thị chúng bằng đường chấm, kèm mức lãi/lỗ tương ứng. Kéo
+  đường hoặc tag của nó để sửa; subscribe qua <code>chart.on('orderModify', ...)</code>.
 </p>
 
-<h2>Khớp lệnh thật (kết nối một adapter)</h2>
+<h2>Giao dịch thực (kết nối adapter)</h2>
 <p>
-  Mặc định biểu đồ chỉ <em>phát ra</em> ý định đặt lệnh/vị thế (<code>orderPlace</code>,
+  Mặc định biểu đồ chỉ <em>phát</em> intent về order/position (<code>orderPlace</code>,
   <code>orderModify</code>, <code>orderCancel</code>, <code>positionModify</code>,
-  <code>positionClose</code>) cho backend của bạn — nó không bao giờ tự giao dịch. Khi kết nối một
-  <code>ExecutionAdapter</code>, biểu đồ sẽ chuyển các ý định đó vào
-  adapter và hiển thị các lệnh/vị thế chính thức mà adapter phát lại (adapter là
-  nguồn dữ liệu chuẩn duy nhất).
+  <code>positionClose</code>) cho backend của bạn; biểu đồ không tự giao dịch. Khi kết nối một
+  <code>ExecutionAdapter</code>, biểu đồ chuyển các intent đó vào
+  adapter và vẽ các order/position chính thức mà adapter phát lại (adapter là
+  nguồn dữ liệu duy nhất).
 </p>
 <pre><code>{`import { PaperExecutionAdapter } from '@tradecanvas/chart'
 
@@ -101,22 +101,22 @@ chart.on('executionError', (e) => toast(e.payload.message))   // e.payload.comma
 // chart.connectExecution(adapter, { brackets: 'place' })   // a confirmed bracket goes to it too: see Bracket orders
 // chart.disconnectExecution()`}</code></pre>
 <p>
-  Cài đặt <code>ExecutionAdapter</code> (nó tương tự <code>DataAdapter</code>) để nối với một
+  Implement <code>ExecutionAdapter</code> (có cấu trúc tương tự <code>DataAdapter</code>) để nối với
   broker / OMS thật: <code>placeOrder</code>, <code>modifyOrder</code>, <code>cancelOrder</code>,
-  <code>modifyPosition</code>, <code>closePosition</code>, cùng các sự kiện <code>orders</code> /
+  <code>modifyPosition</code>, <code>closePosition</code>, cùng các event <code>orders</code> /
   <code>positions</code> / <code>fill</code> / <code>error</code>.
-  <code>PaperExecutionAdapter</code> là môi trường khớp lệnh ảo dùng cho demo và test.
+  <code>PaperExecutionAdapter</code> là sandbox khớp lệnh ảo cho demo và test.
 </p>
 
-<h2>Thao tác với lệnh và vị thế ngay trên biểu đồ</h2>
+<h2>Thao tác với order và position trên biểu đồ</h2>
 <p>
-  Đường lệnh và đường vị thế có các nút nhỏ ở đầu bên phải: <strong>×</strong>
-  huỷ lệnh hoặc đóng vị thế, <strong>⇅</strong> đảo chiều vị thế, còn dấu
-  × trên đường cắt lỗ hoặc chốt lời sẽ gỡ mức đó. Các nút này phát ra cùng những ý định như
+  Đường order và position có các nút nhỏ ở đầu bên phải: <strong>×</strong>
+  huỷ order hoặc đóng position, <strong>⇅</strong> đảo position, và
+  × trên đường cắt lỗ hoặc chốt lời sẽ bỏ đường đó. Các nút phát cùng intent như
   API (<code>orderCancel</code>, <code>positionClose</code>, <code>positionReverse</code>,
-  <code>positionModify</code> với <code>null</code>), nên adapter đã kết nối sẽ xử lý chúng,
-  còn ứng dụng không kết nối adapter thì nhận các sự kiện. Nút chỉ thực hiện khi bạn
-  nhả ra ngay trên nút: nhấn rồi trượt ra ngoài thì không có tác dụng gì. Tắt bất kỳ nút nào bằng
+  <code>positionModify</code> với <code>null</code>), nên adapter đang kết nối sẽ xử lý chúng
+  và host không có adapter sẽ nhận các event. Nút chỉ tác động khi thả chuột trên nút:
+  nhấn rồi trượt ra ngoài thì không làm gì. Tắt nút bất kỳ bằng
   <code>lineButtons</code> trong <code>setTradingConfig</code>.
 </p>
 <pre><code>{`chart.setTradingConfig({ lineButtons: { reverse: false } })  // keep cancel, close and remove-stops
@@ -127,29 +127,29 @@ chart.reversePositionIntent('pos-1')                 // close, then the same siz
 chart.modifyPositionIntent({ positionId: 'pos-1', stopLoss: null }) // null removes the stop
 chart.modifyPositionIntent({ positionId: 'pos-1', trailingStop: 150 }) // the stop trails the price by 150; null ends the trail`}</code></pre>
 <p>
-  Adapter nào đảo chiều được trong một bước thì cài đặt <code>reversePosition</code>;
-  nếu không có, biểu đồ sẽ đóng vị thế rồi gửi một lệnh thị trường theo chiều ngược lại.
-  Lệnh nhận <code>stopLoss</code>, <code>takeProfit</code> và
-  <code>timeInForce</code> (<code>'gtc'</code> hoặc <code>'day'</code>); các giá trị này được chuyển sang
-  vị thế mà lệnh mở ra.
+  Adapter đảo được position trong một bước thì implement <code>reversePosition</code>;
+  nếu không có, biểu đồ đóng position và gửi một market order theo chiều ngược lại.
+  Order nhận <code>stopLoss</code>, <code>takeProfit</code> và
+  <code>timeInForce</code> (<code>'gtc'</code> hoặc <code>'day'</code>), được chuyển sang
+  position mà order mở.
 </p>
 <p>
-  <strong>Dành cho người viết adapter:</strong> trong <code>PositionModifyIntent</code>,
-  <code>stopLoss: null</code> (hoặc <code>takeProfit: null</code>) nghĩa là gỡ mức đó, còn
-  khi thiếu trường thì giữ nguyên. Code viết kiểu
-  <code>intent.stopLoss ?? position.stopLoss</code> sẽ giữ lại mức cắt lỗ mà người dùng đã gỡ.
+  <strong>Cho người viết adapter:</strong> trong <code>PositionModifyIntent</code>,
+  <code>stopLoss: null</code> (hoặc <code>takeProfit: null</code>) nghĩa là bỏ mức đó, còn
+  trường không có nghĩa là giữ nguyên. Code viết kiểu
+  <code>intent.stopLoss ?? position.stopLoss</code> sẽ giữ lại stop mà người dùng đã bỏ.
 </p>
 <p>
-  <strong>Trailing stop</strong> là một stop-loss bám theo giá: <code>trailingStop</code> của một position là khoảng cách, tính bằng giá, mà stop giữ phía sau mức giá tốt nhất, đi lên với lệnh long và đi xuống với lệnh short, và không bao giờ lùi lại. Trên chart, tag của nó ghi TSL. Một nút trên tag của stop bắt đầu trail ở đúng khoảng cách hiện tại từ stop đến giá, hoặc kết thúc trail; <code>lineButtons: {'{'} trailStop: false {'}'}</code> ẩn nút đó. Tài khoản paper tự dời stop. Adapter của một broker chuyển tiếp <code>trailingStop</code> từ <code>modifyPosition</code> (một số bắt đầu trail, <code>null</code> kết thúc trail và để stop nguyên chỗ) và báo lại <code>stopLoss</code> của position khi broker dời nó. Lệnh cũng mang được nó: <code>trailingStop</code> trên một lệnh khiến position mà lệnh mở ra trail ngay từ đầu, và stop của lệnh đang chờ ghi TSL. Trong order ticket, đó là công tắc Trailing stop nằm dưới stop-loss, trail ở đúng khoảng cách từ stop đến giá vào lệnh. Nút trail trên tag của stop được tô đầy khi stop đang trail.
+  <strong>Trailing stop</strong> là cắt lỗ đi theo giá: <code>trailingStop</code> của position là khoảng cách, tính theo giá, mà stop giữ sau giá tốt nhất, đi lên với long và đi xuống với short, và không bao giờ lùi lại. Trên biểu đồ, tag của nó ghi TSL. Một nút trên tag của stop bắt đầu trailing ở khoảng cách hiện tại từ stop tới giá, hoặc kết thúc trailing; <code>lineButtons: {'{'} trailStop: false {'}'}</code> ẩn nút này. Tài khoản paper tự dời stop. Adapter cho broker chuyển tiếp <code>trailingStop</code> từ <code>modifyPosition</code> (một số thì bắt đầu trailing, <code>null</code> thì kết thúc và giữ stop tại chỗ) và báo <code>stopLoss</code> của position khi broker dời nó. Order cũng mang trường này: <code>trailingStop</code> trên order làm position mà order mở trailing ngay từ đầu, và stop của order đang chờ ghi TSL. Trong order ticket, đây là công tắc Trailing stop dưới cắt lỗ, trailing ở khoảng cách từ stop tới entry. Nút trailing trên tag của stop được tô đặc khi stop đang trailing.
 </p>
 
-<h2>Lệnh khớp trên biểu đồ</h2>
+<h2>Fill trên biểu đồ</h2>
 <p>
-  Mỗi lần khớp hiện thành một dấu nhỏ trên nến của nó: tô đặc khi mở vị thế,
-  để rỗng khi đóng vị thế. Biểu đồ ghi lại các lần khớp mà adapter báo về và
-  phát ra <code>executionFill</code> kèm lý do khớp (<code>'order'</code>,
+  Mỗi fill hiển thị là một dấu nhỏ trên nến của nó: đặc khi fill mở position,
+  rỗng khi fill đóng position. Biểu đồ ghi lại các fill mà adapter báo và
+  phát <code>executionFill</code> kèm lý do (<code>'order'</code>,
   <code>'close'</code>, <code>'reverse'</code>, <code>'stopLoss'</code>,
-  <code>'takeProfit'</code>) cùng khoản lãi/lỗ đã chốt.
+  <code>'takeProfit'</code>) và lãi/lỗ đã thực hiện.
 </p>
 <pre><code>{`chart.on('executionFill', (e) => {
   const { side, price, quantity, reason, pnl } = e.payload
@@ -163,12 +163,12 @@ chart.setTradingConfig({ fillMarks: false })  // no marks`}</code></pre>
 
 <h2>Menu chuột phải và nút “+” cạnh trục giá</h2>
 <p>
-  Bấm chuột phải trên biểu đồ sẽ phát ra <code>chartContextMenu</code> kèm vùng được
-  bấm (<code>'plot'</code>, <code>'pane'</code>, <code>'priceAxis'</code> hoặc
+  Chuột phải trên biểu đồ phát <code>chartContextMenu</code> kèm phần được
+  click (<code>'plot'</code>, <code>'pane'</code>, <code>'priceAxis'</code> hoặc
   <code>'timeAxis'</code>) cùng giá và thời gian tại đó. Với
-  <code>features.priceAxisAddButton</code>, một nút “+” chạy theo crosshair dọc trục
-  giá; bấm vào nó sẽ phát ra <code>priceAxisAdd</code> kèm mức giá đó. Khi nút hiện, nhãn của
-  lệnh và vị thế lùi sang trái nó, nên nút không bao giờ che các nút của nhãn.
+  <code>features.priceAxisAddButton</code>, một nút “+” đi theo crosshair dọc trục giá;
+  nhấn nút phát <code>priceAxisAdd</code> kèm giá của nó. Khi nút hiện, tag của order
+  và position kết thúc ở bên trái nút, nên nút không bao giờ che các nút của chúng.
 </p>
 <pre><code>{`const chart = new Chart(host, { features: { priceAxisAddButton: true } })
 
@@ -178,57 +178,60 @@ chart.on('chartContextMenu', (e) => {
 })
 chart.on('priceAxisAdd', (e) => openMyMenu(e.payload.x, e.payload.y, e.payload.price))`}</code></pre>
 <p>
-  ChartWidget dựng các menu của nó trên những sự kiện này. Bấm chuột phải vào vùng biểu đồ để
-  đặt cảnh báo, mua và bán tại mức giá đó (lệnh giới hạn khi mức giá nằm ở phía lệnh phải chờ
-  so với giá thị trường, lệnh stop khi nằm ở phía còn lại), mở order ticket và vẽ đường ngang;
-  tiếp theo là đặt lại khung nhìn, dán các hình vẽ đã sao chép, ẩn hoặc xoá hình vẽ, xoá chỉ báo
-  (phần so sánh với mã khác vẫn được giữ), xuất dữ liệu và mở bảng cài đặt.
+  ChartWidget dựng menu của mình trên các event này. Chuột phải trên vùng vẽ để đặt cảnh báo, mua và
+  bán tại giá đó (lệnh giới hạn ở phía thị trường mà lệnh sẽ chờ, lệnh stop ở
+  phía còn lại), mở order ticket và vẽ đường ngang; sau đó là reset view, dán các hình vẽ
+  đã copy, ẩn hoặc xoá hình vẽ, xoá chỉ báo (mã so sánh vẫn được giữ),
+  xuất dữ liệu, và cài đặt.
 </p>
 <p>
-  Bấm chuột phải vào trục giá để đặt lại thang, bật tự co giãn thang, dùng thang đảo ngược hay
-  thang bên trái, chọn một trong bốn chế độ (thường, logarit, phần trăm, quy về 100), chỉnh nhãn
-  trên trục và các đường chạy ngang biểu đồ trong hai menu con, đặt cảnh báo tại mức giá đó, và
-  mở bảng cài đặt ở tab Thang đo. Trục thời gian có mục đặt lại, đi tới ngày và múi giờ.
+  Chuột phải trên trục giá để reset trục, auto scale, đảo thang và thang
+  bên trái, một trong bốn chế độ (thường, logarit, phần trăm, chỉ số hoá về 100), các
+  nhãn trên trục và các đường ngang biểu đồ trong hai menu con, cảnh báo tại giá, và
+  cài đặt mở ở tab Thang. Trục thời gian có reset, đi tới ngày và
+  múi giờ.
 </p>
 <p>
-  Khi phím tắt của widget đang bật, mục tương ứng hiện phím đó: <kbd>Alt</kbd> + <kbd>R</kbd>
-  đặt lại khung nhìn, <kbd>Alt</kbd> + <kbd>I</kbd> đảo ngược thang, <kbd>Alt</kbd> +
-  <kbd>G</kbd> đi tới ngày. Menu con mở khi bấm vào, khi nhấn <kbd>Enter</kbd> hoặc
-  <kbd>→</kbd>, hay khi con trỏ dừng trên nó; <kbd>←</kbd> hoặc <kbd>Escape</kbd> để quay lại.
-  Trên điện thoại, nơi menu mở từ dưới lên, dòng đầu tiên của menu con đưa bạn quay lại. Thêm
-  mục của riêng bạn bằng <code>chartMenuItems</code> (xem <a href={href('/docs/api')}>Tham chiếu API</a>).
+  Mỗi mục hiển thị phím tắt tương ứng của widget khi phím đó đang bật: <kbd>Alt</kbd> +
+  <kbd>R</kbd> reset view, <kbd>Alt</kbd> + <kbd>I</kbd> đảo thang, <kbd>Alt</kbd> +
+  <kbd>G</kbd> đi tới ngày. Menu con mở khi click, nhấn <kbd>Enter</kbd>, <kbd>→</kbd> hoặc khi
+  con trỏ dừng trên nó, và <kbd>←</kbd> hoặc <kbd>Escape</kbd> để quay lại; trên điện thoại, nơi
+  menu mở từ phía dưới, dòng đầu tiên của menu con dùng để quay lại. Thêm mục riêng bằng
+  <code>chartMenuItems</code> (xem <a href={href('/docs/api')}>tham chiếu API</a>).
 </p>
 
-<h2>Order ticket và bảng tài khoản (ChartWidget)</h2>
+<h2>Order ticket và panel tài khoản (ChartWidget)</h2>
 <p>
-  Mục <strong>Tài khoản</strong> trong menu <strong>Giao dịch</strong> của thanh công cụ mở bảng tài khoản bên dưới biểu đồ: các vị thế đang mở
-  kèm lãi/lỗ, các lệnh đang chờ, và các lần khớp từ trước đến giờ kèm lãi/lỗ (P&amp;L)
-  đã chốt. Mỗi dòng có thể đóng, đảo chiều hoặc huỷ. <strong>Lệnh mới</strong> mở
-  order ticket: mua hoặc bán, lệnh thị trường, giới hạn hoặc stop, khối lượng, giá, mức
-  cắt lỗ và chốt lời (tuỳ chọn), và hiệu lực của lệnh. Order ticket kiểm tra lệnh ngay khi bạn nhập
-  (mua giới hạn phải nằm dưới giá thị trường, cắt lỗ phải nằm ở phía lỗ so với điểm vào…)
-  và hiện tỷ lệ lời:lỗ. Đặt lệnh sẽ gửi đi một ý định <code>orderPlace</code>.
-  Khi đã đặt thị trường (<code>chart.setMarket</code>), order ticket còn giữ các mức giá theo bước giá
-  của thị trường và giá đặt lệnh trong khoảng giá trần, giá sàn của ngày, bắt đầu với một lô, và trên một
-  lô thì chỉ nhận lô chẵn (số cổ phiếu ít hơn là một lệnh lô lẻ riêng).
+  <strong>Tài khoản</strong> trong menu <strong>Giao dịch</strong> của toolbar mở panel tài khoản bên dưới biểu đồ: các position đang mở
+  kèm lãi/lỗ, các order đang chờ, và các fill tới nay kèm P&amp;L
+  đã thực hiện. Mỗi dòng có thể đóng, đảo hoặc huỷ. <strong>Order mới</strong> mở
+  order ticket: mua hoặc bán, market, limit hoặc stop, khối lượng, giá, cắt lỗ và
+  chốt lời tuỳ chọn, và time in force. Ticket kiểm tra order trong lúc nhập
+  (lệnh giới hạn mua phải dưới giá thị trường, cắt lỗ phải ở phía lỗ của entry…)
+  và hiển thị tỷ lệ reward:risk. Đặt order sẽ gửi intent <code>orderPlace</code>. Khi có
+  thị trường được đặt (<code>chart.setMarket</code>), ticket còn giữ giá theo bước giá của thị trường và
+  giá của order trong khoảng giá trần và giá sàn của ngày, bắt đầu ở một lô, và nhận số lô chẵn khi lớn hơn một lô
+  (số cổ phiếu ít hơn là một lệnh lô lẻ riêng).
 </p>
 <p>
-  Order ticket ghi mã cạnh tiêu đề. Loại lệnh và hiệu lực là các lựa chọn trên một hàng (phím mũi tên chuyển
-  giữa chúng); nút − và + đổi khối lượng theo lô và giá theo bước giá của thị trường, còn giá lấy từ biểu đồ được làm
-  tròn theo bước đó. Cắt lỗ hay chốt lời khi bật sẽ ghi cách điểm vào bao nhiêu phần trăm và lãi hay lỗ bao nhiêu;
-  bên dưới, một tờ biên lai tóm tắt lệnh: giá trị, rủi ro, lợi nhuận và lời trên lỗ. Đổi giữa mua và bán vẫn giữ lệnh
-  chờ ở chỗ đã đặt (mua stop trên giá thị trường thành bán giới hạn), và nút đặt lệnh mang màu của chiều mua hay bán.
+  Ticket ghi tên mã cạnh tiêu đề. Loại order và time in force là các lựa chọn trên một hàng
+  (phím mũi tên di chuyển giữa chúng); − và + tăng giảm khối lượng theo lô và giá theo bước giá của thị trường, và
+  giá lấy từ biểu đồ được làm tròn theo bước giá đó. Cắt lỗ hoặc chốt lời, khi bật, ghi khoảng cách tới
+  entry tính theo phần trăm và mức lãi hoặc lỗ tại đó; bên dưới là phần tổng kết order: giá trị, rủi ro,
+  lợi nhuận kỳ vọng và tỷ lệ giữa hai giá trị này. Chuyển giữa mua và bán giữ order đang chờ ở đúng mức giá đã đặt (lệnh stop mua
+  trên giá thị trường thành lệnh giới hạn bán), và nút Đặt lệnh lấy màu của chiều giao dịch.
 </p>
 <p>
-  Trong widget, một hình vẽ Vị thế Long/Short đang được chọn có nút <b>Tạo lệnh</b> trên thanh công cụ của nó khi giao dịch đang bật. Nút này mở
-  order ticket này, điền sẵn từ hình vẽ: chiều lệnh, điểm vào làm giá, stop-loss và take-profit, và khối lượng
-  mà mức rủi ro của nó mua được, làm tròn xuống theo số chữ số thập phân hình vẽ ghi. Loại lệnh theo vị trí của
-  điểm vào so với giá thị trường, và không có gì được gửi đi cho tới khi bấm Đặt lệnh.
+  Trong widget, khi giao dịch đang bật, hình vẽ Long/Short Position đang được chọn có <b>Tạo order</b> trên toolbar của nó. Nút này mở ticket ở trên, điền sẵn từ
+  hình vẽ: chiều, entry làm giá, cắt lỗ và chốt lời, và
+  khối lượng tương ứng với mức rủi ro của hình vẽ, làm tròn xuống theo số chữ số thập phân mà hình vẽ hiển thị.
+  Loại order phụ thuộc vào vị trí của entry so với giá thị trường, và không có gì được gửi cho đến khi
+  nhấn Đặt lệnh.
 </p>
 <p>
-  Đầu bảng tài khoản luôn hiện lãi/lỗ đang mở và lãi/lỗ đã chốt ở mọi tab. Các con số được căn phải bằng chữ
-  đơn cách, tiền theo số lẻ của bước giá và định dạng số của ngôn ngữ; trên điện thoại mỗi dòng là một thẻ ghi tên từng
-  con số.
+  Phần đầu của panel tài khoản luôn hiển thị P&amp;L đang mở và P&amp;L đã thực hiện ở mọi tab. Các con số được
+  căn phải bằng font mono, tiền tệ theo số chữ số thập phân của bước giá và theo number locale; trên điện thoại mỗi dòng là một thẻ
+  gồm các con số có tên.
 </p>
 <pre><code>{`const widget = new ChartWidget(host, {
   trading: true,         // default
@@ -238,42 +241,42 @@ widget.getChart().connectExecution(new PaperExecutionAdapter({ markPrice: 64_000
 widget.toggleAccountPanel(true)
 // The panel follows ordersChange, positionsChange, executionFill and each tick.`}</code></pre>
 <p>
-  Các dấu khớp lệnh gắn với mã đang hiện trên biểu đồ: đổi mã trong widget thì mã
-  tiếp theo bắt đầu mà không có dấu nào.
+  Dấu fill thuộc về mã đang hiển thị: khi chuyển mã trong widget, mã tiếp theo
+  bắt đầu không có dấu nào.
 </p>
 
-<h2>Kéo để tạo lệnh</h2>
+<h2>Kéo để tạo order</h2>
 <p>
-  Tạo một đường lệnh kéo được, kéo nó tới một mức giá rồi xác nhận — loại lệnh
-  (limit hay stop) được suy ra từ vị trí bạn thả so với giá hiện tại. Dùng cùng
-  <code>connectExecution</code> để bản nháp đã xác nhận được khớp ngay.
+  Tạo một đường order kéo được, kéo tới mức giá, rồi xác nhận. Loại order
+  (limit hay stop) được suy ra từ vị trí thả so với giá hiện tại. Dùng cùng
+  <code>connectExecution</code> để order nháp đã xác nhận được khớp ngay.
 </p>
 <pre><code>{`chart.startOrderDraft('buy')   // draggable line at the latest close
 chart.confirmOrderDraft()      // emits orderPlace -> a connected adapter fills it
 chart.cancelOrderDraft()`}</code></pre>
 
-<h2>Lệnh bracket (kéo để đặt)</h2>
+<h2>Bracket order (kéo để đặt)</h2>
 <p>
-  Tạo một lệnh bracket kéo được — điểm vào lệnh cùng vùng cắt lỗ và chốt lời — rồi
-  kéo ba đường để chỉnh điểm vào, mức rủi ro và lợi nhuận. Xác nhận bằng
-  <kbd>Enter</kbd> (hoặc nút Đặt lệnh), huỷ bằng <kbd>Esc</kbd>. Trong
-  widget, các mũi tên xanh/đỏ trên thanh công cụ tạo một bracket Long/Short. Biểu đồ
-  phát ra một sự kiện <code>bracketPlace</code> duy nhất để backend của bạn xử lý.
+  Tạo một bracket kéo được, gồm entry cùng vùng cắt lỗ và chốt lời, rồi
+  kéo ba đường để chỉnh entry, rủi ro và lợi nhuận. Xác nhận bằng
+  <kbd>Enter</kbd> (hoặc nút Đặt), huỷ bằng <kbd>Esc</kbd>. Trong
+  widget, các mũi tên xanh/đỏ trên toolbar tạo bracket long/short. Biểu đồ
+  phát một event <code>bracketPlace</code> duy nhất để backend của bạn xử lý.
 </p>
 <p>
-  Khi một execution adapter được kết nối với <code>brackets: 'place'</code>, biểu đồ còn gửi bracket tới adapter
-  thành một lệnh: điểm vào, là lệnh limit khi giá phải quay lại đó và lệnh stop khi giá phải chạy tiếp tới đó,
-  khối lượng của nó, cùng stop-loss và take-profit gắn trên lệnh. Khi adapter đã nhận lệnh, biểu đồ gửi
-  <code>bracketOrder</code> kèm lệnh đó. Nếu adapter từ chối, biểu đồ gửi <code>executionError</code> với
-  <code>command: 'bracketPlace'</code>. Widget chỉ báo "đã đặt" khi đó, và nói lý do khi lệnh bị từ chối. Một
-  bracket không có khối lượng thì không được gửi, vì chưa ai thấy khối lượng nào để đặt; bracket được xác nhận trước
-  khi biểu đồ có giá để phân biệt điểm vào limit với stop cũng vậy. <code>executionError</code> cho biết
-  <code>reason</code> (<code>'noQuantity'</code>, <code>'noPrice'</code>). Các bracket do mũi tên trên thanh công cụ
-  và <code>startBracket</code> tạo ra chưa có khối lượng, nên với <code>'place'</code> chúng không được gửi, và widget
-  nói rõ điều đó. Không có tuỳ chọn này, một bracket đã xác nhận vẫn chỉ là một sự kiện, và widget báo rằng nó đã
-  được xác nhận. Một adapter được kết nối mà không nói gì (không có <code>brackets</code>) giữ sự kiện và cảnh báo
-  một lần trong console. <code>'place'</code> sẽ thành mặc định ở phiên bản major tiếp theo, nên ứng dụng tự đặt
-  bracket của sự kiện thì truyền <code>brackets: 'event'</code>.
+  Khi execution adapter được kết nối với <code>brackets: 'place'</code>, biểu đồ còn gửi bracket tới
+  adapter dưới dạng một order: entry, là lệnh giới hạn khi giá phải quay lại entry và lệnh stop khi giá phải
+  chạy tiếp tới entry, khối lượng, và cắt lỗ cùng chốt lời gắn trên order. Khi adapter đã nhận, biểu đồ
+  gửi <code>bracketOrder</code> kèm order. Nếu adapter từ chối, biểu đồ gửi
+  <code>executionError</code> với <code>command: 'bracketPlace'</code>. Chỉ khi đó widget mới báo "đã đặt",
+  và báo lý do khi bị từ chối. Bracket không có khối lượng sẽ không được gửi, vì chưa ai thấy khối lượng nào để
+  đặt; bracket được xác nhận trước khi biểu đồ có giá để phân biệt entry limit với entry stop cũng vậy.
+  <code>executionError</code> cho biết <code>reason</code> (<code>'noQuantity'</code>, <code>'noPrice'</code>).
+  Bracket tạo từ mũi tên trên toolbar và từ <code>startBracket</code> chưa có khối lượng, nên với
+  <code>'place'</code> chúng không được gửi, và widget báo điều đó. Không có tuỳ chọn này, bracket đã xác nhận vẫn chỉ là một event, và
+  widget báo là đã xác nhận. Adapter được kết nối mà không nêu tuỳ chọn (không có <code>brackets</code>) giữ
+  event và cảnh báo một lần trong console. <code>'place'</code> sẽ là mặc định ở bản major tiếp theo,
+  nên app tự đặt bracket của event cần truyền <code>brackets: 'event'</code>.
 </p>
 <pre><code>{`chart.startBracket('buy')          // entry defaults to the latest close
 chart.startBracket('sell', 64_800) // or pin the entry price
@@ -291,20 +294,20 @@ chart.on('bracketOrder', (e) => console.log(e.payload.order.id))
 chart.confirmBracket()  // same as Enter
 chart.cancelBracket()   // same as Esc`}</code></pre>
 
-<h2>DOM ladder (bấm để giao dịch)</h2>
+<h2>Depth ladder (click để giao dịch)</h2>
 <p>
-  DOM ladder (bật khi cần) hiển thị sổ lệnh thành các hàng giá với
-  cột khối lượng bid/ask — bấm vào một ô ask để mua, một ô bid để bán tại mức
+  DOM ladder, bật khi cần, hiển thị sổ lệnh thành các dòng giá với
+  cột khối lượng bid/ask: click ô ask để mua, ô bid để bán tại mức
   giá đó. Bật bằng <code>depthLadder: true</code> và cấp dữ liệu sổ lệnh qua
-  <code>widget.setDepth</code>; mỗi cú bấm phát ra ý định <code>orderPlace</code> cho
-  OMS của bạn (biểu đồ không bao giờ tự giao dịch). Cùng dữ liệu đó cũng điều khiển
-  lớp phủ order book depth trên biểu đồ.
+  <code>widget.setDepth</code>; click sẽ phát intent <code>orderPlace</code> cho
+  OMS của bạn (biểu đồ không tự giao dịch). Cùng dữ liệu đó cũng dùng cho
+  depth overlay trên biểu đồ.
 </p>
 <p>
-  DOM ladder là một trang của dock bên cạnh biểu đồ (trên điện thoại là một tấm trượt): mở từ menu Giao dịch, nút
-  của nó trên dải bên phải hoặc <code>widget.openPanel('depthLadder')</code>, và bỏ nút đó bằng
-  <code>dock.depthLadder: false</code>. Giá bán nằm trên giá mua, spread ở giữa, mỗi khối lượng có một thanh mọc ra
-  từ cột giá; hàng nào có lệnh đang chờ của bạn thì ghi khối lượng lệnh đó.
+  Ladder là một trang của dock cạnh biểu đồ (một sheet trên điện thoại): mở từ menu Giao dịch, nút trên rail
+  hoặc <code>widget.openPanel('depthLadder')</code>, và bỏ nút trên rail bằng
+  <code>dock.depthLadder: false</code>. Ask nằm trên bid, spread ở giữa, mỗi khối lượng là một thanh mọc ra từ
+  giá; các dòng có order đang chờ của bạn ghi khối lượng của order đó.
 </p>
 <pre><code>{`const widget = new ChartWidget(host, { depthLadder: true })
 widget.openPanel('depthLadder')   // a page of the dock; the Trade menu opens it too
@@ -318,23 +321,23 @@ widget.getChart().on('orderPlace', (e) => {
   // { side, type: 'limit', price } — submit to your backend
 })`}</code></pre>
 
-<h2>Order book trên plot</h2>
+<h2>Sổ lệnh trên vùng vẽ</h2>
 <p>
-  <code>features.depth</code> vẽ order book lên plot, từ mép phải, cho chart chỉ hiển thị giá: không cần order, không cần
-  trading UI, chạy được với <code>trading: false</code>. Nạp dữ liệu bằng <code>chart.setDepthData</code>
-  (<code>widget.setDepth</code> cũng làm việc này); overlay bật cùng <code>features.depth</code>, và
-  <code>setDepthOverlay</code> đổi cách hiển thị.
+  <code>features.depth</code> vẽ sổ lệnh trên vùng vẽ, từ cạnh phải, cho biểu đồ chỉ hiển thị
+  giá: không cần order hay UI giao dịch, và hoạt động với <code>trading: false</code>. Cấp dữ liệu bằng
+  <code>chart.setDepthData</code> (<code>widget.setDepth</code> cũng làm việc này); overlay bật khi
+  <code>features.depth</code> bật, và <code>setDepthOverlay</code> thay đổi cách hiển thị.
 </p>
 <ul>
-  <li><code>mode</code>: <code>'cumulative'</code> (mặc định) cộng dồn từng mức với các mức gần giá hơn nên thanh dài ra khi xa giá; <code>'level'</code> vẽ khối lượng riêng của từng mức nên một wall hiện thành một thanh dài.</li>
-  <li><code>rowSize</code>: chiều cao thanh tính theo giá. Các mức được cộng gộp thành từng hàng cách nhau đúng khoảng đó, nên book dày trên thang giá thô hoặc book có mức trống vẫn vẽ thanh đều nhau (đặt bằng hàng của footprint). Khi đó <code>markBest</code> kẻ ở giữa hàng best.</li>
-  <li><code>rowOrigin</code>: giá bắt đầu của các hàng. Khi đó hàng k chạy từ <code>rowOrigin + k × rowSize</code> tới đầu hàng kế tiếp, và một mức nằm đúng đầu hàng thì thuộc hàng đó. Footprint có ô bắt đầu ở bội số của kích thước hàng, mỗi tick nằm giữa giá của nó, sẽ khớp khi đặt <code>rowOrigin: -tick / 2</code>. Không đặt thì mỗi hàng lấy một bội số của <code>rowSize</code> làm tâm.</li>
-  <li><code>markBest</code>: một đường ở best bid và best ask (<code>bestBidColor</code>, <code>bestAskColor</code>).</li>
-  <li><code>maxWidth</code>: độ dài tối đa của thanh theo pixel (không quá bề rộng plot), <code>bidColor</code>, <code>askColor</code>.</li>
+  <li><code>mode</code>: <code>'cumulative'</code> (mặc định) cộng mỗi mức vào các mức gần thị trường hơn, nên các thanh dài dần khi xa thị trường; <code>'level'</code> vẽ riêng khối lượng tại mỗi mức giá, nên một bức tường lệnh hiện thành một thanh dài.</li>
+  <li><code>rowSize</code>: chiều cao một thanh, tính theo giá. Các mức được cộng gộp thành các dòng cách nhau đúng khoảng đó, nên sổ lệnh dày dưới một thang thô, hoặc sổ lệnh có mức trống, vẫn vẽ ra các thanh đều nhau (đặt bằng kích thước dòng của footprint). Khi đó <code>markBest</code> kẻ đường ở giữa các dòng tốt nhất.</li>
+  <li><code>rowOrigin</code>: nơi các dòng bắt đầu, tính theo giá. Dòng k chạy từ <code>rowOrigin + k × rowSize</code> tới điểm bắt đầu của dòng kế tiếp, và một mức nằm đúng điểm bắt đầu của dòng thuộc dòng đó. Footprint có ô bắt đầu tại bội số của kích thước dòng, mỗi tick canh giữa theo giá của nó, sẽ khớp với <code>rowOrigin: -tick / 2</code>. Không có tuỳ chọn này, mỗi dòng canh giữa tại một bội số của <code>rowSize</code>.</li>
+  <li><code>markBest</code>: một đường tại bid tốt nhất và ask tốt nhất (<code>bestBidColor</code>, <code>bestAskColor</code>).</li>
+  <li><code>maxWidth</code>: thanh dài nhất tính bằng pixel (không bao giờ vượt quá vùng vẽ), <code>bidColor</code>, <code>askColor</code>.</li>
 </ul>
 <p>
-  Các thanh nằm đè lên những cây nến mới nhất. Muốn chừa chỗ, tăng <code>rightMargin</code> và đặt <code>maxWidth</code>
-  vào cỡ đó. Khi trading bật, <code>{`setTradingConfig({ depthOverlay: { enabled: true } })`}</code> vẫn bật overlay như trước.
+  Các thanh nằm đè lên các nến mới nhất. Để chừa chỗ, tăng <code>rightMargin</code> và đặt <code>maxWidth</code>
+  bằng khoảng chừng đó nến. Khi giao dịch bật, <code>{`setTradingConfig({ depthOverlay: { enabled: true } })`}</code> vẫn bật overlay như trước.
 </p>
 <pre><code>{`const chart = new Chart(host, {
   features: { trading: false, depth: true },       // display only: no orders, no trading UI
@@ -346,14 +349,14 @@ chart.setDepthOverlay({ mode: 'cumulative' })       // change the look later`}</
 
 <h2>Liquidity heatmap</h2>
 <p>
-  Tích luỹ các ảnh chụp sổ lệnh thành một heatmap phía sau nến — mỗi
-  ảnh chụp là một dải dọc, trong đó khối lượng lệnh chờ sáng lên theo từng mức giá
-  (bid màu xanh lá, ask màu đỏ). Những bức tường thanh khoản tồn tại lâu sẽ nổi bật.
-  Bật từ bảng cài đặt (hoặc <code>chart.setDepthHeatmapVisible</code>);
-  <code>widget.setDepth</code> ghi lại một ảnh chụp mỗi khi sổ lệnh cập nhật.
-  Trong lúc replay, một sổ lệnh ghi lại không kèm thời gian thuộc về nến cuối của chuỗi live, heatmap
-  chỉ hiện sổ lệnh của những nến mà replay đã hiện, và order book ở mép vùng vẽ (của thị trường live)
-  bị ẩn cho tới khi replay kết thúc.
+  Tích luỹ các snapshot sổ lệnh thành heatmap phía sau nến: mỗi
+  snapshot là một dải dọc, trong đó khối lượng đang chờ sáng lên theo từng mức giá
+  (bid màu xanh, ask màu đỏ). Các bức tường thanh khoản tồn tại lâu sẽ nổi bật.
+  Bật/tắt từ bảng cài đặt (hoặc <code>chart.setDepthHeatmapVisible</code>);
+  <code>widget.setDepth</code> ghi một snapshot mỗi lần sổ lệnh cập nhật.
+  Trong khi replay, sổ lệnh được ghi mà không có thời gian thuộc về nến cuối của series trực tiếp, heatmap
+  chỉ hiển thị sổ lệnh của các nến mà replay đã hiển thị, và sổ lệnh ở cạnh vùng vẽ,
+  vốn là của thị trường trực tiếp, bị ẩn cho đến khi replay kết thúc.
 </p>
 <pre><code>{`chart.setDepthHeatmapVisible(true)
 chart.setDepthHeatmapConfig({ opacity: 0.7, capacity: 240 })
@@ -363,8 +366,8 @@ widget.setDepth(orderBook)
 // low-level: chart.pushDepthSnapshot(orderBook) · chart.clearDepthHeatmap()
 // books recorded for older bars, oldest first: chart.pushDepthSnapshot(orderBook, bar.time)`}</code></pre>
 
-<h2>Điểm đánh dấu tín hiệu</h2>
-<p>Các tích hợp bot hoặc giao dịch theo tín hiệu có thể đặt mũi tên chỉ hướng lên lớp phủ.</p>
+<h2>Signal marker</h2>
+<p>Bot hoặc tích hợp giao dịch theo tín hiệu có thể đặt mũi tên chỉ chiều lên overlay.</p>
 <pre><code>{`chart.addSignalMarker({
   id: 'sig-12',
   time: bar.time,
@@ -379,17 +382,17 @@ widget.setDepth(orderBook)
 chart.on('signalMarkerHover', (e) => showNote(e.payload.marker, e.payload.x, e.payload.y))  // marker null: off it
 chart.on('signalMarkerClick', (e) => openSignal(e.payload.marker))`}</code></pre>
 <p>
-  ChartWidget hiện một ghi chú cạnh điểm đánh dấu đang nằm dưới con trỏ: nhãn và nguồn, chiều,
-  giá, độ tin cậy và thời gian của nó.
+  ChartWidget hiển thị ghi chú cạnh marker dưới con trỏ: nhãn và nguồn, chiều,
+  giá, độ tin cậy và thời gian.
 </p>
 
-<h2>Marks (dấu sự kiện)</h2>
+<h2>Mark</h2>
 <p>
-  Điều đã xảy ra tại một thời điểm (một tin tức, ngày công bố kết quả kinh doanh, cổ tức, chia tách)
-  hiện thành một badge nhỏ ở chân pane giá, trên bar chứa thời điểm đó. Đưa con trỏ lên badge để đọc
-  tiêu đề và dòng mô tả; các badge sẽ chồng lên nhau được gộp thành một badge kèm số đếm. Replay hiện
-  từng mark khi chạy tới nó. Renko, Kagi, line break, point &amp; figure và range bars không vẽ mark:
-  các bar của chúng không phải là thời gian.
+  Những gì xảy ra tại một thời điểm (tin tức, ngày công bố kết quả kinh doanh, cổ tức, chia tách) dưới dạng một huy hiệu nhỏ ở
+  chân pane giá, trên nến chứa thời điểm đó. Con trỏ trên huy hiệu hiển thị
+  tiêu đề và nội dung; các huy hiệu sẽ chồng lên nhau được gộp thành một kèm số đếm. Replay hiển thị mỗi
+  mark khi tới nó. Renko, Kagi, line break, point &amp; figure và range bar không vẽ mark: nến
+  của chúng không gắn với thời gian.
 </p>
 <pre><code>{`chart.setMarks([
   { id: 'q3', time: reportedAt, kind: 'earnings', title: 'Q3 earnings', text: 'EPS 1.42 vs 1.31 expected' },
@@ -409,22 +412,21 @@ chart.on('marksChange', (e) => e.payload.count)
 new Chart(host, { features: { marks: false } })            // or chart.setFeatures({ marks: false })`}</code></pre>
 <p>
   <code>kind</code> chọn chữ cái và màu: <code>news</code> N, <code>earnings</code> E,
-  <code>dividend</code> D, <code>split</code> S, còn <code>event</code> (hoặc bỏ trống) là i.
-  <code>label</code> (một hoặc hai ký tự) và <code>color</code> thay cho chúng. Một mark cần có
-  <code>title</code> và <code>time</code>; chỉ giữ liên kết http(s); chart giữ tối đa 2.000 mark.
-  Marks thuộc về nguồn dữ liệu, không phải của người dùng: <code>saveState</code> không lưu chúng,
-  nên hãy đặt lại sau khi tải trạng thái.
+  <code>dividend</code> D, <code>split</code> S, và <code>event</code> (hoặc không có) i. <code>label</code>
+  (một hoặc hai ký tự) và <code>color</code> thay thế chúng. Mark cần <code>title</code> và
+  <code>time</code>; chỉ giữ liên kết http(s); mỗi biểu đồ giữ tối đa 2,000 mark. Mark là của feed,
+  không phải của người dùng: <code>saveState</code> không lưu chúng, nên cần đặt lại sau khi load.
 </p>
 <p>
-  ChartWidget đưa các tin của mã lên chart từ nguồn tin (<code>news</code>, hoặc
+  ChartWidget đưa tin tức của mã lên biểu đồ từ nguồn tin của nó (<code>news</code>, hoặc
   <code>fetchNews</code> của adapter); <code>newsMarks: false</code> chỉ để tin trong panel thông tin
-  mã. Nhấp vào một mark sẽ mở liên kết của nó ở tab mới; nhấp vào badge gộp nhiều mark sẽ mở danh
-  sách, mới nhất ở trên. Công tắc tính năng <code>marks</code> của widget ẩn mọi mark. <code>setMarks</code> và
-  <code>clearMarks</code> của bạn không xoá các tin của widget trên chart.
+  mã. Click vào một mark mở liên kết trong tab mới; trên huy hiệu gộp nhiều mark, mở danh sách, mới nhất
+  trước. Công tắc tính năng <code>marks</code> của widget ẩn mọi mark. <code>setMarks</code> và
+  <code>clearMarks</code> của bạn không động tới tin tức mà widget đưa lên biểu đồ.
 </p>
 
 <h2>Vùng giao dịch</h2>
-<p>Hiển thị hình chữ nhật từ điểm vào → điểm ra, tô màu theo lãi/lỗ (P&amp;L) và có huy hiệu hướng lệnh.</p>
+<p>Hiển thị các hình chữ nhật từ entry tới exit, tô màu theo P&amp;L và có nhãn chiều giao dịch.</p>
 <pre><code>{`chart.addTradeZone({
   id: 'tz-1',
   direction: 'long',
@@ -434,10 +436,10 @@ new Chart(host, { features: { marks: false } })            // or chart.setFeatur
   exitPrice: 65_800,
 })`}</code></pre>
 
-<h2>Token cho nhãn vị thế</h2>
+<h2>Token cho nhãn position</h2>
 <p>
-  Viết nhãn vị thế theo ý bạn: <code>positionLabel</code> thay cho chiều và lãi/lỗ đứng sau khối lượng.
-  Nó nhận một chuỗi mẫu hoặc một hàm trả về chuỗi.
+  Tự định dạng tag của position: <code>positionLabel</code> thay cho phần chiều và lãi/lỗ
+  sau khối lượng. Tuỳ chọn này nhận một chuỗi template hoặc một hàm trả về chuỗi.
 </p>
 <pre><code>{`chart.setTradingConfig({
   positionLabel: '{side} @ {entry} · {pnlSign}{pnlPct}%',
@@ -450,7 +452,7 @@ new Chart(host, { features: { marks: false } })            // or chart.setFeatur
   <code>{'{pnl}'}</code>, <code>{'{pnlPct}'}</code>, <code>{'{pnlSign}'}</code>.
 </p>
 
-<h2>Mốc màu chuyển sắc theo P&amp;L</h2>
+<h2>Mốc màu gradient theo P&amp;L</h2>
 <pre><code>{`chart.setTradingConfig({
   pnlThresholds: [
     { pnl: -Infinity, color: '#ef4444' },
@@ -460,6 +462,6 @@ new Chart(host, { features: { marks: false } })            // or chart.setFeatur
 })`}</code></pre>
 
 <p>
-  Số lãi/lỗ trên nhãn và dải màu tới giá hiện tại lấy màu của mốc cao nhất có <code>pnl</code> không vượt
-  quá lãi/lỗ của vị thế, tính bằng tiền.
+  Lãi đang mở trên tag và dải màu tới giá lấy màu của mốc cao nhất có
+  <code>pnl</code> nhỏ hơn hoặc bằng lãi/lỗ của position, tính theo tiền.
 </p>

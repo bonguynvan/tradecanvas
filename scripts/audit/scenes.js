@@ -27,6 +27,8 @@ const scene = params.get('scene') ?? 'orderAtPrice';
 const theme = params.get('theme') ?? 'dark';
 // The widgets' look: `?ui=desk` (Print without it).
 const ui = params.get('ui') ?? undefined;
+// The widgets' language: `?locale=vi` (English without it).
+const locale = params.get('locale') ?? undefined;
 const host = document.getElementById('host');
 
 const market = (symbol) => new MockAdapter({ basePrice: PRICES[symbol] ?? 100, volatility: 0.9, tickInterval: 60_000, historySize: HISTORY });
@@ -39,7 +41,7 @@ const loaded = (chart) => new Promise((resolve) => {
 /** A widget whose feed stops once its bars are in, so nothing moves while it is looked at. */
 async function widget(options = {}) {
   const symbol = options.symbol ?? 'BTCUSDT';
-  const w = new ChartWidget(host, { symbol, timeframe: '5m', theme, ui, adapter: market(symbol), historyLimit: HISTORY, ...options });
+  const w = new ChartWidget(host, { symbol, timeframe: '5m', theme, ui, locale, adapter: market(symbol), historyLimit: HISTORY, ...options });
   const chart = w.getChart();
   await loaded(chart);
   chart.disconnectStream();

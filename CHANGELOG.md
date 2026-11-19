@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Widget
+
+- **The widget's Vietnamese strings, reworded** (`@tradecanvas/chart`): the `vi` table is translated again from the English as plain technical Vietnamese, keeping the trading and chart terms Vietnamese traders use in English (position, order, bracket, crosshair, pane and the like). Every key and placeholder is the same; a label your page overrides with `messages` is not changed.
+
 ## 2.15.0 (2026-11-19)
 
 ### Finance charts

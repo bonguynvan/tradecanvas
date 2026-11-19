@@ -32,7 +32,8 @@ describe('resolveMessages', () => {
 describe('createTranslator', () => {
   it('returns the resolved message for a known key', () => {
     const t = createTranslator(resolveMessages('vi', undefined));
-    expect(t('status.live')).toBe('Trực tiếp');
+    // A key the Vietnamese table words differently from English ("Live" stays English in it).
+    expect(t('toolbar.indicators')).toBe('Chỉ báo');
   });
 
   it('falls back to the raw key when it is missing from both the table and EN_MESSAGES', () => {
