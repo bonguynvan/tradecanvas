@@ -449,7 +449,7 @@ everywhere, dotted = one place; a part shows while all of its switches are on, s
 and never add a part: the depth ladder and the watchlist come from their options
 (`depthLadder: true`, `watchlist: true`), and `features: { depthLadder: true }` alone makes no ladder.
 To stop drawing, trading or zoom on the chart, use `chartOptions.features`. The widget's `symbols` (and
-`setSymbols`) take tickers or `SymbolInfo` (`description`, `type`, `exchange`, `logo`): the symbol search then
+`setSymbols`) take tickers or `SymbolInfo` (`description`, `type`, `exchange`, `logo`, `last`, `changePercent`): the symbol search then
 opens named, with kind tabs and an exchange filter (recipe in [references/recipes.md](references/recipes.md)). The dock's panels
 (watchlist, alerts, depth ladder…) start shut: `widget.openPanel('watchlist')`. Your own parts: `addToolbarButton`,
 `addToolbarDropdown`, `addSidebarButton`, `addStatusBarItem`, `getSlot('chart')`, `addHotkey`, a page in the
@@ -1683,6 +1683,11 @@ widget.setSymbols(more);
   list says `'Cổ phiếu'`, a broker) add no tab and no exchange to pick.
 - `pricePrecision`, `minTick`, `sessions`, `delayMinutes` given here never reach the chart:
   give those through the adapter's `resolveSymbol` or `chart.setSymbolInfo`.
+- `last` (a number, or text written as it is) and `changePercent` (1.5 is
+  +1.50%) show as two columns at the end of a row, the change in the up or
+  down colour, when any row listed has one. The widget fetches none: fill them
+  from your own quotes, here or in `searchSymbols`' results. A search's
+  figures are not kept for the next opening.
 - `logo` takes `https:`/`http:` addresses, paths on your site, `blob:` and
   `data:image/png|jpeg|gif|webp|avif|svg+xml`; it is loaded as an image only,
   with no referrer (allow its host in your CSP's `img-src`). Anything else, or

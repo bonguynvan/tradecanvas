@@ -50,6 +50,16 @@ export interface SymbolInfo {
    * other address is ignored, and the row shows the ticker's first letter.
    */
   logo?: string;
+  /**
+   * Its last price, which the widget's symbol search shows beside it: a
+   * number, written in `pricePrecision` decimals (else by its size), or
+   * text, written as it is. The widget fetches none; give it what your app
+   * has, with the symbols or in a search's results. A search's figures are
+   * shown while its results are, and not kept for the next opening.
+   */
+  last?: number | string;
+  /** Its change over the day, in percent (1.5 is +1.50%), shown beside `last` in the up or down colour. */
+  changePercent?: number;
 }
 
 /** Options for `DataAdapter.searchSymbols`. */
