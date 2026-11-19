@@ -13,44 +13,44 @@
 
 <svelte:head>
   <title>Chỉ báo — Tài liệu TradeCanvas</title>
-  <meta name="description" content="{catalog.length} chỉ báo kỹ thuật có sẵn: đường trung bình động, dải, dao động, khối lượng và biến động, với nguồn dữ liệu, chỉ báo trên chỉ báo và mức chỉnh được." />
+  <meta name="description" content="{catalog.length} chỉ báo kỹ thuật có sẵn: đường trung bình, dải, dao động, khối lượng và biến động, cùng nguồn dữ liệu, chỉ báo tính trên chỉ báo và các mức chỉnh được." />
 </svelte:head>
 
 <h1>Chỉ báo</h1>
 <p>
-  {catalog.length} chỉ báo có sẵn. Thêm một chỉ báo bằng id của nó; tham số bạn bỏ qua sẽ lấy
-  giá trị mặc định, và tham số không hợp lệ cũng quay về giá trị mặc định.
+  {catalog.length} chỉ báo có sẵn. Thêm một chỉ báo bằng id của nó; tham số bỏ trống nhận
+  giá trị mặc định, tham số không hợp lệ cũng quay về giá trị mặc định.
 </p>
 
-<h2>Thêm một chỉ báo</h2>
+<h2>Thêm chỉ báo</h2>
 <pre><code>{`const ema = chart.addIndicator('ema', { period: 50 })          // on the price pane
 const rsi = chart.addIndicator('rsi', { period: 14 }, 'bottom') // in a pane of its own
 chart.updateIndicator(rsi, { period: 21 })
 chart.removeIndicator(rsi)`}</code></pre>
 <p>
-  <code>addIndicator</code> trả về một id instance: cùng một chỉ báo có thể thêm nhiều
-  lần, mỗi instance có thông số, màu và mức riêng.
+  <code>addIndicator</code> trả về id của instance: cùng một chỉ báo có thể thêm nhiều lần,
+  mỗi instance có tham số, màu và các mức riêng.
 </p>
 
 <p>
-  Trong TypeScript, id và thông số của các chỉ báo có sẵn đều có kiểu: <code>BuiltInIndicators</code> liệt kê từng
-  chỉ báo với thông số, giá trị mặc định và key các đường của nó, nên trình soạn thảo gợi ý khi bạn gõ, và một
-  thông số gõ sai tên không qua được bước kiểm tra kiểu. Chỉ báo do plugin đăng ký nhận id và thông số bất kỳ.
+  Trong TypeScript, id và tham số của các chỉ báo có sẵn đều có kiểu: <code>BuiltInIndicators</code> liệt kê từng chỉ báo
+  cùng tham số, giá trị mặc định và key của các đường, nên editor gợi ý chúng khi gõ, và tham số viết sai
+  sẽ không qua bước kiểm tra kiểu. Chỉ báo do plugin đăng ký nhận id và tham số bất kỳ.
 </p>
 
-<h2>Nguồn dữ liệu và chỉ báo trên chỉ báo</h2>
+<h2>Nguồn dữ liệu và chỉ báo tính trên chỉ báo</h2>
 <p>
-  Các chỉ báo có đánh dấu <em>nguồn</em> bên dưới có thể chạy trên một giá khác giá đóng cửa
+  Các chỉ báo đánh dấu <em>source</em> ở dưới có thể tính trên giá khác ngoài giá đóng cửa
   (<code>open</code>, <code>high</code>, <code>low</code>, <code>hl2</code>, <code>hlc3</code>,
-  <code>ohlc4</code>, <code>hlcc4</code>) hoặc trên đường của một chỉ báo khác. Đường trung bình động của RSI
-  được vẽ trong pane của RSI, trên thang của RSI, và bị xoá cùng lúc với RSI.
+  <code>ohlc4</code>, <code>hlcc4</code>) hoặc trên một đường của chỉ báo khác. Đường trung bình của RSI
+  được vẽ trong pane của RSI, theo thang của RSI, và bị xoá khi RSI bị xoá.
 </p>
 <pre><code>{`import { indicatorSource } from '@tradecanvas/chart'
 
 chart.updateIndicator(ema, { source: 'hlc3' })
 const smoothed = chart.addIndicator('sma', { period: 9, source: indicatorSource(rsi, 'value') })`}</code></pre>
 <p>
-  Các chỉ báo ở pane riêng cũng có thể dùng chung một pane:
+  Các chỉ báo trong pane riêng cũng có thể dùng chung một pane:
   <code>chart.addIndicator('stochastic', &#123;&#125;, 'bottom', &#123; pane: rsi &#125;)</code>.
 </p>
 
@@ -62,49 +62,47 @@ chart.setIndicatorVisible(rsi, false)
 const series = chart.getIndicatorOutput(rsi)?.series ?? []
 const latest = series[series.length - 1]?.value   // keyed by the line keys below`}</code></pre>
 <p>
-  Chú giải hiện giá trị mới nhất của mỗi đường. Để gắn thêm nhãn giá trị đó trên trục, bằng màu của đường, hãy bật
-  <code>features.indicatorValueLabels: true</code> hoặc <code>setIndicatorValueLabelsVisible(true)</code> (mặc định tắt).
-  Các đường, mức, trục và crosshair trong cùng một pane dùng chung một thang.
+  Legend hiện giá trị mới nhất của từng đường. Để gắn thêm nhãn giá trị trên trục, theo màu của đường, bật
+  <code>features.indicatorValueLabels: true</code> hoặc gọi <code>setIndicatorValueLabelsVisible(true)</code> (mặc định tắt).
+  Các đường, mức, trục và crosshair của một pane dùng chung một thang.
 </p>
 
-<h2>Chỉ trên một số khung thời gian</h2>
+<h2>Chỉ hiện ở một số khung thời gian</h2>
 <p>
-  Có thể giới hạn một chỉ báo trong một số khung thời gian: đường trung bình 200 ngày trên biểu đồ
-  ngày trở lên, một bộ dao động nhanh chỉ trên các biểu đồ phút. Mỗi loại khung (tick, giây, phút,
-  giờ, ngày, tuần, tháng) có thể để bật, tắt đi, hoặc chỉ bật trong một khoảng, từ bao nhiêu đến bao
-  nhiêu đơn vị; loại nào không nêu thì chỉ báo hiện trên mọi khung của loại đó. Biểu đồ đối chiếu các
-  quy tắc với khung thời gian của luồng dữ liệu mà nó đang kết nối, mỗi khi khung thời gian đổi; với nến nạp bằng
-  <code>setData</code>, <code>chart.setDataTimeframe('1h')</code> cho biết khung thời gian của chúng (ChartWidget tự
-  làm việc này); khi không có cả hai, chỉ báo vẫn hiện. Các quy tắc được lưu cùng bố cục và hoàn tác được như mọi
-  chỉnh sửa khác.
+  Một chỉ báo có thể chỉ hiện ở một số khung thời gian: đường trung bình 200 ngày từ biểu đồ ngày
+  trở lên, một chỉ báo dao động nhanh chỉ ở biểu đồ phút. Mỗi loại khung thời gian (tick, giây,
+  phút, giờ, ngày, tuần, tháng) được để bật, tắt, hoặc giới hạn trong một khoảng số đơn vị;
+  loại nào không nêu thì chỉ báo hiện ở mọi khung thuộc loại đó. Biểu đồ đối chiếu các quy tắc với khung thời gian
+  của stream đang kết nối, theo từng lần khung thời gian đổi; với nến nạp bằng <code>setData</code>,
+  <code>chart.setDataTimeframe('1h')</code> cho biểu đồ biết khung thời gian của chúng (ChartWidget tự làm việc này); nếu không có cả hai,
+  chỉ báo luôn hiện. Các quy tắc được lưu cùng layout và hoàn tác được như mọi chỉnh sửa khác.
 </p>
 <pre><code>{`chart.setIndicatorIntervals(ema, { seconds: false, minutes: false, hours: [1, 4] })
 chart.getIndicatorIntervals(ema)    // { seconds: false, minutes: false, hours: [1, 4] }
-chart.setIndicatorIntervals(ema, null)  // lại hiện trên mọi khung`}</code></pre>
+chart.setIndicatorIntervals(ema, null)  // all of them again`}</code></pre>
 <p>
-  <code>getActiveIndicators()</code> cho biết từng chỉ báo có <code>visible</code> (đang bật) và có
-  <code>shown</code> (được vẽ trên khung thời gian này) hay không. Trong ChartWidget, dòng chú thích
-  của chỉ báo chuyển sang màu xám khi nó không được vẽ.
+  <code>getActiveIndicators()</code> cho biết với từng chỉ báo: <code>visible</code> (đang bật) và
+  <code>shown</code> (được vẽ ở khung thời gian hiện tại). Trong ChartWidget, dòng legend của chỉ báo chuyển màu xám khi nó không được vẽ.
 </p>
 
 <h2>Trong ChartWidget</h2>
 <p>
-  Nút <strong>Chỉ báo</strong> trên thanh công cụ mở một hộp thoại. Gõ để tìm mọi chỉ báo theo tên
-  hoặc tên viết tắt (<kbd>Enter</kbd> thêm chỉ báo khớp nhất); hoặc chọn một nhóm ở cột bên cạnh:
-  <strong>Yêu thích</strong>, <strong>Mẫu</strong>, <strong>Tất cả</strong>, rồi đến từng loại
-  (đường trung bình động, xu hướng, dao động, biến động, khối lượng, dải và kênh, giá và mô hình).
-  Bấm một dòng để thêm chỉ báo của dòng đó, và hộp thoại vẫn mở để thêm chỉ báo tiếp theo; một con số
-  cho biết biểu đồ đang có bao nhiêu chỉ báo loại đó, và ngôi sao bên cạnh giữ nó trong mục yêu thích.
-  Trên điện thoại, các nhóm là một hàng chip phía trên danh sách.
+  Nút <strong>Indicators</strong> trên toolbar mở một dialog. Gõ để tìm mọi chỉ báo theo
+  tên hoặc tên viết tắt (<kbd>Enter</kbd> thêm kết quả khớp nhất); hoặc chọn một nhóm ở cột bên:
+  <strong>Favourites</strong>, <strong>Templates</strong>, <strong>All</strong>, rồi đến từng loại
+  (đường trung bình, xu hướng, dao động, biến động, khối lượng, dải và kênh, giá và
+  mẫu hình). Bấm một dòng để thêm chỉ báo đó, dialog vẫn mở để thêm chỉ báo tiếp theo; một con số cho biết
+  bao nhiêu instance đang có trên biểu đồ, và ngôi sao bên cạnh đưa chỉ báo vào mục yêu thích. Trên điện thoại, các nhóm
+  là một hàng chip phía trên danh sách.
 </p>
 <p>
-  Phần cài đặt của một chỉ báo (bấm tên trên dòng chú thích của nó, hoặc nút bánh răng) có ba tab:
-  <strong>Thông số</strong>; <strong>Kiểu</strong>, mỗi đường một dòng (hiện hay ẩn, màu, kiểu nét),
-  độ dày nét, thang giá của một chỉ báo phủ lên biểu đồ và các mức; và <strong>Hiển thị</strong>, các
-  khung thời gian mà chỉ báo hiện trên đó. Mọi chỉnh sửa hiện ra ngay. <strong>Huỷ</strong> hoặc
-  <kbd>Esc</kbd> trả mọi thứ về như cũ, <strong>OK</strong> giữ lại. <strong>Mặc định</strong> đặt lại
-  chỉ báo, hoặc lưu nó làm mặc định: từ đó các chỉ báo mới cùng loại sẽ bắt đầu với các thông số và
-  giao diện này, trên trình duyệt này.
+  Phần cài đặt của một chỉ báo (bấm tên trên dòng legend, hoặc biểu tượng bánh răng) có ba tab:
+  <strong>Inputs</strong>; <strong>Style</strong>, mỗi đường một dòng (hiện hay ẩn, màu, kiểu
+  nét đứt), độ dày đường, thang giá của overlay và các mức; và <strong>Visibility</strong>,
+  các khung thời gian mà chỉ báo hiện. Mọi chỉnh sửa hiện ngay. <strong>Cancel</strong> hoặc <kbd>Esc</kbd>
+  trả lại tất cả như cũ, <strong>OK</strong> giữ thay đổi. <strong>Defaults</strong> đặt lại về mặc định, hoặc lưu thiết lập hiện tại làm
+  mặc định: các chỉ báo cùng loại thêm sau đó bắt đầu với các tham số và kiểu hiển thị này, trong trình duyệt
+  này.
 </p>
 
 <h2>Trên pane giá ({overlays.length})</h2>
@@ -114,7 +112,7 @@ chart.setIndicatorIntervals(ema, null)  // lại hiện trên mọi khung`}</cod
     {#each overlays as ind (ind.id)}
       <tr>
         <td><code>{ind.id}</code></td>
-        <td>{ind.name}{#if hasSource(ind)} <small>· nguồn</small>{/if}</td>
+        <td>{ind.name}{#if hasSource(ind)} <small>· source</small>{/if}</td>
         <td><code>{params(ind) || '—'}</code></td>
         <td>{lines(ind) || '—'}</td>
       </tr>
@@ -123,30 +121,31 @@ chart.setIndicatorIntervals(ema, null)  // lại hiện trên mọi khung`}</cod
 </table>
 
 <p>
-  <code>mtfma</code> vẽ một đường trung bình động từ khung thời gian lớn hơn lên biểu đồ hiện tại — ví dụ
-  MA50 khung ngày trên nến 1h. Nó chỉ lấy trung bình các giá đóng cửa <em>đã hoàn tất</em> của khung lớn hơn, nên
-  đổi bậc tại mỗi ranh giới và không bao giờ vẽ lại (repaint).
+  <code>mtfma</code> vẽ đường trung bình của khung thời gian lớn hơn lên biểu đồ hiện tại, ví dụ
+  MA50 ngày trên nến 1h. Nó chỉ tính trung bình trên các giá đóng cửa <em>đã hoàn tất</em> của khung lớn hơn, nên
+  đường đi theo bậc ở mỗi ranh giới và không bao giờ repaint.
 </p>
 
 <p>
-  <code>vwap</code> tính lại từ đầu tại mốc <code>anchor</code>: <code>'session'</code> (mặc định) mỗi ngày giao dịch,
-  từ nửa đêm theo múi giờ của sàn (<code>timeZone</code> của mã, không có thì của thị trường, không có nữa thì UTC);
-  <code>'week'</code> mỗi thứ Hai; <code>'month'</code> ngày mùng 1; <code>'all'</code> không bao giờ: trung bình trên mọi
-  nến đã tải, nên đổi khi nạp thêm lịch sử cũ. Trên nến ngày, VWAP theo phiên chính là giá điển hình của từng nến,
-  nên ở đó hãy chọn <code>'week'</code> hoặc <code>'month'</code>. <code>svwap</code> là VWAP theo phiên kèm các dải σ,
-  còn <code>avwap</code> bắt đầu tại nến bạn neo. <code>svwap</code>, <code>mtfma</code>, các đường của ngày trước và
-  các phiên của market profile cũng đếm ngày theo múi giờ đó. Các khung 2h đến 12h của <code>mtfma</code> cũng
-  bắt đầu từ nửa đêm của sàn, còn nến 4h của chính nguồn dữ liệu vẫn theo lưới giờ UTC; trên nến ngày,
-  <code>svwap</code> chỉ cho đường chính, không có các dải. Trong ChartWidget, VWAP với mốc khác được gọi kèm tên mốc ('VWAP Tuần') ở chú giải, chip và bảng Đối tượng, còn mốc và các lựa chọn của nó hiện theo ngôn ngữ của widget; cột CSV vẫn là <code>VWAP</code>.
+  <code>vwap</code> tính lại từ đầu tại <code>anchor</code> của nó: <code>'session'</code>, giá trị mặc định, mỗi ngày
+  giao dịch, từ nửa đêm theo múi giờ của sàn (<code>timeZone</code> của mã, nếu không có thì của thị trường, nếu không có nữa thì
+  UTC); <code>'week'</code> mỗi thứ Hai; <code>'month'</code> vào ngày 1; <code>'all'</code> không bao giờ: nó tính trung bình
+  trên mọi nến đã nạp, nên giá trị thay đổi khi nạp thêm nến cũ. Trên nến ngày, VWAP theo phiên bằng
+  giá điển hình (typical price) của từng nến: khi đó hãy chọn <code>'week'</code> hoặc <code>'month'</code>. <code>svwap</code> là VWAP theo phiên
+  kèm các dải σ, còn <code>avwap</code> bắt đầu từ nến được neo. <code>svwap</code>, <code>mtfma</code>,
+  các đường của ngày trước và các phiên của market profile đếm ngày theo cùng múi giờ đó.
+  Các khung 2h đến 12h của <code>mtfma</code> cũng bắt đầu từ nửa đêm của sàn, trong khi nến 4h do feed cung cấp
+  vẫn theo lưới UTC, và trên nến ngày <code>svwap</code> chỉ có đường chính, không có dải. Trong ChartWidget, VWAP với anchor khác được đặt tên theo anchor đó ('VWAP Week') trong legend, các chip và panel Objects, còn anchor và các lựa chọn của nó hiển thị theo ngôn ngữ của widget; cột CSV vẫn là <code>VWAP</code>.
 </p>
-<pre><code>{`chart.addIndicator('vwap')                      // tính lại mỗi ngày giao dịch
-chart.addIndicator('vwap', { anchor: 'week' })  // mỗi thứ Hai: cho nến ngày
-chart.addIndicator('vwap', { anchor: 'all' })   // mọi nến đã tải, như trước đây`}</code></pre>
+<pre><code>{`chart.addIndicator('vwap')                      // starts again each trading day
+chart.addIndicator('vwap', { anchor: 'week' })  // each Monday: for daily bars
+chart.addIndicator('vwap', { anchor: 'all' })   // every bar loaded, as it was before`}</code></pre>
 
 <p>
-  <code>volumeProfile</code> vẽ mỗi vùng giá một hàng từ mép trái vùng vẽ; độ dài mỗi hàng theo khối lượng đã khớp trong vùng giá đó.
-  Các hàng trong mờ nên chú giải đè lên trên chúng và nến nằm bên dưới chúng vẫn đọc được; đặt <code>opacity</code> thấp hơn bằng
-  <code>updateIndicatorStyle</code> để làm chỉ báo mờ thêm.
+  <code>volumeProfile</code> vẽ mỗi vùng giá một hàng, tính từ mép trái của vùng vẽ; độ dài mỗi hàng
+  theo khối lượng khớp trong vùng giá đó. Các hàng có độ trong suốt, nên legend phía trên và nến
+  phía dưới vẫn đọc được; đặt <code>opacity</code> thấp hơn bằng <code>updateIndicatorStyle</code>
+  để làm mờ thêm.
 </p>
 
 <h2>Trong pane riêng ({panes.length})</h2>
@@ -156,7 +155,7 @@ chart.addIndicator('vwap', { anchor: 'all' })   // mọi nến đã tải, như 
     {#each panes as ind (ind.id)}
       <tr>
         <td><code>{ind.id}</code></td>
-        <td>{ind.name}{#if hasSource(ind)} <small>· nguồn</small>{/if}</td>
+        <td>{ind.name}{#if hasSource(ind)} <small>· source</small>{/if}</td>
         <td><code>{params(ind) || '—'}</code></td>
         <td>{lines(ind) || '—'}</td>
         <td>{'levels' in ind ? ind.levels?.join(', ') : '—'}</td>
@@ -166,27 +165,27 @@ chart.addIndicator('vwap', { anchor: 'all' })   // mọi nến đã tải, như 
 </table>
 
 <p>
-  <code>voldelta</code> (Volume Delta) ước lượng áp lực mua/bán từ OHLCV — nến đóng cửa tăng
+  <code>voldelta</code> (Volume Delta) ước lượng lực mua/bán từ OHLCV: nến đóng cửa tăng
   cộng khối lượng dương, nến giảm cộng khối lượng âm. <code>mode: 0</code> là histogram theo từng nến,
-  <code>mode: 1</code> là delta luỹ kế. (Delta tick thực sự cần dữ liệu bid/ask theo từng giao dịch, thứ mà
-  một chuỗi OHLCV không có.)
+  <code>mode: 1</code> là delta tích luỹ. (Delta theo tick thực sự cần dữ liệu bid/ask của từng lệnh khớp, mà
+  chuỗi OHLCV không có.)
 </p>
 
-<h2>Chỉ báo quen thuộc trên bảng giá châu Á</h2>
+<h2>Chỉ báo từ bảng giá châu Á</h2>
 <p>
-  Những chỉ báo mà nhà đầu tư ở Hàn Quốc, Nhật Bản và Việt Nam quen thấy trên bảng giá: Psychological Line (<code>psy</code>, tâm lý) và New Psychological Line (<code>newpsy</code>), Volume Ratio (<code>vr</code>), AB Ratio (<code>abratio</code>), <code>sonar</code>, <code>sigma</code>, Binary Wave (<code>binarywave</code>), Trade Value (<code>tradevalue</code>, giá trị giao dịch) cùng Volume Change (<code>volchange</code>), vùng giá dự phóng DeMark (<code>demark</code>) và dải đường trung bình <code>rainbow</code> tới 20 đường. Trade Value là ước tính, giá đóng cửa × khối lượng mỗi nến; con số chính thức của sở giao dịch có trong nguồn dữ liệu của họ.
+  Các chỉ báo mà nhà giao dịch ở Hàn Quốc, Nhật Bản và Việt Nam thường thấy trên bảng giá: Psychological Line (<code>psy</code>) và New Psychological Line (<code>newpsy</code>), Volume Ratio (<code>vr</code>), AB Ratio (<code>abratio</code>), <code>sonar</code>, <code>sigma</code>, Binary Wave (<code>binarywave</code>), Trade Value (<code>tradevalue</code>) cùng Volume Change (<code>volchange</code>), vùng giá dự phóng DeMark (<code>demark</code>) và <code>rainbow</code> gồm tối đa 20 đường trung bình. Trade Value là giá trị ước lượng, bằng giá đóng cửa × khối lượng của từng nến; số liệu chính thức của sàn lấy từ feed của sàn.
 </p>
-<pre><code>{`chart.addIndicator('psy', { period: 10 }, 'bottom')              // tỷ lệ phiên tăng; đánh dấu 25 và 75
-chart.addIndicator('vr', { period: 20 }, 'bottom')                // khối lượng phiên tăng so với phiên giảm
-chart.addIndicator('tradevalue', {}, 'bottom')                    // giá đóng cửa × khối lượng, mỗi nến
-chart.addIndicator('rainbow', { first: 10, step: 10, count: 10 }) // mười đường trung bình, 10 đến 100 nến`}</code></pre>
+<pre><code>{`chart.addIndicator('psy', { period: 10 }, 'bottom')              // share of up closes; 25 and 75 marked
+chart.addIndicator('vr', { period: 20 }, 'bottom')                // volume of up days against down days
+chart.addIndicator('tradevalue', {}, 'bottom')                    // close × volume, each bar
+chart.addIndicator('rainbow', { first: 10, step: 10, count: 10 }) // ten averages, 10 to 100 bars`}</code></pre>
 
 <h2>Mẫu nến</h2>
 <p>
-  64 mẫu từ một đến năm nến: doji, búa và sao băng, marubozu và belt hold; nhấn chìm, harami, đường xuyên và mây đen, nhíp, kicking; sao mai và sao hôm, em bé bị bỏ rơi, ba chàng lính và ba con quạ, ba nến trong và ngoài, khoảng trống tasuki; three-line strike, ba phương pháp, mat hold, breakaway và ladder bottom. Mẫu đảo chiều chỉ được tính khi có xu hướng trước đó để đảo (giá đóng cửa trước mẫu vượt cả trung bình 10 nến lẫn giá đóng cửa 10 nến trước, <code>trendPeriod</code>), và thân nến dài hay ngắn được so với thân trung bình của các nến trước. Chỉ báo vẽ mũi tên dưới mẫu tăng và trên mẫu giảm, kèm tên viết tắt khi nến đủ rộng; nến kết thúc nhiều mẫu thì hiện mẫu dài nhất. <code>reversal</code>, <code>continuation</code> và <code>indecision</code> (1 hoặc 0) chọn loại mẫu.
+  64 mẫu nến từ một đến năm nến: doji, hammer và shooting star, marubozu và belt hold; engulfing, harami, piercing line và dark cloud, tweezer, kicking; morning star và evening star, abandoned baby, three soldiers và three crows, three inside và three outside, tasuki gap; three-line strike, three methods, mat hold, breakaway và ladder bottom. Một mẫu đảo chiều chỉ được tính khi có xu hướng trước đó để đảo (giá đóng cửa ngay trước mẫu vượt qua cả đường trung bình 10 nến và giá đóng cửa 10 nến trước, <code>trendPeriod</code>), và thân nến dài hay ngắn được so với thân nến trung bình của các nến trước đó. Chỉ báo vẽ mũi tên dưới mẫu tăng và trên mẫu giảm, kèm tên viết tắt khi nến đủ rộng; nến kết thúc nhiều mẫu cùng lúc hiện mẫu dài nhất. <code>reversal</code>, <code>continuation</code> và <code>indecision</code> (1 hoặc 0) chọn các loại mẫu.
 </p>
-<pre><code>{`chart.addIndicator('candlepatterns')                  // mũi tên và tên mẫu trên mỗi nến kết thúc một mẫu
-chart.addIndicator('candlepatterns', { indecision: 1 }) // hiện cả doji và con xoay
+<pre><code>{`chart.addIndicator('candlepatterns')                  // an arrow and the name on each bar that ends one
+chart.addIndicator('candlepatterns', { indecision: 1 }) // dojis and spinning tops too
 
 import { detectCandlePatterns, CANDLE_PATTERNS } from '@tradecanvas/chart'
 
@@ -194,34 +193,33 @@ const found = detectCandlePatterns(bars, { patterns: ['bullishEngulfing', 'hamme
 // [{ index, time, pattern: { id, name, short, direction, kind, bars } }]
 CANDLE_PATTERNS.length                                 // 64`}</code></pre>
 <p>
-  Trang chỉ tìm mẫu nến mà không vẽ chart (scanner, screener) import hai thứ này từ
-  <code>@tradecanvas/core/patterns</code>: chỉ riêng bộ dò, khoảng 4 kB gzip, trong một chunk riêng,
-  nên trang không tải engine của chart kể cả khi các trang khác của app có dùng. Thêm
-  <code>@tradecanvas/core</code> vào dependencies của app để import được.
+  Trang chỉ tìm mẫu nến mà không vẽ biểu đồ (scanner, screener) import hai thứ này từ
+  <code>@tradecanvas/core/patterns</code>: chỉ riêng bộ nhận diện, khoảng 4 kB sau gzip, trong một chunk
+  riêng, nên trang đó không tải engine của biểu đồ kể cả khi các trang khác của ứng dụng có tải. Khai báo
+  <code>@tradecanvas/core</code> trong dependencies của ứng dụng để import.
 </p>
 <pre><code>{`import { detectCandlePatterns, CANDLE_PATTERNS } from '@tradecanvas/core/patterns'`}</code></pre>
 
-<h2>Chỉ báo của riêng bạn</h2>
+<h2>Chỉ báo tự viết</h2>
 <p>
-  Kế thừa <code>IndicatorBase</code> và khai báo những gì nó vẽ (<code>plots</code>), thang của pane,
-  các mức và thông số; biểu đồ sẽ tự vẽ nó, co giãn pane của nó, gắn nhãn giá trị và liệt kê nó trong
-  chú thích và phần cài đặt của widget mà bạn không phải viết dòng code vẽ nào. Thuộc tính
-  <code>category</code> của nó (<code>'oscillators'</code>, <code>'volume'</code>…) xếp nó vào nhóm đó
-  trong hộp thoại Chỉ báo; nếu không có, nó nằm trong nhóm Khác. Xem
-  <a href="https://github.com/bonguynvan/tradecanvas/blob/main/skills/tradecanvas/references/recipes.md#a-custom-indicator">hướng dẫn mẫu cho chỉ báo tuỳ chỉnh</a>.
-  Chỉ báo nhóm nến theo ngày, tuần hay tháng đọc múi giờ của sàn ở <code>config.exchangeTimeZone</code>
-  (do biểu đồ đặt; không có thì là UTC). Khi múi giờ đổi, chỉ những chỉ báo đọc nó và những chỉ báo
-  đọc đường của chúng được tính lại: chỉ báo của bạn không đọc múi giờ có thể ghi
-  <code>readsExchangeTimeZone: false</code> trong descriptor để được giữ nguyên.
+  Kế thừa <code>IndicatorBase</code> và khai báo những gì chỉ báo vẽ (<code>plots</code>), thang của pane,
+  các mức và tham số; biểu đồ tự vẽ chỉ báo, co giãn pane, gắn nhãn giá trị và liệt kê chỉ báo trong
+  legend và phần cài đặt của widget mà không cần code render riêng. <code>category</code> của chỉ báo
+  (<code>'oscillators'</code>, <code>'volume'</code>…) đặt nó vào nhóm tương ứng trong dialog Indicators;
+  không có category thì nó nằm trong Other. Xem
+  <a href="https://github.com/bonguynvan/tradecanvas/blob/main/skills/tradecanvas/references/recipes.md#a-custom-indicator">recipe chỉ báo tự viết</a>.
+  Chỉ báo gom nến theo ngày, tuần hoặc tháng đọc múi giờ của sàn qua
+  <code>config.exchangeTimeZone</code> (do biểu đồ đặt; không đặt thì là UTC). Khi đổi múi giờ, biểu đồ chỉ tính lại
+  các chỉ báo đọc múi giờ và các chỉ báo đọc đường của chúng: chỉ báo tự viết không đọc múi giờ có thể khai báo
+  <code>readsExchangeTimeZone: false</code> trong descriptor để không bị tính lại.
 </p>
 <p>
-  <code>kind</code> của mỗi input (<code>'int'</code>, <code>'number'</code>, <code>'boolean'</code>,
+  <code>kind</code> của mỗi tham số (<code>'int'</code>, <code>'number'</code>, <code>'boolean'</code>,
   <code>'choice'</code>, <code>'source'</code>, <code>'color'</code>, <code>'text'</code>) cùng
-  <code>min</code>, <code>max</code> và <code>step</code> quyết định ô nhập của nó trong phần cài đặt:
-  một <code>'int'</code> được làm tròn ngay khi gõ, đúng như cách chu kỳ được đọc. Không có
-  <code>kind</code> thì kiểu được suy từ giá trị mặc định (một số là <code>'number'</code>: chỉ <code>'int'</code> được khai báo mới bị làm tròn).
-  <code>describeInputs(descriptor)</code> liệt kê các input đúng như hộp thoại cài đặt, tài liệu này và
-  máy chủ MCP đọc chúng.
+  <code>min</code>, <code>max</code> và <code>step</code> quyết định ô nhập trong phần cài đặt: một
+  <code>'int'</code> được làm tròn khi gõ, giống cách đọc một chu kỳ. Không khai báo kind thì kind được suy ra từ
+  giá trị mặc định (số là <code>'number'</code>: chỉ <code>'int'</code> được khai báo mới làm tròn). <code>describeInputs(descriptor)</code> liệt kê
+  các tham số theo đúng cách dialog cài đặt, tài liệu này và MCP server đọc chúng.
 </p>
 <pre><code>{`inputs: {
   period: { kind: 'int', min: 2, max: 500 },
@@ -230,16 +228,16 @@ CANDLE_PATTERNS.length                                 // 64`}</code></pre>
   type: { kind: 'choice', options: [{ value: 'ema', label: 'Exponential' }, { value: 'sma', label: 'Simple' }] },
 }`}</code></pre>
 <p>
-  <code>options</code> của một lựa chọn là các giá trị, hoặc giá trị kèm nhãn mà phần cài đặt hiện cho nó
-  (<code>{'{ value, label }'}</code>), bằng ngôn ngữ của ứng dụng bạn; chỉ báo nhận giá trị.
+  <code>options</code> của một choice là các giá trị, hoặc giá trị kèm nhãn hiển thị trong phần cài đặt
+  (<code>{'{ value, label }'}</code>), theo ngôn ngữ của ứng dụng; chỉ báo nhận giá trị.
 </p>
 <p>
-  Descriptor cũng ghi các đường trông thế nào, và chart vẽ đúng như vậy: <code>fills</code> tô vùng giữa hai
-  đường ở những nến cả hai đều có giá trị, nằm dưới các đường; <code>width</code> của một đường giữ nó ở độ
-  dày đó bất kể độ dày của chỉ báo (một đường giữa mảnh); <code>lineStyle</code> vẽ nó nét đứt cho tới khi
-  kiểu của nó nói khác, và hộp cài đặt hiện và trả lại đúng nét đó; <code>opacity</code> làm nó mờ đi;
-  <code>breakOn</code> là tên một trường đánh số kỳ, và đường ngắt ở chỗ trường đó đổi. Các kênh, dải,
-  Supertrend và Parabolic SAR có sẵn được vẽ theo cách này.
+  Descriptor cũng khai báo cách các plot hiển thị, và biểu đồ vẽ đúng như vậy: <code>fills</code> tô màu giữa hai
+  plot ở những chỗ cả hai có giá trị, nằm dưới các đường; <code>width</code> của một plot giữ nó ở độ dày đó bất kể độ dày
+  của chỉ báo (một đường giữa mảnh); <code>lineStyle</code> vẽ nét đứt cho đến khi style của nó đặt khác, và
+  phần cài đặt hiện và khôi phục được kiểu nét đứt đó; <code>opacity</code> làm mờ plot; <code>breakOn</code> chỉ định một trường
+  đánh số các giai đoạn, và đường bị ngắt ở chỗ trường đó đổi giá trị. Các kênh, dải, Supertrend và
+  Parabolic SAR có sẵn được vẽ theo cách này.
 </p>
 <pre><code>{`plots: [
   { key: 'upper', title: 'Upper', color: 0 },
@@ -248,24 +246,23 @@ CANDLE_PATTERNS.length                                 // 64`}</code></pre>
 ],
 fills: [{ between: ['upper', 'lower'], color: 0, opacity: 0.1 }],`}</code></pre>
 <p>
-  Một đường có <code>kind: 'markers'</code> đánh dấu các nến mà trường của nó có giá trị (một điểm đảo chiều, một
-  tín hiệu) bằng một <code>shape</code>, <code>'dot'</code>, <code>'triangleUp'</code> hoặc <code>'triangleDown'</code>, tại
-  giá trị đó hoặc, trên pane giá, phía trên đỉnh hay phía dưới đáy của nến (<code>position: 'aboveBar'</code>,
-  <code>'belowBar'</code>). Nó không phải một giá trị để đọc: nó không có giá trị trong legend, không có nhãn trên trục
-  và không có cột khi xuất dữ liệu, và không được đưa ra như một đường mà chỉ báo khác đọc được. Trong một pane, các
-  dấu nằm tại giá trị của chúng. Để trống trường đó ở những nến không có dấu.
+  Plot có <code>kind: 'markers'</code> đánh dấu các nến mà trường của nó có giá trị (điểm đảo chiều, tín hiệu) bằng một
+  <code>shape</code>, <code>'dot'</code>, <code>'triangleUp'</code> hoặc <code>'triangleDown'</code>, đặt tại giá trị đó hoặc, trên
+  pane giá, phía trên giá cao hay phía dưới giá thấp của nến (<code>position: 'aboveBar'</code>, <code>'belowBar'</code>). Đây
+  không phải giá trị để đọc: nó không có trong legend, không có nhãn trên trục, không có cột khi export, và không được đưa ra
+  làm đường cho chỉ báo khác đọc. Trong pane riêng, các điểm đánh dấu nằm tại giá trị của chúng. Để trống trường đó ở các nến không đánh dấu.
 </p>
 <pre><code>{`plots: [
   { key: 'value', title: 'MACD', color: 0 },
   { key: 'turn', title: 'Turn', color: 1, kind: 'markers', shape: 'triangleUp', position: 'belowBar' },
 ],`}</code></pre>
 
-<h2>Pane: đổi kích thước, thu gọn, phóng to, sắp xếp lại</h2>
+<h2>Pane: đổi kích thước, thu gọn, phóng to, sắp xếp</h2>
 <p>
   <strong>Kéo đường phân cách</strong> phía trên một pane để đổi kích thước. Trong ChartWidget, mỗi pane
-  có các nút ở góc phải trên: đưa pane lên hoặc xuống, thu gọn chỉ còn dòng tiêu đề, phóng to
-  (các pane khác thu gọn lại, còn pane giá giữ một dải hẹp). Bố cục đã lưu giữ kích thước, thứ tự,
-  trạng thái thu gọn và phóng to của từng pane. Làm điều tương tự bằng code:
+  có các nút ở góc trên bên phải: chuyển lên hoặc xuống, thu gọn còn phần tiêu đề, phóng to
+  (các pane khác thu gọn, pane giá còn lại một dải). Layout đã lưu giữ kích thước, thứ tự, trạng thái thu gọn và phóng to
+  của từng pane. Làm tương tự từ code:
 </p>
 <pre><code>{`chart.setPanelSize(rsi, 180)        // px, clamped to a minimum
 chart.setPaneCollapsed(macd, true)  // fold to its header
@@ -275,34 +272,35 @@ chart.on('paneChange', (e) => e.payload.change)  // 'collapsed' | 'maximized' | 
 chart.setPaneScale(atr, { log: true, invert: false })  // log while its values are above 0
 chart.setPaneScale(atr, { percent: true })             // labels in percent of its first value on screen`}</code></pre>
 <p>
-  Bấm chuột phải vào một pane trong ChartWidget để bật thang logarit, thang đảo ngược hoặc thang phần trăm riêng cho pane đó.
+  Trong ChartWidget, click chuột phải vào một pane để đặt thang log, thang đảo ngược hoặc thang phần trăm riêng cho pane đó.
 </p>
 
-<h2>Chuyển một chỉ báo sang pane khác</h2>
+<h2>Chuyển chỉ báo sang pane khác</h2>
 <p>
-  Một chỉ báo có thể vào pane của một chỉ báo khác (khi đó nó dùng chung thang của pane đó),
-  có pane riêng, hoặc quay về pane giá. Khi nó rời một pane mà nó làm chủ, các chỉ báo khác
-  trong pane vẫn ở lại (chỉ báo kế tiếp trong pane sẽ làm chủ pane), và các chỉ báo đọc đường của nó
-  sẽ đi theo nó. Trong ChartWidget, nút <strong>⋯</strong> trên một dòng chú thích cho chọn pane phía
-  trên, pane phía dưới, một pane mới và pane giá.
+  Một chỉ báo có thể vào pane của chỉ báo khác (khi đó dùng chung thang của pane đó),
+  sang một pane riêng, hoặc quay về pane giá. Khi rời một pane nó sở hữu,
+  các chỉ báo khác trong pane vẫn ở lại (chỉ báo pane tiếp theo nhận quyền sở hữu pane), và các chỉ báo đọc
+  đường của nó đi theo nó. Trong ChartWidget, nút <strong>⋯</strong> trên dòng legend
+  đưa ra các lựa chọn: pane phía trên, pane phía dưới, pane mới và pane giá.
 </p>
 <pre><code>{`chart.moveIndicatorToPane(cci, rsi)      // into RSI's pane
 chart.moveIndicatorToPane(cci, 'new')    // a pane of its own
 chart.moveIndicatorToPane(ema, 'price')  // an overlay back to the price pane
 chart.canMoveIndicatorToPane(cci, rsi)   // whether it would move`}</code></pre>
 
-<h2>Hoàn tác và mẫu</h2>
+<h2>Hoàn tác và template</h2>
 <p>
-  Thêm, xoá, sửa và di chuyển chỉ báo đều là các bước hoàn tác, nằm chung lịch sử với hình vẽ
-  (<kbd>Ctrl/⌘ Z</kbd>, <kbd>Ctrl/⌘ Shift Z</kbd>); một chỉ báo được khôi phục khi hoàn tác sẽ quay lại
-  với đúng id cũ, nên các cảnh báo trên đường của nó vẫn khớp. Một loạt chỉnh sửa liền nhau trên cùng
-  một chỉ báo (kéo chọn màu, gõ chu kỳ) tính là một bước. Khi tải một bố cục, lịch sử bắt đầu lại từ đầu.
+  Thêm, xoá, chỉnh sửa và di chuyển chỉ báo là các bước hoàn tác trong cùng lịch sử
+  với hình vẽ (<kbd>Ctrl/⌘ Z</kbd>, <kbd>Ctrl/⌘ Shift Z</kbd>); chỉ báo được hoàn tác
+  quay lại với đúng id cũ, nên cảnh báo trên các đường của nó vẫn khớp. Một loạt chỉnh sửa liên tiếp trên
+  một chỉ báo (kéo chọn màu, gõ chu kỳ) tính là một bước. Nạp một layout sẽ bắt đầu
+  lịch sử mới.
 </p>
 <p>
-  Có thể lấy ra và đặt lại toàn bộ chỉ báo cùng một lúc, và đó chính là việc mẫu chỉ báo của
-  ChartWidget làm: <strong>Lưu các chỉ báo thành mẫu…</strong> ở tab Mẫu của hộp thoại Chỉ báo lưu chúng (thông số,
-  kiểu, mức, pane) dưới một cái tên, còn chọn một mẫu sẽ đặt chúng vào thay cho các chỉ báo hiện có
-  của biểu đồ, trong một bước hoàn tác.
+  Toàn bộ chỉ báo có thể lấy ra và đặt lại cùng lúc, đó là cách template chỉ báo của ChartWidget
+  hoạt động: <strong>Save indicators as template…</strong> trong tab Templates
+  của dialog Indicators lưu chúng (tham số, style, mức, pane) dưới một tên, và chọn một template
+  sẽ thay các chỉ báo hiện có trên biểu đồ bằng chúng, trong một bước hoàn tác.
 </p>
 <pre><code>{`const setup = chart.getIndicatorSetup()   // what a layout keeps of them
 chart.applyIndicatorSetup(setup)          // in place of the chart's indicators
@@ -311,8 +309,8 @@ new ChartWidget(host, { indicatorTemplates: true })  // the default`}</code></pr
 
 <h2>Tính toán bên ngoài biểu đồ</h2>
 <p>
-  <code>IndicatorWorkerHost</code> tính một chỉ báo từ dữ liệu nến trong worker có sẵn trong gói
-  (<code>createIndicatorWorker()</code>), chính worker mà biểu đồ dùng với <code>indicatorWorker: 'auto'</code>.
+  <code>IndicatorWorkerHost</code> tính một chỉ báo từ nến trong worker đi kèm package
+  (<code>createIndicatorWorker()</code>), cũng là worker mà biểu đồ dùng khi đặt <code>indicatorWorker: 'auto'</code>.
   Truyền <code>null</code> thay vào đó và đăng ký các plugin để tính ngay tại chỗ (SSR, test, script):
 </p>
 <pre><code>{`import { IndicatorWorkerHost, RSIIndicator, createIndicatorWorker } from '@tradecanvas/core'

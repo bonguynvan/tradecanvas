@@ -5,69 +5,69 @@
 </script>
 
 <svelte:head>
-  <title>Tùy biến — Tài liệu TradeCanvas</title>
-  <meta name="description" content="Mọi cách biến TradeCanvas thành của bạn: màu, giao diện widget, giao diện biểu đồ theo khoá, 133 công tắc cho các phần của widget, nút, menu và mục trạng thái của riêng bạn, chữ, plugin và biểu đồ headless." />
+  <title>Tuỳ biến — Tài liệu TradeCanvas</title>
+  <meta name="description" content="Mọi cách tuỳ biến TradeCanvas: màu, look của widget, hiển thị của biểu đồ theo key, 133 công tắc cho các phần của widget, nút, menu và mục trạng thái tự thêm, chữ hiển thị, plugin và Chart headless." />
 </svelte:head>
 
-<h1>Tùy biến</h1>
+<h1>Tuỳ biến</h1>
 <p>
-  Mọi cách biến biểu đồ thành của bạn, từ chỉnh nhẹ nhất tới sâu nhất. Phần lớn ứng dụng chỉ cần hai, ba cách:
-  một theme, vài công tắc, một nút của riêng mình.
+  Mọi cách tuỳ biến biểu đồ, từ chỉnh nhẹ nhất đến sâu nhất. Phần lớn ứng dụng chỉ cần hai hoặc ba
+  cách: một theme, vài công tắc, một nút riêng.
 </p>
 
-<h2>Muốn đổi gì thì dùng gì</h2>
+<h2>Cách nào cho việc gì</h2>
 <table>
-  <thead><tr><th>Bạn muốn đổi</th><th>Dùng</th></tr></thead>
+  <thead><tr><th>Cần thay đổi</th><th>Dùng</th></tr></thead>
   <tbody>
-    <tr><td>Màu</td><td><code>theme</code> (<code>'dark'</code>, <code>'light'</code> hoặc theme của bạn), <code>setTheme</code> — <a href={href('/docs/api')}>API</a></td></tr>
-    <tr><td>Góc bo, kích thước, kiểu chữ và các thanh của widget</td><td><code>ui</code> / <code>setUI</code> — <a href={href('/docs/styling')}>Giao diện</a></td></tr>
-    <tr><td>Một phần giao diện biểu đồ: lưới, crosshair, màu của một loại biểu đồ</td><td><code>applyOverrides</code> theo khoá — <a href={href('/docs/styling#overrides')}>Giao diện</a></td></tr>
-    <tr><td>Các đường của một chỉ báo, nền của một pane</td><td><code>updateIndicatorStyle(id, {'{ plots }'})</code>, <code>setPaneStyle</code></td></tr>
+    <tr><td>Màu</td><td><code>theme</code> (<code>'dark'</code>, <code>'light'</code> hoặc theme tự định nghĩa), <code>setTheme</code> — <a href={href('/docs/api')}>API</a></td></tr>
+    <tr><td>Góc bo, kích thước, font chữ và các thanh của widget</td><td><code>ui</code> / <code>setUI</code> — <a href={href('/docs/styling')}>Styling</a></td></tr>
+    <tr><td>Một phần hiển thị của biểu đồ: lưới, crosshair, màu của một loại biểu đồ</td><td><code>applyOverrides</code> theo key — <a href={href('/docs/styling#overrides')}>Styling</a></td></tr>
+    <tr><td>Các đường của chỉ báo, nền của pane</td><td><code>updateIndicatorStyle(id, {'{ plots }'})</code>, <code>setPaneStyle</code></td></tr>
     <tr><td>Phần nào của widget được hiện</td><td><code>features</code> / <code>setFeatures</code> — <a href="#switches">bên dưới</a></td></tr>
-    <tr><td>Người dùng được làm gì trên biểu đồ: vẽ, giao dịch, zoom</td><td>Features riêng của biểu đồ: <code>chartOptions: {'{ features: { drawings: false } }'}</code></td></tr>
-    <tr><td>Nút, menu và mục trạng thái của riêng bạn</td><td><code>addToolbarButton</code>, <code>addToolbarDropdown</code>, <code>addSidebarButton</code>, <code>addStatusBarItem</code>, <code>getSlot</code>, các hook menu — <a href="#parts">bên dưới</a>; một trang trong ngăn bên, <code>addDockPage</code> — <a href={href('/docs/api#dock')}>API</a></td></tr>
-    <tr><td>Phím tắt của riêng bạn</td><td><code>addHotkey</code> — <a href="#parts">bên dưới</a></td></tr>
-    <tr><td>CSS của riêng bạn</td><td>Các móc ổn định: <code>--tcw-*</code>, <code>data-tcw-part</code> — <a href="#css">bên dưới</a></td></tr>
-    <tr><td>Chữ của widget</td><td><code>locale</code>, <code>messages</code> — <a href="#words">bên dưới</a></td></tr>
-    <tr><td>Chỉ báo, công cụ vẽ hay loại biểu đồ của riêng bạn</td><td><a href={href('/docs/plugins')}>Plugin</a></td></tr>
-    <tr><td>Toàn bộ giao diện</td><td><code>Chart</code> headless, với giao diện của bạn bao quanh — <a href={href('/docs/api')}>API</a></td></tr>
+    <tr><td>Người dùng làm được gì trên biểu đồ: vẽ, giao dịch, zoom</td><td>Feature của chính biểu đồ: <code>chartOptions: {'{ features: { drawings: false } }'}</code></td></tr>
+    <tr><td>Nút, menu và mục trạng thái tự thêm</td><td><code>addToolbarButton</code>, <code>addToolbarDropdown</code>, <code>addSidebarButton</code>, <code>addStatusBarItem</code>, <code>getSlot</code>, các hook menu — <a href="#parts">bên dưới</a>; một trang trong dock, <code>addDockPage</code> — <a href={href('/docs/api#dock')}>API</a></td></tr>
+    <tr><td>Phím tắt tự thêm</td><td><code>addHotkey</code> — <a href="#parts">bên dưới</a></td></tr>
+    <tr><td>CSS riêng</td><td>Các hook ổn định: <code>--tcw-*</code>, <code>data-tcw-part</code> — <a href="#css">bên dưới</a></td></tr>
+    <tr><td>Chữ hiển thị của widget</td><td><code>locale</code>, <code>messages</code> — <a href="#words">bên dưới</a></td></tr>
+    <tr><td>Chỉ báo, hình vẽ hoặc loại biểu đồ tự viết</td><td><a href={href('/docs/plugins')}>Plugin</a></td></tr>
+    <tr><td>Toàn bộ giao diện</td><td><code>Chart</code> headless, với giao diện riêng bao quanh — <a href={href('/docs/api')}>API</a></td></tr>
   </tbody>
 </table>
 
 <h2 id="switches">Công tắc tính năng</h2>
 <p>
-  Mỗi phần của widget có một công tắc, và công tắc nào cũng bật cho tới khi bạn tắt. Tên không có dấu chấm là cả
-  một tính năng, tắt ở mọi nơi nó xuất hiện: <code>alerts</code> bỏ cái chuông, các mục cảnh báo trong menu và các
-  thông báo cảnh báo. Tên có dấu chấm là một chỗ: <code>toolbar.alerts</code> chỉ bỏ cái chuông, menu vẫn có cảnh
-  báo. Công tắc đổi được khi widget đang chạy.
+  Mỗi phần của widget có một công tắc, và mọi công tắc đều bật cho đến khi bạn tắt. Tên không có dấu chấm là
+  cả một tính năng, tắt ở mọi chỗ nó xuất hiện: <code>alerts</code> bỏ nút chuông, các mục cảnh báo trong menu
+  và các thông báo cảnh báo. Tên có dấu chấm là một vị trí: <code>toolbar.alerts</code> chỉ bỏ nút chuông, còn
+  menu vẫn có mục cảnh báo. Công tắc đổi được khi widget đang chạy.
 </p>
 <pre><code>{`const widget = new ChartWidget(host, {
   features: {
-    'toolbar.replay': false,          // một nút
-    'sidebar.patterns': false,        // một nhóm công cụ vẽ
-    'menu.chart.exportData': false,   // một mục menu
-    hotkeys: false,                   // mọi phím tắt của widget
+    'toolbar.replay': false,          // one button
+    'sidebar.patterns': false,        // a section of drawing tools
+    'menu.chart.exportData': false,   // one menu entry
+    hotkeys: false,                   // every key of the widget's
   },
 })
 
-widget.setFeatures({ sidebar: false, statusBar: false })   // một biểu đồ gọn, ngay khi đang chạy
+widget.setFeatures({ sidebar: false, statusBar: false })   // a clean chart, while it runs
 widget.isFeatureOn('sidebar')        // false
 widget.isFeatureOn('toolbar.alerts') // one switch as set: true after setFeatures({ alerts: false }) too, though the button goes
-widget.getFeatures()                 // mọi công tắc, bật hay tắt
-grid.setFeatures({ toasts: false })  // mọi biểu đồ của một ChartWidgetGrid`}</code></pre>
+widget.getFeatures()                 // every switch, on or off
+grid.setFeatures({ toasts: false })  // every chart of a ChartWidgetGrid`}</code></pre>
 <p>
-  Các tên là một cam kết: có thể thêm tên mới, không đổi tên cũ. Chúng nằm trong <code>WIDGET_FEATURES</code> và
-  được TypeScript kiểm tra; tên lạ bị bỏ qua kèm một cảnh báo.
+  Các tên là một cam kết: có thể thêm tên mới, không tên nào bị đổi. Chúng được liệt kê trong <code>WIDGET_FEATURES</code>, và
+  TypeScript kiểm tra chúng; tên không xác định bị bỏ qua kèm cảnh báo.
 </p>
 <p>
-  Công tắc chỉ ẩn, hiện các phần của chính widget. Muốn chặn một việc trên biểu đồ — vẽ, giao dịch, zoom, một khung
-  thời gian — hãy dùng features của biểu đồ (<code>chartOptions.features</code>). Những phần mang theo dữ liệu hay
-  bộ nhớ vẫn là option: <code>trading</code>, <code>watchlist</code>, <code>depthLadder</code> và
-  <code>layouts</code> quyết định chúng có mặt hay không, còn công tắc ẩn các nút của chúng. Bật một công tắc không thêm phần nào trong số đó: chỉ có <code>features: &#123; depthLadder: true &#125;</code> thì không có DOM ladder nào.
+  Công tắc hiện và ẩn các phần của widget. Để chặn một việc trên chính biểu đồ (vẽ, giao dịch,
+  zoom, một khung thời gian), dùng feature của biểu đồ (<code>chartOptions.features</code>). Các phần cần dữ liệu
+  hoặc bộ lưu trữ đi kèm vẫn là tuỳ chọn: <code>trading</code>, <code>watchlist</code>, <code>depthLadder</code> và
+  <code>layouts</code> quyết định chúng có tồn tại hay không, còn công tắc ẩn các nút của chúng. Bật công tắc không thêm phần nào trong số đó: chỉ <code>features: &#123; depthLadder: true &#125;</code> thì không tạo ra ladder.
 </p>
-<p>Các option bật/tắt cũ chính là những công tắc này, vẫn dùng như trước:</p>
+<p>Các tuỳ chọn bật/tắt cũ là chính các công tắc này, giữ nguyên như trước:</p>
 <table>
-  <thead><tr><th>Option</th><th>Công tắc</th></tr></thead>
+  <thead><tr><th>Tuỳ chọn</th><th>Công tắc</th></tr></thead>
   <tbody>
     <tr><td><code>toolbar: false</code></td><td><code>toolbar</code></td></tr>
     <tr><td><code>drawingTools: false</code></td><td><code>sidebar</code>, <code>drawingSettings</code>, <code>hotkeys.tools</code>, <code>menu.chart.horizontalLine</code></td></tr>
@@ -102,11 +102,11 @@ grid.setFeatures({ toasts: false })  // mọi biểu đồ của một ChartWidg
       <code>toolbar.themeToggle</code> <code>toolbar.fullscreen</code> <code>toolbar.compare</code>
       <code>toolbar.undo</code> <code>toolbar.redo</code> <code>toolbar.trade</code>
     </td></tr>
-    <tr><td>Ngăn bên</td><td>
+    <tr><td>Dock</td><td>
       <code>dock.watchlist</code> <code>dock.alerts</code> <code>dock.objectTree</code> <code>dock.dataWindow</code>
       <code>dock.symbolInfo</code> <code>dock.depthLadder</code>
     </td></tr>
-    <tr><td>Thanh công cụ vẽ</td><td>
+    <tr><td>Sidebar công cụ vẽ</td><td>
       <code>sidebar.cursor</code> <code>sidebar.favorites</code> <code>sidebar.lines</code> <code>sidebar.fibonacci</code>
       <code>sidebar.patterns</code> <code>sidebar.forecasting</code> <code>sidebar.annotation</code> <code>sidebar.style</code>
       <code>sidebar.magnet</code> <code>sidebar.eraser</code> <code>sidebar.zoomArea</code> <code>sidebar.stayInDrawing</code>
@@ -132,42 +132,42 @@ grid.setFeatures({ toasts: false })  // mọi biểu đồ của một ChartWidg
       <code>menu.drawing.order</code> <code>menu.drawing.group</code> <code>menu.drawing.lock</code>
       <code>menu.drawing.hide</code> <code>menu.drawing.duplicate</code> <code>menu.drawing.delete</code>
     </td></tr>
-    <tr><td>Phím tắt</td><td>
+    <tr><td>Phím</td><td>
       <code>hotkeys.commandPalette</code> <code>hotkeys.symbolSearch</code> <code>hotkeys.save</code>
       <code>hotkeys.tools</code> <code>hotkeys.invertScale</code> <code>hotkeys.goToDate</code> <code>hotkeys.help</code> <code>hotkeys.resetView</code>
     </td></tr>
   </tbody>
 </table>
 <p>
-  Vài công tắc làm nhiều hơn tên gọi: tắt <code>indicatorLegend</code> thì các pane lấy lại tiêu đề của mình, còn khi bật, dòng của mỗi indicator
-  chỉ hiện các nút khi rê chuột hoặc focus bằng bàn phím, và trên màn hình cảm ứng khi một lần chạm mở dòng đó
-  (chạm tiếp vào tên thì mở cài đặt), nên trên điện thoại các nút không che nến;
-  <code>menu.chart.*</code> áp cho cả nút "+" cạnh trục giá lẫn menu chuột phải; <code>compare</code> bỏ nút thêm
-  trong cây đối tượng, còn các so sánh đang có vẫn nằm trong danh sách; <code>toasts</code> tắt thông báo của chính
-  widget (thông báo lỗi vẫn hiện), còn thông báo của bạn qua <code>widget.toast()</code> vẫn hiện.
-  Tắt <code>selectionToolbar</code> sẽ ẩn thanh công cụ trên hình được chọn; menu chuột phải vẫn còn.
-  Tắt <code>statusBar.rangeTimeframe</code> sẽ giữ nguyên khung thời gian khi một khoảng trên thanh khoảng thời gian dài hơn số nến vừa màn hình; bật thì chuyển sang tuần hoặc tháng rồi quay về.
-  Các công cụ giao dịch gộp vào một menu Giao dịch trên thanh công cụ: <code>toolbar.bracketOrders</code>, <code>toolbar.depthLadder</code>,
+  Một số công tắc làm nhiều hơn tên gọi: tắt <code>indicatorLegend</code> thì các pane có lại tiêu đề,
+  còn khi bật, dòng của mỗi chỉ báo hiện các nút khi hover hoặc khi có focus bàn phím, và trên màn hình cảm ứng khi một lần chạm
+  mở dòng đó (chạm vào tên khi đó mở phần cài đặt), nên trên điện thoại các nút không che nến;
+  <code>menu.chart.*</code> áp dụng cho cả nút "+" cạnh trục giá lẫn menu chuột phải; <code>compare</code>
+  bỏ nút thêm trong object tree, còn các mã so sánh đang có vẫn được liệt kê; <code>toasts</code> tắt
+  thông báo của widget (lỗi vẫn hiện), còn thông báo của bạn qua <code>widget.toast()</code> vẫn hiện.
+  Tắt <code>selectionToolbar</code> thì ẩn toolbar của hình vẽ đang chọn; menu chuột phải vẫn còn.
+  Tắt <code>statusBar.rangeTimeframe</code> thì giữ nguyên khung thời gian khi một khoảng trên range bar dài hơn số nến có thể chứa; bật thì chuyển sang tuần hoặc tháng rồi chuyển lại.
+  Các công cụ giao dịch gom vào một menu Trade trên toolbar: <code>toolbar.bracketOrders</code>, <code>toolbar.depthLadder</code>,
   <code>toolbar.accountPanel</code> và các tính năng tương ứng bỏ mục của chúng khỏi menu, còn <code>toolbar.trade</code>
-  bỏ cả menu; menu cũng tự mất khi không còn mục nào. Hoàn tác và làm lại đã chuyển từ thanh công cụ vẽ lên thanh
-  công cụ; <code>sidebar.undo</code> và <code>sidebar.redo</code> vẫn tắt được chúng. <code>statusBar.symbol</code>
-  không còn gì để bật tắt: dòng tiêu đề của chú giải đã ghi tên mã.
+  bỏ cả menu; menu cũng mất khi không còn mục nào. Undo và redo đã chuyển từ công cụ vẽ sang
+  toolbar; <code>sidebar.undo</code> và <code>sidebar.redo</code> vẫn tắt được chúng. <code>statusBar.symbol</code>
+  không còn gì để tắt: dòng tiêu đề của legend đã ghi mã.
 </p>
 
 <p id="toast-icons">
-  Thông báo của bạn có thể kèm một icon trong bộ icon của widget, theo tên (<code>'bell'</code>, <code>'check'</code>, <code>'info'</code>…), như thông báo alert của widget kèm icon chuông. Widget không dùng emoji ở đâu cả: mọi icon, kể cả nhãn trên biểu đồ, đều từ cùng một bộ.
+  Thông báo của bạn có thể kèm một icon trong bộ icon của widget, theo tên (<code>'bell'</code>, <code>'check'</code>, <code>'info'</code>…), giống như thông báo cảnh báo của widget kèm icon chuông. Widget không vẽ emoji ở bất kỳ đâu: mọi icon, kể cả nhãn trên biểu đồ, đều lấy từ một bộ.
 </p>
 <pre><code>{`widget.toast('Order filled at 64,200', 'info', 'check')  // the icon set's check before the text
 widget.toast('Feed lost', 'error', 'info')`}</code></pre>
 
-<h2 id="parts">Phần của riêng bạn</h2>
+<h2 id="parts">Phần tự thêm</h2>
 <p>
-  Nút, menu và mục của bạn nằm trong các thanh của widget, trông như của widget và theo theme lẫn giao diện của
-  nó. Mỗi hàm trả về một handle để đổi hoặc gỡ, và phần đó hiện khi thanh của nó hiện.
-  Khi thanh công cụ hết chỗ, nút và menu của bạn gập vào menu “thêm” cùng với nút của widget, nút bên trái gập sau
-  cùng; hẹp hơn 641 px thì tất cả đều vào đó. Menu của bạn chọn từ “thêm” mở ngay dưới nút đó.
-  Bấm “thêm” lần nữa sẽ đóng menu đó. Khi được chọn từ “thêm”, <code>onClick</code> của bạn nhận nút đang gập, không có
-  kích thước (<code>getClientRects()</code> rỗng): khi đó hãy đặt popover theo nút “thêm” (<code>.tcw-toolbar-more</code>).
+  Nút, menu và mục của bạn nằm trong các thanh của widget, hiển thị giống các phần có sẵn và theo theme và look của widget. Mỗi
+  hàm trả về một handle để sửa hoặc xoá phần đó, và phần đó hiện khi thanh chứa nó hiện.
+  Khi toolbar hết chỗ, nút và menu của bạn được gom vào menu “more” cùng các nút có sẵn của widget, các phần
+  bên trái gom sau cùng; khi rộng dưới 641 px thì tất cả đều vào đó. Menu của bạn chọn từ “more” mở ngay bên dưới nó.
+  Bấm “more” lần nữa để đóng. <code>onClick</code> của bạn khi được chọn từ “more” nhận nút đã bị gom, không có kích thước
+  (<code>getClientRects()</code> rỗng): khi đó hãy đặt popover theo nút “more” (<code>.tcw-toolbar-more</code>).
 </p>
 <pre><code>{`widget.addToolbarButton({ id: 'news', label: 'News', icon: 'bell', toggle: true, onClick })
 
@@ -175,8 +175,8 @@ widget.addToolbarDropdown({
   id: 'scans',
   label: 'Scans',
   icon: 'layers',
-  side: 'left',                              // cạnh các nút điều khiển biểu đồ
-  items: () => [                             // được hỏi lại mỗi lần mở
+  side: 'left',                              // with the chart controls
+  items: () => [                             // asked for each time it opens
     { label: 'Breakouts', onSelect: () => runScan('breakouts') },
     { label: 'Live only', checked: liveOnly, onSelect: () => (liveOnly = !liveOnly) },
   ],
@@ -186,16 +186,16 @@ const ruler = widget.addSidebarButton({ id: 'ruler', label: 'Ruler', icon: 'rule
   onClick: () => ruler?.setActive(toggleRuler()) })
 
 const latency = widget.addStatusBarItem({ id: 'latency', text: '12 ms', label: 'Latency' })
-latency?.setText('15 ms')                    // theo chiều chữ của chính nó: giao diện từ phải sang trái vẫn đọc là "15 ms"
-widget.addHotkey({ keys: 'Alt+N', label: 'New note', onPress: () => addNote() })   // thay phím tắt của widget nếu trùng phím; có trong bảng phím tắt (?)
+latency?.setText('15 ms')                    // reads in its own direction: "15 ms", right to left too
+widget.addHotkey({ keys: 'Alt+N', label: 'New note', onPress: () => addNote() })   // replaces a widget shortcut on the same keys; listed in the shortcut sheet (?)
 
-// Bất cứ gì khác của bạn: cạnh các nút của toolbar, dưới các nút của sidebar,
-// ở hai đầu thanh trạng thái, hoặc trên biểu đồ
-widget.getSlot('chart')?.append(myOverlay)   // lớp này cho con trỏ đi qua; phần tử của bạn cần pointer-events: auto`}</code></pre>
+// Anything else of yours: beside the toolbar's controls, under the sidebar's,
+// on either end of the status bar, or over the chart
+widget.getSlot('chart')?.append(myOverlay)   // the layer lets the pointer through; give yours pointer-events: auto`}</code></pre>
 <p>Các slot: <code>toolbar.left</code>, <code>toolbar.right</code>, <code>sidebar</code>, <code>statusBar.left</code>, <code>statusBar.right</code>, <code>chart</code>.</p>
 
-<h3>Mục menu của bạn</h3>
-<p>Mục của bạn nằm cuối các menu của widget, được hỏi lại mỗi lần một menu mở, kèm chỗ nó mở.</p>
+<h3>Mục menu tự thêm</h3>
+<p>Các mục của bạn nằm cuối các menu của widget, được lấy mỗi lần menu mở, kèm vị trí menu được mở.</p>
 <pre><code>{`new ChartWidget(host, {
   chartMenuItems: ({ area, price }) => area === 'plot' && price !== undefined
     ? [{ label: 'Copy price', onSelect: () => copy(price) }]
@@ -204,25 +204,25 @@ widget.getSlot('chart')?.append(myOverlay)   // lớp này cho con trỏ đi qua
   indicatorMenuItems: ({ instanceId, indicatorId }) => [{ label: 'Explain', onSelect: () => explain(indicatorId) }],
 })`}</code></pre>
 
-<h2 id="css">CSS của riêng bạn</h2>
-<p>Widget là một phần của trang, không nằm trong iframe, nên CSS của bạn chạm được tới nó. Những móc sau giữ nguyên suốt 1.x:</p>
+<h2 id="css">CSS riêng</h2>
+<p>Widget là một phần của trang, không phải frame, nên CSS của trang áp dụng được cho nó. Các hook sau giữ nguyên trong suốt 1.x:</p>
 <ul>
-  <li>Biến <code>--tcw-*</code> trên <code>.tcw-root</code>: các token giao diện (xem <a href={href('/docs/styling')}>Giao diện</a>).</li>
-  <li><code>[data-tcw-part~="toolbar.screenshot"]</code>: mỗi phần mang tên các công tắc của nó, nên một rule tìm được nó bằng chính tên đó.</li>
-  <li><code>.tcw-root[data-tcw-off~="sidebar"]</code>: các công tắc đang tắt, trên phần tử gốc của widget.</li>
-  <li><code>[data-host-button="id"]</code>, <code>[data-host-item="id"]</code>: nút và mục trạng thái của riêng bạn, theo id bạn đặt.</li>
+  <li>Biến <code>--tcw-*</code> trên <code>.tcw-root</code>: các token của look (xem <a href={href('/docs/styling')}>Styling</a>).</li>
+  <li><code>[data-tcw-part~="toolbar.screenshot"]</code>: mỗi phần mang tên các công tắc của nó, nên một rule tìm được phần đó bằng cùng tên.</li>
+  <li><code>.tcw-root[data-tcw-off~="sidebar"]</code>: các công tắc đang tắt, đặt trên phần tử gốc của widget.</li>
+  <li><code>[data-host-button="id"]</code>, <code>[data-host-item="id"]</code>: nút và mục trạng thái của bạn, theo id bạn đặt.</li>
 </ul>
-<p>Các tên class khác là của riêng widget và có thể đổi: hãy style qua các móc trên.</p>
-<pre><code>{`/* nút toolbar của bạn theo màu nhấn */
+<p>Các tên class khác thuộc nội bộ widget và có thể thay đổi: hãy style qua các hook.</p>
+<pre><code>{`/* your toolbar button in the accent colour */
 .tcw-root [data-host-button="news"] { color: var(--tcw-accent); }
-/* một panel của bạn rộng hơn khi công cụ vẽ bị tắt */
+/* a wider panel of yours while the drawing tools are switched off */
 .my-layout:has(.tcw-root[data-tcw-off~="sidebar"]) .my-panel { width: 320px; }`}</code></pre>
 
-<h2 id="words">Chữ</h2>
+<h2 id="words">Chữ hiển thị</h2>
 <p>
-  Widget nói 30 ngôn ngữ (<code>locale</code>; tiếng Anh và tiếng Việt có sẵn, các ngôn ngữ khác nạp từ
-  <code>@tradecanvas/chart/widget/locales</code>). <code>messages</code> đổi bất kỳ chuỗi nào, đè lên chuỗi của
-  ngôn ngữ. Tên chỉ báo giữ nguyên.
+  Widget có 30 ngôn ngữ (<code>locale</code>; tiếng Anh và tiếng Việt có sẵn, các ngôn ngữ khác tải từ
+  <code>@tradecanvas/chart/widget/locales</code>). <code>messages</code> thay bất kỳ chuỗi nào của widget, đè lên bản dịch
+  của ngôn ngữ đang dùng. Tên chỉ báo giữ nguyên.
 </p>
 <pre><code>{`import { de } from '@tradecanvas/chart/widget/locales'
 
@@ -233,7 +233,7 @@ new ChartWidget(host, {
 
 <h2>Sâu hơn</h2>
 <p>
-  Chỉ báo, công cụ vẽ và loại biểu đồ của riêng bạn đăng ký dưới dạng <a href={href('/docs/plugins')}>plugin</a>,
-  rồi chạy như những cái có sẵn, kể cả trong menu. Muốn một giao diện hoàn toàn của bạn, hãy dùng <code>Chart</code>
-  headless: cùng một engine, không có widget.
+  Chỉ báo, công cụ vẽ và loại biểu đồ tự viết được đăng ký dưới dạng <a href={href('/docs/plugins')}>plugin</a> và
+  sau đó hoạt động như các loại có sẵn, kể cả trong menu. Với giao diện hoàn toàn của riêng bạn, dùng
+  <code>Chart</code> headless: cùng engine, không có widget.
 </p>
