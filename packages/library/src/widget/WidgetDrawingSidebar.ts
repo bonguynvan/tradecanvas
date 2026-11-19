@@ -44,6 +44,7 @@ function toolLabel(groups: SidebarConfig['drawingToolGroups'], tool: string): st
 }
 /** The custom property that tells the drawing button's stylesheet where the plot starts. */
 const FAB_PLOT_LEFT = '--tcw-fab-plot-left';
+const FAB_PLOT_BOTTOM = '--tcw-fab-plot-bottom';
 
 
 export class WidgetDrawingSidebar {
@@ -133,8 +134,21 @@ export class WidgetDrawingSidebar {
    * a right-to-left widget off the price axis on the chart's right.
    */
   setPlotLeft(px: number): void {
+    this.setFabPx(FAB_PLOT_LEFT, px);
+  }
+
+  /**
+   * How far above the widget body's bottom edge the price pane's plot ends
+   * (px): the phone's drawing button sits on the price pane, clear of the
+   * indicator panes and their legends under it, and of the time axis.
+   */
+  setPlotBottom(px: number): void {
+    this.setFabPx(FAB_PLOT_BOTTOM, px);
+  }
+
+  private setFabPx(name: string, px: number): void {
     const value = `${Math.max(0, Math.round(px))}px`;
-    if (this.fab.style.getPropertyValue(FAB_PLOT_LEFT) !== value) this.fab.style.setProperty(FAB_PLOT_LEFT, value);
+    if (this.fab.style.getPropertyValue(name) !== value) this.fab.style.setProperty(name, value);
   }
 
   /** Laid out as on a phone: the sidebar hides behind the drawing button. */

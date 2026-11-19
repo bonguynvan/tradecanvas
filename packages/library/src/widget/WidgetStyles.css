@@ -5273,8 +5273,9 @@
      price axis stays on the chart's right in either direction, so a
      right-to-left widget keeps the button on the left too, off the axis. */
   left: calc(var(--tcw-fab-plot-left, 0px) + 10px);
-  /* Clear of the time axis. */
-  bottom: 44px;
+  /* In from the bottom of the price pane (the widget sets where it ends): clear of the time axis, and
+     of the indicator panes under it, whose first bars and legend it covered. */
+  bottom: calc(var(--tcw-fab-plot-bottom, 34px) + 10px);
   z-index: 17;
   width: 44px;
   height: 44px;
