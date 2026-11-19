@@ -1,5 +1,54 @@
 # @tradecanvas/chart
 
+## 2.15.0
+
+### Minor Changes
+
+- 1d30fff: A confirmed bracket can go to the execution adapter. `chart.connectExecution(adapter, { brackets: 'place' })` sends it as one order with `placeOrder`:
+
+  - the entry, a limit or a stop against the price;
+  - its quantity;
+  - its stop-loss and take-profit.
+
+  The chart then sends `bracketOrder` (`{ order, bracket }`) once the adapter took it, or `executionError` with the new `command: 'bracketPlace'` field. Some brackets are not sent: one with no quantity, since no one saw a size to place, and one confirmed before the chart has a price to tell a limit entry from a stop. `executionError` gives the new `reason` (`'noQuantity'`, `'noPrice'`). The brackets that the toolbar and `startBracket` start have no quantity yet, so they are not sent. `chart.placesBrackets()` says whether it does. Without `brackets`, a bracket stays the `bracketPlace` event as before, and the chart warns once in the console when one is confirmed with an adapter connected. `'place'` becomes the default in the next major version, so an app that places the event's bracket itself passes `brackets: 'event'`.
+
+  The widget no longer says a bracket was "placed" when it only went out as the event. It says it was confirmed, says "placed" once the adapter took it, and says why one was not placed.
+
+- 6626fe0: A page of your own in the widget's dock: `widget.addDockPage({ id, label, icon, element, onShow, onHide })` puts its button on the rail after the built-in panels, and your element under the dock's header (its label and a close button). `openPanel(id)` opens it, `getOpenPanel()` reports it, and the handle's `remove()` takes it away, shutting it first if it is open. `icon` is a built-in icon's name or an element of yours. An id a built-in panel or another page has gives `null`. The new `onPanelChange` option is told the open panel's id, or `null`, however it changed, so an app no longer polls `getOpenPanel()`. `openPanel` and `getOpenPanel` now take and give `DockPanelId` (a built-in panel or a page's id) in place of `WidgetPanel`: code that keeps `getOpenPanel()` in a `WidgetPanel` variable, or switches over every `WidgetPanel`, widens its type to `DockPanelId`.
+- df27329: `EquityCurveChart` draws levels and bands. `levels` are lines across the plot at fixed values, each with its value in a tag at the axis and an optional `label`, `color` and `dash`. `bands` are tinted stretches of values under the curve, with an optional `label` and `color`. The value scale widens to show them unless `fitLevels: false`, and `setOptions` changes them without making the chart again.
+- 178722d: A favorites toolbar: the star button on the drawing sidebar shows the pinned drawing tools as a bar floating over the chart. Drag its grip to put it anywhere on the chart, press a tool to pick it, right-click one to unpin it. Whether it shows, and where it was left, are kept in this browser, one setting for the widgets of a page; a chart made too small for it holds it inside, and it goes back to its place when there is room again. It first appears centred at the chart's top, and the sidebar's strip of pinned tools steps aside while it shows. The new `favoritesBar` switch (`features: { favoritesBar: false }`) leaves out the bar and its button.
+- c105460: A position with no stop-loss or no take-profit can be given one on the chart. Its entry's tag has an **SL** or a **TP** button: press it and drag the new line where you want it, or just click to set it where it starts. A stop starts 1% of the entry away and a target at twice the stop's distance, both at least 1% beyond the price now. Letting go sends `positionModify`, as dragging a stop does, so a connected execution adapter applies it. Before, a position opened without them, or whose stop was removed with its ×, could get one back only from code. `lineButtons: { addStops: false }` leaves the buttons out.
+- 0f66f7f: `positionLevels(drawing)` reads a Long/Short Position drawing as a trade: its side (`'buy'` for a long), entry, stop-loss, take-profit, and the quantity its risk buys, unrounded, with the decimals the drawing writes it in, the money at risk and to gain, and the R:R. It gives `null` for any other drawing, for a position whose stop is still on its entry, for one with no risk set, and for prices that are not finite, so a result is always an order that can be placed. An app that places an order from the drawing gets the numbers its tags show, without working them out from the anchors and options again. The `PositionLevels` type is exported with it.
+- c977b58: The Long/Short Position drawing has a fourth handle, its right edge on the entry line, which sets how long the trade runs; the stop, the target and the entry sit on the entry's edge, and the stop's handle changes only its price. Over the bars in its span it plays the trade out: entered on the first bar at or after the entry, closed where the price first reaches the stop or the target (the stop when one bar reaches both; a bar's open when it gaps past a level), at its right edge, or still open at the last bar. The part it went through is tinted in the colour of what it made, with a dashed line from the entry to the close and a tag there: `Target hit`, `Stop hit`, `Closed` or `Open`, with the profit or loss. It is on for positions already drawn too; the `showOutcome` option turns it off. It is played on the series' own prices, and left out for a box drawn back from its entry and on chart types whose bars are not the series' (Renko and the like). Saved drawings keep their place: the second anchor still holds the stop's price and the right edge's time.
+- fcbedc2: A Long/Short Position drawing can be placed as an order: selected in the widget with trading on, its toolbar shows **Create order**, which opens the order ticket filled from the drawing: its side, entry as the price, stop-loss, take-profit and the quantity its risk buys, taken down to the decimals the drawing writes. The order type follows the entry against the market (a buy limit below it, a stop above, the market at it), and nothing is sent until Place.
+- c9379d6: The drawing sidebar's magnet, lock and hide buttons each have a menu, opened from their corner, a right click or an arrow key:
+
+  - **Hide:** the drawings, the indicators, the positions and orders, or all. What is hidden is ticked.
+  - **Lock:** the drawings, the positions and orders, or all.
+  - **Magnet:** weak or strong. The magnet button now turns the magnet on at the strength last chosen, and off; before, it cycled through off, weak and strong.
+
+  What a menu picks is what its button does from then on, and the button is named after it. Hiding the indicators hides the ones that showed, and showing them brings back those only.
+
+  New on `Chart`:
+
+  - `setTradingVisible(visible)` / `isTradingVisible()`: hides the positions, orders and fills. None is drawn or can be pressed, and they still follow the execution adapter.
+  - `setTradingLocked(locked)` / `isTradingLocked()`: no line or tag of theirs can be dragged. Their buttons still act.
+  - `setIndicatorsVisible(ids, visible)`: one undo step for several indicators.
+
+### Patch Changes
+
+- 5732771: The time axis says which year is on view when no new year is labelled there: panned back into history, it read "Mar … Apr" with no year until a January came on view. A tag at the left end, in the style of the timezone tag at the right, writes what the labels leave out, as of the first bar on view: the year among months, the month and year among days, the whole date among the times of one day. Over a label at the left end it stands in for it and says what it said ("Mar 2023" over "Mar"). It is left out where a year is labelled, and when the labels come from your own `timeFormatter`.
+- f9a700a: The watchlist row of the chart's own symbol, with no quote for it, shows the day's move: against the close before the last day in the bars, in the exchange's zone, as the symbol info panel reads it. It was read against the first bar loaded, so a daily chart showed the move over its whole history. With no day before the last in the bars, the row shows no move. A `refPrice` given with `setWatchlistEntry` still wins.
+- Updated dependencies [1d30fff]
+- Updated dependencies [df27329]
+- Updated dependencies [c105460]
+- Updated dependencies [0f66f7f]
+- Updated dependencies [c977b58]
+- Updated dependencies [c9379d6]
+- Updated dependencies [5732771]
+  - @tradecanvas/commons@2.15.0
+  - @tradecanvas/core@2.15.0
+
 ## 2.14.0
 
 ### Minor Changes

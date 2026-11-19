@@ -1,5 +1,22 @@
 # @tradecanvas/commons
 
+## 2.15.0
+
+### Minor Changes
+
+- 1d30fff: A confirmed bracket can go to the execution adapter. `chart.connectExecution(adapter, { brackets: 'place' })` sends it as one order with `placeOrder`:
+
+  - the entry, a limit or a stop against the price;
+  - its quantity;
+  - its stop-loss and take-profit.
+
+  The chart then sends `bracketOrder` (`{ order, bracket }`) once the adapter took it, or `executionError` with the new `command: 'bracketPlace'` field. Some brackets are not sent: one with no quantity, since no one saw a size to place, and one confirmed before the chart has a price to tell a limit entry from a stop. `executionError` gives the new `reason` (`'noQuantity'`, `'noPrice'`). The brackets that the toolbar and `startBracket` start have no quantity yet, so they are not sent. `chart.placesBrackets()` says whether it does. Without `brackets`, a bracket stays the `bracketPlace` event as before, and the chart warns once in the console when one is confirmed with an adapter connected. `'place'` becomes the default in the next major version, so an app that places the event's bracket itself passes `brackets: 'event'`.
+
+  The widget no longer says a bracket was "placed" when it only went out as the event. It says it was confirmed, says "placed" once the adapter took it, and says why one was not placed.
+
+- df27329: `EquityCurveChart` draws levels and bands. `levels` are lines across the plot at fixed values, each with its value in a tag at the axis and an optional `label`, `color` and `dash`. `bands` are tinted stretches of values under the curve, with an optional `label` and `color`. The value scale widens to show them unless `fitLevels: false`, and `setOptions` changes them without making the chart again.
+- c105460: A position with no stop-loss or no take-profit can be given one on the chart. Its entry's tag has an **SL** or a **TP** button: press it and drag the new line where you want it, or just click to set it where it starts. A stop starts 1% of the entry away and a target at twice the stop's distance, both at least 1% beyond the price now. Letting go sends `positionModify`, as dragging a stop does, so a connected execution adapter applies it. Before, a position opened without them, or whose stop was removed with its ×, could get one back only from code. `lineButtons: { addStops: false }` leaves the buttons out.
+
 ## 2.14.0
 
 ### Minor Changes
