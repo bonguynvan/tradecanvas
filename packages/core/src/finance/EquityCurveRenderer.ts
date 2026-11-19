@@ -29,6 +29,7 @@ import {
   type TooltipLine,
 } from './chartKit.js';
 import { readableText } from './colorScale.js';
+import { spreadLabels } from '../ui/axisValueLabels.js';
 
 export interface EquityLayout {
   plot: Rect;
@@ -63,6 +64,8 @@ const LEVEL_DASH = [6, 4];
 /** Room around a level's value in its tag at the axis, px. */
 const TAG_PAD_X = 4;
 const TAG_PAD_Y = 2;
+/** Room kept between two levels' tags moved apart, px. */
+const TAG_GAP = 1;
 /** Room between a level or band and its name, px. */
 const NAME_GAP = 3;
 /** The rim of background around a name, so it reads where the curve crosses it, px. */
@@ -262,19 +265,94 @@ function drawBands(ctx: CanvasRenderingContext2D, bands: readonly EquityBand[], 
   }
 }
 
-/** The bands' names, each in its top left corner when the band, as it shows in the plot, is tall enough. */
-function drawBandNames(ctx: CanvasRenderingContext2D, bands: readonly EquityBand[], plot: Rect, toY: (v: number) => number, theme: Theme, measure: Measure): void {
-  ctx.save();
-  ctx.font = fontOf(theme, LABEL_SIZE);
-  ctx.fillStyle = theme.axisLabel;
-  ctx.textAlign = 'left';
-  ctx.textBaseline = 'top';
+/** Where a name is written in the plot, px. */
+interface NameBox {
+  left: number;
+  top: number;
+  right: number;
+  bottom: number;
+}
+
+/** A name placed in the plot: its text, where it stands (its top, and its left or right by `align`) and its colour. */
+interface PlacedName {
+  text: string;
+  x: number;
+  top: number;
+  align: CanvasTextAlign;
+  color: string;
+}
+
+/** The first of `taken` that `box` overlaps, if any. */
+function overlapping(box: NameBox, taken: readonly NameBox[]): NameBox | undefined {
+  return taken.find((t) => box.left < t.right && t.left < box.right && box.top < t.bottom && t.top < box.bottom);
+}
+
+/**
+ * Where the levels' names go: at their line's end (or start, by `labelAt`),
+ * over the line, or under it when there is no room over it or another name is
+ * there. Each one placed is added to `taken`.
+ */
+function placeLevelNames(tags: readonly LevelTag[], plot: Rect, toY: (v: number) => number, theme: Theme, measure: Measure, taken: NameBox[]): PlacedName[] {
+  const placed: PlacedName[] = [];
+  const bottom = plot.y + plot.height;
+  for (const { level } of tags) {
+    if (!level.label) continue;
+    const text = fitText(level.label, plot.width - LABEL_GAP * 2, measure);
+    const width = measure(text, LABEL_SIZE);
+    const atStart = level.labelAt === 'start';
+    const x = atStart ? plot.x + LABEL_GAP : plot.x + plot.width - LABEL_GAP;
+    const left = atStart ? x : x - width;
+    const y = Math.round(toY(level.value));
+    const boxAt = (top: number): NameBox => ({ left, top, right: left + width, bottom: top + LABEL_SIZE });
+    const tops = [y - NAME_GAP - LABEL_SIZE, y + NAME_GAP].filter((top) => top >= plot.y && top + LABEL_SIZE <= bottom);
+    // A plot too low for a name on either side: none, rather than one over the time axis.
+    if (tops.length === 0) continue;
+    // Neither side clear of the others: over the line all the same, where there is room.
+    const top = tops.find((t) => !overlapping(boxAt(t), taken)) ?? tops[0];
+    taken.push(boxAt(top));
+    placed.push({ text, x, top, align: atStart ? 'left' : 'right', color: level.color ?? theme.textSecondary });
+  }
+  return placed;
+}
+
+/**
+ * Where the bands' names go: in each band's top left corner, or lower in the
+ * band where a name already placed is in the way; left out when the band, as
+ * it shows in the plot, has no room for it.
+ */
+function placeBandNames(bands: readonly EquityBand[], plot: Rect, toY: (v: number) => number, theme: Theme, measure: Measure, taken: NameBox[]): PlacedName[] {
+  const placed: PlacedName[] = [];
+  const left = plot.x + LABEL_GAP;
   for (const band of bands) {
     if (!band.label) continue;
-    const top = Math.max(plot.y, toY(Math.max(band.from, band.to)));
-    const bottom = Math.min(plot.y + plot.height, toY(Math.min(band.from, band.to)));
-    if (bottom - top < LABEL_SIZE + NAME_GAP * 2) continue;
-    fillName(ctx, fitText(band.label, plot.width - LABEL_GAP * 2, measure), plot.x + LABEL_GAP, Math.round(top + NAME_GAP), theme);
+    const bandTop = Math.max(plot.y, toY(Math.max(band.from, band.to)));
+    const bandBottom = Math.min(plot.y + plot.height, toY(Math.min(band.from, band.to)));
+    const text = fitText(band.label, plot.width - LABEL_GAP * 2, measure);
+    const width = measure(text, LABEL_SIZE);
+    let top = Math.round(bandTop + NAME_GAP);
+    while (top + LABEL_SIZE + NAME_GAP <= bandBottom) {
+      const box: NameBox = { left, top, right: left + width, bottom: top + LABEL_SIZE };
+      const hit = overlapping(box, taken);
+      if (!hit) {
+        taken.push(box);
+        placed.push({ text, x: left, top, align: 'left', color: theme.axisLabel });
+        break;
+      }
+      top = Math.ceil(hit.bottom + NAME_GAP);
+    }
+  }
+  return placed;
+}
+
+/** The names placed in the plot, each on a rim of the background. */
+function drawNames(ctx: CanvasRenderingContext2D, names: readonly PlacedName[], theme: Theme): void {
+  ctx.save();
+  ctx.font = fontOf(theme, LABEL_SIZE);
+  ctx.textBaseline = 'top';
+  for (const name of names) {
+    ctx.fillStyle = name.color;
+    ctx.textAlign = name.align;
+    fillName(ctx, name.text, name.x, name.top, theme);
   }
   ctx.restore();
 }
@@ -296,39 +374,42 @@ function drawLevelLines(ctx: CanvasRenderingContext2D, levels: readonly EquityLe
 }
 
 /**
- * Each level's name in the plot at its line's right end, over the line (under
- * it at the plot's top), and its value in a tag of its colour at the axis,
- * over the axis's own labels.
+ * Where each level's tag is drawn, by index in `tags`: at its line, unless
+ * another's is too close, when they move apart as little as they can within
+ * the plot's height. When they cannot all fit, the lowest are left out (`null`).
  */
-function drawLevelMarks(
-  ctx: CanvasRenderingContext2D,
-  tags: readonly LevelTag[],
-  plot: Rect,
-  toY: (v: number) => number,
-  theme: Theme,
-  measure: Measure,
-): void {
+function tagPlaces(tags: readonly LevelTag[], plot: Rect, toY: (v: number) => number, tagHeight: number): (number | null)[] {
+  const order = tags.map((tag, i) => ({ i, y: Math.round(toY(tag.level.value)) })).sort((a, b) => a.y - b.y);
+  const half = tagHeight / 2;
+  const bottom = plot.y + plot.height;
+  // A tag's centre may be on the plot's edge, as a level's line is: `spreadLabels` keeps a centre half its spacing inside the bounds.
+  const pad = half + TAG_GAP / 2;
+  const spread = spreadLabels(order.map((o) => o.y), plot.y - pad, bottom + pad, tagHeight + TAG_GAP);
+  const places: (number | null)[] = tags.map(() => null);
+  order.forEach((o, k) => {
+    places[o.i] = spread[k] <= bottom ? spread[k] : null;
+  });
+  return places;
+}
+
+/** Each level's value in a tag of its colour at the axis, over the axis's own labels. */
+function drawLevelTags(ctx: CanvasRenderingContext2D, tags: readonly LevelTag[], plot: Rect, toY: (v: number) => number, theme: Theme): void {
   ctx.save();
   ctx.font = fontOf(theme, LABEL_SIZE);
   const tagHeight = LABEL_SIZE + TAG_PAD_Y * 2;
-  for (const { level, text: value } of tags) {
-    const y = Math.round(toY(level.value));
+  const places = tagPlaces(tags, plot, toY, tagHeight);
+  tags.forEach(({ level, text: value }, i) => {
     const color = level.color ?? theme.textSecondary;
-    if (level.label) {
-      const above = y - plot.y >= LABEL_SIZE + NAME_GAP;
-      ctx.fillStyle = color;
-      ctx.textAlign = 'right';
-      ctx.textBaseline = above ? 'bottom' : 'top';
-      fillName(ctx, fitText(level.label, plot.width - LABEL_GAP * 2, measure), plot.x + plot.width - LABEL_GAP, above ? y - NAME_GAP : y + NAME_GAP, theme);
-    }
+    const at = places[i];
+    if (at === null) return;
     const tagWidth = ctx.measureText(value).width + LABEL_GAP + TAG_PAD_X;
     ctx.fillStyle = color;
-    ctx.fillRect(plot.x - tagWidth, y - tagHeight / 2, tagWidth, tagHeight);
+    ctx.fillRect(plot.x - tagWidth, at - tagHeight / 2, tagWidth, tagHeight);
     ctx.fillStyle = readableText(resolvedColor(ctx, color));
     ctx.textAlign = 'right';
     ctx.textBaseline = 'middle';
-    ctx.fillText(value, plot.x - LABEL_GAP, y);
-  }
+    ctx.fillText(value, plot.x - LABEL_GAP, at);
+  });
   ctx.restore();
 }
 
@@ -427,8 +508,11 @@ export function renderEquityCurve(
   ctx.stroke();
   ctx.restore();
 
-  drawBandNames(ctx, bands, plot, toY, theme, measureText);
-  drawLevelMarks(ctx, layout.tags, plot, toY, theme, measureText);
+  // The levels' names first, at their lines; the bands' keep clear of them.
+  const taken: NameBox[] = [];
+  const levelNames = placeLevelNames(layout.tags, plot, toY, theme, measureText, taken);
+  drawNames(ctx, [...placeBandNames(bands, plot, toY, theme, measureText, taken), ...levelNames], theme);
+  drawLevelTags(ctx, layout.tags, plot, toY, theme);
 
   if (!crosshairPos || crosshairPos.x < plot.x || crosshairPos.x > plot.x + plot.width) return;
   // No point is nearest when the times are no numbers: nothing to read out.

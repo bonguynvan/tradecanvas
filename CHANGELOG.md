@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Finance charts
+
+- **An equity curve's level tags and names kept clear** (`@tradecanvas/chart`): the tags of levels too close for both at the axis move apart instead of one covering the other (the lowest levels' are left out when there is no room for them all), a level's `labelAt: 'start'` writes its name at the line's left end, away from the curve's latest point, and names in the plot keep clear of each other.
+
 ### Widget
 
 - **The widget's Vietnamese strings, reworded** (`@tradecanvas/chart`): the `vi` table is translated again from the English as plain technical Vietnamese, keeping the trading and chart terms Vietnamese traders use in English (position, order, bracket, crosshair, pane and the like). Every key and placeholder is the same; a label your page overrides with `messages` is not changed.
