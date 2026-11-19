@@ -2,6 +2,8 @@
   <a href="https://tradecanvas.dev/ko/"><img src=".github/assets/banner.png" alt="TradeCanvas, 트레이딩 앱을 위한 차트 엔진" width="100%"></a>
 </p>
 
+<h3 align="center">당신이 소유하는 트레이딩 차트.</h3>
+
 <p align="center">
   <a href="https://www.npmjs.com/package/@tradecanvas/chart"><img src="https://img.shields.io/npm/v/@tradecanvas/chart?style=flat-square&labelColor=0b0e13&color=f2a93b&label=npm" alt="npm version"></a>
   <a href="https://www.npmjs.com/package/@tradecanvas/chart"><img src="https://img.shields.io/npm/dm/@tradecanvas/chart?style=flat-square&labelColor=0b0e13&color=3ccf91" alt="npm downloads"></a>

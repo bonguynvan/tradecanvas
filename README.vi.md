@@ -2,6 +2,8 @@
   <a href="https://tradecanvas.dev/vi/"><img src=".github/assets/banner.png" alt="TradeCanvas, chart engine cho ứng dụng giao dịch" width="100%"></a>
 </p>
 
+<h3 align="center">Biểu đồ giao dịch thuộc về bạn.</h3>
+
 <p align="center">
   <a href="https://www.npmjs.com/package/@tradecanvas/chart"><img src="https://img.shields.io/npm/v/@tradecanvas/chart?style=flat-square&labelColor=0b0e13&color=f2a93b&label=npm" alt="Phiên bản npm"></a>
   <a href="https://www.npmjs.com/package/@tradecanvas/chart"><img src="https://img.shields.io/npm/dm/@tradecanvas/chart?style=flat-square&labelColor=0b0e13&color=3ccf91" alt="Lượt tải npm"></a>

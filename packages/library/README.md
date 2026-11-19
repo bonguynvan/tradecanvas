@@ -2,6 +2,8 @@
   <a href="https://tradecanvas.dev/"><img src="https://raw.githubusercontent.com/bonguynvan/tradecanvas/main/.github/assets/banner.png" alt="TradeCanvas, the chart engine for trading apps" width="100%"></a>
 </p>
 
+<h3 align="center">Trading charts you own.</h3>
+
 <p align="center">
   <a href="https://www.npmjs.com/package/@tradecanvas/chart"><img src="https://img.shields.io/npm/v/@tradecanvas/chart?style=flat-square&labelColor=0b0e13&color=f2a93b&label=npm" alt="npm version"></a>
   <a href="https://www.npmjs.com/package/@tradecanvas/chart"><img src="https://img.shields.io/npm/dm/@tradecanvas/chart?style=flat-square&labelColor=0b0e13&color=3ccf91" alt="npm downloads"></a>
