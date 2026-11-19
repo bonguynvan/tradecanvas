@@ -1,5 +1,5 @@
 import type { OHLCBar, Theme, Point, TimeFormatter, TimeZoneSetting } from '@tradecanvas/commons';
-import { autoPricePrecision, barDateZone, formatPrice, formatVolumeLoc, usesKoreanUnits, normalizeBarTime, timeParts, isDateOnly, zonedDateFormatter, type BarTimeUnit } from '@tradecanvas/commons';
+import { autoPricePrecision, priceReadoutColors, barDateZone, formatPrice, formatVolumeLoc, usesKoreanUnits, normalizeBarTime, timeParts, isDateOnly, zonedDateFormatter, type BarTimeUnit } from '@tradecanvas/commons';
 import { isolateFontFeatures } from '../engine/CanvasLayer.js';
 
 /** Gap between the pointer and the card. */
@@ -217,7 +217,8 @@ export class CrosshairTooltip {
     const change = bar.close - base;
     const pct = base !== 0 ? (change / base) * 100 : 0;
     const up = change >= 0;
-    const tone = up ? theme.candleUp : theme.candleDown;
+    const readout = priceReadoutColors(theme);
+    const tone = up ? readout.up : readout.down;
     const sign = up ? '+' : '−';
 
     this.timeEl.textContent = this.timeFormatter
@@ -226,13 +227,13 @@ export class CrosshairTooltip {
     this.changeEl.textContent = `${sign}${formatPrice(Math.abs(pct), 2, this.locale)}%`;
     this.changeEl.style.color = tone;
     this.changeEl.style.background = withAlpha(tone, 0.14);
-    this.dirEl.style.background = bar.close >= bar.open ? theme.candleUp : theme.candleDown;
+    this.dirEl.style.background = bar.close >= bar.open ? readout.up : readout.down;
 
     this.valueEls.open.textContent = fmt(bar.open);
     this.valueEls.high.textContent = fmt(bar.high);
     this.valueEls.low.textContent = fmt(bar.low);
     this.valueEls.close.textContent = fmt(bar.close);
-    this.valueEls.close.style.color = bar.close >= bar.open ? theme.candleUp : theme.candleDown;
+    this.valueEls.close.style.color = bar.close >= bar.open ? readout.up : readout.down;
     this.valueEls.volume.textContent = formatVolume(bar.volume, this.locale);
 
     if (!this.visible) {

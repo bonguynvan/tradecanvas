@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { DARK_THEME, LIGHT_THEME } from '@tradecanvas/commons';
+import { DARK_THEME, LIGHT_THEME, resolveChartTheme } from '@tradecanvas/commons';
 import type { OHLCBar } from '@tradecanvas/commons';
 import { CrosshairTooltip, formatTooltipTime } from '../CrosshairTooltip.js';
 
@@ -186,5 +186,21 @@ describe('CrosshairTooltip — volume in Korean units', () => {
     expect(text()).toContain('9,999');
     tip.show({ x: 100, y: 100 }, bar({ volume: NaN }), DARK_THEME, box);
     expect(text()).toContain('—');
+  });
+});
+
+describe('CrosshairTooltip — up and down colours', () => {
+  it('colours the close and the change by the legend’s keys when the candles are hidden', () => {
+    const hidden = 'rgba(0, 0, 0, 0)';
+    const theme = resolveChartTheme(DARK_THEME, 'candlestick', {
+      'series.candlestick.upColor': hidden,
+      'series.candlestick.downColor': hidden,
+      'legend.upColor': '#00ff00',
+      'legend.downColor': '#ff0000',
+    });
+    tip.show({ x: 100, y: 100 }, bar(), theme, box, { prevClose: 100 });
+    const colours = [...card().querySelectorAll<HTMLElement>('*')].map((el) => el.style.color).filter(Boolean);
+    expect(colours.filter((c) => c === 'rgb(0, 255, 0)').length).toBeGreaterThanOrEqual(2);
+    expect(colours).not.toContain(hidden);
   });
 });

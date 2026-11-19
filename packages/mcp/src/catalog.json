@@ -6297,6 +6297,8 @@
     "axis.time.textColor": "color",
     "legend.textColor": "color",
     "legend.labelColor": "color",
+    "legend.upColor": "color",
+    "legend.downColor": "color",
     "watermark.color": "color",
     "lastPrice.visible": "boolean",
     "lastPrice.upColor": "color",

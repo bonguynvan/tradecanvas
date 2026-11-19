@@ -383,7 +383,7 @@ const es: SiteMessages = {
     },
     overrides: {
       title: 'Overrides de estilo',
-      stat: '101 claves',
+      stat: '103 claves',
       blurb:
         'Cualquier parte del aspecto del gráfico por clave, aparte del tema: la cuadrícula en cada dirección, el crosshair, los ejes, los paneles, la leyenda, el último precio, el volumen y los colores de cada tipo de gráfico. Aquí la cuadrícula vertical está apagada, la horizontal punteada, el crosshair continuo, y la línea de señal del MACD discontinua en un panel con su propio separador.',
       tryThis: [
@@ -779,7 +779,7 @@ const es: SiteMessages = {
       ],
       customization: [
         { name: 'Tres aspectos para el widget', detail: 'Studio, Terminal, Capsule; ui y setUI; variables CSS --tcw-*' },
-        { name: 'El aspecto del gráfico por clave', detail: 'applyOverrides sobre 101 claves tipadas, en una capa de la aplicación y otra del usuario' },
+        { name: 'El aspecto del gráfico por clave', detail: 'applyOverrides sobre 103 claves tipadas, en una capa de la aplicación y otra del usuario' },
         { name: 'Una configuración que llega a cada clave', detail: 'Una pestaña de estilo para el tipo de gráfico visible, una pestaña de trading' },
         { name: '114 interruptores de funciones', detail: 'features, setFeatures, isFeatureOn; se cambian en marcha' },
         { name: 'Tus propias piezas en el widget', detail: 'Botones y desplegables en la barra de herramientas, botones laterales, elementos de estado, slots, entradas de menú' },

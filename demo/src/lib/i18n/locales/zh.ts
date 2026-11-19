@@ -382,7 +382,7 @@ const zh: SiteMessages = {
     },
     overrides: {
       title: '样式覆盖',
-      stat: '101 个键',
+      stat: '103 个键',
       blurb:
         '按键单独设置图表外观的任何部分，不受主题限制：每个方向的网格、十字光标、坐标轴、面板、图例、最新价、成交量以及每种图表类型的颜色。这里关闭了竖向网格，横向网格为点线，十字光标为实线，MACD 的信号线在拥有自己分隔线的面板中显示为虚线。',
       tryThis: [
@@ -776,7 +776,7 @@ const zh: SiteMessages = {
       ],
       customization: [
         { name: '组件的三种外观', detail: 'Studio、Terminal、Capsule；ui 与 setUI；--tcw-* CSS 变量' },
-        { name: '按键定制图表外观', detail: 'applyOverrides 覆盖 101 个带类型的键，分为宿主层和用户层' },
+        { name: '按键定制图表外观', detail: 'applyOverrides 覆盖 103 个带类型的键，分为宿主层和用户层' },
         { name: '覆盖每个键的设置', detail: '当前图表类型的样式选项卡，以及交易选项卡' },
         { name: '114 个功能开关', detail: 'features、setFeatures、isFeatureOn；运行时可更改' },
         { name: '在组件中加入你自己的部件', detail: '工具栏按钮和下拉菜单、侧边栏按钮、状态栏项、插槽、菜单项' },

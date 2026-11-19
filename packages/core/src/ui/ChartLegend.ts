@@ -1,5 +1,5 @@
 import type { ViewportState, Theme, OHLCBar, DataSeries } from '@tradecanvas/commons';
-import { CHART_SPACING, DEFAULT_CHART_DENSITY, autoPricePrecision, formatPrice, formatVolumeLoc, tickerOf } from '@tradecanvas/commons';
+import { CHART_SPACING, priceReadoutColors, DEFAULT_CHART_DENSITY, autoPricePrecision, formatPrice, formatVolumeLoc, tickerOf } from '@tradecanvas/commons';
 
 export interface LegendConfig {
   visible: boolean;
@@ -189,6 +189,7 @@ export class ChartLegend {
     const font = `${fs}px ${family}`;
     ctx.font = font;
     const isUp = bar.close >= bar.open;
+    const tone = priceReadoutColors(theme);
     // A market's explicit precision wins; otherwise match the price axis so
     // sub-$1 assets (e.g. ~$0.34, or PEPE at 0.0000043) don't round to 0.00.
     const precision = this.pricePrecision
@@ -199,7 +200,7 @@ export class ChartLegend {
       { label: 'O', value: fmt(bar.open), color: text },
       { label: 'H', value: fmt(bar.high), color: text },
       { label: 'L', value: fmt(bar.low), color: text },
-      { label: 'C', value: fmt(bar.close), color: isUp ? theme.candleUp : theme.candleDown },
+      { label: 'C', value: fmt(bar.close), color: isUp ? tone.up : tone.down },
     ];
 
     if (this.config.showChange) {
@@ -210,7 +211,7 @@ export class ChartLegend {
       items.push({
         label: '',
         value: `${sign}${fmt(change)} (${sign}${pctText}%)`,
-        color: change >= 0 ? theme.candleUp : theme.candleDown,
+        color: change >= 0 ? tone.up : tone.down,
       });
     }
 

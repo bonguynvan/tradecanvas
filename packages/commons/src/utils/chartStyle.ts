@@ -198,7 +198,12 @@ export function resolveChartTheme(base: Theme, chartType: ChartType, overrides: 
       price: { line: str('axis.price.lineColor', plain.axisLine), text: str('axis.price.textColor', plain.axisLabel) },
       time: { line: str('axis.time.lineColor', plain.axisLine), text: str('axis.time.textColor', plain.axisLabel) },
     },
-    legend: { text: str('legend.textColor', plain.text), label: str('legend.labelColor', plain.textSecondary) },
+    legend: {
+      text: str('legend.textColor', plain.text),
+      label: str('legend.labelColor', plain.textSecondary),
+      up: str('legend.upColor', series.up),
+      down: str('legend.downColor', series.down),
+    },
     watermark: { color: (o('watermark.color') as string | undefined) ?? null },
     lastPrice: {
       visible: (o('lastPrice.visible') as boolean | undefined) ?? true,
@@ -243,6 +248,16 @@ export function resolveChartTheme(base: Theme, chartType: ChartType, overrides: 
   };
 }
 
+/**
+ * The colours of a rise and a fall where a bar's values are read (the
+ * legend, the tooltips, the measure tool): the legend's keys, so a chart can
+ * hide its candles and keep them; the candles' on a theme without resolved
+ * looks.
+ */
+export function priceReadoutColors(theme: Theme): { up: string; down: string } {
+  return { up: theme.style?.legend.up ?? theme.candleUp, down: theme.style?.legend.down ?? theme.candleDown };
+}
+
 /** How each key that isn't the series' reads back from the resolved theme. */
 const READ_BACK: { [K in ChartStyleKey]?: (t: Theme, s: ResolvedChartStyle) => unknown } = {
   'background.color': (t) => t.background,
@@ -257,6 +272,8 @@ const READ_BACK: { [K in ChartStyleKey]?: (t: Theme, s: ResolvedChartStyle) => u
   'axis.time.textColor': (_t, s) => s.axis.time.text,
   'legend.textColor': (_t, s) => s.legend.text,
   'legend.labelColor': (_t, s) => s.legend.label,
+  'legend.upColor': (_t, s) => s.legend.up,
+  'legend.downColor': (_t, s) => s.legend.down,
   'watermark.color': (_t, s) => s.watermark.color,
   'lastPrice.visible': (_t, s) => s.lastPrice.visible,
   'lastPrice.upColor': (_t, s) => s.lastPrice.up,

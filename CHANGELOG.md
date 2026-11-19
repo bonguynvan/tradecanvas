@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Chart
+
+- **The legend's up and down colours as style keys** (`@tradecanvas/chart`, `@tradecanvas/commons`, `@tradecanvas/core`): `legend.upColor` and `legend.downColor` colour the legend's close and change, the crosshair and pinned tooltips and the measure tool, and follow the main series' colours unless set. A chart that hides its candles under an overlay by making them transparent lost those readouts with them; it now sets these two and keeps them. The chart settings' Status line tab has a row for each.
+
 ### Packages
 
 - **The npm descriptions and keywords** (`@tradecanvas/chart`, `@tradecanvas/react`, `@tradecanvas/vue`, `@tradecanvas/svelte`, `@tradecanvas/mcp`): each names TradeCanvas the open-source chart library for trading apps, and their keywords say what a search for a trading, candlestick, stock or crypto chart library looks for. The READMEs open with the same words and a link to tradecanvas.dev.

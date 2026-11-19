@@ -381,7 +381,7 @@ const pt: SiteMessages = {
     },
     overrides: {
       title: 'Overrides de estilo',
-      stat: '101 chaves',
+      stat: '103 chaves',
       blurb:
         'Qualquer parte da aparência do gráfico por chave, à parte do tema: a grade em cada direção, a cruz, os eixos, os painéis, a legenda, o último preço, o volume e as cores de cada tipo de gráfico. Aqui a grade vertical está desligada, a horizontal pontilhada, a cruz contínua, e a linha de sinal do MACD tracejada num painel com separador próprio.',
       tryThis: [
@@ -775,7 +775,7 @@ const pt: SiteMessages = {
       ],
       customization: [
         { name: 'Três aparências para o widget', detail: 'Studio, Terminal, Capsule; ui e setUI; variáveis CSS --tcw-*' },
-        { name: 'A aparência do gráfico por chave', detail: 'applyOverrides sobre 101 chaves tipadas, numa camada da aplicação e numa do usuário' },
+        { name: 'A aparência do gráfico por chave', detail: 'applyOverrides sobre 103 chaves tipadas, numa camada da aplicação e numa do usuário' },
         { name: 'Configurações que alcançam cada chave', detail: 'Uma aba de estilo para o tipo de gráfico em exibição, uma aba de trading' },
         { name: '114 chaves de recursos', detail: 'features, setFeatures, isFeatureOn; alteráveis em execução' },
         { name: 'Suas próprias peças no widget', detail: 'Botões e menus suspensos na barra de ferramentas, botões na barra lateral, itens de status, slots, itens de menu' },

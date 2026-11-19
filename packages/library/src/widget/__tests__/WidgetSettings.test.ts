@@ -382,8 +382,9 @@ describe('the settings’ tabs', () => {
     expect(labels()).not.toContain('OHLC legend');
     expect(labels()).not.toContain('Legend text');
     expect(labels()).not.toContain('Legend labels');
-    // The panes' titles are drawn without the legend.
+    // The panes' titles are drawn without the legend, and the tooltips read a rise and a fall.
     expect(labels()).toContain('Pane titles');
+    expect(labels()).toEqual(expect.arrayContaining(['Up', 'Down']));
   });
 
   it('open on the tab asked for (the scales, from the price axis’s menu)', () => {

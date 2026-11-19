@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi } from 'vitest';
-import { DARK_THEME } from '@tradecanvas/commons';
+import { DARK_THEME, resolveChartTheme } from '@tradecanvas/commons';
 import { PinnedTooltip } from '../PinnedTooltip.js';
 import { unitViewport } from '../../drawings/__tests__/fixtures.js';
 
@@ -108,5 +108,24 @@ describe('PinnedTooltip', () => {
     tooltip.reposition(unitViewport, { ...pinned, time: pinned.time + 1, close: 3 }, 1, DARK_THEME);
     expect(host.textContent).toContain("Δ +2'000 & <up>");
     expect(host.querySelector('up')).toBeNull();
+  });
+});
+
+describe('PinnedTooltip — up and down colours', () => {
+  it('colours the close by the legend’s keys when the candles are hidden', () => {
+    const hidden = 'rgba(0, 0, 0, 0)';
+    const theme = resolveChartTheme(DARK_THEME, 'candlestick', {
+      'series.candlestick.upColor': hidden,
+      'series.candlestick.downColor': hidden,
+      'legend.upColor': '#00ff00',
+      'legend.downColor': '#ff0000',
+    });
+    const host = document.createElement('div');
+    const tooltip = new PinnedTooltip();
+    tooltip.create(host);
+    tooltip.pin({ time: Date.UTC(2026, 2, 4), open: 1, high: 2, low: 0.5, close: 1.5 }, 0, theme);
+    const colours = [...host.querySelectorAll<HTMLElement>('*')].map((el) => el.style.color).filter(Boolean);
+    expect(colours).toContain('rgb(0, 255, 0)');
+    expect(colours).not.toContain(hidden);
   });
 });

@@ -1,5 +1,5 @@
 import type { OHLCBar, Theme, TimeZoneSetting, ViewportState } from '@tradecanvas/commons';
-import { UI_ICONS, barDateParts, formatPrice, iconSvg, normalizeBarTime, timeParts, type BarTimeUnit } from '@tradecanvas/commons';
+import { UI_ICONS, priceReadoutColors, barDateParts, formatPrice, iconSvg, normalizeBarTime, timeParts, type BarTimeUnit } from '@tradecanvas/commons';
 import { barIndexToX, priceToY } from '../viewport/ScaleMapping.js';
 import { isolateFontFeatures } from '../engine/CanvasLayer.js';
 import { writtenDate } from '../axis/writtenDate.js';
@@ -134,7 +134,8 @@ export class PinnedTooltip {
     this.pinnedIndex = barIndex;
 
     const isUp = bar.close >= bar.open;
-    const color = isUp ? theme.candleUp : theme.candleDown;
+    const readout = priceReadoutColors(theme);
+    const color = isUp ? readout.up : readout.down;
 
     const ms = normalizeBarTime(bar.time, unit);
     const d = daily ? barDateParts(ms, this.tz, this.exchangeZone) : timeParts(ms, this.tz);
@@ -210,7 +211,8 @@ export class PinnedTooltip {
         const pct = this.pinnedBar.close !== 0 ? (priceΔ / this.pinnedBar.close) * 100 : 0;
         const sign = priceΔ > 0 ? '+' : priceΔ < 0 ? '−' : '';
         const barΔ = hoverIndex - this.pinnedIndex;
-        const direction = priceΔ >= 0 ? theme.candleUp : theme.candleDown;
+        const readout = priceReadoutColors(theme);
+        const direction = priceΔ >= 0 ? readout.up : readout.down;
         this.deltaEl.style.color = direction;
         // The percentage in the locale too: a price in it beside a plain 1.23 reads as two systems.
         const pctText = formatPrice(Math.abs(pct), PERCENT_DECIMALS, this.locale);
