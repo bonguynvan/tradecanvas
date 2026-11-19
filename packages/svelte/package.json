@@ -1,6 +1,6 @@
 {
   "name": "@tradecanvas/svelte",
-  "version": "2.0.29",
+  "version": "2.0.30",
   "type": "module",
   "description": "Svelte 5 component for TradeCanvas, the open-source chart library for trading apps: candlestick charts, indicators, drawing tools and a full trading UI, with reactive props and runes.",
   "license": "MIT",

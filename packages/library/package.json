@@ -1,6 +1,6 @@
 {
   "name": "@tradecanvas/chart",
-  "version": "2.15.0",
+  "version": "2.16.0",
   "type": "module",
   "description": "TradeCanvas, the open-source chart library for trading apps: candlesticks to Renko, 134 indicators, 76 drawing tools and a full trading UI (orders on the chart, bar replay, depth, watchlist). MIT, no dependencies, Canvas 2D or WebGL; React, Vue, Svelte or plain JS.",
   "license": "MIT",

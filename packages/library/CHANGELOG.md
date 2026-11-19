@@ -1,5 +1,25 @@
 # @tradecanvas/chart
 
+## 2.16.0
+
+### Minor Changes
+
+- d494334: An equity curve's levels too close for both tags at the axis move their tags apart, each as little as it can, where one was drawn over the other; when there is no room for them all, the lowest levels' are left out. A level's `labelAt: 'start'` writes its name at the line's left end, away from the curve's latest point; `'end'`, the right, is the default. Names in the plot keep clear of each other: a level's goes under its line when another name is over it, and a band's moves down its band past a level's.
+- 7b396bc: The widget opens in a new look, Modern: a code editor's window in its Dark Modern and Light Modern colours, the chart on the editor's ground, 16 px icons in 28 px buttons on a 38 px toolbar, corners of 4, 6 and 8 px, the logo's amber for what you act on and pick, and candles in teal (`#089981`) and red (`#f23645`). Without a theme object the widget's chart takes `MODERN_DARK_THEME` and `MODERN_LIGHT_THEME`, new in `@tradecanvas/commons` and `@tradecanvas/chart`. To keep the widget as it was, pass `ui: 'print'`, or `preset: 'print'` in a `ui` object (one without a preset now starts from Modern): the look, the colours and the candles come back, and the other looks keep those colours too. A chart without the widget is unchanged.
+- bfde7a3: The widget's symbol search shows a symbol's last price and day's change when you give them: `SymbolInfo` takes `last` (a number, or text written as it is) and `changePercent`, and when any row listed has one they show in two columns at the end of it, the change in the up or down colour. The widget fetches none of them. On a phone the exchange goes under the ticker, where a long one (SIMULATED, ALL VENUES) was cut short in a column of its own.
+
+### Patch Changes
+
+- 22bb51b: The price axis is as wide as the indicator panes' labels and tags need, not the prices' alone: a pane of millions under prices of tens of thousands had its last value's tag cut and the tick under it hidden. The axis refits when the panes' tags are turned on or off.
+- 62204ed: On a phone the widget's drawing button sits at the bottom of the price pane, clear of the indicator panes under it, whose first bars and legend it covered; it moves as panes come, go or are resized.
+- bc3afdf: The widget's Vietnamese strings (`locale: 'vi'`) are translated again from the English as plain technical Vietnamese, keeping the trading and chart terms Vietnamese traders use in English. Every key and placeholder is the same.
+- Updated dependencies [d494334]
+- Updated dependencies [7b396bc]
+- Updated dependencies [22bb51b]
+- Updated dependencies [bfde7a3]
+  - @tradecanvas/commons@2.16.0
+  - @tradecanvas/core@2.16.0
+
 ## 2.15.0
 
 ### Minor Changes

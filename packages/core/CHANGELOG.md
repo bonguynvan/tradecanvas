@@ -1,5 +1,19 @@
 # @tradecanvas/core
 
+## 2.16.0
+
+### Minor Changes
+
+- d494334: An equity curve's levels too close for both tags at the axis move their tags apart, each as little as it can, where one was drawn over the other; when there is no room for them all, the lowest levels' are left out. A level's `labelAt: 'start'` writes its name at the line's left end, away from the curve's latest point; `'end'`, the right, is the default. Names in the plot keep clear of each other: a level's goes under its line when another name is over it, and a band's moves down its band past a level's.
+
+### Patch Changes
+
+- 22bb51b: The price axis is as wide as the indicator panes' labels and tags need, not the prices' alone: a pane of millions under prices of tens of thousands had its last value's tag cut and the tick under it hidden. The axis refits when the panes' tags are turned on or off.
+- Updated dependencies [d494334]
+- Updated dependencies [7b396bc]
+- Updated dependencies [bfde7a3]
+  - @tradecanvas/commons@2.16.0
+
 ## 2.15.0
 
 ### Minor Changes
