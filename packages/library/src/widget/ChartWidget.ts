@@ -128,6 +128,9 @@ const SCALED_TOKENS = [
   '--tcw-line-height', '--tcw-line-xs', '--tcw-label-size',
 ] as const;
 
+/** The phone's drawing button (44 px) and its 10 px in from the price pane's edge, top and bottom. */
+const DRAWING_BUTTON_ROOM = 44 + 10 * 2;
+
 /**
  * A local timeframe switch (resampling static data) that took at least this
  * long last time is announced with the loading veil before it runs, since the
@@ -1061,8 +1064,10 @@ export class ChartWidget {
     // Bar replay: its panel, the start bar picked on the chart, its keys.
     this.replay = new WidgetReplay(this.replayHost());
     this.replay.attach();
-    // The phone's drawing button keeps to the plot as the chart lays out, or a left scale comes.
-    for (const event of ['resize', 'dataUpdate', 'symbolInfoChange'] as const) {
+    // The phone's drawing button keeps to the plot as the chart lays out, a left scale comes, or
+    // indicator panes come, go or are resized under the price pane (an indicator moved to a pane of
+    // its own, or back, is an indicatorChange).
+    for (const event of ['resize', 'dataUpdate', 'symbolInfoChange', 'indicatorAdd', 'indicatorRemove', 'indicatorChange', 'paneResize', 'paneChange'] as const) {
       this.chart.on(event, () => this.placeDrawingButton());
     }
     this.placeDrawingButton();
@@ -3498,12 +3503,18 @@ export class ChartWidget {
     };
   }
 
-  /** Where the plot starts in the body, for the phone's drawing button to sit over it. */
+  /** Where the price pane's plot is in the body, for the phone's drawing button to sit on it, over no indicator pane. */
   private placeDrawingButton(): void {
     const body = this.bodyEl();
     if (!this.sidebar || !body) return;
-    const inBody = this.chartContainer.getBoundingClientRect().left - body.getBoundingClientRect().left;
-    this.sidebar.setPlotLeft(inBody + this.chart.getPlotRect().x);
+    const bodyRect = body.getBoundingClientRect();
+    const chartRect = this.chartContainer.getBoundingClientRect();
+    const plot = this.chart.getPlotRect();
+    const plotTop = chartRect.top + plot.y;
+    this.sidebar.setPlotLeft(chartRect.left - bodyRect.left + plot.x);
+    // On a price pane too short for it, as high as keeps its top in the pane: over the panes a little, not the toolbar.
+    const highest = bodyRect.bottom - plotTop - DRAWING_BUTTON_ROOM;
+    this.sidebar.setPlotBottom(Math.min(bodyRect.bottom - (plotTop + plot.height), Math.max(0, highest)));
   }
 
   private bodyEl(): HTMLElement | null {

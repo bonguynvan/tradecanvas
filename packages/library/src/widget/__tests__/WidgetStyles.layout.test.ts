@@ -284,3 +284,11 @@ describe('a watchlist row’s remove button', () => {
     expect(button).toMatch(/width:\s*var\(--tcw-watchlist-remove\)/);
   });
 });
+
+describe('the phone’s drawing button', () => {
+  it('sits in from the bottom of the price pane the widget sets, not the bottom of the chart', () => {
+    const fab = rule(".tcw-root[data-tcw-narrow] > .tcw-body > .tcw-sidebar-fab");
+    expect(fab).toContain('bottom: calc(var(--tcw-fab-plot-bottom, 34px) + 10px);');
+    expect(fab).not.toContain('bottom: 44px');
+  });
+});
