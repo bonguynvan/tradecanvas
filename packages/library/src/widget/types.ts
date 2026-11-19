@@ -677,6 +677,8 @@ export interface SidebarCallbacks {
   onHideMenu?: (anchor: HTMLElement) => void;
   onToggleStyle?: () => void;
   onToggleStayInDrawing?: () => void;
+  /** Show or hide the favorites bar floating over the chart. */
+  onToggleFavoritesBar?: () => void;
 }
 
 /** Style keys to set on the user's layer; null takes one away (back to the theme's, or the part's own). */

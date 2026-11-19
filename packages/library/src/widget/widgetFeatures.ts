@@ -18,7 +18,7 @@ export const WIDGET_FEATURES = [
   'dataWindow', 'commandPalette', 'hotkeySheet', 'goToDate', 'replay', 'screenshot', 'copyImage', 'shareView',
   'autoFib', 'themeToggle', 'fullscreen', 'accountPanel', 'orderTicket', 'bracketOrders', 'depthLadder',
   'layouts', 'indicatorTemplates', 'compare', 'indicatorLegend', 'navigation', 'customTimeframes', 'marks',
-  'intervalTyping', 'symbolTyping', 'dragDropImport', 'hotkeys', 'toasts',
+  'intervalTyping', 'symbolTyping', 'dragDropImport', 'hotkeys', 'toasts', 'favoritesBar',
   // The toolbar's buttons.
   'toolbar.symbol', 'toolbar.symbolInfo', 'toolbar.timeframes', 'toolbar.timeframeMenu', 'toolbar.chartType',
   'toolbar.indicators', 'toolbar.layouts', 'toolbar.replay', 'toolbar.bracketOrders', 'toolbar.depthLadder',

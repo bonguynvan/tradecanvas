@@ -3854,6 +3854,76 @@
   animation: tcw-sel-in var(--tcw-dur-fast) var(--tcw-ease-out);
 }
 @keyframes tcw-sel-in { from { opacity: 0; transform: translateY(3px); } }
+
+/* The pinned drawing tools, floating over the chart where they were dragged to: a card as the selection's toolbar is. */
+.tcw-favorites-bar {
+  position: absolute;
+  z-index: 64;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: var(--tcw-space-2);
+  background: var(--tcw-bg-elevated);
+  border: var(--tcw-border-w) solid var(--tcw-divider);
+  border-radius: var(--tcw-menu-radius);
+  box-shadow: var(--tcw-menu-shadow);
+  touch-action: none;
+}
+
+.tcw-favorites-bar[hidden] {
+  display: none;
+}
+
+.tcw-favorites-grip {
+  display: inline-grid;
+  place-items: center;
+  width: 14px;
+  height: var(--tcw-tool-size);
+  color: var(--tcw-text-muted);
+  cursor: grab;
+}
+
+.tcw-favorites-grip:active {
+  cursor: grabbing;
+}
+
+/* On a phone a finger has to find the grip. */
+.tcw-root[data-tcw-narrow] .tcw-favorites-grip {
+  width: 21px;
+}
+
+.tcw-favorites-tools {
+  display: flex;
+  gap: 2px;
+}
+
+.tcw-favorites-tool {
+  display: inline-grid;
+  place-items: center;
+  width: var(--tcw-tool-size);
+  height: var(--tcw-tool-size);
+  padding: 0;
+  border: none;
+  border-radius: var(--tcw-control-radius);
+  background: transparent;
+  color: var(--tcw-text-muted);
+  cursor: pointer;
+}
+
+.tcw-favorites-tool:hover {
+  background: var(--tcw-hover-bg);
+  color: var(--tcw-text);
+}
+
+.tcw-favorites-tool.tcw-active {
+  background: var(--tcw-on-icon-bg, var(--tcw-accent-soft));
+  color: var(--tcw-on-icon-fg, var(--tcw-accent));
+}
+
+.tcw-favorites-tool:focus-visible {
+  outline: none;
+  box-shadow: var(--tcw-ring);
+}
 .tcw-sel-btn {
   display: inline-flex;
   align-items: center;

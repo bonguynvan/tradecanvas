@@ -335,6 +335,16 @@ const SCENES = {
     return s;
   },
 
+  /** The favorites toolbar shown over the chart, with four pinned tools and one of them in use. */
+  async favoritesBar() {
+    localStorage.removeItem('tcw:favoritesBar');
+    const s = await widget({ drawingFavorites: ['trendLine', 'horizontalLine', 'fibRetracement', 'rectangle'] });
+    document.querySelector('[data-role="favoritesBar"]')?.click();
+    document.querySelector('.tcw-favorites-bar [data-tool-value="fibRetracement"]')?.click();
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    return s;
+  },
+
   /** The hide button's menu open on the drawing sidebar, an indicator hidden from it, a position on the chart. */
   async sidebarMenus() {
     const s = await widget({ trading: true });

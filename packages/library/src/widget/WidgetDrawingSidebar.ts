@@ -62,6 +62,9 @@ export class WidgetDrawingSidebar {
   private eraserBtn: HTMLButtonElement | null = null;
   private zoomBtn: HTMLButtonElement | null = null;
   private stayBtn: HTMLButtonElement | null = null;
+  private favoritesBarBtn: HTMLButtonElement | null = null;
+  /** The favorites bar shows over the chart: the strip here steps aside. */
+  private favoritesBarShown = false;
   private lockAllBtn: HTMLButtonElement | null = null;
   private hideAllBtn: HTMLButtonElement | null = null;
   /** Every drawing locked, every drawing hidden: what those buttons undo next. */
@@ -339,6 +342,13 @@ export class WidgetDrawingSidebar {
       el.appendChild(this.stayBtn);
     }
 
+    if (callbacks.onToggleFavoritesBar) {
+      this.favoritesBarBtn = this.toggleButton('star', this.t('favoritesBar.toggle'), callbacks.onToggleFavoritesBar);
+      this.favoritesBarBtn.dataset.role = 'favoritesBar';
+      markPart(this.favoritesBarBtn, 'favoritesBar');
+      el.appendChild(this.favoritesBarBtn);
+    }
+
     this.hostEl = document.createElement('div');
     this.hostEl.className = 'tcw-sidebar-host';
     el.appendChild(this.hostEl);
@@ -396,6 +406,14 @@ export class WidgetDrawingSidebar {
     }
   }
 
+  /** Whether the favorites bar shows: its button says so, and the strip here steps aside for it. */
+  setFavoritesBarShown(shown: boolean): void {
+    this.favoritesBarShown = shown;
+    this.favoritesBarBtn?.setAttribute('aria-pressed', String(shown));
+    this.favoritesBarBtn?.classList.toggle('tcw-active', shown);
+    this.renderFavorites();
+  }
+
   /** Update the pinned-tools strip. */
   setFavorites(favorites: string[]): void {
     this.favorites = [...favorites];
@@ -411,7 +429,8 @@ export class WidgetDrawingSidebar {
   private renderFavorites(): void {
     if (!this.favoritesEl) return;
     this.favoritesEl.replaceChildren();
-    const visible = this.favorites.length > 0;
+    // One place for the pins: the bar over the chart, when it shows, else this strip.
+    const visible = this.favorites.length > 0 && !this.favoritesBarShown;
     this.favoritesEl.style.display = visible ? '' : 'none';
     if (this.favoritesDivider) this.favoritesDivider.style.display = visible ? '' : 'none';
 
