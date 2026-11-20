@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { IndicatorEngine } from '../IndicatorEngine.js';
 import { registerBuiltInIndicators } from '../registry.js';
-import { INDICATOR_CATEGORIES, indicatorCategory } from '../categories.js';
+import { INDICATOR_CATEGORIES, indicatorCategory, indicatorGroup } from '../categories.js';
 
 describe('indicator categories', () => {
   const engine = new IndicatorEngine();
@@ -34,5 +34,27 @@ describe('indicator categories', () => {
     expect(indicatorCategory({ id: 'myOsc', category: 'oscillators' })).toBe('oscillators');
     expect(indicatorCategory({ id: 'sma', category: 'trend' })).toBe('trend');
     expect(indicatorCategory({ id: 'myThing' })).toBe('other');
+  });
+
+  it('keep a group of the app’s own apart from the kinds', () => {
+    const tdk = { id: 'tradingdek', label: 'TradingDek' };
+    expect(indicatorGroup({ id: 'tdkFlow', category: tdk })).toEqual(tdk);
+    // Code that knows only the kinds gets the built-in's, else "other".
+    expect(indicatorCategory({ id: 'tdkFlow', category: tdk })).toBe('other');
+    expect(indicatorCategory({ id: 'rsi', category: tdk })).toBe('oscillators');
+    expect(indicatorGroup({ id: 'myOsc', category: 'oscillators' })).toBeNull();
+    expect(indicatorGroup({ id: 'rsi' })).toBeNull();
+  });
+
+  it('take a group with no id or no name for none', () => {
+    expect(indicatorGroup({ id: 'x', category: { id: '', label: 'X' } })).toBeNull();
+    expect(indicatorGroup({ id: 'x', category: { id: 'x', label: '  ' } })).toBeNull();
+    expect(indicatorCategory({ id: 'x', category: { id: '', label: 'X' } })).toBe('other');
+    expect(indicatorGroup({ id: 'x', category: { id: 'x', label: ' Desk ' } })).toEqual({ id: 'x', label: 'Desk' });
+  });
+
+  it('take a kind they do not know, from code without types, for none: the dialog would list it nowhere', () => {
+    expect(indicatorCategory({ id: 'x', category: 'foo' as never })).toBe('other');
+    expect(indicatorCategory({ id: 'rsi', category: 'foo' as never })).toBe('oscillators');
   });
 });

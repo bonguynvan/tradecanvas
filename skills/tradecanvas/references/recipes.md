@@ -971,8 +971,23 @@ new ChartWidget(document.getElementById('chart')!, {
 - **The settings dialog** edits `inputs` (by `kind`, with `label`, limits and
   labelled `options`), and lists each plot in the Style tab with its colour and
   whether it shows, and a dash for a `line` or `step`. It edits `levels` too.
-- **The Indicators dialog** lists it under `category`, by `name`.
+- **The Indicators dialog** lists it under `category`, by `name`. A `category`
+  of `{ id, label }` is a group of your own: the indicators with that `id` are
+  listed together under `label`, before the built-in kinds, and a search for
+  the label finds them.
 - **Another indicator** can read its lines, the same plots, as a source.
+
+```ts
+import type { IndicatorDescriptor, IndicatorGroup } from '@tradecanvas/chart';
+
+/** Every indicator of the app's in one group of the Indicators dialog, listed first. */
+const MY_APP: IndicatorGroup = { id: 'my-app', label: 'My App' };
+
+export const flow: IndicatorDescriptor = {
+  id: 'my-flow', name: 'Order Flow', placement: 'panel', category: MY_APP,
+  defaultConfig: {}, plots: [{ key: 'value', title: 'Flow', color: 0 }],
+};
+```
 
 ## An overlay of your own, on the price grid
 

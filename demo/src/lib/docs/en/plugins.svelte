@@ -213,7 +213,10 @@ chart.addIndicator('turning-macd', { fast: 8 })`}</code></pre>
     more than one, the plot's <code>title</code>.</li>
   <li><strong>The settings dialog</strong> edits the inputs, lists each plot with its colour, whether it shows, and a
     dash for a line or a step, and edits the levels.</li>
-  <li><strong>The Indicators dialog</strong> lists it by <code>name</code> under its <code>category</code>.</li>
+  <li><strong>The Indicators dialog</strong> lists it by <code>name</code> under its <code>category</code>: a kind
+    (<code>'oscillators'</code>, <code>'volume'</code>…) or a group of your own, <code>{`{ id: 'my-app', label: 'My App' }`}</code>,
+    which puts your app's indicators together under its name, before the built-in kinds (several groups in the
+    order their first indicators are registered). Search finds them by that name too.</li>
   <li><strong>Another indicator</strong> can read its lines (the same plots) as its source.</li>
 </ul>
 <p>

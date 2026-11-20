@@ -76,7 +76,7 @@ import { type CompareWay } from './widgetCompare.js';
 import { WidgetTooltip } from './WidgetTooltip.js';
 import { WidgetIndicatorLegend } from './WidgetIndicatorLegend.js';
 import { formatIndicatorValue } from './legendValues.js';
-import { RANGE_PRESETS, SYMBOL_INDICATOR_IDS, adapterFromFeed, indicatorCategory, isCrosshairCursor, isMarkerPlot, sourceParam, valuePlots } from '@tradecanvas/core';
+import { RANGE_PRESETS, SYMBOL_INDICATOR_IDS, adapterFromFeed, indicatorCategory, indicatorGroup, isCrosshairCursor, isMarkerPlot, sourceParam, valuePlots } from '@tradecanvas/core';
 import { WidgetBracketBar } from './WidgetBracketBar.js';
 import { AlertNotifier } from './AlertNotifier.js';
 import { WidgetDepthLadder } from './WidgetDepthLadder.js';
@@ -3443,13 +3443,17 @@ export class ChartWidget {
   private indicatorPickerItems(): IndicatorPickerItem[] {
     return (this.chart.getAvailableIndicators() ?? [])
       .filter((d) => !SYMBOL_INDICATOR_IDS.has(d.id) && this.chart.isIndicatorAllowed(d.id) !== false)
-      .map((d) => ({
-      id: d.id,
-      name: d.name,
-      shortName: d.shortName ?? d.id.toUpperCase(),
-      placement: d.placement === 'panel' ? 'panel' : 'overlay',
-      category: indicatorCategory(d),
-    }));
+      .map((d): IndicatorPickerItem => {
+        const group = indicatorGroup(d);
+        return {
+          id: d.id,
+          name: d.name,
+          shortName: d.shortName ?? d.id.toUpperCase(),
+          placement: d.placement === 'panel' ? 'panel' : 'overlay',
+          category: indicatorCategory(d),
+          ...(group ? { group } : {}),
+        };
+      });
   }
 
   /** How many of each indicator are on the chart. */

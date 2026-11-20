@@ -3,7 +3,7 @@ export { IndicatorEngine } from './IndicatorEngine.js';
 export type { ActiveIndicatorInfo } from './IndicatorEngine.js';
 export { IndicatorValueMap } from './IndicatorValueMap.js';
 export { registerBuiltInIndicators } from './registry.js';
-export { INDICATOR_CATEGORIES, indicatorCategory } from './categories.js';
+export { INDICATOR_CATEGORIES, indicatorCategory, indicatorGroup } from './categories.js';
 export { INTERVAL_UNITS, INTERVAL_LIMITS, shownOnInterval, cleanIntervals } from './intervals.js';
 export { isSeriesPalette } from './palette.js';
 export { THEME_LOOK_KEYS } from './themeStyle.js';

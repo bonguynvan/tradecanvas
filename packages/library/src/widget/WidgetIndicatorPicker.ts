@@ -1,4 +1,4 @@
-import type { IndicatorCategory } from '@tradecanvas/commons';
+import type { IndicatorCategory, IndicatorGroup } from '@tradecanvas/commons';
 import { INDICATOR_CATEGORIES } from '@tradecanvas/core';
 import { createIcon } from './icons.js';
 import { fill, type MessageKey, type Translator } from './i18n.js';
@@ -13,6 +13,8 @@ export interface IndicatorPickerItem {
   shortName: string;
   placement: 'overlay' | 'panel';
   category: IndicatorCategory;
+  /** The app's own group it is listed in, instead of its kind. */
+  group?: IndicatorGroup;
 }
 
 export interface IndicatorPickerCallbacks {
@@ -37,7 +39,11 @@ export interface IndicatorPickerContent {
   counts?: ReadonlyMap<string, number>;
 }
 
-type View = 'favorites' | 'templates' | 'all' | IndicatorCategory;
+/** A group of the app's own is the view `group:<its id>`. */
+type View = 'favorites' | 'templates' | 'all' | IndicatorCategory | `group:${string}`;
+
+const GROUP_VIEW = 'group:';
+const groupView = (group: IndicatorGroup): View => `${GROUP_VIEW}${group.id}`;
 
 let nextPickerId = 1;
 
@@ -45,7 +51,7 @@ const byName = (a: IndicatorPickerItem, b: IndicatorPickerItem) => a.name.locale
 
 /**
  * The indicators dialog: a search, the groups down the side (favourites,
- * templates, all, then each kind) and the list. A row adds its indicator and
+ * templates, all, the app's own groups, then each kind) and the list. A row adds its indicator and
  * the dialog stays open for the next; the star beside it keeps it in the
  * favourites. Mounts in the widget's overlay layer.
  */
@@ -123,21 +129,41 @@ export class WidgetIndicatorPicker {
     return this.favorites.size > 0 ? 'favorites' : 'all';
   }
 
-  /** The tabs down the side: favourites, templates, all, and each kind that has indicators. */
+  /** The tabs down the side: favourites, templates, all, the app's own groups, and each kind that has indicators. */
   private views(): View[] {
-    const kinds = new Set(this.content.items.map((item) => item.category));
+    const kinds = new Set(this.content.items.filter((item) => !item.group).map((item) => item.category));
     return [
       'favorites',
       ...(this.callbacks.templates && this.content.templates ? ['templates' as const] : []),
       'all',
+      ...this.groups().map(groupView),
       ...INDICATOR_CATEGORIES.filter((category) => kinds.has(category)),
     ];
+  }
+
+  /** The app's own groups, in the order their first indicators come; the first label given for an id names it. */
+  private groups(): IndicatorGroup[] {
+    const byId = new Map<string, IndicatorGroup>();
+    for (const { group } of this.content.items) if (group && !byId.has(group.id)) byId.set(group.id, group);
+    return [...byId.values()];
+  }
+
+  /** The indicators a group's or a kind's tab lists. */
+  private itemsOf(view: View): IndicatorPickerItem[] {
+    const inView = (item: IndicatorPickerItem) => item.group ? groupView(item.group) === view : item.category === view;
+    return this.content.items.filter(inView).sort(byName);
+  }
+
+  /** A tab's element id: by its place, as a group's id may hold any character. */
+  private tabId(view: View): string {
+    return `tcw-ip-tab-${this.uid}-${this.views().indexOf(view)}`;
   }
 
   private viewLabel(view: View): string {
     if (view === 'favorites') return this.t('indicatorPicker.favorites');
     if (view === 'templates') return this.t('toolbar.indicators.templates');
     if (view === 'all') return this.t('toolbar.indicators.all');
+    if (view.startsWith(GROUP_VIEW)) return this.groups().find((group) => groupView(group) === view)?.label ?? '';
     return this.t(`indicatorCategory.${view}` as MessageKey);
   }
 
@@ -233,7 +259,7 @@ export class WidgetIndicatorPicker {
       const tab = document.createElement('button');
       tab.type = 'button';
       tab.className = 'tcw-ip-tab';
-      tab.id = `tcw-ip-tab-${this.uid}-${view}`;
+      tab.id = this.tabId(view);
       tab.dataset.view = view;
       tab.setAttribute('role', 'tab');
       tab.setAttribute('aria-controls', `tcw-ip-list-${this.uid}`);
@@ -260,7 +286,7 @@ export class WidgetIndicatorPicker {
   /** The list is named by its tab, or by the search while it shows the matches. */
   private labelList(): void {
     const searching = this.query.trim() !== '';
-    this.listEl?.setAttribute('aria-labelledby', searching ? `tcw-ip-search-${this.uid}` : `tcw-ip-tab-${this.uid}-${this.view}`);
+    this.listEl?.setAttribute('aria-labelledby', searching ? `tcw-ip-search-${this.uid}` : this.tabId(this.view));
   }
 
   private select(view: View, focusTab = false): void {
@@ -268,7 +294,7 @@ export class WidgetIndicatorPicker {
     if (this.searchEl && this.query) this.searchEl.value = this.query = '';
     this.markNav();
     this.renderList();
-    if (focusTab) this.navEl?.querySelector<HTMLButtonElement>(`[data-view="${view}"]`)?.focus();
+    if (focusTab) this.navEl?.querySelector<HTMLButtonElement>(`#${this.tabId(view)}`)?.focus();
   }
 
   private renderList(): void {
@@ -290,16 +316,16 @@ export class WidgetIndicatorPicker {
       if (favorites.length === 0) list.appendChild(this.note(this.t('indicatorPicker.noFavorites')));
       else list.append(...favorites.map((item) => this.row(item)));
     } else if (this.view === 'all') {
-      for (const category of INDICATOR_CATEGORIES) {
-        const group = items.filter((item) => item.category === category).sort(byName);
+      for (const view of [...this.groups().map(groupView), ...INDICATOR_CATEGORIES]) {
+        const group = this.itemsOf(view);
         if (group.length === 0) continue;
         const heading = document.createElement('div');
         heading.className = 'tcw-ip-heading';
-        heading.textContent = this.viewLabel(category);
+        heading.textContent = this.viewLabel(view);
         list.append(heading, ...group.map((item) => this.row(item)));
       }
     } else {
-      list.append(...items.filter((item) => item.category === this.view).sort(byName).map((item) => this.row(item)));
+      list.append(...this.itemsOf(this.view).map((item) => this.row(item)));
     }
     list.querySelector<HTMLButtonElement>('.tcw-ip-add')?.setAttribute('tabindex', '0');
   }

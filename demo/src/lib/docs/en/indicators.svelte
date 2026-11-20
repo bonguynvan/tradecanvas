@@ -206,7 +206,8 @@ CANDLE_PATTERNS.length                                 // 64`}</code></pre>
   levels and inputs; the chart draws it, scales its pane, tags its values and lists it in the
   widget's legend and settings without rendering code of yours. Its <code>category</code>
   (<code>'oscillators'</code>, <code>'volume'</code>…) puts it in that group of the Indicators dialog;
-  without one it is under Other. See the
+  without one it is under Other. A group of your own, <code>{`{ id: 'my-app', label: 'My App' }`}</code>,
+  lists your app's indicators together under its name, before the built-in kinds. See the
   <a href="https://github.com/bonguynvan/tradecanvas/blob/main/skills/tradecanvas/references/recipes.md#a-custom-indicator">custom indicator recipe</a>.
   An indicator that groups bars by day, week or month reads the exchange's zone as
   <code>config.exchangeTimeZone</code> (set by the chart; unset: UTC). A new zone computes again only

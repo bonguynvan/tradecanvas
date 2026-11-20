@@ -12,6 +12,18 @@ const items = [
 const ids = (query: string) => searchIndicators(items, query).map((i) => i.id);
 
 describe('searching the indicators', () => {
+  it('finds a group of the app’s own by its name, after any indicator named so', () => {
+    const own = [
+      ...items,
+      { id: 'tdkFlow', name: 'Order Flow', shortName: 'OF', group: { label: 'TradingDek' } },
+      { id: 'tdkBasis', name: 'Basis Bands', shortName: 'BAS', group: { label: 'TradingDek' } },
+      { id: 'dekker', name: 'Dekker Line', shortName: 'DK' },
+    ];
+    expect(searchIndicators(own, 'tradingdek').map((i) => i.id)).toEqual(['tdkBasis', 'tdkFlow']);
+    expect(searchIndicators(own, 'dek').map((i) => i.id)).toEqual(['dekker']);
+    expect(searchIndicators(own, 'order').map((i) => i.id)).toEqual(['tdkFlow']);
+  });
+
   it('puts the short name typed in full first, then the others containing it', () => {
     expect(ids('rsi')).toEqual(['rsi', 'crsi', 'stochrsi']);
   });
