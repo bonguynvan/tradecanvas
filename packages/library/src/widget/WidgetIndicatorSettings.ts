@@ -79,9 +79,11 @@ interface Look {
 let nextDialogId = 1;
 
 const DEFAULT_LINE_WIDTH = 1.5;
-/** A line as it is with no style of its own: shown, and dashed as its indicator declares it. */
+/** A line as it is with no style of its own: shown, dashed as its indicator declares it, a mark in its declared shape and sized to the bars. */
 function plainPlot(plots: readonly IndicatorPlot[] | undefined, key: string): IndicatorPlotStyle {
-  return { visible: true, lineStyle: plots?.find((p) => p.key === key)?.lineStyle ?? 'solid' };
+  const plot = plots?.find((p) => p.key === key);
+  const plain: IndicatorPlotStyle = { visible: true, lineStyle: plot?.lineStyle ?? 'solid' };
+  return plot?.kind === 'markers' ? { ...plain, shape: plot.shape ?? 'dot', size: 'auto' } : plain;
 }
 
 const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);

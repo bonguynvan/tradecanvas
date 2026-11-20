@@ -407,6 +407,13 @@ const SCENES = {
     return s;
   },
 
+  /** Williams Fractals: its marks were dots lost in the wicks; now triangles clear of the bars. */
+  async fractals() {
+    const s = await widget();
+    s.chart.addIndicator('fractals', { period: 2 });
+    return s;
+  },
+
   /** More panes than the chart has room for: the price pane keeps its part, the panes share the rest. */
   async manyPanes() {
     const s = await widget();

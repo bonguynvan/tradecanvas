@@ -441,6 +441,15 @@
   width: 104px;
 }
 
+/* A mark's shape names run longer than a dash's; its size is a few characters. */
+.tcw-indi-plot-controls .tcw-indi-select[data-role='mark-shape'] {
+  width: 128px;
+}
+
+.tcw-indi-plot-controls .tcw-indi-select[data-role='mark-size'] {
+  width: 84px;
+}
+
 .tcw-indi-range {
   color: var(--tcw-text-muted);
 }

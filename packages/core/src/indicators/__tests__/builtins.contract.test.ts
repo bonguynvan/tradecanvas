@@ -37,8 +37,12 @@ const PARAMS: Record<string, Record<string, number>> = { mtfma: { period: 3 } };
 /** Not drawn bar by bar: a profile over price. */
 const NOT_PER_BAR = new Set(['volumeProfile']);
 
-/** Marks drawn beside their value, px: a candle pattern's arrow sits off the bar's high or low. */
-const BESIDE: Record<string, number> = { candlepatterns: 12 };
+/**
+ * Marks drawn beside their value, px: a candle pattern's arrow sits off the
+ * bar's high or low; a fractal's triangle, with no bars in the viewport to
+ * sit on, spans half its widest auto size (8 px) each way of its value.
+ */
+const BESIDE: Record<string, number> = { candlepatterns: 12, fractals: 4.01 };
 
 /** Coloured by value, whatever the style: Chop Zone's zones are what it shows. */
 const OWN_COLOURS = new Set(['chopzone']);
