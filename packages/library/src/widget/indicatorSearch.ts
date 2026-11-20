@@ -3,6 +3,8 @@ export interface SearchableIndicator {
   id: string;
   name: string;
   shortName: string;
+  /** The app's own group it is in: a search for the start of the group's name, or of a word in it, finds it too. */
+  group?: { readonly label: string };
 }
 
 /** Lower case without accents, so "mômentum" finds Momentum. */
@@ -20,13 +22,16 @@ function score(item: SearchableIndicator, q: string): number | null {
   if (short.startsWith(q) || name.startsWith(q)) return 1;
   if ([...name.split(WORD_BREAK), ...short.split(WORD_BREAK)].some((word) => word.startsWith(q))) return 2;
   if (name.includes(q) || short.includes(q)) return 3;
+  const group = item.group ? fold(item.group.label) : '';
+  if (group && (group.startsWith(q) || group.split(WORD_BREAK).some((word) => word.startsWith(q)))) return 4;
   return null;
 }
 
 /**
  * The indicators matching `query`, best first: the short name typed in full
  * ("rsi"), then names starting with it, then a word starting with it, then
- * any containing it. Ties go by name. Nothing typed finds nothing.
+ * any containing it, then those in an app's group whose name starts with it.
+ * Ties go by name. Nothing typed finds nothing.
  */
 export function searchIndicators<T extends SearchableIndicator>(items: readonly T[], query: string): T[] {
   const q = fold(query.trim());

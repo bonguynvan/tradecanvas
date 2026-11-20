@@ -145,6 +145,53 @@ describe('the indicators dialog', () => {
   });
 });
 
+describe('the indicators dialog’s groups of the app', () => {
+  const tdk = { id: 'tradingdek', label: 'TradingDek' };
+  const own: IndicatorPickerItem[] = [
+    ...items,
+    { id: 'tdkFlow', name: 'Order Flow', shortName: 'OF', placement: 'panel', category: 'other', group: tdk },
+    { id: 'tdkBasis', name: 'Basis Bands', shortName: 'BAS', placement: 'overlay', category: 'other', group: tdk },
+    { id: 'mine', name: 'Something Else', shortName: 'SE', placement: 'panel', category: 'other' },
+  ];
+  const tabs = () => [...layer.querySelectorAll<HTMLButtonElement>('.tcw-ip-tab')].map((t) => t.textContent);
+
+  it('lists one by its name before the built-in kinds, on the side and in All', () => {
+    picker.open({ items: own, favorites: [], templates: [] });
+    expect(tabs()).toEqual(['Favourites', 'Templates', 'All', 'TradingDek', 'Moving averages', 'Oscillators', 'Volatility', 'Other']);
+    expect([...layer.querySelectorAll('.tcw-ip-heading')].map((h) => h.textContent))
+      .toEqual(['TradingDek', 'Moving averages', 'Oscillators', 'Volatility', 'Other']);
+    expect(listed()).toEqual(['tdkBasis', 'tdkFlow', 'ema', 'sma', 'crsi', 'rsi', 'atr', 'mine']);
+  });
+
+  it('lists only its own from the side, by the keys too, and opens on it next time', () => {
+    picker.open({ items: own, favorites: [], templates: [] });
+    const group = layer.querySelector<HTMLButtonElement>('.tcw-ip-tab[aria-selected="true"]')!;
+    key(group, 'ArrowDown');
+    expect(document.activeElement?.textContent).toBe('TradingDek');
+    expect(listed()).toEqual(['tdkBasis', 'tdkFlow']);
+    expect(layer.querySelector('.tcw-ip-list')!.getAttribute('aria-labelledby')).toBe(document.activeElement!.id);
+    picker.close();
+    picker.open({ items: own, favorites: [], templates: [] });
+    expect(layer.querySelector('.tcw-ip-tab[aria-selected="true"]')?.textContent).toBe('TradingDek');
+    expect(listed()).toEqual(['tdkBasis', 'tdkFlow']);
+  });
+
+  it('finds its indicators by the group’s name, and keeps them in the favourites', () => {
+    picker.open({ items: own, favorites: ['tdkFlow'], templates: [] });
+    expect(listed()).toEqual(['tdkFlow']);
+    type('tradingdek');
+    expect(listed()).toEqual(['tdkBasis', 'tdkFlow']);
+  });
+
+  it('takes an id of any kind of characters, and two groups apart by their ids', () => {
+    const odd = { id: 'a "quoted" id', label: 'Desk A' };
+    picker.open({ items: [...own, { id: 'deskA', name: 'Desk Line', shortName: 'DL', placement: 'overlay', category: 'other', group: odd }], favorites: [], templates: [] });
+    expect(tabs().slice(3, 5)).toEqual(['TradingDek', 'Desk A']);
+    layer.querySelectorAll<HTMLButtonElement>('.tcw-ip-tab')[4].click();
+    expect(listed()).toEqual(['deskA']);
+  });
+});
+
 describe('the indicators dialog’s templates', () => {
   it('applies one and closes, deletes one and stays, and saves the chart’s', () => {
     picker.open({ items, favorites: [], templates: ['Swing', 'Scalp'] });

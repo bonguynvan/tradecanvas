@@ -172,8 +172,14 @@ export interface IndicatorDescriptor {
   levels?: readonly number[];
   /** How its parameters are edited, by parameter name. */
   inputs?: Readonly<Record<string, IndicatorInputSpec>>;
-  /** The group it is listed under in the widget's indicator picker; unset: "other" (built-ins have theirs). */
-  category?: IndicatorCategory;
+  /**
+   * The group it is listed under in the widget's indicator picker: one of
+   * the built-in kinds, or a group of your own (`{ id, label }`), listed
+   * before them in the order their first indicators were registered.
+   * Unset: "other" (built-ins have theirs). Code that needs only the kind
+   * reads `indicatorCategory(descriptor)`.
+   */
+  category?: IndicatorCategory | IndicatorGroup;
   /**
    * Whether it counts days, weeks or months in the exchange's zone
    * (`config.exchangeTimeZone`): a change of the zone computes again only
@@ -193,6 +199,17 @@ export interface IndicatorDescriptor {
    * in another theme takes that theme's look.
    */
   defaultStyle?: IndicatorStyleConfig | ((theme: Theme) => IndicatorStyleConfig);
+}
+
+/**
+ * A group of your own in the widget's indicator picker, listed before the
+ * built-in kinds: your app's indicators together, under its name.
+ */
+export interface IndicatorGroup {
+  /** Tells groups apart: the indicators with the same id are listed together. */
+  id: string;
+  /** Its name in the picker, in the language your app shows; search finds its indicators by it too. */
+  label: string;
 }
 
 /** The groups of the widget's indicator picker. */

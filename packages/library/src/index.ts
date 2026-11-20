@@ -133,6 +133,7 @@ export type {
   IndicatorIntervals,
   IntervalUnit,
   IndicatorCategory,
+  IndicatorGroup,
   ChartStyleKey,
   ChartStyleOverrides,
   ChartStyleOverridesPatch,
@@ -223,7 +224,7 @@ export {
 export type { PriceStepBand, VN30FContract } from '@tradecanvas/commons';
 
 // Re-export base classes for custom indicators and drawing tools
-export { IndicatorBase, IndicatorValueMap, DrawingBase, indicatorCategory, INDICATOR_CATEGORIES, describeInputs } from '@tradecanvas/core';
+export { IndicatorBase, IndicatorValueMap, DrawingBase, indicatorCategory, indicatorGroup, INDICATOR_CATEGORIES, describeInputs } from '@tradecanvas/core';
 export type { IndicatorInputInfo } from '@tradecanvas/core';
 // The trade a Long/Short Position drawing stands for, for an app that places an order from it.
 export { positionLevels } from '@tradecanvas/core';

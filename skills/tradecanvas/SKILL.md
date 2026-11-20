@@ -175,7 +175,8 @@ chart.removeAll('indicators'); // or 'drawings', or 'all': everything of that ki
 - Custom indicators: extend `IndicatorBase`, declare `plots`, and register with
   `chart.registerIndicator(...)` — see [references/recipes.md](references/recipes.md).
   A `category` in the descriptor (`'oscillators'`, `'volume'`…) files it under that
-  group of ChartWidget's Indicators dialog. One that groups bars by day reads the
+  group of ChartWidget's Indicators dialog; `{ id, label }` is a group of your own,
+  listed before the built-in kinds, that keeps your app's indicators together. One that groups bars by day reads the
   exchange's zone as `config.exchangeTimeZone`; one that reads no zone can say
   `readsExchangeTimeZone: false`, so a new zone leaves it as it is.
 

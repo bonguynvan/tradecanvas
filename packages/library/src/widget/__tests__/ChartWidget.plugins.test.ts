@@ -1,9 +1,10 @@
 // @vitest-environment jsdom
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeAll, beforeEach, afterEach, vi } from 'vitest';
 import type { DataAdapter, IndicatorPlugin, IndicatorValue, OHLCBar } from '@tradecanvas/commons';
 import { installChartStubs, sizedHost } from '../../__tests__/chartTestEnv.js';
 import { Chart } from '../../Chart.js';
 import { ChartWidget } from '../ChartWidget.js';
+import { preloadDialogs } from '../widgetDialogs.js';
 
 const BARS: OHLCBar[] = Array.from({ length: 60 }, (_, i) => ({
   time: i * 60_000, open: 100, high: 101, low: 99, close: 100 + (i % 5), volume: 10,
@@ -66,6 +67,8 @@ afterEach(() => {
 });
 
 describe("a widget given the app's plugins", () => {
+  beforeAll(preloadDialogs);
+
   it('registers them before it restores the saved layout, so their indicators come back', async () => {
     saveLayoutWithIndicator();
     const host = sizedHost();
@@ -121,6 +124,18 @@ describe("a widget given the app's plugins", () => {
     widget.setData(BARS);
     expect(widget.getChart().getAvailableIndicators().map((d) => d.id)).toContain('tdk-close');
     expect(widget.getChart().addIndicator('tdk-close')).toBeTruthy();
+  });
+
+  it("lists them in the indicators dialog under the app's own group", () => {
+    const host = sizedHost();
+    hosts.push(host);
+    const grouped: IndicatorPlugin = { ...closeLine, descriptor: { ...closeLine.descriptor, category: { id: 'tdk', label: 'TradingDek' } } };
+    widget = new ChartWidget(host, { symbol: 'AAA', watchlist: false, plugins: [{ kind: 'indicator', plugin: grouped }] });
+    host.querySelector<HTMLButtonElement>('[data-role="indicators"]')!.click();
+    const tabs = [...document.querySelectorAll<HTMLButtonElement>('.tcw-ip-tab')].map((t) => t.textContent);
+    expect(tabs.indexOf('TradingDek')).toBe(tabs.indexOf('All') + 1);
+    document.querySelectorAll<HTMLButtonElement>('.tcw-ip-tab')[tabs.indexOf('TradingDek')].click();
+    expect([...document.querySelectorAll<HTMLElement>('.tcw-ip-add')].map((b) => b.dataset.ind)).toEqual(['tdk-close']);
   });
 
   it("adds them to the chart's own plugins", () => {
