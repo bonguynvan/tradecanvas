@@ -2728,12 +2728,12 @@
       {
         "key": "up",
         "title": "Up",
-        "kind": "dots"
+        "kind": "markers"
       },
       {
         "key": "down",
         "title": "Down",
-        "kind": "dots"
+        "kind": "markers"
       }
     ]
   },

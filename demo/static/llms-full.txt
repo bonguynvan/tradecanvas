@@ -1296,6 +1296,18 @@ const turnPlots: IndicatorPlot[] = [
 ];
 ```
 
+A mark is as wide as the bars allow (4 to 8 px). Its style gives another
+shape and a size in pixels, for a built-in such as Williams Fractals too:
+
+```ts
+import type { Chart } from '@tradecanvas/chart';
+
+function biggerFractals(chart: Chart): void {
+  const fractals = chart.addIndicator('fractals', { period: 2 });
+  if (fractals) chart.updateIndicatorStyle(fractals, { plots: { up: { shape: 'arrowUp', size: 14 }, down: { size: 14 } } });
+}
+```
+
 An indicator that starts again each day, week or month reads the exchange's
 IANA zone as `config.exchangeTimeZone`: the chart sets it from the symbol's
 `timeZone`, else the market's (`setSymbolInfo`, `setMarket`), and leaves it

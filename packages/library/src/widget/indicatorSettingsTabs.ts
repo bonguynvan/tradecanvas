@@ -1,4 +1,5 @@
-import type { IndicatorIntervals, IndicatorPlot, IndicatorPlotStyle, IntervalUnit, LineStyle } from '@tradecanvas/commons';
+import type { IndicatorIntervals, IndicatorMarkerShape, IndicatorPlot, IndicatorPlotStyle, IntervalUnit, LineStyle } from '@tradecanvas/commons';
+import { INDICATOR_MARKER_SHAPES } from '@tradecanvas/commons';
 import { INTERVAL_LIMITS, INTERVAL_UNITS } from '@tradecanvas/core';
 import { createIcon } from './icons.js';
 import { colorInput, numberInput, selectInput, settingsRow } from './settingsControls.js';
@@ -6,6 +7,8 @@ import type { MessageKey, Translator } from './i18n.js';
 
 const LINE_WIDTHS = [1, 1.5, 2, 3, 4];
 const LINE_STYLES: readonly LineStyle[] = ['solid', 'dashed', 'dotted'];
+/** A mark's sizes to pick, px across, after Auto (as wide as the bars allow). */
+const MARK_SIZES = [6, 8, 10, 12, 16, 20, 24];
 /** A line's colour where the indicator gives none (a colour field needs one; not a token, which it can't read). */
 const FALLBACK_COLOR = '#4c8dff';
 /** A new level sits this far above the last one. */
@@ -43,16 +46,20 @@ export interface StyleTabActions {
 }
 
 /**
- * The Style tab: a row per line (shown or not, its colours, its dash), the
- * line width, the price scale of an overlay, and the levels under them.
+ * The Style tab: a row per line (shown or not, its colours, its dash, a
+ * mark's shape and size), the line width when a line has one, the price
+ * scale of an overlay, and the levels under them.
  */
 export function renderStyleTab(body: HTMLElement, state: StyleTabState, actions: StyleTabActions, t: Translator, uid: number): void {
   const lines = section();
   // In the order of their colours: a two-tone plot's up and down sit together.
   for (const plot of [...state.plots].sort((a, b) => a.color - b.color)) lines.appendChild(plotRow(plot, state, actions, t));
-  const width = selectInput(LINE_WIDTHS.map((w) => ({ value: String(w), label: `${w} px` })), String(state.lineWidth), (v) => actions.lineWidth(Number(v)));
-  width.dataset.role = 'line-width';
-  lines.appendChild(settingsRow(t('indicatorSettings.lineWidth'), width));
+  // Marks have no width: an indicator drawn in marks alone gets none to pick.
+  if (!state.plots.length || state.plots.some((p) => p.kind !== 'markers')) {
+    const width = selectInput(LINE_WIDTHS.map((w) => ({ value: String(w), label: `${w} px` })), String(state.lineWidth), (v) => actions.lineWidth(Number(v)));
+    width.dataset.role = 'line-width';
+    lines.appendChild(settingsRow(t('indicatorSettings.lineWidth'), width));
+  }
   if (state.scale && actions.scale) {
     const scale = selectInput([
       { value: 'right', label: t('indicatorSettings.scale.right') },
@@ -107,8 +114,28 @@ function plotRow(plot: IndicatorPlot, state: StyleTabState, actions: StyleTabAct
     dash.setAttribute('aria-label', `${plot.title}: ${t('drawingSettings.lineStyle')}`);
     controls.appendChild(dash);
   }
+  if (plot.kind === 'markers') controls.append(...markControls(plot, own, actions, t));
   row.append(name, controls);
   return row;
+}
+
+/** A mark's shape and size pickers. */
+function markControls(plot: IndicatorPlot, own: IndicatorPlotStyle, actions: StyleTabActions, t: Translator): HTMLSelectElement[] {
+  const shape = selectInput(
+    INDICATOR_MARKER_SHAPES.map((s) => ({ value: s, label: t(`indicatorSettings.markShape.${s}`) })),
+    own.shape ?? plot.shape ?? 'dot',
+    (v) => actions.plot(plot.key, { shape: v as IndicatorMarkerShape }),
+  );
+  shape.dataset.role = 'mark-shape';
+  shape.setAttribute('aria-label', `${plot.title}: ${t('indicatorSettings.markShape')}`);
+  const size = selectInput(
+    [{ value: 'auto', label: t('settings.auto') }, ...MARK_SIZES.map((s) => ({ value: String(s), label: `${s} px` }))],
+    typeof own.size === 'number' ? String(own.size) : 'auto',
+    (v) => actions.plot(plot.key, { size: v === 'auto' ? 'auto' : Number(v) }),
+  );
+  size.dataset.role = 'mark-size';
+  size.setAttribute('aria-label', `${plot.title}: ${t('indicatorSettings.markSize')}`);
+  return [shape, size];
 }
 
 /** The levels, each with its remove button, and Add; it redraws itself and keeps the keyboard nearby. */

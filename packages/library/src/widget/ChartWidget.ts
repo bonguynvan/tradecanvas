@@ -76,7 +76,7 @@ import { type CompareWay } from './widgetCompare.js';
 import { WidgetTooltip } from './WidgetTooltip.js';
 import { WidgetIndicatorLegend } from './WidgetIndicatorLegend.js';
 import { formatIndicatorValue } from './legendValues.js';
-import { RANGE_PRESETS, SYMBOL_INDICATOR_IDS, adapterFromFeed, indicatorCategory, isCrosshairCursor, sourceParam, valuePlots } from '@tradecanvas/core';
+import { RANGE_PRESETS, SYMBOL_INDICATOR_IDS, adapterFromFeed, indicatorCategory, isCrosshairCursor, isMarkerPlot, sourceParam, valuePlots } from '@tradecanvas/core';
 import { WidgetBracketBar } from './WidgetBracketBar.js';
 import { AlertNotifier } from './AlertNotifier.js';
 import { WidgetDepthLadder } from './WidgetDepthLadder.js';
@@ -4019,11 +4019,17 @@ export function lineSourcesFor(instanceId: string, active: readonly ActiveIndica
       }
     }
   }
+  // Marks are not lines to read, but one the indicator reads already stays: it was a line in a layout saved before.
+  const self = active.find((ind) => ind.instanceId === instanceId);
+  const sourceName = self ? sourceParam(self.descriptor) : null;
+  const reading = self && sourceName ? self.params[sourceName] : undefined;
   const out: { value: string; label: string }[] = [];
   for (const ind of active) {
     if (downstream.has(ind.instanceId)) continue;
     const name = widgetIndicatorLabel(ind, t);
-    for (const plot of valuePlots(ind.descriptor.plots ?? [])) {
+    const plots = ind.descriptor.plots ?? [];
+    const readable = [...valuePlots(plots), ...plots.filter((p) => isMarkerPlot(p) && indicatorSource(ind.instanceId, p.key) === reading)];
+    for (const plot of readable) {
       out.push({ value: indicatorSource(ind.instanceId, plot.key), label: `${name}: ${plot.title}` });
     }
   }

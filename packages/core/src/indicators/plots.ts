@@ -1,8 +1,10 @@
 import type {
   IndicatorDescriptor,
   IndicatorFill,
+  IndicatorMarkerShape,
   IndicatorOutput,
   IndicatorPlot,
+  IndicatorPlotStyle,
   IndicatorValue,
   ResolvedIndicatorStyle,
   ViewportState,
@@ -250,7 +252,7 @@ export function renderPlots(
         const take = (val: IndicatorValue) => up === null || isUpTone(plot, val) === up;
         if (kind === 'histogram') drawHistogram(ctx, series, plot.key, from, to, viewport, toY, color, take);
         else if (kind === 'dots') drawDots(ctx, series, plot.key, from, to, viewport, toY, color, take);
-        else if (kind === 'markers') drawMarkers(ctx, output, series, plot, from, to, viewport, toY, color, take, pricePane);
+        else if (kind === 'markers') drawMarkers(ctx, output, series, plot, style.plots?.[plot.key], from, to, viewport, toY, color, take, pricePane);
         else drawPath(ctx, series, plot.key, from, to, viewport, toY, color, width, kind === 'step', up === null ? null : take, dash, breaks);
       }
     } finally {
@@ -377,6 +379,56 @@ const MARKER_SIZE = 8;
 const MIN_MARKER_SIZE = 4;
 /** The room between a mark and the bar it sits above or below. */
 const MARKER_GAP = 3;
+/** The sizes a mark's own size is kept within, px across. */
+const MARKER_SIZE_RANGE = [2, 40] as const;
+/** A square's side and an arrow's shaft, against the mark's size: they look as heavy as a triangle. */
+const SQUARE_SIDE = 0.8;
+const SHAFT_WIDTH = 0.4;
+
+/** A mark's size: its style's, kept within reason, else as wide as the bars allow. */
+function markerSize(own: IndicatorPlotStyle | undefined, viewport: ViewportState): number {
+  const set = own?.size;
+  if (typeof set === 'number' && Number.isFinite(set)) return Math.min(MARKER_SIZE_RANGE[1], Math.max(MARKER_SIZE_RANGE[0], set));
+  return Math.max(MIN_MARKER_SIZE, Math.min(MARKER_SIZE, viewport.barWidth + viewport.barSpacing));
+}
+
+/** One mark's outline, centred at (x, y), `half` its half size, added to the path. */
+function traceMark(ctx: CanvasRenderingContext2D, shape: IndicatorMarkerShape, x: number, y: number, half: number): void {
+  if (shape === 'dot') {
+    ctx.moveTo(x + half, y);
+    ctx.arc(x, y, half, 0, Math.PI * 2);
+    return;
+  }
+  if (shape === 'square') {
+    const s = half * SQUARE_SIDE;
+    ctx.moveTo(x - s, y - s);
+    ctx.lineTo(x + s, y - s);
+    ctx.lineTo(x + s, y + s);
+    ctx.lineTo(x - s, y + s);
+  } else if (shape === 'diamond') {
+    ctx.moveTo(x, y - half);
+    ctx.lineTo(x + half, y);
+    ctx.lineTo(x, y + half);
+    ctx.lineTo(x - half, y);
+  } else if (shape === 'arrowUp' || shape === 'arrowDown') {
+    // A head over the near half, a shaft down the far one.
+    const dir = shape === 'arrowUp' ? -1 : 1;
+    const shaft = half * SHAFT_WIDTH;
+    ctx.moveTo(x, y + dir * half);
+    ctx.lineTo(x + half, y);
+    ctx.lineTo(x + shaft, y);
+    ctx.lineTo(x + shaft, y - dir * half);
+    ctx.lineTo(x - shaft, y - dir * half);
+    ctx.lineTo(x - shaft, y);
+    ctx.lineTo(x - half, y);
+  } else {
+    const tip = shape === 'triangleUp' ? -half : half;
+    ctx.moveTo(x, y + tip);
+    ctx.lineTo(x + half, y - tip);
+    ctx.lineTo(x - half, y - tip);
+  }
+  ctx.closePath();
+}
 
 type MarkerBar = { time: number; high?: number; low?: number };
 
@@ -388,12 +440,11 @@ type MarkerBar = { time: number; high?: number; low?: number };
  * other mark is at its value. Zoomed out, one per pixel column.
  */
 function drawMarkers(
-  ctx: CanvasRenderingContext2D, output: IndicatorOutput, series: Series, plot: IndicatorPlot, from: number, to: number,
-  viewport: ViewportState, toY: (v: number) => number, color: string, take: Take, pricePane: boolean,
+  ctx: CanvasRenderingContext2D, output: IndicatorOutput, series: Series, plot: IndicatorPlot, own: IndicatorPlotStyle | undefined,
+  from: number, to: number, viewport: ViewportState, toY: (v: number) => number, color: string, take: Take, pricePane: boolean,
 ): void {
-  const size = Math.max(MIN_MARKER_SIZE, Math.min(MARKER_SIZE, viewport.barWidth + viewport.barSpacing));
-  const half = size / 2;
-  const shape = plot.shape ?? 'dot';
+  const half = markerSize(own, viewport) / 2;
+  const shape = own?.shape ?? plot.shape ?? 'dot';
   const position = markerPosition(plot, pricePane);
   const bars = viewport.data as readonly MarkerBar[] | undefined;
   // On an inverted scale a bar's high is drawn below its low: above and below follow the screen.
@@ -417,16 +468,7 @@ function drawMarkers(
     let y = toY(v);
     if (aligned && position === 'aboveBar' && bar.high !== undefined) y = toY(bar.high) - away * (MARKER_GAP + half);
     else if (aligned && position === 'belowBar' && bar.low !== undefined) y = toY(bar.low) + away * (MARKER_GAP + half);
-    if (shape === 'dot') {
-      ctx.moveTo(x + half, y);
-      ctx.arc(x, y, half, 0, Math.PI * 2);
-    } else {
-      const tip = shape === 'triangleUp' ? -half : half;
-      ctx.moveTo(x, y + tip);
-      ctx.lineTo(x + half, y - tip);
-      ctx.lineTo(x - half, y - tip);
-      ctx.closePath();
-    }
+    traceMark(ctx, shape, x, y, half);
   }
   ctx.fill();
 }

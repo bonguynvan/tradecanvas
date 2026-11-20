@@ -1,6 +1,6 @@
 import type { ChartType, LineStyle } from '../types/chart.js';
 import type { Theme } from '../types/theme.js';
-import type { IndicatorPlotStyle } from '../types/indicator.js';
+import type { IndicatorMarkerShape, IndicatorPlotStyle } from '../types/indicator.js';
 import {
   CHART_STYLE_KEYS,
   type ChartStyleKey,
@@ -15,6 +15,13 @@ import { resolveVolumeColors } from '../constants/themes.js';
 import { lerpColor } from './color.js';
 
 const LINE_STYLES: readonly LineStyle[] = ['solid', 'dashed', 'dotted'];
+
+/** A mark's size, px across: what a style may set. */
+const MARK_SIZE_MIN = 2;
+const MARK_SIZE_MAX = 40;
+
+/** The shapes a markers plot draws, in the order a picker lists them. */
+export const INDICATOR_MARKER_SHAPES: readonly IndicatorMarkerShape[] = ['triangleUp', 'triangleDown', 'arrowUp', 'arrowDown', 'dot', 'square', 'diamond'];
 
 /** How much of the ink a crosshair tag's ground takes. */
 const CROSSHAIR_TAG_INK = 0.28;
@@ -106,16 +113,18 @@ export function readPaneStyle(raw: unknown): PaneStyle | null {
 /** A plot key as indicators name them: short, nothing odd in it. */
 const PLOT_KEY = /^[A-Za-z0-9_]{1,32}$/;
 
-/** Plot styles read from anywhere: by plot key, a dash style and whether it shows; undefined when none. */
+/** Plot styles read from anywhere: by plot key, a dash style, whether it shows, a mark's shape and size; undefined when none. */
 export function readIndicatorPlotStyles(raw: unknown): Record<string, IndicatorPlotStyle> | undefined {
   if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return undefined;
   const out: Record<string, IndicatorPlotStyle> = {};
   for (const [key, value] of Object.entries(raw)) {
     if (!PLOT_KEY.test(key) || typeof value !== 'object' || value === null) continue;
-    const { lineStyle, visible } = value as Record<string, unknown>;
+    const { lineStyle, visible, shape, size } = value as Record<string, unknown>;
     const plot: IndicatorPlotStyle = {
       ...(LINE_STYLES.includes(lineStyle as LineStyle) ? { lineStyle: lineStyle as LineStyle } : {}),
       ...(typeof visible === 'boolean' ? { visible } : {}),
+      ...(INDICATOR_MARKER_SHAPES.includes(shape as IndicatorMarkerShape) ? { shape: shape as IndicatorMarkerShape } : {}),
+      ...(size === 'auto' ? { size } : typeof size === 'number' && Number.isFinite(size) && size > 0 ? { size: Math.min(MARK_SIZE_MAX, Math.max(MARK_SIZE_MIN, size)) } : {}),
     };
     if (Object.keys(plot).length > 0) out[key] = plot;
   }

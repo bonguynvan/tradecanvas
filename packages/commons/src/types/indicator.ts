@@ -36,7 +36,7 @@ export type IndicatorParamsFor<Id extends string> = Id extends BuiltInIndicatorI
 export type IndicatorPlotKind = 'line' | 'histogram' | 'dots' | 'step' | 'markers';
 
 /** The shape of a markers plot's marks. */
-export type IndicatorMarkerShape = 'dot' | 'triangleUp' | 'triangleDown';
+export type IndicatorMarkerShape = 'dot' | 'triangleUp' | 'triangleDown' | 'arrowUp' | 'arrowDown' | 'square' | 'diamond';
 
 /**
  * Where a markers plot puts its mark on a bar: at its value, above the
@@ -252,21 +252,29 @@ export type OverlayScale = 'right' | 'left';
 
 /**
  * One plot's own look, by its key (`'signal'`, `'upper'`). Its colour and
- * width stay in `colors` and `lineWidths`; this adds its dash and whether it
- * shows. Plots drawn from the descriptor's `plots` follow it; an indicator
- * that draws itself keeps to its own look.
+ * width stay in `colors` and `lineWidths`; this adds its dash, whether it
+ * shows, and a markers plot's shape and size. Plots drawn from the
+ * descriptor's `plots` follow it; an indicator that draws itself keeps to
+ * its own look.
  */
 export interface IndicatorPlotStyle {
   lineStyle?: LineStyle;
   /** False: not drawn, and no value tag or legend value. */
   visible?: boolean;
+  /** A markers plot's shape, over the one its descriptor declares. */
+  shape?: IndicatorMarkerShape;
+  /**
+   * A markers plot's marks, in CSS pixels across (2 to 40). `'auto'` or
+   * unset: as wide as the bars allow, 4 to 8 px.
+   */
+  size?: number | 'auto';
 }
 
 export interface IndicatorStyleConfig {
   colors?: string[];
   lineWidths?: number[];
   opacity?: number;
-  /** Each plot's own dash and visibility, by its key. */
+  /** Each plot's own dash, visibility, and a mark's shape and size, by its key. */
   plots?: Record<string, IndicatorPlotStyle>;
 }
 

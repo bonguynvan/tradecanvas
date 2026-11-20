@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { readIndicatorPlotStyles as readPlotStyles } from '@tradecanvas/commons';
 import {
   CHART_STYLE_KEYS,
   crosshairTagLook,
@@ -240,5 +241,16 @@ describe('lineDash', () => {
     expect(lineDash('dashed', [4, 3])).toEqual([4, 3]);
     expect(lineDash('dotted', [4, 4])).toEqual([1, 2]);
     expect(lineDash('dotted', [4, 4], 2)).toEqual([2, 4]);
+  });
+});
+
+describe('readIndicatorPlotStyles', () => {
+  it('keeps a mark’s shape and size, and drops ones it can’t draw', () => {
+    expect(readPlotStyles({ up: { shape: 'diamond', size: 12 }, down: { shape: 'arrowDown', size: 'auto' } }))
+      .toEqual({ up: { shape: 'diamond', size: 12 }, down: { shape: 'arrowDown', size: 'auto' } });
+    expect(readPlotStyles({ up: { shape: 'star', size: -3 }, down: { size: Number.NaN, visible: false } }))
+      .toEqual({ down: { visible: false } });
+    // Kept within what is drawn: 2 to 40 px.
+    expect(readPlotStyles({ up: { size: 500 }, down: { size: 0.5 } })).toEqual({ up: { size: 40 }, down: { size: 2 } });
   });
 });

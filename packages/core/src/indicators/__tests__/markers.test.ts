@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import type { IndicatorOutput, IndicatorPlot, IndicatorPlugin, IndicatorValue, ViewportState } from '@tradecanvas/commons';
 import { drawnKeys, renderPlots, valuePlots } from '../plots.js';
 import { IndicatorEngine } from '../IndicatorEngine.js';
+import { WilliamsFractalsIndicator } from '../overlay/WilliamsFractals.js';
 
 /** An output over `BARS`: its values by their times as well as by index. */
 const out = (series: (IndicatorValue | null)[]): IndicatorOutput => ({
@@ -157,5 +158,70 @@ describe('the axis tags of an indicator with markers', () => {
     engine.register(plugin);
     const id = engine.addIndicator('turns', {}, BARS);
     expect(engine.getLatestValues(id).map((tag) => tag.value)).toEqual([BARS[2].close]);
+  });
+});
+
+/** The box a mark's points fill. */
+const bounds = (points: { x: number; y: number }[]) => {
+  const xs = points.map((p) => p.x);
+  const ys = points.map((p) => p.y);
+  return { width: Math.max(...xs) - Math.min(...xs), height: Math.max(...ys) - Math.min(...ys), top: Math.min(...ys), bottom: Math.max(...ys) };
+};
+
+describe('Williams Fractals', () => {
+  const plots = new WilliamsFractalsIndicator().descriptor.plots!;
+
+  it('marks a high with a triangle above its bar and a low with one below, clear of the wicks', () => {
+    const up = recorder();
+    // The bar's high of 70 is at y 30; its low of 30 at y 70.
+    renderPlots(up.ctx, out([null, { up: 70 }, null]), viewport, style, plots);
+    const drawn = (shapes: { points: { x: number; y: number }[] }[]) => shapes.filter((s) => s.points.length > 0);
+    expect(drawn(up.shapes)).toHaveLength(1);
+    expect(bounds(drawn(up.shapes)[0].points).bottom).toBeLessThan(30);
+    const down = recorder();
+    renderPlots(down.ctx, out([null, { down: 30 }, null]), viewport, style, plots);
+    expect(bounds(drawn(down.shapes)[0].points).top).toBeGreaterThan(70);
+  });
+
+  it('draws marks as wide as the bars allow, not dots inside the wick', () => {
+    const { ctx, shapes } = recorder();
+    renderPlots(ctx, out([null, { up: 70 }, null]), viewport, style, plots);
+    expect(bounds(shapes[0].points).width).toBeGreaterThanOrEqual(8);
+  });
+});
+
+describe('a markers plot styled on its own', () => {
+  const plot: IndicatorPlot = { key: 'v', title: 'V', color: 0, kind: 'markers', shape: 'triangleUp' };
+  const draw = (own: { shape?: 'dot' | 'triangleUp' | 'triangleDown' | 'arrowUp' | 'arrowDown' | 'square' | 'diamond'; size?: number | 'auto' }) => {
+    const { ctx, shapes } = recorder();
+    renderPlots(ctx, out([null, { v: 50 }, null]), viewport, { ...style, plots: { v: own } }, [plot]);
+    return shapes[0].points;
+  };
+
+  it('takes the size it is given, in pixels across, whatever the bars', () => {
+    expect(bounds(draw({ size: 16 })).width).toBeCloseTo(16);
+    expect(bounds(draw({ size: 'auto' })).width).toBeCloseTo(bounds(draw({})).width);
+  });
+
+  it('keeps a size it is given within reason', () => {
+    expect(bounds(draw({ size: 500 })).width).toBeLessThanOrEqual(40);
+    expect(bounds(draw({ size: 0.5 })).width).toBeGreaterThanOrEqual(2);
+  });
+
+  it('draws the shape its style picks over the one it declares, each within its size', () => {
+    for (const shape of ['dot', 'triangleUp', 'triangleDown', 'arrowUp', 'arrowDown', 'square', 'diamond'] as const) {
+      const box = bounds(draw({ shape, size: 20 }));
+      // A dot is recorded by its start and centre only.
+      if (shape === 'dot') continue;
+      expect(box.width, shape).toBeLessThanOrEqual(20 + 1e-9);
+      expect(box.height, shape).toBeLessThanOrEqual(20 + 1e-9);
+      expect(Math.max(box.width, box.height), shape).toBeGreaterThanOrEqual(14);
+    }
+    // An arrow is not a triangle: its shaft adds points.
+    expect(draw({ shape: 'arrowUp', size: 20 }).length).toBeGreaterThan(draw({ shape: 'triangleUp', size: 20 }).length);
+    // Up points up: its single highest point is the tip.
+    const arrow = draw({ shape: 'arrowUp', size: 20 });
+    const top = Math.min(...arrow.map((p) => p.y));
+    expect(arrow.filter((p) => p.y === top)).toHaveLength(1);
   });
 });
