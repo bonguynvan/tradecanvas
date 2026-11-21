@@ -322,6 +322,7 @@ export const ID_MESSAGES: WidgetMessages = {
   'settings.extendedHours': 'Jam perdagangan diperpanjang',
   'settings.boxSize': 'Ukuran kotak',
   'settings.atrPeriod': 'Panjang ATR',
+  'settings.smoothingLength': 'Panjang penghalusan',
   'settings.lineBreakLines': 'Garis yang harus ditembus',
   'settings.reversal': 'Pembalikan',
   'settings.reversalType': 'Pembalikan dalam',

@@ -322,6 +322,7 @@ export const PT_MESSAGES: WidgetMessages = {
   'settings.extendedHours': 'Horário estendido',
   'settings.boxSize': 'Tamanho da caixa',
   'settings.atrPeriod': 'Período do ATR',
+  'settings.smoothingLength': 'Comprimento de suavização',
   'settings.lineBreakLines': 'Linhas para rompimento',
   'settings.reversal': 'Reversão',
   'settings.reversalType': 'Reversão em',

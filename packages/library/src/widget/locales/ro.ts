@@ -322,6 +322,7 @@ export const RO_MESSAGES: WidgetMessages = {
   'settings.extendedHours': 'Program extins',
   'settings.boxSize': 'Mărimea casetei',
   'settings.atrPeriod': 'Lungime ATR',
+  'settings.smoothingLength': 'Lungimea netezirii',
   'settings.lineBreakLines': 'Linii de străpuns',
   'settings.reversal': 'Inversare',
   'settings.reversalType': 'Inversare în',

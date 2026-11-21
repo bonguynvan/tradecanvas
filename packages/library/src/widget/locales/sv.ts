@@ -322,6 +322,7 @@ export const SV_MESSAGES: WidgetMessages = {
   'settings.extendedHours': 'Förlängd handelstid',
   'settings.boxSize': 'Boxstorlek',
   'settings.atrPeriod': 'ATR-period',
+  'settings.smoothingLength': 'Utjämningslängd',
   'settings.lineBreakLines': 'Linjer att bryta',
   'settings.reversal': 'Vändning',
   'settings.reversalType': 'Vändning i',

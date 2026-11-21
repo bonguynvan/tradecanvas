@@ -329,6 +329,7 @@ export const NB_MESSAGES: WidgetMessages = {
   'settings.extendedHours': 'Utvidet handelstid',
   'settings.boxSize': 'Boksstørrelse',
   'settings.atrPeriod': 'ATR-lengde',
+  'settings.smoothingLength': 'Glattingslengde',
   'settings.lineBreakLines': 'Linjer som må brytes',
   'settings.reversal': 'Vending',
   'settings.reversalType': 'Vending i',

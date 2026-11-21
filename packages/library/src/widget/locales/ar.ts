@@ -329,6 +329,7 @@ export const AR_MESSAGES: WidgetMessages = {
   'settings.extendedHours': 'ساعات التداول الممتدة',
   'settings.boxSize': 'حجم الصندوق',
   'settings.atrPeriod': 'فترة ATR',
+  'settings.smoothingLength': 'طول التمهيد',
   'settings.lineBreakLines': 'خطوط الكسر',
   'settings.reversal': 'الانعكاس',
   'settings.reversalType': 'وحدة الانعكاس',

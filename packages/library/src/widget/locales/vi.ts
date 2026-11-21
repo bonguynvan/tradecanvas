@@ -329,6 +329,7 @@ export const VI_MESSAGES: WidgetMessages = {
   'settings.extendedHours': 'Giờ mở rộng',
   'settings.boxSize': 'Box size',
   'settings.atrPeriod': 'Độ dài ATR',
+  'settings.smoothingLength': 'Độ dài làm mượt',
   'settings.lineBreakLines': 'Số đường để phá',
   'settings.reversal': 'Đảo chiều',
   'settings.reversalType': 'Đảo chiều theo',

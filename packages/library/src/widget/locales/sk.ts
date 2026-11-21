@@ -322,6 +322,7 @@ export const SK_MESSAGES: WidgetMessages = {
   'settings.extendedHours': 'Rozšírené obchodné hodiny',
   'settings.boxSize': 'Veľkosť boxu',
   'settings.atrPeriod': 'Perióda ATR',
+  'settings.smoothingLength': 'Dĺžka vyhladenia',
   'settings.lineBreakLines': 'Počet čiar pre obrat',
   'settings.reversal': 'Obrat',
   'settings.reversalType': 'Jednotka obratu',

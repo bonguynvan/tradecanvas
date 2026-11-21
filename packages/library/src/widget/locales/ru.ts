@@ -322,6 +322,7 @@ export const RU_MESSAGES: WidgetMessages = {
   'settings.extendedHours': 'Расширенные торговые часы',
   'settings.boxSize': 'Размер блока',
   'settings.atrPeriod': 'Период ATR',
+  'settings.smoothingLength': 'Длина сглаживания',
   'settings.lineBreakLines': 'Линий для разворота',
   'settings.reversal': 'Разворот',
   'settings.reversalType': 'Тип разворота',

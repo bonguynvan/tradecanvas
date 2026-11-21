@@ -51,8 +51,25 @@ describe('the chart types drawn from the closes', () => {
 });
 
 describe('ColumnsRenderer', () => {
-  it('stands a column on the scale’s low edge up to each close, as wide as its bar', () => {
-    expect(draw(new ColumnsRenderer()).named('fillRect')).toEqual([[0, 80, 10, 20], [10, 60, 10, 40], [20, 70, 10, 30], [30, 40, 10, 60]]);
+  it('stands the columns a little under the lowest close in view, each up to its close and as wide as its bar', () => {
+    // The lowest close, 20, is at y 80: the columns stand 8 px under it.
+    expect(draw(new ColumnsRenderer()).named('fillRect')).toEqual([[0, 80, 10, 8], [10, 60, 10, 28], [20, 70, 10, 18], [30, 40, 10, 48]]);
+  });
+
+  it('leaves the room under the lowest close alone: the volume’s, when the chart shows it', () => {
+    // Prices 0 to 100 in view, closes from 60: the 40 px under them are another's.
+    const high = bars.map((bar) => ({ ...bar, close: bar.close + 40 }));
+    const bottoms = draw(new ColumnsRenderer(), high).named('fillRect').map(([, y, , height]) => y + height);
+    expect(new Set(bottoms)).toEqual(new Set([48]));
+  });
+
+  it('stands on the plot’s edge when the lowest close is at it, and hangs from the low edge upside down', () => {
+    const low = bars.map((bar, i) => ({ ...bar, close: i === 0 ? 2 : bar.close }));
+    expect(draw(new ColumnsRenderer(), low).named('fillRect')[1]).toEqual([10, 60, 10, 40]);
+    const flipped = draw(new ColumnsRenderer(), bars, view({ invertScale: true })).named('fillRect');
+    // Upside down a price p is at y = p: the lowest close is at 20, and the columns start 8 px above it.
+    expect(flipped[0]).toEqual([0, 12, 10, 8]);
+    expect(flipped[3]).toEqual([30, 12, 10, 48]);
   });
 
   it('colours each by its close against the one before, the first against its open', () => {
@@ -105,6 +122,19 @@ describe('StepAreaRenderer', () => {
     expect(named('moveTo')[0]).toEqual([5, 100]);
     expect(calls.filter((call) => call.name === 'fill')).toHaveLength(1);
     expect(calls.filter((call) => call.name === 'stroke')).toHaveLength(1);
+  });
+});
+
+describe('the lines, zoomed far out', () => {
+  const many: DataSeries = Array.from({ length: 20_000 }, (_, i) => ({ time: i, open: 50, high: 60, low: 40, close: 50 + Math.sin(i / 90) * 30, volume: 1 }));
+  const dense = view({ visibleRange: { from: 0, to: 19_999 }, barWidth: 0.04, barSpacing: 0.01, chartRect: { x: 0, y: 0, width: 1000, height: 100 } });
+
+  it('draw the bars that keep the shape, not every bar', () => {
+    for (const renderer of [new StepAreaRenderer(), new SplineRenderer(), new DotsRenderer()]) {
+      const { calls } = draw(renderer, many, dense);
+      expect(calls.length, renderer.constructor.name).toBeLessThan(20_000);
+      expect(calls.length, renderer.constructor.name).toBeGreaterThan(200);
+    }
   });
 });
 

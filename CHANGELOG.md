@@ -12,7 +12,7 @@ The `3.0` branch. These move under the version's own heading when it is released
 
 ### Chart
 
-- **Six more chart types** (`@tradecanvas/chart`, `@tradecanvas/commons`, `@tradecanvas/core`), 24 in all: `columns` (a column up to each close), `hlcBars` (high, low and close, with no open), `stepArea` (the step line, filled), `spline` (a smooth curve through the closes that passes no high or low close), `dots` (a dot at each close) and `smoothedHeikinAshi` (Heikin-Ashi of prices averaged over `chartTypeOptions.smoothedHeikinAshi.period` bars first, 10). The widget lists them, in 30 languages.
+- **Six more chart types** (`@tradecanvas/chart`, `@tradecanvas/commons`, `@tradecanvas/core`), 24 in all: `columns` (a column up to each close), `hlcBars` (high, low and close, with no open), `stepArea` (the step line, filled), `spline` (a smooth curve through the closes that never goes past a high or low close), `dots` (a dot at each close) and `smoothedHeikinAshi` (Heikin-Ashi of prices averaged over `chartTypeOptions.smoothedHeikinAshi.period` bars first, 10). The widget lists them and sets the length in its settings, in 30 languages.
 
 ### Trading
 

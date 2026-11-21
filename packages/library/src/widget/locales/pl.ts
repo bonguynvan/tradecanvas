@@ -322,6 +322,7 @@ export const PL_MESSAGES: WidgetMessages = {
   'settings.extendedHours': 'Rozszerzone godziny handlu',
   'settings.boxSize': 'Wielkość pola',
   'settings.atrPeriod': 'Okres ATR',
+  'settings.smoothingLength': 'Długość wygładzania',
   'settings.lineBreakLines': 'Liczba linii do przełamania',
   'settings.reversal': 'Odwrócenie',
   'settings.reversalType': 'Jednostka odwrócenia',

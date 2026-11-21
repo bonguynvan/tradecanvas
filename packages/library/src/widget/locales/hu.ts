@@ -322,6 +322,7 @@ export const HU_MESSAGES: WidgetMessages = {
   'settings.extendedHours': 'Meghosszabbított kereskedési idő',
   'settings.boxSize': 'Dobozméret',
   'settings.atrPeriod': 'ATR hossza',
+  'settings.smoothingLength': 'Simítás hossza',
   'settings.lineBreakLines': 'Áttörendő vonalak száma',
   'settings.reversal': 'Fordulat',
   'settings.reversalType': 'Fordulat egysége',

@@ -330,6 +330,7 @@ export const EN_MESSAGES = {
   'settings.extendedHours': 'Extended hours',
   'settings.boxSize': 'Box size',
   'settings.atrPeriod': 'ATR length',
+  'settings.smoothingLength': 'Smoothing length',
   'settings.lineBreakLines': 'Lines to break',
   'settings.reversal': 'Reversal',
   'settings.reversalType': 'Reversal in',

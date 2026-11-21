@@ -322,6 +322,7 @@ export const JA_MESSAGES: WidgetMessages = {
   'settings.extendedHours': '時間外取引',
   'settings.boxSize': 'ボックスサイズ',
   'settings.atrPeriod': 'ATR 期間',
+  'settings.smoothingLength': '平滑化の期間',
   'settings.lineBreakLines': '転換に必要な本数',
   'settings.reversal': '反転幅',
   'settings.reversalType': '反転幅の単位',

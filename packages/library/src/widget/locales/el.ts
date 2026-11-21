@@ -322,6 +322,7 @@ export const EL_MESSAGES: WidgetMessages = {
   'settings.extendedHours': 'Εκτεταμένο ωράριο',
   'settings.boxSize': 'Μέγεθος κουτιού',
   'settings.atrPeriod': 'Μήκος ATR',
+  'settings.smoothingLength': 'Μήκος εξομάλυνσης',
   'settings.lineBreakLines': 'Γραμμές προς διάσπαση',
   'settings.reversal': 'Αντιστροφή',
   'settings.reversalType': 'Αντιστροφή σε',

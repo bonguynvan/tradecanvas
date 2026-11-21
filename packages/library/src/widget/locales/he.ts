@@ -329,6 +329,7 @@ export const HE_MESSAGES: WidgetMessages = {
   'settings.extendedHours': 'שעות מסחר מורחבות',
   'settings.boxSize': 'גודל תיבה',
   'settings.atrPeriod': 'אורך ATR',
+  'settings.smoothingLength': 'אורך ההחלקה',
   'settings.lineBreakLines': 'קווים לשבירה',
   'settings.reversal': 'היפוך',
   'settings.reversalType': 'היפוך לפי',

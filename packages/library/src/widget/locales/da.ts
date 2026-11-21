@@ -329,6 +329,7 @@ export const DA_MESSAGES: WidgetMessages = {
   'settings.extendedHours': 'Udvidet handelstid',
   'settings.boxSize': 'Boksstørrelse',
   'settings.atrPeriod': 'ATR-længde',
+  'settings.smoothingLength': 'Udjævningslængde',
   'settings.lineBreakLines': 'Linjer, der skal brydes',
   'settings.reversal': 'Vending',
   'settings.reversalType': 'Vending i',

@@ -322,6 +322,7 @@ export const TH_MESSAGES: WidgetMessages = {
   'settings.extendedHours': 'การซื้อขายนอกเวลาปกติ',
   'settings.boxSize': 'ขนาดกล่อง',
   'settings.atrPeriod': 'ความยาว ATR',
+  'settings.smoothingLength': 'ความยาวการปรับเรียบ',
   'settings.lineBreakLines': 'จำนวนเส้นที่ต้องทะลุ',
   'settings.reversal': 'ระยะกลับตัว',
   'settings.reversalType': 'หน่วยการกลับตัว',

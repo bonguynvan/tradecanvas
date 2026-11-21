@@ -322,6 +322,7 @@ export const TR_MESSAGES: WidgetMessages = {
   'settings.extendedHours': 'Uzatılmış işlem saatleri',
   'settings.boxSize': 'Kutu boyutu',
   'settings.atrPeriod': 'ATR uzunluğu',
+  'settings.smoothingLength': 'Yumuşatma uzunluğu',
   'settings.lineBreakLines': 'Kırılacak çizgi sayısı',
   'settings.reversal': 'Dönüş',
   'settings.reversalType': 'Dönüş birimi',

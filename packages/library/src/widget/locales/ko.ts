@@ -322,6 +322,7 @@ export const KO_MESSAGES: WidgetMessages = {
   'settings.extendedHours': '시간외 거래',
   'settings.boxSize': '박스 크기',
   'settings.atrPeriod': 'ATR 기간',
+  'settings.smoothingLength': '평활 기간',
   'settings.lineBreakLines': '돌파할 라인 수',
   'settings.reversal': '반전 폭',
   'settings.reversalType': '반전 단위',

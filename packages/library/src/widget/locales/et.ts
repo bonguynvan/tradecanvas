@@ -329,6 +329,7 @@ export const ET_MESSAGES: WidgetMessages = {
   'settings.extendedHours': 'Pikendatud kauplemisaeg',
   'settings.boxSize': 'Kasti suurus',
   'settings.atrPeriod': 'ATR-i pikkus',
+  'settings.smoothingLength': 'Silumise pikkus',
   'settings.lineBreakLines': 'Murtavate joonte arv',
   'settings.reversal': 'Pööre',
   'settings.reversalType': 'Pöörde ühik',

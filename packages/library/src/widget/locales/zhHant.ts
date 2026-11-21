@@ -322,6 +322,7 @@ export const ZH_HANT_MESSAGES: WidgetMessages = {
   'settings.extendedHours': '延長交易時段',
   'settings.boxSize': '方塊大小',
   'settings.atrPeriod': 'ATR 週期',
+  'settings.smoothingLength': '平滑週期',
   'settings.lineBreakLines': '突破線數',
   'settings.reversal': '反轉幅度',
   'settings.reversalType': '反轉單位',

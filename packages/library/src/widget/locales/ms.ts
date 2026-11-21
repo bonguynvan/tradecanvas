@@ -329,6 +329,7 @@ export const MS_MESSAGES: WidgetMessages = {
   'settings.extendedHours': 'Waktu dagangan lanjutan',
   'settings.boxSize': 'Saiz kotak',
   'settings.atrPeriod': 'Tempoh ATR',
+  'settings.smoothingLength': 'Panjang pelicinan',
   'settings.lineBreakLines': 'Garisan untuk ditembusi',
   'settings.reversal': 'Pembalikan',
   'settings.reversalType': 'Pembalikan dalam',

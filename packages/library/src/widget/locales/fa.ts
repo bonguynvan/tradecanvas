@@ -329,6 +329,7 @@ export const FA_MESSAGES: WidgetMessages = {
   'settings.extendedHours': 'ساعات پیش و پس از بازار',
   'settings.boxSize': 'اندازه باکس',
   'settings.atrPeriod': 'دوره ATR',
+  'settings.smoothingLength': 'طول هموارسازی',
   'settings.lineBreakLines': 'تعداد خطوط شکست',
   'settings.reversal': 'بازگشت',
   'settings.reversalType': 'واحد بازگشت',

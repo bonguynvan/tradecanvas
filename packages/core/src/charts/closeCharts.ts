@@ -23,23 +23,34 @@ function closeColor(data: DataSeries, i: number, theme: Theme): string {
   return data[i].close >= before ? theme.candleUp : theme.candleDown;
 }
 
+/** How far under the lowest close in view the columns stand, so that one has a height too. */
+const COLUMN_FOOT = 8;
+
 /**
- * Columns: a column from the scale's low edge up to each close, coloured by
- * the close against the one before. Zoomed far out, a pixel column each.
+ * Columns: a column up to each close, coloured by the close against the one
+ * before. They stand a little under the lowest close in view, not on the
+ * plot's edge: the room under it is the volume's when the chart shows it.
+ * Zoomed far out, a pixel column each.
  */
 export class ColumnsRenderer implements ChartRendererInterface {
   render(ctx: CanvasRenderingContext2D, data: DataSeries, viewport: ViewportState, theme: Theme): void {
     if (!drawable(data, viewport)) return;
     const { from, to } = viewport.visibleRange;
     const { toX, toY } = frame(viewport);
-    // The columns stand on the low-price edge: the bottom, or the top when the scale is upside down.
-    const baseY = toY(viewport.priceRange.min);
     const width = Math.max(1, Math.round(viewport.barWidth));
     // Zoomed far out there are more bars than pixels: the ones that keep the shape, a pixel column each.
     const indices = isDense(viewport) ? lttbVisibleIndices(from, to, data.length, viewport.chartRect.width, (i) => data[i].close) : null;
     const count = indices ? indices.length : Math.min(to, data.length - 1) - Math.max(0, from) + 1;
+    const at = (k: number) => (indices ? indices[k] : Math.max(0, from) + k);
+    let lowest = Infinity;
+    for (let k = 0; k < count; k++) lowest = Math.min(lowest, data[at(k)].close);
+    if (!Number.isFinite(lowest)) return;
+    // Toward the low-price edge (the bottom, or the top upside down), and no farther than it.
+    const edgeY = toY(viewport.priceRange.min);
+    const lowY = toY(lowest);
+    const baseY = edgeY >= lowY ? Math.min(edgeY, lowY + COLUMN_FOOT) : Math.max(edgeY, lowY - COLUMN_FOOT);
     for (let k = 0; k < count; k++) {
-      const i = indices ? indices[k] : Math.max(0, from) + k;
+      const i = at(k);
       const y = toY(data[i].close);
       ctx.fillStyle = closeColor(data, i, theme);
       ctx.fillRect(Math.round(toX(i) - width / 2), Math.min(y, baseY), width, Math.max(1, Math.abs(baseY - y)));
@@ -97,21 +108,23 @@ export class DotsRenderer implements ChartRendererInterface {
 const DOT_MIN_RADIUS = 1;
 const DOT_MAX_RADIUS = 4;
 
-/** The closes as steps, with the area under them filled: each close holds until the next bar. */
+/** The closes as steps, with the area under them filled: each close holds until the next bar. Zoomed far out, the steps are between the bars that keep the shape. */
 export class StepAreaRenderer implements ChartRendererInterface {
   render(ctx: CanvasRenderingContext2D, data: DataSeries, viewport: ViewportState, theme: Theme): void {
     if (!drawable(data, viewport)) return;
     const { from, to } = viewport.visibleRange;
     const { toX, toY } = frame(viewport);
-    const first = Math.max(0, from);
-    const last = Math.min(to, data.length - 1);
-    if (first > last) return;
+    const indices = lttbVisibleIndices(from, to, data.length, viewport.chartRect.width, (i) => data[i].close);
+    if (indices.length === 0) return;
+    const first = indices[0];
+    const last = indices[indices.length - 1];
     const baseY = toY(viewport.priceRange.min);
     const steps = (start: 'move' | 'line') => {
       let prevY = toY(data[first].close);
       if (start === 'move') ctx.moveTo(toX(first), prevY);
       else ctx.lineTo(toX(first), prevY);
-      for (let i = first + 1; i <= last; i++) {
+      for (let k = 1; k < indices.length; k++) {
+        const i = indices[k];
         const x = toX(i);
         const y = toY(data[i].close);
         ctx.lineTo(x, prevY);
