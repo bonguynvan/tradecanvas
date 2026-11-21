@@ -44,6 +44,9 @@ export const LAST_PRICE_SECTION: LookSection = {
     row('settings.down', 'lastPrice.downColor'),
     row('drawingSettings.lineStyle', 'lastPrice.style'),
     row('drawingSettings.lineWidth', 'lastPrice.width'),
+    // Auto: the tag is the up or the down colour, its text the one that reads on it.
+    autoRow('settings.labelBackground', 'lastPrice.labelBackground', { from: 'lastPrice.upColor' }),
+    autoRow('settings.labelText', 'lastPrice.labelTextColor', { from: 'crosshair.labelTextColor' }),
   ],
 };
 export const VOLUME_SECTION: LookSection = {
@@ -77,6 +80,7 @@ export const STATUS_LINE_ROWS: readonly LookRow[] = [...LEGEND_ROWS, ...READOUT_
 export const SCALE_ROWS: readonly LookRow[] = [
   row('drawingSettings.text', 'axis.price.textColor', 'axis.time.textColor'),
   row('settings.scaleLines', 'axis.price.lineColor', 'axis.time.lineColor'),
+  row('settings.outlinedValues', 'axis.price.valueTagsOutlined'),
 ];
 
 /** The Appearance tab: the background, the grid, the crosshair, the session breaks, the drawings' handles. */
@@ -95,6 +99,7 @@ export const APPEARANCE_SECTIONS: readonly LookSection[] = [
     rows: [
       row('settings.horizontal', 'grid.horizontal.visible'),
       row('settings.vertical', 'grid.vertical.visible'),
+      row('settings.verticalAtPeriods', 'grid.vertical.periodsOnly'),
       row('drawingSettings.color', 'grid.horizontal.color', 'grid.vertical.color'),
       row('drawingSettings.lineStyle', 'grid.horizontal.style', 'grid.vertical.style'),
       row('drawingSettings.lineWidth', 'grid.horizontal.width', 'grid.vertical.width'),

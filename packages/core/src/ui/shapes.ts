@@ -40,6 +40,22 @@ export function tagPath(ctx: CanvasRenderingContext2D, x: number, y: number, w: 
 export const AXIS_TAG_TEXT_INSET = 7;
 
 /**
+ * A tag's edge, a pixel wide and inside its box (an outlined tag is no
+ * larger than a filled one), in the theme's corner shape and the context's
+ * current stroke.
+ */
+export function strokeTag(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, theme: Theme): void {
+  const box = crispBox(ctx, x, y, w, h);
+  ctx.lineWidth = 1;
+  if (!(cornerRadius(theme, box.w, box.h) > 0)) {
+    ctx.strokeRect(box.x + 0.5, box.y + 0.5, box.w - 1, box.h - 1);
+    return;
+  }
+  tagPath(ctx, box.x + 0.5, box.y + 0.5, box.w - 1, box.h - 1, theme);
+  ctx.stroke();
+}
+
+/**
  * Fill a tag's box in the theme's corner shape, with the context's current
  * fill, its edges on whole device pixels (see `crispBox`).
  */

@@ -15,6 +15,7 @@ import { CandlestickRenderer } from '../charts/CandlestickRenderer.js';
 import type { ChartRendererInterface } from '../charts/ChartRenderer.js';
 import { gridFitsGpu, type GridRenderer } from '../axis/GridRenderer.js';
 import type { GridMarks } from '../axis/gridLines.js';
+import { periodStarts } from '../axis/timeMarks.js';
 import { crosshairLooks } from '../interaction/crosshairLooks.js';
 import { crispX, crispY, hLine, vLine } from '../charts/pixelGrid.js';
 import type { PriceAxis } from '../axis/PriceAxis.js';
@@ -1027,8 +1028,11 @@ export class RenderEngine {
 
 /** Where the axes label, for the grid's lines: the price axis's ticks and the time axis's marks. */
 function gridMarks(ctx: RenderContext): GridMarks {
+  const marks = ctx.timeAxis?.marks(ctx.viewport, ctx.data);
+  // A look that rules the time axis where a period begins, not at every label.
+  const ruled = marks && ctx.theme.style?.grid.verticalAtPeriods ? periodStarts(marks) : marks;
   return {
     prices: ctx.priceAxis?.ticks(ctx.viewport),
-    slots: ctx.timeAxis?.marks(ctx.viewport, ctx.data).map((m) => m.index),
+    slots: ruled?.map((m) => m.index),
   };
 }

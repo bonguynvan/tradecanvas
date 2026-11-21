@@ -381,7 +381,7 @@ const id: SiteMessages = {
     },
     overrides: {
       title: 'Override gaya',
-      stat: '103 kunci',
+      stat: '107 kunci',
       blurb:
         'Bagian mana pun dari tampilan grafik lewat kunci, terpisah dari tema: grid di tiap arah, crosshair, sumbu, panel, legenda, harga terakhir, volume, dan warna tiap jenis grafik. Di sini grid vertikal dimatikan, grid horizontal bertitik, crosshair garis penuh, dan garis sinyal MACD putus-putus di panel dengan pemisahnya sendiri.',
       tryThis: [
@@ -775,7 +775,7 @@ const id: SiteMessages = {
       ],
       customization: [
         { name: 'Tiga tampilan widget', detail: 'Studio, Terminal, Capsule; ui dan setUI; variabel CSS --tcw-*' },
-        { name: 'Tampilan grafik per kunci', detail: 'applyOverrides atas 103 kunci bertipe, pada lapisan host dan lapisan pengguna' },
+        { name: 'Tampilan grafik per kunci', detail: 'applyOverrides atas 107 kunci bertipe, pada lapisan host dan lapisan pengguna' },
         { name: 'Pengaturan yang menjangkau setiap kunci', detail: 'Tab gaya untuk jenis grafik yang sedang tampil, tab trading' },
         { name: '114 sakelar fitur', detail: 'features, setFeatures, isFeatureOn; dapat diubah saat berjalan' },
         { name: 'Komponen Anda sendiri di widget', detail: 'Tombol dan dropdown bilah alat, tombol panel samping, item status, slot, item menu' },

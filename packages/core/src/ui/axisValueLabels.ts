@@ -1,5 +1,5 @@
 import type { Theme } from '@tradecanvas/commons';
-import { AXIS_TAG_TEXT_INSET, fillTag } from './shapes.js';
+import { AXIS_TAG_TEXT_INSET, fillTag, strokeTag } from './shapes.js';
 
 /** A coloured tag on a value axis: an indicator line's latest value. */
 export interface AxisValueLabel {
@@ -119,11 +119,18 @@ export function drawAxisValueLabels(
   ctx.textBaseline = 'middle';
   ctx.textAlign = 'left';
   const half = AXIS_LABEL_HEIGHT / 2;
+  // Outlined: the chart's ground under an edge and a text in the line's colour, where a look wants no blocks of colour.
+  const outlined = theme.style?.axis.price.valueTagsOutlined === true;
   for (const label of labels) {
-    ctx.fillStyle = label.color;
+    const top = Math.round(label.y - half);
+    ctx.fillStyle = outlined ? theme.background : label.color;
     // The axis's width, as an order's tag and the last price's are.
-    fillTag(ctx, axisX + 1, Math.round(label.y - half), axisWidth - 2, AXIS_LABEL_HEIGHT, theme);
-    ctx.fillStyle = labelTextColor(label.color);
+    fillTag(ctx, axisX + 1, top, axisWidth - 2, AXIS_LABEL_HEIGHT, theme);
+    if (outlined) {
+      ctx.strokeStyle = label.color;
+      strokeTag(ctx, axisX + 1, top, axisWidth - 2, AXIS_LABEL_HEIGHT, theme);
+    }
+    ctx.fillStyle = outlined ? label.color : labelTextColor(label.color);
     ctx.fillText(label.text, axisX + 1 + AXIS_TAG_TEXT_INSET, Math.round(label.y));
   }
   ctx.restore();

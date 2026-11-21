@@ -41,6 +41,21 @@ export function markKind(weight: number): MarkKind {
   return 'time';
 }
 
+/** How coarse each kind of mark is. */
+const KIND_ORDER: Record<MarkKind, number> = { time: 0, day: 1, month: 2, year: 3 };
+
+/**
+ * The marks where a period begins: those of a coarser kind than the finest
+ * on view (months and years among days, years among months, days among
+ * times of day). None when every mark is of one kind: no period begins on
+ * view.
+ */
+export function periodStarts(marks: readonly TimeMark[]): TimeMark[] {
+  if (marks.length === 0) return [];
+  const finest = Math.min(...marks.map((mark) => KIND_ORDER[markKind(mark.weight)]));
+  return marks.filter((mark) => KIND_ORDER[markKind(mark.weight)] > finest);
+}
+
 /** A slot the time axis labels and the grid draws a line down. */
 export interface TimeMark {
   /** The slot: a bar's index, or past the last bar, a slot in the future. */

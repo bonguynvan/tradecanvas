@@ -517,6 +517,28 @@ describe('RenderEngine — a GPU layer under the scene', () => {
     expect(gpu.render).toHaveBeenCalledWith(expect.objectContaining({ seriesRevision: 7 }));
   });
 
+  it('gives the grid every mark of the time axis, and only the starts of periods where the look rules those', async () => {
+    const { MARK_WEIGHT } = await import('../../axis/timeMarks.js');
+    const { DARK_THEME, resolveChartTheme } = await import('@tradecanvas/commons');
+    const marks = [
+      { index: 3, time: 0, weight: MARK_WEIGHT.day },
+      { index: 9, time: 0, weight: MARK_WEIGHT.dayOfFive },
+      { index: 20, time: 0, weight: MARK_WEIGHT.month },
+      { index: 41, time: 0, weight: MARK_WEIGHT.year },
+    ];
+    const slotsDrawn = (theme: RenderContext['theme']): unknown => {
+      const { ctx } = makeContext();
+      const grid = vi.fn();
+      ctx.gridRenderer = { render: grid, isVisible: () => true } as unknown as RenderContext['gridRenderer'];
+      ctx.timeAxis = { marks: () => marks.map((mark) => ({ ...mark })), render: () => {}, labelColumns: () => [] } as unknown as RenderContext['timeAxis'];
+      engine.setRenderContext({ ...ctx, theme });
+      engine.renderNow();
+      return (grid.mock.calls[0][3] as { slots?: number[] }).slots;
+    };
+    expect(slotsDrawn(resolveChartTheme(DARK_THEME, 'candlestick', {}))).toEqual([3, 9, 20, 41]);
+    expect(slotsDrawn(resolveChartTheme(DARK_THEME, 'candlestick', { 'grid.vertical.periodsOnly': true }))).toEqual([20, 41]);
+  });
+
   it('leaves candles, volume and the grid to the GPU', async () => {
     const { ctx, series, grid, volume } = await candleContext();
     const { gpu } = fakeGpu();
