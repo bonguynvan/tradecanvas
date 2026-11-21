@@ -220,7 +220,7 @@ chart.removeAll('indicators'); // or 'drawings', or 'all': everything of that ki
   loaded and moves when older history is paged in.
 - Custom indicators: `defineIndicator({ id, name, inputs, plots, calculate({ bars, inputs, ta }) })`
   returns one to `chart.registerIndicator(...)`; `ta` has the sums (`ema`, `rsi`, `macd`, `atr`,
-  `bollinger`, `crossover`…). For one that updates tick by tick or draws its own way, extend
+  `bollinger`, `crossover`…) and `ta.indicator(id, bars, params)` runs any built-in. For one that updates tick by tick or draws its own way, extend
   `IndicatorBase` and declare `plots` — see [references/recipes.md](references/recipes.md).
   A `category` in the descriptor (`'oscillators'`, `'volume'`…) files it under that
   group of ChartWidget's Indicators dialog; `{ id, label }` is a group of your own,
@@ -1197,7 +1197,11 @@ are made of, each taking a value a bar and returning one: `sma`, `ema`,
 `wma`, `rma`, `stdev`, `highest`, `lowest`, `change`, `rsi`, `macd`
 (`{ macd, signal, histogram }`), `atr` (of the bars), `bollinger`
 (`{ upper, middle, lower }`), `crossover` and `crossunder` (true on the bars
-of a cross). They give the built-in indicators' values.
+of a cross). `rsi`, `macd`, `atr` and `bollinger` run the built-in indicators,
+and `ta.indicator(id, input, params)` runs any of them and returns its lines
+by key, typed by the id: `ta.indicator('stochastic', bars, { kPeriod: 14 }).k`.
+Its input is the bars, or a value a bar the indicator reads as its prices
+(`ta.indicator('ema', rsi, { period: 5 }).value`).
 
 ```ts
 import { Chart, defineIndicator } from '@tradecanvas/chart';

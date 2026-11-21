@@ -2,7 +2,7 @@ export { IndicatorBase } from './IndicatorBase.js';
 export { defineIndicator } from './defineIndicator.js';
 export type { DefinedIndicatorInput, IndicatorBars, IndicatorCalculation, IndicatorDefinition, IndicatorInputValue, IndicatorLine, InputsOf } from './defineIndicator.js';
 export { ta } from './ta.js';
-export type { Ta, TaBars, TaSeries } from './ta.js';
+export type { Ta, TaBars, TaInput, TaSeries } from './ta.js';
 export { IndicatorEngine } from './IndicatorEngine.js';
 export type { ActiveIndicatorInfo } from './IndicatorEngine.js';
 export { IndicatorValueMap } from './IndicatorValueMap.js';

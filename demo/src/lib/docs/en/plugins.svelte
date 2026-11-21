@@ -111,8 +111,16 @@ chart.addIndicator('emaCross', { fast: 12 })`}</code></pre>
     <code>stdev</code>, <code>highest</code>, <code>lowest</code>, <code>change</code>, <code>rsi</code>,
     <code>macd</code>, <code>atr</code>, <code>bollinger</code>, <code>crossover</code> and
     <code>crossunder</code>. Each takes a value a bar and returns one, so one feeds the next
-    (<code>ta.ema(ta.rsi(bars.close, 14), 9)</code>), and on the prices they give the values of the built-in
-    indicators. It is
+    (<code>ta.ema(ta.rsi(bars.close, 14), 9)</code>). <code>rsi</code>, <code>macd</code>, <code>atr</code> and
+    <code>bollinger</code> run the built-in indicators themselves, so their values are the chart's.
+  </li>
+  <li>
+    <strong><code>ta.indicator(id, input, params)</code></strong> runs any built-in indicator and returns its
+    lines by key: <code>{`ta.indicator('stochastic', bars, { kPeriod: 14 }).k`}</code>,
+    <code>{`ta.indicator('supertrend', bars).value`}</code>. The ids, inputs and lines are the ones on the
+    <a href={href('/docs/indicators')}>Indicators</a> page, and they are typed. <code>input</code> is the bars, or
+    a value a bar that the indicator then reads as its prices (<code>{`ta.indicator('ema', rsi, { period: 5 })`}</code>).
+    The five that read another symbol's bars are not among them. It is
     exported on its own too: <code>{`import { ta } from '@tradecanvas/chart'`}</code>.
   </li>
 </ul>

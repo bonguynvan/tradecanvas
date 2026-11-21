@@ -8,6 +8,7 @@ import { ATRIndicator } from '../panel/ATR.js';
 import { BollingerBandsIndicator } from '../overlay/BollingerBands.js';
 import { EMAIndicator } from '../overlay/EMA.js';
 import { describeInputs } from '../inputs.js';
+import { BUILT_IN_FACTORIES } from '../builtInFactories.js';
 
 /** Bars that go up and down, with ranges that differ. */
 const bars: DataSeries = Array.from({ length: 120 }, (_, i) => {
@@ -91,6 +92,58 @@ describe('ta: the sums of the built-in indicators', () => {
     expect(ta.ema([], 10)).toEqual([]);
     expect(ta.macd([], 12, 26, 9)).toEqual({ macd: [], signal: [], histogram: [] });
     expect(ta.atr({ high: [], low: [], close: [] })).toEqual([]);
+  });
+});
+
+describe('ta.indicator: a built-in indicator’s lines', () => {
+  const columns = { time: bars.map((bar) => bar.time), open: column('open'), high: column('high'), low: column('low'), close: column('close'), volume: bars.map((bar) => bar.volume ?? 0) };
+
+  it('gives the lines of the indicator the chart draws, by key', () => {
+    const stochastic = BUILT_IN_FACTORIES.map((make) => make()).find((plugin) => plugin.descriptor.id === 'stochastic')!;
+    const builtIn = stochastic.calculate(bars, config({ ...stochastic.descriptor.defaultConfig as IndicatorConfig['params'] }));
+    const lines = ta.indicator('stochastic', columns);
+    const keys = stochastic.descriptor.plots!.map((plot) => plot.key);
+    expect(keys.length).toBeGreaterThan(1);
+    for (const key of keys) near(lines[key], line(builtIn, key));
+  });
+
+  it('takes the indicator’s own inputs, the rest at their defaults', () => {
+    near(ta.indicator('rsi', columns, { period: 7 }).value, line(new RSIIndicator().calculate(bars, config({ period: 7 })), 'value'));
+    near(ta.indicator('ema', columns).value, ta.ema(column('close'), 20));
+  });
+
+  it('reads a price of the bars other than the close when its source says so', () => {
+    const hl2 = bars.map((bar) => (bar.high + bar.low) / 2);
+    near(ta.indicator('sma', columns, { period: 5, source: 'hl2' }).value, ta.sma(hl2, 5));
+  });
+
+  it('runs on a value a bar, from its first one on, and gives the lines back on the same bars', () => {
+    const rsi = ta.rsi(column('close'), 14);
+    const smoothed = ta.indicator('ema', rsi, { period: 5 }).value;
+    expect(smoothed).toHaveLength(bars.length);
+    near(smoothed, ta.ema(rsi, 5));
+    expect(smoothed.findIndex((v) => v !== undefined)).toBe(14 + 5 - 1);
+  });
+
+  it('has every line of the indicator, with no values, when the input has none', () => {
+    expect(ta.indicator('macd', [undefined, undefined])).toEqual({ histogram: [undefined, undefined], macd: [undefined, undefined], signal: [undefined, undefined] });
+    expect(ta.indicator('rsi', []).value).toEqual([]);
+  });
+
+  it('reads columns left out as the closes, and bars with no time in order', () => {
+    near(ta.indicator('atr', { close: column('close'), high: column('high'), low: column('low') }, { period: 14 }).value, line(new ATRIndicator().calculate(bars, config({ period: 14 })), 'value'));
+    expect(ta.indicator('sma', { close: [1, 2, 3] }, { period: 2 }).value).toEqual([undefined, 1.5, 2.5]);
+  });
+
+  it('says so when there is no such indicator', () => {
+    expect(() => ta.indicator('nope' as never, columns)).toThrow(/no built-in indicator 'nope'/);
+  });
+
+  it('can run every built-in on the bars without throwing, each line as long as the bars', () => {
+    for (const plugin of BUILT_IN_FACTORIES.map((make) => make())) {
+      const lines = ta.indicator(plugin.descriptor.id as never, columns) as Record<string, (number | undefined)[]>;
+      for (const key of Object.keys(lines)) expect(lines[key], `${plugin.descriptor.id}.${key}`).toHaveLength(bars.length);
+    }
   });
 });
 
