@@ -501,6 +501,12 @@ const de: SiteMessages = {
     benchmark: 'Benchmark',
     allocationRings: 'Allokation nach Anlageklasse und Sektor',
     allocationOverTime: 'Allokation im Jahresverlauf',
+    volSurface: 'Implizite Volatilität nach Basispreis und Laufzeit',
+    strike: 'Basispreis',
+    expiry: 'Laufzeit',
+    depthOverTime: 'Orderbuchtiefe im Zeitverlauf',
+    quarterReturns: 'Rendite nach Quartal und Anlageklasse',
+    turnHint: 'Ziehen dreht ein Diagramm, ein Doppelklick stellt die Ausgangsansicht wieder her.',
     waterfall: {
       start: 'Start',
       btcLong: 'BTC Long',

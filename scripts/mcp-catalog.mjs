@@ -41,6 +41,8 @@ const FINANCE_CHARTS = [
   ['RadarChart', 'RadarChartOptions', FINANCE_TYPES, "Several measures at once, a spoke each: a strategy's scorecard, factor exposures beside an index's."],
   ['SunburstChart', 'SunburstOptions', FINANCE_TYPES, 'Parts of a whole and the parts inside them, a ring a level: an allocation by asset class, then sector.'],
   ['StackedAreaChart', 'StackedAreaOptions', FINANCE_TYPES, 'Several series one on another over time: what a total is made of, or how its mix changes.'],
+  ['SurfaceChart', 'SurfaceChartOptions', FINANCE_TYPES, 'Values over two axes as a sheet in a 3D box that a drag turns: implied volatility by strike and expiry (a volatility surface), a profit by price and day, or as slices, depth over time.'],
+  ['Bar3DChart', 'Bar3DChartOptions', FINANCE_TYPES, 'A column for each value in rows a series deep, in a 3D box that a drag turns: returns by quarter and asset class, volume by hour and weekday.'],
   ['PerformanceDashboard', 'PerformanceDashboardOptions', 'packages/library/src/finance/PerformanceDashboard.ts', "A backtest's result as a page: stats, the equity curve, drawdown and monthly returns."],
 ];
 /**

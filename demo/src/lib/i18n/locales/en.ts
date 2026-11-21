@@ -508,6 +508,12 @@ const en = {
     benchmark: 'Benchmark',
     allocationRings: 'Allocation by asset class and sector',
     allocationOverTime: 'Allocation over the year',
+    volSurface: 'Implied volatility by strike and expiry',
+    strike: 'Strike',
+    expiry: 'Expiry',
+    depthOverTime: 'Order book depth over time',
+    quarterReturns: 'Returns by quarter and asset class',
+    turnHint: 'Drag a chart to turn it, double-click to turn it back.',
     waterfall: {
       start: 'Start',
       btcLong: 'BTC long',

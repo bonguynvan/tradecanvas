@@ -130,8 +130,8 @@ describe('tools', () => {
 describe('the finance charts', () => {
   it('list_finance_charts names every class @tradecanvas/chart has, and finds one by its purpose', () => {
     const all = call('list_finance_charts').data as { count: number; charts: { name: string; what: string; options: string[] }[]; usage: string };
-    expect(all.count).toBe(20);
-    expect(all.charts.map((c) => c.name)).toEqual(expect.arrayContaining(['BarChart', 'DepthChart', 'EquityCurveChart', 'HeatmapChart', 'PerformanceDashboard', 'PayoffChart', 'CurveChart', 'BoxPlotChart', 'RadarChart', 'SunburstChart', 'StackedAreaChart']));
+    expect(all.count).toBe(22);
+    expect(all.charts.map((c) => c.name)).toEqual(expect.arrayContaining(['BarChart', 'DepthChart', 'EquityCurveChart', 'HeatmapChart', 'PerformanceDashboard', 'PayoffChart', 'CurveChart', 'BoxPlotChart', 'RadarChart', 'SunburstChart', 'StackedAreaChart', 'SurfaceChart', 'Bar3DChart']));
     expect(all.charts.every((c) => c.what.length > 20 && c.options.length > 3)).toBe(true);
     expect(all.usage).toContain("from '@tradecanvas/chart'");
     const book = call('list_finance_charts', { query: 'order book' }).data as typeof all;

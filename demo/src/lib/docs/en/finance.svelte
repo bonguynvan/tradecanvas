@@ -39,6 +39,8 @@
     <tr><td><code>RadarChart</code></td><td>Several measures at once, a spoke each: a strategy's scorecard beside a benchmark's.</td></tr>
     <tr><td><code>SunburstChart</code></td><td>Parts of a whole and the parts inside them: an allocation by asset class, then sector, then holding.</td></tr>
     <tr><td><code>StackedAreaChart</code></td><td>Several series one on another over time: what a total is made of, or how its mix changes.</td></tr>
+    <tr><td><code>SurfaceChart</code></td><td>Values over two axes as a sheet in a 3D box you turn by dragging: implied volatility by strike and expiry, a profit by price and day, or as slices, an order book's depth over time.</td></tr>
+    <tr><td><code>Bar3DChart</code></td><td>A column for each value in rows a series deep, in the same box: returns by quarter and asset class, volume by hour and weekday.</td></tr>
     <tr><td><code>PerformanceDashboard</code></td><td>A strategy report from a backtest: stats, equity, drawdown and monthly returns.</td></tr>
   </tbody>
 </table>
@@ -392,6 +394,77 @@ const chart = new StackedAreaChart(el, {
   categories: ['Jan', 'Feb', 'Mar', 'Apr'],
   series: [{ name: 'Stocks', values: [40, 44, 47, 52] }, { name: 'Bonds', values: [30, 29, 27, 25] }, { name: 'Cash', values: [30, 27, 26, 23] }],
   normalized: true,
+})
+chart.update(nextSeries, nextCategories)`}</code></pre>
+
+<h2>3D surface</h2>
+<p>
+  <code>SurfaceChart</code> draws values over two axes as a sheet in a box: <code>x</code> across,
+  <code>y</code> running back, and <code>values[yIndex][xIndex]</code> up. Numbers along an axis are placed by
+  their value, and drawn by rising value whatever their order; names are spaced evenly in the order given, so
+  a list of tenors (<code>'1W'</code>, <code>'1M'</code>, <code>'1Y'</code>) is not crowded at its short end.
+  A value that is missing or no number leaves a hole.
+</p>
+<pre><code>{`import { SurfaceChart } from '@tradecanvas/chart'
+
+const chart = new SurfaceChart(el, {
+  x: [80, 90, 100, 110, 120],              // strikes
+  y: ['1W', '1M', '3M', '6M', '1Y'],       // expiries
+  values: impliedVolatility,               // values[expiry][strike]
+  xLabel: 'Strike', yLabel: 'Expiry', valueLabel: 'IV',
+  valueFormat: (v) => (v * 100).toFixed(1) + '%',
+  onPointClick: (point) => openChain(point.x, point.y),
+})
+chart.update(nextValues)                   // or update(values, { x, y }) when the axes changed too`}</code></pre>
+<p>
+  Dragging turns the chart: a mouse turns and tilts it, a finger turns it only, so that a page still scrolls
+  under it. A double click goes back to the <code>view</code> the options gave
+  (<code>{'{'} yaw: -35, pitch: 28 {'}'}</code> when they give none: <code>yaw</code> turns the chart about its
+  upright axis, <code>pitch</code> is how far above the floor the eye is, 0 to 90 degrees).
+  <code>getView()</code> reads where it is seen from now, <code>setView()</code> sets it,
+  <code>onViewChange</code> follows it, and <code>rotate: false</code> holds it still. The chart is drawn
+  without perspective, so lines that are parallel in the data stay parallel on the screen, and it keeps one
+  size as it is turned.
+</p>
+<p>
+  <code>style</code> is <code>'surface'</code> (a shaded sheet, the default), <code>'wireframe'</code> (its
+  lines only) or <code>'slices'</code> (each <code>y</code> a filled line of its own, one behind another).
+  Values are coloured by <code>colorRamp</code>: one hue from near the chart's ground up to its strongest by
+  default, over the values' range; give <code>colors</code> (two or more, the lowest value's first) and
+  <code>min</code> and <code>max</code> for your own, such as a loss colour, a neutral and a profit colour
+  either side of zero. The pointer reads the nearest point of the cell it is on, the one in front where the
+  sheet folds over itself. A grid past 120 points along an axis is thinned to that many, both ends kept.
+</p>
+<p>
+  <code>depthSurface(snapshots, {'{'} levels {'}'})</code> turns a run of order books into a surface's
+  <code>x</code>, <code>y</code> and <code>values</code>: prices across, the books' times back, and at each the
+  volume waiting from the best price out to that price, as a depth chart has it.
+</p>
+<pre><code>{`import { SurfaceChart, depthSurface } from '@tradecanvas/chart'
+
+// books: { time, bids: [{ price, volume }], asks: [...] }[], oldest first
+const chart = new SurfaceChart(el, {
+  ...depthSurface(books, { levels: 48 }),
+  style: 'slices',
+  xLabel: 'Price', yLabel: 'Time', valueLabel: 'Depth',
+  yFormat: (ms) => new Date(ms).toISOString().slice(11, 16),
+})`}</code></pre>
+
+<h2>3D bars</h2>
+<p>
+  <code>Bar3DChart</code> stands a column on each value, in rows a series deep: <code>categories</code> across
+  and a row for each of <code>series</code>, the first at the front of the <code>y</code> axis. Columns start
+  at zero; one under zero hangs from the level of zero, which is drawn as a sheet across the box. It takes
+  <code>view</code>, <code>rotate</code> and the rest of what a surface takes for turning, and
+  <code>onBarClick</code> gives the category, the series and the value. No more than 120 categories and 120
+  series are drawn.
+</p>
+<pre><code>{`import { Bar3DChart } from '@tradecanvas/chart'
+
+const chart = new Bar3DChart(el, {
+  categories: ['Q1', 'Q2', 'Q3', 'Q4'],
+  series: [{ name: 'Stocks', values: [4.2, 6.1, -2.4, 5.3] }, { name: 'Bonds', values: [1.1, 0.8, 1.6, -0.5] }],
+  valueFormat: (v) => v.toFixed(1) + '%',
 })
 chart.update(nextSeries, nextCategories)`}</code></pre>
 

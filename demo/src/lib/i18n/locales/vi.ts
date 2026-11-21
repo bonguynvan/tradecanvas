@@ -499,6 +499,12 @@ const vi: SiteMessages = {
     benchmark: 'Benchmark',
     allocationRings: 'Phân bổ theo loại tài sản và ngành',
     allocationOverTime: 'Phân bổ trong năm',
+    volSurface: 'Implied volatility theo strike và kỳ hạn',
+    strike: 'Strike',
+    expiry: 'Kỳ hạn',
+    depthOverTime: 'Độ sâu sổ lệnh theo thời gian',
+    quarterReturns: 'Lợi nhuận theo quý và loại tài sản',
+    turnHint: 'Kéo biểu đồ để xoay, nhấp đúp để quay về góc nhìn ban đầu.',
     pnl: 'Phân bổ lãi/lỗ',
     fearGreed: 'Chỉ số Sợ hãi & Tham lam',
     waterfall: {

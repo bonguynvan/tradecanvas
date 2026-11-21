@@ -501,6 +501,12 @@ const ja: SiteMessages = {
     benchmark: 'ベンチマーク',
     allocationRings: '資産クラスとセクター別の配分',
     allocationOverTime: '年間の配分の推移',
+    volSurface: '権利行使価格と満期ごとのインプライド・ボラティリティ',
+    strike: '権利行使価格',
+    expiry: '満期',
+    depthOverTime: '板の厚みの推移',
+    quarterReturns: '四半期・資産クラス別のリターン',
+    turnHint: 'チャートをドラッグすると回転し、ダブルクリックで元の向きに戻ります。',
     waterfall: {
       start: '開始',
       btcLong: 'BTC ロング',

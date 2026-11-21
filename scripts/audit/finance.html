@@ -137,6 +137,24 @@ cell('box-plot', (el) => new lib.BoxPlotChart(el, { ...base, data: weekdays, col
 cell('radar', (el) => new lib.RadarChart(el, { ...base, axes: scores, series: [{ name: 'Strategy', values: [1.8, 2.4, 1.5, 1.1, 2] }, { name: 'Benchmark', values: [1, 1.3, 0.7, 0.4, 1.2] }] }));
 cell('sunburst', (el) => new lib.SunburstChart(el, { ...base, data: holdings, centerLabel: 'Total', centerValue: '100%', valueFormat: (v) => `${v}%` }));
 cell('stacked-area', (el) => new lib.StackedAreaChart(el, { ...base, categories: months, series: mix }));
+
+// In three dimensions.
+const tenors = ['1W', '1M', '2M', '3M', '6M', '1Y'];
+const volatility = tenors.map((_, t) => strikes.map((k) => 0.2 + ((k - 100) / 100) ** 2 * (2.4 / (1 + t * 0.7)) - (k - 100) * 0.0012 + t * 0.006));
+const books = Array.from({ length: 24 }, (_, t) => {
+  const mid = 100 + Math.sin(t / 4) * 1.2;
+  return {
+    time: start + t * 60_000,
+    bids: Array.from({ length: 30 }, (_, i) => ({ price: Math.round((mid - 0.1 - i * 0.1) * 10) / 10, volume: 4 + i * 0.6 + (i === 12 ? 30 + t : 0) + random() * 3 })),
+    asks: Array.from({ length: 30 }, (_, i) => ({ price: Math.round((mid + 0.1 + i * 0.1) * 10) / 10, volume: 4 + i * 0.5 + (i === 18 ? 46 - t : 0) + random() * 3 })),
+  };
+});
+const clock = (ms) => new Date(ms).toISOString().slice(11, 16);
+const quarters = ['Q1', 'Q2', 'Q3', 'Q4'];
+const classes = [{ name: 'Stocks', values: [4.2, 6.1, -2.4, 5.3] }, { name: 'Bonds', values: [1.1, 0.8, 1.6, -0.5] }, { name: 'Gold', values: [2.5, -1.2, 3.8, 2.1] }];
+cell('surface', (el) => new lib.SurfaceChart(el, { ...base, x: strikes, y: tenors, values: volatility, xLabel: 'Strike', yLabel: 'Expiry', valueLabel: 'IV', valueFormat: (v) => `${(v * 100).toFixed(1)}%` }));
+cell('surface-slices', (el) => new lib.SurfaceChart(el, { ...base, ...lib.depthSurface(books, { levels: 44 }), style: 'slices', xLabel: 'Price', yLabel: 'Time', valueLabel: 'Depth', yFormat: clock }));
+cell('bar3d', (el) => new lib.Bar3DChart(el, { ...base, categories: quarters, series: classes, valueFormat: (v) => `${v.toFixed(1)}%` }));
 // The states that could break them.
 cell('payoff-marks-together', (el) => new lib.PayoffChart(el, { ...base, legs: [{ type: 'call', side: 'long', strike: 100, premium: 4 }, { type: 'put', side: 'long', strike: 100, premium: 4 }], spot: 108.2, spotLabel: 'Price now' }));
 cell('payoff-covered-call', (el) => new lib.PayoffChart(el, { ...base, legs: [{ type: 'underlying', side: 'long', entry: 0.0412 }, { type: 'call', side: 'short', strike: 0.045, premium: 0.0011 }], multiplier: 100_000, spot: 0.0431 }));
@@ -147,6 +165,18 @@ cell('sunburst-pie-small-parts', (el) => new lib.SunburstChart(el, { ...base, in
 cell('stacked-area-normalized-many', (el) => new lib.StackedAreaChart(el, { ...base, normalized: true, categories: Array.from({ length: 90 }, (_, i) => new Date(start + i * DAY).toISOString().slice(5, 10)), series: [{ name: 'Long', values: Array.from({ length: 90 }, (_, i) => 50 + Math.sin(i / 8) * 30) }, { name: 'Short', values: Array.from({ length: 90 }, (_, i) => 30 + Math.cos(i / 11) * 25) }, { name: 'Flat', values: Array.from({ length: 90 }, (_, i) => (i > 40 && i < 50 ? 0 : 20)) }] }));
 cell('stacked-area-one-point', (el) => new lib.StackedAreaChart(el, { ...base, categories: ['Today'], series: [{ name: 'Stocks', values: [60] }, { name: 'Cash', values: [40] }] }));
 cell('empty-sunburst', (el) => new lib.SunburstChart(el, { ...base, data: [] }));
+const days3d = [7, 14, 30, 60, 120, 365];
+const prices3d = Array.from({ length: 15 }, (_, i) => 80 + i * 3);
+cell('surface-wireframe-profit', (el) => new lib.SurfaceChart(el, { ...base, style: 'wireframe', x: prices3d, y: days3d, values: days3d.map((d) => prices3d.map((p) => (p === 101 && d === 30 ? NaN : Math.max(-6, 14 - Math.abs(p - 101) * (0.5 + 12 / d)) - 4))), colorRamp: { colors: ['#e8505b', '#8d8b86', '#1c9e6d'], min: -10, max: 10 }, xLabel: 'Price', yLabel: 'Days left', valueLabel: 'Profit' }));
+cell('surface-dense', (el) => new lib.SurfaceChart(el, { ...base, x: Array.from({ length: 300 }, (_, i) => i), y: Array.from({ length: 300 }, (_, i) => i), values: Array.from({ length: 300 }, (_, r) => Array.from({ length: 300 }, (_, c) => Math.sin(c / 28) * Math.cos(r / 34) + (c + r) / 500)), legend: false }));
+cell('surface-flat-long-names', (el) => new lib.SurfaceChart(el, { ...base, x: ['Consumer discretionary', 'Information technology', 'Health care'], y: ['Three months to expiry', 'Six months to expiry'], values: [[5, 5, 5], [5, 5, 5]], xLabel: 'A sector with a long name', yLabel: 'Time left', valueLabel: 'Weight' }));
+cell('surface-from-above', (el) => new lib.SurfaceChart(el, { ...base, x: strikes, y: tenors, values: volatility, view: { yaw: 0, pitch: 90 }, valueFormat: (v) => `${(v * 100).toFixed(1)}%` }));
+cell('surface-level-end-on', (el) => new lib.SurfaceChart(el, { ...base, style: 'slices', x: strikes, y: tenors, values: volatility, view: { yaw: 0, pitch: 0 }, rotate: false, valueFormat: (v) => `${(v * 100).toFixed(1)}%` }));
+cell('surface-one-row', (el) => new lib.SurfaceChart(el, { ...base, x: strikes, y: ['1M'], values: [volatility[1]], view: { yaw: 150, pitch: 20 } }));
+cell('bar3d-negative-one-series', (el) => new lib.Bar3DChart(el, { ...base, categories: ['Revenue from operations', 'Costs', 'Tax', 'Net'], series: [{ name: 'Year', values: [120, -45, -15, 60], color: 'teal' }], xLabel: 'Line', valueLabel: 'Amount' }));
+cell('bar3d-many', (el) => new lib.Bar3DChart(el, { ...base, categories: Array.from({ length: 24 }, (_, i) => `${String(i).padStart(2, '0')}:00`), series: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((name, d) => ({ name, values: Array.from({ length: 24 }, (_, hour) => (hour === 3 && d === 2 ? NaN : 20 + Math.sin((hour - 6) / 3.8) * 14 + d * 2 + random() * 6)) })), view: { yaw: -50, pitch: 40 }, xLabel: 'Hour', valueLabel: 'Volume' }));
+cell('empty-surface', (el) => new lib.SurfaceChart(el, { ...base, x: [], y: [], values: [] }));
+cell('empty-bar3d', (el) => new lib.Bar3DChart(el, { ...base, categories: ['Q1'], series: [] }));
 cell('empty-radar', (el) => new lib.RadarChart(el, { ...base, axes: [{ label: 'Only' }, { label: 'Two' }], series: [{ name: 's', values: [1, 2] }] }));
 
 let equity = 100_000;

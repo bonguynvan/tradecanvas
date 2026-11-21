@@ -655,6 +655,36 @@ new StackedAreaChart(document.getElementById('mix')!, {
 });
 ```
 
+Values over two axes in a box that a drag turns (`SurfaceChart`), and columns in the same box (`Bar3DChart`):
+
+```ts
+import { SurfaceChart, Bar3DChart, depthSurface, type DepthSnapshot } from '@tradecanvas/chart';
+
+// values[yIndex][xIndex]: numbers along an axis are placed by value, names evenly.
+const surface = new SurfaceChart(document.getElementById('vol-surface')!, {
+  x: [90, 100, 110],
+  y: ['1M', '3M', '1Y'],
+  values: [[0.31, 0.24, 0.27], [0.28, 0.23, 0.25], [0.26, 0.22, 0.23]],
+  xLabel: 'Strike', yLabel: 'Expiry', valueLabel: 'IV',
+  view: { yaw: -35, pitch: 28 }, // degrees; a drag turns it, a double click comes back here
+  onPointClick: (point) => console.log(point.x, point.y, point.value),
+});
+surface.setView({ yaw: 40 });
+
+// An order book's depth over time, each book a slice.
+declare const books: DepthSnapshot[]; // { time, bids: [{ price, volume }], asks: [...] }
+new SurfaceChart(document.getElementById('depth-history')!, {
+  ...depthSurface(books, { levels: 48 }),
+  style: 'slices',
+  yFormat: (ms) => new Date(ms).toISOString().slice(11, 16),
+});
+
+new Bar3DChart(document.getElementById('returns')!, {
+  categories: ['Q1', 'Q2', 'Q3', 'Q4'],
+  series: [{ name: 'Stocks', values: [4.2, 6.1, -2.4, 5.3] }, { name: 'Bonds', values: [1.1, 0.8, 1.6, -0.5] }],
+});
+```
+
 ## A dashboard: net flows, allocation and returns
 
 The finance charts take an element and their options, and size themselves to it.

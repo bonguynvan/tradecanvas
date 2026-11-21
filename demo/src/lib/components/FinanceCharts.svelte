@@ -24,6 +24,9 @@
     RadarChart,
     SunburstChart,
     StackedAreaChart,
+    SurfaceChart,
+    Bar3DChart,
+    depthSurface,
     DARK_THEME,
     LIGHT_THEME,
   } from '@tradecanvas/chart';
@@ -268,6 +271,9 @@
   let radarContainer: HTMLDivElement | undefined = $state();
   let ringsContainer: HTMLDivElement | undefined = $state();
   let mixContainer: HTMLDivElement | undefined = $state();
+  let surfaceContainer: HTMLDivElement | undefined = $state();
+  let depthHistoryContainer: HTMLDivElement | undefined = $state();
+  let quartersContainer: HTMLDivElement | undefined = $state();
 
   // --- Chart instances ---
   let sparkCharts: SparklineChart[] = [];
@@ -276,7 +282,7 @@
   let heatmapChart: HeatmapChart | null = null;
   let waterfallChart: WaterfallChart | null = null;
   let gaugeChart: GaugeChart | null = null;
-  let newCharts: (BarChart | DonutChart | ScatterChart | HistogramChart | CalendarChart | MatrixChart | HeatmapChart | CounterClockChart | PayoffChart | CurveChart | BoxPlotChart | RadarChart | SunburstChart | StackedAreaChart)[] = [];
+  let newCharts: (BarChart | DonutChart | ScatterChart | HistogramChart | CalendarChart | MatrixChart | HeatmapChart | CounterClockChart | PayoffChart | CurveChart | BoxPlotChart | RadarChart | SunburstChart | StackedAreaChart | SurfaceChart | Bar3DChart)[] = [];
   let gaugeInterval: ReturnType<typeof setInterval> | null = null;
 
 
@@ -566,6 +572,62 @@
       }));
     }
 
+    // In three dimensions.
+    if (surfaceContainer) {
+      const strikes = [80, 85, 90, 95, 100, 105, 110, 115, 120];
+      const tenors = ['1W', '2W', '1M', '2M', '3M', '6M', '1Y'];
+      newCharts.push(new SurfaceChart(surfaceContainer, {
+        x: strikes,
+        y: tenors,
+        // A smile that flattens as the expiry moves out, with a skew to the downside.
+        values: tenors.map((_, t) => strikes.map((k) => 0.2 + ((k - 100) / 100) ** 2 * (2.4 / (1 + t * 0.6)) - (k - 100) * 0.0012 + t * 0.005)),
+        xLabel: i18n.m.finance.strike,
+        yLabel: i18n.m.finance.expiry,
+        valueLabel: 'IV',
+        valueFormat: (v) => `${(v * 100).toFixed(1)}%`,
+        ariaLabel: i18n.m.finance.volSurface,
+        locale: tag,
+        theme,
+      }));
+    }
+    if (depthHistoryContainer) {
+      const bookRng = seededRandom(5150);
+      const opened = Date.UTC(2026, 0, 5, 9, 0);
+      const books = Array.from({ length: 30 }, (_, t) => {
+        const mid = 100 + Math.sin(t / 5) * 1.1;
+        const level = (i: number, wall: number, size: number) => 4 + i * 0.55 + (i === wall ? size : 0) + bookRng() * 3;
+        return {
+          time: opened + t * 60_000,
+          bids: Array.from({ length: 30 }, (_, i) => ({ price: Math.round((mid - 0.1 - i * 0.1) * 10) / 10, volume: level(i, 12, 24 + t) })),
+          asks: Array.from({ length: 30 }, (_, i) => ({ price: Math.round((mid + 0.1 + i * 0.1) * 10) / 10, volume: level(i, 18, 52 - t) })),
+        };
+      });
+      const clock = new Intl.DateTimeFormat(tag, { hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone: 'UTC' });
+      newCharts.push(new SurfaceChart(depthHistoryContainer, {
+        ...depthSurface(books, { levels: 48 }),
+        style: 'slices',
+        yFormat: (ms) => clock.format(new Date(ms)),
+        ariaLabel: i18n.m.finance.depthOverTime,
+        locale: tag,
+        theme,
+      }));
+    }
+    if (quartersContainer) {
+      const { assets } = i18n.m.finance;
+      newCharts.push(new Bar3DChart(quartersContainer, {
+        categories: ['Q1', 'Q2', 'Q3', 'Q4'],
+        series: [
+          { name: assets.stocks, values: [4.2, 6.1, -2.4, 5.3] },
+          { name: assets.bonds, values: [1.1, 0.8, 1.6, -0.5] },
+          { name: assets.gold, values: [2.5, -1.2, 3.8, 2.1] },
+        ],
+        valueFormat: percent,
+        ariaLabel: i18n.m.finance.quarterReturns,
+        locale: tag,
+        theme,
+      }));
+    }
+
     // Gauge
     if (gaugeContainer) {
       gaugeChart = new GaugeChart(gaugeContainer, {
@@ -746,6 +808,26 @@
       <div class="card-chart card-chart--300" bind:this={mixContainer}></div>
     </div>
   </div>
+
+  <!-- In three dimensions -->
+  <div class="chart-card chart-card--spaced" data-reveal>
+    <div class="card-label card-label--split">
+      <span>{m.finance.volSurface}</span>
+      <span class="card-hint">{m.finance.turnHint}</span>
+    </div>
+    <div class="card-chart card-chart--420" bind:this={surfaceContainer}></div>
+  </div>
+
+  <div class="mid-grid" data-reveal data-reveal-stagger>
+    <div class="chart-card">
+      <div class="card-label">{m.finance.depthOverTime}</div>
+      <div class="card-chart card-chart--350" bind:this={depthHistoryContainer}></div>
+    </div>
+    <div class="chart-card">
+      <div class="card-label">{m.finance.quarterReturns}</div>
+      <div class="card-chart card-chart--350" bind:this={quartersContainer}></div>
+    </div>
+  </div>
 </section>
 
 <style>
@@ -847,6 +929,20 @@
     border-bottom: 1px solid var(--border);
   }
 
+  /* A title with a line of help beside it, under it where there is no room. */
+  .card-label--split {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 4px 16px;
+  }
+
+  .card-hint {
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: 0;
+  }
+
   .card-chart {
     width: 100%;
   }
@@ -865,6 +961,10 @@
 
   .card-chart--350 {
     height: 350px;
+  }
+
+  .card-chart--420 {
+    height: 420px;
   }
 
   /* --- Responsive --- */
