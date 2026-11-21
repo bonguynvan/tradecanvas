@@ -6,9 +6,19 @@ const GRID = 24;
 const STROKE = 1.75;
 const DASH = [2, 2.5];
 
-/** Each path's `Path2D`, built once: icons are drawn every frame. */
-const paths = new Map<string, Path2D>();
+/**
+ * Each path's `Path2D`, built once: icons are drawn every frame. Kept by the
+ * `Path2D` that built it: a chart drawn with no page is given its canvas
+ * library's for as long as it draws, and a path of one library's is no path
+ * to another's canvas.
+ */
+const built = new WeakMap<object, Map<string, Path2D>>();
 const path = (d: string): Path2D => {
+  let paths = built.get(Path2D);
+  if (!paths) {
+    paths = new Map();
+    built.set(Path2D, paths);
+  }
   let p = paths.get(d);
   if (!p) {
     p = new Path2D(d);

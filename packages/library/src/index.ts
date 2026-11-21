@@ -308,6 +308,7 @@ export { histogramBins, niceScale, correlationMatrix, counterClockPoints, counte
 export type { PdfImage } from '@tradecanvas/core';
 export { chartsToPdf } from './chartsToPdf.js';
 export type { PdfPageSource } from './chartsToPdf.js';
+export { renderPriceChart } from './static/renderPriceChart.js';
 export type { PayoffStats } from '@tradecanvas/core';
 export {
   toEquityPoints,
@@ -352,6 +353,9 @@ export type {
   FinanceChartKind,
   FinanceChartOptionsMap,
   ChartImageOptions,
+  PriceChartOptions,
+  PriceChartIndicator,
+  PriceChartFeatures,
   ChartPrintOptions,
   ChartPdfOptions,
   PdfPageOptions,

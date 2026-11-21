@@ -106,7 +106,8 @@ const png = canvas.toBuffer('image/png')`}</code></pre>
   The context has to have what a browser's has: paths, text and its measuring, and
   <code>getTransform</code>. The text is drawn in the theme's font, so name one your canvas has with
   <code>font</code>. Nothing follows a pointer and nothing moves: a gauge is at its value. The performance
-  dashboard is built of page elements and is not drawn this way; its charts are.
+  dashboard is built of page elements and is not drawn this way; its charts are. The price chart has its
+  own: <code>renderPriceChart</code>, on the API page.
 </p>
 
 <h2>Bar chart</h2>

@@ -142,7 +142,7 @@ import { SymbolRequests } from './model/SymbolRequests.js';
 import { drawingPaneAt, drawingPaneViewport, takesDrawing } from './model/DrawingPanes.js';
 import { HistoryPager, type HistoryLoader } from './HistoryPager.js';
 import { ThemeManager } from './ThemeManager.js';
-import { startOverrides } from './style/styleOptions.js';
+import { readFont, readShapes, startOverrides } from './style/styleOptions.js';
 import { LayoutManager } from './layout/LayoutManager.js';
 import { requiredPriceAxisWidth, nextPriceAxisWidth } from './layout/priceAxisWidth.js';
 import { LabelWidths } from './layout/labelWidths.js';
@@ -639,8 +639,7 @@ export class Chart {
     this.engine.onContainerResize = (newSize) => {
       if (newSize.width <= 0 || newSize.height <= 0) return;
       const wasAtEnd = this.viewport.isAtEnd();
-      this.viewport.resize(newSize.width, newSize.height);
-      this.layoutManager.resize(newSize.width, newSize.height);
+      this.takeSize(newSize);
       // wasAtEnd carries the user's intent: if they were tracking the live
       // edge before the resize, keep them there afterwards. Otherwise leave
       // their scroll position alone.
@@ -6481,10 +6480,22 @@ export class Chart {
     this.engine.layerManager.resize(size, dpr, this.engine.dprManager.getDeviceSize());
     // Check if viewport was at the end before resize
     const wasAtEnd = this.viewport.isAtEnd();
-    this.viewport.resize(size.width, size.height);
-    this.layoutManager.resize(size.width, size.height);
+    this.takeSize(size);
     this.updateViewportAndRender(wasAtEnd);
     this.eventBus.emit('resize', size);
+  }
+
+  /**
+   * The container's new size, taken into the layout and the viewport. The
+   * viewport is given the plot the layout leaves, not the container less
+   * the price scale: a left scale, or a pane beside the plot, is room the
+   * bars do not have, and bars fitted below the usual slot would be widened
+   * to that room and stay so.
+   */
+  private takeSize(size: { width: number; height: number }): void {
+    this.layoutManager.resize(size.width, size.height);
+    this.panes.invalidate();
+    this.viewport.setChartRect(this.getResolvedLayout().mainChartRect);
   }
 
   destroy(): void {
@@ -7001,29 +7012,6 @@ function measureWith(ctx: CanvasRenderingContext2D, text: string, font: string):
   const width = ctx.measureText(text).width;
   ctx.font = drawing;
   return width;
-}
-
-/** The longest family list `setFont` takes, characters. */
-const MAX_FONT_FAMILY = 300;
-
-/** A font the chart can draw with: a family that isn't empty, sizes above zero. */
-function readFont(font: Partial<FontConfig>): Partial<FontConfig> {
-  const out: Partial<FontConfig> = {};
-  // A list of faces, nothing a style sheet could read more into (the family also reaches CSS text).
-  const face = (v: unknown): v is string => typeof v === 'string' && v.trim() !== '' && v.length <= MAX_FONT_FAMILY && !/[;{}<>\\]|\/\*/.test(v);
-  if (face(font.family)) out.family = font.family;
-  if (face(font.textFamily)) out.textFamily = font.textFamily;
-  for (const key of ['sizeSmall', 'sizeMedium', 'sizeLarge'] as const) {
-    const size = font[key];
-    if (typeof size === 'number' && Number.isFinite(size) && size > 0) out[key] = size;
-  }
-  return out;
-}
-
-/** Shapes the chart can draw: a corner radius from 0 to 999 px. */
-function readShapes(shapes: ShapeConfig): ShapeConfig {
-  const r = shapes.tagRadius;
-  return typeof r === 'number' && Number.isFinite(r) && r >= 0 ? { tagRadius: Math.min(r, 999) } : {};
 }
 
 /** An alert as its events carry it. */

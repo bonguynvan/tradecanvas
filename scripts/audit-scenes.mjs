@@ -27,7 +27,7 @@ if (UI && !/^[a-z]+$/.test(UI)) throw new Error(`UI must be a look's name, not $
 // The widgets' language, to see its strings fit: `WIDGET_LOCALE=vi` (English without it).
 const WIDGET_LOCALE = process.env.WIDGET_LOCALE ?? '';
 if (WIDGET_LOCALE && !/^[a-zA-Z-]+$/.test(WIDGET_LOCALE)) throw new Error(`WIDGET_LOCALE must be a language tag, not ${WIDGET_LOCALE}`);
-const SCENES = ['orderAtPrice', 'linkedGrid', 'replay', 'replayDepth', 'compare', 'renko', 'priceLimits', 'indicators', 'ichimoku', 'krx', 'paneDrawings', 'selectedDrawing', 'selectedPaneDrawing', 'manyPanes', 'marks', 'historyDaily', 'historyHourly', 'positions', 'watchlistOwnRow', 'dockPage', 'positionAddStops', 'sidebarMenus', 'favoritesBar', 'symbolSearch', 'paneMillions', 'hiddenCandles', 'fractals', 'bracketQuantity'];
+const SCENES = ['orderAtPrice', 'linkedGrid', 'replay', 'replayDepth', 'compare', 'renko', 'priceLimits', 'indicators', 'ichimoku', 'krx', 'paneDrawings', 'selectedDrawing', 'selectedPaneDrawing', 'manyPanes', 'marks', 'historyDaily', 'historyHourly', 'positions', 'watchlistOwnRow', 'dockPage', 'positionAddStops', 'sidebarMenus', 'favoritesBar', 'symbolSearch', 'paneMillions', 'hiddenCandles', 'fractals', 'bracketQuantity', 'noPage'];
 const THEMES = ['dark', 'light'];
 const SIZES = {
   phone: { viewport: { width: 390, height: 760 }, isMobile: true, hasTouch: true },
@@ -107,6 +107,8 @@ async function shoot(browser, base, scene, theme, size) {
     errors.push(...await page.evaluate(linkedLegendChecks));
   }
   errors.push(...await page.evaluate(pageChecks));
+  // A scene's own checks, where it has some.
+  errors.push(...await page.evaluate(() => window.stage.checks?.() ?? []));
   const file = `${sheetName(scene)}-${theme}-${size}.png`;
   await page.screenshot({ path: join(OUT, file) });
   await context.close();

@@ -178,3 +178,40 @@ describe('the finance charts', () => {
     }
   });
 });
+
+describe('the charts drawn with no page', () => {
+  it('list_options takes renderPriceChart, with how it is called', () => {
+    const drawn = call('list_options', { target: 'renderPriceChart' }).data as { target: string; what: string; options: { name: string; required?: boolean; doc?: string }[]; usage: string };
+    expect(drawn.target).toBe('renderPriceChart');
+    expect(drawn.what).toMatch(/no page/);
+    expect(drawn.options.map((o) => o.name)).toEqual(expect.arrayContaining(['data', 'symbol', 'timeframe', 'indicators', 'drawings', 'markers', 'visibleRange', 'theme', 'chartType', 'features', 'path2D']));
+    expect(drawn.options.find((o) => o.name === 'data')?.required).toBe(true);
+    // What only a chart on a page has is not among them.
+    expect(drawn.options.map((o) => o.name)).not.toContain('crosshair');
+    expect(drawn.usage).toContain('renderPriceChart(ctx, options, { width');
+    const found = call('list_options', { target: 'renderPriceChart', query: 'Path2D' }).data as typeof drawn;
+    expect(found.options.map((o) => o.name)).toEqual(['path2D']);
+  });
+
+  it('validate_options checks its options, and an unknown target is told its name too', () => {
+    const bad = call('validate_options', { target: 'renderPriceChart', options: { data: [], indicatorz: [], theme: 'sepia' } });
+    expect((bad.data as { valid: boolean }).valid).toBe(false);
+    expect(bad.text).toMatch(/indicatorz/);
+    expect(bad.text).toMatch(/Did you mean 'indicators'/);
+    expect(call('validate_options', { target: 'renderPriceChart', options: {} }).text).toMatch(/needs 'data'/);
+    expect(call('validate_options', { target: 'renderPriceChart', options: { data: [], chartType: 'line' } }).text).toBe('No problems found.');
+    expect(call('validate_options', { target: 'PieChart', options: {} }).text).toContain('renderPriceChart');
+  });
+
+  it('knows its plugins and its other symbols’ bars, and what its features are', () => {
+    const drawn = call('list_options', { target: 'renderPriceChart' }).data as { options: { name: string }[] };
+    expect(drawn.options.map((o) => o.name)).toEqual(expect.arrayContaining(['plugins', 'symbolSeries']));
+    expect(call('validate_options', { target: 'renderPriceChart', options: { data: [], plugins: [], symbolSeries: {} } }).text).toBe('No problems found.');
+    expect(call('validate_options', { target: 'renderPriceChart', options: { data: [], features: { volume: false, legend: false } } }).text).toBe('No problems found.');
+    // A feature of a chart on a page is none of a still one's.
+    const page = call('validate_options', { target: 'renderPriceChart', options: { data: [], features: { crosshair: false } } });
+    expect(page.text).toMatch(/crosshair/);
+    expect((page.data as { valid: boolean }).valid).toBe(false);
+    expect(call('validate_options', { target: 'renderPriceChart', options: { data: [], features: { volume: 'no' } } }).text).toMatch(/volume/);
+  });
+});

@@ -61,3 +61,17 @@ test('lists the drawing tools and feature switches from the built packages', () 
   assert.ok(favorites.items.includes('trendLine'));
   assert.equal(favorites.open, true);
 });
+
+test("reads what a function takes, beyond its options interface: renderPriceChart's plugins and its feature switches", () => {
+  const drawn = catalog.functions.find((f) => f.name === 'renderPriceChart');
+  assert.ok(drawn, 'renderPriceChart is among the functions');
+  const names = drawn.options.map((o) => o.name);
+  for (const name of ['data', 'indicators', 'drawings', 'markers', 'symbolSeries', 'plugins', 'path2D']) assert.ok(names.includes(name), name);
+  assert.equal(drawn.options.find((o) => o.name === 'data').required, true);
+  assert.match(drawn.options.find((o) => o.name === 'plugins').doc, /plugins/i);
+  assert.match(drawn.usage, /renderPriceChart\(ctx, options/);
+  // Its switches are its own: what only a chart on a page has is not among them.
+  const features = catalog.nested['renderPriceChart.features'].map((o) => o.name);
+  assert.ok(features.includes('volume') && features.includes('legend'));
+  assert.ok(!features.includes('crosshair') && !features.includes('panning'));
+});

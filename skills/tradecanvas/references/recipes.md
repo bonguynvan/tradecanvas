@@ -690,7 +690,7 @@ new Bar3DChart(document.getElementById('returns')!, {
 Every chart gives a picture of itself: the price chart (`Chart`, and `ChartWidget` through `widget.chart`) and each finance chart have the same methods.
 
 ```ts
-import { Chart, EquityCurveChart, chartsToPdf, renderFinanceChart } from '@tradecanvas/chart';
+import { Chart, EquityCurveChart, chartsToPdf, renderFinanceChart, renderPriceChart, type OHLCBar } from '@tradecanvas/chart';
 
 declare const chart: Chart;
 declare const equity: EquityCurveChart;
@@ -709,9 +709,38 @@ const report = await chartsToPdf([chart, equity], { title: 'March' });        //
 declare const ctx: OffscreenCanvasRenderingContext2D;
 ctx.scale(2, 2);
 renderFinanceChart(ctx, 'equityCurve', { data: [{ time: 0, value: 100 }, { time: 86_400_000, value: 104 }], theme: 'light' }, { width: 800, height: 400 });
+
+// The price chart with no page: one frame, the same picture `Chart` draws of the same bars.
+declare const bars: OHLCBar[];
+declare const NodePath2D: typeof Path2D; // in Node: import { Path2D } from '@napi-rs/canvas' (a worker has its own, and needs none given)
+renderPriceChart(
+  ctx,
+  {
+    data: bars, // every bar is on view when they fit; visibleRange: { from, to } (times) names others
+    symbol: 'BTCUSDT',
+    timeframe: '1d',
+    theme: 'light',
+    timeZone: 'Asia/Ho_Chi_Minh', // the machine's own zone with none
+    indicators: [
+      { id: 'ema', params: { period: 21 } },
+      { id: 'rsi', instanceId: 'momentum' }, // a pane of its own
+      { id: 'stochastic', pane: 'momentum' }, // in that pane
+    ],
+    drawings: [
+      ...chart.getDrawings(), // a chart set up in the browser, drawn again elsewhere
+      { type: 'horizontalLine', anchors: [{ time: bars[0].time, price: 70 }], paneId: 'momentum' }, // one by hand, on that pane
+    ],
+    markers: [{ time: bars[40].time, price: bars[40].low, direction: 'long', confidence: 0.8, source: 'strategy', label: 'Buy' }],
+    features: { volume: false },
+    path2D: NodePath2D,
+  },
+  { width: 800, height: 400 },
+);
 ```
 
-`renderFinanceChart` names a chart by its class name without `Chart`, first letter small (`'bar'`, `'boxPlot'`, `'surface'`, `'bar3d'`). The price chart is not drawn without a page.
+`renderFinanceChart` names a chart by its class name without `Chart`, first letter small (`'bar'`, `'boxPlot'`, `'surface'`, `'bar3d'`).
+
+`renderPriceChart` takes what `Chart` takes of how the chart looks (`chartType`, `theme`, `font`, `overrides`, `density`, `logScale`, `numberLocale`, `priceFormat`, `watermark`, `features`), and as options what a chart on a page is given by calls: `data`, `symbol`, `timeframe`, `indicators` (as `chart.getIndicatorSetup()` gives them), `drawings` (as `getDrawings()` gives them or `addDrawing()` takes one), `markers`, `visibleRange`, `pricePrecision`, `timeZone`, `symbolSeries` (other symbols' bars, for `'compareSymbol'` and the like), and `plugins`. The picture is the one a chart on a page gives after `chart.fitContent()`. In Node it needs a canvas library with `Path2D` (`@napi-rs/canvas`, `skia-canvas`), given as `path2D`. It has no crosshair, orders, positions, alerts or compare lines, and it throws, naming the option, for one that is wrong (an indicator it does not know, a time zone, a theme).
 
 ## A dashboard: net flows, allocation and returns
 

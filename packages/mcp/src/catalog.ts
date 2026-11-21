@@ -76,6 +76,17 @@ export interface FinanceChartEntry {
   options: OptionEntry[];
 }
 
+/** A function of @tradecanvas/chart that takes an options object: `<name>(ctx, options, size)`. */
+export interface FunctionEntry {
+  /** The function's name. */
+  name: string;
+  /** What it is for, in a line. */
+  what: string;
+  /** How it is imported and called. */
+  usage: string;
+  options: OptionEntry[];
+}
+
 export interface Catalog {
   indicators: IndicatorEntry[];
   drawingTools: DrawingToolEntry[];
@@ -92,6 +103,8 @@ export interface Catalog {
   nested: Record<string, OptionEntry[]>;
   /** The finance charts (bars, donut, depth, equity curve…) and the dashboard, each with its options. */
   financeCharts: FinanceChartEntry[];
+  /** The functions that take an options object (`renderPriceChart`), each with its options and how it is called. */
+  functions: FunctionEntry[];
   /** How to write an indicator of your own: the skill's recipe (Markdown, its code type-checked) and the file it is in. */
   customIndicator: { guide: string; source: string };
 }
