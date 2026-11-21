@@ -34,6 +34,11 @@ export class WaterfallChart extends BaseFinanceChart {
     renderWaterfall(ctx, width, height, this.options, theme, pos);
   }
 
+  /** A picture of the chart: nothing under a pointer. */
+  protected renderStill(ctx: CanvasRenderingContext2D, width: number, height: number, theme: Theme): void {
+    renderWaterfall(ctx, width, height, this.options, theme, null);
+  }
+
   update(data: WaterfallBar[]): void {
     this.options = { ...this.options, data };
     this.applyLabel();

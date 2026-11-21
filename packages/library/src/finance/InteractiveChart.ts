@@ -57,6 +57,11 @@ export abstract class InteractiveChart<O extends HoverOptions, L> extends BaseFi
     this.draw(ctx, width, height, theme, pointer, this.layout);
   }
 
+  /** A picture of the chart: laid out for the picture's own size, with no pointer, and the page's layout left as it is. */
+  protected renderStill(ctx: CanvasRenderingContext2D, width: number, height: number, theme: Theme): void {
+    this.draw(ctx, width, height, theme, null, this.compute(width, height, theme, canvasMeasure(ctx, theme)));
+  }
+
   setOptions(options: Partial<O>): void {
     this.options = { ...this.options, ...options };
     this.applyBaseOptions({ ...('theme' in options ? { theme: options.theme } : {}), ...('font' in options ? { font: options.font } : {}) });

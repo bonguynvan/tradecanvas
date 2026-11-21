@@ -507,6 +507,9 @@ const de: SiteMessages = {
     depthOverTime: 'Orderbuchtiefe im Zeitverlauf',
     quarterReturns: 'Rendite nach Quartal und Anlageklasse',
     turnHint: 'Ziehen dreht ein Diagramm, ein Doppelklick stellt die Ausgangsansicht wieder her.',
+    exportLabel: 'Portfolio-Chart speichern',
+    print: 'Drucken',
+    reportPdf: 'Alle Charts in einem PDF',
     waterfall: {
       start: 'Start',
       btcLong: 'BTC Long',

@@ -50,6 +50,14 @@ export class LayerManager {
     return this.back;
   }
 
+  /** The canvases that are the chart's own, as they are now: any other in the container is a guest's. */
+  ownCanvases(): HTMLCanvasElement[] {
+    const own: HTMLCanvasElement[] = [];
+    for (const layer of [this.back, this.scene, this.top]) if (layer) own.push(layer.canvas);
+    if (this.gpuCanvas) own.push(this.gpuCanvas);
+    return own;
+  }
+
   /** The pixel ratio the canvases were last sized for. */
   getDpr(): number {
     return this.dpr;

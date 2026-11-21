@@ -752,3 +752,35 @@ export interface DepthSurface {
   /** `values[time][price]`: the volume waiting from the best price out to that price. */
   values: number[][];
 }
+
+/**
+ * The options of each finance chart, by the name `renderFinanceChart` knows
+ * it by: the chart's class name without `Chart`, its first letter small.
+ */
+export interface FinanceChartOptionsMap {
+  bar: BarChartOptions;
+  donut: DonutChartOptions;
+  scatter: ScatterChartOptions;
+  histogram: HistogramOptions;
+  calendar: CalendarChartOptions;
+  matrix: MatrixChartOptions;
+  heatmap: HeatmapOptions;
+  counterClock: CounterClockOptions;
+  depth: DepthChartOptions;
+  equityCurve: EquityCurveOptions;
+  waterfall: WaterfallOptions;
+  gauge: GaugeOptions;
+  sparkline: SparklineOptions;
+  payoff: PayoffOptions;
+  curve: CurveChartOptions;
+  boxPlot: BoxPlotOptions;
+  radar: RadarChartOptions;
+  sunburst: SunburstOptions;
+  stackedArea: StackedAreaOptions;
+  surface: SurfaceChartOptions;
+  bar3d: Bar3DChartOptions;
+}
+
+/** A finance chart's name, as `renderFinanceChart` takes it. */
+export type FinanceChartKind = keyof FinanceChartOptionsMap;
+

@@ -507,6 +507,9 @@ const zhHant: SiteMessages = {
     depthOverTime: '委託簿深度隨時間的變化',
     quarterReturns: '各季度、各資產類別的報酬',
     turnHint: '拖曳圖表即可旋轉，按兩下回到原本的視角。',
+    exportLabel: '儲存投資組合圖表',
+    print: '列印',
+    reportPdf: '所有圖表合成一個 PDF',
     waterfall: {
       start: '期初',
       btcLong: 'BTC 多單',

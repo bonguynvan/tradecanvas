@@ -152,6 +152,9 @@ export const COMMAND_FEATURES: Readonly<Record<string, WidgetFeature>> = {
   objectTree: 'objectTree',
   hotkeys: 'hotkeySheet',
   screenshot: 'screenshot',
+  // The chart on paper is its picture too: the same switch.
+  printChart: 'screenshot',
+  savePdf: 'screenshot',
   copyImage: 'copyImage',
   toggleTheme: 'themeToggle',
   settings: 'settings',

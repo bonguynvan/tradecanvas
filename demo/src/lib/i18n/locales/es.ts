@@ -509,6 +509,9 @@ const es: SiteMessages = {
     depthOverTime: 'Profundidad del libro de órdenes en el tiempo',
     quarterReturns: 'Rentabilidad por trimestre y clase de activo',
     turnHint: 'Arrastra un gráfico para girarlo; con doble clic vuelve a su vista inicial.',
+    exportLabel: 'Guardar el gráfico de la cartera',
+    print: 'Imprimir',
+    reportPdf: 'Todos los gráficos en un PDF',
     waterfall: {
       start: 'Inicio',
       btcLong: 'BTC largo',

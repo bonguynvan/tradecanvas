@@ -507,6 +507,9 @@ const ru: SiteMessages = {
     depthOverTime: 'Глубина стакана во времени',
     quarterReturns: 'Доходность по кварталам и классам активов',
     turnHint: 'Перетащите график, чтобы повернуть его; двойной щелчок возвращает исходный вид.',
+    exportLabel: 'Сохранить график портфеля',
+    print: 'Печать',
+    reportPdf: 'Все графики в одном PDF',
     waterfall: {
       start: 'Начало',
       btcLong: 'BTC лонг',

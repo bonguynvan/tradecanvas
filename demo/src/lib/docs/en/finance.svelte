@@ -50,6 +50,7 @@
 
 chart.setOptions({ mode: 'stacked' })   // any option, merged
 chart.setTheme('light')                 // 'dark' | 'light' | a Theme
+chart.screenshot('flows', { pixelRatio: 2 })   // a picture: see below
 chart.destroy()                         // removes the canvas and its listeners`}</code></pre>
 <p>
   On a touch screen a tap shows the tooltip, and it stays until a tap elsewhere; a drag still scrolls the page. The charts draw on the screen's own pixels, so lines stay sharp at any zoom or display scaling. The depth, equity and waterfall charts size their margins to their labels, as the newer charts do.
@@ -64,6 +65,48 @@ chart.destroy()                         // removes the canvas and its listeners`
   your words, for instance in your page's language. Numbers read with
   <code>valueFormat</code> (or <code>xFormat</code> / <code>yFormat</code>), else as
   1,234.5 and, past ten thousand, 12.3K.
+</p>
+
+<h2 id="pictures">Pictures, paper, and drawing with no page</h2>
+<p>
+  Every chart gives a picture of itself, as the price chart does: <code>screenshot(filename, options)</code>
+  saves one, <code>copyScreenshot()</code> puts a PNG on the clipboard, and <code>screenshotDataURL()</code>,
+  <code>screenshotBlob()</code> and <code>toCanvas()</code> hand it over. The chart is drawn again for the
+  picture, with nothing that follows the pointer on it: at its own size by the screen's pixel ratio, or with
+  the <code>pixelRatio</code>, the <code>theme</code> and the <code>width</code> and <code>height</code> the
+  options give (it is laid out again for another size). <code>print()</code> opens the print dialog for the
+  chart alone and <code>toPdf()</code> gives a PDF of one page, both in the light theme and at twice the
+  pixels unless told otherwise; <code>chartsToPdf</code> makes one PDF of several charts
+  (<a href={href('/docs/api')}>Pictures, print and PDF</a> has the options).
+</p>
+<pre><code>{`import { chartsToPdf } from '@tradecanvas/chart'
+
+equity.screenshot('equity', { pixelRatio: 3 })                 // equity.png
+const wide = flows.screenshotDataURL({ width: 1200, height: 400, type: 'jpeg' })
+allocation.print({ title: 'Allocation' })
+const report = await chartsToPdf([equity, flows, allocation], { title: 'March' })`}</code></pre>
+<p>
+  <code>renderFinanceChart</code> draws a chart on a 2D context of your own, with no page: a canvas made in
+  Node, for a picture in an email, a report or a message from a bot, or an <code>OffscreenCanvas</code> in a
+  worker. Its second argument names the chart, by its class name without <code>Chart</code> and with a small
+  first letter (<code>'bar'</code>, <code>'equityCurve'</code>, <code>'boxPlot'</code>,
+  <code>'surface'</code>, <code>'bar3d'</code>; <code>FINANCE_CHART_KINDS</code> lists them), and the third
+  is that chart's own options. It draws the size you give in the context's own units, over the theme's
+  ground: scale the context first for more pixels.
+</p>
+<pre><code>{`import { createCanvas } from '@napi-rs/canvas'        // or another canvas for Node
+import { renderFinanceChart } from '@tradecanvas/chart'
+
+const canvas = createCanvas(1600, 800)
+const ctx = canvas.getContext('2d')
+ctx.scale(2, 2)                                        // an 800 × 400 chart at twice the pixels
+renderFinanceChart(ctx, 'equityCurve', { data: equity, theme: 'light', font: { family: 'Inter' } }, { width: 800, height: 400 })
+const png = canvas.toBuffer('image/png')`}</code></pre>
+<p>
+  The context has to have what a browser's has: paths, text and its measuring, and
+  <code>getTransform</code>. The text is drawn in the theme's font, so name one your canvas has with
+  <code>font</code>. Nothing follows a pointer and nothing moves: a gauge is at its value. The performance
+  dashboard is built of page elements and is not drawn this way; its charts are.
 </p>
 
 <h2>Bar chart</h2>

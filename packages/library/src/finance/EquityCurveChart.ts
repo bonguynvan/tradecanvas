@@ -34,6 +34,11 @@ export class EquityCurveChart extends BaseFinanceChart {
     renderEquityCurve(ctx, width, height, this.options, theme, pos);
   }
 
+  /** A picture of the chart: nothing under a pointer. */
+  protected renderStill(ctx: CanvasRenderingContext2D, width: number, height: number, theme: Theme): void {
+    renderEquityCurve(ctx, width, height, this.options, theme, null);
+  }
+
   update(data: EquityPoint[], benchmark?: EquityPoint[]): void {
     this.options = { ...this.options, data };
     if (benchmark !== undefined) {

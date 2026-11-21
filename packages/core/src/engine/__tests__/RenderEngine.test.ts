@@ -1039,3 +1039,43 @@ describe('RenderEngine — a drawing’s span on the axes', () => {
     expect(spans(false).renderSpan).not.toHaveBeenCalled();
   });
 });
+
+describe('RenderEngine — the frame on a context of the caller’s', () => {
+  /** A context of the caller's own: a stand-in, as the layers' are here. */
+  const own = () => fakeContext(document.createElement('canvas'));
+
+  it('draws the scene and what is over it there, and leaves its own canvases as they are', () => {
+    const { ctx, scene, top } = makeContext();
+    engine.setRenderContext(ctx);
+    const cleared = [LayerType.Main, LayerType.Hover].map((type) => vi.spyOn(engine.layerManager.getLayer(type)!, 'clear'));
+    const target = own();
+    engine.renderTo(target);
+    expect(scene).toHaveBeenCalledTimes(1);
+    expect(scene.mock.calls[0][0]).toBe(target);
+    expect(top).toHaveBeenCalledTimes(1);
+    expect(top.mock.calls[0][0]).toBe(target);
+    for (const clear of cleared) expect(clear).not.toHaveBeenCalled();
+    // No frame was asked of the loop either.
+    expect(frames).toEqual([]);
+  });
+
+  it('draws it all in Canvas 2D where the chart itself draws with the GPU', () => {
+    const { ctx, scene } = makeContext();
+    const grid = vi.fn();
+    ctx.gridRenderer = { isVisible: () => true, render: grid } as unknown as RenderContext['gridRenderer'];
+    const canvas = document.createElement('canvas');
+    const gpu = { canvas, label: 'test GPU', render: vi.fn(() => ({ series: true, volume: true, background: true })), onLost: () => {}, onRestored: () => {}, destroy: () => canvas.remove() };
+    engine.attachGpu(gpu as never);
+    engine.setRenderContext(ctx);
+    const target = own();
+    engine.renderTo(target);
+    expect(gpu.render).not.toHaveBeenCalled();
+    expect(scene.mock.calls[0][0]).toBe(target);
+    expect(grid.mock.calls[0][0]).toBe(target);
+  });
+
+  it('draws nothing before it has a frame to draw', () => {
+    expect(() => engine.renderTo(own())).not.toThrow();
+  });
+});
+

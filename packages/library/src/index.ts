@@ -304,7 +304,10 @@ export type { GridLayout, GridArea, GridShape, GridCellConfig, ChartGridOptions 
 
 // Finance charts
 export { SparklineChart, DepthChart, EquityCurveChart, HeatmapChart, WaterfallChart, GaugeChart, PerformanceDashboard, BarChart, DonutChart, ScatterChart, HistogramChart, CalendarChart, MatrixChart, CounterClockChart, PayoffChart, CurveChart, BoxPlotChart, RadarChart, SunburstChart, StackedAreaChart, SurfaceChart, Bar3DChart } from './finance/index.js';
-export { histogramBins, niceScale, correlationMatrix, counterClockPoints, counterClockPhase, optionPayoff, payoffStats, curveValueAt, boxPlotStats, depthSurface } from '@tradecanvas/core';
+export { histogramBins, niceScale, correlationMatrix, counterClockPoints, counterClockPhase, optionPayoff, payoffStats, curveValueAt, boxPlotStats, depthSurface, renderFinanceChart, FINANCE_CHART_KINDS, imagesToPdf } from '@tradecanvas/core';
+export type { PdfImage } from '@tradecanvas/core';
+export { chartsToPdf } from './chartsToPdf.js';
+export type { PdfPageSource } from './chartsToPdf.js';
 export type { PayoffStats } from '@tradecanvas/core';
 export {
   toEquityPoints,
@@ -346,6 +349,12 @@ export type {
   Bar3DChartOptions,
   DepthSnapshot,
   DepthSurface,
+  FinanceChartKind,
+  FinanceChartOptionsMap,
+  ChartImageOptions,
+  ChartPrintOptions,
+  ChartPdfOptions,
+  PdfPageOptions,
   SparklineOptions,
   DepthChartOptions,
   EquityPoint,

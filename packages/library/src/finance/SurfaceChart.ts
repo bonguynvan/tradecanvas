@@ -17,6 +17,11 @@ export class SurfaceChart extends Chart3D<SurfaceChartOptions, SurfaceLayout> {
     renderSurface(ctx, width, height, this.options, theme, this.turning ? null : pointer, layout);
   }
 
+  /** A picture of the surface: whole, though the page draws it with fewer points while it is turned. */
+  protected renderStill(ctx: CanvasRenderingContext2D, width: number, height: number, theme: Theme): void {
+    renderSurface(ctx, width, height, this.options, theme, null);
+  }
+
   protected describe(): string {
     // An axis may be missing where the options come from plain JavaScript: the chart then draws nothing.
     return `3D surface of ${this.options.x?.length ?? 0} by ${this.options.y?.length ?? 0} points`;

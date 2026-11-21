@@ -44,11 +44,12 @@ import type {
 } from '@tradecanvas/commons';
 import { isValidTimeZone, sessionMinute, symbolTimeZone, LayerType, setLocale as setGlobalLocale, computePriceLimits, createMarketTheme, priceStepAt, PRICE_AXIS_WIDTH, autoPricePrecision, formatPrice, stepDecimals, priceFormatterFor, fractionTick } from '@tradecanvas/commons';
 import { CHART_SPACING } from '@tradecanvas/commons';
-import type { BarLayout, ChartDensity, ChartSpacing, ChartTypeOptions, DataUpdatePayload, FontConfig, IndicatorId, IndicatorParamsFor, PriceFormatter, PriceFraction, ShapeConfig, TimeFormatter } from '@tradecanvas/commons';
+import type { BarLayout, ChartDensity, ChartImageOptions, ChartPdfOptions, ChartPrintOptions, ChartSpacing, ChartTypeOptions, DataUpdatePayload, FontConfig, IndicatorId, IndicatorParamsFor, PriceFormatter, PriceFraction, ShapeConfig, TimeFormatter } from '@tradecanvas/commons';
 import type { ResolvedLayout, ChartStyleKey, ChartStyleOverrides, ChartStyleOverridesPatch, IndicatorIntervals, IndicatorStyleConfig, PaneStyle, ResolvedChartStyle, StyleLayer } from '@tradecanvas/commons';
 import { readChartTypeOptions, tickBarCount, barTimeUnit, readChartStyleOverrides, readIndicatorPlotStyles, readPaneStyle } from '@tradecanvas/commons';
 import { PriceLines, type BidAsk, SymbolSeriesStore, CompareSymbolIndicator, CompareSymbolPaneIndicator, SpreadIndicator, CorrelationCoefficientIndicator, CorrelationLogIndicator, axisTimes, HiLoRenderer, PointAndFigureRenderer, isPriceLevelAlert, loadWebGL, gpuContextsLeft, whenGpuContextFree, idleCssCursor, isCrosshairCursor } from '@tradecanvas/core';
 import type { GpuRenderer, RendererMode } from '@tradecanvas/core';
+import { canvasBlob, canvasDataURL, canvasReadable, canvasesToPdf, copyImage, downloadImage, imageFileName, imageRatio, printCanvas } from '@tradecanvas/core';
 import { indicatorWorkerPool, INDICATOR_WORKER_MIN_BARS, THEME_LOOK_KEYS, valuePlots, panelScale, panelScaleTexts, panelTagText, type IndicatorWorkerLease } from '@tradecanvas/core';
 import { regularHoursFilter } from './regularHours.js';
 import { ChartA11y } from './chartA11y.js';
@@ -176,6 +177,9 @@ const HISTORY_AHEAD_MIN_BARS = 20;
 
 /** Narrowest box (px) the zoom-area tool zooms into. */
 const MIN_ZOOM_BOX_PX = 8;
+/** A picture for paper (`print`, `toPdf`) is drawn in this theme and with this many pixels to a CSS pixel, unless its options say otherwise. */
+const PAPER_THEME = 'light';
+const PAPER_PIXEL_RATIO = 2;
 /** Arrow keys on selected drawings: a bar across or a pixel up or down; Shift moves this many. */
 const NUDGE_SHIFT_STEPS = 10;
 /** Each arrow key's step for selected drawings: bars across, pixels down. */
@@ -4949,55 +4953,134 @@ export class Chart {
 
   // --- Screenshot ---
 
-  screenshot(filename?: string): void {
-    if (!this.features.screenshot) return;
-    this.freshFrame();
-    Screenshot.download(this.container, filename, this.themeManager.getTheme().background);
+  /**
+   * The chart as a canvas, for a picture of it. With nothing asked that the
+   * screen cannot give, it is read off the chart's own canvases as they are
+   * now. For more pixels than the screen's (`pixelRatio`) or another theme
+   * (`theme`), the frame is drawn again on the picture's canvas, in Canvas
+   * 2D whatever the chart itself draws with: the chart on the page is left
+   * as it is. Null with screenshots switched off or a chart with no size.
+   */
+  toCanvas(options: ChartImageOptions = {}): HTMLCanvasElement | null {
+    if (!this.features.screenshot) return null;
+    if (options.pixelRatio === undefined && options.theme === undefined) {
+      this.freshFrame();
+      const read = Screenshot.compose(this.container, this.themeManager.getTheme().background);
+      // Canvases of no size make a picture of none.
+      return read && read.width > 0 && read.height > 0 ? read : null;
+    }
+    const size = this.engine.dprManager.readContainerSize();
+    if (!(size.width > 0) || !(size.height > 0)) return null;
+    const ratio = imageRatio(size.width, size.height, options.pixelRatio, this.engine.dprManager.getDpr());
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(size.width * ratio));
+    canvas.height = Math.max(1, Math.round(size.height * ratio));
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return null;
+    // A paused chart hasn't taken in what changed since it stopped drawing: the
+    // scales are fitted for the picture, quietly. The frame it owes the page
+    // stays owed, and resuming draws it and says what moved.
+    if (this.isSuspended() && this.renderDeferred) {
+      this.panes.invalidateScales();
+      this.fitDataAndAxes();
+      this.syncRenderContext();
+    }
+    const draw = (): void => {
+      ctx.setTransform(canvas.width / size.width, 0, 0, canvas.height / size.height, 0, 0);
+      // The plot's ground is the container's on the page: the picture needs its own.
+      ctx.fillStyle = this.themeManager.getTheme().background;
+      ctx.fillRect(0, 0, size.width, size.height);
+      this.engine.renderTo(ctx);
+    };
+    if (options.theme === undefined) {
+      draw();
+    } else {
+      // The chart in the other theme for as long as the picture takes: nothing on the page is told or changed.
+      try {
+        this.themeManager.withTheme(options.theme, () => {
+          this.syncRenderContext();
+          draw();
+        });
+      } finally {
+        this.syncRenderContext();
+      }
+      // A frame notes where its labels and tags are as it draws them, and that was for the
+      // other theme's font: the chart's own frame, drawn again, notes them for its own.
+      this.engine.requestRender();
+    }
+    this.drawGuestCanvases(ctx);
+    return canvas;
   }
 
-  /** Copy the chart image to the clipboard. Returns false if unsupported/blocked. */
-  async copyScreenshot(): Promise<boolean> {
-    if (!this.features.screenshot) return false;
-    const ClipboardItemCtor = (globalThis as { ClipboardItem?: typeof ClipboardItem }).ClipboardItem;
-    // A runtime with no navigator has no clipboard either: that is a false, not an error.
-    const clipboard = typeof navigator === 'undefined' ? undefined : navigator.clipboard;
-    if (!clipboard?.write || !ClipboardItemCtor) return false;
-    try {
-      this.freshFrame();
-      const png = Screenshot.toBlob(this.container, this.themeManager.getTheme().background).then((blob) => {
-        if (!blob) throw new Error('No chart image to copy');
-        return blob;
-      });
-      // The write reports a missing image; this keeps it from also showing as an unhandled rejection.
-      png.catch(() => {});
-      // The item is made, and written, before anything is awaited, while the
-      // image still encodes: Safari lets a page write the clipboard only while
-      // the click that asked for it is being handled.
-      let item: ClipboardItem;
-      try {
-        item = new ClipboardItemCtor({ 'image/png': png });
-      } catch (err) {
-        // Older browsers take only a Blob here, so they wait for the encoding.
-        if (!(err instanceof TypeError)) throw err;
-        item = new ClipboardItemCtor({ 'image/png': await png });
-      }
-      await clipboard.write([item]);
-      return true;
-    } catch {
-      return false;
+  /**
+   * The canvases in the chart's container that are not the chart's own (a
+   * layer a host laid over it), each where it is: a picture read off the
+   * screen has them, so one drawn again has them too. One that is not shown
+   * is left out, and so is one the page may not read (it holds a picture
+   * from another site): drawn on the picture, it would make the whole
+   * picture one nobody can read.
+   */
+  private drawGuestCanvases(ctx: CanvasRenderingContext2D): void {
+    const own = new Set(this.engine.layerManager.ownCanvases());
+    const guests = [...this.container.querySelectorAll('canvas')].filter((canvas) => !own.has(canvas));
+    if (guests.length === 0) return;
+    const box = this.container.getBoundingClientRect();
+    for (const guest of guests) {
+      const at = guest.getBoundingClientRect();
+      if (!(at.width > 0) || !(at.height > 0) || getComputedStyle(guest).visibility === 'hidden' || !canvasReadable(guest)) continue;
+      ctx.drawImage(guest, at.left - box.left, at.top - box.top, at.width, at.height);
     }
   }
 
-  screenshotDataURL(): string | null {
-    if (!this.features.screenshot) return null;
-    this.freshFrame();
-    return Screenshot.toDataURL(this.container, this.themeManager.getTheme().background);
+  /** Saves the chart as a picture file: `filename` (`chart` with none), ending as the format does. `options`: see `toCanvas`. */
+  screenshot(filename?: string, options: ChartImageOptions = {}): void {
+    const url = this.screenshotDataURL(options);
+    if (url) downloadImage(url, imageFileName(filename, options.type ?? 'png'));
   }
 
-  async screenshotBlob(): Promise<Blob | null> {
-    if (!this.features.screenshot) return null;
-    this.freshFrame();
-    return Screenshot.toBlob(this.container, this.themeManager.getTheme().background);
+  /** Copy the chart image to the clipboard, as a PNG. Returns false if unsupported/blocked. `options`: see `toCanvas`. */
+  async copyScreenshot(options: Omit<ChartImageOptions, 'type' | 'quality'> = {}): Promise<boolean> {
+    if (!this.features.screenshot) return false;
+    // Nothing is drawn where there is no clipboard to put it on.
+    const clipboard = typeof navigator === 'undefined' ? undefined : navigator.clipboard;
+    if (!clipboard?.write || !(globalThis as { ClipboardItem?: unknown }).ClipboardItem) return false;
+    const canvas = this.toCanvas(options);
+    return copyImage(canvas ? canvasBlob(canvas) : Promise.resolve(null));
+  }
+
+  /** The chart as a picture in a data URL. `options`: its format, and see `toCanvas`. */
+  screenshotDataURL(options: ChartImageOptions = {}): string | null {
+    const canvas = this.toCanvas(options);
+    return canvas ? canvasDataURL(canvas, options) : null;
+  }
+
+  /** The chart as a picture file's bytes. `options`: its format, and see `toCanvas`. */
+  async screenshotBlob(options: ChartImageOptions = {}): Promise<Blob | null> {
+    const canvas = this.toCanvas(options);
+    return canvas ? canvasBlob(canvas, options) : null;
+  }
+
+  /**
+   * Opens the browser's print dialog for the chart alone: a page that holds
+   * its picture and nothing of the page it is on. Drawn again for paper: in
+   * the light theme and at twice the pixels unless `options` say otherwise.
+   * False when there was no picture to print (screenshots off, a chart with
+   * no size, a picture the page may not read).
+   */
+  print(options: ChartPrintOptions = {}): boolean {
+    const canvas = this.toCanvas({ ...options, theme: options.theme ?? PAPER_THEME, pixelRatio: options.pixelRatio ?? PAPER_PIXEL_RATIO });
+    return canvas !== null && printCanvas(canvas, { title: options.title });
+  }
+
+  /**
+   * The chart as a PDF of one page: its picture, kept without loss, as
+   * large as fits within the margins. A4 on its side, in the light theme
+   * and at twice the pixels unless `options` say otherwise. Null with
+   * screenshots switched off or a chart with no size.
+   */
+  async toPdf(options: ChartPdfOptions = {}): Promise<Blob | null> {
+    const canvas = this.toCanvas({ ...options, theme: options.theme ?? PAPER_THEME, pixelRatio: options.pixelRatio ?? PAPER_PIXEL_RATIO });
+    return canvas ? canvasesToPdf([canvas], options) : null;
   }
 
   // --- Alerts ---

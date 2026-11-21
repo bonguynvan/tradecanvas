@@ -507,6 +507,9 @@ const fr: SiteMessages = {
     depthOverTime: 'Profondeur du carnet d’ordres dans le temps',
     quarterReturns: 'Rendement par trimestre et classe d’actifs',
     turnHint: 'Faites glisser un graphique pour le tourner ; un double-clic le remet dans sa vue initiale.',
+    exportLabel: 'Enregistrer le graphique du portefeuille',
+    print: 'Imprimer',
+    reportPdf: 'Tous les graphiques dans un seul PDF',
     waterfall: {
       start: 'Début',
       btcLong: 'BTC long',

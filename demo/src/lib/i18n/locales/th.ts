@@ -507,6 +507,9 @@ const th: SiteMessages = {
     depthOverTime: 'ความลึกของสมุดคำสั่งตามเวลา',
     quarterReturns: 'ผลตอบแทนรายไตรมาสแยกตามประเภทสินทรัพย์',
     turnHint: 'ลากกราฟเพื่อหมุน ดับเบิลคลิกเพื่อกลับสู่มุมมองเริ่มต้น',
+    exportLabel: 'บันทึกกราฟพอร์ต',
+    print: 'พิมพ์',
+    reportPdf: 'กราฟทั้งหมดใน PDF เดียว',
     waterfall: {
       start: 'เริ่มต้น',
       btcLong: 'BTC ฝั่งซื้อ',

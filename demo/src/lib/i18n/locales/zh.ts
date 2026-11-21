@@ -508,6 +508,9 @@ const zh: SiteMessages = {
     depthOverTime: '订单簿深度随时间的变化',
     quarterReturns: '各季度、各资产类别的收益',
     turnHint: '拖动图表即可旋转，双击恢复原来的视角。',
+    exportLabel: '保存组合图表',
+    print: '打印',
+    reportPdf: '全部图表合成一个 PDF',
     waterfall: {
       start: '期初',
       btcLong: 'BTC 多单',
