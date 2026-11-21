@@ -161,3 +161,96 @@ describe('PaperExecutionAdapter: an order the account cannot carry', () => {
     expect(adapter.getAccount()).toEqual(expect.objectContaining({ balance: 10, marginUsed: 0 }));
   });
 });
+
+describe('PaperExecutionAdapter: the account through every way a position changes', () => {
+  it('charges a reverse twice, the close and the opening, and keeps the margin of the position turned', async () => {
+    const { adapter, fills, market } = connect({ balance: 10_000, commission: { min: 1 } });
+    await market('buy', 2);
+    adapter.setMarkPrice(110);
+    await adapter.reversePosition({ positionId: adapter.getPositions()[0].id });
+    expect(fills.map((f) => f.commission)).toEqual([1, 1, 1]);
+    expect(adapter.getAccount()).toEqual(expect.objectContaining({ balance: 10_000 + 20 - 3, realisedPnl: 20, commission: 3, marginUsed: 220 }));
+  });
+
+  it('reverses a position when what the close leaves carries the one it opens', async () => {
+    const { adapter, market } = connect({ balance: 1_000 });
+    await market('buy', 10);
+    adapter.setMarkPrice(90);
+    // The close leaves 900, and ten at 90 hold 900.
+    await adapter.reversePosition({ positionId: adapter.getPositions()[0].id });
+    expect(adapter.getPositions()).toEqual([expect.objectContaining({ side: 'sell', quantity: 10, entryPrice: 90 })]);
+  });
+
+  it('refuses a reverse the account cannot carry, and leaves the position as it was', async () => {
+    const { adapter, fills, market } = connect({ balance: 1_000, commission: { rate: 0.06 } });
+    await market('buy', 9);
+    // 946 left after the first commission. A reverse costs 54 to close and 54 to open, and holds 900.
+    const before = adapter.getPositions()[0];
+    await expect(adapter.reversePosition({ positionId: before.id })).rejects.toThrow(/margin/i);
+    expect(adapter.getPositions()).toEqual([before]);
+    expect(fills).toHaveLength(1);
+  });
+
+  it('realises and charges on a net position turned round, and holds the margin of what is left', async () => {
+    const { adapter, fills, market } = connect({ balance: 10_000, positions: 'net', commission: { perUnit: 1 } });
+    await market('buy', 2);
+    await market('buy', 1);
+    expect(adapter.getAccount()!.marginUsed).toBe(300);
+    adapter.setMarkPrice(110);
+    await market('sell', 5);
+    expect(fills.at(-1)).toEqual(expect.objectContaining({ pnl: 30, commission: 5 }));
+    expect(adapter.getAccount()).toEqual(expect.objectContaining({ realisedPnl: 30, commission: 8, balance: 10_000 + 30 - 8, marginUsed: 220, unrealisedPnl: 0 }));
+  });
+
+  it('puts a take-profit’s gain and a trailed stop’s in the balance', async () => {
+    const { adapter, market } = connect({ balance: 1_000 });
+    await market('buy', 1, { takeProfit: 105 });
+    adapter.setMarkPrice(106);
+    expect(adapter.getAccount()!.balance).toBe(1_005);
+    await market('buy', 1, { stopLoss: 100, trailingStop: 6 });
+    adapter.setMarkPrice(120);
+    adapter.setMarkPrice(113);
+    expect(adapter.getAccount()).toEqual(expect.objectContaining({ balance: 1_005 + 8, marginUsed: 0 }));
+  });
+
+  it('sizes a stop order by its stop, on placing it and when its price comes', async () => {
+    const { adapter, errors } = connect({ balance: 1_000 });
+    // It fills at its stop, 120: ten of them hold 1200.
+    await expect(adapter.placeOrder({ side: 'buy', type: 'stop', price: 90, stopPrice: 120, quantity: 10 })).rejects.toThrow(/margin/i);
+    await adapter.placeOrder({ side: 'buy', type: 'stop', price: 120, stopPrice: 100.5, quantity: 9 });
+    adapter.setMarkPrice(101);
+    expect(errors).toEqual([]);
+    expect(adapter.getPositions()).toHaveLength(1);
+  });
+
+  it('sizes an order that fills at once by the price there is, not by its limit', async () => {
+    const { adapter } = connect({ balance: 1_000 });
+    await adapter.placeOrder({ side: 'buy', type: 'limit', price: 105, quantity: 10, timeInForce: 'ioc' });
+    expect(adapter.getPositions()).toEqual([expect.objectContaining({ entryPrice: 100, quantity: 10 })]);
+  });
+
+  it('tells the account before the fill and the positions, so what reads it then reads it as it is', async () => {
+    const { adapter, market } = connect({ balance: 1_000, commission: { min: 1 } });
+    const seen: [string, number][] = [];
+    adapter.on('fill', () => seen.push(['fill', adapter.getAccount()!.balance]));
+    adapter.on('positions', () => seen.push(['positions', adapter.getAccount()!.marginUsed]));
+    const order: string[] = [];
+    for (const type of ['account', 'fill', 'positions'] as const) adapter.on(type, () => order.push(type));
+    await market('buy', 2);
+    expect(seen).toEqual([['fill', 999], ['positions', 200]]);
+    expect(order).toEqual(['account', 'fill', 'positions']);
+  });
+
+  it('carries an order that needs all there is, to the last digit of a large account', async () => {
+    const { adapter, market } = connect({ balance: 30_000_000.3, leverage: 3 });
+    await market('buy', 900_000.009);
+    expect(adapter.getPositions()).toHaveLength(1);
+  });
+
+  it('starts again from its balance when it is connected again, with what it holds', () => {
+    const { adapter, accounts } = connect({ balance: 500 });
+    adapter.connect({});
+    expect(accounts).toHaveLength(1);
+    expect(adapter.getAccount()!.balance).toBe(500);
+  });
+});

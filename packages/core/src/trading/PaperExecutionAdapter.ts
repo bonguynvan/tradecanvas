@@ -186,8 +186,12 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
       freed = this.marginOf(closes, held.entryPrice);
     }
     const needed = this.marginOf(opens, price) + this.commissionOf(order.quantity, price);
-    // A hair of rounding is not a shortfall.
-    return needed > account.freeMargin + freed + MONEY_SLACK ? `Not enough free margin: the order needs ${needed}, the account has ${account.freeMargin + freed}` : null;
+    return short(needed, account.freeMargin + freed);
+  }
+
+  /** The price an order is sized at: where it fills. A stop fills at its stop, the rest at their price. */
+  private sizedAt(order: TradingOrder): number {
+    return order.type === 'stop' ? order.stopPrice ?? order.price : order.price;
   }
 
   connect(_config: ExecutionConfig): void {
@@ -264,8 +268,10 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
     if (dated) order.expireTime = intent.expireTime;
     if (intent.ocoGroup) order.ocoGroup = intent.ocoGroup;
 
-    const short = this.cannotCarry(order, intent.type === 'market' ? this.markPrice || intent.price : order.price);
-    if (short) throw new Error(short);
+    // An order that fills now is sized at the price there is; one that waits, at where it will fill.
+    const fillsNow = intent.type === 'market' || (atOnce && this.markPrice > 0);
+    const lack = this.cannotCarry(order, fillsNow ? this.markPrice || intent.price : this.sizedAt(order));
+    if (lack) throw new Error(lack);
 
     if (intent.type === 'market') {
       this.fill(order, this.markPrice || intent.price);
@@ -329,8 +335,14 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
     const position = this.positions.find((p) => p.id === intent.positionId);
     if (!position) return;
     const price = this.markPrice || position.entryPrice;
-    this.close(position, price, 'reverse');
     const quantity = position.quantity - (position.closedQuantity ?? 0);
+    // Both halves or neither: the close frees the position's margin and costs a commission, as the opening does.
+    const account = this.getAccount();
+    if (account) {
+      const lack = short(this.marginOf(quantity, price) + 2 * this.commissionOf(quantity, price), account.freeMargin + this.marginOf(quantity, position.entryPrice));
+      if (lack) throw new Error(lack);
+    }
+    this.close(position, price, 'reverse');
     const order: TradingOrder = { id: this.nextId('ord'), side: opposite(position.side), type: 'market', price, quantity };
     this.fill(order, price);
   }
@@ -376,10 +388,11 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
       fill.positionId = position.id;
     }
     this.charge(fill);
+    // The account first: what hears of the fill or the positions reads it as they left it.
+    this.tellAccount();
     this.emit('fill', fill);
     this.emit('orders', this.orders);
     this.emit('positions', this.positions);
-    this.tellAccount();
   }
 
   /** The position a fill of `quantity` opens, with the order's stops. */
@@ -457,6 +470,7 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
     };
     this.realise(fill.pnl!);
     this.charge(fill);
+    this.tellAccount();
     this.emit('fill', fill);
   }
 
@@ -484,11 +498,11 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
       // One of its group filled before it in this pass, and cancelled it.
       if (!this.orders.includes(o)) continue;
       // The money it needed has gone since it was placed: it comes off, and says why.
-      const short = this.cannotCarry(o, o.type === 'limit' ? o.price : o.stopPrice ?? o.price);
-      if (short) {
+      const lack = this.cannotCarry(o, reached.has(o.id) ? this.markPrice : this.sizedAt(o));
+      if (lack) {
         this.orders = this.orders.filter((other) => other.id !== o.id);
         this.emit('orders', this.orders);
-        this.emit('error', { message: `Order ${o.id} was cancelled. ${short}`, command: 'orderPlace' });
+        this.emit('error', { message: `Order ${o.id} was cancelled. ${lack}`, command: 'orderPlace' });
         continue;
       }
       // A limit that waited fills at its price; one that began working at this price fills at it, within its limit.
@@ -551,8 +565,13 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
   }
 }
 
-/** How far short of an order's need the account may be and still carry it: a sum's rounding. */
+/** How far short of an order's need the account may be and still carry it, as a part of the need: a sum's rounding. */
 const MONEY_SLACK = 1e-9;
+
+/** Why `available` does not carry `needed`, or null when it does. */
+function short(needed: number, available: number): string | null {
+  return needed > available + MONEY_SLACK * Math.max(1, Math.abs(needed)) ? `Not enough free margin: the order needs ${needed}, the account has ${available}` : null;
+}
 
 /** How near two sizes are, as a part of the larger, to be the same size. */
 const QUANTITY_SLACK = 1e-9;

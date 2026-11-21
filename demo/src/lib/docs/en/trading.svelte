@@ -159,9 +159,13 @@ chart.placeOrderIntent({ side: 'buy', type: 'limit', price: 63_500, quantity: 1,
   Given a <code>balance</code>, the paper account keeps its money as a broker does. What a close makes or loses
   goes into the balance, open positions hold margin (their value, over <code>leverage</code>), and each fill
   pays its <code>commission</code>. An order the free margin cannot carry is refused
-  (<code>executionError</code>), and a waiting order whose money has gone by the time its price comes is
-  cancelled. <code>multiplier</code> is what a move of one in price is worth for one unit, for a futures
-  contract. Without a <code>balance</code> there is no account, and any order is taken, as before.
+  (<code>executionError</code>), and so is a reverse; a waiting order whose money has gone by the time its
+  price comes is cancelled, which <code>executionError</code> says too. <code>multiplier</code> is what a move
+  of one in price is worth for one unit, for a futures contract: give it the market's
+  <code>contractMultiplier</code>, which the widget's panel counts the positions' profit by. The account is told
+  before the fill that changed it, so <code>chart.getAccount()</code> in an <code>executionFill</code> listener
+  reads it as the fill left it. It does not call margin or close positions when the equity runs out: a balance
+  can go below zero. Without a <code>balance</code> there is no account, and any order is taken, as before.
 </p>
 <pre><code>{`const broker = new PaperExecutionAdapter({
   balance: 10_000,

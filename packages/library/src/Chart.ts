@@ -3666,8 +3666,10 @@ export class Chart {
       marketPrice: () => this.series.bars().at(-1)?.close ?? null,
       onBracketOrder: (order, bracket) => this.eventBus.emit('bracketOrder', { order, bracket }),
       setAccount: (account) => {
-        this.account = account;
-        this.eventBus.emit('accountChange', { account });
+        // Read on wiring and told again on connecting: the same figures are one change.
+        if (this.account && JSON.stringify(this.account) === JSON.stringify(account)) return;
+        this.account = { ...account };
+        this.eventBus.emit('accountChange', { account: { ...account } });
       },
     }, { brackets: this.executionBrackets });
     Promise.resolve(adapter.connect(config)).catch((cause) =>

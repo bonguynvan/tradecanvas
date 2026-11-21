@@ -165,7 +165,8 @@ describe('Chart: the account of the adapter connected', () => {
     expect(chart.getAccount()).toEqual(expect.objectContaining({ marginUsed: 200, freeMargin: 800 }));
     broker.setMarkPrice(105);
     expect(chart.getAccount()!.equity).toBe(1_010);
-    expect(seen.length).toBeGreaterThanOrEqual(3);
+    // On connecting, after the fill, after the price: each once.
+    expect(seen).toHaveLength(3);
     chart.disconnectExecution();
     expect(chart.getAccount()).toBeNull();
     expect(seen.at(-1)).toBeNull();
@@ -181,5 +182,16 @@ describe('Chart: the account of the adapter connected', () => {
     expect(errors).toHaveLength(1);
     expect(errors[0].command).toBe('orderPlace');
     expect(String((errors[0].cause as Error).message)).toMatch(/margin/i);
+  });
+});
+
+describe('Chart: what it hands out of the account', () => {
+  it('is a copy: a listener that writes on it does not change the chart’s', () => {
+    const broker = new PaperExecutionAdapter({ markPrice: 100, balance: 1_000 });
+    chart.on('accountChange', (e) => {
+      if (e.payload.account) e.payload.account.balance = -1;
+    });
+    chart.connectExecution(broker);
+    expect(chart.getAccount()!.balance).toBe(1_000);
   });
 });

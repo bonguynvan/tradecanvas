@@ -29,6 +29,8 @@ export interface AccountSnapshot {
   realisedPnl?: number;
   /** The account's money, from a broker that keeps one: its balance, equity and free margin head the totals. */
   account?: AccountSummary | null;
+  /** What a move of one in price is worth for one unit (the market's contract multiplier), in the positions' P&L. Default 1. */
+  multiplier?: number;
 }
 
 type Tab = 'positions' | 'orders' | 'history';
@@ -58,7 +60,7 @@ function known<T extends string>(known: readonly T[], value: string | undefined,
 /** The same money: the three figures the totals show. */
 function sameAccount(a: AccountSummary | null | undefined, b: AccountSummary | null | undefined): boolean {
   if (!a || !b) return !a && !b;
-  return a.balance === b.balance && a.equity === b.equity && a.freeMargin === b.freeMargin;
+  return a.balance === b.balance && a.equity === b.equity && a.freeMargin === b.freeMargin && a.unrealisedPnl === b.unrealisedPnl;
 }
 
 /** A time the panel can write: a good-till-date order's date. */
@@ -76,12 +78,12 @@ interface LiveCells {
   pnl: HTMLSpanElement;
 }
 
-/** A position's open profit or loss at `price`, and as a percent of what went in. */
-export function positionPnl(position: TradingPosition, price: number | null): { pnl: number; pct: number } | null {
+/** A position's open profit or loss at `price` (a point worth `multiplier` a unit), and as a percent of what went in. */
+export function positionPnl(position: TradingPosition, price: number | null, multiplier = 1): { pnl: number; pct: number } | null {
   if (price === null) return null;
   const open = position.quantity - (position.closedQuantity ?? 0);
   const direction = position.side === 'buy' ? 1 : -1;
-  const pnl = (price - position.entryPrice) * open * direction;
+  const pnl = (price - position.entryPrice) * open * direction * multiplier;
   const pct = position.entryPrice !== 0 ? ((price - position.entryPrice) / position.entryPrice) * 100 * direction : 0;
   return { pnl, pct };
 }
@@ -208,7 +210,8 @@ export class WidgetAccountPanel {
     const rowsSame = sameRows(before.positions, snapshot.positions)
       && sameRows(before.orders, snapshot.orders)
       && sameRows(before.fills, snapshot.fills)
-      && before.realisedPnl === snapshot.realisedPnl;
+      && before.realisedPnl === snapshot.realisedPnl
+      && before.multiplier === snapshot.multiplier;
     if (rowsSame) {
       if (before.price !== snapshot.price || !sameAccount(before.account, snapshot.account)) {
         this.renderTotals();
@@ -270,8 +273,9 @@ export class WidgetAccountPanel {
     if (account) {
       totals.push(this.sum('account.balance', account.balance), this.sum('account.equity', account.equity), this.sum('account.freeMargin', account.freeMargin));
     }
-    const open = positions.reduce<number | null>((sum, p) => {
-      const pnl = positionPnl(p, price);
+    // The broker's own figure when it keeps the account; else the rows' sum.
+    const open = account && positions.length > 0 ? account.unrealisedPnl : positions.reduce<number | null>((sum, p) => {
+      const pnl = positionPnl(p, price, this.multiplier());
       return pnl === null ? sum : (sum ?? 0) + pnl.pnl;
     }, null);
     if (open !== null) totals.push(this.total('account.openPnl', open));
@@ -279,6 +283,11 @@ export class WidgetAccountPanel {
       totals.push(this.total('account.realised', realisedPnl ?? fills.reduce((sum, f) => sum + (f.pnl ?? 0), 0)));
     }
     this.totalsEl.replaceChildren(...totals);
+  }
+
+  private multiplier(): number {
+    const m = this.snapshot.multiplier;
+    return m !== undefined && Number.isFinite(m) && m > 0 ? m : 1;
   }
 
   /** A sum of money that is no profit or loss: its words and the figure, in no tone; a debt reads with its minus. */
@@ -322,7 +331,7 @@ export class WidgetAccountPanel {
     const { price } = this.snapshot;
     for (const cells of this.live) {
       cells.price.textContent = price === null ? NONE : this.callbacks.formatPrice(price);
-      this.writePnl(cells.pnl, positionPnl(cells.position, price));
+      this.writePnl(cells.pnl, positionPnl(cells.position, price, this.multiplier()));
     }
   }
 
@@ -442,7 +451,7 @@ export class WidgetAccountPanel {
     const rows = this.snapshot.positions.map((p) => {
       const open = p.quantity - (p.closedQuantity ?? 0);
       const pnl = ltr('');
-      this.writePnl(pnl, positionPnl(p, price));
+      this.writePnl(pnl, positionPnl(p, price, this.multiplier()));
       pnls.push(pnl);
       // "Close position: Long 2 @ 100.00", so each row's buttons say which.
       const which = `${this.sideText(p.side, 'position')} ${open} @ ${formatPrice(p.entryPrice)}`;

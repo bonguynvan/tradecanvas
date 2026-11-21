@@ -219,6 +219,14 @@ describe('WidgetAccountPanel: an account with money', () => {
     expect(balance.className).toBe('tcw-account-total tcw-account-sum');
   });
 
+  it('takes the open P&L from the account, which counts a contract’s multiplier, and counts it in each row', () => {
+    if (!panel.isOpen()) panel.toggle();
+    panel.update({ ...current, account: { ...account, unrealisedPnl: 600 }, multiplier: 100 });
+    expect(totals()[3]).toBe('Open P&L: +600.00');
+    expect(positionPnl({ id: 'x', side: 'buy', entryPrice: 100, quantity: 2 }, 103, 100)).toEqual({ pnl: 600, pct: 3 });
+    expect(cells()[0].some((cell) => cell?.includes('+600.00'))).toBe(true);
+  });
+
   it('follows the account when nothing else changed', () => {
     panel.update({ ...current, account });
     panel.update({ ...current, account: { ...account, equity: 9_990, freeMargin: 9_790 } });
