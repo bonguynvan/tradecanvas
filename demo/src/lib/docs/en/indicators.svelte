@@ -202,7 +202,23 @@ CANDLE_PATTERNS.length                                 // 64`}</code></pre>
 
 <h2>Your own indicator</h2>
 <p>
-  Extend <code>IndicatorBase</code> and declare what it draws (<code>plots</code>), its pane scale,
+  The short way is <code>defineIndicator</code>: its inputs, and one function that returns its lines from the
+  bars, with <code>ta</code> for the sums (<code>ta.ema</code>, <code>ta.rsi</code>, <code>ta.crossover</code>…).
+</p>
+<pre><code>{`import { defineIndicator } from '@tradecanvas/chart'
+
+chart.registerIndicator(defineIndicator({
+  id: 'smoothRsi',
+  name: 'Smoothed RSI',
+  inputs: { period: { default: 14, kind: 'int', min: 2 }, smooth: { default: 5, kind: 'int', min: 1 } },
+  scale: { min: 0, max: 100 },
+  levels: [30, 70],
+  calculate: ({ bars, inputs, ta }) => ({ value: ta.ema(ta.rsi(bars.close, inputs.period), inputs.smooth) }),
+}))
+chart.addIndicator('smoothRsi')`}</code></pre>
+<p>
+  For an indicator that keeps up with ticks on a long history, or draws something of its own, extend
+  <code>IndicatorBase</code> and declare what it draws (<code>plots</code>), its pane scale,
   levels and inputs; the chart draws it, scales its pane, tags its values and lists it in the
   widget's legend and settings without rendering code of yours. Its <code>category</code>
   (<code>'oscillators'</code>, <code>'volume'</code>…) puts it in that group of the Indicators dialog;

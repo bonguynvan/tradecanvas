@@ -704,6 +704,51 @@ console.log(bullish.length, 'of', CANDLE_PATTERNS.length, 'patterns known');
 
 ## A custom indicator
 
+The short way is `defineIndicator`: its inputs, how its lines look, and one
+function that returns the lines from the bars. `ta` has the sums indicators
+are made of, each taking a value a bar and returning one: `sma`, `ema`,
+`wma`, `rma`, `stdev`, `highest`, `lowest`, `change`, `rsi`, `macd`
+(`{ macd, signal, histogram }`), `atr` (of the bars), `bollinger`
+(`{ upper, middle, lower }`), `crossover` and `crossunder` (true on the bars
+of a cross). They give the built-in indicators' values.
+
+```ts
+import { Chart, defineIndicator } from '@tradecanvas/chart';
+
+const emaCross = defineIndicator({
+  id: 'emaCross',
+  name: 'EMA Crossover',
+  placement: 'overlay', // on the prices; 'panel' (the default) is a pane of its own
+  inputs: {
+    fast: { default: 9, kind: 'int', min: 1 },
+    slow: { default: 21, kind: 'int', min: 2 },
+  },
+  plots: [
+    { key: 'fast', title: 'Fast', color: 0 },
+    { key: 'slow', title: 'Slow', color: 1 },
+    { key: 'buy', title: 'Buy', color: 2, kind: 'markers', shape: 'arrowUp', position: 'belowBar' },
+    { key: 'sell', title: 'Sell', color: 3, kind: 'markers', shape: 'arrowDown', position: 'aboveBar' },
+  ],
+  calculate({ bars, inputs, ta }) {
+    const fast = ta.ema(bars.close, inputs.fast); // inputs.fast is a number: typed from its default
+    const slow = ta.ema(bars.close, inputs.slow);
+    return { fast, slow, buy: ta.crossover(fast, slow), sell: ta.crossunder(fast, slow) };
+  },
+});
+
+const cross = new Chart(document.getElementById('chart')!, {});
+cross.registerIndicator(emaCross);
+cross.addIndicator('emaCross', { fast: 12 });
+```
+
+A line is a value a bar (`undefined`, `null` or `NaN` where there is none);
+`true` marks a bar for a `'markers'` plot above or below the bars. Leave
+`plots` out and every line returned is drawn as a line. `fills`, `scale`,
+`levels`, `category` and `shortName` are the descriptor's, described below.
+It computes over all the bars on each tick, which is quick for sums like
+these; for a long history with a heavy sum, or drawing of your own, write the
+class:
+
 Extend `IndicatorBase` and declare what it draws (`plots`), its pane scale and
 levels; the chart then draws it, scales its pane, labels its values and lists
 it in the widget legend and settings with no rendering code of yours.
