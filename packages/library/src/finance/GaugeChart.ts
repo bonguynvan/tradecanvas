@@ -39,6 +39,11 @@ export class GaugeChart extends BaseFinanceChart {
     renderGauge(ctx, width, height, this.options, theme, this.currentValue);
   }
 
+  /** A picture of the gauge: at the value it is going to, wherever it is on the way. */
+  protected renderStill(ctx: CanvasRenderingContext2D, width: number, height: number, theme: Theme): void {
+    renderGauge(ctx, width, height, this.options, theme, this.targetValue);
+  }
+
   setValue(value: number): void {
     const animate = this.options.animate !== false;
     if (!animate) {

@@ -507,6 +507,9 @@ const ko: SiteMessages = {
     depthOverTime: '시간에 따른 호가 깊이',
     quarterReturns: '분기·자산군별 수익률',
     turnHint: '차트를 드래그하면 돌아가고, 더블 클릭하면 처음 시점으로 돌아갑니다.',
+    exportLabel: '포트폴리오 차트 저장',
+    print: '인쇄',
+    reportPdf: '모든 차트를 PDF 하나로',
     waterfall: {
       start: '시작',
       btcLong: 'BTC 롱',

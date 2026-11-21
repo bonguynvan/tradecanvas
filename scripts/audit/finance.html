@@ -37,7 +37,18 @@ const query = new URLSearchParams(location.search);
 const theme = query.get('theme') === 'light' ? 'light' : 'dark';
 const locale = query.get('locale') ?? undefined;
 document.body.className = theme;
-const stage = (window.stage = { ready: false, errors: [], charts: {} });
+const stage = (window.stage = {
+  ready: false,
+  errors: [],
+  charts: {},
+  lib,
+  // The cell of each chart, by the name `renderFinanceChart` knows the chart by.
+  kinds: {
+    bar: 'bar', donut: 'donut', scatter: 'scatter', histogram: 'histogram', calendar: 'calendar', matrix: 'matrix', 'counter-clock': 'counterClock',
+    'heatmap-sectors': 'heatmap', equity: 'equityCurve', depth: 'depth', waterfall: 'waterfall', gauge: 'gauge', sparkline: 'sparkline', payoff: 'payoff',
+    curve: 'curve', 'box-plot': 'boxPlot', radar: 'radar', sunburst: 'sunburst', 'stacked-area': 'stackedArea', surface: 'surface', bar3d: 'bar3d',
+  },
+});
 window.addEventListener('error', (e) => stage.errors.push(e.message));
 
 const grid = document.getElementById('grid');

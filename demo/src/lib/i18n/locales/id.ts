@@ -507,6 +507,9 @@ const id: SiteMessages = {
     depthOverTime: 'Kedalaman buku order dari waktu ke waktu',
     quarterReturns: 'Imbal hasil per kuartal dan kelas aset',
     turnHint: 'Seret grafik untuk memutarnya; klik dua kali untuk kembali ke tampilan awal.',
+    exportLabel: 'Simpan grafik portofolio',
+    print: 'Cetak',
+    reportPdf: 'Semua grafik dalam satu PDF',
     waterfall: {
       start: 'Awal',
       btcLong: 'BTC long',

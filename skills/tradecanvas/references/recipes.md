@@ -685,6 +685,34 @@ new Bar3DChart(document.getElementById('returns')!, {
 });
 ```
 
+## A chart as a picture, on paper, and drawn with no page
+
+Every chart gives a picture of itself: the price chart (`Chart`, and `ChartWidget` through `widget.chart`) and each finance chart have the same methods.
+
+```ts
+import { Chart, EquityCurveChart, chartsToPdf, renderFinanceChart } from '@tradecanvas/chart';
+
+declare const chart: Chart;
+declare const equity: EquityCurveChart;
+
+chart.screenshot('btc-1h');                                  // btc-1h.png, read off the screen
+chart.screenshot('btc-1h', { pixelRatio: 3, type: 'webp' }); // drawn again with three times the pixels
+const url = chart.screenshotDataURL({ theme: 'light' });     // another theme; the chart on the page stays as it is
+const blob = await equity.screenshotBlob({ width: 1200, height: 400, type: 'jpeg', quality: 0.9 }); // a finance chart takes a size too
+const copied = await chart.copyScreenshot();                 // false where the browser has no clipboard for pictures
+
+chart.print({ title: 'BTCUSDT, 1h' });                       // the print dialog, for the chart alone; light and at 2x by default
+const pdf = await chart.toPdf({ pageSize: 'letter', title: 'BTCUSDT' });       // a Blob, or null with no picture to make
+const report = await chartsToPdf([chart, equity], { title: 'March' });        // a page each
+
+// With no page (Node with a canvas library, a worker): a finance chart on a context of your own.
+declare const ctx: OffscreenCanvasRenderingContext2D;
+ctx.scale(2, 2);
+renderFinanceChart(ctx, 'equityCurve', { data: [{ time: 0, value: 100 }, { time: 86_400_000, value: 104 }], theme: 'light' }, { width: 800, height: 400 });
+```
+
+`renderFinanceChart` names a chart by its class name without `Chart`, first letter small (`'bar'`, `'boxPlot'`, `'surface'`, `'bar3d'`). The price chart is not drawn without a page.
+
 ## A dashboard: net flows, allocation and returns
 
 The finance charts take an element and their options, and size themselves to it.

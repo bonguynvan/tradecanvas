@@ -43,7 +43,7 @@ export class Screenshot {
    * at once, because the GPU canvas keeps its pixels only until its frame is
    * shown.
    */
-  private static compose(container: HTMLElement, background?: string): HTMLCanvasElement | null {
+  static compose(container: HTMLElement, background?: string): HTMLCanvasElement | null {
     const canvases = container.querySelectorAll('canvas');
     if (canvases.length === 0) return null;
 

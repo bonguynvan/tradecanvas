@@ -514,6 +514,9 @@ const en = {
     depthOverTime: 'Order book depth over time',
     quarterReturns: 'Returns by quarter and asset class',
     turnHint: 'Drag a chart to turn it, double-click to turn it back.',
+    exportLabel: 'Save the portfolio chart',
+    print: 'Print',
+    reportPdf: 'All charts in one PDF',
     waterfall: {
       start: 'Start',
       btcLong: 'BTC long',

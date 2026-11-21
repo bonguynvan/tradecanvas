@@ -76,7 +76,7 @@ import { type CompareWay } from './widgetCompare.js';
 import { WidgetTooltip } from './WidgetTooltip.js';
 import { WidgetIndicatorLegend } from './WidgetIndicatorLegend.js';
 import { formatIndicatorValue } from './legendValues.js';
-import { RANGE_PRESETS, SYMBOL_INDICATOR_IDS, adapterFromFeed, indicatorCategory, indicatorGroup, isCrosshairCursor, isMarkerPlot, sourceParam, valuePlots } from '@tradecanvas/core';
+import { RANGE_PRESETS, SYMBOL_INDICATOR_IDS, adapterFromFeed, downloadImage, imageFileName, indicatorCategory, indicatorGroup, isCrosshairCursor, isMarkerPlot, sourceParam, valuePlots } from '@tradecanvas/core';
 import type { BracketSize } from '@tradecanvas/core';
 import { WidgetBracketBar } from './WidgetBracketBar.js';
 import { WidgetQuoteButtons } from './WidgetQuoteButtons.js';
@@ -3006,6 +3006,34 @@ export class ChartWidget {
     this.say(ok ? this.t('toast.imageCopied') : this.t('toast.imageCopyFailed'), ok ? 'info' : 'error');
   }
 
+  /** What the chart is called on paper: its symbol and its interval. */
+  private paperTitle(): string {
+    return `${this.state.symbol}, ${this.state.timeframe}`;
+  }
+
+  /** Opens the browser's print dialog for the chart alone, under its symbol and interval (`Chart.print`). */
+  printChart(): void {
+    this.chart.print({ title: this.paperTitle() });
+  }
+
+  /** Saves the chart as a PDF of one page, named after its symbol and interval (`Chart.toPdf`); a toast says when none could be made. */
+  async saveChartPdf(): Promise<void> {
+    let pdf: Blob | null = null;
+    try {
+      pdf = await this.chart.toPdf({ title: this.paperTitle() });
+    } catch {
+      // Too large for the browser to hold, or its canvas refused: said below, as no PDF.
+      pdf = null;
+    }
+    if (!pdf) {
+      this.say(this.t('toast.pdfFailed'), 'error');
+      return;
+    }
+    const url = URL.createObjectURL(pdf);
+    downloadImage(url, imageFileName(`${this.state.symbol}-${this.state.timeframe}`.replace(/[^\w.-]+/g, '_'), 'pdf'));
+    URL.revokeObjectURL(url);
+  }
+
   /** Copy a shareable deep-link (current view encoded in the URL hash) to the clipboard. */
   async copyShareLink(): Promise<void> {
     return this.layouts.copyShareLink();
@@ -3861,6 +3889,8 @@ export class ChartWidget {
       get commandPalettePart() { return w.commandPalettePart; },
       get comparing() { return w.comparing; },
       copyChartImage: (...args) => w.copyChartImage(...args),
+      printChart: (...args) => w.printChart(...args),
+      saveChartPdf: (...args) => w.saveChartPdf(...args),
       copyShareLink: (...args) => w.layouts.copyShareLink(...args),
       get featureState() { return w.featureState; },
       handleToggleTheme: (...args) => w.handleToggleTheme(...args),

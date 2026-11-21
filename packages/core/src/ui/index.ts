@@ -1,6 +1,9 @@
 export { ChartLegend, DEFAULT_LEGEND_CONFIG } from './ChartLegend.js';
 export type { LegendConfig } from './ChartLegend.js';
 export { Screenshot } from './Screenshot.js';
+export { imagesToPdf } from './pdf.js';
+export type { PdfImage } from './pdf.js';
+export { MAX_IMAGE_PIXELS, MAX_IMAGE_SIDE, canvasBlob, canvasDataURL, canvasPdfImage, canvasesToPdf, copyImage, downloadImage, imageFileName, imageRatio, printCanvas } from './chartImage.js';
 export { Watermark } from './Watermark.js';
 export { BarCountdown, COUNTDOWN_HEIGHT } from './BarCountdown.js';
 export { SessionBreaks } from './SessionBreaks.js';

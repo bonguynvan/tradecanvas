@@ -329,6 +329,51 @@ chart.exportVisibleData('json', undefined, { indicators: false })
 const text = chart.getExportText('csv', { range: 'visible' })
 const { bars, columns } = chart.getExportData()          // columns: { name, values }[]`}</code></pre>
 
+<h3 id="pictures">Pictures, print and PDF</h3>
+<p>
+  The chart as a picture: saved to a file, copied, or read as a data URL, as bytes or as a canvas. With
+  nothing more asked, it is read off the chart's canvases as they are on the screen. Ask for more pixels
+  (<code>pixelRatio</code>) or another theme (<code>theme</code>) and the frame is drawn again for the
+  picture, in Canvas 2D whatever the chart itself draws with: the chart on the page is neither resized nor
+  told. <code>type</code> is <code>'png'</code> (default), <code>'jpeg'</code> or <code>'webp'</code>, with
+  <code>quality</code> for the last two.
+</p>
+<pre><code>{`chart.screenshot('btc-1h')                                   // btc-1h.png, as on the screen
+chart.screenshot('btc-1h', { pixelRatio: 3, type: 'webp' })  // drawn again at three times the pixels
+await chart.copyScreenshot()                                 // a PNG on the clipboard; false where the browser refuses
+const url = chart.screenshotDataURL({ theme: 'light' })      // in the light theme; the chart stays as it is
+const blob = await chart.screenshotBlob({ type: 'jpeg', quality: 0.9 })
+const canvas = chart.toCanvas({ pixelRatio: 2 })             // to draw on, or to read yourself`}</code></pre>
+<p>
+  <code>print()</code> opens the browser's print dialog for the chart alone: a page that holds its picture
+  and nothing of the page it is on. <code>toPdf()</code> gives a PDF of one page, the picture kept without
+  loss and as large as fits within the margins. Both draw the chart again for paper, in the light theme and
+  at twice the pixels unless you say otherwise. <code>chartsToPdf</code> makes one PDF of several charts, a
+  page each: the price chart, the <a href={href('/docs/finance')}>finance charts</a>, or a canvas of your own.
+</p>
+<pre><code>{`import { chartsToPdf } from '@tradecanvas/chart'
+
+chart.print({ title: 'BTCUSDT, 1h' })
+const pdf = await chart.toPdf({ pageSize: 'letter', margin: 12, title: 'BTCUSDT' })   // a Blob
+const report = await chartsToPdf([chart, equityChart, allocationChart], { title: 'March', theme: 'dark' })`}</code></pre>
+<p>
+  <code>pageSize</code> is <code>'a4'</code> (default), <code>'a3'</code>, <code>'letter'</code>,
+  <code>'legal'</code> or the paper's two sides in millimetres; <code>orientation</code> is
+  <code>'landscape'</code> (default) or <code>'portrait'</code>; <code>margin</code> is in millimetres. The
+  PDF holds no text of its own, so it needs no font: the chart's words are in its picture, in any language.
+  A picture is held to what a browser can draw (no side past 16,384 pixels, some 16 million in all), so a
+  very large chart gets fewer pixels than asked.
+</p>
+<p>
+  What the picture has is what the chart draws on its canvases: the plot, the axes, the legend, the
+  crosshair if it is showing, and a canvas a host laid over the chart. What is built of page elements is not
+  on it: the tooltips, and the widget's bars and its rows of indicator names. With
+  <code>features.screenshot</code> off there is no picture, print or PDF. ChartWidget has
+  <strong>Print chart</strong> and <strong>Save chart as PDF</strong> in the command palette, and
+  <code>widget.printChart()</code> and <code>widget.saveChartPdf()</code>, both under the chart's symbol and
+  interval; they go with the <code>screenshot</code> switch.
+</p>
+
 <h3>Volume Profile</h3>
 <p>
   Horizontal histogram of traded volume bucketed by price over the visible

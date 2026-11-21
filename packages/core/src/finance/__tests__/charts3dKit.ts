@@ -16,6 +16,8 @@ export function recorder(): { ctx: CanvasRenderingContext2D; texts: string[]; sh
     get: (target, prop) => {
       if (prop in target) return target[prop];
       if (prop === 'measureText') return (t: string) => ({ width: String(t).length * 6 });
+      // A gradient is asked for its colours: one that takes them and keeps none.
+      if (prop === 'createLinearGradient' || prop === 'createRadialGradient') return () => ({ addColorStop: () => {} });
       return (...args: unknown[]) => {
         if (prop === 'beginPath') path = [];
         if (prop === 'moveTo' || prop === 'lineTo') path.push(Number(args[0]), Number(args[1]));

@@ -72,6 +72,24 @@ export class ThemeManager {
     this.effective = null;
   }
 
+  /**
+   * Runs `draw` with another theme in place of the one set, then puts the
+   * one set back exactly as it was: for a picture of the chart in a theme
+   * that is not the one on the page. The font and the shapes set apart from
+   * the theme go over the other theme too, and so do the overrides made for it.
+   */
+  withTheme<T>(themeOrName: ThemeName | Theme, draw: () => T): T {
+    const kept = { base: this.base, themeFont: this.themeFont, effective: this.effective };
+    this.setTheme(themeOrName);
+    try {
+      return draw();
+    } finally {
+      this.base = kept.base;
+      this.themeFont = kept.themeFont;
+      this.effective = kept.effective;
+    }
+  }
+
   /** A font over every theme from now on, on top of the one set before (null: each theme's own). */
   setFont(font: Partial<FontConfig> | null): void {
     this.font = font ? { ...this.font, ...font } : null;

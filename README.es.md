@@ -44,6 +44,7 @@ Es un motor de gráficos que es tuyo: licencia MIT, se instala desde npm y se si
 - **Rápido**: un millón de barras desplazadas a 60 fps con WebGL; un tick en vivo en un microsegundo, más o menos; diez minutos de 30.000 operaciones por segundo sobre un millón de barras sin que crezca la memoria ([prueba](benchmarks/2026-11-03.md)).
 - **Un espacio de trabajo**: cuadrículas de gráficos, diseños, repetición de barras, backtesting.
 - **Veintidós gráficos más** para las páginas que rodean al gráfico: profundidad, curva de equity, cascada, mapa de calor y mapa de sectores, barras, donut, dispersión, histograma, calendario, matriz de correlación, indicador de aguja, sparkline, el payoff de opciones, curvas (sonrisa de volatilidad, estructura temporal), diagrama de caja, radar, sunburst, áreas apiladas, una superficie 3D que se gira arrastrando (superficie de volatilidad, profundidad en el tiempo), barras 3D y un panel de resultados de backtest.
+- **En papel y sin página**: cualquier gráfico como imagen nítida, impreso por separado o guardado como PDF; los gráficos de arriba también se dibujan en Node o en un worker, sin página de navegador.
 - **A tu medida**: temas, tres aspectos, 114 interruptores, plugins; 30 idiomas; móviles y apps.
 
 <table>

@@ -505,6 +505,9 @@ const vi: SiteMessages = {
     depthOverTime: 'Độ sâu sổ lệnh theo thời gian',
     quarterReturns: 'Lợi nhuận theo quý và loại tài sản',
     turnHint: 'Kéo biểu đồ để xoay, nhấp đúp để quay về góc nhìn ban đầu.',
+    exportLabel: 'Lưu biểu đồ danh mục',
+    print: 'In',
+    reportPdf: 'Mọi biểu đồ trong một PDF',
     pnl: 'Phân bổ lãi/lỗ',
     fearGreed: 'Chỉ số Sợ hãi & Tham lam',
     waterfall: {

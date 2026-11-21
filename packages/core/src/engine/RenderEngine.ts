@@ -200,157 +200,44 @@ export interface RenderContext {
   renderOverlayPlugins?: ((ctx: CanvasRenderingContext2D, layer: 'main' | 'overlay' | 'ui') => void) | null;
 }
 
-export class RenderEngine {
-  readonly layerManager: LayerManager;
-  readonly renderLoop: RenderLoop;
-  readonly dprManager: DPRManager;
-  private renderCtx: RenderContext | null = null;
-
-  // Cached canvas references — avoid a lookup per frame
-  private sceneLayer: CanvasLayer | undefined;
-  private topLayer: CanvasLayer | undefined;
-  /** The GPU renderer under the scene. */
-  private gpu: GpuRenderer | null = null;
-  /** A GPU whose context was lost, kept for when it comes back. */
-  private lostGpu: GpuRenderer | null = null;
-
-  /** Called when the GPU context is lost and the engine has gone back to Canvas 2D. */
-  onGpuLost: (() => void) | null = null;
-  /** Called when the lost context came back and the engine draws with the GPU again. */
-  onGpuRestored: (() => void) | null = null;
+/**
+ * Draws a chart's frames from a `RenderContext`, on any 2D context: it has
+ * no canvas of its own and needs no page, so a frame can be drawn where
+ * there is none (a canvas made in Node, an OffscreenCanvas in a worker) as
+ * well as for a picture of a chart that is on the screen.
+ */
+export class FrameRenderer {
+  /**
+   * Draws a whole frame on `c`, in CSS pixels and all in Canvas 2D: the
+   * scene, then what follows the pointer and the legend over it. The ground
+   * is the caller's: nothing is cleared or filled first. Scale the context
+   * for a picture of more pixels than the chart has CSS ones.
+   */
+  drawFrame(c: CanvasRenderingContext2D, ctx: RenderContext): void {
+    const { chartRect } = ctx.viewport;
+    if (!(chartRect.width > 0) || !(chartRect.height > 0)) return;
+    this.renderScene(c, ctx, null);
+    this.renderTop(c, ctx);
+  }
 
   /**
-   * Optional hook fired AFTER the canvas layers have been resized in
-   * response to a container resize. The Chart class uses this to push the
-   * new dimensions into its viewport + layout manager — without it, the
-   * viewport keeps a stale chartRect forever and `scrollToEnd` / panning
-   * compute against the wrong width.
+   * The GPU's part of a scene, for a frame drawer that has one: what it
+   * drew, and what is left for Canvas 2D. This one has none: the plot is
+   * all Canvas 2D's.
    */
-  onContainerResize: ((size: Size) => void) | null = null;
-
-  /** `maxPixelRatio`: the highest device pixel ratio the canvases are drawn at (see `DEFAULT_MAX_PIXEL_RATIO`). */
-  constructor(container: HTMLElement, maxPixelRatio?: number) {
-    this.layerManager = new LayerManager(container);
-    this.renderLoop = new RenderLoop();
-    this.dprManager = new DPRManager(container, maxPixelRatio);
-
-    this.layerManager.createLayers();
-    this.cacheLayerRefs();
-
-    this.renderLoop.setCallback((dirtyLayers) => this.render(dirtyLayers));
-
-    this.dprManager.onResize((size, dpr) => {
-      this.layerManager.resize(size, dpr, this.dprManager.getDeviceSize());
-      this.renderLoop.markAllDirty();
-      // Notify the Chart so it can update viewport.chartRect + layout.
-      // Without this, container resizes leave the viewport's idea of width
-      // stuck at whatever it was at construction time.
-      this.onContainerResize?.(size);
-    });
-
-    const size = this.dprManager.getContainerSize();
-    const dpr = this.dprManager.getDpr();
-    this.layerManager.resize(size, dpr, this.dprManager.getDeviceSize());
+  protected renderGpu(
+    _gpu: GpuRenderer,
+    _ctx: RenderContext,
+    _scene: CanvasRenderingContext2D,
+    plot: DrawStep[],
+    _panes: readonly PaneSteps[],
+  ): { drawn: GpuDrawn; plan: StepPlan } {
+    return { drawn: { series: false, volume: false, background: false }, plan: canvasPlan(plot) };
   }
 
-  private cacheLayerRefs(): void {
-    this.sceneLayer = this.layerManager.getLayer(LayerType.Main);
-    this.topLayer = this.layerManager.getLayer(LayerType.Hover);
-  }
-
-  setRenderContext(ctx: RenderContext): void {
-    this.renderCtx = ctx;
-  }
-
-  /** Draw bars and volume with `gpu`, on its canvas under the scene. */
-  attachGpu(gpu: GpuRenderer): void {
-    this.detachGpu();
-    this.placeGpu(gpu);
-    // Lost: Canvas 2D, keeping the GPU for when its context comes back.
-    gpu.onLost(() => {
-      if (this.gpu !== gpu) return;
-      this.gpu = null;
-      this.lostGpu = gpu;
-      this.layerManager.detachGpu();
-      this.renderLoop.markAllDirty();
-      this.onGpuLost?.();
-    });
-    gpu.onRestored?.(() => {
-      if (this.lostGpu !== gpu) return;
-      this.lostGpu = null;
-      this.placeGpu(gpu);
-      this.onGpuRestored?.();
-    });
-  }
-
-  private placeGpu(gpu: GpuRenderer): void {
-    this.gpu = gpu;
-    this.layerManager.attachGpu(gpu.canvas);
-    this.renderLoop.markAllDirty();
-  }
-
-  /** Back to Canvas 2D for everything. */
-  detachGpu(): void {
-    const gpu = this.gpu ?? this.lostGpu;
-    if (!gpu) return;
-    this.gpu = null;
-    this.lostGpu = null;
-    this.layerManager.detachGpu();
-    gpu.destroy();
-    this.renderLoop.markAllDirty();
-  }
-
-  /** Draw every layer now, synchronously (a screenshot reads the GPU canvas before the browser clears it). */
-  renderNow(): void {
-    this.render(new Set([LayerType.Main, LayerType.Hover]));
-  }
-
-  /** The GPU renderer in use, if any. */
-  getGpu(): GpuRenderer | null {
-    return this.gpu;
-  }
-
-  start(): void {
-    this.renderLoop.start();
-  }
-
-  stop(): void {
-    this.renderLoop.stop();
-  }
-
-  requestRender(layer?: LayerType): void {
-    if (layer !== undefined) {
-      this.renderLoop.markDirty(layer);
-    } else {
-      this.renderLoop.markAllDirty();
-    }
-  }
-
-  private render(dirtyLayers: ReadonlySet<LayerType>): void {
-    const ctx = this.renderCtx;
-    if (!ctx) return;
-
-    // Skip rendering if viewport has zero dimensions
-    const { chartRect } = ctx.viewport;
-    if (chartRect.width <= 0 || chartRect.height <= 0) return;
-
-    // Anything except a hover-only change redraws the scene. The top canvas
-    // always follows: it is nearly empty, and what it shows (legend values,
-    // crosshair pills) can depend on any of it.
-    let sceneDirty = false;
-    for (const layer of dirtyLayers) {
-      if (layer !== LayerType.Hover) { sceneDirty = true; break; }
-    }
-    if (sceneDirty && this.sceneLayer) this.renderScene(this.sceneLayer, ctx);
-    if (this.topLayer) this.renderTop(this.topLayer, ctx);
-  }
-
-  /** Everything that only changes with data, viewport or chart objects. */
-  private renderScene(layer: CanvasLayer, ctx: RenderContext): void {
+  /** Everything that only changes with data, viewport or chart objects, on `c`: with `gpu`, what it draws is left to it. */
+  protected renderScene(c: CanvasRenderingContext2D, ctx: RenderContext, gpu: GpuRenderer | null): void {
     const { viewport, theme, data } = ctx;
-    layer.clear();
-    const c = layer.ctx;
-    const gpu = this.gpu;
     // Candles the GPU draws itself; any other series is a step like the rest.
     const native = !!gpu && ctx.chartRenderer instanceof CandlestickRenderer;
     const series: DrawStep[] = ctx.chartRenderer ? [(s) => ctx.chartRenderer!.render(s, data, viewport, theme)] : [];
@@ -444,65 +331,8 @@ export class RenderEngine {
     }
   }
 
-  /**
-   * With a GPU: the grid, session shading, break lines, bars and volume on
-   * the GPU, then what was recorded of the plot and panes. What goes under
-   * the bars (a depth heatmap, volume profiles, with volume under them as in
-   * Canvas 2D) is recorded to go under them too. A watermark needs Canvas
-   * 2D, and so does what goes under the bars when the GPU can't take all of
-   * it: then the whole background goes on a 2D canvas under the GPU's,
-   * there only while needed.
-   */
-  private renderGpu(
-    gpu: GpuRenderer,
-    ctx: RenderContext,
-    scene: CanvasRenderingContext2D,
-    plot: DrawStep[],
-    panes: readonly PaneSteps[],
-  ): { drawn: GpuDrawn; plan: StepPlan } {
-    const { viewport, theme, data } = ctx;
-    const dpr = this.layerManager.getDpr();
-    const underSteps = this.underSteps(ctx);
-    // Text under the bars (a market profile's readout, its letters) needs a
-    // 2D canvas under them: then all of it goes there, unrecorded.
-    const underText = !!(ctx.marketProfile?.isVisible() && ctx.marketProfile.drawsText());
-    const under = underSteps.length > 0 && !underText ? recordAll(gpu.recorder?.(dpr, scene) ?? null, viewport.chartRect, underSteps) : null;
-    const underOnBack = underSteps.length > 0 && !under;
-    // What the GPU can draw of the plot and panes, recorded before it draws.
-    const recorder = gpu.recorder?.(dpr, scene) ?? null;
-    const recorded = recorder ? recordSteps(recorder, viewport.chartRect, plot, panes) : canvasPlan(plot);
-    const profiles = !!(ctx.volumeProfile?.isVisible() || ctx.marketProfile?.isVisible());
-    // A grid the GPU can't draw as it looks (dashed, wider, two colours) takes the background to Canvas 2D.
-    const gridOn2d = !!ctx.gridRenderer?.isVisible() && !gridFitsGpu(theme);
-    const background: GpuBackground | null = ctx.watermark?.isVisible() || underOnBack || gridOn2d ? null : {
-      grid: ctx.gridRenderer?.isVisible() ?? false,
-      marks: ctx.gridRenderer?.isVisible() ? gridMarks(ctx) : undefined,
-      rects: [...(ctx.sessionShading?.rects(data, viewport, theme) ?? []), ...(ctx.sessionBreaks?.lineRects(viewport, theme, data) ?? [])],
-    };
-    // With a profile, volume goes under it, among the steps under the bars.
-    const volume = ctx.volumeRenderer?.isVisible() && !profiles ? { heightRatio: ctx.volumeRenderer.getHeightRatio() } : null;
-    const drawn = gpu.render({
-      data, viewport, theme,
-      // The ratio the canvases are sized for, which may trail the screen's.
-      dpr,
-      candles: ctx.chartRenderer instanceof CandlestickRenderer,
-      volume, background, under, recorded: recorder,
-      seriesRevision: ctx.seriesRevision,
-    });
-    const plan = drawn.recorded ? recorded : canvasPlan(plot);
-    const result = { drawn: { ...drawn, volume: drawn.volume || profiles }, plan };
-    const backgroundDrawn = background !== null && !!drawn.background;
-    const backSteps = under !== null && drawn.under ? [] : underSteps;
-    if (backgroundDrawn && backSteps.length === 0) {
-      this.layerManager.dropBackLayer();
-      return result;
-    }
-    this.renderBackCanvas(ctx, backSteps, !backgroundDrawn);
-    return result;
-  }
-
   /** What goes under the bars, in Canvas 2D's order: the depth heatmap, then with a profile, volume and the profiles. */
-  private underSteps(ctx: RenderContext): DrawStep[] {
+  protected underSteps(ctx: RenderContext): DrawStep[] {
     const { viewport, theme, data } = ctx;
     const steps: DrawStep[] = [];
     if (ctx.depthHeatmap?.isVisible()) steps.push((c) => ctx.depthHeatmap!.render(c, viewport, theme));
@@ -514,17 +344,8 @@ export class RenderEngine {
     return steps;
   }
 
-  /** The 2D canvas under the GPU's: the background unless the GPU drew it, then `under` (clipped to the plot). */
-  private renderBackCanvas(ctx: RenderContext, under: readonly DrawStep[], background: boolean): void {
-    const back = this.layerManager.backLayer();
-    if (!back) return;
-    back.clear();
-    if (background) this.renderBackground(back.ctx, ctx);
-    if (under.length > 0) this.inPlot(back.ctx, ctx.viewport, () => under.forEach((step) => step(back.ctx)));
-  }
-
   /** The background: grid, session shading and breaks, watermark. */
-  private renderBackground(c: CanvasRenderingContext2D, ctx: RenderContext): void {
+  protected renderBackground(c: CanvasRenderingContext2D, ctx: RenderContext): void {
     const { viewport, theme, data } = ctx;
     if (ctx.gridRenderer?.isVisible()) ctx.gridRenderer.render(c, viewport, theme, gridMarks(ctx));
     ctx.sessionShading?.render(c, data, viewport, theme);
@@ -533,7 +354,7 @@ export class RenderEngine {
   }
 
   /** Run `draw` clipped to the main plot. */
-  private inPlot(c: CanvasRenderingContext2D, viewport: ViewportState, draw: () => void): void {
+  protected inPlot(c: CanvasRenderingContext2D, viewport: ViewportState, draw: () => void): void {
     c.save();
     c.beginPath();
     c.rect(viewport.chartRect.x, viewport.chartRect.y, viewport.chartRect.width, viewport.chartRect.height);
@@ -547,10 +368,8 @@ export class RenderEngine {
    * shows the hovered bar), bar countdown, measure ruler, selection box.
    * A hover redraws just this thin layer, never the scene underneath.
    */
-  private renderTop(layer: CanvasLayer, ctx: RenderContext): void {
+  protected renderTop(c: CanvasRenderingContext2D, ctx: RenderContext): void {
     const { viewport, theme, data } = ctx;
-    layer.clear();
-    const c = layer.ctx;
 
     // The drawing under the pointer glows here, under the crosshair: crossing drawings repaints only this layer.
     ctx.drawingRenderer?.renderHover(c, viewport, theme);
@@ -1015,6 +834,239 @@ export class RenderEngine {
       ctx.textAlign = 'left';
       ctx.fillText(text(price), axisX + AXIS_TAG_TEXT_INSET, tagY);
     });
+  }
+}
+
+/**
+ * A chart's canvases on the page and the loop that draws them: the scene and
+ * what follows the pointer on a canvas each, sized to their container, with
+ * a GPU under them when one is attached.
+ */
+export class RenderEngine extends FrameRenderer {
+  readonly layerManager: LayerManager;
+  readonly renderLoop: RenderLoop;
+  readonly dprManager: DPRManager;
+  private renderCtx: RenderContext | null = null;
+
+  // Cached canvas references — avoid a lookup per frame
+  private sceneLayer: CanvasLayer | undefined;
+  private topLayer: CanvasLayer | undefined;
+  /** The GPU renderer under the scene. */
+  private gpu: GpuRenderer | null = null;
+  /** A GPU whose context was lost, kept for when it comes back. */
+  private lostGpu: GpuRenderer | null = null;
+
+  /** Called when the GPU context is lost and the engine has gone back to Canvas 2D. */
+  onGpuLost: (() => void) | null = null;
+  /** Called when the lost context came back and the engine draws with the GPU again. */
+  onGpuRestored: (() => void) | null = null;
+
+  /**
+   * Optional hook fired AFTER the canvas layers have been resized in
+   * response to a container resize. The Chart class uses this to push the
+   * new dimensions into its viewport + layout manager — without it, the
+   * viewport keeps a stale chartRect forever and `scrollToEnd` / panning
+   * compute against the wrong width.
+   */
+  onContainerResize: ((size: Size) => void) | null = null;
+
+  /** `maxPixelRatio`: the highest device pixel ratio the canvases are drawn at (see `DEFAULT_MAX_PIXEL_RATIO`). */
+  constructor(container: HTMLElement, maxPixelRatio?: number) {
+    super();
+    this.layerManager = new LayerManager(container);
+    this.renderLoop = new RenderLoop();
+    this.dprManager = new DPRManager(container, maxPixelRatio);
+
+    this.layerManager.createLayers();
+    this.cacheLayerRefs();
+
+    this.renderLoop.setCallback((dirtyLayers) => this.render(dirtyLayers));
+
+    this.dprManager.onResize((size, dpr) => {
+      this.layerManager.resize(size, dpr, this.dprManager.getDeviceSize());
+      this.renderLoop.markAllDirty();
+      // Notify the Chart so it can update viewport.chartRect + layout.
+      // Without this, container resizes leave the viewport's idea of width
+      // stuck at whatever it was at construction time.
+      this.onContainerResize?.(size);
+    });
+
+    const size = this.dprManager.getContainerSize();
+    const dpr = this.dprManager.getDpr();
+    this.layerManager.resize(size, dpr, this.dprManager.getDeviceSize());
+  }
+
+  private cacheLayerRefs(): void {
+    this.sceneLayer = this.layerManager.getLayer(LayerType.Main);
+    this.topLayer = this.layerManager.getLayer(LayerType.Hover);
+  }
+
+  setRenderContext(ctx: RenderContext): void {
+    this.renderCtx = ctx;
+  }
+
+  /** Draw bars and volume with `gpu`, on its canvas under the scene. */
+  attachGpu(gpu: GpuRenderer): void {
+    this.detachGpu();
+    this.placeGpu(gpu);
+    // Lost: Canvas 2D, keeping the GPU for when its context comes back.
+    gpu.onLost(() => {
+      if (this.gpu !== gpu) return;
+      this.gpu = null;
+      this.lostGpu = gpu;
+      this.layerManager.detachGpu();
+      this.renderLoop.markAllDirty();
+      this.onGpuLost?.();
+    });
+    gpu.onRestored?.(() => {
+      if (this.lostGpu !== gpu) return;
+      this.lostGpu = null;
+      this.placeGpu(gpu);
+      this.onGpuRestored?.();
+    });
+  }
+
+  private placeGpu(gpu: GpuRenderer): void {
+    this.gpu = gpu;
+    this.layerManager.attachGpu(gpu.canvas);
+    this.renderLoop.markAllDirty();
+  }
+
+  /** Back to Canvas 2D for everything. */
+  detachGpu(): void {
+    const gpu = this.gpu ?? this.lostGpu;
+    if (!gpu) return;
+    this.gpu = null;
+    this.lostGpu = null;
+    this.layerManager.detachGpu();
+    gpu.destroy();
+    this.renderLoop.markAllDirty();
+  }
+
+  /** Draw every layer now, synchronously (a screenshot reads the GPU canvas before the browser clears it). */
+  renderNow(): void {
+    this.render(new Set([LayerType.Main, LayerType.Hover]));
+  }
+
+  /** The GPU renderer in use, if any. */
+  getGpu(): GpuRenderer | null {
+    return this.gpu;
+  }
+
+  start(): void {
+    this.renderLoop.start();
+  }
+
+  stop(): void {
+    this.renderLoop.stop();
+  }
+
+  requestRender(layer?: LayerType): void {
+    if (layer !== undefined) {
+      this.renderLoop.markDirty(layer);
+    } else {
+      this.renderLoop.markAllDirty();
+    }
+  }
+
+  private render(dirtyLayers: ReadonlySet<LayerType>): void {
+    const ctx = this.renderCtx;
+    if (!ctx) return;
+
+    // Skip rendering if viewport has zero dimensions
+    const { chartRect } = ctx.viewport;
+    if (chartRect.width <= 0 || chartRect.height <= 0) return;
+
+    // Anything except a hover-only change redraws the scene. The top canvas
+    // always follows: it is nearly empty, and what it shows (legend values,
+    // crosshair pills) can depend on any of it.
+    let sceneDirty = false;
+    for (const layer of dirtyLayers) {
+      if (layer !== LayerType.Hover) { sceneDirty = true; break; }
+    }
+    if (sceneDirty && this.sceneLayer) {
+      this.sceneLayer.clear();
+      this.renderScene(this.sceneLayer.ctx, ctx, this.gpu);
+    }
+    if (this.topLayer) {
+      this.topLayer.clear();
+      this.renderTop(this.topLayer.ctx, ctx);
+    }
+  }
+
+  /**
+   * The frame as it is now, on a context of the caller's (`drawFrame`): for
+   * a picture of it at another size than the screen's. Neither the chart's
+   * own canvases nor its GPU are touched, and no frame is asked for.
+   */
+  renderTo(c: CanvasRenderingContext2D): void {
+    if (this.renderCtx) this.drawFrame(c, this.renderCtx);
+  }
+
+  /**
+   * With a GPU: the grid, session shading, break lines, bars and volume on
+   * the GPU, then what was recorded of the plot and panes. What goes under
+   * the bars (a depth heatmap, volume profiles, with volume under them as in
+   * Canvas 2D) is recorded to go under them too. A watermark needs Canvas
+   * 2D, and so does what goes under the bars when the GPU can't take all of
+   * it: then the whole background goes on a 2D canvas under the GPU's,
+   * there only while needed.
+   */
+  protected override renderGpu(
+    gpu: GpuRenderer,
+    ctx: RenderContext,
+    scene: CanvasRenderingContext2D,
+    plot: DrawStep[],
+    panes: readonly PaneSteps[],
+  ): { drawn: GpuDrawn; plan: StepPlan } {
+    const { viewport, theme, data } = ctx;
+    const dpr = this.layerManager.getDpr();
+    const underSteps = this.underSteps(ctx);
+    // Text under the bars (a market profile's readout, its letters) needs a
+    // 2D canvas under them: then all of it goes there, unrecorded.
+    const underText = !!(ctx.marketProfile?.isVisible() && ctx.marketProfile.drawsText());
+    const under = underSteps.length > 0 && !underText ? recordAll(gpu.recorder?.(dpr, scene) ?? null, viewport.chartRect, underSteps) : null;
+    const underOnBack = underSteps.length > 0 && !under;
+    // What the GPU can draw of the plot and panes, recorded before it draws.
+    const recorder = gpu.recorder?.(dpr, scene) ?? null;
+    const recorded = recorder ? recordSteps(recorder, viewport.chartRect, plot, panes) : canvasPlan(plot);
+    const profiles = !!(ctx.volumeProfile?.isVisible() || ctx.marketProfile?.isVisible());
+    // A grid the GPU can't draw as it looks (dashed, wider, two colours) takes the background to Canvas 2D.
+    const gridOn2d = !!ctx.gridRenderer?.isVisible() && !gridFitsGpu(theme);
+    const background: GpuBackground | null = ctx.watermark?.isVisible() || underOnBack || gridOn2d ? null : {
+      grid: ctx.gridRenderer?.isVisible() ?? false,
+      marks: ctx.gridRenderer?.isVisible() ? gridMarks(ctx) : undefined,
+      rects: [...(ctx.sessionShading?.rects(data, viewport, theme) ?? []), ...(ctx.sessionBreaks?.lineRects(viewport, theme, data) ?? [])],
+    };
+    // With a profile, volume goes under it, among the steps under the bars.
+    const volume = ctx.volumeRenderer?.isVisible() && !profiles ? { heightRatio: ctx.volumeRenderer.getHeightRatio() } : null;
+    const drawn = gpu.render({
+      data, viewport, theme,
+      // The ratio the canvases are sized for, which may trail the screen's.
+      dpr,
+      candles: ctx.chartRenderer instanceof CandlestickRenderer,
+      volume, background, under, recorded: recorder,
+      seriesRevision: ctx.seriesRevision,
+    });
+    const plan = drawn.recorded ? recorded : canvasPlan(plot);
+    const result = { drawn: { ...drawn, volume: drawn.volume || profiles }, plan };
+    const backgroundDrawn = background !== null && !!drawn.background;
+    const backSteps = under !== null && drawn.under ? [] : underSteps;
+    if (backgroundDrawn && backSteps.length === 0) {
+      this.layerManager.dropBackLayer();
+      return result;
+    }
+    this.renderBackCanvas(ctx, backSteps, !backgroundDrawn);
+    return result;
+  }
+
+  /** The 2D canvas under the GPU's: the background unless the GPU drew it, then `under` (clipped to the plot). */
+  private renderBackCanvas(ctx: RenderContext, under: readonly DrawStep[], background: boolean): void {
+    const back = this.layerManager.backLayer();
+    if (!back) return;
+    back.clear();
+    if (background) this.renderBackground(back.ctx, ctx);
+    if (under.length > 0) this.inPlot(back.ctx, ctx.viewport, () => under.forEach((step) => step(back.ctx)));
   }
 
   destroy(): void {

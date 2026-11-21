@@ -27,6 +27,7 @@
     SurfaceChart,
     Bar3DChart,
     depthSurface,
+    chartsToPdf,
     DARK_THEME,
     LIGHT_THEME,
   } from '@tradecanvas/chart';
@@ -293,6 +294,25 @@
   }
 
   let stopThemeSync: (() => void) | null = null;
+
+  /** Every chart of the section that is drawn now, in the order of the page. */
+  function chartsOnPage() {
+    return [equityChart, depthChart, heatmapChart, waterfallChart, gaugeChart, ...newCharts].filter((chart) => chart !== null);
+  }
+
+  /** Saves a PDF the browser has just made, and lets go of it. */
+  async function savePdf(make: () => Promise<Blob | null>, filename: string): Promise<void> {
+    const pdf = await make();
+    if (!pdf) return;
+    const url = URL.createObjectURL(pdf);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  }
 
   function applyThemeToAll(theme: Theme): void {
     for (const sc of sparkCharts) {
@@ -825,6 +845,15 @@
     </div>
   </div>
   <p class="chart-note" data-reveal>{m.finance.turnHint}</p>
+
+  <!-- A chart as a picture, on paper, and all of them as one PDF -->
+  <div class="export-row" data-reveal>
+    <span class="export-label">{m.finance.exportLabel}</span>
+    <button type="button" class="export-btn" onclick={() => equityChart?.screenshot('portfolio', { pixelRatio: 2 })}>PNG</button>
+    <button type="button" class="export-btn" onclick={() => savePdf(async () => (equityChart ? equityChart.toPdf({ title: m.finance.portfolio }) : null), 'portfolio.pdf')}>PDF</button>
+    <button type="button" class="export-btn" onclick={() => equityChart?.print({ title: m.finance.portfolio })}>{m.finance.print}</button>
+    <button type="button" class="export-btn" onclick={() => savePdf(() => chartsToPdf(chartsOnPage(), { title: m.finance.title }), 'charts.pdf')}>{m.finance.reportPdf}</button>
+  </div>
 </section>
 
 <style>
@@ -942,6 +971,42 @@
     margin: 0 0 20px;
     font-size: 12px;
     color: var(--text-muted);
+  }
+
+  /* --- A chart to take away: a picture, paper, a PDF --- */
+  .export-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .export-label {
+    margin-right: 4px;
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  .export-btn {
+    padding: 6px 12px;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text);
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: border-color 150ms, color 150ms;
+  }
+
+  .export-btn:hover {
+    border-color: var(--text-muted);
+  }
+
+  .export-btn:focus-visible {
+    outline: 2px solid var(--text);
+    outline-offset: 2px;
   }
 
   .card-chart {

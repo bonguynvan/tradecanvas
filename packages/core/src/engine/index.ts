@@ -2,7 +2,7 @@ export { CanvasLayer } from './CanvasLayer.js';
 export { LayerManager } from './LayerManager.js';
 export { RenderLoop } from './RenderLoop.js';
 export { DPRManager, DEFAULT_MAX_PIXEL_RATIO, cappedPixelRatio } from './DPRManager.js';
-export { RenderEngine } from './RenderEngine.js';
+export { RenderEngine, FrameRenderer } from './RenderEngine.js';
 export type { RenderContext, PanelRenderInfo } from './RenderEngine.js';
 export { loadWebGL, loadWebGLRenderer } from './loadWebGL.js';
 export type { WebGLLoad } from './loadWebGL.js';

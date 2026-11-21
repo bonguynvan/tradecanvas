@@ -507,6 +507,9 @@ const tr: SiteMessages = {
     depthOverTime: 'Zaman içinde emir defteri derinliği',
     quarterReturns: 'Çeyreğe ve varlık sınıfına göre getiri',
     turnHint: 'Bir grafiği döndürmek için sürükleyin; çift tıklama ilk görünüme döndürür.',
+    exportLabel: 'Portföy grafiğini kaydet',
+    print: 'Yazdır',
+    reportPdf: 'Tüm grafikler tek PDF içinde',
     waterfall: {
       start: 'Başlangıç',
       btcLong: 'BTC uzun',

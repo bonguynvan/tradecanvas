@@ -1,13 +1,5 @@
 import type { HeatmapCell, HeatmapOptions, Theme } from '@tradecanvas/commons';
-import {
-  BaseFinanceChart,
-  FinanceCrosshair,
-  layoutUniformGrid,
-  layoutSquarifiedTreemap,
-  layoutGroupedTreemap,
-  renderHeatmap,
-  GROUP_HEADER,
-} from '@tradecanvas/core';
+import { BaseFinanceChart, FinanceCrosshair, computeHeatmapLayout, renderHeatmap } from '@tradecanvas/core';
 import type { GroupRect, LayoutRect } from '@tradecanvas/core';
 
 export class HeatmapChart extends BaseFinanceChart {
@@ -51,35 +43,11 @@ export class HeatmapChart extends BaseFinanceChart {
   }
 
   private recomputeLayout(): void {
-    const bounds = { x: 0, y: 0, width: this.width, height: this.height };
-    const padding = this.options.cellPadding ?? 2;
     this.lastLayoutWidth = this.width;
     this.lastLayoutHeight = this.height;
-
-    this.cachedGroups = [];
-    if (this.options.grouped) {
-      const weighted = this.currentData.map(c => ({
-        id: c.id,
-        weight: c.weight ?? (Math.abs(c.value) || 1),
-        group: c.group,
-        value: c.value,
-      }));
-      const { groups, cells } = layoutGroupedTreemap(weighted, bounds, padding, GROUP_HEADER);
-      this.cachedRects = cells;
-      this.cachedGroups = groups;
-    } else if (this.options.weighted) {
-      const weighted = this.currentData.map(c => ({
-        id: c.id,
-        weight: c.weight ?? (Math.abs(c.value) || 1),
-      }));
-      this.cachedRects = layoutSquarifiedTreemap(weighted, bounds, padding);
-    } else {
-      this.cachedRects = layoutUniformGrid(
-        this.currentData.map(c => ({ id: c.id })),
-        bounds,
-        padding,
-      );
-    }
+    const { rects, groups } = computeHeatmapLayout({ ...this.options, data: this.currentData }, this.width, this.height);
+    this.cachedRects = rects;
+    this.cachedGroups = groups;
   }
 
   private onCanvasClick(x: number, y: number): void {
@@ -107,6 +75,12 @@ export class HeatmapChart extends BaseFinanceChart {
 
     const pos = this.options.crosshair === false ? null : this.crosshair.getPosition();
     renderHeatmap(ctx, width, height, this.currentData, this.cachedRects, this.options, theme, pos, this.cachedGroups);
+  }
+
+  /** A picture of the chart: laid out for the picture's own size, with nothing under a pointer. */
+  protected renderStill(ctx: CanvasRenderingContext2D, width: number, height: number, theme: Theme): void {
+    const { rects, groups } = computeHeatmapLayout({ ...this.options, data: this.currentData }, width, height);
+    renderHeatmap(ctx, width, height, this.currentData, rects, this.options, theme, null, groups);
   }
 
   update(data: HeatmapCell[]): void {

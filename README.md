@@ -44,6 +44,7 @@ It is a charting engine you own: MIT-licensed, installed from npm and served wit
 - **Fast**: a million bars panned at 60 fps with WebGL; a live tick in about a microsecond; ten minutes of 30,000 trades a second on a million bars with no memory growth ([soak](benchmarks/2026-11-03.md)).
 - **A workspace**: grids of charts, layouts, bar replay, backtesting.
 - **Twenty-two more charts** for the pages around the chart: depth, equity curve, waterfall, heatmap and sector map, bars, donut, scatter, histogram, calendar, correlation matrix, gauge, sparkline, an options payoff, curves (a volatility smile, a term structure), box plot, radar, sunburst, stacked area, a 3D surface you turn by dragging (a volatility surface, depth over time), 3D bars, and a backtest dashboard.
+- **On paper, and with no page**: any chart as a sharp picture, printed on its own or saved as a PDF; the charts above also draw in Node or a worker, with no browser page.
 - **Yours to shape**: themes, five looks, 133 switches, plugins; 30 languages; phones and apps.
 
 <table>
