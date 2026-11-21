@@ -9487,6 +9487,234 @@
       ]
     },
     {
+      "name": "SurfaceChart",
+      "what": "Values over two axes as a sheet in a 3D box that a drag turns: implied volatility by strike and expiry (a volatility surface), a profit by price and day, or as slices, depth over time.",
+      "options": [
+        {
+          "name": "x",
+          "type": "number[] | string[]",
+          "required": true,
+          "doc": "The points along x: strikes, prices. Numbers are placed by their value (and drawn by rising value, whatever their order); names are spaced evenly, in the order given. A number that is none (`NaN`, `Infinity`) is left out with its values. With fewer than two points along x, or none along y, nothing is drawn."
+        },
+        {
+          "name": "y",
+          "type": "number[] | string[]",
+          "required": true,
+          "doc": "The points along y, the axis that runs back: days to expiry, times. Numbers or names, as `x`."
+        },
+        {
+          "name": "values",
+          "type": "number[][]",
+          "required": true,
+          "doc": "`values[yIndex][xIndex]`; a missing or non-finite value leaves a hole."
+        },
+        {
+          "name": "style",
+          "type": "'surface' | 'wireframe' | 'slices'",
+          "doc": "`'surface'` (default): a shaded sheet through the values. `'wireframe'`: its lines only. `'slices'`: each y as a filled line of its own, one behind another: an order book's depth over time.",
+          "values": [
+            "surface",
+            "wireframe",
+            "slices"
+          ]
+        },
+        {
+          "name": "colorRamp",
+          "type": "ColorRamp",
+          "doc": "The colours values are drawn in. Default: one hue over the values' range."
+        },
+        {
+          "name": "mesh",
+          "type": "boolean",
+          "doc": "The lines between a surface's cells. Default `true`; left out anyway where the cells are too small for them.",
+          "kind": "boolean"
+        },
+        {
+          "name": "xFormat",
+          "type": "(value: number) => string",
+          "doc": "How an x and a y are written, when they are numbers.",
+          "kind": "function"
+        },
+        {
+          "name": "yFormat",
+          "type": "(value: number) => string",
+          "kind": "function"
+        },
+        {
+          "name": "legend",
+          "type": "boolean",
+          "doc": "The colours' bar under the chart. Default `true`.",
+          "kind": "boolean"
+        },
+        {
+          "name": "onPointClick",
+          "type": "(point: SurfacePoint) => void",
+          "kind": "function"
+        },
+        {
+          "name": "view",
+          "type": "View3D",
+          "doc": "Where the chart is seen from at first, and what a double click goes back to."
+        },
+        {
+          "name": "rotate",
+          "type": "boolean",
+          "doc": "Turn the chart by dragging it: a mouse turns and tilts it, a finger turns it only, so that a page still scrolls under it. Default `true`.",
+          "kind": "boolean"
+        },
+        {
+          "name": "onViewChange",
+          "type": "(view: Required<View3D>) => void",
+          "doc": "Called as the chart is turned, with where it is seen from now.",
+          "kind": "function"
+        },
+        {
+          "name": "xLabel",
+          "type": "string",
+          "doc": "The axes' titles: across, back and up.",
+          "kind": "string"
+        },
+        {
+          "name": "yLabel",
+          "type": "string",
+          "kind": "string"
+        },
+        {
+          "name": "valueLabel",
+          "type": "string",
+          "kind": "string"
+        },
+        {
+          "name": "valueFormat",
+          "type": "(value: number) => string",
+          "kind": "function"
+        },
+        {
+          "name": "crosshair",
+          "type": "boolean",
+          "doc": "Show what is under the pointer. Default `true`.",
+          "kind": "boolean"
+        },
+        {
+          "name": "theme",
+          "type": "ThemeName | Theme",
+          "doc": "The chart's colours: `'dark'` (the default), `'light'`, or a theme of your own."
+        },
+        {
+          "name": "font",
+          "type": "Partial<FontConfig>",
+          "doc": "The face and sizes of the chart's text, over the theme's. Left out, the text is in the theme's face: a sans one whose digits are one width (`FIGURES_FONT_FAMILY`) in the dark and the light theme. `{ family: MONO_FONT_FAMILY }` gives a monospaced one."
+        },
+        {
+          "name": "locale",
+          "type": "string",
+          "doc": "The language numbers and dates are written in, as a BCP 47 tag (`'vi'`, `'de-DE'`): the grouping and decimal marks, the short forms past ten thousand, the names of months and days. The browser's own when left out. A format function of yours (`valueFormat`…) is used as it is.",
+          "kind": "string"
+        },
+        {
+          "name": "ariaLabel",
+          "type": "string",
+          "doc": "What the chart shows, for screen readers; every chart describes itself (in English) without one.",
+          "kind": "string"
+        }
+      ]
+    },
+    {
+      "name": "Bar3DChart",
+      "what": "A column for each value in rows a series deep, in a 3D box that a drag turns: returns by quarter and asset class, volume by hour and weekday.",
+      "options": [
+        {
+          "name": "categories",
+          "type": "string[]",
+          "required": true,
+          "doc": "A label for each column along x. No more than the first 120 are drawn."
+        },
+        {
+          "name": "series",
+          "type": "ChartSeries[]",
+          "required": true,
+          "doc": "A row of columns for each series, the first where the y axis starts (the front, as the chart is first seen): `values[i]` belongs to `categories[i]`. No more than the first 120 are drawn."
+        },
+        {
+          "name": "legend",
+          "type": "boolean",
+          "doc": "The series' names. Default `true` with more than one.",
+          "kind": "boolean"
+        },
+        {
+          "name": "onBarClick",
+          "type": "(hit: BarHit) => void",
+          "kind": "function"
+        },
+        {
+          "name": "view",
+          "type": "View3D",
+          "doc": "Where the chart is seen from at first, and what a double click goes back to."
+        },
+        {
+          "name": "rotate",
+          "type": "boolean",
+          "doc": "Turn the chart by dragging it: a mouse turns and tilts it, a finger turns it only, so that a page still scrolls under it. Default `true`.",
+          "kind": "boolean"
+        },
+        {
+          "name": "onViewChange",
+          "type": "(view: Required<View3D>) => void",
+          "doc": "Called as the chart is turned, with where it is seen from now.",
+          "kind": "function"
+        },
+        {
+          "name": "xLabel",
+          "type": "string",
+          "doc": "The axes' titles: across, back and up.",
+          "kind": "string"
+        },
+        {
+          "name": "yLabel",
+          "type": "string",
+          "kind": "string"
+        },
+        {
+          "name": "valueLabel",
+          "type": "string",
+          "kind": "string"
+        },
+        {
+          "name": "valueFormat",
+          "type": "(value: number) => string",
+          "kind": "function"
+        },
+        {
+          "name": "crosshair",
+          "type": "boolean",
+          "doc": "Show what is under the pointer. Default `true`.",
+          "kind": "boolean"
+        },
+        {
+          "name": "theme",
+          "type": "ThemeName | Theme",
+          "doc": "The chart's colours: `'dark'` (the default), `'light'`, or a theme of your own."
+        },
+        {
+          "name": "font",
+          "type": "Partial<FontConfig>",
+          "doc": "The face and sizes of the chart's text, over the theme's. Left out, the text is in the theme's face: a sans one whose digits are one width (`FIGURES_FONT_FAMILY`) in the dark and the light theme. `{ family: MONO_FONT_FAMILY }` gives a monospaced one."
+        },
+        {
+          "name": "locale",
+          "type": "string",
+          "doc": "The language numbers and dates are written in, as a BCP 47 tag (`'vi'`, `'de-DE'`): the grouping and decimal marks, the short forms past ten thousand, the names of months and days. The browser's own when left out. A format function of yours (`valueFormat`…) is used as it is.",
+          "kind": "string"
+        },
+        {
+          "name": "ariaLabel",
+          "type": "string",
+          "doc": "What the chart shows, for screen readers; every chart describes itself (in English) without one.",
+          "kind": "string"
+        }
+      ]
+    },
+    {
       "name": "PerformanceDashboard",
       "what": "A backtest's result as a page: stats, the equity curve, drawdown and monthly returns.",
       "options": [

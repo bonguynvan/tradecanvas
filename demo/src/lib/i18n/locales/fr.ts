@@ -501,6 +501,12 @@ const fr: SiteMessages = {
     benchmark: 'Référence',
     allocationRings: 'Allocation par classe d’actifs et secteur',
     allocationOverTime: 'Allocation au fil de l’année',
+    volSurface: 'Volatilité implicite par prix d’exercice et échéance',
+    strike: 'Prix d’exercice',
+    expiry: 'Échéance',
+    depthOverTime: 'Profondeur du carnet d’ordres dans le temps',
+    quarterReturns: 'Rendement par trimestre et classe d’actifs',
+    turnHint: 'Faites glisser un graphique pour le tourner ; un double-clic le remet dans sa vue initiale.',
     waterfall: {
       start: 'Début',
       btcLong: 'BTC long',

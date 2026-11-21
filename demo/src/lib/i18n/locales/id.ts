@@ -501,6 +501,12 @@ const id: SiteMessages = {
     benchmark: 'Tolok ukur',
     allocationRings: 'Alokasi per kelas aset dan sektor',
     allocationOverTime: 'Alokasi sepanjang tahun',
+    volSurface: 'Volatilitas tersirat per strike dan jatuh tempo',
+    strike: 'Strike',
+    expiry: 'Jatuh tempo',
+    depthOverTime: 'Kedalaman buku order dari waktu ke waktu',
+    quarterReturns: 'Imbal hasil per kuartal dan kelas aset',
+    turnHint: 'Seret grafik untuk memutarnya; klik dua kali untuk kembali ke tampilan awal.',
     waterfall: {
       start: 'Awal',
       btcLong: 'BTC long',

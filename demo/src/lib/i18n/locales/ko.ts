@@ -501,6 +501,12 @@ const ko: SiteMessages = {
     benchmark: '벤치마크',
     allocationRings: '자산군과 섹터별 배분',
     allocationOverTime: '연간 배분 추이',
+    volSurface: '행사가와 만기별 내재변동성',
+    strike: '행사가',
+    expiry: '만기',
+    depthOverTime: '시간에 따른 호가 깊이',
+    quarterReturns: '분기·자산군별 수익률',
+    turnHint: '차트를 드래그하면 돌아가고, 더블 클릭하면 처음 시점으로 돌아갑니다.',
     waterfall: {
       start: '시작',
       btcLong: 'BTC 롱',

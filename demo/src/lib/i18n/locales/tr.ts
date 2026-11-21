@@ -501,6 +501,12 @@ const tr: SiteMessages = {
     benchmark: 'Karşılaştırma ölçütü',
     allocationRings: 'Varlık sınıfına ve sektöre göre dağılım',
     allocationOverTime: 'Yıl boyunca dağılım',
+    volSurface: 'Kullanım fiyatına ve vadeye göre zımni oynaklık',
+    strike: 'Kullanım fiyatı',
+    expiry: 'Vade',
+    depthOverTime: 'Zaman içinde emir defteri derinliği',
+    quarterReturns: 'Çeyreğe ve varlık sınıfına göre getiri',
+    turnHint: 'Bir grafiği döndürmek için sürükleyin; çift tıklama ilk görünüme döndürür.',
     waterfall: {
       start: 'Başlangıç',
       btcLong: 'BTC uzun',

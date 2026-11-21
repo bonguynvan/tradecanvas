@@ -17,6 +17,8 @@ export { BoxPlotChart } from './BoxPlotChart.js';
 export { RadarChart } from './RadarChart.js';
 export { SunburstChart } from './SunburstChart.js';
 export { StackedAreaChart } from './StackedAreaChart.js';
+export { SurfaceChart } from './SurfaceChart.js';
+export { Bar3DChart } from './Bar3DChart.js';
 export { PerformanceDashboard } from './PerformanceDashboard.js';
 export type { PerformanceDashboardOptions, PerformanceResult } from './PerformanceDashboard.js';
 export {

@@ -627,3 +627,128 @@ export interface StackedAreaOptions extends BaseFinanceChartOptions {
   /** Show every series' value at the point under the pointer. Default `true`. */
   crosshair?: boolean;
 }
+
+/**
+ * Where a 3D chart is seen from, in degrees. `yaw` turns it about its
+ * upright axis: at 0 the x axis runs across and the y axis straight back; a
+ * positive yaw swings the far end of the x axis towards the eye, a negative
+ * one away from it. `pitch` is how far above the floor the eye is: 0 level
+ * with it, 90 straight down on it. A pitch outside 0 to 90 is held to them.
+ */
+export interface View3D {
+  /** Default `-35`: the corner where both axes start is nearest. */
+  yaw?: number;
+  /** Default `28`. */
+  pitch?: number;
+}
+
+/**
+ * Colours from the lowest value to the highest, for a surface. Hex and
+ * rgb() colours blend; others (names, hsl()) change in steps.
+ */
+export interface ColorRamp {
+  /**
+   * Two or more colours, the lowest value's first. Default: one hue, from
+   * near the chart's ground up to its strongest, so low values stand back in
+   * the dark theme and in the light one.
+   */
+  colors?: string[];
+  /** Where the first colour is reached; values under it keep it. Default: the lowest value. */
+  min?: number;
+  /** Where the last colour is reached; values over it keep it. Default: the highest value. Given under `min`, the two are taken in order. */
+  max?: number;
+}
+
+/** A point of a surface chart: what the pointer is on. */
+export interface SurfacePoint {
+  /** The point's place along x and along y, as the options gave them. */
+  x: number | string;
+  y: number | string;
+  value: number;
+  /** Its indexes in the options' `x` and `y`. */
+  xIndex: number;
+  yIndex: number;
+}
+
+/** What every 3D chart's options hold. */
+export interface Chart3DOptions extends BaseFinanceChartOptions {
+  /** Where the chart is seen from at first, and what a double click goes back to. */
+  view?: View3D;
+  /**
+   * Turn the chart by dragging it: a mouse turns and tilts it, a finger
+   * turns it only, so that a page still scrolls under it. Default `true`.
+   */
+  rotate?: boolean;
+  /** Called as the chart is turned, with where it is seen from now. */
+  onViewChange?: (view: Required<View3D>) => void;
+  /** The axes' titles: across, back and up. */
+  xLabel?: string;
+  yLabel?: string;
+  valueLabel?: string;
+  valueFormat?: (value: number) => string;
+  /** Show what is under the pointer. Default `true`. */
+  crosshair?: boolean;
+}
+
+export interface SurfaceChartOptions extends Chart3DOptions {
+  /**
+   * The points along x: strikes, prices. Numbers are placed by their value
+   * (and drawn by rising value, whatever their order); names are spaced
+   * evenly, in the order given. A number that is none (`NaN`, `Infinity`)
+   * is left out with its values. With fewer than two points along x, or none
+   * along y, nothing is drawn. Past 120 points along an axis they are thinned
+   * to that many, the first and the last kept, and to 60 for as long as the
+   * chart is being turned.
+   */
+  x: number[] | string[];
+  /** The points along y, the axis that runs back: days to expiry, times. Numbers or names, as `x`. */
+  y: number[] | string[];
+  /** `values[yIndex][xIndex]`; a missing or non-finite value leaves a hole. */
+  values: number[][];
+  /**
+   * `'surface'` (default): a shaded sheet through the values. `'wireframe'`:
+   * its lines only. `'slices'`: each y as a filled line of its own, one
+   * behind another: an order book's depth over time.
+   */
+  style?: 'surface' | 'wireframe' | 'slices';
+  /** The colours values are drawn in. Default: one hue over the values' range. */
+  colorRamp?: ColorRamp;
+  /** The lines between a surface's cells. Default `true`; left out anyway where the cells are too small for them. */
+  mesh?: boolean;
+  /** How an x and a y are written, when they are numbers. */
+  xFormat?: (value: number) => string;
+  yFormat?: (value: number) => string;
+  /** The colours' bar under the chart. Default `true`. */
+  legend?: boolean;
+  onPointClick?: (point: SurfacePoint) => void;
+}
+
+export interface Bar3DChartOptions extends Chart3DOptions {
+  /** A label for each column along x. No more than the first 120 are drawn. */
+  categories: string[];
+  /**
+   * A row of columns for each series, the first where the y axis starts (the
+   * front, as the chart is first seen): `values[i]` belongs to
+   * `categories[i]`. No more than the first 120 are drawn.
+   */
+  series: ChartSeries[];
+  /** The series' names. Default `true` with more than one. */
+  legend?: boolean;
+  onBarClick?: (hit: BarHit) => void;
+}
+
+/** An order book at a time, for `depthSurface`. */
+export interface DepthSnapshot extends DepthData {
+  /** When the book was read, ms. */
+  time: number;
+}
+
+/** What `depthSurface` makes of a run of order books: a surface chart's `x`, `y` and `values`. */
+export interface DepthSurface {
+  /** Prices, evenly spaced. */
+  x: number[];
+  /** The books' times. */
+  y: number[];
+  /** `values[time][price]`: the volume waiting from the best price out to that price. */
+  values: number[][];
+}

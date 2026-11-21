@@ -502,6 +502,12 @@ const zh: SiteMessages = {
     benchmark: '基准',
     allocationRings: '按资产类别与行业的配置',
     allocationOverTime: '全年配置变化',
+    volSurface: '各行权价与到期日的隐含波动率',
+    strike: '行权价',
+    expiry: '到期日',
+    depthOverTime: '订单簿深度随时间的变化',
+    quarterReturns: '各季度、各资产类别的收益',
+    turnHint: '拖动图表即可旋转，双击恢复原来的视角。',
     waterfall: {
       start: '期初',
       btcLong: 'BTC 多单',

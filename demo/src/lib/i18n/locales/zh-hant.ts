@@ -501,6 +501,12 @@ const zhHant: SiteMessages = {
     benchmark: '基準',
     allocationRings: '依資產類別與產業的配置',
     allocationOverTime: '全年配置變化',
+    volSurface: '各履約價與到期日的隱含波動率',
+    strike: '履約價',
+    expiry: '到期日',
+    depthOverTime: '委託簿深度隨時間的變化',
+    quarterReturns: '各季度、各資產類別的報酬',
+    turnHint: '拖曳圖表即可旋轉，按兩下回到原本的視角。',
     waterfall: {
       start: '期初',
       btcLong: 'BTC 多單',
