@@ -94,7 +94,7 @@ chart.setIndicatorsVisible(ids, false)   // 複数のインジケーターをま
 chart.connectExecution(new PaperExecutionAdapter({ markPrice: 64_000 }))
 
 chart.on('executionError', (e) => toast(e.payload.message))   // e.payload.command: the intent that failed
-// chart.connectExecution(adapter, { brackets: 'place' })   // a confirmed bracket goes to it too: see Bracket orders
+// A confirmed bracket goes to it too: see Bracket orders
 // chart.disconnectExecution()`}</code></pre>
 <p>
   実際のブローカーや OMS と接続するには、<code>ExecutionAdapter</code> を実装します（<code>DataAdapter</code> と対になる構造です）：
@@ -250,31 +250,47 @@ chart.cancelOrderDraft()`}</code></pre>
   1 つ発行します。
 </p>
 <p>
-  <code>brackets: 'place'</code> を指定して執行アダプターを接続すると、チャートはそれを 1 つの注文としてアダプターにも送ります：
-  エントリー（価格が戻ってくる必要があれば指値、さらに進む必要があれば逆指値）、その数量、そして注文に付く損切りと利確です。
-  アダプターが受け付けると、チャートはその注文とともに <code>bracketOrder</code> を送ります。アダプターが拒否すると、
-  <code>command: 'bracketPlace'</code> 付きの <code>executionError</code> を送ります。ウィジェットが「発注しました」と表示するのは
-  受け付けられたときだけで、拒否されたときはその理由を表示します。数量のないブラケットは送られません（発注する数量を誰も
-  見ていないためです）。指値と逆指値のエントリーを区別する価格をチャートが持つ前に確定したものも送られません。
-  <code>executionError</code> は <code>reason</code>（<code>'noQuantity'</code>、<code>'noPrice'</code>）を返します。
-  ツールバーの矢印と <code>startBracket</code> で始めたブラケットにはまだ数量がないので、<code>'place'</code> では送られず、
-  ウィジェットがそう表示します。指定しなければ、確定したブラケットはイベントのままで、ウィジェットは確定したと表示します。
-  何も指定せずに（<code>brackets</code> なしで）接続したアダプターはイベントのままとし、コンソールで一度だけ警告します。
-  次のメジャーバージョンでは <code>'place'</code> が既定になるので、イベントのブラケットを自ら発注するアプリは
-  <code>brackets: 'event'</code> を渡してください。
+  <strong>サイズ。</strong>ブラケットは、そのサイズから決まる数量の注文です。<code>{`{ quantity: 2 }`}</code>
+  はその数量です。<code>{`{ risk: 50 }`}</code> はストップで失う金額です：数量は 50 をエントリーからストップまでの距離
+  （に <code>multiplier</code>、つまり価格が 1 動いたときの 1 単位あたりの価値を掛けたもの）で割り、
+  <code>quantityStep</code> に切り捨てたもので、ラインをドラッグすると追従します。数量はエントリーのタグに表示され、
+  <code>bracketPlace</code> にも含まれます。ウィジェットでは、ブラケットバーの入力欄に数量を入力します。
+  入力欄は前回入力した数量、なければ市場のロットから始まります。<code>widget.startBracket(side, size)</code>
+  もサイズを受け取ります：リスクでサイズを決めるブラケットには入力欄がありません。
+  <code>bracketQuantity(bracket, size)</code> は同じ計算を自分のコードで使うためのものです。
+</p>
+<p>
+  執行アダプターを接続していると、チャートは確定したブラケットを 1 つの注文としてアダプターにも送ります：
+  エントリー（価格がエントリーまで戻る必要があるときは指値、さらに進む必要があるときはストップ）、数量、
+  そして注文に付くストップロスとテイクプロフィットです。アダプターが受け付けると、チャートはその注文とともに
+  <code>bracketOrder</code> を送ります。アダプターが拒否した場合は、<code>command: 'bracketPlace'</code> の
+  <code>executionError</code> を送ります。ウィジェットが「発注済み」と表示するのはそのときだけで、
+  拒否されたときは理由を表示します。数量のないブラケットは確定されません。発注するサイズを誰も見ていないためです：
+  <code>confirmBracket()</code> は false を返し、ブラケットは数量が与えられるまでチャートに残ります。
+  指値エントリーとストップエントリーを区別するための価格がチャートにまだないうちに確定したブラケットは送られません。
+  <code>executionError</code> が <code>reason</code>（<code>'noQuantity'</code>、<code>'noPrice'</code>）を伝え、
+  ウィジェットもそれを表示します。イベントのブラケットを自分で発注するアプリは <code>brackets: 'event'</code>
+  で接続します：ブラケットはイベントのままで、ウィジェットは確定したと表示します。3.0 より前はこれが既定でした
+  （<a href={href('/docs/migration-3')}>3.0 への移行</a> を参照）。
 </p>
 <pre><code>{`chart.startBracket('buy')          // entry defaults to the latest close
 chart.startBracket('sell', 64_800) // or pin the entry price
 
+chart.startBracket('buy', undefined, { quantity: 2 })                   // for two
+chart.startBracket('buy', undefined, { risk: 50, quantityStep: 0.001 }) // for what loses 50 at the stop
+chart.setBracketSize({ quantity: 3 })   // while it is placed
+chart.getBracket()                      // { side, entry, stopLoss, takeProfit, quantity } or null
+
 chart.on('bracketPlace', (e) => {
-  const { side, entry, stopLoss, takeProfit, riskReward } = e.payload
-  // submit to your OMS, then reflect fills back via chart.setOrders/setPositions
+  const { side, entry, stopLoss, takeProfit, quantity, riskReward } = e.payload
+  // with no adapter (or brackets: 'event'): submit to your OMS, then reflect fills back via chart.setOrders/setPositions
 })
 
-// Or let the connected adapter place it
-chart.connectExecution(broker, { brackets: 'place' })
+// The connected adapter places it
+chart.connectExecution(broker)
 chart.placesBrackets()   // true
 chart.on('bracketOrder', (e) => console.log(e.payload.order.id))
+// chart.connectExecution(broker, { brackets: 'event' })   // only the event: your code places it
 
 chart.confirmBracket()  // same as Enter
 chart.cancelBracket()   // same as Esc`}</code></pre>

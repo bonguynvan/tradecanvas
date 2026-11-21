@@ -566,6 +566,7 @@ export const DA_MESSAGES: WidgetMessages = {
   'ticket.tif.gtd': 'GTD',
   'ticket.tif.ioc': 'IOC',
   'ticket.tif.fok': 'FOK',
+  'account.oco': 'OCO',
   'ticket.value': 'Værdi',
   'ticket.risk': 'Risiko',
   'ticket.reward': 'Gevinst',

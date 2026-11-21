@@ -123,6 +123,28 @@ describe('WidgetOrderTicket', () => {
     expect(checked('timeInForce')).toBe('day');
   });
 
+  it('offers a limit order the kinds that fill at once or not at all, and a stop order only those that wait', () => {
+    ticket.open({ price: 95, lastPrice: 100 });
+    expect(radios('timeInForce').map((r) => r.dataset.value)).toEqual(['gtc', 'day', 'ioc', 'fok']);
+    radios('timeInForce')[2].click();
+    expect(checked('timeInForce')).toBe('ioc');
+    radios('type')[2].click();
+    expect(radios('timeInForce').map((r) => r.dataset.value)).toEqual(['gtc', 'day']);
+    expect(checked('timeInForce')).toBe('gtc');
+  });
+
+  it('asks for a stop order good till cancelled when its draft still holds a kind it cannot be', () => {
+    expect(orderTicketIntent({ side: 'buy', type: 'stop', quantity: 1, price: 105, stopLoss: null, takeProfit: null, timeInForce: 'ioc', trailing: false }, 100).timeInForce).toBe('gtc');
+    expect(orderTicketIntent({ side: 'buy', type: 'limit', quantity: 1, price: 95, stopLoss: null, takeProfit: null, timeInForce: 'ioc', trailing: false }, 100).timeInForce).toBe('ioc');
+  });
+
+  it('sends the kind chosen for a limit order', () => {
+    ticket.open({ price: 95, lastPrice: 100 });
+    radios('timeInForce')[3].click();
+    place().click();
+    expect(sent).toEqual([expect.objectContaining({ type: 'limit', timeInForce: 'fok' })]);
+  });
+
   it('steps the quantity by a lot and a price by the market’s step', () => {
     ticket.open({ price: 95, lastPrice: 100, step: () => 0.5, rules: { lot: 100 } });
     host.querySelector<HTMLButtonElement>('[data-ticket-field="quantity-up"]')!.click();

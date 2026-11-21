@@ -13,6 +13,8 @@ import {
   type OrderTicketDraft,
   type OrderTicketProblem,
   type OrderTicketRules,
+  ticketTimeInForce,
+  ticketTimesInForce,
 } from './orderTicket.js';
 
 export interface OrderTicketCallbacks {
@@ -264,7 +266,7 @@ export class WidgetOrderTicket {
     } else {
       this.body.append(
         this.row('ticket.price', this.priceField('price', draft.price, (price) => this.set({ price }))),
-        this.row('ticket.timeInForce', this.choices('timeInForce', ['gtc', 'day'] as const, draft.timeInForce, 'ticket.timeInForce', (timeInForce: TimeInForce) => this.set({ timeInForce }))),
+        this.row('ticket.timeInForce', this.choices('timeInForce', ticketTimesInForce(draft.type), ticketTimeInForce(draft), 'ticket.timeInForce', (timeInForce: TimeInForce) => this.set({ timeInForce }))),
       );
     }
     this.body.append(this.optionalPrice('stopLoss', draft.stopLoss));

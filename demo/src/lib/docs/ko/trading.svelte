@@ -96,7 +96,7 @@ chart.setIndicatorsVisible(ids, false)   // 여러 지표를 한 번에, 실행 
 chart.connectExecution(new PaperExecutionAdapter({ markPrice: 64_000 }))
 
 chart.on('executionError', (e) => toast(e.payload.message))   // e.payload.command: the intent that failed
-// chart.connectExecution(adapter, { brackets: 'place' })   // a confirmed bracket goes to it too: see Bracket orders
+// A confirmed bracket goes to it too: see Bracket orders
 // chart.disconnectExecution()`}</code></pre>
 <p>
   실제 브로커 / OMS를 연결하려면 <code>ExecutionAdapter</code>(<code>DataAdapter</code>와 같은 구조)를
@@ -255,31 +255,45 @@ chart.cancelOrderDraft()`}</code></pre>
   백엔드가 처리할 <code>bracketPlace</code> 이벤트 하나를 발생시킵니다.
 </p>
 <p>
-  실행 어댑터를 <code>brackets: 'place'</code>로 연결하면 차트는 브래킷을 어댑터에도 하나의 주문으로 보냅니다: 진입가
-  (가격이 되돌아와야 닿으면 지정가, 계속 나아가야 닿으면 스톱), 수량, 그리고 그 주문에 단 손절과 익절입니다. 어댑터가
-  받아들이면 차트는 그 주문과 함께 <code>bracketOrder</code>를 보냅니다. 어댑터가 거부하면
-  <code>command: 'bracketPlace'</code>가 담긴 <code>executionError</code>를 보냅니다. 위젯은 그때에야 "주문됨"이라고
-  알리고, 거부되었을 때는 그 이유를 알립니다. 수량이 없는 브래킷은 보내지 않습니다. 아무도 주문할 크기를 보지 못했기
-  때문입니다. 차트가 지정가 진입과 스톱 진입을 가를 가격을 갖기 전에 확정된 브래킷도 보내지 않습니다.
-  <code>executionError</code>가 <code>reason</code>(<code>'noQuantity'</code>, <code>'noPrice'</code>)을 알려 줍니다.
-  도구 모음의 화살표와 <code>startBracket</code>이 시작하는 브래킷에는 아직 수량이 없으므로 <code>'place'</code>에서는
-  보내지 않으며, 위젯이 그렇게 알립니다. <code>'place'</code>가 없으면 확정된 브래킷은 이벤트로만 남고, 위젯은 확정되었다고
-  알립니다. 따로 지정하지 않고(<code>brackets</code> 없이) 연결한 어댑터는 이벤트를 유지하며 콘솔에 한 번 경고합니다.
-  다음 메이저 버전에서는 <code>'place'</code>가 기본값이 되므로, 이벤트의 브래킷을 직접 주문하는 앱은
-  <code>brackets: 'event'</code>를 넘기세요.
+  <strong>크기.</strong> 브래킷은 그 크기로 정해지는 수량의 주문입니다. <code>{`{ quantity: 2 }`}</code>는 그 수량입니다.
+  <code>{`{ risk: 50 }`}</code>는 손절가에서 잃는 금액입니다: 수량은 50을 진입가에서 손절가까지의 거리
+  (에 <code>multiplier</code>, 즉 가격이 1 움직일 때 한 단위의 가치를 곱한 값)로 나누고 <code>quantityStep</code>으로
+  내림한 값이며, 선을 끌면 따라 바뀝니다. 수량은 진입선의 태그에 표시되고 <code>bracketPlace</code>에도 담깁니다.
+  위젯에서는 브래킷 바의 입력란에 수량을 입력합니다. 입력란은 마지막으로 입력한 수량, 없으면 시장의 거래 단위에서
+  시작합니다. <code>widget.startBracket(side, size)</code>도 크기를 받습니다: 위험 금액으로 크기를 정하는 브래킷에는
+  입력란이 없습니다. <code>bracketQuantity(bracket, size)</code>는 같은 계산을 여러분의 코드에서 쓰기 위한 것입니다.
+</p>
+<p>
+  실행 어댑터가 연결되어 있으면 차트는 확정한 브래킷을 어댑터에도 하나의 주문으로 보냅니다: 진입가
+  (가격이 진입가로 되돌아와야 하면 지정가, 더 나아가야 하면 스톱), 수량, 그리고 주문에 붙는 손절가와 익절가입니다.
+  어댑터가 받으면 차트는 그 주문과 함께 <code>bracketOrder</code>를 보냅니다. 어댑터가 거부하면
+  <code>command: 'bracketPlace'</code>인 <code>executionError</code>를 보냅니다. 위젯은 그때에만 "주문됨"이라고
+  알리며, 거부되면 이유를 알립니다. 수량이 없는 브래킷은 확정되지 않습니다. 주문할 크기를 아무도 보지 못했기 때문입니다:
+  <code>confirmBracket()</code>은 false를 반환하고, 브래킷은 수량을 받을 때까지 차트에 남습니다. 지정가 진입과
+  스톱 진입을 구분할 가격이 차트에 아직 없을 때 확정한 브래킷은 전송되지 않습니다.
+  <code>executionError</code>가 <code>reason</code>(<code>'noQuantity'</code>, <code>'noPrice'</code>)을 알려 주고,
+  위젯도 이를 알립니다. 이벤트의 브래킷을 직접 주문하는 앱은 <code>brackets: 'event'</code>로 연결합니다:
+  그러면 브래킷은 이벤트로만 남고 위젯은 확정되었다고 알립니다. 3.0 이전에는 이것이 기본값이었습니다
+  (<a href={href('/docs/migration-3')}>3.0으로 마이그레이션</a> 참고).
 </p>
 <pre><code>{`chart.startBracket('buy')          // entry defaults to the latest close
 chart.startBracket('sell', 64_800) // or pin the entry price
 
+chart.startBracket('buy', undefined, { quantity: 2 })                   // for two
+chart.startBracket('buy', undefined, { risk: 50, quantityStep: 0.001 }) // for what loses 50 at the stop
+chart.setBracketSize({ quantity: 3 })   // while it is placed
+chart.getBracket()                      // { side, entry, stopLoss, takeProfit, quantity } or null
+
 chart.on('bracketPlace', (e) => {
-  const { side, entry, stopLoss, takeProfit, riskReward } = e.payload
-  // submit to your OMS, then reflect fills back via chart.setOrders/setPositions
+  const { side, entry, stopLoss, takeProfit, quantity, riskReward } = e.payload
+  // with no adapter (or brackets: 'event'): submit to your OMS, then reflect fills back via chart.setOrders/setPositions
 })
 
-// Or let the connected adapter place it
-chart.connectExecution(broker, { brackets: 'place' })
+// The connected adapter places it
+chart.connectExecution(broker)
 chart.placesBrackets()   // true
 chart.on('bracketOrder', (e) => console.log(e.payload.order.id))
+// chart.connectExecution(broker, { brackets: 'event' })   // only the event: your code places it
 
 chart.confirmBracket()  // same as Enter
 chart.cancelBracket()   // same as Esc`}</code></pre>

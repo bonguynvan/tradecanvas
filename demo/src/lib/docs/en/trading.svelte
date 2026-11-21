@@ -126,7 +126,8 @@ chart.on('executionError', (e) => toast(e.payload.message))   // e.payload.comma
   </li>
   <li>
     <strong><code>type: 'stopLimit'</code></strong>: <code>stopPrice</code> is where it starts working and
-    <code>price</code> the limit it then works at. Dragging its line moves its <code>price</code>.
+    <code>price</code> the limit it then works at. Its line on the chart is its limit: on the paper account,
+    dragging it moves the stop by as much.
   </li>
 </ul>
 <pre><code>{`// A target and a stop for one exit: whichever fills first takes the other off
@@ -142,7 +143,8 @@ chart.placeOrderIntent({ side: 'buy', type: 'limit', price: 63_500, quantity: 1,
   comes off when the time given with <code>setMarkPrice</code> reaches its date (the clock's, with no time
   given), and one whose date has passed is refused. An <code>'ioc'</code> or <code>'fok'</code> limit fills at
   once, at the price there is, when that is within it, and is refused when it is not (<code>executionError</code>); the paper market has no size, so the two are the
-  same there. It leaves <code>'day'</code> to the app, which knows when its market's day ends.
+  same there. The widget's order ticket offers both for a limit order, and its account panel writes OCO beside
+  an order of a group and a dated order's date. It leaves <code>'day'</code> to the app, which knows when its market's day ends.
 </p>
 <p>
   <strong>One net position.</strong> By default the paper account opens a position for each filled order, a buy

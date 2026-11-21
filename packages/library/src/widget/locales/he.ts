@@ -566,6 +566,7 @@ export const HE_MESSAGES: WidgetMessages = {
   'ticket.tif.gtd': 'GTD',
   'ticket.tif.ioc': 'IOC',
   'ticket.tif.fok': 'FOK',
+  'account.oco': 'OCO',
   'ticket.value': 'שווי',
   'ticket.risk': 'סיכון',
   'ticket.reward': 'רווח',
