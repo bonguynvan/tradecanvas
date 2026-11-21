@@ -35,6 +35,12 @@ const FINANCE_CHARTS = [
   ['WaterfallChart', 'WaterfallOptions', FINANCE_TYPES, 'Steps up and down to a total: a P&L bridge.'],
   ['GaugeChart', 'GaugeOptions', FINANCE_TYPES, 'One value against coloured bands: sentiment, risk, margin use.'],
   ['SparklineChart', 'SparklineOptions', FINANCE_TYPES, "A small line with no axes: a table cell's trend."],
+  ['PayoffChart', 'PayoffOptions', FINANCE_TYPES, "What an options position makes or loses at expiry over the underlying's price, with its breakevens: a spread, a straddle, a condor."],
+  ['CurveChart', 'CurveChartOptions', FINANCE_TYPES, 'Values against a strike or a tenor, a line for each series: a volatility smile, a term structure, a yield curve.'],
+  ['BoxPlotChart', 'BoxPlotOptions', FINANCE_TYPES, "How each group's values spread, as quartiles, whiskers and outliers: returns by weekday or by strategy."],
+  ['RadarChart', 'RadarChartOptions', FINANCE_TYPES, "Several measures at once, a spoke each: a strategy's scorecard, factor exposures beside an index's."],
+  ['SunburstChart', 'SunburstOptions', FINANCE_TYPES, 'Parts of a whole and the parts inside them, a ring a level: an allocation by asset class, then sector.'],
+  ['StackedAreaChart', 'StackedAreaOptions', FINANCE_TYPES, 'Several series one on another over time: what a total is made of, or how its mix changes.'],
   ['PerformanceDashboard', 'PerformanceDashboardOptions', 'packages/library/src/finance/PerformanceDashboard.ts', "A backtest's result as a page: stats, the equity curve, drawdown and monthly returns."],
 ];
 /**

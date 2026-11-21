@@ -303,8 +303,9 @@ export type { LayoutStorage, SavedLayout, SavedLayoutSummary } from './state/lay
 export type { GridLayout, GridArea, GridShape, GridCellConfig, ChartGridOptions } from './grid/ChartGrid.js';
 
 // Finance charts
-export { SparklineChart, DepthChart, EquityCurveChart, HeatmapChart, WaterfallChart, GaugeChart, PerformanceDashboard, BarChart, DonutChart, ScatterChart, HistogramChart, CalendarChart, MatrixChart, CounterClockChart } from './finance/index.js';
-export { histogramBins, niceScale, correlationMatrix, counterClockPoints, counterClockPhase } from '@tradecanvas/core';
+export { SparklineChart, DepthChart, EquityCurveChart, HeatmapChart, WaterfallChart, GaugeChart, PerformanceDashboard, BarChart, DonutChart, ScatterChart, HistogramChart, CalendarChart, MatrixChart, CounterClockChart, PayoffChart, CurveChart, BoxPlotChart, RadarChart, SunburstChart, StackedAreaChart } from './finance/index.js';
+export { histogramBins, niceScale, correlationMatrix, counterClockPoints, counterClockPhase, optionPayoff, payoffStats, curveValueAt, boxPlotStats } from '@tradecanvas/core';
+export type { PayoffStats } from '@tradecanvas/core';
 export {
   toEquityPoints,
   computeDrawdownCurve,
@@ -322,6 +323,21 @@ export type {
 } from './finance/index.js';
 export type {
   BaseFinanceChartOptions,
+  OptionLeg,
+  PayoffOptions,
+  CurvePoint,
+  CurveSeries,
+  CurveMarker,
+  CurveChartOptions,
+  BoxPlotStats,
+  BoxPlotGroup,
+  BoxPlotLabels,
+  BoxPlotOptions,
+  RadarAxis,
+  RadarChartOptions,
+  SunburstNode,
+  SunburstOptions,
+  StackedAreaOptions,
   SparklineOptions,
   DepthChartOptions,
   EquityPoint,

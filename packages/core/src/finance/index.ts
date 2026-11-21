@@ -30,3 +30,15 @@ export { renderMatrix, computeMatrixLayout, hitMatrixCell, correlationMatrix } f
 export type { MatrixLayout, MatrixCellRect } from './MatrixRenderer.js';
 export { renderCounterClock, computeCounterClockLayout, nearestCounterClockPoint, counterClockPoints, counterClockPhase, shownCount } from './CounterClockRenderer.js';
 export type { CounterClockLayout, PlacedClockPoint } from './CounterClockRenderer.js';
+export { renderPayoff, computePayoffLayout, payoffPriceAt, optionPayoff, payoffStats } from './PayoffRenderer.js';
+export type { PayoffLayout, PayoffPoint, PayoffStats } from './PayoffRenderer.js';
+export { renderCurve, computeCurveLayout, nearestCurveX, curveValueAt } from './CurveRenderer.js';
+export type { CurveLayout, CurveLine, CurveLinePoint } from './CurveRenderer.js';
+export { renderBoxPlot, computeBoxPlotLayout, hitBox, boxPlotStats } from './BoxPlotRenderer.js';
+export type { BoxPlotLayout, BoxRect } from './BoxPlotRenderer.js';
+export { renderRadar, computeRadarLayout, hitRadarAxis } from './RadarRenderer.js';
+export type { RadarLayout, RadarSpoke, RadarShape, RadarShapePoint } from './RadarRenderer.js';
+export { renderSunburst, computeSunburstLayout, hitSunburstArc } from './SunburstRenderer.js';
+export type { SunburstLayout, SunburstArc } from './SunburstRenderer.js';
+export { renderStackedArea, computeStackedAreaLayout, hitStackedCategory } from './StackedAreaRenderer.js';
+export type { StackedAreaLayout, StackedBand } from './StackedAreaRenderer.js';

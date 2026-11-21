@@ -1,5 +1,5 @@
 // The browser audit of the finance charts: scripts/audit/finance.html draws
-// each of the fourteen and the dashboard, then the states that broke before
+// each of the twenty and the dashboard, then the states that broke before
 // (a step of zero, long labels, flat data, a book of one level, cells with no
 // number, nothing to show). In both themes at a phone, a laptop and a wide
 // screen, and at the pixel ratios where lines go soft, it checks that every
@@ -32,9 +32,9 @@ const SIZES = {
 /** Time for the charts to draw after a change. */
 const SETTLE_MS = 300;
 /** The charts with a readout, and where across them to point (a share of the width). */
-const READOUTS = { equity: 0.7, depth: 0.3, waterfall: 0.6, bar: 0.5, 'heatmap-sectors': 0.3 };
+const READOUTS = { equity: 0.7, depth: 0.3, waterfall: 0.6, bar: 0.5, 'heatmap-sectors': 0.3, payoff: 0.6, curve: 0.5, 'box-plot': 0.3, radar: 0.5, sunburst: 0.7, 'stacked-area': 0.5 };
 /** The charts that draw nothing but their background, by design. */
-const EMPTY = ['empty-waterfall', 'empty-equity', 'empty-depth'];
+const EMPTY = ['empty-waterfall', 'empty-equity', 'empty-depth', 'empty-sunburst', 'empty-radar'];
 
 function serve() {
   const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.map': 'application/json' };

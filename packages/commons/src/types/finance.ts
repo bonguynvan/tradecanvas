@@ -422,3 +422,208 @@ export interface CounterClockOptions extends BaseFinanceChartOptions {
   crosshair?: boolean;
   onPointClick?: (point: CounterClockPoint) => void;
 }
+
+/**
+ * One leg of an options position: an option bought or sold, or the underlying
+ * held beside them. An option without its `strike`, or the underlying without
+ * its `entry`, counts for nothing.
+ */
+export interface OptionLeg {
+  /** A call, a put, or the underlying itself. */
+  type: 'call' | 'put' | 'underlying';
+  /** Bought (`'long'`) or sold (`'short'`). */
+  side: 'long' | 'short';
+  /** An option's strike. */
+  strike?: number;
+  /** What one unit of the option cost, or brought in when sold. Default `0`. */
+  premium?: number;
+  /** The price the underlying was bought or sold at, for an `'underlying'` leg. */
+  entry?: number;
+  /** How many. Default `1`; `0` counts for nothing. */
+  quantity?: number;
+}
+
+export interface PayoffOptions extends BaseFinanceChartOptions {
+  /** The position's legs: what they make or lose together at expiry is the line. */
+  legs: OptionLeg[];
+  /** The units one contract is for (100 for a US stock option). Default `1`. */
+  multiplier?: number;
+  /** The underlying's price now: a marked line. */
+  spot?: number;
+  /** A word before the price now on its mark (`'Spot'`). */
+  spotLabel?: string;
+  /** The underlying's prices drawn. Default: from under the lowest strike to over the highest. */
+  range?: { min: number; max: number };
+  /** How a profit or a loss is written. */
+  valueFormat?: (value: number) => string;
+  /** How the underlying's price is written. */
+  priceFormat?: (value: number) => string;
+  /** The line and the area above zero. Default: the theme's up colour. */
+  profitColor?: string;
+  /** The line and the area below zero. Default: the theme's down colour. */
+  lossColor?: string;
+  /** Show the profit or loss at the price under the pointer. Default `true`. */
+  crosshair?: boolean;
+}
+
+export interface CurvePoint {
+  x: number;
+  y: number;
+}
+
+/** One line of a curve chart: an expiry's smile, a day's yield curve. */
+export interface CurveSeries {
+  name: string;
+  /** The line's points, in any order: drawn by rising `x`. */
+  points: CurvePoint[];
+  color?: string;
+  /** Drawn dashed: yesterday's curve beside today's. */
+  dashed?: boolean;
+}
+
+/** A labelled line at an x: the strike at the money. */
+export interface CurveMarker {
+  x: number;
+  label?: string;
+  color?: string;
+}
+
+export interface CurveChartOptions extends BaseFinanceChartOptions {
+  /** The curves: values against a strike, a tenor, a maturity. */
+  series: CurveSeries[];
+  /** Labels along x in place of the scale's own: a tenor each (`{ x: 30, label: '1M' }`). */
+  ticks?: { x: number; label: string }[];
+  /** How an x is written, without `ticks`. */
+  xFormat?: (value: number) => string;
+  valueFormat?: (value: number) => string;
+  /** Round the lines through their points, never past a value they do not reach. Default `true`. */
+  smooth?: boolean;
+  /** A dot at each point. Default `true`. */
+  showPoints?: boolean;
+  /** Labelled lines at x values. */
+  markers?: CurveMarker[];
+  /** The curves' names over the plot. Default `true` with more than one. */
+  legend?: boolean;
+  /** Show each curve's value at the x under the pointer. Default `true`. */
+  crosshair?: boolean;
+}
+
+/** A box plot's five numbers and what lies outside them. */
+export interface BoxPlotStats {
+  /** The lower whisker's end: the lowest value that is no outlier. */
+  min: number;
+  /** The first quartile: a quarter of the values are under it. */
+  q1: number;
+  median: number;
+  /** The third quartile: a quarter of the values are over it. */
+  q3: number;
+  /** The upper whisker's end: the highest value that is no outlier. */
+  max: number;
+  /** The values past the whiskers, in order. */
+  outliers: number[];
+}
+
+/** One box: a group's raw `values`, or its numbers worked out already in `stats`. */
+export interface BoxPlotGroup {
+  label: string;
+  values?: number[];
+  /** Used in place of `values` when both are given. */
+  stats?: BoxPlotStats;
+  color?: string;
+}
+
+/** The words a box plot's readout names its numbers with. */
+export interface BoxPlotLabels {
+  max: string;
+  q3: string;
+  median: string;
+  q1: string;
+  min: string;
+}
+
+export interface BoxPlotOptions extends BaseFinanceChartOptions {
+  /** A box for each group: returns by weekday, by month, by strategy. */
+  data: BoxPlotGroup[];
+  /**
+   * How far a whisker may reach past the box, in box heights (the
+   * interquartile range): values further out are outliers. Default `1.5`;
+   * `Infinity` takes the whiskers to the lowest and the highest value.
+   */
+  whiskers?: number;
+  /** A box whose median is under zero in the theme's down colour, the rest in its up colour. */
+  colorBySign?: boolean;
+  valueFormat?: (value: number) => string;
+  /** The readout's words, for another language. Default: `Max`, `Q3`, `Median`, `Q1`, `Min`. */
+  labels?: Partial<BoxPlotLabels>;
+  /** Show the hovered box's numbers. Default `true`. */
+  crosshair?: boolean;
+}
+
+/** One spoke of a radar chart. */
+export interface RadarAxis {
+  label: string;
+  /** The value at the centre. Default `0`, or the lowest value on the spoke when that is under zero. */
+  min?: number;
+  /** The value at the rim. Default: the highest value any series has on this spoke. */
+  max?: number;
+}
+
+export interface RadarChartOptions extends BaseFinanceChartOptions {
+  /** The spokes, clockwise from twelve o'clock: at least three. */
+  axes: RadarAxis[];
+  /** A shape for each series: `values[i]` is its value on `axes[i]`. */
+  series: ChartSeries[];
+  /** The rings of the grid between the centre and the rim. Default `4`. */
+  rings?: number;
+  /** Tint each shape with its colour. Default `true`. */
+  fill?: boolean;
+  /** The series' names. Default `true` with more than one. */
+  legend?: boolean;
+  valueFormat?: (value: number) => string;
+  /** Show every series' value on the spoke nearest the pointer. Default `true`. */
+  crosshair?: boolean;
+}
+
+/** A part of a whole that may have parts of its own. */
+export interface SunburstNode {
+  label: string;
+  /** Its size, when it has no children; with children it is as large as they are together. */
+  value?: number;
+  /** Default: the palette's in turn for the first ring, the parent's for the rings outside it. */
+  color?: string;
+  children?: SunburstNode[];
+  meta?: Record<string, unknown>;
+}
+
+export interface SunburstOptions extends BaseFinanceChartOptions {
+  /** The first ring's parts, clockwise from twelve o'clock; their children are the rings outside. */
+  data: SunburstNode[];
+  /** How many rings are drawn. Default: as many as the data is deep, four at most. */
+  maxDepth?: number;
+  /** The hole as a share of the radius. Default `0.3`. */
+  innerRadius?: number;
+  /** Text in the hole: a caption and a figure (`'Total'`, `'1.2B'`). */
+  centerLabel?: string;
+  centerValue?: string;
+  /** Print a part's name on it when it fits. Default `true`. */
+  showLabels?: boolean;
+  valueFormat?: (value: number) => string;
+  /** Show the hovered part's path, value and share. Default `true`. */
+  crosshair?: boolean;
+  /** `path` is the labels from the first ring down to the part. */
+  onNodeClick?: (node: SunburstNode, path: string[]) => void;
+}
+
+export interface StackedAreaOptions extends BaseFinanceChartOptions {
+  /** A label for each point along x: dates, periods. */
+  categories: string[];
+  /** The areas, the first at the bottom: `values[i]` belongs to `categories[i]`. A value under zero counts as none. */
+  series: ChartSeries[];
+  /** Each point's values as shares of their total, so the areas fill the height: how a mix changes. */
+  normalized?: boolean;
+  /** The series' names. Default `true` with more than one. */
+  legend?: boolean;
+  valueFormat?: (value: number) => string;
+  /** Show every series' value at the point under the pointer. Default `true`. */
+  crosshair?: boolean;
+}

@@ -33,6 +33,12 @@
     <tr><td><code>WaterfallChart</code></td><td>Steps from a start to an end: P&amp;L attribution, cash flows.</td></tr>
     <tr><td><code>DepthChart</code></td><td>Cumulative bids and asks of an order book.</td></tr>
     <tr><td><code>EquityCurveChart</code></td><td>An account's value over time, with drawdowns and a benchmark.</td></tr>
+    <tr><td><code>PayoffChart</code></td><td>What an options position makes or loses at expiry, over the underlying's price: a spread, a straddle, a condor.</td></tr>
+    <tr><td><code>CurveChart</code></td><td>Values against a strike or a tenor, a line for each series: a volatility smile, a term structure, a yield curve.</td></tr>
+    <tr><td><code>BoxPlotChart</code></td><td>How each group's values spread: returns by weekday, by month, by strategy.</td></tr>
+    <tr><td><code>RadarChart</code></td><td>Several measures at once, a spoke each: a strategy's scorecard beside a benchmark's.</td></tr>
+    <tr><td><code>SunburstChart</code></td><td>Parts of a whole and the parts inside them: an allocation by asset class, then sector, then holding.</td></tr>
+    <tr><td><code>StackedAreaChart</code></td><td>Several series one on another over time: what a total is made of, or how its mix changes.</td></tr>
     <tr><td><code>PerformanceDashboard</code></td><td>A strategy report from a backtest: stats, equity, drawdown and monthly returns.</td></tr>
   </tbody>
 </table>
@@ -254,6 +260,140 @@ new EquityCurveChart(el, { data: equity, benchmark, drawdown: true })`}</code></
   ],
 })
 chart.setOptions({ levels: [{ value: 42_000, label: 'CHoCH' }] })`}</code></pre>
+
+<h2>Option payoff</h2>
+<p>
+  <code>PayoffChart</code> draws what an options position makes or loses at expiry, over the underlying's price:
+  the profit tinted above zero and the loss below it, a dashed line at each breakeven and at <code>spot</code>,
+  the price now. A leg is a <code>'call'</code> or a <code>'put'</code>, bought (<code>'long'</code>) or sold
+  (<code>'short'</code>), with its <code>strike</code> and the <code>premium</code> of one unit; an
+  <code>'underlying'</code> leg is the underlying held beside them, at its <code>entry</code>.
+  <code>multiplier</code> is the units a contract is for. The prices drawn are around the strikes, or the
+  <code>range</code> given. The pointer reads the profit or loss at its price.
+</p>
+<pre><code>{`import { PayoffChart, payoffStats, optionPayoff } from '@tradecanvas/chart'
+
+const condor = [
+  { type: 'put', side: 'long', strike: 90, premium: 1 },
+  { type: 'put', side: 'short', strike: 95, premium: 2.5 },
+  { type: 'call', side: 'short', strike: 105, premium: 2.5 },
+  { type: 'call', side: 'long', strike: 110, premium: 1 },
+]
+const chart = new PayoffChart(el, { legs: condor, multiplier: 100, spot: 101.4, spotLabel: 'Spot' })
+chart.update(otherLegs)
+
+payoffStats(condor, 100)    // { maxProfit: 300, maxLoss: -200, breakevens: [92, 108] }
+optionPayoff(condor, 100, 100)   // 300: what the legs make with the underlying at 100`}</code></pre>
+<p>
+  <code>payoffStats</code> gives the most the legs make and the most they lose at expiry
+  (<code>null</code> where there is no limit: a call bought, a call sold alone) and the prices where they break
+  even. They are sums at expiry: no option is priced before it, so there is no curve for today. A leg without
+  its strike, or the underlying without its entry, counts for nothing.
+</p>
+
+<h2>Curves: a volatility smile, a term structure</h2>
+<p>
+  <code>CurveChart</code> draws values against a strike, a tenor or a maturity, a line for each series. The
+  lines are rounded through their points without passing a value they do not reach
+  (<code>smooth: false</code> joins them straight), a series with <code>dashed</code> is yesterday's beside
+  today's, and <code>markers</code> are labelled lines at an x. With <code>ticks</code> the x axis is
+  named by you, a tenor at each number of days. The pointer snaps to the nearest x that has a quote and reads
+  every curve there, along the line as it is drawn. <code>curveValueAt(points, x)</code> reads a curve in code,
+  straight between its points, or along the rounded line with <code>true</code> as its third argument.
+</p>
+<pre><code>{`import { CurveChart } from '@tradecanvas/chart'
+
+// A smile: implied volatility against the strike, a line an expiry.
+new CurveChart(el, {
+  series: [
+    { name: '1M', points: [{ x: 90, y: 31 }, { x: 100, y: 24 }, { x: 110, y: 27 }] },
+    { name: '3M', points: [{ x: 90, y: 28 }, { x: 100, y: 25 }, { x: 110, y: 26 }] },
+  ],
+  markers: [{ x: 101.4, label: 'ATM' }],
+  valueFormat: (v) => v.toFixed(1) + '%',
+})
+
+// A term structure: tenors along x, in days.
+new CurveChart(el, {
+  series: [
+    { name: 'Today', points: [{ x: 30, y: 26 }, { x: 90, y: 25 }, { x: 365, y: 27 }] },
+    { name: 'A week ago', points: [{ x: 30, y: 24 }, { x: 90, y: 25 }, { x: 365, y: 26 }], dashed: true },
+  ],
+  ticks: [{ x: 30, label: '1M' }, { x: 90, label: '3M' }, { x: 365, label: '1Y' }],
+})`}</code></pre>
+
+<h2>Box plot</h2>
+<p>
+  <code>BoxPlotChart</code> shows how each group's values spread: a box from the first quartile to the third
+  with a line at the median, whiskers to the furthest values within <code>whiskers</code> box heights of the
+  box (1.5 when left out; <code>Infinity</code> for the lowest and the highest), and a ring for each value
+  further out. A group gives its raw <code>values</code>, or its numbers in <code>stats</code> when they were
+  worked out elsewhere. <code>boxPlotStats(values)</code> is the same working out in code, and
+  <code>labels</code> puts the readout's words in another language.
+</p>
+<pre><code>{`import { BoxPlotChart, boxPlotStats } from '@tradecanvas/chart'
+
+new BoxPlotChart(el, {
+  data: [{ label: 'Mon', values: mondayReturns }, { label: 'Tue', values: tuesdayReturns }],
+  colorBySign: true,                     // by each box's median
+  valueFormat: (v) => v.toFixed(1) + '%',
+})
+
+boxPlotStats([1, 2, 3, 4, 5, 6, 7, 8, 9, 100])
+// { min: 1, q1: 3.25, median: 5.5, q3: 7.75, max: 9, outliers: [100] }`}</code></pre>
+
+<h2>Radar</h2>
+<p>
+  <code>RadarChart</code> puts several measures on spokes around a centre, clockwise from twelve o'clock, and
+  joins each series' values into a shape. A spoke runs from its <code>min</code> at the centre (0 when left
+  out, or the lowest value on it when that is under zero) to its <code>max</code> at the rim, the highest value
+  on it when none is given: give each spoke its
+  own when the measures differ in size. It needs three spokes. The pointer reads every series on the nearest
+  spoke.
+</p>
+<pre><code>{`import { RadarChart } from '@tradecanvas/chart'
+
+new RadarChart(el, {
+  axes: [{ label: 'Sharpe', max: 3 }, { label: 'Sortino', max: 3 }, { label: 'Calmar', max: 3 }, { label: 'Win rate', max: 100 }],
+  series: [{ name: 'Strategy', values: [1.8, 2.4, 1.5, 58] }, { name: 'Benchmark', values: [1.0, 1.3, 0.7, 51] }],
+})`}</code></pre>
+
+<h2>Sunburst</h2>
+<p>
+  <code>SunburstChart</code> draws parts of a whole and the parts inside them, a ring a level. A part with
+  <code>children</code> is as large as they are together; one without takes its <code>value</code>. The first
+  ring takes the palette's colours and each ring outside it its parent's, paler. Four rings are drawn at most
+  (<code>maxDepth</code> for fewer or more), <code>innerRadius: 0</code> closes the hole, and
+  <code>centerLabel</code> and <code>centerValue</code> are written in it. A click gives the part and the
+  labels down to it. Names are written along their rings where they fit.
+</p>
+<pre><code>{`import { SunburstChart } from '@tradecanvas/chart'
+
+new SunburstChart(el, {
+  data: [
+    { label: 'Stocks', children: [{ label: 'Banks', value: 22 }, { label: 'Technology', value: 14 }] },
+    { label: 'Bonds', value: 23 },
+    { label: 'Cash', value: 18 },
+  ],
+  centerLabel: 'Total', centerValue: '1.2B',
+  onNodeClick: (node, path) => openHoldings(path),   // ['Stocks', 'Banks']
+})`}</code></pre>
+
+<h2>Stacked area</h2>
+<p>
+  <code>StackedAreaChart</code> stacks several series over the same points, the first at the bottom: what a
+  total is made of over time. With <code>normalized</code> each point's values are shares of their total and
+  the areas fill the height: how a mix changes. A value under zero counts as none. The pointer reads every
+  series and their total at the nearest point.
+</p>
+<pre><code>{`import { StackedAreaChart } from '@tradecanvas/chart'
+
+const chart = new StackedAreaChart(el, {
+  categories: ['Jan', 'Feb', 'Mar', 'Apr'],
+  series: [{ name: 'Stocks', values: [40, 44, 47, 52] }, { name: 'Bonds', values: [30, 29, 27, 25] }, { name: 'Cash', values: [30, 27, 26, 23] }],
+  normalized: true,
+})
+chart.update(nextSeries, nextCategories)`}</code></pre>
 
 <h2>Performance dashboard</h2>
 <p>
