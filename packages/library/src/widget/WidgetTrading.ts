@@ -3,6 +3,7 @@ import { WidgetOrderTicket, type OrderTicketStart } from './WidgetOrderTicket.js
 import type { OrderTicketRules } from './orderTicket.js';
 import { WidgetBracketBar } from './WidgetBracketBar.js';
 import { WidgetDepthLadder } from './WidgetDepthLadder.js';
+import type { WidgetQuoteButtons } from './WidgetQuoteButtons.js';
 import type { DepthData } from '@tradecanvas/commons';
 import { stepDecimals } from '@tradecanvas/commons';
 import { fill, type MessageKey } from './i18n.js';
@@ -40,6 +41,39 @@ export class WidgetTrading {
   private bracketQuantity: number | null = null;
 
   depthLadder: WidgetDepthLadder | null = null;
+
+  /** Sell and Buy on the chart, under its legend. */
+  quoteButtons: WidgetQuoteButtons | null = null;
+
+  /** The activity log as last read, and whether something was logged since: it is read again only then. */
+  private log: ReturnType<TradingHost['chart']['getActivityLog']> = [];
+  private logStale = true;
+
+  /** Something the log records happened: the panel reads it again on its next frame. */
+  markLogStale(): void {
+    this.logStale = true;
+  }
+
+  /**
+   * The Sell and Buy buttons with the prices now: the best bid and ask, or
+   * the last price for both where the feed gives none or one side only, and on a replay,
+   * whose prices are not the live quote's. Shown while an execution adapter
+   * is connected to the chart (there is a broker to send to), and the order
+   * ticket and the buttons are switched on. Returns whether they are shown.
+   */
+  refreshQuote(): boolean {
+    const buttons = this.quoteButtons;
+    if (!buttons) return false;
+    const shown = this.host.featureState.orderTicket && this.host.featureState.tradeButtons && this.host.chart.getExecutionAdapter() != null;
+    buttons.setShown(shown);
+    if (!shown) return false;
+    const last = this.host.chart.getData().at(-1)?.close ?? null;
+    const live = this.host.chart.isReplayActive() ? null : this.host.chart.getBidAsk();
+    // Both sides or neither: one side beside the last price is no spread, and a bid is no price to buy at.
+    const quoted = live?.bid !== undefined && live.ask !== undefined;
+    buttons.update(quoted ? { bid: live.bid!, ask: live.ask! } : { bid: last, ask: last });
+    return true;
+  }
 
   /** Open or close the account panel (no argument: the other way from now). */
   toggleAccountPanel(open?: boolean): void {
@@ -81,7 +115,7 @@ export class WidgetTrading {
 
   /** Redraw the account panel once a frame at most (ticks, fills and order changes come in bursts). */
   refreshAccountSoon(): void {
-    if (this.accountFrame || !this.accountPanel) return;
+    if (this.accountFrame || (!this.accountPanel && !this.quoteButtons)) return;
     this.accountFrame = requestAnimationFrame(() => {
       this.accountFrame = 0;
       if (!this.host.destroyed) this.refreshAccount();
@@ -89,6 +123,7 @@ export class WidgetTrading {
   }
 
   refreshAccount(): void {
+    this.refreshQuote();
     if (!this.accountPanel) return;
     const data = this.host.chart.getData();
     const price = data.length > 0 ? data[data.length - 1].close : null;
@@ -99,9 +134,19 @@ export class WidgetTrading {
       price,
       realisedPnl: this.host.chart.getRealisedPnl(),
       account: this.host.chart.getAccount(),
+      log: this.activityLog(),
       multiplier: this.host.chart.getMarket()?.contractMultiplier,
     });
     this.orderTicket?.setLastPrice(price);
+  }
+
+  /** The activity log, read from the chart only when something was logged since the last read. */
+  private activityLog(): ReturnType<TradingHost['chart']['getActivityLog']> {
+    if (this.logStale) {
+      this.log = this.host.chart.getActivityLog();
+      this.logStale = false;
+    }
+    return this.log;
   }
 
   /** Ask for a limit or stop order at `price` (one unit), and say so. */

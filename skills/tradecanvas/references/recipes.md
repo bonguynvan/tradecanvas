@@ -345,6 +345,8 @@ chart.placeOrderIntent({ side: 'sell', type: 'stop', price: 63_000, stopPrice: 6
 // new PaperExecutionAdapter({ balance: 10_000, leverage: 10, commission: { rate: 0.0004 } }) keeps its money:
 // chart.getAccount() gives { balance, equity, marginUsed, freeMargin, … }, 'accountChange' follows it,
 // and an order the free margin cannot carry is refused (executionError)
+// chart.getActivityLog(): each order placed, moved, cancelled or filled and what was refused, oldest first
+// (the widget's account panel shows it in its Log tab, and Sell and Buy buttons under the legend while an adapter is connected)
 ```
 
 Switching the interval mid-replay keeps the time: the replay waits for the new

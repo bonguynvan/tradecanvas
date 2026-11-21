@@ -3259,6 +3259,58 @@
   white-space: nowrap;
   text-overflow: ellipsis;
 }
+/* Sell and Buy under the chart's legend: each its side's colour, with the price it would trade at. */
+/* Only the two buttons take the pointer: a drag or a drawing that starts between them is the chart's. */
+.tcw-quote-buttons {
+  position: absolute;
+  z-index: 6;
+  pointer-events: none;
+  max-width: calc(100% - 96px);
+  overflow: hidden;
+  display: flex;
+  align-items: stretch;
+  gap: var(--tcw-space-2);
+  font-family: var(--tcw-font-mono);
+  font-size: var(--tcw-font-size-sm);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  white-space: nowrap;
+}
+.tcw-quote-buttons[hidden] { display: none; }
+.tcw-quote-btn {
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--tcw-space-3);
+  height: 24px;
+  padding-inline: var(--tcw-space-4);
+  border: var(--tcw-border-w) solid var(--tcw-side);
+  border-radius: var(--tcw-control-radius);
+  background: color-mix(in srgb, var(--tcw-side) 12%, var(--tcw-bg));
+  color: var(--tcw-side);
+  font: inherit;
+  cursor: pointer;
+  transition: background var(--tcw-dur-fast) var(--tcw-ease), color var(--tcw-dur-fast) var(--tcw-ease);
+}
+.tcw-quote-sell { --tcw-side: var(--tcw-red); }
+.tcw-quote-buy { --tcw-side: var(--tcw-green); }
+.tcw-quote-name { font-family: var(--tcw-font); font-weight: var(--tcw-weight-strong); }
+.tcw-quote-btn:hover:not(:disabled) { background: var(--tcw-side); color: var(--tcw-bg); }
+.tcw-quote-btn:focus-visible { outline: none; box-shadow: var(--tcw-ring); }
+.tcw-quote-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.tcw-quote-spread {
+  display: inline-flex;
+  align-items: center;
+  padding-inline: var(--tcw-space-2);
+  color: var(--tcw-text-muted);
+}
+.tcw-quote-spread[hidden] { display: none; }
+/* A narrow widget has room for the two prices, not for what is between them. */
+.tcw-root[data-tcw-narrow] .tcw-quote-spread { display: none; }
+@media (forced-colors: active) {
+  .tcw-quote-btn { border-color: ButtonText; }
+  .tcw-quote-btn:focus-visible { outline: 2px solid Highlight; }
+}
 /* The quantity: narrower than a dialog's stepper, as the bar has a phone's width to fit. */
 .tcw-bracket-quantity { flex: none; }
 .tcw-bracket-quantity[hidden] { display: none; }

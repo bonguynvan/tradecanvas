@@ -52,6 +52,8 @@ export type ChartEventType =
   | 'ordersChange'
   | 'positionsChange'
   | 'accountChange'
+  | 'executionChange'
+  | 'bidAskChange'
   | 'executionError'
   | 'bracketPlace'
   /** A confirmed bracket the execution adapter took, as the order it placed. */
@@ -454,6 +456,10 @@ export interface ChartEventMap {
   ordersChange: { orders: TradingOrder[] };
   /** The positions on the chart changed (`setPositions`, or the execution adapter): all of them. */
   positionsChange: { positions: TradingPosition[] };
+  /** The best bid and ask marked on the chart changed (`setBidAsk`, or the feed's quotes); null: taken off. */
+  bidAskChange: { bid?: number; ask?: number } | null;
+  /** An execution adapter was connected to the chart, or the one it had was taken away. */
+  executionChange: { connected: boolean };
   /** The account's money changed (the execution adapter's `account`); null once no adapter keeps one. */
   accountChange: { account: AccountSummary | null };
   /** The reverse button on a position's tag was pressed. */

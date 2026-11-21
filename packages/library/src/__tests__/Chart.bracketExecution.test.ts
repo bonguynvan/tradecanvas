@@ -195,3 +195,77 @@ describe('Chart: what it hands out of the account', () => {
     expect(chart.getAccount()!.balance).toBe(1_000);
   });
 });
+
+describe('Chart: the trading activity log', () => {
+  const kinds = () => chart.getActivityLog().map((entry) => entry.kind);
+
+  it('logs an order through its life with the adapter: placed, moved, cancelled', async () => {
+    const broker = new PaperExecutionAdapter({ markPrice: 100 });
+    chart.connectExecution(broker);
+    const order = await broker.placeOrder({ side: 'buy', type: 'limit', price: 95, quantity: 2 });
+    await broker.modifyOrder({ orderId: order.id, newPrice: 96 });
+    await broker.cancelOrder({ orderId: order.id });
+    expect(kinds()).toEqual(['placed', 'moved', 'cancelled']);
+    expect(chart.getActivityLog()[1]).toEqual(expect.objectContaining({ orderId: order.id, side: 'buy', type: 'limit', quantity: 2, price: 96 }));
+  });
+
+  it('logs a fill as a fill, not as its order cancelled, and a close with what it made', async () => {
+    const broker = new PaperExecutionAdapter({ markPrice: 100 });
+    chart.connectExecution(broker);
+    await broker.placeOrder({ side: 'buy', type: 'limit', price: 95, quantity: 1 });
+    broker.setMarkPrice(94);
+    broker.setMarkPrice(99);
+    await broker.closePosition({ positionId: broker.getPositions()[0].id });
+    expect(kinds()).toEqual(['placed', 'filled', 'filled']);
+    expect(chart.getActivityLog()[2]).toEqual(expect.objectContaining({ reason: 'close', pnl: 4, price: 99 }));
+  });
+
+  it('logs what the broker refused, in its words', async () => {
+    chart.connectExecution(new PaperExecutionAdapter({ markPrice: 100, balance: 50 }));
+    chart.placeOrderIntent({ side: 'buy', type: 'market', price: 100, quantity: 1 });
+    await flush();
+    const log = chart.getActivityLog();
+    expect(log).toHaveLength(1);
+    expect(log[0].kind).toBe('rejected');
+    expect(log[0].message).toMatch(/margin/i);
+  });
+
+  it('logs orders and fills an app gives it itself, with no adapter', () => {
+    chart.setOrders([]);
+    chart.setOrders([{ id: 'a', side: 'sell', type: 'limit', price: 110, quantity: 1 }]);
+    chart.addFill({ orderId: 'a', side: 'sell', price: 110, quantity: 1, time: 5, reason: 'order' });
+    chart.setOrders([]);
+    expect(kinds()).toEqual(['placed', 'filled']);
+  });
+
+  it('starts again empty when cleared', async () => {
+    const broker = new PaperExecutionAdapter({ markPrice: 100 });
+    chart.connectExecution(broker);
+    await broker.placeOrder({ side: 'buy', type: 'limit', price: 95, quantity: 1 });
+    chart.clearActivityLog();
+    expect(chart.getActivityLog()).toEqual([]);
+  });
+});
+
+describe('Chart: the activity log across brokers and symbols', () => {
+  const kinds = () => chart.getActivityLog().map((entry) => entry.kind);
+
+  it('does not call one broker’s orders cancelled when another is connected', async () => {
+    const first = new PaperExecutionAdapter({ markPrice: 100 });
+    chart.connectExecution(first);
+    await first.placeOrder({ side: 'buy', type: 'limit', price: 95, quantity: 1 });
+    const second = new PaperExecutionAdapter({ markPrice: 100 });
+    chart.connectExecution(second);
+    expect(kinds()).toEqual(['placed']);
+    await second.placeOrder({ side: 'sell', type: 'limit', price: 105, quantity: 1 });
+    expect(kinds()).toEqual(['placed', 'placed']);
+  });
+
+  it('says when the bid and the ask change, for what quotes them', () => {
+    const quotes: unknown[] = [];
+    chart.on('bidAskChange', (e) => quotes.push(e.payload));
+    chart.setBidAsk({ bid: 99, ask: 101 });
+    chart.setBidAsk(null);
+    expect(quotes).toEqual([{ bid: 99, ask: 101 }, null]);
+  });
+});
