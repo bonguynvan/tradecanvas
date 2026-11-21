@@ -10,6 +10,7 @@ import {
   canvasMeasure,
   drawTooltip,
   drawValueAxis,
+  extent,
   fitText,
   fontOf,
   niceScale,
@@ -66,8 +67,11 @@ export function boxPlotStats(values: readonly number[], whiskers = DEFAULT_WHISK
 /** A group's numbers: the ones given when they are all numbers, else worked out from its values. */
 function statsOf(group: BoxPlotGroup, whiskers: number | undefined): BoxPlotStats | null {
   const given = group.stats;
-  if (given && [given.min, given.q1, given.median, given.q3, given.max].every((value) => Number.isFinite(value))) {
-    return { ...given, outliers: (given.outliers ?? []).filter((value) => Number.isFinite(value)) };
+  const five = given ? [given.min, given.q1, given.median, given.q3, given.max] : [];
+  if (given && five.every((value) => Number.isFinite(value))) {
+    // In order, whichever names they came under: a box is drawn from the second to the fourth.
+    const [min, q1, median, q3, max] = five.sort((a, b) => a - b);
+    return { min, q1, median, q3, max, outliers: (given.outliers ?? []).filter((value) => Number.isFinite(value)) };
   }
   return boxPlotStats(group.values ?? [], whiskers);
 }
@@ -102,8 +106,15 @@ export interface BoxPlotLayout {
 /** A box for each group over one value axis, for a chart `width` × `height`. */
 export function computeBoxPlotLayout(options: BoxPlotOptions, width: number, height: number, theme: Theme, measure: Measure): BoxPlotLayout {
   const groups = options.data.map((group) => ({ group, stats: statsOf(group, options.whiskers) }));
-  const values = groups.flatMap(({ stats }) => (stats ? [stats.min, stats.max, ...stats.outliers] : []));
-  const yScale = values.length > 0 ? niceScale(Math.min(...values), Math.max(...values), Math.max(2, Math.floor(height / 60))) : niceScale(0, 1);
+  // Every whisker's end and every outlier: what the value axis has to hold.
+  const drawn: number[] = [];
+  for (const { stats } of groups) {
+    if (!stats) continue;
+    drawn.push(stats.min, stats.max);
+    for (const outlier of stats.outliers) drawn.push(outlier);
+  }
+  const reach = extent(drawn);
+  const yScale = reach ? niceScale(reach.min, reach.max, Math.max(2, Math.floor(height / 60))) : niceScale(0, 1);
   const format = options.valueFormat ?? axisFormat(yScale, options.locale);
   const tickWidth = Math.max(0, ...yScale.ticks.map((tick) => measure(format(tick), LABEL_SIZE)));
   const left = CHART_PAD + tickWidth + AXIS_GAP;

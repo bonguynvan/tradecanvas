@@ -11,6 +11,7 @@ import {
   drawTooltip,
   drawTopMarks,
   drawValueAxis,
+  extent,
   niceScale,
   numberFormat,
   readoutFormat,
@@ -28,40 +29,51 @@ const FILL_ALPHA = 0.16;
 const EPSILON = 1e-9;
 
 const finite = (value: number | undefined): value is number => typeof value === 'number' && Number.isFinite(value);
-const sizeOf = (leg: OptionLeg) => (finite(leg.quantity) && leg.quantity > 0 ? leg.quantity : 1) * (leg.side === 'short' ? -1 : 1);
+/** How many of a leg, signed: under zero for one sold. A quantity that is no number, or under zero, is one. */
+const sizeOf = (leg: OptionLeg) => (finite(leg.quantity) && leg.quantity >= 0 ? leg.quantity : 1) * (leg.side === 'short' ? -1 : 1);
+
+/** The legs that can be priced: an option with its strike, the underlying with its entry. Another counts for nothing. */
+function priced(legs: readonly OptionLeg[]): OptionLeg[] {
+  return legs.filter((leg) => (leg.type === 'underlying' ? finite(leg.entry) : finite(leg.strike) && leg.strike >= 0));
+}
 
 /**
- * What one leg makes or loses at expiry with the underlying at `price`, for
- * one unit: a call or a put's worth there less the premium paid (the other
- * way for one sold), or the underlying's move from its entry.
+ * What one priced leg makes or loses at expiry with the underlying at
+ * `price`, for one unit: a call or a put's worth there less the premium paid
+ * (the other way for one sold), or the underlying's move from its entry.
  */
 function legPayoff(leg: OptionLeg, price: number): number {
   const size = sizeOf(leg);
-  if (leg.type === 'underlying') return (price - (finite(leg.entry) ? leg.entry : 0)) * size;
-  const strike = finite(leg.strike) ? leg.strike : 0;
+  if (leg.type === 'underlying') return (price - (leg.entry ?? 0)) * size;
+  const strike = leg.strike ?? 0;
   const worth = leg.type === 'call' ? Math.max(0, price - strike) : Math.max(0, strike - price);
   return (worth - (finite(leg.premium) ? leg.premium : 0)) * size;
 }
 
-/** What the legs together make or lose at expiry with the underlying at `price`: each leg's, times `multiplier` (the units a contract is for). */
+const unitsOf = (multiplier: number | undefined) => (finite(multiplier) && multiplier > 0 ? multiplier : 1);
+
+/**
+ * What the legs together make or lose at expiry with the underlying at
+ * `price`: each leg's, times `multiplier` (the units a contract is for). A
+ * leg without its strike, or the underlying without its entry, counts for nothing.
+ */
 export function optionPayoff(legs: readonly OptionLeg[], price: number, multiplier = 1): number {
-  const each = finite(multiplier) && multiplier > 0 ? multiplier : 1;
-  return legs.reduce((sum, leg) => sum + legPayoff(leg, price), 0) * each;
+  return priced(legs).reduce((sum, leg) => sum + legPayoff(leg, price), 0) * unitsOf(multiplier);
 }
 
 /** The prices where the payoff's line bends: the options' strikes, in order, each once. */
 function kinks(legs: readonly OptionLeg[]): number[] {
-  const strikes = legs.filter((leg) => leg.type !== 'underlying' && finite(leg.strike) && leg.strike > 0).map((leg) => leg.strike as number);
+  const strikes = priced(legs).filter((leg) => leg.type !== 'underlying' && (leg.strike ?? 0) > 0).map((leg) => leg.strike as number);
   return [...new Set(strikes)].sort((a, b) => a - b);
 }
 
 /** How the payoff changes for a move of one in the price, past the highest strike: the calls and the underlying. */
 function slopeAbove(legs: readonly OptionLeg[]): number {
-  return legs.reduce((sum, leg) => sum + (leg.type === 'put' ? 0 : sizeOf(leg)), 0);
+  return priced(legs).reduce((sum, leg) => sum + (leg.type === 'put' ? 0 : sizeOf(leg)), 0);
 }
 
 export interface PayoffStats {
-  /** The most the legs can make at expiry; null: no limit. */
+  /** The most the legs can make at expiry (0 when every price is a loss); null: no limit. */
   maxProfit: number | null;
   /** The most they can lose, as a negative sum (0 when they cannot lose); null: no limit. */
   maxLoss: number | null;
@@ -76,28 +88,32 @@ export interface PayoffStats {
  * is not flat has no limit.
  */
 export function payoffStats(legs: readonly OptionLeg[], multiplier = 1): PayoffStats {
-  if (legs.length === 0) return { maxProfit: 0, maxLoss: 0, breakevens: [] };
+  if (priced(legs).length === 0) return { maxProfit: 0, maxLoss: 0, breakevens: [] };
   const at = [0, ...kinks(legs)];
   const values = at.map((price) => optionPayoff(legs, price, multiplier));
   const rising = slopeAbove(legs);
+  const range = extent(values) ?? { min: 0, max: 0 };
+  // Nothing: by the size of the sums themselves, which a small multiplier makes small.
+  const nothing = EPSILON * Math.max(Math.abs(range.min), Math.abs(range.max));
+  const isNothing = (value: number) => Math.abs(value) <= nothing;
   const breakevens: number[] = [];
   for (let i = 0; i < at.length; i++) {
     const value = values[i];
-    if (Math.abs(value) <= EPSILON) {
+    if (isNothing(value)) {
       // A stretch at zero is no one price: only where the line comes to zero from a side.
       const before = i > 0 ? values[i - 1] : value;
-      const after = i < at.length - 1 ? values[i + 1] : rising;
-      if (Math.abs(before) > EPSILON || Math.abs(after) > EPSILON) breakevens.push(at[i]);
-    } else if (i < at.length - 1 && value * values[i + 1] < -EPSILON * EPSILON && Math.abs(values[i + 1]) > EPSILON) {
+      const leaves = i < at.length - 1 ? !isNothing(values[i + 1]) : Math.abs(rising) > EPSILON;
+      if (!isNothing(before) || leaves) breakevens.push(at[i]);
+    } else if (i < at.length - 1 && !isNothing(values[i + 1]) && value * values[i + 1] < 0) {
       breakevens.push(at[i] + ((at[i + 1] - at[i]) * -value) / (values[i + 1] - value));
     }
   }
   // Past the highest strike the line runs on at its slope: it may cross zero once more.
   const last = values[values.length - 1];
-  if (Math.abs(rising) > EPSILON && Math.abs(last) > EPSILON && last * rising < 0) breakevens.push(at[at.length - 1] - last / (rising * (finite(multiplier) && multiplier > 0 ? multiplier : 1)));
+  if (Math.abs(rising) > EPSILON && !isNothing(last) && last * rising < 0) breakevens.push(at[at.length - 1] - last / (rising * unitsOf(multiplier)));
   return {
-    maxProfit: rising > EPSILON ? null : Math.max(...values),
-    maxLoss: rising < -EPSILON ? null : Math.min(0, ...values),
+    maxProfit: rising > EPSILON ? null : Math.max(0, range.max),
+    maxLoss: rising < -EPSILON ? null : Math.min(0, range.min),
     breakevens: [...new Set(breakevens.map((price) => Number(price.toPrecision(12))))].sort((a, b) => a - b),
   };
 }
@@ -120,18 +136,18 @@ export interface PayoffLayout {
   stats: PayoffStats;
 }
 
-/** The prices drawn: the range given, else from under the lowest strike (or the entry, or the price now) to over the highest. */
+/** The prices drawn: the range given, else from under the lowest strike (or the entry, or the price now) to over the highest. Never under zero. */
 function priceRange(options: PayoffOptions): { min: number; max: number } {
   const given = options.range;
-  if (given && finite(given.min) && finite(given.max) && given.max > given.min) return { min: Math.max(0, given.min), max: given.max };
-  const around = [
+  if (given && finite(given.min) && finite(given.max) && given.max > Math.max(0, given.min)) return { min: Math.max(0, given.min), max: given.max };
+  const around = extent([
     ...kinks(options.legs),
-    ...options.legs.filter((leg) => leg.type === 'underlying' && finite(leg.entry)).map((leg) => leg.entry as number),
+    ...priced(options.legs).filter((leg) => leg.type === 'underlying').map((leg) => leg.entry as number),
     ...(finite(options.spot) ? [options.spot] : []),
-  ];
-  if (around.length === 0) return { min: 0, max: 1 };
-  const lo = Math.min(...around);
-  const hi = Math.max(...around);
+  ]);
+  // Nothing to go by, or nothing above zero: any prices will do.
+  if (!around || around.max <= 0) return { min: 0, max: 1 };
+  const { min: lo, max: hi } = around;
   const margin = Math.max(hi - lo, hi * AUTO_MARGIN) * (hi > lo ? 0.5 : 1);
   return { min: Math.max(0, lo - margin), max: hi + margin };
 }
@@ -143,7 +159,8 @@ export function computePayoffLayout(options: PayoffOptions, width: number, heigh
   const xScale = niceScale(range.min, range.max, Math.max(2, Math.floor(width / 110)));
   const prices = [xScale.min, ...kinks(legs).filter((k) => k > xScale.min && k < xScale.max), xScale.max];
   const values = prices.map((price) => optionPayoff(legs, price, multiplier));
-  const yScale = niceScale(Math.min(0, ...values), Math.max(0, ...values), Math.max(2, Math.floor(height / 60)));
+  const reach = extent(values) ?? { min: 0, max: 0 };
+  const yScale = niceScale(Math.min(0, reach.min), Math.max(0, reach.max), Math.max(2, Math.floor(height / 60)));
   const yFormat = options.valueFormat ?? axisFormat(yScale, options.locale);
   const xFormat = options.priceFormat ?? axisFormat(xScale, options.locale);
   const tickWidth = Math.max(0, ...yScale.ticks.map((tick) => measure(yFormat(tick), LABEL_SIZE)));

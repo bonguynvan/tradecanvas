@@ -11,6 +11,7 @@ import {
   drawLegend,
   drawTooltip,
   drawValueAxis,
+  extent,
   fontOf,
   layoutLegend,
   niceScale,
@@ -55,6 +56,8 @@ export interface StackedAreaLayout {
   /** What the series count together at each point. */
   totals: number[];
   normalized: boolean;
+  /** Every which label is written along x: 1 when they all fit, 2 for every second… */
+  labelEvery: number;
   legend: LegendLayout | null;
 }
 
@@ -67,9 +70,11 @@ export function computeStackedAreaLayout(options: StackedAreaOptions, width: num
   const normalized = options.normalized === true;
   const raws = series.map((s) => categories.map((_, i) => counted(s.values[i])));
   const totals = categories.map((_, i) => raws.reduce((sum, raw) => sum + raw[i], 0));
-  const yScale = normalized ? SHARE_SCALE : niceScale(0, Math.max(1, ...totals), Math.max(2, Math.floor(height / 60)));
+  // To the largest total, whatever its size: only nothing at all needs a scale of its own.
+  const most = extent(totals)?.max ?? 0;
+  const yScale = normalized ? SHARE_SCALE : niceScale(0, most > 0 ? most : 1, Math.max(2, Math.floor(height / 60)));
   const format = normalized ? percentFormat(options.locale) : (options.valueFormat ?? axisFormat(yScale, options.locale));
-  const legend = options.legend !== false && series.length > 0
+  const legend = (options.legend ?? series.length > 1) && series.length > 0
     ? layoutLegend(series.map((s, i) => ({ label: s.name, color: seriesColor(i, s.color) })), width - CHART_PAD * 2, measure)
     : null;
   const tickWidth = Math.max(0, ...yScale.ticks.map((tick) => measure(format(tick), LABEL_SIZE)));
@@ -90,16 +95,19 @@ export function computeStackedAreaLayout(options: StackedAreaOptions, width: num
     lower = upper;
     return band;
   });
-  return { plot, yScale, xs, bands, totals, normalized, legend };
+  // Every label when they fit side by side, else every second, every third…
+  const widest = (extent(categories.map((label) => measure(label, LABEL_SIZE)))?.max ?? 0) + LABEL_SPACING;
+  const spacing = count > 1 ? plot.width / (count - 1) : plot.width;
+  const labelEvery = Math.max(1, Math.ceil(widest / Math.max(Number.EPSILON, spacing)));
+  return { plot, yScale, xs, bands, totals, normalized, labelEvery, legend };
 }
 
 /** The point nearest the pointer's x, inside the plot; its index. */
 export function hitStackedCategory(layout: StackedAreaLayout, x: number, y: number): number | null {
   const { plot, xs } = layout;
   if (xs.length === 0 || x < plot.x || x > plot.x + plot.width || y < plot.y || y > plot.y + plot.height) return null;
-  let best = 0;
-  for (let i = 1; i < xs.length; i++) if (Math.abs(xs[i] - x) < Math.abs(xs[best] - x)) best = i;
-  return best;
+  // The points are evenly spaced from edge to edge.
+  return xs.length === 1 ? 0 : Math.min(xs.length - 1, Math.max(0, Math.round(((x - plot.x) / plot.width) * (xs.length - 1))));
 }
 
 /** A band's outline: along its upper edge, back along its lower one. One point alone spans the plot. */
@@ -114,18 +122,13 @@ function tracePath(ctx: CanvasRenderingContext2D, layout: StackedAreaLayout, ban
   ctx.closePath();
 }
 
-function drawCategories(ctx: CanvasRenderingContext2D, layout: StackedAreaLayout, categories: readonly string[], theme: Theme, measure: Measure): void {
+function drawCategories(ctx: CanvasRenderingContext2D, layout: StackedAreaLayout, categories: readonly string[], theme: Theme): void {
   const { plot, xs } = layout;
-  if (xs.length === 0) return;
   ctx.font = fontOf(theme, LABEL_SIZE);
   ctx.fillStyle = theme.axisLabel;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'top';
-  // Every label when they fit side by side, else every second, every third…
-  const widest = Math.max(...categories.map((label) => measure(label, LABEL_SIZE))) + LABEL_SPACING;
-  const spacing = xs.length > 1 ? xs[1] - xs[0] : plot.width;
-  const every = Math.max(1, Math.ceil(widest / Math.max(1, spacing)));
-  for (let i = 0; i < xs.length; i += every) ctx.fillText(categories[i], Math.round(xs[i]), plot.y + plot.height + LABEL_GAP);
+  for (let i = 0; i < xs.length; i += layout.labelEvery) ctx.fillText(categories[i], Math.round(xs[i]), plot.y + plot.height + LABEL_GAP);
 }
 
 export function renderStackedArea(
@@ -159,7 +162,7 @@ export function renderStackedArea(
       ctx.stroke();
     }
   }
-  drawCategories(ctx, layout, options.categories, theme, canvasMeasure(ctx, theme));
+  drawCategories(ctx, layout, options.categories, theme);
   ctx.restore();
 
   const hovered = pointer && options.crosshair !== false ? hitStackedCategory(layout, pointer.x, pointer.y) : null;

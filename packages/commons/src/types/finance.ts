@@ -423,7 +423,11 @@ export interface CounterClockOptions extends BaseFinanceChartOptions {
   onPointClick?: (point: CounterClockPoint) => void;
 }
 
-/** One leg of an options position: an option bought or sold, or the underlying held beside them. */
+/**
+ * One leg of an options position: an option bought or sold, or the underlying
+ * held beside them. An option without its `strike`, or the underlying without
+ * its `entry`, counts for nothing.
+ */
 export interface OptionLeg {
   /** A call, a put, or the underlying itself. */
   type: 'call' | 'put' | 'underlying';
@@ -435,7 +439,7 @@ export interface OptionLeg {
   premium?: number;
   /** The price the underlying was bought or sold at, for an `'underlying'` leg. */
   entry?: number;
-  /** How many. Default `1`. */
+  /** How many. Default `1`; `0` counts for nothing. */
   quantity?: number;
 }
 
@@ -558,7 +562,7 @@ export interface BoxPlotOptions extends BaseFinanceChartOptions {
 /** One spoke of a radar chart. */
 export interface RadarAxis {
   label: string;
-  /** The value at the centre. Default `0`. */
+  /** The value at the centre. Default `0`, or the lowest value on the spoke when that is under zero. */
   min?: number;
   /** The value at the rim. Default: the highest value any series has on this spoke. */
   max?: number;
@@ -617,7 +621,7 @@ export interface StackedAreaOptions extends BaseFinanceChartOptions {
   series: ChartSeries[];
   /** Each point's values as shares of their total, so the areas fill the height: how a mix changes. */
   normalized?: boolean;
-  /** The series' names. Default `true`. */
+  /** The series' names. Default `true` with more than one. */
   legend?: boolean;
   valueFormat?: (value: number) => string;
   /** Show every series' value at the point under the pointer. Default `true`. */

@@ -7,6 +7,7 @@ import {
   canvasMeasure,
   drawLegend,
   drawTooltip,
+  extent,
   fitText,
   fontOf,
   layoutLegend,
@@ -27,7 +28,7 @@ const MAX_RINGS = 10;
 const LABEL_SHARE = 0.22;
 const SHAPE_FILL_ALPHA = 0.18;
 const DOT_RADIUS = 2.5;
-/** The pointer reads a spoke this far past the rim, px: over its label. */
+/** The pointer reads a spoke at least this far past the rim, px, and as far as its label goes. */
 const HIT_MARGIN = 28;
 /** How far off the vertical or the horizontal a spoke is before its label is set to a side. */
 const SIDE = 0.3;
@@ -86,14 +87,17 @@ export function computeRadarLayout(options: RadarChartOptions, width: number, he
   const cy = CHART_PAD + areaHeight / 2;
   if (axes.length < MIN_SPOKES) return { cx, cy, radius: 0, rings, spokes: [], shapes: [], labelWidth: 0, legend: null };
 
-  const labelWidth = Math.min(width * LABEL_SHARE, Math.max(...axes.map((axis) => measure(axis.label, LABEL_SIZE))));
+  const labelWidth = Math.min(width * LABEL_SHARE, extent(axes.map((axis) => measure(axis.label, LABEL_SIZE)))?.max ?? 0);
   const radius = Math.max(0, Math.min(width / 2 - CHART_PAD - labelWidth - LABEL_GAP, areaHeight / 2 - LABEL_SIZE - LABEL_GAP));
   const spokes = axes.map((axis, i): RadarSpoke => {
     const angle = TOP + (i * FULL) / axes.length;
-    const min = finite(axis.min) ? axis.min : 0;
+    const here = extent(series.map((s) => s.values[i]).filter(finite));
+    // The centre: the value given, else zero, or the lowest value here when that is under zero.
+    const low = finite(axis.min) ? axis.min : Math.min(0, here?.min ?? 0);
     // The rim: the value given, else the highest any series has here.
-    const highest = Math.max(min, ...series.map((s) => s.values[i]).filter(finite));
-    return { label: axis.label, angle, min, max: finite(axis.max) ? axis.max : highest, x: cx + Math.cos(angle) * radius, y: cy + Math.sin(angle) * radius };
+    const high = finite(axis.max) ? axis.max : Math.max(low, here?.max ?? low);
+    // A rim given under its centre is taken the other way round.
+    return { label: axis.label, angle, min: Math.min(low, high), max: Math.max(low, high), x: cx + Math.cos(angle) * radius, y: cy + Math.sin(angle) * radius };
   });
   const shapes = series.map((s, i): RadarShape => ({
     name: s.name,
@@ -110,7 +114,7 @@ export function computeRadarLayout(options: RadarChartOptions, width: number, he
 /** The spoke nearest the pointer by its angle, inside the chart and a little past the rim; its index. */
 export function hitRadarAxis(layout: RadarLayout, x: number, y: number): number | null {
   const { cx, cy, radius, spokes } = layout;
-  if (spokes.length === 0 || Math.hypot(x - cx, y - cy) > radius + HIT_MARGIN) return null;
+  if (spokes.length === 0 || Math.hypot(x - cx, y - cy) > radius + Math.max(HIT_MARGIN, layout.labelWidth + LABEL_GAP)) return null;
   const angle = Math.atan2(y - cy, x - cx);
   let best = 0;
   let nearest = Infinity;

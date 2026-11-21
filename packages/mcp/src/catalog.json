@@ -9448,7 +9448,7 @@
         {
           "name": "legend",
           "type": "boolean",
-          "doc": "The series' names. Default `true`.",
+          "doc": "The series' names. Default `true` with more than one.",
           "kind": "boolean"
         },
         {

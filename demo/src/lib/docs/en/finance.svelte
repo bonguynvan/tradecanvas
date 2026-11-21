@@ -287,7 +287,8 @@ optionPayoff(condor, 100, 100)   // 300: what the legs make with the underlying 
 <p>
   <code>payoffStats</code> gives the most the legs make and the most they lose at expiry
   (<code>null</code> where there is no limit: a call bought, a call sold alone) and the prices where they break
-  even. They are sums at expiry: no option is priced before it, so there is no curve for today.
+  even. They are sums at expiry: no option is priced before it, so there is no curve for today. A leg without
+  its strike, or the underlying without its entry, counts for nothing.
 </p>
 
 <h2>Curves: a volatility smile, a term structure</h2>
@@ -297,7 +298,8 @@ optionPayoff(condor, 100, 100)   // 300: what the legs make with the underlying 
   (<code>smooth: false</code> joins them straight), a series with <code>dashed</code> is yesterday's beside
   today's, and <code>markers</code> are labelled lines at an x. With <code>ticks</code> the x axis is
   named by you, a tenor at each number of days. The pointer snaps to the nearest x that has a quote and reads
-  every curve there; <code>curveValueAt(points, x)</code> is the same reading in code.
+  every curve there, along the line as it is drawn. <code>curveValueAt(points, x)</code> reads a curve in code,
+  straight between its points, or along the rounded line with <code>true</code> as its third argument.
 </p>
 <pre><code>{`import { CurveChart } from '@tradecanvas/chart'
 
@@ -343,8 +345,9 @@ boxPlotStats([1, 2, 3, 4, 5, 6, 7, 8, 9, 100])
 <h2>Radar</h2>
 <p>
   <code>RadarChart</code> puts several measures on spokes around a centre, clockwise from twelve o'clock, and
-  joins each series' values into a shape. A spoke runs from its <code>min</code> (0 when left out) at the
-  centre to its <code>max</code> at the rim, the highest value on it when none is given: give each spoke its
+  joins each series' values into a shape. A spoke runs from its <code>min</code> at the centre (0 when left
+  out, or the lowest value on it when that is under zero) to its <code>max</code> at the rim, the highest value
+  on it when none is given: give each spoke its
   own when the measures differ in size. It needs three spokes. The pointer reads every series on the nearest
   spoke.
 </p>
@@ -362,7 +365,7 @@ new RadarChart(el, {
   ring takes the palette's colours and each ring outside it its parent's, paler. Four rings are drawn at most
   (<code>maxDepth</code> for fewer or more), <code>innerRadius: 0</code> closes the hole, and
   <code>centerLabel</code> and <code>centerValue</code> are written in it. A click gives the part and the
-  labels down to it.
+  labels down to it. Names are written along their rings where they fit.
 </p>
 <pre><code>{`import { SunburstChart } from '@tradecanvas/chart'
 

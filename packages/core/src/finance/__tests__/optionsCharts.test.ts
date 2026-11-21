@@ -494,3 +494,179 @@ describe('a stacked area chart', () => {
     expect(() => renderStackedArea(ctx, W, H, { categories: [], series: [] }, DARK_THEME, { x: 200, y: 150 })).not.toThrow();
   });
 });
+
+describe('the payoff’s numbers at their edges', () => {
+  it('counts nothing for a leg without what prices it, and nothing for none of it', () => {
+    expect(optionPayoff([{ type: 'call', side: 'long', premium: 5 }], 120)).toBe(0);
+    expect(optionPayoff([{ type: 'call', side: 'long', strike: Number.NaN, premium: 5 }], 120)).toBe(0);
+    expect(optionPayoff([{ type: 'call', side: 'long', strike: '100' as never, premium: 5 }], 120)).toBe(0);
+    expect(optionPayoff([{ type: 'underlying', side: 'long' }], 120)).toBe(0);
+    expect(optionPayoff([{ ...longCall, quantity: 0 }], 120)).toBe(0);
+    expect(payoffStats([longCall, { type: 'put', side: 'long', premium: 4 }])).toEqual(payoffStats([longCall]));
+  });
+
+  it('makes nothing at most where every price is a loss, as it loses nothing at most where none is', () => {
+    // The underlying bought at 100 and a call sold at 50 for nothing: 100 down at a price of 0, 50 down from 50 up.
+    expect(payoffStats([{ type: 'underlying', side: 'long', entry: 100 }, { type: 'call', side: 'short', strike: 50 }])).toEqual({ maxProfit: 0, maxLoss: -100, breakevens: [] });
+  });
+
+  it('breaks even where a line that lay at zero leaves it, and past the highest strike on contracts of many units', () => {
+    // A put sold for nothing: nothing above its strike, a loss below.
+    expect(payoffStats([{ type: 'put', side: 'short', strike: 100 }])).toEqual({ maxProfit: 0, maxLoss: -100, breakevens: [100] });
+    expect(payoffStats([{ type: 'underlying', side: 'short', entry: 100 }])).toEqual({ maxProfit: 100, maxLoss: null, breakevens: [100] });
+    expect(payoffStats([{ type: 'call', side: 'long', strike: 100, premium: 12 }, { type: 'call', side: 'long', strike: 110 }], 100).breakevens).toEqual([111]);
+  });
+
+  it('finds the breakevens of sums however small', () => {
+    expect(payoffStats([longCall], 1e-12).breakevens).toEqual([105]);
+  });
+
+  it('draws no price under zero, whatever range is asked for or however little there is to go by', () => {
+    const asked = computePayoffLayout({ legs: [longCall], range: { min: -5, max: -1 } }, W, H, DARK_THEME, measure);
+    expect(asked.xScale.min).toBeGreaterThanOrEqual(0);
+    // No range at all: the prices are around the strike.
+    expect(asked.xScale.max).toBeGreaterThan(100);
+    const bare = computePayoffLayout({ legs: [], spot: 0 }, W, H, DARK_THEME, measure);
+    expect(bare.xScale.min).toBeGreaterThanOrEqual(0);
+    expect(bare.xScale.max).toBeGreaterThan(bare.xScale.min);
+  });
+});
+
+describe('a curve read in code', () => {
+  it('reads nothing at an x that is no number, and reads through points given in any order or twice', () => {
+    expect(curveValueAt([{ x: 0, y: 1 }], Number.NaN)).toBeNull();
+    expect(curveValueAt([{ x: 2, y: 20 }, { x: 1, y: 10 }, { x: 1, y: 12 }], 1.5)).toBe(16);
+    expect(curveValueAt([{ x: 1, y: 10 }], 1)).toBe(10);
+  });
+
+  it('reads the rounded line the chart draws when asked to', () => {
+    const points = [{ x: 0, y: 0 }, { x: 1, y: 10 }, { x: 3, y: 12 }];
+    expect(curveValueAt(points, 1, true)).toBe(10);
+    expect(curveValueAt(points, 2)).toBe(11);
+    // Between two points the rounded line bulges past the straight one where the slope changes, and stays within the points.
+    expect(curveValueAt(points, 2, true)).toBeCloseTo(11.25, 9);
+    expect(curveValueAt(points, 4, true)).toBeNull();
+  });
+
+  it('writes at the pointer what the line drawn passes through: rounded, or straight when it is drawn straight', () => {
+    const series = [{ name: 'a', points: [{ x: 0, y: 0 }, { x: 1, y: 10 }, { x: 3, y: 12 }] }, { name: 'b', points: [{ x: 2, y: 5 }] }];
+    const read = (smooth: boolean) => {
+      const options = { series, smooth, valueFormat: plain };
+      const layout = computeCurveLayout(options, W, H, DARK_THEME, measure);
+      const { ctx, texts } = recorder();
+      renderCurve(ctx, W, H, options, DARK_THEME, { x: layout.lines[1].points[0].px, y: layout.plot.y + 20 }, layout);
+      return texts;
+    };
+    expect(read(true)).toContain('a: 11.25');
+    expect(read(false)).toContain('a: 11');
+  });
+
+  it('draws a hundred and fifty thousand points without running out of stack', () => {
+    const points = Array.from({ length: 150_000 }, (_, i) => ({ x: i, y: Math.sin(i / 1000) }));
+    const { ctx } = recorder();
+    expect(() => renderCurve(ctx, W, H, { series: [{ name: 'big', points }] }, DARK_THEME, { x: 200, y: 150 })).not.toThrow();
+  });
+});
+
+describe('a box plot’s numbers at their edges', () => {
+  it('counts ties, ends whiskers of no reach at the box, and finds quartiles between two values', () => {
+    expect(boxPlotStats([1, 1, 1, 1, 5])).toEqual({ min: 1, q1: 1, median: 1, q3: 1, max: 1, outliers: [5] });
+    expect(boxPlotStats([1, 2, 3, 4, 5, 6, 7, 8, 9], 0)).toEqual({ min: 3, q1: 3, median: 5, q3: 7, max: 7, outliers: [1, 2, 8, 9] });
+    expect(boxPlotStats([4, 8])).toEqual({ min: 4, q1: 5, median: 6, q3: 7, max: 8, outliers: [] });
+  });
+
+  it('puts numbers given out of order in order, and keeps all five on the scale', () => {
+    const layout = computeBoxPlotLayout({ data: [{ label: 'x', stats: { min: 5, q1: 2, median: 6, q3: 9, max: 8, outliers: [] } }] }, W, H, DARK_THEME, measure);
+    expect(layout.boxes[0].stats).toEqual({ min: 2, q1: 5, median: 6, q3: 8, max: 9, outliers: [] });
+    expect(layout.yScale.max).toBeGreaterThanOrEqual(9);
+    expect(layout.yScale.min).toBeLessThanOrEqual(2);
+  });
+
+  it('draws groups with more outliers than a call can take arguments', () => {
+    // Half of each group is one value, a quarter under it and a quarter over: nearly half are outliers.
+    const values = Array.from({ length: 150_000 }, (_, i) => (i % 100 < 24 ? -i - 1 : i % 100 < 76 ? 0 : i));
+    const { ctx } = recorder();
+    expect(() => renderBoxPlot(ctx, W, H, { data: [{ label: 'a', values }, { label: 'b', values }] }, DARK_THEME, null)).not.toThrow();
+  });
+});
+
+describe('a radar chart at its edges', () => {
+  it('takes a rim under its centre the other way round, and the lowest value as the centre when it is under zero', () => {
+    const layout = computeRadarLayout({ axes: [{ label: 'A', min: 10, max: 5 }, { label: 'B' }, { label: 'C' }], series: [{ name: 's', values: [7.5, -4, 0] }, { name: 't', values: [5, 4, 0] }] }, W, H, DARK_THEME, measure);
+    expect([layout.spokes[0].min, layout.spokes[0].max]).toEqual([5, 10]);
+    expect(layout.shapes[0].points[0].share).toBe(0.5);
+    expect([layout.spokes[1].min, layout.spokes[1].max]).toEqual([-4, 4]);
+    expect(layout.shapes[0].points[1].share).toBe(0);
+    expect(layout.shapes[1].points[1].share).toBe(1);
+  });
+
+  it('reads a spoke from over its label, however long', () => {
+    const layout = computeRadarLayout({ axes: [{ label: 'A' }, { label: 'A label that is long' }, { label: 'C' }, { label: 'D' }], series: [{ name: 's', values: [1, 2, 3, 4] }] }, W, H, DARK_THEME, measure);
+    expect(hitRadarAxis(layout, layout.cx + layout.radius + layout.labelWidth, layout.cy)).toBe(1);
+    expect(hitRadarAxis(layout, layout.cx + layout.radius + layout.labelWidth * 3, layout.cy)).toBeNull();
+  });
+});
+
+describe('a sunburst chart at its edges', () => {
+  it('ends on data that holds itself, and counts such a part for nothing inside itself', () => {
+    const self: SunburstNode = { label: 'a', value: 1, children: [] };
+    self.children!.push(self, self, { label: 'leaf', value: 2 });
+    const layout = computeSunburstLayout({ data: [self] }, W, H, DARK_THEME, measure);
+    expect(layout.total).toBe(2);
+    expect(layout.arcs.map((a) => a.path.join('/'))).toEqual(['a', 'a/leaf']);
+    const first: SunburstNode = { label: 'first', children: [] };
+    const second: SunburstNode = { label: 'second', children: [first, { label: 'leaf', value: 3 }] };
+    first.children!.push(second);
+    expect(computeSunburstLayout({ data: [first] }, W, H, DARK_THEME, measure).arcs.map((a) => a.path.join('/'))).toEqual(['first', 'first/second', 'first/second/leaf']);
+  });
+
+  it('takes a part’s own value where its children have no size, and draws no more than eight rings', () => {
+    const layout = computeSunburstLayout({ data: [{ label: 'p', value: 5, children: [{ label: 'c', value: 0 }] }] }, W, H, DARK_THEME, measure);
+    expect(layout.arcs.map((a) => [a.path.join('/'), a.value])).toEqual([['p', 5]]);
+    let chain: SunburstNode = { label: 'end', value: 1 };
+    for (let i = 0; i < 11; i++) chain = { label: `level ${i}`, children: [chain] };
+    expect(computeSunburstLayout({ data: [chain], maxDepth: 50 }, W, H, DARK_THEME, measure).levels).toBe(8);
+  });
+
+  it('keeps a part’s colour when one before it has no size', () => {
+    const colours = (first: number) => computeSunburstLayout({ data: [{ label: 'A', value: first }, { label: 'B', value: 1 }, { label: 'C', value: 1 }] }, W, H, DARK_THEME, measure).arcs.filter((a) => a.path[0] !== 'A').map((a) => a.color);
+    expect(colours(0)).toEqual(colours(1));
+  });
+
+  it('draws nothing of sizes too large to add up', () => {
+    expect(computeSunburstLayout({ data: [{ label: 'a', value: 1e308 }, { label: 'b', value: 1e308 }] }, W, H, DARK_THEME, measure).arcs).toEqual([]);
+  });
+});
+
+describe('a stacked area chart at its edges', () => {
+  it('scales to totals under one', () => {
+    const layout = computeStackedAreaLayout({ categories: ['a', 'b', 'c'], series: [{ name: 's', values: [0.01, 0.02, 0.015] }] }, W, H, DARK_THEME, measure);
+    expect(layout.yScale.max).toBeLessThan(0.1);
+    expect(layout.bands[0].upper[1]).toBeLessThan(layout.plot.y + layout.plot.height / 2);
+  });
+
+  it('names its series when there is more than one, or when told to', () => {
+    const one = [{ name: 's', values: [1, 2] }];
+    expect(computeStackedAreaLayout({ categories: ['a', 'b'], series: one }, W, H, DARK_THEME, measure).legend).toBeNull();
+    expect(computeStackedAreaLayout({ categories: ['a', 'b'], series: one, legend: true }, W, H, DARK_THEME, measure).legend).not.toBeNull();
+    expect(computeStackedAreaLayout({ categories: ['a', 'b'], series: [...one, ...one] }, W, H, DARK_THEME, measure).legend).not.toBeNull();
+    expect(computeStackedAreaLayout({ categories: ['a', 'b'], series: [...one, ...one], legend: false }, W, H, DARK_THEME, measure).legend).toBeNull();
+  });
+
+  it('draws a hundred and fifty thousand points, and measures their labels once', () => {
+    const categories = Array.from({ length: 150_000 }, (_, i) => `d${i}`);
+    const options = { categories, series: [{ name: 's', values: categories.map((_, i) => i % 7) }, { name: 't', values: categories.map(() => 1) }] };
+    let measured = 0;
+    const counting = (text: string) => {
+      measured++;
+      return measure(text);
+    };
+    const layout = computeStackedAreaLayout(options, W, H, DARK_THEME, counting);
+    const { ctx, texts } = recorder();
+    expect(() => renderStackedArea(ctx, W, H, options, DARK_THEME, { x: 200, y: 150 }, layout)).not.toThrow();
+    expect(hitStackedCategory(layout, layout.xs[75_000], layout.plot.y + 5)).toBe(75_000);
+    // The labels drawn are few: they are spaced by the widest, found when the chart was laid out.
+    expect(texts.filter((t) => /^d\d+$/.test(t)).length).toBeLessThan(20);
+    expect(measured).toBeLessThan(categories.length + 50);
+  });
+});

@@ -12,6 +12,7 @@ import {
   drawTooltip,
   drawTopMarks,
   drawValueAxis,
+  extent,
   fontOf,
   layoutLegend,
   niceScale,
@@ -36,17 +37,61 @@ const usable = (point: CurvePoint) => Number.isFinite(point.x) && Number.isFinit
 const byX = (points: readonly CurvePoint[]) => points.filter(usable).sort((a, b) => a.x - b.x);
 
 /**
- * A curve's value at `x`: its point there, or straight between the points
- * either side. Null outside its points: a curve is not carried past its ends.
+ * The slope at point `i` of a curve through `points` that never passes a
+ * value it does not reach: flat where the line turns, so a smile has no dip
+ * under its lowest quote. The points may be any distance apart; `xOf` and
+ * `yOf` say where a point is, in values or in pixels.
  */
-export function curveValueAt(points: readonly CurvePoint[], x: number): number | null {
-  const sorted = byX(points);
-  if (sorted.length === 0 || x < sorted[0].x || x > sorted[sorted.length - 1].x) return null;
-  const after = sorted.findIndex((point) => point.x >= x);
-  const b = sorted[after];
-  if (b.x === x || after === 0) return b.y;
-  const a = sorted[after - 1];
-  return a.y + ((b.y - a.y) * (x - a.x)) / (b.x - a.x);
+function slopeAt<P>(points: readonly P[], i: number, xOf: (point: P) => number, yOf: (point: P) => number): number {
+  const n = points.length;
+  if (n < 2) return 0;
+  const run = (k: number) => xOf(points[k + 1]) - xOf(points[k]);
+  const rise = (k: number) => (run(k) > 0 ? (yOf(points[k + 1]) - yOf(points[k])) / run(k) : 0);
+  if (i === 0) return rise(0);
+  if (i === n - 1) return rise(n - 2);
+  const before = rise(i - 1);
+  const after = rise(i);
+  if (before * after <= 0) return 0;
+  const h0 = run(i - 1);
+  const h1 = run(i);
+  return (3 * (h0 + h1)) / ((2 * h1 + h0) / before + (h1 + 2 * h0) / after);
+}
+
+const valueX = (point: CurvePoint) => point.x;
+const valueY = (point: CurvePoint) => point.y;
+
+/** A curve's value at `x`, through points by rising x: see curveValueAt. */
+function valueAt(sorted: readonly CurvePoint[], x: number, smooth: boolean): number | null {
+  if (!Number.isFinite(x) || sorted.length === 0 || x < sorted[0].x || x > sorted[sorted.length - 1].x) return null;
+  // The first point at or past x, by halves: a curve may have a great many.
+  let low = 0;
+  let high = sorted.length - 1;
+  while (low < high) {
+    const middle = (low + high) >> 1;
+    if (sorted[middle].x >= x) high = middle;
+    else low = middle + 1;
+  }
+  const b = sorted[low];
+  if (b.x === x || low === 0) return b.y;
+  const a = sorted[low - 1];
+  const run = b.x - a.x;
+  const t = (x - a.x) / run;
+  if (!smooth) return a.y + (b.y - a.y) * t;
+  // The cubic the chart draws between the two points, by their slopes.
+  const t2 = t * t;
+  const t3 = t2 * t;
+  const from = slopeAt(sorted, low - 1, valueX, valueY) * run;
+  const to = slopeAt(sorted, low, valueX, valueY) * run;
+  return (2 * t3 - 3 * t2 + 1) * a.y + (t3 - 2 * t2 + t) * from + (3 * t2 - 2 * t3) * b.y + (t3 - t2) * to;
+}
+
+/**
+ * A curve's value at `x`: its point there, or between the points either
+ * side, straight, or with `smooth` along the rounded line the chart draws.
+ * Null outside its points: a curve is not carried past its ends.
+ */
+export function curveValueAt(points: readonly CurvePoint[], x: number, smooth = false): number | null {
+  return valueAt(byX(points), x, smooth);
 }
 
 export interface CurveLinePoint extends CurvePoint {
@@ -76,10 +121,11 @@ export interface CurveLayout {
 function xScaleOf(options: CurveChartOptions, xs: readonly number[], width: number): NiceScale {
   const ticks = (options.ticks ?? []).map((tick) => tick.x).filter((x) => Number.isFinite(x)).sort((a, b) => a - b);
   const all = [...xs, ...(options.markers ?? []).map((marker) => marker.x).filter((x) => Number.isFinite(x))];
-  if (all.length === 0) return niceScale(0, 1);
-  if (ticks.length === 0) return niceScale(Math.min(...all), Math.max(...all), Math.max(2, Math.floor(width / 110)));
-  const min = Math.min(...all, ...ticks);
-  const max = Math.max(...all, ...ticks);
+  const reach = extent(all);
+  if (!reach) return niceScale(0, 1);
+  if (ticks.length === 0) return niceScale(reach.min, reach.max, Math.max(2, Math.floor(width / 110)));
+  const min = Math.min(reach.min, ticks[0]);
+  const max = Math.max(reach.max, ticks[ticks.length - 1]);
   // One x alone: room either side of it.
   return min === max ? { min: min - 1, max: max + 1, step: 1, ticks } : { min, max, step: (max - min) / ticks.length, ticks };
 }
@@ -127,9 +173,9 @@ function drawXAxis(ctx: CanvasRenderingContext2D, plot: Rect, scale: NiceScale, 
 export function computeCurveLayout(options: CurveChartOptions, width: number, height: number, _theme: Theme, measure: Measure): CurveLayout {
   const series = options.series.map((s, i) => ({ name: s.name, color: seriesColor(i, s.color), dashed: s.dashed === true, points: byX(s.points) }));
   const xs = [...new Set(series.flatMap((s) => s.points.map((point) => point.x)))].sort((a, b) => a - b);
-  const ys = series.flatMap((s) => s.points.map((point) => point.y));
+  const reach = extent(series.flatMap((s) => s.points.map((point) => point.y)));
   const xScale = xScaleOf(options, xs, width);
-  const yScale = ys.length > 0 ? niceScale(Math.min(...ys), Math.max(...ys), Math.max(2, Math.floor(height / 60))) : niceScale(0, 1);
+  const yScale = reach ? niceScale(reach.min, reach.max, Math.max(2, Math.floor(height / 60))) : niceScale(0, 1);
   const yFormat = options.valueFormat ?? axisFormat(yScale, options.locale);
   const xFormat = xFormatOf(options, xScale);
   const showLegend = options.legend ?? series.length > 1;
@@ -159,42 +205,23 @@ export function nearestCurveX(layout: CurveLayout, x: number, y: number): number
   return xs.reduce((best, candidate) => (Math.abs(candidate - value) < Math.abs(best - value) ? candidate : best));
 }
 
-/**
- * The slopes of a curve through `points` that never passes a value it does
- * not reach: flat where the line turns, so a smile has no dip under its
- * lowest quote. The points may be any distance apart.
- */
-function slopes(points: readonly { px: number; py: number }[]): number[] {
-  const n = points.length;
-  const out = new Array<number>(n).fill(0);
-  if (n < 2) return out;
-  const run = (i: number) => points[i + 1].px - points[i].px;
-  const rise = (i: number) => (run(i) > 0 ? (points[i + 1].py - points[i].py) / run(i) : 0);
-  out[0] = rise(0);
-  out[n - 1] = rise(n - 2);
-  for (let i = 1; i < n - 1; i++) {
-    const before = rise(i - 1);
-    const after = rise(i);
-    if (before * after <= 0) continue;
-    const h0 = run(i - 1);
-    const h1 = run(i);
-    out[i] = (3 * (h0 + h1)) / ((2 * h1 + h0) / before + (h1 + 2 * h0) / after);
-  }
-  return out;
-}
+const pixelX = (point: CurveLinePoint) => point.px;
+const pixelY = (point: CurveLinePoint) => point.py;
 
 function strokeLine(ctx: CanvasRenderingContext2D, line: CurveLine, smooth: boolean): void {
   const { points } = line;
   if (points.length < 2) return;
-  const m = smooth ? slopes(points) : [];
   ctx.beginPath();
   ctx.moveTo(points[0].px, points[0].py);
+  let leaving = smooth ? slopeAt(points, 0, pixelX, pixelY) : 0;
   for (let i = 1; i < points.length; i++) {
     const a = points[i - 1];
     const b = points[i];
     const third = (b.px - a.px) / 3;
-    if (smooth && third > 0) ctx.bezierCurveTo(a.px + third, a.py + m[i - 1] * third, b.px - third, b.py - m[i] * third, b.px, b.py);
+    const arriving = smooth ? slopeAt(points, i, pixelX, pixelY) : 0;
+    if (smooth && third > 0) ctx.bezierCurveTo(a.px + third, a.py + leaving * third, b.px - third, b.py - arriving * third, b.px, b.py);
     else ctx.lineTo(b.px, b.py);
+    leaving = arriving;
   }
   ctx.strokeStyle = line.color;
   ctx.lineWidth = 2;
@@ -267,7 +294,7 @@ export function renderCurve(
   if (at !== null && pointer) {
     const rows: TooltipLine[] = [{ text: xReadout(at), bold: true }];
     for (const line of lines) {
-      const value = curveValueAt(line.points, at);
+      const value = valueAt(line.points, at, options.smooth !== false);
       if (value !== null) rows.push({ text: `${line.name}: ${valueFormat(value)}`, color: line.color });
     }
     drawTooltip(ctx, rows, pointer, { x: 0, y: 0, width, height }, theme);

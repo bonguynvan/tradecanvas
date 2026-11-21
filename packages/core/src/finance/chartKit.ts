@@ -437,6 +437,20 @@ export function fitText(text: string, width: number, measure: Measure, size = LA
   return cut.length > 1 ? `${cut}…` : '';
 }
 
+/**
+ * The lowest and the highest of `values`, by a loop: spread into `Math.min`
+ * they run out of stack past a hundred thousand or so. Null with none.
+ */
+export function extent(values: Iterable<number>): { min: number; max: number } | null {
+  let min = Infinity;
+  let max = -Infinity;
+  for (const value of values) {
+    if (value < min) min = value;
+    if (value > max) max = value;
+  }
+  return min <= max ? { min, max } : null;
+}
+
 /** A line down the plot at `x` (px), with `text` over the plot. */
 export interface TopMark {
   x: number;
@@ -444,13 +458,15 @@ export interface TopMark {
   color: string;
 }
 
+/** No more rows of texts than this go into a plot: a mark past them keeps its line and loses its text. */
+const MAX_MARK_ROWS = 3;
 /** The room the texts of drawTopMarks take over a plot, px. */
 export const TOP_MARK_ROOM = 16;
 
 /**
  * Dashed lines down the plot, each with its text over it: a price now, a
  * breakeven, a strike at the money. A text that would run into one already
- * written goes a row lower, inside the plot.
+ * written goes a row lower, inside the plot, three rows at most.
  */
 export function drawTopMarks(ctx: CanvasRenderingContext2D, plot: Rect, marks: readonly TopMark[], theme: Theme): void {
   ctx.save();
@@ -470,7 +486,8 @@ export function drawTopMarks(ctx: CanvasRenderingContext2D, plot: Rect, marks: r
     ctx.setLineDash([]);
     const half = ctx.measureText(mark.text).width / 2 + 4;
     let row = 0;
-    while (taken.some((t) => t.row === row && x - half < t.to && x + half > t.from)) row++;
+    while (row < MAX_MARK_ROWS && taken.some((t) => t.row === row && x - half < t.to && x + half > t.from)) row++;
+    if (row === MAX_MARK_ROWS) continue;
     taken.push({ from: x - half, to: x + half, row });
     const baseline = plot.y - 3 + row * (LABEL_SIZE + 3);
     if (row > 0) {

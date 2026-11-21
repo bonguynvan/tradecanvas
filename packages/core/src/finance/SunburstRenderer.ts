@@ -77,50 +77,80 @@ export interface SunburstLayout {
   arcs: SunburstArc[];
 }
 
-/** A part's size: its children's together when it has any with a size, else its own value. */
-function sizeOf(node: SunburstNode, nesting = 0): number {
-  const children = nesting < MAX_NESTING ? (node.children ?? []) : [];
-  const inside = children.reduce((sum, child) => sum + sizeOf(child, nesting + 1), 0);
-  if (inside > 0) return inside;
-  return typeof node.value === 'number' && Number.isFinite(node.value) && node.value > 0 ? node.value : 0;
+/**
+ * Every part's size, worked out once: its children's together when they
+ * have any, else its own value. A part met again inside itself counts for
+ * nothing there, so data that holds itself still ends.
+ */
+function sizesOf(nodes: readonly SunburstNode[]): Map<SunburstNode, number> {
+  const known = new Map<SunburstNode, number>();
+  const open = new Set<SunburstNode>();
+  const sizeOf = (node: SunburstNode, nesting: number): number => {
+    const done = known.get(node);
+    if (done !== undefined) return done;
+    if (open.has(node)) return 0;
+    open.add(node);
+    let inside = 0;
+    if (nesting < MAX_NESTING) for (const child of node.children ?? []) inside += sizeOf(child, nesting + 1);
+    open.delete(node);
+    const own = typeof node.value === 'number' && Number.isFinite(node.value) && node.value > 0 ? node.value : 0;
+    const size = inside > 0 ? inside : own;
+    known.set(node, size);
+    return size;
+  };
+  for (const node of nodes) sizeOf(node, 0);
+  return known;
 }
 
-/** How many rings the data fills. */
-function depthOf(nodes: readonly SunburstNode[], nesting = 0): number {
-  const sized = nodes.filter((node) => sizeOf(node, nesting) > 0);
-  if (sized.length === 0 || nesting >= HARD_MAX_DEPTH) return 0;
-  return 1 + Math.max(...sized.map((node) => depthOf(node.children ?? [], nesting + 1)));
+/** How many rings the data fills, `most` at most. */
+function depthOf(nodes: readonly SunburstNode[], sizes: Map<SunburstNode, number>, most: number, above: Set<SunburstNode>): number {
+  if (most <= 0) return 0;
+  let deepest = -1;
+  for (const node of nodes) {
+    if (!((sizes.get(node) ?? 0) > 0) || above.has(node)) continue;
+    above.add(node);
+    deepest = Math.max(deepest, depthOf(node.children ?? [], sizes, most - 1, above));
+    above.delete(node);
+    // As deep as is drawn: the rest cannot add a ring.
+    if (deepest >= most - 1) break;
+  }
+  return deepest + 1;
 }
 
 /** The parts as arcs of rings around a hole, for a chart `width` × `height`. */
 export function computeSunburstLayout(options: SunburstOptions, width: number, height: number, _theme: Theme, _measure: Measure): SunburstLayout {
   const asked = options.maxDepth;
   const most = typeof asked === 'number' && Number.isFinite(asked) && asked >= 1 ? Math.min(HARD_MAX_DEPTH, Math.floor(asked)) : DEFAULT_MAX_DEPTH;
-  const levels = Math.min(most, depthOf(options.data));
-  const total = options.data.reduce((sum, node) => sum + sizeOf(node), 0);
+  const sizes = sizesOf(options.data);
+  const levels = depthOf(options.data, sizes, most, new Set());
+  const total = options.data.reduce((sum, node) => sum + (sizes.get(node) ?? 0), 0);
   const radius = Math.max(0, Math.min(width, height) / 2 - CHART_PAD);
   const hole = options.innerRadius;
   const inner = radius * Math.min(MAX_HOLE, Math.max(0, typeof hole === 'number' && Number.isFinite(hole) ? hole : DEFAULT_HOLE));
   const arcs: SunburstArc[] = [];
 
+  const above = new Set<SunburstNode>();
   const place = (nodes: readonly SunburstNode[], from: number, depth: number, path: readonly string[], inherited: string | null): void => {
     let angle = from;
-    let shown = 0;
-    for (const node of nodes) {
-      const value = sizeOf(node, depth);
-      if (value <= 0) continue;
+    nodes.forEach((node, i) => {
+      const value = sizes.get(node) ?? 0;
+      if (value <= 0 || above.has(node)) return;
       const start = angle;
       angle += (value / total) * FULL;
-      const color = node.color ?? inherited ?? seriesColor(shown);
-      shown++;
+      // By its place among its siblings: a part keeps its colour when one before it has no size.
+      const color = node.color ?? inherited ?? seriesColor(i);
       const own = [...path, node.label];
       arcs.push({ node, path: own, depth, value, share: value / total, start, end: angle, color });
-      if (depth + 1 < levels) place(node.children ?? [], start, depth + 1, own, color);
-    }
+      if (depth + 1 >= levels) return;
+      above.add(node);
+      place(node.children ?? [], start, depth + 1, own, color);
+      above.delete(node);
+    });
   };
-  if (total > 0 && levels > 0) place(options.data, TOP, 0, [], null);
+  // Sizes too large to add up have no shares.
+  if (Number.isFinite(total) && total > 0 && levels > 0) place(options.data, TOP, 0, [], null);
 
-  return { cx: width / 2, cy: height / 2, radius, inner, ring: levels > 0 ? (radius - inner) / levels : 0, levels, total, arcs };
+  return { cx: width / 2, cy: height / 2, radius, inner, ring: levels > 0 ? (radius - inner) / levels : 0, levels, total: Number.isFinite(total) ? total : 0, arcs };
 }
 
 /** The part under (x, y): on its ring, within its angle. Null in the hole, outside, or where a ring has nothing. */
