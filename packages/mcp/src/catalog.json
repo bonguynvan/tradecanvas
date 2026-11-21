@@ -9494,7 +9494,7 @@
           "name": "x",
           "type": "number[] | string[]",
           "required": true,
-          "doc": "The points along x: strikes, prices. Numbers are placed by their value (and drawn by rising value, whatever their order); names are spaced evenly, in the order given."
+          "doc": "The points along x: strikes, prices. Numbers are placed by their value (and drawn by rising value, whatever their order); names are spaced evenly, in the order given. A number that is none (`NaN`, `Infinity`) is left out with its values. With fewer than two points along x, or none along y, nothing is drawn."
         },
         {
           "name": "y",
@@ -9627,13 +9627,13 @@
           "name": "categories",
           "type": "string[]",
           "required": true,
-          "doc": "A label for each column along x."
+          "doc": "A label for each column along x. No more than the first 120 are drawn."
         },
         {
           "name": "series",
           "type": "ChartSeries[]",
           "required": true,
-          "doc": "A row of columns for each series, the first at the front of the y axis: `values[i]` belongs to `categories[i]`."
+          "doc": "A row of columns for each series, the first where the y axis starts (the front, as the chart is first seen): `values[i]` belongs to `categories[i]`. No more than the first 120 are drawn."
         },
         {
           "name": "legend",

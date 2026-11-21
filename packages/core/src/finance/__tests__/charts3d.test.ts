@@ -1,250 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { DARK_THEME, LIGHT_THEME, type Bar3DChartOptions, type SurfaceChartOptions } from '@tradecanvas/commons';
-import { computeScene3D, resolveView, sceneDepth, sceneX, sceneY, type Axis3D, type Scene3D } from '../scene3d.js';
-import { MAX_SURFACE_POINTS, computeSurfaceLayout, depthSurface, hitSurfacePoint, renderSurface, type SurfaceLayout } from '../SurfaceRenderer.js';
+import { DARK_THEME, type Bar3DChartOptions, type SurfaceChartOptions } from '@tradecanvas/commons';
+import { sceneDepth, sceneX, sceneY } from '../scene3d.js';
+import { MAX_DEPTH_LEVELS, MAX_SURFACE_POINTS, TURNING_SURFACE_POINTS, computeSurfaceLayout, depthSurface, hitSurfacePoint, renderSurface, type SurfaceLayout } from '../SurfaceRenderer.js';
 import { MAX_BAR3D_SIZE, computeBar3DLayout, hitBar3D, renderBar3D } from '../Bar3DRenderer.js';
-import { rampColor, resolveColorRamp } from '../colorScale.js';
-
-interface Shape {
-  kind: 'fill' | 'stroke';
-  points: number[];
-  style: string;
-  alpha: number;
-}
-
-/** A canvas stand-in that keeps the text, the paths and the rectangles drawn with it. */
-function recorder(): { ctx: CanvasRenderingContext2D; texts: string[]; shapes: Shape[]; rects: number[][] } {
-  const texts: string[] = [];
-  const shapes: Shape[] = [];
-  const rects: number[][] = [];
-  let path: number[] = [];
-  const state: Record<string | symbol, unknown> = { font: '10px sans-serif', fillStyle: '', strokeStyle: '', globalAlpha: 1 };
-  const ctx = new Proxy(state, {
-    get: (target, prop) => {
-      if (prop in target) return target[prop];
-      if (prop === 'measureText') return (t: string) => ({ width: String(t).length * 6 });
-      return (...args: unknown[]) => {
-        if (prop === 'beginPath') path = [];
-        if (prop === 'moveTo' || prop === 'lineTo') path.push(Number(args[0]), Number(args[1]));
-        if (prop === 'fill') shapes.push({ kind: 'fill', points: [...path], style: String(target.fillStyle), alpha: Number(target.globalAlpha) });
-        if (prop === 'stroke') shapes.push({ kind: 'stroke', points: [...path], style: String(target.strokeStyle), alpha: Number(target.globalAlpha) });
-        if (prop === 'fillRect') rects.push(args.map(Number));
-        if (prop === 'fillText') texts.push(String(args[0]));
-      };
-    },
-    set: (target, prop, value) => {
-      target[prop] = value;
-      return true;
-    },
-  }) as unknown as CanvasRenderingContext2D;
-  return { ctx, texts, shapes, rects };
-}
-
-/** As the stand-in measures: 6 px a character. */
-const measure = (text: string) => text.length * 6;
-const W = 480;
-const H = 360;
-const plain = (v: number) => String(Number(v.toFixed(4)));
-const AREA = { x: 0, y: 0, width: W, height: H };
-
-const ticks = (texts: string[]): Axis3D => ({ ticks: texts.map((text, i) => ({ at: texts.length === 1 ? 0.5 : i / (texts.length - 1), text })) });
-const AXES = { x: { ...ticks(['90', '100', '110']), title: 'Strike' }, y: { ...ticks(['30', '60', '90']), title: 'Days' }, z: { ...ticks(['0.1', '0.2', '0.3']), title: 'IV' } };
-
-/** The eight corners of the box, on the screen. */
-function corners(scene: Scene3D): { x: number; y: number }[] {
-  const out: { x: number; y: number }[] = [];
-  for (const u of [0, 1]) for (const v of [0, 1]) for (const h of [0, 1]) out.push({ x: sceneX(scene, u, v), y: sceneY(scene, u, v, h) });
-  return out;
-}
-
-/** Whether two lists of points hold the same points, in any order. */
-function samePoints(a: readonly number[], b: readonly number[]): boolean {
-  const key = (p: readonly number[]) => Array.from({ length: p.length / 2 }, (_, i) => `${p[i * 2].toFixed(3)},${p[i * 2 + 1].toFixed(3)}`).sort().join(' ');
-  return a.length === b.length && key(a) === key(b);
-}
-
-describe('where a 3D chart is seen from', () => {
-  it('is a quarter turn off the corner and a little above the floor when nothing says', () => {
-    expect(resolveView()).toEqual({ yaw: -35, pitch: 28 });
-    expect(resolveView({ pitch: 40 })).toEqual({ yaw: -35, pitch: 40 });
-  });
-
-  it('holds the pitch between the floor and straight above, and the yaw to one turn', () => {
-    expect(resolveView({ yaw: 0, pitch: -10 }).pitch).toBe(0);
-    expect(resolveView({ yaw: 0, pitch: 120 }).pitch).toBe(90);
-    expect(resolveView({ yaw: 370, pitch: 10 }).yaw).toBeCloseTo(10, 9);
-    expect(resolveView({ yaw: -190, pitch: 10 }).yaw).toBeCloseTo(170, 9);
-    expect(resolveView({ yaw: 180, pitch: 10 }).yaw).toBeCloseTo(180, 9);
-  });
-
-  it('takes an angle that is no number as its default', () => {
-    expect(resolveView({ yaw: Number.NaN, pitch: Number.POSITIVE_INFINITY })).toEqual({ yaw: -35, pitch: 28 });
-  });
-});
-
-describe('a 3D chart’s box on the screen', () => {
-  it('has x across and the values up when seen level from the front, the y axis end on', () => {
-    const scene = computeScene3D(AREA, { yaw: 0, pitch: 0 }, AXES, measure);
-    expect(sceneX(scene, 1, 0)).toBeGreaterThan(sceneX(scene, 0, 0));
-    expect(sceneY(scene, 0, 0, 1)).toBeLessThan(sceneY(scene, 0, 0, 0));
-    expect(sceneX(scene, 0.3, 1)).toBeCloseTo(sceneX(scene, 0.3, 0), 9);
-    expect(sceneY(scene, 0.3, 1, 0.5)).toBeCloseTo(sceneY(scene, 0.3, 0, 0.5), 9);
-  });
-
-  it('has the y axis up the screen and the values end on when seen from straight above', () => {
-    const scene = computeScene3D(AREA, { yaw: 0, pitch: 90 }, AXES, measure);
-    expect(sceneY(scene, 0, 1, 0)).toBeLessThan(sceneY(scene, 0, 0, 0));
-    expect(sceneY(scene, 0.5, 0.5, 1)).toBeCloseTo(sceneY(scene, 0.5, 0.5, 0), 9);
-  });
-
-  it('stays in its room at every turn and tilt, its labels with it', () => {
-    for (let yaw = -180; yaw < 180; yaw += 15) {
-      for (const pitch of [0, 15, 28, 60, 90]) {
-        const scene = computeScene3D(AREA, { yaw, pitch }, AXES, measure);
-        for (const corner of corners(scene)) {
-          expect(corner.x).toBeGreaterThanOrEqual(-0.5);
-          expect(corner.x).toBeLessThanOrEqual(W + 0.5);
-          expect(corner.y).toBeGreaterThanOrEqual(-0.5);
-          expect(corner.y).toBeLessThanOrEqual(H + 0.5);
-        }
-        for (const label of scene.labels) {
-          const width = label.angle === 0 ? measure(label.text) : 0;
-          const left = label.align === 'left' ? label.x : label.align === 'right' ? label.x - width : label.x - width / 2;
-          expect(left, `${label.text} at yaw ${yaw}, pitch ${pitch}`).toBeGreaterThanOrEqual(-0.5);
-          expect(left + width, `${label.text} at yaw ${yaw}, pitch ${pitch}`).toBeLessThanOrEqual(W + 0.5);
-          expect(label.y).toBeGreaterThanOrEqual(0);
-          expect(label.y).toBeLessThanOrEqual(H);
-        }
-      }
-    }
-  });
-
-  it('is the same size at every turn, so it does not swell and shrink as it is turned', () => {
-    const sizes = [-170, -35, 0, 45, 90, 133].map((yaw) => computeScene3D(AREA, { yaw, pitch: 28 }, AXES, measure).scale);
-    for (const size of sizes) expect(size).toBeCloseTo(sizes[0], 9);
-    expect(sizes[0]).toBeGreaterThan(100);
-  });
-
-  it('knows which sides are at the back: the ones its grid is drawn on', () => {
-    const near = computeScene3D(AREA, { yaw: -35, pitch: 28 }, AXES, measure);
-    // The corner where both axes start is the nearest of the floor's four.
-    const depths = [[0, 0], [1, 0], [0, 1], [1, 1]].map(([u, v]) => sceneDepth(near, u, v, 0));
-    expect(Math.min(...depths)).toBe(depths[0]);
-    expect([near.uBack, near.vBack]).toEqual([1, 1]);
-    const turned = computeScene3D(AREA, { yaw: 145, pitch: 28 }, AXES, measure);
-    expect([turned.uBack, turned.vBack]).toEqual([0, 0]);
-    const side = computeScene3D(AREA, { yaw: 35, pitch: 28 }, AXES, measure);
-    expect([side.uBack, side.vBack]).toEqual([0, 1]);
-  });
-
-  it('writes the values to the left of its left edge, and each floor axis outside the floor', () => {
-    const scene = computeScene3D(AREA, { yaw: -35, pitch: 28 }, AXES, measure);
-    const left = Math.min(...corners(scene).map((c) => c.x));
-    const bottom = Math.max(...corners(scene).map((c) => c.y));
-    const values = scene.labels.filter((l) => ['0.1', '0.2', '0.3'].includes(l.text));
-    expect(values).toHaveLength(3);
-    for (const label of values) {
-      expect(label.align).toBe('right');
-      expect(label.x).toBeLessThan(left);
-    }
-    // The higher a value, the higher its label.
-    expect(values.find((l) => l.text === '0.3')!.y).toBeLessThan(values.find((l) => l.text === '0.1')!.y);
-    // The floor's ticks are under the floor's front edges: lower than the box's middle, and never above its top.
-    const middle = sceneY(scene, 0.5, 0.5, 0.5);
-    for (const text of ['90', '110', '30', '90']) {
-      const label = scene.labels.find((l) => l.text === text)!;
-      expect(label.y).toBeGreaterThan(middle);
-      expect(label.y).toBeLessThanOrEqual(bottom + 30);
-    }
-  });
-
-  it('turns each axis title along its axis, never upside down', () => {
-    for (const yaw of [-150, -35, 20, 110]) {
-      const scene = computeScene3D(AREA, { yaw, pitch: 28 }, AXES, measure);
-      const titles = scene.labels.filter((l) => l.title);
-      expect(titles.map((l) => l.text).sort()).toEqual(['Days', 'IV', 'Strike']);
-      for (const title of titles) {
-        expect(title.angle).toBeGreaterThanOrEqual(-Math.PI / 2 - 1e-9);
-        expect(title.angle).toBeLessThanOrEqual(Math.PI / 2 + 1e-9);
-      }
-      // The values' title runs up the left edge.
-      expect(titles.find((l) => l.text === 'IV')!.angle).toBeCloseTo(-Math.PI / 2, 9);
-    }
-  });
-
-  it('leaves out a label that would run into one before it, and an axis seen end on', () => {
-    const many: Axis3D = { ticks: Array.from({ length: 60 }, (_, i) => ({ at: i / 59, text: `tick ${i}` })) };
-    const crowded = computeScene3D(AREA, { yaw: -35, pitch: 28 }, { ...AXES, x: many }, measure);
-    const written = crowded.labels.filter((l) => l.text.startsWith('tick'));
-    expect(written.length).toBeGreaterThan(1);
-    expect(written.length).toBeLessThan(20);
-    // From straight above the values' axis is a point: none of its labels is written.
-    const above = computeScene3D(AREA, { yaw: -35, pitch: 90 }, AXES, measure);
-    expect(above.labels.some((l) => ['0.1', '0.2', '0.3', 'IV'].includes(l.text))).toBe(false);
-  });
-
-  it('writes a floor axis’s last tick a line lower where it meets the lowest value’s, and leaves neither out', () => {
-    // Turned so that the x axis runs up the left side and ends at the foot of the values' axis.
-    const scene = computeScene3D(AREA, { yaw: -107, pitch: 44 }, AXES, measure);
-    const written = scene.labels.filter((l) => !l.title).map((l) => l.text).sort();
-    expect(written).toEqual(['0.1', '0.2', '0.3', '100', '110', '30', '60', '90', '90']);
-  });
-
-  it('draws nothing it cannot place in a room of no size', () => {
-    const scene = computeScene3D({ x: 0, y: 0, width: 0, height: 0 }, undefined, AXES, measure);
-    expect(Number.isFinite(scene.scale)).toBe(true);
-    for (const corner of corners(scene)) expect(Number.isFinite(corner.x) && Number.isFinite(corner.y)).toBe(true);
-  });
-});
-
-describe('colours from the lowest value to the highest', () => {
-  it('are one hue by default, from near the ground to its strongest, over the values’ range', () => {
-    for (const theme of [DARK_THEME, LIGHT_THEME]) {
-      const ramp = resolveColorRamp([3, 1, Number.NaN, 5], theme);
-      expect([ramp.min, ramp.max]).toEqual([1, 5]);
-      expect(ramp.colors.length).toBeGreaterThanOrEqual(2);
-      expect(rampColor(1, ramp)).not.toBe(rampColor(5, ramp));
-      expect(rampColor(3, ramp)).not.toBe(rampColor(5, ramp));
-    }
-  });
-
-  it('blend between the colours given, and keep the end colours past the ends', () => {
-    const ramp = resolveColorRamp([0, 10], DARK_THEME, { colors: ['#000000', '#ffffff'] });
-    expect(rampColor(0, ramp)).toBe('rgb(0,0,0)');
-    expect(rampColor(5, ramp)).toBe('rgb(128,128,128)');
-    expect(rampColor(10, ramp)).toBe('rgb(255,255,255)');
-    expect(rampColor(-4, ramp)).toBe('rgb(0,0,0)');
-    expect(rampColor(99, ramp)).toBe('rgb(255,255,255)');
-    const three = resolveColorRamp([0, 10], DARK_THEME, { colors: ['#ff0000', '#000000', '#0000ff'] });
-    expect(rampColor(5, three)).toBe('rgb(0,0,0)');
-    expect(rampColor(7.5, three)).toBe('rgb(0,0,128)');
-  });
-
-  it('take a range of their own, and ignore one that is no number', () => {
-    expect(resolveColorRamp([2, 4], DARK_THEME, { min: 0, max: 10 })).toMatchObject({ min: 0, max: 10 });
-    expect(resolveColorRamp([2, 4], DARK_THEME, { min: Number.NaN, max: Number.POSITIVE_INFINITY })).toMatchObject({ min: 2, max: 4 });
-    expect(resolveColorRamp([], DARK_THEME)).toMatchObject({ min: 0, max: 1 });
-  });
-
-  it('are darker or lighter by how a face is lit', () => {
-    const ramp = resolveColorRamp([0, 10], DARK_THEME, { colors: ['#646464', '#646464'] });
-    expect(rampColor(5, ramp, 1)).toBe('rgb(100,100,100)');
-    expect(rampColor(5, ramp, 0.5)).toBe('rgb(50,50,50)');
-    // Past full light a colour goes towards white, never past it.
-    expect(rampColor(5, ramp, 1.2)).toBe('rgb(131,131,131)');
-  });
-
-  it('change in steps between colours that cannot be read, one colour where one is given', () => {
-    const named = resolveColorRamp([0, 10], DARK_THEME, { colors: ['red', 'blue'] });
-    expect(rampColor(2, named)).toBe('red');
-    expect(rampColor(8, named)).toBe('blue');
-    const one = resolveColorRamp([0, 10], DARK_THEME, { colors: ['#102030'] });
-    expect(rampColor(0, one)).toBe('rgb(16,32,48)');
-    expect(rampColor(10, one)).toBe('rgb(16,32,48)');
-    const flat = resolveColorRamp([4, 4], DARK_THEME, { colors: ['#000000', '#ffffff'] });
-    expect(rampColor(4, flat)).toBe('rgb(128,128,128)');
-  });
-});
+import { H, W, measure, plain, recorder, redOf, samePoints } from './charts3dKit.js';
 
 const SMILE: SurfaceChartOptions = {
   x: [90, 100, 110],
@@ -262,6 +21,20 @@ function cell(layout: SurfaceLayout, column: number, row: number): number[] {
   const n = layout.columns.length;
   const at = (c: number, r: number) => [layout.sx[r * n + c], layout.sy[r * n + c]];
   return [...at(column, row), ...at(column + 1, row), ...at(column + 1, row + 1), ...at(column, row + 1)];
+}
+
+/**
+ * Whether something `columns` and `rows` on from another is behind it as the
+ * eye sees them: further along an axis without being nearer along the other.
+ * `stepU` and `stepV` are how much further a step along each axis is; along
+ * an axis seen from the side (no step), only what is in the same place can
+ * be in front or behind. Drawn later, it would paint over what covers it.
+ */
+function isBehind(columns: number, rows: number, stepU: number, stepV: number): boolean {
+  const along = (places: number, step: number) => (Math.abs(step) < 1e-9 ? (places === 0 ? 0 : Number.NaN) : places * step);
+  const u = along(columns, stepU);
+  const v = along(rows, stepV);
+  return u >= 0 && v >= 0 && u + v > 0;
 }
 
 describe('a surface chart’s layout', () => {
@@ -313,6 +86,19 @@ describe('a surface chart’s layout', () => {
     expect([layout.rows[0], layout.rows.at(-1)]).toEqual([0, 299]);
   });
 
+  it('thins a grid further where it is asked to, for a chart that is being turned', () => {
+    const x = Array.from({ length: 500 }, (_, i) => i);
+    const y = Array.from({ length: 90 }, (_, i) => i);
+    const values = y.map((r) => x.map((c) => c + r));
+    const layout = computeSurfaceLayout({ x, y, values }, W, H, DARK_THEME, measure, TURNING_SURFACE_POINTS);
+    expect(layout.columns).toHaveLength(TURNING_SURFACE_POINTS);
+    expect(layout.rows).toHaveLength(TURNING_SURFACE_POINTS);
+    expect([layout.columns[0], layout.columns.at(-1), layout.rows[0], layout.rows.at(-1)]).toEqual([0, 499, 0, 89]);
+    expect(TURNING_SURFACE_POINTS).toBeLessThan(MAX_SURFACE_POINTS);
+    // A grid already that small is drawn whole.
+    expect(computeSurfaceLayout(SMILE, W, H, DARK_THEME, measure, TURNING_SURFACE_POINTS).columns).toEqual([0, 1, 2]);
+  });
+
   it('takes a great many values without running out of stack', () => {
     const x = Array.from({ length: 2000 }, (_, i) => i);
     const y = Array.from({ length: 400 }, (_, i) => i);
@@ -343,6 +129,36 @@ describe('a surface chart’s layout', () => {
       expect(shapes).toEqual([]);
       expect(rects).toEqual([[0, 0, W, H]]);
     }
+  });
+
+  it('has nothing to draw in a room whose size is no number, and nothing under the pointer there', () => {
+    for (const [width, height] of [[Number.NaN, H], [W, Number.NaN], [-5, H], [W, 0]]) {
+      const layout = computeSurfaceLayout(SMILE, width, height, DARK_THEME, measure);
+      expect(layout.scene, `${width} × ${height}`).toBeNull();
+      expect(hitSurfacePoint(layout, 10, 10)).toBeNull();
+    }
+  });
+
+  it('places values as far apart as numbers go, and draws them', () => {
+    const options: SurfaceChartOptions = { x: [0, 1], y: [0, 1], values: [[1e308, -1e308], [3, 4]] };
+    const layout = computeSurfaceLayout(options, W, H, DARK_THEME, measure);
+    expect([...layout.heights].every((h) => h >= 0 && h <= 1)).toBe(true);
+    expect(layout.heights[0]).toBeGreaterThan(layout.heights[1]);
+    const { ctx, shapes } = recorder();
+    renderSurface(ctx, W, H, options, DARK_THEME, null, layout);
+    expect(shapes.some((s) => s.kind === 'fill' && samePoints(s.points, cell(layout, 0, 0)))).toBe(true);
+  });
+
+  it('writes a place along an axis with two decimals more than its round steps have, however many it has', () => {
+    // Evenly spaced by a sum: 100.02127659574468…
+    const x = Array.from({ length: 48 }, (_, i) => 100 + i / 47);
+    const layout = computeSurfaceLayout({ x, y: [1, 2], values: [x, x], locale: 'en' }, W, H, DARK_THEME, measure);
+    expect(layout.format.x(x[1])).toBe('100.021');
+    // A few points with long numbers, each of them a tick.
+    const few = computeSurfaceLayout({ x: [100, 100 + 1 / 3, 100 + 2 / 3, 101], y: [1, 2], values: [[1, 2, 3, 4], [1, 2, 3, 4]], locale: 'en' }, W, H, DARK_THEME, measure);
+    expect(few.scene!.labels.map((l) => l.text)).toEqual(expect.arrayContaining(['100.000', '100.333', '101.000']));
+    // Numbers that are whole stay whole.
+    expect(computeSurfaceLayout({ ...SMILE, locale: 'en' }, W, H, DARK_THEME, measure).format.x(90)).toBe('90');
   });
 
   it('takes the view it is given, and the colours’ range', () => {
@@ -376,6 +192,52 @@ describe('a surface chart’s drawing', () => {
     expect(first).toBeLessThan(last);
   });
 
+  it('fills no cell after one that could cover it, at any turn or tilt', () => {
+    const points = [0, 1, 2, 3];
+    const bumpy: SurfaceChartOptions = { x: points, y: points, values: points.map((r) => points.map((c) => Math.sin(c * 1.7) * Math.cos(r * 1.3) + (c * r) / 9)) };
+    for (const yaw of [-145, -90, -35, 0, 35, 90, 145, 180]) {
+      for (const pitch of [0, 28, 60]) {
+        const options = { ...bumpy, view: { yaw, pitch } };
+        const layout = computeSurfaceLayout(options, W, H, DARK_THEME, measure);
+        const scene = layout.scene!;
+        const { ctx, shapes } = recorder();
+        renderSurface(ctx, W, H, options, DARK_THEME, null, layout);
+        const fills = shapes.filter((s) => s.kind === 'fill' && s.points.length === 8);
+        const cells: [number, number][] = [];
+        for (const fill of fills) {
+          for (let r = 0; r < 3; r++) for (let c = 0; c < 3; c++) if (samePoints(fill.points, cell(layout, c, r))) cells.push([c, r]);
+        }
+        expect(cells, `yaw ${yaw}, pitch ${pitch}`).toHaveLength(9);
+        // How much further from the eye a step along each axis takes a cell.
+        const stepU = sceneDepth(scene, 1, 0, 0) - sceneDepth(scene, 0, 0, 0);
+        const stepV = sceneDepth(scene, 0, 1, 0) - sceneDepth(scene, 0, 0, 0);
+        for (let late = 1; late < cells.length; late++) {
+          for (let early = 0; early < late; early++) {
+            const behind = isBehind(cells[late][0] - cells[early][0], cells[late][1] - cells[early][1], stepU, stepV);
+            expect(behind, `yaw ${yaw}, pitch ${pitch}: cell ${cells[late]} after ${cells[early]}`).toBe(false);
+          }
+        }
+      }
+    }
+  });
+
+  it('draws slices from the furthest to the nearest at any turn', () => {
+    const options: SurfaceChartOptions = { ...SMILE, style: 'slices' };
+    for (const yaw of [-145, -90, -35, 0, 35, 90, 145, 180]) {
+      const layout = computeSurfaceLayout({ ...options, view: { yaw, pitch: 28 } }, W, H, DARK_THEME, measure);
+      const scene = layout.scene!;
+      const { ctx, shapes } = recorder();
+      renderSurface(ctx, W, H, options, DARK_THEME, null, layout);
+      const n = layout.columns.length;
+      // A slice's line along its top starts at its first point.
+      const tops = shapes.filter((s) => s.kind === 'stroke' && s.points.length === n * 2);
+      const rows = tops.map((top) => [0, 1, 2].find((r) => top.points[0] === layout.sx[r * n] && top.points[1] === layout.sy[r * n])!);
+      expect([...rows].sort(), `yaw ${yaw}`).toEqual([0, 1, 2]);
+      const depths = rows.map((r) => sceneDepth(scene, 0, layout.vs[r], 0));
+      for (let i = 1; i < depths.length; i++) expect(depths[i], `yaw ${yaw}`).toBeLessThanOrEqual(depths[i - 1] + 1e-9);
+    }
+  });
+
   it('colours a cell by its values, the highest in the last colour', () => {
     const options: SurfaceChartOptions = { x: [0, 1, 2], y: [0, 1], values: [[0, 0, 10], [0, 0, 10]], colorRamp: { colors: ['#000000', '#ffffff'] }, view: { yaw: 0, pitch: 90 } };
     const layout = computeSurfaceLayout(options, W, H, DARK_THEME, measure);
@@ -384,8 +246,7 @@ describe('a surface chart’s drawing', () => {
     const fills = shapes.filter((s) => s.kind === 'fill');
     const low = fills.find((s) => samePoints(s.points, cell(layout, 0, 0)))!;
     const high = fills.find((s) => samePoints(s.points, cell(layout, 1, 0)))!;
-    const brightness = (style: string) => Number(style.match(/\d+/)![0]);
-    expect(brightness(high.style)).toBeGreaterThan(brightness(low.style) + 60);
+    expect(redOf(high.style)).toBeGreaterThan(redOf(low.style) + 60);
   });
 
   it('draws a sheet’s underside in its own shade, where it is seen from below', () => {
@@ -396,7 +257,7 @@ describe('a surface chart’s drawing', () => {
       const layout = computeSurfaceLayout(options, W, H, DARK_THEME, measure);
       const { ctx, shapes } = recorder();
       renderSurface(ctx, W, H, options, DARK_THEME, null, layout);
-      return Number(shapes.find((s) => s.kind === 'fill' && samePoints(s.points, cell(layout, 0, 0)))!.style.match(/\d+/)![0]);
+      return redOf(shapes.find((s) => s.kind === 'fill' && samePoints(s.points, cell(layout, 0, 0)))!.style);
     };
     expect(brightness(10)).toBeLessThan(brightness(80) - 20);
   });
@@ -642,6 +503,19 @@ describe('an order book’s depth over time, as a surface', () => {
     expect(depthSurface([book], { levels: Number.NaN }).x.length).toBeGreaterThan(2);
   });
 
+  it('reads no more prices than MAX_DEPTH_LEVELS, however many are asked for', () => {
+    const surface = depthSurface([book], { levels: 1e9 });
+    expect(surface.x).toHaveLength(MAX_DEPTH_LEVELS);
+    expect(surface.values[0]).toHaveLength(MAX_DEPTH_LEVELS);
+    expect([surface.x[0], surface.x.at(-1)]).toEqual([99, 102]);
+  });
+
+  it('takes a window given the wrong way round in order', () => {
+    const surface = depthSurface([book], { levels: 3, from: 102, to: 100 });
+    expect(surface.x).toEqual([100, 101, 102]);
+    expect(surface.values).toEqual([[2, 1, 5]]);
+  });
+
   it('is empty with no book, and all zeros for a book with no levels', () => {
     expect(depthSurface([])).toEqual({ x: [], y: [], values: [] });
     expect(depthSurface([{ time: 1, bids: [], asks: [] }])).toEqual({ x: [], y: [], values: [] });
@@ -691,6 +565,43 @@ describe('a chart of columns in 3D', () => {
     const top = drawn[2];
     expect(drawn[0].style).not.toBe(top.style);
     expect(drawn[1].style).not.toBe(top.style);
+    // The top is fully lit, a side less: by its light, and so by the colour it is drawn in.
+    for (const bar of layout.bars) {
+      expect(bar.faces[2].light).toBe(1);
+      expect(bar.faces[0].light).toBeLessThan(1);
+      expect(bar.faces[1].light).toBeLessThan(1);
+    }
+    expect(redOf(drawn[0].style)).toBeLessThan(redOf(top.style));
+    expect(redOf(drawn[1].style)).toBeLessThan(redOf(top.style));
+  });
+
+  it('draws no column after one that could cover it, and finds the nearest first, at any turn', () => {
+    const options: Bar3DChartOptions = { categories: ['a', 'b', 'c', 'd'], series: ['s', 't', 'u'].map((name, j) => ({ name, values: [1, 2, 3, 4].map((v) => v + j) })) };
+    for (const yaw of [-145, -90, -35, 0, 35, 90, 145, 180]) {
+      const layout = computeBar3DLayout({ ...options, view: { yaw, pitch: 28 } }, W, H, DARK_THEME, measure);
+      const scene = layout.scene!;
+      expect(layout.bars).toHaveLength(12);
+      const stepU = sceneDepth(scene, 1, 0, 0) - sceneDepth(scene, 0, 0, 0);
+      const stepV = sceneDepth(scene, 0, 1, 0) - sceneDepth(scene, 0, 0, 0);
+      const place = (bar: (typeof layout.bars)[number]) => [bar.hit.index, ['s', 't', 'u'].indexOf(bar.hit.series)];
+      for (let late = 1; late < layout.bars.length; late++) {
+        for (let early = 0; early < late; early++) {
+          const behind = isBehind(place(layout.bars[late])[0] - place(layout.bars[early])[0], place(layout.bars[late])[1] - place(layout.bars[early])[1], stepU, stepV);
+          expect(behind, `yaw ${yaw}: ${layout.bars[late].hit.category}/${layout.bars[late].hit.series} after ${layout.bars[early].hit.category}/${layout.bars[early].hit.series}`).toBe(false);
+        }
+      }
+      // The last drawn is on top where two overlap: the one a pointer on its own top finds.
+      const nearest = layout.bars.at(-1)!;
+      expect(hitBar3D(layout, nearest.top.x, nearest.top.y)).toBe(nearest);
+    }
+  });
+
+  it('has nothing to draw in a room whose size is no number, and stands columns on values as far apart as numbers go', () => {
+    expect(computeBar3DLayout(BARS, Number.NaN, H, DARK_THEME, measure).scene).toBeNull();
+    expect(computeBar3DLayout(BARS, W, Number.NaN, DARK_THEME, measure).scene).toBeNull();
+    const wide = computeBar3DLayout({ categories: ['a', 'b'], series: [{ name: 's', values: [1e308, -1e308] }] }, W, H, DARK_THEME, measure);
+    expect(wide.bars).toHaveLength(2);
+    for (const bar of wide.bars) for (const face of bar.faces) expect(face.points.every(Number.isFinite)).toBe(true);
   });
 
   it('starts every column at zero, one under zero hanging from it', () => {

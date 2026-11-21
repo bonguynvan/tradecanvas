@@ -33,7 +33,7 @@ const LABEL_NUDGES = [[0, 0], [LABEL_GAP, 0], [LABEL_SIZE, 0], [0, LABEL_SIZE + 
 const SIDEWAYS = 0.3;
 /** How strongly a face turned from the light is still lit. */
 const AMBIENT = 0.62;
-/** Where the light is, as the eye sees it: over its left shoulder. Across, up, and away. */
+/** Where the light is, as the eye sees it: over its left shoulder. To the left, up, and on the eye's side of the chart. */
 const LIGHT = [-0.35, 0.85, -0.4];
 const LIGHT_LENGTH = Math.hypot(LIGHT[0], LIGHT[1], LIGHT[2]);
 /** How much of its light a sheet's underside has: seen from below, it is in its own shade. */
@@ -132,7 +132,8 @@ export function sceneDepth(scene: Scene3D, u: number, v: number, h: number): num
  * from the eye is a sheet seen from below: its other side, in its shade.
  */
 export function faceLight(scene: Scene3D, nx: number, ny: number, nz: number): number {
-  const length = Math.hypot(nx, ny, nz);
+  // By hand: this runs for every cell of a surface in every frame of a drag.
+  const length = Math.sqrt(nx * nx + ny * ny + nz * nz);
   if (!(length > 0)) return 1;
   const under = nx * scene.eye[0] + ny * scene.eye[1] + nz * scene.eye[2] < 0;
   const towards = (nx * scene.light[0] + ny * scene.light[1] + nz * scene.light[2]) / length;
@@ -140,20 +141,29 @@ export function faceLight(scene: Scene3D, nx: number, ny: number, nz: number): n
   return under ? lit * UNDERSIDE : lit;
 }
 
-function inTriangle(px: number, py: number, ax: number, ay: number, bx: number, by: number, cx: number, cy: number): boolean {
-  // A triangle seen edge on holds no point.
-  if (Math.abs((bx - ax) * (cy - ay) - (cx - ax) * (by - ay)) < 1e-9) return false;
-  const d1 = (px - bx) * (ay - by) - (ax - bx) * (py - by);
-  const d2 = (px - cx) * (by - cy) - (bx - cx) * (py - cy);
-  const d3 = (px - ax) * (cy - ay) - (cx - ax) * (py - ay);
-  const under = d1 < 0 || d2 < 0 || d3 < 0;
-  const over = d1 > 0 || d2 > 0 || d3 > 0;
-  return !(under && over);
+/** Whether a line from (px, py) straight to the right crosses the side from (ax, ay) to (bx, by). */
+function crosses(px: number, py: number, ax: number, ay: number, bx: number, by: number): boolean {
+  return ay > py !== by > py && px < ((bx - ax) * (py - ay)) / (by - ay) + ax;
 }
 
-/** Whether (px, py) is in the shape with four corners, taken as two triangles: a cell of a surface need not lie flat. */
+/**
+ * Whether (px, py) is in the shape with these four corners, in the order
+ * they are joined: it is when a line from it crosses an odd number of the
+ * shape's sides. That holds for a shape with a dent and for one twisted
+ * into a bow, as a cell of a surface seen at a slant can be, and it is what
+ * the canvas fills. A shape seen edge on, or with a corner that is no
+ * number, holds no point.
+ */
 export function inQuad(px: number, py: number, x0: number, y0: number, x1: number, y1: number, x2: number, y2: number, x3: number, y3: number): boolean {
-  return inTriangle(px, py, x0, y0, x1, y1, x2, y2) || inTriangle(px, py, x0, y0, x2, y2, x3, y3);
+  // A corner that is no number makes the sum one too.
+  const sum = x0 + y0 + x1 + y1 + x2 + y2 + x3 + y3;
+  if (sum !== sum) return false;
+  let inside = false;
+  if (crosses(px, py, x0, y0, x1, y1)) inside = !inside;
+  if (crosses(px, py, x1, y1, x2, y2)) inside = !inside;
+  if (crosses(px, py, x2, y2, x3, y3)) inside = !inside;
+  if (crosses(px, py, x3, y3, x0, y0)) inside = !inside;
+  return inside;
 }
 
 interface Point {
@@ -195,6 +205,7 @@ function labelAxis(axis: Axis3D, from: Point, to: Point, centre: Point, area: Re
   const baseline: CanvasTextBaseline = Math.abs(ny) < SIDEWAYS ? 'middle' : ny > 0 ? 'top' : 'bottom';
   // How far the ticks' texts reach from the edge: the title goes beyond them.
   let reach = 0;
+  const own: Rect[] = [];
   for (const tick of axis.ticks) {
     if (!(tick.at >= 0 && tick.at <= 1) || tick.text === '') continue;
     const width = measure(tick.text, LABEL_SIZE);
@@ -202,13 +213,17 @@ function labelAxis(axis: Axis3D, from: Point, to: Point, centre: Point, area: Re
       const x = from.x + dx * tick.at + nx * (LABEL_GAP + out);
       const y = from.y + dy * tick.at + ny * (LABEL_GAP + out) + lower;
       const box = labelBox(x, y, width, align, baseline);
-      if (!inside(box, area) || taken.some((other) => overlap(box, other))) continue;
-      taken.push(box);
+      const crowded = own.some((other) => overlap(box, other));
+      // In its own place it runs into its own axis's tick: one tick too many for the room. Set aside, the two would read as a pair.
+      if (crowded && out === 0 && lower === 0) break;
+      if (crowded || !inside(box, area) || taken.some((other) => overlap(box, other))) continue;
+      own.push(box);
       labels.push({ text: tick.text, x, y, align, baseline, angle: 0, title: false });
       reach = Math.max(reach, out + Math.abs(nx) * width + Math.abs(ny) * (LABEL_SIZE + lower));
       break;
     }
   }
+  taken.push(...own);
   const title = axis.title ? fitText(axis.title, length * TITLE_SHARE, measure) : '';
   if (title === '') return;
   const out = LABEL_GAP * 2 + reach + LABEL_SIZE / 2;

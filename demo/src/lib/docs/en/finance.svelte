@@ -403,7 +403,8 @@ chart.update(nextSeries, nextCategories)`}</code></pre>
   <code>y</code> running back, and <code>values[yIndex][xIndex]</code> up. Numbers along an axis are placed by
   their value, and drawn by rising value whatever their order; names are spaced evenly in the order given, so
   a list of tenors (<code>'1W'</code>, <code>'1M'</code>, <code>'1Y'</code>) is not crowded at its short end.
-  A value that is missing or no number leaves a hole.
+  A value that is missing or no number leaves a hole, and a place along an axis that is no number is left out
+  with its values.
 </p>
 <pre><code>{`import { SurfaceChart } from '@tradecanvas/chart'
 
@@ -433,12 +434,15 @@ chart.update(nextValues)                   // or update(values, { x, y }) when t
   default, over the values' range; give <code>colors</code> (two or more, the lowest value's first) and
   <code>min</code> and <code>max</code> for your own, such as a loss colour, a neutral and a profit colour
   either side of zero. The pointer reads the nearest point of the cell it is on, the one in front where the
-  sheet folds over itself. A grid past 120 points along an axis is thinned to that many, both ends kept.
+  sheet folds over itself. A grid past 120 points along an axis is thinned to that many, both ends kept, and
+  to 60 for as long as it is being turned, so that a large grid turns smoothly.
 </p>
 <p>
   <code>depthSurface(snapshots, {'{'} levels {'}'})</code> turns a run of order books into a surface's
   <code>x</code>, <code>y</code> and <code>values</code>: prices across, the books' times back, and at each the
-  volume waiting from the best price out to that price, as a depth chart has it.
+  volume waiting from the best price out to that price, as a depth chart has it. <code>levels</code> is how
+  many prices (48 when left out, 1,000 at most), and <code>from</code> and <code>to</code> keep to a window of
+  prices.
 </p>
 <pre><code>{`import { SurfaceChart, depthSurface } from '@tradecanvas/chart'
 

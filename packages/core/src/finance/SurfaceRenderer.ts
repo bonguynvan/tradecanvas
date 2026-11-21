@@ -1,11 +1,17 @@
 import type { DepthLevel, DepthSnapshot, DepthSurface, SurfaceChartOptions, SurfacePoint, Theme } from '@tradecanvas/commons';
 import { withAlpha } from '@tradecanvas/commons';
-import { CHART_PAD, axisFormat, canvasMeasure, decimalsFor, drawTooltip, extent, fixedFormat, niceScale, readoutFormat, type Measure, type NiceScale, type Rect } from './chartKit.js';
+import { CHART_PAD, axisFormat, canvasMeasure, decimalsFor, drawTooltip, extent, fixedFormat, niceScale, readoutFormat, shareBetween, type Measure, type NiceScale, type Rect } from './chartKit.js';
 import { BAR_LABEL_SIZE, COLOR_BAR_ROOM, colorBarLabelWidth, drawRangeBar, rampColor, resolveColorRamp, type ResolvedRamp } from './colorScale.js';
 import { BOX_SIZE, computeScene3D, drawScene3D, drawSceneLabels, faceLight, inQuad, sceneX, sceneY, type Axis3D, type Scene3D } from './scene3d.js';
 
 /** No more points along an axis are drawn than this: a grid past it is thinned, both ends kept. */
 export const MAX_SURFACE_POINTS = 120;
+/**
+ * And no more than this while the chart is being turned: 14,000 cells take
+ * some 27 ms to draw, which is every other frame of a drag; a quarter of
+ * them leave time to spare.
+ */
+export const TURNING_SURFACE_POINTS = 60;
 /**
  * An axis of this many points or fewer has a tick at each of them. Past it,
  * ticks are on round numbers, or on some of the points where the numbers
@@ -21,8 +27,17 @@ const MESH_ALPHA = 0.35;
 const BAR_WIDTH = 180;
 const BAR_GAP = 8;
 const MARKER_RADIUS = 4;
+/** The width of the ring round the point under the pointer, and of the line along a slice's top, px. */
+const MARKER_LINE = 1.5;
+const SLICE_LINE = 1.5;
+/** How many more decimals a place along an axis is written with than its round steps have. */
+const PLACE_DECIMALS = 2;
 /** The prices `depthSurface` reads a book at, when its options do not say. */
 const DEPTH_LEVELS = 48;
+/** The most prices `depthSurface` reads a book at: several times what a chart draws along an axis. */
+export const MAX_DEPTH_LEVELS = 1000;
+/** How near a level's price a price worked out by sums has to be to count that level, as a share of the prices' range. */
+const PRICE_SLACK = 1e-9;
 
 type SurfaceStyle = NonNullable<SurfaceChartOptions['style']>;
 
@@ -70,29 +85,32 @@ interface PlacedAxis {
   format: (value: number | string) => string;
 }
 
-/** `order` thinned to MAX_SURFACE_POINTS, evenly, its first and its last kept. */
-function thin(order: number[]): number[] {
-  if (order.length <= MAX_SURFACE_POINTS) return order;
+/** `order` thinned to `most`, evenly, its first and its last kept. */
+function thin(order: number[], most: number): number[] {
+  if (order.length <= most) return order;
   const kept: number[] = [];
-  for (let k = 0; k < MAX_SURFACE_POINTS; k++) kept.push(order[Math.round((k * (order.length - 1)) / (MAX_SURFACE_POINTS - 1))]);
+  for (let k = 0; k < most; k++) kept.push(order[Math.round((k * (order.length - 1)) / (most - 1))]);
   return kept;
 }
 
 /** Names along an axis: evenly spaced in the order given, each a tick. */
-function placeNames(names: readonly unknown[], title: string | undefined): PlacedAxis {
-  const order = thin(names.map((_, i) => i));
+function placeNames(names: readonly unknown[], title: string | undefined, most: number): PlacedAxis {
+  const order = thin(names.map((_, i) => i), most);
   const at = order.map((_, k) => (order.length === 1 ? 0.5 : k / (order.length - 1)));
   return { order, at, axis: { title, ticks: order.map((index, k) => ({ at: at[k], text: String(names[index]) })) }, format: String };
 }
 
 /** Numbers along an axis: by rising value, each where its value falls between the lowest and the highest. */
-function placeNumbers(numbers: readonly number[], title: string | undefined, given: ((value: number) => string) | undefined, locale: string | undefined): PlacedAxis {
-  const order = thin(numbers.map((_, i) => i).filter((i) => Number.isFinite(numbers[i])).sort((a, b) => numbers[a] - numbers[b]));
+function placeNumbers(numbers: readonly number[], title: string | undefined, given: ((value: number) => string) | undefined, locale: string | undefined, most: number): PlacedAxis {
+  const order = thin(numbers.map((_, i) => i).filter((i) => Number.isFinite(numbers[i])).sort((a, b) => numbers[a] - numbers[b]), most);
   if (order.length === 0) return { order, at: [], axis: { ticks: [], title }, format: String };
   const min = numbers[order[0]];
   const max = numbers[order[order.length - 1]];
-  const share = (value: number) => (max > min ? (value - min) / (max - min) : 0.5);
-  const exact = fixedFormat(locale, decimalsFor(order.map((index) => numbers[index])));
+  const share = (value: number) => (max > min ? shareBetween(value, min, max) : 0.5);
+  // As many decimals as the numbers have, up to two more than their round steps: a price made by a sum has no end of them.
+  const written = decimalsFor(order.map((index) => numbers[index]));
+  const steps = max > min ? decimalsFor([niceScale(min, max, AXIS_TICKS).step]) + PLACE_DECIMALS : written;
+  const exact = fixedFormat(locale, Math.min(written, steps));
   const format = (value: number | string) => (typeof value === 'number' ? (given ?? exact)(value) : String(value));
   let ticks: Axis3D['ticks'];
   if (order.length <= MAX_POINT_TICKS || !(max > min)) {
@@ -108,9 +126,9 @@ function placeNumbers(numbers: readonly number[], title: string | undefined, giv
   return { order, at: order.map((index) => share(numbers[index])), axis: { title, ticks }, format };
 }
 
-function placeAxis(points: readonly (number | string)[], title: string | undefined, given: ((value: number) => string) | undefined, locale: string | undefined): PlacedAxis {
+function placeAxis(points: readonly (number | string)[], title: string | undefined, given: ((value: number) => string) | undefined, locale: string | undefined, most: number): PlacedAxis {
   const numbers = points.length > 0 && points.every((point) => typeof point === 'number');
-  return numbers ? placeNumbers(points as readonly number[], title, given, locale) : placeNames(points, title);
+  return numbers ? placeNumbers(points as readonly number[], title, given, locale, most) : placeNames(points, title, most);
 }
 
 function emptyLayout(options: SurfaceChartOptions, theme: Theme): SurfaceLayout {
@@ -136,13 +154,18 @@ function emptyLayout(options: SurfaceChartOptions, theme: Theme): SurfaceLayout 
   };
 }
 
-/** A grid of values as a sheet in a box, for a chart `width` × `height`. */
-export function computeSurfaceLayout(options: SurfaceChartOptions, width: number, height: number, theme: Theme, measure: Measure): SurfaceLayout {
-  const x = placeAxis(options.x ?? [], options.xLabel, options.xFormat, options.locale);
-  const y = placeAxis(options.y ?? [], options.yLabel, options.yFormat, options.locale);
+/**
+ * A grid of values as a sheet in a box, for a chart `width` × `height`.
+ * `most` is how many points along an axis are drawn at most, between 2 and
+ * MAX_SURFACE_POINTS: fewer for a chart that is being turned.
+ */
+export function computeSurfaceLayout(options: SurfaceChartOptions, width: number, height: number, theme: Theme, measure: Measure, most = MAX_SURFACE_POINTS): SurfaceLayout {
+  const points = Number.isFinite(most) ? Math.max(2, Math.min(MAX_SURFACE_POINTS, Math.floor(most))) : MAX_SURFACE_POINTS;
+  const x = placeAxis(options.x ?? [], options.xLabel, options.xFormat, options.locale, points);
+  const y = placeAxis(options.y ?? [], options.yLabel, options.yFormat, options.locale, points);
   const n = x.order.length;
   const m = y.order.length;
-  if (n < 2 || m < 1 || width <= 0 || height <= 0) return emptyLayout(options, theme);
+  if (n < 2 || m < 1 || !(width > 0) || !(height > 0)) return emptyLayout(options, theme);
 
   const values = new Float64Array(n * m);
   for (let r = 0; r < m; r++) {
@@ -160,8 +183,8 @@ export function computeSurfaceLayout(options: SurfaceChartOptions, width: number
   const zScale = niceScale(range.min, range.max, VALUE_TICKS);
   const ramp = resolveColorRamp(drawn, theme, options.colorRamp);
   const valueText = options.valueFormat ?? axisFormat(zScale, options.locale);
-  const span = zScale.max - zScale.min;
-  const z: Axis3D = { title: options.valueLabel, ticks: zScale.ticks.map((tick) => ({ at: (tick - zScale.min) / span, text: valueText(tick) })) };
+  const up = (value: number) => shareBetween(value, zScale.min, zScale.max);
+  const z: Axis3D = { title: options.valueLabel, ticks: zScale.ticks.map((tick) => ({ at: up(tick), text: valueText(tick) })) };
 
   const legendRoom = options.legend === false ? 0 : COLOR_BAR_ROOM;
   const area = { x: CHART_PAD, y: CHART_PAD, width: Math.max(1, width - CHART_PAD * 2), height: Math.max(1, height - CHART_PAD * 2 - legendRoom) };
@@ -173,7 +196,7 @@ export function computeSurfaceLayout(options: SurfaceChartOptions, width: number
   for (let r = 0; r < m; r++) {
     for (let c = 0; c < n; c++) {
       const k = r * n + c;
-      heights[k] = (values[k] - zScale.min) / span;
+      heights[k] = up(values[k]);
       sx[k] = sceneX(scene, x.at[c], y.at[r]);
       sy[k] = sceneY(scene, x.at[c], y.at[r], heights[k]);
     }
@@ -287,7 +310,7 @@ function drawSlices(ctx: CanvasRenderingContext2D, layout: SurfaceLayout, scene:
     }
     // The line along its top, in the chart's ground: what parts one slice from the one behind it.
     ctx.strokeStyle = theme.background;
-    ctx.lineWidth = 1.5;
+    ctx.lineWidth = SLICE_LINE;
     ctx.beginPath();
     let open = false;
     for (let column = 0; column < n; column++) {
@@ -395,7 +418,7 @@ export function renderSurface(
     ctx.save();
     ctx.fillStyle = color;
     ctx.strokeStyle = theme.text;
-    ctx.lineWidth = 1.5;
+    ctx.lineWidth = MARKER_LINE;
     ctx.beginPath();
     ctx.arc(hit.px, hit.py, MARKER_RADIUS, 0, Math.PI * 2);
     ctx.fill();
@@ -423,6 +446,8 @@ function side(levels: readonly DepthLevel[] | undefined, best: 'highest' | 'lowe
  * them), the books' times back, and at each the volume waiting from the best
  * price out to that price, as a depth chart has it. Between the best bid
  * and the best ask there is none. Draw it with `style: 'slices'`.
+ * `levels` is how many prices (48 when left out, 2 to MAX_DEPTH_LEVELS);
+ * `from` and `to` keep to a window of prices, in either order.
  */
 export function depthSurface(snapshots: readonly DepthSnapshot[], options: { levels?: number; from?: number; to?: number } = {}): DepthSurface {
   const books = snapshots.map((snapshot) => ({ time: snapshot.time, bids: side(snapshot.bids, 'highest'), asks: side(snapshot.asks, 'lowest') }));
@@ -430,18 +455,20 @@ export function depthSurface(snapshots: readonly DepthSnapshot[], options: { lev
   for (const book of books) for (const level of [...book.bids, ...book.asks]) prices.push(level.price);
   const range = extent(prices);
   if (!range) return { x: [], y: [], values: [] };
-  let lo = options.from !== undefined && Number.isFinite(options.from) ? options.from : range.min;
-  let hi = options.to !== undefined && Number.isFinite(options.to) ? options.to : range.max;
+  const from = options.from !== undefined && Number.isFinite(options.from) ? options.from : range.min;
+  const to = options.to !== undefined && Number.isFinite(options.to) ? options.to : range.max;
+  let lo = Math.min(from, to);
+  let hi = Math.max(from, to);
   if (!(hi > lo)) {
     // One price: a little room either side of it.
     const room = Math.abs(lo) / 2 || 0.5;
     hi = lo + room;
     lo -= room;
   }
-  const count = options.levels !== undefined && Number.isFinite(options.levels) ? Math.max(2, Math.floor(options.levels)) : DEPTH_LEVELS;
+  const count = options.levels !== undefined && Number.isFinite(options.levels) ? Math.min(MAX_DEPTH_LEVELS, Math.max(2, Math.floor(options.levels))) : DEPTH_LEVELS;
   const x = Array.from({ length: count }, (_, i) => lo + ((hi - lo) * i) / (count - 1));
   // A price a hair off a level's, by the sums that made it, still counts that level.
-  const slack = (hi - lo) * 1e-9;
+  const slack = (hi - lo) * PRICE_SLACK;
   const values = books.map((book) => {
     const row = new Array<number>(count).fill(0);
     // Bids from the highest price down, asks from the lowest up: each sum only grows.

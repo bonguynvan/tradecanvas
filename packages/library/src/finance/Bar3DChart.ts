@@ -14,7 +14,8 @@ export class Bar3DChart extends Chart3D<Bar3DChartOptions, Bar3DLayout> {
   }
 
   protected describe(): string {
-    return `3D bar chart of ${this.options.series.length} series over ${counted(this.options.categories.length, 'category', 'categories')}`;
+    // Either may be missing where the options come from plain JavaScript: the chart then draws nothing.
+    return `3D bar chart of ${this.options.series?.length ?? 0} series over ${counted(this.options.categories?.length ?? 0, 'category', 'categories')}`;
   }
 
   protected clickable(): boolean {

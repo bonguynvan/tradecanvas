@@ -7,12 +7,17 @@ const TURN_PER_PIXEL = 0.4;
 /** A press that moves less than this, px, is a click and turns nothing. */
 const DRAG_SLOP = 4;
 
-/** A press that may turn the chart: where it began, and the view it began from. */
+/** What a finger may still do to the page over a chart that turns: scroll it up and down, and pinch it. */
+const TOUCH_LEFT_TO_PAGE = 'pan-y pinch-zoom';
+
+/** A press that may turn the chart: where it began and the view it began from, and where the pointer is now. */
 interface Turn {
   id: number;
   x: number;
   y: number;
   from: Required<View3D>;
+  lastX: number;
+  lastY: number;
   moved: boolean;
   touch: boolean;
 }
@@ -32,7 +37,7 @@ export abstract class Chart3D<O extends Chart3DOptions, L> extends InteractiveCh
   private readonly onPress = (e: PointerEvent) => {
     this.turned = false;
     if (this.options.rotate === false || e.isPrimary === false || (e.button !== undefined && e.button !== 0)) return;
-    this.turn = { id: e.pointerId, x: e.clientX, y: e.clientY, from: this.getView(), moved: false, touch: e.pointerType === 'touch' };
+    this.turn = { id: e.pointerId, x: e.clientX, y: e.clientY, from: this.getView(), lastX: e.clientX, lastY: e.clientY, moved: false, touch: e.pointerType === 'touch' };
     try {
       // Held, the pointer still turns the chart when it leaves the canvas.
       this.canvas.setPointerCapture?.(e.pointerId);
@@ -53,6 +58,8 @@ export abstract class Chart3D<O extends Chart3DOptions, L> extends InteractiveCh
       this.endTurn();
       return;
     }
+    turn.lastX = e.clientX;
+    turn.lastY = e.clientY;
     const dx = e.clientX - turn.x;
     const dy = e.clientY - turn.y;
     if (!turn.moved && Math.hypot(dx, dy) < DRAG_SLOP) return;
@@ -108,6 +115,8 @@ export abstract class Chart3D<O extends Chart3DOptions, L> extends InteractiveCh
     if (!turn) return;
     this.turn = null;
     this.turned = turn.moved;
+    // What was laid out for a chart that turns is laid out again for one at rest.
+    if (turn.moved) this.options = { ...this.options };
     try {
       this.canvas.releasePointerCapture?.(turn.id);
     } catch {
@@ -125,13 +134,17 @@ export abstract class Chart3D<O extends Chart3DOptions, L> extends InteractiveCh
 
   private applyRotate(): void {
     const turns = this.options.rotate !== false;
-    // A finger's drag up and down stays the page's; across, it is the chart's.
-    this.canvas.style.touchAction = turns ? 'pan-y' : '';
+    // A finger's drag up and down stays the page's, and its pinch; across, it is the chart's.
+    this.canvas.style.touchAction = turns ? TOUCH_LEFT_TO_PAGE : '';
+    // A mouse dragged off the chart would mark the page's text as it went.
+    this.canvas.style.userSelect = turns ? 'none' : '';
+    this.canvas.style.setProperty('-webkit-user-select', turns ? 'none' : '');
     if (turns) {
       this.restCursor();
       return;
     }
-    this.turn = null;
+    // Switched off in the middle of a drag: it ends here, and its release is still no click.
+    this.endTurn();
     if (this.canvas.style.cursor === 'grab' || this.canvas.style.cursor === 'grabbing') this.canvas.style.cursor = '';
   }
 
@@ -148,6 +161,8 @@ export abstract class Chart3D<O extends Chart3DOptions, L> extends InteractiveCh
   setOptions(options: Partial<O>): void {
     if ('view' in options) this.home = options.view;
     super.setOptions(options);
+    // A view set in the middle of a drag: the drag goes on from it, where the pointer is now.
+    if ('view' in options && this.turn) this.turn = { ...this.turn, x: this.turn.lastX, y: this.turn.lastY, from: this.getView() };
     this.applyRotate();
   }
 

@@ -630,9 +630,10 @@ export interface StackedAreaOptions extends BaseFinanceChartOptions {
 
 /**
  * Where a 3D chart is seen from, in degrees. `yaw` turns it about its
- * upright axis: at 0 the x axis runs across and the y axis straight back.
- * `pitch` is how far above the floor the eye is: 0 level with it, 90 straight
- * down on it. A pitch outside 0 to 90 is held to them.
+ * upright axis: at 0 the x axis runs across and the y axis straight back; a
+ * positive yaw swings the far end of the x axis towards the eye, a negative
+ * one away from it. `pitch` is how far above the floor the eye is: 0 level
+ * with it, 90 straight down on it. A pitch outside 0 to 90 is held to them.
  */
 export interface View3D {
   /** Default `-35`: the corner where both axes start is nearest. */
@@ -654,7 +655,7 @@ export interface ColorRamp {
   colors?: string[];
   /** Where the first colour is reached; values under it keep it. Default: the lowest value. */
   min?: number;
-  /** Where the last colour is reached; values over it keep it. Default: the highest value. */
+  /** Where the last colour is reached; values over it keep it. Default: the highest value. Given under `min`, the two are taken in order. */
   max?: number;
 }
 
@@ -693,7 +694,11 @@ export interface SurfaceChartOptions extends Chart3DOptions {
   /**
    * The points along x: strikes, prices. Numbers are placed by their value
    * (and drawn by rising value, whatever their order); names are spaced
-   * evenly, in the order given.
+   * evenly, in the order given. A number that is none (`NaN`, `Infinity`)
+   * is left out with its values. With fewer than two points along x, or none
+   * along y, nothing is drawn. Past 120 points along an axis they are thinned
+   * to that many, the first and the last kept, and to 60 for as long as the
+   * chart is being turned.
    */
   x: number[] | string[];
   /** The points along y, the axis that runs back: days to expiry, times. Numbers or names, as `x`. */
@@ -719,9 +724,13 @@ export interface SurfaceChartOptions extends Chart3DOptions {
 }
 
 export interface Bar3DChartOptions extends Chart3DOptions {
-  /** A label for each column along x. */
+  /** A label for each column along x. No more than the first 120 are drawn. */
   categories: string[];
-  /** A row of columns for each series, the first at the front of the y axis: `values[i]` belongs to `categories[i]`. */
+  /**
+   * A row of columns for each series, the first where the y axis starts (the
+   * front, as the chart is first seen): `values[i]` belongs to
+   * `categories[i]`. No more than the first 120 are drawn.
+   */
   series: ChartSeries[];
   /** The series' names. Default `true` with more than one. */
   legend?: boolean;

@@ -46,7 +46,7 @@ export { resolveColorRamp, rampColor } from './colorScale.js';
 export type { ResolvedRamp } from './colorScale.js';
 export { computeScene3D, resolveView, sceneX, sceneY, sceneDepth, DEFAULT_VIEW } from './scene3d.js';
 export type { Scene3D, Axis3D, Axes3D, SceneLabel } from './scene3d.js';
-export { renderSurface, computeSurfaceLayout, hitSurfacePoint, depthSurface, MAX_SURFACE_POINTS } from './SurfaceRenderer.js';
+export { renderSurface, computeSurfaceLayout, hitSurfacePoint, depthSurface, MAX_SURFACE_POINTS, TURNING_SURFACE_POINTS, MAX_DEPTH_LEVELS } from './SurfaceRenderer.js';
 export type { SurfaceLayout, SurfaceHit } from './SurfaceRenderer.js';
 export { renderBar3D, computeBar3DLayout, hitBar3D, MAX_BAR3D_SIZE } from './Bar3DRenderer.js';
 export type { Bar3DLayout, Bar3DBox, Bar3DFace } from './Bar3DRenderer.js';

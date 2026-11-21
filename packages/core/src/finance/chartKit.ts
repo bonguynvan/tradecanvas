@@ -92,6 +92,16 @@ export function niceScale(min: number, max: number, maxTicks = 5): NiceScale {
   return { min: ticks[0], max: ticks[ticks.length - 1], step: clean(step, decimals), ticks };
 }
 
+/**
+ * How far `value` is from `min` to `max`: 0 at `min`, 1 at `max`. By halves
+ * where the two are further apart than the largest number, so that values
+ * at both ends of what a number can hold still have a place between them.
+ */
+export function shareBetween(value: number, min: number, max: number): number {
+  const span = max - min;
+  return Number.isFinite(span) ? (value - min) / span : (value / 2 - min / 2) / (max / 2 - min / 2);
+}
+
 /** Where `value` falls along a span of pixels, `start` at the scale's min (or max when `inverted`). */
 export function scaleToPx(scale: NiceScale, value: number, start: number, length: number, inverted = false): number {
   const t = scale.max === scale.min ? 0.5 : (value - scale.min) / (scale.max - scale.min);

@@ -1,6 +1,6 @@
 import type { ColorRamp, ColorScale, Theme } from '@tradecanvas/commons';
 import { TC_SERIES_COLORS } from '@tradecanvas/commons';
-import { LABEL_SIZE, fontOf, type Rect } from './chartKit.js';
+import { LABEL_SIZE, fontOf, shareBetween, type Rect } from './chartKit.js';
 
 /** A colour scale with its range worked out. */
 export interface ResolvedScale {
@@ -143,11 +143,10 @@ export function resolveColorRamp(values: Iterable<number>, theme: Theme, ramp?: 
   const given = (ramp?.colors ?? []).filter((color) => typeof color === 'string' && color.trim() !== '');
   const hue = TC_SERIES_COLORS[0];
   const colors = given.length > 1 ? given : given.length === 1 ? [given[0], given[0]] : [mix(theme.background, hue, RAMP_LOW), hue, mix(hue, theme.text, RAMP_HIGH)];
-  return {
-    colors,
-    min: ramp?.min !== undefined && Number.isFinite(ramp.min) ? ramp.min : lo <= hi ? lo : 0,
-    max: ramp?.max !== undefined && Number.isFinite(ramp.max) ? ramp.max : lo <= hi ? hi : 1,
-  };
+  const min = ramp?.min !== undefined && Number.isFinite(ramp.min) ? ramp.min : lo <= hi ? lo : 0;
+  const max = ramp?.max !== undefined && Number.isFinite(ramp.max) ? ramp.max : lo <= hi ? hi : 1;
+  // In order, whichever way round they came: a range that runs backwards would colour every value alike.
+  return { colors, min: Math.min(min, max), max: Math.max(min, max) };
 }
 
 /** A colour's parts under `light`: darker under 1, towards white over it. */
@@ -163,8 +162,7 @@ function lit(rgb: Rgb, light: number): string {
  * to it. Colours that cannot be read change in steps and take no light.
  */
 export function rampColor(value: number, ramp: ResolvedRamp, light = 1): string {
-  const span = ramp.max - ramp.min;
-  const share = span > 0 && Number.isFinite(value) ? Math.max(0, Math.min(1, (value - ramp.min) / span)) : 0.5;
+  const share = ramp.max > ramp.min && Number.isFinite(value) ? Math.max(0, Math.min(1, shareBetween(value, ramp.min, ramp.max))) : 0.5;
   const at = share * (ramp.colors.length - 1);
   const below = Math.min(ramp.colors.length - 2, Math.floor(at));
   const a = parseRgb(ramp.colors[below]);
@@ -208,7 +206,8 @@ export function drawRangeBar(
   const span = scale.max - scale.min;
   for (let i = 0; i < BAR_STEPS; i++) {
     const t = (i + 0.5) / BAR_STEPS;
-    ctx.fillStyle = colorOf(scale.min + span * t);
+    // The ends weighed, where they are further apart than the largest number.
+    ctx.fillStyle = colorOf(Number.isFinite(span) ? scale.min + span * t : scale.min * (1 - t) + scale.max * t);
     ctx.fillRect(x + (width * i) / BAR_STEPS, y, width / BAR_STEPS + 0.5, BAR_HEIGHT);
   }
   ctx.fillStyle = theme.textSecondary;

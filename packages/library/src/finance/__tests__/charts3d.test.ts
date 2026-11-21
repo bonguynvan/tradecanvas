@@ -9,6 +9,8 @@ import { installChartStubs, sizedHost } from '../../__tests__/chartTestEnv.js';
 let host: HTMLDivElement;
 /** Every text the charts drew, newest last. */
 let texts: string[];
+/** How many shapes the charts filled. */
+let fills = 0;
 
 /** A 2D context that keeps the text drawn with it. */
 function recordingContext(): CanvasRenderingContext2D {
@@ -18,6 +20,7 @@ function recordingContext(): CanvasRenderingContext2D {
       if (prop in target) return target[prop];
       if (prop === 'measureText') return (t: string) => ({ width: String(t).length * 6 });
       if (prop === 'fillText') return (t: string) => { texts.push(String(t)); };
+      if (prop === 'fill') return () => { fills++; };
       return () => {};
     },
     set: (target, prop, value) => {
@@ -64,6 +67,14 @@ function pointer(type: string, x: number, y: number, touch = false): void {
   canvas().dispatchEvent(event);
 }
 const click = (x: number, y: number) => canvas().dispatchEvent(new MouseEvent('click', { clientX: x, clientY: y, bubbles: true }));
+/** A pointer event with what a browser's has and jsdom's mouse event lacks: which pointer it is, and whether it is the first down. */
+function pointerOf(type: string, x: number, y: number, more: { id?: number; primary?: boolean; button?: number; buttons?: number; touch?: boolean } = {}): void {
+  const event = new MouseEvent(type, { clientX: x, clientY: y, bubbles: true, button: more.button ?? 0, buttons: more.buttons ?? (type === 'pointerup' ? 0 : 1) });
+  Object.defineProperty(event, 'pointerId', { value: more.id ?? 1 });
+  Object.defineProperty(event, 'isPrimary', { value: more.primary ?? true });
+  Object.defineProperty(event, 'pointerType', { value: more.touch ? 'touch' : 'mouse' });
+  canvas().dispatchEvent(event);
+}
 const plain = (v: number) => String(Number(v.toFixed(4)));
 
 const SMILE: SurfaceChartOptions = {
@@ -174,7 +185,7 @@ describe('the 3D charts', () => {
   it('turn under a finger and leave the tilt alone, so that a page scrolls under it', () => {
     const chart = new SurfaceChart(host, SMILE);
     frame();
-    expect(canvas().style.touchAction).toBe('pan-y');
+    expect(canvas().style.touchAction).toBe('pan-y pinch-zoom');
     pointer('pointerdown', 200, 150, true);
     pointer('pointermove', 260, 220, true);
     expect(chart.getView().yaw).toBeLessThan(-35);
@@ -217,7 +228,7 @@ describe('the 3D charts', () => {
     pointer('pointerup', 260, 190);
     expect(chart.getView()).toEqual({ yaw: -35, pitch: 28 });
     chart.setOptions({ rotate: true });
-    expect(canvas().style.touchAction).toBe('pan-y');
+    expect(canvas().style.touchAction).toBe('pan-y pinch-zoom');
     expect(canvas().style.cursor).toBe('grab');
     chart.destroy();
   });
@@ -276,6 +287,147 @@ describe('the 3D charts', () => {
     click(1, 1);
     expect(hits).toEqual([{ category: 'Q1', series: 'Stocks', value: 4, index: 0 }]);
     bars.destroy();
+  });
+
+  it('are made, and take new options, with an array left out: a page in plain JavaScript may leave one out', () => {
+    const surface = new SurfaceChart(host, { values: [] } as unknown as SurfaceChartOptions);
+    const bars = new Bar3DChart(host, { categories: ['a'] } as unknown as Bar3DChartOptions);
+    expect([...host.querySelectorAll('canvas')].map((c) => c.getAttribute('aria-label'))).toEqual(['3D surface of 0 by 0 points', '3D bar chart of 0 series over 1 category']);
+    expect(() => frame()).not.toThrow();
+    expect(() => surface.setOptions({ x: undefined } as unknown as Partial<SurfaceChartOptions>)).not.toThrow();
+    expect(() => bars.setOptions({ categories: undefined } as unknown as Partial<Bar3DChartOptions>)).not.toThrow();
+    expect(() => frame()).not.toThrow();
+    surface.destroy();
+    bars.destroy();
+    expect(host.querySelector('canvas')).toBeNull();
+  });
+
+  it('follow the pointer that pressed them: not a second finger, not another button', () => {
+    const chart = new SurfaceChart(host, SMILE);
+    frame();
+    const start = chart.getView();
+    // The right button turns nothing.
+    pointerOf('pointerdown', 200, 150, { button: 2, buttons: 2 });
+    pointerOf('pointermove', 260, 150, { buttons: 2 });
+    expect(chart.getView()).toEqual(start);
+    pointerOf('pointerup', 260, 150, { button: 2 });
+
+    pointerOf('pointerdown', 200, 150, { id: 1, touch: true });
+    // A second finger comes down: its moves are not the turn's, and lifting it does not end the turn.
+    pointerOf('pointerdown', 100, 100, { id: 2, primary: false, touch: true });
+    pointerOf('pointermove', 30, 100, { id: 2, primary: false, touch: true });
+    expect(chart.getView()).toEqual(start);
+    pointerOf('pointerup', 30, 100, { id: 2, primary: false, touch: true });
+    pointerOf('pointermove', 250, 150, { id: 1, touch: true });
+    expect(chart.getView().yaw).toBeCloseTo(start.yaw - 20, 9);
+    pointerOf('pointerup', 250, 150, { id: 1, touch: true });
+    const turned = chart.getView();
+    pointerOf('pointermove', 300, 150, { id: 1, touch: true });
+    expect(chart.getView()).toEqual(turned);
+    chart.destroy();
+  });
+
+  it('hold the pointer while it turns them, and end the turn when its button is let go where they cannot see', () => {
+    const chart = new SurfaceChart(host, SMILE);
+    frame();
+    const held: number[] = [];
+    const freed: number[] = [];
+    Object.assign(canvas(), { setPointerCapture: (id: number) => held.push(id), releasePointerCapture: (id: number) => freed.push(id) });
+    pointerOf('pointerdown', 200, 150, { id: 7 });
+    expect(held).toEqual([7]);
+    pointerOf('pointermove', 240, 150, { id: 7 });
+    const turned = chart.getView();
+    expect(turned.yaw).toBeCloseTo(-51, 9);
+    // The next move comes with no button down: the release was missed.
+    pointerOf('pointermove', 300, 150, { id: 7, buttons: 0 });
+    expect(chart.getView()).toEqual(turned);
+    expect(freed).toEqual([7]);
+    pointerOf('pointermove', 340, 150, { id: 7 });
+    expect(chart.getView()).toEqual(turned);
+    // A pointer that cannot be held still turns the chart.
+    Object.assign(canvas(), { setPointerCapture: () => { throw new Error('gone'); } });
+    expect(() => pointerOf('pointerdown', 200, 150, { id: 8 })).not.toThrow();
+    pointerOf('pointermove', 210, 150, { id: 8 });
+    expect(chart.getView().yaw).toBeCloseTo(turned.yaw - 4, 9);
+    chart.destroy();
+  });
+
+  it('stop where they are when turning is switched off in the middle of a drag, and take its release for no click', () => {
+    const points: SurfacePoint[] = [];
+    const chart = new SurfaceChart(host, { ...FLAT, onPointClick: (point) => points.push(point) });
+    frame();
+    const at = middleOf(FLAT);
+    pointerOf('pointerdown', at.x, at.y);
+    pointerOf('pointermove', at.x + 30, at.y);
+    const turned = chart.getView();
+    chart.setOptions({ rotate: false });
+    pointerOf('pointermove', at.x + 90, at.y);
+    expect(chart.getView()).toEqual(turned);
+    pointerOf('pointerup', at.x + 90, at.y);
+    click(at.x, at.y);
+    expect(points).toEqual([]);
+    chart.destroy();
+  });
+
+  it('go on from a view set in the middle of a drag, without jumping back', () => {
+    const chart = new SurfaceChart(host, SMILE);
+    frame();
+    pointerOf('pointerdown', 200, 150);
+    pointerOf('pointermove', 250, 150);
+    expect(chart.getView().yaw).toBeCloseTo(-55, 9);
+    chart.setView({ yaw: 10, pitch: 40 });
+    expect(chart.getView()).toEqual({ yaw: 10, pitch: 40 });
+    pointerOf('pointermove', 260, 160);
+    expect(chart.getView().yaw).toBeCloseTo(6, 9);
+    expect(chart.getView().pitch).toBeCloseTo(44, 9);
+    pointerOf('pointerup', 260, 160);
+    chart.destroy();
+  });
+
+  it('can be destroyed in the middle of a drag', () => {
+    const seen: Required<View3D>[] = [];
+    const chart = new Bar3DChart(host, { ...BARS, onViewChange: (view) => seen.push(view) });
+    frame();
+    const node = canvas();
+    pointerOf('pointerdown', 200, 150);
+    pointerOf('pointermove', 240, 150);
+    expect(seen).toHaveLength(1);
+    expect(() => chart.destroy()).not.toThrow();
+    node.dispatchEvent(new MouseEvent('pointermove', { clientX: 300, clientY: 150, buttons: 1 }));
+    node.dispatchEvent(new MouseEvent('pointerup', { clientX: 300, clientY: 150 }));
+    expect(() => frame()).not.toThrow();
+    expect(seen).toHaveLength(1);
+  });
+
+  it('keep a drag from selecting the page’s text, and leave a pinch to the page', () => {
+    const chart = new SurfaceChart(host, SMILE);
+    expect(canvas().style.userSelect).toBe('none');
+    expect(canvas().style.touchAction).toBe('pan-y pinch-zoom');
+    chart.setOptions({ rotate: false });
+    expect(canvas().style.userSelect).toBe('');
+    expect(canvas().style.touchAction).toBe('');
+    chart.destroy();
+  });
+
+  it('draw a large surface with fewer cells while it is turned, and whole again once it rests', () => {
+    const axis = Array.from({ length: 150 }, (_, i) => i);
+    const chart = new SurfaceChart(host, { x: axis, y: axis, values: axis.map((r) => axis.map((c) => Math.sin(c / 20) + Math.cos(r / 25))), legend: false, crosshair: false });
+    /** The shapes filled in the next frame. */
+    const filled = () => {
+      fills = 0;
+      vi.advanceTimersByTime(20);
+      return fills;
+    };
+    const whole = filled();
+    expect(whole).toBeGreaterThan(14_000);
+    pointerOf('pointerdown', 200, 150);
+    pointerOf('pointermove', 240, 150);
+    const turning = filled();
+    expect(turning).toBeGreaterThan(3_000);
+    expect(turning).toBeLessThan(whole / 3);
+    pointerOf('pointerup', 240, 150);
+    expect(filled()).toBe(whole);
+    chart.destroy();
   });
 
   it('listen to nothing once destroyed', () => {

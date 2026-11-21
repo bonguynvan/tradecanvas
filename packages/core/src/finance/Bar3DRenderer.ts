@@ -1,6 +1,6 @@
 import type { Bar3DChartOptions, BarHit, Theme } from '@tradecanvas/commons';
 import { withAlpha } from '@tradecanvas/commons';
-import { CHART_PAD, LABEL_GAP, axisFormat, canvasMeasure, drawLegend, drawTooltip, extent, layoutLegend, niceScale, numberFormat, seriesColor, type LegendLayout, type Measure, type NiceScale } from './chartKit.js';
+import { CHART_PAD, LABEL_GAP, axisFormat, canvasMeasure, drawLegend, drawTooltip, extent, layoutLegend, niceScale, numberFormat, seriesColor, shareBetween, type LegendLayout, type Measure, type NiceScale } from './chartKit.js';
 import { litColor } from './colorScale.js';
 import { computeScene3D, drawScene3D, drawSceneLabels, faceLight, inQuad, sceneX, sceneY, type Axis3D, type Scene3D } from './scene3d.js';
 
@@ -13,6 +13,8 @@ const VALUE_TICKS = 4;
 const HOVER_LIGHT = 0.18;
 /** How strongly the level of zero is filled, where columns hang under it. */
 const ZERO_ALPHA = 0.06;
+/** The decimals a shade's strength is written with in its colour. */
+const SHADE_DECIMALS = 3;
 
 /** A side of a column: its four corners on the screen, and how strongly it is lit. */
 export interface Bar3DFace {
@@ -57,12 +59,11 @@ export function computeBar3DLayout(options: Bar3DChartOptions, width: number, he
   const finite: number[] = [];
   for (const one of series) for (let i = 0; i < n; i++) if (Number.isFinite(one.values?.[i])) finite.push(one.values[i]);
   const range = extent(finite);
-  if (!range || width <= 0 || height <= 0) return NOTHING;
+  if (!range || !(width > 0) || !(height > 0)) return NOTHING;
 
   // Columns stand on zero: it is on the scale whatever the values are.
   const zScale = niceScale(Math.min(0, range.min), Math.max(0, range.max), VALUE_TICKS);
-  const span = zScale.max - zScale.min;
-  const up = (value: number) => (value - zScale.min) / span;
+  const up = (value: number) => shareBetween(value, zScale.min, zScale.max);
   const valueText = options.valueFormat ?? axisFormat(zScale, options.locale);
   const axes = {
     x: { title: options.xLabel, ticks: categories.map((text, i) => ({ at: (i + 0.5) / n, text })) },
@@ -173,8 +174,8 @@ export function renderBar3D(
       ctx.fill();
       ctx.stroke();
       if (fill === bar.color && light !== 1) {
-        // A colour that cannot be read takes no light: its shade is drawn over it.
-        ctx.fillStyle = light < 1 ? `rgba(0,0,0,${(1 - light).toFixed(3)})` : `rgba(255,255,255,${Math.min(1, light - 1).toFixed(3)})`;
+        // A colour that cannot be read takes no light: its shade is drawn over it, black for less light and white for more.
+        ctx.fillStyle = light < 1 ? `rgba(0,0,0,${(1 - light).toFixed(SHADE_DECIMALS)})` : `rgba(255,255,255,${Math.min(1, light - 1).toFixed(SHADE_DECIMALS)})`;
         ctx.fill();
       }
     }

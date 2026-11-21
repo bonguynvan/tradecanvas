@@ -809,16 +809,12 @@
     </div>
   </div>
 
-  <!-- In three dimensions -->
-  <div class="chart-card chart-card--spaced" data-reveal>
-    <div class="card-label card-label--split">
-      <span>{m.finance.volSurface}</span>
-      <span class="card-hint">{m.finance.turnHint}</span>
+  <!-- In three dimensions: a box is about as wide as it is high, so three to a row -->
+  <div class="tri-grid" data-reveal data-reveal-stagger>
+    <div class="chart-card">
+      <div class="card-label">{m.finance.volSurface}</div>
+      <div class="card-chart card-chart--350" bind:this={surfaceContainer}></div>
     </div>
-    <div class="card-chart card-chart--420" bind:this={surfaceContainer}></div>
-  </div>
-
-  <div class="mid-grid" data-reveal data-reveal-stagger>
     <div class="chart-card">
       <div class="card-label">{m.finance.depthOverTime}</div>
       <div class="card-chart card-chart--350" bind:this={depthHistoryContainer}></div>
@@ -828,6 +824,7 @@
       <div class="card-chart card-chart--350" bind:this={quartersContainer}></div>
     </div>
   </div>
+  <p class="chart-note" data-reveal>{m.finance.turnHint}</p>
 </section>
 
 <style>
@@ -929,18 +926,22 @@
     border-bottom: 1px solid var(--border);
   }
 
-  /* A title with a line of help beside it, under it where there is no room. */
-  .card-label--split {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    gap: 4px 16px;
+  /* --- A row of three (the charts in a box) --- */
+  .tri-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    margin-bottom: 12px;
   }
 
-  .card-hint {
-    font-weight: 400;
-    text-transform: none;
-    letter-spacing: 0;
+  .tri-grid .chart-card {
+    min-width: 0;
+  }
+
+  .chart-note {
+    margin: 0 0 20px;
+    font-size: 12px;
+    color: var(--text-muted);
   }
 
   .card-chart {
@@ -963,14 +964,14 @@
     height: 350px;
   }
 
-  .card-chart--420 {
-    height: 420px;
-  }
-
   /* --- Responsive --- */
   @media (max-width: 1024px) {
     .spark-grid {
       grid-template-columns: repeat(3, 1fr);
+    }
+
+    .tri-grid {
+      grid-template-columns: 1fr;
     }
   }
 

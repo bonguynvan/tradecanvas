@@ -1,5 +1,5 @@
 import type { SurfaceChartOptions, Theme } from '@tradecanvas/commons';
-import { computeSurfaceLayout, hitSurfacePoint, renderSurface, type SurfaceLayout, type Measure } from '@tradecanvas/core';
+import { TURNING_SURFACE_POINTS, computeSurfaceLayout, hitSurfacePoint, renderSurface, type SurfaceLayout, type Measure } from '@tradecanvas/core';
 import { Chart3D } from './Chart3D.js';
 
 /**
@@ -9,7 +9,8 @@ import { Chart3D } from './Chart3D.js';
  */
 export class SurfaceChart extends Chart3D<SurfaceChartOptions, SurfaceLayout> {
   protected compute(width: number, height: number, theme: Theme, measure: Measure): SurfaceLayout {
-    return computeSurfaceLayout(this.options, width, height, theme, measure);
+    // With fewer points while it turns: a frame of a drag has no time for a large grid whole.
+    return computeSurfaceLayout(this.options, width, height, theme, measure, this.turning ? TURNING_SURFACE_POINTS : undefined);
   }
 
   protected draw(ctx: CanvasRenderingContext2D, width: number, height: number, theme: Theme, pointer: { x: number; y: number } | null, layout: SurfaceLayout): void {
@@ -17,7 +18,8 @@ export class SurfaceChart extends Chart3D<SurfaceChartOptions, SurfaceLayout> {
   }
 
   protected describe(): string {
-    return `3D surface of ${this.options.x.length} by ${this.options.y.length} points`;
+    // An axis may be missing where the options come from plain JavaScript: the chart then draws nothing.
+    return `3D surface of ${this.options.x?.length ?? 0} by ${this.options.y?.length ?? 0} points`;
   }
 
   protected clickable(): boolean {
