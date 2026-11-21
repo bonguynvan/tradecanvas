@@ -101,10 +101,13 @@ describe('ta.indicator: a built-in indicator’s lines', () => {
   it('gives the lines of the indicator the chart draws, by key', () => {
     const stochastic = BUILT_IN_FACTORIES.map((make) => make()).find((plugin) => plugin.descriptor.id === 'stochastic')!;
     const builtIn = stochastic.calculate(bars, config({ ...stochastic.descriptor.defaultConfig as IndicatorConfig['params'] }));
-    const lines = ta.indicator('stochastic', columns);
+    const lines: Record<string, (number | undefined)[]> = ta.indicator('stochastic', columns);
     const keys = stochastic.descriptor.plots!.map((plot) => plot.key);
     expect(keys.length).toBeGreaterThan(1);
     for (const key of keys) near(lines[key], line(builtIn, key));
+    // The lines are typed by the id: a key the indicator has not is not one.
+    // @ts-expect-error stochastic has k and d
+    expect(ta.indicator('stochastic', columns).value).toBeUndefined();
   });
 
   it('takes the indicator’s own inputs, the rest at their defaults', () => {
@@ -139,11 +142,55 @@ describe('ta.indicator: a built-in indicator’s lines', () => {
     expect(() => ta.indicator('nope' as never, columns)).toThrow(/no built-in indicator 'nope'/);
   });
 
-  it('can run every built-in on the bars without throwing, each line as long as the bars', () => {
+  const run = (id: string, input: Parameters<typeof ta.indicator>[1], params: object = {}) =>
+    ta.indicator(id as never, input, params as never) as Record<string, (number | undefined)[]>;
+
+  it('can run every built-in on bars and on a value a bar, of any length, each line as long as its input', () => {
+    const closes = column('close');
     for (const plugin of BUILT_IN_FACTORIES.map((make) => make())) {
-      const lines = ta.indicator(plugin.descriptor.id as never, columns) as Record<string, (number | undefined)[]>;
-      for (const key of Object.keys(lines)) expect(lines[key], `${plugin.descriptor.id}.${key}`).toHaveLength(bars.length);
+      const id = plugin.descriptor.id;
+      for (const length of [0, 1, 2, 3, 120]) {
+        for (const input of [closes.slice(0, length), { close: closes.slice(0, length) }, { ...columns, close: closes.slice(0, length) }]) {
+          const lines = run(id, input);
+          for (const key of Object.keys(lines)) expect(lines[key], `${id}.${key} on ${length}`).toHaveLength(length);
+        }
+      }
     }
+  });
+
+  it('gives the same lines when asked again after other inputs: an indicator is kept, its sums are not', () => {
+    for (const plugin of BUILT_IN_FACTORIES.map((make) => make())) {
+      const id = plugin.descriptor.id;
+      const first = run(id, columns);
+      run(id, column('close').slice(0, 40).reverse());
+      run(id, { close: column('open') });
+      expect(run(id, columns), id).toEqual(first);
+    }
+  });
+
+  it('leaves a bar the input has no value for without one, as the other sums do', () => {
+    const gapped = column('close').map((v, i) => (i >= 40 && i < 45 ? undefined : v));
+    for (const [id, key] of [['rsi', 'value'], ['bb', 'middle'], ['macd', 'macd'], ['ema', 'value']] as const) {
+      const lineOf = run(id, gapped, { period: 5, fast: 3, slow: 6, signal: 2 })[key];
+      expect(lineOf.slice(40, 45), id).toEqual([undefined, undefined, undefined, undefined, undefined]);
+      expect(lineOf[39], id).toBeTypeOf('number');
+      expect(lineOf[45], id).toBeTypeOf('number');
+    }
+    expect(ta.rsi(gapped, 5).slice(40, 45)).toEqual([undefined, undefined, undefined, undefined, undefined]);
+  });
+
+  it('reads a bar whose close is no number as the close before it, so one bad bar does not end the line', () => {
+    const close = column('close').slice(0, 40);
+    close[10] = Number.NaN;
+    const atr = ta.atr({ close, high: column('high').slice(0, 40), low: column('low').slice(0, 40) }, 5);
+    expect(atr[9]).toBeTypeOf('number');
+    expect(atr[39]).toBeTypeOf('number');
+    expect(atr.slice(5).every((v) => v !== undefined && Number.isFinite(v))).toBe(true);
+  });
+
+  it('reads a source by the name the indicator gives it, and takes one that is no price of the bars as the close', () => {
+    near(run('sma', columns, { period: 5, source: 'ind:other:value' }).value, ta.sma(column('close'), 5));
+    near(run('sma', column('close'), { period: 5, source: 'hl2' }).value, ta.sma(column('close'), 5));
   });
 });
 

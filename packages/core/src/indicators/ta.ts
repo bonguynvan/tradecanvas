@@ -1,8 +1,7 @@
 import type { BuiltInIndicatorId, BuiltInIndicators, DataSeries, IndicatorPlugin, OHLCBar } from '@tradecanvas/commons';
-import { isPriceSource } from '@tradecanvas/commons';
 import { BUILT_IN_FACTORIES } from './builtInFactories.js';
 import { emaOf, highestAt, lowestAt, rmaOf, smaOf, stdevOf, wmaOf, type Num } from './math.js';
-import { priceSourceBars } from './sources.js';
+import { inputSource, priceSourceBars } from './sources.js';
 
 /** A value a bar: a number, or none there (undefined or null; NaN counts as none). */
 export type TaSeries = readonly (number | null | undefined)[];
@@ -36,17 +35,30 @@ function builtIn(id: string): IndicatorPlugin {
 
 const isSeries = (input: TaInput): input is TaSeries => Array.isArray(input);
 
-/** The bars of columns, a column left out read as the closes. */
+const finite = (value: number | undefined): value is number => typeof value === 'number' && Number.isFinite(value);
+
+/**
+ * The bars of columns, a column left out read as the closes. A close that is
+ * no number is read as the one before it (the first as 0), and another price
+ * that is none as its bar's close: one bad bar does not end a smoothed line.
+ */
 function barsOf(columns: TaBars): OHLCBar[] {
   const { close, open = close, high = close, low = close, volume, time } = columns;
-  return close.map((c, i) => ({ time: time?.[i] ?? i * BAR_MS, open: open[i] ?? c, high: high[i] ?? c, low: low[i] ?? c, close: c, volume: volume?.[i] ?? 0 }));
+  let last = 0;
+  return close.map((raw, i) => {
+    const c = finite(raw) ? raw : last;
+    last = c;
+    const price = (column: readonly number[]) => (finite(column[i]) ? column[i] : c);
+    return { time: time?.[i] ?? i * BAR_MS, open: price(open), high: price(high), low: price(low), close: c, volume: finite(volume?.[i]) ? volume![i] : 0 };
+  });
 }
 
 /**
  * A built-in indicator's lines over `input`. A value a bar becomes bars of
- * that value from its first one on (a later gap repeats the last), as the
- * chart feeds an indicator another indicator's line, and the lines come back
- * on the input's own bars.
+ * that value from its first one on, as the chart feeds an indicator another
+ * indicator's line: a later gap is computed over as the last value, and has
+ * no value in the lines, like the input. The lines come back on the input's
+ * own bars.
  */
 function runBuiltIn(id: string, input: TaInput, params: Record<string, unknown>): Record<string, Num[]> {
   const plugin = builtIn(id);
@@ -61,23 +73,26 @@ function runBuiltIn(id: string, input: TaInput, params: Record<string, unknown>)
 
   let data: DataSeries;
   let start = 0;
+  let values: Num[] | null = null;
   if (isSeries(input)) {
-    const values = clean(input);
+    values = clean(input);
     start = values.findIndex((v) => v !== undefined);
     if (start < 0) return lines;
     let last = values[start]!;
+    const from = start;
     data = values.slice(start).map((v, i) => {
       if (v !== undefined) last = v;
-      return { time: (start + i) * BAR_MS, open: last, high: last, low: last, close: last, volume: 0 };
+      return { time: (from + i) * BAR_MS, open: last, high: last, low: last, close: last, volume: 0 };
     });
   } else {
     const bars = barsOf(input);
-    const source = set.source;
-    data = isPriceSource(source) && source !== 'close' ? priceSourceBars(bars, source) : bars;
+    // The price the indicator's source input names; another indicator's line is not to be had here, and reads as the close.
+    const source = inputSource(plugin.descriptor, set);
+    data = source.kind === 'price' ? priceSourceBars(bars, source.source) : bars;
   }
   const output = plugin.calculate(data, { id, instanceId: `ta:${id}`, params: set });
   (output.series ?? []).forEach((point, i) => {
-    if (!point) return;
+    if (!point || (values && values[start + i] === undefined)) return;
     for (const key in point) {
       const value = point[key];
       if (value !== undefined && Number.isFinite(value)) lineOf(key)[start + i] = value;
@@ -157,12 +172,17 @@ export const ta = {
    * It runs the indicator the chart draws, so the values are the chart's.
    * `input` is the bars (`bars`, or any of their columns with `close`), or a
    * value a bar, which the indicator then reads as its prices: open, high,
-   * low and close all that value, from its first one on. `params` are the
-   * indicator's own, each optional; a `source` of `'hl2'`, `'ohlc4'`… picks
-   * that price of the bars. Not for the indicators that read another symbol.
+   * low and close all that value, from its first one on. A value a bar has
+   * no volume and no clock, so an indicator of volume or of the day's
+   * sessions (OBV, MFI, VWAP…) wants the bars. `params` are the indicator's
+   * own, each optional; a `source` of `'hl2'`, `'ohlc4'`… picks that price
+   * of the bars (a value a bar has one price, and another indicator's line
+   * is not to be had here). Not for the indicators that read another
+   * symbol, nor for the two that draw no line (`volumeProfile`,
+   * `candlepatterns`).
    */
-  indicator: <K extends BuiltInIndicatorId>(id: K, input: TaInput, params: BuiltInIndicators[K]['params'] = {}): Record<BuiltInIndicators[K]['lines'], Num[]> & Record<string, Num[]> =>
-    runBuiltIn(id, input, params as Record<string, unknown>) as Record<BuiltInIndicators[K]['lines'], Num[]> & Record<string, Num[]>,
+  indicator: <K extends BuiltInIndicatorId>(id: K, input: TaInput, params: BuiltInIndicators[K]['params'] = {}): Record<BuiltInIndicators[K]['lines'], Num[]> =>
+    runBuiltIn(id, input, params as Record<string, unknown>) as Record<BuiltInIndicators[K]['lines'], Num[]>,
   /** Relative Strength Index, 0 to 100: the built-in RSI's. */
   rsi: (src: TaSeries, period = 14): Num[] => runBuiltIn('rsi', src, { period }).value,
   /** MACD, the built-in's: the fast average less the slow one, its signal line, and the one less the other. */
