@@ -46,6 +46,20 @@ chart.connectExecution(broker, { brackets: 'place' })   →   chart.connectExecu
 <pre><code>{`chart.startBracket('buy', undefined, { quantity: 2 })
 chart.startBracket('buy', undefined, { risk: 50 })   // 在止损处亏损 50 的数量`}</code></pre>
 
+<h3 id="stop-limit">模拟账户在限价内成交止损限价单</h3>
+<p>
+  <code>PaperExecutionAdapter</code> 以前在止损价处成交 <code>stopLimit</code> 订单，与止损单相同。现在，价格到达止损价后，
+  它会变为以其 <code>price</code> 为限价的限价单：订单继续挂着（类型变为 <code>'limit'</code>），直到价格进入限价范围。
+  如果测试期望价格一到止损价就产生持仓，请先把价格移到限价范围内，或改用 <code>'stop'</code> 订单。
+</p>
+
+<h2 id="types">扩充的类型</h2>
+<p>
+  <code>TimeInForce</code> 现在是 <code>'gtc' | 'day' | 'gtd' | 'ioc' | 'fok'</code>。处理全部成员的代码
+  （没有 default 的 <code>switch</code>、<code>Record&lt;TimeInForce, …&gt;</code>）需要补上三个新成员；
+  你自己的执行适配器可以拒绝它不支持的类型。
+</p>
+
 <h2 id="unchanged">没有变化的部分</h2>
 <ul>
   <li>数据、2.x 保存的布局和设置照常加载。</li>

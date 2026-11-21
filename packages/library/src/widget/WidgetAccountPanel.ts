@@ -33,7 +33,7 @@ type Tab = 'positions' | 'orders' | 'history';
 const TABS: readonly Tab[] = ['positions', 'orders', 'history'];
 const REASONS = ['order', 'close', 'reverse', 'stopLoss', 'takeProfit'] as const;
 const ORDER_TYPES = ['market', 'limit', 'stop'] as const;
-const TIME_IN_FORCE = ['gtc', 'day'] as const;
+const TIME_IN_FORCE = ['gtc', 'day', 'gtd', 'ioc', 'fok'] as const;
 /** What a cell holds where there is nothing (no stop, no price yet). */
 const NONE = '—';
 /** Where the totals' words take their figure. */

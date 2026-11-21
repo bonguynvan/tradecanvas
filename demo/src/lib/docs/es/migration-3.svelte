@@ -49,6 +49,22 @@ chart.connectExecution(broker, { brackets: 'place' })   →   chart.connectExecu
 <pre><code>{`chart.startBracket('buy', undefined, { quantity: 2 })
 chart.startBracket('buy', undefined, { risk: 50 })   // la cantidad que pierde 50 en el stop`}</code></pre>
 
+<h3 id="stop-limit">La cuenta de simulación ejecuta una stop-limit dentro de su límite</h3>
+<p>
+  <code>PaperExecutionAdapter</code> ejecutaba una orden <code>stopLimit</code> en su stop, como una orden stop.
+  Ahora, cuando el precio alcanza el stop, pasa a ser una orden limitada a su <code>price</code>: la orden sigue
+  activa (su tipo pasa a <code>'limit'</code>) hasta que el precio está dentro del límite. Una prueba que esperaba
+  una posición en cuanto se alcanzaba el stop debe llevar antes el precio dentro del límite, o usar una orden
+  <code>'stop'</code>.
+</p>
+
+<h2 id="types">Tipos que han crecido</h2>
+<p>
+  <code>TimeInForce</code> es ahora <code>'gtc' | 'day' | 'gtd' | 'ioc' | 'fok'</code>. El código que trata todos
+  sus miembros (un <code>switch</code> sin default, un <code>Record&lt;TimeInForce, …&gt;</code>) necesita los tres
+  nuevos; un adaptador de ejecución propio puede rechazar los que no acepte.
+</p>
+
 <h2 id="unchanged">Sin cambios</h2>
 <ul>
   <li>Los datos, y los diseños y ajustes guardados en la 2.x, se cargan como antes.</li>

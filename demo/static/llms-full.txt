@@ -822,6 +822,12 @@ chart.replayResume();
 // A bracket (entry, stop-loss, take-profit) to drag and confirm with Enter: it needs a size to be an order.
 chart.startBracket('buy', undefined, { risk: 50, quantityStep: 0.001 }); // the quantity that loses 50 at the stop
 // chart.startBracket('sell', 64_800, { quantity: 2 }); chart.setBracketSize({ quantity: 3 }); chart.getBracket()
+
+// A target and a stop for one exit: the first to fill cancels the other (their tags read OCO).
+chart.placeOrderIntent({ side: 'sell', type: 'limit', price: 66_000, quantity: 1, ocoGroup: 'exit' });
+chart.placeOrderIntent({ side: 'sell', type: 'stop', price: 63_000, stopPrice: 63_000, quantity: 1, ocoGroup: 'exit' });
+// timeInForce: 'gtc' | 'day' | 'gtd' (with expireTime, ms) | 'ioc' | 'fok' (filled at once, or refused: executionError)
+// new PaperExecutionAdapter({ positions: 'net' }) keeps one net position, as a futures account does
 ```
 
 Switching the interval mid-replay keeps the time: the replay waits for the new

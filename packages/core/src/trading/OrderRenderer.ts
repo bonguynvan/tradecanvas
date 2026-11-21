@@ -89,8 +89,8 @@ export class OrderRenderer {
   }
 
   /**
-   * Each order's tag: its quantity, its side and kind, and a × that cancels
-   * it; a tag on its stop and its target saying what they would make.
+   * Each order's tag: its quantity, its side and kind, OCO when it is one
+   * of a group where one cancels the others, and a × that cancels it; a tag on its stop and its target saying what they would make.
    */
   tags(orders: TradingOrder[], viewport: ViewportState, config: TradingConfig, dragState: DragState | null): TradingTag[] {
     const colors = colorsOf(config);
@@ -103,6 +103,8 @@ export class OrderRenderer {
           { kind: 'stamp', text: String(order.quantity) },
           { kind: 'text', text: orderKindText(order) },
         ];
+        // One of a group where one cancels the others: its filling takes the rest off.
+        if (order.ocoGroup) cells.push({ kind: 'text', text: 'OCO' });
         if (config.lineButtons?.cancel !== false && !isDragged(order, dragState)) {
           cells.push({ kind: 'button', icon: UI_ICONS.x, action: { type: 'cancelOrder', orderId: order.id } });
         }

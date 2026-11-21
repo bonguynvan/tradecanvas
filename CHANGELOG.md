@@ -7,9 +7,14 @@ The `3.0` branch. These move under the version's own heading when it is released
 ### Breaking
 
 - **A confirmed bracket goes to the execution adapter** (`@tradecanvas/chart`): with an adapter connected, `brackets` is now `'place'` when left out, where it was `'event'` with a warning in the console. An app that places the `bracketPlace` event's bracket itself connects with `{ brackets: 'event' }`. The docs' *Moving to 3.0* page has each case.
+- **The paper account fills a stop-limit within its limit** (`@tradecanvas/core`): `PaperExecutionAdapter` made a `stopLimit` order a position at its stop. It now becomes a limit order at its `price` once the stop is reached, and fills only within it.
+- **`TimeInForce` has three more members** (`@tradecanvas/commons`): `'gtd'`, `'ioc'` and `'fok'`. Code that handles every member needs them.
 
 ### Trading
 
+- **Orders of which one cancels the others** (`@tradecanvas/commons`, `@tradecanvas/core`, `@tradecanvas/chart`): an order's `ocoGroup` names the group it is one of. The paper account cancels the rest of a group when one of it fills, and the orders' tags read OCO.
+- **How long an order works** (`@tradecanvas/commons`, `@tradecanvas/core`, `@tradecanvas/chart`): `timeInForce` takes `'gtd'` with an `expireTime`, `'ioc'` and `'fok'`. The paper account takes a `'gtd'` order off at its date (by the time given with `setMarkPrice`, by the clock with none), and fills an `'ioc'` or `'fok'` limit at once, at the price there is, or refuses it. The widget's account panel names them.
+- **One net position on the paper account** (`@tradecanvas/core`): `new PaperExecutionAdapter({ positions: 'net' })` keeps one position, as a futures account does: fills the same way average in, fills the other way take from it and realise that part, and a larger one turns it round.
 - **A bracket has a size** (`@tradecanvas/chart`, `@tradecanvas/core`): `chart.startBracket(side, entry, size)` takes `{ quantity }`, or `{ risk, quantityStep, multiplier }` for the quantity that loses `risk` at the stop, which follows the lines as they are dragged. The quantity is written on the entry's tag and sent with `bracketPlace`, so the bracket reaches a connected adapter as an order; one with no quantity is not confirmed then, and stays to be given one (`executionError`, `reason: 'noQuantity'`). `chart.setBracketSize(size)` sizes it anew while it is placed, `chart.getBracket()` reads it, and `bracketQuantity(bracket, size)` is the sum on its own.
 - **The widget's bracket bar has a quantity field** (`@tradecanvas/chart`): it starts at the quantity last typed, else at the market's lot, steps by the lot, and Place is off while it holds no quantity. `widget.startBracket(side, size)` takes a size; a bracket sized by its risk has no field.
 
