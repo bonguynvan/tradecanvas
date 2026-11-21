@@ -388,7 +388,7 @@ const en = {
     },
     overrides: {
       title: 'Style overrides',
-      stat: '103 keys',
+      stat: '107 keys',
       blurb:
         'Any part of the chart’s look by key, apart from the theme: the grid each way, the crosshair, the axes, the panes, the legend, the last price, the volume and each chart type’s colours. Here the vertical grid is off, the horizontal one dotted, the crosshair solid, and MACD’s signal line dashed in a pane with a separator of its own.',
       tryThis: [
@@ -783,7 +783,7 @@ const en = {
       ],
       customization: [
         { name: 'Three looks for the widget', detail: 'Studio, Terminal, Capsule; ui and setUI; --tcw-* CSS variables' },
-        { name: 'The chart’s look by key', detail: 'applyOverrides over 103 typed keys, on a host layer and a user layer' },
+        { name: 'The chart’s look by key', detail: 'applyOverrides over 107 typed keys, on a host layer and a user layer' },
         { name: 'Settings that reach every key', detail: 'A style tab for the chart type on view, a trading tab' },
         { name: '114 feature switches', detail: 'features, setFeatures, isFeatureOn; changed while running' },
         { name: 'Your own parts in the widget', detail: 'Toolbar buttons and dropdowns, sidebar buttons, status items, slots, menu items' },

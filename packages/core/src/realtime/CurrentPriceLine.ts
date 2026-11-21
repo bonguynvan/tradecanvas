@@ -5,13 +5,16 @@ import { AXIS_TAG_TEXT_INSET, fillTag } from '../ui/shapes.js';
 import { hLine } from '../charts/pixelGrid.js';
 import { labelTextColor } from '../ui/axisValueLabels.js';
 
-/** Where the last-price tag went on the axis, and its colour: the countdown hangs under it. */
+/** Where the last-price tag went on the axis, and its colours: the countdown hangs under it. */
 export interface LastPriceTag {
   x: number;
   y: number;
   width: number;
   height: number;
+  /** The tag's fill. */
   color: string;
+  /** Its text. */
+  textColor: string;
 }
 
 /** Height (px) of the last-price tag. */
@@ -131,11 +134,15 @@ export class CurrentPriceLine {
     // The axis's width, as every tag on it is: an order's, an alert's and this one line up edge to edge.
     const badgeWidth = (viewport.priceAxisWidth ?? PRICE_AXIS_WIDTH) - 2;
 
-    ctx.fillStyle = color;
+    // The tag in a colour of its own where the look sets one (the line keeps the day's); its text the same way.
+    const look = theme.style?.lastPrice;
+    const fill = look?.labelBackground ?? color;
+    const textColor = look?.labelText ?? labelTextColor(fill);
+    ctx.fillStyle = fill;
     fillTag(ctx, axisX, y - TAG_HEIGHT / 2, badgeWidth, TAG_HEIGHT, theme);
-    this.tag = { x: axisX, y: y - TAG_HEIGHT / 2, width: badgeWidth, height: TAG_HEIGHT, color };
+    this.tag = { x: axisX, y: y - TAG_HEIGHT / 2, width: badgeWidth, height: TAG_HEIGHT, color: fill, textColor };
 
-    ctx.fillStyle = labelTextColor(color);
+    ctx.fillStyle = textColor;
     ctx.textBaseline = 'middle';
     ctx.textAlign = 'left';
     ctx.fillText(text, axisX + AXIS_TAG_TEXT_INSET, y);

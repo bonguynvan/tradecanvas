@@ -193,6 +193,7 @@ export function resolveChartTheme(base: Theme, chartType: ChartType, overrides: 
     grid: {
       horizontal: lineLook(o, 'grid.horizontal', { visible: true, color: plain.grid, style: 'solid', width: 1 }),
       vertical: lineLook(o, 'grid.vertical', { visible: true, color: plain.grid, style: 'solid', width: 1 }),
+      verticalAtPeriods: (o('grid.vertical.periodsOnly') as boolean | undefined) ?? false,
     },
     // Hairlines, solid: a dash pattern is noise the eye has to read past. Its
     // tags are the ink faded into the ground: read when looked for, quieter
@@ -204,7 +205,11 @@ export function resolveChartTheme(base: Theme, chartType: ChartType, overrides: 
       labelText: str('crosshair.labelTextColor', crosshairTagLook(background, plain.text).text),
     },
     axis: {
-      price: { line: str('axis.price.lineColor', plain.axisLine), text: str('axis.price.textColor', plain.axisLabel) },
+      price: {
+        line: str('axis.price.lineColor', plain.axisLine),
+        text: str('axis.price.textColor', plain.axisLabel),
+        valueTagsOutlined: (o('axis.price.valueTagsOutlined') as boolean | undefined) ?? false,
+      },
       time: { line: str('axis.time.lineColor', plain.axisLine), text: str('axis.time.textColor', plain.axisLabel) },
     },
     legend: {
@@ -221,6 +226,8 @@ export function resolveChartTheme(base: Theme, chartType: ChartType, overrides: 
       // Dotted: a solid line across the chart reads as one somebody drew.
       style: (o('lastPrice.style') as LineStyle | undefined) ?? 'dotted',
       width: (o('lastPrice.width') as number | undefined) ?? 1,
+      labelBackground: (o('lastPrice.labelBackground') as string | undefined) ?? null,
+      labelText: (o('lastPrice.labelTextColor') as string | undefined) ?? null,
     },
     sessionBreaks: {
       color: (o('sessionBreaks.color') as string | undefined) ?? null,
@@ -289,6 +296,10 @@ const READ_BACK: { [K in ChartStyleKey]?: (t: Theme, s: ResolvedChartStyle) => u
   'lastPrice.downColor': (_t, s) => s.lastPrice.down,
   'lastPrice.style': (_t, s) => s.lastPrice.style,
   'lastPrice.width': (_t, s) => s.lastPrice.width,
+  'lastPrice.labelBackground': (_t, s) => s.lastPrice.labelBackground,
+  'lastPrice.labelTextColor': (_t, s) => s.lastPrice.labelText,
+  'axis.price.valueTagsOutlined': (_t, s) => s.axis.price.valueTagsOutlined,
+  'grid.vertical.periodsOnly': (_t, s) => s.grid.verticalAtPeriods,
   // As drawn: a theme that sets only candle colours gets volume in those colours.
   'volume.upColor': (t) => resolveVolumeColors(t).up,
   'volume.downColor': (t) => resolveVolumeColors(t).down,
@@ -341,9 +352,12 @@ export function chartStyleValue(
   }
   const theme = resolveChartTheme(base, chartType, overrides);
   const style = theme.style!;
+  // A key of its own first: the grid's vertical lines have one that is no part of a line's look.
+  const own = READ_BACK[key];
+  if (own) return (own(theme, style) ?? null) as string | number | boolean | null;
   if (parts[0] === 'grid' || (parts[0] === 'crosshair' && (parts[1] === 'horizontal' || parts[1] === 'vertical'))) {
     const group = parts[0] === 'grid' ? style.grid : style.crosshair;
     return group[parts[1] as 'horizontal' | 'vertical'][LINE_PROPS[parts[2]]];
   }
-  return (READ_BACK[key]?.(theme, style) ?? null) as string | number | boolean | null;
+  return null;
 }
