@@ -253,6 +253,28 @@ function isLanguageTag(tag: string): boolean {
   }
 }
 
+/** Options against the interface they are declared by: unknown names, values outside a union, wrong plain kinds, and what it marks as required. */
+function checkDeclared(ctx: Context, entry: { name: string; options: OptionEntry[] }, options: unknown): void {
+  checkObject(ctx, entry.options, options, '', entry.name);
+  if (!isObject(options)) return;
+  for (const { name } of entry.options.filter((o) => o.required)) {
+    if (options[name] === undefined || options[name] === null) problem(ctx, name, `${entry.name} needs '${name}'.`);
+  }
+}
+
+/**
+ * Checks the options object of a function that takes one
+ * (`renderPriceChart(ctx, options, size)`), by the function's name. Returns
+ * null for a name that is none of them.
+ */
+export function validateFunctionOptions(name: string, options: unknown, catalog: Catalog = CATALOG): Validation | null {
+  const entry = catalog.functions.find((f) => f.name === name);
+  if (!entry) return null;
+  const ctx: Context = { catalog, problems: [], notes: [] };
+  checkDeclared(ctx, entry, options);
+  return { valid: ctx.problems.length === 0, problems: ctx.problems, notes: ctx.notes };
+}
+
 /**
  * Checks an options object for a finance chart (`new BarChart(el, options)`,
  * `new DepthChart(el, options)`…), by the chart's name: unknown names (with
@@ -264,12 +286,8 @@ export function validateFinanceOptions(chart: string, options: unknown, catalog:
   const entry = catalog.financeCharts.find((c) => c.name === chart);
   if (!entry) return null;
   const ctx: Context = { catalog, problems: [], notes: [] };
-  checkObject(ctx, entry.options, options, '', chart);
+  checkDeclared(ctx, entry, options);
   if (isObject(options)) {
-    // What the declaration marks as required: its data, by whatever name the chart takes it.
-    for (const { name } of entry.options.filter((o) => o.required)) {
-      if (options[name] === undefined || options[name] === null) problem(ctx, name, `${chart} needs '${name}'.`);
-    }
     // Any language tag `Intl` reads; one it cannot is drawn in the browser's language, which is seldom what was meant.
     if (typeof options.locale === 'string' && !isLanguageTag(options.locale)) {
       problem(ctx, 'locale', `'${options.locale}' is not a language tag (BCP 47: 'vi', 'en-US', 'de-DE').`);

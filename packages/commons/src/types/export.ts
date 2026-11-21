@@ -1,4 +1,10 @@
 import type { Theme, ThemeName } from './theme.js';
+import type { ChartOptions, FeaturesConfig } from './chart.js';
+import type { DrawingState } from './drawing.js';
+import type { IndicatorIntervals, IndicatorStyleConfig } from './indicator.js';
+import type { DataSeries, TimeFrame } from './ohlc.js';
+import type { SignalMarker } from './signal.js';
+import type { PaneStyle } from './style.js';
 
 /** How a chart is made into a picture. */
 export interface ChartImageOptions {
@@ -48,3 +54,113 @@ export interface PdfPageOptions {
 
 /** What `toPdf` takes: how the chart is made into a picture, and the page it goes on. */
 export interface ChartPdfOptions extends Omit<ChartImageOptions, 'type' | 'quality'>, PdfPageOptions {}
+
+/**
+ * An indicator on a price chart drawn with no page (`renderPriceChart`). It
+ * reads as a saved layout's does: what `chart.getIndicatorSetup()` gives for
+ * one goes in as it is.
+ */
+export interface PriceChartIndicator {
+  /** Which indicator: `'sma'`, `'rsi'`, `'bb'`, `'macd'`… */
+  id: string;
+  /** A name for this one, for another to refer to: `pane`, or a `source` of `'ind:<instanceId>:<line>'`. */
+  instanceId?: string;
+  /** Its inputs; the indicator's own defaults for those left out. */
+  params?: Record<string, unknown>;
+  /** For one with a pane of its own: `'bottom'` (the default), under the price pane, or `'top'`, over it. */
+  position?: string;
+  /** The `instanceId` of the indicator whose pane it is drawn in, on that pane's scale. */
+  pane?: string;
+  /** `'left'`: an overlay on a price scale of its own, at the left. */
+  scale?: 'left';
+  /** `false`: worked out, for the others that read its lines, and not drawn. */
+  visible?: boolean;
+  /** Its reference levels; the indicator's own with none. */
+  levels?: number[];
+  /** Its lines' colours, widths and look. */
+  style?: IndicatorStyleConfig;
+  /** The intervals it shows on (`timeframe` says the chart's); all of them with none. */
+  intervals?: IndicatorIntervals;
+  /** Its pane's own background and separator. */
+  paneStyle?: PaneStyle;
+  /** Its pane's share of the height, to the price pane's 1. */
+  paneSize?: number;
+  /** Its pane's place among the panes, from the top. */
+  paneOrder?: number;
+  /** Its pane folded to its title. */
+  paneCollapsed?: boolean;
+  /** Its pane over the whole chart, the price pane kept to a strip. */
+  paneMaximized?: boolean;
+  /** Its pane's scale logarithmic. */
+  paneLog?: boolean;
+  /** Its pane's scale upside down. */
+  paneInvert?: boolean;
+  /** Its pane's scale in percent of the first value on view. */
+  panePercent?: boolean;
+}
+
+/** What a price chart drawn with no page shows or leaves out; each is shown unless it is `false`. */
+export type PriceChartFeatures = Pick<
+  FeaturesConfig,
+  'volume' | 'grid' | 'priceAxis' | 'timeAxis' | 'legend' | 'watermark' | 'sessionBreaks' | 'indicatorValueLabels' | 'alignAxisLabels'
+>;
+
+/**
+ * A price chart drawn with no page (`renderPriceChart`): the bars, and what
+ * `Chart` takes of how they look. It is one frame: nothing follows a pointer
+ * and nothing moves.
+ */
+export interface PriceChartOptions
+  extends Pick<
+    ChartOptions,
+    | 'chartType'
+    | 'chartTypeOptions'
+    | 'theme'
+    | 'font'
+    | 'shapes'
+    | 'overrides'
+    | 'grid'
+    | 'density'
+    | 'rightMargin'
+    | 'barLayout'
+    | 'logScale'
+    | 'numberLocale'
+    | 'priceFormat'
+    | 'timeFormatter'
+    | 'watermark'
+    | 'sessionBreaks'
+    | 'highLowLines'
+  > {
+  /** The bars, oldest first. One that is no bar (a price missing, a high under its low) is left out. */
+  data: DataSeries;
+  /** The symbol's name, for the legend. */
+  symbol?: string;
+  /** The bars' interval (`'1d'`, `'15m'`): the legend names it, and indicators kept to some intervals follow it. */
+  timeframe?: TimeFrame;
+  /** The indicators, in the order they are listed and drawn. */
+  indicators?: PriceChartIndicator[];
+  /** Drawings on the chart, as `chart.getDrawings()` gives them. */
+  drawings?: DrawingState[];
+  /** Buy and sell marks on the bars, as `chart.setSignalMarkers()` takes them. */
+  markers?: SignalMarker[];
+  /**
+   * The times (ms) of the first and the last bar on view. With none, every
+   * bar is on view when they fit, and the newest ones when they do not.
+   */
+  visibleRange?: { from: number; to: number };
+  /** The zone times are read in: an IANA name (`'Asia/Ho_Chi_Minh'`) or minutes from UTC. UTC with none. */
+  timeZone?: string | number | null;
+  /** The decimals prices show; fitted to the prices on view with none. */
+  pricePrecision?: number;
+  /** A line and a tag at the last close. Default `true`. */
+  lastPriceLine?: boolean;
+  /** What is shown or left out. */
+  features?: PriceChartFeatures;
+  /**
+   * The `Path2D` of your canvas library, where there is no global one: Node
+   * has none, and `@napi-rs/canvas` and `skia-canvas` each export theirs. A
+   * browser and a worker need none.
+   */
+  path2D?: typeof Path2D;
+}
+

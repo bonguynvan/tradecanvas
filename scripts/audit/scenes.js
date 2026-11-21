@@ -3,7 +3,7 @@
 // quote on, a linked grid under the pointer, a replay, compares, Renko, the
 // day's limits. Picked by `?scene=` and `?theme=`; the market is made up from
 // a fixed seed and stops once loaded, so every run draws the same bars.
-import { MockAdapter, PaperExecutionAdapter, MARKET_HOSE, MARKET_KRX } from '@tradecanvas/chart';
+import { Chart, MockAdapter, PaperExecutionAdapter, MARKET_HOSE, MARKET_KRX, renderPriceChart } from '@tradecanvas/chart';
 import { ChartWidget, ChartWidgetGrid } from '@tradecanvas/chart/widget';
 
 /** A small seeded generator in place of Math.random: the same bars every time. */
@@ -49,6 +49,31 @@ async function widget(options = {}) {
 }
 
 const lastClose = (chart) => chart.getData().at(-1).close;
+
+const DAY_MS = 86_400_000;
+
+/** Daily bars from the seeded generator: the same every run. */
+function dailyBars(count) {
+  let close = 100;
+  return Array.from({ length: count }, (_, i) => {
+    const open = close;
+    close = Math.max(5, open + (Math.random() - 0.48) * 4);
+    const high = Math.max(open, close) + Math.random() * 2;
+    const low = Math.min(open, close) - Math.random() * 2;
+    return { time: Date.UTC(2026, 0, 5) + i * DAY_MS, open, high, low, close, volume: 800 + Math.round(Math.random() * 1600) };
+  });
+}
+
+/** How many of two same-sized canvases' pixels are apart by more than a shade. */
+function pixelsApart(a, b) {
+  const one = a.getContext('2d').getImageData(0, 0, a.width, a.height).data;
+  const other = b.getContext('2d').getImageData(0, 0, b.width, b.height).data;
+  let apart = 0;
+  for (let i = 0; i < one.length; i += 4) {
+    if (Math.abs(one[i] - other[i]) > 2 || Math.abs(one[i + 1] - other[i + 1]) > 2 || Math.abs(one[i + 2] - other[i + 2]) > 2) apart++;
+  }
+  return apart;
+}
 
 const SCENES = {
   /** A position and orders around the last price, with the bid and ask on: lines and tags meet there. */
@@ -422,6 +447,79 @@ const SCENES = {
     const s = await widget();
     s.chart.addIndicator('fractals', { period: 2 });
     return s;
+  },
+
+  /**
+   * The price chart drawn with no page (`renderPriceChart`), under the same chart on the page: the
+   * two are one picture, pixel for pixel, at the screen's size and at twice the pixels.
+   */
+  async noPage() {
+    host.style.display = 'grid';
+    host.style.gridTemplateRows = '1fr 1fr';
+    const [top, bottom] = [document.createElement('div'), document.createElement('canvas')];
+    top.style.minHeight = '0';
+    bottom.style.cssText = 'width:100%;height:100%;min-height:0;display:block';
+    host.append(top, bottom);
+    const data = dailyBars(160);
+    const drawings = [
+      { id: 'trend', type: 'trendLine', anchors: [{ time: data[40].time, price: data[40].low }, { time: data[130].time, price: data[130].low }], style: { color: '#e07b00', lineWidth: 2 }, visible: true, locked: false },
+      { id: 'level', type: 'horizontalLine', anchors: [{ time: data[90].time, price: data[90].high }], style: { color: '#2266ff', lineWidth: 1 }, visible: true, locked: false },
+    ];
+    const markers = [
+      { id: 'in', time: data[60].time, price: data[60].low, direction: 'long', confidence: 0.8, source: 'audit', label: 'Buy' },
+      { id: 'out', time: data[120].time, price: data[120].high, direction: 'short', confidence: 0.7, source: 'audit', label: 'Sell' },
+    ];
+    const look = { theme, watermark: { text: 'NO PAGE' }, features: { indicatorValueLabels: true } };
+    // Nothing that follows a pointer or a clock: a still frame has neither.
+    const chart = new Chart(top, { ...look, features: { ...look.features, crosshair: false, barCountdown: false } });
+    chart.setData(data);
+    chart.fitContent();
+    chart.setSymbolName('DEMO');
+    chart.setDataTimeframe('1d');
+    chart.addIndicator('ema', { period: 21 });
+    chart.addIndicator('bb');
+    chart.addIndicator('rsi');
+    chart.addIndicator('macd');
+    chart.setDrawings(drawings);
+    chart.setSignalMarkers(markers);
+    const still = {
+      ...look,
+      data,
+      symbol: 'DEMO',
+      timeframe: '1d',
+      indicators: [{ id: 'ema', params: { period: 21 } }, { id: 'bb' }, { id: 'rsi' }, { id: 'macd' }],
+      drawings,
+      markers,
+    };
+    /** The still chart on a canvas of `width` × `height` CSS pixels, `ratio` pixels to each. */
+    const draw = (canvas, width, height, ratio) => {
+      canvas.width = Math.round(width * ratio);
+      canvas.height = Math.round(height * ratio);
+      const ctx = canvas.getContext('2d');
+      ctx.setTransform(canvas.width / width, 0, 0, canvas.height / height, 0, 0);
+      renderPriceChart(ctx, still, { width, height });
+    };
+    // On the page for the screenshot, once the chart above has its size and its fonts.
+    await document.fonts.ready;
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    const size = () => ({ width: top.clientWidth, height: top.clientHeight });
+    draw(bottom, bottom.clientWidth, bottom.clientHeight, devicePixelRatio);
+    const checks = () => {
+      const problems = [];
+      for (const ratio of [1, 2]) {
+        const onPage = chart.toCanvas({ pixelRatio: ratio });
+        const drawn = document.createElement('canvas');
+        draw(drawn, size().width, size().height, ratio);
+        if (!onPage || onPage.width !== drawn.width || onPage.height !== drawn.height) {
+          problems.push(`no page, ×${ratio}: the picture is ${drawn.width}×${drawn.height}, the chart's ${onPage?.width}×${onPage?.height}`);
+          continue;
+        }
+        const apart = pixelsApart(onPage, drawn);
+        if (apart > 0) problems.push(`no page, ×${ratio}: ${apart} of ${drawn.width * drawn.height} pixels are not the chart's own`);
+      }
+      return problems;
+    };
+    return { chart, checks, drawStill: draw };
   },
 
   /** More panes than the chart has room for: the price pane keeps its part, the panes share the rest. */

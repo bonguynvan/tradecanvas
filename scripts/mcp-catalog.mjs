@@ -16,6 +16,20 @@ const ENTRY_POINTS = [
   ['ChartWidgetGrid', 'packages/library/src/widget/ChartWidgetGrid.ts'],
 ];
 /**
+ * The functions that take an options object: each export of
+ * @tradecanvas/chart, the interface its options are declared by, what it is
+ * for in a line, and how it is called.
+ */
+const FUNCTIONS = [
+  [
+    'renderPriceChart',
+    'PriceChartOptions',
+    'packages/commons/src/types/export.ts',
+    'The price chart drawn on a 2D context of your own, with no page: a picture made in Node or in a worker, for an email, a report or a message from a bot.',
+    "import { renderPriceChart } from '@tradecanvas/chart';\nrenderPriceChart(ctx, options, { width: 800, height: 400 }); // one frame on your context; in Node give your canvas library's Path2D as options.path2D",
+  ],
+];
+/**
  * The finance charts: each class of @tradecanvas/chart, the interface its
  * options are declared by, and what it is for in a line. A class that is not
  * exported, or an interface that is not there, stops the build.
@@ -201,7 +215,8 @@ function describeProperty(checker, symbol, at) {
 
 function readOptions(root) {
   const ohlc = sourcePath(root, 'packages/commons/src/types/ohlc.ts');
-  const files = [...ENTRY_POINTS.map(([, file]) => sourcePath(root, file)), ...new Set(FINANCE_CHARTS.map(([, , file]) => sourcePath(root, file))), ohlc];
+  const declared = new Set([...FINANCE_CHARTS, ...FUNCTIONS].map(([, , file]) => sourcePath(root, file)));
+  const files = [...ENTRY_POINTS.map(([, file]) => sourcePath(root, file)), ...declared, ohlc];
   const program = ts.createProgram(files, {
     target: ts.ScriptTarget.ES2022,
     module: ts.ModuleKind.ESNext,
@@ -229,9 +244,14 @@ function readOptions(root) {
     const props = checker.getPropertiesOfType(checker.getTypeAtLocation(declared));
     return { name, what, options: props.map((p) => describeProperty(checker, p, declared)) };
   });
+  const functions = FUNCTIONS.map(([name, optionsType, file, what, usage]) => {
+    const declared = topLevel(program, sourcePath(root, file), (n) => ts.isInterfaceDeclaration(n) && n.name.text === optionsType, `interface ${optionsType}`);
+    const props = checker.getPropertiesOfType(checker.getTypeAtLocation(declared));
+    return { name, what, usage, options: props.map((p) => describeProperty(checker, p, declared)) };
+  });
   const known = topLevel(program, ohlc, (n) => ts.isTypeAliasDeclaration(n) && n.name.text === 'KnownTimeFrame', 'KnownTimeFrame');
   const timeframes = writtenLiterals(checker, known.type) ?? [];
-  return { options, nested, timeframes, financeCharts };
+  return { options, nested, timeframes, financeCharts, functions };
 }
 
 /** Where the guide to writing an indicator is: the skill's recipe, whose code CI type-checks. */
@@ -259,8 +279,8 @@ export async function buildMcpCatalog(root, indicators) {
   ]);
   const tools = [];
   core.registerBuiltInDrawingTools({ register: (tool) => tools.push(tool.descriptor) });
-  const { options, nested, timeframes, financeCharts } = readOptions(root);
-  for (const { name } of financeCharts) {
+  const { options, nested, timeframes, financeCharts, functions } = readOptions(root);
+  for (const { name } of [...financeCharts, ...functions]) {
     if (typeof library[name] !== 'function') throw new Error(`mcp catalog: @tradecanvas/chart exports no ${name}`);
   }
   return {
@@ -284,6 +304,7 @@ export async function buildMcpCatalog(root, indicators) {
     options,
     nested,
     financeCharts,
+    functions,
     customIndicator: readCustomIndicatorGuide(root),
   };
 }

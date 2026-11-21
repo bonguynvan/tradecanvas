@@ -29,7 +29,7 @@ A pnpm workspace, TypeScript strict, no runtime dependencies in any package.
 |---|---|
 | `packages/commons` | Shared types, themes, the icon set (`src/icons/iconSet.ts`). No DOM. |
 | `packages/core` | The engine: viewport, renderers (Canvas 2D and WebGL), indicators, drawings, trading, data adapters. |
-| `packages/library` | `@tradecanvas/chart`: the `Chart` class (`src/Chart.ts`), its bars in `src/SeriesStore.ts` (every write goes through it), the chart's state with no DOM in `src/model` (the series a chart type draws, when the price scale is fitted, the panes as drawn, which pane each indicator is in, the indicators' undo steps and saved setup, the pane a drawing goes on, the other symbols indicators read, what the alerts are checked against and what they follow, the prices a paper account trades on in a replay), tested in plain Node, and `ChartWidget` with its UI in `src/widget`. |
+| `packages/library` | `@tradecanvas/chart`: the `Chart` class (`src/Chart.ts`), its bars in `src/SeriesStore.ts` (every write goes through it), the chart's state with no DOM in `src/model` (the series a chart type draws, when the price scale is fitted, the panes as drawn, which pane each indicator is in, the indicators' undo steps and saved setup, the pane a drawing goes on, the other symbols indicators read, what the alerts are checked against and what they follow, the prices a paper account trades on in a replay), tested in plain Node, the chart's frame put together with no page in `src/static` (`renderPriceChart`: what `Chart` wires up for a frame, wired again there, so a part added to the chart's frame is added there too, and `sameAsChart.test.ts` and the `noPage` audit scene fail when the two draw apart), and `ChartWidget` with its UI in `src/widget`. |
 | `packages/analytics` | Backtester, strategies, risk metrics. |
 | `packages/mcp` | `@tradecanvas/mcp`: the MCP server for coding agents. Its catalog is generated from the other packages (`scripts/mcp-catalog.mjs`). |
 | `packages/react`, `vue`, `svelte` | Framework wrappers. They read the built output of `library`. |
@@ -173,7 +173,8 @@ These fail CI, often far from the line that caused them.
   order with a quote on, a linked grid under the pointer, a replay, compares,
   Renko, the day's limits, many indicators), in both themes at three widths.
   It checks that no two price axis tags overlap and that a linked grid's
-  legends follow the pointer, and writes a sheet per scene to `.tmp/audit`
+  legends follow the pointer, and that the chart drawn with no page is the
+  chart's own picture pixel for pixel (scene `noPage`), and writes a sheet per scene to `.tmp/audit`
   to look over. Add a scene to `scripts/audit/scenes.js` for a state a bug
   turned up.
 - A change to the finance charts (`src/finance` in `core` or `library`) runs

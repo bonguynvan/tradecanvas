@@ -44,7 +44,7 @@
 - **Nhanh**: pan một triệu nến ở 60 fps với WebGL; một tick trực tiếp mất khoảng một micro giây; mười phút với 30,000 giao dịch mỗi giây trên một triệu nến mà bộ nhớ không tăng ([soak](benchmarks/2026-11-03.md)).
 - **Workspace**: grid nhiều biểu đồ, layout, bar replay, backtest.
 - **Thêm hai mươi hai loại biểu đồ** cho các trang xung quanh biểu đồ chính: depth chart, equity curve, waterfall, heatmap và market map theo ngành, biểu đồ cột, donut, scatter, histogram, calendar, correlation matrix, gauge, sparkline, payoff của options, curve (volatility smile, term structure), box plot, radar, sunburst, stacked area, surface 3D xoay được bằng cách kéo (volatility surface, depth theo thời gian), cột 3D, và một dashboard backtest.
-- **In ấn, và không cần trang web**: mọi biểu đồ xuất được thành ảnh sắc nét, in riêng hoặc lưu thành PDF; các biểu đồ ở trên còn vẽ được trong Node hoặc worker, không cần trang trình duyệt.
+- **In ấn, và không cần trang web**: mọi biểu đồ xuất được thành ảnh sắc nét, in riêng hoặc lưu thành PDF; biểu đồ giá và các biểu đồ ở trên còn vẽ được trong Node hoặc worker, không cần trang trình duyệt.
 - **Tuỳ biến**: theme, năm look, 133 công tắc tính năng, plugin; 30 ngôn ngữ; điện thoại và ứng dụng.
 
 <table>

@@ -142,7 +142,7 @@ import { SymbolRequests } from './model/SymbolRequests.js';
 import { drawingPaneAt, drawingPaneViewport, takesDrawing } from './model/DrawingPanes.js';
 import { HistoryPager, type HistoryLoader } from './HistoryPager.js';
 import { ThemeManager } from './ThemeManager.js';
-import { startOverrides } from './style/styleOptions.js';
+import { readFont, readShapes, startOverrides } from './style/styleOptions.js';
 import { LayoutManager } from './layout/LayoutManager.js';
 import { requiredPriceAxisWidth, nextPriceAxisWidth } from './layout/priceAxisWidth.js';
 import { LabelWidths } from './layout/labelWidths.js';
@@ -7001,29 +7001,6 @@ function measureWith(ctx: CanvasRenderingContext2D, text: string, font: string):
   const width = ctx.measureText(text).width;
   ctx.font = drawing;
   return width;
-}
-
-/** The longest family list `setFont` takes, characters. */
-const MAX_FONT_FAMILY = 300;
-
-/** A font the chart can draw with: a family that isn't empty, sizes above zero. */
-function readFont(font: Partial<FontConfig>): Partial<FontConfig> {
-  const out: Partial<FontConfig> = {};
-  // A list of faces, nothing a style sheet could read more into (the family also reaches CSS text).
-  const face = (v: unknown): v is string => typeof v === 'string' && v.trim() !== '' && v.length <= MAX_FONT_FAMILY && !/[;{}<>\\]|\/\*/.test(v);
-  if (face(font.family)) out.family = font.family;
-  if (face(font.textFamily)) out.textFamily = font.textFamily;
-  for (const key of ['sizeSmall', 'sizeMedium', 'sizeLarge'] as const) {
-    const size = font[key];
-    if (typeof size === 'number' && Number.isFinite(size) && size > 0) out[key] = size;
-  }
-  return out;
-}
-
-/** Shapes the chart can draw: a corner radius from 0 to 999 px. */
-function readShapes(shapes: ShapeConfig): ShapeConfig {
-  const r = shapes.tagRadius;
-  return typeof r === 'number' && Number.isFinite(r) && r >= 0 ? { tagRadius: Math.min(r, 999) } : {};
 }
 
 /** An alert as its events carry it. */
