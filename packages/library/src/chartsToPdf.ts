@@ -12,9 +12,10 @@ const PAPER_PIXEL_RATIO = 2;
  * A PDF with a page for each chart, in the order given: a report. A chart
  * is the price chart, a finance chart, or anything with `toCanvas`; a canvas
  * goes in as it is. Each is drawn again for paper, in the light theme and at
- * twice the pixels unless `options` say otherwise, and kept without loss. A
- * chart with no picture to give (no size, screenshots switched off) has no
- * page; null when none has one.
+ * twice the pixels unless `options` say otherwise, and kept without loss
+ * where the browser can pack pixels (every current one can). A chart with no
+ * picture to give (no size, screenshots switched off) has no page; null when
+ * none has one.
  */
 export async function chartsToPdf(charts: readonly PdfPageSource[], options: ChartPdfOptions = {}): Promise<Blob | null> {
   const picture: ChartImageOptions = { theme: options.theme ?? PAPER_THEME, pixelRatio: options.pixelRatio ?? PAPER_PIXEL_RATIO };

@@ -346,8 +346,9 @@ const blob = await chart.screenshotBlob({ type: 'jpeg', quality: 0.9 })
 const canvas = chart.toCanvas({ pixelRatio: 2 })             // to draw on, or to read yourself`}</code></pre>
 <p>
   <code>print()</code> opens the browser's print dialog for the chart alone: a page that holds its picture
-  and nothing of the page it is on. <code>toPdf()</code> gives a PDF of one page, the picture kept without
-  loss and as large as fits within the margins. Both draw the chart again for paper, in the light theme and
+  and nothing of the page it is on; it gives <code>false</code> when there was no picture to print.
+  <code>toPdf()</code> gives a PDF of one page, the picture kept without loss and as large as fits within the
+  margins. Both draw the chart again for paper, in the light theme and
   at twice the pixels unless you say otherwise. <code>chartsToPdf</code> makes one PDF of several charts, a
   page each: the price chart, the <a href={href('/docs/finance')}>finance charts</a>, or a canvas of your own.
 </p>
@@ -362,16 +363,20 @@ const report = await chartsToPdf([chart, equityChart, allocationChart], { title:
   <code>'landscape'</code> (default) or <code>'portrait'</code>; <code>margin</code> is in millimetres. The
   PDF holds no text of its own, so it needs no font: the chart's words are in its picture, in any language.
   A picture is held to what a browser can draw (no side past 16,384 pixels, some 16 million in all), so a
-  very large chart gets fewer pixels than asked.
+  very large chart gets fewer pixels than asked. The pixels are packed without loss by the browser's
+  <code>CompressionStream</code>, which every current browser has; one without it gets a JPEG that keeps
+  nearly all of the picture. Printing puts the picture in a frame as a <code>data:</code> URL, so a page with
+  a content security policy has to allow those for images.
 </p>
 <p>
   What the picture has is what the chart draws on its canvases: the plot, the axes, the legend, the
-  crosshair if it is showing, and a canvas a host laid over the chart. What is built of page elements is not
-  on it: the tooltips, and the widget's bars and its rows of indicator names. With
+  crosshair if it is showing, and a canvas a host laid over the chart (unless it is hidden, or holds a
+  picture from another site, which no page may read back). What is built of page elements is not on it: the tooltips, and the widget's bars and its rows of indicator names. With
   <code>features.screenshot</code> off there is no picture, print or PDF. ChartWidget has
   <strong>Print chart</strong> and <strong>Save chart as PDF</strong> in the command palette, and
   <code>widget.printChart()</code> and <code>widget.saveChartPdf()</code>, both under the chart's symbol and
-  interval; they go with the <code>screenshot</code> switch.
+  interval, with a toast when there was nothing to print or to save; they go with the <code>screenshot</code>
+  switch.
 </p>
 
 <h3>Volume Profile</h3>

@@ -948,6 +948,7 @@ export const ZH_HANT_MESSAGES: WidgetMessages = {
   'toast.imageCopied': '已複製圖表圖片',
   'toast.imageCopyFailed': '複製失敗：無法寫入圖片剪貼簿',
   'toast.pdfFailed': '無法產生 PDF',
+  'toast.printFailed': '無法列印圖表',
   'toast.linkCopied': '已複製分享連結',
   'toast.copyFailed': '複製失敗：剪貼簿無法使用',
   'toast.compareNeedsAdapter': '比較需要即時資料來源',

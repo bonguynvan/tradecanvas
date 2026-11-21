@@ -948,6 +948,7 @@ export const RU_MESSAGES: WidgetMessages = {
   'toast.imageCopied': 'Изображение графика скопировано',
   'toast.imageCopyFailed': 'Не удалось скопировать: буфер обмена изображений недоступен',
   'toast.pdfFailed': 'Не удалось создать PDF',
+  'toast.printFailed': 'Не удалось напечатать график',
   'toast.linkCopied': 'Ссылка скопирована',
   'toast.copyFailed': 'Не удалось скопировать: буфер обмена недоступен',
   'toast.compareNeedsAdapter': 'Для сравнения нужен источник данных в реальном времени',

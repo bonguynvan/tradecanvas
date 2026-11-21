@@ -961,6 +961,7 @@ export const ET_MESSAGES: WidgetMessages = {
   'toast.imageCopied': 'Graafiku pilt kopeeritud',
   'toast.imageCopyFailed': 'Kopeerimine ebaõnnestus – pilte ei saa lõikelauale kopeerida',
   'toast.pdfFailed': 'PDF-i loomine ebaõnnestus',
+  'toast.printFailed': 'Graafiku printimine ebaõnnestus',
   'toast.linkCopied': 'Jagamislink kopeeritud',
   'toast.copyFailed': 'Kopeerimine ebaõnnestus – lõikelaud pole saadaval',
   'toast.compareNeedsAdapter': 'Võrdlemiseks on vaja reaalajas andmeallikat',

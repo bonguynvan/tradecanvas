@@ -132,7 +132,7 @@ export abstract class BaseFinanceChart {
   }
 
   /**
-   * Draws the chart as a picture of it has it: what `renderChart` draws,
+   * Draws the chart for a picture of it: what `renderChart` draws, whole,
    * with nothing that follows the pointer or is on its way somewhere, and
    * without touching what the chart on the page keeps between frames (a
    * picture may be another size than the chart).
@@ -195,11 +195,12 @@ export abstract class BaseFinanceChart {
   /**
    * Opens the browser's print dialog for the chart alone: a page that holds
    * its picture and nothing of the page it is on. In the light theme and at
-   * twice the pixels unless `options` say otherwise.
+   * twice the pixels unless `options` say otherwise. False for a chart with
+   * no size.
    */
-  print(options: ChartPrintOptions = {}): void {
+  print(options: ChartPrintOptions = {}): boolean {
     const canvas = this.toCanvas(forPaper(options));
-    if (canvas) printCanvas(canvas, { title: options.title });
+    return canvas !== null && printCanvas(canvas, { title: options.title });
   }
 
   /**

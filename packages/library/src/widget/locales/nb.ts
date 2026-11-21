@@ -961,6 +961,7 @@ export const NB_MESSAGES: WidgetMessages = {
   'toast.imageCopied': 'Bilde av grafen kopiert',
   'toast.imageCopyFailed': 'Kopiering mislyktes – bilder kan ikke kopieres til utklippstavlen',
   'toast.pdfFailed': 'PDF-filen kunne ikke lages',
+  'toast.printFailed': 'Grafen kunne ikke skrives ut',
   'toast.linkCopied': 'Delingslenke kopiert',
   'toast.copyFailed': 'Kopiering mislyktes – utklippstavlen er ikke tilgjengelig',
   'toast.compareNeedsAdapter': 'Sammenligning krever en datakilde i sanntid',

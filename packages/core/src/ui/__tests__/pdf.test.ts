@@ -109,6 +109,40 @@ describe('a PDF of pictures, a page each', () => {
     expect(placed(await imagesToPdf([picture(2, 2)], { pageSize: { width: 100, height: 200 }, orientation: 'portrait' })).box).toEqual([0, 0, 283.46, 566.93]);
   });
 
+  it('takes a paper it does not know, or one no reader would open, as A4 or as near as a reader takes', async () => {
+    // A name every object has is no paper's.
+    for (const name of ['constructor', 'toString', 'a5']) {
+      expect(placed(await imagesToPdf([picture(2, 2)], { pageSize: name as never })).box, name).toEqual([0, 0, 841.89, 595.28]);
+    }
+    // Sides held between a centimetre and the 200 inches a reader takes.
+    const tiny = placed(await imagesToPdf([picture(4, 2)], { pageSize: { width: 0.001, height: 0.001 } }));
+    expect(tiny.box).toEqual([0, 0, 28.35, 28.35]);
+    expect(tiny.matrix[0]).toBeGreaterThan(1);
+    expect(tiny.matrix[3]).toBeGreaterThan(0.5);
+    const vast = placed(await imagesToPdf([picture(4, 2)], { pageSize: { width: 1e20, height: 1e20 } }));
+    expect(vast.box).toEqual([0, 0, 14400, 14400]);
+    expect(placed(await imagesToPdf([picture(4, 2)], { pageSize: { width: Number.NaN, height: 100 } })).box).toEqual([0, 0, 841.89, 595.28]);
+  });
+
+  it('asks for each picture when its page is written, the one before it done with', async () => {
+    const order: string[] = [];
+    const later = (name: string, image: PdfImage) => async () => {
+      order.push(`asked ${name}`);
+      await Promise.resolve();
+      order.push(`given ${name}`);
+      return image;
+    };
+    const bytes = await imagesToPdf([later('a', picture(4, 2)), picture(3, 3), later('c', picture(2, 6))]);
+    expect(order).toEqual(['asked a', 'given a', 'asked c', 'given c']);
+    const pdf = text(bytes);
+    expect(object(pdf, 2)).toContain('/Count 3');
+    expect(object(pdf, 5)).toContain('/Width 4');
+    expect(object(pdf, 8)).toContain('/Width 3');
+    expect(object(pdf, 11)).toContain('/Width 2');
+    // One that turns out to be no picture is said by its page.
+    await expect(imagesToPdf([picture(2, 2), async () => ({ width: 2, height: 2 })])).rejects.toThrow(/picture 2 has neither/);
+  });
+
   it('holds a margin to what leaves room for the picture, and takes one that is no number as its own', async () => {
     const whole = placed(await imagesToPdf([picture(4, 2)], { margin: 0 }));
     expect(whole.matrix[0]).toBeCloseTo(841.89, 1);

@@ -1,5 +1,5 @@
 import type { ChartImageOptions, PdfPageOptions } from '@tradecanvas/commons';
-import { imagesToPdf, type PdfImage } from './pdf.js';
+import { imagesToPdf, type PdfImage, type PdfPicture } from './pdf.js';
 
 /** The longest side a browser draws a canvas at, px, and the most pixels the strictest of them gives one. */
 export const MAX_IMAGE_SIDE = 16_384;
@@ -11,6 +11,12 @@ const PDF_JPEG_QUALITY = 0.95;
 /** The frame a picture is printed from is taken away this long after, ms, where the browser never says the printing is over. */
 const PRINT_FRAME_LIFE_MS = 5 * 60_000;
 const PRINT_MARGIN = '12mm';
+/**
+ * How long after a file was saved from an object URL the URL is let go of,
+ * ms. In the click's own task, Firefox and Safari have saved nothing, or a
+ * part, of a large file.
+ */
+const REVOKE_AFTER_MS = 40_000;
 
 type ImageType = NonNullable<ChartImageOptions['type']>;
 const MIME: Record<ImageType, string> = { png: 'image/png', jpeg: 'image/jpeg', webp: 'image/webp' };
@@ -45,10 +51,14 @@ export function canvasBlob(canvas: HTMLCanvasElement, options: ChartImageOptions
   return new Promise((resolve) => canvas.toBlob(resolve, ...encoding(options)));
 }
 
-/** A file name for a picture: the one given, with the format's ending where it has none; `chart` with no name. */
+/**
+ * A file name for a picture: the one given, with the format's ending unless
+ * it has a picture's ending already; `chart` with no name. A dot elsewhere
+ * is part of the name: `BTC.USD` is a symbol, not a file of the kind `USD`.
+ */
 export function imageFileName(name: string | undefined, type: ImageType | 'pdf'): string {
   if (!name) return `chart.${ENDING[type]}`;
-  return /\.[a-z0-9]{2,5}$/i.test(name) ? name : `${name}.${ENDING[type]}`;
+  return /\.(png|jpe?g|webp|pdf)$/i.test(name) ? name : `${name}.${ENDING[type]}`;
 }
 
 /** Saves what `url` holds as a file, by a link the page never shows. Nothing, for no URL. */
@@ -60,6 +70,13 @@ export function downloadImage(url: string, filename: string): void {
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
+}
+
+/** Saves a file's bytes under `filename`, by an address of its own that is let go of once the browser has had time to save. */
+export function downloadBlob(blob: Blob, filename: string): void {
+  const url = URL.createObjectURL(blob);
+  downloadImage(url, filename);
+  setTimeout(() => URL.revokeObjectURL(url), REVOKE_AFTER_MS);
 }
 
 /**
@@ -99,9 +116,19 @@ export async function copyImage(png: Promise<Blob | null>): Promise<boolean> {
  * Sends a canvas to the printer: the browser's print dialog, for a page that
  * holds the picture and nothing else. It is printed from a frame of its own,
  * so the page the chart is on is neither printed nor changed; the paper is
- * turned the way the picture is.
+ * turned the way the picture is. False, and nothing shown, for a canvas the
+ * page may not read (one that holds a picture from another site). The page
+ * has to allow `data:` pictures; where it allows no inline style, the picture
+ * prints at the browser's own size and paper.
  */
-export function printCanvas(canvas: HTMLCanvasElement, options: { title?: string } = {}): void {
+export function printCanvas(canvas: HTMLCanvasElement, options: { title?: string } = {}): boolean {
+  // Read first: with no picture there is nothing to make a frame for.
+  let picture: string;
+  try {
+    picture = canvasDataURL(canvas);
+  } catch {
+    return false;
+  }
   const frame = document.createElement('iframe');
   frame.setAttribute('aria-hidden', 'true');
   frame.tabIndex = -1;
@@ -112,8 +139,12 @@ export function printCanvas(canvas: HTMLCanvasElement, options: { title?: string
   const view = frame.contentWindow;
   if (!page || !view) {
     frame.remove();
-    return;
+    return false;
   }
+  // A page written here is the frame's from now on: a browser still loading the empty page it began with does not put that back over this one.
+  page.open();
+  page.write('<!doctype html><html><head></head><body></body></html>');
+  page.close();
   let life: ReturnType<typeof setTimeout> | undefined;
   const done = () => {
     clearTimeout(life);
@@ -128,12 +159,38 @@ export function printCanvas(canvas: HTMLCanvasElement, options: { title?: string
   image.addEventListener('load', () => {
     view.addEventListener('afterprint', done);
     life = setTimeout(done, PRINT_FRAME_LIFE_MS);
-    view.focus();
-    view.print();
+    try {
+      view.focus();
+      view.print();
+    } catch {
+      // A page that may not print (a sandboxed frame): nothing to wait for.
+      done();
+    }
   });
   image.addEventListener('error', done);
-  image.src = canvasDataURL(canvas);
+  image.src = picture;
   page.body.appendChild(image);
+  return true;
+}
+
+/**
+ * Whether the page may read what `canvas` holds. One with a picture from
+ * another site drawn on it may not be read, nor may any canvas it is then
+ * drawn on: it is tried on a canvas of one pixel, so the caller's stays good.
+ */
+export function canvasReadable(canvas: HTMLCanvasElement): boolean {
+  const probe = document.createElement('canvas');
+  probe.width = 1;
+  probe.height = 1;
+  const ctx = probe.getContext('2d');
+  if (!ctx) return false;
+  try {
+    ctx.drawImage(canvas, 0, 0, 1, 1);
+    ctx.getImageData(0, 0, 1, 1);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 /** A canvas's pixels for a page of a PDF: red, green and blue, what shows through laid on white. */
@@ -167,10 +224,15 @@ async function canvasPdfJpeg(canvas: HTMLCanvasElement): Promise<PdfImage> {
   return { width: canvas.width, height: canvas.height, jpeg: new Uint8Array(await blob.arrayBuffer()) };
 }
 
-/** A PDF with a page for each canvas, its picture kept without loss where the platform can pack it. */
+/**
+ * A PDF with a page for each canvas. A picture is kept without loss where
+ * the platform can pack its pixels (`CompressionStream`: every current
+ * browser), and as a JPEG that keeps nearly all of it where it cannot. Each
+ * canvas is read when its page is written, so one page's pixels are held at
+ * a time.
+ */
 export async function canvasesToPdf(canvases: readonly HTMLCanvasElement[], options: PdfPageOptions = {}): Promise<Blob> {
   const lossless = typeof CompressionStream === 'function';
-  const images: PdfImage[] = [];
-  for (const canvas of canvases) images.push(lossless ? canvasPdfImage(canvas) : await canvasPdfJpeg(canvas));
-  return new Blob([(await imagesToPdf(images, options)) as BlobPart], { type: 'application/pdf' });
+  const pictures: PdfPicture[] = canvases.map((canvas) => () => (lossless ? canvasPdfImage(canvas) : canvasPdfJpeg(canvas)));
+  return new Blob([(await imagesToPdf(pictures, options)) as BlobPart], { type: 'application/pdf' });
 }

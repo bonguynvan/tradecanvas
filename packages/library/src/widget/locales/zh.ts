@@ -948,6 +948,7 @@ export const ZH_MESSAGES: WidgetMessages = {
   'toast.imageCopied': '已复制图表图片',
   'toast.imageCopyFailed': '复制失败：无法写入图片剪贴板',
   'toast.pdfFailed': '无法生成 PDF',
+  'toast.printFailed': '无法打印图表',
   'toast.linkCopied': '已复制分享链接',
   'toast.copyFailed': '复制失败：剪贴板不可用',
   'toast.compareNeedsAdapter': '对比需要实时数据源',

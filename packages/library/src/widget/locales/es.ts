@@ -948,6 +948,7 @@ export const ES_MESSAGES: WidgetMessages = {
   'toast.imageCopied': 'Imagen del gráfico copiada',
   'toast.imageCopyFailed': 'No se pudo copiar: portapapeles de imágenes no disponible',
   'toast.pdfFailed': 'No se pudo crear el PDF',
+  'toast.printFailed': 'No se pudo imprimir el gráfico',
   'toast.linkCopied': 'Enlace copiado',
   'toast.copyFailed': 'No se pudo copiar: portapapeles no disponible',
   'toast.compareNeedsAdapter': 'La comparación necesita una fuente de datos en vivo',

@@ -948,6 +948,7 @@ export const KO_MESSAGES: WidgetMessages = {
   'toast.imageCopied': '차트 이미지를 복사했습니다',
   'toast.imageCopyFailed': '복사 실패 — 이미지 클립보드를 사용할 수 없습니다',
   'toast.pdfFailed': 'PDF를 만들지 못했습니다',
+  'toast.printFailed': '차트를 인쇄하지 못했습니다',
   'toast.linkCopied': '공유 링크를 복사했습니다',
   'toast.copyFailed': '복사 실패 — 클립보드를 사용할 수 없습니다',
   'toast.compareNeedsAdapter': '비교하려면 실시간 데이터 소스가 필요합니다',

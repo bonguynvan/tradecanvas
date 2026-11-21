@@ -961,6 +961,7 @@ export const FA_MESSAGES: WidgetMessages = {
   'toast.imageCopied': 'تصویر نمودار کپی شد',
   'toast.imageCopyFailed': 'کپی ناموفق بود — کلیپ‌بورد تصویر در دسترس نیست',
   'toast.pdfFailed': 'ساخت PDF ناموفق بود',
+  'toast.printFailed': 'چاپ نمودار ناموفق بود',
   'toast.linkCopied': 'لینک اشتراک‌گذاری کپی شد',
   'toast.copyFailed': 'کپی ناموفق بود — کلیپ‌بورد در دسترس نیست',
   'toast.compareNeedsAdapter': 'مقایسه به منبع داده زنده نیاز دارد',

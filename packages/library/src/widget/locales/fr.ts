@@ -948,6 +948,7 @@ export const FR_MESSAGES: WidgetMessages = {
   'toast.imageCopied': 'Image du graphique copiée',
   'toast.imageCopyFailed': 'Copie impossible : presse-papiers d’images indisponible',
   'toast.pdfFailed': 'Impossible de créer le PDF',
+  'toast.printFailed': 'Impossible d’imprimer le graphique',
   'toast.linkCopied': 'Lien copié',
   'toast.copyFailed': 'Copie impossible : presse-papiers indisponible',
   'toast.compareNeedsAdapter': 'La comparaison nécessite une source de données en direct',

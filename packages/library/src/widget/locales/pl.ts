@@ -948,6 +948,7 @@ export const PL_MESSAGES: WidgetMessages = {
   'toast.imageCopied': 'Skopiowano obraz wykresu',
   'toast.imageCopyFailed': 'Nie udało się skopiować – schowek obrazów jest niedostępny',
   'toast.pdfFailed': 'Nie udało się utworzyć pliku PDF',
+  'toast.printFailed': 'Nie udało się wydrukować wykresu',
   'toast.linkCopied': 'Skopiowano link',
   'toast.copyFailed': 'Nie udało się skopiować – schowek jest niedostępny',
   'toast.compareNeedsAdapter': 'Porównanie wymaga źródła danych na żywo',

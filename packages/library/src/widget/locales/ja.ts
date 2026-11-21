@@ -948,6 +948,7 @@ export const JA_MESSAGES: WidgetMessages = {
   'toast.imageCopied': 'チャート画像をコピーしました',
   'toast.imageCopyFailed': 'コピーできませんでした：画像のクリップボードを使用できません',
   'toast.pdfFailed': 'PDFを作成できませんでした',
+  'toast.printFailed': 'チャートを印刷できませんでした',
   'toast.linkCopied': '共有リンクをコピーしました',
   'toast.copyFailed': 'コピーできませんでした：クリップボードを使用できません',
   'toast.compareNeedsAdapter': '比較にはライブのデータソースが必要です',

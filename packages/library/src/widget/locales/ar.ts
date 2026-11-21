@@ -961,6 +961,7 @@ export const AR_MESSAGES: WidgetMessages = {
   'toast.imageCopied': 'تم نسخ صورة الرسم البياني',
   'toast.imageCopyFailed': 'فشل النسخ — حافظة الصور غير متاحة',
   'toast.pdfFailed': 'تعذّر إنشاء ملف PDF',
+  'toast.printFailed': 'تعذّرت طباعة الرسم البياني',
   'toast.linkCopied': 'تم نسخ رابط المشاركة',
   'toast.copyFailed': 'فشل النسخ — الحافظة غير متاحة',
   'toast.compareNeedsAdapter': 'تتطلب المقارنة محوّل بيانات مباشرة',

@@ -948,6 +948,7 @@ export const DE_MESSAGES: WidgetMessages = {
   'toast.imageCopied': 'Chartbild kopiert',
   'toast.imageCopyFailed': 'Kopieren fehlgeschlagen – Bild-Zwischenablage nicht verfügbar',
   'toast.pdfFailed': 'Das PDF konnte nicht erstellt werden',
+  'toast.printFailed': 'Der Chart konnte nicht gedruckt werden',
   'toast.linkCopied': 'Link kopiert',
   'toast.copyFailed': 'Kopieren fehlgeschlagen – Zwischenablage nicht verfügbar',
   'toast.compareNeedsAdapter': 'Für einen Vergleich wird eine Live-Datenquelle benötigt',

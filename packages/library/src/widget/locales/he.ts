@@ -961,6 +961,7 @@ export const HE_MESSAGES: WidgetMessages = {
   'toast.imageCopied': 'תמונת הגרף הועתקה',
   'toast.imageCopyFailed': 'ההעתקה נכשלה — לוח ההעתקה לא זמין לתמונות',
   'toast.pdfFailed': 'לא ניתן היה ליצור את ה-PDF',
+  'toast.printFailed': 'לא ניתן היה להדפיס את הגרף',
   'toast.linkCopied': 'קישור השיתוף הועתק',
   'toast.copyFailed': 'ההעתקה נכשלה — לוח ההעתקה לא זמין',
   'toast.compareNeedsAdapter': 'השוואה דורשת מתאם נתונים חיים',

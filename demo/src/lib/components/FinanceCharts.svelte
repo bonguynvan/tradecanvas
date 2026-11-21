@@ -300,6 +300,9 @@
     return [equityChart, depthChart, heatmapChart, waterfallChart, gaugeChart, ...newCharts].filter((chart) => chart !== null);
   }
 
+  /** How long after a file was saved its address is let go of, ms. */
+  const REVOKE_AFTER_MS = 40_000;
+
   /** Saves a PDF the browser has just made, and lets go of it. */
   async function savePdf(make: () => Promise<Blob | null>, filename: string): Promise<void> {
     const pdf = await make();
@@ -311,7 +314,8 @@
     document.body.appendChild(link);
     link.click();
     link.remove();
-    URL.revokeObjectURL(url);
+    // Later, not in the click's own task: a browser may not have begun to save yet.
+    setTimeout(() => URL.revokeObjectURL(url), REVOKE_AFTER_MS);
   }
 
   function applyThemeToAll(theme: Theme): void {

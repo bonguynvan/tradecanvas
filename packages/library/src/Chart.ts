@@ -49,7 +49,7 @@ import type { ResolvedLayout, ChartStyleKey, ChartStyleOverrides, ChartStyleOver
 import { readChartTypeOptions, tickBarCount, barTimeUnit, readChartStyleOverrides, readIndicatorPlotStyles, readPaneStyle } from '@tradecanvas/commons';
 import { PriceLines, type BidAsk, SymbolSeriesStore, CompareSymbolIndicator, CompareSymbolPaneIndicator, SpreadIndicator, CorrelationCoefficientIndicator, CorrelationLogIndicator, axisTimes, HiLoRenderer, PointAndFigureRenderer, isPriceLevelAlert, loadWebGL, gpuContextsLeft, whenGpuContextFree, idleCssCursor, isCrosshairCursor } from '@tradecanvas/core';
 import type { GpuRenderer, RendererMode } from '@tradecanvas/core';
-import { canvasBlob, canvasDataURL, canvasesToPdf, copyImage, downloadImage, imageFileName, imageRatio, printCanvas } from '@tradecanvas/core';
+import { canvasBlob, canvasDataURL, canvasReadable, canvasesToPdf, copyImage, downloadImage, imageFileName, imageRatio, printCanvas } from '@tradecanvas/core';
 import { indicatorWorkerPool, INDICATOR_WORKER_MIN_BARS, THEME_LOOK_KEYS, valuePlots, panelScale, panelScaleTexts, panelTagText, type IndicatorWorkerLease } from '@tradecanvas/core';
 import { regularHoursFilter } from './regularHours.js';
 import { ChartA11y } from './chartA11y.js';
@@ -4977,10 +4977,13 @@ export class Chart {
     canvas.height = Math.max(1, Math.round(size.height * ratio));
     const ctx = canvas.getContext('2d');
     if (!ctx) return null;
-    // A paused chart hasn't taken in what changed since it stopped drawing.
+    // A paused chart hasn't taken in what changed since it stopped drawing: the
+    // scales are fitted for the picture, quietly. The frame it owes the page
+    // stays owed, and resuming draws it and says what moved.
     if (this.isSuspended() && this.renderDeferred) {
-      this.renderDeferred = false;
-      this.refitForTick();
+      this.panes.invalidateScales();
+      this.fitDataAndAxes();
+      this.syncRenderContext();
     }
     const draw = (): void => {
       ctx.setTransform(canvas.width / size.width, 0, 0, canvas.height / size.height, 0, 0);
@@ -5001,6 +5004,9 @@ export class Chart {
       } finally {
         this.syncRenderContext();
       }
+      // A frame notes where its labels and tags are as it draws them, and that was for the
+      // other theme's font: the chart's own frame, drawn again, notes them for its own.
+      this.engine.requestRender();
     }
     this.drawGuestCanvases(ctx);
     return canvas;
@@ -5009,7 +5015,10 @@ export class Chart {
   /**
    * The canvases in the chart's container that are not the chart's own (a
    * layer a host laid over it), each where it is: a picture read off the
-   * screen has them, so one drawn again has them too.
+   * screen has them, so one drawn again has them too. One that is not shown
+   * is left out, and so is one the page may not read (it holds a picture
+   * from another site): drawn on the picture, it would make the whole
+   * picture one nobody can read.
    */
   private drawGuestCanvases(ctx: CanvasRenderingContext2D): void {
     const own = new Set(this.engine.layerManager.ownCanvases());
@@ -5018,7 +5027,8 @@ export class Chart {
     const box = this.container.getBoundingClientRect();
     for (const guest of guests) {
       const at = guest.getBoundingClientRect();
-      if (at.width > 0 && at.height > 0) ctx.drawImage(guest, at.left - box.left, at.top - box.top, at.width, at.height);
+      if (!(at.width > 0) || !(at.height > 0) || getComputedStyle(guest).visibility === 'hidden' || !canvasReadable(guest)) continue;
+      ctx.drawImage(guest, at.left - box.left, at.top - box.top, at.width, at.height);
     }
   }
 
@@ -5054,10 +5064,12 @@ export class Chart {
    * Opens the browser's print dialog for the chart alone: a page that holds
    * its picture and nothing of the page it is on. Drawn again for paper: in
    * the light theme and at twice the pixels unless `options` say otherwise.
+   * False when there was no picture to print (screenshots off, a chart with
+   * no size, a picture the page may not read).
    */
-  print(options: ChartPrintOptions = {}): void {
+  print(options: ChartPrintOptions = {}): boolean {
     const canvas = this.toCanvas({ ...options, theme: options.theme ?? PAPER_THEME, pixelRatio: options.pixelRatio ?? PAPER_PIXEL_RATIO });
-    if (canvas) printCanvas(canvas, { title: options.title });
+    return canvas !== null && printCanvas(canvas, { title: options.title });
   }
 
   /**

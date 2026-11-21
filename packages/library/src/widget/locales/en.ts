@@ -962,6 +962,7 @@ export const EN_MESSAGES = {
   'toast.imageCopied': 'Chart image copied',
   'toast.imageCopyFailed': 'Copy failed — image clipboard unavailable',
   'toast.pdfFailed': 'Could not make the PDF',
+  'toast.printFailed': 'Could not print the chart',
   'toast.linkCopied': 'Share link copied',
   'toast.copyFailed': 'Copy failed — clipboard unavailable',
   'toast.compareNeedsAdapter': 'Comparison needs a live data adapter',

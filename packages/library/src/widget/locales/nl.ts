@@ -948,6 +948,7 @@ export const NL_MESSAGES: WidgetMessages = {
   'toast.imageCopied': 'Grafiekafbeelding gekopieerd',
   'toast.imageCopyFailed': 'Kopiëren mislukt: klembord voor afbeeldingen niet beschikbaar',
   'toast.pdfFailed': 'De pdf kon niet worden gemaakt',
+  'toast.printFailed': 'De grafiek kon niet worden afgedrukt',
   'toast.linkCopied': 'Deellink gekopieerd',
   'toast.copyFailed': 'Kopiëren mislukt: klembord niet beschikbaar',
   'toast.compareNeedsAdapter': 'Vergelijken vereist een live gegevensbron',

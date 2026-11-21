@@ -961,6 +961,7 @@ export const VI_MESSAGES: WidgetMessages = {
   'toast.imageCopied': 'Đã chép ảnh biểu đồ',
   'toast.imageCopyFailed': 'Không chép được — clipboard không nhận ảnh',
   'toast.pdfFailed': 'Không tạo được PDF',
+  'toast.printFailed': 'Không in được biểu đồ',
   'toast.linkCopied': 'Đã chép link chia sẻ',
   'toast.copyFailed': 'Không chép được — không có clipboard',
   'toast.compareNeedsAdapter': 'So sánh cần adapter dữ liệu trực tiếp',

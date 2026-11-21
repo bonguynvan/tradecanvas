@@ -948,6 +948,7 @@ export const RO_MESSAGES: WidgetMessages = {
   'toast.imageCopied': 'Imaginea graficului a fost copiată',
   'toast.imageCopyFailed': 'Copierea a eșuat – clipboardul nu acceptă imagini',
   'toast.pdfFailed': 'PDF-ul nu a putut fi creat',
+  'toast.printFailed': 'Graficul nu a putut fi tipărit',
   'toast.linkCopied': 'Linkul de partajare a fost copiat',
   'toast.copyFailed': 'Copierea a eșuat – clipboardul nu este disponibil',
   'toast.compareNeedsAdapter': 'Compararea necesită o sursă de date în timp real',

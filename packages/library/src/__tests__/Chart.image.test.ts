@@ -32,7 +32,10 @@ function contextOf(canvas: HTMLCanvasElement): CanvasRenderingContext2D {
       if (prop === 'setTransform') return (...m: number[]) => { drawn.transforms.push(m); };
       if (prop === 'clearRect') return () => { drawn.cleared++; };
       if (prop === 'drawImage') return (...args: unknown[]) => { drawn.images.push(args); };
-      if (prop === 'getImageData') return () => ({ data: new Uint8ClampedArray(canvas.width * canvas.height * 4).fill(255) });
+      if (prop === 'getImageData') return () => {
+        if (drawn.images.some((args) => (args as [HTMLCanvasElement])[0]?.dataset?.fromElsewhere)) throw new DOMException('The canvas has been tainted by cross-origin data.', 'SecurityError');
+        return { data: new Uint8ClampedArray(canvas.width * canvas.height * 4).fill(255) };
+      };
       if (prop === 'createLinearGradient' || prop === 'createRadialGradient' || prop === 'createPattern') return () => ({ addColorStop: () => {} });
       return () => {};
     },
@@ -144,6 +147,61 @@ describe('the chart as a picture drawn again', () => {
     expect(drawn.images).toEqual([[layer, 100, 50, 200, 100]]);
   });
 
+  it('leaves out a canvas the page may not read, and one that is not shown: with either the picture would be no good', () => {
+    const at = (left: number) => ({ left, top: 0, width: 100, height: 50, right: left + 100, bottom: 50, x: left, y: 0, toJSON: () => ({}) });
+    const guest = (left: number): HTMLCanvasElement => {
+      const canvas = document.createElement('canvas');
+      canvas.width = 100;
+      canvas.height = 50;
+      host.appendChild(canvas);
+      vi.spyOn(canvas, 'getBoundingClientRect').mockReturnValue(at(left));
+      return canvas;
+    };
+    const readable = guest(0);
+    // It holds a picture from another site: the browser lets no one read a canvas it is drawn on.
+    const fromElsewhere = guest(100);
+    fromElsewhere.dataset.fromElsewhere = 'yes';
+    const hidden = guest(200);
+    hidden.style.visibility = 'hidden';
+    vi.spyOn(host, 'getBoundingClientRect').mockReturnValue({ left: 0, top: 0, width: W, height: H, right: W, bottom: H, x: 0, y: 0, toJSON: () => ({}) });
+    const picture = chart.toCanvas({ pixelRatio: 2 })!;
+    expect(drawings.get(picture)!.images.map((args) => (args as [HTMLCanvasElement])[0])).toEqual([readable]);
+    // So the picture can still be read.
+    expect(() => picture.getContext('2d')!.getImageData(0, 0, 1, 1)).not.toThrow();
+  });
+
+  it('takes in what a paused chart has not drawn yet, without a word to the page or a frame of its own', async () => {
+    // Its first frame drawn: a legend drawn for the first time says how tall it is, which asks for a frame.
+    await new Promise((resolve) => setTimeout(resolve, 40));
+    const told: string[] = [];
+    chart.on('visibleRangeChange', () => told.push('visibleRange'));
+    chart.on('priceRangeChange', () => told.push('priceRange'));
+    chart.suspend();
+    // Something changed while it was paused: a frame is owed.
+    chart.requestRender();
+    const engine = (chart as unknown as { engine: { requestRender(): void } }).engine;
+    const asked = vi.spyOn(engine, 'requestRender');
+    told.length = 0;
+    expect(chart.toCanvas({ pixelRatio: 2 })).not.toBeNull();
+    expect(told).toEqual([]);
+    expect(asked).not.toHaveBeenCalled();
+    // The frame it owes the page is still owed: resuming draws it.
+    chart.resume();
+    await new Promise((resolve) => setTimeout(resolve, 60));
+    expect(asked).toHaveBeenCalled();
+  });
+
+  it('draws the chart’s own frame again after a picture in another theme, and not after one in its own', async () => {
+    await new Promise((resolve) => setTimeout(resolve, 40));
+    const engine = (chart as unknown as { engine: { requestRender(): void } }).engine;
+    const asked = vi.spyOn(engine, 'requestRender');
+    chart.toCanvas({ pixelRatio: 2 });
+    expect(asked).not.toHaveBeenCalled();
+    // What a frame notes of where its labels are was noted for the other theme's font.
+    chart.toCanvas({ theme: 'light' });
+    expect(asked).toHaveBeenCalledTimes(1);
+  });
+
   it('is nothing with screenshots switched off, or for a chart with no size', () => {
     const off = new Chart(sizedHost(W, H), { features: { screenshot: false } });
     expect(off.toCanvas()).toBeNull();
@@ -204,6 +262,14 @@ describe('the chart’s picture, saved, printed, made a PDF', () => {
     chart.print({ theme: 'dark', pixelRatio: 1 });
     const dark = [...drawings.entries()].filter(([c]) => !own().includes(c) && c.width === W).at(-1)![1];
     expect(dark.rects[0].style).toBe(DARK_THEME.background);
+  });
+
+  it('says whether the print dialog was asked for', () => {
+    expect(chart.print()).toBe(true);
+    document.querySelector('iframe')!.remove();
+    vi.spyOn(HTMLCanvasElement.prototype, 'toDataURL').mockImplementation(() => { throw new DOMException('Tainted canvases may not be exported.', 'SecurityError'); });
+    expect(chart.print()).toBe(false);
+    expect(document.querySelector('iframe')).toBeNull();
   });
 
   it('is a PDF of one page', async () => {

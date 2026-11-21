@@ -948,6 +948,7 @@ export const EL_MESSAGES: WidgetMessages = {
   'toast.imageCopied': 'Η εικόνα του γραφήματος αντιγράφηκε',
   'toast.imageCopyFailed': 'Η αντιγραφή απέτυχε – το πρόχειρο δεν δέχεται εικόνες',
   'toast.pdfFailed': 'Δεν ήταν δυνατή η δημιουργία του PDF',
+  'toast.printFailed': 'Δεν ήταν δυνατή η εκτύπωση του γραφήματος',
   'toast.linkCopied': 'Ο σύνδεσμος κοινοποίησης αντιγράφηκε',
   'toast.copyFailed': 'Η αντιγραφή απέτυχε – το πρόχειρο δεν είναι διαθέσιμο',
   'toast.compareNeedsAdapter': 'Η σύγκριση απαιτεί πηγή ζωντανών δεδομένων',

@@ -948,6 +948,7 @@ export const HU_MESSAGES: WidgetMessages = {
   'toast.imageCopied': 'Grafikonkép másolva',
   'toast.imageCopyFailed': 'A másolás sikertelen – a vágólap nem fogad képet',
   'toast.pdfFailed': 'A PDF létrehozása nem sikerült',
+  'toast.printFailed': 'A grafikon nyomtatása nem sikerült',
   'toast.linkCopied': 'Megosztási hivatkozás másolva',
   'toast.copyFailed': 'A másolás sikertelen – a vágólap nem érhető el',
   'toast.compareNeedsAdapter': 'Az összehasonlításhoz élő adatforrás szükséges',

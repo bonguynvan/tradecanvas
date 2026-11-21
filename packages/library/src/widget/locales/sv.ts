@@ -948,6 +948,7 @@ export const SV_MESSAGES: WidgetMessages = {
   'toast.imageCopied': 'Diagrambild kopierad',
   'toast.imageCopyFailed': 'Kopieringen misslyckades: urklipp för bilder är inte tillgängligt',
   'toast.pdfFailed': 'Det gick inte att skapa PDF-filen',
+  'toast.printFailed': 'Det gick inte att skriva ut diagrammet',
   'toast.linkCopied': 'Delningslänk kopierad',
   'toast.copyFailed': 'Kopieringen misslyckades: urklipp är inte tillgängligt',
   'toast.compareNeedsAdapter': 'Jämförelse kräver en livedatakälla',

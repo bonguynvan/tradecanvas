@@ -961,6 +961,7 @@ export const DA_MESSAGES: WidgetMessages = {
   'toast.imageCopied': 'Billede af grafen kopieret',
   'toast.imageCopyFailed': 'Kopiering mislykkedes – billeder kan ikke kopieres til udklipsholderen',
   'toast.pdfFailed': 'PDF-filen kunne ikke oprettes',
+  'toast.printFailed': 'Grafen kunne ikke udskrives',
   'toast.linkCopied': 'Delingslink kopieret',
   'toast.copyFailed': 'Kopiering mislykkedes – udklipsholderen er ikke tilgængelig',
   'toast.compareNeedsAdapter': 'Sammenligning kræver en datakilde i realtid',

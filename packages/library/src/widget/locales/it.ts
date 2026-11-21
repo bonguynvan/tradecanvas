@@ -948,6 +948,7 @@ export const IT_MESSAGES: WidgetMessages = {
   'toast.imageCopied': 'Immagine del grafico copiata',
   'toast.imageCopyFailed': 'Copia non riuscita: appunti per immagini non disponibili',
   'toast.pdfFailed': 'Impossibile creare il PDF',
+  'toast.printFailed': 'Impossibile stampare il grafico',
   'toast.linkCopied': 'Link di condivisione copiato',
   'toast.copyFailed': 'Copia non riuscita: appunti non disponibili',
   'toast.compareNeedsAdapter': 'Il confronto richiede una fonte di dati in tempo reale',

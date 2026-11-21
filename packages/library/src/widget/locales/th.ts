@@ -948,6 +948,7 @@ export const TH_MESSAGES: WidgetMessages = {
   'toast.imageCopied': 'คัดลอกภาพกราฟแล้ว',
   'toast.imageCopyFailed': 'คัดลอกไม่สำเร็จ: ใช้คลิปบอร์ดรูปภาพไม่ได้',
   'toast.pdfFailed': 'สร้าง PDF ไม่สำเร็จ',
+  'toast.printFailed': 'พิมพ์กราฟไม่สำเร็จ',
   'toast.linkCopied': 'คัดลอกลิงก์แล้ว',
   'toast.copyFailed': 'คัดลอกไม่สำเร็จ: ใช้คลิปบอร์ดไม่ได้',
   'toast.compareNeedsAdapter': 'การเปรียบเทียบต้องใช้แหล่งข้อมูลสด',

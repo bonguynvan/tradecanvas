@@ -948,6 +948,7 @@ export const ID_MESSAGES: WidgetMessages = {
   'toast.imageCopied': 'Gambar grafik disalin',
   'toast.imageCopyFailed': 'Gagal menyalin: papan klip gambar tidak tersedia',
   'toast.pdfFailed': 'PDF tidak dapat dibuat',
+  'toast.printFailed': 'Grafik tidak dapat dicetak',
   'toast.linkCopied': 'Tautan disalin',
   'toast.copyFailed': 'Gagal menyalin: papan klip tidak tersedia',
   'toast.compareNeedsAdapter': 'Perbandingan memerlukan sumber data langsung',

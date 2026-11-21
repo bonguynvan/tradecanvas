@@ -76,7 +76,7 @@ import { type CompareWay } from './widgetCompare.js';
 import { WidgetTooltip } from './WidgetTooltip.js';
 import { WidgetIndicatorLegend } from './WidgetIndicatorLegend.js';
 import { formatIndicatorValue } from './legendValues.js';
-import { RANGE_PRESETS, SYMBOL_INDICATOR_IDS, adapterFromFeed, downloadImage, imageFileName, indicatorCategory, indicatorGroup, isCrosshairCursor, isMarkerPlot, sourceParam, valuePlots } from '@tradecanvas/core';
+import { RANGE_PRESETS, SYMBOL_INDICATOR_IDS, adapterFromFeed, downloadBlob, imageFileName, indicatorCategory, indicatorGroup, isCrosshairCursor, isMarkerPlot, sourceParam, valuePlots } from '@tradecanvas/core';
 import type { BracketSize } from '@tradecanvas/core';
 import { WidgetBracketBar } from './WidgetBracketBar.js';
 import { WidgetQuoteButtons } from './WidgetQuoteButtons.js';
@@ -3011,9 +3011,9 @@ export class ChartWidget {
     return `${this.state.symbol}, ${this.state.timeframe}`;
   }
 
-  /** Opens the browser's print dialog for the chart alone, under its symbol and interval (`Chart.print`). */
+  /** Opens the browser's print dialog for the chart alone, under its symbol and interval (`Chart.print`); a toast says when there was nothing to print. */
   printChart(): void {
-    this.chart.print({ title: this.paperTitle() });
+    if (this.chart.print({ title: this.paperTitle() }) === false) this.say(this.t('toast.printFailed'), 'error');
   }
 
   /** Saves the chart as a PDF of one page, named after its symbol and interval (`Chart.toPdf`); a toast says when none could be made. */
@@ -3029,9 +3029,7 @@ export class ChartWidget {
       this.say(this.t('toast.pdfFailed'), 'error');
       return;
     }
-    const url = URL.createObjectURL(pdf);
-    downloadImage(url, imageFileName(`${this.state.symbol}-${this.state.timeframe}`.replace(/[^\w.-]+/g, '_'), 'pdf'));
-    URL.revokeObjectURL(url);
+    downloadBlob(pdf, imageFileName(`${this.state.symbol}-${this.state.timeframe}`.replace(/[^\w.-]+/g, '_'), 'pdf'));
   }
 
   /** Copy a shareable deep-link (current view encoded in the URL hash) to the clipboard. */

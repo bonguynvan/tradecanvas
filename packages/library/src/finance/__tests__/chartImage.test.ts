@@ -15,6 +15,8 @@ import { installChartStubs, sizedHost } from '../../__tests__/chartTestEnv.js';
 /** What was drawn on one canvas. */
 interface Drawn {
   texts: string[];
+  /** How many shapes were filled. */
+  fills: number;
   /** Each rectangle filled, and the colour it was filled in. */
   rects: { at: number[]; style: string }[];
   transforms: number[][];
@@ -25,7 +27,7 @@ const drawings = new Map<HTMLCanvasElement, Drawn>();
 
 /** A 2D context that keeps what is drawn with it, the same one for a canvas each time it is asked for. */
 function contextOf(canvas: HTMLCanvasElement): CanvasRenderingContext2D {
-  const drawn: Drawn = { texts: [], rects: [], transforms: [] };
+  const drawn: Drawn = { texts: [], fills: 0, rects: [], transforms: [] };
   drawings.set(canvas, drawn);
   const state: Record<string | symbol, unknown> = { canvas };
   return new Proxy(state, {
@@ -33,6 +35,7 @@ function contextOf(canvas: HTMLCanvasElement): CanvasRenderingContext2D {
       if (prop in target) return target[prop];
       if (prop === 'measureText') return (t: string) => ({ width: String(t).length * 6 });
       if (prop === 'fillText') return (t: string) => { drawn.texts.push(String(t)); };
+      if (prop === 'fill') return () => { drawn.fills++; };
       if (prop === 'fillRect') return (...at: number[]) => { drawn.rects.push({ at, style: String(target.fillStyle) }); };
       if (prop === 'setTransform') return (...m: number[]) => { drawn.transforms.push(m); };
       if (prop === 'createLinearGradient' || prop === 'createRadialGradient') return () => ({ addColorStop: () => {} });
@@ -184,6 +187,24 @@ describe('a finance chart as a picture', () => {
     chart.destroy();
   });
 
+  it('shows a large surface whole, though it is being turned and the page draws it with fewer cells', () => {
+    const axis = Array.from({ length: 150 }, (_, i) => i);
+    const chart = new SurfaceChart(host, { x: axis, y: axis, values: axis.map((r) => axis.map((c) => Math.sin(c / 20) + Math.cos(r / 25))), legend: false });
+    frame();
+    const whole = drawings.get(chart.toCanvas()!)!.fills;
+    expect(whole).toBeGreaterThan(14_000);
+    const press = (type: string, x: number) => canvas().dispatchEvent(new MouseEvent(type, { clientX: x, clientY: 150, bubbles: true, buttons: 1 }));
+    press('pointerdown', 200);
+    press('pointermove', 240);
+    // The page's own frame, in the middle of the drag, has a quarter of the cells.
+    const onPage = drawings.get(canvas())!;
+    onPage.fills = 0;
+    vi.advanceTimersByTime(20);
+    expect(onPage.fills).toBeLessThan(whole / 3);
+    expect(drawings.get(chart.toCanvas()!)!.fills).toBe(whole);
+    chart.destroy();
+  });
+
   it('is nothing for a chart with no size', () => {
     const empty = sizedHost(0, 0);
     const chart = new BarChart(empty, BARS);
@@ -239,6 +260,16 @@ describe('a finance chart’s picture, saved, copied, printed', () => {
     expect(document.querySelector('iframe')!.contentDocument!.querySelector('img')!.getAttribute('src')).toBe(`data:image/png;size=${W * 3}x${H * 3}`);
     const dark = [...drawings.entries()].find(([c]) => c.width === W * 3)![1];
     expect(dark.rects[0].style).toBe(DARK_THEME.background);
+    chart.destroy();
+  });
+
+  it('says whether the print dialog was asked for', () => {
+    const chart = new BarChart(host, BARS);
+    expect(chart.print()).toBe(true);
+    document.querySelector('iframe')!.remove();
+    vi.spyOn(HTMLCanvasElement.prototype, 'toDataURL').mockImplementation(() => { throw new DOMException('Tainted canvases may not be exported.', 'SecurityError'); });
+    expect(chart.print()).toBe(false);
+    expect(document.querySelector('iframe')).toBeNull();
     chart.destroy();
   });
 

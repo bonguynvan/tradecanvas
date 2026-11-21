@@ -961,6 +961,7 @@ export const MS_MESSAGES: WidgetMessages = {
   'toast.imageCopied': 'Imej carta disalin',
   'toast.imageCopyFailed': 'Gagal menyalin — papan keratan imej tidak tersedia',
   'toast.pdfFailed': 'PDF tidak dapat dibuat',
+  'toast.printFailed': 'Carta tidak dapat dicetak',
   'toast.linkCopied': 'Pautan kongsi disalin',
   'toast.copyFailed': 'Gagal menyalin — papan keratan tidak tersedia',
   'toast.compareNeedsAdapter': 'Perbandingan memerlukan sumber data langsung',

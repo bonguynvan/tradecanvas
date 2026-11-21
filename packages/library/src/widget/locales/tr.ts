@@ -948,6 +948,7 @@ export const TR_MESSAGES: WidgetMessages = {
   'toast.imageCopied': 'Grafik görüntüsü kopyalandı',
   'toast.imageCopyFailed': 'Kopyalanamadı: görüntü panosu kullanılamıyor',
   'toast.pdfFailed': 'PDF oluşturulamadı',
+  'toast.printFailed': 'Grafik yazdırılamadı',
   'toast.linkCopied': 'Bağlantı kopyalandı',
   'toast.copyFailed': 'Kopyalanamadı: pano kullanılamıyor',
   'toast.compareNeedsAdapter': 'Karşılaştırma için canlı bir veri kaynağı gerekir',

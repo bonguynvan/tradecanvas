@@ -948,6 +948,7 @@ export const SK_MESSAGES: WidgetMessages = {
   'toast.imageCopied': 'Obrázok grafu skopírovaný',
   'toast.imageCopyFailed': 'Kopírovanie zlyhalo – schránka pre obrázky nie je dostupná',
   'toast.pdfFailed': 'PDF sa nepodarilo vytvoriť',
+  'toast.printFailed': 'Graf sa nepodarilo vytlačiť',
   'toast.linkCopied': 'Odkaz skopírovaný',
   'toast.copyFailed': 'Kopírovanie zlyhalo – schránka nie je dostupná',
   'toast.compareNeedsAdapter': 'Porovnanie vyžaduje živý zdroj údajov',

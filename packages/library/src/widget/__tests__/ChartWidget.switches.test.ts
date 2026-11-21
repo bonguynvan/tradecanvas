@@ -638,14 +638,32 @@ describe('ChartWidget — the chart on paper', () => {
     const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (this: HTMLAnchorElement) {
       saved.push(`${this.download} <- ${this.href}`);
     });
+    vi.useFakeTimers();
     commands().handleAction('savePdf');
-    await settled();
+    await vi.advanceTimersByTimeAsync(0);
     expect(toPdf).toHaveBeenCalledWith({ title: 'AAA, 1h' });
     expect(made).toEqual([pdf]);
     expect(saved).toEqual(['AAA-1h.pdf <- blob:chart']);
+    // Not in the click's own task: a browser may not have begun to save yet.
+    expect(freed).toEqual([]);
+    await vi.advanceTimersByTimeAsync(60_000);
     expect(freed).toEqual(['blob:chart']);
     expect(host.querySelector('.tcw-toast')).toBeNull();
+    vi.useRealTimers();
     click.mockRestore();
+  });
+
+  it('says so when the chart could not be printed', () => {
+    make();
+    Object.assign(FakeChart.last, { print: () => false });
+    widget.printChart();
+    expect(host.querySelector('.tcw-toast')!.textContent).toContain('Could not print the chart');
+    widget.destroy();
+    // A chart that says nothing has asked for the dialog: no toast.
+    make();
+    Object.assign(FakeChart.last, { print: () => true });
+    widget.printChart();
+    expect(host.querySelector('.tcw-toast')).toBeNull();
   });
 
   it('says so when no PDF could be made', async () => {

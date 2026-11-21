@@ -948,6 +948,7 @@ export const PT_MESSAGES: WidgetMessages = {
   'toast.imageCopied': 'Imagem do gráfico copiada',
   'toast.imageCopyFailed': 'Falha ao copiar: área de transferência de imagens indisponível',
   'toast.pdfFailed': 'Não foi possível criar o PDF',
+  'toast.printFailed': 'Não foi possível imprimir o gráfico',
   'toast.linkCopied': 'Link copiado',
   'toast.copyFailed': 'Falha ao copiar: área de transferência indisponível',
   'toast.compareNeedsAdapter': 'A comparação precisa de uma fonte de dados ao vivo',

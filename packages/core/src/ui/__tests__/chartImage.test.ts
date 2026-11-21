@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { MAX_IMAGE_PIXELS, MAX_IMAGE_SIDE, canvasBlob, canvasDataURL, canvasPdfImage, canvasesToPdf, copyImage, downloadImage, imageFileName, imageRatio, printCanvas } from '../chartImage.js';
+import { MAX_IMAGE_PIXELS, MAX_IMAGE_SIDE, canvasBlob, canvasDataURL, canvasPdfImage, canvasesToPdf, copyImage, downloadBlob, downloadImage, imageFileName, imageRatio, printCanvas } from '../chartImage.js';
 
 afterEach(() => {
   document.body.innerHTML = '';
@@ -75,6 +75,34 @@ describe('a canvas as a picture', () => {
     expect(imageFileName('report.final.jpeg', 'png')).toBe('report.final.jpeg');
     expect(imageFileName('', 'png')).toBe('chart.png');
     expect(imageFileName('equity', 'pdf')).toBe('equity.pdf');
+    expect(imageFileName('Equity.PNG', 'png')).toBe('Equity.PNG');
+  });
+
+  it('takes a dot in a name for part of the name, unless what follows is a picture’s ending', () => {
+    // A symbol with a dot, a date: neither is a file's ending.
+    expect(imageFileName('BTC.USD', 'png')).toBe('BTC.USD.png');
+    expect(imageFileName('AAPL 2024.11', 'jpeg')).toBe('AAPL 2024.11.jpg');
+    expect(imageFileName('EUR.USD', 'pdf')).toBe('EUR.USD.pdf');
+    expect(imageFileName('v1.2', 'webp')).toBe('v1.2.webp');
+  });
+
+  it('is saved from a file’s bytes by an address that is let go of later, not at once', () => {
+    vi.useFakeTimers();
+    const made: Blob[] = [];
+    const freed: string[] = [];
+    Object.assign(URL, { createObjectURL: (blob: Blob) => { made.push(blob); return 'blob:picture'; }, revokeObjectURL: (url: string) => { freed.push(url); } });
+    const clicked: string[] = [];
+    vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (this: HTMLAnchorElement) {
+      clicked.push(`${this.download} <- ${this.href}`);
+    });
+    const blob = new Blob(['%PDF'], { type: 'application/pdf' });
+    downloadBlob(blob, 'report.pdf');
+    expect(made).toEqual([blob]);
+    expect(clicked).toEqual(['report.pdf <- blob:picture']);
+    // Let go of in the click's own task, some browsers save nothing, or a part.
+    expect(freed).toEqual([]);
+    vi.advanceTimersByTime(60_000);
+    expect(freed).toEqual(['blob:picture']);
   });
 
   it('is saved by a link the page never shows', () => {
@@ -169,9 +197,35 @@ describe('a picture sent to the printer', () => {
   });
 
   it('takes the frame away when the picture cannot be read', () => {
-    printCanvas(canvasOf(300, 200));
+    expect(printCanvas(canvasOf(300, 200))).toBe(true);
     document.querySelector('iframe')!.contentDocument!.querySelector('img')!.dispatchEvent(new Event('error'));
     expect(document.querySelector('iframe')).toBeNull();
+  });
+
+  it('makes no frame for a canvas the page may not read, and says so', () => {
+    const canvas = canvasOf(300, 200);
+    canvas.toDataURL = () => { throw new DOMException('Tainted canvases may not be exported.', 'SecurityError'); };
+    expect(printCanvas(canvas)).toBe(false);
+    expect(printCanvas(canvas)).toBe(false);
+    expect(document.querySelector('iframe')).toBeNull();
+  });
+
+  it('takes the frame away where the browser will not print', () => {
+    vi.useFakeTimers();
+    printCanvas(canvasOf(300, 200));
+    const frame = document.querySelector('iframe')!;
+    Object.assign(frame.contentWindow!, { focus: vi.fn(), print: () => { throw new Error('printing is not allowed here'); } });
+    expect(() => frame.contentDocument!.querySelector('img')!.dispatchEvent(new Event('load'))).not.toThrow();
+    expect(document.querySelector('iframe')).toBeNull();
+  });
+
+  it('writes the frame’s page itself, so that a browser still loading the empty one does not put it back', () => {
+    printCanvas(canvasOf(300, 200));
+    const page = document.querySelector('iframe')!.contentDocument!;
+    // A page written by the script is a page of its own: standards mode, a head and a body.
+    expect(page.doctype?.name).toBe('html');
+    expect(page.compatMode).toBe('CSS1Compat');
+    expect(page.querySelectorAll('img')).toHaveLength(1);
   });
 });
 

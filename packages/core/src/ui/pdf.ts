@@ -2,7 +2,9 @@ import type { PdfPageOptions } from '@tradecanvas/commons';
 
 /**
  * A picture for a page of a PDF: its pixels as red, green and blue, a byte
- * each, row by row from the top (`rgb`), or the bytes of a JPEG file (`jpeg`).
+ * each, row by row from the top (`rgb`), or the bytes of a JPEG file
+ * (`jpeg`). A JPEG is put in as it is: it has to be one in RGB (not grey,
+ * not CMYK) of the `width` and `height` given.
  */
 export interface PdfImage {
   width: number;
@@ -10,6 +12,13 @@ export interface PdfImage {
   rgb?: Uint8Array;
   jpeg?: Uint8Array;
 }
+
+/**
+ * A page's picture, or a function that gives it when its page is written:
+ * a large picture made on demand is let go of before the next one is made,
+ * so a long report holds one page's pixels at a time.
+ */
+export type PdfPicture = PdfImage | (() => PdfImage | Promise<PdfImage>);
 
 /** A PDF's unit, the point, to a millimetre. */
 const POINTS_PER_MM = 72 / 25.4;
@@ -20,6 +29,10 @@ const PAPERS: Record<string, [number, number]> = {
   letter: [215.9, 279.4],
   legal: [215.9, 355.6],
 };
+const DEFAULT_PAPER = PAPERS.a4;
+/** A page's side is held between these, mm: a centimetre, and the 200 inches past which readers refuse a page. */
+const MIN_SIDE_MM = 10;
+const MAX_SIDE_MM = 5080;
 const DEFAULT_MARGIN_MM = 12;
 /** No margin is more than this share of the page's shorter side: a fifth of the side is left for the picture. */
 const MAX_MARGIN_SHARE = 0.4;
@@ -89,10 +102,12 @@ function checked(image: PdfImage, page: number): void {
 /** The page's sides in points, as it lies: on its side the longer one runs across. */
 function pageSize(options: PdfPageOptions): { width: number; height: number } {
   const size = options.pageSize ?? 'a4';
-  const sides = typeof size === 'string' ? PAPERS[size] ?? PAPERS.a4 : [size.width, size.height];
-  const usable = sides.every((side) => Number.isFinite(side) && side > 0) ? sides : PAPERS.a4;
-  const short = Math.min(usable[0], usable[1]) * POINTS_PER_MM;
-  const long = Math.max(usable[0], usable[1]) * POINTS_PER_MM;
+  // By its own name only: every object has a `constructor`, and that is no paper.
+  const named = typeof size === 'string' ? (Object.prototype.hasOwnProperty.call(PAPERS, size) ? PAPERS[size] : DEFAULT_PAPER) : [size?.width, size?.height];
+  const usable = named.every((side) => Number.isFinite(side) && side > 0) ? named : DEFAULT_PAPER;
+  const held = usable.map((side) => Math.min(MAX_SIDE_MM, Math.max(MIN_SIDE_MM, side)));
+  const short = Math.min(held[0], held[1]) * POINTS_PER_MM;
+  const long = Math.max(held[0], held[1]) * POINTS_PER_MM;
   return options.orientation === 'portrait' ? { width: short, height: long } : { width: long, height: short };
 }
 
@@ -102,11 +117,15 @@ function pageSize(options: PdfPageOptions): { width: number; height: number } {
  * kept as they are (packed without loss, where the platform can pack), so a
  * chart's lines stay sharp; a JPEG is put in as it is. No text is written on
  * the page, so no font is needed: a chart's words are in its picture, in any
- * language. Throws a RangeError for no pictures, or one with no size or data.
+ * language. A picture may be a function that gives it when its page comes.
+ * Rejects with a RangeError for no pictures, or one with no size or data.
  */
-export async function imagesToPdf(images: readonly PdfImage[], options: PdfPageOptions = {}): Promise<Uint8Array> {
+export async function imagesToPdf(images: readonly PdfPicture[], options: PdfPageOptions = {}): Promise<Uint8Array> {
   if (images.length === 0) throw new RangeError('imagesToPdf: no picture to make a page of');
-  images.forEach(checked);
+  // Those in hand are looked over before anything is written; one made on demand, when it is made.
+  images.forEach((image, page) => {
+    if (typeof image !== 'function') checked(image, page);
+  });
 
   const page = pageSize(options);
   const asked = options.margin !== undefined && Number.isFinite(options.margin) ? options.margin : DEFAULT_MARGIN_MM;
@@ -143,7 +162,9 @@ export async function imagesToPdf(images: readonly PdfImage[], options: PdfPageO
   write(`<< ${options.title ? `/Title ${pdfString(options.title)} ` : ''}/Producer (${PRODUCER}) >>\nendobj\n`);
 
   for (let i = 0; i < images.length; i++) {
-    const image = images[i];
+    const source = images[i];
+    const image = typeof source === 'function' ? await source() : source;
+    if (typeof source === 'function') checked(image, i);
     const n = pageNumbers[i];
     const scale = Math.min((page.width - margin * 2) / image.width, (page.height - margin * 2) / image.height);
     const width = image.width * scale;
