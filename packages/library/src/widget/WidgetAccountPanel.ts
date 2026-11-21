@@ -448,6 +448,19 @@ export class WidgetAccountPanel {
     return wrap;
   }
 
+  /**
+   * The take-profit cell: the target, or with take-profit levels the
+   * nearest of them and how many more targets there are, the take-profit
+   * that closes the rest among them ("110.00 +2").
+   */
+  private target(of: Pick<TradingPosition, 'takeProfit' | 'takeProfits'>): string {
+    const levels = of.takeProfits ?? [];
+    if (levels.length === 0) return this.price(of.takeProfit);
+    const more = levels.length - 1 + (of.takeProfit !== undefined ? 1 : 0);
+    const first = this.callbacks.formatPrice(levels[0].price);
+    return more > 0 ? `${first} +${more}` : first;
+  }
+
   /** How long an order works, with a dated order's date after it. */
   private timeInForceText(order: TradingOrder): string {
     if (!order.timeInForce) return NONE;
@@ -477,7 +490,7 @@ export class WidgetAccountPanel {
         price === null ? NONE : formatPrice(price),
         pnl,
         this.price(p.stopLoss),
-        this.price(p.takeProfit),
+        this.target(p),
         this.actions(
           { icon: 'arrowUpDown', label: `${this.t('account.reverse')}: ${which}`, key: `reverse:${p.id}`, run: () => this.callbacks.onReversePosition(p.id) },
           { icon: 'x', label: `${this.t('account.closePosition')}: ${which}`, key: `close:${p.id}`, run: () => this.callbacks.onClosePosition(p.id), danger: true },
@@ -510,7 +523,7 @@ export class WidgetAccountPanel {
         String(o.quantity),
         formatPrice(o.price),
         this.price(o.stopLoss),
-        this.price(o.takeProfit),
+        this.target(o),
         this.timeInForceText(o),
         this.actions({ icon: 'x', label: `${this.t('account.cancelOrder')}: ${which}`, key: `cancel:${o.id}`, run: () => this.callbacks.onCancelOrder(o.id), danger: true }),
       ];

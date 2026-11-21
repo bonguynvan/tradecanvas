@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import type { OrderPlaceIntent } from '@tradecanvas/commons';
-import { orderTicketIntent, orderTicketProblems, orderTicketRiskReward, type OrderTicketDraft } from '../orderTicket.js';
+import { orderTicketIntent, orderTicketProblems, orderTicketRiskReward, orderTicketSummary, ticketTakeProfitLevels, type OrderTicketDraft } from '../orderTicket.js';
 import { WidgetOrderTicket } from '../WidgetOrderTicket.js';
 
 const draft = (over: Partial<OrderTicketDraft> = {}): OrderTicketDraft => ({
@@ -232,6 +232,23 @@ describe('WidgetOrderTicket', () => {
     expect(ticket.isOpen()).toBe(false);
     expect(sent).toEqual([]);
   });
+
+  it('offers one, two or three targets once there is a take-profit, and lists what each takes off', () => {
+    ticket.open({ price: 95, lastPrice: 100, quantity: 3 });
+    expect(host.querySelector('[data-ticket-field="targets"]')).toBeNull();
+    host.querySelector<HTMLElement>('[data-ticket-field="takeProfit-switch"]')!.click();
+    expect(radios('targets').map((r) => r.dataset.value)).toEqual(['1', '2', '3']);
+    expect(checked('targets')).toBe('1');
+    expect(host.querySelector('.tcw-ticket-levels')?.textContent).toBe('');
+    radios('targets')[2].click();
+    expect(checked('targets')).toBe('3');
+    const listed = host.querySelector('.tcw-ticket-levels')!.textContent!;
+    expect(listed.split(' · ')).toHaveLength(3);
+    expect(listed).toMatch(/^TP1 .* × 1 · TP2 .* × 1 · TP3 .* × 1$/);
+    place().click();
+    expect(sent[0].takeProfits).toHaveLength(2);
+    expect(sent[0].takeProfits![0].quantity).toBe(1);
+  });
 });
 
 describe('WidgetOrderTicket focus', () => {
@@ -308,5 +325,72 @@ describe('WidgetOrderTicket: the trailing switch', () => {
     expect(trailSwitch()).toBeNull();
     stopSwitch().click();
     expect(trailSwitch()!.getAttribute('aria-checked')).toBe('false');
+  });
+});
+
+describe('a ticket’s take-profit in several targets', () => {
+  const base = { side: 'buy' as const, type: 'limit' as const, quantity: 3, price: 100, stopLoss: null, takeProfit: 130, timeInForce: 'gtc' as const };
+
+  it('splits the way to the take-profit evenly, a part of the quantity at each target before the last', () => {
+    expect(ticketTakeProfitLevels({ ...base, targets: 3 }, 100)).toEqual([{ price: 110, quantity: 1 }, { price: 120, quantity: 1 }]);
+    expect(ticketTakeProfitLevels({ ...base, targets: 2 }, 100)).toEqual([{ price: 115, quantity: 1 }]);
+    expect(ticketTakeProfitLevels({ ...base, side: 'sell', takeProfit: 70, targets: 3 }, 100)).toEqual([{ price: 90, quantity: 1 }, { price: 80, quantity: 1 }]);
+  });
+
+  it('has no levels with one target, no take-profit, or no entry to measure from', () => {
+    expect(ticketTakeProfitLevels({ ...base, targets: 1 }, 100)).toEqual([]);
+    expect(ticketTakeProfitLevels(base, 100)).toEqual([]);
+    expect(ticketTakeProfitLevels({ ...base, takeProfit: null, targets: 3 }, 100)).toEqual([]);
+    expect(ticketTakeProfitLevels({ ...base, targets: 3 }, null)).toEqual([]);
+  });
+
+  it('takes a part down to the quantity’s own step, or to the lot', () => {
+    expect(ticketTakeProfitLevels({ ...base, quantity: 0.5, targets: 2 }, 100)).toEqual([{ price: 115, quantity: 0.2 }]);
+    expect(ticketTakeProfitLevels({ ...base, quantity: 500, targets: 3 }, 100, { lot: 100 })).toEqual([{ price: 110, quantity: 100 }, { price: 120, quantity: 100 }]);
+  });
+
+  it('has no levels when the quantity is too small to part', () => {
+    expect(ticketTakeProfitLevels({ ...base, quantity: 1, targets: 3 }, 100)).toEqual([]);
+    expect(ticketTakeProfitLevels({ ...base, quantity: 100, targets: 3 }, 100, { lot: 100 })).toEqual([]);
+  });
+
+  it('has no levels while the take-profit is on the wrong side of the entry', () => {
+    expect(ticketTakeProfitLevels({ ...base, takeProfit: 90, targets: 3 }, 100)).toEqual([]);
+    expect(ticketTakeProfitLevels({ ...base, side: 'sell', takeProfit: 130, targets: 3 }, 100)).toEqual([]);
+  });
+
+  it('keeps only the targets that are prices of their own between the entry and the take-profit, as the market rounds them', () => {
+    // A coarse step: both would round to the entry.
+    expect(ticketTakeProfitLevels({ ...base, takeProfit: 100.2, targets: 3 }, 100, { roundPrice: (p) => Math.round(p * 2) / 2 })).toEqual([]);
+    // Two that round to one price are one target.
+    expect(ticketTakeProfitLevels({ ...base, takeProfit: 101, targets: 3 }, 100, { roundPrice: (p) => Math.round(p * 2) / 2 })).toEqual([{ price: 100.5, quantity: 1 }]);
+  });
+
+  it('takes a number of targets that is none as one', () => {
+    expect(ticketTakeProfitLevels({ ...base, targets: Number.NaN }, 100)).toEqual([]);
+    expect(ticketTakeProfitLevels({ ...base, targets: 9 }, 100)).toHaveLength(2);
+  });
+
+  it('rounds the targets as the market rounds its prices', () => {
+    const levels = ticketTakeProfitLevels({ ...base, takeProfit: 110, targets: 3 }, 100, { roundPrice: (p) => Math.round(p * 2) / 2 });
+    expect(levels.map((level) => level.price)).toEqual([103.5, 106.5]);
+  });
+
+  it('sums the reward as what each part makes where it comes off, and its ratio to the risk', () => {
+    const whole = orderTicketSummary({ ...base, stopLoss: 90 }, 105);
+    expect(whole.reward).toBe(90);
+    expect(whole.ratio).toBe(3);
+    // One at 110, one at 120, one at 130: 10 + 20 + 30.
+    const parted = orderTicketSummary({ ...base, stopLoss: 90, targets: 3 }, 105);
+    expect(parted.reward).toBe(60);
+    expect(parted.risk).toBe(-30);
+    expect(parted.ratio).toBe(2);
+  });
+
+  it('asks for the levels with the order, the take-profit closing what they leave', () => {
+    expect(orderTicketIntent({ ...base, targets: 3 }, 105)).toEqual(expect.objectContaining({ takeProfit: 130, takeProfits: [{ price: 110, quantity: 1 }, { price: 120, quantity: 1 }] }));
+    expect(orderTicketIntent(base, 105)).not.toHaveProperty('takeProfits');
+    // A market order is measured from the price now.
+    expect(orderTicketIntent({ ...base, type: 'market', targets: 2 }, 110).takeProfits).toEqual([{ price: 120, quantity: 1 }]);
   });
 });

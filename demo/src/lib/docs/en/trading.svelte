@@ -154,6 +154,37 @@ chart.placeOrderIntent({ side: 'buy', type: 'limit', price: 63_500, quantity: 1,
   it round, the rest opening at the fill's price. A fill that adds to it brings its stops when it has them; one
   that takes from it leaves the position's stops as they are; one that turns it round brings its own.
 </p>
+<h3 id="take-profit-levels">Taking profit in parts</h3>
+<p>
+  A position can be taken off in parts. <code>takeProfits</code> on an order's intent, or on a position
+  (<code>chart.modifyPositionIntent</code>), is a list of levels, each a <code>price</code> and the
+  <code>quantity</code> that closes there. As the price reaches a level, its part is closed at the level's price
+  and the level goes; what the levels leave stays open for <code>takeProfit</code> to close, or the stop-loss.
+  The stop-loss closes all that is left whatever levels were waiting, a level past the take-profit is never
+  reached, and a level takes no more than is still open.
+  The chart draws a line and a tag for each (TP1 is the nearest), with its part and what that would make, and
+  the widget's account panel writes the nearest level and how many more there are.
+</p>
+<pre><code>{`chart.placeOrderIntent({
+  side: 'buy', type: 'market', price: 64_000, quantity: 3,
+  stopLoss: 63_000,
+  takeProfits: [{ price: 65_000, quantity: 1 }, { price: 66_000, quantity: 1 }],   // a third at each
+  takeProfit: 67_000,                                                              // the rest
+})
+
+chart.modifyPositionIntent({ positionId: 'pos-1', takeProfits: [{ price: 65_500, quantity: 2 }] })   // all of them, anew
+chart.modifyPositionIntent({ positionId: 'pos-1', takeProfits: null })                               // none`}</code></pre>
+<p>
+  The paper account closes the parts (a fill each, with <code>reason: 'takeProfit'</code> and what it
+  realised) and counts them in the position's <code>closedQuantity</code>. It takes only levels that are a
+  profit from the entry, and on a net account an order that brings levels gives the position its levels, as it
+  gives it its stops. TP1 on the chart is the nearest level still waiting. An adapter of your own reports its
+  broker's. In the widget's order ticket, a take-profit can be reached in one, two or three
+  <strong>Targets</strong>: with more than one, an even part of the quantity comes off at each target on the
+  way, evenly spaced from the entry, and the take-profit closes what is left. The ticket lists what comes off
+  where before it is placed. A level is not dragged on the chart yet: it is changed through the intent.
+</p>
+
 <h3 id="account">An account with money</h3>
 <p>
   Given a <code>balance</code>, the paper account keeps its money as a broker does. What a close makes or loses

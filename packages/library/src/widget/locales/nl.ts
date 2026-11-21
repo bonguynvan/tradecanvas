@@ -572,6 +572,7 @@ export const NL_MESSAGES: WidgetMessages = {
   'ticket.stopLoss': 'Stop-loss',
   'ticket.takeProfit': 'Take-profit',
   'ticket.trailing': 'Trailing stop',
+  'ticket.targets': 'Doelen',
   'ticket.timeInForce': 'Geldigheid',
   'ticket.tif.gtc': 'Geldig tot annulering',
   'ticket.tif.day': 'Dagorder',

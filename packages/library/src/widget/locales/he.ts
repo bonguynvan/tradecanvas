@@ -578,6 +578,7 @@ export const HE_MESSAGES: WidgetMessages = {
   'ticket.stopLoss': 'סטופ לוס',
   'ticket.takeProfit': 'טייק פרופיט',
   'ticket.trailing': 'סטופ נגרר',
+  'ticket.targets': 'יעדים',
   'ticket.timeInForce': 'תוקף הפקודה',
   'ticket.tif.gtc': 'בתוקף עד ביטול',
   'ticket.tif.day': 'יומית',

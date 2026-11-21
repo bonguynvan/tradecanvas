@@ -1,4 +1,4 @@
-import type { TradingPosition, TradingConfig, ViewportState, Theme } from '@tradecanvas/commons';
+import type { TakeProfitLevel, TradingPosition, TradingConfig, ViewportState, Theme } from '@tradecanvas/commons';
 import { priceToY, yToPrice } from '../viewport/ScaleMapping.js';
 import { UI_ICONS, priceTagText } from '@tradecanvas/commons';
 import {
@@ -113,6 +113,11 @@ export class PositionRenderer {
           ctx.globalAlpha = 1;
         }
       }
+      // Its take-profit levels: a line each, as the target's.
+      for (const level of pos.takeProfits ?? []) {
+        const y = priceToY(level.price, viewport);
+        if (inPlot(y, viewport)) levelLine(ctx, viewport, y, colors.profit, STOP_DASH);
+      }
     }
   }
 
@@ -162,6 +167,7 @@ export class PositionRenderer {
         const stop = this.stopTag(pos, which, viewport, config, dragState, currentPrice);
         if (stop) tags.push(stop);
       }
+      tags.push(...levelTags(pos.takeProfits, pos.side, pos.entryPrice, openQuantity(pos), viewport, config));
     }
     return tags;
   }
@@ -267,6 +273,7 @@ export class PositionRenderer {
       const prices = [
         [stopPrice(pos, 'stopLoss', dragState), colors.loss],
         [stopPrice(pos, 'takeProfit', dragState), colors.profit],
+        ...(pos.takeProfits ?? []).map((level) => [level.price, colors.profit] as const),
         [pos.entryPrice, colors.entry],
       ] as const;
       for (const [price, color] of prices) {
@@ -277,4 +284,43 @@ export class PositionRenderer {
     }
     return badges;
   }
+}
+
+/**
+ * A tag for each take-profit level on the plot: which it is (TP1 is the
+ * nearest still waiting), the part it takes off, and what that part would
+ * make from `entry`. A level takes no more than is left of `open` after the
+ * levels before it, and one with nothing left to take has no tag. They are
+ * no handles: a level is moved through the account.
+ */
+export function levelTags(
+  levels: readonly TakeProfitLevel[] | undefined,
+  side: TradingPosition['side'],
+  entry: number,
+  open: number,
+  viewport: ViewportState,
+  config: TradingConfig,
+): TradingTag[] {
+  const colors = colorsOf(config);
+  const tags: TradingTag[] = [];
+  let left = open;
+  (levels ?? []).forEach((level, i) => {
+    const part = Math.min(level.quantity, left);
+    left -= part;
+    if (!(part > 0)) return;
+    const y = priceToY(level.price, viewport);
+    if (!inPlot(y, viewport)) return;
+    const amount = amountAt(side, entry, part, level.price);
+    tags.push({
+      y,
+      color: colors.profit,
+      cells: [
+        { kind: 'stamp', text: `TP${i + 1}` },
+        // To the digits a quantity is written in, with no sum's rounding after them.
+        { kind: 'text', text: String(Number(part.toFixed(8))) },
+        { kind: 'text', text: formatAmount(amount, amountDecimals(amount, entry, config.pricePrecision), viewport.numberLocale), color: amount >= 0 ? colors.profit : colors.loss },
+      ],
+    });
+  });
+  return tags;
 }

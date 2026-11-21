@@ -185,6 +185,8 @@ export interface PositionModifyPayload {
   positionId: string;
   stopLoss?: number;
   takeProfit?: number;
+  /** The position's take-profit levels, all of them; null removes them. */
+  takeProfits?: { price: number; quantity: number }[] | null;
   /** The distance the stop-loss is to trail the price by; null ends the trail. */
   trailingStop?: number | null;
 }
@@ -204,6 +206,8 @@ export interface OrderPlacePayload {
   takeProfit?: number;
   /** The distance, in price, the position's stop-loss is to trail the price by. */
   trailingStop?: number;
+  /** Take-profit levels for the position the order opens: a part of it closes at each. */
+  takeProfits?: { price: number; quantity: number }[];
   /** How long the order works. */
   timeInForce?: 'gtc' | 'day' | 'gtd' | 'ioc' | 'fok';
   /** When the order ends (ms since the epoch), with `timeInForce: 'gtd'`. */

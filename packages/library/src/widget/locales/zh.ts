@@ -572,6 +572,7 @@ export const ZH_MESSAGES: WidgetMessages = {
   'ticket.stopLoss': '止损',
   'ticket.takeProfit': '止盈',
   'ticket.trailing': '追踪止损',
+  'ticket.targets': '止盈档数',
   'ticket.timeInForce': '有效期',
   'ticket.tif.gtc': '撤销前有效',
   'ticket.tif.day': '当日有效',

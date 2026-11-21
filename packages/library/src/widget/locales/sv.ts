@@ -572,6 +572,7 @@ export const SV_MESSAGES: WidgetMessages = {
   'ticket.stopLoss': 'Stop loss',
   'ticket.takeProfit': 'Take profit',
   'ticket.trailing': 'Glidande stopp',
+  'ticket.targets': 'Mål',
   'ticket.timeInForce': 'Giltighet',
   'ticket.tif.gtc': 'Gäller tills vidare',
   'ticket.tif.day': 'Dagsorder',

@@ -1,4 +1,5 @@
-import type { OrderPlaceIntent, OrderSide, TimeInForce } from '@tradecanvas/commons';
+import type { OrderPlaceIntent, OrderSide, TakeProfitLevel, TimeInForce } from '@tradecanvas/commons';
+import { stepDecimals } from '@tradecanvas/commons';
 
 /** What the order ticket holds while it is filled in. */
 export interface OrderTicketDraft {
@@ -12,7 +13,62 @@ export interface OrderTicketDraft {
   /** The stop-loss is to trail the price, at its distance from the entry. */
   trailing?: boolean;
   timeInForce: TimeInForce;
+  /**
+   * How many targets the take-profit is reached in (1 to 3; 1 when unset):
+   * with more than one, a part of the quantity comes off at each target on
+   * the way, evenly spaced, and the take-profit closes what is left.
+   */
+  targets?: number;
 }
+
+/** The most targets a ticket parts its take-profit into. */
+export const TICKET_MAX_TARGETS = 3;
+
+/**
+ * The take-profit levels of a draft with several targets: one before each
+ * target but the last, which is the take-profit itself. They part the way
+ * from `entry` to the take-profit evenly, and each takes an even part of the
+ * quantity, down to the lot or to the quantity's own last digit. None with
+ * one target, no take-profit (or one on the wrong side of the entry), no
+ * entry, or a quantity too small to part; a target the market's rounding
+ * puts on another price there is left out.
+ */
+export function ticketTakeProfitLevels(
+  draft: Pick<OrderTicketDraft, 'side' | 'quantity' | 'takeProfit' | 'targets'>,
+  entry: number | null,
+  rules: Pick<OrderTicketRules, 'lot' | 'roundPrice'> = {},
+): TakeProfitLevel[] {
+  const targets = ticketTargets(draft.targets);
+  const target = draft.takeProfit;
+  if (!(targets > 1) || target === null || !Number.isFinite(target) || entry === null || !Number.isFinite(entry)) return [];
+  // A take-profit on the wrong side of the entry is no profit to part.
+  const up = draft.side === 'buy';
+  if (up ? target <= entry : target >= entry) return [];
+  if (!(draft.quantity > 0) || !Number.isFinite(draft.quantity)) return [];
+  const step = rules.lot !== undefined && rules.lot > 1 ? rules.lot : 10 ** -stepDecimals(draft.quantity);
+  const part = Number((Math.floor(draft.quantity / targets / step + PART_SLACK) * step).toFixed(stepDecimals(step)));
+  if (!(part > 0)) return [];
+  const round = rules.roundPrice ?? ((price: number) => price);
+  const levels: TakeProfitLevel[] = [];
+  let before = entry;
+  for (let k = 1; k < targets; k++) {
+    const price = round(entry + ((target - entry) * k) / targets);
+    // Rounded, a target may land on the entry, on the one before it or on the take-profit: it is then no target of its own.
+    const own = up ? price > before && price < target : price < before && price > target;
+    if (!own) continue;
+    levels.push({ price, quantity: part });
+    before = price;
+  }
+  return levels;
+}
+
+/** A draft's number of targets as the ticket takes it: a whole number from 1 to the most there are. */
+export function ticketTargets(targets: number | undefined): number {
+  return targets !== undefined && Number.isFinite(targets) ? Math.min(TICKET_MAX_TARGETS, Math.max(1, Math.floor(targets))) : 1;
+}
+
+/** Room for a quotient a hair under a whole number of steps. */
+const PART_SLACK = 1e-9;
 
 /** What is wrong with a draft, as message keys. */
 export type OrderTicketProblem =
@@ -107,7 +163,7 @@ export function ticketTimeInForce(draft: Pick<OrderTicketDraft, 'type' | 'timeIn
 }
 
 /** The order a draft asks for. */
-export function orderTicketIntent(draft: OrderTicketDraft, lastPrice: number | null): OrderPlaceIntent {
+export function orderTicketIntent(draft: OrderTicketDraft, lastPrice: number | null, rules: Pick<OrderTicketRules, 'lot' | 'roundPrice'> = {}): OrderPlaceIntent {
   const intent: OrderPlaceIntent = {
     side: draft.side,
     type: draft.type,
@@ -118,6 +174,8 @@ export function orderTicketIntent(draft: OrderTicketDraft, lastPrice: number | n
   if (draft.type !== 'market') intent.timeInForce = ticketTimeInForce(draft);
   if (draft.stopLoss !== null) intent.stopLoss = draft.stopLoss;
   if (draft.takeProfit !== null) intent.takeProfit = draft.takeProfit;
+  const levels = ticketTakeProfitLevels(draft, intent.price, rules);
+  if (levels.length > 0) intent.takeProfits = levels;
   if (draft.trailing && draft.stopLoss !== null) {
     const distance = priceDistance(intent.price, draft.stopLoss);
     if (distance > 0) intent.trailingStop = distance;
@@ -176,6 +234,8 @@ export interface OrderTicketSummary {
 
 /**
  * The receipt's sums, in money (a contract's points times its multiplier).
+ * With several targets the reward is what the parts make where each comes
+ * off, and the ratio is that reward over the risk.
  * A stop or a target on the wrong side of the entry sums to nothing: its
  * "risk" would read as a gain, and reward over risk would mean nothing.
  */
@@ -187,6 +247,11 @@ export function orderTicketSummary(draft: OrderTicketDraft, lastPrice: number | 
   const at = (price: number | null, wrong: OrderTicketProblem) =>
     price === null || problems.includes(wrong) ? null : orderTicketDistance(draft, lastPrice, price, multiplier)?.amount ?? null;
   const risk = at(draft.stopLoss, 'stopLossSide');
-  const reward = at(draft.takeProfit, 'takeProfitSide');
-  return { value, risk, reward, ratio: risk !== null && reward !== null ? orderTicketRiskReward(draft, lastPrice) : null };
+  const whole = at(draft.takeProfit, 'takeProfitSide');
+  // The parts taken off on the way make less than they would at the take-profit: by their distance short of it.
+  const levels = whole === null ? [] : ticketTakeProfitLevels(draft, entry, rules);
+  const short = levels.reduce((sum, level) => sum + level.quantity * Math.abs((draft.takeProfit as number) - level.price) * multiplier, 0);
+  const reward = whole === null ? null : whole - short;
+  const ratio = risk === null || reward === null ? null : levels.length > 0 && risk !== 0 ? reward / Math.abs(risk) : orderTicketRiskReward(draft, lastPrice);
+  return { value, risk, reward, ratio };
 }

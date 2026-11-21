@@ -15,6 +15,9 @@ import {
   type OrderTicketRules,
   ticketTimeInForce,
   ticketTimesInForce,
+  ticketTakeProfitLevels,
+  ticketTargets,
+  TICKET_MAX_TARGETS,
 } from './orderTicket.js';
 
 export interface OrderTicketCallbacks {
@@ -237,7 +240,7 @@ export class WidgetOrderTicket {
   private place(): void {
     const draft = this.draft;
     if (!draft || orderTicketProblems(draft, this.lastPrice, this.rules).length > 0) return;
-    this.callbacks.onSubmit(orderTicketIntent(draft, this.lastPrice));
+    this.callbacks.onSubmit(orderTicketIntent(draft, this.lastPrice, this.rules));
     this.close();
   }
 
@@ -273,6 +276,8 @@ export class WidgetOrderTicket {
     // With a stop-loss, whether it is to follow the price.
     if (draft.stopLoss !== null) this.body.append(this.trailRow(draft.trailing === true));
     this.body.append(this.optionalPrice('takeProfit', draft.takeProfit));
+    // With a take-profit, in how many targets it is reached: a part comes off at each on the way.
+    if (draft.takeProfit !== null) this.body.append(this.targetsRow(draft));
     if (restore) this.body.querySelector<HTMLElement>(restore)?.focus();
     this.check();
   }
@@ -424,6 +429,38 @@ export class WidgetOrderTicket {
     return row;
   }
 
+  /** One, two or three targets for the take-profit, and under them what comes off where. */
+  private targetsRow(draft: OrderTicketDraft): HTMLElement {
+    const wrap = document.createElement('div');
+    wrap.className = 'tcw-ticket-targets';
+    const counts = Array.from({ length: TICKET_MAX_TARGETS }, (_, i) => String(i + 1));
+    const group = field('targets', segmentedControl(
+      counts.map((count) => ({ value: count, label: count })),
+      String(ticketTargets(draft.targets)),
+      (count) => this.set({ targets: Number(count) }, true),
+      this.t('ticket.targets'),
+    ));
+    for (const radio of group.querySelectorAll<HTMLElement>('[role=radio]')) radio.dataset.ticketField = `targets-${radio.dataset.value}`;
+    const levels = document.createElement('p');
+    levels.className = 'tcw-ticket-levels';
+    // Figures read left to right in any widget.
+    levels.dir = 'ltr';
+    wrap.append(this.row('ticket.targets', group), levels);
+    return wrap;
+  }
+
+  /** What comes off at each target: the levels on the way, then the take-profit with the rest. Empty with one target. */
+  private levelsText(draft: OrderTicketDraft): string {
+    const entry = draft.type === 'market' ? this.lastPrice ?? draft.price : draft.price;
+    const levels = ticketTakeProfitLevels(draft, entry, this.rules);
+    if (levels.length === 0 || draft.takeProfit === null) return '';
+    const taken = levels.reduce((sum, level) => sum + level.quantity, 0);
+    const rest = Number((draft.quantity - taken).toFixed(8));
+    return [...levels, { price: draft.takeProfit, quantity: rest }]
+      .map((level, i) => `TP${i + 1} ${this.callbacks.formatPrice(level.price)} × ${level.quantity}`)
+      .join(' · ');
+  }
+
   /** The stop-loss's own switch: it trails the price, at its distance from the entry. */
   private trailRow(on: boolean): HTMLElement {
     const row = document.createElement('div');
@@ -467,6 +504,8 @@ export class WidgetOrderTicket {
       const distance = price === null ? null : orderTicketDistance(draft, this.lastPrice, price, this.rules.multiplier);
       if (el) el.textContent = distance ? `${this.signedNumber(distance.pct, 2)}% · ${this.amount(distance.amount)}` : '';
     }
+    const levels = this.body.querySelector<HTMLElement>('.tcw-ticket-levels');
+    if (levels) levels.textContent = this.levelsText(draft);
     this.renderSummary(draft);
     this.submit.disabled = problems.length > 0;
     this.submit.textContent = this.t(draft.side === 'buy' ? 'ticket.placeBuy' : 'ticket.placeSell');

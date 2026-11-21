@@ -572,6 +572,7 @@ export const TR_MESSAGES: WidgetMessages = {
   'ticket.stopLoss': 'Zarar kes',
   'ticket.takeProfit': 'Kâr al',
   'ticket.trailing': 'İz süren stop',
+  'ticket.targets': 'Hedefler',
   'ticket.timeInForce': 'Geçerlilik süresi',
   'ticket.tif.gtc': 'İptale kadar geçerli',
   'ticket.tif.day': 'Gün',

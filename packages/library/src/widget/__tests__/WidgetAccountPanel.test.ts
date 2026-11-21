@@ -44,6 +44,22 @@ const tab = (name: RegExp) => [...host.querySelectorAll<HTMLButtonElement>('[rol
 const cells = () => [...host.querySelectorAll('tbody tr')].map((tr) => [...tr.querySelectorAll('td')].map((td) => td.textContent));
 
 describe('WidgetAccountPanel', () => {
+  it('writes the nearest take-profit level and how many more there are, where a position or an order has levels', () => {
+    if (!panel.isOpen()) panel.toggle();
+    panel.update({
+      ...current,
+      positions: [{ id: 'p', side: 'buy', entryPrice: 100, quantity: 3, takeProfits: [{ price: 110, quantity: 1 }, { price: 120, quantity: 1 }, { price: 130, quantity: 1 }] }],
+      orders: [{ id: 'o', side: 'buy', type: 'limit', price: 90, quantity: 2, takeProfits: [{ price: 105, quantity: 1 }] }],
+    });
+    expect(cells()[0]).toContain('110.00 +2');
+    tab(/Orders/).click();
+    expect(cells()[0]).toContain('105.00');
+    // The take-profit that closes the rest is a target too: counted after the levels.
+    panel.update({ ...current, positions: [{ id: 'p', side: 'buy', entryPrice: 100, quantity: 3, takeProfit: 130, takeProfits: [{ price: 110, quantity: 1 }] }] });
+    tab(/Positions/).click();
+    expect(cells()[0]).toContain('110.00 +1');
+  });
+
   it('says which orders are of a group where one cancels the others, and when a dated order ends', () => {
     panel.update({ ...current, orders: [
       { id: 'a', side: 'sell', type: 'limit', price: 110, quantity: 1, ocoGroup: 'exit' },

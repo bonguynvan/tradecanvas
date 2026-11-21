@@ -572,6 +572,7 @@ export const RU_MESSAGES: WidgetMessages = {
   'ticket.stopLoss': 'Стоп-лосс',
   'ticket.takeProfit': 'Тейк-профит',
   'ticket.trailing': 'Трейлинг-стоп',
+  'ticket.targets': 'Цели',
   'ticket.timeInForce': 'Срок действия',
   'ticket.tif.gtc': 'До отмены',
   'ticket.tif.day': 'На день',

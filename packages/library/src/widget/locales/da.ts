@@ -578,6 +578,7 @@ export const DA_MESSAGES: WidgetMessages = {
   'ticket.stopLoss': 'Stop-loss',
   'ticket.takeProfit': 'Take-profit',
   'ticket.trailing': 'Glidende stop',
+  'ticket.targets': 'Mål',
   'ticket.timeInForce': 'Gyldighed',
   'ticket.tif.gtc': 'Gyldig indtil annulleret',
   'ticket.tif.day': 'Kun i dag',

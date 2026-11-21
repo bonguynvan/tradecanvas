@@ -572,6 +572,7 @@ export const JA_MESSAGES: WidgetMessages = {
   'ticket.stopLoss': '損切り',
   'ticket.takeProfit': '利確',
   'ticket.trailing': 'トレーリングストップ',
+  'ticket.targets': '利確の分割数',
   'ticket.timeInForce': '有効期限',
   'ticket.tif.gtc': '取消まで有効',
   'ticket.tif.day': '当日限り',

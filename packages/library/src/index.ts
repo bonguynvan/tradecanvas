@@ -106,6 +106,7 @@ export type {
   ExecutionListener,
   FillEvent,
   AccountSummary,
+  TakeProfitLevel,
   ExecutionError,
   Locale,
   LocaleStrings,
