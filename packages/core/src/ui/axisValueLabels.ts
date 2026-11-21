@@ -1,5 +1,5 @@
 import type { Theme } from '@tradecanvas/commons';
-import { AXIS_TAG_TEXT_INSET, fillTag, strokeTag } from './shapes.js';
+import { AXIS_TAG_TEXT_INSET, fillTag, outlineTag } from './shapes.js';
 
 /** A coloured tag on a value axis: an indicator line's latest value. */
 export interface AxisValueLabel {
@@ -51,6 +51,18 @@ export function labelTextColor(background: string): string {
   const [r, g, b] = rgb;
   const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
   return luminance > 0.62 ? '#10131a' : '#ffffff';
+}
+
+/** How far apart two colours' lightness has to be, of 1, for one to be read as text on the other. */
+const READABLE_LIGHTNESS_GAP = 0.25;
+
+/** Whether text in `color` reads on `ground`. A colour that cannot be read as numbers is taken to. */
+function readsOn(color: string, ground: string): boolean {
+  const text = parseColor(color);
+  const under = parseColor(ground);
+  if (!text || !under) return true;
+  const lightness = ([r, g, b]: [number, number, number]): number => (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return Math.abs(lightness(text) - lightness(under)) >= READABLE_LIGHTNESS_GAP;
 }
 
 function parseColor(color: string): [number, number, number] | null {
@@ -105,13 +117,18 @@ export function layoutAxisValueLabels(
   return out;
 }
 
-/** Draw tags already laid out (`layoutAxisValueLabels`) on the axis whose left edge is `axisX`. */
+/**
+ * Draw tags already laid out (`layoutAxisValueLabels`) on the axis whose
+ * left edge is `axisX`. `ground`: what is under them, which an outlined tag
+ * is filled with (the chart's background unless a pane has its own).
+ */
 export function drawAxisValueLabels(
   ctx: CanvasRenderingContext2D,
   labels: readonly AxisValueLabel[],
   axisX: number,
   axisWidth: number,
   theme: Theme,
+  ground: string = theme.background,
 ): void {
   if (labels.length === 0) return;
   ctx.save();
@@ -121,16 +138,19 @@ export function drawAxisValueLabels(
   const half = AXIS_LABEL_HEIGHT / 2;
   // Outlined: the chart's ground under an edge and a text in the line's colour, where a look wants no blocks of colour.
   const outlined = theme.style?.axis.price.valueTagsOutlined === true;
+  // A line's colour that would not read on the ground writes its value in the scale's own text colour.
+  const scaleText = theme.style?.axis.price.text ?? theme.axisLabel;
   for (const label of labels) {
     const top = Math.round(label.y - half);
-    ctx.fillStyle = outlined ? theme.background : label.color;
     // The axis's width, as an order's tag and the last price's are.
-    fillTag(ctx, axisX + 1, top, axisWidth - 2, AXIS_LABEL_HEIGHT, theme);
     if (outlined) {
-      ctx.strokeStyle = label.color;
-      strokeTag(ctx, axisX + 1, top, axisWidth - 2, AXIS_LABEL_HEIGHT, theme);
+      outlineTag(ctx, axisX + 1, top, axisWidth - 2, AXIS_LABEL_HEIGHT, theme, label.color, ground);
+      ctx.fillStyle = readsOn(label.color, ground) ? label.color : scaleText;
+    } else {
+      ctx.fillStyle = label.color;
+      fillTag(ctx, axisX + 1, top, axisWidth - 2, AXIS_LABEL_HEIGHT, theme);
+      ctx.fillStyle = labelTextColor(label.color);
     }
-    ctx.fillStyle = outlined ? label.color : labelTextColor(label.color);
     ctx.fillText(label.text, axisX + 1 + AXIS_TAG_TEXT_INSET, Math.round(label.y));
   }
   ctx.restore();
@@ -148,6 +168,7 @@ export function renderAxisValueLabels(
   axisWidth: number,
   bounds: { top: number; bottom: number },
   theme: Theme,
+  ground?: string,
 ): void {
-  drawAxisValueLabels(ctx, layoutAxisValueLabels(labels, bounds), axisX, axisWidth, theme);
+  drawAxisValueLabels(ctx, layoutAxisValueLabels(labels, bounds), axisX, axisWidth, theme, ground);
 }

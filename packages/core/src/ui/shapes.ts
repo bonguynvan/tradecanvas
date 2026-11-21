@@ -40,19 +40,20 @@ export function tagPath(ctx: CanvasRenderingContext2D, x: number, y: number, w: 
 export const AXIS_TAG_TEXT_INSET = 7;
 
 /**
- * A tag's edge, a pixel wide and inside its box (an outlined tag is no
- * larger than a filled one), in the theme's corner shape and the context's
- * current stroke.
+ * An outlined tag: its box in `edge`, and `ground` inside it, in the
+ * theme's corner shape. The edge is a CSS pixel wide, in whole device
+ * pixels (two where a CSS pixel is one and a half), and inside the box: an
+ * outlined tag is the size of a filled one. Two fills and no stroke, so it
+ * is sharp at any zoom of the page and takes no dash left on the context.
  */
-export function strokeTag(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, theme: Theme): void {
-  const box = crispBox(ctx, x, y, w, h);
-  ctx.lineWidth = 1;
-  if (!(cornerRadius(theme, box.w, box.h) > 0)) {
-    ctx.strokeRect(box.x + 0.5, box.y + 0.5, box.w - 1, box.h - 1);
-    return;
-  }
-  tagPath(ctx, box.x + 0.5, box.y + 0.5, box.w - 1, box.h - 1, theme);
-  ctx.stroke();
+export function outlineTag(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, theme: Theme, edge: string, ground: string): void {
+  const scale = ctx.getTransform?.().a || 1;
+  const line = Math.max(1, Math.round(scale)) / scale;
+  ctx.fillStyle = edge;
+  fillTag(ctx, x, y, w, h, theme);
+  if (!(w > 2 * line) || !(h > 2 * line)) return;
+  ctx.fillStyle = ground;
+  fillTag(ctx, x + line, y + line, w - 2 * line, h - 2 * line, theme);
 }
 
 /**

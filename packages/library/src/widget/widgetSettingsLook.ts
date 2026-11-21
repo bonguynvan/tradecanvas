@@ -46,7 +46,8 @@ export const LAST_PRICE_SECTION: LookSection = {
     row('drawingSettings.lineWidth', 'lastPrice.width'),
     // Auto: the tag is the up or the down colour, its text the one that reads on it.
     autoRow('settings.labelBackground', 'lastPrice.labelBackground', { from: 'lastPrice.upColor' }),
-    autoRow('settings.labelText', 'lastPrice.labelTextColor', { from: 'crosshair.labelTextColor' }),
+    // A picker opened from Auto starts on the page's colour: the text of a tag filled with the ink.
+    autoRow('settings.labelText', 'lastPrice.labelTextColor', { from: 'background.color' }),
   ],
 };
 export const VOLUME_SECTION: LookSection = {

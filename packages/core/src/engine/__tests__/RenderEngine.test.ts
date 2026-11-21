@@ -517,7 +517,7 @@ describe('RenderEngine — a GPU layer under the scene', () => {
     expect(gpu.render).toHaveBeenCalledWith(expect.objectContaining({ seriesRevision: 7 }));
   });
 
-  it('gives the grid every mark of the time axis, and only the starts of periods where the look rules those', async () => {
+  it('gives the grid every mark of the time axis, and the axis’s starts of periods where the look rules those', async () => {
     const { MARK_WEIGHT } = await import('../../axis/timeMarks.js');
     const { DARK_THEME, resolveChartTheme } = await import('@tradecanvas/commons');
     const marks = [
@@ -530,7 +530,7 @@ describe('RenderEngine — a GPU layer under the scene', () => {
       const { ctx } = makeContext();
       const grid = vi.fn();
       ctx.gridRenderer = { render: grid, isVisible: () => true } as unknown as RenderContext['gridRenderer'];
-      ctx.timeAxis = { marks: () => marks.map((mark) => ({ ...mark })), render: () => {}, labelColumns: () => [] } as unknown as RenderContext['timeAxis'];
+      ctx.timeAxis = { marks: () => marks.map((mark) => ({ ...mark })), periodMarks: () => [marks[2], marks[3]], render: () => {}, labelColumns: () => [] } as unknown as RenderContext['timeAxis'];
       engine.setRenderContext({ ...ctx, theme });
       engine.renderNow();
       return (grid.mock.calls[0][3] as { slots?: number[] }).slots;

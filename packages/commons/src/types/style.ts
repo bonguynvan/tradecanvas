@@ -24,13 +24,17 @@ export type StyleValueKind = 'color' | 'lineStyle' | 'width' | 'boolean';
  *   that reads on it. The line keeps `upColor` and `downColor` either way.
  * - `axis.price.valueTagsOutlined` draws an indicator's value tags on the
  *   price axis (in the price pane and in the indicator panes) outlined:
- *   the chart's background, with an edge and its text in the line's colour,
- *   instead of filled with the line's colour.
- * - `grid.vertical.periodsOnly` keeps the vertical grid lines where a period
- *   begins: the coarser kind of mark the time axis shows (months among
- *   days, years among months, days among times of day). With one kind on
- *   view no period begins there, and no vertical line is drawn. The lines
- *   follow the time axis's marks: with the time axis switched off they are
+ *   the chart's background (a pane's own where it has one), with an edge
+ *   and its text in the line's colour, instead of filled with the line's
+ *   colour. A line too close to the background to be read on it has its
+ *   value written in the scale's text colour.
+ * - `grid.vertical.periodsOnly` rules the vertical grid where a period
+ *   begins, not at the time axis's labels: at each day's first bar on an
+ *   intraday chart, each month's on a chart of days, each year's on a chart
+ *   of weeks or months, in the zone the axis shows. Where those would be
+ *   closer than 40 px (a chart of days zoomed out to years) the next
+ *   coarser period is ruled. No line is drawn where no such period begins
+ *   on view. It needs the time axis: with that switched off the lines are
  *   as without the key.
  */
 export const CHART_STYLE_KEYS = {
