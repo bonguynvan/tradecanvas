@@ -9047,6 +9047,446 @@
       ]
     },
     {
+      "name": "PayoffChart",
+      "what": "What an options position makes or loses at expiry over the underlying's price, with its breakevens: a spread, a straddle, a condor.",
+      "options": [
+        {
+          "name": "legs",
+          "type": "OptionLeg[]",
+          "required": true,
+          "doc": "The position's legs: what they make or lose together at expiry is the line."
+        },
+        {
+          "name": "multiplier",
+          "type": "number",
+          "doc": "The units one contract is for (100 for a US stock option). Default `1`.",
+          "kind": "number"
+        },
+        {
+          "name": "spot",
+          "type": "number",
+          "doc": "The underlying's price now: a marked line.",
+          "kind": "number"
+        },
+        {
+          "name": "spotLabel",
+          "type": "string",
+          "doc": "A word before the price now on its mark (`'Spot'`).",
+          "kind": "string"
+        },
+        {
+          "name": "range",
+          "type": "{ min: number; max: number }",
+          "doc": "The underlying's prices drawn. Default: from under the lowest strike to over the highest."
+        },
+        {
+          "name": "valueFormat",
+          "type": "(value: number) => string",
+          "doc": "How a profit or a loss is written.",
+          "kind": "function"
+        },
+        {
+          "name": "priceFormat",
+          "type": "(value: number) => string",
+          "doc": "How the underlying's price is written.",
+          "kind": "function"
+        },
+        {
+          "name": "profitColor",
+          "type": "string",
+          "doc": "The line and the area above zero. Default: the theme's up colour.",
+          "kind": "string"
+        },
+        {
+          "name": "lossColor",
+          "type": "string",
+          "doc": "The line and the area below zero. Default: the theme's down colour.",
+          "kind": "string"
+        },
+        {
+          "name": "crosshair",
+          "type": "boolean",
+          "doc": "Show the profit or loss at the price under the pointer. Default `true`.",
+          "kind": "boolean"
+        },
+        {
+          "name": "theme",
+          "type": "ThemeName | Theme",
+          "doc": "The chart's colours: `'dark'` (the default), `'light'`, or a theme of your own."
+        },
+        {
+          "name": "font",
+          "type": "Partial<FontConfig>",
+          "doc": "The face and sizes of the chart's text, over the theme's. Left out, the text is in the theme's face: a sans one whose digits are one width (`FIGURES_FONT_FAMILY`) in the dark and the light theme. `{ family: MONO_FONT_FAMILY }` gives a monospaced one."
+        },
+        {
+          "name": "locale",
+          "type": "string",
+          "doc": "The language numbers and dates are written in, as a BCP 47 tag (`'vi'`, `'de-DE'`): the grouping and decimal marks, the short forms past ten thousand, the names of months and days. The browser's own when left out. A format function of yours (`valueFormat`…) is used as it is.",
+          "kind": "string"
+        },
+        {
+          "name": "ariaLabel",
+          "type": "string",
+          "doc": "What the chart shows, for screen readers; every chart describes itself (in English) without one.",
+          "kind": "string"
+        }
+      ]
+    },
+    {
+      "name": "CurveChart",
+      "what": "Values against a strike or a tenor, a line for each series: a volatility smile, a term structure, a yield curve.",
+      "options": [
+        {
+          "name": "series",
+          "type": "CurveSeries[]",
+          "required": true,
+          "doc": "The curves: values against a strike, a tenor, a maturity."
+        },
+        {
+          "name": "ticks",
+          "type": "{ x: number; label: string }[]",
+          "doc": "Labels along x in place of the scale's own: a tenor each (`{ x: 30, label: '1M' }`)."
+        },
+        {
+          "name": "xFormat",
+          "type": "(value: number) => string",
+          "doc": "How an x is written, without `ticks`.",
+          "kind": "function"
+        },
+        {
+          "name": "valueFormat",
+          "type": "(value: number) => string",
+          "kind": "function"
+        },
+        {
+          "name": "smooth",
+          "type": "boolean",
+          "doc": "Round the lines through their points, never past a value they do not reach. Default `true`.",
+          "kind": "boolean"
+        },
+        {
+          "name": "showPoints",
+          "type": "boolean",
+          "doc": "A dot at each point. Default `true`.",
+          "kind": "boolean"
+        },
+        {
+          "name": "markers",
+          "type": "CurveMarker[]",
+          "doc": "Labelled lines at x values."
+        },
+        {
+          "name": "legend",
+          "type": "boolean",
+          "doc": "The curves' names over the plot. Default `true` with more than one.",
+          "kind": "boolean"
+        },
+        {
+          "name": "crosshair",
+          "type": "boolean",
+          "doc": "Show each curve's value at the x under the pointer. Default `true`.",
+          "kind": "boolean"
+        },
+        {
+          "name": "theme",
+          "type": "ThemeName | Theme",
+          "doc": "The chart's colours: `'dark'` (the default), `'light'`, or a theme of your own."
+        },
+        {
+          "name": "font",
+          "type": "Partial<FontConfig>",
+          "doc": "The face and sizes of the chart's text, over the theme's. Left out, the text is in the theme's face: a sans one whose digits are one width (`FIGURES_FONT_FAMILY`) in the dark and the light theme. `{ family: MONO_FONT_FAMILY }` gives a monospaced one."
+        },
+        {
+          "name": "locale",
+          "type": "string",
+          "doc": "The language numbers and dates are written in, as a BCP 47 tag (`'vi'`, `'de-DE'`): the grouping and decimal marks, the short forms past ten thousand, the names of months and days. The browser's own when left out. A format function of yours (`valueFormat`…) is used as it is.",
+          "kind": "string"
+        },
+        {
+          "name": "ariaLabel",
+          "type": "string",
+          "doc": "What the chart shows, for screen readers; every chart describes itself (in English) without one.",
+          "kind": "string"
+        }
+      ]
+    },
+    {
+      "name": "BoxPlotChart",
+      "what": "How each group's values spread, as quartiles, whiskers and outliers: returns by weekday or by strategy.",
+      "options": [
+        {
+          "name": "data",
+          "type": "BoxPlotGroup[]",
+          "required": true,
+          "doc": "A box for each group: returns by weekday, by month, by strategy."
+        },
+        {
+          "name": "whiskers",
+          "type": "number",
+          "doc": "How far a whisker may reach past the box, in box heights (the interquartile range): values further out are outliers. Default `1.5`; `Infinity` takes the whiskers to the lowest and the highest value.",
+          "kind": "number"
+        },
+        {
+          "name": "colorBySign",
+          "type": "boolean",
+          "doc": "A box whose median is under zero in the theme's down colour, the rest in its up colour.",
+          "kind": "boolean"
+        },
+        {
+          "name": "valueFormat",
+          "type": "(value: number) => string",
+          "kind": "function"
+        },
+        {
+          "name": "labels",
+          "type": "Partial<BoxPlotLabels>",
+          "doc": "The readout's words, for another language. Default: `Max`, `Q3`, `Median`, `Q1`, `Min`."
+        },
+        {
+          "name": "crosshair",
+          "type": "boolean",
+          "doc": "Show the hovered box's numbers. Default `true`.",
+          "kind": "boolean"
+        },
+        {
+          "name": "theme",
+          "type": "ThemeName | Theme",
+          "doc": "The chart's colours: `'dark'` (the default), `'light'`, or a theme of your own."
+        },
+        {
+          "name": "font",
+          "type": "Partial<FontConfig>",
+          "doc": "The face and sizes of the chart's text, over the theme's. Left out, the text is in the theme's face: a sans one whose digits are one width (`FIGURES_FONT_FAMILY`) in the dark and the light theme. `{ family: MONO_FONT_FAMILY }` gives a monospaced one."
+        },
+        {
+          "name": "locale",
+          "type": "string",
+          "doc": "The language numbers and dates are written in, as a BCP 47 tag (`'vi'`, `'de-DE'`): the grouping and decimal marks, the short forms past ten thousand, the names of months and days. The browser's own when left out. A format function of yours (`valueFormat`…) is used as it is.",
+          "kind": "string"
+        },
+        {
+          "name": "ariaLabel",
+          "type": "string",
+          "doc": "What the chart shows, for screen readers; every chart describes itself (in English) without one.",
+          "kind": "string"
+        }
+      ]
+    },
+    {
+      "name": "RadarChart",
+      "what": "Several measures at once, a spoke each: a strategy's scorecard, factor exposures beside an index's.",
+      "options": [
+        {
+          "name": "axes",
+          "type": "RadarAxis[]",
+          "required": true,
+          "doc": "The spokes, clockwise from twelve o'clock: at least three."
+        },
+        {
+          "name": "series",
+          "type": "ChartSeries[]",
+          "required": true,
+          "doc": "A shape for each series: `values[i]` is its value on `axes[i]`."
+        },
+        {
+          "name": "rings",
+          "type": "number",
+          "doc": "The rings of the grid between the centre and the rim. Default `4`.",
+          "kind": "number"
+        },
+        {
+          "name": "fill",
+          "type": "boolean",
+          "doc": "Tint each shape with its colour. Default `true`.",
+          "kind": "boolean"
+        },
+        {
+          "name": "legend",
+          "type": "boolean",
+          "doc": "The series' names. Default `true` with more than one.",
+          "kind": "boolean"
+        },
+        {
+          "name": "valueFormat",
+          "type": "(value: number) => string",
+          "kind": "function"
+        },
+        {
+          "name": "crosshair",
+          "type": "boolean",
+          "doc": "Show every series' value on the spoke nearest the pointer. Default `true`.",
+          "kind": "boolean"
+        },
+        {
+          "name": "theme",
+          "type": "ThemeName | Theme",
+          "doc": "The chart's colours: `'dark'` (the default), `'light'`, or a theme of your own."
+        },
+        {
+          "name": "font",
+          "type": "Partial<FontConfig>",
+          "doc": "The face and sizes of the chart's text, over the theme's. Left out, the text is in the theme's face: a sans one whose digits are one width (`FIGURES_FONT_FAMILY`) in the dark and the light theme. `{ family: MONO_FONT_FAMILY }` gives a monospaced one."
+        },
+        {
+          "name": "locale",
+          "type": "string",
+          "doc": "The language numbers and dates are written in, as a BCP 47 tag (`'vi'`, `'de-DE'`): the grouping and decimal marks, the short forms past ten thousand, the names of months and days. The browser's own when left out. A format function of yours (`valueFormat`…) is used as it is.",
+          "kind": "string"
+        },
+        {
+          "name": "ariaLabel",
+          "type": "string",
+          "doc": "What the chart shows, for screen readers; every chart describes itself (in English) without one.",
+          "kind": "string"
+        }
+      ]
+    },
+    {
+      "name": "SunburstChart",
+      "what": "Parts of a whole and the parts inside them, a ring a level: an allocation by asset class, then sector.",
+      "options": [
+        {
+          "name": "data",
+          "type": "SunburstNode[]",
+          "required": true,
+          "doc": "The first ring's parts, clockwise from twelve o'clock; their children are the rings outside."
+        },
+        {
+          "name": "maxDepth",
+          "type": "number",
+          "doc": "How many rings are drawn. Default: as many as the data is deep, four at most.",
+          "kind": "number"
+        },
+        {
+          "name": "innerRadius",
+          "type": "number",
+          "doc": "The hole as a share of the radius. Default `0.3`.",
+          "kind": "number"
+        },
+        {
+          "name": "centerLabel",
+          "type": "string",
+          "doc": "Text in the hole: a caption and a figure (`'Total'`, `'1.2B'`).",
+          "kind": "string"
+        },
+        {
+          "name": "centerValue",
+          "type": "string",
+          "kind": "string"
+        },
+        {
+          "name": "showLabels",
+          "type": "boolean",
+          "doc": "Print a part's name on it when it fits. Default `true`.",
+          "kind": "boolean"
+        },
+        {
+          "name": "valueFormat",
+          "type": "(value: number) => string",
+          "kind": "function"
+        },
+        {
+          "name": "crosshair",
+          "type": "boolean",
+          "doc": "Show the hovered part's path, value and share. Default `true`.",
+          "kind": "boolean"
+        },
+        {
+          "name": "onNodeClick",
+          "type": "(node: SunburstNode, path: string[]) => void",
+          "doc": "`path` is the labels from the first ring down to the part.",
+          "kind": "function"
+        },
+        {
+          "name": "theme",
+          "type": "ThemeName | Theme",
+          "doc": "The chart's colours: `'dark'` (the default), `'light'`, or a theme of your own."
+        },
+        {
+          "name": "font",
+          "type": "Partial<FontConfig>",
+          "doc": "The face and sizes of the chart's text, over the theme's. Left out, the text is in the theme's face: a sans one whose digits are one width (`FIGURES_FONT_FAMILY`) in the dark and the light theme. `{ family: MONO_FONT_FAMILY }` gives a monospaced one."
+        },
+        {
+          "name": "locale",
+          "type": "string",
+          "doc": "The language numbers and dates are written in, as a BCP 47 tag (`'vi'`, `'de-DE'`): the grouping and decimal marks, the short forms past ten thousand, the names of months and days. The browser's own when left out. A format function of yours (`valueFormat`…) is used as it is.",
+          "kind": "string"
+        },
+        {
+          "name": "ariaLabel",
+          "type": "string",
+          "doc": "What the chart shows, for screen readers; every chart describes itself (in English) without one.",
+          "kind": "string"
+        }
+      ]
+    },
+    {
+      "name": "StackedAreaChart",
+      "what": "Several series one on another over time: what a total is made of, or how its mix changes.",
+      "options": [
+        {
+          "name": "categories",
+          "type": "string[]",
+          "required": true,
+          "doc": "A label for each point along x: dates, periods."
+        },
+        {
+          "name": "series",
+          "type": "ChartSeries[]",
+          "required": true,
+          "doc": "The areas, the first at the bottom: `values[i]` belongs to `categories[i]`. A value under zero counts as none."
+        },
+        {
+          "name": "normalized",
+          "type": "boolean",
+          "doc": "Each point's values as shares of their total, so the areas fill the height: how a mix changes.",
+          "kind": "boolean"
+        },
+        {
+          "name": "legend",
+          "type": "boolean",
+          "doc": "The series' names. Default `true`.",
+          "kind": "boolean"
+        },
+        {
+          "name": "valueFormat",
+          "type": "(value: number) => string",
+          "kind": "function"
+        },
+        {
+          "name": "crosshair",
+          "type": "boolean",
+          "doc": "Show every series' value at the point under the pointer. Default `true`.",
+          "kind": "boolean"
+        },
+        {
+          "name": "theme",
+          "type": "ThemeName | Theme",
+          "doc": "The chart's colours: `'dark'` (the default), `'light'`, or a theme of your own."
+        },
+        {
+          "name": "font",
+          "type": "Partial<FontConfig>",
+          "doc": "The face and sizes of the chart's text, over the theme's. Left out, the text is in the theme's face: a sans one whose digits are one width (`FIGURES_FONT_FAMILY`) in the dark and the light theme. `{ family: MONO_FONT_FAMILY }` gives a monospaced one."
+        },
+        {
+          "name": "locale",
+          "type": "string",
+          "doc": "The language numbers and dates are written in, as a BCP 47 tag (`'vi'`, `'de-DE'`): the grouping and decimal marks, the short forms past ten thousand, the names of months and days. The browser's own when left out. A format function of yours (`valueFormat`…) is used as it is.",
+          "kind": "string"
+        },
+        {
+          "name": "ariaLabel",
+          "type": "string",
+          "doc": "What the chart shows, for screen readers; every chart describes itself (in English) without one.",
+          "kind": "string"
+        }
+      ]
+    },
+    {
       "name": "PerformanceDashboard",
       "what": "A backtest's result as a page: stats, the equity curve, drawdown and monthly returns.",
       "options": [

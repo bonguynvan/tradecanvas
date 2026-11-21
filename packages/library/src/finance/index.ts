@@ -11,6 +11,12 @@ export { HistogramChart } from './HistogramChart.js';
 export { CalendarChart } from './CalendarChart.js';
 export { MatrixChart } from './MatrixChart.js';
 export { CounterClockChart } from './CounterClockChart.js';
+export { PayoffChart } from './PayoffChart.js';
+export { CurveChart } from './CurveChart.js';
+export { BoxPlotChart } from './BoxPlotChart.js';
+export { RadarChart } from './RadarChart.js';
+export { SunburstChart } from './SunburstChart.js';
+export { StackedAreaChart } from './StackedAreaChart.js';
 export { PerformanceDashboard } from './PerformanceDashboard.js';
 export type { PerformanceDashboardOptions, PerformanceResult } from './PerformanceDashboard.js';
 export {

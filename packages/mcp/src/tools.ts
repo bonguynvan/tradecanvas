@@ -178,7 +178,7 @@ export const TOOLS: readonly ToolDefinition[] = [
   {
     name: 'list_finance_charts',
     title: 'List the finance charts',
-    description: 'Lists the charts of @tradecanvas/chart that are not the trading chart: bars, donut, scatter, histogram, calendar, correlation matrix, heatmap and sector map, depth, equity curve, waterfall, gauge, sparkline, and a backtest dashboard. Each with its class name and what it is for; list_options with that name gives its options. Search by words of the name or the purpose.',
+    description: 'Lists the charts of @tradecanvas/chart that are not the trading chart: bars, donut, scatter, histogram, calendar, correlation matrix, heatmap and sector map, depth, equity curve, waterfall, gauge, sparkline, an options payoff, curves (a volatility smile, a term structure), box plot, radar, sunburst, stacked area, and a backtest dashboard. Each with its class name and what it is for; list_options with that name gives its options. Search by words of the name or the purpose.',
     inputSchema: {
       type: 'object',
       properties: { query: { type: 'string', description: 'Words to find in the name or the purpose, e.g. "order book" or "returns".' } },

@@ -604,6 +604,57 @@ declare const result: ConstructorParameters<typeof PerformanceDashboard>[1]['res
 new PerformanceDashboard(el('report'), { result, title: 'Strategy', labels: { equityCurve: 'Equity', monthlyReturns: 'By month' } });
 ```
 
+## Options and portfolios: payoff, smile, box plot, radar, sunburst, stacked area
+
+An options position's profit and loss at expiry, and where it breaks even:
+
+```ts
+import { PayoffChart, payoffStats, type OptionLeg } from '@tradecanvas/chart';
+
+const condor: OptionLeg[] = [
+  { type: 'put', side: 'long', strike: 90, premium: 1 },
+  { type: 'put', side: 'short', strike: 95, premium: 2.5 },
+  { type: 'call', side: 'short', strike: 105, premium: 2.5 },
+  { type: 'call', side: 'long', strike: 110, premium: 1 },
+];
+new PayoffChart(document.getElementById('payoff')!, { legs: condor, multiplier: 100, spot: 101.4, spotLabel: 'Spot' });
+
+const { maxProfit, maxLoss, breakevens } = payoffStats(condor, 100); // 300, -200, [92, 108]; null where there is no limit
+```
+
+Values against a strike or a tenor (`CurveChart`), how groups of values spread (`BoxPlotChart`), several measures at once (`RadarChart`), parts inside parts (`SunburstChart`) and a mix over time (`StackedAreaChart`):
+
+```ts
+import { CurveChart, BoxPlotChart, RadarChart, SunburstChart, StackedAreaChart } from '@tradecanvas/chart';
+
+new CurveChart(document.getElementById('smile')!, {
+  series: [{ name: '1M', points: [{ x: 90, y: 31 }, { x: 100, y: 24 }, { x: 110, y: 27 }] }],
+  markers: [{ x: 101.4, label: 'ATM' }],
+  // A term structure names its tenors: ticks: [{ x: 30, label: '1M' }, { x: 365, label: '1Y' }]
+});
+
+new BoxPlotChart(document.getElementById('spread')!, {
+  data: [{ label: 'Mon', values: [0.4, -1.2, 0.8, 2.1, -0.3] }, { label: 'Tue', values: [1.1, 0.2, -0.6, 0.9, 0.3] }],
+  colorBySign: true,
+});
+
+new RadarChart(document.getElementById('scorecard')!, {
+  axes: [{ label: 'Sharpe', max: 3 }, { label: 'Sortino', max: 3 }, { label: 'Calmar', max: 3 }],
+  series: [{ name: 'Strategy', values: [1.8, 2.4, 1.5] }, { name: 'Benchmark', values: [1, 1.3, 0.7] }],
+});
+
+new SunburstChart(document.getElementById('holdings')!, {
+  data: [{ label: 'Stocks', children: [{ label: 'Banks', value: 22 }, { label: 'Technology', value: 14 }] }, { label: 'Bonds', value: 23 }],
+  onNodeClick: (node, path) => console.log(node.label, path),
+});
+
+new StackedAreaChart(document.getElementById('mix')!, {
+  categories: ['Jan', 'Feb', 'Mar'],
+  series: [{ name: 'Stocks', values: [40, 44, 47] }, { name: 'Bonds', values: [30, 29, 27] }],
+  normalized: true,
+});
+```
+
 ## A dashboard: net flows, allocation and returns
 
 The finance charts take an element and their options, and size themselves to it.
