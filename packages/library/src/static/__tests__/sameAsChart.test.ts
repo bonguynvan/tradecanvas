@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { ChartOptions, PriceChartOptions } from '@tradecanvas/commons';
+import type { ChartOptions, DataSeries, PriceChartOptions } from '@tradecanvas/commons';
 import { CandlestickRenderer, defineIndicator, yToPrice } from '@tradecanvas/core';
 import { Chart } from '../../Chart.js';
 import type { ChartPlugin } from '../../plugins/contracts.js';
@@ -15,12 +15,24 @@ const bars = someBars(120);
 /** What only a chart on a page draws: left off it, so the two frames are of the same things. */
 const STILL: ChartOptions['features'] = { barCountdown: false, crosshair: false };
 
-/** The frame a chart on a page draws for a picture of itself, as paints. */
-async function chartFrame(options: ChartOptions & { plugins?: ChartPlugin[] }, setUp: (chart: Chart) => void): Promise<string[]> {
+/** What a chart on a page is told to show once all is on it: every bar, unless a test names a range. */
+const fitted = (chart: Chart): void => chart.fitContent();
+
+/**
+ * The frame a chart on a page draws for a picture of itself, as paints. It
+ * is told what to show last, as a still chart is fitted last: a pane or a
+ * scale added after would leave the bars fitted to a plot that is gone.
+ */
+async function chartFrame(
+  options: ChartOptions & { plugins?: ChartPlugin[] },
+  setUp: (chart: Chart) => void,
+  data: DataSeries = bars,
+  view: (chart: Chart) => void = fitted,
+): Promise<string[]> {
   const chart = new Chart(sizedHost(WIDTH, HEIGHT), { ...options, features: { ...STILL, ...options.features } });
-  chart.setData(bars);
-  chart.fitContent();
+  chart.setData(data);
   setUp(chart);
+  view(chart);
   // Its first frames drawn: a legend drawn for the first time says how tall it is, and the frame after is the one that stands.
   await new Promise((resolve) => setTimeout(resolve, 80));
   const { ctx, paints } = painted(WIDTH, HEIGHT);
@@ -31,11 +43,14 @@ async function chartFrame(options: ChartOptions & { plugins?: ChartPlugin[] }, s
   return paints;
 }
 
-function staticFrame(options: Omit<PriceChartOptions, 'data'> & { plugins?: ChartPlugin[] }): string[] {
+function staticFrame(options: Omit<PriceChartOptions, 'data'>, data: DataSeries = bars): string[] {
   const { ctx, paints } = painted(WIDTH, HEIGHT);
-  renderPriceChart(ctx, { ...options, data: bars }, { width: WIDTH, height: HEIGHT });
+  renderPriceChart(ctx, { ...options, data }, { width: WIDTH, height: HEIGHT });
   return paints;
 }
+
+/** Bars whose prices need a price scale wider than the one a chart starts with. */
+const dear = bars.map((bar) => ({ ...bar, open: bar.open * 650, high: bar.high * 650, low: bar.low * 650, close: bar.close * 650, volume: bar.volume * 1e6 }));
 
 describe('the price chart drawn with no page is the chart’s own frame', () => {
   beforeEach(() => {
@@ -92,7 +107,7 @@ describe('the price chart drawn with no page is the chart’s own frame', () => 
   it('over a range of its bars, packed close, in another locale and zone', async () => {
     const range = { from: bars[30].time, to: bars[89].time };
     const options = { density: 'compact', numberLocale: 'de-DE', timeZone: 'Asia/Ho_Chi_Minh' } as const;
-    const onPage = await chartFrame(options, (chart) => chart.setVisibleRange(range.from, range.to));
+    const onPage = await chartFrame(options, () => undefined, bars, (chart) => chart.setVisibleRange(range.from, range.to));
     expect(firstDifference(staticFrame({ ...options, visibleRange: range }), onPage)).toBeNull();
   });
 
@@ -108,7 +123,7 @@ describe('the price chart drawn with no page is the chart’s own frame', () => 
   it('with an indicator on the left scale and one kept to other intervals', async () => {
     const onPage = await chartFrame({}, (chart) => {
       chart.setDataTimeframe('1d');
-      chart.addIndicator('obv', {}, 'bottom', { scale: 'left' });
+      chart.addIndicator('wma', { period: 12 }, 'bottom', { scale: 'left' });
       chart.applyIndicatorSetup([
         ...chart.getIndicatorSetup(),
         { id: 'sma', instanceId: 'hourly', params: { period: 5 }, intervals: { minutes: [1, 59], hours: [1, 24], days: false, weeks: false, months: false } },
@@ -117,7 +132,7 @@ describe('the price chart drawn with no page is the chart’s own frame', () => 
     const drawn = staticFrame({
       timeframe: '1d',
       indicators: [
-        { id: 'obv', scale: 'left' },
+        { id: 'wma', params: { period: 12 }, scale: 'left' },
         { id: 'sma', params: { period: 5 }, intervals: { minutes: [1, 59], hours: [1, 24], days: false, weeks: false, months: false } },
       ],
     });
@@ -173,6 +188,64 @@ describe('the price chart drawn with no page is the chart’s own frame', () => 
     ];
     const onPage = await chartFrame({}, (chart) => chart.setDrawings(drawings as never));
     expect(firstDifference(staticFrame({ drawings: drawings as never }), onPage)).toBeNull();
+  });
+
+  it('with prices that widen the price scale: the bars are fitted to the plot that is left', async () => {
+    const onPage = await chartFrame({}, () => undefined, dear);
+    expect(firstDifference(staticFrame({}, dear), onPage)).toBeNull();
+    // The scale is wider than a chart's first: the two would be alike without it.
+    expect(onPage.join(' ')).toMatch(/rect\(0,0,7[0-2]\d,/);
+    const german = await chartFrame({ numberLocale: 'de-DE' }, () => undefined, dear);
+    expect(firstDifference(staticFrame({ numberLocale: 'de-DE' }, dear), german)).toBeNull();
+    const left = await chartFrame({}, (chart) => void chart.addIndicator('ema', { period: 8 }, 'bottom', { scale: 'left' }), dear);
+    const onLeft = staticFrame({ indicators: [{ id: 'ema', params: { period: 8 }, scale: 'left' }] }, dear);
+    expect(firstDifference(onLeft, left)).toBeNull();
+    // A scale of its own at the left: the plot starts past it.
+    expect(firstDifference(staticFrame({ indicators: [{ id: 'ema', params: { period: 8 } }] }, dear), left)).not.toBeNull();
+    const range = { from: dear[30].time, to: dear[89].time };
+    const part = await chartFrame({}, () => undefined, dear, (chart) => chart.setVisibleRange(range.from, range.to));
+    expect(firstDifference(staticFrame({ visibleRange: range }, dear), part)).toBeNull();
+  });
+
+  it('from what a chart on a page gives of itself: its indicators and its drawings, one on a pane, go in as they are', async () => {
+    let setup: PriceChartOptions['indicators'] = [];
+    let drawings: PriceChartOptions['drawings'] = [];
+    const onPage = await chartFrame({}, (chart) => {
+      chart.addIndicator('ema', { period: 9 });
+      const rsi = chart.addIndicator('rsi');
+      chart.addIndicator('sma', { period: 5, source: `ind:${rsi}:rsi` });
+      chart.addDrawing({ type: 'trendLine', anchors: [{ time: bars[20].time, price: 100 }, { time: bars[90].time, price: 128 }] });
+      chart.addDrawing({ type: 'horizontalLine', anchors: [{ time: bars[60].time, price: 60 }], paneId: rsi ?? undefined });
+      setup = chart.getIndicatorSetup();
+      drawings = chart.getDrawings();
+    });
+    expect(drawings).toHaveLength(2);
+    const drawn = staticFrame({ indicators: setup, drawings });
+    expect(firstDifference(drawn, onPage)).toBeNull();
+    // The line on the pane is among them: without it the frame is another.
+    expect(firstDifference(staticFrame({ indicators: setup, drawings: drawings.slice(0, 1) }), onPage)).not.toBeNull();
+  });
+
+  it('with drawings and marks written by hand, as `addDrawing` and `addSignalMarker` take them', async () => {
+    const line = { type: 'trendLine' as const, anchors: [{ time: bars[20].time, price: 100 }, { time: bars[90].time, price: 128 }], style: { color: '#ff8800' } };
+    const mark = { time: bars[40].time, price: bars[40].low, direction: 'long' as const, confidence: 0.8, source: 'test' };
+    const onPage = await chartFrame({}, (chart) => {
+      chart.addDrawing(line);
+      chart.addSignalMarker(mark);
+    });
+    expect(firstDifference(staticFrame({ drawings: [line], markers: [mark] }), onPage)).toBeNull();
+  });
+
+  it('with another symbol’s bars, for the indicators that read them', async () => {
+    const other = bars.map((bar) => ({ ...bar, open: bar.open * 0.5 + 20, high: bar.high * 0.5 + 21, low: bar.low * 0.5 + 19, close: bar.close * 0.5 + 20 }));
+    const onPage = await chartFrame({}, (chart) => {
+      chart.setSymbolSeries('OTHER', other);
+      chart.addIndicator('compareSymbol', { symbol: 'OTHER' });
+      chart.addIndicator('correlation', { symbol: 'OTHER' });
+    });
+    const indicators = [{ id: 'compareSymbol', params: { symbol: 'OTHER' } }, { id: 'correlation', params: { symbol: 'OTHER' } }];
+    expect(firstDifference(staticFrame({ indicators, symbolSeries: { OTHER: other } }), onPage)).toBeNull();
+    expect(firstDifference(staticFrame({ indicators }), onPage)).not.toBeNull();
   });
 
   it('with an indicator, a chart type and an overlay of the caller’s own', async () => {

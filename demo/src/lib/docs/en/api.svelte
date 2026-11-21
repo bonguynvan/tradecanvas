@@ -384,7 +384,9 @@ const report = await chartsToPdf([chart, equityChart, allocationChart], { title:
   <code>renderPriceChart</code> draws the price chart on a 2D context of your own, where there is no page:
   a canvas made in Node, for a picture in an email, a report or a message from a bot, or an
   <code>OffscreenCanvas</code> in a worker. It is one frame, put together as <code>Chart</code> puts its
-  own together: the same bars at the same size give the same picture, pixel for pixel.
+  own together: at the same size it is the picture a chart on a page gives of the same bars once
+  <code>chart.fitContent()</code> has every bar on view (or <code>chart.setVisibleRange()</code>, with
+  <code>visibleRange</code>).
 </p>
 <pre><code>{`import { createCanvas, Path2D } from '@napi-rs/canvas'   // or another canvas for Node that has Path2D
 import { renderPriceChart } from '@tradecanvas/chart'
@@ -403,8 +405,11 @@ renderPriceChart(ctx, {
     { id: 'rsi', instanceId: 'momentum' },                 // a pane of its own under the prices
     { id: 'stochastic', pane: 'momentum' },                // in that pane, on its scale
   ],
-  drawings: [{ id: 'level', type: 'horizontalLine', anchors: [{ time: bars[0].time, price: 64000 }], style: { color: '#2266ff', lineWidth: 1 }, visible: true, locked: false }],
-  markers: [{ id: 'entry', time: bars[40].time, price: bars[40].low, direction: 'long', confidence: 0.8, source: 'strategy', label: 'Buy' }],
+  drawings: [
+    { type: 'horizontalLine', anchors: [{ time: bars[0].time, price: 64000 }], style: { color: '#2266ff' } },
+    { type: 'horizontalLine', anchors: [{ time: bars[0].time, price: 70 }], paneId: 'momentum' },  // on that pane
+  ],
+  markers: [{ time: bars[40].time, price: bars[40].low, direction: 'long', confidence: 0.8, source: 'strategy', label: 'Buy' }],
   path2D: Path2D,                                          // Node has no Path2D of its own
 }, { width: 960, height: 540 })
 const png = canvas.toBuffer('image/png')`}</code></pre>
@@ -415,12 +420,15 @@ const png = canvas.toBuffer('image/png')`}</code></pre>
   <code>watermark</code>, and <code>features</code> to leave out the volume, the grid, an axis or the
   legend. What a chart on a page is given by calls, this one takes as options: <code>data</code>,
   <code>symbol</code> and <code>timeframe</code> for the legend, <code>indicators</code>,
-  <code>drawings</code>, <code>markers</code>, <code>visibleRange</code> (the times of the first and the last
-  bar on view), <code>pricePrecision</code> and <code>timeZone</code> (the machine's own with none: name the
-  zone your readers are in). An indicator reads as a saved layout's does, so
-  <code>chart.getIndicatorSetup()</code> and <code>chart.getDrawings()</code> go in as they are: a chart
-  someone set up in the browser is drawn again on the server. <code>plugins</code> takes an indicator, a
-  chart type, a drawing tool or an overlay of your own.
+  <code>drawings</code> (as <code>addDrawing</code> takes one), <code>markers</code> (as
+  <code>addSignalMarker</code> takes one), <code>visibleRange</code> (the times of the first and the last
+  bar on view), <code>pricePrecision</code>, <code>timeZone</code> (the machine's own with none: name the
+  zone your readers are in) and <code>symbolSeries</code> (other symbols' bars, for
+  <code>'compareSymbol'</code>, <code>'spread'</code> and the correlations). An indicator reads as a saved
+  layout's does, so <code>chart.getIndicatorSetup()</code> and <code>chart.getDrawings()</code> go in as
+  they are, a drawing on an indicator's pane with them: a chart someone set up in the browser is drawn again
+  on the server. <code>plugins</code> takes an indicator, a chart type, a drawing tool or an overlay of your
+  own.
 </p>
 <p>
   It draws the size you give in the context's own units, over the theme's ground: scale the context first
@@ -428,10 +436,16 @@ const png = canvas.toBuffer('image/png')`}</code></pre>
   <code>@napi-rs/canvas</code> and <code>skia-canvas</code> each export theirs, to give as
   <code>path2D</code>; a worker has its own. The text is in the theme's font, so name one your canvas has
   with <code>font</code>. Nothing follows a pointer: there is no crosshair, countdown or tooltip. Orders
-  and positions, alerts, compare lines, the volume and market profiles and session shading are not drawn
-  this way yet. An indicator or a time zone it does not know throws a <code>RangeError</code>. A finance
-  chart is drawn the same way by <code>renderFinanceChart</code>, and <code>imagesToPdf</code> puts
-  pictures made this way in a PDF.
+  and positions, alerts, compare lines, the volume and market profiles, session shading and a market's
+  price limits are not drawn this way yet. A finance chart is drawn the same way by
+  <code>renderFinanceChart</code>, and <code>imagesToPdf</code> puts pictures made this way in a PDF.
+</p>
+<p>
+  What is wrong with the options is said before anything is drawn, by the option's name: a
+  <code>RangeError</code> for an indicator, a theme or a time zone it does not know, two indicators of one
+  <code>instanceId</code>, and a number outside what it can be; a <code>TypeError</code> for an option that
+  is the wrong kind of thing. A bar that is no bar is left out, as a chart leaves it out. The context is
+  left as it was found; should a plugin of yours throw while it draws, draw the next chart on another.
 </p>
 
 <h3>Volume Profile</h3>

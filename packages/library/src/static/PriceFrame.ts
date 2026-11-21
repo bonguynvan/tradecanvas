@@ -1,11 +1,10 @@
-import type { DataSeries, PanelPosition, PriceChartIndicator, PriceChartOptions, ViewportState } from '@tradecanvas/commons';
+import type { DataSeries, DrawingState, PanelPosition, PriceChartIndicator, PriceChartOptions, SignalMarker, ViewportState } from '@tradecanvas/commons';
 import {
   CHART_SPACING,
   PRICE_AXIS_WIDTH,
   autoPricePrecision,
   formatPrice,
   fractionTick,
-  isValidTimeZone,
   priceFormatterFor,
   readChartStyleOverrides,
   readChartTypeOptions,
@@ -13,6 +12,10 @@ import {
 } from '@tradecanvas/commons';
 import {
   ChartLegend,
+  CompareSymbolIndicator,
+  CompareSymbolPaneIndicator,
+  CorrelationCoefficientIndicator,
+  CorrelationLogIndicator,
   CrosshairHandler,
   CurrentPriceLine,
   DrawingManager,
@@ -25,6 +28,8 @@ import {
   PriceLines,
   SessionBreaks,
   SignalMarkerManager,
+  SpreadIndicator,
+  SymbolSeriesStore,
   THEME_LOOK_KEYS,
   TimeAxis,
   Viewport,
@@ -54,11 +59,20 @@ import { PriceFit, hasVolume } from '../model/PriceFit.js';
 import { overlaysForLayer, type ChartPlugin } from '../plugins/contracts.js';
 import { PluginManager } from '../plugins/PluginManager.js';
 import { readFont, readShapes, startOverrides } from '../style/styleOptions.js';
+import { EXCHANGE_ZONE } from './checkOptions.js';
 
 /** How far past its values the left scale's range goes, as a share of their span: the chart's own. */
 const LEFT_SCALE_PADDING = 0.08;
 /** Where a pane of its own may go. */
 const PANE_POSITIONS: readonly PanelPosition[] = ['top', 'bottom', 'left', 'right'];
+/**
+ * How many times the bars are fitted to the plot and the scales sized to
+ * their labels before the frame stands: each depends on the other, and they
+ * settle in two rounds unless a label's length keeps changing with them.
+ */
+const MAX_FIT_ROUNDS = 4;
+/** The most empty slots kept past the newest bar: more would be a chart of nothing, and a slot each costs time. */
+const MAX_RIGHT_MARGIN = 1000;
 
 /** How much room the chart leaves around its bars, for a density. */
 type Spacing = (typeof CHART_SPACING)[keyof typeof CHART_SPACING];
@@ -83,6 +97,10 @@ export class PriceFrame {
   private readonly series = new SeriesStore(() => null);
   private readonly layout = new LayoutManager();
   private readonly indicators = new IndicatorEngine();
+  /** Other symbols' bars, for the indicators that read them. */
+  private readonly symbols = new SymbolSeriesStore();
+  /** Each indicator's name in the options, and the instance it became. */
+  private readonly instanceIds = new Map<string, string>();
   private readonly plugins: PluginManager;
   private readonly panes: PaneLayout;
   private readonly indicatorPanes: IndicatorPanes;
@@ -137,7 +155,7 @@ export class PriceFrame {
     this.viewport = this.makeViewport(size, spacing);
     this.layout.resize(size.width, size.height);
     this.indicators.setTheme(this.themes.getTheme());
-    registerBuiltInIndicators(this.indicators);
+    this.registerIndicators();
     this.panes = new PaneLayout(this.layout, this.indicators, () => undefined);
     this.indicatorPanes = new IndicatorPanes(this.indicators, this.layout, {
       passStyle: (from, heir) => this.panes.passStyle(from, heir),
@@ -220,6 +238,15 @@ export class PriceFrame {
     };
   }
 
+  /** The built-in indicators, and those that read another symbol's bars, as the chart has them. */
+  private registerIndicators(): void {
+    registerBuiltInIndicators(this.indicators);
+    for (const [symbol, bars] of Object.entries(this.options.symbolSeries ?? {})) this.symbols.set(symbol.trim(), bars);
+    for (const Reader of [CompareSymbolIndicator, CompareSymbolPaneIndicator, SpreadIndicator, CorrelationCoefficientIndicator, CorrelationLogIndicator]) {
+      this.indicators.register(new Reader(this.symbols));
+    }
+  }
+
   private makeRenderer(): ChartRendererInterface {
     const renderer = resolveRenderer(this.chartType, (type) => this.plugins.getChartType(type));
     if (renderer instanceof HiLoRenderer) renderer.setPriceText((price) => this.priceText(price));
@@ -244,7 +271,7 @@ export class PriceFrame {
 
   private makeViewport(size: { width: number; height: number }, spacing: Spacing): Viewport {
     const { options } = this;
-    const viewport = new Viewport(size.width, size.height, undefined, undefined, options.rightMargin ?? spacing.rightMargin);
+    const viewport = new Viewport(size.width, size.height, undefined, undefined, Math.min(options.rightMargin ?? spacing.rightMargin, MAX_RIGHT_MARGIN));
     viewport.setBarLayout(options.barLayout ?? spacing.barLayout);
     viewport.setScaleMargins({ top: spacing.priceMargin, bottom: spacing.priceMargin });
     viewport.setNumberLocale(this.locale);
@@ -258,7 +285,10 @@ export class PriceFrame {
     const { options } = this;
     const themes = new ThemeManager(options.theme);
     themes.setChartType(this.chartType as never);
-    themes.applyOverrides(readChartStyleOverrides(startOverrides(options)).overrides, 'host');
+    const { overrides, rejected } = readChartStyleOverrides(startOverrides(options));
+    // Said as the chart says it: a key left out is a look the picture does not have.
+    if (rejected.length > 0) console.warn(`Style overrides left out (unknown key or value): ${rejected.join(', ')}`);
+    themes.applyOverrides(overrides, 'host');
     if (options.shapes) themes.setShape(readShapes(options.shapes));
     if (options.font) themes.setFont(readFont(options.font));
     return themes;
@@ -329,9 +359,15 @@ export class PriceFrame {
   /** The indicators, hosts and sources first so a member finds its pane and a reader its line, then in the order given. */
   private addIndicators(list: readonly PriceChartIndicator[]): void {
     const known = new Set(this.indicators.getAvailableIndicators().map((d) => d.id));
-    // An indicator with no name of its own is called by its place in the list.
-    const named = list.map((ind, i) => ({ ...ind, instanceId: ind.instanceId ?? `#${i}`, params: { ...ind.params } }));
-    const ids = new Map<string, string>();
+    const given = new Set(list.flatMap((ind) => ind.instanceId ?? []));
+    // An indicator with no name of its own is called by its place in the list, under a name none of the others has.
+    const placeName = (i: number): string => {
+      let name = `#${i}`;
+      while (given.has(name)) name = `#${name}`;
+      return name;
+    };
+    const named = list.map((ind, i) => ({ ...ind, instanceId: ind.instanceId ?? placeName(i), params: { ...ind.params } }));
+    const ids = this.instanceIds;
     const added: [(typeof named)[number], string][] = [];
     for (const ind of dependencyOrder(named)) {
       if (!known.has(ind.id)) throw new RangeError(`renderPriceChart: no indicator is called '${ind.id}'`);
@@ -339,9 +375,11 @@ export class PriceFrame {
       const descriptor = this.indicators.getAvailableIndicators().find((d) => d.id === ind.id);
       const requested = ind.pane ? ids.get(ind.pane) : undefined;
       const pane = descriptor ? this.indicatorPanes.paneFor(descriptor, params, requested) : null;
+      // Under the name it was given, where it was given one: a drawing on its pane is found by it.
       const instanceId = this.indicators.addIndicator(ind.id, params, this.indicatorBars(), {
         ...(pane ? { pane } : {}),
         ...(ind.scale === 'left' ? { scale: 'left' as const } : {}),
+        ...(given.has(ind.instanceId) ? { instanceId: ind.instanceId } : {}),
       });
       if (descriptor?.placement === 'panel' && !pane) this.layout.addPanel(instanceId, PANE_POSITIONS.find((p) => p === ind.position) ?? 'bottom');
       ids.set(ind.instanceId, instanceId);
@@ -387,8 +425,22 @@ export class PriceFrame {
     });
     this.drawingRenderer.setKeepOut(() => this.legendKeepOut());
     this.drawingRenderer.setTimeFormat((time) => this.timeText.formatTime(time, this.display.get()));
-    if (options.drawings?.length) this.drawings.setDrawings(options.drawings.map((drawing) => ({ ...drawing })));
-    if (options.markers?.length) this.markers.setMarkers(options.markers.map((marker) => ({ ...marker })));
+    if (options.drawings?.length) this.drawings.setDrawings(options.drawings.map((drawing, i) => this.wholeDrawing(drawing, i)));
+    if (options.markers?.length) this.markers.setMarkers(options.markers.map((marker, i): SignalMarker => ({ ...marker, id: marker.id ?? `marker-${i}` })));
+  }
+
+  /** A drawing with what a hand-written one may leave out, as `addDrawing` fills it in, on the pane its indicator has here. */
+  private wholeDrawing(drawing: NonNullable<PriceChartOptions['drawings']>[number], place: number): DrawingState {
+    const paneId = typeof drawing.paneId === 'string' ? this.instanceIds.get(drawing.paneId) ?? drawing.paneId : undefined;
+    return {
+      ...drawing,
+      id: drawing.id ?? `drawing-${place}`,
+      anchors: drawing.anchors.map((anchor) => ({ ...anchor })),
+      style: { ...this.drawings.getActiveStyle(), ...drawing.style },
+      visible: drawing.visible ?? true,
+      locked: drawing.locked ?? false,
+      ...(paneId !== undefined ? { paneId } : {}),
+    };
   }
 
   /** A pane's scale for a drawing on it: the panes stacked over and under the price pane take one. */
@@ -411,17 +463,38 @@ export class PriceFrame {
     return width > 0 && height > 0 ? [{ x: plot.x, y: plot.y, width, height }] : [];
   }
 
-  /** The layout, the bars on view, both scales fitted and sized: the chart's own order. */
+  /**
+   * The layout, the bars on view, both scales fitted and sized. The bars
+   * are fitted to the plot, the plot is what the scales leave, and a scale
+   * is as wide as the labels of the bars on view. A chart on a page has its
+   * scales sized for the view it opens at by the time it is told what to
+   * show, and a scale grows at once but gives room back only when much is
+   * spare: so the frame opens as a chart does, then shows its bars, and
+   * goes round until the scales stand.
+   */
   private fit(): void {
     this.indicators.setBarsTimed(this.timeAligned());
     this.layout.setPanelsAside(this.panes.offChartType());
-    this.panes.invalidate();
     this.layout.setLeftAxisWidth(this.leftScaleShown() ? this.leftAxisWidth : 0);
-    this.viewport.setChartRect(this.panes.resolved().mainChartRect);
-    this.showBars();
+    this.openView();
+    for (let round = 0; round < MAX_FIT_ROUNDS; round++) {
+      this.panes.invalidate();
+      this.viewport.setChartRect(this.panes.resolved().mainChartRect);
+      this.showBars();
+      // The plot again once the bars are placed, as the chart takes it after a fit: the same sums, to the last digit.
+      this.viewport.setChartRect(this.panes.resolved().mainChartRect);
+      if (!this.fitDataAndAxes()) break;
+    }
+  }
+
+  /** The view a chart opens at when it is given its bars: the newest of them at its opening zoom, the scales sized for those. */
+  private openView(): void {
     this.panes.invalidate();
     this.viewport.setChartRect(this.panes.resolved().mainChartRect);
-    this.fitDataAndAxes();
+    this.viewport.updateData(this.display.get(), false);
+    this.viewport.scrollToEnd();
+    // A scale that changed width changed the plot: the newest bars are at its edge again.
+    if (this.fitDataAndAxes()) this.viewport.scrollToEnd();
   }
 
   /** The bars on view: the range asked for, or all of them (the newest where they do not fit). */
@@ -438,13 +511,16 @@ export class PriceFrame {
     this.viewport.scrollToEnd();
   }
 
-  private fitDataAndAxes(): void {
+  /** The price scales fitted to the bars on view and sized to their labels; true when a scale changed width, and so the plot. */
+  private fitDataAndAxes(): boolean {
     const shown = this.applyData();
     const priceResized = this.fitPriceAxisWidth();
     this.leftViewport = this.computeLeftViewport();
-    if (this.fitLeftAxisWidth() || priceResized) this.applyData();
+    const resized = this.fitLeftAxisWidth() || priceResized;
+    if (resized) this.applyData();
     this.priceFit.settle(this.viewport.getState(), shown.length);
     this.leftViewport = this.computeLeftViewport();
+    return resized;
   }
 
   private applyData(): DataSeries {
@@ -579,15 +655,8 @@ function wholeDecimals(precision: number | undefined): number | null {
   return typeof precision === 'number' && Number.isInteger(precision) && precision >= 0 && precision <= 20 ? precision : null;
 }
 
-/** The zone times are read in: a name the runtime knows or minutes from UTC; null is the machine's own. */
+/** The zone times are read in: a name or minutes from UTC (checked before the frame is made); null is the machine's own. */
 function timeZoneOf(zone: string | number | null | undefined): string | number | null {
-  if (typeof zone === 'number') {
-    if (!Number.isFinite(zone)) throw new RangeError(`renderPriceChart: invalid UTC offset: ${zone}`);
-    return zone;
-  }
-  if (typeof zone === 'string') {
-    if (!isValidTimeZone(zone)) throw new RangeError(`renderPriceChart: unknown time zone: ${zone}`);
-    return zone;
-  }
-  return null;
+  if (zone === EXCHANGE_ZONE) return 'UTC';
+  return zone ?? null;
 }

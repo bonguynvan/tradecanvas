@@ -53,13 +53,14 @@ const lastClose = (chart) => chart.getData().at(-1).close;
 const DAY_MS = 86_400_000;
 
 /** Daily bars from the seeded generator: the same every run. */
-function dailyBars(count) {
-  let close = 100;
+function dailyBars(count, first = 100) {
+  let close = first;
   return Array.from({ length: count }, (_, i) => {
     const open = close;
-    close = Math.max(5, open + (Math.random() - 0.48) * 4);
-    const high = Math.max(open, close) + Math.random() * 2;
-    const low = Math.min(open, close) - Math.random() * 2;
+    const step = first / 25;
+    close = Math.max(first / 20, open + (Math.random() - 0.48) * step);
+    const high = Math.max(open, close) + (Math.random() * step) / 2;
+    const low = Math.min(open, close) - (Math.random() * step) / 2;
     return { time: Date.UTC(2026, 0, 5) + i * DAY_MS, open, high, low, close, volume: 800 + Math.round(Math.random() * 1600) };
   });
 }
@@ -460,7 +461,8 @@ const SCENES = {
     top.style.minHeight = '0';
     bottom.style.cssText = 'width:100%;height:100%;min-height:0;display:block';
     host.append(top, bottom);
-    const data = dailyBars(160);
+    // Prices long enough to widen the price scale: the bars are fitted to the plot that is left.
+    const data = dailyBars(160, 64_200);
     const drawings = [
       { id: 'trend', type: 'trendLine', anchors: [{ time: data[40].time, price: data[40].low }, { time: data[130].time, price: data[130].low }], style: { color: '#e07b00', lineWidth: 2 }, visible: true, locked: false },
       { id: 'level', type: 'horizontalLine', anchors: [{ time: data[90].time, price: data[90].high }], style: { color: '#2266ff', lineWidth: 1 }, visible: true, locked: false },
@@ -473,24 +475,20 @@ const SCENES = {
     // Nothing that follows a pointer or a clock: a still frame has neither.
     const chart = new Chart(top, { ...look, features: { ...look.features, crosshair: false, barCountdown: false } });
     chart.setData(data);
-    chart.fitContent();
     chart.setSymbolName('DEMO');
     chart.setDataTimeframe('1d');
     chart.addIndicator('ema', { period: 21 });
+    chart.addIndicator('wma', { period: 34 }, 'bottom', { scale: 'left' });
     chart.addIndicator('bb');
-    chart.addIndicator('rsi');
+    const rsi = chart.addIndicator('rsi');
     chart.addIndicator('macd');
     chart.setDrawings(drawings);
+    chart.addDrawing({ type: 'horizontalLine', anchors: [{ time: data[80].time, price: 55 }], paneId: rsi });
     chart.setSignalMarkers(markers);
-    const still = {
-      ...look,
-      data,
-      symbol: 'DEMO',
-      timeframe: '1d',
-      indicators: [{ id: 'ema', params: { period: 21 } }, { id: 'bb' }, { id: 'rsi' }, { id: 'macd' }],
-      drawings,
-      markers,
-    };
+    // Told what to show last, as a still chart is fitted last.
+    chart.fitContent();
+    // What the chart gives of itself goes in as it is.
+    const still = { ...look, data, symbol: 'DEMO', timeframe: '1d', indicators: chart.getIndicatorSetup(), drawings: chart.getDrawings(), markers };
     /** The still chart on a canvas of `width` × `height` CSS pixels, `ratio` pixels to each. */
     const draw = (canvas, width, height, ratio) => {
       canvas.width = Math.round(width * ratio);

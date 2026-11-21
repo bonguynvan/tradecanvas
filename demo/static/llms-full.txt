@@ -1214,8 +1214,11 @@ renderPriceChart(
       { id: 'rsi', instanceId: 'momentum' }, // a pane of its own
       { id: 'stochastic', pane: 'momentum' }, // in that pane
     ],
-    drawings: chart.getDrawings(), // a chart set up in the browser, drawn again elsewhere
-    markers: [{ id: 'entry', time: bars[40].time, price: bars[40].low, direction: 'long', confidence: 0.8, source: 'strategy', label: 'Buy' }],
+    drawings: [
+      ...chart.getDrawings(), // a chart set up in the browser, drawn again elsewhere
+      { type: 'horizontalLine', anchors: [{ time: bars[0].time, price: 70 }], paneId: 'momentum' }, // one by hand, on that pane
+    ],
+    markers: [{ time: bars[40].time, price: bars[40].low, direction: 'long', confidence: 0.8, source: 'strategy', label: 'Buy' }],
     features: { volume: false },
     path2D: NodePath2D,
   },
@@ -1225,7 +1228,7 @@ renderPriceChart(
 
 `renderFinanceChart` names a chart by its class name without `Chart`, first letter small (`'bar'`, `'boxPlot'`, `'surface'`, `'bar3d'`).
 
-`renderPriceChart` takes what `Chart` takes of how the chart looks (`chartType`, `theme`, `font`, `overrides`, `density`, `logScale`, `numberLocale`, `priceFormat`, `watermark`, `features`), and as options what a chart on a page is given by calls: `data`, `symbol`, `timeframe`, `indicators` (as `chart.getIndicatorSetup()` gives them), `drawings`, `markers`, `visibleRange`, `pricePrecision`, `timeZone`, and `plugins`. In Node it needs a canvas library with `Path2D` (`@napi-rs/canvas`, `skia-canvas`), given as `path2D`. It has no crosshair, orders, positions, alerts or compare lines.
+`renderPriceChart` takes what `Chart` takes of how the chart looks (`chartType`, `theme`, `font`, `overrides`, `density`, `logScale`, `numberLocale`, `priceFormat`, `watermark`, `features`), and as options what a chart on a page is given by calls: `data`, `symbol`, `timeframe`, `indicators` (as `chart.getIndicatorSetup()` gives them), `drawings` (as `getDrawings()` gives them or `addDrawing()` takes one), `markers`, `visibleRange`, `pricePrecision`, `timeZone`, `symbolSeries` (other symbols' bars, for `'compareSymbol'` and the like), and `plugins`. The picture is the one a chart on a page gives after `chart.fitContent()`. In Node it needs a canvas library with `Path2D` (`@napi-rs/canvas`, `skia-canvas`), given as `path2D`. It has no crosshair, orders, positions, alerts or compare lines, and it throws, naming the option, for one that is wrong (an indicator it does not know, a time zone, a theme).
 
 ## A dashboard: net flows, allocation and returns
 

@@ -16,15 +16,16 @@ const ENTRY_POINTS = [
   ['ChartWidgetGrid', 'packages/library/src/widget/ChartWidgetGrid.ts'],
 ];
 /**
- * The functions that take an options object: each export of
- * @tradecanvas/chart, the interface its options are declared by, what it is
- * for in a line, and how it is called.
+ * The functions that take an options object as their second argument: each
+ * export of @tradecanvas/chart, the file it is declared in, what it is for
+ * in a line, and how it is called. Its options are read off the argument's
+ * own type, so what the function takes beyond an options interface (its
+ * plugins) is among them.
  */
 const FUNCTIONS = [
   [
     'renderPriceChart',
-    'PriceChartOptions',
-    'packages/commons/src/types/export.ts',
+    'packages/library/src/static/renderPriceChart.ts',
     'The price chart drawn on a 2D context of your own, with no page: a picture made in Node or in a worker, for an email, a report or a message from a bot.',
     "import { renderPriceChart } from '@tradecanvas/chart';\nrenderPriceChart(ctx, options, { width: 800, height: 400 }); // one frame on your context; in Node give your canvas library's Path2D as options.path2D",
   ],
@@ -64,7 +65,7 @@ const FINANCE_CHARTS = [
  * `Chart.features`, and ChartWidget's `chartOptions`, a `Partial<ChartOptions>`
  * (so without the `plugins` that only Chart's constructor takes).
  */
-const NESTED = [['Chart', 'features'], ['ChartWidget', 'chartOptions']];
+const NESTED = [['Chart', 'features'], ['ChartWidget', 'chartOptions'], ['renderPriceChart', 'features']];
 /** Docs longer than this are cut at a sentence: the tool answers stay short. */
 const MAX_DOC = 360;
 /** Type text longer than this is cut: the doc says the rest. */
@@ -96,6 +97,14 @@ function constructorOptions(program, file, className) {
   const ctor = cls.members.find(ts.isConstructorDeclaration);
   const param = ctor?.parameters[1];
   if (!param) throw new Error(`mcp catalog: ${className}'s constructor takes no options`);
+  return param;
+}
+
+/** The options parameter of an exported function: its second. */
+function functionOptions(program, file, name) {
+  const fn = topLevel(program, file, (n) => ts.isFunctionDeclaration(n) && n.name?.text === name, `function ${name}`);
+  const param = fn.parameters[1];
+  if (!param) throw new Error(`mcp catalog: ${name} takes no options`);
   return param;
 }
 
@@ -215,8 +224,8 @@ function describeProperty(checker, symbol, at) {
 
 function readOptions(root) {
   const ohlc = sourcePath(root, 'packages/commons/src/types/ohlc.ts');
-  const declared = new Set([...FINANCE_CHARTS, ...FUNCTIONS].map(([, , file]) => sourcePath(root, file)));
-  const files = [...ENTRY_POINTS.map(([, file]) => sourcePath(root, file)), ...declared, ohlc];
+  const declared = new Set(FINANCE_CHARTS.map(([, , file]) => sourcePath(root, file)));
+  const files = [...[...ENTRY_POINTS, ...FUNCTIONS].map(([, file]) => sourcePath(root, file)), ...declared, ohlc];
   const program = ts.createProgram(files, {
     target: ts.ScriptTarget.ES2022,
     module: ts.ModuleKind.ESNext,
@@ -227,28 +236,25 @@ function readOptions(root) {
   const checker = program.getTypeChecker();
   const options = {};
   const nested = {};
-  for (const [entry, file] of ENTRY_POINTS) {
-    const param = constructorOptions(program, sourcePath(root, file), entry);
+  /** What `param` takes, each option described, with the nested objects kept for `owner` beside them. */
+  const read = (owner, param) => {
     const type = setTypes(checker.getTypeAtLocation(param.type ?? param))[0];
     const props = checker.getPropertiesOfType(type);
-    options[entry] = props.map((p) => describeProperty(checker, p, param));
-    for (const [owner, key] of NESTED.filter(([o]) => o === entry)) {
+    for (const [, key] of NESTED.filter(([o]) => o === owner)) {
       const symbol = props.find((p) => p.name === key);
       if (!symbol) throw new Error(`mcp catalog: ${owner} has no '${key}' option`);
       const inner = setTypes(checker.getTypeOfSymbolAtLocation(symbol, param))[0];
       nested[`${owner}.${key}`] = checker.getPropertiesOfType(inner).map((p) => describeProperty(checker, p, param));
     }
-  }
+    return props.map((p) => describeProperty(checker, p, param));
+  };
+  for (const [entry, file] of ENTRY_POINTS) options[entry] = read(entry, constructorOptions(program, sourcePath(root, file), entry));
   const financeCharts = FINANCE_CHARTS.map(([name, optionsType, file, what]) => {
     const declared = topLevel(program, sourcePath(root, file), (n) => ts.isInterfaceDeclaration(n) && n.name.text === optionsType, `interface ${optionsType}`);
     const props = checker.getPropertiesOfType(checker.getTypeAtLocation(declared));
     return { name, what, options: props.map((p) => describeProperty(checker, p, declared)) };
   });
-  const functions = FUNCTIONS.map(([name, optionsType, file, what, usage]) => {
-    const declared = topLevel(program, sourcePath(root, file), (n) => ts.isInterfaceDeclaration(n) && n.name.text === optionsType, `interface ${optionsType}`);
-    const props = checker.getPropertiesOfType(checker.getTypeAtLocation(declared));
-    return { name, what, usage, options: props.map((p) => describeProperty(checker, p, declared)) };
-  });
+  const functions = FUNCTIONS.map(([name, file, what, usage]) => ({ name, what, usage, options: read(name, functionOptions(program, sourcePath(root, file), name)) }));
   const known = topLevel(program, ohlc, (n) => ts.isTypeAliasDeclaration(n) && n.name.text === 'KnownTimeFrame', 'KnownTimeFrame');
   const timeframes = writtenLiterals(checker, known.type) ?? [];
   return { options, nested, timeframes, financeCharts, functions };

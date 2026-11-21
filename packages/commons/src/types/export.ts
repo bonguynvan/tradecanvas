@@ -1,6 +1,6 @@
 import type { Theme, ThemeName } from './theme.js';
 import type { ChartOptions, FeaturesConfig } from './chart.js';
-import type { DrawingState } from './drawing.js';
+import type { DrawingState, DrawingStyle } from './drawing.js';
 import type { IndicatorIntervals, IndicatorStyleConfig } from './indicator.js';
 import type { DataSeries, TimeFrame } from './ohlc.js';
 import type { SignalMarker } from './signal.js';
@@ -99,6 +99,21 @@ export interface PriceChartIndicator {
   panePercent?: boolean;
 }
 
+/**
+ * A drawing on a price chart drawn with no page: as `chart.getDrawings()`
+ * gives one, or as `chart.addDrawing()` takes one, where the id, the style
+ * it leaves out, `visible` and `locked` are filled in.
+ */
+export type PriceChartDrawing = Omit<DrawingState, 'id' | 'style' | 'visible' | 'locked'> & {
+  id?: string;
+  style?: Partial<DrawingStyle>;
+  visible?: boolean;
+  locked?: boolean;
+};
+
+/** A buy or sell mark on a price chart drawn with no page: a signal marker, with or without an id. */
+export type PriceChartMarker = Omit<SignalMarker, 'id'> & { id?: string };
+
 /** What a price chart drawn with no page shows or leaves out; each is shown unless it is `false`. */
 export type PriceChartFeatures = Pick<
   FeaturesConfig,
@@ -139,18 +154,36 @@ export interface PriceChartOptions
   timeframe?: TimeFrame;
   /** The indicators, in the order they are listed and drawn. */
   indicators?: PriceChartIndicator[];
-  /** Drawings on the chart, as `chart.getDrawings()` gives them. */
-  drawings?: DrawingState[];
-  /** Buy and sell marks on the bars, as `chart.setSignalMarkers()` takes them. */
-  markers?: SignalMarker[];
   /**
-   * The times (ms) of the first and the last bar on view. With none, every
-   * bar is on view when they fit, and the newest ones when they do not.
+   * Drawings on the chart, as `chart.getDrawings()` gives them or as
+   * `chart.addDrawing()` takes one. One with a `paneId` is on the pane of
+   * the indicator of that `instanceId`.
+   */
+  drawings?: PriceChartDrawing[];
+  /** Buy and sell marks on the bars, as `chart.addSignalMarker()` takes one. */
+  markers?: PriceChartMarker[];
+  /**
+   * Other symbols' bars, by symbol, for the indicators that read them
+   * (`'compareSymbol'`, `'compareSymbolPane'`, `'spread'`, `'correlation'`,
+   * `'correlationlog'`): what `chart.setSymbolSeries()` gives a chart on a
+   * page. An indicator whose symbol is not here draws nothing.
+   */
+  symbolSeries?: Record<string, DataSeries>;
+  /**
+   * The times (ms) of the first and the last bar on view, as
+   * `chart.setVisibleRange()` takes them. With none, every bar is on view
+   * when they fit and the newest ones when they do not, as
+   * `chart.fitContent()` shows them.
    */
   visibleRange?: { from: number; to: number };
-  /** The zone times are read in: an IANA name (`'Asia/Ho_Chi_Minh'`) or minutes from UTC. UTC with none. */
+  /**
+   * The zone times are read in: an IANA name (`'Asia/Ho_Chi_Minh'`) or
+   * minutes east of UTC. With none it is the machine's own, which on a
+   * server is seldom your readers': name theirs. `'exchange'` reads as UTC:
+   * a still chart has no exchange to ask.
+   */
   timeZone?: string | number | null;
-  /** The decimals prices show; fitted to the prices on view with none. */
+  /** The decimals prices show, a whole number from 0 to 20; fitted to the prices on view with none. */
   pricePrecision?: number;
   /** A line and a tag at the last close. Default `true`. */
   lastPriceLine?: boolean;

@@ -1,4 +1,5 @@
 import { FrameRenderer } from '@tradecanvas/core';
+import { checkOptions } from './checkOptions.js';
 import { PriceFrame, type PriceFrameOptions } from './PriceFrame.js';
 
 type Context2D = CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
@@ -20,27 +21,40 @@ type Context2D = CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
  * ones when they do not, and `visibleRange` names others.
  *
  * The bars are drawn with `Path2D`, which Node has none of: give your canvas
- * library's as `options.path2D` there. Throws a RangeError for an indicator
- * or a time zone it does not know, and a TypeError where there is no
- * `Path2D` at all, no context, or no bars. A size that is none draws
- * nothing.
+ * library's as `options.path2D` there.
+ *
+ * What is wrong with the options is said before anything is drawn: a
+ * RangeError for an indicator, a theme or a time zone it does not know and
+ * for a number outside what it can be, a TypeError for an option that is
+ * the wrong kind of thing, for no context, and where there is no `Path2D`
+ * at all. A size that is none draws nothing. The context is left as it was
+ * found; should a plugin of yours throw while it draws, use another.
  */
 export function renderPriceChart(ctx: Context2D, options: PriceFrameOptions, size: { width: number; height: number }): void {
   // What is no chart at all is said at once: further in, it would fail somewhere that names none of it.
   if (!ctx || typeof ctx.fillRect !== 'function') throw new TypeError('renderPriceChart: the first argument is the 2D context to draw on.');
   if (!options || typeof options !== 'object') throw new TypeError('renderPriceChart: options is an object, with the bars as its data.');
-  if (!Array.isArray(options.data)) throw new TypeError('renderPriceChart: options.data is the bars: an array, oldest first.');
-  if (!size || !(size.width > 0) || !(size.height > 0)) return;
+  checkOptions(options);
+  if (!size || !isSize(size.width) || !isSize(size.height)) return;
   // An OffscreenCanvas's context draws as a canvas's does; only what ties a canvas to its page is missing from it.
   const c = ctx as CanvasRenderingContext2D;
   withPath2D(options.path2D, () => {
     const frame = new PriceFrame(options, size, (text, font) => measureWith(c, text, font));
-    frame.prepare(c);
-    c.fillStyle = frame.background();
-    c.fillRect(0, 0, size.width, size.height);
-    new FrameRenderer().drawFrame(c, frame.context());
+    // The context is the caller's: its fill, its font and its clip are theirs again when this returns, or throws.
+    c.save();
+    try {
+      frame.prepare(c);
+      c.fillStyle = frame.background();
+      c.fillRect(0, 0, size.width, size.height);
+      new FrameRenderer().drawFrame(c, frame.context());
+    } finally {
+      c.restore();
+    }
   });
 }
+
+/** A side a chart can be drawn at: a number above 0 that is not without end. */
+const isSize = (side: unknown): side is number => typeof side === 'number' && Number.isFinite(side) && side > 0;
 
 /** The width of `text` in `font` on `ctx`, which keeps the font it had. */
 function measureWith(ctx: CanvasRenderingContext2D, text: string, font: string): number {

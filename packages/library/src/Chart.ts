@@ -639,8 +639,7 @@ export class Chart {
     this.engine.onContainerResize = (newSize) => {
       if (newSize.width <= 0 || newSize.height <= 0) return;
       const wasAtEnd = this.viewport.isAtEnd();
-      this.viewport.resize(newSize.width, newSize.height);
-      this.layoutManager.resize(newSize.width, newSize.height);
+      this.takeSize(newSize);
       // wasAtEnd carries the user's intent: if they were tracking the live
       // edge before the resize, keep them there afterwards. Otherwise leave
       // their scroll position alone.
@@ -6481,10 +6480,22 @@ export class Chart {
     this.engine.layerManager.resize(size, dpr, this.engine.dprManager.getDeviceSize());
     // Check if viewport was at the end before resize
     const wasAtEnd = this.viewport.isAtEnd();
-    this.viewport.resize(size.width, size.height);
-    this.layoutManager.resize(size.width, size.height);
+    this.takeSize(size);
     this.updateViewportAndRender(wasAtEnd);
     this.eventBus.emit('resize', size);
+  }
+
+  /**
+   * The container's new size, taken into the layout and the viewport. The
+   * viewport is given the plot the layout leaves, not the container less
+   * the price scale: a left scale, or a pane beside the plot, is room the
+   * bars do not have, and bars fitted below the usual slot would be widened
+   * to that room and stay so.
+   */
+  private takeSize(size: { width: number; height: number }): void {
+    this.layoutManager.resize(size.width, size.height);
+    this.panes.invalidate();
+    this.viewport.setChartRect(this.getResolvedLayout().mainChartRect);
   }
 
   destroy(): void {

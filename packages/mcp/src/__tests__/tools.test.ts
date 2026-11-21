@@ -202,4 +202,16 @@ describe('the charts drawn with no page', () => {
     expect(call('validate_options', { target: 'renderPriceChart', options: { data: [], chartType: 'line' } }).text).toBe('No problems found.');
     expect(call('validate_options', { target: 'PieChart', options: {} }).text).toContain('renderPriceChart');
   });
+
+  it('knows its plugins and its other symbols’ bars, and what its features are', () => {
+    const drawn = call('list_options', { target: 'renderPriceChart' }).data as { options: { name: string }[] };
+    expect(drawn.options.map((o) => o.name)).toEqual(expect.arrayContaining(['plugins', 'symbolSeries']));
+    expect(call('validate_options', { target: 'renderPriceChart', options: { data: [], plugins: [], symbolSeries: {} } }).text).toBe('No problems found.');
+    expect(call('validate_options', { target: 'renderPriceChart', options: { data: [], features: { volume: false, legend: false } } }).text).toBe('No problems found.');
+    // A feature of a chart on a page is none of a still one's.
+    const page = call('validate_options', { target: 'renderPriceChart', options: { data: [], features: { crosshair: false } } });
+    expect(page.text).toMatch(/crosshair/);
+    expect((page.data as { valid: boolean }).valid).toBe(false);
+    expect(call('validate_options', { target: 'renderPriceChart', options: { data: [], features: { volume: 'no' } } }).text).toMatch(/volume/);
+  });
 });

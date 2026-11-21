@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { DARK_THEME, LIGHT_THEME } from '@tradecanvas/commons';
 import { renderPriceChart } from '../renderPriceChart.js';
 import { PaintPath, painted, someBars } from './paintKit.js';
@@ -160,6 +160,86 @@ describe('the price chart drawn on a context of the caller’s', () => {
     expect(() => renderPriceChart(null as never, { data: bars, path2D }, SIZE)).toThrow(/context/);
     expect(() => renderPriceChart(blank.ctx, { data: bars, path2D, timeZone: 'Mars/Olympus' }, SIZE)).toThrow(/Mars\/Olympus/);
     expect(blank.paints).toEqual([]);
+  });
+
+  it('names the option that is wrong before anything is drawn', () => {
+    const wrong: [Record<string, unknown>, RegExp][] = [
+      [{ indicators: 'rsi' }, /indicators/],
+      [{ indicators: [null] }, /indicators\[0\]/],
+      [{ indicators: [{ params: {} }] }, /indicators\[0\]/],
+      [{ indicators: [{ id: 'rsi', instanceId: 'a' }, { id: 'macd', instanceId: 'a' }] }, /'a'/],
+      [{ drawings: 'x' }, /drawings/],
+      [{ drawings: [null] }, /drawings\[0\]/],
+      [{ drawings: [{ type: 'trendLine' }] }, /drawings\[0\]/],
+      [{ markers: [{ time: 'now' }] }, /markers\[0\]/],
+      [{ plugins: [null] }, /plugins\[0\]/],
+      [{ theme: 'sepia' }, /theme/],
+      [{ rightMargin: Number.NaN }, /rightMargin/],
+      [{ rightMargin: -3 }, /rightMargin/],
+      [{ pricePrecision: 99 }, /pricePrecision/],
+      [{ pricePrecision: 1.5 }, /pricePrecision/],
+      [{ visibleRange: { from: 'a', to: 2 } }, /visibleRange/],
+      [{ symbolSeries: { OTHER: 'bars' } }, /symbolSeries/],
+      [{ features: 'none' }, /features/],
+    ];
+    for (const [options, named] of wrong) {
+      const { ctx, paints } = painted();
+      expect(() => renderPriceChart(ctx, { data: bars, path2D, ...options } as never, SIZE), JSON.stringify(options)).toThrow(named);
+      expect(paints, JSON.stringify(options)).toEqual([]);
+    }
+    // A size that is none, or no number at all, draws nothing; a margin past any chart's is held to one that is not.
+    for (const size of [{ width: Number.POSITIVE_INFINITY, height: 300 }, { width: '800', height: 400 }]) {
+      const { ctx, paints } = painted();
+      renderPriceChart(ctx, { data: bars, path2D }, size as never);
+      expect(paints).toEqual([]);
+    }
+    const far = painted();
+    const began = performance.now();
+    renderPriceChart(far.ctx, { data: bars, path2D, rightMargin: 1e9 }, SIZE);
+    expect(performance.now() - began).toBeLessThan(2000);
+    expect(far.paints.length).toBeGreaterThan(10);
+  });
+
+  it('says so, as the chart does, for a style key it leaves out, and draws the rest', () => {
+    const warned = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const { ctx, paints } = painted();
+    renderPriceChart(ctx, { data: bars, path2D, overrides: { 'no.such.key': 1, 'grid.vertical.visible': false } as never }, SIZE);
+    expect(warned).toHaveBeenCalledTimes(1);
+    expect(String(warned.mock.calls[0][0])).toContain('no.such.key');
+    expect(paints.length).toBeGreaterThan(20);
+    warned.mockRestore();
+  });
+
+  it('reads `exchange` as UTC, having no exchange to ask', () => {
+    const utc = painted();
+    renderPriceChart(utc.ctx, { data: bars, path2D, timeZone: 'UTC' }, SIZE);
+    const exchange = painted();
+    renderPriceChart(exchange.ctx, { data: bars, path2D, timeZone: 'exchange' }, SIZE);
+    expect(exchange.paints).toEqual(utc.paints);
+  });
+
+  it('leaves the context as it found it, and unclipped when a plugin of the caller’s throws', () => {
+    const { ctx, paints } = painted();
+    ctx.fillStyle = '#010203';
+    ctx.font = '7px serif';
+    renderPriceChart(ctx, { data: bars, path2D }, SIZE);
+    expect(ctx.fillStyle).toBe('#010203');
+    expect(ctx.font).toBe('7px serif');
+    const broken = {
+      kind: 'overlay' as const,
+      plugin: {
+        descriptor: { id: 'broken', name: 'Broken', layer: 'main' as const },
+        render: () => {
+          throw new Error('the plugin broke');
+        },
+      },
+    };
+    expect(() => renderPriceChart(ctx, { data: bars, path2D, plugins: [broken] }, SIZE)).toThrow(/the plugin broke/);
+    expect(typeof Path2D).toBe('undefined');
+    // The plot's clip, which the plugin threw inside, is gone: what is drawn next is not cut to it.
+    paints.length = 0;
+    ctx.fillRect(1, 2, 3, 4);
+    expect(paints[0]).toMatch(/clip\[\]$/);
   });
 
   it('leaves out a bar that is no bar, as the chart does', () => {

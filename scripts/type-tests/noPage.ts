@@ -14,6 +14,20 @@ const still: PriceChartOptions = { data: chart.getData(), indicators: chart.getI
 renderPriceChart(ctx, still, size);
 renderPriceChart(offscreen, { data: bars, chartType: 'heikinAshi', theme: 'light', features: { volume: false, legend: false } }, size);
 
+// By hand, a drawing and a mark are what `addDrawing` and `addSignalMarker` take; other symbols' bars go with the indicators that read them.
+renderPriceChart(
+  ctx,
+  {
+    data: bars,
+    indicators: [{ id: 'rsi', instanceId: 'momentum' }, { id: 'compareSymbol', params: { symbol: 'ETHUSDT' } }],
+    drawings: [{ type: 'horizontalLine', anchors: [{ time: 0, price: 70 }], paneId: 'momentum', style: { color: '#2266ff' } }],
+    markers: [{ time: 0, price: 1, direction: 'long', confidence: 1, source: 'strategy' }],
+    symbolSeries: { ETHUSDT: bars },
+    timeZone: 'exchange',
+  },
+  size,
+);
+
 // An indicator of your own, as a plugin.
 const mid = defineIndicator({
   id: 'mid',
@@ -30,6 +44,8 @@ renderPriceChart(ctx, { symbol: 'BTCUSDT' }, size);
 renderPriceChart(ctx, { data: bars, crosshair: { mode: 'magnet' } }, size);
 // @ts-expect-error An indicator is named by its id.
 renderPriceChart(ctx, { data: bars, indicators: [{ params: { period: 5 } }] }, size);
+// @ts-expect-error A drawing is of a tool, by its type.
+renderPriceChart(ctx, { data: bars, drawings: [{ anchors: [{ time: 0, price: 1 }] }] }, size);
 // @ts-expect-error A feature of a chart on a page is none of a still one's.
 renderPriceChart(ctx, { data: bars, features: { panning: false } }, size);
 export { setup };

@@ -7877,6 +7877,62 @@
         "type": "TimeFrame[]",
         "doc": "ChartWidget: timeframes on the quick-access bar until the user changes them."
       }
+    ],
+    "renderPriceChart.features": [
+      {
+        "name": "grid",
+        "type": "boolean",
+        "doc": "Show grid lines",
+        "kind": "boolean"
+      },
+      {
+        "name": "priceAxis",
+        "type": "boolean",
+        "doc": "Show price axis",
+        "kind": "boolean"
+      },
+      {
+        "name": "timeAxis",
+        "type": "boolean",
+        "doc": "Show time axis",
+        "kind": "boolean"
+      },
+      {
+        "name": "watermark",
+        "type": "boolean",
+        "doc": "Show watermark text",
+        "kind": "boolean"
+      },
+      {
+        "name": "sessionBreaks",
+        "type": "boolean",
+        "doc": "Show session break lines (day separators)",
+        "kind": "boolean"
+      },
+      {
+        "name": "volume",
+        "type": "boolean",
+        "doc": "Show volume bars below candles",
+        "kind": "boolean"
+      },
+      {
+        "name": "legend",
+        "type": "boolean",
+        "doc": "Show OHLCV legend overlay",
+        "kind": "boolean"
+      },
+      {
+        "name": "indicatorValueLabels",
+        "type": "boolean",
+        "doc": "Tag each indicator line's latest value on its value axis. Default false: the legend shows the values.",
+        "kind": "boolean"
+      },
+      {
+        "name": "alignAxisLabels",
+        "type": "boolean",
+        "doc": "Move the price axis's tags apart where they would cover one another: the last price's stays on its line, those above it go up and those below it down (orders, positions, bid/ask, high/low, limits). Default true; false keeps each tag on its line.",
+        "kind": "boolean"
+      }
     ]
   },
   "financeCharts": [
@@ -9786,28 +9842,33 @@
         },
         {
           "name": "drawings",
-          "type": "DrawingState[]",
-          "doc": "Drawings on the chart, as `chart.getDrawings()` gives them."
+          "type": "PriceChartDrawing[]",
+          "doc": "Drawings on the chart, as `chart.getDrawings()` gives them or as `chart.addDrawing()` takes one. One with a `paneId` is on the pane of the indicator of that `instanceId`."
         },
         {
           "name": "markers",
-          "type": "SignalMarker[]",
-          "doc": "Buy and sell marks on the bars, as `chart.setSignalMarkers()` takes them."
+          "type": "PriceChartMarker[]",
+          "doc": "Buy and sell marks on the bars, as `chart.addSignalMarker()` takes one."
+        },
+        {
+          "name": "symbolSeries",
+          "type": "Record<string, DataSeries>",
+          "doc": "Other symbols' bars, by symbol, for the indicators that read them (`'compareSymbol'`, `'compareSymbolPane'`, `'spread'`, `'correlation'`, `'correlationlog'`): what `chart.setSymbolSeries()` gives a chart on a page. An indicator whose symbol is not here draws nothing."
         },
         {
           "name": "visibleRange",
-          "type": "{ from: number; to: number }",
-          "doc": "The times (ms) of the first and the last bar on view. With none, every bar is on view when they fit, and the newest ones when they do not."
+          "type": "{ from: number; to: number; }",
+          "doc": "The times (ms) of the first and the last bar on view, as `chart.setVisibleRange()` takes them. With none, every bar is on view when they fit and the newest ones when they do not, as `chart.fitContent()` shows them."
         },
         {
           "name": "timeZone",
           "type": "string | number | null",
-          "doc": "The zone times are read in: an IANA name (`'Asia/Ho_Chi_Minh'`) or minutes from UTC. UTC with none."
+          "doc": "The zone times are read in: an IANA name (`'Asia/Ho_Chi_Minh'`) or minutes east of UTC. With none it is the machine's own, which on a server is seldom your readers': name theirs. `'exchange'` reads as UTC: a still chart has no exchange to ask."
         },
         {
           "name": "pricePrecision",
           "type": "number",
-          "doc": "The decimals prices show; fitted to the prices on view with none.",
+          "doc": "The decimals prices show, a whole number from 0 to 20; fitted to the prices on view with none.",
           "kind": "number"
         },
         {
@@ -9947,6 +10008,11 @@
           "name": "font",
           "type": "Partial<FontConfig>",
           "doc": "The face and sizes of the chart's own text (the axes, the tags, the crosshair's pills) over every theme: `{ family: MONO_FONT_FAMILY }` for monospaced figures, where the default is a sans face whose digits are one width (`FIGURES_FONT_FAMILY`)."
+        },
+        {
+          "name": "plugins",
+          "type": "ChartPlugin[]",
+          "doc": "Plugins, as `new Chart(el, { plugins })` takes them; those registered for every chart are here too."
         }
       ]
     }

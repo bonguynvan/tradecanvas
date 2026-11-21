@@ -194,6 +194,8 @@ function checkValue(ctx: Context, owner: string, entry: OptionEntry, value: unkn
     case 'ChartWidget.locale': return checkLocale(ctx, value, path, isObject(siblings.messages));
     case 'Chart.features': return checkObject(ctx, catalog.nested['Chart.features'] ?? [], value, path, 'Chart features');
     case 'Chart.overrides': return checkOverrides(ctx, value, path);
+    case 'renderPriceChart.features': return checkObject(ctx, catalog.nested['renderPriceChart.features'] ?? [], value, path, 'renderPriceChart features');
+    case 'renderPriceChart.overrides': return checkOverrides(ctx, value, path);
     case 'ChartWidgetGrid.widget': return checkObject(ctx, catalog.options.ChartWidget, value, path, 'ChartWidget');
     case 'ChartWidgetGrid.cells':
       if (!Array.isArray(value)) return problem(ctx, path, '`cells` is an array of ChartWidget options, one per chart.');
