@@ -98,7 +98,7 @@ chart.setIndicatorsVisible(ids, false)   // several indicators at once, one undo
 chart.connectExecution(new PaperExecutionAdapter({ markPrice: 64_000 }))
 
 chart.on('executionError', (e) => toast(e.payload.message))   // e.payload.command: the intent that failed
-// chart.connectExecution(adapter, { brackets: 'place' })   // a confirmed bracket goes to it too: see Bracket orders
+// A confirmed bracket goes to it too: see Bracket orders
 // chart.disconnectExecution()`}</code></pre>
 <p>
   Implement <code>ExecutionAdapter</code> (có cấu trúc tương tự <code>DataAdapter</code>) để nối với
@@ -264,32 +264,47 @@ chart.cancelOrderDraft()`}</code></pre>
   phát một event <code>bracketPlace</code> duy nhất để backend của bạn xử lý.
 </p>
 <p>
-  Khi execution adapter được kết nối với <code>brackets: 'place'</code>, biểu đồ còn gửi bracket tới
+  <strong>Kích cỡ.</strong> Bracket dành cho khối lượng theo kích cỡ của nó. <code>{`{ quantity: 2 }`}</code> là
+  khối lượng đó. <code>{`{ risk: 50 }`}</code> là số tiền lỗ tại stop: khối lượng khi đó bằng 50 chia cho khoảng
+  cách từ entry tới stop (nhân với <code>multiplier</code>, giá trị của một điểm giá cho một đơn vị), làm tròn
+  xuống theo <code>quantityStep</code>, và thay đổi theo các đường khi kéo. Khối lượng được ghi trên tag của entry,
+  và <code>bracketPlace</code> mang theo nó. Trong widget, khối lượng được gõ vào một ô trên thanh bracket; ô này
+  bắt đầu bằng khối lượng gõ lần trước, nếu chưa có thì bằng lot của thị trường. <code>widget.startBracket(side, size)</code>
+  cũng nhận kích cỡ: bracket tính theo rủi ro thì không có ô. <code>bracketQuantity(bracket, size)</code> là phép
+  tính đó cho code của bạn.
+</p>
+<p>
+  Khi có execution adapter đang kết nối, biểu đồ còn gửi bracket đã xác nhận tới
   adapter dưới dạng một order: entry, là lệnh giới hạn khi giá phải quay lại entry và lệnh stop khi giá phải
   chạy tiếp tới entry, khối lượng, và cắt lỗ cùng chốt lời gắn trên order. Khi adapter đã nhận, biểu đồ
   gửi <code>bracketOrder</code> kèm order. Nếu adapter từ chối, biểu đồ gửi
   <code>executionError</code> với <code>command: 'bracketPlace'</code>. Chỉ khi đó widget mới báo "đã đặt",
-  và báo lý do khi bị từ chối. Bracket không có khối lượng sẽ không được gửi, vì chưa ai thấy khối lượng nào để
-  đặt; bracket được xác nhận trước khi biểu đồ có giá để phân biệt entry limit với entry stop cũng vậy.
-  <code>executionError</code> cho biết <code>reason</code> (<code>'noQuantity'</code>, <code>'noPrice'</code>).
-  Bracket tạo từ mũi tên trên toolbar và từ <code>startBracket</code> chưa có khối lượng, nên với
-  <code>'place'</code> chúng không được gửi, và widget báo điều đó. Không có tuỳ chọn này, bracket đã xác nhận vẫn chỉ là một event, và
-  widget báo là đã xác nhận. Adapter được kết nối mà không nêu tuỳ chọn (không có <code>brackets</code>) giữ
-  event và cảnh báo một lần trong console. <code>'place'</code> sẽ là mặc định ở bản major tiếp theo,
-  nên app tự đặt bracket của event cần truyền <code>brackets: 'event'</code>.
+  và báo lý do khi bị từ chối. Bracket không có khối lượng thì không được xác nhận, vì chưa ai thấy khối lượng nào
+  để đặt: <code>confirmBracket()</code> trả về false, và bracket ở lại trên biểu đồ để nhận khối lượng. Bracket
+  được xác nhận trước khi biểu đồ có giá để phân biệt entry limit với entry stop thì không được gửi.
+  <code>executionError</code> cho biết <code>reason</code> (<code>'noQuantity'</code>, <code>'noPrice'</code>),
+  và widget báo điều đó. App tự đặt bracket của event thì kết nối với
+  <code>brackets: 'event'</code>: bracket khi đó chỉ là một event, và widget báo là đã xác nhận.
+  Trước 3.0 đó là mặc định (xem <a href={href('/docs/migration-3')}>Chuyển sang 3.0</a>).
 </p>
 <pre><code>{`chart.startBracket('buy')          // entry defaults to the latest close
 chart.startBracket('sell', 64_800) // or pin the entry price
 
+chart.startBracket('buy', undefined, { quantity: 2 })                   // for two
+chart.startBracket('buy', undefined, { risk: 50, quantityStep: 0.001 }) // for what loses 50 at the stop
+chart.setBracketSize({ quantity: 3 })   // while it is placed
+chart.getBracket()                      // { side, entry, stopLoss, takeProfit, quantity } or null
+
 chart.on('bracketPlace', (e) => {
-  const { side, entry, stopLoss, takeProfit, riskReward } = e.payload
-  // submit to your OMS, then reflect fills back via chart.setOrders/setPositions
+  const { side, entry, stopLoss, takeProfit, quantity, riskReward } = e.payload
+  // with no adapter (or brackets: 'event'): submit to your OMS, then reflect fills back via chart.setOrders/setPositions
 })
 
-// Or let the connected adapter place it
-chart.connectExecution(broker, { brackets: 'place' })
+// The connected adapter places it
+chart.connectExecution(broker)
 chart.placesBrackets()   // true
 chart.on('bracketOrder', (e) => console.log(e.payload.order.id))
+// chart.connectExecution(broker, { brackets: 'event' })   // only the event: your code places it
 
 chart.confirmBracket()  // same as Enter
 chart.cancelBracket()   // same as Esc`}</code></pre>

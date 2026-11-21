@@ -560,6 +560,7 @@ export const ZH_MESSAGES: WidgetMessages = {
   'ticket.tif.gtd': 'GTD',
   'ticket.tif.ioc': 'IOC',
   'ticket.tif.fok': 'FOK',
+  'account.oco': 'OCO',
   'ticket.value': '金额',
   'ticket.risk': '风险',
   'ticket.reward': '收益',

@@ -560,6 +560,7 @@ export const KO_MESSAGES: WidgetMessages = {
   'ticket.tif.gtd': 'GTD',
   'ticket.tif.ioc': 'IOC',
   'ticket.tif.fok': 'FOK',
+  'account.oco': 'OCO',
   'ticket.value': '금액',
   'ticket.risk': '위험',
   'ticket.reward': '보상',

@@ -91,7 +91,7 @@ chart.setIndicatorsVisible(ids, false)   // 一次处理多个指标，一步撤
 chart.connectExecution(new PaperExecutionAdapter({ markPrice: 64_000 }))
 
 chart.on('executionError', (e) => toast(e.payload.message))   // e.payload.command: the intent that failed
-// chart.connectExecution(adapter, { brackets: 'place' })   // a confirmed bracket goes to it too: see Bracket orders
+// A confirmed bracket goes to it too: see Bracket orders
 // chart.disconnectExecution()`}</code></pre>
 <p>
   实现 <code>ExecutionAdapter</code>（其结构与 <code>DataAdapter</code> 相对应），即可接入
@@ -242,28 +242,42 @@ chart.cancelOrderDraft()`}</code></pre>
   图表会发出一个 <code>bracketPlace</code> 事件，由你的后端处理。
 </p>
 <p>
-  若执行适配器以 <code>brackets: 'place'</code> 连接，图表还会把括号单作为一个订单发给适配器：入场（价格需要回到入场价时为限价单，
-  需要继续走到入场价时为止损单）、数量，以及挂在其上的止损和止盈。适配器接受后，图表发出带有该订单的 <code>bracketOrder</code>。
-  若适配器拒绝，则发出 <code>command: 'bracketPlace'</code> 的 <code>executionError</code>。组件只有在这之后才提示“已下单”，
-  被拒绝时则说明原因。没有数量的括号单不会发送，因为没有人看到要下的数量；在图表还没有价格、无法区分限价入场和止损入场之前确认的括号单
-  也不会发送。<code>executionError</code> 会给出 <code>reason</code>（<code>'noQuantity'</code>、<code>'noPrice'</code>）。
-  工具栏箭头和 <code>startBracket</code> 创建的括号单还没有数量，因此在 <code>'place'</code> 下不会发送，组件会提示这一点。
-  不使用它时，确认的括号单仍只是一个事件，组件提示它已确认。连接时未指定（没有 <code>brackets</code>）的适配器保留事件方式，
-  并在控制台警告一次。<code>'place'</code> 将在下一个大版本中成为默认值，因此自行处理事件中括号单的应用应传入
-  <code>brackets: 'event'</code>。
+  <strong>规模。</strong>括号单按其规模对应的数量下单。<code>{`{ quantity: 2 }`}</code> 就是该数量。
+  <code>{`{ risk: 50 }`}</code> 是在止损处亏损的金额：数量等于 50 除以入场价到止损价的距离（再乘以
+  <code>multiplier</code>，即价格变动一个单位时每一单位的价值），按 <code>quantityStep</code> 向下取整，并随拖动的线而变化。
+  数量写在入场线的标签上，<code>bracketPlace</code> 也会带上它。在组件中，数量在括号单操作栏的输入框里填写，
+  初始值为上次填写的数量，否则为市场的每手数量。<code>widget.startBracket(side, size)</code> 也接受规模：
+  按风险确定规模的括号单没有输入框。<code>bracketQuantity(bracket, size)</code> 是供你自己的代码使用的同一计算。
+</p>
+<p>
+  连接了执行适配器时，图表还会把已确认的括号单作为一个订单发给适配器：入场（价格需要回到入场价时为限价单，
+  需要继续走到入场价时为止损单）、数量，以及附带的止损和止盈。适配器接受后，图表发出带有该订单的
+  <code>bracketOrder</code>。如果适配器拒绝，图表发出 <code>command: 'bracketPlace'</code> 的
+  <code>executionError</code>。只有这时组件才提示"已下单"，被拒绝时会说明原因。没有数量的括号单不会被确认，
+  因为没有人看到要下的数量：<code>confirmBracket()</code> 返回 false，括号单留在图表上等待填入数量。
+  在图表还没有价格来区分限价入场和止损入场时确认的括号单不会被发送。
+  <code>executionError</code> 会给出 <code>reason</code>（<code>'noQuantity'</code>、<code>'noPrice'</code>），
+  组件也会提示。自行根据事件下括号单的应用以 <code>brackets: 'event'</code> 连接：这时括号单只是一个事件，
+  组件提示已确认。3.0 之前这是默认行为（见 <a href={href('/docs/migration-3')}>迁移到 3.0</a>）。
 </p>
 <pre><code>{`chart.startBracket('buy')          // entry defaults to the latest close
 chart.startBracket('sell', 64_800) // or pin the entry price
 
+chart.startBracket('buy', undefined, { quantity: 2 })                   // for two
+chart.startBracket('buy', undefined, { risk: 50, quantityStep: 0.001 }) // for what loses 50 at the stop
+chart.setBracketSize({ quantity: 3 })   // while it is placed
+chart.getBracket()                      // { side, entry, stopLoss, takeProfit, quantity } or null
+
 chart.on('bracketPlace', (e) => {
-  const { side, entry, stopLoss, takeProfit, riskReward } = e.payload
-  // submit to your OMS, then reflect fills back via chart.setOrders/setPositions
+  const { side, entry, stopLoss, takeProfit, quantity, riskReward } = e.payload
+  // with no adapter (or brackets: 'event'): submit to your OMS, then reflect fills back via chart.setOrders/setPositions
 })
 
-// Or let the connected adapter place it
-chart.connectExecution(broker, { brackets: 'place' })
+// The connected adapter places it
+chart.connectExecution(broker)
 chart.placesBrackets()   // true
 chart.on('bracketOrder', (e) => console.log(e.payload.order.id))
+// chart.connectExecution(broker, { brackets: 'event' })   // only the event: your code places it
 
 chart.confirmBracket()  // same as Enter
 chart.cancelBracket()   // same as Esc`}</code></pre>

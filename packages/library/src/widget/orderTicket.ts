@@ -96,6 +96,16 @@ function marketProblems(draft: OrderTicketDraft, rules: OrderTicketRules): Order
   return problems;
 }
 
+/** How long a ticket's order may work, by its type: one that waits for its stop cannot fill at once or not at all. */
+export function ticketTimesInForce(type: OrderTicketDraft['type']): readonly TimeInForce[] {
+  return type === 'limit' ? ['gtc', 'day', 'ioc', 'fok'] : ['gtc', 'day'];
+}
+
+/** The draft's time in force as its type takes it: good till cancelled in place of one it does not. */
+export function ticketTimeInForce(draft: Pick<OrderTicketDraft, 'type' | 'timeInForce'>): TimeInForce {
+  return ticketTimesInForce(draft.type).includes(draft.timeInForce) ? draft.timeInForce : 'gtc';
+}
+
 /** The order a draft asks for. */
 export function orderTicketIntent(draft: OrderTicketDraft, lastPrice: number | null): OrderPlaceIntent {
   const intent: OrderPlaceIntent = {
@@ -105,7 +115,7 @@ export function orderTicketIntent(draft: OrderTicketDraft, lastPrice: number | n
     quantity: draft.quantity,
   };
   if (draft.type === 'stop') intent.stopPrice = draft.price;
-  if (draft.type !== 'market') intent.timeInForce = draft.timeInForce;
+  if (draft.type !== 'market') intent.timeInForce = ticketTimeInForce(draft);
   if (draft.stopLoss !== null) intent.stopLoss = draft.stopLoss;
   if (draft.takeProfit !== null) intent.takeProfit = draft.takeProfit;
   if (draft.trailing && draft.stopLoss !== null) {

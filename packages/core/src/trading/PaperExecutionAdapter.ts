@@ -166,9 +166,13 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
   }
 
   async modifyOrder(intent: OrderModifyIntent): Promise<void> {
-    this.orders = this.orders.map((o) =>
-      o.id === intent.orderId ? { ...o, price: intent.newPrice } : o,
-    );
+    this.orders = this.orders.map((o) => {
+      if (o.id !== intent.orderId) return o;
+      // A stop moves with its line, and a stop-limit's as far as its limit: the room between them stays.
+      // A stop at its price goes to the new one itself, not there by a sum that could leave it a hair off.
+      const stopPrice = o.stopPrice === undefined ? undefined : o.stopPrice === o.price ? intent.newPrice : o.stopPrice + (intent.newPrice - o.price);
+      return stopPrice === undefined ? { ...o, price: intent.newPrice } : { ...o, price: intent.newPrice, stopPrice };
+    });
     this.emit('orders', this.orders);
   }
 

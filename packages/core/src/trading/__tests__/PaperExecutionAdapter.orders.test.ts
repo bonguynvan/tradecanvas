@@ -55,6 +55,31 @@ describe('PaperExecutionAdapter: a stop-limit order', () => {
   });
 });
 
+describe('PaperExecutionAdapter: an order moved', () => {
+  it('moves a stop order’s stop with its line: it then waits for the new price', async () => {
+    const order = await adapter.placeOrder({ side: 'buy', type: 'stop', price: 105, stopPrice: 105, quantity: 1 });
+    await adapter.modifyOrder({ orderId: order.id, newPrice: 108 });
+    expect(adapter.getOrders()[0]).toEqual(expect.objectContaining({ price: 108, stopPrice: 108 }));
+    adapter.setMarkPrice(106);
+    expect(adapter.getPositions()).toEqual([]);
+    adapter.setMarkPrice(108);
+    expect(adapter.getPositions()).toEqual([expect.objectContaining({ entryPrice: 108 })]);
+  });
+
+  it('moves a stop-limit’s stop as far as its limit, keeping the room between them', async () => {
+    const order = await adapter.placeOrder({ side: 'buy', type: 'stopLimit', stopPrice: 105, price: 107, quantity: 1 });
+    await adapter.modifyOrder({ orderId: order.id, newPrice: 110 });
+    expect(adapter.getOrders()[0]).toEqual(expect.objectContaining({ type: 'stopLimit', price: 110, stopPrice: 108 }));
+  });
+
+  it('moves a limit order’s price and gives it no stop', async () => {
+    const order = await adapter.placeOrder({ side: 'buy', type: 'limit', price: 95, quantity: 1 });
+    await adapter.modifyOrder({ orderId: order.id, newPrice: 96 });
+    expect(adapter.getOrders()[0].price).toBe(96);
+    expect(adapter.getOrders()[0].stopPrice).toBeUndefined();
+  });
+});
+
 describe('PaperExecutionAdapter: one cancels the other', () => {
   it('cancels the rest of a group when one of its orders fills', async () => {
     const target = await adapter.placeOrder({ side: 'sell', type: 'limit', price: 110, quantity: 1, ocoGroup: 'exit' });

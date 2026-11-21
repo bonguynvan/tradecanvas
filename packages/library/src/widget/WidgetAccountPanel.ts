@@ -52,6 +52,9 @@ function known<T extends string>(known: readonly T[], value: string | undefined,
   return (known as readonly string[]).includes(value ?? '') ? (value as T) : fallback;
 }
 
+/** A time the panel can write: a good-till-date order's date. */
+const writable = (time: number | undefined): time is number => time !== undefined && Number.isFinite(time);
+
 /** Same rows: the same objects in the same order (a tick changes only the price). */
 function sameRows(a: readonly object[], b: readonly object[]): boolean {
   return a.length === b.length && a.every((row, i) => row === b[i]);
@@ -393,6 +396,13 @@ export class WidgetAccountPanel {
     return wrap;
   }
 
+  /** How long an order works, with a dated order's date after it. */
+  private timeInForceText(order: TradingOrder): string {
+    if (!order.timeInForce) return NONE;
+    const name = this.t(`ticket.tif.${known(TIME_IN_FORCE, order.timeInForce, 'gtc')}` as MessageKey);
+    return order.timeInForce === 'gtd' && writable(order.expireTime) ? `${name} · ${this.callbacks.formatTime(order.expireTime)}` : name;
+  }
+
   private price(value: number | undefined): string {
     return value === undefined ? NONE : this.callbacks.formatPrice(value);
   }
@@ -443,12 +453,13 @@ export class WidgetAccountPanel {
       const which = `${this.sideText(o.side, 'trade')} ${o.quantity} @ ${formatPrice(o.price)}`;
       return [
         this.sideCell(o.side, 'trade'),
-        this.t(`ticket.type.${type}` as MessageKey),
+        // One of a group where one cancels the others says so beside its type, as its tag on the chart does.
+        o.ocoGroup ? `${this.t(`ticket.type.${type}` as MessageKey)} · ${this.t('account.oco')}` : this.t(`ticket.type.${type}` as MessageKey),
         String(o.quantity),
         formatPrice(o.price),
         this.price(o.stopLoss),
         this.price(o.takeProfit),
-        o.timeInForce ? this.t(`ticket.tif.${known(TIME_IN_FORCE, o.timeInForce, 'gtc')}` as MessageKey) : NONE,
+        this.timeInForceText(o),
         this.actions({ icon: 'x', label: `${this.t('account.cancelOrder')}: ${which}`, key: `cancel:${o.id}`, run: () => this.callbacks.onCancelOrder(o.id), danger: true }),
       ];
     });

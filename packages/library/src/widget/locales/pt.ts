@@ -560,6 +560,7 @@ export const PT_MESSAGES: WidgetMessages = {
   'ticket.tif.gtd': 'GTD',
   'ticket.tif.ioc': 'IOC',
   'ticket.tif.fok': 'FOK',
+  'account.oco': 'OCO',
   'ticket.value': 'Valor',
   'ticket.risk': 'Risco',
   'ticket.reward': 'Ganho',

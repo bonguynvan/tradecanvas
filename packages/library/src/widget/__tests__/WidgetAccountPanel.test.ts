@@ -44,6 +44,18 @@ const tab = (name: RegExp) => [...host.querySelectorAll<HTMLButtonElement>('[rol
 const cells = () => [...host.querySelectorAll('tbody tr')].map((tr) => [...tr.querySelectorAll('td')].map((td) => td.textContent));
 
 describe('WidgetAccountPanel', () => {
+  it('says which orders are of a group where one cancels the others, and when a dated order ends', () => {
+    panel.update({ ...current, orders: [
+      { id: 'a', side: 'sell', type: 'limit', price: 110, quantity: 1, ocoGroup: 'exit' },
+      { id: 'b', side: 'buy', type: 'limit', price: 90, quantity: 1, timeInForce: 'gtd', expireTime: 5 },
+      { id: 'c', side: 'buy', type: 'limit', price: 90, quantity: 1, timeInForce: 'gtd' },
+      { id: 'd', side: 'buy', type: 'limit', price: 90, quantity: 1, timeInForce: 'gtd', expireTime: Number.NaN },
+    ] });
+    tab(/Orders/).click();
+    expect(cells().map((row) => [row[1], row[6]])).toEqual([['Limit · OCO', '—'], ['Limit', 'GTD · 2026-10-03 10:00'], ['Limit', 'GTD'], ['Limit', 'GTD']]);
+    expect(callbacks.formatTime).toHaveBeenCalledWith(5);
+  });
+
   it('names how long each order works, the kinds past good-till-cancelled and day by the market’s letters', () => {
     panel.update({ ...current, orders: (['gtd', 'ioc', 'fok'] as const).map((timeInForce, i) => ({ id: `t${i}`, side: 'buy' as const, type: 'limit' as const, price: 90, quantity: 1, timeInForce })) });
     tab(/Orders/).click();
