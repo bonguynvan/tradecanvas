@@ -9320,7 +9320,7 @@
         {
           "name": "onBoxClick",
           "type": "(group: BoxPlotGroup, stats: BoxPlotStats) => void",
-          "doc": "Called with the group whose box, whisker or outlier was clicked, and its five numbers.",
+          "doc": "Called with the group a click falls on, and its five numbers: anywhere up and down its place across the plot, as the pointer's readout picks it.",
           "kind": "function"
         },
         {
@@ -9395,7 +9395,7 @@
         {
           "name": "onAxisClick",
           "type": "(hit: RadarAxisHit) => void",
-          "doc": "Called with the measure whose spoke was clicked, and each series' value on it.",
+          "doc": "Called with the measure nearest a click on the radar, and each series' value on it: the spoke the pointer's readout picks, wherever between two the click falls.",
           "kind": "function"
         },
         {
@@ -9642,6 +9642,12 @@
           "kind": "boolean"
         },
         {
+          "name": "describeView",
+          "type": "(view: Required<View3D>) => string",
+          "doc": "What a screen reader says after a key turned the chart, in your words. Default `'Turned to -35°, tilted to 28°'`.",
+          "kind": "function"
+        },
+        {
           "name": "onViewChange",
           "type": "(view: Required<View3D>) => void",
           "doc": "Called as the chart is turned, by a drag or a key, with where it is seen from now.",
@@ -9735,6 +9741,12 @@
           "type": "boolean",
           "doc": "Turn the chart by dragging it: a mouse turns and tilts it, a finger turns it only, so that a page still scrolls under it. With the keyboard, once Tab has reached the chart: the arrows turn and tilt it (further with Shift), Home goes back to `view`. Default `true`.",
           "kind": "boolean"
+        },
+        {
+          "name": "describeView",
+          "type": "(view: Required<View3D>) => string",
+          "doc": "What a screen reader says after a key turned the chart, in your words. Default `'Turned to -35°, tilted to 28°'`.",
+          "kind": "function"
         },
         {
           "name": "onViewChange",

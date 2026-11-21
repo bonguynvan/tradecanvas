@@ -31,7 +31,7 @@ export { renderMatrix, computeMatrixLayout, hitMatrixCell, correlationMatrix } f
 export type { MatrixLayout, MatrixCellRect } from './MatrixRenderer.js';
 export { renderCounterClock, computeCounterClockLayout, nearestCounterClockPoint, counterClockPoints, counterClockPhase, shownCount } from './CounterClockRenderer.js';
 export type { CounterClockLayout, PlacedClockPoint } from './CounterClockRenderer.js';
-export { renderPayoff, computePayoffLayout, payoffPriceAt, optionPayoff, payoffStats, optionPrice, positionValue } from './PayoffRenderer.js';
+export { renderPayoff, computePayoffLayout, payoffPriceAt, optionPayoff, payoffStats, optionPrice, positionValue, payoffModelOf } from './PayoffRenderer.js';
 export type { OptionTerms } from './PayoffRenderer.js';
 export type { PayoffLayout, PayoffPoint, PayoffStats } from './PayoffRenderer.js';
 export { renderCurve, computeCurveLayout, nearestCurveX, curveValueAt } from './CurveRenderer.js';

@@ -14,6 +14,7 @@ import {
   drawTopMarks,
   drawValueAxis,
   extent,
+  fitText,
   layoutLegend,
   niceScale,
   numberFormat,
@@ -83,6 +84,9 @@ export interface OptionTerms {
   dividendYield?: number;
 }
 
+/** How wide a legend entry's sample and its gap are at most, px: what a name is cut to fit beside. */
+const LEGEND_SAMPLE_ROOM = 28;
+
 /** The share of a standard normal under `x` (Abramowitz and Stegun 7.1.26, good to seven places); what is over `x` is the rest, exactly. */
 function normalCdf(x: number): number {
   if (x < 0) return 1 - normalCdf(-x);
@@ -94,22 +98,31 @@ function normalCdf(x: number): number {
 /**
  * The Black-Scholes price of a European call or put: what one unit is
  * worth with the underlying at `spot`, by a model. With no time left it is
- * what the option pays; with no volatility, what its forward pays, brought
- * back to today. 0 for a price, a strike or a volatility that is no number
- * above zero.
+ * what the option pays. With nothing to move it (a volatility of zero or
+ * under, an underlying or a strike at nothing) it is what its forward
+ * pays, brought back to today: a put with the underlying at nothing is its
+ * strike, discounted. 0 for a price or a strike under zero, for any of the
+ * numbers that is none, and for a time without end. Good to about a part
+ * in a million of the price: for a chart and a sum, not for a quote.
  */
 export function optionPrice(type: 'call' | 'put', spot: number, strike: number, terms: OptionTerms): number {
   const { years, volatility } = terms;
-  if (!finite(spot) || !finite(strike) || !(spot > 0) || !(strike > 0) || !finite(volatility) || Number.isNaN(years)) return 0;
+  if (!finite(spot) || !finite(strike) || spot < 0 || strike < 0 || !finite(volatility)) return 0;
+  if (Number.isNaN(years) || years === Number.POSITIVE_INFINITY) return 0;
   const sign = type === 'call' ? 1 : -1;
   if (!(years > 0)) return Math.max(0, sign * (spot - strike));
   const rate = finite(terms.rate) ? terms.rate : 0;
   const carried = spot * Math.exp(-(finite(terms.dividendYield) ? terms.dividendYield : 0) * years);
   const discounted = strike * Math.exp(-rate * years);
-  if (!(volatility > 0)) return Math.max(0, sign * (carried - discounted));
+  // A rate over a time that takes either past what a number holds prices nothing.
+  if (!Number.isFinite(carried) || !Number.isFinite(discounted)) return 0;
+  // One outcome only: no volatility, or an underlying or a strike at nothing, which no volatility moves.
+  if (!(volatility > 0) || carried === 0 || discounted === 0) return Math.max(0, sign * (carried - discounted));
   const spread = volatility * Math.sqrt(years);
   const d1 = Math.log(carried / discounted) / spread + spread / 2;
-  return sign * (carried * normalCdf(sign * d1) - discounted * normalCdf(sign * (d1 - spread)));
+  const price = sign * (carried * normalCdf(sign * d1) - discounted * normalCdf(sign * (d1 - spread)));
+  // Far out, the two tails' rounding can leave a hair under nothing.
+  return Number.isFinite(price) ? Math.max(0, price) : 0;
 }
 
 /**
@@ -117,7 +130,8 @@ export function optionPrice(type: 'call' | 'put', spot: number, strike: number, 
  * `price`: each option at its model price (`optionPrice`) less the premium
  * paid, the other way for one sold, the underlying by its move from its
  * entry; times `multiplier`. A leg's own `daysToExpiry` and `volatility`
- * stand in for the model's. With no days left it is `optionPayoff`.
+ * stand in for the model's. With no days left, or days that are no number,
+ * it is `optionPayoff`.
  */
 export function positionValue(legs: readonly OptionLeg[], price: number, model: PayoffModel, multiplier = 1): number {
   let total = 0;
@@ -139,7 +153,7 @@ export function positionValue(legs: readonly OptionLeg[], price: number, model: 
 }
 
 /** The model the chart draws a second line by, or null: its days and its volatility have to be numbers. */
-function modelOf(options: PayoffOptions): PayoffModel | null {
+export function payoffModelOf(options: PayoffOptions): PayoffModel | null {
   const model = options.model;
   return model && finite(model.daysToExpiry) && finite(model.volatility) ? model : null;
 }
@@ -246,13 +260,13 @@ function priceRange(options: PayoffOptions): { min: number; max: number } {
 }
 
 /** The payoff's line over its prices, for a chart `width` × `height`. */
-export function computePayoffLayout(options: PayoffOptions, width: number, height: number, _theme: Theme, measure: Measure): PayoffLayout {
+export function computePayoffLayout(options: PayoffOptions, width: number, height: number, theme: Theme, measure: Measure): PayoffLayout {
   const { legs, multiplier } = options;
   const range = priceRange(options);
   const xScale = niceScale(range.min, range.max, Math.max(2, Math.floor(width / 110)));
   const prices = [xScale.min, ...kinks(legs).filter((k) => k > xScale.min && k < xScale.max), xScale.max];
   const values = prices.map((price) => optionPayoff(legs, price, multiplier));
-  const model = modelOf(options);
+  const model = payoffModelOf(options);
   // The value before expiry is a curve: sampled along the prices, the payoff's kinks among them.
   const span = xScale.max - xScale.min;
   const todayPrices = model
@@ -267,7 +281,20 @@ export function computePayoffLayout(options: PayoffOptions, width: number, heigh
   const left = CHART_PAD + tickWidth + AXIS_GAP;
   const right = CHART_PAD + measure(xFormat(xScale.max), LABEL_SIZE) / 2;
   const names = model ? lineNames(options, model) : null;
-  const legend = names ? layoutLegend([{ label: names.expiry, color: _theme.text }, { label: names.today, color: _theme.textSecondary }], width - CHART_PAD * 2, measure) : null;
+  // Each name beside its line as it is drawn: the payoff's in its two colours, the other dashed. A name too long for the chart is cut.
+  const nameRoom = Math.max(0, width - CHART_PAD * 2 - LEGEND_SAMPLE_ROOM);
+  const profit = options.profitColor ?? theme.candleUp;
+  const loss = options.lossColor ?? theme.candleDown;
+  const legend = names
+    ? layoutLegend(
+        [
+          { label: fitText(names.expiry, nameRoom, measure), color: profit, line: { colors: [profit, loss] } },
+          { label: fitText(names.today, nameRoom, measure), color: theme.textSecondary, line: { dash: TODAY_DASH } },
+        ],
+        width - CHART_PAD * 2,
+        measure,
+      )
+    : null;
   // Over the plot: the lines' names, then the price now and the breakevens.
   const top = CHART_PAD + (legend ? legend.height + LABEL_GAP : 0) + TOP_MARK_ROOM;
   const plot = { x: left, y: top, width: Math.max(1, width - left - right), height: Math.max(1, height - top - CHART_PAD - BOTTOM_LABELS) };
@@ -351,7 +378,7 @@ export function renderPayoff(
   ctx.restore();
 
   // The value before expiry: a dashed line over the payoff's, in the quiet ink, so the two are told apart without a colour.
-  const model = modelOf(options);
+  const model = payoffModelOf(options);
   if (layout.today && layout.today.length > 1) {
     ctx.save();
     ctx.beginPath();

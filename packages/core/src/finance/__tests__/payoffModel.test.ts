@@ -33,6 +33,27 @@ describe('what an option is worth before it expires', () => {
     expect(optionPrice('put', 100, 90, { years: 1, volatility: 0, rate: 0.05 })).toBe(0);
   });
 
+  it('is worth what it must be where the underlying is at nothing, or the strike is', () => {
+    // At a price of nothing a put is its strike, brought back to today, and a call nothing.
+    expect(optionPrice('put', 0, 100, { years: 1, volatility: 0.3, rate: 0.05 })).toBeCloseTo(100 * Math.exp(-0.05), 9);
+    expect(optionPrice('put', 0, 100, { years: 0, volatility: 0.3 })).toBe(100);
+    expect(optionPrice('call', 0, 100, { years: 1, volatility: 0.3 })).toBe(0);
+    // A call at a strike of nothing is the underlying itself.
+    expect(optionPrice('call', 120, 0, { years: 0.5, volatility: 0.3, dividendYield: 0.02 })).toBeCloseTo(120 * Math.exp(-0.01), 9);
+    expect(optionPrice('call', 120, 0, { years: 0, volatility: 0.3 })).toBe(120);
+    expect(optionPrice('put', 120, 0, { years: 0.5, volatility: 0.3 })).toBe(0);
+  });
+
+  it('is never under nothing, and a number, at the far ends', () => {
+    for (const [spot, strike, years, volatility, rate] of [[100, 900, 0.02, 0.1, 0], [900, 100, 0.02, 0.1, 0], [1, 1e6, 1, 0.05, 0.1], [50, 50, 1e5, 0.2, -0.05], [50, 50, Number.POSITIVE_INFINITY, 0.2, 0]]) {
+      for (const type of ['call', 'put'] as const) {
+        const price = optionPrice(type, spot, strike, { years, volatility, rate });
+        expect(Number.isFinite(price), `${type} ${spot} ${strike} ${years}`).toBe(true);
+        expect(price).toBeGreaterThanOrEqual(0);
+      }
+    }
+  });
+
   it('is nothing for numbers that are none', () => {
     for (const bad of [Number.NaN, -5, Number.POSITIVE_INFINITY]) {
       expect(optionPrice('call', bad, 100, { years: 1, volatility: 0.2 })).toBe(0);
@@ -54,6 +75,18 @@ describe('what a position makes or loses before expiry', () => {
   it('is the payoff at expiry on the day itself', () => {
     for (const price of [80, 92, 100, 107, 125]) {
       expect(positionValue(condor, price, { daysToExpiry: 0, volatility: 0.25 }, 100)).toBeCloseTo(optionPayoff(condor, price, 100), 9);
+    }
+  });
+
+  it('is the payoff on the day at every price, the lowest and a strike of nothing among them', () => {
+    const legs: OptionLeg[] = [
+      { type: 'call', side: 'long', strike: 0, premium: 2 },
+      { type: 'put', side: 'short', strike: 100, premium: 3 },
+      { type: 'underlying', side: 'long', entry: 95 },
+      { type: 'call', side: 'short', strike: 105, premium: 1 },
+    ];
+    for (const price of [0, 50, 100, 105, 200]) {
+      expect(positionValue(legs, price, { daysToExpiry: 0, volatility: 0.3 }, 10), `at ${price}`).toBeCloseTo(optionPayoff(legs, price, 10), 9);
     }
   });
 
@@ -83,6 +116,39 @@ describe('what a position makes or loses before expiry', () => {
     expect(positionValue(calendar, 104, model)).toBeCloseTo(-(4 - 2) + (far - 4), 9);
   });
 });
+
+/** A stand-in context that notes each stroke's colour and whether it is dashed, and each square's colour, keeping both over save and restore as a canvas does. */
+function inkWatcher(): { ctx: CanvasRenderingContext2D; strokes: { color: string; dashed: boolean }[]; squares: string[] } {
+  interface Ink {
+    strokeStyle: string;
+    fillStyle: string;
+    dash: number[];
+  }
+  let ink: Ink = { strokeStyle: '', fillStyle: '', dash: [] };
+  const kept: Ink[] = [];
+  const strokes: { color: string; dashed: boolean }[] = [];
+  const squares: string[] = [];
+  const other: Record<string | symbol, unknown> = { font: '10px sans-serif' };
+  const ctx = new Proxy(other, {
+    get: (target, prop) => {
+      if (prop === 'strokeStyle' || prop === 'fillStyle') return ink[prop];
+      if (prop in target) return target[prop];
+      if (prop === 'measureText') return (text: string) => ({ width: String(text).length * 6 });
+      if (prop === 'save') return () => void kept.push({ ...ink, dash: [...ink.dash] });
+      if (prop === 'restore') return () => void (ink = kept.pop() ?? ink);
+      if (prop === 'setLineDash') return (dash: number[]) => void (ink.dash = [...dash]);
+      if (prop === 'stroke') return () => void strokes.push({ color: ink.strokeStyle, dashed: ink.dash.length > 0 });
+      if (prop === 'fillRect') return () => void squares.push(ink.fillStyle);
+      return () => {};
+    },
+    set: (target, prop, value) => {
+      if (prop === 'strokeStyle' || prop === 'fillStyle') ink[prop] = String(value);
+      else target[prop] = value;
+      return true;
+    },
+  }) as unknown as CanvasRenderingContext2D;
+  return { ctx, strokes, squares };
+}
 
 describe('the payoff chart with the position’s value before expiry', () => {
   const options: PayoffOptions = {
@@ -140,6 +206,40 @@ describe('the payoff chart with the position’s value before expiry', () => {
     renderPayoff(hovered.ctx, W, H, options, DARK_THEME, at);
     expect(hovered.texts.some((text) => text.startsWith('At expiry'))).toBe(true);
     expect(hovered.texts.some((text) => text.startsWith('In 45 days'))).toBe(true);
+  });
+
+  it('has no cliff at a price of nothing: a put bought is worth its strike there', () => {
+    const put: PayoffOptions = { legs: [{ type: 'put', side: 'long', strike: 100, premium: 3 }], range: { min: 0, max: 200 }, model: { daysToExpiry: 30, volatility: 0.3 } };
+    const today = computePayoffLayout(put, W, H, DARK_THEME, measure).today!;
+    expect(today[0].price).toBe(0);
+    expect(today[0].value).toBeCloseTo(97, 6);
+    // The next step along is a few units of price away, and a few units of value.
+    expect(Math.abs(today[1].value - today[0].value)).toBeLessThan(5);
+  });
+
+  it('shows each line in the legend as it is drawn: the payoff in its two colours, the other dashed', () => {
+    const drawn = (given: PayoffOptions) => {
+      const { ctx, strokes, squares } = inkWatcher();
+      renderPayoff(ctx, W, H, given, DARK_THEME, null);
+      const count = (color: string, dashed: boolean) => strokes.filter((stroke) => stroke.color === color && stroke.dashed === dashed).length;
+      return { profit: count(DARK_THEME.candleUp, false), loss: count(DARK_THEME.candleDown, false), dashed: count(DARK_THEME.textSecondary, true), squares };
+    };
+    const alone = drawn({ ...options, model: undefined });
+    const both = drawn(options);
+    // The payoff's sample: one more whole stroke in the profit's colour and one in the loss's.
+    expect(both.profit - alone.profit).toBe(1);
+    expect(both.loss - alone.loss).toBe(1);
+    // Two more dashed ones in the quiet ink: the curve, and its sample.
+    expect(both.dashed - alone.dashed).toBe(2);
+    // And no square: a square's colour would be one no line here has.
+    expect(both.squares).toEqual(alone.squares);
+  });
+
+  it('cuts a name too long for the chart', () => {
+    const long: PayoffOptions = { ...options, expiryLabel: 'On the day the options expire, '.repeat(12), model: { ...options.model!, label: 'x'.repeat(400) } };
+    const layout = computePayoffLayout(long, W, H, DARK_THEME, measure);
+    for (const item of layout.legend!.items) expect(item.x + measure(item.label, 11)).toBeLessThanOrEqual(W);
+    expect(layout.legend!.items[0].label.endsWith('…')).toBe(true);
   });
 
   it('names the lines as the options say, and a day as a day', () => {

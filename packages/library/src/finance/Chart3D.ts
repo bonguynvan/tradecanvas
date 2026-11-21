@@ -19,6 +19,9 @@ const KEY_STEPS: Readonly<Record<string, readonly [number, number]>> = {
   ArrowUp: [0, -1],
 };
 
+/** Out of sight and still read out: what a screen reader is told as the chart turns. */
+const OUT_OF_SIGHT = 'position:absolute;width:1px;height:1px;margin:-1px;padding:0;border:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap;';
+
 /** What a finger may still do to the page over a chart that turns: scroll it up and down, and pinch it. */
 const TOUCH_LEFT_TO_PAGE = 'pan-y pinch-zoom';
 
@@ -46,6 +49,8 @@ export abstract class Chart3D<O extends Chart3DOptions, L> extends InteractiveCh
   private turn: Turn | null = null;
   /** The press that just ended turned the chart: the click the browser sends after it is not one. */
   private turned = false;
+  /** Where a screen reader is told how the chart was turned by a key; there while the chart turns. */
+  private spoken: HTMLElement | null = null;
 
   private readonly onPress = (e: PointerEvent) => {
     this.turned = false;
@@ -97,13 +102,15 @@ export abstract class Chart3D<O extends Chart3DOptions, L> extends InteractiveCh
     if (!step && e.key !== 'Home') return;
     // The page does not scroll under a key the chart took.
     e.preventDefault();
-    if (!step) {
-      this.turnTo(resolveView(this.home));
-      return;
-    }
     const by = e.shiftKey ? KEY_TURN_FAR : KEY_TURN;
     const from = this.getView();
-    this.turnTo(resolveView({ yaw: from.yaw + step[0] * by, pitch: from.pitch + step[1] * by }));
+    const to = resolveView(step ? { yaw: from.yaw + step[0] * by, pitch: from.pitch + step[1] * by } : this.home);
+    // At the end of its tilt, or where Home is already: nothing turned, so nothing is called or said.
+    if (to.yaw === from.yaw && to.pitch === from.pitch) return;
+    this.turnTo(to);
+    // A drag under way goes on from here, where the pointer is now.
+    if (this.turn) this.turn = { ...this.turn, x: this.turn.lastX, y: this.turn.lastY, from: to };
+    this.say(to);
   };
 
   constructor(container: HTMLElement, options: O) {
@@ -169,10 +176,7 @@ export abstract class Chart3D<O extends Chart3DOptions, L> extends InteractiveCh
     // A mouse dragged off the chart would mark the page's text as it went.
     this.canvas.style.userSelect = turns ? 'none' : '';
     this.canvas.style.setProperty('-webkit-user-select', turns ? 'none' : '');
-    // Tab reaches a chart that turns, and a screen reader is told its keys.
-    this.canvas.tabIndex = turns ? 0 : -1;
-    if (turns) this.canvas.setAttribute('aria-keyshortcuts', TURN_KEYS);
-    else this.canvas.removeAttribute('aria-keyshortcuts');
+    this.applyKeys(turns);
     if (turns) {
       this.restCursor();
       return;
@@ -180,6 +184,39 @@ export abstract class Chart3D<O extends Chart3DOptions, L> extends InteractiveCh
     // Switched off in the middle of a drag: it ends here, and its release is still no click.
     this.endTurn();
     if (this.canvas.style.cursor === 'grab' || this.canvas.style.cursor === 'grabbing') this.canvas.style.cursor = '';
+  }
+
+  /**
+   * Tab reaches a chart that turns. To a screen reader it is then no
+   * picture, which takes no keys and whose arrows it keeps for itself, but
+   * a thing the keys go to, still called by its label; it is told the keys,
+   * and after each, where the chart is seen from. One held still is the
+   * picture every other finance chart is.
+   */
+  private applyKeys(turns: boolean): void {
+    if (!turns) {
+      this.canvas.removeAttribute('tabindex');
+      this.canvas.removeAttribute('aria-keyshortcuts');
+      this.canvas.setAttribute('role', 'img');
+      this.spoken?.remove();
+      this.spoken = null;
+      return;
+    }
+    this.canvas.tabIndex = 0;
+    this.canvas.setAttribute('role', 'application');
+    this.canvas.setAttribute('aria-keyshortcuts', TURN_KEYS);
+    if (this.spoken) return;
+    // In the page before anything is said in it: a screen reader reads out what changes, not what arrives.
+    this.spoken = document.createElement('div');
+    this.spoken.setAttribute('aria-live', 'polite');
+    this.spoken.style.cssText = OUT_OF_SIGHT;
+    this.canvas.after(this.spoken);
+  }
+
+  /** Tells a screen reader where the chart is seen from: its user does not see it turn. */
+  private say(view: Required<View3D>): void {
+    if (!this.spoken) return;
+    this.spoken.textContent = this.options.describeView?.(view) ?? `Turned to ${Math.round(view.yaw)}°, tilted to ${Math.round(view.pitch)}°`;
   }
 
   /** Where the chart is seen from now. */
@@ -207,6 +244,8 @@ export abstract class Chart3D<O extends Chart3DOptions, L> extends InteractiveCh
     this.canvas.removeEventListener('pointercancel', this.onRelease);
     this.canvas.removeEventListener('dblclick', this.onReset);
     this.canvas.removeEventListener('keydown', this.onKey);
+    this.spoken?.remove();
+    this.spoken = null;
     super.destroy();
   }
 }

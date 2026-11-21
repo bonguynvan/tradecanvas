@@ -461,7 +461,7 @@ export interface PayoffModel {
   rate?: number;
   /** The underlying's dividend yield, a year's, as a share. Default `0`. */
   dividendYield?: number;
-  /** The line's name in the legend. Default `'In 30 days'`, by `daysToExpiry`. */
+  /** The line's name in the legend. Default `'In 30 days'`, by `daysToExpiry`: name it yourself where the legs have days of their own. */
   label?: string;
 }
 
@@ -586,7 +586,7 @@ export interface BoxPlotOptions extends BaseFinanceChartOptions {
   labels?: Partial<BoxPlotLabels>;
   /** Show the hovered box's numbers. Default `true`. */
   crosshair?: boolean;
-  /** Called with the group whose box, whisker or outlier was clicked, and its five numbers. */
+  /** Called with the group a click falls on, and its five numbers: anywhere up and down its place across the plot, as the pointer's readout picks it. */
   onBoxClick?: (group: BoxPlotGroup, stats: BoxPlotStats) => void;
 }
 
@@ -613,7 +613,7 @@ export interface RadarChartOptions extends BaseFinanceChartOptions {
   valueFormat?: (value: number) => string;
   /** Show every series' value on the spoke nearest the pointer. Default `true`. */
   crosshair?: boolean;
-  /** Called with the measure whose spoke was clicked, and each series' value on it. */
+  /** Called with the measure nearest a click on the radar, and each series' value on it: the spoke the pointer's readout picks, wherever between two the click falls. */
   onAxisClick?: (hit: RadarAxisHit) => void;
 }
 
@@ -724,6 +724,11 @@ export interface Chart3DOptions extends BaseFinanceChartOptions {
    * with Shift), Home goes back to `view`. Default `true`.
    */
   rotate?: boolean;
+  /**
+   * What a screen reader says after a key turned the chart, in your words.
+   * Default `'Turned to -35°, tilted to 28°'`.
+   */
+  describeView?: (view: Required<View3D>) => string;
   /** Called as the chart is turned, by a drag or a key, with where it is seen from now. */
   onViewChange?: (view: Required<View3D>) => void;
   /** The axes' titles: across, back and up. */

@@ -34,6 +34,9 @@ export const BOTTOM_LABELS = 20;
 /** Room for a label's text around it, px. */
 export const LABEL_SIZE = 11;
 const LEGEND_SWATCH = 10;
+/** A legend entry's stretch of line: long enough for dashes to read as dashes. */
+const LEGEND_LINE = 22;
+const LEGEND_LINE_WIDTH = 2;
 const LEGEND_GAP = 6;
 const LEGEND_ITEM_GAP = 16;
 const LEGEND_ROW = 18;
@@ -219,7 +222,16 @@ export function canvasMeasure(ctx: CanvasRenderingContext2D, theme: Theme): Meas
 export interface LegendItem {
   label: string;
   color: string;
+  /**
+   * Shown as a stretch of line in place of a square, where a square's
+   * colour would not say which line is meant: the colours along it, in
+   * equal parts (the entry's own without any), and its dashes.
+   */
+  line?: { colors?: readonly string[]; dash?: readonly number[] };
 }
+
+/** How wide an entry's sample is, before its text. */
+const sampleWidth = (item: LegendItem) => (item.line ? LEGEND_LINE : LEGEND_SWATCH);
 
 export interface LegendLayout {
   items: (LegendItem & { x: number; y: number })[];
@@ -233,7 +245,7 @@ export function layoutLegend(items: readonly LegendItem[], maxWidth: number, mea
   let x = 0;
   let row = 0;
   for (const item of items) {
-    const width = LEGEND_SWATCH + LEGEND_GAP + measure(item.label, LABEL_SIZE);
+    const width = sampleWidth(item) + LEGEND_GAP + measure(item.label, LABEL_SIZE);
     if (x > 0 && (column || x + width > maxWidth)) {
       row++;
       x = 0;
@@ -252,11 +264,32 @@ export function drawLegend(ctx: CanvasRenderingContext2D, layout: LegendLayout, 
   ctx.textAlign = 'left';
   for (const item of layout.items) {
     const cy = oy + item.y + LEGEND_ROW / 2;
-    ctx.fillStyle = item.color;
-    ctx.fillRect(ox + item.x, cy - LEGEND_SWATCH / 2, LEGEND_SWATCH, LEGEND_SWATCH);
+    if (item.line) drawLegendLine(ctx, item, ox + item.x, cy);
+    else {
+      ctx.fillStyle = item.color;
+      ctx.fillRect(ox + item.x, cy - LEGEND_SWATCH / 2, LEGEND_SWATCH, LEGEND_SWATCH);
+    }
     ctx.fillStyle = theme.textSecondary;
-    ctx.fillText(item.label, ox + item.x + LEGEND_SWATCH + LEGEND_GAP, cy);
+    ctx.fillText(item.label, ox + item.x + sampleWidth(item) + LEGEND_GAP, cy);
   }
+  ctx.restore();
+}
+
+/** An entry's sample as the line it stands for: its colours one after another, dashed where the line is. */
+function drawLegendLine(ctx: CanvasRenderingContext2D, item: LegendItem, x: number, y: number): void {
+  const colors = item.line?.colors?.length ? item.line.colors : [item.color];
+  const part = LEGEND_LINE / colors.length;
+  ctx.save();
+  ctx.lineWidth = LEGEND_LINE_WIDTH;
+  ctx.setLineDash([...(item.line?.dash ?? [])]);
+  colors.forEach((color, i) => {
+    ctx.beginPath();
+    ctx.moveTo(x + part * i, y);
+    ctx.lineTo(x + part * (i + 1), y);
+    ctx.strokeStyle = color;
+    ctx.stroke();
+  });
+  ctx.setLineDash([]);
   ctx.restore();
 }
 

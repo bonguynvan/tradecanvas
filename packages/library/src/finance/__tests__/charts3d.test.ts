@@ -111,7 +111,8 @@ describe('the 3D charts', () => {
     const made = [new SurfaceChart(host, SMILE), new Bar3DChart(host, BARS), new SurfaceChart(host, { ...SMILE, ariaLabel: 'Implied volatility by strike and expiry' })];
     const labels = [...host.querySelectorAll('canvas')].map((c) => c.getAttribute('aria-label'));
     expect(labels).toEqual(['3D surface of 3 by 3 points', '3D bar chart of 2 series over 3 categories', 'Implied volatility by strike and expiry']);
-    expect([...host.querySelectorAll('canvas')].every((c) => c.getAttribute('role') === 'img')).toBe(true);
+    // One that turns takes keys, which a picture does not: see openEnds.test.ts.
+    expect([...host.querySelectorAll('canvas')].every((c) => c.getAttribute('role') === 'application')).toBe(true);
     for (const chart of made) chart.destroy();
     expect(host.querySelector('canvas')).toBeNull();
   });
