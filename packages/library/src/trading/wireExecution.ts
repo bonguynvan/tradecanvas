@@ -29,7 +29,7 @@ export type HostIntentType = ExecutionIntentType | 'bracketPlace';
 
 /** How the wiring treats what is not a plain command. */
 export interface WireExecutionOptions {
-  /** `'place'`: a confirmed bracket goes to the adapter as an order. Otherwise it stays an event. */
+  /** `'place'` (the default): a confirmed bracket goes to the adapter as an order. `'event'`: it stays an event. */
   brackets?: 'event' | 'place';
 }
 
@@ -185,13 +185,13 @@ export function wireExecution(adapter: ExecutionAdapter, host: ExecutionHost, op
     teardowns.push(unsub);
   }
 
-  // A confirmed bracket, as one order with its stop-loss and take-profit, when asked for.
+  // A confirmed bracket, as one order with its stop-loss and take-profit, unless the app places it itself.
   // An answer that comes after the teardown is for an adapter no longer connected: it is dropped.
   let connected = true;
   teardowns.push(() => {
     connected = false;
   });
-  if (options.brackets === 'place') {
+  if (options.brackets !== 'event') {
     teardowns.push(host.onIntent('bracketPlace', (payload) => {
       const bracket = payload as BracketPlacePayload;
       const marketPrice = host.marketPrice?.() ?? null;

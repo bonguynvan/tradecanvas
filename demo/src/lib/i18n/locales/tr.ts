@@ -927,6 +927,7 @@ const tr: SiteMessages = {
       frameworks: 'Framework’ler',
       embed: 'Gömülebilir Widget',
       migration: "2.0'a geçiş",
+      'migration-3': "3.0'a geçiş",
       'from-tradingview': "TradingView'dan geçiş",
       'how-it-works': 'Nasıl çalışır',
       api: 'API Referansı',

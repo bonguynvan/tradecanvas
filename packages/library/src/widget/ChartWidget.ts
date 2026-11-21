@@ -77,6 +77,7 @@ import { WidgetTooltip } from './WidgetTooltip.js';
 import { WidgetIndicatorLegend } from './WidgetIndicatorLegend.js';
 import { formatIndicatorValue } from './legendValues.js';
 import { RANGE_PRESETS, SYMBOL_INDICATOR_IDS, adapterFromFeed, indicatorCategory, indicatorGroup, isCrosshairCursor, isMarkerPlot, sourceParam, valuePlots } from '@tradecanvas/core';
+import type { BracketSize } from '@tradecanvas/core';
 import { WidgetBracketBar } from './WidgetBracketBar.js';
 import { AlertNotifier } from './AlertNotifier.js';
 import { WidgetDepthLadder } from './WidgetDepthLadder.js';
@@ -1356,6 +1357,7 @@ export class ChartWidget {
           this.chart.cancelBracket();
           this.trading.bracketBar?.hide();
         },
+        onQuantity: (quantity) => this.trading.setBracketQuantity(quantity),
       }, this.t);
       // Placed only once the broker took it; a bracket that goes no further than the event is confirmed.
       this.chart.on('bracketPlace', (e) => {
@@ -2990,9 +2992,15 @@ export class ChartWidget {
     return this.trading.setDepth(depth);
   }
 
-  /** Begin a draggable bracket order at the latest price and show the action bar. */
-  startBracket(side: 'buy' | 'sell'): void {
-    return this.trading.startBracket(side);
+  /**
+   * Begin a draggable bracket order at the latest price and show the action
+   * bar, where its quantity is typed. `size` gives the quantity the field
+   * starts with (`{ quantity: 2 }`; else the one last typed, else the
+   * market's lot), or sizes the bracket by the money at risk
+   * (`{ risk: 50 }`): its quantity then follows its lines, with no field.
+   */
+  startBracket(side: 'buy' | 'sell', size?: BracketSize): void {
+    return this.trading.startBracket(side, size);
   }
 
   private openIndicatorSettings(instanceId: string): void {

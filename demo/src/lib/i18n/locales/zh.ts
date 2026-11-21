@@ -928,6 +928,7 @@ const zh: SiteMessages = {
       frameworks: '框架',
       embed: '可嵌入组件',
       migration: '迁移到 2.0',
+      'migration-3': '迁移到 3.0',
       'from-tradingview': '从 TradingView 迁移',
       'how-it-works': '工作原理',
       api: 'API 参考',

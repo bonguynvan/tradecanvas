@@ -201,6 +201,7 @@ function llmsTxt() {
     '',
     `- [Getting started](${SITE}/docs/getting-started): install, the widget, the headless chart`,
     `- [Moving to 2.0](${SITE}/docs/migration): from 1.x: the new default look and the option that keeps the old one, each removed name and what to use, what changed without a name changing`,
+    `- [Moving to 3.0](${SITE}/docs/migration-3): from 2.x, while 3.0 is in development: each behaviour that changed and the option that keeps the old one`,
     `- [Moving from TradingView](${SITE}/docs/from-tradingview): an app on TradingView's charting library or Lightweight Charts: its datafeed kept as it is (feedFromJsApi, udfFeed for a UDF server), the MCP tools that map its options, featuresets, overrides, studies, drawings and methods, what changes and what does not carry over`,
     `- [API reference](${SITE}/docs/api): Chart and ChartWidget methods, options and events`,
     `- [Indicators](${SITE}/docs/indicators): every built-in indicator with its id, inputs and lines`,

@@ -935,6 +935,7 @@ const en = {
       frameworks: 'Frameworks',
       embed: 'Embeddable Widget',
       migration: 'Moving to 2.0',
+      'migration-3': 'Moving to 3.0',
       'from-tradingview': 'Moving from TradingView',
       'how-it-works': 'How It Works',
       api: 'API Reference',

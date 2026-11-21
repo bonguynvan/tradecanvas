@@ -4,8 +4,9 @@ import type { OrderTicketRules } from './orderTicket.js';
 import { WidgetBracketBar } from './WidgetBracketBar.js';
 import { WidgetDepthLadder } from './WidgetDepthLadder.js';
 import type { DepthData } from '@tradecanvas/commons';
+import { stepDecimals } from '@tradecanvas/commons';
 import { fill, type MessageKey } from './i18n.js';
-import { positionLevels } from '@tradecanvas/core';
+import { positionLevels, type BracketSize } from '@tradecanvas/core';
 import type { ChartWidget } from './ChartWidget.js';
 
 /** What trading reads of the widget around it, and asks of it. */
@@ -34,6 +35,9 @@ export class WidgetTrading {
   accountFrame = 0;
 
   bracketBar: WidgetBracketBar | null = null;
+
+  /** The quantity last typed for a bracket: the next one starts with it. */
+  private bracketQuantity: number | null = null;
 
   depthLadder: WidgetDepthLadder | null = null;
 
@@ -119,11 +123,32 @@ export class WidgetTrading {
     if (depth) this.host.chart.pushDepthSnapshot(depth);
   }
 
-  /** Begin a draggable bracket order at the latest price and show the action bar. */
-  startBracket(side: 'buy' | 'sell'): void {
-    if (this.host.chart.startBracket(side)) {
-      this.bracketBar?.show(side);
+  /**
+   * Begin a draggable bracket order at the latest price and show the action
+   * bar. Its quantity is typed in the bar: it starts at `size.quantity`,
+   * else at the one last typed, else at the market's lot (one without). A
+   * bracket sized by `size.risk` has no field: its quantity follows its lines.
+   */
+  startBracket(side: 'buy' | 'sell', size?: BracketSize): void {
+    if (size?.risk !== undefined) {
+      if (this.host.chart.startBracket(side, undefined, size)) this.bracketBar?.show(side);
+      return;
     }
+    const lot = this.host.chart.getMarket()?.volumeUnit;
+    const board = lot !== undefined && lot > 1 ? lot : null;
+    const quantity = firstQuantity(size?.quantity, this.bracketQuantity, board);
+    if (!this.host.chart.startBracket(side, undefined, { ...size, quantity })) return;
+    this.bracketBar?.show(side, {
+      quantity,
+      // A lot, else the quantity's own last digit (0.5 moves by 0.1), as the order ticket steps.
+      step: (q) => board ?? lastDigitStep(q),
+    });
+  }
+
+  /** The bar's quantity field was typed in: the bracket takes it, and the next one starts with it. */
+  setBracketQuantity(quantity: number | null): void {
+    if (quantity !== null) this.bracketQuantity = quantity;
+    this.host.chart.setBracketSize(quantity === null ? undefined : { quantity });
   }
 
   /** Open the order ticket from a Long/Short Position drawing, filled with its levels. */
@@ -140,4 +165,17 @@ export class WidgetTrading {
       quantity: Math.floor(levels.quantity * step) / step,
     });
   }
+}
+
+/** The quantity a bracket starts with: the one asked for, else the one last typed when the market's lot takes it, else a lot (one without). */
+function firstQuantity(asked: number | undefined, typed: number | null, lot: number | null): number {
+  if (asked !== undefined && Number.isFinite(asked) && asked > 0) return asked;
+  if (typed !== null && (lot === null || typed % lot === 0)) return typed;
+  return lot ?? 1;
+}
+
+/** One of a quantity's last digit: 0.1 for 0.5, 1 for a whole number or none. */
+function lastDigitStep(quantity: number): number {
+  const decimals = Number.isFinite(quantity) ? stepDecimals(quantity) : 0;
+  return decimals > 0 ? Number((10 ** -decimals).toFixed(decimals)) : 1;
 }

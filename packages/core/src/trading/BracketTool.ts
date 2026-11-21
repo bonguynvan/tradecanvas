@@ -1,5 +1,5 @@
 import type { OrderSide, Point, ViewportState, Theme } from '@tradecanvas/commons';
-import { priceTagText } from '@tradecanvas/commons';
+import { priceTagText, stepDecimals } from '@tradecanvas/commons';
 import { priceToY, yToPrice } from '../viewport/ScaleMapping.js';
 import { inPlot, levelLine } from './plot.js';
 import { drawAxisBadge, drawTags, type AxisBadge, type TradingTag } from './tradingTags.js';
@@ -11,6 +11,56 @@ export interface BracketDraft {
   entry: number;
   stopLoss: number;
   takeProfit: number;
+  /** The quantity it is for, from its size (`BracketSize`); unset with none. */
+  quantity?: number;
+}
+
+/** What sizes a bracket: a quantity, or the money put at risk between its entry and its stop. */
+export interface BracketSize {
+  /** The quantity to trade. */
+  quantity?: number;
+  /**
+   * The money lost when the stop is hit. The quantity is then this over the
+   * stop's distance from the entry, and follows the lines as they are
+   * dragged. It takes the place of `quantity`.
+   */
+  risk?: number;
+  /** What a quantity from `risk` is rounded down to a multiple of: a lot, `0.001`… Unset: not rounded. */
+  quantityStep?: number;
+  /** What a move of one in price is worth for one unit, for `risk`: a contract's multiplier. Default 1. */
+  multiplier?: number;
+}
+
+/** Room for a quotient a hair under a whole number of steps (0.3 / 0.1). */
+const STEP_SLACK = 1e-9;
+
+const positive = (value: number | undefined): value is number => value !== undefined && Number.isFinite(value) && value > 0;
+
+/**
+ * The quantity of a bracket of this `size`: its `quantity`, or with `risk`
+ * the money at risk over what the stop's distance costs a unit, rounded down
+ * to `quantityStep`. Undefined with nothing to size by: no size, a stop on
+ * the entry, a risk that buys less than a step.
+ */
+export function bracketQuantity(draft: Pick<BracketDraft, 'entry' | 'stopLoss'>, size: BracketSize | undefined): number | undefined {
+  if (!size) return undefined;
+  if (size.risk === undefined) return positive(size.quantity) ? size.quantity : undefined;
+  if (!positive(size.risk)) return undefined;
+  const lossPerUnit = Math.abs(draft.entry - draft.stopLoss) * (positive(size.multiplier) ? size.multiplier : 1);
+  if (!positive(lossPerUnit)) return undefined;
+  const raw = size.risk / lossPerUnit;
+  if (!positive(size.quantityStep)) return positive(raw) ? raw : undefined;
+  const steps = Math.floor(raw / size.quantityStep + STEP_SLACK);
+  // Three steps of 0.1 are 0.30000000000000004: written to the step's own decimals.
+  return steps > 0 ? Number((steps * size.quantityStep).toFixed(stepDecimals(size.quantityStep))) : undefined;
+}
+
+/** The decimals a quantity is written to on the entry's tag. */
+const QUANTITY_DECIMALS = 4;
+
+/** A quantity on a tag: four decimals of it at most (four figures of one under 1), no zeros after them. */
+function quantityText(quantity: number): string {
+  return String(Number(quantity >= 1 ? quantity.toFixed(QUANTITY_DECIMALS) : quantity.toPrecision(QUANTITY_DECIMALS)));
 }
 
 export interface BracketDefaultsOptions {
@@ -64,18 +114,28 @@ export class BracketTool {
   private dragStart: BracketDraft | null = null;
   private dragging: BracketHandle | null = null;
   private defaults: BracketDefaultsOptions;
+  /** What sizes the bracket in hand. */
+  private size: BracketSize | undefined;
 
   constructor(defaults: BracketDefaultsOptions = {}) {
     this.defaults = defaults;
   }
 
-  start(side: OrderSide, entry: number): void {
+  /** Start a bracket at `entry`, of this `size` (none: it has no quantity). */
+  start(side: OrderSide, entry: number, size?: BracketSize): void {
     this.draft = computeBracketDefaults(side, entry, this.defaults);
+    this.size = size ? { ...size } : undefined;
     this.dragging = null;
+  }
+
+  /** Size the bracket in hand anew (a quantity typed in a field); with none in hand it does nothing. */
+  setSize(size: BracketSize | undefined): void {
+    if (this.draft) this.size = size ? { ...size } : undefined;
   }
 
   cancel(): void {
     this.draft = null;
+    this.size = undefined;
     this.dragging = null;
   }
 
@@ -83,8 +143,11 @@ export class BracketTool {
     return this.draft !== null;
   }
 
+  /** The bracket in hand, with the quantity its size gives it now. */
   getDraft(): BracketDraft | null {
-    return this.draft ? { ...this.draft } : null;
+    if (!this.draft) return null;
+    const quantity = bracketQuantity(this.draft, this.size);
+    return quantity === undefined ? { ...this.draft } : { ...this.draft, quantity };
   }
 
   /** Which handle (if any) is under the pointer. */
@@ -174,8 +237,9 @@ export class BracketTool {
   }
 
   /**
-   * The tags, each a handle for its line: the side and the reward to risk
-   * on the entry, how far away in percent on the target and the stop.
+   * The tags, each a handle for its line: the side, the quantity when it
+   * has one and the reward to risk on the entry, how far away in percent on
+   * the target and the stop.
    */
   tags(viewport: ViewportState, theme: Theme): TradingTag[] {
     const d = this.draft;
@@ -186,9 +250,11 @@ export class BracketTool {
       const pct = d.entry === 0 ? 0 : ((price - d.entry) / d.entry) * 100 * direction;
       return `${pct >= 0 ? '+' : ''}${pct.toFixed(2)}%`;
     };
+    const quantity = bracketQuantity(d, this.size);
     const tags: TradingTag[] = [
       { y: priceToY(d.entry, viewport), color: theme.text, grab: { kind: 'bracket', handle: 'entry' }, cells: [
         { kind: 'stamp', text: d.side === 'buy' ? 'Long' : 'Short' },
+        ...(quantity === undefined ? [] : [{ kind: 'text' as const, text: quantityText(quantity) }]),
         { kind: 'text', text: `${bracketRiskReward(d).toFixed(2)}R` },
       ] },
       { y: priceToY(d.takeProfit, viewport), color: profit, grab: { kind: 'bracket', handle: 'tp' }, cells: [

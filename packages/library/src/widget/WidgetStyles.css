@@ -3259,6 +3259,12 @@
   white-space: nowrap;
   text-overflow: ellipsis;
 }
+/* The quantity: narrower than a dialog's stepper, as the bar has a phone's width to fit. */
+.tcw-bracket-quantity { flex: none; }
+.tcw-bracket-quantity[hidden] { display: none; }
+.tcw-bracket-quantity .tcw-stepper .tcw-indi-input { width: 72px; }
+.tcw-bracket-quantity[data-invalid] .tcw-stepper { border-color: var(--tcw-red); }
+.tcw-bracket-confirm:disabled { opacity: 0.45; cursor: not-allowed; }
 .tcw-bracket-cancel,
 .tcw-bracket-confirm {
   display: inline-flex;
@@ -3302,6 +3308,12 @@
   }
   .tcw-bracket-hint { display: none; }
   .tcw-bracket-label { margin-inline-end: auto; }
+  /* With the quantity's field there is no room for the bar's name or for Cancel's word, in German least of
+     all: Place has the side's colour, the entry's tag its name, and Cancel keeps its icon. */
+  .tcw-bracket-bar[data-quantity] .tcw-bracket-label { display: none; }
+  .tcw-bracket-bar[data-quantity] .tcw-bracket-quantity { margin-inline-end: auto; }
+  .tcw-bracket-bar[data-quantity] .tcw-bracket-cancel { justify-content: center; width: 34px; padding-inline: 0; }
+  .tcw-bracket-bar[data-quantity] .tcw-bracket-cancel span { display: none; }
   .tcw-bracket-cancel,
   .tcw-bracket-confirm { height: 34px; }
 }
