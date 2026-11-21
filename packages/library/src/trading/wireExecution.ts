@@ -1,4 +1,5 @@
 import type {
+  AccountSummary,
   ExecutionAdapter,
   ExecutionEvent,
   ExecutionError,
@@ -55,6 +56,8 @@ export interface ExecutionHost {
   marketPrice?(): number | null;
   /** A confirmed bracket the adapter took, as the order it placed. */
   onBracketOrder?(order: TradingOrder, bracket: BracketPlacePayload): void;
+  /** The account's money, from an adapter that keeps one: as it is on wiring, then as it changes. */
+  setAccount?(account: AccountSummary): void;
 }
 
 /** What a command can read: the latest positions, and the reverses under way. */
@@ -167,6 +170,15 @@ export function wireExecution(adapter: ExecutionAdapter, host: ExecutionHost, op
   adapter.on<TradingPosition[]>('positions', onPositions);
   adapter.on<ExecutionError>('error', onError);
   adapter.on<FillEvent>('fill', onFill);
+  const onAccount = (e: ExecutionEvent<AccountSummary>) => {
+    if (e.data) host.setAccount?.(e.data);
+  };
+  adapter.on<AccountSummary>('account', onAccount);
+  const account = adapter.getAccount?.();
+  if (account) host.setAccount?.(account);
+  teardowns.push(
+    () => adapter.off('account', onAccount),
+  );
   teardowns.push(
     () => adapter.off('orders', onOrders),
     () => adapter.off('positions', onPositions),

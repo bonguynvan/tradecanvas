@@ -215,6 +215,8 @@ export class Chart {
   private executionAdapter: ExecutionAdapter | null = null;
   /** What a confirmed bracket does with the adapter connected. */
   private executionBrackets: 'event' | 'place' = 'place';
+  /** The connected adapter's account, when it keeps one. */
+  private account: import('@tradecanvas/commons').AccountSummary | null = null;
   private execTeardown: (() => void) | null = null;
   private autoScrollOnNewBar = true;
   /** The drawn series (Renko bricks…) the indicators were last worked out on; null: the data bars. */
@@ -3663,6 +3665,10 @@ export class Chart {
       getPositions: () => this.tradingManager.getPositions(),
       marketPrice: () => this.series.bars().at(-1)?.close ?? null,
       onBracketOrder: (order, bracket) => this.eventBus.emit('bracketOrder', { order, bracket }),
+      setAccount: (account) => {
+        this.account = account;
+        this.eventBus.emit('accountChange', { account });
+      },
     }, { brackets: this.executionBrackets });
     Promise.resolve(adapter.connect(config)).catch((cause) =>
       this.eventBus.emit('executionError', { message: 'Execution connect failed', cause }),
@@ -3690,6 +3696,19 @@ export class Chart {
       this.executionAdapter.disconnect();
       this.executionAdapter = null;
     }
+    if (this.account) {
+      this.account = null;
+      this.eventBus.emit('accountChange', { account: null });
+    }
+  }
+
+  /**
+   * The connected execution adapter's account: its balance, equity, margin
+   * and what trading cost. Null with no adapter, or one that keeps no money
+   * (the paper account without a `balance`). `accountChange` follows it.
+   */
+  getAccount(): import('@tradecanvas/commons').AccountSummary | null {
+    return this.account ? { ...this.account } : null;
   }
 
   /**

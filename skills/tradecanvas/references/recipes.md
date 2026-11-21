@@ -342,6 +342,9 @@ chart.placeOrderIntent({ side: 'sell', type: 'limit', price: 66_000, quantity: 1
 chart.placeOrderIntent({ side: 'sell', type: 'stop', price: 63_000, stopPrice: 63_000, quantity: 1, ocoGroup: 'exit' });
 // timeInForce: 'gtc' | 'day' | 'gtd' (with expireTime, ms) | 'ioc' | 'fok' (filled at once, or refused: executionError)
 // new PaperExecutionAdapter({ positions: 'net' }) keeps one net position, as a futures account does
+// new PaperExecutionAdapter({ balance: 10_000, leverage: 10, commission: { rate: 0.0004 } }) keeps its money:
+// chart.getAccount() gives { balance, equity, marginUsed, freeMargin, … }, 'accountChange' follows it,
+// and an order the free margin cannot carry is refused (executionError)
 ```
 
 Switching the interval mid-replay keeps the time: the replay waits for the new

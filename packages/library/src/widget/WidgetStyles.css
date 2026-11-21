@@ -4201,12 +4201,14 @@
   text-align: center;
 }
 /* The open and realised P&L, on every tab, in the mono figures. Short of room, they keep their start: the open P&L's words stay whole. */
+/* With an account's money there are five of them: they take a second line where one has no room. */
 .tcw-account-totals {
   display: flex;
   flex: 1;
+  flex-wrap: wrap;
   justify-content: flex-end;
   justify-content: safe flex-end;
-  gap: var(--tcw-space-5);
+  gap: var(--tcw-space-2) var(--tcw-space-5);
   min-width: 0;
   overflow: hidden;
   color: var(--tcw-text-dim);

@@ -98,6 +98,7 @@ export class WidgetTrading {
       fills: this.host.chart.getFills(),
       price,
       realisedPnl: this.host.chart.getRealisedPnl(),
+      account: this.host.chart.getAccount(),
     });
     this.orderTicket?.setLastPrice(price);
   }

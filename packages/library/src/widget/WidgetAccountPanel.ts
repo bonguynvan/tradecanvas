@@ -1,4 +1,4 @@
-import type { FillEvent, TradingOrder, TradingPosition } from '@tradecanvas/commons';
+import type { AccountSummary, FillEvent, TradingOrder, TradingPosition } from '@tradecanvas/commons';
 import { createIcon } from './icons.js';
 import { EN_TRANSLATOR, type MessageKey, type Translator } from './i18n.js';
 import { markPart } from './widgetFeatures.js';
@@ -27,6 +27,8 @@ export interface AccountSnapshot {
   price: number | null;
   /** The P&L realised by every fill (the list may keep only the latest); else the listed fills' sum. */
   realisedPnl?: number;
+  /** The account's money, from a broker that keeps one: its balance, equity and free margin head the totals. */
+  account?: AccountSummary | null;
 }
 
 type Tab = 'positions' | 'orders' | 'history';
@@ -38,6 +40,7 @@ const TIME_IN_FORCE = ['gtc', 'day', 'gtd', 'ioc', 'fok'] as const;
 const NONE = '—';
 /** Where the totals' words take their figure. */
 const PNL_SLOT = '{pnl}';
+const AMOUNT_SLOT = '{amount}';
 /** The positions table's column of the latest price, rewritten on a tick. */
 const PRICE_COLUMN = 3;
 
@@ -50,6 +53,12 @@ interface Column {
 /** `value` when it is one of `known`, else `fallback` (a host may send what the panel has no words for). */
 function known<T extends string>(known: readonly T[], value: string | undefined, fallback: T): T {
   return (known as readonly string[]).includes(value ?? '') ? (value as T) : fallback;
+}
+
+/** The same money: the three figures the totals show. */
+function sameAccount(a: AccountSummary | null | undefined, b: AccountSummary | null | undefined): boolean {
+  if (!a || !b) return !a && !b;
+  return a.balance === b.balance && a.equity === b.equity && a.freeMargin === b.freeMargin;
 }
 
 /** A time the panel can write: a good-till-date order's date. */
@@ -201,7 +210,7 @@ export class WidgetAccountPanel {
       && sameRows(before.fills, snapshot.fills)
       && before.realisedPnl === snapshot.realisedPnl;
     if (rowsSame) {
-      if (before.price !== snapshot.price) {
+      if (before.price !== snapshot.price || !sameAccount(before.account, snapshot.account)) {
         this.renderTotals();
         if (this.open && this.tab === 'positions') this.patchPrices();
       }
@@ -250,10 +259,17 @@ export class WidgetAccountPanel {
     this.renderTotals();
   }
 
-  /** The open P&L (with positions and a price) and the realised (once there are fills or a figure), on every tab. */
+  /**
+   * The account's balance, equity and free margin (from a broker that keeps
+   * them), the open P&L (with positions and a price) and the realised (once
+   * there are fills or a figure), on every tab.
+   */
   private renderTotals(): void {
-    const { positions, price, fills, realisedPnl } = this.snapshot;
+    const { positions, price, fills, realisedPnl, account } = this.snapshot;
     const totals: HTMLElement[] = [];
+    if (account) {
+      totals.push(this.sum('account.balance', account.balance), this.sum('account.equity', account.equity), this.sum('account.freeMargin', account.freeMargin));
+    }
     const open = positions.reduce<number | null>((sum, p) => {
       const pnl = positionPnl(p, price);
       return pnl === null ? sum : (sum ?? 0) + pnl.pnl;
@@ -263,6 +279,18 @@ export class WidgetAccountPanel {
       totals.push(this.total('account.realised', realisedPnl ?? fills.reduce((sum, f) => sum + (f.pnl ?? 0), 0)));
     }
     this.totalsEl.replaceChildren(...totals);
+  }
+
+  /** A sum of money that is no profit or loss: its words and the figure, in no tone; a debt reads with its minus. */
+  private sum(key: MessageKey, value: number): HTMLElement {
+    const el = document.createElement('span');
+    el.className = 'tcw-account-total tcw-account-sum';
+    const words = this.t(key);
+    const at = words.indexOf(AMOUNT_SLOT);
+    const figure = ltr(value < 0 ? `-${this.money(-value)}` : this.money(value));
+    if (at < 0) el.append(`${words} `, figure);
+    else el.append(words.slice(0, at), figure, words.slice(at + AMOUNT_SLOT.length));
+    return el;
   }
 
   /** A total: its words, the figure in them read left to right ("+6.00", never "6.00+"); after them, if they have no place for it. */
