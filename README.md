@@ -38,7 +38,7 @@ It is a charting engine you own: MIT-licensed, installed from npm and served wit
 
 ## Highlights
 
-- **18 chart types, 134 indicators, 76 drawing tools**, indicators on indicators, alerts on lines, undo and redo.
+- **24 chart types, 134 indicators, 76 drawing tools**, indicators on indicators, alerts on lines, undo and redo.
 - **Trading on the chart**: positions with live P&L, orders and stops you drag, a paper broker or your own.
 - **Live data** from Binance, Bybit, Coinbase, Kraken and Upbit, or your own feed in about twenty lines.
 - **Fast**: a million bars panned at 60 fps with WebGL; a live tick in about a microsecond; ten minutes of 30,000 trades a second on a million bars with no memory growth ([soak](benchmarks/2026-11-03.md)).

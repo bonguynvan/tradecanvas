@@ -10,7 +10,8 @@ export type ChartType =
   | 'renko' | 'lineBreak' | 'kagi' | 'pointAndFigure'
   | 'rangeBars'
   | 'volumeCandles' | 'hlcArea' | 'stepLine' | 'lineWithMarkers'
-  | 'equivolume' | 'hiLo';
+  | 'equivolume' | 'hiLo'
+  | 'columns' | 'hlcBars' | 'dots' | 'stepArea' | 'spline' | 'smoothedHeikinAshi';
 
 /**
  * Settings of the chart types that build bars of their own. What isn't set
@@ -25,6 +26,8 @@ export interface ChartTypeOptions {
    * no more.
    */
   renko?: { boxSize?: number | 'atr'; atrPeriod?: number };
+  /** How many bars the smoothed Heikin-Ashi averages each price over before it makes its candles: a whole number from 1 to 500 (10). */
+  smoothedHeikinAshi?: { period?: number };
   /** How many lines a reversal has to break (3). A bar makes one line at most. */
   lineBreak?: { lines?: number };
   /**

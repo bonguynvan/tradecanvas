@@ -10,7 +10,7 @@ const en = {
   meta: {
     title: 'TradeCanvas · Canvas trading charts for the web',
     description:
-      'TradeCanvas is a trading chart library for the web, drawn with Canvas 2D or WebGL: 18 chart types, 134 indicators, 76 drawing tools, live exchange feeds, orders on the chart, replay and backtesting, in 30 languages. Zero dependencies, MIT.',
+      'TradeCanvas is a trading chart library for the web, drawn with Canvas 2D or WebGL: 24 chart types, 134 indicators, 76 drawing tools, live exchange feeds, orders on the chart, replay and backtesting, in 30 languages. Zero dependencies, MIT.',
   },
 
   nav: {
@@ -698,7 +698,7 @@ const en = {
       chartTypes: [
         { name: 'Candles, OHLC bars, line, area, baseline, Heikin-Ashi, hollow candles', detail: 'candlestick, bar, line, area, baseline, heikinAshi, hollowCandle' },
         { name: 'Renko, line break, Kagi, point & figure, range bars', detail: 'Box size or ATR, lines to break, reversal in percent or price, range per bar' },
-        { name: 'Volume candles, Equivolume, HLC area, step line, line with markers, high-low', detail: '18 chart types in all' },
+        { name: 'Volume candles, Equivolume, HLC area, step line, line with markers, high-low', detail: '24 chart types in all' },
         { name: 'The main series hidden', detail: 'Only the indicators and drawings stay' },
         { name: 'Charts for dashboards', detail: 'Bars (grouped, stacked, sideways), donut and pie, scatter and bubbles, histograms, calendars, correlation matrices, sector maps, counter-clock charts, sparklines, gauges, heatmaps and treemaps, waterfalls, depth, equity curves' },
       ],

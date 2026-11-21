@@ -6096,6 +6096,12 @@
     "hlcArea",
     "stepLine",
     "lineWithMarkers",
+    "columns",
+    "hlcBars",
+    "dots",
+    "stepArea",
+    "spline",
+    "smoothedHeikinAshi",
     "hiLo",
     "renko",
     "lineBreak",
@@ -6331,6 +6337,10 @@
     "series.heikinAshi.downColor": "color",
     "series.heikinAshi.wickUpColor": "color",
     "series.heikinAshi.wickDownColor": "color",
+    "series.smoothedHeikinAshi.upColor": "color",
+    "series.smoothedHeikinAshi.downColor": "color",
+    "series.smoothedHeikinAshi.wickUpColor": "color",
+    "series.smoothedHeikinAshi.wickDownColor": "color",
     "series.hollowCandle.upColor": "color",
     "series.hollowCandle.downColor": "color",
     "series.volumeCandles.upColor": "color",
@@ -6345,6 +6355,10 @@
     "series.bar.downColor": "color",
     "series.hiLo.upColor": "color",
     "series.hiLo.downColor": "color",
+    "series.hlcBars.upColor": "color",
+    "series.hlcBars.downColor": "color",
+    "series.columns.upColor": "color",
+    "series.columns.downColor": "color",
     "series.renko.upColor": "color",
     "series.renko.downColor": "color",
     "series.lineBreak.upColor": "color",
@@ -6364,10 +6378,17 @@
     "series.stepLine.lineWidth": "width",
     "series.lineWithMarkers.color": "color",
     "series.lineWithMarkers.lineWidth": "width",
+    "series.spline.color": "color",
+    "series.spline.lineWidth": "width",
+    "series.dots.color": "color",
     "series.area.lineColor": "color",
     "series.area.lineWidth": "width",
     "series.area.topColor": "color",
     "series.area.bottomColor": "color",
+    "series.stepArea.lineColor": "color",
+    "series.stepArea.lineWidth": "width",
+    "series.stepArea.topColor": "color",
+    "series.stepArea.bottomColor": "color",
     "series.hlcArea.lineColor": "color",
     "series.hlcArea.lineWidth": "width",
     "series.hlcArea.topColor": "color",
@@ -6729,7 +6750,13 @@
           "stepLine",
           "lineWithMarkers",
           "equivolume",
-          "hiLo"
+          "hiLo",
+          "columns",
+          "hlcBars",
+          "dots",
+          "stepArea",
+          "spline",
+          "smoothedHeikinAshi"
         ]
       },
       {
@@ -6984,7 +7011,13 @@
           "stepLine",
           "lineWithMarkers",
           "equivolume",
-          "hiLo"
+          "hiLo",
+          "columns",
+          "hlcBars",
+          "dots",
+          "stepArea",
+          "spline",
+          "smoothedHeikinAshi"
         ]
       },
       {
@@ -7330,7 +7363,13 @@
           "stepLine",
           "lineWithMarkers",
           "equivolume",
-          "hiLo"
+          "hiLo",
+          "columns",
+          "hlcBars",
+          "dots",
+          "stepArea",
+          "spline",
+          "smoothedHeikinAshi"
         ]
       },
       {

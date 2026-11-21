@@ -10,6 +10,10 @@ The `3.0` branch. These move under the version's own heading when it is released
 - **The paper account fills a stop-limit within its limit** (`@tradecanvas/core`): `PaperExecutionAdapter` made a `stopLimit` order a position at its stop. It now becomes a limit order at its `price` once the stop is reached, and fills only within it.
 - **`TimeInForce` has three more members** (`@tradecanvas/commons`): `'gtd'`, `'ioc'` and `'fok'`. Code that handles every member needs them.
 
+### Chart
+
+- **Six more chart types** (`@tradecanvas/chart`, `@tradecanvas/commons`, `@tradecanvas/core`), 24 in all: `columns` (a column up to each close), `hlcBars` (high, low and close, with no open), `stepArea` (the step line, filled), `spline` (a smooth curve through the closes that passes no high or low close), `dots` (a dot at each close) and `smoothedHeikinAshi` (Heikin-Ashi of prices averaged over `chartTypeOptions.smoothedHeikinAshi.period` bars first, 10). The widget lists them, in 30 languages.
+
 ### Trading
 
 - **A paper account with money** (`@tradecanvas/commons`, `@tradecanvas/core`, `@tradecanvas/chart`): `new PaperExecutionAdapter({ balance, leverage, multiplier, commission })` keeps a balance, holds margin for open positions, charges each fill (`commission` on the fill), and refuses an order its free margin cannot carry; a waiting order whose money has gone when its price comes is cancelled. `chart.getAccount()` and the `accountChange` event give its `AccountSummary`, and the widget's account panel heads its totals with the balance, the equity and the free margin. An adapter of your own gives its account with `getAccount()` and an `account` event.

@@ -12,7 +12,7 @@
 <h1>시작하기</h1>
 <p>TradeCanvas를 설치하고 1분 안에 차트를 렌더링합니다.</p>
 <p>
-  TradeCanvas는 MIT 라이선스이며 차트에 로고를 표시하지 않습니다. 18가지 차트,
+  TradeCanvas는 MIT 라이선스이며 차트에 로고를 표시하지 않습니다. 24가지 차트,
   134개 지표, 76가지 드로잉 도구가 기본으로 들어 있습니다.
 </p>
 
@@ -105,7 +105,7 @@ args = ["-y", "@tradecanvas/mcp"]`}</code></pre>
 <h2>다음 단계</h2>
 <ul>
   <li><a href={href('/docs/api')}>API 레퍼런스</a> — <code>Chart</code>와 <code>ChartWidget</code>의 전체 API</li>
-  <li><a href={href('/docs/chart-types')}>차트 유형</a> — 내장 차트 유형 18종</li>
+  <li><a href={href('/docs/chart-types')}>차트 유형</a> — 내장 차트 유형 24종</li>
   <li><a href={href('/docs/indicators')}>지표</a> — 지표 134종 카탈로그</li>
   <li><a href={href('/docs/realtime')}>실시간 및 리플레이</a> — 스트리밍 어댑터와 리플레이 모드</li>
   <li><a href={href('/docs/analytics')}>분석</a> — 전략 백테스터와 리스크 지표</li>
