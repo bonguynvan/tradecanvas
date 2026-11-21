@@ -710,7 +710,12 @@ are made of, each taking a value a bar and returning one: `sma`, `ema`,
 `wma`, `rma`, `stdev`, `highest`, `lowest`, `change`, `rsi`, `macd`
 (`{ macd, signal, histogram }`), `atr` (of the bars), `bollinger`
 (`{ upper, middle, lower }`), `crossover` and `crossunder` (true on the bars
-of a cross). They give the built-in indicators' values.
+of a cross). `rsi`, `macd`, `atr` and `bollinger` run the built-in indicators,
+and `ta.indicator(id, input, params)` runs any of them and returns its lines
+by key, typed by the id: `ta.indicator('stochastic', bars, { kPeriod: 14 }).k`.
+Its input is the bars, or a value a bar the indicator reads as its prices
+(`ta.indicator('ema', rsi, { period: 5 }).value`); an indicator of volume or
+of sessions (OBV, MFI, VWAP…) wants the bars.
 
 ```ts
 import { Chart, defineIndicator } from '@tradecanvas/chart';
