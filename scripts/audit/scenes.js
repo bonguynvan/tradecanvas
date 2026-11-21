@@ -515,6 +515,14 @@ const SCENES = {
         const apart = pixelsApart(onPage, drawn);
         if (apart > 0) problems.push(`no page, ×${ratio}: ${apart} of ${drawn.width * drawn.height} pixels are not the chart's own`);
       }
+      // Pictures at sizes of their own leave the chart on the page as it was.
+      const before = chart.toCanvas({ pixelRatio: 1 });
+      const large = chart.toCanvas({ width: 1920, height: 1080, pixelRatio: 1 });
+      const small = chart.toCanvas({ width: 360, height: 280, theme: theme === 'dark' ? 'light' : 'dark' });
+      if (!large || large.width !== 1920 || large.height !== 1080) problems.push(`a picture asked for at 1920×1080 is ${large?.width}×${large?.height}`);
+      if (!small) problems.push('a picture asked for at 360×280 is none');
+      const moved = pixelsApart(before, chart.toCanvas({ pixelRatio: 1 }));
+      if (moved > 0) problems.push(`after pictures at other sizes, ${moved} pixels of the chart on the page are not as they were`);
       return problems;
     };
     return { chart, checks, drawStill: draw };

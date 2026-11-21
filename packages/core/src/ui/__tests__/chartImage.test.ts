@@ -259,3 +259,24 @@ describe('canvases as a PDF', () => {
     expect(text).toContain('/Title (Two charts)');
   });
 });
+
+describe('the pixels a picture has', () => {
+  it('are the size times the ratio, each side a whole number, and never past what a canvas can be', async () => {
+    const { MAX_IMAGE_PIXELS, MAX_IMAGE_SIDE, imageRatio, picturePixels, pictureSize } = await import('../chartImage.js');
+    expect(picturePixels({ width: 800, height: 400 }, 2)).toEqual({ width: 1600, height: 800 });
+    expect(picturePixels({ width: 801, height: 601 }, 1.5)).toEqual({ width: 1202, height: 902 });
+    expect(picturePixels({ width: 0.2, height: 0.2 }, 1)).toEqual({ width: 1, height: 1 });
+    // Held to the most pixels a canvas has: rounding each side up could go past it by a few.
+    for (const size of [{ width: 12_000, height: 9000 }, { width: 9999, height: 7777 }, { width: 5000, height: 4999 }, { width: 16_384, height: 16_384 }]) {
+      const pixels = picturePixels(size, imageRatio(size.width, size.height, 4, 1));
+      expect(pixels.width * pixels.height, JSON.stringify(size)).toBeLessThanOrEqual(MAX_IMAGE_PIXELS);
+      expect(Math.max(pixels.width, pixels.height)).toBeLessThanOrEqual(MAX_IMAGE_SIDE);
+      // And no smaller than it has to be.
+      expect(pixels.width * pixels.height).toBeGreaterThan(MAX_IMAGE_PIXELS * 0.99);
+    }
+    expect(pictureSize({ width: 800, height: 400 }, {})).toEqual({ width: 800, height: 400 });
+    expect(pictureSize({ width: 800, height: 400 }, { width: 1600 })).toEqual({ width: 1600, height: 400 });
+    expect(pictureSize({ width: 800, height: 400 }, { width: Number.NaN, height: -1 })).toEqual({ width: 800, height: 400 });
+    expect(pictureSize({ width: 800, height: 400 }, { width: 1e9, height: 200.4 })).toEqual({ width: MAX_IMAGE_SIDE, height: 200 });
+  });
+});

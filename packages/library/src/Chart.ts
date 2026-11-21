@@ -49,7 +49,7 @@ import type { ResolvedLayout, ChartStyleKey, ChartStyleOverrides, ChartStyleOver
 import { readChartTypeOptions, tickBarCount, barTimeUnit, readChartStyleOverrides, readIndicatorPlotStyles, readPaneStyle } from '@tradecanvas/commons';
 import { PriceLines, type BidAsk, SymbolSeriesStore, CompareSymbolIndicator, CompareSymbolPaneIndicator, SpreadIndicator, CorrelationCoefficientIndicator, CorrelationLogIndicator, axisTimes, HiLoRenderer, PointAndFigureRenderer, isPriceLevelAlert, loadWebGL, gpuContextsLeft, whenGpuContextFree, idleCssCursor, isCrosshairCursor } from '@tradecanvas/core';
 import type { GpuRenderer, RendererMode } from '@tradecanvas/core';
-import { canvasBlob, canvasDataURL, canvasReadable, canvasesToPdf, copyImage, downloadImage, imageFileName, imageRatio, printCanvas } from '@tradecanvas/core';
+import { canvasBlob, canvasDataURL, canvasReadable, canvasesToPdf, copyImage, downloadImage, imageFileName, imageRatio, picturePixels, pictureSize, printCanvas } from '@tradecanvas/core';
 import { indicatorWorkerPool, INDICATOR_WORKER_MIN_BARS, THEME_LOOK_KEYS, valuePlots, panelScale, panelScaleTexts, panelTagText, type IndicatorWorkerLease } from '@tradecanvas/core';
 import { regularHoursFilter } from './regularHours.js';
 import { ChartA11y } from './chartA11y.js';
@@ -172,6 +172,8 @@ function assertTimeZone(tz: TimeZoneSetting): void {
 
 /** Room above and below the left scale's overlays, as a share of their range. */
 const LEFT_SCALE_PADDING = 0.08;
+/** How many times a picture at a size of its own fits its bars and sizes its scales: a scale that changes width changes the plot once. */
+const PICTURE_FIT_ROUNDS = 3;
 /** Fewest bars ahead of the view that trigger the next history page. */
 const HISTORY_AHEAD_MIN_BARS = 20;
 
@@ -4962,18 +4964,22 @@ export class Chart {
    */
   toCanvas(options: ChartImageOptions = {}): HTMLCanvasElement | null {
     if (!this.features.screenshot) return null;
-    if (options.pixelRatio === undefined && options.theme === undefined) {
+    const own = this.engine.dprManager.readContainerSize();
+    const size = pictureSize(own, options);
+    const sized = size.width !== own.width || size.height !== own.height;
+    if (options.pixelRatio === undefined && options.theme === undefined && !sized) {
       this.freshFrame();
       const read = Screenshot.compose(this.container, this.themeManager.getTheme().background);
       // Canvases of no size make a picture of none.
       return read && read.width > 0 && read.height > 0 ? read : null;
     }
-    const size = this.engine.dprManager.readContainerSize();
-    if (!(size.width > 0) || !(size.height > 0)) return null;
+    // A chart with no size has no layout to draw at another.
+    if (!(own.width > 0) || !(own.height > 0)) return null;
     const ratio = imageRatio(size.width, size.height, options.pixelRatio, this.engine.dprManager.getDpr());
     const canvas = document.createElement('canvas');
-    canvas.width = Math.max(1, Math.round(size.width * ratio));
-    canvas.height = Math.max(1, Math.round(size.height * ratio));
+    const pixels = picturePixels(size, ratio);
+    canvas.width = pixels.width;
+    canvas.height = pixels.height;
     const ctx = canvas.getContext('2d');
     if (!ctx) return null;
     // A paused chart hasn't taken in what changed since it stopped drawing: the
@@ -4984,31 +4990,80 @@ export class Chart {
       this.fitDataAndAxes();
       this.syncRenderContext();
     }
-    const draw = (): void => {
+    const paint = (): void => {
       ctx.setTransform(canvas.width / size.width, 0, 0, canvas.height / size.height, 0, 0);
       // The plot's ground is the container's on the page: the picture needs its own.
       ctx.fillStyle = this.themeManager.getTheme().background;
       ctx.fillRect(0, 0, size.width, size.height);
       this.engine.renderTo(ctx);
     };
-    if (options.theme === undefined) {
-      draw();
+    // At another size or in another font the legend is another size: worked out before the frame, whose
+    // drawings keep clear of it, and the page's put back after.
+    const frame = (): void => {
+      if (this.features.legend) this.chartLegend.measure(ctx, this.viewport.getState(), this.themeManager.getTheme(), this.getDisplayData());
+      paint();
+    };
+    const draw = sized ? (): void => this.atSize(size, frame) : frame;
+    if (options.theme === undefined && !sized) {
+      paint();
     } else {
-      // The chart in the other theme for as long as the picture takes: nothing on the page is told or changed.
+      // The chart in the other theme, at the other size, for as long as the picture takes: nothing on the page is told or changed.
       try {
-        this.themeManager.withTheme(options.theme, () => {
-          this.syncRenderContext();
-          draw();
+        this.chartLegend.keepSize(() => {
+          if (options.theme === undefined) return draw();
+          this.themeManager.withTheme(options.theme, () => {
+            this.syncRenderContext();
+            draw();
+          });
         });
       } finally {
         this.syncRenderContext();
       }
       // A frame notes where its labels and tags are as it draws them, and that was for the
-      // other theme's font: the chart's own frame, drawn again, notes them for its own.
+      // other font or the other size: the chart's own frame, drawn again, notes them for its own.
       this.engine.requestRender();
     }
-    this.drawGuestCanvases(ctx);
+    // A host's canvas is laid over the chart where the chart is on the page: it has no place at another size.
+    if (!sized) this.drawGuestCanvases(ctx);
     return canvas;
+  }
+
+  /**
+   * Runs `draw` with the chart laid out at `size`, the bars now on view on
+   * view there, and puts the page's layout back: a picture at a size of its
+   * own. Nothing is told, and no canvas of the chart's is touched. The bars
+   * are as wide as the size makes them, within what a bar can be: past
+   * that, more or fewer of them are on view, about the same middle.
+   */
+  private atSize(size: { width: number; height: number }, draw: () => void): void {
+    const own = this.engine.dprManager.readContainerSize();
+    const kept = { viewport: this.viewport.snapshot(), fit: this.priceFit.snapshot(), priceAxisWidth: this.priceAxisWidth, leftAxisWidth: this.leftAxisWidth };
+    const { offset, barWidth, barSpacing, chartRect } = this.viewport.getState();
+    const unit = barWidth + barSpacing;
+    const first = unit > 0 ? offset / unit : 0;
+    const last = unit > 0 ? first + chartRect.width / unit - 1 : 0;
+    try {
+      this.layoutManager.resize(size.width, size.height);
+      // The bars are fitted to the plot, and the plot is what the scales leave: twice, should a scale change width.
+      for (let round = 0; round < PICTURE_FIT_ROUNDS; round++) {
+        this.panes.invalidate();
+        this.viewport.setChartRect(this.getResolvedLayout().mainChartRect);
+        this.viewport.zoomToBarRange(first, last);
+        if (!this.fitDataAndAxes()) break;
+      }
+      this.syncRenderContext();
+      draw();
+    } finally {
+      this.layoutManager.resize(own.width, own.height);
+      this.priceAxisWidth = kept.priceAxisWidth;
+      this.leftAxisWidth = kept.leftAxisWidth;
+      this.layoutManager.setPriceAxisWidth(kept.priceAxisWidth);
+      this.layoutManager.setLeftAxisWidth(this.isLeftPriceScaleShown() ? kept.leftAxisWidth : 0);
+      this.viewport.restore(kept.viewport);
+      this.priceFit.restore(kept.fit);
+      this.panes.invalidate();
+      this.leftViewport = this.computeLeftViewport();
+    }
   }
 
   /**
@@ -6728,15 +6783,18 @@ export class Chart {
   /**
    * Fit the data to the plot, then size both price scales to their labels. A
    * scale that changes width changes the plot, so the data is fit again —
-   * before anything reads the layout for this frame.
+   * before anything reads the layout for this frame. True when a scale
+   * changed width.
    */
-  private fitDataAndAxes(scrollToEnd = false): void {
+  private fitDataAndAxes(scrollToEnd = false): boolean {
     const shown = this.applyDataToViewport(scrollToEnd);
     const priceResized = this.fitPriceAxisWidth();
     this.leftViewport = this.computeLeftViewport();
-    if (this.fitLeftAxisWidth() || priceResized) this.applyDataToViewport(scrollToEnd);
+    const resized = this.fitLeftAxisWidth() || priceResized;
+    if (resized) this.applyDataToViewport(scrollToEnd);
     // The new series' prices are on the axis: auto-scale off holds them from here.
     this.priceFit.settle(this.viewport.getState(), shown.length);
+    return resized;
   }
 
   /**
