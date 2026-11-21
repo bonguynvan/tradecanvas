@@ -17,6 +17,7 @@ import type {
   PositionModifyIntent,
   PositionCloseIntent,
   PositionReverseIntent,
+  TakeProfitLevel,
 } from '@tradecanvas/commons';
 
 export interface PaperExecutionOptions {
@@ -267,6 +268,8 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
     if (intent.trailingStop !== undefined && Number.isFinite(intent.trailingStop) && intent.trailingStop > 0) order.trailingStop = intent.trailingStop;
     if (dated) order.expireTime = intent.expireTime;
     if (intent.ocoGroup) order.ocoGroup = intent.ocoGroup;
+    const levels = levelsOf(intent.takeProfits, intent.side);
+    if (levels) order.takeProfits = levels;
 
     // An order that fills now is sized at the price there is; one that waits, at where it will fill.
     const fillsNow = intent.type === 'market' || (atOnce && this.markPrice > 0);
@@ -311,6 +314,12 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
     this.positions = this.positions.map((p) => {
       if (p.id !== intent.positionId) return p;
       const next: TradingPosition = { ...p, stopLoss: pick(intent.stopLoss, p.stopLoss), takeProfit: pick(intent.takeProfit, p.takeProfit) };
+      // Its levels, all of them: left out keeps them, null (or none usable) takes them off.
+      if (intent.takeProfits !== undefined) {
+        const levels = levelsOf(intent.takeProfits, p.side);
+        if (levels) next.takeProfits = levels;
+        else delete next.takeProfits;
+      }
       // A distance starts the trail, null ends it; anything that is not a distance is not taken.
       if (intent.trailingStop === null) delete next.trailingStop;
       else if (intent.trailingStop !== undefined && Number.isFinite(intent.trailingStop) && intent.trailingStop > 0) next.trailingStop = intent.trailingStop;
@@ -406,6 +415,7 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
       takeProfit: order.takeProfit,
     };
     if (order.trailingStop !== undefined) position.trailingStop = order.trailingStop;
+    if (order.takeProfits) position.takeProfits = order.takeProfits.map((level) => ({ ...level }));
     return position;
   }
 
@@ -429,6 +439,7 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
       };
       delete added.closedQuantity;
       if (order.trailingStop !== undefined) added.trailingStop = order.trailingStop;
+      if (order.takeProfits) added.takeProfits = order.takeProfits.map((level) => ({ ...level }));
       this.positions = [added];
       fill.positionId = held.id;
       return;
@@ -454,9 +465,14 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
   }
 
   /** Take a position off the book at `price`, reporting the fill and what it realised. */
-  private close(position: TradingPosition, price: number, reason: FillReason): void {
-    this.positions = this.positions.filter((p) => p.id !== position.id);
-    const quantity = position.quantity - (position.closedQuantity ?? 0);
+  private close(position: TradingPosition, price: number, reason: FillReason, part?: number): void {
+    const open = position.quantity - (position.closedQuantity ?? 0);
+    // A part as large as what is open (to a hair) is all of it.
+    const whole = part === undefined || part >= open * (1 - QUANTITY_SLACK);
+    const quantity = whole ? open : part;
+    this.positions = whole
+      ? this.positions.filter((p) => p.id !== position.id)
+      : this.positions.map((p) => (p.id === position.id ? { ...p, closedQuantity: (p.closedQuantity ?? 0) + quantity } : p));
     const direction = position.side === 'buy' ? 1 : -1;
     const fill: FillEvent = {
       orderId: this.nextId('ord'),
@@ -536,13 +552,17 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
     // The stops that were there are checked first: a price that falls through one fills it
     // where it was, and only then do the others follow the price.
     let changed = false;
-    for (const p of [...this.positions]) {
+    for (const held of [...this.positions]) {
+      const long = held.side === 'buy';
+      const reached = (target: number) => (long ? this.markPrice >= target : this.markPrice <= target);
       const hitSL =
-        p.stopLoss !== undefined &&
-        (p.side === 'buy' ? this.markPrice <= p.stopLoss : this.markPrice >= p.stopLoss);
-      const hitTP =
-        p.takeProfit !== undefined &&
-        (p.side === 'buy' ? this.markPrice >= p.takeProfit : this.markPrice <= p.takeProfit);
+        held.stopLoss !== undefined &&
+        (long ? this.markPrice <= held.stopLoss : this.markPrice >= held.stopLoss);
+      // Its levels first, the nearest first: each takes its part off at its own price.
+      if (!hitSL && this.closeLevels(held, reached)) changed = true;
+      const p = this.positions.find((other) => other.id === held.id);
+      if (!p) continue;
+      const hitTP = p.takeProfit !== undefined && reached(p.takeProfit);
       if (!hitSL && !hitTP) continue;
       // Filled at the stop's price, as a stop order would be.
       this.close(p, hitSL ? p.stopLoss! : p.takeProfit!, hitSL ? 'stopLoss' : 'takeProfit');
@@ -550,6 +570,29 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
     }
     if (this.trailStops()) changed = true;
     if (changed) this.emit('positions', this.positions);
+  }
+
+  /**
+   * The parts of a position its take-profit levels take off at the price
+   * now: each level reached closes its quantity (or what is left) at its own
+   * price and goes. True when one did.
+   */
+  private closeLevels(position: TradingPosition, reached: (target: number) => boolean): boolean {
+    let closed = false;
+    for (;;) {
+      const p = this.positions.find((other) => other.id === position.id);
+      const level = p?.takeProfits?.[0];
+      if (!p || !level || !reached(level.price)) return closed;
+      const rest = p.takeProfits!.slice(1);
+      // The level goes before its part does: what the close leaves has the levels still to come.
+      this.positions = this.positions.map((other) => {
+        if (other.id !== p.id) return other;
+        const { takeProfits: _levels, ...without } = other;
+        return rest.length > 0 ? { ...without, takeProfits: rest } : without;
+      });
+      this.close(this.positions.find((other) => other.id === p.id)!, level.price, 'takeProfit', level.quantity);
+      closed = true;
+    }
   }
 
   private nextId(prefix: string): string {
@@ -563,6 +606,20 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
       for (const listener of set) listener(event);
     }
   }
+}
+
+/**
+ * Take-profit levels as the account keeps them: those with a price and a
+ * quantity above 0, the nearest to the entry first (the lowest for a long,
+ * the highest for a short). Undefined with none.
+ */
+function levelsOf(levels: readonly TakeProfitLevel[] | null | undefined, side: TradingOrder['side']): TakeProfitLevel[] | undefined {
+  if (!Array.isArray(levels)) return undefined;
+  const usable = levels
+    .filter((level) => level && positive(level.price) && positive(level.quantity))
+    .map((level) => ({ price: level.price, quantity: level.quantity }))
+    .sort((a, b) => (side === 'buy' ? a.price - b.price : b.price - a.price));
+  return usable.length > 0 ? usable : undefined;
 }
 
 /** How far short of an order's need the account may be and still carry it, as a part of the need: a sum's rounding. */

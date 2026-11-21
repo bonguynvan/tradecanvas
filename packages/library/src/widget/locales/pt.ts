@@ -572,6 +572,7 @@ export const PT_MESSAGES: WidgetMessages = {
   'ticket.stopLoss': 'Stop loss',
   'ticket.takeProfit': 'Take profit',
   'ticket.trailing': 'Stop móvel',
+  'ticket.targets': 'Alvos',
   'ticket.timeInForce': 'Validade',
   'ticket.tif.gtc': 'Válida até cancelar',
   'ticket.tif.day': 'Dia',

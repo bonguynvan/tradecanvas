@@ -572,6 +572,7 @@ export const PL_MESSAGES: WidgetMessages = {
   'ticket.stopLoss': 'Stop Loss',
   'ticket.takeProfit': 'Take Profit',
   'ticket.trailing': 'Stop kroczący',
+  'ticket.targets': 'Cele',
   'ticket.timeInForce': 'Ważność',
   'ticket.tif.gtc': 'Do odwołania',
   'ticket.tif.day': 'Do końca dnia',

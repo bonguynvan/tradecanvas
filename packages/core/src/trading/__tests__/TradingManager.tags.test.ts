@@ -28,6 +28,31 @@ beforeEach(() => {
 });
 
 describe('the tags on the trading lines', () => {
+  it('give each take-profit level of a position its tag: which it is, its part and what that would make', () => {
+    manager.setPositions([{ id: 'p1', side: 'buy', entryPrice: 60, quantity: 3, takeProfits: [{ price: 70, quantity: 1 }, { price: 80, quantity: 2 }] }]);
+    manager.setOrders([]);
+    const { texts, calls } = draw();
+    expect(texts).toEqual(expect.arrayContaining(['TP1', 'TP2']));
+    // One at 70 from 60 makes 10, two at 80 make 40.
+    expect(texts).toEqual(expect.arrayContaining(['+10.00', '+40.00']));
+    // A line for each, beside the entry's: at y 30 and y 20, on the pixel's middle as lines are drawn.
+    const lineYs = calls.filter((call) => call.name === 'moveTo').map((call) => call.args[1]);
+    expect(lineYs).toEqual(expect.arrayContaining([30.5, 20.5]));
+  });
+
+  it('give a waiting order’s levels their tags too', () => {
+    manager.setPositions([]);
+    manager.setOrders([{ id: 'o1', side: 'buy', type: 'limit', price: 30, quantity: 2, takeProfits: [{ price: 40, quantity: 1 }, { price: 50, quantity: 1 }] }]);
+    const { texts } = draw();
+    expect(texts).toEqual(expect.arrayContaining(['TP1', 'TP2', '+10.00', '+20.00']));
+  });
+
+  it('draw no level that is off the plot', () => {
+    manager.setPositions([{ id: 'p1', side: 'buy', entryPrice: 60, quantity: 3, takeProfits: [{ price: 500, quantity: 1 }] }]);
+    manager.setOrders([]);
+    expect(draw().texts).not.toContain('TP1');
+  });
+
   it('say which orders are of a group where one cancels the others', () => {
     expect(draw().texts).not.toContain('OCO');
     manager.setOrders([

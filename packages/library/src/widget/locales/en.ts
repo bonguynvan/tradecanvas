@@ -579,6 +579,7 @@ export const EN_MESSAGES = {
   'ticket.stopLoss': 'Stop-loss',
   'ticket.takeProfit': 'Take-profit',
   'ticket.trailing': 'Trailing stop',
+  'ticket.targets': 'Targets',
   'ticket.timeInForce': 'Time in force',
   'ticket.tif.gtc': 'Good till cancelled',
   'ticket.tif.day': 'Day',

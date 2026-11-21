@@ -4,6 +4,7 @@ import { UI_ICONS, priceTagText } from '@tradecanvas/commons';
 import type { LineButton } from './lineButtons.js';
 import { inPlot, levelLine } from './plot.js';
 import { amountAt, amountDecimals, formatAmount } from './positionFormat.js';
+import { levelTags } from './PositionRenderer.js';
 import { drawAxisBadge, drawTags, type AxisBadge, type TagCell, type TradingTag } from './tradingTags.js';
 
 export interface DragState {
@@ -85,6 +86,10 @@ export class OrderRenderer {
         const stopY = price === undefined ? NaN : priceToY(price, viewport);
         if (inPlot(stopY, viewport)) levelLine(ctx, viewport, stopY, stopColor, PLANNED_DASH);
       }
+      for (const level of order.takeProfits ?? []) {
+        const levelY = priceToY(level.price, viewport);
+        if (inPlot(levelY, viewport)) levelLine(ctx, viewport, levelY, colors.profit, PLANNED_DASH);
+      }
     }
   }
 
@@ -126,6 +131,7 @@ export class OrderRenderer {
           ],
         });
       }
+      tags.push(...levelTags(order.takeProfits, order.side, price, viewport, config));
     }
     return tags;
   }

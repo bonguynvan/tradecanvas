@@ -572,6 +572,7 @@ export const ID_MESSAGES: WidgetMessages = {
   'ticket.stopLoss': 'Stop loss',
   'ticket.takeProfit': 'Take profit',
   'ticket.trailing': 'Trailing stop',
+  'ticket.targets': 'Target',
   'ticket.timeInForce': 'Masa berlaku',
   'ticket.tif.gtc': 'Berlaku hingga dibatalkan',
   'ticket.tif.day': 'Harian',

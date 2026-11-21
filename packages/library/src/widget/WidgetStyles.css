@@ -3259,6 +3259,18 @@
   white-space: nowrap;
   text-overflow: ellipsis;
 }
+/* What comes off at each of the take-profit's targets: figures, under their choice. */
+.tcw-ticket-levels {
+  margin: var(--tcw-space-2) 0 0;
+  min-height: 1em;
+  color: var(--tcw-text-muted);
+  font-family: var(--tcw-font-mono);
+  font-size: var(--tcw-font-size-sm);
+  font-variant-numeric: tabular-nums;
+  text-align: end;
+  overflow-wrap: anywhere;
+}
+.tcw-ticket-levels:empty { display: none; }
 /* Sell and Buy under the chart's legend: each its side's colour, with the price it would trade at. */
 /* Only the two buttons take the pointer: a drag or a drawing that starts between them is the chart's. */
 .tcw-quote-buttons {

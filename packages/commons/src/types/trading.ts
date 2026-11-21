@@ -10,6 +10,13 @@ export type OrderLabel = 'LIMIT' | 'STOP' | 'SL' | 'TP' | 'STOP LIMIT';
  */
 export type TimeInForce = 'gtc' | 'day' | 'gtd' | 'ioc' | 'fok';
 
+/** A part of a position taken off at a price: one of its take-profit levels. */
+export interface TakeProfitLevel {
+  price: number;
+  /** How much of the position closes there. */
+  quantity: number;
+}
+
 export interface TradingOrder {
   id: string;
   side: OrderSide;
@@ -25,6 +32,8 @@ export interface TradingOrder {
   /** The distance the position's stop-loss trails the price by once the order fills (see `TradingPosition.trailingStop`). */
   trailingStop?: number;
   timeInForce?: TimeInForce;
+  /** Take-profit levels the position gets when the order fills: a part of it closes at each (see `TradingPosition.takeProfits`). */
+  takeProfits?: TakeProfitLevel[];
   /** When a good-till-date order ends (ms since the epoch). */
   expireTime?: number;
   /** The group it is one of, where one cancels the others: when one of them fills, the rest are cancelled. */
@@ -41,6 +50,14 @@ export interface TradingPosition {
   closedQuantity?: number;
   stopLoss?: number;
   takeProfit?: number;
+  /**
+   * Take-profit levels, the nearest first: a part of the position closes at
+   * each as the price reaches it, and the level goes. What they leave stays
+   * open, for `takeProfit` to close (or the stop-loss). The account takes
+   * the parts off (the paper account does; a broker's adapter reports its
+   * own), counting them in `closedQuantity`.
+   */
+  takeProfits?: TakeProfitLevel[];
   /**
    * The distance (in price) its stop-loss trails the best price by: the stop
    * follows the price up for a long and down for a short, and never moves
@@ -174,6 +191,8 @@ export interface OrderPlaceIntent {
   /** The distance, in price, the position's stop-loss is to trail the price by. */
   trailingStop?: number;
   timeInForce?: TimeInForce;
+  /** Take-profit levels for the position the order opens: a part of it closes at each. */
+  takeProfits?: TakeProfitLevel[];
   /** When the order ends (ms since the epoch), with `timeInForce: 'gtd'`. */
   expireTime?: number;
   /** A name shared by orders of which one cancels the others: when one fills, the rest are cancelled. */
@@ -198,6 +217,8 @@ export interface PositionModifyIntent {
   stopLoss?: number | null;
   /** A new take-profit; null removes it, left out keeps it. */
   takeProfit?: number | null;
+  /** New take-profit levels, all of them; null removes them, left out keeps them. */
+  takeProfits?: TakeProfitLevel[] | null;
   /**
    * The distance (in price) the stop-loss is to trail the price by; null ends
    * the trail and leaves the stop where it is, left out keeps it.

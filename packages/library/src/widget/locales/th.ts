@@ -572,6 +572,7 @@ export const TH_MESSAGES: WidgetMessages = {
   'ticket.stopLoss': 'ตัดขาดทุน',
   'ticket.takeProfit': 'ทำกำไร',
   'ticket.trailing': 'Trailing stop',
+  'ticket.targets': 'เป้าหมาย',
   'ticket.timeInForce': 'ระยะเวลาคำสั่ง',
   'ticket.tif.gtc': 'มีผลจนกว่าจะยกเลิก',
   'ticket.tif.day': 'เฉพาะวันนี้',
