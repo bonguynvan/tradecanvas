@@ -927,6 +927,7 @@ const ko: SiteMessages = {
       frameworks: '프레임워크',
       embed: '임베드 위젯',
       migration: '2.0으로 마이그레이션',
+      'migration-3': '3.0으로 마이그레이션',
       'from-tradingview': 'TradingView에서 옮겨오기',
       'how-it-works': '작동 방식',
       api: 'API 레퍼런스',

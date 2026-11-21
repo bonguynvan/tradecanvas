@@ -326,12 +326,16 @@ import { Chart, BinanceAdapter, PaperExecutionAdapter } from '@tradecanvas/chart
 const adapter = new BinanceAdapter();
 const chart = new Chart(document.getElementById('chart')!, { theme: 'dark' });
 await chart.connect({ adapter, symbol: 'BTCUSDT', timeframe: '1h' });
-chart.connectExecution(new PaperExecutionAdapter(), { brackets: 'place' }); // a confirmed bracket is an order too
+chart.connectExecution(new PaperExecutionAdapter()); // a confirmed bracket is an order too ({ brackets: 'event' }: only the event)
 
 // The chart fetches the minutes of the bars it is about to play (not the newest ones).
 chart.replayStart({ animate: true, step: 'auto', startIndex: 300, paused: true, speed: 2 });
 chart.replayResume();
 // … place orders from the chart; chart.replaySeekToBar(i) jumps, chart.replayStop() goes back to live
+
+// A bracket (entry, stop-loss, take-profit) to drag and confirm with Enter: it needs a size to be an order.
+chart.startBracket('buy', undefined, { risk: 50, quantityStep: 0.001 }); // the quantity that loses 50 at the stop
+// chart.startBracket('sell', 64_800, { quantity: 2 }); chart.setBracketSize({ quantity: 3 }); chart.getBracket()
 ```
 
 Switching the interval mid-replay keeps the time: the replay waits for the new

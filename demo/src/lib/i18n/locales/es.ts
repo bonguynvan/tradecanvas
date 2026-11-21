@@ -931,6 +931,7 @@ const es: SiteMessages = {
       frameworks: 'Frameworks',
       embed: 'Widget incrustable',
       migration: 'Migrar a la 2.0',
+      'migration-3': 'Migrar a la 3.0',
       'from-tradingview': 'Pasar desde TradingView',
       'how-it-works': 'Cómo funciona',
       api: 'Referencia de la API',

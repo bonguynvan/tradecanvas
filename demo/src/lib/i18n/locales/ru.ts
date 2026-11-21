@@ -927,6 +927,7 @@ const ru: SiteMessages = {
       frameworks: 'Фреймворки',
       embed: 'Встраиваемый виджет',
       migration: 'Переход на 2.0',
+      'migration-3': 'Переход на 3.0',
       'from-tradingview': 'Переход с TradingView',
       'how-it-works': 'Как это устроено',
       api: 'Справочник API',

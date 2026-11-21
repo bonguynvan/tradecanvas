@@ -927,6 +927,7 @@ const fr: SiteMessages = {
       frameworks: 'Frameworks',
       embed: 'Widget intégrable',
       migration: 'Passer à la 2.0',
+      'migration-3': 'Passer à la 3.0',
       'from-tradingview': 'Passer de TradingView',
       'how-it-works': 'Fonctionnement',
       api: 'Référence de l’API',

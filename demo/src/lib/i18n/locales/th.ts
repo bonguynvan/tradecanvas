@@ -927,6 +927,7 @@ const th: SiteMessages = {
       frameworks: 'เฟรมเวิร์ก',
       embed: 'วิดเจ็ตแบบฝัง',
       migration: 'ย้ายไปใช้ 2.0',
+      'migration-3': 'ย้ายไปใช้ 3.0',
       'from-tradingview': 'ย้ายจาก TradingView',
       'how-it-works': 'วิธีการทำงาน',
       api: 'เอกสารอ้างอิง API',

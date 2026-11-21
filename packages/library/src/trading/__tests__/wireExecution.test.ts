@@ -213,14 +213,22 @@ describe('wireExecution and a confirmed bracket', () => {
     expect(taken).toEqual([]);
   });
 
-  it('only emits it, as before, without being asked to send it', async () => {
-    for (const options of [undefined, { brackets: 'event' as const }]) {
+  it('sends it without being told what a bracket does: placing is the default', async () => {
+    for (const options of [undefined, {}]) {
       const { h, taken, emit } = wired(options);
       emit(bracket);
       await flush();
-      expect(h.orders).toEqual([]);
-      expect(taken).toEqual([]);
+      expect(h.orders).toEqual([expect.objectContaining({ price: 95, quantity: 2 })]);
+      expect(taken).toHaveLength(1);
     }
+  });
+
+  it('only emits it for an app that places it itself (brackets: event)', async () => {
+    const { h, taken, emit } = wired({ brackets: 'event' });
+    emit(bracket);
+    await flush();
+    expect(h.orders).toEqual([]);
+    expect(taken).toEqual([]);
   });
 
   it('reports a bracket the adapter refuses', async () => {

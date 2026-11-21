@@ -124,7 +124,7 @@ import {
   PRICE_AXIS_ADD_STRIP,
   findDominantSwing,
 } from '@tradecanvas/core';
-import type { ChartRendererInterface, CompareValue, RangePreset, SessionHoursConfig, DrawingPatch, DrawingOrderMove } from '@tradecanvas/core';
+import type { BracketDraft, BracketSize, ChartRendererInterface, CompareValue, RangePreset, SessionHoursConfig, DrawingPatch, DrawingOrderMove } from '@tradecanvas/core';
 import { timeframeToMs } from '@tradecanvas/commons';
 import { resolveRenderer, isReshapedChartType } from './charts/ChartTypeStrategy.js';
 import { AutoSaveScheduler } from './state/AutoSaveScheduler.js';
@@ -213,12 +213,8 @@ export class Chart {
   private eventBus: EventBus;
   private streamManager: StreamManager | null = null;
   private executionAdapter: ExecutionAdapter | null = null;
-  /** What a confirmed bracket does with the adapter: `null` when `connectExecution` was not told. */
-  private executionBrackets: 'event' | 'place' | null = null;
-  /** The console was told once that a bracket did not reach the adapter. */
-  private bracketsWarned = false;
-  /** Waits for the first bracket confirmed with an adapter connected without `brackets`, to say so. */
-  private bracketWarner: (() => void) | null = null;
+  /** What a confirmed bracket does with the adapter connected. */
+  private executionBrackets: 'event' | 'place' = 'place';
   private execTeardown: (() => void) | null = null;
   private autoScrollOnNewBar = true;
   /** The drawn series (Renko bricks…) the indicators were last worked out on; null: the data bars. */
@@ -1156,7 +1152,7 @@ export class Chart {
 
     this.interactionManager.setConfirmHandler(() => {
       if (this.features.trading && this.tradingManager.isBracketActive()) {
-        this.tradingManager.confirmBracket();
+        this.confirmBracket();
         return true;
       }
       return false;
@@ -3114,23 +3110,50 @@ export class Chart {
    * Begin placing a draggable bracket order (entry + stop-loss + take-profit).
    * Defaults the entry to the latest close when `entry` is omitted. Drag the
    * three lines to adjust; confirm with Enter (emits `bracketPlace`) or cancel
-   * with Esc. Returns false if trading is disabled or no price is available.
+   * with Esc. `size` gives it its quantity: `{ quantity: 2 }`, or
+   * `{ risk: 50 }` for the quantity that loses 50 at the stop, which follows
+   * the lines as they are dragged. With no size it has no quantity, and a
+   * connected execution adapter is not sent it. Returns false if trading is
+   * disabled or no price is available.
    */
-  startBracket(side: import('@tradecanvas/commons').OrderSide, entry?: number): boolean {
+  startBracket(side: import('@tradecanvas/commons').OrderSide, entry?: number, size?: BracketSize): boolean {
     if (!this.features.trading) return false;
     const data = this.series.bars();
     const price = entry ?? (data.length > 0 ? data[data.length - 1].close : null);
     if (price === null) return false;
-    this.tradingManager.startBracket(side, price);
+    this.tradingManager.startBracket(side, price, size);
     return true;
+  }
+
+  /** Size the bracket being placed anew (a quantity typed in a field). With none being placed it does nothing. */
+  setBracketSize(size: BracketSize | undefined): void {
+    if (this.features.trading) this.tradingManager.setBracketSize(size);
+  }
+
+  /** The bracket being placed: its side, its three prices and the quantity its size gives it now. Null with none. */
+  getBracket(): BracketDraft | null {
+    return this.features.trading ? this.tradingManager.getBracket() : null;
   }
 
   cancelBracket(): void {
     if (this.features.trading) this.tradingManager.cancelBracket();
   }
 
+  /**
+   * Confirm the bracket being placed: `bracketPlace` goes out, and with an
+   * execution adapter connected it is sent as an order. A bracket the adapter
+   * would not be sent (it has no quantity) is not confirmed: `executionError`
+   * says why (`reason: 'noQuantity'`), and it stays to be given a size.
+   * Returns whether it was confirmed.
+   */
   confirmBracket(): boolean {
-    return this.features.trading ? this.tradingManager.confirmBracket() : false;
+    if (!this.features.trading) return false;
+    const bracket = this.tradingManager.getBracket();
+    if (bracket && bracket.quantity === undefined && this.placesBrackets()) {
+      this.eventBus.emit('executionError', { message: 'A bracket with no quantity is not sent to the adapter', command: 'bracketPlace', reason: 'noQuantity' });
+      return false;
+    }
+    return this.tradingManager.confirmBracket();
   }
 
   isBracketActive(): boolean {
@@ -3623,7 +3646,7 @@ export class Chart {
     }
     this.disconnectExecution();
     this.executionAdapter = adapter;
-    this.executionBrackets = config.brackets ?? null;
+    this.executionBrackets = config.brackets ?? 'place';
     this.execTeardown = wireExecution(adapter, {
       onIntent: (type, handler) => {
         const wrapped = (e: ChartEvent) => handler(e.payload);
@@ -3640,48 +3663,25 @@ export class Chart {
       getPositions: () => this.tradingManager.getPositions(),
       marketPrice: () => this.series.bars().at(-1)?.close ?? null,
       onBracketOrder: (order, bracket) => this.eventBus.emit('bracketOrder', { order, bracket }),
-    }, { brackets: config.brackets });
-    if (config.brackets === undefined) this.warnOfUnsentBrackets();
+    }, { brackets: this.executionBrackets });
     Promise.resolve(adapter.connect(config)).catch((cause) =>
       this.eventBus.emit('executionError', { message: 'Execution connect failed', cause }),
     );
   }
 
   /**
-   * Whether a confirmed bracket goes to the connected adapter as an order
-   * (`connectExecution(adapter, { brackets: 'place' })`), not only as the
-   * `bracketPlace` event.
+   * Whether a confirmed bracket goes to the connected adapter as an order,
+   * not only as the `bracketPlace` event: with an adapter connected, unless
+   * it was connected with `brackets: 'event'`.
    */
   placesBrackets(): boolean {
     return this.executionAdapter !== null && this.executionBrackets === 'place';
   }
 
-  /**
-   * An adapter connected without saying what a bracket does: the first one
-   * confirmed is said in the console not to have reached it, once a chart.
-   */
-  private warnOfUnsentBrackets(): void {
-    if (this.bracketsWarned || this.bracketWarner) return;
-    const warnOnce = () => {
-      this.stopBracketWarner();
-      this.bracketsWarned = true;
-      console.warn("[Chart] A bracket was confirmed with an execution adapter connected, and was not sent to it: only the bracketPlace event went out. connectExecution(adapter, { brackets: 'place' }) sends it as an order; { brackets: 'event' } keeps the event and says nothing. 'place' becomes the default in the next major version.");
-    };
-    this.bracketWarner = warnOnce;
-    this.eventBus.on('bracketPlace', warnOnce);
-  }
-
-  private stopBracketWarner(): void {
-    if (!this.bracketWarner) return;
-    this.eventBus.off('bracketPlace', this.bracketWarner);
-    this.bracketWarner = null;
-  }
-
   /** Tear down the active execution adapter (if any) and stop routing intents. */
   disconnectExecution(): void {
     this.returnMarkToLive();
-    this.executionBrackets = null;
-    this.stopBracketWarner();
+    this.executionBrackets = 'place';
     if (this.execTeardown) {
       this.execTeardown();
       this.execTeardown = null;

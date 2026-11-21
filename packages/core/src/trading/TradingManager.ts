@@ -15,7 +15,7 @@ import { OrderRenderer } from './OrderRenderer.js';
 import { PositionRenderer } from './PositionRenderer.js';
 import { TradingDragHandler } from './TradingDragHandler.js';
 import { TradingContextMenu } from './TradingContextMenu.js';
-import { BracketTool, bracketRiskReward } from './BracketTool.js';
+import { BracketTool, bracketRiskReward, type BracketDraft, type BracketSize } from './BracketTool.js';
 import { OrderDraftTool } from './OrderDraftTool.js';
 import { buttonAt, sameLineAction, type LineButton, type LineButtonAction } from './lineButtons.js';
 import { renderFillMarks } from './fillMarks.js';
@@ -234,10 +234,22 @@ export class TradingManager {
 
   // --- Bracket placement ---
 
-  /** Begin placing a bracket (entry + SL + TP) at `entry` for `side`. */
-  startBracket(side: OrderSide, entry: number): void {
-    this.bracket.start(side, entry);
+  /** Begin placing a bracket (entry + SL + TP) at `entry` for `side`, of this `size` (none: it has no quantity). */
+  startBracket(side: OrderSide, entry: number, size?: BracketSize): void {
+    this.bracket.start(side, entry, size);
     this.requestRender?.();
+  }
+
+  /** Size the bracket being placed anew; with none being placed it does nothing. */
+  setBracketSize(size: BracketSize | undefined): void {
+    if (!this.bracket.isActive()) return;
+    this.bracket.setSize(size);
+    this.requestRender?.();
+  }
+
+  /** The bracket being placed, with the quantity its size gives it now; null with none. */
+  getBracket(): BracketDraft | null {
+    return this.bracket.getDraft();
   }
 
   cancelBracket(): void {
@@ -255,6 +267,7 @@ export class TradingManager {
       entry: draft.entry,
       stopLoss: draft.stopLoss,
       takeProfit: draft.takeProfit,
+      ...(draft.quantity === undefined ? {} : { quantity: draft.quantity }),
       riskReward: bracketRiskReward(draft),
     });
     this.bracket.cancel();

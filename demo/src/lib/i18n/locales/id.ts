@@ -927,6 +927,7 @@ const id: SiteMessages = {
       frameworks: 'Framework',
       embed: 'Widget Tertanam',
       migration: 'Pindah ke 2.0',
+      'migration-3': 'Pindah ke 3.0',
       'from-tradingview': 'Pindah dari TradingView',
       'how-it-works': 'Cara kerja',
       api: 'Referensi API',

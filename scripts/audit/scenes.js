@@ -337,6 +337,16 @@ const SCENES = {
     return s;
   },
 
+  /** A long bracket being placed with a paper account connected: its quantity in the bar's field and on the entry's tag. */
+  async bracketQuantity() {
+    const s = await widget({ trading: true });
+    s.broker = new PaperExecutionAdapter({ markPrice: lastClose(s.chart) });
+    s.chart.connectExecution(s.broker);
+    s.widget.startBracket('buy', { quantity: 2 });
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    return s;
+  },
+
   /** The favorites toolbar shown over the chart, with four pinned tools and one of them in use. */
   async favoritesBar() {
     localStorage.removeItem('tcw:favoritesBar');

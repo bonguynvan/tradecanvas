@@ -228,6 +228,9 @@ export { IndicatorBase, IndicatorValueMap, DrawingBase, indicatorCategory, indic
 export type { IndicatorInputInfo } from '@tradecanvas/core';
 // The trade a Long/Short Position drawing stands for, for an app that places an order from it.
 export { positionLevels } from '@tradecanvas/core';
+// A bracket being placed (`chart.getBracket()`), what sizes it, and the quantity a size gives it.
+export { bracketQuantity } from '@tradecanvas/core';
+export type { BracketDraft, BracketSize } from '@tradecanvas/core';
 export type { PositionLevels } from '@tradecanvas/core';
 // Screen geometry of a frame, for plugins that draw (indicators, overlays, chart types).
 export { barIndexToX, xToBarIndex, priceToY, priceToYMapper, yToPrice, timeToX, xToTime, timestampToBarIndex } from '@tradecanvas/core';
