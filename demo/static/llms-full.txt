@@ -218,8 +218,10 @@ chart.removeAll('indicators'); // or 'drawings', or 'all': everything of that ki
   `{ anchor: 'week' }` or `{ anchor: 'month' }` on daily bars, where a session's
   VWAP is just each bar's typical price; `{ anchor: 'all' }` averages every bar
   loaded and moves when older history is paged in.
-- Custom indicators: extend `IndicatorBase`, declare `plots`, and register with
-  `chart.registerIndicator(...)` — see [references/recipes.md](references/recipes.md).
+- Custom indicators: `defineIndicator({ id, name, inputs, plots, calculate({ bars, inputs, ta }) })`
+  returns one to `chart.registerIndicator(...)`; `ta` has the sums (`ema`, `rsi`, `macd`, `atr`,
+  `bollinger`, `crossover`…). For one that updates tick by tick or draws its own way, extend
+  `IndicatorBase` and declare `plots` — see [references/recipes.md](references/recipes.md).
   A `category` in the descriptor (`'oscillators'`, `'volume'`…) files it under that
   group of ChartWidget's Indicators dialog; `{ id, label }` is a group of your own,
   listed before the built-in kinds, that keeps your app's indicators together. One that groups bars by day reads the
@@ -1188,6 +1190,55 @@ console.log(bullish.length, 'of', CANDLE_PATTERNS.length, 'patterns known');
 ```
 
 ## A custom indicator
+
+The short way is `defineIndicator`: its inputs, how its lines look, and one
+function that returns the lines from the bars. `ta` has the sums indicators
+are made of, each taking a value a bar and returning one: `sma`, `ema`,
+`wma`, `rma`, `stdev`, `highest`, `lowest`, `change`, `rsi`, `macd`
+(`{ macd, signal, histogram }`), `atr` (of the bars), `bollinger`
+(`{ upper, middle, lower }`), `crossover` and `crossunder` (true on the bars
+of a cross). They give the built-in indicators' values.
+
+```ts
+import { Chart, defineIndicator } from '@tradecanvas/chart';
+
+const emaCross = defineIndicator({
+  id: 'emaCross',
+  name: 'EMA Crossover',
+  placement: 'overlay', // on the prices; 'panel' (the default) is a pane of its own
+  inputs: {
+    fast: { default: 9, kind: 'int', min: 1 },
+    slow: { default: 21, kind: 'int', min: 2 },
+  },
+  plots: [
+    { key: 'fast', title: 'Fast', color: 0 },
+    { key: 'slow', title: 'Slow', color: 1 },
+    { key: 'buy', title: 'Buy', color: 2, kind: 'markers', shape: 'arrowUp', position: 'belowBar' },
+    { key: 'sell', title: 'Sell', color: 3, kind: 'markers', shape: 'arrowDown', position: 'aboveBar' },
+  ],
+  calculate({ bars, inputs, ta }) {
+    const fast = ta.ema(bars.close, inputs.fast); // inputs.fast is a number: typed from its default
+    const slow = ta.ema(bars.close, inputs.slow);
+    return { fast, slow, buy: ta.crossover(fast, slow), sell: ta.crossunder(fast, slow) };
+  },
+});
+
+const cross = new Chart(document.getElementById('chart')!, {});
+cross.registerIndicator(emaCross);
+cross.addIndicator('emaCross', { fast: 12 });
+```
+
+A line is a value a bar (`undefined`, `null` or `NaN` where there is none).
+`true` marks a bar for a `'markers'` plot of an overlay: above or below the
+bar by its `position`, else at the bar's close; in a pane of its own a mark
+is the number it is drawn at. `calculate` gets each number input within its
+`min` and `max` (whole for `kind: 'int'`). Leave `plots` out and every line
+returned is drawn as a line (declare them when `calculate` returns nothing
+for too few bars). `fills`, `scale`,
+`levels`, `category` and `shortName` are the descriptor's, described below.
+It computes over all the bars on each tick, which is quick for sums like
+these; for a long history with a heavy sum, or drawing of your own, write the
+class:
 
 Extend `IndicatorBase` and declare what it draws (`plots`), its pane scale and
 levels; the chart then draws it, scales its pane, labels its values and lists
