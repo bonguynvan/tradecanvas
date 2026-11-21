@@ -13,7 +13,7 @@ Use `ChartWidget` (`@tradecanvas/chart/widget`) for a complete trading UI, or `C
 - [API reference](https://tradecanvas.dev/docs/api): Chart and ChartWidget methods, options and events
 - [Indicators](https://tradecanvas.dev/docs/indicators): every built-in indicator with its id, inputs and lines
 - [Styling](https://tradecanvas.dev/docs/styling): the widget's look as tokens: the Print (default, kept to the golden ratio), Studio, Terminal, Capsule and Desk presets, your own theme, CSS variables
-- [Customization](https://tradecanvas.dev/docs/customization): every way to customise: themes, looks, style overrides, the widget's 135 feature switches, your own toolbar, sidebar, status bar, menu entries and shortcuts, your own CSS
+- [Customization](https://tradecanvas.dev/docs/customization): every way to customise: themes, looks, style overrides, the widget's 136 feature switches, your own toolbar, sidebar, status bar, menu entries and shortcuts, your own CSS
 - [Chart types](https://tradecanvas.dev/docs/chart-types): candlestick, Heikin-Ashi, Renko, Kagi, point & figure and more
 - [Drawing tools](https://tradecanvas.dev/docs/drawing-tools): trend lines, Fibonacci, Gann, patterns, text
 - [Realtime and replay](https://tradecanvas.dev/docs/realtime): data adapters (Binance, Coinbase, Bybit, Kraken, WebSocket, polling) and replay
@@ -833,6 +833,8 @@ chart.placeOrderIntent({ side: 'sell', type: 'stop', price: 63_000, stopPrice: 6
 // new PaperExecutionAdapter({ balance: 10_000, leverage: 10, commission: { rate: 0.0004 } }) keeps its money:
 // chart.getAccount() gives { balance, equity, marginUsed, freeMargin, … }, 'accountChange' follows it,
 // and an order the free margin cannot carry is refused (executionError)
+// chart.getActivityLog(): each order placed, moved, cancelled or filled and what was refused, oldest first
+// (the widget's account panel shows it in its Log tab, and Sell and Buy buttons under the legend while an adapter is connected)
 ```
 
 Switching the interval mid-replay keeps the time: the replay waits for the new

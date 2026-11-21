@@ -232,6 +232,8 @@ export type { DefinedIndicatorInput, IndicatorBars, IndicatorCalculation, Indica
 export type { IndicatorInputInfo } from '@tradecanvas/core';
 // The trade a Long/Short Position drawing stands for, for an app that places an order from it.
 export { positionLevels } from '@tradecanvas/core';
+// The trading activity log's lines (`chart.getActivityLog()`).
+export type { ActivityEntry, ActivityKind } from './model/ActivityLog.js';
 // A bracket being placed (`chart.getBracket()`), what sizes it, and the quantity a size gives it.
 export { bracketQuantity } from '@tradecanvas/core';
 export type { BracketDraft, BracketSize } from '@tradecanvas/core';

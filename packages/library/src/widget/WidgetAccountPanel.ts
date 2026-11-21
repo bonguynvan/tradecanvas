@@ -1,3 +1,4 @@
+import type { ActivityEntry } from '../model/ActivityLog.js';
 import type { AccountSummary, FillEvent, TradingOrder, TradingPosition } from '@tradecanvas/commons';
 import { createIcon } from './icons.js';
 import { EN_TRANSLATOR, type MessageKey, type Translator } from './i18n.js';
@@ -31,10 +32,13 @@ export interface AccountSnapshot {
   account?: AccountSummary | null;
   /** What a move of one in price is worth for one unit (the market's contract multiplier), in the positions' P&L. Default 1. */
   multiplier?: number;
+  /** What happened to the orders, oldest first (`chart.getActivityLog()`): the Log tab. */
+  log?: readonly ActivityEntry[];
 }
 
-type Tab = 'positions' | 'orders' | 'history';
-const TABS: readonly Tab[] = ['positions', 'orders', 'history'];
+type Tab = 'positions' | 'orders' | 'history' | 'log';
+const TABS: readonly Tab[] = ['positions', 'orders', 'history', 'log'];
+const EVENTS = ['placed', 'moved', 'cancelled', 'filled', 'rejected'] as const;
 const REASONS = ['order', 'close', 'reverse', 'stopLoss', 'takeProfit'] as const;
 const ORDER_TYPES = ['market', 'limit', 'stop'] as const;
 const TIME_IN_FORCE = ['gtc', 'day', 'gtd', 'ioc', 'fok'] as const;
@@ -55,6 +59,14 @@ interface Column {
 /** `value` when it is one of `known`, else `fallback` (a host may send what the panel has no words for). */
 function known<T extends string>(known: readonly T[], value: string | undefined, fallback: T): T {
   return (known as readonly string[]).includes(value ?? '') ? (value as T) : fallback;
+}
+
+/** The same log: as long, and ending with the same line (it grows at its end, and a fill may take a line's place). */
+function sameLog(a: readonly ActivityEntry[] | undefined, b: readonly ActivityEntry[] | undefined): boolean {
+  if ((a?.length ?? 0) !== (b?.length ?? 0)) return false;
+  const last = a?.at(-1);
+  const other = b?.at(-1);
+  return last?.time === other?.time && last?.kind === other?.kind && last?.orderId === other?.orderId && last?.message === other?.message;
 }
 
 /** The same money: the three figures the totals show. */
@@ -211,7 +223,8 @@ export class WidgetAccountPanel {
       && sameRows(before.orders, snapshot.orders)
       && sameRows(before.fills, snapshot.fills)
       && before.realisedPnl === snapshot.realisedPnl
-      && before.multiplier === snapshot.multiplier;
+      && before.multiplier === snapshot.multiplier
+      && sameLog(before.log, snapshot.log);
     if (rowsSame) {
       if (before.price !== snapshot.price || !sameAccount(before.account, snapshot.account)) {
         this.renderTotals();
@@ -249,6 +262,7 @@ export class WidgetAccountPanel {
       positions: this.snapshot.positions.length,
       orders: this.snapshot.orders.length,
       history: this.snapshot.fills.length,
+      log: this.snapshot.log?.length ?? 0,
     };
     for (const [tab, btn] of this.tabButtons) {
       const selected = tab === this.tab;
@@ -322,7 +336,8 @@ export class WidgetAccountPanel {
     this.live = [];
     if (this.tab === 'positions') this.renderPositions();
     else if (this.tab === 'orders') this.renderOrders();
-    else this.renderHistory();
+    else if (this.tab === 'history') this.renderHistory();
+    else this.renderLog();
     if (focused) [...this.content.querySelectorAll<HTMLElement>('[data-focus-key]')].find((el) => el.dataset.focusKey === focused)?.focus();
   }
 
@@ -537,6 +552,28 @@ export class WidgetAccountPanel {
       ],
       rows,
       'account.noFills',
+    );
+  }
+
+  /** What happened to the orders, the newest first: when, what, the order, and why for a fill or a refusal. */
+  private renderLog(): void {
+    const { formatPrice, formatTime } = this.callbacks;
+    const rows = [...(this.snapshot.log ?? [])].reverse().map((entry) => [
+      formatTime(entry.time),
+      this.t(`account.event.${known(EVENTS, entry.kind, 'placed')}` as MessageKey),
+      entry.side ? this.sideCell(entry.side, 'trade') : NONE,
+      entry.quantity !== undefined ? String(entry.quantity) : NONE,
+      entry.price !== undefined ? formatPrice(entry.price) : NONE,
+      // A refusal's own words; a fill's reason.
+      entry.message ?? (entry.reason ? this.t(`account.reason.${known(REASONS, entry.reason, 'order')}` as MessageKey) : NONE),
+    ]);
+    this.table(
+      [
+        { key: 'account.time' }, { key: 'account.event' }, { key: 'account.side' }, { key: 'account.quantity', num: true },
+        { key: 'account.price', num: true }, { key: 'account.reason' },
+      ],
+      rows,
+      'account.noLog',
     );
   }
 }

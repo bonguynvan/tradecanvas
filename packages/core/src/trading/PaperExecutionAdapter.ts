@@ -570,7 +570,12 @@ const MONEY_SLACK = 1e-9;
 
 /** Why `available` does not carry `needed`, or null when it does. */
 function short(needed: number, available: number): string | null {
-  return needed > available + MONEY_SLACK * Math.max(1, Math.abs(needed)) ? `Not enough free margin: the order needs ${needed}, the account has ${available}` : null;
+  return needed > available + MONEY_SLACK * Math.max(1, Math.abs(needed)) ? `Not enough free margin: the order needs ${money(needed)}, the account has ${money(available)}` : null;
+}
+
+/** A sum for a message: to the cent, or to four figures where it is under one. */
+function money(amount: number): string {
+  return String(Number(Math.abs(amount) >= 1 ? amount.toFixed(2) : amount.toPrecision(4)));
 }
 
 /** How near two sizes are, as a part of the larger, to be the same size. */

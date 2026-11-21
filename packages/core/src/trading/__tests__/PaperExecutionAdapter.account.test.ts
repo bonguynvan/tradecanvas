@@ -122,6 +122,11 @@ describe('PaperExecutionAdapter: an order the account cannot carry', () => {
     await expect(market('buy', 1)).rejects.toThrow(/margin/i);
   });
 
+  it('says what the order needs and what the account has, to the cent', async () => {
+    const { market } = connect({ balance: 1_000 / 3 });
+    await expect(market('buy', 5)).rejects.toThrow('Not enough free margin: the order needs 500, the account has 333.33');
+  });
+
   it('is refused as a waiting order too, by the price it waits at', async () => {
     const { adapter } = connect({ balance: 150 });
     await expect(adapter.placeOrder({ side: 'buy', type: 'limit', price: 90, quantity: 2 })).rejects.toThrow(/margin/i);

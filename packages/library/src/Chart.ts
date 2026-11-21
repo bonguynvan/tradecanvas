@@ -132,6 +132,7 @@ import { isValidBar } from './DataManager.js';
 import { SeriesStore, isWholeBar, type LiveChange } from './SeriesStore.js';
 import { PriceFit, hasVolume } from './model/PriceFit.js';
 import { DisplaySeries } from './model/DisplaySeries.js';
+import { ActivityLog, type ActivityEntry } from './model/ActivityLog.js';
 import { PaneLayout } from './model/PaneLayout.js';
 import { IndicatorHistory, INDICATOR_EDIT_MERGE_MS } from './model/IndicatorHistory.js';
 import { IndicatorPanes } from './model/IndicatorPanes.js';
@@ -215,6 +216,8 @@ export class Chart {
   private executionAdapter: ExecutionAdapter | null = null;
   /** What a confirmed bracket does with the adapter connected. */
   private executionBrackets: 'event' | 'place' = 'place';
+  /** What happened to the orders: placed, moved, cancelled, filled, refused. */
+  private readonly activity = new ActivityLog();
   /** The connected adapter's account, when it keeps one. */
   private account: import('@tradecanvas/commons').AccountSummary | null = null;
   private execTeardown: (() => void) | null = null;
@@ -594,6 +597,10 @@ export class Chart {
     this.tradingManager.setEventCallback((event, data) => {
       this.eventBus.emit(event as ChartEventType, data);
     });
+    // The activity log hears what the chart is told, whoever tells it: an adapter, or the app's own calls.
+    this.eventBus.on('ordersChange', (e) => this.activity.orders((e.payload as { orders: TradingOrder[] }).orders, this.activityTime()));
+    this.eventBus.on('executionFill', (e) => this.activity.fill(e.payload as import('@tradecanvas/commons').FillEvent));
+    this.eventBus.on('executionError', (e) => this.activity.error(e.payload as import('@tradecanvas/commons').ExecutionErrorPayload, this.activityTime()));
 
     // Rendering
     this.engine = new RenderEngine(container, options.maxPixelRatio);
@@ -3216,6 +3223,28 @@ export class Chart {
     return this.tradingManager.getPositions();
   }
 
+  /**
+   * What happened to the orders, oldest first, the latest 200: each placed,
+   * moved, cancelled or filled, and what was refused with why. Read from the
+   * orders, fills and errors the chart is told, from an execution adapter or
+   * from `setOrders` and `addFill`. The orders there when it began are not
+   * in it. `ordersChange`, `executionFill` and `executionError` follow it.
+   */
+  getActivityLog(): ActivityEntry[] {
+    return this.activity.entries();
+  }
+
+  /** Empty the activity log. */
+  clearActivityLog(): void {
+    this.activity.clear();
+  }
+
+  /** When something that is no fill happened: now, or on a replay the bar it is at (as the paper account's fills are timed). */
+  private activityTime(): number {
+    if (this.replaySession === null) return Date.now();
+    return this.series.bars().at(-1)?.time ?? Date.now();
+  }
+
   /** Fills marked on the chart, oldest first: the execution adapter's, or `addFill`'s. */
   getFills(): import('@tradecanvas/commons').FillEvent[] {
     return this.tradingManager.getFills();
@@ -3672,6 +3701,7 @@ export class Chart {
         this.eventBus.emit('accountChange', { account: { ...account } });
       },
     }, { brackets: this.executionBrackets });
+    this.eventBus.emit('executionChange', { connected: true });
     Promise.resolve(adapter.connect(config)).catch((cause) =>
       this.eventBus.emit('executionError', { message: 'Execution connect failed', cause }),
     );
@@ -3697,6 +3727,7 @@ export class Chart {
     if (this.executionAdapter) {
       this.executionAdapter.disconnect();
       this.executionAdapter = null;
+      this.eventBus.emit('executionChange', { connected: false });
     }
     if (this.account) {
       this.account = null;

@@ -85,6 +85,8 @@ export interface LegendHost {
   readonly featureState: ChartWidget['featureState'];
   handleRemoveIndicator: ChartWidget['handleRemoveIndicator'];
   readonly indicatorLegend: ChartWidget['indicatorLegend'];
+  /** Sell and Buy under the legend: the indicators' rows stand under them. */
+  readonly quoteButtons: ChartWidget['trading']['quoteButtons'];
   indicatorValueText: ChartWidget['indicatorValueText'];
   readonly legendHoverIndex: ChartWidget['legendHoverIndex'];
   openIndicatorSettings: ChartWidget['openIndicatorSettings'];
@@ -106,9 +108,15 @@ export class WidgetLegendView {
   /** The legend row's "more" menu: move the indicator to another pane. */
   legendMenu: WidgetContextMenu | null = null;
 
-  /** Redraw the on-chart indicator list on the next frame (coalesced). */
-  scheduleLegend(): void {
-    if (!this.host.indicatorLegend || this.legendFrame || !this.host.featureState.indicatorLegend) return;
+  /**
+   * Redraw what stands under the chart's legend on the next frame
+   * (coalesced): the Sell and Buy buttons, and the indicators' rows.
+   * `placeOnly`: the buttons were just taken away, and there may be nothing
+   * shown to ask for the frame.
+   */
+  scheduleLegend(placeOnly = false): void {
+    const rows = this.host.indicatorLegend !== null && this.host.featureState.indicatorLegend;
+    if (this.legendFrame || (!rows && !placeOnly && !this.host.quoteButtons?.isShown())) return;
     this.legendFrame = requestAnimationFrame(() => {
       this.legendFrame = 0;
       this.renderLegend();
@@ -116,13 +124,18 @@ export class WidgetLegendView {
   }
 
   private renderLegend(): void {
-    if (!this.host.indicatorLegend || this.host.destroyed) return;
+    if (this.host.destroyed) return;
+    const plot = this.host.chart.getPlotRect();
+    const inset = legendRowInset(this.host.chart);
+    const top = this.host.chart.getLegendBottom() + STACK_GAP;
+    // The buttons first, at the legend's foot; the rows under them.
+    const rowsTop = top + (this.host.quoteButtons?.place(plot.x + inset, top) ?? 0);
+    if (!this.host.indicatorLegend || !this.host.featureState.indicatorLegend) return;
     const last = this.host.chart.getData().length - 1;
     // On Renko, Kagi and the like the hovered index is a brick's, and the
     // indicators are worked out on the bricks: each reads its own series there.
     const aligned = this.host.chart.isTimeAligned();
     const hover = this.host.legendHoverIndex;
-    const inset = legendRowInset(this.host.chart);
     const idx = hover === null ? last : Math.min(Math.max(hover, 0), last);
     const maximized = this.host.chart.getMaximizedPane();
     // As the panes show: one maximised folds the others.
@@ -179,7 +192,6 @@ export class WidgetLegendView {
       };
     });
     const rows = [...compares, ...indicators];
-    const plot = this.host.chart.getPlotRect();
     const labelOf = (id: string) => rows.find((r) => r.instanceId === id)?.label ?? '';
     const paneControls: IndicatorLegendPane[] = paneStates.map(({ pane, ...state }) => ({
       instanceId: pane.instanceId,
@@ -188,7 +200,7 @@ export class WidgetLegendView {
       label: labelOf(pane.instanceId),
       ...state,
     }));
-    this.host.indicatorLegend.update(rows, { left: plot.x + inset, top: this.host.chart.getLegendBottom() + STACK_GAP }, paneControls);
+    this.host.indicatorLegend.update(rows, { left: plot.x + inset, top: rowsTop }, paneControls);
   }
 
   /** A pane's button on the chart. */

@@ -278,8 +278,8 @@ chart.on('priceAxisAdd', (e) => openMyMenu(e.payload.x, e.payload.y, e.payload.p
 <h2>Order ticket and account panel (ChartWidget)</h2>
 <p>
   <strong>Account</strong> in the toolbar's <strong>Trade</strong> menu opens an account panel under the chart: open positions
-  with their profit and loss, working orders, and the fills so far with the P&amp;L
-  realised. Each row closes, reverses or cancels. <strong>New order</strong> opens an
+  with their profit and loss, working orders, the fills so far with the P&amp;L
+  realised, and a log of what happened to the orders. Each row closes, reverses or cancels. <strong>New order</strong> opens an
   order ticket: buy or sell, market, limit or stop, quantity, price, an optional
   stop-loss and take-profit, and time in force. It checks the order as you fill it in
   (a buy limit goes below the market, a stop-loss on the losing side of the entry…)
@@ -308,13 +308,33 @@ chart.on('priceAxisAdd', (e) => openMyMenu(e.payload.x, e.payload.y, e.payload.p
   set right in the mono type, money to the price step's decimals in the number locale; on a phone each row is a card
   of named figures.
 </p>
+<p>
+  <strong>The Log tab</strong> lists what happened to the orders, the newest first: each one placed, moved,
+  cancelled or filled, and what the broker refused with its reason. The chart keeps it, for a chart of your own
+  too: <code>chart.getActivityLog()</code> gives the latest 200 entries, oldest first, each
+  <code>{`{ time, kind, orderId, side, type, quantity, price, reason, pnl, message }`}</code> with what its
+  <code>kind</code> has (<code>'placed'</code>, <code>'moved'</code>, <code>'cancelled'</code>,
+  <code>'filled'</code>, <code>'rejected'</code>). It is read from the orders, fills and errors the chart is told,
+  by an execution adapter or by <code>setOrders</code> and <code>addFill</code>; the orders there when it began
+  are not in it. <code>chart.clearActivityLog()</code> empties it.
+</p>
+<p>
+  <strong>Sell and Buy on the chart.</strong> While an execution adapter is connected, the widget shows two
+  buttons under the chart's legend, each with the price it would trade at: the best bid on Sell and the best ask
+  on Buy with the spread between them (<code>chart.setBidAsk</code>, or a feed whose ticks carry them), else the
+  last price on both. A press opens the order ticket on that side. <code>executionChange</code> says when an
+  adapter is connected or taken away, and the <code>tradeButtons</code> switch turns the buttons off.
+</p>
 <pre><code>{`const widget = new ChartWidget(host, {
   trading: true,         // default
   accountPanel: true,    // default when trading is on
+  features: { tradeButtons: true },   // default: Sell and Buy under the legend, with a broker connected
 })
 widget.getChart().connectExecution(new PaperExecutionAdapter({ markPrice: 64_000 }))
 widget.toggleAccountPanel(true)
-// The panel follows ordersChange, positionsChange, executionFill and each tick.`}</code></pre>
+// The panel follows ordersChange, positionsChange, executionFill and each tick.
+
+widget.getChart().getActivityLog().at(-1)   // { time, kind: 'filled', side: 'buy', quantity: 1, price: 64_000, reason: 'order' }`}</code></pre>
 <p>
   Fill marks belong to the symbol on the chart: switching symbol in the widget starts
   the next one with none.

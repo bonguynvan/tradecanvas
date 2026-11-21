@@ -71,7 +71,7 @@ describe('WidgetAccountPanel', () => {
   it('counts each tab and lists the positions with their P&L', () => {
     panel.openPanel();
     const tabs = [...host.querySelectorAll('[role=tab]')].map((b) => [b.querySelector('.tcw-account-tab-label')!.textContent, b.querySelector('.tcw-account-count')!.textContent]);
-    expect(tabs).toEqual([['Positions', '1'], ['Orders', '1'], ['History', '2']]);
+    expect(tabs).toEqual([['Positions', '1'], ['Orders', '1'], ['History', '2'], ['Log', '0']]);
     expect(cells()[0].slice(0, 7)).toEqual(['Long', '2', '100.00', '103.00', '+6.00 · +3.00%', '95.00', '—']);
     expect(callbacks.onToggle).toHaveBeenCalledWith(true);
   });
@@ -238,5 +238,46 @@ describe('WidgetAccountPanel: an account with money', () => {
     expect(totals()[2]).toBe('Free margin: -12.50');
     panel.update({ ...current, account: null });
     expect(totals()).toEqual(['Open P&L: +6.00', 'Realised P&L: +4.00']);
+  });
+});
+
+describe('WidgetAccountPanel: the Log tab', () => {
+  const log = [
+    { time: 1, kind: 'placed' as const, orderId: 'a', side: 'buy' as const, type: 'limit' as const, quantity: 2, price: 95 },
+    { time: 2, kind: 'filled' as const, orderId: 'a', side: 'buy' as const, quantity: 2, price: 95, reason: 'order' as const },
+    { time: 3, kind: 'rejected' as const, message: 'Not enough free margin' },
+  ];
+
+  it('is a tab counting what happened, listing it the newest first', () => {
+    if (!panel.isOpen()) panel.toggle();
+    panel.update({ ...current, log });
+    expect(tab(/Log/).textContent).toContain('3');
+    tab(/Log/).click();
+    expect(cells()).toEqual([
+      ['2026-10-03 10:00', 'Rejected', '—', '—', '—', 'Not enough free margin'],
+      ['2026-10-03 10:00', 'Filled', 'Buy', '2', '95.00', 'Order'],
+      ['2026-10-03 10:00', 'Order placed', 'Buy', '2', '95.00', '—'],
+    ]);
+    expect(callbacks.formatTime.mock.calls.map(([time]) => time)).toEqual(expect.arrayContaining([1, 2, 3]));
+  });
+
+  it('follows the log as it grows, and when a line takes another’s place', () => {
+    if (!panel.isOpen()) panel.toggle();
+    panel.update({ ...current, log: log.slice(0, 1) });
+    tab(/Log/).click();
+    expect(cells()).toHaveLength(1);
+    panel.update({ ...current, log: log.slice(0, 2) });
+    expect(cells()).toHaveLength(2);
+    panel.update({ ...current, log: [log[0], { ...log[1], kind: 'cancelled' as const }] });
+    expect(cells()[0][1]).toBe('Order cancelled');
+  });
+
+  it('says so when nothing has happened, and names every kind of event', () => {
+    if (!panel.isOpen()) panel.toggle();
+    panel.update({ ...current, log: [] });
+    tab(/Log/).click();
+    expect(host.textContent).toContain('Nothing has happened yet');
+    panel.update({ ...current, log: (['placed', 'moved', 'cancelled', 'filled', 'rejected'] as const).map((kind, i) => ({ time: i, kind })) });
+    expect(cells().map((row) => row[1])).toEqual(['Rejected', 'Filled', 'Order cancelled', 'Order moved', 'Order placed']);
   });
 });

@@ -79,6 +79,7 @@ import { formatIndicatorValue } from './legendValues.js';
 import { RANGE_PRESETS, SYMBOL_INDICATOR_IDS, adapterFromFeed, indicatorCategory, indicatorGroup, isCrosshairCursor, isMarkerPlot, sourceParam, valuePlots } from '@tradecanvas/core';
 import type { BracketSize } from '@tradecanvas/core';
 import { WidgetBracketBar } from './WidgetBracketBar.js';
+import { WidgetQuoteButtons } from './WidgetQuoteButtons.js';
 import { AlertNotifier } from './AlertNotifier.js';
 import { WidgetDepthLadder } from './WidgetDepthLadder.js';
 import { WidgetDataWindow, PERCENT_DECIMALS as DATA_WINDOW_PERCENT_DECIMALS } from './WidgetDataWindow.js';
@@ -1343,8 +1344,19 @@ export class ChartWidget {
           this.trading.refreshAccount();
         },
       }, this.t);
+      // Sell and Buy under the legend, each with its price: a press opens the ticket on that side.
+      this.trading.quoteButtons = new WidgetQuoteButtons(this.chartContainer, {
+        onTrade: (side) => this.trading.openOrderTicket(undefined, { side }),
+        formatPrice: (p) => this.formatAlertPrice(p),
+      }, this.t);
+      if (this.trading.refreshQuote()) this.legend.scheduleLegend();
+      // A broker connected, or gone: the buttons come and go with it, and the indicators' rows move.
+      this.chart.on('executionChange', () => {
+        this.trading.refreshQuote();
+        this.legend.scheduleLegend(true);
+      });
       // indicatorUpdate comes once per tick, so open P&L follows the price.
-      for (const event of ['ordersChange', 'positionsChange', 'executionFill', 'accountChange', 'dataUpdate', 'indicatorUpdate'] as const) {
+      for (const event of ['ordersChange', 'positionsChange', 'executionFill', 'executionError', 'accountChange', 'dataUpdate', 'indicatorUpdate'] as const) {
         this.chart.on(event, () => this.trading.refreshAccountSoon());
       }
     }
@@ -2212,6 +2224,7 @@ export class ChartWidget {
     this.trading.orderTicket?.destroy();
     if (this.trading.accountFrame) cancelAnimationFrame(this.trading.accountFrame);
     this.trading.bracketBar?.destroy();
+    this.trading.quoteButtons?.destroy();
     this.alerting.alertNotifier?.destroy();
     this.trading.depthLadder?.destroy();
     this.dataWindow?.destroy();
@@ -2326,6 +2339,11 @@ export class ChartWidget {
     if (changed('indicatorLegend')) {
       this.chart.setPaneTitlesVisible(!this.featureState.indicatorLegend);
       this.legend.scheduleLegend();
+    }
+    if (changed('tradeButtons') || changed('orderTicket')) {
+      // The indicators' rows stand under the buttons: they move up or down with them.
+      this.trading.refreshQuote();
+      this.legend.scheduleLegend(true);
     }
     if (changed('menu.priceAxisAdd')) {
       this.chart.setFeatures({ priceAxisAddButton: this.priceAxisAddDefault && this.featureState['menu.priceAxisAdd'] });
@@ -3813,6 +3831,7 @@ export class ChartWidget {
       get featureState() { return w.featureState; },
       handleRemoveIndicator: (...args) => w.handleRemoveIndicator(...args),
       get indicatorLegend() { return w.indicatorLegend; },
+      get quoteButtons() { return w.trading.quoteButtons; },
       indicatorValueText: (...args) => w.indicatorValueText(...args),
       get legendHoverIndex() { return w.legendHoverIndex; },
       openIndicatorSettings: (...args) => w.openIndicatorSettings(...args),
