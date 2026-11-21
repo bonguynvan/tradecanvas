@@ -450,13 +450,15 @@ export class WidgetAccountPanel {
 
   /**
    * The take-profit cell: the target, or with take-profit levels the
-   * nearest of them and how many more there are ("110.00 +2").
+   * nearest of them and how many more targets there are, the take-profit
+   * that closes the rest among them ("110.00 +2").
    */
   private target(of: Pick<TradingPosition, 'takeProfit' | 'takeProfits'>): string {
     const levels = of.takeProfits ?? [];
     if (levels.length === 0) return this.price(of.takeProfit);
+    const more = levels.length - 1 + (of.takeProfit !== undefined ? 1 : 0);
     const first = this.callbacks.formatPrice(levels[0].price);
-    return levels.length > 1 ? `${first} +${levels.length - 1}` : first;
+    return more > 0 ? `${first} +${more}` : first;
   }
 
   /** How long an order works, with a dated order's date after it. */

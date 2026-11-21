@@ -167,7 +167,7 @@ export class PositionRenderer {
         const stop = this.stopTag(pos, which, viewport, config, dragState, currentPrice);
         if (stop) tags.push(stop);
       }
-      tags.push(...levelTags(pos.takeProfits, pos.side, pos.entryPrice, viewport, config));
+      tags.push(...levelTags(pos.takeProfits, pos.side, pos.entryPrice, openQuantity(pos), viewport, config));
     }
     return tags;
   }
@@ -288,28 +288,36 @@ export class PositionRenderer {
 
 /**
  * A tag for each take-profit level on the plot: which it is (TP1 is the
- * nearest), the part it takes off, and what that part would make from
- * `entry`. They are no handles: a level is moved through the account.
+ * nearest still waiting), the part it takes off, and what that part would
+ * make from `entry`. A level takes no more than is left of `open` after the
+ * levels before it, and one with nothing left to take has no tag. They are
+ * no handles: a level is moved through the account.
  */
 export function levelTags(
   levels: readonly TakeProfitLevel[] | undefined,
   side: TradingPosition['side'],
   entry: number,
+  open: number,
   viewport: ViewportState,
   config: TradingConfig,
 ): TradingTag[] {
   const colors = colorsOf(config);
   const tags: TradingTag[] = [];
+  let left = open;
   (levels ?? []).forEach((level, i) => {
+    const part = Math.min(level.quantity, left);
+    left -= part;
+    if (!(part > 0)) return;
     const y = priceToY(level.price, viewport);
     if (!inPlot(y, viewport)) return;
-    const amount = amountAt(side, entry, level.quantity, level.price);
+    const amount = amountAt(side, entry, part, level.price);
     tags.push({
       y,
       color: colors.profit,
       cells: [
         { kind: 'stamp', text: `TP${i + 1}` },
-        { kind: 'text', text: String(level.quantity) },
+        // To the digits a quantity is written in, with no sum's rounding after them.
+        { kind: 'text', text: String(Number(part.toFixed(8))) },
         { kind: 'text', text: formatAmount(amount, amountDecimals(amount, entry, config.pricePrecision), viewport.numberLocale), color: amount >= 0 ? colors.profit : colors.loss },
       ],
     });

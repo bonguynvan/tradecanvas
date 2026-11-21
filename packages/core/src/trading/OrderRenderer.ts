@@ -131,7 +131,7 @@ export class OrderRenderer {
           ],
         });
       }
-      tags.push(...levelTags(order.takeProfits, order.side, price, viewport, config));
+      tags.push(...levelTags(order.takeProfits, order.side, price, order.quantity, viewport, config));
     }
     return tags;
   }

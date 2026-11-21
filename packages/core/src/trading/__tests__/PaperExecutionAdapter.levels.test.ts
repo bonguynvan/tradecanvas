@@ -123,3 +123,60 @@ describe('PaperExecutionAdapter: levels and the account', () => {
     expect(position().takeProfits).toEqual([{ price: 120, quantity: 2 }]);
   });
 });
+
+describe('PaperExecutionAdapter: levels that are no profit', () => {
+  it('gives a position no level at its entry or on the losing side of it: it would close at a price the market is not at', async () => {
+    const { adapter, fills, market, position } = connect();
+    await market('buy', 3, { takeProfits: [{ price: 95, quantity: 1 }, { price: 100, quantity: 1 }, { price: 110, quantity: 1 }] });
+    expect(position().takeProfits).toEqual([{ price: 110, quantity: 1 }]);
+    adapter.setMarkPrice(100);
+    expect(fills).toHaveLength(1);
+    const short = connect();
+    await short.market('sell', 2, { takeProfits: [{ price: 105, quantity: 1 }, { price: 90, quantity: 1 }] });
+    expect(short.position().takeProfits).toEqual([{ price: 90, quantity: 1 }]);
+  });
+
+  it('measures a waiting order’s levels against the price it fills at, and a position’s new ones against its entry', async () => {
+    const { adapter, position } = connect();
+    await adapter.placeOrder({ side: 'buy', type: 'limit', price: 95, quantity: 2, takeProfits: [{ price: 97, quantity: 1 }, { price: 94, quantity: 1 }] });
+    adapter.setMarkPrice(94.5);
+    expect(position().takeProfits).toEqual([{ price: 97, quantity: 1 }]);
+    const other = connect();
+    await other.market('buy', 2);
+    await other.adapter.modifyPosition({ positionId: other.position().id, takeProfits: [{ price: 99, quantity: 1 }, { price: 101, quantity: 1 }] });
+    expect(other.position().takeProfits).toEqual([{ price: 101, quantity: 1 }]);
+  });
+
+  it('leaves the levels as they are when it is given something that is no list', async () => {
+    const { adapter, market, position } = connect();
+    await market('buy', 2, { takeProfits: [{ price: 110, quantity: 1 }] });
+    await adapter.modifyPosition({ positionId: position().id, takeProfits: { price: 120, quantity: 1 } as never });
+    expect(position().takeProfits).toEqual([{ price: 110, quantity: 1 }]);
+  });
+});
+
+describe('PaperExecutionAdapter: levels beside the stop-loss and the take-profit', () => {
+  it('closes all at the stop-loss when a price reaches it, whatever levels were waiting', async () => {
+    const { adapter, fills, market } = connect();
+    await market('sell', 3, { stopLoss: 105, takeProfits: [{ price: 95, quantity: 1 }] });
+    adapter.setMarkPrice(106);
+    expect(fills.slice(1)).toEqual([expect.objectContaining({ reason: 'stopLoss', quantity: 3 })]);
+    expect(adapter.getPositions()).toEqual([]);
+  });
+
+  it('never reaches a level set past the take-profit: the take-profit closes all first', async () => {
+    const { adapter, fills, market } = connect();
+    await market('buy', 3, { takeProfit: 105, takeProfits: [{ price: 110, quantity: 1 }] });
+    adapter.setMarkPrice(106);
+    expect(fills.slice(1).map((f) => [f.price, f.quantity])).toEqual([[105, 3]]);
+  });
+
+  it('tells the positions once the parts are off', async () => {
+    const { adapter, market } = connect();
+    const told: number[] = [];
+    await market('buy', 3, { takeProfits: [{ price: 110, quantity: 1 }] });
+    adapter.on('positions', () => told.push(adapter.getPositions()[0]?.closedQuantity ?? 0));
+    adapter.setMarkPrice(111);
+    expect(told).toEqual([1]);
+  });
+});

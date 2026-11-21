@@ -54,6 +54,10 @@ describe('WidgetAccountPanel', () => {
     expect(cells()[0]).toContain('110.00 +2');
     tab(/Orders/).click();
     expect(cells()[0]).toContain('105.00');
+    // The take-profit that closes the rest is a target too: counted after the levels.
+    panel.update({ ...current, positions: [{ id: 'p', side: 'buy', entryPrice: 100, quantity: 3, takeProfit: 130, takeProfits: [{ price: 110, quantity: 1 }] }] });
+    tab(/Positions/).click();
+    expect(cells()[0]).toContain('110.00 +1');
   });
 
   it('says which orders are of a group where one cancels the others, and when a dated order ends', () => {

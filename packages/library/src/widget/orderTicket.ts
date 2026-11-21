@@ -29,22 +29,42 @@ export const TICKET_MAX_TARGETS = 3;
  * target but the last, which is the take-profit itself. They part the way
  * from `entry` to the take-profit evenly, and each takes an even part of the
  * quantity, down to the lot or to the quantity's own last digit. None with
- * one target, no take-profit, no entry, or a quantity too small to part.
+ * one target, no take-profit (or one on the wrong side of the entry), no
+ * entry, or a quantity too small to part; a target the market's rounding
+ * puts on another price there is left out.
  */
 export function ticketTakeProfitLevels(
-  draft: Pick<OrderTicketDraft, 'quantity' | 'takeProfit' | 'targets'>,
+  draft: Pick<OrderTicketDraft, 'side' | 'quantity' | 'takeProfit' | 'targets'>,
   entry: number | null,
   rules: Pick<OrderTicketRules, 'lot' | 'roundPrice'> = {},
 ): TakeProfitLevel[] {
-  const targets = Math.min(TICKET_MAX_TARGETS, Math.floor(draft.targets ?? 1));
+  const targets = ticketTargets(draft.targets);
   const target = draft.takeProfit;
   if (!(targets > 1) || target === null || !Number.isFinite(target) || entry === null || !Number.isFinite(entry)) return [];
+  // A take-profit on the wrong side of the entry is no profit to part.
+  const up = draft.side === 'buy';
+  if (up ? target <= entry : target >= entry) return [];
   if (!(draft.quantity > 0) || !Number.isFinite(draft.quantity)) return [];
   const step = rules.lot !== undefined && rules.lot > 1 ? rules.lot : 10 ** -stepDecimals(draft.quantity);
   const part = Number((Math.floor(draft.quantity / targets / step + PART_SLACK) * step).toFixed(stepDecimals(step)));
   if (!(part > 0)) return [];
   const round = rules.roundPrice ?? ((price: number) => price);
-  return Array.from({ length: targets - 1 }, (_, k) => ({ price: round(entry + ((target - entry) * (k + 1)) / targets), quantity: part }));
+  const levels: TakeProfitLevel[] = [];
+  let before = entry;
+  for (let k = 1; k < targets; k++) {
+    const price = round(entry + ((target - entry) * k) / targets);
+    // Rounded, a target may land on the entry, on the one before it or on the take-profit: it is then no target of its own.
+    const own = up ? price > before && price < target : price < before && price > target;
+    if (!own) continue;
+    levels.push({ price, quantity: part });
+    before = price;
+  }
+  return levels;
+}
+
+/** A draft's number of targets as the ticket takes it: a whole number from 1 to the most there are. */
+export function ticketTargets(targets: number | undefined): number {
+  return targets !== undefined && Number.isFinite(targets) ? Math.min(TICKET_MAX_TARGETS, Math.max(1, Math.floor(targets))) : 1;
 }
 
 /** Room for a quotient a hair under a whole number of steps. */

@@ -354,6 +354,23 @@ describe('a ticket’s take-profit in several targets', () => {
     expect(ticketTakeProfitLevels({ ...base, quantity: 100, targets: 3 }, 100, { lot: 100 })).toEqual([]);
   });
 
+  it('has no levels while the take-profit is on the wrong side of the entry', () => {
+    expect(ticketTakeProfitLevels({ ...base, takeProfit: 90, targets: 3 }, 100)).toEqual([]);
+    expect(ticketTakeProfitLevels({ ...base, side: 'sell', takeProfit: 130, targets: 3 }, 100)).toEqual([]);
+  });
+
+  it('keeps only the targets that are prices of their own between the entry and the take-profit, as the market rounds them', () => {
+    // A coarse step: both would round to the entry.
+    expect(ticketTakeProfitLevels({ ...base, takeProfit: 100.2, targets: 3 }, 100, { roundPrice: (p) => Math.round(p * 2) / 2 })).toEqual([]);
+    // Two that round to one price are one target.
+    expect(ticketTakeProfitLevels({ ...base, takeProfit: 101, targets: 3 }, 100, { roundPrice: (p) => Math.round(p * 2) / 2 })).toEqual([{ price: 100.5, quantity: 1 }]);
+  });
+
+  it('takes a number of targets that is none as one', () => {
+    expect(ticketTakeProfitLevels({ ...base, targets: Number.NaN }, 100)).toEqual([]);
+    expect(ticketTakeProfitLevels({ ...base, targets: 9 }, 100)).toHaveLength(2);
+  });
+
   it('rounds the targets as the market rounds its prices', () => {
     const levels = ticketTakeProfitLevels({ ...base, takeProfit: 110, targets: 3 }, 100, { roundPrice: (p) => Math.round(p * 2) / 2 });
     expect(levels.map((level) => level.price)).toEqual([103.5, 106.5]);

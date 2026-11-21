@@ -314,9 +314,9 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
     this.positions = this.positions.map((p) => {
       if (p.id !== intent.positionId) return p;
       const next: TradingPosition = { ...p, stopLoss: pick(intent.stopLoss, p.stopLoss), takeProfit: pick(intent.takeProfit, p.takeProfit) };
-      // Its levels, all of them: left out keeps them, null (or none usable) takes them off.
-      if (intent.takeProfits !== undefined) {
-        const levels = levelsOf(intent.takeProfits, p.side);
+      // Its levels, all of them: null (or none usable) takes them off; left out, or no list, keeps them.
+      if (intent.takeProfits === null || Array.isArray(intent.takeProfits)) {
+        const levels = beyondEntry(levelsOf(intent.takeProfits, p.side), p.side, p.entryPrice);
         if (levels) next.takeProfits = levels;
         else delete next.takeProfits;
       }
@@ -415,7 +415,8 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
       takeProfit: order.takeProfit,
     };
     if (order.trailingStop !== undefined) position.trailingStop = order.trailingStop;
-    if (order.takeProfits) position.takeProfits = order.takeProfits.map((level) => ({ ...level }));
+    const levels = beyondEntry(order.takeProfits, order.side, price);
+    if (levels) position.takeProfits = levels;
     return position;
   }
 
@@ -439,7 +440,9 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
       };
       delete added.closedQuantity;
       if (order.trailingStop !== undefined) added.trailingStop = order.trailingStop;
-      if (order.takeProfits) added.takeProfits = order.takeProfits.map((level) => ({ ...level }));
+      // The fill's levels when it brings them, as its stops: they are the plan for the whole position now.
+      const levels = beyondEntry(order.takeProfits, order.side, added.entryPrice);
+      if (levels) added.takeProfits = levels;
       this.positions = [added];
       fill.positionId = held.id;
       return;
@@ -620,6 +623,16 @@ function levelsOf(levels: readonly TakeProfitLevel[] | null | undefined, side: T
     .map((level) => ({ price: level.price, quantity: level.quantity }))
     .sort((a, b) => (side === 'buy' ? a.price - b.price : b.price - a.price));
   return usable.length > 0 ? usable : undefined;
+}
+
+/**
+ * The levels that are a profit from `entry`: past it the winning way. One at
+ * the entry or on the losing side would close its part at once, at a price
+ * the market is not at. Copies; undefined with none left.
+ */
+function beyondEntry(levels: readonly TakeProfitLevel[] | undefined, side: TradingOrder['side'], entry: number): TakeProfitLevel[] | undefined {
+  const kept = (levels ?? []).filter((level) => (side === 'buy' ? level.price > entry : level.price < entry)).map((level) => ({ ...level }));
+  return kept.length > 0 ? kept : undefined;
 }
 
 /** How far short of an order's need the account may be and still carry it, as a part of the need: a sum's rounding. */

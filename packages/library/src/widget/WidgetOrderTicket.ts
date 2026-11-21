@@ -16,6 +16,7 @@ import {
   ticketTimeInForce,
   ticketTimesInForce,
   ticketTakeProfitLevels,
+  ticketTargets,
   TICKET_MAX_TARGETS,
 } from './orderTicket.js';
 
@@ -435,7 +436,7 @@ export class WidgetOrderTicket {
     const counts = Array.from({ length: TICKET_MAX_TARGETS }, (_, i) => String(i + 1));
     const group = field('targets', segmentedControl(
       counts.map((count) => ({ value: count, label: count })),
-      String(Math.min(TICKET_MAX_TARGETS, Math.max(1, Math.floor(draft.targets ?? 1)))),
+      String(ticketTargets(draft.targets)),
       (count) => this.set({ targets: Number(count) }, true),
       this.t('ticket.targets'),
     ));
