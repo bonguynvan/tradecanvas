@@ -135,6 +135,13 @@ describe('bracketQuantity', () => {
     expect(bracketQuantity({ ...draft, stopLoss: 100 }, { risk: 50 })).toBeUndefined();
     expect(bracketQuantity(draft, { risk: 5, quantityStep: 10 })).toBeUndefined();
   });
+
+  it('is none when the sum has no end: a risk past any number over a stop a hair from the entry', () => {
+    const hair = { ...draft, stopLoss: 100 - 1e-10 };
+    expect(bracketQuantity(hair, { risk: Number.MAX_VALUE })).toBeUndefined();
+    expect(bracketQuantity(hair, { risk: Number.MAX_VALUE, quantityStep: 0.1 })).toBeUndefined();
+    expect(bracketQuantity(draft, { risk: Number.POSITIVE_INFINITY })).toBeUndefined();
+  });
 });
 
 describe('BracketTool with a size', () => {

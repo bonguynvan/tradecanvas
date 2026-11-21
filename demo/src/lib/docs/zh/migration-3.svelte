@@ -39,7 +39,7 @@
 chart.connectExecution(broker)             chart.connectExecution(broker, { brackets: 'event' })
 chart.connectExecution(broker, { brackets: 'place' })   →   chart.connectExecution(broker)`}</code></pre>
 <p>
-  括号单按其规模对应的数量发送。没有数量的括号单不会被发送，<code>executionError</code> 会说明原因
+  括号单按其规模对应的数量发送。没有数量的括号单不会被确认：它会留在图表上，<code>executionError</code> 会说明原因
   （<code>reason: 'noQuantity'</code>）。组件的括号单操作栏现在有数量输入框，因此从工具栏开始的括号单都带有数量；
   由你的代码开始的括号单通过第三个参数指定规模（见 <a href={href('/docs/trading')}>交易</a>）：
 </p>

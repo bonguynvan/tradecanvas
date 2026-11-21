@@ -1152,7 +1152,7 @@ export class Chart {
 
     this.interactionManager.setConfirmHandler(() => {
       if (this.features.trading && this.tradingManager.isBracketActive()) {
-        this.tradingManager.confirmBracket();
+        this.confirmBracket();
         return true;
       }
       return false;
@@ -3139,8 +3139,21 @@ export class Chart {
     if (this.features.trading) this.tradingManager.cancelBracket();
   }
 
+  /**
+   * Confirm the bracket being placed: `bracketPlace` goes out, and with an
+   * execution adapter connected it is sent as an order. A bracket the adapter
+   * would not be sent (it has no quantity) is not confirmed: `executionError`
+   * says why (`reason: 'noQuantity'`), and it stays to be given a size.
+   * Returns whether it was confirmed.
+   */
   confirmBracket(): boolean {
-    return this.features.trading ? this.tradingManager.confirmBracket() : false;
+    if (!this.features.trading) return false;
+    const bracket = this.tradingManager.getBracket();
+    if (bracket && bracket.quantity === undefined && this.placesBrackets()) {
+      this.eventBus.emit('executionError', { message: 'A bracket with no quantity is not sent to the adapter', command: 'bracketPlace', reason: 'noQuantity' });
+      return false;
+    }
+    return this.tradingManager.confirmBracket();
   }
 
   isBracketActive(): boolean {

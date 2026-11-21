@@ -261,7 +261,8 @@ chart.cancelOrderDraft()`}</code></pre>
   drag the three lines to tune entry, risk, and reward. Confirm with
   <kbd>Enter</kbd> (or the Place button), cancel with <kbd>Esc</kbd>. In the
   widget, the green/red toolbar arrows start a long/short bracket. The chart
-  emits a single <code>bracketPlace</code> event for your backend to act on.
+  emits a single <code>bracketPlace</code> event, and sends the bracket to a connected
+  execution adapter (below); with none, the event is for your backend to act on.
 </p>
 <p>
   <strong>Its size.</strong> A bracket is for the quantity it is sized with. <code>{`{ quantity: 2 }`}</code> is
@@ -279,8 +280,9 @@ chart.cancelOrderDraft()`}</code></pre>
   run on to it, its quantity, and its stop-loss and take-profit on it. Once the adapter took it, the chart
   sends <code>bracketOrder</code> with the order. If the adapter refuses it, it sends
   <code>executionError</code> with <code>command: 'bracketPlace'</code>. The widget says "placed" only then,
-  and says why when it was refused. A bracket with no quantity is not sent, since no one saw a size to
-  place; nor is one confirmed before the chart has a price to tell a limit entry from a stop.
+  and says why when it was refused. A bracket with no quantity is not confirmed, since no one saw a size to
+  place: <code>confirmBracket()</code> returns false, and the bracket stays on the chart to be given one. One
+  confirmed before the chart has a price to tell a limit entry from a stop is not sent.
   <code>executionError</code> gives the <code>reason</code> (<code>'noQuantity'</code>, <code>'noPrice'</code>),
   and the widget says so. An app that places the event's bracket itself connects with
   <code>brackets: 'event'</code>: the bracket then stays an event, and the widget says it was confirmed.

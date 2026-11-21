@@ -42,7 +42,7 @@
 chart.connectExecution(broker)             chart.connectExecution(broker, { brackets: 'event' })
 chart.connectExecution(broker, { brackets: 'place' })   →   chart.connectExecution(broker)`}</code></pre>
 <p>
-  ブラケットは、そのサイズから決まる数量とともに送られます。数量のないブラケットは送られず、
+  ブラケットは、そのサイズから決まる数量とともに送られます。数量のないブラケットは確定されずチャートに残り、
   <code>executionError</code> がその旨を伝えます（<code>reason: 'noQuantity'</code>）。ウィジェットのブラケットバーに数量の入力欄が加わったため、ツールバーから始めたブラケットには数量があります。自分のコードで始めるブラケットは、第
   3 引数でサイズを受け取ります（<a href={href('/docs/trading')}>トレーディング</a> を参照）：
 </p>

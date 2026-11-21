@@ -40,7 +40,7 @@
 chart.connectExecution(broker)             chart.connectExecution(broker, { brackets: 'event' })
 chart.connectExecution(broker, { brackets: 'place' })   →   chart.connectExecution(broker)`}</code></pre>
 <p>
-  브래킷은 그 크기로 정해지는 수량과 함께 전송됩니다. 수량이 없는 브래킷은 전송되지 않으며,
+  브래킷은 그 크기로 정해지는 수량과 함께 전송됩니다. 수량이 없는 브래킷은 확정되지 않고 차트에 남으며,
   <code>executionError</code>가 그 이유를 알립니다(<code>reason: 'noQuantity'</code>). 위젯의 브래킷 바에 수량 입력란이
   생겨, 툴바에서 시작한 브래킷에는 수량이 있습니다. 여러분의 코드가 시작하는 브래킷은 세 번째 인수로 크기를 받습니다
   (<a href={href('/docs/trading')}>트레이딩</a> 참고):

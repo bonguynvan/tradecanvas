@@ -42,7 +42,7 @@
 chart.connectExecution(broker)             chart.connectExecution(broker, { brackets: 'event' })
 chart.connectExecution(broker, { brackets: 'place' })   →   chart.connectExecution(broker)`}</code></pre>
 <p>
-  Bracket được gửi kèm khối lượng theo kích cỡ của nó. Bracket không có khối lượng thì không được gửi, và
+  Bracket được gửi kèm khối lượng theo kích cỡ của nó. Bracket không có khối lượng thì không được xác nhận: nó ở lại trên chart, và
   <code>executionError</code> nói rõ điều đó (<code>reason: 'noQuantity'</code>). Thanh bracket của widget nay có
   ô khối lượng, nên bracket bắt đầu từ toolbar luôn có khối lượng; bracket do code của bạn bắt đầu nhận kích cỡ ở
   tham số thứ ba (xem <a href={href('/docs/trading')}>Trading</a>):

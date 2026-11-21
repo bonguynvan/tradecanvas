@@ -49,7 +49,9 @@ export function bracketQuantity(draft: Pick<BracketDraft, 'entry' | 'stopLoss'>,
   const lossPerUnit = Math.abs(draft.entry - draft.stopLoss) * (positive(size.multiplier) ? size.multiplier : 1);
   if (!positive(lossPerUnit)) return undefined;
   const raw = size.risk / lossPerUnit;
-  if (!positive(size.quantityStep)) return positive(raw) ? raw : undefined;
+  // A sum with no end (a risk past any number, a stop a hair from the entry) sizes nothing.
+  if (!positive(raw)) return undefined;
+  if (!positive(size.quantityStep)) return raw;
   const steps = Math.floor(raw / size.quantityStep + STEP_SLACK);
   // Three steps of 0.1 are 0.30000000000000004: written to the step's own decimals.
   return steps > 0 ? Number((steps * size.quantityStep).toFixed(stepDecimals(size.quantityStep))) : undefined;

@@ -78,15 +78,43 @@ describe('Chart: a confirmed bracket and the execution adapter', () => {
     expect(broker.getOrders()).toEqual([expect.objectContaining({ quantity: 2 })]);
   });
 
-  it('sends none of the brackets with no quantity, and says why', async () => {
+  it('does not confirm a bracket with no quantity: it says why and keeps it, to be given one', async () => {
     const broker = new PaperExecutionAdapter({ markPrice: 100 });
     const errors: { command?: string; reason?: string }[] = [];
+    const confirmed: unknown[] = [];
     chart.on('executionError', (e) => errors.push(e.payload));
+    chart.on('bracketPlace', (e) => confirmed.push(e.payload));
     chart.connectExecution(broker);
-    expect(confirmLong()).toBe(true);
+    expect(confirmLong()).toBe(false);
     await flush();
     expect(broker.getOrders()).toEqual([]);
+    expect(confirmed).toEqual([]);
     expect(errors).toEqual([expect.objectContaining({ command: 'bracketPlace', reason: 'noQuantity' })]);
+    expect(chart.isBracketActive()).toBe(true);
+    chart.setBracketSize({ quantity: 2 });
+    expect(chart.confirmBracket()).toBe(true);
+    await flush();
+    expect(broker.getOrders()).toEqual([expect.objectContaining({ quantity: 2 })]);
+  });
+
+  it('keeps it on Enter too, as the key confirms what the method does', () => {
+    chart.connectExecution(new PaperExecutionAdapter({ markPrice: 100 }));
+    chart.startBracket('buy', 99);
+    host.querySelector('canvas')!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    expect(chart.isBracketActive()).toBe(true);
+  });
+
+  it('still reports a sizeless bracket that reaches the wiring from elsewhere', async () => {
+    const broker = new PaperExecutionAdapter({ markPrice: 100 });
+    const errors: { reason?: string }[] = [];
+    chart.on('executionError', (e) => errors.push(e.payload));
+    chart.connectExecution(broker);
+    (chart as unknown as { eventBus: { emit(type: string, payload: unknown): void } }).eventBus.emit('bracketPlace', {
+      side: 'buy', entry: 99, stopLoss: 98, takeProfit: 101, riskReward: 2,
+    });
+    await flush();
+    expect(errors).toEqual([expect.objectContaining({ reason: 'noQuantity' })]);
   });
 
   it('stays an event for an app that places it itself (brackets: event), and says nothing', async () => {
@@ -96,7 +124,7 @@ describe('Chart: a confirmed bracket and the execution adapter', () => {
     chart.connectExecution(broker, { brackets: 'event' });
     expect(chart.placesBrackets()).toBe(false);
     confirmSized();
-    confirmLong();
+    expect(confirmLong()).toBe(true);
     await flush();
     expect(broker.getOrders()).toEqual([]);
     expect(errors).toEqual([]);

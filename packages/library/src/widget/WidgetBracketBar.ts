@@ -63,7 +63,8 @@ export class WidgetBracketBar {
     this.quantityInput.addEventListener('keydown', (e) => this.onQuantityKey(e));
     const stepper = stepperField(this.quantityInput, {
       step: (value) => this.quantityStep(value),
-      fallback: () => this.quantityStep(Number.NaN),
+      // An empty field steps from nothing: + writes one step.
+      fallback: () => 0,
       labels: { down: fill(this.t('ticket.stepDown'), { field: quantityName }), up: fill(this.t('ticket.stepUp'), { field: quantityName }) },
     });
     this.quantityEl = document.createElement('div');

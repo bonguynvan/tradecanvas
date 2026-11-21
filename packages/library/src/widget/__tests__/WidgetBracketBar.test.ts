@@ -76,6 +76,13 @@ describe('WidgetBracketBar: the quantity', () => {
     expect(onQuantity).toHaveBeenLastCalledWith(200);
   });
 
+  it('steps an empty field to one step, not two', () => {
+    bar.show('buy', { quantity: 100, step: () => 100 });
+    type('');
+    el().querySelector<HTMLButtonElement>('.tcw-bracket-quantity .tcw-stepper-btn:last-of-type')!.click();
+    expect(quantity().value).toBe('100');
+  });
+
   it('places nothing with no quantity: the field is marked, Place is off and the bracket is told it has none', () => {
     bar.show('sell', { quantity: 1 });
     for (const text of ['', '0', '-3', 'abc']) {

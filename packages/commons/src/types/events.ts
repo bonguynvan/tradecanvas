@@ -436,7 +436,7 @@ export interface ChartEventMap {
   resize: ResizePayload;
   orderPlace: OrderPlacePayload;
   bracketPlace: BracketPlacePayload;
-  /** A confirmed bracket the execution adapter took, as the order it placed (`connectExecution(adapter, { brackets: 'place' })`). */
+  /** A confirmed bracket the execution adapter took, as the order it placed (not with `connectExecution(adapter, { brackets: 'event' })`). */
   bracketOrder: { order: TradingOrder; bracket: BracketPlacePayload };
   orderModify: OrderModifyPayload;
   orderCancel: OrderCancelPayload;

@@ -31,8 +31,9 @@ export interface ExecutionConfig {
    * entry against the price, its quantity, its stop-loss and take-profit.
    * The chart then sends `bracketOrder` once the adapter took it, or
    * `executionError` (`command: 'bracketPlace'`). A bracket with no quantity
-   * is not sent (no one saw a size to place), nor one with no price yet to
-   * tell a limit entry from a stop: `executionError` says so (`reason`).
+   * is not confirmed (no one saw a size to place) and stays to be given one,
+   * and one with no price yet to tell a limit entry from a stop is not sent:
+   * `executionError` says so (`reason`).
    * `'event'`: only the `bracketPlace` event, for your own code to place.
    */
   brackets?: 'event' | 'place';

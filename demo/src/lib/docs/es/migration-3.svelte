@@ -41,7 +41,7 @@
 chart.connectExecution(broker)             chart.connectExecution(broker, { brackets: 'event' })
 chart.connectExecution(broker, { brackets: 'place' })   →   chart.connectExecution(broker)`}</code></pre>
 <p>
-  Un bracket se envía con la cantidad que le da su tamaño. Uno sin cantidad no se envía, y
+  Un bracket se envía con la cantidad que le da su tamaño. Uno sin cantidad no se confirma: se queda en el gráfico, y
   <code>executionError</code> lo indica (<code>reason: 'noQuantity'</code>). La barra de bracket del widget tiene
   ahora un campo de cantidad, así que los brackets que inicia su barra de herramientas la tienen; un bracket que
   inicia tu código recibe un tamaño como tercer argumento (consulta <a href={href('/docs/trading')}>Trading</a>):
