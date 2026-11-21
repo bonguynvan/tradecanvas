@@ -315,15 +315,18 @@ chart.on('priceAxisAdd', (e) => openMyMenu(e.payload.x, e.payload.y, e.payload.p
   <code>{`{ time, kind, orderId, side, type, quantity, price, reason, pnl, message }`}</code> with what its
   <code>kind</code> has (<code>'placed'</code>, <code>'moved'</code>, <code>'cancelled'</code>,
   <code>'filled'</code>, <code>'rejected'</code>). It is read from the orders, fills and errors the chart is told,
-  by an execution adapter or by <code>setOrders</code> and <code>addFill</code>; the orders there when it began
-  are not in it. <code>chart.clearActivityLog()</code> empties it.
+  by an execution adapter or by <code>setOrders</code> and <code>addFill</code>. The orders there when it began
+  are not in it, nor those there when an adapter is connected or taken away, or (with no adapter) when the symbol
+  changes: they are what is there, not orders placed. An order filled in part and then taken off is logged
+  cancelled. <code>chart.clearActivityLog()</code> empties it.
 </p>
 <p>
   <strong>Sell and Buy on the chart.</strong> While an execution adapter is connected, the widget shows two
   buttons under the chart's legend, each with the price it would trade at: the best bid on Sell and the best ask
   on Buy with the spread between them (<code>chart.setBidAsk</code>, or a feed whose ticks carry them), else the
-  last price on both. A press opens the order ticket on that side. <code>executionChange</code> says when an
-  adapter is connected or taken away, and the <code>tradeButtons</code> switch turns the buttons off.
+  last price on both, as on a replay or when the feed gives one side only. A press opens the order ticket on that
+  side. <code>executionChange</code> says when an adapter is connected or taken away, <code>bidAskChange</code>
+  when the bid and the ask change, and the <code>tradeButtons</code> switch turns the buttons off.
 </p>
 <pre><code>{`const widget = new ChartWidget(host, {
   trading: true,         // default

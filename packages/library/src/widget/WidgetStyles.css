@@ -3260,9 +3260,13 @@
   text-overflow: ellipsis;
 }
 /* Sell and Buy under the chart's legend: each its side's colour, with the price it would trade at. */
+/* Only the two buttons take the pointer: a drag or a drawing that starts between them is the chart's. */
 .tcw-quote-buttons {
   position: absolute;
   z-index: 6;
+  pointer-events: none;
+  max-width: calc(100% - 96px);
+  overflow: hidden;
   display: flex;
   align-items: stretch;
   gap: var(--tcw-space-2);
@@ -3274,6 +3278,7 @@
 }
 .tcw-quote-buttons[hidden] { display: none; }
 .tcw-quote-btn {
+  pointer-events: auto;
   display: inline-flex;
   align-items: center;
   gap: var(--tcw-space-3);
@@ -3300,6 +3305,8 @@
   color: var(--tcw-text-muted);
 }
 .tcw-quote-spread[hidden] { display: none; }
+/* A narrow widget has room for the two prices, not for what is between them. */
+.tcw-root[data-tcw-narrow] .tcw-quote-spread { display: none; }
 @media (forced-colors: active) {
   .tcw-quote-btn { border-color: ButtonText; }
   .tcw-quote-btn:focus-visible { outline: 2px solid Highlight; }

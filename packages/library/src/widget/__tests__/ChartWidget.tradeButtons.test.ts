@@ -93,3 +93,25 @@ describe('ChartWidget: Sell and Buy under the legend', () => {
     expect(parseFloat(stack().style.top)).toBe(before);
   });
 });
+
+describe('ChartWidget: the quote on Sell and Buy', () => {
+  it('follows a quote that comes with no trade', async () => {
+    connect();
+    widget.getChart().setBidAsk({ bid: 103.5, ask: 104.5 });
+    await frame();
+    expect(text('sell')).toBe('Sell103.50');
+    widget.getChart().setBidAsk({ bid: 103.75, ask: 104.25 });
+    await frame();
+    expect(text('sell')).toBe('Sell103.75');
+    expect(text('buy')).toBe('Buy104.25');
+  });
+
+  it('quotes the last price on both when the feed gives one side only: a bid is no price to buy at', async () => {
+    connect();
+    widget.getChart().setBidAsk({ bid: 103.5 });
+    await frame();
+    expect(text('sell')).toBe('Sell104.00');
+    expect(text('buy')).toBe('Buy104.00');
+    expect(buttons().querySelector<HTMLElement>('.tcw-quote-spread')!.hidden).toBe(true);
+  });
+});

@@ -110,3 +110,45 @@ describe('ActivityLog: what it keeps', () => {
     expect(kinds()).toEqual(['cancelled']);
   });
 });
+
+describe('ActivityLog: an order filled in parts', () => {
+  const part = (quantity: number, time: number) => ({ orderId: 'a', side: 'buy' as const, price: 95, quantity, time, reason: 'order' as const });
+
+  it('logs the rest cancelled when an order part filled is taken off', () => {
+    log.orders([limit('a', 95, { quantity: 10 })], 100);
+    log.fill(part(4, 200));
+    log.orders([limit('a', 95, { quantity: 10 })], 200);
+    log.orders([], 300);
+    expect(kinds()).toEqual(['placed', 'filled', 'cancelled']);
+  });
+
+  it('logs no cancellation when its parts add up to the order', () => {
+    log.orders([limit('a', 95, { quantity: 10 })], 100);
+    log.fill(part(4, 200));
+    log.fill(part(6, 300));
+    log.orders([], 300);
+    expect(kinds()).toEqual(['placed', 'filled', 'filled']);
+  });
+});
+
+describe('ActivityLog: what it is told by reference', () => {
+  it('sees an order moved when the app changed the same object and gave it again', () => {
+    const order = limit('a', 95);
+    const orders = [order];
+    log.orders(orders, 100);
+    order.price = 97;
+    log.orders(orders, 200);
+    expect(log.entries()[1]).toEqual(expect.objectContaining({ kind: 'moved', price: 97 }));
+  });
+});
+
+describe('ActivityLog: starting over from another set of orders', () => {
+  it('takes the next orders as what is there, logging nothing of the change', () => {
+    log.orders([limit('a', 95), limit('b', 90)], 100);
+    log.rebase();
+    log.orders([limit('z', 50)], 200);
+    expect(kinds()).toEqual(['placed', 'placed']);
+    log.orders([], 300);
+    expect(log.entries().at(-1)).toEqual(expect.objectContaining({ kind: 'cancelled', orderId: 'z' }));
+  });
+});

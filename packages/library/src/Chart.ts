@@ -601,6 +601,10 @@ export class Chart {
     this.eventBus.on('ordersChange', (e) => this.activity.orders((e.payload as { orders: TradingOrder[] }).orders, this.activityTime()));
     this.eventBus.on('executionFill', (e) => this.activity.fill(e.payload as import('@tradecanvas/commons').FillEvent));
     this.eventBus.on('executionError', (e) => this.activity.error(e.payload as import('@tradecanvas/commons').ExecutionErrorPayload, this.activityTime()));
+    // With no adapter the orders are the app's to give, and it gives another symbol's for another symbol: those are no news.
+    this.eventBus.on('symbolChange', () => {
+      if (!this.executionAdapter) this.activity.rebase();
+    });
 
     // Rendering
     this.engine = new RenderEngine(container, options.maxPixelRatio);
@@ -1830,6 +1834,7 @@ export class Chart {
   setBidAsk(quote: BidAsk | null): void {
     this.priceLines.setBidAsk(quote);
     this.engine.requestRender(LayerType.Overlay);
+    this.eventBus.emit('bidAskChange', quote ? { ...quote } : null);
   }
 
   getBidAsk(): BidAsk | null {
@@ -3228,7 +3233,10 @@ export class Chart {
    * moved, cancelled or filled, and what was refused with why. Read from the
    * orders, fills and errors the chart is told, from an execution adapter or
    * from `setOrders` and `addFill`. The orders there when it began are not
-   * in it. `ordersChange`, `executionFill` and `executionError` follow it.
+   * in it, nor those there when an adapter is connected or taken away, or
+   * (with no adapter) when the symbol changes. An order filled in part and
+   * then taken off is logged cancelled. `ordersChange`, `executionFill` and
+   * `executionError` follow it.
    */
   getActivityLog(): ActivityEntry[] {
     return this.activity.entries();
@@ -3676,6 +3684,8 @@ export class Chart {
       throw new Error('connectExecution requires features.trading to be enabled');
     }
     this.disconnectExecution();
+    // Another broker's orders are what is there, not orders placed now.
+    this.activity.rebase();
     this.executionAdapter = adapter;
     this.executionBrackets = config.brackets ?? 'place';
     this.execTeardown = wireExecution(adapter, {
@@ -3727,6 +3737,7 @@ export class Chart {
     if (this.executionAdapter) {
       this.executionAdapter.disconnect();
       this.executionAdapter = null;
+      this.activity.rebase();
       this.eventBus.emit('executionChange', { connected: false });
     }
     if (this.account) {

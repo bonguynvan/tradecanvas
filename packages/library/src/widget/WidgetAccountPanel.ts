@@ -66,7 +66,7 @@ function sameLog(a: readonly ActivityEntry[] | undefined, b: readonly ActivityEn
   if ((a?.length ?? 0) !== (b?.length ?? 0)) return false;
   const last = a?.at(-1);
   const other = b?.at(-1);
-  return last?.time === other?.time && last?.kind === other?.kind && last?.orderId === other?.orderId && last?.message === other?.message;
+  return last?.time === other?.time && last?.kind === other?.kind && last?.orderId === other?.orderId && last?.message === other?.message && last?.price === other?.price;
 }
 
 /** The same money: the three figures the totals show. */

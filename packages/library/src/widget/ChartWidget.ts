@@ -1341,6 +1341,8 @@ export class ChartWidget {
         formatNumber: (v, d) => this.formatNumber(v, d),
         onToggle: (open) => {
           this.markOpen('account', open);
+          // Opened: the log as it is now, an app's own clearing of it included.
+          this.trading.markLogStale();
           this.trading.refreshAccount();
         },
       }, this.t);
@@ -1356,8 +1358,12 @@ export class ChartWidget {
         this.legend.scheduleLegend(true);
       });
       // indicatorUpdate comes once per tick, so open P&L follows the price.
-      for (const event of ['ordersChange', 'positionsChange', 'executionFill', 'executionError', 'accountChange', 'dataUpdate', 'indicatorUpdate'] as const) {
+      for (const event of ['ordersChange', 'positionsChange', 'executionFill', 'executionError', 'accountChange', 'bidAskChange', 'replayState', 'dataUpdate', 'indicatorUpdate'] as const) {
         this.chart.on(event, () => this.trading.refreshAccountSoon());
+      }
+      // What the activity log records: it is read again after one of these, not on every tick.
+      for (const event of ['ordersChange', 'executionFill', 'executionError', 'executionChange', 'symbolChange'] as const) {
+        this.chart.on(event, () => this.trading.markLogStale());
       }
     }
 

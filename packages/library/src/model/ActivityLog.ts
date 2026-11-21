@@ -25,6 +25,8 @@ export interface ActivityEntry {
 
 /** The entries kept when not told how many. */
 const DEFAULT_LIMIT = 200;
+/** How near an order's size its fills may add up and be the whole of it: a sum's rounding. */
+const PART_SLACK = 1e-9;
 /** How many of the latest entries a fill looks back through for its order's "cancelled", to take it back. */
 const LOOK_BACK = 8;
 
@@ -43,14 +45,15 @@ export class ActivityLog {
   private list: ActivityEntry[] = [];
   /** The orders working when last told; null until the first set, which is what was there and no news. */
   private known: Map<string, TradingOrder> | null = null;
-  /** The orders whose fill was told: their leaving is no cancellation. */
-  private readonly filled = new Set<string>();
+  /** How much of each working order the fills told of have filled: one filled whole leaves without a cancellation. */
+  private readonly filled = new Map<string, number>();
 
   constructor(private readonly limit = DEFAULT_LIMIT) {}
 
   /** The working orders now, at `time`. */
   orders(next: readonly TradingOrder[], time: number): void {
-    const now = new Map(next.map((order) => [order.id, order]));
+    // Copies: an app may change its own order and give it again.
+    const now = new Map(next.map((order) => [order.id, { ...order }]));
     const before = this.known;
     this.known = now;
     if (!before) return;
@@ -61,9 +64,20 @@ export class ActivityLog {
     }
     for (const [id, order] of before) {
       if (now.has(id)) continue;
-      // It filled: that was logged, or is about to be.
-      if (!this.filled.delete(id)) this.add(orderEntry('cancelled', order, time));
+      // Filled whole: that was logged. Filled in part, or not at all: what was left was cancelled.
+      const whole = (this.filled.get(id) ?? 0) >= order.quantity * (1 - PART_SLACK);
+      this.filled.delete(id);
+      if (!whole) this.add(orderEntry('cancelled', order, time));
     }
+  }
+
+  /**
+   * Start over from the next set of orders: it is what is there, and no news.
+   * For when the orders are another broker's, or another symbol's.
+   */
+  rebase(): void {
+    this.known = null;
+    this.filled.clear();
   }
 
   /** An order filled, or a position closed. */
@@ -72,7 +86,7 @@ export class ActivityLog {
     const from = Math.max(0, this.list.length - LOOK_BACK);
     const at = this.list.findIndex((entry, i) => i >= from && entry.kind === 'cancelled' && entry.orderId === fill.orderId);
     if (at >= 0) this.list.splice(at, 1);
-    else if (this.known?.has(fill.orderId)) this.filled.add(fill.orderId);
+    else if (this.known?.has(fill.orderId)) this.filled.set(fill.orderId, (this.filled.get(fill.orderId) ?? 0) + fill.quantity);
     const entry: ActivityEntry = { time: fill.time, kind: 'filled', orderId: fill.orderId, side: fill.side, quantity: fill.quantity, price: fill.price };
     if (fill.reason !== undefined) entry.reason = fill.reason;
     if (fill.pnl !== undefined) entry.pnl = fill.pnl;

@@ -246,3 +246,26 @@ describe('Chart: the trading activity log', () => {
     expect(chart.getActivityLog()).toEqual([]);
   });
 });
+
+describe('Chart: the activity log across brokers and symbols', () => {
+  const kinds = () => chart.getActivityLog().map((entry) => entry.kind);
+
+  it('does not call one broker’s orders cancelled when another is connected', async () => {
+    const first = new PaperExecutionAdapter({ markPrice: 100 });
+    chart.connectExecution(first);
+    await first.placeOrder({ side: 'buy', type: 'limit', price: 95, quantity: 1 });
+    const second = new PaperExecutionAdapter({ markPrice: 100 });
+    chart.connectExecution(second);
+    expect(kinds()).toEqual(['placed']);
+    await second.placeOrder({ side: 'sell', type: 'limit', price: 105, quantity: 1 });
+    expect(kinds()).toEqual(['placed', 'placed']);
+  });
+
+  it('says when the bid and the ask change, for what quotes them', () => {
+    const quotes: unknown[] = [];
+    chart.on('bidAskChange', (e) => quotes.push(e.payload));
+    chart.setBidAsk({ bid: 99, ask: 101 });
+    chart.setBidAsk(null);
+    expect(quotes).toEqual([{ bid: 99, ask: 101 }, null]);
+  });
+});
