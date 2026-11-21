@@ -53,6 +53,17 @@ export class PriceFit {
     this.preferred = autoScale;
   }
 
+  /** What it holds of the series on the page, to put back with `restore` after a frame fitted for a picture. */
+  snapshot(): { auto: boolean; pending: boolean; arriving: boolean } {
+    return { auto: this.auto, pending: this.pending, arriving: this.arriving };
+  }
+
+  restore(kept: { auto: boolean; pending: boolean; arriving: boolean }): void {
+    this.auto = kept.auto;
+    this.pending = kept.pending;
+    this.arriving = kept.arriving;
+  }
+
   /** The margins the next fit leaves (the chart's density). */
   setSpacing(spacing: FitSpacing): void {
     this.spacing = spacing;

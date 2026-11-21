@@ -335,15 +335,21 @@ const { bars, columns } = chart.getExportData()          // columns: { name, val
   nothing more asked, it is read off the chart's canvases as they are on the screen. Ask for more pixels
   (<code>pixelRatio</code>) or another theme (<code>theme</code>) and the frame is drawn again for the
   picture, in Canvas 2D whatever the chart itself draws with: the chart on the page is neither resized nor
-  told. <code>type</code> is <code>'png'</code> (default), <code>'jpeg'</code> or <code>'webp'</code>, with
-  <code>quality</code> for the last two.
+  told. A <code>width</code> or a <code>height</code> lays the chart out again at that size, the bars it has
+  on view on view there, and puts the page's layout back: a picture for a slide or a sheet of paper from a
+  chart in a sidebar. The bars are as wide as the size makes them, within what a bar can be: past that, more
+  or fewer of them are on view, about the same middle. At a size of its own the picture has nothing that
+  follows the pointer (the crosshair, a measure), nor a canvas a host laid over the chart, and a size with no
+  room for a plot gives no picture. <code>type</code> is <code>'png'</code> (default), <code>'jpeg'</code> or
+  <code>'webp'</code>, with <code>quality</code> for the last two.
 </p>
 <pre><code>{`chart.screenshot('btc-1h')                                   // btc-1h.png, as on the screen
 chart.screenshot('btc-1h', { pixelRatio: 3, type: 'webp' })  // drawn again at three times the pixels
 await chart.copyScreenshot()                                 // a PNG on the clipboard; false where the browser refuses
 const url = chart.screenshotDataURL({ theme: 'light' })      // in the light theme; the chart stays as it is
 const blob = await chart.screenshotBlob({ type: 'jpeg', quality: 0.9 })
-const canvas = chart.toCanvas({ pixelRatio: 2 })             // to draw on, or to read yourself`}</code></pre>
+const canvas = chart.toCanvas({ pixelRatio: 2 })             // to draw on, or to read yourself
+const slide = await chart.screenshotBlob({ width: 1920, height: 1080 })   // laid out again at that size`}</code></pre>
 <p>
   <code>print()</code> opens the browser's print dialog for the chart alone: a page that holds its picture
   and nothing of the page it is on; it gives <code>false</code> when there was no picture to print.
@@ -356,6 +362,7 @@ const canvas = chart.toCanvas({ pixelRatio: 2 })             // to draw on, or t
 
 chart.print({ title: 'BTCUSDT, 1h' })
 const pdf = await chart.toPdf({ pageSize: 'letter', margin: 12, title: 'BTCUSDT' })   // a Blob
+const full = await chart.toPdf({ width: 1123, height: 794 })   // laid out in the page's own shape: as large as its margins allow
 const report = await chartsToPdf([chart, equityChart, allocationChart], { title: 'March', theme: 'dark' })`}</code></pre>
 <p>
   <code>pageSize</code> is <code>'a4'</code> (default), <code>'a3'</code>, <code>'letter'</code>,
@@ -1326,6 +1333,10 @@ grid.applyOverrides({ 'grid.vertical.visible': false })   // every chart's look,
 grid.setFeatures({ 'toolbar.replay': false })               // every chart's switches, and the charts it adds
 grid.getActiveWidget().getChart()
 grid.getLayoutSession()?.saveAs('Majors')
+
+// The charts as one picture, each in its cell: a file, the print dialog, a PDF
+grid.screenshot('majors', { pixelRatio: 2 })
+const sheet = await grid.toPdf({ title: 'Majors' })   // light and at twice the pixels, as a chart's
 
 // Each chart as it is made (at the start, and when the grid grows)
 new ChartWidgetGrid(host, {

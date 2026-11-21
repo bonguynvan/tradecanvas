@@ -25,6 +25,18 @@ export const PRICE_SCALE_MARGIN = CHART_SPACING[DEFAULT_CHART_DENSITY].priceMarg
 /** Margins must leave the prices at least this share of the height. */
 const MIN_PRICE_SHARE = 0.2;
 
+/** A viewport as it stood, for `Viewport.restore`. */
+export interface ViewportSnapshot {
+  state: ViewportState;
+  priceAxisWidth: number;
+  margins: ScaleMargins;
+}
+
+/** A state of its own: the ranges and the plot are not shared with the one it was read from. */
+function ownState(state: ViewportState): ViewportState {
+  return { ...state, visibleRange: { ...state.visibleRange }, priceRange: { ...state.priceRange }, chartRect: { ...state.chartRect } };
+}
+
 export class Viewport {
   private state: ViewportState;
   // A field rather than state: computeChartRect runs while state is being built.
@@ -96,6 +108,22 @@ export class Viewport {
       };
     }
     return this.stateCache;
+  }
+
+  /**
+   * The viewport as it stands, to put back with `restore`: a frame is laid
+   * out at another size for a picture, and the page's is the page's again.
+   */
+  snapshot(): ViewportSnapshot {
+    return { state: ownState(this.state), priceAxisWidth: this.priceAxisWidth, margins: { ...this.margins } };
+  }
+
+  /** The viewport as `snapshot` found it: the bars on view, the prices, the plot, the scale's width and margins. */
+  restore(kept: ViewportSnapshot): void {
+    this.state = ownState(kept.state);
+    this.priceAxisWidth = kept.priceAxisWidth;
+    this.margins = { ...kept.margins };
+    this.invalidate();
   }
 
   /** Drop the cached snapshot — called by every method that mutates `state`. */

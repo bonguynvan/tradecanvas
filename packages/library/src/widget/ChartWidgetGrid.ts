@@ -1,10 +1,12 @@
-import type { ChartStyleOverrides, ChartStyleOverridesPatch, DataAdapter, DrawingState, Theme, ThemeName, VisibleRangeChangePayload } from '@tradecanvas/commons';
-import { tickerOf } from '@tradecanvas/commons';
+import type { ChartImageOptions, ChartPdfOptions, ChartPrintOptions, ChartStyleOverrides, ChartStyleOverridesPatch, DataAdapter, DrawingState, Theme, ThemeName, VisibleRangeChangePayload } from '@tradecanvas/commons';
+import { DARK_THEME, LIGHT_THEME, tickerOf } from '@tradecanvas/commons';
+import { canvasBlob, canvasDataURL, canvasesToPdf, downloadImage, imageFileName, printCanvas } from '@tradecanvas/core';
 import { ChartWidget } from './ChartWidget.js';
 import type { ChartWidgetOptions, WidgetLayoutsOptions } from './types.js';
 import { readWidgetFeatures, type WidgetFeatures } from './widgetFeatures.js';
 import { GRID_LAYOUT_SHAPES, GRID_LAYOUTS, gridAreas, gridChartCount, isGridLayout, placeGridCell, type GridLayout, type GridShape } from '../grid/gridShapes.js';
 import { GridLayoutPicker } from './GridLayoutPicker.js';
+import { gridPicture } from './gridPicture.js';
 import { injectWidgetStyles, removeWidgetStyles } from './WidgetStyles.js';
 import { createTranslator, fill, resolveMessages, type MessageKey, type Translator } from './i18n.js';
 import { createIcon } from './icons.js';
@@ -82,6 +84,11 @@ export interface WidgetGridLayoutContent {
 interface Cell {
   el: HTMLDivElement;
   widget: ChartWidget;
+}
+
+/** A picture for paper: in the light theme and at twice the pixels, unless the options say otherwise. */
+function forPaper<O extends Omit<ChartImageOptions, 'type' | 'quality'>>(options: O): O {
+  return { ...options, theme: options.theme ?? 'light', pixelRatio: options.pixelRatio ?? 2 };
 }
 
 /** A detached copy of plain data (drawings): charts must not share objects they change in place. */
@@ -219,6 +226,67 @@ export class ChartWidgetGrid {
     this.markActive();
     this.options.onActiveChange?.(index, this.cells[index].widget);
     this.session?.changed();
+  }
+
+  // --- Pictures ---
+
+  /**
+   * The grid's charts as one picture, each in its cell, a line between
+   * them: for a file, a page or a PDF of the whole grid. Each chart is
+   * drawn again for its cell (`chart.toCanvas`), so the room its widget's
+   * bars take on the page is the chart's in the picture. `options` are a
+   * chart's own picture's (`pixelRatio`, `theme`), and a `width` or a
+   * `height` is the whole grid's. A narrow grid, which shows one chart at
+   * a time, gives that chart. Null when no chart has a picture to give.
+   */
+  toCanvas(options: ChartImageOptions = {}): HTMLCanvasElement | null {
+    const grid = this.cellsEl.getBoundingClientRect();
+    const pieces = this.cells.map((cell) => {
+      const box = cell.el.getBoundingClientRect();
+      return { chart: cell.widget.getChart(), box: { x: box.left - grid.left, y: box.top - grid.top, width: box.width, height: box.height } };
+    });
+    // The line between two cells, as the charts draw their own lines in the picture's theme.
+    const theme = options.theme === undefined ? this.getActiveWidget().getChart().getTheme() : options.theme === 'light' ? LIGHT_THEME : options.theme === 'dark' ? DARK_THEME : options.theme;
+    return gridPicture(pieces, { width: grid.width, height: grid.height }, options, theme.axisLine, window.devicePixelRatio || 1);
+  }
+
+  /** The grid's picture in a data URL (`toCanvas`); `options` say its format too. */
+  screenshotDataURL(options: ChartImageOptions = {}): string | null {
+    const canvas = this.toCanvas(options);
+    return canvas ? canvasDataURL(canvas, options) : null;
+  }
+
+  /** The grid's picture as a file's bytes (`toCanvas`); `options` say its format too. */
+  async screenshotBlob(options: ChartImageOptions = {}): Promise<Blob | null> {
+    const canvas = this.toCanvas(options);
+    return canvas ? canvasBlob(canvas, options) : null;
+  }
+
+  /** Saves the grid's picture as a file: `charts.png` unless `filename` says otherwise. */
+  screenshot(filename = 'charts', options: ChartImageOptions = {}): void {
+    const url = this.screenshotDataURL(options);
+    if (url) downloadImage(url, imageFileName(filename, options.type ?? 'png'));
+  }
+
+  /**
+   * Opens the browser's print dialog for the grid's charts alone, in the
+   * light theme and at twice the pixels unless `options` say otherwise.
+   * False when there was no picture to print.
+   */
+  print(options: ChartPrintOptions = {}): boolean {
+    const canvas = this.toCanvas(forPaper(options));
+    return canvas !== null && printCanvas(canvas, { title: options.title });
+  }
+
+  /**
+   * The grid's charts as a PDF of one page: their picture, kept without
+   * loss, as large as fits within the margins. In the light theme and at
+   * twice the pixels unless `options` say otherwise. For a page a chart,
+   * give the charts to `chartsToPdf`. Null when there was no picture.
+   */
+  async toPdf(options: ChartPdfOptions = {}): Promise<Blob | null> {
+    const canvas = this.toCanvas(forPaper(options));
+    return canvas ? canvasesToPdf([canvas], options) : null;
   }
 
   getLayout(): GridLayout {

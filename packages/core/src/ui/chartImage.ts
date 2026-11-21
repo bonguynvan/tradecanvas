@@ -33,6 +33,33 @@ export function imageRatio(width: number, height: number, asked: number | undefi
   return Math.min(wanted, MAX_IMAGE_SIDE / Math.max(width, height), Math.sqrt(MAX_IMAGE_PIXELS / (width * height)));
 }
 
+/**
+ * The size a picture is laid out at, in CSS pixels: each side as asked for
+ * (a part of a pixel too: a grid's cell is laid out to the pixels it has),
+ * and the chart's own for a side left out or one that is no size. No side
+ * is past what a canvas can be.
+ */
+export function pictureSize(own: { width: number; height: number }, asked: { width?: number; height?: number }): { width: number; height: number } {
+  const side = (wanted: number | undefined, mine: number): number =>
+    wanted !== undefined && Number.isFinite(wanted) && wanted > 0 ? Math.min(wanted, MAX_IMAGE_SIDE) : mine;
+  return { width: side(asked.width, own.width), height: side(asked.height, own.height) };
+}
+
+/**
+ * The pixels of a picture `size` CSS pixels at `ratio`: each side a whole
+ * number, one at least. Where rounding the sides takes them past the most
+ * pixels a canvas has (a ratio held to that by `imageRatio` leaves no room
+ * for it), the longer side gives way.
+ */
+export function picturePixels(size: { width: number; height: number }, ratio: number): { width: number; height: number } {
+  const pixels = { width: Math.max(1, Math.round(size.width * ratio)), height: Math.max(1, Math.round(size.height * ratio)) };
+  while (pixels.width * pixels.height > MAX_IMAGE_PIXELS) {
+    if (pixels.width >= pixels.height) pixels.width--;
+    else pixels.height--;
+  }
+  return pixels;
+}
+
 /** The format and the quality a canvas is asked to encode itself in. */
 function encoding(options: ChartImageOptions): [string, number | undefined] {
   const type = options.type && MIME[options.type] ? options.type : 'png';

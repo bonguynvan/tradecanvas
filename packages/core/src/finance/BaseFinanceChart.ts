@@ -2,7 +2,7 @@ import type { ChartImageOptions, ChartPdfOptions, ChartPrintOptions, FontConfig,
 import { DARK_THEME, LIGHT_THEME } from '@tradecanvas/commons';
 import { DPRManager, backingSize } from '../engine/DPRManager.js';
 import { isolateFontFeatures } from '../engine/CanvasLayer.js';
-import { canvasBlob, canvasDataURL, canvasesToPdf, copyImage, downloadImage, imageFileName, imageRatio, printCanvas } from '../ui/chartImage.js';
+import { canvasBlob, canvasDataURL, canvasesToPdf, copyImage, downloadImage, imageFileName, imageRatio, picturePixels, printCanvas } from '../ui/chartImage.js';
 
 /** A picture for paper has this many pixels to a CSS pixel when the options do not say, and is drawn in this theme. */
 const PAPER_PIXEL_RATIO = 2;
@@ -155,8 +155,9 @@ export abstract class BaseFinanceChart {
     if (!(width > 0) || !(height > 0)) return null;
     const ratio = imageRatio(width, height, options.pixelRatio, this.dpr || 1);
     const canvas = document.createElement('canvas');
-    canvas.width = Math.max(1, Math.round(width * ratio));
-    canvas.height = Math.max(1, Math.round(height * ratio));
+    const pixels = picturePixels({ width, height }, ratio);
+    canvas.width = pixels.width;
+    canvas.height = pixels.height;
     const ctx = canvas.getContext('2d');
     if (!ctx) return null;
     const theme = options.theme !== undefined ? financeTheme(options.theme, this.fontGiven) : this.theme;
