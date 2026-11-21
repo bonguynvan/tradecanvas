@@ -329,12 +329,26 @@ const chart = new PayoffChart(el, { legs: condor, multiplier: 100, spot: 101.4, 
 chart.update(otherLegs)
 
 payoffStats(condor, 100)    // { maxProfit: 300, maxLoss: -200, breakevens: [92, 108] }
-optionPayoff(condor, 100, 100)   // 300: what the legs make with the underlying at 100`}</code></pre>
+optionPayoff(condor, 100, 100)   // 300: what the legs make with the underlying at 100
+
+// Before expiry: a second, dashed line, by a model
+chart.setOptions({ model: { daysToExpiry: 30, volatility: 0.25, rate: 0.03 } })
+positionValue(condor, 100, { daysToExpiry: 30, volatility: 0.25 }, 100)   // what the legs make with 30 days to go
+optionPrice('call', 100, 105, { years: 30 / 365, volatility: 0.25 })      // one option's price`}</code></pre>
 <p>
   <code>payoffStats</code> gives the most the legs make and the most they lose at expiry
   (<code>null</code> where there is no limit: a call bought, a call sold alone) and the prices where they break
-  even. They are sums at expiry: no option is priced before it, so there is no curve for today. A leg without
-  its strike, or the underlying without its entry, counts for nothing.
+  even. A leg without its strike, or the underlying without its entry, counts for nothing.
+</p>
+<p>
+  With <code>model</code> the chart draws what the position makes or loses with that many days still to go,
+  dashed, over the payoff, names the two lines over the plot (<code>expiryLabel</code> and
+  <code>model.label</code> say them in your words) and reads both under the pointer. Each option is priced
+  as a European one by Black-Scholes at the model's <code>volatility</code> (a year's, as a share:
+  <code>0.25</code> is 25%), with <code>rate</code> and <code>dividendYield</code> where given; a leg's own
+  <code>volatility</code> and <code>daysToExpiry</code> stand in for the model's, for a skew or a calendar
+  spread. It is a model's answer, not a quote: an American option, or one whose volatility moves with the
+  price, is worth something else. <code>positionValue</code> and <code>optionPrice</code> are the sums.
 </p>
 
 <h2>Curves: a volatility smile, a term structure</h2>
@@ -463,7 +477,8 @@ const chart = new SurfaceChart(el, {
 chart.update(nextValues)                   // or update(values, { x, y }) when the axes changed too`}</code></pre>
 <p>
   Dragging turns the chart: a mouse turns and tilts it, a finger turns it only, so that a page still scrolls
-  under it. A double click goes back to the <code>view</code> the options gave
+  under it. From the keyboard, once Tab has reached the chart, the arrows turn and tilt it by 5 degrees (15
+  with Shift) and Home goes back. A double click goes back to the <code>view</code> the options gave
   (<code>{'{'} yaw: -35, pitch: 28 {'}'}</code> when they give none: <code>yaw</code> turns the chart about its
   upright axis, <code>pitch</code> is how far above the floor the eye is, 0 to 90 degrees).
   <code>getView()</code> reads where it is seen from now, <code>setView()</code> sets it,

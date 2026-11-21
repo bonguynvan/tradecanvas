@@ -6,6 +6,18 @@ import { InteractiveChart } from './InteractiveChart.js';
 const TURN_PER_PIXEL = 0.4;
 /** A press that moves less than this, px, is a click and turns nothing. */
 const DRAG_SLOP = 4;
+/** Degrees an arrow key turns the chart, and with Shift. */
+const KEY_TURN = 5;
+const KEY_TURN_FAR = 15;
+/** The keys a chart that turns takes, as `aria-keyshortcuts` names them. */
+const TURN_KEYS = 'ArrowLeft ArrowRight ArrowUp ArrowDown Home';
+/** Which way each arrow turns the chart, in steps of yaw and of pitch: as a drag that way does. */
+const KEY_STEPS: Readonly<Record<string, readonly [number, number]>> = {
+  ArrowRight: [-1, 0],
+  ArrowLeft: [1, 0],
+  ArrowDown: [0, 1],
+  ArrowUp: [0, -1],
+};
 
 /** What a finger may still do to the page over a chart that turns: scroll it up and down, and pinch it. */
 const TOUCH_LEFT_TO_PAGE = 'pan-y pinch-zoom';
@@ -25,7 +37,8 @@ interface Turn {
 /**
  * A finance chart drawn in a box that a drag turns. A mouse turns it and
  * tilts it; a finger turns it only and leaves the up-and-down drag to the
- * page, so a chart in a page that scrolls does not hold the scroll.
+ * page, so a chart in a page that scrolls does not hold the scroll. Tab
+ * reaches it, and there the arrows turn and tilt it and Home goes back.
  */
 export abstract class Chart3D<O extends Chart3DOptions, L> extends InteractiveChart<O, L> {
   /** The view the options last gave: what a double click goes back to. */
@@ -77,6 +90,22 @@ export abstract class Chart3D<O extends Chart3DOptions, L> extends InteractiveCh
     if (this.options.rotate !== false) this.turnTo(resolveView(this.home));
   };
 
+  /** The arrows turn and tilt the chart, Home goes back: what a drag and a double click do, with no pointer. */
+  private readonly onKey = (e: KeyboardEvent) => {
+    if (this.options.rotate === false || e.altKey || e.ctrlKey || e.metaKey) return;
+    const step = KEY_STEPS[e.key];
+    if (!step && e.key !== 'Home') return;
+    // The page does not scroll under a key the chart took.
+    e.preventDefault();
+    if (!step) {
+      this.turnTo(resolveView(this.home));
+      return;
+    }
+    const by = e.shiftKey ? KEY_TURN_FAR : KEY_TURN;
+    const from = this.getView();
+    this.turnTo(resolveView({ yaw: from.yaw + step[0] * by, pitch: from.pitch + step[1] * by }));
+  };
+
   constructor(container: HTMLElement, options: O) {
     super(container, options);
     this.home = options.view;
@@ -85,6 +114,7 @@ export abstract class Chart3D<O extends Chart3DOptions, L> extends InteractiveCh
     this.canvas.addEventListener('pointerup', this.onRelease);
     this.canvas.addEventListener('pointercancel', this.onRelease);
     this.canvas.addEventListener('dblclick', this.onReset);
+    this.canvas.addEventListener('keydown', this.onKey);
     this.applyRotate();
   }
 
@@ -139,6 +169,10 @@ export abstract class Chart3D<O extends Chart3DOptions, L> extends InteractiveCh
     // A mouse dragged off the chart would mark the page's text as it went.
     this.canvas.style.userSelect = turns ? 'none' : '';
     this.canvas.style.setProperty('-webkit-user-select', turns ? 'none' : '');
+    // Tab reaches a chart that turns, and a screen reader is told its keys.
+    this.canvas.tabIndex = turns ? 0 : -1;
+    if (turns) this.canvas.setAttribute('aria-keyshortcuts', TURN_KEYS);
+    else this.canvas.removeAttribute('aria-keyshortcuts');
     if (turns) {
       this.restCursor();
       return;
@@ -172,6 +206,7 @@ export abstract class Chart3D<O extends Chart3DOptions, L> extends InteractiveCh
     this.canvas.removeEventListener('pointerup', this.onRelease);
     this.canvas.removeEventListener('pointercancel', this.onRelease);
     this.canvas.removeEventListener('dblclick', this.onReset);
+    this.canvas.removeEventListener('keydown', this.onKey);
     super.destroy();
   }
 }

@@ -1,5 +1,5 @@
 import type { ChartSeries, RadarChartOptions, Theme } from '@tradecanvas/commons';
-import { computeRadarLayout, renderRadar, type RadarLayout, type Measure } from '@tradecanvas/core';
+import { computeRadarLayout, hitRadarAxis, renderRadar, type RadarLayout, type Measure } from '@tradecanvas/core';
 import { InteractiveChart } from './InteractiveChart.js';
 import { counted } from './describe.js';
 
@@ -18,14 +18,23 @@ export class RadarChart extends InteractiveChart<RadarChartOptions, RadarLayout>
   }
 
   protected clickable(): boolean {
-    return false;
+    return this.options.onAxisClick !== undefined;
   }
 
-  protected hits(): boolean {
-    return false;
+  protected hits(layout: RadarLayout, x: number, y: number): boolean {
+    return hitRadarAxis(layout, x, y) !== null;
   }
 
-  protected clickAt(): void {}
+  /** The measure whose spoke is nearest the click, with each series' value on it. */
+  protected clickAt(layout: RadarLayout, x: number, y: number): void {
+    const index = hitRadarAxis(layout, x, y);
+    if (index === null) return;
+    this.options.onAxisClick?.({
+      axis: layout.spokes[index].label,
+      index,
+      values: layout.shapes.map((shape) => ({ series: shape.name, value: shape.points[index]?.value ?? null })),
+    });
+  }
 
   update(series: ChartSeries[]): void {
     this.setOptions({ series });

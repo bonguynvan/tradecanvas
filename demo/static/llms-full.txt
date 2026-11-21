@@ -1097,7 +1097,7 @@ new PerformanceDashboard(el('report'), { result, title: 'Strategy', labels: { eq
 An options position's profit and loss at expiry, and where it breaks even:
 
 ```ts
-import { PayoffChart, payoffStats, type OptionLeg } from '@tradecanvas/chart';
+import { PayoffChart, optionPrice, payoffStats, positionValue, type OptionLeg } from '@tradecanvas/chart';
 
 const condor: OptionLeg[] = [
   { type: 'put', side: 'long', strike: 90, premium: 1 },
@@ -1105,9 +1105,14 @@ const condor: OptionLeg[] = [
   { type: 'call', side: 'short', strike: 105, premium: 2.5 },
   { type: 'call', side: 'long', strike: 110, premium: 1 },
 ];
-new PayoffChart(document.getElementById('payoff')!, { legs: condor, multiplier: 100, spot: 101.4, spotLabel: 'Spot' });
+const payoff = new PayoffChart(document.getElementById('payoff')!, { legs: condor, multiplier: 100, spot: 101.4, spotLabel: 'Spot' });
 
 const { maxProfit, maxLoss, breakevens } = payoffStats(condor, 100); // 300, -200, [92, 108]; null where there is no limit
+
+// Before expiry: a second, dashed line by Black-Scholes (European options, one volatility; a model's answer, not a quote).
+payoff.setOptions({ model: { daysToExpiry: 30, volatility: 0.25, rate: 0.03 } });
+const withThirtyDays = positionValue(condor, 100, { daysToExpiry: 30, volatility: 0.25 }, 100);
+const oneCall = optionPrice('call', 100, 105, { years: 30 / 365, volatility: 0.25 });
 ```
 
 Values against a strike or a tenor (`CurveChart`), how groups of values spread (`BoxPlotChart`), several measures at once (`RadarChart`), parts inside parts (`SunburstChart`) and a mix over time (`StackedAreaChart`):
@@ -1124,11 +1129,13 @@ new CurveChart(document.getElementById('smile')!, {
 new BoxPlotChart(document.getElementById('spread')!, {
   data: [{ label: 'Mon', values: [0.4, -1.2, 0.8, 2.1, -0.3] }, { label: 'Tue', values: [1.1, 0.2, -0.6, 0.9, 0.3] }],
   colorBySign: true,
+  onBoxClick: (group, stats) => console.log(group.label, stats.median),
 });
 
 new RadarChart(document.getElementById('scorecard')!, {
   axes: [{ label: 'Sharpe', max: 3 }, { label: 'Sortino', max: 3 }, { label: 'Calmar', max: 3 }],
   series: [{ name: 'Strategy', values: [1.8, 2.4, 1.5] }, { name: 'Benchmark', values: [1, 1.3, 0.7] }],
+  onAxisClick: ({ axis, values }) => console.log(axis, values), // the measure, and each series' value on it
 });
 
 new SunburstChart(document.getElementById('holdings')!, {
