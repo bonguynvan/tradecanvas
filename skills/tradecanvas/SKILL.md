@@ -174,7 +174,7 @@ chart.removeAll('indicators'); // or 'drawings', or 'all': everything of that ki
   loaded and moves when older history is paged in.
 - Custom indicators: `defineIndicator({ id, name, inputs, plots, calculate({ bars, inputs, ta }) })`
   returns one to `chart.registerIndicator(...)`; `ta` has the sums (`ema`, `rsi`, `macd`, `atr`,
-  `bollinger`, `crossover`…). For one that updates tick by tick or draws its own way, extend
+  `bollinger`, `crossover`…) and `ta.indicator(id, bars, params)` runs any built-in. For one that updates tick by tick or draws its own way, extend
   `IndicatorBase` and declare `plots` — see [references/recipes.md](references/recipes.md).
   A `category` in the descriptor (`'oscillators'`, `'volume'`…) files it under that
   group of ChartWidget's Indicators dialog; `{ id, label }` is a group of your own,
