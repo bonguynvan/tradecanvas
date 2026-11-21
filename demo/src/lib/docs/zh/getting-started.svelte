@@ -12,7 +12,7 @@
 <h1>快速开始</h1>
 <p>安装 TradeCanvas，一分钟内即可渲染出图表。</p>
 <p>
-  TradeCanvas 采用 MIT 许可证，图表上不显示任何标志。内置 18 种图表、134 个指标和
+  TradeCanvas 采用 MIT 许可证，图表上不显示任何标志。内置 24 种图表、134 个指标和
   76 种画线工具。
 </p>
 
@@ -104,7 +104,7 @@ args = ["-y", "@tradecanvas/mcp"]`}</code></pre>
 <h2>下一步</h2>
 <ul>
   <li><a href={href('/docs/api')}>API 参考</a> — <code>Chart</code> 与 <code>ChartWidget</code> 的完整接口</li>
-  <li><a href={href('/docs/chart-types')}>图表类型</a> — 18 种内置图表类型</li>
+  <li><a href={href('/docs/chart-types')}>图表类型</a> — 24 种内置图表类型</li>
   <li><a href={href('/docs/indicators')}>指标</a> — 134 个指标的目录</li>
   <li><a href={href('/docs/realtime')}>实时数据与回放</a> — 流式数据适配器与回放模式</li>
   <li><a href={href('/docs/analytics')}>分析</a> — 策略回测与风险指标</li>

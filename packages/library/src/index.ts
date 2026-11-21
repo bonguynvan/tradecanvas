@@ -228,7 +228,7 @@ export type { PriceStepBand, VN30FContract } from '@tradecanvas/commons';
 export { IndicatorBase, IndicatorValueMap, DrawingBase, indicatorCategory, indicatorGroup, INDICATOR_CATEGORIES, describeInputs } from '@tradecanvas/core';
 // An indicator from its inputs and one function of the bars, and the sums it is made of.
 export { defineIndicator, ta } from '@tradecanvas/core';
-export type { DefinedIndicatorInput, IndicatorBars, IndicatorCalculation, IndicatorDefinition, IndicatorInputValue, IndicatorLine, InputsOf, Ta, TaBars, TaSeries } from '@tradecanvas/core';
+export type { DefinedIndicatorInput, IndicatorBars, IndicatorCalculation, IndicatorDefinition, IndicatorInputValue, IndicatorLine, InputsOf, Ta, TaBars, TaInput, TaSeries } from '@tradecanvas/core';
 export type { IndicatorInputInfo } from '@tradecanvas/core';
 // The trade a Long/Short Position drawing stands for, for an app that places an order from it.
 export { positionLevels } from '@tradecanvas/core';

@@ -1,6 +1,6 @@
 ---
 name: tradecanvas
-description: Build trading and financial charts with TradeCanvas (@tradecanvas/chart) — candlesticks and 17 other chart types, 134 indicators, drawing tools, live exchange data, orders and positions on the chart, signals and trade zones, alerts, replay, a full trading widget. Use when a project imports @tradecanvas/*, or when asked to add a price, candlestick or trading chart to a web app (vanilla TS/JS, React, Vue, Svelte).
+description: Build trading and financial charts with TradeCanvas (@tradecanvas/chart) — candlesticks and 23 other chart types, 134 indicators, drawing tools, live exchange data, orders and positions on the chart, signals and trade zones, alerts, replay, a full trading widget. Use when a project imports @tradecanvas/*, or when asked to add a price, candlestick or trading chart to a web app (vanilla TS/JS, React, Vue, Svelte).
 ---
 
 # TradeCanvas
@@ -174,7 +174,7 @@ chart.removeAll('indicators'); // or 'drawings', or 'all': everything of that ki
   loaded and moves when older history is paged in.
 - Custom indicators: `defineIndicator({ id, name, inputs, plots, calculate({ bars, inputs, ta }) })`
   returns one to `chart.registerIndicator(...)`; `ta` has the sums (`ema`, `rsi`, `macd`, `atr`,
-  `bollinger`, `crossover`…). For one that updates tick by tick or draws its own way, extend
+  `bollinger`, `crossover`…) and `ta.indicator(id, bars, params)` runs any built-in. For one that updates tick by tick or draws its own way, extend
   `IndicatorBase` and declare `plots` — see [references/recipes.md](references/recipes.md).
   A `category` in the descriptor (`'oscillators'`, `'volume'`…) files it under that
   group of ChartWidget's Indicators dialog; `{ id, label }` is a group of your own,

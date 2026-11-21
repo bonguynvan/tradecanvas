@@ -574,6 +574,10 @@ export class WidgetSettings {
         number('settings.reversalBoxes', all.pointAndFigure?.reversal ?? null, { step: '1', max: 10 },
           (v) => set('pointAndFigure', withValue(own().pointAndFigure, 'reversal', v)));
         break;
+      case 'smoothedHeikinAshi':
+        number('settings.smoothingLength', all.smoothedHeikinAshi?.period ?? null, { step: '1', max: 500 },
+          (v) => set('smoothedHeikinAshi', withValue(own().smoothedHeikinAshi, 'period', v)));
+        break;
       case 'rangeBars':
         number('settings.barRange', typeof all.rangeBars?.range === 'number' ? all.rangeBars.range : null, SIZE_LIMITS,
           (v) => set('rangeBars', { range: v ?? 'auto' }));

@@ -48,7 +48,7 @@
 <table>
   <thead><tr><th>Method</th><th>Purpose</th></tr></thead>
   <tbody>
-    <tr><td><code>setChartType(type)</code></td><td>One of 18 types — see <a href={href('/docs/chart-types')}>Chart types</a>.</td></tr>
+    <tr><td><code>setChartType(type)</code></td><td>One of 24 types — see <a href={href('/docs/chart-types')}>Chart types</a>.</td></tr>
     <tr><td><code>getChartType()</code></td><td>The type the chart is drawn as (<code>'candlestick'</code> by default).</td></tr>
     <tr><td><code>setTheme(name | theme)</code></td><td>Switch between built-in themes, or set your own. <code>getTheme()</code> gives it back as set.</td></tr>
     <tr><td><code>applyOverrides(patch, {'{ layer }'})</code></td><td>Style any part of the chart by key (<code>'grid.vertical.visible'</code>, <code>'series.candlestick.upColor'</code>…); <code>null</code> takes a key away. See <a href={href('/docs/styling#overrides')}>Styling</a>.</td></tr>

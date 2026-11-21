@@ -1,5 +1,31 @@
 import type { OHLCBar, DataSeries } from '@tradecanvas/commons';
 
+/** The bars the smoothed Heikin-Ashi averages over when not told. */
+export const SMOOTHED_HEIKIN_ASHI_PERIOD = 10;
+
+/**
+ * Smoothed Heikin-Ashi: each bar's open, high, low and close taken as an
+ * exponential average over `period` bars first (started at the first bar),
+ * then made Heikin-Ashi. Its candles turn later than Heikin-Ashi's and less
+ * often: a trend reads as one run of a colour.
+ */
+export function toSmoothedHeikinAshi(data: DataSeries, period = SMOOTHED_HEIKIN_ASHI_PERIOD): DataSeries {
+  if (data.length === 0) return [];
+  const span = Number.isFinite(period) ? Math.max(1, Math.floor(period)) : SMOOTHED_HEIKIN_ASHI_PERIOD;
+  const alpha = 2 / (span + 1);
+  let { open, high, low, close } = data[0];
+  const smooth = (was: number, now: number) => was + alpha * (now - was);
+  return toHeikinAshi(data.map((bar, i) => {
+    if (i > 0) {
+      open = smooth(open, bar.open);
+      high = smooth(high, bar.high);
+      low = smooth(low, bar.low);
+      close = smooth(close, bar.close);
+    }
+    return { time: bar.time, open, high, low, close, volume: bar.volume };
+  }));
+}
+
 /**
  * Transform OHLC data to Heikin Ashi.
  * HA Close = (O+H+L+C) / 4

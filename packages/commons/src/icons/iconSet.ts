@@ -184,6 +184,12 @@ export const CHART_TYPE_ICONS: Readonly<Record<string, IconDef>> = {
   hlcArea: { d: 'M3 9L8 6L13 9L21 4M3 15L8 13L13 16L21 11', dash: 'M3 12L8 9.5L13 12.5L21 7.5', soft: 'M3 9L8 6L13 9L21 4V11L13 16L8 13L3 15z' }, // HLC Area
   stepLine: { d: 'M3 18H8V12H12V15H16V7H21' }, // Step Line
   lineWithMarkers: { d: 'M4 17L9 10L14 14L20 6', dots: [[4, 17], [9, 10], [14, 14], [20, 6]] }, // Line with Markers
+  columns: { d: 'M4 20V11H8V20M10 20V6H14V20M16 20V14H20V20', fills: ['M4 11h4v9H4z', 'M10 6h4v14h-4z', 'M16 14h4v6h-4z'] }, // Columns
+  hlcBars: { d: 'M6 6V18M6 14H9M12 4V15M12 8H15M18 9V20M18 12H21' }, // HLC Bars
+  dots: { d: 'M4 17h.01', dots: [[4, 17], [8, 11], [12, 14], [16, 8], [20, 6]] }, // Dots
+  stepArea: { d: 'M3 18H8V12H12V15H16V7H21', soft: 'M3 18H8V12H12V15H16V7H21V20H3z' }, // Step Area
+  spline: { d: 'M3 16C7 16 7 8 11 8S15 14 21 6' }, // Spline
+  smoothedHeikinAshi: { d: 'M5.5 10V12M5.5 18V19.5M12 6.5V8M12 14V15.5M18.5 3.5V5M18.5 11V12.5M3 21C9 20 15 15 21 9', fills: ['M4 12h3v6H4z', 'M10.5 8h3v6h-3z', 'M17 5h3v6h-3z'] }, // Smoothed Heikin-Ashi
   hiLo: { d: 'M6 7V17M12 4V14M18 9V20', fills: ['M5 7h2v10H5z', 'M11 4h2v10h-2z', 'M17 9h2v11h-2z'] }, // High-Low
   renko: { d: 'M3.5 15.5h4v4h-4zM7.5 11.5h4v4h-4zM11.5 7.5h4v4h-4zM15.5 11.5h4v4h-4z' }, // Renko
   lineBreak: { d: 'M4 14h4v5H4zM8 10h4v4H8zM16 9h4v8h-4z', fills: ['M12 5h4v5h-4z'] }, // Line Break
