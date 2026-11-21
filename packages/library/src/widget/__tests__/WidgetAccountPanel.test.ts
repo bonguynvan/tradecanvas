@@ -44,6 +44,12 @@ const tab = (name: RegExp) => [...host.querySelectorAll<HTMLButtonElement>('[rol
 const cells = () => [...host.querySelectorAll('tbody tr')].map((tr) => [...tr.querySelectorAll('td')].map((td) => td.textContent));
 
 describe('WidgetAccountPanel', () => {
+  it('names how long each order works, the kinds past good-till-cancelled and day by the market’s letters', () => {
+    panel.update({ ...current, orders: (['gtd', 'ioc', 'fok'] as const).map((timeInForce, i) => ({ id: `t${i}`, side: 'buy' as const, type: 'limit' as const, price: 90, quantity: 1, timeInForce })) });
+    tab(/Orders/).click();
+    expect(cells().map((row) => row[6])).toEqual(['GTD', 'IOC', 'FOK']);
+  });
+
   it('works out a position’s profit and loss, long or short', () => {
     expect(positionPnl({ id: 'x', side: 'buy', entryPrice: 100, quantity: 2 }, 103)).toEqual({ pnl: 6, pct: 3 });
     expect(positionPnl({ id: 'x', side: 'sell', entryPrice: 100, quantity: 2, closedQuantity: 1 }, 103)).toEqual({ pnl: -3, pct: -3 });

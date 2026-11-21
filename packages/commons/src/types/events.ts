@@ -202,7 +202,11 @@ export interface OrderPlacePayload {
   /** The distance, in price, the position's stop-loss is to trail the price by. */
   trailingStop?: number;
   /** How long the order works. */
-  timeInForce?: 'gtc' | 'day';
+  timeInForce?: 'gtc' | 'day' | 'gtd' | 'ioc' | 'fok';
+  /** When the order ends (ms since the epoch), with `timeInForce: 'gtd'`. */
+  expireTime?: number;
+  /** A name shared by orders of which one cancels the others. */
+  ocoGroup?: string;
 }
 
 export interface ExecutionErrorPayload {

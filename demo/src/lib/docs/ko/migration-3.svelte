@@ -48,6 +48,21 @@ chart.connectExecution(broker, { brackets: 'place' })   →   chart.connectExecu
 <pre><code>{`chart.startBracket('buy', undefined, { quantity: 2 })
 chart.startBracket('buy', undefined, { risk: 50 })   // 손절가에서 50을 잃는 수량`}</code></pre>
 
+<h3 id="stop-limit">모의 계좌는 스톱 리밋을 지정가 범위 안에서 체결합니다</h3>
+<p>
+  <code>PaperExecutionAdapter</code>는 이전에 <code>stopLimit</code> 주문을 스톱 가격에서 스톱 주문처럼 체결했습니다. 이제
+  가격이 스톱에 닿으면 <code>price</code>를 지정가로 하는 지정가 주문이 됩니다: 가격이 지정가 범위 안에 들어올 때까지 주문은
+  대기 상태로 남습니다(유형은 <code>'limit'</code>이 됩니다). 스톱에 닿자마자 포지션이 생기기를 기대하던 테스트는 먼저 가격을
+  지정가 범위 안으로 옮기거나 <code>'stop'</code> 주문을 사용하세요.
+</p>
+
+<h2 id="types">넓어진 타입</h2>
+<p>
+  <code>TimeInForce</code>는 이제 <code>'gtc' | 'day' | 'gtd' | 'ioc' | 'fok'</code>입니다. 모든 멤버를 처리하는 코드(default가
+  없는 <code>switch</code>, <code>Record&lt;TimeInForce, …&gt;</code>)에는 새 멤버 세 개가 필요합니다. 직접 만든 실행 어댑터는
+  받지 않는 유형을 거부해도 됩니다.
+</p>
+
 <h2 id="unchanged">달라지지 않은 것</h2>
 <ul>
   <li>데이터, 그리고 2.x에서 저장한 레이아웃과 설정은 이전처럼 불러옵니다.</li>

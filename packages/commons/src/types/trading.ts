@@ -3,8 +3,12 @@ export type OrderType = 'market' | 'limit' | 'stop' | 'stopLimit';
 export type OrderStatus = 'pending' | 'filled' | 'cancelled' | 'rejected';
 export type OrderLabel = 'LIMIT' | 'STOP' | 'SL' | 'TP' | 'STOP LIMIT';
 
-/** How long an order works: good till cancelled, or for the day. */
-export type TimeInForce = 'gtc' | 'day';
+/**
+ * How long an order works: good till cancelled (`'gtc'`), for the day
+ * (`'day'`), till a date (`'gtd'`, with `expireTime`), or not at all unless
+ * it fills at once: immediate or cancel (`'ioc'`), fill or kill (`'fok'`).
+ */
+export type TimeInForce = 'gtc' | 'day' | 'gtd' | 'ioc' | 'fok';
 
 export interface TradingOrder {
   id: string;
@@ -21,6 +25,10 @@ export interface TradingOrder {
   /** The distance the position's stop-loss trails the price by once the order fills (see `TradingPosition.trailingStop`). */
   trailingStop?: number;
   timeInForce?: TimeInForce;
+  /** When a good-till-date order ends (ms since the epoch). */
+  expireTime?: number;
+  /** The group it is one of, where one cancels the others: when one of them fills, the rest are cancelled. */
+  ocoGroup?: string;
   meta?: Record<string, unknown>;
 }
 
@@ -166,6 +174,10 @@ export interface OrderPlaceIntent {
   /** The distance, in price, the position's stop-loss is to trail the price by. */
   trailingStop?: number;
   timeInForce?: TimeInForce;
+  /** When the order ends (ms since the epoch), with `timeInForce: 'gtd'`. */
+  expireTime?: number;
+  /** A name shared by orders of which one cancels the others: when one fills, the rest are cancelled. */
+  ocoGroup?: string;
 }
 
 export interface OrderModifyIntent {

@@ -28,6 +28,15 @@ beforeEach(() => {
 });
 
 describe('the tags on the trading lines', () => {
+  it('say which orders are of a group where one cancels the others', () => {
+    expect(draw().texts).not.toContain('OCO');
+    manager.setOrders([
+      { id: 'o1', side: 'sell', type: 'limit', price: 30, quantity: 1, ocoGroup: 'exit' },
+      { id: 'o2', side: 'sell', type: 'stop', price: 20, quantity: 1 },
+    ]);
+    expect(draw().texts.filter((text) => text === 'OCO')).toHaveLength(1);
+  });
+
   it('sit at the right end of their lines, a gap short of the price axis', () => {
     const { buttons } = draw();
     const close = button(buttons, 'closePosition');

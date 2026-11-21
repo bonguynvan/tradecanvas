@@ -49,6 +49,21 @@ chart.connectExecution(broker, { brackets: 'place' })   →   chart.connectExecu
 <pre><code>{`chart.startBracket('buy', undefined, { quantity: 2 })
 chart.startBracket('buy', undefined, { risk: 50 })   // the quantity that loses 50 at the stop`}</code></pre>
 
+<h3 id="stop-limit">The paper account fills a stop-limit within its limit</h3>
+<p>
+  <code>PaperExecutionAdapter</code> filled a <code>stopLimit</code> order at its stop, as a stop order. It now
+  makes it a limit order at its <code>price</code> once the stop is reached: the order stays working (its type
+  reads <code>'limit'</code>) until the price is within the limit. A test that expected a position as soon as the
+  stop was reached moves the price within the limit first, or places a <code>'stop'</code> order.
+</p>
+
+<h2 id="types">Types that grew</h2>
+<p>
+  <code>TimeInForce</code> is now <code>'gtc' | 'day' | 'gtd' | 'ioc' | 'fok'</code>. Code that handles every
+  member (a <code>switch</code> with no default, a <code>Record&lt;TimeInForce, …&gt;</code>) needs the three new
+  ones; an execution adapter of your own may refuse those it does not take.
+</p>
+
 <h2 id="unchanged">Not changed</h2>
 <ul>
   <li>Data, saved layouts and settings from 2.x load as before.</li>

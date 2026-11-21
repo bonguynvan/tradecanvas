@@ -50,6 +50,21 @@ chart.connectExecution(broker, { brackets: 'place' })   →   chart.connectExecu
 <pre><code>{`chart.startBracket('buy', undefined, { quantity: 2 })
 chart.startBracket('buy', undefined, { risk: 50 })   // khối lượng sẽ lỗ 50 tại stop`}</code></pre>
 
+<h3 id="stop-limit">Tài khoản paper khớp stop-limit trong giới hạn của nó</h3>
+<p>
+  <code>PaperExecutionAdapter</code> trước đây khớp order <code>stopLimit</code> tại stop, như một stop order.
+  Nay khi giá chạm stop, order trở thành limit order tại <code>price</code> của nó: order tiếp tục chờ (type là
+  <code>'limit'</code>) cho tới khi giá nằm trong giới hạn. Test nào chờ có position ngay khi chạm stop thì đưa
+  giá vào trong giới hạn trước, hoặc đặt order <code>'stop'</code>.
+</p>
+
+<h2 id="types">Các type được mở rộng</h2>
+<p>
+  <code>TimeInForce</code> nay là <code>'gtc' | 'day' | 'gtd' | 'ioc' | 'fok'</code>. Code xử lý mọi giá trị
+  (một <code>switch</code> không có default, một <code>Record&lt;TimeInForce, …&gt;</code>) cần thêm ba giá trị
+  mới; execution adapter của riêng bạn có thể từ chối những loại nó không nhận.
+</p>
+
 <h2 id="unchanged">Không thay đổi</h2>
 <ul>
   <li>Dữ liệu, layout và thiết lập đã lưu từ 2.x vẫn tải như trước.</li>

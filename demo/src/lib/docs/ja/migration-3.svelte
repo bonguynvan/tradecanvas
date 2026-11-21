@@ -49,6 +49,20 @@ chart.connectExecution(broker, { brackets: 'place' })   →   chart.connectExecu
 <pre><code>{`chart.startBracket('buy', undefined, { quantity: 2 })
 chart.startBracket('buy', undefined, { risk: 50 })   // ストップで 50 を失う数量`}</code></pre>
 
+<h3 id="stop-limit">ペーパー口座はストップリミットを指値の範囲内で約定します</h3>
+<p>
+  <code>PaperExecutionAdapter</code> はこれまで <code>stopLimit</code> 注文をストップ価格で、ストップ注文と同じように約定していました。今後は、価格がストップに達すると
+  <code>price</code> を指値とする指値注文になります：価格が指値の範囲内に入るまで、注文は有効なまま残ります（タイプは
+  <code>'limit'</code> になります）。ストップに達した時点でポジションができることを期待していたテストは、先に価格を指値の範囲内へ動かすか、<code>'stop'</code>
+  注文を使ってください。
+</p>
+
+<h2 id="types">広がった型</h2>
+<p>
+  <code>TimeInForce</code> は <code>'gtc' | 'day' | 'gtd' | 'ioc' | 'fok'</code> になりました。すべてのメンバーを扱うコード（default
+  のない <code>switch</code>、<code>Record&lt;TimeInForce, …&gt;</code>）には新しい 3 つが必要です。独自の執行アダプターは、受け付けないものを拒否してかまいません。
+</p>
+
 <h2 id="unchanged">変わっていないもの</h2>
 <ul>
   <li>データ、および 2.x で保存したレイアウトと設定は、これまでどおり読み込めます。</li>
