@@ -129,6 +129,9 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
     if (dated && !(intent.expireTime !== undefined && Number.isFinite(intent.expireTime))) {
       throw new Error("A good-till-date order (timeInForce: 'gtd') needs its expireTime");
     }
+    if (dated && intent.expireTime! <= this.fillTime()) {
+      throw new Error('The date of the good-till-date order has passed');
+    }
     const order: TradingOrder = {
       id: this.nextId('ord'),
       side: intent.side,
@@ -151,8 +154,10 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
       this.fill(order, this.markPrice || intent.price);
     } else if (atOnce) {
       // All of it now or none of it: the paper market has no size to fill a part with.
-      if (!this.isTriggered(order)) throw new Error(`The ${intent.timeInForce} order was not filled at once: it is cancelled`);
-      this.fill(order, order.price);
+      // With no price yet there is nothing to fill it at.
+      if (!(this.markPrice > 0) || !this.isTriggered(order)) throw new Error(`The ${intent.timeInForce} order was not filled at once: it is cancelled`);
+      // At the price there is: its limit is the worst it takes.
+      this.fill(order, this.markPrice);
     } else {
       this.orders = [...this.orders, order];
       this.emit('orders', this.orders);
@@ -291,17 +296,19 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
       fill.positionId = held.id;
       return;
     }
-    const closed = Math.min(open, order.quantity);
+    // Sizes built of fractions differ by a hair from their sum (0.1 + 0.2 and 0.3): as large is the same size.
+    const same = Math.abs(order.quantity - open) <= QUANTITY_SLACK * Math.max(order.quantity, open);
+    const closed = same ? open : Math.min(open, order.quantity);
     fill.pnl = (price - held.entryPrice) * closed * (held.side === 'buy' ? 1 : -1);
     fill.positionId = held.id;
-    if (order.quantity < open) {
+    if (!same && order.quantity < open) {
       const left: TradingPosition = { ...held, quantity: open - closed };
       delete left.closedQuantity;
       this.positions = [left];
       return;
     }
     this.positions = [];
-    if (order.quantity > open) {
+    if (!same && order.quantity > open) {
       const turned = this.opened(order, price, order.quantity - open);
       this.positions = [turned];
       fill.positionId = turned.id;
@@ -325,10 +332,9 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
     } satisfies FillEvent);
   }
 
-  /** The good-till-date orders whose date the mark's time has reached come off the book. */
+  /** The good-till-date orders whose date has come (by the mark's time, else by the clock) come off the book. */
   private expireOrders(): void {
-    const now = this.markTime;
-    if (now === undefined) return;
+    const now = this.fillTime();
     const working = this.orders.filter((o) => !(o.timeInForce === 'gtd' && o.expireTime !== undefined && o.expireTime <= now));
     if (working.length === this.orders.length) return;
     this.orders = working;
@@ -349,7 +355,8 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
     for (const o of this.orders.filter((o) => this.isTriggered(o))) {
       // One of its group filled before it in this pass, and cancelled it.
       if (!this.orders.includes(o)) continue;
-      this.fill(o, o.type === 'limit' ? o.price : o.stopPrice ?? o.price);
+      // A limit that waited fills at its price; one that began working at this price fills at it, within its limit.
+      this.fill(o, o.type !== 'limit' ? o.stopPrice ?? o.price : reached.has(o.id) ? this.markPrice : o.price);
     }
   }
 
@@ -407,6 +414,9 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
     }
   }
 }
+
+/** How near two sizes are, as a part of the larger, to be the same size. */
+const QUANTITY_SLACK = 1e-9;
 
 function opposite(side: TradingOrder['side']): TradingOrder['side'] {
   return side === 'buy' ? 'sell' : 'buy';

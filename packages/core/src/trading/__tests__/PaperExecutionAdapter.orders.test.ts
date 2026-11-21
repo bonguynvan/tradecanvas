@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { PaperExecutionAdapter } from '../PaperExecutionAdapter.js';
 import type { FillEvent, TradingOrder } from '@tradecanvas/commons';
 
@@ -30,10 +30,22 @@ describe('PaperExecutionAdapter: a stop-limit order', () => {
     expect(adapter.getPositions()).toEqual([expect.objectContaining({ side: 'buy', entryPrice: 104 })]);
   });
 
-  it('fills at once at its limit when the price that reached the stop is within it', async () => {
+  it('fills at once when the price that reached the stop is within its limit: at that price, not the limit', async () => {
     await adapter.placeOrder({ side: 'buy', type: 'stopLimit', stopPrice: 105, price: 107, quantity: 1 });
     adapter.setMarkPrice(105.5);
-    expect(adapter.getPositions()).toEqual([expect.objectContaining({ entryPrice: 107 })]);
+    expect(adapter.getPositions()).toEqual([expect.objectContaining({ entryPrice: 105.5 })]);
+    await adapter.placeOrder({ side: 'sell', type: 'stopLimit', stopPrice: 95, price: 93, quantity: 1 });
+    adapter.setMarkPrice(94);
+    expect(adapter.getPositions()[1]).toEqual(expect.objectContaining({ side: 'sell', entryPrice: 94 }));
+  });
+
+  it('is cancelled by the order of its group that fills first, and cancels them when it fills', async () => {
+    await adapter.placeOrder({ side: 'buy', type: 'stopLimit', stopPrice: 105, price: 107, quantity: 1, ocoGroup: 'entry' });
+    const dip = await adapter.placeOrder({ side: 'buy', type: 'limit', price: 95, quantity: 1, ocoGroup: 'entry' });
+    adapter.setMarkPrice(106);
+    expect(adapter.getOrders()).toEqual([]);
+    expect(fills).toHaveLength(1);
+    expect(fills[0].orderId).not.toBe(dip.id);
   });
 
   it('waits below its stop', async () => {
@@ -75,7 +87,8 @@ describe('PaperExecutionAdapter: how long an order works', () => {
     for (const timeInForce of ['ioc', 'fok'] as const) {
       connect();
       const order = await adapter.placeOrder({ side: 'buy', type: 'limit', price: 101, quantity: 2, timeInForce });
-      expect(fills).toEqual([expect.objectContaining({ orderId: order.id, price: 101, quantity: 2 })]);
+      // At the price there is, as a limit is its worst price.
+      expect(fills).toEqual([expect.objectContaining({ orderId: order.id, price: 100, quantity: 2 })]);
       expect(adapter.getOrders()).toEqual([]);
     }
   });
@@ -89,12 +102,18 @@ describe('PaperExecutionAdapter: how long an order works', () => {
     }
   });
 
+  it('refuses one placed before the account has a price: there is nothing to fill it at', async () => {
+    connect({});
+    await expect(adapter.placeOrder({ side: 'buy', type: 'limit', price: 101, quantity: 1, timeInForce: 'ioc' })).rejects.toThrow(/not filled at once/);
+  });
+
   it('refuses a stop that is to fill at once or not at all: it waits by its nature', async () => {
     await expect(adapter.placeOrder({ side: 'buy', type: 'stop', price: 105, stopPrice: 105, quantity: 1, timeInForce: 'ioc' })).rejects.toThrow(/stop/);
     await expect(adapter.placeOrder({ side: 'buy', type: 'stopLimit', price: 106, stopPrice: 105, quantity: 1, timeInForce: 'fok' })).rejects.toThrow(/stop/);
   });
 
   it('takes a good-till-date order off once the mark’s time reaches its date', async () => {
+    adapter.setMarkPrice(100, 1_000);
     const order = await adapter.placeOrder({ side: 'buy', type: 'limit', price: 95, quantity: 1, timeInForce: 'gtd', expireTime: 2_000 });
     expect(order.expireTime).toBe(2_000);
     adapter.setMarkPrice(99, 1_999);
@@ -107,12 +126,37 @@ describe('PaperExecutionAdapter: how long an order works', () => {
     expect(orderLists.length).toBeGreaterThan(before);
   });
 
+  it('refuses a good-till-date order whose date has passed', async () => {
+    adapter.setMarkPrice(100, 5_000);
+    await expect(adapter.placeOrder({ side: 'buy', type: 'limit', price: 95, quantity: 1, timeInForce: 'gtd', expireTime: 5_000 })).rejects.toThrow(/passed/);
+    expect(adapter.getOrders()).toEqual([]);
+  });
+
+  describe('with no time given with the price (a live chart)', () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+      vi.setSystemTime(10_000);
+    });
+    afterEach(() => vi.useRealTimers());
+
+    it('goes by the clock', async () => {
+      await adapter.placeOrder({ side: 'buy', type: 'limit', price: 95, quantity: 1, timeInForce: 'gtd', expireTime: 12_000 });
+      adapter.setMarkPrice(99);
+      expect(adapter.getOrders()).toHaveLength(1);
+      vi.setSystemTime(12_000);
+      adapter.setMarkPrice(94);
+      expect(adapter.getOrders()).toEqual([]);
+      expect(fills).toEqual([]);
+    });
+  });
+
   it('refuses a good-till-date order with no date', async () => {
     await expect(adapter.placeOrder({ side: 'buy', type: 'limit', price: 95, quantity: 1, timeInForce: 'gtd' })).rejects.toThrow(/expireTime/);
     await expect(adapter.placeOrder({ side: 'buy', type: 'limit', price: 95, quantity: 1, timeInForce: 'gtd', expireTime: Number.NaN })).rejects.toThrow(/expireTime/);
   });
 
   it('keeps a date only on a good-till-date order', async () => {
+    adapter.setMarkPrice(100, 1_000);
     const order = await adapter.placeOrder({ side: 'buy', type: 'limit', price: 95, quantity: 1, timeInForce: 'gtc', expireTime: 2_000 });
     expect(order.expireTime).toBeUndefined();
     adapter.setMarkPrice(99, 3_000);
@@ -164,6 +208,40 @@ describe('PaperExecutionAdapter: one net position (positions: net)', () => {
     expect(adapter.getPositions()[0]).toEqual(expect.objectContaining({ stopLoss: 90, takeProfit: 120 }));
     await market('buy', 1, { stopLoss: 95 });
     expect(adapter.getPositions()[0]).toEqual(expect.objectContaining({ stopLoss: 95, takeProfit: 120 }));
+  });
+
+  it('closes a position built of fractions with its size, leaving no dust and turning nothing round', async () => {
+    await market('buy', 0.1);
+    await market('buy', 0.2); // 0.30000000000000004 held
+    await market('sell', 0.3);
+    expect(adapter.getPositions()).toEqual([]);
+    await market('sell', 0.7);
+    await market('buy', 0.1);
+    await market('buy', 0.6); // 0.7 less 0.1 is a hair under 0.6
+    expect(adapter.getPositions()).toEqual([]);
+  });
+
+  it('leaves the position’s stops when a fill takes from it, and brings the fill’s own when it turns it round', async () => {
+    await market('buy', 3, { stopLoss: 90, takeProfit: 120 });
+    await market('sell', 1, { stopLoss: 130 });
+    expect(adapter.getPositions()[0]).toEqual(expect.objectContaining({ quantity: 2, stopLoss: 90, takeProfit: 120 }));
+    await market('sell', 3);
+    const turned = adapter.getPositions()[0];
+    expect(turned).toEqual(expect.objectContaining({ side: 'sell', quantity: 1 }));
+    expect(turned.stopLoss).toBeUndefined();
+    expect(turned.takeProfit).toBeUndefined();
+  });
+
+  it('closes, reverses and stops out the one position as it does any', async () => {
+    await market('buy', 2, { stopLoss: 95 });
+    await adapter.reversePosition({ positionId: adapter.getPositions()[0].id });
+    expect(adapter.getPositions()).toEqual([expect.objectContaining({ side: 'sell', quantity: 2 })]);
+    await adapter.closePosition({ positionId: adapter.getPositions()[0].id });
+    expect(adapter.getPositions()).toEqual([]);
+    await market('buy', 1, { stopLoss: 95 });
+    adapter.setMarkPrice(94);
+    expect(adapter.getPositions()).toEqual([]);
+    expect(fills.at(-1)).toEqual(expect.objectContaining({ reason: 'stopLoss', pnl: -5 }));
   });
 
   it('nets working orders as they fill, too', async () => {

@@ -126,7 +126,7 @@ chart.on('executionError', (e) => toast(e.payload.message))   // e.payload.comma
   </li>
   <li>
     <strong><code>type: 'stopLimit'</code></strong>: <code>stopPrice</code> is where it starts working and
-    <code>price</code> the limit it then works at.
+    <code>price</code> the limit it then works at. Dragging its line moves its <code>price</code>.
   </li>
 </ul>
 <pre><code>{`// A target and a stop for one exit: whichever fills first takes the other off
@@ -138,9 +138,10 @@ chart.placeOrderIntent({ side: 'buy', type: 'limit', price: 63_500, quantity: 1,
 <p>
   The paper account does what a broker would with each. Of a group, the first to fill cancels the rest. A
   stop-limit becomes a limit order at its <code>price</code> once the price reaches its stop, and fills only
-  within that limit. A <code>'gtd'</code> order comes off when the time given with <code>setMarkPrice</code>
-  reaches its date. An <code>'ioc'</code> or <code>'fok'</code> limit fills at once when the price is within it,
-  and is refused when it is not (<code>executionError</code>); the paper market has no size, so the two are the
+  within that limit (at the price that reached the stop, when that is within it). A <code>'gtd'</code> order
+  comes off when the time given with <code>setMarkPrice</code> reaches its date (the clock's, with no time
+  given), and one whose date has passed is refused. An <code>'ioc'</code> or <code>'fok'</code> limit fills at
+  once, at the price there is, when that is within it, and is refused when it is not (<code>executionError</code>); the paper market has no size, so the two are the
   same there. It leaves <code>'day'</code> to the app, which knows when its market's day ends.
 </p>
 <p>
@@ -148,7 +149,8 @@ chart.placeOrderIntent({ side: 'buy', type: 'limit', price: 63_500, quantity: 1,
   beside a sell (<code>positions: 'hedge'</code>). <code>{`new PaperExecutionAdapter({ positions: 'net' })`}</code>
   keeps one position, as a futures account does: a fill the same way adds to it at the average of their prices, a
   fill the other way takes from it and realises that part (<code>pnl</code> on the fill), and a larger one turns
-  it round, the rest opening at the fill's price.
+  it round, the rest opening at the fill's price. A fill that adds to it brings its stops when it has them; one
+  that takes from it leaves the position's stops as they are; one that turns it round brings its own.
 </p>
 
 <h2>Act on orders and positions from the chart</h2>
