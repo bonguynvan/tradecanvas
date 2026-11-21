@@ -147,3 +147,51 @@ describe('Chart: a confirmed bracket and the execution adapter', () => {
     expect(broker.getOrders()).toEqual([]);
   });
 });
+
+describe('Chart: the account of the adapter connected', () => {
+  it('has none with no adapter, or one that keeps no money', () => {
+    expect(chart.getAccount()).toBeNull();
+    chart.connectExecution(new PaperExecutionAdapter({ markPrice: 100 }));
+    expect(chart.getAccount()).toBeNull();
+  });
+
+  it('reads the adapter’s account, follows it, and drops it when the adapter goes', async () => {
+    const broker = new PaperExecutionAdapter({ markPrice: 100, balance: 1_000 });
+    const seen: unknown[] = [];
+    chart.on('accountChange', (e) => seen.push(e.payload.account && { ...e.payload.account }));
+    chart.connectExecution(broker);
+    expect(chart.getAccount()).toEqual(expect.objectContaining({ balance: 1_000, freeMargin: 1_000 }));
+    await broker.placeOrder({ side: 'buy', type: 'market', price: 100, quantity: 2 });
+    expect(chart.getAccount()).toEqual(expect.objectContaining({ marginUsed: 200, freeMargin: 800 }));
+    broker.setMarkPrice(105);
+    expect(chart.getAccount()!.equity).toBe(1_010);
+    // On connecting, after the fill, after the price: each once.
+    expect(seen).toHaveLength(3);
+    chart.disconnectExecution();
+    expect(chart.getAccount()).toBeNull();
+    expect(seen.at(-1)).toBeNull();
+  });
+
+  it('says why an order the account cannot carry was not placed', async () => {
+    const broker = new PaperExecutionAdapter({ markPrice: 100, balance: 50 });
+    const errors: { message: string; command?: string; cause?: unknown }[] = [];
+    chart.on('executionError', (e) => errors.push(e.payload));
+    chart.connectExecution(broker);
+    chart.placeOrderIntent({ side: 'buy', type: 'market', price: 100, quantity: 1 });
+    await flush();
+    expect(errors).toHaveLength(1);
+    expect(errors[0].command).toBe('orderPlace');
+    expect(String((errors[0].cause as Error).message)).toMatch(/margin/i);
+  });
+});
+
+describe('Chart: what it hands out of the account', () => {
+  it('is a copy: a listener that writes on it does not change the chart’s', () => {
+    const broker = new PaperExecutionAdapter({ markPrice: 100, balance: 1_000 });
+    chart.on('accountChange', (e) => {
+      if (e.payload.account) e.payload.account.balance = -1;
+    });
+    chart.connectExecution(broker);
+    expect(chart.getAccount()!.balance).toBe(1_000);
+  });
+});

@@ -1344,7 +1344,7 @@ export class ChartWidget {
         },
       }, this.t);
       // indicatorUpdate comes once per tick, so open P&L follows the price.
-      for (const event of ['ordersChange', 'positionsChange', 'executionFill', 'dataUpdate', 'indicatorUpdate'] as const) {
+      for (const event of ['ordersChange', 'positionsChange', 'executionFill', 'accountChange', 'dataUpdate', 'indicatorUpdate'] as const) {
         this.chart.on(event, () => this.trading.refreshAccountSoon());
       }
     }

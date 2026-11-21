@@ -154,6 +154,35 @@ chart.placeOrderIntent({ side: 'buy', type: 'limit', price: 63_500, quantity: 1,
   it round, the rest opening at the fill's price. A fill that adds to it brings its stops when it has them; one
   that takes from it leaves the position's stops as they are; one that turns it round brings its own.
 </p>
+<h3 id="account">An account with money</h3>
+<p>
+  Given a <code>balance</code>, the paper account keeps its money as a broker does. What a close makes or loses
+  goes into the balance, open positions hold margin (their value, over <code>leverage</code>), and each fill
+  pays its <code>commission</code>. An order the free margin cannot carry is refused
+  (<code>executionError</code>), and so is a reverse; a waiting order whose money has gone by the time its
+  price comes is cancelled, which <code>executionError</code> says too. <code>multiplier</code> is what a move
+  of one in price is worth for one unit, for a futures contract: give it the market's
+  <code>contractMultiplier</code>, which the widget's panel counts the positions' profit by. The account is told
+  before the fill that changed it, so <code>chart.getAccount()</code> in an <code>executionFill</code> listener
+  reads it as the fill left it. It does not call margin or close positions when the equity runs out: a balance
+  can go below zero. Without a <code>balance</code> there is no account, and any order is taken, as before.
+</p>
+<pre><code>{`const broker = new PaperExecutionAdapter({
+  balance: 10_000,
+  leverage: 10,                                 // a position holds a tenth of its value
+  commission: { rate: 0.0004, min: 0.1 },       // 0.04% of each fill's value, no less than 0.1; perUnit: an amount a unit
+  positions: 'net',
+})
+chart.connectExecution(broker)
+
+chart.getAccount()   // { balance, equity, unrealisedPnl, realisedPnl, marginUsed, freeMargin, commission } or null
+chart.on('accountChange', (e) => console.log(e.payload.account?.equity))
+chart.on('executionFill', (e) => console.log(e.payload.commission))`}</code></pre>
+<p>
+  The widget's account panel heads its totals with the balance, the equity and the free margin. An adapter of
+  your own does the same by implementing <code>getAccount()</code> and emitting <code>account</code> with an
+  <code>AccountSummary</code> as its money changes.
+</p>
 
 <h2>Act on orders and positions from the chart</h2>
 <p>

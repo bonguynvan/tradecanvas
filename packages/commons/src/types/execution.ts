@@ -46,10 +46,32 @@ export type ExecutionEventType =
   | 'positions'
   /** `data`: `FillEvent`, an order filled. */
   | 'fill'
+  /** `data`: `AccountSummary`, the account's money, when the adapter keeps one. */
+  | 'account'
   /** `data`: `ConnectionState`. */
   | 'connectionChange'
   /** `data`: `ExecutionError`. */
   | 'error';
+
+/** An account's money, as its broker counts it. */
+export interface AccountSummary {
+  /** The cash: what was paid in, with what closed trades made or lost and less what trading cost. */
+  balance: number;
+  /** The balance with the open positions' profit or loss at the price now. */
+  equity: number;
+  /** The open positions' profit or loss at the price now. */
+  unrealisedPnl: number;
+  /** What closed trades made or lost. */
+  realisedPnl: number;
+  /** What the open positions hold of the account. */
+  marginUsed: number;
+  /** What is left to open positions with: the equity less the margin used. */
+  freeMargin: number;
+  /** What trading has cost: the commissions paid. */
+  commission: number;
+  /** The currency the figures are in ("USD"), when the adapter says. */
+  currency?: string;
+}
 
 /** Why a fill happened: an order, a position closed by hand or reversed, or its stop-loss or take-profit. */
 export type FillReason = 'order' | 'close' | 'reverse' | 'stopLoss' | 'takeProfit';
@@ -66,6 +88,8 @@ export interface FillEvent {
   reason?: FillReason;
   /** Profit or loss it realised, for a fill that closes a position. */
   pnl?: number;
+  /** What the fill cost, when the account charges for trading. */
+  commission?: number;
 }
 
 export interface ExecutionError {
@@ -122,6 +146,8 @@ export interface ExecutionAdapter {
    * it, the chart closes the position and places a market order instead.
    */
   reversePosition?(intent: PositionReverseIntent): Promise<void>;
+  /** The account's money now, when the adapter keeps one; it then also emits `account` as it changes. */
+  getAccount?(): AccountSummary | null;
   /**
    * The market price, live or replayed, and its time (ms). Optional: a paper
    * adapter fills pending orders and stops against it and stamps fills with

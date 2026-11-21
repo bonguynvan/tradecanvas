@@ -105,6 +105,7 @@ export type {
   ExecutionEventType,
   ExecutionListener,
   FillEvent,
+  AccountSummary,
   ExecutionError,
   Locale,
   LocaleStrings,
@@ -225,6 +226,9 @@ export type { PriceStepBand, VN30FContract } from '@tradecanvas/commons';
 
 // Re-export base classes for custom indicators and drawing tools
 export { IndicatorBase, IndicatorValueMap, DrawingBase, indicatorCategory, indicatorGroup, INDICATOR_CATEGORIES, describeInputs } from '@tradecanvas/core';
+// An indicator from its inputs and one function of the bars, and the sums it is made of.
+export { defineIndicator, ta } from '@tradecanvas/core';
+export type { DefinedIndicatorInput, IndicatorBars, IndicatorCalculation, IndicatorDefinition, IndicatorInputValue, IndicatorLine, InputsOf, Ta, TaBars, TaSeries } from '@tradecanvas/core';
 export type { IndicatorInputInfo } from '@tradecanvas/core';
 // The trade a Long/Short Position drawing stands for, for an app that places an order from it.
 export { positionLevels } from '@tradecanvas/core';
@@ -238,7 +242,7 @@ export { barIndexToX, xToBarIndex, priceToY, priceToYMapper, yToPrice, timeToX, 
 // Re-export realtime module
 export { StreamManager, ReconnectManager, ReplayController, BinanceAdapter, MockAdapter, TickAggregator, CurrentPriceLine, PaperExecutionAdapter, WebSocketAdapter, PollingAdapter, CoinbaseAdapter, BybitAdapter, KrakenAdapter, UpbitAdapter, ResamplingAdapter, ManualFeed, adapterFromFeed, feedFromAdapter, isDataFeed, withResampling, servesTimeframe, KEPT_BUCKETS, TickBarBuilder, TickBarAdapter, withTickBars } from '@tradecanvas/core';
 export type { ReplayBarEvent, ReplayEventMap, ReplayOptions, ReplayStateChangeEvent, ReplayStatus } from '@tradecanvas/core';
-export type { PaperExecutionOptions, WebSocketAdapterOptions, WsParseResult, PollingAdapterOptions, CoinbaseAdapterOptions, BybitAdapterOptions, KrakenAdapterOptions, UpbitAdapterOptions } from '@tradecanvas/core';
+export type { PaperExecutionOptions, PaperCommission, WebSocketAdapterOptions, WsParseResult, PollingAdapterOptions, CoinbaseAdapterOptions, BybitAdapterOptions, KrakenAdapterOptions, UpbitAdapterOptions } from '@tradecanvas/core';
 export { DEFAULT_RECONNECT, DEFAULT_STREAM_CONFIG } from '@tradecanvas/commons';
 // Datafeeds written for the callback-style JS API, and UDF servers, as a DataFeed
 export { feedFromJsApi, udfFeed, sessionsFromJsApi, symbolInfoFromJsApi } from '@tradecanvas/core';

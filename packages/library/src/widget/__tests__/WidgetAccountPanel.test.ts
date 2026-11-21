@@ -207,3 +207,36 @@ describe('WidgetAccountPanel', () => {
     expect(host.querySelector('.tcw-account-empty')!.textContent).toBe('No open positions');
   });
 });
+
+describe('WidgetAccountPanel: an account with money', () => {
+  const totals = () => [...host.querySelectorAll('.tcw-account-total')].map((el) => el.textContent);
+  const account = { balance: 10_000, equity: 10_006, unrealisedPnl: 6, realisedPnl: 4, marginUsed: 200, freeMargin: 9_806, commission: 0 };
+
+  it('heads the totals with the balance, the equity and the free margin, in no profit’s or loss’s colour', () => {
+    panel.update({ ...current, account });
+    expect(totals()).toEqual(['Balance: 10000.00', 'Equity: 10006.00', 'Free margin: 9806.00', 'Open P&L: +6.00', 'Realised P&L: +4.00']);
+    const balance = host.querySelector('.tcw-account-total')!;
+    expect(balance.className).toBe('tcw-account-total tcw-account-sum');
+  });
+
+  it('takes the open P&L from the account, which counts a contract’s multiplier, and counts it in each row', () => {
+    if (!panel.isOpen()) panel.toggle();
+    panel.update({ ...current, account: { ...account, unrealisedPnl: 600 }, multiplier: 100 });
+    expect(totals()[3]).toBe('Open P&L: +600.00');
+    expect(positionPnl({ id: 'x', side: 'buy', entryPrice: 100, quantity: 2 }, 103, 100)).toEqual({ pnl: 600, pct: 3 });
+    expect(cells()[0].some((cell) => cell?.includes('+600.00'))).toBe(true);
+  });
+
+  it('follows the account when nothing else changed', () => {
+    panel.update({ ...current, account });
+    panel.update({ ...current, account: { ...account, equity: 9_990, freeMargin: 9_790 } });
+    expect(totals().slice(0, 3)).toEqual(['Balance: 10000.00', 'Equity: 9990.00', 'Free margin: 9790.00']);
+  });
+
+  it('writes a debt with its minus, and shows no money once the broker keeps none', () => {
+    panel.update({ ...current, account: { ...account, freeMargin: -12.5 } });
+    expect(totals()[2]).toBe('Free margin: -12.50');
+    panel.update({ ...current, account: null });
+    expect(totals()).toEqual(['Open P&L: +6.00', 'Realised P&L: +4.00']);
+  });
+});

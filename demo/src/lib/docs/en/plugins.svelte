@@ -53,6 +53,75 @@ chart.plugins.list()`}</code></pre>
   </tbody>
 </table>
 
+<h2 id="define">Custom indicator, the short way</h2>
+<p>
+  <code>defineIndicator</code> makes an indicator from its inputs and one function of the bars: no class and no
+  drawing code. <code>calculate</code> is handed the bars as columns (<code>bars.close[i]</code>), the inputs'
+  values and <code>ta</code>, the sums indicators are made of, and returns its lines by key. The chart draws them,
+  scales their pane, lists them in the legend, and gives each input a field in the settings dialog.
+</p>
+<pre><code>{`import { defineIndicator } from '@tradecanvas/chart'
+
+const emaCross = defineIndicator({
+  id: 'emaCross',
+  name: 'EMA Crossover',
+  placement: 'overlay',                       // on the prices; 'panel' (the default) is a pane of its own
+  inputs: {
+    fast: { default: 9, kind: 'int', min: 1 },
+    slow: { default: 21, kind: 'int', min: 2 },
+  },
+  plots: [
+    { key: 'fast', title: 'Fast', color: 0 },
+    { key: 'slow', title: 'Slow', color: 1 },
+    { key: 'buy', title: 'Buy', color: 2, kind: 'markers', shape: 'arrowUp', position: 'belowBar' },
+    { key: 'sell', title: 'Sell', color: 3, kind: 'markers', shape: 'arrowDown', position: 'aboveBar' },
+  ],
+  calculate({ bars, inputs, ta }) {
+    const fast = ta.ema(bars.close, inputs.fast)
+    const slow = ta.ema(bars.close, inputs.slow)
+    return { fast, slow, buy: ta.crossover(fast, slow), sell: ta.crossunder(fast, slow) }
+  },
+})
+
+chart.registerIndicator(emaCross)
+chart.addIndicator('emaCross', { fast: 12 })`}</code></pre>
+<ul>
+  <li>
+    <strong>Inputs.</strong> Each has a <code>default</code>, whose type is the input's type, and what the
+    settings dialog needs to show it: <code>kind</code>, <code>min</code>, <code>max</code>, <code>step</code>,
+    <code>options</code> for a choice, <code>source: true</code> for a price source (the indicator then reads it
+    as <code>bars.close</code>). <code>calculate</code> gets each number within its <code>min</code> and
+    <code>max</code>, whole for a <code>kind: 'int'</code>, and a choice that is one of its options.
+  </li>
+  <li>
+    <strong>Lines.</strong> A value a bar; <code>undefined</code>, <code>null</code> or <code>NaN</code> where
+    there is none. <code>true</code> marks a bar, for a plot of <code>kind: 'markers'</code> on the prices:
+    above or below the bar by its <code>position</code>, else at the bar's close. A mark in a pane of its own is
+    a number, the value it is drawn at. With no <code>plots</code>, every line returned is drawn as a line in the
+    theme's series colours; an indicator that returns no lines for too few bars declares them.
+  </li>
+  <li>
+    <strong>How it looks.</strong> <code>plots</code> (a line, <code>'histogram'</code>, <code>'step'</code>,
+    <code>'dots'</code>, <code>'markers'</code>, each with its colour, width and dash), <code>fills</code> for a
+    band between two lines, <code>scale</code> and <code>levels</code> for a pane, as in
+    <a href="#descriptor">the descriptor</a> below.
+  </li>
+  <li>
+    <strong><code>ta</code></strong> has <code>sma</code>, <code>ema</code>, <code>wma</code>, <code>rma</code>,
+    <code>stdev</code>, <code>highest</code>, <code>lowest</code>, <code>change</code>, <code>rsi</code>,
+    <code>macd</code>, <code>atr</code>, <code>bollinger</code>, <code>crossover</code> and
+    <code>crossunder</code>. Each takes a value a bar and returns one, so one feeds the next
+    (<code>ta.ema(ta.rsi(bars.close, 14), 9)</code>), and on the prices they give the values of the built-in
+    indicators. It is
+    exported on its own too: <code>{`import { ta } from '@tradecanvas/chart'`}</code>.
+  </li>
+</ul>
+<p>
+  It computes over all the bars on each tick, which is quick for sums like these. An indicator slow enough for
+  that to show, or one that draws something other than a value a bar, is a class with an <code>update</code>:
+  the long way, below.
+</p>
+
 <h2>Custom indicator</h2>
 <p>
   An indicator is an <code>IndicatorPlugin</code>: a <code>descriptor</code> that says what it is and how it
@@ -117,7 +186,7 @@ class TurningMacd extends IndicatorBase {
   (<code>up</code> above) is not drawn, scaled or shown; it is there for a plot's <code>tone</code>.
 </p>
 
-<h3>The descriptor</h3>
+<h3 id="descriptor">The descriptor</h3>
 <ul>
   <li><strong>Plots</strong> draw a field each: <code>'line'</code> (the default), <code>'step'</code>,
     <code>'histogram'</code>, <code>'dots'</code> (a line drawn as dots), or <code>'markers'</code>, a shape

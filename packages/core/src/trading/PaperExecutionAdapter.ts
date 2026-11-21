@@ -1,4 +1,5 @@
 import type {
+  AccountSummary,
   ExecutionAdapter,
   ExecutionConfig,
   ExecutionEventType,
@@ -29,7 +30,32 @@ export interface PaperExecutionOptions {
    * that part, and a larger one turns it round.
    */
   positions?: 'hedge' | 'net';
+  /**
+   * The cash the account starts with. With it the account keeps its money
+   * (`getAccount()`, the `account` event): closes move the balance, open
+   * positions hold margin, and an order the free margin cannot carry is
+   * refused. Without it there is no account, and any order is taken.
+   */
+  balance?: number;
+  /** How many times the margin a position's value may be: 10 holds a tenth of it. Default 1, the whole value. */
+  leverage?: number;
+  /** What a move of one in price is worth for one unit: a contract's multiplier. Default 1. */
+  multiplier?: number;
+  /** What each fill costs, opening or closing. */
+  commission?: PaperCommission;
 }
+
+/** What a fill costs on the paper account: a part of its value and an amount a unit, and no less than `min`. */
+export interface PaperCommission {
+  /** A part of the fill's value: 0.001 is 0.1%. */
+  rate?: number;
+  /** An amount for each unit filled. */
+  perUnit?: number;
+  /** The least a fill costs. */
+  min?: number;
+}
+
+const positive = (value: number | undefined): value is number => value !== undefined && Number.isFinite(value) && value > 0;
 
 /**
  * `position` with its trailing stop brought to its distance behind `price`
@@ -72,10 +98,100 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
   private markTime: number | undefined;
   private seq = 0;
   private readonly net: boolean;
+  /** The cash, when the account keeps its money; null: no account. */
+  private balance: number | null;
+  private realised = 0;
+  private commissionPaid = 0;
+  private readonly leverage: number;
+  private readonly multiplier: number;
+  private readonly commission: PaperCommission;
+  /** The account as last told, to tell it again only when it changed. */
+  private accountTold = '';
 
   constructor(options: PaperExecutionOptions = {}) {
     this.markPrice = options.markPrice ?? 0;
     this.net = options.positions === 'net';
+    this.balance = options.balance !== undefined && Number.isFinite(options.balance) ? options.balance : null;
+    this.leverage = positive(options.leverage) ? options.leverage : 1;
+    this.multiplier = positive(options.multiplier) ? options.multiplier : 1;
+    this.commission = options.commission ?? {};
+  }
+
+  /** The account's money now, or null when it keeps none (no `balance` was given). */
+  getAccount(): AccountSummary | null {
+    if (this.balance === null) return null;
+    let unrealisedPnl = 0;
+    let marginUsed = 0;
+    for (const p of this.positions) {
+      const open = p.quantity - (p.closedQuantity ?? 0);
+      if (this.markPrice > 0) unrealisedPnl += (this.markPrice - p.entryPrice) * open * (p.side === 'buy' ? 1 : -1) * this.multiplier;
+      marginUsed += this.marginOf(open, p.entryPrice);
+    }
+    const equity = this.balance + unrealisedPnl;
+    return { balance: this.balance, equity, unrealisedPnl, realisedPnl: this.realised, marginUsed, freeMargin: equity - marginUsed, commission: this.commissionPaid };
+  }
+
+  /** What a position of `quantity` at `price` holds of the account. */
+  private marginOf(quantity: number, price: number): number {
+    return (quantity * price * this.multiplier) / this.leverage;
+  }
+
+  /** What a fill of `quantity` at `price` costs. */
+  private commissionOf(quantity: number, price: number): number {
+    const { rate, perUnit, min } = this.commission;
+    const cost = (positive(rate) ? quantity * price * this.multiplier * rate : 0) + (positive(perUnit) ? quantity * perUnit : 0);
+    return Math.max(cost, positive(min) ? min : 0);
+  }
+
+  /** Tell the account, when it changed since it was last told. */
+  private tellAccount(): void {
+    const account = this.getAccount();
+    if (!account) return;
+    const told = JSON.stringify(account);
+    if (told === this.accountTold) return;
+    this.accountTold = told;
+    this.emit('account', account);
+  }
+
+  /** A fill's cost off the balance and on the fill; nothing written when it costs nothing. */
+  private charge(fill: FillEvent): void {
+    const cost = this.commissionOf(fill.quantity, fill.price);
+    if (!(cost > 0)) return;
+    fill.commission = cost;
+    this.commissionPaid += cost;
+    if (this.balance !== null) this.balance -= cost;
+  }
+
+  /** What a closed part made or lost, into the balance. */
+  private realise(pnl: number): void {
+    this.realised += pnl;
+    if (this.balance !== null) this.balance += pnl;
+  }
+
+  /**
+   * Why the account cannot carry `order` filled at `price`, or null when it
+   * can (or keeps no money). It needs the margin of what it opens and its
+   * commission; what it closes of a net position frees that part's margin.
+   */
+  private cannotCarry(order: TradingOrder, price: number): string | null {
+    const account = this.getAccount();
+    if (!account) return null;
+    const held = this.net ? this.positions[0] : undefined;
+    let opens = order.quantity;
+    let freed = 0;
+    if (held && held.side !== order.side) {
+      const open = held.quantity - (held.closedQuantity ?? 0);
+      const closes = Math.min(open, order.quantity);
+      opens = order.quantity - closes;
+      freed = this.marginOf(closes, held.entryPrice);
+    }
+    const needed = this.marginOf(opens, price) + this.commissionOf(order.quantity, price);
+    return short(needed, account.freeMargin + freed);
+  }
+
+  /** The price an order is sized at: where it fills. A stop fills at its stop, the rest at their price. */
+  private sizedAt(order: TradingOrder): number {
+    return order.type === 'stop' ? order.stopPrice ?? order.price : order.price;
   }
 
   connect(_config: ExecutionConfig): void {
@@ -83,6 +199,7 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
     this.emit('connectionChange', this.state);
     this.emit('orders', this.orders);
     this.emit('positions', this.positions);
+    this.tellAccount();
   }
 
   disconnect(): void {
@@ -105,6 +222,7 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
     this.expireOrders();
     this.checkPendingOrders();
     this.checkStops();
+    this.tellAccount();
   }
 
   /** When fills happen: the mark's time when one was given, else now. */
@@ -149,6 +267,11 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
     if (intent.trailingStop !== undefined && Number.isFinite(intent.trailingStop) && intent.trailingStop > 0) order.trailingStop = intent.trailingStop;
     if (dated) order.expireTime = intent.expireTime;
     if (intent.ocoGroup) order.ocoGroup = intent.ocoGroup;
+
+    // An order that fills now is sized at the price there is; one that waits, at where it will fill.
+    const fillsNow = intent.type === 'market' || (atOnce && this.markPrice > 0);
+    const lack = this.cannotCarry(order, fillsNow ? this.markPrice || intent.price : this.sizedAt(order));
+    if (lack) throw new Error(lack);
 
     if (intent.type === 'market') {
       this.fill(order, this.markPrice || intent.price);
@@ -204,6 +327,7 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
     if (!position) return;
     this.close(position, this.markPrice || position.entryPrice, 'close');
     this.emit('positions', this.positions);
+    this.tellAccount();
   }
 
   /** Close a position at the mark and open the same size the other way. */
@@ -211,8 +335,14 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
     const position = this.positions.find((p) => p.id === intent.positionId);
     if (!position) return;
     const price = this.markPrice || position.entryPrice;
-    this.close(position, price, 'reverse');
     const quantity = position.quantity - (position.closedQuantity ?? 0);
+    // Both halves or neither: the close frees the position's margin and costs a commission, as the opening does.
+    const account = this.getAccount();
+    if (account) {
+      const lack = short(this.marginOf(quantity, price) + 2 * this.commissionOf(quantity, price), account.freeMargin + this.marginOf(quantity, position.entryPrice));
+      if (lack) throw new Error(lack);
+    }
+    this.close(position, price, 'reverse');
     const order: TradingOrder = { id: this.nextId('ord'), side: opposite(position.side), type: 'market', price, quantity };
     this.fill(order, price);
   }
@@ -257,6 +387,9 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
       this.positions = [...this.positions, position];
       fill.positionId = position.id;
     }
+    this.charge(fill);
+    // The account first: what hears of the fill or the positions reads it as they left it.
+    this.tellAccount();
     this.emit('fill', fill);
     this.emit('orders', this.orders);
     this.emit('positions', this.positions);
@@ -303,7 +436,8 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
     // Sizes built of fractions differ by a hair from their sum (0.1 + 0.2 and 0.3): as large is the same size.
     const same = Math.abs(order.quantity - open) <= QUANTITY_SLACK * Math.max(order.quantity, open);
     const closed = same ? open : Math.min(open, order.quantity);
-    fill.pnl = (price - held.entryPrice) * closed * (held.side === 'buy' ? 1 : -1);
+    fill.pnl = (price - held.entryPrice) * closed * (held.side === 'buy' ? 1 : -1) * this.multiplier;
+    this.realise(fill.pnl);
     fill.positionId = held.id;
     if (!same && order.quantity < open) {
       const left: TradingPosition = { ...held, quantity: open - closed };
@@ -324,7 +458,7 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
     this.positions = this.positions.filter((p) => p.id !== position.id);
     const quantity = position.quantity - (position.closedQuantity ?? 0);
     const direction = position.side === 'buy' ? 1 : -1;
-    this.emit('fill', {
+    const fill: FillEvent = {
       orderId: this.nextId('ord'),
       side: opposite(position.side),
       price,
@@ -332,8 +466,12 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
       time: this.fillTime(),
       positionId: position.id,
       reason,
-      pnl: (price - position.entryPrice) * quantity * direction,
-    } satisfies FillEvent);
+      pnl: (price - position.entryPrice) * quantity * direction * this.multiplier,
+    };
+    this.realise(fill.pnl!);
+    this.charge(fill);
+    this.tellAccount();
+    this.emit('fill', fill);
   }
 
   /** The good-till-date orders whose date has come (by the mark's time, else by the clock) come off the book. */
@@ -359,6 +497,14 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
     for (const o of this.orders.filter((o) => this.isTriggered(o))) {
       // One of its group filled before it in this pass, and cancelled it.
       if (!this.orders.includes(o)) continue;
+      // The money it needed has gone since it was placed: it comes off, and says why.
+      const lack = this.cannotCarry(o, reached.has(o.id) ? this.markPrice : this.sizedAt(o));
+      if (lack) {
+        this.orders = this.orders.filter((other) => other.id !== o.id);
+        this.emit('orders', this.orders);
+        this.emit('error', { message: `Order ${o.id} was cancelled. ${lack}`, command: 'orderPlace' });
+        continue;
+      }
       // A limit that waited fills at its price; one that began working at this price fills at it, within its limit.
       this.fill(o, o.type !== 'limit' ? o.stopPrice ?? o.price : reached.has(o.id) ? this.markPrice : o.price);
     }
@@ -417,6 +563,14 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
       for (const listener of set) listener(event);
     }
   }
+}
+
+/** How far short of an order's need the account may be and still carry it, as a part of the need: a sum's rounding. */
+const MONEY_SLACK = 1e-9;
+
+/** Why `available` does not carry `needed`, or null when it does. */
+function short(needed: number, available: number): string | null {
+  return needed > available + MONEY_SLACK * Math.max(1, Math.abs(needed)) ? `Not enough free margin: the order needs ${needed}, the account has ${available}` : null;
 }
 
 /** How near two sizes are, as a part of the larger, to be the same size. */
