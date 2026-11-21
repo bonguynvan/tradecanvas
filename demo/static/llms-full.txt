@@ -1228,9 +1228,13 @@ cross.registerIndicator(emaCross);
 cross.addIndicator('emaCross', { fast: 12 });
 ```
 
-A line is a value a bar (`undefined`, `null` or `NaN` where there is none);
-`true` marks a bar for a `'markers'` plot above or below the bars. Leave
-`plots` out and every line returned is drawn as a line. `fills`, `scale`,
+A line is a value a bar (`undefined`, `null` or `NaN` where there is none).
+`true` marks a bar for a `'markers'` plot of an overlay: above or below the
+bar by its `position`, else at the bar's close; in a pane of its own a mark
+is the number it is drawn at. `calculate` gets each number input within its
+`min` and `max` (whole for `kind: 'int'`). Leave `plots` out and every line
+returned is drawn as a line (declare them when `calculate` returns nothing
+for too few bars). `fills`, `scale`,
 `levels`, `category` and `shortName` are the descriptor's, described below.
 It computes over all the bars on each tick, which is quick for sums like
 these; for a long history with a heavy sum, or drawing of your own, write the

@@ -90,12 +90,15 @@ chart.addIndicator('emaCross', { fast: 12 })`}</code></pre>
     <strong>Inputs.</strong> Each has a <code>default</code>, whose type is the input's type, and what the
     settings dialog needs to show it: <code>kind</code>, <code>min</code>, <code>max</code>, <code>step</code>,
     <code>options</code> for a choice, <code>source: true</code> for a price source (the indicator then reads it
-    as <code>bars.close</code>).
+    as <code>bars.close</code>). <code>calculate</code> gets each number within its <code>min</code> and
+    <code>max</code>, whole for a <code>kind: 'int'</code>, and a choice that is one of its options.
   </li>
   <li>
     <strong>Lines.</strong> A value a bar; <code>undefined</code>, <code>null</code> or <code>NaN</code> where
-    there is none. <code>true</code> marks a bar, for a plot of <code>kind: 'markers'</code> above or below the
-    bars. With no <code>plots</code>, every line returned is drawn as a line in the theme's series colours.
+    there is none. <code>true</code> marks a bar, for a plot of <code>kind: 'markers'</code> on the prices:
+    above or below the bar by its <code>position</code>, else at the bar's close. A mark in a pane of its own is
+    a number, the value it is drawn at. With no <code>plots</code>, every line returned is drawn as a line in the
+    theme's series colours; an indicator that returns no lines for too few bars declares them.
   </li>
   <li>
     <strong>How it looks.</strong> <code>plots</code> (a line, <code>'histogram'</code>, <code>'step'</code>,
@@ -108,7 +111,8 @@ chart.addIndicator('emaCross', { fast: 12 })`}</code></pre>
     <code>stdev</code>, <code>highest</code>, <code>lowest</code>, <code>change</code>, <code>rsi</code>,
     <code>macd</code>, <code>atr</code>, <code>bollinger</code>, <code>crossover</code> and
     <code>crossunder</code>. Each takes a value a bar and returns one, so one feeds the next
-    (<code>ta.ema(ta.rsi(bars.close, 14), 9)</code>), and they give the values of the built-in indicators. It is
+    (<code>ta.ema(ta.rsi(bars.close, 14), 9)</code>), and on the prices they give the values of the built-in
+    indicators. It is
     exported on its own too: <code>{`import { ta } from '@tradecanvas/chart'`}</code>.
   </li>
 </ul>

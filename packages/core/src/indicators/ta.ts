@@ -15,9 +15,9 @@ function clean(src: TaSeries): Num[] {
   return src.map((v) => (typeof v === 'number' && Number.isFinite(v) ? v : undefined));
 }
 
-/** A whole period of at least one: what a sum over bars can use. */
+/** A whole period of at least one, as the built-in indicators take one: its whole part. */
 function whole(period: number): number {
-  return Number.isFinite(period) ? Math.max(1, Math.round(period)) : 1;
+  return Number.isFinite(period) ? Math.max(1, Math.floor(period)) : 1;
 }
 
 const numberAt = (src: TaSeries | number, i: number): Num => {
@@ -99,13 +99,19 @@ export const ta = {
   },
   /**
    * MACD: the fast average less the slow one, its signal line, and the one
-   * less the other. As the built-in MACD, its averages start at the first
-   * value (not at a simple average), and it has values from the `slow`-th.
+   * less the other. As the built-in MACD, its averages start at the source's
+   * first value (not at a simple average), and it has values from the
+   * source's `slow`-th.
    */
   macd: (src: TaSeries, fast = 12, slow = 26, signal = 9): { macd: Num[]; signal: Num[]; histogram: Num[] } => {
     const quick = fromFirst(src, whole(fast));
     const long = fromFirst(src, whole(slow));
-    const macd = quick.map((q, i) => (i < whole(slow) - 1 || q === undefined || long[i] === undefined ? undefined : q - long[i]!));
+    let seen = 0;
+    const macd = quick.map((q, i) => {
+      if (q === undefined || long[i] === undefined) return undefined;
+      seen++;
+      return seen < whole(slow) ? undefined : q - long[i]!;
+    });
     const line = fromFirst(macd, whole(signal));
     return { macd, signal: line, histogram: macd.map((m, i) => (m === undefined || line[i] === undefined ? undefined : m - line[i]!)) };
   },

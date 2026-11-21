@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import type { DataSeries, IndicatorConfig } from '@tradecanvas/commons';
 import { defineIndicator } from '../defineIndicator.js';
 import { ta } from '../ta.js';
@@ -58,7 +58,8 @@ describe('ta: the sums of the built-in indicators', () => {
   it('takes null and NaN for no value, and a period as the whole number of at least one it is nearest', () => {
     expect(ta.sma([1, null, Number.NaN, 4, 6], 2)).toEqual([undefined, undefined, undefined, undefined, 5]);
     expect(ta.sma([1, 2, 3], 0)).toEqual([1, 2, 3]);
-    expect(ta.sma([1, 2, 3], 1.6)).toEqual([undefined, 1.5, 2.5]);
+    // As the built-in indicators take a period: its whole part.
+    expect(ta.sma([1, 2, 3], 2.9)).toEqual([undefined, 1.5, 2.5]);
     expect(ta.sma([1, 2, 3], Number.NaN)).toEqual([1, 2, 3]);
   });
 
@@ -69,6 +70,21 @@ describe('ta: the sums of the built-in indicators', () => {
     expect(ta.crossunder(a, b)).toEqual([false, false, false, false, true, false]);
     expect(ta.crossover(a, 2)).toEqual(ta.crossover(a, b));
     expect(ta.crossover([undefined, 3, 1, 3], [2, 2, 2, 2])).toEqual([false, false, false, true]);
+  });
+
+  it('counts MACD’s slow period from the source’s first value, as the built-in on another indicator’s line', () => {
+    const closes = column('close');
+    const late = [...new Array<undefined>(14).fill(undefined), ...closes.slice(14)];
+    const { macd, signal } = ta.macd(late, 3, 6, 2);
+    expect(macd.findIndex((v) => v !== undefined)).toBe(14 + 6 - 1);
+    expect(signal.findIndex((v) => v !== undefined)).toBe(14 + 6 - 1);
+    near(macd.slice(14), ta.macd(closes.slice(14), 3, 6, 2).macd);
+  });
+
+  it('has no values when the period is longer than the bars', () => {
+    expect(ta.sma([1, 2, 3], 5)).toEqual([undefined, undefined, undefined]);
+    expect(ta.rsi([1, 2, 3], 14)).toEqual([undefined, undefined, undefined]);
+    expect(ta.macd([1, 2, 3]).macd).toEqual([undefined, undefined, undefined]);
   });
 
   it('gives no values for no bars', () => {
@@ -136,6 +152,74 @@ describe('defineIndicator', () => {
     });
     expect(plugin.descriptor.placement).toBe('panel');
     expect(plugin.descriptor.plots).toEqual([{ key: 'ema', title: 'ema', color: 0 }, { key: 'high', title: 'high', color: 1 }]);
+  });
+
+  it('says to declare the plots when a run on no bars returns no lines: it would draw nothing', () => {
+    expect(() => defineIndicator({ id: 'guarded', name: 'Guarded', calculate: ({ bars: b }) => (b.length < 5 ? {} : { value: b.close }) })).toThrow(/Declare them in plots/);
+  });
+
+  it('hands calculate its inputs as the settings dialog bounds them: whole, within min and max, of the choices', () => {
+    const seen: unknown[] = [];
+    const plugin = defineIndicator({
+      id: 'bounded', name: 'Bounded',
+      inputs: {
+        period: { default: 14, kind: 'int', min: 2, max: 50 },
+        factor: { default: 1.5, min: 0.5 },
+        mode: { default: 'ema', options: ['ema', { value: 'sma', label: 'Simple' }] },
+        on: { default: true },
+      },
+      plots: [{ key: 'value', title: 'V', color: 0 }],
+      calculate: ({ inputs }) => { seen.push({ ...inputs }); return { value: [] }; },
+    });
+    plugin.calculate(bars, config({ period: 14.9, factor: 0.1, mode: 'sma', on: false }));
+    plugin.calculate(bars, config({ period: -3, factor: 2.25, mode: 'wma', on: 'yes' }));
+    plugin.calculate(bars, config({ period: '20', factor: 'x' }));
+    plugin.calculate(bars, config({ period: 900 }));
+    expect(seen).toEqual([
+      { period: 14, factor: 0.5, mode: 'sma', on: false },
+      { period: 2, factor: 2.25, mode: 'ema', on: true },
+      { period: 20, factor: 1.5, mode: 'ema', on: true },
+      { period: 50, factor: 1.5, mode: 'ema', on: true },
+    ]);
+  });
+
+  it('reads the source the user picked as the closes', () => {
+    const plugin = defineIndicator({ id: 'src', name: 'Src', inputs: { source: { default: 'close', source: true } }, plots: [{ key: 'value', title: 'V', color: 0 }], calculate: ({ bars: b }) => ({ value: b.close }) });
+    expect(plugin.descriptor.inputs).toEqual({ source: { source: true } });
+    expect(plugin.descriptor.defaultConfig).toEqual({ source: 'close' });
+  });
+
+  it('puts a mark given as true at the bar’s close when its plot marks a value on the prices', () => {
+    const plugin = defineIndicator({
+      id: 'atClose', name: 'At close', placement: 'overlay',
+      plots: [{ key: 'hit', title: 'Hit', color: 0, kind: 'markers' }],
+      calculate: ({ bars: b }) => ({ hit: b.close.map((_, i) => i % 10 === 0) }),
+    });
+    const out = plugin.calculate(bars, config());
+    expect(out.series![10]).toEqual({ hit: bars[10].close });
+    expect(out.series![11]).toBeNull();
+  });
+
+  it('leaves out marks given as true in a pane of its own, where there is no price to put them at, and says so once', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const plugin = defineIndicator({
+      id: 'inPane', name: 'In pane',
+      plots: [{ key: 'value', title: 'V', color: 0 }, { key: 'hit', title: 'Hit', color: 1, kind: 'markers' }],
+      calculate: ({ bars: b }) => ({ value: b.close, hit: b.close.map(() => true) }),
+    });
+    const out = plugin.calculate(bars, config());
+    plugin.calculate(bars, config());
+    expect(out.series![3]).toEqual({ value: bars[3].close });
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(String(warn.mock.calls[0][0])).toContain('inPane');
+    warn.mockRestore();
+  });
+
+  it('keeps its own copy of the plots it is given', () => {
+    const plots = [{ key: 'value', title: 'V', color: 0 }];
+    const plugin = defineIndicator({ id: 'copy', name: 'Copy', plots, calculate: ({ bars: b }) => ({ value: b.close }) });
+    plots.push({ key: 'other', title: 'O', color: 1 });
+    expect(plugin.descriptor.plots).toHaveLength(1);
   });
 
   it('says to declare the plots when its lines cannot be found on no bars', () => {
