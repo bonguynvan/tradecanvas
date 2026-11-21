@@ -19,19 +19,30 @@ interface Frame {
   theme: { background: string };
   timeAxisY?: number;
   panels: { rect: { x: number; y: number; width: number; height: number } }[];
+  crosshairHandler: unknown;
+  /** The bar the legend read when the frame was drawn: the one pointed at, or none (it reads the latest). */
+  legendBar?: unknown;
+  chartLegend?: { hoverBar?: unknown } | null;
+  measureOverlay: unknown;
+  selectionBoxOverlay?: unknown;
+  priceAxisAddButton?: unknown;
 }
 
 interface Inside {
   viewport: { getState(): ViewportState; setPriceRange(min: number, max: number): void };
-  engine: { renderTo(c: CanvasRenderingContext2D): void; renderCtx: Frame | null; requestRender(): void };
+  engine: { renderTo(c: CanvasRenderingContext2D): void; renderNow(): void; renderCtx: Frame | null; requestRender(): void };
+  priceFit: { snapshot(): unknown };
+  priceAxisWidth: number;
+  leftAxisWidth: number;
 }
 
-/** A chart of 200 bars with a pane, scrolled back and zoomed, its first frames drawn. */
-async function chartOnPage(): Promise<{ chart: Chart; inside: Inside; host: HTMLElement }> {
+/** A chart of 200 bars with a pane and a scale at the left, scrolled back and zoomed, its first frames drawn. */
+async function chartOnPage(options: ConstructorParameters<typeof Chart>[1] = { features: { crosshair: false, barCountdown: false } }): Promise<{ chart: Chart; inside: Inside; host: HTMLElement }> {
   const host = sizedHost(WIDTH, HEIGHT);
-  const chart = new Chart(host, { features: { crosshair: false, barCountdown: false } });
+  const chart = new Chart(host, options);
   chart.setData(bars);
   chart.addIndicator('rsi');
+  chart.addIndicator('ema', { period: 8 }, 'bottom', { scale: 'left' });
   chart.setVisibleRange(bars[60].time, bars[139].time);
   await new Promise((resolve) => setTimeout(resolve, 60));
   return { chart, inside: chart as unknown as Inside, host };
@@ -43,7 +54,7 @@ function framesDrawn(inside: Inside, take: () => void): Frame[] {
   const renderTo = inside.engine.renderTo.bind(inside.engine);
   const spy = vi.spyOn(inside.engine, 'renderTo').mockImplementation((c) => {
     const frame = inside.engine.renderCtx;
-    if (frame) frames.push({ ...frame, viewport: { ...frame.viewport, chartRect: { ...frame.viewport.chartRect }, visibleRange: { ...frame.viewport.visibleRange }, priceRange: { ...frame.viewport.priceRange } } });
+    if (frame) frames.push({ ...frame, legendBar: frame.chartLegend?.hoverBar ?? null, viewport: { ...frame.viewport, chartRect: { ...frame.viewport.chartRect }, visibleRange: { ...frame.viewport.visibleRange }, priceRange: { ...frame.viewport.priceRange } } });
     renderTo(c);
   });
   try {
@@ -99,6 +110,10 @@ describe('a picture of the chart at a size of its own', () => {
     const before = JSON.stringify(inside.viewport.getState());
     const frameBefore = JSON.stringify({ viewport: inside.engine.renderCtx?.viewport, panels: inside.engine.renderCtx?.panels.map((p) => p.rect), timeAxisY: inside.engine.renderCtx?.timeAxisY });
     const plotBefore = chart.getPlotRect();
+    // What the layout and the price scale keep that the viewport does not show.
+    const kept = (): string => JSON.stringify([inside.priceFit.snapshot(), inside.priceAxisWidth, inside.leftAxisWidth, chart.isLeftPriceScaleShown(), chart.getIndicatorPanes().map((p) => p.rect)]);
+    const keptBefore = kept();
+    expect(plotBefore.x).toBeGreaterThan(0);
     const own = [...host.querySelectorAll('canvas')].map((c) => [c.width, c.height]);
 
     chart.toCanvas({ width: 1600, height: 900, pixelRatio: 2 });
@@ -107,6 +122,7 @@ describe('a picture of the chart at a size of its own', () => {
     expect(JSON.stringify(inside.viewport.getState())).toBe(before);
     expect(JSON.stringify({ viewport: inside.engine.renderCtx?.viewport, panels: inside.engine.renderCtx?.panels.map((p) => p.rect), timeAxisY: inside.engine.renderCtx?.timeAxisY })).toBe(frameBefore);
     expect(chart.getPlotRect()).toEqual(plotBefore);
+    expect(kept()).toBe(keptBefore);
     expect([...host.querySelectorAll('canvas')].map((c) => [c.width, c.height])).toEqual(own);
     await new Promise((resolve) => setTimeout(resolve, 60));
     expect(told).toEqual([]);
@@ -157,6 +173,82 @@ describe('a picture of the chart at a size of its own', () => {
     expect(taken).toHaveBeenLastCalledWith(expect.objectContaining({ width: 1123, height: 794 }));
     chart.print({ width: 900, height: 500 });
     expect(taken).toHaveBeenLastCalledWith(expect.objectContaining({ width: 900, height: 500 }));
+    chart.destroy();
+  });
+
+  it('has nothing that follows the pointer on it, and tells the page’s crosshair nothing', async () => {
+    const { chart, inside } = await chartOnPage({ features: { barCountdown: false } });
+    chart.setCrosshairPosition({ x: 300, y: 100 });
+    await new Promise((resolve) => setTimeout(resolve, 60));
+    expect(inside.engine.renderCtx?.crosshairHandler).not.toBeNull();
+    const moves: unknown[] = [];
+    chart.on('crosshairMove', (event) => void moves.push(event.payload));
+    chart.on('crosshairLeave', () => void moves.push('left'));
+
+    const [frame] = framesDrawn(inside, () => void chart.toCanvas({ width: 1600, height: 900, pixelRatio: 1 }));
+    // The pointer is at a place on the page: at another size that place is no bar's.
+    expect(frame.crosshairHandler).toBeNull();
+    // With no crosshair to say which bar, the legend reads the latest; the page's reads the one pointed at, as before.
+    expect(frame.legendBar).toBeNull();
+    expect(inside.engine.renderCtx?.chartLegend?.hoverBar ?? null).not.toBeNull();
+    expect(frame.measureOverlay).toBeNull();
+    expect(frame.selectionBoxOverlay ?? null).toBeNull();
+    expect(frame.priceAxisAddButton ?? null).toBeNull();
+    await new Promise((resolve) => setTimeout(resolve, 60));
+    expect(moves).toEqual([]);
+    // The page's own frame has its crosshair still.
+    expect(inside.engine.renderCtx?.crosshairHandler).not.toBeNull();
+    chart.destroy();
+  });
+
+  it('draws the page’s own frame again at once, so nothing is pressed where the picture had it', async () => {
+    const { chart, inside } = await chartOnPage();
+    const now = vi.spyOn(inside.engine, 'renderNow');
+    chart.toCanvas({ width: 1600, height: 900 });
+    expect(now).toHaveBeenCalledTimes(1);
+    chart.toCanvas({ theme: 'light' });
+    expect(now).toHaveBeenCalledTimes(2);
+    // One at the screen's size in its own theme changed nothing a frame keeps.
+    chart.toCanvas({ pixelRatio: 2 });
+    expect(now).toHaveBeenCalledTimes(2);
+    // A paused chart draws when it is shown again, not now.
+    chart.suspend();
+    const later = vi.spyOn(inside.engine, 'requestRender');
+    chart.toCanvas({ width: 1600, height: 900 });
+    expect(now).toHaveBeenCalledTimes(2);
+    expect(later).toHaveBeenCalled();
+    chart.destroy();
+  });
+
+  it('is no picture at a size with no room for a plot, and none from inside another', async () => {
+    const { chart, inside } = await chartOnPage();
+    const before = JSON.stringify(inside.viewport.getState());
+    expect(chart.toCanvas({ width: 60, height: 30 })).toBeNull();
+    expect(chart.toCanvas({ width: 4, height: 400 })).toBeNull();
+    expect(JSON.stringify(inside.viewport.getState())).toBe(before);
+    // A picture asked for while one is being drawn would lay the chart out under it.
+    let inner: HTMLCanvasElement | null | undefined;
+    const renderTo = inside.engine.renderTo.bind(inside.engine);
+    vi.spyOn(inside.engine, 'renderTo').mockImplementation((c) => {
+      if (inner === undefined) inner = chart.toCanvas({ width: 500, height: 300 });
+      renderTo(c);
+    });
+    const outer = chart.toCanvas({ width: 1600, height: 900, pixelRatio: 1 });
+    expect(inner).toBeNull();
+    expect([outer!.width, outer!.height]).toEqual([1600, 900]);
+    expect(JSON.stringify(inside.viewport.getState())).toBe(before);
+    chart.destroy();
+  });
+
+  it('keeps the middle of what is on view where bars cannot be as wide or as narrow as the size would make them', async () => {
+    const { chart, inside } = await chartOnPage();
+    const own = inside.viewport.getState().visibleRange;
+    const middle = (own.from + own.to) / 2;
+    for (const width of [160, 8000]) {
+      const [frame] = framesDrawn(inside, () => void chart.toCanvas({ width, height: 600, pixelRatio: 1 }));
+      const { from, to } = frame.viewport.visibleRange;
+      expect(Math.abs((from + to) / 2 - middle), `${width}`).toBeLessThanOrEqual(2);
+    }
     chart.destroy();
   });
 

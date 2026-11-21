@@ -29,8 +29,9 @@ export interface ChartImageOptions {
    * The picture's size in CSS pixels, when not the chart's own: the chart is
    * laid out again for it, and the one on the page is left as it is. A side
    * left out is the chart's own. The price chart keeps the bars it has on
-   * view, as wide as the size makes them; a grid of charts gives each chart
-   * its share.
+   * view, as wide as the size makes them (within what a bar can be), and
+   * leaves out what follows the pointer; a grid of charts gives each chart
+   * its share. A size with no room for a plot gives no picture.
    */
   width?: number;
   height?: number;

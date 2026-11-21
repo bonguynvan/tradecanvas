@@ -49,6 +49,23 @@ describe('the legend drawn for a picture', () => {
     expect(moved).toHaveBeenCalledTimes(1);
   });
 
+  it('reads again the bar it read on the page, after a picture that read the latest', () => {
+    const legend = new ChartLegend();
+    legend.setHoverBar(data[0], null);
+    const texts: string[] = [];
+    const writing = new Proxy(ctx, { get: (target, prop) => (prop === 'fillText' ? (text: string) => void texts.push(text) : Reflect.get(target, prop)) });
+    legend.keepSize(() => {
+      legend.setHoverBar(null);
+      legend.render(writing, plot(900), DARK_THEME, data);
+    });
+    // In the picture: the latest bar's close. On the page again: the first bar's, which was pointed at.
+    expect(texts).toContain('102.00');
+    texts.length = 0;
+    legend.render(writing, plot(900), DARK_THEME, data);
+    expect(texts).toContain('103.00');
+    expect(texts).not.toContain('102.00');
+  });
+
   it('is put back when the drawing throws', () => {
     const legend = new ChartLegend();
     legend.render(ctx, plot(900), DARK_THEME, data);

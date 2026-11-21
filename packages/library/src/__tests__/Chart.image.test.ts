@@ -193,13 +193,16 @@ describe('the chart as a picture drawn again', () => {
 
   it('draws the chart’s own frame again after a picture in another theme, and not after one in its own', async () => {
     await new Promise((resolve) => setTimeout(resolve, 40));
-    const engine = (chart as unknown as { engine: { requestRender(): void } }).engine;
+    const engine = (chart as unknown as { engine: { requestRender(): void; renderNow(): void } }).engine;
     const asked = vi.spyOn(engine, 'requestRender');
+    const drawn = vi.spyOn(engine, 'renderNow');
     chart.toCanvas({ pixelRatio: 2 });
     expect(asked).not.toHaveBeenCalled();
-    // What a frame notes of where its labels are was noted for the other theme's font.
+    expect(drawn).not.toHaveBeenCalled();
+    // What a frame notes of where its labels are was noted for the other theme's font: the
+    // page's own frame is drawn again at once, before anything on it can be pressed.
     chart.toCanvas({ theme: 'light' });
-    expect(asked).toHaveBeenCalledTimes(1);
+    expect(drawn).toHaveBeenCalledTimes(1);
   });
 
   it('is nothing with screenshots switched off, or for a chart with no size', () => {

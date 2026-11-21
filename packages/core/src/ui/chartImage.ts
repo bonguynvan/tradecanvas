@@ -34,13 +34,14 @@ export function imageRatio(width: number, height: number, asked: number | undefi
 }
 
 /**
- * The size a picture is laid out at, in CSS pixels: each side as asked for,
+ * The size a picture is laid out at, in CSS pixels: each side as asked for
+ * (a part of a pixel too: a grid's cell is laid out to the pixels it has),
  * and the chart's own for a side left out or one that is no size. No side
  * is past what a canvas can be.
  */
 export function pictureSize(own: { width: number; height: number }, asked: { width?: number; height?: number }): { width: number; height: number } {
   const side = (wanted: number | undefined, mine: number): number =>
-    wanted !== undefined && Number.isFinite(wanted) && wanted > 0 ? Math.min(Math.round(wanted), MAX_IMAGE_SIDE) : mine;
+    wanted !== undefined && Number.isFinite(wanted) && wanted > 0 ? Math.min(wanted, MAX_IMAGE_SIDE) : mine;
   return { width: side(asked.width, own.width), height: side(asked.height, own.height) };
 }
 

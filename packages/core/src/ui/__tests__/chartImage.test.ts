@@ -277,6 +277,7 @@ describe('the pixels a picture has', () => {
     expect(pictureSize({ width: 800, height: 400 }, {})).toEqual({ width: 800, height: 400 });
     expect(pictureSize({ width: 800, height: 400 }, { width: 1600 })).toEqual({ width: 1600, height: 400 });
     expect(pictureSize({ width: 800, height: 400 }, { width: Number.NaN, height: -1 })).toEqual({ width: 800, height: 400 });
-    expect(pictureSize({ width: 800, height: 400 }, { width: 1e9, height: 200.4 })).toEqual({ width: MAX_IMAGE_SIDE, height: 200 });
+    // A side that is no whole number stays as asked: a grid's cell is laid out to the pixel it has.
+    expect(pictureSize({ width: 800, height: 400 }, { width: 1e9, height: 200.4 })).toEqual({ width: MAX_IMAGE_SIDE, height: 200.4 });
   });
 });

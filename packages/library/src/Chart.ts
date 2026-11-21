@@ -382,6 +382,8 @@ export class Chart {
   private leftPriceAxis = new PriceAxis();
   private leftScaleRequested = false;
   private leftAxisWidth = PRICE_AXIS_WIDTH;
+  /** While a picture at a size of its own is drawn: the chart is laid out for the picture, not for the page. */
+  private picturing = false;
   /** The left scale's viewport this frame; null while it is hidden. */
   private leftViewport: ViewportState | null = null;
   private timeAxis: TimeAxis;
@@ -4973,8 +4975,9 @@ export class Chart {
       // Canvases of no size make a picture of none.
       return read && read.width > 0 && read.height > 0 ? read : null;
     }
-    // A chart with no size has no layout to draw at another.
-    if (!(own.width > 0) || !(own.height > 0)) return null;
+    // A chart with no size has no layout to draw at another, and a picture asked for
+    // while one is being drawn (by a plugin, as it draws) would lay the chart out under it.
+    if (!(own.width > 0) || !(own.height > 0) || this.picturing) return null;
     const ratio = imageRatio(size.width, size.height, options.pixelRatio, this.engine.dprManager.getDpr());
     const canvas = document.createElement('canvas');
     const pixels = picturePixels(size, ratio);
@@ -5003,25 +5006,32 @@ export class Chart {
       if (this.features.legend) this.chartLegend.measure(ctx, this.viewport.getState(), this.themeManager.getTheme(), this.getDisplayData());
       paint();
     };
-    const draw = sized ? (): void => this.atSize(size, frame) : frame;
+    // False where the size leaves no room for a plot: there is nothing to draw of the chart.
+    const draw = sized ? (): boolean => this.atSize(size, frame) : (): boolean => (frame(), true);
     if (options.theme === undefined && !sized) {
       paint();
     } else {
       // The chart in the other theme, at the other size, for as long as the picture takes: nothing on the page is told or changed.
+      let drawn = false;
       try {
         this.chartLegend.keepSize(() => {
-          if (options.theme === undefined) return draw();
-          this.themeManager.withTheme(options.theme, () => {
-            this.syncRenderContext();
-            draw();
-          });
+          if (options.theme === undefined) drawn = draw();
+          else {
+            this.themeManager.withTheme(options.theme, () => {
+              this.syncRenderContext();
+              drawn = draw();
+            });
+          }
         });
       } finally {
         this.syncRenderContext();
+        // A frame notes where its labels and tags are as it draws them, and what is pressed on the page is
+        // found by those notes: the page's own frame is drawn again before anything can be. A paused chart
+        // draws when it is shown again.
+        if (this.isSuspended()) this.engine.requestRender();
+        else this.engine.renderNow();
       }
-      // A frame notes where its labels and tags are as it draws them, and that was for the
-      // other font or the other size: the chart's own frame, drawn again, notes them for its own.
-      this.engine.requestRender();
+      if (!drawn) return null;
     }
     // A host's canvas is laid over the chart where the chart is on the page: it has no place at another size.
     if (!sized) this.drawGuestCanvases(ctx);
@@ -5033,27 +5043,45 @@ export class Chart {
    * view there, and puts the page's layout back: a picture at a size of its
    * own. Nothing is told, and no canvas of the chart's is touched. The bars
    * are as wide as the size makes them, within what a bar can be: past
-   * that, more or fewer of them are on view, about the same middle.
+   * that, more or fewer of them are on view, about the same middle. What
+   * follows the pointer is left out, the pointer being at a place on the
+   * page. False, with nothing drawn, where the size leaves the plot no room.
    */
-  private atSize(size: { width: number; height: number }, draw: () => void): void {
+  private atSize(size: { width: number; height: number }, draw: () => void): boolean {
     const own = this.engine.dprManager.readContainerSize();
     const kept = { viewport: this.viewport.snapshot(), fit: this.priceFit.snapshot(), priceAxisWidth: this.priceAxisWidth, leftAxisWidth: this.leftAxisWidth };
     const { offset, barWidth, barSpacing, chartRect } = this.viewport.getState();
     const unit = barWidth + barSpacing;
     const first = unit > 0 ? offset / unit : 0;
     const last = unit > 0 ? first + chartRect.width / unit - 1 : 0;
+    /** The bars that are on view on the page, fitted to the plot the picture's layout leaves. */
+    const place = (): void => {
+      this.panes.invalidate();
+      this.viewport.setChartRect(this.getResolvedLayout().mainChartRect);
+      this.viewport.zoomToBarRange(first, last);
+    };
+    this.picturing = true;
     try {
+      // With no crosshair on the picture to say which bar, its legend reads the latest (`keepSize` puts the page's back).
+      this.chartLegend.setHoverBar(null);
       this.layoutManager.resize(size.width, size.height);
-      // The bars are fitted to the plot, and the plot is what the scales leave: twice, should a scale change width.
-      for (let round = 0; round < PICTURE_FIT_ROUNDS; round++) {
-        this.panes.invalidate();
-        this.viewport.setChartRect(this.getResolvedLayout().mainChartRect);
-        this.viewport.zoomToBarRange(first, last);
+      // The bars are fitted to the plot, and the plot is what the scales leave: again, should a scale change width.
+      for (let round = 1; round <= PICTURE_FIT_ROUNDS; round++) {
+        place();
         if (!this.fitDataAndAxes()) break;
+        // Still changing at the last round: the bars are placed in the plot as it now is, and their prices fitted there.
+        if (round === PICTURE_FIT_ROUNDS) {
+          place();
+          this.applyDataToViewport();
+        }
       }
+      const plot = this.viewport.getState().chartRect;
+      if (!(plot.width > 0) || !(plot.height > 0)) return false;
       this.syncRenderContext();
       draw();
+      return true;
     } finally {
+      this.picturing = false;
       this.layoutManager.resize(own.width, own.height);
       this.priceAxisWidth = kept.priceAxisWidth;
       this.leftAxisWidth = kept.leftAxisWidth;
@@ -6984,7 +7012,8 @@ export class Chart {
       gridRenderer: this.features.grid ? this.gridRenderer : null,
       priceAxis: this.features.priceAxis ? this.priceAxis : null,
       timeAxis: this.features.timeAxis ? this.timeAxis : null,
-      crosshairHandler: this.features.crosshair ? this.crosshairHandler : null,
+      // A picture at a size of its own has nothing that follows the pointer: the pointer is at a place on the page.
+      crosshairHandler: this.features.crosshair && !this.picturing ? this.crosshairHandler : null,
       indicatorEngine: this.features.indicators ? this.indicatorEngine : null,
       drawingRenderer: this.features.drawings ? this.drawingRenderer : null,
       tradingRenderer: this.features.trading ? this.tradingRenderer : null,
@@ -7004,9 +7033,9 @@ export class Chart {
       sessionShading: this.sessionShading,
       compareRenderer: this.comparesDrawn() ? this.compareRenderer : null,
       alertManager: this.features.alerts ? this.alertManager : null,
-      measureOverlay: this.measureOverlay,
-      selectionBoxOverlay: this.selectionBoxOverlay,
-      priceAxisAddButton: this.priceAxisAddButton,
+      measureOverlay: this.picturing ? null : this.measureOverlay,
+      selectionBoxOverlay: this.picturing ? null : this.selectionBoxOverlay,
+      priceAxisAddButton: this.picturing ? null : this.priceAxisAddButton,
       signalMarkerManager: this.signalMarkerManager,
       chartMarkManager: this.features.marks ? this.chartMarkManager : null,
       tradeZoneManager: this.tradeZoneManager,

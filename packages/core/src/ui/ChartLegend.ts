@@ -266,12 +266,12 @@ export class ChartLegend {
 
   /**
    * Runs `draw` (a frame for a picture, at another size or in another font)
-   * and puts back the size the legend had on the page. What stacks under it
-   * hears nothing meanwhile: it is not told of a height the page never
-   * showed.
+   * and puts back the size the legend had on the page, and the bar it read
+   * there. What stacks under it hears nothing meanwhile: it is not told of
+   * a height the page never showed.
    */
   keepSize<T>(draw: () => T): T {
-    const { drawnHeight, drawnWidth, reportedHeight, resizeListener } = this;
+    const { drawnHeight, drawnWidth, reportedHeight, resizeListener, hoverBar, hoverPrev } = this;
     this.resizeListener = null;
     try {
       return draw();
@@ -280,6 +280,8 @@ export class ChartLegend {
       this.drawnWidth = drawnWidth;
       this.reportedHeight = reportedHeight;
       this.resizeListener = resizeListener;
+      this.hoverBar = hoverBar;
+      this.hoverPrev = hoverPrev;
     }
   }
 

@@ -99,6 +99,21 @@ describe('the charts of a grid as one picture', () => {
     expect(vast!.width * vast!.height).toBeLessThanOrEqual(MAX_IMAGE_PIXELS);
   });
 
+  it('asks each chart for the very pixels its cell has, at a screen of a pixel and a half', () => {
+    // Cells that do not fall on whole pixels: a third of 1000 each, a pixel between.
+    const charts = [fakeChart(), fakeChart(), fakeChart()];
+    const pieces: GridPiece[] = charts.map((chart, i) => ({ chart, box: { x: i * 333.67, y: 0, width: 332.67, height: 250.4 } }));
+    const picture = gridPicture(pieces, { width: 1000, height: 250.4 }, {}, '#000', 1.5);
+    const { images } = drawn.get(picture!)!;
+    for (const image of images) {
+      // Drawn as it is: a picture of another size than its place would be blurred into it.
+      expect([image.source.width, image.source.height]).toEqual([image.at[2], image.at[3]]);
+    }
+    // Neighbours neither meet nor part by more than the line between them.
+    expect(images[1].at[0] - (images[0].at[0] + images[0].at[2])).toBeGreaterThanOrEqual(1);
+    expect(images[1].at[0] - (images[0].at[0] + images[0].at[2])).toBeLessThanOrEqual(2);
+  });
+
   it('leaves out a chart with no place or no picture, and is no picture when none has one', () => {
     const shown = fakeChart();
     const hidden = fakeChart();

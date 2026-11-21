@@ -1188,7 +1188,7 @@ chart.screenshot('btc-1h', { pixelRatio: 3, type: 'webp' }); // drawn again with
 const url = chart.screenshotDataURL({ theme: 'light' });     // another theme; the chart on the page stays as it is
 const blob = await equity.screenshotBlob({ width: 1200, height: 400, type: 'jpeg', quality: 0.9 }); // a finance chart takes a size too
 const copied = await chart.copyScreenshot();                 // false where the browser has no clipboard for pictures
-const slide = chart.toCanvas({ width: 1920, height: 1080 }); // laid out again at that size, the same bars on view; the page's chart is left as it is
+const slide = chart.toCanvas({ width: 1920, height: 1080 }); // laid out again at that size, the same bars on view, no crosshair; the page's chart is left as it is
 
 chart.print({ title: 'BTCUSDT, 1h' });                       // the print dialog, for the chart alone; light and at 2x by default
 const pdf = await chart.toPdf({ pageSize: 'letter', title: 'BTCUSDT' });       // a Blob, or null with no picture to make
