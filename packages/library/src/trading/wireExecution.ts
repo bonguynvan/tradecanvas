@@ -13,6 +13,7 @@ import type {
   PositionCloseIntent,
   PositionReverseIntent,
   FillEvent,
+  MarginCall,
 } from '@tradecanvas/commons';
 import { inferOrderType } from '@tradecanvas/core';
 
@@ -58,6 +59,8 @@ export interface ExecutionHost {
   onBracketOrder?(order: TradingOrder, bracket: BracketPlacePayload): void;
   /** The account's money, from an adapter that keeps one: as it is on wiring, then as it changes. */
   setAccount?(account: AccountSummary): void;
+  /** The account was warned of its margin (the adapter's `marginCall`). */
+  onMarginCall?(call: MarginCall): void;
 }
 
 /** What a command can read: the latest positions, and the reverses under way. */
@@ -176,8 +179,13 @@ export function wireExecution(adapter: ExecutionAdapter, host: ExecutionHost, op
   adapter.on<AccountSummary>('account', onAccount);
   const account = adapter.getAccount?.();
   if (account) host.setAccount?.(account);
+  const onMarginCall = (e: ExecutionEvent<MarginCall>) => {
+    if (e.data) host.onMarginCall?.(e.data);
+  };
+  adapter.on<MarginCall>('marginCall', onMarginCall);
   teardowns.push(
     () => adapter.off('account', onAccount),
+    () => adapter.off('marginCall', onMarginCall),
   );
   teardowns.push(
     () => adapter.off('orders', onOrders),

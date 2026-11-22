@@ -153,3 +153,11 @@ describe('ChartWidget: the quantity of a bracket it starts', () => {
     expect(host.querySelector<HTMLElement>('.tcw-bracket-quantity')!.hidden).toBe(true);
   });
 });
+
+describe('ChartWidget: what it says of a margin call', () => {
+  it('says how the equity stands to the margin held, as a warning that shows with the toasts off', () => {
+    widget = new ChartWidget(host, { symbol: 'AAA', trading: true, features: { toasts: false } });
+    FakeChart.last.emit('marginCall', { marginLevel: 0.9, level: 1, equity: 450, marginUsed: 500 });
+    expect(toasts()).toEqual(['Margin call: the equity is 90.0% of the margin held']);
+  });
+});

@@ -182,7 +182,15 @@ chart.modifyPositionIntent({ positionId: 'pos-1', takeProfits: null })          
   broker's. In the widget's order ticket, a take-profit can be reached in one, two or three
   <strong>Targets</strong>: with more than one, an even part of the quantity comes off at each target on the
   way, evenly spaced from the entry, and the take-profit closes what is left. The ticket lists what comes off
-  where before it is placed. A level is not dragged on the chart yet: it is changed through the intent.
+  where before it is placed.
+</p>
+<p>
+  A position's level is dragged on the chart as its stop-loss and take-profit are, by its line or by its tag:
+  the line follows the pointer, with where it was left faint behind it, and letting go raises
+  <code>positionModify</code> with all the position's <code>takeProfits</code>, that one moved, the nearest
+  first. A level is a profit, so one let go at the entry or past it the losing way goes back where it was, and
+  nothing is raised. The levels of an order that still waits are a plan the order brings and are not handles;
+  nor is any while the lines are locked.
 </p>
 
 <h3 id="account">An account with money</h3>
@@ -195,24 +203,39 @@ chart.modifyPositionIntent({ positionId: 'pos-1', takeProfits: null })          
   of one in price is worth for one unit, for a futures contract: give it the market's
   <code>contractMultiplier</code>, which the widget's panel counts the positions' profit by. The account is told
   before the fill that changed it, so <code>chart.getAccount()</code> in an <code>executionFill</code> listener
-  reads it as the fill left it. It does not call margin or close positions when the equity runs out: a balance
-  can go below zero. Without a <code>balance</code> there is no account, and any order is taken, as before.
+  reads it as the fill left it. Without a <code>balance</code> there is no account, and any order is taken, as
+  before.
+</p>
+<p>
+  While positions hold margin the account says how its equity stands to it: <code>marginLevel</code>, the
+  equity as a part of the margin used (<code>1.5</code> is 150%). Two levels act on it, each left out unless
+  given. Under <code>marginCallLevel</code> the account warns once, the <code>marginCall</code> event, and
+  again only after the equity has been back over the level; it closes nothing. Under
+  <code>stopOutLevel</code> it closes positions at the price there is, the one losing most first, until it is
+  back over the level or holds none: closing one frees its margin, which may be enough. Each is a fill with
+  <code>reason: 'liquidation'</code>. Both are counted as each price comes, after the orders and the stops it
+  reached, so a stop-loss closes its position first. With neither, nothing is closed and a balance can go
+  below zero.
 </p>
 <pre><code>{`const broker = new PaperExecutionAdapter({
   balance: 10_000,
   leverage: 10,                                 // a position holds a tenth of its value
   commission: { rate: 0.0004, min: 0.1 },       // 0.04% of each fill's value, no less than 0.1; perUnit: an amount a unit
   positions: 'net',
+  marginCallLevel: 1,                           // warn when the equity falls under the margin held
+  stopOutLevel: 0.5,                            // close positions when it falls under half of it
 })
 chart.connectExecution(broker)
 
-chart.getAccount()   // { balance, equity, unrealisedPnl, realisedPnl, marginUsed, freeMargin, commission } or null
+chart.getAccount()   // { balance, equity, unrealisedPnl, realisedPnl, marginUsed, freeMargin, commission, marginLevel? } or null
 chart.on('accountChange', (e) => console.log(e.payload.account?.equity))
-chart.on('executionFill', (e) => console.log(e.payload.commission))`}</code></pre>
+chart.on('executionFill', (e) => console.log(e.payload.commission, e.payload.reason))   // 'liquidation' for a stop-out
+chart.on('marginCall', (e) => warn(e.payload))   // { marginLevel: 0.9, level: 1, equity, marginUsed }`}</code></pre>
 <p>
-  The widget's account panel heads its totals with the balance, the equity and the free margin. An adapter of
-  your own does the same by implementing <code>getAccount()</code> and emitting <code>account</code> with an
-  <code>AccountSummary</code> as its money changes.
+  The widget's account panel heads its totals with the balance, the equity and the free margin, and the margin
+  level while there is one; it shows a margin call as a warning, and names a stop-out's fill in its history. An
+  adapter of your own does the same by implementing <code>getAccount()</code> and emitting <code>account</code>
+  with an <code>AccountSummary</code> as its money changes, and <code>marginCall</code> when its broker warns.
 </p>
 
 <h2>Act on orders and positions from the chart</h2>

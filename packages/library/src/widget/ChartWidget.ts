@@ -49,7 +49,7 @@ import { WidgetContextMenu } from './WidgetContextMenu.js';
 import { TEXT_LAYOUTS, TEXT_PLACES } from './drawingText.js';
 import { WidgetInlineText } from './WidgetInlineText.js';
 import { chartMenuEntries, priceEntries } from './chartMenu.js';
-import { WidgetAccountPanel } from './WidgetAccountPanel.js';
+import { MARGIN_LEVEL_DECIMALS, WidgetAccountPanel } from './WidgetAccountPanel.js';
 import { WidgetOrderTicket } from './WidgetOrderTicket.js';
 import { WidgetNamePrompt } from './WidgetNamePrompt.js';
 import { WidgetIntervalInput } from './WidgetIntervalInput.js';
@@ -1399,6 +1399,10 @@ export class ChartWidget {
         const cause = e.payload.cause;
         const reason = cause instanceof Error ? cause.message : typeof cause === 'string' ? cause : e.payload.message;
         this.say(fill(this.t('bracket.refused'), { reason }), 'error');
+      });
+      // A warning the account gives once: it shows with the toasts off, as an error does.
+      this.chart.on('marginCall', (e) => {
+        this.say(fill(this.t('toast.marginCall'), { level: `${this.formatNumber(e.payload.marginLevel * 100, MARGIN_LEVEL_DECIMALS)}%` }), 'error');
       });
 
       // Depth-of-market ladder (opt-in; fed via widget.setDepth)

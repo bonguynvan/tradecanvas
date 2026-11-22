@@ -24,6 +24,16 @@ chart.addMark({ time: 0, title: 'x', kind: 'rumour' });
 
 // Trading, menus and tool events carry typed payloads too.
 chart.on('executionFill', (e) => e.payload.price);
+// A stop-out's fill says so, and a margin call carries how the equity stands to the margin held.
+chart.on('executionFill', (e) => e.payload.reason === 'liquidation');
+chart.on('marginCall', (e) => e.payload.marginLevel < e.payload.level && e.payload.equity < e.payload.marginUsed);
+chart.on('accountChange', (e) => (e.payload.account?.marginLevel ?? 0) * 100);
+chart.on('marginCall', (e) => {
+  // @ts-expect-error A margin call closes nothing: it names no position.
+  return e.payload.positionId;
+});
+// A dragged take-profit level comes as all the position's levels.
+chart.on('positionModify', (e) => e.payload.takeProfits?.map((level) => level.price + level.quantity));
 chart.on('ordersChange', (e) => e.payload.orders.map((o) => o.id));
 chart.on('positionsChange', (e) => e.payload.positions.map((p) => p.id));
 chart.on('positionReverse', (e) => e.payload.positionId.length);

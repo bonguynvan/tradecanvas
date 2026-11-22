@@ -70,6 +70,18 @@ function stopPrice(pos: TradingPosition, which: Stop, dragState: DragState | nul
   return dragState?.orderId === pos.id && dragState.sourceType === which ? dragState.currentPrice : pos[which];
 }
 
+/** The index of the take-profit level of `pos` being dragged, or -1. */
+function draggedLevel(pos: TradingPosition, dragState: DragState | null): number {
+  return dragState?.orderId === pos.id && dragState.sourceType === 'level' && dragState.level !== undefined ? dragState.level : -1;
+}
+
+/** A position's take-profit levels where they are: the one being dragged at where it is dragged to. */
+function levelsShown(pos: TradingPosition, dragState: DragState | null): readonly TakeProfitLevel[] | undefined {
+  const dragged = draggedLevel(pos, dragState);
+  if (dragged < 0 || !dragState) return pos.takeProfits;
+  return pos.takeProfits?.map((level, i) => (i === dragged ? { ...level, price: dragState.currentPrice } : level));
+}
+
 export class PositionRenderer {
   /** The lines and their tags, the tags laid out among themselves. */
   render(
@@ -113,11 +125,18 @@ export class PositionRenderer {
           ctx.globalAlpha = 1;
         }
       }
-      // Its take-profit levels: a line each, as the target's.
-      for (const level of pos.takeProfits ?? []) {
+      // Its take-profit levels: a line each, as the target's; one being dragged where it is dragged to, and faint where it was.
+      const dragged = draggedLevel(pos, dragState);
+      (levelsShown(pos, dragState) ?? []).forEach((level, i) => {
         const y = priceToY(level.price, viewport);
         if (inPlot(y, viewport)) levelLine(ctx, viewport, y, colors.profit, STOP_DASH);
-      }
+        const from = pos.takeProfits?.[i]?.price;
+        if (i === dragged && from !== undefined && from !== level.price) {
+          ctx.globalAlpha = GHOST_ALPHA;
+          levelLine(ctx, viewport, priceToY(from, viewport), colors.profit, GHOST_DASH);
+          ctx.globalAlpha = 1;
+        }
+      });
     }
   }
 
@@ -167,7 +186,7 @@ export class PositionRenderer {
         const stop = this.stopTag(pos, which, viewport, config, dragState, currentPrice);
         if (stop) tags.push(stop);
       }
-      tags.push(...levelTags(pos.takeProfits, pos.side, pos.entryPrice, openQuantity(pos), viewport, config));
+      tags.push(...levelTags(levelsShown(pos, dragState), pos.side, pos.entryPrice, openQuantity(pos), viewport, config, pos.id));
     }
     return tags;
   }
@@ -273,7 +292,7 @@ export class PositionRenderer {
       const prices = [
         [stopPrice(pos, 'stopLoss', dragState), colors.loss],
         [stopPrice(pos, 'takeProfit', dragState), colors.profit],
-        ...(pos.takeProfits ?? []).map((level) => [level.price, colors.profit] as const),
+        ...(levelsShown(pos, dragState) ?? []).map((level) => [level.price, colors.profit] as const),
         [pos.entryPrice, colors.entry],
       ] as const;
       for (const [price, color] of prices) {
@@ -290,8 +309,9 @@ export class PositionRenderer {
  * A tag for each take-profit level on the plot: which it is (TP1 is the
  * nearest still waiting), the part it takes off, and what that part would
  * make from `entry`. A level takes no more than is left of `open` after the
- * levels before it, and one with nothing left to take has no tag. They are
- * no handles: a level is moved through the account.
+ * levels before it, and one with nothing left to take has no tag. With the
+ * position's id each is a handle for its line; an order's, which are a plan
+ * the order brings, are none.
  */
 export function levelTags(
   levels: readonly TakeProfitLevel[] | undefined,
@@ -300,6 +320,7 @@ export function levelTags(
   open: number,
   viewport: ViewportState,
   config: TradingConfig,
+  positionId?: string,
 ): TradingTag[] {
   const colors = colorsOf(config);
   const tags: TradingTag[] = [];
@@ -320,6 +341,7 @@ export function levelTags(
         { kind: 'text', text: String(Number(part.toFixed(8))) },
         { kind: 'text', text: formatAmount(amount, amountDecimals(amount, entry, config.pricePrecision), viewport.numberLocale), color: amount >= 0 ? colors.profit : colors.loss },
       ],
+      ...(positionId === undefined ? {} : { grab: { kind: 'level' as const, positionId, index: i } }),
     });
   });
   return tags;

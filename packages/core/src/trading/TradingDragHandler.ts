@@ -4,8 +4,10 @@ import type { DragState } from './OrderRenderer.js';
 import { inPlot } from './plot.js';
 
 export interface DragResult {
-  sourceType: 'order' | 'stopLoss' | 'takeProfit';
+  sourceType: 'order' | 'stopLoss' | 'takeProfit' | 'level';
   id: string;
+  /** Which of the position's take-profit levels, for a `'level'`. */
+  level?: number;
   newPrice: number;
   previousPrice: number;
 }
@@ -20,7 +22,7 @@ export class TradingDragHandler {
 
   constructor(private dragThreshold = 3) {}
 
-  /** A press at `pos`: the first order line within `tolerance`, else the first stop or target. */
+  /** A press at `pos`: the first order line within `tolerance`, else the first stop or target, else the first take-profit level. */
   onPointerDown(
     pos: Point,
     orders: TradingOrder[],
@@ -40,6 +42,10 @@ export class TradingDragHandler {
         if (price !== undefined && near(price)) return this.beginStop(position, which, pos.y);
       }
     }
+    for (const position of positions) {
+      const index = (position.takeProfits ?? []).findIndex((level) => near(level.price));
+      if (index >= 0) return this.beginLevel(position, index, pos.y);
+    }
     return false;
   }
 
@@ -54,6 +60,13 @@ export class TradingDragHandler {
     const price = position[which];
     if (price === undefined) return false;
     return this.start({ orderId: position.id, sourceType: which, startPrice: price, currentPrice: price }, y);
+  }
+
+  /** Drag `position`'s take-profit level at `index`, pressed at `y`. */
+  beginLevel(position: TradingPosition, index: number, y: number): boolean {
+    const level = position.takeProfits?.[index];
+    if (!level) return false;
+    return this.start({ orderId: position.id, sourceType: 'level', level: index, startPrice: level.price, currentPrice: level.price }, y);
   }
 
   /**
@@ -96,6 +109,7 @@ export class TradingDragHandler {
     return {
       sourceType: state.sourceType,
       id: state.orderId,
+      ...(state.level === undefined ? {} : { level: state.level }),
       newPrice: state.currentPrice,
       previousPrice: state.startPrice,
     };

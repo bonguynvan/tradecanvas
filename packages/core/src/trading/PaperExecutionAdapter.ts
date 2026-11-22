@@ -6,6 +6,7 @@ import type {
   ExecutionListener,
   FillEvent,
   FillReason,
+  MarginCall,
   ConnectionState,
   TradingOrder,
   TradingPosition,
@@ -44,6 +45,23 @@ export interface PaperExecutionOptions {
   multiplier?: number;
   /** What each fill costs, opening or closing. */
   commission?: PaperCommission;
+  /**
+   * Where the account is warned, as the equity's part of the margin its
+   * positions hold (the margin level): `1` warns when the equity falls under
+   * the margin. It says so once (the `marginCall` event), and again only
+   * after the equity has been back over it. Nothing is closed. Needs
+   * `balance`; without a level there is no warning.
+   */
+  marginCallLevel?: number;
+  /**
+   * Where the account is stopped out, as the equity's part of the margin
+   * held: `0.5` closes positions when the equity falls under half the
+   * margin. They are closed at the price there is, the one losing most
+   * first, until the account is back over the level or holds none (fills
+   * with `reason: 'liquidation'`). Needs `balance`; without a level nothing
+   * is closed, and the equity may go under zero.
+   */
+  stopOutLevel?: number;
 }
 
 /** What a fill costs on the paper account: a part of its value and an amount a unit, and no less than `min`. */
@@ -82,7 +100,9 @@ function trailed(position: TradingPosition, price: number): TradingPosition {
  * the first to fill cancels the rest; an order ends at its date (`'gtd'`) or
  * is refused unless it fills at once (`'ioc'`, `'fok'`). SL/TP auto-close
  * when the mark crosses them. Every fill is reported, closes included (with
- * the profit or loss they realise), so a host can keep a trade history.
+ * the profit or loss they realise), so a host can keep a trade history. An
+ * account with money can be warned as its equity falls against its margin
+ * (`marginCallLevel`) and stopped out (`stopOutLevel`).
  *
  * The safe sandbox for demos and tests, and the shape real broker adapters
  * mirror. No network, no real money.
@@ -108,6 +128,10 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
   private readonly commission: PaperCommission;
   /** The account as last told, to tell it again only when it changed. */
   private accountTold = '';
+  private readonly marginCallLevel: number | null;
+  private readonly stopOutLevel: number | null;
+  /** The warning is out: no other until the equity has been back over the level. */
+  private called = false;
 
   constructor(options: PaperExecutionOptions = {}) {
     this.markPrice = options.markPrice ?? 0;
@@ -116,6 +140,8 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
     this.leverage = positive(options.leverage) ? options.leverage : 1;
     this.multiplier = positive(options.multiplier) ? options.multiplier : 1;
     this.commission = options.commission ?? {};
+    this.marginCallLevel = positive(options.marginCallLevel) ? options.marginCallLevel : null;
+    this.stopOutLevel = positive(options.stopOutLevel) ? options.stopOutLevel : null;
   }
 
   /** The account's money now, or null when it keeps none (no `balance` was given). */
@@ -129,7 +155,10 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
       marginUsed += this.marginOf(open, p.entryPrice);
     }
     const equity = this.balance + unrealisedPnl;
-    return { balance: this.balance, equity, unrealisedPnl, realisedPnl: this.realised, marginUsed, freeMargin: equity - marginUsed, commission: this.commissionPaid };
+    const account: AccountSummary = { balance: this.balance, equity, unrealisedPnl, realisedPnl: this.realised, marginUsed, freeMargin: equity - marginUsed, commission: this.commissionPaid };
+    // No level with no margin held: there is nothing the equity is a part of.
+    if (marginUsed > 0) account.marginLevel = equity / marginUsed;
+    return account;
   }
 
   /** What a position of `quantity` at `price` holds of the account. */
@@ -148,6 +177,8 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
   private tellAccount(): void {
     const account = this.getAccount();
     if (!account) return;
+    // Back over the level, or holding nothing: the next fall under it is warned of again.
+    if (!this.under(account, this.marginCallLevel)) this.called = false;
     const told = JSON.stringify(account);
     if (told === this.accountTold) return;
     this.accountTold = told;
@@ -223,7 +254,48 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
     this.expireOrders();
     this.checkPendingOrders();
     this.checkStops();
+    // What the orders and the stops left is what the margin is counted on.
+    this.warnOfMargin();
+    this.stopOut();
     this.tellAccount();
+  }
+
+  /** Whether the account's equity is under `level` of the margin it holds. */
+  private under(account: AccountSummary | null, level: number | null): boolean {
+    return account !== null && level !== null && account.marginLevel !== undefined && account.marginLevel < level;
+  }
+
+  /** The margin call: said once as the equity falls under its level. */
+  private warnOfMargin(): void {
+    const account = this.getAccount();
+    if (!account || this.marginCallLevel === null || !this.under(account, this.marginCallLevel)) return;
+    if (this.called) return;
+    this.called = true;
+    const call: MarginCall = { marginLevel: account.marginLevel!, level: this.marginCallLevel, equity: account.equity, marginUsed: account.marginUsed };
+    this.emit('marginCall', call);
+  }
+
+  /**
+   * The stop-out: while the equity is under its level, the position losing
+   * most at the price is closed there. Closing one frees its margin, which
+   * may be enough; with the equity under zero nothing is, and all go.
+   */
+  private stopOut(): void {
+    if (this.stopOutLevel === null || !(this.markPrice > 0)) return;
+    let closed = false;
+    while (this.under(this.getAccount(), this.stopOutLevel)) {
+      const worst = this.losingMost();
+      if (!worst) break;
+      this.close(worst, this.markPrice, 'liquidation');
+      closed = true;
+    }
+    if (closed) this.emit('positions', this.positions);
+  }
+
+  /** The position with the lowest open profit at the price, or undefined with none. */
+  private losingMost(): TradingPosition | undefined {
+    const pnl = (p: TradingPosition) => (this.markPrice - p.entryPrice) * (p.quantity - (p.closedQuantity ?? 0)) * (p.side === 'buy' ? 1 : -1);
+    return this.positions.reduce<TradingPosition | undefined>((worst, p) => (worst === undefined || pnl(p) < pnl(worst) ? p : worst), undefined);
   }
 
   /** When fills happen: the mark's time when one was given, else now. */

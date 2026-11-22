@@ -9,7 +9,10 @@ import { drawAxisBadge, drawTags, type AxisBadge, type TagCell, type TradingTag 
 
 export interface DragState {
   orderId: string;
-  sourceType: 'order' | 'stopLoss' | 'takeProfit';
+  /** What is dragged: an order's line, a position's stop or target, or one of its take-profit levels (`level`). */
+  sourceType: 'order' | 'stopLoss' | 'takeProfit' | 'level';
+  /** Which of the position's take-profit levels, for a `'level'`. */
+  level?: number;
   startPrice: number;
   currentPrice: number;
   /** A stop or a target the position had not got, being added. */

@@ -3717,6 +3717,7 @@ export class Chart {
         this.account = { ...account };
         this.eventBus.emit('accountChange', { account: { ...account } });
       },
+      onMarginCall: (call) => this.eventBus.emit('marginCall', { ...call }),
     }, { brackets: this.executionBrackets });
     this.eventBus.emit('executionChange', { connected: true });
     Promise.resolve(adapter.connect(config)).catch((cause) =>
