@@ -13,7 +13,7 @@
 <p>Cài TradeCanvas và render một biểu đồ trong chưa đến một phút.</p>
 <p>
   TradeCanvas theo giấy phép MIT và không vẽ logo nào lên biểu đồ. Thư viện có
-  sẵn 24 loại biểu đồ, 134 chỉ báo và 76 công cụ vẽ.
+  sẵn 25 loại biểu đồ, 134 chỉ báo và 76 công cụ vẽ.
 </p>
 
 <h2>Cài đặt</h2>
@@ -105,7 +105,7 @@ args = ["-y", "@tradecanvas/mcp"]`}</code></pre>
 <h2>Bước tiếp theo</h2>
 <ul>
   <li><a href={href('/docs/api')}>Tham chiếu API</a> — toàn bộ API của <code>Chart</code> và <code>ChartWidget</code></li>
-  <li><a href={href('/docs/chart-types')}>Loại biểu đồ</a> — 24 loại biểu đồ có sẵn</li>
+  <li><a href={href('/docs/chart-types')}>Loại biểu đồ</a> — 25 loại biểu đồ có sẵn</li>
   <li><a href={href('/docs/indicators')}>Chỉ báo</a> — danh mục 134 chỉ báo</li>
   <li><a href={href('/docs/realtime')}>Thời gian thực &amp; replay</a> — adapter stream và chế độ replay</li>
   <li><a href={href('/docs/analytics')}>Phân tích</a> — backtest chiến lược và chỉ số rủi ro</li>

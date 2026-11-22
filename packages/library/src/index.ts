@@ -17,6 +17,10 @@ export type { ParseResult, DragDropImporterCallbacks } from './io/index.js';
 export type {
   OHLCBar,
   DataSeries,
+  FootprintBar,
+  FootprintLevel,
+  FootprintOptions,
+  FootprintCells,
   TimeFrame,
   ChartOptions,
   BarLayout,
@@ -174,6 +178,10 @@ export {
 // Re-export data utilities
 export { normalizeBarTime, normalizeBar, barsAreDaily, barTimeUnit, MS_TIME_THRESHOLD, barDelta, buyVolumeOf } from '@tradecanvas/commons';
 export type { BarTimeUnit } from '@tradecanvas/commons';
+
+// The footprint chart's data: rows from trades, a bar's sums, and where one side outdid the other
+export { autoFootprintRow, footprintImbalances, footprintOf, footprintStats } from '@tradecanvas/core';
+export type { FootprintImbalance, FootprintStats } from '@tradecanvas/core';
 
 // Timeframes of any length, resampling, and display time zones
 export {

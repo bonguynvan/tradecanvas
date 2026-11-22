@@ -1,10 +1,16 @@
+<script lang="ts">
+  import { useI18n } from '$lib/i18n/context.svelte';
+
+  const { href } = useI18n();
+</script>
+
 <svelte:head>
   <title>图表类型 — TradeCanvas 文档</title>
-  <meta name="description" content="24 种内置图表类型：蜡烛图、OHLC 和 HLC 柱线、柱形图、样条曲线、阶梯面积图、高低图、平均K线（Heikin-Ashi）及其平滑版、砖形图（Renko）、卡吉图（Kagi）、点数图（Point & Figure）、等量图（Equivolume）等。" />
+  <meta name="description" content="25 种内置图表类型：蜡烛图、OHLC 和 HLC 柱线、柱形图、样条曲线、阶梯面积图、高低图、平均K线（Heikin-Ashi）及其平滑版、砖形图（Renko）、卡吉图（Kagi）、点数图（Point & Figure）、等量图（Equivolume）等。" />
 </svelte:head>
 
 <h1>图表类型</h1>
-<p>24 种内置图表类型。运行时可通过 <code>chart.setChartType(type)</code> 切换。</p>
+<p>25 种内置图表类型。运行时可通过 <code>chart.setChartType(type)</code> 切换。</p>
 
 <h2>标准类型</h2>
 <table>
@@ -49,6 +55,16 @@
     <tr><td><code>volumeCandles</code></td><td>蜡烛宽度与成交量成正比。</td></tr>
     <tr><td><code>equivolume</code></td><td>
       覆盖完整价格区间的方框，宽度与成交量占比成正比；颜色取决于收盘价相对前一收盘价的涨跌（Richard Arms 风格）。
+    </td></tr>
+  </tbody>
+</table>
+
+<h2>订单流</h2>
+<table>
+  <thead><tr><th>类型</th><th>说明</th></tr></thead>
+  <tbody>
+    <tr><td><code>footprint</code></td><td>
+      在每根K线旁画出其内部每个价位的成交：卖方在买价主动成交的量和买方在卖价主动成交的量，来自数据源的成交或你自己的数据。参见<a href={href('/docs/realtime#footprint')}>足迹图</a>。
     </td></tr>
   </tbody>
 </table>

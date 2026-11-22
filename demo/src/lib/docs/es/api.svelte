@@ -27,6 +27,8 @@
     <tr><td><code>appendBars(bars)</code></td><td>Añade en lote; recalcula los indicadores una sola vez.</td></tr>
     <tr><td><code>updateLastBar(bar)</code></td><td>Modifica la barra en formación.</td></tr>
     <tr><td><code>updateLastBarFromTick(tick)</code></td><td>Fusiona un tick en la última barra.</td></tr>
+    <tr><td><code>addTrades(trades)</code></td><td>Operaciones para el <a href={href('/docs/realtime#footprint')}>footprint</a>: cada una en la barra de su tiempo y en la fila de su precio, en el lado que la tomó.</td></tr>
+    <tr><td><code>setFootprint(bars)</code> / <code>getFootprint(time?)</code> / <code>clearFootprint()</code></td><td>Las filas del footprint, barra por barra: dadas a mano, leídas de vuelta (las de una barra, o las de todas), olvidadas.</td></tr>
     <tr><td><code>updateBar(bar)</code></td><td>Corrige una barra cargada: la que tiene el mismo tiempo, en cualquier lugar de la serie. La vista se mantiene; false si ninguna barra cargada tiene ese tiempo.</td></tr>
     <tr><td><code>getData()</code></td><td>Lee la serie OHLC sin procesar.</td></tr>
   </tbody>
@@ -48,7 +50,7 @@
 <table>
   <thead><tr><th>Método</th><th>Función</th></tr></thead>
   <tbody>
-    <tr><td><code>setChartType(type)</code></td><td>Uno de los 24 tipos; consulta <a href={href('/docs/chart-types')}>Tipos de gráfico</a>.</td></tr>
+    <tr><td><code>setChartType(type)</code></td><td>Uno de los 25 tipos; consulta <a href={href('/docs/chart-types')}>Tipos de gráfico</a>.</td></tr>
     <tr><td><code>getChartType()</code></td><td>El tipo con que se dibuja el gráfico (<code>'candlestick'</code> por defecto).</td></tr>
     <tr><td><code>setTheme(name | theme)</code></td><td>Cambia entre los temas integrados, o fija el tuyo. <code>getTheme()</code> lo devuelve tal como se fijó.</td></tr>
     <tr><td><code>applyOverrides(patch, {'{ layer }'})</code></td><td>Da estilo a cualquier parte del gráfico por clave (<code>'grid.vertical.visible'</code>, <code>'series.candlestick.upColor'</code>…); <code>null</code> quita una clave. Ver <a href={href('/docs/styling#overrides')}>Estilos</a>.</td></tr>

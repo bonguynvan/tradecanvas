@@ -251,3 +251,16 @@ describe('the price chart drawn on a context of the caller’s', () => {
     expect(barRects(whole.paints) - barRects(paints)).toBe(RECTS_A_BAR);
   });
 });
+
+describe('renderPriceChart: a footprint’s rows', () => {
+  const size = { width: 800, height: 400 };
+  const data = someBars(40);
+
+  it('says what is wrong with rows that are none', () => {
+    const draw = (footprint: unknown) => renderPriceChart(painted(800, 400).ctx, { data, path2D, chartType: 'footprint', footprint: footprint as never }, size);
+    expect(() => draw('rows')).toThrow(/options\.footprint is an array/);
+    expect(() => draw([{ levels: [] }])).toThrow(/options\.footprint\[0\] needs a time/);
+    expect(() => draw([{ time: data[0].time }])).toThrow(/options\.footprint\[0\] needs levels/);
+    expect(() => draw([{ time: data[0].time, levels: [] }])).not.toThrow();
+  });
+});

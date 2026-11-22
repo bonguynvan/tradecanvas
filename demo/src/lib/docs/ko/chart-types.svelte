@@ -1,10 +1,16 @@
+<script lang="ts">
+  import { useI18n } from '$lib/i18n/context.svelte';
+
+  const { href } = useI18n();
+</script>
+
 <svelte:head>
   <title>차트 유형 — TradeCanvas 문서</title>
-  <meta name="description" content="내장 차트 유형 24종: 캔들스틱, OHLC 바와 HLC 바, 컬럼, 곡선, 계단 영역, 고가-저가, 하이킨아시와 평활 하이킨아시, 렌코, 카기, 포인트 앤 피겨, 이퀴볼륨 등." />
+  <meta name="description" content="내장 차트 유형 25종: 캔들스틱, OHLC 바와 HLC 바, 컬럼, 곡선, 계단 영역, 고가-저가, 하이킨아시와 평활 하이킨아시, 렌코, 카기, 포인트 앤 피겨, 이퀴볼륨 등." />
 </svelte:head>
 
 <h1>차트 유형</h1>
-<p>내장 차트 유형 24종을 제공합니다. 런타임에 <code>chart.setChartType(type)</code>으로 전환합니다.</p>
+<p>내장 차트 유형 25종을 제공합니다. 런타임에 <code>chart.setChartType(type)</code>으로 전환합니다.</p>
 
 <h2>기본</h2>
 <table>
@@ -49,6 +55,16 @@
     <tr><td><code>volumeCandles</code></td><td>캔들 너비가 거래량에 비례합니다.</td></tr>
     <tr><td><code>equivolume</code></td><td>
       거래량 비중에 비례하는 너비의 전체 범위 박스. 색상은 종가와 이전 종가의 비교로 정해집니다(Richard Arms 방식).
+    </td></tr>
+  </tbody>
+</table>
+
+<h2>오더 플로</h2>
+<table>
+  <thead><tr><th>유형</th><th>설명</th></tr></thead>
+  <tbody>
+    <tr><td><code>footprint</code></td><td>
+      각 봉 옆에, 그 봉 안의 모든 가격에서 체결된 것을 그립니다: 매도 측이 매수 호가에서 가져간 물량과 매수 측이 매도 호가에서 가져간 물량으로, 피드의 체결이나 직접 가진 체결에서 만듭니다. <a href={href('/docs/realtime#footprint')}>풋프린트 차트</a>를 참고하세요.
     </td></tr>
   </tbody>
 </table>

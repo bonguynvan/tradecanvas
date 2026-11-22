@@ -151,6 +151,7 @@ export const HE_MESSAGES: WidgetMessages = {
   'chartType.kagi': 'Kagi',
   'chartType.pointAndFigure': 'Point & Figure',
   'chartType.rangeBars': 'נרות טווח',
+  'chartType.footprint': 'פוטפרינט',
 
   // Watchlist
   'watchlist.title': 'רשימת מעקב',
@@ -339,6 +340,11 @@ export const HE_MESSAGES: WidgetMessages = {
   'settings.reversalType.price': 'מחיר',
   'settings.reversalBoxes': 'תיבות היפוך',
   'settings.barRange': 'טווח',
+  'settings.footprintRowSize': 'גודל שורה',
+  'settings.footprintCells': 'תאים',
+  'settings.footprintCells.bidAsk': 'Bid × Ask',
+  'settings.footprintCells.delta': 'דלתא',
+  'settings.footprintImbalance': 'יחס חוסר איזון',
   'settings.auto': 'אוטומטי',
   'settings.numberAtLeast': '{min} או יותר',
   'settings.numberWhole': 'מספר שלם מ־{min} עד {max}',

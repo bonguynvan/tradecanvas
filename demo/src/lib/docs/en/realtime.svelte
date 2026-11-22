@@ -253,6 +253,63 @@ barDelta({ volume: 1200, buyVolume: 700 })   // 200: 700 bought, 500 sold`}</cod
   bridges have no field for it.
 </p>
 
+<h2 id="footprint">The footprint chart</h2>
+<p>
+  <code>chartType: 'footprint'</code> draws, by each bar, what traded at every price inside it: what
+  the sellers took at the bid on the left, what the buyers took at the ask on the right. A row where
+  one side outdid the other is in bold on a stronger tint, the row most traded at has a line round
+  it, and a slim candle stands at the left of each bar. In the widget it is Footprint in the chart
+  type menu, with its settings in Chart Settings.
+</p>
+<pre><code>{`const chart = new Chart(el, { chartType: 'footprint' })
+await chart.connect({ adapter: new BinanceAdapter(), symbol: 'BTCUSDT', timeframe: '1m' })`}</code></pre>
+<p>
+  That is all a feed with trades needs (<code>fetchTrades</code> and <code>subscribeTrades</code>, as
+  <code>BinanceAdapter</code> and <code>MockAdapter</code> have): while the chart shows a footprint it
+  asks the feed for its recent trades, a thousand of them, and follows its live ones, and it stops
+  when the chart type changes. A feed keeps few trades, so at first only the newest bars have a
+  footprint: the bar the recent trades began part way through is left out, the bars before it are
+  slim candles, and the footprint grows with the live trades from there. Another symbol or timeframe
+  starts it again.
+</p>
+<p>
+  A host with trades of its own gives them with <code>chart.addTrades(trades)</code>, on any chart
+  type: each is counted in the bar of its time and the row of its price, on the side that took it. A
+  trade with no <code>side</code> is told by the trade before it (bought when the price went up to
+  it, sold when it went down): an estimate, as the delta of a bar with no <code>buyVolume</code> is.
+  A host that keeps the rows gives those, bar by bar, and <code>footprintOf</code> makes them from
+  trades in one call.
+</p>
+<pre><code>{`import { footprintOf, footprintStats } from '@tradecanvas/chart'
+
+chart.setChartTypeOptions({ footprint: { rowSize: 0.5, collect: false } })   // the rows are the host's
+chart.setFootprint([
+  { time: bar.time, levels: [{ price: 100, buy: 12, sell: 30 }, { price: 100.5, buy: 41, sell: 9 }] },
+])
+chart.setFootprint(footprintOf(trades, '1m', 0.5))    // or made from trades
+
+const rows = chart.getFootprint(bar.time)             // { time, levels }, or null for a bar with none
+if (rows) footprintStats(rows.levels)                 // { buy, sell, volume, delta, poc, … }
+chart.clearFootprint()                                // before another series' rows`}</code></pre>
+<table>
+  <thead><tr><th>Setting</th><th>Default</th><th>What it does</th></tr></thead>
+  <tbody>
+    <tr><td><code>rowSize</code></td><td><code>'auto'</code></td><td>The height of a row in price. Auto is about a ten-thousandth of the last price, rounded to 1, 2 or 5 (5 at 60,000), in whole steps of the symbol's price step; with rows given by hand, the smallest step between their prices. Another size starts the footprint again.</td></tr>
+    <tr><td><code>cells</code></td><td><code>'bidAsk'</code></td><td><code>'bidAsk'</code>: the two sides apart. <code>'delta'</code>: bought less sold. <code>'volume'</code>: both together.</td></tr>
+    <tr><td><code>imbalance</code></td><td><code>3</code></td><td>How many times one side has to outdo the other, a row apart, to be marked: what was bought at a price against what was sold one row below, and what was sold against what was bought one row above. 0 marks none.</td></tr>
+    <tr><td><code>collect</code></td><td><code>true</code></td><td>false: the chart asks its feed for no trades.</td></tr>
+  </tbody>
+</table>
+<p>
+  The zoom decides what a bar carries. Choosing the footprint zooms in to where the numbers read,
+  and its bars may get much wider than candles do; zoomed out, the numbers give way to a bar for
+  each side, then to plain candles. Rows too thin to read are drawn 2, 5, 10… to one, on round
+  prices. The footprint is kept for the newest 500 bars and is not saved with the chart's state.
+  During a replay the bars not yet shown carry no cells. It is drawn in Canvas 2D, with the WebGL
+  renderer too. <code>renderPriceChart</code> draws it from <code>footprint</code>, the rows as
+  <code>chart.getFootprint()</code> gives them.
+</p>
+
 <h2>Market status and news</h2>
 <p>
   <code>marketStatus(info, now)</code> tells whether a symbol's market is open at a moment, from its

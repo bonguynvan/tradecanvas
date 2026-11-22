@@ -167,6 +167,31 @@ describe('settings of the chart’s type', () => {
     expect(changes.at(-1)).toEqual({ chartTypeOptions: { kagi: { reversalType: 'price' } } });
   });
 
+  it('offers the footprint’s row size (Auto when empty), what its cells show and the ratio that marks a row', () => {
+    settings!.open({ ...DEFAULT_SETTINGS, chartTypeOptions: { footprint: { imbalance: 4 } } }, 'footprint');
+    expect(document.querySelector('.tcw-settings-section-title')?.textContent).toBe('Footprint');
+    const row = field('Row size')!;
+    expect(row.placeholder).toBe('Auto');
+    type(row, '0.5');
+    expect(changes.at(-1)).toEqual({ chartTypeOptions: { footprint: { imbalance: 4, rowSize: 0.5 } } });
+    type(row, '');
+    expect(changes.at(-1)).toEqual({ chartTypeOptions: { footprint: { imbalance: 4, rowSize: 'auto' } } });
+    type(row, '-1');
+    expect(row.getAttribute('aria-invalid')).not.toBeNull();
+    const cells = document.querySelector<HTMLSelectElement>('.tcw-settings-section select')!;
+    expect([...cells.options].map((option) => option.textContent)).toEqual(['Bid × Ask', 'Delta', 'Volume']);
+    expect(cells.value).toBe('bidAsk');
+    cells.value = 'delta';
+    cells.dispatchEvent(new Event('change'));
+    expect(changes.at(-1)).toEqual({ chartTypeOptions: { footprint: { imbalance: 4, rowSize: 'auto', cells: 'delta' } } });
+    expect(field('Imbalance ratio')!.value).toBe('4');
+    type(field('Imbalance ratio')!, '2.5');
+    expect(changes.at(-1)).toEqual({ chartTypeOptions: { footprint: { rowSize: 'auto', cells: 'delta', imbalance: 2.5 } } });
+    // Emptied, it is the chart's own again.
+    type(field('Imbalance ratio')!, '');
+    expect(changes.at(-1)).toEqual({ chartTypeOptions: { footprint: { rowSize: 'auto', cells: 'delta' } } });
+  });
+
   it('has only colours for a chart type without settings', () => {
     settings!.open(DEFAULT_SETTINGS, 'candlestick');
     expect(field('Box size')).toBeNull();

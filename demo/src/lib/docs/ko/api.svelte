@@ -27,6 +27,8 @@
     <tr><td><code>appendBars(bars)</code></td><td>일괄 추가합니다. 지표는 한 번만 다시 계산합니다.</td></tr>
     <tr><td><code>updateLastBar(bar)</code></td><td>현재 형성 중인 봉을 변경합니다.</td></tr>
     <tr><td><code>updateLastBarFromTick(tick)</code></td><td>틱을 마지막 봉에 병합합니다.</td></tr>
+    <tr><td><code>addTrades(trades)</code></td><td>체결을 <a href={href('/docs/realtime#footprint')}>풋프린트</a>에 넣습니다: 각 체결을 그 시각의 봉과 그 가격의 행에, 가져간 쪽으로 계산합니다.</td></tr>
+    <tr><td><code>setFootprint(bars)</code> / <code>getFootprint(time?)</code> / <code>clearFootprint()</code></td><td>풋프린트의 행을 봉 단위로: 직접 넣기, 다시 읽기(한 봉의 것, 또는 모든 봉의 것), 지우기.</td></tr>
     <tr><td><code>updateBar(bar)</code></td><td>불러온 봉을 고칩니다. 시리즈 어디에 있든 시각이 같은 봉입니다. 보는 위치는 그대로이며, 그 시각의 봉이 없으면 false를 돌려줍니다.</td></tr>
     <tr><td><code>getData()</code></td><td>원본 OHLC 시리즈를 읽습니다.</td></tr>
   </tbody>
@@ -48,7 +50,7 @@
 <table>
   <thead><tr><th>메서드</th><th>용도</th></tr></thead>
   <tbody>
-    <tr><td><code>setChartType(type)</code></td><td>24가지 유형 중 하나 —<a href={href('/docs/chart-types')}>차트 유형</a>을 참고하세요.</td></tr>
+    <tr><td><code>setChartType(type)</code></td><td>25가지 유형 중 하나 —<a href={href('/docs/chart-types')}>차트 유형</a>을 참고하세요.</td></tr>
     <tr><td><code>getChartType()</code></td><td>현재 그리고 있는 차트 유형(기본값 <code>'candlestick'</code>).</td></tr>
     <tr><td><code>setTheme(name | theme)</code></td><td>내장 테마 사이에서 전환하거나 자신의 테마를 설정합니다. <code>getTheme()</code> 은 설정한 그대로 돌려줍니다.</td></tr>
     <tr><td><code>applyOverrides(patch, {'{ layer }'})</code></td><td>차트의 어떤 부분이든 키로 스타일 지정(<code>'grid.vertical.visible'</code>, <code>'series.candlestick.upColor'</code>…). <code>null</code> 은 키를 뺍니다. <a href={href('/docs/styling#overrides')}>스타일</a> 참고.</td></tr>

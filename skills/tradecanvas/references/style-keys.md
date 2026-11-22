@@ -2,7 +2,7 @@
 
 # Style keys
 
-122 keys, each one part of the chart's look apart from its theme:
+126 keys, each one part of the chart's look apart from its theme:
 `chart.applyOverrides({ 'grid.vertical.visible': false })`, `overrides` in the chart's options, or the
 React/Vue/Svelte `overrides` prop. A value sets a key and `null` takes it away. `CHART_STYLE_KEYS`, exported
 from `@tradecanvas/chart`, holds them with their kinds; `chart.getStyleValue(key)` is what one resolves to now.
@@ -198,6 +198,15 @@ from `@tradecanvas/chart`, holds them with their kinds; `chart.getStyleValue(key
 | `series.equivolume.downColor` | color |
 | `series.equivolume.wickUpColor` | color |
 | `series.equivolume.wickDownColor` | color |
+
+## series.footprint
+
+| Key | Kind |
+|---|---|
+| `series.footprint.upColor` | color |
+| `series.footprint.downColor` | color |
+| `series.footprint.wickUpColor` | color |
+| `series.footprint.wickDownColor` | color |
 
 ## series.bar
 

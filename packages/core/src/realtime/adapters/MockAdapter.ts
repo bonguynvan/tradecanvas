@@ -11,7 +11,7 @@ import type {
   SymbolSearchOptions,
   TimeFrame,
 } from '@tradecanvas/commons';
-import { rankSymbols, timeframeToMs } from '@tradecanvas/commons';
+import { buyVolumeOf, rankSymbols, tickBarCount, timeframeToMs } from '@tradecanvas/commons';
 
 export interface MockAdapterOptions {
   /** Base price to generate data around */
@@ -50,6 +50,53 @@ function split(bar: OHLCBar): OHLCBar {
   return { ...bar, buyVolume: Math.round(bar.volume * share) };
 }
 
+/** How many of the bars it last gave it can tell the trades of, and how many trades a bar is told in. */
+const BARS_WITH_TRADES = 40;
+const TRADES_A_BAR = 40;
+/** How many trades a live tick is sent as: steps from the last price to the new one. */
+const TRADES_A_TICK = 3;
+
+/**
+ * Trades that tell a bar's own story, `count` of them from `from` to `to`:
+ * along its open, low, high and close (the high first when it fell), adding
+ * up to its volume, the buyers taking what its `buyVolume` says, more of it
+ * traded in the middle of the way than at its ends. No random number is
+ * drawn.
+ */
+function tradesOfBar(bar: OHLCBar, count: number, from: number, to: number): Trade[] {
+  if (!(bar.volume > 0) || count < 1) return [];
+  const path = bar.close >= bar.open ? [bar.open, bar.low, bar.high, bar.close] : [bar.open, bar.high, bar.low, bar.close];
+  const legs = path.length - 1;
+  const bought = buyVolumeOf(bar) ?? bar.volume / 2;
+  const sold = bar.volume - bought;
+  // At least one trade for a side that took anything at all.
+  const most = count - (sold > 0 ? 1 : 0);
+  const buys = Math.max(bought > 0 ? 1 : 0, Math.min(most, Math.round((count * bought) / bar.volume)));
+  // The buys among the sells as evenly as they go.
+  const isBuy = (j: number): boolean => Math.floor(((j + 1) * buys) / count) > Math.floor((j * buys) / count);
+  // Each trade's share of its side's volume: the most in the middle of the way.
+  const weight = (j: number): number => 1 + Math.sin((Math.PI * (j + 0.5)) / count);
+  let buyWeight = 0;
+  let sellWeight = 0;
+  for (let j = 0; j < count; j++) {
+    if (isBuy(j)) buyWeight += weight(j);
+    else sellWeight += weight(j);
+  }
+  const trades: Trade[] = [];
+  for (let j = 0; j < count; j++) {
+    const along = ((j + 0.5) / count) * legs;
+    const leg = Math.min(legs - 1, Math.floor(along));
+    const buy = isBuy(j);
+    trades.push({
+      time: Math.floor(from + ((to - from) * (j + 0.5)) / count),
+      price: path[leg] + (path[leg + 1] - path[leg]) * (along - leg),
+      volume: buy ? (bought * weight(j)) / buyWeight : (sold * weight(j)) / sellWeight,
+      side: buy ? 'buy' : 'sell',
+    });
+  }
+  return trades;
+}
+
 /**
  * Mock data adapter for testing, demos, and markets without free APIs.
  *
@@ -73,6 +120,10 @@ export class MockAdapter implements DataAdapter {
   /** The bar the ticks build on, and its timeframe: the history's newest, then each new one. */
   private forming: OHLCBar | null = null;
   private formingTimeframe: TimeFrame | null = null;
+  /** The newest bars it gave, kept up with the ticks: what its trades are told from. */
+  private recent: { symbol: string; timeframe: TimeFrame; bars: OHLCBar[] } | null = null;
+  /** Who listens for trades, each to a symbol's. */
+  private tradeListeners = new Set<{ symbol: string; send: (trades: Trade[]) => void }>();
 
   constructor(options?: MockAdapterOptions) {
     this.options = {
@@ -94,6 +145,8 @@ export class MockAdapter implements DataAdapter {
 
   disconnect(): void {
     this.stopTicking();
+    // The bars it gave are of a series no longer shown: trades asked for now are not theirs.
+    this.recent = null;
     this.state = 'disconnected';
     this.emitEvent('connectionChange', 'disconnected');
   }
@@ -138,9 +191,16 @@ export class MockAdapter implements DataAdapter {
     return () => clearInterval(timer);
   }
 
-  /** Made-up recent trades: a walk around `basePrice`, a second apart, oldest first. */
+  /**
+   * Made-up recent trades, oldest first. After bars of `symbol` were given
+   * (a time timeframe's), the trades of the newest of them: inside each
+   * bar, adding up to its volume and its split, so a footprint of them is
+   * the bars' own. Else a walk around `basePrice`, a second apart.
+   */
   async fetchTrades(symbol: string, limit = 1000): Promise<Trade[]> {
     const count = Math.max(1, Math.min(1000, Math.floor(limit)));
+    const told = this.tradesOfRecentBars(symbol, count);
+    if (told) return told;
     const now = Date.now();
     const step = this.options.volatility! / 1000;
     let price = this.options.basePrice! * (0.5 + (symbolHash(symbol) % 1000) / 1000);
@@ -154,11 +214,19 @@ export class MockAdapter implements DataAdapter {
     return trades;
   }
 
-  /** Made-up live trades, a few each `tickInterval`. */
+  /**
+   * Made-up live trades, a few each `tickInterval`. While the bars of
+   * `symbol` tick, the trades are those ticks: at the forming bar's prices,
+   * adding up to what it gains. Else a walk of their own.
+   */
   subscribeTrades(symbol: string, onTrades: (trades: Trade[]) => void): () => void {
     const step = this.options.volatility! / 1000;
     let price = this.options.basePrice! * (0.5 + (symbolHash(symbol) % 1000) / 1000);
+    const listener = { symbol, send: onTrades };
+    this.tradeListeners.add(listener);
     const timer = setInterval(() => {
+      // The bars' own ticks are the trades while they tick.
+      if (this.ticksBarsOf(symbol)) return;
       const trades: Trade[] = [];
       for (let i = 0; i < 3; i++) {
         const from = price;
@@ -167,7 +235,28 @@ export class MockAdapter implements DataAdapter {
       }
       onTrades(trades);
     }, this.options.tickInterval);
-    return () => clearInterval(timer);
+    return () => {
+      clearInterval(timer);
+      this.tradeListeners.delete(listener);
+    };
+  }
+
+  /** Whether the live bars are `symbol`'s, of a timeframe of time. */
+  private ticksBarsOf(symbol: string): boolean {
+    return this.tickTimer !== null && this.state === 'connected' && this.config?.symbol === symbol && tickBarCount(this.config.timeframe) === null;
+  }
+
+  /** The trades of the newest bars given for `symbol`, at most `limit`; null when it gave none to tell them from. */
+  private tradesOfRecentBars(symbol: string, limit: number): Trade[] | null {
+    const recent = this.recent;
+    if (!recent || recent.symbol !== symbol || recent.bars.length === 0) return null;
+    const span = timeframeToMs(recent.timeframe);
+    // One trade under the limit at most: who asked can tell these are all the trades there are.
+    const bars = recent.bars.slice(-Math.max(1, Math.floor((limit - 1) / TRADES_A_BAR)));
+    const each = Math.min(TRADES_A_BAR, Math.max(1, Math.floor((limit - 1) / bars.length)));
+    const now = Date.now();
+    // The bar still forming has traded up to now, not to its end.
+    return bars.flatMap((bar) => tradesOfBar(bar, each, bar.time, Math.max(bar.time, Math.min(bar.time + span, now))));
   }
 
   async fetchHistory(symbol: string, timeframe: TimeFrame, limit?: number): Promise<OHLCBar[]> {
@@ -177,6 +266,8 @@ export class MockAdapter implements DataAdapter {
     if (bars.length > 0) this.oldestOpen.set(symbol, bars[0].open);
     this.forming = bars.length > 0 ? { ...bars[bars.length - 1] } : null;
     this.formingTimeframe = timeframe;
+    // Bars of trades (a tick timeframe) are made of trades, not the other way round.
+    this.recent = tickBarCount(timeframe) === null ? { symbol, timeframe, bars: bars.slice(-BARS_WITH_TRADES).map((bar) => ({ ...bar })) } : null;
     return bars;
   }
 
@@ -259,10 +350,12 @@ export class MockAdapter implements DataAdapter {
       this.currentPrice += change;
 
       const now = Date.now();
-      const bar = this.tickBar(now, change, Math.floor(100 + Math.random() * 5000));
+      const volume = Math.floor(100 + Math.random() * 5000);
+      const bar = this.tickBar(now, change, volume);
       // A forming bar each tick; the next bar's time starts the next one.
       this.emitEvent('bar', { bar, closed: false });
       this.emitEvent('tick', { time: now, price: this.currentPrice, volume: bar.volume });
+      this.sendTickTrades(now, change, volume);
     }, interval);
   }
 
@@ -279,16 +372,48 @@ export class MockAdapter implements DataAdapter {
     const last = this.formingTimeframe === timeframe ? this.forming : null;
     const wick = Math.abs(change) * 0.2;
     let bar: OHLCBar;
+    // Taken by the buyers when the price went up to it, by the sellers when it went down: the tick rule, as its trades say.
+    const bought = change >= 0 ? volume : 0;
     if (last && last.time === time) {
-      bar = { time, open: last.open, high: Math.max(last.high, price + wick), low: Math.min(last.low, price - wick), close: price, volume: last.volume + volume };
+      bar = {
+        time, open: last.open, high: Math.max(last.high, price + wick), low: Math.min(last.low, price - wick), close: price,
+        volume: last.volume + volume, buyVolume: (buyVolumeOf(last) ?? 0) + bought,
+      };
     } else {
       const open = last?.close ?? price - change;
-      bar = { time, open, high: Math.max(open, price) + wick, low: Math.min(open, price) - wick, close: price, volume };
+      bar = { time, open, high: Math.max(open, price) + wick, low: Math.min(open, price) - wick, close: price, volume, buyVolume: bought };
     }
-    bar = split(bar);
     this.forming = bar;
     this.formingTimeframe = timeframe;
+    this.keepRecent(bar);
     return { ...bar };
+  }
+
+  /** The bar the ticks build on among the newest bars: in place of itself, or after them once it is a new one. */
+  private keepRecent(bar: OHLCBar): void {
+    const recent = this.recent;
+    if (!recent || recent.timeframe !== this.config?.timeframe || recent.symbol !== this.config.symbol) return;
+    const last = recent.bars[recent.bars.length - 1];
+    if (last && last.time === bar.time) recent.bars[recent.bars.length - 1] = { ...bar };
+    else recent.bars = [...recent.bars.slice(-(BARS_WITH_TRADES - 1)), { ...bar }];
+  }
+
+  /** A tick as trades, to those who listen for the symbol's: steps from the price before it to the price after, the tick's volume between them. */
+  private sendTickTrades(now: number, change: number, volume: number): void {
+    const symbol = this.config?.symbol;
+    if (symbol === undefined || !this.ticksBarsOf(symbol) || this.tradeListeners.size === 0) return;
+    const from = this.currentPrice - change;
+    const part = Math.floor(volume / TRADES_A_TICK);
+    const side = change >= 0 ? 'buy' : 'sell';
+    const trades: Trade[] = [];
+    for (let k = 1; k <= TRADES_A_TICK; k++) {
+      // What does not divide goes with the last step.
+      const size = k === TRADES_A_TICK ? volume - part * (TRADES_A_TICK - 1) : part;
+      if (size > 0) trades.push({ time: now, price: from + (change * k) / TRADES_A_TICK, volume: size, side });
+    }
+    for (const listener of this.tradeListeners) {
+      if (listener.symbol === symbol) listener.send(trades);
+    }
   }
 
   private stopTicking(): void {

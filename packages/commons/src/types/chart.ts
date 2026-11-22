@@ -11,7 +11,8 @@ export type ChartType =
   | 'rangeBars'
   | 'volumeCandles' | 'hlcArea' | 'stepLine' | 'lineWithMarkers'
   | 'equivolume' | 'hiLo'
-  | 'columns' | 'hlcBars' | 'dots' | 'stepArea' | 'spline' | 'smoothedHeikinAshi';
+  | 'columns' | 'hlcBars' | 'dots' | 'stepArea' | 'spline' | 'smoothedHeikinAshi'
+  | 'footprint';
 
 /**
  * Settings of the chart types that build bars of their own. What isn't set
@@ -59,6 +60,41 @@ export interface ChartTypeOptions {
    * last bar drawn is the one still forming.
    */
   rangeBars?: { range?: number | 'auto' };
+  /** How the footprint chart keeps and draws what traded at each price of a bar. */
+  footprint?: FootprintOptions;
+}
+
+/** What a footprint cell shows: the two sides apart, their difference, or their sum. */
+export type FootprintCells = 'bidAsk' | 'delta' | 'volume';
+
+/** Settings of the footprint chart (`chartTypeOptions.footprint`). */
+export interface FootprintOptions {
+  /**
+   * The height of a row in price ('auto', the default: about a
+   * ten-thousandth of the last price, rounded to 1, 2 or 5). Trades are
+   * kept in rows of this size; where they would be too thin to read, 2, 5,
+   * 10… of them are drawn as one. Another size starts the footprint again.
+   */
+  rowSize?: number | 'auto';
+  /**
+   * What a cell shows. `'bidAsk'` (default): what the sellers took at the
+   * bid on the left, what the buyers took at the ask on the right.
+   * `'delta'`: bought less sold. `'volume'`: both together.
+   */
+  cells?: FootprintCells;
+  /**
+   * How many times one side has to outdo the other, a row apart, to be
+   * marked (3): what was bought at a price against what was sold one row
+   * below, and what was sold against what was bought one row above. 0
+   * marks none.
+   */
+  imbalance?: number;
+  /**
+   * Whether the chart asks its feed for trades (`fetchTrades` and
+   * `subscribeTrades`) while it shows a footprint (true). false for a host
+   * that gives the rows itself, with `setFootprint` or `addTrades`.
+   */
+  collect?: boolean;
 }
 
 export type LineStyle = 'solid' | 'dashed' | 'dotted';

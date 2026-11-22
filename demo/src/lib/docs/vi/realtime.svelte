@@ -254,6 +254,60 @@ barDelta({ volume: 1200, buyVolume: 700 })   // 200: 700 bought, 500 sold`}</cod
   Các cầu nối JS API và UDF không có trường cho số liệu này.
 </p>
 
+<h2 id="footprint">Biểu đồ footprint</h2>
+<p>
+  <code>chartType: 'footprint'</code> vẽ, bên cạnh mỗi nến, những gì đã khớp ở từng mức giá bên trong nến đó:
+  phần bên bán chủ động khớp vào giá bid nằm bên trái, phần bên mua chủ động khớp vào giá ask nằm bên phải. Hàng
+  giá nào có một bên áp đảo bên kia thì được in đậm trên nền đậm hơn, hàng giá khớp nhiều nhất có đường viền bao
+  quanh, và một cây nến mảnh đứng ở bên trái mỗi nến. Trong widget, loại này là Footprint trong menu loại biểu đồ,
+  và các thiết lập của nó nằm trong Chart Settings.
+</p>
+<pre><code>{`const chart = new Chart(el, { chartType: 'footprint' })
+await chart.connect({ adapter: new BinanceAdapter(), symbol: 'BTCUSDT', timeframe: '1m' })`}</code></pre>
+<p>
+  Với một feed có trade thì chỉ cần vậy (<code>fetchTrades</code> và <code>subscribeTrades</code>, như
+  <code>BinanceAdapter</code> và <code>MockAdapter</code> có): khi đang hiển thị footprint, chart hỏi feed các
+  trade gần nhất, một nghìn trade, rồi theo các trade trực tiếp, và dừng lại khi loại biểu đồ đổi. Feed chỉ giữ ít
+  trade, nên lúc đầu chỉ những nến mới nhất có footprint: nến mà các trade gần nhất bắt đầu giữa chừng bị bỏ qua,
+  các nến trước nó là nến mảnh, và từ đó footprint lớn dần theo các trade trực tiếp. Đổi symbol hoặc timeframe thì
+  nó bắt đầu lại.
+</p>
+<p>
+  Host có trade riêng thì đưa vào bằng <code>chart.addTrades(trades)</code>, ở bất kỳ loại biểu đồ nào: mỗi
+  trade được tính vào nến theo thời gian của nó và hàng giá theo giá của nó, ở bên đã chủ động khớp. Trade không
+  có <code>side</code> được suy ra từ trade ngay trước nó (mua khi giá đi lên tới nó, bán khi giá đi xuống): đây
+  là giá trị ước lượng, như delta của một nến không có <code>buyVolume</code>. Host tự giữ các hàng giá thì đưa
+  thẳng các hàng đó, từng nến một, và <code>footprintOf</code> tạo chúng từ trade trong một lần gọi.
+</p>
+<pre><code>{`import { footprintOf, footprintStats } from '@tradecanvas/chart'
+
+chart.setChartTypeOptions({ footprint: { rowSize: 0.5, collect: false } })   // các hàng giá là của host
+chart.setFootprint([
+  { time: bar.time, levels: [{ price: 100, buy: 12, sell: 30 }, { price: 100.5, buy: 41, sell: 9 }] },
+])
+chart.setFootprint(footprintOf(trades, '1m', 0.5))    // hoặc tạo từ trade
+
+const rows = chart.getFootprint(bar.time)             // { time, levels }, hoặc null với nến không có
+if (rows) footprintStats(rows.levels)                 // { buy, sell, volume, delta, poc, … }
+chart.clearFootprint()                                // trước khi đưa hàng giá của chuỗi khác`}</code></pre>
+<table>
+  <thead><tr><th>Thiết lập</th><th>Mặc định</th><th>Tác dụng</th></tr></thead>
+  <tbody>
+    <tr><td><code>rowSize</code></td><td><code>'auto'</code></td><td>Chiều cao một hàng giá, tính theo giá. Auto là khoảng một phần mười nghìn của giá cuối, làm tròn về 1, 2 hoặc 5 (5 ở mức 60.000), theo bội số nguyên của bước giá của symbol; với các hàng đưa vào bằng tay, là bước nhỏ nhất giữa các mức giá của chúng. Đổi sang cỡ khác thì footprint bắt đầu lại.</td></tr>
+    <tr><td><code>cells</code></td><td><code>'bidAsk'</code></td><td><code>'bidAsk'</code>: hai bên tách riêng. <code>'delta'</code>: mua trừ bán. <code>'volume'</code>: cả hai cộng lại.</td></tr>
+    <tr><td><code>imbalance</code></td><td><code>3</code></td><td>Một bên phải gấp bên kia bao nhiêu lần, lệch nhau một hàng, thì được đánh dấu: phần mua ở một mức giá so với phần bán ở hàng ngay dưới, và phần bán so với phần mua ở hàng ngay trên. 0 thì không đánh dấu hàng nào.</td></tr>
+    <tr><td><code>collect</code></td><td><code>true</code></td><td>false: chart không hỏi feed để lấy trade.</td></tr>
+  </tbody>
+</table>
+<p>
+  Mức zoom quyết định một nến mang gì. Chọn footprint thì chart zoom vào tới chỗ đọc được các con số, và nến
+  của nó có thể rộng hơn nến thường nhiều; zoom ra thì các con số nhường chỗ cho một thanh cho mỗi bên, rồi cho
+  nến thường. Các hàng quá mỏng để đọc được vẽ gộp 2, 5, 10… hàng làm một, ở các mức giá tròn. Footprint được giữ
+  cho 500 nến mới nhất và không được lưu cùng trạng thái của chart. Trong replay, các nến chưa được hiện không có
+  ô nào. Nó được vẽ bằng Canvas 2D, kể cả khi dùng renderer WebGL. <code>renderPriceChart</code> vẽ nó từ
+  <code>footprint</code>, là các hàng đúng như <code>chart.getFootprint()</code> trả về.
+</p>
+
 <h2>Trạng thái thị trường và tin tức</h2>
 <p>
   <code>marketStatus(info, now)</code> cho biết thị trường của một mã có mở cửa tại một thời điểm hay không, dựa trên

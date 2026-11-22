@@ -443,6 +443,37 @@ const chart = new Chart(document.getElementById('chart')!, {
 chart.setSymbolInfo({ symbol: 'ZN', timeZone: 'America/Chicago', sessions: [{ start: '07:20', end: '14:00' }] });
 ```
 
+## A footprint chart: what traded at each price of a bar
+
+`chartType: 'footprint'` draws, by each bar, what the sellers took at the bid and what the buyers
+took at the ask at every price inside it. A feed with trades (`fetchTrades` and `subscribeTrades`,
+as `BinanceAdapter` has) is asked for them while the footprint shows; only the newest bars have one
+at first, and it grows with the live trades.
+
+```ts
+import { Chart, BinanceAdapter, footprintOf, footprintStats, type Trade } from '@tradecanvas/chart';
+
+const chart = new Chart(document.getElementById('chart')!, {
+  chartType: 'footprint',
+  // rowSize: the height of a row in price ('auto' unless set); cells: 'bidAsk' | 'delta' | 'volume';
+  // imbalance: how many times one side has to outdo the other, a row apart, to be marked (0: none)
+  chartTypeOptions: { footprint: { rowSize: 5, cells: 'bidAsk', imbalance: 3 } },
+});
+await chart.connect({ adapter: new BinanceAdapter(), symbol: 'BTCUSDT', timeframe: '1m' });
+
+// Trades or rows of your own instead ({ collect: false } stops the chart asking the feed):
+declare const trades: Trade[]; // { time, price, volume, side?: 'buy' | 'sell' }
+chart.addTrades(trades); // each in the bar of its time and the row of its price
+chart.setFootprint(footprintOf(trades, '1m', 5)); // or whole rows: [{ time, levels: [{ price, buy, sell }] }]
+
+const last = chart.getData().at(-1)!;
+const rows = chart.getFootprint(last.time); // null for a bar with no footprint
+if (rows) footprintStats(rows.levels); // { buy, sell, volume, delta, poc, maxSide, maxVolume, maxDelta }
+```
+
+Zoomed out, the numbers give way to a bar for each side, then to candles. `chart.clearFootprint()`
+before another series' rows; a connected chart starts again by itself on another symbol or timeframe.
+
 ## A Vietnamese stock, and VN30 futures
 
 HOSE's rules on the chart: steps by price band, the day's ceiling and floor,

@@ -151,6 +151,7 @@ export const FA_MESSAGES: WidgetMessages = {
   'chartType.kagi': 'کاگی',
   'chartType.pointAndFigure': 'نقطه و رقم',
   'chartType.rangeBars': 'کندل‌های رنج',
+  'chartType.footprint': 'فوت‌پرینت',
 
   // Watchlist
   'watchlist.title': 'دیده‌بان',
@@ -339,6 +340,11 @@ export const FA_MESSAGES: WidgetMessages = {
   'settings.reversalType.price': 'قیمت',
   'settings.reversalBoxes': 'باکس‌های بازگشت',
   'settings.barRange': 'رنج',
+  'settings.footprintRowSize': 'اندازه ردیف',
+  'settings.footprintCells': 'سلول‌ها',
+  'settings.footprintCells.bidAsk': 'Bid × Ask',
+  'settings.footprintCells.delta': 'دلتا',
+  'settings.footprintImbalance': 'نسبت عدم تعادل',
   'settings.auto': 'خودکار',
   'settings.numberAtLeast': '{min} یا بیشتر',
   'settings.numberWhole': 'عدد صحیح از {min} تا {max}',

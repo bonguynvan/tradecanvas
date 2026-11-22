@@ -244,6 +244,57 @@ barDelta({ volume: 1200, buyVolume: 700 })   // 200: 700 bought, 500 sold`}</cod
   위한 필드가 없습니다.
 </p>
 
+<h2 id="footprint">풋프린트 차트</h2>
+<p>
+  <code>chartType: 'footprint'</code>는 각 봉 옆에, 그 봉 안의 모든 가격에서 체결된 것을 그립니다: 왼쪽에는 매도 측이
+  매수 호가에서 가져간 물량, 오른쪽에는 매수 측이 매도 호가에서 가져간 물량입니다. 한쪽이 다른 쪽을 크게 앞선 행은 더 진한 바탕 위에
+  굵게 표시되고, 가장 많이 체결된 행에는 테두리가 있으며, 각 봉의 왼쪽에는 가는 캔들이 섭니다. 위젯에서는 차트 유형 메뉴의
+  Footprint이고, 설정은 Chart Settings에 있습니다.
+</p>
+<pre><code>{`const chart = new Chart(el, { chartType: 'footprint' })
+await chart.connect({ adapter: new BinanceAdapter(), symbol: 'BTCUSDT', timeframe: '1m' })`}</code></pre>
+<p>
+  체결을 가진 피드라면 이것으로 충분합니다(<code>fetchTrades</code>와 <code>subscribeTrades</code>.
+  <code>BinanceAdapter</code>와 <code>MockAdapter</code>에 있습니다): 풋프린트를 보여 주는 동안 차트는 피드에 최근 체결을
+  천 건 요청하고, 그 뒤로는 실시간 체결을 따라가며, 차트 유형이 바뀌면 멈춥니다. 피드가 보관하는 체결은 많지 않으므로 처음에는
+  가장 최근의 봉들만 풋프린트를 가집니다: 최근 체결이 중간부터 시작된 봉은 제외되고, 그 이전 봉들은 가는 캔들이며, 거기서부터
+  실시간 체결과 함께 풋프린트가 늘어납니다. 다른 심볼이나 타임프레임에서는 처음부터 다시 시작합니다.
+</p>
+<p>
+  자체 체결을 가진 호스트는 어떤 차트 유형에서든 <code>chart.addTrades(trades)</code>로 넣습니다: 각 체결은
+  그 시각의 봉과 그 가격의 행에, 가져간 쪽으로 계산됩니다. <code>side</code>가 없는 체결은 바로 앞 체결로 판단합니다
+  (가격이 그 체결까지 올랐으면 매수, 내렸으면 매도): 이는 추정이며, <code>buyVolume</code>이 없는 봉의 델타와 같습니다.
+  행을 직접 보관하는 호스트는 그 행을 봉 단위로 넣고, <code>footprintOf</code>는 체결에서 한 번의 호출로 행을 만듭니다.
+</p>
+<pre><code>{`import { footprintOf, footprintStats } from '@tradecanvas/chart'
+
+chart.setChartTypeOptions({ footprint: { rowSize: 0.5, collect: false } })   // 행은 호스트의 것
+chart.setFootprint([
+  { time: bar.time, levels: [{ price: 100, buy: 12, sell: 30 }, { price: 100.5, buy: 41, sell: 9 }] },
+])
+chart.setFootprint(footprintOf(trades, '1m', 0.5))    // 또는 체결에서 만들기
+
+const rows = chart.getFootprint(bar.time)             // { time, levels }, 풋프린트가 없는 봉은 null
+if (rows) footprintStats(rows.levels)                 // { buy, sell, volume, delta, poc, … }
+chart.clearFootprint()                                // 다른 시리즈의 행을 넣기 전에`}</code></pre>
+<table>
+  <thead><tr><th>설정</th><th>기본값</th><th>하는 일</th></tr></thead>
+  <tbody>
+    <tr><td><code>rowSize</code></td><td><code>'auto'</code></td><td>한 행의 가격 높이. Auto는 마지막 가격의 약 만분의 일을 1, 2 또는 5로 반올림한 값(60,000에서는 5)이며, 심볼의 호가 단위의 정수배입니다. 행을 직접 넣은 경우에는 그 가격들 사이의 가장 작은 간격입니다. 다른 크기로 바꾸면 풋프린트는 처음부터 다시 시작합니다.</td></tr>
+    <tr><td><code>cells</code></td><td><code>'bidAsk'</code></td><td><code>'bidAsk'</code>: 양쪽을 따로. <code>'delta'</code>: 매수에서 매도를 뺀 값. <code>'volume'</code>: 둘의 합.</td></tr>
+    <tr><td><code>imbalance</code></td><td><code>3</code></td><td>한 행 떨어진 자리에서 한쪽이 다른 쪽의 몇 배가 되어야 표시되는지: 어떤 가격의 매수를 한 행 아래의 매도와, 매도를 한 행 위의 매수와 비교합니다. 0이면 아무것도 표시하지 않습니다.</td></tr>
+    <tr><td><code>collect</code></td><td><code>true</code></td><td>false: 차트가 피드에 체결을 요청하지 않습니다.</td></tr>
+  </tbody>
+</table>
+<p>
+  봉이 무엇을 담는지는 확대 정도가 정합니다. 풋프린트를 고르면 차트는 숫자가 읽히는 곳까지 확대하고, 그 봉은 캔들보다
+  훨씬 넓어질 수 있습니다. 축소하면 숫자는 양쪽에 하나씩의 막대로, 더 축소하면 보통 캔들로 바뀝니다. 읽기에 너무 얇은 행은
+  2, 5, 10… 행을 하나로 묶어 딱 떨어지는 가격에 맞춰 그립니다. 풋프린트는 가장 최근의 500개 봉에 대해 보관되며 차트 상태와 함께
+  저장되지 않습니다. 리플레이 중에는 아직 보이지 않은 봉에 셀이 없습니다. Canvas 2D로 그려지며, WebGL 렌더러에서도 마찬가지입니다.
+  <code>renderPriceChart</code>는 <code>footprint</code>에서, 곧 <code>chart.getFootprint()</code>가 돌려주는
+  행에서 그립니다.
+</p>
+
 <h2>시장 상태와 뉴스</h2>
 <p>
   <code>marketStatus(info, now)</code>는 거래소 시간대 기준의 거래 시간(서머타임 전환 포함)으로 특정 시점에 종목의 시장이

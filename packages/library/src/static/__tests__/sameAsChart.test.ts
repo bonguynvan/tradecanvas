@@ -111,6 +111,28 @@ describe('the price chart drawn with no page is the chart’s own frame', () => 
     expect(firstDifference(staticFrame({ ...options, visibleRange: range }), onPage)).toBeNull();
   });
 
+  it('as a footprint, with the rows of its last bars, their numbers and their marks', async () => {
+    const shown = bars.slice(-7);
+    const range = { from: shown[0].time, to: shown[shown.length - 1].time };
+    // Rows a price unit tall through each bar, bought and sold in turn, one row far busier than the rest.
+    const footprint = shown.map((bar, b) => ({
+      time: bar.time,
+      levels: Array.from({ length: Math.floor(bar.high) - Math.ceil(bar.low) + 1 }, (_, r) => ({
+        price: Math.ceil(bar.low) + r,
+        buy: 120 + ((b * 7 + r * 13) % 9) * 55 + (r === 1 ? 2400 : 0),
+        sell: 90 + ((b * 5 + r * 11) % 7) * 70,
+      })),
+    }));
+    const options = { chartType: 'footprint', chartTypeOptions: { footprint: { rowSize: 1 } }, features: { volume: false } } as const;
+    const onPage = await chartFrame(options, (chart) => chart.setFootprint(footprint), bars, (chart) => chart.setVisibleRange(range.from, range.to));
+    // The cells are drawn: their numbers are in the frame.
+    expect(onPage.some((paint) => paint.includes('2.5K'))).toBe(true);
+    expect(firstDifference(staticFrame({ ...options, footprint, visibleRange: range }), onPage)).toBeNull();
+    // The comparison would tell: without the rows, or with other cells, the frame is another.
+    expect(firstDifference(staticFrame({ ...options, visibleRange: range }), onPage)).not.toBeNull();
+    expect(firstDifference(staticFrame({ ...options, chartTypeOptions: { footprint: { rowSize: 1, cells: 'delta' } }, footprint, visibleRange: range }), onPage)).not.toBeNull();
+  });
+
   it('named, with its interval, a watermark and prices in fractions', async () => {
     const options = { watermark: { text: 'TRADECANVAS' }, priceFormat: { denominator: 32 } } as const;
     const onPage = await chartFrame(options, (chart) => {
