@@ -350,3 +350,15 @@ describe('WidgetAccountPanel: an order that fills in parts', () => {
     expect(cells()[0][2]).toBe('4 / 5');
   });
 });
+
+describe('WidgetAccountPanel: a part-filled order in a row written right to left', () => {
+  it('keeps what has filled before the whole: the two are one figure, left to right', () => {
+    panel.openPanel();
+    panel.update({ ...current, orders: [{ id: 'a', side: 'buy', type: 'limit', price: 90, quantity: 5, filledQuantity: 2 }, { id: 'b', side: 'buy', type: 'limit', price: 89, quantity: 3 }] });
+    tab(/Orders/).click();
+    const cellsOf = (row: number) => [...host.querySelectorAll('tbody tr')][row].querySelectorAll('td');
+    expect(cellsOf(0)[2].querySelector('[dir=ltr]')?.textContent).toBe('2 / 5');
+    // A plain quantity is one number: nothing to keep in order.
+    expect(cellsOf(1)[2].querySelector('[dir]')).toBeNull();
+  });
+});

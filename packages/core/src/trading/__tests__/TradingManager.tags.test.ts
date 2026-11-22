@@ -224,10 +224,12 @@ describe('the tag of an order that fills in parts', () => {
     manager.setPositions([]);
     manager.setOrders([{ id: 'o1', side: 'buy', type: 'limit', price: 30, quantity: 5, filledQuantity: 2, stopLoss: 20, takeProfit: 50, takeProfits: [{ price: 40, quantity: 4 }] }]);
     const { texts } = draw();
-    // Three are left: ten under for each at the stop, twenty over at the target; and a level takes no more than those three.
-    expect(texts).toEqual(expect.arrayContaining(['-30.00', '+60.00', 'TP1', '3', '+30.00']));
+    // Three are left: ten under for each at the stop, twenty over at the target.
+    expect(texts).toEqual(expect.arrayContaining(['-30.00', '+60.00']));
     expect(texts).not.toContain('-50.00');
     expect(texts).not.toContain('+100.00');
+    // A level is a size of the position's plan, not of what is left of the order: written as planned.
+    expect(texts).toEqual(expect.arrayContaining(['TP1', '4', '+40.00']));
   });
 
   it('writes a plain quantity for an order nothing of which has filled, or whose count is none', () => {

@@ -127,7 +127,7 @@ export class OrderRenderer {
         const grab = order.draggable === false ? undefined : { kind: 'order' as const, orderId: order.id };
         tags.push({ y, color: order.side === 'buy' ? colors.buy : colors.sell, cells, grab });
       }
-      // What its stop, its target and its levels would make is of what is left of it: what has filled is a position, with tags of its own.
+      // What its stop and its target would make is of what is left of it: what has filled is a position, with tags of its own.
       const left = leftOf(order);
       for (const which of ['stopLoss', 'takeProfit'] as const) {
         const stop = order[which];
@@ -144,7 +144,8 @@ export class OrderRenderer {
           ],
         });
       }
-      tags.push(...levelTags(order.takeProfits, order.side, price, left, viewport, config));
+      // Its levels are sizes of the position's plan, not of what is left of the order: written as planned.
+      tags.push(...levelTags(order.takeProfits, order.side, price, order.quantity, viewport, config));
     }
     return tags;
   }

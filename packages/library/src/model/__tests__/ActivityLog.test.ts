@@ -120,6 +120,8 @@ describe('ActivityLog: an order filled in parts', () => {
     log.orders([limit('a', 95, { quantity: 10 })], 200);
     log.orders([], 300);
     expect(kinds()).toEqual(['placed', 'filled', 'cancelled']);
+    // What was cancelled is what was left of it, not the whole it began as.
+    expect(log.entries().map((entry) => entry.quantity)).toEqual([10, 4, 6]);
   });
 
   it('logs no cancellation when its parts add up to the order', () => {

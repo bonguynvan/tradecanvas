@@ -482,7 +482,7 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
 
   /** What is left of an order to fill. */
   private leftOf(order: TradingOrder): number {
-    return order.quantity - (order.filledQuantity ?? 0);
+    return tidy(order.quantity - (order.filledQuantity ?? 0));
   }
 
   /**
@@ -509,7 +509,7 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
     // The orders it cancels are off the book, the rest of its group; and so is it, unless a part of it still works.
     this.orders = this.orders
       .filter((o) => (o.id === order.id ? working : !(order.ocoGroup !== undefined && o.ocoGroup === order.ocoGroup)))
-      .map((o) => (o.id === order.id ? { ...o, filledQuantity: (o.filledQuantity ?? 0) + quantity } : o));
+      .map((o) => (o.id === order.id ? { ...o, filledQuantity: tidy((o.filledQuantity ?? 0) + quantity) } : o));
     const fill: FillEvent = {
       orderId: order.id,
       side: order.side,
@@ -518,15 +518,20 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
       time: this.fillTime(),
       reason: 'order',
     };
-    if (working) fill.remaining = left - quantity;
+    if (working) fill.remaining = tidy(left - quantity);
     // The part as an order of its own size: what a position is opened by, or added to.
     const { filledQuantity: _filled, ...whole } = order;
     const filled: TradingOrder = { ...whole, quantity };
+    // A part after the first adds to a position and brings no plan a second time: the first
+    // brought the order's stops and levels, and what was done to them since stands.
+    const later = (order.filledQuantity ?? 0) > 0;
+    const bare: TradingOrder = { id: order.id, side: order.side, type: order.type, price: order.price, quantity };
     const held = this.net ? this.positions[0] : this.positions.find((p) => p.id === this.building.get(order.id));
-    if (held && this.net) this.fillInto(held, filled, price, fill);
+    // On a net account a part that takes from the position, or turns it round, is the order as it is.
+    if (held && this.net) this.fillInto(held, later && held.side === order.side ? bare : filled, price, fill);
     else if (held) {
       // Another part of an order whose first opened this position: it grows, at the average of their prices.
-      this.positions = this.positions.map((p) => (p.id === held.id ? this.added(held, filled, price) : p));
+      this.positions = this.positions.map((p) => (p.id === held.id ? this.added(held, bare, price) : p));
       fill.positionId = held.id;
     } else {
       const position = this.opened(filled, price, quantity);
@@ -536,6 +541,8 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
     // The position its next part goes into, where each order has its own.
     if (working && !this.net && fill.positionId !== undefined) this.building.set(order.id, fill.positionId);
     else this.building.delete(order.id);
+    // The orders its filling took off the book build nothing more.
+    if (order.ocoGroup !== undefined) this.forgetBuilt();
     this.charge(fill);
     // The account first: what hears of the fill or the positions reads it as they left it.
     this.tellAccount();
@@ -611,8 +618,10 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
     delete added.closedQuantity;
     if (order.trailingStop !== undefined) added.trailingStop = order.trailingStop;
     // The fill's levels when it brings them, as its stops: they are the plan for the whole position now.
-    const levels = beyondEntry(order.takeProfits, order.side, added.entryPrice);
+    // With none, the position keeps its own, those still a profit from the average its entry has become.
+    const levels = beyondEntry(order.takeProfits ?? held.takeProfits, order.side, added.entryPrice);
     if (levels) added.takeProfits = levels;
+    else delete added.takeProfits;
     return added;
   }
 
@@ -810,6 +819,11 @@ function money(amount: number): string {
 
 /** How near two sizes are, as a part of the larger, to be the same size. */
 const QUANTITY_SLACK = 1e-9;
+
+/** A size that is a sum of parts, with the sum's rounding taken off: three tenths less two is one tenth. */
+function tidy(size: number): number {
+  return Number(size.toPrecision(12));
+}
 
 function opposite(side: TradingOrder['side']): TradingOrder['side'] {
   return side === 'buy' ? 'sell' : 'buy';

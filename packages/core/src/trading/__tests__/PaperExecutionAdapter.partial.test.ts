@@ -191,6 +191,8 @@ describe('PaperExecutionAdapter: orders that fill at once or not at all, in a ma
     const { adapter, fills, told } = connect();
     const before = told();
     const order = await adapter.placeOrder({ side: 'buy', type: 'limit', price: 101, quantity: 5, timeInForce: 'ioc' });
+    // It was never on the book: the orders are told once, of the book as it was and is.
+    expect(told()).toBe(before + 1);
     expect(order).toEqual(expect.objectContaining({ quantity: 5, filledQuantity: 2 }));
     // Nothing of it works on: the fill left nothing waiting.
     expect(parts(fills)).toEqual(['2']);
@@ -200,7 +202,6 @@ describe('PaperExecutionAdapter: orders that fill at once or not at all, in a ma
     adapter.setMarkPrice(100);
     expect(fills).toHaveLength(1);
     expect(adapter.getPositions()).toHaveLength(1);
-    expect(told()).toBeGreaterThanOrEqual(before);
   });
 
   it('fills an immediate-or-cancel order whole when the market has it all', async () => {
@@ -270,5 +271,81 @@ describe('PaperExecutionAdapter: a market with no size of its own', () => {
     expect(fills).toHaveLength(3);
     expect(fills[2]).not.toHaveProperty('remaining');
     expect(adapter.getOrders()).toEqual([]);
+  });
+});
+
+describe('PaperExecutionAdapter: what was done to a position between an order’s parts', () => {
+  it('stands: a later part adds to the position, and brings the order’s stops no second time', async () => {
+    const { adapter, limit } = connect();
+    await limit('buy', 95, 6, { stopLoss: 90, takeProfit: 110, trailingStop: 4, takeProfits: [{ price: 100, quantity: 1 }, { price: 105, quantity: 1 }] });
+    adapter.setMarkPrice(95);
+    const id = adapter.getPositions()[0].id;
+    // The stop moved up by hand, the target taken off, the trail ended, one level kept.
+    await adapter.modifyPosition({ positionId: id, stopLoss: 94, takeProfit: null, trailingStop: null, takeProfits: [{ price: 103, quantity: 2 }] });
+    adapter.setMarkPrice(95);
+    const grown = adapter.getPositions()[0];
+    expect(grown).toEqual(expect.objectContaining({ id, quantity: 4, stopLoss: 94, takeProfits: [{ price: 103, quantity: 2 }] }));
+    expect(grown.takeProfit).toBeUndefined();
+    expect(grown.trailingStop).toBeUndefined();
+  });
+
+  it('stands on a net account too: the order’s later parts leave the position’s stops as they are', async () => {
+    const { adapter, limit } = connect({ positions: 'net' });
+    await limit('buy', 95, 4, { stopLoss: 90 });
+    adapter.setMarkPrice(95);
+    await adapter.modifyPosition({ positionId: adapter.getPositions()[0].id, stopLoss: null });
+    adapter.setMarkPrice(95);
+    expect(adapter.getPositions()).toEqual([expect.objectContaining({ quantity: 4 })]);
+    expect(adapter.getPositions()[0].stopLoss).toBeUndefined();
+  });
+
+  it('gives the order’s stops again to a position a later part opens, the one it was building being closed', async () => {
+    const { adapter, limit } = connect();
+    await limit('buy', 95, 4, { stopLoss: 90, takeProfit: 110 });
+    adapter.setMarkPrice(95);
+    await adapter.closePosition({ positionId: adapter.getPositions()[0].id });
+    adapter.setMarkPrice(95);
+    expect(adapter.getPositions()).toEqual([expect.objectContaining({ quantity: 2, stopLoss: 90, takeProfit: 110 })]);
+  });
+
+  it('keeps of the position’s levels those still a profit from the average its entry has become', async () => {
+    const { adapter } = connect();
+    // A stop-limit whose first part fills at 101 and whose second at its limit, 103: the entry becomes 102.
+    await adapter.placeOrder({ side: 'buy', type: 'stopLimit', stopPrice: 100.5, price: 103, quantity: 4, takeProfits: [{ price: 101.5, quantity: 1 }, { price: 110, quantity: 1 }] });
+    adapter.setMarkPrice(101);
+    expect(adapter.getPositions()[0].takeProfits).toEqual([{ price: 101.5, quantity: 1 }, { price: 110, quantity: 1 }]);
+    adapter.setMarkPrice(101.2);
+    expect(adapter.getPositions()[0]).toEqual(expect.objectContaining({ quantity: 4, entryPrice: 102, takeProfits: [{ price: 110, quantity: 1 }] }));
+  });
+});
+
+describe('PaperExecutionAdapter: the parts’ sums, and what the account keeps of them', () => {
+  it('says what is left and what has filled with no sum’s rounding after them', async () => {
+    const { adapter, fills, limit } = connect({ fillSize: 0.1 });
+    await limit('buy', 95, 0.3);
+    adapter.setMarkPrice(95);
+    adapter.setMarkPrice(95);
+    expect(adapter.getOrders()[0].filledQuantity).toBe(0.2);
+    adapter.setMarkPrice(95);
+    expect(fills.map((fill) => [fill.quantity, fill.remaining])).toEqual([[0.1, 0.2], [0.1, 0.1], [0.1, undefined]]);
+  });
+
+  it('forgets the position an order was building once the order is off the book, whatever took it off', async () => {
+    const { adapter, limit } = connect();
+    const built = () => (adapter as unknown as { building: Map<string, string> }).building.size;
+    // Filled: its last part ends it.
+    await limit('buy', 95, 3);
+    adapter.setMarkPrice(95);
+    expect(built()).toBe(1);
+    adapter.setMarkPrice(95);
+    expect(built()).toBe(0);
+    // Cancelled by another of its group filling.
+    await limit('buy', 94, 4, { ocoGroup: 'g' });
+    adapter.setMarkPrice(94);
+    adapter.setMarkPrice(96);
+    await adapter.placeOrder({ side: 'buy', type: 'stop', price: 97, stopPrice: 97, quantity: 1, ocoGroup: 'g' });
+    adapter.setMarkPrice(97);
+    expect(adapter.getOrders()).toEqual([]);
+    expect(built()).toBe(0);
   });
 });

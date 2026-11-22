@@ -174,11 +174,15 @@ chart.on('ordersChange', (e) => console.log(e.payload.orders[0]?.filledQuantity)
 <p>
   The parts of one order build one position, at the average of their prices; on a net account they add to its
   position, or take from it. The position has the order's stop-loss, take-profit and levels from its first
-  part. A part pays its own commission, and one the account can no longer carry cancels what is left of the
+  part, and a later part brings them no second time: a stop you moved since, or took off, stays as you left
+  it. A part that fills after its position was closed opens another, with the order's stops again. A level is
+  a size of the whole plan, so the first parts may not fill it: it takes no more than is open. A stop-limit
+  fills in parts too, once it works as a limit. A part pays its own commission, and one the account can no longer carry cancels what is left of the
   order (<code>executionError</code>). What is left can be moved, cancelled, or end at its date, and the first
   part cancels the rest of the order's group. Of an <code>'ioc'</code> order what fills at once fills and the
   rest is dropped (the order that <code>placeOrder</code> gives back says how much: its
-  <code>filledQuantity</code>); a <code>'fok'</code> order larger than the size is refused. A market order and
+  <code>filledQuantity</code>; the chart and the widget say nothing of the dropped rest, and its fill is of
+  less than was asked); a <code>'fok'</code> order larger than the size is refused. A market order and
   a stop fill whole, as do closes: the paper market takes them at the price there is, and models no slippage.
   An adapter of your own reports its broker's parts the same way: the order with its
   <code>filledQuantity</code> in <code>orders</code>, and a <code>fill</code> for each.

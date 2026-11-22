@@ -65,9 +65,11 @@ export class ActivityLog {
     for (const [id, order] of before) {
       if (now.has(id)) continue;
       // Filled whole: that was logged. Filled in part, or not at all: what was left was cancelled.
-      const whole = (this.filled.get(id) ?? 0) >= order.quantity * (1 - PART_SLACK);
+      const done = this.filled.get(id) ?? 0;
+      const whole = done >= order.quantity * (1 - PART_SLACK);
       this.filled.delete(id);
-      if (!whole) this.add(orderEntry('cancelled', order, time));
+      // What was cancelled is what was left of it, with no sum's rounding after it.
+      if (!whole) this.add(orderEntry('cancelled', done > 0 ? { ...order, quantity: Number((order.quantity - done).toPrecision(12)) } : order, time));
     }
   }
 
