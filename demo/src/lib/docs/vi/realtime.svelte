@@ -244,6 +244,15 @@ barDelta({ volume: 1200, buyVolume: 700 })   // 200: 700 bought, 500 sold`}</cod
   CSV và JSON ghi nó vào một cột riêng (<code>Buy Volume</code>), và bản nhập đọc lại được cột này. Nến có một
   phần không ghi thì không có giá trị này: biết một nửa thì không tính là biết.
 </p>
+<p>
+  Ba điều cần biết. Trade đưa vào bằng <code>chart.updateLastBarFromTick</code> cũng được đếm khi nó có
+  <code>side</code>; trade có khối lượng mà không có side làm nến đang hình thành không còn
+  <code>buyVolume</code>. Renko, Kagi, line break, point and figure và range bars là nến do chart vẽ ra, không
+  phải nến của feed: chỉ báo trên các chart đó đọc nến được vẽ, vốn không có số liệu này, nên delta ở đó là
+  giá trị ước lượng. Và khi chỉ một số nến của chuỗi có ghi, delta tích luỹ cộng delta thật với giá trị ước
+  lượng, mà mỗi giá trị ước lượng là toàn bộ khối lượng của một nến: đường này nhảy bậc ở chỗ hai loại gặp nhau.
+  Các cầu nối JS API và UDF không có trường cho số liệu này.
+</p>
 
 <h2>Trạng thái thị trường và tin tức</h2>
 <p>

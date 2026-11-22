@@ -243,6 +243,15 @@ barDelta({ volume: 1200, buyVolume: 700 })   // 200: 700 bought, 500 sold`}</cod
   its volume; the CSV and JSON exports write it in a column of its own (<code>Buy Volume</code>), which
   the import reads back. A bar with a part that does not say has none: half a split is no split.
 </p>
+<p>
+  Three things to know. A trade pushed with <code>chart.updateLastBarFromTick</code> counts too when it
+  has its <code>side</code>; one with a volume and no side leaves the forming bar with no
+  <code>buyVolume</code>. Renko, Kagi, line break, point and figure and range bars are drawn bars, not
+  the feed's: indicators on those charts read the drawn bars, which have no split, so the delta there is
+  the estimate. And where only some bars of a series say, the cumulative delta adds true deltas to
+  estimates, each of which is a bar's whole volume: it steps where the two meet. The JS API and UDF
+  bridges have no field for it.
+</p>
 
 <h2>Market status and news</h2>
 <p>

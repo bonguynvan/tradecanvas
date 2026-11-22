@@ -71,3 +71,37 @@ describe('a bar replayed part of the way', () => {
     expect(formingAt(intrabarPath(plain), 0.5)).not.toHaveProperty('buyVolume');
   });
 });
+
+describe('Chart: a live trade that says who took it', () => {
+  it('adds to what was bought in the forming bar, by the chart’s own tick method', () => {
+    chart.setData(bars(30));
+    const last = chart.getData().at(-1)!;
+    chart.updateLastBarFromTick({ time: last.time + 1, price: 101, volume: 4, side: 'buy' });
+    expect(chart.getData().at(-1)).toEqual(expect.objectContaining({ volume: 14, buyVolume: 7 }));
+    chart.updateLastBarFromTick({ time: last.time + 2, price: 100, volume: 6, side: 'sell' });
+    expect(chart.getData().at(-1)).toEqual(expect.objectContaining({ volume: 20, buyVolume: 7 }));
+    // One that does not say leaves the bar with no split.
+    chart.updateLastBarFromTick({ time: last.time + 3, price: 100, volume: 1 });
+    expect(chart.getData().at(-1)).not.toHaveProperty('buyVolume');
+  });
+
+  it('starts the count in a bar that opened with nothing traded', () => {
+    chart.setData(bars(30));
+    const last = chart.getData().at(-1)!;
+    chart.appendBar({ time: last.time + HOUR, open: 101, high: 101, low: 101, close: 101, volume: 0 });
+    chart.updateLastBarFromTick({ time: last.time + HOUR + 1, price: 102, volume: 3, side: 'buy' });
+    expect(chart.getData().at(-1)).toEqual(expect.objectContaining({ volume: 3, buyVolume: 3 }));
+  });
+});
+
+describe('Chart: a bar that says what cannot be', () => {
+  it('is kept without its split: more bought than traded, or no number', () => {
+    const data = bars(30);
+    data[5] = { ...data[5], buyVolume: 40 };
+    data[6] = { ...data[6], buyVolume: Number.NaN };
+    data[7] = { ...data[7], buyVolume: -2 };
+    chart.setData(data);
+    for (const i of [5, 6, 7]) expect(chart.getData()[i], String(i)).not.toHaveProperty('buyVolume');
+    expect(chart.getData()[8].buyVolume).toBe(3);
+  });
+});

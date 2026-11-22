@@ -250,6 +250,15 @@ barDelta({ volume: 1200, buyVolume: 700 })   // 200: 700 bought, 500 sold`}</cod
   (<code>Buy Volume</code>), que la importación vuelve a leer. Una barra con una parte que no lo dice no
   lo tiene: medio reparto no es un reparto.
 </p>
+<p>
+  Tres cosas a saber. Una operación enviada con <code>chart.updateLastBarFromTick</code> también cuenta
+  cuando lleva su <code>side</code>; una con volumen y sin side deja la barra en formación sin
+  <code>buyVolume</code>. Renko, Kagi, line break, punto y figura y las barras de rango son barras
+  dibujadas, no las del feed: los indicadores de esos gráficos leen las barras dibujadas, que no tienen
+  reparto, así que allí el delta es la estimación. Y cuando solo algunas barras de una serie lo dicen, el
+  delta acumulado suma deltas reales con estimaciones, cada una de las cuales es todo el volumen de una
+  barra: da un escalón donde se encuentran. Los puentes JS API y UDF no tienen un campo para ello.
+</p>
 
 <h2>Estado del mercado y noticias</h2>
 <p>

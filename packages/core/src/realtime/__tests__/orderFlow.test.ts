@@ -125,3 +125,60 @@ describe('the bars written out', () => {
     expect(JSON.parse(DataExporter.toJSON([bar(1_700_000_000_000, 10)]))[0]).not.toHaveProperty('buyVolume');
   });
 });
+
+describe('a bar with no trade in it yet', () => {
+  it('starts counting what the buyers take with its first trade, though it said nothing before', () => {
+    const empty: OHLCBar = { time: 0, open: 10, high: 10, low: 10, close: 10, volume: 0 };
+    expect(mergeBar(empty, { time: 1, price: 11, volume: 2, side: 'buy' })).toEqual(expect.objectContaining({ volume: 2, buyVolume: 2 }));
+    expect(mergeBar(empty, { time: 1, price: 9, volume: 2, side: 'sell' })).toEqual(expect.objectContaining({ volume: 2, buyVolume: 0 }));
+    expect(mergeBar(empty, { time: 1, price: 9, volume: 2 })).not.toHaveProperty('buyVolume');
+  });
+});
+
+describe('the mock feed’s made-up split', () => {
+  it('is within each bar’s volume, and draws no random number of its own', async () => {
+    const { MockAdapter } = await import('../adapters/MockAdapter.js');
+    const random = Math.random;
+    let draws = 0;
+    Math.random = () => {
+      draws++;
+      return random();
+    };
+    try {
+      const bars = await new MockAdapter({ tickInterval: 1000, historySize: 200 }).fetchHistory('BTCUSDT', '5m');
+      expect(bars).toHaveLength(200);
+      for (const b of bars) {
+        expect(b.buyVolume).toBeGreaterThanOrEqual(0);
+        expect(b.buyVolume!).toBeLessThanOrEqual(b.volume);
+      }
+      // Some bars go against their close: the split is no copy of the bar's direction.
+      expect(bars.some((b) => (b.close >= b.open) !== (2 * b.buyVolume! - b.volume >= 0))).toBe(true);
+      // Four draws a bar, as before the split: the change, the two wicks and the volume.
+      expect(draws % 200).toBe(0);
+      expect(draws / 200).toBe(4);
+    } finally {
+      Math.random = random;
+    }
+  });
+});
+
+describe('the bars written out and read back', () => {
+  it('say the same of what was bought, cell by cell', async () => {
+    const { parseOHLCV } = await import('../../../../library/src/io/parseOHLCV.js');
+    const bars = [bar(1_700_000_000_000, 10, 7), bar(1_700_000_060_000, 5), bar(1_700_000_120_000, 8, 0)];
+    const back = parseOHLCV(DataExporter.toCSV(bars)).data;
+    expect(back.map((b) => [b.volume, b.buyVolume])).toEqual([[10, 7], [5, undefined], [8, 0]]);
+  });
+});
+
+describe('a reconnect’s forming bar', () => {
+  it('keeps what the buyers took of it, on top of the history', async () => {
+    const { withForming } = await import('../StreamManager.js');
+    const history: OHLCBar[] = [bar(1_700_000_000_000, 10, 7)];
+    const forming = { time: 1_700_000_060_000, open: 10, high: 12, low: 9, close: 11, volume: 6, buyVolume: 2, closed: false, tickCount: 3 };
+    expect(withForming(history, forming).at(-1)).toEqual({ time: 1_700_000_060_000, open: 10, high: 12, low: 9, close: 11, volume: 6, buyVolume: 2 });
+    const { buyVolume: _bought, ...plain } = forming;
+    expect(withForming(history, plain).at(-1)).not.toHaveProperty('buyVolume');
+    expect(withForming(history, null)).toBe(history);
+  });
+});

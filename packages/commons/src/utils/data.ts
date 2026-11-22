@@ -183,7 +183,8 @@ export function mergeBar(existing: OHLCBar, tick: { price: number; volume?: numb
     volume: existing.volume + (tick.volume ?? 0),
   };
   // What was bought goes on being counted only while every trade says who took it.
-  const bought = buyVolumeAfter(had, tick);
+  // A bar with nothing traded in it yet starts the count with this trade, whatever it said before.
+  const bought = buyVolumeAfter(had, tick, had === undefined && !(existing.volume > 0));
   if (bought !== undefined) merged.buyVolume = bought;
   return merged;
 }

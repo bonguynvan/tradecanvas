@@ -1534,8 +1534,13 @@ export class Chart {
     this.scheduleRender();
   }
 
-  /** A trade's price into the forming bar (its high, low, close and volume): the live price, as with `updateLastBar`. */
-  updateLastBarFromTick(tick: { price: number; volume?: number; time: number }): void {
+  /**
+   * A trade's price into the forming bar (its high, low, close and volume):
+   * the live price, as with `updateLastBar`. With the trade's `side`, the
+   * bar's `buyVolume` counts it too; a trade with a volume and no side leaves
+   * the bar with none.
+   */
+  updateLastBarFromTick(tick: { price: number; volume?: number; time: number; side?: 'buy' | 'sell' }): void {
     if (!Number.isFinite(tick.price) || tick.price < 0) return;
     if (tick.volume !== undefined && !(Number.isFinite(tick.volume) && tick.volume >= 0)) return;
     // A tick outside regular hours, while they are hidden, moves the price line and what follows the price, not a bar.

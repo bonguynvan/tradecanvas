@@ -234,6 +234,15 @@ barDelta({ volume: 1200, buyVolume: 700 })   // 200: 700 bought, 500 sold`}</cod
   CSV와 JSON 내보내기는 그것을 별도의 열(<code>Buy Volume</code>)에 쓰며 가져오기가 그 열을 다시 읽습니다.
   알려 주지 않는 부분이 하나라도 있는 봉에는 없습니다: 절반만 아는 것은 아는 것이 아닙니다.
 </p>
+<p>
+  알아 둘 것이 세 가지 있습니다. <code>chart.updateLastBarFromTick</code>으로 넣은 체결도
+  <code>side</code>가 있으면 셉니다. 거래량은 있는데 side가 없는 체결은 형성 중인 봉에서
+  <code>buyVolume</code>을 없앱니다. Renko, Kagi, Line Break, Point &amp; Figure, Range Bars는 차트가 그리는
+  봉이지 피드의 봉이 아닙니다: 이런 차트의 지표는 그려진 봉을 읽고, 그 봉에는 이 구분이 없으므로 거기서의
+  델타는 추정값입니다. 그리고 시리즈의 일부 봉만 알려 줄 때 누적 델타는 실제 델타와 추정값을 더하는데,
+  추정값은 저마다 봉의 거래량 전체이므로 둘이 만나는 곳에서 계단이 생깁니다. JS API와 UDF 브리지에는 이를
+  위한 필드가 없습니다.
+</p>
 
 <h2>시장 상태와 뉴스</h2>
 <p>

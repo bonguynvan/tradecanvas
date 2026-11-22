@@ -224,6 +224,14 @@ barDelta({ volume: 1200, buyVolume: 700 })   // 200: 700 bought, 500 sold`}</cod
   导出会把它写入单独的一列（<code>Buy Volume</code>），导入时可以读回。只要有一部分没有说明，
   这根K线就没有该值：只知道一半不算知道。
 </p>
+<p>
+  有三点需要了解。通过 <code>chart.updateLastBarFromTick</code> 推入的成交，只要带有
+  <code>side</code> 也会被统计；有成交量却没有 side 的成交会让正在形成的K线失去
+  <code>buyVolume</code>。Renko、Kagi、Line Break、Point &amp; Figure 和 Range Bars 是图表绘制出来的K线，
+  而不是数据源的K线：这些图表上的指标读取的是绘制出的K线，它们没有这一拆分，所以那里的 delta 是估算值。
+  另外，当一个序列中只有部分K线说明了主动方时，累计 delta 会把真实 delta 与估算值相加，而每个估算值都是
+  一根K线的全部成交量：两者相接处会出现台阶。JS API 和 UDF 桥接没有对应的字段。
+</p>
 
 <h2>市场状态与新闻</h2>
 <p>
