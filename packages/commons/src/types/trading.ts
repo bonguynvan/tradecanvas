@@ -24,6 +24,11 @@ export interface TradingOrder {
   price: number;
   stopPrice?: number;
   quantity: number;
+  /**
+   * How much of it has filled so far, for an order that fills in parts: the
+   * rest still works. Left out while nothing of it has filled.
+   */
+  filledQuantity?: number;
   label?: OrderLabel;
   draggable?: boolean;
   /** Stop-loss and take-profit the position gets when the order fills. */

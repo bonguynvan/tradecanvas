@@ -27,7 +27,7 @@ if (UI && !/^[a-z]+$/.test(UI)) throw new Error(`UI must be a look's name, not $
 // The widgets' language, to see its strings fit: `WIDGET_LOCALE=vi` (English without it).
 const WIDGET_LOCALE = process.env.WIDGET_LOCALE ?? '';
 if (WIDGET_LOCALE && !/^[a-zA-Z-]+$/.test(WIDGET_LOCALE)) throw new Error(`WIDGET_LOCALE must be a language tag, not ${WIDGET_LOCALE}`);
-const SCENES = ['orderAtPrice', 'linkedGrid', 'replay', 'replayDepth', 'depth', 'compare', 'renko', 'priceLimits', 'indicators', 'ichimoku', 'krx', 'paneDrawings', 'selectedDrawing', 'selectedPaneDrawing', 'manyPanes', 'marks', 'historyDaily', 'historyHourly', 'positions', 'watchlistOwnRow', 'dockPage', 'positionAddStops', 'levelDrag', 'sidebarMenus', 'favoritesBar', 'symbolSearch', 'paneMillions', 'hiddenCandles', 'fractals', 'bracketQuantity', 'noPage', 'paperLook'];
+const SCENES = ['orderAtPrice', 'linkedGrid', 'replay', 'replayDepth', 'depth', 'compare', 'renko', 'priceLimits', 'indicators', 'ichimoku', 'krx', 'paneDrawings', 'selectedDrawing', 'selectedPaneDrawing', 'manyPanes', 'marks', 'historyDaily', 'historyHourly', 'positions', 'watchlistOwnRow', 'dockPage', 'positionAddStops', 'levelDrag', 'partFill', 'sidebarMenus', 'favoritesBar', 'symbolSearch', 'paneMillions', 'hiddenCandles', 'fractals', 'bracketQuantity', 'noPage', 'paperLook'];
 const THEMES = ['dark', 'light'];
 const SIZES = {
   phone: { viewport: { width: 390, height: 760 }, isMobile: true, hasTouch: true },

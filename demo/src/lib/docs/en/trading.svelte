@@ -142,8 +142,8 @@ chart.placeOrderIntent({ side: 'buy', type: 'limit', price: 63_500, quantity: 1,
   within that limit (at the price that reached the stop, when that is within it). A <code>'gtd'</code> order
   comes off when the time given with <code>setMarkPrice</code> reaches its date (the clock's, with no time
   given), and one whose date has passed is refused. An <code>'ioc'</code> or <code>'fok'</code> limit fills at
-  once, at the price there is, when that is within it, and is refused when it is not (<code>executionError</code>); the paper market has no size, so the two are the
-  same there. The widget's order ticket offers both for a limit order, and its account panel writes OCO beside
+  once, at the price there is, when that is within it, and is refused when it is not (<code>executionError</code>). The paper market has no size of its own, so the two are the
+  same there, unless it is given one (<a href="#partial-fills">below</a>). The widget's order ticket offers both for a limit order, and its account panel writes OCO beside
   an order of a group and a dated order's date. It leaves <code>'day'</code> to the app, which knows when its market's day ends.
 </p>
 <p>
@@ -154,6 +154,36 @@ chart.placeOrderIntent({ side: 'buy', type: 'limit', price: 63_500, quantity: 1,
   it round, the rest opening at the fill's price. A fill that adds to it brings its stops when it has them; one
   that takes from it leaves the position's stops as they are; one that turns it round brings its own.
 </p>
+<h3 id="partial-fills">Orders that fill in parts</h3>
+<p>
+  A limit order rests in the market and is filled as others come to it, often a part at a time. Given a
+  <code>fillSize</code>, the paper account fills no more than that of a limit order at one price: a larger one
+  fills a part at each price that reaches its limit (each <code>setMarkPrice</code>), and works on for the
+  rest. The order stays in <code>chart.getOrders()</code> with its <code>filledQuantity</code>; each part is a
+  fill of its own (<code>executionFill</code>), whose <code>remaining</code> is what it left working, and the
+  last part takes the order off. The chart writes what has filled on the order's tag (<code>2/5</code>), and
+  the widget's account panel in its row; the tags on the order's stop and target say what the rest of it would
+  make, since what has filled is a position with tags of its own.
+</p>
+<pre><code>{`const broker = new PaperExecutionAdapter({ fillSize: 2 })   // two of a limit order at each price
+chart.connectExecution(broker)
+chart.placeOrderIntent({ side: 'buy', type: 'limit', price: 95, quantity: 5 })
+
+chart.on('executionFill', (e) => console.log(e.payload.quantity, e.payload.remaining))   // 2 3, then 2 1, then 1 undefined
+chart.on('ordersChange', (e) => console.log(e.payload.orders[0]?.filledQuantity))        // 2, 4, then no order`}</code></pre>
+<p>
+  The parts of one order build one position, at the average of their prices; on a net account they add to its
+  position, or take from it. The position has the order's stop-loss, take-profit and levels from its first
+  part. A part pays its own commission, and one the account can no longer carry cancels what is left of the
+  order (<code>executionError</code>). What is left can be moved, cancelled, or end at its date, and the first
+  part cancels the rest of the order's group. Of an <code>'ioc'</code> order what fills at once fills and the
+  rest is dropped (the order that <code>placeOrder</code> gives back says how much: its
+  <code>filledQuantity</code>); a <code>'fok'</code> order larger than the size is refused. A market order and
+  a stop fill whole, as do closes: the paper market takes them at the price there is, and models no slippage.
+  An adapter of your own reports its broker's parts the same way: the order with its
+  <code>filledQuantity</code> in <code>orders</code>, and a <code>fill</code> for each.
+</p>
+
 <h3 id="take-profit-levels">Taking profit in parts</h3>
 <p>
   A position can be taken off in parts. <code>takeProfits</code> on an order's intent, or on a position

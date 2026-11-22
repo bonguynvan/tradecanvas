@@ -325,3 +325,28 @@ describe('WidgetAccountPanel: an account against its margin', () => {
     expect(cells()[0][4]).toBe('Liquidation');
   });
 });
+
+describe('WidgetAccountPanel: an order that fills in parts', () => {
+  it('writes how much of it has filled beside its quantity, and a plain quantity where nothing has', () => {
+    panel.openPanel();
+    panel.update({
+      ...current,
+      orders: [
+        { id: 'a', side: 'buy', type: 'limit', price: 90, quantity: 5, filledQuantity: 2 },
+        { id: 'b', side: 'buy', type: 'limit', price: 89, quantity: 3 },
+        { id: 'c', side: 'buy', type: 'limit', price: 88, quantity: 0.3, filledQuantity: 0.1 + 0.1 },
+      ],
+    });
+    tab(/Orders/).click();
+    expect(cells().map((row) => row[2])).toEqual(['2 / 5', '3', '0.2 / 0.3']);
+  });
+
+  it('follows an order as another part of it fills', () => {
+    panel.openPanel();
+    const order = { id: 'a', side: 'buy' as const, type: 'limit' as const, price: 90, quantity: 5 };
+    panel.update({ ...current, orders: [{ ...order, filledQuantity: 2 }] });
+    tab(/Orders/).click();
+    panel.update({ ...current, orders: [{ ...order, filledQuantity: 4 }] });
+    expect(cells()[0][2]).toBe('4 / 5');
+  });
+});

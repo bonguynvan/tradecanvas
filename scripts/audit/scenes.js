@@ -426,6 +426,37 @@ const SCENES = {
     return { ...s, broker, checks };
   },
 
+  /**
+   * A limit order that the paper account fills in parts, two of its five
+   * filled: its tag reads 2/5, the position it is building beside it, and
+   * its row in the account panel's orders.
+   */
+  async partFill() {
+    const s = await widget({ trading: true });
+    const last = lastClose(s.chart);
+    const broker = new PaperExecutionAdapter({ markPrice: last, fillSize: 2 });
+    s.chart.connectExecution(broker);
+    const limit = last * 0.997;
+    await broker.placeOrder({ side: 'buy', type: 'limit', price: limit, quantity: 5, stopLoss: last * 0.992 });
+    // The price comes to its limit once, and goes back: one part fills, the rest waits.
+    broker.setMarkPrice(limit);
+    broker.setMarkPrice(last);
+    s.widget.toggleAccountPanel(true);
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    // The panel's second tab is its orders, in any language.
+    host.querySelectorAll('[role=tab]')[1]?.click();
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    const checks = () => {
+      const problems = [];
+      const order = s.chart.getOrders()[0];
+      if (!order || order.filledQuantity !== 2 || order.quantity !== 5) problems.push('the chart does not hold the order with two of its five filled');
+      if (s.chart.getPositions()[0]?.quantity !== 2) problems.push('the part that filled is not a position of two');
+      if (!locale && ![...host.querySelectorAll('tbody td')].some((cell) => cell.textContent === '2 / 5')) problems.push('the account panel does not write 2 / 5 in the order\'s row');
+      return problems;
+    };
+    return { ...s, broker, checks };
+  },
+
   /** A long bracket being placed with a paper account connected: its quantity in the bar's field and on the entry's tag. */
   async bracketQuantity() {
     const s = await widget({ trading: true });

@@ -46,6 +46,17 @@ export interface PaperExecutionOptions {
   /** What each fill costs, opening or closing. */
   commission?: PaperCommission;
   /**
+   * The most of a limit order that fills at one price. A larger one fills
+   * in parts, one at each price the account is told (`setMarkPrice`) that
+   * reaches its limit, and works on for the rest: its `filledQuantity`
+   * says how far it has got, each fill's `remaining` what it left. Of an
+   * immediate-or-cancel order what fills at once fills and the rest is
+   * dropped; a fill-or-kill order larger than this is refused. A market
+   * order and a stop fill whole: the paper market takes them at the price
+   * there is. Without it every order fills whole.
+   */
+  fillSize?: number;
+  /**
    * Where the account is warned, as the equity's part of the margin its
    * positions hold (the margin level): `1` warns when the equity falls under
    * the margin. It says so once (the `marginCall` event), and again only
@@ -103,7 +114,9 @@ function trailed(position: TradingPosition, price: number): TradingPosition {
  * limit/stop orders triggered via `setMarkPrice()`. A stop-limit becomes a
  * limit at its stop; of a group where one cancels the others (`ocoGroup`)
  * the first to fill cancels the rest; an order ends at its date (`'gtd'`) or
- * is refused unless it fills at once (`'ioc'`, `'fok'`). SL/TP auto-close
+ * is refused unless it fills at once (`'ioc'`, `'fok'`); a limit order
+ * larger than the market fills at one price (`fillSize`) fills in parts.
+ * SL/TP auto-close
  * when the mark crosses them. Every fill is reported, closes included (with
  * the profit or loss they realise), so a host can keep a trade history. An
  * account with money can be warned as its equity falls against its margin
@@ -137,6 +150,10 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
   private readonly stopOutLevel: number | null;
   /** The warning is out: no other until the equity has been back over the level. */
   private called = false;
+  /** The most of a limit order that fills at one price; null: all of it. */
+  private readonly fillSize: number | null;
+  /** The position each part-filled order is building, where every order has one of its own: its next part adds to it. */
+  private readonly building = new Map<string, string>();
 
   constructor(options: PaperExecutionOptions = {}) {
     this.markPrice = options.markPrice ?? 0;
@@ -147,6 +164,7 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
     this.commission = options.commission ?? {};
     this.marginCallLevel = positive(options.marginCallLevel) ? options.marginCallLevel : null;
     this.stopOutLevel = positive(options.stopOutLevel) ? options.stopOutLevel : null;
+    this.fillSize = positive(options.fillSize) ? options.fillSize : null;
   }
 
   /** The account's money now, or null when it keeps none (no `balance` was given). */
@@ -356,11 +374,16 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
     if (intent.type === 'market') {
       this.fill(order, this.markPrice || intent.price);
     } else if (atOnce) {
-      // All of it now or none of it: the paper market has no size to fill a part with.
       // With no price yet there is nothing to fill it at.
       if (!(this.markPrice > 0) || !this.isTriggered(order)) throw new Error(`The ${intent.timeInForce} order was not filled at once: it is cancelled`);
-      // At the price there is: its limit is the worst it takes.
-      this.fill(order, this.markPrice);
+      // What the market fills of it at this price: all of it, unless it fills in parts.
+      const part = this.partOf(order);
+      const whole = part >= order.quantity * (1 - QUANTITY_SLACK);
+      // All of it now or none of it.
+      if (!whole && intent.timeInForce === 'fok') throw new Error('The fok order was not filled at once: it is cancelled');
+      // At the price there is: its limit is the worst it takes. Of an immediate-or-cancel order the rest is dropped.
+      this.fill(order, this.markPrice, part, false);
+      if (!whole) order.filledQuantity = part;
     } else {
       this.orders = [...this.orders, order];
       this.emit('orders', this.orders);
@@ -381,6 +404,7 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
 
   async cancelOrder(intent: OrderCancelIntent): Promise<void> {
     this.orders = this.orders.filter((o) => o.id !== intent.orderId);
+    this.building.delete(intent.orderId);
     this.emit('orders', this.orders);
   }
 
@@ -451,28 +475,67 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
     this.listeners.clear();
     this.orders = [];
     this.positions = [];
+    this.building.clear();
   }
 
   // --- internal ---
 
-  private fill(order: TradingOrder, price: number): void {
-    // It is off the book, and so are the orders it cancels: the rest of its group.
-    this.orders = this.orders.filter((o) => o.id !== order.id && !(order.ocoGroup !== undefined && o.ocoGroup === order.ocoGroup));
+  /** What is left of an order to fill. */
+  private leftOf(order: TradingOrder): number {
+    return order.quantity - (order.filledQuantity ?? 0);
+  }
+
+  /**
+   * How much of an order fills at one price: what is left of it, or for a
+   * limit order in a market that fills in parts, no more than that market's
+   * size. A market order and a stop are taken whole.
+   */
+  private partOf(order: TradingOrder): number {
+    const left = this.leftOf(order);
+    return this.fillSize !== null && order.type === 'limit' ? Math.min(left, this.fillSize) : left;
+  }
+
+  /**
+   * Fill `part` of an order at `price` (all that is left of it, without
+   * one). A part that leaves some of it stays on the book with what has
+   * filled counted, when `rests`; else the rest is dropped.
+   */
+  private fill(order: TradingOrder, price: number, part = this.leftOf(order), rests = true): void {
+    const left = this.leftOf(order);
+    // A part as large as what is left (to a hair) is the last of it.
+    const last = part >= left * (1 - QUANTITY_SLACK);
+    const quantity = last ? left : part;
+    const working = !last && rests;
+    // The orders it cancels are off the book, the rest of its group; and so is it, unless a part of it still works.
+    this.orders = this.orders
+      .filter((o) => (o.id === order.id ? working : !(order.ocoGroup !== undefined && o.ocoGroup === order.ocoGroup)))
+      .map((o) => (o.id === order.id ? { ...o, filledQuantity: (o.filledQuantity ?? 0) + quantity } : o));
     const fill: FillEvent = {
       orderId: order.id,
       side: order.side,
       price,
-      quantity: order.quantity,
+      quantity,
       time: this.fillTime(),
       reason: 'order',
     };
-    const held = this.net ? this.positions[0] : undefined;
-    if (held) this.fillInto(held, order, price, fill);
-    else {
-      const position = this.opened(order, price, order.quantity);
+    if (working) fill.remaining = left - quantity;
+    // The part as an order of its own size: what a position is opened by, or added to.
+    const { filledQuantity: _filled, ...whole } = order;
+    const filled: TradingOrder = { ...whole, quantity };
+    const held = this.net ? this.positions[0] : this.positions.find((p) => p.id === this.building.get(order.id));
+    if (held && this.net) this.fillInto(held, filled, price, fill);
+    else if (held) {
+      // Another part of an order whose first opened this position: it grows, at the average of their prices.
+      this.positions = this.positions.map((p) => (p.id === held.id ? this.added(held, filled, price) : p));
+      fill.positionId = held.id;
+    } else {
+      const position = this.opened(filled, price, quantity);
       this.positions = [...this.positions, position];
       fill.positionId = position.id;
     }
+    // The position its next part goes into, where each order has its own.
+    if (working && !this.net && fill.positionId !== undefined) this.building.set(order.id, fill.positionId);
+    else this.building.delete(order.id);
     this.charge(fill);
     // The account first: what hears of the fill or the positions reads it as they left it.
     this.tellAccount();
@@ -506,21 +569,7 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
   private fillInto(held: TradingPosition, order: TradingOrder, price: number, fill: FillEvent): void {
     const open = held.quantity - (held.closedQuantity ?? 0);
     if (order.side === held.side) {
-      const quantity = open + order.quantity;
-      const added: TradingPosition = {
-        ...held,
-        quantity,
-        entryPrice: (held.entryPrice * open + price * order.quantity) / quantity,
-        // The fill's stops when it brings them; else the position keeps its own.
-        stopLoss: order.stopLoss ?? held.stopLoss,
-        takeProfit: order.takeProfit ?? held.takeProfit,
-      };
-      delete added.closedQuantity;
-      if (order.trailingStop !== undefined) added.trailingStop = order.trailingStop;
-      // The fill's levels when it brings them, as its stops: they are the plan for the whole position now.
-      const levels = beyondEntry(order.takeProfits, order.side, added.entryPrice);
-      if (levels) added.takeProfits = levels;
-      this.positions = [added];
+      this.positions = [this.added(held, order, price)];
       fill.positionId = held.id;
       return;
     }
@@ -542,6 +591,29 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
       this.positions = [turned];
       fill.positionId = turned.id;
     }
+  }
+
+  /**
+   * `held` with a fill the same way added to it: what is open of it and the
+   * fill, at the average of their prices.
+   */
+  private added(held: TradingPosition, order: TradingOrder, price: number): TradingPosition {
+    const open = held.quantity - (held.closedQuantity ?? 0);
+    const quantity = open + order.quantity;
+    const added: TradingPosition = {
+      ...held,
+      quantity,
+      entryPrice: (held.entryPrice * open + price * order.quantity) / quantity,
+      // The fill's stops when it brings them; else the position keeps its own.
+      stopLoss: order.stopLoss ?? held.stopLoss,
+      takeProfit: order.takeProfit ?? held.takeProfit,
+    };
+    delete added.closedQuantity;
+    if (order.trailingStop !== undefined) added.trailingStop = order.trailingStop;
+    // The fill's levels when it brings them, as its stops: they are the plan for the whole position now.
+    const levels = beyondEntry(order.takeProfits, order.side, added.entryPrice);
+    if (levels) added.takeProfits = levels;
+    return added;
   }
 
   /** Take a position off the book at `price`, reporting the fill and what it realised. */
@@ -576,7 +648,15 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
     const working = this.orders.filter((o) => !(o.timeInForce === 'gtd' && o.expireTime !== undefined && o.expireTime <= now));
     if (working.length === this.orders.length) return;
     this.orders = working;
+    this.forgetBuilt();
     this.emit('orders', this.orders);
+  }
+
+  /** The positions being built by orders that are off the book are built no more. */
+  private forgetBuilt(): void {
+    for (const id of [...this.building.keys()]) {
+      if (!this.orders.some((o) => o.id === id)) this.building.delete(id);
+    }
   }
 
   private checkPendingOrders(): void {
@@ -593,16 +673,19 @@ export class PaperExecutionAdapter implements ExecutionAdapter {
     for (const o of this.orders.filter((o) => this.isTriggered(o))) {
       // One of its group filled before it in this pass, and cancelled it.
       if (!this.orders.includes(o)) continue;
+      // What fills of it at this price: all that is left, or a part where the market fills in parts.
+      const part = this.partOf(o);
       // The money it needed has gone since it was placed: it comes off, and says why.
-      const lack = this.cannotCarry(o, reached.has(o.id) ? this.markPrice : this.sizedAt(o));
+      const lack = this.cannotCarry({ ...o, quantity: part }, reached.has(o.id) ? this.markPrice : this.sizedAt(o));
       if (lack) {
         this.orders = this.orders.filter((other) => other.id !== o.id);
+        this.building.delete(o.id);
         this.emit('orders', this.orders);
         this.emit('error', { message: `Order ${o.id} was cancelled. ${lack}`, command: 'orderPlace' });
         continue;
       }
       // A limit that waited fills at its price; one that began working at this price fills at it, within its limit.
-      this.fill(o, o.type !== 'limit' ? o.stopPrice ?? o.price : reached.has(o.id) ? this.markPrice : o.price);
+      this.fill(o, o.type !== 'limit' ? o.stopPrice ?? o.price : reached.has(o.id) ? this.markPrice : o.price, part);
     }
   }
 

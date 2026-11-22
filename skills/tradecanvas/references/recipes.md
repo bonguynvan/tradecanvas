@@ -341,6 +341,9 @@ chart.startBracket('buy', undefined, { risk: 50, quantityStep: 0.001 }); // the 
 chart.placeOrderIntent({ side: 'sell', type: 'limit', price: 66_000, quantity: 1, ocoGroup: 'exit' });
 chart.placeOrderIntent({ side: 'sell', type: 'stop', price: 63_000, stopPrice: 63_000, quantity: 1, ocoGroup: 'exit' });
 // timeInForce: 'gtc' | 'day' | 'gtd' (with expireTime, ms) | 'ioc' | 'fok' (filled at once, or refused: executionError)
+// new PaperExecutionAdapter({ fillSize: 2 }) fills a limit order in parts, two at each price that reaches it:
+// the order stays in chart.getOrders() with its filledQuantity, each part is an 'executionFill' with what it left in `remaining`;
+// 'ioc' then fills what there is and drops the rest, 'fok' larger than the size is refused; market and stop orders fill whole
 // new PaperExecutionAdapter({ positions: 'net' }) keeps one net position, as a futures account does
 // new PaperExecutionAdapter({ balance: 10_000, leverage: 10, commission: { rate: 0.0004 } }) keeps its money:
 // chart.getAccount() gives { balance, equity, marginUsed, freeMargin, … }, 'accountChange' follows it,

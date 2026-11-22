@@ -205,3 +205,39 @@ describe('the bracket and the order draft', () => {
     expect(axis.texts).toContain('40.00');
   });
 });
+
+describe('the tag of an order that fills in parts', () => {
+  it('says how much of it has filled, of how much', () => {
+    manager.setPositions([]);
+    manager.setOrders([
+      { id: 'o1', side: 'buy', type: 'limit', price: 30, quantity: 5, filledQuantity: 2 },
+      { id: 'o2', side: 'sell', type: 'limit', price: 80, quantity: 0.3, filledQuantity: 0.1 + 0.1 },
+      { id: 'o3', side: 'sell', type: 'limit', price: 60, quantity: 4 },
+    ]);
+    const { texts } = draw();
+    // Two of five; two tenths of three, with no sum's rounding after them; and a plain quantity where nothing has filled.
+    expect(texts).toEqual(expect.arrayContaining(['2/5', '0.2/0.3', '4']));
+    expect(texts).not.toContain('5');
+  });
+
+  it('says on its stop and its target what the rest of it would make: what has filled is a position, with tags of its own', () => {
+    manager.setPositions([]);
+    manager.setOrders([{ id: 'o1', side: 'buy', type: 'limit', price: 30, quantity: 5, filledQuantity: 2, stopLoss: 20, takeProfit: 50, takeProfits: [{ price: 40, quantity: 4 }] }]);
+    const { texts } = draw();
+    // Three are left: ten under for each at the stop, twenty over at the target; and a level takes no more than those three.
+    expect(texts).toEqual(expect.arrayContaining(['-30.00', '+60.00', 'TP1', '3', '+30.00']));
+    expect(texts).not.toContain('-50.00');
+    expect(texts).not.toContain('+100.00');
+  });
+
+  it('writes a plain quantity for an order nothing of which has filled, or whose count is none', () => {
+    manager.setPositions([]);
+    manager.setOrders([
+      { id: 'o1', side: 'buy', type: 'limit', price: 30, quantity: 5, filledQuantity: 0 },
+      { id: 'o2', side: 'buy', type: 'limit', price: 50, quantity: 6, filledQuantity: Number.NaN },
+    ]);
+    const { texts } = draw();
+    expect(texts).toEqual(expect.arrayContaining(['5', '6']));
+    expect(texts.some((text) => text.includes('/'))).toBe(false);
+  });
+});

@@ -113,6 +113,12 @@ export interface FillEvent {
   pnl?: number;
   /** What the fill cost, when the account charges for trading. */
   commission?: number;
+  /**
+   * What is left of the order, still working, for a fill that took a part
+   * of it. Left out when nothing of it works on: the fill completed it, or
+   * the rest was dropped (an immediate-or-cancel order).
+   */
+  remaining?: number;
 }
 
 export interface ExecutionError {

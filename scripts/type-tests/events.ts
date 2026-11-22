@@ -32,6 +32,9 @@ chart.on('marginCall', (e) => {
   // @ts-expect-error A margin call closes nothing: it names no position.
   return e.payload.positionId;
 });
+// An order that fills in parts says how far it has got, and each part what it left working.
+chart.on('ordersChange', (e) => e.payload.orders.map((o) => o.quantity - (o.filledQuantity ?? 0)));
+chart.on('executionFill', (e) => e.payload.quantity + (e.payload.remaining ?? 0));
 // A dragged take-profit level comes as all the position's levels.
 chart.on('positionModify', (e) => e.payload.takeProfits?.map((level) => level.price + level.quantity));
 chart.on('ordersChange', (e) => e.payload.orders.map((o) => o.id));
