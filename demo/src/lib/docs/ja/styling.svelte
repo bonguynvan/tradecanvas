@@ -322,11 +322,15 @@ chart.on('styleChange', (e) => e.payload.layer)         // 'host' | 'user'`}</co
     <tr><td><code>background.color</code></td><td>チャートの背景（ペインに独自の背景がなければペインも）。</td></tr>
     <tr><td><code>panes.background</code>, <code>.separatorColor</code>, <code>.titleColor</code></td><td>インジケーターのペイン：背景、上端のバー、名前。</td></tr>
     <tr><td><code>grid.horizontal.*</code>, <code>grid.vertical.*</code></td><td><code>visible</code>、<code>color</code>、<code>style</code>（<code>solid</code> · <code>dashed</code> · <code>dotted</code>）、<code>width</code>。方向ごとに別々。</td></tr>
+    <tr><td><code>grid.vertical.periodsOnly</code></td><td><code>true</code> で、垂直グリッドを時間軸のラベルの位置ではなく、期間の始まりに引く：日中足のチャートでは各日の最初のバー、日足のチャートでは各月の最初のバー、週足や月足のチャートでは各年の最初のバーで、軸が表示するタイムゾーンによる。それらが 40 px より近くなる場合（年単位まで縮小した日足のチャート）は一段粗い期間に引き、表示範囲でそのような期間が始まらない所には線を引かない。時間軸が必要：時間軸をオフにすると、線はこのキーがないときと同じになる。</td></tr>
     <tr><td><code>crosshair.horizontal.*</code>, <code>crosshair.vertical.*</code></td><td>クロスヘアの線にも同じ 4 つ（既定は細い実線）。</td></tr>
     <tr><td><code>crosshair.labelBackground</code>, <code>.labelTextColor</code></td><td>軸とペインの目盛り上の価格・時刻ラベル。</td></tr>
     <tr><td><code>axis.price.lineColor</code>, <code>.textColor</code>, <code>axis.time.*</code></td><td>各軸の線とラベル（ペインの目盛りは価格軸に従う）。</td></tr>
+    <tr><td><code>axis.price.valueTagsOutlined</code></td><td><code>true</code> で、価格軸上のインジケーターの値タグを、線の色で塗りつぶす代わりに枠線で描く（線の色の縁の内側はチャートの背景、またはペイン独自の背景で、文字はその線の色）：価格ペイン、インジケーターのペイン、左側のスケールで。背景に近すぎてその上では読めない線は、値がスケールの文字色で書かれる。</td></tr>
     <tr><td><code>legend.textColor</code>, <code>.labelColor</code></td><td>凡例の値と、そのラベル（O、H、L、Vol）。</td></tr>
+    <tr><td><code>legend.upColor</code>, <code>.downColor</code></td><td>バーの値を読む場所での上昇と下落：凡例の終値と変化、クロスヘアのツールチップと固定したツールチップ、計測ツール。未設定ならメイン系列の色に従うので、ローソク足を隠すチャート（独自に描くオーバーレイ）は、これらを設定して色を保つ。</td></tr>
     <tr><td><code>lastPrice.visible</code>, <code>.upColor</code>, <code>.downColor</code>, <code>.style</code>, <code>.width</code></td><td>最新価格の線とタグ。未設定なら色はメイン系列に従う。バーの残り時間（<code>features.barCountdown</code>）はタグの下に付く。</td></tr>
+    <tr><td><code>lastPrice.labelBackground</code>, <code>.labelTextColor</code></td><td>その日の方向にかかわらず 1 色にする最新価格のタグと、その文字。未設定なら、タグは上昇色か下落色で、文字はその上で読める色。線はどちらの場合も <code>upColor</code> と <code>downColor</code> のまま。タグの下の残り時間は両方に従う。</td></tr>
     <tr><td><code>volume.upColor</code>, <code>.downColor</code></td><td>出来高のバー。</td></tr>
     <tr><td><code>sessionBreaks.color</code>, <code>.style</code>, <code>.width</code></td><td>日・週・月の区切り線。</td></tr>
     <tr><td><code>highLow.color</code>, <code>watermark.color</code></td><td>高値・安値の線、ウォーターマーク。</td></tr>

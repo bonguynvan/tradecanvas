@@ -198,10 +198,28 @@ CANDLE_PATTERNS.length                                 // 64`}</code></pre>
 
 <h2>独自のインジケーター</h2>
 <p>
+  手短な方法は <code>defineIndicator</code> です：入力と、バーから線を返す 1 つの関数を渡し、
+  計算には <code>ta</code> を使います（<code>ta.ema</code>、<code>ta.rsi</code>、<code>ta.crossover</code>…）。
+</p>
+<pre><code>{`import { defineIndicator } from '@tradecanvas/chart'
+
+chart.registerIndicator(defineIndicator({
+  id: 'smoothRsi',
+  name: 'Smoothed RSI',
+  inputs: { period: { default: 14, kind: 'int', min: 2 }, smooth: { default: 5, kind: 'int', min: 1 } },
+  scale: { min: 0, max: 100 },
+  levels: [30, 70],
+  calculate: ({ bars, inputs, ta }) => ({ value: ta.ema(ta.rsi(bars.close, inputs.period), inputs.smooth) }),
+}))
+chart.addIndicator('smoothRsi')`}</code></pre>
+<p>
+  長い履歴の上でティックに追従するインジケーターや、独自のものを描くインジケーターでは、
   <code>IndicatorBase</code> を継承し、描画する内容（<code>plots</code>）、ペインのスケール、レベル、
   入力を宣言します。描画のコードを書かなくても、チャートが描画し、ペインのスケールを調整し、値をタグ表示し、
   ウィジェットの凡例と設定に表示します。<code>category</code>（<code>'oscillators'</code>、<code>'volume'</code>…）を
-  指定するとインジケーターダイアログのそのグループに入り、指定しなければ「その他」に入ります。詳しくは
+  指定するとインジケーターダイアログのそのグループに入り、指定しなければ「その他」に入ります。
+  独自のグループ <code>{`{ id: 'my-app', label: 'My App' }`}</code> を指定すると、アプリのインジケーターがその名前の下に、
+  組み込みの種類より前にまとめて並びます。詳しくは
   <a href="https://github.com/bonguynvan/tradecanvas/blob/main/skills/tradecanvas/references/recipes.md#a-custom-indicator">カスタムインジケーターのレシピ</a>を参照してください。
   日・週・月でバーをまとめるインジケーターは、取引所のタイムゾーンを <code>config.exchangeTimeZone</code>
   で読めます（チャートが設定します。未設定なら UTC）。タイムゾーンが変わると、それを読むインジケーターと
@@ -242,11 +260,18 @@ CANDLE_PATTERNS.length                                 // 64`}</code></pre>
 fills: [{ between: ['upper', 'lower'], color: 0, opacity: 0.1 }],`}</code></pre>
 <p>
   <code>kind: 'markers'</code> のプロットは、フィールドに値があるバー（転換点、シグナル）に <code>shape</code>
-  （<code>'dot'</code>、<code>'triangleUp'</code>、<code>'triangleDown'</code>）で印を付けます。位置はその値か、価格ペインでは
+  （<code>'triangleUp'</code>、<code>'triangleDown'</code>、<code>'arrowUp'</code>、<code>'arrowDown'</code>、
+  <code>'dot'</code>、<code>'square'</code>、<code>'diamond'</code>）で印を付けます。位置はその値か、価格ペインでは
   バーの高値の上または安値の下です（<code>position: 'aboveBar'</code>、<code>'belowBar'</code>）。読み取る値ではないので、
   凡例に値は出ず、軸にタグは付かず、エクスポートに列もなく、別のインジケーターが読める線としても提示されません。
   ペインでは、印はその値の位置に置かれます。印のないバーではフィールドを未設定のままにします。
 </p>
+<p>
+  印の幅はバーが許すかぎりで、4〜8 px です。閲覧者はインジケーターの「スタイル」タブで別の形とサイズを選び、
+  コードではプロットのスタイルで設定します：<code>shape</code> と、幅をピクセルで表す <code>size</code>（2〜40）または
+  <code>'auto'</code> です。Williams Fractals はこの方法で描かれます：高値の上に三角、安値の下に三角です。
+</p>
+<pre><code>{`chart.updateIndicatorStyle(fractals, { plots: { up: { shape: 'arrowUp', size: 14 }, down: { size: 'auto' } } });`}</code></pre>
 <pre><code>{`plots: [
   { key: 'value', title: 'MACD', color: 0 },
   { key: 'turn', title: 'Turn', color: 1, kind: 'markers', shape: 'triangleUp', position: 'belowBar' },
