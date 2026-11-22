@@ -151,6 +151,7 @@ export const AR_MESSAGES: WidgetMessages = {
   'chartType.kagi': 'كاغي',
   'chartType.pointAndFigure': 'النقطة والشكل',
   'chartType.rangeBars': 'أعمدة النطاق',
+  'chartType.footprint': 'فوتبرنت',
 
   // Watchlist
   'watchlist.title': 'قائمة المراقبة',
@@ -339,6 +340,11 @@ export const AR_MESSAGES: WidgetMessages = {
   'settings.reversalType.price': 'السعر',
   'settings.reversalBoxes': 'صناديق الانعكاس',
   'settings.barRange': 'النطاق',
+  'settings.footprintRowSize': 'حجم الصف',
+  'settings.footprintCells': 'الخلايا',
+  'settings.footprintCells.bidAsk': 'Bid × Ask',
+  'settings.footprintCells.delta': 'دلتا',
+  'settings.footprintImbalance': 'نسبة عدم التوازن',
   'settings.auto': 'تلقائي',
   'settings.numberAtLeast': '{min} أو أكثر',
   'settings.numberWhole': 'عدد صحيح من {min} إلى {max}',

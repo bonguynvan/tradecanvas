@@ -151,6 +151,7 @@ export const MS_MESSAGES: WidgetMessages = {
   'chartType.kagi': 'Kagi',
   'chartType.pointAndFigure': 'Point & Figure',
   'chartType.rangeBars': 'Bar julat',
+  'chartType.footprint': 'Footprint',
 
   // Watchlist
   'watchlist.title': 'Senarai pantauan',
@@ -339,6 +340,11 @@ export const MS_MESSAGES: WidgetMessages = {
   'settings.reversalType.price': 'Harga',
   'settings.reversalBoxes': 'Kotak pembalikan',
   'settings.barRange': 'Julat',
+  'settings.footprintRowSize': 'Saiz baris',
+  'settings.footprintCells': 'Sel',
+  'settings.footprintCells.bidAsk': 'Bid × Ask',
+  'settings.footprintCells.delta': 'Delta',
+  'settings.footprintImbalance': 'Nisbah ketidakseimbangan',
   'settings.auto': 'Automatik',
   'settings.numberAtLeast': '{min} atau lebih',
   'settings.numberWhole': 'Nombor bulat dari {min} hingga {max}',

@@ -178,6 +178,7 @@ export const CHART_TYPE_ICONS: Readonly<Record<string, IconDef>> = {
   bar: { d: 'M8 4V20M5 8H8M8 16H11M16 6V18M13 15H16M16 9H19' }, // Bar (OHLC)
   volumeCandles: { d: 'M6.5 5V8M6.5 16V19M15.5 3.5V6M15.5 16V20', fills: ['M5.5 8h2a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1-.5-.5v-7a.5.5 0 0 1 .5-.5z', 'M11.5 6h8a.5.5 0 0 1 .5.5v9a.5.5 0 0 1-.5.5h-8a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5z'] }, // Volume Candles
   equivolume: { d: 'M4.5 10h2a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1v-6a1 1 0 0 1 1-1zM10 6h5a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1h-5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1zM18.5 4h1a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1h-1a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z' }, // Equivolume
+  footprint: { d: 'M12 4V20M8 7.5H12M5 12H12M9 16.5H12M12 7.5H18M12 12H15M12 16.5H19' }, // Footprint
   line: { d: 'M3 17L8 11L12 14L21 5' }, // Line
   area: { d: 'M3 17L8 11L12 14L21 5', soft: 'M3 17L8 11L12 14L21 5V20H3z' }, // Area
   baseline: { d: 'M3 16L7 9L11 14L15 7L21 15', dash: 'M3 12H21' }, // Baseline

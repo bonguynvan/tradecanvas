@@ -27,6 +27,8 @@
     <tr><td><code>appendBars(bars)</code></td><td>Thêm theo lô; tính lại chỉ báo một lần.</td></tr>
     <tr><td><code>updateLastBar(bar)</code></td><td>Cập nhật nến đang hình thành.</td></tr>
     <tr><td><code>updateLastBarFromTick(tick)</code></td><td>Gộp một tick vào nến cuối.</td></tr>
+    <tr><td><code>addTrades(trades)</code></td><td>Đưa trade vào <a href={href('/docs/realtime#footprint')}>footprint</a>: mỗi trade vào nến theo thời gian của nó và hàng giá theo giá của nó, ở bên đã chủ động khớp.</td></tr>
+    <tr><td><code>setFootprint(bars)</code> / <code>getFootprint(time?)</code> / <code>clearFootprint()</code></td><td>Các hàng giá của footprint, từng nến một: đưa vào bằng tay, đọc lại (của một nến, hoặc của mọi nến), xoá đi.</td></tr>
     <tr><td><code>updateBar(bar)</code></td><td>Sửa một nến đã nạp: nến có cùng time, ở bất kỳ vị trí nào trong chuỗi. View giữ nguyên; trả về false khi không có nến đã nạp nào có time đó.</td></tr>
     <tr><td><code>getData()</code></td><td>Đọc chuỗi OHLC gốc.</td></tr>
   </tbody>
@@ -48,7 +50,7 @@
 <table>
   <thead><tr><th>Phương thức</th><th>Mục đích</th></tr></thead>
   <tbody>
-    <tr><td><code>setChartType(type)</code></td><td>Một trong 24 loại — xem <a href={href('/docs/chart-types')}>Loại biểu đồ</a>.</td></tr>
+    <tr><td><code>setChartType(type)</code></td><td>Một trong 25 loại — xem <a href={href('/docs/chart-types')}>Loại biểu đồ</a>.</td></tr>
     <tr><td><code>getChartType()</code></td><td>Loại mà chart đang vẽ (mặc định <code>'candlestick'</code>).</td></tr>
     <tr><td><code>setTheme(name | theme)</code></td><td>Đổi giữa các theme có sẵn, hoặc đặt theme riêng. <code>getTheme()</code> trả lại theme như đã đặt.</td></tr>
     <tr><td><code>applyOverrides(patch, {'{ layer }'})</code></td><td>Đặt style cho bất kỳ phần nào của chart theo key (<code>'grid.vertical.visible'</code>, <code>'series.candlestick.upColor'</code>…); <code>null</code> bỏ một key. Xem <a href={href('/docs/styling#overrides')}>Styling</a>.</td></tr>

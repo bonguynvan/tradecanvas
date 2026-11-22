@@ -233,6 +233,56 @@ barDelta({ volume: 1200, buyVolume: 700 })   // 200: 700 bought, 500 sold`}</cod
   一根K线的全部成交量：两者相接处会出现台阶。JS API 和 UDF 桥接没有对应的字段。
 </p>
 
+<h2 id="footprint">足迹图</h2>
+<p>
+  <code>chartType: 'footprint'</code> 在每根K线旁画出其内部每个价位的成交：左边是卖方在买价主动成交的量，
+  右边是买方在卖价主动成交的量。一方明显压过另一方的行会加粗并加深底色，成交最多的行带有边框，
+  每根K线的左侧立着一根细蜡烛。在组件中，它是图表类型菜单里的 Footprint，其设置位于 Chart Settings。
+</p>
+<pre><code>{`const chart = new Chart(el, { chartType: 'footprint' })
+await chart.connect({ adapter: new BinanceAdapter(), symbol: 'BTCUSDT', timeframe: '1m' })`}</code></pre>
+<p>
+  对于带成交的数据源，这样就够了（需要 <code>fetchTrades</code> 和 <code>subscribeTrades</code>，
+  <code>BinanceAdapter</code> 和 <code>MockAdapter</code> 都有）：图表显示足迹图期间，会向数据源请求最近的成交，
+  一千笔，然后跟随实时成交；图表类型改变时即停止。数据源保留的成交不多，所以一开始只有最新的几根K线有足迹：
+  最近成交从中途开始的那根K线会被略去，它之前的K线是细蜡烛，之后足迹随实时成交逐渐增长。
+  切换交易品种或周期会重新开始。
+</p>
+<p>
+  自己有成交数据的宿主用 <code>chart.addTrades(trades)</code> 传入，任何图表类型下都可以：每笔成交按时间计入对应的K线、
+  按价格计入对应的行，记在主动成交的一方。没有 <code>side</code> 的成交由它前一笔成交来判断（价格上涨到它为买入，
+  下跌到它为卖出）：这是估算，就像没有 <code>buyVolume</code> 的K线的 delta 一样。自己保存各行的宿主可以逐根K线传入这些行，
+  <code>footprintOf</code> 则可一次调用从成交生成它们。
+</p>
+<pre><code>{`import { footprintOf, footprintStats } from '@tradecanvas/chart'
+
+chart.setChartTypeOptions({ footprint: { rowSize: 0.5, collect: false } })   // 各行由宿主提供
+chart.setFootprint([
+  { time: bar.time, levels: [{ price: 100, buy: 12, sell: 30 }, { price: 100.5, buy: 41, sell: 9 }] },
+])
+chart.setFootprint(footprintOf(trades, '1m', 0.5))    // 或由成交生成
+
+const rows = chart.getFootprint(bar.time)             // { time, levels }，没有足迹的K线为 null
+if (rows) footprintStats(rows.levels)                 // { buy, sell, volume, delta, poc, … }
+chart.clearFootprint()                                // 在传入另一序列的行之前`}</code></pre>
+<table>
+  <thead><tr><th>设置</th><th>默认值</th><th>作用</th></tr></thead>
+  <tbody>
+    <tr><td><code>rowSize</code></td><td><code>'auto'</code></td><td>一行的价格高度。Auto 约为最新价的万分之一，取整到 1、2 或 5（60,000 时为 5），并为品种最小价格变动的整数倍；手动传入各行时，取其价位之间的最小间距。改用另一大小会让足迹重新开始。</td></tr>
+    <tr><td><code>cells</code></td><td><code>'bidAsk'</code></td><td><code>'bidAsk'</code>：两侧分开显示。<code>'delta'</code>：买入减卖出。<code>'volume'</code>：两者相加。</td></tr>
+    <tr><td><code>imbalance</code></td><td><code>3</code></td><td>相隔一行的两侧，一方须达到另一方的多少倍才被标记：某价位的买入量与下一行的卖出量相比，卖出量与上一行的买入量相比。0 表示不标记。</td></tr>
+    <tr><td><code>collect</code></td><td><code>true</code></td><td>false：图表不向数据源请求成交。</td></tr>
+  </tbody>
+</table>
+<p>
+  缩放决定一根K线显示什么。选择足迹图时，图表会放大到数字可读的程度，其K线可以比蜡烛宽得多；
+  缩小时，数字让位于每侧一根条形，再缩小则变回普通蜡烛。太薄而无法阅读的行会按 2、5、10… 行合并为一行，对齐到整数价位。
+  足迹只保留最新的 500 根K线，且不随图表状态保存。回放期间，尚未显示的K线没有单元格，仍在由更细的K线形成的那根也没有。
+  在 tick 图上，每笔成交计入它到达时最后开出的那根K线，因此一根K线的第一笔成交可能落在前一根里。它用 Canvas 2D 绘制，
+  使用 WebGL 渲染器时也是如此。<code>renderPriceChart</code> 根据 <code>footprint</code> 绘制它，
+  即 <code>chart.getFootprint()</code> 返回的各行。
+</p>
+
 <h2>市场状态与新闻</h2>
 <p>
   <code>marketStatus(info, now)</code> 根据品种在其交易所时区内的交易时段（包括夏令时切换），判断某一时刻市场是否开放，

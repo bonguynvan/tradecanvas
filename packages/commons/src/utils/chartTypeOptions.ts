@@ -47,5 +47,14 @@ export function readChartTypeOptions(raw: unknown): ChartTypeOptions {
     const { range } = raw.rangeBars;
     out.rangeBars = positive(range) || range === 'auto' ? { range } : {};
   }
+  if (isObject(raw.footprint)) {
+    const { rowSize, cells, imbalance, collect } = raw.footprint;
+    out.footprint = {
+      ...(positive(rowSize) || rowSize === 'auto' ? { rowSize } : {}),
+      ...(cells === 'bidAsk' || cells === 'delta' || cells === 'volume' ? { cells } : {}),
+      ...(typeof imbalance === 'number' && Number.isFinite(imbalance) && imbalance >= 0 ? { imbalance } : {}),
+      ...(typeof collect === 'boolean' ? { collect } : {}),
+    };
+  }
   return out;
 }

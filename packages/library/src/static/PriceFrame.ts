@@ -20,6 +20,10 @@ import {
   CurrentPriceLine,
   DrawingManager,
   DrawingRenderer,
+  FOOTPRINT_IMBALANCE,
+  FOOTPRINT_MAX_SLOT,
+  FootprintRenderer,
+  FootprintStore,
   GridRenderer,
   HiLoRenderer,
   IndicatorEngine,
@@ -51,6 +55,7 @@ import { isReshapedChartType, resolveRenderer } from '../charts/ChartTypeStrateg
 import { LayoutManager } from '../layout/LayoutManager.js';
 import { nextPriceAxisWidth, requiredPriceAxisWidth } from '../layout/priceAxisWidth.js';
 import { DisplaySeries } from '../model/DisplaySeries.js';
+import { footprintRowSize } from '../model/FootprintFeed.js';
 import { drawingPaneViewport } from '../model/DrawingPanes.js';
 import { IndicatorPanes } from '../model/IndicatorPanes.js';
 import { dependencyOrder, renameSources, restorePanes } from '../model/IndicatorSetup.js';
@@ -250,7 +255,23 @@ export class PriceFrame {
   private makeRenderer(): ChartRendererInterface {
     const renderer = resolveRenderer(this.chartType, (type) => this.plugins.getChartType(type));
     if (renderer instanceof HiLoRenderer) renderer.setPriceText((price) => this.priceText(price));
+    if (renderer instanceof FootprintRenderer) this.giveFootprint(renderer);
     return renderer;
+  }
+
+  /** The rows given, in a store of their own, with the chart type's settings: what `Chart` hands its footprint renderer. */
+  private giveFootprint(renderer: FootprintRenderer): void {
+    const settings = readChartTypeOptions(this.options.chartTypeOptions ?? {}).footprint ?? {};
+    const rows = this.options.footprint ?? [];
+    const { data } = this.options;
+    // As `Chart` works it out: the size set, the rows' own step, or one from the last price in steps of the price's unit.
+    const rowSize = footprintRowSize(settings.rowSize ?? 'auto', rows, data[data.length - 1]?.close ?? 0, this.priceUnit ?? undefined);
+    const store = new FootprintStore(Math.max(1, rows.length));
+    store.setRowSize(rowSize);
+    for (const bar of rows) store.set(bar);
+    renderer.setStore(store);
+    renderer.setCells(settings.cells ?? 'bidAsk');
+    renderer.setImbalance(settings.imbalance ?? FOOTPRINT_IMBALANCE);
   }
 
   /** The series the chart type draws, made from the bars: Heikin-Ashi candles, Renko bricks, a plugin's own. */
@@ -272,7 +293,9 @@ export class PriceFrame {
   private makeViewport(size: { width: number; height: number }, spacing: Spacing): Viewport {
     const { options } = this;
     const viewport = new Viewport(size.width, size.height, undefined, undefined, Math.min(options.rightMargin ?? spacing.rightMargin, MAX_RIGHT_MARGIN));
+    // A footprint's bars carry numbers: as wide as `Chart` lets them get.
     viewport.setBarLayout(options.barLayout ?? spacing.barLayout);
+    viewport.setMaxBarSlot(this.chartType === 'footprint' ? FOOTPRINT_MAX_SLOT : null);
     viewport.setScaleMargins({ top: spacing.priceMargin, bottom: spacing.priceMargin });
     viewport.setNumberLocale(this.locale);
     viewport.setPriceFormat(this.priceFormatter, this.priceUnit);

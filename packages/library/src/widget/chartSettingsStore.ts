@@ -41,8 +41,8 @@ export const SHARE_LEAVES: ReadonlySet<SettingsKey> = new Set<SettingsKey>([...N
 /** Nothing left out: every setting of the right kind. */
 export const ALL_SETTINGS: ReadonlySet<SettingsKey> = new Set<SettingsKey>();
 
-/** The chart types with settings of their own (Renko's box, Kagi's reversal, the smoothed Heikin-Ashi's length…), each a key of `chartTypeOptions`. */
-export const TYPES_WITH_SETTINGS: readonly (keyof ChartTypeOptions)[] = ['renko', 'lineBreak', 'kagi', 'pointAndFigure', 'rangeBars', 'smoothedHeikinAshi'];
+/** The chart types with settings of their own (Renko's box, Kagi's reversal, the smoothed Heikin-Ashi's length, the footprint's rows…), each a key of `chartTypeOptions`. */
+export const TYPES_WITH_SETTINGS: readonly (keyof ChartTypeOptions)[] = ['renko', 'lineBreak', 'kagi', 'pointAndFigure', 'rangeBars', 'smoothedHeikinAshi', 'footprint'];
 
 /** Whether a chart type has settings of its own. */
 export function hasTypeSettings(type: unknown): type is keyof ChartTypeOptions {

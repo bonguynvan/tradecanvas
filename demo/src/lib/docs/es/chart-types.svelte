@@ -1,10 +1,16 @@
+<script lang="ts">
+  import { useI18n } from '$lib/i18n/context.svelte';
+
+  const { href } = useI18n();
+</script>
+
 <svelte:head>
   <title>Tipos de gráfico — Documentación de TradeCanvas</title>
-  <meta name="description" content="24 tipos de gráfico integrados: velas, barras OHLC y HLC, columnas, curva suavizada, área escalonada, máximo-mínimo, Heikin-Ashi y su variante suavizada, Renko, Kagi, Punto y figura, Equivolumen y más." />
+  <meta name="description" content="25 tipos de gráfico integrados: velas, barras OHLC y HLC, columnas, curva suavizada, área escalonada, máximo-mínimo, Heikin-Ashi y su variante suavizada, Renko, Kagi, Punto y figura, Equivolumen y más." />
 </svelte:head>
 
 <h1>Tipos de gráfico</h1>
-<p>24 tipos de gráfico integrados. Cámbialos en tiempo de ejecución con <code>chart.setChartType(type)</code>.</p>
+<p>25 tipos de gráfico integrados. Cámbialos en tiempo de ejecución con <code>chart.setChartType(type)</code>.</p>
 
 <h2>Estándar</h2>
 <table>
@@ -49,6 +55,16 @@
     <tr><td><code>volumeCandles</code></td><td>Ancho de vela proporcional al volumen.</td></tr>
     <tr><td><code>equivolume</code></td><td>
       Cajas de rango completo con un ancho proporcional a su parte del volumen; el color sigue el cierre frente al cierre anterior (estilo Richard Arms).
+    </td></tr>
+  </tbody>
+</table>
+
+<h2>Flujo de órdenes</h2>
+<table>
+  <thead><tr><th>Tipo</th><th>Descripción</th></tr></thead>
+  <tbody>
+    <tr><td><code>footprint</code></td><td>
+      Junto a cada barra, lo que se negoció en cada precio dentro de ella: lo que los vendedores tomaron en el bid y lo que los compradores tomaron en el ask, a partir de las operaciones del feed o de las tuyas. Consulta <a href={href('/docs/realtime#footprint')}>el gráfico footprint</a>.
     </td></tr>
   </tbody>
 </table>

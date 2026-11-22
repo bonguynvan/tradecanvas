@@ -6100,6 +6100,7 @@
     "bar",
     "volumeCandles",
     "equivolume",
+    "footprint",
     "line",
     "area",
     "baseline",
@@ -6366,6 +6367,10 @@
     "series.equivolume.downColor": "color",
     "series.equivolume.wickUpColor": "color",
     "series.equivolume.wickDownColor": "color",
+    "series.footprint.upColor": "color",
+    "series.footprint.downColor": "color",
+    "series.footprint.wickUpColor": "color",
+    "series.footprint.wickDownColor": "color",
     "series.bar.upColor": "color",
     "series.bar.downColor": "color",
     "series.hiLo.upColor": "color",
@@ -6771,7 +6776,8 @@
           "dots",
           "stepArea",
           "spline",
-          "smoothedHeikinAshi"
+          "smoothedHeikinAshi",
+          "footprint"
         ]
       },
       {
@@ -7032,7 +7038,8 @@
           "dots",
           "stepArea",
           "spline",
-          "smoothedHeikinAshi"
+          "smoothedHeikinAshi",
+          "footprint"
         ]
       },
       {
@@ -7384,7 +7391,8 @@
           "dots",
           "stepArea",
           "spline",
-          "smoothedHeikinAshi"
+          "smoothedHeikinAshi",
+          "footprint"
         ]
       },
       {
@@ -9900,6 +9908,11 @@
           "doc": "Buy and sell marks on the bars, as `chart.addSignalMarker()` takes one."
         },
         {
+          "name": "footprint",
+          "type": "FootprintBar[]",
+          "doc": "The rows of a footprint chart (`chartType: 'footprint'`), as `chart.getFootprint()` gives them and `chart.setFootprint()` takes them: what traded at each price of each bar. Their row size is `chartTypeOptions.footprint.rowSize`, or the smallest step between their prices."
+        },
+        {
           "name": "symbolSeries",
           "type": "Record<string, DataSeries>",
           "doc": "Other symbols' bars, by symbol, for the indicators that read them (`'compareSymbol'`, `'compareSymbolPane'`, `'spread'`, `'correlation'`, `'correlationlog'`): what `chart.setSymbolSeries()` gives a chart on a page. An indicator whose symbol is not here draws nothing."
@@ -9964,7 +9977,8 @@
             "dots",
             "stepArea",
             "spline",
-            "smoothedHeikinAshi"
+            "smoothedHeikinAshi",
+            "footprint"
           ]
         },
         {

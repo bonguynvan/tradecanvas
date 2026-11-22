@@ -14,6 +14,19 @@ export { HLCAreaRenderer } from './HLCAreaRenderer.js';
 export { StepLineRenderer } from './StepLineRenderer.js';
 export { LineWithMarkersRenderer } from './LineWithMarkersRenderer.js';
 export { HiLoRenderer } from './HiLoRenderer.js';
+export { FootprintRenderer, footprintWidth, FOOTPRINT_SLOT_GAP, FOOTPRINT_MIN_BAR_WIDTH, FOOTPRINT_TEXT_BAR_WIDTH, FOOTPRINT_MAX_SLOT, FOOTPRINT_IMBALANCE } from './FootprintRenderer.js';
+export {
+  FootprintStore,
+  FOOTPRINT_CAPACITY,
+  autoFootprintRow,
+  footprintImbalances,
+  footprintOf,
+  footprintRowFactor,
+  footprintStats,
+  footprintText,
+  mergeFootprintRows,
+} from './footprint.js';
+export type { FootprintImbalance, FootprintStats } from './footprint.js';
 export { ColumnsRenderer, HLCBarRenderer, DotsRenderer, StepAreaRenderer, SplineRenderer, monotoneSlopes } from './closeCharts.js';
 export { VolumeRenderer, VOLUME_HEIGHT_RATIO } from './VolumeRenderer.js';
 export { VolumeProfileRenderer } from './VolumeProfileRenderer.js';

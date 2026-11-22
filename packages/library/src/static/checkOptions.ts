@@ -48,6 +48,13 @@ function checkMarkers(list: unknown): void {
   });
 }
 
+function checkFootprint(list: unknown): void {
+  eachObject(list, 'footprint', (bar, at) => {
+    if (typeof bar.time !== 'number') throw new TypeError(`renderPriceChart: ${at} needs a time (ms): its bar's.`);
+    if (!Array.isArray(bar.levels) || !bar.levels.every(isObject)) throw new TypeError(`renderPriceChart: ${at} needs levels: an array of { price, buy, sell }.`);
+  });
+}
+
 function checkNumbers(options: Record<string, unknown>): void {
   const { rightMargin, pricePrecision, visibleRange } = options;
   if (rightMargin !== undefined && !(typeof rightMargin === 'number' && rightMargin >= 0)) {
@@ -95,6 +102,7 @@ export function checkOptions(given: PriceChartOptions): void {
   checkIndicators(options.indicators);
   checkDrawings(options.drawings);
   checkMarkers(options.markers);
+  checkFootprint(options.footprint);
   eachObject(options.plugins, 'plugins', (plugin, at) => {
     if (typeof plugin.kind !== 'string' || !isObject(plugin.plugin)) throw new TypeError(`renderPriceChart: ${at} is a plugin: { kind, plugin }.`);
   });

@@ -245,6 +245,58 @@ barDelta({ volume: 1200, buyVolume: 700 })   // 200: 700 bought, 500 sold`}</cod
   JS API と UDF のブリッジには、これを運ぶフィールドがありません。
 </p>
 
+<h2 id="footprint">フットプリントチャート</h2>
+<p>
+  <code>chartType: 'footprint'</code> は、各バーの横に、そのバーの中のすべての価格で約定したものを描きます：
+  左に売り手がビッドで取った量、右に買い手がアスクで取った量です。一方がもう一方を大きく上回った行は濃い色の上に太字で表示され、
+  最も多く約定した行は線で囲まれ、各バーの左には細いローソク足が立ちます。ウィジェットでは、チャートタイプのメニューの
+  Footprint で、設定は Chart Settings にあります。
+</p>
+<pre><code>{`const chart = new Chart(el, { chartType: 'footprint' })
+await chart.connect({ adapter: new BinanceAdapter(), symbol: 'BTCUSDT', timeframe: '1m' })`}</code></pre>
+<p>
+  約定を持つフィードならこれだけで足ります（<code>fetchTrades</code> と <code>subscribeTrades</code>。
+  <code>BinanceAdapter</code> と <code>MockAdapter</code> にあります）：フットプリントを表示している間、チャートはフィードに
+  直近の約定を千件求め、その後はライブの約定を追い、チャートタイプが変わると止めます。フィードが保持する約定は少ないので、
+  最初にフットプリントを持つのは最新のバーだけです：直近の約定が途中から始まったバーは除かれ、それより前のバーは細いローソク足になり、
+  そこからライブの約定とともにフットプリントが増えていきます。別のシンボルや時間足では最初からやり直します。
+</p>
+<p>
+  自前の約定を持つホストは、どのチャートタイプでも <code>chart.addTrades(trades)</code> で渡します：各約定は、
+  その時刻のバーとその価格の行に、取った側として数えられます。<code>side</code> のない約定は直前の約定から判断されます
+  （価格がそこまで上がったら買い、下がったら売り）：これは推定で、<code>buyVolume</code> のないバーのデルタと同じです。
+  行を自分で保持するホストは、その行をバーごとに渡します。<code>footprintOf</code> は約定からそれらを一度の呼び出しで作ります。
+</p>
+<pre><code>{`import { footprintOf, footprintStats } from '@tradecanvas/chart'
+
+chart.setChartTypeOptions({ footprint: { rowSize: 0.5, collect: false } })   // 行はホストのもの
+chart.setFootprint([
+  { time: bar.time, levels: [{ price: 100, buy: 12, sell: 30 }, { price: 100.5, buy: 41, sell: 9 }] },
+])
+chart.setFootprint(footprintOf(trades, '1m', 0.5))    // または約定から作る
+
+const rows = chart.getFootprint(bar.time)             // { time, levels }、フットプリントのないバーは null
+if (rows) footprintStats(rows.levels)                 // { buy, sell, volume, delta, poc, … }
+chart.clearFootprint()                                // 別の系列の行を渡す前に`}</code></pre>
+<table>
+  <thead><tr><th>設定</th><th>既定値</th><th>働き</th></tr></thead>
+  <tbody>
+    <tr><td><code>rowSize</code></td><td><code>'auto'</code></td><td>行ひとつの価格の高さ。Auto は直近価格のおよそ一万分の一を 1、2、5 に丸めた値（60,000 では 5）で、シンボルの呼び値の整数倍です。行を手で渡した場合は、その価格の間の最小の刻みです。別の大きさにするとフットプリントは最初からやり直します。</td></tr>
+    <tr><td><code>cells</code></td><td><code>'bidAsk'</code></td><td><code>'bidAsk'</code>：両側を別々に。<code>'delta'</code>：買いから売りを引いたもの。<code>'volume'</code>：両方の合計。</td></tr>
+    <tr><td><code>imbalance</code></td><td><code>3</code></td><td>一行ずれた位置で、一方がもう一方の何倍になればマークするか：ある価格の買いを一行下の売りと比べ、売りを一行上の買いと比べます。0 はどれもマークしません。</td></tr>
+    <tr><td><code>collect</code></td><td><code>true</code></td><td>false：チャートはフィードに約定を求めません。</td></tr>
+  </tbody>
+</table>
+<p>
+  バーが何を載せるかはズームで決まります。フットプリントを選ぶと、チャートは数字が読めるところまでズームインし、
+  そのバーはローソク足よりずっと広くなれます。ズームアウトすると、数字は各側一本ずつのバーに、さらに普通のローソク足に変わります。
+  読めないほど薄い行は 2、5、10… 行をひとつにまとめ、切りのよい価格にそろえて描かれます。フットプリントは最新の 500 本のバーについて保持され、
+  チャートの状態と一緒には保存されません。リプレイ中、まだ表示されていないバーにはセルがなく、より細かいバーから形成中のバーにもありません。
+  ティックチャートでは、約定は届いた時点で最後に開いていたバーに数えられるため、バーの最初の約定が前のバーに入ることがあります。描画は Canvas 2D で、
+  WebGL レンダラーでも同じです。<code>renderPriceChart</code> は <code>footprint</code> から、つまり
+  <code>chart.getFootprint()</code> が返す行から描きます。
+</p>
+
 <h2>市場の状態とニュース</h2>
 <p>
   <code>marketStatus(info, now)</code> は、取引所のタイムゾーンでの取引時間（夏時間の切り替えを含む）から、ある時点で

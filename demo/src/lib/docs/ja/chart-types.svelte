@@ -1,10 +1,16 @@
+<script lang="ts">
+  import { useI18n } from '$lib/i18n/context.svelte';
+
+  const { href } = useI18n();
+</script>
+
 <svelte:head>
   <title>チャートタイプ — TradeCanvas ドキュメント</title>
-  <meta name="description" content="24 種類の組み込みチャートタイプ：ローソク足、OHLC バーと HLC バー、カラム、スプライン、ステップエリア、高値-安値、平均足とその平滑化版、練行足、カギ足、ポイント・アンド・フィギュア、エクイボリュームなど。" />
+  <meta name="description" content="25 種類の組み込みチャートタイプ：ローソク足、OHLC バーと HLC バー、カラム、スプライン、ステップエリア、高値-安値、平均足とその平滑化版、練行足、カギ足、ポイント・アンド・フィギュア、エクイボリュームなど。" />
 </svelte:head>
 
 <h1>チャートタイプ</h1>
-<p>24 種類の組み込みチャートタイプがあり、<code>chart.setChartType(type)</code> で実行時に切り替えられます。</p>
+<p>25 種類の組み込みチャートタイプがあり、<code>chart.setChartType(type)</code> で実行時に切り替えられます。</p>
 
 <h2>標準</h2>
 <table>
@@ -49,6 +55,16 @@
     <tr><td><code>volumeCandles</code></td><td>出来高に比例した幅のローソク足。</td></tr>
     <tr><td><code>equivolume</code></td><td>
       全値幅を表すボックスで、幅は出来高の比率に比例します。色は終値と前の終値の比較で決まります（Richard Arms 方式）。
+    </td></tr>
+  </tbody>
+</table>
+
+<h2>オーダーフロー</h2>
+<table>
+  <thead><tr><th>タイプ</th><th>説明</th></tr></thead>
+  <tbody>
+    <tr><td><code>footprint</code></td><td>
+      各バーの横に、そのバーの中のすべての価格で約定したものを描きます：売り手がビッドで取った量と買い手がアスクで取った量で、フィードの約定または自前の約定から作ります。<a href={href('/docs/realtime#footprint')}>フットプリントチャート</a>を参照してください。
     </td></tr>
   </tbody>
 </table>

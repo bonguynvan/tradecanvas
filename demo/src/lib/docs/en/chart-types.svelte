@@ -1,10 +1,16 @@
+<script lang="ts">
+  import { useI18n } from '$lib/i18n/context.svelte';
+
+  const { href } = useI18n();
+</script>
+
 <svelte:head>
   <title>Chart types — TradeCanvas docs</title>
-  <meta name="description" content="24 built-in chart types: candlestick, OHLC and HLC bars, columns, spline, step area, High-Low, Heikin-Ashi and its smoothed kind, Renko, Kagi, Point & Figure, Equivolume, and more." />
+  <meta name="description" content="25 built-in chart types: candlestick, OHLC and HLC bars, columns, spline, step area, High-Low, Heikin-Ashi and its smoothed kind, Renko, Kagi, Point & Figure, Equivolume, and more." />
 </svelte:head>
 
 <h1>Chart types</h1>
-<p>24 built-in chart types. Switch at runtime via <code>chart.setChartType(type)</code>.</p>
+<p>25 built-in chart types. Switch at runtime via <code>chart.setChartType(type)</code>.</p>
 
 <h2>Standard</h2>
 <table>
@@ -49,6 +55,16 @@
     <tr><td><code>volumeCandles</code></td><td>Candle width proportional to volume.</td></tr>
     <tr><td><code>equivolume</code></td><td>
       Full-range boxes with width proportional to volume share; color tracks close vs prior close (Richard Arms style).
+    </td></tr>
+  </tbody>
+</table>
+
+<h2>Order flow</h2>
+<table>
+  <thead><tr><th>Type</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr><td><code>footprint</code></td><td>
+      By each bar, what traded at every price inside it: what the sellers took at the bid and what the buyers took at the ask, from the feed's trades or your own. See <a href={href('/docs/realtime#footprint')}>the footprint chart</a>.
     </td></tr>
   </tbody>
 </table>

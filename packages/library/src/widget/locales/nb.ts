@@ -151,6 +151,7 @@ export const NB_MESSAGES: WidgetMessages = {
   'chartType.kagi': 'Kagi',
   'chartType.pointAndFigure': 'Point & Figure',
   'chartType.rangeBars': 'Range-stolper',
+  'chartType.footprint': 'Footprint',
 
   // Watchlist
   'watchlist.title': 'Overvåkingsliste',
@@ -339,6 +340,11 @@ export const NB_MESSAGES: WidgetMessages = {
   'settings.reversalType.price': 'Kurs',
   'settings.reversalBoxes': 'Bokser for vending',
   'settings.barRange': 'Spenn',
+  'settings.footprintRowSize': 'Radstørrelse',
+  'settings.footprintCells': 'Celler',
+  'settings.footprintCells.bidAsk': 'Bid × Ask',
+  'settings.footprintCells.delta': 'Delta',
+  'settings.footprintImbalance': 'Ubalanseforhold',
   'settings.auto': 'Auto',
   'settings.numberAtLeast': '{min} eller mer',
   'settings.numberWhole': 'Et heltall fra {min} til {max}',

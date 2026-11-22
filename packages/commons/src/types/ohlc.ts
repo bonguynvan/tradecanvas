@@ -44,3 +44,21 @@ export type KnownTimeFrame =
 export type TimeFrame = KnownTimeFrame | (`${number}${TimeFrameUnit}` & {}) | (`${number}T` & {});
 
 export type DataSeries = OHLCBar[];
+
+/** What traded at one price row of a bar, by who took it. */
+export interface FootprintLevel {
+  /** The row's price: its lower edge. */
+  price: number;
+  /** What the buyers took, at the ask. */
+  buy: number;
+  /** What the sellers took, at the bid. */
+  sell: number;
+}
+
+/** A bar's footprint: what traded at each price inside it. */
+export interface FootprintBar {
+  /** The bar's time, in milliseconds. */
+  time: number;
+  /** Its rows, lowest price first. */
+  levels: FootprintLevel[];
+}

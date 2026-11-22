@@ -1,10 +1,16 @@
+<script lang="ts">
+  import { useI18n } from '$lib/i18n/context.svelte';
+
+  const { href } = useI18n();
+</script>
+
 <svelte:head>
   <title>Loại biểu đồ — Tài liệu TradeCanvas</title>
-  <meta name="description" content="24 loại biểu đồ có sẵn: candlestick, thanh OHLC và HLC, cột, spline, step area, High-Low, Heikin-Ashi và dạng làm mượt của nó, Renko, Kagi, Point & Figure, Equivolume và các loại khác." />
+  <meta name="description" content="25 loại biểu đồ có sẵn: candlestick, thanh OHLC và HLC, cột, spline, step area, High-Low, Heikin-Ashi và dạng làm mượt của nó, Renko, Kagi, Point & Figure, Equivolume và các loại khác." />
 </svelte:head>
 
 <h1>Loại biểu đồ</h1>
-<p>24 loại biểu đồ có sẵn. Đổi loại lúc chạy bằng <code>chart.setChartType(type)</code>.</p>
+<p>25 loại biểu đồ có sẵn. Đổi loại lúc chạy bằng <code>chart.setChartType(type)</code>.</p>
 
 <h2>Cơ bản</h2>
 <table>
@@ -49,6 +55,16 @@
     <tr><td><code>volumeCandles</code></td><td>Độ rộng nến tỷ lệ với khối lượng.</td></tr>
     <tr><td><code>equivolume</code></td><td>
       Hộp phủ toàn bộ khoảng giá, độ rộng tỷ lệ với tỷ trọng khối lượng; màu theo giá đóng cửa so với giá đóng cửa trước (kiểu Richard Arms).
+    </td></tr>
+  </tbody>
+</table>
+
+<h2>Order flow</h2>
+<table>
+  <thead><tr><th>Loại</th><th>Mô tả</th></tr></thead>
+  <tbody>
+    <tr><td><code>footprint</code></td><td>
+      Bên cạnh mỗi nến, những gì đã khớp ở từng mức giá bên trong nến đó: phần bên bán chủ động khớp vào giá bid và phần bên mua chủ động khớp vào giá ask, lấy từ trade của feed hoặc của chính bạn. Xem <a href={href('/docs/realtime#footprint')}>biểu đồ footprint</a>.
     </td></tr>
   </tbody>
 </table>

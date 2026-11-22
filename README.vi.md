@@ -38,7 +38,7 @@
 
 ## Điểm chính
 
-- **24 loại biểu đồ, 134 chỉ báo, 76 công cụ vẽ**, chỉ báo tính trên chỉ báo, cảnh báo trên đường vẽ, undo và redo.
+- **25 loại biểu đồ, 134 chỉ báo, 76 công cụ vẽ**, chỉ báo tính trên chỉ báo, cảnh báo trên đường vẽ, undo và redo.
 - **Giao dịch trên biểu đồ**: position với P&L trực tiếp, order và stop kéo được bằng chuột, broker paper trading hoặc broker của bạn.
 - **Dữ liệu trực tiếp** từ Binance, Bybit, Coinbase, Kraken và Upbit, hoặc feed của bạn trong khoảng hai mươi dòng code.
 - **Nhanh**: pan một triệu nến ở 60 fps với WebGL; một tick trực tiếp mất khoảng một micro giây; mười phút với 30,000 giao dịch mỗi giây trên một triệu nến mà bộ nhớ không tăng ([soak](benchmarks/2026-11-03.md)).

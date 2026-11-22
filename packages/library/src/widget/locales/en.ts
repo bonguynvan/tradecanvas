@@ -152,6 +152,7 @@ export const EN_MESSAGES = {
   'chartType.kagi': 'Kagi',
   'chartType.pointAndFigure': 'Point & Figure',
   'chartType.rangeBars': 'Range Bars',
+  'chartType.footprint': 'Footprint',
 
   // Watchlist
   'watchlist.title': 'Watchlist',
@@ -340,6 +341,11 @@ export const EN_MESSAGES = {
   'settings.reversalType.price': 'Price',
   'settings.reversalBoxes': 'Reversal boxes',
   'settings.barRange': 'Range',
+  'settings.footprintRowSize': 'Row size',
+  'settings.footprintCells': 'Cells',
+  'settings.footprintCells.bidAsk': 'Bid × Ask',
+  'settings.footprintCells.delta': 'Delta',
+  'settings.footprintImbalance': 'Imbalance ratio',
   'settings.auto': 'Auto',
   'settings.numberAtLeast': '{min} or more',
   'settings.numberWhole': 'A whole number from {min} to {max}',

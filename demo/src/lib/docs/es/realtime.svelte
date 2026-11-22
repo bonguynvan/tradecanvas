@@ -260,6 +260,65 @@ barDelta({ volume: 1200, buyVolume: 700 })   // 200: 700 bought, 500 sold`}</cod
   barra: da un escalón donde se encuentran. Los puentes JS API y UDF no tienen un campo para ello.
 </p>
 
+<h2 id="footprint">El gráfico footprint</h2>
+<p>
+  <code>chartType: 'footprint'</code> dibuja, junto a cada barra, lo que se negoció en cada precio dentro de
+  ella: a la izquierda lo que los vendedores tomaron en el bid, a la derecha lo que los compradores tomaron en el
+  ask. Una fila en la que un lado superó al otro va en negrita sobre un tinte más fuerte, la fila más negociada
+  lleva una línea alrededor, y una vela delgada se alza a la izquierda de cada barra. En el widget es Footprint
+  en el menú de tipos de gráfico, con su configuración en Chart Settings.
+</p>
+<pre><code>{`const chart = new Chart(el, { chartType: 'footprint' })
+await chart.connect({ adapter: new BinanceAdapter(), symbol: 'BTCUSDT', timeframe: '1m' })`}</code></pre>
+<p>
+  Eso es todo lo que necesita un feed con operaciones (<code>fetchTrades</code> y <code>subscribeTrades</code>,
+  como tienen <code>BinanceAdapter</code> y <code>MockAdapter</code>): mientras el gráfico muestra un footprint
+  pide al feed sus operaciones recientes, mil de ellas, y sigue las que llegan en vivo, y se detiene cuando cambia
+  el tipo de gráfico. Un feed conserva pocas operaciones, así que al principio solo las barras más nuevas tienen
+  footprint: la barra en la que las operaciones recientes empezaron a medias se deja fuera, las barras anteriores
+  son velas delgadas, y desde ahí el footprint crece con las operaciones en vivo. Otro símbolo u otro marco
+  temporal lo empieza de nuevo.
+</p>
+<p>
+  Un host con operaciones propias las da con <code>chart.addTrades(trades)</code>, en cualquier tipo de
+  gráfico: cada una se cuenta en la barra de su tiempo y en la fila de su precio, en el lado que la tomó. Una
+  operación sin <code>side</code> se deduce de la operación anterior (comprada cuando el precio subió hasta ella,
+  vendida cuando bajó): una estimación, como lo es el delta de una barra sin <code>buyVolume</code>. Un host que
+  guarda las filas da esas, barra por barra, y <code>footprintOf</code> las crea a partir de operaciones en una
+  sola llamada.
+</p>
+<pre><code>{`import { footprintOf, footprintStats } from '@tradecanvas/chart'
+
+chart.setChartTypeOptions({ footprint: { rowSize: 0.5, collect: false } })   // las filas son del host
+chart.setFootprint([
+  { time: bar.time, levels: [{ price: 100, buy: 12, sell: 30 }, { price: 100.5, buy: 41, sell: 9 }] },
+])
+chart.setFootprint(footprintOf(trades, '1m', 0.5))    // o creadas a partir de operaciones
+
+const rows = chart.getFootprint(bar.time)             // { time, levels }, o null para una barra sin ninguno
+if (rows) footprintStats(rows.levels)                 // { buy, sell, volume, delta, poc, … }
+chart.clearFootprint()                                // antes de las filas de otra serie`}</code></pre>
+<table>
+  <thead><tr><th>Ajuste</th><th>Por defecto</th><th>Qué hace</th></tr></thead>
+  <tbody>
+    <tr><td><code>rowSize</code></td><td><code>'auto'</code></td><td>La altura de una fila en precio. Auto es aproximadamente una diezmilésima del último precio, redondeada a 1, 2 o 5 (5 en 60.000), en pasos enteros del paso de precio del símbolo; con filas dadas a mano, el paso más pequeño entre sus precios. Otro tamaño empieza el footprint de nuevo.</td></tr>
+    <tr><td><code>cells</code></td><td><code>'bidAsk'</code></td><td><code>'bidAsk'</code>: los dos lados por separado. <code>'delta'</code>: lo comprado menos lo vendido. <code>'volume'</code>: ambos juntos.</td></tr>
+    <tr><td><code>imbalance</code></td><td><code>3</code></td><td>Cuántas veces un lado tiene que superar al otro, a una fila de distancia, para quedar marcado: lo comprado en un precio frente a lo vendido una fila más abajo, y lo vendido frente a lo comprado una fila más arriba. 0 no marca ninguna.</td></tr>
+    <tr><td><code>collect</code></td><td><code>true</code></td><td>false: el gráfico no pide operaciones a su feed.</td></tr>
+  </tbody>
+</table>
+<p>
+  El zoom decide qué lleva una barra. Elegir el footprint acerca el zoom hasta donde los números se leen, y
+  sus barras pueden hacerse mucho más anchas que las velas; al alejar, los números dan paso a una barra por cada
+  lado, y luego a velas normales. Las filas demasiado finas para leerse se dibujan de 2, 5, 10… en una, en precios
+  redondos. El footprint se conserva para las 500 barras más nuevas y no se guarda con el estado del gráfico.
+  Durante un replay, las barras aún no mostradas no llevan celdas, ni tampoco una que aún se forma a
+  partir de barras más finas. En un gráfico de ticks, una operación se cuenta en la última barra que se
+  había abierto cuando llegó, así que la primera operación de una barra puede caer en la anterior. Se dibuja en Canvas 2D, también con el
+  renderizador WebGL. <code>renderPriceChart</code> lo dibuja a partir de <code>footprint</code>, las filas tal
+  como las da <code>chart.getFootprint()</code>.
+</p>
+
 <h2>Estado del mercado y noticias</h2>
 <p>
   <code>marketStatus(info, now)</code> indica si el mercado de un símbolo está abierto en un momento dado, a partir de su

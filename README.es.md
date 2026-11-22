@@ -38,7 +38,7 @@ Es un motor de gráficos que es tuyo: licencia MIT, se instala desde npm y se si
 
 ## Lo más destacado
 
-- **24 tipos de gráfico, 134 indicadores, 76 herramientas de dibujo**, indicadores sobre indicadores, alertas en líneas, deshacer y rehacer.
+- **25 tipos de gráfico, 134 indicadores, 76 herramientas de dibujo**, indicadores sobre indicadores, alertas en líneas, deshacer y rehacer.
 - **Trading en el gráfico**: posiciones con P&L en vivo, órdenes y stops que arrastras, un bróker simulado o el tuyo.
 - **Datos en vivo** de Binance, Bybit, Coinbase y Kraken, o tu propio feed en unas veinte líneas.
 - **Rápido**: un millón de barras desplazadas a 60 fps con WebGL; un tick en vivo en un microsegundo, más o menos; diez minutos de 30.000 operaciones por segundo sobre un millón de barras sin que crezca la memoria ([prueba](benchmarks/2026-11-03.md)).

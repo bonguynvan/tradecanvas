@@ -151,6 +151,7 @@ export const VI_MESSAGES: WidgetMessages = {
   'chartType.kagi': 'Kagi',
   'chartType.pointAndFigure': 'Point & Figure',
   'chartType.rangeBars': 'Range Bars',
+  'chartType.footprint': 'Footprint',
 
   // Watchlist
   'watchlist.title': 'Watchlist',
@@ -339,6 +340,11 @@ export const VI_MESSAGES: WidgetMessages = {
   'settings.reversalType.price': 'Giá',
   'settings.reversalBoxes': 'Số box đảo chiều',
   'settings.barRange': 'Range',
+  'settings.footprintRowSize': 'Row size',
+  'settings.footprintCells': 'Ô hiển thị',
+  'settings.footprintCells.bidAsk': 'Bid × Ask',
+  'settings.footprintCells.delta': 'Delta',
+  'settings.footprintImbalance': 'Tỷ lệ imbalance',
   'settings.auto': 'Tự động',
   'settings.numberAtLeast': 'Từ {min} trở lên',
   'settings.numberWhole': 'Số nguyên từ {min} đến {max}',

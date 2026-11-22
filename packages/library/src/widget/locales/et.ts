@@ -151,6 +151,7 @@ export const ET_MESSAGES: WidgetMessages = {
   'chartType.kagi': 'Kagi',
   'chartType.pointAndFigure': 'Point & Figure',
   'chartType.rangeBars': 'Range-tulbad',
+  'chartType.footprint': 'Footprint',
 
   // Watchlist
   'watchlist.title': 'Jälgimisnimekiri',
@@ -339,6 +340,11 @@ export const ET_MESSAGES: WidgetMessages = {
   'settings.reversalType.price': 'Hind',
   'settings.reversalBoxes': 'Pöörde kastide arv',
   'settings.barRange': 'Vahemik',
+  'settings.footprintRowSize': 'Rea suurus',
+  'settings.footprintCells': 'Lahtrid',
+  'settings.footprintCells.bidAsk': 'Bid × Ask',
+  'settings.footprintCells.delta': 'Delta',
+  'settings.footprintImbalance': 'Tasakaalutuse suhe',
   'settings.auto': 'Automaatne',
   'settings.numberAtLeast': '{min} või rohkem',
   'settings.numberWhole': 'Täisarv vahemikus {min} kuni {max}',

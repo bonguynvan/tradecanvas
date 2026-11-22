@@ -357,6 +357,6 @@ describe('the chart types drawn from the closes, and the smoothed Heikin-Ashi', 
       expect(EN_MESSAGES[`chartType.${type}`], type).toBeTruthy();
       expect(ICONS[type], type).toBeTruthy();
     }
-    expect(listed).toHaveLength(24);
+    expect(listed).toHaveLength(25);
   });
 });

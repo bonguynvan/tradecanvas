@@ -38,6 +38,8 @@ const TEMPLATE_ID = 't:';
 const MIN_TYPE_SIZE = 1e-8;
 /** A box, reversal or range: any number from MIN_TYPE_SIZE up. */
 const SIZE_LIMITS: NumberLimits = { step: 'any', max: Infinity, min: MIN_TYPE_SIZE };
+/** The most one side has to outdo the other by for a footprint's row to be marked. */
+const MAX_IMBALANCE = 100;
 
 let nextSettingsId = 1;
 
@@ -582,6 +584,19 @@ export class WidgetSettings {
         number('settings.barRange', typeof all.rangeBars?.range === 'number' ? all.rangeBars.range : null, SIZE_LIMITS,
           (v) => set('rangeBars', { range: v ?? 'auto' }));
         break;
+      case 'footprint': {
+        const o = all.footprint ?? {};
+        number('settings.footprintRowSize', typeof o.rowSize === 'number' ? o.rowSize : null, SIZE_LIMITS,
+          (v) => set('footprint', { ...(own().footprint ?? {}), rowSize: v ?? 'auto' }));
+        section.appendChild(selectRow(this.t('settings.footprintCells'), o.cells ?? 'bidAsk', [
+          { value: 'bidAsk', label: this.t('settings.footprintCells.bidAsk') },
+          { value: 'delta', label: this.t('settings.footprintCells.delta') },
+          { value: 'volume', label: this.t('settings.volume') },
+        ], (v) => set('footprint', { ...(own().footprint ?? {}), cells: v === 'delta' || v === 'volume' ? v : 'bidAsk' })));
+        number('settings.footprintImbalance', o.imbalance ?? null, { step: 'any', max: MAX_IMBALANCE, min: 0 },
+          (v) => set('footprint', withValue(own().footprint, 'imbalance', v)));
+        break;
+      }
       default:
         break;
     }

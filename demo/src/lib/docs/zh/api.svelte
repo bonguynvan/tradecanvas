@@ -27,6 +27,8 @@
     <tr><td><code>appendBars(bars)</code></td><td>批量追加；指标只重新计算一次。</td></tr>
     <tr><td><code>updateLastBar(bar)</code></td><td>修改当前正在形成的K线。</td></tr>
     <tr><td><code>updateLastBarFromTick(tick)</code></td><td>把一笔 tick 合并进最后一根K线。</td></tr>
+    <tr><td><code>addTrades(trades)</code></td><td>向<a href={href('/docs/realtime#footprint')}>足迹图</a>传入成交：每笔按时间计入对应的K线、按价格计入对应的行，记在主动成交的一方。</td></tr>
+    <tr><td><code>setFootprint(bars)</code> / <code>getFootprint(time?)</code> / <code>clearFootprint()</code></td><td>足迹图的各行，逐根K线：手动传入、读回（某一根K线的，或所有K线的）、清除。</td></tr>
     <tr><td><code>updateBar(bar)</code></td><td>修正一根已加载的K线：时间相同的那根，无论它在序列中的哪个位置。视图保持不变；没有已加载的K线是这个时间时返回 false。</td></tr>
     <tr><td><code>getData()</code></td><td>读取原始 OHLC 序列。</td></tr>
   </tbody>
@@ -48,7 +50,7 @@
 <table>
   <thead><tr><th>方法</th><th>用途</th></tr></thead>
   <tbody>
-    <tr><td><code>setChartType(type)</code></td><td>24 种类型之一——参见 <a href={href('/docs/chart-types')}>图表类型</a>。</td></tr>
+    <tr><td><code>setChartType(type)</code></td><td>25 种类型之一——参见 <a href={href('/docs/chart-types')}>图表类型</a>。</td></tr>
     <tr><td><code>getChartType()</code></td><td>图表当前绘制的类型（默认 <code>'candlestick'</code>）。</td></tr>
     <tr><td><code>setTheme(name | theme)</code></td><td>在内置主题之间切换，或设置自己的主题。<code>getTheme()</code> 按设置时的样子返回。</td></tr>
     <tr><td><code>applyOverrides(patch, {'{ layer }'})</code></td><td>按键设置图表任意部分的样式（<code>'grid.vertical.visible'</code>、<code>'series.candlestick.upColor'</code>…）；<code>null</code> 移除一个键。见<a href={href('/docs/styling#overrides')}>样式</a>。</td></tr>

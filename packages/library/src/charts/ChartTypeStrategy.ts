@@ -8,6 +8,7 @@ import {
   ColumnsRenderer,
   DotsRenderer,
   EquivolumeRenderer,
+  FootprintRenderer,
   HLCBarRenderer,
   HiLoRenderer,
   HLCAreaRenderer,
@@ -73,6 +74,8 @@ export function createRendererFor(type: ChartType): ChartRendererInterface {
       return new LineWithMarkersRenderer();
     case 'hiLo':
       return new HiLoRenderer();
+    case 'footprint':
+      return new FootprintRenderer();
     case 'columns':
       return new ColumnsRenderer();
     case 'hlcBars':

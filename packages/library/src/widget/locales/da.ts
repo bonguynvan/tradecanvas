@@ -151,6 +151,7 @@ export const DA_MESSAGES: WidgetMessages = {
   'chartType.kagi': 'Kagi',
   'chartType.pointAndFigure': 'Point & Figure',
   'chartType.rangeBars': 'Range-søjler',
+  'chartType.footprint': 'Footprint',
 
   // Watchlist
   'watchlist.title': 'Overvågningsliste',
@@ -339,6 +340,11 @@ export const DA_MESSAGES: WidgetMessages = {
   'settings.reversalType.price': 'Kurs',
   'settings.reversalBoxes': 'Bokse til vending',
   'settings.barRange': 'Spænd',
+  'settings.footprintRowSize': 'Rækkestørrelse',
+  'settings.footprintCells': 'Celler',
+  'settings.footprintCells.bidAsk': 'Bid × Ask',
+  'settings.footprintCells.delta': 'Delta',
+  'settings.footprintImbalance': 'Ubalanceforhold',
   'settings.auto': 'Auto',
   'settings.numberAtLeast': '{min} eller mere',
   'settings.numberWhole': 'Et heltal fra {min} til {max}',

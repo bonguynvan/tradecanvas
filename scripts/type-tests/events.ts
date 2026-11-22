@@ -52,3 +52,22 @@ chart.on('ordersChange', (e) => {
   // @ts-expect-error The payload holds the orders, not a single order.
   return e.payload.id;
 });
+
+// The footprint chart: its type, its settings and its data, as the published types take them.
+{
+  const footprintChart: import('@tradecanvas/chart').ChartOptions = {
+    chartType: 'footprint',
+    chartTypeOptions: { footprint: { rowSize: 0.5, cells: 'delta', imbalance: 3, collect: false } },
+  };
+  void footprintChart;
+  const autoRows: import('@tradecanvas/chart').ChartOptions = { chartTypeOptions: { footprint: { rowSize: 'auto', cells: 'bidAsk' } } };
+  void autoRows;
+  // @ts-expect-error cells are 'bidAsk', 'delta' or 'volume'
+  const wrongCells: import('@tradecanvas/chart').ChartOptions = { chartTypeOptions: { footprint: { cells: 'ask' } } };
+  void wrongCells;
+  const rows: import('@tradecanvas/chart').FootprintBar = { time: 0, levels: [{ price: 100, buy: 1, sell: 2 }] };
+  void rows;
+  // @ts-expect-error a row has its price and both sides
+  const halfRow: import('@tradecanvas/chart').FootprintLevel = { price: 100, buy: 1 };
+  void halfRow;
+}

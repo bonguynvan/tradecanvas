@@ -481,6 +481,50 @@ const SCENES = {
     return { ...s, checks };
   },
 
+  /**
+   * A footprint chart from the feed's own trades: by each of the newest
+   * bars, what the sellers took at the bid on the left and what the buyers
+   * took at the ask on the right, the rows where one side outdid the other
+   * marked, the row most traded at outlined. The older bars, whose trades
+   * the feed no longer has, are slim candles.
+   */
+  async footprint() {
+    const s = await widget({ chartOptions: { chartType: 'footprint' } });
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    const checks = () => {
+      const problems = [];
+      const bars = s.chart.getData();
+      const prints = s.chart.getFootprint();
+      if (s.chart.getChartType() !== 'footprint') problems.push('the chart is not a footprint');
+      if (prints.length < 10) problems.push(`only ${prints.length} bars have a footprint: the feed's trades did not come in`);
+      const byTime = new Map(bars.map((bar) => [bar.time, bar]));
+      const rowSize = prints[0]?.levels.length > 1 ? prints[0].levels[1].price - prints[0].levels[0].price : 0;
+      for (const print of prints) {
+        const bar = byTime.get(print.time);
+        if (!bar) {
+          problems.push(`a footprint at ${print.time} has no bar`);
+          continue;
+        }
+        const bought = print.levels.reduce((sum, level) => sum + level.buy, 0);
+        const sold = print.levels.reduce((sum, level) => sum + level.sell, 0);
+        // The trades are the bar's own: they add up to its volume and its split, inside its range.
+        if (Math.abs(bought + sold - bar.volume) > 1e-6 * bar.volume) problems.push(`bar ${print.time}: its footprint adds up to ${bought + sold}, its volume is ${bar.volume}`);
+        if (Math.abs(bought - bar.buyVolume) > 1e-6 * bar.volume) problems.push(`bar ${print.time}: its footprint says ${bought} bought, the bar ${bar.buyVolume}`);
+        const lowest = print.levels[0].price;
+        const highest = print.levels[print.levels.length - 1].price;
+        // A row starts at or under its lowest trade, by less than a row.
+        if (lowest < bar.low - rowSize || highest > bar.high) {
+          problems.push(`bar ${print.time}: its rows run ${lowest} to ${highest}, the bar ${bar.low} to ${bar.high}`);
+        }
+      }
+      // The newest bars are the ones with a footprint, with no bar between them left out.
+      const newest = bars.slice(-prints.length).map((bar) => bar.time);
+      if (prints.some((print, i) => print.time !== newest[i])) problems.push('the footprints are not those of the newest bars, one each');
+      return problems;
+    };
+    return { ...s, checks };
+  },
+
   /** A long bracket being placed with a paper account connected: its quantity in the bar's field and on the entry's tag. */
   async bracketQuantity() {
     const s = await widget({ trading: true });

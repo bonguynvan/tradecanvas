@@ -2,7 +2,7 @@ import type { Theme, ThemeName } from './theme.js';
 import type { ChartOptions, FeaturesConfig } from './chart.js';
 import type { DrawingState, DrawingStyle } from './drawing.js';
 import type { IndicatorIntervals, IndicatorStyleConfig } from './indicator.js';
-import type { DataSeries, TimeFrame } from './ohlc.js';
+import type { DataSeries, FootprintBar, TimeFrame } from './ohlc.js';
 import type { SignalMarker } from './signal.js';
 import type { PaneStyle } from './style.js';
 
@@ -165,6 +165,14 @@ export interface PriceChartOptions
   drawings?: PriceChartDrawing[];
   /** Buy and sell marks on the bars, as `chart.addSignalMarker()` takes one. */
   markers?: PriceChartMarker[];
+  /**
+   * The rows of a footprint chart (`chartType: 'footprint'`), as
+   * `chart.getFootprint()` gives them and `chart.setFootprint()` takes
+   * them: what traded at each price of each bar. Their row size is
+   * `chartTypeOptions.footprint.rowSize`, or the smallest step between
+   * their prices.
+   */
+  footprint?: FootprintBar[];
   /**
    * Other symbols' bars, by symbol, for the indicators that read them
    * (`'compareSymbol'`, `'compareSymbolPane'`, `'spread'`, `'correlation'`,
