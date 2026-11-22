@@ -287,3 +287,20 @@ describe('replay events and seeking by time', () => {
   });
 });
 
+
+describe('a footprint in a replay of finer steps', () => {
+  const shownUntil = () => (chart as unknown as { chartRenderer: { shownUntil: number | null } }).chartRenderer.shownUntil;
+
+  it('shows the cells of a bar once it has closed, not while it forms: its trades are the whole bar’s', () => {
+    chart.setChartType('footprint');
+    chart.replayStart({ steps, startIndex: 2, paused: true, interval: 100 });
+    // The start bar is whole: its cells show, the next bar's do not.
+    expect(shownUntil()).toBe(hours[3].time);
+    chart.replaySeek(chart.getReplayProgress().current + 1); // the first 15 minutes of hour 3
+    expect(shownUntil()).toBe(hours[3].time);
+    chart.replaySeek(chart.getReplayProgress().current + 2); // 45 minutes in
+    expect(shownUntil()).toBe(hours[3].time);
+    chart.replaySeek(chart.getReplayProgress().current + 1); // its last step: the bar closes
+    expect(shownUntil()).toBe(hours[4].time);
+  });
+});

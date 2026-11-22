@@ -178,6 +178,21 @@ describe('FootprintRenderer', () => {
     expect(texts.find((t) => t.text === '8')!.font).not.toContain('bold');
   });
 
+  it('writes smaller in halves too narrow for the usual size, so a number stays in its half', () => {
+    const { store, renderer } = setup();
+    store.set({ time: T0, levels: [level(2, 12_340, 99_900)] });
+    const size = (font: string) => Number(/(\d+(?:\.\d+)?)px/.exec(font)![1]);
+    const wide = recorder();
+    renderer.render(wide.ctx, data, viewport(120), DARK_THEME);
+    const narrow = recorder();
+    renderer.render(narrow.ctx, data, viewport(76), DARK_THEME);
+    expect(narrow.texts.map((t) => t.text).sort()).toEqual(['12.3K', '99.9K']);
+    expect(size(narrow.texts[0].font)).toBeLessThan(size(wide.texts[0].font));
+    // Five characters and their padding fit the half: its width is the bar's cells halved.
+    const half = (76 - 5 - 3) / 2;
+    expect(size(narrow.texts[0].font) * 3 + 4).toBeLessThanOrEqual(half);
+  });
+
   it('draws no cells for the bars a replay has not shown yet', () => {
     const { store, renderer } = setup();
     store.set({ time: T0, levels: [level(2, 1, 6)] });

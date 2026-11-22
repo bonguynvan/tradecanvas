@@ -63,11 +63,14 @@ const TRADES_A_TICK = 3;
  * traded in the middle of the way than at its ends. No random number is
  * drawn.
  */
-function tradesOfBar(bar: OHLCBar, count: number, from: number, to: number): Trade[] {
-  if (!(bar.volume > 0) || count < 1) return [];
+function tradesOfBar(bar: OHLCBar, trades: number, from: number, to: number): Trade[] {
+  if (!(bar.volume > 0) || trades < 1) return [];
+  const taken = buyVolumeOf(bar) ?? bar.volume / 2;
+  // A bar both sides took part of is told in two trades at the least: one cannot be both.
+  const count = taken > 0 && taken < bar.volume ? Math.max(2, trades) : trades;
   const path = bar.close >= bar.open ? [bar.open, bar.low, bar.high, bar.close] : [bar.open, bar.high, bar.low, bar.close];
   const legs = path.length - 1;
-  const bought = buyVolumeOf(bar) ?? bar.volume / 2;
+  const bought = taken;
   const sold = bar.volume - bought;
   // At least one trade for a side that took anything at all.
   const most = count - (sold > 0 ? 1 : 0);
@@ -82,19 +85,19 @@ function tradesOfBar(bar: OHLCBar, count: number, from: number, to: number): Tra
     if (isBuy(j)) buyWeight += weight(j);
     else sellWeight += weight(j);
   }
-  const trades: Trade[] = [];
+  const told: Trade[] = [];
   for (let j = 0; j < count; j++) {
     const along = ((j + 0.5) / count) * legs;
     const leg = Math.min(legs - 1, Math.floor(along));
     const buy = isBuy(j);
-    trades.push({
+    told.push({
       time: Math.floor(from + ((to - from) * (j + 0.5)) / count),
       price: path[leg] + (path[leg + 1] - path[leg]) * (along - leg),
       volume: buy ? (bought * weight(j)) / buyWeight : (sold * weight(j)) / sellWeight,
       side: buy ? 'buy' : 'sell',
     });
   }
-  return trades;
+  return told;
 }
 
 /**
@@ -120,8 +123,10 @@ export class MockAdapter implements DataAdapter {
   /** The bar the ticks build on, and its timeframe: the history's newest, then each new one. */
   private forming: OHLCBar | null = null;
   private formingTimeframe: TimeFrame | null = null;
-  /** The newest bars it gave, kept up with the ticks: what its trades are told from. */
-  private recent: { symbol: string; timeframe: TimeFrame; bars: OHLCBar[] } | null = null;
+  /** The newest bars it gave, by symbol and timeframe, kept up with the ticks: what its trades are told from. */
+  private recent = new Map<string, OHLCBar[]>();
+  /** The timeframe of the bars each symbol was last given in. */
+  private lastGiven = new Map<string, TimeFrame>();
   /** Who listens for trades, each to a symbol's. */
   private tradeListeners = new Set<{ symbol: string; send: (trades: Trade[]) => void }>();
 
@@ -146,7 +151,8 @@ export class MockAdapter implements DataAdapter {
   disconnect(): void {
     this.stopTicking();
     // The bars it gave are of a series no longer shown: trades asked for now are not theirs.
-    this.recent = null;
+    this.recent.clear();
+    this.lastGiven.clear();
     this.state = 'disconnected';
     this.emitEvent('connectionChange', 'disconnected');
   }
@@ -248,11 +254,13 @@ export class MockAdapter implements DataAdapter {
 
   /** The trades of the newest bars given for `symbol`, at most `limit`; null when it gave none to tell them from. */
   private tradesOfRecentBars(symbol: string, limit: number): Trade[] | null {
-    const recent = this.recent;
-    if (!recent || recent.symbol !== symbol || recent.bars.length === 0) return null;
-    const span = timeframeToMs(recent.timeframe);
+    // The bars it streams, where it streams the symbol's: another timeframe of it may have been asked for since.
+    const timeframe = this.ticksBarsOf(symbol) ? this.config!.timeframe : this.lastGiven.get(symbol);
+    const kept = timeframe === undefined ? undefined : this.recent.get(recentKey(symbol, timeframe));
+    if (timeframe === undefined || !kept || kept.length === 0) return null;
+    const span = timeframeToMs(timeframe);
     // One trade under the limit at most: who asked can tell these are all the trades there are.
-    const bars = recent.bars.slice(-Math.max(1, Math.floor((limit - 1) / TRADES_A_BAR)));
+    const bars = kept.slice(-Math.max(1, Math.floor((limit - 1) / TRADES_A_BAR)));
     const each = Math.min(TRADES_A_BAR, Math.max(1, Math.floor((limit - 1) / bars.length)));
     const now = Date.now();
     // The bar still forming has traded up to now, not to its end.
@@ -267,7 +275,10 @@ export class MockAdapter implements DataAdapter {
     this.forming = bars.length > 0 ? { ...bars[bars.length - 1] } : null;
     this.formingTimeframe = timeframe;
     // Bars of trades (a tick timeframe) are made of trades, not the other way round.
-    this.recent = tickBarCount(timeframe) === null ? { symbol, timeframe, bars: bars.slice(-BARS_WITH_TRADES).map((bar) => ({ ...bar })) } : null;
+    if (tickBarCount(timeframe) === null) {
+      this.recent.set(recentKey(symbol, timeframe), bars.slice(-BARS_WITH_TRADES).map((bar) => ({ ...bar })));
+      this.lastGiven.set(symbol, timeframe);
+    }
     return bars;
   }
 
@@ -375,10 +386,10 @@ export class MockAdapter implements DataAdapter {
     // Taken by the buyers when the price went up to it, by the sellers when it went down: the tick rule, as its trades say.
     const bought = change >= 0 ? volume : 0;
     if (last && last.time === time) {
-      bar = {
-        time, open: last.open, high: Math.max(last.high, price + wick), low: Math.min(last.low, price - wick), close: price,
-        volume: last.volume + volume, buyVolume: (buyVolumeOf(last) ?? 0) + bought,
-      };
+      bar = { time, open: last.open, high: Math.max(last.high, price + wick), low: Math.min(last.low, price - wick), close: price, volume: last.volume + volume };
+      // A bar that did not say who took what it had traded says nothing of the rest: half a split is no split.
+      const had = buyVolumeOf(last);
+      if (had !== null) bar.buyVolume = had + bought;
     } else {
       const open = last?.close ?? price - change;
       bar = { time, open, high: Math.max(open, price) + wick, low: Math.min(open, price) - wick, close: price, volume, buyVolume: bought };
@@ -391,11 +402,13 @@ export class MockAdapter implements DataAdapter {
 
   /** The bar the ticks build on among the newest bars: in place of itself, or after them once it is a new one. */
   private keepRecent(bar: OHLCBar): void {
-    const recent = this.recent;
-    if (!recent || recent.timeframe !== this.config?.timeframe || recent.symbol !== this.config.symbol) return;
-    const last = recent.bars[recent.bars.length - 1];
-    if (last && last.time === bar.time) recent.bars[recent.bars.length - 1] = { ...bar };
-    else recent.bars = [...recent.bars.slice(-(BARS_WITH_TRADES - 1)), { ...bar }];
+    if (!this.config) return;
+    const key = recentKey(this.config.symbol, this.config.timeframe);
+    const kept = this.recent.get(key);
+    if (!kept) return;
+    const last = kept[kept.length - 1];
+    if (last && last.time === bar.time) kept[kept.length - 1] = { ...bar };
+    else this.recent.set(key, [...kept.slice(-(BARS_WITH_TRADES - 1)), { ...bar }]);
   }
 
   /** A tick as trades, to those who listen for the symbol's: steps from the price before it to the price after, the tick's volume between them. */
@@ -431,6 +444,9 @@ export class MockAdapter implements DataAdapter {
     }
   }
 }
+
+/** Where the newest bars of a symbol in a timeframe are kept. */
+const recentKey = (symbol: string, timeframe: TimeFrame): string => `${symbol}|${timeframe}`;
 
 /** A steady number for a symbol, so each one's made-up price is its own. */
 function symbolHash(symbol: string): number {

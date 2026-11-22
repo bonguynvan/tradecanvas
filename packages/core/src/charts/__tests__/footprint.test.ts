@@ -239,3 +239,28 @@ describe('a cell’s number', () => {
     expect(footprintText(999_960)).toBe('1M');
   });
 });
+
+describe('rows a thousandth tall at a price in the tens of thousands', () => {
+  const ROW = 0.001;
+  const prices = Array.from({ length: 2000 }, (_, k) => Number((60_000 + k * ROW).toFixed(3)));
+
+  it('puts each price on a row’s edge in the row it starts', () => {
+    const store = new FootprintStore();
+    store.setRowSize(ROW);
+    for (const price of prices) store.add(0, trade(1, price, 1, 'buy'));
+    const levels = store.get(0)!.levels;
+    expect(levels).toHaveLength(prices.length);
+    expect(levels.map((l) => l.price)).toEqual(prices);
+    expect(levels.every((l) => l.buy === 1)).toBe(true);
+  });
+
+  it('draws them several to one in the rows they belong to, and compares the right rows', () => {
+    const levels = prices.map((price) => level(price, 1, 1));
+    const merged = mergeFootprintRows(levels, ROW, 5);
+    expect(merged).toHaveLength(prices.length / 5);
+    expect(merged.every((row) => row.buy === 5 && row.sell === 5)).toBe(true);
+    // Level everywhere: no side outdid the other, at any row.
+    expect(footprintImbalances(levels, ROW, 3).some((flag) => flag.buy || flag.sell)).toBe(false);
+    expect(footprintImbalances(merged, ROW * 5, 3).some((flag) => flag.buy || flag.sell)).toBe(false);
+  });
+});

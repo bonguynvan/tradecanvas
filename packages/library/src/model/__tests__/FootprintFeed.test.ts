@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import type { OHLCBar, Trade } from '@tradecanvas/commons';
 import { FootprintStore } from '@tradecanvas/core';
-import { FootprintFeed, barOfTrade, rowSizeOf } from '../FootprintFeed.js';
+import { FootprintFeed, barOfTrade, barSpanOf, footprintRowSize, rowSizeOf } from '../FootprintFeed.js';
 
 const MIN = 60_000;
 const T0 = Date.UTC(2025, 0, 6);
@@ -157,5 +157,94 @@ describe('the row size of rows given by hand', () => {
     expect(rowSizeOf([])).toBeNull();
     expect(rowSizeOf([{ time: T0, levels: [{ price: 100, buy: 1, sell: 1 }] }])).toBeNull();
     expect(rowSizeOf([{ time: T0, levels: [{ price: 100, buy: 1, sell: 1 }, { price: 100, buy: 2, sell: 2 }] }])).toBeNull();
+  });
+});
+
+describe('FootprintFeed: what the review turned up', () => {
+  it('keeps the trades that come before the footprint has a row size, and counts them once it has', () => {
+    const store = new FootprintStore();
+    const series = bars(5);
+    const feed = new FootprintFeed(store, (time) => barOfTrade(series, time, MIN));
+    feed.skipHistory();
+    expect(feed.live([trade(T0 + 10, 100, 4)])).toBe(false);
+    feed.settle();
+    expect(store.bars()).toEqual([]);
+    store.setRowSize(1);
+    expect(feed.settle()).toBe(true);
+    expect(store.get(T0)!.levels).toEqual([{ price: 100, buy: 4, sell: 0 }]);
+  });
+
+  it('drops the bar it had last when the recent trades asked for again begin after it: its end is missing', () => {
+    const { feed, store, bought } = setup();
+    feed.history([trade(T0 + 10, 100, 1), trade(T0 + MIN + 10, 100, 2)], 1000);
+    expect(bought(T0 + MIN)).toBe(2);
+    // A long break: the feed's recent trades no longer reach back to what the footprint has.
+    feed.history([trade(T0 + 3 * MIN + 30_000, 100, 5), trade(T0 + 4 * MIN + 1, 100, 7)], 2);
+    expect(bought(T0)).toBe(1);
+    expect(store.get(T0 + MIN)).toBeNull();
+    expect(store.get(T0 + 3 * MIN)).toBeNull();
+    expect(bought(T0 + 4 * MIN)).toBe(7);
+  });
+
+  it('leaves the live trades of the bar it left out out too: part of a bar is no footprint of it', () => {
+    const { feed, store, bought } = setup();
+    feed.live([trade(T0 + MIN + 55_000, 100, 9)]);
+    // As many as were asked for, all of one bar: the feed had more, from earlier in it.
+    feed.history([trade(T0 + MIN + 40_000, 100, 5), trade(T0 + MIN + 50_000, 100, 5)], 2);
+    expect(store.get(T0 + MIN)).toBeNull();
+    feed.live([trade(T0 + MIN + 58_000, 100, 3)]);
+    expect(store.get(T0 + MIN)).toBeNull();
+    // The next bar is whole from its first trade.
+    feed.live([trade(T0 + 2 * MIN + 1, 100, 2)]);
+    expect(bought(T0 + 2 * MIN)).toBe(2);
+  });
+});
+
+describe('how long a bar lasts', () => {
+  const series = bars(5);
+
+  it('is its timeframe, for seconds, minutes, hours, days and weeks', () => {
+    expect(barSpanOf('1m', series)).toBe(MIN);
+    expect(barSpanOf('30s', series)).toBe(30_000);
+    expect(barSpanOf('4h', series)).toBe(4 * 60 * MIN);
+    expect(barSpanOf('1d', series)).toBe(24 * 60 * MIN);
+    expect(barSpanOf('2w', series)).toBe(14 * 24 * 60 * MIN);
+  });
+
+  it('is not set for months, whose lengths differ, nor for bars of trades', () => {
+    expect(barSpanOf('1M', series)).toBe(Infinity);
+    expect(barSpanOf('100T', series)).toBe(Infinity);
+  });
+
+  it('is the distance of the last two bars where the timeframe is not known, for bars under a day', () => {
+    expect(barSpanOf(null, series)).toBe(MIN);
+    expect(barSpanOf(null, bars(5, 24 * 60 * MIN))).toBe(Infinity);
+    expect(barSpanOf(null, bars(1))).toBe(Infinity);
+    expect(barSpanOf(null, series.map((bar) => ({ ...bar, time: bar.time / 1000 })))).toBe(MIN);
+  });
+});
+
+describe('the row size a footprint keeps', () => {
+  const given = [{ time: T0, levels: [{ price: 100, buy: 1, sell: 1 }, { price: 100.5, buy: 1, sell: 1 }] }];
+
+  it('is the one set, whatever else is known', () => {
+    expect(footprintRowSize(0.25, given, 60_000, 0.1)).toBe(0.25);
+  });
+
+  it('is the step of the rows given by hand when none is set', () => {
+    expect(footprintRowSize('auto', given, 60_000, undefined)).toBe(0.5);
+  });
+
+  it('is about a ten-thousandth of the price otherwise, in whole steps of the market’s', () => {
+    expect(footprintRowSize('auto', undefined, 60_000, undefined)).toBe(5);
+    // A step of 2: 5 is no whole number of them, 4 and 6 are; the nearer of equals, upward.
+    expect(footprintRowSize('auto', undefined, 60_000, 2)).toBe(6);
+    // A step wider than the row: one step.
+    expect(footprintRowSize('auto', undefined, 50, 0.1)).toBeCloseTo(0.1, 12);
+    expect(footprintRowSize('auto', [], 60_000, undefined)).toBe(5);
+  });
+
+  it('is not known without a price', () => {
+    expect(footprintRowSize('auto', undefined, 0, undefined)).toBe(0);
   });
 });

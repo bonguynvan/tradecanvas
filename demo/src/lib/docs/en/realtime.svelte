@@ -305,7 +305,9 @@ chart.clearFootprint()                                // before another series' 
   and its bars may get much wider than candles do; zoomed out, the numbers give way to a bar for
   each side, then to plain candles. Rows too thin to read are drawn 2, 5, 10… to one, on round
   prices. The footprint is kept for the newest 500 bars and is not saved with the chart's state.
-  During a replay the bars not yet shown carry no cells. It is drawn in Canvas 2D, with the WebGL
+  During a replay the bars not yet shown carry no cells, nor does a bar still forming from finer bars.
+  On a tick chart a trade is counted in the last bar that had opened when it came, so a bar's first
+  trade can fall in the bar before it. It is drawn in Canvas 2D, with the WebGL
   renderer too. <code>renderPriceChart</code> draws it from <code>footprint</code>, the rows as
   <code>chart.getFootprint()</code> gives them.
 </p>

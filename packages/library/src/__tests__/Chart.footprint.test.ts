@@ -248,3 +248,66 @@ describe('Chart: a footprint from the feed', () => {
     chart = new Chart(host, { chartType: 'candlestick' });
   });
 });
+
+describe('Chart: what the review of the footprint turned up', () => {
+  it('keeps trades given before the bars, with no row size set, and counts them once the bars are there', () => {
+    chart.setChartType('footprint');
+    chart.addTrades([trade(T0 + 5, 100.2, 3), trade(T0 + MIN + 5, 100.2, 4)]);
+    expect(chart.getFootprint()).toEqual([]);
+    chart.setData(bars(10));
+    expect(chart.getFootprint().map((bar) => bar.time)).toEqual([T0, T0 + MIN]);
+    expect(chart.getFootprint(T0)!.levels).toEqual([{ price: 100.2, buy: 3, sell: 0 }]);
+  });
+
+  it('gives its rows as a copy: a host that changes what it read changes nothing on the chart', () => {
+    chart.setData(bars(10));
+    chart.setChartTypeOptions({ footprint: { rowSize: 1 } });
+    chart.addTrades([trade(T0 + 5, 100.2, 3)]);
+    const read = chart.getFootprint(T0)!;
+    read.levels[0].buy = 999;
+    read.levels.push({ price: 5, buy: 1, sell: 1 });
+    chart.getFootprint()[0].levels.length = 0;
+    expect(chart.getFootprint(T0)!.levels).toEqual([{ price: 100, buy: 3, sell: 0 }]);
+  });
+
+  it('keeps a trade made after a daily bar ended for the next day’s bar', () => {
+    const DAY = 24 * 60 * MIN;
+    const days = Array.from({ length: 3 }, (_, i) => ({ time: T0 + i * DAY, open: 100, high: 101, low: 99, close: 100, volume: 10 }));
+    chart.setData(days);
+    chart.setDataTimeframe('1d');
+    chart.setChartTypeOptions({ footprint: { rowSize: 1 } });
+    chart.addTrades([trade(T0 + 2 * DAY + 60_000, 100, 2), trade(T0 + 3 * DAY + 60_000, 100, 7)]);
+    expect(chart.getFootprint().map((bar) => bar.time)).toEqual([T0 + 2 * DAY]);
+    chart.appendBar({ time: T0 + 3 * DAY, open: 100, high: 101, low: 99, close: 100, volume: 7 });
+    expect(chart.getFootprint(T0 + 3 * DAY)!.levels).toEqual([{ price: 100, buy: 7, sell: 0 }]);
+  });
+
+  it('asks for the recent trades again when the stream reconnects, and counts only the ones it missed', async () => {
+    const recent = [trade(T0 + 59 * MIN + 1, 100.2, 2)];
+    const feed = tradeFeed(recent);
+    chart.setChartType('footprint');
+    chart.setChartTypeOptions({ footprint: { rowSize: 1 } });
+    await chart.connect({ adapter: feed.adapter, symbol: 'X', timeframe: '1m' });
+    await settle();
+    expect(feed.asked).toHaveLength(1);
+    // While the connection was down the feed went on trading.
+    recent.push(trade(T0 + 59 * MIN + 500, 100.2, 5));
+    (chart as unknown as { streamManager: { emit(type: string, bars: OHLCBar[]): void } }).streamManager.emit('snapshot', bars(60));
+    await settle();
+    expect(feed.asked).toHaveLength(2);
+    expect(feed.stops[0]).not.toHaveBeenCalled();
+    expect(chart.getFootprint(T0 + 59 * MIN)!.levels).toEqual([{ price: 100, buy: 7, sell: 0 }]);
+  });
+
+  it('hides, in a replay, the cells of the bars not shown yet, whatever unit the bars’ times are in', () => {
+    const inSeconds = bars(20).map((bar) => ({ ...bar, time: bar.time / 1000 }));
+    chart.setData(inSeconds);
+    chart.setChartType('footprint');
+    chart.replayStart({ startIndex: 10, paused: true });
+    const shown = (inner().chartRenderer as unknown as { shownUntil: number | null }).shownUntil;
+    // Up to the eleventh bar's end, in milliseconds as the footprint's bars are.
+    expect(shown).toBe(T0 + 11 * MIN);
+    chart.replayStop();
+    expect((inner().chartRenderer as unknown as { shownUntil: number | null }).shownUntil).toBeNull();
+  });
+});

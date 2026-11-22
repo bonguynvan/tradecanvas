@@ -30,6 +30,10 @@ const CANDLE_MAX = 7;
 const CANDLE_GAP = 3;
 const ROW_GAP = 1;
 const TEXT_PAD = 4;
+/** A number of five characters is about this many times its font's size wide. */
+const NUMBER_EMS = 3;
+/** Numbers are never written smaller than this, px. */
+const MIN_FONT = 8;
 /** The tint under a number: from this (a cell with next to nothing) to this (the bar's largest). */
 const TINT_MIN = 0.06;
 const TINT_MAX = 0.34;
@@ -190,12 +194,14 @@ export class FootprintRenderer implements ChartRendererInterface {
     box: Box,
     theme: Theme,
   ): void {
-    const size = Math.max(8, Math.min(theme.font.sizeSmall, box.height - 2));
+    // As large as the row is tall and its half is wide: a number stays in its own cell.
+    const half = Math.floor(box.width / 2);
+    const room = this.cells === 'bidAsk' ? half : box.width;
+    const size = Math.max(MIN_FONT, Math.min(theme.font.sizeSmall, box.height - 2, Math.floor((room - TEXT_PAD) / NUMBER_EMS)));
     const plain = `${size}px ${theme.font.family}`;
     const bold = `bold ${plain}`;
     const middle = box.y + box.height / 2;
     if (this.cells === 'bidAsk') {
-      const half = Math.floor(box.width / 2);
       const mid = box.x + half;
       tint(ctx, box.x, box.y, half, box.height, theme.candleDown, tintOf(row.sell, bar.stats.maxSide, mark.sell));
       tint(ctx, mid, box.y, box.width - half, box.height, theme.candleUp, tintOf(row.buy, bar.stats.maxSide, mark.buy));

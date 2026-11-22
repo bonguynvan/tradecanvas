@@ -1,9 +1,52 @@
-import type { FootprintBar, Trade } from '@tradecanvas/commons';
-import { barTimeUnit } from '@tradecanvas/commons';
-import type { FootprintStore } from '@tradecanvas/core';
+import type { FootprintBar, TimeFrame, Trade } from '@tradecanvas/commons';
+import { barTimeUnit, parseTimeframe, tickBarCount } from '@tradecanvas/commons';
+import { autoFootprintRow, type FootprintStore } from '@tradecanvas/core';
 
 /** Trades of bars still to come are kept up to this many; the oldest go first. */
 const LATER_LIMIT = 20_000;
+const DAY_MS = 86_400_000;
+/** The units a bar has a set length in, ms: a month's days differ. */
+const SPAN_MS: Partial<Record<string, number>> = { s: 1000, m: 60_000, h: 3_600_000, d: DAY_MS, w: 7 * DAY_MS };
+
+/**
+ * How long a bar lasts, ms, where it has a set length: its timeframe's, for
+ * seconds to weeks; with no timeframe known, the distance of the last two
+ * bars, for bars under a day (longer ones skip weekends). Bars of months, of
+ * trades (`'100T'`) and a lone bar have none (Infinity): a trade after the
+ * last bar is of it.
+ */
+export function barSpanOf(timeframe: TimeFrame | null, bars: ArrayLike<{ time: number }>): number {
+  if (timeframe !== null) {
+    if (tickBarCount(timeframe) !== null) return Infinity;
+    const parsed = parseTimeframe(timeframe);
+    const unit = parsed ? SPAN_MS[parsed.unit] : undefined;
+    if (parsed && unit !== undefined) return parsed.count * unit;
+    if (parsed) return Infinity;
+  }
+  if (bars.length < 2) return Infinity;
+  const span = (bars[bars.length - 1].time - bars[bars.length - 2].time) * barTimeUnit(bars);
+  return span > 0 && span < DAY_MS ? span : Infinity;
+}
+
+/**
+ * The row size a footprint keeps: the one set; else the step of the rows
+ * given by hand; else about a ten-thousandth of `price`, in whole steps of
+ * the market's price step where it has one. 0 while none of them is known.
+ */
+export function footprintRowSize(
+  set: number | 'auto',
+  given: readonly FootprintBar[] | undefined,
+  price: number,
+  step: number | undefined,
+): number {
+  if (typeof set === 'number') return set;
+  const fromRows = given ? rowSizeOf(given) : null;
+  if (fromRows) return fromRows;
+  const auto = autoFootprintRow(price);
+  if (!(auto > 0)) return 0;
+  const size = step !== undefined && step > 0 ? Math.max(1, Math.round(auto / step)) * step : auto;
+  return Number(size.toPrecision(12));
+}
 
 /**
  * Which bar a trade is of: its time in milliseconds, `'later'` for a bar
@@ -64,6 +107,8 @@ export class FootprintFeed {
   private waiting: Trade[] | null = [];
   /** Trades of bars still to come, in the order they came. */
   private later: Trade[] = [];
+  /** The bar the recent trades began part way through: no trade of it is counted, its live ones neither. */
+  private cut: number | null = null;
 
   constructor(
     private readonly store: FootprintStore,
@@ -74,19 +119,23 @@ export class FootprintFeed {
    * The feed's recent trades, of which `asked` were asked for. Those the
    * footprint already has are left out. When the feed had more than it gave
    * and they start after what the footprint has, the bar they begin in is
-   * left out: its first trades are missing, and a footprint with part of a
-   * bar's trades reads as one with all of them. True when a trade was
-   * counted.
+   * left out, its live trades too: its first trades are missing, and a
+   * footprint with part of a bar's trades reads as one with all of them.
+   * True when a trade was counted.
    */
   history(trades: readonly Trade[], asked: number): boolean {
     const have = this.store.latestTrade();
     const inOrder = trades.filter((t) => Number.isFinite(t.time)).sort((a, b) => a.time - b.time);
-    const cut = inOrder.length >= asked && inOrder.length > 0 && inOrder[0].time > have ? this.barOf(inOrder[0].time) : null;
+    const begins = inOrder.length >= asked && inOrder.length > 0 && inOrder[0].time > have ? this.barOf(inOrder[0].time) : null;
+    if (typeof begins === 'number') {
+      this.cut = begins;
+      // What it had ends before these begin (a long break in the connection): the bar it had last is missing its end.
+      const broken = Number.isFinite(have) ? this.barOf(have) : null;
+      if (typeof broken === 'number') this.store.set({ time: broken, levels: [] });
+    }
     let counted = false;
     for (const trade of inOrder) {
-      if (trade.time <= have) continue;
-      if (typeof cut === 'number' && this.barOf(trade.time) === cut) continue;
-      counted = this.count(trade) || counted;
+      if (trade.time > have) counted = this.count(trade) || counted;
     }
     return this.release() || counted;
   }
@@ -132,8 +181,9 @@ export class FootprintFeed {
 
   private count(trade: Trade): boolean {
     const bar = this.barOf(trade.time);
-    if (bar === null) return false;
-    if (bar === 'later') {
+    if (bar === null || bar === this.cut) return false;
+    // Before the footprint has a row size (no price to work one out from yet), as before its bar is there: kept.
+    if (bar === 'later' || this.store.getRowSize() <= 0) {
       this.later.push(trade);
       if (this.later.length > LATER_LIMIT) this.later.splice(0, this.later.length - LATER_LIMIT);
       return false;

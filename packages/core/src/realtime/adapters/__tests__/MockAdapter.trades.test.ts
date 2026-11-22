@@ -104,3 +104,64 @@ describe('MockAdapter: trades that tell the bars’ own story', () => {
     stop();
   });
 });
+
+describe('MockAdapter: what the review turned up', () => {
+  it('tells a bar in two trades at the least, so both sides of it are there, however few are asked for', async () => {
+    const adapter = new MockAdapter({ historySize: 20 });
+    const bars = await adapter.fetchHistory('BTCUSDT', '1m');
+    const last = bars.at(-1)!;
+    for (const limit of [2, 3, 5]) {
+      const trades = await adapter.fetchTrades('BTCUSDT', limit);
+      expect(trades.length, String(limit)).toBeLessThanOrEqual(Math.max(2, limit));
+      const of = trades.filter((t) => t.time >= last.time);
+      expect(sum(of), String(limit)).toBeCloseTo(last.volume, 6);
+      expect(sum(of, 'buy'), String(limit)).toBeCloseTo(last.buyVolume!, 6);
+    }
+  });
+
+  it('keeps each symbol’s bars apart: another symbol’s history does not take the first one’s trades away', async () => {
+    const adapter = new MockAdapter({ historySize: 30 });
+    const bars = await adapter.fetchHistory('BTCUSDT', '1m');
+    await adapter.fetchHistory('ETHUSDT', '1m');
+    const trades = await adapter.fetchTrades('BTCUSDT', 1000);
+    const last = bars.at(-1)!;
+    const of = trades.filter((t) => t.time >= last.time);
+    expect(sum(of)).toBeCloseTo(last.volume, 6);
+    for (const t of of) {
+      expect(t.price).toBeGreaterThanOrEqual(last.low - 1e-9);
+      expect(t.price).toBeLessThanOrEqual(last.high + 1e-9);
+    }
+  });
+
+  it('tells the trades of the timeframe it streams, though another of the symbol was asked for since', async () => {
+    const adapter = new MockAdapter({ historySize: 30, tickInterval: 60_000 });
+    const minutes = await adapter.fetchHistory('BTCUSDT', '1m');
+    adapter.connect({ symbol: 'BTCUSDT', timeframe: '1m' });
+    await adapter.fetchHistory('BTCUSDT', '1h');
+    const trades = await adapter.fetchTrades('BTCUSDT', 1000);
+    // A minute's bars: many of them in the last half hour, not one hour's bar.
+    const spanned = new Set(trades.map((t) => Math.floor(t.time / MIN)));
+    expect(spanned.size).toBeGreaterThan(10);
+    expect(Math.min(...trades.map((t) => t.time))).toBeGreaterThanOrEqual(minutes.at(-25)!.time);
+    adapter.dispose();
+  });
+
+  it('says nothing of who took a live bar’s trades when the bar it carries on did not say', async () => {
+    const plain = (_symbol: string, _tf: unknown, limit: number): OHLCBar[] =>
+      Array.from({ length: limit }, (_, i) => ({ time: Math.floor(NOW / MIN) * MIN - (limit - 1 - i) * MIN, open: 100, high: 101, low: 99, close: 100, volume: 500 }));
+    const adapter = new MockAdapter({ historySize: 5, tickInterval: 500, historyGenerator: plain });
+    await adapter.fetchHistory('BTCUSDT', '1m');
+    const forming: OHLCBar[] = [];
+    adapter.on<{ bar: OHLCBar }>('bar', (event) => forming.push(event.data.bar));
+    adapter.connect({ symbol: 'BTCUSDT', timeframe: '1m' });
+    vi.advanceTimersByTime(2000);
+    expect(forming.length).toBeGreaterThan(2);
+    // The bar had 500 traded with no word of who took it: a count from here on would be of part of it.
+    expect(forming.at(-1)).not.toHaveProperty('buyVolume');
+    // A bar that opens under the ticks is counted from its first.
+    vi.advanceTimersByTime(60_000);
+    expect(typeof forming.at(-1)!.buyVolume).toBe('number');
+    expect(forming.at(-1)!.buyVolume!).toBeLessThanOrEqual(forming.at(-1)!.volume);
+    adapter.dispose();
+  });
+});

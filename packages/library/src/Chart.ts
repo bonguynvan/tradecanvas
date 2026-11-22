@@ -96,7 +96,6 @@ import {
   DepthHeatmapRenderer,
   FootprintRenderer,
   FootprintStore,
-  autoFootprintRow,
   FOOTPRINT_IMBALANCE,
   FOOTPRINT_MAX_SLOT,
   FOOTPRINT_SLOT_GAP,
@@ -141,7 +140,7 @@ import { AutoSaveScheduler } from './state/AutoSaveScheduler.js';
 import { isValidBar } from './DataManager.js';
 import { SeriesStore, isWholeBar, type LiveChange } from './SeriesStore.js';
 import { PriceFit, hasVolume } from './model/PriceFit.js';
-import { FootprintFeed, barOfTrade, rowSizeOf } from './model/FootprintFeed.js';
+import { FootprintFeed, barOfTrade, barSpanOf, footprintRowSize } from './model/FootprintFeed.js';
 import { DisplaySeries } from './model/DisplaySeries.js';
 import { ActivityLog, type ActivityEntry } from './model/ActivityLog.js';
 import { PaneLayout } from './model/PaneLayout.js';
@@ -186,8 +185,12 @@ const LEFT_SCALE_PADDING = 0.08;
 const FOOTPRINT_RECENT_TRADES = 1000;
 /** The slot a chart turned into a footprint opens at: a little over the narrowest whose footprint carries both sides' numbers. */
 const FOOTPRINT_OPENING_SLOT = FOOTPRINT_TEXT_BAR_WIDTH + FOOTPRINT_SLOT_GAP + 8;
-/** Bars this long or longer have no set length for the footprint: a trade after the last is of it. */
-const FOOTPRINT_DAY_MS = 86_400_000;
+/** The feed whose trades a footprint follows: the series it is of, what counts them, and how to stop listening. */
+interface FootprintLive {
+  key: string;
+  feed: FootprintFeed;
+  stop: () => void;
+}
 /** How many times a picture at a size of its own fits its bars and sizes its scales: a scale that changes width changes the plot once. */
 const PICTURE_FIT_ROUNDS = 3;
 /** Fewest bars ahead of the view that trigger the next history page. */
@@ -386,7 +389,7 @@ export class Chart {
   /** Trades given by hand (`addTrades`), those of bars still to come kept until the bars are there. */
   private footprintByHand = new FootprintFeed(this.footprint, (time) => this.footprintBarOf(time));
   /** The connected feed's trades, followed while the chart shows a footprint. */
-  private footprintLive: { key: string; feed: FootprintFeed; stop: () => void } | null = null;
+  private footprintLive: FootprintLive | null = null;
   /** The row size the footprint was told to keep; 'auto': worked out from the rows given, or the price. */
   private footprintRowSet: number | 'auto' = 'auto';
   /** A footprint chosen: zoom in to where its numbers read, once its bars are there. */
@@ -3477,6 +3480,7 @@ export class Chart {
 
     this.streamManager.on('snapshot', (bars) => {
       const key = this.streamSeriesKey(config.adapter);
+      const reconnected = key === this.snapshotKey;
       if (key === this.snapshotKey && this.replaySession) {
         this.series.mergeSnapshot(bars); // a reconnect during a replay: into the live series kept aside
       } else if (key === this.snapshotKey && this.series.length() > 0) {
@@ -3488,8 +3492,8 @@ export class Chart {
       }
       this.snapshotKey = key;
       this.useStreamHistory(config.adapter, config.historyPageSize);
-      // The bars the trades are counted into are there now.
-      this.syncFootprintFeed();
+      // The bars the trades are counted into are there now; after a reconnect, the trades made meanwhile are asked for.
+      this.syncFootprintFeed(reconnected);
     });
 
     // Each bar lands by its time: the last bar again (its latest values, a
@@ -4616,7 +4620,11 @@ export class Chart {
   getFootprint(): FootprintBar[];
   getFootprint(time: number): FootprintBar | null;
   getFootprint(time?: number): FootprintBar[] | FootprintBar | null {
-    return time === undefined ? this.footprint.bars() : this.footprint.get(time);
+    // Copies: the rows kept are the ones drawn, and are not the host's to change.
+    const copy = (bar: FootprintBar): FootprintBar => ({ time: bar.time, levels: bar.levels.map((level) => ({ ...level })) });
+    if (time === undefined) return this.footprint.bars().map(copy);
+    const bar = this.footprint.get(time);
+    return bar ? copy(bar) : null;
   }
 
   /** Forget every bar's footprint: for a host that gave the rows and now shows another series. */
@@ -4636,24 +4644,9 @@ export class Chart {
   /** The bar of the live series a trade made at `time` is of. */
   private footprintBarOf(time: number): number | 'later' | null {
     const bars = this.series.liveBars();
-    return barOfTrade(bars, time, this.footprintBarSpan(bars));
+    return barOfTrade(bars, time, barSpanOf(this.streamTimeframe ?? this.announcedTimeframe, bars));
   }
 
-  /**
-   * How long a bar lasts, ms, where it says so: the stream's or the data's
-   * interval, else the last two bars' distance, for bars under a day.
-   * Longer bars, tick bars and a lone bar have no set length (Infinity): a
-   * trade after the last bar is of it.
-   */
-  private footprintBarSpan(bars: DataSeries): number {
-    const timeframe = this.streamTimeframe ?? this.announcedTimeframe;
-    if (timeframe && tickBarCount(timeframe) !== null) return Infinity;
-    let span = timeframe ? timeframeToMs(timeframe) : NaN;
-    if (!Number.isFinite(span) && bars.length > 1) {
-      span = (bars[bars.length - 1].time - bars[bars.length - 2].time) * barTimeUnit(bars);
-    }
-    return span > 0 && span < FOOTPRINT_DAY_MS ? span : Infinity;
-  }
 
   /**
    * The row size, once: the one set; else the step of the rows given by
@@ -4662,22 +4655,10 @@ export class Chart {
    */
   private resolveFootprintRow(given?: readonly FootprintBar[]): void {
     if (this.footprint.getRowSize() > 0) return;
-    if (typeof this.footprintRowSet === 'number') {
-      this.footprint.setRowSize(this.footprintRowSet);
-      return;
-    }
-    const fromRows = given ? rowSizeOf(given) : null;
-    if (fromRows) {
-      this.footprint.setRowSize(fromRows);
-      return;
-    }
     const bars = this.series.liveBars();
     const price = bars[bars.length - 1]?.close ?? 0;
-    const auto = autoFootprintRow(price);
-    if (!(auto > 0)) return;
-    const step = this.stepAt(price);
-    const size = step !== undefined && step > 0 ? Math.max(1, Math.round(auto / step)) * step : auto;
-    this.footprint.setRowSize(Number(size.toPrecision(12)));
+    const size = footprintRowSize(this.footprintRowSet, given, price, this.stepAt(price));
+    if (size > 0) this.footprint.setRowSize(size);
   }
 
   /** The footprint's settings into its renderer; another row size starts the footprint again. */
@@ -4699,7 +4680,7 @@ export class Chart {
    * connected series whose bars are in, and stop when it no longer does:
    * its recent trades once, then its live ones.
    */
-  private syncFootprintFeed(): void {
+  private syncFootprintFeed(reconnected = false): void {
     const adapter = this.streamAdapter;
     const symbol = this.currentSymbol;
     const wanted = this.options.chartType === 'footprint'
@@ -4707,28 +4688,38 @@ export class Chart {
       && !!adapter?.fetchTrades && !!adapter.subscribeTrades
       && this.snapshotKey !== null && this.snapshotKey === this.streamSeriesKey(adapter);
     const key = wanted ? this.snapshotKey : null;
-    if (key === (this.footprintLive?.key ?? null)) return;
+    if (key === (this.footprintLive?.key ?? null)) {
+      // The same series after a dropped connection: the trades made while it was down are in the feed's recent ones.
+      if (reconnected && this.footprintLive) this.fetchFootprintTrades(this.footprintLive, adapter, symbol);
+      return;
+    }
     this.stopFootprintFeed();
-    if (key === null || !adapter?.fetchTrades || !adapter.subscribeTrades) return;
+    if (key === null || !adapter?.subscribeTrades) return;
     const feed = new FootprintFeed(this.footprint, (time) => this.footprintBarOf(time));
-    const live = { key, feed, stop: () => {} };
+    const live: FootprintLive = { key, feed, stop: () => {} };
     this.footprintLive = live;
-    const mine = (): boolean => this.footprintLive === live;
     live.stop = adapter.subscribeTrades(symbol, (trades) => {
-      if (!mine()) return;
+      if (this.footprintLive !== live) return;
       this.resolveFootprintRow();
       if (feed.live(trades)) this.footprintChanged();
     });
+    this.fetchFootprintTrades(live, adapter, symbol);
+  }
+
+  /** The feed's recent trades into the footprint, while `live` is still the feed followed: those it has are left out. */
+  private fetchFootprintTrades(live: FootprintLive, adapter: DataAdapter | null, symbol: string): void {
+    if (!adapter?.fetchTrades) return;
+    const mine = (): boolean => this.footprintLive === live;
     adapter.fetchTrades(symbol, FOOTPRINT_RECENT_TRADES).then(
       (trades) => {
         if (!mine()) return;
         this.resolveFootprintRow();
-        if (feed.history(trades, FOOTPRINT_RECENT_TRADES)) this.footprintChanged();
+        if (live.feed.history(trades, FOOTPRINT_RECENT_TRADES)) this.footprintChanged();
       },
       (error: unknown) => {
         if (!mine()) return;
         // No recent trades: the live ones count from the first.
-        if (feed.skipHistory()) this.footprintChanged();
+        if (live.feed.skipHistory()) this.footprintChanged();
         const message = error instanceof Error ? error.message : String(error);
         this.eventBus.emit('dataUpdate', { kind: 'error', error: message } satisfies DataUpdatePayload);
       },
@@ -4742,6 +4733,8 @@ export class Chart {
 
   /** Trades kept for bars that were still to come: counted when the bars are there. */
   private settleFootprint(): void {
+    // Trades kept for want of a row size too: the bars that are there now say the price it is worked out from.
+    this.resolveFootprintRow();
     const byHand = this.footprintByHand.settle();
     const live = this.footprintLive?.feed.settle() ?? false;
     if (byHand || live) this.footprintChanged();
@@ -5855,7 +5848,9 @@ export class Chart {
       if (this.replaySession) this.replaySession.until = until;
       // The books of the bars the replay has shown, not those of the bars still to come.
       this.depthHeatmap.setShownUntil(until);
-      this.setFootprintShownUntil(until);
+      // A bar's footprint is its whole one: a bar still forming from finer steps shows none until it has closed.
+      const whole = !steps || closesBar(steps, coarse, index, barIndex);
+      this.setFootprintShownUntil(whole ? until * barTimeUnit(series) : coarse[barIndex].time * barTimeUnit(coarse));
       // Markers and trades as far as the replay has shown, in the same frame as its bars.
       if (this.replayRevealMarks) this.revealReplayMarks(until);
       // The replay's bars are a series of their own: what was kept is of no use.

@@ -5,8 +5,10 @@ import { timeframeBucketStart } from '@tradecanvas/commons';
 const AUTO_ROW_SHARE = 1e-4;
 /** How many bars' footprints are kept unless told otherwise. */
 export const FOOTPRINT_CAPACITY = 500;
-/** A price a hair under a row's edge by floating point is on the edge. */
+/** A price a hair under a row's edge by floating point is on the edge: by this much of a row at the least. */
 const ROW_EDGE_SLACK = 1e-9;
+/** The hair grows with the price counted in rows: this share of it, so a thousandth of a row at 60,000 is still told. */
+const ROW_EDGE_SHARE = 1e-12;
 /** Rows are never drawn more than this many to one: a row with no height on screen is not worked on for ever. */
 const MAX_ROW_FACTOR = 1e9;
 const NICE_STEPS = [1, 2, 5];
@@ -30,7 +32,13 @@ export function autoFootprintRow(price: number): number {
 }
 
 /** Which row a price is in, counted from price 0. */
-const rowIndex = (price: number, rowSize: number): number => Math.floor(price / rowSize + ROW_EDGE_SLACK);
+function rowIndex(price: number, rowSize: number): number {
+  const rows = price / rowSize;
+  return Math.floor(rows + Math.max(ROW_EDGE_SLACK, Math.abs(rows) * ROW_EDGE_SHARE));
+}
+
+/** Which row a row's own price is: the nearest, as it was written from its number. */
+const rowNumber = (rowPrice: number, rowSize: number): number => Math.round(rowPrice / rowSize);
 
 interface Cell {
   buy: number;
@@ -249,7 +257,7 @@ export function mergeFootprintRows(levels: readonly FootprintLevel[], rowSize: n
   const merged: FootprintLevel[] = [];
   let at = Number.NaN;
   for (const level of levels) {
-    const index = Math.floor(rowIndex(level.price, rowSize) / factor);
+    const index = Math.floor(rowNumber(level.price, rowSize) / factor);
     if (index !== at) {
       merged.push({ price: tidy(index * tall), buy: 0, sell: 0 });
       at = index;
@@ -294,7 +302,7 @@ export interface FootprintImbalance {
  */
 export function footprintImbalances(levels: readonly FootprintLevel[], rowSize: number, ratio: number): FootprintImbalance[] {
   if (!(ratio > 1) || !(rowSize > 0)) return levels.map(() => ({ buy: false, sell: false }));
-  const indices = levels.map((level) => rowIndex(level.price, rowSize));
+  const indices = levels.map((level) => rowNumber(level.price, rowSize));
   const byIndex = new Map(levels.map((level, i) => [indices[i], level]));
   const lowest = indices[0];
   const highest = indices[indices.length - 1];

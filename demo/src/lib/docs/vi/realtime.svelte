@@ -303,8 +303,9 @@ chart.clearFootprint()                                // trước khi đưa hàn
   Mức zoom quyết định một nến mang gì. Chọn footprint thì chart zoom vào tới chỗ đọc được các con số, và nến
   của nó có thể rộng hơn nến thường nhiều; zoom ra thì các con số nhường chỗ cho một thanh cho mỗi bên, rồi cho
   nến thường. Các hàng quá mỏng để đọc được vẽ gộp 2, 5, 10… hàng làm một, ở các mức giá tròn. Footprint được giữ
-  cho 500 nến mới nhất và không được lưu cùng trạng thái của chart. Trong replay, các nến chưa được hiện không có
-  ô nào. Nó được vẽ bằng Canvas 2D, kể cả khi dùng renderer WebGL. <code>renderPriceChart</code> vẽ nó từ
+  cho 500 nến mới nhất và không được lưu cùng trạng thái của chart. Trong replay, các nến chưa được hiện không có ô nào, nến đang hình thành từ các nến nhỏ hơn cũng vậy.
+  Trên tick chart, mỗi trade được tính vào nến mở gần nhất tại lúc nó đến, nên trade đầu tiên của một
+  nến có thể rơi vào nến ngay trước. Nó được vẽ bằng Canvas 2D, kể cả khi dùng renderer WebGL. <code>renderPriceChart</code> vẽ nó từ
   <code>footprint</code>, là các hàng đúng như <code>chart.getFootprint()</code> trả về.
 </p>
 

@@ -312,7 +312,9 @@ chart.clearFootprint()                                // antes de las filas de o
   sus barras pueden hacerse mucho más anchas que las velas; al alejar, los números dan paso a una barra por cada
   lado, y luego a velas normales. Las filas demasiado finas para leerse se dibujan de 2, 5, 10… en una, en precios
   redondos. El footprint se conserva para las 500 barras más nuevas y no se guarda con el estado del gráfico.
-  Durante un replay, las barras aún no mostradas no llevan celdas. Se dibuja en Canvas 2D, también con el
+  Durante un replay, las barras aún no mostradas no llevan celdas, ni tampoco una que aún se forma a
+  partir de barras más finas. En un gráfico de ticks, una operación se cuenta en la última barra que se
+  había abierto cuando llegó, así que la primera operación de una barra puede caer en la anterior. Se dibuja en Canvas 2D, también con el
   renderizador WebGL. <code>renderPriceChart</code> lo dibuja a partir de <code>footprint</code>, las filas tal
   como las da <code>chart.getFootprint()</code>.
 </p>

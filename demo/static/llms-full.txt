@@ -961,6 +961,8 @@ if (rows) footprintStats(rows.levels); // { buy, sell, volume, delta, poc, maxSi
 
 Zoomed out, the numbers give way to a bar for each side, then to candles. `chart.clearFootprint()`
 before another series' rows; a connected chart starts again by itself on another symbol or timeframe.
+`chart.getFootprint()` gives copies. With no `rowSize`, trades given before the bars are kept until the
+bars say the price a row is worked out from.
 
 ## A Vietnamese stock, and VN30 futures
 

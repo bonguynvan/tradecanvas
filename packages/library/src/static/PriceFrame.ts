@@ -12,7 +12,6 @@ import {
 } from '@tradecanvas/commons';
 import {
   ChartLegend,
-  autoFootprintRow,
   CompareSymbolIndicator,
   CompareSymbolPaneIndicator,
   CorrelationCoefficientIndicator,
@@ -56,7 +55,7 @@ import { isReshapedChartType, resolveRenderer } from '../charts/ChartTypeStrateg
 import { LayoutManager } from '../layout/LayoutManager.js';
 import { nextPriceAxisWidth, requiredPriceAxisWidth } from '../layout/priceAxisWidth.js';
 import { DisplaySeries } from '../model/DisplaySeries.js';
-import { rowSizeOf } from '../model/FootprintFeed.js';
+import { footprintRowSize } from '../model/FootprintFeed.js';
 import { drawingPaneViewport } from '../model/DrawingPanes.js';
 import { IndicatorPanes } from '../model/IndicatorPanes.js';
 import { dependencyOrder, renameSources, restorePanes } from '../model/IndicatorSetup.js';
@@ -265,9 +264,8 @@ export class PriceFrame {
     const settings = readChartTypeOptions(this.options.chartTypeOptions ?? {}).footprint ?? {};
     const rows = this.options.footprint ?? [];
     const { data } = this.options;
-    const rowSize = typeof settings.rowSize === 'number'
-      ? settings.rowSize
-      : rowSizeOf(rows) ?? autoFootprintRow(data[data.length - 1]?.close ?? 0);
+    // As `Chart` works it out: the size set, the rows' own step, or one from the last price in steps of the price's unit.
+    const rowSize = footprintRowSize(settings.rowSize ?? 'auto', rows, data[data.length - 1]?.close ?? 0, this.priceUnit ?? undefined);
     const store = new FootprintStore(Math.max(1, rows.length));
     store.setRowSize(rowSize);
     for (const bar of rows) store.set(bar);
