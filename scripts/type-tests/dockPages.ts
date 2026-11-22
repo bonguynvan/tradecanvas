@@ -21,7 +21,7 @@ new ChartWidget(document.body, { tape: { minSize: 0.5, rows: 100 } });
 // Its settings have a type of their own, for a host that keeps them.
 const tapeSettings: TapeOptions = { minSize: 2 };
 const sellers: TapeSide = 'sell';
-new ChartWidget(document.body, { tape: { side: sellers, group: true } });
+new ChartWidget(document.body, { tape: { side: sellers, group: true, persist: false } });
 // @ts-expect-error A tape lists all trades, the buyers' or the sellers'.
 new ChartWidget(document.body, { tape: { side: 'both' } });
 new ChartWidget(document.body, { tape: tapeSettings });

@@ -60,8 +60,9 @@ export interface TapeRow {
  * It can list one side's trades alone (`setSide`), and make one row of the
  * trades made together (`setGroup`): a market order that took several
  * resting orders at a price reads as the one trade it was, measured against
- * the least size, and for being large, by what it adds up to. Every trade is
- * kept as it came, so either choice can be changed back.
+ * the least size by what it adds up to, and large when what it adds up to
+ * is, or when one of its trades was marked so. Every trade is kept as it
+ * came, so either choice can be changed back.
  */
 export class TapeModel {
   /** Every trade kept, by the time it was made, oldest first. */

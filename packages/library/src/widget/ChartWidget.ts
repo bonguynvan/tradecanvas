@@ -1104,8 +1104,9 @@ export class ChartWidget {
     // The tape (opt-in): the trades of the chart's symbol, the feed's followed while it is open.
     if (this.options.tape) {
       const given = typeof this.options.tape === 'object' ? this.options.tape : {};
-      // What a reader chose here before, kept in this browser, over what the options start it with.
-      const kept = readTapePrefs(browserStorage());
+      // What a reader chose here before, kept in this browser, over what the options start it with:
+      // each choice by itself, so what they never chose is still the host's to set.
+      const kept = readTapePrefs(this.tapeStorage());
       this.tapeSymbol = this.state.symbol;
       const tape = new WidgetTape(this.root, {
         formatTime: (time) => this.formatTapeTime(time),
@@ -1113,10 +1114,11 @@ export class ChartWidget {
         formatSize: (size, decimals) => this.formatTapeSize(size, decimals),
         onToggle: (open) => this.followTapeTrades(open),
         onClose: () => this.docking.closePanelByHand('tape'),
-        onChange: (chosen) => this.keepTapeChoices(chosen),
+        onChange: (chosen, changed) => this.keepTapeChoice(chosen, changed),
       }, {
         ...given,
-        ...(kept ? { side: kept.side, group: kept.group } : {}),
+        side: kept.side ?? given.side,
+        group: kept.group ?? given.group,
         minSize: minSizeFor(kept, this.tapeSymbol) ?? given.minSize,
       }, this.t);
       this.tape = tape;
@@ -1125,7 +1127,7 @@ export class ChartWidget {
       this.chart.on('symbolChange', (e) => {
         this.tapeSymbol = (e.payload as { symbol?: string }).symbol ?? this.state.symbol;
         tape.clear();
-        tape.setMinSize(minSizeFor(readTapePrefs(browserStorage()), this.tapeSymbol) ?? given.minSize ?? 0);
+        tape.setMinSize(minSizeFor(readTapePrefs(this.tapeStorage()), this.tapeSymbol) ?? given.minSize ?? 0);
       });
     }
     // The bar another chart of a grid points at here, or the latest again when it goes.
@@ -3174,11 +3176,25 @@ export class ChartWidget {
     this.stopTapeTrades = stop;
   }
 
-  /** What a reader chose on the tape is kept in this browser, as the dock's width is: the least size for the symbol it was chosen on. */
-  private keepTapeChoices(chosen: TapeChoices): void {
-    const storage = browserStorage();
-    const kept = readTapePrefs(storage) ?? { side: 'all', group: false, minSizes: {} };
-    writeTapePrefs(storage, withMinSize({ ...kept, side: chosen.side, group: chosen.group }, this.tapeSymbol, chosen.minSize));
+  /** Where the tape's choices are kept: this browser, unless the tape was told to keep nothing (`persist: false`). */
+  private tapeStorage(): Storage | null {
+    const given = this.options.tape;
+    return typeof given === 'object' && given.persist === false ? null : browserStorage();
+  }
+
+  /**
+   * What a reader just chose on the tape is kept in this browser, as the
+   * dock's width is: that one choice, and a least size under the symbol it
+   * was typed on. What they did not choose is not written, so the host's
+   * options still start it.
+   */
+  private keepTapeChoice(chosen: TapeChoices, changed: keyof TapeChoices): void {
+    const storage = this.tapeStorage();
+    if (!storage) return;
+    const kept = readTapePrefs(storage);
+    if (changed === 'minSize') writeTapePrefs(storage, withMinSize(kept, this.tapeSymbol, chosen.minSize));
+    else if (changed === 'side') writeTapePrefs(storage, { ...kept, side: chosen.side });
+    else writeTapePrefs(storage, { ...kept, group: chosen.group });
   }
 
   /** A trade's time as the tape writes it: the time of day in the display zone, to the second. */

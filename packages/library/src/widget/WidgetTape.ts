@@ -31,24 +31,44 @@ export interface TapeCallbacks {
   onToggle?: (open: boolean) => void;
   /** Its own × pressed: the dock that holds it shuts it. Unset, it closes itself. */
   onClose?: () => void;
-  /** The reader chose something in the panel: a least size, a side, grouping. Not called for what is set from outside. */
-  onChange?: (chosen: TapeChoices) => void;
+  /**
+   * The reader chose something in the panel: what stands chosen now, and
+   * which of it they just chose. Not called for what is set from outside.
+   */
+  onChange?: (chosen: TapeChoices, changed: keyof TapeChoices) => void;
 }
 
 /** How the tape starts: how many rows it shows, and the least size of a trade it lists. */
 export interface TapeOptions {
   /** How many rows it shows at the most (200; a thousand at the most). */
   rows?: number;
-  /** Trades smaller than this are not listed (0: all are). */
+  /**
+   * Trades smaller than this are not listed (0: all are). It is where every
+   * symbol starts: a size typed in the panel is kept for the symbol it was
+   * typed on, and used over this one there.
+   */
   minSize?: number;
-  /** Which trades it lists: all (`'all'`, the default), those the buyers took (`'buy'`) or those the sellers took (`'sell'`). */
+  /**
+   * Which trades it lists: all (`'all'`, the default), those the buyers took
+   * (`'buy'`) or those the sellers took (`'sell'`). Where it starts: a side
+   * the reader picked in the panel is kept, and used over this one.
+   */
   side?: TapeSide;
   /**
    * Whether trades made at the same moment, at the same price and by the
    * same side are one row, their sizes added (`false`): a market order that
-   * took several resting orders reads as the one trade it was.
+   * took several resting orders reads as the one trade it was. Where it
+   * starts: what the reader chose in the panel is kept, and used over this.
    */
   group?: boolean;
+  /**
+   * Whether what a reader chooses in the panel is kept in the browser, to
+   * be there the next time (`true`): the side and the grouping, and the
+   * least size with the name of the symbol it was typed on, for up to a
+   * hundred symbols. `false` keeps nothing and reads nothing: the tape
+   * starts from these options every time.
+   */
+  persist?: boolean;
 }
 
 /**
@@ -77,6 +97,8 @@ export class WidgetTape {
   private pending: TapeRow[] = [];
   /** The rows on the page are no longer the model's (a late trade, finer sizes): the next frame writes them all. */
   private stale = false;
+  /** The split is no longer the trades' (one side listed, and a trade of the other came): the next frame draws it again. */
+  private splitStale = false;
   /** The decimals the sizes on the page are written to. */
   private decimals = 0;
   private frame = 0;
@@ -183,6 +205,8 @@ export class WidgetTape {
     this.open = false;
     this.el.hidden = true;
     this.cancelFrame();
+    // Its menu hangs from a button that is gone now.
+    this.menu?.close();
     this.callbacks.onToggle?.(false);
   }
 
@@ -192,8 +216,10 @@ export class WidgetTape {
     if (!this.open) return;
     // A trade that went in among the rows, or sizes finer than the ones written: every row again.
     if (added === null || this.model.sizeDecimals() !== this.decimals) this.stale = true;
-    else if (added.length === 0) return;
-    else this.pending = [...added, ...this.pending].slice(0, this.model.getCapacity());
+    else if (added.length > 0) this.pending = [...added, ...this.pending].slice(0, this.model.getCapacity());
+    // With one side listed, a trade of the other adds no row and still takes its share of the split.
+    else if (this.model.getSide() !== 'all') this.splitStale = true;
+    else return;
     if (!this.frame) this.frame = requestAnimationFrame(() => this.drawFrame());
   }
 
@@ -245,11 +271,12 @@ export class WidgetTape {
   }
 
   private choose(id: string): void {
-    if (id === GROUP_ID) this.model.setGroup(!this.model.isGrouped());
+    const grouping = id === GROUP_ID;
+    if (grouping) this.model.setGroup(!this.model.isGrouped());
     else this.model.setSide(id as TapeSide);
     this.markSide();
     this.redraw();
-    this.callbacks.onChange?.(this.choices());
+    this.callbacks.onChange?.(this.choices(), grouping ? 'group' : 'side');
   }
 
   private cancelFrame(): void {
@@ -257,6 +284,7 @@ export class WidgetTape {
     this.frame = 0;
     this.pending = [];
     this.stale = false;
+    this.splitStale = false;
   }
 
   /** The least size as typed: a number of 0 or more, or empty for none; anything else is refused and marked. */
@@ -270,7 +298,7 @@ export class WidgetTape {
     this.minEl.removeAttribute('aria-invalid');
     this.model.setMinSize(size);
     this.redraw();
-    this.callbacks.onChange?.(this.choices());
+    this.callbacks.onChange?.(this.choices(), 'minSize');
   }
 
   /** Every row again, from the trades kept: on opening, on another least size, once cleared, and when the rows went stale. */
@@ -299,7 +327,13 @@ export class WidgetTape {
     }
     const added = this.pending;
     this.pending = [];
-    if (!this.open || added.length === 0) return;
+    const splitStale = this.splitStale;
+    this.splitStale = false;
+    if (!this.open) return;
+    if (added.length === 0) {
+      if (splitStale) this.drawSplit();
+      return;
+    }
     this.emptyEl.remove();
     this.showRows(true);
     const fresh = added.map((row) => this.newRow(row));

@@ -355,6 +355,7 @@ stop()   // el feed se suelta cuando nadie lo sigue y el gráfico no es un footp
   elige en el panel se guarda en el navegador y sigue ahí la próxima vez: el lado y la agrupación para todos
   los símbolos, el tamaño mínimo para el símbolo en que se eligió, pues un tamaño significa una cosa en un
   instrumento y otra en el siguiente.
+  Lo que el lector eligió se usa en lugar de la opción de partida, cada elección por separado; <code>persist: false</code> no guarda nada.
 </p>
 
 <h2>Estado del mercado y noticias</h2>

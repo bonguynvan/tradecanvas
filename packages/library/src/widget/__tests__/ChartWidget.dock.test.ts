@@ -251,6 +251,42 @@ describe('ChartWidget dock', () => {
       expect(checked()).toEqual(['true', 'false', 'false', 'false']);
     });
 
+    it('keeps only what the reader chose: the rest is still the host’s to set', () => {
+      make({ tape: { minSize: 5 } });
+      widget.openPanel('tape');
+      pick('Group trades made together');
+      expect(JSON.parse(localStorage.getItem('tcw:tape')!)).toEqual({ group: true, minSizes: [] });
+      widget.destroy();
+      // The host starts its tape otherwise the next time: where the reader chose nothing, it does.
+      make({ tape: { minSize: 10, side: 'sell' } });
+      widget.openPanel('tape');
+      expect(least().value).toBe('10');
+      expect(checked()).toEqual(['false', 'false', 'true', 'true']);
+    });
+
+    it('keeps a least size under the symbol it was typed on, and nothing of the symbols a reader only looked at', () => {
+      make({ tape: true });
+      widget.openPanel('tape');
+      FakeChart.last.emit('symbolChange', { symbol: 'BBB', previous: 'AAA' });
+      pick('Sold');
+      FakeChart.last.emit('symbolChange', { symbol: 'CCC', previous: 'BBB' });
+      type('7');
+      expect(JSON.parse(localStorage.getItem('tcw:tape')!)).toEqual({ side: 'sell', minSizes: [['CCC', 7]] });
+    });
+
+    it('keeps nothing when told not to, and starts from its options every time', () => {
+      localStorage.setItem('tcw:tape', JSON.stringify({ side: 'sell', group: true, minSizes: [['AAA', 9]] }));
+      make({ tape: { persist: false, minSize: 2 } });
+      widget.openPanel('tape');
+      expect(least().value).toBe('2');
+      expect(checked()).toEqual(['true', 'false', 'false', 'false']);
+      pick('Bought');
+      type('4');
+      expect(JSON.parse(localStorage.getItem('tcw:tape')!)).toEqual({ side: 'sell', group: true, minSizes: [['AAA', 9]] });
+      FakeChart.last.emit('symbolChange', { symbol: 'BBB', previous: 'AAA' });
+      expect(least().value).toBe('2');
+    });
+
     it('lists the trades as chosen: a kept least size leaves the smaller ones out from the first', () => {
       make({ tape: true });
       widget.openPanel('tape');

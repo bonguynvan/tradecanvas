@@ -264,3 +264,31 @@ describe('a tape that groups trades made together', () => {
     expect(tape.rows().map((row) => [row.time, row.volume])).toEqual([[3, 2], [2, 1]]);
   });
 });
+
+describe('a grouped tape, in its corners', () => {
+  it('has a trade that comes late join the trades it was made with', () => {
+    const tape = new TapeModel();
+    tape.setGroup(true);
+    tape.push([trade(10, 100, 1, 'buy'), trade(20, 100, 1, 'buy')]);
+    expect(tape.push([trade(10, 100, 2, 'buy')])).toBeNull();
+    expect(tape.rows().map((row) => [row.time, row.volume])).toEqual([[20, 1], [10, 3]]);
+  });
+
+  it('adds up what is left of a group when the oldest of its trades are let go', () => {
+    const tape = new TapeModel(2, 3);
+    tape.setGroup(true);
+    tape.push([trade(1, 100, 1, 'buy'), trade(1, 100, 1, 'buy'), trade(1, 100, 1, 'buy'), trade(1, 100, 1, 'buy'), trade(2, 100, 5, 'sell')]);
+    expect(tape.kept()).toBe(3);
+    expect(tape.rows().map((row) => [row.time, row.volume])).toEqual([[2, 5], [1, 2]]);
+  });
+
+  it('lists a trade that says no side, and has none before it to tell by, among all and under neither side', () => {
+    const tape = new TapeModel();
+    tape.push([trade(1, 100, 1), trade(2, 100, 1)]);
+    expect(tape.rows()).toHaveLength(2);
+    tape.setSide('buy');
+    expect(tape.rows()).toEqual([]);
+    tape.setSide('sell');
+    expect(tape.rows()).toEqual([]);
+  });
+});

@@ -346,6 +346,7 @@ stop()   // the feed is let go of once no one follows it and the chart is no foo
   (<code>{`tape: { side: 'buy', group: true }`}</code>). What a reader chooses in the panel is kept in
   the browser and is there the next time: the side and the grouping for every symbol, the least size
   for the symbol it was chosen on, since a size means one thing on one instrument and another on the next.
+  What the reader chose is used over the option it started from, each choice by itself; <code>persist: false</code> keeps nothing.
 </p>
 
 <h2>Market status and news</h2>

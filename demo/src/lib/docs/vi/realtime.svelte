@@ -343,6 +343,7 @@ stop()   // feed được thả ra khi không còn ai theo dõi và chart không
   (<code>{`tape: { side: 'buy', group: true }`}</code>). Những gì người dùng chọn trong panel được lưu trong
   trình duyệt và có lại ở lần sau: bên và việc gộp áp dụng cho mọi mã, còn cỡ tối thiểu thì theo từng mã,
   vì cùng một con số có nghĩa khác nhau ở mỗi mã.
+  Lựa chọn của người dùng được dùng thay cho tuỳ chọn ban đầu, tính riêng từng lựa chọn; <code>persist: false</code> không lưu gì cả.
 </p>
 
 <h2>Trạng thái thị trường và tin tức</h2>

@@ -315,18 +315,42 @@ describe('the tape’s own choices', () => {
   it('says what was chosen each time a choice is made, the least size among them', () => {
     made();
     pick('Sold');
-    expect(onChange).toHaveBeenLastCalledWith({ minSize: 0, side: 'sell', group: false });
+    expect(onChange).toHaveBeenLastCalledWith({ minSize: 0, side: 'sell', group: false }, 'side');
     pick('Group trades made together');
-    expect(onChange).toHaveBeenLastCalledWith({ minSize: 0, side: 'sell', group: true });
+    expect(onChange).toHaveBeenLastCalledWith({ minSize: 0, side: 'sell', group: true }, 'group');
     const least = host.querySelector<HTMLInputElement>('.tcw-tape-min')!;
     least.value = '2.5';
     least.dispatchEvent(new Event('input'));
-    expect(onChange).toHaveBeenLastCalledWith({ minSize: 2.5, side: 'sell', group: true });
+    expect(onChange).toHaveBeenLastCalledWith({ minSize: 2.5, side: 'sell', group: true }, 'minSize');
     // What is no size changes nothing, and says nothing.
     onChange.mockClear();
     least.value = '-1';
     least.dispatchEvent(new Event('input'));
     expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('goes on saying how the two sides share the trades while one side is listed: the other side’s trades move the bar', () => {
+    made();
+    pick('Bought');
+    tape.push([trade(1, 100, 3, 'buy')]);
+    frame();
+    const split = host.querySelector<HTMLElement>('.tcw-tape-split')!;
+    expect(split.style.getPropertyValue('--tcw-tape-bought')).toBe('100%');
+    // Sales add no row to a list of what was bought, and still take their share.
+    tape.push([trade(2, 100, 1, 'sell')]);
+    frame();
+    expect(rows()).toHaveLength(1);
+    expect(split.style.getPropertyValue('--tcw-tape-bought')).toBe('75%');
+    expect(split.getAttribute('aria-label')).toBe('Bought 3, sold 1');
+  });
+
+  it('shuts its menu when the panel is shut under it', () => {
+    made();
+    choices().click();
+    expect(entries()).toHaveLength(4);
+    tape.close();
+    expect(entries()).toEqual([]);
+    expect(choices().getAttribute('aria-expanded')).toBe('false');
   });
 
   it('takes a least size from outside, its field and its rows with it, and says nothing of it', () => {
