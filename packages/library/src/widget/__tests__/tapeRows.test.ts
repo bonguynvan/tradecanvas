@@ -140,3 +140,127 @@ describe('TapeModel', () => {
     expect(tape.kept()).toBe(5);
   });
 });
+
+describe('a tape of one side', () => {
+  const both = [trade(1, 100, 2, 'buy'), trade(2, 99, 3, 'sell'), trade(3, 101, 1, 'buy'), trade(4, 101, 4)];
+
+  it('lists only the trades that side took, and all of them again when told to', () => {
+    const tape = new TapeModel();
+    tape.push(both);
+    tape.setSide('sell');
+    expect(tape.getSide()).toBe('sell');
+    expect(tape.rows().map((row) => row.time)).toEqual([2]);
+    tape.setSide('buy');
+    // The fourth says no side: it is told by the trade before it, which was bought.
+    expect(tape.rows().map((row) => row.time)).toEqual([4, 3, 1]);
+    tape.setSide('all');
+    expect(tape.rows()).toHaveLength(4);
+  });
+
+  it('gives a push only the rows of its side to put on top', () => {
+    const tape = new TapeModel();
+    tape.setSide('buy');
+    expect(tape.push(both)!.map((row) => row.time)).toEqual([4, 3, 1]);
+    expect(tape.push([trade(5, 100, 1, 'sell')])).toEqual([]);
+  });
+
+  it('still says how the two sides shared the trades: the split is of all the rows, not of the side listed', () => {
+    const tape = new TapeModel();
+    tape.push(both);
+    const all = tape.totals();
+    tape.setSide('sell');
+    expect(tape.totals()).toEqual(all);
+    expect(all).toEqual({ buy: 7, sell: 3 });
+  });
+
+  it('takes anything that is no side as all', () => {
+    const tape = new TapeModel();
+    tape.push(both);
+    tape.setSide('up' as never);
+    expect(tape.getSide()).toBe('all');
+    expect(tape.rows()).toHaveLength(4);
+  });
+});
+
+describe('a tape that groups trades made together', () => {
+  // A buyer's order that took three resting orders at 100 in one moment, a sale, and two trades alike a moment apart.
+  const sweep = [trade(10, 100, 1, 'buy'), trade(10, 100, 2, 'buy'), trade(10, 100, 0.5, 'buy'), trade(10, 100, 4, 'sell'), trade(11, 100, 1, 'buy'), trade(12, 100, 1, 'buy')];
+
+  it('makes one row of trades of one moment, one price and one side, their sizes added', () => {
+    const tape = new TapeModel();
+    tape.setGroup(true);
+    tape.push(sweep);
+    expect(tape.isGrouped()).toBe(true);
+    expect(tape.rows().map((row) => [row.time, row.volume, row.side])).toEqual([
+      [12, 1, 'buy'],
+      [11, 1, 'buy'],
+      [10, 4, 'sell'],
+      [10, 3.5, 'buy'],
+    ]);
+  });
+
+  it('keeps apart what differs: another price, another side, another moment', () => {
+    const tape = new TapeModel();
+    tape.setGroup(true);
+    tape.push([trade(10, 100, 1, 'buy'), trade(10, 100.5, 1, 'buy'), trade(10, 100.5, 1, 'sell'), trade(11, 100.5, 1, 'sell')]);
+    expect(tape.rows()).toHaveLength(4);
+  });
+
+  it('lists every trade again when grouping is switched off', () => {
+    const tape = new TapeModel();
+    tape.setGroup(true);
+    tape.push(sweep);
+    tape.setGroup(false);
+    expect(tape.rows()).toHaveLength(6);
+    expect(tape.kept()).toBe(6);
+  });
+
+  it('measures a group against the least size by what it adds up to', () => {
+    const tape = new TapeModel();
+    tape.setGroup(true);
+    tape.setMinSize(3);
+    tape.push(sweep);
+    // Three trades under three each, three and a half together.
+    expect(tape.rows().map((row) => row.volume)).toEqual([4, 3.5]);
+    tape.setGroup(false);
+    expect(tape.rows().map((row) => row.volume)).toEqual([4]);
+  });
+
+  it('marks a group as large when what it adds up to is, though none of its trades is', () => {
+    const tape = new TapeModel();
+    tape.setGroup(true);
+    tape.push(Array.from({ length: 20 }, (_, i) => trade(i, 100, 1, i % 2 ? 'buy' : 'sell')));
+    tape.push(Array.from({ length: 12 }, () => trade(50, 100, 1, 'buy')));
+    const [top] = tape.rows();
+    expect(top.volume).toBe(12);
+    expect(top.large).toBe(true);
+    tape.setGroup(false);
+    expect(tape.rows().some((row) => row.large)).toBe(false);
+  });
+
+  it('says the rows changed, not which were added, when a trade joins a row already there', () => {
+    const tape = new TapeModel();
+    tape.setGroup(true);
+    expect(tape.push([trade(10, 100, 1, 'buy')])!.map((row) => row.volume)).toEqual([1]);
+    // The same moment, price and side: the row on top grows.
+    expect(tape.push([trade(10, 100, 2, 'buy')])).toBeNull();
+    // Two that join each other within one push: the rows are written again for them too.
+    expect(tape.push([trade(11, 100, 1, 'sell'), trade(11, 100, 1, 'sell')])).toBeNull();
+    expect(tape.push([trade(12, 100, 1, 'sell')])!.map((row) => row.volume)).toEqual([1]);
+    expect(tape.rows().map((row) => row.volume)).toEqual([1, 2, 3]);
+  });
+
+  it('adds up no hair of floating point: a tenth and two tenths are three tenths', () => {
+    const tape = new TapeModel();
+    tape.setGroup(true);
+    tape.push([trade(10, 100, 0.1, 'buy'), trade(10, 100, 0.2, 'buy')]);
+    expect(tape.rows()[0].volume).toBe(0.3);
+  });
+
+  it('shows no more rows than it may, counted in groups', () => {
+    const tape = new TapeModel(2);
+    tape.setGroup(true);
+    tape.push([trade(1, 100, 1, 'buy'), trade(1, 100, 1, 'buy'), trade(2, 100, 1, 'buy'), trade(3, 100, 1, 'buy'), trade(3, 100, 1, 'buy')]);
+    expect(tape.rows().map((row) => [row.time, row.volume])).toEqual([[3, 2], [2, 1]]);
+  });
+});

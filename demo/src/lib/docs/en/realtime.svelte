@@ -338,6 +338,15 @@ stop()   // the feed is let go of once no one follows it and the chart is no foo
   only while the tape is open. <code>widget.openPanel('tape')</code> opens it; its switches are
   <code>tape</code> and <code>dock.tape</code>.
 </p>
+<p>
+  A menu in the tape's header lists one side's trades alone (bought, or sold), and makes one row of the
+  trades made together: those of one moment, one price and one side, their sizes added, so a market
+  order that took several resting orders reads as the one trade it was. Such a row is measured against
+  the least size, and for being large, by what it adds up to. Both can be set from the start
+  (<code>{`tape: { side: 'buy', group: true }`}</code>). What a reader chooses in the panel is kept in
+  the browser and is there the next time: the side and the grouping for every symbol, the least size
+  for the symbol it was chosen on, since a size means one thing on one instrument and another on the next.
+</p>
 
 <h2>Market status and news</h2>
 <p>

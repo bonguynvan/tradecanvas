@@ -227,3 +227,118 @@ describe('WidgetTape', () => {
     delete (HTMLElement.prototype as { offsetHeight?: number }).offsetHeight;
   });
 });
+
+describe('the tape’s own choices', () => {
+  const onChange = vi.fn();
+  const choices = () => host.querySelector<HTMLButtonElement>('.tcw-tape-more')!;
+  const entries = () => [...host.querySelectorAll<HTMLElement>('.tcw-context-menu:not([hidden]) [role^="menuitem"]')];
+  const labels = () => entries().map((entry) => entry.querySelector('.tcw-context-label')?.textContent);
+  const pick = (label: string) => {
+    choices().click();
+    entries().find((entry) => entry.querySelector('.tcw-context-label')?.textContent === label)!.click();
+  };
+  const sweep = [trade(10, 100, 1, 'buy'), trade(10, 100, 2, 'buy'), trade(10, 99, 4, 'sell'), trade(11, 100, 1, 'buy')];
+  const made = (options: ConstructorParameters<typeof WidgetTape>[2] = {}) => {
+    tape = new WidgetTape(host, {
+      formatTime: (time) => `t${time}`,
+      formatPrice: (price) => price.toFixed(2),
+      formatSize: (size, decimals) => size.toFixed(decimals),
+      onToggle,
+      onClose,
+      onChange,
+    }, options);
+    tape.openPanel();
+    return tape;
+  };
+
+  it('has a button that opens a menu: which side’s trades it lists, and whether trades made together are one row', () => {
+    made();
+    const button = choices();
+    expect(button.getAttribute('aria-label')).toBe('More');
+    expect(button.getAttribute('aria-haspopup')).toBe('menu');
+    button.click();
+    expect(labels()).toEqual(['All trades', 'Bought', 'Sold', 'Group trades made together']);
+    expect(entries().map((entry) => [entry.getAttribute('role'), entry.getAttribute('aria-checked')])).toEqual([
+      ['menuitemradio', 'true'],
+      ['menuitemradio', 'false'],
+      ['menuitemradio', 'false'],
+      ['menuitemcheckbox', 'false'],
+    ]);
+  });
+
+  it('lists one side’s trades when it is picked, and marks its button while not all are listed', () => {
+    made();
+    tape.push(sweep);
+    frame();
+    pick('Sold');
+    expect(rows().map((row) => row.dataset.side)).toEqual(['sell']);
+    expect(choices().classList.contains('tcw-active')).toBe(true);
+    choices().click();
+    expect(entries().map((entry) => entry.getAttribute('aria-checked'))).toEqual(['false', 'false', 'true', 'false']);
+    choices().click();
+    pick('All trades');
+    expect(rows()).toHaveLength(4);
+    expect(choices().classList.contains('tcw-active')).toBe(false);
+  });
+
+  it('puts only a side’s new trades on top while that side is listed', () => {
+    made();
+    pick('Bought');
+    tape.push(sweep);
+    frame();
+    expect(rows().map((row) => row.dataset.side)).toEqual(['buy', 'buy', 'buy']);
+  });
+
+  it('makes one row of trades made together when told to, and every trade a row again when told not to', () => {
+    made();
+    tape.push(sweep);
+    frame();
+    pick('Group trades made together');
+    expect(rows().map((row) => row.children[2].textContent)).toEqual(['1', '4', '3']);
+    // A trade that joins the row on top: the row grows, no row is added.
+    tape.push([trade(11, 100, 2, 'buy')]);
+    frame();
+    expect(rows().map((row) => row.children[2].textContent)).toEqual(['3', '4', '3']);
+    pick('Group trades made together');
+    expect(rows()).toHaveLength(5);
+  });
+
+  it('starts as it is told to: a side, grouped', () => {
+    made({ side: 'buy', group: true });
+    tape.push(sweep);
+    frame();
+    expect(rows().map((row) => row.children[2].textContent)).toEqual(['1', '3']);
+    choices().click();
+    expect(entries().map((entry) => entry.getAttribute('aria-checked'))).toEqual(['false', 'true', 'false', 'true']);
+  });
+
+  it('says what was chosen each time a choice is made, the least size among them', () => {
+    made();
+    pick('Sold');
+    expect(onChange).toHaveBeenLastCalledWith({ minSize: 0, side: 'sell', group: false });
+    pick('Group trades made together');
+    expect(onChange).toHaveBeenLastCalledWith({ minSize: 0, side: 'sell', group: true });
+    const least = host.querySelector<HTMLInputElement>('.tcw-tape-min')!;
+    least.value = '2.5';
+    least.dispatchEvent(new Event('input'));
+    expect(onChange).toHaveBeenLastCalledWith({ minSize: 2.5, side: 'sell', group: true });
+    // What is no size changes nothing, and says nothing.
+    onChange.mockClear();
+    least.value = '-1';
+    least.dispatchEvent(new Event('input'));
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('takes a least size from outside, its field and its rows with it, and says nothing of it', () => {
+    made();
+    tape.push(sweep);
+    frame();
+    tape.setMinSize(2);
+    expect(host.querySelector<HTMLInputElement>('.tcw-tape-min')!.value).toBe('2');
+    expect(rows().map((row) => row.children[2].textContent)).toEqual(['4', '2']);
+    tape.setMinSize(0);
+    expect(host.querySelector<HTMLInputElement>('.tcw-tape-min')!.value).toBe('');
+    expect(rows()).toHaveLength(4);
+    expect(onChange).not.toHaveBeenCalled();
+  });
+});

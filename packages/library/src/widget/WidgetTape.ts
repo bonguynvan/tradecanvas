@@ -1,8 +1,25 @@
 import type { Trade } from '@tradecanvas/commons';
 import { createIcon } from './icons.js';
 import { EN_TRANSLATOR, fill, type Translator } from './i18n.js';
-import { TapeModel, type TapeRow } from './tapeRows.js';
+import { TapeModel, type TapeRow, type TapeSide } from './tapeRows.js';
+import { WidgetContextMenu, type ContextMenuEntry } from './WidgetContextMenu.js';
 import { markPart } from './widgetFeatures.js';
+
+/** What a reader has chosen on the tape. */
+export interface TapeChoices {
+  /** The least size listed; 0 for none. */
+  minSize: number;
+  side: TapeSide;
+  group: boolean;
+}
+
+/** The menu's entry for each side, in the order they are listed. */
+const SIDE_ENTRIES: readonly (readonly [TapeSide, 'tape.side.all' | 'tape.side.buy' | 'tape.side.sell'])[] = [
+  ['all', 'tape.side.all'],
+  ['buy', 'tape.side.buy'],
+  ['sell', 'tape.side.sell'],
+];
+const GROUP_ID = 'group';
 
 export interface TapeCallbacks {
   /** A trade's time (ms) as the tape writes it: the time of day, to the second. */
@@ -14,6 +31,8 @@ export interface TapeCallbacks {
   onToggle?: (open: boolean) => void;
   /** Its own × pressed: the dock that holds it shuts it. Unset, it closes itself. */
   onClose?: () => void;
+  /** The reader chose something in the panel: a least size, a side, grouping. Not called for what is set from outside. */
+  onChange?: (chosen: TapeChoices) => void;
 }
 
 /** How the tape starts: how many rows it shows, and the least size of a trade it lists. */
@@ -22,6 +41,14 @@ export interface TapeOptions {
   rows?: number;
   /** Trades smaller than this are not listed (0: all are). */
   minSize?: number;
+  /** Which trades it lists: all (`'all'`, the default), those the buyers took (`'buy'`) or those the sellers took (`'sell'`). */
+  side?: TapeSide;
+  /**
+   * Whether trades made at the same moment, at the same price and by the
+   * same side are one row, their sizes added (`false`): a market order that
+   * took several resting orders reads as the one trade it was.
+   */
+  group?: boolean;
 }
 
 /**
@@ -33,14 +60,17 @@ export interface TapeOptions {
  * out. Fed by `push(trades)`; drawn only while open, a burst of trades once
  * a frame, the new rows put on top of the ones there. Every size is written
  * to the same decimals: when a finer one comes, or a trade that was missed
- * comes late, the rows are all written again.
+ * comes late, the rows are all written again. A menu in its header lists
+ * one side's trades alone, and makes one row of the trades made together.
  */
 export class WidgetTape {
   private readonly el: HTMLElement;
   private readonly bodyEl: HTMLDivElement;
   private readonly splitEl: HTMLDivElement;
   private readonly minEl: HTMLInputElement;
+  private readonly moreEl: HTMLButtonElement;
   private readonly emptyEl: HTMLDivElement;
+  private menu: WidgetContextMenu | null = null;
   private readonly model: TapeModel;
   private open = false;
   /** Rows taken in since the last frame, newest first: what the next frame puts on top. */
@@ -56,9 +86,13 @@ export class WidgetTape {
     private readonly callbacks: TapeCallbacks,
     options: TapeOptions = {},
     private readonly t: Translator = EN_TRANSLATOR,
+    /** Where its menu opens: the widget's root, so it lies over the chart and is not cut by the panel. The panel's own holder with none given. */
+    private readonly menuHost: HTMLElement = host,
   ) {
     this.model = new TapeModel(options.rows);
     this.model.setMinSize(options.minSize ?? 0);
+    this.model.setSide(options.side ?? 'all');
+    this.model.setGroup(options.group === true);
 
     this.el = document.createElement('section');
     this.el.className = 'tcw-tape';
@@ -83,13 +117,23 @@ export class WidgetTape {
     this.minEl.autocomplete = 'off';
     if (this.model.getMinSize() > 0) this.minEl.value = String(this.model.getMinSize());
     this.minEl.addEventListener('input', () => this.readMinSize());
+    this.moreEl = document.createElement('button');
+    this.moreEl.type = 'button';
+    this.moreEl.className = 'tcw-tape-more';
+    this.moreEl.setAttribute('aria-label', this.t('toolbar.more'));
+    this.moreEl.title = this.t('toolbar.more');
+    this.moreEl.setAttribute('aria-haspopup', 'menu');
+    this.moreEl.setAttribute('aria-expanded', 'false');
+    this.moreEl.innerHTML = createIcon('more', 14);
+    this.moreEl.addEventListener('click', () => this.toggleMenu());
+    this.markSide();
     const closeBtn = document.createElement('button');
     closeBtn.type = 'button';
     closeBtn.className = 'tcw-tape-close';
     closeBtn.setAttribute('aria-label', this.t('common.close'));
     closeBtn.innerHTML = createIcon('x', 14);
     closeBtn.addEventListener('click', () => (this.callbacks.onClose ? this.callbacks.onClose() : this.close()));
-    header.append(title, this.minEl, closeBtn);
+    header.append(title, this.minEl, this.moreEl, closeBtn);
 
     // Under the header, and staying there: the columns' names, and the split of the rows between the sides.
     const top = document.createElement('div');
@@ -159,9 +203,53 @@ export class WidgetTape {
     this.redraw();
   }
 
+  /** The least size from outside (another symbol has its own): the field and the rows follow, and no choice is said to be made. */
+  setMinSize(size: number): void {
+    this.model.setMinSize(size);
+    const least = this.model.getMinSize();
+    this.minEl.value = least > 0 ? String(least) : '';
+    this.minEl.removeAttribute('aria-invalid');
+    this.redraw();
+  }
+
   destroy(): void {
     this.cancelFrame();
+    this.menu?.destroy();
+    this.menu = null;
     this.el.remove();
+  }
+
+  /** What the reader has chosen, as it stands. */
+  private choices(): TapeChoices {
+    return { minSize: this.model.getMinSize(), side: this.model.getSide(), group: this.model.isGrouped() };
+  }
+
+  /** The button stands out while not every trade is listed: a reader sees why some are missing. */
+  private markSide(): void {
+    this.moreEl.classList.toggle('tcw-active', this.model.getSide() !== 'all');
+  }
+
+  private toggleMenu(): void {
+    this.menu ??= new WidgetContextMenu(this.menuHost, this.t('toolbar.more'));
+    if (this.menu.isOpen()) {
+      this.menu.close();
+      return;
+    }
+    const side = this.model.getSide();
+    const entries: ContextMenuEntry[] = [
+      ...SIDE_ENTRIES.map(([id, key]): ContextMenuEntry => ({ id, label: this.t(key), radio: true, checked: id === side })),
+      'separator',
+      { id: GROUP_ID, label: this.t('tape.group'), checked: this.model.isGrouped() },
+    ];
+    this.menu.openUnder(entries, this.moreEl, (id) => this.choose(id), 'end');
+  }
+
+  private choose(id: string): void {
+    if (id === GROUP_ID) this.model.setGroup(!this.model.isGrouped());
+    else this.model.setSide(id as TapeSide);
+    this.markSide();
+    this.redraw();
+    this.callbacks.onChange?.(this.choices());
   }
 
   private cancelFrame(): void {
@@ -182,6 +270,7 @@ export class WidgetTape {
     this.minEl.removeAttribute('aria-invalid');
     this.model.setMinSize(size);
     this.redraw();
+    this.callbacks.onChange?.(this.choices());
   }
 
   /** Every row again, from the trades kept: on opening, on another least size, once cleared, and when the rows went stale. */

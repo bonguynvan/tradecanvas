@@ -335,6 +335,15 @@ stop()   // feed được thả ra khi không còn ai theo dõi và chart không
   tape đang mở. <code>widget.openPanel('tape')</code> mở nó; các công tắc của nó là
   <code>tape</code> và <code>dock.tape</code>.
 </p>
+<p>
+  Menu ở đầu tape cho phép chỉ liệt kê trade của một bên (mua, hoặc bán), và gộp các trade khớp cùng lúc
+  thành một hàng: cùng thời điểm, cùng giá và cùng bên thì cộng khối lượng lại, nên một lệnh thị trường
+  khớp với nhiều lệnh chờ sẽ hiện đúng là một trade. Hàng gộp được so với cỡ tối thiểu, và được xét là
+  trade lớn, theo tổng của nó. Cả hai có thể đặt từ đầu
+  (<code>{`tape: { side: 'buy', group: true }`}</code>). Những gì người dùng chọn trong panel được lưu trong
+  trình duyệt và có lại ở lần sau: bên và việc gộp áp dụng cho mọi mã, còn cỡ tối thiểu thì theo từng mã,
+  vì cùng một con số có nghĩa khác nhau ở mỗi mã.
+</p>
 
 <h2>Trạng thái thị trường và tin tức</h2>
 <p>
