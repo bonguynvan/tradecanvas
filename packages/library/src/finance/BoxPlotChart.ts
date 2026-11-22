@@ -1,5 +1,5 @@
 import type { BoxPlotGroup, BoxPlotOptions, Theme } from '@tradecanvas/commons';
-import { computeBoxPlotLayout, renderBoxPlot, type BoxPlotLayout, type Measure } from '@tradecanvas/core';
+import { computeBoxPlotLayout, hitBox, renderBoxPlot, type BoxPlotLayout, type Measure } from '@tradecanvas/core';
 import { InteractiveChart } from './InteractiveChart.js';
 import { counted } from './describe.js';
 
@@ -18,14 +18,17 @@ export class BoxPlotChart extends InteractiveChart<BoxPlotOptions, BoxPlotLayout
   }
 
   protected clickable(): boolean {
-    return false;
+    return this.options.onBoxClick !== undefined;
   }
 
-  protected hits(): boolean {
-    return false;
+  protected hits(layout: BoxPlotLayout, x: number, y: number): boolean {
+    return hitBox(layout, x, y) !== null;
   }
 
-  protected clickAt(): void {}
+  protected clickAt(layout: BoxPlotLayout, x: number, y: number): void {
+    const box = hitBox(layout, x, y);
+    if (box) this.options.onBoxClick?.(box.group, box.stats);
+  }
 
   update(data: BoxPlotGroup[]): void {
     this.setOptions({ data });

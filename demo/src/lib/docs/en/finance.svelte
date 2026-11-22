@@ -329,12 +329,29 @@ const chart = new PayoffChart(el, { legs: condor, multiplier: 100, spot: 101.4, 
 chart.update(otherLegs)
 
 payoffStats(condor, 100)    // { maxProfit: 300, maxLoss: -200, breakevens: [92, 108] }
-optionPayoff(condor, 100, 100)   // 300: what the legs make with the underlying at 100`}</code></pre>
+optionPayoff(condor, 100, 100)   // 300: what the legs make with the underlying at 100
+
+// Before expiry: a second, dashed line, by a model
+chart.setOptions({ model: { daysToExpiry: 30, volatility: 0.25, rate: 0.03 } })
+positionValue(condor, 100, { daysToExpiry: 30, volatility: 0.25 }, 100)   // what the legs make with 30 days to go
+optionPrice('call', 100, 105, { years: 30 / 365, volatility: 0.25 })      // one option's price`}</code></pre>
 <p>
   <code>payoffStats</code> gives the most the legs make and the most they lose at expiry
   (<code>null</code> where there is no limit: a call bought, a call sold alone) and the prices where they break
-  even. They are sums at expiry: no option is priced before it, so there is no curve for today. A leg without
-  its strike, or the underlying without its entry, counts for nothing.
+  even. A leg without its strike, or the underlying without its entry, counts for nothing.
+</p>
+<p>
+  With <code>model</code> the chart draws what the position makes or loses with that many days still to go,
+  dashed, over the payoff, names the two lines over the plot, each beside a stretch of its own line
+  (<code>expiryLabel</code> and <code>model.label</code> say them in your words) and reads both under the
+  pointer. Each option is priced
+  as a European one by Black-Scholes at the model's <code>volatility</code> (a year's, as a share:
+  <code>0.25</code> is 25%), with <code>rate</code> and <code>dividendYield</code> where given; a leg's own
+  <code>volatility</code> and <code>daysToExpiry</code> stand in for the model's, for a skew or a calendar
+  spread. It is a model's answer, not a quote: an American option, or one whose volatility moves with the
+  price, is worth something else. <code>positionValue</code> and <code>optionPrice</code> are the sums, good
+  to about a part in a million of a price; with no days left <code>positionValue</code> is
+  <code>optionPayoff</code>, and with the underlying at nothing a put is worth its strike, discounted.
 </p>
 
 <h2>Curves: a volatility smile, a term structure</h2>
@@ -375,7 +392,9 @@ new CurveChart(el, {
   box (1.5 when left out; <code>Infinity</code> for the lowest and the highest), and a ring for each value
   further out. A group gives its raw <code>values</code>, or its numbers in <code>stats</code> when they were
   worked out elsewhere. <code>boxPlotStats(values)</code> is the same working out in code, and
-  <code>labels</code> puts the readout's words in another language.
+  <code>labels</code> puts the readout's words in another language. <code>onBoxClick</code> gives the group
+  a click falls on and its five numbers: anywhere up and down the group's place across the plot, as the
+  readout picks it.
 </p>
 <pre><code>{`import { BoxPlotChart, boxPlotStats } from '@tradecanvas/chart'
 
@@ -383,6 +402,7 @@ new BoxPlotChart(el, {
   data: [{ label: 'Mon', values: mondayReturns }, { label: 'Tue', values: tuesdayReturns }],
   colorBySign: true,                     // by each box's median
   valueFormat: (v) => v.toFixed(1) + '%',
+  onBoxClick: (group, stats) => openDay(group.label, stats.median),
 })
 
 boxPlotStats([1, 2, 3, 4, 5, 6, 7, 8, 9, 100])
@@ -395,13 +415,15 @@ boxPlotStats([1, 2, 3, 4, 5, 6, 7, 8, 9, 100])
   out, or the lowest value on it when that is under zero) to its <code>max</code> at the rim, the highest value
   on it when none is given: give each spoke its
   own when the measures differ in size. It needs three spokes. The pointer reads every series on the nearest
-  spoke.
+  spoke, and <code>onAxisClick</code> gives that spoke for a click: its label, its place among
+  <code>axes</code>, and each series' value on it.
 </p>
 <pre><code>{`import { RadarChart } from '@tradecanvas/chart'
 
 new RadarChart(el, {
   axes: [{ label: 'Sharpe', max: 3 }, { label: 'Sortino', max: 3 }, { label: 'Calmar', max: 3 }, { label: 'Win rate', max: 100 }],
   series: [{ name: 'Strategy', values: [1.8, 2.4, 1.5, 58] }, { name: 'Benchmark', values: [1.0, 1.3, 0.7, 51] }],
+  onAxisClick: ({ axis, index, values }) => explain(axis, values),   // 'Sortino', 1, [{ series: 'Strategy', value: 2.4 }, …]
 })`}</code></pre>
 
 <h2>Sunburst</h2>
@@ -463,7 +485,10 @@ const chart = new SurfaceChart(el, {
 chart.update(nextValues)                   // or update(values, { x, y }) when the axes changed too`}</code></pre>
 <p>
   Dragging turns the chart: a mouse turns and tilts it, a finger turns it only, so that a page still scrolls
-  under it. A double click goes back to the <code>view</code> the options gave
+  under it. From the keyboard, once Tab has reached the chart, the arrows turn and tilt it by 5 degrees (15
+  with Shift) and Home goes back; a screen reader is told the keys, and after each where the chart is seen
+  from (<code>describeView</code> says it in your words). A double click goes back to the <code>view</code> the
+  options gave
   (<code>{'{'} yaw: -35, pitch: 28 {'}'}</code> when they give none: <code>yaw</code> turns the chart about its
   upright axis, <code>pitch</code> is how far above the floor the eye is, 0 to 90 degrees).
   <code>getView()</code> reads where it is seen from now, <code>setView()</code> sets it,

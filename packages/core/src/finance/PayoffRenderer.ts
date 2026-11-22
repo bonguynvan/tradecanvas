@@ -1,4 +1,4 @@
-import type { OptionLeg, PayoffOptions, Theme } from '@tradecanvas/commons';
+import type { OptionLeg, PayoffModel, PayoffOptions, Theme } from '@tradecanvas/commons';
 import { withAlpha } from '@tradecanvas/commons';
 import {
   AXIS_GAP,
@@ -8,14 +8,19 @@ import {
   TOP_MARK_ROOM,
   axisFormat,
   canvasMeasure,
+  LABEL_GAP,
+  drawLegend,
   drawTooltip,
   drawTopMarks,
   drawValueAxis,
   extent,
+  fitText,
+  layoutLegend,
   niceScale,
   numberFormat,
   readoutFormat,
   scaleToPx,
+  type LegendLayout,
   type Measure,
   type NiceScale,
   type Rect,
@@ -59,6 +64,104 @@ const unitsOf = (multiplier: number | undefined) => (finite(multiplier) && multi
  */
 export function optionPayoff(legs: readonly OptionLeg[], price: number, multiplier = 1): number {
   return priced(legs).reduce((sum, leg) => sum + legPayoff(leg, price), 0) * unitsOf(multiplier);
+}
+
+/** Days in a year, for the time an option has left. */
+const DAYS_A_YEAR = 365;
+/** Steps along the line of a position's value before expiry: it is a curve, and the payoff's kinks are on it too. */
+const TODAY_STEPS = 64;
+const TODAY_DASH = [5, 4];
+
+/** What an option's price is worked out from, besides the underlying's price and its strike. */
+export interface OptionTerms {
+  /** The time left, in years. None left, or less: the option is worth what it pays. */
+  years: number;
+  /** The implied volatility, a year's, as a share: `0.25` is 25%. */
+  volatility: number;
+  /** The interest rate, a year's, as a share. Default `0`. */
+  rate?: number;
+  /** The underlying's dividend yield, a year's, as a share. Default `0`. */
+  dividendYield?: number;
+}
+
+/** How wide a legend entry's sample and its gap are at most, px: what a name is cut to fit beside. */
+const LEGEND_SAMPLE_ROOM = 28;
+
+/** The share of a standard normal under `x` (Abramowitz and Stegun 7.1.26, good to seven places); what is over `x` is the rest, exactly. */
+function normalCdf(x: number): number {
+  if (x < 0) return 1 - normalCdf(-x);
+  const t = 1 / (1 + 0.3275911 * (x / Math.SQRT2));
+  const poly = t * (0.254829592 + t * (-0.284496736 + t * (1.421413741 + t * (-1.453152027 + t * 1.061405429))));
+  return 1 - (poly * Math.exp(-(x * x) / 2)) / 2;
+}
+
+/**
+ * The Black-Scholes price of a European call or put: what one unit is
+ * worth with the underlying at `spot`, by a model. With no time left it is
+ * what the option pays. With nothing to move it (a volatility of zero or
+ * under, an underlying or a strike at nothing) it is what its forward
+ * pays, brought back to today: a put with the underlying at nothing is its
+ * strike, discounted. 0 for a price or a strike under zero, for any of the
+ * numbers that is none, and for a time without end. Good to about a part
+ * in a million of the price: for a chart and a sum, not for a quote.
+ */
+export function optionPrice(type: 'call' | 'put', spot: number, strike: number, terms: OptionTerms): number {
+  const { years, volatility } = terms;
+  if (!finite(spot) || !finite(strike) || spot < 0 || strike < 0 || !finite(volatility)) return 0;
+  if (Number.isNaN(years) || years === Number.POSITIVE_INFINITY) return 0;
+  const sign = type === 'call' ? 1 : -1;
+  if (!(years > 0)) return Math.max(0, sign * (spot - strike));
+  const rate = finite(terms.rate) ? terms.rate : 0;
+  const carried = spot * Math.exp(-(finite(terms.dividendYield) ? terms.dividendYield : 0) * years);
+  const discounted = strike * Math.exp(-rate * years);
+  // A rate over a time that takes either past what a number holds prices nothing.
+  if (!Number.isFinite(carried) || !Number.isFinite(discounted)) return 0;
+  // One outcome only: no volatility, or an underlying or a strike at nothing, which no volatility moves.
+  if (!(volatility > 0) || carried === 0 || discounted === 0) return Math.max(0, sign * (carried - discounted));
+  const spread = volatility * Math.sqrt(years);
+  const d1 = Math.log(carried / discounted) / spread + spread / 2;
+  const price = sign * (carried * normalCdf(sign * d1) - discounted * normalCdf(sign * (d1 - spread)));
+  // Far out, the two tails' rounding can leave a hair under nothing.
+  return Number.isFinite(price) ? Math.max(0, price) : 0;
+}
+
+/**
+ * What the legs together make or lose before expiry with the underlying at
+ * `price`: each option at its model price (`optionPrice`) less the premium
+ * paid, the other way for one sold, the underlying by its move from its
+ * entry; times `multiplier`. A leg's own `daysToExpiry` and `volatility`
+ * stand in for the model's. With no days left, or days that are no number,
+ * it is `optionPayoff`.
+ */
+export function positionValue(legs: readonly OptionLeg[], price: number, model: PayoffModel, multiplier = 1): number {
+  let total = 0;
+  for (const leg of priced(legs)) {
+    if (leg.type === 'underlying') {
+      total += (price - (leg.entry ?? 0)) * sizeOf(leg);
+      continue;
+    }
+    const days = finite(leg.daysToExpiry) ? leg.daysToExpiry : model.daysToExpiry;
+    const worth = optionPrice(leg.type, price, leg.strike ?? 0, {
+      years: finite(days) ? days / DAYS_A_YEAR : 0,
+      volatility: finite(leg.volatility) ? leg.volatility : model.volatility,
+      rate: model.rate,
+      dividendYield: model.dividendYield,
+    });
+    total += (worth - (finite(leg.premium) ? leg.premium : 0)) * sizeOf(leg);
+  }
+  return total * unitsOf(multiplier);
+}
+
+/** The model the chart draws a second line by, or null: its days and its volatility have to be numbers. */
+export function payoffModelOf(options: PayoffOptions): PayoffModel | null {
+  const model = options.model;
+  return model && finite(model.daysToExpiry) && finite(model.volatility) ? model : null;
+}
+
+/** The names of the two lines: the payoff's, and the model's by its days unless it has one. */
+function lineNames(options: PayoffOptions, model: PayoffModel): { expiry: string; today: string } {
+  const days = Math.max(0, Math.round(model.daysToExpiry));
+  return { expiry: options.expiryLabel ?? 'At expiry', today: model.label ?? `In ${days} ${days === 1 ? 'day' : 'days'}` };
 }
 
 /** The prices where the payoff's line bends: the options' strikes, in order, each once. */
@@ -134,6 +237,10 @@ export interface PayoffLayout {
   /** The y of zero profit, on the plot. */
   zeroY: number;
   stats: PayoffStats;
+  /** The position's value before expiry, by the options' `model`: a curve over the same prices. Null without a model. */
+  today: PayoffPoint[] | null;
+  /** The two lines' names, over the plot. Null without a model. */
+  legend: LegendLayout | null;
 }
 
 /** The prices drawn: the range given, else from under the lowest strike (or the entry, or the price now) to over the highest. Never under zero. */
@@ -153,21 +260,43 @@ function priceRange(options: PayoffOptions): { min: number; max: number } {
 }
 
 /** The payoff's line over its prices, for a chart `width` × `height`. */
-export function computePayoffLayout(options: PayoffOptions, width: number, height: number, _theme: Theme, measure: Measure): PayoffLayout {
+export function computePayoffLayout(options: PayoffOptions, width: number, height: number, theme: Theme, measure: Measure): PayoffLayout {
   const { legs, multiplier } = options;
   const range = priceRange(options);
   const xScale = niceScale(range.min, range.max, Math.max(2, Math.floor(width / 110)));
   const prices = [xScale.min, ...kinks(legs).filter((k) => k > xScale.min && k < xScale.max), xScale.max];
   const values = prices.map((price) => optionPayoff(legs, price, multiplier));
-  const reach = extent(values) ?? { min: 0, max: 0 };
+  const model = payoffModelOf(options);
+  // The value before expiry is a curve: sampled along the prices, the payoff's kinks among them.
+  const span = xScale.max - xScale.min;
+  const todayPrices = model
+    ? [...new Set([...Array.from({ length: TODAY_STEPS + 1 }, (_, i) => xScale.min + (span * i) / TODAY_STEPS), ...prices])].sort((a, b) => a - b)
+    : [];
+  const todayValues = model ? todayPrices.map((price) => positionValue(legs, price, model, multiplier)) : [];
+  const reach = extent([...values, ...todayValues]) ?? { min: 0, max: 0 };
   const yScale = niceScale(Math.min(0, reach.min), Math.max(0, reach.max), Math.max(2, Math.floor(height / 60)));
   const yFormat = options.valueFormat ?? axisFormat(yScale, options.locale);
   const xFormat = options.priceFormat ?? axisFormat(xScale, options.locale);
   const tickWidth = Math.max(0, ...yScale.ticks.map((tick) => measure(yFormat(tick), LABEL_SIZE)));
   const left = CHART_PAD + tickWidth + AXIS_GAP;
   const right = CHART_PAD + measure(xFormat(xScale.max), LABEL_SIZE) / 2;
-  // Over the plot: the price now and the breakevens.
-  const top = CHART_PAD + TOP_MARK_ROOM;
+  const names = model ? lineNames(options, model) : null;
+  // Each name beside its line as it is drawn: the payoff's in its two colours, the other dashed. A name too long for the chart is cut.
+  const nameRoom = Math.max(0, width - CHART_PAD * 2 - LEGEND_SAMPLE_ROOM);
+  const profit = options.profitColor ?? theme.candleUp;
+  const loss = options.lossColor ?? theme.candleDown;
+  const legend = names
+    ? layoutLegend(
+        [
+          { label: fitText(names.expiry, nameRoom, measure), color: profit, line: { colors: [profit, loss] } },
+          { label: fitText(names.today, nameRoom, measure), color: theme.textSecondary, line: { dash: TODAY_DASH } },
+        ],
+        width - CHART_PAD * 2,
+        measure,
+      )
+    : null;
+  // Over the plot: the lines' names, then the price now and the breakevens.
+  const top = CHART_PAD + (legend ? legend.height + LABEL_GAP : 0) + TOP_MARK_ROOM;
   const plot = { x: left, y: top, width: Math.max(1, width - left - right), height: Math.max(1, height - top - CHART_PAD - BOTTOM_LABELS) };
   const points = prices.map((price, i) => ({
     price,
@@ -175,7 +304,15 @@ export function computePayoffLayout(options: PayoffOptions, width: number, heigh
     x: scaleToPx(xScale, price, plot.x, plot.width),
     y: scaleToPx(yScale, values[i], plot.y, plot.height, true),
   }));
-  return { plot, xScale, yScale, points, zeroY: scaleToPx(yScale, 0, plot.y, plot.height, true), stats: payoffStats(legs, multiplier) };
+  const today = model
+    ? todayPrices.map((price, i) => ({
+        price,
+        value: todayValues[i],
+        x: scaleToPx(xScale, price, plot.x, plot.width),
+        y: scaleToPx(yScale, todayValues[i], plot.y, plot.height, true),
+      }))
+    : null;
+  return { plot, xScale, yScale, points, zeroY: scaleToPx(yScale, 0, plot.y, plot.height, true), stats: payoffStats(legs, multiplier), today, legend };
 }
 
 /** The price under the pointer's x, inside the plot; null outside it. */
@@ -240,6 +377,25 @@ export function renderPayoff(
   ctx.stroke();
   ctx.restore();
 
+  // The value before expiry: a dashed line over the payoff's, in the quiet ink, so the two are told apart without a colour.
+  const model = payoffModelOf(options);
+  if (layout.today && layout.today.length > 1) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(plot.x, plot.y, plot.width, plot.height);
+    ctx.clip();
+    ctx.beginPath();
+    layout.today.forEach((point, i) => (i === 0 ? ctx.moveTo(point.x, point.y) : ctx.lineTo(point.x, point.y)));
+    ctx.strokeStyle = theme.textSecondary;
+    ctx.lineWidth = 1.5;
+    ctx.lineJoin = 'round';
+    ctx.setLineDash(TODAY_DASH);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.restore();
+  }
+  if (layout.legend) drawLegend(ctx, layout.legend, CHART_PAD, CHART_PAD, theme);
+
   drawMarks(ctx, layout, options, theme, priceFormat);
 
   const price = pointer && options.crosshair !== false ? payoffPriceAt(layout, pointer.x, pointer.y) : null;
@@ -259,9 +415,14 @@ export function renderPayoff(
     ctx.arc(pointer.x, y, 3.5, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
+    const signed = (amount: number): string => `${amount > 0 ? '+' : ''}${valueFormat(amount)}`;
+    const names = model ? lineNames(options, model) : null;
+    const before = model ? positionValue(options.legs, price, model, options.multiplier) : null;
+    // With a second line each amount says whose it is; alone, the payoff needs no name.
     drawTooltip(ctx, [
       { text: priceFormat(price), bold: true },
-      { text: `${value > 0 ? '+' : ''}${valueFormat(value)}`, color: value >= 0 ? profit : loss },
+      { text: names ? `${names.expiry} ${signed(value)}` : signed(value), color: value >= 0 ? profit : loss },
+      ...(names && before !== null ? [{ text: `${names.today} ${signed(before)}`, color: before >= 0 ? profit : loss }] : []),
     ], pointer, { x: 0, y: 0, width, height }, theme);
   }
   return layout;

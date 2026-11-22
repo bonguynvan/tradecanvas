@@ -441,11 +441,40 @@ export interface OptionLeg {
   entry?: number;
   /** How many. Default `1`; `0` counts for nothing. */
   quantity?: number;
+  /** This option's own implied volatility, for its value before expiry (`PayoffOptions.model`); the model's without one. */
+  volatility?: number;
+  /** This option's own days to expiry, where the legs do not expire together (a calendar spread); the model's without one. */
+  daysToExpiry?: number;
+}
+
+/**
+ * What a position is worth before it expires is worked out with: the
+ * Black-Scholes price of each option, as a European one, at one
+ * volatility. It is a model's answer, not a quote.
+ */
+export interface PayoffModel {
+  /** Days until the options expire. `0` is the day itself: the payoff. */
+  daysToExpiry: number;
+  /** The implied volatility, a year's, as a share: `0.25` is 25%. */
+  volatility: number;
+  /** The interest rate, a year's, as a share. Default `0`. */
+  rate?: number;
+  /** The underlying's dividend yield, a year's, as a share. Default `0`. */
+  dividendYield?: number;
+  /** The line's name in the legend. Default `'In 30 days'`, by `daysToExpiry`: name it yourself where the legs have days of their own. */
+  label?: string;
 }
 
 export interface PayoffOptions extends BaseFinanceChartOptions {
   /** The position's legs: what they make or lose together at expiry is the line. */
   legs: OptionLeg[];
+  /**
+   * Draws a second line: what the position makes or loses with this many
+   * days still to go, by a model (`PayoffModel`). The pointer reads both.
+   */
+  model?: PayoffModel;
+  /** The payoff's name in the legend, beside the model's line. Default `'At expiry'`. */
+  expiryLabel?: string;
   /** The units one contract is for (100 for a US stock option). Default `1`. */
   multiplier?: number;
   /** The underlying's price now: a marked line. */
@@ -557,6 +586,8 @@ export interface BoxPlotOptions extends BaseFinanceChartOptions {
   labels?: Partial<BoxPlotLabels>;
   /** Show the hovered box's numbers. Default `true`. */
   crosshair?: boolean;
+  /** Called with the group a click falls on, and its five numbers: anywhere up and down its place across the plot, as the pointer's readout picks it. */
+  onBoxClick?: (group: BoxPlotGroup, stats: BoxPlotStats) => void;
 }
 
 /** One spoke of a radar chart. */
@@ -582,6 +613,18 @@ export interface RadarChartOptions extends BaseFinanceChartOptions {
   valueFormat?: (value: number) => string;
   /** Show every series' value on the spoke nearest the pointer. Default `true`. */
   crosshair?: boolean;
+  /** Called with the measure nearest a click on the radar, and each series' value on it: the spoke the pointer's readout picks, wherever between two the click falls. */
+  onAxisClick?: (hit: RadarAxisHit) => void;
+}
+
+/** A radar's measure, as a click on its spoke gives it. */
+export interface RadarAxisHit {
+  /** The measure's label. */
+  axis: string;
+  /** Its place among `axes`. */
+  index: number;
+  /** Each series' value on it; null where the series has none. */
+  values: { series: string; value: number | null }[];
 }
 
 /** A part of a whole that may have parts of its own. */
@@ -676,10 +719,17 @@ export interface Chart3DOptions extends BaseFinanceChartOptions {
   view?: View3D;
   /**
    * Turn the chart by dragging it: a mouse turns and tilts it, a finger
-   * turns it only, so that a page still scrolls under it. Default `true`.
+   * turns it only, so that a page still scrolls under it. With the keyboard,
+   * once Tab has reached the chart: the arrows turn and tilt it (further
+   * with Shift), Home goes back to `view`. Default `true`.
    */
   rotate?: boolean;
-  /** Called as the chart is turned, with where it is seen from now. */
+  /**
+   * What a screen reader says after a key turned the chart, in your words.
+   * Default `'Turned to -35°, tilted to 28°'`.
+   */
+  describeView?: (view: Required<View3D>) => string;
+  /** Called as the chart is turned, by a drag or a key, with where it is seen from now. */
   onViewChange?: (view: Required<View3D>) => void;
   /** The axes' titles: across, back and up. */
   xLabel?: string;

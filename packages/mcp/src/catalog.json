@@ -9113,6 +9113,17 @@
           "doc": "The position's legs: what they make or lose together at expiry is the line."
         },
         {
+          "name": "model",
+          "type": "PayoffModel",
+          "doc": "Draws a second line: what the position makes or loses with this many days still to go, by a model (`PayoffModel`). The pointer reads both."
+        },
+        {
+          "name": "expiryLabel",
+          "type": "string",
+          "doc": "The payoff's name in the legend, beside the model's line. Default `'At expiry'`.",
+          "kind": "string"
+        },
+        {
           "name": "multiplier",
           "type": "number",
           "doc": "The units one contract is for (100 for a US stock option). Default `1`.",
@@ -9307,6 +9318,12 @@
           "kind": "boolean"
         },
         {
+          "name": "onBoxClick",
+          "type": "(group: BoxPlotGroup, stats: BoxPlotStats) => void",
+          "doc": "Called with the group a click falls on, and its five numbers: anywhere up and down its place across the plot, as the pointer's readout picks it.",
+          "kind": "function"
+        },
+        {
           "name": "theme",
           "type": "ThemeName | Theme",
           "doc": "The chart's colours: `'dark'` (the default), `'light'`, or a theme of your own."
@@ -9374,6 +9391,12 @@
           "type": "boolean",
           "doc": "Show every series' value on the spoke nearest the pointer. Default `true`.",
           "kind": "boolean"
+        },
+        {
+          "name": "onAxisClick",
+          "type": "(hit: RadarAxisHit) => void",
+          "doc": "Called with the measure nearest a click on the radar, and each series' value on it: the spoke the pointer's readout picks, wherever between two the click falls.",
+          "kind": "function"
         },
         {
           "name": "theme",
@@ -9615,13 +9638,19 @@
         {
           "name": "rotate",
           "type": "boolean",
-          "doc": "Turn the chart by dragging it: a mouse turns and tilts it, a finger turns it only, so that a page still scrolls under it. Default `true`.",
+          "doc": "Turn the chart by dragging it: a mouse turns and tilts it, a finger turns it only, so that a page still scrolls under it. With the keyboard, once Tab has reached the chart: the arrows turn and tilt it (further with Shift), Home goes back to `view`. Default `true`.",
           "kind": "boolean"
+        },
+        {
+          "name": "describeView",
+          "type": "(view: Required<View3D>) => string",
+          "doc": "What a screen reader says after a key turned the chart, in your words. Default `'Turned to -35°, tilted to 28°'`.",
+          "kind": "function"
         },
         {
           "name": "onViewChange",
           "type": "(view: Required<View3D>) => void",
-          "doc": "Called as the chart is turned, with where it is seen from now.",
+          "doc": "Called as the chart is turned, by a drag or a key, with where it is seen from now.",
           "kind": "function"
         },
         {
@@ -9710,13 +9739,19 @@
         {
           "name": "rotate",
           "type": "boolean",
-          "doc": "Turn the chart by dragging it: a mouse turns and tilts it, a finger turns it only, so that a page still scrolls under it. Default `true`.",
+          "doc": "Turn the chart by dragging it: a mouse turns and tilts it, a finger turns it only, so that a page still scrolls under it. With the keyboard, once Tab has reached the chart: the arrows turn and tilt it (further with Shift), Home goes back to `view`. Default `true`.",
           "kind": "boolean"
+        },
+        {
+          "name": "describeView",
+          "type": "(view: Required<View3D>) => string",
+          "doc": "What a screen reader says after a key turned the chart, in your words. Default `'Turned to -35°, tilted to 28°'`.",
+          "kind": "function"
         },
         {
           "name": "onViewChange",
           "type": "(view: Required<View3D>) => void",
-          "doc": "Called as the chart is turned, with where it is seen from now.",
+          "doc": "Called as the chart is turned, by a drag or a key, with where it is seen from now.",
           "kind": "function"
         },
         {

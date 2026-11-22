@@ -515,6 +515,7 @@
         ],
         multiplier: 100,
         spot: 101.4,
+        model: { daysToExpiry: 30, volatility: 0.22, rate: 0.03 },
         ariaLabel: i18n.m.finance.payoff,
         locale: tag,
         theme,
