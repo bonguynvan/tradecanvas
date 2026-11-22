@@ -927,6 +927,7 @@ export const ID_MESSAGES: WidgetMessages = {
   'tape.size': 'Ukuran',
   'tape.empty': 'Belum ada transaksi',
   'tape.minSize': 'Ukuran min.',
+  'tape.split': 'Dibeli {buy}, dijual {sell}',
   'dataWindow.title': 'Jendela data',
   'dock.rail': 'Panel',
   'dock.resize': 'Ubah lebar panel',

@@ -927,6 +927,7 @@ export const DE_MESSAGES: WidgetMessages = {
   'tape.size': 'Größe',
   'tape.empty': 'Noch keine Trades',
   'tape.minSize': 'Mindestgröße',
+  'tape.split': 'Gekauft {buy}, verkauft {sell}',
   'dataWindow.title': 'Datenfenster',
   'dock.rail': 'Bereiche',
   'dock.resize': 'Breite des Bereichs ändern',

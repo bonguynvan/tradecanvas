@@ -29,6 +29,7 @@
     <tr><td><code>updateLastBarFromTick(tick)</code></td><td>Merge a tick into the last bar.</td></tr>
     <tr><td><code>addTrades(trades)</code></td><td>Trades into the <a href={href('/docs/realtime#footprint')}>footprint</a>: each in the bar of its time and the row of its price, on the side that took it.</td></tr>
     <tr><td><code>followTrades()</code></td><td>Follow the feed's trades, its recent ones and then its live ones, as <code>trades</code> events, until the function it returns is called. See <a href={href('/docs/realtime#tape')}>the tape</a>.</td></tr>
+    <tr><td><code>getTrades()</code></td><td>The trades told lately, oldest first: the feed's and those given by hand. For a listener that comes after trades were told.</td></tr>
     <tr><td><code>setFootprint(bars)</code> / <code>getFootprint(time?)</code> / <code>clearFootprint()</code></td><td>The footprint's rows, bar by bar: given by hand, read back (a bar's, or every bar's), forgotten.</td></tr>
     <tr><td><code>updateBar(bar)</code></td><td>Correct a loaded bar: the one with the same time, anywhere in the series. The view stays; false when no loaded bar has that time.</td></tr>
     <tr><td><code>getData()</code></td><td>Read the raw OHLC series.</td></tr>

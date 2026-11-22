@@ -55,6 +55,10 @@ const BARS_WITH_TRADES = 40;
 const TRADES_A_BAR = 40;
 /** How many trades a live tick is sent as: steps from the last price to the new one. */
 const TRADES_A_TICK = 3;
+/** A share nearer a whole number than this is that number. */
+const SHARE_NOISE = 1e-9;
+/** How many series' newest bars it keeps to tell trades from; over it, the series asked for longest ago goes. */
+const SERIES_KEPT = 16;
 
 /**
  * Trades that tell a bar's own story, `count` of them from `from` to `to`:
@@ -111,8 +115,15 @@ function shared(total: number, trades: readonly number[], weight: (trade: number
   if (!(total > 0) || !(all > 0)) return [];
   const exact = trades.map((trade) => (total * weight(trade)) / all);
   if (!Number.isInteger(total)) return trades.map((trade, i) => [trade, exact[i]]);
-  const sizes = exact.map(Math.floor);
-  const left = total - sizes.reduce((sum, size) => sum + size, 0);
+  // Rounded down, a hair's allowance for a share floating point left just under a whole number, and never over the total.
+  const sizes = exact.map((size) => Math.floor(size + SHARE_NOISE));
+  let given = sizes.reduce((sum, size) => sum + size, 0);
+  for (let i = sizes.length - 1; given > total && i >= 0; i--) {
+    const back = Math.min(sizes[i], given - total);
+    sizes[i] -= back;
+    given -= back;
+  }
+  const left = total - given;
   // The largest parts lost to rounding first; the earlier trade of two that lost the same.
   const byLoss = exact.map((_, i) => i).sort((a, b) => (exact[b] - sizes[b]) - (exact[a] - sizes[a]) || a - b);
   for (let k = 0; k < left; k++) sizes[byLoss[k % byLoss.length]] += 1;
@@ -300,7 +311,11 @@ export class MockAdapter implements DataAdapter {
     this.formingTimeframe = timeframe;
     // Bars of trades (a tick timeframe) are made of trades, not the other way round.
     if (tickBarCount(timeframe) === null) {
-      this.recent.set(recentKey(symbol, timeframe), bars.slice(-BARS_WITH_TRADES).map((bar) => ({ ...bar })));
+      const key = recentKey(symbol, timeframe);
+      // Given again, a series is the newest asked for.
+      this.recent.delete(key);
+      this.recent.set(key, bars.slice(-BARS_WITH_TRADES).map((bar) => ({ ...bar })));
+      while (this.recent.size > SERIES_KEPT) this.recent.delete(this.recent.keys().next().value as string);
       this.lastGiven.set(symbol, timeframe);
     }
     return bars;

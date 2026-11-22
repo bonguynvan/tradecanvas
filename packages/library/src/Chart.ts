@@ -186,12 +186,14 @@ const LEFT_SCALE_PADDING = 0.08;
 const FOOTPRINT_RECENT_TRADES = 1000;
 /** The slot a chart turned into a footprint opens at: a little over the narrowest whose footprint carries both sides' numbers. */
 const FOOTPRINT_OPENING_SLOT = FOOTPRINT_TEXT_BAR_WIDTH + FOOTPRINT_SLOT_GAP + 8;
-/** The feed whose trades the chart follows: the series it is of, what counts them into the footprint, what tells them once each, and how to stop listening. */
+/** How long the live trades are held for a feed's recent ones, ms: a feed that never answers must not hold them back for ever. */
+const RECENT_TRADES_WAIT_MS = 10_000;
+/** The feed whose trades the chart follows: the series it is of, what counts them into the footprint, how to stop listening, and the wait for its recent trades. */
 interface TradesLive {
   key: string;
   feed: FootprintFeed;
-  told: TradeStream;
   stop: () => void;
+  wait: ReturnType<typeof setTimeout> | null;
 }
 /** How many times a picture at a size of its own fits its bars and sizes its scales: a scale that changes width changes the plot once. */
 const PICTURE_FIT_ROUNDS = 3;
@@ -394,8 +396,10 @@ export class Chart {
   private tradesLive: TradesLive | null = null;
   /** How many asked for the feed's trades (`followTrades`). */
   private tradeFollowers = 0;
-  /** When the latest of the symbol's trades told was made: followed again, the feed tells none a second time. */
-  private tradesToldUntil = -Infinity;
+  /** The symbol's trades told so far: each of the feed's is told once, however often it is asked for them. */
+  private tradesTold = new TradeStream();
+  /** The feed's trades counted into the footprint so far: each counted once, and anew once the footprint starts over. */
+  private footprintCounted = new TradeStream();
   /** The row size the footprint was told to keep; 'auto': worked out from the rows given, or the price. */
   private footprintRowSet: number | 'auto' = 'auto';
   /** A footprint chosen: zoom in to where its numbers read, once its bars are there. */
@@ -3633,7 +3637,7 @@ export class Chart {
     // Another series: its bars are other bars, and the rows kept are not theirs.
     if (symbol !== this.currentSymbol || timeframe !== this.streamTimeframe) this.forgetFootprint();
     // Another symbol's trades are all new.
-    if (symbol !== this.currentSymbol) this.tradesToldUntil = -Infinity;
+    if (symbol !== this.currentSymbol) this.tradesTold = new TradeStream();
     this.currentSymbol = symbol;
     this.streamTimeframe = timeframe;
     this.tickStream = tickBarCount(timeframe) !== null;
@@ -4607,10 +4611,18 @@ export class Chart {
    */
   addTrades(trades: readonly Trade[]): void {
     this.resolveFootprintRow();
-    // Trades by hand have no recent ones to wait for.
-    this.footprintByHand.skipHistory();
     if (this.footprintByHand.live(trades)) this.footprintChanged();
-    this.tellTrades([...trades], false);
+    this.tellTrades(this.tradesTold.byHand(trades), false);
+  }
+
+  /**
+   * The trades of the chart's symbol told lately, oldest first: up to 2,000
+   * of them, the feed's and those given by hand. For a listener that comes
+   * after trades were told (a chart that shows a footprint follows them
+   * from the start): read these, then listen for `trades`.
+   */
+  getTrades(): Trade[] {
+    return this.tradesTold.trades();
   }
 
   /**
@@ -4669,6 +4681,8 @@ export class Chart {
   private forgetFootprint(): void {
     this.stopTradeFeed();
     this.footprint.reset();
+    // Nothing is counted any more: the feed's recent trades are all to count again.
+    this.footprintCounted = new TradeStream();
     this.footprintByHand = new FootprintFeed(this.footprint, (time) => this.footprintBarOf(time));
   }
 
@@ -4734,17 +4748,30 @@ export class Chart {
     this.stopTradeFeed();
     if (key === null || !adapter?.subscribeTrades) return;
     const feed = new FootprintFeed(this.footprint, (time) => this.footprintBarOf(time));
-    const live: TradesLive = { key, feed, told: new TradeStream(this.tradesToldUntil), stop: () => {} };
+    const live: TradesLive = { key, feed, stop: () => {}, wait: null };
     this.tradesLive = live;
+    // Live trades wait for the recent ones, so each is told, and counted, in its turn.
+    this.tradesTold.hold();
+    if (collects) this.footprintCounted.hold();
     live.stop = adapter.subscribeTrades(symbol, (trades) => {
       if (this.tradesLive !== live) return;
-      if (collects) {
-        this.resolveFootprintRow();
-        if (feed.live(trades)) this.footprintChanged();
-      }
-      this.tellTrades(live.told.live(trades), false);
+      if (collects) this.countTrades(live, this.footprintCounted.live(trades));
+      this.tellTrades(this.tradesTold.live(trades), false);
     });
     this.fetchRecentTrades(live, adapter, symbol, collects);
+  }
+
+  /** Trades into the footprint, by the feed followed. */
+  private countTrades(live: TradesLive, trades: readonly Trade[]): void {
+    if (trades.length === 0) return;
+    this.resolveFootprintRow();
+    if (live.feed.live(trades)) this.footprintChanged();
+  }
+
+  /** The live trades held for the feed's recent ones, which are not coming: counted and told as they are. */
+  private releaseHeldTrades(live: TradesLive, collects: boolean): void {
+    if (collects) this.countTrades(live, this.footprintCounted.noRecent());
+    this.tellTrades(this.tradesTold.noRecent(), false);
   }
 
   /** Trades as a `trades` event, to whoever listens; none, no event. */
@@ -4756,20 +4783,36 @@ export class Chart {
   private fetchRecentTrades(live: TradesLive, adapter: DataAdapter | null, symbol: string, collects: boolean): void {
     if (!adapter?.fetchTrades) return;
     const mine = (): boolean => this.tradesLive === live;
+    const answered = (): void => {
+      if (live.wait !== null) clearTimeout(live.wait);
+      live.wait = null;
+    };
+    // A feed that never answers: the live trades held for its recent ones go on without them.
+    answered();
+    live.wait = setTimeout(() => {
+      live.wait = null;
+      if (mine()) this.releaseHeldTrades(live, collects);
+    }, RECENT_TRADES_WAIT_MS);
     adapter.fetchTrades(symbol, FOOTPRINT_RECENT_TRADES).then(
       (trades) => {
         if (!mine()) return;
+        answered();
         if (collects) {
+          const counted = this.footprintCounted.recent(trades, FOOTPRINT_RECENT_TRADES);
           this.resolveFootprintRow();
-          if (live.feed.history(trades, FOOTPRINT_RECENT_TRADES)) this.footprintChanged();
+          const recent = live.feed.recent(counted.fresh, counted.begins, counted.before);
+          const held = live.feed.live(counted.held);
+          if (recent || held) this.footprintChanged();
         }
-        this.tellTrades(live.told.recent(trades), true);
+        const told = this.tradesTold.recent(trades, FOOTPRINT_RECENT_TRADES);
+        this.tellTrades(told.fresh, true);
+        this.tellTrades(told.held, false);
       },
       (error: unknown) => {
         if (!mine()) return;
+        answered();
         // No recent trades: the live ones count from the first.
-        if (collects && live.feed.skipHistory()) this.footprintChanged();
-        this.tellTrades(live.told.noRecent(), false);
+        this.releaseHeldTrades(live, collects);
         const message = error instanceof Error ? error.message : String(error);
         this.eventBus.emit('dataUpdate', { kind: 'error', error: message } satisfies DataUpdatePayload);
       },
@@ -4779,8 +4822,8 @@ export class Chart {
   private stopTradeFeed(): void {
     const live = this.tradesLive;
     if (!live) return;
-    // Where it left off: followed again, the feed tells no trade a second time.
-    this.tradesToldUntil = Math.max(this.tradesToldUntil, live.told.toldUntil());
+    if (live.wait !== null) clearTimeout(live.wait);
+    live.wait = null;
     live.stop();
     this.tradesLive = null;
   }

@@ -29,6 +29,7 @@
     <tr><td><code>updateLastBarFromTick(tick)</code></td><td>틱을 마지막 봉에 병합합니다.</td></tr>
     <tr><td><code>addTrades(trades)</code></td><td>체결을 <a href={href('/docs/realtime#footprint')}>풋프린트</a>에 넣습니다: 각 체결을 그 시각의 봉과 그 가격의 행에, 가져간 쪽으로 계산합니다.</td></tr>
     <tr><td><code>followTrades()</code></td><td>피드의 체결을, 최근 체결에 이어 실시간 체결을, 돌려주는 함수가 호출될 때까지 <code>trades</code> 이벤트로 따라갑니다. <a href={href('/docs/realtime#tape')}>체결 내역</a>을 참고하세요.</td></tr>
+    <tr><td><code>getTrades()</code></td><td>최근에 알린 체결을 오래된 것부터: 피드의 체결과 직접 넣은 체결. 체결이 알려진 뒤에 온 리스너를 위한 것입니다.</td></tr>
     <tr><td><code>setFootprint(bars)</code> / <code>getFootprint(time?)</code> / <code>clearFootprint()</code></td><td>풋프린트의 행을 봉 단위로: 직접 넣기, 다시 읽기(한 봉의 것, 또는 모든 봉의 것), 지우기.</td></tr>
     <tr><td><code>updateBar(bar)</code></td><td>불러온 봉을 고칩니다. 시리즈 어디에 있든 시각이 같은 봉입니다. 보는 위치는 그대로이며, 그 시각의 봉이 없으면 false를 돌려줍니다.</td></tr>
     <tr><td><code>getData()</code></td><td>원본 OHLC 시리즈를 읽습니다.</td></tr>

@@ -927,6 +927,7 @@ export const TH_MESSAGES: WidgetMessages = {
   'tape.size': 'ขนาด',
   'tape.empty': 'ยังไม่มีการซื้อขาย',
   'tape.minSize': 'ขนาดขั้นต่ำ',
+  'tape.split': 'ซื้อ {buy} ขาย {sell}',
   'dataWindow.title': 'หน้าต่างข้อมูล',
   'dock.rail': 'แผง',
   'dock.resize': 'ปรับความกว้างของแผง',

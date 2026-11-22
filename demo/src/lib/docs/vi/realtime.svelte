@@ -315,7 +315,9 @@ chart.clearFootprint()                                // trước khi đưa hàn
   các trade gần nhất của feed, rồi các trade trực tiếp, dưới dạng sự kiện <code>trades</code>. Feed chỉ được hỏi
   một lần dù có bao nhiêu bên theo dõi, và chart đang hiển thị footprint thì tự theo dõi. Trade đưa vào bằng
   <code>chart.addTrades()</code> cũng được báo theo cách đó. Không trade nào của feed bị báo hai lần: không khi
-  đổi sang timeframe khác của cùng symbol, cũng không sau khi kết nối lại, lúc đó chỉ những trade bị lỡ mới được báo.
+  đổi sang timeframe khác của cùng symbol, cũng không sau khi kết nối lại, lúc đó chỉ những trade bị lỡ mới được báo,
+  dù các trade sau chúng đã được báo trước. <code>chart.getTrades()</code> trả về các trade vừa được báo,
+  tối đa hai nghìn trade, cho bên lắng nghe đến sau khi chúng đã được báo.
 </p>
 <pre><code>{`const stop = chart.followTrades()
 chart.on('trades', (e) => {

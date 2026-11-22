@@ -319,7 +319,8 @@ chart.clearFootprint()                                // before another series' 
   feed is asked once for any number of followers, and a chart that shows a footprint follows them by
   itself. Trades given with <code>chart.addTrades()</code> are told the same way. No trade of the
   feed's is told twice: not on another timeframe of the symbol, nor after a reconnect, when only the
-  ones missed are.
+  ones missed are, though later ones were told first. <code>chart.getTrades()</code> gives the trades told
+  lately, up to two thousand, for a listener that comes after they were told.
 </p>
 <pre><code>{`const stop = chart.followTrades()
 chart.on('trades', (e) => {

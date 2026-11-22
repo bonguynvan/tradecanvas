@@ -938,6 +938,7 @@ export const ET_MESSAGES: WidgetMessages = {
   'tape.size': 'Maht',
   'tape.empty': 'Tehinguid veel pole',
   'tape.minSize': 'Min. maht',
+  'tape.split': 'Ostetud {buy}, müüdud {sell}',
   'dataWindow.title': 'Andmeaken',
   'dock.rail': 'Paneelid',
   'dock.resize': 'Muuda paneeli laiust',

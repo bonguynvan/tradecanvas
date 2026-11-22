@@ -96,15 +96,19 @@ export function rowSizeOf(bars: readonly FootprintBar[]): number | null {
 }
 
 /**
- * A feed's trades into the footprint: its recent trades once, then its live
- * ones. Live trades that come before the recent ones are in are held, and
- * counted after them if they were made later, so none is counted twice and
- * none is lost in between. A trade of a bar still to come is kept until the
- * bar is there (`settle`).
+ * Trades into the footprint: each counted in the bar of its time. Which
+ * trades are new is the trade stream's to say (`TradeStream`): what comes
+ * here is counted, but for these.
+ *
+ * - A trade of a bar still to come is kept until the bar is there
+ *   (`settle`), as is one that comes before the footprint has a row size.
+ * - Where a feed's recent trades begin part way through a bar (it had more
+ *   than it gave), that bar is left out, its live trades too: a footprint
+ *   with part of a bar's trades reads as one with all of them.
+ * - The bar that held the latest trade before such a hole is dropped: its
+ *   end is missing.
  */
 export class FootprintFeed {
-  /** Live trades held until the recent ones are in; null once they are. */
-  private waiting: Trade[] | null = [];
   /** Trades of bars still to come, in the order they came. */
   private later: Trade[] = [];
   /** The bar the recent trades began part way through: no trade of it is counted, its live ones neither. */
@@ -116,41 +120,24 @@ export class FootprintFeed {
   ) {}
 
   /**
-   * The feed's recent trades, of which `asked` were asked for. Those the
-   * footprint already has are left out. When the feed had more than it gave
-   * and they start after what the footprint has, the bar they begin in is
-   * left out, its live trades too: its first trades are missing, and a
-   * footprint with part of a bar's trades reads as one with all of them.
+   * The feed's recent trades that were not told before, oldest first.
+   * `begins`: when the oldest trade the feed gave was made, where its list
+   * may begin part way through a bar (null where it reaches back to what
+   * was told); `before`: when the latest trade told before it was made.
    * True when a trade was counted.
    */
-  history(trades: readonly Trade[], asked: number): boolean {
-    const have = this.store.latestTrade();
-    const inOrder = trades.filter((t) => Number.isFinite(t.time)).sort((a, b) => a.time - b.time);
-    const begins = inOrder.length >= asked && inOrder.length > 0 && inOrder[0].time > have ? this.barOf(inOrder[0].time) : null;
-    if (typeof begins === 'number') {
-      this.cut = begins;
-      // What it had ends before these begin (a long break in the connection): the bar it had last is missing its end.
-      const broken = Number.isFinite(have) ? this.barOf(have) : null;
+  recent(fresh: readonly Trade[], begins: number | null, before: number | null): boolean {
+    if (begins !== null) {
+      const partial = this.barOf(begins);
+      if (typeof partial === 'number') this.cut = partial;
+      const broken = before === null ? null : this.barOf(before);
       if (typeof broken === 'number') this.store.set({ time: broken, levels: [] });
     }
-    let counted = false;
-    for (const trade of inOrder) {
-      if (trade.time > have) counted = this.count(trade) || counted;
-    }
-    return this.release() || counted;
+    return this.live(fresh);
   }
 
-  /** The feed has no recent trades to give: the live ones count from the first. */
-  skipHistory(): boolean {
-    return this.release();
-  }
-
-  /** Live trades, as they come. True when a trade was counted. */
+  /** Trades as they come, oldest first. True when a trade was counted. */
   live(trades: readonly Trade[]): boolean {
-    if (this.waiting) {
-      this.waiting.push(...trades);
-      return false;
-    }
     let counted = this.settle();
     for (const trade of trades) counted = this.count(trade) || counted;
     return counted;
@@ -163,19 +150,6 @@ export class FootprintFeed {
     this.later = [];
     let counted = false;
     for (const trade of kept) counted = this.count(trade) || counted;
-    return counted;
-  }
-
-  /** The live trades held while the recent ones were on their way: those made after them. */
-  private release(): boolean {
-    const held = this.waiting;
-    if (!held) return false;
-    this.waiting = null;
-    const have = this.store.latestTrade();
-    let counted = false;
-    for (const trade of held) {
-      if (trade.time > have) counted = this.count(trade) || counted;
-    }
     return counted;
   }
 

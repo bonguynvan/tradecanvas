@@ -927,6 +927,7 @@ export const PL_MESSAGES: WidgetMessages = {
   'tape.size': 'Wielkość',
   'tape.empty': 'Brak transakcji',
   'tape.minSize': 'Min. wielkość',
+  'tape.split': 'Kupiono {buy}, sprzedano {sell}',
   'dataWindow.title': 'Okno danych',
   'dock.rail': 'Panele',
   'dock.resize': 'Zmień szerokość panelu',

@@ -927,6 +927,7 @@ export const RO_MESSAGES: WidgetMessages = {
   'tape.size': 'Mărime',
   'tape.empty': 'Încă nu există tranzacții',
   'tape.minSize': 'Mărime min.',
+  'tape.split': 'Cumpărat {buy}, vândut {sell}',
   'dataWindow.title': 'Fereastră de date',
   'dock.rail': 'Panouri',
   'dock.resize': 'Redimensionare panou',

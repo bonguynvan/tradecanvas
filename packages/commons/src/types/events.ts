@@ -475,7 +475,8 @@ export interface ChartEventMap {
    * followed (`chart.followTrades()`, or a footprint chart), and those given
    * with `chart.addTrades()`. `recent`: the feed's recent trades, told when
    * it starts being followed and after a reconnect, not trades made just now.
-   * No trade of the feed's is told twice.
+   * The feed's recent trades are told once, however often it is asked for
+   * them; `chart.getTrades()` has the ones told before a listener came.
    */
   trades: { trades: Trade[]; recent: boolean };
   /** The reverse button on a position's tag was pressed. */

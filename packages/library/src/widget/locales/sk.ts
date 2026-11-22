@@ -927,6 +927,7 @@ export const SK_MESSAGES: WidgetMessages = {
   'tape.size': 'Objem',
   'tape.empty': 'Zatiaľ žiadne obchody',
   'tape.minSize': 'Min. objem',
+  'tape.split': 'Kúpené {buy}, predané {sell}',
   'dataWindow.title': 'Okno údajov',
   'dock.rail': 'Panely',
   'dock.resize': 'Zmeniť šírku panelu',

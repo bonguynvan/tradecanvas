@@ -927,6 +927,7 @@ export const RU_MESSAGES: WidgetMessages = {
   'tape.size': 'Объём',
   'tape.empty': 'Сделок пока нет',
   'tape.minSize': 'Мин. объём',
+  'tape.split': 'Куплено {buy}, продано {sell}',
   'dataWindow.title': 'Окно данных',
   'dock.rail': 'Панели',
   'dock.resize': 'Изменить ширину панели',

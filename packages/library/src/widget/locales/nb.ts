@@ -938,6 +938,7 @@ export const NB_MESSAGES: WidgetMessages = {
   'tape.size': 'Størrelse',
   'tape.empty': 'Ingen handler ennå',
   'tape.minSize': 'Min. størrelse',
+  'tape.split': 'Kjøpt {buy}, solgt {sell}',
   'dataWindow.title': 'Datavindu',
   'dock.rail': 'Paneler',
   'dock.resize': 'Endre panelets bredde',

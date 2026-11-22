@@ -927,6 +927,7 @@ export const ZH_MESSAGES: WidgetMessages = {
   'tape.size': '数量',
   'tape.empty': '暂无成交',
   'tape.minSize': '最小数量',
+  'tape.split': '买入 {buy}，卖出 {sell}',
   'dataWindow.title': '数据窗口',
   'dock.rail': '面板',
   'dock.resize': '调整面板宽度',

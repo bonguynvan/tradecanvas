@@ -938,6 +938,7 @@ export const DA_MESSAGES: WidgetMessages = {
   'tape.size': 'Størrelse',
   'tape.empty': 'Ingen handler endnu',
   'tape.minSize': 'Min. størrelse',
+  'tape.split': 'Købt {buy}, solgt {sell}',
   'dataWindow.title': 'Datavindue',
   'dock.rail': 'Paneler',
   'dock.resize': 'Skift panelets bredde',

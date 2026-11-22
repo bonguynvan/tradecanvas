@@ -18,7 +18,7 @@ function make(options: { rows?: number; minSize?: number } = {}): WidgetTape {
   tape = new WidgetTape(host, {
     formatTime: (time) => `t${time}`,
     formatPrice: (price) => price.toFixed(2),
-    formatSize: (size) => `${size}`,
+    formatSize: (size, decimals) => size.toFixed(decimals),
     onToggle,
     onClose,
   }, options);
@@ -115,14 +115,17 @@ describe('WidgetTape', () => {
     frame();
     const least = host.querySelector<HTMLInputElement>('.tcw-tape-min')!;
     expect(least.getAttribute('aria-label')).toBe('Min size');
+    // A number field, as the widget's others: the browser reads what is typed in the reader's own digits and marks.
+    expect(least.type).toBe('number');
+    expect(least.min).toBe('0');
     least.value = '2';
     least.dispatchEvent(new Event('input'));
-    expect(rows().map((row) => row.children[2].textContent)).toEqual(['2', '5']);
+    expect(rows().map((row) => row.children[2].textContent)).toEqual(['2.0', '5.0']);
     least.value = '';
     least.dispatchEvent(new Event('input'));
     expect(rows()).toHaveLength(3);
-    // What is no number is no least size, and says so.
-    least.value = 'abc';
+    // A size under nothing is no least size, and says so.
+    least.value = '-3';
     least.dispatchEvent(new Event('input'));
     expect(rows()).toHaveLength(3);
     expect(least.getAttribute('aria-invalid')).toBe('true');
@@ -147,10 +150,39 @@ describe('WidgetTape', () => {
     const split = host.querySelector<HTMLElement>('.tcw-tape-split')!;
     expect(split.hidden).toBe(false);
     expect(split.style.getPropertyValue('--tcw-tape-bought')).toBe('75%');
-    expect(split.getAttribute('aria-label')).toBe('3 / 1');
+    expect(split.getAttribute('aria-label')).toBe('Bought 3, sold 1');
     // Nothing to split: no bar.
     tape.clear();
     expect(split.hidden).toBe(true);
+  });
+
+  it('writes every size again when a finer one comes, so the column lines up', () => {
+    make().openPanel();
+    tape.push([trade(1, 100, 3, 'buy')]);
+    frame();
+    expect(rows().map((row) => row.children[2].textContent)).toEqual(['3']);
+    tape.push([trade(2, 100, 0.25, 'sell')]);
+    frame();
+    expect(rows().map((row) => row.children[2].textContent)).toEqual(['0.25', '3.00']);
+  });
+
+  it('puts a trade that comes late in its place among the rows', () => {
+    make().openPanel();
+    tape.push([trade(1, 100, 1, 'buy'), trade(5, 100, 1, 'buy')]);
+    frame();
+    tape.push([trade(3, 100, 1, 'sell')]);
+    frame();
+    expect(rows().map((row) => row.children[0].textContent)).toEqual(['t5', 't3', 't1']);
+  });
+
+  it('is a list to a screen reader, each trade an item, and none of it read out as it changes', () => {
+    make().openPanel();
+    tape.push([trade(1, 100, 1, 'buy')]);
+    frame();
+    const body = host.querySelector('.tcw-tape-body')!;
+    expect(body.getAttribute('role')).toBe('list');
+    expect(rows()[0].getAttribute('role')).toBe('listitem');
+    expect(host.querySelector('[aria-live]')).toBeNull();
   });
 
   it('marks a trade several times the usual size', () => {

@@ -927,6 +927,7 @@ export const SV_MESSAGES: WidgetMessages = {
   'tape.size': 'Storlek',
   'tape.empty': 'Inga avslut ännu',
   'tape.minSize': 'Minsta storlek',
+  'tape.split': 'Köpt {buy}, sålt {sell}',
   'dataWindow.title': 'Datafönster',
   'dock.rail': 'Paneler',
   'dock.resize': 'Ändra panelens bredd',

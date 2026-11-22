@@ -927,6 +927,7 @@ export const EL_MESSAGES: WidgetMessages = {
   'tape.size': 'Μέγεθος',
   'tape.empty': 'Δεν υπάρχουν ακόμη συναλλαγές',
   'tape.minSize': 'Ελάχ. μέγεθος',
+  'tape.split': 'Αγορές {buy}, πωλήσεις {sell}',
   'dataWindow.title': 'Παράθυρο δεδομένων',
   'dock.rail': 'Πάνελ',
   'dock.resize': 'Αλλαγή πλάτους του πάνελ',

@@ -29,6 +29,7 @@
     <tr><td><code>updateLastBarFromTick(tick)</code></td><td>ティックを最後のバーに統合します。</td></tr>
     <tr><td><code>addTrades(trades)</code></td><td>約定を<a href={href('/docs/realtime#footprint')}>フットプリント</a>に入れます：各約定を、その時刻のバーとその価格の行に、取った側として数えます。</td></tr>
     <tr><td><code>followTrades()</code></td><td>フィードの約定を、直近のものに続いてライブのものを、<code>trades</code> イベントとして、返す関数が呼ばれるまで追います。<a href={href('/docs/realtime#tape')}>歩み値</a>を参照してください。</td></tr>
+    <tr><td><code>getTrades()</code></td><td>最近伝えられた約定を古い順に：フィードのものと手で渡したもの。約定が伝えられたあとに来たリスナーのためのものです。</td></tr>
     <tr><td><code>setFootprint(bars)</code> / <code>getFootprint(time?)</code> / <code>clearFootprint()</code></td><td>フットプリントの行をバーごとに：手で渡す、読み返す（ひとつのバーの、またはすべてのバーの）、消す。</td></tr>
     <tr><td><code>updateBar(bar)</code></td><td>読み込み済みのバーを修正します。系列のどこにあっても、時刻が同じバーです。表示位置はそのままで、その時刻のバーがなければ false を返します。</td></tr>
     <tr><td><code>getData()</code></td><td>元の OHLC 系列を取得します。</td></tr>

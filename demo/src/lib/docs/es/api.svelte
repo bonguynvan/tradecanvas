@@ -29,6 +29,7 @@
     <tr><td><code>updateLastBarFromTick(tick)</code></td><td>Fusiona un tick en la última barra.</td></tr>
     <tr><td><code>addTrades(trades)</code></td><td>Operaciones para el <a href={href('/docs/realtime#footprint')}>footprint</a>: cada una en la barra de su tiempo y en la fila de su precio, en el lado que la tomó.</td></tr>
     <tr><td><code>followTrades()</code></td><td>Sigue las operaciones del feed, las recientes y después las que llegan en vivo, como eventos <code>trades</code>, hasta que se llama a la función que devuelve. Consulta <a href={href('/docs/realtime#tape')}>la cinta</a>.</td></tr>
+    <tr><td><code>getTrades()</code></td><td>Las operaciones comunicadas últimamente, de la más antigua a la más nueva: las del feed y las dadas a mano. Para un oyente que llega después de que se comunicaron.</td></tr>
     <tr><td><code>setFootprint(bars)</code> / <code>getFootprint(time?)</code> / <code>clearFootprint()</code></td><td>Las filas del footprint, barra por barra: dadas a mano, leídas de vuelta (las de una barra, o las de todas), olvidadas.</td></tr>
     <tr><td><code>updateBar(bar)</code></td><td>Corrige una barra cargada: la que tiene el mismo tiempo, en cualquier lugar de la serie. La vista se mantiene; false si ninguna barra cargada tiene ese tiempo.</td></tr>
     <tr><td><code>getData()</code></td><td>Lee la serie OHLC sin procesar.</td></tr>

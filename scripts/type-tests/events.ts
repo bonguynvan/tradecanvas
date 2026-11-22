@@ -76,6 +76,8 @@ chart.on('ordersChange', (e) => {
 {
   const stop: () => void = chart.followTrades();
   stop();
+  const lately: { time: number; price: number; volume: number; side?: 'buy' | 'sell' }[] = chart.getTrades();
+  void lately;
   chart.on('trades', (e) => [e.payload.trades.map((trade) => [trade.time, trade.price, trade.volume, trade.side]), e.payload.recent]);
   chart.on('trades', (e) => {
     // @ts-expect-error The payload holds the trades, not a single trade.

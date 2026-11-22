@@ -927,6 +927,7 @@ export const CS_MESSAGES: WidgetMessages = {
   'tape.size': 'Objem',
   'tape.empty': 'Zatím žádné obchody',
   'tape.minSize': 'Min. objem',
+  'tape.split': 'Koupeno {buy}, prodáno {sell}',
   'dataWindow.title': 'Okno dat',
   'dock.rail': 'Panely',
   'dock.resize': 'Změnit šířku panelu',

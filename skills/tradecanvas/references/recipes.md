@@ -506,6 +506,7 @@ stop(); // let go of the feed (a footprint chart keeps following by itself)
 ```
 
 Trades given with `chart.addTrades(trades)` are told as `trades` events too, and listed on the tape.
+`chart.getTrades()` gives the trades told lately (up to 2,000), for a listener that comes after them.
 
 ## A Vietnamese stock, and VN30 futures
 

@@ -927,6 +927,7 @@ export const HU_MESSAGES: WidgetMessages = {
   'tape.size': 'Méret',
   'tape.empty': 'Még nincs kötés',
   'tape.minSize': 'Min. méret',
+  'tape.split': 'Vétel {buy}, eladás {sell}',
   'dataWindow.title': 'Adatablak',
   'dock.rail': 'Panelek',
   'dock.resize': 'A panel szélességének módosítása',

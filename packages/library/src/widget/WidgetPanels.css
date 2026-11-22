@@ -432,15 +432,25 @@
 
 /* The least size a trade is listed from: a short field by the title, its figures as the rows'. */
 .tcw-root .tcw-tape-min {
-  flex: none;
+  flex: 0 1 14ch;
   box-sizing: border-box;
-  inline-size: 9ch;
+  min-width: 7ch;
   height: var(--tcw-control-h);
   padding-inline: var(--tcw-space-3);
   font-family: var(--tcw-font-mono);
   font-size: var(--tcw-font-size-xs);
   font-variant-numeric: tabular-nums;
   text-align: end;
+  text-overflow: ellipsis;
+  /* No steppers: they took the room its name is written in while it is empty, and a size is typed, not stepped to. */
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+.tcw-root .tcw-tape-min::-webkit-inner-spin-button,
+.tcw-root .tcw-tape-min::-webkit-outer-spin-button {
+  display: none;
+  margin: 0;
+  -webkit-appearance: none;
 }
 
 /* Under the header and staying there: the columns' names, and how the rows split between buyers and sellers. */
@@ -476,15 +486,25 @@
   white-space: nowrap;
   text-overflow: ellipsis;
 }
+/* The price and the size sit at the end of their columns, the names over the figures, in a widget written either way:
+   placed by the grid, which follows the widget's direction, not by the text's own. */
 .tcw-tape-cols span:not(:first-child),
 .tcw-tape-row span:not(:first-child) {
-  text-align: end;
+  justify-self: end;
 }
 
 /* What the buyers took of the rows, from the bar's start, and the sellers the rest. */
 .tcw-tape-split {
   height: 3px;
   background: linear-gradient(to right, var(--tcw-green) var(--tcw-tape-bought, 50%), var(--tcw-red) var(--tcw-tape-bought, 50%));
+}
+[dir='rtl'] .tcw-tape-split {
+  background: linear-gradient(to left, var(--tcw-green) var(--tcw-tape-bought, 50%), var(--tcw-red) var(--tcw-tape-bought, 50%));
+}
+
+/* The tape keeps a reader's place itself when rows come in on top: the browser's own anchoring would move it twice. */
+.tcw-tape {
+  overflow-anchor: none;
 }
 
 .tcw-tape-body { flex: 1; padding-bottom: env(safe-area-inset-bottom, 0px); }

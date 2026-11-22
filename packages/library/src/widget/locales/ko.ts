@@ -927,6 +927,7 @@ export const KO_MESSAGES: WidgetMessages = {
   'tape.size': '수량',
   'tape.empty': '아직 체결이 없습니다',
   'tape.minSize': '최소 수량',
+  'tape.split': '매수 {buy}, 매도 {sell}',
   'dataWindow.title': '데이터 창',
   'dock.rail': '패널',
   'dock.resize': '패널 너비 조절',

@@ -927,6 +927,7 @@ export const TR_MESSAGES: WidgetMessages = {
   'tape.size': 'Büyüklük',
   'tape.empty': 'Henüz işlem yok',
   'tape.minSize': 'Min. büyüklük',
+  'tape.split': 'Alış {buy}, satış {sell}',
   'dataWindow.title': 'Veri penceresi',
   'dock.rail': 'Paneller',
   'dock.resize': 'Panelin genişliğini değiştir',

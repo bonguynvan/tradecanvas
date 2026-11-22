@@ -326,7 +326,9 @@ chart.clearFootprint()                                // antes de las filas de o
   <code>trades</code>. Al feed se le pide una sola vez sea cual sea el número de seguidores, y un gráfico que
   muestra un footprint las sigue por sí mismo. Las operaciones dadas con <code>chart.addTrades()</code> se
   comunican del mismo modo. Ninguna operación del feed se comunica dos veces: ni en otro marco temporal del
-  símbolo, ni tras una reconexión, cuando solo se comunican las que se perdieron.
+  símbolo, ni tras una reconexión, cuando solo se comunican las que se perdieron, aunque otras
+  posteriores se hayan comunicado antes. <code>chart.getTrades()</code> da las operaciones comunicadas
+  últimamente, hasta dos mil, para un oyente que llega después de que se comunicaron.
 </p>
 <pre><code>{`const stop = chart.followTrades()
 chart.on('trades', (e) => {

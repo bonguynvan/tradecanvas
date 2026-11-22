@@ -83,7 +83,6 @@ import { WidgetQuoteButtons } from './WidgetQuoteButtons.js';
 import { AlertNotifier } from './AlertNotifier.js';
 import { WidgetDepthLadder } from './WidgetDepthLadder.js';
 import { WidgetTape } from './WidgetTape.js';
-import { sizeDecimals } from './tapeRows.js';
 import { WidgetDataWindow, PERCENT_DECIMALS as DATA_WINDOW_PERCENT_DECIMALS } from './WidgetDataWindow.js';
 import type { DepthData } from '@tradecanvas/commons';
 import { DragDropImporter, resampleOHLCV, inferTimeframeMs } from '../io/index.js';
@@ -348,8 +347,6 @@ export class ChartWidget {
   private tape: WidgetTape | null = null;
   /** Lets go of the feed's trades the open tape follows; null while it is shut. */
   private stopTapeTrades: (() => void) | null = null;
-  /** The decimals the tape writes its sizes to: as many as the finest size it listed needs. */
-  private tapeSizeDecimals = 0;
   private lastHoverIndex: number | null = null;
   /** The bar the crosshair reported at it: on Renko and the like a brick, not a data bar. */
   private lastHoverBar: OHLCBar | null = null;
@@ -1106,22 +1103,14 @@ export class ChartWidget {
       const tape = new WidgetTape(this.root, {
         formatTime: (time) => this.formatTapeTime(time),
         formatPrice: (p) => this.formatAlertPrice(p),
-        formatSize: (size) => this.formatTapeSize(size),
+        formatSize: (size, decimals) => this.formatTapeSize(size, decimals),
         onToggle: (open) => this.followTapeTrades(open),
         onClose: () => this.docking.closePanelByHand('tape'),
       }, typeof this.options.tape === 'object' ? this.options.tape : {}, this.t);
       this.tape = tape;
-      this.chart.on('trades', (e) => {
-        for (const trade of e.payload.trades) {
-          if (trade.volume < TAPE_SHORT_FROM) this.tapeSizeDecimals = Math.max(this.tapeSizeDecimals, sizeDecimals(trade.volume));
-        }
-        tape.push(e.payload.trades);
-      });
+      this.chart.on('trades', (e) => tape.push(e.payload.trades));
       // Another symbol's trades are another tape.
-      this.chart.on('symbolChange', () => {
-        this.tapeSizeDecimals = 0;
-        tape.clear();
-      });
+      this.chart.on('symbolChange', () => tape.clear());
     }
     // The bar another chart of a grid points at here, or the latest again when it goes.
     this.chart.on('crosshairSync', (e) => {
@@ -3163,8 +3152,10 @@ export class ChartWidget {
 
   /** Follow the feed's trades for the tape while it is open, and let go of them when it shuts. */
   private followTapeTrades(open: boolean): void {
+    // Taken up before it is let go of: the feed is never dropped and asked again in between.
+    const stop = open ? this.chart.followTrades() ?? null : null;
     this.stopTapeTrades?.();
-    this.stopTapeTrades = open ? this.chart.followTrades() ?? null : null;
+    this.stopTapeTrades = stop;
   }
 
   /** A trade's time as the tape writes it: the time of day in the display zone, to the second. */
@@ -3173,11 +3164,10 @@ export class ChartWidget {
     return `${hoursAndMinutes}:${String(new Date(time).getUTCSeconds()).padStart(2, '0')}`;
   }
 
-  /** A trade's size as the tape writes it: shortened from a thousand up; below, to the decimals the finest size listed needs, so the column lines up. */
-  private formatTapeSize(size: number): string {
+  /** A trade's size as the tape writes it: shortened from a thousand up; below, to the decimals the tape writes every size to, so the column lines up. */
+  private formatTapeSize(size: number, decimals: number): string {
     if (size >= TAPE_SHORT_FROM) return this.formatVolume(size);
     const locale = this.chartSettings.settingsState.numberLocale || undefined;
-    const decimals = this.tapeSizeDecimals;
     return size.toLocaleString(locale, { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
   }
 

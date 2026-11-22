@@ -29,6 +29,7 @@
     <tr><td><code>updateLastBarFromTick(tick)</code></td><td>Gộp một tick vào nến cuối.</td></tr>
     <tr><td><code>addTrades(trades)</code></td><td>Đưa trade vào <a href={href('/docs/realtime#footprint')}>footprint</a>: mỗi trade vào nến theo thời gian của nó và hàng giá theo giá của nó, ở bên đã chủ động khớp.</td></tr>
     <tr><td><code>followTrades()</code></td><td>Theo dõi các trade của feed, các trade gần nhất rồi các trade trực tiếp, dưới dạng sự kiện <code>trades</code>, cho tới khi hàm nó trả về được gọi. Xem <a href={href('/docs/realtime#tape')}>tape</a>.</td></tr>
+    <tr><td><code>getTrades()</code></td><td>Các trade vừa được báo, cũ nhất trước: của feed và các trade đưa vào bằng tay. Dành cho bên lắng nghe đến sau khi trade đã được báo.</td></tr>
     <tr><td><code>setFootprint(bars)</code> / <code>getFootprint(time?)</code> / <code>clearFootprint()</code></td><td>Các hàng giá của footprint, từng nến một: đưa vào bằng tay, đọc lại (của một nến, hoặc của mọi nến), xoá đi.</td></tr>
     <tr><td><code>updateBar(bar)</code></td><td>Sửa một nến đã nạp: nến có cùng time, ở bất kỳ vị trí nào trong chuỗi. View giữ nguyên; trả về false khi không có nến đã nạp nào có time đó.</td></tr>
     <tr><td><code>getData()</code></td><td>Đọc chuỗi OHLC gốc.</td></tr>

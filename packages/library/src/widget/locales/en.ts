@@ -939,6 +939,7 @@ export const EN_MESSAGES = {
   'tape.size': 'Size',
   'tape.empty': 'No trades yet',
   'tape.minSize': 'Min size',
+  'tape.split': 'Bought {buy}, sold {sell}',
   'dataWindow.title': 'Data window',
   'dock.rail': 'Panels',
   'dock.resize': 'Resize the panel',

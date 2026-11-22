@@ -927,6 +927,7 @@ export const JA_MESSAGES: WidgetMessages = {
   'tape.size': '数量',
   'tape.empty': 'まだ約定がありません',
   'tape.minSize': '最小数量',
+  'tape.split': '買い {buy}、売り {sell}',
   'dataWindow.title': 'データウィンドウ',
   'dock.rail': 'パネル',
   'dock.resize': 'パネルの幅を変更',

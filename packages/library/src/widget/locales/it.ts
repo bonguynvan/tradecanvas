@@ -927,6 +927,7 @@ export const IT_MESSAGES: WidgetMessages = {
   'tape.size': 'Quantità',
   'tape.empty': 'Ancora nessuna operazione',
   'tape.minSize': 'Quantità min.',
+  'tape.split': 'Acquistato {buy}, venduto {sell}',
   'dataWindow.title': 'Finestra dati',
   'dock.rail': 'Pannelli',
   'dock.resize': 'Ridimensiona il pannello',

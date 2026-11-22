@@ -938,6 +938,7 @@ export const MS_MESSAGES: WidgetMessages = {
   'tape.size': 'Saiz',
   'tape.empty': 'Belum ada dagangan',
   'tape.minSize': 'Saiz min.',
+  'tape.split': 'Dibeli {buy}, dijual {sell}',
   'dataWindow.title': 'Tetingkap data',
   'dock.rail': 'Panel',
   'dock.resize': 'Ubah lebar panel',

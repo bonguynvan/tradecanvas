@@ -927,6 +927,7 @@ export const NL_MESSAGES: WidgetMessages = {
   'tape.size': 'Omvang',
   'tape.empty': 'Nog geen trades',
   'tape.minSize': 'Min. omvang',
+  'tape.split': 'Gekocht {buy}, verkocht {sell}',
   'dataWindow.title': 'Gegevensvenster',
   'dock.rail': 'Panelen',
   'dock.resize': 'Breedte van het paneel wijzigen',

@@ -311,3 +311,37 @@ describe('Chart: what the review of the footprint turned up', () => {
     expect((inner().chartRenderer as unknown as { shownUntil: number | null }).shownUntil).toBeNull();
   });
 });
+
+describe('Chart: the footprint after a dropped connection', () => {
+  it('counts the trades it missed though a live trade came in before they were asked for again', async () => {
+    const recent = [trade(T0 + 58 * MIN + 1, 100.2, 2)];
+    const feed = tradeFeed(recent);
+    chart.setChartType('footprint');
+    chart.setChartTypeOptions({ footprint: { rowSize: 1 } });
+    await chart.connect({ adapter: feed.adapter, symbol: 'X', timeframe: '1m' });
+    await settle();
+    // While it was down: 5 bought in the bar before the last, 4 in the last. The trades come back first.
+    recent.push(trade(T0 + 58 * MIN + 500, 100.2, 5), trade(T0 + 59 * MIN + 10, 100.2, 4), trade(T0 + 59 * MIN + 20, 100.2, 1));
+    feed.live([trade(T0 + 59 * MIN + 20, 100.2, 1)]);
+    (chart as unknown as { streamManager: { emit(type: string, bars: OHLCBar[]): void } }).streamManager.emit('snapshot', bars(60));
+    await settle();
+    expect(chart.getFootprint(T0 + 58 * MIN)!.levels).toEqual([{ price: 100, buy: 7, sell: 0 }]);
+    expect(chart.getFootprint(T0 + 59 * MIN)!.levels).toEqual([{ price: 100, buy: 5, sell: 0 }]);
+  });
+
+  it('counts the feed’s recent trades again after the footprint was started over, though they were told before', async () => {
+    const feed = tradeFeed([trade(T0 + 59 * MIN + 1, 100.2, 2)]);
+    chart.setChartType('footprint');
+    chart.setChartTypeOptions({ footprint: { rowSize: 1 } });
+    const told: number[] = [];
+    chart.on('trades', (e) => told.push(...e.payload.trades.map((t) => t.time)));
+    await chart.connect({ adapter: feed.adapter, symbol: 'X', timeframe: '1m' });
+    await settle();
+    expect(told).toEqual([T0 + 59 * MIN + 1]);
+    // Another row size starts the footprint again: the trades are counted anew, and told no second time.
+    chart.setChartTypeOptions({ footprint: { rowSize: 0.5 } });
+    await settle();
+    expect(chart.getFootprint(T0 + 59 * MIN)!.levels).toEqual([{ price: 100, buy: 2, sell: 0 }]);
+    expect(told).toEqual([T0 + 59 * MIN + 1]);
+  });
+});

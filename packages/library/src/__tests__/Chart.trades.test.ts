@@ -116,7 +116,67 @@ describe('Chart: following the feed’s trades', () => {
     expect(told).toEqual([]);
     answer([trade(END + 4), trade(END + 5)]);
     await settle();
-    expect(told).toEqual([{ times: [END + 4, END + 5, END + 6], recent: true }]);
+    // The feed's recent trades, then the live one that was held: each said to be what it is.
+    expect(told).toEqual([{ times: [END + 4, END + 5], recent: true }, { times: [END + 6], recent: false }]);
+  });
+
+  it('tells the trades it missed when the stream reconnects, though a live trade came in first', async () => {
+    const feed = tradeFeed([trade(END + 1)]);
+    chart.followTrades();
+    await chart.connect({ adapter: feed.adapter, symbol: 'X', timeframe: '1m' });
+    await settle();
+    // The connection drops: two trades are made unseen. The trades come back before the bars do.
+    feed.recent.push(trade(END + 2), trade(END + 3), trade(END + 4));
+    feed.live([trade(END + 4)]);
+    expect(told.at(-1)).toEqual({ times: [END + 4], recent: false });
+    (chart as unknown as { streamManager: { emit(type: string, bars: OHLCBar[]): void } }).streamManager.emit('snapshot', bars(60));
+    await settle();
+    expect(told.at(-1)).toEqual({ times: [END + 2, END + 3], recent: true });
+  });
+
+  it('tells the live trades after a while when the feed never answers for its recent ones', async () => {
+    vi.useFakeTimers();
+    try {
+      const feed = tradeFeed();
+      feed.adapter.fetchTrades = () => new Promise<Trade[]>(() => {});
+      chart.followTrades();
+      await chart.connect({ adapter: feed.adapter, symbol: 'X', timeframe: '1m' });
+      await settle();
+      feed.live([trade(END + 5)]);
+      expect(told).toEqual([]);
+      vi.advanceTimersByTime(15_000);
+      expect(told).toEqual([{ times: [END + 5], recent: false }]);
+      feed.live([trade(END + 6)]);
+      expect(told.at(-1)).toEqual({ times: [END + 6], recent: false });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('takes a feed that answers with no list of trades as one with none', async () => {
+    const feed = tradeFeed();
+    feed.adapter.fetchTrades = async () => undefined as unknown as Trade[];
+    chart.followTrades();
+    await chart.connect({ adapter: feed.adapter, symbol: 'X', timeframe: '1m' });
+    await settle();
+    feed.live([trade(END + 5)]);
+    expect(told).toEqual([{ times: [END + 5], recent: false }]);
+  });
+
+  it('keeps the trades told lately for whoever comes late, and forgets them for another symbol', async () => {
+    const feed = tradeFeed([trade(END + 2), trade(END + 1)]);
+    chart.followTrades();
+    await chart.connect({ adapter: feed.adapter, symbol: 'X', timeframe: '1m' });
+    await settle();
+    feed.live([trade(END + 3)]);
+    expect(chart.getTrades().map((t) => t.time)).toEqual([END + 1, END + 2, END + 3]);
+    // A copy: what a host does with it changes nothing here.
+    chart.getTrades().length = 0;
+    expect(chart.getTrades()).toHaveLength(3);
+    feed.recent.length = 0;
+    await chart.switchStream('Y', '1m');
+    await settle();
+    expect(chart.getTrades()).toEqual([]);
   });
 
   it('tells the trades given by hand, on any chart', () => {
@@ -126,6 +186,9 @@ describe('Chart: following the feed’s trades', () => {
     // None given: nothing told.
     chart.addTrades([]);
     expect(told).toHaveLength(1);
+    // What is no trade is not told as one.
+    chart.addTrades([{ time: END + 3, price: Number.NaN, volume: 1 }, trade(END + 4)]);
+    expect(told.at(-1)).toEqual({ times: [END + 4], recent: false });
   });
 
   it('tells no trade again on another timeframe of the symbol, and starts over on another symbol', async () => {

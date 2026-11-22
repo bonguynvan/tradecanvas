@@ -29,6 +29,7 @@
     <tr><td><code>updateLastBarFromTick(tick)</code></td><td>把一笔 tick 合并进最后一根K线。</td></tr>
     <tr><td><code>addTrades(trades)</code></td><td>向<a href={href('/docs/realtime#footprint')}>足迹图</a>传入成交：每笔按时间计入对应的K线、按价格计入对应的行，记在主动成交的一方。</td></tr>
     <tr><td><code>followTrades()</code></td><td>跟随数据源的成交，先是最近的成交，然后是实时成交，以 <code>trades</code> 事件发出，直到调用它返回的函数。参见<a href={href('/docs/realtime#tape')}>逐笔成交</a>。</td></tr>
+    <tr><td><code>getTrades()</code></td><td>最近发出的成交，最早的在前：数据源的成交和手动传入的成交。供在成交发出之后才来的监听者使用。</td></tr>
     <tr><td><code>setFootprint(bars)</code> / <code>getFootprint(time?)</code> / <code>clearFootprint()</code></td><td>足迹图的各行，逐根K线：手动传入、读回（某一根K线的，或所有K线的）、清除。</td></tr>
     <tr><td><code>updateBar(bar)</code></td><td>修正一根已加载的K线：时间相同的那根，无论它在序列中的哪个位置。视图保持不变；没有已加载的K线是这个时间时返回 false。</td></tr>
     <tr><td><code>getData()</code></td><td>读取原始 OHLC 序列。</td></tr>
