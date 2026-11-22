@@ -338,6 +338,7 @@ export const KO_MESSAGES: WidgetMessages = {
   'settings.footprintCells.bidAsk': 'Bid × Ask',
   'settings.footprintCells.delta': '델타',
   'settings.footprintImbalance': '불균형 비율',
+  'settings.footprintTotals': '각 봉 아래 합계',
   'settings.auto': '자동',
   'settings.numberAtLeast': '{min} 이상',
   'settings.numberWhole': '{min}부터 {max}까지의 정수',

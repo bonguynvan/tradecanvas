@@ -338,6 +338,7 @@ export const ID_MESSAGES: WidgetMessages = {
   'settings.footprintCells.bidAsk': 'Bid × Ask',
   'settings.footprintCells.delta': 'Delta',
   'settings.footprintImbalance': 'Rasio ketidakseimbangan',
+  'settings.footprintTotals': 'Total di bawah tiap bar',
   'settings.auto': 'Otomatis',
   'settings.numberAtLeast': '{min} atau lebih',
   'settings.numberWhole': 'Bilangan bulat dari {min} sampai {max}',

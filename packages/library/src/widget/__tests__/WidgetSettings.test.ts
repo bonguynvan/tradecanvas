@@ -192,6 +192,20 @@ describe('settings of the chart’s type', () => {
     expect(changes.at(-1)).toEqual({ chartTypeOptions: { footprint: { rowSize: 'auto', cells: 'delta' } } });
   });
 
+  it('offers the footprint’s totals as a switch, on unless they were switched off', () => {
+    const totals = () => document.querySelector<HTMLButtonElement>('.tcw-settings-row button[role="switch"][aria-label="Totals under each bar"]')!;
+    settings!.open(DEFAULT_SETTINGS, 'footprint');
+    expect(totals().getAttribute('aria-checked')).toBe('true');
+    totals().click();
+    expect(changes.at(-1)).toEqual({ chartTypeOptions: { footprint: { totals: false } } });
+    settings!.close();
+    // Its other settings stay as they are when it is switched.
+    settings!.open({ ...DEFAULT_SETTINGS, chartTypeOptions: { footprint: { cells: 'delta', totals: false } } }, 'footprint');
+    expect(totals().getAttribute('aria-checked')).toBe('false');
+    totals().click();
+    expect(changes.at(-1)).toEqual({ chartTypeOptions: { footprint: { cells: 'delta', totals: true } } });
+  });
+
   it('has only colours for a chart type without settings', () => {
     settings!.open(DEFAULT_SETTINGS, 'candlestick');
     expect(field('Box size')).toBeNull();

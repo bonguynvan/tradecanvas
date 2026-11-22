@@ -43,6 +43,11 @@ const TINT_MARKED = 0.62;
 const BAR_ALPHA = 0.7;
 const BAR_ALPHA_MARKED = 1;
 const POC_ALPHA = 0.8;
+/** Under a bar's lowest row: this much room over its totals and under them, and this much between their two lines, px. */
+const TOTALS_GAP = 3;
+const TOTALS_LINE_GAP = 2;
+/** The plate the totals stand on: the chart's ground, this strong, so they read over a grid line or the volume behind them. */
+const TOTALS_PLATE_ALPHA = 0.85;
 
 /** A bar's rows as drawn: merged to the row height on screen, with their sums and marks. */
 interface DrawnBar {
@@ -74,6 +79,8 @@ export class FootprintRenderer implements ChartRendererInterface {
   private store: FootprintStore | null = null;
   private cells: FootprintCells = 'bidAsk';
   private imbalance = FOOTPRINT_IMBALANCE;
+  /** Whether what a bar's rows add up to is written under it. */
+  private totals = false;
   /** Bars from this time on show no cells (a replay has not reached them); null shows all. */
   private shownUntil: number | null = null;
   /** What was worked out for a bar's rows, until they or the row height change. */
@@ -90,6 +97,22 @@ export class FootprintRenderer implements ChartRendererInterface {
   /** How many times one side has to outdo the other to be marked; 1 or less marks none. */
   setImbalance(ratio: number): void {
     this.imbalance = Number.isFinite(ratio) && ratio >= 0 ? ratio : FOOTPRINT_IMBALANCE;
+  }
+
+  /** Write under each bar what its rows add up to: bought less sold, and both together. */
+  setTotals(on: boolean): void {
+    this.totals = on === true;
+  }
+
+  /**
+   * The room the totals take under a bar, px: what the price scale leaves
+   * under the lowest bar so they are not cut. None with totals off, and none
+   * where the bars are too narrow to have them.
+   */
+  totalsRoom(viewport: ViewportState, theme: Theme): number {
+    const width = footprintWidth(viewport);
+    if (!this.totals || width < FOOTPRINT_MIN_BAR_WIDTH || isDense(viewport) || !this.writesTotals(width)) return 0;
+    return totalsHeight(theme.font.sizeSmall);
   }
 
   /** Draw cells only for bars before `time`, as a replay that has shown the bars up to it would; null for all. */
@@ -111,6 +134,7 @@ export class FootprintRenderer implements ChartRendererInterface {
     const toY = priceToYMapper(viewport);
     const unit = barTimeUnit(data);
     const text = this.writesNumbers(width);
+    const totals = this.writesTotals(width);
     const factor = this.rowFactor(viewport, toY, text);
 
     ctx.save();
@@ -121,13 +145,18 @@ export class FootprintRenderer implements ChartRendererInterface {
       const time = bar.time * unit;
       if (this.shownUntil !== null && time >= this.shownUntil) continue;
       const footprint = this.store?.get(time);
-      if (footprint) this.drawCells(ctx, this.drawnBar(footprint, factor), factor, slot, viewport, toY, theme, text);
+      if (footprint) this.drawCells(ctx, this.drawnBar(footprint, factor), factor, slot, viewport, toY, theme, text, totals);
     }
     ctx.restore();
   }
 
   private writesNumbers(width: number): boolean {
     return width >= (this.cells === 'bidAsk' ? FOOTPRINT_TEXT_BAR_WIDTH : SINGLE_TEXT_BAR_WIDTH);
+  }
+
+  /** Totals are one number a line: they fit a bar that one number fits, whatever its rows show. */
+  private writesTotals(width: number): boolean {
+    return this.totals && width >= SINGLE_TEXT_BAR_WIDTH;
   }
 
   /** How many kept rows make a drawn one: measured in the middle of the scale, one for every bar, so rows line up across them. */
@@ -164,6 +193,7 @@ export class FootprintRenderer implements ChartRendererInterface {
     toY: (price: number) => number,
     theme: Theme,
     text: boolean,
+    totals: boolean,
   ): void {
     const tall = this.store!.getRowSize() * factor;
     const top = viewport.chartRect.y;
@@ -171,18 +201,22 @@ export class FootprintRenderer implements ChartRendererInterface {
     if (text) {
       ctx.textBaseline = 'middle';
     }
+    /** Where the lowest row on the screen ends: the totals go under it. */
+    let lowest = -Infinity;
     for (let r = 0; r < bar.rows.length; r++) {
       const row = bar.rows[r];
       const a = toY(row.price);
       const b = toY(row.price + tall);
       const y = Math.round(Math.min(a, b));
       const height = Math.max(1, Math.round(Math.max(a, b)) - y - ROW_GAP);
+      lowest = Math.max(lowest, y + height);
       if (y + height < top || y > bottom) continue;
       const box = { x: slot.cellsLeft, y, width: slot.cellsWidth, height };
       if (text) this.drawNumbers(ctx, row, bar, bar.marks[r], box, theme);
       else this.drawBars(ctx, row, bar, bar.marks[r], box, theme);
       if (text && row.price === bar.stats.poc) outline(ctx, box, theme);
     }
+    if (totals && Number.isFinite(lowest)) drawTotals(ctx, bar.stats, slot, lowest + ROW_GAP, top, bottom, theme);
   }
 
   /** A wide bar's row: its numbers, each on a tint as strong as its share of the bar's largest. */
@@ -289,6 +323,33 @@ function drawCandle(ctx: CanvasRenderingContext2D, bar: DataSeries[number], slot
   const close = Math.round(toY(bar.close));
   ctx.fillStyle = up ? theme.candleUp : theme.candleDown;
   ctx.fillRect(slot.left, Math.min(open, close), slot.candle, Math.max(1, Math.abs(close - open)));
+}
+
+/** How tall a bar's totals are with their numbers `size` high, px: two lines, and room over, between and under them. */
+function totalsHeight(size: number): number {
+  return TOTALS_GAP + size + TOTALS_LINE_GAP + size + TOTALS_GAP;
+}
+
+/**
+ * What a bar's rows add up to, from `y` down under the lowest of them:
+ * bought less sold in the colour of its sign, then both together in the
+ * quiet ink, on a plate of the chart's ground. Not drawn outside the plot.
+ */
+function drawTotals(ctx: CanvasRenderingContext2D, stats: FootprintStats, slot: Slot, y: number, top: number, bottom: number, theme: Theme): void {
+  // As large as the usual small size, or as a number of five characters fits the cells.
+  const size = Math.max(MIN_FONT, Math.min(theme.font.sizeSmall, Math.floor((slot.cellsWidth - TEXT_PAD) / NUMBER_EMS)));
+  const height = totalsHeight(size);
+  if (y + height < top || y > bottom) return;
+  tint(ctx, slot.cellsLeft, y, slot.cellsWidth, height, theme.background, TOTALS_PLATE_ALPHA);
+  const x = slot.cellsLeft + slot.cellsWidth / 2;
+  const first = y + TOTALS_GAP + size / 2;
+  ctx.font = `${size}px ${theme.font.family}`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = stats.delta > 0 ? theme.candleUp : stats.delta < 0 ? theme.candleDown : theme.textSecondary;
+  ctx.fillText((stats.delta > 0 ? '+' : '') + footprintText(stats.delta), x, first);
+  ctx.fillStyle = theme.textSecondary;
+  ctx.fillText(footprintText(stats.volume), x, first + size + TOTALS_LINE_GAP);
 }
 
 /** How strong a cell's tint is: its share of the bar's largest, on a square root so mid sizes show. */

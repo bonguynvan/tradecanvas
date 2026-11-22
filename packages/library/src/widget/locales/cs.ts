@@ -338,6 +338,7 @@ export const CS_MESSAGES: WidgetMessages = {
   'settings.footprintCells.bidAsk': 'Bid × Ask',
   'settings.footprintCells.delta': 'Delta',
   'settings.footprintImbalance': 'Poměr nerovnováhy',
+  'settings.footprintTotals': 'Součty pod každou svíčkou',
   'settings.auto': 'Auto',
   'settings.numberAtLeast': '{min} nebo více',
   'settings.numberWhole': 'Celé číslo od {min} do {max}',

@@ -338,6 +338,7 @@ export const SV_MESSAGES: WidgetMessages = {
   'settings.footprintCells.bidAsk': 'Bid × Ask',
   'settings.footprintCells.delta': 'Delta',
   'settings.footprintImbalance': 'Obalanskvot',
+  'settings.footprintTotals': 'Summor under varje stapel',
   'settings.auto': 'Auto',
   'settings.numberAtLeast': '{min} eller mer',
   'settings.numberWhole': 'Ett heltal från {min} till {max}',

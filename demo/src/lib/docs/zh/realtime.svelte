@@ -272,6 +272,7 @@ chart.clearFootprint()                                // 在传入另一序列�
     <tr><td><code>cells</code></td><td><code>'bidAsk'</code></td><td><code>'bidAsk'</code>：两侧分开显示。<code>'delta'</code>：买入减卖出。<code>'volume'</code>：两者相加。</td></tr>
     <tr><td><code>imbalance</code></td><td><code>3</code></td><td>相隔一行的两侧，一方须达到另一方的多少倍才被标记：某价位的买入量与下一行的卖出量相比，卖出量与上一行的买入量相比。0 表示不标记。</td></tr>
     <tr><td><code>collect</code></td><td><code>true</code></td><td>false：图表不向数据源请求成交。</td></tr>
+    <tr><td><code>totals</code></td><td><code>true</code></td><td>每根K线下方是各行的合计：买入减卖出，按正负着色，其下是两者之和。只有K线宽到能写下一个数字时才显示；价格轴会在最低的K线下方为它们留出空间。false：不显示。</td></tr>
   </tbody>
 </table>
 <p>

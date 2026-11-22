@@ -298,6 +298,7 @@ chart.clearFootprint()                                // before another series' 
     <tr><td><code>cells</code></td><td><code>'bidAsk'</code></td><td><code>'bidAsk'</code>: the two sides apart. <code>'delta'</code>: bought less sold. <code>'volume'</code>: both together.</td></tr>
     <tr><td><code>imbalance</code></td><td><code>3</code></td><td>How many times one side has to outdo the other, a row apart, to be marked: what was bought at a price against what was sold one row below, and what was sold against what was bought one row above. 0 marks none.</td></tr>
     <tr><td><code>collect</code></td><td><code>true</code></td><td>false: the chart asks its feed for no trades.</td></tr>
+    <tr><td><code>totals</code></td><td><code>true</code></td><td>Under each bar, what its rows add up to: bought less sold in the colour of its sign, and both together under that. Written where a bar is wide enough for a number; the price scale leaves them room under the lowest bar. false: none.</td></tr>
   </tbody>
 </table>
 <p>

@@ -345,6 +345,7 @@ export const MS_MESSAGES: WidgetMessages = {
   'settings.footprintCells.bidAsk': 'Bid × Ask',
   'settings.footprintCells.delta': 'Delta',
   'settings.footprintImbalance': 'Nisbah ketidakseimbangan',
+  'settings.footprintTotals': 'Jumlah di bawah setiap bar',
   'settings.auto': 'Automatik',
   'settings.numberAtLeast': '{min} atau lebih',
   'settings.numberWhole': 'Nombor bulat dari {min} hingga {max}',

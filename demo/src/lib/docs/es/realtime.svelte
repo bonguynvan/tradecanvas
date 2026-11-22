@@ -305,6 +305,7 @@ chart.clearFootprint()                                // antes de las filas de o
     <tr><td><code>cells</code></td><td><code>'bidAsk'</code></td><td><code>'bidAsk'</code>: los dos lados por separado. <code>'delta'</code>: lo comprado menos lo vendido. <code>'volume'</code>: ambos juntos.</td></tr>
     <tr><td><code>imbalance</code></td><td><code>3</code></td><td>Cuántas veces un lado tiene que superar al otro, a una fila de distancia, para quedar marcado: lo comprado en un precio frente a lo vendido una fila más abajo, y lo vendido frente a lo comprado una fila más arriba. 0 no marca ninguna.</td></tr>
     <tr><td><code>collect</code></td><td><code>true</code></td><td>false: el gráfico no pide operaciones a su feed.</td></tr>
+    <tr><td><code>totals</code></td><td><code>true</code></td><td>Bajo cada barra, lo que suman sus filas: lo comprado menos lo vendido en el color de su signo, y debajo ambos juntos. Se escriben donde una barra es lo bastante ancha para un número; la escala de precios les deja sitio bajo la barra más baja. false: ninguno.</td></tr>
   </tbody>
 </table>
 <p>

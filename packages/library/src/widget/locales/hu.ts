@@ -338,6 +338,7 @@ export const HU_MESSAGES: WidgetMessages = {
   'settings.footprintCells.bidAsk': 'Bid × Ask',
   'settings.footprintCells.delta': 'Delta',
   'settings.footprintImbalance': 'Egyensúlyhiány aránya',
+  'settings.footprintTotals': 'Összegek minden gyertya alatt',
   'settings.auto': 'Automatikus',
   'settings.numberAtLeast': '{min} vagy több',
   'settings.numberWhole': 'Egész szám {min} és {max} között',

@@ -945,7 +945,8 @@ const chart = new Chart(document.getElementById('chart')!, {
   chartType: 'footprint',
   // rowSize: the height of a row in price ('auto' unless set); cells: 'bidAsk' | 'delta' | 'volume';
   // imbalance: how many times one side has to outdo the other, a row apart, to be marked (0: none)
-  chartTypeOptions: { footprint: { rowSize: 5, cells: 'bidAsk', imbalance: 3 } },
+  // totals (true): bought less sold, and both together, written under each bar; false for none
+  chartTypeOptions: { footprint: { rowSize: 5, cells: 'bidAsk', imbalance: 3, totals: true } },
 });
 await chart.connect({ adapter: new BinanceAdapter(), symbol: 'BTCUSDT', timeframe: '1m' });
 

@@ -338,6 +338,7 @@ export const NL_MESSAGES: WidgetMessages = {
   'settings.footprintCells.bidAsk': 'Bid × Ask',
   'settings.footprintCells.delta': 'Delta',
   'settings.footprintImbalance': 'Onbalansverhouding',
+  'settings.footprintTotals': 'Totalen onder elke bar',
   'settings.auto': 'Auto',
   'settings.numberAtLeast': '{min} of meer',
   'settings.numberWhole': 'Een geheel getal van {min} tot en met {max}',

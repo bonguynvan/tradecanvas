@@ -338,6 +338,7 @@ export const TR_MESSAGES: WidgetMessages = {
   'settings.footprintCells.bidAsk': 'Bid × Ask',
   'settings.footprintCells.delta': 'Delta',
   'settings.footprintImbalance': 'Dengesizlik oranı',
+  'settings.footprintTotals': 'Her çubuğun altında toplamlar',
   'settings.auto': 'Otomatik',
   'settings.numberAtLeast': '{min} veya daha fazla',
   'settings.numberWhole': '{min} ile {max} arasında bir tam sayı',

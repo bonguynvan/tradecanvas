@@ -150,6 +150,27 @@ describe('Chart: trades into the footprint', () => {
     expect(chart.getChartTypeOptions().footprint).toEqual({ rowSize: 0.5 });
   });
 
+  it('writes what each bar adds up to under it unless told not to, and takes that as a setting', () => {
+    chart.setData(bars(300));
+    chart.setChartType('footprint');
+    const room = () => (inner().chartRenderer as FootprintRenderer).totalsRoom(inner().viewport.getState() as never, chart.getTheme());
+    expect(room()).toBeGreaterThan(0);
+    chart.setChartTypeOptions({ footprint: { totals: false } });
+    expect(room()).toBe(0);
+    expect(chart.getChartTypeOptions().footprint).toEqual({ totals: false });
+    chart.setChartTypeOptions({ footprint: { totals: true } });
+    expect(room()).toBeGreaterThan(0);
+    // What is no switch is left out, and the totals stay on.
+    chart.setChartTypeOptions({ footprint: { totals: 'yes' } as never });
+    expect(chart.getChartTypeOptions().footprint).toEqual({});
+    expect(room()).toBeGreaterThan(0);
+    // A chart made as a footprint with them off has them off from the first.
+    chart.destroy();
+    chart = new Chart(host, { chartType: 'footprint', chartTypeOptions: { footprint: { totals: false } } });
+    chart.setData(bars(300));
+    expect(room()).toBe(0);
+  });
+
   it('reads its settings: what a cell shows, the ratio that marks a row, and leaves out what it cannot use', () => {
     chart.setChartTypeOptions({ footprint: { cells: 'volume', imbalance: 4, rowSize: 'auto', collect: false } });
     expect(chart.getChartTypeOptions().footprint).toEqual({ cells: 'volume', imbalance: 4, rowSize: 'auto', collect: false });

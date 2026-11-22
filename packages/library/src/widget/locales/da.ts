@@ -345,6 +345,7 @@ export const DA_MESSAGES: WidgetMessages = {
   'settings.footprintCells.bidAsk': 'Bid × Ask',
   'settings.footprintCells.delta': 'Delta',
   'settings.footprintImbalance': 'Ubalanceforhold',
+  'settings.footprintTotals': 'Totaler under hver bar',
   'settings.auto': 'Auto',
   'settings.numberAtLeast': '{min} eller mere',
   'settings.numberWhole': 'Et heltal fra {min} til {max}',

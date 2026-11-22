@@ -338,6 +338,7 @@ export const EL_MESSAGES: WidgetMessages = {
   'settings.footprintCells.bidAsk': 'Bid × Ask',
   'settings.footprintCells.delta': 'Δέλτα',
   'settings.footprintImbalance': 'Λόγος ανισορροπίας',
+  'settings.footprintTotals': 'Σύνολα κάτω από κάθε μπάρα',
   'settings.auto': 'Αυτόματο',
   'settings.numberAtLeast': '{min} ή περισσότερο',
   'settings.numberWhole': 'Ακέραιος από {min} έως {max}',

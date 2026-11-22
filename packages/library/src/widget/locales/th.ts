@@ -338,6 +338,7 @@ export const TH_MESSAGES: WidgetMessages = {
   'settings.footprintCells.bidAsk': 'Bid × Ask',
   'settings.footprintCells.delta': 'เดลต้า',
   'settings.footprintImbalance': 'อัตราส่วนความไม่สมดุล',
+  'settings.footprintTotals': 'ผลรวมใต้แต่ละแท่ง',
   'settings.auto': 'อัตโนมัติ',
   'settings.numberAtLeast': '{min} ขึ้นไป',
   'settings.numberWhole': 'จำนวนเต็มตั้งแต่ {min} ถึง {max}',

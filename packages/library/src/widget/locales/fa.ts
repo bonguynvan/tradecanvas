@@ -345,6 +345,7 @@ export const FA_MESSAGES: WidgetMessages = {
   'settings.footprintCells.bidAsk': 'Bid × Ask',
   'settings.footprintCells.delta': 'دلتا',
   'settings.footprintImbalance': 'نسبت عدم تعادل',
+  'settings.footprintTotals': 'جمع‌ها زیر هر کندل',
   'settings.auto': 'خودکار',
   'settings.numberAtLeast': '{min} یا بیشتر',
   'settings.numberWhole': 'عدد صحیح از {min} تا {max}',

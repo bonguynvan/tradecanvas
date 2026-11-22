@@ -345,6 +345,7 @@ export const HE_MESSAGES: WidgetMessages = {
   'settings.footprintCells.bidAsk': 'Bid × Ask',
   'settings.footprintCells.delta': 'דלתא',
   'settings.footprintImbalance': 'יחס חוסר איזון',
+  'settings.footprintTotals': 'סיכומים מתחת לכל נר',
   'settings.auto': 'אוטומטי',
   'settings.numberAtLeast': '{min} או יותר',
   'settings.numberWhole': 'מספר שלם מ־{min} עד {max}',

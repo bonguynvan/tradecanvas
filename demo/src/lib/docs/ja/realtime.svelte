@@ -285,6 +285,7 @@ chart.clearFootprint()                                // 別の系列の行を�
     <tr><td><code>cells</code></td><td><code>'bidAsk'</code></td><td><code>'bidAsk'</code>：両側を別々に。<code>'delta'</code>：買いから売りを引いたもの。<code>'volume'</code>：両方の合計。</td></tr>
     <tr><td><code>imbalance</code></td><td><code>3</code></td><td>一行ずれた位置で、一方がもう一方の何倍になればマークするか：ある価格の買いを一行下の売りと比べ、売りを一行上の買いと比べます。0 はどれもマークしません。</td></tr>
     <tr><td><code>collect</code></td><td><code>true</code></td><td>false：チャートはフィードに約定を求めません。</td></tr>
+    <tr><td><code>totals</code></td><td><code>true</code></td><td>各バーの下に、その行の合計を表示します。買いから売りを引いた値を符号の色で、その下に両方の合計を書きます。数字ひとつが入る幅のバーにだけ書かれ、価格スケールは最も低いバーの下にその分の余白を取ります。false：表示しません。</td></tr>
   </tbody>
 </table>
 <p>

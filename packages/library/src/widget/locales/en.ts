@@ -346,6 +346,7 @@ export const EN_MESSAGES = {
   'settings.footprintCells.bidAsk': 'Bid × Ask',
   'settings.footprintCells.delta': 'Delta',
   'settings.footprintImbalance': 'Imbalance ratio',
+  'settings.footprintTotals': 'Totals under each bar',
   'settings.auto': 'Auto',
   'settings.numberAtLeast': '{min} or more',
   'settings.numberWhole': 'A whole number from {min} to {max}',

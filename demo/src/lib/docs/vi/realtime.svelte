@@ -297,6 +297,7 @@ chart.clearFootprint()                                // trước khi đưa hàn
     <tr><td><code>cells</code></td><td><code>'bidAsk'</code></td><td><code>'bidAsk'</code>: hai bên tách riêng. <code>'delta'</code>: mua trừ bán. <code>'volume'</code>: cả hai cộng lại.</td></tr>
     <tr><td><code>imbalance</code></td><td><code>3</code></td><td>Một bên phải gấp bên kia bao nhiêu lần, lệch nhau một hàng, thì được đánh dấu: phần mua ở một mức giá so với phần bán ở hàng ngay dưới, và phần bán so với phần mua ở hàng ngay trên. 0 thì không đánh dấu hàng nào.</td></tr>
     <tr><td><code>collect</code></td><td><code>true</code></td><td>false: chart không hỏi feed để lấy trade.</td></tr>
+    <tr><td><code>totals</code></td><td><code>true</code></td><td>Dưới mỗi nến là tổng các hàng của nó: mua trừ bán theo màu của dấu, và bên dưới là cả hai cộng lại. Chỉ viết khi nến đủ rộng cho một con số; thang giá chừa chỗ cho chúng dưới nến thấp nhất. false: không viết.</td></tr>
   </tbody>
 </table>
 <p>
