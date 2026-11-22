@@ -182,6 +182,14 @@ function drawCellText(
   ctx.restore();
 }
 
+/** What a cell writes beside its logo: a line with nothing in it (the value of a cell with no number) takes no room there. */
+function writtenLines(text: CellText | null): CellText | null {
+  if (!text) return null;
+  const label = text.label && text.label.text !== '' ? text.label : null;
+  const value = text.value && text.value.text !== '' ? text.value : null;
+  return label || value ? { label, value } : null;
+}
+
 /** The side of a cell's logo, px; 0 where the cell has no room for one over what it writes. */
 function logoSide(rw: number, rh: number, textH: number): number {
   const wanted = Math.min(LOGO_MOST, Math.round(Math.min(rw, rh) * LOGO_SHARE));
@@ -283,22 +291,27 @@ export function renderHeatmap(
     ctx.fill();
 
     const text = cellText(cell, rw, rh, theme, showLabels, showValues, formatLabel, formatValue);
-    const textH = textHeight(text);
     const cx = x + rw / 2;
     const cy = y + rh / 2;
+    const ink = cellLabelInk(bgColor, theme.background);
     // A logo goes before the text does: a cell too small to write in has none either.
     const roomForLogo = showLogos && logoOf !== undefined && !!cell.logo && (text !== null || !writes);
-    const side = roomForLogo ? logoSide(rw, rh, textH) : 0;
+    const beside = roomForLogo ? writtenLines(text) : null;
+    const besideH = textHeight(beside);
+    const side = roomForLogo ? logoSide(rw, rh, besideH) : 0;
     // Asked for only where it will be drawn: asking is what starts a picture loading.
-    const image = side > 0 && logoOf ? logoOf(cell) : null;
-    let ty = cy;
+    const asked = side > 0 && logoOf ? logoOf(cell) : null;
+    const image = asked && asked.width > 0 && asked.height > 0 ? asked : null;
     if (image) {
       // The logo and the text under it, together in the middle of the cell.
-      const top = Math.round(cy - (side + (textH > 0 ? LOGO_GAP + textH : 0)) / 2);
+      const top = Math.round(cy - (side + (besideH > 0 ? LOGO_GAP + besideH : 0)) / 2);
       drawLogo(ctx, image, Math.round(cx - side / 2), top, side);
-      ty = top + side + LOGO_GAP + (text?.label && text.value ? text.label.size + LINE_GAP : textH / 2);
+      const ty = top + side + LOGO_GAP + (beside?.label && beside.value ? beside.label.size + LINE_GAP : besideH / 2);
+      if (beside) drawCellText(ctx, beside, cx, ty, rw, theme, ink);
+    } else if (text) {
+      // No logo, or its picture has not come: the text where it has always been.
+      drawCellText(ctx, text, cx, cy, rw, theme, ink);
     }
-    if (text) drawCellText(ctx, text, cx, ty, rw, theme, cellLabelInk(bgColor, theme.background));
 
     if (lr.id === hoveredId) {
       roundRect(ctx, x, y, rw, rh, cellRadius);

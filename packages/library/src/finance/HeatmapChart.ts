@@ -89,6 +89,7 @@ export class HeatmapChart extends BaseFinanceChart {
   update(data: HeatmapCell[]): void {
     this.currentData = data;
     this.options = { ...this.options, data };
+    this.keepLogos();
     this.applyLabel();
     this.recomputeLayout();
     this.requestRender();
@@ -100,10 +101,16 @@ export class HeatmapChart extends BaseFinanceChart {
     this.applyBaseOptions({ ...('theme' in opts ? { theme: opts.theme } : {}), ...('font' in opts ? { font: opts.font } : {}) });
     if (opts.data) {
       this.currentData = opts.data;
+      this.keepLogos();
     }
     this.applyLabel();
     this.recomputeLayout();
     this.requestRender();
+  }
+
+  /** Other data has other logos: those no cell has now are let go, and their room is the new ones'. */
+  private keepLogos(): void {
+    this.logos.keep(this.currentData.map((cell) => cell.logo));
   }
 
   destroy(): void {

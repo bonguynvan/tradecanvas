@@ -113,10 +113,36 @@ describe('a heatmap whose cells have logos', () => {
     chart.destroy();
   });
 
-  it('draws no frame for a logo that comes after it was destroyed', () => {
+  it('has them in a picture of another size and another theme too', () => {
+    const chart = new HeatmapChart(host, { data: cells });
+    frame();
+    FakeImage.made[0].come();
+    frame();
+    images.length = 0;
+    chart.toCanvas({ width: 900, height: 500, theme: 'light' });
+    expect(images).toEqual([FakeImage.made[0]]);
+    chart.destroy();
+  });
+
+  it('lets go of the logos no cell has when its data changes, and asks for the new ones', () => {
+    const chart = new HeatmapChart(host, { data: cells });
+    frame();
+    const old = FakeImage.made[0];
+    chart.update([{ id: 'c', label: 'GOOG', value: 0.5, logo: 'https://cdn.example/goog.png' }]);
+    // The picture still on its way is no longer waited for.
+    expect(old.onload).toBeNull();
+    frame();
+    expect(FakeImage.made.map((image) => image.src)).toEqual(['https://cdn.example/aapl.png', 'https://cdn.example/goog.png']);
+    chart.setOptions({ data: cells });
+    expect(FakeImage.made[1].onload).toBeNull();
+    chart.destroy();
+  });
+
+  it('waits for no logo once it is destroyed', () => {
     const chart = new HeatmapChart(host, { data: cells });
     frame();
     chart.destroy();
+    expect(FakeImage.made[0].onload).toBeNull();
     FakeImage.made[0].come();
     expect(frame()).toBeNull();
   });

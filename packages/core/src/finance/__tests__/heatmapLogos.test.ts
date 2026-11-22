@@ -4,7 +4,7 @@ import type { HeatmapCell, HeatmapOptions } from '@tradecanvas/commons';
 import { renderHeatmap, type CellImage } from '../HeatmapRenderer.js';
 import type { LayoutRect } from '../HeatmapLayout.js';
 
-interface Call { name: string; args: unknown[]; fillStyle: unknown; font: unknown }
+interface Call { name: string; args: unknown[]; fillStyle: unknown; font: unknown; baseline: unknown }
 
 /** A canvas stand-in that keeps every call, with the fill and the font it was made with. */
 function recorder(): { ctx: CanvasRenderingContext2D; calls: Call[] } {
@@ -15,7 +15,7 @@ function recorder(): { ctx: CanvasRenderingContext2D; calls: Call[] } {
       if (prop in target) return target[prop];
       if (prop === 'measureText') return (t: string) => ({ width: String(t).length * 6 });
       return (...args: unknown[]) => {
-        calls.push({ name: String(prop), args, fillStyle: target.fillStyle, font: target.font });
+        calls.push({ name: String(prop), args, fillStyle: target.fillStyle, font: target.font, baseline: target.textBaseline });
       };
     },
     set: (target, prop, value) => {
@@ -38,7 +38,14 @@ function draw(width: number, height: number, logoOf?: (cell: HeatmapCell) => Cel
     const [, x, y, w, h] = c.args as [unknown, number, number, number, number];
     return { x, y, w, h };
   });
-  const texts = calls.filter((c) => c.name === 'fillText').map((c) => ({ text: String(c.args[0]), x: c.args[1] as number, y: c.args[2] as number, size: parseFloat(String(c.font).replace('bold ', '')) }));
+  const texts = calls.filter((c) => c.name === 'fillText').map((c) => ({
+    text: String(c.args[0]),
+    x: c.args[1] as number,
+    y: c.args[2] as number,
+    size: parseFloat(String(c.font).replace('bold ', '')),
+    baseline: c.baseline,
+    most: c.args[3],
+  }));
   return { calls, images, texts };
 }
 
@@ -72,6 +79,59 @@ describe('a logo in a heatmap’s cell', () => {
     const plain = draw(200, 120).texts;
     expect(draw(200, 120, () => null).texts).toEqual(plain);
     expect(draw(200, 120, () => picture(), {}, { id: 'a', label: 'AAPL', value: 1.2 }).texts).toEqual(plain);
+  });
+
+  it('writes a cell with no logo as it always has: its name ending a hair over the middle, its value starting a hair under', () => {
+    // The numbers the chart drew before it knew of logos, for a cell 200 by 120 in the dark theme.
+    expect(draw(200, 120).texts).toEqual([
+      { text: 'AAPL', x: 100, y: 59, size: 13, baseline: 'bottom', most: 192 },
+      { text: '+1.20%', x: 100, y: 61, size: 11, baseline: 'top', most: 192 },
+    ]);
+    expect(draw(200, 120, undefined, { showValues: false }).texts).toEqual([{ text: 'AAPL', x: 100, y: 60, size: 13, baseline: 'middle', most: 192 }]);
+    expect(draw(200, 120, undefined, { showLabels: false }).texts).toEqual([{ text: '+1.20%', x: 100, y: 60, size: 11, baseline: 'middle', most: 192 }]);
+    // A cell with no number writes its name over a value of nothing.
+    expect(draw(200, 120, undefined, {}, { id: 'a', label: 'AAPL', value: NaN }).texts).toEqual([
+      { text: 'AAPL', x: 100, y: 59, size: 13, baseline: 'bottom', most: 192 },
+      { text: '', x: 100, y: 61, size: 11, baseline: 'top', most: 192 },
+    ]);
+  });
+
+  it('gives a line with nothing in it no room beside a logo: a cell with no number has its logo and its name in the middle', () => {
+    const { images, texts } = draw(200, 120, () => picture(), {}, { ...cell, value: NaN });
+    expect(texts.map((t) => t.text)).toEqual(['AAPL']);
+    const [name] = texts;
+    expect(name.baseline).toBe('middle');
+    const over = images[0].y;
+    const under = 120 - (name.y + name.size / 2);
+    expect(Math.abs(over - under)).toBeLessThanOrEqual(1);
+  });
+
+  it('keeps a long name and its logo inside the cell', () => {
+    const long = { ...cell, label: 'A very long name of a company indeed' };
+    const { images, texts } = draw(200, 120, () => picture(), {}, long);
+    expect(images).toHaveLength(1);
+    const value = texts.find((t) => t.text === '+1.20%')!;
+    expect(images[0].y).toBeGreaterThanOrEqual(4);
+    expect(value.y + value.size).toBeLessThanOrEqual(116);
+    expect(texts[0].most).toBe(192);
+  });
+
+  it('has a logo in a narrow cell from forty-one across, and none in a wide cell too short for it', () => {
+    expect(draw(40, 200, () => picture()).images).toEqual([]);
+    const narrow = draw(42, 200, () => picture()).images;
+    expect(narrow).toHaveLength(1);
+    expect(narrow[0].w).toBe(14);
+    expect(narrow[0].x).toBeGreaterThanOrEqual(4);
+    expect(narrow[0].x + narrow[0].w).toBeLessThanOrEqual(38);
+    const short = draw(300, 50, () => picture());
+    expect(short.images).toEqual([]);
+    expect(short.texts).toEqual(draw(300, 50).texts);
+  });
+
+  it('draws nothing of a picture that has no size, and leaves the text where it is', () => {
+    const none = draw(200, 120, () => picture(0, 64));
+    expect(none.images).toEqual([]);
+    expect(none.texts).toEqual(draw(200, 120).texts);
   });
 
   it('goes before the text does: a cell with no room for it keeps its name and its value', () => {

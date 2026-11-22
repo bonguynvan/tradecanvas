@@ -27,12 +27,26 @@ class FakeImage {
   }
 }
 
+/** Whether the page may read a canvas a picture was drawn on: false for one that spoils it. */
+let readable = true;
+
 beforeEach(() => {
   FakeImage.made = [];
+  readable = true;
   vi.stubGlobal('Image', FakeImage);
+  // The one-pixel canvas a picture is tried on.
+  vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockImplementation(() => ({
+    drawImage: () => {},
+    getImageData: () => {
+      if (!readable) throw new Error('The canvas has been tainted');
+      return {};
+    },
+  }) as never);
 });
 
 afterEach(() => {
+  vi.useRealTimers();
+  vi.restoreAllMocks();
   vi.unstubAllGlobals();
 });
 
@@ -71,6 +85,66 @@ describe('pictures loaded by their address', () => {
     expect(store.get('https://cdn.example/gone.png')).toBeNull();
     expect(FakeImage.made).toHaveLength(1);
     expect(told).not.toHaveBeenCalled();
+  });
+
+  it('asks again for a picture that failed once a minute has gone by', () => {
+    vi.useFakeTimers();
+    const store = new ImageStore(() => {});
+    store.get('https://cdn.example/a.png');
+    FakeImage.made[0].fail();
+    vi.advanceTimersByTime(59_000);
+    store.get('https://cdn.example/a.png');
+    expect(FakeImage.made).toHaveLength(1);
+    vi.advanceTimersByTime(2_000);
+    expect(store.get('https://cdn.example/a.png')).toBeNull();
+    expect(FakeImage.made).toHaveLength(2);
+    FakeImage.made[1].come();
+    expect(store.get('https://cdn.example/a.png')).not.toBeNull();
+  });
+
+  it('gives no picture that would spoil the canvas it is drawn on: the chart could not be saved after it', () => {
+    const told = vi.fn();
+    const store = new ImageStore(told);
+    store.get('data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22/%3E');
+    readable = false;
+    FakeImage.made[0].come();
+    expect(told).not.toHaveBeenCalled();
+    expect(store.get('data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22/%3E')).toBeNull();
+    expect(FakeImage.made).toHaveLength(1);
+  });
+
+  it('keeps only the pictures of the data it is told of: the others are let go, on their way or come', () => {
+    const told = vi.fn();
+    const store = new ImageStore(told);
+    for (const name of ['a', 'b', 'c', 'd']) store.get(`https://cdn.example/${name}.png`);
+    const [a, b, c, d] = FakeImage.made;
+    a.come();
+    b.come();
+    d.fail();
+    expect(told).toHaveBeenCalledTimes(2);
+    store.keep(['https://cdn.example/a.png', undefined, 'not an address:']);
+    // The one kept is still here; the one that had come is asked for again; the one on its way says nothing now.
+    expect(store.get('https://cdn.example/a.png')).not.toBeNull();
+    expect(store.get('https://cdn.example/b.png')).toBeNull();
+    expect(FakeImage.made).toHaveLength(5);
+    c.come();
+    expect(told).toHaveBeenCalledTimes(2);
+    // A failure of data that is gone is forgotten with it.
+    store.get('https://cdn.example/d.png');
+    expect(FakeImage.made).toHaveLength(6);
+  });
+
+  it('has room again for new pictures once it is told the old data is gone', () => {
+    const store = new ImageStore(() => {}, 2);
+    store.get('https://cdn.example/a.png');
+    store.get('https://cdn.example/b.png');
+    FakeImage.made[0].come();
+    FakeImage.made[1].come();
+    store.get('https://cdn.example/c.png');
+    expect(FakeImage.made).toHaveLength(2);
+    store.keep(['https://cdn.example/c.png']);
+    store.get('https://cdn.example/c.png');
+    expect(FakeImage.made).toHaveLength(3);
   });
 
   it('takes a picture that says no size as a square', () => {
