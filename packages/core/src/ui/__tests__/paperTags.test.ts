@@ -136,6 +136,18 @@ describe('an indicator’s value tag on the price axis', () => {
     expect(outer.at[2] - inner.at[2]).toBeCloseTo(4 / 1.5, 6);
   });
 
+  it('has an edge of one pixel on a context that cannot say how it is scaled: one that gives no transform, or has none to ask', () => {
+    const theme = themed({ 'axis.price.valueTagsOutlined': true });
+    for (const getTransform of [() => undefined, undefined]) {
+      const { ctx, fills } = recorder();
+      // Over the recorder's own answer: a stand-in context's, and an older browser's.
+      const mute = new Proxy(ctx, { get: (target, prop) => (prop === 'getTransform' ? getTransform : Reflect.get(target, prop)) });
+      expect(() => drawAxisValueLabels(mute, labels, 200, 70, theme)).not.toThrow();
+      const [outer, inner] = fills;
+      expect(inner.at).toEqual([outer.at[0] + 1, outer.at[1] + 1, outer.at[2] - 2, outer.at[3] - 2]);
+    }
+  });
+
   it('is on the ground it is given: a pane’s own, where the pane has one', () => {
     const theme = themed({ 'axis.price.valueTagsOutlined': true, 'background.color': '#fbfaf5' });
     const { ctx, fills } = recorder();
