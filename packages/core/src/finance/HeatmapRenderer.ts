@@ -1,6 +1,7 @@
 import type { HeatmapCell, HeatmapOptions, Theme } from '@tradecanvas/commons';
 import { lerpColor } from '@tradecanvas/commons';
 import type { GroupRect, LayoutRect } from './HeatmapLayout.js';
+import type { CellImage } from './ImageStore.js';
 import { drawTooltip, fitText, type TooltipLine } from './chartKit.js';
 import { readableText, resolveColorScale } from './colorScale.js';
 
@@ -76,16 +77,45 @@ function roundRect(
   ctx.closePath();
 }
 
+export type { CellImage };
+
 export interface HeatmapHitResult {
   cell: HeatmapCell;
   rect: LayoutRect;
 }
 
-function drawCellText(
-  ctx: CanvasRenderingContext2D,
+/** The least a cell is across and down for its name and its value to be written in it. */
+const TEXT_MIN_WIDTH = 40;
+const TEXT_MIN_HEIGHT = 30;
+/** A hair between a cell's name and the line it meets its value on, and the same under it. */
+const LINE_GAP = 1;
+/** A logo is a third of its cell's shorter side, forty at the most; one under fourteen is left out. */
+const LOGO_SHARE = 1 / 3;
+const LOGO_MOST = 40;
+const LOGO_LEAST = 14;
+/** Room between a logo and the text under it, and between a cell's edge and what it holds. */
+const LOGO_GAP = 4;
+const CELL_PAD = 4;
+/** How round a logo's plate is, as a share of its side. */
+const LOGO_CORNER = 0.22;
+/** The plate under a logo: white, as the page most logos are drawn for, whatever the cell's colour. */
+const LOGO_PLATE = '#FFFFFF';
+
+/** A line a cell writes, and the size it is written in. */
+interface CellLine {
+  text: string;
+  size: number;
+}
+
+/** What a cell writes: its name, its value, or both. */
+interface CellText {
+  label: CellLine | null;
+  value: CellLine | null;
+}
+
+/** What a cell of a size writes; null for one too small to write in, and for one that writes nothing. */
+function cellText(
   cell: HeatmapCell,
-  x: number,
-  y: number,
   rw: number,
   rh: number,
   theme: Theme,
@@ -93,13 +123,42 @@ function drawCellText(
   showValues: boolean,
   formatLabel: (c: HeatmapCell) => string,
   formatValue: (v: number) => string,
+): CellText | null {
+  if (rw < TEXT_MIN_WIDTH || rh < TEXT_MIN_HEIGHT || (!showLabels && !showValues)) return null;
+  let label: CellLine | null = null;
+  let value: CellLine | null = null;
+  if (showLabels) {
+    const text = formatLabel(cell);
+    label = { text, size: Math.max(8, Math.min(theme.font.sizeMedium, rw / text.length * 1.5, rh / 4)) };
+  }
+  if (showValues) {
+    const text = formatValue(cell.value);
+    value = { text, size: Math.max(7, Math.min(theme.font.sizeSmall, rw / text.length * 1.5, rh / 4)) };
+  }
+  return { label, value };
+}
+
+/** How tall what a cell writes is: its name over its value, or the one of them it writes. */
+function textHeight(text: CellText | null): number {
+  if (!text) return 0;
+  if (text.label && text.value) return text.label.size + 2 * LINE_GAP + text.value.size;
+  return (text.label ?? text.value)?.size ?? 0;
+}
+
+/**
+ * A cell's name and value about the line `ty`: the name ending a hair over
+ * it and the value starting a hair under it, or the one of them the cell
+ * writes, in its middle.
+ */
+function drawCellText(
+  ctx: CanvasRenderingContext2D,
+  text: CellText,
+  cx: number,
+  ty: number,
+  rw: number,
+  theme: Theme,
   ink: string,
 ): void {
-  if (rw < 40 || rh < 30) return;
-
-  const cx = x + rw / 2;
-  const cy = y + rh / 2;
-
   ctx.save();
   // A shadow lifts white off a strong cell; the dark ink on a pale one needs none.
   const white = ink === WHITE_INK;
@@ -108,22 +167,48 @@ function drawCellText(
   ctx.fillStyle = ink;
   ctx.textAlign = 'center';
 
-  if (showLabels) {
-    const labelText = formatLabel(cell);
-    const fontSize = Math.min(theme.font.sizeMedium, rw / labelText.length * 1.5, rh / 4);
-    ctx.font = 'bold ' + Math.max(8, fontSize) + 'px ' + theme.font.family;
-    ctx.textBaseline = showValues ? 'bottom' : 'middle';
-    ctx.fillText(labelText, cx, showValues ? cy - 1 : cy, rw - 8);
+  if (text.label) {
+    ctx.font = 'bold ' + text.label.size + 'px ' + theme.font.family;
+    ctx.textBaseline = text.value ? 'bottom' : 'middle';
+    ctx.fillText(text.label.text, cx, text.value ? ty - LINE_GAP : ty, rw - 8);
   }
 
-  if (showValues) {
-    const valText = formatValue(cell.value);
-    const valSize = Math.min(theme.font.sizeSmall, rw / valText.length * 1.5, rh / 4);
-    ctx.font = Math.max(7, valSize) + 'px ' + theme.font.family;
-    ctx.textBaseline = showLabels ? 'top' : 'middle';
-    ctx.fillText(valText, cx, showLabels ? cy + 1 : cy, rw - 8);
+  if (text.value) {
+    ctx.font = text.value.size + 'px ' + theme.font.family;
+    ctx.textBaseline = text.label ? 'top' : 'middle';
+    ctx.fillText(text.value.text, cx, text.label ? ty + LINE_GAP : ty, rw - 8);
   }
 
+  ctx.restore();
+}
+
+/** What a cell writes beside its logo: a line with nothing in it (the value of a cell with no number) takes no room there. */
+function writtenLines(text: CellText | null): CellText | null {
+  if (!text) return null;
+  const label = text.label && text.label.text !== '' ? text.label : null;
+  const value = text.value && text.value.text !== '' ? text.value : null;
+  return label || value ? { label, value } : null;
+}
+
+/** The side of a cell's logo, px; 0 where the cell has no room for one over what it writes. */
+function logoSide(rw: number, rh: number, textH: number): number {
+  const wanted = Math.min(LOGO_MOST, Math.round(Math.min(rw, rh) * LOGO_SHARE));
+  const down = rh - 2 * CELL_PAD - (textH > 0 ? LOGO_GAP + textH : 0);
+  const side = Math.floor(Math.min(wanted, down, rw - 2 * CELL_PAD));
+  return side >= LOGO_LEAST ? side : 0;
+}
+
+/** A logo on its plate, a square with round corners: the picture whole inside it, whatever its shape. */
+function drawLogo(ctx: CanvasRenderingContext2D, image: CellImage, x: number, y: number, side: number): void {
+  ctx.save();
+  roundRect(ctx, x, y, side, side, side * LOGO_CORNER);
+  ctx.fillStyle = LOGO_PLATE;
+  ctx.fill();
+  ctx.clip();
+  const scale = Math.min(side / image.width, side / image.height);
+  const width = image.width * scale;
+  const height = image.height * scale;
+  ctx.drawImage(image.source, x + (side - width) / 2, y + (side - height) / 2, width, height);
   ctx.restore();
 }
 
@@ -146,6 +231,8 @@ export function renderHeatmap(
   theme: Theme,
   crosshairPos: { x: number; y: number } | null,
   groups: readonly GroupRect[] = [],
+  /** A cell's logo as a picture ready to be drawn; null for one that has not come. With none given, no logo is drawn. */
+  logoOf?: (cell: HeatmapCell) => CellImage | null,
 ): HeatmapHitResult | null {
   if (width <= 0 || height <= 0) return null;
   ctx.fillStyle = theme.background;
@@ -161,6 +248,8 @@ export function renderHeatmap(
   const cellRadius = options.cellRadius ?? 4;
   const showLabels = options.showLabels !== false;
   const showValues = options.showValues !== false;
+  const showLogos = options.showLogos !== false;
+  const writes = showLabels || showValues;
   const formatValue = options.valueFormat ?? defaultValueFormat;
   const formatLabel = options.labelFormat ?? defaultLabelFormat;
 
@@ -201,7 +290,28 @@ export function renderHeatmap(
     ctx.fillStyle = bgColor;
     ctx.fill();
 
-    drawCellText(ctx, cell, x, y, rw, rh, theme, showLabels, showValues, formatLabel, formatValue, cellLabelInk(bgColor, theme.background));
+    const text = cellText(cell, rw, rh, theme, showLabels, showValues, formatLabel, formatValue);
+    const cx = x + rw / 2;
+    const cy = y + rh / 2;
+    const ink = cellLabelInk(bgColor, theme.background);
+    // A logo goes before the text does: a cell too small to write in has none either.
+    const roomForLogo = showLogos && logoOf !== undefined && !!cell.logo && (text !== null || !writes);
+    const beside = roomForLogo ? writtenLines(text) : null;
+    const besideH = textHeight(beside);
+    const side = roomForLogo ? logoSide(rw, rh, besideH) : 0;
+    // Asked for only where it will be drawn: asking is what starts a picture loading.
+    const asked = side > 0 && logoOf ? logoOf(cell) : null;
+    const image = asked && asked.width > 0 && asked.height > 0 ? asked : null;
+    if (image) {
+      // The logo and the text under it, together in the middle of the cell.
+      const top = Math.round(cy - (side + (besideH > 0 ? LOGO_GAP + besideH : 0)) / 2);
+      drawLogo(ctx, image, Math.round(cx - side / 2), top, side);
+      const ty = top + side + LOGO_GAP + (beside?.label && beside.value ? beside.label.size + LINE_GAP : besideH / 2);
+      if (beside) drawCellText(ctx, beside, cx, ty, rw, theme, ink);
+    } else if (text) {
+      // No logo, or its picture has not come: the text where it has always been.
+      drawCellText(ctx, text, cx, cy, rw, theme, ink);
+    }
 
     if (lr.id === hoveredId) {
       roundRect(ctx, x, y, rw, rh, cellRadius);

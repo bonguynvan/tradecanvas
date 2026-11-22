@@ -123,6 +123,18 @@ cell('equity-flat', (el) => new lib.EquityCurveChart(el, { ...base, data: [{ tim
 cell('depth-one-level', (el) => new lib.DepthChart(el, { ...base, data: { bids: [{ price: 100, volume: 5 }], asks: [] } }));
 cell('depth-small-prices', (el) => new lib.DepthChart(el, { ...base, bidColor: 'rgb(31, 168, 116)', askColor: '#e55', data: { bids: [{ price: 0.00001234, volume: 5e6 }, { price: 0.00001232, volume: 9e6 }], asks: [{ price: 0.00001236, volume: 4e6 }, { price: 0.00001239, volume: 7e6 }] } }));
 cell('heatmap-no-numbers', (el) => new lib.HeatmapChart(el, { ...base, weighted: true, data: [{ id: 'a', label: 'AAA', value: 3, weight: 5 }, { id: 'b', label: 'No value', value: NaN, weight: 3 }, { id: 'c', label: 'No weight', value: -2, weight: NaN }, { id: 'd', label: 'DDD', value: -4, weight: 2 }] }));
+// Logos written in `data:`, so the page asks no other site for one: a disc with a letter, a wide one, one that is no
+// picture (its cell is as a cell with none), a cell with none, and a cell too small for the one it has.
+const disc = (letter, colour) => 'data:image/svg+xml,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><circle cx="32" cy="32" r="30" fill="${colour}"/><text x="32" y="43" font-size="32" font-family="sans-serif" font-weight="700" text-anchor="middle" fill="#fff">${letter}</text></svg>`);
+const wideLogo = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="120" height="40"><rect width="120" height="40" rx="8" fill="#1d4ed8"/><rect x="14" y="16" width="92" height="8" fill="#fff"/></svg>');
+cell('heatmap-logos', (el) => new lib.HeatmapChart(el, { ...base, weighted: true, data: [
+  { id: 'vcb', label: 'VCB', value: 2.4, weight: 9, logo: disc('V', '#15803d') },
+  { id: 'hpg', label: 'HPG', value: -1.8, weight: 6, logo: disc('H', '#b45309') },
+  { id: 'fpt', label: 'FPT', value: 0.6, weight: 5, logo: wideLogo },
+  { id: 'mwg', label: 'MWG', value: -3.9, weight: 4, logo: 'data:image/png;base64,AAAA' },
+  { id: 'vnm', label: 'VNM', value: 1.1, weight: 3 },
+  { id: 'pnj', label: 'PNJ', value: 4.2, weight: 0.3, logo: disc('P', '#7c3aed') },
+] }));
 cell('sparkline-short-hex', (el) => new lib.SparklineChart(el, { ...base, data: [3, 5, 4, 8, 6, 9, 7], color: '#0af' }), true);
 cell('empty-waterfall', (el) => new lib.WaterfallChart(el, { ...base, data: [] }));
 cell('empty-equity', (el) => new lib.EquityCurveChart(el, { ...base, data: [] }));

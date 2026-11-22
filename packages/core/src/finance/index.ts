@@ -9,6 +9,8 @@ export { layoutUniformGrid, layoutSquarifiedTreemap, layoutGroupedTreemap, compu
 export type { LayoutRect, GroupRect } from './HeatmapLayout.js';
 export { renderHeatmap } from './HeatmapRenderer.js';
 export type { HeatmapHitResult } from './HeatmapRenderer.js';
+export { ImageStore } from './ImageStore.js';
+export type { CellImage } from './ImageStore.js';
 export { renderWaterfall, computeWaterfallLayout, hitWaterfallBar } from './WaterfallRenderer.js';
 export type { WaterfallLayout, WaterfallBarRect } from './WaterfallRenderer.js';
 export { renderGauge } from './GaugeRenderer.js';

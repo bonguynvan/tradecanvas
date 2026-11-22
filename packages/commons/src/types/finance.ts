@@ -108,6 +108,15 @@ export interface HeatmapCell {
   value: number;
   weight?: number;
   group?: string;
+  /**
+   * The cell's logo, drawn over its name where the cell has room for it: an
+   * `https:` or `http:` address, a path on your site, a `blob:` URL, or a
+   * `data:image/png|jpeg|gif|webp|avif|svg+xml` one, as a symbol's `logo`.
+   * It is asked for as a picture the page may read, so the chart can still
+   * be saved as a picture itself: one from another site has to allow that
+   * (CORS), or it is not drawn. Any other address is ignored.
+   */
+  logo?: string;
   meta?: Record<string, unknown>;
 }
 
@@ -140,6 +149,8 @@ export interface HeatmapOptions extends BaseFinanceChartOptions {
   valueFormat?: (value: number) => string;
   showLabels?: boolean;
   showValues?: boolean;
+  /** Whether the cells that have a `logo` draw it (`true`). */
+  showLogos?: boolean;
   onCellClick?: (cell: HeatmapCell) => void;
   crosshair?: boolean;
 }

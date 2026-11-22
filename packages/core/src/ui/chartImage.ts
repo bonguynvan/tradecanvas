@@ -218,11 +218,12 @@ export function printCanvas(canvas: HTMLCanvasElement, options: { title?: string
 }
 
 /**
- * Whether the page may read what `canvas` holds. One with a picture from
- * another site drawn on it may not be read, nor may any canvas it is then
- * drawn on: it is tried on a canvas of one pixel, so the caller's stays good.
+ * Whether the page may read what `canvas` holds (a canvas, or a picture a
+ * canvas would draw). One with a picture from another site drawn on it may
+ * not be read, nor may any canvas it is then drawn on: it is tried on a
+ * canvas of one pixel, so the caller's stays good.
  */
-export function canvasReadable(canvas: HTMLCanvasElement): boolean {
+export function canvasReadable(canvas: CanvasImageSource): boolean {
   const probe = document.createElement('canvas');
   probe.width = 1;
   probe.height = 1;

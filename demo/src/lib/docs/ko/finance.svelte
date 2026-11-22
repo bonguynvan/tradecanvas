@@ -234,7 +234,7 @@ new MatrixChart(el, {
 
 new HeatmapChart(el, {
   data: [
-    { id: 'vcb', label: 'VCB', value: 0.8, weight: 480, group: '은행' },
+    { id: 'vcb', label: 'VCB', value: 0.8, weight: 480, group: '은행', logo: '/logos/vcb.png' },
     { id: 'hpg', label: 'HPG', value: 1.9, weight: 160, group: '철강' },
     { id: 'vhm', label: 'VHM', value: -2.4, weight: 170, group: '부동산' },
   ],
@@ -243,6 +243,14 @@ new HeatmapChart(el, {
 })`}</code></pre>
 <p>
   각 섹터는 종목 비중의 합만큼 자리를 차지하고, 들어갈 때 타일 위쪽에 섹터 이름과 가중 평균 등락을 표시합니다. 히트맵의 색은 <code>colorScale</code>에 <code>min</code>과 <code>max</code>를 주지 않으면 -5에서 5까지입니다.
+</p>
+<p>
+  <code>logo</code>가 있는 셀은 자리가 있을 때 이름 위의 흰 바탕에 로고를 그립니다. 셀이 작아지면 이름과 값보다
+  로고가 먼저 사라집니다. 주소는 종목의 <code>logo</code>와 같은 것(<code>https:</code> 주소, 사이트 안의 경로,
+  <code>blob:</code> 또는 <code>data:image/…</code> URL)을 받으며, 한 번만 불러오고, 로고를 불러오지 못한 셀은
+  로고가 없는 셀처럼 그려집니다. 다른 사이트의 로고는 CORS 헤더와 함께 제공되어야 합니다. 차트를 이미지로 저장할 수
+  있게 하기 위한 것이며, 그렇지 않은 로고는 그려지지 않습니다. <code>showLogos: false</code>는 로고를 그리지 않습니다.
+  페이지 없이 그릴 때(<code>renderFinanceChart</code>)는 히트맵에 로고가 없습니다.
 </p>
 
 <h2>역시계곡선</h2>

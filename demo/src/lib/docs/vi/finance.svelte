@@ -238,7 +238,7 @@ new MatrixChart(el, {
 
 new HeatmapChart(el, {
   data: [
-    { id: 'vcb', label: 'VCB', value: 0.8, weight: 480, group: 'Banks' },
+    { id: 'vcb', label: 'VCB', value: 0.8, weight: 480, group: 'Banks', logo: '/logos/vcb.png' },
     { id: 'hpg', label: 'HPG', value: 1.9, weight: 160, group: 'Steel' },
     { id: 'vhm', label: 'VHM', value: -2.4, weight: 170, group: 'Real estate' },
   ],
@@ -247,6 +247,14 @@ new HeatmapChart(el, {
 })`}</code></pre>
 <p>
   Mỗi nhóm chiếm diện tích theo tổng trọng số các cổ phiếu của nó, và tên cùng mức thay đổi có trọng số của nhóm nằm ở đầu ô khi đủ chỗ. Màu của heatmap chạy từ -5 đến 5, trừ khi <code>colorScale</code> đặt <code>min</code> và <code>max</code>.
+</p>
+<p>
+  Ô có <code>logo</code> sẽ vẽ logo phía trên tên, trên một nền trắng, khi ô đủ chỗ: ô nhỏ dần thì logo biến mất
+  trước, rồi mới đến tên và giá trị. <code>logo</code> nhận các loại địa chỉ như <code>logo</code> của một mã
+  (địa chỉ <code>https:</code>, đường dẫn trên site của bạn, URL <code>blob:</code> hoặc <code>data:image/…</code>),
+  được tải một lần, và ô có logo tải lỗi được vẽ như ô không có logo. Logo từ site khác phải được phục vụ kèm
+  header CORS để chart vẫn lưu được thành ảnh; logo không có CORS sẽ bị bỏ qua. <code>showLogos: false</code>
+  không vẽ logo nào. Khi vẽ không cần trang (<code>renderFinanceChart</code>), heatmap không có logo.
 </p>
 
 <h2>Biểu đồ counter-clock</h2>

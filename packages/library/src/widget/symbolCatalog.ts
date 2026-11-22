@@ -1,12 +1,7 @@
 import { MAX_SYMBOL_LENGTH, type SymbolInfo } from '@tradecanvas/commons';
+import { imageAddress } from '@tradecanvas/core';
 
 export { MAX_SYMBOL_LENGTH };
-/** The longest logo address taken, and the longest image written in a `data:` one. */
-const MAX_LOGO_URL = 2048;
-const MAX_LOGO_DATA = 65_536;
-/** The images a `data:` logo may be; a page written in `data:` is none of them. */
-const DATA_IMAGE = /^data:image\/(png|jpeg|gif|webp|avif|svg\+xml)[;,]/i;
-const LOGO_PROTOCOLS = new Set(['https:', 'http:', 'blob:']);
 /** The fields a row writes as words, or loads (the logo): anything but text there says nothing. */
 const TEXT_FIELDS: ReadonlySet<string> = new Set(['description', 'exchange', 'type', 'logo']);
 
@@ -114,25 +109,7 @@ export function symbolTitle(info: SymbolInfo | null | undefined): string | null 
   return [info?.description, info?.exchange].filter(Boolean).join(' · ') || null;
 }
 
-const pageBase = (): string | undefined => (typeof document === 'undefined' ? undefined : document.baseURI);
-
-/**
- * The address to load a logo from, or null for one it must not load. It is
- * only ever an image's `src`, so markup in it is a path that finds nothing;
- * the scheme still has to be one for images, which keeps out `javascript:`
- * and pages written in `data:`.
- */
-export function logoSrc(raw: unknown, base: string | undefined = pageBase()): string | null {
-  if (typeof raw !== 'string') return null;
-  const text = raw.trim();
-  // One longer than any taken is refused before it is parsed: a row's badge is made again on every keystroke.
-  if (!text || text.length > MAX_LOGO_DATA) return null;
-  let url: URL;
-  try {
-    url = new URL(text, base);
-  } catch {
-    return null;
-  }
-  if (url.protocol === 'data:') return DATA_IMAGE.test(url.href) && url.href.length <= MAX_LOGO_DATA ? url.href : null;
-  return LOGO_PROTOCOLS.has(url.protocol) && url.href.length <= MAX_LOGO_URL ? url.href : null;
+/** The address to load a logo from, or null for one it must not load: the rule every picture's address is read by (`imageAddress`). */
+export function logoSrc(raw: unknown, base?: string): string | null {
+  return base === undefined ? imageAddress(raw) : imageAddress(raw, base);
 }

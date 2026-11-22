@@ -1,6 +1,6 @@
 import type { HeatmapCell, HeatmapOptions, Theme } from '@tradecanvas/commons';
-import { BaseFinanceChart, FinanceCrosshair, computeHeatmapLayout, renderHeatmap } from '@tradecanvas/core';
-import type { GroupRect, LayoutRect } from '@tradecanvas/core';
+import { BaseFinanceChart, FinanceCrosshair, ImageStore, computeHeatmapLayout, renderHeatmap } from '@tradecanvas/core';
+import type { CellImage, GroupRect, LayoutRect } from '@tradecanvas/core';
 
 export class HeatmapChart extends BaseFinanceChart {
   private options: HeatmapOptions;
@@ -11,6 +11,9 @@ export class HeatmapChart extends BaseFinanceChart {
   private currentData: HeatmapCell[] = [];
   private lastLayoutWidth = 0;
   private lastLayoutHeight = 0;
+  /** The cells' logos, each asked for when its cell first draws it: a frame is drawn again when one has come. */
+  private readonly logos = new ImageStore(() => this.requestRender());
+  private readonly logoOf = (cell: HeatmapCell): CellImage | null => this.logos.get(cell.logo);
   /** Always listening: a callback given later through `setOptions` is called too. */
   private readonly handleClick = (e: MouseEvent): void => {
     const rect = this.canvas.getBoundingClientRect();
@@ -74,18 +77,19 @@ export class HeatmapChart extends BaseFinanceChart {
     }
 
     const pos = this.options.crosshair === false ? null : this.crosshair.getPosition();
-    renderHeatmap(ctx, width, height, this.currentData, this.cachedRects, this.options, theme, pos, this.cachedGroups);
+    renderHeatmap(ctx, width, height, this.currentData, this.cachedRects, this.options, theme, pos, this.cachedGroups, this.logoOf);
   }
 
   /** A picture of the chart: laid out for the picture's own size, with nothing under a pointer. */
   protected renderStill(ctx: CanvasRenderingContext2D, width: number, height: number, theme: Theme): void {
     const { rects, groups } = computeHeatmapLayout({ ...this.options, data: this.currentData }, width, height);
-    renderHeatmap(ctx, width, height, this.currentData, rects, this.options, theme, null, groups);
+    renderHeatmap(ctx, width, height, this.currentData, rects, this.options, theme, null, groups, this.logoOf);
   }
 
   update(data: HeatmapCell[]): void {
     this.currentData = data;
     this.options = { ...this.options, data };
+    this.keepLogos();
     this.applyLabel();
     this.recomputeLayout();
     this.requestRender();
@@ -97,14 +101,21 @@ export class HeatmapChart extends BaseFinanceChart {
     this.applyBaseOptions({ ...('theme' in opts ? { theme: opts.theme } : {}), ...('font' in opts ? { font: opts.font } : {}) });
     if (opts.data) {
       this.currentData = opts.data;
+      this.keepLogos();
     }
     this.applyLabel();
     this.recomputeLayout();
     this.requestRender();
   }
 
+  /** Other data has other logos: those no cell has now are let go, and their room is the new ones'. */
+  private keepLogos(): void {
+    this.logos.keep(this.currentData.map((cell) => cell.logo));
+  }
+
   destroy(): void {
     this.crosshair.destroy();
+    this.logos.destroy();
     this.canvas.removeEventListener('click', this.handleClick);
     super.destroy();
   }
