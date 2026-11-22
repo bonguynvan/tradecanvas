@@ -562,7 +562,7 @@ export class PriceFrame {
         compareRange: () => null,
         volumeRatio: (bars, from, to) => (this.volumeShown() && hasVolume(bars, from, to) ? this.volume.getHeightRatio() : null),
         // As `Chart`: a footprint's totals stand under its bars.
-        footRoom: (vs) => (this.chartRenderer instanceof FootprintRenderer ? this.chartRenderer.totalsRoom(vs, this.themes.getTheme()) : 0),
+        footRoom: (bars, vs) => (this.chartRenderer instanceof FootprintRenderer ? this.chartRenderer.totalsRoom(vs, this.themes.getTheme(), bars) : 0),
       });
     }
     return data;

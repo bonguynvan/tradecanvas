@@ -23,8 +23,8 @@ export interface FitSources {
   compareRange(data: DataSeries, vs: ViewportState): PriceRange | null;
   /** The volume band's share of the plot when volume is on view, else null. */
   volumeRatio(data: DataSeries, from: number, to: number): number | null;
-  /** Room to leave under the lowest price, px, for what is written under the bars (a footprint's totals); none when left out. */
-  footRoom?(vs: ViewportState): number;
+  /** Room to leave under the lowest price, px, for what is written under the bars on view (a footprint's totals); none when left out. */
+  footRoom?(data: DataSeries, vs: ViewportState): number;
 }
 
 /** The most of the plot left to what is written under the bars. */
@@ -138,7 +138,7 @@ export class PriceFit {
     const ratio = sources.volumeRatio(data, from, to);
     const { priceMargin, volumeGap } = this.spacing;
     // What is written under the bars stands between the lowest of them and the volume's band.
-    const band = (ratio === null ? priceMargin : ratio + volumeGap) + footShare(sources.footRoom?.(vs) ?? 0, vs.chartRect.height);
+    const band = (ratio === null ? priceMargin : ratio + volumeGap) + footShare(sources.footRoom?.(data, vs) ?? 0, vs.chartRect.height);
     // The band is at the screen's bottom: on an upside-down scale that is above the highest price.
     target.setScaleMargins(target.isInvertScale()
       ? { top: band, bottom: priceMargin }

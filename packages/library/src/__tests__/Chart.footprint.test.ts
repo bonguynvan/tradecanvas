@@ -153,7 +153,10 @@ describe('Chart: trades into the footprint', () => {
   it('writes what each bar adds up to under it unless told not to, and takes that as a setting', () => {
     chart.setData(bars(300));
     chart.setChartType('footprint');
-    const room = () => (inner().chartRenderer as FootprintRenderer).totalsRoom(inner().viewport.getState() as never, chart.getTheme());
+    const room = () => (inner().chartRenderer as FootprintRenderer).totalsRoom(inner().viewport.getState() as never, chart.getTheme(), chart.getData());
+    // No bar has a footprint yet: nothing to write, and no room asked for.
+    expect(room()).toBe(0);
+    chart.addTrades([trade(T0 + 299 * MIN + 5, 100.2, 3)]);
     expect(room()).toBeGreaterThan(0);
     chart.setChartTypeOptions({ footprint: { totals: false } });
     expect(room()).toBe(0);
@@ -168,7 +171,10 @@ describe('Chart: trades into the footprint', () => {
     chart.destroy();
     chart = new Chart(host, { chartType: 'footprint', chartTypeOptions: { footprint: { totals: false } } });
     chart.setData(bars(300));
+    chart.addTrades([trade(T0 + 299 * MIN + 5, 100.2, 3)]);
     expect(room()).toBe(0);
+    chart.setChartTypeOptions({ footprint: { totals: true } });
+    expect(room()).toBeGreaterThan(0);
   });
 
   it('reads its settings: what a cell shows, the ratio that marks a row, and leaves out what it cannot use', () => {

@@ -7132,7 +7132,7 @@ export class Chart {
       volumeRatio: (data, from, to) =>
         (this.features.volume && this.volumeRenderer.isVisible() && hasVolume(data, from, to) ? this.volumeRenderer.getHeightRatio() : null),
       // A footprint's totals stand under its bars.
-      footRoom: (state) => (this.chartRenderer instanceof FootprintRenderer ? this.chartRenderer.totalsRoom(state, this.themeManager.getTheme()) : 0),
+      footRoom: (data, state) => (this.chartRenderer instanceof FootprintRenderer ? this.chartRenderer.totalsRoom(state, this.themeManager.getTheme(), data) : 0),
     });
   }
 

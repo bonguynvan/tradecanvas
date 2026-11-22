@@ -99,20 +99,39 @@ export class FootprintRenderer implements ChartRendererInterface {
     this.imbalance = Number.isFinite(ratio) && ratio >= 0 ? ratio : FOOTPRINT_IMBALANCE;
   }
 
-  /** Write under each bar what its rows add up to: bought less sold, and both together. */
+  /**
+   * Write under each bar what its rows add up to: bought less sold, and both
+   * together. Off until told: the chart turns it on unless its
+   * `footprint.totals` option says otherwise.
+   */
   setTotals(on: boolean): void {
     this.totals = on === true;
   }
 
   /**
    * The room the totals take under a bar, px: what the price scale leaves
-   * under the lowest bar so they are not cut. None with totals off, and none
-   * where the bars are too narrow to have them.
+   * under the lowest bar so they are not cut. None with totals off, none
+   * where the bars are too narrow to have them, and none where no bar on
+   * view has a footprint to add up.
    */
-  totalsRoom(viewport: ViewportState, theme: Theme): number {
+  totalsRoom(viewport: ViewportState, theme: Theme, data: DataSeries): number {
     const width = footprintWidth(viewport);
     if (!this.totals || width < FOOTPRINT_MIN_BAR_WIDTH || isDense(viewport) || !this.writesTotals(width)) return 0;
-    return totalsHeight(theme.font.sizeSmall);
+    if (!this.anyOnView(data, viewport)) return 0;
+    return totalsHeight(totalsFont(theme, Infinity));
+  }
+
+  /** Whether a bar on view has a footprint with rows in it, one a replay has shown. */
+  private anyOnView(data: DataSeries, viewport: ViewportState): boolean {
+    if (!this.store) return false;
+    const unit = barTimeUnit(data);
+    const { from, to } = viewport.visibleRange;
+    for (let i = Math.max(0, from); i <= to && i < data.length; i++) {
+      const time = data[i].time * unit;
+      if (this.shownUntil !== null && time >= this.shownUntil) continue;
+      if ((this.store.get(time)?.levels.length ?? 0) > 0) return true;
+    }
+    return false;
   }
 
   /** Draw cells only for bars before `time`, as a replay that has shown the bars up to it would; null for all. */
@@ -325,6 +344,11 @@ function drawCandle(ctx: CanvasRenderingContext2D, bar: DataSeries[number], slot
   ctx.fillRect(slot.left, Math.min(open, close), slot.candle, Math.max(1, Math.abs(close - open)));
 }
 
+/** The size the totals are written in under cells `room` wide: the theme's small size, or as a number of five characters fits, and never smaller than a number is written. */
+function totalsFont(theme: Theme, room: number): number {
+  return Math.max(MIN_FONT, Math.min(theme.font.sizeSmall, Math.floor((room - TEXT_PAD) / NUMBER_EMS)));
+}
+
 /** How tall a bar's totals are with their numbers `size` high, px: two lines, and room over, between and under them. */
 function totalsHeight(size: number): number {
   return TOTALS_GAP + size + TOTALS_LINE_GAP + size + TOTALS_GAP;
@@ -336,8 +360,7 @@ function totalsHeight(size: number): number {
  * quiet ink, on a plate of the chart's ground. Not drawn outside the plot.
  */
 function drawTotals(ctx: CanvasRenderingContext2D, stats: FootprintStats, slot: Slot, y: number, top: number, bottom: number, theme: Theme): void {
-  // As large as the usual small size, or as a number of five characters fits the cells.
-  const size = Math.max(MIN_FONT, Math.min(theme.font.sizeSmall, Math.floor((slot.cellsWidth - TEXT_PAD) / NUMBER_EMS)));
+  const size = totalsFont(theme, slot.cellsWidth);
   const height = totalsHeight(size);
   if (y + height < top || y > bottom) return;
   tint(ctx, slot.cellsLeft, y, slot.cellsWidth, height, theme.background, TOTALS_PLATE_ALPHA);
