@@ -76,7 +76,7 @@ import { type CompareWay } from './widgetCompare.js';
 import { WidgetTooltip } from './WidgetTooltip.js';
 import { WidgetIndicatorLegend } from './WidgetIndicatorLegend.js';
 import { formatIndicatorValue } from './legendValues.js';
-import { RANGE_PRESETS, SYMBOL_INDICATOR_IDS, adapterFromFeed, downloadBlob, imageFileName, indicatorCategory, indicatorGroup, isCrosshairCursor, isMarkerPlot, sourceParam, valuePlots } from '@tradecanvas/core';
+import { RANGE_PRESETS, SYMBOL_INDICATOR_IDS, adapterFromFeed, downloadBlob, fileNamePart, imageFileName, indicatorCategory, indicatorGroup, isCrosshairCursor, isMarkerPlot, sourceParam, valuePlots } from '@tradecanvas/core';
 import type { BracketSize } from '@tradecanvas/core';
 import { WidgetBracketBar } from './WidgetBracketBar.js';
 import { WidgetQuoteButtons } from './WidgetQuoteButtons.js';
@@ -3060,7 +3060,7 @@ export class ChartWidget {
       this.say(this.t('toast.pdfFailed'), 'error');
       return;
     }
-    downloadBlob(pdf, imageFileName(`${this.state.symbol}-${this.state.timeframe}`.replace(/[^\w.-]+/g, '_'), 'pdf'));
+    downloadBlob(pdf, imageFileName([this.state.symbol, this.state.timeframe].map(fileNamePart).filter((part) => part !== '').join('-'), 'pdf'));
   }
 
   /** Copy a shareable deep-link (current view encoded in the URL hash) to the clipboard. */

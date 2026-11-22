@@ -88,6 +88,16 @@ export function imageFileName(name: string | undefined, type: ImageType | 'pdf')
   return /\.(png|jpe?g|webp|pdf)$/i.test(name) ? name : `${name}.${ENDING[type]}`;
 }
 
+/**
+ * What of a name (a symbol, say) a file's name can carry: the letters and
+ * digits of any writing, a dot, a dash and an underscore, and an underscore
+ * for a run of anything else. Nothing, for a name with no letter or digit.
+ */
+export function fileNamePart(name: string): string {
+  const kept = name.trim().replace(/[^\p{L}\p{N}_.-]+/gu, '_');
+  return /[\p{L}\p{N}]/u.test(kept) ? kept : '';
+}
+
 /** Saves what `url` holds as a file, by a link the page never shows. Nothing, for no URL. */
 export function downloadImage(url: string, filename: string): void {
   if (!url) return;
@@ -104,6 +114,13 @@ export function downloadBlob(blob: Blob, filename: string): void {
   const url = URL.createObjectURL(blob);
   downloadImage(url, filename);
   setTimeout(() => URL.revokeObjectURL(url), REVOKE_AFTER_MS);
+}
+
+/** Whether the browser has a clipboard a picture can be put on: asked before one is drawn for it. */
+export function canCopyImage(): boolean {
+  // A runtime with no navigator has no clipboard either.
+  const clipboard = typeof navigator === 'undefined' ? undefined : navigator.clipboard;
+  return !!clipboard?.write && !!(globalThis as { ClipboardItem?: unknown }).ClipboardItem;
 }
 
 /**

@@ -1,6 +1,6 @@
 import type { ChartImageOptions, ChartPdfOptions, ChartPrintOptions, ChartStyleOverrides, ChartStyleOverridesPatch, DataAdapter, DrawingState, Theme, ThemeName, VisibleRangeChangePayload } from '@tradecanvas/commons';
 import { DARK_THEME, LIGHT_THEME, tickerOf } from '@tradecanvas/commons';
-import { canvasBlob, canvasDataURL, canvasesToPdf, copyImage, downloadImage, imageFileName, printCanvas } from '@tradecanvas/core';
+import { canCopyImage, canvasBlob, canvasDataURL, canvasesToPdf, copyImage, downloadImage, imageFileName, printCanvas } from '@tradecanvas/core';
 import { ChartWidget } from './ChartWidget.js';
 import type { ChartWidgetOptions, WidgetLayoutsOptions } from './types.js';
 import { readWidgetFeatures, type WidgetFeatures } from './widgetFeatures.js';
@@ -69,7 +69,7 @@ export interface ChartWidgetGridOptions {
   /**
    * The bar's picture button: the charts together saved as an image, copied,
    * printed or saved as a PDF. Default `true`. It is hidden as well while
-   * the charts' `screenshot` switch is off.
+   * a chart's `screenshot` switch is off: the picture shows every chart.
    */
   picture?: boolean;
   /** The chart in use changed (pressed, or the grid shrank). */
@@ -288,8 +288,7 @@ export class ChartWidgetGrid {
    */
   async copyScreenshot(options: Omit<ChartImageOptions, 'type' | 'quality'> = {}): Promise<boolean> {
     // Nothing is drawn where there is no clipboard to put it on.
-    const clipboard = typeof navigator === 'undefined' ? undefined : navigator.clipboard;
-    if (!clipboard?.write || !(globalThis as { ClipboardItem?: unknown }).ClipboardItem) return false;
+    if (!canCopyImage()) return false;
     const canvas = this.toCanvas(options);
     return copyImage(canvas ? canvasBlob(canvas) : Promise.resolve(null));
   }
@@ -714,6 +713,8 @@ export class ChartWidgetGrid {
       c.el.classList.toggle('tcw-grid-cell-current', i === this.active);
     });
     this.renderTabs();
+    // Other charts may be here now: whether their pictures are switched on is asked again.
+    this.pictureButton?.render();
   }
 
   /** A tab per chart, its symbol and interval: the active one pressed. */
@@ -801,7 +802,8 @@ export class ChartWidgetGrid {
         root: this.root,
         t: this.t,
         symbols: () => [...new Set(this.picturedCells().map((c) => c.widget.getSymbol()))],
-        isOn: (feature) => this.cells.some((c) => c.widget.isFeatureOn(feature)),
+        // The picture shows every chart: it needs every chart's leave.
+        isOn: (feature) => this.cells.length > 0 && this.cells.every((c) => c.widget.isFeatureOn(feature)),
         screenshot: (filename) => this.screenshot(filename),
         copyScreenshot: () => this.copyScreenshot(),
         print: (options) => this.print(options),
@@ -824,13 +826,17 @@ export class ChartWidgetGrid {
     return bar;
   }
 
-  /** The charts a picture shows: those with room on the page (a narrow grid shows one); all of them where the page is not laid out. */
+  /**
+   * The charts a picture shows: those with room on the page (a narrow grid
+   * shows one; all of them where the page is not laid out), less a chart
+   * that gives no picture (`features.screenshot` off on the chart itself).
+   */
   private picturedCells(): Cell[] {
     const shown = this.cells.filter((c) => {
       const box = c.el.getBoundingClientRect();
       return box.width > 0 && box.height > 0;
     });
-    return shown.length > 0 ? shown : this.cells;
+    return (shown.length > 0 ? shown : this.cells).filter((c) => c.widget.getChart().getFeatures().screenshot);
   }
 
   private sep(): HTMLSpanElement {

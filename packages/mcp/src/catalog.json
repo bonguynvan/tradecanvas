@@ -7347,7 +7347,7 @@
       {
         "name": "picture",
         "type": "boolean",
-        "doc": "The bar's picture button: the charts together saved as an image, copied, printed or saved as a PDF. Default `true`. It is hidden as well while the charts' `screenshot` switch is off.",
+        "doc": "The bar's picture button: the charts together saved as an image, copied, printed or saved as a PDF. Default `true`. It is hidden as well while a chart's `screenshot` switch is off: the picture shows every chart.",
         "kind": "boolean"
       },
       {

@@ -33,6 +33,7 @@ class FakeChart {
   saveState(): string { return JSON.stringify({ version: 2, chartType: 'candlestick', drawings: this.drawings }); }
   loadState(json: string): void { this.drawings = (JSON.parse(json) as { drawings: unknown[] }).drawings; }
   getData(): { time: number }[] { return this.data; }
+  getFeatures(): { screenshot: boolean } { return { screenshot: true }; }
   getActiveIndicators(): unknown[] { return []; }
   getIndicatorPanes(): unknown[] { return []; }
   getPlotRect() { return { x: 0, y: 0, width: 600, height: 300 }; }
@@ -631,6 +632,81 @@ describe('the charts’ picture, from the grid’s bar', () => {
     pictureButton()!.click();
     grid.setFeatures({ screenshot: false });
     expect(pictureButton()!.hidden).toBe(true);
+  });
+
+  it('shuts its menu when screenshots are switched off under it', () => {
+    make();
+    pictureButton()!.click();
+    expect(menuLabels()).toHaveLength(4);
+    grid.setFeatures({ screenshot: false });
+    expect(menuLabels()).toEqual([]);
+    expect(pictureButton()!.hidden).toBe(true);
+  });
+
+  it('needs every chart’s leave: one chart with screenshots off, and there is no button', () => {
+    make();
+    grid.getWidget(1)!.setFeatures({ screenshot: false });
+    // The grid looks again when its own switches are set, when the charts change, and when it is pressed.
+    grid.setFeatures({});
+    expect(pictureButton()!.hidden).toBe(true);
+    grid.getWidget(1)!.setFeatures({ screenshot: true });
+    grid.setActive(1);
+    expect(pictureButton()!.hidden).toBe(false);
+  });
+
+  it('looks again when pressed: a chart switched off by itself opens no menu', () => {
+    make();
+    for (const widget of grid.getWidgets()) widget.setFeatures({ screenshot: false });
+    expect(pictureButton()!.hidden).toBe(false);
+    pictureButton()!.click();
+    expect(menuLabels()).toEqual([]);
+    expect(pictureButton()!.hidden).toBe(true);
+  });
+
+  it('looks again when the grid grows: charts it adds are asked too', () => {
+    make({ cells: [{ symbol: 'AAA', features: { screenshot: false } }, { symbol: 'BBB' }, { symbol: 'CCC' }, { symbol: 'DDD' }], layout: '1x1' });
+    expect(pictureButton()!.hidden).toBe(true);
+    grid.getWidget(0)!.setFeatures({ screenshot: true });
+    grid.setLayout('1x2');
+    expect(pictureButton()!.hidden).toBe(false);
+  });
+
+  it('names the file after the charts that have room on the page: a narrow grid shows one', () => {
+    make({ layout: '2x2' });
+    const cells = [...host.querySelectorAll<HTMLElement>('.tcw-grid-cell')];
+    const box = (width: number, height: number) => () => ({ x: 0, y: 0, left: 0, top: 0, right: width, bottom: height, width, height, toJSON: () => ({}) });
+    cells.forEach((cell, i) => { cell.getBoundingClientRect = box(i === 2 ? 390 : 0, i === 2 ? 700 : 0); });
+    const saved = vi.spyOn(grid, 'screenshot').mockImplementation(() => undefined);
+    const printed = vi.spyOn(grid, 'print').mockReturnValue(true);
+    pick('Save image');
+    expect(saved).toHaveBeenLastCalledWith('CCC');
+    pick('Print');
+    expect(printed).toHaveBeenLastCalledWith({ title: 'CCC' });
+  });
+
+  it('leaves out of the name a chart that gives no picture', () => {
+    make();
+    Object.assign(charts()[0], { getFeatures: () => ({ screenshot: false }) });
+    const saved = vi.spyOn(grid, 'screenshot').mockImplementation(() => undefined);
+    pick('Save image');
+    expect(saved).toHaveBeenLastCalledWith('BBB');
+  });
+
+  it('keeps a symbol’s own letters in the file’s name, and names no chart twice', async () => {
+    make({ layout: '1x3' });
+    const saved = vi.spyOn(grid, 'screenshot').mockImplementation(() => undefined);
+    await grid.getWidget(0)!.setSymbol('삼성전자');
+    await grid.getWidget(1)!.setSymbol('BTC/USDT');
+    await grid.getWidget(2)!.setSymbol('BTC:USDT');
+    pick('Save image');
+    expect(saved).toHaveBeenLastCalledWith('삼성전자-BTC_USDT');
+  });
+
+  it('titles the paper with three symbols at the most', () => {
+    make({ layout: '2x2' });
+    const printed = vi.spyOn(grid, 'print').mockReturnValue(true);
+    pick('Print');
+    expect(printed).toHaveBeenLastCalledWith({ title: 'AAA, BBB, CCC, …' });
   });
 
   it('copies nothing where there is no clipboard for pictures, or no picture', async () => {

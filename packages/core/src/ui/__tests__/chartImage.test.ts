@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { MAX_IMAGE_PIXELS, MAX_IMAGE_SIDE, canvasBlob, canvasDataURL, canvasPdfImage, canvasesToPdf, copyImage, downloadBlob, downloadImage, imageFileName, imageRatio, printCanvas } from '../chartImage.js';
+import { MAX_IMAGE_PIXELS, MAX_IMAGE_SIDE, canvasBlob, canvasDataURL, canvasPdfImage, canvasesToPdf, canCopyImage, copyImage, downloadBlob, downloadImage, fileNamePart, imageFileName, imageRatio, printCanvas } from '../chartImage.js';
 
 afterEach(() => {
   document.body.innerHTML = '';
@@ -279,5 +279,46 @@ describe('the pixels a picture has', () => {
     expect(pictureSize({ width: 800, height: 400 }, { width: Number.NaN, height: -1 })).toEqual({ width: 800, height: 400 });
     // A side that is no whole number stays as asked: a grid's cell is laid out to the pixel it has.
     expect(pictureSize({ width: 800, height: 400 }, { width: 1e9, height: 200.4 })).toEqual({ width: MAX_IMAGE_SIDE, height: 200.4 });
+  });
+});
+
+describe('what of a name a file can carry', () => {
+  it('keeps the letters and digits of any writing, and a dot, a dash and an underscore', () => {
+    expect(fileNamePart('BTCUSDT')).toBe('BTCUSDT');
+    expect(fileNamePart('BRK.B')).toBe('BRK.B');
+    expect(fileNamePart('ES-2026_Z')).toBe('ES-2026_Z');
+    expect(fileNamePart('삼성전자')).toBe('삼성전자');
+    expect(fileNamePart('上证指数')).toBe('上证指数');
+    expect(fileNamePart('Сбербанк')).toBe('Сбербанк');
+  });
+
+  it('writes an underscore for a run of anything else', () => {
+    expect(fileNamePart('BTC/USDT')).toBe('BTC_USDT');
+    expect(fileNamePart('EUR USD: spot')).toBe('EUR_USD_spot');
+    expect(fileNamePart('^GSPC')).toBe('_GSPC');
+  });
+
+  it('is nothing for a name with no letter or digit in it', () => {
+    expect(fileNamePart('')).toBe('');
+    expect(fileNamePart('   ')).toBe('');
+    expect(fileNamePart('/:*?')).toBe('');
+  });
+});
+
+describe('whether a picture can be copied', () => {
+  it('is not where there is no clipboard for pictures', () => {
+    expect(canCopyImage()).toBe(false);
+    vi.stubGlobal('ClipboardItem', class {});
+    expect(canCopyImage()).toBe(false);
+  });
+
+  it('is where the browser has a clipboard to write and an item to put a picture in', () => {
+    vi.stubGlobal('ClipboardItem', class {});
+    Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { write: () => Promise.resolve() } });
+    try {
+      expect(canCopyImage()).toBe(true);
+    } finally {
+      Object.defineProperty(navigator, 'clipboard', { configurable: true, value: undefined });
+    }
   });
 });

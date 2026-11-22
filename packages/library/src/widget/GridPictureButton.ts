@@ -1,13 +1,15 @@
 import type { ChartPdfOptions, ChartPrintOptions } from '@tradecanvas/commons';
-import { downloadBlob, imageFileName } from '@tradecanvas/core';
+import { downloadBlob, fileNamePart, imageFileName } from '@tradecanvas/core';
 import { createIcon } from './icons.js';
 import type { Translator } from './i18n.js';
 import { WidgetContextMenu, type ContextMenuEntry } from './WidgetContextMenu.js';
 
-/** A picture of more symbols than this is not named after them. */
+/** A picture of more symbols than this is not named after them all. */
 const NAMED_SYMBOLS = 3;
-/** What a picture of too many symbols, or of none, is called. */
+/** What a file of too many symbols, or of none, is called. */
 const PLAIN_NAME = 'charts';
+/** What follows the symbols a paper's title has room for. */
+const AND_MORE = '…';
 const ICON_SIZE = 14;
 
 /** What the picture button reads of its grid, and asks of it. */
@@ -17,7 +19,7 @@ export interface GridPictureHost {
   t: Translator;
   /** The symbols of the charts a picture shows, each once, in the charts' order. */
   symbols: () => string[];
-  /** Whether the charts' widgets have a part switched on. */
+  /** Whether every chart's widget has a part switched on. */
   isOn: (feature: 'screenshot' | 'copyImage') => boolean;
   screenshot: (filename: string) => void;
   copyScreenshot: () => Promise<boolean>;
@@ -30,8 +32,10 @@ export interface GridPictureHost {
  * The grid bar's picture button: a menu that saves the charts together as
  * an image, copies it, prints it or saves it as a PDF. What a chart's own
  * camera and commands do for one chart, for all of them as they stand in
- * the grid. It goes with those: hidden while screenshots are switched off,
- * and without its copy entry while copying is.
+ * the grid. It goes with those: hidden while a chart's screenshots are
+ * switched off, and without its copy entry while copying is. The grid has
+ * it look again (`render`) when its switches or its charts change; it looks
+ * again itself when pressed, for a chart switched by its own widget.
  */
 export class GridPictureButton {
   readonly button: HTMLButtonElement;
@@ -64,11 +68,14 @@ export class GridPictureButton {
 
   private toggle(): void {
     const { t, root } = this.host;
-    this.menu ??= new WidgetContextMenu(root, t('grid.picture'));
-    if (this.menu.isOpen()) {
+    if (this.menu?.isOpen()) {
       this.menu.close();
       return;
     }
+    // A chart may have been switched since by its own widget.
+    this.render();
+    if (this.button.hidden) return;
+    this.menu ??= new WidgetContextMenu(root, t('grid.picture'));
     const entries: ContextMenuEntry[] = [{ id: 'save', label: t('grid.picture.save'), icon: 'download' }];
     if (this.host.isOn('copyImage')) entries.push({ id: 'copy', label: t('grid.picture.copy'), icon: 'copy' });
     entries.push(
@@ -86,16 +93,17 @@ export class GridPictureButton {
     else if (id === 'pdf') void this.savePdf();
   }
 
-  /** A file's name: the charts' symbols, or `charts` for more of them than a name holds. */
+  /** A file's name: the charts' symbols as a file can carry them, each once, or `charts` for more of them than a name holds. */
   private fileName(): string {
-    const symbols = this.host.symbols();
-    const name = symbols.length > 0 && symbols.length <= NAMED_SYMBOLS ? symbols.join('-') : PLAIN_NAME;
-    return name.replace(/[^\w.-]+/g, '_');
+    const names = [...new Set(this.host.symbols().map(fileNamePart))].filter((name) => name !== '');
+    return names.length > 0 && names.length <= NAMED_SYMBOLS ? names.join('-') : PLAIN_NAME;
   }
 
-  /** What the charts are called on paper: their symbols. */
+  /** What the charts are called on paper: their symbols, the first few of many. */
   private paperTitle(): string {
-    return this.host.symbols().join(', ');
+    const symbols = this.host.symbols();
+    const named = symbols.slice(0, NAMED_SYMBOLS).join(', ');
+    return symbols.length > NAMED_SYMBOLS ? `${named}, ${AND_MORE}` : named;
   }
 
   private async copy(): Promise<void> {
